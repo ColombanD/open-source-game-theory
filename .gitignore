@@ -12,3 +12,4 @@
 *.xml
 *.minted
 *.pdf
+/build
