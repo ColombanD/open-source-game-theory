@@ -1,0 +1,67 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\input{../theoremsetup}
+
+\title{Goedel-Prover-V2: Scaling Formal Theorem Proving with Scaffolded Data Synthesis and Self-Correction}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{../references.bib} % Link your .bib file
+
+\newcommand{\dupoc}{\texttt{DUPOC}}
+\newcommand{\cupod}{\texttt{CUPOD}}
+\newcommand{\cimcic}{\texttt{CIMCIC}}
+\newcommand{\dimcid}{\texttt{DIMCID}}
+\begin{document}
+
+\maketitle
+These notes recap the content exposed in \cite{lin2025goedelproverv2scalingformaltheorem}.
+
+\section{Abstract}
+They introduce a series of open-source language models that are state-of-the-art in automated theorem proving.
+Approach: Expert iteration, RL, curriculum learning, verifier-guided self-correction, model averaging.
+
+\section{Introduction}
+Automated theorem proving is a grand challenge for AI, requiring the construction of step-by-step, machine-verifiable proofs in formal languages like Lean. Requires a completely rigorous logical flow.
+
+Most methods today use reasoning models that are huge and cost a lot. Overall, our results demonstrate that the frontier of formal theorem proving can be advanced without
+access to extremely large models, vast computational resources, or proprietary technology.
+
+\section{Method}
+\subsection{Chain-of-Thought and Self-Correction}
+We structure the pipeline so that, after an initial proof attempt, verification
+failures are parsed and communicated back into the model as corrective guidance. The model then
+generates proof repairs, leading to an iterative self-correction process.
+
+\subsection{Curating formal Statements}
+Creation of a dataset of math problems with increasing difficulty (curriculum learning) using LLM. Use of a \textit{formalizer} to translate existing math problems written in natural language into formal Lean statements.
+
+\subsection{Training Algorithm}
+\begin{itemize}
+    \item Use an expert model to perform large-scale inference and produce an initial SFT dataset $S_1$.
+    \item Use $S_1$ to finetune the prover $\to$ SFT-$S_1$.
+    \item Use expert model and SFT-$S_1$ to annotate self-correction data $\to S_2$
+    \item SFT on $S_2 \to$ SFT-$S_2$.
+    \item Model averaging SFT-$S_1$ and SFT-$S_2$ $\to$ SFT-$S_2$-AVG
+    \item Scaffolding data synthesis with SFT-$S_2$-AVG to generate $S_3$
+    \item SFT of SFT-$S_2$-AVG on $S_3 \to$ SFT-$S_3$
+    \item Model averaging $\to$ SFT-$S_3$-AVG
+    \item RL on SFT-$S_3$-AVG $+$ model averaging $\to$ final RL-AVG
+\end{itemize}
+
+\section{Related works}
+\begin{itemize}
+    \item \textbf{Formal Theorem Proving as Whole Proof Generation:} Generate entire \textbf{Lean} proofs in a single pass.
+    \item \textbf{Formal Theorem Proving using Proof Search:} Incrementally construct proofs by exploring derivations paths with verifier feedback at each step. Requires a lot of computations.
+    \item \textbf{Self-Repair and Verifier-Guided Refinement:} Use auxiliary signals to streamline the reasoning process: informal sketches of proof as base, RAG for relevant theorems, self-verification.
+\end{itemize}
+
+\section{Summary}
+This paper is a nice intro to how an automated prover is designed and trained. Some interesting aspects pop out from the literature, such as \textbf{expert iteration} and \textbf{RL}.
+\textbf{Related works} very interesting, could read the paper on \textbf{DeepSeek-Prover}
+
+\printbibliography
+\end{document}

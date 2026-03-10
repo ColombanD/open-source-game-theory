@@ -1,0 +1,44 @@
+\documentclass{article}
+
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\input{../theoremsetup}
+
+\title{Robust Program Equilibrium}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex}
+\addbibresource{../references.bib}
+
+\begin{document}
+
+\maketitle
+
+These notes recap the contents exposed in \cite{robust_program_equilibrium}
+\section{Abstract}
+Tennenholtz's program equilibrium is too fragile, and unrealistic. We propose another program:  cooperate with some small probability $\epsilon$ and otherwise act as the opponent
+acts against this program. This is similar to the tit-for-tat strategy for the iterated prisoner's dilemma.
+We generalize this one-shot versions to other games.
+
+\section{Introduction}
+Tennenholtz introduced the concepts of programm equilibria and proposed a framework that was too fragile.
+We then move on to more robust program equilibria by letting the programs reason about each other, like \cite{critch2022cooperativeuncooperativeinstitutiondesigns}, but they are computationally expensive.
+This paper proposes a more computationally feasable program equilibria, similar to \texttt{FairBot}.
+
+\section{Robust program equilibrium in the prisoner's dilemma}
+$\epsilon \texttt{GroundedFairBot}$: cooperate with a probability $\epsilon$, otherwise act as your opponent plays against you.
+$2$ ideas: \begin{itemize}
+    \item It is a version of $\texttt{FairBot}$ which mimics a tit-for-tat strategy
+    \item It cooperates with a small probability to avoid running into the infinite loop that a $\texttt{FairBot}$ might encounter.
+\end{itemize}
+
+\section{Extensions}
+$\epsilon \texttt{Grounded} \pi_i\texttt{Bot}$ $\to$ Does terminate.
+
+Relationship to the underlying iterated game strategy.
+
+\printbibliography
+
+\end{document}

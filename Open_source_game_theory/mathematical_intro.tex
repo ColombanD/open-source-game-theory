@@ -1,0 +1,175 @@
+\documentclass{article}
+
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+\usepackage{minted}
+
+\input{../theoremsetup}
+
+\title{Mathematical Background for Open-source Game Theory}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex}
+\addbibresource{../references.bib}
+
+\begin{document}
+
+\maketitle
+
+These notes serve as a mathematical introduction for the Master thesis Project.
+
+\section{Preliminaries}
+\subsection{Open Source Game Theory}
+Open Source Game Theory is based on the idea that players submit programs instead of actions. The programs can read each other's source code and then output an action. This allows for more complex strategies that can condition on the opponent's program, leading to more cooperative outcomes in certain games.
+
+The equivalent of a Nash equilibrium in this setting is called a program equilibrium. A program equilibrium is a set of programs, one for each player, such that no player can unilaterally change their program to achieve a better outcome.
+
+\subsection{Simulation vs Formal Verification}
+In the literature on open source game theory, there are two main approaches to achieving cooperation: simulation-based and proof-based.
+\begin{itemize}
+    \item Simulation-based approaches involve agents simulating each other's behavior to determine whether to cooperate or defect. Works on this include \cite{robust_program_equilibrium,caspar_oesterheld_program_equilibrium,cooper2025characterisingsimulationbasedprogramequilibria}
+    \item Proof-based approaches involve agents using formal verification to determine whether to cooperate or defect. This is based on Löb's theorem and has been mainly explored in \cite{critch2022cooperativeuncooperativeinstitutiondesigns}.
+\end{itemize}
+
+\subsection{Formal Verifier Agents}
+The goal of the project will be to focus on the proof-based approaches in the literature, which is less explored and more theoretical. We will be working with formal verifier agents, which are agents that make decisions based on formal verification of certain properties of their opponents' programs.
+
+\paragraph{Setting, following \cite{critch2022cooperativeuncooperativeinstitutiondesigns}} 
+For simplicity, we will focus on the Prisoner's Dilemma, but any game with a similar structure would work. The agents will be defined as follows:
+
+\begin{minted}{python}
+def agent(opp_source):
+    # some code that reads opp_source and decides whether to cooperate or defect
+    return action
+\end{minted}
+
+We are interested in the outcome of the game when two agents interact with each other. The outcome is defined as follows:
+
+\begin{minted}{python}
+# Game outcomes:
+def outcome(agent1, agent2):
+    return (agent1(agent2.source),agent2(agent1.source))
+\end{minted}
+
+Now the interesting part: the agents will be making decisions based on formal verification of certain properties of their opponents' programs. For example, an agent might check if the opponent's program has a proof that it will cooperate with it, and then decide to cooperate if such a proof exists.
+We will need to define a proof checker and a proof search algorithm to implement this.
+
+\begin{minted}{python}
+def proof_checker(opp_source, proof_string, hypothesis_string):
+# Check if proof_string is a valid proof of
+# hypothesis_string using opp_source as an oracle
+    pass
+\end{minted}
+
+\begin{minted}{python}
+def proof_search(length_bound, opp_source, hypothesis):
+# proof_search checks each generated proof string to see
+# if it encodes a valid proof of a given hypothesis:
+  for proof in string_generator(length_bound):
+    if proof_checker(opp_source, proof, hypothesis):
+      return True
+  # otherwise, if no valid proof of hypothesis is found:
+  return False
+\end{minted}
+
+\section{The project}
+\subsection{Main lines}
+The project studies proof-based agents from \cite{critch2022cooperativeuncooperativeinstitutiondesigns} and related work (e.g. \cite{sistla2025evaluatingllmsopensourcegames}), with both theoretical and implementation goals.
+
+Main objectives:
+\begin{itemize}
+  \item Reconstruct core proof-based agents and verify their behavior in canonical games.
+  \item Produce proof-of-concept proofs by explicitly carrying out the reasoning these agents rely on.
+  \item Compare resulting behaviors with simulation-based approaches when relevant.
+\end{itemize}
+
+Methodological plan:
+\begin{itemize}
+  \item \textbf{Proof track:} write and check the key cooperation/defection arguments for the toy agents.
+  \item \textbf{Formalization track:} build a Lean framework encoding agents, outcomes, and proof obligations.
+  \item \textbf{Validation track:} use Lean as a proof checker to ensure that claimed properties are formally justified.
+\end{itemize}
+
+Extensions after the core setup:
+\begin{itemize}
+  \item Non-deterministic variants of the agents.
+  \item More efficient proof-search procedures.
+  \item Transfer to richer games beyond the Prisoner's Dilemma.
+\end{itemize}
+
+Possible exploratory direction:
+\begin{itemize}
+  \item Use language models as proof assistants by providing Lean proof templates and testing whether they can complete them reliably.
+\end{itemize}
+
+\subsection{Toy examples}
+Here, we present some basic examples of agents that we will be working with in the project. These agents are based on the ones described in \cite{critch2022cooperativeuncooperativeinstitutiondesigns} and other related works.
+
+\begin{minted}{python}
+# "CooperateBot":
+def CB(opp_source):
+    return C
+\end{minted}
+
+\begin{minted}{python}
+# "DefectBot":
+def DB(opp_source):
+    return D
+\end{minted}
+
+\begin{minted}{python}
+# "SourceCooperate": cooperate if opponent source contains "return C"
+def SC(opp_source):
+  if "return C" in opp_source:
+    return C
+  return D
+\end{minted}
+
+\begin{minted}{python}
+# "ShortSourceBot": cooperate only with short programs
+def SSB(opp_source):
+  if len(opp_source) < 200:
+    return C
+  return D
+\end{minted}
+
+\begin{minted}{python}
+# "CooperateIfNiceToDB": cooperate only if opponent cooperates with DefectBot
+def CADB(k):
+  def CADB_k(opp_source):
+    if proof_search(k, opp_source, "opp(DB.source) == C"):
+      return C
+    else:
+      return D
+  return CADB_k
+\end{minted}
+
+\newcommand{\cupod}{\Verb{CUPOD(k)}\xspace}
+\begin{minted}{python}
+# "Cooperate Unless Proof Of Defection" (CUPOD):
+def CUPOD(k):
+  def CUPOD_k(opp_source):
+    if proof_search(k, opp_source, "opp(CUPOD_k.source) == D"):
+      return D
+    else:
+      return C
+  return CUPOD_k
+\end{minted}
+
+\begin{minted}{python}
+# "Cooperate If My Cooperation Implies Cooperation  from
+# the opponent" (CIMCIC):
+def CIMCIC(k):
+  def CIMCIC_k(opp_source):
+    if proof_search(k, opp_source,
+    "(CIMCIC_k(opp.source)==C) => (opp(CIMCIC_k.source)==C)"):
+      return C
+    else:
+      return D
+  return CIMCIC_k
+\end{minted}    
+
+\printbibliography
+
+\end{document}

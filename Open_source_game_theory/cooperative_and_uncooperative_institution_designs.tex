@@ -1,0 +1,110 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\input{../theoremsetup}
+
+\title{Cooperative and uncooperative institution designs: Surprises and problems in open-source game theory}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{../references.bib} % Link your .bib file
+
+\newcommand{\dupoc}{\texttt{DUPOC}}
+\newcommand{\cupod}{\texttt{CUPOD}}
+\newcommand{\cimcic}{\texttt{CIMCIC}}
+\newcommand{\dimcid}{\texttt{DIMCID}}
+\begin{document}
+
+\maketitle
+These notes recap the content exposed in \cite{critch2022cooperativeuncooperativeinstitutiondesigns}
+
+\section{Abstract}
+\textit{Open-source game theory}: game theory where the internal programming of each of the agents is visible.
+\textit{Program equilibria}: game-theoretic equilibria in open-source game theory.
+
+In this paper, give a series of counterintuitive results on open-source games.
+Some of these open-source agents exhibit desirable characteristics: create incentives for cooperation.
+
+\section{Introduction}
+Important to understand how automated decision-making systems can interact.
+Sometimes, counterintuitive strategic interactions between algorithms arise, that need to be checked-in.
+
+Layout: \begin{itemize}
+    \item Examine interactions between very simple agents who reason about each other using mathematical proofs and make decisions based on that reasoning.
+    \item Show that results in mathematical logic can be applied to resolve the outcomes of such games.
+    \item Conjecture that perhaps these results may be reducible to a form more easily applied to human institutions.
+\end{itemize}
+
+\section{Setup}
+Agents will make decisions in part by formally verifying certain properties of each other: formal verifier agents. Examples: \texttt{CB}, \texttt{DB}, \texttt{CUPOD}, \texttt{DUPOC}
+
+Proof-searching via proof-checking: \texttt{proof\_checker}, \texttt{proof\_search}
+
+
+\begin{theorem} \label{thm:cupod-cupod}
+    For $k$ large, $\texttt{outcome(CUPOD(k), CUPOD(k))} == (\texttt{D,D})$
+\end{theorem}
+\begin{proof}
+    Proof is based on a modified version of Löb's Theorem. Essentially, it states that if (in our deduction system, we have that for all $k$, there exists a proof of above using less than $k$ characters implies above statement), then above statement.
+\end{proof}
+
+\subsection{\texttt{DUPOC}-like institutions}
+Two \texttt{DUPOC}-like institutions that become open-source to one another can in turn cooperate together given the corollary of $\cref{thm:cupod-cupod}$.
+
+Compared to \texttt{CUPOD}-like institutions that seem "nicer" in a sense because they never exploit its opponent, \texttt{DUPOC}-like institutions have desirable game-theoretic properties: \begin{enumerate}
+    \item \textbf{unexploitability:} \dupoc never cooperates with an opponent that will defect
+    \item \textbf{broad cooperativity:} \dupoc achieves (C, C) not just with other \dupoc s, but with other agents that follow "G-fairness" (opponents that always cooperates with agents that exhibit easy-to-verify cooperation)
+\end{enumerate}
+
+\section{Generalizability of results}
+\begin{itemize}
+    \item Non-deterministic version of \dupoc: \texttt{P}\dupoc which cooperates with probability $q$ if it knows its opponent cooperates with probability $q$.
+    \item More efficient \texttt{proof\_search} methods
+\end{itemize}
+
+\section{More Results}
+\cimcic: Cooperate if my cooperation implies cooperation from the opponent
+$\to$ unexploitable.
+\dimcid: defect if my cooperation implies defection from the opponent
+
+\begin{theorem}
+    \begin{itemize}
+        \item For $k$ large, $\texttt{outcome}(\cimcic(k),\cimcic(k)) == (C,C)$
+        \item For $k$ large, $\texttt{outcome}(\dupoc(k),\cimcic(k)) == (C,C)$
+    \end{itemize}
+\end{theorem}
+\begin{theorem}
+    \begin{itemize}
+        \item For $k$ large, $\texttt{outcome}(\dimcid(k),\dimcid(k)) == (D,D)$
+        \item For $k$ large, $\texttt{outcome}(\cupod(k),\dimcid(k)) == (D,D)$
+    \end{itemize}
+\end{theorem}
+
+\section{Discussion}
+\subsection{Applicability to non-logical reasoning processes}
+Do agents need to use formal logic to form their beliefs, or can similar results be obtained with probabilistic reasoning?
+Basically, we want to still have the PBLT so we need: \begin{itemize}
+    \item  The proof language for representing the agents’ beliefs needs to be
+expressive enough to represent numbers and computable functions and
+to introduce and expand abbreviations.
+    \item There must be a process the agents can follow for deriving beliefs from
+other beliefs (writing a proof is such a process).
+    \item The proof language must also be able to represent belief derivations
+(e.g., proofs) as objects in some way, and refer to the cost (e.g., in time
+or space) of producing various belief derivations.
+\end{itemize}
+Since these conditions are fairly general, it seems likely that similar results could be obtained for agents using probabilistic reasoning processes.
+\subsection{Modelling self-fulfilling prophecies in humans}
+\subsection{Comparison to Nash equilibria}
+
+\section{Conclusion}
+Open-source game theory is a rich field with many counterintuitive results, and should not be left unchecked.
+One-shot interactions can "short-circuit" unbounded recursions of metacognition, like in \cref{thm:cupod-cupod}.
+Still a bunch of open problems.
+
+
+
+\printbibliography
+\end{document}

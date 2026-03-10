@@ -1,0 +1,88 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\title{\textbf{Proposal:} \\ Formal Verification of Collusion in Transparent AI Agents}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{references.bib} % Link your .bib file
+
+
+\newcommand{\dupoc}{\texttt{DUPOC}}
+\newcommand{\cupod}{\texttt{CUPOD}}
+\newcommand{\cimcic}{\texttt{CIMCIC}}
+\newcommand{\dimcid}{\texttt{DIMCID}}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+We want to be able to better understand how AI agents coordinate/collude together or against each other. How they manage to do this depends on the information they have about each other, going from fully open-source to black-box.
+
+\textbf{Question:} "How well does controlling 
+the transparency level serve as a lever for preventing collusion in oversight mechanisms?"
+
+To respond to this question, 3 concrete scenarios: \begin{enumerate}
+    \item \textbf{ Collusion via credible commitments under full visibility} $\to$ White box: \begin{itemize}
+        \item Implement formal verifier agents (CUPOD/DUPOC-like strategies)
+        \item Examine the minimal paths that lead to AI agents forming collusive agreements, and characterize the conditions
+        \item Investigate system designs and agents behaviors that can prevent collusion, using a proof assistant.
+    \end{itemize}
+    \item Collusion via reverse-engineering the opponent's objectives (simulation-based collusion) $\to$ Gray box: \begin{itemize}
+        \item model weight access, reasoning traces, output-only, etc...
+        \item How much transparency is the minimum needed to catch deceptive behaviour? (use of verification model for this)
+        \item Can we trust what AIs claim as their own alignement?
+    \end{itemize}
+    \item Collusion via deceptive alignment (strategically hiding information) $\to$ Black box: \begin{itemize}
+        \item What strategies emerge in this scenario for collusion?
+        \item Is AI reasoning powerful enough that collusion arises automatically?
+    \end{itemize}
+\end{enumerate}
+
+\section{Methodology}
+\begin{itemize}
+    \item White box: Full access to one another's source code. Each agent is instantiated as a Lean-verifiable program to encode commitments, defections, and counterfactual reasoning as formal propositions.
+    Introduction of mechanism-level constraints, including asymmetric visibility and probabilistic agents to evaluate the sweet spot between collusion and collaboration.
+    
+    Formulation of Collusion Dynamics Dataset using the Lean-verifiable agents to form upper bounds on collusion under maximal transparency.
+
+    Use of Lean to formally prove upper bounds on achievable collusion rates. Empirical tournament results will be compared to these bounds.
+    \item Gray box: Model the amount of information to disclose as a strategic choice pondered by the cost upon information disclosure. Compare results to phase 1.
+    
+    Formulation of the Strategic Revelation Dataset under varying transparency costs.
+
+    Quantify the reduction in collusion frequency given a specific mechanism. Robustness tests using randomized perturbations and cost penalties for communication or simulations.
+    \item Black box: LLM-based agents with recursive reasoning templates. Evaluate wether collusion against the overseer emerges implicitly as a function of modeling depth. Compare to phases 1 and 2, testing whether behavioral inference enables the same collusion patterns as in the other phases. Aims to see if the removal of transparency is sufficient to disrupt collusion.
+    
+    Formulation of the Reasoning Depths Dataset using LLM-based agents acting through behavioral inference, guided by fixed reasoning templates.
+
+    Collusion rates analyzed as a function of recursive depth k and across regimes featuring implicit signaling (like coded communication, steganographic communication)
+\end{itemize}
+
+\section{Talk with Jerick}
+2 Proposals: 
+\begin{enumerate}
+    \item Understand what agents can do in open source game theory, using lean:
+    \begin{itemize}
+        \item Transparency (Master Thesis): First idea (extension of Critch's paper): We want to answer the open questions of the paper. To do so, we want to code in Lean the proof\_checker (or proof\_writer ?) of a specific game (e.g: $\cupod$ vs $\cupod$ in prisoners dilemma) to be able to simulate the expected outcome (in the example: (D, D)). Notion of length of proof (k) important.
+        
+        Lean might not be the best for this, will have to check. Maybe a llm that does the lean code, or something else?      
+        
+        \item Partial Transparency: How much info can we give to the agents so that they achieve cooperation? More on simulation with less info.
+        \item Pay a cost to simulate: Analyze thea game theory behind the games (this is the math part) and then do some simulations.
+    \end{itemize}
+    \item Tackle open-source game theory with other tools than Lean:
+    \begin{itemize}
+    \item Transform the concepts of (hash being hackable $\to$ hash families better) in a gt sense.
+    Instead of committing into one strategy, you have a family of strategies for agent A. Then can agent B devise a strategy to not get exploited (partial information setting)?
+    \item RL in gt: Instead of just feeding the reward to the agent, we also feed in the weights of the last layer of the opponent → RL training: see if there is better behavior.
+    \item Creating a benchmark to see how good agents are at simulating the actions of other agents. What are the different outcomes? Difference between one shot reasoning and recursive reasoning.
+\end{itemize}
+\end{enumerate}
+
+
+Material on the Jinesis drive I can read, in folders: presentations, proofs, experiments.
+\end{document}

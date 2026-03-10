@@ -1,0 +1,43 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\input{../theoremsetup}
+
+\title{Evaluating LLMs in Open-Source Games}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{../references.bib} % Link your .bib file
+
+\newcommand{\dupoc}{\texttt{DUPOC}}
+\newcommand{\cupod}{\texttt{CUPOD}}
+\newcommand{\cimcic}{\texttt{CIMCIC}}
+\newcommand{\dimcid}{\texttt{DIMCID}}
+\begin{document}
+
+\maketitle
+These notes recap the content exposed in \cite{sistla2025evaluatingllmsopensourcegames}
+
+\section{Introduction}
+Shifting from classical game theory to open-source game theory (with players submitting programs instead of actions) is nice because it allows for transparency in the game's outplay. Policies are more auditable and checkable for safety making this setting enviable.
+We want to see how llms compete in this setting, where they submit programs.
+Key findings: \begin{enumerate}
+    \item LLMs can understand strategic code
+    \item LLMs agents develop sophisticated strategic mechanisms in open-source games
+    \item LLMs converge to approximate program equilibria
+\end{enumerate}
+
+\section{Evaluations}
+\begin{itemize}
+    \item SPARC Benchmark: evaluate how competent an LLM is at predicting program behavior against a $\texttt{CooperateBot}$.
+    \item Evaluation of strategies from LLMs for Prisoner's dilemma and Coin game: evaluate strategy complexity and how much it uses the opponent's source code.
+    \item Empirical Program Equilibria: Analyze the dynamics using a quadratic system of differential equations (replicator dynamics)
+\end{itemize}
+
+\section{Summary}
+This paper offers a view on empirical Open-source game theory with LLMs. Analysis is three-fold, but does not implement formal verification in the analysis.
+
+\printbibliography
+\end{document}

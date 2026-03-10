@@ -1,0 +1,41 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\title{Papers on Simulations in Game Theory - notes}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{references.bib} % Link your .bib file
+
+\begin{document}
+
+\maketitle
+\section{GovSim}
+\begin{itemize}
+    \item GovSim: a simulation platform where LLM agents must collectively balance exploiting a common resource with sustaining it for future use.
+    \item Study how ethical considerations, strategic planning and negotiation skills impact cooperative outcomes
+    \item  Analysis of LLM behavior suggests that the lack of sustainable
+    governance may result from an inability to mentally simulate the long-term effects of greedy actions
+    on the equilibrium of the multi-agent system. To address this challenge, we find that prompting
+    agents to consider the universalization of their action significantly improves survival time
+\end{itemize}
+
+\section{MoralSim}
+\begin{itemize}
+    \item MoralSim: Evaluate how LLMs navigate social dilemmas in which ethical norms conflict with payoff-maximizing strategies: prisoners dilemma and public goods game.
+    \item Crucially, no model exhibits consistently moral behavior in
+    MoralSim, highlighting the need for caution when deploying LLMs in agentic
+    roles where the agent’s “self-interest” may conflict with ethical expectations.
+\end{itemize}
+
+\section{GT-HarmBench}
+\begin{itemize}
+    \item Big Benchmark for LLMs focusing on 2x2 symetric games and their Nash equilibria.
+    \item Use of a reasoning model to multiply the games: 6 original games and their dual, then derived into 2000+ scenarios for evaluation.
+    \item Mechanism design: modify the setting to nudge a certain behavior.
+\end{itemize}
+
+
+\end{document}

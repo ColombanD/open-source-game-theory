@@ -1,0 +1,62 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\input{../theoremsetup}
+
+\title{Casper talk: Open-source game theory}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{../references.bib} % Link your .bib file
+
+\newcommand{\dupoc}{\texttt{DUPOC}}
+\newcommand{\cupod}{\texttt{CUPOD}}
+\newcommand{\cimcic}{\texttt{CIMCIC}}
+\newcommand{\dimcid}{\texttt{DIMCID}}
+\begin{document}
+
+\maketitle
+These notes recap the content exposed in the video of the talk given by AXRP with Caspar Oesterheld on open-source game theory: \cite{caspar_oesterheld_program_equilibrium}
+
+\paragraph{Introduction}
+\begin{itemize}
+    \item Program equilibrium: a program equilibrium is a Nash equilibrium of a game where players choose computer programs that can read each other's source code and then output an action. The idea is that by being able to read each other's source code, players can condition their actions on the actions of the other player, leading to more cooperative outcomes in certain games.
+    \item Initial papers on program equilibrium find the following programm: Cooperate if and only if the opponents program is identical to mine.
+    \item Practically, this setting is very complex, because you require to coordinate on what program to use. Not robust to small changes in the program. Also, it is not clear how to extend this to more complex games, than the Prisoner's Dilemma.
+    \item What are we trying to achive with these settings? $\to$ Most of the papers want to find the "nash equilibrium". A lot of the work on the next papers: intuitive notion of robustness, but not formalized.
+    \item Program equilibrium: nice to have a program that only reacts to the opponent's behavior rather than their syntax.
+    \item Desideratum: computational effeciency, robustness to small changes in the program, and generalization to more complex games.
+    \item Why does Program Equilibrium matter? $\to$ These games could be used to model interactions between AI agents, computer programs. It models kinds of games that could be played in the future, so very relevant.
+    \item Institution design: we can use these games to design institutions that promote cooperation. For example, we could design a system where agents are rewarded for cooperating with each other, and punished for defecting.
+\end{itemize}
+
+\paragraph{Before the two papers, what do we know about program equilibrium?}
+\begin{itemize}
+    \item We have some caracterization about the basic programs that achieve program equilibrium, but they are all based on being similar to each other.
+    \item Post Tenenholtz's paper, most papers have focused on finding more robust program equilibria, e.g. proof-based programs. $\to$ More robust to synthatic changes. Based on Löb's theorem.
+    \item Extensions of this Löbian cooperation: \cite{critch2022cooperativeuncooperativeinstitutiondesigns} shows that Löb holds with bounded proof length. It matters that you try to find a proof for cooperation, rather than defection. 
+    \item Issue: in practice, proving these behaviors is very hard.
+\end{itemize}
+
+\paragraph{Presentation of two papers: \cite{barasz2021robustcooperationprisonersdilemma,cooper2025characterisingsimulationbasedprogramequilibria}}
+\begin{itemize}
+    \item Caspar's paper: Getting program equilibria not by proof but by simulation. Problem with infinite recursion if both programs try to simulate each other $\to$ solution: cooperate with some small probability $\epsilon$ and otherwise do what the opponent does against this program.
+    \item Special case: Prisoner's Dilemma. Paper draws connection between $\epsilon$-grounded bots and repeated games where you can only see the oppoents last move.
+    \item How much do we know about iterated strategies? $\to$ We have a lot for the Prisoner's Dilemma, but not for more complex games.
+    \item With the löbian agents, the time it takes to cooperate is instantaneous, but with the $\epsilon$-grounded bots, it takes some time to cooperate: $\frac{1}{\epsilon}$ rounds.
+    \item CUPOD vs $\epsilon$-grounded fair bot will both cooperate.
+    \item You cannot simulate both opponents infinitely. To fix this, you pass an infinite random string to each player and ask that they both halt when they see the same threshold bit.
+\end{itemize}
+
+\paragraph{Follow-up work}
+\begin{itemize}
+    \item Technical questions for löbian agents: There isn't a result for the folk theorem with shared randomness.
+    \item In practice, one doesn't see the opponent's full source code, but not a lot of litterature on this.
+    \item Similarity-based cooperation
+    \item With language models, e.g. my program is: I prompt my language model → not open source because we don't see the internal workings of the language model, but we can still condition on the output of the language model. $\to$ We can get cooperation by conditioning on the output of the language model, rather than the source code.
+\end{itemize}
+
+\printbibliography
+\end{document}

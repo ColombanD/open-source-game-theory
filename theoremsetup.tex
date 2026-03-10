@@ -1,0 +1,21 @@
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{thmtools} 
+\usepackage{cleveref}
+
+
+% Number equations within sections (instead of chapters)
+\numberwithin{equation}{section}
+
+% Declare theorem environments anchored to sections
+\declaretheorem[name=Theorem,numberwithin=section]{theorem}
+\declaretheorem[name=Lemma,numberlike=theorem]{lemma}
+\declaretheorem[name=Proposition,numberlike=theorem]{proposition}
+\declaretheorem[name=Corollary,numberlike=theorem]{corollary}
+\declaretheorem[name=Definition,numberlike=theorem]{definition}
+\declaretheorem[name=Assumption,numberlike=theorem]{assumption}
+\declaretheorem[name=Example,numberlike=theorem]{example}
+\declaretheorem[name=Remark,numberlike=theorem]{remark}
+
+% For restatable theorems 
+\declaretheorem[name=Theorem,numberwithin=section]{restatabletheorem}

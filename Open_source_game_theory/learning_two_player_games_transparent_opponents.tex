@@ -1,0 +1,57 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\input{../theoremsetup}
+
+\title{Learning in two-player games between
+transparent opponents}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{../references.bib} % Link your .bib file
+
+\newcommand{\dupoc}{\texttt{DUPOC}}
+\newcommand{\cupod}{\texttt{CUPOD}}
+\newcommand{\cimcic}{\texttt{CIMCIC}}
+\newcommand{\dimcid}{\texttt{DIMCID}}
+\begin{document}
+
+\maketitle
+These notes recap the content exposed in \cite{hutter2021learningtwoplayergamestransparent}.
+
+\section{Abstract}
+Scenario in which two RL agents repeatedly play a matrix game against each other and update their parameters after each round. Decision-making is transparent.
+Two algorithms: LOLA and SOS (opponent-aware learning).
+
+\section{Introduction}
+Vanilla gradient descent learners failed to learn tit-for-tat strategies that encourage mutual cooperation in iterated prisoner's dilemma.
+Important point: in one-shot PD, situations that have been studied where mutual cooperation might arise are based on one condition: mutual transparency.
+
+Different strategies such as $\epsilon-\texttt{GroundedFairBot}$ can emerge that defect with prob $1-\epsilon$ if facing a defector. They train an agent to have such property.
+
+\section{Learning with opponent-learning awareness}
+Two algorithms based on gradient descent: \textbf{Learning with Opponent-Learning Awareness (LOLA)} and \textbf{Stable Opponent Shaping (SOS)}.
+Both use gradients of both players in the gradient descent part (Taylor approximation for example).
+Depending on the learning rate of each player, we have some notion of how much one is \textit{looking ahead}.
+
+\section{Discussion}
+We have seen that LOLA and SOS learners can
+achieve outcomes which are drastically different from those achieved by naive
+gradient descent learners.
+
+In the prisoner’s dilemma, mutual awareness of each other’s inner workings
+is helpful for achieving cooperative outcomes. This idea has existed for decades
+(at least since Hofstadter (1983)), and we have now validated it in the paradigm
+of gradient-based machine learning.
+
+Chicken Game can pose some problems in the setting of mutual information, as it can favorize defection.
+
+\section{Opinion of this paper}
+Shows a computational approach of open-source gt where they try to test the theory of some known results of cooperation or defection for some agents.
+
+Could be useful to understand how learning works in practice $\to$ Here it is basically just gradient descent on the expected payoff that is computed analytically (closed-formed).
+
+\printbibliography
+\end{document}

@@ -1,0 +1,94 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\input{../theoremsetup}
+
+\title{Recursive Joint Simulation in Games}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{../references.bib} % Link your .bib file
+
+\newcommand{\dupoc}{\texttt{DUPOC}}
+\newcommand{\cupod}{\texttt{CUPOD}}
+\newcommand{\cimcic}{\texttt{CIMCIC}}
+\newcommand{\dimcid}{\texttt{DIMCID}}
+\begin{document}
+
+\maketitle
+These notes recap the content exposed in \cite{kovarik2024recursivejointsimulationgames}
+
+\section{Abstract}
+We place ourselves in the context of open-source game theory. 
+The aim is to explore ways in which we can achieve cooperation.
+Recursive simulation: first, agents jointly observe a simulation that is recursive before taking an action.
+
+\section{Introduction}
+Compared to humans, AI agents by their nature allow different game theoretic setups such as open-source game theory.
+In this paper, we investigate the implications of the potential ability for AI agents to simulate each other during strategic interaction.
+Setting: We create a chain of nested simulations of depth k, where k is determined by the probability of not allowing further simulations.
+The real agents now suspect they are also in a simulation $\to$ tradeoff between seeking a direct payoff (if in reality) and adopting an indirect strategy (if in simulation)
+One strategy: \textbf{grim trigger strategy}
+
+\section{Related Work}
+\begin{itemize}
+    \item Infinite recursion $\to$ program equilibria \cite{critch2022cooperativeuncooperativeinstitutiondesigns}: Difference to our work: players here receive behavioral information and not a source code. Also, intermediate simulated players are also counted as rational players, whereas they would not be considered rational players in \cite{critch2022cooperativeuncooperativeinstitutiondesigns}.
+    \item On program's behavior: $\epsilon$-grounded \texttt{FairBot}: separate simulation of one another instead of joint simulation.
+    \item Unilateral simulation: Only one agent can simulate the other.
+    \item Super rationality reasoning: Knowing that the opponent is like me so if I cooperate, they will too.
+\end{itemize}
+
+\section{Background}
+\subsection{Normal-form games}
+Set the foundations and notations.
+
+\subsection{Repeated Games}
+Key types of Normal form games $\mathcal{G} = (\mathcal{A}, u^\mathcal{G})$: \begin{itemize}
+    \item Rep$_T(\mathcal{G})$: Players play $\mathcal{G}$ $T$ times.
+    \item Rep$_\omega(\mathcal{G}, p)$: Players play infinitely many times, with exponential discounting.
+    \item Rep$_{T=?}(\mathcal{G})$: players plays an unknown number of repetitions, where at each stage, the game ends with a probability of $1-p$.
+    \item Rep$_T(\mathcal{G})$
+\end{itemize}
+Notion of \textbf{strategically equivalent} and \textbf{realization-equivalent} games.
+
+Proposition: in an infinitely repeated Prisoner's Dilemma with sufficiently high $p$ has as an equilibrium the policy that players cooperate every single time.
+
+Not the case in the finite setting.
+
+\section{Recursive Joint Simulation Games and Equivalence to Repeated Games}
+\begin{definition}
+    A \textbf{recursive joint-simulation game} RJS$(\mathcal{G},p)$ is a normal form game $\mathcal{G}$ such that it has the recursive simulation as in the intro, with probability $p$ of ending the simulation.
+\end{definition}
+\begin{theorem}
+    For any $\mathcal{G}$ and $p$, RJS$(\mathcal{G},p)$ is strategically equivalent to Rep$_{T=?}(\mathcal{G})$ and Rep$_\omega(\mathcal{G}, p)$.
+\end{theorem}
+
+\section{Extensions of the Formalism}
+\subsection{Voluntary Simulation}
+Previous section assumes decision to simulate comes from a third party. The same is the case when the players decide whether to simulate or not.
+Three cases are available to extend the RJS$(\mathcal{G},p)$ setting in this case, but it becomes equivalent.
+
+\subsection{Variable Simulation Probability}
+Probability of continuing the simulation depends on the depth of the simulation. But this is realization-equivalent to Rep$_\omega(\mathcal{G}, (p_t)_t)$
+
+\section{Self-locating Beliefs}
+This section takes the point of view of the agent acting.
+
+\section{Two Objections to the Simulation Framework}
+\textbf{Indistinguishability:} Agents cannot distinguish between being in a simulation and being in the real world.
+\begin{itemize}
+    \item Could indistinguishability be impossible \textit{in principle}? $\to$ No because its just numerical bits for AI agents, in a simulation or the real world.
+    \item Could indistinguishability be impossible \textit{in practice}? $\to$ Depending on the complexity of the simulation, we can or cannot do it in practice.
+\end{itemize}
+
+\section{Conclusion}
+In some settings, recursive joint-simulation games inherit the properties of repeated games and allow a larger range of outcomes, such as cooperation.
+
+More broadly, the setting of our paper is just one example illustrating the interplay between: (1) topics in formal epistemology, including the study of decision scenarios that in the context of ordinary human affairs might well be considered fanciful; and
+(2) questions about the design of AI agents, whose strategic interactions may take a
+form unlike any in ordinary human affairs.
+
+\printbibliography
+\end{document}

@@ -1,0 +1,42 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+
+\input{../theoremsetup}
+
+\title{Robust Cooperation in the Prisoner's Dilemma: //
+Program Equilibrium via Provability Logic}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex} % Ensure style matches your preference
+\addbibresource{../references.bib} % Link your .bib file
+
+\newcommand{\dupoc}{\texttt{DUPOC}}
+\newcommand{\cupod}{\texttt{CUPOD}}
+\newcommand{\cimcic}{\texttt{CIMCIC}}
+\newcommand{\dimcid}{\texttt{DIMCID}}
+\begin{document}
+
+\maketitle
+These notes recap the content exposed in \cite{barasz2021robustcooperationprisonersdilemma}
+
+\section{Abstract}
+Achieve mutual cooperation in one-shot Prisoner's Dilemma with open-source agents.
+\textit{Robust}: Cooperation does not need exact equality of the agent's source code.
+\textit{Unexploitable}: Agents never cooperate if the opponent defects.
+
+\section{Introduction}
+Concept of agents given full knowledge of one-another should cooperate. True for "superrationality" but not in practice. 
+A line of work on \texttt{CliqueBot}: "cooperate iff the opponent's source code is identical to mine" $\to$ Nash equilibrium for the expanded game: 2 players decide which code to submit to the Prisoner's Dilemma with source-code swap.
+Two faulty ideas: \begin{itemize}
+    \item simulating the other agent to see what they do when given one's own source code $\to$ infinite regress when the two do the same
+    \item find fixed points of strategies $\to$ sometimes several or none exist
+\end{itemize}
+\textbf{Solution:} Use modal logic, in particular Löb's Theorem.
+
+Open-source Prisoner's Dilemma is analogous to Newcomb's problem.
+
+\section{Agents in Formal Logic}
+\printbibliography
+\end{document}
