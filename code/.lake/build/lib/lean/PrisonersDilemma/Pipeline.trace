@@ -1,0 +1,31 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["c224e9c152e79809.olean"],
+  "i": "30bac265ef0f5383.ilean",
+  "c": "5595f01f79048f46.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/open-source-gt/.lake/build/lib/lean /Users/colomband/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/open-source-gt/PrisonersDilemma/Pipeline.lean -o /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/open-source-gt/.lake/build/lib/lean/PrisonersDilemma/Pipeline.olean -i /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/open-source-gt/.lake/build/lib/lean/PrisonersDilemma/Pipeline.ilean -c /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/open-source-gt/.lake/build/ir/PrisonersDilemma/Pipeline.c --setup /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/open-source-gt/.lake/build/ir/PrisonersDilemma/Pipeline.setup.json --json",
+   "level": "trace"}],
+ "inputs":
+ [["PrisonersDilemma.Pipeline:deps",
+   [["deps",
+     [["PrisonersDilemma/PrisonersDilemma:extraDep",
+       [["@PrisonersDilemma:extraDep", "00000000000006bb"]]],
+      ["imports",
+       [["PrisonersDilemma.Core transitive imports (legacy)",
+         "00000000000006bb"],
+        ["PrisonersDilemma.Core:importAllArts", "944f6e465e1e7020"]]]]],
+    ["libs",
+     [["import dynlibs", "00000000000006bb"],
+      ["package external libraries", "00000000000006bb"],
+      ["module dynlibs", "00000000000006bb"],
+      ["module plugins", "00000000000006bb"]]]]],
+  ["Lean 4.28.0, commit 7e01a1bf5c70fc6167d49c345d3bf80596e9a79b",
+   "a96bc04a2e5e9630"],
+  ["/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/open-source-gt/PrisonersDilemma/Pipeline.lean",
+   "f79f47e5c24ed699"],
+  ["options", "00000000000006bb"],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "24d9b10b47b62e28"}

@@ -1,0 +1,9 @@
+{"plugins": [],
+ "package": "PrisonersDilemma",
+ "options": {},
+ "name": "PrisonersDilemma",
+ "isModule": false,
+ "importArts":
+ {"PrisonersDilemma.Basic":
+  ["/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-gt/.lake/build/lib/lean/PrisonersDilemma/Basic.olean"]},
+ "dynlibs": []}

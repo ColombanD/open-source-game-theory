@@ -1,0 +1,9 @@
+{"plugins": [],
+ "package": "PrisonersDilemma",
+ "options": {},
+ "name": "PrisonersDilemma.Pipeline",
+ "isModule": false,
+ "importArts":
+ {"PrisonersDilemma.Core":
+  ["/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/open-source-gt/.lake/build/lib/lean/PrisonersDilemma/Core.olean"]},
+ "dynlibs": []}
