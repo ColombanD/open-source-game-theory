@@ -56,13 +56,13 @@ In open-source game theory each player can inspect the opponent's source code be
 | `open_source_breaks_dominance` | In open-source PD, CooperateBot outperforms DefectBot against TFT (3 > 1) — the central insight |
 | `tft_vs_defectBot_payoff` | TFT **sees** DefectBot and pre-emptively defects → mutual D → payoff 1 (not exploited) |
 | `tft_tft_payoff` | TFT vs TFT → mutual cooperation, payoff 3 each |
-| `dd_is_nash` | (D,D) is a Nash equilibrium: switching to C against a defector only hurts you |
-| `cc_not_nash` | (C,C) is not a Nash equilibrium: unilateral defection is profitable |
+| `dd_is_nash` | (D, D) is a Nash equilibrium: switching to C against a defector only hurts you |
+| `cc_not_nash` | (C, C) is not a Nash equilibrium: unilateral defection is profitable |
 | `tft_is_program_equilibrium` | (TFT, TFT) is a program equilibrium: neither bot benefits by switching to DefectBot |
 | `defectBot_program_equilibrium` | (DefectBot, DefectBot) is also a program equilibrium |
-| `cc_better_than_dd_socially` | Social welfare at (C,C) > (D,D) |
+| `cc_better_than_dd_socially` | Social welfare at (C, C) > (, DD) |
 | `tft_tft_optimal_welfare` | TFT vs TFT achieves the same social welfare as CooperateBot vs CooperateBot |
-| `pd_dilemma` | The unique Nash equilibrium (D,D) is Pareto-dominated by (C,C) |
+| `pd_dilemma` | The unique Nash equilibrium (D, D) is Pareto-dominated by (C, C) |
 
 ## Building
 
