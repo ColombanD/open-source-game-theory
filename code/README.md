@@ -12,6 +12,12 @@ The codebase now includes a modular backbone for scaling to many papers/programs
 - `PrisonersDilemma/Proofs/`: one file per matchup theorem set
 - `PrisonersDilemma/Proofs/WorkflowTemplate.lean`: template for writing manual proofs in two stages
 
+Current modularized open-source PD bot stack:
+
+- `PrisonersDilemma/Models/OpenSourceBots.lean`: bot syntax + semantics (`ProgramModel` instance)
+- `PrisonersDilemma/Proofs/OpenSourceBots.lean`: behavioral/equilibrium/welfare theorems
+- `PrisonersDilemma/Basic.lean`: deprecated compatibility shim
+
 ### Recommended per-match process
 
 1. Add or update semantics in a model file under `PrisonersDilemma/Models/`.
@@ -21,7 +27,7 @@ The codebase now includes a modular backbone for scaling to many papers/programs
 
 ### Current starter model
 
-`PrisonersDilemma/Models/Simple.lean` includes a minimal reference model (`cooperate`, `defect`) and sample theorems proving action profiles and canonical payoffs (`CC=2, CD=0, DC=3, DD=1`).
+`PrisonersDilemma/Models/Simple.lean` includes a minimal reference model (`cooperate`, `defect`) and sample theorems proving action profiles and canonical payoffs (`CC=3, CD=0, DC=5, DD=1`).
 
 In open-source game theory each player can inspect the opponent's source code before choosing an action. This changes the strategic landscape: defection no longer unconditionally dominates.
 

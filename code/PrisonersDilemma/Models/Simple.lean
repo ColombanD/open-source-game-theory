@@ -39,7 +39,7 @@ theorem cd_outcome_canonical :
       leftAction := Action.C
       rightAction := Action.D
       leftPayoff := 0
-      rightPayoff := 3
+      rightPayoff := 5
     } := by
   simp [playOutcome, playActions, mkOutcome, payoff, canonicalPayoff]
 

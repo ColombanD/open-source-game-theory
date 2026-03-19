@@ -15,9 +15,9 @@ structure PayoffMatrix : Type where
   dd : Nat
   deriving Repr
 
-/-- Canonical matrix used in your markdown notes: CC=2, CD=0, DC=3, DD=1. -/
+/-- Canonical one-shot PD matrix: CC=3, CD=0, DC=5, DD=1. -/
 def canonicalPayoff : PayoffMatrix :=
-  { cc := 2, cd := 0, dc := 3, dd := 1 }
+  { cc := 3, cd := 0, dc := 5, dd := 1 }
 
 def payoff (m : PayoffMatrix) (mine opp : Action) : Nat :=
   match mine, opp with
@@ -25,6 +25,11 @@ def payoff (m : PayoffMatrix) (mine opp : Action) : Nat :=
   | C, D => m.cd
   | D, C => m.dc
   | D, D => m.dd
+
+@[simp] theorem payoff_canonical_cc : payoff canonicalPayoff C C = 3 := rfl
+@[simp] theorem payoff_canonical_cd : payoff canonicalPayoff C D = 0 := rfl
+@[simp] theorem payoff_canonical_dc : payoff canonicalPayoff D C = 5 := rfl
+@[simp] theorem payoff_canonical_dd : payoff canonicalPayoff D D = 1 := rfl
 
 structure Outcome : Type where
   leftAction : Action
