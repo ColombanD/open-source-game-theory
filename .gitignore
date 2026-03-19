@@ -13,3 +13,4 @@
 *.minted
 *.pdf
 /build
+*.DS_Store

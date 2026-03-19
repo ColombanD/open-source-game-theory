@@ -77,28 +77,28 @@ def proof_search(length_bound, opp_source, hypothesis):
 \subsection{Main lines}
 The project studies proof-based agents from \cite{critch2022cooperativeuncooperativeinstitutiondesigns} and related work (e.g. \cite{sistla2025evaluatingllmsopensourcegames}), with both theoretical and implementation goals.
 
-Main objectives:
+\textbf{Main objectives:}
 \begin{itemize}
   \item Reconstruct core proof-based agents and verify their behavior in canonical games.
   \item Produce proof-of-concept proofs by explicitly carrying out the reasoning these agents rely on.
   \item Compare resulting behaviors with simulation-based approaches when relevant.
 \end{itemize}
 
-Methodological plan:
+\textbf{Methodological plan:}
 \begin{itemize}
   \item \textbf{Proof track:} write and check the key cooperation/defection arguments for the toy agents.
   \item \textbf{Formalization track:} build a Lean framework encoding agents, outcomes, and proof obligations.
   \item \textbf{Validation track:} use Lean as a proof checker to ensure that claimed properties are formally justified.
 \end{itemize}
 
-Extensions after the core setup:
+\textbf{Extensions after the core setup:}
 \begin{itemize}
   \item Non-deterministic variants of the agents.
   \item More efficient proof-search procedures.
   \item Transfer to richer games beyond the Prisoner's Dilemma.
 \end{itemize}
 
-Possible exploratory direction:
+\textbf{Possible exploratory direction:}
 \begin{itemize}
   \item Use language models as proof assistants by providing Lean proof templates and testing whether they can complete them reliably.
 \end{itemize}
@@ -136,13 +136,13 @@ def SSB(opp_source):
 
 \begin{minted}{python}
 # "CooperateIfNiceToDB": cooperate only if opponent cooperates with DefectBot
-def CADB(k):
-  def CADB_k(opp_source):
+def CINTDB(k):
+  def CINTB_k(opp_source):
     if proof_search(k, opp_source, "opp(DB.source) == C"):
       return C
     else:
       return D
-  return CADB_k
+  return CINTB_k
 \end{minted}
 
 \newcommand{\cupod}{\Verb{CUPOD(k)}\xspace}
@@ -158,7 +158,7 @@ def CUPOD(k):
 \end{minted}
 
 \begin{minted}{python}
-# "Cooperate If My Cooperation Implies Cooperation  from
+# "Cooperate If My Cooperation Implies Cooperation from
 # the opponent" (CIMCIC):
 def CIMCIC(k):
   def CIMCIC_k(opp_source):
@@ -168,7 +168,13 @@ def CIMCIC(k):
     else:
       return D
   return CIMCIC_k
-\end{minted}    
+\end{minted} 
+
+As stated in the main lines, the idea will be to manually provide the outcome of playing pairs of agents against each other.
+
+For example, we will rigorously prove that \[
+\texttt{outcome}(\texttt{CINTDB}, \texttt{CIMCIC}) = (\texttt{D}, \texttt{D})
+\]
 
 \printbibliography
 
