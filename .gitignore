@@ -7,11 +7,15 @@
 *.synctex.gz
 *.bbl
 *.blg
-*.vscode
+/.vscode/
 *.bcf
 *.xml
 *.minted
 *.pdf
-/build
 *.DS_Store
-/.lake
+
+# LaTeX build outputs
+/latex/build/
+
+# Lean/Lake build outputs
+/code/.lake/

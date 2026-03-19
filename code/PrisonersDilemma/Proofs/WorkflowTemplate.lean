@@ -28,8 +28,8 @@ variable (left right : Prog)
 /-- Template shape: first prove the action profile. -/
 example (hActs : ActionClaim left right Action.C Action.D) :
     (playOutcome m left right).leftAction = Action.C := by
-  simp [ActionClaim, playOutcome, playActions] at hActs
-  simpa [hActs]
+  unfold ActionClaim at hActs
+  simp [playOutcome, mkOutcome, hActs]
 
 /-- Template shape: then prove the full outcome record. -/
 example (hActs : ActionClaim left right Action.C Action.D)
@@ -42,7 +42,8 @@ example (hActs : ActionClaim left right Action.C Action.D)
     } := by
   rcases hPayoffs with ⟨hL, hR⟩
   unfold OutcomeClaim
-  simp [playOutcome, ActionClaim, mkOutcome, hActs, hL, hR]
+  unfold ActionClaim at hActs
+  simp [playOutcome, mkOutcome, hActs, hL, hR]
 
 end GenericTemplate
 
