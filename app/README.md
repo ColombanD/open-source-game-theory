@@ -24,6 +24,13 @@ Python orchestration layer for the Lean project in `../code`.
 - Combine both:
 	- `uv run run-matchup --left cooperateBot --right defectBot --quiet --no-keep-file`
 
+### Optional theorem check (ActionClaim)
+
+- Prove a simple action claim that should pass:
+	- `uv run run-matchup --left cooperateBot --right defectBot --claim-left C --claim-right D`
+- Try an intentionally false claim (should error):
+	- `uv run run-matchup --left cooperateBot --right defectBot --claim-left D --claim-right C`
+
 ## Useful uv Commands
 
 - Install dev tools (`pytest`, `ruff`):

@@ -7,6 +7,8 @@ from dataclasses import dataclass
 class MatchupRequest:
     left_bot: str
     right_bot: str
+    claim_left_action: str | None = None
+    claim_right_action: str | None = None
 
 
 @dataclass(frozen=True)

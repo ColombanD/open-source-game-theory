@@ -24,6 +24,8 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
         target_dir=paths.generated_lean_dir,
         left_bot=request.left_bot,
         right_bot=request.right_bot,
+        claim_left_action=request.claim_left_action,
+        claim_right_action=request.claim_right_action,
     )
 
     exec_result = run_lean_file(paths.lean_code_dir, lean_file)
