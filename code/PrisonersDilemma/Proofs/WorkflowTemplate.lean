@@ -8,11 +8,12 @@ Use this file as a pattern when adding a new paper/program family.
 1. Define a program type in `PrisonersDilemma/Models/<Family>.lean`.
 2. Provide `ProgramModel` semantics (`action : Prog → Prog → Action`).
 3. Create theorem files in `PrisonersDilemma/Proofs/` that prove
-   `ActionClaim` first, then `OutcomeClaim`.
+  `ActionClaim` first.
+4. Add `OutcomeClaim` only when you actually need payoff fields.
 
-The two-stage pattern keeps theorem-prover reasoning clean:
-- Stage A: prove what each side does.
-- Stage B: derive payoffs from the payoff matrix.
+Action-first reasoning keeps theorem-prover workflows clean:
+- Stage A (default): prove what each side does.
+- Stage B (optional): derive payoffs/outcomes from the payoff matrix.
 -/
 
 namespace PD.Proofs -- Namespace for reusable proof patterns and concrete theorem files.
@@ -25,13 +26,25 @@ variable {Prog : Type} [ProgramModel Prog] -- Abstract program language plus its
 variable (m : PayoffMatrix) -- Abstract payoff matrix used for outcome evaluation.
 variable (left right : Prog) -- Two arbitrary programs to compare.
 
-/-- Template shape: first prove the action profile. -/
+/-- Template shape (default): prove the action profile itself. -/
 example (hActs : ActionClaim left right Action.C Action.D) :
-    (playOutcome m left right).leftAction = Action.C := by
-  unfold ActionClaim at hActs -- Turn the claim hypothesis into an explicit equality on `playActions`.
-  simp [playOutcome, mkOutcome, hActs] -- Expand outcome construction and rewrite via known actions.
+    ActionClaim left right Action.C Action.D := by
+  simpa using hActs
 
-/-- Template shape: then prove the full outcome record. -/
+/-- From `ActionClaim`, you can read off each chosen action directly,
+without touching payoffs. -/
+example (hActs : ActionClaim left right Action.C Action.D) :
+  (playActions left right).1 = Action.C := by
+  unfold ActionClaim at hActs
+  simpa [playActions] using congrArg Prod.fst hActs
+
+/-- Symmetric right-side action extraction. -/
+example (hActs : ActionClaim left right Action.C Action.D) :
+    (playActions left right).2 = Action.D := by
+  unfold ActionClaim at hActs
+  simpa [playActions] using congrArg Prod.snd hActs
+
+/-- Optional Stage B: prove the full outcome record when you need payoffs. -/
 example (hActs : ActionClaim left right Action.C Action.D)
     (hPayoffs : payoff m Action.C Action.D = 0 ∧ payoff m Action.D Action.C = 3) :
     OutcomeClaim m left right {
