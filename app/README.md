@@ -15,6 +15,15 @@ Python orchestration layer for the Lean project in `../code`.
 2. `uv sync`
 3. `uv run run-matchup --left cooperateBot --right defectBot`
 
+### Cleaner output and file cleanup
+
+- Print only actions:
+	- `uv run run-matchup --left cooperateBot --right defectBot --quiet`
+- Delete generated Lean file after execution:
+	- `uv run run-matchup --left cooperateBot --right defectBot --no-keep-file`
+- Combine both:
+	- `uv run run-matchup --left cooperateBot --right defectBot --quiet --no-keep-file`
+
 ## Useful uv Commands
 
 - Install dev tools (`pytest`, `ruff`):

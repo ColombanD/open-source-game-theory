@@ -45,6 +45,8 @@ config/secrets*
 .venv/
 venv/
 poetry.lock
+__pycache__/
+*.py[cod]
 
 # uv/setuptools artifacts for app runner
 app/uv.lock
