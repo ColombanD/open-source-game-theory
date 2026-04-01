@@ -46,6 +46,10 @@ config/secrets*
 venv/
 poetry.lock
 
+# uv/setuptools artifacts for app runner
+app/uv.lock
+app/src/*.egg-info/
+
 # Node modules (if used)
 node_modules/
 npm-debug.log
