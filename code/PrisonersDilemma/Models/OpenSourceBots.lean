@@ -14,18 +14,47 @@ inductive Bot : Type where -- Finite strategy set used for deterministic one-sho
   | alternator : Bot -- Encoded alternator behavior via opponent-dependent one-shot cases.
   deriving DecidableEq, Repr -- Derive equality checks and printable representation.
 
+/-- Source-code encoding for each bot. Strategy rules reason about these strings
+instead of matching opponent constructors directly. -/
+@[simp] def cooperateBotSource : String := "C"
+@[simp] def defectBotSource : String := "D"
+@[simp] def titForTatSource : String := "CT"
+@[simp] def suspiciousTFTSource : String := "DT"
+@[simp] def alternatorSource : String := "CA"
+
+@[simp]
+def source : Bot → String
+  | Bot.cooperateBot => cooperateBotSource
+  | Bot.defectBot => defectBotSource
+  | Bot.titForTat => titForTatSource
+  | Bot.suspiciousTFT => suspiciousTFTSource
+  | Bot.alternator => alternatorSource
+
+/-- Source-level evaluator: my action given only opponent source text. -/
+@[simp]
+def evalSource (me : Bot) (oppSource : String) : Action :=
+  match me with
+  | Bot.cooperateBot => C
+  | Bot.defectBot => D
+  | Bot.titForTat =>
+      if oppSource = cooperateBotSource || oppSource = titForTatSource ||
+          oppSource = alternatorSource then
+        C
+      else
+        D
+  | Bot.suspiciousTFT => D
+  | Bot.alternator => if oppSource = cooperateBotSource || oppSource = titForTatSource then C else D
+
 instance : ProgramModel Bot where -- Define each bot's action as a function of opponent identity.
-  action -- Implementation of the required `ProgramModel.action` method.
-    | Bot.cooperateBot, _ => C -- Cooperator ignores opponent and plays `C`.
-    | Bot.defectBot, _ => D -- Defector ignores opponent and plays `D`.
-    | Bot.titForTat, Bot.cooperateBot => C -- Tit-for-tat cooperates with known cooperator.
-    | Bot.titForTat, Bot.titForTat => C -- Tit-for-tat cooperates with itself.
-    | Bot.titForTat, Bot.alternator => C -- Tit-for-tat cooperates with alternator in this encoding.
-    | Bot.titForTat, _ => D -- Otherwise tit-for-tat defects.
-    | Bot.suspiciousTFT, _ => D -- Suspicious TFT always defects in one-shot setting.
-    | Bot.alternator, Bot.cooperateBot => C -- Alternator cooperates against cooperator.
-    | Bot.alternator, Bot.titForTat => C -- Alternator cooperates against tit-for-tat.
-    | Bot.alternator, _ => D -- Alternator defects against remaining opponents.
+  SourceType := String
+  source := source
+  actionFromSource := evalSource
+
+@[simp] theorem source_eq_source (b : Bot) :
+  ProgramModel.source b = source b := rfl
+
+@[simp] theorem actionFromSource_eq_evalSource (me : Bot) (oppSource : String) :
+  ProgramModel.actionFromSource me oppSource = evalSource me oppSource := rfl
 
 /-- Action chosen by a bot against an opponent bot. -/
 def eval (me opp : Bot) : Action := -- Convenience wrapper around typeclass-dispatched action selection.

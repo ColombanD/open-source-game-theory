@@ -6,7 +6,7 @@ import PrisonersDilemma.Pipeline -- Import generic game pipeline definitions and
 Use this file as a pattern when adding a new paper/program family.
 
 1. Define a program type in `PrisonersDilemma/Models/<Family>.lean`.
-2. Provide `ProgramModel` semantics (`action : Prog → Prog → Action`).
+2. Provide `ProgramModel` semantics (`Source`, `source`, and `actionFromSource`).
 3. Create theorem files in `PrisonersDilemma/Proofs/` that prove
   `ActionClaim` first.
 4. Add `OutcomeClaim` only when you actually need payoff fields.
