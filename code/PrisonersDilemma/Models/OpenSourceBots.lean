@@ -50,12 +50,6 @@ instance : ProgramModel Bot where -- Define each bot's action as a function of o
   source := source
   actionFromSource := evalSource
 
-@[simp] theorem source_eq_source (b : Bot) :
-  ProgramModel.source b = source b := rfl
-
-@[simp] theorem actionFromSource_eq_evalSource (me : Bot) (oppSource : String) :
-  ProgramModel.actionFromSource me oppSource = evalSource me oppSource := rfl
-
 /-- Action chosen by a bot against an opponent bot. -/
 def eval (me opp : Bot) : Action := -- Convenience wrapper around typeclass-dispatched action selection.
   ProgramModel.action me opp -- Compute `me`'s action against `opp`.

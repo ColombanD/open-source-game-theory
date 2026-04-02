@@ -9,6 +9,12 @@ open PD.Models.OpenSourceBots
 abbrev payoff (mine opponent : Action) : Nat :=
   PD.payoff PD.canonicalPayoff mine opponent
 
+@[simp] theorem source_eq_source (b : Bot) :
+    ProgramModel.source b = source b := rfl
+
+@[simp] theorem actionFromSource_eq_evalSource (me : Bot) (oppSource : String) :
+    ProgramModel.actionFromSource me oppSource = evalSource me oppSource := rfl
+
 section ActionClaimTheorems
 
 /-- CooperateBot vs CooperateBot: mutual cooperation. -/
