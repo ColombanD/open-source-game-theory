@@ -19,3 +19,44 @@
 
 # Lean/Lake build outputs
 /code/.lake/
+
+# ============================================
+# SECURITY: Environment variables & secrets
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.*.private
+*.pem
+*.key
+*.pub
+secrets.json
+api_keys.json
+config/secrets*
+.apikey
+.credentials
+
+# AWS, GCP, Azure credentials
+.aws/
+.gcp/
+.azure/
+
+# Python environment & poetry
+.venv/
+venv/
+poetry.lock
+__pycache__/
+*.py[cod]
+
+# uv/setuptools artifacts for app runner
+app/uv.lock
+app/src/*.egg-info/
+
+# Node modules (if used)
+node_modules/
+npm-debug.log
+
+# IDE secrets (VS Code, PyCharm, etc.)
+.vscode/settings.json
+.vscode/launch.json
+.idea/
