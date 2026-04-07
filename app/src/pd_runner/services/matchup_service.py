@@ -29,7 +29,7 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
     )
     lean_file = generated.path
 
-    exec_result = run_lean_file(paths.lean_code_dir, lean_file)
+    exec_result = run_lean_file(paths.lean_engine_dir, lean_file)
     if exec_result.returncode != 0:
         if not keep_file:
             _cleanup_file(lean_file)
