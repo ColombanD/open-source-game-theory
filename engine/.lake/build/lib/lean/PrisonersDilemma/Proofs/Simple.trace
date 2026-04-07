@@ -1,0 +1,32 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["0563643e4fcccec8.olean"],
+  "i": "49afdfc01181b573.ilean",
+  "c": "18cedfe4f4262ee5.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/lib/lean /Users/colomband/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/PrisonersDilemma/Proofs/Simple.lean -o /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/lib/lean/PrisonersDilemma/Proofs/Simple.olean -i /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/lib/lean/PrisonersDilemma/Proofs/Simple.ilean -c /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/ir/PrisonersDilemma/Proofs/Simple.c --setup /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/ir/PrisonersDilemma/Proofs/Simple.setup.json --json",
+   "level": "trace"}],
+ "inputs":
+ [["PrisonersDilemma.Proofs.Simple:deps",
+   [["deps",
+     [["PrisonersDilemma/PrisonersDilemma:extraDep",
+       [["@PrisonersDilemma:extraDep", "00000000000006bb"]]],
+      ["imports",
+       [["PrisonersDilemma.Models.Simple transitive imports (legacy)",
+         "bc26947afa249424"],
+        ["PrisonersDilemma.Models.Simple:importAllArts",
+         "5b54c19ba02a598c"]]]]],
+    ["libs",
+     [["import dynlibs", "00000000000006bb"],
+      ["package external libraries", "00000000000006bb"],
+      ["module dynlibs", "00000000000006bb"],
+      ["module plugins", "00000000000006bb"]]]]],
+  ["Lean 4.28.0, commit 7e01a1bf5c70fc6167d49c345d3bf80596e9a79b",
+   "a96bc04a2e5e9630"],
+  ["/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/PrisonersDilemma/Proofs/Simple.lean",
+   "24c40649b42b67ef"],
+  ["options", "00000000000006bb"],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "855873c9bcd407e5"}

@@ -1,0 +1,32 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["02733623af7f9ab7.olean"],
+  "i": "cf037636f9875a55.ilean",
+  "c": "594589922f2c7656.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/lib/lean /Users/colomband/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/PrisonersDilemma/Proofs/OpenSourceBots.lean -o /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/lib/lean/PrisonersDilemma/Proofs/OpenSourceBots.olean -i /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/lib/lean/PrisonersDilemma/Proofs/OpenSourceBots.ilean -c /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/ir/PrisonersDilemma/Proofs/OpenSourceBots.c --setup /Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/ir/PrisonersDilemma/Proofs/OpenSourceBots.setup.json --json",
+   "level": "trace"}],
+ "inputs":
+ [["PrisonersDilemma.Proofs.OpenSourceBots:deps",
+   [["deps",
+     [["PrisonersDilemma/PrisonersDilemma:extraDep",
+       [["@PrisonersDilemma:extraDep", "00000000000006bb"]]],
+      ["imports",
+       [["PrisonersDilemma.Models.OpenSourceBots transitive imports (legacy)",
+         "bc26947afa249424"],
+        ["PrisonersDilemma.Models.OpenSourceBots:importAllArts",
+         "bc99ab4b792aefd7"]]]]],
+    ["libs",
+     [["import dynlibs", "00000000000006bb"],
+      ["package external libraries", "00000000000006bb"],
+      ["module dynlibs", "00000000000006bb"],
+      ["module plugins", "00000000000006bb"]]]]],
+  ["Lean 4.28.0, commit 7e01a1bf5c70fc6167d49c345d3bf80596e9a79b",
+   "a96bc04a2e5e9630"],
+  ["/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/PrisonersDilemma/Proofs/OpenSourceBots.lean",
+   "8729ad116ac76bf7"],
+  ["options", "00000000000006bb"],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "6257e8eda1f63b5b"}

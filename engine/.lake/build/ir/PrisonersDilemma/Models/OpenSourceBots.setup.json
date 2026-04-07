@@ -1,0 +1,11 @@
+{"plugins": [],
+ "package": "PrisonersDilemma",
+ "options": {},
+ "name": "PrisonersDilemma.Models.OpenSourceBots",
+ "isModule": false,
+ "importArts":
+ {"PrisonersDilemma.Pipeline":
+  ["/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/lib/lean/PrisonersDilemma/Pipeline.olean"],
+  "PrisonersDilemma.Core":
+  ["/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/code/.lake/build/lib/lean/PrisonersDilemma/Core.olean"]},
+ "dynlibs": []}
