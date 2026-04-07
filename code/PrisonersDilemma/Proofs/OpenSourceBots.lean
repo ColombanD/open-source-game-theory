@@ -12,7 +12,7 @@ abbrev payoff (mine opponent : Action) : Nat :=
 @[simp] theorem source_eq_source (b : Bot) :
     ProgramModel.source b = source b := rfl
 
-@[simp] theorem actionFromSource_eq_evalSource (me : Bot) (oppSource : String) :
+@[simp] theorem actionFromSource_eq_evalSource (me : Bot) (oppSource : SourceAST) :
     ProgramModel.actionFromSource me oppSource = evalSource me oppSource := rfl
 
 section ActionClaimTheorems
