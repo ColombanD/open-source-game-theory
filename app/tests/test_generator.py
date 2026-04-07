@@ -40,3 +40,11 @@ def test_write_matchup_lean_file_falls_back_to_generated_proof(tmp_path: Path) -
 
     assert generated.proof_theorem_used == "generated:unfold+simp"
     assert "unfold ActionClaim playActions" in content
+
+
+def test_write_matchup_lean_file_without_known_theorem_has_no_proof_block(tmp_path: Path) -> None:
+    generated = write_matchup_lean_file(tmp_path, "alternator", "cooperateBot")
+    content = generated.path.read_text(encoding="utf-8")
+
+    assert generated.proof_theorem_used is None
+    assert "theorem claimed_actions" not in content
