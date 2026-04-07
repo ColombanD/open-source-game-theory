@@ -19,3 +19,4 @@ class MatchupResult:
     right_action: str
     lean_file: str
     command: str
+    proof_theorem_used: str | None = None

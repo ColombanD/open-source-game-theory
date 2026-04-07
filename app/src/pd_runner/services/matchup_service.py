@@ -20,13 +20,14 @@ def _cleanup_file(path: Path) -> None:
 def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResult:
     paths = load_paths()
 
-    lean_file = write_matchup_lean_file(
+    generated = write_matchup_lean_file(
         target_dir=paths.generated_lean_dir,
         left_bot=request.left_bot,
         right_bot=request.right_bot,
         claim_left_action=request.claim_left_action,
         claim_right_action=request.claim_right_action,
     )
+    lean_file = generated.path
 
     exec_result = run_lean_file(paths.lean_code_dir, lean_file)
     if exec_result.returncode != 0:
@@ -50,4 +51,5 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
         right_action=right_action,
         lean_file=str(lean_file),
         command=exec_result.command,
+        proof_theorem_used=generated.proof_theorem_used,
     )

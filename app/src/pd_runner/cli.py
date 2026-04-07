@@ -59,6 +59,7 @@ def main() -> None:
     print(f"left bot:  {result.left_bot}")
     print(f"right bot: {result.right_bot}")
     print(f"actions:   ({result.left_action}, {result.right_action})")
+    print(f"proof:     {result.proof_theorem_used or 'none'}")
     print(f"lean file: {result.lean_file}")
     print(f"command:   {result.command}")
 
