@@ -5,6 +5,7 @@ import PrisonersDilemma.Pipeline
 import PrisonersDilemma.StrategyDSL
 import PrisonersDilemma.Models.CooperateBot
 import PrisonersDilemma.Models.DefectBot
+import PrisonersDilemma.Models.BotUniverse
 import PrisonersDilemma.Models.DBot
 import PrisonersDilemma.Models.OpenSourceBots
 import PrisonersDilemma.Proofs.WorkflowTemplate
