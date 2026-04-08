@@ -8,21 +8,19 @@ This project provides a modular architecture to:
 2. encode program families (bots),
 3. prove action/outcome claims and game-theoretic properties.
 
-## What Changed In This Refactor
+## Overview
 
-The project was reorganized around a clean module pipeline and a stronger action-first theorem style:
+The codebase is organized around a pipeline-native semantics layer:
 
-### Module reorganization
-- `Basic.lean` was removed.
-- core semantics are centralized in `Core.lean`.
-- strategy definitions live in `Models/`.
-- theorem developments live in `Proofs/`.
-- non-code reading and dataset files were moved under `PrisonersDilemma/Research/`.
+- core game objects and payoff logic in `Core.lean`,
+- program interaction semantics in `Pipeline.lean`,
+- concrete bot definitions in `Models/`,
+- theorem developments in `Proofs/`.
 
-This removes duplicated definitions and keeps code, proofs, and references separated.
+The default proving strategy is action-first:
 
-### Proof style reorganization
-The refactor prioritizes proving action behavior first, with optional payoff/outcome layers on top.
+1. prove the action profile (`ActionClaim`),
+2. add outcome/payoff theorems (`OutcomeClaim`) only when needed.
 
 ## Folder Map
 
@@ -100,9 +98,9 @@ def ActionClaim (left right : Prog) (leftAction rightAction : Action) : Prop :=
 ```
 
 **Why ActionClaim is central:**
-- It is the **minimal semantic unit** — just "what did each program do?"
-- It is **independent of payoffs** — you can prove and reason about actions without touching the payoff matrix.
-- It is **reusable** — subsequent proofs (payoffs, outcomes, equilibria) all build on ActionClaim facts.
+- It is the minimal semantic unit: what each program does in a matchup.
+- It is independent of payoffs: action behavior can be proved without matrix details.
+- It is reusable: payoff and higher-level theorems build on these action facts.
 
 ### ActionClaim Proof Flow
 
@@ -110,12 +108,12 @@ Example with the shared bot universe:
 
 ```lean
 theorem dbot_vs_cooperate_actionClaim :
-		ActionClaim Bot.dBot Bot.cooperateBot D C := by
-	unfold ActionClaim playActions
-	change (botEvalSource Bot.dBot (botSource Bot.cooperateBot),
-		botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
-	simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-		PD.Models.CooperateBot.action, PD.Models.CooperateBot.strategy]
+    ActionClaim Bot.dBot Bot.cooperateBot D C := by
+  unfold ActionClaim playActions
+  change (botEvalSource Bot.dBot (botSource Bot.cooperateBot),
+    botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
+  simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
+    PD.Models.CooperateBot.action, PD.Models.CooperateBot.strategy]
 ```
 
 **Key insight:** ActionClaim is your **stopping point** if you only care about what programs do. Payoffs and outcomes are optional layers on top.
@@ -129,12 +127,6 @@ theorem dbot_vs_cooperate_actionClaim :
 | `OutcomeClaim` | proposition that a matchup yields a specific outcome record (actions + payoffs) |
 | `playOutcome` | lifts action profile into payoff outcome record |
 | `ProgramModel` | how a program chooses an action given opponent source |
-
-## Core Concepts (Extended Reference)
-
-For backward compatibility, this table covers all semantic layers:
-
----
 
 ## How To Extend
 
