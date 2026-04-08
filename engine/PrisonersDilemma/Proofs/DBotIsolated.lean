@@ -4,22 +4,33 @@ namespace PD.Proofs.DBotIsolated
 
 open PD
 open PD.Action
-open PD.Models.StrategyDSL
+open PD.StrategyDSL
 open PD.Models.DBotIsolated
 
-/-- Against an always-cooperating opponent, DBot defects while the opponent cooperates. -/
-theorem dbot_vs_cooperate_actions :
-    (dBotAction cooperateSource, C) = (D, C) := by
-  simp [dBotAction, dBotStrategy, actionFor, evalActionExpr]
+/-- Pipeline-style action claim for DBot vs CooperateBot. -/
+theorem dbot_vs_cooperate_actionClaim :
+    ActionClaim Bot.dBot Bot.cooperateBot D C := by
+  unfold ActionClaim playActions
+  change (evalSource Bot.dBot (PD.Models.DBotIsolated.source Bot.cooperateBot),
+    evalSource Bot.cooperateBot (PD.Models.DBotIsolated.source Bot.dBot)) = (D, C)
+  simp [evalSource, PD.Models.DBotIsolated.source, dBotAction, dBotStrategy, actionFor, evalActionExpr,
+    PD.Models.CooperateBot.action, PD.Models.CooperateBot.strategy]
 
-/-- Against an always-defecting opponent, DBot cooperates while the opponent defects. -/
-theorem dbot_vs_defect_actions :
-    (dBotAction defectSource, D) = (C, D) := by
-  simp [dBotAction, dBotStrategy, actionFor, evalActionExpr]
+/-- Pipeline-style action claim for DBot vs DefectBot. -/
+theorem dbot_vs_defect_actionClaim :
+    ActionClaim Bot.dBot Bot.defectBot C D := by
+  unfold ActionClaim playActions
+  change (evalSource Bot.dBot (PD.Models.DBotIsolated.source Bot.defectBot),
+    evalSource Bot.defectBot (PD.Models.DBotIsolated.source Bot.dBot)) = (C, D)
+  simp [evalSource, PD.Models.DBotIsolated.source, dBotAction, dBotStrategy, actionFor, evalActionExpr,
+    PD.Models.DefectBot.action, PD.Models.DefectBot.strategy]
 
-/-- Against itself in this isolated model, DBot cooperates on both sides. -/
-theorem dbot_vs_dbot_actions :
-    (dBotAction dBotSource, dBotAction dBotSource) = (C, C) := by
-  simp [dBotAction, dBotStrategy, dBotSource, actionFor, evalActionExpr]
+/-- Pipeline-style action claim for DBot vs DBot. -/
+theorem dbot_vs_dbot_actionClaim :
+    ActionClaim Bot.dBot Bot.dBot C C := by
+  unfold ActionClaim playActions
+  change (evalSource Bot.dBot (PD.Models.DBotIsolated.source Bot.dBot),
+    evalSource Bot.dBot (PD.Models.DBotIsolated.source Bot.dBot)) = (C, C)
+  simp [evalSource, PD.Models.DBotIsolated.source, dBotAction, dBotStrategy, actionFor, evalActionExpr]
 
 end PD.Proofs.DBotIsolated

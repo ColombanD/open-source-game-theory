@@ -1,6 +1,6 @@
 import PrisonersDilemma.Pipeline
 
-namespace PD.Models.StrategyDSL
+namespace PD.StrategyDSL
 
 open PD
 open PD.Action
@@ -33,15 +33,6 @@ structure SourceAST : Type where
   strategy : ActionExpr
   deriving DecidableEq, Repr
 
-@[simp] def cooperateStrategy : ActionExpr := ActionExpr.actionLit C
-@[simp] def defectStrategy : ActionExpr := ActionExpr.actionLit D
-
-@[simp] def cooperateSource : SourceAST :=
-  { tag := SourceTag.cooperateTag, strategy := cooperateStrategy }
-
-@[simp] def defectSource : SourceAST :=
-  { tag := SourceTag.defectTag, strategy := defectStrategy }
-
 /-- Execute a strategy expression against opponent source metadata. -/
 @[simp]
 def evalActionExpr (e : ActionExpr) (oppTag : SourceTag) : Action :=
@@ -53,8 +44,7 @@ def evalActionExpr (e : ActionExpr) (oppTag : SourceTag) : Action :=
       else
         evalActionExpr eBranch oppTag
 
-/-- Probe helper: evaluate opponent strategy on a chosen probe source.
-This is a simple way to test how a strategy behaves against a specific opponent source. -/
+/-- Probe helper: evaluate opponent strategy on a chosen probe source. -/
 @[simp]
 def probeOpponent (oppSource probeInput : SourceAST) : Action :=
   evalActionExpr oppSource.strategy probeInput.tag
@@ -64,4 +54,4 @@ def probeOpponent (oppSource probeInput : SourceAST) : Action :=
 def actionFor (strategy : ActionExpr) (oppSource : SourceAST) : Action :=
   evalActionExpr strategy oppSource.tag
 
-end PD.Models.StrategyDSL
+end PD.StrategyDSL

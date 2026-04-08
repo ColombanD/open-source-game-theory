@@ -1,112 +1,97 @@
 # DBot Flow Tutorial
 
-This note explains the exact reduction flow behind the theorem
+This note explains the DBot vs CooperateBot proof flow using the pipeline-native theorem shape.
+
+## Pipeline Matchup Through `ActionClaim`
 
 ```lean
-theorem dbot_vs_cooperate_actions :
-    (dBotAction cooperateSource, C) = (D, C) := by
-  simp [dBotAction, dBotStrategy, actionFor, evalActionExpr]
+theorem dbot_vs_cooperate_actionClaim :
+    ActionClaim Bot.dBot Bot.cooperateBot D C := by
+  unfold ActionClaim playActions
+  change (evalSource Bot.dBot (source Bot.cooperateBot), evalSource Bot.cooperateBot (source Bot.dBot)) = (D, C)
+  simp [evalSource, source, dBotAction, dBotStrategy, actionFor, evalActionExpr]
 ```
 
-The goal is simple: show that DBot plays `D` against a cooperating opponent, so the final pair is `(D, C)`.
+### What `ActionClaim` means
 
-## The Key Idea
-
-`dBotAction` does not directly return an action literal. It runs a small strategy expression through the DSL.
-
-In this case, the strategy says:
-
-- if the opponent is tagged as `cooperateTag`, play `D`
-- otherwise, play `C`
-
-## Reduction Flow
-
-Starting from the left side of the theorem:
+`ActionClaim left right aL aR` means:
 
 ```lean
-dBotAction cooperateSource
+playActions left right = (aL, aR)
 ```
 
-the definition unfolds as follows:
+So this theorem means:
+
+- left bot (`dBot`) plays `D`
+- right bot (`cooperateBot`) plays `C`
+
+### Step-by-step pipeline flow
+
+Start goal:
 
 ```lean
-dBotAction cooperateSource
+ActionClaim Bot.dBot Bot.cooperateBot D C
 ```
 
-becomes
+After:
 
 ```lean
-actionFor dBotStrategy cooperateSource
+unfold ActionClaim playActions
 ```
 
-because `dBotAction` is defined using `actionFor`.
-
-Then `actionFor` unfolds to:
+the goal is:
 
 ```lean
-evalActionExpr dBotStrategy cooperateSource.tag
+(ProgramModel.action Bot.dBot Bot.cooperateBot,
+ ProgramModel.action Bot.cooperateBot Bot.dBot) = (D, C)
 ```
 
-and since `cooperateSource.tag = SourceTag.cooperateTag`, this becomes:
+Then `change` rewrites the same goal into model-level functions:
 
 ```lean
-evalActionExpr dBotStrategy SourceTag.cooperateTag
+(evalSource Bot.dBot (source Bot.cooperateBot),
+ evalSource Bot.cooperateBot (source Bot.dBot)) = (D, C)
 ```
 
-Now unfold `dBotStrategy`:
+Now compute each component.
+
+#### First component (left side): `dBot` against `cooperateBot`
 
 ```lean
-ActionExpr.ifOppIs SourceTag.cooperateTag
-  (ActionExpr.actionLit D)
-  (ActionExpr.actionLit C)
-```
-
-So the evaluator checks whether the opponent tag matches `cooperateTag`.
-
-Because the tag is exactly `cooperateTag`, the first branch is taken.
-
-That reduces the expression to:
-
-```lean
-evalActionExpr (ActionExpr.actionLit D) SourceTag.cooperateTag
-```
-
-Finally, evaluating an action literal just returns that action:
-
-```lean
-D
-```
-
-So the whole theorem reduces to:
-
-```lean
-(D, C) = (D, C)
-```
-
-which is exactly what `simp` proves.
-
-## Compact Summary
-
-The full computation is:
-
-```lean
-dBotAction cooperateSource
+evalSource Bot.dBot (source Bot.cooperateBot)
+=> evalSource Bot.dBot cooperateSource
+=> dBotAction cooperateSource
 => actionFor dBotStrategy cooperateSource
 => evalActionExpr dBotStrategy cooperateSource.tag
 => evalActionExpr dBotStrategy SourceTag.cooperateTag
 => D
 ```
 
-So DBot defects against `cooperateSource`, while the opponent cooperates.
-
-## What `simp` Is Doing
-
-The proof uses:
+#### Second component (right side): `cooperateBot` against `dBot`
 
 ```lean
-simp [dBotAction, dBotStrategy, actionFor, evalActionExpr]
+evalSource Bot.cooperateBot (source Bot.dBot)
+=> evalSource Bot.cooperateBot dBotSource
+=> actionFor cooperateStrategy dBotSource
+=> evalActionExpr cooperateStrategy dBotSource.tag
+=> evalActionExpr (ActionExpr.actionLit C) SourceTag.defectTag
+=> C
 ```
 
-This tells Lean to unfold the named definitions and simplify the resulting expression until both sides match.
+So the pair is `(D, C)`, exactly the target.
 
-In other words, this is a computation proof, not a long logical argument.
+### Common pitfall (the one you ran into)
+
+It is easy to accidentally write:
+
+```lean
+ProgramModel.actionFromSource Bot.cooperateBot (ProgramModel.source Bot.dBot) = D
+```
+
+but this is false. It should be `= C`, because `cooperateStrategy` is `ActionExpr.actionLit C`, which always evaluates to `C`.
+
+### Why `unfold`, `change`, and `simp` are all used
+
+- `unfold`: opens high-level wrappers (`ActionClaim`, `playActions`) so you can see the real goal.
+- `change`: rewrites the goal into an equivalent but easier-to-simplify shape.
+- `simp`: executes definitional computation and rewriting until both sides match.
