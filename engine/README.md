@@ -4,41 +4,42 @@ Lean 4 formalization of Prisoner's Dilemma models and proofs.
 
 This project provides a modular architecture to:
 
-1. define reusable game semantics,
-2. encode program families (bots),
-3. prove action/outcome claims and game-theoretic properties.
+1. Define reusable game semantics,
+2. Encode program families (bots),
+3. Prove action/outcome claims and game-theoretic properties.
 
 ## Overview
 
 The codebase is organized around a pipeline-native semantics layer:
 
-- core game objects and payoff logic in `Core.lean`,
-- program interaction semantics in `Pipeline.lean`,
-- concrete bot definitions in `Models/`,
-- theorem developments in `Proofs/`.
+- Core game objects and payoff logic in `Core.lean`,
+- Strategy expression language and evaluators in `StrategyDSL.lean`,
+- Program interaction semantics in `Pipeline.lean`,
+- Concrete bot definitions in `Models/`,
+- Theorem developments in `Proofs/`.
 
 The default proving strategy is action-first:
 
-1. prove the action profile (`ActionClaim`),
-2. add outcome/payoff theorems (`OutcomeClaim`) only when needed.
+1. Prove the action profile (`ActionClaim`),
+2. Add outcome/payoff theorems (`OutcomeClaim`) only when needed.
 
 ## Folder Map
 
 ### Library entrypoint
 
 - `PrisonersDilemma.lean`
-	- root import hub for all build targets in this package.
+	- Root import hub for all build targets in this package.
 
 ### Core semantics
 
 - `PrisonersDilemma/Core.lean`
-	- defines `Action`, `PayoffMatrix`, `Outcome`, `mkOutcome`.
-	- defines canonical one-shot PD payoff matrix:
+	- Defines `Action`, `PayoffMatrix`, `Outcome`, `mkOutcome`.
+	- Defines canonical one-shot PD payoff matrix:
 		- `CC = 3`, `CD = 0`, `DC = 5`, `DD = 1`.
 
 - `PrisonersDilemma/Pipeline.lean`
-	- defines `ProgramModel` abstraction.
-	- defines reusable simulation combinators:
+	- Defines `ProgramModel` abstraction.
+	- Defines reusable simulation combinators:
 		- `playActions`
 		- `playOutcome`
 		- `ActionClaim`
@@ -47,16 +48,16 @@ The default proving strategy is action-first:
 ### Models
 
 - `PrisonersDilemma/Models/CooperateBot.lean`
-	- strategy/source/action definitions for an always-cooperate bot.
+	- Strategy/source/action definitions for an always-cooperate bot.
 
 - `PrisonersDilemma/Models/DefectBot.lean`
-	- strategy/source/action definitions for an always-defect bot.
+	- Strategy/source/action definitions for an always-defect bot.
 
 - `PrisonersDilemma/Models/DBot.lean`
-	- strategy/source/action definitions for a conditional bot that defects against cooperate-tagged source and cooperates otherwise.
+	- Strategy/source/action definitions for a conditional bot that defects against cooperate-tagged source and cooperates otherwise.
 
 - `PrisonersDilemma/Models/BotUniverse.lean`
-	- shared `Bot` type (`cooperateBot`, `defectBot`, `dBot`).
+	- Shared `Bot` type (`cooperateBot`, `defectBot`, `dBot`).
 	- `ProgramModel` instance via:
 		- `botSource`
 		- `botEvalSource`
@@ -65,23 +66,23 @@ The default proving strategy is action-first:
 ### Proofs
 
 - `PrisonersDilemma/Proofs/CooperateBot.lean`
-	- proves `CooperateBot.action` is always `C`.
+	- Proves `CooperateBot.action` is always `C`.
 
 - `PrisonersDilemma/Proofs/DefectBot.lean`
-	- proves `DefectBot.action` is always `D`.
+	- Proves `DefectBot.action` is always `D`.
 
 - `PrisonersDilemma/Proofs/DBot.lean`
-	- proves pipeline-level `ActionClaim` results for key matchups in the shared bot universe.
+	- Proves pipeline-level `ActionClaim` results for key matchups in the shared bot universe.
 
 ### Research material (non-code)
 
 - `PrisonersDilemma/Research/Notes/`
-	- markdown notes and summaries.
+	- Markdown notes and summaries.
 - `PrisonersDilemma/Research/Readings/`
-	- papers and extracted text files.
+	- Papers and extracted text files.
 - `PrisonersDilemma/Research/Data/`
-	- raw tournament/program data artifacts.
-	- includes `prisoners_dilemma_tournament_results.scm`.
+	- Raw tournament/program data artifacts.
+	- Includes `prisoners_dilemma_tournament_results.scm`.
 
 These files are intentionally separated from Lean modules to reduce clutter in
 the main code path.
