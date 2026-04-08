@@ -53,7 +53,8 @@ def evalActionExpr (e : ActionExpr) (oppTag : SourceTag) : Action :=
       else
         evalActionExpr eBranch oppTag
 
-/-- Probe helper: evaluate opponent strategy on a chosen probe source. -/
+/-- Probe helper: evaluate opponent strategy on a chosen probe source.
+This is a simple way to test how a strategy behaves against a specific opponent source. -/
 @[simp]
 def probeOpponent (oppSource probeInput : SourceAST) : Action :=
   evalActionExpr oppSource.strategy probeInput.tag
