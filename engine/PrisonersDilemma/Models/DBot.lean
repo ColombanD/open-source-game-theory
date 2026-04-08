@@ -2,10 +2,10 @@ import PrisonersDilemma.StrategyDSL
 import PrisonersDilemma.Models.CooperateBot
 import PrisonersDilemma.Models.DefectBot
 
-namespace PD.Models.DBotIsolated
+namespace PD.Models.DBot
 
 /-!
-`DBotIsolated.lean` is a minimal teaching file for the Contrarian Probe bot.
+`DBot.lean` is a minimal teaching file for the Contrarian Probe bot.
 
 How to read this file:
 1. Define tiny data types for "source code" and "strategies".
@@ -70,4 +70,4 @@ instance : ProgramModel Bot where
 def eval (me opp : Bot) : Action :=
   ProgramModel.action me opp
 
-end PD.Models.DBotIsolated
+end PD.Models.DBot
