@@ -74,6 +74,16 @@ theorem defectBot_always_defects (opp : Bot) :
     eval Bot.defectBot opp = D := by
   simp [eval, ProgramModel.action]
 
+/-- DBot exploits naive cooperators by defecting. -/
+theorem dBot_defects_against_cooperateBot :
+    eval Bot.dBot Bot.cooperateBot = D := by
+  simp [eval, ProgramModel.action]
+
+/-- DBot cooperates with defensive defectors (contrarian probe behavior). -/
+theorem dBot_cooperates_against_defectBot :
+    eval Bot.dBot Bot.defectBot = C := by
+  simp [eval, ProgramModel.action]
+
 /-- TitForTat cooperates with CooperateBot. -/
 theorem tft_cooperates_with_cooperateBot :
     eval Bot.titForTat Bot.cooperateBot = C := by
@@ -188,6 +198,16 @@ theorem dd_payoff :
 /-- DefectBot exploits CooperateBot: payoff is 5. -/
 theorem defectBot_exploits_cooperateBot :
     botPayoff Bot.defectBot Bot.cooperateBot = 5 := by
+  simp [botPayoff, eval, ProgramModel.action]
+
+/-- DBot earns the temptation payoff against CooperateBot. -/
+theorem dBot_exploits_cooperateBot :
+    botPayoff Bot.dBot Bot.cooperateBot = 5 := by
+  simp [botPayoff, eval, ProgramModel.action]
+
+/-- DBot is exploited by DefectBot due to its contrarian cooperation. -/
+theorem dBot_exploited_by_defectBot :
+    botPayoff Bot.dBot Bot.defectBot = 0 := by
   simp [botPayoff, eval, ProgramModel.action]
 
 /-- TitForTat vs TitForTat payoff: 3 each. -/

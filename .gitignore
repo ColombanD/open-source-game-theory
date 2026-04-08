@@ -19,6 +19,7 @@
 
 # Lean/Lake build outputs
 /code/.lake/
+/engine/.lake/
 
 # ============================================
 # SECURITY: Environment variables & secrets

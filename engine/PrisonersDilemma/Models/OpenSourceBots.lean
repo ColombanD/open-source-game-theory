@@ -9,6 +9,7 @@ open PD.Action -- Allow writing `C`/`D` directly instead of `Action.C`/`Action.D
 inductive Bot : Type where -- Finite strategy set used for deterministic one-shot evaluation.
   | cooperateBot : Bot -- Always cooperates.
   | defectBot : Bot -- Always defects.
+  | dBot : Bot -- Contrarian probe: inverts opponent's response to DefectBot.
   | titForTat : Bot -- Cooperates with cooperative-looking bots, defects otherwise.
   | suspiciousTFT : Bot -- Always defects in this one-shot encoding.
   | alternator : Bot -- Encoded alternator behavior via opponent-dependent one-shot cases.
@@ -18,6 +19,7 @@ inductive Bot : Type where -- Finite strategy set used for deterministic one-sho
 inductive SourceTag : Type where
   | cooperateTag : SourceTag
   | defectTag : SourceTag
+  | dBotTag : SourceTag
   | titForTatTag : SourceTag
   | suspiciousTFTTag : SourceTag
   | alternatorTag : SourceTag
@@ -65,12 +67,17 @@ def titForTatStrategy : ActionExpr :=
 def alternatorStrategy : ActionExpr :=
   ActionExpr.ifThenElse alternatorCondition (ActionExpr.actionLit C) (ActionExpr.actionLit D)
 
+@[simp] def dBotStrategy : ActionExpr := ActionExpr.actionLit C
+
 /-- Source-code encoding for each bot as a strategy AST. -/
 @[simp] def cooperateBotSource : SourceAST :=
   { tag := SourceTag.cooperateTag, strategy := cooperateStrategy }
 
 @[simp] def defectBotSource : SourceAST :=
   { tag := SourceTag.defectTag, strategy := defectStrategy }
+
+@[simp] def dBotSource : SourceAST :=
+  { tag := SourceTag.dBotTag, strategy := dBotStrategy }
 
 @[simp] def titForTatSource : SourceAST :=
   { tag := SourceTag.titForTatTag, strategy := titForTatStrategy }
@@ -85,9 +92,13 @@ def alternatorStrategy : ActionExpr :=
 def source : Bot → SourceAST
   | Bot.cooperateBot => cooperateBotSource
   | Bot.defectBot => defectBotSource
+  | Bot.dBot => dBotSource
   | Bot.titForTat => titForTatSource
   | Bot.suspiciousTFT => suspiciousTFTSource
   | Bot.alternator => alternatorSource
+
+/-- Resolve a named probe to the corresponding source AST. -/
+@[simp] def dBotProbeSource : SourceAST := defectBotSource
 
 /-- Evaluate a source predicate against opponent tag metadata. -/
 @[simp]
@@ -109,10 +120,22 @@ def evalActionExpr (e : ActionExpr) (oppTag : SourceTag) : Action :=
       else
         evalActionExpr eBranch oppTag
 
+/-- Evaluate an opponent source against a fixed probe input source. -/
+@[simp]
+def probeOpponent (oppSource probeInput : SourceAST) : Action :=
+  evalActionExpr oppSource.strategy probeInput.tag
+
+/-- DBot: defect if opponent cooperates with DefectBot, else cooperate. -/
+@[simp]
+def dBotContrarianAction (oppSource : SourceAST) : Action :=
+  if probeOpponent oppSource dBotProbeSource = C then D else C
+
 /-- Source-level evaluator: my action given only opponent source AST. -/
 @[simp]
 def evalSource (me : Bot) (oppSource : SourceAST) : Action :=
-  evalActionExpr (source me).strategy oppSource.tag
+  match me with
+  | Bot.dBot => dBotContrarianAction oppSource
+  | _ => evalActionExpr (source me).strategy oppSource.tag
 
 instance : ProgramModel Bot where -- Define each bot's action as a function of opponent identity.
   SourceType := SourceAST
