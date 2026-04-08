@@ -1,9 +1,8 @@
 # PrisonersDilemma
 
-Lean 4 formalization of open-source Prisoner's Dilemma models and proofs.
+Lean 4 formalization of Prisoner's Dilemma models and proofs.
 
-In open-source game theory, each player can inspect the opponent's source code
-before choosing an action. This project provides a modular architecture to:
+This project provides a modular architecture to:
 
 1. define reusable game semantics,
 2. encode program families (bots),
@@ -11,7 +10,7 @@ before choosing an action. This project provides a modular architecture to:
 
 ## What Changed In This Refactor
 
-The project was reorganized around a clean module pipeline and a new **action-first proof workflow**:
+The project was reorganized around a clean module pipeline and a stronger action-first theorem style:
 
 ### Module reorganization
 - `Basic.lean` was removed.
@@ -22,14 +21,8 @@ The project was reorganized around a clean module pipeline and a new **action-fi
 
 This removes duplicated definitions and keeps code, proofs, and references separated.
 
-### Proof workflow reorganization
-All theorem files now follow a **three-section structure**:
-
-1. **ActionClaim theorems** — prove what actions each program chose.
-2. **OutcomeClaim theorems** — (optional) prove full outcomes with payoffs, built on ActionClaim.
-3. **Remaining theorems** — game-theoretic analysis (dominance, equilibrium, welfare).
-
-This pattern prioritizes action-level reasoning and makes payoff/outcome proofs optional.
+### Proof style reorganization
+The refactor prioritizes proving action behavior first, with optional payoff/outcome layers on top.
 
 ## Folder Map
 
@@ -55,29 +48,32 @@ This pattern prioritizes action-level reasoning and makes payoff/outcome proofs 
 
 ### Models
 
-- `PrisonersDilemma/Models/Simple.lean`
-	- minimal two-strategy toy model (`cooperate`, `defect`).
-	- small sanity-check theorems over action profiles and canonical outcomes.
+- `PrisonersDilemma/Models/CooperateBot.lean`
+	- strategy/source/action definitions for an always-cooperate bot.
 
-- `PrisonersDilemma/Models/OpenSourceBots.lean`
-	- main bot family used in this repository:
-		- `cooperateBot`, `defectBot`, `titForTat`, `suspiciousTFT`, `alternator`.
-	- provides `ProgramModel` semantics for these bots.
-	- provides convenience definitions:
-		- `eval`
-		- `botPayoff`
-		- `socialWelfare`
+- `PrisonersDilemma/Models/DefectBot.lean`
+	- strategy/source/action definitions for an always-defect bot.
+
+- `PrisonersDilemma/Models/DBot.lean`
+	- strategy/source/action definitions for a conditional bot that defects against cooperate-tagged source and cooperates otherwise.
+
+- `PrisonersDilemma/Models/BotUniverse.lean`
+	- shared `Bot` type (`cooperateBot`, `defectBot`, `dBot`).
+	- `ProgramModel` instance via:
+		- `botSource`
+		- `botEvalSource`
+		- `botEval`
 
 ### Proofs
 
-- `PrisonersDilemma/Proofs/WorkflowTemplate.lean`
-	- generic template showing the intended 2-stage proof pattern:
-		1. prove action profile,
-		2. derive outcome/payoff claim.
+- `PrisonersDilemma/Proofs/CooperateBot.lean`
+	- proves `CooperateBot.action` is always `C`.
 
-- `PrisonersDilemma/Proofs/OpenSourceBots.lean`
-	- theorem set for the `OpenSourceBots` model.
-	- includes behavior, dominance, equilibrium, and welfare results.
+- `PrisonersDilemma/Proofs/DefectBot.lean`
+	- proves `DefectBot.action` is always `D`.
+
+- `PrisonersDilemma/Proofs/DBot.lean`
+	- proves pipeline-level `ActionClaim` results for key matchups in the shared bot universe.
 
 ### Research material (non-code)
 
@@ -110,30 +106,16 @@ def ActionClaim (left right : Prog) (leftAction rightAction : Action) : Prop :=
 
 ### ActionClaim Proof Flow
 
-**Stage 1: Prove the action profile**
-```lean
-theorem cc_actionClaim :
-    ActionClaim Bot.cooperateBot Bot.cooperateBot C C := by
-  unfold ActionClaim playActions
-  simp [ProgramModel.action]  -- Unfold bot semantics and verify actions match
-```
+Example with the shared bot universe:
 
-**Stage 2a (optional): Derive full outcome**
 ```lean
-theorem cc_outcomeClaim :
-    OutcomeClaim PD.canonicalPayoff Bot.cooperateBot Bot.cooperateBot {
-      leftAction := C, rightAction := C, leftPayoff := 3, rightPayoff := 3
-    } := by
-  have hActs : ActionClaim Bot.cooperateBot Bot.cooperateBot C C := cc_actionClaim
-  -- Now unfold outcome computation using the known actions
-  simp [playOutcome, mkOutcome, hActs]
-```
-
-**Stage 2b (optional): Extract individual action facts**
-```lean
-theorem cooperateBot_always_cooperates (opp : Bot) :
-    eval Bot.cooperateBot opp = C := by
-  simp [eval, ProgramModel.action]
+theorem dbot_vs_cooperate_actionClaim :
+		ActionClaim Bot.dBot Bot.cooperateBot D C := by
+	unfold ActionClaim playActions
+	change (botEvalSource Bot.dBot (botSource Bot.cooperateBot),
+		botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
+	simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
+		PD.Models.CooperateBot.action, PD.Models.CooperateBot.strategy]
 ```
 
 **Key insight:** ActionClaim is your **stopping point** if you only care about what programs do. Payoffs and outcomes are optional layers on top.
@@ -152,32 +134,6 @@ theorem cooperateBot_always_cooperates (opp : Bot) :
 
 For backward compatibility, this table covers all semantic layers:
 
-## Theorem Coverage (OpenSourceBots)
-
-Theorems in `Proofs/OpenSourceBots.lean` are organized into three sections:
-
-### ActionClaim theorems
-Proofs of what actions each program chooses in key matchups:
-- behavior:
-	- always-cooperate / always-defect lemmas,
-	- matchup action lemmas.
-
-### OutcomeClaim theorems
-Full outcome records and payoff facts built from ActionClaim proofs:
-- matchup outcome and payoff lemmas.
-
-### Remaining theorems
-Game-theoretic analysis and strategic properties:
-- dominance:
-	- fixed-action dominance,
-	- open-source dominance break results.
-- equilibrium-style statements:
-	- Nash-style checks,
-	- program-equilibrium style inequalities.
-- welfare and dilemma statements:
-	- social welfare comparisons,
-	- Pareto-vs-equilibrium tension (`pd_dilemma`).
-
 ---
 
 ## How To Extend
@@ -187,15 +143,13 @@ Recommended process for a new paper/program family:
 1. Create `PrisonersDilemma/Models/<Family>.lean`.
 2. Define program syntax and implement `ProgramModel`.
 3. Create `PrisonersDilemma/Proofs/<Family>.lean`.
-4. **Organize into three sections:**
-   - **Stage A (default):** prove `ActionClaim` theorems for key matchups.
-   - **Stage B (optional):** prove `OutcomeClaim` theorems if you need payoffs.
-   - **Stage C (optional):** add remaining game-theoretic theorems.
-5. Add the new model/proof imports to `PrisonersDilemma.lean`.
+4. Prove key `ActionClaim` theorems first.
+5. Add optional `OutcomeClaim`/payoff theorems only if needed.
+6. Add the new model/proof imports to `PrisonersDilemma.lean`.
 
 ## Build
 
-From `code/`:
+From `engine/`:
 
 ```bash
 lake build

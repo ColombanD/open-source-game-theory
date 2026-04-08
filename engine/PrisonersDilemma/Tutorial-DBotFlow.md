@@ -8,8 +8,9 @@ This note explains the DBot vs CooperateBot proof flow using the pipeline-native
 theorem dbot_vs_cooperate_actionClaim :
     ActionClaim Bot.dBot Bot.cooperateBot D C := by
   unfold ActionClaim playActions
-  change (evalSource Bot.dBot (source Bot.cooperateBot), evalSource Bot.cooperateBot (source Bot.dBot)) = (D, C)
-  simp [evalSource, source, dBotAction, dBotStrategy, actionFor, evalActionExpr]
+  change (botEvalSource Bot.dBot (botSource Bot.cooperateBot), botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
+  simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
+    PD.Models.CooperateBot.action, PD.Models.CooperateBot.strategy]
 ```
 
 ### What `ActionClaim` means
@@ -49,8 +50,8 @@ the goal is:
 Then `change` rewrites the same goal into model-level functions:
 
 ```lean
-(evalSource Bot.dBot (source Bot.cooperateBot),
- evalSource Bot.cooperateBot (source Bot.dBot)) = (D, C)
+(botEvalSource Bot.dBot (botSource Bot.cooperateBot),
+ botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
 ```
 
 Now compute each component.
@@ -58,22 +59,23 @@ Now compute each component.
 #### First component (left side): `dBot` against `cooperateBot`
 
 ```lean
-evalSource Bot.dBot (source Bot.cooperateBot)
-=> evalSource Bot.dBot cooperateSource
-=> dBotAction cooperateSource
-=> actionFor dBotStrategy cooperateSource
-=> evalActionExpr dBotStrategy cooperateSource.tag
-=> evalActionExpr dBotStrategy SourceTag.cooperateTag
+botEvalSource Bot.dBot (botSource Bot.cooperateBot)
+=> botEvalSource Bot.dBot PD.Models.CooperateBot.source
+=> PD.Models.DBot.action PD.Models.CooperateBot.source
+=> actionFor PD.Models.DBot.strategy PD.Models.CooperateBot.source
+=> evalActionExpr PD.Models.DBot.strategy PD.Models.CooperateBot.source.tag
+=> evalActionExpr PD.Models.DBot.strategy SourceTag.cooperateTag
 => D
 ```
 
 #### Second component (right side): `cooperateBot` against `dBot`
 
 ```lean
-evalSource Bot.cooperateBot (source Bot.dBot)
-=> evalSource Bot.cooperateBot dBotSource
-=> actionFor cooperateStrategy dBotSource
-=> evalActionExpr cooperateStrategy dBotSource.tag
+botEvalSource Bot.cooperateBot (botSource Bot.dBot)
+=> botEvalSource Bot.cooperateBot PD.Models.DBot.source
+=> PD.Models.CooperateBot.action PD.Models.DBot.source
+=> actionFor PD.Models.CooperateBot.strategy PD.Models.DBot.source
+=> evalActionExpr PD.Models.CooperateBot.strategy PD.Models.DBot.source.tag
 => evalActionExpr (ActionExpr.actionLit C) SourceTag.defectTag
 => C
 ```
@@ -85,7 +87,7 @@ So the pair is `(D, C)`, exactly the target.
 It is easy to accidentally write:
 
 ```lean
-ProgramModel.actionFromSource Bot.cooperateBot (ProgramModel.source Bot.dBot) = D
+botEvalSource Bot.cooperateBot (botSource Bot.dBot) = D
 ```
 
 but this is false. It should be `= C`, because `cooperateStrategy` is `ActionExpr.actionLit C`, which always evaluates to `C`.
