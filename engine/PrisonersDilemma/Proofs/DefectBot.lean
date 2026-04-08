@@ -1,11 +1,11 @@
-import PrisonersDilemma.Models.DefectBot
+import PrisonersDilemma.Models.Bots.DefectBot
 
 namespace PD.Proofs.DefectBot
 
 open PD
 open PD.Action
 open PD.StrategyDSL
-open PD.Models.DefectBot
+open PD.Models.Bots.DefectBot
 
 /-- DefectBot always returns `D` regardless of opponent source. -/
 theorem action_always_defect (oppSource : SourceAST) :

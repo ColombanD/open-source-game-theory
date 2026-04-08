@@ -1,6 +1,6 @@
 import PrisonersDilemma.StrategyDSL
 
-namespace PD.Models.DBot
+namespace PD.Models.Bots.DBot
 
 open PD
 open PD.Action
@@ -23,4 +23,4 @@ def source : SourceAST :=
 def action (oppSource : SourceAST) : Action :=
   actionFor strategy oppSource
 
-end PD.Models.DBot
+end PD.Models.Bots.DBot

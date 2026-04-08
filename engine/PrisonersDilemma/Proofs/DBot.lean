@@ -1,5 +1,5 @@
 import PrisonersDilemma.Models.BotUniverse
-import PrisonersDilemma.Models.DBot
+import PrisonersDilemma.Models.Bots.DBot
 
 namespace PD.Proofs.DBot
 
@@ -7,7 +7,7 @@ open PD
 open PD.Action
 open PD.StrategyDSL
 open PD.Models.BotUniverse
-open PD.Models.DBot
+open PD.Models.Bots.DBot
 
 /-- Pipeline-style action claim for DBot vs CooperateBot. -/
 theorem dbot_vs_cooperate_actionClaim :
@@ -16,7 +16,7 @@ theorem dbot_vs_cooperate_actionClaim :
   change (botEvalSource Bot.dBot (botSource Bot.cooperateBot),
     botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
   simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-    PD.Models.CooperateBot.action, PD.Models.CooperateBot.strategy]
+    PD.Models.Bots.CooperateBot.action, PD.Models.Bots.CooperateBot.strategy]
 
 /-- Pipeline-style action claim for DBot vs DefectBot. -/
 theorem dbot_vs_defect_actionClaim :
@@ -25,7 +25,7 @@ theorem dbot_vs_defect_actionClaim :
   change (botEvalSource Bot.dBot (botSource Bot.defectBot),
     botEvalSource Bot.defectBot (botSource Bot.dBot)) = (C, D)
   simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-    PD.Models.DefectBot.action, PD.Models.DefectBot.strategy]
+    PD.Models.Bots.DefectBot.action, PD.Models.Bots.DefectBot.strategy]
 
 /-- Pipeline-style action claim for DBot vs DBot. -/
 theorem dbot_vs_dbot_actionClaim :

@@ -1,15 +1,15 @@
-import PrisonersDilemma.Models.CooperateBot
-import PrisonersDilemma.Models.DefectBot
-import PrisonersDilemma.Models.DBot
+import PrisonersDilemma.Models.Bots.CooperateBot
+import PrisonersDilemma.Models.Bots.DefectBot
+import PrisonersDilemma.Models.Bots.DBot
 
 namespace PD.Models.BotUniverse
 
 open PD
 open PD.Action
 open PD.StrategyDSL
-open PD.Models.CooperateBot
-open PD.Models.DefectBot
-open PD.Models.DBot
+open PD.Models.Bots.CooperateBot
+open PD.Models.Bots.DefectBot
+open PD.Models.Bots.DBot
 
 /-- Shared bot universe for the pipeline-native matchup model. -/
 inductive Bot : Type where
@@ -21,17 +21,17 @@ inductive Bot : Type where
 /-- Source encoding used by `ProgramModel` for this shared universe. -/
 @[simp]
 def botSource : Bot -> SourceAST
-  | Bot.cooperateBot => CooperateBot.source
-  | Bot.defectBot => DefectBot.source
-  | Bot.dBot => DBot.source
+  | Bot.cooperateBot => PD.Models.Bots.CooperateBot.source
+  | Bot.defectBot => PD.Models.Bots.DefectBot.source
+  | Bot.dBot => PD.Models.Bots.DBot.source
 
 /-- Source interpreter used by `ProgramModel` for this shared universe. -/
 @[simp]
 def botEvalSource (me : Bot) (oppSource : SourceAST) : Action :=
   match me with
-  | Bot.cooperateBot => CooperateBot.action oppSource
-  | Bot.defectBot => DefectBot.action oppSource
-  | Bot.dBot => DBot.action oppSource
+  | Bot.cooperateBot => PD.Models.Bots.CooperateBot.action oppSource
+  | Bot.defectBot => PD.Models.Bots.DefectBot.action oppSource
+  | Bot.dBot => PD.Models.Bots.DBot.action oppSource
 
 instance : ProgramModel Bot where
   SourceType := SourceAST

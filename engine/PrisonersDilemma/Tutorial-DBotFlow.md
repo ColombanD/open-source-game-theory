@@ -10,7 +10,7 @@ theorem dbot_vs_cooperate_actionClaim :
   unfold ActionClaim playActions
   change (botEvalSource Bot.dBot (botSource Bot.cooperateBot), botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
   simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-    PD.Models.CooperateBot.action, PD.Models.CooperateBot.strategy]
+    PD.Models.Bots.CooperateBot.action, PD.Models.Bots.CooperateBot.strategy]
 ```
 
 ### What `ActionClaim` means
@@ -60,11 +60,11 @@ Now compute each component.
 
 ```lean
 botEvalSource Bot.dBot (botSource Bot.cooperateBot)
-=> botEvalSource Bot.dBot PD.Models.CooperateBot.source
-=> PD.Models.DBot.action PD.Models.CooperateBot.source
-=> actionFor PD.Models.DBot.strategy PD.Models.CooperateBot.source
-=> evalActionExpr PD.Models.DBot.strategy PD.Models.CooperateBot.source.tag
-=> evalActionExpr PD.Models.DBot.strategy SourceTag.cooperateTag
+=> botEvalSource Bot.dBot PD.Models.Bots.CooperateBot.source
+=> PD.Models.Bots.DBot.action PD.Models.Bots.CooperateBot.source
+=> actionFor PD.Models.Bots.DBot.strategy PD.Models.Bots.CooperateBot.source
+=> evalActionExpr PD.Models.Bots.DBot.strategy PD.Models.Bots.CooperateBot.source.tag
+=> evalActionExpr PD.Models.Bots.DBot.strategy SourceTag.cooperateTag
 => D
 ```
 
@@ -72,10 +72,10 @@ botEvalSource Bot.dBot (botSource Bot.cooperateBot)
 
 ```lean
 botEvalSource Bot.cooperateBot (botSource Bot.dBot)
-=> botEvalSource Bot.cooperateBot PD.Models.DBot.source
-=> PD.Models.CooperateBot.action PD.Models.DBot.source
-=> actionFor PD.Models.CooperateBot.strategy PD.Models.DBot.source
-=> evalActionExpr PD.Models.CooperateBot.strategy PD.Models.DBot.source.tag
+=> botEvalSource Bot.cooperateBot PD.Models.Bots.DBot.source
+=> PD.Models.Bots.CooperateBot.action PD.Models.Bots.DBot.source
+=> actionFor PD.Models.Bots.CooperateBot.strategy PD.Models.Bots.DBot.source
+=> evalActionExpr PD.Models.Bots.CooperateBot.strategy PD.Models.Bots.DBot.source.tag
 => evalActionExpr (ActionExpr.actionLit C) SourceTag.defectTag
 => C
 ```

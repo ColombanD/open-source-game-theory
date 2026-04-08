@@ -47,13 +47,13 @@ The default proving strategy is action-first:
 
 ### Models
 
-- `PrisonersDilemma/Models/CooperateBot.lean`
+- `PrisonersDilemma/Models/Bots/CooperateBot.lean`
 	- Strategy/source/action definitions for an always-cooperate bot.
 
-- `PrisonersDilemma/Models/DefectBot.lean`
+- `PrisonersDilemma/Models/Bots/DefectBot.lean`
 	- Strategy/source/action definitions for an always-defect bot.
 
-- `PrisonersDilemma/Models/DBot.lean`
+- `PrisonersDilemma/Models/Bots/DBot.lean`
 	- Strategy/source/action definitions for a conditional bot that defects against cooperate-tagged source and cooperates otherwise.
 
 - `PrisonersDilemma/Models/BotUniverse.lean`
@@ -113,8 +113,8 @@ theorem dbot_vs_cooperate_actionClaim :
   unfold ActionClaim playActions
   change (botEvalSource Bot.dBot (botSource Bot.cooperateBot),
     botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
-  simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-    PD.Models.CooperateBot.action, PD.Models.CooperateBot.strategy]
+	simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
+		PD.Models.Bots.CooperateBot.action, PD.Models.Bots.CooperateBot.strategy]
 ```
 
 **Key insight:** ActionClaim is your **stopping point** if you only care about what programs do. Payoffs and outcomes are optional layers on top.

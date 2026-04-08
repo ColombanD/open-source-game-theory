@@ -3,10 +3,10 @@
 import PrisonersDilemma.Core
 import PrisonersDilemma.Pipeline
 import PrisonersDilemma.StrategyDSL
-import PrisonersDilemma.Models.CooperateBot
-import PrisonersDilemma.Models.DefectBot
+import PrisonersDilemma.Models.Bots.CooperateBot
+import PrisonersDilemma.Models.Bots.DefectBot
 import PrisonersDilemma.Models.BotUniverse
-import PrisonersDilemma.Models.DBot
+import PrisonersDilemma.Models.Bots.DBot
 import PrisonersDilemma.Models.OpenSourceBots
 import PrisonersDilemma.Proofs.WorkflowTemplate
 import PrisonersDilemma.Proofs.CooperateBot
