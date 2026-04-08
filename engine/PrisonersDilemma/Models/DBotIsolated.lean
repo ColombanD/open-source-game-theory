@@ -22,8 +22,8 @@ open PD.Models.StrategyDSL
 @[simp]
 def dBotStrategy : ActionExpr :=
   ActionExpr.ifOppIs SourceTag.cooperateTag
-    (ActionExpr.actionLit D)
-    (ActionExpr.actionLit C)
+    (ActionExpr.actionLit D) -- If yes
+    (ActionExpr.actionLit C) -- If no
 
 /-- Optional source value carrying DBot strategy. -/
 @[simp]
