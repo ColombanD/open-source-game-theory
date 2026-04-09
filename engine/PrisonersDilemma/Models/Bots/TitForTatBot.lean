@@ -1,4 +1,5 @@
 import PrisonersDilemma.StrategyDSL
+import PrisonersDilemma.Models.Bots.CooperateBot
 
 namespace PD.Models.Bots.TitForTatBot
 

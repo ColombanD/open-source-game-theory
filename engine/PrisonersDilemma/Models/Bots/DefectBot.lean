@@ -6,14 +6,19 @@ open PD
 open PD.Action
 open PD.StrategyDSL
 
+/-- Strategy expression for DefectBot. -/
+@[simp]
+def strategyExpr : ActionExpr :=
+  ActionExpr.actionLit D
+
 /-- Strategy definition for DefectBot. -/
 @[simp]
-def strategy (oppSource : SourceAST) : ActionExpr :=
-  ActionExpr.actionLit D
+def strategy (_oppSource : SourceAST) : ActionExpr :=
+  strategyExpr
 
 /-- Source encoding for DefectBot. -/
 @[simp] def source : SourceAST :=
-  { tag := SourceTag.defectTag, strategy := strategy }
+  { tag := SourceTag.defectTag, strategy := strategyExpr }
 
 /-- Action chosen by DefectBot from opponent source metadata. -/
 @[simp] def action (oppSource : SourceAST) : Action :=
