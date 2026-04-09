@@ -5,13 +5,15 @@ namespace PD.Models.Bots.DBot
 open PD
 open PD.Action
 open PD.StrategyDSL
-open PD.Models.Bots.DefectBot
+open PD.Models.Bots
 
 /-- Strategy definition for DBot.
 Bot defects if the opponent cooperates against a defect probe. -/
 @[simp]
-def strategy (oppSource : SourceAST) : Action :=
-  if probeOpponent oppSource defectBotSource = C then D else C
+def strategy (oppSource : SourceAST) : ActionExpr :=
+  if probeOpponent oppSource DefectBot.source = C
+    then ActionExpr.actionLit D
+    else ActionExpr.actionLit C
 
 /-- Source encoding for DBot. -/
 @[simp]
@@ -21,6 +23,6 @@ def source : SourceAST :=
 /-- Action chosen by DBot from opponent source metadata. -/
 @[simp]
 def action (oppSource : SourceAST) : Action :=
-  strategy oppSource
+  evalActionExpr (strategy oppSource) oppSource.tag
 
 end PD.Models.Bots.DBot

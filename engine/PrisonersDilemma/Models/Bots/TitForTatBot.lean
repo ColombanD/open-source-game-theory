@@ -5,18 +5,15 @@ namespace PD.Models.Bots.TitForTatBot
 open PD
 open PD.Action
 open PD.StrategyDSL
+open PD.Models.Bots
 
-/-- Condition used by TitForTat strategy in one-shot open-source PD. -/
+/-- Strategy definition for TitForTatBot.
+Bot cooperates if the opponent cooperates against a cooperate probe. -/
 @[simp]
-def condition : BoolExpr :=
-  BoolExpr.or (BoolExpr.oppIs SourceTag.cooperateTag)
-    (BoolExpr.or (BoolExpr.oppIs SourceTag.titForTatTag)
-      (BoolExpr.oppIs SourceTag.alternatorTag))
-
-/-- Strategy definition for TitForTatBot. -/
-@[simp]
-def strategy: ActionExpr :=
-  ActionExpr.ifThenElse condition (ActionExpr.actionLit C) (ActionExpr.actionLit D)
+def strategy (oppSource : SourceAST) : ActionExpr :=
+  if probeOpponent oppSource CooperateBot.source = C
+    then ActionExpr.actionLit C
+    else ActionExpr.actionLit D
 
 /-- Source encoding for TitForTatBot. -/
 @[simp]
@@ -26,6 +23,6 @@ def source : SourceAST :=
 /-- Action chosen by TitForTatBot from opponent source metadata. -/
 @[simp]
 def action (oppSource : SourceAST) : Action :=
-  evalActionExpr strategy oppSource.tag
+  evalActionExpr (strategy oppSource) oppSource.tag
 
 end PD.Models.Bots.TitForTatBot
