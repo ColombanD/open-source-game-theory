@@ -19,6 +19,10 @@ Mental model:
 inductive SourceTag : Type where
   | cooperateTag : SourceTag
   | defectTag : SourceTag
+  | titForTatTag : SourceTag
+  | alternatorTag : SourceTag
+  | suspiciousTFTTag : SourceTag
+  | dBotTag: SourceTag
   deriving DecidableEq, Repr
 
 /-- Tiny strategy language: literal action or source-based branch. -/
