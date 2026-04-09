@@ -36,4 +36,6 @@ theorem titForTatBot_vs_titForTatBot_actionClaim :
     botEvalSource Bot.titForTatBot (botSource Bot.titForTatBot)) = (C, C)
   simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr]
 
+/-- Pipeline-style action claim for TitForTatBot vs DBot. -/
+
 end PD.Proofs.TitForTatBot
