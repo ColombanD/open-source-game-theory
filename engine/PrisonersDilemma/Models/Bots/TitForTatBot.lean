@@ -11,10 +11,10 @@ open PD.Models.Bots
 /-- Strategy definition for TitForTatBot.
 Bot cooperates if the opponent cooperates against a cooperate probe. -/
 @[simp]
-def strategy (oppSource : SourceAST) : ActionExpr :=
-  if probeOpponent oppSource CooperateBot.source = C
-    then ActionExpr.actionLit C
-    else ActionExpr.actionLit D
+def strategy : ActionExpr :=
+  ActionExpr.probeAndBranch CooperateBot.source C
+    (ActionExpr.actionLit C)  -- If opponent cooperates against CooperateBot, cooperate
+    (ActionExpr.actionLit D)  -- Otherwise, defect
 
 /-- Source encoding for TitForTatBot. -/
 @[simp]
@@ -24,6 +24,6 @@ def source : SourceAST :=
 /-- Action chosen by TitForTatBot from opponent source metadata. -/
 @[simp]
 def action (oppSource : SourceAST) : Action :=
-  evalActionExpr (strategy oppSource) oppSource.tag
+  evalActionExpr' strategy oppSource
 
 end PD.Models.Bots.TitForTatBot

@@ -6,22 +6,17 @@ open PD
 open PD.Action
 open PD.StrategyDSL
 
-/-- Strategy expression for CooperateBot. -/
-@[simp]
-def strategyExpr : ActionExpr :=
-  ActionExpr.actionLit C
-
 /-- Strategy definition for CooperateBot. -/
 @[simp]
-def strategy (_oppSource : SourceAST) : ActionExpr :=
-  strategyExpr
+def strategy : ActionExpr :=
+  ActionExpr.actionLit C
 
 /-- Source encoding for CooperateBot. -/
 @[simp] def source : SourceAST :=
-  { tag := SourceTag.cooperateTag, strategy := strategyExpr }
+  { tag := SourceTag.cooperateTag, strategy := strategy }
 
 /-- Action chosen by CooperateBot from opponent source metadata. -/
 @[simp] def action (oppSource : SourceAST) : Action :=
-  evalActionExpr (strategy oppSource) oppSource.tag
+  evalActionExpr' strategy oppSource
 
 end PD.Models.Bots.CooperateBot

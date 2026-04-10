@@ -10,6 +10,7 @@ open PD.Models.Bots.CooperateBot
 /-- CooperateBot always returns `C` regardless of opponent source. -/
 theorem action_always_cooperate (oppSource : SourceAST) :
     action oppSource = C := by
-  simp [action, strategy, actionFor, evalActionExpr]
+  unfold action strategy evalActionExpr' evalActionExpr
+  simp
 
 end PD.Proofs.CooperateBot

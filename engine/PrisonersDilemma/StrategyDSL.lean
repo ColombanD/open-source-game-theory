@@ -5,9 +5,6 @@ namespace PD.StrategyDSL
 open PD
 open PD.Action
 
-/-- Witness that Action is nonempty, required for partial functions returning Action. -/
-instance : Nonempty Action := ⟨C⟩
-
 /-!
 Beginner-friendly strategy DSL used by small model files.
 
@@ -43,35 +40,54 @@ end
 
 mutual
 /-- Mutual recursion between evalActionExpr and probeOpponent.
-   These are marked `partial` because termination cannot be guaranteed structurally:
-   bots can probe other bots, potentially creating cycles (e.g., Bot A probes Bot B,
-   which probes Bot A). Real termination depends on how users structure their bot definitions.
-   In practice, well-designed bots avoid such circular probing. -/
-  partial def evalActionExpr (e : ActionExpr) (oppSource : SourceAST) : Action :=
-    match e with
-    | ActionExpr.actionLit a => a
-    | ActionExpr.ifOppIs expected tBranch eBranch =>
-        if oppSource.tag = expected then
-          evalActionExpr tBranch oppSource
-        else
-          evalActionExpr eBranch oppSource
-    | ActionExpr.probeAndBranch probeSource expectedAction tBranch eBranch =>
-        -- Probe the opponent with a chosen probe source and branch based on the result.
-        -- If opponent's response matches expectedAction, take tBranch; otherwise take eBranch.
-        let probeResult := probeOpponent oppSource probeSource
-        if probeResult = expectedAction then
-          evalActionExpr tBranch oppSource
-        else
-          evalActionExpr eBranch oppSource
+   These functions take a fuel parameter to ensure termination,
+   even if bots probe other bots. Fuel decreases with each recursive call,
+   preventing infinite loops.
+
+   Returns Option Action: some action if evaluation succeeds, none if fuel exhausted. -/
+  def evalActionExpr (fuel : Nat) (e : ActionExpr) (oppSource : SourceAST) : Option Action :=
+    match fuel with
+    | 0 => none  -- Out of fuel
+    | fuel + 1 =>
+      match e with
+      | ActionExpr.actionLit a => some a
+      | ActionExpr.ifOppIs expected tBranch eBranch =>
+          if oppSource.tag = expected then
+            evalActionExpr fuel tBranch oppSource
+          else
+            evalActionExpr fuel eBranch oppSource
+      | ActionExpr.probeAndBranch probeSource expectedAction tBranch eBranch =>
+          -- Probe the opponent with a chosen probe source and branch based on the result.
+          -- If opponent's response matches expectedAction, take tBranch; otherwise take eBranch.
+          let probeResult := probeOpponent fuel oppSource probeSource
+          match probeResult with
+          | none => none
+          | some result =>
+              if result = expectedAction then
+                evalActionExpr fuel tBranch oppSource
+              else
+                evalActionExpr fuel eBranch oppSource
 
   /-- Probe helper: evaluate opponent strategy against a chosen probe source. -/
-  partial def probeOpponent (oppSource probeInput : SourceAST) : Action :=
-    evalActionExpr oppSource.strategy probeInput
+  def probeOpponent (fuel : Nat) (oppSource probeInput : SourceAST) : Option Action :=
+    evalActionExpr fuel oppSource.strategy probeInput
 end
+
+/-- Wrapper: evaluate strategy with default fuel of 100. -/
+def evalActionExpr' (e : ActionExpr) (oppSource : SourceAST) : Action :=
+  match evalActionExpr 100 e oppSource with
+  | some a => a
+  | none => C  -- Fallback if fuel exhausted
+
+/-- Wrapper: probe opponent with default fuel of 100. -/
+def probeOpponent' (oppSource probeInput : SourceAST) : Action :=
+  match probeOpponent 100 oppSource probeInput with
+  | some a => a
+  | none => C  -- Fallback if fuel exhausted
 
 /-- Uniform helper: run any strategy against an opponent source. -/
 @[simp]
 def actionFor (strategy : ActionExpr) (oppSource : SourceAST) : Action :=
-  evalActionExpr strategy oppSource
+  evalActionExpr' strategy oppSource
 
 end PD.StrategyDSL

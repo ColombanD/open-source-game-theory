@@ -16,8 +16,12 @@ theorem titForTatBot_vs_cooperate_actionClaim :
   unfold ActionClaim playActions
   change (botEvalSource Bot.titForTatBot (botSource Bot.cooperateBot),
     botEvalSource Bot.cooperateBot (botSource Bot.titForTatBot)) = (C, C)
-  simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-    CooperateBot.action, CooperateBot.strategy]
+  unfold botEvalSource
+  simp
+  unfold evalActionExpr' evalActionExpr
+  simp
+  unfold probeOpponent evalActionExpr
+  simp
 
 /-- Pipeline-style action claim for TitForTatBot vs DefectBot. -/
 theorem titForTatBot_vs_defect_actionClaim :
@@ -25,8 +29,12 @@ theorem titForTatBot_vs_defect_actionClaim :
   unfold ActionClaim playActions
   change (botEvalSource Bot.titForTatBot (botSource Bot.defectBot),
     botEvalSource Bot.defectBot (botSource Bot.titForTatBot)) = (D, D)
-  simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-    DefectBot.action, DefectBot.strategy]
+  unfold botEvalSource
+  simp
+  unfold evalActionExpr' evalActionExpr
+  simp
+  unfold probeOpponent evalActionExpr
+  simp
 
 /-- Pipeline-style action claim for TitForTatBot vs TitForTatBot. -/
 theorem titForTatBot_vs_titForTatBot_actionClaim :
@@ -34,8 +42,28 @@ theorem titForTatBot_vs_titForTatBot_actionClaim :
   unfold ActionClaim playActions
   change (botEvalSource Bot.titForTatBot (botSource Bot.titForTatBot),
     botEvalSource Bot.titForTatBot (botSource Bot.titForTatBot)) = (C, C)
-  simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr]
+  unfold botEvalSource
+  simp
+  unfold evalActionExpr' evalActionExpr
+  simp
+  unfold probeOpponent evalActionExpr
+  simp
+  unfold probeOpponent evalActionExpr
+  simp
 
 /-- Pipeline-style action claim for TitForTatBot vs DBot. -/
+theorem titForTatBot_vs_dbot_actionClaim :
+    ActionClaim Bot.titForTatBot Bot.dBot D C := by
+  unfold ActionClaim playActions
+  change (botEvalSource Bot.titForTatBot (botSource Bot.dBot),
+    botEvalSource Bot.dBot (botSource Bot.titForTatBot)) = (D, C)
+  unfold botEvalSource
+  simp
+  unfold evalActionExpr' evalActionExpr
+  simp
+  unfold probeOpponent evalActionExpr
+  simp
+  unfold probeOpponent evalActionExpr
+  simp
 
 end PD.Proofs.TitForTatBot
