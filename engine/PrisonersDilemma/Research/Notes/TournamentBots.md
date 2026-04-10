@@ -61,19 +61,36 @@ Payoffs: CC → 2 each, CD → 0/3, DC → 3/0, DD → 1 each.
   (define ErrorBot '(lambda (x) '?))
   (define MirrorBot '(lambda (x) ...))
   (define MyBot '(lambda (x) ...))
-
-  ;; unit tests ...
+  
+  ;; run unit tests on MyBot
+  (test ((eval MyBot) CooperateBot) 'D)
+  (test ((eval MyBot) DefectBot) 'D)
+  (test ((eval MyBot) MirrorBot) 'C)
+  (test ((eval MyBot) ErrorBot) 'D)
+  (test ((eval MyBot) MyBot) 'C)
+  
   ((eval MyBot) other))
 ```
 
-**Behavior:** Defines a suite of test bots internally (CooperateBot, DefectBot, ErrorBot, MirrorBot) and a strategy bot `MyBot`. MyBot's logic is:
+**Behavior:** EBot defines four test bots and MyBot strategy:
 
-1. If the opponent cooperates with DefectBot → **defect** (the opponent is a sucker).
-2. Else if the opponent cooperates with CooperateBot → **cooperate**.
-3. Else if the opponent cooperates with MirrorBot → **cooperate**.
-4. Otherwise → **defect**.
+- **CooperateBot**: Always cooperates.
+- **DefectBot**: Always defects.
+- **ErrorBot**: Returns `'?` (error/unknown).
+- **MirrorBot**: Cooperates only if opponent cooperates against ErrorBot.
 
-Before playing, EBot runs unit tests on its own strategy to verify correctness. It confirms that MyBot defects against CooperateBot, defects against DefectBot, cooperates with MirrorBot, defects against ErrorBot, and cooperates with itself.
+**MyBot decision tree:**
+1. If opponent cooperates with DefectBot → **defect** (opponent is exploitable).
+2. Else if opponent cooperates with CooperateBot → **cooperate**.
+3. Else if opponent cooperates with MirrorBot → **cooperate**.
+4. Else → **defect**.
+
+**Unit tests verify:**
+- MyBot defects against CooperateBot (cooperates with DefectBot = sucker)
+- MyBot defects against DefectBot (never cooperates)
+- MyBot cooperates with MirrorBot (respects mirror logic)
+- MyBot defects against ErrorBot (unpredictable)
+- MyBot cooperates with itself
 
 ---
 
@@ -164,7 +181,7 @@ Before playing, EBot runs unit tests on its own strategy to verify correctness. 
 2. Otherwise, evaluate the opponent against KBot's own source code. If the opponent cooperates with KBot:
    - Send quineDetector (a bot that cooperates only when given KBot's exact source) to the opponent twice.
    - If the opponent ever gives quineDetector KBot's source (proving it's another copy of KBot or a friendly bot), cooperate.
-   - Otherwise defect.
+   - Otherwise, defect.
 3. If the opponent defects against KBot, defect.
 
 This is a **CliqueBot**: it tries to cooperate only with copies of itself or bots that can prove they know KBot's source.
@@ -266,13 +283,13 @@ The obfuscated defection symbol is built via `(string->symbol (bytes->string/utf
 2. If the opponent defects against a cooperator:
    - Asks "what do you do against a defector?" If the opponent defects against a defector:
      - Asks "what do you do against a cooperator?" and returns that.
-   - Otherwise defects.
+   - Otherwise, defects.
 
 This bot tries to find inconsistencies in the opponent's behavior across different inputs and exploit them.
 
 ---
 
-## PBot — Quine MimicBot with Yield-Eval Sandboxing
+## PBot — Quine imicBot with Yield-Eval Sandboxing
 
 ```scheme
 (lambda (x)
@@ -288,7 +305,7 @@ This bot tries to find inconsistencies in the opponent's behavior across differe
 3. **Uses `cval`** — a "cheating eval" that intercepts evaluations of PBot's own source and returns a modified version that auto-cooperates with the current opponent. This lets PBot trick the opponent into thinking PBot cooperates.
 4. **Timeout sandboxing** at 0.5 seconds per simulation.
 5. **Strategy:**
-   - Runs the opponent (via `cval`, which lies about PBot's behavior) against PBot's quine. If the opponent cooperates, and the opponent also cooperates with a trivial CooperateBot and defects with a "stupid bot", then PBot **defects** (exploitation). Otherwise PBot cooperates.
+   - Runs the opponent (via `cval`, which lies about PBot's behavior) against PBot's quine. If the opponent cooperates, and the opponent also cooperates with a trivial CooperateBot and defects with a "stupid bot", then PBot **defects** (exploitation). Otherwise, PBot cooperates.
    - If the opponent defects against PBot's (faked) source, PBot defects.
 
 The `cval` trick is the key insight: PBot lies to the opponent during simulation, making itself look cooperative, and then decides based on the opponent's trusting response.
@@ -396,7 +413,7 @@ The `impatient` function is an identity wrapper — the author may have intended
 1. If the source contains the word `"quine"` → **cooperate** (assumes it's a sophisticated but friendly MimicBot).
 2. If the source contains `"thread"` → **defect** (assumes it's a dangerous sandboxing/timeout bot).
 3. If the source contains `eval` appearing twice (`"eval.*eval"`) → **defect** (assumes it's doing deep simulation, possibly adversarial).
-4. Otherwise → **cooperate**.
+4. Otherwise, → **cooperate**.
 
 This is pure static analysis with no execution of the opponent's code.
 
