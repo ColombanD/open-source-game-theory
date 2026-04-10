@@ -18,7 +18,7 @@ def strategy : ActionExpr :=
 /-- Source encoding for DBot. -/
 @[simp]
 def source : SourceAST :=
-  { tag := SourceTag.defectTag, strategy := strategy }
+  { tag := SourceTag.dBotTag, strategy := strategy }
 
 /-- Action chosen by DBot from opponent source metadata. -/
 @[simp]

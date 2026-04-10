@@ -21,6 +21,7 @@ inductive SourceTag : Type where
   | defectTag : SourceTag
   | dBotTag: SourceTag
   | titForTatTag : SourceTag
+  | oBotTag : SourceTag
   deriving DecidableEq, Repr
 
 mutual

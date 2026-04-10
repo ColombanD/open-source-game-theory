@@ -2,6 +2,7 @@ import PrisonersDilemma.Models.Bots.CooperateBot
 import PrisonersDilemma.Models.Bots.DefectBot
 import PrisonersDilemma.Models.Bots.DBot
 import PrisonersDilemma.Models.Bots.TitForTatBot
+import PrisonersDilemma.Models.Bots.OBot
 
 namespace PD.Models.BotUniverse
 
@@ -12,6 +13,7 @@ open PD.Models.Bots.CooperateBot
 open PD.Models.Bots.TitForTatBot
 open PD.Models.Bots.DefectBot
 open PD.Models.Bots.DBot
+open PD.Models.Bots.OBot
 
 /-- Shared bot universe for the pipeline-native matchup model. -/
 inductive Bot : Type where
@@ -19,6 +21,7 @@ inductive Bot : Type where
   | defectBot : Bot
   | dBot : Bot
   | titForTatBot : Bot
+  | oBot : Bot
   deriving DecidableEq, Repr
 
 /-- Source encoding used by `ProgramModel` for this shared universe. -/
@@ -28,6 +31,7 @@ def botSource : Bot -> SourceAST
   | Bot.defectBot => PD.Models.Bots.DefectBot.source
   | Bot.dBot => PD.Models.Bots.DBot.source
   | Bot.titForTatBot => PD.Models.Bots.TitForTatBot.source
+  | Bot.oBot => PD.Models.Bots.OBot.source
 
 /-- Source interpreter used by `ProgramModel` for this shared universe. -/
 @[simp]
@@ -37,6 +41,7 @@ def botEvalSource (me : Bot) (oppSource : SourceAST) : Action :=
   | Bot.defectBot => PD.Models.Bots.DefectBot.action oppSource
   | Bot.dBot => PD.Models.Bots.DBot.action oppSource
   | Bot.titForTatBot => PD.Models.Bots.TitForTatBot.action oppSource
+  | Bot.oBot => PD.Models.Bots.OBot.action oppSource
 
 instance : ProgramModel Bot where
   SourceType := SourceAST
