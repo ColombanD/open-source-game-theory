@@ -18,6 +18,8 @@ theorem dbot_vs_cooperate_actionClaim :
     botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
   unfold botEvalSource
   simp
+  unfold getBotData
+  simp
   unfold evalActionExpr' evalActionExpr
   simp
   unfold probeOpponent evalActionExpr
@@ -31,6 +33,8 @@ theorem dbot_vs_defect_actionClaim :
     botEvalSource Bot.defectBot (botSource Bot.dBot)) = (C, D)
   unfold botEvalSource
   simp
+  unfold getBotData
+  simp
   unfold evalActionExpr' evalActionExpr
   simp
   unfold probeOpponent evalActionExpr
@@ -43,6 +47,8 @@ theorem dbot_vs_dbot_actionClaim :
   change (botEvalSource Bot.dBot (botSource Bot.dBot),
     botEvalSource Bot.dBot (botSource Bot.dBot)) = (D, D)
   unfold botEvalSource
+  simp
+  unfold getBotData
   simp
   unfold evalActionExpr' evalActionExpr
   simp
@@ -58,6 +64,8 @@ theorem dbot_vs_titForTatBot_actionClaim :
   change (botEvalSource Bot.dBot (botSource Bot.titForTatBot),
     botEvalSource Bot.titForTatBot (botSource Bot.dBot)) = (C, D)
   unfold botEvalSource
+  simp
+  unfold getBotData
   simp
   unfold evalActionExpr' evalActionExpr
   simp

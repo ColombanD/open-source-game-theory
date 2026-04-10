@@ -31,28 +31,45 @@ inductive Bot : Type where
   | eBot : Bot
   deriving DecidableEq, Repr
 
-/-- Source encoding used by `ProgramModel` for this shared universe. -/
+/-- Data structure holding both source and action for a bot. -/
+structure BotData where
+  source : SourceAST
+  action : SourceAST → Action
+
+/-- All bot definitions in one place. List each bot once. -/
+def getBotData : Bot → BotData
+  | Bot.cooperateBot => {
+      source := PD.Models.Bots.CooperateBot.source,
+      action := PD.Models.Bots.CooperateBot.action }
+  | Bot.defectBot => {
+      source := PD.Models.Bots.DefectBot.source,
+      action := PD.Models.Bots.DefectBot.action }
+  | Bot.dBot => {
+      source := PD.Models.Bots.DBot.source,
+      action := PD.Models.Bots.DBot.action }
+  | Bot.titForTatBot => {
+      source := PD.Models.Bots.TitForTatBot.source,
+      action := PD.Models.Bots.TitForTatBot.action }
+  | Bot.oBot => {
+      source := PD.Models.Bots.OBot.source,
+      action := PD.Models.Bots.OBot.action }
+  | Bot.mirrorBot => {
+      source := PD.Models.Bots.MirrorBot.source,
+      action := PD.Models.Bots.MirrorBot.action }
+  | Bot.eBot => {
+      source := PD.Models.Bots.EBot.source,
+      action := PD.Models.Bots.EBot.action }
+
+/-- Generic lookup functions. -/
 @[simp]
-def botSource : Bot -> SourceAST
-  | Bot.cooperateBot => PD.Models.Bots.CooperateBot.source
-  | Bot.defectBot => PD.Models.Bots.DefectBot.source
-  | Bot.dBot => PD.Models.Bots.DBot.source
-  | Bot.titForTatBot => PD.Models.Bots.TitForTatBot.source
-  | Bot.oBot => PD.Models.Bots.OBot.source
-  | Bot.mirrorBot => PD.Models.Bots.MirrorBot.source
-  | Bot.eBot => PD.Models.Bots.EBot.source
+def botSource (b : Bot) : SourceAST := (getBotData b).source
+
+@[simp]
+def botAction (b : Bot) (oppSource : SourceAST) : Action := (getBotData b).action oppSource
 
 /-- Source interpreter used by `ProgramModel` for this shared universe. -/
-@[simp]
 def botEvalSource (me : Bot) (oppSource : SourceAST) : Action :=
-  match me with
-  | Bot.cooperateBot => PD.Models.Bots.CooperateBot.action oppSource
-  | Bot.defectBot => PD.Models.Bots.DefectBot.action oppSource
-  | Bot.dBot => PD.Models.Bots.DBot.action oppSource
-  | Bot.titForTatBot => PD.Models.Bots.TitForTatBot.action oppSource
-  | Bot.oBot => PD.Models.Bots.OBot.action oppSource
-  | Bot.mirrorBot => PD.Models.Bots.MirrorBot.action oppSource
-  | Bot.eBot => PD.Models.Bots.EBot.action oppSource
+  botAction me oppSource
 
 instance : ProgramModel Bot where
   SourceType := SourceAST
