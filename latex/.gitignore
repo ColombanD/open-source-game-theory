@@ -1,0 +1,43 @@
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.fls
+*.fdb_latexmk
+*.xdv
+*.blg
+*.bbl
+*.bcf
+*.run.xml
+*.synctex.gz
+*.dvi
+*.ps
+
+# Build directory (latexmk and pdflatex output)
+build/
+
+# Biber/BibTeX
+*.bcf
+*.bibtex
+
+# latexmk
+.latexmkrc
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor backup files
+*~
+*.swp
+*.swo
+
+# Generated PDFs from auxiliary files (keep only main outputs)
+# (PDF outputs like presentation.pdf are kept intentionally)
