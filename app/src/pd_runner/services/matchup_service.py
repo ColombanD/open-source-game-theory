@@ -40,6 +40,10 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
         )
 
     left_action, right_action = parse_actions_from_stdout(exec_result.stdout)
+    
+    # If we evaluated in reverse order, swap the actions back to match the requested order
+    if generated.actions_are_swapped:
+        left_action, right_action = right_action, left_action
 
     if not keep_file:
         _cleanup_file(lean_file)
