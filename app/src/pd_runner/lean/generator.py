@@ -11,6 +11,7 @@ from pd_runner.lean.templates import matchup_eval_template
 class GeneratedLeanFile:
     path: Path
     proof_theorem_used: str | None
+    actions_are_swapped: bool
 
 
 def validate_bot_name(name: str) -> None:
@@ -45,7 +46,7 @@ def write_matchup_lean_file(
     target_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%f")
     path = target_dir / f"matchup_{left_bot}_{right_bot}_{timestamp}.lean"
-    script, proof_theorem_used = matchup_eval_template(
+    script, proof_theorem_used, actions_are_swapped = matchup_eval_template(
         left_bot,
         right_bot,
         claim_left_action=claim_left_action,
@@ -55,4 +56,8 @@ def write_matchup_lean_file(
         script,
         encoding="utf-8",
     )
-    return GeneratedLeanFile(path=path, proof_theorem_used=proof_theorem_used)
+    return GeneratedLeanFile(
+        path=path,
+        proof_theorem_used=proof_theorem_used,
+        actions_are_swapped=actions_are_swapped,
+    )

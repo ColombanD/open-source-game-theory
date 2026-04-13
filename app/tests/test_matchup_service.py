@@ -24,7 +24,11 @@ def test_run_matchup_orchestrates_generation_execution_and_parsing(monkeypatch, 
     monkeypatch.setattr(
         matchup_service,
         "write_matchup_lean_file",
-        lambda **kwargs: GeneratedLeanFile(path=generated_file, proof_theorem_used="PD.Proofs.OpenSourceBots.cd_actionClaim"),
+        lambda **kwargs: GeneratedLeanFile(
+            path=generated_file,
+            proof_theorem_used="PD.Proofs.OpenSourceBots.cd_actionClaim",
+            actions_are_swapped=False,
+        ),
     )
 
     def fake_run_lean_file(lean_project_dir, lean_file):
@@ -58,6 +62,53 @@ def test_run_matchup_orchestrates_generation_execution_and_parsing(monkeypatch, 
     assert result.proof_theorem_used == "PD.Proofs.OpenSourceBots.cd_actionClaim"
 
 
+def test_run_matchup_swaps_actions_when_reversed_theorem_used(monkeypatch, tmp_path: Path) -> None:
+    """When a reversed-order theorem is used, actions should be swapped to match requested order."""
+    generated_file = tmp_path / "matchup.lean"
+
+    monkeypatch.setattr(
+        matchup_service,
+        "load_paths",
+        lambda: SimpleNamespace(
+            generated_lean_dir=tmp_path / "generated",
+            lean_engine_dir=tmp_path / "engine",
+        ),
+    )
+    monkeypatch.setattr(
+        matchup_service,
+        "write_matchup_lean_file",
+        lambda **kwargs: GeneratedLeanFile(
+            path=generated_file,
+            proof_theorem_used="PD.Proofs.OpenSourceBots.dBot_vs_oBot_actionClaim",
+            actions_are_swapped=True,  # Indicate that reversed theorem was used
+        ),
+    )
+
+    def fake_run_lean_file(lean_project_dir, lean_file):
+        # When we evaluate in reverse order, Lean returns the actions for that order
+        return LeanExecResult(
+            command=f"lake env lean {lean_file}",
+            returncode=0,
+            stdout="(D, C)\n",  # Actions for (dBot, oBot)
+            stderr="",
+        )
+
+    def fake_parse_actions_from_stdout(stdout: str):
+        return "D", "C"
+
+    monkeypatch.setattr(matchup_service, "run_lean_file", fake_run_lean_file)
+    monkeypatch.setattr(matchup_service, "parse_actions_from_stdout", fake_parse_actions_from_stdout)
+
+    # Request oBot vs dBot (which doesn't have a direct theorem)
+    result = matchup_service.run_matchup(MatchupRequest("oBot", "dBot"))
+
+    # The actions should be swapped to match the requested order
+    assert result.left_bot == "oBot"
+    assert result.right_bot == "dBot"
+    assert result.left_action == "C"  # Swapped from the reversed evaluation
+    assert result.right_action == "D"  # Swapped from the reversed evaluation
+
+
 def test_run_matchup_raises_and_cleans_up_on_lean_failure(monkeypatch, tmp_path: Path) -> None:
     generated_file = tmp_path / "matchup.lean"
     generated_file.write_text("fake lean file", encoding="utf-8")
@@ -73,7 +124,11 @@ def test_run_matchup_raises_and_cleans_up_on_lean_failure(monkeypatch, tmp_path:
     monkeypatch.setattr(
         matchup_service,
         "write_matchup_lean_file",
-        lambda **kwargs: GeneratedLeanFile(path=generated_file, proof_theorem_used=None),
+        lambda **kwargs: GeneratedLeanFile(
+            path=generated_file,
+            proof_theorem_used=None,
+            actions_are_swapped=False,
+        ),
     )
     monkeypatch.setattr(
         matchup_service,

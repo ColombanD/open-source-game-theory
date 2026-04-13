@@ -4,28 +4,28 @@ from pd_runner.lean.generator import write_matchup_lean_file
 
 
 def test_write_matchup_lean_file(tmp_path: Path) -> None:
-    generated = write_matchup_lean_file(tmp_path, "cooperateBot", "defectBot")
+    generated = write_matchup_lean_file(tmp_path, "dBot", "defectBot")
     content = generated.path.read_text(encoding="utf-8")
 
     assert generated.path.exists()
-    assert "import PrisonersDilemma.Proofs.OpenSourceBots" in content
-    assert generated.proof_theorem_used == "PD.Proofs.OpenSourceBots.cd_actionClaim"
-    assert "exact cd_actionClaim" in content
-    assert "#eval playActions Bot.cooperateBot Bot.defectBot" in content
+    assert "import PrisonersDilemma.Models.BotUniverse" in content
+    assert generated.proof_theorem_used == "PD.Proofs.DBot.dbot_vs_defect_actionClaim"
+    assert "exact PD.Proofs.DBot.dbot_vs_defect_actionClaim" in content
+    assert "#eval playActions Bot.dBot Bot.defectBot" in content
 
 
 def test_write_matchup_lean_file_uses_preproved_theorem(tmp_path: Path) -> None:
     generated = write_matchup_lean_file(
         tmp_path,
-        "cooperateBot",
+        "dBot",
         "defectBot",
         claim_left_action="C",
         claim_right_action="D",
     )
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PD.Proofs.OpenSourceBots.cd_actionClaim"
-    assert "exact cd_actionClaim" in content
+    assert generated.proof_theorem_used == "PD.Proofs.DBot.dbot_vs_defect_actionClaim"
+    assert "exact PD.Proofs.DBot.dbot_vs_defect_actionClaim" in content
 
 
 def test_write_matchup_lean_file_falls_back_to_generated_proof(tmp_path: Path) -> None:

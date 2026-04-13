@@ -1,0 +1,309 @@
+\documentclass[t,11pt]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{xspace}
+\usepackage{textcomp}
+
+
+\usepackage[backend=biber,style=alphabetic]{biblatex}
+\addbibresource{references.bib}
+
+% Disable small caps in bibliography to avoid font warnings
+\renewcommand{\mkbibacro}[1]{#1}
+
+% Define colors
+\definecolor{darkblue}{rgb}{0.1, 0.2, 0.5}
+\definecolor{codegray}{gray}{0.95}
+\definecolor{codegreen}{rgb}{0, 0.6, 0}
+\definecolor{codepurple}{rgb}{0.58, 0, 0.82}
+
+% Code listings
+\lstset{
+  language=python,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codegray},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{darkblue},
+  stringstyle=\color{codepurple},
+  breaklines=true,
+  showstringspaces=false,
+  frame=single,
+  rulecolor=\color{gray}
+}
+
+% Custom commands
+\newcommand{\lean}{\texttt{Lean 4}\xspace}
+\newcommand{\python}{\texttt{Python}\xspace}
+\newcommand{\pd}{Prisoner's Dilemma\xspace}
+
+% Title page
+\title{Open Source Game Theory}
+\subtitle{Formal Verification of Bot Strategies in \pd}
+\author{Colomban Duclaux}
+\institute{ETH Zurich}
+\date{April 2026}
+
+\begin{document}
+
+% Title slide
+\frame{\titlepage}
+
+% Slide 2: Table of Contents
+\begin{frame}
+  \frametitle{Outline}
+  \tableofcontents
+\end{frame}
+
+% Section 1: Open Source Game Theory
+\section{Open Source Game Theory}
+
+\begin{frame}
+  \frametitle{What is Open Source Game Theory?}
+
+  \textbf{Starting Observation:} In traditional game theory, players choose actions without knowledge of opponent's strategy. This often leads to non-cooperative equilibria (e.g., (D, D) in Prisoner's Dilemma).
+  
+  \vspace{0.2cm}
+  
+  \textbf{Open Source Game Theory:} Players submit \emph{programs} that can read opponent's source code. These programs then output actions.
+  
+  \vspace{0.3cm}
+  
+  \begin{center}
+    \begin{tabular}{cc}
+      \hline
+      \textbf{Standard PD} & \textbf{Open Source PD} \\
+      \hline
+      Player chooses C or D & Player submits code \\
+      Limited by payoff matrix & Code reads opponent's source \\
+      Nash: (D,D) & Possible Nash: (C,C) \\
+      \hline
+    \end{tabular}
+  \end{center}
+  
+  \vspace{0.5cm}
+  
+  \small\textit{Key insight:} Access to source code enables more complex strategies and can make cooperation a Nash equilibrium.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Setting: Agents and Outcomes}
+  
+  An agent is a function that reads opponent source and outputs an action:
+  
+  \begin{center}
+    \begin{lstlisting}
+def agent(opp.source):
+    # read opp.source, make decision
+    return action  # C or D
+    \end{lstlisting}
+  \end{center}
+  
+  The outcome of two agents is:
+  
+  \begin{center}
+    \begin{lstlisting}
+outcome(A, B) = (A(B.source), B(A.source))
+    \end{lstlisting}
+  \end{center}
+  
+  \small\textbf{Question:} How do we design agents that achieve cooperation? How do we verify their behavior?
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Examples of simple Agents}
+  
+  \small{\textbf{CooperateBot:}}
+  \begin{center}
+    \begin{lstlisting}
+def CooperateBot(opp.source): # Always cooperate
+    return C
+    \end{lstlisting}
+
+  \end{center}
+
+  \vspace{0.3cm}
+  \small{\textbf{MirrorBot:}}
+  \begin{center}
+    \begin{lstlisting}
+def MirrorBot(opp.source):
+    if outcome(opp, CooperateBot) == (C, C):
+        return C  # Cooperate if opponent cooperates with CooperateBot
+    else:
+      if outcome(opp, DefectBot) == (D, D):
+          return D # Defect if opponent defects with DefectBot
+      else:
+          return C
+    \end{lstlisting}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Two Approaches in Open Source Game Theory}
+  
+  As seen with MirrorBot, we need to be able to reason about the opponent's behavior, e.g. 
+
+  \[\texttt{outcome}(\texttt{opp}, \texttt{CooperateBot})\]
+
+  \vspace{0.6cm}
+
+  Two main approaches to this:
+
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \textbf{Simulation-based:}
+    \begin{itemize}
+      \item Agents simulate opponent behavior
+      \item More heuristic, less rigorous
+    \end{itemize}
+    
+    \column{0.5\textwidth}
+    \textbf{Proof-based:}
+    \begin{itemize}
+      \item Agents use formal verification, and search for proofs of opponent behavior
+      \item Rigorous but computationally harder
+    \end{itemize}
+  \end{columns}
+  
+  \vspace{0.5cm}
+  
+  \small\textit{This project focuses on proof-based agents.}
+\end{frame}
+
+\section{Formal Verification Framework}
+\begin{frame}[fragile]
+  \frametitle{Proof-based Agents}
+  \textbf{Key idea:} Agents can perform a proof search on opponent's source code to determine their likely action.
+
+  To do this, they will need to have a proof search procedure that can analyze the opponent's code and find proofs of certain statements about their behavior:
+  \vspace{0.3cm}
+  \begin{center}
+    \begin{lstlisting}
+def proof_search(opp.source, statement):
+    # Analyze source code to find proof of statement
+    return True or False # depending on whether proof is found
+    \end{lstlisting}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A more complex example}
+  \textbf{CUPOD:} "Cooperate Unless Proof Of Defection"
+
+  \begin{center}
+    \begin{lstlisting}
+      def CUPOD(opp.source):
+          if proof_search(opp.source, "opp(CUPOD.source) == D"):
+              return D
+          else:
+              return C
+    \end{lstlisting}
+  \end{center}
+
+  \vspace{0.5cm}
+
+  \vspace{0.3cm}
+  \textit{Problem: What happens when we try to play CUPOD vs CUPOD?}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Problem of the Recursion Loop}
+
+  \textbf{Challenge:} If agents can read each other's source code, they can also read each other's proof search process. This creates a recursion loop:
+\begin{center}
+\begin{tikzpicture}[node distance=4cm, auto]
+  \node (A) {Agent A};
+  \node (B) [right of=A] {Agent B};
+  \draw[->] (A) to node {reads source} (B);
+  \draw[->] (B) to node {reads source} (A);
+  \draw[->] (A) to [bend left] node {proof search} (B);
+  \draw[->] (B) to [bend left] node {proof search} (A);
+\end{tikzpicture}
+\end{center}
+  \vspace{0.3cm}
+  \textbf{Implication:} Agents must reason about the opponent's reasoning about their reasoning, and so on. This can lead to infinite regress if not handled carefully.
+
+  \vspace{0.3cm}
+
+  \textit{Solution:} \cite{critch2022cooperativeuncooperativeinstitutiondesigns} uses modal logic and fixed-point theorems to resolve this recursion and determine stable outcomes. 
+\end{frame}
+
+\section{Our Project}
+\begin{frame}
+  \frametitle{Goals of this project}
+  The main limitation of \cite{critch2022cooperativeuncooperativeinstitutiondesigns} is that it is purely theoretical: e.g. they prove mathematically that 
+  \[\texttt{outcome}(\texttt{CUPOD}, \texttt{CUPOD}) = (D, D)\]
+  
+  \vspace{0.4cm}
+  We want to implement these proof-based agents and verify their behavior in practice.
+
+
+  \vspace{0.5cm}
+
+  \textbf{Main objectives:}
+  \begin{itemize}
+    \item Implement core proof-based agents of the Prisoner's Dilemma and verify their behavior in a formal proof assistant (\lean).
+    \item Verify the results of \cite{critch2022cooperativeuncooperativeinstitutiondesigns} by integrating modal logic and fixed-point reasoning into our implementation.
+  \end{itemize}
+
+  \end{frame}
+
+
+\begin{frame}
+  \frametitle{Our Architecture}
+
+  % Add an image
+  \begin{center}
+    \includegraphics[width=0.85\textwidth]{images/Pipeline Figure.jpeg}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Lean Engine}
+  
+  \textbf{Conceptually:}
+  \begin{enumerate}
+    \item \textbf{Formalize agent semantics}: Define how agents read and evaluate opponent source code
+    \item \textbf{Define ActionClaim}: A theorem that states "Agent A and B produce actions X and Y"
+    \item \textbf{Prove by computation}: Unfold agent definitions and let the proof checker verify the outcome
+    \item \textbf{Cache theorems}: Store proven results for instant lookup
+  \end{enumerate}
+  
+  \vspace{0.4cm}
+  
+  \textbf{Result:} We can definitively say that outcome(CUPOD, CUPOD) = (D, D) with mathematical certainty.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Future Directions}
+
+  \begin{itemize}
+    \item Explore generalizations of these results to more complex agents and reasoning processes.
+    \vspace{0.2cm}
+    \item Extend the framework to other games beyond the Prisoner's Dilemma.
+    \vspace{0.2cm}
+    \item Evaluate the practical implications of proof-based agents in real-world scenarios, such as multi-agent systems and AI safety.
+    \vspace{0.2cm}
+    \item Use language models as proof assistants by providing Lean proof templates and testing whether they can complete them reliably.
+  \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}[allowframebreaks]
+  \frametitle{References}
+  \printbibliography
+\end{frame}
+
+\end{document}
