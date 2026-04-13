@@ -45,6 +45,11 @@ The default proving strategy is action-first:
 		- `ActionClaim`
 		- `OutcomeClaim`
 
+### Tutorials
+
+- `PrisonersDilemma/Tutorial-DBotFlow.md`
+	- Step-by-step walkthrough of the D-bot strategy and proof workflow.
+
 ### Models
 
 - `PrisonersDilemma/Models/Bots/CooperateBot.lean`
@@ -56,8 +61,20 @@ The default proving strategy is action-first:
 - `PrisonersDilemma/Models/Bots/DBot.lean`
 	- Strategy/source/action definitions for a conditional bot that defects against cooperate-tagged source and cooperates otherwise.
 
+- `PrisonersDilemma/Models/Bots/EBot.lean`
+	- Strategy/source/action definitions for the E-bot strategy.
+
+- `PrisonersDilemma/Models/Bots/MirrorBot.lean`
+	- Strategy/source/action definitions for a mirroring bot strategy.
+
+- `PrisonersDilemma/Models/Bots/OBot.lean`
+	- Strategy/source/action definitions for the O-bot strategy.
+
+- `PrisonersDilemma/Models/Bots/TitForTatBot.lean`
+	- Strategy/source/action definitions for the Tit-for-Tat strategy.
+
 - `PrisonersDilemma/Models/BotUniverse.lean`
-	- Shared `Bot` type (`cooperateBot`, `defectBot`, `dBot`).
+	- Shared `Bot` type (`cooperateBot`, `defectBot`, `dBot`, `eBot`, `mirrorBot`, `oBot`, `titForTatBot`).
 	- `ProgramModel` instance via:
 		- `botSource`
 		- `botEvalSource`
@@ -72,7 +89,19 @@ The default proving strategy is action-first:
 	- Proves `DefectBot.action` is always `D`.
 
 - `PrisonersDilemma/Proofs/DBot.lean`
-	- Proves pipeline-level `ActionClaim` results for key matchups in the shared bot universe.
+	- Proves pipeline-level `ActionClaim` results for key matchups with the D-bot strategy.
+
+- `PrisonersDilemma/Proofs/Ebot.lean`
+	- Proves pipeline-level `ActionClaim` results for key matchups with the E-bot strategy.
+
+- `PrisonersDilemma/Proofs/MirrorBot.lean`
+	- Proves pipeline-level `ActionClaim` results for key matchups with the mirroring bot strategy.
+
+- `PrisonersDilemma/Proofs/OBot.lean`
+	- Proves pipeline-level `ActionClaim` results for key matchups with the O-bot strategy.
+
+- `PrisonersDilemma/Proofs/TitForTatBot.lean`
+	- Proves pipeline-level `ActionClaim` results for key matchups with the Tit-for-Tat strategy.
 
 ### Research material (non-code)
 
@@ -94,7 +123,8 @@ the main code path.
 **ActionClaim** is the foundational concept: it captures the semantic fact "when program X plays program Y, what actions do they choose?"
 
 ```lean
-def ActionClaim (left right : Prog) (leftAction rightAction : Action) : Prop :=
+def ActionClaim {Prog : Type} [ProgramModel Prog]
+    (left right : Prog) (leftAction rightAction : Action) : Prop :=
   playActions left right = (leftAction, rightAction)
 ```
 
@@ -113,8 +143,12 @@ theorem dbot_vs_cooperate_actionClaim :
   unfold ActionClaim playActions
   change (botEvalSource Bot.dBot (botSource Bot.cooperateBot),
     botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
-	simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-		PD.Models.Bots.CooperateBot.action, PD.Models.Bots.CooperateBot.strategy]
+  unfold botEvalSource
+  simp
+  unfold getBotData
+  simp
+  unfold evalActionExpr' evalActionExpr
+  simp
 ```
 
 **Key insight:** ActionClaim is your **stopping point** if you only care about what programs do. Payoffs and outcomes are optional layers on top.

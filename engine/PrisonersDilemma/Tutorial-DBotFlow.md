@@ -8,9 +8,16 @@ This note explains the DBot vs CooperateBot proof flow using the pipeline-native
 theorem dbot_vs_cooperate_actionClaim :
     ActionClaim Bot.dBot Bot.cooperateBot D C := by
   unfold ActionClaim playActions
-  change (botEvalSource Bot.dBot (botSource Bot.cooperateBot), botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
-  simp [botEvalSource, botSource, action, strategy, actionFor, evalActionExpr,
-    PD.Models.Bots.CooperateBot.action, PD.Models.Bots.CooperateBot.strategy]
+  change (botEvalSource Bot.dBot (botSource Bot.cooperateBot),
+    botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
+  unfold botEvalSource
+  simp
+  unfold getBotData
+  simp
+  unfold evalActionExpr' evalActionExpr
+  simp
+  unfold probeOpponent evalActionExpr
+  simp
 ```
 
 ### What `ActionClaim` means
@@ -94,6 +101,12 @@ but this is false. It should be `= C`, because `cooperateStrategy` is `ActionExp
 
 ### Why `unfold`, `change`, and `simp` are all used
 
-- `unfold`: opens high-level wrappers (`ActionClaim`, `playActions`) so you can see the real goal.
+- `unfold`: opens high-level wrappers or definitions so you can inspect internals.
 - `change`: rewrites the goal into an equivalent but easier-to-simplify shape.
-- `simp`: executes definitional computation and rewriting until both sides match.
+- `simp`: executes definitional computation and rewriting until stuck.
+
+The proof uses **multiple cycles** of `unfold` followed by `simp`:
+1. First unfold high-level constructs (`ActionClaim`, `playActions`, `botEvalSource`)
+2. Simplify away what you can
+3. Recognize the next layer that needs unfolding (`getBotData`, `evalActionExpr'`, etc.)
+4. Repeat until both sides match computationally
