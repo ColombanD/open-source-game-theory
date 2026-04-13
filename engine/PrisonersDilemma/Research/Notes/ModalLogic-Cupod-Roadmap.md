@@ -4,124 +4,70 @@ Date: 2026-04-13
 Project: open-source-game-theory (Lean engine)
 
 ## Goal
-Formally verify a Theorem 3.4 style result for CUPOD self-play (for sufficiently large k, CUPOD(k) vs CUPOD(k) yields D,D), using a staged path through Parametric Bounded Lob Theorem (PBLT / Lemma 3.6).
+Formally verify a Theorem 3.4 style result for CUPOD self-play (for sufficiently large k, CUPOD(k) vs CUPOD(k) yields D,D), while reusing the FormalizedFormalLogic/Foundation library as much as possible for modal logic, provability logic, completeness, and boxdot-style translation.
 
 ## Strategy Decision (Locked)
-We will use a hybrid top-down approach:
-1. Build end-to-end CUPOD theorem flow early using explicit assumptions/interfaces.
-2. Keep assumptions minimal and visible.
-3. Replace assumptions progressively with deeper modal/provability formalization.
+We will use a hybrid top-down approach with Foundation as the backend:
+1. Reuse Foundation's modal/provability logic infrastructure instead of rebuilding modal logic from scratch.
+2. Keep the CUPOD theorem flow explicit and small at the engine level.
+3. Add only the smallest local glue needed to connect Critch-style statements to Foundation's existing theorems.
+4. Replace any temporary assumptions with proofs only if Foundation does not already provide the needed theorem.
 
-This gives fast traction without sacrificing long-term rigor.
+This gives fast traction while preserving rigor and minimizing duplicate formalization.
 
 ## Scope and Non-Goals
 In scope:
-- Lean architecture for bounded provability and modal-style reasoning hooks.
-- CUPOD bot model integration into existing engine structure.
-- Theorem pipeline from PBLT assumptions to CUPOD self-play claim.
+- Integration planning around Foundation's modal logic, provability logic, GL, Grz, boxdot, and arithmetical completeness infrastructure.
+- CUPOD bot model integration into the existing engine structure.
+- Theorem pipeline from a Foundation-backed PBLT/Lob-style statement to CUPOD self-play.
+- Minimal compatibility glue between our engine concepts and Foundation's theorem names / abstractions.
 
 Out of scope (for first pass):
+- Reimplementing modal logic or provability logic from first principles unless Foundation proves insufficient.
 - Full low-level encoding of proof strings and exact character-level verifier internals.
-- Complete foundational reconstruction of all metatheory before any CUPOD results.
+- Complete reconstruction of all metatheory before any CUPOD results.
 
 ## Milestones
 
-### Milestone A: Logic Interface Layer
+### Milestone A: Foundation Integration Layer
 Status: [ ] Not started
+Objective: Map the project's needs onto Foundation's existing modal/provability machinery.
 
-Objective:
-- Introduce an abstract interface for bounded provability concepts needed by PBLT.
-
-Deliverables:
-- Lean module namespace for logic/provability abstractions.
-- Definitions for parameterized claims p(k), bounded box-like predicate, and growth assumptions.
-- Minimal axioms/assumptions clearly documented.
-
-Exit criteria:
-- The interface compiles and can be imported by theorem files.
-
-##
-
-### Milestone B: Parametric Bounded Lob Theorem Skeleton
+### Milestone B: Critch-to-Foundation Theorem Shape
 Status: [ ] Not started
+Objective: Identify the theorem shape that plays the role of Lemma 3.6 in the Foundation-backed development.
 
-Objective:
-- State (and possibly partially prove) a Lean theorem matching Lemma 3.6 structure.
-
-Deliverables:
-- Lean theorem statement for PBLT with explicit hypotheses.
-- Proof skeleton that isolates what remains assumed vs proved.
-
-Exit criteria:
-- The theorem is usable as a dependency for CUPOD proofs.
-
-##
-
-### Milestone C: CUPOD Bot Model Integration
+### Milestone C: CUPOD Model Integration
 Status: [ ] Not started
+Objective: Add CUPOD to the bot layer in a way that plays nicely with the existing engine and the Foundation-backed theorem plan.
 
-Objective:
-- Add CUPOD model in the bot layer and align with ProgramModel pipeline.
-
-Deliverables:
-- Models/Bots/CupodBot module with strategy and source/action definitions.
-- BotUniverse integration path (or parallel universe if cleaner during transition).
-
-Exit criteria:
-- CUPOD can participate in playActions / ActionClaim statements.
-
-##
-
-### Milestone D: Theorem 3.4-Style Result from PBLT
+### Milestone D: Cupod Self-Play Theorem
 Status: [ ] Not started
+Objective: Derive the Theorem 3.4-style conclusion for Cupod self-play using the Foundation-backed theorem shape.
 
-Objective:
-- Instantiate PBLT with CUPOD-specific p(k) and f(k)=k assumptions.
-
-Deliverables:
-- Proof file deriving eventual-defection self-play claim for CUPOD.
-- Lean statement aligned with "for sufficiently large k" style.
-
-Exit criteria:
-- Compiling theorem that formalizes the target high-level claim under current assumptions.
-
-##
-
-### Milestone E: Assumption Discharge and Strengthening
+### Milestone E: Foundation Gap Closure
 Status: [ ] Not started
+Objective: Replace any temporary assumptions or wrappers with existing Foundation theorems, or isolate the minimal missing lemmas as local extensions.
 
-Objective:
-- Replace abstract assumptions with concrete formalization where feasible.
-
-Deliverables:
-- Reduced axiom surface.
-- Documentation of remaining trusted assumptions and why.
-
-Exit criteria:
-- A tighter, more foundational development than Milestone D with explicit trust boundary.
+### Milestone F: Optional Local Extensions
+Status: [ ] Not started
+Objective: Add only the smallest local extensions needed if Foundation is almost enough but not quite.
 
 ## Working Conventions
+- Foundation is the default source of truth for modal/provability logic.
 - Action-first theorem workflow remains default.
-- Keep modal/provability files isolated from existing bot proofs to reduce churn.
-- Every assumption must be named and justified in comments/docs.
+- Keep Cupod-specific code isolated from proof infrastructure.
+- Every assumption or wrapper must be named and justified in comments/docs.
 - Prefer small, composable lemmas over monolithic proofs.
-
-## Suggested File Layout (Planned)
-- PrisonersDilemma/Logic/
-  - Provability.lean
-  - BoundedLob.lean
-  - FixedPoint.lean (optional, if needed)
-- PrisonersDilemma/Models/Bots/
-  - CupodBot.lean
-- PrisonersDilemma/Proofs/
-  - Cupod.lean
+- If Foundation already proves a fact, use it rather than re-proving it locally.
 
 ## Tracking Table
-- [ ] A. Logic interface compiles
-- [ ] B. PBLT statement available to downstream proofs
+- [ ] A. Foundation integration layer mapped
+- [ ] B. PBLT/theorem-shape identified inside Foundation ecosystem
 - [ ] C. CUPOD model integrated with pipeline
-- [ ] D. Theorem 3.4 style result formalized (assumption-aware)
-- [ ] E. Assumptions reduced / trust boundary documented
+- [ ] D. Theorem 3.4 style result formalized
+- [ ] E. Remaining gaps documented or closed
+- [ ] F. Any local extensions minimized
 
 ## Immediate Next Step
-Start Milestone A by drafting theorem/definition signatures first (no heavy proofs), then iterate on the smallest assumption set needed by Milestone B.
+Start Milestone A by making a precise mapping table from our project concepts to the Foundation modules and theorems that look most relevant, then decide whether we depend on Foundation directly or vendor a subset.
