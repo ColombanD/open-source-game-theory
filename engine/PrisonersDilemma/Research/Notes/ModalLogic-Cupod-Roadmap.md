@@ -34,7 +34,7 @@ Status: [x] complete
 Objective: Map the project's needs onto Foundation's existing modal/provability machinery.
 
 ### Milestone B: Critch-to-Foundation Theorem Shape
-Status: [ ] Not started
+Status: [x] complete
 Objective: Identify the theorem shape that plays the role of Lemma 3.6 in the Foundation-backed development.
 
 ### Milestone C: CUPOD Model Integration
@@ -63,11 +63,11 @@ Objective: Add only the smallest local extensions needed if Foundation is almost
 
 ## Tracking Table
 - [x] A. Foundation integration layer mapped
-- [ ] B. PBLT/theorem-shape identified inside Foundation ecosystem
+- [x] B. PBLT/theorem-shape identified inside Foundation ecosystem
 - [ ] C. CUPOD model integrated with pipeline
 - [ ] D. Theorem 3.4 style result formalized
 - [ ] E. Remaining gaps documented or closed
 - [ ] F. Any local extensions minimized
 
 ## Immediate Next Step
-Start Milestone B by tightening the theorem shape that plays the role of Lemma 3.6 inside the Foundation-backed development, using the completed Milestone A mapping, dependency decision, and build-verified Foundation integration.
+Start Milestone C by integrating CUPOD into the bot and proof pipeline against the Milestone B theorem-shape contract, while keeping any unresolved parameterization details tracked for E/F closure.
