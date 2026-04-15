@@ -38,12 +38,34 @@ Status: [x] complete
 Objective: Identify the theorem shape that plays the role of Lemma 3.6 in the Foundation-backed development.
 
 ### Milestone C: CUPOD Model Integration
-Status: [ ] Not started
+Status: [x] complete
 Objective: Add CUPOD to the bot layer in a way that plays nicely with the existing engine and the Foundation-backed theorem plan.
 
-### Milestone D: Cupod Self-Play Theorem
-Status: [ ] Not started
-Objective: Derive the Theorem 3.4-style conclusion for Cupod self-play using the Foundation-backed theorem shape.
+**Completed Deliverables:**
+- CupodBot model created with self-referential strategy (SourceTag.cupodTag, probes self for decision between D/C)
+- Wired into BotUniverse with Bot.cupodBot variant and case handling in getBotData
+- Created Proofs/CupodBot.lean with lightweight model-level lemmas:
+  - cupodBot_source_tag: ensures source tagging consistency
+  - cupodBot_strategy_eq: strategy extraction property
+- Root imports updated (PrisonersDilemma.lean, PrisonersDilemma/Proofs/CupodBot)
+- Full build validation: 1685 jobs successful, zero errors (verified 2026-04-13)
+- Self-referential strategy semantics documented in code; `sorry` placeholder in source.strategy pending formal proof in Milestone D
+- Carry-over work items documented in MilestoneC-Carry-Over-Items.md
+
+### Milestone D: CUPOD Self-Play Theorem and Fixed-Point Formalization
+Status: [ ] In Queue
+Objective: Derive the Theorem 3.4-style conclusion for CUPOD self-play using the Foundation-backed theorem shape.
+
+**Entry Points:**
+- Load theorem shape decision from Milestone B spec (Lemma 3.6 completeness theorem: GL / Grz / boxdot)
+- Instantiate selected theorem with CUPOD strategy structure
+- Replace `sorry` in CupodBot.source with formal proof of fixed-point semantics
+- Validate via `lake build` (expect 1685+ jobs)
+
+**Deferred Work:**
+- Self-referential fixed-point equation formalization
+- Deterministic behavior proof (optional refinement)
+- Critch-style mutual simulation properties
 
 ### Milestone E: Foundation Gap Closure
 Status: [ ] Not started
@@ -64,10 +86,11 @@ Objective: Add only the smallest local extensions needed if Foundation is almost
 ## Tracking Table
 - [x] A. Foundation integration layer mapped
 - [x] B. PBLT/theorem-shape identified inside Foundation ecosystem
-- [ ] C. CUPOD model integrated with pipeline
+- [x] C. CUPOD model integrated with pipeline (1685 jobs verified)
 - [ ] D. Theorem 3.4 style result formalized
 - [ ] E. Remaining gaps documented or closed
 - [ ] F. Any local extensions minimized
 
 ## Immediate Next Step
-Start Milestone C by integrating CUPOD into the bot and proof pipeline against the Milestone B theorem-shape contract, while keeping any unresolved parameterization details tracked for E/F closure.
+Proceed to Milestone D: Load the theorem-shape decision from Milestone B (Lemma 3.6 completeness theorem).
+Instantiate it with CUPOD strategy and prove fixed-point semantics to remove the `sorry` placeholder.

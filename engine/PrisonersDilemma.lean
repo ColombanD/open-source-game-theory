@@ -13,8 +13,10 @@ import PrisonersDilemma.Models.Bots.DefectBot
 import PrisonersDilemma.Models.Bots.DBot
 import PrisonersDilemma.Models.Bots.TitForTatBot
 import PrisonersDilemma.Models.Bots.OBot
+import PrisonersDilemma.Models.Bots.CupodBot
 import PrisonersDilemma.Proofs.CooperateBot
 import PrisonersDilemma.Proofs.DefectBot
 import PrisonersDilemma.Proofs.DBot
 import PrisonersDilemma.Proofs.TitForTatBot
 import PrisonersDilemma.Proofs.OBot
+import PrisonersDilemma.Proofs.CupodBot

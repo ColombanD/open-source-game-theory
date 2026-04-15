@@ -24,6 +24,7 @@ inductive SourceTag : Type where
   | oBotTag : SourceTag
   | mirrorBotTag : SourceTag
   | eBotTag : SourceTag
+  | cupodTag : SourceTag
   deriving DecidableEq, Repr
 
 mutual

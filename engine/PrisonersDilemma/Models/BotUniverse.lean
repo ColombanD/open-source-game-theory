@@ -5,6 +5,7 @@ import PrisonersDilemma.Models.Bots.TitForTatBot
 import PrisonersDilemma.Models.Bots.OBot
 import PrisonersDilemma.Models.Bots.EBot
 import PrisonersDilemma.Models.Bots.MirrorBot
+import PrisonersDilemma.Models.Bots.CupodBot
 
 namespace PD.Models.BotUniverse
 
@@ -18,6 +19,7 @@ open PD.Models.Bots.DBot
 open PD.Models.Bots.OBot
 open PD.Models.Bots.EBot
 open PD.Models.Bots.MirrorBot
+open PD.Models.Bots.CupodBot
 
 
 /-- Shared bot universe for the pipeline-native matchup model. -/
@@ -29,6 +31,7 @@ inductive Bot : Type where
   | oBot : Bot
   | mirrorBot : Bot
   | eBot : Bot
+  | cupodBot : Bot
   deriving DecidableEq, Repr
 
 /-- Data structure holding both source and action for a bot. -/
@@ -59,6 +62,9 @@ def getBotData : Bot → BotData
   | Bot.eBot => {
       source := PD.Models.Bots.EBot.source,
       action := PD.Models.Bots.EBot.action }
+  | Bot.cupodBot => {
+      source := PD.Models.Bots.CupodBot.source,
+      action := PD.Models.Bots.CupodBot.action }
 
 /-- Generic lookup functions. -/
 @[simp]
