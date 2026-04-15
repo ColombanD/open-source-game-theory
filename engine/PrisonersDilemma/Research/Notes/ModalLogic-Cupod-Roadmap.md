@@ -30,7 +30,7 @@ Out of scope (for first pass):
 ## Milestones
 
 ### Milestone A: Foundation Integration Layer
-Status: [ ] Not started
+Status: [x] complete
 Objective: Map the project's needs onto Foundation's existing modal/provability machinery.
 
 ### Milestone B: Critch-to-Foundation Theorem Shape
@@ -62,7 +62,7 @@ Objective: Add only the smallest local extensions needed if Foundation is almost
 - If Foundation already proves a fact, use it rather than re-proving it locally.
 
 ## Tracking Table
-- [ ] A. Foundation integration layer mapped
+- [x] A. Foundation integration layer mapped
 - [ ] B. PBLT/theorem-shape identified inside Foundation ecosystem
 - [ ] C. CUPOD model integrated with pipeline
 - [ ] D. Theorem 3.4 style result formalized
@@ -70,4 +70,4 @@ Objective: Add only the smallest local extensions needed if Foundation is almost
 - [ ] F. Any local extensions minimized
 
 ## Immediate Next Step
-Start Milestone A by making a precise mapping table from our project concepts to the Foundation modules and theorems that look most relevant, then decide whether we depend on Foundation directly or vendor a subset.
+Start Milestone B by tightening the theorem shape that plays the role of Lemma 3.6 inside the Foundation-backed development, using the completed Milestone A mapping, dependency decision, and build-verified Foundation integration.

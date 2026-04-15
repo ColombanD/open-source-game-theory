@@ -1,5 +1,9 @@
 -- This module serves as the root of the `PrisonersDilemma` library.
 -- Import modules here that should be built as part of the library.
+
+-- Foundation integration layer (Milestone A dependency)
+import Foundation
+
 import PrisonersDilemma.Core
 import PrisonersDilemma.Pipeline
 import PrisonersDilemma.StrategyDSL
