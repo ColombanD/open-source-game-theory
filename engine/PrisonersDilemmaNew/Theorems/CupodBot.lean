@@ -11,7 +11,6 @@ open PDNew.Bots
 namespace PDNew.Theorems
 
 
--- Lemma 3: therefore the oracle must return `false` on that formula.
 -- This is the contrapositive of soundness, wrapped in a bool case split.
 theorem guard_false (k : Nat) :
     proofSearch k (.plays CooperateBot (CupodBot k) .D) = false := by
