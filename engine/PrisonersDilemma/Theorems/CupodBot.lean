@@ -21,6 +21,7 @@ theorem guard_false (k : Nat) :
                           (interp_CooperateBot_plays_D_false _)
   | false => rfl
 
+
 theorem guard_true (n: Nat) :
     ∃ k, (proofSearch k (.plays DefectBot (CupodBot n) .D) = true) := by
   have h3 := proofSearch_complete
@@ -35,11 +36,21 @@ theorem guard_true (n: Nat) :
   exists k
 
 /-- Monotonicity of CUPOD bot: If the proof search succeeds with less fuel, it also succeeds with more fuel -/
-theorem CUPOD_monotonicity (k₁ k₂ : Nat) (bot : Prog) (a : Action) :
-    k₁ ≤ k₂ → proofSearch k₁ (.plays bot (CupodBot k₁) a) = true → proofSearch k₂ (.plays bot (CupodBot k₂) a) = true := sorry
+theorem CUPOD_monotonicity (n k : Nat) (bot : Prog) (a : Action) :
+    n ≤ k →
+    proofSearch k (.plays bot (CupodBot n) a) = true →
+    proofSearch k (.plays bot (CupodBot k) a) = true := sorry
 
 theorem guard_true_same_k :
-  ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true := sorry
+    ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true := by
+  have h := guard_true
+  obtain ⟨k, hk⟩ := h 0 -- we can pick any n, so we pick 0 for simplicity; k is the corresponding k from the lemma.
+  refine ⟨k, ?_⟩ -- use the same k for the conclusion
+  exact CUPOD_monotonicity 0 k DefectBot .D (Nat.zero_le k) hk
+
+  -- split the cases on whether k is less than n or not.
+  -- If k < n, then we can use monotonicity of proofsearch to show that the proof search also succeeds for k.
+  -- If k >= n, then we use monotonicity of Cupod: if Cupod(n) is succesful, then so is Cupod(n + m) for any m.
 
 /-- An example of the formula being incorect -/
 theorem CUPOD_vs_CB (k fuel : Nat):
@@ -60,7 +71,20 @@ theorem CUPOD_vs_CB (k fuel : Nat):
   simp [outcome, hA, hB]
 
 /-- An example of the formula being correct -/
-theorem CUPOD_vs_DB (k fuel : Nat):
-  outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := sorry
+theorem CUPOD_vs_DB (fuel : Nat):
+    ∃ k, outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := by
+  obtain ⟨k, hk⟩ := guard_true_same_k
+  refine ⟨k, ?_⟩
+
+  have hA : play (fuel + 2) (CupodBot k) DefectBot = some .D := by
+    show eval (fuel + 2) (CupodBot k) DefectBot (CupodBot k) = some .D
+    unfold CupodBot at hk ⊢
+    simp [eval, Prog.subst, Formula.subst, hk]
+
+  have hB : play (fuel + 2) DefectBot (CupodBot k) = some .D := by
+    simpa [Nat.add_assoc] using (play_DefectBot (fuel + 1) (CupodBot k))
+
+  simp [outcome, hA, hB]
+
 
 end PDNew.Theorems
