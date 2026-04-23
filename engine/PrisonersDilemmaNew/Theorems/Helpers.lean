@@ -14,6 +14,7 @@ theorem play_from_eval (fuel : Nat) (me opponent : Prog) (a : Action)
 Generic one-step helper for `ite` programs: if `me` is an `ite` and you know
 the guard value at fuel `fuel + n`, this theorem rewrites
 `play (fuel + n + 1) me opponent` to the corresponding branch evaluation.
+If guardAct == test, then use p as body, else use q
 -/
 theorem play_ite_from_guard
     (fuel n : Nat)

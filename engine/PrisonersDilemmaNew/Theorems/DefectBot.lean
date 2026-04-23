@@ -13,15 +13,11 @@ theorem play_DefectBot (n : Nat) (opponent : Prog) :
     unfold play eval DefectBot
     simp
 
--- The interpretation "DB plays C against q" is false.
--- This is the semantic content the soundness axiom will consume.
-theorem interp_DefectBot_plays_C_false (q : Prog) :
-    ¬ (Formula.plays DefectBot q .C).interp := by
-  rintro ⟨n, hn⟩
-  cases n with
-  | zero   => simp [play, eval] at hn
-  | succ m =>
-      rw [play_DefectBot] at hn
-      cases hn                -- some .D = some .C : impossible
+-- The interpretation "DB plays D against q" is true.
+-- This is the semantic content the completeness axiom will consume.
+theorem interp_DefectBot_plays_D_true (q : Prog) :
+    (Formula.plays DefectBot q .D).interp := by
+  unfold Formula.interp
+  exists 1
 
 end PDNew.Theorems

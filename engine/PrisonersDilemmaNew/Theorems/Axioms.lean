@@ -8,6 +8,14 @@ namespace PDNew.Axioms
 axiom proofSearch_sound :
   ∀ k φ, proofSearch k φ = true → φ.interp
 
+-- Completeness of bounded proof search: if the formula is semantically true, then the oracle returns `true`.
+axiom proofSearch_complete :
+  ∀ φ, φ.interp → ∃ k, proofSearch k φ = true
+
+-- Monotonicity of bounded proof search: if the oracle returns `true` on a formula with some fuel, then it also returns `true` with more fuel.
+axiom proofSearch_monotone :
+  ∀ k₁ k₂ φ, k₁ ≤ k₂ → proofSearch k₁ φ = true → proofSearch k₂ φ = true
+
 -- Parametric Bounded Löb (stated for completeness; not used below).
 -- `□_{f(k)} φ` is encoded as a distinguished formula constructor in a
 -- fuller development; here we leave it schematic.
