@@ -1,185 +1,184 @@
-# PrisonersDilemma
+# PrisonersDilemmaNew
 
-Lean 4 formalization of Prisoner's Dilemma models and proofs.
+Lean 4 formalization of Prisoner's Dilemma using fuel-bounded program evaluation.
 
 This project provides a modular architecture to:
 
-1. Define reusable game semantics,
-2. Encode program families (bots),
-3. Prove action/outcome claims and game-theoretic properties.
+1. Define executable game programs using inductive syntax,
+2. Evaluate programs under fuel constraints (to ensure termination),
+3. Encode bot strategies with simulation, branching, and oracle reasoning,
+4. Prove action and outcome claims via mechanized verification.
 
 ## Overview
 
-The codebase is organized around a pipeline-native semantics layer:
+The codebase is organized around a **fuel-bounded evaluator** for game programs:
 
-- Core game objects and payoff logic in `Core.lean`,
-- Strategy expression language and evaluators in `StrategyDSL.lean`,
-- Program interaction semantics in `Pipeline.lean`,
-- Concrete bot definitions in `Models/`,
-- Theorem developments in `Proofs/`.
+- Program syntax and substitution in `PrisonersDilemmaNew/Program.lean`,
+- Fuelled evaluation semantics in `PrisonersDilemmaNew/Dynamics.lean`,
+- Bot strategy definitions in `PrisonersDilemmaNew/Bots/`,
+- Theorem developments and helpers in `PrisonersDilemmaNew/Theorems/`.
 
-The default proving strategy is action-first:
+The proving strategy focuses on outcome proofs:
 
-1. Prove the action profile (`ActionClaim`),
-2. Add outcome/payoff theorems (`OutcomeClaim`) only when needed.
+1. Define bot strategies as `Prog` terms,
+2. Establish guard evaluations and simulations,
+3. Prove `play` (single action) and `outcome` (action pair) claims.
 
 ## Folder Map
 
 ### Library entrypoint
 
-- `PrisonersDilemma.lean`
-	- Root import hub for all build targets in this package.
+- `PrisonersDilemmaNew.lean`
+	- Root import hub for all build targets in the new package.
 
 ### Core semantics
 
-- `PrisonersDilemma/Core.lean`
-	- Defines `Action`, `PayoffMatrix`, `Outcome`, `mkOutcome`.
-	- Defines canonical one-shot PD payoff matrix:
-		- `CC = 3`, `CD = 0`, `DC = 5`, `DD = 1`.
+- `PrisonersDilemmaNew/Program.lean`
+	- Defines `Action` (C or D), `Outcome` (action pair), and `Prog` inductive type.
+	- `Prog` variants: `.const`, `.self`, `.opp`, `.sim`, `.ite`, `.search`.
+	- Defines `Formula` for oracle-decidable propositions about programs.
+	- Implements `Prog.subst` and `Formula.subst` for variable capture.
 
-- `PrisonersDilemma/Pipeline.lean`
-	- Defines `ProgramModel` abstraction.
-	- Defines reusable simulation combinators:
-		- `playActions`
-		- `playOutcome`
-		- `ActionClaim`
-		- `OutcomeClaim`
+- `PrisonersDilemmaNew/Dynamics.lean`
+	- Defines fuel-bounded evaluator `eval : Nat → Prog → Prog → Prog → Option Action`.
+	- Axiomatizes `proofSearch : Nat → Formula → Bool` (oracle).
+	- Defines `play : Nat → Prog → Prog → Option Action` (single agent's move).
+	- Defines `outcome : Nat → Prog → Prog → Option Outcome` (both agents' moves).
+	- Defines `Formula.interp` (semantic interpretation of formulas).
 
-### Tutorials
+### Bots
 
-- `PrisonersDilemma/Tutorial-DBotFlow.md`
-	- Step-by-step walkthrough of the D-bot strategy and proof workflow.
+- `PrisonersDilemmaNew/Bots/CooperateBot.lean`
+	- Always-cooperate strategy as `.const Action.C`.
 
-### Models
+- `PrisonersDilemmaNew/Bots/DefectBot.lean`
+	- Always-defect strategy as `.const Action.D`.
 
-- `PrisonersDilemma/Models/Bots/CooperateBot.lean`
-	- Strategy/source/action definitions for an always-cooperate bot.
+- `PrisonersDilemmaNew/Bots/DBot.lean`
+	- Defector bot: probes opponent against CooperateBot, responds to probe result.
 
-- `PrisonersDilemma/Models/Bots/DefectBot.lean`
-	- Strategy/source/action definitions for an always-defect bot.
+- `PrisonersDilemmaNew/Bots/TitForTatBot.lean`
+	- Tit-for-tat bot: probes opponent against CooperateBot, cooperates if probe yields C.
 
-- `PrisonersDilemma/Models/Bots/DBot.lean`
-	- Strategy/source/action definitions for a conditional bot that defects against cooperate-tagged source and cooperates otherwise.
+- `PrisonersDilemmaNew/Bots/OBot.lean`
+	- Opportunistic bot: nested probes (CooperateBot, then DefectBot based on first result).
 
-- `PrisonersDilemma/Models/Bots/EBot.lean`
-	- Strategy/source/action definitions for the E-bot strategy.
+- `PrisonersDilemmaNew/Bots/CupodBot.lean`
+	- Cupod (Cooperative Until Provably Opportunistic Defector) strategy with fuel parameter.
 
-- `PrisonersDilemma/Models/Bots/MirrorBot.lean`
-	- Strategy/source/action definitions for a mirroring bot strategy.
+- `PrisonersDilemmaNew/Bots/DupocBot.lean`
+	- Dupoc (Defector Unless Provably Opportunistic Cooperator) strategy.
 
-- `PrisonersDilemma/Models/Bots/OBot.lean`
-	- Strategy/source/action definitions for the O-bot strategy.
+### Theorems
 
-- `PrisonersDilemma/Models/Bots/TitForTatBot.lean`
-	- Strategy/source/action definitions for the Tit-for-Tat strategy.
+- `PrisonersDilemmaNew/Theorems/Helpers.lean`
+	- Reusable proof helpers:
+		- `play_from_eval`: Lifting eval results to play claims.
+		- `play_ite_from_guard(fuel n)`: Generic helper for if-then-else programs with parametric fuel offset.
 
-- `PrisonersDilemma/Models/BotUniverse.lean`
-	- Shared `Bot` type (`cooperateBot`, `defectBot`, `dBot`, `eBot`, `mirrorBot`, `oBot`, `titForTatBot`).
-	- `ProgramModel` instance via:
-		- `botSource`
-		- `botEvalSource`
-		- `botEval`
+- `PrisonersDilemmaNew/Theorems/CooperateBot.lean`
+	- Proves action claims for CooperateBot (always plays C).
 
-### Proofs
+- `PrisonersDilemmaNew/Theorems/DefectBot.lean`
+	- Proves action claims for DefectBot (always plays D).
 
-- `PrisonersDilemma/Proofs/CooperateBot.lean`
-	- Proves `CooperateBot.action` is always `C`.
+- `PrisonersDilemmaNew/Theorems/DBot.lean`
+	- Proves outcome claims for DBot vs key opponents.
 
-- `PrisonersDilemma/Proofs/DefectBot.lean`
-	- Proves `DefectBot.action` is always `D`.
+- `PrisonersDilemmaNew/Theorems/TitForTatBot.lean`
+	- Proves outcome claims for TitForTatBot vs key opponents.
 
-- `PrisonersDilemma/Proofs/DBot.lean`
-	- Proves pipeline-level `ActionClaim` results for key matchups with the D-bot strategy.
+- `PrisonersDilemmaNew/Theorems/OBot.lean`
+	- Proves outcome claims for OBot (handles nested simulation structure).
 
-- `PrisonersDilemma/Proofs/Ebot.lean`
-	- Proves pipeline-level `ActionClaim` results for key matchups with the E-bot strategy.
+- `PrisonersDilemmaNew/Theorems/CupodBot.lean`
+	- Proves outcome claims for CupodBot with parametrized fuel.
 
-- `PrisonersDilemma/Proofs/MirrorBot.lean`
-	- Proves pipeline-level `ActionClaim` results for key matchups with the mirroring bot strategy.
-
-- `PrisonersDilemma/Proofs/OBot.lean`
-	- Proves pipeline-level `ActionClaim` results for key matchups with the O-bot strategy.
-
-- `PrisonersDilemma/Proofs/TitForTatBot.lean`
-	- Proves pipeline-level `ActionClaim` results for key matchups with the Tit-for-Tat strategy.
-
-### Research material (non-code)
-
-- `PrisonersDilemma/Research/Notes/`
-	- Markdown notes and summaries.
-- `PrisonersDilemma/Research/Readings/`
-	- Papers and extracted text files.
-- `PrisonersDilemma/Research/Data/`
-	- Raw tournament/program data artifacts.
-	- Includes `prisoners_dilemma_tournament_results.scm`.
-
-These files are intentionally separated from Lean modules to reduce clutter in
-the main code path.
+- `PrisonersDilemmaNew/Theorems/Axioms.lean`
+	- Axioms and additional assumptions used across theorem development.
 
 ## Core Concepts
 
-### ActionClaim: The Heart of the Project
+### Program Semantics: The Foundation
 
-**ActionClaim** is the foundational concept: it captures the semantic fact "when program X plays program Y, what actions do they choose?"
+**Programs** are defined inductively in `Prog`:
+- `.const a`: Always play action `a`.
+- `.self`: Evaluate the current program (self-reference).
+- `.opp`: Evaluate the opponent program.
+- `.sim p q`: Simulate program `p` against `q`, then evaluate the result.
+- `.ite b a p q`: If guard `b` evaluates to action `a`, run `p`, else run `q`.
+- `.search k φ p q`: If oracle proves formula `φ`, run `p`, else run `q`.
 
-```lean
-def ActionClaim {Prog : Type} [ProgramModel Prog]
-    (left right : Prog) (leftAction rightAction : Action) : Prop :=
-  playActions left right = (leftAction, rightAction)
-```
+### Evaluation: Fuel-Bounded Execution
 
-**Why ActionClaim is central:**
-- It is the minimal semantic unit: what each program does in a matchup.
-- It is independent of payoffs: action behavior can be proved without matrix details.
-- It is reusable: payoff and higher-level theorems build on these action facts.
+The evaluator `eval : Nat → Prog → Prog → Prog → Option Action` takes:
+- `fuel`: A natural number limiting recursion depth (ensures termination).
+- `me` and `opponent`: The two programs in the matchup.
+- `body`: The program to evaluate (usually `me` itself via `play`).
 
-### ActionClaim Proof Flow
+Returns `Option Action`: `some a` if evaluation succeeds, `none` if fuel exhausted.
 
-Example with the shared bot universe:
+**Key insight:** Fuel parametrization allows reasoning about "how deep" a proof can dig. Higher fuel enables more complex nested simulations.
 
-```lean
-theorem dbot_vs_cooperate_actionClaim :
-    ActionClaim Bot.dBot Bot.cooperateBot D C := by
-  unfold ActionClaim playActions
-  change (botEvalSource Bot.dBot (botSource Bot.cooperateBot),
-    botEvalSource Bot.cooperateBot (botSource Bot.dBot)) = (D, C)
-  unfold botEvalSource
-  simp
-  unfold getBotData
-  simp
-  unfold evalActionExpr' evalActionExpr
-  simp
-```
+### Action and Outcome Claims
 
-**Key insight:** ActionClaim is your **stopping point** if you only care about what programs do. Payoffs and outcomes are optional layers on top.
-
-| Name | Meaning |
+| Term | Meaning |
 |---|---|
-| `Action` | `C` (cooperate) or `D` (defect) |
-| `ActionClaim` | proposition that a matchup yields a specific action pair |
-| `playActions` | computes both players' chosen actions |
-| `canonicalPayoff` | one-shot PD matrix `CC=3, CD=0, DC=5, DD=1` |
-| `OutcomeClaim` | proposition that a matchup yields a specific outcome record (actions + payoffs) |
-| `playOutcome` | lifts action profile into payoff outcome record |
-| `ProgramModel` | how a program chooses an action given opponent source |
+| `play fuel me opp` | Single program `me`'s action when facing `opp` with given `fuel`. |
+| `outcome fuel p q` | Pair `(play fuel p q, play fuel q p)` of both programs' actions. |
+| Theorem proving `play`/`outcome` | Establishes what programs provably do at specific fuel levels. |
+
+### Substitution and Capture Avoidance
+
+`Prog.subst` replaces `.self` and `.opp` references:
+- In bot definitions, we write `.opp` abstractly.
+- During evaluation, `.opp` is substituted with the actual opponent program.
+- This avoids explicit lambda abstractions while enabling higher-order reasoning.
+
+### Nested Simulation and Proof Structuring
+
+Complex bots (e.g., OBot) involve nested `.ite` and `.sim` constructs:
+- **Guard evaluation**: Prove `eval (fuel + n) me opp guard_expr = some guardAct`.
+- **Branch instantiation**: Use `play_ite_from_guard` helper to connect guard result to branch outcome.
+- **Nested structures**: For nested ites, apply the helper recursively at different fuel levels.
 
 ## How To Extend
 
-Recommended process for a new paper/program family:
+Recommended process for adding a new bot strategy:
 
-1. Create `PrisonersDilemma/Models/<Family>.lean`.
-2. Define program syntax and implement `ProgramModel`.
-3. Create `PrisonersDilemma/Proofs/<Family>.lean`.
-4. Prove key `ActionClaim` theorems first.
-5. Add optional `OutcomeClaim`/payoff theorems only if needed.
-6. Add the new model/proof imports to `PrisonersDilemma.lean`.
+1. **Define the bot** in `PrisonersDilemmaNew/Bots/<BotName>.lean`.
+   - Create a `def <botName> : Prog` using the inductive syntax.
+   - Document the strategy in comments.
+
+2. **Create theorems** in `PrisonersDilemmaNew/Theorems/<BotName>.lean`.
+   - Import the bot definition and helper theorems.
+   - Prove `play` (single action) claims at specific fuel levels.
+   - Prove `outcome` (pair action) claims by combining two `play` results.
+
+3. **Reuse helpers** from `PrisonersDilemmaNew/Theorems/Helpers.lean`.
+   - `play_from_eval`: Lift `eval` results to `play` goals.
+   - `play_ite_from_guard(fuel n)`: Handle if-then-else structure with fuel offset `n`.
+
+4. **Manage fuel tracking** carefully.
+   - Each simulation step consumes 1 fuel.
+   - Document fuel requirements as comments in proofs.
+   - Use parametric helpers to avoid repeating similar proofs at different fuel levels.
 
 ## Build
 
 From `engine/`:
 
 ```bash
+# Build the entire package
 lake build
+
+# Build only PrisonersDilemmaNew
+lake build PrisonersDilemmaNew
+
+# Build a specific theorem module
+lake build PrisonersDilemmaNew.Theorems.OBot
 ```
 
-Toolchain: Lean `v4.28.0` (see `lean-toolchain`).
+**Toolchain:** Lean `v4.28.0` (see `lean-toolchain`).
+
+**Note:** The deprecated `PrisonersDilemma` folder is kept for historical reference but is not actively maintained. Use `PrisonersDilemmaNew` for all new work.
