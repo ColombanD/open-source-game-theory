@@ -24,4 +24,11 @@ theorem interp_DefectBot_plays_C_false (q : Prog) :
       rw [play_DefectBot] at hn
       cases hn                -- some .D = some .C : impossible
 
+-- DefectBot vs itself: mutual defection, (D, D).
+theorem outcome_DefectBot_vs_DefectBot (n : Nat) :
+    outcome (n+1) DefectBot DefectBot = some (.D, .D) := by
+  unfold outcome
+  rw [play_DefectBot]
+  rfl
+
 end PDNew.Theorems

@@ -1,6 +1,6 @@
 import PrisonersDilemmaNew.Program
 import PrisonersDilemmaNew.Dynamics
-import PrisonersDilemmaNew.Theorems.Axioms
+import PrisonersDilemmaNew.Axioms
 import PrisonersDilemmaNew.Bots.CooperateBot
 import PrisonersDilemmaNew.Bots.CupodBot
 import PrisonersDilemmaNew.Theorems.CooperateBot
