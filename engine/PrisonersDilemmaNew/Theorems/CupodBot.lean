@@ -61,10 +61,6 @@ theorem CUPOD_vs_CB (k fuel : Nat):
 
 /-- An example of the formula being correct -/
 theorem CUPOD_vs_DB (k fuel : Nat):
-  outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := by
-  have hA : play (fuel + 2) (CupodBot k) DefectBot = some .D := by
-    show eval (fuel + 2) (CupodBot k) DefectBot (CupodBot k) = some .D
-
-
+  outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := sorry
 
 end PDNew.Theorems
