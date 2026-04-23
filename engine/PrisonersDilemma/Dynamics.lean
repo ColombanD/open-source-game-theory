@@ -1,4 +1,4 @@
-import PrisonersDilemmaNew.Program
+import PrisonersDilemma.Program
 
 namespace PDNew
 

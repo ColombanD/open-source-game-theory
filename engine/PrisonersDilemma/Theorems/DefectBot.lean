@@ -1,6 +1,6 @@
-import PrisonersDilemmaNew.Program
-import PrisonersDilemmaNew.Dynamics
-import PrisonersDilemmaNew.Bots.DefectBot
+import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.DefectBot
 
 open PDNew
 open PDNew.Bots

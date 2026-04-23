@@ -1,5 +1,5 @@
-import PrisonersDilemmaNew.Program
-import PrisonersDilemmaNew.Dynamics
+import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
 
 open PDNew
 namespace PDNew.Axioms

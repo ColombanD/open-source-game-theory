@@ -1,8 +1,8 @@
-import PrisonersDilemmaNew.Program
-import PrisonersDilemmaNew.Dynamics
-import PrisonersDilemmaNew.Bots.CooperateBot
-import PrisonersDilemmaNew.Bots.DefectBot
-import PrisonersDilemmaNew.Theorems.DefectBot
+import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Theorems.DefectBot
 
 open PDNew
 open PDNew.Bots

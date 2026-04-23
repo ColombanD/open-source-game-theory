@@ -1,6 +1,6 @@
-import PrisonersDilemmaNew.Program
-import PrisonersDilemmaNew.Bots.DefectBot
-import PrisonersDilemmaNew.Bots.CooperateBot
+import PrisonersDilemma.Program
+import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Bots.CooperateBot
 
 open PDNew
 namespace PDNew.Bots
