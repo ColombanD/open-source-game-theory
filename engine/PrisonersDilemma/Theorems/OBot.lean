@@ -1,11 +1,11 @@
-import PrisonersDilemmaNew.Bots.CooperateBot
-import PrisonersDilemmaNew.Bots.DefectBot
-import PrisonersDilemmaNew.Bots.TitForTatBot
-import PrisonersDilemmaNew.Bots.OBot
-import PrisonersDilemmaNew.Theorems.DBot
-import PrisonersDilemmaNew.Theorems.TitForTatBot
-import PrisonersDilemmaNew.Dynamics
-import PrisonersDilemmaNew.Theorems.Helpers
+import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Bots.TitForTatBot
+import PrisonersDilemma.Bots.OBot
+import PrisonersDilemma.Theorems.DBot
+import PrisonersDilemma.Theorems.TitForTatBot
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Theorems.Helpers
 
 
 open PDNew.Bots

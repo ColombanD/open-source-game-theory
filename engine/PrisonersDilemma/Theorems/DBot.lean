@@ -1,9 +1,9 @@
-import PrisonersDilemmaNew.Bots.DBot
-import PrisonersDilemmaNew.Bots.CooperateBot
-import PrisonersDilemmaNew.Bots.DefectBot
-import PrisonersDilemmaNew.Dynamics
-import PrisonersDilemmaNew.Theorems.DefectBot
-import PrisonersDilemmaNew.Theorems.Helpers
+import PrisonersDilemma.Bots.DBot
+import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Theorems.DefectBot
+import PrisonersDilemma.Theorems.Helpers
 
 open PDNew.Bots
 namespace PDNew.Theorems

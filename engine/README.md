@@ -1,4 +1,4 @@
-# PrisonersDilemmaNew
+# PrisonersDilemma
 
 Lean 4 formalization of Prisoner's Dilemma using fuel-bounded program evaluation.
 
@@ -13,10 +13,10 @@ This project provides a modular architecture to:
 
 The codebase is organized around a **fuel-bounded evaluator** for game programs:
 
-- Program syntax and substitution in `PrisonersDilemmaNew/Program.lean`,
-- Fuelled evaluation semantics in `PrisonersDilemmaNew/Dynamics.lean`,
-- Bot strategy definitions in `PrisonersDilemmaNew/Bots/`,
-- Theorem developments and helpers in `PrisonersDilemmaNew/Theorems/`.
+- Program syntax and substitution in `PrisonersDilemma/Program.lean`,
+- Fuelled evaluation semantics in `PrisonersDilemma/Dynamics.lean`,
+- Bot strategy definitions in `PrisonersDilemma/Bots/`,
+- Theorem developments and helpers in `PrisonersDilemma/Theorems/`.
 
 The proving strategy focuses on outcome proofs:
 
@@ -28,18 +28,18 @@ The proving strategy focuses on outcome proofs:
 
 ### Library entrypoint
 
-- `PrisonersDilemmaNew.lean`
+- `PrisonersDilemma.lean`
 	- Root import hub for all build targets in the new package.
 
 ### Core semantics
 
-- `PrisonersDilemmaNew/Program.lean`
+- `PrisonersDilemma/Program.lean`
 	- Defines `Action` (C or D), `Outcome` (action pair), and `Prog` inductive type.
 	- `Prog` variants: `.const`, `.self`, `.opp`, `.sim`, `.ite`, `.search`.
 	- Defines `Formula` for oracle-decidable propositions about programs.
 	- Implements `Prog.subst` and `Formula.subst` for variable capture.
 
-- `PrisonersDilemmaNew/Dynamics.lean`
+- `PrisonersDilemma/Dynamics.lean`
 	- Defines fuel-bounded evaluator `eval : Nat → Prog → Prog → Prog → Option Action`.
 	- Axiomatizes `proofSearch : Nat → Formula → Bool` (oracle).
 	- Defines `play : Nat → Prog → Prog → Option Action` (single agent's move).
@@ -48,53 +48,53 @@ The proving strategy focuses on outcome proofs:
 
 ### Bots
 
-- `PrisonersDilemmaNew/Bots/CooperateBot.lean`
+- `PrisonersDilemma/Bots/CooperateBot.lean`
 	- Always-cooperate strategy as `.const Action.C`.
 
-- `PrisonersDilemmaNew/Bots/DefectBot.lean`
+- `PrisonersDilemma/Bots/DefectBot.lean`
 	- Always-defect strategy as `.const Action.D`.
 
-- `PrisonersDilemmaNew/Bots/DBot.lean`
+- `PrisonersDilemma/Bots/DBot.lean`
 	- Defector bot: probes opponent against CooperateBot, responds to probe result.
 
-- `PrisonersDilemmaNew/Bots/TitForTatBot.lean`
+- `PrisonersDilemma/Bots/TitForTatBot.lean`
 	- Tit-for-tat bot: probes opponent against CooperateBot, cooperates if probe yields C.
 
-- `PrisonersDilemmaNew/Bots/OBot.lean`
+- `PrisonersDilemma/Bots/OBot.lean`
 	- Opportunistic bot: nested probes (CooperateBot, then DefectBot based on first result).
 
-- `PrisonersDilemmaNew/Bots/CupodBot.lean`
+- `PrisonersDilemma/Bots/CupodBot.lean`
 	- Cupod (Cooperative Until Provably Opportunistic Defector) strategy with fuel parameter.
 
-- `PrisonersDilemmaNew/Bots/DupocBot.lean`
+- `PrisonersDilemma/Bots/DupocBot.lean`
 	- Dupoc (Defector Unless Provably Opportunistic Cooperator) strategy.
 
 ### Theorems
 
-- `PrisonersDilemmaNew/Theorems/Helpers.lean`
+- `PrisonersDilemma/Theorems/Helpers.lean`
 	- Reusable proof helpers:
 		- `play_from_eval`: Lifting eval results to play claims.
 		- `play_ite_from_guard(fuel n)`: Generic helper for if-then-else programs with parametric fuel offset.
 
-- `PrisonersDilemmaNew/Theorems/CooperateBot.lean`
+- `PrisonersDilemma/Theorems/CooperateBot.lean`
 	- Proves action claims for CooperateBot (always plays C).
 
-- `PrisonersDilemmaNew/Theorems/DefectBot.lean`
+- `PrisonersDilemma/Theorems/DefectBot.lean`
 	- Proves action claims for DefectBot (always plays D).
 
-- `PrisonersDilemmaNew/Theorems/DBot.lean`
+- `PrisonersDilemma/Theorems/DBot.lean`
 	- Proves outcome claims for DBot vs key opponents.
 
-- `PrisonersDilemmaNew/Theorems/TitForTatBot.lean`
+- `PrisonersDilemma/Theorems/TitForTatBot.lean`
 	- Proves outcome claims for TitForTatBot vs key opponents.
 
-- `PrisonersDilemmaNew/Theorems/OBot.lean`
+- `PrisonersDilemma/Theorems/OBot.lean`
 	- Proves outcome claims for OBot (handles nested simulation structure).
 
-- `PrisonersDilemmaNew/Theorems/CupodBot.lean`
+- `PrisonersDilemma/Theorems/CupodBot.lean`
 	- Proves outcome claims for CupodBot with parametrized fuel.
 
-- `PrisonersDilemmaNew/Theorems/Axioms.lean`
+- `PrisonersDilemma/Theorems/Axioms.lean`
 	- Axioms and additional assumptions used across theorem development.
 
 ## Core Concepts
@@ -146,16 +146,16 @@ Complex bots (e.g., OBot) involve nested `.ite` and `.sim` constructs:
 
 Recommended process for adding a new bot strategy:
 
-1. **Define the bot** in `PrisonersDilemmaNew/Bots/<BotName>.lean`.
+1. **Define the bot** in `PrisonersDilemma/Bots/<BotName>.lean`.
    - Create a `def <botName> : Prog` using the inductive syntax.
    - Document the strategy in comments.
 
-2. **Create theorems** in `PrisonersDilemmaNew/Theorems/<BotName>.lean`.
+2. **Create theorems** in `PrisonersDilemma/Theorems/<BotName>.lean`.
    - Import the bot definition and helper theorems.
    - Prove `play` (single action) claims at specific fuel levels.
    - Prove `outcome` (pair action) claims by combining two `play` results.
 
-3. **Reuse helpers** from `PrisonersDilemmaNew/Theorems/Helpers.lean`.
+3. **Reuse helpers** from `PrisonersDilemma/Theorems/Helpers.lean`.
    - `play_from_eval`: Lift `eval` results to `play` goals.
    - `play_ite_from_guard(fuel n)`: Handle if-then-else structure with fuel offset `n`.
 
@@ -172,13 +172,13 @@ From `engine/`:
 # Build the entire package
 lake build
 
-# Build only PrisonersDilemmaNew
-lake build PrisonersDilemmaNew
+# Build only PrisonersDilemma
+lake build PrisonersDilemma
 
 # Build a specific theorem module
-lake build PrisonersDilemmaNew.Theorems.OBot
+lake build PrisonersDilemma.Theorems.OBot
 ```
 
 **Toolchain:** Lean `v4.28.0` (see `lean-toolchain`).
 
-**Note:** The deprecated `PrisonersDilemma` folder is kept for historical reference but is not actively maintained. Use `PrisonersDilemmaNew` for all new work.
+**Note:** The deprecated `PrisonersDilemma` folder is kept for historical reference but is not actively maintained. Use `PrisonersDilemma` for all new work.

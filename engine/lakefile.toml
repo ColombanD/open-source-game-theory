@@ -1,6 +1,6 @@
-name = "PrisonersDilemmaNew"
+name = "PrisonersDilemma"
 version = "0.1.0"
-defaultTargets = ["PrisonersDilemmaNew"]
+defaultTargets = ["PrisonersDilemma"]
 
 [[lean_lib]]
-name = "PrisonersDilemmaNew"
+name = "PrisonersDilemma"
