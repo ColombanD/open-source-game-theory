@@ -1,31 +1,60 @@
 namespace PDNew
 
-inductive Action | C | D
+inductive Action
+  | C
+  | D
   deriving DecidableEq, Repr, BEq
 
 abbrev Outcome := Action × Action
 
--- `Prog` and `Formula` are mutually recursive: `.search` carries a
--- formula, and a formula can mention programs as its subjects.
+-- `Prog` is the language of agents from Critch 2022 (the Python-style
+-- pseudocode). It is pure *source code*: no constructor produces an
+-- `Action` directly — actions only appear after evaluation via `eval`
+-- in Dynamics.lean. Keeping everything at the syntactic level is what lets agents be nested,
+--  substituted, and passed as subjects of formulas.
+
+-- `Formula` is the part of the proof system `S` that agents query through the oracle,just enough to
+-- just enough to express hypotheses like `"opp(CUPOD_k.source) == D"`.
+
+-- They are mutually recursive because `.search` carries a formula as
+-- its guard, and a formula's `.plays` atom takes programs as subjects:
+-- agents reason about agents reasoning about agents.
+
 mutual
   inductive Prog where
-    | const  : Action → Prog -- constant program that always plays the same action
-    | self   : Prog -- refers to the current program
-    | opp    : Prog -- refers to the opponent program
-    | sim    : Prog → Prog → Prog -- simulate one program against another
-    | ite    : Prog → Action → Prog → Prog → Prog -- if a guard program returns action a, then run p else run q
-    | search : Nat → Formula → Prog → Prog → Prog
--- Formula is the language of statements the oracle can reason about.
+    | const  : Action → Prog                      -- trivial bots like CB/DB: ignore opp, play a fixed action
+    | self   : Prog                               -- placeholder for "my own source" — closed by `subst`
+    | opp    : Prog                               -- placeholder for the opponent's source — closed by `subst`
+    | sim    : Prog → Prog → Prog                 -- source code for "run p with q as opponent"
+    | ite    : Prog → Action → Prog → Prog → Prog -- if evaluating guard yields action a, run p, else q
+    | search : Nat → Formula → Prog → Prog → Prog -- proof_search(k, φ): if oracle verifies φ in ≤k chars, run p, else q
   inductive Formula where
-    | plays : Prog → Prog → Action → Formula   -- "p(q.source) = a"
-    | impl  : Formula → Formula → Formula -- "if φ then ψ"
-    | neg   : Formula → Formula -- "not φ"
+    | plays : Prog → Prog → Action → Formula      -- atomic: "p(q.source) == a"
+    | impl  : Formula → Formula → Formula         -- φ → ψ (needed for Löb-style hypotheses like □C → C)
+    | neg   : Formula → Formula                   -- ¬ φ
+    | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
 end
 
--- How to handle the self-reference.
--- Substitute `.self` / `.opp` in both programs and formulas. When a
--- `.search` fires we resolve its formula against the current agent
--- and opponent so that the oracle receives a closed statement.
+-- Closing self-reference via substitution.
+--
+-- `.self` and `.opp` are *placeholders* (free variables) standing for
+-- "my own source" and "the opponent's source" — the Python pseudocode's
+-- `subst` walks replaces every `.self` with `me` and every `.opp` with `opponent`;
+
+
+-- This matters because the oracle `proofSearch : Nat → Formula → Bool`
+-- expects a *closed* formula — one with no free placeholders. So at every
+-- evaluation boundary where a new context is entered (`.sim` and
+-- `.search` in Dynamics.lean), the evaluator calls `subst` to freeze the
+-- placeholders to the concrete programs currently playing the game.
+
+-- The two definitions are mutually recursive for the same reason the
+-- types are: `Prog.subst` descends into formulas at `.search`, and
+-- `Formula.subst` descends into programs at `.plays`.
+
+-- Note: `subst` is one-shot, not a fixed point. Placeholders inside the
+-- freshly inserted `me`/`opponent` are *not* re-substituted — they remain
+-- bound to whatever context will enclose them next.
 mutual
   def Prog.subst : Prog → (me opponent : Prog) → Prog
     | .const a,        _, _ => .const a
@@ -39,6 +68,7 @@ mutual
     | .plays p q a, m, o => .plays (p.subst m o) (q.subst m o) a
     | .impl φ ψ,    m, o => .impl (φ.subst m o) (ψ.subst m o)
     | .neg φ,       m, o => .neg (φ.subst m o)
+    | .box n φ,     m, o => .box n (φ.subst m o)
 end
 
 end PDNew

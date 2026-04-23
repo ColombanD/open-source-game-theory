@@ -20,4 +20,11 @@ theorem interp_DefectBot_plays_D_true (q : Prog) :
   unfold Formula.interp
   exists 1
 
+-- DefectBot vs itself: mutual defection, (D, D).
+theorem outcome_DefectBot_vs_DefectBot (n : Nat) :
+    outcome (n+1) DefectBot DefectBot = some (.D, .D) := by
+  unfold outcome
+  rw [play_DefectBot]
+  rfl
+
 end PDNew.Theorems

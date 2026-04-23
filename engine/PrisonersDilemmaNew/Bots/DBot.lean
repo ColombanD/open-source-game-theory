@@ -4,8 +4,7 @@ import PrisonersDilemmaNew.Bots.DefectBot
 open PDNew
 namespace PDNew.Bots
 
-/-- Strategy definition for DBot.
-Bot defects if the opponent cooperates against a defect probe. -/
+-- Bot defects if the opponent cooperates against a defect probe. --
 def DBot : Prog :=
   .ite -- If then else
     (.sim .opp (DefectBot)) -- Simulate opponent against DefectBot

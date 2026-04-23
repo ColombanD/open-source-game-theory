@@ -4,8 +4,7 @@ import PrisonersDilemmaNew.Bots.CooperateBot
 open PDNew
 namespace PDNew.Bots
 
-/-- Strategy definition for TitForTatBot.
-Bot cooperates if the opponent cooperates against a cooperate probe. -/
+-- Bot cooperates if the opponent cooperates against a cooperate probe. --
 def TitForTatBot : Prog :=
   .ite -- If then else
     (.sim .opp (CooperateBot)) -- Simulate opponent against CooperateBot
