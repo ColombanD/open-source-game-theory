@@ -24,6 +24,10 @@ The proving strategy focuses on outcome proofs:
 2. Establish guard evaluations and simulations,
 3. Prove `play` (single action) and `outcome` (action pair) claims.
 
+## Bot Results
+
+Bot outcomes are being recorded here: [Outcome Matrix](https://docs.google.com/spreadsheets/d/10oNMb88iDmsWcR6SBecopLhrlgilRU-htBB0q07eET8/edit?gid=0#gid=0)
+
 ## Folder Map
 
 ### Library entrypoint
