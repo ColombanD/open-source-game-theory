@@ -15,6 +15,11 @@ theorem play_CooperateBot (n : Nat) (opponent : Prog) :
     unfold play eval CooperateBot
     simp only
 
+theorem interp_CooperateBot_plays_C_true (q : Prog) :
+    (Formula.plays CooperateBot q .C).interp := by
+  unfold Formula.interp
+  exists 1
+
 -- The interpretation "CB plays D against q" is false.
 -- This is the semantic content the soundness axiom will consume.
 theorem interp_CooperateBot_plays_D_false (q : Prog) :

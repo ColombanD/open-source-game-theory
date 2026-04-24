@@ -13,7 +13,7 @@ open PDNew.Axioms
 open PDNew.Bots
 namespace PDNew.Theorems
 
-/-- Monotonicity of CUPOD bot: If the proof search succeeds with less fuel, it also succeeds with more fuel -/
+/-- Monotonicity of CupodBot: If the proof search succeeds with less fuel, it also succeeds with more fuel -/
 theorem CupodBot_monotonicity (n k : Nat) :
     n ≤ k →
     proofSearch k (.plays DefectBot (CupodBot n) .D) = true →
@@ -57,7 +57,7 @@ theorem proofSearch_true_for_DefectBot :
 
 
 /-- CupodBot vs CooperateBot: uses proof search being false -/
-theorem CupodBot_vs_CB (k fuel : Nat):
+theorem CupodBot_vs_CooperateBot (k fuel : Nat):
     outcome (fuel + 2) (CupodBot k) CooperateBot = some (.C, .C) := by
   -- Left side: CUPOD executes its `.search` guard. The guard is false by the
   -- lemma above, so the `search` falls through to the final `.const .C` branch.
@@ -75,7 +75,7 @@ theorem CupodBot_vs_CB (k fuel : Nat):
   simp [outcome, hA, hB]
 
 /-- CupodBot vs DefectBot: uses proof search being true -/
-theorem CupodBot_vs_DB (fuel : Nat):
+theorem CupodBot_vs_DefectBot (fuel : Nat):
     ∃ k, outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_DefectBot
   refine ⟨k, ?_⟩
