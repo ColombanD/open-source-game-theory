@@ -6,7 +6,7 @@ import PrisonersDilemma.Bots.MirrorBot
 open PDNew
 namespace PDNew.Bots
 
-def _EBot : Prog :=
+def EBot : Prog :=
   .ite -- If then else
     (.sim .opp DefectBot) -- Simulate opponent against DefectBot
     Action.C -- test action C
