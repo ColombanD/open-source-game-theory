@@ -20,6 +20,15 @@ theorem interp_DefectBot_plays_D_true (q : Prog) :
   unfold Formula.interp
   exists 1
 
+theorem interp_DefectBot_plays_C_false (q : Prog) :
+    ¬ (Formula.plays DefectBot q .C).interp := by
+  rintro ⟨n, hn⟩
+  cases n with
+  | zero   => simp only [play, eval, reduceCtorEq] at hn
+  | succ m =>
+      rw [play_DefectBot] at hn
+      cases hn
+
 -- DefectBot vs itself: mutual defection, (D, D).
 theorem outcome_DefectBot_vs_DefectBot (n : Nat) :
     outcome (n+1) DefectBot DefectBot = some (.D, .D) := by

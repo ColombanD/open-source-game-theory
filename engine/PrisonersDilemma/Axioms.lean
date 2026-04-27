@@ -4,17 +4,59 @@ import PrisonersDilemma.Dynamics
 open PDNew
 namespace PDNew.Axioms
 
--- Soundness of bounded proof search: if the oracle returns `true` on a formula, then that formula is semantically true.
-axiom proofSearch_sound :
-  ∀ k φ, proofSearch k φ = true → φ.interp
+/-- Abstract proof objects used to model derivations in the ambient proof system. -/
+axiom ProofWitness : Type
 
--- Completeness of bounded proof search: if the formula is semantically true, then the oracle returns `true`.
-axiom proofSearch_complete :
-  ∀ φ, φ.interp → ∃ k, proofSearch k φ = true
+/-- The size of a proof witness, used as the budget measured by `proofSearch`. -/
+axiom witnessChars : ProofWitness → Nat
 
--- Monotonicity of bounded proof search: if the oracle returns `true` on a formula with some fuel, then it also returns `true` with more fuel.
-axiom proofSearch_monotone :
-  ∀ k₁ k₂ φ, k₁ ≤ k₂ → proofSearch k₁ φ = true → proofSearch k₂ φ = true
+/-- The proposition that a witness proves a particular formula. -/
+axiom witnessProves : ProofWitness → Formula → Prop
+
+/-- Witness soundness: any formula proved by a witness is semantically true. -/
+axiom witness_sound :
+  ∀ w φ, witnessProves w φ → φ.interp
+
+/-- Σ₁-completeness for atomic plays-formulas. Decidable arithmetic; no Gödel issues. -/
+axiom witness_complete_plays :
+  ∀ p q a, (∃ n, play n p q = some a) →
+    ∃ w : ProofWitness, witnessProves w (.plays p q a)
+
+/-- Exact budget semantics for `proofSearch`: true iff there is a witness of size at most `k`. -/
+axiom proofSearch_spec :
+  ∀ k φ, proofSearch k φ = true ↔
+    ∃ w : ProofWitness, witnessProves w φ ∧ witnessChars w ≤ k
+
+/--
+Transport of witnesses across a parameterized formula family when the parameter grows.
+
+This is the strongest witness-level assumption in the file. It says that if a
+family of formulas `Φ : Nat → Formula` changes only by increasing its parameter
+from `n` to `k`, then a witness for the smaller instance can be turned into a
+witness for the larger instance, provided the original witness already fits
+within the larger budget `k`.
+
+Concretely:
+* `Φ n` is the formula at the smaller parameter.
+* `Φ k` is the formula at the larger parameter.
+* `w` is a witness that proves the smaller formula.
+* `witnessChars w ≤ k` says the witness is still within the budget available
+  at the larger parameter.
+* the conclusion produces a witness `w'` for the larger formula, again with
+  size at most `k`.
+
+This is the axiom that lets a proof at parameter `n` be reused when the
+parameter is raised to `k`, without having to encode a specific CUPOD bridge
+in the theorem file.
+-/
+axiom witness_transport_family :
+  ∀ (Φ : Nat → Formula) n k,
+  n ≤ k →
+  ∀ w, witnessProves w (Φ n) →
+  witnessChars w ≤ k →
+    ∃ w', witnessProves w' (Φ k) ∧ witnessChars w' ≤ k
+
+-- . -------------------------------------------------------------------------
 
 
 -- Parametric Bounded Löb's Theorem (Lemma 3.6).

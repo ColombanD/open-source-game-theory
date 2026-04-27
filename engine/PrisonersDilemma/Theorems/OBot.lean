@@ -123,7 +123,7 @@ theorem OBot_vs_DBot (fuel : Nat):
     -- 1) OBot defects against DefectBot.
     have hProbe1 : play (fuel + 3) OBot DefectBot = some .D := OBot_plays_D_against_DB fuel
     -- 2) DBot defects against CooperateBot.
-    have hProbe2 : play (fuel + 3) DBot CooperateBot = some .D := DBot_plays_D_against_CB fuel
+    have hProbe2 : play (fuel + 3) DBot CooperateBot = some .D := DBot_plays_D_against_CooperateBot fuel
 
     -- OBot's outer guard against DBot is `.sim .opp CooperateBot`.
     -- In this development, after unfolding/simplifying `eval`, `Prog.subst`, and `play`,
