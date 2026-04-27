@@ -54,7 +54,7 @@ theorem TitForTatBot_vs_TitForTatBot (fuel : Nat):
 theorem TitForTatBot_vs_DBot (fuel : Nat):
     outcome (fuel + 5) TitForTatBot DBot = some (.D, .C) := by
     have hProbe1 : play (fuel + 3) TitForTatBot DefectBot = some .D := TitForTatBot_plays_D_against_DB (fuel)
-    have hProbe2 : play (fuel + 3) DBot CooperateBot = some .D := DBot_plays_D_against_CB (fuel)
+    have hProbe2 : play (fuel + 3) DBot CooperateBot = some .D := DBot_plays_D_against_CooperateBot (fuel)
     have hGuard1 : eval (fuel + 4) TitForTatBot DBot (.sim .opp CooperateBot) = some .D := by
         simpa [eval, Prog.subst, play] using hProbe1
     have hGuard2 : eval (fuel + 4) DBot TitForTatBot (.sim .opp DefectBot) = some .D := by

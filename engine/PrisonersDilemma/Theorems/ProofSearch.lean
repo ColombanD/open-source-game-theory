@@ -12,13 +12,13 @@ theorem proofSearch_sound :
   obtain ⟨w, hw, _⟩ := (proofSearch_spec k φ).1 hk
   exact witness_sound w φ hw
 
--- Completeness of bounded proof search.
-theorem proofSearch_complete :
-  ∀ φ, φ.interp → ∃ k, proofSearch k φ = true := by
-  intro φ hφ
-  obtain ⟨w, hw⟩ := witness_complete φ hφ
+/-- Completeness of bounded proof search for atomic plays-formulas. -/
+theorem proofSearch_complete_plays :
+∀ p q a, (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
+  intro p q a h
+  obtain ⟨w, hw⟩ := witness_complete_plays p q a h
   refine ⟨witnessChars w, ?_⟩
-  exact (proofSearch_spec (witnessChars w) φ).2 ⟨w, hw, Nat.le_refl _⟩
+  exact (proofSearch_spec (witnessChars w) (.plays p q a)).2 ⟨w, hw, Nat.le_refl _⟩
 
 -- Monotonicity in proof-search budget.
 theorem proofSearch_monotone :

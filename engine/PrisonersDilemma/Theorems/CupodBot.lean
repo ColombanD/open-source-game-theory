@@ -33,19 +33,16 @@ theorem proofSearch_false_for_CooperateBot (k : Nat) :
                           (interp_CooperateBot_plays_D_false _)
   | false => rfl
 
-/-- Proof search k is true for DefectBot vs Cupod n, but n ≠ k -/
 theorem proofSearch_true_for_DefectBot_different_k (n: Nat) :
-    ∃ k, (proofSearch k (.plays DefectBot (CupodBot n) .D) = true) := by
-  let φ := Formula
-  let ν := (Formula.plays DefectBot (CupodBot n) .D)
-  have h1 :  ν.interp := by
-    have h2 := interp_DefectBot_plays_D_true
-    specialize h2 (CupodBot n)
-    exact h2
-  have h3 := proofSearch_complete
-  specialize h3 ν h1
-  obtain ⟨k, hk⟩ := h3
-  exists k
+    ∃ k, proofSearch k (.plays DefectBot (CupodBot n) .D) = true := by
+  -- Show that there exists n such that play n DefectBot (CupodBot n) = some .D
+  have hex : ∃ m, play m DefectBot (CupodBot n) = some .D := by
+    -- Use the fact that DefectBot always plays .D
+    exists 1
+  -- Now apply the restricted completeness theorem
+  have h := proofSearch_complete_plays DefectBot (CupodBot n) .D hex
+  obtain ⟨k, hk⟩ := h
+  exact ⟨k, hk⟩
 
 /-- Proof search k is true for DefectBot vs Cupod k -/
 theorem proofSearch_true_for_DefectBot :

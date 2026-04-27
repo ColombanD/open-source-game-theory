@@ -17,9 +17,10 @@ axiom witnessProves : ProofWitness → Formula → Prop
 axiom witness_sound :
   ∀ w φ, witnessProves w φ → φ.interp
 
-/-- Witness completeness: every semantically true formula has at least one witness. -/
-axiom witness_complete :
-  ∀ φ, φ.interp → ∃ w : ProofWitness, witnessProves w φ
+/-- Σ₁-completeness for atomic plays-formulas. Decidable arithmetic; no Gödel issues. -/
+axiom witness_complete_plays :
+  ∀ p q a, (∃ n, play n p q = some a) →
+    ∃ w : ProofWitness, witnessProves w (.plays p q a)
 
 /-- Exact budget semantics for `proofSearch`: true iff there is a witness of size at most `k`. -/
 axiom proofSearch_spec :

@@ -35,17 +35,15 @@ theorem proofSearch_false_for_DefectBot (k : Nat) :
 
 /-- Proof search k is true for CooperateBot vs Dupoc n, but n ≠ k -/
 theorem proofSearch_true_for_CooperateBot_different_k (n: Nat) :
-    ∃ k, (proofSearch k (.plays CooperateBot (DupocBot n) .C) = true) := by
-  let φ := Formula
-  let ν := (Formula.plays CooperateBot (DupocBot n) .C)
-  have h1 :  ν.interp := by
-    have h2 := interp_CooperateBot_plays_C_true
-    specialize h2 (DupocBot n)
-    exact h2
-  have h3 := proofSearch_complete
-  specialize h3 ν h1
-  obtain ⟨k, hk⟩ := h3
-  exists k
+    ∃ k, proofSearch k (.plays CooperateBot (DupocBot n) .C) = true := by
+  -- Show that there exists n such that play n CooperateBot (DupocBot n) = some .C
+  have hex : ∃ m, play m CooperateBot (DupocBot n) = some .C := by
+    -- Use the fact that CooperateBot always plays .C
+    exists 1
+  -- Now apply the restricted completeness theorem
+  have h := proofSearch_complete_plays CooperateBot (DupocBot n) .C hex
+  obtain ⟨k, hk⟩ := h
+  exact ⟨k, hk⟩
 
 /-- Proof search k is true for CooperateBot vs Dupoc k -/
 theorem proofSearch_true_for_CooperateBot :
