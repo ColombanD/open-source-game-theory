@@ -3,10 +3,12 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.OBot
+import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.Helpers
 
 
 open PDNew.Bots
+open PDNew.Axioms
 namespace PDNew.Theorems
 
 theorem MirrorBot_plays_C_against_CooperateBot (fuel : Nat) :
@@ -95,5 +97,35 @@ theorem MirrorBot_vs_OBot (fuel : Nat):
     have hA : play (fuel + 7) MirrorBot OBot = some .D := MirrorBot_plays_D_against_OBot (fuel)
     have hB : play (fuel + 7) OBot MirrorBot = some .D := OBot_plays_D_against_MirrorBot (fuel + 1)
     simp [outcome, hA, hB]
+
+/-- MirrorBot vs MirrorBot loops forever: each `.sim .opp .self` step decrements
+    fuel by 1 but reproduces the same `eval _ MirrorBot MirrorBot MirrorBot`
+    expression, so fuel runs out and `play` returns `none`. -/
+theorem MirrorBot_plays_none_against_MirrorBot (fuel : Nat) :
+    play fuel MirrorBot MirrorBot = none := by
+    induction fuel with
+    | zero => rfl
+    | succ n ih => simpa [play, eval, Prog.subst, MirrorBot] using ih
+
+theorem MirrorBot_vs_MirrorBot (fuel : Nat):
+    outcome fuel MirrorBot MirrorBot = none := by
+    have hA : play fuel MirrorBot MirrorBot = none := MirrorBot_plays_none_against_MirrorBot fuel
+    simp [outcome, hA]
+
+theorem mirror_self_no_action :
+    ∀ a, ¬ (Formula.plays MirrorBot MirrorBot a).interp := by
+  intro a ⟨n, h⟩
+  rw [MirrorBot_plays_none_against_MirrorBot n] at h
+  contradiction
+
+theorem mirror_self_unprovable :
+    ∀ k a, proofSearch k (.plays MirrorBot MirrorBot a) = false := by
+  intro k a
+  cases hp : proofSearch k (.plays MirrorBot MirrorBot a) with
+  | false => rfl
+  | true =>
+      rcases (proofSearch_spec k _).mp hp with ⟨w, hw, _⟩
+      exact absurd (witness_sound _ _ hw) (mirror_self_no_action a)
+
 
 end PDNew.Theorems
