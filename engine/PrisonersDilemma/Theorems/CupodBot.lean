@@ -372,6 +372,122 @@ theorem CupodBot_vs_OBot (fuel : Nat) :
 
 -- CupodBot --
 
+theorem linear_function_growth :
+  ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → k > c * Nat.log2 k := by
+  -- We only need one positive constant and one threshold.  Taking `c = 1`
+  -- reduces the goal to showing that, eventually, `k > log2 k`.
+  refine ⟨1, 1, by decide, ?_⟩
+  intro k hk
+  -- Since `k > 1`, in particular `k` is nonzero.  This lets us use the
+  -- standard characterization `Nat.log2_lt`: `log2 k < k` iff `k < 2^k`.
+  have hk_ne_zero : k ≠ 0 := by
+    exact Nat.ne_of_gt (Nat.lt_trans (by decide : 0 < 1) hk)
+  -- The exponential bound `k < 2^k` is true because the base `2` is bigger
+  -- than `1`.  Rewriting through `Nat.log2_lt` gives `log2 k < k`.
+  have hlog_lt : Nat.log2 k < k := by
+    exact (Nat.log2_lt hk_ne_zero).2 (Nat.lt_pow_self (by decide : 1 < 2))
+  -- The PBLT growth hypothesis is written as `k > 1 * log2 k`; `simpa`
+  -- removes the harmless multiplication by `1`.
+  simpa using hlog_lt
+
+theorem formula_self_fulfilling :
+  let φ := fun k : Nat => Formula.plays (CupodBot k) (CupodBot k) Action.D
+  (∀ k, k > 0 → ∃ m, proofSearch m (.impl (.box (k) (φ k)) (φ k)) = true) := by
+  dsimp
+  intro k _hk
+  let ψ := Formula.plays (CupodBot k) (CupodBot k) Action.D
+
+  -- First prove the semantic version of the self-fulfilling implication.
+  -- Semantically, `.box k ψ` means exactly `proofSearch k ψ = true`.
+  -- By proof-search soundness, any such proof-search success implies `ψ.interp`.
+  have hSemantic : (Formula.impl (Formula.box k ψ) ψ).interp := by
+    intro hBox
+    exact proofSearch_sound k ψ hBox
+
+  -- Blocking step: to finish the PBLT hypothesis, we need this semantic
+  -- implication to be provable in the abstract proof system `S`.
+  --
+  -- The existing completeness theorem only applies when the outer formula is
+  -- `.plays`.  Here the outer formula is `.impl`, so this step needs either a
+  -- concrete proof system for `S` or an additional axiom/completeness principle
+  -- for this kind of implication.
+  have hProvable :
+      ∃ m, proofSearch m (Formula.impl (Formula.box k ψ) ψ) = true := proofSearch_CupodBot_self_fulfilling k
+
+  -- Unfold the local abbreviation `ψ` so the result matches the statement.
+  simpa [ψ] using hProvable
+
+
+theorem CupodBot_vs_CupodBot (fuel : Nat) :
+    ∃ k, outcome (fuel + 2) (CupodBot k) (CupodBot k) = some (.D, .D) := by
+    -- We instantiate PBLT with the formula saying that `CupodBot k` defects
+    -- against itself.  The function `f k = k` matches CUPOD's proof-search
+    -- budget, because `CupodBot k` searches with exactly fuel `k`.
+    let φ := fun k : Nat => Formula.plays (CupodBot k) (CupodBot k) Action.D
+    let f := fun x : Nat => x
+    let k₁ := 0
+
+    -- `f` is monotone since it is just the identity function.
+    have hf_mono : ∀ a b : Nat, a ≤ b → f a ≤ f b := by
+      intro a b hab
+      exact hab
+
+    -- These are the remaining PBLT hypotheses: enough growth for `f`, and
+    -- derivability of Löb-style implications for all sufficiently large `k`.
+    have hf_growth :
+      ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → f k > c * Nat.log2 k := linear_function_growth
+    have hproofSearch :
+      (∀ k, k > k₁ → ∃ m, proofSearch m (.impl (.box (f k) (φ k)) (φ k)) = true) := formula_self_fulfilling
+
+    -- PBLT gives a threshold `k₂`: every `k` above it has some proof-search
+    -- fuel `m` proving `φ k`.
+    have pblt := PBLT φ f k₁ hf_mono hf_growth hproofSearch
+    obtain ⟨k₂, hk⟩ := pblt
+
+    -- Start with any index above the PBLT threshold.  This `k₀` is only a
+    -- temporary index used to extract an initial proof-search witness.
+    let k₀ := Nat.succ k₂
+    have hk₀_gt : k₀ > k₂ := by
+      exact Nat.lt_succ_self k₂
+
+    -- Specializing `hk` at `k₀` gives a proof-search success for `φ k₀`, but
+    -- with an unknown fuel `m`.
+    obtain ⟨m, hm⟩ := hk k₀ hk₀_gt
+
+    -- CUPOD's own search budget must equal its index.  Since `hm` only proves
+    -- success at fuel `m`, choose the final CUPOD index `k` large enough for
+    -- both the original index `k₀` and the fuel `m`.
+    let k := k₀ + m
+    have hk₀_le_k : k₀ ≤ k := by
+      exact Nat.le_add_right k₀ m
+    have hm_le_k : m ≤ k := by
+      exact Nat.le_add_left m k₀
+
+    -- Lift the proof-search success from `proofSearch m (φ k₀)` to
+    -- `proofSearch k (φ k)`.  This happens in two steps:
+    -- first increase the proof-search fuel from `m` to `k`, then transport the
+    -- indexed formula from `k₀` to the larger index `k`.
+    have hSearchK : proofSearch k (φ k) = true := by
+      let Φ : Nat → Formula := fun i => φ i
+      have hmK : proofSearch k (Φ k₀) = true :=
+        proofSearch_monotone m k (Φ k₀) hm_le_k hm
+      obtain ⟨w, hw, hwk⟩ := (proofSearch_spec k (Φ k₀)).1 hmK
+      obtain ⟨w', hw', hwk'⟩ := witness_transport_family Φ k₀ k hk₀_le_k w hw hwk
+      exact (proofSearch_spec k (Φ k)).2 ⟨w', hw', hwk'⟩
+
+    -- Use this final `k` as the witness for the theorem.
+    refine ⟨k, ?_⟩
+
+    -- With `hSearchK`, both CUPOD bots see their search guard succeed, so the
+    -- evaluated action is `.D`.
+    have hA : play (fuel + 2) (CupodBot k) (CupodBot k) = some .D := by
+      show eval (fuel + 2) (CupodBot k) (CupodBot k) (CupodBot k) = some .D
+      unfold φ at hSearchK
+      unfold CupodBot at hSearchK ⊢
+      simp [eval, Prog.subst, Formula.subst, hSearchK]
+
+    -- The two sides of the outcome are identical plays, so `hA` resolves both.
+    simp [outcome, hA]
 
 
 end PDNew.Theorems
