@@ -90,7 +90,7 @@ theorem CupodBot_vs_CooperateBot (k fuel : Nat):
   -- Right side: CooperateBot is definitionally the constant `.C` bot.
   have hB : play (fuel + 2) CooperateBot (CupodBot k) = some .C := rfl
   -- Finally, `outcome` just packages the two `play` results together.
-  simp [outcome, hA, hB]
+  exact outcome_of_plays _ _ _ _ _ hA hB
 
 
 -- DefectBot --
@@ -153,7 +153,7 @@ theorem CupodBot_vs_DefectBot (fuel : Nat):
   have hB : play (fuel + 2) DefectBot (CupodBot k) = some .D := by
     simpa [Nat.add_assoc] using (play_DefectBot (fuel + 1) (CupodBot k))
 
-  simp [outcome, hA, hB]
+  exact outcome_of_plays _ _ _ _ _ hA hB
 
 
 -- TitForTatBot --
@@ -164,7 +164,8 @@ theorem TitForTatBot_plays_C_against_CupodBot (k fuel : Nat) :
     CupodBot_plays_C_against_bot_CooperateBot k fuel
   have hGuard :
       eval (fuel + 3) TitForTatBot (CupodBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
-    simpa [eval, Prog.subst, play] using hCupod
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) TitForTatBot (CupodBot k) CooperateBot Action.C hCupod)
   have hPlay := play_ite_from_guard
     fuel 3 TitForTatBot (CupodBot k) (.sim .opp (.bot CooperateBot))
     (.const Action.C) (.const Action.D)
@@ -225,7 +226,7 @@ theorem CupodBot_vs_TitForTatBot (fuel : Nat):
     simp [eval, Prog.subst, Formula.subst, hg]
   have hB : play (fuel + 4) TitForTatBot (CupodBot k) = some .C := by
     exact TitForTatBot_plays_C_against_CupodBot k fuel
-  simp [outcome, hA, hB]
+  exact outcome_of_plays _ _ _ _ _ hA hB
 
 
 -- DBot --
@@ -237,7 +238,8 @@ theorem DBot_plays_C_against_CupodBot (k fuel : Nat)
     CupodBot_plays_D_against_bot_DefectBot k fuel hk
   have hGuard :
       eval (fuel + 3) DBot (CupodBot k) (.sim .opp (.bot DefectBot)) = some .D := by
-    simpa [eval, Prog.subst, play] using hCupod
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) DBot (CupodBot k) DefectBot Action.D hCupod)
   have hPlay := play_ite_from_guard
     fuel 3 DBot (CupodBot k) (.sim .opp (.bot DefectBot))
     (.const Action.D) (.const Action.C)
@@ -300,7 +302,7 @@ theorem CupodBot_vs_DBot (fuel : Nat):
     simp [eval, Prog.subst, Formula.subst, hg]
   have hB : play (fuel + 4) DBot (CupodBot k) = some .C := by
     exact DBot_plays_C_against_CupodBot k fuel hk
-  simp [outcome, hA, hB]
+  exact outcome_of_plays _ _ _ _ _ hA hB
 
 
 -- OBot --
@@ -312,12 +314,14 @@ theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
       eval (fuel + 4) OBot (CupodBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
     have hProbe : play (fuel + 3) (CupodBot k) (.bot CooperateBot) = some .C := by
       simpa [Nat.add_assoc] using CupodBot_plays_C_against_bot_CooperateBot k (fuel + 1)
-    simpa [eval, Prog.subst, play] using hProbe
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 3) OBot (CupodBot k) CooperateBot Action.C hProbe)
   have hGuard2 :
       eval (fuel + 3) OBot (CupodBot k) (.sim .opp (.bot DefectBot)) = some .D := by
     have hProbe : play (fuel + 2) (CupodBot k) (.bot DefectBot) = some .D :=
       CupodBot_plays_D_against_bot_DefectBot k fuel hk
-    simpa [eval, Prog.subst, play] using hProbe
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) OBot (CupodBot k) DefectBot Action.D hProbe)
   have hPlay := play_ite_from_guard
     fuel 4 OBot (CupodBot k) (.sim .opp (.bot CooperateBot))
     (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
@@ -328,19 +332,10 @@ theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
       eval (fuel + 4) OBot (CupodBot k)
         (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
           some .D := by
-    have hGuard2' :
-        eval (fuel + 3)
-          (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
-          (CupodBot k) (.sim .opp (.bot DefectBot)) = some .D := by
-      simpa [eval, Prog.subst, play] using hGuard2
-    have hPlay := play_ite_from_guard
-      fuel 3
-      (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
-      (CupodBot k) (.sim .opp (.bot DefectBot))
-      (.const Action.C) (.const Action.D)
-      Action.C Action.D
-      (by rfl) hGuard2'
-    simpa [play, eval, Prog.subst] using hPlay
+    simpa [Nat.add_assoc] using
+      (eval_ite_from_guard (fuel + 3) OBot (CupodBot k)
+        (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
+        Action.C Action.D hGuard2)
   simpa [hInner] using hPlay
 
 theorem proofSearch_true_for_OBot_different_k:
@@ -417,7 +412,7 @@ theorem CupodBot_vs_OBot (fuel : Nat) :
   -- DefectBot, so OBot's inner probe follows its defect branch.
   have hB : play (fuel + 5) OBot (CupodBot k) = some .D := by
     exact OBot_plays_D_against_CupodBot k fuel hkDefect
-  simp [outcome, hA, hB]
+  exact outcome_of_plays _ _ _ _ _ hA hB
 
 
 -- CupodBot --
@@ -537,7 +532,7 @@ theorem CupodBot_vs_CupodBot (fuel : Nat) :
       simp [eval, Prog.subst, Formula.subst, hSearchK]
 
     -- The two sides of the outcome are identical plays, so `hA` resolves both.
-    simp [outcome, hA]
+    exact outcome_of_plays _ _ _ _ _ hA hA
 
 
 end PDNew.Theorems
