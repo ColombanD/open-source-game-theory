@@ -19,6 +19,16 @@ List bots discovered from the Lean engine:
 
 - `uv run run-matchup --list-bots`
 
+### CLI Parameters
+
+- `--left BOT`: left bot name, for example `CooperateBot` or `CupodBot:3`.
+- `--right BOT`: right bot name, for example `DefectBot` or `CupodBot:?`.
+- `--list-bots`: print the bots discovered from the Lean engine and exit.
+- `--claim-left C|D` and `--claim-right C|D`: check a claimed action pair.
+- `--quiet`: print only the action pair.
+- `--no-keep-file`: delete the generated Lean file after execution.
+- `--json`: print the result as JSON.
+
 ### Cleaner output and file cleanup
 
 - Print only actions:
