@@ -2,6 +2,7 @@ import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.DBot
+import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.Helpers
@@ -97,6 +98,32 @@ theorem MirrorBot_vs_OBot (fuel : Nat):
     have hA : play (fuel + 7) MirrorBot OBot = some .D := MirrorBot_plays_D_against_OBot (fuel)
     have hB : play (fuel + 7) OBot MirrorBot = some .D := OBot_plays_D_against_MirrorBot (fuel + 1)
     simp [outcome, hA, hB]
+
+theorem TitForTatBot_plays_C_against_MirrorBot (fuel : Nat) :
+    play (fuel + 4) TitForTatBot MirrorBot = some .C := by
+    have hProbe : play (fuel + 2) MirrorBot CooperateBot = some .C :=
+        MirrorBot_plays_C_against_CooperateBot (fuel)
+    have hGuard : eval (fuel + 3) TitForTatBot MirrorBot (.sim .opp CooperateBot) = some .C := by
+        simpa [eval, Prog.subst, play] using hProbe
+    have hPlay := play_ite_from_guard
+        fuel 3 TitForTatBot MirrorBot (.sim .opp CooperateBot)
+        (.const Action.C) (.const Action.D)
+        Action.C Action.C
+        (by rfl) hGuard
+    simpa [eval] using hPlay
+
+theorem MirrorBot_plays_C_against_TitForTatBot (fuel : Nat) :
+    play (fuel + 5) MirrorBot TitForTatBot = some .C := by
+    have hTitForTatPlays : play (fuel + 5) TitForTatBot MirrorBot = some .C :=
+        TitForTatBot_plays_C_against_MirrorBot (fuel)
+    simpa [play, eval, Prog.subst, MirrorBot] using hTitForTatPlays
+
+theorem MirrorBot_vs_TitForTatBot (fuel : Nat):
+    outcome (fuel + 5) MirrorBot TitForTatBot = some (.C, .C) := by
+    have hA : play (fuel + 5) MirrorBot TitForTatBot = some .C := MirrorBot_plays_C_against_TitForTatBot (fuel)
+    have hB : play (fuel + 5) TitForTatBot MirrorBot = some .C := TitForTatBot_plays_C_against_MirrorBot (fuel + 1)
+    simp [outcome, hA, hB]
+
 
 /-- MirrorBot vs MirrorBot loops forever: each `.sim .opp .self` step decrements
     fuel by 1 but reproduces the same `eval _ MirrorBot MirrorBot MirrorBot`
