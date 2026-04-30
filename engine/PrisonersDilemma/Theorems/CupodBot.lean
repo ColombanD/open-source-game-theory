@@ -505,6 +505,82 @@ theorem CupodBot_vs_EBot (fuel : Nat):
     exact EBot_plays_C_against_CupodBot k fuel hk
   exact outcome_of_plays _ _ _ _ _ hA hB
 
+
+-- MirrorBot --
+
+/--
+If CUPOD's proof search succeeds for the claim that `MirrorBot` defects against
+`CupodBot k`, then CUPOD takes its defect branch when playing `MirrorBot`.
+The searched formula is exactly `.plays MirrorBot (CupodBot k) .D`, because
+`CupodBot` substitutes `.opp` with `MirrorBot` and `.self` with itself.
+-/
+theorem CupodBot_plays_D_against_MirrorBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true) :
+    play (fuel + 2) (CupodBot k) MirrorBot = some .D := by
+  show eval (fuel + 2) (CupodBot k) MirrorBot (CupodBot k) = some .D
+  unfold CupodBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/--
+If CUPOD's proof search fails for the claim that `MirrorBot` defects against
+`CupodBot k`, then CUPOD takes its default cooperate branch against `MirrorBot`.
+-/
+theorem CupodBot_plays_C_against_MirrorBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = false) :
+    play (fuel + 2) (CupodBot k) MirrorBot = some .C := by
+  show eval (fuel + 2) (CupodBot k) MirrorBot (CupodBot k) = some .C
+  unfold CupodBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/--
+`MirrorBot` mirrors what its opponent does against itself. So if CUPOD defects
+against `MirrorBot`, then `MirrorBot` defects against `CupodBot k`.
+-/
+theorem MirrorBot_plays_D_against_CupodBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true) :
+    play (fuel + 3) MirrorBot (CupodBot k) = some .D := by
+  have hCupod : play (fuel + 2) (CupodBot k) MirrorBot = some .D :=
+    CupodBot_plays_D_against_MirrorBot k fuel hk
+  simpa [play, eval, Prog.subst, MirrorBot] using hCupod
+
+/--
+The cooperate-side mirror of the previous theorem: if CUPOD cooperates with
+`MirrorBot`, then `MirrorBot` also cooperates against `CupodBot k`.
+-/
+theorem MirrorBot_plays_C_against_CupodBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = false) :
+    play (fuel + 3) MirrorBot (CupodBot k) = some .C := by
+  have hCupod : play (fuel + 2) (CupodBot k) MirrorBot = some .C :=
+    CupodBot_plays_C_against_MirrorBot k fuel hk
+  simpa [play, eval, Prog.subst, MirrorBot] using hCupod
+
+/--
+Conditional mutual defection: when CUPOD can prove that `MirrorBot` defects
+against it, CUPOD defects; `MirrorBot` then mirrors that defection.
+-/
+theorem MirrorBot_vs_CupodBot_of_proofSearch_true (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true) :
+    outcome (fuel + 3) MirrorBot (CupodBot k) = some (.D, .D) := by
+  have hA : play (fuel + 3) MirrorBot (CupodBot k) = some .D :=
+    MirrorBot_plays_D_against_CupodBot k fuel hk
+  have hB : play (fuel + 3) (CupodBot k) MirrorBot = some .D := by
+    simpa [Nat.add_assoc] using CupodBot_plays_D_against_MirrorBot k (fuel + 1) hk
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+/--
+Conditional mutual cooperation: when CUPOD cannot prove that `MirrorBot`
+defects against it, CUPOD cooperates; `MirrorBot` mirrors that cooperation.
+-/
+theorem MirrorBot_vs_CupodBot_of_proofSearch_false (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = false) :
+    outcome (fuel + 3) MirrorBot (CupodBot k) = some (.C, .C) := by
+  have hA : play (fuel + 3) MirrorBot (CupodBot k) = some .C :=
+    MirrorBot_plays_C_against_CupodBot k fuel hk
+  have hB : play (fuel + 3) (CupodBot k) MirrorBot = some .C := by
+    simpa [Nat.add_assoc] using CupodBot_plays_C_against_MirrorBot k (fuel + 1) hk
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+
 -- CupodBot --
 
 theorem linear_function_growth :
@@ -551,7 +627,6 @@ theorem formula_self_fulfilling :
 
   -- Unfold the local abbreviation `ψ` so the result matches the statement.
   simpa [ψ] using hProvable
-
 
 theorem CupodBot_vs_CupodBot (fuel : Nat) :
     ∃ k, outcome (fuel + 2) (CupodBot k) (CupodBot k) = some (.D, .D) := by
