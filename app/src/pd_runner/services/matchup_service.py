@@ -34,7 +34,8 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
         raise RuntimeError(
             "no Lean outcome theorem was found for this matchup; "
             "the new engine's outcome function is noncomputable, so the app can only "
-            "return matchups backed by a theorem"
+            "return matchups backed by a theorem. Use Bot:k for concrete parameterized "
+            "bots or Bot:? for existential parameter theorems"
         )
 
     build_result = build_lean_project(paths.lean_engine_dir)
@@ -88,4 +89,6 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
         lean_file=str(lean_file),
         command=exec_result.command,
         proof_theorem_used=generated.proof_theorem_used,
+        result_kind=generated.result_kind,
+        witness=generated.witness,
     )

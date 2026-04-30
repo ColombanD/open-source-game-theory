@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,13 +13,15 @@ class GeneratedLeanFile:
     path: Path
     proof_theorem_used: str | None
     actions_are_swapped: bool
+    result_kind: str = "concrete"
+    witness: str | None = None
 
 
 def validate_bot_name(name: str) -> None:
     # Keep this strict to avoid generating malformed Lean code.
     if not name:
         raise ValueError("bot name cannot be empty")
-    if not name.replace("_", "").isalnum():
+    if not re.fullmatch(r"[A-Za-z_]\w*(?::(\d+|\?))?", name):
         raise ValueError(f"invalid bot name: {name}")
 
 
@@ -45,8 +48,10 @@ def write_matchup_lean_file(
 
     target_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%f")
-    path = target_dir / f"matchup_{left_bot}_{right_bot}_{timestamp}.lean"
-    script, proof_theorem_used, actions_are_swapped = matchup_eval_template(
+    safe_left_bot = re.sub(r"[^A-Za-z0-9_]+", "_", left_bot)
+    safe_right_bot = re.sub(r"[^A-Za-z0-9_]+", "_", right_bot)
+    path = target_dir / f"matchup_{safe_left_bot}_{safe_right_bot}_{timestamp}.lean"
+    script, proof_theorem_used, actions_are_swapped, result_kind, witness = matchup_eval_template(
         left_bot,
         right_bot,
         claim_left_action=claim_left_action,
@@ -60,4 +65,6 @@ def write_matchup_lean_file(
         path=path,
         proof_theorem_used=proof_theorem_used,
         actions_are_swapped=actions_are_swapped,
+        result_kind=result_kind,
+        witness=witness,
     )

@@ -15,3 +15,5 @@ class MatchupResponseSchema:
     right_bot: str
     left_action: str
     right_action: str
+    result_kind: str = "concrete"
+    witness: str | None = None

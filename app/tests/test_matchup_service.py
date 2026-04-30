@@ -74,6 +74,8 @@ def test_run_matchup_orchestrates_generation_execution_and_parsing(monkeypatch, 
     assert result.lean_file == str(generated_file)
     assert result.command == f"lake env lean {generated_file}"
     assert result.proof_theorem_used == "PD.Proofs.OpenSourceBots.cd_actionClaim"
+    assert result.result_kind == "concrete"
+    assert result.witness is None
 
 
 def test_run_matchup_swaps_actions_when_reversed_theorem_used(monkeypatch, tmp_path: Path) -> None:
