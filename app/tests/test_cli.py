@@ -106,6 +106,27 @@ def test_cli_main_json_mode_emits_json_payload(monkeypatch, capsys) -> None:
     assert '"proof_theorem_used": "PD.Proofs.OpenSourceBots.cd_actionClaim"' in output
 
 
+def test_cli_main_lists_available_bots(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(sys, "argv", ["pd-runner", "--list-bots"])
+
+    cli.main()
+
+    output = capsys.readouterr().out
+    assert "CooperateBot" in output
+    assert "CupodBot" in output
+    assert "DefectBot" in output
+
+
+def test_cli_main_requires_matchup_without_list_bots(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(sys, "argv", ["pd-runner", "--left", "CooperateBot"])
+
+    with pytest.raises(SystemExit):
+        cli.main()
+
+    stderr = capsys.readouterr().err
+    assert "--left and --right are required unless --list-bots is used" in stderr
+
+
 def test_cli_main_rejects_single_claim_side(monkeypatch, capsys) -> None:
     monkeypatch.setattr(
         sys,

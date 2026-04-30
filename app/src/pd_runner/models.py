@@ -20,3 +20,5 @@ class MatchupResult:
     lean_file: str
     command: str
     proof_theorem_used: str | None = None
+    result_kind: str = "concrete"
+    witness: str | None = None

@@ -1,11 +1,11 @@
 # pd-runner
 
-Python orchestration layer for the Lean project in `../code`.
+Python orchestration layer for the Lean project in `../engine`.
 
 ## Goal
 
-- Accept two program names (bots) from the user.
-- Generate a Lean file that evaluates their chosen actions.
+- Accept two program names (bots) from the user, including `Bot:k` parameterized bots.
+- Generate a Lean file that checks a discovered outcome theorem.
 - Run Lean checks via `lake env lean`.
 - Parse and return resulting actions.
 
@@ -13,23 +13,49 @@ Python orchestration layer for the Lean project in `../code`.
 
 1. `cd app`
 2. `uv sync`
-3. `uv run run-matchup --left cooperateBot --right defectBot`
+3. `uv run run-matchup --left CooperateBot --right DefectBot`
+
+List bots discovered from the Lean engine:
+
+- `uv run run-matchup --list-bots`
+
+### CLI Parameters
+
+- `--left BOT`: left bot name, for example `CooperateBot` or `CupodBot:3`.
+- `--right BOT`: right bot name, for example `DefectBot` or `CupodBot:?`.
+- `--list-bots`: print the bots discovered from the Lean engine and exit.
+- `--claim-left C|D` and `--claim-right C|D`: check a claimed action pair.
+- `--quiet`: print only the action pair.
+- `--no-keep-file`: delete the generated Lean file after execution.
+- `--json`: print the result as JSON.
 
 ### Cleaner output and file cleanup
 
 - Print only actions:
-	- `uv run run-matchup --left cooperateBot --right defectBot --quiet`
+	- `uv run run-matchup --left CooperateBot --right DefectBot --quiet`
 - Delete generated Lean file after execution:
-	- `uv run run-matchup --left cooperateBot --right defectBot --no-keep-file`
+	- `uv run run-matchup --left CooperateBot --right DefectBot --no-keep-file`
 - Combine both:
-	- `uv run run-matchup --left cooperateBot --right defectBot --quiet --no-keep-file`
+	- `uv run run-matchup --left CooperateBot --right DefectBot --quiet --no-keep-file`
 
-### Optional theorem check (ActionClaim)
+### Optional Claim Check
 
-- Prove a simple action claim that should pass:
-	- `uv run run-matchup --left cooperateBot --right defectBot --claim-left C --claim-right D`
+- Check a claim against a discovered Lean outcome theorem:
+	- `uv run run-matchup --left CooperateBot --right DefectBot --claim-left C --claim-right D`
 - Try an intentionally false claim (should error):
-	- `uv run run-matchup --left cooperateBot --right defectBot --claim-left D --claim-right C`
+	- `uv run run-matchup --left CooperateBot --right DefectBot --claim-left D --claim-right C`
+
+### Parameterized Bots
+
+- Use `Bot:k` for a concrete natural-number parameter:
+	- `uv run run-matchup --left CupodBot:3 --right CooperateBot`
+- Reversed theorem lookup still works:
+	- `uv run run-matchup --left CooperateBot --right CupodBot:3`
+- Use `Bot:?` for existential parameter theorems:
+	- `uv run run-matchup --left 'CupodBot:?' --right DefectBot`
+- `Bot:?` first tries universal parameter theorems. If a theorem proves every `k`, the result is reported as `kind: all_parameters` with `witness: any`.
+- If no universal theorem matches, `Bot:?` tries existential theorems and reports `kind: exists_parameter` with `witness: unknown`.
+- Existential theorems do not certify concrete parameters. For example, `CupodBot:?` can use a theorem proving `∃ k`, but `CupodBot:3` requires a theorem about that concrete `k`.
 
 ## Useful uv Commands
 
@@ -42,6 +68,9 @@ Python orchestration layer for the Lean project in `../code`.
 
 ## Notes
 
-- This app assumes the Lean project lives at `../code`.
+- This app assumes the Lean project lives at `../engine`.
+- Legacy names such as `cooperateBot`, `defectBot`, and `dBot` are still accepted and mapped to the new Lean bot names.
+- Parameterized names use colon syntax: `CupodBot:3`, `DupocBot:10`, or `CupodBot:?`. Quote `Bot:?` in shells like zsh so `?` is not treated as a glob.
+- Unknown bot errors include the available bot list. You can also run `uv run run-matchup --list-bots`.
 - Generated Lean snippets are written to `generated/lean/`.
 - Build/eval logs can be stored in `generated/logs/`.

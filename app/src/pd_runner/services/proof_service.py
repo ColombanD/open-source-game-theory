@@ -1,6 +1,6 @@
 """Future service for explicit theorem proving workflows.
 
-This module is a placeholder for generating ActionClaim/OutcomeClaim theorem stubs
+This module is a placeholder for generating outcome theorem stubs
 and invoking Lean checks as part of larger proof pipelines.
 """
 
