@@ -6,7 +6,7 @@ _ACTION_RE = re.compile(r"\b(C|D)\b")
 
 
 def parse_actions_from_stdout(stdout: str) -> tuple[str, str]:
-    # Lean `#eval playActions ...` prints a tuple containing two actions.
+    # Lean `#eval outcome ...` prints an Option-wrapped tuple containing two actions.
     # We parse the first line that exposes at least two `C`/`D` tokens.
     for line in stdout.splitlines():
         tokens = _ACTION_RE.findall(line)

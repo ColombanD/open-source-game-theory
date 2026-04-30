@@ -126,7 +126,7 @@ def test_run_matchup_raises_and_cleans_up_on_lean_failure(monkeypatch, tmp_path:
         "write_matchup_lean_file",
         lambda **kwargs: GeneratedLeanFile(
             path=generated_file,
-            proof_theorem_used=None,
+            proof_theorem_used="PDNew.Theorems.outcome_CooperateBot_vs_DefectBot",
             actions_are_swapped=False,
         ),
     )
@@ -143,5 +143,33 @@ def test_run_matchup_raises_and_cleans_up_on_lean_failure(monkeypatch, tmp_path:
 
     with pytest.raises(RuntimeError, match="lean execution failed"):
         matchup_service.run_matchup(MatchupRequest("cooperateBot", "defectBot"), keep_file=False)
+
+    assert not generated_file.exists()
+
+
+def test_run_matchup_raises_when_no_outcome_theorem(monkeypatch, tmp_path: Path) -> None:
+    generated_file = tmp_path / "matchup.lean"
+    generated_file.write_text("fake lean file", encoding="utf-8")
+
+    monkeypatch.setattr(
+        matchup_service,
+        "load_paths",
+        lambda: SimpleNamespace(
+            generated_lean_dir=tmp_path / "generated",
+            lean_engine_dir=tmp_path / "engine",
+        ),
+    )
+    monkeypatch.setattr(
+        matchup_service,
+        "write_matchup_lean_file",
+        lambda **kwargs: GeneratedLeanFile(
+            path=generated_file,
+            proof_theorem_used=None,
+            actions_are_swapped=False,
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="no Lean outcome theorem"):
+        matchup_service.run_matchup(MatchupRequest("unknown", "defectBot"), keep_file=False)
 
     assert not generated_file.exists()

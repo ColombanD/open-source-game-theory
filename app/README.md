@@ -1,11 +1,11 @@
 # pd-runner
 
-Python orchestration layer for the Lean project in `../code`.
+Python orchestration layer for the Lean project in `../engine`.
 
 ## Goal
 
 - Accept two program names (bots) from the user.
-- Generate a Lean file that evaluates their chosen actions.
+- Generate a Lean file that checks a discovered outcome theorem.
 - Run Lean checks via `lake env lean`.
 - Parse and return resulting actions.
 
@@ -13,23 +13,23 @@ Python orchestration layer for the Lean project in `../code`.
 
 1. `cd app`
 2. `uv sync`
-3. `uv run run-matchup --left cooperateBot --right defectBot`
+3. `uv run run-matchup --left CooperateBot --right DefectBot`
 
 ### Cleaner output and file cleanup
 
 - Print only actions:
-	- `uv run run-matchup --left cooperateBot --right defectBot --quiet`
+	- `uv run run-matchup --left CooperateBot --right DefectBot --quiet`
 - Delete generated Lean file after execution:
-	- `uv run run-matchup --left cooperateBot --right defectBot --no-keep-file`
+	- `uv run run-matchup --left CooperateBot --right DefectBot --no-keep-file`
 - Combine both:
-	- `uv run run-matchup --left cooperateBot --right defectBot --quiet --no-keep-file`
+	- `uv run run-matchup --left CooperateBot --right DefectBot --quiet --no-keep-file`
 
-### Optional theorem check (ActionClaim)
+### Optional Claim Check
 
-- Prove a simple action claim that should pass:
-	- `uv run run-matchup --left cooperateBot --right defectBot --claim-left C --claim-right D`
+- Check a claim against a discovered Lean outcome theorem:
+	- `uv run run-matchup --left CooperateBot --right DefectBot --claim-left C --claim-right D`
 - Try an intentionally false claim (should error):
-	- `uv run run-matchup --left cooperateBot --right defectBot --claim-left D --claim-right C`
+	- `uv run run-matchup --left CooperateBot --right DefectBot --claim-left D --claim-right C`
 
 ## Useful uv Commands
 
@@ -42,6 +42,7 @@ Python orchestration layer for the Lean project in `../code`.
 
 ## Notes
 
-- This app assumes the Lean project lives at `../code`.
+- This app assumes the Lean project lives at `../engine`.
+- Legacy names such as `cooperateBot`, `defectBot`, and `dBot` are still accepted and mapped to the new Lean bot names.
 - Generated Lean snippets are written to `generated/lean/`.
 - Build/eval logs can be stored in `generated/logs/`.

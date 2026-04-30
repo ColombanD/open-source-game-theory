@@ -10,17 +10,17 @@ from pd_runner.services.matchup_service import run_matchup
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run a Lean-verified open-source PD matchup")
-    parser.add_argument("--left", required=True, help="Left bot name, e.g. cooperateBot")
-    parser.add_argument("--right", required=True, help="Right bot name, e.g. defectBot")
+    parser.add_argument("--left", required=True, help="Left bot name, e.g. CooperateBot")
+    parser.add_argument("--right", required=True, help="Right bot name, e.g. DefectBot")
     parser.add_argument(
         "--claim-left",
         choices=["C", "D"],
-        help="Optional claimed left action to prove as an ActionClaim theorem.",
+        help="Optional claimed left action to check against a Lean outcome theorem.",
     )
     parser.add_argument(
         "--claim-right",
         choices=["C", "D"],
-        help="Optional claimed right action to prove as an ActionClaim theorem.",
+        help="Optional claimed right action to check against a Lean outcome theorem.",
     )
     parser.add_argument("--json", action="store_true", help="Emit JSON output")
     parser.add_argument("--quiet", action="store_true", help="Emit only the action pair")

@@ -28,6 +28,14 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
         claim_right_action=request.claim_right_action,
     )
     lean_file = generated.path
+    if generated.proof_theorem_used is None:
+        if not keep_file:
+            _cleanup_file(lean_file)
+        raise RuntimeError(
+            "no Lean outcome theorem was found for this matchup; "
+            "the new engine's outcome function is noncomputable, so the app can only "
+            "return matchups backed by a theorem"
+        )
 
     exec_result = run_lean_file(paths.lean_engine_dir, lean_file)
     if exec_result.returncode != 0:
@@ -36,6 +44,7 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
         raise RuntimeError(
             "lean execution failed\n"
             f"command: {exec_result.command}\n"
+            f"stdout:\n{exec_result.stdout}\n"
             f"stderr:\n{exec_result.stderr}"
         )
 
@@ -44,6 +53,18 @@ def run_matchup(request: MatchupRequest, keep_file: bool = True) -> MatchupResul
     # If we evaluated in reverse order, swap the actions back to match the requested order
     if generated.actions_are_swapped:
         left_action, right_action = right_action, left_action
+
+    if request.claim_left_action is not None and request.claim_right_action is not None:
+        claimed_actions = (request.claim_left_action, request.claim_right_action)
+        actual_actions = (left_action, right_action)
+        if actual_actions != claimed_actions:
+            if not keep_file:
+                _cleanup_file(lean_file)
+            raise RuntimeError(
+                "lean outcome did not match claimed actions\n"
+                f"claimed: {claimed_actions}\n"
+                f"actual:  {actual_actions}"
+            )
 
     if not keep_file:
         _cleanup_file(lean_file)

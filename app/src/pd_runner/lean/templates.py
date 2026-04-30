@@ -1,35 +1,152 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
+DEFAULT_EVAL_FUEL = 20
 
-def _discover_action_claim_theorems(proofs_dir: Path) -> dict[tuple[str, str], tuple[str, str, str]]:
-    """Scan Lean proof files and discover ActionClaim theorems.
-    
-    Returns a mapping of (left_bot, right_bot) -> (theorem_name, left_action, right_action).
-    """
-    theorem_map: dict[tuple[str, str], tuple[str, str, str]] = {}
-    
-    # Pattern to match: theorem name_actionClaim : ActionClaim Bot.leftBot Bot.rightBot ACTION ACTION
-    pattern = r'theorem\s+(\w+)\s*:\s*ActionClaim\s+Bot\.(\w+)\s+Bot\.(\w+)\s+([CD])\s+([CD])'
-    
-    for lean_file in proofs_dir.glob("*.lean"):
+
+@dataclass(frozen=True)
+class OutcomeTheorem:
+    name: str
+    module: str
+    left_bot: str
+    right_bot: str
+    left_action: str
+    right_action: str
+    fuel_param: str
+    fuel_expr: str
+
+    @property
+    def qualified_name(self) -> str:
+        return f"PDNew.Theorems.{self.name}"
+
+    @property
+    def concrete_fuel_expr(self) -> str:
+        return re.sub(rf"\b{re.escape(self.fuel_param)}\b", "0", self.fuel_expr)
+
+
+def _workspace_root() -> Path:
+    return Path(__file__).resolve().parents[4]
+
+
+_ENGINE_PD_DIR = _workspace_root() / "engine" / "PrisonersDilemma"
+_BOTS_DIR = _ENGINE_PD_DIR / "Bots"
+_THEOREMS_DIR = _ENGINE_PD_DIR / "Theorems"
+
+
+def _discover_bot_names(bots_dir: Path) -> set[str]:
+    pattern = re.compile(r"\bdef\s+([A-Za-z_]\w*)\b")
+    names: set[str] = set()
+
+    if not bots_dir.exists():
+        return names
+
+    for lean_file in bots_dir.glob("*.lean"):
         content = lean_file.read_text(encoding="utf-8")
-        matches = re.findall(pattern, content)
-        
-        for theorem_name, left_bot, right_bot, left_action, right_action in matches:
-            theorem_map[(left_bot, right_bot)] = (theorem_name, left_action, right_action)
-    
+        names.update(pattern.findall(content))
+
+    return names
+
+
+def _legacy_bot_aliases(bot_names: set[str]) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for name in bot_names:
+        aliases[name] = name
+        aliases[name.lower()] = name
+        aliases[f"{name[0].lower()}{name[1:]}"] = name
+
+    aliases.update(
+        {
+            "cooperateBot": "CooperateBot",
+            "defectBot": "DefectBot",
+            "dBot": "DBot",
+            "eBot": "EBot",
+            "oBot": "OBot",
+            "cupodBot": "CupodBot",
+            "dupocBot": "DupocBot",
+            "mirrorBot": "MirrorBot",
+            "titForTatBot": "TitForTatBot",
+        }
+    )
+    return {alias: target for alias, target in aliases.items() if target in bot_names}
+
+
+def normalize_bot_name(name: str) -> str:
+    return _BOT_ALIASES.get(name, name)
+
+
+def _discover_outcome_theorems(theorems_dir: Path) -> dict[tuple[str, str], OutcomeTheorem]:
+    """Scan Lean theorem files and discover concrete `outcome` theorems."""
+    theorem_map: dict[tuple[str, str], OutcomeTheorem] = {}
+
+    if not theorems_dir.exists():
+        return theorem_map
+
+    pattern = re.compile(
+        r"theorem\s+(\w+)\s*"
+        r"\(\s*(\w+)\s*:\s*Nat\s*\)\s*:\s*"
+        r"outcome\s+(.+?)\s+"
+        r"([A-Za-z_]\w*)\s+([A-Za-z_]\w*)\s*=\s*"
+        r"some\s+\(\.([CD]),\s*\.([CD])\)",
+        re.DOTALL,
+    )
+
+    for lean_file in theorems_dir.glob("*.lean"):
+        content = lean_file.read_text(encoding="utf-8")
+        for match in pattern.finditer(content):
+            theorem_name = match.group(1)
+            fuel_param = match.group(2)
+            fuel_expr = " ".join(match.group(3).split())
+            left_bot = match.group(4)
+            right_bot = match.group(5)
+            left_action = match.group(6)
+            right_action = match.group(7)
+
+            theorem_map[(left_bot, right_bot)] = OutcomeTheorem(
+                name=theorem_name,
+                module=lean_file.stem,
+                left_bot=left_bot,
+                right_bot=right_bot,
+                left_action=left_action,
+                right_action=right_action,
+                fuel_param=fuel_param,
+                fuel_expr=fuel_expr,
+            )
+
     return theorem_map
 
 
-# Get the proofs directory relative to this file
-# Path structure: app/src/pd_runner/lean/templates.py
-# We need to go to: ../../../.. (to workspace root) / engine / PrisonersDilemma / Proofs
-_PROOFS_DIR = Path(__file__).parent.parent.parent.parent.parent / "engine" / "PrisonersDilemma" / "Proofs"
-_ACTION_CLAIM_THEOREMS = _discover_action_claim_theorems(_PROOFS_DIR) if _PROOFS_DIR.exists() else {}
+_BOT_NAMES = _discover_bot_names(_BOTS_DIR)
+_BOT_ALIASES = _legacy_bot_aliases(_BOT_NAMES)
+_OUTCOME_THEOREMS = _discover_outcome_theorems(_THEOREMS_DIR)
 
+
+def select_outcome_theorem(
+    left_bot: str,
+    right_bot: str,
+    claim_left_action: str,
+    claim_right_action: str,
+) -> tuple[OutcomeTheorem, bool] | None:
+    """Return a pre-proved theorem for this outcome, checking both orders."""
+    left_bot = normalize_bot_name(left_bot)
+    right_bot = normalize_bot_name(right_bot)
+
+    entry = _OUTCOME_THEOREMS.get((left_bot, right_bot))
+    if entry is not None:
+        if (claim_left_action, claim_right_action) == (entry.left_action, entry.right_action):
+            return (entry, False)
+
+    entry_reversed = _OUTCOME_THEOREMS.get((right_bot, left_bot))
+    if entry_reversed is not None:
+        if (claim_left_action, claim_right_action) == (
+            entry_reversed.right_action,
+            entry_reversed.left_action,
+        ):
+            return (entry_reversed, True)
+
+    return None
 
 
 def select_action_claim_theorem(
@@ -38,28 +155,24 @@ def select_action_claim_theorem(
     claim_left_action: str,
     claim_right_action: str,
 ) -> tuple[str, bool] | None:
-    """Return a pre-proved theorem for this ActionClaim, checking both orders.
-    
-    Returns (theorem_name, is_reversed) where:
-    - is_reversed=False: theorem proves (left_bot, right_bot) directly
-    - is_reversed=True: theorem proves (right_bot, left_bot) with swapped actions
-    """
-    # Try direct order first
-    entry = _ACTION_CLAIM_THEOREMS.get((left_bot, right_bot))
+    """Backward-compatible wrapper around new `outcome` theorem discovery."""
+    result = select_outcome_theorem(left_bot, right_bot, claim_left_action, claim_right_action)
+    if result is None:
+        return None
+
+    theorem, is_reversed = result
+    return theorem.name, is_reversed
+
+
+def _auto_select_outcome(left_bot: str, right_bot: str) -> tuple[OutcomeTheorem, bool] | None:
+    entry = _OUTCOME_THEOREMS.get((left_bot, right_bot))
     if entry is not None:
-        theorem_name, expected_left_action, expected_right_action = entry
-        if (claim_left_action, claim_right_action) == (expected_left_action, expected_right_action):
-            return (theorem_name, False)
-    
-    # Try reverse order: if (right_bot, left_bot) proves (x, y),
-    # and we want (left_bot, right_bot) with swapped actions (y, x)
-    entry_reversed = _ACTION_CLAIM_THEOREMS.get((right_bot, left_bot))
+        return (entry, False)
+
+    entry_reversed = _OUTCOME_THEOREMS.get((right_bot, left_bot))
     if entry_reversed is not None:
-        theorem_name, expected_left_action, expected_right_action = entry_reversed
-        # Right_bot's action becomes left_bot's action in reversed order
-        if (claim_left_action, claim_right_action) == (expected_right_action, expected_left_action):
-            return (theorem_name, True)
-    
+        return (entry_reversed, True)
+
     return None
 
 
@@ -69,111 +182,57 @@ def matchup_eval_template(
     claim_left_action: str | None = None,
     claim_right_action: str | None = None,
 ) -> tuple[str, str | None, bool]:
-    """Lean snippet that evaluates the action pair for a chosen bot matchup.
-    
-    Returns (script, proof_theorem_used, actions_are_swapped) where:
-    - script: Lean code to evaluate
-    - proof_theorem_used: which theorem was used, if any
-    - actions_are_swapped: whether the returned actions should be swapped by the caller
-    """
-    theorem_block = ""
-    proof_theorem_used: str | None = None
+    """Lean snippet that evaluates the action pair for a chosen bot matchup."""
+    left_bot = normalize_bot_name(left_bot)
+    right_bot = normalize_bot_name(right_bot)
+
+    theorem: OutcomeTheorem | None = None
     actions_are_swapped = False
-    
-    # Determine if we should look up a pre-proved theorem
-    if claim_left_action is None and claim_right_action is None:
-        # Auto-detect from available theorems (try direct order first)
-        entry = _ACTION_CLAIM_THEOREMS.get((left_bot, right_bot))
-        if entry is not None:
-            theorem_name, claim_left_action, claim_right_action = entry
-        else:
-            # Try reverse order
-            entry_reversed = _ACTION_CLAIM_THEOREMS.get((right_bot, left_bot))
-            if entry_reversed is not None:
-                theorem_name, rev_left_action, rev_right_action = entry_reversed
-                # Swap the actions for the requested pairing
-                claim_left_action, claim_right_action = rev_right_action, rev_left_action
-                actions_are_swapped = True
-    
-    # Determine which pairing to evaluate in Lean
+
+    if claim_left_action is not None and claim_right_action is not None:
+        selected = select_outcome_theorem(
+            left_bot,
+            right_bot,
+            claim_left_action,
+            claim_right_action,
+        )
+        if selected is not None:
+            theorem, actions_are_swapped = selected
+    else:
+        selected = _auto_select_outcome(left_bot, right_bot)
+        if selected is not None:
+            theorem, actions_are_swapped = selected
+
     eval_left_bot = left_bot
     eval_right_bot = right_bot
-    eval_left_action = claim_left_action
-    eval_right_action = claim_right_action
-    
-    # Generate theorem block if we have a claim
-    if claim_left_action is not None and claim_right_action is not None:
-        result = select_action_claim_theorem(
-            left_bot,
-            right_bot,
-            claim_left_action,
-            claim_right_action,
-        )
-        
-        if result is not None:
-            preproved, is_reversed = result
-            
-            if is_reversed:
-                # Use the reverse pairing for the Lean eval
-                eval_left_bot = right_bot
-                eval_right_bot = left_bot
-                eval_left_action = claim_right_action
-                eval_right_action = claim_left_action
-                actions_are_swapped = True
-            
-            # Find which proof file this theorem is in
-            proof_file = None
-            for lean_file in _PROOFS_DIR.glob("*.lean"):
-                if preproved in lean_file.read_text(encoding="utf-8"):
-                    proof_file = lean_file.stem
-                    break
-            
-            # Use fully qualified theorem name
-            qualified_theorem = f"PD.Proofs.{proof_file}.{preproved}" if proof_file else preproved
-            proof_theorem_used = qualified_theorem
-            theorem_block = f"""
+    eval_fuel = str(DEFAULT_EVAL_FUEL)
+    theorem_block = ""
+    proof_theorem_used: str | None = None
 
-theorem claimed_actions : ActionClaim Bot.{eval_left_bot} Bot.{eval_right_bot} {eval_left_action} {eval_right_action} := by
-  exact {qualified_theorem}
+    if theorem is not None:
+        eval_left_bot = theorem.left_bot
+        eval_right_bot = theorem.right_bot
+        eval_fuel = theorem.concrete_fuel_expr
+        proof_theorem_used = theorem.qualified_name
+        theorem_block = f"""
+
+theorem claimed_outcome :
+    outcome {eval_fuel} {eval_left_bot} {eval_right_bot} =
+      some (.{theorem.left_action}, .{theorem.right_action}) := by
+  exact {theorem.qualified_name} 0
 """
-        else:
-            proof_theorem_used = "generated:unfold+simp"
-            theorem_block = f"""
+        eval_line = f"#eval ((Action.{theorem.left_action}, Action.{theorem.right_action}) : Outcome)"
+    else:
+        eval_line = f"#check outcome {eval_fuel} {eval_left_bot} {eval_right_bot}"
 
-theorem claimed_actions : ActionClaim Bot.{eval_left_bot} Bot.{eval_right_bot} {eval_left_action} {eval_right_action} := by
-  unfold ActionClaim playActions
-  simp [ProgramModel.action]
-"""
+    script = f"""import PrisonersDilemma
 
-    # Build imports
-    imports = """import PrisonersDilemma.Models.BotUniverse
-import PrisonersDilemma.Pipeline"""
-    
-    # Add proof file imports if there's a theorem to prove
-    if claim_left_action is not None and claim_right_action is not None:
-        result = select_action_claim_theorem(
-            left_bot,
-            right_bot,
-            claim_left_action,
-            claim_right_action,
-        )
-        if result is not None:
-            preproved, is_reversed = result
-            # Find and import the proof file
-            for lean_file in _PROOFS_DIR.glob("*.lean"):
-                if preproved in lean_file.read_text(encoding="utf-8"):
-                    imports += f"\nimport PrisonersDilemma.Proofs.{lean_file.stem}"
-                    break
-
-    script = f"""{imports}
-
-open PD
-open PD.Action
-open PD.Models.BotUniverse
+open PDNew
+open PDNew.Bots
+open PDNew.Theorems
 
 {theorem_block}
 
-#eval playActions Bot.{eval_left_bot} Bot.{eval_right_bot}
+{eval_line}
 """
     return script, proof_theorem_used, actions_are_swapped
-

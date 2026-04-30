@@ -21,12 +21,12 @@ def test_run_lean_file_invokes_lake_env_lean(monkeypatch, tmp_path: Path) -> Non
     lean_file = tmp_path / "matchup.lean"
     result = lean_executor.run_lean_file(project_dir, lean_file)
 
-    assert seen["cmd"] == ["lake", "env", "lean", str(lean_file)]
-    assert seen["cwd"] == project_dir
+    assert seen["cmd"] == ["lake", "env", "lean", "../matchup.lean"]
+    assert seen["cwd"] == project_dir.resolve()
     assert seen["capture_output"] is True
     assert seen["text"] is True
     assert seen["check"] is False
-    assert result.command == f"lake env lean {lean_file}"
+    assert result.command == "lake env lean ../matchup.lean"
     assert result.returncode == 0
     assert result.stdout == "(C, D)\n"
     assert result.stderr == ""
