@@ -41,6 +41,29 @@ theorem proofSearch_false_for_CooperateBot (k : Nat) :
                           (interp_CooperateBot_plays_D_false _)
   | false => rfl
 
+theorem play_bot_CooperateBot (n : Nat) (opponent : Prog) :
+    play (n + 2) (.bot CooperateBot) opponent = some .C := by
+  simp [play, eval, CooperateBot]
+
+theorem interp_bot_CooperateBot_plays_D_false (q : Prog) :
+    ¬ (Formula.plays (.bot CooperateBot) q .D).interp := by
+  rintro ⟨n, hn⟩
+  cases n with
+  | zero => simp only [play, eval, reduceCtorEq] at hn
+  | succ m =>
+      cases m with
+      | zero => simp [play, eval] at hn
+      | succ fuel =>
+          rw [play_bot_CooperateBot] at hn
+          cases hn
+
+theorem proofSearch_false_for_bot_CooperateBot (k : Nat) :
+    proofSearch k (.plays (.bot CooperateBot) (CupodBot k) .D) = false := by
+  cases h : proofSearch k (.plays (.bot CooperateBot) (CupodBot k) .D) with
+  | true  => exact absurd (proofSearch_sound _ _ h)
+                          (interp_bot_CooperateBot_plays_D_false _)
+  | false => rfl
+
 theorem CupodBot_plays_C_against_CooperateBot (k fuel : Nat) :
     play (fuel + 2) (CupodBot k) CooperateBot = some .C := by
   -- `guard_false` tells us the proof search for “CooperateBot plays D” fails.
@@ -48,6 +71,13 @@ theorem CupodBot_plays_C_against_CooperateBot (k fuel : Nat) :
   -- and the constant branch all the way down to `.C`.
   have hg := proofSearch_false_for_CooperateBot k
   show eval (fuel + 2) (CupodBot k) CooperateBot (CupodBot k) = some .C
+  unfold CupodBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+theorem CupodBot_plays_C_against_bot_CooperateBot (k fuel : Nat) :
+    play (fuel + 2) (CupodBot k) (.bot CooperateBot) = some .C := by
+  have hg := proofSearch_false_for_bot_CooperateBot k
+  show eval (fuel + 2) (CupodBot k) (.bot CooperateBot) (CupodBot k) = some .C
   unfold CupodBot at hg ⊢
   simp [eval, Prog.subst, Formula.subst, hg]
 
@@ -85,10 +115,29 @@ theorem proofSearch_true_for_DefectBot :
   refine ⟨k, ?_⟩ -- use the same k for the conclusion
   exact CupodBot_monotonicity 0 k DefectBot .D (Nat.zero_le k) hk
 
+theorem proofSearch_true_for_bot_DefectBot_different_k (n: Nat) :
+    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot n) .D) = true := by
+  have hex : ∃ m, play m (.bot DefectBot) (CupodBot n) = some .D := by
+    exists 2
+  exact proofSearch_complete_plays (.bot DefectBot) (CupodBot n) .D hex
+
+theorem proofSearch_true_for_bot_DefectBot :
+    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true := by
+  obtain ⟨k, hk⟩ := proofSearch_true_for_bot_DefectBot_different_k 0
+  refine ⟨k, ?_⟩
+  exact CupodBot_monotonicity 0 k (.bot DefectBot) .D (Nat.zero_le k) hk
+
 theorem CupodBot_plays_D_against_DefectBot (k fuel : Nat)
     (hk : proofSearch k (.plays DefectBot (CupodBot k) .D) = true) :
     play (fuel + 2) (CupodBot k) DefectBot = some .D := by
   show eval (fuel + 2) (CupodBot k) DefectBot (CupodBot k) = some .D
+  unfold CupodBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+theorem CupodBot_plays_D_against_bot_DefectBot (k fuel : Nat)
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
+    play (fuel + 2) (CupodBot k) (.bot DefectBot) = some .D := by
+  show eval (fuel + 2) (CupodBot k) (.bot DefectBot) (CupodBot k) = some .D
   unfold CupodBot at hk ⊢
   simp [eval, Prog.subst, Formula.subst, hk]
 
@@ -111,12 +160,13 @@ theorem CupodBot_vs_DefectBot (fuel : Nat):
 
 theorem TitForTatBot_plays_C_against_CupodBot (k fuel : Nat) :
     play (fuel + 4) TitForTatBot (CupodBot k) = some .C := by
-  have hCupod : play (fuel + 2) (CupodBot k) CooperateBot = some .C := CupodBot_plays_C_against_CooperateBot k fuel
+  have hCupod : play (fuel + 2) (CupodBot k) (.bot CooperateBot) = some .C :=
+    CupodBot_plays_C_against_bot_CooperateBot k fuel
   have hGuard :
-      eval (fuel + 3) TitForTatBot (CupodBot k) (.sim .opp CooperateBot) = some .C := by
-    simpa [eval, Prog.subst, play, CooperateBot] using hCupod
+      eval (fuel + 3) TitForTatBot (CupodBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    simpa [eval, Prog.subst, play] using hCupod
   have hPlay := play_ite_from_guard
-    fuel 3 TitForTatBot (CupodBot k) (.sim .opp CooperateBot)
+    fuel 3 TitForTatBot (CupodBot k) (.sim .opp (.bot CooperateBot))
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
@@ -181,22 +231,22 @@ theorem CupodBot_vs_TitForTatBot (fuel : Nat):
 -- DBot --
 
 theorem DBot_plays_C_against_CupodBot (k fuel : Nat)
-    (hk : proofSearch k (.plays DefectBot (CupodBot k) .D) = true) :
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
     play (fuel + 4) DBot (CupodBot k) = some .C := by
-  have hCupod : play (fuel + 2) (CupodBot k) DefectBot = some .D :=
-    CupodBot_plays_D_against_DefectBot k fuel hk
+  have hCupod : play (fuel + 2) (CupodBot k) (.bot DefectBot) = some .D :=
+    CupodBot_plays_D_against_bot_DefectBot k fuel hk
   have hGuard :
-      eval (fuel + 3) DBot (CupodBot k) (.sim .opp DefectBot) = some .D := by
-    simpa [eval, Prog.subst, play, DefectBot] using hCupod
+      eval (fuel + 3) DBot (CupodBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+    simpa [eval, Prog.subst, play] using hCupod
   have hPlay := play_ite_from_guard
-    fuel 3 DBot (CupodBot k) (.sim .opp DefectBot)
+    fuel 3 DBot (CupodBot k) (.sim .opp (.bot DefectBot))
     (.const Action.D) (.const Action.C)
     Action.C Action.D
     (by rfl) hGuard
   simpa [eval] using hPlay
 
 theorem interp_DBot_plays_D_false (k : Nat)
-    (hk : proofSearch k (.plays DefectBot (CupodBot k) .D) = true) :
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
     ¬ (Formula.plays DBot (CupodBot k) .D).interp := by
   -- `interp` for a `.plays` formula means: there exists some evaluation fuel
   -- `n` at which the play returns the claimed action.  To refute the formula,
@@ -232,7 +282,7 @@ theorem interp_DBot_plays_D_false (k : Nat)
                   cases hn
 
 theorem proofSearch_false_for_DBot (k : Nat)
-    (hk : proofSearch k (.plays DefectBot (CupodBot k) .D) = true) :
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
     proofSearch k (.plays DBot (CupodBot k) .D) = false := by
   cases h : proofSearch k (.plays DBot (CupodBot k) .D) with
   | true  => exact absurd (proofSearch_sound _ _ h)
@@ -241,7 +291,7 @@ theorem proofSearch_false_for_DBot (k : Nat)
 
 theorem CupodBot_vs_DBot (fuel : Nat):
     ∃ k, outcome (fuel + 4) (CupodBot k) DBot = some (.C, .C) := by
-  obtain ⟨k, hk⟩ := proofSearch_true_for_DefectBot
+  obtain ⟨k, hk⟩ := proofSearch_true_for_bot_DefectBot
   refine ⟨k, ?_⟩
   have hA : play (fuel + 4) (CupodBot k) DBot = some .C := by
     have hg := proofSearch_false_for_DBot k hk
@@ -256,37 +306,37 @@ theorem CupodBot_vs_DBot (fuel : Nat):
 -- OBot --
 
 theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
-    (hk : proofSearch k (.plays DefectBot (CupodBot k) .D) = true) :
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
     play (fuel + 5) OBot (CupodBot k) = some .D := by
   have hGuard1 :
-      eval (fuel + 4) OBot (CupodBot k) (.sim .opp CooperateBot) = some .C := by
-    have hProbe : play (fuel + 3) (CupodBot k) CooperateBot = some .C := by
-      simpa [Nat.add_assoc] using CupodBot_plays_C_against_CooperateBot k (fuel + 1)
-    simpa [eval, Prog.subst, play, CooperateBot] using hProbe
+      eval (fuel + 4) OBot (CupodBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    have hProbe : play (fuel + 3) (CupodBot k) (.bot CooperateBot) = some .C := by
+      simpa [Nat.add_assoc] using CupodBot_plays_C_against_bot_CooperateBot k (fuel + 1)
+    simpa [eval, Prog.subst, play] using hProbe
   have hGuard2 :
-      eval (fuel + 3) OBot (CupodBot k) (.sim .opp DefectBot) = some .D := by
-    have hProbe : play (fuel + 2) (CupodBot k) DefectBot = some .D :=
-      CupodBot_plays_D_against_DefectBot k fuel hk
-    simpa [eval, Prog.subst, play, DefectBot] using hProbe
+      eval (fuel + 3) OBot (CupodBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+    have hProbe : play (fuel + 2) (CupodBot k) (.bot DefectBot) = some .D :=
+      CupodBot_plays_D_against_bot_DefectBot k fuel hk
+    simpa [eval, Prog.subst, play] using hProbe
   have hPlay := play_ite_from_guard
-    fuel 4 OBot (CupodBot k) (.sim .opp CooperateBot)
-    (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D))
+    fuel 4 OBot (CupodBot k) (.sim .opp (.bot CooperateBot))
+    (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
     (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard1
   have hInner :
       eval (fuel + 4) OBot (CupodBot k)
-        (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D)) =
+        (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
           some .D := by
     have hGuard2' :
         eval (fuel + 3)
-          (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D))
-          (CupodBot k) (.sim .opp DefectBot) = some .D := by
-      simpa [eval, Prog.subst, play, DefectBot] using hGuard2
+          (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
+          (CupodBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+      simpa [eval, Prog.subst, play] using hGuard2
     have hPlay := play_ite_from_guard
       fuel 3
-      (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D))
-      (CupodBot k) (.sim .opp DefectBot)
+      (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
+      (CupodBot k) (.sim .opp (.bot DefectBot))
       (.const Action.C) (.const Action.D)
       Action.C Action.D
       (by rfl) hGuard2'
@@ -297,7 +347,7 @@ theorem proofSearch_true_for_OBot_different_k:
     ∃ k n, proofSearch k (.plays OBot (CupodBot n) .D) = true := by
   have hex : ∃ m n, play m OBot (CupodBot n) = some .D := by
     -- We want to use OBot plays D against CupodBot n, but we need to have hk
-    have hk := proofSearch_true_for_DefectBot
+    have hk := proofSearch_true_for_bot_DefectBot
     obtain ⟨d, hd⟩ := hk
     have hOBotPlayD := OBot_plays_D_against_CupodBot d 0 hd
     exists 5, d
@@ -337,7 +387,7 @@ theorem CupodBot_vs_OBot (fuel : Nat) :
   -- `o` makes CUPOD defect against OBot, while `d` makes OBot defect against
   -- CUPOD via the DefectBot probe used inside `OBot_plays_D_against_CupodBot`.
   obtain ⟨o, ho⟩ := proofSearch_true_for_OBot
-  obtain ⟨d, hd⟩ := proofSearch_true_for_DefectBot
+  obtain ⟨d, hd⟩ := proofSearch_true_for_bot_DefectBot
 
   -- Choose one final index large enough for both witnesses. From there,
   -- monotonicity lets us reuse both proof-search successes at the same `k`.
@@ -354,9 +404,9 @@ theorem CupodBot_vs_OBot (fuel : Nat) :
 
   -- Lift DefectBot's proof-search success from fuel/index `d` to the same `k`.
   -- This is what OBot needs in order to defect against `CupodBot k`.
-  have hkDefect : proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
-    CupodBot_monotonicity d k DefectBot .D hdk
-      (proofSearch_monotone d k (.plays DefectBot (CupodBot d) .D) hdk hd)
+  have hkDefect : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
+    CupodBot_monotonicity d k (.bot DefectBot) .D hdk
+      (proofSearch_monotone d k (.plays (.bot DefectBot) (CupodBot d) .D) hdk hd)
   refine ⟨k, ?_⟩
 
   -- CUPOD defects against OBot because `hkOBot` makes its search guard true.
