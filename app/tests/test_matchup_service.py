@@ -32,6 +32,7 @@ def test_run_matchup_orchestrates_generation_execution_and_parsing(monkeypatch, 
     )
 
     def fake_run_lean_file(lean_project_dir, lean_file):
+        calls["run_after_build"] = calls.get("build_lean_project") is True
         calls["lean_project_dir"] = lean_project_dir
         calls["lean_file"] = lean_file
         return LeanExecResult(
@@ -41,6 +42,17 @@ def test_run_matchup_orchestrates_generation_execution_and_parsing(monkeypatch, 
             stderr="",
         )
 
+    def fake_build_lean_project(lean_project_dir):
+        calls["build_lean_project"] = True
+        calls["build_project_dir"] = lean_project_dir
+        return LeanExecResult(
+            command="lake build PrisonersDilemma",
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
+
+    monkeypatch.setattr(matchup_service, "build_lean_project", fake_build_lean_project)
     def fake_parse_actions_from_stdout(stdout: str):
         calls["stdout"] = stdout
         return "C", "D"
@@ -50,6 +62,8 @@ def test_run_matchup_orchestrates_generation_execution_and_parsing(monkeypatch, 
 
     result = matchup_service.run_matchup(MatchupRequest("cooperateBot", "defectBot"))
 
+    assert calls["build_project_dir"] == tmp_path / "engine"
+    assert calls["run_after_build"] is True
     assert calls["lean_project_dir"] == tmp_path / "engine"
     assert calls["lean_file"] == generated_file
     assert calls["stdout"] == "(C, D)\n"
@@ -93,6 +107,16 @@ def test_run_matchup_swaps_actions_when_reversed_theorem_used(monkeypatch, tmp_p
             stderr="",
         )
 
+    monkeypatch.setattr(
+        matchup_service,
+        "build_lean_project",
+        lambda lean_project_dir: LeanExecResult(
+            command="lake build PrisonersDilemma",
+            returncode=0,
+            stdout="",
+            stderr="",
+        ),
+    )
     def fake_parse_actions_from_stdout(stdout: str):
         return "D", "C"
 
@@ -140,8 +164,56 @@ def test_run_matchup_raises_and_cleans_up_on_lean_failure(monkeypatch, tmp_path:
             stderr="boom",
         ),
     )
+    monkeypatch.setattr(
+        matchup_service,
+        "build_lean_project",
+        lambda lean_project_dir: LeanExecResult(
+            command="lake build PrisonersDilemma",
+            returncode=0,
+            stdout="",
+            stderr="",
+        ),
+    )
 
     with pytest.raises(RuntimeError, match="lean execution failed"):
+        matchup_service.run_matchup(MatchupRequest("cooperateBot", "defectBot"), keep_file=False)
+
+    assert not generated_file.exists()
+
+
+def test_run_matchup_raises_and_cleans_up_on_build_failure(monkeypatch, tmp_path: Path) -> None:
+    generated_file = tmp_path / "matchup.lean"
+    generated_file.write_text("fake lean file", encoding="utf-8")
+
+    monkeypatch.setattr(
+        matchup_service,
+        "load_paths",
+        lambda: SimpleNamespace(
+            generated_lean_dir=tmp_path / "generated",
+            lean_engine_dir=tmp_path / "engine",
+        ),
+    )
+    monkeypatch.setattr(
+        matchup_service,
+        "write_matchup_lean_file",
+        lambda **kwargs: GeneratedLeanFile(
+            path=generated_file,
+            proof_theorem_used="PDNew.Theorems.outcome_CooperateBot_vs_DefectBot",
+            actions_are_swapped=False,
+        ),
+    )
+    monkeypatch.setattr(
+        matchup_service,
+        "build_lean_project",
+        lambda lean_project_dir: LeanExecResult(
+            command="lake build PrisonersDilemma",
+            returncode=1,
+            stdout="build stdout",
+            stderr="build boom",
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="lean engine build failed"):
         matchup_service.run_matchup(MatchupRequest("cooperateBot", "defectBot"), keep_file=False)
 
     assert not generated_file.exists()

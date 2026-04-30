@@ -36,3 +36,21 @@ def run_lean_file(lean_project_dir: Path, lean_file: Path) -> LeanExecResult:
         stdout=proc.stdout,
         stderr=proc.stderr,
     )
+
+
+def build_lean_project(lean_project_dir: Path, target: str = "PrisonersDilemma") -> LeanExecResult:
+    lean_project_dir = lean_project_dir.resolve()
+    cmd = ["lake", "build", target]
+    proc = subprocess.run(
+        cmd,
+        cwd=lean_project_dir,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return LeanExecResult(
+        command=shlex.join(cmd),
+        returncode=proc.returncode,
+        stdout=proc.stdout,
+        stderr=proc.stderr,
+    )
