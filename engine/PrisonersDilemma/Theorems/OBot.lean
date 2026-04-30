@@ -27,12 +27,12 @@ theorem OBot_vs_CB (fuel : Nat):
 
 theorem OBot_plays_D_against_DB (fuel : Nat) :
     play (fuel + 3) OBot DefectBot = some .D := by
-    have hGuard : eval (fuel + 2) OBot DefectBot (.sim .opp CooperateBot) = some .D := by
+    have hGuard : eval (fuel + 2) OBot DefectBot (.sim .opp (.bot CooperateBot)) = some .D := by
         unfold OBot DefectBot CooperateBot
         simp [eval, Prog.subst]
     have hPlay := play_ite_from_guard
-        fuel 2 OBot DefectBot (.sim .opp CooperateBot)
-        (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D))
+        fuel 2 OBot DefectBot (.sim .opp (.bot CooperateBot))
+        (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
         (.const Action.D)
         Action.C Action.D
         (by rfl) hGuard
@@ -47,165 +47,139 @@ theorem OBot_vs_DB (fuel : Nat):
 
 theorem OBot_vs_TitForTatBot (fuel : Nat):
     outcome (fuel + 7) OBot TitForTatBot = some (.D, .C) := by
-    -- OBot is an outer `ite` whose guard asks:
-    -- "What does the opponent do against CooperateBot?"
-    -- Here the opponent is TitForTatBot, and TitForTatBot cooperates vs CooperateBot.
-    -- So this guard must evaluate to `some .C`.
-    have hGuard1 : eval (fuel + 6) OBot TitForTatBot (.sim .opp CooperateBot) = some .C := by
-        -- Reuse the already-proven behavior of TitForTatBot against CooperateBot.
-        have hProbe : play (fuel + 5) TitForTatBot CooperateBot = some .C :=
-            (TitForTatBot_plays_C_against_CB (fuel + 2)) ▸ rfl
-        -- Convert the simulated guard expression into exactly that `play` statement.
-        -- First, rewrite the eval using the definition of .sim
-        rw [show eval (fuel + 6) OBot TitForTatBot (.sim .opp CooperateBot) =
-                eval (fuel + 5) TitForTatBot CooperateBot TitForTatBot by rfl]
-        -- Second, rewrite the eval as a play using the def of play
-        rw [show eval (fuel + 5) TitForTatBot CooperateBot TitForTatBot =
-                        play (fuel + 5) TitForTatBot CooperateBot by rfl]
-        exact hProbe
-    -- This is the inner guard used once the outer guard is `C`.
-    -- It asks what TitForTatBot does against DefectBot.
-    -- TitForTatBot defects there, so this guard evaluates to `some .D`.
-    have hGuard2 : eval (fuel + 6) OBot TitForTatBot (.sim .opp DefectBot) = some .D := by
-        -- Reuse the theorem for TitForTatBot vs DefectBot.
-        have hProbe : play (fuel + 5) TitForTatBot DefectBot = some .D :=
-            (TitForTatBot_plays_D_against_DB (fuel + 2)) ▸ rfl
-        -- Same conversion pattern: simulated eval -> concrete `play` fact.
-        show eval (fuel + 6) OBot TitForTatBot (.sim .opp DefectBot) = some .D
-        rw [show eval (fuel + 6) OBot TitForTatBot (.sim .opp DefectBot) =
-                eval (fuel + 5) TitForTatBot DefectBot TitForTatBot by rfl]
-        rw [show eval (fuel + 5) TitForTatBot DefectBot TitForTatBot =
-                        play (fuel + 5) TitForTatBot DefectBot by rfl]
-        exact hProbe
-    -- Compute OBot's action against TitForTatBot.
-    -- `play_ite_from_guard` unfolds one outer `ite` step using `hGuard1`.
-    -- Since the outer guard result is `C` (the test action), we move into the then-branch,
-    -- which is the inner `ite`.
-    -- `hGuard2` then forces that inner `ite` to choose its else-branch (`const D`).
+    have hGuard1 : eval (fuel + 6) OBot TitForTatBot (.sim .opp (.bot CooperateBot)) = some .C := by
+      simp [eval, Prog.subst, TitForTatBot, CooperateBot]; decide
+    have hGuard2 : eval (fuel + 6) OBot TitForTatBot (.sim .opp (.bot DefectBot)) = some .D := by
+      simp [eval, Prog.subst, TitForTatBot, CooperateBot, DefectBot]; decide
     have hA : play (fuel + 7) OBot TitForTatBot = some .D := by
         have hPlay := play_ite_from_guard
-            fuel 6 OBot TitForTatBot (.sim .opp CooperateBot)
-            (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D))
+            fuel 6 OBot TitForTatBot (.sim .opp (.bot CooperateBot))
+            (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
             (.const Action.D)
             Action.C Action.C
             (by rfl) hGuard1
         simpa [eval, hGuard2] using hPlay
-    -- Now compute TitForTatBot's action against OBot.
-    -- TitForTatBot also checks what the opponent does against CooperateBot.
-    -- We first show OBot cooperates against CooperateBot, then feed that into the guard.
     have hB : play (fuel + 7) TitForTatBot OBot = some .C := by
-        -- OBot cooperates when facing CooperateBot.
-        have hProbe : play (fuel + 5) OBot CooperateBot = some .C :=
-            (OBot_plays_C_against_CB (fuel)) ▸ rfl
-        -- Rewrite TitForTatBot's guard simulation into the corresponding `play` fact.
-        have hGuard : eval (fuel + 6) TitForTatBot OBot (.sim .opp CooperateBot) = some .C := by
-            show eval (fuel + 6) TitForTatBot OBot (.sim .opp CooperateBot) = some .C
-            rw [show eval (fuel + 6) TitForTatBot OBot (.sim .opp CooperateBot) =
-                    eval (fuel + 5) OBot CooperateBot OBot by rfl]
-            simp only [show eval (fuel + 5) OBot CooperateBot OBot =
-                            play (fuel + 5) OBot CooperateBot by rfl]
-            exact hProbe
-        -- One `ite` step for TitForTatBot: guard is `C`, so it takes `const C`.
+        -- TitForTatBot's guard reduces to OBot vs (.bot CooperateBot). We trace
+        -- OBot's outer ite (guard = C → take then-branch which is inner ite,
+        -- inner guard = C → take const C).
+        have hOuter : eval (fuel + 4) OBot (.bot CooperateBot) (.sim .opp (.bot CooperateBot)) = some .C := by
+          simp [eval, Prog.subst, CooperateBot]
+        have hInner : eval (fuel + 4) OBot (.bot CooperateBot) (.sim .opp (.bot DefectBot)) = some .C := by
+          simp [eval, Prog.subst, CooperateBot]
+        have hOBot : play (fuel + 5) OBot (.bot CooperateBot) = some .C := by
+          have hPlay := play_ite_from_guard
+            fuel 4 OBot (.bot CooperateBot) (.sim .opp (.bot CooperateBot))
+            (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
+            (.const Action.D)
+            Action.C Action.C
+            (by unfold OBot; rfl) hOuter
+          simpa [eval, hInner] using hPlay
+        have hGuard : eval (fuel + 6) TitForTatBot OBot (.sim .opp (.bot CooperateBot)) = some .C := by
+          rw [show eval (fuel + 6) TitForTatBot OBot (.sim .opp (.bot CooperateBot)) =
+                  eval (fuel + 5) OBot (.bot CooperateBot) OBot by rfl]
+          simpa [play] using hOBot
         have hPlay := play_ite_from_guard
-            fuel 6 TitForTatBot OBot (.sim .opp CooperateBot)
+            fuel 6 TitForTatBot OBot (.sim .opp (.bot CooperateBot))
             (.const Action.C) (.const Action.D)
             Action.C Action.C
             (by rfl) hGuard
         exact hPlay ▸ rfl
-    -- Finish: outcome is just the pair of both `play` results.
     unfold outcome
     rw [hA, hB]
     rfl
 
 theorem OBot_vs_DBot (fuel : Nat):
-    outcome (fuel + 5) OBot DBot = some (.D, .C) := by
-    -- Probe facts reused to evaluate simulation guards.
-    -- 1) OBot defects against DefectBot.
-    have hProbe1 : play (fuel + 3) OBot DefectBot = some .D := OBot_plays_D_against_DB fuel
-    -- 2) DBot defects against CooperateBot.
-    have hProbe2 : play (fuel + 3) DBot CooperateBot = some .D := DBot_plays_D_against_CooperateBot fuel
+    outcome (fuel + 6) OBot DBot = some (.D, .C) := by
+    -- hGuard1: simulates DBot vs (.bot CooperateBot). DBot's inner guard
+    -- returns C, so DBot takes its const-D branch.
+    have hGuard1 : eval (fuel + 5) OBot DBot (.sim .opp (.bot CooperateBot)) = some .D := by
+      simp [eval, Prog.subst, DBot, CooperateBot, DefectBot]; decide
+    -- hGuard2: simulates OBot vs (.bot DefectBot). OBot's outer guard returns
+    -- D, so OBot takes its const-D else-branch.
+    have hG2Outer : eval (fuel + 3) OBot (.bot DefectBot) (.sim .opp (.bot CooperateBot)) = some .D := by
+      simp [eval, Prog.subst, DefectBot]
+    have hOBotvsBotDefect : play (fuel + 4) OBot (.bot DefectBot) = some .D := by
+      have hPlay := play_ite_from_guard
+        fuel 3 OBot (.bot DefectBot) (.sim .opp (.bot CooperateBot))
+        (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
+        (.const Action.D)
+        Action.C Action.D
+        (by unfold OBot; rfl) hG2Outer
+      simpa [eval] using hPlay
+    have hGuard2 : eval (fuel + 5) DBot OBot (.sim .opp (.bot DefectBot)) = some .D := by
+      rw [show eval (fuel + 5) DBot OBot (.sim .opp (.bot DefectBot)) =
+              eval (fuel + 4) OBot (.bot DefectBot) OBot by rfl]
+      simpa [play] using hOBotvsBotDefect
 
-    -- OBot's outer guard against DBot is `.sim .opp CooperateBot`.
-    -- In this development, after unfolding/simplifying `eval`, `Prog.subst`, and `play`,
-    -- this guard goal reduces to the already-known probe fact `hProbe1`.
-    have hGuard1 : eval (fuel + 4) OBot DBot (.sim .opp CooperateBot) = some .D := by
-        simpa [eval, Prog.subst, play] using hProbe1
-
-    -- DBot's guard against OBot is `.sim .opp DefectBot`.
-    -- With the same unfolding/simplification pattern, this guard goal reduces
-    -- to the probe fact `hProbe2`.
-    have hGuard2 : eval (fuel + 4) DBot OBot (.sim .opp DefectBot) = some .D := by
-        simpa [eval, Prog.subst, play] using hProbe2
-
-    -- Compute OBot's move against DBot.
-    -- `play_ite_from_guard` unfolds one outer `ite` step of OBot.
-    -- The test action is `C`, but the guard result is `D`, so OBot takes else-branch `const D`.
-    have hA : play (fuel + 5) OBot DBot = some .D := by
+    have hA : play (fuel + 6) OBot DBot = some .D := by
         have hPlay := play_ite_from_guard
-            fuel 4 OBot DBot (.sim .opp CooperateBot)
-            (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D))
+            fuel 5 OBot DBot (.sim .opp (.bot CooperateBot))
+            (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
             (.const Action.D)
             Action.C Action.D
             (by rfl) hGuard1
         simpa [eval] using hPlay
 
-    -- Compute DBot's move against OBot.
-    -- DBot is `ite (.sim .opp DefectBot) C (const D) (const C)`.
-    -- Here guard result is `D`, not equal to test `C`, so DBot takes else-branch `const C`.
-    have hB : play (fuel + 5) DBot OBot = some .C := by
+    have hB : play (fuel + 6) DBot OBot = some .C := by
         have hPlay := play_ite_from_guard
-            fuel 4 DBot OBot (.sim .opp DefectBot)
+            fuel 5 DBot OBot (.sim .opp (.bot DefectBot))
             (.const Action.D) (.const Action.C)
             Action.C Action.D
             (by rfl) hGuard2
         simpa [eval] using hPlay
 
-    -- Finish by unfolding `outcome` and substituting both computed plays.
     simp [outcome, hA, hB]
 
 
 theorem OBot_vs_OBot (fuel : Nat):
     outcome (fuel + 7) OBot OBot = some (.D, .D) := by
-    -- Outer guard for OBot (against OBot): `.sim .opp CooperateBot`.
-    -- We reduce it to a known probe: OBot cooperates against CooperateBot.
-    have hGuard1 : eval (fuel + 6) OBot OBot (.sim .opp CooperateBot) = some .C := by
-        -- Existing theorem gives `play (fuel + 5) OBot CooperateBot = some .C`.
-        have hProbe : play (fuel + 5) OBot CooperateBot = some .C :=
-            (OBot_plays_C_against_CB (fuel)) ▸ rfl
-        -- Convert simulated guard evaluation into that `play` statement.
-        rw [show eval (fuel + 6) OBot OBot (.sim .opp CooperateBot) =
-                eval (fuel + 5) OBot CooperateBot OBot by rfl]
-        simp only [show eval (fuel + 5) OBot CooperateBot OBot =
-                        play (fuel + 5) OBot CooperateBot by rfl]
-        exact hProbe
+    -- After substitution, OBot's outer guard simulates OBot vs (.bot CooperateBot).
+    -- Trace OBot's outer ite (guard = C, take then-branch = inner ite, inner
+    -- guard = C, take const C) → some C.
+    have hOuter : eval (fuel + 4) OBot (.bot CooperateBot) (.sim .opp (.bot CooperateBot)) = some .C := by
+      simp [eval, Prog.subst, CooperateBot]
+    have hInner : eval (fuel + 4) OBot (.bot CooperateBot) (.sim .opp (.bot DefectBot)) = some .C := by
+      simp [eval, Prog.subst, CooperateBot]
+    have hOBotvsBotCB : play (fuel + 5) OBot (.bot CooperateBot) = some .C := by
+      have hPlay := play_ite_from_guard
+        fuel 4 OBot (.bot CooperateBot) (.sim .opp (.bot CooperateBot))
+        (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
+        (.const Action.D)
+        Action.C Action.C
+        (by unfold OBot; rfl) hOuter
+      simpa [eval, hInner] using hPlay
+    have hGuard1 : eval (fuel + 6) OBot OBot (.sim .opp (.bot CooperateBot)) = some .C := by
+      rw [show eval (fuel + 6) OBot OBot (.sim .opp (.bot CooperateBot)) =
+              eval (fuel + 5) OBot (.bot CooperateBot) OBot by rfl]
+      simpa [play] using hOBotvsBotCB
 
-    -- Inner guard for OBot's then-branch: `.sim .opp DefectBot`.
-    -- This reduces to the known probe that OBot defects against DefectBot.
-    have hGuard2 : eval (fuel + 6) OBot OBot (.sim .opp DefectBot) = some .D := by
-        -- Existing theorem gives `play (fuel + 5) OBot DefectBot = some .D`.
-        have hProbe : play (fuel + 5) OBot DefectBot = some .D :=
-            (OBot_plays_D_against_DB (fuel + 2)) ▸ rfl
-        -- Convert simulated guard evaluation into that `play` statement.
-        rw [show eval (fuel + 6) OBot OBot (.sim .opp DefectBot) =
-                eval (fuel + 5) OBot DefectBot OBot by rfl]
-        simp only [show eval (fuel + 5) OBot DefectBot OBot =
-                        play (fuel + 5) OBot DefectBot by rfl]
-        exact hProbe
+    -- Same idea for the inner guard: simulates OBot vs (.bot DefectBot),
+    -- where OBot's outer guard returns D, so falls to const D.
+    have hOuterD : eval (fuel + 3) OBot (.bot DefectBot) (.sim .opp (.bot CooperateBot)) = some .D := by
+      simp [eval, Prog.subst, DefectBot]
+    have hOBotvsBotDB : play (fuel + 4) OBot (.bot DefectBot) = some .D := by
+      have hPlay := play_ite_from_guard
+        fuel 3 OBot (.bot DefectBot) (.sim .opp (.bot CooperateBot))
+        (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
+        (.const Action.D)
+        Action.C Action.D
+        (by unfold OBot; rfl) hOuterD
+      simpa [eval] using hPlay
+    have hGuard2 : eval (fuel + 6) OBot OBot (.sim .opp (.bot DefectBot)) = some .D := by
+      rw [show eval (fuel + 6) OBot OBot (.sim .opp (.bot DefectBot)) =
+              eval (fuel + 5) OBot (.bot DefectBot) OBot by rfl]
+      simpa [play] using hOBotvsBotDB
 
-    -- Compute OBot's action against OBot.
-    -- `play_ite_from_guard` unfolds one outer `ite` step using `hGuard1`.
-    -- Since the outer guard is `C` (the test), we enter the inner `ite`.
-    -- `hGuard2` then forces the inner `ite` to choose `const D`.
     have hA : play (fuel + 7) OBot OBot = some .D := by
         have hPlay := play_ite_from_guard
-            fuel 6 OBot OBot (.sim .opp CooperateBot)
-            (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D))
+            fuel 6 OBot OBot (.sim .opp (.bot CooperateBot))
+            (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
             (.const Action.D)
             Action.C Action.C
             (by rfl) hGuard1
         simpa [eval, hGuard2] using hPlay
 
-    -- Finish by unfolding outcome and substituting both computed plays.
     simp [outcome, hA]
 
 end PDNew.Theorems

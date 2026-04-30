@@ -19,6 +19,7 @@ noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
     | .const a        => some a                        -- fixed action, no recursion
     | .self           => eval n me opponent me         -- resolve `.self` to my own source
     | .opp            => eval n me opponent opponent   -- resolve `.opp` to opponent's source
+    | .bot p          => eval n me opponent p          -- unwrap closed bot reference; `.self`/`.opp` inside p bind to current frame
     | .sim p q        =>
         -- Enter a new context with p vs q. Close p and q against the
         -- *current* me/opponent first so their placeholders don't leak.

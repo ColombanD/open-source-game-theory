@@ -38,13 +38,12 @@ theorem TitForTatBot_vs_DB (fuel : Nat):
 
 
 theorem TitForTatBot_vs_TitForTatBot (fuel : Nat):
-    outcome (fuel + 5) TitForTatBot TitForTatBot = some (.C, .C) := by
-    have hProbe : play (fuel + 3) TitForTatBot CooperateBot = some .C := TitForTatBot_plays_C_against_CB (fuel)
-    have hGuard : eval (fuel + 4) TitForTatBot TitForTatBot (.sim .opp CooperateBot) = some .C := by
-        simpa [eval, Prog.subst, play] using hProbe
-    have hA : play (fuel + 5) TitForTatBot TitForTatBot = some .C := by
+    outcome (fuel + 6) TitForTatBot TitForTatBot = some (.C, .C) := by
+    have hGuard : eval (fuel + 5) TitForTatBot TitForTatBot (.sim .opp (.bot CooperateBot)) = some .C := by
+      simp [eval, Prog.subst, TitForTatBot, CooperateBot]; decide
+    have hA : play (fuel + 6) TitForTatBot TitForTatBot = some .C := by
         have hPlay := play_ite_from_guard
-            fuel 4 TitForTatBot TitForTatBot (.sim .opp CooperateBot)
+            fuel 5 TitForTatBot TitForTatBot (.sim .opp (.bot CooperateBot))
             (.const Action.C) (.const Action.D)
             Action.C Action.C
             (by rfl) hGuard
@@ -52,23 +51,21 @@ theorem TitForTatBot_vs_TitForTatBot (fuel : Nat):
     simp [outcome, hA]
 
 theorem TitForTatBot_vs_DBot (fuel : Nat):
-    outcome (fuel + 5) TitForTatBot DBot = some (.D, .C) := by
-    have hProbe1 : play (fuel + 3) TitForTatBot DefectBot = some .D := TitForTatBot_plays_D_against_DB (fuel)
-    have hProbe2 : play (fuel + 3) DBot CooperateBot = some .D := DBot_plays_D_against_CooperateBot (fuel)
-    have hGuard1 : eval (fuel + 4) TitForTatBot DBot (.sim .opp CooperateBot) = some .D := by
-        simpa [eval, Prog.subst, play] using hProbe1
-    have hGuard2 : eval (fuel + 4) DBot TitForTatBot (.sim .opp DefectBot) = some .D := by
-        simpa [eval, Prog.subst, play] using hProbe2
-    have hA : play (fuel + 5) TitForTatBot DBot = some .D := by
+    outcome (fuel + 6) TitForTatBot DBot = some (.D, .C) := by
+    have hGuard1 : eval (fuel + 5) TitForTatBot DBot (.sim .opp (.bot CooperateBot)) = some .D := by
+      simp [eval, Prog.subst, DBot, CooperateBot, DefectBot]; decide
+    have hGuard2 : eval (fuel + 5) DBot TitForTatBot (.sim .opp (.bot DefectBot)) = some .D := by
+      simp [eval, Prog.subst, TitForTatBot, CooperateBot, DefectBot]; decide
+    have hA : play (fuel + 6) TitForTatBot DBot = some .D := by
         have hPlay := play_ite_from_guard
-            fuel 4 TitForTatBot DBot (.sim .opp CooperateBot)
+            fuel 5 TitForTatBot DBot (.sim .opp (.bot CooperateBot))
             (.const Action.C) (.const Action.D)
             Action.C Action.D
             (by rfl) hGuard1
         simpa [eval] using hPlay
-    have hB : play (fuel + 5) DBot TitForTatBot = some .C := by
+    have hB : play (fuel + 6) DBot TitForTatBot = some .C := by
         have hPlay := play_ite_from_guard
-            fuel 4 DBot TitForTatBot (.sim .opp DefectBot)
+            fuel 5 DBot TitForTatBot (.sim .opp (.bot DefectBot))
             (.const Action.D) (.const Action.C)
             Action.C Action.D
             (by rfl) hGuard2
