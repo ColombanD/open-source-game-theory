@@ -25,6 +25,7 @@ mutual
     | const  : Action → Prog                      -- trivial bots like CB/DB: ignore opp, play a fixed action
     | self   : Prog                               -- placeholder for "my own source" — closed by `subst`
     | opp    : Prog                               -- placeholder for the opponent's source — closed by `subst`
+    | bot    : Prog → Prog                        -- closed bot reference; `subst` does not descend
     | sim    : Prog → Prog → Prog                 -- source code for "run p with q as opponent"
     | ite    : Prog → Action → Prog → Prog → Prog -- if evaluating guard yields action a, run p, else q
     | search : Nat → Formula → Prog → Prog → Prog -- proof_search(k, φ): if oracle verifies φ in ≤k chars, run p, else q
@@ -55,11 +56,24 @@ end
 -- Note: `subst` is one-shot, not a fixed point. Placeholders inside the
 -- freshly inserted `me`/`opponent` are *not* re-substituted — they remain
 -- bound to whatever context will enclose them next.
+
+-- Scope barrier: `.bot p` marks `p` as a *closed bot reference* — i.e. one
+-- bot literally naming another bot in its source. `Prog.subst` does NOT
+-- descend into `.bot p`, so the outer frame's `me`/`opponent` cannot capture
+-- the placeholders inside `p`. Without this barrier, when EBot's body
+-- contains `.sim .opp MirrorBot` (with `MirrorBot = .sim .opp .self`), the
+-- outer `subst` rewrites `MirrorBot.subst me opp = .sim opp me` — turning a
+-- probe of "what does opp do against MirrorBot?" into a self-simulation
+-- shape, breaking EBot vs EBot. `.bot` is the fix point at the substitution
+-- layer; `eval` (Dynamics.lean) handles `.bot` separately by simply
+-- unwrapping it (one fuel decrement) so any `.self`/`.opp` inside the
+-- wrapped body bind to the *current* frame, as intended.
 mutual
   def Prog.subst : Prog → (me opponent : Prog) → Prog
     | .const a,        _, _ => .const a
     | .self,           m, _ => m
     | .opp,            _, o => o
+    | .bot p,          _, _ => .bot p
     | .sim p q,        m, o => .sim (p.subst m o) (q.subst m o)
     | .ite b a p q,    m, o => .ite (b.subst m o) a (p.subst m o) (q.subst m o)
     | .search k φ p q, m, o => .search k (φ.subst m o) (p.subst m o) (q.subst m o)

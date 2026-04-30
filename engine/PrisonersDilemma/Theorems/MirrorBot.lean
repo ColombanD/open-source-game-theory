@@ -42,12 +42,10 @@ theorem MirrorBot_vs_DefectBot (fuel : Nat):
     to its cooperate branch. -/
 theorem DBot_plays_C_against_MirrorBot (fuel : Nat) :
     play (fuel + 5) DBot MirrorBot = some .C := by
-    have hProbe : play (fuel + 3) MirrorBot DefectBot = some .D :=
-        MirrorBot_plays_D_against_DefectBot (fuel)
-    have hGuard : eval (fuel + 4) DBot MirrorBot (.sim .opp DefectBot) = some .D := by
-        simpa [eval, Prog.subst, play] using hProbe
+    have hGuard : eval (fuel + 4) DBot MirrorBot (.sim .opp (.bot DefectBot)) = some .D := by
+      simp [eval, Prog.subst, MirrorBot, DefectBot]
     have hPlay := play_ite_from_guard
-        fuel 4 DBot MirrorBot (.sim .opp DefectBot)
+        fuel 4 DBot MirrorBot (.sim .opp (.bot DefectBot))
         (.const Action.D) (.const Action.C)
         Action.C Action.D
         (by rfl) hGuard
@@ -71,17 +69,13 @@ theorem MirrorBot_vs_DBot (fuel : Nat):
     guard returns D ≠ C, fall through to defect). -/
 theorem OBot_plays_D_against_MirrorBot (fuel : Nat) :
     play (fuel + 6) OBot MirrorBot = some .D := by
-    have hProbe1 : play (fuel + 4) MirrorBot CooperateBot = some .C :=
-        MirrorBot_plays_C_against_CooperateBot (fuel + 1)
-    have hGuard1 : eval (fuel + 5) OBot MirrorBot (.sim .opp CooperateBot) = some .C := by
-        simpa [eval, Prog.subst, play] using hProbe1
-    have hProbe2 : play (fuel + 4) MirrorBot DefectBot = some .D :=
-        MirrorBot_plays_D_against_DefectBot (fuel + 1)
-    have hGuard2 : eval (fuel + 5) OBot MirrorBot (.sim .opp DefectBot) = some .D := by
-        simpa [eval, Prog.subst, play] using hProbe2
+    have hGuard1 : eval (fuel + 5) OBot MirrorBot (.sim .opp (.bot CooperateBot)) = some .C := by
+      simp [eval, Prog.subst, MirrorBot, CooperateBot]
+    have hGuard2 : eval (fuel + 5) OBot MirrorBot (.sim .opp (.bot DefectBot)) = some .D := by
+      simp [eval, Prog.subst, MirrorBot, DefectBot]
     have hPlay := play_ite_from_guard
-        fuel 5 OBot MirrorBot (.sim .opp CooperateBot)
-        (.ite (.sim .opp DefectBot) Action.C (.const Action.C) (.const Action.D))
+        fuel 5 OBot MirrorBot (.sim .opp (.bot CooperateBot))
+        (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
         (.const Action.D)
         Action.C Action.C
         (by rfl) hGuard1
@@ -100,28 +94,26 @@ theorem MirrorBot_vs_OBot (fuel : Nat):
     simp [outcome, hA, hB]
 
 theorem TitForTatBot_plays_C_against_MirrorBot (fuel : Nat) :
-    play (fuel + 4) TitForTatBot MirrorBot = some .C := by
-    have hProbe : play (fuel + 2) MirrorBot CooperateBot = some .C :=
-        MirrorBot_plays_C_against_CooperateBot (fuel)
-    have hGuard : eval (fuel + 3) TitForTatBot MirrorBot (.sim .opp CooperateBot) = some .C := by
-        simpa [eval, Prog.subst, play] using hProbe
+    play (fuel + 5) TitForTatBot MirrorBot = some .C := by
+    have hGuard : eval (fuel + 4) TitForTatBot MirrorBot (.sim .opp (.bot CooperateBot)) = some .C := by
+      simp [eval, Prog.subst, MirrorBot, CooperateBot]
     have hPlay := play_ite_from_guard
-        fuel 3 TitForTatBot MirrorBot (.sim .opp CooperateBot)
+        fuel 4 TitForTatBot MirrorBot (.sim .opp (.bot CooperateBot))
         (.const Action.C) (.const Action.D)
         Action.C Action.C
         (by rfl) hGuard
     simpa [eval] using hPlay
 
 theorem MirrorBot_plays_C_against_TitForTatBot (fuel : Nat) :
-    play (fuel + 5) MirrorBot TitForTatBot = some .C := by
+    play (fuel + 6) MirrorBot TitForTatBot = some .C := by
     have hTitForTatPlays : play (fuel + 5) TitForTatBot MirrorBot = some .C :=
         TitForTatBot_plays_C_against_MirrorBot (fuel)
     simpa [play, eval, Prog.subst, MirrorBot] using hTitForTatPlays
 
 theorem MirrorBot_vs_TitForTatBot (fuel : Nat):
-    outcome (fuel + 5) MirrorBot TitForTatBot = some (.C, .C) := by
-    have hA : play (fuel + 5) MirrorBot TitForTatBot = some .C := MirrorBot_plays_C_against_TitForTatBot (fuel)
-    have hB : play (fuel + 5) TitForTatBot MirrorBot = some .C := TitForTatBot_plays_C_against_MirrorBot (fuel + 1)
+    outcome (fuel + 6) MirrorBot TitForTatBot = some (.C, .C) := by
+    have hA : play (fuel + 6) MirrorBot TitForTatBot = some .C := MirrorBot_plays_C_against_TitForTatBot (fuel)
+    have hB : play (fuel + 6) TitForTatBot MirrorBot = some .C := TitForTatBot_plays_C_against_MirrorBot (fuel + 1)
     simp [outcome, hA, hB]
 
 
