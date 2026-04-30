@@ -26,7 +26,7 @@ theorem EBot_vs_CooperateBot (fuel : Nat):
     outcome (fuel + 3) EBot CooperateBot = some (.D, .C) := by
     have hA : play (fuel + 3) EBot CooperateBot = some .D := EBot_plays_D_against_CooperateBot (fuel)
     have hB : play (fuel + 3) CooperateBot EBot = some .C := rfl
-    simp [outcome, hA, hB]
+    exact outcome_of_plays _ _ _ _ _ hA hB
 
 theorem EBot_plays_D_against_DefectBot (fuel : Nat) :
     play (fuel + 5) EBot DefectBot = some .D := by
@@ -40,7 +40,7 @@ theorem EBot_vs_DefectBot (fuel : Nat):
     outcome (fuel + 5) EBot DefectBot = some (.D, .D) := by
     have hA : play (fuel + 5) EBot DefectBot = some .D := EBot_plays_D_against_DefectBot (fuel)
     have hB : play (fuel + 5) DefectBot EBot = some .D := rfl
-    simp [outcome, hA, hB]
+    exact outcome_of_plays _ _ _ _ _ hA hB
 
 theorem EBot_vs_Dbot (fuel : Nat):
     outcome (fuel + 8) EBot DBot = some (.D, .C) := by
@@ -64,7 +64,7 @@ theorem EBot_vs_Dbot (fuel : Nat):
             Action.C Action.D
             (by rfl) hGuard2
         simpa [eval] using hPlay
-    simp [outcome, hA, hB]
+    exact outcome_of_plays _ _ _ _ _ hA hB
 
 
 theorem EBot_vs_TitForTatBot (fuel : Nat):
@@ -93,10 +93,8 @@ theorem EBot_vs_TitForTatBot (fuel : Nat):
         Action.C Action.C
         (by unfold EBot; rfl) hOuterCB
       simpa [eval] using hPlay
-    have hGuard3 : eval (fuel + 6) TitForTatBot EBot (.sim .opp (.bot CooperateBot)) = some .D := by
-      rw [show eval (fuel + 6) TitForTatBot EBot (.sim .opp (.bot CooperateBot)) =
-              eval (fuel + 5) EBot (.bot CooperateBot) EBot by rfl]
-      simpa [play] using hEBotBotCB
+    have hGuard3 : eval (fuel + 6) TitForTatBot EBot (.sim .opp (.bot CooperateBot)) = some .D :=
+      eval_sim_opp_bot_of_play _ _ _ _ _ hEBotBotCB
     have hB : play (fuel + 7) TitForTatBot EBot = some .D := by
         have hPlay := play_ite_from_guard
             fuel 6 TitForTatBot EBot (.sim .opp (.bot CooperateBot))
@@ -105,7 +103,7 @@ theorem EBot_vs_TitForTatBot (fuel : Nat):
             Action.C Action.D
             (by rfl) hGuard3
         simpa [eval] using hPlay
-    simp [outcome, hA, hB]
+    exact outcome_of_plays _ _ _ _ _ hA hB
 
 
 theorem EBot_vs_OBot (fuel : Nat):
@@ -123,10 +121,8 @@ theorem EBot_vs_OBot (fuel : Nat):
         Action.C Action.D
         (by unfold OBot; rfl) hOBotvsBotD_outer
       simpa [eval] using hPlay
-    have hGuard1 : eval (fuel + 7) EBot OBot (.sim .opp (.bot DefectBot)) = some .D := by
-      rw [show eval (fuel + 7) EBot OBot (.sim .opp (.bot DefectBot)) =
-              eval (fuel + 6) OBot (.bot DefectBot) OBot by rfl]
-      simpa [play] using hOBotvsBotD
+    have hGuard1 : eval (fuel + 7) EBot OBot (.sim .opp (.bot DefectBot)) = some .D :=
+      eval_sim_opp_bot_of_play _ _ _ _ _ hOBotvsBotD
     -- hGuard2 traces OBot vs (.bot CooperateBot): outer guard C, take inner ite
     -- whose guard is also C, take const C.
     have hOBotvsBotC_outer : eval (fuel + 5) OBot (.bot CooperateBot) (.sim .opp (.bot CooperateBot)) = some .C := by
@@ -141,10 +137,8 @@ theorem EBot_vs_OBot (fuel : Nat):
         Action.C Action.C
         (by unfold OBot; rfl) hOBotvsBotC_outer
       simpa [eval, hOBotvsBotC_inner] using hPlay
-    have hGuard2 : eval (fuel + 7) EBot OBot (.sim .opp (.bot CooperateBot)) = some .C := by
-      rw [show eval (fuel + 7) EBot OBot (.sim .opp (.bot CooperateBot)) =
-              eval (fuel + 6) OBot (.bot CooperateBot) OBot by rfl]
-      simpa [play] using hOBotvsBotC
+    have hGuard2 : eval (fuel + 7) EBot OBot (.sim .opp (.bot CooperateBot)) = some .C :=
+      eval_sim_opp_bot_of_play _ _ _ _ _ hOBotvsBotC
     have hA : play (fuel + 8) EBot OBot = some .C := by
         have hPlay := play_ite_from_guard
             fuel 7 EBot OBot (.sim .opp (.bot DefectBot))
@@ -164,10 +158,8 @@ theorem EBot_vs_OBot (fuel : Nat):
         Action.C Action.C
         (by unfold EBot; rfl) hEBotBotCB_outer
       simpa [eval] using hPlay
-    have hGuard3 : eval (fuel + 7) OBot EBot (.sim .opp (.bot CooperateBot)) = some .D := by
-      rw [show eval (fuel + 7) OBot EBot (.sim .opp (.bot CooperateBot)) =
-              eval (fuel + 6) EBot (.bot CooperateBot) EBot by rfl]
-      simpa [play] using hEBotBotCB
+    have hGuard3 : eval (fuel + 7) OBot EBot (.sim .opp (.bot CooperateBot)) = some .D :=
+      eval_sim_opp_bot_of_play _ _ _ _ _ hEBotBotCB
     have hB : play (fuel + 8) OBot EBot = some .D := by
         have hPlay := play_ite_from_guard
             fuel 7 OBot EBot (.sim .opp (.bot CooperateBot))
@@ -176,7 +168,7 @@ theorem EBot_vs_OBot (fuel : Nat):
             Action.C Action.D
             (by rfl) hGuard3
         simpa [eval] using hPlay
-    simp [outcome, hA, hB]
+    exact outcome_of_plays _ _ _ _ _ hA hB
 
 theorem EBot_plays_C_against_MirrorBot (fuel : Nat) :
     play (fuel + 7) EBot MirrorBot = some .C := by
@@ -200,7 +192,7 @@ theorem EBot_vs_MirrorBot (fuel : Nat):
             EBot_plays_C_against_MirrorBot fuel
         show eval (fuel + 7) EBot MirrorBot EBot = some .C
         exact hEBotPlays
-    simp [outcome, hA, hB]
+    exact outcome_of_plays _ _ _ _ _ hA hB
 
 /--
 With `.bot`-wrapped bot references, EBot's third guard `(.sim .opp (.bot MirrorBot))`
@@ -221,20 +213,29 @@ theorem EBot_vs_EBot (fuel : Nat):
       simp only [eval, Prog.subst, DefectBot]
     have hInnerInnerG : eval (k + 3) EBot (.bot DefectBot) (.sim .opp (.bot MirrorBot)) = some .D := by
       simp only [eval, Prog.subst, DefectBot]
-    have hInnerInnerIte : eval (k + 4) EBot (.bot DefectBot) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)) = some .D := by
-      change (do let r ← eval (k + 3) EBot (.bot DefectBot) (.sim .opp (.bot MirrorBot)); if r == Action.C then eval (k + 3) EBot (.bot DefectBot) (.const Action.C) else eval (k + 3) EBot (.bot DefectBot) (.const Action.D)) = some Action.D
-      rw [hInnerInnerG]; rfl
-    have hInnerIte : eval (k + 5) EBot (.bot DefectBot) (Prog.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) = some .D := by
-      change (do let r ← eval (k + 4) EBot (.bot DefectBot) (.sim .opp (.bot CooperateBot)); if r == Action.C then eval (k + 4) EBot (.bot DefectBot) (.const Action.C) else eval (k + 4) EBot (.bot DefectBot) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) = some Action.D
-      rw [hInnerG, hInnerInnerIte]; rfl
-    change (do let r ← eval (k + 5) EBot (.bot DefectBot) (.sim .opp (.bot DefectBot)); if r == Action.C then eval (k + 5) EBot (.bot DefectBot) (.const Action.D) else eval (k + 5) EBot (.bot DefectBot) (Prog.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))) = some Action.D
-    rw [hOuterG, hInnerIte]; rfl
+    have hInnerInnerIte : eval (k + 4) EBot (.bot DefectBot)
+        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)) = some .D := by
+      rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hInnerInnerG]; rfl
+    have hInnerIte : eval (k + 5) EBot (.bot DefectBot)
+        (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+          (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D))) = some .D := by
+      rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hInnerG]
+      exact hInnerInnerIte
+    show eval (k + 6) EBot (.bot DefectBot)
+        (.ite (.sim .opp (.bot DefectBot)) .C (.const .D)
+          (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+            (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))) = some .D
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hOuterG]
+    exact hInnerIte
   have hEBotBotC : ∀ k, eval (k + 4) EBot (.bot CooperateBot) EBot = some .D := by
     intro k
     have hOuterG : eval (k + 3) EBot (.bot CooperateBot) (.sim .opp (.bot DefectBot)) = some .C := by
       simp only [eval, Prog.subst, CooperateBot]
-    change (do let r ← eval (k + 3) EBot (.bot CooperateBot) (.sim .opp (.bot DefectBot)); if r == Action.C then eval (k + 3) EBot (.bot CooperateBot) (.const Action.D) else eval (k + 3) EBot (.bot CooperateBot) (Prog.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))) = some Action.D
-    rw [hOuterG]; rfl
+    show eval (k + 4) EBot (.bot CooperateBot)
+        (.ite (.sim .opp (.bot DefectBot)) .C (.const .D)
+          (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+            (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))) = some .D
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hOuterG]; rfl
   have hEBotBotM : ∀ k, eval (k + 7) EBot (.bot MirrorBot) EBot = some .C := by
     intro k
     have hOuterG : eval (k + 6) EBot (.bot MirrorBot) (.sim .opp (.bot DefectBot)) = some .D := by
@@ -242,40 +243,42 @@ theorem EBot_vs_EBot (fuel : Nat):
     have hInnerG : eval (k + 5) EBot (.bot MirrorBot) (.sim .opp (.bot CooperateBot)) = some .C := by
       simp only [eval, Prog.subst, MirrorBot, CooperateBot]
     have hInnerIte : eval (k + 6) EBot (.bot MirrorBot)
-        (Prog.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
-              (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
-        = some .C := by
-      change (do let r ← eval (k + 5) EBot (.bot MirrorBot) (.sim .opp (.bot CooperateBot)); if r == Action.C then eval (k + 5) EBot (.bot MirrorBot) (.const Action.C) else eval (k + 5) EBot (.bot MirrorBot) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) = some Action.C
-      rw [hInnerG]
-      rfl
-    change (do let r ← eval (k + 6) EBot (.bot MirrorBot) (.sim .opp (.bot DefectBot)); if r == Action.C then eval (k + 6) EBot (.bot MirrorBot) (.const Action.D) else eval (k + 6) EBot (.bot MirrorBot) (Prog.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))) = some Action.C
-    rw [hOuterG, hInnerIte]
-    rfl
+        (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+          (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D))) = some .C := by
+      rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hInnerG]; rfl
+    show eval (k + 7) EBot (.bot MirrorBot)
+        (.ite (.sim .opp (.bot DefectBot)) .C (.const .D)
+          (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+            (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))) = some .C
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hOuterG]
+    exact hInnerIte
 
-  -- Self-play guards: each reduces to EBot vs (.bot Z) via the .sim rule.
-  have hG1 : eval (fuel + 10) EBot EBot (.sim .opp (.bot DefectBot)) = some .D := by
-    rw [show eval (fuel + 10) EBot EBot (.sim .opp (.bot DefectBot)) =
-            eval (fuel + 9) EBot (.bot DefectBot) EBot by rfl]
-    exact hEBotBotD (fuel + 3)
-  have hG2 : eval (fuel + 9) EBot EBot (.sim .opp (.bot CooperateBot)) = some .D := by
-    rw [show eval (fuel + 9) EBot EBot (.sim .opp (.bot CooperateBot)) =
-            eval (fuel + 8) EBot (.bot CooperateBot) EBot by rfl]
-    exact hEBotBotC (fuel + 4)
-  have hG3 : eval (fuel + 8) EBot EBot (.sim .opp (.bot MirrorBot)) = some .C := by
-    rw [show eval (fuel + 8) EBot EBot (.sim .opp (.bot MirrorBot)) =
-            eval (fuel + 7) EBot (.bot MirrorBot) EBot by rfl]
-    exact hEBotBotM fuel
+  -- Self-play guards: each reduces to EBot vs (.bot Z) via L2.
+  have hG1 : eval (fuel + 10) EBot EBot (.sim .opp (.bot DefectBot)) = some .D :=
+    eval_sim_opp_bot_of_play _ _ _ _ _
+      (play_from_eval _ _ _ _ (hEBotBotD (fuel + 3)))
+  have hG2 : eval (fuel + 9) EBot EBot (.sim .opp (.bot CooperateBot)) = some .D :=
+    eval_sim_opp_bot_of_play _ _ _ _ _
+      (play_from_eval _ _ _ _ (hEBotBotC (fuel + 4)))
+  have hG3 : eval (fuel + 8) EBot EBot (.sim .opp (.bot MirrorBot)) = some .C :=
+    eval_sim_opp_bot_of_play _ _ _ _ _
+      (play_from_eval _ _ _ _ (hEBotBotM fuel))
 
-  have hInnerInnerIte : eval (fuel + 9) EBot EBot (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)) = some .C := by
-    change (do let r ← eval (fuel + 8) EBot EBot (.sim .opp (.bot MirrorBot)); if r == Action.C then eval (fuel + 8) EBot EBot (.const Action.C) else eval (fuel + 8) EBot EBot (.const Action.D)) = some Action.C
-    rw [hG3]; rfl
-  have hInnerIte : eval (fuel + 10) EBot EBot (Prog.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) = some .C := by
-    change (do let r ← eval (fuel + 9) EBot EBot (.sim .opp (.bot CooperateBot)); if r == Action.C then eval (fuel + 9) EBot EBot (.const Action.C) else eval (fuel + 9) EBot EBot (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) = some Action.C
-    rw [hG2, hInnerInnerIte]; rfl
+  have hInnerInnerIte : eval (fuel + 9) EBot EBot
+      (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)) = some .C := by
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG3]; rfl
+  have hInnerIte : eval (fuel + 10) EBot EBot
+      (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D))) = some .C := by
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG2]
+    exact hInnerInnerIte
   have hA : play (fuel + 11) EBot EBot = some .C := by
-    show eval (fuel + 11) EBot EBot EBot = some .C
-    change (do let r ← eval (fuel + 10) EBot EBot (.sim .opp (.bot DefectBot)); if r == Action.C then eval (fuel + 10) EBot EBot (.const Action.D) else eval (fuel + 10) EBot EBot (Prog.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (Prog.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))) = some Action.C
-    rw [hG1, hInnerIte]; rfl
+    show eval (fuel + 11) EBot EBot
+        (.ite (.sim .opp (.bot DefectBot)) .C (.const .D)
+          (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+            (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))) = some .C
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG1]
+    exact hInnerIte
   simp [outcome, hA]
 
 end PDNew.Theorems
