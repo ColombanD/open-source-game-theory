@@ -1,7 +1,9 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.CupodBot
 
 open PDNew
+open PDNew.Bots
 namespace PDNew.Axioms
 
 /-- Abstract proof objects used to model derivations in the ambient proof system. -/
@@ -85,4 +87,12 @@ axiom PBLT :
     (∀ k, k > k₁ → ∃ m, proofSearch m (.impl (.box (f k) (φ k)) (φ k)) = true) →
       ∃ k₂, ∀ k, k > k₂ → ∃ m, proofSearch m (φ k) = true
 
+axiom proofSearch_CupodBot_self_fulfilling :
+  ∀ k,
+    ∃ m,
+      proofSearch m
+        (Formula.impl
+          (Formula.box k
+            (Formula.plays (CupodBot k) (CupodBot k) Action.D))
+          (Formula.plays (CupodBot k) (CupodBot k) Action.D)) = true
 end PDNew.Axioms
