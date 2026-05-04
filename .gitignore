@@ -61,3 +61,6 @@ npm-debug.log
 .vscode/settings.json
 .vscode/launch.json
 .idea/
+
+# Claude Code worktree artifacts
+.claude/worktrees/
