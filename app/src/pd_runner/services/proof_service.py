@@ -22,6 +22,7 @@ class ProofRequest:
     left_action: str
     right_action: str
     max_iterations: int = 20
+    model: str = "claude-opus-4-7"
 
 
 @dataclass(frozen=True)
@@ -61,6 +62,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
     client = AnthropicClient(
         system_prompt=build_system_prompt(request.left_bot, request.right_bot),
         tools=LEAN_TOOLS,
+        model=request.model,
         max_iterations=request.max_iterations,
     )
 
