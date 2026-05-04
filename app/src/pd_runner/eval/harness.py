@@ -1,7 +1,8 @@
 """M5: Evaluation harness — re-prove a held-out set of existing theorems.
 
 Run with:
-    uv run python -m pd_runner.eval.harness [--output results.json]
+    uv run python -m pd_runner.eval.harness [--model MODEL] [--output results.json]
+    uv run python -m pd_runner.eval.harness --dry-run   # no API calls, tests plumbing only
 
 Each case hides the existing proof and asks the agent to re-discover it.
 Reports: per-case pass/fail, iterations used, and a summary table.
@@ -14,8 +15,24 @@ import json
 import time
 from dataclasses import asdict, dataclass
 from typing import Any
+from unittest.mock import patch
 
-from pd_runner.services.proof_service import ProofRequest, ProofSearchError, search_proof
+from pd_runner.services.proof_service import ProofRequest, ProofResult, ProofSearchError, search_proof
+
+_DRY_RUN_SOURCE = """\
+import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+
+open PDNew
+open PDNew.Bots
+
+namespace PDNew.Theorems
+
+-- dry-run placeholder (no real proof attempted)
+theorem dry_run_placeholder : True := trivial
+
+end PDNew.Theorems
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -53,7 +70,30 @@ class CaseResult:
     lean_source: str | None = None
 
 
-def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7") -> list[CaseResult]:
+def _dry_run_search_proof(request: ProofRequest) -> ProofResult:
+    """Exercises retrieval + prompt building without calling the LLM or Lean."""
+    from pd_runner.llm.prompts import build_system_prompt, proof_request_message
+    from pd_runner.llm.retrieval import list_known_outcome_theorems, retrieve_few_shots
+
+    few_shots = retrieve_few_shots(request.left_bot, request.right_bot)
+    known = list_known_outcome_theorems(request.left_bot, request.right_bot)
+    _ = build_system_prompt(request.left_bot, request.right_bot)
+    _ = proof_request_message(
+        request.left_bot, request.right_bot,
+        request.left_action, request.right_action,
+        few_shots, known,
+    )
+    return ProofResult(
+        left_bot=request.left_bot,
+        right_bot=request.right_bot,
+        left_action=request.left_action,
+        right_action=request.right_action,
+        lean_source=_DRY_RUN_SOURCE,
+        iterations_used=0,
+    )
+
+
+def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7", dry_run: bool = False) -> list[CaseResult]:
     results: list[CaseResult] = []
     for case in EVAL_CASES:
         req = ProofRequest(
@@ -71,7 +111,7 @@ def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7") -> list[C
 
         t0 = time.monotonic()
         try:
-            result = search_proof(req)
+            result = _dry_run_search_proof(req) if dry_run else search_proof(req)
             elapsed = time.monotonic() - t0
             print(f"  PASSED in {result.iterations_used} tool calls, {elapsed:.1f}s")
             results.append(CaseResult(
@@ -129,10 +169,14 @@ def main() -> None:
     parser.add_argument("--output", default=None, help="Save results to JSON file")
     parser.add_argument("--max-iterations", type=int, default=20)
     parser.add_argument("--model", default="claude-opus-4-7", help="Anthropic model ID")
+    parser.add_argument("--dry-run", action="store_true", help="Skip LLM+Lean calls, test plumbing only")
     args = parser.parse_args()
 
-    print(f"Model: {args.model}  |  Max iterations: {args.max_iterations}")
-    results = run_eval(max_iterations=args.max_iterations, model=args.model)
+    if args.dry_run:
+        print("DRY RUN — no LLM or Lean calls will be made")
+    else:
+        print(f"Model: {args.model}  |  Max iterations: {args.max_iterations}")
+    results = run_eval(max_iterations=args.max_iterations, model=args.model, dry_run=args.dry_run)
     print_summary(results)
 
     if args.output:
