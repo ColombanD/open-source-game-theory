@@ -17,6 +17,7 @@ from dataclasses import asdict, dataclass
 from typing import Any
 from unittest.mock import patch
 
+from pd_runner.logging_config import setup_logging
 from pd_runner.services.proof_service import ProofRequest, ProofResult, ProofSearchError, search_proof
 
 _DRY_RUN_SOURCE = """\
@@ -170,7 +171,10 @@ def main() -> None:
     parser.add_argument("--max-iterations", type=int, default=20)
     parser.add_argument("--model", default="claude-opus-4-7", help="Anthropic model ID")
     parser.add_argument("--dry-run", action="store_true", help="Skip LLM+Lean calls, test plumbing only")
+    parser.add_argument("--log-level", default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logging verbosity (DEBUG shows all LLM turns and tool calls)")
     args = parser.parse_args()
+
+    setup_logging(args.log_level)
 
     if args.dry_run:
         print("DRY RUN — no LLM or Lean calls will be made")

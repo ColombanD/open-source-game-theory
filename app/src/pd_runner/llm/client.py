@@ -5,6 +5,10 @@ from __future__ import annotations
 import anthropic
 from typing import Any
 
+from pd_runner.logging_config import get_logger
+
+_log = get_logger("llm.client")
+
 _DEFAULT_MODEL = "claude-opus-4-7"
 _MAX_TOOL_ITERATIONS = 20
 
@@ -70,8 +74,12 @@ class AnthropicClient:
             # Append assistant turn (full content block list preserves thinking blocks).
             messages.append({"role": "assistant", "content": response.content})
 
+            assistant_text = _extract_text(response.content)
+            if assistant_text:
+                _log.debug("Assistant:\n%s", assistant_text)
+
             if response.stop_reason == "end_turn":
-                return _extract_text(response.content)
+                return assistant_text
 
             if response.stop_reason == "tool_use":
                 if tool_handler is None:
@@ -80,7 +88,9 @@ class AnthropicClient:
                 tool_results: list[dict[str, Any]] = []
                 for block in response.content:
                     if block.type == "tool_use":
+                        _log.info("Tool call: %s(%s)", block.name, _fmt_input(block.input))
                         result_text = tool_handler.call(block.name, block.input)
+                        _log.debug("Tool result (%s):\n%s", block.name, result_text[:2000] if len(result_text) > 2000 else result_text)
                         tool_results.append(
                             {
                                 "type": "tool_result",
@@ -102,6 +112,15 @@ class AnthropicClient:
 
 def _extract_text(content: list[Any]) -> str:
     return "\n".join(block.text for block in content if hasattr(block, "text") and block.text)
+
+
+def _fmt_input(tool_input: dict[str, Any]) -> str:
+    """Compact one-line summary of tool input for logging."""
+    parts = []
+    for k, v in tool_input.items():
+        s = str(v)
+        parts.append(f"{k}={s[:80]!r}" if len(s) > 80 else f"{k}={s!r}")
+    return ", ".join(parts)
 
 
 class ToolHandler:

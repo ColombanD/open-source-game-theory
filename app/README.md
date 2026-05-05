@@ -131,6 +131,11 @@ uv run python -m pd_runner.eval.harness --dry-run
 #   --max-iterations N    Max tool-use iterations per proof (default: 20)
 #   --output FILE         Save results as JSON
 #   --dry-run             Skip LLM and Lean, test plumbing only
+#   --log-level LEVEL     Logging verbosity: DEBUG, INFO, WARNING (default), ERROR
+#                           INFO  — prints each tool call name and input summary to stderr
+#                           DEBUG — also prints full LLM responses and tool results (truncated at 2000 chars)
+#                         Tip: redirect stderr to a file to keep the summary table clean:
+#                           uv run python -m pd_runner.eval.harness --log-level DEBUG 2>debug.log
 ```
 
 ### Eval case tiers
