@@ -88,7 +88,7 @@ axiom PBLT :
 /--
 S can read source code: if an agent `me` is literally
 `.search k ψ (.const a) (.const b)`, then S proves
-`□_k ψ' → me plays a against opp`, where `ψ' = ψ.subst me opp`
+`□_k ψ' → me plays a against opponent`, where `ψ' = ψ.subst me opponent`
 is the closed guard formula `eval` feeds to `proofSearch`.
 
 The implication is true by inspection of `me`'s code: a successful proof
@@ -97,9 +97,9 @@ an axiom because we don't model S's internals; critch22 uses the same step
 silently when applying PBLT (e.g. Theorem 3.4 for CUPOD, 3.7 for DUPOC).
 -/
 axiom proof_system_verifies_search_branch :
-  ∀ (k : Nat) (ψ : Formula) (a b : Action) (me opp : Prog),
+  ∀ (k : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog),
     me = .search k ψ (.const a) (.const b) →
     ∃ m, proofSearch m
-      (.impl (.box k (ψ.subst me opp)) (.plays me opp a)) = true
+      (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a)) = true
 
 end PDNew.Axioms
