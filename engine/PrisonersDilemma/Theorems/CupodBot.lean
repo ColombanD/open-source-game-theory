@@ -7,6 +7,7 @@ import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Bots.EBot
+import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
@@ -516,5 +517,51 @@ theorem CupodBot_vs_EBot (fuel : Nat) :
   have hB : play (fuel + 5) EBot (CupodBot k) = some .C := by
     exact EBot_plays_C_against_CupodBot k fuel hk
   exact outcome_of_plays _ _ _ _ _ hA hB
+
+
+-- MirrorBot --
+
+/-- Specialization of `proof_system_verifies_sim` to `MirrorBot = .sim .opp .self`
+    against an arbitrary opponent: S derives "opp plays a vs Mirror → Mirror plays a vs opp". -/
+theorem mirror_swap_provable (q : Prog) (a : Action) :
+    ∃ m, proofSearch m
+      (.impl (.plays q MirrorBot a) (.plays MirrorBot q a)) = true := by
+  have h := proof_system_verifies_sim MirrorBot .opp .self q a rfl
+  simpa [Prog.subst, MirrorBot] using h
+
+/-- Löb premise for CupodBot vs MirrorBot. Combines source-code transparency
+    of CupodBot's `.search` body (giving `□_k φ_A → φ_B`) with `.sim` source
+    transparency for MirrorBot (giving `φ_B → φ_A`), then chains via
+    `proofSearch_impl_trans` to produce the closed `□_k φ → φ` PBLT requires. -/
+theorem cupod_mirror_loeb_premise (k : Nat) :
+    ∃ m, proofSearch m
+      (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
+             (.plays MirrorBot (CupodBot k) .D)) = true := by
+  have hSearch :
+      ∃ m, proofSearch m
+        (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
+               (.plays (CupodBot k) MirrorBot .D)) = true := by
+    have h := proof_system_verifies_search_branch
+                k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl
+    simpa [Formula.subst, Prog.subst] using h
+  have hMirror := mirror_swap_provable (CupodBot k) .D
+  exact proofSearch_impl_trans _ _ _ hSearch hMirror
+
+/-- Once `proofSearch k = true`, CupodBot's eval against MirrorBot is fully
+    determined. Pattern from `CupodBot_plays_D_against_bot_DefectBot:247`. -/
+theorem CupodBot_plays_D_against_MirrorBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true) :
+    play (fuel + 2) (CupodBot k) MirrorBot = some .D := by
+  show eval (fuel + 2) (CupodBot k) MirrorBot (CupodBot k) = some .D
+  unfold CupodBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- `.sim .opp .self` swap idiom from `MirrorBot_plays_C_against_DBot:54`. -/
+theorem MirrorBot_plays_D_against_CupodBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true) :
+    play (fuel + 3) MirrorBot (CupodBot k) = some .D := by
+  have hCupod : play (fuel + 2) (CupodBot k) MirrorBot = some .D :=
+    CupodBot_plays_D_against_MirrorBot k fuel hk
+  simpa [play, eval, Prog.subst, MirrorBot] using hCupod
 
 end PDNew.Theorems
