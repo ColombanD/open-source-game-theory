@@ -85,4 +85,21 @@ axiom PBLT :
     (∀ k, k > k₁ → ∃ m, proofSearch m (.impl (.box (f k) (φ k)) (φ k)) = true) →
       ∃ k₂, ∀ k, k > k₂ → ∃ m, proofSearch m (φ k) = true
 
+/--
+S can read source code: if an agent `me` is literally
+`.search k ψ (.const a) (.const b)`, then S proves
+`□_k ψ' → me plays a against opp`, where `ψ' = ψ.subst me opp`
+is the closed guard formula `eval` feeds to `proofSearch`.
+
+The implication is true by inspection of `me`'s code: a successful proof
+search makes `eval` take the `.const a` branch and return `a`. We make this
+an axiom because we don't model S's internals; critch22 uses the same step
+silently when applying PBLT (e.g. Theorem 3.4 for CUPOD, 3.7 for DUPOC).
+-/
+axiom proof_system_verifies_search_branch :
+  ∀ (k : Nat) (ψ : Formula) (a b : Action) (me opp : Prog),
+    me = .search k ψ (.const a) (.const b) →
+    ∃ m, proofSearch m
+      (.impl (.box k (ψ.subst me opp)) (.plays me opp a)) = true
+
 end PDNew.Axioms
