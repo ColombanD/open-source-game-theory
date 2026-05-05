@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.DBot
+import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
@@ -312,6 +313,111 @@ theorem CupodBot_vs_DBot (fuel : Nat) :
     simp [eval, Prog.subst, Formula.subst, hg]
   have hB : play (fuel + 4) DBot (CupodBot k) = some .C := by
     exact DBot_plays_C_against_CupodBot k fuel hk
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+
+-- OBot --
+
+/-- OBot defects against CUPOD: its first probe (`.bot CooperateBot`) sees CUPOD
+    cooperate, so it descends into the inner `ite`; that inner probe
+    (`.bot DefectBot`) sees CUPOD defect, sending OBot to the defect branch. -/
+theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
+    play (fuel + 5) OBot (CupodBot k) = some .D := by
+  have hGuard1 :
+      eval (fuel + 4) OBot (CupodBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    have hProbe : play (fuel + 3) (CupodBot k) (.bot CooperateBot) = some .C := by
+      simpa [Nat.add_assoc] using CupodBot_plays_C_against_bot_CooperateBot k (fuel + 1)
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 3) OBot (CupodBot k) CooperateBot Action.C hProbe)
+  have hGuard2 :
+      eval (fuel + 3) OBot (CupodBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+    have hProbe : play (fuel + 2) (CupodBot k) (.bot DefectBot) = some .D :=
+      CupodBot_plays_D_against_bot_DefectBot k fuel hk
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) OBot (CupodBot k) DefectBot Action.D hProbe)
+  have hPlay := play_ite_from_guard
+    fuel 4 OBot (CupodBot k) (.sim .opp (.bot CooperateBot))
+    (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
+    (.const Action.D)
+    Action.C Action.C
+    (by rfl) hGuard1
+  have hInner :
+      eval (fuel + 4) OBot (CupodBot k)
+        (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
+          some .D := by
+    simpa [Nat.add_assoc] using
+      (eval_ite_from_guard (fuel + 3) OBot (CupodBot k)
+        (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
+        Action.C Action.D hGuard2)
+  simpa [hInner] using hPlay
+
+theorem proofSearch_true_for_OBot_different_k :
+    ∃ k n, proofSearch k (.plays OBot (CupodBot n) .D) = true := by
+  have hex : ∃ m n, play m OBot (CupodBot n) = some .D := by
+    have hk := proofSearch_true_for_bot_DefectBot
+    obtain ⟨d, hd⟩ := hk
+    have _ := OBot_plays_D_against_CupodBot d 0 hd
+    exists 5, d
+  rcases hex with ⟨m, n, h⟩
+  have hn : ∃ m, play m OBot (CupodBot n) = some Action.D := ⟨m, h⟩
+  have h := proofSearch_complete_plays OBot (CupodBot n) .D hn
+  obtain ⟨k, hk⟩ := h
+  exact ⟨k, n, hk⟩
+
+theorem proofSearch_true_for_OBot :
+    ∃ k, proofSearch k (.plays OBot (CupodBot k) .D) = true := by
+  obtain ⟨k, n, hk⟩ := proofSearch_true_for_OBot_different_k
+  by_cases hnk : n ≤ k
+  · refine ⟨k, ?_⟩
+    -- If the Cupod index `n` is at most the proof-search fuel `k`, keep `k`
+    -- as the final witness and transport the formula from `CupodBot n` to
+    -- `CupodBot k`.
+    exact CupodBot_monotonicity n k OBot .D hnk hk
+  · refine ⟨n, ?_⟩
+    -- Otherwise `k < n`. We cannot transport `CupodBot n` down to `CupodBot k`,
+    -- so choose `n` as the final witness and only increase the proof-search
+    -- fuel from `k` to `n`, leaving the formula itself unchanged.
+    exact proofSearch_monotone k n (.plays OBot (CupodBot n) .D)
+      (Nat.le_of_lt (Nat.lt_of_not_ge hnk)) hk
+
+theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
+    (hk : proofSearch k (.plays OBot (CupodBot k) .D) = true) :
+    play (fuel + 5) (CupodBot k) OBot = some .D := by
+  show eval (fuel + 5) (CupodBot k) OBot (CupodBot k) = some .D
+  unfold CupodBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- CupodBot vs OBot: mutual defection. -/
+theorem CupodBot_vs_OBot (fuel : Nat) :
+    ∃ k, outcome (fuel + 5) (CupodBot k) OBot = some (.D, .D) := by
+  -- Two proof-search witnesses: `o` makes CUPOD defect against OBot, `d` makes
+  -- OBot defect against CUPOD via the DefectBot probe.
+  obtain ⟨o, ho⟩ := proofSearch_true_for_OBot
+  obtain ⟨d, hd⟩ := proofSearch_true_for_bot_DefectBot
+
+  -- Pick a final index large enough for both witnesses; monotonicity reuses
+  -- both proof-search successes at the same `k`.
+  let k := o + d
+  have hok : o ≤ k := Nat.le_add_right o d
+  have hdk : d ≤ k := Nat.le_add_left d o
+
+  have hkOBot : proofSearch k (.plays OBot (CupodBot k) .D) = true :=
+    CupodBot_monotonicity o k OBot .D hok
+      (proofSearch_monotone o k (.plays OBot (CupodBot o) .D) hok ho)
+
+  have hkDefect : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
+    CupodBot_monotonicity d k (.bot DefectBot) .D hdk
+      (proofSearch_monotone d k (.plays (.bot DefectBot) (CupodBot d) .D) hdk hd)
+
+  refine ⟨k, ?_⟩
+
+  have hA : play (fuel + 5) (CupodBot k) OBot = some .D :=
+    CupodBot_plays_D_against_OBot fuel k hkOBot
+
+  have hB : play (fuel + 5) OBot (CupodBot k) = some .D :=
+    OBot_plays_D_against_CupodBot k fuel hkDefect
+
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PDNew.Theorems
