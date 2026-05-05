@@ -1,0 +1,282 @@
+[
+  {
+    "left_bot": "CooperateBot",
+    "right_bot": "CooperateBot",
+    "left_action": "C",
+    "right_action": "C",
+    "passed": true,
+    "iterations_used": 1,
+    "elapsed_seconds": 12.600763541999186,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.CooperateBot
+
+open PDNew
+open PDNew.Bots
+
+namespace PDNew.Theorems
+
+theorem play_CooperateBot' (n : Nat) (opponent : Prog) :
+    play (n+1) CooperateBot opponent = some .C := by
+  unfold play eval CooperateBot
+  simp only
+
+theorem outcome_CooperateBot_vs_CooperateBot (n : Nat) :
+    outcome (n+1) CooperateBot CooperateBot = some (.C, .C) := by
+  unfold outcome
+  rw [play_CooperateBot']
+  rfl
+
+end PDNew.Theorems"
+  },
+  {
+    "left_bot": "CooperateBot",
+    "right_bot": "DefectBot",
+    "left_action": "C",
+    "right_action": "D",
+    "passed": true,
+    "iterations_used": 1,
+    "elapsed_seconds": 10.79887479199897,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Theorems.DefectBot
+
+open PDNew
+open PDNew.Bots
+
+namespace PDNew.Theorems
+
+theorem play_CooperateBot' (n : Nat) (opponent : Prog) :
+    play (n+1) CooperateBot opponent = some .C := by
+  unfold play eval CooperateBot
+  simp only
+
+theorem outcome_CooperateBot_vs_DefectBot (n : Nat) :
+    outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by
+  unfold outcome
+  rw [play_CooperateBot', play_DefectBot]
+  rfl
+
+end PDNew.Theorems"
+  },
+  {
+    "left_bot": "DefectBot",
+    "right_bot": "DefectBot",
+    "left_action": "D",
+    "right_action": "D",
+    "passed": true,
+    "iterations_used": 1,
+    "elapsed_seconds": 13.745999291997578,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.DefectBot
+
+open PDNew
+open PDNew.Bots
+
+namespace PDNew.Theorems
+
+theorem play_DefectBot (n : Nat) (opponent : Prog) :
+      play (n+1) DefectBot opponent = some .D := by
+    unfold play eval DefectBot
+    simp
+
+theorem outcome_DefectBot_vs_DefectBot (n : Nat) :
+    outcome (n+1) DefectBot DefectBot = some (.D, .D) := by
+  unfold outcome
+  rw [play_DefectBot]
+  rfl
+
+end PDNew.Theorems"
+  },
+  {
+    "left_bot": "MirrorBot",
+    "right_bot": "CooperateBot",
+    "left_action": "C",
+    "right_action": "C",
+    "passed": true,
+    "iterations_used": 12,
+    "elapsed_seconds": 275.17507162499896,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.MirrorBot
+import PrisonersDilemma.Bots.CooperateBot
+
+open PDNew
+open PDNew.Bots
+
+namespace PDNew.Theorems
+
+/-- MirrorBot mirrors its opponent: it simulates the opponent against itself.
+    Against CooperateBot, it simulates CooperateBot against MirrorBot,
+    which immediately returns .C (CooperateBot is .const .C). Minimum fuel needed is 2. -/
+theorem outcome_MirrorBot_vs_CooperateBot (n : Nat) :
+    outcome (n+2) MirrorBot CooperateBot = some (.C, .C) := by
+  have hA : play (n+2) MirrorBot CooperateBot = some .C := by
+    show eval (n+2) MirrorBot CooperateBot MirrorBot = some .C
+    unfold MirrorBot CooperateBot
+    simp only [eval, Prog.subst]
+  have hB : play (n+2) CooperateBot MirrorBot = some .C := rfl
+  simp [outcome, hA, hB]
+
+end PDNew.Theorems"
+  },
+  {
+    "left_bot": "MirrorBot",
+    "right_bot": "DefectBot",
+    "left_action": "D",
+    "right_action": "D",
+    "passed": true,
+    "iterations_used": 12,
+    "elapsed_seconds": 209.729031709001,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.MirrorBot
+import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Theorems.Helpers
+import PrisonersDilemma.Theorems.DefectBot
+
+open PDNew
+open PDNew.Bots
+
+namespace PDNew.Theorems
+
+-- Confirm that play 1 MirrorBot DefectBot = none (n+1 is insufficient)
+theorem mirror_play_1_is_none : play 1 MirrorBot DefectBot = none := by
+  unfold play MirrorBot DefectBot
+  simp [eval]
+
+-- The main theorem with n+2 (minimum needed fuel is 2)
+theorem outcome_MirrorBot_vs_DefectBot (n : Nat) :
+    outcome (n+2) MirrorBot DefectBot = some (.D, .D) := by
+  have hA : play (n+2) MirrorBot DefectBot = some .D := by
+    apply play_from_eval
+    unfold MirrorBot DefectBot
+    simp [eval, Prog.subst]
+  have hB : play (n+2) DefectBot MirrorBot = some .D :=
+    play_DefectBot (n+1) MirrorBot
+  simp [outcome, hA, hB]
+
+end PDNew.Theorems"
+  },
+  {
+    "left_bot": "OBot",
+    "right_bot": "CooperateBot",
+    "left_action": "C",
+    "right_action": "C",
+    "passed": false,
+    "iterations_used": 0,
+    "elapsed_seconds": 137.93680162500095,
+    "error": "Agent did not produce a final Lean source for OBot vs CooperateBot.
+Final response:
+",
+    "lean_source": null
+  },
+  {
+    "left_bot": "DBot",
+    "right_bot": "CooperateBot",
+    "left_action": "D",
+    "right_action": "C",
+    "passed": true,
+    "iterations_used": 15,
+    "elapsed_seconds": 260.86503733300196,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.DBot
+import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Theorems.DBot
+import PrisonersDilemma.Theorems.Helpers
+
+open PDNew.Bots
+open PDNew
+namespace PDNew.Theorems
+
+theorem outcome_DBot_vs_CooperateBot (n : Nat) :
+    outcome (n+3) DBot CooperateBot = some (.D, .C) := by
+  have hA : play (n+3) DBot CooperateBot = some .D := DBot_plays_D_against_CooperateBot n
+  have hB : play (n+3) CooperateBot DBot = some .C := rfl
+  simp [outcome, hA, hB]
+
+end PDNew.Theorems"
+  },
+  {
+    "left_bot": "TitForTatBot",
+    "right_bot": "CooperateBot",
+    "left_action": "C",
+    "right_action": "C",
+    "passed": true,
+    "iterations_used": 8,
+    "elapsed_seconds": 186.53981937500066,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Bots.TitForTatBot
+import PrisonersDilemma.Theorems.TitForTatBot
+
+open PDNew
+open PDNew.Bots
+
+namespace PDNew.Theorems
+
+theorem outcome_TitForTatBot_vs_CooperateBot (n : Nat) :
+    outcome (n+3) TitForTatBot CooperateBot = some (.C, .C) := by
+  exact TitForTatBot_vs_CB n
+
+end PDNew.Theorems"
+  },
+  {
+    "left_bot": "TitForTatBot",
+    "right_bot": "DefectBot",
+    "left_action": "D",
+    "right_action": "D",
+    "passed": true,
+    "iterations_used": 19,
+    "elapsed_seconds": 434.8682367500005,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Bots.TitForTatBot
+import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Theorems.DefectBot
+import PrisonersDilemma.Theorems.Helpers
+
+open PDNew
+open PDNew.Bots
+
+namespace PDNew.Theorems
+
+theorem outcome_TitForTatBot_vs_DefectBot (n : Nat) :
+    outcome (n+3) TitForTatBot DefectBot = some (.D, .D) := by
+  have hA : play (n+3) TitForTatBot DefectBot = some .D := by
+    apply play_from_eval
+    unfold TitForTatBot DefectBot CooperateBot
+    simp [eval, Prog.subst]
+    decide
+  have hB : play (n+3) DefectBot TitForTatBot = some .D :=
+    play_DefectBot n TitForTatBot
+  simp [outcome, hA, hB]
+
+end PDNew.Theorems"
+  },
+  {
+    "left_bot": "EBot",
+    "right_bot": "CooperateBot",
+    "left_action": "D",
+    "right_action": "C",
+    "passed": false,
+    "iterations_used": 0,
+    "elapsed_seconds": 736.367084999998,
+    "error": "Proof search did not converge within 20 tool-use iterations",
+    "lean_source": null
+  }
+]
