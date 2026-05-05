@@ -11,7 +11,6 @@
 *.bcf
 *.xml
 *.minted
-*.pdf
 *.DS_Store
 
 # LaTeX build outputs
