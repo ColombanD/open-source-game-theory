@@ -100,6 +100,9 @@ theorem CupodBot_vs_DefectBot (fuel : Nat):
 
   simp [outcome, hA, hB]
 
+
+-- CupodBot --
+
 /-- CUPOD-specific Löb premise (critch22 Theorem 3.4 substitution into PBLT).
     Instantiates `proof_system_verifies_search_branch` with
     ψ = "opp(self.source) == D", a = .D, b = .C, me = opp = CupodBot k.
