@@ -6,6 +6,7 @@ import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.OBot
+import PrisonersDilemma.Bots.EBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
@@ -418,6 +419,102 @@ theorem CupodBot_vs_OBot (fuel : Nat) :
   have hB : play (fuel + 5) OBot (CupodBot k) = some .D :=
     OBot_plays_D_against_CupodBot k fuel hkDefect
 
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+
+-- EBot --
+
+/-- EBot cooperates with CUPOD: its outer probe (`.bot DefectBot`) sees CUPOD
+    defect, so EBot descends into the inner `ite`; the next probe
+    (`.bot CooperateBot`) sees CUPOD cooperate, so EBot cooperates. -/
+theorem EBot_plays_C_against_CupodBot (k fuel : Nat)
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
+    play (fuel + 5) EBot (CupodBot k) = some .C := by
+  have hCupodD : play (fuel + 3) (CupodBot k) (.bot DefectBot) = some .D := by
+    simpa [Nat.add_assoc] using CupodBot_plays_D_against_bot_DefectBot k (fuel + 1) hk
+  have hGuard1 :
+      eval (fuel + 4) EBot (CupodBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 3) EBot (CupodBot k) DefectBot Action.D hCupodD)
+  have hCupodC : play (fuel + 2) (CupodBot k) (.bot CooperateBot) = some .C :=
+    CupodBot_plays_C_against_bot_CooperateBot k fuel
+  have hGuard2 :
+      eval (fuel + 3) EBot (CupodBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) EBot (CupodBot k) CooperateBot Action.C hCupodC)
+  have hInner :
+      eval (fuel + 4) EBot (CupodBot k)
+        (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
+          (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) =
+        some .C := by
+    simpa [Nat.add_assoc] using
+      (eval_ite_from_guard (fuel + 3) EBot (CupodBot k)
+        (.sim .opp (.bot CooperateBot)) (.const Action.C)
+        (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))
+        Action.C Action.C hGuard2)
+  have hPlay := play_ite_from_guard
+    fuel 4 EBot (CupodBot k) (.sim .opp (.bot DefectBot))
+    (.const Action.D)
+    (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
+      (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
+    Action.C Action.D
+    (by rfl) hGuard1
+  simpa [Nat.add_assoc, hInner] using hPlay
+
+/-- Semantically, EBot never plays D against CUPOD (given the DefectBot probe
+    succeeds). -/
+theorem interp_EBot_plays_D_false (k : Nat)
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
+    ¬ (Formula.plays EBot (CupodBot k) .D).interp := by
+  rintro ⟨n, hn⟩
+  cases n with
+  | zero   => simp only [play, eval, reduceCtorEq] at hn
+  | succ m =>
+      cases m with
+      | zero => simp [play, eval, EBot] at hn
+      | succ m =>
+          cases m with
+          | zero => simp [play, eval, EBot] at hn
+          | succ fuel =>
+              cases fuel with
+              | zero =>
+                  simp [play, eval, EBot, CupodBot, Prog.subst, Formula.subst] at hn
+              | succ fuel =>
+                  cases fuel with
+                  | zero =>
+                      have hk' := hk
+                      unfold CupodBot at hk'
+                      simp [play, eval, EBot, CupodBot, Prog.subst, Formula.subst, hk'] at hn
+                      have hDC : (Action.D == Action.C) = false := by decide
+                      rw [hDC] at hn
+                      cases hn
+                  | succ fuel =>
+                      have hC :
+                          play (fuel + 1 + 1 + 1 + 1 + 1) EBot (CupodBot k) = some .C := by
+                        simpa [Nat.add_assoc] using EBot_plays_C_against_CupodBot k fuel hk
+                      rw [hC] at hn
+                      cases hn
+
+theorem proofSearch_false_for_EBot (k : Nat)
+    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :
+    proofSearch k (.plays EBot (CupodBot k) .D) = false := by
+  cases h : proofSearch k (.plays EBot (CupodBot k) .D) with
+  | true  => exact absurd (proofSearch_sound _ _ h)
+                          (interp_EBot_plays_D_false _ hk)
+  | false => rfl
+
+/-- CupodBot vs EBot: mutual cooperation. -/
+theorem CupodBot_vs_EBot (fuel : Nat) :
+    ∃ k, outcome (fuel + 5) (CupodBot k) EBot = some (.C, .C) := by
+  obtain ⟨k, hk⟩ := proofSearch_true_for_bot_DefectBot
+  refine ⟨k, ?_⟩
+  have hA : play (fuel + 5) (CupodBot k) EBot = some .C := by
+    have hg := proofSearch_false_for_EBot k hk
+    show eval (fuel + 5) (CupodBot k) EBot (CupodBot k) = some .C
+    unfold CupodBot at hg ⊢
+    simp [eval, Prog.subst, Formula.subst, hg]
+  have hB : play (fuel + 5) EBot (CupodBot k) = some .C := by
+    exact EBot_plays_C_against_CupodBot k fuel hk
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PDNew.Theorems
