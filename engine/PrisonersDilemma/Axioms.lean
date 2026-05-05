@@ -1,9 +1,7 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Bots.CupodBot
 
 open PDNew
-open PDNew.Bots
 namespace PDNew.Axioms
 
 /-- Abstract proof objects used to model derivations in the ambient proof system. -/
