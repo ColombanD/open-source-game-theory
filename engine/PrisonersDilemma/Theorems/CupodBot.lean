@@ -3,15 +3,20 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.CupodBot
+import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 
 open PDNew
 open PDNew.Axioms
 open PDNew.Bots
 namespace PDNew.Theorems
+
+
+-- Monotonicity --
 
 /-- Monotonicity of CupodBot: If the proof search succeeds with less fuel, it also succeeds with more fuel -/
 theorem CupodBot_monotonicity (n k : Nat) :
@@ -25,6 +30,8 @@ theorem CupodBot_monotonicity (n k : Nat) :
   exact (proofSearch_spec k (Φ k)).2 ⟨w', hw', hwk'⟩
 
 
+-- CooperateBot --
+
 /-- Proof search is false for CooperateBot -/
 theorem proofSearch_false_for_CooperateBot (k : Nat) :
     proofSearch k (.plays CooperateBot (CupodBot k) .D) = false := by
@@ -32,6 +39,27 @@ theorem proofSearch_false_for_CooperateBot (k : Nat) :
   | true  => exact absurd (proofSearch_sound _ _ h)
                           (interp_CooperateBot_plays_D_false _)
   | false => rfl
+
+/-- CupodBot vs CooperateBot: uses proof search being false -/
+theorem CupodBot_vs_CooperateBot (k fuel : Nat):
+    outcome (fuel + 2) (CupodBot k) CooperateBot = some (.C, .C) := by
+  -- Left side: CUPOD executes its `.search` guard. The guard is false by the
+  -- lemma above, so the `search` falls through to the final `.const .C` branch.
+  have hA : play (fuel + 2) (CupodBot k) CooperateBot = some .C := by
+    show eval (fuel + 2) (CupodBot k) CooperateBot (CupodBot k) = some .C
+    -- `guard_false` tells us the proof search for “CooperateBot plays D” fails.
+    -- Once we unfold the bot, the remaining `simp` can simplify the search node
+    -- and the constant branch all the way down to `.C`.
+    have hg := proofSearch_false_for_CooperateBot k
+    unfold CupodBot at hg ⊢
+    simp [eval, Prog.subst, Formula.subst, hg]
+  -- Right side: CooperateBot is definitionally the constant `.C` bot.
+  have hB : play (fuel + 2) CooperateBot (CupodBot k) = some .C := rfl
+  -- Finally, `outcome` just packages the two `play` results together.
+  simp [outcome, hA, hB]
+
+
+-- DefectBot --
 
 theorem proofSearch_true_for_DefectBot_different_k (n: Nat) :
     ∃ k, proofSearch k (.plays DefectBot (CupodBot n) .D) = true := by
@@ -52,25 +80,6 @@ theorem proofSearch_true_for_DefectBot :
   refine ⟨k, ?_⟩ -- use the same k for the conclusion
   exact CupodBot_monotonicity 0 k (Nat.zero_le k) hk
 
-
-/-- CupodBot vs CooperateBot: uses proof search being false -/
-theorem CupodBot_vs_CooperateBot (k fuel : Nat):
-    outcome (fuel + 2) (CupodBot k) CooperateBot = some (.C, .C) := by
-  -- Left side: CUPOD executes its `.search` guard. The guard is false by the
-  -- lemma above, so the `search` falls through to the final `.const .C` branch.
-  have hA : play (fuel + 2) (CupodBot k) CooperateBot = some .C := by
-    show eval (fuel + 2) (CupodBot k) CooperateBot (CupodBot k) = some .C
-    -- `guard_false` tells us the proof search for “CooperateBot plays D” fails.
-    -- Once we unfold the bot, the remaining `simp` can simplify the search node
-    -- and the constant branch all the way down to `.C`.
-    have hg := proofSearch_false_for_CooperateBot k
-    unfold CupodBot at hg ⊢
-    simp [eval, Prog.subst, Formula.subst, hg]
-  -- Right side: CooperateBot is definitionally the constant `.C` bot.
-  have hB : play (fuel + 2) CooperateBot (CupodBot k) = some .C := rfl
-  -- Finally, `outcome` just packages the two `play` results together.
-  simp [outcome, hA, hB]
-
 /-- CupodBot vs DefectBot: uses proof search being true -/
 theorem CupodBot_vs_DefectBot (fuel : Nat):
     ∃ k, outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := by
@@ -86,6 +95,9 @@ theorem CupodBot_vs_DefectBot (fuel : Nat):
     simpa [Nat.add_assoc] using (play_DefectBot (fuel + 1) (CupodBot k))
 
   simp [outcome, hA, hB]
+
+
+-- CupodBot --
 
 /-- CUPOD-specific Löb premise (critch22 Theorem 3.4 substitution into PBLT).
     Instantiates `proof_system_verifies_search_branch` with
@@ -131,5 +143,86 @@ theorem CupodBot_vs_CupodBot :
   obtain ⟨n, hn⟩ := hInterp
   refine ⟨n, ?_⟩
   simp [outcome, hn]
+
+
+-- TitForTatBot --
+
+/-- Proof search is false for `.bot CooperateBot`. -/
+theorem proofSearch_false_for_bot_CooperateBot (k : Nat) :
+    proofSearch k (.plays (.bot CooperateBot) (CupodBot k) .D) = false := by
+  cases h : proofSearch k (.plays (.bot CooperateBot) (CupodBot k) .D) with
+  | true  => exact absurd (proofSearch_sound _ _ h)
+                          (interp_bot_CooperateBot_plays_D_false _)
+  | false => rfl
+
+/-- CUPOD cooperates against `.bot CooperateBot` because the search guard fails. -/
+theorem CupodBot_plays_C_against_bot_CooperateBot (k fuel : Nat) :
+    play (fuel + 2) (CupodBot k) (.bot CooperateBot) = some .C := by
+  have hg := proofSearch_false_for_bot_CooperateBot k
+  show eval (fuel + 2) (CupodBot k) (.bot CooperateBot) (CupodBot k) = some .C
+  unfold CupodBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- TitForTat cooperates with CUPOD: its `.sim .opp (.bot CooperateBot)` probe
+    sees CUPOD cooperate, so the `ite` selects the cooperate branch. -/
+theorem TitForTatBot_plays_C_against_CupodBot (k fuel : Nat) :
+    play (fuel + 4) TitForTatBot (CupodBot k) = some .C := by
+  have hCupod : play (fuel + 2) (CupodBot k) (.bot CooperateBot) = some .C :=
+    CupodBot_plays_C_against_bot_CooperateBot k fuel
+  have hGuard :
+      eval (fuel + 3) TitForTatBot (CupodBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) TitForTatBot (CupodBot k) CooperateBot Action.C hCupod)
+  have hPlay := play_ite_from_guard
+    fuel 3 TitForTatBot (CupodBot k) (.sim .opp (.bot CooperateBot))
+    (.const Action.C) (.const Action.D)
+    Action.C Action.C
+    (by rfl) hGuard
+  simpa [eval] using hPlay
+
+/-- Semantically, TitForTat never plays D against CUPOD. -/
+theorem interp_TitForTatBot_plays_D_false (k : Nat) :
+    ¬ (Formula.plays TitForTatBot (CupodBot k) .D).interp := by
+  rintro ⟨n, hn⟩
+  cases n with
+  | zero   => simp only [play, eval, reduceCtorEq] at hn
+  | succ m =>
+      cases m with
+      | zero => simp [play, eval, TitForTatBot] at hn
+      | succ m =>
+          cases m with
+          | zero =>
+              simp [play, eval, TitForTatBot] at hn
+          | succ fuel =>
+              cases fuel with
+              | zero =>
+                  simp [play, eval, TitForTatBot, CupodBot, Prog.subst, Formula.subst, CooperateBot] at hn
+              | succ fuel =>
+                  have hC : play (fuel + 1 + 1 + 1 + 1) TitForTatBot (CupodBot k) = some .C := by
+                    simpa [Nat.add_assoc] using TitForTatBot_plays_C_against_CupodBot k fuel
+                  rw [hC] at hn
+                  cases hn
+
+/-- Proof search is false for `.plays TitForTatBot (CupodBot k) .D`. -/
+theorem proofSearch_false_for_TitForTatBot (k : Nat) :
+    proofSearch k (.plays TitForTatBot (CupodBot k) .D) = false := by
+  cases h : proofSearch k (.plays TitForTatBot (CupodBot k) .D) with
+  | true  => exact absurd (proofSearch_sound _ _ h)
+                          (interp_TitForTatBot_plays_D_false _)
+  | false => rfl
+
+/-- CupodBot vs TitForTatBot: mutual cooperation. -/
+theorem CupodBot_vs_TitForTatBot (fuel : Nat):
+    ∃ k, outcome (fuel + 4) (CupodBot k) TitForTatBot = some (.C, .C) := by
+  let k := 0
+  refine ⟨k, ?_⟩
+  have hA : play (fuel + 4) (CupodBot k) TitForTatBot = some .C := by
+    have hg := proofSearch_false_for_TitForTatBot k
+    show eval (fuel + 4) (CupodBot k) TitForTatBot (CupodBot k) = some .C
+    unfold CupodBot at hg ⊢
+    simp [eval, Prog.subst, Formula.subst, hg]
+  have hB : play (fuel + 4) TitForTatBot (CupodBot k) = some .C := by
+    exact TitForTatBot_plays_C_against_CupodBot k fuel
+  exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PDNew.Theorems

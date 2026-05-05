@@ -31,6 +31,24 @@ theorem interp_CooperateBot_plays_D_false (q : Prog) :
       rw [play_CooperateBot] at hn
       cases hn
 
+/-- `(.bot CooperateBot)` always cooperates after at least two fuel steps. -/
+theorem play_bot_CooperateBot (n : Nat) (opponent : Prog) :
+    play (n + 2) (.bot CooperateBot) opponent = some .C := by
+  simp [play, eval, CooperateBot]
+
+/-- The interpretation "(.bot CooperateBot) plays D against q" is false. -/
+theorem interp_bot_CooperateBot_plays_D_false (q : Prog) :
+    ¬ (Formula.plays (.bot CooperateBot) q .D).interp := by
+  rintro ⟨n, hn⟩
+  cases n with
+  | zero => simp only [play, eval, reduceCtorEq] at hn
+  | succ m =>
+      cases m with
+      | zero => simp [play, eval] at hn
+      | succ fuel =>
+          rw [play_bot_CooperateBot] at hn
+          cases hn
+
 -- CooperateBot vs DefectBot: the cooperator is exploited, (C, D).
 theorem outcome_CooperateBot_vs_DefectBot (n : Nat) :
     outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by
