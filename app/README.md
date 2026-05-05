@@ -130,6 +130,7 @@ uv run python -m pd_runner.eval.harness --dry-run
 #   --model MODEL         Anthropic model ID (default: claude-opus-4-7)
 #   --max-iterations N    Max tool-use iterations per proof (default: 20)
 #   --output FILE         Save results as JSON
+#   --n-cases N           Run only the first N eval cases (default: all 10)
 #   --dry-run             Skip LLM and Lean, test plumbing only
 #   --log-level LEVEL     Logging verbosity: DEBUG, INFO, WARNING (default), ERROR
 #                           INFO  — prints each tool call name and input summary to stderr

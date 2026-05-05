@@ -94,9 +94,10 @@ def _dry_run_search_proof(request: ProofRequest) -> ProofResult:
     )
 
 
-def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7", dry_run: bool = False) -> list[CaseResult]:
+def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7", dry_run: bool = False, n_cases: int | None = None) -> list[CaseResult]:
     results: list[CaseResult] = []
-    for case in EVAL_CASES:
+    cases = EVAL_CASES[:n_cases] if n_cases is not None else EVAL_CASES
+    for case in cases:
         req = ProofRequest(
             left_bot=case["left"],
             right_bot=case["right"],
@@ -170,6 +171,7 @@ def main() -> None:
     parser.add_argument("--output", default=None, help="Save results to JSON file")
     parser.add_argument("--max-iterations", type=int, default=20)
     parser.add_argument("--model", default="claude-opus-4-7", help="Anthropic model ID")
+    parser.add_argument("--n-cases", type=int, default=None, help="Run only the first N eval cases (default: all)")
     parser.add_argument("--dry-run", action="store_true", help="Skip LLM+Lean calls, test plumbing only")
     parser.add_argument("--log-level", default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logging verbosity (DEBUG shows all LLM turns and tool calls)")
     args = parser.parse_args()
@@ -180,7 +182,7 @@ def main() -> None:
         print("DRY RUN — no LLM or Lean calls will be made")
     else:
         print(f"Model: {args.model}  |  Max iterations: {args.max_iterations}")
-    results = run_eval(max_iterations=args.max_iterations, model=args.model, dry_run=args.dry_run)
+    results = run_eval(max_iterations=args.max_iterations, model=args.model, dry_run=args.dry_run, n_cases=args.n_cases)
     print_summary(results)
 
     if args.output:
