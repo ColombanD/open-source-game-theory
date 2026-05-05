@@ -94,9 +94,9 @@ def _dry_run_search_proof(request: ProofRequest) -> ProofResult:
     )
 
 
-def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7", dry_run: bool = False, n_cases: int | None = None) -> list[CaseResult]:
+def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7", dry_run: bool = False, cases_slice: slice = slice(None)) -> list[CaseResult]:
     results: list[CaseResult] = []
-    cases = EVAL_CASES[:n_cases] if n_cases is not None else EVAL_CASES
+    cases = EVAL_CASES[cases_slice]
     for case in cases:
         req = ProofRequest(
             left_bot=case["left"],
@@ -171,7 +171,7 @@ def main() -> None:
     parser.add_argument("--output", default=None, help="Save results to JSON file")
     parser.add_argument("--max-iterations", type=int, default=20)
     parser.add_argument("--model", default="claude-opus-4-7", help="Anthropic model ID")
-    parser.add_argument("--n-cases", type=int, default=None, help="Run only the first N eval cases (default: all)")
+    parser.add_argument("--cases", type=int, nargs="*", metavar="N", help="Case selection: omit for all, one int N for first N, two ints N M for slice N:M (0-indexed)")
     parser.add_argument("--dry-run", action="store_true", help="Skip LLM+Lean calls, test plumbing only")
     parser.add_argument("--log-level", default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logging verbosity (DEBUG shows all LLM turns and tool calls)")
     args = parser.parse_args()
@@ -182,7 +182,16 @@ def main() -> None:
         print("DRY RUN — no LLM or Lean calls will be made")
     else:
         print(f"Model: {args.model}  |  Max iterations: {args.max_iterations}")
-    results = run_eval(max_iterations=args.max_iterations, model=args.model, dry_run=args.dry_run, n_cases=args.n_cases)
+    cases = args.cases
+    if not cases:
+        cases_slice = slice(None)
+    elif len(cases) == 1:
+        cases_slice = slice(cases[0])
+    elif len(cases) == 2:
+        cases_slice = slice(cases[0], cases[1])
+    else:
+        parser.error("--cases takes at most 2 integers")
+    results = run_eval(max_iterations=args.max_iterations, model=args.model, dry_run=args.dry_run, cases_slice=cases_slice)
     print_summary(results)
 
     if args.output:
