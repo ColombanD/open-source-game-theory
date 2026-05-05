@@ -102,4 +102,35 @@ axiom proof_system_verifies_search_branch :
     ∃ m, proofSearch m
       (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a)) = true
 
+/--
+S can read `.sim` nodes. If `me`'s literal body is `.sim p q`, then by the
+`.sim` eval rule
+
+  eval (n+1) me opp (.sim p q) = eval n p' q' p'   where p' = p.subst me opp,
+                                                         q' = q.subst me opp
+
+so `me` plays `a` against `opp` iff `p'` plays `a` against `q'`. S verifies
+this by inspection of `me`'s code. Direct analogue of
+`proof_system_verifies_search_branch`, but for the `.sim` constructor instead
+of `.search`.
+-/
+axiom proof_system_verifies_sim :
+  ∀ (me p q opponent : Prog) (a : Action),
+    me = .sim p q →
+    ∃ m, proofSearch m
+      (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+             (.plays me opponent a)) = true
+
+/--
+Hypothetical syllogism in S: if S derives `φ → ψ` and `ψ → χ`, S derives
+`φ → χ`. A basic structural rule for any reasonable proof system. Used to
+chain `proof_system_verifies_search_branch` with `proof_system_verifies_sim`
+when constructing PBLT premises for cross-pairings.
+-/
+axiom proofSearch_impl_trans :
+  ∀ (φ ψ χ : Formula),
+    (∃ m, proofSearch m (.impl φ ψ) = true) →
+    (∃ m, proofSearch m (.impl ψ χ) = true) →
+    ∃ m, proofSearch m (.impl φ χ) = true
+
 end PDNew.Axioms
