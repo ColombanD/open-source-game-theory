@@ -1,0 +1,24 @@
+[
+  {
+    "left_bot": "CooperateBot",
+    "right_bot": "CooperateBot",
+    "left_action": "C",
+    "right_action": "C",
+    "passed": true,
+    "iterations_used": 1,
+    "elapsed_seconds": 11.8661358749996,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.CooperateBot\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem outcome_CooperateBot_vs_CooperateBot (n : Nat) :\n    outcome (n+1) CooperateBot CooperateBot = some (.C, .C) := by\n  unfold outcome\n  simp [play, eval, CooperateBot]"
+  },
+  {
+    "left_bot": "CooperateBot",
+    "right_bot": "DefectBot",
+    "left_action": "C",
+    "right_action": "D",
+    "passed": true,
+    "iterations_used": 3,
+    "elapsed_seconds": 18.637542041000415,
+    "error": null,
+    "lean_source": "import PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem play_CooperateBot (n : Nat) (opponent : Prog) :\n    play (n+1) CooperateBot opponent = some .C := by\n  unfold play eval CooperateBot\n  simp only\n\ntheorem play_DefectBot (n : Nat) (opponent : Prog) :\n    play (n+1) DefectBot opponent = some .D := by\n  unfold play eval DefectBot\n  simp\n\ntheorem outcome_CooperateBot_vs_DefectBot (n : Nat) :\n    outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by\n  unfold outcome\n  rw [play_CooperateBot, play_DefectBot]\n  rfl\n\nend PDNew.Theorems"
+  }
+]
