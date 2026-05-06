@@ -13,8 +13,10 @@ abbrev Outcome := Action × Action
 -- in Dynamics.lean. Keeping everything at the syntactic level is what lets agents be nested,
 --  substituted, and passed as subjects of formulas.
 
--- `Formula` is the part of the proof system `S` that agents query through the oracle,just enough to
+-- `Formula` is the part of the proof system `S` that agents query through the oracle,
 -- just enough to express hypotheses like `"opp(CUPOD_k.source) == D"`.
+-- We can see `Formula` as the language of the ambient logic in which agents reason about each other.
+-- Note: `Formula` is not a full internalization of the ambient logic — it only has the constructs we need to express the theorems in this file.
 
 -- They are mutually recursive because `.search` carries a formula as
 -- its guard, and a formula's `.plays` atom takes programs as subjects:
