@@ -564,4 +564,84 @@ theorem MirrorBot_plays_D_against_CupodBot (k fuel : Nat)
     CupodBot_plays_D_against_MirrorBot k fuel hk
   simpa [play, eval, Prog.subst, MirrorBot] using hCupod
 
+/-- Dual of `CupodBot_plays_D_against_MirrorBot`: when proofSearch fails,
+    CupodBot falls through to its `.const .C` cooperate branch. -/
+theorem CupodBot_plays_C_against_MirrorBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = false) :
+    play (fuel + 2) (CupodBot k) MirrorBot = some .C := by
+  show eval (fuel + 2) (CupodBot k) MirrorBot (CupodBot k) = some .C
+  unfold CupodBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- Dual of `MirrorBot_plays_D_against_CupodBot`: MirrorBot mirrors the
+    cooperate branch via the `.sim .opp .self` swap. -/
+theorem MirrorBot_plays_C_against_CupodBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (CupodBot k) .D) = false) :
+    play (fuel + 3) MirrorBot (CupodBot k) = some .C := by
+  have hCupod : play (fuel + 2) (CupodBot k) MirrorBot = some .C :=
+    CupodBot_plays_C_against_MirrorBot k fuel hk
+  simpa [play, eval, Prog.subst, MirrorBot] using hCupod
+
+/-- Inversion: from a `play` witness on MirrorBot's leg, recover that
+    CupodBot's proof-search guard at parameter `k` must have fired. The play
+    can only be `some .D` if CupodBot's `.search` took the `.const .D` branch,
+    which requires `proofSearch k = true`. -/
+theorem proofSearch_k_of_play_MirrorBot
+    (k n : Nat) (h : play n MirrorBot (CupodBot k) = some .D) :
+    proofSearch k (.plays MirrorBot (CupodBot k) .D) = true := by
+  cases hps : proofSearch k (.plays MirrorBot (CupodBot k) .D) with
+  | true  => rfl
+  | false =>
+    -- `play _ MirrorBot (CupodBot k)` is either `none` (small fuel) or `some .C`
+    -- (proofSearch returned false). Neither equals `some .D`, contradicting `h`.
+    exfalso
+    rcases n with _ | _ | _ | n
+    · simp [play, eval] at h
+    · simp [play, eval, MirrorBot] at h
+    · have hev : play 2 MirrorBot (CupodBot k) = none := by
+        unfold CupodBot
+        simp [play, eval, Prog.subst, MirrorBot, Formula.subst]
+      rw [hev] at h
+      cases h
+    · have hev : play (n + 3) MirrorBot (CupodBot k) = some .C := by
+        simpa using MirrorBot_plays_C_against_CupodBot k n hps
+      rw [hev] at h
+      cases h
+
+/-- CupodBot vs MirrorBot defects, for `k` large enough. Direct application of
+    PBLT with `φ k = .plays MirrorBot (CupodBot k) .D`, `f = id`, `k₁ = 0`.
+    Mirrors `CupodBot_vs_CupodBot`; the play witness lives on the MirrorBot
+    leg and is lifted to the CupodBot leg via the `.sim` swap. -/
+theorem CupodBot_vs_MirrorBot :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ fuel, outcome fuel (CupodBot k) MirrorBot = some (.D, .D) := by
+  let φ : Nat → Formula := fun k => .plays MirrorBot (CupodBot k) .D
+  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
+  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
+    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
+    intro k hk
+    have hlog : Nat.log2 k < k := by
+      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]
+      exact Nat.lt_two_pow_self
+    simpa using hlog
+  have hLoeb :
+      ∀ k, k > 0 →
+        ∃ m, proofSearch m (.impl (.box (id k) (φ k)) (φ k)) = true := by
+    intro k _
+    simpa using cupod_mirror_loeb_premise k
+  obtain ⟨k₂, hk₂⟩ := PBLT φ id 0 hMono hLog hLoeb
+  refine ⟨k₂, ?_⟩
+  intro k hk
+  obtain ⟨m, hm⟩ := hk₂ k hk
+  have hInterp : (φ k).interp := proofSearch_sound m (φ k) hm
+  obtain ⟨n, hMirror⟩ := hInterp
+  have hPS : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true :=
+    proofSearch_k_of_play_MirrorBot k n hMirror
+  refine ⟨3, ?_⟩
+  have hA : play 3 (CupodBot k) MirrorBot = some .D := by
+    simpa using CupodBot_plays_D_against_MirrorBot k 1 hPS
+  have hB : play 3 MirrorBot (CupodBot k) = some .D := by
+    simpa using MirrorBot_plays_D_against_CupodBot k 0 hPS
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
 end PDNew.Theorems
