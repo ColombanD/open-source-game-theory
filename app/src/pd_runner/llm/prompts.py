@@ -76,6 +76,17 @@ def proof_request_message(
         f"```"
     )
 
+    # Always inject the bot definitions so the agent doesn't need to fetch them manually.
+    bot_defs: list[str] = []
+    for bot in dict.fromkeys([left_bot, right_bot]):  # deduplicate, preserve order
+        try:
+            src = _read_lean(f"Bots/{bot}.lean")
+            bot_defs.append(f"--- Bots/{bot}.lean ---\n```lean\n{src}\n```")
+        except OSError:
+            pass
+    if bot_defs:
+        parts.append("Bot definitions:\n\n" + "\n\n".join(bot_defs))
+
     parts.append(
         f"Known outcome theorems involving these bots:\n{known_theorems_summary}"
     )

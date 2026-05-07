@@ -105,6 +105,7 @@ def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7", dry_run: 
             right_action=case["ra"],
             max_iterations=max_iterations,
             model=model,
+            exclude_bots=frozenset({case["left"], case["right"]}),
         )
         label = f"{case['left']} vs {case['right']} -> ({case['la']},{case['ra']})"
         print(f"\n{'='*60}")

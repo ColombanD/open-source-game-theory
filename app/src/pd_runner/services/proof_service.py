@@ -23,6 +23,7 @@ class ProofRequest:
     right_action: str
     max_iterations: int = 20
     model: str = "claude-opus-4-7"
+    exclude_bots: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -44,7 +45,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
 
     Raises ProofSearchError if the agent fails to produce a verified proof.
     """
-    few_shots = retrieve_few_shots(request.left_bot, request.right_bot)
+    few_shots = retrieve_few_shots(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
     known = list_known_outcome_theorems(request.left_bot, request.right_bot)
 
     user_message = proof_request_message(

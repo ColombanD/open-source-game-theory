@@ -15,7 +15,7 @@ from pd_runner.lean.templates import (
 )
 
 
-def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4) -> list[tuple[str, str]]:
+def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclude_bots: set[str] | None = None) -> list[tuple[str, str]]:
     """Return (filename, source) pairs for the most relevant existing theorem files.
 
     Ranking: files whose name matches one of the two bots come first; then any
@@ -27,6 +27,7 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4) -> lis
         return []
 
     target_names = {left_bot.lower(), right_bot.lower()}
+    excluded = {b.lower() for b in exclude_bots} if exclude_bots else set()
 
     def _score(path: Path) -> int:
         stem = path.stem.lower()
@@ -38,7 +39,7 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4) -> lis
         return 0
 
     candidates = sorted(
-        theorems_dir.glob("*.lean"),
+        (p for p in theorems_dir.glob("*.lean") if p.stem.lower() not in excluded),
         key=lambda p: (-_score(p), p.name),
     )
 
