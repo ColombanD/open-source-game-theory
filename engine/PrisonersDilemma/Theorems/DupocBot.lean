@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.OBot
+import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
@@ -276,6 +277,83 @@ theorem DupocBot_vs_OBot (fuel : Nat) :
     simpa [Nat.add_assoc] using DupocBot_plays_D_against_OBot k (fuel + 3) hk
   have hB : play (fuel + 5) OBot (DupocBot k) = some .D :=
     OBot_plays_D_against_DupocBot k fuel hk
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+
+-- TitForTatBot --
+
+/-- TitForTatBot cooperates with DupocBot: its probe sees DupocBot cooperate
+    against `.bot CooperateBot` (search succeeds), so the `ite` selects the
+    cooperate branch. -/
+theorem TitForTatBot_plays_C_against_DupocBot (k fuel : Nat)
+    (hCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true) :
+    play (fuel + 4) TitForTatBot (DupocBot k) = some .C := by
+  have hDupocC : play (fuel + 2) (DupocBot k) (.bot CooperateBot) = some .C :=
+    DupocBot_plays_C_against_bot_CooperateBot k fuel hCB
+  have hGuard :
+      eval (fuel + 3) TitForTatBot (DupocBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) TitForTatBot (DupocBot k) CooperateBot Action.C hDupocC)
+  have hPlay := play_ite_from_guard
+    fuel 3 TitForTatBot (DupocBot k) (.sim .opp (.bot CooperateBot))
+    (.const Action.C) (.const Action.D)
+    Action.C Action.C
+    (by rfl) hGuard
+  simpa [eval] using hPlay
+
+/-- Existence of a `(k, n)` for which proof search verifies "TFT plays C vs
+    DupocBot n". The Dupoc index `n` is the witness from
+    `proofSearch_true_for_bot_CooperateBot` so that TFT's probe fires. -/
+theorem proofSearch_true_for_TitForTatBot_different_k :
+    ∃ k n, proofSearch k (.plays TitForTatBot (DupocBot n) .C) = true := by
+  obtain ⟨c, hc⟩ := proofSearch_true_for_bot_CooperateBot
+  have hPlay : play 4 TitForTatBot (DupocBot c) = some .C := by
+    simpa using TitForTatBot_plays_C_against_DupocBot c 0 hc
+  obtain ⟨k, hk⟩ :=
+    proofSearch_complete_plays TitForTatBot (DupocBot c) .C ⟨4, hPlay⟩
+  exact ⟨k, c, hk⟩
+
+/-- Proof search k is true for TFT vs DupocBot k. Aligns the indices via
+    monotonicity (Dupoc-side or proof-search-side, depending on which is
+    larger). -/
+theorem proofSearch_true_for_TitForTatBot :
+    ∃ k, proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true := by
+  obtain ⟨k, n, hk⟩ := proofSearch_true_for_TitForTatBot_different_k
+  by_cases hnk : n ≤ k
+  · refine ⟨k, ?_⟩
+    exact DupocBot_monotonicity n k TitForTatBot .C hnk hk
+  · refine ⟨n, ?_⟩
+    exact proofSearch_monotone k n (.plays TitForTatBot (DupocBot n) .C)
+      (Nat.le_of_lt (Nat.lt_of_not_ge hnk)) hk
+
+/-- DupocBot cooperates with TFT once its search for "TFT plays C" succeeds. -/
+theorem DupocBot_plays_C_against_TitForTatBot (k fuel : Nat)
+    (hk : proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true) :
+    play (fuel + 2) (DupocBot k) TitForTatBot = some .C := by
+  show eval (fuel + 2) (DupocBot k) TitForTatBot (DupocBot k) = some .C
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- DupocBot vs TitForTatBot: mutual cooperation. Combine two proof-search
+    witnesses (one for `.bot CB`, one for TFT) at a common `k = t + c`. -/
+theorem DupocBot_vs_TitForTatBot (fuel : Nat) :
+    ∃ k, outcome (fuel + 4) (DupocBot k) TitForTatBot = some (.C, .C) := by
+  obtain ⟨t, ht⟩ := proofSearch_true_for_TitForTatBot
+  obtain ⟨c, hc⟩ := proofSearch_true_for_bot_CooperateBot
+  let k := t + c
+  have htk : t ≤ k := Nat.le_add_right t c
+  have hck : c ≤ k := Nat.le_add_left c t
+  have hkTFT : proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true :=
+    DupocBot_monotonicity t k TitForTatBot .C htk
+      (proofSearch_monotone t k (.plays TitForTatBot (DupocBot t) .C) htk ht)
+  have hkCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
+    DupocBot_monotonicity c k (.bot CooperateBot) .C hck
+      (proofSearch_monotone c k (.plays (.bot CooperateBot) (DupocBot c) .C) hck hc)
+  refine ⟨k, ?_⟩
+  have hA : play (fuel + 4) (DupocBot k) TitForTatBot = some .C := by
+    simpa [Nat.add_assoc] using DupocBot_plays_C_against_TitForTatBot k (fuel + 2) hkTFT
+  have hB : play (fuel + 4) TitForTatBot (DupocBot k) = some .C :=
+    TitForTatBot_plays_C_against_DupocBot k fuel hkCB
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 
