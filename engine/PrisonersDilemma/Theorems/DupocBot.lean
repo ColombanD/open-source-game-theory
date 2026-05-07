@@ -502,4 +502,125 @@ theorem DupocBot_vs_DupocBot :
   simp [outcome, hn]
 
 
+-- MirrorBot --
+
+/-- Löb premise for DupocBot vs MirrorBot. Combines source-code transparency
+    of DupocBot's `.search` body (giving `□_k φ_A → φ_B`) with `.sim` source
+    transparency for MirrorBot (giving `φ_B → φ_A`), then chains via
+    `proofSearch_impl_trans` to produce the closed `□_k φ → φ` PBLT requires. -/
+theorem dupoc_mirror_loeb_premise (k : Nat) :
+    ∃ m, proofSearch m
+      (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
+             (.plays MirrorBot (DupocBot k) .C)) = true := by
+  have hSearch :
+      ∃ m, proofSearch m
+        (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
+               (.plays (DupocBot k) MirrorBot .C)) = true := by
+    have h := proof_system_verifies_search_branch
+                k (.plays .opp .self .C) .C .D (DupocBot k) MirrorBot rfl
+    simpa [Formula.subst, Prog.subst] using h
+  have hMirror :
+      ∃ m, proofSearch m
+        (.impl (.plays (DupocBot k) MirrorBot .C)
+               (.plays MirrorBot (DupocBot k) .C)) = true := by
+    have h := proof_system_verifies_sim MirrorBot .opp .self (DupocBot k) .C rfl
+    simpa [Prog.subst, MirrorBot] using h
+  exact proofSearch_impl_trans _ _ _ hSearch hMirror
+
+/-- Once `proofSearch k = true`, DupocBot's eval against MirrorBot takes the
+    cooperate branch. -/
+theorem DupocBot_plays_C_against_MirrorBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (DupocBot k) .C) = true) :
+    play (fuel + 2) (DupocBot k) MirrorBot = some .C := by
+  show eval (fuel + 2) (DupocBot k) MirrorBot (DupocBot k) = some .C
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- MirrorBot mirrors DupocBot's cooperate via the `.sim .opp .self` swap. -/
+theorem MirrorBot_plays_C_against_DupocBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (DupocBot k) .C) = true) :
+    play (fuel + 3) MirrorBot (DupocBot k) = some .C := by
+  have hDupoc : play (fuel + 2) (DupocBot k) MirrorBot = some .C :=
+    DupocBot_plays_C_against_MirrorBot k fuel hk
+  simpa [play, eval, Prog.subst, MirrorBot] using hDupoc
+
+/-- Dual of `DupocBot_plays_C_against_MirrorBot`: when proofSearch fails,
+    DupocBot falls through to its `.const .D` defect branch. -/
+theorem DupocBot_plays_D_against_MirrorBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (DupocBot k) .C) = false) :
+    play (fuel + 2) (DupocBot k) MirrorBot = some .D := by
+  show eval (fuel + 2) (DupocBot k) MirrorBot (DupocBot k) = some .D
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- Dual of `MirrorBot_plays_C_against_DupocBot`: MirrorBot mirrors the defect
+    branch via the `.sim .opp .self` swap. -/
+theorem MirrorBot_plays_D_against_DupocBot (k fuel : Nat)
+    (hk : proofSearch k (.plays MirrorBot (DupocBot k) .C) = false) :
+    play (fuel + 3) MirrorBot (DupocBot k) = some .D := by
+  have hDupoc : play (fuel + 2) (DupocBot k) MirrorBot = some .D :=
+    DupocBot_plays_D_against_MirrorBot k fuel hk
+  simpa [play, eval, Prog.subst, MirrorBot] using hDupoc
+
+/-- Inversion: from a `play` witness on MirrorBot's leg, recover that DupocBot's
+    proof-search guard at parameter `k` must have fired. The play can only be
+    `some .C` if DupocBot's `.search` took the `.const .C` branch, which requires
+    `proofSearch k = true`. -/
+theorem proofSearch_k_of_play_MirrorBot_dupoc
+    (k n : Nat) (h : play n MirrorBot (DupocBot k) = some .C) :
+    proofSearch k (.plays MirrorBot (DupocBot k) .C) = true := by
+  cases hps : proofSearch k (.plays MirrorBot (DupocBot k) .C) with
+  | true  => rfl
+  | false =>
+    exfalso
+    rcases n with _ | _ | _ | n
+    · simp [play, eval] at h
+    · simp [play, eval, MirrorBot] at h
+    · have hev : play 2 MirrorBot (DupocBot k) = none := by
+        unfold DupocBot
+        simp [play, eval, Prog.subst, MirrorBot, Formula.subst]
+      rw [hev] at h
+      cases h
+    · have hev : play (n + 3) MirrorBot (DupocBot k) = some .D := by
+        simpa using MirrorBot_plays_D_against_DupocBot k n hps
+      rw [hev] at h
+      cases h
+
+/-- DupocBot vs MirrorBot cooperates, for `k` large enough. Direct application
+    of PBLT with `φ k = .plays MirrorBot (DupocBot k) .C`, `f = id`, `k₁ = 0`.
+    Mirrors `DupocBot_vs_DupocBot`; the play witness lives on the MirrorBot leg
+    and is lifted to the DupocBot leg via the `.sim` swap. -/
+theorem DupocBot_vs_MirrorBot :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ fuel, outcome fuel (DupocBot k) MirrorBot = some (.C, .C) := by
+  let φ : Nat → Formula := fun k => .plays MirrorBot (DupocBot k) .C
+  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
+  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
+    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
+    intro k hk
+    have hlog : Nat.log2 k < k := by
+      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]
+      exact Nat.lt_two_pow_self
+    simpa using hlog
+  have hLoeb :
+      ∀ k, k > 0 →
+        ∃ m, proofSearch m (.impl (.box (id k) (φ k)) (φ k)) = true := by
+    intro k _
+    simpa using dupoc_mirror_loeb_premise k
+  obtain ⟨k₂, hk₂⟩ := PBLT φ id 0 hMono hLog hLoeb
+  refine ⟨k₂, ?_⟩
+  intro k hk
+  obtain ⟨m, hm⟩ := hk₂ k hk
+  have hInterp : (φ k).interp := proofSearch_sound m (φ k) hm
+  obtain ⟨n, hMirror⟩ := hInterp
+  have hPS : proofSearch k (.plays MirrorBot (DupocBot k) .C) = true :=
+    proofSearch_k_of_play_MirrorBot_dupoc k n hMirror
+  refine ⟨3, ?_⟩
+  have hA : play 3 (DupocBot k) MirrorBot = some .C := by
+    simpa using DupocBot_plays_C_against_MirrorBot k 1 hPS
+  have hB : play 3 MirrorBot (DupocBot k) = some .C := by
+    simpa using MirrorBot_plays_C_against_DupocBot k 0 hPS
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+
 end PDNew.Theorems
