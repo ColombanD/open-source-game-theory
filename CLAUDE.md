@@ -24,16 +24,30 @@ Next phase of the project: automate the creation of bots and proofs that today a
 4. Human-in-the-loop v1: human accepts each new bot and theorem before it lands in the library.
 5. Foundational issues with the proof system S (temporary axiom for CupodBot self-play) are expected to be fixed before MVP and are not a blocker for design.
 
-## Phase 2 milestones (proof-writing first)
+## Phase 2 milestones (proof-writing first) — COMPLETE ✅
 
 Start with proof-writing for human-written bots/theorem statements, NOT end-to-end NL→bot→proof. The agentic Lean loop is the riskiest unknown; test it against existing ground-truth proofs first.
 
 **Milestones:**
-1. **Real LLM client** ✅ — `llm/client.py` replaced with Anthropic-SDK-backed client (multi-turn tool use, prompt caching).
+1. **Real LLM client** ✅ — `llm/client.py` replaced with Anthropic-SDK-backed client (multi-turn tool use, prompt caching). Auto-retry on 529 overload errors with exponential backoff.
 2. **Lean tools for the agent** ✅ — `llm/tools.py` wraps `run_lean_proof_file` + `read_library_file` as Claude tool definitions. Fast per-iteration check (no `lake build`).
-3. **Retrieval over the library** — given target theorem, return most relevant existing proofs as few-shot context. Start with structural match on bot names using `_UNIVERSAL_OUTCOME_THEOREMS` / `_EXISTENTIAL_OUTCOME_THEOREMS`.
-4. **Proof-search loop in `proof_service.py`** — the actual agent. Input = theorem statement, output = proven `.lean` file or failure. Loop: retrieve few-shots → propose proof → run Lean → feed errors back → iterate up to N steps.
-5. **Evaluation harness** — pick ~10 existing theorems, hide proofs, have agent re-prove them. Measure success rate, iterations, token cost.
-6. **Library writer** — on success, write proof to new file under `engine/PrisonersDilemma/Theorems/`. Confirm `lake build` passes. Add human-acceptance gate.
+3. **Retrieval over the library** ✅ — `llm/retrieval.py` returns relevant theorem files as few-shot context (name match). Bot definitions always injected upfront into the prompt. Eval harness uses `exclude_bots` to prevent leaking the target proof via few-shots or known-theorems summary.
+4. **Proof-search loop in `proof_service.py`** ✅ — agentic loop with retrieval, prompt building, tool use, and error feedback. `ProofRequest` carries `fuel` (correct minimum fuel offset per bot pair) and `exclude_bots`.
+5. **Evaluation harness** ✅ — `eval/harness.py` re-proves 10 held-out theorems. **10/10 passed** in ~263s avg 1.5 iterations on clean (leak-free) run. Supports `--cases N [M]`, `--log-level` (TRACE/DEBUG/INFO/WARNING), `--model`, `--max-iterations`, `--output`.
+6. **Library writer** ✅ — `services/library_writer.py` writes proven proofs to `engine/PrisonersDilemma/Theorems/LlmGenerations/`, appends import to `LlmGenerations.lean`, runs `lake build`, rolls back on failure. LLM-generated theorems use `llm_outcome_X_vs_Y` naming to avoid clashes with existing library theorems.
 
-**Deferred:** NL→bot synthesis, behavioral testing vs canonical opponents, API/UI for human-accept flow.
+**Key design notes:**
+- Theorem name prefix `llm_outcome_` avoids collision with hand-written theorems in the same namespace.
+- `LlmGenerations.lean` acts as the index file; `PrisonersDilemma.lean` imports it once.
+- Eval harness excludes the target bot pair from few-shots AND known-theorems summary to prevent answer leakage.
+
+## Phase 3 — NL→bot synthesis (current)
+
+Given a natural language description of a strategy, generate a valid Lean 4 bot definition and prove its outcome theorems end-to-end.
+
+**Milestones:**
+1. **Bot writer agent** — given NL strategy description, generate a `Bots/LlmGenerations/BotName.lean` file with a valid Lean 4 bot definition. Use existing bots as few-shot examples.
+2. **Bot reviewer** — validate the generated bot compiles and behaves as described (run `lake build`, optionally test against canonical opponents).
+3. **End-to-end pipeline** — NL description → bot → proof → library write. Human acceptance gate before each step lands in the library.
+
+**Deferred:** behavioral testing vs canonical opponents, API/UI for human-accept flow.
