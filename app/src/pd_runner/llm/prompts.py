@@ -64,6 +64,7 @@ def proof_request_message(
     right_action: str,
     few_shot_files: list[tuple[str, str]],
     known_theorems_summary: str,
+    fuel: int = 1,
 ) -> str:
     parts: list[str] = []
 
@@ -71,7 +72,7 @@ def proof_request_message(
         f"Prove the following outcome theorem:\n\n"
         f"```lean\n"
         f"theorem outcome_{left_bot}_vs_{right_bot} (n : Nat) :\n"
-        f"    outcome (n+1) {left_bot} {right_bot} = some (.{left_action}, .{right_action}) := by\n"
+        f"    outcome (n+{fuel}) {left_bot} {right_bot} = some (.{left_action}, .{right_action}) := by\n"
         f"  sorry  -- replace with a real proof\n"
         f"```"
     )

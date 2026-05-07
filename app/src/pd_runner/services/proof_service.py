@@ -13,6 +13,9 @@ from pd_runner.llm.client import AnthropicClient, ToolHandler
 from pd_runner.llm.prompts import build_system_prompt, proof_request_message
 from pd_runner.llm.retrieval import list_known_outcome_theorems, retrieve_few_shots
 from pd_runner.llm.tools import LEAN_TOOLS, register_lean_tools
+from pd_runner.logging_config import get_logger, TRACE
+
+_log = get_logger("services.proof_service")
 
 
 @dataclass(frozen=True)
@@ -21,6 +24,7 @@ class ProofRequest:
     right_bot: str
     left_action: str
     right_action: str
+    fuel: int = 1
     max_iterations: int = 20
     model: str = "claude-opus-4-7"
     exclude_bots: frozenset[str] = frozenset()
@@ -46,22 +50,27 @@ def search_proof(request: ProofRequest) -> ProofResult:
     Raises ProofSearchError if the agent fails to produce a verified proof.
     """
     few_shots = retrieve_few_shots(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
-    known = list_known_outcome_theorems(request.left_bot, request.right_bot)
+    known = list_known_outcome_theorems(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
 
+    system_prompt = build_system_prompt(request.left_bot, request.right_bot)
     user_message = proof_request_message(
         left_bot=request.left_bot,
         right_bot=request.right_bot,
         left_action=request.left_action,
         right_action=request.right_action,
+        fuel=request.fuel,
         few_shot_files=few_shots,
         known_theorems_summary=known,
     )
+
+    _log.log(TRACE, "System prompt:\n%s", system_prompt)
+    _log.log(TRACE, "User message:\n%s", user_message)
 
     handler = ToolHandler()
     register_lean_tools(handler)
 
     client = AnthropicClient(
-        system_prompt=build_system_prompt(request.left_bot, request.right_bot),
+        system_prompt=system_prompt,
         tools=LEAN_TOOLS,
         model=request.model,
         max_iterations=request.max_iterations,

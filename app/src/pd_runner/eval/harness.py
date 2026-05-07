@@ -41,20 +41,20 @@ end PDNew.Theorems
 # Ordered roughly easy → hard.
 # ---------------------------------------------------------------------------
 
-EVAL_CASES: list[dict[str, str]] = [
+EVAL_CASES: list[dict] = [
     # Tier 1: trivial bots (.const action)
-    {"left": "CooperateBot", "right": "CooperateBot", "la": "C", "ra": "C"},
-    {"left": "CooperateBot", "right": "DefectBot",    "la": "C", "ra": "D"},
-    {"left": "DefectBot",    "right": "DefectBot",    "la": "D", "ra": "D"},
+    {"left": "CooperateBot", "right": "CooperateBot", "la": "C", "ra": "C", "fuel": 1},
+    {"left": "CooperateBot", "right": "DefectBot",    "la": "C", "ra": "D", "fuel": 1},
+    {"left": "DefectBot",    "right": "DefectBot",    "la": "D", "ra": "D", "fuel": 1},
     # Tier 2: one-step simulation bots
-    {"left": "MirrorBot",    "right": "CooperateBot", "la": "C", "ra": "C"},
-    {"left": "MirrorBot",    "right": "DefectBot",    "la": "D", "ra": "D"},
-    {"left": "OBot",         "right": "CooperateBot", "la": "C", "ra": "C"},
-    {"left": "DBot",         "right": "CooperateBot", "la": "D", "ra": "C"},
+    {"left": "MirrorBot",    "right": "CooperateBot", "la": "C", "ra": "C", "fuel": 3},
+    {"left": "MirrorBot",    "right": "DefectBot",    "la": "D", "ra": "D", "fuel": 3},
+    {"left": "OBot",         "right": "CooperateBot", "la": "C", "ra": "C", "fuel": 5},
+    {"left": "DBot",         "right": "CooperateBot", "la": "D", "ra": "C", "fuel": 3},
     # Tier 3: multi-step / proof-search bots
-    {"left": "TitForTatBot", "right": "CooperateBot", "la": "C", "ra": "C"},
-    {"left": "TitForTatBot", "right": "DefectBot",    "la": "D", "ra": "D"},
-    {"left": "EBot",         "right": "CooperateBot", "la": "D", "ra": "C"},
+    {"left": "TitForTatBot", "right": "CooperateBot", "la": "C", "ra": "C", "fuel": 3},
+    {"left": "TitForTatBot", "right": "DefectBot",    "la": "D", "ra": "D", "fuel": 3},
+    {"left": "EBot",         "right": "CooperateBot", "la": "D", "ra": "C", "fuel": 3},
 ]
 
 
@@ -103,6 +103,7 @@ def run_eval(max_iterations: int = 20, model: str = "claude-opus-4-7", dry_run: 
             right_bot=case["right"],
             left_action=case["la"],
             right_action=case["ra"],
+            fuel=case["fuel"],
             max_iterations=max_iterations,
             model=model,
             exclude_bots=frozenset({case["left"], case["right"]}),
@@ -174,7 +175,7 @@ def main() -> None:
     parser.add_argument("--model", default="claude-opus-4-7", help="Anthropic model ID")
     parser.add_argument("--cases", type=int, nargs="*", metavar="N", help="Case selection: omit for all, one int N for first N, two ints N M for slice N:M (0-indexed)")
     parser.add_argument("--dry-run", action="store_true", help="Skip LLM+Lean calls, test plumbing only")
-    parser.add_argument("--log-level", default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logging verbosity (DEBUG shows all LLM turns and tool calls)")
+    parser.add_argument("--log-level", default="WARNING", choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR"], help="Logging verbosity: TRACE=full, DEBUG=no prompts, INFO=tool calls only")
     args = parser.parse_args()
 
     setup_logging(args.log_level)

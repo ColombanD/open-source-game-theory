@@ -58,12 +58,19 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
     return results
 
 
-def list_known_outcome_theorems(left_bot: str, right_bot: str) -> str:
-    """Return a short summary of any already-proven outcome theorems for this pair."""
+def list_known_outcome_theorems(left_bot: str, right_bot: str, exclude_bots: set[str] | None = None) -> str:
+    """Return a short summary of any already-proven outcome theorems for this pair.
+
+    Theorems whose module matches a bot in exclude_bots are omitted — used by the
+    eval harness to prevent leaking the answer via the known-theorems summary.
+    """
     target = {left_bot, right_bot}
+    excluded = {b.lower() for b in exclude_bots} if exclude_bots else set()
     lines: list[str] = []
 
     for thm in _UNIVERSAL_OUTCOME_THEOREMS:
+        if thm.module.lower() in excluded:
+            continue
         bots = {thm.left_bot.name, thm.right_bot.name}
         if bots & target:
             lines.append(
@@ -73,6 +80,8 @@ def list_known_outcome_theorems(left_bot: str, right_bot: str) -> str:
             )
 
     for thm in _EXISTENTIAL_OUTCOME_THEOREMS:
+        if thm.module.lower() in excluded:
+            continue
         bots = {thm.left_bot.name, thm.right_bot.name}
         if bots & target:
             lines.append(

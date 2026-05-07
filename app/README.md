@@ -135,10 +135,12 @@ uv run python -m pd_runner.eval.harness --dry-run
 #                                --cases 3 6    → cases 3, 4, 5
 #                                --cases 4 5    → case 4 only
 #   --dry-run             Skip LLM and Lean, test plumbing only
-#   --log-level LEVEL     Logging verbosity: DEBUG, INFO, WARNING (default), ERROR
-#                           INFO  — prints each tool call name and input summary to stderr
-#                           DEBUG — also prints full LLM responses and tool results (truncated at 2000 chars)
-#                         Tip: redirect stderr to a file to keep the summary table clean:
+#   --log-level LEVEL     Logging verbosity (output goes to stderr):
+#                           WARNING (default) — silent
+#                           INFO    — tool call names and input summaries
+#                           DEBUG   — also LLM responses, full lean source sent to Lean, tool results
+#                           TRACE   — also initial system prompt and user message (full context dump)
+#                         Tip: redirect stderr to keep the summary table clean:
 #                           uv run python -m pd_runner.eval.harness --log-level DEBUG 2>debug.log
 ```
 

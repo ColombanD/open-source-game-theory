@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import anthropic
 from typing import Any
 
@@ -11,6 +12,19 @@ _log = get_logger("llm.client")
 
 _DEFAULT_MODEL = "claude-opus-4-7"
 _MAX_TOOL_ITERATIONS = 20
+_RETRY_DELAYS = [5, 15, 30, 60]  # seconds between retries on 529
+
+
+def _create_with_retry(client: anthropic.Anthropic, kwargs: dict[str, Any]) -> Any:
+    for attempt, delay in enumerate(_RETRY_DELAYS, start=1):
+        try:
+            return client.messages.create(**kwargs)
+        except anthropic.APIStatusError as exc:
+            if exc.status_code != 529:
+                raise
+            _log.warning("API overloaded (529), retrying in %ds (attempt %d/%d)...", delay, attempt, len(_RETRY_DELAYS))
+            time.sleep(delay)
+    return client.messages.create(**kwargs)  # final attempt, let it raise
 
 
 class AnthropicClient:
@@ -69,7 +83,7 @@ class AnthropicClient:
             if self.tools:
                 kwargs["tools"] = self.tools
 
-            response = self._client.messages.create(**kwargs)
+            response = _create_with_retry(self._client, kwargs)
 
             # Append assistant turn (full content block list preserves thinking blocks).
             messages.append({"role": "assistant", "content": response.content})

@@ -2,9 +2,15 @@
 
 Usage:
     from pd_runner.logging_config import setup_logging
-    setup_logging("DEBUG")   # or "INFO", "WARNING", etc.
+    setup_logging("DEBUG")   # or "INFO", "TRACE", "WARNING", etc.
 
 All pd_runner loggers are children of the "pd_runner" root logger.
+
+Log levels (most → least verbose):
+  TRACE   (5)  — everything: system prompt, initial user message, LLM responses, tool calls/results, lean source
+  DEBUG   (10) — LLM responses, tool calls/results, lean source (no initial prompts)
+  INFO    (20) — tool call names and inputs only
+  WARNING (30) — silent (default)
 """
 
 from __future__ import annotations
@@ -13,6 +19,8 @@ import logging
 import sys
 
 LOGGER_NAME = "pd_runner"
+TRACE = 5
+logging.addLevelName(TRACE, "TRACE")
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -20,7 +28,7 @@ def get_logger(name: str) -> logging.Logger:
 
 
 def setup_logging(level: str = "WARNING") -> None:
-    numeric = getattr(logging, level.upper(), None)
+    numeric = TRACE if level.upper() == "TRACE" else getattr(logging, level.upper(), None)
     if not isinstance(numeric, int):
         raise ValueError(f"Invalid log level: {level}")
 

@@ -13,6 +13,9 @@ from typing import Any
 
 from pd_runner.config import load_paths
 from pd_runner.lean.executor import run_lean_proof_file
+from pd_runner.logging_config import get_logger
+
+_log = get_logger("llm.tools")
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +98,8 @@ def _run_lean_proof(lean_source: str, filename_hint: str = "proof_attempt") -> s
     ) as f:
         f.write(lean_source)
         tmp_path = Path(f.name)
+
+    _log.debug("Running Lean on: %s\n%s", tmp_path.name, lean_source)
 
     try:
         result = run_lean_proof_file(lean_dir, tmp_path)
