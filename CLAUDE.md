@@ -71,9 +71,11 @@ NL description
 - **Output**: valid `Bots/LlmGenerations/BotName.lean`
 
 **Milestones:**
-1. **Bot writer agent** — `services/bot_service.py`, analogous to `proof_service.py`. Input = NL description + bot name, output = compiled `.lean` bot file.
-2. **Reviewer workflow** — `services/reviewer.py`. Runs `search_proof` against canonical opponents, returns outcome table.
-3. **End-to-end pipeline script** — `eval/run_bot_pipeline.py`. NL → bot → review → human accept → library write (bot + proofs).
-4. **Eval** — test on target strategy: "cooperates against bots with cooperation tendencies, defects against all others".
+1. **Bot writer agent** ✅ — `services/bot_service.py`. Input = NL description + bot name, output = compiled `.lean` bot file. Uses `run_lean_build` tool (lake env lean, not lake build). Bot files go in `Bots/LlmGenerations/`, indexed by `Bots/LlmGenerations.lean`.
+2. **Bot library writer** ✅ — `write_bot_to_library` in `library_writer.py`. Writes bot to `Bots/LlmGenerations/BotName.lean`, appends import to index. No `lake build` needed (bots not imported by root module).
+3. **Pipeline script** ✅ — `eval/run_bot_pipeline.py`. CLI: `--bot-name`, `--strategy`, `--model`, `--log-level`. Runs bot writer → shows source → `[y/N]` human gate → writes to library.
+4. **Reviewer workflow** — `services/reviewer.py`. Runs `search_proof` against canonical opponents (CooperateBot, DefectBot, MirrorBot, TitForTatBot), returns outcome table. **Deferred** — design: run all 4 sequentially, report pass/fail per opponent, default fuel=5 and let the proof agent adapt.
+5. **End-to-end test** ← **NEXT**. KindBot is already generated and saved in `Bots/LlmGenerations/KindBot.lean`. Run `search_proof` manually against canonical opponents, verify proofs land in `Theorems/LlmGenerations/`. This validates the full Phase 3 story.
+6. **Phase 4 / API+UI** — FastAPI endpoint: user submits NL description, gets back outcome table. Deferred.
 
-**Deferred:** automatic rewriter loop (v2), API/UI for human-accept flow.
+**Deferred:** reviewer (design above), automatic rewriter loop (v2), API/UI.
