@@ -1,8 +1,11 @@
-"""Claude tool definitions and implementations for the proof-search agent.
+"""Claude tool definitions and implementations for the proof-search and bot-writer agents.
 
-Two tools are exposed to the agent:
+Tools exposed to the proof agent:
   - run_lean_proof: write a candidate proof to a temp file and run lake env lean
   - read_library_file: read any file under engine/PrisonersDilemma/ for few-shot context
+
+Tools exposed to the bot writer agent (in addition to read_library_file):
+  - run_lean_build: write a candidate bot file to Bots/LlmGenerations/ and run lake build
 """
 
 from __future__ import annotations
@@ -12,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from pd_runner.config import load_paths
-from pd_runner.lean.executor import run_lean_proof_file
+from pd_runner.lean.executor import build_lean_project, run_lean_proof_file
 from pd_runner.logging_config import get_logger
 
 _log = get_logger("llm.tools")
@@ -21,6 +24,28 @@ _log = get_logger("llm.tools")
 # ---------------------------------------------------------------------------
 # Claude tool schemas (passed to the Anthropic messages API via `tools=`)
 # ---------------------------------------------------------------------------
+
+_READ_LIBRARY_FILE_TOOL: dict[str, Any] = {
+    "name": "read_library_file",
+    "description": (
+        "Read any file under engine/PrisonersDilemma/ (Bots/, Theorems/, or root files). "
+        "Use this to fetch existing theorems as few-shot proof examples or to inspect a bot's "
+        "definition before writing a proof about it."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "relative_path": {
+                "type": "string",
+                "description": (
+                    "Path relative to engine/PrisonersDilemma/, e.g. "
+                    "'Theorems/CooperateBot.lean' or 'Bots/DefectBot.lean'."
+                ),
+            }
+        },
+        "required": ["relative_path"],
+    },
+}
 
 LEAN_TOOLS: list[dict[str, Any]] = [
     {
@@ -52,27 +77,7 @@ LEAN_TOOLS: list[dict[str, Any]] = [
             "required": ["lean_source"],
         },
     },
-    {
-        "name": "read_library_file",
-        "description": (
-            "Read any file under engine/PrisonersDilemma/ (Bots/, Theorems/, or root files). "
-            "Use this to fetch existing theorems as few-shot proof examples or to inspect a bot's "
-            "definition before writing a proof about it."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "relative_path": {
-                    "type": "string",
-                    "description": (
-                        "Path relative to engine/PrisonersDilemma/, e.g. "
-                        "'Theorems/CooperateBot.lean' or 'Bots/DefectBot.lean'."
-                    ),
-                }
-            },
-            "required": ["relative_path"],
-        },
-    },
+    _READ_LIBRARY_FILE_TOOL,
 ]
 
 
@@ -134,7 +139,69 @@ def _read_library_file(relative_path: str) -> str:
         return f"Error reading file: {exc}"
 
 
+BOT_TOOLS: list[dict[str, Any]] = [
+    {
+        "name": "run_lean_build",
+        "description": (
+            "Write a candidate Lean 4 bot definition to Bots/LlmGenerations/<bot_name>.lean "
+            "and compile the whole project with `lake build`. "
+            "Returns stdout, stderr, and exit code. "
+            "An exit code of 0 means the bot definition is valid Lean. "
+            "Use this tool to iteratively fix syntax and type errors in your bot definition."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "bot_name": {
+                    "type": "string",
+                    "description": "The name of the bot (e.g. 'KindBot'). Used as the filename and Lean definition name.",
+                },
+                "lean_source": {
+                    "type": "string",
+                    "description": (
+                        "Complete Lean 4 source for the bot file, including imports, "
+                        "namespace declarations, and the bot definition."
+                    ),
+                },
+            },
+            "required": ["bot_name", "lean_source"],
+        },
+    },
+    _READ_LIBRARY_FILE_TOOL,
+]
+
+
+def _run_lean_build(bot_name: str, lean_source: str) -> str:
+    paths = load_paths()
+    llm_bots_dir = paths.lean_engine_dir / "PrisonersDilemma" / "Bots" / "LlmGenerations"
+    llm_bots_dir.mkdir(parents=True, exist_ok=True)
+
+    bot_file = llm_bots_dir / f"{bot_name}.lean"
+    _log.debug("Writing bot to: %s\n%s", bot_file.name, lean_source)
+    bot_file.write_text(lean_source, encoding="utf-8")
+
+    try:
+        result = build_lean_project(paths.lean_engine_dir)
+    finally:
+        bot_file.unlink(missing_ok=True)
+
+    lines = [
+        f"exit_code: {result.returncode}",
+        "--- stdout ---",
+        result.stdout or "(empty)",
+        "--- stderr ---",
+        result.stderr or "(empty)",
+    ]
+    return "\n".join(lines)
+
+
 def register_lean_tools(handler) -> None:
     """Register the Lean tool implementations into a ToolHandler."""
     handler.register_fn("run_lean_proof", _run_lean_proof)
+    handler.register_fn("read_library_file", _read_library_file)
+
+
+def register_bot_tools(handler) -> None:
+    """Register the bot-writer tool implementations into a ToolHandler."""
+    handler.register_fn("run_lean_build", _run_lean_build)
     handler.register_fn("read_library_file", _read_library_file)

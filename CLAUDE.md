@@ -43,11 +43,37 @@ Start with proof-writing for human-written bots/theorem statements, NOT end-to-e
 
 ## Phase 3 — NL→bot synthesis (current)
 
-Given a natural language description of a strategy, generate a valid Lean 4 bot definition and prove its outcome theorems end-to-end.
+Given a natural language description of a strategy, generate a valid Lean 4 bot definition, verify its behavior against canonical opponents, and prove its outcome theorems end-to-end.
+
+**Architecture:**
+```
+NL description
+    → bot writer agent → BotName.lean (compiles)
+    → reviewer workflow:
+        for each canonical opponent (CooperateBot, DefectBot, MirrorBot, TitForTatBot):
+            run search_proof(BotName, opponent)
+            record (opponent, action_pair)
+    → present outcomes to human: "Your bot cooperates with X, defects against Y..."
+    → human accepts → write bot + proofs to library
+```
+
+**Design decisions:**
+1. Bot writer agent has access to the full `Prog` language (all constructors including `.search`). No artificial restrictions — if a strategy needs `.search`, use it.
+2. Reviewer is a **workflow** (not a second agent) for v1 — deterministic execution of `search_proof` against fixed canonical opponents, no LLM reasoning needed.
+3. Automatic rewriter loop (reviewer feeds back into bot writer on mismatch) is deferred to v2.
+4. Bot files go in `Bots/LlmGenerations/`, proofs in `Theorems/LlmGenerations/` (same pattern as phase 2).
+5. Human acceptance gate before anything lands in the library.
+
+**Bot writer agent:**
+- **Input**: NL strategy description + desired bot name
+- **System prompt**: embeds `Program.lean` (full `Prog` language + semantics), all existing bot definitions as few-shots
+- **Tools**: `run_lean_build` (compile candidate bot file), `read_library_file` (inspect existing bots)
+- **Output**: valid `Bots/LlmGenerations/BotName.lean`
 
 **Milestones:**
-1. **Bot writer agent** — given NL strategy description, generate a `Bots/LlmGenerations/BotName.lean` file with a valid Lean 4 bot definition. Use existing bots as few-shot examples.
-2. **Bot reviewer** — validate the generated bot compiles and behaves as described (run `lake build`, optionally test against canonical opponents).
-3. **End-to-end pipeline** — NL description → bot → proof → library write. Human acceptance gate before each step lands in the library.
+1. **Bot writer agent** — `services/bot_service.py`, analogous to `proof_service.py`. Input = NL description + bot name, output = compiled `.lean` bot file.
+2. **Reviewer workflow** — `services/reviewer.py`. Runs `search_proof` against canonical opponents, returns outcome table.
+3. **End-to-end pipeline script** — `eval/run_bot_pipeline.py`. NL → bot → review → human accept → library write (bot + proofs).
+4. **Eval** — test on target strategy: "cooperates against bots with cooperation tendencies, defects against all others".
 
-**Deferred:** behavioral testing vs canonical opponents, API/UI for human-accept flow.
+**Deferred:** automatic rewriter loop (v2), API/UI for human-accept flow.
