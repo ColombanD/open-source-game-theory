@@ -4,6 +4,7 @@ import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Bots.DBot
+import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
@@ -154,6 +155,127 @@ theorem DupocBot_vs_DBot (fuel : Nat) :
     simp [eval, Prog.subst, Formula.subst, hk]
   have hB : play (fuel + 4) DBot (DupocBot k) = some .C :=
     DBot_plays_C_against_DupocBot k fuel
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+
+-- OBot --
+
+/-- DupocBot cooperates with `.bot CooperateBot` once its search guard succeeds. -/
+theorem DupocBot_plays_C_against_bot_CooperateBot (k fuel : Nat)
+    (hk : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true) :
+    play (fuel + 2) (DupocBot k) (.bot CooperateBot) = some .C := by
+  show eval (fuel + 2) (DupocBot k) (.bot CooperateBot) (DupocBot k) = some .C
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- OBot defects against DupocBot: outer probe sees DupocBot cooperate against
+    `.bot CooperateBot` (search succeeds), so OBot descends into the inner ite.
+    The inner probe sees DupocBot defect against `.bot DefectBot` (search fails),
+    so OBot takes the defect branch. -/
+theorem OBot_plays_D_against_DupocBot (k fuel : Nat)
+    (hCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true) :
+    play (fuel + 5) OBot (DupocBot k) = some .D := by
+  have hDupocC : play (fuel + 3) (DupocBot k) (.bot CooperateBot) = some .C := by
+    simpa [Nat.add_assoc] using DupocBot_plays_C_against_bot_CooperateBot k (fuel + 1) hCB
+  have hOuterGuard :
+      eval (fuel + 4) OBot (DupocBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 3) OBot (DupocBot k) CooperateBot Action.C hDupocC)
+  have hDupocD : play (fuel + 2) (DupocBot k) (.bot DefectBot) = some .D :=
+    DupocBot_plays_D_against_bot_DefectBot k fuel
+  have hInnerGuard :
+      eval (fuel + 3) OBot (DupocBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) OBot (DupocBot k) DefectBot Action.D hDupocD)
+  have hPlay := play_ite_from_guard
+    fuel 4 OBot (DupocBot k) (.sim .opp (.bot CooperateBot))
+    (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
+    (.const Action.D)
+    Action.C Action.C
+    (by rfl) hOuterGuard
+  have hInner :
+      eval (fuel + 4) OBot (DupocBot k)
+        (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
+          some .D := by
+    simpa [Nat.add_assoc] using
+      (eval_ite_from_guard (fuel + 3) OBot (DupocBot k)
+        (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
+        Action.C Action.D hInnerGuard)
+  simpa [hInner] using hPlay
+
+/-- Semantically, OBot never plays C against DupocBot (given the `.bot CB`
+    proof-search succeeds). -/
+theorem interp_OBot_plays_C_false (k : Nat)
+    (hCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true) :
+    ¬ (Formula.plays OBot (DupocBot k) .C).interp := by
+  rintro ⟨n, hn⟩
+  have hDB : proofSearch k (.plays (.bot DefectBot) (DupocBot k) .C) = false :=
+    proofSearch_false_for_bot_DefectBot k
+  cases n with
+  | zero => simp only [play, eval, reduceCtorEq] at hn
+  | succ m =>
+      cases m with
+      | zero => simp [play, eval, OBot] at hn
+      | succ m =>
+          cases m with
+          | zero => simp [play, eval, OBot] at hn
+          | succ m =>
+              cases m with
+              | zero =>
+                  simp [play, eval, OBot, DupocBot, Prog.subst, Formula.subst] at hn
+              | succ fuel =>
+                  cases fuel with
+                  | zero =>
+                      unfold DupocBot at hCB hDB
+                      simp [play, eval, OBot, DupocBot, Prog.subst, Formula.subst, hCB, hDB] at hn
+                  | succ fuel =>
+                      have hD : play (fuel + 5) OBot (DupocBot k) = some .D := by
+                        simpa [Nat.add_assoc] using OBot_plays_D_against_DupocBot k fuel hCB
+                      rw [hD] at hn
+                      cases hn
+
+/-- Proof search is false for OBot vs DupocBot k, given the `.bot CB` search succeeds. -/
+theorem proofSearch_false_for_OBot (k : Nat)
+    (hCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true) :
+    proofSearch k (.plays OBot (DupocBot k) .C) = false := by
+  cases h : proofSearch k (.plays OBot (DupocBot k) .C) with
+  | true => exact absurd (proofSearch_sound _ _ h) (interp_OBot_plays_C_false k hCB)
+  | false => rfl
+
+/-- DupocBot defects against OBot: its search for "OBot plays C" fails, so it
+    falls through to the defect branch. -/
+theorem DupocBot_plays_D_against_OBot (k fuel : Nat)
+    (hCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true) :
+    play (fuel + 2) (DupocBot k) OBot = some .D := by
+  have hOBot : proofSearch k (.plays OBot (DupocBot k) .C) = false :=
+    proofSearch_false_for_OBot k hCB
+  show eval (fuel + 2) (DupocBot k) OBot (DupocBot k) = some .D
+  unfold DupocBot at hOBot ⊢
+  simp [eval, Prog.subst, Formula.subst, hOBot]
+
+/-- Proof search is true for `.bot CooperateBot` vs DupocBot n, but n ≠ k. -/
+theorem proofSearch_true_for_bot_CooperateBot_different_k (n : Nat) :
+    ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot n) .C) = true := by
+  have hex : ∃ m, play m (.bot CooperateBot) (DupocBot n) = some .C :=
+    ⟨2, by simpa using play_bot_CooperateBot 0 (DupocBot n)⟩
+  exact proofSearch_complete_plays (.bot CooperateBot) (DupocBot n) .C hex
+
+/-- Proof search k is true for `.bot CooperateBot` vs DupocBot k. -/
+theorem proofSearch_true_for_bot_CooperateBot :
+    ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true := by
+  obtain ⟨k, hk⟩ := proofSearch_true_for_bot_CooperateBot_different_k 0
+  refine ⟨k, ?_⟩
+  exact DupocBot_monotonicity 0 k (.bot CooperateBot) .C (Nat.zero_le k) hk
+
+/-- DupocBot vs OBot: mutual defection. -/
+theorem DupocBot_vs_OBot (fuel : Nat) :
+    ∃ k, outcome (fuel + 5) (DupocBot k) OBot = some (.D, .D) := by
+  obtain ⟨k, hk⟩ := proofSearch_true_for_bot_CooperateBot
+  refine ⟨k, ?_⟩
+  have hA : play (fuel + 5) (DupocBot k) OBot = some .D := by
+    simpa [Nat.add_assoc] using DupocBot_plays_D_against_OBot k (fuel + 3) hk
+  have hB : play (fuel + 5) OBot (DupocBot k) = some .D :=
+    OBot_plays_D_against_DupocBot k fuel hk
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 
