@@ -29,11 +29,19 @@ class LibraryWriteError(RuntimeError):
 
 
 def theorem_file_path(result: ProofResult) -> Path:
-    """Return the canonical path for this proof inside the theorem library."""
+    """Return the canonical path for this proof inside the LLM generations subfolder."""
     paths = load_paths()
-    theorems_dir = paths.lean_engine_dir / "PrisonersDilemma" / "Theorems"
+    llm_dir = paths.lean_engine_dir / "PrisonersDilemma" / "Theorems" / "LlmGenerations"
     filename = f"outcome_{result.left_bot}_vs_{result.right_bot}.lean"
-    return theorems_dir / filename
+    return llm_dir / filename
+
+
+def _llm_generations_index(paths) -> Path:
+    return paths.lean_engine_dir / "PrisonersDilemma" / "Theorems" / "LlmGenerations.lean"
+
+
+def _module_name(result: ProofResult) -> str:
+    return f"PrisonersDilemma.Theorems.LlmGenerations.outcome_{result.left_bot}_vs_{result.right_bot}"
 
 
 def write_proof_to_library(
@@ -76,14 +84,26 @@ def write_proof_to_library(
             build_stderr="",
         )
 
+    paths = load_paths()
+
+    # Ensure the LlmGenerations directory exists.
+    target.parent.mkdir(parents=True, exist_ok=True)
+
     target.write_text(result.lean_source + "\n", encoding="utf-8")
 
-    paths = load_paths()
+    # Append the import line to the index file.
+    index = _llm_generations_index(paths)
+    import_line = f"import {_module_name(result)}\n"
+    with index.open("a", encoding="utf-8") as f:
+        f.write(import_line)
+
     build_result: LeanExecResult = build_lean_project(paths.lean_engine_dir)
 
     if build_result.returncode != 0:
-        # Roll back — the proof broke the build.
+        # Roll back both the proof file and the index line.
         target.unlink(missing_ok=True)
+        index_text = index.read_text(encoding="utf-8")
+        index.write_text(index_text.replace(import_line, ""), encoding="utf-8")
         raise LibraryWriteError(
             f"lake build failed after writing {target} — file removed.\n"
             f"stdout:\n{build_result.stdout}\nstderr:\n{build_result.stderr}"
