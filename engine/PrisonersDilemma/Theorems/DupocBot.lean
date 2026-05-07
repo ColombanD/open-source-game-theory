@@ -6,6 +6,8 @@ import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Bots.TitForTatBot
+import PrisonersDilemma.Bots.EBot
+import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
@@ -354,6 +356,101 @@ theorem DupocBot_vs_TitForTatBot (fuel : Nat) :
     simpa [Nat.add_assoc] using DupocBot_plays_C_against_TitForTatBot k (fuel + 2) hkTFT
   have hB : play (fuel + 4) TitForTatBot (DupocBot k) = some .C :=
     TitForTatBot_plays_C_against_DupocBot k fuel hkCB
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+
+-- EBot --
+
+/-- EBot cooperates with DupocBot: outer probe (`.bot DefectBot`) sees DupocBot
+    defect (always), so EBot descends into the inner ite. The next probe
+    (`.bot CooperateBot`) sees DupocBot cooperate (search succeeds), so EBot
+    cooperates. -/
+theorem EBot_plays_C_against_DupocBot (k fuel : Nat)
+    (hCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true) :
+    play (fuel + 5) EBot (DupocBot k) = some .C := by
+  have hDupocD : play (fuel + 3) (DupocBot k) (.bot DefectBot) = some .D := by
+    simpa [Nat.add_assoc] using DupocBot_plays_D_against_bot_DefectBot k (fuel + 1)
+  have hGuard1 :
+      eval (fuel + 4) EBot (DupocBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 3) EBot (DupocBot k) DefectBot Action.D hDupocD)
+  have hDupocC : play (fuel + 2) (DupocBot k) (.bot CooperateBot) = some .C :=
+    DupocBot_plays_C_against_bot_CooperateBot k fuel hCB
+  have hGuard2 :
+      eval (fuel + 3) EBot (DupocBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    simpa [Nat.add_assoc] using
+      (eval_sim_opp_bot_of_play (fuel + 2) EBot (DupocBot k) CooperateBot Action.C hDupocC)
+  have hInner :
+      eval (fuel + 4) EBot (DupocBot k)
+        (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
+          (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) =
+        some .C := by
+    simpa [Nat.add_assoc] using
+      (eval_ite_from_guard (fuel + 3) EBot (DupocBot k)
+        (.sim .opp (.bot CooperateBot)) (.const Action.C)
+        (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))
+        Action.C Action.C hGuard2)
+  have hPlay := play_ite_from_guard
+    fuel 4 EBot (DupocBot k) (.sim .opp (.bot DefectBot))
+    (.const Action.D)
+    (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
+      (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
+    Action.C Action.D
+    (by rfl) hGuard1
+  simpa [Nat.add_assoc, hInner] using hPlay
+
+/-- Existence of `(k, n)` for which proof search verifies "EBot plays C vs
+    DupocBot n". The Dupoc index is the witness from
+    `proofSearch_true_for_bot_CooperateBot` so EBot's inner probe fires. -/
+theorem proofSearch_true_for_EBot_different_k :
+    ∃ k n, proofSearch k (.plays EBot (DupocBot n) .C) = true := by
+  obtain ⟨c, hc⟩ := proofSearch_true_for_bot_CooperateBot
+  have hPlay : play 5 EBot (DupocBot c) = some .C := by
+    simpa using EBot_plays_C_against_DupocBot c 0 hc
+  obtain ⟨k, hk⟩ :=
+    proofSearch_complete_plays EBot (DupocBot c) .C ⟨5, hPlay⟩
+  exact ⟨k, c, hk⟩
+
+/-- Proof search k is true for EBot vs DupocBot k. Aligns indices via
+    monotonicity. -/
+theorem proofSearch_true_for_EBot :
+    ∃ k, proofSearch k (.plays EBot (DupocBot k) .C) = true := by
+  obtain ⟨k, n, hk⟩ := proofSearch_true_for_EBot_different_k
+  by_cases hnk : n ≤ k
+  · refine ⟨k, ?_⟩
+    exact DupocBot_monotonicity n k EBot .C hnk hk
+  · refine ⟨n, ?_⟩
+    exact proofSearch_monotone k n (.plays EBot (DupocBot n) .C)
+      (Nat.le_of_lt (Nat.lt_of_not_ge hnk)) hk
+
+/-- DupocBot cooperates with EBot once its search for "EBot plays C" succeeds. -/
+theorem DupocBot_plays_C_against_EBot (k fuel : Nat)
+    (hk : proofSearch k (.plays EBot (DupocBot k) .C) = true) :
+    play (fuel + 2) (DupocBot k) EBot = some .C := by
+  show eval (fuel + 2) (DupocBot k) EBot (DupocBot k) = some .C
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- DupocBot vs EBot: mutual cooperation. Combine two proof-search witnesses
+    (one for `.bot CB`, one for EBot) at a common `k = e + c`. -/
+theorem DupocBot_vs_EBot (fuel : Nat) :
+    ∃ k, outcome (fuel + 5) (DupocBot k) EBot = some (.C, .C) := by
+  obtain ⟨e, he⟩ := proofSearch_true_for_EBot
+  obtain ⟨c, hc⟩ := proofSearch_true_for_bot_CooperateBot
+  let k := e + c
+  have hek : e ≤ k := Nat.le_add_right e c
+  have hck : c ≤ k := Nat.le_add_left c e
+  have hkEBot : proofSearch k (.plays EBot (DupocBot k) .C) = true :=
+    DupocBot_monotonicity e k EBot .C hek
+      (proofSearch_monotone e k (.plays EBot (DupocBot e) .C) hek he)
+  have hkCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
+    DupocBot_monotonicity c k (.bot CooperateBot) .C hck
+      (proofSearch_monotone c k (.plays (.bot CooperateBot) (DupocBot c) .C) hck hc)
+  refine ⟨k, ?_⟩
+  have hA : play (fuel + 5) (DupocBot k) EBot = some .C := by
+    simpa [Nat.add_assoc] using DupocBot_plays_C_against_EBot k (fuel + 3) hkEBot
+  have hB : play (fuel + 5) EBot (DupocBot k) = some .C :=
+    EBot_plays_C_against_DupocBot k fuel hkCB
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 
