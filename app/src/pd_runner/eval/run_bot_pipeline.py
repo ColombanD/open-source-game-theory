@@ -11,6 +11,7 @@ import argparse
 
 from pd_runner.logging_config import setup_logging
 from pd_runner.services.bot_service import BotRequest, BotWriteError, search_bot
+from pd_runner.services.library_writer import LibraryWriteError, write_bot_to_library
 
 
 def main() -> None:
@@ -42,6 +43,14 @@ def main() -> None:
         print(f"\n--- Generated Lean source ---\n{result.lean_source}\n---")
     except BotWriteError as exc:
         print(f"\nBot generation failed: {exc}")
+        return
+
+    print("\nWriting bot to library...")
+    try:
+        wr = write_bot_to_library(result, human_accept=True, dry_run=False)
+        print(f"Written to: {wr.path}")
+    except LibraryWriteError as exc:
+        print(f"Library write failed: {exc}")
 
 
 if __name__ == "__main__":

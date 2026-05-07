@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from pd_runner.config import load_paths
-from pd_runner.lean.executor import build_lean_project, run_lean_proof_file
+from pd_runner.lean.executor import run_lean_proof_file
 from pd_runner.logging_config import get_logger
 
 _log = get_logger("llm.tools")
@@ -143,10 +143,9 @@ BOT_TOOLS: list[dict[str, Any]] = [
     {
         "name": "run_lean_build",
         "description": (
-            "Write a candidate Lean 4 bot definition to Bots/LlmGenerations/<bot_name>.lean "
-            "and compile the whole project with `lake build`. "
+            "Write a candidate Lean 4 bot definition to a temp file and check it with `lake env lean`. "
             "Returns stdout, stderr, and exit code. "
-            "An exit code of 0 means the bot definition is valid Lean. "
+            "An exit code of 0 with no errors means the bot definition is valid Lean. "
             "Use this tool to iteratively fix syntax and type errors in your bot definition."
         ),
         "input_schema": {
@@ -173,7 +172,8 @@ BOT_TOOLS: list[dict[str, Any]] = [
 
 def _run_lean_build(bot_name: str, lean_source: str) -> str:
     paths = load_paths()
-    llm_bots_dir = paths.lean_engine_dir / "PrisonersDilemma" / "Bots" / "LlmGenerations"
+    lean_dir = paths.lean_engine_dir
+    llm_bots_dir = lean_dir / "PrisonersDilemma" / "Bots" / "LlmGenerations"
     llm_bots_dir.mkdir(parents=True, exist_ok=True)
 
     bot_file = llm_bots_dir / f"{bot_name}.lean"
@@ -181,7 +181,7 @@ def _run_lean_build(bot_name: str, lean_source: str) -> str:
     bot_file.write_text(lean_source, encoding="utf-8")
 
     try:
-        result = build_lean_project(paths.lean_engine_dir)
+        result = run_lean_proof_file(lean_dir, bot_file)
     finally:
         bot_file.unlink(missing_ok=True)
 
