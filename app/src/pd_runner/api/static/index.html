@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Open-Source Game Theory</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem; }
+
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3149;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 760px;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #93c5fd; }
+
+    .bots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.3rem; }
+    input[type="text"], textarea {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2d3149;
+      border-radius: 0.5rem;
+      color: #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: #3b82f6; }
+    textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+
+    .btn {
+      padding: 0.6rem 1.25rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #2563eb; }
+    .btn-success { background: #059669; color: white; }
+    .btn-success:hover:not(:disabled) { background: #047857; }
+    .btn-danger  { background: #dc2626; color: white; }
+    .btn-danger:hover:not(:disabled)  { background: #b91c1c; }
+
+    .run-btn { width: 100%; max-width: 760px; padding: 0.75rem; margin-bottom: 1.25rem; }
+
+    #status-card { display: none; }
+
+    .status-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+
+    .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 9999px; }
+    .badge-pending         { background: #374151; color: #9ca3af; }
+    .badge-generating_bots { background: #1d4ed8; color: #bfdbfe; }
+    .badge-bots_ready      { background: #92400e; color: #fcd34d; }
+    .badge-proving         { background: #1d4ed8; color: #bfdbfe; }
+    .badge-proof_ready     { background: #92400e; color: #fcd34d; }
+    .badge-done            { background: #065f46; color: #6ee7b7; }
+    .badge-failed          { background: #7f1d1d; color: #fca5a5; }
+
+    .spinner {
+      width: 1rem; height: 1rem;
+      border: 2px solid #374151; border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .generating_bots .spinner,
+    .proving .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .step-text { font-size: 0.85rem; color: #94a3b8; }
+
+    .gate-actions { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+
+    .section-label {
+      font-size: 0.75rem; color: #94a3b8; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    .bots-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+    pre {
+      background: #0f1117;
+      border: 1px solid #2d3149;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-size: 0.78rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #a5b4fc;
+      max-height: 260px;
+      overflow-y: auto;
+      margin-bottom: 0.75rem;
+    }
+
+    .outcome-box {
+      display: flex; gap: 1.5rem;
+      background: #0f1117; border: 1px solid #2d3149;
+      border-radius: 0.5rem; padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .outcome-cell { display: flex; flex-direction: column; gap: 0.2rem; }
+    .outcome-cell .bot-name { font-size: 0.75rem; color: #94a3b8; }
+    .action { font-size: 1.4rem; font-weight: 700; }
+    .action-C { color: #34d399; }
+    .action-D { color: #f87171; }
+    .outcome-vs { color: #4b5563; align-self: center; font-size: 0.9rem; }
+
+    .error-msg {
+      background: #7f1d1d22; border: 1px solid #7f1d1d;
+      border-radius: 0.5rem; padding: 0.75rem 1rem;
+      color: #fca5a5; font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Open-Source Game Theory</h1>
+  <p class="subtitle">Describe two strategies — get a formally verified game outcome.</p>
+
+  <div class="card">
+    <h2>Bot strategies</h2>
+    <div class="bots-grid">
+      <div>
+        <label for="bot-a-name">Bot A name</label>
+        <input type="text" id="bot-a-name" placeholder="e.g. KindBot" value="KindBot" />
+      </div>
+      <div>
+        <label for="bot-b-name">Bot B name</label>
+        <input type="text" id="bot-b-name" placeholder="e.g. MeanBot" value="MeanBot" />
+      </div>
+      <div>
+        <label for="bot-a-strategy">Bot A strategy</label>
+        <textarea id="bot-a-strategy">Always cooperate with any opponent.</textarea>
+      </div>
+      <div>
+        <label for="bot-b-strategy">Bot B strategy</label>
+        <textarea id="bot-b-strategy">Always defect against any opponent.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary run-btn" id="run-btn" onclick="runPipeline()">Run Pipeline</button>
+
+  <div class="card" id="status-card">
+    <h2>Pipeline</h2>
+
+    <div class="status-row" id="status-row">
+      <div class="spinner"></div>
+      <span class="badge" id="status-badge">pending</span>
+      <span class="step-text" id="step-text"></span>
+    </div>
+
+    <div id="result-area"></div>
+  </div>
+
+  <script>
+    let pollInterval = null;
+    let currentJobId = null;
+
+    async function runPipeline() {
+      const botAName     = document.getElementById('bot-a-name').value.trim();
+      const botBName     = document.getElementById('bot-b-name').value.trim();
+      const botAStrategy = document.getElementById('bot-a-strategy').value.trim();
+      const botBStrategy = document.getElementById('bot-b-strategy').value.trim();
+
+      if (!botAName || !botBName || !botAStrategy || !botBStrategy) {
+        alert('Please fill in all four fields.');
+        return;
+      }
+
+      document.getElementById('run-btn').disabled = true;
+      document.getElementById('status-card').style.display = 'block';
+      renderState({ status: 'pending', step: 'Submitting...' });
+
+      const resp = await fetch('/pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bot_a_name: botAName, bot_a_strategy: botAStrategy,
+          bot_b_name: botBName, bot_b_strategy: botBStrategy,
+        }),
+      });
+
+      if (!resp.ok) {
+        renderState({ status: 'failed', error: 'Failed to submit job.' });
+        document.getElementById('run-btn').disabled = false;
+        return;
+      }
+
+      const job = await resp.json();
+      currentJobId = job.job_id;
+      pollInterval = setInterval(() => pollJob(currentJobId), 2000);
+    }
+
+    async function pollJob(jobId) {
+      const resp = await fetch(`/pipeline/${jobId}`);
+      if (!resp.ok) return;
+      renderState(await resp.json());
+    }
+
+    async function sendDecision(endpoint) {
+      clearInterval(pollInterval);
+      const resp = await fetch(`/pipeline/${currentJobId}/${endpoint}`, { method: 'POST' });
+      if (!resp.ok) return;
+      const job = await resp.json();
+      renderState(job);
+      if (job.status !== 'done' && job.status !== 'failed') {
+        pollInterval = setInterval(() => pollJob(currentJobId), 2000);
+      }
+    }
+
+    function renderState(job) {
+      const badge  = document.getElementById('status-badge');
+      const row    = document.getElementById('status-row');
+      const stepEl = document.getElementById('step-text');
+      const area   = document.getElementById('result-area');
+
+      badge.textContent = job.status;
+      badge.className   = `badge badge-${job.status}`;
+      row.className     = `status-row ${job.status}`;
+      stepEl.textContent = job.step || '';
+      area.innerHTML = '';
+
+      const terminal = job.status === 'done' || job.status === 'failed';
+      if (terminal) {
+        clearInterval(pollInterval);
+        document.getElementById('run-btn').disabled = false;
+      }
+
+      if (job.status === 'bots_ready' && job.bot_a && job.bot_b) {
+        area.innerHTML = `
+          <p style="margin-bottom:0.75rem;font-size:0.9rem;color:#fcd34d;">
+            Review the generated bot definitions and accept or reject.
+          </p>
+          <div class="bots-preview">
+            <div>
+              <div class="section-label">${esc(job.bot_a.name)}</div>
+              <pre>${esc(job.bot_a.source)}</pre>
+            </div>
+            <div>
+              <div class="section-label">${esc(job.bot_b.name)}</div>
+              <pre>${esc(job.bot_b.source)}</pre>
+            </div>
+          </div>
+          <div class="gate-actions">
+            <button class="btn btn-success" onclick="sendDecision('accept-bots')">Accept bots</button>
+            <button class="btn btn-danger"  onclick="sendDecision('reject-bots')">Reject</button>
+          </div>
+        `;
+      } else if (job.status === 'proof_ready' && job.proof) {
+        const actionLabel = a => `<span class="action action-${a}">${a === 'C' ? 'Cooperate' : 'Defect'}</span>`;
+        area.innerHTML = `
+          <p style="margin-bottom:0.75rem;font-size:0.9rem;color:#fcd34d;">
+            Review the proof and accept or reject.
+          </p>
+          <div class="outcome-box">
+            <div class="outcome-cell">
+              <span class="bot-name">${esc(job.bot_a ? job.bot_a.name : '')}</span>
+              ${actionLabel(job.proof.left_action)}
+            </div>
+            <span class="outcome-vs">vs</span>
+            <div class="outcome-cell">
+              <span class="bot-name">${esc(job.bot_b ? job.bot_b.name : '')}</span>
+              ${actionLabel(job.proof.right_action)}
+            </div>
+          </div>
+          <div class="section-label">Lean proof</div>
+          <pre>${esc(job.proof.source)}</pre>
+          <div class="gate-actions">
+            <button class="btn btn-success" onclick="sendDecision('accept-proof')">Accept proof</button>
+            <button class="btn btn-danger"  onclick="sendDecision('reject-proof')">Reject</button>
+          </div>
+        `;
+      } else if (job.status === 'done' && job.result) {
+        const r = job.result;
+        const actionLabel = a => `<span class="action action-${a}">${a === 'C' ? 'Cooperate' : 'Defect'}</span>`;
+        area.innerHTML = `
+          <div class="section-label">Outcome</div>
+          <div class="outcome-box">
+            <div class="outcome-cell">
+              <span class="bot-name">${esc(r.bot_a_name)}</span>
+              ${actionLabel(r.left_action)}
+            </div>
+            <span class="outcome-vs">vs</span>
+            <div class="outcome-cell">
+              <span class="bot-name">${esc(r.bot_b_name)}</span>
+              ${actionLabel(r.right_action)}
+            </div>
+          </div>
+          <div class="bots-preview">
+            <div>
+              <div class="section-label">${esc(r.bot_a_name)} — Lean source</div>
+              <pre>${esc(r.bot_a_source)}</pre>
+            </div>
+            <div>
+              <div class="section-label">${esc(r.bot_b_name)} — Lean source</div>
+              <pre>${esc(r.bot_b_source)}</pre>
+            </div>
+          </div>
+          <div class="section-label">Proof</div>
+          <pre>${esc(r.proof_source)}</pre>
+        `;
+      } else if (job.error) {
+        area.innerHTML = `<div class="error-msg">${esc(job.error)}</div>`;
+      }
+    }
+
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+
+</body>
+</html>

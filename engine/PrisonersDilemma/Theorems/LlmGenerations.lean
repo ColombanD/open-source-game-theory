@@ -1,3 +1,4 @@
 -- Auto-generated theorem files from the LLM proof agent.
 import PrisonersDilemma.Theorems.LlmGenerations.outcome_DefectBot_vs_DefectBot
 import PrisonersDilemma.Theorems.LlmGenerations.outcome_KindBot_vs_MeanBot
+import PrisonersDilemma.Theorems.LlmGenerations.outcome_KinBot_vs_MeanBot
