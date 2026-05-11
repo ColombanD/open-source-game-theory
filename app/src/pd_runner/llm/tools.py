@@ -176,9 +176,18 @@ def _run_lean_build(bot_name: str, lean_source: str) -> str:
     llm_bots_dir = lean_dir / "PrisonersDilemma" / "Bots" / "LlmGenerations"
     llm_bots_dir.mkdir(parents=True, exist_ok=True)
 
-    bot_file = llm_bots_dir / f"{bot_name}.lean"
-    _log.debug("Writing bot to: %s\n%s", bot_file.name, lean_source)
-    bot_file.write_text(lean_source, encoding="utf-8")
+    safe_name = "".join(c if c.isalnum() or c in "_-" else "_" for c in bot_name)
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".lean",
+        prefix=f"pd_bot_{safe_name}_",
+        dir=llm_bots_dir,
+        delete=False,
+    ) as f:
+        f.write(lean_source)
+        bot_file = Path(f.name)
+
+    _log.debug("Writing bot to temp: %s\n%s", bot_file.name, lean_source)
 
     try:
         result = run_lean_proof_file(lean_dir, bot_file)

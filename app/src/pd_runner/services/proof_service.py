@@ -22,8 +22,8 @@ _log = get_logger("services.proof_service")
 class ProofRequest:
     left_bot: str
     right_bot: str
-    left_action: str
-    right_action: str
+    left_action: str | None = None   # None → agent must discover the outcome
+    right_action: str | None = None  # None → agent must discover the outcome
     fuel: int = 1
     max_iterations: int = 20
     model: str = "claude-opus-4-7"
@@ -96,14 +96,34 @@ def search_proof(request: ProofRequest) -> ProofResult:
             f"Final response:\n{final_text}"
         )
 
+    left_action = request.left_action
+    right_action = request.right_action
+    if left_action is None or right_action is None:
+        parsed = _extract_actions_from_source(lean_source)
+        if parsed is None:
+            raise ProofSearchError(
+                f"Could not parse action pair from proven source for "
+                f"{request.left_bot} vs {request.right_bot}.\n"
+                f"Source:\n{lean_source}"
+            )
+        left_action, right_action = parsed
+
     return ProofResult(
         left_bot=request.left_bot,
         right_bot=request.right_bot,
-        left_action=request.left_action,
-        right_action=request.right_action,
+        left_action=left_action,
+        right_action=right_action,
         lean_source=lean_source,
         iterations_used=iteration_count[0],
     )
+
+
+def _extract_actions_from_source(lean_source: str) -> tuple[str, str] | None:
+    """Parse the action pair from a proven theorem statement like `= some (.C, .D)`."""
+    match = re.search(r"=\s*some\s*\(\.([CD]),\s*\.([CD])\)", lean_source)
+    if match:
+        return match.group(1), match.group(2)
+    return None
 
 
 def _extract_lean_source(text: str) -> str | None:

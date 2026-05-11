@@ -129,14 +129,6 @@ def bot_file_path(result: BotResult) -> Path:
     return llm_dir / f"{result.bot_name}.lean"
 
 
-def _bot_llm_generations_index(paths) -> Path:
-    return paths.lean_engine_dir / "PrisonersDilemma" / "Bots" / "LlmGenerations.lean"
-
-
-def _bot_module_name(result: BotResult) -> str:
-    return f"PrisonersDilemma.Bots.LlmGenerations.{result.bot_name}"
-
-
 def write_bot_to_library(
     result: BotResult,
     *,
@@ -145,9 +137,8 @@ def write_bot_to_library(
 ) -> WriteResult:
     """Write a generated bot file to engine/PrisonersDilemma/Bots/LlmGenerations/.
 
-    Does NOT run lake build — bots are not imported by the root module.
-    The import is appended to Bots/LlmGenerations.lean so the proof agent
-    can import the bot when writing outcome theorems.
+    No lake build — bots are imported transitively by their theorem files,
+    which are verified when write_proof_to_library runs lake build.
 
     Raises:
         LibraryWriteError: if the file already exists or the user rejects.
@@ -178,11 +169,6 @@ def write_bot_to_library(
     paths = load_paths()
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(result.lean_source + "\n", encoding="utf-8")
-
-    index = _bot_llm_generations_index(paths)
-    import_line = f"import {_bot_module_name(result)}\n"
-    with index.open("a", encoding="utf-8") as f:
-        f.write(import_line)
 
     return WriteResult(
         path=target,

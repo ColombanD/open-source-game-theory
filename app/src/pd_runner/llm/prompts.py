@@ -60,33 +60,51 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
 def proof_request_message(
     left_bot: str,
     right_bot: str,
-    left_action: str,
-    right_action: str,
+    left_action: str | None,
+    right_action: str | None,
     few_shot_files: list[tuple[str, str]],
     known_theorems_summary: str,
     fuel: int = 1,
 ) -> str:
     parts: list[str] = []
 
-    parts.append(
-        f"Prove the following outcome theorem:\n\n"
-        f"```lean\n"
-        f"theorem llm_outcome_{left_bot}_vs_{right_bot} (n : Nat) :\n"
-        f"    outcome (n+{fuel}) {left_bot} {right_bot} = some (.{left_action}, .{right_action}) := by\n"
-        f"  sorry  -- replace with a real proof\n"
-        f"```\n\n"
-        f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
-        f"to avoid clashing with existing library theorems."
-    )
+    if left_action is not None and right_action is not None:
+        parts.append(
+            f"Prove the following outcome theorem:\n\n"
+            f"```lean\n"
+            f"theorem llm_outcome_{left_bot}_vs_{right_bot} (n : Nat) :\n"
+            f"    outcome (n+{fuel}) {left_bot} {right_bot} = some (.{left_action}, .{right_action}) := by\n"
+            f"  sorry  -- replace with a real proof\n"
+            f"```\n\n"
+            f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
+            f"to avoid clashing with existing library theorems."
+        )
+    else:
+        parts.append(
+            f"Determine the outcome of `{left_bot}` vs `{right_bot}` and prove it.\n\n"
+            f"The outcome is one of: `(.C, .C)`, `(.C, .D)`, `(.D, .C)`, `(.D, .D)`.\n"
+            f"Read the bot definitions, reason about what action each bot plays, "
+            f"then write and verify a theorem of the form:\n\n"
+            f"```lean\n"
+            f"theorem llm_outcome_{left_bot}_vs_{right_bot} (n : Nat) :\n"
+            f"    outcome (n+{fuel}) {left_bot} {right_bot} = some (.<LEFT>, .<RIGHT>) := by\n"
+            f"  sorry  -- replace with a real proof\n"
+            f"```\n\n"
+            f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
+            f"to avoid clashing with existing library theorems."
+        )
 
     # Always inject the bot definitions so the agent doesn't need to fetch them manually.
+    # Try the standard path first, then the LlmGenerations subfolder.
     bot_defs: list[str] = []
     for bot in dict.fromkeys([left_bot, right_bot]):  # deduplicate, preserve order
-        try:
-            src = _read_lean(f"Bots/{bot}.lean")
-            bot_defs.append(f"--- Bots/{bot}.lean ---\n```lean\n{src}\n```")
-        except OSError:
-            pass
+        for candidate in (f"Bots/{bot}.lean", f"Bots/LlmGenerations/{bot}.lean"):
+            try:
+                src = _read_lean(candidate)
+                bot_defs.append(f"--- {candidate} ---\n```lean\n{src}\n```")
+                break
+            except OSError:
+                pass
     if bot_defs:
         parts.append("Bot definitions:\n\n" + "\n\n".join(bot_defs))
 
