@@ -92,11 +92,13 @@ def write_proof_to_library(
 
     target.write_text(result.lean_source + "\n", encoding="utf-8")
 
-    # Append the import line to the index file.
+    # Append the import line to the index file (skip if already present).
     index = _llm_generations_index(paths)
     import_line = f"import {_module_name(result)}\n"
-    with index.open("a", encoding="utf-8") as f:
-        f.write(import_line)
+    existing_index = index.read_text(encoding="utf-8")
+    if import_line not in existing_index:
+        with index.open("a", encoding="utf-8") as f:
+            f.write(import_line)
 
     build_result: LeanExecResult = build_lean_project(paths.lean_engine_dir)
 
@@ -134,6 +136,7 @@ def write_bot_to_library(
     *,
     human_accept: bool = True,
     dry_run: bool = False,
+    overwrite: bool = False,
 ) -> WriteResult:
     """Write a generated bot file to engine/PrisonersDilemma/Bots/LlmGenerations/.
 
@@ -141,11 +144,11 @@ def write_bot_to_library(
     which are verified when write_proof_to_library runs lake build.
 
     Raises:
-        LibraryWriteError: if the file already exists or the user rejects.
+        LibraryWriteError: if the file already exists (and overwrite=False) or the user rejects.
     """
     target = bot_file_path(result)
 
-    if target.exists():
+    if target.exists() and not overwrite:
         raise LibraryWriteError(
             f"Bot file already exists: {target}\n"
             "The bot writer may only add new files, not overwrite existing ones."
