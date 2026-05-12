@@ -6,21 +6,40 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class BotConflictResolution(str, Enum):
+    overwrite = "overwrite"      # regenerate and overwrite existing
+    use_existing = "use_existing"  # skip generation, use the file on disk
+    # rename: client just changes bot_a_name / bot_b_name to a new value
+
+
+class BotSpec(BaseModel):
+    name: str
+    strategy: str
+    conflict_resolution: Optional[BotConflictResolution] = None
+
+
 class PipelineRequest(BaseModel):
-    bot_a_name: str
-    bot_a_strategy: str
-    bot_b_name: str
-    bot_b_strategy: str
+    bot_a: BotSpec
+    bot_b: BotSpec
     model: str = "claude-sonnet-4-6"
     max_iterations: int = 20
+
+
+class BotConflict(BaseModel):
+    name: str
+    existing_source: str
+
+
+class ConflictResponse(BaseModel):
+    conflicts: list[BotConflict]
 
 
 class JobStatus(str, Enum):
     pending = "pending"
     generating_bots = "generating_bots"
-    bots_ready = "bots_ready"       # waiting for human to accept bots
+    bots_ready = "bots_ready"
     proving = "proving"
-    proof_ready = "proof_ready"     # waiting for human to accept proof
+    proof_ready = "proof_ready"
     done = "done"
     failed = "failed"
 
@@ -28,6 +47,7 @@ class JobStatus(str, Enum):
 class BotDraft(BaseModel):
     name: str
     source: str
+    is_existing: bool = False   # True if loaded from disk rather than generated
 
 
 class ProofDraft(BaseModel):
@@ -50,11 +70,8 @@ class JobResponse(BaseModel):
     job_id: str
     status: JobStatus
     step: Optional[str] = None
-    # Populated at bots_ready — shown to user for acceptance
     bot_a: Optional[BotDraft] = None
     bot_b: Optional[BotDraft] = None
-    # Populated at proof_ready — shown to user for acceptance
     proof: Optional[ProofDraft] = None
-    # Populated at done
     result: Optional[PipelineResult] = None
     error: Optional[str] = None

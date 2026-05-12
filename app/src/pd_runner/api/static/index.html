@@ -35,7 +35,7 @@
     .bots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
     label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.3rem; }
-    input[type="text"], textarea {
+    input[type="text"], textarea, select {
       width: 100%;
       background: #0f1117;
       border: 1px solid #2d3149;
@@ -46,17 +46,15 @@
       outline: none;
       transition: border-color 0.15s;
     }
-    input[type="text"]:focus, textarea:focus { border-color: #3b82f6; }
+    input[type="text"]:focus, textarea:focus, select:focus { border-color: #3b82f6; }
     textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+    select option { background: #1e2130; }
 
     .btn {
       padding: 0.6rem 1.25rem;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
+      border: none; border-radius: 0.5rem;
+      font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
     }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-primary { background: #3b82f6; color: white; }
@@ -84,46 +82,52 @@
     .spinner {
       width: 1rem; height: 1rem;
       border: 2px solid #374151; border-top-color: #3b82f6;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      display: none;
+      border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
     }
-    .generating_bots .spinner,
-    .proving .spinner { display: block; }
+    .generating_bots .spinner, .proving .spinner { display: block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .step-text { font-size: 0.85rem; color: #94a3b8; }
-
-    .gate-actions { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+    .gate-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
 
     .section-label {
       font-size: 0.75rem; color: #94a3b8; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      margin-bottom: 0.4rem;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;
+    }
+    .tag-existing {
+      display: inline-block; font-size: 0.7rem; padding: 0.1rem 0.4rem;
+      background: #92400e33; color: #fcd34d; border: 1px solid #92400e;
+      border-radius: 4px; margin-left: 0.4rem; vertical-align: middle;
+    }
+    .tag-new {
+      display: inline-block; font-size: 0.7rem; padding: 0.1rem 0.4rem;
+      background: #05996933; color: #6ee7b7; border: 1px solid #059969;
+      border-radius: 4px; margin-left: 0.4rem; vertical-align: middle;
     }
 
     .bots-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
 
     pre {
-      background: #0f1117;
-      border: 1px solid #2d3149;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      font-size: 0.78rem;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      color: #a5b4fc;
-      max-height: 260px;
-      overflow-y: auto;
-      margin-bottom: 0.75rem;
+      background: #0f1117; border: 1px solid #2d3149;
+      border-radius: 0.5rem; padding: 1rem;
+      font-size: 0.78rem; overflow-x: auto;
+      white-space: pre-wrap; word-break: break-word;
+      color: #a5b4fc; max-height: 260px; overflow-y: auto; margin-bottom: 0.75rem;
     }
+
+    .conflict-box {
+      background: #92400e22; border: 1px solid #92400e;
+      border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;
+    }
+    .conflict-box h3 { font-size: 0.9rem; color: #fcd34d; margin-bottom: 0.75rem; }
+    .conflict-item { margin-bottom: 1rem; }
+    .conflict-item:last-child { margin-bottom: 0; }
+    .conflict-item label { color: #e2e8f0; font-size: 0.85rem; margin-bottom: 0.4rem; }
 
     .outcome-box {
       display: flex; gap: 1.5rem;
       background: #0f1117; border: 1px solid #2d3149;
-      border-radius: 0.5rem; padding: 1rem 1.25rem;
-      margin-bottom: 1rem;
+      border-radius: 0.5rem; padding: 1rem 1.25rem; margin-bottom: 1rem;
     }
     .outcome-cell { display: flex; flex-direction: column; gap: 0.2rem; }
     .outcome-cell .bot-name { font-size: 0.75rem; color: #94a3b8; }
@@ -166,47 +170,95 @@
     </div>
   </div>
 
+  <!-- Conflict resolution card — shown only when 409 returned -->
+  <div class="card" id="conflict-card" style="display:none">
+    <h2>Name conflicts</h2>
+    <div id="conflict-area"></div>
+    <button class="btn btn-primary" onclick="resubmitWithResolutions()">Continue</button>
+  </div>
+
   <button class="btn btn-primary run-btn" id="run-btn" onclick="runPipeline()">Run Pipeline</button>
 
   <div class="card" id="status-card">
     <h2>Pipeline</h2>
-
     <div class="status-row" id="status-row">
       <div class="spinner"></div>
       <span class="badge" id="status-badge">pending</span>
       <span class="step-text" id="step-text"></span>
     </div>
-
     <div id="result-area"></div>
   </div>
 
   <script>
     let pollInterval = null;
     let currentJobId = null;
+    // Tracks per-bot conflict resolutions: { botAName: 'overwrite'|'use_existing', ... }
+    let conflictResolutions = {};
+
+    function buildRequest() {
+      return {
+        bot_a: {
+          name: document.getElementById('bot-a-name').value.trim(),
+          strategy: document.getElementById('bot-a-strategy').value.trim(),
+          conflict_resolution: conflictResolutions[document.getElementById('bot-a-name').value.trim()] || null,
+        },
+        bot_b: {
+          name: document.getElementById('bot-b-name').value.trim(),
+          strategy: document.getElementById('bot-b-strategy').value.trim(),
+          conflict_resolution: conflictResolutions[document.getElementById('bot-b-name').value.trim()] || null,
+        },
+      };
+    }
 
     async function runPipeline() {
-      const botAName     = document.getElementById('bot-a-name').value.trim();
-      const botBName     = document.getElementById('bot-b-name').value.trim();
-      const botAStrategy = document.getElementById('bot-a-strategy').value.trim();
-      const botBStrategy = document.getElementById('bot-b-strategy').value.trim();
-
-      if (!botAName || !botBName || !botAStrategy || !botBStrategy) {
+      const req = buildRequest();
+      if (!req.bot_a.name || !req.bot_b.name || !req.bot_a.strategy || !req.bot_b.strategy) {
         alert('Please fill in all four fields.');
         return;
       }
 
+      conflictResolutions = {};
+      document.getElementById('conflict-card').style.display = 'none';
       document.getElementById('run-btn').disabled = true;
       document.getElementById('status-card').style.display = 'block';
       renderState({ status: 'pending', step: 'Submitting...' });
 
+      await submitPipeline(req);
+    }
+
+    async function resubmitWithResolutions() {
+      // Read rename fields if any
+      ['a', 'b'].forEach(side => {
+        const renameEl = document.getElementById(`rename-${side}`);
+        if (renameEl) {
+          const newName = renameEl.value.trim();
+          if (newName) document.getElementById(`bot-${side}-name`).value = newName;
+        }
+      });
+
+      const req = buildRequest();
+      document.getElementById('conflict-card').style.display = 'none';
+      document.getElementById('run-btn').disabled = true;
+      document.getElementById('status-card').style.display = 'block';
+      renderState({ status: 'pending', step: 'Submitting...' });
+
+      await submitPipeline(req);
+    }
+
+    async function submitPipeline(req) {
       const resp = await fetch('/pipeline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bot_a_name: botAName, bot_a_strategy: botAStrategy,
-          bot_b_name: botBName, bot_b_strategy: botBStrategy,
-        }),
+        body: JSON.stringify(req),
       });
+
+      if (resp.status === 409) {
+        const body = await resp.json();
+        showConflicts(body.detail.conflicts, req);
+        document.getElementById('run-btn').disabled = false;
+        document.getElementById('status-card').style.display = 'none';
+        return;
+      }
 
       if (!resp.ok) {
         renderState({ status: 'failed', error: 'Failed to submit job.' });
@@ -216,7 +268,50 @@
 
       const job = await resp.json();
       currentJobId = job.job_id;
+      renderState(job);
       pollInterval = setInterval(() => pollJob(currentJobId), 2000);
+    }
+
+    function showConflicts(conflicts, req) {
+      document.getElementById('conflict-card').style.display = 'block';
+      const area = document.getElementById('conflict-area');
+
+      area.innerHTML = conflicts.map((c, i) => {
+        const side = (c.name === req.bot_a.name) ? 'a' : 'b';
+        return `
+          <div class="conflict-item">
+            <div class="section-label">${esc(c.name)} — existing definition</div>
+            <pre>${esc(c.existing_source)}</pre>
+            <label>What would you like to do?</label>
+            <select id="resolution-${side}" onchange="updateResolution('${esc(c.name)}', this.value, '${side}')">
+              <option value="use_existing">Use existing bot</option>
+              <option value="overwrite">Overwrite with newly generated bot</option>
+              <option value="rename">Rename — use a different name</option>
+            </select>
+            <div id="rename-field-${side}" style="display:none; margin-top:0.5rem;">
+              <label>New name</label>
+              <input type="text" id="rename-${side}" placeholder="e.g. ${esc(c.name)}2" />
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Set defaults
+      conflicts.forEach(c => {
+        const side = (c.name === req.bot_a.name) ? 'a' : 'b';
+        conflictResolutions[c.name] = 'use_existing';
+      });
+    }
+
+    function updateResolution(name, value, side) {
+      const renameField = document.getElementById(`rename-field-${side}`);
+      if (value === 'rename') {
+        renameField.style.display = 'block';
+        delete conflictResolutions[name];
+      } else {
+        renameField.style.display = 'none';
+        conflictResolutions[name] = value;
+      }
     }
 
     async function pollJob(jobId) {
@@ -242,11 +337,11 @@
       const stepEl = document.getElementById('step-text');
       const area   = document.getElementById('result-area');
 
-      badge.textContent = job.status;
-      badge.className   = `badge badge-${job.status}`;
-      row.className     = `status-row ${job.status}`;
+      badge.textContent  = job.status;
+      badge.className    = `badge badge-${job.status}`;
+      row.className      = `status-row ${job.status}`;
       stepEl.textContent = job.step || '';
-      area.innerHTML = '';
+      area.innerHTML     = '';
 
       const terminal = job.status === 'done' || job.status === 'failed';
       if (terminal) {
@@ -255,17 +350,24 @@
       }
 
       if (job.status === 'bots_ready' && job.bot_a && job.bot_b) {
+        const tagA = job.bot_a.is_existing
+          ? '<span class="tag-existing">existing</span>'
+          : '<span class="tag-new">generated</span>';
+        const tagB = job.bot_b.is_existing
+          ? '<span class="tag-existing">existing</span>'
+          : '<span class="tag-new">generated</span>';
+
         area.innerHTML = `
           <p style="margin-bottom:0.75rem;font-size:0.9rem;color:#fcd34d;">
-            Review the generated bot definitions and accept or reject.
+            Review the bot definitions and accept or reject.
           </p>
           <div class="bots-preview">
             <div>
-              <div class="section-label">${esc(job.bot_a.name)}</div>
+              <div class="section-label">${esc(job.bot_a.name)} ${tagA}</div>
               <pre>${esc(job.bot_a.source)}</pre>
             </div>
             <div>
-              <div class="section-label">${esc(job.bot_b.name)}</div>
+              <div class="section-label">${esc(job.bot_b.name)} ${tagB}</div>
               <pre>${esc(job.bot_b.source)}</pre>
             </div>
           </div>

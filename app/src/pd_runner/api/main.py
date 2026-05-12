@@ -9,8 +9,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from pd_runner.api.jobs import store
-from pd_runner.api.pipeline_task import run_pipeline
-from pd_runner.api.schemas import JobResponse, JobStatus, PipelineRequest
+from pd_runner.api.pipeline_task import bot_exists, bot_source_on_disk, run_pipeline
+from pd_runner.api.schemas import (
+    BotConflict, BotConflictResolution, BotSpec,
+    ConflictResponse, JobResponse, JobStatus, PipelineRequest,
+)
 
 app = FastAPI(title="Open-Source Game Theory Pipeline", version="0.1.0")
 
@@ -24,8 +27,23 @@ async def index() -> HTMLResponse:
     return HTMLResponse((_STATIC_DIR / "index.html").read_text(encoding="utf-8"))
 
 
-@app.post("/pipeline", response_model=JobResponse, status_code=202)
-async def start_pipeline(req: PipelineRequest, background_tasks: BackgroundTasks) -> JobResponse:
+def _unresolved_conflicts(req: PipelineRequest) -> list[BotConflict]:
+    """Return conflicts for bots that already exist and have no resolution set."""
+    conflicts = []
+    for spec in (req.bot_a, req.bot_b):
+        if bot_exists(spec.name) and spec.conflict_resolution is None:
+            source = bot_source_on_disk(spec.name) or ""
+            conflicts.append(BotConflict(name=spec.name, existing_source=source))
+    return conflicts
+
+
+@app.post("/pipeline", response_model=JobResponse, status_code=202,
+          responses={409: {"model": ConflictResponse}})
+async def start_pipeline(req: PipelineRequest, background_tasks: BackgroundTasks):
+    conflicts = _unresolved_conflicts(req)
+    if conflicts:
+        raise HTTPException(status_code=409, detail=ConflictResponse(conflicts=conflicts).model_dump())
+
     job = store.create()
     background_tasks.add_task(run_pipeline, job, req, store)
     return JobResponse(**job.to_response_dict())

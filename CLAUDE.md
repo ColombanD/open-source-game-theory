@@ -71,11 +71,15 @@ NL description
 - **Output**: valid `Bots/LlmGenerations/BotName.lean`
 
 **Milestones:**
-1. **Bot writer agent** ✅ — `services/bot_service.py`. Input = NL description + bot name, output = compiled `.lean` bot file. Uses `run_lean_build` tool (lake env lean, not lake build). Bot files go in `Bots/LlmGenerations/`, indexed by `Bots/LlmGenerations.lean`.
-2. **Bot library writer** ✅ — `write_bot_to_library` in `library_writer.py`. Writes bot to `Bots/LlmGenerations/BotName.lean`, appends import to index. No `lake build` needed (bots not imported by root module).
-3. **Pipeline script** ✅ — `eval/run_bot_pipeline.py`. CLI: `--bot-name`, `--strategy`, `--model`, `--log-level`. Runs bot writer → shows source → `[y/N]` human gate → writes to library.
-4. **Reviewer workflow** — `services/reviewer.py`. Runs `search_proof` against canonical opponents (CooperateBot, DefectBot, MirrorBot, TitForTatBot), returns outcome table. **Deferred** — design: run all 4 sequentially, report pass/fail per opponent, default fuel=5 and let the proof agent adapt.
-5. **End-to-end test** ← **NEXT**. KindBot is already generated and saved in `Bots/LlmGenerations/KindBot.lean`. Run `search_proof` manually against canonical opponents, verify proofs land in `Theorems/LlmGenerations/`. This validates the full Phase 3 story.
-6. **Phase 4 / API+UI** — FastAPI endpoint: user submits NL description, gets back outcome table. Deferred.
+1. **Bot writer agent** ✅ — `services/bot_service.py`. Input = NL description + bot name, output = compiled `.lean` bot file. Uses `run_lean_build` tool (lake env lean, not lake build). Bot files go in `Bots/LlmGenerations/`.
+2. **Bot library writer** ✅ — `write_bot_to_library` in `library_writer.py`. Writes bot to `Bots/LlmGenerations/BotName.lean`. No `lake build` needed (bots imported transitively via theorem files).
+3. **Pipeline script** ✅ — `eval/run_bot_pipeline.py`. CLI: `--bot-a-name`, `--bot-a-strategy`, `--bot-b-name`, `--bot-b-strategy`, `--model`, `--log-level`. Generates two bots, human gates for each, proof agent discovers+proves outcome, human gate for proof, writes to library. Handles existing bot names (overwrite / rename / use existing).
+4. **Reviewer workflow** — deferred. Proof agent discovers outcome on its own; no separate prediction step needed.
+5. **End-to-end test** ✅ — KindBot vs MeanBot pipeline ran successfully. Both bots compiled, proof found in 1 iteration, `lake build` green after write.
+6. **Phase 4 / API+UI** ✅ — FastAPI server (`api/main.py`, `pd-serve` CLI). Two-step async job with human acceptance gates at bots and proof. Minimal HTML/JS frontend at `/`. Start with `uv run pd-serve --reload`.
+   - `POST /pipeline` returns 409 with `ConflictResponse` if any bot name already exists and no `conflict_resolution` is set.
+   - Conflict resolution options: `use_existing`, `overwrite`, or rename (client changes the name and resubmits).
+   - UI shows existing bot source on conflict, per-bot dropdown (use existing / overwrite / rename), rename input pre-filled with `<OldName>2`.
+   - Bot review gate shows `existing` / `new` badge per bot. Proof review gate shows full Lean source before accept/reject.
 
-**Deferred:** reviewer (design above), automatic rewriter loop (v2), API/UI.
+**Deferred:** reviewer with outcome prediction (v2), automatic rewriter loop (v2).

@@ -35,10 +35,12 @@ class Job:
         """Serialisable snapshot for JobResponse."""
         bot_a = None
         if self.bot_a_draft:
-            bot_a = BotDraft(name=self.bot_a_draft.bot_name, source=self.bot_a_draft.lean_source)
+            bot_a = BotDraft(name=self.bot_a_draft.bot_name, source=self.bot_a_draft.lean_source,
+                             is_existing=self.bot_a_draft.iterations_used == 0)
         bot_b = None
         if self.bot_b_draft:
-            bot_b = BotDraft(name=self.bot_b_draft.bot_name, source=self.bot_b_draft.lean_source)
+            bot_b = BotDraft(name=self.bot_b_draft.bot_name, source=self.bot_b_draft.lean_source,
+                             is_existing=self.bot_b_draft.iterations_used == 0)
         proof = None
         if self.proof_draft:
             proof = ProofDraft(
