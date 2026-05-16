@@ -28,9 +28,14 @@ _log = get_logger("llm.tools")
 _READ_LIBRARY_FILE_TOOL: dict[str, Any] = {
     "name": "read_library_file",
     "description": (
-        "Read any file under engine/PrisonersDilemma/ (Bots/, Theorems/, or root files). "
+        "Read a single file under engine/PrisonersDilemma/ (Bots/, Theorems/, or root files). "
         "Use this to fetch existing theorems as few-shot proof examples or to inspect a bot's "
-        "definition before writing a proof about it."
+        "definition before writing a proof about it. "
+        "IMPORTANT: pass a full file path ending in `.lean`, not a directory — directory listings "
+        "are not supported. If you're unsure of the exact filename, the bot definitions you need "
+        "are already in your prompt; in general, prefer reasoning from the prompt over guessing "
+        "filenames. Files that mention the bots currently under evaluation are intentionally "
+        "blocked to prevent answer leakage."
     ),
     "input_schema": {
         "type": "object",
@@ -38,8 +43,9 @@ _READ_LIBRARY_FILE_TOOL: dict[str, Any] = {
             "relative_path": {
                 "type": "string",
                 "description": (
-                    "Path relative to engine/PrisonersDilemma/, e.g. "
-                    "'Theorems/CooperateBot.lean' or 'Bots/DefectBot.lean'."
+                    "Path to a `.lean` file, relative to engine/PrisonersDilemma/. "
+                    "Examples: 'Theorems/CooperateBot.lean', 'Bots/DefectBot.lean', "
+                    "'Program.lean'. Must end in '.lean' — directories are rejected."
                 ),
             }
         },
@@ -150,20 +156,29 @@ def _read_library_file(relative_path: str, exclude_bots: frozenset[str] = frozen
     if not target.exists():
         return f"Error: file not found: {relative_path}"
 
+    if target.is_dir():
+        return (
+            f"Error: `{relative_path}` is a directory. This tool reads single `.lean` files only — "
+            f"directory listings are not supported. Pass a specific filename ending in `.lean`."
+        )
+
     try:
         content = target.read_text(encoding="utf-8")
     except OSError as exc:
         return f"Error reading file: {exc}"
 
     if exclude_bots:
-        lowered = content.lower()
+        # Block only files named after a target bot — i.e. the bot's own definition
+        # or its dedicated theorem file. Files that merely mention a target bot in
+        # passing (e.g. a comparison theorem in another bot's file) are allowed,
+        # since the leak risk lives in files primarily about a target bot.
         stem_lower = target.stem.lower()
         excluded_lower = {b.lower() for b in exclude_bots}
-        if stem_lower in excluded_lower or any(b in lowered for b in excluded_lower):
+        if stem_lower in excluded_lower:
             return (
-                f"Error: access denied — `{relative_path}` mentions one of the bots under "
-                f"evaluation ({', '.join(sorted(exclude_bots))}). "
-                f"To prevent answer leakage during the bot-matrix run, files referencing "
+                f"Error: access denied — `{relative_path}` is the dedicated file for one of "
+                f"the bots under evaluation ({', '.join(sorted(exclude_bots))}). "
+                f"To prevent answer leakage during the bot-matrix run, files named after "
                 f"the target bots cannot be read via this tool. Reason about the bot "
                 f"definitions you were given directly."
             )

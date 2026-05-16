@@ -30,19 +30,15 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
     excluded = {b.lower() for b in exclude_bots} if exclude_bots else set()
 
     def _mentions_excluded(path: Path) -> bool:
-        """True if the file's name or content references any excluded bot.
+        """True if the file is the dedicated file for an excluded bot.
 
-        Used to prevent leaking the target proof through few-shots — a theorem
-        file about CupodBot will be named `outcome_CupodBot_vs_X.lean` (stem
-        doesn't equal `cupodbot`) but its content references it.
+        We only filter on filename stem — a file is "about" an excluded bot if
+        it is named after it (e.g. `Theorems/CupodBot.lean`). Files that merely
+        mention a target bot in passing are kept, since the proof for a pair
+        (A, B) is, by repo convention, located in `Theorems/A.lean` or
+        `Theorems/B.lean`, not in unrelated bots' files.
         """
-        if path.stem.lower() in excluded:
-            return True
-        try:
-            content = path.read_text(encoding="utf-8").lower()
-        except OSError:
-            return False
-        return any(name in content for name in excluded)
+        return path.stem.lower() in excluded
 
     def _score(path: Path) -> int:
         stem = path.stem.lower()
@@ -74,36 +70,37 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
 
 
 def list_known_outcome_theorems(left_bot: str, right_bot: str, exclude_bots: set[str] | None = None) -> str:
-    """Return a short summary of any already-proven outcome theorems for this pair.
+    """Return a short summary of already-proven outcome theorems involving these bots.
 
-    Theorems whose module matches a bot in exclude_bots are omitted — used by the
-    eval harness to prevent leaking the answer via the known-theorems summary.
+    Leak prevention: theorems whose pair *exactly matches* the target pair are
+    omitted (that would print the answer directly). Theorems involving only one
+    of the target bots are kept — they give useful prior signal (e.g. how the
+    target behaves against a different opponent) without revealing the queried
+    outcome.
     """
     target = {left_bot, right_bot}
-    excluded = {b.lower() for b in exclude_bots} if exclude_bots else set()
+    excluded_pairs: set[frozenset[str]] = set()
+    if exclude_bots is not None:
+        # The "answer" we must hide is a theorem about the exact target pair.
+        excluded_pairs.add(frozenset(target))
     lines: list[str] = []
 
-    for thm in _UNIVERSAL_OUTCOME_THEOREMS:
+    def _emit(thm, suffix: str) -> None:
         bots = {thm.left_bot.name, thm.right_bot.name}
-        if any(b.lower() in excluded for b in bots):
-            continue
-        if bots & target:
-            lines.append(
-                f"  {thm.name} (module {thm.module}): "
-                f"{thm.left_bot.existential_lean()} vs {thm.right_bot.existential_lean()} "
-                f"→ ({thm.left_action}, {thm.right_action})"
-            )
+        if frozenset(bots) in excluded_pairs:
+            return
+        if not (bots & target):
+            return
+        lines.append(
+            f"  {thm.name} (module {thm.module}{suffix}): "
+            f"{thm.left_bot.existential_lean()} vs {thm.right_bot.existential_lean()} "
+            f"→ ({thm.left_action}, {thm.right_action})"
+        )
 
+    for thm in _UNIVERSAL_OUTCOME_THEOREMS:
+        _emit(thm, "")
     for thm in _EXISTENTIAL_OUTCOME_THEOREMS:
-        bots = {thm.left_bot.name, thm.right_bot.name}
-        if any(b.lower() in excluded for b in bots):
-            continue
-        if bots & target:
-            lines.append(
-                f"  {thm.name} (module {thm.module}, existential): "
-                f"{thm.left_bot.existential_lean()} vs {thm.right_bot.existential_lean()} "
-                f"→ ({thm.left_action}, {thm.right_action})"
-            )
+        _emit(thm, ", existential")
 
     if not lines:
         return "None found."

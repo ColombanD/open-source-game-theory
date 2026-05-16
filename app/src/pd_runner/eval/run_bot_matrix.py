@@ -142,12 +142,13 @@ def _run_pair(
         )
     except (ProofSearchError, RuntimeError) as exc:
         elapsed = time.monotonic() - t0
+        iters = getattr(exc, "iterations_used", 0)
         return MatrixResult(
             bot_a=bot_a, bot_b=bot_b,
             tier_a=tier_a, tier_b=tier_b,
             passed=False,
             left_action=None, right_action=None, chosen_fuel=None,
-            iterations=0,
+            iterations=iters,
             wall_clock_s=elapsed,
             error_class=type(exc).__name__,
             error_msg=str(exc)[:500],
@@ -170,6 +171,9 @@ def main() -> None:
                         choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR"])
     parser.add_argument("--dry-run", action="store_true",
                         help="Print the pairs that would run, no API calls")
+    parser.add_argument("--ordered", action="store_true",
+                        help="Run all N*N ordered pairs (default: N*(N+1)/2 unordered pairs, "
+                             "since outcome A B and outcome B A are symmetric)")
     args = parser.parse_args()
 
     setup_logging(args.log_level)
@@ -182,10 +186,18 @@ def main() -> None:
     output_path = Path(args.output).resolve()
     completed = _load_completed(output_path) if args.resume else set()
 
-    pairs = [(a, b) for a in bots for b in bots]
+    if args.ordered:
+        pairs = [(a, b) for a in bots for b in bots]
+        mode = "ordered"
+    else:
+        # Half-matrix: each unordered pair once (a ≤ b in list order). outcome A B
+        # and outcome B A are symmetric, so we only need to prove one ordering.
+        pairs = [(a, b) for i, a in enumerate(bots) for b in bots[i:]]
+        mode = "unordered (half-matrix)"
     remaining = [(a, b) for (a, b) in pairs if (a, b) not in completed]
 
     print(f"Bots ({len(bots)}): {', '.join(bots)}")
+    print(f"Mode: {mode}")
     print(f"Pairs total: {len(pairs)}  |  remaining: {len(remaining)}  |  completed: {len(completed)}")
     print(f"Output: {output_path}")
     if args.dry_run:

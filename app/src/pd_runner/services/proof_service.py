@@ -45,7 +45,11 @@ class ProofResult:
 
 
 class ProofSearchError(RuntimeError):
-    pass
+    """Raised when proof search fails. Carries iterations_used for the caller."""
+
+    def __init__(self, message: str, *, iterations_used: int = 0) -> None:
+        super().__init__(message)
+        self.iterations_used = iterations_used
 
 
 def _outcomes_dir() -> Path:
@@ -161,7 +165,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
                 iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
                 passed=False, left_action=None, right_action=None, error=err,
             )
-            raise ProofSearchError(err)
+            raise ProofSearchError(err, iterations_used=iteration_count[0])
 
         left_action = request.left_action
         right_action = request.right_action
@@ -178,7 +182,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
                     iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
                     passed=False, left_action=None, right_action=None, error=err,
                 )
-                raise ProofSearchError(err)
+                raise ProofSearchError(err, iterations_used=iteration_count[0])
             left_action, right_action = parsed
 
         _persist_attempt(
