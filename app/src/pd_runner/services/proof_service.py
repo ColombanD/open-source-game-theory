@@ -6,9 +6,13 @@ Output: proven Lean source (str) or raises ProofSearchError
 
 from __future__ import annotations
 
+import json
 import re
+import time
 from dataclasses import dataclass
+from pathlib import Path
 
+from pd_runner.config import load_paths
 from pd_runner.llm.client import AnthropicClient, ToolHandler
 from pd_runner.llm.prompts import build_system_prompt, proof_request_message
 from pd_runner.llm.retrieval import list_known_outcome_theorems, retrieve_few_shots
@@ -44,10 +48,63 @@ class ProofSearchError(RuntimeError):
     pass
 
 
+def _outcomes_dir() -> Path:
+    """Directory where every proof attempt (pass or fail) is persisted."""
+    paths = load_paths()
+    d = paths.app_root / "generated" / "outcomes"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _persist_attempt(
+    request: ProofRequest,
+    *,
+    lean_source: str | None,
+    final_text: str,
+    iterations: int,
+    elapsed_s: float,
+    passed: bool,
+    left_action: str | None,
+    right_action: str | None,
+    error: str | None,
+) -> Path:
+    """Write the proof attempt and metadata sidecar for traceability."""
+    ts = time.strftime("%Y%m%dT%H%M%S")
+    stem = f"{ts}_{request.left_bot}_vs_{request.right_bot}_{'pass' if passed else 'fail'}"
+    out_dir = _outcomes_dir()
+    lean_path = out_dir / f"{stem}.lean"
+    meta_path = out_dir / f"{stem}.json"
+    lean_path.write_text(
+        (lean_source or "-- (agent did not emit a final ```lean code block)\n") + "\n",
+        encoding="utf-8",
+    )
+    meta = {
+        "timestamp": ts,
+        "bot_a": request.left_bot,
+        "bot_b": request.right_bot,
+        "model": request.model,
+        "max_iterations": request.max_iterations,
+        "fuel_requested": request.fuel,
+        "exclude_bots": sorted(request.exclude_bots),
+        "passed": passed,
+        "left_action": left_action,
+        "right_action": right_action,
+        "iterations_used": iterations,
+        "elapsed_seconds": elapsed_s,
+        "error": error,
+        "final_text_tail": final_text[-2000:] if final_text else None,
+    }
+    meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    _log.info("Persisted attempt to %s", lean_path)
+    return lean_path
+
+
 def search_proof(request: ProofRequest) -> ProofResult:
     """Run the agentic proof-search loop for one theorem.
 
     Raises ProofSearchError if the agent fails to produce a verified proof.
+    Every attempt (pass or fail) is persisted to `generated/outcomes/` for
+    traceability — see `_persist_attempt`.
     """
     few_shots = retrieve_few_shots(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
     known = list_known_outcome_theorems(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
@@ -67,7 +124,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
     _log.log(TRACE, "User message:\n%s", user_message)
 
     handler = ToolHandler()
-    register_lean_tools(handler)
+    register_lean_tools(handler, exclude_bots=request.exclude_bots)
 
     client = AnthropicClient(
         system_prompt=system_prompt,
@@ -86,36 +143,66 @@ def search_proof(request: ProofRequest) -> ProofResult:
 
     handler.call = counting_call  # type: ignore[method-assign]
 
-    final_text = client.run(user_message, tool_handler=handler)
+    t0 = time.monotonic()
+    final_text = ""
+    lean_source: str | None = None
+    try:
+        final_text = client.run(user_message, tool_handler=handler)
+        lean_source = _extract_lean_source(final_text)
 
-    lean_source = _extract_lean_source(final_text)
-    if lean_source is None:
-        raise ProofSearchError(
-            f"Agent did not produce a final Lean source for "
-            f"{request.left_bot} vs {request.right_bot}.\n"
-            f"Final response:\n{final_text}"
-        )
-
-    left_action = request.left_action
-    right_action = request.right_action
-    if left_action is None or right_action is None:
-        parsed = _extract_actions_from_source(lean_source)
-        if parsed is None:
-            raise ProofSearchError(
-                f"Could not parse action pair from proven source for "
+        if lean_source is None:
+            err = (
+                f"Agent did not produce a final Lean source for "
                 f"{request.left_bot} vs {request.right_bot}.\n"
-                f"Source:\n{lean_source}"
+                f"Final response:\n{final_text}"
             )
-        left_action, right_action = parsed
+            _persist_attempt(
+                request, lean_source=None, final_text=final_text,
+                iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
+                passed=False, left_action=None, right_action=None, error=err,
+            )
+            raise ProofSearchError(err)
 
-    return ProofResult(
-        left_bot=request.left_bot,
-        right_bot=request.right_bot,
-        left_action=left_action,
-        right_action=right_action,
-        lean_source=lean_source,
-        iterations_used=iteration_count[0],
-    )
+        left_action = request.left_action
+        right_action = request.right_action
+        if left_action is None or right_action is None:
+            parsed = _extract_actions_from_source(lean_source)
+            if parsed is None:
+                err = (
+                    f"Could not parse action pair from proven source for "
+                    f"{request.left_bot} vs {request.right_bot}.\n"
+                    f"Source:\n{lean_source}"
+                )
+                _persist_attempt(
+                    request, lean_source=lean_source, final_text=final_text,
+                    iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
+                    passed=False, left_action=None, right_action=None, error=err,
+                )
+                raise ProofSearchError(err)
+            left_action, right_action = parsed
+
+        _persist_attempt(
+            request, lean_source=lean_source, final_text=final_text,
+            iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
+            passed=True, left_action=left_action, right_action=right_action, error=None,
+        )
+        return ProofResult(
+            left_bot=request.left_bot,
+            right_bot=request.right_bot,
+            left_action=left_action,
+            right_action=right_action,
+            lean_source=lean_source,
+            iterations_used=iteration_count[0],
+        )
+    except ProofSearchError:
+        raise
+    except Exception as exc:
+        _persist_attempt(
+            request, lean_source=lean_source, final_text=final_text,
+            iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
+            passed=False, left_action=None, right_action=None, error=f"{type(exc).__name__}: {exc}",
+        )
+        raise
 
 
 def _extract_actions_from_source(lean_source: str) -> tuple[str, str] | None:

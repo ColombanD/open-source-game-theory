@@ -33,6 +33,14 @@ def build_system_prompt(left_bot: str, right_bot: str) -> str:
     if needs_axioms:
         axioms_src = _read_lean("Axioms.lean")
         axioms_block = f"\n\n-- Axioms.lean\n```lean\n{axioms_src}\n```"
+        try:
+            proofsearch_src = _read_lean("Theorems/ProofSearch.lean")
+            axioms_block += (
+                f"\n\n-- Theorems/ProofSearch.lean (helper lemmas about the proof system)\n"
+                f"```lean\n{proofsearch_src}\n```"
+            )
+        except OSError:
+            pass
 
     return f"""\
 You are an expert Lean 4 proof assistant for the open-source game theory project.

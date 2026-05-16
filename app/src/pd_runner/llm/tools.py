@@ -138,7 +138,7 @@ def _run_lean_proof(lean_source: str, filename_hint: str = "proof_attempt") -> s
     return "\n".join(lines)
 
 
-def _read_library_file(relative_path: str) -> str:
+def _read_library_file(relative_path: str, exclude_bots: frozenset[str] = frozenset()) -> str:
     paths = load_paths()
     target = (paths.lean_engine_dir / "PrisonersDilemma" / relative_path).resolve()
     base = (paths.lean_engine_dir / "PrisonersDilemma").resolve()
@@ -151,9 +151,24 @@ def _read_library_file(relative_path: str) -> str:
         return f"Error: file not found: {relative_path}"
 
     try:
-        return target.read_text(encoding="utf-8")
+        content = target.read_text(encoding="utf-8")
     except OSError as exc:
         return f"Error reading file: {exc}"
+
+    if exclude_bots:
+        lowered = content.lower()
+        stem_lower = target.stem.lower()
+        excluded_lower = {b.lower() for b in exclude_bots}
+        if stem_lower in excluded_lower or any(b in lowered for b in excluded_lower):
+            return (
+                f"Error: access denied — `{relative_path}` mentions one of the bots under "
+                f"evaluation ({', '.join(sorted(exclude_bots))}). "
+                f"To prevent answer leakage during the bot-matrix run, files referencing "
+                f"the target bots cannot be read via this tool. Reason about the bot "
+                f"definitions you were given directly."
+            )
+
+    return content
 
 
 BOT_TOOLS: list[dict[str, Any]] = [
@@ -221,10 +236,17 @@ def _run_lean_build(bot_name: str, lean_source: str) -> str:
     return "\n".join(lines)
 
 
-def register_lean_tools(handler) -> None:
-    """Register the Lean tool implementations into a ToolHandler."""
+def register_lean_tools(handler, exclude_bots: frozenset[str] = frozenset()) -> None:
+    """Register the Lean tool implementations into a ToolHandler.
+
+    `exclude_bots` is forwarded to `read_library_file` so it refuses to read any
+    file whose content references a bot under evaluation (leak prevention).
+    """
     handler.register_fn("run_lean_proof", _run_lean_proof)
-    handler.register_fn("read_library_file", _read_library_file)
+    handler.register_fn(
+        "read_library_file",
+        lambda relative_path: _read_library_file(relative_path, exclude_bots=exclude_bots),
+    )
 
 
 def register_bot_tools(handler) -> None:

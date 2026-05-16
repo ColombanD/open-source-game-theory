@@ -29,6 +29,21 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
     target_names = {left_bot.lower(), right_bot.lower()}
     excluded = {b.lower() for b in exclude_bots} if exclude_bots else set()
 
+    def _mentions_excluded(path: Path) -> bool:
+        """True if the file's name or content references any excluded bot.
+
+        Used to prevent leaking the target proof through few-shots — a theorem
+        file about CupodBot will be named `outcome_CupodBot_vs_X.lean` (stem
+        doesn't equal `cupodbot`) but its content references it.
+        """
+        if path.stem.lower() in excluded:
+            return True
+        try:
+            content = path.read_text(encoding="utf-8").lower()
+        except OSError:
+            return False
+        return any(name in content for name in excluded)
+
     def _score(path: Path) -> int:
         stem = path.stem.lower()
         if stem in target_names:
@@ -39,7 +54,7 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
         return 0
 
     candidates = sorted(
-        (p for p in theorems_dir.glob("*.lean") if p.stem.lower() not in excluded),
+        (p for p in theorems_dir.glob("*.lean") if not _mentions_excluded(p)),
         key=lambda p: (-_score(p), p.name),
     )
 
@@ -69,9 +84,9 @@ def list_known_outcome_theorems(left_bot: str, right_bot: str, exclude_bots: set
     lines: list[str] = []
 
     for thm in _UNIVERSAL_OUTCOME_THEOREMS:
-        if thm.module.lower() in excluded:
-            continue
         bots = {thm.left_bot.name, thm.right_bot.name}
+        if any(b.lower() in excluded for b in bots):
+            continue
         if bots & target:
             lines.append(
                 f"  {thm.name} (module {thm.module}): "
@@ -80,9 +95,9 @@ def list_known_outcome_theorems(left_bot: str, right_bot: str, exclude_bots: set
             )
 
     for thm in _EXISTENTIAL_OUTCOME_THEOREMS:
-        if thm.module.lower() in excluded:
-            continue
         bots = {thm.left_bot.name, thm.right_bot.name}
+        if any(b.lower() in excluded for b in bots):
+            continue
         if bots & target:
             lines.append(
                 f"  {thm.name} (module {thm.module}, existential): "
