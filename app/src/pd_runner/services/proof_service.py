@@ -24,7 +24,7 @@ class ProofRequest:
     right_bot: str
     left_action: str | None = None   # None → agent must discover the outcome
     right_action: str | None = None  # None → agent must discover the outcome
-    fuel: int = 1
+    fuel: int | None = None          # None → agent must pick a suitable fuel
     max_iterations: int = 20
     model: str = "claude-opus-4-7"
     exclude_bots: frozenset[str] = frozenset()
@@ -124,6 +124,18 @@ def _extract_actions_from_source(lean_source: str) -> tuple[str, str] | None:
     if match:
         return match.group(1), match.group(2)
     return None
+
+
+_BOT_DEF_RE = re.compile(r"^\s*def\s+(\w+)\s*:\s*Prog\b", re.MULTILINE)
+
+
+def _find_bot_redefinitions(lean_source: str) -> list[str]:
+    """Return names of any `def X : Prog` declarations in the proof source.
+
+    Proof files must import bots, never redefine them — a redefinition causes a
+    namespace clash with `PDNew.Bots.X` at `lake build` time.
+    """
+    return _BOT_DEF_RE.findall(lean_source)
 
 
 def _extract_lean_source(text: str) -> str | None:

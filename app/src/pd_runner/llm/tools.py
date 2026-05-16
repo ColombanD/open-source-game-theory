@@ -86,6 +86,23 @@ LEAN_TOOLS: list[dict[str, Any]] = [
 # ---------------------------------------------------------------------------
 
 def _run_lean_proof(lean_source: str, filename_hint: str = "proof_attempt") -> str:
+    from pd_runner.services.proof_service import _find_bot_redefinitions
+
+    redefs = _find_bot_redefinitions(lean_source)
+    if redefs:
+        names = ", ".join(redefs)
+        return (
+            "exit_code: 1\n"
+            "--- stdout ---\n(empty)\n"
+            "--- stderr ---\n"
+            f"Rejected before compile: your proof file contains `def {names} : Prog` "
+            f"declaration(s). Proof files must NOT redefine bots — they cause a namespace "
+            f"clash with `PDNew.Bots.{redefs[0]}` at lake build time.\n"
+            f"Fix: remove the `def` block(s) and add an import line "
+            f"`import PrisonersDilemma.Bots.{redefs[0]}` (and similarly for any other bots). "
+            f"Reference the bots by name only."
+        )
+
     paths = load_paths()
     lean_dir = paths.lean_engine_dir
 
