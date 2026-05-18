@@ -12,6 +12,7 @@ _log = get_logger("llm.client")
 
 _DEFAULT_MODEL = "claude-opus-4-7"
 _MAX_TOOL_ITERATIONS = 20
+_DEFAULT_MAX_TOKENS = 16384
 _RETRY_DELAYS = [5, 15, 30, 60]  # seconds between retries on 529
 
 
@@ -41,10 +42,12 @@ class AnthropicClient:
         tools: list[dict[str, Any]] | None = None,
         model: str = _DEFAULT_MODEL,
         max_iterations: int = _MAX_TOOL_ITERATIONS,
+        max_tokens: int = _DEFAULT_MAX_TOKENS,
     ) -> None:
-        self._client = anthropic.Anthropic()
+        self._client = anthropic.Anthropic(timeout=None)
         self.model = model
         self.max_iterations = max_iterations
+        self.max_tokens = max_tokens
         self.tools = tools or []
         # Cache the system prompt — it is long and stable across iterations.
         self._system: list[dict[str, Any]] = [
@@ -75,7 +78,7 @@ class AnthropicClient:
         for _ in range(self.max_iterations):
             kwargs: dict[str, Any] = {
                 "model": self.model,
-                "max_tokens": 16384,
+                "max_tokens": self.max_tokens,
                 "system": self._system,
                 "messages": messages,
                 "thinking": {"type": "adaptive"},

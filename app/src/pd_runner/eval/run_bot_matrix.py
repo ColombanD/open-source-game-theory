@@ -116,13 +116,14 @@ def _load_completed(output_path: Path) -> set[tuple[str, str]]:
 
 
 def _run_pair(
-    bot_a: str, bot_b: str, model: str, max_iterations: int,
+    bot_a: str, bot_b: str, model: str, max_iterations: int, max_tokens: int,
 ) -> MatrixResult:
     tier_a, tier_b = _classify_tier(bot_a), _classify_tier(bot_b)
     req = ProofRequest(
         left_bot=bot_a,
         right_bot=bot_b,
         max_iterations=max_iterations,
+        max_tokens=max_tokens,
         model=model,
         exclude_bots=frozenset({bot_a, bot_b}),
     )
@@ -165,6 +166,8 @@ def main() -> None:
                         help="Also include bots from Bots/LlmGenerations/")
     parser.add_argument("--model", default="claude-opus-4-7")
     parser.add_argument("--max-iterations", type=int, default=20)
+    parser.add_argument("--max-tokens", type=int, default=16384,
+                        help="Max output tokens per API call (default: 16384, Opus 4.7 max: 32000)")
     parser.add_argument("--resume", action="store_true",
                         help="Skip pairs that already have a passing result in --output")
     parser.add_argument("--log-level", default="WARNING",
@@ -198,6 +201,7 @@ def main() -> None:
 
     print(f"Bots ({len(bots)}): {', '.join(bots)}")
     print(f"Mode: {mode}")
+    print(f"Model: {args.model}  |  max_tokens: {args.max_tokens}  |  max_iterations: {args.max_iterations}")
     print(f"Pairs total: {len(pairs)}  |  remaining: {len(remaining)}  |  completed: {len(completed)}")
     print(f"Output: {output_path}")
     if args.dry_run:
@@ -209,7 +213,7 @@ def main() -> None:
     with output_path.open("a", encoding="utf-8") as f:
         for i, (a, b) in enumerate(remaining, start=1):
             print(f"\n[{i}/{len(remaining)}] {a} vs {b} (tier {_classify_tier(a)}x{_classify_tier(b)})")
-            res = _run_pair(a, b, args.model, args.max_iterations)
+            res = _run_pair(a, b, args.model, args.max_iterations, args.max_tokens)
             f.write(json.dumps(asdict(res)) + "\n")
             f.flush()
             status = "PASS" if res.passed else f"FAIL ({res.error_class})"

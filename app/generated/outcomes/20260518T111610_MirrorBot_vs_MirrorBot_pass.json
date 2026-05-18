@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260518T111610",
+  "bot_a": "MirrorBot",
+  "bot_b": "MirrorBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "MirrorBot"
+  ],
+  "passed": true,
+  "left_action": null,
+  "right_action": null,
+  "iterations_used": 3,
+  "elapsed_seconds": 185.33721516599962,
+  "error": null,
+  "final_text_tail": "formally proved this:\n- `play n MirrorBot MirrorBot = none` for all `n`\n- `outcome n MirrorBot MirrorBot = none` for all `n`\n\nTherefore **no theorem of the form `outcome (n + FUEL) MirrorBot MirrorBot = some (.X, .Y)` can be true** for any of the four pairs `(.C,.C)`, `(.C,.D)`, `(.D,.C)`, `(.D,.D)`. The required theorem template is unsatisfiable.\n\nI cannot produce a compiling proof of the requested form because the proposition is false. The best honest output I can give is the divergence proof itself:\n\n```lean\nimport PrisonersDilemma.Bots.MirrorBot\n\nopen PDNew\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\n-- MirrorBot vs MirrorBot diverges: play returns `none` at every fuel level.\n-- Reason: MirrorBot = .sim .opp .self. Evaluating .sim closes p=.opp and\n-- q=.self under (me=MirrorBot, opp=MirrorBot), giving p' = q' = MirrorBot.\n-- The recursive call `eval n MirrorBot MirrorBot MirrorBot` is the same\n-- shape with one less fuel, so the recursion bottoms out at `eval 0 = none`.\ntheorem play_MirrorBot_vs_MirrorBot_none : \u2200 n, play n MirrorBot MirrorBot = none := by\n  intro n\n  induction n with\n  | zero => rfl\n  | succ k ih =>\n    unfold play\n    unfold MirrorBot at *\n    show eval (k+1) (.sim .opp .self) (.sim .opp .self) (.sim .opp .self) = none\n    simp only [eval, Prog.subst]\n    exact ih\n\ntheorem outcome_MirrorBot_vs_MirrorBot_none : \u2200 n, outcome n MirrorBot MirrorBot = none := by\n  intro n\n  simp [outcome, play_MirrorBot_vs_MirrorBot_none n]\n\n-- The requested theorem `llm_outcome_MirrorBot_vs_MirrorBot` cannot be\n-- proved with `some (.X, .Y)` on the RHS for ANY fuel: outcome is uniformly\n-- `none`, so for every choice of (X, Y),\n--   outcome (n + FUEL) MirrorBot MirrorBot = some (.X, .Y)\n-- reduces to `none = some (.X, .Y)`, which is False.\n\nend PDNew.Theorems\n```\n\nThe MirrorBot self-play case is a genuine non-terminating pair (it's the canonical example of mutual simulation deadlock \u2014 each agent waits for the other to act first). There is no valid outcome to prove."
+}

@@ -30,6 +30,7 @@ class ProofRequest:
     right_action: str | None = None  # None → agent must discover the outcome
     fuel: int | None = None          # None → agent must pick a suitable fuel
     max_iterations: int = 20
+    max_tokens: int = 16384
     model: str = "claude-opus-4-7"
     exclude_bots: frozenset[str] = frozenset()
 
@@ -38,8 +39,8 @@ class ProofRequest:
 class ProofResult:
     left_bot: str
     right_bot: str
-    left_action: str
-    right_action: str
+    left_action: str | None   # None when outcome is provably none (non-terminating)
+    right_action: str | None
     lean_source: str
     iterations_used: int
 
@@ -88,6 +89,7 @@ def _persist_attempt(
         "bot_b": request.right_bot,
         "model": request.model,
         "max_iterations": request.max_iterations,
+        "max_tokens": request.max_tokens,
         "fuel_requested": request.fuel,
         "exclude_bots": sorted(request.exclude_bots),
         "passed": passed,
@@ -135,6 +137,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
         tools=LEAN_TOOLS,
         model=request.model,
         max_iterations=request.max_iterations,
+        max_tokens=request.max_tokens,
     )
 
     # Track how many tool calls were made by monkey-patching the handler.
@@ -209,11 +212,22 @@ def search_proof(request: ProofRequest) -> ProofResult:
         raise
 
 
-def _extract_actions_from_source(lean_source: str) -> tuple[str, str] | None:
-    """Parse the action pair from a proven theorem statement like `= some (.C, .D)`."""
+_NONE_OUTCOME_RE = re.compile(r"outcome\s+\w.*?=\s*none\b", re.DOTALL)
+
+
+def _extract_actions_from_source(lean_source: str) -> tuple[str | None, str | None] | None:
+    """Parse the action pair from a proven theorem statement.
+
+    Returns:
+        (action_left, action_right) for `= some (.X, .Y)` theorems.
+        (None, None) for `= none` theorems (provably non-terminating pairs).
+        None if no recognizable outcome pattern is found.
+    """
     match = re.search(r"=\s*some\s*\(\.([CD]),\s*\.([CD])\)", lean_source)
     if match:
         return match.group(1), match.group(2)
+    if _NONE_OUTCOME_RE.search(lean_source):
+        return None, None
     return None
 
 

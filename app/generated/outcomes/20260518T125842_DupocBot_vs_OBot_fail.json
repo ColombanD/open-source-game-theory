@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260518T125842",
+  "bot_a": "DupocBot",
+  "bot_b": "OBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DupocBot",
+    "OBot"
+  ],
+  "passed": false,
+  "left_action": null,
+  "right_action": null,
+  "iterations_used": 6,
+  "elapsed_seconds": 405.0282157500005,
+  "error": "Agent did not produce a final Lean source for DupocBot vs OBot.\nFinal response:\n[stop_reason=max_tokens]\n--- thinking ---\n",
+  "final_text_tail": "[stop_reason=max_tokens]\n--- thinking ---\n"
+}
