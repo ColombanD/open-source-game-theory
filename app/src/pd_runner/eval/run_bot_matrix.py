@@ -55,6 +55,7 @@ class MatrixResult:
     chosen_fuel: int | None
     iterations: int
     wall_clock_s: float
+    max_tokens: int = 0
     error_class: str | None = None
     error_msg: str | None = None
 
@@ -140,6 +141,7 @@ def _run_pair(
             chosen_fuel=_extract_chosen_fuel(proof.lean_source),
             iterations=proof.iterations_used,
             wall_clock_s=elapsed,
+            max_tokens=max_tokens,
         )
     except (ProofSearchError, RuntimeError) as exc:
         elapsed = time.monotonic() - t0
@@ -151,6 +153,7 @@ def _run_pair(
             left_action=None, right_action=None, chosen_fuel=None,
             iterations=iters,
             wall_clock_s=elapsed,
+            max_tokens=max_tokens,
             error_class=type(exc).__name__,
             error_msg=str(exc)[:500],
         )
