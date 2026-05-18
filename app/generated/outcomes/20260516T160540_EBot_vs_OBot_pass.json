@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T160540",
+  "bot_a": "EBot",
+  "bot_b": "OBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "EBot",
+    "OBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "D",
+  "iterations_used": 2,
+  "elapsed_seconds": 129.64869641599944,
+  "error": null,
+  "final_text_tail": "Compiles cleanly with zero errors and zero warnings.\n\n```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Bots.OBot\nimport PrisonersDilemma.Dynamics\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_EBot_vs_OBot (n : Nat) :\n    outcome (n+8) EBot OBot = some (.C, .D) := by\n  have h1 : (Action.D == Action.C) = false := rfl\n  have h2 : (Action.C == Action.C) = true := rfl\n  simp [outcome, play, eval, EBot, OBot, Prog.subst, DefectBot, CooperateBot, MirrorBot, h1, h2]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

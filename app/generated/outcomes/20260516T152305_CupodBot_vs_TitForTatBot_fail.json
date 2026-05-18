@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T152305",
+  "bot_a": "CupodBot",
+  "bot_b": "TitForTatBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CupodBot",
+    "TitForTatBot"
+  ],
+  "passed": false,
+  "left_action": null,
+  "right_action": null,
+  "iterations_used": 2,
+  "elapsed_seconds": 189.96671987499576,
+  "error": "Agent did not produce a final Lean source for CupodBot vs TitForTatBot.\nFinal response:\n[stop_reason=max_tokens]\n--- thinking ---\n",
+  "final_text_tail": "[stop_reason=max_tokens]\n--- thinking ---\n"
+}

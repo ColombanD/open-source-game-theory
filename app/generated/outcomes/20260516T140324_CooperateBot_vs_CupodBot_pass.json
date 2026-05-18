@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T140324",
+  "bot_a": "CooperateBot",
+  "bot_b": "CupodBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CooperateBot",
+    "CupodBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 1,
+  "elapsed_seconds": 48.51197108299675,
+  "error": null,
+  "final_text_tail": "Compiles cleanly with zero errors and zero warnings.\n\n```lean\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.CupodBot\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Axioms\nimport PrisonersDilemma.Theorems.ProofSearch\n\nopen PDNew\nopen PDNew.Axioms\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\ntheorem interp_CooperateBot_plays_D_false (k : Nat) :\n    \u00ac (Formula.plays CooperateBot (CupodBot k) .D).interp := by\n  intro \u27e8n, h\u27e9\n  cases n with\n  | zero => simp [play, eval] at h\n  | succ m => simp [play, eval, CooperateBot] at h\n\ntheorem proofSearch_false_CooperateBot_plays_D (k : Nat) :\n    proofSearch k (.plays CooperateBot (CupodBot k) .D) = false := by\n  cases h : proofSearch k (.plays CooperateBot (CupodBot k) .D) with\n  | true => exact absurd (proofSearch_sound _ _ h) (interp_CooperateBot_plays_D_false k)\n  | false => rfl\n\ntheorem llm_outcome_CooperateBot_vs_CupodBot (n k : Nat) :\n    outcome (n+2) CooperateBot (CupodBot k) = some (.C, .C) := by\n  have hG := proofSearch_false_CooperateBot_plays_D k\n  have hA : play (n+2) CooperateBot (CupodBot k) = some .C := rfl\n  have hB : play (n+2) (CupodBot k) CooperateBot = some .C := by\n    show eval (n+2) (CupodBot k) CooperateBot (CupodBot k) = some .C\n    unfold CupodBot at hG \u22a2\n    simp [eval, Prog.subst, Formula.subst, hG]\n  simp [outcome, hA, hB]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

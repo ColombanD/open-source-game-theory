@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260516T160832",
+  "bot_a": "MirrorBot",
+  "bot_b": "MirrorBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "MirrorBot"
+  ],
+  "passed": false,
+  "left_action": null,
+  "right_action": null,
+  "iterations_used": 2,
+  "elapsed_seconds": 112.07132204200025,
+  "error": "Could not parse action pair from proven source for MirrorBot vs MirrorBot.\nSource:\nimport PrisonersDilemma.Bots.MirrorBot\n\nopen PDNew\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\n/-- MirrorBot vs MirrorBot never terminates: both sides try to simulate the\n    opponent against itself, recursing into the same configuration with one\n    less unit of fuel. Hence `play` always returns `none`, and so does\n    `outcome`. -/\ntheorem outcome_MirrorBot_MirrorBot_none (n : Nat) :\n    outcome n MirrorBot MirrorBot = none := by\n  have h : \u2200 k, play k MirrorBot MirrorBot = none := by\n    intro k\n    induction k with\n    | zero => rfl\n    | succ k ih =>\n        show eval (k+1) MirrorBot MirrorBot MirrorBot = none\n        unfold MirrorBot\n        simp [eval, Prog.subst]\n        exact ih\n  simp [outcome, h]\n\n/-- Corollary: the requested theorem template\n    `\u2200 n, outcome (n+FUEL) MirrorBot MirrorBot = some (L, R)`\n    is unsatisfiable for every choice of FUEL, L, R. -/\nexample (FUEL : Nat) (L R : Action) :\n    \u00ac \u2200 n, outcome (n + FUEL) MirrorBot MirrorBot = some (L, R) := by\n  intro h\n  have := h 0\n  rw [outcome_MirrorBot_MirrorBot_none] at this\n  cases this\n\nend PDNew.Theorems",
+  "final_text_tail": "The requested theorem **cannot be proved** because it is false. I have formally proven the opposite: `outcome n MirrorBot MirrorBot = none` for every `n`, and consequently no `some (L, R)` outcome holds for any fuel choice.\n\nMirrorBot vs MirrorBot is a genuine non-terminating mutual simulation: each side tries to simulate the opponent against itself, recursing into the same configuration with one less unit of fuel until fuel is exhausted and `none` is returned.\n\nHere is the formally-verified evidence (compiles cleanly):\n\n```lean\nimport PrisonersDilemma.Bots.MirrorBot\n\nopen PDNew\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\n/-- MirrorBot vs MirrorBot never terminates: both sides try to simulate the\n    opponent against itself, recursing into the same configuration with one\n    less unit of fuel. Hence `play` always returns `none`, and so does\n    `outcome`. -/\ntheorem outcome_MirrorBot_MirrorBot_none (n : Nat) :\n    outcome n MirrorBot MirrorBot = none := by\n  have h : \u2200 k, play k MirrorBot MirrorBot = none := by\n    intro k\n    induction k with\n    | zero => rfl\n    | succ k ih =>\n        show eval (k+1) MirrorBot MirrorBot MirrorBot = none\n        unfold MirrorBot\n        simp [eval, Prog.subst]\n        exact ih\n  simp [outcome, h]\n\n/-- Corollary: the requested theorem template\n    `\u2200 n, outcome (n+FUEL) MirrorBot MirrorBot = some (L, R)`\n    is unsatisfiable for every choice of FUEL, L, R. -/\nexample (FUEL : Nat) (L R : Action) :\n    \u00ac \u2200 n, outcome (n + FUEL) MirrorBot MirrorBot = some (L, R) := by\n  intro h\n  have := h 0\n  rw [outcome_MirrorBot_MirrorBot_none] at this\n  cases this\n\nend PDNew.Theorems\n```\n\nThe intended outcome among `{(C,C), (C,D), (D,C), (D,D)}` does not exist \u2014 the actual outcome is `none` (divergence). Since the rules forbid `sorry`/`admit` and the prescribed theorem statement is genuinely false, I cannot produce a `llm_outcome_MirrorBot_vs_MirrorBot` proof. The task as stated is unsatisfiable."
+}

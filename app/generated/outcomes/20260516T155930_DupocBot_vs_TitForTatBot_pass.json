@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T155930",
+  "bot_a": "DupocBot",
+  "bot_b": "TitForTatBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DupocBot",
+    "TitForTatBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 7,
+  "elapsed_seconds": 355.1843111249982,
+  "error": null,
+  "final_text_tail": "4) TitForTatBot (DupocBot k) = some .C := by\n    intro k hk m\n    have hps := hCB_for k hk\n    show eval (m+4) TitForTatBot (DupocBot k) TitForTatBot = some .C\n    unfold TitForTatBot DupocBot at hps \u22a2\n    simp [eval, Prog.subst, Formula.subst, hps]\n    rfl\n\n  have hTFT_s0 : \u2203 m, play m TitForTatBot (DupocBot s\u2080) = some .C :=\n    \u27e80+4, hTFT_at s\u2080 (Nat.le_refl _) 0\u27e9\n  obtain \u27e8w\u2081, hw\u2081\u27e9 := witness_complete_plays TitForTatBot (DupocBot s\u2080) .C hTFT_s0\n  let s\u2081 : Nat := witnessChars w\u2081\n\n  let k : Nat := max s\u2080 s\u2081\n  refine \u27e8k, ?_\u27e9\n  have hk0 : s\u2080 \u2264 k := Nat.le_max_left s\u2080 s\u2081\n  have hk1 : s\u2081 \u2264 k := Nat.le_max_right s\u2080 s\u2081\n\n  have hB : play (n+4) TitForTatBot (DupocBot k) = some .C := hTFT_at k hk0 n\n\n  have hPS_TFT : proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true := by\n    obtain \u27e8w', hw', hwk'\u27e9 :=\n      witness_transport_family\n        (fun i => .plays TitForTatBot (DupocBot i) .C)\n        s\u2080 k hk0 w\u2081 hw\u2081 hk1\n    exact (proofSearch_spec k _).2 \u27e8w', hw', hwk'\u27e9\n\n  have hA : play (n+4) (DupocBot k) TitForTatBot = some .C := by\n    show eval (n+4) (DupocBot k) TitForTatBot (DupocBot k) = some .C\n    unfold DupocBot at hPS_TFT \u22a2\n    simp [eval, Prog.subst, Formula.subst, hPS_TFT]\n\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PDNew.Theorems\n```\n\nOutcome: **(C, C)** \u2014 the existential is necessary because `DupocBot k` requires its proof-search budget `k` to be large enough. The argument:\n1. `(.bot CooperateBot)` plays C trivially, so it has a witness of some size `s\u2080`. Via `witness_transport_family`, for any `k \u2265 s\u2080`, the formula `.plays (.bot CB) (DupocBot k) C` is provable with budget `k`, so `DupocBot k` cooperates against `(.bot CB)`.\n2. Therefore `TitForTatBot`'s CooperateBot-probe sees DupocBot cooperate, and TFT plays C against `DupocBot k`.\n3. By completeness, this play gives a witness of size `s\u2081` for `.plays TFT (DupocBot s\u2080) C`. Transport again to `DupocBot k` for `k \u2265 max(s\u2080,s\u2081)`, so `DupocBot k`'s search succeeds and it plays C against TFT.\n\nPROOF COMPLETE"
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T153608",
+  "bot_a": "DefectBot",
+  "bot_b": "TitForTatBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DefectBot",
+    "TitForTatBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 2,
+  "elapsed_seconds": 29.34356200000184,
+  "error": null,
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Bots.TitForTatBot\nimport PrisonersDilemma.Dynamics\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_DefectBot_vs_TitForTatBot (n : Nat) :\n    outcome (n+3) DefectBot TitForTatBot = some (.D, .D) := by\n  simp [outcome, play, eval, TitForTatBot, DefectBot, Prog.subst]\n  decide\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

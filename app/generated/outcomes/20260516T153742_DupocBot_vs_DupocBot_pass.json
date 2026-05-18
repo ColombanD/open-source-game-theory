@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260516T153742",
+  "bot_a": "DupocBot",
+  "bot_b": "DupocBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DupocBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 1,
+  "elapsed_seconds": 94.36619462499948,
+  "error": null,
+  "final_text_tail": "The proof compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.DupocBot\nimport PrisonersDilemma.Axioms\nimport PrisonersDilemma.Theorems.ProofSearch\n\nopen PDNew\nopen PDNew.Axioms\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\nprivate theorem dupoc_loeb_premise (k : Nat) :\n    \u2203 m, proofSearch m\n      (.impl (.box k (.plays (DupocBot k) (DupocBot k) .C))\n             (.plays (DupocBot k) (DupocBot k) .C)) = true := by\n  have h := proof_system_verifies_search_branch\n              k (.plays .opp .self .C) .C .D\n              (DupocBot k) (DupocBot k) rfl\n  simpa [Formula.subst, Prog.subst] using h\n\ntheorem llm_outcome_DupocBot_vs_DupocBot :\n    \u2203 k\u2082, \u2200 k, k\u2082 < k \u2192\n      \u2203 fuel, outcome fuel (DupocBot k) (DupocBot k) = some (.C, .C) := by\n  let \u03c6 : Nat \u2192 Formula := fun k => .plays (DupocBot k) (DupocBot k) .C\n  have hMono : \u2200 a b : Nat, a \u2264 b \u2192 id a \u2264 id b := fun _ _ h => h\n  have hLog : \u2203 c kHat, c > 0 \u2227 \u2200 k, k > kHat \u2192 id k > c * Nat.log2 k := by\n    refine \u27e81, 0, Nat.zero_lt_one, ?_\u27e9\n    intro k hk\n    have hlog : Nat.log2 k < k := by\n      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]\n      exact Nat.lt_two_pow_self\n    simpa using hlog\n  have hLoeb :\n      \u2200 k, k > 0 \u2192\n        \u2203 m, proofSearch m (.impl (.box (id k) (\u03c6 k)) (\u03c6 k)) = true := by\n    intro k _\n    simpa using dupoc_loeb_premise k\n  obtain \u27e8k\u2082, hk\u2082\u27e9 := PBLT \u03c6 id 0 hMono hLog hLoeb\n  refine \u27e8k\u2082, ?_\u27e9\n  intro k hk\n  obtain \u27e8m, hm\u27e9 := hk\u2082 k hk\n  have hInterp : (\u03c6 k).interp := proofSearch_sound m (\u03c6 k) hm\n  obtain \u27e8n, hn\u27e9 := hInterp\n  refine \u27e8n, ?_\u27e9\n  simp [outcome, hn]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

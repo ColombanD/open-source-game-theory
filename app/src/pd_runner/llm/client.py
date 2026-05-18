@@ -75,10 +75,11 @@ class AnthropicClient:
         for _ in range(self.max_iterations):
             kwargs: dict[str, Any] = {
                 "model": self.model,
-                "max_tokens": 8192,
+                "max_tokens": 16384,
                 "system": self._system,
                 "messages": messages,
                 "thinking": {"type": "adaptive"},
+                "output_config": {"effort": "high"},
             }
             if self.tools:
                 kwargs["tools"] = self.tools
@@ -93,6 +94,10 @@ class AnthropicClient:
                 _log.debug("Assistant:\n%s", assistant_text)
 
             if response.stop_reason == "end_turn":
+                if not assistant_text:
+                    # Empty text but the turn ended — preserve thinking/tool blocks
+                    # for post-mortem so the sidecar isn't useless.
+                    return _serialize_final_content(response.content, response.stop_reason)
                 return assistant_text
 
             if response.stop_reason == "tool_use":
@@ -116,8 +121,9 @@ class AnthropicClient:
                 messages.append({"role": "user", "content": tool_results})
                 continue
 
-            # Unexpected stop reason — return whatever text exists.
-            return _extract_text(response.content)
+            # Unexpected stop reason — surface a structured dump so callers can
+            # see what blocks came back and why the loop exited.
+            return _serialize_final_content(response.content, response.stop_reason)
 
         raise RuntimeError(
             f"Proof search did not converge within {self.max_iterations} tool-use iterations"
@@ -126,6 +132,29 @@ class AnthropicClient:
 
 def _extract_text(content: list[Any]) -> str:
     return "\n".join(block.text for block in content if hasattr(block, "text") and block.text)
+
+
+def _serialize_final_content(content: list[Any], stop_reason: str | None) -> str:
+    """Human-readable dump of every block in a final assistant turn.
+
+    Used when the turn ends without a text block (e.g. only thinking + tool_use
+    or a refusal) so the saved sidecar still tells us what the model did.
+    """
+    parts: list[str] = [f"[stop_reason={stop_reason}]"]
+    for block in content:
+        btype = getattr(block, "type", type(block).__name__)
+        if btype == "text":
+            parts.append(f"--- text ---\n{getattr(block, 'text', '')}")
+        elif btype == "thinking":
+            thinking = getattr(block, "thinking", "") or getattr(block, "text", "")
+            parts.append(f"--- thinking ---\n{thinking}")
+        elif btype == "tool_use":
+            name = getattr(block, "name", "?")
+            tool_input = getattr(block, "input", {})
+            parts.append(f"--- tool_use ({name}) ---\n{_fmt_input(tool_input)}")
+        else:
+            parts.append(f"--- {btype} ---\n{block!r}")
+    return "\n".join(parts)
 
 
 def _fmt_input(tool_input: dict[str, Any]) -> str:

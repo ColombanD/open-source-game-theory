@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T140657",
+  "bot_a": "CooperateBot",
+  "bot_b": "MirrorBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CooperateBot",
+    "MirrorBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 1,
+  "elapsed_seconds": 16.510235583002213,
+  "error": null,
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.MirrorBot\n\nopen PDNew\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_CooperateBot_vs_MirrorBot (n : Nat) :\n    outcome (n+3) CooperateBot MirrorBot = some (.C, .C) := by\n  have hA : play (n+3) CooperateBot MirrorBot = some .C := rfl\n  have hB : play (n+3) MirrorBot CooperateBot = some .C := by\n    show eval (n+3) MirrorBot CooperateBot MirrorBot = some .C\n    simp [eval, MirrorBot, Prog.subst, CooperateBot]\n  simp [outcome, hA, hB]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

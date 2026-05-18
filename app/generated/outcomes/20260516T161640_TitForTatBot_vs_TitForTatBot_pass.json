@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260516T161640",
+  "bot_a": "TitForTatBot",
+  "bot_b": "TitForTatBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "TitForTatBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 2,
+  "elapsed_seconds": 56.75239870900259,
+  "error": null,
+  "final_text_tail": "Compiled cleanly with zero errors and warnings.\n\n```lean\nimport PrisonersDilemma.Bots.TitForTatBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Theorems.Helpers\n\nopen PDNew\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_TitForTatBot_vs_TitForTatBot (n : Nat) :\n    outcome (n+7) TitForTatBot TitForTatBot = some (.C, .C) := by\n  have hGuard : eval (n + 6) TitForTatBot TitForTatBot (.sim .opp (.bot CooperateBot)) = some .C := by\n    simp [eval, Prog.subst, TitForTatBot, CooperateBot]; decide\n  have hA : play (n + 7) TitForTatBot TitForTatBot = some .C := by\n    have hPlay := play_ite_from_guard\n      n 6 TitForTatBot TitForTatBot (.sim .opp (.bot CooperateBot))\n      (.const Action.C) (.const Action.D)\n      Action.C Action.C\n      (by rfl) hGuard\n    simpa [eval] using hPlay\n  simp [outcome, hA]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

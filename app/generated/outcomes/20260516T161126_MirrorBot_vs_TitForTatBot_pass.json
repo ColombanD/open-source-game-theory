@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T161126",
+  "bot_a": "MirrorBot",
+  "bot_b": "TitForTatBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "MirrorBot",
+    "TitForTatBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 2,
+  "elapsed_seconds": 66.69580258300266,
+  "error": null,
+  "final_text_tail": "Compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.MirrorBot\nimport PrisonersDilemma.Bots.TitForTatBot\nimport PrisonersDilemma.Bots.CooperateBot\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_MirrorBot_vs_TitForTatBot (n : Nat) :\n    outcome (n+6) MirrorBot TitForTatBot = some (.C, .C) := by\n  unfold outcome play\n  simp [MirrorBot, TitForTatBot, CooperateBot, eval, Prog.subst]\n  decide\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

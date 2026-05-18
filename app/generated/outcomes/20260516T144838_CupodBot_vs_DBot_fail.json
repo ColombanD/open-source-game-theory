@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T144838",
+  "bot_a": "CupodBot",
+  "bot_b": "DBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CupodBot",
+    "DBot"
+  ],
+  "passed": false,
+  "left_action": null,
+  "right_action": null,
+  "iterations_used": 7,
+  "elapsed_seconds": 309.3472627919982,
+  "error": "Agent did not produce a final Lean source for CupodBot vs DBot.\nFinal response:\n[stop_reason=max_tokens]\n--- thinking ---\n",
+  "final_text_tail": "[stop_reason=max_tokens]\n--- thinking ---\n"
+}

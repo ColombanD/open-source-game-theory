@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260516T143540",
+  "bot_a": "CupodBot",
+  "bot_b": "CupodBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CupodBot"
+  ],
+  "passed": false,
+  "left_action": null,
+  "right_action": null,
+  "iterations_used": 0,
+  "elapsed_seconds": 0.6845690000045579,
+  "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': '\"thinking.type.enabled\" is not supported for this model. Use \"thinking.type.adaptive\" and \"output_config.effort\" to control thinking behavior.'}, 'request_id': 'req_011Cb6Ft1VaaaahHmL2KDivh'}",
+  "final_text_tail": null
+}

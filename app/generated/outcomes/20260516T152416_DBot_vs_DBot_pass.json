@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260516T152416",
+  "bot_a": "DBot",
+  "bot_b": "DBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 1,
+  "elapsed_seconds": 71.08044704200438,
+  "error": null,
+  "final_text_tail": "Compiles cleanly with no errors or warnings.\n\n```lean\nimport PrisonersDilemma.Bots.DBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Theorems.Helpers\n\nopen PDNew\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_DBot_vs_DBot (n : Nat) :\n    outcome (n + 7) DBot DBot = some (.D, .D) := by\n  have hGuard : eval (n + 6) DBot DBot (.sim .opp (.bot DefectBot)) = some .C := by\n    simp [eval, Prog.subst, DBot, DefectBot]; decide\n  have hA : play (n + 7) DBot DBot = some .D := by\n    have hPlay := play_ite_from_guard\n        n 6 DBot DBot (.sim .opp (.bot DefectBot))\n        (.const Action.D) (.const Action.C)\n        Action.C Action.C\n        (by rfl) hGuard\n    simpa [eval] using hPlay\n  exact outcome_of_plays _ _ _ _ _ hA hA\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

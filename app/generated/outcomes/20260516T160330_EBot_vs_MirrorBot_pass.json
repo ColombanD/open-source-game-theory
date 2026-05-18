@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T160330",
+  "bot_a": "EBot",
+  "bot_b": "MirrorBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "EBot",
+    "MirrorBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 2,
+  "elapsed_seconds": 77.15314904100524,
+  "error": null,
+  "final_text_tail": "Compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Bots.MirrorBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_EBot_vs_MirrorBot (n : Nat) :\n    outcome (n+7) EBot MirrorBot = some (.C, .C) := by\n  simp [outcome, play, eval, EBot, MirrorBot, CooperateBot, DefectBot, Prog.subst,\n        show (Action.D == Action.C) = false from rfl,\n        show (Action.C == Action.C) = true from rfl]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}
