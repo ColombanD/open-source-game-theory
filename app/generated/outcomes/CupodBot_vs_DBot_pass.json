@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260602T132530",
+  "bot_a": "CupodBot",
+  "bot_b": "DBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CupodBot",
+    "DBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 8,
+  "elapsed_seconds": 306.75645516699296,
+  "error": null,
+  "final_text_tail": "rmula.subst, hfalse]\n\nprivate theorem play_DBot_vs_CupodBot_small (k : Nat) :\n    play 0 DBot (CupodBot k) = none ∧\n    play 1 DBot (CupodBot k) = none ∧\n    play 2 DBot (CupodBot k) = none ∧\n    play 3 DBot (CupodBot k) = none := by\n  refine ⟨rfl, ?_, ?_, ?_⟩\n  · show eval 1 DBot (CupodBot k) DBot = none\n    simp [eval, DBot]\n  · show eval 2 DBot (CupodBot k) DBot = none\n    simp [eval, DBot]\n  · show eval 3 DBot (CupodBot k) DBot = none\n    unfold DBot CupodBot\n    simp [eval, Prog.subst, Formula.subst]\n\nprivate theorem DBot_never_plays_D_vs_CupodBot_aux (k : Nat)\n    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :\n    ¬ ∃ n, play n DBot (CupodBot k) = some .D := by\n  rintro ⟨n, hn⟩\n  obtain ⟨h0, h1, h2, h3⟩ := play_DBot_vs_CupodBot_small k\n  match n, hn with\n  | 0, hn => rw [h0] at hn; cases hn\n  | 1, hn => rw [h1] at hn; cases hn\n  | 2, hn => rw [h2] at hn; cases hn\n  | 3, hn => rw [h3] at hn; cases hn\n  | n+4, hn =>\n    have h := DBot_plays_C_against_CupodBot_aux k n hk\n    rw [h] at hn; cases hn\n\nprivate theorem cupod_DBot_search_fails_aux (k : Nat)\n    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :\n    proofSearch k (.plays DBot (CupodBot k) .D) = false := by\n  cases h : proofSearch k (.plays DBot (CupodBot k) .D) with\n  | false => rfl\n  | true =>\n    exfalso\n    have hi := proofSearch_sound k _ h\n    exact DBot_never_plays_D_vs_CupodBot_aux k hk hi\n\ntheorem llm_outcome_CupodBot_vs_DBot :\n    ∃ k, ∀ n, outcome (n + 4) (CupodBot k) DBot = some (.C, .C) := by\n  obtain ⟨k, hk⟩ := cupod_search_succeeds_aux\n  refine ⟨k, fun n => ?_⟩\n  have hFalse := cupod_DBot_search_fails_aux k hk\n  have hA : play (n + 4) (CupodBot k) DBot = some .C := by\n    have := CupodBot_plays_C_against_DBot_aux k (n + 2) hFalse\n    simpa [Nat.add_assoc] using this\n  have hB : play (n + 4) DBot (CupodBot k) = some .C :=\n    DBot_plays_C_against_CupodBot_aux k n hk\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

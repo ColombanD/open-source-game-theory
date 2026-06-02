@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260602T133101",
+  "bot_a": "CupodBot",
+  "bot_b": "DupocBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CupodBot",
+    "DupocBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "D",
+  "iterations_used": 12,
+  "elapsed_seconds": 330.9264749169961,
+  "error": null,
+  "final_text_tail": ".\n\n```lean\nimport PrisonersDilemma.Bots.CupodBot\nimport PrisonersDilemma.Bots.DupocBot\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Axioms\nimport PrisonersDilemma.Theorems.Helpers\nimport PrisonersDilemma.Theorems.ProofSearch\n\nopen PDNew\nopen PDNew.Bots\nopen PDNew.Axioms\n\nnamespace PDNew.Theorems\n\n/-- CupodBot vs DupocBot: the matchup's outcome is oracle-dependent (three of\nthe four action pairs are consistent with the axioms; only (D,C) is ruled out\nby soundness). When neither bot's bounded proof search succeeds, CupodBot\nfalls through to cooperate and DupocBot falls through to defect, giving\n(C, D). The two `proofSearch _ = false` hypotheses make this assumption\nexplicit. -/\ntheorem llm_outcome_CupodBot_vs_DupocBot (n k₁ k₂ : Nat)\n    (h₁ : proofSearch k₁\n      ((Formula.plays Prog.opp Prog.self Action.D).subst (CupodBot k₁) (DupocBot k₂)) = false)\n    (h₂ : proofSearch k₂\n      ((Formula.plays Prog.opp Prog.self Action.C).subst (DupocBot k₂) (CupodBot k₁)) = false) :\n    outcome (n+2) (CupodBot k₁) (DupocBot k₂) = some (.C, .D) := by\n  have hA : play (n+2) (CupodBot k₁) (DupocBot k₂) = some .C := by\n    show eval (n+2) (CupodBot k₁) (DupocBot k₂) (CupodBot k₁) = some .C\n    have h1' : proofSearch k₁\n        ((Formula.plays Prog.opp Prog.self Action.D).subst\n          (Prog.search k₁ (Formula.plays Prog.opp Prog.self Action.D) (Prog.const Action.D) (Prog.const Action.C))\n          (DupocBot k₂)) = false := h₁\n    unfold CupodBot\n    simp only [eval, h1']\n    rfl\n  have hB : play (n+2) (DupocBot k₂) (CupodBot k₁) = some .D := by\n    show eval (n+2) (DupocBot k₂) (CupodBot k₁) (DupocBot k₂) = some .D\n    have h2' : proofSearch k₂\n        ((Formula.plays Prog.opp Prog.self Action.C).subst\n          (Prog.search k₂ (Formula.plays Prog.opp Prog.self Action.C) (Prog.const Action.C) (Prog.const Action.D))\n          (CupodBot k₁)) = false := h₂\n    unfold DupocBot\n    simp only [eval, h2']\n    rfl\n  simp [outcome, hA, hB]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}
