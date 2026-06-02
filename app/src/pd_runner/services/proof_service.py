@@ -100,7 +100,7 @@ def _persist_attempt(
         "error": error,
         "final_text_tail": final_text[-2000:] if final_text else None,
     }
-    meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     _log.info("Persisted attempt to %s", lean_path)
     return lean_path
 
