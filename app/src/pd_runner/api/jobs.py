@@ -27,6 +27,7 @@ class Job:
     bots_accepted: asyncio.Event = field(default_factory=asyncio.Event)
     proof_accepted: asyncio.Event = field(default_factory=asyncio.Event)
     rejected: bool = False  # True if user rejected at either gate
+    stop_after_bots: bool = False  # True if user accepted bots but wants to skip the proof step
 
     result: Optional[PipelineResult] = None
     error: Optional[str] = None

@@ -47,14 +47,24 @@ def _resolve_bot(name: str, strategy: str, resolution: BotConflictResolution | N
 
 async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
     loop = asyncio.get_event_loop()
+    # In bot-writer-only mode (no bot_b), force stop_after_bots so the pipeline
+    # never tries to prove an outcome with a missing second bot.
+    bots_only_mode = req.bot_b is None
+    if bots_only_mode:
+        job.stop_after_bots = True
 
-    def _generate_bots() -> tuple[BotResult, BotResult]:
+    def _generate_bots() -> tuple[BotResult, BotResult | None]:
         bot_a = _resolve_bot(req.bot_a.name, req.bot_a.strategy, req.bot_a.conflict_resolution, req.model, req.max_iterations)
+        if req.bot_b is None:
+            return bot_a, None
         bot_b = _resolve_bot(req.bot_b.name, req.bot_b.strategy, req.bot_b.conflict_resolution, req.model, req.max_iterations)
         return bot_a, bot_b
 
-    def _write_bots(bot_a: BotResult, bot_b: BotResult) -> None:
-        for bot, spec in ((bot_a, req.bot_a), (bot_b, req.bot_b)):
+    def _write_bots(bot_a: BotResult, bot_b: BotResult | None) -> None:
+        pairs = [(bot_a, req.bot_a)]
+        if bot_b is not None and req.bot_b is not None:
+            pairs.append((bot_b, req.bot_b))
+        for bot, spec in pairs:
             overwrite = spec.conflict_resolution == BotConflictResolution.overwrite
             try:
                 write_bot_to_library(bot, human_accept=False, dry_run=False, overwrite=overwrite)
@@ -63,6 +73,7 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
                     raise
 
     def _prove() -> ProofResult:
+        assert req.bot_b is not None  # guarded by stop_after_bots in bots-only mode
         return search_proof(ProofRequest(
             left_bot=req.bot_a.name,
             right_bot=req.bot_b.name,
@@ -78,9 +89,13 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
                 raise
 
     try:
-        # --- Step 1: Generate both bots ---
+        # --- Step 1: Generate bots (one or two depending on mode) ---
         job.status = JobStatus.generating_bots
-        job.step = f"Generating {req.bot_a.name} and {req.bot_b.name}..."
+        if bots_only_mode:
+            job.step = f"Generating {req.bot_a.name}..."
+        else:
+            assert req.bot_b is not None
+            job.step = f"Generating {req.bot_a.name} and {req.bot_b.name}..."
         bot_a, bot_b = await loop.run_in_executor(None, _generate_bots)
 
         # --- Gate 1: Pause for human to review and accept bots ---
@@ -100,7 +115,23 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
         job.step = "Writing bots to library..."
         await loop.run_in_executor(None, lambda: _write_bots(bot_a, bot_b))
 
+        # If the user asked to stop after accepting the bots, finalise now and skip proof.
+        if job.stop_after_bots:
+            job.status = JobStatus.done
+            job.step = None
+            job.result = PipelineResult(
+                bot_a_name=req.bot_a.name,
+                bot_a_source=bot_a.lean_source,
+                bot_b_name=(req.bot_b.name if req.bot_b is not None else None),
+                bot_b_source=(bot_b.lean_source if bot_b is not None else None),
+                left_action=None,
+                right_action=None,
+                proof_source=None,
+            )
+            return
+
         # --- Step 3: Prove outcome ---
+        assert req.bot_b is not None  # bots_only_mode would have returned above
         job.step = f"Proving outcome: {req.bot_a.name} vs {req.bot_b.name}..."
         proof = await loop.run_in_executor(None, _prove)
 
@@ -121,6 +152,7 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
 
         job.status = JobStatus.done
         job.step = None
+        assert req.bot_b is not None and bot_b is not None  # full-pipeline path
         job.result = PipelineResult(
             bot_a_name=req.bot_a.name,
             bot_a_source=bot_a.lean_source,

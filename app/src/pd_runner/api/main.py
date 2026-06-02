@@ -30,7 +30,8 @@ async def index() -> HTMLResponse:
 def _unresolved_conflicts(req: PipelineRequest) -> list[BotConflict]:
     """Return conflicts for bots that already exist and have no resolution set."""
     conflicts = []
-    for spec in (req.bot_a, req.bot_b):
+    specs = [req.bot_a] + ([req.bot_b] if req.bot_b is not None else [])
+    for spec in specs:
         if bot_exists(spec.name) and spec.conflict_resolution is None:
             source = bot_source_on_disk(spec.name) or ""
             conflicts.append(BotConflict(name=spec.name, existing_source=source))
@@ -64,6 +65,19 @@ async def accept_bots(job_id: str) -> JobResponse:
         raise HTTPException(status_code=404, detail="Job not found")
     if job.status != JobStatus.bots_ready:
         raise HTTPException(status_code=409, detail=f"Job is not waiting for bot acceptance (status: {job.status})")
+    job.bots_accepted.set()
+    return JobResponse(**job.to_response_dict())
+
+
+@app.post("/pipeline/{job_id}/accept-bots-stop", response_model=JobResponse)
+async def accept_bots_stop(job_id: str) -> JobResponse:
+    """Accept the generated bots, write them to the library, and skip the proof step."""
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != JobStatus.bots_ready:
+        raise HTTPException(status_code=409, detail=f"Job is not waiting for bot acceptance (status: {job.status})")
+    job.stop_after_bots = True
     job.bots_accepted.set()
     return JobResponse(**job.to_response_dict())
 

@@ -106,6 +106,7 @@
     }
 
     .bots-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .bots-preview.single { grid-template-columns: 1fr; }
 
     pre {
       background: #0f1117; border: 1px solid #2d3149;
@@ -150,12 +151,18 @@
 
   <div class="card">
     <h2>Bot strategies</h2>
+    <div style="margin-bottom: 1rem;">
+      <label style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.9rem;">
+        <input type="checkbox" id="bot-writer-only" onchange="toggleBotsOnlyMode()" />
+        Bot writer only (single bot — skip the proof step)
+      </label>
+    </div>
     <div class="bots-grid">
       <div>
         <label for="bot-a-name">Bot A name</label>
         <input type="text" id="bot-a-name" placeholder="e.g. KindBot" value="KindBot" />
       </div>
-      <div>
+      <div id="bot-b-name-cell">
         <label for="bot-b-name">Bot B name</label>
         <input type="text" id="bot-b-name" placeholder="e.g. MeanBot" value="MeanBot" />
       </div>
@@ -163,7 +170,7 @@
         <label for="bot-a-strategy">Bot A strategy</label>
         <textarea id="bot-a-strategy">Always cooperate with any opponent.</textarea>
       </div>
-      <div>
+      <div id="bot-b-strategy-cell">
         <label for="bot-b-strategy">Bot B strategy</label>
         <textarea id="bot-b-strategy">Always defect against any opponent.</textarea>
       </div>
@@ -191,33 +198,54 @@
 
   <script>
     let pollInterval = null;
+    // Cache the last-rendered job JSON so we skip re-rendering when state hasn't changed.
+    // This preserves scroll positions inside <pre> elements during polling.
+    let lastRenderedSignature = null;
     let currentJobId = null;
     // Tracks per-bot conflict resolutions: { botAName: 'overwrite'|'use_existing', ... }
     let conflictResolutions = {};
 
+    function isBotsOnlyMode() {
+      return document.getElementById('bot-writer-only').checked;
+    }
+
+    function toggleBotsOnlyMode() {
+      const hide = isBotsOnlyMode();
+      document.getElementById('bot-b-name-cell').style.display = hide ? 'none' : '';
+      document.getElementById('bot-b-strategy-cell').style.display = hide ? 'none' : '';
+    }
+
     function buildRequest() {
-      return {
+      const req = {
         bot_a: {
           name: document.getElementById('bot-a-name').value.trim(),
           strategy: document.getElementById('bot-a-strategy').value.trim(),
           conflict_resolution: conflictResolutions[document.getElementById('bot-a-name').value.trim()] || null,
         },
-        bot_b: {
+      };
+      if (!isBotsOnlyMode()) {
+        req.bot_b = {
           name: document.getElementById('bot-b-name').value.trim(),
           strategy: document.getElementById('bot-b-strategy').value.trim(),
           conflict_resolution: conflictResolutions[document.getElementById('bot-b-name').value.trim()] || null,
-        },
-      };
+        };
+      }
+      return req;
     }
 
     async function runPipeline() {
       const req = buildRequest();
-      if (!req.bot_a.name || !req.bot_b.name || !req.bot_a.strategy || !req.bot_b.strategy) {
-        alert('Please fill in all four fields.');
+      if (!req.bot_a.name || !req.bot_a.strategy) {
+        alert('Please fill in the bot A name and strategy.');
+        return;
+      }
+      if (req.bot_b && (!req.bot_b.name || !req.bot_b.strategy)) {
+        alert('Please fill in the bot B name and strategy, or enable "Bot writer only" mode.');
         return;
       }
 
       conflictResolutions = {};
+      lastRenderedSignature = null;
       document.getElementById('conflict-card').style.display = 'none';
       document.getElementById('run-btn').disabled = true;
       document.getElementById('status-card').style.display = 'block';
@@ -332,6 +360,12 @@
     }
 
     function renderState(job) {
+      // Skip re-render if the job state is unchanged — preserves scroll positions
+      // inside <pre> elements (which would otherwise reset every 2s during polling).
+      const signature = JSON.stringify(job);
+      if (signature === lastRenderedSignature) return;
+      lastRenderedSignature = signature;
+
       const badge  = document.getElementById('status-badge');
       const row    = document.getElementById('status-row');
       const stepEl = document.getElementById('step-text');
@@ -349,30 +383,37 @@
         document.getElementById('run-btn').disabled = false;
       }
 
-      if (job.status === 'bots_ready' && job.bot_a && job.bot_b) {
+      if (job.status === 'bots_ready' && job.bot_a) {
         const tagA = job.bot_a.is_existing
           ? '<span class="tag-existing">existing</span>'
           : '<span class="tag-new">generated</span>';
-        const tagB = job.bot_b.is_existing
+        const tagB = job.bot_b ? (job.bot_b.is_existing
           ? '<span class="tag-existing">existing</span>'
-          : '<span class="tag-new">generated</span>';
+          : '<span class="tag-new">generated</span>') : '';
+        const botBBlock = job.bot_b ? `
+            <div>
+              <div class="section-label">${esc(job.bot_b.name)} ${tagB}</div>
+              <pre>${esc(job.bot_b.source)}</pre>
+            </div>
+        ` : '';
+        const continueButton = job.bot_b
+          ? `<button class="btn btn-success" onclick="sendDecision('accept-bots')">Accept &amp; continue to proof</button>`
+          : '';
 
         area.innerHTML = `
           <p style="margin-bottom:0.75rem;font-size:0.9rem;color:#fcd34d;">
             Review the bot definitions and accept or reject.
           </p>
-          <div class="bots-preview">
+          <div class="bots-preview${job.bot_b ? '' : ' single'}">
             <div>
               <div class="section-label">${esc(job.bot_a.name)} ${tagA}</div>
               <pre>${esc(job.bot_a.source)}</pre>
             </div>
-            <div>
-              <div class="section-label">${esc(job.bot_b.name)} ${tagB}</div>
-              <pre>${esc(job.bot_b.source)}</pre>
-            </div>
+            ${botBBlock}
           </div>
           <div class="gate-actions">
-            <button class="btn btn-success" onclick="sendDecision('accept-bots')">Accept bots</button>
+            ${continueButton}
+            <button class="btn btn-success" onclick="sendDecision('accept-bots-stop')">Save bots &amp; stop here</button>
             <button class="btn btn-danger"  onclick="sendDecision('reject-bots')">Reject</button>
           </div>
         `;
@@ -403,7 +444,11 @@
       } else if (job.status === 'done' && job.result) {
         const r = job.result;
         const actionLabel = a => `<span class="action action-${a}">${a === 'C' ? 'Cooperate' : 'Defect'}</span>`;
-        area.innerHTML = `
+        const bots_only = r.proof_source == null;
+        const outcomeBlock = bots_only ? `
+          <div class="section-label">Bots saved to library</div>
+          <p>Proof step skipped — the bots have been written to the library and can be used in future runs.</p>
+        ` : `
           <div class="section-label">Outcome</div>
           <div class="outcome-box">
             <div class="outcome-cell">
@@ -416,18 +461,27 @@
               ${actionLabel(r.right_action)}
             </div>
           </div>
-          <div class="bots-preview">
-            <div>
-              <div class="section-label">${esc(r.bot_a_name)} — Lean source</div>
-              <pre>${esc(r.bot_a_source)}</pre>
-            </div>
+        `;
+        const proofBlock = bots_only ? '' : `
+          <div class="section-label">Proof</div>
+          <pre>${esc(r.proof_source)}</pre>
+        `;
+        const botBSourceBlock = r.bot_b_name ? `
             <div>
               <div class="section-label">${esc(r.bot_b_name)} — Lean source</div>
               <pre>${esc(r.bot_b_source)}</pre>
             </div>
+        ` : '';
+        area.innerHTML = `
+          ${outcomeBlock}
+          <div class="bots-preview${r.bot_b_name ? '' : ' single'}">
+            <div>
+              <div class="section-label">${esc(r.bot_a_name)} — Lean source</div>
+              <pre>${esc(r.bot_a_source)}</pre>
+            </div>
+            ${botBSourceBlock}
           </div>
-          <div class="section-label">Proof</div>
-          <pre>${esc(r.proof_source)}</pre>
+          ${proofBlock}
         `;
       } else if (job.error) {
         area.innerHTML = `<div class="error-msg">${esc(job.error)}</div>`;

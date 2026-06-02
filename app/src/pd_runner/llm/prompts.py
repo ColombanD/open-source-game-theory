@@ -262,6 +262,11 @@ Use the `read_library_file` tool to inspect any existing bot for reference.
 - The bot must be in namespace `PDNew.Bots`.
 - Import only `PrisonersDilemma.Program` and bot files you reference via `.bot`.
 - Do not use `sorry` or any placeholder.
+- **Search budget must be a parameter, not a literal.** If your bot uses `.search`, the
+  bot definition MUST take a `Nat` parameter (conventionally `k`) and pass it as the
+  search budget, e.g. `def MyBot (k : Nat) : Prog := .search k ...`. Hardcoded budgets
+  like `.search 1000 ...` are NOT allowed — downstream theorems quantify over `k`, and a
+  fixed literal breaks that. Bots without `.search` (e.g. `CooperateBot`) take no parameter.
 - When the bot compiles cleanly, output the final Lean source inside a ```lean ... ``` code fence and say "BOT COMPLETE".
 """
 
