@@ -30,7 +30,8 @@ class ProofRequest:
     right_action: str | None = None  # None → agent must discover the outcome
     fuel: int | None = None          # None → agent must pick a suitable fuel
     max_iterations: int = 20
-    max_tokens: int = 16384
+    max_tokens: int = 32000
+    thinking_effort: str = "medium"
     model: str = "claude-opus-4-7"
     exclude_bots: frozenset[str] = frozenset()
 
@@ -75,10 +76,16 @@ def _persist_attempt(
 ) -> Path:
     """Write the proof attempt and metadata sidecar for traceability."""
     ts = time.strftime("%Y%m%dT%H%M%S")
-    stem = f"{ts}_{request.left_bot}_vs_{request.right_bot}_{'pass' if passed else 'fail'}"
+    stem = f"{request.left_bot}_vs_{request.right_bot}_{'pass' if passed else 'fail'}"
     out_dir = _outcomes_dir()
     lean_path = out_dir / f"{stem}.lean"
     meta_path = out_dir / f"{stem}.json"
+    # Remove any previous outcome files for this pair (pass or fail) so only
+    # the latest attempt survives.
+    for old in out_dir.glob(f"{request.left_bot}_vs_{request.right_bot}_*.lean"):
+        old.unlink(missing_ok=True)
+    for old in out_dir.glob(f"{request.left_bot}_vs_{request.right_bot}_*.json"):
+        old.unlink(missing_ok=True)
     lean_path.write_text(
         (lean_source or "-- (agent did not emit a final ```lean code block)\n") + "\n",
         encoding="utf-8",
@@ -138,6 +145,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
         model=request.model,
         max_iterations=request.max_iterations,
         max_tokens=request.max_tokens,
+        thinking_effort=request.thinking_effort,
     )
 
     # Track how many tool calls were made by monkey-patching the handler.

@@ -118,6 +118,7 @@ def _load_completed(output_path: Path) -> set[tuple[str, str]]:
 
 def _run_pair(
     bot_a: str, bot_b: str, model: str, max_iterations: int, max_tokens: int,
+    thinking_effort: str,
 ) -> MatrixResult:
     tier_a, tier_b = _classify_tier(bot_a), _classify_tier(bot_b)
     req = ProofRequest(
@@ -125,6 +126,7 @@ def _run_pair(
         right_bot=bot_b,
         max_iterations=max_iterations,
         max_tokens=max_tokens,
+        thinking_effort=thinking_effort,
         model=model,
         exclude_bots=frozenset({bot_a, bot_b}),
     )
@@ -169,8 +171,11 @@ def main() -> None:
                         help="Also include bots from Bots/LlmGenerations/")
     parser.add_argument("--model", default="claude-opus-4-7")
     parser.add_argument("--max-iterations", type=int, default=20)
-    parser.add_argument("--max-tokens", type=int, default=16384,
-                        help="Max output tokens per API call (default: 16384, Opus 4.7 max: 32000)")
+    parser.add_argument("--max-tokens", type=int, default=32000,
+                        help="Max output tokens per API call (default: 32000, Opus 4.7 max: 32000)")
+    parser.add_argument("--thinking-effort", default="medium",
+                        choices=["low", "medium", "high", "xhigh"],
+                        help="Thinking effort level (default: medium)")
     parser.add_argument("--resume", action="store_true",
                         help="Skip pairs that already have a passing result in --output")
     parser.add_argument("--log-level", default="WARNING",
@@ -204,7 +209,7 @@ def main() -> None:
 
     print(f"Bots ({len(bots)}): {', '.join(bots)}")
     print(f"Mode: {mode}")
-    print(f"Model: {args.model}  |  max_tokens: {args.max_tokens}  |  max_iterations: {args.max_iterations}")
+    print(f"Model: {args.model}  |  max_tokens: {args.max_tokens}  |  thinking_effort: {args.thinking_effort}  |  max_iterations: {args.max_iterations}")
     print(f"Pairs total: {len(pairs)}  |  remaining: {len(remaining)}  |  completed: {len(completed)}")
     print(f"Output: {output_path}")
     if args.dry_run:
@@ -213,25 +218,33 @@ def main() -> None:
         return
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("a", encoding="utf-8") as f:
-        for i, (a, b) in enumerate(remaining, start=1):
-            print(f"\n[{i}/{len(remaining)}] {a} vs {b} (tier {_classify_tier(a)}x{_classify_tier(b)})")
-            res = _run_pair(a, b, args.model, args.max_iterations, args.max_tokens)
-            f.write(json.dumps(asdict(res)) + "\n")
-            f.flush()
-            status = "PASS" if res.passed else f"FAIL ({res.error_class})"
-            print(f"  {status}  outcome=({res.left_action},{res.right_action})  fuel={res.chosen_fuel}  "
-                  f"iters={res.iterations}  {res.wall_clock_s:.1f}s")
+
+    # Load existing results into a dict keyed by (bot_a, bot_b) so new runs
+    # overwrite old ones rather than appending duplicates.
+    latest: dict[tuple[str, str], dict] = {}
+    if output_path.exists():
+        with output_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    r = json.loads(line)
+                    latest[(r["bot_a"], r["bot_b"])] = r
+
+    for i, (a, b) in enumerate(remaining, start=1):
+        print(f"\n[{i}/{len(remaining)}] {a} vs {b} (tier {_classify_tier(a)}x{_classify_tier(b)})")
+        res = _run_pair(a, b, args.model, args.max_iterations, args.max_tokens, args.thinking_effort)
+        latest[(a, b)] = asdict(res)
+        # Rewrite the whole file with deduplicated latest results after each pair.
+        with output_path.open("w", encoding="utf-8") as f:
+            for record in latest.values():
+                f.write(json.dumps(record) + "\n")
+        status = "PASS" if res.passed else f"FAIL ({res.error_class})"
+        print(f"  {status}  outcome=({res.left_action},{res.right_action})  fuel={res.chosen_fuel}  "
+              f"iters={res.iterations}  {res.wall_clock_s:.1f}s")
 
     # Summary.
-    all_results = []
-    with output_path.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                all_results.append(json.loads(line))
-    passed = sum(1 for r in all_results if r["passed"])
-    print(f"\n{'='*60}\nSUMMARY: {passed}/{len(all_results)} passed across all logged runs\n{'='*60}")
+    passed = sum(1 for r in latest.values() if r["passed"])
+    print(f"\n{'='*60}\nSUMMARY: {passed}/{len(latest)} passed\n{'='*60}")
 
 
 if __name__ == "__main__":
