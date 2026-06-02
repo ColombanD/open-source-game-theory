@@ -29,7 +29,7 @@ def bot_source_on_disk(name: str) -> str | None:
     return None
 
 
-def _resolve_bot(name: str, strategy: str, resolution: BotConflictResolution | None, model: str, max_iterations: int) -> BotResult:
+def _resolve_bot(name: str, strategy: str | None, resolution: BotConflictResolution | None, model: str, max_iterations: int) -> BotResult:
     """Generate or load a bot according to the conflict resolution decision."""
     if resolution == BotConflictResolution.use_existing:
         source = bot_source_on_disk(name)
@@ -37,6 +37,8 @@ def _resolve_bot(name: str, strategy: str, resolution: BotConflictResolution | N
             raise RuntimeError(f"Bot '{name}' not found on disk despite use_existing resolution.")
         return BotResult(bot_name=name, lean_source=source, iterations_used=0)
 
+    if not strategy:
+        raise RuntimeError(f"Bot '{name}' has no strategy description and resolution != use_existing.")
     return search_bot(BotRequest(
         bot_name=name,
         strategy_description=strategy,
@@ -46,14 +48,40 @@ def _resolve_bot(name: str, strategy: str, resolution: BotConflictResolution | N
 
 
 async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
+    import logging as _logging
+
     loop = asyncio.get_event_loop()
+
+    # Attach per-job log handler if a log level was requested.
+    if req.log_level:
+        from pd_runner.api.jobs import JobLogHandler
+        level = getattr(_logging, req.log_level.upper(), _logging.INFO)
+        handler = JobLogHandler(job.log_queue)
+        handler.set_loop(loop)
+        handler.setLevel(level)
+        handler.setFormatter(_logging.Formatter("%(levelname)s %(name)s — %(message)s"))
+        job.log_handler = handler
+        root_logger = _logging.getLogger()
+        root_logger.addHandler(handler)
+        # Ensure root logger level is at least as verbose as requested.
+        if root_logger.level == 0 or root_logger.level > level:
+            root_logger.setLevel(level)
     # In bot-writer-only mode (no bot_b), force stop_after_bots so the pipeline
     # never tries to prove an outcome with a missing second bot.
     bots_only_mode = req.bot_b is None
     if bots_only_mode:
         job.stop_after_bots = True
 
+    def _load_existing(name: str) -> BotResult:
+        source = bot_source_on_disk(name)
+        if source is None:
+            raise RuntimeError(f"Bot '{name}' not found on disk (expected for prove-only mode).")
+        return BotResult(bot_name=name, lean_source=source, iterations_used=0)
+
     def _generate_bots() -> tuple[BotResult, BotResult | None]:
+        if req.prove_only:
+            assert req.bot_b is not None  # prove-only requires two bots; UI enforces this
+            return _load_existing(req.bot_a.name), _load_existing(req.bot_b.name)
         bot_a = _resolve_bot(req.bot_a.name, req.bot_a.strategy, req.bot_a.conflict_resolution, req.model, req.max_iterations)
         if req.bot_b is None:
             return bot_a, None
@@ -89,9 +117,12 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
                 raise
 
     try:
-        # --- Step 1: Generate bots (one or two depending on mode) ---
+        # --- Step 1: Generate (or load) bots ---
         job.status = JobStatus.generating_bots
-        if bots_only_mode:
+        if req.prove_only:
+            assert req.bot_b is not None
+            job.step = f"Loading {req.bot_a.name} and {req.bot_b.name} from library..."
+        elif bots_only_mode:
             job.step = f"Generating {req.bot_a.name}..."
         else:
             assert req.bot_b is not None
@@ -110,10 +141,11 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
             job.error = "Rejected by user."
             return
 
-        # --- Step 2: Write bots to library ---
+        # --- Step 2: Write bots to library (skipped in prove-only mode — bots already exist) ---
         job.status = JobStatus.proving
-        job.step = "Writing bots to library..."
-        await loop.run_in_executor(None, lambda: _write_bots(bot_a, bot_b))
+        if not req.prove_only:
+            job.step = "Writing bots to library..."
+            await loop.run_in_executor(None, lambda: _write_bots(bot_a, bot_b))
 
         # If the user asked to stop after accepting the bots, finalise now and skip proof.
         if job.stop_after_bots:
@@ -167,3 +199,8 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
         job.status = JobStatus.failed
         job.step = None
         job.error = str(exc)
+    finally:
+        if job.log_handler is not None:
+            import logging as _logging
+            _logging.getLogger().removeHandler(job.log_handler)
+        job.logs_done = True

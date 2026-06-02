@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 from dataclasses import dataclass, field
 from typing import Optional
@@ -10,6 +11,23 @@ from typing import Optional
 from pd_runner.api.schemas import BotDraft, JobStatus, PipelineResult, ProofDraft
 from pd_runner.services.bot_service import BotResult
 from pd_runner.services.proof_service import ProofResult
+
+
+class JobLogHandler(logging.Handler):
+    """Logging handler that appends records to the job's log queue."""
+
+    def __init__(self, queue: asyncio.Queue) -> None:
+        super().__init__()
+        self._queue = queue
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
+        self._loop = loop
+
+    def emit(self, record: logging.LogRecord) -> None:
+        msg = self.format(record)
+        if self._loop is not None and not self._loop.is_closed():
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, msg)
 
 
 @dataclass
@@ -31,6 +49,11 @@ class Job:
 
     result: Optional[PipelineResult] = None
     error: Optional[str] = None
+
+    # Log streaming
+    log_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
+    log_handler: Optional[JobLogHandler] = field(default=None, repr=False)
+    logs_done: bool = False  # set to True when pipeline finishes so SSE stream can close
 
     def to_response_dict(self) -> dict:
         """Serialisable snapshot for JobResponse."""

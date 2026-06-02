@@ -142,6 +142,19 @@
       border-radius: 0.5rem; padding: 0.75rem 1rem;
       color: #fca5a5; font-size: 0.85rem;
     }
+
+    #log-panel {
+      display: none;
+      margin-top: 1rem;
+    }
+    #log-panel .section-label { margin-bottom: 0.4rem; }
+    #log-output {
+      background: #0a0d14; border: 1px solid #2d3149;
+      border-radius: 0.5rem; padding: 0.75rem 1rem;
+      font-size: 0.72rem; font-family: monospace;
+      color: #7dd3fc; max-height: 240px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-all;
+    }
   </style>
 </head>
 <body>
@@ -151,22 +164,32 @@
 
   <div class="card">
     <h2>Bot strategies</h2>
-    <div style="margin-bottom: 1rem;">
-      <label style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.9rem;">
-        <input type="checkbox" id="bot-writer-only" onchange="toggleBotsOnlyMode()" />
-        Bot writer only (single bot — skip the proof step)
+    <div style="margin-bottom: 1rem; display:flex; flex-direction:column; gap:0.4rem; font-size:0.9rem;">
+      <label style="display:inline-flex; align-items:center; gap:0.5rem;">
+        <input type="radio" name="mode" value="full" checked onchange="onModeChange()" />
+        Full pipeline — generate two bots from NL and prove their outcome
+      </label>
+      <label style="display:inline-flex; align-items:center; gap:0.5rem;">
+        <input type="radio" name="mode" value="bots_only" onchange="onModeChange()" />
+        Bot writer only — generate a single bot from NL, skip the proof
+      </label>
+      <label style="display:inline-flex; align-items:center; gap:0.5rem;">
+        <input type="radio" name="mode" value="prove_only" onchange="onModeChange()" />
+        Prove existing bots — pick two existing bots and prove their outcome
       </label>
     </div>
     <div class="bots-grid">
       <div>
         <label for="bot-a-name">Bot A name</label>
         <input type="text" id="bot-a-name" placeholder="e.g. KindBot" value="KindBot" />
+        <select id="bot-a-select" style="display:none; width:100%; margin-top:0.25rem;"></select>
       </div>
       <div id="bot-b-name-cell">
         <label for="bot-b-name">Bot B name</label>
         <input type="text" id="bot-b-name" placeholder="e.g. MeanBot" value="MeanBot" />
+        <select id="bot-b-select" style="display:none; width:100%; margin-top:0.25rem;"></select>
       </div>
-      <div>
+      <div id="bot-a-strategy-cell">
         <label for="bot-a-strategy">Bot A strategy</label>
         <textarea id="bot-a-strategy">Always cooperate with any opponent.</textarea>
       </div>
@@ -174,6 +197,15 @@
         <label for="bot-b-strategy">Bot B strategy</label>
         <textarea id="bot-b-strategy">Always defect against any opponent.</textarea>
       </div>
+    </div>
+    <div style="margin-top:1rem; display:flex; align-items:center; gap:0.75rem;">
+      <label style="margin:0; white-space:nowrap;" for="log-level-select">Log streaming</label>
+      <select id="log-level-select" style="width:auto;">
+        <option value="">Off</option>
+        <option value="WARNING">WARNING</option>
+        <option value="INFO" selected>INFO</option>
+        <option value="DEBUG">DEBUG</option>
+      </select>
     </div>
   </div>
 
@@ -194,6 +226,10 @@
       <span class="step-text" id="step-text"></span>
     </div>
     <div id="result-area"></div>
+    <div id="log-panel">
+      <div class="section-label">Logs</div>
+      <div id="log-output"></div>
+    </div>
   </div>
 
   <script>
@@ -204,26 +240,64 @@
     let currentJobId = null;
     // Tracks per-bot conflict resolutions: { botAName: 'overwrite'|'use_existing', ... }
     let conflictResolutions = {};
+    let logEventSource = null;
 
-    function isBotsOnlyMode() {
-      return document.getElementById('bot-writer-only').checked;
+    function currentMode() {
+      return document.querySelector('input[name="mode"]:checked').value; // 'full' | 'bots_only' | 'prove_only'
     }
 
-    function toggleBotsOnlyMode() {
-      const hide = isBotsOnlyMode();
-      document.getElementById('bot-b-name-cell').style.display = hide ? 'none' : '';
-      document.getElementById('bot-b-strategy-cell').style.display = hide ? 'none' : '';
+    function onModeChange() {
+      const mode = currentMode();
+      const proveOnly = mode === 'prove_only';
+      const botsOnly = mode === 'bots_only';
+
+      // Bot B fields visible in full and prove_only modes
+      document.getElementById('bot-b-name-cell').style.display = botsOnly ? 'none' : '';
+      document.getElementById('bot-b-strategy-cell').style.display = (botsOnly || proveOnly) ? 'none' : '';
+      document.getElementById('bot-a-strategy-cell').style.display = proveOnly ? 'none' : '';
+
+      // In prove_only mode, swap name text inputs for dropdowns
+      document.getElementById('bot-a-name').style.display = proveOnly ? 'none' : '';
+      document.getElementById('bot-b-name').style.display = proveOnly ? 'none' : '';
+      document.getElementById('bot-a-select').style.display = proveOnly ? '' : 'none';
+      document.getElementById('bot-b-select').style.display = proveOnly ? '' : 'none';
+
+      if (proveOnly) loadBotList();
+    }
+
+    async function loadBotList() {
+      const resp = await fetch('/bots');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const names = [...data.handwritten, ...data.llm];
+      for (const id of ['bot-a-select', 'bot-b-select']) {
+        const sel = document.getElementById(id);
+        const previous = sel.value;
+        sel.innerHTML = names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+        if (previous && names.includes(previous)) sel.value = previous;
+      }
     }
 
     function buildRequest() {
+      const mode = currentMode();
+      const logLevel = document.getElementById('log-level-select').value || null;
+      if (mode === 'prove_only') {
+        return {
+          bot_a: { name: document.getElementById('bot-a-select').value },
+          bot_b: { name: document.getElementById('bot-b-select').value },
+          prove_only: true,
+          log_level: logLevel,
+        };
+      }
       const req = {
         bot_a: {
           name: document.getElementById('bot-a-name').value.trim(),
           strategy: document.getElementById('bot-a-strategy').value.trim(),
           conflict_resolution: conflictResolutions[document.getElementById('bot-a-name').value.trim()] || null,
         },
+        log_level: logLevel,
       };
-      if (!isBotsOnlyMode()) {
+      if (mode === 'full') {
         req.bot_b = {
           name: document.getElementById('bot-b-name').value.trim(),
           strategy: document.getElementById('bot-b-strategy').value.trim(),
@@ -234,18 +308,32 @@
     }
 
     async function runPipeline() {
+      const mode = currentMode();
       const req = buildRequest();
-      if (!req.bot_a.name || !req.bot_a.strategy) {
-        alert('Please fill in the bot A name and strategy.');
-        return;
-      }
-      if (req.bot_b && (!req.bot_b.name || !req.bot_b.strategy)) {
-        alert('Please fill in the bot B name and strategy, or enable "Bot writer only" mode.');
-        return;
+      if (mode === 'prove_only') {
+        if (!req.bot_a.name || !req.bot_b.name) {
+          alert('Please pick both bots.');
+          return;
+        }
+        if (req.bot_a.name === req.bot_b.name) {
+          // Self-play is allowed by the proof engine, no warning needed.
+        }
+      } else {
+        if (!req.bot_a.name || !req.bot_a.strategy) {
+          alert('Please fill in the bot A name and strategy.');
+          return;
+        }
+        if (req.bot_b && (!req.bot_b.name || !req.bot_b.strategy)) {
+          alert('Please fill in the bot B name and strategy, or pick "Bot writer only" mode.');
+          return;
+        }
       }
 
       conflictResolutions = {};
       lastRenderedSignature = null;
+      if (logEventSource) { logEventSource.close(); logEventSource = null; }
+      document.getElementById('log-panel').style.display = 'none';
+      document.getElementById('log-output').textContent = '';
       document.getElementById('conflict-card').style.display = 'none';
       document.getElementById('run-btn').disabled = true;
       document.getElementById('status-card').style.display = 'block';
@@ -298,6 +386,38 @@
       currentJobId = job.job_id;
       renderState(job);
       pollInterval = setInterval(() => pollJob(currentJobId), 2000);
+
+      // Start SSE log stream if log level was set
+      if (req.log_level) {
+        startLogStream(job.job_id);
+      }
+    }
+
+    function startLogStream(jobId) {
+      if (logEventSource) { logEventSource.close(); logEventSource = null; }
+      const panel = document.getElementById('log-panel');
+      const output = document.getElementById('log-output');
+      panel.style.display = 'block';
+      output.textContent = '';
+
+      const es = new EventSource(`/pipeline/${jobId}/logs`);
+      logEventSource = es;
+
+      es.onmessage = (e) => {
+        const atBottom = output.scrollHeight - output.scrollTop <= output.clientHeight + 4;
+        output.textContent += e.data + '\n';
+        if (atBottom) output.scrollTop = output.scrollHeight;
+      };
+
+      es.addEventListener('done', () => {
+        es.close();
+        logEventSource = null;
+      });
+
+      es.onerror = () => {
+        es.close();
+        logEventSource = null;
+      };
     }
 
     function showConflicts(conflicts, req) {
@@ -491,6 +611,9 @@
     function esc(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
+
+    // Initialise mode visibility on load.
+    onModeChange();
   </script>
 
 </body>

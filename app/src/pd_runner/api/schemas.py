@@ -14,7 +14,9 @@ class BotConflictResolution(str, Enum):
 
 class BotSpec(BaseModel):
     name: str
-    strategy: str
+    # strategy is optional: only required for bot-writer flows. In "prove existing bots"
+    # mode the bot is loaded from disk by name and no NL description is needed.
+    strategy: Optional[str] = None
     conflict_resolution: Optional[BotConflictResolution] = None
 
 
@@ -25,6 +27,11 @@ class PipelineRequest(BaseModel):
     bot_b: Optional[BotSpec] = None
     model: str = "claude-sonnet-4-6"
     max_iterations: int = 20
+    # Prove-only mode: skip bot generation entirely; both bot_a and bot_b must already
+    # exist on disk (in Bots/ or Bots/LlmGenerations/). strategy fields are ignored.
+    prove_only: bool = False
+    # Log level for streaming: "DEBUG", "INFO", "WARNING". None = no streaming.
+    log_level: Optional[str] = None
 
 
 class BotConflict(BaseModel):
