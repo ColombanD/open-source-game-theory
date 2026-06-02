@@ -166,11 +166,19 @@ def search_proof(request: ProofRequest) -> ProofResult:
         lean_source = _extract_lean_source(final_text)
 
         if lean_source is None:
-            err = (
-                f"Agent did not produce a final Lean source for "
-                f"{request.left_bot} vs {request.right_bot}.\n"
-                f"Final response:\n{final_text}"
-            )
+            if "OUTCOME OPEN" in final_text:
+                err = (
+                    f"Agent declared outcome OPEN for "
+                    f"{request.left_bot} vs {request.right_bot} "
+                    f"(matchup is oracle-dependent and no unconditional outcome is provable).\n"
+                    f"Agent explanation:\n{final_text}"
+                )
+            else:
+                err = (
+                    f"Agent did not produce a final Lean source for "
+                    f"{request.left_bot} vs {request.right_bot}.\n"
+                    f"Final response:\n{final_text}"
+                )
             _persist_attempt(
                 request, lean_source=None, final_text=final_text,
                 iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,

@@ -167,6 +167,8 @@ def main() -> None:
                         help="JSONL file to append results to")
     parser.add_argument("--bots", default=None,
                         help="Comma-separated subset of bot names (default: all hand-written)")
+    parser.add_argument("--pair", default=None,
+                        help="Run a single pair, format 'BotA,BotB' (overrides --bots; ignores --ordered/--resume)")
     parser.add_argument("--include-llm", action="store_true",
                         help="Also include bots from Bots/LlmGenerations/")
     parser.add_argument("--model", default="claude-opus-4-7")
@@ -189,21 +191,31 @@ def main() -> None:
 
     setup_logging(args.log_level)
 
-    if args.bots:
-        bots = [b.strip() for b in args.bots.split(",") if b.strip()]
+    if args.pair:
+        parts = [b.strip() for b in args.pair.split(",") if b.strip()]
+        if len(parts) != 2:
+            parser.error("--pair must be exactly two bot names, e.g. 'CupodBot,DupocBot'")
+        bots = parts
+        pairs = [(parts[0], parts[1])]
+        mode = "single pair"
+        output_path = Path(args.output).resolve()
+        completed = set()
     else:
-        bots = _discover_bots(include_llm=args.include_llm)
+        if args.bots:
+            bots = [b.strip() for b in args.bots.split(",") if b.strip()]
+        else:
+            bots = _discover_bots(include_llm=args.include_llm)
 
-    output_path = Path(args.output).resolve()
-    completed = _load_completed(output_path) if args.resume else set()
+        output_path = Path(args.output).resolve()
+        completed = _load_completed(output_path) if args.resume else set()
 
-    if args.ordered:
-        pairs = [(a, b) for a in bots for b in bots]
-        mode = "ordered"
-    else:
-        # Half-matrix: each unordered pair once (a ≤ b in list order). outcome A B
-        # and outcome B A are symmetric, so we only need to prove one ordering.
-        pairs = [(a, b) for i, a in enumerate(bots) for b in bots[i:]]
+        if args.ordered:
+            pairs = [(a, b) for a in bots for b in bots]
+            mode = "ordered"
+        else:
+            # Half-matrix: each unordered pair once (a ≤ b in list order). outcome A B
+            # and outcome B A are symmetric, so we only need to prove one ordering.
+            pairs = [(a, b) for i, a in enumerate(bots) for b in bots[i:]]
         mode = "unordered (half-matrix)"
     remaining = [(a, b) for (a, b) in pairs if (a, b) not in completed]
 

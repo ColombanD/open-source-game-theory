@@ -76,6 +76,18 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
   Redefining a bot causes a namespace clash at `lake build` time.
 - Do not use `sorry`, `admit`, or `native_decide`.
 - Prefer `unfold`, `simp`, `rfl`, `exact`, `rw`, `cases`, `omega` tactics.
+- **Strict theorem shape — no extra premises.** The theorem's conclusion must be of the form
+  `outcome <fuel-expr> <bot_a> <bot_b> = some (.X, .Y)`, optionally wrapped in `∃` / `∀`
+  quantifiers over fuel/search-budget naturals (e.g. `∃ k, ∀ n, outcome (n+f) ...` or
+  `∃ K FUEL, ∀ k, K ≤ k → ...`). You may NOT add hypotheses of the form
+  `proofSearch _ _ = false`, `proofSearch _ _ = true`, or any other premise that conditions
+  the outcome on the behavior of the proof oracle. Such hypotheses turn an outcome theorem
+  into a conditional claim and defeat the purpose of mechanizing the outcome.
+- **If the unconditional outcome is genuinely unprovable** (the matchup is oracle-dependent
+  and the action pair is not determined by the axioms), do NOT invent premises to make it
+  provable. Instead, do not emit a ```lean``` code block and say exactly `OUTCOME OPEN`
+  followed by a one-paragraph explanation of which action pairs are consistent with the
+  axioms and why no single pair is forced.
 - When you are confident the proof compiles cleanly, output the final Lean source inside
   a ```lean ... ``` code fence and say "PROOF COMPLETE".
 """
