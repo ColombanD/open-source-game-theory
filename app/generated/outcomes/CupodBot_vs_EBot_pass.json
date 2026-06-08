@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260602T133927",
+  "bot_a": "CupodBot",
+  "bot_b": "EBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CupodBot",
+    "EBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 4,
+  "elapsed_seconds": 506.10727783400216,
+  "error": null,
+  "final_text_tail": "_EBot_plays_D_vs_CupodBot_false (k : Nat)\n    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :\n    ¬ (Formula.plays EBot (CupodBot k) .D).interp := by\n  rintro ⟨n, hn⟩\n  cases n with\n  | zero => simp [play, eval] at hn\n  | succ n => cases n with\n    | zero => simp [play, eval, EBot] at hn\n    | succ n => cases n with\n      | zero => simp [play, eval, EBot] at hn\n      | succ n => cases n with\n        | zero => simp [play, eval, EBot, Prog.subst, CupodBot] at hn\n        | succ n => cases n with\n          | zero =>\n              simp only [CupodBot] at hk\n              simp [play, eval, EBot, Prog.subst, CupodBot, Formula.subst, hk] at hn\n              exact absurd hn (by decide)\n          | succ fuel =>\n              have hC : play (fuel + 5) EBot (CupodBot k) = some .C :=\n                EBot_plays_C_vs_CupodBot k fuel hk\n              have hn' : play (fuel + 5) EBot (CupodBot k) = some .D := hn\n              rw [hC] at hn'\n              cases hn'\n\nprivate theorem ps_false_EBot_CupodBot (k : Nat)\n    (hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true) :\n    proofSearch k (.plays EBot (CupodBot k) .D) = false := by\n  cases h : proofSearch k (.plays EBot (CupodBot k) .D) with\n  | true =>\n    exact absurd (proofSearch_sound _ _ h)\n      (interp_EBot_plays_D_vs_CupodBot_false k hk)\n  | false => rfl\n\ntheorem llm_outcome_CupodBot_vs_EBot (n : Nat) :\n    ∃ k, outcome (n + 5) (CupodBot k) EBot = some (.C, .C) := by\n  obtain ⟨k, hk⟩ := ps_true_botDB_CupodBot\n  refine ⟨k, ?_⟩\n  have hF : proofSearch k (.plays EBot (CupodBot k) .D) = false :=\n    ps_false_EBot_CupodBot k hk\n  have hA : play (n + 5) (CupodBot k) EBot = some .C := by\n    show eval (n + 5) (CupodBot k) EBot (CupodBot k) = some .C\n    unfold CupodBot at hF ⊢\n    simp [eval, Prog.subst, Formula.subst, hF]\n  have hB : play (n + 5) EBot (CupodBot k) = some .C :=\n    EBot_plays_C_vs_CupodBot k n hk\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

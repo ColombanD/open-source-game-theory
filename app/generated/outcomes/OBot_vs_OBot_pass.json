@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260516T161424",
+  "bot_a": "OBot",
+  "bot_b": "OBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "OBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 2,
+  "elapsed_seconds": 178.45910558300238,
+  "error": null,
+  "final_text_tail": " -- Step 1: OBot plays C against (.bot CooperateBot)\n  have hOBotC : play (n + 6) OBot (.bot CooperateBot) = some .C := by\n    have hOuter : eval (n + 5) OBot (.bot CooperateBot)\n        (.sim .opp (.bot CooperateBot)) = some .C := by\n      simp [eval, Prog.subst, CooperateBot]\n    have hInner : eval (n + 5) OBot (.bot CooperateBot)\n        (.sim .opp (.bot DefectBot)) = some .C := by\n      simp [eval, Prog.subst, CooperateBot]\n    have hPlay := play_ite_from_guard\n      n 5 OBot (.bot CooperateBot) (.sim .opp (.bot CooperateBot))\n      (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))\n      (.const Action.D)\n      Action.C Action.C\n      (by unfold OBot; rfl) hOuter\n    simpa [eval, hInner] using hPlay\n  -- Step 2: OBot plays D against (.bot DefectBot)\n  have hOBotD : play (n + 6) OBot (.bot DefectBot) = some .D := by\n    have hOuter : eval (n + 5) OBot (.bot DefectBot)\n        (.sim .opp (.bot CooperateBot)) = some .D := by\n      simp [eval, Prog.subst, DefectBot]\n    have hPlay := play_ite_from_guard\n      n 5 OBot (.bot DefectBot) (.sim .opp (.bot CooperateBot))\n      (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))\n      (.const Action.D)\n      Action.C Action.D\n      (by unfold OBot; rfl) hOuter\n    simpa [eval] using hPlay\n  -- Step 3: OBot vs OBot\n  have hG1 : eval (n + 7) OBot OBot (.sim .opp (.bot CooperateBot)) = some .C :=\n    eval_sim_opp_bot_of_play _ _ _ _ _ hOBotC\n  have hG2 : eval (n + 7) OBot OBot (.sim .opp (.bot DefectBot)) = some .D :=\n    eval_sim_opp_bot_of_play _ _ _ _ _ hOBotD\n  have hPlay := play_ite_from_guard\n    n 7 OBot OBot (.sim .opp (.bot CooperateBot))\n    (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))\n    (.const Action.D)\n    Action.C Action.C\n    (by unfold OBot; rfl) hG1\n  have hA : play (n + 8) OBot OBot = some .D := by\n    simpa [eval, hG2] using hPlay\n  exact outcome_of_plays _ _ _ _ _ hA hA\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

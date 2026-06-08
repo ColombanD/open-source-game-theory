@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T153508",
+  "bot_a": "DefectBot",
+  "bot_b": "MirrorBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DefectBot",
+    "MirrorBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 1,
+  "elapsed_seconds": 22.4759955000045,
+  "error": null,
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Bots.MirrorBot\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_DefectBot_vs_MirrorBot (n : Nat) :\n    outcome (n+2) DefectBot MirrorBot = some (.D, .D) := by\n  have hA : play (n+2) DefectBot MirrorBot = some .D := by\n    unfold play DefectBot\n    rfl\n  have hB : play (n+2) MirrorBot DefectBot = some .D := by\n    unfold play MirrorBot DefectBot\n    simp [eval, Prog.subst]\n  simp [outcome, hA, hB]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

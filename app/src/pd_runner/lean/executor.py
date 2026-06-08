@@ -38,6 +38,16 @@ def run_lean_file(lean_project_dir: Path, lean_file: Path) -> LeanExecResult:
     )
 
 
+def run_lean_proof_file(lean_project_dir: Path, lean_file: Path) -> LeanExecResult:
+    """Run a single Lean file against the already-built project (no lake build).
+
+    Use this for the per-iteration proof check inside the agentic loop —
+    it avoids the multi-second lake build cost on every attempt.
+    The project must have been built at least once before calling this.
+    """
+    return run_lean_file(lean_project_dir, lean_file)
+
+
 def build_lean_project(lean_project_dir: Path, target: str = "PrisonersDilemma") -> LeanExecResult:
     lean_project_dir = lean_project_dir.resolve()
     cmd = ["lake", "build", target]

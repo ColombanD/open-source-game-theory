@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T145041",
+  "bot_a": "CupodBot",
+  "bot_b": "DefectBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CupodBot",
+    "DefectBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 4,
+  "elapsed_seconds": 122.64496579200204,
+  "error": null,
+  "final_text_tail": "Proof compiles cleanly. \n\n```lean\nimport PrisonersDilemma.Bots.CupodBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Axioms\nimport PrisonersDilemma.Theorems.ProofSearch\nimport PrisonersDilemma.Theorems.Helpers\n\nopen PDNew\nopen PDNew.Axioms\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_CupodBot_vs_DefectBot (n : Nat) :\n    \u2203 k, outcome (n+2) (CupodBot k) DefectBot = some (.D, .D) := by\n  -- Step 1: DefectBot plays D against CupodBot 0 (trivially).\n  have h0 : \u2203 m, play m DefectBot (CupodBot 0) = some .D := \u27e81, rfl\u27e9\n  obtain \u27e8w, hw\u27e9 := witness_complete_plays DefectBot (CupodBot 0) .D h0\n  -- Step 2: transport witness to CupodBot K with K = witnessChars w.\n  let \u03a6 : Nat \u2192 Formula := fun i => Formula.plays DefectBot (CupodBot i) .D\n  let K := witnessChars w\n  have hLe : 0 \u2264 K := Nat.zero_le _\n  have hwK : witnessChars w \u2264 K := Nat.le_refl _\n  have hw' : witnessProves w (\u03a6 0) := hw\n  obtain \u27e8w', hw'p, hwK'\u27e9 := witness_transport_family \u03a6 0 K hLe w hw' hwK\n  have hPS : proofSearch K (\u03a6 K) = true :=\n    (proofSearch_spec K (\u03a6 K)).2 \u27e8w', hw'p, hwK'\u27e9\n  refine \u27e8K, ?_\u27e9\n  -- Step 3: compute the two plays.\n  have hA : play (n+2) (CupodBot K) DefectBot = some .D := by\n    show eval (n+2) (CupodBot K) DefectBot (CupodBot K) = some .D\n    show eval (n+2) (CupodBot K) DefectBot\n      (.search K (.plays .opp .self .D) (.const .D) (.const .C)) = some .D\n    show (if proofSearch K ((Formula.plays .opp .self .D).subst (CupodBot K) DefectBot)\n            then eval (n+1) (CupodBot K) DefectBot (.const .D)\n            else eval (n+1) (CupodBot K) DefectBot (.const .C)) = some .D\n    have hEq : (Formula.plays Prog.opp Prog.self .D).subst (CupodBot K) DefectBot = \u03a6 K := rfl\n    rw [hEq, hPS]\n    rfl\n  have hB : play (n+2) DefectBot (CupodBot K) = some .D := rfl\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

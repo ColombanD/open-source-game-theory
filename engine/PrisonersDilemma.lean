@@ -11,3 +11,4 @@ import PrisonersDilemma.Theorems.TitForTatBot
 import PrisonersDilemma.Theorems.OBot
 import PrisonersDilemma.Theorems.MirrorBot
 import PrisonersDilemma.Theorems.DBot
+import PrisonersDilemma.Theorems.LlmGenerations

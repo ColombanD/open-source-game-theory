@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260602T144347",
+  "bot_a": "DupocBot",
+  "bot_b": "OBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DupocBot",
+    "OBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 7,
+  "elapsed_seconds": 675.6155506249925,
+  "error": null,
+  "final_text_tail": "n\n  | succ m =>\n  cases m with\n  | zero =>\n    by_cases hCB :\n        proofSearch k (.plays (.bot CooperateBot)\n          (.search k (.plays .opp .self .C) (.const .C) (.const .D)) .C) = true\n    · unfold OBot DupocBot at hn\n      simp [play, eval, Prog.subst, Formula.subst, hCB, hDFalse, hDC] at hn\n    · have hCBFalse :\n          proofSearch k (.plays (.bot CooperateBot)\n            (.search k (.plays .opp .self .C) (.const .C) (.const .D)) .C) = false := by\n        cases h : proofSearch k _ with\n        | true => exact absurd h hCB\n        | false => rfl\n      unfold OBot DupocBot at hn\n      simp [play, eval, Prog.subst, Formula.subst, hCBFalse, hDFalse, hDC] at hn\n  | succ fuel =>\n    have hD : play (fuel + 6) OBot (DupocBot k) = some .D :=\n      OBot_plays_D_against_DupocBot k fuel\n    have heq : fuel + 1 + 1 + 1 + 1 + 1 + 1 = fuel + 6 := by omega\n    rw [heq, hD] at hn\n    cases hn\n\ntheorem proofSearch_false_OBot_C_dupoc (k : Nat) :\n    proofSearch k (.plays OBot (DupocBot k) .C) = false := by\n  cases h : proofSearch k (.plays OBot (DupocBot k) .C) with\n  | true => exact absurd (proofSearch_sound _ _ h) (interp_OBot_plays_C_false_dupoc k)\n  | false => rfl\n\ntheorem DupocBot_plays_D_against_OBot (k fuel : Nat) :\n    play (fuel + 2) (DupocBot k) OBot = some .D := by\n  have hg := proofSearch_false_OBot_C_dupoc k\n  show eval (fuel + 2) (DupocBot k) OBot (DupocBot k) = some .D\n  unfold DupocBot at hg ⊢\n  simp [eval, Prog.subst, Formula.subst, hg]\n\ntheorem llm_outcome_DupocBot_vs_OBot (k n : Nat) :\n    outcome (n + 6) (DupocBot k) OBot = some (.D, .D) := by\n  have hA : play (n + 6) (DupocBot k) OBot = some .D := by\n    have h : play ((n + 4) + 2) (DupocBot k) OBot = some .D :=\n      DupocBot_plays_D_against_OBot k (n + 4)\n    have heq : n + 4 + 2 = n + 6 := by omega\n    rw [heq] at h\n    exact h\n  have hB : play (n + 6) OBot (DupocBot k) = some .D :=\n    OBot_plays_D_against_DupocBot k n\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

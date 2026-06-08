@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T153538",
+  "bot_a": "DefectBot",
+  "bot_b": "OBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DefectBot",
+    "OBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 3,
+  "elapsed_seconds": 29.87631245900411,
+  "error": null,
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Bots.OBot\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_DefectBot_vs_OBot (n : Nat) :\n    outcome (n+5) DefectBot OBot = some (.D, .D) := by\n  unfold outcome play\n  simp [eval, OBot, DefectBot, Prog.subst]\n  decide\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}

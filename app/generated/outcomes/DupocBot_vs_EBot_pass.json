@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260516T154454",
+  "bot_a": "DupocBot",
+  "bot_b": "EBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "DupocBot",
+    "EBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 7,
+  "elapsed_seconds": 432.36126062499534,
+  "error": null,
+  "final_text_tail": "_from_guard\n    fuel 4 EBot (DupocBot k) (.sim .opp (.bot DefectBot))\n    (.const Action.D)\n    (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)\n      (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))\n    Action.C Action.D\n    (by rfl) hGuard1\n  simpa [Nat.add_assoc, hInner] using hPlay\n\ntheorem llm_outcome_DupocBot_vs_EBot (n : Nat) :\n    \u2203 k, outcome (n+5) (DupocBot k) EBot = some (.C, .C) := by\n  obtain \u27e8k_C, hk_C\u27e9 := proofSearch_true_bot_CooperateBot_DupocBot\n  have hex_E : \u2203 m, play m EBot (DupocBot k_C) = some .C :=\n    \u27e85, EBot_plays_C_against_DupocBot_lemma k_C 0 hk_C\u27e9\n  obtain \u27e8w_E, hw_E\u27e9 := witness_complete_plays EBot (DupocBot k_C) .C hex_E\n  let k := max k_C (witnessChars w_E)\n  have hk_ge_kC : k_C \u2264 k := Nat.le_max_left _ _\n  have hk_ge_wE : witnessChars w_E \u2264 k := Nat.le_max_right _ _\n  have hPS_coop : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true := by\n    let \u03a6 : Nat \u2192 Formula := fun i => .plays (.bot CooperateBot) (DupocBot i) .C\n    obtain \u27e8w0, hw0, hw0k\u27e9 := (proofSearch_spec k_C (\u03a6 k_C)).1 hk_C\n    have hw0_kfinal : witnessChars w0 \u2264 k := Nat.le_trans hw0k hk_ge_kC\n    obtain \u27e8w', hw', hwk'\u27e9 := witness_transport_family \u03a6 k_C k hk_ge_kC w0 hw0 hw0_kfinal\n    exact (proofSearch_spec k (\u03a6 k)).2 \u27e8w', hw', hwk'\u27e9\n  have hPS_E : proofSearch k (.plays EBot (DupocBot k) .C) = true := by\n    let \u03a8 : Nat \u2192 Formula := fun i => .plays EBot (DupocBot i) .C\n    obtain \u27e8w', hw', hwk'\u27e9 := witness_transport_family \u03a8 k_C k hk_ge_kC w_E hw_E hk_ge_wE\n    exact (proofSearch_spec k (\u03a8 k)).2 \u27e8w', hw', hwk'\u27e9\n  refine \u27e8k, ?_\u27e9\n  have hA : play (n+5) (DupocBot k) EBot = some .C := by\n    show eval (n+5) (DupocBot k) EBot (DupocBot k) = some .C\n    unfold DupocBot at hPS_E \u22a2\n    simp [eval, Prog.subst, Formula.subst, hPS_E]\n  have hB : play (n+5) EBot (DupocBot k) = some .C :=\n    EBot_plays_C_against_DupocBot_lemma k n hPS_coop\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+}
