@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Derivation
 import PrisonersDilemma.Bots.DefectBot
 
 open PDNew

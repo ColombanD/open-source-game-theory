@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Derivation
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.CupodBot
@@ -29,9 +29,8 @@ theorem CupodBot_monotonicity (n k : Nat) (Bot : Prog) (a : Action) :
     proofSearch k (.plays Bot (CupodBot k) a) = true := by
   intro hle hnk
   let Φ : Nat → Formula := fun i => Formula.plays Bot (CupodBot i) a
-  obtain ⟨w, hw, hwk⟩ := (proofSearch_spec k (Φ n)).1 hnk
-  obtain ⟨w', hw', hwk'⟩ := witness_transport_family Φ n k hle w hw hwk
-  exact (proofSearch_spec k (Φ k)).2 ⟨w', hw', hwk'⟩
+  have hn : Provable k (Φ n) := (proofSearch_spec k (Φ n)).1 hnk
+  exact (proofSearch_spec k (Φ k)).2 (Provable_transport_family Φ n k hle hn)
 
 
 -- CooperateBot --
@@ -530,22 +529,26 @@ theorem mirror_swap_provable (q : Prog) (a : Action) :
   simpa [Prog.subst, MirrorBot] using h
 
 /-- Löb premise for CupodBot vs MirrorBot. Combines source-code transparency
-    of CupodBot's `.search` body (giving `□_k φ_A → φ_B`) with `.sim` source
-    transparency for MirrorBot (giving `φ_B → φ_A`), then chains via
-    `proofSearch_impl_trans` to produce the closed `□_k φ → φ` PBLT requires. -/
+    of CupodBot's `.search` body (`□_k φ_A → φ_B`) with `.sim` source
+    transparency for MirrorBot (`φ_B → φ_A`), chained by `Derivation.hypSyll`
+    into the closed `□_k φ → φ` that PBLT requires. (Was an `proofSearch`-level
+    chain via the deleted `proofSearch_impl_trans`; now one explicit
+    derivation.) -/
 theorem cupod_mirror_loeb_premise (k : Nat) :
     ∃ m, proofSearch m
       (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
              (.plays MirrorBot (CupodBot k) .D)) = true := by
-  have hSearch :
-      ∃ m, proofSearch m
-        (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
-               (.plays (CupodBot k) MirrorBot .D)) = true := by
-    have h := proof_system_verifies_search_branch
-                k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl
-    simpa [Formula.subst, Prog.subst] using h
-  have hMirror := mirror_swap_provable (CupodBot k) .D
-  exact proofSearch_impl_trans _ _ _ hSearch hMirror
+  -- `□_k (Mirror plays D vs Cupod) → Cupod plays D vs Mirror`, from Cupod's `.search` body.
+  let dS : Derivation (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
+                             (.plays (CupodBot k) MirrorBot .D)) := by
+    have := Derivation.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl
+    simpa [Formula.subst, Prog.subst, CupodBot] using this
+  -- `Cupod plays D vs Mirror → Mirror plays D vs Cupod`, from Mirror's `.sim` swap.
+  let dM : Derivation (.impl (.plays (CupodBot k) MirrorBot .D)
+                             (.plays MirrorBot (CupodBot k) .D)) := by
+    have := Derivation.simStep MirrorBot .opp .self (CupodBot k) .D rfl
+    simpa [Prog.subst, MirrorBot] using this
+  exact derives (.hypSyll _ _ _ dS dM)
 
 /-- Once `proofSearch k = true`, CupodBot's eval against MirrorBot is fully
     determined. Pattern from `CupodBot_plays_D_against_bot_DefectBot:247`. -/

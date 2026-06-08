@@ -2,7 +2,7 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Theorems.DBot
-import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Derivation
 import PrisonersDilemma.Theorems.Helpers
 
 

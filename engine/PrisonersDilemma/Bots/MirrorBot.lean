@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Derivation
 
 open PDNew
 namespace PDNew.Bots

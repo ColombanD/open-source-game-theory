@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Derivation
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DupocBot
@@ -26,9 +26,8 @@ theorem DupocBot_monotonicity (n k : Nat) (Bot : Prog) (a : Action) :
     proofSearch k (.plays Bot (DupocBot k) a) = true := by
   intro hle hnk
   let Φ : Nat → Formula := fun i => Formula.plays Bot (DupocBot i) a
-  obtain ⟨w, hw, hwk⟩ := (proofSearch_spec k (Φ n)).1 hnk
-  obtain ⟨w', hw', hwk'⟩ := witness_transport_family Φ n k hle w hw hwk
-  exact (proofSearch_spec k (Φ k)).2 ⟨w', hw', hwk'⟩
+  have hn : Provable k (Φ n) := (proofSearch_spec k (Φ n)).1 hnk
+  exact (proofSearch_spec k (Φ k)).2 (Provable_transport_family Φ n k hle hn)
 
 
 /-- Proof search is false for DefectBot -/
@@ -505,27 +504,23 @@ theorem DupocBot_vs_DupocBot :
 -- MirrorBot --
 
 /-- Löb premise for DupocBot vs MirrorBot. Combines source-code transparency
-    of DupocBot's `.search` body (giving `□_k φ_A → φ_B`) with `.sim` source
-    transparency for MirrorBot (giving `φ_B → φ_A`), then chains via
-    `proofSearch_impl_trans` to produce the closed `□_k φ → φ` PBLT requires. -/
+    of DupocBot's `.search` body (`□_k φ_A → φ_B`) with `.sim` source
+    transparency for MirrorBot (`φ_B → φ_A`), chained by `Derivation.hypSyll`
+    into the closed `□_k φ → φ` that PBLT requires. (Symmetric to
+    `cupod_mirror_loeb_premise`.) -/
 theorem dupoc_mirror_loeb_premise (k : Nat) :
     ∃ m, proofSearch m
       (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
              (.plays MirrorBot (DupocBot k) .C)) = true := by
-  have hSearch :
-      ∃ m, proofSearch m
-        (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
-               (.plays (DupocBot k) MirrorBot .C)) = true := by
-    have h := proof_system_verifies_search_branch
-                k (.plays .opp .self .C) .C .D (DupocBot k) MirrorBot rfl
-    simpa [Formula.subst, Prog.subst] using h
-  have hMirror :
-      ∃ m, proofSearch m
-        (.impl (.plays (DupocBot k) MirrorBot .C)
-               (.plays MirrorBot (DupocBot k) .C)) = true := by
-    have h := proof_system_verifies_sim MirrorBot .opp .self (DupocBot k) .C rfl
-    simpa [Prog.subst, MirrorBot] using h
-  exact proofSearch_impl_trans _ _ _ hSearch hMirror
+  let dS : Derivation (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
+                             (.plays (DupocBot k) MirrorBot .C)) := by
+    have := Derivation.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) MirrorBot rfl
+    simpa [Formula.subst, Prog.subst, DupocBot] using this
+  let dM : Derivation (.impl (.plays (DupocBot k) MirrorBot .C)
+                             (.plays MirrorBot (DupocBot k) .C)) := by
+    have := Derivation.simStep MirrorBot .opp .self (DupocBot k) .C rfl
+    simpa [Prog.subst, MirrorBot] using this
+  exact derives (.hypSyll _ _ _ dS dM)
 
 /-- Once `proofSearch k = true`, DupocBot's eval against MirrorBot takes the
     cooperate branch. -/

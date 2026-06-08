@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Derivation
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.DefectBot
