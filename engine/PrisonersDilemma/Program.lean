@@ -10,7 +10,7 @@ abbrev Outcome := Action × Action
 -- `Prog` is the language of agents from Critch 2022 (the Python-style
 -- pseudocode). It is pure *source code*: no constructor produces an
 -- `Action` directly — actions only appear after evaluation via `eval`
--- in Dynamics.lean. Keeping everything at the syntactic level is what lets agents be nested,
+-- in Eval.lean. Keeping everything at the syntactic level is what lets agents be nested,
 --  substituted, and passed as subjects of formulas.
 
 -- `Formula` is the part of the proof system `S` that agents query through the oracle,
@@ -48,7 +48,7 @@ end
 -- This matters because the oracle `proofSearch : Nat → Formula → Bool`
 -- expects a *closed* formula — one with no free placeholders. So at every
 -- evaluation boundary where a new context is entered (`.sim` and
--- `.search` in Dynamics.lean), the evaluator calls `subst` to freeze the
+-- `.search` in Eval.lean), the evaluator calls `subst` to freeze the
 -- placeholders to the concrete programs currently playing the game.
 
 -- The two definitions are mutually recursive for the same reason the
@@ -67,7 +67,7 @@ end
 -- outer `subst` rewrites `MirrorBot.subst me opp = .sim opp me` — turning a
 -- probe of "what does opp do against MirrorBot?" into a self-simulation
 -- shape, breaking EBot vs EBot. `.bot` is the fix point at the substitution
--- layer; `eval` (Dynamics.lean) handles `.bot` separately by simply
+-- layer; `eval` (Eval.lean) handles `.bot` separately by simply
 -- unwrapping it (one fuel decrement) so any `.self`/`.opp` inside the
 -- wrapped body bind to the *current* frame, as intended.
 mutual

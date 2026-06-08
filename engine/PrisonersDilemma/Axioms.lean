@@ -1,63 +1,31 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Derivation
 
 open PDNew
 namespace PDNew.Axioms
 
-/-- Abstract proof objects used to model derivations in the ambient proof system. -/
-axiom ProofWitness : Type
+/-!
+# Surviving axioms
 
-/-- The size of a proof witness, used as the budget measured by `proofSearch`. -/
-axiom witnessChars : ProofWitness → Nat
+After the reform that made the proof system `S` semi-explicit
+(`Derivation.lean`), the bespoke proof-system axioms collapsed to:
 
-/-- The proposition that a witness proves a particular formula. -/
-axiom witnessProves : ProofWitness → Formula → Prop
+* the explicit `Derivation` system + its proved soundness (`Derivation.sound`),
+* `proofSearch` as a *definition* (`decide ∘ Provable`) with `proofSearch_spec`
+  a *theorem*,
+* the source-transparency steps as *theorems* (`proof_system_verifies_*`).
 
-/-- Witness soundness: any formula proved by a witness is semantically true. -/
-axiom witness_sound :
-  ∀ w φ, witnessProves w φ → φ.interp
+What remains genuinely axiomatic lives here or in `Derivation.lean`:
 
-/-- Σ₁-completeness for atomic plays-formulas. Decidable arithmetic; no Gödel issues. -/
-axiom witness_complete_plays :
-  ∀ p q a, (∃ n, play n p q = some a) →
-    ∃ w : ProofWitness, witnessProves w (.plays p q a)
-
-/-- Exact budget semantics for `proofSearch`: true iff there is a witness of size at most `k`. -/
-axiom proofSearch_spec :
-  ∀ k φ, proofSearch k φ = true ↔
-    ∃ w : ProofWitness, witnessProves w φ ∧ witnessChars w ≤ k
-
-/--
-Transport of witnesses across a parameterized formula family when the parameter grows.
-
-This is the strongest witness-level assumption in the file. It says that if a
-family of formulas `Φ : Nat → Formula` changes only by increasing its parameter
-from `n` to `k`, then a witness for the smaller instance can be turned into a
-witness for the larger instance, provided the original witness already fits
-within the larger budget `k`.
-
-Concretely:
-* `Φ n` is the formula at the smaller parameter.
-* `Φ k` is the formula at the larger parameter.
-* `w` is a witness that proves the smaller formula.
-* `witnessChars w ≤ k` says the witness is still within the budget available
-  at the larger parameter.
-* the conclusion produces a witness `w'` for the larger formula, again with
-  size at most `k`.
-
-This is the axiom that lets a proof at parameter `n` be reused when the
-parameter is raised to `k`, without having to encode a specific CUPOD bridge
-in the theorem file.
+* `Derivation.atom_complete` / `AtomProvable_sound` — σ₁-completeness and
+  soundness for atomic `.plays` formulas (cannot be made constructive without
+  recreating the `play`/`proofSearch` cycle).
+* `PBLT` (below) — the Parametric Bounded Löb Theorem, borrowed from critch22.
+* `Provable_transport_family` (below) — CUPOD/DUPOC monotonicity under growing
+  bot index. **Out of scope** for this reform; its general form is not
+  derivable at the play level (an opponent can behave differently against
+  `CupodBot n` vs `CupodBot k`). Flagged for separate, per-opponent treatment.
 -/
-axiom witness_transport_family :
-  ∀ (Φ : Nat → Formula) n k,
-  n ≤ k →
-  ∀ w, witnessProves w (Φ n) →
-  witnessChars w ≤ k →
-    ∃ w', witnessProves w' (Φ k) ∧ witnessChars w' ≤ k
-
--- . -------------------------------------------------------------------------
-
 
 -- Parametric Bounded Löb's Theorem (Lemma 3.6).
 --
@@ -70,14 +38,11 @@ axiom witness_transport_family :
 --
 -- Encoding notes:
 -- * `□_{f(k)}(φ k)` is the formula `Formula.box (f k) (φ k)`; its
---   semantic clause is `proofSearch (f k) (φ k) = true`.
+--   semantic clause is `Provable (f k) (φ k)`.
 -- * "`S` derives ψ" is `∃ m, proofSearch m ψ = true`.
 -- * `f(k) ≻ O(lg k)` is spelled out as: there exists a positive constant
 --   `c` and a threshold `k̂` such that for all `k > k̂`, `f(k) > c · lg k`.
--- * "Increasing" is the plain pointwise condition on `f`; the
---   "computable" side of the paper's hypothesis is vacuous in Lean since
---   every `Nat → Nat` we can write down is already computable in the
---   relevant sense.
+-- * "Increasing" is the plain pointwise condition on `f`.
 axiom PBLT :
   ∀ (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat),
     (∀ a b, a ≤ b → f a ≤ f b) →
@@ -86,51 +51,21 @@ axiom PBLT :
       ∃ k₂, ∀ k, k > k₂ → ∃ m, proofSearch m (φ k) = true
 
 /--
-S can read source code: if an agent `me` is literally
-`.search k ψ (.const a) (.const b)`, then S proves
-`□_k ψ' → me plays a against opponent`, where `ψ' = ψ.subst me opponent`
-is the closed guard formula `eval` feeds to `proofSearch`.
+Transport of provability across a parameterized formula family when the
+parameter grows: if `Φ n` is provable within budget `k` and `n ≤ k`, then so is
+`Φ k`.
 
-The implication is true by inspection of `me`'s code: a successful proof
-search makes `eval` take the `.const a` branch and return `a`. We make this
-an axiom because we don't model S's internals; critch22 uses the same step
-silently when applying PBLT (e.g. Theorem 3.4 for CUPOD, 3.7 for DUPOC).
+This is the one assumption this reform deliberately does **not** discharge. It
+is used only for CUPOD/DUPOC monotonicity (`CupodBot_monotonicity`,
+`DupocBot_monotonicity`), where `Φ i = plays Bot (CupodBot i) a`. Its general
+form (arbitrary opponent `Bot`) is genuinely not derivable at the play level —
+an opponent may behave differently against `CupodBot n` vs `CupodBot k` — so
+eliminating it requires per-opponent restructuring, tracked as separate work.
+
+Restated over `Provable` (was `witness_transport_family`, over the now-deleted
+abstract witness interface).
 -/
-axiom proof_system_verifies_search_branch :
-  ∀ (k : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog),
-    me = .search k ψ (.const a) (.const b) →
-    ∃ m, proofSearch m
-      (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a)) = true
-
-/--
-S can read `.sim` nodes. If `me`'s literal body is `.sim p q`, then by the
-`.sim` eval rule
-
-  eval (n+1) me opp (.sim p q) = eval n p' q' p'   where p' = p.subst me opp,
-                                                         q' = q.subst me opp
-
-so `me` plays `a` against `opp` iff `p'` plays `a` against `q'`. S verifies
-this by inspection of `me`'s code. Direct analogue of
-`proof_system_verifies_search_branch`, but for the `.sim` constructor instead
-of `.search`.
--/
-axiom proof_system_verifies_sim :
-  ∀ (me p q opponent : Prog) (a : Action),
-    me = .sim p q →
-    ∃ m, proofSearch m
-      (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
-             (.plays me opponent a)) = true
-
-/--
-Hypothetical syllogism in S: if S derives `φ → ψ` and `ψ → χ`, S derives
-`φ → χ`. A basic structural rule for any reasonable proof system. Used to
-chain `proof_system_verifies_search_branch` with `proof_system_verifies_sim`
-when constructing PBLT premises for cross-pairings.
--/
-axiom proofSearch_impl_trans :
-  ∀ (φ ψ χ : Formula),
-    (∃ m, proofSearch m (.impl φ ψ) = true) →
-    (∃ m, proofSearch m (.impl ψ χ) = true) →
-    ∃ m, proofSearch m (.impl φ χ) = true
+axiom Provable_transport_family :
+  ∀ (Φ : Nat → Formula) n k, n ≤ k → Provable k (Φ n) → Provable k (Φ k)
 
 end PDNew.Axioms
