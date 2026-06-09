@@ -35,18 +35,19 @@ every concrete form of it. So atom-provability stays opaque, pinned by axioms.
 --     code", one rule per `Prog` construct it inspects (`.search`, `.sim`).
 --     Justified by Appendix B(a) (S reasons about computable functions).
 --
--- Deliberately ABSENT:
+-- Deliberately ABSENT as a *constructor* (but available as axioms):
 --   • An atomic-`plays` rule: it would carry a `play` hypothesis → cycle;
 --     atoms go through `AtomProvable` instead.
---   • GL axiom 4 (`□φ → □□φ`): its soundness obligation is
---     `Provable n φ → Provable m (.box n φ)` — i.e. `S` proving facts about its
---     own provability (reflection). No constructor produces a `.box`-headed
---     conclusion, so this is not a proven-sound rule; it could only be an
---     axiom, and as the general reflection principle it is too strong for a
---     faithful model of a PA-like `S` (inconsistency-risk, and unneeded —
---     critch22's self-fulfilling bots run on Löb, packaged as `PBLT`).
--- The single controlled box principle is therefore `PBLT` (the bounded Löb
--- axiom). GL's K *is* available — but as the derived theorem `K_provable`
+--   • GL axiom 4 (`□φ → □□φ`): its obligation is
+--     `Provable k φ → ∃K, Provable K (.box k φ)`. This is a *sound* PA principle
+--     (Hilbert–Bernays–Löb D2, Solovay) — NOT dangerous reflection (the
+--     dangerous one is `□φ → φ`, which we do not have). It is not a *constructor*
+--     only because no `Derivation` rule introspects `Provable` (nothing concludes
+--     a `.box`-headed formula from a provability premise), and the bounded box
+--     needs a *larger* output budget. So it lives as the axiom `box_provable`
+--     (Axioms.lean), same status as `PBLT`/`atom_complete`.
+-- Box-level principles (Löb via `PBLT`, axiom 4 via `box_provable`) are thus
+-- axioms; GL's K *is* derived — as the theorem `K_provable`
 -- (budget-respecting), built from `modusPonens` below; it needs no constructor.
 inductive Derivation : Formula → Type where
   -- — Logical core —

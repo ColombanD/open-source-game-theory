@@ -37,6 +37,28 @@ axiom atom_monotone :
     irrelevant to truth. -/
 axiom AtomProvable_sound : ∀ k φ, AtomProvable k φ → φ.interp
 
+/--
+**GL axiom 4 (`□φ → □□φ`), bounded form.** If `φ` is provable within budget `k`,
+then *that fact* — `□_k φ` — is itself provable, at some larger budget `K`.
+
+This is the Hilbert–Bernays–Löb derivability condition D2, and by Solovay's
+theorem it is a genuine theorem of PA's provability logic — i.e. a sound
+principle of any PA-like `S`. It is stated here, rather than derived, for two
+reasons, both intrinsic to this minimal model (not to PA):
+
+* the box is *budget-bounded*, so the conclusion needs a *larger* budget `K`
+  than `k` (proving "there is a proof of size ≤ k" costs more than `k`
+  characters) — hence the `∃ K`, mirroring `atom_complete`;
+* the `Derivation` system has no rule that introspects `Provable` (nothing
+  concludes a `.box`-headed formula from a provability premise), so 4 cannot be
+  a proven-sound `Derivation` rule. Its status is therefore exactly that of
+  `PBLT`/`atom_complete`: a true principle of `S` the minimal model cannot
+  witness constructively. It is consistent (its body is its own soundness
+  obligation, which is true) and currently unused — included for reasoning that
+  needs `S` to reflect positively on its own provability. -/
+axiom box_provable :
+  ∀ (k : Nat) (φ : Formula), Provable k φ → ∃ K, Provable K (.box k φ)
+
 
 -- Parametric Bounded Löb's Theorem (Lemma 3.6).
 --
