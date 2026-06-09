@@ -91,6 +91,23 @@ axiom box_provable :
 -- * `f(k) ≻ O(lg k)` is spelled out as: there exists a positive constant
 --   `c` and a threshold `k̂` such that for all `k > k̂`, `f(k) > c · lg k`.
 -- * "Increasing" is the plain pointwise condition on `f`.
+--
+-- QUANTIFIER FIDELITY (∀□ vs □∀). critch22 states both hypothesis and
+-- conclusion as `S ⊢ (∀k>k_i)(…)` — S proves a *single, universally quantified*
+-- formula. We instead use the *per-instance* form `∀k>k_i, (∃m, Provable m …)`
+-- — for each k, S proves that instance separately. This differs from Critch
+-- (his ∀ is inside the box; ours is the meta-∀ outside), for an unavoidable
+-- reason: our `Formula` has no internal ∀ quantifier, so a family `φ : Nat →
+-- Formula` cannot be packaged into one quantified object-formula. The
+-- per-instance form is:
+--   • SOUND as an axiom — it is *implied by* Critch's Lemma 3.6 (if S proves
+--     ∀k,P(k) then a fortiori S proves each P(k)), so we assume strictly less;
+--   • SUFFICIENT — the consumers (`CupodBot_vs_CupodBot`, etc.) both *supply*
+--     the hypothesis per-instance (one `cupod_loeb_premise k` per k) and
+--     *consume* the conclusion per-instance (instantiating at a single k before
+--     `Provable_sound`). They never need a single S-proof of the universal.
+-- So this axiomatizes a faithful, sufficient *consequence* of Lemma 3.6, not
+-- the □∀ lemma verbatim.
 axiom PBLT :
   ∀ (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat),
     (∀ a b, a ≤ b → f a ≤ f b) →
