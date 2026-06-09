@@ -1,4 +1,4 @@
-import PrisonersDilemma.Eval
+import PrisonersDilemma.Program
 
 namespace PDNew
 open Classical
@@ -12,9 +12,14 @@ inductive `Derivation` whose rules are individually inspectable, prove its
 soundness, and *define* `proofSearch` as decidable provability over it.
 
 The only assumptions that survive are isolated to atomic `.plays` formulas
-(σ₁-completeness and atom-soundness — see `AtomProvable` below); these cannot
-be made constructive without recreating the cycle
-`AtomProvable → play → proofSearch → Provable → AtomProvable`.
+(σ₁-completeness and atom-soundness — see `AtomProvable` below). These cannot
+be made constructive: any concrete definition of atom-provability that handles
+`.search`-using programs must consult the truth of their guard `□_k ψ`, whose
+meaning *is* `Provable` — closing the self-referential loop
+`Provable → AtomProvable → (guard) Provable`. This is the Löb/Gödel
+self-reference at the heart of the setup (the same reason critch22 needs PBLT),
+not merely an artefact of `play` evaluation; Lean's termination checker rejects
+every concrete form of it. So atom-provability stays opaque, pinned by axioms.
 -/
 
 -- 1. The derivation system: three syntactic shape-rules. No general
@@ -39,11 +44,16 @@ def Derivation.size : {φ : Formula} → Derivation φ → Nat
   | _, .simStep ..        => 1
   | _, .hypSyll _ _ _ d e => d.size + e.size + 1
 
--- 2. σ₁ atom-provability as an opaque predicate. It cannot reference `play`
--- (cycle), so it is opaque and pinned down only by the two atom axioms below,
--- stated after `play` exists. Budget-independent: an atom is σ₁-true (hence
--- provable at *some* size) or it is not — there is no tight size bound to track,
--- which makes proof-search budget-monotonicity automatic.
+-- 2. σ₁ atom-provability as an opaque predicate. It is opaque, not defined,
+-- because any concrete definition is self-referential: justifying a `.plays`
+-- atom whose subject is a `.search` program requires consulting that program's
+-- guard `□_k ψ`, and `□`'s meaning is `Provable` — so `AtomProvable` would
+-- depend on `Provable`, which already depends on `AtomProvable` (§3). That is a
+-- genuine Löb-style loop (independent of `play`), which Lean's termination
+-- checker rejects in every form we tried. The two atom axioms below pin it
+-- down instead. Budget-independent: an atom is σ₁-true (hence provable at *some*
+-- size) or not — no tight size bound to track, making proof-search
+-- budget-monotonicity automatic.
 opaque AtomProvable : Formula → Prop
 
 -- 3. Provability in S: derivable by the structural rules within budget `k`, OR
@@ -61,13 +71,13 @@ theorem proofSearch_spec (k : Nat) (φ : Formula) :
     proofSearch k φ = true ↔ Provable k φ := by
   unfold proofSearch; exact decide_eq_true_iff
 
--- 5. Tie the knot: the canonical evaluator fixes the oracle to the real
--- `proofSearch`. We give `eval` its *own* native definition (recursing on
--- itself, with `proofSearch` inlined) rather than `evalWith proofSearch`, so
--- its generated equation lemmas fire under `simp [eval]` / `unfold eval`
--- exactly as before the reform — leaving all ~22 downstream `.search`-branch
--- reductions untouched. (It is propositionally `evalWith proofSearch`; see
--- `eval_eq_evalWith` below.)
+-- 5. The fuelled evaluator. Because `proofSearch` is already defined above,
+-- the `.search` guard inlines it directly — so `eval` is an ordinary
+-- non-parametric definition here, defined *after* the oracle it consults.
+-- This staging (oracle first, evaluator second) is what avoids the cycle
+-- `eval → proofSearch → Provable → Derivation`; no oracle parameter is needed.
+-- `me`/`opponent` are the fixed players; `body` is the subterm being reduced;
+-- `Option` lets runs fail when fuel is exhausted.
 noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
   | 0,   _,  _,   _    => none
   | n+1, me, opponent, body => match body with
@@ -86,12 +96,6 @@ noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
         if proofSearch k (φ.subst me opponent)
           then eval n me opponent p
           else eval n me opponent q
-
-/-- `eval` is the parametric `evalWith` with the real oracle plugged in. -/
-theorem eval_eq_evalWith : eval = evalWith proofSearch := by
-  funext n; induction n with
-  | zero => rfl
-  | succ n ih => funext me opponent body; cases body <;> simp [eval, evalWith, ih]
 
 noncomputable def play (fuel : Nat) (me opponent : Prog) : Option Action :=
   eval fuel me opponent me
