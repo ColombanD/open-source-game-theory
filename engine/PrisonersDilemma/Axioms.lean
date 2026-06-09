@@ -11,12 +11,14 @@ The assumptions about the proof system `S` that are *not* discharged by the
 explicit `Derivation` system. Each is a sound principle of a PA-like `S` that
 the minimal model cannot witness constructively:
 
-* `atom_complete`, `atom_monotone`, `AtomProvable_sound` — σ₁-completeness,
-  budget-monotonicity, and soundness for atomic `.plays` facts;
+* `atom_complete`, `atom_monotone`, `AtomProvable_sound` — budget-bounded
+  σ₁-completeness, budget-monotonicity, and soundness for atomic `.plays` facts;
 * `box_provable` — bounded GL axiom 4 (HBL D2 / Solovay), currently unused;
-* `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6);
-* `Provable_transport_family` — CUPOD/DUPOC budget monotonicity (deferred; see
-  below).
+* `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
+
+(The former `Provable_transport_family` — CUPOD/DUPOC index monotonicity — was
+removed: budget-bounded `atom_complete` lets the bot proofs pin budget = index
+directly, so index-transport is no longer needed.)
 
 Everything else about `S` — soundness (`Derivation.sound`), the
 `proofSearch ↔ Provable` bridge (`proofSearch_spec`), the source-transparency
@@ -24,17 +26,23 @@ steps (`proof_system_verifies_*`), and GL's K (`K_provable`) — is a *theorem*,
 proved in `BaseTheorems.lean`.
 -/
 
-/-- σ₁-completeness for atoms, **budget-sensitive**: a true atomic play is
-    provable in S, but only once the budget is large enough — there is *some*
-    threshold `K` (the proof cost) at which it becomes provable. critch22 uses
+/-- σ₁-completeness for atoms, **budget-bounded**: a play that succeeds within
+    `fuel` steps is provable within budget `fuel`. The proof cost of the Σ₁ fact
+    "this program plays `a` within `fuel` steps" is bounded by the computation
+    length, so a budget of `fuel` characters suffices. critch22 uses
     σ₁-completeness implicitly (e.g. "CUPOD(10⁹)(DB.source) will find the proof
     and return D"); it is decidable Σ₁ truth, no Gödel obstruction.
 
-    The `∃ K` (rather than provability at *every* budget) is what lets a true
-    play be *unprovable within a too-small budget* — the slack Open Problem 3's
-    `outcome(DUPOC,CUPOD) = (D,C)` requires. -/
+    Two properties this exact (budget = `fuel`) form gives:
+    * **Boundedness** — the budget is a *concrete* quantity (`fuel`) we control,
+      not an opaque `∃ K`. This is what lets CUPOD/DUPOC index-monotonicity be a
+      *theorem* (pick budget = fuel, no transport axiom needed).
+    * **Slack for Open Problem 3** — a true play with large `fuel` is still
+      *unprovable within a smaller budget* `j < fuel` (nothing forces provability
+      below `fuel`, and `atom_monotone` only bumps budgets *up*). So
+      `outcome(DUPOC,CUPOD) = (D,C)` remains statable. -/
 axiom atom_complete :
-  ∀ p q a, (∃ n, play n p q = some a) → ∃ K, AtomProvable K (.plays p q a)
+  ∀ p q a fuel, play fuel p q = some a → AtomProvable fuel (.plays p q a)
 
 /-- Atom provability is monotone in budget: more characters never hurt. With the
     budget index this must be stated (it was automatic before). -/
@@ -114,23 +122,5 @@ axiom PBLT :
     (∃ c kHat, c > 0 ∧ ∀ k, k > kHat → f k > c * Nat.log2 k) →
     (∀ k, k > k₁ → ∃ m, Provable m (.impl (.box (f k) (φ k)) (φ k))) →
       ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (φ k)
-
-/--
-Transport of provability across a parameterized formula family when the
-parameter grows: if `Φ n` is provable within budget `k` and `n ≤ k`, then so is
-`Φ k`.
-
-This is the one assumption this reform deliberately does **not** discharge. It
-is used only for CUPOD/DUPOC monotonicity (`CupodBot_monotonicity`,
-`DupocBot_monotonicity`), where `Φ i = plays Bot (CupodBot i) a`. Its general
-form (arbitrary opponent `Bot`) is genuinely not derivable at the play level —
-an opponent may behave differently against `CupodBot n` vs `CupodBot k` — so
-eliminating it requires per-opponent restructuring, tracked as separate work.
-
-Restated over `Provable` (was `witness_transport_family`, over the now-deleted
-abstract witness interface).
--/
-axiom Provable_transport_family :
-  ∀ (Φ : Nat → Formula) n k, n ≤ k → Provable k (Φ n) → Provable k (Φ k)
 
 end PD.Axioms

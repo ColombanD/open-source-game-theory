@@ -21,17 +21,6 @@ open PD.BaseTheorems
 namespace PD.Theorems
 
 
--- Monotonicity --
-
-/-- Monotonicity of CupodBot: If the proof search succeeds with less fuel, it also succeeds with more fuel -/
-theorem CupodBot_monotonicity (n k : Nat) (Bot : Prog) (a : Action) :
-    n ≤ k →
-    proofSearch k (.plays Bot (CupodBot n) a) = true →
-    proofSearch k (.plays Bot (CupodBot k) a) = true := by
-  intro hle hnk
-  let Φ : Nat → Formula := fun i => Formula.plays Bot (CupodBot i) a
-  have hn : Provable k (Φ n) := (proofSearch_spec k (Φ n)).1 hnk
-  exact (proofSearch_spec k (Φ k)).2 (Provable_transport_family Φ n k hle hn)
 
 
 -- CooperateBot --
@@ -65,24 +54,12 @@ theorem CupodBot_vs_CooperateBot (k fuel : Nat):
 
 -- DefectBot --
 
-theorem proofSearch_true_for_DefectBot_different_k (n: Nat) :
-    ∃ k, proofSearch k (.plays DefectBot (CupodBot n) .D) = true := by
-  -- Show that there exists n such that play n DefectBot (CupodBot n) = some .D
-  have hex : ∃ m, play m DefectBot (CupodBot n) = some .D := by
-    -- Use the fact that DefectBot always plays .D
-    exists 1
-  -- Now apply the restricted completeness theorem
-  have h := proofSearch_complete_plays DefectBot (CupodBot n) .D hex
-  obtain ⟨k, hk⟩ := h
-  exact ⟨k, hk⟩
-
-/-- Proof search k is true for DefectBot vs Cupod k -/
+/-- Proof search k is true for DefectBot vs Cupod k. Budget = index = 1:
+    DefectBot plays D at fuel 1, and budget-bounded completeness makes that
+    provable within budget 1 (no index-transport needed). -/
 theorem proofSearch_true_for_DefectBot :
-    ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true := by
-  have h := proofSearch_true_for_DefectBot_different_k
-  obtain ⟨k, hk⟩ := h 0 -- we can pick any n, so we pick 0 for simplicity; k is the corresponding k from the lemma.
-  refine ⟨k, ?_⟩ -- use the same k for the conclusion
-  exact CupodBot_monotonicity 0 k DefectBot .D (Nat.zero_le k) hk
+    ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
+  ⟨1, (proofSearch_spec _ _).2 (Or.inr (atom_complete DefectBot (CupodBot 1) .D 1 rfl))⟩
 
 /-- CupodBot vs DefectBot: uses proof search being true -/
 theorem CupodBot_vs_DefectBot (fuel : Nat):
@@ -233,17 +210,9 @@ theorem CupodBot_vs_TitForTatBot (fuel : Nat):
 
 -- DBot --
 
-theorem proofSearch_true_for_bot_DefectBot_different_k (n : Nat) :
-    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot n) .D) = true := by
-  have hex : ∃ m, play m (.bot DefectBot) (CupodBot n) = some .D := by
-    exists 2
-  exact proofSearch_complete_plays (.bot DefectBot) (CupodBot n) .D hex
-
 theorem proofSearch_true_for_bot_DefectBot :
-    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true := by
-  obtain ⟨k, hk⟩ := proofSearch_true_for_bot_DefectBot_different_k 0
-  refine ⟨k, ?_⟩
-  exact CupodBot_monotonicity 0 k (.bot DefectBot) .D (Nat.zero_le k) hk
+    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
+  ⟨2, (proofSearch_spec _ _).2 (Or.inr (atom_complete (.bot DefectBot) (CupodBot 2) .D 2 rfl))⟩
 
 /-- CUPOD defects against `.bot DefectBot` once its search guard succeeds. -/
 theorem CupodBot_plays_D_against_bot_DefectBot (k fuel : Nat)
@@ -355,34 +324,20 @@ theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
         Action.C Action.D hGuard2)
   simpa [hInner] using hPlay
 
-theorem proofSearch_true_for_OBot_different_k :
-    ∃ k n, proofSearch k (.plays OBot (CupodBot n) .D) = true := by
-  have hex : ∃ m n, play m OBot (CupodBot n) = some .D := by
-    have hk := proofSearch_true_for_bot_DefectBot
-    obtain ⟨d, hd⟩ := hk
-    have _ := OBot_plays_D_against_CupodBot d 0 hd
-    exists 5, d
-  rcases hex with ⟨m, n, h⟩
-  have hn : ∃ m, play m OBot (CupodBot n) = some Action.D := ⟨m, h⟩
-  have h := proofSearch_complete_plays OBot (CupodBot n) .D hn
-  obtain ⟨k, hk⟩ := h
-  exact ⟨k, n, hk⟩
-
 theorem proofSearch_true_for_OBot :
     ∃ k, proofSearch k (.plays OBot (CupodBot k) .D) = true := by
-  obtain ⟨k, n, hk⟩ := proofSearch_true_for_OBot_different_k
-  by_cases hnk : n ≤ k
-  · refine ⟨k, ?_⟩
-    -- If the Cupod index `n` is at most the proof-search fuel `k`, keep `k`
-    -- as the final witness and transport the formula from `CupodBot n` to
-    -- `CupodBot k`.
-    exact CupodBot_monotonicity n k OBot .D hnk hk
-  · refine ⟨n, ?_⟩
-    -- Otherwise `k < n`. We cannot transport `CupodBot n` down to `CupodBot k`,
-    -- so choose `n` as the final witness and only increase the proof-search
-    -- fuel from `k` to `n`, leaving the formula itself unchanged.
-    exact proofSearch_monotone k n (.plays OBot (CupodBot n) .D)
-      (Nat.le_of_lt (Nat.lt_of_not_ge hnk)) hk
+  -- Index = budget = 5 (OBot's probe chain bottoms out within fuel 5). No
+  -- index-transport: each step pins its budget via bounded completeness, then
+  -- budget-monotone lifts to 5.
+  -- CUPOD 5's `.bot DefectBot` probe fires (DefectBot defects at fuel 2 → budget
+  -- 2 → bump to 5):
+  have hk5 : proofSearch 5 (.plays (.bot DefectBot) (CupodBot 5) .D) = true :=
+    proofSearch_monotone 2 5 _ (by decide)
+      ((proofSearch_spec _ _).2 (Or.inr (atom_complete (.bot DefectBot) (CupodBot 5) .D 2 rfl)))
+  -- so OBot defects vs CUPOD 5 at fuel 5; bounded completeness → budget 5:
+  have hobot : play 5 OBot (CupodBot 5) = some .D := by
+    simpa using OBot_plays_D_against_CupodBot 5 0 hk5
+  exact ⟨5, (proofSearch_spec _ _).2 (Or.inr (atom_complete OBot (CupodBot 5) .D 5 hobot))⟩
 
 theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
     (hk : proofSearch k (.plays OBot (CupodBot k) .D) = true) :
@@ -394,24 +349,17 @@ theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
 /-- CupodBot vs OBot: mutual defection. -/
 theorem CupodBot_vs_OBot (fuel : Nat) :
     ∃ k, outcome (fuel + 5) (CupodBot k) OBot = some (.D, .D) := by
-  -- Two proof-search witnesses: `o` makes CUPOD defect against OBot, `d` makes
-  -- OBot defect against CUPOD via the DefectBot probe.
-  obtain ⟨o, ho⟩ := proofSearch_true_for_OBot
-  obtain ⟨d, hd⟩ := proofSearch_true_for_bot_DefectBot
-
-  -- Pick a final index large enough for both witnesses; monotonicity reuses
-  -- both proof-search successes at the same `k`.
-  let k := o + d
-  have hok : o ≤ k := Nat.le_add_right o d
-  have hdk : d ≤ k := Nat.le_add_left d o
-
-  have hkOBot : proofSearch k (.plays OBot (CupodBot k) .D) = true :=
-    CupodBot_monotonicity o k OBot .D hok
-      (proofSearch_monotone o k (.plays OBot (CupodBot o) .D) hok ho)
-
+  -- Both facts at a single concrete index/budget 5, via bounded completeness +
+  -- budget-monotone (no index-transport): `.bot DefectBot` defects vs CUPOD 5 at
+  -- fuel 2, and OBot defects vs CUPOD 5 at fuel 5.
+  let k := 5
   have hkDefect : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
-    CupodBot_monotonicity d k (.bot DefectBot) .D hdk
-      (proofSearch_monotone d k (.plays (.bot DefectBot) (CupodBot d) .D) hdk hd)
+    proofSearch_monotone 2 k _ (by decide)
+      ((proofSearch_spec _ _).2 (Or.inr (atom_complete (.bot DefectBot) (CupodBot k) .D 2 rfl)))
+  have hkOBot : proofSearch k (.plays OBot (CupodBot k) .D) = true := by
+    have hobot : play 5 OBot (CupodBot k) = some .D := by
+      simpa using OBot_plays_D_against_CupodBot k 0 hkDefect
+    exact (proofSearch_spec _ _).2 (Or.inr (atom_complete OBot (CupodBot k) .D 5 hobot))
 
   refine ⟨k, ?_⟩
 

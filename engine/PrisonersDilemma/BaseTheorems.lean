@@ -105,13 +105,12 @@ theorem proofSearch_sound :
   fun k φ hk => Provable_sound k φ ((proofSearch_spec k φ).1 hk)
 
 /-- Completeness of bounded proof search for atomic plays-formulas, via the
-    budget-sensitive σ₁ atom-completeness axiom: a true play is provable at
-    *some* budget `K` (its proof cost), not necessarily at `0`. -/
+    budget-bounded σ₁ atom-completeness axiom: a play within `fuel` is provable
+    within budget `fuel`. -/
 theorem proofSearch_complete_plays :
 ∀ p q a, (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
-  intro p q a h
-  obtain ⟨K, hK⟩ := atom_complete p q a h
-  exact ⟨K, (proofSearch_spec K (.plays p q a)).2 (Or.inr hK)⟩
+  intro p q a ⟨n, hn⟩
+  exact ⟨n, (proofSearch_spec n (.plays p q a)).2 (Or.inr (atom_complete p q a n hn))⟩
 
 -- Monotonicity in proof-search budget: the structural disjunct relaxes its size
 -- bound; the `AtomProvable` disjunct carries over by `atom_monotone`.

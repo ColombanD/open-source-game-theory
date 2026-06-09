@@ -20,15 +20,6 @@ open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 
-/-- Monotonicity of Dupoc bot: If the proof search succeeds with less fuel, it also succeeds with more fuel -/
-theorem DupocBot_monotonicity (n k : Nat) (Bot : Prog) (a : Action) :
-    n ≤ k →
-    proofSearch k (.plays Bot (DupocBot n) a) = true →
-    proofSearch k (.plays Bot (DupocBot k) a) = true := by
-  intro hle hnk
-  let Φ : Nat → Formula := fun i => Formula.plays Bot (DupocBot i) a
-  have hn : Provable k (Φ n) := (proofSearch_spec k (Φ n)).1 hnk
-  exact (proofSearch_spec k (Φ k)).2 (Provable_transport_family Φ n k hle hn)
 
 
 /-- Proof search is false for DefectBot -/
@@ -39,25 +30,10 @@ theorem proofSearch_false_for_DefectBot (k : Nat) :
                           (interp_DefectBot_plays_C_false _)
   | false => rfl
 
-/-- Proof search k is true for CooperateBot vs Dupoc n, but n ≠ k -/
-theorem proofSearch_true_for_CooperateBot_different_k (n: Nat) :
-    ∃ k, proofSearch k (.plays CooperateBot (DupocBot n) .C) = true := by
-  -- Show that there exists n such that play n CooperateBot (DupocBot n) = some .C
-  have hex : ∃ m, play m CooperateBot (DupocBot n) = some .C := by
-    -- Use the fact that CooperateBot always plays .C
-    exists 1
-  -- Now apply the restricted completeness theorem
-  have h := proofSearch_complete_plays CooperateBot (DupocBot n) .C hex
-  obtain ⟨k, hk⟩ := h
-  exact ⟨k, hk⟩
-
-/-- Proof search k is true for CooperateBot vs Dupoc k -/
+/-- Proof search k is true for CooperateBot vs Dupoc k. Budget = index = 1. -/
 theorem proofSearch_true_for_CooperateBot :
-    ∃ k, proofSearch k (.plays CooperateBot (DupocBot k) .C) = true := by
-  have h := proofSearch_true_for_CooperateBot_different_k
-  obtain ⟨k, hk⟩ := h 0 -- we can pick any n, so we pick 0 for simplicity; k is the corresponding k from the lemma.
-  refine ⟨k, ?_⟩ -- use the same k for the conclusion
-  exact DupocBot_monotonicity 0 k CooperateBot .C (Nat.zero_le k) hk
+    ∃ k, proofSearch k (.plays CooperateBot (DupocBot k) .C) = true :=
+  ⟨1, (proofSearch_spec _ _).2 (Or.inr (atom_complete CooperateBot (DupocBot 1) .C 1 rfl))⟩
 
 
 /-- DupocBot vs DefectBot: uses proof search being false -/
@@ -131,19 +107,13 @@ theorem DBot_plays_C_against_DupocBot (k fuel : Nat) :
     (by rfl) hGuard
   simpa [eval] using hPlay
 
-/-- Proof search is true for DBot vs DupocBot n, for some k (n ≠ k in general). -/
-theorem proofSearch_true_for_DBot_different_k (n : Nat) :
-    ∃ k, proofSearch k (.plays DBot (DupocBot n) .C) = true := by
-  have hex : ∃ m, play m DBot (DupocBot n) = some .C :=
-    ⟨4, by simpa using DBot_plays_C_against_DupocBot n 0⟩
-  exact proofSearch_complete_plays DBot (DupocBot n) .C hex
-
-/-- Proof search k is true for DBot vs Dupoc k. -/
+/-- Proof search k is true for DBot vs Dupoc k. Budget = index = 4: DBot
+    cooperates vs DupocBot 4 at fuel 4 (self-contained via its DefectBot probe),
+    and bounded completeness makes that provable within budget 4. -/
 theorem proofSearch_true_for_DBot :
-    ∃ k, proofSearch k (.plays DBot (DupocBot k) .C) = true := by
-  obtain ⟨k, hk⟩ := proofSearch_true_for_DBot_different_k 0
-  refine ⟨k, ?_⟩
-  exact DupocBot_monotonicity 0 k DBot .C (Nat.zero_le k) hk
+    ∃ k, proofSearch k (.plays DBot (DupocBot k) .C) = true :=
+  ⟨4, (proofSearch_spec _ _).2 (Or.inr (atom_complete DBot (DupocBot 4) .C 4
+        (by simpa using DBot_plays_C_against_DupocBot 4 0)))⟩
 
 /-- DupocBot vs DBot: mutual cooperation. DupocBot's search succeeds (DBot does
     cooperate against it), and DBot's probe sees DupocBot defect against
@@ -256,19 +226,11 @@ theorem DupocBot_plays_D_against_OBot (k fuel : Nat)
   unfold DupocBot at hOBot ⊢
   simp [eval, Prog.subst, Formula.subst, hOBot]
 
-/-- Proof search is true for `.bot CooperateBot` vs DupocBot n, but n ≠ k. -/
-theorem proofSearch_true_for_bot_CooperateBot_different_k (n : Nat) :
-    ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot n) .C) = true := by
-  have hex : ∃ m, play m (.bot CooperateBot) (DupocBot n) = some .C :=
-    ⟨2, by simpa using play_bot_CooperateBot 0 (DupocBot n)⟩
-  exact proofSearch_complete_plays (.bot CooperateBot) (DupocBot n) .C hex
-
-/-- Proof search k is true for `.bot CooperateBot` vs DupocBot k. -/
+/-- Proof search k is true for `.bot CooperateBot` vs DupocBot k. Budget = index = 2. -/
 theorem proofSearch_true_for_bot_CooperateBot :
-    ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true := by
-  obtain ⟨k, hk⟩ := proofSearch_true_for_bot_CooperateBot_different_k 0
-  refine ⟨k, ?_⟩
-  exact DupocBot_monotonicity 0 k (.bot CooperateBot) .C (Nat.zero_le k) hk
+    ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
+  ⟨2, (proofSearch_spec _ _).2 (Or.inr (atom_complete (.bot CooperateBot) (DupocBot 2) .C 2
+        (by simpa using play_bot_CooperateBot 0 (DupocBot 2))))⟩
 
 /-- DupocBot vs OBot: mutual defection. -/
 theorem DupocBot_vs_OBot (fuel : Nat) :
@@ -303,30 +265,18 @@ theorem TitForTatBot_plays_C_against_DupocBot (k fuel : Nat)
     (by rfl) hGuard
   simpa [eval] using hPlay
 
-/-- Existence of a `(k, n)` for which proof search verifies "TFT plays C vs
-    DupocBot n". The Dupoc index `n` is the witness from
-    `proofSearch_true_for_bot_CooperateBot` so that TFT's probe fires. -/
-theorem proofSearch_true_for_TitForTatBot_different_k :
-    ∃ k n, proofSearch k (.plays TitForTatBot (DupocBot n) .C) = true := by
-  obtain ⟨c, hc⟩ := proofSearch_true_for_bot_CooperateBot
-  have hPlay : play 4 TitForTatBot (DupocBot c) = some .C := by
-    simpa using TitForTatBot_plays_C_against_DupocBot c 0 hc
-  obtain ⟨k, hk⟩ :=
-    proofSearch_complete_plays TitForTatBot (DupocBot c) .C ⟨4, hPlay⟩
-  exact ⟨k, c, hk⟩
-
-/-- Proof search k is true for TFT vs DupocBot k. Aligns the indices via
-    monotonicity (Dupoc-side or proof-search-side, depending on which is
-    larger). -/
+/-- Proof search k is true for TFT vs DupocBot k. Budget = index = 4: DupocBot 4's
+    `.bot CooperateBot` guard fires (fuel 2 → budget 2 → bump to 4), so TFT
+    cooperates vs DupocBot 4 at fuel 4; bounded completeness → budget 4. -/
 theorem proofSearch_true_for_TitForTatBot :
     ∃ k, proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true := by
-  obtain ⟨k, n, hk⟩ := proofSearch_true_for_TitForTatBot_different_k
-  by_cases hnk : n ≤ k
-  · refine ⟨k, ?_⟩
-    exact DupocBot_monotonicity n k TitForTatBot .C hnk hk
-  · refine ⟨n, ?_⟩
-    exact proofSearch_monotone k n (.plays TitForTatBot (DupocBot n) .C)
-      (Nat.le_of_lt (Nat.lt_of_not_ge hnk)) hk
+  have hCB : proofSearch 4 (.plays (.bot CooperateBot) (DupocBot 4) .C) = true :=
+    proofSearch_monotone 2 4 _ (by decide)
+      ((proofSearch_spec _ _).2 (Or.inr (atom_complete (.bot CooperateBot) (DupocBot 4) .C 2
+        (by simpa using play_bot_CooperateBot 0 (DupocBot 4)))))
+  have hPlay : play 4 TitForTatBot (DupocBot 4) = some .C := by
+    simpa using TitForTatBot_plays_C_against_DupocBot 4 0 hCB
+  exact ⟨4, (proofSearch_spec _ _).2 (Or.inr (atom_complete TitForTatBot (DupocBot 4) .C 4 hPlay))⟩
 
 /-- DupocBot cooperates with TFT once its search for "TFT plays C" succeeds. -/
 theorem DupocBot_plays_C_against_TitForTatBot (k fuel : Nat)
@@ -340,17 +290,17 @@ theorem DupocBot_plays_C_against_TitForTatBot (k fuel : Nat)
     witnesses (one for `.bot CB`, one for TFT) at a common `k = t + c`. -/
 theorem DupocBot_vs_TitForTatBot (fuel : Nat) :
     ∃ k, outcome (fuel + 4) (DupocBot k) TitForTatBot = some (.C, .C) := by
-  obtain ⟨t, ht⟩ := proofSearch_true_for_TitForTatBot
-  obtain ⟨c, hc⟩ := proofSearch_true_for_bot_CooperateBot
-  let k := t + c
-  have htk : t ≤ k := Nat.le_add_right t c
-  have hck : c ≤ k := Nat.le_add_left c t
-  have hkTFT : proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true :=
-    DupocBot_monotonicity t k TitForTatBot .C htk
-      (proofSearch_monotone t k (.plays TitForTatBot (DupocBot t) .C) htk ht)
+  -- Both facts at a single concrete index/budget 4 via bounded completeness +
+  -- budget-monotone (no index-transport).
+  let k := 4
   have hkCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
-    DupocBot_monotonicity c k (.bot CooperateBot) .C hck
-      (proofSearch_monotone c k (.plays (.bot CooperateBot) (DupocBot c) .C) hck hc)
+    proofSearch_monotone 2 k _ (by decide)
+      ((proofSearch_spec _ _).2 (Or.inr (atom_complete (.bot CooperateBot) (DupocBot k) .C 2
+        (by simpa using play_bot_CooperateBot 0 (DupocBot k)))))
+  have hkTFT : proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true := by
+    have hPlay : play 4 TitForTatBot (DupocBot k) = some .C := by
+      simpa using TitForTatBot_plays_C_against_DupocBot k 0 hkCB
+    exact (proofSearch_spec _ _).2 (Or.inr (atom_complete TitForTatBot (DupocBot k) .C 4 hPlay))
   refine ⟨k, ?_⟩
   have hA : play (fuel + 4) (DupocBot k) TitForTatBot = some .C := by
     simpa [Nat.add_assoc] using DupocBot_plays_C_against_TitForTatBot k (fuel + 2) hkTFT
@@ -399,29 +349,18 @@ theorem EBot_plays_C_against_DupocBot (k fuel : Nat)
     (by rfl) hGuard1
   simpa [Nat.add_assoc, hInner] using hPlay
 
-/-- Existence of `(k, n)` for which proof search verifies "EBot plays C vs
-    DupocBot n". The Dupoc index is the witness from
-    `proofSearch_true_for_bot_CooperateBot` so EBot's inner probe fires. -/
-theorem proofSearch_true_for_EBot_different_k :
-    ∃ k n, proofSearch k (.plays EBot (DupocBot n) .C) = true := by
-  obtain ⟨c, hc⟩ := proofSearch_true_for_bot_CooperateBot
-  have hPlay : play 5 EBot (DupocBot c) = some .C := by
-    simpa using EBot_plays_C_against_DupocBot c 0 hc
-  obtain ⟨k, hk⟩ :=
-    proofSearch_complete_plays EBot (DupocBot c) .C ⟨5, hPlay⟩
-  exact ⟨k, c, hk⟩
-
-/-- Proof search k is true for EBot vs DupocBot k. Aligns indices via
-    monotonicity. -/
+/-- Proof search k is true for EBot vs DupocBot k. Budget = index = 5:
+    DupocBot 5's `.bot CooperateBot` guard fires (fuel 2 → budget 2 → bump to 5),
+    so EBot cooperates vs DupocBot 5 at fuel 5; bounded completeness → budget 5. -/
 theorem proofSearch_true_for_EBot :
     ∃ k, proofSearch k (.plays EBot (DupocBot k) .C) = true := by
-  obtain ⟨k, n, hk⟩ := proofSearch_true_for_EBot_different_k
-  by_cases hnk : n ≤ k
-  · refine ⟨k, ?_⟩
-    exact DupocBot_monotonicity n k EBot .C hnk hk
-  · refine ⟨n, ?_⟩
-    exact proofSearch_monotone k n (.plays EBot (DupocBot n) .C)
-      (Nat.le_of_lt (Nat.lt_of_not_ge hnk)) hk
+  have hCB : proofSearch 5 (.plays (.bot CooperateBot) (DupocBot 5) .C) = true :=
+    proofSearch_monotone 2 5 _ (by decide)
+      ((proofSearch_spec _ _).2 (Or.inr (atom_complete (.bot CooperateBot) (DupocBot 5) .C 2
+        (by simpa using play_bot_CooperateBot 0 (DupocBot 5)))))
+  have hPlay : play 5 EBot (DupocBot 5) = some .C := by
+    simpa using EBot_plays_C_against_DupocBot 5 0 hCB
+  exact ⟨5, (proofSearch_spec _ _).2 (Or.inr (atom_complete EBot (DupocBot 5) .C 5 hPlay))⟩
 
 /-- DupocBot cooperates with EBot once its search for "EBot plays C" succeeds. -/
 theorem DupocBot_plays_C_against_EBot (k fuel : Nat)
@@ -435,17 +374,17 @@ theorem DupocBot_plays_C_against_EBot (k fuel : Nat)
     (one for `.bot CB`, one for EBot) at a common `k = e + c`. -/
 theorem DupocBot_vs_EBot (fuel : Nat) :
     ∃ k, outcome (fuel + 5) (DupocBot k) EBot = some (.C, .C) := by
-  obtain ⟨e, he⟩ := proofSearch_true_for_EBot
-  obtain ⟨c, hc⟩ := proofSearch_true_for_bot_CooperateBot
-  let k := e + c
-  have hek : e ≤ k := Nat.le_add_right e c
-  have hck : c ≤ k := Nat.le_add_left c e
-  have hkEBot : proofSearch k (.plays EBot (DupocBot k) .C) = true :=
-    DupocBot_monotonicity e k EBot .C hek
-      (proofSearch_monotone e k (.plays EBot (DupocBot e) .C) hek he)
+  -- Both facts at a single concrete index/budget 5 via bounded completeness +
+  -- budget-monotone (no index-transport).
+  let k := 5
   have hkCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
-    DupocBot_monotonicity c k (.bot CooperateBot) .C hck
-      (proofSearch_monotone c k (.plays (.bot CooperateBot) (DupocBot c) .C) hck hc)
+    proofSearch_monotone 2 k _ (by decide)
+      ((proofSearch_spec _ _).2 (Or.inr (atom_complete (.bot CooperateBot) (DupocBot k) .C 2
+        (by simpa using play_bot_CooperateBot 0 (DupocBot k)))))
+  have hkEBot : proofSearch k (.plays EBot (DupocBot k) .C) = true := by
+    have hPlay : play 5 EBot (DupocBot k) = some .C := by
+      simpa using EBot_plays_C_against_DupocBot k 0 hkCB
+    exact (proofSearch_spec _ _).2 (Or.inr (atom_complete EBot (DupocBot k) .C 5 hPlay))
   refine ⟨k, ?_⟩
   have hA : play (fuel + 5) (DupocBot k) EBot = some .C := by
     simpa [Nat.add_assoc] using DupocBot_plays_C_against_EBot k (fuel + 3) hkEBot
