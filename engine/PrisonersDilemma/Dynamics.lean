@@ -53,5 +53,6 @@ def Formula.interp : Formula → Prop
   | .impl φ ψ    => φ.interp → ψ.interp
   | .neg φ       => ¬ φ.interp
   | .box n φ     => Provable n φ
+  | .eq p q      => p = q
 
 end PD

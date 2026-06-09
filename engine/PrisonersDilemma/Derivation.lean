@@ -79,11 +79,14 @@ inductive Derivation : Formula → Type where
   | simStep (me p q opponent : Prog) (a : Action) (hme : me = .sim p q) :
       Derivation (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
                         (.plays me opponent a))
+  /-- S can verify structural identity by reflexivity: any program equals itself. -/
+  | eqRefl (p : Prog) : Derivation (.eq p p)
 
 /-- Proof size; the budget measured by `proofSearch`. -/
 def Derivation.size : {φ : Formula} → Derivation φ → Nat
   | _, .searchBranch ..       => 1
   | _, .simStep ..            => 1
+  | _, .eqRefl _              => 1
   | _, .modusPonens _ _ d e   => d.size + e.size + 1
   | _, .hypSyll _ _ _ d e     => d.size + e.size + 1
 

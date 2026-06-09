@@ -45,6 +45,9 @@ theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
                        simp only [eval]; exact hn⟩
   | hypSyll φ ψ χ _ _ ih1 ih2 =>
       exact fun h => ih2 (ih1 h)
+  | eqRefl p =>
+      -- `.eq p p` interprets as `p = p`, which is `rfl`.
+      rfl
 
 /-- A derivation of size `m` witnesses `proofSearch m φ = true` (structural
     disjunct of `Provable`). -/
