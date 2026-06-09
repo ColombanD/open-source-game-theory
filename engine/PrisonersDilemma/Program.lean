@@ -87,4 +87,27 @@ mutual
     | .box n φ,     m, o => .box n (φ.subst m o)
 end
 
+-- Syntactic size = character count of source. This is the unit the proof system
+-- measures budgets in: `□_k φ` means "φ has a proof of ≤ k characters", and a
+-- proof's length is bounded in terms of the sizes of the formulas it manipulates.
+-- A numeral `k` costs `Nat.log2 k + 1` characters (critch22 Appendix B(b):
+-- numbers are written in `O(lg k)` characters), so e.g. `.search`/`.box` pay that
+-- for their index. Everything else is `(sum of children) + 1` for the node.
+mutual
+  def Prog.size : Prog → Nat
+    | .const _        => 1
+    | .self           => 1
+    | .opp            => 1
+    | .bot p          => p.size + 1
+    | .sim p q        => p.size + q.size + 1
+    | .ite b _ p q    => b.size + p.size + q.size + 1
+    | .search k φ p q => (Nat.log2 k + 1) + φ.size + p.size + q.size + 1
+
+  def Formula.size : Formula → Nat
+    | .plays p q _ => p.size + q.size + 1
+    | .impl φ ψ    => φ.size + ψ.size + 1
+    | .neg φ       => φ.size + 1
+    | .box k φ     => (Nat.log2 k + 1) + φ.size + 1
+end
+
 end PD
