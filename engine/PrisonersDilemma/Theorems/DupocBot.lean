@@ -489,14 +489,15 @@ theorem DupocBot_vs_DupocBot :
     simpa using hlog
   have hLoeb :
       ∀ k, k > 0 →
-        ∃ m, proofSearch m (.impl (.box (id k) (φ k)) (φ k)) = true := by
+        ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by
     intro k _
-    simpa using dupoc_loeb_premise k
+    obtain ⟨m, hm⟩ := dupoc_loeb_premise k
+    exact ⟨m, (proofSearch_spec _ _).1 (by simpa using hm)⟩
   obtain ⟨k₂, hk₂⟩ := PBLT φ id 0 hMono hLog hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := proofSearch_sound m (φ k) hm
+  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
   obtain ⟨n, hn⟩ := hInterp
   refine ⟨n, ?_⟩
   simp [outcome, hn]
@@ -600,14 +601,15 @@ theorem DupocBot_vs_MirrorBot :
     simpa using hlog
   have hLoeb :
       ∀ k, k > 0 →
-        ∃ m, proofSearch m (.impl (.box (id k) (φ k)) (φ k)) = true := by
+        ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by
     intro k _
-    simpa using dupoc_mirror_loeb_premise k
+    obtain ⟨m, hm⟩ := dupoc_mirror_loeb_premise k
+    exact ⟨m, (proofSearch_spec _ _).1 (by simpa using hm)⟩
   obtain ⟨k₂, hk₂⟩ := PBLT φ id 0 hMono hLog hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := proofSearch_sound m (φ k) hm
+  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
   obtain ⟨n, hMirror⟩ := hInterp
   have hPS : proofSearch k (.plays MirrorBot (DupocBot k) .C) = true :=
     proofSearch_k_of_play_MirrorBot_dupoc k n hMirror

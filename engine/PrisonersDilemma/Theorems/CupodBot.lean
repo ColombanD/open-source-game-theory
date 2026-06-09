@@ -136,14 +136,15 @@ theorem CupodBot_vs_CupodBot :
     simpa using hlog
   have hLoeb :
       ∀ k, k > 0 →
-        ∃ m, proofSearch m (.impl (.box (id k) (φ k)) (φ k)) = true := by
+        ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by
     intro k _
-    simpa using cupod_loeb_premise k
+    obtain ⟨m, hm⟩ := cupod_loeb_premise k
+    exact ⟨m, (proofSearch_spec _ _).1 (by simpa using hm)⟩
   obtain ⟨k₂, hk₂⟩ := PBLT φ id 0 hMono hLog hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := proofSearch_sound m (φ k) hm
+  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
   obtain ⟨n, hn⟩ := hInterp
   refine ⟨n, ?_⟩
   simp [outcome, hn]
@@ -630,14 +631,15 @@ theorem CupodBot_vs_MirrorBot :
     simpa using hlog
   have hLoeb :
       ∀ k, k > 0 →
-        ∃ m, proofSearch m (.impl (.box (id k) (φ k)) (φ k)) = true := by
+        ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by
     intro k _
-    simpa using cupod_mirror_loeb_premise k
+    obtain ⟨m, hm⟩ := cupod_mirror_loeb_premise k
+    exact ⟨m, (proofSearch_spec _ _).1 (by simpa using hm)⟩
   obtain ⟨k₂, hk₂⟩ := PBLT φ id 0 hMono hLog hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := proofSearch_sound m (φ k) hm
+  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
   obtain ⟨n, hMirror⟩ := hInterp
   have hPS : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true :=
     proofSearch_k_of_play_MirrorBot k n hMirror

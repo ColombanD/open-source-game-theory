@@ -84,7 +84,10 @@ axiom box_provable :
 -- Encoding notes:
 -- * `□_{f(k)}(φ k)` is the formula `Formula.box (f k) (φ k)`; its
 --   semantic clause is `Provable (f k) (φ k)`.
--- * "`S` derives ψ" is `∃ m, proofSearch m ψ = true`.
+-- * "`S` derives ψ" is `∃ m, Provable m ψ` — provability at some budget. (Stated
+--   over `Provable` rather than the agents' `proofSearch _ = true` oracle, since
+--   PBLT is a meta-theorem about bounded provability `□`, not about oracle
+--   calls; the two are interchangeable via `proofSearch_spec`.)
 -- * `f(k) ≻ O(lg k)` is spelled out as: there exists a positive constant
 --   `c` and a threshold `k̂` such that for all `k > k̂`, `f(k) > c · lg k`.
 -- * "Increasing" is the plain pointwise condition on `f`.
@@ -92,8 +95,8 @@ axiom PBLT :
   ∀ (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat),
     (∀ a b, a ≤ b → f a ≤ f b) →
     (∃ c kHat, c > 0 ∧ ∀ k, k > kHat → f k > c * Nat.log2 k) →
-    (∀ k, k > k₁ → ∃ m, proofSearch m (.impl (.box (f k) (φ k)) (φ k)) = true) →
-      ∃ k₂, ∀ k, k > k₂ → ∃ m, proofSearch m (φ k) = true
+    (∀ k, k > k₁ → ∃ m, Provable m (.impl (.box (f k) (φ k)) (φ k))) →
+      ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (φ k)
 
 /--
 Transport of provability across a parameterized formula family when the

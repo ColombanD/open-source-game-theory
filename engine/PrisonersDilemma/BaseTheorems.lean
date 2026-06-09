@@ -90,15 +90,19 @@ theorem proof_system_verifies_sim :
   fun me p q opponent a hme => derives (.simStep me p q opponent a hme)
 
 
--- Soundness of bounded proof search. Either the formula is provable by the
--- structural `Derivation` rules (→ `Derivation.sound`), or it is an atomic σ₁
--- fact (→ `AtomProvable_sound`).
-theorem proofSearch_sound :
-  ∀ k φ, proofSearch k φ = true → φ.interp := by
-  intro k φ hk
-  rcases (proofSearch_spec k φ).1 hk with ⟨d, _⟩ | hatom
+-- Soundness of bounded provability: anything provable within a budget is true.
+-- Either the formula is provable by the structural `Derivation` rules
+-- (→ `Derivation.sound`), or it is an atomic σ₁ fact (→ `AtomProvable_sound`).
+theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
+  intro k φ h
+  rcases h with ⟨d, _⟩ | hatom
   · exact d.sound
   · exact AtomProvable_sound k φ hatom
+
+-- Soundness of the proof-search oracle: the `Bool` reflection of `Provable_sound`.
+theorem proofSearch_sound :
+  ∀ k φ, proofSearch k φ = true → φ.interp :=
+  fun k φ hk => Provable_sound k φ ((proofSearch_spec k φ).1 hk)
 
 /-- Completeness of bounded proof search for atomic plays-formulas, via the
     budget-sensitive σ₁ atom-completeness axiom: a true play is provable at
