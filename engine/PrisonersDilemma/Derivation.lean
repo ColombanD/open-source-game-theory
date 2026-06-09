@@ -35,11 +35,19 @@ every concrete form of it. So atom-provability stays opaque, pinned by axioms.
 --     code", one rule per `Prog` construct it inspects (`.search`, `.sim`).
 --     Justified by Appendix B(a) (S reasons about computable functions).
 --
--- Deliberately ABSENT: any atomic-`plays` rule (would carry a `play` hypothesis
--- → cycle; atoms go through `AtomProvable`), and any *box-level* rule (K,
--- axiom-4) — those are not sound at a fixed budget against this finitary model,
--- so box-level reasoning is confined to the single controlled axiom `PBLT`
--- (exactly as critch22 uses Parametric Bounded Löb, not full GL).
+-- Deliberately ABSENT:
+--   • An atomic-`plays` rule: it would carry a `play` hypothesis → cycle;
+--     atoms go through `AtomProvable` instead.
+--   • GL axiom 4 (`□φ → □□φ`): its soundness obligation is
+--     `Provable n φ → Provable m (.box n φ)` — i.e. `S` proving facts about its
+--     own provability (reflection). No constructor produces a `.box`-headed
+--     conclusion, so this is not a proven-sound rule; it could only be an
+--     axiom, and as the general reflection principle it is too strong for a
+--     faithful model of a PA-like `S` (inconsistency-risk, and unneeded —
+--     critch22's self-fulfilling bots run on Löb, packaged as `PBLT`).
+-- The single controlled box principle is therefore `PBLT` (the bounded Löb
+-- axiom). GL's K *is* available — but as the derived theorem `K_provable`
+-- (budget-respecting), built from `modusPonens` below; it needs no constructor.
 inductive Derivation : Formula → Type where
   -- — Logical core —
   /-- Modus ponens: from `φ → ψ` and `φ`, infer `ψ`. Lets `S` *apply*
