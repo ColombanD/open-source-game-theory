@@ -5,15 +5,24 @@ open PD
 namespace PD.Axioms
 
 /-!
-# Surviving axioms
+# Axioms
 
-After the reform that made the proof system `S` semi-explicit
-(`Derivation.lean`), the bespoke proof-system axioms collapsed to:
+The assumptions about the proof system `S` that are *not* discharged by the
+explicit `Derivation` system. Each is a sound principle of a PA-like `S` that
+the minimal model cannot witness constructively:
 
-* the explicit `Derivation` system + its proved soundness (`Derivation.sound`),
-* `proofSearch` as a *definition* (`decide ∘ Provable`) with `proofSearch_spec`
-  a *theorem*,
-* the source-transparency steps as *theorems* (`proof_system_verifies_*`). -/
+* `atom_complete`, `atom_monotone`, `AtomProvable_sound` — σ₁-completeness,
+  budget-monotonicity, and soundness for atomic `.plays` facts;
+* `box_provable` — bounded GL axiom 4 (HBL D2 / Solovay), currently unused;
+* `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6);
+* `Provable_transport_family` — CUPOD/DUPOC budget monotonicity (deferred; see
+  below).
+
+Everything else about `S` — soundness (`Derivation.sound`), the
+`proofSearch ↔ Provable` bridge (`proofSearch_spec`), the source-transparency
+steps (`proof_system_verifies_*`), and GL's K (`K_provable`) — is a *theorem*,
+proved in `BaseTheorems.lean`.
+-/
 
 /-- σ₁-completeness for atoms, **budget-sensitive**: a true atomic play is
     provable in S, but only once the budget is large enough — there is *some*
@@ -49,13 +58,16 @@ reasons, both intrinsic to this minimal model (not to PA):
 * the box is *budget-bounded*, so the conclusion needs a *larger* budget `K`
   than `k` (proving "there is a proof of size ≤ k" costs more than `k`
   characters) — hence the `∃ K`, mirroring `atom_complete`;
-* the `Derivation` system has no rule that introspects `Provable` (nothing
-  concludes a `.box`-headed formula from a provability premise), so 4 cannot be
-  a proven-sound `Derivation` rule. Its status is therefore exactly that of
-  `PBLT`/`atom_complete`: a true principle of `S` the minimal model cannot
-  witness constructively. It is consistent (its body is its own soundness
-  obligation, which is true) and currently unused — included for reasoning that
-  needs `S` to reflect positively on its own provability. -/
+* its structural half *could* be a `Derivation` constructor (necessitation,
+  `Derivation φ → Derivation (.box k φ)`), but a sound one needs the
+  side-condition `(proof size) ≤ k`, unstatable in the constructor's type
+  without size-indexing the whole `Derivation` type — unjustified for an unused
+  principle. And the atomic half (where `φ`'s provability is the opaque
+  `AtomProvable`, with no `Derivation` in hand) is irreducibly an assumption.
+
+So its status matches `PBLT`/`atom_complete`: a true principle of `S` the
+minimal model cannot witness constructively. It is consistent (its body is its
+own soundness obligation, which is true) and currently unused. -/
 axiom box_provable :
   ∀ (k : Nat) (φ : Formula), Provable k φ → ∃ K, Provable K (.box k φ)
 

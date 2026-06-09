@@ -4,16 +4,19 @@ import PrisonersDilemma.Derivation
 namespace PD
 
 /-!
-**The game dynamics** — the fuelled evaluator `eval`, plus `play`,
-   `outcome`, and the denotational semantics `Formula.interp`. -/
+# Game dynamics
 
--- The fuelled evaluator. Because `proofSearch` is already defined above,
--- the `.search` guard inlines it directly — so `eval` is an ordinary
--- non-parametric definition here, defined *after* the oracle it consults.
--- This staging (oracle first, evaluator second) is what avoids the cycle
--- `eval → proofSearch → Provable → Derivation`; no oracle parameter is needed.
--- `me`/`opponent` are the fixed players; `body` is the subterm being reduced;
--- `Option` lets runs fail when fuel is exhausted.
+The fuelled evaluator `eval`, the entry points `play`/`outcome`, and the
+denotational semantics `Formula.interp`. This layer sits on top of the proof
+system in `Derivation.lean`: `eval`'s `.search` guard consults `proofSearch`,
+and `interp`'s box clause is `Provable`.
+-/
+
+-- The fuelled evaluator. The `.search` guard consults the oracle `proofSearch`
+-- (defined in Derivation.lean, which this file imports). `me`/`opponent` are
+-- the fixed players; `body` is the subterm being reduced; `Option` lets runs
+-- fail when fuel is exhausted, keeping `eval` finite despite the unbounded
+-- self-reference available in `Prog`.
 noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
   | 0,   _,  _,   _    => none
   | n+1, me, opponent, body => match body with
@@ -41,8 +44,10 @@ noncomputable def outcome (fuel : Nat) (p q : Prog) : Option Outcome := do
   let b ← play fuel q p
   some (a, b)
 
--- Denotational semantics. The box clause now refers to `Provable` directly
--- — the semantics no longer quotes a black-box oracle.
+-- Denotational semantics: maps a syntactic `Formula` to a Lean proposition
+-- (truth). `.plays` is fuel-existential so theorems need not commit to a budget;
+-- the box clause is `Provable n φ` (the proof system's provability predicate,
+-- not a separate oracle).
 def Formula.interp : Formula → Prop
   | .plays p q a => ∃ n, play n p q = some a
   | .impl φ ψ    => φ.interp → ψ.interp

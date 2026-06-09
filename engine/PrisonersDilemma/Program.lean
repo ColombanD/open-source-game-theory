@@ -10,8 +10,8 @@ abbrev Outcome := Action × Action
 -- `Prog` is the language of agents from Critch 2022 (the Python-style
 -- pseudocode). It is pure *source code*: no constructor produces an
 -- `Action` directly — actions only appear after evaluation via `eval`
--- in Eval.lean. Keeping everything at the syntactic level is what lets agents be nested,
---  substituted, and passed as subjects of formulas.
+-- in Dynamics.lean. Keeping everything at the syntactic level is what lets
+-- agents be nested, substituted, and passed as subjects of formulas.
 
 -- `Formula` is the part of the proof system `S` that agents query through the oracle,
 -- just enough to express hypotheses like `"opp(CUPOD_k.source) == D"`.

@@ -4,11 +4,18 @@ namespace PD
 open Classical
 
 /-!
-**The proof system `S`** — the inductive `Derivation` (syntactic shape
-rules), the opaque `AtomProvable`, `Provable` (`Derivation`-or-atom), and
-the proof-search oracle `proofSearch` *defined* as decidable provability
-(no longer an axiom).
+# The proof system `S`
 
+The agents' internal logic, made explicit. This file defines:
+* `Derivation : Formula → Type` — the inductive proof objects of `S` (its
+  inference rules);
+* `Provable k φ` — provability within budget `k` (a `Derivation` of size ≤ `k`,
+  or an atomic σ₁ fact `AtomProvable k φ`);
+* `proofSearch k φ` — the oracle the agents query, *defined* as decidable
+  `Provable` (not an axiom).
+
+`Formula.interp` (Dynamics.lean) interprets `Formula` into Lean's logic, and
+`Derivation.sound` (BaseTheorems.lean) is the bridge `provability → truth`.
 
 The only assumptions that survive are isolated to atomic `.plays` formulas
 (σ₁-completeness and atom-soundness — see `AtomProvable` below). These cannot
@@ -41,10 +48,13 @@ every concrete form of it. So atom-provability stays opaque, pinned by axioms.
 --   • GL axiom 4 (`□φ → □□φ`): its obligation is
 --     `Provable k φ → ∃K, Provable K (.box k φ)`. This is a *sound* PA principle
 --     (Hilbert–Bernays–Löb D2, Solovay) — NOT dangerous reflection (the
---     dangerous one is `□φ → φ`, which we do not have). It is not a *constructor*
---     only because no `Derivation` rule introspects `Provable` (nothing concludes
---     a `.box`-headed formula from a provability premise), and the bounded box
---     needs a *larger* output budget. So it lives as the axiom `box_provable`
+--     dangerous one is `□φ → φ`, which we do not have). One *could* in principle
+--     derive its structural half via a necessitation constructor
+--     `Derivation φ → Derivation (.box k φ)`, but a SOUND such rule needs the
+--     side-condition `(proof size) ≤ k`, which cannot be stated in the
+--     constructor's type without size-indexing the whole `Derivation` type
+--     (`Derivation : Formula → Nat → Type`) — a large change unjustified for an
+--     unused principle. So axiom 4 lives wholesale as the axiom `box_provable`
 --     (Axioms.lean), same status as `PBLT`/`atom_complete`.
 -- Box-level principles (Löb via `PBLT`, axiom 4 via `box_provable`) are thus
 -- axioms; GL's K *is* derived — as the theorem `K_provable`
