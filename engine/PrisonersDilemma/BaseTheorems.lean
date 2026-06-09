@@ -24,6 +24,9 @@ theorem proofSearch_spec (k : Nat) (φ : Formula) :
 theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
   intro φ d
   induction d with
+  | modusPonens φ ψ _ _ ih1 ih2 =>
+      -- `.impl`'s interp is Lean implication, so this is just function application.
+      exact ih1 ih2
   | searchBranch k ψ a b me opponent hme =>
       -- `me` is a `.search` node; a provable guard makes `eval` take the
       -- `.const a` branch, so `me` plays `a` against `opponent`.
