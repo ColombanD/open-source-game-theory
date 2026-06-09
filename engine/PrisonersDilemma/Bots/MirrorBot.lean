@@ -1,11 +1,11 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Derivation
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 /-- MirrorBot: mimics what the opponent does against itself-/
 def MirrorBot : Prog :=
   .sim .opp .self -- Simulate opponent against itself
 
-end PDNew.Bots
+end PD.Bots

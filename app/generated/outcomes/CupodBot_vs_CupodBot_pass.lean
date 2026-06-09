@@ -3,11 +3,11 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.ProofSearch
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
+open PD
+open PD.Axioms
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_CupodBot_vs_CupodBot :
     ∃ k, ∀ n, outcome (n + 2) (CupodBot k) (CupodBot k) = some (.D, .D) := by
@@ -60,4 +60,4 @@ theorem llm_outcome_CupodBot_vs_CupodBot :
     simp [eval]
   simp [outcome, hplay]
 
-end PDNew.Theorems
+end PD.Theorems

@@ -3,8 +3,8 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.MirrorBot
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 def EBot : Prog :=
   .ite -- If then else
@@ -21,4 +21,4 @@ def EBot : Prog :=
         (.const Action.C) -- if opponent cooperates, cooperate
         (.const Action.D))) -- else, defect
 
-end PDNew.Bots
+end PD.Bots

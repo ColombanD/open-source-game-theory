@@ -2,10 +2,10 @@ import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.CooperateBot
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_MirrorBot_vs_TitForTatBot (n : Nat) :
     outcome (n+6) MirrorBot TitForTatBot = some (.C, .C) := by
@@ -13,4 +13,4 @@ theorem llm_outcome_MirrorBot_vs_TitForTatBot (n : Nat) :
   simp [MirrorBot, TitForTatBot, CooperateBot, eval, Prog.subst]
   decide
 
-end PDNew.Theorems
+end PD.Theorems

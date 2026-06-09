@@ -4,9 +4,9 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.DefectBot
 
-open PDNew
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Bots
+namespace PD.Theorems
 
 theorem llm_outcome_CooperateBot_vs_DBot (n : Nat) :
     outcome (n+4) CooperateBot DBot = some (.C, .D) := by
@@ -17,4 +17,4 @@ theorem llm_outcome_CooperateBot_vs_DBot (n : Nat) :
     decide
   simp [outcome, hA, hB]
 
-end PDNew.Theorems
+end PD.Theorems

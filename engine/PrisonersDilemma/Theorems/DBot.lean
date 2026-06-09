@@ -5,8 +5,8 @@ import PrisonersDilemma.Derivation
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Theorems.Helpers
 
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD.Bots
+namespace PD.Theorems
 
 theorem DBot_plays_D_against_CooperateBot (fuel : Nat) :
     play (fuel + 3) DBot CooperateBot = some .D := by
@@ -64,4 +64,4 @@ theorem DBot_vs_DBot (fuel : Nat):
       simpa [eval] using hPlay
     simp [outcome, hA]
 
-end PDNew.Theorems
+end PD.Theorems

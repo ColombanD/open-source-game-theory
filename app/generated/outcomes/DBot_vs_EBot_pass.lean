@@ -6,10 +6,10 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.MirrorBot
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_DBot_vs_EBot (n : Nat) :
     outcome (n+8) DBot EBot = some (.C, .D) := by
@@ -18,4 +18,4 @@ theorem llm_outcome_DBot_vs_EBot (n : Nat) :
   have h2 : (Action.C == Action.C) = true := rfl
   simp [eval, DBot, EBot, DefectBot, CooperateBot, MirrorBot, Prog.subst, h1, h2]
 
-end PDNew.Theorems
+end PD.Theorems

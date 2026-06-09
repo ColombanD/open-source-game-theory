@@ -10,8 +10,8 @@ import PrisonersDilemma.Theorems.TitForTatBot
 import PrisonersDilemma.Theorems.MirrorBot
 
 
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD.Bots
+namespace PD.Theorems
 
 theorem EBot_plays_D_against_CooperateBot (fuel : Nat) :
     play (fuel + 3) EBot CooperateBot = some .D := by
@@ -281,4 +281,4 @@ theorem EBot_vs_EBot (fuel : Nat):
     exact hInnerIte
   simp [outcome, hA]
 
-end PDNew.Theorems
+end PD.Theorems

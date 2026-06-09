@@ -5,10 +5,10 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Theorems.ProofSearch
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Axioms
+open PD.Bots
+namespace PD.Theorems
 
 /-- Monotonicity of DupocBot in `k`: transport a witness across parameter growth. -/
 theorem DupocBot_monotonicity (Bot : Prog) (a : Action) (n k : Nat) :
@@ -39,4 +39,4 @@ theorem llm_outcome_CooperateBot_vs_DupocBot (n : Nat) :
     simp [eval, Prog.subst, Formula.subst, hk]
   simp [outcome, hA, hB]
 
-end PDNew.Theorems
+end PD.Theorems

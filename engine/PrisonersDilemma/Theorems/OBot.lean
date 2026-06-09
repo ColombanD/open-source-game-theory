@@ -8,8 +8,8 @@ import PrisonersDilemma.Derivation
 import PrisonersDilemma.Theorems.Helpers
 
 
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD.Bots
+namespace PD.Theorems
 
 
 theorem OBot_plays_C_against_CB(fuel : Nat) :
@@ -182,4 +182,4 @@ theorem OBot_vs_OBot (fuel : Nat):
 
     simp [outcome, hA]
 
-end PDNew.Theorems
+end PD.Theorems

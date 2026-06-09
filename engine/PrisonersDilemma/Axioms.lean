@@ -1,8 +1,8 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.Dynamics
 
-open PDNew
-namespace PDNew.Axioms
+open PD
+namespace PD.Axioms
 
 /-!
 # Surviving axioms
@@ -13,19 +13,18 @@ After the reform that made the proof system `S` semi-explicit
 * the explicit `Derivation` system + its proved soundness (`Derivation.sound`),
 * `proofSearch` as a *definition* (`decide ∘ Provable`) with `proofSearch_spec`
   a *theorem*,
-* the source-transparency steps as *theorems* (`proof_system_verifies_*`).
+* the source-transparency steps as *theorems* (`proof_system_verifies_*`). -/
 
-What remains genuinely axiomatic lives here or in `Derivation.lean`:
+/-- σ₁-completeness for atoms: a true atomic play is provable in S.
+    critch22 uses this implicitly (e.g. "CUPOD(10⁹)(DB.source) will find the
+    proof and return D"); it is decidable Σ₁ truth, no Gödel obstruction. -/
+axiom atom_complete :
+  ∀ p q a, (∃ n, play n p q = some a) → AtomProvable (.plays p q a)
 
-* `Derivation.atom_complete` / `AtomProvable_sound` — σ₁-completeness and
-  soundness for atomic `.plays` formulas (cannot be made constructive without
-  recreating the `play`/`proofSearch` cycle).
-* `PBLT` (below) — the Parametric Bounded Löb Theorem, borrowed from critch22.
-* `Provable_transport_family` (below) — CUPOD/DUPOC monotonicity under growing
-  bot index. **Out of scope** for this reform; its general form is not
-  derivable at the play level (an opponent can behave differently against
-  `CupodBot n` vs `CupodBot k`). Flagged for separate, per-opponent treatment.
--/
+/-- S is sound on atoms. Companion to `atom_complete`; the atomic analogue of
+    `Derivation.sound`, needed because `AtomProvable` is opaque. -/
+axiom AtomProvable_sound : ∀ φ, AtomProvable φ → φ.interp
+
 
 -- Parametric Bounded Löb's Theorem (Lemma 3.6).
 --
@@ -68,4 +67,4 @@ abstract witness interface).
 axiom Provable_transport_family :
   ∀ (Φ : Nat → Formula) n k, n ≤ k → Provable k (Φ n) → Provable k (Φ k)
 
-end PDNew.Axioms
+end PD.Axioms

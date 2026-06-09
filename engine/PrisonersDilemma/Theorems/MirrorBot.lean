@@ -9,9 +9,9 @@ import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 
 
-open PDNew.Bots
-open PDNew.Axioms
-namespace PDNew.Theorems
+open PD.Bots
+open PD.Axioms
+namespace PD.Theorems
 
 theorem MirrorBot_plays_C_against_CooperateBot (fuel : Nat) :
     play (fuel + 3) MirrorBot CooperateBot = some .C := by
@@ -144,7 +144,7 @@ theorem mirror_self_unprovable :
   cases hp : proofSearch k (.plays MirrorBot MirrorBot a) with
   | false => rfl
   | true =>
-      exact absurd (PDNew.Theorems.proofSearch_sound _ _ hp) (mirror_self_no_action a)
+      exact absurd (PD.Theorems.proofSearch_sound _ _ hp) (mirror_self_no_action a)
 
 
-end PDNew.Theorems
+end PD.Theorems

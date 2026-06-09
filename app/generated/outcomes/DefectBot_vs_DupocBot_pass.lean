@@ -4,11 +4,11 @@ import PrisonersDilemma.Theorems.ProofSearch
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Dynamics
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
+open PD
+open PD.Axioms
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 private theorem interp_DefectBot_plays_C_false_local (q : Prog) :
     ¬ (Formula.plays DefectBot q .C).interp := by
@@ -36,4 +36,4 @@ theorem llm_outcome_DefectBot_vs_DupocBot (n k : Nat) :
     simp [eval, Prog.subst, Formula.subst, hg]
   simp [outcome, hA, hB]
 
-end PDNew.Theorems
+end PD.Theorems

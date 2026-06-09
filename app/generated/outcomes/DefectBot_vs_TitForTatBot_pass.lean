@@ -2,14 +2,14 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Dynamics
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_DefectBot_vs_TitForTatBot (n : Nat) :
     outcome (n+3) DefectBot TitForTatBot = some (.D, .D) := by
   simp [outcome, play, eval, TitForTatBot, DefectBot, Prog.subst]
   decide
 
-end PDNew.Theorems
+end PD.Theorems

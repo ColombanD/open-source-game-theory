@@ -1,7 +1,7 @@
 import PrisonersDilemma.Program
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 /-- DIMCID: Defect If My Cooperation Implies Defection.
     Uses the proof oracle to check whether "if I cooperate, the opponent defects".
@@ -12,4 +12,4 @@ def DIMCID (k : Nat) : Prog :=
     (.const Action.D)
     (.const Action.C)
 
-end PDNew.Bots
+end PD.Bots

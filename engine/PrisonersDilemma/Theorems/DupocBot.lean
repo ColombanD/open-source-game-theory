@@ -14,10 +14,10 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Axioms
+open PD.Bots
+namespace PD.Theorems
 
 /-- Monotonicity of Dupoc bot: If the proof search succeeds with less fuel, it also succeeds with more fuel -/
 theorem DupocBot_monotonicity (n k : Nat) (Bot : Prog) (a : Action) :
@@ -618,4 +618,4 @@ theorem DupocBot_vs_MirrorBot :
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 
-end PDNew.Theorems
+end PD.Theorems

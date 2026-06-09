@@ -4,11 +4,11 @@ import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.ProofSearch
 import PrisonersDilemma.Theorems.Helpers
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
+open PD
+open PD.Axioms
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_CupodBot_vs_DefectBot (n : Nat) :
     ∃ k, outcome (n+2) (CupodBot k) DefectBot = some (.D, .D) := by
@@ -39,4 +39,4 @@ theorem llm_outcome_CupodBot_vs_DefectBot (n : Nat) :
   have hB : play (n+2) DefectBot (CupodBot K) = some .D := rfl
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems

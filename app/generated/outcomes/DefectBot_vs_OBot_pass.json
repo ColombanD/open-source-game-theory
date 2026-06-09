@@ -15,5 +15,5 @@
   "iterations_used": 3,
   "elapsed_seconds": 29.87631245900411,
   "error": null,
-  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Bots.OBot\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_DefectBot_vs_OBot (n : Nat) :\n    outcome (n+5) DefectBot OBot = some (.D, .D) := by\n  unfold outcome play\n  simp [eval, OBot, DefectBot, Prog.subst]\n  decide\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Bots.OBot\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_DefectBot_vs_OBot (n : Nat) :\n    outcome (n+5) DefectBot OBot = some (.D, .D) := by\n  unfold outcome play\n  simp [eval, OBot, DefectBot, Prog.subst]\n  decide\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

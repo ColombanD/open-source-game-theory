@@ -1,15 +1,26 @@
 import PrisonersDilemma.Program
 
-namespace PDNew
+namespace PD
 open Classical
 
 /-!
-# The explicit derivation system `S`
+# Game dynamics and the explicit proof system `S`
 
-This file makes the ambient proof system `S` *semi-explicit*. Instead of an
-abstract `proofSearch` oracle bolted on as an axiom, we define a small
-inductive `Derivation` whose rules are individually inspectable, prove its
-soundness, and *define* `proofSearch` as decidable provability over it.
+This file holds the two co-defined layers of the model, in the order their
+dependencies force:
+
+1. **The proof system `S`** — the inductive `Derivation` (syntactic shape
+   rules), the opaque `AtomProvable`, `Provable` (`Derivation`-or-atom), and
+   the proof-search oracle `proofSearch` *defined* as decidable provability
+   (no longer an axiom).
+2. **The game dynamics** — the fuelled evaluator `eval`, plus `play`,
+   `outcome`, and the denotational semantics `Formula.interp`.
+
+They live together because they are mutually entangled: `eval`'s `.search`
+guard calls `proofSearch`, while `Provable`/`interp` reason about `play`. The
+ordering below (proof system first, dynamics second) is what keeps the
+definitions acyclic. Soundness of `Derivation`, `proofSearch_spec`, and the
+transparency theorems are proved separately in `BaseTheorems.lean`.
 
 The only assumptions that survive are isolated to atomic `.plays` formulas
 (σ₁-completeness and atom-soundness — see `AtomProvable` below). These cannot
@@ -66,11 +77,6 @@ def Provable (k : Nat) (φ : Formula) : Prop :=
 -- (hence noncomputable), which is correct for a model of an oracle.
 noncomputable def proofSearch (k : Nat) (φ : Formula) : Bool := decide (Provable k φ)
 
-/-- The bridge `proofSearch ↔ Provable` is now a theorem, not an axiom. -/
-theorem proofSearch_spec (k : Nat) (φ : Formula) :
-    proofSearch k φ = true ↔ Provable k φ := by
-  unfold proofSearch; exact decide_eq_true_iff
-
 -- 5. The fuelled evaluator. Because `proofSearch` is already defined above,
 -- the `.search` guard inlines it directly — so `eval` is an ordinary
 -- non-parametric definition here, defined *after* the oracle it consults.
@@ -113,82 +119,4 @@ def Formula.interp : Formula → Prop
   | .neg φ       => ¬ φ.interp
   | .box n φ     => Provable n φ
 
--- 7. Soundness of the structural rules. Each `Derivation` yields a true
--- formula. The interesting cases (`searchBranch`, `simStep`) are exactly the
--- semantic content the old transparency axioms asserted for free.
-theorem Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
-  intro φ d
-  induction d with
-  | searchBranch k ψ a b me opponent hme =>
-      -- `me` is a `.search` node; a provable guard makes `eval` take the
-      -- `.const a` branch, so `me` plays `a` against `opponent`.
-      subst hme
-      intro hguard
-      have hps : proofSearch k (ψ.subst (.search k ψ (.const a) (.const b)) opponent) = true :=
-        (proofSearch_spec _ _).2 hguard
-      exact ⟨2, by simp only [play, eval, hps, if_true]⟩
-  | simStep me p q opponent a hme =>
-      -- `me` is a `.sim` node; by the `.sim` eval rule, `me` plays `a` iff its
-      -- closed body `p'` plays `a` against `q'`.
-      subst hme
-      intro h
-      obtain ⟨n, hn⟩ := h
-      exact ⟨n + 1, by show eval (n+1) (.sim p q) opponent (.sim p q) = some a
-                       simp only [eval]; exact hn⟩
-  | hypSyll φ ψ χ _ _ ih1 ih2 =>
-      exact fun h => ih2 (ih1 h)
-
--- 8. Atom axioms (the one deliberately-kept assumption, isolated to `.plays`).
--- They mention `play`/`interp`, so they come after those are defined.
-
-/-- σ₁-completeness for atoms: a true atomic play is provable in S.
-    critch22 uses this implicitly (e.g. "CUPOD(10⁹)(DB.source) will find the
-    proof and return D"); it is decidable Σ₁ truth, no Gödel obstruction. -/
-axiom atom_complete :
-  ∀ p q a, (∃ n, play n p q = some a) → AtomProvable (.plays p q a)
-
-/-- S is sound on atoms. Companion to `atom_complete`; the atomic analogue of
-    `Derivation.sound`, needed because `AtomProvable` is opaque. -/
-axiom AtomProvable_sound : ∀ φ, AtomProvable φ → φ.interp
-
--- 9. Transparency lemmas, now *theorems*. Kept in `PDNew.Axioms` so the
--- existing `open PDNew.Axioms` in the bot theorem files resolves them
--- unqualified — zero edits to their ~20 call sites.
-namespace Axioms
-
-/-- A derivation of size `m` witnesses `proofSearch m φ = true` (structural
-    disjunct of `Provable`). -/
-theorem derives {φ : Formula} (d : Derivation φ) : ∃ m, proofSearch m φ = true :=
-  ⟨d.size, (proofSearch_spec _ _).2 (Or.inl ⟨d, Nat.le_refl _⟩)⟩
-
-/--
-S can read source code: if an agent `me` is literally
-`.search k ψ (.const a) (.const b)`, then S proves
-`□_k ψ' → me plays a against opponent`, where `ψ' = ψ.subst me opponent`.
-
-Was an axiom; now a theorem, witnessed by `Derivation.searchBranch`.
--/
-theorem proof_system_verifies_search_branch :
-    ∀ (k : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog),
-      me = .search k ψ (.const a) (.const b) →
-      ∃ m, proofSearch m
-        (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a)) = true :=
-  fun k ψ a b me opponent hme => derives (.searchBranch k ψ a b me opponent hme)
-
-/--
-S can read `.sim` nodes: if `me = .sim p q`, then S proves
-`(p' plays a vs q') → (me plays a vs opponent)`.
-
-Was an axiom; now a theorem, witnessed by `Derivation.simStep`.
--/
-theorem proof_system_verifies_sim :
-    ∀ (me p q opponent : Prog) (a : Action),
-      me = .sim p q →
-      ∃ m, proofSearch m
-        (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
-               (.plays me opponent a)) = true :=
-  fun me p q opponent a hme => derives (.simStep me p q opponent a hme)
-
-end Axioms
-
-end PDNew
+end PD

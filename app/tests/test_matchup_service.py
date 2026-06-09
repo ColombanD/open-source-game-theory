@@ -152,7 +152,7 @@ def test_run_matchup_raises_and_cleans_up_on_lean_failure(monkeypatch, tmp_path:
         "write_matchup_lean_file",
         lambda **kwargs: GeneratedLeanFile(
             path=generated_file,
-            proof_theorem_used="PDNew.Theorems.outcome_CooperateBot_vs_DefectBot",
+            proof_theorem_used="PD.Theorems.outcome_CooperateBot_vs_DefectBot",
             actions_are_swapped=False,
         ),
     )
@@ -200,7 +200,7 @@ def test_run_matchup_raises_and_cleans_up_on_build_failure(monkeypatch, tmp_path
         "write_matchup_lean_file",
         lambda **kwargs: GeneratedLeanFile(
             path=generated_file,
-            proof_theorem_used="PDNew.Theorems.outcome_CooperateBot_vs_DefectBot",
+            proof_theorem_used="PD.Theorems.outcome_CooperateBot_vs_DefectBot",
             actions_are_swapped=False,
         ),
     )

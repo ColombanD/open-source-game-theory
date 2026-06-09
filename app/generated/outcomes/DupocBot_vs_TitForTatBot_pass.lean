@@ -7,10 +7,10 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Theorems.ProofSearch
 import PrisonersDilemma.Theorems.Helpers
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Axioms
+open PD.Bots
+namespace PD.Theorems
 
 theorem llm_outcome_DupocBot_vs_TitForTatBot (n : Nat) :
     ∃ k, outcome (n+4) (DupocBot k) TitForTatBot = some (.C, .C) := by
@@ -62,4 +62,4 @@ theorem llm_outcome_DupocBot_vs_TitForTatBot (n : Nat) :
 
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems

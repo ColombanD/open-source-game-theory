@@ -1,9 +1,9 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Derivation
 
-open PDNew
+open PD
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem play_from_eval (fuel : Nat) (me opponent : Prog) (a : Action)
     (hEval : eval fuel me opponent me = some a) :
@@ -87,4 +87,4 @@ theorem outcome_of_plays
     outcome fuel p q = some (a, b) := by
   simp [outcome, hA, hB]
 
-end PDNew.Theorems
+end PD.Theorems

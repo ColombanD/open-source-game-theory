@@ -14,5 +14,5 @@
   "iterations_used": 3,
   "elapsed_seconds": 163.47699108300003,
   "error": null,
-  "final_text_tail": "It compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Dynamics\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_EBot_vs_EBot (n : Nat) :\n    outcome (n+11) EBot EBot = some (.C, .C) := by\n  simp [outcome, play, eval, EBot, MirrorBot, CooperateBot, DefectBot, Prog.subst,\n        show (Action.C == Action.C) = true from rfl,\n        show (Action.D == Action.C) = false from rfl]\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "It compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_EBot_vs_EBot (n : Nat) :\n    outcome (n+11) EBot EBot = some (.C, .C) := by\n  simp [outcome, play, eval, EBot, MirrorBot, CooperateBot, DefectBot, Prog.subst,\n        show (Action.C == Action.C) = true from rfl,\n        show (Action.D == Action.C) = false from rfl]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

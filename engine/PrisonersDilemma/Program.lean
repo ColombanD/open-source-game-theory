@@ -1,4 +1,4 @@
-namespace PDNew
+namespace PD
 
 inductive Action
   | C
@@ -87,4 +87,4 @@ mutual
     | .box n φ,     m, o => .box n (φ.subst m o)
 end
 
-end PDNew
+end PD

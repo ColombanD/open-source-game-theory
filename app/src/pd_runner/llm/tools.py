@@ -103,7 +103,7 @@ def _run_lean_proof(lean_source: str, filename_hint: str = "proof_attempt") -> s
             "--- stderr ---\n"
             f"Rejected before compile: your proof file contains `def {names} : Prog` "
             f"declaration(s). Proof files must NOT redefine bots — they cause a namespace "
-            f"clash with `PDNew.Bots.{redefs[0]}` at lake build time.\n"
+            f"clash with `PD.Bots.{redefs[0]}` at lake build time.\n"
             f"Fix: remove the `def` block(s) and add an import line "
             f"`import PrisonersDilemma.Bots.{redefs[0]}` (and similarly for any other bots). "
             f"Reference the bots by name only."

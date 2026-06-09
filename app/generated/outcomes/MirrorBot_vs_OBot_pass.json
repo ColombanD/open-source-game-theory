@@ -15,5 +15,5 @@
   "iterations_used": 3,
   "elapsed_seconds": 106.898621291999,
   "error": null,
-  "final_text_tail": "Compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.MirrorBot\nimport PrisonersDilemma.Bots.OBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PDNew\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_MirrorBot_vs_OBot (n : Nat) :\n    outcome (n+7) MirrorBot OBot = some (.D, .D) := by\n  simp [outcome, play, eval, MirrorBot, OBot, CooperateBot, DefectBot, Prog.subst]\n  decide\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "Compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.MirrorBot\nimport PrisonersDilemma.Bots.OBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_MirrorBot_vs_OBot (n : Nat) :\n    outcome (n+7) MirrorBot OBot = some (.D, .D) := by\n  simp [outcome, play, eval, MirrorBot, OBot, CooperateBot, DefectBot, Prog.subst]\n  decide\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

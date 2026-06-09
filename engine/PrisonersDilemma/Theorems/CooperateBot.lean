@@ -4,10 +4,10 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.DefectBot
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 -- CooperateBot always cooperates (with any fuel ≥ 1).
 theorem play_CooperateBot (n : Nat) (opponent : Prog) :
@@ -63,4 +63,4 @@ theorem outcome_CooperateBot_vs_CooperateBot (n : Nat) :
   rw [play_CooperateBot]
   rfl
 
-end PDNew.Theorems
+end PD.Theorems

@@ -3,10 +3,10 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.OBot
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_DefectBot_vs_OBot (n : Nat) :
     outcome (n+5) DefectBot OBot = some (.D, .D) := by
@@ -14,4 +14,4 @@ theorem llm_outcome_DefectBot_vs_OBot (n : Nat) :
   simp [eval, OBot, DefectBot, Prog.subst]
   decide
 
-end PDNew.Theorems
+end PD.Theorems

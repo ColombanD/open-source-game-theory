@@ -6,10 +6,10 @@ import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 import PrisonersDilemma.Theorems.DefectBot
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Axioms
+open PD.Bots
+namespace PD.Theorems
 
 private theorem cupod_search_succeeds_aux :
     ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true := by
@@ -94,4 +94,4 @@ theorem llm_outcome_CupodBot_vs_DBot :
     DBot_plays_C_against_CupodBot_aux k n hk
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems

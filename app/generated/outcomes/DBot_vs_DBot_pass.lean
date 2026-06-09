@@ -2,9 +2,9 @@ import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.Helpers
 
-open PDNew
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Bots
+namespace PD.Theorems
 
 theorem llm_outcome_DBot_vs_DBot (n : Nat) :
     outcome (n + 7) DBot DBot = some (.D, .D) := by
@@ -19,4 +19,4 @@ theorem llm_outcome_DBot_vs_DBot (n : Nat) :
     simpa [eval] using hPlay
   exact outcome_of_plays _ _ _ _ _ hA hA
 
-end PDNew.Theorems
+end PD.Theorems
