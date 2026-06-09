@@ -15,15 +15,27 @@ After the reform that made the proof system `S` semi-explicit
   a *theorem*,
 * the source-transparency steps as *theorems* (`proof_system_verifies_*`). -/
 
-/-- σ₁-completeness for atoms: a true atomic play is provable in S.
-    critch22 uses this implicitly (e.g. "CUPOD(10⁹)(DB.source) will find the
-    proof and return D"); it is decidable Σ₁ truth, no Gödel obstruction. -/
+/-- σ₁-completeness for atoms, **budget-sensitive**: a true atomic play is
+    provable in S, but only once the budget is large enough — there is *some*
+    threshold `K` (the proof cost) at which it becomes provable. critch22 uses
+    σ₁-completeness implicitly (e.g. "CUPOD(10⁹)(DB.source) will find the proof
+    and return D"); it is decidable Σ₁ truth, no Gödel obstruction.
+
+    The `∃ K` (rather than provability at *every* budget) is what lets a true
+    play be *unprovable within a too-small budget* — the slack Open Problem 3's
+    `outcome(DUPOC,CUPOD) = (D,C)` requires. -/
 axiom atom_complete :
-  ∀ p q a, (∃ n, play n p q = some a) → AtomProvable (.plays p q a)
+  ∀ p q a, (∃ n, play n p q = some a) → ∃ K, AtomProvable K (.plays p q a)
+
+/-- Atom provability is monotone in budget: more characters never hurt. With the
+    budget index this must be stated (it was automatic before). -/
+axiom atom_monotone :
+  ∀ k₁ k₂ φ, k₁ ≤ k₂ → AtomProvable k₁ φ → AtomProvable k₂ φ
 
 /-- S is sound on atoms. Companion to `atom_complete`; the atomic analogue of
-    `Derivation.sound`, needed because `AtomProvable` is opaque. -/
-axiom AtomProvable_sound : ∀ φ, AtomProvable φ → φ.interp
+    `Derivation.sound`, needed because `AtomProvable` is opaque. Budget is
+    irrelevant to truth. -/
+axiom AtomProvable_sound : ∀ k φ, AtomProvable k φ → φ.interp
 
 
 -- Parametric Bounded Löb's Theorem (Lemma 3.6).

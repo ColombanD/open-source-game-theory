@@ -76,22 +76,29 @@ def Derivation.size : {φ : Formula} → Derivation φ → Nat
   | _, .modusPonens _ _ d e   => d.size + e.size + 1
   | _, .hypSyll _ _ _ d e     => d.size + e.size + 1
 
--- 2. σ₁ atom-provability as an opaque predicate. It is opaque, not defined,
--- because any concrete definition is self-referential: justifying a `.plays`
--- atom whose subject is a `.search` program requires consulting that program's
--- guard `□_k ψ`, and `□`'s meaning is `Provable` — so `AtomProvable` would
--- depend on `Provable`, which already depends on `AtomProvable` (§3). That is a
--- genuine Löb-style loop (independent of `play`), which Lean's termination
--- checker rejects in every form we tried. The two atom axioms below pin it
--- down instead. Budget-independent: an atom is σ₁-true (hence provable at *some*
--- size) or not — no tight size bound to track, making proof-search
--- budget-monotonicity automatic.
-opaque AtomProvable : Formula → Prop
+-- 2. σ₁ atom-provability as an opaque predicate, indexed by budget `k`.
+-- `AtomProvable k φ` means "S can prove the atom `φ` within `k` characters".
+-- It is opaque, not defined, because any concrete definition is
+-- self-referential: justifying a `.plays` atom whose subject is a `.search`
+-- program requires consulting that program's guard `□_k ψ`, and `□`'s meaning
+-- is `Provable` — so `AtomProvable` would depend on `Provable`, which already
+-- depends on `AtomProvable` (§3). A genuine Löb-style loop Lean rejects.
+--
+-- The budget index is ESSENTIAL: a true atomic play is provable, but generally
+-- only once the budget is large enough (its proof has a cost). At a *small*
+-- budget a true atom may be unprovable. Dropping this index (the earlier
+-- budget-independent version) forces every true play to be provable at every
+-- budget — which collapses interactions toward cooperation and makes Critch's
+-- Open Problem 3 outcome `outcome(DUPOC,CUPOD) = (D,C)` impossible to even
+-- state (DUPOC could never be "unable to prove CUPOD cooperates"). The atom
+-- axioms (`atom_complete`, `atom_monotone`, `AtomProvable_sound`) pin it down.
+opaque AtomProvable : Nat → Formula → Prop
 
--- 3. Provability in S: derivable by the structural rules within budget `k`, OR
--- an atomic σ₁ fact. This is the truth condition the box modality refers to.
+-- 3. Provability in S within budget `k`: derivable by the structural rules with
+-- a derivation of size ≤ `k`, OR an atomic σ₁ fact provable within `k`. This is
+-- the truth condition the box modality refers to.
 def Provable (k : Nat) (φ : Formula) : Prop :=
-  (∃ d : Derivation φ, d.size ≤ k) ∨ AtomProvable φ
+  (∃ d : Derivation φ, d.size ≤ k) ∨ AtomProvable k φ
 
 -- 4. The proof-search oracle is now a *definition*, not an axiom: bounded
 -- provability, reflected into `Bool` for the evaluator's guard. Classical

@@ -98,24 +98,24 @@ theorem proofSearch_sound :
   intro k φ hk
   rcases (proofSearch_spec k φ).1 hk with ⟨d, _⟩ | hatom
   · exact d.sound
-  · exact AtomProvable_sound φ hatom
+  · exact AtomProvable_sound k φ hatom
 
 /-- Completeness of bounded proof search for atomic plays-formulas, via the
-    σ₁ atom-completeness axiom. Any budget works (`AtomProvable` is
-    budget-independent); pick `0`. -/
+    budget-sensitive σ₁ atom-completeness axiom: a true play is provable at
+    *some* budget `K` (its proof cost), not necessarily at `0`. -/
 theorem proofSearch_complete_plays :
 ∀ p q a, (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
   intro p q a h
-  exact ⟨0, (proofSearch_spec 0 (.plays p q a)).2 (Or.inr (atom_complete p q a h))⟩
+  obtain ⟨K, hK⟩ := atom_complete p q a h
+  exact ⟨K, (proofSearch_spec K (.plays p q a)).2 (Or.inr hK)⟩
 
 -- Monotonicity in proof-search budget: the structural disjunct relaxes its size
--- bound, and the `AtomProvable` disjunct is budget-independent — so both carry
--- over to any larger budget.
+-- bound; the `AtomProvable` disjunct carries over by `atom_monotone`.
 theorem proofSearch_monotone :
   ∀ k₁ k₂ φ, k₁ ≤ k₂ → proofSearch k₁ φ = true → proofSearch k₂ φ = true := by
   intro k₁ k₂ φ hk h1
   rcases (proofSearch_spec k₁ φ).1 h1 with ⟨d, hd⟩ | hatom
   · exact (proofSearch_spec k₂ φ).2 (Or.inl ⟨d, Nat.le_trans hd hk⟩)
-  · exact (proofSearch_spec k₂ φ).2 (Or.inr hatom)
+  · exact (proofSearch_spec k₂ φ).2 (Or.inr (atom_monotone k₁ k₂ φ hk hatom))
 
 end PD.BaseTheorems
