@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.CupodBot
@@ -12,11 +12,12 @@ import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.Helpers
-import PrisonersDilemma.Theorems.ProofSearch
+import PrisonersDilemma.BaseTheorems
 
 open PD
 open PD.Axioms
 open PD.Bots
+open PD.BaseTheorems
 namespace PD.Theorems
 
 
@@ -530,10 +531,10 @@ theorem mirror_swap_provable (q : Prog) (a : Action) :
 
 /-- Löb premise for CupodBot vs MirrorBot. Combines source-code transparency
     of CupodBot's `.search` body (`□_k φ_A → φ_B`) with `.sim` source
-    transparency for MirrorBot (`φ_B → φ_A`), chained by `Derivation.hypSyll`
+    transparency for MirrorBot (`φ_B → φ_A`), chained by `Dynamics.hypSyll`
     into the closed `□_k φ → φ` that PBLT requires. (Was an `proofSearch`-level
     chain via the deleted `proofSearch_impl_trans`; now one explicit
-    derivation.) -/
+    Dynamics.) -/
 theorem cupod_mirror_loeb_premise (k : Nat) :
     ∃ m, proofSearch m
       (.impl (.box k (.plays MirrorBot (CupodBot k) .D))

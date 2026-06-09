@@ -4,7 +4,7 @@ import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Theorems.DBot
 import PrisonersDilemma.Theorems.TitForTatBot
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Theorems.Helpers
 
 

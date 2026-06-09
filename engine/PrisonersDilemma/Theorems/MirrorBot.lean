@@ -6,7 +6,7 @@ import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.Helpers
-import PrisonersDilemma.Theorems.ProofSearch
+import PrisonersDilemma.BaseTheorems
 
 
 open PD.Bots
@@ -144,7 +144,7 @@ theorem mirror_self_unprovable :
   cases hp : proofSearch k (.plays MirrorBot MirrorBot a) with
   | false => rfl
   | true =>
-      exact absurd (PD.Theorems.proofSearch_sound _ _ hp) (mirror_self_no_action a)
+      exact absurd (PD.BaseTheorems.proofSearch_sound _ _ hp) (mirror_self_no_action a)
 
 
 end PD.Theorems

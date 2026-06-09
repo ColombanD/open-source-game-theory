@@ -6,7 +6,7 @@ import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Theorems.DupocBot
 import PrisonersDilemma.Theorems.EBot
 import PrisonersDilemma.Theorems.Helpers
-import PrisonersDilemma.Theorems.ProofSearch
+import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.TitForTatBot
 import PrisonersDilemma.Theorems.OBot
 import PrisonersDilemma.Theorems.MirrorBot

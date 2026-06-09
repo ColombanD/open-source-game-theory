@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DupocBot
@@ -12,10 +12,11 @@ import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.Helpers
-import PrisonersDilemma.Theorems.ProofSearch
+import PrisonersDilemma.BaseTheorems
 
 open PD
 open PD.Axioms
+open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 
@@ -505,7 +506,7 @@ theorem DupocBot_vs_DupocBot :
 
 /-- Löb premise for DupocBot vs MirrorBot. Combines source-code transparency
     of DupocBot's `.search` body (`□_k φ_A → φ_B`) with `.sim` source
-    transparency for MirrorBot (`φ_B → φ_A`), chained by `Derivation.hypSyll`
+    transparency for MirrorBot (`φ_B → φ_A`), chained by `Dynamics.hypSyll`
     into the closed `□_k φ → φ` that PBLT requires. (Symmetric to
     `cupod_mirror_loeb_premise`.) -/
 theorem dupoc_mirror_loeb_premise (k : Nat) :
