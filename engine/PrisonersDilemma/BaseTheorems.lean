@@ -51,6 +51,16 @@ theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
 theorem derives {φ : Formula} (d : Derivation φ) : ∃ m, proofSearch m φ = true :=
   ⟨d.size, (proofSearch_spec _ _).2 (Or.inl ⟨d, Nat.le_refl _⟩)⟩
 
+/-- The **K axiom** of GL, budget-respecting: from a derivation of `φ → ψ` of
+    size `≤ n` and one of `φ` of size `≤ m`, `ψ` is provable within `n + m + 1`
+    (the `+1` is the modus-ponens step). Lifts the `modusPonens` constructor to
+    the budgeted `Provable` level. -/
+theorem K_provable (n m : Nat) (φ ψ : Formula)
+    (dImp : Derivation (.impl φ ψ)) (hI : dImp.size ≤ n)
+    (dφ : Derivation φ) (hF : dφ.size ≤ m) :
+    Provable (n + m + 1) ψ :=
+  Or.inl ⟨.modusPonens φ ψ dImp dφ, Nat.add_le_add (Nat.add_le_add hI hF) (Nat.le_refl 1)⟩
+
 /--
 S can read source code: if an agent `me` is literally
 `.search k ψ (.const a) (.const b)`, then S proves
