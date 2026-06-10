@@ -8,6 +8,24 @@ open PD
 open PD.Axioms
 namespace PD.BaseTheorems
 
+/-- `atom_cost` is monotone in fuel, so bot proofs can lift a small-fuel atom to a
+    larger working budget via `proofSearch_monotone`. -/
+theorem atom_cost_mono {a b : Nat} (h : a ≤ b) : atom_cost a ≤ atom_cost b := by
+  unfold atom_cost
+  exact Nat.add_le_add_left
+    (Nat.mul_le_mul (Nat.add_le_add_left (c_guard_mono h) _) h) _
+
+/-- σ₁-completeness for atoms: every `fuel`-step play has an `AtomProvable`
+    certificate at budget `atom_cost fuel`. Constructive when a `PlaysProof`
+    exists; falls back to `atom_complete_false_guard` otherwise. -/
+theorem atom_complete :
+    ∀ p q a fuel, play fuel p q = some a →
+      AtomProvable (atom_cost fuel) (.plays p q a) := by
+  intro p q a fuel h
+  by_cases hc : ∃ _ : PlaysProof p q p a (atom_cost fuel), True
+  · obtain ⟨cert, _⟩ := hc; exact .mk cert (Nat.le_refl _)
+  · exact atom_complete_false_guard p q a fuel h hc
+
 /-- The bridge `proofSearch ↔ Provable` is now a theorem, not an axiom. -/
 theorem proofSearch_spec (k : Nat) (φ : Formula) :
     proofSearch k φ = true ↔ Provable k φ := by
@@ -52,7 +70,7 @@ theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
 /-- A derivation of size `m` witnesses `proofSearch m φ = true` (structural
     disjunct of `Provable`). -/
 theorem derives {φ : Formula} (d : Derivation φ) : ∃ m, proofSearch m φ = true :=
-  ⟨d.size, (proofSearch_spec _ _).2 (Or.inl ⟨d, Nat.le_refl _⟩)⟩
+  ⟨d.size, (proofSearch_spec _ _).2 (Provable.struct ⟨d, Nat.le_refl _⟩)⟩
 
 /-- The **K axiom** of GL, budget-respecting: from a derivation of `φ → ψ` of
     size `≤ n` and one of `φ` of size `≤ m`, `ψ` is provable within `n + m + 1`.
@@ -64,8 +82,7 @@ theorem K_provable (n m : Nat) (φ ψ : Formula)
     (dφ : Derivation φ) (_hF : dφ.size ≤ m) :
     Provable (n + m + 1) ψ := by
   -- dImp.size = (φ → ψ).size = φ.size + ψ.size + 1, so ψ.size ≤ n ≤ n+m+1
-  apply Or.inl
-  exact ⟨.modusPonens φ ψ dImp dφ, by
+  exact Provable.struct ⟨.modusPonens φ ψ dImp dφ, by
     simp only [Derivation.size] at *; simp [Formula.size] at hI; omega⟩
 
 /--
@@ -97,14 +114,114 @@ theorem proof_system_verifies_sim :
   fun me p q opponent a hme => derives (.simStep me p q opponent a hme)
 
 
+/-! ## Atom certificate soundness (`PlaysProof` → real play)
+
+The atom-side axioms `atom_monotone` and `AtomProvable_sound` are now THEOREMS:
+`AtomProvable` is the constructive `PlaysProof` certificate, so monotonicity is
+just relaxing its cost bound, and soundness is "a certificate yields a real
+play." (Only `atom_complete`'s false-guard *completeness* stays axiomatic — see
+`Axioms.lean`.) -/
+
+/-- Fuel monotonicity of `eval`: a successful run survives more fuel. Standard;
+    by strong induction on the fuel, generalized over all of `me`/`opp`/`body`
+    (the `.sim` case swaps players). -/
+theorem eval_mono :
+    ∀ (N : Nat) (me opponent body : Prog) (a : Action),
+      eval N me opponent body = some a → eval (N+1) me opponent body = some a := by
+  intro N
+  induction N with
+  | zero => intro me opponent body a h; simp [eval] at h
+  | succ n ih =>
+    intro me opponent body a h
+    cases body with
+    | const c => simpa [eval] using h
+    | self => rw [eval] at h ⊢; exact ih _ _ _ _ h
+    | opp => rw [eval] at h ⊢; exact ih _ _ _ _ h
+    | bot p => rw [eval] at h ⊢; exact ih _ _ _ _ h
+    | sim p q => rw [eval] at h ⊢; exact ih _ _ _ _ h
+    | ite b a' p q =>
+        rw [eval] at h ⊢
+        cases hb : eval n me opponent b with
+        | none => simp [hb] at h
+        | some r =>
+            rw [hb] at h; rw [ih me opponent b r hb]
+            simp only [bind, Option.bind] at h ⊢
+            by_cases hr : (r == a') = true
+            · rw [if_pos hr] at h ⊢; exact ih _ _ _ _ h
+            · rw [if_neg hr] at h ⊢; exact ih _ _ _ _ h
+    | search k φ p q =>
+        rw [eval] at h ⊢
+        by_cases hg : proofSearch k (φ.subst me opponent) = true
+        · rw [if_pos hg] at h ⊢; exact ih _ _ _ _ h
+        · rw [if_neg hg] at h ⊢; exact ih _ _ _ _ h
+
+/-- `≤`-form of fuel monotonicity. -/
+theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}
+    (h : eval N me opponent body = some a) : ∀ M, N ≤ M → eval M me opponent body = some a := by
+  intro M hM
+  induction hM with
+  | refl => exact h
+  | step _ ih => exact eval_mono _ _ _ _ _ ih
+
+/-- **Soundness of the play certificate.** A `PlaysProof` yields an actual play
+    (at some fuel). Via `PlaysProof.rec` (`induction` can't handle the mutual
+    block); `.ite`/`.search` unify the two child fuels with `eval_mono_le` to
+    `max … + 1`. The `.search_t` case reflects its `Provable` guard premise into
+    the `proofSearch` the evaluator consults, via `(proofSearch_spec).2`. -/
+theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body a n) :
+    ∃ N, eval N me opponent body = some a := by
+  refine PlaysProof.rec
+    (motive_1 := fun me opponent body a _ _ => ∃ N, eval N me opponent body = some a)
+    (motive_2 := fun _ _ _ => True)
+    (motive_3 := fun _ _ _ => True)
+    ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom h
+  case const => exact ⟨1, rfl⟩
+  case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
+  case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
+  case bot => intro me opponent p a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
+  case sim => intro a n me opponent p q _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
+  case ite_t =>
+    intro me opponent b r m a' p a n q _ hr _ ihb ihp
+    obtain ⟨Nb, hNb⟩ := ihb; obtain ⟨Np, hNp⟩ := ihp
+    refine ⟨max Nb Np + 1, ?_⟩
+    rw [eval, eval_mono_le hNb _ (Nat.le_max_left Nb Np)]
+    simp only [bind, Option.bind]; rw [if_pos hr]
+    exact eval_mono_le hNp _ (Nat.le_max_right Nb Np)
+  case ite_f =>
+    intro me opponent b r m a' q a n p _ hr _ ihb ihq
+    obtain ⟨Nb, hNb⟩ := ihb; obtain ⟨Nq, hNq⟩ := ihq
+    refine ⟨max Nb Nq + 1, ?_⟩
+    rw [eval, eval_mono_le hNb _ (Nat.le_max_left Nb Nq)]
+    simp only [bind, Option.bind]; rw [if_neg (by simp [hr])]
+    exact eval_mono_le hNq _ (Nat.le_max_right Nb Nq)
+  case search_t =>
+    intro k me opponent p a n φ q hguard _ _ ihp
+    obtain ⟨Np, hNp⟩ := ihp
+    exact ⟨Np+1, by rw [eval, if_pos ((proofSearch_spec k (φ.subst me opponent)).2 hguard)]; exact hNp⟩
+  case atomMk => intros; trivial
+  case provStruct => intros; trivial
+  case provAtom => intros; trivial
+
+/-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
+theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
+    AtomProvable k₁ φ → AtomProvable k₂ φ := by
+  rintro ⟨cert, hle⟩; exact .mk cert (Nat.le_trans hle hk)
+
+/-- **`AtomProvable_sound` (was an axiom).** A bounded certificate yields a real
+    play, hence the atom's `interp` (`∃ n, play n me opponent = some a`). -/
+theorem AtomProvable_sound (k : Nat) (φ : Formula) : AtomProvable k φ → φ.interp := by
+  rintro ⟨cert, _⟩
+  obtain ⟨N, hN⟩ := playsProof_sound cert
+  exact ⟨N, hN⟩
+
 -- Soundness of bounded provability: anything provable within a budget is true.
 -- Either the formula is provable by the structural `Derivation` rules
 -- (→ `Derivation.sound`), or it is an atomic σ₁ fact (→ `AtomProvable_sound`).
 theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
   intro k φ h
-  rcases h with ⟨d, _⟩ | hatom
-  · exact d.sound
-  · exact AtomProvable_sound k φ hatom
+  cases h with
+  | struct hd => obtain ⟨d, _⟩ := hd; exact d.sound
+  | atom hatom => exact AtomProvable_sound k φ hatom
 
 -- Soundness of the proof-search oracle: the `Bool` reflection of `Provable_sound`.
 theorem proofSearch_sound :
@@ -112,20 +229,21 @@ theorem proofSearch_sound :
   fun k φ hk => Provable_sound k φ ((proofSearch_spec k φ).1 hk)
 
 /-- Completeness of bounded proof search for atomic plays-formulas: a play within
-    `fuel` steps is provable within budget `proof_expansion_c * fuel + proof_expansion_d`. -/
+    `fuel` steps is provable within budget `atom_cost fuel`. -/
 theorem proofSearch_complete_plays :
 ∀ p q a, (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
   intro p q a ⟨n, hn⟩
-  exact ⟨proof_expansion_c * n + proof_expansion_d,
-    (proofSearch_spec _ (.plays p q a)).2 (Or.inr (atom_complete p q a n hn))⟩
+  exact ⟨atom_cost n,
+    (proofSearch_spec _ (.plays p q a)).2 (Provable.atom (atom_complete p q a n hn))⟩
 
 -- Monotonicity in proof-search budget: the structural disjunct relaxes its size
 -- bound; the `AtomProvable` disjunct carries over by `atom_monotone`.
 theorem proofSearch_monotone :
   ∀ k₁ k₂ φ, k₁ ≤ k₂ → proofSearch k₁ φ = true → proofSearch k₂ φ = true := by
   intro k₁ k₂ φ hk h1
-  rcases (proofSearch_spec k₁ φ).1 h1 with ⟨d, hd⟩ | hatom
-  · exact (proofSearch_spec k₂ φ).2 (Or.inl ⟨d, Nat.le_trans hd hk⟩)
-  · exact (proofSearch_spec k₂ φ).2 (Or.inr (atom_monotone k₁ k₂ φ hk hatom))
+  cases (proofSearch_spec k₁ φ).1 h1 with
+  | struct hd => obtain ⟨d, hsz⟩ := hd
+                 exact (proofSearch_spec k₂ φ).2 (Provable.struct ⟨d, Nat.le_trans hsz hk⟩)
+  | atom hatom => exact (proofSearch_spec k₂ φ).2 (Provable.atom (atom_monotone k₁ k₂ φ hk hatom))
 
 end PD.BaseTheorems
