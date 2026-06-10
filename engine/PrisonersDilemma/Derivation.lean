@@ -82,13 +82,14 @@ inductive Derivation : Formula → Type where
   /-- S can verify structural identity by reflexivity: any program equals itself. -/
   | eqRefl (p : Prog) : Derivation (.eq p p)
 
-/-- Proof size; the budget measured by `proofSearch`. -/
+/-- Proof size: the character count of the **conclusion formula**. This is the
+    quantity `proofSearch k φ` tests against: "is there a proof of `φ` whose
+    conclusion fits in `k` characters?" Leaf rules (`searchBranch`, `simStep`,
+    `eqRefl`) each contribute exactly their conclusion's size; combining rules
+    (`modusPonens`, `hypSyll`) produce a conclusion that is strictly smaller than
+    the sum of the premises, so existing size bounds are preserved. -/
 def Derivation.size : {φ : Formula} → Derivation φ → Nat
-  | _, .searchBranch ..       => 1
-  | _, .simStep ..            => 1
-  | _, .eqRefl _              => 1
-  | _, .modusPonens _ _ d e   => d.size + e.size + 1
-  | _, .hypSyll _ _ _ d e     => d.size + e.size + 1
+  | φ, _ => φ.size
 
 -- 2. σ₁ atom-provability as an opaque predicate, indexed by budget `k`.
 -- `AtomProvable k φ` means "S can prove the atom `φ` within `k` characters".

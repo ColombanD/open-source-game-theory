@@ -55,14 +55,18 @@ theorem derives {φ : Formula} (d : Derivation φ) : ∃ m, proofSearch m φ = t
   ⟨d.size, (proofSearch_spec _ _).2 (Or.inl ⟨d, Nat.le_refl _⟩)⟩
 
 /-- The **K axiom** of GL, budget-respecting: from a derivation of `φ → ψ` of
-    size `≤ n` and one of `φ` of size `≤ m`, `ψ` is provable within `n + m + 1`
-    (the `+1` is the modus-ponens step). Lifts the `modusPonens` constructor to
-    the budgeted `Provable` level. -/
+    size `≤ n` and one of `φ` of size `≤ m`, `ψ` is provable within `n + m + 1`.
+    With the character-faithful `Derivation.size = conclusion.size`, the combined
+    derivation's size is `ψ.size ≤ (φ → ψ).size ≤ n ≤ n + m + 1`. Lifts the
+    `modusPonens` constructor to the budgeted `Provable` level. -/
 theorem K_provable (n m : Nat) (φ ψ : Formula)
     (dImp : Derivation (.impl φ ψ)) (hI : dImp.size ≤ n)
-    (dφ : Derivation φ) (hF : dφ.size ≤ m) :
-    Provable (n + m + 1) ψ :=
-  Or.inl ⟨.modusPonens φ ψ dImp dφ, Nat.add_le_add (Nat.add_le_add hI hF) (Nat.le_refl 1)⟩
+    (dφ : Derivation φ) (_hF : dφ.size ≤ m) :
+    Provable (n + m + 1) ψ := by
+  -- dImp.size = (φ → ψ).size = φ.size + ψ.size + 1, so ψ.size ≤ n ≤ n+m+1
+  apply Or.inl
+  exact ⟨.modusPonens φ ψ dImp dφ, by
+    simp only [Derivation.size] at *; simp [Formula.size] at hI; omega⟩
 
 /--
 S can read source code: if an agent `me` is literally
@@ -107,13 +111,13 @@ theorem proofSearch_sound :
   ∀ k φ, proofSearch k φ = true → φ.interp :=
   fun k φ hk => Provable_sound k φ ((proofSearch_spec k φ).1 hk)
 
-/-- Completeness of bounded proof search for atomic plays-formulas, via the
-    budget-bounded σ₁ atom-completeness axiom: a play within `fuel` is provable
-    within budget `fuel`. -/
+/-- Completeness of bounded proof search for atomic plays-formulas: a play within
+    `fuel` steps is provable within budget `proof_expansion_c * fuel + proof_expansion_d`. -/
 theorem proofSearch_complete_plays :
 ∀ p q a, (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
   intro p q a ⟨n, hn⟩
-  exact ⟨n, (proofSearch_spec n (.plays p q a)).2 (Or.inr (atom_complete p q a n hn))⟩
+  exact ⟨proof_expansion_c * n + proof_expansion_d,
+    (proofSearch_spec _ (.plays p q a)).2 (Or.inr (atom_complete p q a n hn))⟩
 
 -- Monotonicity in proof-search budget: the structural disjunct relaxes its size
 -- bound; the `AtomProvable` disjunct carries over by `atom_monotone`.

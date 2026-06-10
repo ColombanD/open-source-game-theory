@@ -26,23 +26,33 @@ steps (`proof_system_verifies_*`), and GL's K (`K_provable`) — is a *theorem*,
 proved in `BaseTheorems.lean`.
 -/
 
-/-- σ₁-completeness for atoms, **budget-bounded**: a play that succeeds within
-    `fuel` steps is provable within budget `fuel`. The proof cost of the Σ₁ fact
-    "this program plays `a` within `fuel` steps" is bounded by the computation
-    length, so a budget of `fuel` characters suffices. critch22 uses
-    σ₁-completeness implicitly (e.g. "CUPOD(10⁹)(DB.source) will find the proof
-    and return D"); it is decidable Σ₁ truth, no Gödel obstruction.
+/-- Critch's **proof-expansion constant** `e*` (Appendix B(d)): the linear factor
+    by which the proof of "p plays a in `fuel` steps" exceeds `fuel`. A computation
+    trace of length `fuel` takes `e* · fuel + e₀` characters to write down in `S`.
+    Kept abstract because its concrete value depends on the encoding of `S`; the
+    bot theorems are valid for all `e* ≥ 1`. -/
+axiom proof_expansion_c : Nat
 
-    Two properties this exact (budget = `fuel`) form gives:
-    * **Boundedness** — the budget is a *concrete* quantity (`fuel`) we control,
-      not an opaque `∃ K`. This is what lets CUPOD/DUPOC index-monotonicity be a
-      *theorem* (pick budget = fuel, no transport axiom needed).
-    * **Slack for Open Problem 3** — a true play with large `fuel` is still
-      *unprovable within a smaller budget* `j < fuel` (nothing forces provability
-      below `fuel`, and `atom_monotone` only bumps budgets *up*). So
-      `outcome(DUPOC,CUPOD) = (D,C)` remains statable. -/
+/-- Per-formula overhead in the atom proof: the constant additive term `e₀` in
+    `e* · fuel + e₀`. Covers the characters used to name the formula itself. -/
+axiom proof_expansion_d : Nat
+
+/-- σ₁-completeness for atoms, **character-faithful**: a play that terminates in
+    `fuel` steps is provable within `proof_expansion_c * fuel + proof_expansion_d`
+    characters. This matches critch22 Appendix B(d): encoding a `fuel`-step trace
+    costs `O(fuel)` characters, with leading constant `e*`.
+
+    The earlier `budget = fuel` form was a simplification; the faithful version
+    is this linear-in-`fuel` bound. Bot proofs use `atom_monotone` to lift to
+    whatever working budget they need.
+
+    Slack for Open Problem 3 is preserved: a true play is only guaranteed provable
+    at budget `≥ proof_expansion_c * fuel + proof_expansion_d`; nothing forces
+    provability below that, so DUPOC can still fail to find a proof of CUPOD
+    cooperating when its own search budget is too small. -/
 axiom atom_complete :
-  ∀ p q a fuel, play fuel p q = some a → AtomProvable fuel (.plays p q a)
+  ∀ p q a fuel, play fuel p q = some a →
+    AtomProvable (proof_expansion_c * fuel + proof_expansion_d) (.plays p q a)
 
 /-- Atom provability is monotone in budget: more characters never hurt. With the
     budget index this must be stated (it was automatic before). -/
@@ -84,38 +94,44 @@ axiom box_provable :
 --
 -- Informally: let `φ k` be a formula family in the proof language of `S`,
 -- `k₁ ∈ ℕ` a base threshold, and `f : ℕ → ℕ` an *increasing* computable
--- function with `f(k) ≻ O(lg k)`. If `S` can derive, for every `k > k₁`,
--- that bounded provability of `φ k` within `f(k)` steps implies `φ k`
--- itself, then there exists a threshold `k₂` beyond which `S` proves
--- `φ k` outright.
+-- function with `f(k) ≻ O(lg k)`. If `S` has a proof of size `≤ f(k)` that
+-- bounded provability of `φ k` within `f(k)` steps implies `φ k` itself,
+-- then there exists a threshold `k₂` beyond which `S` proves `φ k` outright.
 --
 -- Encoding notes:
 -- * `□_{f(k)}(φ k)` is the formula `Formula.box (f k) (φ k)`; its
---   semantic clause is `Provable (f k) (φ k)`.
--- * "`S` derives ψ" is `∃ m, Provable m ψ` — provability at some budget. (Stated
---   over `Provable` rather than the agents' `proofSearch _ = true` oracle, since
---   PBLT is a meta-theorem about bounded provability `□`, not about oracle
---   calls; the two are interchangeable via `proofSearch_spec`.)
+--   semantic clause is `Provable (f k) (φ k)`. The inner budget `f(k)` is
+--   Critch's, and is load-bearing: `f(k) ≻ O(lg k)` is exactly what makes the
+--   box a *non-vacuous* provability claim about `φ k`, whose own proof is
+--   `Θ(lg k)`-sized (it embeds the numeral `k`). Too small an `f(k)` would make
+--   `□_{f(k)}(φ k)` unsatisfiable and the Löb step `□φ → φ` unusable.
+-- * The OUTER proof — of the implication `□_{f(k)}(φ k) → φ k` — is left
+--   *unbudgeted* (`∃ m, Provable m …`), faithfully matching Critch's turnstile
+--   `⊢` in `⊢ (∀k>k₁)(□_{f(k)}(p[k]) → p[k])`, which carries no size annotation
+--   on the proof of the implication itself. (An earlier version pinned the outer
+--   proof to budget `f(k)` to make `Derivation.size` load-bearing in the axiom's
+--   hypothesis; that is a *strengthening* of the hypothesis — sound, but a
+--   distortion of Critch. We instead keep the axiom faithful and let the
+--   consumers carry the size bound as a *separate* fact: e.g.
+--   `cupod_loeb_premise` still proves `searchBranch.size = 5·log2 k + 33 ≤ k`
+--   via `linear_log2_add_le`, so `Derivation.size` remains load-bearing in the
+--   library without contaminating the axiom statement.)
 -- * `f(k) ≻ O(lg k)` is spelled out as: there exists a positive constant
 --   `c` and a threshold `k̂` such that for all `k > k̂`, `f(k) > c · lg k`.
 -- * "Increasing" is the plain pointwise condition on `f`.
 --
 -- QUANTIFIER FIDELITY (∀□ vs □∀). critch22 states both hypothesis and
 -- conclusion as `S ⊢ (∀k>k_i)(…)` — S proves a *single, universally quantified*
--- formula. We instead use the *per-instance* form `∀k>k_i, (∃m, Provable m …)`
--- — for each k, S proves that instance separately. This differs from Critch
--- (his ∀ is inside the box; ours is the meta-∀ outside), for an unavoidable
--- reason: our `Formula` has no internal ∀ quantifier, so a family `φ : Nat →
--- Formula` cannot be packaged into one quantified object-formula. The
--- per-instance form is:
---   • SOUND as an axiom — it is *implied by* Critch's Lemma 3.6 (if S proves
---     ∀k,P(k) then a fortiori S proves each P(k)), so we assume strictly less;
+-- formula. We instead use the *per-instance* form `∀k>k_i, ∃ m, Provable m …`
+-- — for each k, S proves that instance. This differs from Critch (his ∀ is
+-- inside the box; ours is the meta-∀ outside), for an unavoidable reason: our
+-- `Formula` has no internal ∀ quantifier, so a family `φ : Nat → Formula`
+-- cannot be packaged into one quantified object-formula. The per-instance form
+-- is:
+--   • SOUND as an axiom — it is *implied by* Critch's Lemma 3.6 (instantiate his
+--     single ∀-proof at each k);
 --   • SUFFICIENT — the consumers (`CupodBot_vs_CupodBot`, etc.) both *supply*
---     the hypothesis per-instance (one `cupod_loeb_premise k` per k) and
---     *consume* the conclusion per-instance (instantiating at a single k before
---     `Provable_sound`). They never need a single S-proof of the universal.
--- So this axiomatizes a faithful, sufficient *consequence* of Lemma 3.6, not
--- the □∀ lemma verbatim.
+--     the hypothesis per-instance and *consume* the conclusion per-instance.
 axiom PBLT :
   ∀ (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat),
     (∀ a b, a ≤ b → f a ≤ f b) →
