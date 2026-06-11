@@ -27,7 +27,25 @@ axiom c_guard_mono : ∀ {a b : Nat}, a ≤ b → c_guard a ≤ c_guard b
     constructive `PlaysProof` certificate (because it branched on a *failed*
     proof search, requiring `¬ Provable k (guard)` — Π₁, non-positive) still
     has an `AtomProvable` certificate at budget `atom_cost fuel`.
-    Use `atom_complete` (the theorem below) at call sites. -/
+    Use `atom_complete` (the theorem below) at call sites.
+
+    NOTE — currently not *force-exercised* by the library. `atom_complete` is the
+    only consumer, via a `by_cases` on whether a constructive `PlaysProof` exists;
+    every call site to date (CupodBot/DupocBot/CupodTrollBot theorems) transcribes
+    a play whose internal guards all fire *true* (or has no guard at all — const
+    bots), so it always lands in the constructive branch and this axiom is never
+    forced. It is referenced (so it compiles) but no theorem's truth yet depends
+    on it.
+
+    To genuinely exercise it you need to lift a *failed-guard cooperation* into a
+    provable atom — i.e. some bot `Z` that proof-searches "does my opponent
+    cooperate with me?" (`.search k (.plays .opp .self .C) …`) played against
+    CUPOD. CUPOD cooperates with `Z` by taking its *else* (failed-guard) branch,
+    so certifying `.plays (CupodBot k) Z .C` needs the missing `search_f` step —
+    no constructive `PlaysProof` exists, and `atom_complete` falls through here.
+    No such bot is in the library yet; add one (e.g. a "CupodProber") to make this
+    axiom load-bearing, or drop it and restrict `atom_complete` to the true-guard
+    / const fragment the library actually uses. -/
 axiom atom_complete_false_guard :
   ∀ p q a fuel, play fuel p q = some a →
     ¬ (∃ _ : PlaysProof p q p a (atom_cost fuel), True) →

@@ -36,7 +36,7 @@ mutual
     | impl  : Formula → Formula → Formula         -- φ → ψ (needed for Löb-style hypotheses like □C → C)
     | neg   : Formula → Formula                   -- ¬ φ
     | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
-    | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program"
+    | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
 end
 
 -- Closing self-reference via substitution.
@@ -86,7 +86,7 @@ mutual
     | .impl φ ψ,    m, o => .impl (φ.subst m o) (ψ.subst m o)
     | .neg φ,       m, o => .neg (φ.subst m o)
     | .box n φ,     m, o => .box n (φ.subst m o)
-    | .eq p q,      m, o => .eq (p.subst m o) (q.subst m o)
+    | .eq p q,      m, o => .eq (p.subst m o) q   -- only the LHS (probe) substitutes; the RHS is a frozen literal target
 end
 
 -- Syntactic size = character count of source. This is the unit the proof system

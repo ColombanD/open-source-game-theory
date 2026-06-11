@@ -17,7 +17,9 @@ theorem atom_cost_mono {a b : Nat} (h : a ≤ b) : atom_cost a ≤ atom_cost b :
 
 /-- σ₁-completeness for atoms: every `fuel`-step play has an `AtomProvable`
     certificate at budget `atom_cost fuel`. Constructive when a `PlaysProof`
-    exists; falls back to `atom_complete_false_guard` otherwise. -/
+    exists; falls back to `atom_complete_false_guard` otherwise.
+    This means that if p plays a against q within fuel steps,
+    then S can prove that fact within the budget -/
 theorem atom_complete :
     ∀ p q a fuel, play fuel p q = some a →
       AtomProvable (atom_cost fuel) (.plays p q a) := by
@@ -222,6 +224,34 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
   cases h with
   | struct hd => obtain ⟨d, _⟩ := hd; exact d.sound
   | atom hatom => exact AtomProvable_sound k φ hatom
+
+/-
+HOW TO DISCHARGE A `proofSearch k φ = b` GOAL.
+
+The two boolean directions are proved by *opposite* bridges — this asymmetry is
+fundamental (Σ₁ vs Π₁), not a stylistic choice:
+
+• `proofSearch k φ = true`  — COMPLETENESS / Σ₁ side. Exhibit a witness.
+    For a plays-atom `φ = .plays p q a`: produce a real `play n p q = some a`,
+    feed it to `atom_complete` (→ `AtomProvable (atom_cost n) φ`), then flip with
+    `(proofSearch_spec _ _).2 (Provable.atom …)`. `proofSearch_complete_plays`
+    below packages exactly this. For a structural `φ` (e.g. `.eq p p`), build the
+    `Derivation` and use `Provable.struct`. You are *constructing* a proof object.
+
+• `proofSearch k φ = false` — SOUNDNESS side, by refutation. You CANNOT exhibit
+    "a proof that no proof exists" (that is Π₁); instead rule out `true` via its
+    semantic consequence. Canonical pattern:
+      cases h : proofSearch k φ with
+      | true  => exact absurd (proofSearch_sound _ _ h) (interp_…_false …)
+      | false => rfl
+    i.e. if it were `true`, `proofSearch_sound` would force `φ.interp` (the bot
+    would actually play that), which a computed fact (`interp_…_false`) refutes.
+
+Mnemonic: `= true` builds a proof (atom_complete / Derivation); `= false`
+destroys a hypothetical one (proofSearch_sound + contradiction). The single place
+these collide is `atom_complete`'s false-guard branch — see `atom_complete_false_guard`
+in Axioms.lean.
+-/
 
 -- Soundness of the proof-search oracle: the `Bool` reflection of `Provable_sound`.
 theorem proofSearch_sound :
