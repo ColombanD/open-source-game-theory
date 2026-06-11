@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from pd_runner.llm import retrieval, tools
+from pd_runner.llm import retrieval
 from pd_runner.llm.prompts import build_system_prompt
 from pd_runner.services import library_writer, proof_service
 from pd_runner.services.proof_service import ProofResult, ProofSearchError, _extract_lean_source
@@ -63,34 +63,61 @@ def test_list_known_outcome_theorems_returns_none_for_unknown(monkeypatch) -> No
 # ---------------------------------------------------------------------------
 
 
-def test_build_system_prompt_includes_program_and_dynamics(tmp_path: Path, monkeypatch) -> None:
-    pd_dir = tmp_path / "PrisonersDilemma"
-    pd_dir.mkdir()
+def _write_fake_engine(pd_dir: Path) -> None:
+    pd_dir.mkdir(parents=True, exist_ok=True)
     (pd_dir / "Program.lean").write_text("-- program", encoding="utf-8")
     (pd_dir / "Dynamics.lean").write_text("-- dynamics", encoding="utf-8")
+    (pd_dir / "BaseTheorems.lean").write_text("-- base-theorems", encoding="utf-8")
     (pd_dir / "Axioms.lean").write_text("-- axioms", encoding="utf-8")
+    (pd_dir / "Derivation.lean").write_text("-- derivation", encoding="utf-8")
+    (pd_dir / "SizeLemmas.lean").write_text("-- size-lemmas", encoding="utf-8")
+
+    # Bot sources are how `_bot_uses_search` decides whether to inject the
+    # search-only proof-system modules: CooperateBot has no `.search`, CupodBot does.
+    bots_dir = pd_dir / "Bots"
+    bots_dir.mkdir(exist_ok=True)
+    (bots_dir / "CooperateBot.lean").write_text("def CooperateBot : Prog := .const .C", encoding="utf-8")
+    (bots_dir / "CupodBot.lean").write_text(
+        "def CupodBot (k : Nat) : Prog := .search k φ p q", encoding="utf-8"
+    )
+
+
+def test_build_system_prompt_includes_program_and_dynamics(tmp_path: Path, monkeypatch) -> None:
+    pd_dir = tmp_path / "PrisonersDilemma"
+    _write_fake_engine(pd_dir)
 
     import pd_runner.llm.prompts as prompts_mod
     monkeypatch.setattr(prompts_mod, "_ENGINE_PD_DIR", pd_dir)
 
+    # Non-search matchup: core proof vocabulary is injected, but the heavier
+    # search-only proof-system modules are not.
     prompt = build_system_prompt("CooperateBot", "DefectBot")
     assert "-- program" in prompt
     assert "-- dynamics" in prompt
+    assert "-- base-theorems" in prompt
     assert "-- axioms" not in prompt
+    assert "-- derivation" not in prompt
+    assert "-- size-lemmas" not in prompt
 
 
-def test_build_system_prompt_includes_axioms_for_search_bots(tmp_path: Path, monkeypatch) -> None:
+def test_build_system_prompt_includes_proof_system_for_search_bots(
+    tmp_path: Path, monkeypatch
+) -> None:
     pd_dir = tmp_path / "PrisonersDilemma"
-    pd_dir.mkdir()
-    (pd_dir / "Program.lean").write_text("-- program", encoding="utf-8")
-    (pd_dir / "Dynamics.lean").write_text("-- dynamics", encoding="utf-8")
-    (pd_dir / "Axioms.lean").write_text("-- axioms", encoding="utf-8")
+    _write_fake_engine(pd_dir)
 
     import pd_runner.llm.prompts as prompts_mod
     monkeypatch.setattr(prompts_mod, "_ENGINE_PD_DIR", pd_dir)
 
+    # CupodBot uses `.search`, so the full proof-system context (axioms +
+    # explicit derivation system + budget lemmas) must be injected. This is the
+    # regression guard for the engine reform that moved `atom_complete` out of
+    # `Axioms.lean` into `BaseTheorems.lean` and added `Derivation`/`SizeLemmas`.
     prompt = build_system_prompt("CupodBot", "CooperateBot")
+    assert "-- base-theorems" in prompt
     assert "-- axioms" in prompt
+    assert "-- derivation" in prompt
+    assert "-- size-lemmas" in prompt
 
 
 # ---------------------------------------------------------------------------
@@ -117,12 +144,15 @@ def test_extract_lean_source_strips_whitespace() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_search_proof_returns_result_on_success(monkeypatch) -> None:
+def test_search_proof_returns_result_on_success(tmp_path: Path, monkeypatch) -> None:
     lean_source = "theorem foo := by rfl"
 
     monkeypatch.setattr(proof_service, "retrieve_few_shots", lambda *a, **kw: [])
-    monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a: "None found.")
+    monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a, **kw: "None found.")
     monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a: "system")
+    # `search_proof` persists every attempt to `generated/outcomes/`; redirect that
+    # to a tmp dir so the test does not clobber the committed fixtures.
+    monkeypatch.setattr(proof_service, "_outcomes_dir", lambda: tmp_path)
     monkeypatch.setattr(
         proof_service.AnthropicClient,
         "run",
@@ -137,10 +167,11 @@ def test_search_proof_returns_result_on_success(monkeypatch) -> None:
     assert result.right_bot == "DefectBot"
 
 
-def test_search_proof_raises_when_no_lean_block(monkeypatch) -> None:
+def test_search_proof_raises_when_no_lean_block(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(proof_service, "retrieve_few_shots", lambda *a, **kw: [])
-    monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a: "None found.")
+    monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a, **kw: "None found.")
     monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a: "system")
+    monkeypatch.setattr(proof_service, "_outcomes_dir", lambda: tmp_path)
     monkeypatch.setattr(
         proof_service.AnthropicClient,
         "run",
@@ -207,17 +238,23 @@ def test_read_library_file_missing_file(tmp_path: Path, monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_write_proof_dry_run_does_not_write(tmp_path: Path, monkeypatch) -> None:
+def _setup_llm_generations(tmp_path: Path) -> tuple[Path, Path]:
+    """Create the LlmGenerations layout the writer targets.
+
+    Returns (llm_dir, index_file). Proofs are written to
+    `Theorems/LlmGenerations/` and their import lines appended to the
+    `Theorems/LlmGenerations.lean` index, which must already exist.
+    """
     theorems_dir = tmp_path / "PrisonersDilemma" / "Theorems"
-    theorems_dir.mkdir(parents=True)
+    llm_dir = theorems_dir / "LlmGenerations"
+    llm_dir.mkdir(parents=True)
+    index = theorems_dir / "LlmGenerations.lean"
+    index.write_text("-- LlmGenerations index\n", encoding="utf-8")
+    return llm_dir, index
 
-    monkeypatch.setattr(
-        library_writer,
-        "load_paths",
-        lambda: SimpleNamespace(lean_engine_dir=tmp_path),
-    )
 
-    result_obj = ProofResult(
+def _cooperate_vs_defect_result() -> ProofResult:
+    return ProofResult(
         left_bot="CooperateBot",
         right_bot="DefectBot",
         left_action="C",
@@ -226,20 +263,29 @@ def test_write_proof_dry_run_does_not_write(tmp_path: Path, monkeypatch) -> None
         iterations_used=1,
     )
 
-    write_result = library_writer.write_proof_to_library(
-        result_obj, human_accept=False, dry_run=True
+
+def test_write_proof_dry_run_does_not_write(tmp_path: Path, monkeypatch) -> None:
+    llm_dir, _ = _setup_llm_generations(tmp_path)
+
+    monkeypatch.setattr(
+        library_writer,
+        "load_paths",
+        lambda: SimpleNamespace(lean_engine_dir=tmp_path),
     )
 
-    expected = theorems_dir / "outcome_CooperateBot_vs_DefectBot.lean"
+    write_result = library_writer.write_proof_to_library(
+        _cooperate_vs_defect_result(), human_accept=False, dry_run=True
+    )
+
+    expected = llm_dir / "outcome_CooperateBot_vs_DefectBot.lean"
     assert write_result.path == expected
     assert write_result.build_ok is True
     assert not expected.exists()
 
 
 def test_write_proof_refuses_to_overwrite(tmp_path: Path, monkeypatch) -> None:
-    theorems_dir = tmp_path / "PrisonersDilemma" / "Theorems"
-    theorems_dir.mkdir(parents=True)
-    existing = theorems_dir / "outcome_CooperateBot_vs_DefectBot.lean"
+    llm_dir, _ = _setup_llm_generations(tmp_path)
+    existing = llm_dir / "outcome_CooperateBot_vs_DefectBot.lean"
     existing.write_text("-- already exists", encoding="utf-8")
 
     monkeypatch.setattr(
@@ -248,24 +294,16 @@ def test_write_proof_refuses_to_overwrite(tmp_path: Path, monkeypatch) -> None:
         lambda: SimpleNamespace(lean_engine_dir=tmp_path),
     )
 
-    result_obj = ProofResult(
-        left_bot="CooperateBot",
-        right_bot="DefectBot",
-        left_action="C",
-        right_action="D",
-        lean_source="theorem foo := by rfl",
-        iterations_used=1,
-    )
-
     with pytest.raises(library_writer.LibraryWriteError, match="already exists"):
-        library_writer.write_proof_to_library(result_obj, human_accept=False, dry_run=False)
+        library_writer.write_proof_to_library(
+            _cooperate_vs_defect_result(), human_accept=False, dry_run=False
+        )
 
 
 def test_write_proof_rolls_back_on_build_failure(tmp_path: Path, monkeypatch) -> None:
     from pd_runner.lean.executor import LeanExecResult
 
-    theorems_dir = tmp_path / "PrisonersDilemma" / "Theorems"
-    theorems_dir.mkdir(parents=True)
+    llm_dir, index = _setup_llm_generations(tmp_path)
 
     monkeypatch.setattr(
         library_writer,
@@ -278,26 +316,20 @@ def test_write_proof_rolls_back_on_build_failure(tmp_path: Path, monkeypatch) ->
         lambda _: LeanExecResult("lake build", 1, "", "build error"),
     )
 
-    result_obj = ProofResult(
-        left_bot="CooperateBot",
-        right_bot="DefectBot",
-        left_action="C",
-        right_action="D",
-        lean_source="theorem foo := by rfl",
-        iterations_used=1,
-    )
-
     with pytest.raises(library_writer.LibraryWriteError, match="lake build failed"):
-        library_writer.write_proof_to_library(result_obj, human_accept=False, dry_run=False)
+        library_writer.write_proof_to_library(
+            _cooperate_vs_defect_result(), human_accept=False, dry_run=False
+        )
 
-    assert not (theorems_dir / "outcome_CooperateBot_vs_DefectBot.lean").exists()
+    # Both the proof file and the appended index import line are rolled back.
+    assert not (llm_dir / "outcome_CooperateBot_vs_DefectBot.lean").exists()
+    assert "outcome_CooperateBot_vs_DefectBot" not in index.read_text(encoding="utf-8")
 
 
 def test_write_proof_writes_and_builds_successfully(tmp_path: Path, monkeypatch) -> None:
     from pd_runner.lean.executor import LeanExecResult
 
-    theorems_dir = tmp_path / "PrisonersDilemma" / "Theorems"
-    theorems_dir.mkdir(parents=True)
+    llm_dir, index = _setup_llm_generations(tmp_path)
 
     monkeypatch.setattr(
         library_writer,
@@ -310,18 +342,13 @@ def test_write_proof_writes_and_builds_successfully(tmp_path: Path, monkeypatch)
         lambda _: LeanExecResult("lake build", 0, "Build OK", ""),
     )
 
-    result_obj = ProofResult(
-        left_bot="CooperateBot",
-        right_bot="DefectBot",
-        left_action="C",
-        right_action="D",
-        lean_source="theorem foo := by rfl",
-        iterations_used=1,
+    write_result = library_writer.write_proof_to_library(
+        _cooperate_vs_defect_result(), human_accept=False
     )
 
-    write_result = library_writer.write_proof_to_library(result_obj, human_accept=False)
-
-    expected = theorems_dir / "outcome_CooperateBot_vs_DefectBot.lean"
+    expected = llm_dir / "outcome_CooperateBot_vs_DefectBot.lean"
     assert expected.exists()
     assert "theorem foo" in expected.read_text()
     assert write_result.build_ok is True
+    # The import line was appended to the index.
+    assert "outcome_CooperateBot_vs_DefectBot" in index.read_text(encoding="utf-8")
