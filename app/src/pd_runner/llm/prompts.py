@@ -12,7 +12,8 @@ def _read_lean(relative: str) -> str:
 def _bot_uses_search(bot: str) -> bool:
     """True if the bot's source references the `.search` constructor.
 
-    Used to decide whether to inject Axioms.lean into the proof agent's system prompt.
+    Used to decide whether to inject the proof-system modules (Axioms.lean,
+    Derivation.lean, SizeLemmas.lean) into the proof agent's system prompt.
     Reads from `Bots/<bot>.lean` or `Bots/LlmGenerations/<bot>.lean`; missing bot → False.
     """
     for candidate in (f"Bots/{bot}.lean", f"Bots/LlmGenerations/{bot}.lean"):
@@ -28,19 +29,29 @@ def build_system_prompt(left_bot: str, right_bot: str) -> str:
     program_src = _read_lean("Program.lean")
     dynamics_src = _read_lean("Dynamics.lean")
 
+    # `BaseTheorems.lean` holds the load-bearing proof vocabulary (`atom_complete`,
+    # `proofSearch_spec`, the soundness lemmas, …) that outcome proofs reference. It
+    # used to live in `Axioms.lean` / `Theorems/ProofSearch.lean`; both were reformed
+    # away, so inject the current module for every proof.
+    base_theorems_src = _read_lean("BaseTheorems.lean")
+    proof_blocks = [f"-- BaseTheorems.lean\n```lean\n{base_theorems_src}\n```"]
+
+    # `.search` bots additionally need the axioms they rest on plus the explicit
+    # derivation system and the budget (size) lemmas used to discharge `□`/`search`.
     needs_axioms = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
-    axioms_block = ""
     if needs_axioms:
-        axioms_src = _read_lean("Axioms.lean")
-        axioms_block = f"\n\n-- Axioms.lean\n```lean\n{axioms_src}\n```"
-        try:
-            proofsearch_src = _read_lean("Theorems/ProofSearch.lean")
-            axioms_block += (
-                f"\n\n-- Theorems/ProofSearch.lean (helper lemmas about the proof system)\n"
-                f"```lean\n{proofsearch_src}\n```"
-            )
-        except OSError:
-            pass
+        for relative, label in (
+            ("Axioms.lean", "Axioms.lean"),
+            ("Derivation.lean", "Derivation.lean (the explicit proof-system `S`)"),
+            ("SizeLemmas.lean", "SizeLemmas.lean (character-budget lemmas)"),
+        ):
+            try:
+                src = _read_lean(relative)
+            except OSError:
+                continue
+            proof_blocks.append(f"-- {label}\n```lean\n{src}\n```")
+
+    proof_system_block = "\n\n" + "\n\n".join(proof_blocks)
 
     return f"""\
 You are an expert Lean 4 proof assistant for the open-source game theory project.
@@ -58,7 +69,7 @@ Do not invent definitions — use only what is shown here and imported in the ex
 -- Dynamics.lean
 ```lean
 {dynamics_src}
-```{axioms_block}
+```{proof_system_block}
 
 # Your task
 
@@ -245,7 +256,14 @@ Each bot is a Lean definition `def BotName : Prog := ...`.
 | `.bot p` | Closed reference to bot `p` — substitution does not descend inside |
 | `.self` | Placeholder for "my own source code" — resolved by `subst` |
 | `.opp` | Placeholder for "the opponent's source code" — resolved by `subst` |
-| `.search k φ p q` | If the proof oracle can verify formula `φ` in ≤k steps, run `p`, else `q` |
+| `.search k φ p q` | If the proof oracle can verify formula `φ` within a budget of `k` characters, run `p`, else `q` |
+
+`φ` above is a `Formula` (see Program.lean). The relevant `Formula` constructors are
+`.plays p q a` ("`p(q.source) == a`"), `.impl`, `.neg`, `.box n φ` ("`φ` is provable
+within budget `n`"), and `.eq p q` — a **structural-identity** guard meaning "probe `p`
+(typically `.opp`) is literally the same program as the frozen literal target `q`".
+`subst` resolves the probe `p` but does not descend into the literal `q`. Use `.eq` for
+strategies that test whether the opponent is a specific named bot.
 
 # Existing bots (few-shot examples)
 
