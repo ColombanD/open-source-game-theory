@@ -13,11 +13,26 @@ def main() -> None:
     args = parser.parse_args()
 
     import uvicorn
+
+    # In reload mode, only watch the source tree. The pipeline writes proof
+    # attempts to `app/generated/` and runs `lake build` over `engine/`; without
+    # these excludes the reloader restarts mid-run, wiping the in-memory job
+    # store and stranding the UI on its last state ("stuck in ending").
+    reload_kwargs: dict = {}
+    if args.reload:
+        from pathlib import Path
+        src_dir = Path(__file__).resolve().parents[2]  # app/src
+        reload_kwargs = {
+            "reload_dirs": [str(src_dir)],
+            "reload_excludes": ["*/generated/*", "generated/*"],
+        }
+
     uvicorn.run(
         "pd_runner.api.main:app",
         host=args.host,
         port=args.port,
         reload=args.reload,
+        **reload_kwargs,
     )
 
 

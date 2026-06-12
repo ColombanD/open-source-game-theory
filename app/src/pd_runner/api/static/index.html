@@ -463,7 +463,21 @@
     }
 
     async function pollJob(jobId) {
-      const resp = await fetch(`/pipeline/${jobId}`);
+      let resp;
+      try {
+        resp = await fetch(`/pipeline/${jobId}`);
+      } catch (e) {
+        return; // transient network blip — keep polling
+      }
+      if (resp.status === 404) {
+        // The job vanished server-side (e.g. the server restarted mid-run).
+        // Stop polling and tell the user instead of silently freezing.
+        clearInterval(pollInterval);
+        if (logEventSource) { logEventSource.close(); logEventSource = null; }
+        document.getElementById('run-btn').disabled = false;
+        renderState({ status: 'failed', error: 'Job lost (the server may have restarted). Please run again.' });
+        return;
+      }
       if (!resp.ok) return;
       renderState(await resp.json());
     }
