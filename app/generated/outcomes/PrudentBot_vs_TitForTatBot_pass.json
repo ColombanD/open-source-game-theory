@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260612T142321",
+  "bot_a": "PrudentBot",
+  "bot_b": "TitForTatBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 64000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 6,
+  "elapsed_seconds": 381.5130652079988,
+  "error": null,
+  "final_text_tail": " => simp [play, eval, TitForTatBot] at hn\n  | succ n2 =>\n  cases n2 with\n  | zero => simp [play, eval, TitForTatBot, PrudentBot, Prog.subst, CooperateBot] at hn\n  | succ n3 =>\n  cases n3 with\n  | zero => simp [play, eval, TitForTatBot, PrudentBot, Prog.subst, CooperateBot, DefectBot, Formula.subst] at hn\n  | succ n4 =>\n  cases n4 with\n  | zero => simp [play, eval, TitForTatBot, PrudentBot, Prog.subst, CooperateBot, DefectBot, Formula.subst] at hn\n  | succ fuel =>\n    have hD : play (fuel + 6) TitForTatBot (PrudentBot k) = some .D :=\n      TFT_plays_D_against_PrudentBot k fuel\n    have heq : fuel + 1 + 1 + 1 + 1 + 1 + 1 = fuel + 6 := by omega\n    rw [heq] at hn\n    rw [hD] at hn\n    cases hn\n\ntheorem proofSearch_false_for_TitForTatBot_vs_PrudentBot (k : Nat) :\n    proofSearch k (.plays TitForTatBot (PrudentBot k) .C) = false := by\n  cases h : proofSearch k (.plays TitForTatBot (PrudentBot k) .C) with\n  | true => exact absurd (proofSearch_sound _ _ h)\n                         (interp_TitForTatBot_plays_C_against_PrudentBot_false k)\n  | false => rfl\n\ntheorem PrudentBot_plays_D_against_TFT (k fuel : Nat) :\n    play (fuel + 6) (PrudentBot k) TitForTatBot = some .D := by\n  have hps := proofSearch_false_for_TitForTatBot_vs_PrudentBot k\n  simp only [TitForTatBot, PrudentBot, CooperateBot, DefectBot] at hps\n  show eval (fuel + 6) (PrudentBot k) TitForTatBot (PrudentBot k) = some .D\n  have hDC : (Action.D == Action.C) = false := rfl\n  simp [PrudentBot, TitForTatBot, CooperateBot, DefectBot, eval, Prog.subst, Formula.subst,\n        hps, hDC]\n\ntheorem llm_outcome_PrudentBot_vs_TitForTatBot :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (PrudentBot k) TitForTatBot = some (.D, .D) := by\n  refine ⟨0, fun k _ => ⟨6, ?_⟩⟩\n  have hA : play 6 (PrudentBot k) TitForTatBot = some .D :=\n    PrudentBot_plays_D_against_TFT k 0\n  have hB : play 6 TitForTatBot (PrudentBot k) = some .D :=\n    TFT_plays_D_against_PrudentBot k 0\n  simp [outcome, hA, hB]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}
