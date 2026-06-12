@@ -90,15 +90,27 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
 - **Strict theorem shape — no extra premises.** The theorem's conclusion must be of the form
   `outcome <fuel-expr> <bot_a> <bot_b> = some (.X, .Y)`, optionally wrapped in `∃` / `∀`
   quantifiers over fuel/search-budget naturals (e.g. `∃ k, ∀ n, outcome (n+f) ...` or
-  `∃ K FUEL, ∀ k, K ≤ k → ...`). You may NOT add hypotheses of the form
+  `∃ k₂, ∀ k, k₂ < k → ∃ fuel, ...`). You may NOT add hypotheses of the form
   `proofSearch _ _ = false`, `proofSearch _ _ = true`, or any other premise that conditions
   the outcome on the behavior of the proof oracle. Such hypotheses turn an outcome theorem
-  into a conditional claim and defeat the purpose of mechanizing the outcome.
-- **If the unconditional outcome is genuinely unprovable** (the matchup is oracle-dependent
-  and the action pair is not determined by the axioms), do NOT invent premises to make it
-  provable. Instead, do not emit a ```lean``` code block and say exactly `OUTCOME OPEN`
-  followed by a one-paragraph explanation of which action pairs are consistent with the
-  axioms and why no single pair is forced.
+  into a conditional claim and defeat the purpose of mechanizing the outcome. Binding the
+  search budget `k` with a `∃ k₂, ∀ k, k₂ < k → …` *threshold quantifier* is NOT an extra
+  premise — it is the correct way to state the outcome of a `.search`-bot matchup.
+- **`.search`-bot matchups depend on the budget `k` — bind it, do not give up.** When one or
+  both bots take a budget parameter `k`, the outcome typically flips with `k`: small `k` gives
+  defection (the oracle proves nothing), large `k` gives the Löb/Critch cooperation fixed
+  point. The unquantified statement with `k` left free is unprovable, but the **large-`k`
+  threshold** statement `∃ k₂, ∀ k, k₂ < k → ∃ fuel, outcome fuel (BotA k) (BotB k) = some (…)`
+  is provable and is the expected answer. Existing `.search`-bot self-play theorems in the
+  few-shot files show the canonical `PBLT` application for this shape — follow it. Prove the
+  threshold theorem; do NOT declare OUTCOME OPEN merely because the result varies with `k`.
+- **OUTCOME OPEN is only for genuinely undetermined matchups.** Reserve it for the rare case
+  where *no* single action pair holds even past a threshold on `k` (e.g. the matchup admits
+  two incompatible fixed points and neither is forced for all sufficiently large `k`). If a
+  large-`k` threshold theorem of the shape above is provable, you must prove it instead. When
+  OUTCOME OPEN genuinely applies, do not emit a ```lean``` code block and say exactly
+  `OUTCOME OPEN` followed by a one-paragraph explanation of which action pairs are consistent
+  with the axioms and why no single pair is forced even in the large-`k` limit.
 - When you are confident the proof compiles cleanly, output the final Lean source inside
   a ```lean ... ``` code fence and say "PROOF COMPLETE".
 """
@@ -115,44 +127,104 @@ def proof_request_message(
 ) -> str:
     parts: list[str] = []
 
-    fuel_expr = f"n+{fuel}" if fuel is not None else "n+<FUEL>"
-    fuel_note = (
-        f"Use fuel offset `+{fuel}` exactly."
-        if fuel is not None
-        else (
-            "Pick `<FUEL>` yourself: it must be a concrete `Nat` literal large enough that "
-            "`outcome (n+<FUEL>) ...` settles to a single action pair for all `n`. Try a small "
-            "value first (1 or 3), increase if Lean rejects the proof because evaluation needs "
-            "more fuel."
-        )
-    )
+    # A bot that uses `.search` takes a budget parameter `k` (project convention).
+    # When either side is such a bot, the outcome can *flip with `k`* (small `k`:
+    # the proof oracle proves nothing, bots defect; large `k`: the Löb/Critch
+    # fixed point makes them cooperate). An unquantified `outcome … BotA BotB`
+    # statement then leaves `k` free and is genuinely unprovable. The right shape
+    # is a **large-`k` threshold theorem** binding `k` — exactly the form used by
+    # `DupocBot_vs_DupocBot`. Detect that case and render the threshold template.
+    parameterized = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
+
     outcome_clause = (
         f"some (.{left_action}, .{right_action})"
         if left_action is not None and right_action is not None
         else "some (.<LEFT>, .<RIGHT>)"
     )
 
-    if left_action is not None and right_action is not None:
-        intro = "Prove the following outcome theorem:"
+    if parameterized:
+        left_app = f"({left_bot} k)" if _bot_uses_search(left_bot) else left_bot
+        right_app = f"({right_bot} k)" if _bot_uses_search(right_bot) else right_bot
+
+        if left_action is not None and right_action is not None:
+            intro = (
+                "Prove the following outcome theorem. This matchup involves a "
+                "`.search` bot, so the outcome depends on the search budget `k`; "
+                "state it as a large-`k` threshold theorem:"
+            )
+        else:
+            intro = (
+                f"Determine the outcome of `{left_bot}` vs `{right_bot}` and prove it.\n\n"
+                f"At least one side is a `.search` bot, so the outcome may depend on the "
+                f"search budget `k` (small `k`: the proof oracle proves nothing and the "
+                f"bots tend to defect; large `k`: the Löb/Critch fixed point can make them "
+                f"cooperate). Prove the **large-`k`** outcome as a threshold theorem of the "
+                f"form below, picking the action pair that holds for all sufficiently large "
+                f"`k`.\n\n"
+                f"The outcome is one of: `(.C, .C)`, `(.C, .D)`, `(.D, .C)`, `(.D, .D)`."
+            )
+
+        # Point at the canonical worked example, but not when DupocBot self-play is
+        # itself the target (that would name the answer theorem and leak it past the
+        # eval harness's `exclude_bots` filter).
+        if {left_bot, right_bot} == {"DupocBot"}:
+            template_hint = (
+                "This is the canonical threshold shape for a `.search`-bot matchup; the "
+                "few-shot files show the `PBLT` application that discharges it."
+            )
+        else:
+            template_hint = (
+                "This threshold shape is exactly how `DupocBot_vs_DupocBot` is stated — read "
+                "that theorem (and the `PBLT` application it uses) as your template."
+            )
+
+        parts.append(
+            f"{intro}\n\n"
+            f"```lean\n"
+            f"theorem llm_outcome_{left_bot}_vs_{right_bot} :\n"
+            f"    ∃ k₂, ∀ k, k₂ < k →\n"
+            f"      ∃ fuel, outcome fuel {left_app} {right_app} = {outcome_clause} := by\n"
+            f"  sorry  -- replace with a real proof\n"
+            f"```\n\n"
+            f"{template_hint} Do NOT emit an unquantified `outcome … = some (…)` with `k` "
+            f"left free; that statement is unprovable because the outcome flips with `k`.\n\n"
+            f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
+            f"to avoid clashing with existing library theorems."
+        )
     else:
-        intro = (
-            f"Determine the outcome of `{left_bot}` vs `{right_bot}` and prove it.\n\n"
-            f"The outcome is one of: `(.C, .C)`, `(.C, .D)`, `(.D, .C)`, `(.D, .D)`.\n"
-            f"Read the bot definitions, reason about what action each bot plays, "
-            f"then write and verify a theorem of the form:"
+        fuel_expr = f"n+{fuel}" if fuel is not None else "n+<FUEL>"
+        fuel_note = (
+            f"Use fuel offset `+{fuel}` exactly."
+            if fuel is not None
+            else (
+                "Pick `<FUEL>` yourself: it must be a concrete `Nat` literal large enough that "
+                "`outcome (n+<FUEL>) ...` settles to a single action pair for all `n`. Try a small "
+                "value first (1 or 3), increase if Lean rejects the proof because evaluation needs "
+                "more fuel."
+            )
         )
 
-    parts.append(
-        f"{intro}\n\n"
-        f"```lean\n"
-        f"theorem llm_outcome_{left_bot}_vs_{right_bot} (n : Nat) :\n"
-        f"    outcome ({fuel_expr}) {left_bot} {right_bot} = {outcome_clause} := by\n"
-        f"  sorry  -- replace with a real proof\n"
-        f"```\n\n"
-        f"{fuel_note}\n\n"
-        f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
-        f"to avoid clashing with existing library theorems."
-    )
+        if left_action is not None and right_action is not None:
+            intro = "Prove the following outcome theorem:"
+        else:
+            intro = (
+                f"Determine the outcome of `{left_bot}` vs `{right_bot}` and prove it.\n\n"
+                f"The outcome is one of: `(.C, .C)`, `(.C, .D)`, `(.D, .C)`, `(.D, .D)`.\n"
+                f"Read the bot definitions, reason about what action each bot plays, "
+                f"then write and verify a theorem of the form:"
+            )
+
+        parts.append(
+            f"{intro}\n\n"
+            f"```lean\n"
+            f"theorem llm_outcome_{left_bot}_vs_{right_bot} (n : Nat) :\n"
+            f"    outcome ({fuel_expr}) {left_bot} {right_bot} = {outcome_clause} := by\n"
+            f"  sorry  -- replace with a real proof\n"
+            f"```\n\n"
+            f"{fuel_note}\n\n"
+            f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
+            f"to avoid clashing with existing library theorems."
+        )
 
     # Always inject the bot definitions so the agent doesn't need to fetch them manually.
     # Try the standard path first, then the LlmGenerations subfolder.
