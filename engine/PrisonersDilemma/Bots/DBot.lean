@@ -1,8 +1,8 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Bots.DefectBot
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 -- Bot defects if the opponent cooperates against a defect probe. --
 def DBot : Prog :=
@@ -12,4 +12,4 @@ def DBot : Prog :=
     (.const Action.D) -- if opponent cooperates, defect
     (.const Action.C) -- else, cooperate
 
-end PDNew.Bots
+end PD.Bots

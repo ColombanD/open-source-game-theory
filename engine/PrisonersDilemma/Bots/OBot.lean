@@ -2,8 +2,8 @@ import PrisonersDilemma.Program
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.CooperateBot
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 /-- Strategy definition for OBot.
 OBot probes the opponent's response to CooperateBot and DefectBot, and then chooses its action based on the opponent's behavior. -/

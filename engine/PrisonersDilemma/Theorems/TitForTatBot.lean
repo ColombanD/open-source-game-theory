@@ -6,8 +6,8 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Theorems.Helpers
 
 
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD.Bots
+namespace PD.Theorems
 
 
 theorem TitForTatBot_plays_C_against_CB (fuel : Nat) :
@@ -72,4 +72,4 @@ theorem TitForTatBot_vs_DBot (fuel : Nat):
         simpa [eval] using hPlay
     simp [outcome, hA, hB]
 
-end PDNew.Theorems
+end PD.Theorems

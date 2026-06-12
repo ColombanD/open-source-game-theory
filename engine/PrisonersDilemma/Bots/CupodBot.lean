@@ -1,7 +1,7 @@
 import PrisonersDilemma.Program
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 -- Cooperate unless proof of opponent defecting is found within k steps.
 def CupodBot (k : Nat) : Prog :=
@@ -10,4 +10,4 @@ def CupodBot (k : Nat) : Prog :=
     (.const Action.D)
     (.const Action.C)
 
-end PDNew.Bots
+end PD.Bots

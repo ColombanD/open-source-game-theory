@@ -11,11 +11,11 @@ import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
+open PD
+open PD.Axioms
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 -- play (n+2) (.bot DefectBot) q = some .D
 theorem play_bot_DefectBot_lemma (n : Nat) (q : Prog) :
@@ -132,4 +132,4 @@ theorem llm_outcome_DupocBot_vs_EBot (n : Nat) :
     EBot_plays_C_against_DupocBot_lemma k n hPS_coop
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems

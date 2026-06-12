@@ -69,7 +69,7 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
 # Rules
 - The file must compile with zero errors and zero warnings in stderr.
 - Import only modules that exist in the PrisonersDilemma library.
-- The namespace must be `PDNew.Theorems`.
+- The namespace must be `PD.Theorems`.
 - **Do NOT redefine bots in your proof file.** Every bot already lives in its own
   module under `PrisonersDilemma.Bots.*` — import it (e.g. `import PrisonersDilemma.Bots.CupodBot`)
   and reference it by name. The proof file must contain only theorems, no `def` of any bot.
@@ -259,7 +259,7 @@ Use the `read_library_file` tool to inspect any existing bot for reference.
 
 # Rules
 - The file must compile with zero errors (exit code 0 from `run_lean_build`).
-- The bot must be in namespace `PDNew.Bots`.
+- The bot must be in namespace `PD.Bots`.
 - Import only `PrisonersDilemma.Program` and bot files you reference via `.bot`.
 - Do not use `sorry` or any placeholder.
 - **Search budget must be a parameter, not a literal.** If your bot uses `.search`, the
@@ -279,19 +279,19 @@ Write a Lean 4 bot definition for the following strategy:
 
 **Strategy:** {strategy_description}
 
-The bot definition should go in the namespace `PDNew.Bots` and follow this structure:
+The bot definition should go in the namespace `PD.Bots` and follow this structure:
 
 ```lean
 import PrisonersDilemma.Program
 -- (add more imports if your bot references other bots via .bot)
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 def {bot_name} : Prog :=
   -- your Prog expression here
 
-end PDNew.Bots
+end PD.Bots
 ```
 
 Use the `run_lean_build` tool with `bot_name = "{bot_name}"` to check your definition compiles. \

@@ -2,10 +2,10 @@ import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Bots.DefectBot
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 -- DefectBot always defects (with any fuel ≥ 1).
 theorem play_DefectBot (n : Nat) (opponent : Prog) :
@@ -54,4 +54,4 @@ theorem outcome_DefectBot_vs_DefectBot (n : Nat) :
   rw [play_DefectBot]
   rfl
 
-end PDNew.Theorems
+end PD.Theorems

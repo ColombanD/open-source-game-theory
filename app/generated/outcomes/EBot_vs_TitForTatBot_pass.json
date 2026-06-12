@@ -15,5 +15,5 @@
   "iterations_used": 4,
   "elapsed_seconds": 60.384094207998714,
   "error": null,
-  "final_text_tail": "Compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Bots.TitForTatBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Bots.MirrorBot\nimport PrisonersDilemma.Dynamics\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_EBot_vs_TitForTatBot (n : Nat) :\n    outcome (n+10) EBot TitForTatBot = some (.C, .D) := by\n  unfold outcome play\n  simp [eval, EBot, TitForTatBot, CooperateBot, DefectBot, MirrorBot, Prog.subst]\n  decide\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "Compiles cleanly.\n\n```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Bots.TitForTatBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Bots.MirrorBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_EBot_vs_TitForTatBot (n : Nat) :\n    outcome (n+10) EBot TitForTatBot = some (.C, .D) := by\n  unfold outcome play\n  simp [eval, EBot, TitForTatBot, CooperateBot, DefectBot, MirrorBot, Prog.subst]\n  decide\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

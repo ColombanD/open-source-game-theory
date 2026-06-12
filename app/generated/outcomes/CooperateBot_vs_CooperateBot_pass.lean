@@ -1,13 +1,13 @@
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Bots.CooperateBot
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_CooperateBot_vs_CooperateBot (n : Nat) :
     outcome (n+1) CooperateBot CooperateBot = some (.C, .C) := by
   rfl
 
-end PDNew.Theorems
+end PD.Theorems

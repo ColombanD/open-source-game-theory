@@ -1,9 +1,9 @@
 import PrisonersDilemma.Program
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 /-- CooperateBot always cooperates, regardless of opponent behavior. -/
 def CooperateBot : Prog := .const Action.C
 
-end PDNew.Bots
+end PD.Bots

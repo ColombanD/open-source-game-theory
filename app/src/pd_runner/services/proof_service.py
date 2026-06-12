@@ -254,7 +254,7 @@ def _find_bot_redefinitions(lean_source: str) -> list[str]:
     """Return names of any `def X : Prog` declarations in the proof source.
 
     Proof files must import bots, never redefine them — a redefinition causes a
-    namespace clash with `PDNew.Bots.X` at `lake build` time.
+    namespace clash with `PD.Bots.X` at `lake build` time.
     """
     return _BOT_DEF_RE.findall(lean_source)
 

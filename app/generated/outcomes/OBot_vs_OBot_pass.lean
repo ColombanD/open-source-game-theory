@@ -3,10 +3,10 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.Helpers
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_OBot_vs_OBot (n : Nat) :
     outcome (n + 8) OBot OBot = some (.D, .D) := by
@@ -52,4 +52,4 @@ theorem llm_outcome_OBot_vs_OBot (n : Nat) :
     simpa [eval, hG2] using hPlay
   exact outcome_of_plays _ _ _ _ _ hA hA
 
-end PDNew.Theorems
+end PD.Theorems

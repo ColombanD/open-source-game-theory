@@ -2,11 +2,11 @@ import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.ProofSearch
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
+open PD
+open PD.Axioms
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 private theorem dupoc_loeb_premise (k : Nat) :
     ∃ m, proofSearch m
@@ -43,4 +43,4 @@ theorem llm_outcome_DupocBot_vs_DupocBot :
   refine ⟨n, ?_⟩
   simp [outcome, hn]
 
-end PDNew.Theorems
+end PD.Theorems

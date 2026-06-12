@@ -11,8 +11,8 @@ def test_write_matchup_lean_file(tmp_path: Path) -> None:
 
     assert generated.path.exists()
     assert "import PrisonersDilemma" in content
-    assert generated.proof_theorem_used == "PDNew.Theorems.DBot_vs_DefectBot"
-    assert "exact PDNew.Theorems.DBot_vs_DefectBot 0" in content
+    assert generated.proof_theorem_used == "PD.Theorems.DBot_vs_DefectBot"
+    assert "exact PD.Theorems.DBot_vs_DefectBot 0" in content
     assert "#eval ((Action.C, Action.D) : Outcome)" in content
 
 
@@ -26,8 +26,8 @@ def test_write_matchup_lean_file_uses_preproved_theorem(tmp_path: Path) -> None:
     )
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PDNew.Theorems.DBot_vs_DefectBot"
-    assert "exact PDNew.Theorems.DBot_vs_DefectBot 0" in content
+    assert generated.proof_theorem_used == "PD.Theorems.DBot_vs_DefectBot"
+    assert "exact PD.Theorems.DBot_vs_DefectBot 0" in content
 
 
 def test_write_matchup_lean_file_falls_back_to_generated_proof(tmp_path: Path) -> None:
@@ -40,7 +40,7 @@ def test_write_matchup_lean_file_falls_back_to_generated_proof(tmp_path: Path) -
     )
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PDNew.Theorems.outcome_CooperateBot_vs_DefectBot"
+    assert generated.proof_theorem_used == "PD.Theorems.outcome_CooperateBot_vs_DefectBot"
     assert "theorem claimed_outcome" in content
 
 
@@ -53,10 +53,10 @@ def test_write_matchup_lean_file_uses_parameterized_universal_theorem(tmp_path: 
     generated = write_matchup_lean_file(tmp_path, "CupodBot:3", "CooperateBot")
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PDNew.Theorems.CupodBot_vs_CooperateBot"
+    assert generated.proof_theorem_used == "PD.Theorems.CupodBot_vs_CooperateBot"
     assert generated.result_kind == "concrete"
     assert "outcome (0 + 2) (CupodBot 3) CooperateBot" in content
-    assert "exact PDNew.Theorems.CupodBot_vs_CooperateBot 3 0" in content
+    assert "exact PD.Theorems.CupodBot_vs_CooperateBot 3 0" in content
     assert "#eval ((Action.C, Action.C) : Outcome)" in content
 
 
@@ -64,7 +64,7 @@ def test_write_matchup_lean_file_uses_reversed_parameterized_universal_theorem(t
     generated = write_matchup_lean_file(tmp_path, "CooperateBot", "CupodBot:3")
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PDNew.Theorems.CupodBot_vs_CooperateBot"
+    assert generated.proof_theorem_used == "PD.Theorems.CupodBot_vs_CooperateBot"
     assert generated.actions_are_swapped is True
     assert "outcome (0 + 2) (CupodBot 3) CooperateBot" in content
 
@@ -73,22 +73,22 @@ def test_write_matchup_lean_file_uses_existential_theorem(tmp_path: Path) -> Non
     generated = write_matchup_lean_file(tmp_path, "CupodBot:?", "DefectBot")
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PDNew.Theorems.CupodBot_vs_DefectBot"
+    assert generated.proof_theorem_used == "PD.Theorems.CupodBot_vs_DefectBot"
     assert generated.result_kind == "exists_parameter"
     assert "theorem claimed_exists_outcome" in content
     assert "∃ k, outcome (0 + 2) (CupodBot k) DefectBot" in content
-    assert "exact PDNew.Theorems.CupodBot_vs_DefectBot 0" in content
+    assert "exact PD.Theorems.CupodBot_vs_DefectBot 0" in content
 
 
 def test_write_matchup_lean_file_prefers_universal_theorem_for_wildcard(tmp_path: Path) -> None:
     generated = write_matchup_lean_file(tmp_path, "CooperateBot", "CupodBot:?")
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PDNew.Theorems.CupodBot_vs_CooperateBot"
+    assert generated.proof_theorem_used == "PD.Theorems.CupodBot_vs_CooperateBot"
     assert generated.result_kind == "all_parameters"
     assert generated.witness == "any"
     assert generated.actions_are_swapped is True
-    assert "exact PDNew.Theorems.CupodBot_vs_CooperateBot 0 0" in content
+    assert "exact PD.Theorems.CupodBot_vs_CooperateBot 0 0" in content
 
 
 def test_write_matchup_lean_file_does_not_use_existential_for_concrete_param(tmp_path: Path) -> None:
