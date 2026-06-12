@@ -126,10 +126,10 @@ theorem ps_false_bot_DB_plays_C (k : Nat) (q : Prog) :
     · simp [play, eval, DefectBot] at hn
   | false => rfl
 
-theorem outcome_PrudentBot_vs_DBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (PrudentBot k) DBot = some (.D, .C) := by
-  refine ⟨0, fun k _ => ⟨20, ?_⟩⟩
+/-- PrudentBot vs DBot at the concrete fuel `6`: PrudentBot defects, DBot
+    cooperates, (D, C). -/
+theorem outcome_PrudentBot_vs_DBot_fuel (k : Nat) :
+    outcome 6 (PrudentBot k) DBot = some (.D, .C) := by
   have hfalse := ps_false_bot_DB_plays_C k
     ((Prog.opp.sim (Prog.const Action.D).bot).ite Action.D
       (Prog.search k (Formula.plays Prog.opp Prog.self Action.C) (Prog.const Action.C)
@@ -140,6 +140,11 @@ theorem outcome_PrudentBot_vs_DBot :
         show (Action.D == Action.C) = false from rfl,
         show (Action.C == Action.D) = false from rfl,
         hfalse]
+
+theorem outcome_PrudentBot_vs_DBot :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ fuel, outcome fuel (PrudentBot k) DBot = some (.D, .C) :=
+  ⟨0, fun k _ => ⟨6, outcome_PrudentBot_vs_DBot_fuel k⟩⟩
 
 
 -- OBot --
