@@ -144,15 +144,30 @@ async def stream_logs(job_id: str) -> StreamingResponse:
         raise HTTPException(status_code=404, detail="Job not found")
 
     async def _generate():
+        # Open the stream immediately so the browser's EventSource connects and
+        # starts rendering before the first real log record arrives.
+        yield ": connected\n\n"
         while True:
-            if not job.log_queue.empty():
-                line = job.log_queue.get_nowait()
-                yield f"data: {line}\n\n"
-            elif job.logs_done:
+            # Drain anything already queued before blocking, then close promptly
+            # once the pipeline has signalled completion.
+            if job.logs_done and job.log_queue.empty():
                 yield "event: done\ndata: \n\n"
                 break
-            else:
-                await asyncio.sleep(0.1)
+            try:
+                # Block until a record is available (with a timeout so we can
+                # still notice logs_done and emit periodic heartbeats). Awaiting
+                # here yields control back to the event loop after every single
+                # record, which forces uvicorn to flush each SSE event instead
+                # of coalescing a burst of back-to-back yields into one write.
+                line = await asyncio.wait_for(job.log_queue.get(), timeout=10.0)
+                yield f"data: {line}\n\n"
+            except asyncio.TimeoutError:
+                if job.logs_done and job.log_queue.empty():
+                    yield "event: done\ndata: \n\n"
+                    break
+                # Heartbeat keeps the connection from being idle-closed during
+                # long quiet stretches (e.g. a slow LLM/Lean call).
+                yield ": keepalive\n\n"
 
     return StreamingResponse(_generate(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
