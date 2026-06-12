@@ -176,7 +176,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
     (motive_1 := fun me opponent body a _ _ => ∃ N, eval N me opponent body = some a)
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun _ _ _ => True)
-    ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom h
+    ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken h
   case const => exact ⟨1, rfl⟩
   case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
   case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
@@ -203,6 +203,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
   case atomMk => intros; trivial
   case provStruct => intros; trivial
   case provAtom => intros; trivial
+  case provWeaken => intros; trivial
 
 /-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
 theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
@@ -217,13 +218,38 @@ theorem AtomProvable_sound (k : Nat) (φ : Formula) : AtomProvable k φ → φ.i
   exact ⟨N, hN⟩
 
 -- Soundness of bounded provability: anything provable within a budget is true.
--- Either the formula is provable by the structural `Derivation` rules
--- (→ `Derivation.sound`), or it is an atomic σ₁ fact (→ `AtomProvable_sound`).
+-- Three disjuncts now:
+--   • structural `Derivation` rules (→ `Derivation.sound`);
+--   • an atomic σ₁ fact (→ `AtomProvable_sound`);
+--   • a `weakenImpl` true-consequent implication (recursive on the consequent's
+--     provability — `Provable m ψ` is a structural subterm, so via `Provable.rec`).
+-- `induction`/`cases` can't recurse through the mutual block, so we drive it with
+-- `Provable.rec` (mirroring `playsProof_sound`).
 theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
   intro k φ h
-  cases h with
-  | struct hd => obtain ⟨d, _⟩ := hd; exact d.sound
-  | atom hatom => exact AtomProvable_sound k φ hatom
+  -- The minor premises of `Provable.rec` are positional (anonymous binders), so
+  -- we supply all twelve in order: the eight `PlaysProof` cases and the
+  -- `AtomProvable` (`mk`) case all have motive `True`; then `struct`, `atom`, and
+  -- the new `weakenImpl`.
+  exact Provable.rec
+    (motive_1 := fun _ _ _ _ _ _ => True)
+    (motive_2 := fun _ _ _ => True)
+    (motive_3 := fun _ φ _ => φ.interp)
+    trivial                                   -- const
+    (fun _ _ => trivial)                      -- self
+    (fun _ _ => trivial)                      -- opp
+    (fun _ _ => trivial)                      -- bot
+    (fun _ _ => trivial)                      -- sim
+    (fun _ _ _ _ _ => trivial)                -- ite_t
+    (fun _ _ _ _ _ => trivial)                -- ite_f
+    (fun _ _ _ _ => trivial)                  -- search_t
+    (fun _ _ _ => trivial)                    -- mk (AtomProvable)
+    (fun {k} {φ} hd => by obtain ⟨d, _⟩ := hd; exact d.sound)   -- struct
+    (fun {k} {φ} hatom _ => AtomProvable_sound k φ hatom)       -- atom
+    -- weakenImpl: `(.impl φ ψ).interp` is `φ.interp → ψ.interp`; the IH
+    -- `ih : ψ.interp` (from `Provable m ψ`) discharges it via `fun _ => ih`.
+    (fun _φ _ψ _m _hpsi _hsz ih => fun _ => ih)                 -- weakenImpl
+    h
 
 /-
 HOW TO DISCHARGE A `proofSearch k φ = b` GOAL.
@@ -275,5 +301,10 @@ theorem proofSearch_monotone :
   | struct hd => obtain ⟨d, hsz⟩ := hd
                  exact (proofSearch_spec k₂ φ).2 (Provable.struct ⟨d, Nat.le_trans hsz hk⟩)
   | atom hatom => exact (proofSearch_spec k₂ φ).2 (Provable.atom (atom_monotone k₁ k₂ φ hk hatom))
+  | weakenImpl ψ' χ' m hpsi hsz =>
+      -- the conclusion's size bound relaxes from `k₁` to `k₂`; the consequent's
+      -- proof carries over unchanged.
+      exact (proofSearch_spec k₂ _).2
+        (Provable.weakenImpl ψ' χ' m hpsi (Nat.le_trans hsz hk))
 
 end PD.BaseTheorems
