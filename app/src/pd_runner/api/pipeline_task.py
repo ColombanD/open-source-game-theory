@@ -29,8 +29,12 @@ def bot_source_on_disk(name: str) -> str | None:
     return None
 
 
-def _resolve_bot(name: str, strategy: str | None, resolution: BotConflictResolution | None, model: str, max_iterations: int) -> BotResult:
-    """Generate or load a bot according to the conflict resolution decision."""
+def _resolve_bot(name: str, strategy: str | None, resolution: BotConflictResolution | None, req: PipelineRequest) -> BotResult:
+    """Generate or load a bot according to the conflict resolution decision.
+
+    The model / token / effort knobs come from the pipeline request so the bot
+    writer and the proof agent run under the same user-chosen settings.
+    """
     if resolution == BotConflictResolution.use_existing:
         source = bot_source_on_disk(name)
         if source is None:
@@ -42,8 +46,10 @@ def _resolve_bot(name: str, strategy: str | None, resolution: BotConflictResolut
     return search_bot(BotRequest(
         bot_name=name,
         strategy_description=strategy,
-        model=model,
-        max_iterations=max_iterations,
+        model=req.model,
+        max_iterations=req.max_iterations,
+        max_tokens=req.max_tokens,
+        thinking_effort=req.thinking_effort,
     ))
 
 
@@ -82,10 +88,10 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
         if req.prove_only:
             assert req.bot_b is not None  # prove-only requires two bots; UI enforces this
             return _load_existing(req.bot_a.name), _load_existing(req.bot_b.name)
-        bot_a = _resolve_bot(req.bot_a.name, req.bot_a.strategy, req.bot_a.conflict_resolution, req.model, req.max_iterations)
+        bot_a = _resolve_bot(req.bot_a.name, req.bot_a.strategy, req.bot_a.conflict_resolution, req)
         if req.bot_b is None:
             return bot_a, None
-        bot_b = _resolve_bot(req.bot_b.name, req.bot_b.strategy, req.bot_b.conflict_resolution, req.model, req.max_iterations)
+        bot_b = _resolve_bot(req.bot_b.name, req.bot_b.strategy, req.bot_b.conflict_resolution, req)
         return bot_a, bot_b
 
     def _write_bots(bot_a: BotResult, bot_b: BotResult | None) -> None:
@@ -107,6 +113,8 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
             right_bot=req.bot_b.name,
             model=req.model,
             max_iterations=req.max_iterations,
+            max_tokens=req.max_tokens,
+            thinking_effort=req.thinking_effort,
         ))
 
     def _write_proof(proof: ProofResult) -> None:

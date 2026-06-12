@@ -19,6 +19,8 @@ class BotRequest:
     strategy_description: str
     max_iterations: int = 20
     model: str = "claude-opus-4-7"
+    max_tokens: int = 32000
+    thinking_effort: str = "medium"
 
 
 @dataclass(frozen=True)
@@ -51,6 +53,8 @@ def search_bot(request: BotRequest) -> BotResult:
         tools=BOT_TOOLS,
         model=request.model,
         max_iterations=request.max_iterations,
+        max_tokens=request.max_tokens,
+        thinking_effort=request.thinking_effort,
     )
 
     iteration_count = [0]
