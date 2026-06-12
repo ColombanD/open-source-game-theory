@@ -138,6 +138,24 @@ mutual
   inductive Provable : Nat → Formula → Prop where
     | struct : (∃ d : Derivation φ, d.size ≤ k) → Provable k φ
     | atom : AtomProvable k φ → Provable k φ
+    /-- **True-consequent implication** (`ψ ⊢ φ → ψ`, the premise of GL's K /
+        intuitionistic axiom 1): if the consequent `ψ` is provable (at any budget
+        `m`), then `φ → ψ` is provable, provided the conclusion's character size
+        fits the budget `k`. Sound — `interp (.impl φ ψ)` is `φ.interp → ψ.interp`,
+        which follows from `ψ.interp` by `fun _ => ·` — and faithful to a PA-like
+        `S`, which can always weaken a proved formula into an implication with an
+        arbitrary antecedent.
+
+        This is the rule that makes proof-oracle bots whose guard is an *implication*
+        (CIMCIC, DIMCID) provable: their guard `(.plays me opp .C) → (.plays opp me a)`
+        is discharged whenever the consequent atom is itself provable (e.g. the
+        opponent is a constant cooperator/defector). Unlike `searchBranch`/`simStep`
+        it lives on `Provable` rather than `Derivation`, because its premise is the
+        consequent's *provability* (atom or structural), which `Derivation` (a
+        `Type`-valued object distinct from the `Prop`-valued `Provable`) cannot
+        carry. -/
+    | weakenImpl (φ ψ : Formula) (m : Nat) :
+        Provable m ψ → (Formula.impl φ ψ).size ≤ k → Provable k (.impl φ ψ)
 end
 
 -- 4. The proof-search oracle: bounded provability reflected into `Bool` for the
