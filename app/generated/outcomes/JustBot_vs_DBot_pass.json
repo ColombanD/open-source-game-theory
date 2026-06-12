@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260612T124153",
+  "bot_a": "JustBot",
+  "bot_b": "DBot",
+  "model": "claude-sonnet-4-6",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 8,
+  "elapsed_seconds": 604.3209997909998,
+  "error": null,
+  "final_text_tail": "ot_JB k\n  show eval (fuel + 2) (JustBot k) (.bot DefectBot) (JustBot k) = some .D\n  unfold JustBot\n  simp [eval, Prog.subst, Formula.subst, hg]\n\n-- DBot cooperates against JustBot k: sim probe sees JustBot defects → DBot cooperates\ntheorem DBot_plays_C_against_JustBot_JB (k fuel : Nat) :\n    play (fuel + 4) DBot (JustBot k) = some .C := by\n  have hInner : play (fuel + 2) (JustBot k) (.bot DefectBot) = some .D :=\n    JustBot_plays_D_against_bot_DefectBot_JB k fuel\n  have hGuard : eval (fuel + 3) DBot (JustBot k) (.sim .opp (.bot DefectBot)) = some .D := by\n    simpa [Nat.add_assoc] using\n      eval_sim_opp_bot_of_play (fuel + 2) DBot (JustBot k) DefectBot .D hInner\n  have hPlay := play_ite_from_guard\n    fuel 3 DBot (JustBot k) (.sim .opp (.bot DefectBot))\n    (.const Action.D) (.const Action.C) Action.C Action.D\n    (by rfl) hGuard\n  simpa [eval] using hPlay\n\n-- JustBot cooperates against DBot when proof search fires\ntheorem JustBot_plays_C_against_DBot_JB (k fuel : Nat)\n    (hk : proofSearch k (.plays DBot (.bot (DupocBot k)) .C) = true) :\n    play (fuel + 2) (JustBot k) DBot = some .C := by\n  show eval (fuel + 2) (JustBot k) DBot (JustBot k) = some .C\n  unfold JustBot\n  simp [eval, Prog.subst, Formula.subst, hk]\n\ntheorem llm_outcome_JustBot_vs_DBot (n : Nat) :\n    ∃ k, outcome (n + 4) (JustBot k) DBot = some (.C, .C) := by\n  let k := atom_cost 5\n  refine ⟨k, ?_⟩\n  have hPlay : play 5 DBot (.bot (DupocBot k)) = some .C := by\n    simpa using DBot_plays_C_against_bot_DupocBot_JB k 0\n  have hk : proofSearch k (.plays DBot (.bot (DupocBot k)) .C) = true :=\n    (proofSearch_spec _ _).2 (Provable.atom (atom_complete DBot (.bot (DupocBot k)) .C 5 hPlay))\n  have hA : play (n + 4) (JustBot k) DBot = some .C := by\n    have h := JustBot_plays_C_against_DBot_JB k (n + 2) hk\n    simpa [Nat.add_assoc] using h\n  have hB : play (n + 4) DBot (JustBot k) = some .C :=\n    DBot_plays_C_against_JustBot_JB k n\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}
