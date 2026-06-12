@@ -65,6 +65,45 @@ theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
                        simp only [eval]; exact hn⟩
   | hypSyll φ ψ χ _ _ ih1 ih2 =>
       exact fun h => ih2 (ih1 h)
+  | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
+      -- `me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0) (.const c1)) q`.
+      -- Guard `.sim .opp (.bot z)` is frame-independent: it equals `opponent` vs
+      -- `.bot z` (`eval_sim_opp_bot_of_play`). Once the guard fires (`hb` gives it
+      -- plays `a'`, so `a' == a'` selects the then-branch), the inner `.search`
+      -- runs in-frame and consults `proofSearch k (ψ.subst me opponent)`, which the
+      -- box premise reflects to `true` (`proofSearch_spec`), landing on `.const c0`.
+      subst hme
+      rintro ⟨nb, hb⟩ hbox
+      have hps : proofSearch k (ψ.subst
+          (.ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0) (.const c1)) q)
+          opponent) = true := (proofSearch_spec _ _).2 hbox
+      -- `nb ≥ 1`: a fuel-`0` play is `none ≠ some a'`, so write `nb = m + 1`. The
+      -- extra step lets the inner `.search`'s `.const c0` branch evaluate.
+      obtain ⟨m, rfl⟩ : ∃ m, nb = m + 1 := by
+        cases nb with
+        | zero => simp [play, eval] at hb
+        | succ m => exact ⟨m, rfl⟩
+      -- `.sim .opp (.bot z)` guard reduces (one fuel step; `subst` sends `.opp`↦
+      -- opponent, leaves `.bot z` closed) to `eval (m+1) opponent z.bot opponent`,
+      -- which is `play (m+1) opponent z.bot = some a'` (`hb`), frame-independent of
+      -- `me`. Same reduction `eval_sim_opp_bot_of_play` performs, inlined since
+      -- that helper lives downstream of this file.
+      have hguard : eval (m + 1) opponent (.bot z) opponent = some a' := hb
+      have hrefl : (a' == a') = true := by cases a' <;> rfl
+      -- Witness fuel `m + 3`: `.ite` step (→ m+2) evaluates the guard `.sim`
+      -- (→ m+1, matching `hguard`); the then-branch `.search` and its `.const c0`
+      -- run at `m+1 ≥ 1`.
+      refine ⟨m + 1 + 1 + 1, ?_⟩
+      show eval (m + 1 + 1 + 1) _ opponent _ = some c0
+      -- `.ite` step then `.sim` guard step, exposing `hguard`'s LHS exactly.
+      rw [eval]
+      simp only [bind, Option.bind]
+      rw [show eval (m + 1 + 1) ((Prog.opp.sim z.bot).ite a'
+              (.search k ψ (.const c0) (.const c1)) q) opponent (.sim .opp (.bot z))
+            = eval (m + 1) opponent (.bot z) opponent from rfl, hguard]
+      -- guard fired; `a' == a'` (`hrefl`) selects the `.search`, `hps` makes it
+      -- take `.const c0`.
+      simp only [hrefl, hps, if_pos, eval]
   | eqRefl p =>
       -- `.eq p p` interprets as `p = p`, which is `rfl`.
       rfl

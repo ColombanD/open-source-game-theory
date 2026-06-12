@@ -63,6 +63,41 @@ inductive Derivation : Formula → Type where
   | simStep (me p q opponent : Prog) (a : Action) (hme : me = .sim p q) :
       Derivation (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
                         (.plays me opponent a))
+  /-- S can read a `.ite` whose **then-branch is itself a `.search`** — the
+      PrudentBot shape: `me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0)
+      (.const c1)) q`. This fuses the `.ite` guard reading and the inner
+      `.search` reading into one sound, in-frame rule, concluding the Löb-shaped
+      `□_k ψ' → me plays c0` once the guard fires.
+
+      Why fused (and not a generic `.ite` branch rule): `eval`'s `.ite` rule runs
+      both guard and selected branch in the *outer* frame (`eval n me opponent ·`),
+      and for a `.search` branch that in-frame run consults
+      `proofSearch k (ψ.subst me opponent)` — whereas the same `.search` run *as
+      its own program* (`p.subst me opponent`) would consult a doubly-substituted
+      guard. The two differ, so a generic "branch plays `a`" premise cannot be a
+      `.plays` atom soundly. Keeping the `.search` explicit lets soundness reflect
+      the *outer-frame* guard directly via `proofSearch_spec`.
+
+      Restrictions, all met by real bots:
+      * guard `= .sim .opp (.bot z)` — its value is frame-independent (it is
+        `opponent` vs `.bot z`, lemma `eval_sim_opp_bot_of_play`), so the guard
+        fact is the `.plays opponent (.bot z) a'` atom;
+      * then-branch `= .search k ψ (.const c0) (.const c1)`.
+
+      Conclusion (curried): `guard-plays-a' → (□_k ψ' → me plays c0)`, with
+      `ψ' = ψ.subst me opponent`. `modusPonens` discharges the guard atom; the
+      residual `□_k ψ' → me plays c0` is exactly the PBLT-shaped hypothesis that
+      `searchBranch` supplies for a bare `.search` bot — now available when the
+      `.search` sits under an `.ite` (PrudentBot, JustBot). Faithful: S reads the
+      `.ite` node, its `.sim` guard, and the `.search` guard — each already an
+      admitted transparency step. -/
+  | iteBranchSearch_t (k : Nat) (z : Prog) (a' c0 c1 : Action) (ψ : Formula)
+      (q me opponent : Prog)
+      (hme : me = .ite (.sim .opp (.bot z)) a'
+                       (.search k ψ (.const c0) (.const c1)) q) :
+      Derivation (.impl (.plays opponent (.bot z) a')
+                        (.impl (.box k (ψ.subst me opponent))
+                               (.plays me opponent c0)))
   /-- S can verify structural identity by reflexivity: any program equals itself. -/
   | eqRefl (p : Prog) :
       Derivation (.eq p p)
