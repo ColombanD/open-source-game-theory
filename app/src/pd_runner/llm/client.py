@@ -17,16 +17,60 @@ _DEFAULT_THINKING_EFFORT = "medium"
 _RETRY_DELAYS = [5, 15, 30, 60]  # seconds between retries on 529
 
 
+# Emit a progress line roughly every this many characters of streamed
+# thinking/text. Coarse enough not to flood the SSE log, fine enough that the
+# first (long, pre-tool) turn shows it's alive rather than hung.
+_STREAM_PROGRESS_EVERY_CHARS = 400
+
+
+def _stream_once(client: anthropic.Anthropic, kwargs: dict[str, Any]) -> Any:
+    """Run a single streamed request, logging coarse progress, and return the
+    fully-assembled final message (same object shape as ``messages.create``).
+
+    Streaming is purely for observability: callers get back the identical final
+    message (thinking + tool_use + text blocks intact) they would have gotten
+    from a blocking ``create``. The deltas are only used to log progress so a
+    long pre-tool thinking turn doesn't look like a hang.
+    """
+    thinking_chars = 0
+    text_chars = 0
+    next_thinking_mark = _STREAM_PROGRESS_EVERY_CHARS
+    next_text_mark = _STREAM_PROGRESS_EVERY_CHARS
+    first_token_logged = False
+
+    with client.messages.stream(**kwargs) as stream:
+        for event in stream:
+            etype = getattr(event, "type", None)
+            if etype != "content_block_delta":
+                continue
+            delta = getattr(event, "delta", None)
+            dtype = getattr(delta, "type", None)
+            if not first_token_logged:
+                _log.info("Model started responding (streaming)...")
+                first_token_logged = True
+            if dtype == "thinking_delta":
+                thinking_chars += len(getattr(delta, "thinking", "") or "")
+                if thinking_chars >= next_thinking_mark:
+                    _log.info("...thinking (%d chars so far)", thinking_chars)
+                    next_thinking_mark = thinking_chars + _STREAM_PROGRESS_EVERY_CHARS
+            elif dtype == "text_delta":
+                text_chars += len(getattr(delta, "text", "") or "")
+                if text_chars >= next_text_mark:
+                    _log.info("...writing response (%d chars so far)", text_chars)
+                    next_text_mark = text_chars + _STREAM_PROGRESS_EVERY_CHARS
+        return stream.get_final_message()
+
+
 def _create_with_retry(client: anthropic.Anthropic, kwargs: dict[str, Any]) -> Any:
     for attempt, delay in enumerate(_RETRY_DELAYS, start=1):
         try:
-            return client.messages.create(**kwargs)
+            return _stream_once(client, kwargs)
         except anthropic.APIStatusError as exc:
             if exc.status_code != 529:
                 raise
             _log.warning("API overloaded (529), retrying in %ds (attempt %d/%d)...", delay, attempt, len(_RETRY_DELAYS))
             time.sleep(delay)
-    return client.messages.create(**kwargs)  # final attempt, let it raise
+    return _stream_once(client, kwargs)  # final attempt, let it raise
 
 
 class AnthropicClient:
