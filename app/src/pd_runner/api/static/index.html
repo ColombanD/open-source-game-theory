@@ -540,11 +540,40 @@
       renderState(await resp.json());
     }
 
+    let decisionInFlight = false;
+
     async function sendDecision(endpoint) {
+      // Guard against double-clicks: a second click would POST the same decision
+      // to a job that has already left the gate, returning 409.
+      if (decisionInFlight) return;
+      decisionInFlight = true;
+      // Disable the gate buttons immediately so the user can't re-fire.
+      document.querySelectorAll('#result-area .gate-actions button')
+        .forEach(b => { b.disabled = true; });
       clearInterval(pollInterval);
-      const resp = await fetch(`/pipeline/${currentJobId}/${endpoint}`, { method: 'POST' });
-      if (!resp.ok) return;
+
+      let resp;
+      try {
+        resp = await fetch(`/pipeline/${currentJobId}/${endpoint}`, { method: 'POST' });
+      } catch (e) {
+        // Network blip — resume polling so the UI recovers on the next tick.
+        decisionInFlight = false;
+        pollInterval = setInterval(() => pollJob(currentJobId), 2000);
+        return;
+      }
+
+      if (!resp.ok) {
+        // 409 = the job already left this gate (duplicate click or the decision
+        // already landed); any other error is transient. Either way, resync to
+        // the real state and resume polling instead of freezing on the gate.
+        decisionInFlight = false;
+        await pollJob(currentJobId);
+        pollInterval = setInterval(() => pollJob(currentJobId), 2000);
+        return;
+      }
+
       const job = await resp.json();
+      decisionInFlight = false;
       renderState(job);
       if (job.status !== 'done' && job.status !== 'failed') {
         pollInterval = setInterval(() => pollJob(currentJobId), 2000);
