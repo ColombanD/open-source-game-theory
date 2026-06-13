@@ -3,9 +3,9 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.MirrorBot
 
-open PDNew
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Bots
+namespace PD.Theorems
 
 theorem llm_outcome_CooperateBot_vs_MirrorBot (n : Nat) :
     outcome (n+3) CooperateBot MirrorBot = some (.C, .C) := by
@@ -15,4 +15,4 @@ theorem llm_outcome_CooperateBot_vs_MirrorBot (n : Nat) :
     simp [eval, MirrorBot, Prog.subst, CooperateBot]
   simp [outcome, hA, hB]
 
-end PDNew.Theorems
+end PD.Theorems

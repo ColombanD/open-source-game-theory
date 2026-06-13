@@ -15,5 +15,5 @@
   "iterations_used": 2,
   "elapsed_seconds": 22.81385191600566,
   "error": null,
-  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.DBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PDNew\nopen PDNew.Bots\n\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_DBot_vs_DefectBot (n : Nat) :\n    outcome (n+4) DBot DefectBot = some (.C, .D) := by\n  simp [outcome, play, eval, DBot, DefectBot, Prog.subst]\n  decide\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.DBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_DBot_vs_DefectBot (n : Nat) :\n    outcome (n+4) DBot DefectBot = some (.C, .D) := by\n  simp [outcome, play, eval, DBot, DefectBot, Prog.subst]\n  decide\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

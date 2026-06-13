@@ -1,4 +1,4 @@
-namespace PDNew
+namespace PD
 
 inductive Action
   | C
@@ -10,8 +10,8 @@ abbrev Outcome := Action × Action
 -- `Prog` is the language of agents from Critch 2022 (the Python-style
 -- pseudocode). It is pure *source code*: no constructor produces an
 -- `Action` directly — actions only appear after evaluation via `eval`
--- in Dynamics.lean. Keeping everything at the syntactic level is what lets agents be nested,
---  substituted, and passed as subjects of formulas.
+-- in Dynamics.lean. Keeping everything at the syntactic level is what lets
+-- agents be nested, substituted, and passed as subjects of formulas.
 
 -- `Formula` is the part of the proof system `S` that agents query through the oracle,
 -- just enough to express hypotheses like `"opp(CUPOD_k.source) == D"`.
@@ -36,6 +36,7 @@ mutual
     | impl  : Formula → Formula → Formula         -- φ → ψ (needed for Löb-style hypotheses like □C → C)
     | neg   : Formula → Formula                   -- ¬ φ
     | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
+    | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
 end
 
 -- Closing self-reference via substitution.
@@ -48,7 +49,7 @@ end
 -- This matters because the oracle `proofSearch : Nat → Formula → Bool`
 -- expects a *closed* formula — one with no free placeholders. So at every
 -- evaluation boundary where a new context is entered (`.sim` and
--- `.search` in Dynamics.lean), the evaluator calls `subst` to freeze the
+-- `.search` in Eval.lean), the evaluator calls `subst` to freeze the
 -- placeholders to the concrete programs currently playing the game.
 
 -- The two definitions are mutually recursive for the same reason the
@@ -67,7 +68,7 @@ end
 -- outer `subst` rewrites `MirrorBot.subst me opp = .sim opp me` — turning a
 -- probe of "what does opp do against MirrorBot?" into a self-simulation
 -- shape, breaking EBot vs EBot. `.bot` is the fix point at the substitution
--- layer; `eval` (Dynamics.lean) handles `.bot` separately by simply
+-- layer; `eval` (Eval.lean) handles `.bot` separately by simply
 -- unwrapping it (one fuel decrement) so any `.self`/`.opp` inside the
 -- wrapped body bind to the *current* frame, as intended.
 mutual
@@ -85,6 +86,31 @@ mutual
     | .impl φ ψ,    m, o => .impl (φ.subst m o) (ψ.subst m o)
     | .neg φ,       m, o => .neg (φ.subst m o)
     | .box n φ,     m, o => .box n (φ.subst m o)
+    | .eq p q,      m, o => .eq (p.subst m o) q   -- only the LHS (probe) substitutes; the RHS is a frozen literal target
 end
 
-end PDNew
+-- Syntactic size = character count of source. This is the unit the proof system
+-- measures budgets in: `□_k φ` means "φ has a proof of ≤ k characters", and a
+-- proof's length is bounded in terms of the sizes of the formulas it manipulates.
+-- A numeral `k` costs `Nat.log2 k + 1` characters (critch22 Appendix B(b):
+-- numbers are written in `O(lg k)` characters), so e.g. `.search`/`.box` pay that
+-- for their index. Everything else is `(sum of children) + 1` for the node.
+mutual
+  def Prog.size : Prog → Nat
+    | .const _        => 1
+    | .self           => 1
+    | .opp            => 1
+    | .bot p          => p.size + 1
+    | .sim p q        => p.size + q.size + 1
+    | .ite b _ p q    => b.size + p.size + q.size + 1
+    | .search k φ p q => (Nat.log2 k + 1) + φ.size + p.size + q.size + 1
+
+  def Formula.size : Formula → Nat
+    | .plays p q _ => p.size + q.size + 1
+    | .impl φ ψ    => φ.size + ψ.size + 1
+    | .neg φ       => φ.size + 1
+    | .box k φ     => (Nat.log2 k + 1) + φ.size + 1
+    | .eq p q      => p.size + q.size + 1
+end
+
+end PD

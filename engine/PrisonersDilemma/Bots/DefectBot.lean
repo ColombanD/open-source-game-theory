@@ -1,9 +1,9 @@
 import PrisonersDilemma.Program
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 /-- DefectBot always defects, regardless of opponent behavior. -/
 def DefectBot : Prog := .const Action.D
 
-end PDNew.Bots
+end PD.Bots

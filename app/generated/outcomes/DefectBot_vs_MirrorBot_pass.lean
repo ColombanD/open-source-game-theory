@@ -3,10 +3,10 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.MirrorBot
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_DefectBot_vs_MirrorBot (n : Nat) :
     outcome (n+2) DefectBot MirrorBot = some (.D, .D) := by
@@ -18,4 +18,4 @@ theorem llm_outcome_DefectBot_vs_MirrorBot (n : Nat) :
     simp [eval, Prog.subst]
   simp [outcome, hA, hB]
 
-end PDNew.Theorems
+end PD.Theorems

@@ -1,8 +1,8 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Bots.CooperateBot
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 -- Bot cooperates if the opponent cooperates against a cooperate probe. --
 def TitForTatBot : Prog :=
@@ -12,4 +12,4 @@ def TitForTatBot : Prog :=
     (.const Action.C) -- if opponent cooperates, cooperate
     (.const Action.D) -- else, defect
 
-end PDNew.Bots
+end PD.Bots

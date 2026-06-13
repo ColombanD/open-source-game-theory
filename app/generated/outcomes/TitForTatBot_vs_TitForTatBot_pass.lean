@@ -2,9 +2,9 @@ import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Theorems.Helpers
 
-open PDNew
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Bots
+namespace PD.Theorems
 
 theorem llm_outcome_TitForTatBot_vs_TitForTatBot (n : Nat) :
     outcome (n+7) TitForTatBot TitForTatBot = some (.C, .C) := by
@@ -19,4 +19,4 @@ theorem llm_outcome_TitForTatBot_vs_TitForTatBot (n : Nat) :
     simpa [eval] using hPlay
   simp [outcome, hA]
 
-end PDNew.Theorems
+end PD.Theorems

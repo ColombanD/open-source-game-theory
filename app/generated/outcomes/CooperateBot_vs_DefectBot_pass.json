@@ -15,5 +15,5 @@
   "iterations_used": 1,
   "elapsed_seconds": 10.532468290999532,
   "error": null,
-  "final_text_tail": "```lean\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PDNew\nopen PDNew.Bots\nnamespace PDNew.Theorems\n\ntheorem llm_outcome_CooperateBot_vs_DefectBot (n : Nat) :\n    outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by\n  rfl\n\nend PDNew.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_CooperateBot_vs_DefectBot (n : Nat) :\n    outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by\n  rfl\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

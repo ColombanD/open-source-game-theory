@@ -9,11 +9,11 @@ import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 import PrisonersDilemma.Axioms
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
+open PD
+open PD.Axioms
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 private theorem cupod_mono (n k : Nat) (Bot : Prog) (a : Action) :
     n ≤ k →
@@ -132,4 +132,4 @@ theorem llm_outcome_CupodBot_vs_EBot (n : Nat) :
     EBot_plays_C_vs_CupodBot k n hk
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems

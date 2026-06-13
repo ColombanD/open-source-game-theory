@@ -2,5 +2,10 @@ name = "PrisonersDilemma"
 version = "0.1.0"
 defaultTargets = ["PrisonersDilemma"]
 
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.28.0"
+
 [[lean_lib]]
 name = "PrisonersDilemma"

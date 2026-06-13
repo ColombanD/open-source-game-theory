@@ -24,15 +24,15 @@ _DRY_RUN_SOURCE = """\
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
 
-open PDNew
-open PDNew.Bots
+open PD
+open PD.Bots
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 -- dry-run placeholder (no real proof attempted)
 theorem dry_run_placeholder : True := trivial
 
-end PDNew.Theorems
+end PD.Theorems
 """
 
 

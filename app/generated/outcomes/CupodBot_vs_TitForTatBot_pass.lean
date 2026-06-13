@@ -5,11 +5,11 @@ import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 
-open PDNew
-open PDNew.Bots
-open PDNew.Axioms
+open PD
+open PD.Bots
+open PD.Axioms
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 theorem llm_outcome_CupodBot_vs_TitForTatBot (n k : Nat) :
     outcome (n+5) (CupodBot k) TitForTatBot = some (.C, .C) := by
@@ -116,4 +116,4 @@ theorem llm_outcome_CupodBot_vs_TitForTatBot (n k : Nat) :
     exact hP
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems

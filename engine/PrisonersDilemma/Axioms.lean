@@ -1,136 +1,83 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
 
-open PDNew
-namespace PDNew.Axioms
+open PD
+namespace PD.Axioms
 
-/-- Abstract proof objects used to model derivations in the ambient proof system. -/
-axiom ProofWitness : Type
+/-!
+# Axioms
 
-/-- The size of a proof witness, used as the budget measured by `proofSearch`. -/
-axiom witnessChars : ProofWitness → Nat
+Principles of `S` not discharged constructively. Four remain:
 
-/-- The proposition that a witness proves a particular formula. -/
-axiom witnessProves : ProofWitness → Formula → Prop
+* `c_guard_mono` — the opaque `c_guard` cost function is monotone in `k`.
+* `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches
+  on a *failed* guard has a certificate. Everything else is a theorem.
+* `box_provable` — bounded GL axiom 4 (HBL D2); currently unused.
+* `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
 
-/-- Witness soundness: any formula proved by a witness is semantically true. -/
-axiom witness_sound :
-  ∀ w φ, witnessProves w φ → φ.interp
-
-/-- Σ₁-completeness for atomic plays-formulas. Decidable arithmetic; no Gödel issues. -/
-axiom witness_complete_plays :
-  ∀ p q a, (∃ n, play n p q = some a) →
-    ∃ w : ProofWitness, witnessProves w (.plays p q a)
-
-/-- Exact budget semantics for `proofSearch`: true iff there is a witness of size at most `k`. -/
-axiom proofSearch_spec :
-  ∀ k φ, proofSearch k φ = true ↔
-    ∃ w : ProofWitness, witnessProves w φ ∧ witnessChars w ≤ k
-
-/--
-Transport of witnesses across a parameterized formula family when the parameter grows.
-
-This is the strongest witness-level assumption in the file. It says that if a
-family of formulas `Φ : Nat → Formula` changes only by increasing its parameter
-from `n` to `k`, then a witness for the smaller instance can be turned into a
-witness for the larger instance, provided the original witness already fits
-within the larger budget `k`.
-
-Concretely:
-* `Φ n` is the formula at the smaller parameter.
-* `Φ k` is the formula at the larger parameter.
-* `w` is a witness that proves the smaller formula.
-* `witnessChars w ≤ k` says the witness is still within the budget available
-  at the larger parameter.
-* the conclusion produces a witness `w'` for the larger formula, again with
-  size at most `k`.
-
-This is the axiom that lets a proof at parameter `n` be reused when the
-parameter is raised to `k`, without having to encode a specific CUPOD bridge
-in the theorem file.
+Everything else is a theorem in `BaseTheorems.lean`.
 -/
-axiom witness_transport_family :
-  ∀ (Φ : Nat → Formula) n k,
-  n ≤ k →
-  ∀ w, witnessProves w (Φ n) →
-  witnessChars w ≤ k →
-    ∃ w', witnessProves w' (Φ k) ∧ witnessChars w' ≤ k
 
--- . -------------------------------------------------------------------------
+/-- `c_guard` (the cost of writing the budget numeral `k` in a proof transcript)
+    is monotone: a larger `k` takes at least as many characters to write.
+    Needed for `atom_cost_mono`. -/
+axiom c_guard_mono : ∀ {a b : Nat}, a ≤ b → c_guard a ≤ c_guard b
 
+/-- The irreducible Π₁ residue of σ₁-completeness: a play that has no
+    constructive `PlaysProof` certificate (because it branched on a *failed*
+    proof search, requiring `¬ Provable k (guard)` — Π₁, non-positive) still
+    has an `AtomProvable` certificate at budget `atom_cost fuel`.
+    Use `atom_complete` (the theorem below) at call sites.
 
--- Parametric Bounded Löb's Theorem (Lemma 3.6).
+    NOTE — currently not *force-exercised* by the library. `atom_complete` is the
+    only consumer, via a `by_cases` on whether a constructive `PlaysProof` exists;
+    every call site to date (CupodBot/DupocBot/CupodTrollBot theorems) transcribes
+    a play whose internal guards all fire *true* (or has no guard at all — const
+    bots), so it always lands in the constructive branch and this axiom is never
+    forced. It is referenced (so it compiles) but no theorem's truth yet depends
+    on it.
+
+    To genuinely exercise it you need to lift a *failed-guard cooperation* into a
+    provable atom — i.e. some bot `Z` that proof-searches "does my opponent
+    cooperate with me?" (`.search k (.plays .opp .self .C) …`) played against
+    CUPOD. CUPOD cooperates with `Z` by taking its *else* (failed-guard) branch,
+    so certifying `.plays (CupodBot k) Z .C` needs the missing `search_f` step —
+    no constructive `PlaysProof` exists, and `atom_complete` falls through here.
+    No such bot is in the library yet; add one (e.g. a "CupodProber") to make this
+    axiom load-bearing, or drop it and restrict `atom_complete` to the true-guard
+    / const fragment the library actually uses. -/
+axiom atom_complete_false_guard :
+  ∀ p q a fuel, play fuel p q = some a →
+    ¬ (∃ _ : PlaysProof p q p a (atom_cost fuel), True) →
+    AtomProvable (atom_cost fuel) (.plays p q a)
+
+/-- Bounded GL axiom 4 (`□_k φ → □_K □_k φ`): if `φ` is provable within budget
+    `k`, then that fact is itself provable at some larger budget `K`. Sound by
+    Solovay / HBL D2; axiomatic here because the budget-indexed box makes a
+    constructive witness impossible without size-indexing `Derivation`. Currently
+    unused. -/
+axiom box_provable :
+  ∀ (k : Nat) (φ : Formula), Provable k φ → ∃ K, Provable K (.box k φ)
+
+-- Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
 --
--- Informally: let `φ k` be a formula family in the proof language of `S`,
--- `k₁ ∈ ℕ` a base threshold, and `f : ℕ → ℕ` an *increasing* computable
--- function with `f(k) ≻ O(lg k)`. If `S` can derive, for every `k > k₁`,
--- that bounded provability of `φ k` within `f(k)` steps implies `φ k`
--- itself, then there exists a threshold `k₂` beyond which `S` proves
--- `φ k` outright.
+-- If `f(k) ≻ O(log k)` and S proves `□_{f(k)} φ(k) → φ(k)` for all large k,
+-- then S proves `φ(k)` outright for all large k.
 --
--- Encoding notes:
--- * `□_{f(k)}(φ k)` is the formula `Formula.box (f k) (φ k)`; its
---   semantic clause is `proofSearch (f k) (φ k) = true`.
--- * "`S` derives ψ" is `∃ m, proofSearch m ψ = true`.
--- * `f(k) ≻ O(lg k)` is spelled out as: there exists a positive constant
---   `c` and a threshold `k̂` such that for all `k > k̂`, `f(k) > c · lg k`.
--- * "Increasing" is the plain pointwise condition on `f`; the
---   "computable" side of the paper's hypothesis is vacuous in Lean since
---   every `Nat → Nat` we can write down is already computable in the
---   relevant sense.
+-- The hypothesis is *unbudgeted* (`∃ m, Provable m …`) — faithful to Critch's
+-- `⊢`, which carries no size annotation on the implication proof. Consumers
+-- (CupodBot, DupocBot) supply the `f(k) ≻ O(log k)` bound separately via
+-- `linear_log2_add_le` and `Derivation.size`.
+--
+-- We use the per-instance meta-∀ (`∀ k > k₁, ∃ m, Provable m …`) rather than
+-- Critch's single universally-quantified object-formula, because `Formula` has
+-- no internal ∀ quantifier. This is implied by Critch's statement and sufficient
+-- for all consumers.
 axiom PBLT :
   ∀ (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat),
     (∀ a b, a ≤ b → f a ≤ f b) →
     (∃ c kHat, c > 0 ∧ ∀ k, k > kHat → f k > c * Nat.log2 k) →
-    (∀ k, k > k₁ → ∃ m, proofSearch m (.impl (.box (f k) (φ k)) (φ k)) = true) →
-      ∃ k₂, ∀ k, k > k₂ → ∃ m, proofSearch m (φ k) = true
+    (∀ k, k > k₁ → ∃ m, Provable m (.impl (.box (f k) (φ k)) (φ k))) →
+      ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (φ k)
 
-/--
-S can read source code: if an agent `me` is literally
-`.search k ψ (.const a) (.const b)`, then S proves
-`□_k ψ' → me plays a against opponent`, where `ψ' = ψ.subst me opponent`
-is the closed guard formula `eval` feeds to `proofSearch`.
-
-The implication is true by inspection of `me`'s code: a successful proof
-search makes `eval` take the `.const a` branch and return `a`. We make this
-an axiom because we don't model S's internals; critch22 uses the same step
-silently when applying PBLT (e.g. Theorem 3.4 for CUPOD, 3.7 for DUPOC).
--/
-axiom proof_system_verifies_search_branch :
-  ∀ (k : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog),
-    me = .search k ψ (.const a) (.const b) →
-    ∃ m, proofSearch m
-      (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a)) = true
-
-/--
-S can read `.sim` nodes. If `me`'s literal body is `.sim p q`, then by the
-`.sim` eval rule
-
-  eval (n+1) me opp (.sim p q) = eval n p' q' p'   where p' = p.subst me opp,
-                                                         q' = q.subst me opp
-
-so `me` plays `a` against `opp` iff `p'` plays `a` against `q'`. S verifies
-this by inspection of `me`'s code. Direct analogue of
-`proof_system_verifies_search_branch`, but for the `.sim` constructor instead
-of `.search`.
--/
-axiom proof_system_verifies_sim :
-  ∀ (me p q opponent : Prog) (a : Action),
-    me = .sim p q →
-    ∃ m, proofSearch m
-      (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
-             (.plays me opponent a)) = true
-
-/--
-Hypothetical syllogism in S: if S derives `φ → ψ` and `ψ → χ`, S derives
-`φ → χ`. A basic structural rule for any reasonable proof system. Used to
-chain `proof_system_verifies_search_branch` with `proof_system_verifies_sim`
-when constructing PBLT premises for cross-pairings.
--/
-axiom proofSearch_impl_trans :
-  ∀ (φ ψ χ : Formula),
-    (∃ m, proofSearch m (.impl φ ψ) = true) →
-    (∃ m, proofSearch m (.impl ψ χ) = true) →
-    ∃ m, proofSearch m (.impl φ χ) = true
-
-end PDNew.Axioms
+end PD.Axioms

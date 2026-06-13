@@ -1,7 +1,7 @@
 import PrisonersDilemma.Program
 
-open PDNew
-namespace PDNew.Bots
+open PD
+namespace PD.Bots
 
 /-- CIMCIC: Cooperate if I can prove my cooperation implies cooperation from the opponent.
     Uses the proof oracle to check whether the formula
@@ -12,4 +12,4 @@ def CIMCIC (k : Nat) : Prog :=
     (.const Action.C)
     (.const Action.D)
 
-end PDNew.Bots
+end PD.Bots

@@ -4,10 +4,10 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.ProofSearch
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Axioms
+open PD.Bots
+namespace PD.Theorems
 
 theorem interp_CooperateBot_plays_D_false (k : Nat) :
     ¬ (Formula.plays CooperateBot (CupodBot k) .D).interp := by
@@ -32,4 +32,4 @@ theorem llm_outcome_CooperateBot_vs_CupodBot (n k : Nat) :
     simp [eval, Prog.subst, Formula.subst, hG]
   simp [outcome, hA, hB]
 
-end PDNew.Theorems
+end PD.Theorems

@@ -60,7 +60,7 @@ class UniversalOutcomeTheorem:
 
     @property
     def qualified_name(self) -> str:
-        return f"PDNew.Theorems.{self.name}"
+        return f"PD.Theorems.{self.name}"
 
     def concrete_fuel_expr(self, substitutions: dict[str, str]) -> str:
         return _substitute_identifiers(self.fuel_expr, substitutions | {self.fuel_param: "0"})
@@ -85,7 +85,7 @@ class ExistentialOutcomeTheorem:
 
     @property
     def qualified_name(self) -> str:
-        return f"PDNew.Theorems.{self.name}"
+        return f"PD.Theorems.{self.name}"
 
     def concrete_fuel_expr(self) -> str:
         return _substitute_identifiers(self.fuel_expr, {self.fuel_param: "0"})
@@ -569,9 +569,9 @@ theorem claimed_exists_outcome :
 
     script = f"""import PrisonersDilemma
 
-open PDNew
-open PDNew.Bots
-open PDNew.Theorems
+open PD
+open PD.Bots
+open PD.Theorems
 
 {theorem_block}
 

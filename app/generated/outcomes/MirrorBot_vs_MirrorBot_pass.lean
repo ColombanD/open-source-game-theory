@@ -1,8 +1,8 @@
 import PrisonersDilemma.Bots.MirrorBot
 
-open PDNew
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Bots
+namespace PD.Theorems
 
 -- MirrorBot vs MirrorBot diverges: play returns `none` at every fuel level.
 -- Reason: MirrorBot = .sim .opp .self. Evaluating .sim closes p=.opp and
@@ -30,4 +30,4 @@ theorem outcome_MirrorBot_vs_MirrorBot_none : ∀ n, outcome n MirrorBot MirrorB
 --   outcome (n + FUEL) MirrorBot MirrorBot = some (.X, .Y)
 -- reduces to `none = some (.X, .Y)`, which is False.
 
-end PDNew.Theorems
+end PD.Theorems

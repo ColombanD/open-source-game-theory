@@ -5,10 +5,10 @@ import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 import PrisonersDilemma.Axioms
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Axioms
+open PD.Bots
+namespace PD.Theorems
 
 -- DupocBot monotonicity: lift a proof-search success from index n to a larger index k.
 theorem DupocBot_monotonicity_local (n k : Nat) (Bot : Prog) (a : Action) :
@@ -101,4 +101,4 @@ theorem llm_outcome_DBot_vs_DupocBot (n : Nat) :
     simpa [Nat.add_assoc] using DupocBot_plays_C_against_DBot k (n + 2) hk
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems

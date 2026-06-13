@@ -6,10 +6,10 @@ import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.ProofSearch
 
-open PDNew
-open PDNew.Axioms
-open PDNew.Bots
-namespace PDNew.Theorems
+open PD
+open PD.Axioms
+open PD.Bots
+namespace PD.Theorems
 
 theorem interp_bot_DefectBot_plays_C_false_dupoc (k : Nat) :
     ¬ (Formula.plays (.bot DefectBot) (DupocBot k) .C).interp := by
@@ -161,4 +161,4 @@ theorem llm_outcome_DupocBot_vs_OBot (k n : Nat) :
     OBot_plays_D_against_DupocBot k n
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems

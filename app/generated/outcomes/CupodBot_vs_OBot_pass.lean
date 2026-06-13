@@ -7,11 +7,11 @@ import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.ProofSearch
 import PrisonersDilemma.Axioms
 
-open PDNew
-open PDNew.Bots
-open PDNew.Axioms
+open PD
+open PD.Bots
+open PD.Axioms
 
-namespace PDNew.Theorems
+namespace PD.Theorems
 
 /-- Auxiliary: given proofSearch evidence on the inner DefectBot probe,
     OBot defects against CupodBot. -/
@@ -108,4 +108,4 @@ theorem llm_outcome_CupodBot_vs_OBot :
   have hB := llm_OBot_plays_D_vs_CupodBot_aux n k hI
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-end PDNew.Theorems
+end PD.Theorems
