@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .bots import DEFAULT_BOTS_DIR, load_bot_sources
+from .bot_descriptions import BOT_DESCRIPTIONS
 from .data import load_library
 from .fitting import fit_all
 from .openrouter import make_client, query_action
@@ -35,7 +35,6 @@ class RunConfig:
     n: int = 30
     temperature: float = 1.0
     matrix_path: Path = Path("data/payoff_matrix.csv")
-    bots_dir: Path = DEFAULT_BOTS_DIR
     output_root: Path = Path("runs")
 
 
@@ -46,7 +45,9 @@ def _model_slug(model: str) -> str:
 def run_pipeline(config: RunConfig) -> Path:
     """Run the full measure-then-fit pipeline; return the run folder path."""
     library = load_library(config.matrix_path)
-    sources = load_bot_sources(library.bots, config.bots_dir)
+    missing = [bot for bot in library.bots if bot not in BOT_DESCRIPTIONS]
+    if missing:
+        raise KeyError(f"No pseudocode description for bots: {missing}")
 
     api_key = os.environ.get(API_KEY_ENV)
     if not api_key:
@@ -57,7 +58,7 @@ def run_pipeline(config: RunConfig) -> Path:
     x = np.empty(library.n, dtype=float)
 
     for i, bot in enumerate(library.bots):
-        prompt = build_prompt(bot, sources[bot])
+        prompt = build_prompt(bot, BOT_DESCRIPTIONS[bot])
         results = [query_action(client, config.model, prompt, config.temperature)
                    for _ in range(config.n)]
         raw_responses[bot] = [{"action": a, "raw": r} for a, r in results]

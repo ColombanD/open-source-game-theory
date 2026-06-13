@@ -88,13 +88,15 @@ The above fits a cooperation vector `x` that you supply by hand. The pipeline
 
 **What it does.** For each bot in the library (canonical CSV order) the model is
 queried, in a one-shot **maximum-transparency** (source-visible) prisoner's
-dilemma, against that bot. The bot's Lean source
-(`engine/PrisonersDilemma/Bots/<BotName>.lean`) is injected into the prompt. Each
-bot is queried `N` times; the fraction of `C` replies is the Bernoulli estimate
-`x_i = P(model plays C against bot i)`. The full `x` then goes straight into the
-existing `fit_all` + `format_report` — the model is treated as "a new bot" whose
-row is measured rather than read from the CSV (same C=1/D=0, no-transpose
-convention).
+dilemma, against that bot. A hardcoded **Python-pseudocode** description of the
+bot (`src/distillation/bot_descriptions.py`, `BOT_DESCRIPTIONS`) is injected into
+the prompt — not the actual Lean source, so the model reasons about the strategy
+rather than the engine syntax. Each bot is queried `N` times; the fraction of `C`
+replies is the Bernoulli estimate `x_i = P(model plays C against bot i)`. The
+full `x` then goes straight into the existing `fit_all` + `format_report` — the
+model is treated as "a new bot" whose row is measured rather than read from the
+CSV (same C=1/D=0, no-transpose convention). `BOT_DESCRIPTIONS` must cover every
+bot in the matrix.
 
 **Default `N = 30`.** For a Bernoulli proportion the 95% CI half-width is
 `≈ 0.98/√N`, so `N = 30` gives `≈ ±0.18` at the worst case `p = 0.5` — a fair
@@ -124,7 +126,7 @@ distillation-llm --model anthropic/claude-3.5-sonnet            # N=30 default
 distillation-llm --model openai/gpt-4o --n 100 --temperature 1.0
 ```
 
-Flags: `--model` (required), `--n`, `--temperature`, `--matrix`, `--bots-dir`,
+Flags: `--model` (required), `--n`, `--temperature`, `--matrix`,
 `--output-root` (default `runs`).
 
 ## Layout
@@ -135,7 +137,7 @@ src/distillation/
   fitting.py       # L2/L1/L∞/ExpectedHamming fits, identifiability, profile stats
   reporting.py     # human-readable report formatting
   cli.py           # argparse entry point (manual-vector fit)
-  bots.py          # read library bot Lean sources from the engine
+  bot_descriptions.py  # hardcoded Python-pseudocode descriptions of the bots
   prompt.py        # per-bot prompt construction (PLACEHOLDER template)
   openrouter.py    # OpenAI-SDK client for OpenRouter + C/D reply parsing
   pipeline.py      # measure x via the LLM, fit, write run folder

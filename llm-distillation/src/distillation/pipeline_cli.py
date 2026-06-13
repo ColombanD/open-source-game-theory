@@ -13,7 +13,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from .bots import DEFAULT_BOTS_DIR
 from .pipeline import RunConfig, run_pipeline
 
 
@@ -31,8 +30,6 @@ def build_parser() -> argparse.ArgumentParser:
                         "probabilities. Default: 1.0.")
     parser.add_argument("--matrix", type=Path, default=Path("data/payoff_matrix.csv"),
                         help="Path to the payoff matrix CSV.")
-    parser.add_argument("--bots-dir", type=Path, default=DEFAULT_BOTS_DIR,
-                        help="Directory of bot .lean source files.")
     parser.add_argument("--output-root", type=Path, default=Path("runs"),
                         help="Root folder for run outputs. Default: runs.")
     return parser
@@ -45,7 +42,6 @@ def main(argv: list[str] | None = None) -> int:
         n=args.n,
         temperature=args.temperature,
         matrix_path=args.matrix,
-        bots_dir=args.bots_dir,
         output_root=args.output_root,
     )
 

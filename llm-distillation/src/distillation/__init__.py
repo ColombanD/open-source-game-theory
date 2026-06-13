@@ -19,7 +19,7 @@ from .fitting import (
     profile_stats,
 )
 from .reporting import format_fit, format_profile_stats, format_report
-from .bots import DEFAULT_BOTS_DIR, load_bot_sources
+from .bot_descriptions import BOT_DESCRIPTIONS
 from .prompt import build_prompt
 from .openrouter import make_client, parse_action, query_action
 from .pipeline import RunConfig, run_pipeline
@@ -42,8 +42,7 @@ __all__ = [
     "format_report",
     "format_fit",
     "format_profile_stats",
-    "DEFAULT_BOTS_DIR",
-    "load_bot_sources",
+    "BOT_DESCRIPTIONS",
     "build_prompt",
     "make_client",
     "parse_action",
