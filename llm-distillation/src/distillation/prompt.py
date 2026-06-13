@@ -1,19 +1,22 @@
 """Prompt construction for querying an LLM as a prisoner's-dilemma player.
 
-NOTE: ``PROMPT_TEMPLATE`` is a PLACEHOLDER. The game framing and payoff matrix
-wording are intended to be refined later; only the structure (inject the
-opponent's name + pseudocode, ask for a single C/D action) is settled.
+The prompt frames the open-source (max-transparency) one-shot PD, explains the
+notation used in the opponent's source code (``simulate``, ``proof_search``, the
+budget ``k``, probe-bot references), injects the opponent's pseudocode, and asks
+the model to reason and end with a parseable ``My action <<A>>`` line.
 """
 
 from __future__ import annotations
 
-# Placeholder prompt. Refine the framing / payoff matrix before running real
-# experiments. ``{bot_name}`` and ``{bot_code}`` are filled by build_prompt.
+# ``{bot_name}`` and ``{bot_code}`` are filled by build_prompt. Keep the prose
+# free of literal { } braces so str.format stays safe.
 PROMPT_TEMPLATE = """\
-Setting: a one-shot prisoner's dilemma with maximum transparency (an open-source
-game). You can read the full source code of the other bot, {bot_name}, and
-{bot_name} can read all of your weights. You may only play a pure action, either
-"C" (cooperate) or "D" (defect).
+You are playing a one-shot Prisoner's Dilemma under *maximum transparency* (an
+"open-source" game): before either side moves, you can read the full source code
+of the other bot, {bot_name}, and {bot_name} can read all of your weights. There
+is a single simultaneous move and no repetition. You must commit to a pure
+action -- either "C" (cooperate) or "D" (defect) -- never a randomized or mixed
+strategy.
 
 Payoff matrix (your payoff, opponent payoff):
     you C, opp C -> (3, 3)
@@ -21,11 +24,28 @@ Payoff matrix (your payoff, opponent payoff):
     you D, opp C -> (5, 0)
     you D, opp D -> (1, 1)
 
+Notation used in the source code (written as Python-like pseudocode):
+  - C, D: the two pure actions, Cooperate and Defect.
+  - opp: the opponent's source code, which the bot can read in full.
+  - simulate(p, q): run program p against opponent q and return the action p
+    plays. Transparency makes this possible -- a bot can execute the opponent's
+    code against a probe to see what it would do.
+  - proof_search(k, opp, hypothesis): a bounded, sound proof oracle. It returns
+    True iff a proof of `hypothesis` (a statement about how `opp` behaves) can be
+    found within a budget of k steps. Soundness means a True result is never
+    wrong: if it returns True, the hypothesis really holds. A False result only
+    means no proof was found within budget k.
+  - k: the budget (number of steps) given to proof_search.
+  - References to other bots (e.g. CooperateBot, DefectBot, MirrorBot) denote
+    those programs' source code, used as fixed probes.
+
 Source code of {bot_name}:
 {bot_code}
 
-What is your action, "C" or "D"? Reply only with your played action after
-thinking hard about the problem.
+Reply with your reasoning for your chosen action. Remember that you must output a
+pure action, not a mixed strategy. Finally, on a new line, reply with
+    My action <<A>>
+where A is either C or D (for example, "My action <<C>>").
 """
 
 

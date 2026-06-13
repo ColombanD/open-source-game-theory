@@ -1,14 +1,21 @@
 """Thin wrapper over the OpenAI SDK pointed at OpenRouter.
 
 OpenRouter speaks the OpenAI chat-completions API, so we reuse the official SDK
-with a custom ``base_url``. The model is queried for a single C/D action.
+with a custom ``base_url``. The model reasons freely and ends with a
+``My action <<A>>`` marker, which we parse into a C/D action.
 """
 
 from __future__ import annotations
 
+import re
+
 from openai import OpenAI
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+# Matches the required final marker, e.g. "My action <<C>>" (case-insensitive,
+# tolerant of surrounding whitespace).
+_ACTION_RE = re.compile(r"My action\s*<<\s*([CD])\s*>>", re.IGNORECASE)
 
 
 def make_client(api_key: str) -> OpenAI:
@@ -17,16 +24,16 @@ def make_client(api_key: str) -> OpenAI:
 
 
 def parse_action(text: str) -> str | None:
-    """Extract a single action from a model reply: ``"C"``, ``"D"``, or None.
+    """Extract the action from the model's ``My action <<A>>`` marker.
 
-    The reply is expected to be just the action, but we tolerate surrounding
-    whitespace/punctuation. If both or neither appear, we cannot decide.
+    Returns ``"C"``, ``"D"``, or ``None`` if no well-formed marker is present.
+    If the marker appears more than once, the last occurrence wins (the model's
+    final answer, not a mention inside its reasoning).
     """
-    upper = text.upper()
-    has_c, has_d = "C" in upper, "D" in upper
-    if has_c == has_d:  # both present or both absent -> ambiguous
+    matches = _ACTION_RE.findall(text)
+    if not matches:
         return None
-    return "C" if has_c else "D"
+    return matches[-1].upper()
 
 
 def query_action(
@@ -34,7 +41,9 @@ def query_action(
 ) -> tuple[str | None, str]:
     """Query the model once and return ``(parsed_action, raw_text)``.
 
-    ``parsed_action`` is ``"C"``, ``"D"``, or ``None`` if the reply is ambiguous.
+    ``parsed_action`` is ``"C"``, ``"D"``, or ``None`` if the reply has no
+    well-formed ``My action <<A>>`` marker. ``raw_text`` keeps the full reply
+    (including the model's reasoning).
     """
     response = client.chat.completions.create(
         model=model,

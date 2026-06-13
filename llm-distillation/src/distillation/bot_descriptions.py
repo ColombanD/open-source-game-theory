@@ -26,6 +26,7 @@ def CupodBot(k, opp):
 """,
     "DBot": """\
 def DBot(opp):
+    # DefectBot: always defects (returns D), ignoring the opponent.
     if simulate(opp, DefectBot) == C:
         return D  # exploit opponents naive enough to cooperate against DefectBot
     else:
@@ -45,6 +46,8 @@ def DupocBot(k, opp):
 """,
     "OBot": """\
 def OBot(opp):
+    # CooperateBot: always cooperates (returns C), ignoring the opponent.
+    # DefectBot: always defects (returns D), ignoring the opponent.
     # Cooperate only with opponents that pass both probes.
     if simulate(opp, CooperateBot) == C:
         if simulate(opp, DefectBot) == C:
@@ -56,6 +59,7 @@ def OBot(opp):
 """,
     "TitForTatBot": """\
 def TitForTatBot(opp):
+    # CooperateBot: always cooperates (returns C), ignoring the opponent.
     if simulate(opp, CooperateBot) == C:
         return C  # opponent looks cooperative -> cooperate
     else:
@@ -63,6 +67,9 @@ def TitForTatBot(opp):
 """,
     "EBot": """\
 def EBot(opp):
+    # DefectBot: always defects (returns D), ignoring the opponent.
+    # CooperateBot: always cooperates (returns C), ignoring the opponent.
+    # MirrorBot: plays whatever the opponent plays against it (mirrors it).
     if simulate(opp, DefectBot) == C:
         return D  # exploit naive cooperator
     elif simulate(opp, CooperateBot) == C:
@@ -74,6 +81,8 @@ def EBot(opp):
 """,
     "CupodTrollBot": """\
 def CupodTrollBot(k, opp):
+    # CupodBot: cooperates by default, defecting only on a bounded proof that
+    # the opponent defects against it (Cooperate Unless Proof Of Defection).
     # Defect iff the opponent is literally CupodBot (structural identity).
     if opp == CupodBot(k):
         return D

@@ -108,8 +108,12 @@ returns the same action and `x_i` collapses to exactly 0/1.
 **API.** Calls go through the OpenAI SDK pointed at OpenRouter
 (`https://openrouter.ai/api/v1`). Set `OPENROUTER_API_KEY` in the environment.
 
-> The prompt (`src/distillation/prompt.py`, `PROMPT_TEMPLATE`) is a **placeholder**
-> — the game framing and payoff wording are meant to be refined before real runs.
+The prompt (`src/distillation/prompt.py`, `PROMPT_TEMPLATE`) frames the game,
+explains the source-code helpers the model will encounter (`simulate`,
+`proof_search`, the budget `k`, probe-bot references), and asks the model to
+reason and then end with a `My action <<A>>` line. `parse_action`
+(`openrouter.py`) extracts `A` from that marker (last occurrence wins); a reply
+with no marker parses to `None` and is dropped from the estimate.
 
 **Output.** Each run creates `runs/<YYYY-MM-DD_HH-MM-SS>_<model-slug>/` with:
 - `metadata.json` — model, n, temperature, timestamp, matrix path, bot order.
@@ -138,8 +142,8 @@ src/distillation/
   reporting.py     # human-readable report formatting
   cli.py           # argparse entry point (manual-vector fit)
   bot_descriptions.py  # hardcoded Python-pseudocode descriptions of the bots
-  prompt.py        # per-bot prompt construction (PLACEHOLDER template)
-  openrouter.py    # OpenAI-SDK client for OpenRouter + C/D reply parsing
+  prompt.py        # per-bot prompt construction (game framing + notation)
+  openrouter.py    # OpenAI-SDK client for OpenRouter + `My action <<A>>` parsing
   pipeline.py      # measure x via the LLM, fit, write run folder
   pipeline_cli.py  # `distillation-llm` entry point
 tests/             # parsing + fitting tests
