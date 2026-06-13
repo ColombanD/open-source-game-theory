@@ -81,16 +81,68 @@ We deliberately use real QP/LP solvers (no hand-rolled gradient descent).
 - **`level = mean(x)`** — overall cooperativeness.
 - **`sharpness = mean(|x_i − 0.5|)`** — how decisive (near 0/1) the profile is.
 
+## LLM distillation pipeline
+
+The above fits a cooperation vector `x` that you supply by hand. The pipeline
+*measures* `x` for a real LLM and then runs that fit automatically.
+
+**What it does.** For each bot in the library (canonical CSV order) the model is
+queried, in a one-shot **maximum-transparency** (source-visible) prisoner's
+dilemma, against that bot. The bot's Lean source
+(`engine/PrisonersDilemma/Bots/<BotName>.lean`) is injected into the prompt. Each
+bot is queried `N` times; the fraction of `C` replies is the Bernoulli estimate
+`x_i = P(model plays C against bot i)`. The full `x` then goes straight into the
+existing `fit_all` + `format_report` — the model is treated as "a new bot" whose
+row is measured rather than read from the CSV (same C=1/D=0, no-transpose
+convention).
+
+**Default `N = 30`.** For a Bernoulli proportion the 95% CI half-width is
+`≈ 0.98/√N`, so `N = 30` gives `≈ ±0.18` at the worst case `p = 0.5` — a fair
+estimate at modest cost (`N × 9` calls). Raise `N` for tighter estimates.
+
+**Temperature defaults to `1.0`** — sampling must be stochastic, or every query
+returns the same action and `x_i` collapses to exactly 0/1.
+
+**API.** Calls go through the OpenAI SDK pointed at OpenRouter
+(`https://openrouter.ai/api/v1`). Set `OPENROUTER_API_KEY` in the environment.
+
+> The prompt (`src/distillation/prompt.py`, `PROMPT_TEMPLATE`) is a **placeholder**
+> — the game framing and payoff wording are meant to be refined before real runs.
+
+**Output.** Each run creates `runs/<YYYY-MM-DD_HH-MM-SS>_<model-slug>/` with:
+- `metadata.json` — model, n, temperature, timestamp, matrix path, bot order.
+- `raw_responses.json` — every raw reply + parsed action, per bot.
+- `cooperation_vector.json` — the measured `x` (ordered list + by-bot map).
+- `report.txt` — the `format_report` fit output.
+
+**Run it:**
+
+```bash
+conda activate py-random
+export OPENROUTER_API_KEY=...
+distillation-llm --model anthropic/claude-3.5-sonnet            # N=30 default
+distillation-llm --model openai/gpt-4o --n 100 --temperature 1.0
+```
+
+Flags: `--model` (required), `--n`, `--temperature`, `--matrix`, `--bots-dir`,
+`--output-root` (default `runs`).
+
 ## Layout
 
 ```
 src/distillation/
-  data.py        # CSV parsing, reference matrix R, input-vector loading
-  fitting.py     # L2/L1/L∞/ExpectedHamming fits, identifiability, profile stats
-  reporting.py   # human-readable report formatting
-  cli.py         # argparse entry point
-tests/           # parsing + fitting tests
+  data.py          # CSV parsing, reference matrix R, input-vector loading
+  fitting.py       # L2/L1/L∞/ExpectedHamming fits, identifiability, profile stats
+  reporting.py     # human-readable report formatting
+  cli.py           # argparse entry point (manual-vector fit)
+  bots.py          # read library bot Lean sources from the engine
+  prompt.py        # per-bot prompt construction (PLACEHOLDER template)
+  openrouter.py    # OpenAI-SDK client for OpenRouter + C/D reply parsing
+  pipeline.py      # measure x via the LLM, fit, write run folder
+  pipeline_cli.py  # `distillation-llm` entry point
+tests/             # parsing + fitting tests
 data/payoff_matrix.csv
+runs/              # per-run outputs (created at runtime)
 ```
 
 ## Running
