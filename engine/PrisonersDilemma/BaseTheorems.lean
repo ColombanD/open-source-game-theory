@@ -73,6 +73,17 @@ theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
       exact ⟨n + 2, by
         show eval (n+2) (.bot (.sim p q)) opponent (.bot (.sim p q)) = some a
         simp only [eval]; exact hn⟩
+  | botSearchStep k ψ a b me opponent hme =>
+      -- `me = .bot (.search k ψ (.const a) (.const b))`: `eval` unwraps the `.bot`
+      -- (one step, `me` stays the player), then runs the `.search`. A provable
+      -- guard makes `eval` take the `.const a` branch, so `me` plays `a`. Witness
+      -- fuel `3`: one `.bot` unwrap, one `.search` step, one `.const a` step.
+      subst hme
+      intro hguard
+      have hps : proofSearch k
+          (ψ.subst (.bot (.search k ψ (.const a) (.const b))) opponent) = true :=
+        (proofSearch_spec _ _).2 hguard
+      exact ⟨3, by simp only [play, eval, hps, if_true]⟩
   | hypSyll φ ψ χ _ _ ih1 ih2 =>
       exact fun h => ih2 (ih1 h)
   | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>

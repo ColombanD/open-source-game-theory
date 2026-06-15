@@ -77,6 +77,24 @@ inductive Derivation : Formula → Type where
   | botSimStep (me p q opponent : Prog) (a : Action) (hme : me = .bot (.sim p q)) :
       Derivation (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
                         (.plays me opponent a))
+  /-- S can read a `.bot`-wrapped `.search` body: `me = .bot (.search k ψ (.const a)
+      (.const b))`. `eval` unwraps the `.bot` (one step, keeping `me` as the player)
+      and then runs the `.search`, so a successful guard makes `me` play `a` — the
+      `.bot (.search …)` twin of `searchBranch`.
+
+      Sound for the same reason as `botSimStep` (and unlike the unsound general
+      `.bot` transparency `plays z → plays (.bot z)`): the `.bot` is read as `me`'s
+      *own body*, so `subst` uses the SAME `me = .bot (.search …)` throughout — the
+      guard `ψ.subst me opponent` is keyed to that very `me`, no bare sub-program's
+      `.self`/`.opp` is rebound. Needed when a `.search`-bot appears `.bot`-wrapped
+      as a *player* that S must read: e.g. JustBot's guard substitutes its opponent
+      against `.bot (DupocBot k)`, making the `.bot`-wrapped DupocBot's `.search`
+      body the leg of the PrudentBot↔DupocBot cooperation loop that `searchBranch`
+      supplies for the bare DupocBot. Conclusion (same Löb/PBLT shape as
+      `searchBranch`): `□_k ψ' → me plays a`, with `ψ' = ψ.subst me opponent`. -/
+  | botSearchStep (k : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog)
+      (hme : me = .bot (.search k ψ (.const a) (.const b))) :
+      Derivation (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a))
   /-- S can read a `.ite` whose **then-branch is itself a `.search`** — the
       PrudentBot shape: `me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0)
       (.const c1)) q`. This fuses the `.ite` guard reading and the inner
