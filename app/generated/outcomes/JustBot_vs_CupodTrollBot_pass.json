@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260615T184329",
+  "bot_a": "JustBot",
+  "bot_b": "CupodTrollBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 64000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 4,
+  "elapsed_seconds": 56.35879216599278,
+  "error": null,
+  "final_text_tail": "DupocBot)?\" which is true, so once the\n    budget covers the atom the guard fires. -/\ntheorem JustBot_plays_C_against_CupodTrollBot (k fuel : Nat)\n    (hbudget : atom_cost (fuel + 2) ≤ k) :\n    play (fuel + 2) (JustBot k) (CupodTrollBot k) = some .C := by\n  -- CupodTrollBot cooperates against `.bot (DupocBot k)`.\n  have hC : play (fuel + 2) (CupodTrollBot k) (.bot (DupocBot k)) = some .C :=\n    CupodTrollBot_cooperates_against_bot k fuel (DupocBot k)\n  have hatom : proofSearch (atom_cost (fuel + 2))\n      (.plays (CupodTrollBot k) (.bot (DupocBot k)) .C) = true :=\n    (proofSearch_spec _ _).2\n      (Provable.atom (atom_complete (CupodTrollBot k) (.bot (DupocBot k)) .C (fuel + 2) hC))\n  have hg : proofSearch k (.plays (CupodTrollBot k) (.bot (DupocBot k)) .C) = true :=\n    proofSearch_monotone _ _ _ hbudget hatom\n  show eval (fuel + 2) (JustBot k) (CupodTrollBot k) (JustBot k) = some .C\n  unfold JustBot at hg ⊢\n  simp [eval, Prog.subst, Formula.subst, hg]\n\ntheorem llm_outcome_JustBot_vs_CupodTrollBot :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (JustBot k) (CupodTrollBot k) = some (.C, .C) := by\n  refine ⟨atom_cost 2, fun k hk => ⟨2, ?_⟩⟩\n  have hbudget : atom_cost (0 + 2) ≤ k := by simpa using Nat.le_of_lt hk\n  -- Direction A: JustBot cooperates.\n  have hA : play 2 (JustBot k) (CupodTrollBot k) = some .C := by\n    simpa using JustBot_plays_C_against_CupodTrollBot k 0 hbudget\n  -- Direction B: CupodTrollBot cooperates (JustBot ≠ CupodBot).\n  have hB : play 2 (CupodTrollBot k) (JustBot k) = some .C := by\n    have := CupodTrollBot_cooperates_if_opp_not_CupodBot k 0 (JustBot k)\n      (by simp [JustBot, CupodBot])\n    simpa using this\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PD.Theorems\n```\n\nThe outcome is `(.C, .C)`: JustBot's guard asks whether CupodTrollBot cooperates against DupocBot (it does, since DupocBot ≠ CupodBot), so for large `k` JustBot cooperates; and CupodTrollBot cooperates with JustBot since JustBot is not literally CupodBot.\n\nPROOF COMPLETE"
+}
