@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260615T183107",
+  "bot_a": "PrudentBot",
+  "bot_b": "PrudentBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 64000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 3,
+  "elapsed_seconds": 109.04574741699616,
+  "error": null,
+  "final_text_tail": " : Nat → Formula := fun k => Formula.plays (PrudentBot k) (PrudentBot k) Action.C\n  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h\n  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by\n    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩\n    intro k hk\n    have hlog : Nat.log2 k < k := by\n      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]\n      exact Nat.lt_two_pow_self\n    simpa using hlog\n  obtain ⟨kPrud, hkPrud⟩ := prudence_self_prudent\n  obtain ⟨K₀, hK₀⟩ := prudent_self_loeb_premise\n  have hLoeb : ∀ k, k > K₀ → ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) :=\n    fun k hk => ⟨k, hK₀ k (Nat.le_of_lt hk)⟩\n  obtain ⟨k₂, hk₂⟩ := PBLT φ id K₀ hMono hLog hLoeb\n  refine ⟨max k₂ kPrud, fun k hk => ?_⟩\n  have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk\n  have hkP : kPrud ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)\n  obtain ⟨m, hm⟩ := hk₂ k hk2\n  obtain ⟨n, hplay⟩ := Provable_sound m (φ k) hm\n  have hpsOuter : proofSearch k (Formula.plays (PrudentBot k) (PrudentBot k) Action.C) = true :=\n    prudent_outer_true_of_play_C k n (PrudentBot k) hplay\n  have hprud : proofSearch k (Formula.plays (PrudentBot k) (.bot DefectBot) Action.D) = true :=\n    (proofSearch_spec _ _).2 (hkPrud k hkP)\n  refine ⟨3, ?_⟩\n  have hA : play 3 (PrudentBot k) (PrudentBot k) = some .C := by\n    simpa using prudent_eval_both_true k 0 (PrudentBot k) hpsOuter hprud\n  exact outcome_of_plays _ _ _ _ _ hA hA\n\nend PD.Theorems\n```\n\nPROOF COMPLETE\n\nThe outcome is **(C, C)**: PrudentBot cooperates with itself for all sufficiently large search budgets `k`. This is the Critch/Löb cooperation fixed point — in self-play the `searchThenSearch_t` transparency rule directly yields the closed Löb premise `□_k φ → φ` (where `φ` = \"PrudentBot cooperates with PrudentBot\"), with the inner prudence condition discharged by the provable Σ₁ atom that PrudentBot defects against `.bot DefectBot`. PBLT then proves `φ` outright, and both bots' guards fire, giving mutual cooperation."
+}
