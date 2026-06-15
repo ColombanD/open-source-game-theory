@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260615T120819",
+  "bot_a": "PrudentBot",
+  "bot_b": "CupodTrollBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 64000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "C",
+  "iterations_used": 1,
+  "elapsed_seconds": 156.5377319160034,
+  "error": null,
+  "final_text_tail": "risonersDilemma.Bots.LlmGenerations.PrudentBot\nimport PrisonersDilemma.Bots.CupodTrollBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Bots.CupodBot\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.BaseTheorems\nimport PrisonersDilemma.Theorems.Helpers\nimport PrisonersDilemma.Theorems.CupodTrollBot\n\nopen PD\nopen PD.Bots\nopen PD.BaseTheorems\nnamespace PD.Theorems\n\ntheorem CupodTrollBot_never_D_vs_botDefect (k : Nat) :\n    ¬ ∃ n, play n (CupodTrollBot k) (.bot DefectBot) = some .D := by\n  rintro ⟨n, hn⟩\n  have hC : play (n + 2) (CupodTrollBot k) (.bot DefectBot) = some .C :=\n    CupodTrollBot_cooperates_against_bot k n DefectBot\n  have hn' : eval n (CupodTrollBot k) (.bot DefectBot) (CupodTrollBot k) = some .D := hn\n  have hD : play (n + 2) (CupodTrollBot k) (.bot DefectBot) = some .D :=\n    eval_mono_le hn' (n + 2) (by omega)\n  rw [hC] at hD\n  simp at hD\n\ntheorem PrudentBot_defects_vs_CupodTrollBot (k fuel : Nat) :\n    play (fuel + 3) (PrudentBot k) (CupodTrollBot k) = some .D := by\n  have hφ2 : proofSearch k (.plays (CupodTrollBot k) (.bot DefectBot) .D) = false := by\n    cases hps : proofSearch k (.plays (CupodTrollBot k) (.bot DefectBot) .D) with\n    | true => exact absurd (proofSearch_sound _ _ hps) (CupodTrollBot_never_D_vs_botDefect k)\n    | false => rfl\n  show eval (fuel + 3) (PrudentBot k) (CupodTrollBot k) (PrudentBot k) = some .D\n  unfold PrudentBot\n  simp [eval, Prog.subst, Formula.subst, hφ2]\n\ntheorem llm_outcome_PrudentBot_vs_CupodTrollBot :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (PrudentBot k) (CupodTrollBot k) = some (.D, .C) := by\n  refine ⟨0, fun k _ => ⟨3, ?_⟩⟩\n  have hA : play 3 (PrudentBot k) (CupodTrollBot k) = some .D :=\n    PrudentBot_defects_vs_CupodTrollBot k 0\n  have hB : play 3 (CupodTrollBot k) (PrudentBot k) = some .C :=\n    CupodTrollBot_cooperates_if_opp_not_CupodBot k 1 (PrudentBot k)\n      (by simp [PrudentBot, CupodBot])\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}
