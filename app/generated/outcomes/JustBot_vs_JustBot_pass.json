@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260615T203048",
+  "bot_a": "JustBot",
+  "bot_b": "JustBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 128000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 6,
+  "elapsed_seconds": 303.2846978329908,
+  "error": null,
+  "final_text_tail": " Nat, a ≤ b → id a ≤ id b := fun _ _ h => h\n  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by\n    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩\n    intro k hk\n    have hlog : Nat.log2 k < k := by\n      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]\n      exact Nat.lt_two_pow_self\n    simpa using hlog\n  obtain ⟨K₀, hK₀⟩ := botdupoc_loeb_premise\n  have hLoeb : ∀ k, k > K₀ → ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by\n    intro k hk\n    exact ⟨k, hK₀ k (Nat.le_of_lt hk)⟩\n  obtain ⟨k₂, hk₂⟩ := PBLT φ id K₀ hMono hLog hLoeb\n  refine ⟨k₂, fun k hk => ?_⟩\n  obtain ⟨m, hm⟩ := hk₂ k hk\n  have hInterp : (φ k).interp := Provable_sound m (φ k) hm\n  obtain ⟨n, hn⟩ := hInterp\n  exact ps_k_of_play_botDupoc_self k n hn\n\n/-- JustBot vs JustBot: mutual cooperation for sufficiently large `k`. -/\ntheorem llm_outcome_JustBot_vs_JustBot :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (JustBot k) (JustBot k) = some (.C, .C) := by\n  obtain ⟨k₂, hk₂⟩ := botDupoc_self_coop\n  refine ⟨max k₂ (atom_cost 2), fun k hk => ?_⟩\n  have hk2 : k₂ < k := lt_of_le_of_lt (le_max_left _ _) hk\n  have hac2 : atom_cost 2 ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)\n  have hdd : proofSearch k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C) = true := hk₂ k hk2\n  have hJd : ∀ f, play (f + 2) (JustBot k) (.bot (DupocBot k)) = some .C := by\n    intro f\n    refine JustBot_eval_step k f (.bot (DupocBot k)) .C ?_\n    simpa using hdd\n  have hd' : proofSearch k (.plays (JustBot k) (.bot (DupocBot k)) .C) = true := by\n    refine proofSearch_monotone (atom_cost 2) k _ hac2 ?_\n    exact (proofSearch_spec _ _).2 (Provable.atom\n      (atom_complete (JustBot k) (.bot (DupocBot k)) .C 2 (by simpa using hJd 0)))\n  have hJJ : ∀ f, play (f + 2) (JustBot k) (JustBot k) = some .C := by\n    intro f\n    refine JustBot_eval_step k f (JustBot k) .C ?_\n    simpa using hd'\n  exact ⟨2, outcome_of_plays _ _ _ _ _ (by simpa using hJJ 0) (by simpa using hJJ 0)⟩\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}
