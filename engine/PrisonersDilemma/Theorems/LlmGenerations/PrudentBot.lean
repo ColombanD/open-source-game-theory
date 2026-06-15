@@ -1152,7 +1152,7 @@ theorem prudent_self_loeb_premise :
   omega
 
 /-- **PrudentBot vs PrudentBot → (C, C)** for all large enough `k`. -/
-theorem llm_outcome_PrudentBot_vs_PrudentBot :
+theorem outcome_PrudentBot_vs_PrudentBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (PrudentBot k) (PrudentBot k) = some (.C, .C) := by
   let φ : Nat → Formula := fun k => Formula.plays (PrudentBot k) (PrudentBot k) Action.C
