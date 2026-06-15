@@ -896,4 +896,227 @@ theorem outcome_PrudentBot_vs_CupodTrollBot :
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 
+-- Dupoc --
+
+/-!
+# PrudentBot vs DupocBot → (C, C)
+
+This matchup is a **search-vs-search modal fixed point with no unboxed `.sim`
+leg**: PrudentBot reads "DupocBot cooperates with me" (`searchThenSearch_t`,
+boxed) and DupocBot reads "PrudentBot cooperates with me" (`searchBranch`, boxed).
+Both transparency legs are *boxed*:
+
+* leg1 (`searchThenSearch_t` on PrudentBot, prudence atom discharged):
+  `□_k (DupocBot plays C vs PrudentBot) → (PrudentBot plays C vs DupocBot)`;
+* leg2 (`searchBranch` on DupocBot):
+  `□_k (PrudentBot plays C vs DupocBot) → (DupocBot plays C vs PrudentBot)`.
+
+For the MirrorBot/TFT matchups one leg is an *unboxed* `.sim` (`simStep`), and
+`searchBranch` + `simStep` chain directly into the closed `□_k φ → φ` that `PBLT`
+consumes. Here neither leg is a `.sim`, so that route is unavailable: composing two
+*boxed* implications into `□_k φ → φ` needs to strip a box, which the source-
+transparency rules cannot do.
+
+**The closing ingredient is object-form Σ₁-completeness for play-atoms**,
+`atom_box_provable_impl : ⊢ (p plays a vs q) → □_k (p plays a vs q)` (Axioms.lean).
+A `.plays` atom is Σ₁, so "true ⟹ provable" is sound reflection (NOT the GL-excluded
+general `φ → □φ`, which fails on Π₁ truths). Applied to the play-atom `φ_P`:
+`atom_box_provable_impl ⊳ leg2` yields the *unboxed-antecedent* implication
+`φ_P → φ_D` (stripping the box `searchBranch` needs), which composes with `leg1`
+into `□_k φ_D → φ_D`. That is exactly the role `simStep` plays for the `.sim`
+matchups, now recovered for genuine search-vs-search via Σ₁-reflection rather than
+`.sim` source-transparency.
+
+The cooperative leg is *also* independently true with no axioms at all
+(`dupocShaped_self_loeb_interp` below), which is why selecting `(C, C)` — the
+intended Critch fixed point — is sound: the cooperative equilibrium is consistent,
+and GL-4 is what lets `S` *prove* it rather than merely admit its consistency.
+-/
+
+/-! ## The cooperative Löb premise is true (no axioms) -/
+
+/-- **The cooperative Löb premise is true, for any Dupoc-shaped cooperator.**
+    `A = .search k (.plays .opp .self c) (.const c) (.const d)` cooperates `c` iff it
+    proves the opponent plays `c` with it; for any opponent `B`, the implication
+    `□_k (A plays c vs B) → (A plays c vs B)` holds. Proved with no new axioms via
+    `A`'s own `.search` inversion. (The `(C,C)` outcome below does not use this; it
+    is recorded as the semantic justification that the cooperative equilibrium is
+    consistent.) -/
+theorem dupocShaped_self_loeb_interp
+    (k : Nat) (c d : Action) (B : Prog)
+    (A : Prog) (hA : A = .search k (.plays .opp .self c) (.const c) (.const d)) :
+    (Formula.impl (.box k (Formula.plays A B c)) (Formula.plays A B c)).interp := by
+  subst hA
+  show (Formula.box k (Formula.plays _ B c)).interp → (Formula.plays _ B c).interp
+  intro hbox
+  have hps : proofSearch k (Formula.plays
+      (.search k (.plays .opp .self c) (.const c) (.const d)) B c) = true :=
+    (proofSearch_spec _ _).2 hbox
+  obtain ⟨n, hplay⟩ := proofSearch_sound _ _ hps
+  cases hg : proofSearch k (Formula.plays B
+      (.search k (.plays .opp .self c) (.const c) (.const d)) c) with
+  | true =>
+    refine ⟨2, ?_⟩
+    show eval 2 _ B _ = some c
+    simp [eval, Prog.subst, Formula.subst, hg]
+  | false =>
+    have hD : play (n + 2)
+        (.search k (.plays .opp .self c) (.const c) (.const d)) B = some d := by
+      show eval (n + 2) _ B _ = some d
+      simp [eval, Prog.subst, Formula.subst, hg]
+    have hC : play (n + 2)
+        (.search k (.plays .opp .self c) (.const c) (.const d)) B = some c := by
+      unfold play at hplay ⊢; exact eval_mono_le hplay (n + 2) (by omega)
+    rw [hC] at hD
+    obtain rfl : c = d := by injection hD
+    exact ⟨n, hplay⟩
+
+/-! ## Supporting lemmas for the (C, C) outcome -/
+
+abbrev φD (k : Nat) : Formula := Formula.plays (DupocBot k) (PrudentBot k) Action.C
+abbrev φP (k : Nat) : Formula := Formula.plays (PrudentBot k) (DupocBot k) Action.C
+
+/-- Prudence atom: DupocBot plays D vs `.bot DefectBot` (its cooperation search
+    fails — `.bot DefectBot` never cooperates — so it defects). -/
+theorem dupoc_plays_D_vs_bot_DB (k fuel : Nat) :
+    play (fuel + 2) (DupocBot k) (.bot DefectBot) = some .D := by
+  have hg : proofSearch k (.plays (.bot DefectBot) (DupocBot k) .C) = false := by
+    cases h : proofSearch k (.plays (.bot DefectBot) (DupocBot k) .C) with
+    | true  => exact absurd (proofSearch_sound _ _ h) (interp_bot_DefectBot_plays_C_false _)
+    | false => rfl
+  show eval (fuel + 2) (DupocBot k) (.bot DefectBot) (DupocBot k) = some .D
+  unfold DupocBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+theorem prudence_dupoc :
+    ∃ k₀, ∀ k, k₀ ≤ k →
+      Provable k (Formula.plays (DupocBot k) (.bot DefectBot) Action.D) := by
+  refine ⟨atom_cost 2, fun k hk => ?_⟩
+  have hPlay : play 2 (DupocBot k) (.bot DefectBot) = some .D := by
+    simpa using dupoc_plays_D_vs_bot_DB k 0
+  exact Provable.atom (atom_monotone (atom_cost 2) k _ hk
+    (atom_complete (DupocBot k) (.bot DefectBot) Action.D 2 hPlay))
+
+/-- DupocBot cooperates with PrudentBot once its search fires. -/
+theorem dupoc_C_vs_prudent (k fuel : Nat)
+    (hk : proofSearch k (.plays (PrudentBot k) (DupocBot k) .C) = true) :
+    play (fuel + 2) (DupocBot k) (PrudentBot k) = some .C := by
+  show eval (fuel + 2) (DupocBot k) (PrudentBot k) (DupocBot k) = some .C
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- DupocBot defects against PrudentBot when its search fails. -/
+theorem dupoc_D_vs_prudent (k fuel : Nat)
+    (hk : proofSearch k (.plays (PrudentBot k) (DupocBot k) .C) = false) :
+    play (fuel + 2) (DupocBot k) (PrudentBot k) = some .D := by
+  show eval (fuel + 2) (DupocBot k) (PrudentBot k) (DupocBot k) = some .D
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+/-- Inversion on DupocBot's leg: a cooperating play forces DupocBot's search guard
+    (`PrudentBot plays C vs DupocBot`, = φ_P) to have fired at budget k. -/
+theorem ps_k_of_play_dupoc (k n : Nat)
+    (h : play n (DupocBot k) (PrudentBot k) = some .C) :
+    proofSearch k (.plays (PrudentBot k) (DupocBot k) .C) = true := by
+  cases hps : proofSearch k (.plays (PrudentBot k) (DupocBot k) .C) with
+  | true  => rfl
+  | false =>
+    exfalso
+    have hD : play (n + 2) (DupocBot k) (PrudentBot k) = some .D := dupoc_D_vs_prudent k n hps
+    have hC : play (n + 2) (DupocBot k) (PrudentBot k) = some .C := by
+      unfold play at h ⊢; exact eval_mono_le h (n + 2) (by omega)
+    rw [hC] at hD; cases hD
+
+/-! ## The closed Löb premise, via object-level GL-4 -/
+
+/-- **The cooperative Löb premise as a `Provable` object**, assembled from the two
+    boxed transparency legs and object-level GL-4 (`box_provable_impl`):
+
+    * leg1 (`searchThenSearch_t`): `□_k φ_D → φ_P`;
+    * leg2 (`searchBranch`):       `□_k φ_P → φ_D`;
+    * `box_provable_impl ⊳ leg2` : `φ_P → φ_D`  (the box on `φ_P` is stripped — the
+      step that the missing `.sim` leg would otherwise have provided);
+    * `leg1 ⊳ (φ_P → φ_D)`       : `□_k φ_D → φ_D`,  the closed premise `PBLT` needs.
+
+    All boxes stay at the single budget `k`, so the `implTrans` size side-conditions
+    fit via `linear_log2_add_le`. -/
+theorem loeb_premise_provable :
+    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
+      Provable k (.impl (.box k (φD k)) (φD k)) := by
+  obtain ⟨kPrud, hkPrud⟩ := prudence_dupoc
+  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 20 200
+  refine ⟨max kPrud Ksz, fun k hk => ?_⟩
+  have hkP : kPrud ≤ k := le_trans (le_max_left _ _) hk
+  have hkS : Ksz ≤ k := le_trans (le_max_right _ _) hk
+  have hprud : Provable k (Formula.plays (DupocBot k) (.bot DefectBot) Action.D) := hkPrud k hkP
+  have leg1 : Provable k (.impl (.box k (φD k)) (φP k)) := by
+    refine Provable.searchThenSearch_t k k
+      (Formula.plays .opp .self Action.C)
+      (Formula.plays .opp (.bot DefectBot) Action.D)
+      Action.C Action.D (.const Action.D) (PrudentBot k) (DupocBot k) rfl hprud ?_
+    simp only [Formula.subst, Prog.subst, Formula.size, Prog.size,
+      PrudentBot, DupocBot, DefectBot]
+    have := hKsz k hkS; omega
+  have leg2 : Provable k (.impl (.box k (φP k)) (φD k)) := by
+    apply Provable.struct
+    refine ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) (PrudentBot k) rfl, ?_⟩
+    simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    have := hKsz k hkS; omega
+  have hsz1 : (Formula.impl (φP k) (φD k)).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    have := hKsz k hkS; omega
+  have bridge : Provable k (.impl (φP k) (φD k)) :=
+    Provable.implTrans (φP k) (.box k (φP k)) (φD k) k k
+      (atom_box_provable_impl k (PrudentBot k) (DupocBot k) Action.C) leg2 hsz1
+  have hsz2 : (Formula.impl (.box k (φD k)) (φD k)).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    have := hKsz k hkS; omega
+  exact Provable.implTrans (.box k (φD k)) (φP k) (φD k) k k leg1 bridge hsz2
+
+/-! ## The outcome -/
+
+/-- **PrudentBot vs DupocBot → (C, C)** for all large enough `k`. The first
+    search-vs-search matchup in the library with *no* unboxed `.sim` leg; closed by
+    object-level GL-4 (`box_provable_impl`). Application of `PBLT` to
+    `loeb_premise_provable`: PBLT yields `Provable m φ_D`, soundness gives a real
+    DupocBot-cooperates play, the inversion lifts it to `proofSearch k φ_P = true`,
+    and both bots then cooperate (PrudentBot via both guards firing — outer = φ_D,
+    inner = the provable prudence atom; DupocBot via its search firing on φ_P). -/
+theorem outcome_PrudentBot_vs_DupocBot :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ fuel, outcome fuel (PrudentBot k) (DupocBot k) = some (.C, .C) := by
+  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
+  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
+    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
+    intro k hk
+    have hlog : Nat.log2 k < k := by
+      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]; exact Nat.lt_two_pow_self
+    simpa using hlog
+  obtain ⟨kPrud, hkPrud⟩ := prudence_dupoc
+  obtain ⟨K₀, hK₀⟩ := loeb_premise_provable
+  have hLoeb : ∀ k, k > K₀ → ∃ m, Provable m (.impl (.box (id k) (φD k)) (φD k)) :=
+    fun k hk => ⟨k, hK₀ k (Nat.le_of_lt hk)⟩
+  obtain ⟨k₂, hk₂⟩ := PBLT φD id K₀ hMono hLog hLoeb
+  refine ⟨max (max k₂ kPrud) (atom_cost 2), fun k hk => ?_⟩
+  have hk2 : k > k₂ := lt_of_le_of_lt (le_trans (le_max_left _ _) (le_max_left _ _)) hk
+  have hkP : kPrud ≤ k := le_of_lt (lt_of_le_of_lt (le_trans (le_max_right _ _) (le_max_left _ _)) hk)
+  have hkAtom : atom_cost 2 ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
+  obtain ⟨m, hm⟩ := hk₂ k hk2
+  obtain ⟨n, hplayD⟩ := Provable_sound m (φD k) hm
+  have hpsP : proofSearch k (.plays (PrudentBot k) (DupocBot k) .C) = true :=
+    ps_k_of_play_dupoc k n hplayD
+  have hpsD : proofSearch k (φD k) = true := by
+    have hplay2 : play 2 (DupocBot k) (PrudentBot k) = some .C := dupoc_C_vs_prudent k 0 hpsP
+    exact (proofSearch_spec _ _).2 (Provable.atom (atom_monotone (atom_cost 2) k _ hkAtom
+      (atom_complete (DupocBot k) (PrudentBot k) Action.C 2 hplay2)))
+  have hprud : proofSearch k (.plays (DupocBot k) (.bot DefectBot) Action.D) = true :=
+    (proofSearch_spec _ _).2 (hkPrud k hkP)
+  refine ⟨3, ?_⟩
+  have hA : play 3 (PrudentBot k) (DupocBot k) = some .C := by
+    simpa using prudent_eval_both_true k 0 (DupocBot k) hpsD hprud
+  have hB : play 3 (DupocBot k) (PrudentBot k) = some .C := by
+    simpa using dupoc_C_vs_prudent k 1 hpsP
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+
 end PD.Theorems
