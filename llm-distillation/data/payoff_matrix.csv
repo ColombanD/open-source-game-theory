@@ -1,0 +1,10 @@
+,CooperateBot,CupodBot,DBot,DefectBot,DupocBot,OBot,TitForTatBot,EBot,CupodTrollBot
+CooperateBot,"(C, C)","(C, C)","(C, D)","(C, D)","(C, C)","(C, C)","(C, C)","(C, D)","(C, C)"
+CupodBot,"(C, C)","(D, D)","(C, C)","(D, D)","(C, D)","(D, D)","(C, C)","(C, C)","(D, D)"
+DBot,"(D, C)","(C, C)","(D, D)","(C, D)","(C, C)","(C, D)","(C, D)","(C, D)","(D, C)"
+DefectBot,"(D, C)","(D, D)","(D, C)","(D, D)","(D, D)","(D, D)","(D, D)","(D, D)","(D, C)"
+DupocBot,"(C, C)","(D, C)","(C, C)","(D, D)","(C, C)","(D, D)","(C, C)","(C, C)","(C, C)"
+OBot,"(C, C)","(D, D)","(D, C)","(D, D)","(D, D)","(D, D)","(D, C)","(D, C)","(C, C)"
+TitForTatBot,"(C, C)","(C, C)","(D, C)","(D, D)","(C, C)","(C, D)","(C, C)","(D, C)","(C, C)"
+EBot,"(D, C)","(C, C)","(D, C)","(D, D)","(C, C)","(D, C)","(D, C)","(C, C)","(D, C)"
+CupodTrollBot,"(C, C)","(D, D)","(C, D)","(C, D)","(C, C)","(C, C)","(C, C)","(C, D)","(C, C)"
