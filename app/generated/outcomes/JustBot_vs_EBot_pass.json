@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260615T190747",
+  "bot_a": "JustBot",
+  "bot_b": "EBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 64000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 6,
+  "elapsed_seconds": 498.5004092080053,
+  "error": null,
+  "final_text_tail": "ction.C) (.const Action.D))) = some .C := by\n      simpa using (eval_ite_from_guard 4 EBot op (.sim .opp (.bot CooperateBot)) (.const Action.C)\n        (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))\n        Action.C Action.C hG2)\n    have hPlay := play_ite_from_guard 0 5 EBot op (.sim .opp (.bot DefectBot))\n      (.const Action.D)\n      (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)\n        (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))\n      Action.C Action.D\n      (by rfl) hG1\n    simpa [hInner] using hPlay\n  have hEO : play 6 EBot (.bot (DupocBot k)) = some .C := ebot_C (.bot (DupocBot k)) lemA lemB\n  have hPS3 : proofSearch k (.plays EBot (.bot (DupocBot k)) .C) = true :=\n    proofSearch_monotone (atom_cost 6) k _ hb6\n      ((proofSearch_spec _ _).2 (Provable.atom\n        (atom_complete EBot (.bot (DupocBot k)) .C 6 hEO)))\n  -- JustBot vs EBot: cooperates\n  have hJ : ∀ j, play (j+2) (JustBot k) EBot = some .C := by\n    intro j\n    show eval (j+2) (JustBot k) EBot (JustBot k) = some .C\n    unfold JustBot\n    unfold DupocBot at hPS3 ⊢\n    simp [eval, Prog.subst, Formula.subst, hPS3]\n  -- JustBot vs .bot DefectBot defects, vs .bot CooperateBot cooperates\n  have lemC : ∀ j, play (j+2) (JustBot k) (.bot DefectBot) = some .D := by\n    intro j\n    show eval (j+2) (JustBot k) (.bot DefectBot) (JustBot k) = some .D\n    unfold JustBot\n    unfold DupocBot at hPSf ⊢\n    simp [eval, Prog.subst, Formula.subst, hPSf]\n  have lemD : ∀ j, play (j+2) (JustBot k) (.bot CooperateBot) = some .C := by\n    intro j\n    show eval (j+2) (JustBot k) (.bot CooperateBot) (JustBot k) = some .C\n    unfold JustBot\n    unfold DupocBot at hPS1 ⊢\n    simp [eval, Prog.subst, Formula.subst, hPS1]\n  have hEJ6 : play 6 EBot (JustBot k) = some .C :=\n    ebot_C (JustBot k) (fun j => lemC (j+1)) (fun j => lemD (j+1))\n  exact ⟨6, outcome_of_plays 6 (JustBot k) EBot .C .C (hJ 4) hEJ6⟩\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}
