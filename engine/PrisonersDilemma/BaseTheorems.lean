@@ -386,4 +386,28 @@ theorem proofSearch_monotone :
       exact (proofSearch_spec k₂ _).2
         (Provable.implTrans φ ψ χ a b hab hbc (Nat.le_trans hsz hk))
 
+/-- **Soundness witness for the `atom_box_provable_impl` axiom (Axioms.lean).**
+    Object-level bounded Σ₁-completeness for play-atoms, in the *conditional* form
+    that is a kernel-checked THEOREM: when the play actually happens within `fuel`
+    steps AND the budget `k` fits a certificate (`atom_cost fuel ≤ k`), the object
+    implication `(p plays a vs q) → □_k (p plays a vs q)` is provable at `k`. Built
+    from `atom_complete` + `atom_monotone` (→ `Provable k atom`), `box_provable`
+    (→ `Provable K (□_k atom)`), and `weakenImpl` (→ the implication).
+
+    This certifies the principle the axiom asserts is SOUND under the budget
+    threshold; the axiom drops the `play`/`atom_cost ≤ k` hypotheses so it can be used
+    *witness-free* (the matchup builds its Löb premise before the cooperative play is
+    in hand — see the false-case analysis in `PrudentDupoc.lean`), which is the part
+    that genuinely needs to be axiomatic (Π₁/`box_provable`-style reflection). The
+    threshold `atom_cost fuel ≤ k` is what keeps it on the sound Σ₁ side: it is bounded
+    Σ₁-completeness, NOT the GL-excluded converse-necessitation `φ → □φ`. -/
+theorem atom_box_provable_impl_sound (k fuel : Nat) (p q : Prog) (a : Action)
+    (hplay : play fuel p q = some a) (hk : atom_cost fuel ≤ k)
+    (hsz : (Formula.impl (.plays p q a) (.box k (.plays p q a))).size ≤ k) :
+    Provable k (.impl (.plays p q a) (.box k (.plays p q a))) := by
+  have hatom : Provable k (.plays p q a) :=
+    Provable.atom (atom_monotone (atom_cost fuel) k _ hk (atom_complete p q a fuel hplay))
+  obtain ⟨K, hbox⟩ := box_provable k (.plays p q a) hatom
+  exact Provable.weakenImpl (.plays p q a) (.box k (.plays p q a)) K hbox hsz
+
 end PD.BaseTheorems
