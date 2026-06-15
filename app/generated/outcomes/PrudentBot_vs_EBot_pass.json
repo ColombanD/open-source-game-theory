@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260615T155535",
+  "bot_a": "PrudentBot",
+  "bot_b": "EBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 64000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 9,
+  "elapsed_seconds": 903.0618039589899,
+  "error": null,
+  "final_text_tail": "al 6 EBot (PrudentBot k) (.sim .opp (.bot DefectBot)) = some .D :=\n    eval_sim_opp_bot_of_play 5 EBot (PrudentBot k) DefectBot .D p1\n  have hg2 : eval 5 EBot (PrudentBot k) (.sim .opp (.bot CooperateBot)) = some .D :=\n    eval_sim_opp_bot_of_play 4 EBot (PrudentBot k) CooperateBot .D p2\n  have hg3 : eval 4 EBot (PrudentBot k) (.sim .opp (.bot MirrorBot)) = some .C :=\n    eval_sim_opp_bot_of_play 3 EBot (PrudentBot k) MirrorBot .C p3\n  have hII : eval 5 EBot (PrudentBot k)\n      (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)) = some .C := by\n    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hg3]; rfl\n  have hI : eval 6 EBot (PrudentBot k)\n      (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)\n        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D))) = some .C := by\n    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hg2]\n    exact hII\n  have hEBotC : play 7 EBot (PrudentBot k) = some .C := by\n    show eval 7 EBot (PrudentBot k)\n      (.ite (.sim .opp (.bot DefectBot)) .C (.const .D)\n        (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)\n          (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))) = some .C\n    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hg1]\n    exact hI\n  -- PrudentBot plays C vs EBot\n  have hg1P : proofSearch k (.plays EBot (PrudentBot k) .C) = true :=\n    (proofSearch_spec _ _).2 (Provable.atom\n      (atom_monotone (atom_cost 7) k _ ha7\n        (atom_complete EBot (PrudentBot k) .C 7 hEBotC)))\n  have hg2P : proofSearch k (.plays EBot (.bot DefectBot) .D) = true := by\n    have hplay : play 6 EBot (.bot DefectBot) = some .D := EBot_plays_D_vs_bot_DefectBot 0\n    exact (proofSearch_spec _ _).2 (Provable.atom\n      (atom_monotone (atom_cost 6) k _ hb6\n        (atom_complete EBot (.bot DefectBot) .D 6 hplay)))\n  have hPrudC : play 7 (PrudentBot k) EBot = some .C :=\n    prudent_eval_both_true k 4 EBot hg1P hg2P\n  exact ⟨7, outcome_of_plays 7 (PrudentBot k) EBot .C .C hPrudC hEBotC⟩\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}

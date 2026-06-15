@@ -63,6 +63,16 @@ theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
       obtain ⟨n, hn⟩ := h
       exact ⟨n + 1, by show eval (n+1) (.sim p q) opponent (.sim p q) = some a
                        simp only [eval]; exact hn⟩
+  | botSimStep me p q opponent a hme =>
+      -- `me = .bot (.sim p q)`: `eval` unwraps the `.bot` (one step, `me` stays the
+      -- player), then runs the `.sim`. So `me` plays `a` iff its substituted body
+      -- plays `a`. Witness fuel `n + 2`: one `.bot` unwrap, one `.sim` step.
+      subst hme
+      intro h
+      obtain ⟨n, hn⟩ := h
+      exact ⟨n + 2, by
+        show eval (n+2) (.bot (.sim p q)) opponent (.bot (.sim p q)) = some a
+        simp only [eval]; exact hn⟩
   | hypSyll φ ψ χ _ _ ih1 ih2 =>
       exact fun h => ih2 (ih1 h)
   | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
@@ -215,7 +225,8 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
     (motive_1 := fun me opponent body a _ _ => ∃ N, eval N me opponent body = some a)
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun _ _ _ => True)
-    ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken h
+    ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken
+    ?provSearchThenSearch ?provImplTrans h
   case const => exact ⟨1, rfl⟩
   case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
   case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
@@ -243,6 +254,8 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
   case provStruct => intros; trivial
   case provAtom => intros; trivial
   case provWeaken => intros; trivial
+  case provSearchThenSearch => intros; trivial
+  case provImplTrans => intros; trivial
 
 /-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
 theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
@@ -288,6 +301,23 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
     -- weakenImpl: `(.impl φ ψ).interp` is `φ.interp → ψ.interp`; the IH
     -- `ih : ψ.interp` (from `Provable m ψ`) discharges it via `fun _ => ih`.
     (fun _φ _ψ _m _hpsi _hsz ih => fun _ => ih)                 -- weakenImpl
+    -- searchThenSearch_t: conclusion `(□_{k₁} ψ₁' → me plays c0).interp`, i.e.
+    -- `Provable k₁ ψ₁' → ∃ n, play n me opponent = some c0`. Given the box
+    -- antecedent (`hbox : Provable k₁ ψ₁'`) and the prudence premise
+    -- (`hprud : Provable k₂ ψ₂'`), both reflect to `proofSearch … = true`, so
+    -- `eval` runs outer `.search` → inner `.search` → `.const c0`. Witness fuel 3.
+    (fun {_k} k₁ k₂ ψ₁ ψ₂ c0 c1 q me opponent hme hprud _hsz _ih => by
+        subst hme
+        intro hbox
+        have hps₁ : proofSearch k₁ (ψ₁.subst
+            (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opponent) = true :=
+          (proofSearch_spec _ _).2 hbox
+        have hps₂ : proofSearch k₂ (ψ₂.subst
+            (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opponent) = true :=
+          (proofSearch_spec _ _).2 hprud
+        exact ⟨3, by simp only [play, eval, hps₁, hps₂, if_true]⟩)
+    -- implTrans: compose the two implications' interps (function composition).
+    (fun _φ _ψ _χ _a _b _hab _hbc _hsz ihab ihbc => fun h => ihbc (ihab h))  -- implTrans
     h
 
 /-
@@ -345,5 +375,15 @@ theorem proofSearch_monotone :
       -- proof carries over unchanged.
       exact (proofSearch_spec k₂ _).2
         (Provable.weakenImpl ψ' χ' m hpsi (Nat.le_trans hsz hk))
+  | searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opp hme hprud hsz =>
+      -- same as `weakenImpl`: relax the conclusion's size bound `k₁ → k₂`; the
+      -- inner (prudence) proof and `hme` carry over unchanged.
+      exact (proofSearch_spec k₂ _).2
+        (Provable.searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opp hme hprud
+          (Nat.le_trans hsz hk))
+  | implTrans φ ψ χ a b hab hbc hsz =>
+      -- relax the conclusion's size bound `k₁ → k₂`; both legs carry over.
+      exact (proofSearch_spec k₂ _).2
+        (Provable.implTrans φ ψ χ a b hab hbc (Nat.le_trans hsz hk))
 
 end PD.BaseTheorems

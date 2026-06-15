@@ -63,6 +63,20 @@ inductive Derivation : Formula → Type where
   | simStep (me p q opponent : Prog) (a : Action) (hme : me = .sim p q) :
       Derivation (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
                         (.plays me opponent a))
+  /-- S can read a `.bot`-wrapped `.sim` body: `me = .bot (.sim p q)`. `eval`
+      unwraps the `.bot` (one step, keeping `me` as the player) and then runs the
+      `.sim`, so `me` plays `a` iff its substituted body does — the `.bot (.sim …)`
+      twin of `simStep`.
+
+      Unlike the (unsound) general `.bot` transparency `plays z → plays (.bot z)`,
+      this is sound: the `.bot` here is read as `me`'s *own body*, so `subst` uses
+      the SAME `me = .bot (.sim p q)` throughout — there is no rebinding of a bare
+      sub-program's `.self`. Needed for the `.bot MirrorBot` mirror leg (EBot's
+      third probe substitutes `.opp ↦ .bot MirrorBot`, making `.bot MirrorBot` a
+      *player* whose source S must read; `simStep` requires a bare `.sim`). -/
+  | botSimStep (me p q opponent : Prog) (a : Action) (hme : me = .bot (.sim p q)) :
+      Derivation (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+                        (.plays me opponent a))
   /-- S can read a `.ite` whose **then-branch is itself a `.search`** — the
       PrudentBot shape: `me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0)
       (.const c1)) q`. This fuses the `.ite` guard reading and the inner
@@ -191,6 +205,45 @@ mutual
         carry. -/
     | weakenImpl (φ ψ : Formula) (m : Nat) :
         Provable m ψ → (Formula.impl φ ψ).size ≤ k → Provable k (.impl φ ψ)
+    /-- **Stacked-`.search` transparency** (the canonical Critch PrudentBot shape):
+        `me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q`. PrudentBot
+        plays `c0` exactly when it can prove BOTH its conditions: the outer guard
+        `ψ₁` (opponent cooperates with me) and the inner guard `ψ₂` (opponent
+        defects vs DefectBot — prudence).
+
+        The twin of `Derivation.iteBranchSearch_t`, but for two stacked `.search`
+        nodes, and — crucially — living on `Provable` rather than `Derivation`. It
+        must: the inner (prudence) guard is discharged here by its *provability*
+        `Provable k₂ ψ₂'`, which is typically an ordinary Σ₁ atom (`□(atom)` has no
+        `Derivation`, so a `Derivation`-level rule could not strip it — the same
+        Type/Prop split that motivates `weakenImpl`). Carrying the inner proof as a
+        premise collapses the two guards to a *single*-box conclusion `□_{k₁} ψ₁'
+        → me plays c0`, which is exactly the Löb-premise shape `PBLT` consumes.
+
+        Sound: once `proofSearch k₂ ψ₂'` holds (reflecting the premise) and the box
+        antecedent gives `proofSearch k₁ ψ₁'`, `eval` runs the outer `.search` →
+        inner `.search` → `.const c0` in-frame, so `me` plays `c0`
+        (`Provable_sound`). Faithful: S reads the outer `.search` node and its
+        `.search` then-branch — each an admitted transparency step — and consults
+        the already-proved inner guard. The size side-condition keeps the
+        conclusion within budget `k`, as for `weakenImpl`. -/
+    | searchThenSearch_t (k₁ k₂ : Nat) (ψ₁ ψ₂ : Formula) (c0 c1 : Action)
+        (q me opponent : Prog)
+        (hme : me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) :
+        Provable k₂ (ψ₂.subst me opponent) →
+        (Formula.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0)).size ≤ k →
+        Provable k (.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0))
+    /-- **Transitivity of implication at the `Provable` level** (hypothetical
+        syllogism for `Provable`): from `φ → ψ` and `ψ → χ`, infer `φ → χ`.
+        `Derivation.hypSyll` already gives this for `Derivation` premises; this is
+        its `Provable` twin, needed to chain a `Provable`-only implication (e.g. the
+        `searchThenSearch_t` Löb leg, which has no `Derivation`) with another. Sound
+        — `interp` of each `.impl` is Lean implication, so composition is function
+        composition (`Provable_sound`). The size side-condition keeps the
+        conclusion within budget `k`, as for `weakenImpl`. -/
+    | implTrans (φ ψ χ : Formula) (a b : Nat) :
+        Provable a (.impl φ ψ) → Provable b (.impl ψ χ) →
+        (Formula.impl φ χ).size ≤ k → Provable k (.impl φ χ)
 end
 
 -- 4. The proof-search oracle: bounded provability reflected into `Bool` for the
