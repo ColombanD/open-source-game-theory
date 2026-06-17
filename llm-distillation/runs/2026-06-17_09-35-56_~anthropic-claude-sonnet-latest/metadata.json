@@ -1,0 +1,18 @@
+{
+  "model": "~anthropic/claude-sonnet-latest",
+  "n": 3,
+  "temperature": 1.0,
+  "timestamp": "2026-06-17_09-35-56",
+  "matrix_path": "data/payoff_matrix.csv",
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot",
+    "CupodTrollBot"
+  ]
+}

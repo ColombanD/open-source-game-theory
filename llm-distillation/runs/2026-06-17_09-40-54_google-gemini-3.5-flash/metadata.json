@@ -1,0 +1,18 @@
+{
+  "model": "google/gemini-3.5-flash",
+  "n": 3,
+  "temperature": 1.0,
+  "timestamp": "2026-06-17_09-40-54",
+  "matrix_path": "data/payoff_matrix.csv",
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot",
+    "CupodTrollBot"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot",
+    "CupodTrollBot"
+  ],
+  "x": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "by_bot": {
+    "CooperateBot": 0.0,
+    "CupodBot": 1.0,
+    "DBot": 0.0,
+    "DefectBot": 0.0,
+    "DupocBot": 1.0,
+    "OBot": 0.0,
+    "TitForTatBot": 0.0,
+    "EBot": 0.0,
+    "CupodTrollBot": 0.0
+  }
+}

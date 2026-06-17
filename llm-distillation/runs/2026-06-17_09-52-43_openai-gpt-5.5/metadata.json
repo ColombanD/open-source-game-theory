@@ -1,0 +1,19 @@
+{
+  "model": "openai/gpt-5.5",
+  "n": 3,
+  "temperature": 1.0,
+  "reasoning_effort": "low",
+  "timestamp": "2026-06-17_09-52-43",
+  "matrix_path": "data/payoff_matrix.csv",
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot",
+    "CupodTrollBot"
+  ]
+}

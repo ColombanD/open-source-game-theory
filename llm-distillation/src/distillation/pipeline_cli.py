@@ -29,6 +29,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", type=float, default=1.0,
                         help="Sampling temperature; must be >0 to estimate "
                         "probabilities. Default: 1.0.")
+    parser.add_argument("--reasoning-effort", default=None,
+                        choices=["minimal", "low", "medium", "high", "xhigh"],
+                        help="OpenRouter reasoning effort (OpenAI/Anthropic etc.). "
+                        "Default: none -- the reasoning param is omitted, so models "
+                        "without reasoning support are unaffected.")
     parser.add_argument("--matrix", type=Path, default=Path("data/payoff_matrix.csv"),
                         help="Path to the payoff matrix CSV.")
     parser.add_argument("--output-root", type=Path, default=Path("runs"),
@@ -42,6 +47,7 @@ def main(argv: list[str] | None = None) -> int:
         model=args.model,
         n=args.n,
         temperature=args.temperature,
+        reasoning_effort=args.reasoning_effort,
         matrix_path=args.matrix,
         output_root=args.output_root,
     )

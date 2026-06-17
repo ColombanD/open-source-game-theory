@@ -37,18 +37,27 @@ def parse_action(text: str) -> str | None:
 
 
 def query_action(
-    client: OpenAI, model: str, prompt: str, temperature: float
+    client: OpenAI, model: str, prompt: str, temperature: float,
+    reasoning_effort: str | None = None,
 ) -> tuple[str | None, str]:
     """Query the model once and return ``(parsed_action, raw_text)``.
 
     ``parsed_action`` is ``"C"``, ``"D"``, or ``None`` if the reply has no
     well-formed ``My action <<A>>`` marker. ``raw_text`` keeps the full reply
     (including the model's reasoning).
+
+    ``reasoning_effort`` (e.g. ``"high"``) is passed through OpenRouter's unified
+    ``reasoning`` parameter. When ``None`` it is omitted entirely, so models that
+    do not support reasoning are unaffected.
     """
+    extra_body = (
+        {"reasoning": {"effort": reasoning_effort}} if reasoning_effort else {}
+    )
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature,
+        extra_body=extra_body,
     )
     raw = response.choices[0].message.content or ""
     return parse_action(raw), raw
