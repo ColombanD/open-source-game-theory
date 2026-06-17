@@ -144,11 +144,15 @@ def Derivation.size : {φ : Formula} → Derivation φ → Nat
   | φ, _ => φ.size
 
 -- 2. Per-step proof-encoding costs (Critch's `e*`, Appendix B(d)): the character
--- cost of transcribing one `eval`-step into a proof. Opaque constants — any
--- concrete values work; only `c_guard`'s monotonicity is constrained (Axioms.lean).
-opaque c_leaf  : Nat        -- leaf step (`.const a`)
-opaque c_node  : Nat        -- structural step (`.self`/`.opp`/`.bot`/`.sim`/`.ite`)
-opaque c_guard : Nat → Nat  -- `.search` guard at budget `k`; grows with `k` (see c_guard_mono)
+-- cost of transcribing one `eval`-step into a proof. Concrete (not opaque): every
+-- step costs ≥ 1 character, so a fuel-`n` play certificate has ≤ `n` steps — this is
+-- what makes the decision procedure (`Checker.lean`) terminate, and lets the cost be
+-- *computed* rather than reasoned about classically. `c_guard k = Nat.log2 k + 1` is
+-- the `O(lg k)` character cost of writing the budget numeral `k` (Appendix B(b)); its
+-- monotonicity (`c_guard_mono`, Axioms.lean) is now a theorem, not an axiom.
+def c_leaf  : Nat := 1                          -- leaf step (`.const a`)
+def c_node  : Nat := 1                          -- structural step (`.self`/`.opp`/`.bot`/`.sim`/`.ite`)
+def c_guard (k : Nat) : Nat := Nat.log2 k + 1   -- `.search` guard at budget `k`; grows with `k`
 
 -- 3. **Atom/provability layer, as one mutual inductive.**
 -- * `PlaysProof me opp body a n` — a play certificate: `body` evaluates to `a`
@@ -222,7 +226,7 @@ mutual
         `Type`-valued object distinct from the `Prop`-valued `Provable`) cannot
         carry. -/
     | weakenImpl (φ ψ : Formula) (m : Nat) :
-        Provable m ψ → (Formula.impl φ ψ).size ≤ k → Provable k (.impl φ ψ)
+        Provable m ψ → m ≤ k → (Formula.impl φ ψ).size ≤ k → Provable k (.impl φ ψ)
     /-- **Stacked-`.search` transparency** (the canonical Critch PrudentBot shape):
         `me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q`. PrudentBot
         plays `c0` exactly when it can prove BOTH its conditions: the outer guard
@@ -248,7 +252,7 @@ mutual
     | searchThenSearch_t (k₁ k₂ : Nat) (ψ₁ ψ₂ : Formula) (c0 c1 : Action)
         (q me opponent : Prog)
         (hme : me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) :
-        Provable k₂ (ψ₂.subst me opponent) →
+        Provable k₂ (ψ₂.subst me opponent) → k₂ ≤ k →
         (Formula.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0)).size ≤ k →
         Provable k (.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0))
     /-- **Transitivity of implication at the `Provable` level** (hypothetical
@@ -261,6 +265,7 @@ mutual
         conclusion within budget `k`, as for `weakenImpl`. -/
     | implTrans (φ ψ χ : Formula) (a b : Nat) :
         Provable a (.impl φ ψ) → Provable b (.impl ψ χ) →
+        a ≤ k → b ≤ k → ψ.size ≤ k →
         (Formula.impl φ χ).size ≤ k → Provable k (.impl φ χ)
 end
 

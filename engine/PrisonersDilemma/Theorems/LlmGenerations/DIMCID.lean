@@ -71,10 +71,14 @@ theorem proofSearch_true_for_DIMCID_vs_DefectBot :
   show Provable k
     (Formula.impl (.plays (DIMCID k) DefectBot Action.C)
                   (.plays DefectBot (DIMCID k) Action.D))
-  refine Provable.weakenImpl _ _ (atom_cost 1) (DIMCID_consequent_DefectBot k) ?_
-  have hb := hK k hk
-  simp only [Formula.size, Prog.size, DIMCID, DefectBot]
-  omega
+  refine Provable.weakenImpl _ _ (atom_cost 1) (DIMCID_consequent_DefectBot k) ?_ ?_
+  · -- `m = atom_cost 1 = 3 ≤ k`.
+    have hb := hK k hk
+    have h1 : atom_cost 1 = 3 := by decide
+    rw [h1]; omega
+  · have hb := hK k hk
+    simp only [Formula.size, Prog.size, DIMCID, DefectBot]
+    omega
 
 /-- DIMCID defects against DefectBot: its guard fires (proved above), so it takes
     the `.const .D` branch. -/

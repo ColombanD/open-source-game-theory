@@ -311,13 +311,13 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
     (fun {k} {φ} hatom _ => AtomProvable_sound k φ hatom)       -- atom
     -- weakenImpl: `(.impl φ ψ).interp` is `φ.interp → ψ.interp`; the IH
     -- `ih : ψ.interp` (from `Provable m ψ`) discharges it via `fun _ => ih`.
-    (fun _φ _ψ _m _hpsi _hsz ih => fun _ => ih)                 -- weakenImpl
+    (fun _φ _ψ _m _hpsi _hmk _hsz ih => fun _ => ih)            -- weakenImpl
     -- searchThenSearch_t: conclusion `(□_{k₁} ψ₁' → me plays c0).interp`, i.e.
     -- `Provable k₁ ψ₁' → ∃ n, play n me opponent = some c0`. Given the box
     -- antecedent (`hbox : Provable k₁ ψ₁'`) and the prudence premise
     -- (`hprud : Provable k₂ ψ₂'`), both reflect to `proofSearch … = true`, so
     -- `eval` runs outer `.search` → inner `.search` → `.const c0`. Witness fuel 3.
-    (fun {_k} k₁ k₂ ψ₁ ψ₂ c0 c1 q me opponent hme hprud _hsz _ih => by
+    (fun {_k} k₁ k₂ ψ₁ ψ₂ c0 c1 q me opponent hme hprud _hk2 _hsz _ih => by
         subst hme
         intro hbox
         have hps₁ : proofSearch k₁ (ψ₁.subst
@@ -328,7 +328,7 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
           (proofSearch_spec _ _).2 hprud
         exact ⟨3, by simp only [play, eval, hps₁, hps₂, if_true]⟩)
     -- implTrans: compose the two implications' interps (function composition).
-    (fun _φ _ψ _χ _a _b _hab _hbc _hsz ihab ihbc => fun h => ihbc (ihab h))  -- implTrans
+    (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hpsisz _hsz ihab ihbc => fun h => ihbc (ihab h))  -- implTrans
     h
 
 /-
@@ -381,21 +381,23 @@ theorem proofSearch_monotone :
   | struct hd => obtain ⟨d, hsz⟩ := hd
                  exact (proofSearch_spec k₂ φ).2 (Provable.struct ⟨d, Nat.le_trans hsz hk⟩)
   | atom hatom => exact (proofSearch_spec k₂ φ).2 (Provable.atom (atom_monotone k₁ k₂ φ hk hatom))
-  | weakenImpl ψ' χ' m hpsi hsz =>
+  | weakenImpl ψ' χ' m hpsi hmk hsz =>
       -- the conclusion's size bound relaxes from `k₁` to `k₂`; the consequent's
-      -- proof carries over unchanged.
+      -- proof and budget bound carry over (transitivity through `k₁ ≤ k₂`).
       exact (proofSearch_spec k₂ _).2
-        (Provable.weakenImpl ψ' χ' m hpsi (Nat.le_trans hsz hk))
-  | searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opp hme hprud hsz =>
-      -- same as `weakenImpl`: relax the conclusion's size bound `k₁ → k₂`; the
-      -- inner (prudence) proof and `hme` carry over unchanged.
+        (Provable.weakenImpl ψ' χ' m hpsi (Nat.le_trans hmk hk) (Nat.le_trans hsz hk))
+  | searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opp hme hprud hk2 hsz =>
+      -- same as `weakenImpl`: relax the conclusion's size and `k₂` bounds `k₁ → k₂`;
+      -- the inner (prudence) proof and `hme` carry over unchanged.
       exact (proofSearch_spec k₂ _).2
         (Provable.searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opp hme hprud
-          (Nat.le_trans hsz hk))
-  | implTrans φ ψ χ a b hab hbc hsz =>
-      -- relax the conclusion's size bound `k₁ → k₂`; both legs carry over.
+          (Nat.le_trans hk2 hk) (Nat.le_trans hsz hk))
+  | implTrans φ ψ χ a b hab hbc hak hbk hpsisz hsz =>
+      -- relax the conclusion's size, both leg budgets, and the cut-formula size
+      -- bound `k₁ → k₂` (all via transitivity through `k₁ ≤ k₂`).
       exact (proofSearch_spec k₂ _).2
-        (Provable.implTrans φ ψ χ a b hab hbc (Nat.le_trans hsz hk))
+        (Provable.implTrans φ ψ χ a b hab hbc (Nat.le_trans hak hk) (Nat.le_trans hbk hk)
+          (Nat.le_trans hpsisz hk) (Nat.le_trans hsz hk))
 
 /-- **Soundness witness for the `atom_box_provable_impl` axiom (Axioms.lean).**
     Object-level bounded Σ₁-completeness for play-atoms, in the *conditional* form
@@ -418,7 +420,12 @@ theorem atom_box_provable_impl_sound (k fuel : Nat) (p q : Prog) (a : Action)
     Provable k (.impl (.plays p q a) (.box k (.plays p q a))) := by
   have hatom : Provable k (.plays p q a) :=
     Provable.atom (atom_monotone (atom_cost fuel) k _ hk (atom_complete p q a fuel hplay))
-  obtain ⟨K, hbox⟩ := box_provable k (.plays p q a) hatom
-  exact Provable.weakenImpl (.plays p q a) (.box k (.plays p q a)) K hbox hsz
+  obtain ⟨K, hKle, hbox⟩ := box_provable k (.plays p q a) hatom
+  -- `hKle : K ≤ (□_k atom).size`, and `hsz` forces `(□_k atom).size < (atom → □_k atom).size ≤ k`,
+  -- so `K ≤ k` — exactly the budget bound the now-bounded `weakenImpl` requires.
+  have hszbox : (Formula.box k (.plays p q a)).size < (Formula.impl (.plays p q a) (.box k (.plays p q a))).size := by
+    simp only [Formula.size]; omega
+  have hKk : K ≤ k := Nat.le_trans hKle (Nat.le_trans (Nat.le_of_lt hszbox) hsz)
+  exact Provable.weakenImpl (.plays p q a) (.box k (.plays p q a)) K hbox hKk hsz
 
 end PD.BaseTheorems
