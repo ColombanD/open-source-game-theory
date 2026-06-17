@@ -5,6 +5,9 @@ transparent prisoner's dilemma against that bot, count how often it plays ``C``,
 and use the frequency as the Bernoulli estimate ``x_i``. The full vector ``x`` is
 then fit to the convex hull of the reference bots with the existing machinery,
 and everything is written to a timestamped run folder.
+
+The OpenRouter API key is loaded exclusively from a gitignored ``.env`` file at
+the project root (see :func:`_load_api_key`).
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+from dotenv import load_dotenv
 
 from .bot_descriptions import BOT_DESCRIPTIONS
 from .data import load_library
@@ -25,6 +29,27 @@ from .prompt import build_prompt
 from .reporting import format_report
 
 API_KEY_ENV = "OPENROUTER_API_KEY"
+# The key is loaded exclusively from a gitignored .env at the project root.
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+# Placeholder shipped in .env; treated as "not set" so a fresh clone fails loudly.
+_API_KEY_PLACEHOLDER = "sk-or-replace-me"
+
+
+def _load_api_key() -> str:
+    """Load OPENROUTER_API_KEY from the project-root .env file.
+
+    The ``.env`` file (gitignored) is the single source for the key. Raises a
+    clear error if the file is missing or still holds the shipped placeholder.
+    """
+    if not ENV_FILE.is_file():
+        raise RuntimeError(f"No .env file at {ENV_FILE}. Create it with "
+                           f"{API_KEY_ENV}=<your-key>.")
+    load_dotenv(ENV_FILE)
+    api_key = os.environ.get(API_KEY_ENV)
+    if not api_key or api_key == _API_KEY_PLACEHOLDER:
+        raise RuntimeError(f"{API_KEY_ENV} is not set in {ENV_FILE} "
+                           "(still the placeholder?).")
+    return api_key
 
 
 @dataclass
@@ -49,10 +74,7 @@ def run_pipeline(config: RunConfig) -> Path:
     if missing:
         raise KeyError(f"No pseudocode description for bots: {missing}")
 
-    api_key = os.environ.get(API_KEY_ENV)
-    if not api_key:
-        raise RuntimeError(f"Environment variable {API_KEY_ENV} is not set.")
-    client = make_client(api_key)
+    client = make_client(_load_api_key())
 
     raw_responses: dict[str, list[dict[str, str | None]]] = {}
     x = np.empty(library.n, dtype=float)

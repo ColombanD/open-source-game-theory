@@ -4,7 +4,8 @@ Usage::
 
     distillation-llm --model anthropic/claude-3.5-sonnet [--n 30]
 
-Requires the ``OPENROUTER_API_KEY`` environment variable.
+Requires ``OPENROUTER_API_KEY`` set in a gitignored ``.env`` file at the project
+root.
 """
 
 from __future__ import annotations

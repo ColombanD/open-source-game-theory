@@ -91,14 +91,3 @@ def test_load_input_vector_length_mismatch():
 def test_load_input_vector_out_of_range():
     with pytest.raises(ValueError):
         load_input_vector("1.5, 0, 0, 0", 4)
-
-
-def test_real_matrix_has_identical_rows():
-    """The shipped matrix really does contain coincident rows (Cupod==Dupoc)."""
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
-    lib = load_library(root / "data" / "payoff_matrix.csv")
-    i = lib.bots.index("CupodBot")
-    j = lib.bots.index("DupocBot")
-    np.testing.assert_array_equal(lib.R[i], lib.R[j])

@@ -21,10 +21,10 @@ spacing variants, but the canonical encoding here is `"(C, D)"`.
 - **`C → 1`, `D → 0`** — cooperation is probability 1, defection is 0. Used for
   the reference matrix, the input vector, and every output.
 - **Canonical bot ordering** = the CSV's row order. The current library has
-  `N = 8` bots: `CooperateBot, CupodBot, DBot, DefectBot, DupocBot, OBot,
-  TitForTatBot, EBot`. This ordering is reused for every vector, matrix, and
-  report. The bot set is the unique bots in the matrix; the loader checks that
-  the row order matches the column order.
+  `N = 9` bots: `CooperateBot, CupodBot, DBot, DefectBot, DupocBot, OBot,
+  TitForTatBot, EBot, CupodTrollBot`. This ordering is reused for every vector,
+  matrix, and report. The bot set is the unique bots in the matrix; the loader
+  checks that the row order matches the column order.
 
 ### Reference vectors — row's own action, **no transpose**
 
@@ -37,11 +37,19 @@ half of each pair is **never used** and we **never transpose**.
 opponents, entries in `{0, 1}`). The CLI prints `R` so it can be eyeballed
 against the source CSV.
 
-> Note: the shipped matrix genuinely contains **identical rows** (CupodBot and
-> DupocBot have the same reference vector) and **identical columns** (the
-> CupodBot and OBot columns coincide; so do the DupocBot and TitForTat columns).
-> The first makes some weight fits non-identifiable; the second makes certain
-> inputs provably off-hull. Both are exercised in the tests.
+> Note: the convex-hull machinery is built to handle degenerate libraries —
+> **identical rows** (which make some weight fits non-identifiable) and
+> **identical columns** (which can make certain inputs provably off-hull). These
+> cases are exercised with small synthetic matrices in the tests.
+>
+> The current shipped **9-bot** matrix contains *neither*. An earlier **8-bot**
+> version did — CupodBot and DupocBot had the same reference vector (identical
+> rows), and the CupodBot/OBot and DupocBot/TitForTat columns coincided — but
+> adding `CupodTrollBot` as both a row and a column broke every one of those
+> coincidences (e.g. CupodBot now plays `D` against CupodTrollBot while DupocBot
+> plays `C`, so their rows differ). The degenerate-library behaviour is still
+> covered by `tests/test_fitting.py::test_coincident_rows_not_identified` on a
+> synthetic matrix.
 
 ## What the tool computes
 
