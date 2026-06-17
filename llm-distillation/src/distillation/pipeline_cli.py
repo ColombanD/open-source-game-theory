@@ -25,7 +25,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--model", required=True, help="OpenRouter model id.")
     parser.add_argument("--n", type=int, default=30,
-                        help="Queries per bot (Bernoulli sample size). Default: 30.")
+                        help="Max queries per bot (Bernoulli sample size). Default: 30.")
+    parser.add_argument("--min-n", type=int, default=15,
+                        help="Early-stop a bot after this many unanimous valid "
+                        "replies (~3/min_n upper bound on the other action at 95%%). "
+                        "Set equal to --n to disable early stopping. Default: 15.")
     parser.add_argument("--temperature", type=float, default=1.0,
                         help="Sampling temperature; must be >0 to estimate "
                         "probabilities. Default: 1.0.")
@@ -46,6 +50,7 @@ def main(argv: list[str] | None = None) -> int:
     config = RunConfig(
         model=args.model,
         n=args.n,
+        min_n=args.min_n,
         temperature=args.temperature,
         reasoning_effort=args.reasoning_effort,
         matrix_path=args.matrix,

@@ -58,6 +58,7 @@ class RunConfig:
 
     model: str
     n: int = 30
+    min_n: int = 15  # early-stop after this many unanimous valid replies; == n disables
     temperature: float = 1.0
     reasoning_effort: str | None = None  # None -> reasoning param omitted entirely
     matrix_path: Path = Path("data/payoff_matrix.csv")
@@ -83,18 +84,26 @@ def run_pipeline(config: RunConfig) -> Path:
     x = np.full(library.n, np.nan)  # NaN until a bot is measured (crash-safe partials)
 
     for i, bot in enumerate(library.bots):
-        print(f"[{i + 1}/{library.n}] {bot}: querying {config.n}x ...", flush=True)
+        print(f"[{i + 1}/{library.n}] {bot}: querying up to {config.n}x ...", flush=True)
         prompt = build_prompt(bot, BOT_DESCRIPTIONS[bot])  # identical across the N queries
-        results = [query_action(client, config.model, prompt, config.temperature,
-                                 config.reasoning_effort)
-                   for _ in range(config.n)]
+        responses: list[dict[str, str | None]] = []
+        actions: list[str] = []  # valid (parseable) replies only
+        for _ in range(config.n):
+            a, r = query_action(client, config.model, prompt, config.temperature,
+                                config.reasoning_effort)
+            responses.append({"action": a, "raw": r})
+            if a is not None:
+                actions.append(a)
+            # Early stop once we have min_n valid replies and they all agree.
+            if len(actions) >= config.min_n and len(set(actions)) == 1:
+                break
         # Archive the prompt once per bot alongside its responses.
-        raw_responses[bot] = {"prompt": prompt,
-                              "responses": [{"action": a, "raw": r} for a, r in results]}
+        raw_responses[bot] = {"prompt": prompt, "responses": responses}
 
-        actions = [a for a, _ in results if a is not None]
         x[i] = actions.count("C") / len(actions) if actions else float("nan")
-        print(f"  -> P(C) = {x[i]:.3f}  ({len(actions)}/{config.n} valid)", flush=True)
+        stopped = " (early stop)" if len(responses) < config.n else ""
+        print(f"  -> P(C) = {x[i]:.3f}  ({len(actions)}/{len(responses)} valid"
+              f"{stopped})", flush=True)
         # Crash safety: persist what we have so far after every bot.
         _save_data(run_dir, library.bots, x, raw_responses)
 
@@ -112,6 +121,7 @@ def _init_run_dir(config, bots) -> Path:
     (run_dir / "metadata.json").write_text(json.dumps({
         "model": config.model,
         "n": config.n,
+        "min_n": config.min_n,
         "temperature": config.temperature,
         "reasoning_effort": config.reasoning_effort,
         "timestamp": timestamp,
@@ -123,9 +133,13 @@ def _init_run_dir(config, bots) -> Path:
 
 def _save_data(run_dir: Path, bots, x, raw_responses) -> None:
     """Write raw_responses.json and cooperation_vector.json (called per bot)."""
+    # Queries actually spent per bot (< n when early-stopped); null until measured.
+    queries_used = {b: (len(raw_responses[b]["responses"]) if b in raw_responses else None)
+                    for b in bots}
     (run_dir / "raw_responses.json").write_text(json.dumps(raw_responses, indent=2))
     (run_dir / "cooperation_vector.json").write_text(json.dumps({
         "bots": list(bots),
         "x": x.tolist(),
         "by_bot": dict(zip(bots, x.tolist())),
+        "queries_used": queries_used,
     }, indent=2))
