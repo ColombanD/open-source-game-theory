@@ -8,6 +8,48 @@ Date: 2026-06 (Lean engine, `engine/PrisonersDilemma`).
 
 ---
 
+## ★ FINAL RESOLUTION (2026-06-18) — supersedes everything below ★
+
+Both candidate routes for a *total* computable oracle satisfying the existing
+`proofSearch_spec` were ruled out, the second by a machine-checked refutation:
+
+1. The `derivable` checker (separate search-gas): non-monotone — "not found yet"
+   conflated with "unprovable". Abandoned earlier.
+2. Route ii, `Decidable (Provable k φ)` by a lexicographic `(k, search-depth)` WF measure:
+   **FALSE.** Substituting a `.search`-bot into its own guard *increases* search-depth
+   (`engine/PrisonersDilemma/DecMeasure.lean`: `meP` has depth 1, its self-substituted
+   guard node has depth 2, by `decide`). No naive structural measure decides bounded
+   `Provable` totally — this is Löb's theorem.
+
+**Why total computability is IMPOSSIBLE (not merely hard):** the library reflects the
+Löb-fixpoint outcomes (PrudentBot↔DupocBot cooperation) through `proofSearch_spec.2`
+(`Provable → proofSearch = true`). Those outcomes have **no finite proof-search witness**
+(they are established by the bounded-Σ₁ reflection axioms PBLT / `atom_box_provable_impl`,
+not by unrolling). So any computable function satisfying the existing `proofSearch_spec`
+would have to return `true` on them — impossible for a terminating function. Hence `eval`
+*must* stay classical; a computable evaluator must be **separate**.
+
+**What shipped (Computable.lean + Demo.lean, build green 3142 jobs, no new axioms):** a
+SOUND, total, computable **partial** evaluator `evalC` with a 3-valued guard `decGuard`:
+- `some true`  — a finite play witness exists AND fits the node budget `k` ⇒ run `p`;
+- `some false` — a finite refutation (subject plays another action) ⇒ run `q`;
+- `none`       — undecided within fuel (Löb fixpoints) ⇒ `evalC` returns `none`.
+
+A first 2-valued version was UNSOUND (silently defected on undecided guards ⇒ returned the
+WRONG action where the real bot cooperates; `decGuard` fired `true` on a false atom,
+machine-confirmed). The 3-valued + budget-aware design fixes it. Faithfulness is proved:
+`evalC_eq_and_decGuard_sound` (strong induction on fuel) ⇒ corollaries `evalC_sound` /
+`playC_sound` / `outcomeC_sound` — every committed `#eval outcomeC …` is exactly the
+classical `outcome`. The PrudentBot×DupocBot fixpoint returns `none`: the honest boundary
+where bounded computation ends and modal reflection begins (the `(C,C)` there is the
+*theorem* `outcome_PrudentBot_vs_DupocBot`). `atom_complete_false_guard` was NOT deleted
+(its N4 deletion was contingent on the abandoned total-`decP`); axiom footprint unchanged.
+
+The rest of this file (below) is the *investigation history* that led here; the route-ii
+"Feasibility" section is SUPERSEDED by the refutation above.
+
+---
+
 ## TL;DR
 
 - **Goal**: make `eval`/`play`/`outcome` computable by replacing the classical oracle
