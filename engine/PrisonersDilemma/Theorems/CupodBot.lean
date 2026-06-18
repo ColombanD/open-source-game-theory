@@ -517,18 +517,20 @@ theorem cupod_mirror_loeb_premise :
   -- `□_k (Mirror plays D vs Cupod) → Cupod plays D vs Mirror`, from Cupod's `.search` body.
   -- The guard `(.plays .opp .self .D).subst (CupodBot k) MirrorBot` reduces
   -- definitionally to `.plays MirrorBot (CupodBot k) .D`, so this lands in type.
-  let dS : Derivation (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
+  let dS : Derivation k (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
                              (.plays (CupodBot k) MirrorBot .D)) :=
     Derivation.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl
   -- `Cupod plays D vs Mirror → Mirror plays D vs Cupod`, from Mirror's `.sim` swap.
-  let dM : Derivation (.impl (.plays (CupodBot k) MirrorBot .D)
+  let dM : Derivation k (.impl (.plays (CupodBot k) MirrorBot .D)
                              (.plays MirrorBot (CupodBot k) .D)) :=
     Derivation.simStep MirrorBot .opp .self (CupodBot k) .D rfl
   apply Provable.struct
-  refine ⟨.hypSyll _ _ _ dS dM, ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, CupodBot, MirrorBot]
-  have := hK₀ k hk
-  omega
+  -- the two `.hypSyll` cut-formula bounds (`dS`/`dM` conclusions ≤ k) follow from the
+  -- same `linear_log2_add_le` witness, the premises being subformulas of the conclusion.
+  refine ⟨.hypSyll _ _ _ dS dM ?_ ?_, ?_⟩ <;>
+    (simp only [Derivation.size, Formula.size, Prog.size, CupodBot, MirrorBot]
+     have := hK₀ k hk
+     omega)
 
 /-- Once `proofSearch k = true`, CupodBot's eval against MirrorBot is fully
     determined. Pattern from `CupodBot_plays_D_against_bot_DefectBot:247`. -/

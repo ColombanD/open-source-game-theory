@@ -753,20 +753,6 @@ theorem llm_outcome_JustBot_vs_DupocBot :
     simpa using hlog
   have hLoeb : ∀ k, k > 0 → ∃ m, Provable m (.impl (.box (f k) (φ k)) (φ k)) := by
     intro k _
-    have d1 : Derivation
-        (.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
-               (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)) :=
-      Derivation.botSearchStep k (.plays .opp .self .C) .C .D
-        (.bot (DupocBot k)) (DupocBot k) rfl
-    have d3 : Derivation
-        (.impl (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))
-               (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)) :=
-      Derivation.searchBranch k (.plays .opp .self .C) .C .D
-        (DupocBot k) (.bot (DupocBot k)) rfl
-    have d2 : Provable k
-        (.impl (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
-               (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))) :=
-      atom_box_provable_impl k (.bot (DupocBot k)) (DupocBot k) .C
     -- Single generous budget dominating `k` and every conclusion/cut size in this
     -- chain, so the new `implTrans` budget/cut-size side-conditions are omega-trivial.
     -- (Was: each piece at its own conclusion size with `Nat.le_refl`, which no longer
@@ -775,6 +761,22 @@ theorem llm_outcome_JustBot_vs_DupocBot :
     set fDB := Formula.plays (DupocBot k) (.bot (DupocBot k)) .C with hfDB
     let K : Nat := k + (Formula.impl (.box k fDB) fBD).size
       + (Formula.impl (.box k fBD) fDB).size + (Formula.impl (.box k fDB) fBD).size
+    -- The leaf derivations are budget-polymorphic; instantiate them at the working
+    -- budget `K` (so they slot into `Provable.struct … : Provable K …` directly).
+    have d1 : Derivation K
+        (.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
+               (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)) :=
+      Derivation.botSearchStep k (.plays .opp .self .C) .C .D
+        (.bot (DupocBot k)) (DupocBot k) rfl
+    have d3 : Derivation K
+        (.impl (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))
+               (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)) :=
+      Derivation.searchBranch k (.plays .opp .self .C) .C .D
+        (DupocBot k) (.bot (DupocBot k)) rfl
+    have d2 : Provable k
+        (.impl (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
+               (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))) :=
+      atom_box_provable_impl k (.bot (DupocBot k)) (DupocBot k) .C
     have hKk : k ≤ K := by simp only [K]; omega
     have hszBox_fBD : (Formula.box k fBD).size ≤ K := by
       simp only [K, Formula.size]; omega
