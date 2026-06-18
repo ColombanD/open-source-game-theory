@@ -3,6 +3,7 @@
 import PrisonersDilemma.SizeLemmas
 import PrisonersDilemma.Enumerate
 import PrisonersDilemma.Computable
+import PrisonersDilemma.Demo
 import PrisonersDilemma.Theorems.CupodBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
