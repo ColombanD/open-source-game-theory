@@ -311,7 +311,7 @@ noncomputable def proofSearch (k : Nat) (φ : Formula) : Bool := decide (Provabl
 /-- 5. Character budget for a `fuel`-step play's atom certificate. Honest `O(fuel)`
     (Critch's `e*`, Appendix B(d)): `c_node + c_guard fuel` per step, plus a leaf.
     `c_guard fuel` over-approximates every guard budget reachable in the run. -/
-noncomputable def atom_cost (fuel : Nat) : Nat := c_leaf + (c_node + c_guard fuel) * fuel
+def atom_cost (fuel : Nat) : Nat := c_leaf + (c_node + c_guard fuel) * fuel
 
 
 end PD
