@@ -8,19 +8,16 @@ namespace PD.Axioms
 /-!
 # Axioms
 
-Principles of `S` not discharged constructively. Four remain (`c_guard_mono` is now
-a theorem — the cost constants are concrete, see Derivation.lean):
+Principles of `S` not discharged constructively. Three remain (`c_guard_mono` is now
+a theorem — the cost constants are concrete, see Derivation.lean; and
+`atom_box_provable_impl` was REMOVED as unsound — see below):
 
 * `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches
   on a *failed* guard has a certificate. Everything else is a theorem.
-* `box_provable` — bounded GL axiom 4 (HBL D2), meta form. Now load-bearing (the
-  soundness witness `BaseTheorems.atom_box_provable_impl_sound` is derived from it).
-* `atom_box_provable_impl` — object/witness-free Σ₁-completeness for play-atoms,
-  `⊢ (p plays a vs q) → □_k (p plays a vs q)`. SOUNDNESS is certified by the
-  kernel-checked theorem `BaseTheorems.atom_box_provable_impl_sound` (same statement
-  under the budget threshold `atom_cost fuel ≤ k`). Closes search-vs-search modal
-  fixed points with no unboxed `.sim` leg (PrudentBot vs DupocBot). Restricted to
-  `.plays` atoms (Σ₁) — NOT the GL-excluded general `φ → □φ`.
+* `box_provable` — bounded GL axiom 4 (HBL D2), meta form. SOUND (provable-Σ₁-
+  completeness on the genuinely-Σ₁ predicate `Provable k φ`); axiomatic only for a
+  representational reason — `Derivation` has no box-introduction constructor and
+  does not size-index proof trees, so the witness cannot be built structurally.
 * `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
 
 Everything else is a theorem in `BaseTheorems.lean`.
@@ -75,35 +72,31 @@ axiom box_provable :
   ∀ (k : Nat) (φ : Formula), Provable k φ →
     ∃ K, K ≤ (Formula.box k φ).size ∧ Provable K (.box k φ)
 
-/-- **Object-level Σ₁-completeness for play-atoms** (witness-free form):
-    `⊢ (p plays a vs q) → □_k (p plays a vs q)` as a provable `Formula` implication,
-    for play-atoms, with NO budget side-condition.
+/-! ### REMOVED — `atom_box_provable_impl` (was unsound)
 
-    SOUNDNESS is separately established by the kernel-checked theorem
-    `BaseTheorems.atom_box_provable_impl_sound`, which proves exactly this implication
-    under the budget threshold `atom_cost fuel ≤ k` (from `atom_complete` +
-    `box_provable` + `weakenImpl`). A `.plays` atom is Σ₁ (∃ a fuel-bounded run), so
-    "true ⟹ provable" is genuine bounded Σ₁-completeness — NOT the GL-excluded
-    converse-necessitation `φ → □φ` (which is unsound on Π₁ truths). Restricting to
-    `.plays` atoms keeps it on the sound Σ₁ side.
+    Formerly an axiom asserting the *witness-free* object implication
+    `⊢ (p plays a vs q) → □_k (p plays a vs q)` for ALL `k p q a`, with no
+    threshold. It was **unsound in the `interp` model**: applied through
+    `Provable_sound`, its interp is `(∃n, play n p q = a) → Provable k (.plays p q a)`,
+    which forces a size-≤-`k` certificate to exist whenever the play merely happens
+    at SOME fuel — false for any play whose certificate exceeds `k` (`atom_cost fuel
+    > k`). Now exhibitable since the cost model (`c_guard`, `atom_cost`) is concrete.
 
-    Why the *axiom* drops the threshold the theorem carries: the matchup that needs
-    it (PrudentBot vs DupocBot) must build its Löb premise `□_k φ_D → φ_D` as a
-    `Provable` OBJECT *before* the cooperative play exists — in the premise's
-    false case the antecedent `□_k φ_D` is unprovable, so no play witness is
-    available, yet a `Provable` object of the (vacuously true) implication is still
-    required. Producing it witness-free is exactly the Π₁/reflection step the system
-    keeps axiomatic (cf. `box_provable`). So this is the *object, witness-free*
-    twin of `box_provable`, with `atom_box_provable_impl_sound` as its soundness
-    certificate.
+    The SOUND content it gestured at survives in two places, neither witness-free:
+    * `BaseTheorems.atom_box_provable_impl_sound` — the conditional THEOREM carrying
+      the threshold `atom_cost fuel ≤ k` (genuine bounded Σ₁-completeness); and
+    * `Provable.atomBoxImpl` (Derivation.lean) — its constructive, certificate-carrying
+      realization as a `Provable` rule, discharged with NO axiom.
 
-    Closes search-vs-search modal fixed points with no unboxed `.sim` leg: applied to
-    the play-atom `φ_P`, `implTrans` with DupocBot's boxed `searchBranch` leg strips
-    the box (`φ_P → φ_D`), recovering the role `simStep` plays for `.sim` matchups.
-    See `Theorems/LlmGenerations/PrudentDupoc.lean`. -/
-axiom atom_box_provable_impl :
-  ∀ (k : Nat) (p q : Prog) (a : Action),
-    Provable k (.impl (.plays p q a) (.box k (.plays p q a)))
+    The matchups that USED the unsound form — `outcome_PrudentBot_vs_DupocBot`,
+    `llm_outcome_JustBot_vs_PrudentBot`, `llm_outcome_JustBot_vs_DupocBot` — are
+    genuine Löb fixed points whose box-introduction on the (as-yet-unproven)
+    cooperative atom needs reflection strictly beyond the sound rules currently
+    available: every sound form (incl. GL-4 / `box_provable`) requires the atom's
+    certificate as input, which at the fixed point does not exist before the loop is
+    closed. They are therefore left UNPROVED (`sorry` at the former axiom sites),
+    pending a constructive `box_provable` over a size-indexed `Derivation`. See the
+    soundness analysis in `Research/Notes/COMPUTABLE_EVAL_NOTES.md`. -/
 
 -- Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
 --

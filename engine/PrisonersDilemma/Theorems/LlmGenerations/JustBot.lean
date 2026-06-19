@@ -667,7 +667,11 @@ theorem prudent_botdupoc_loeb_premise :
       (.impl (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)
              (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)) :=
     Provable.implTrans _ (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)) _ k k
-      (atom_box_provable_impl k (PrudentBot k) (.bot (DupocBot k)) Action.C) leg2
+      -- UNSOUND-AXIOM REMOVED (`atom_box_provable_impl`): box-introduction on the
+      -- unproven cooperative atom φP'. No sound rule supplies it pre-fixed-point.
+      -- Left as `sorry` — this matchup is not soundly proved. See Axioms.lean.
+      (sorry : Provable k (.impl (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)
+                                 (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)))) leg2
       (le_refl k) (le_refl k) hcut1 hsz1
   -- closed premise
   have hsz2 : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
@@ -774,7 +778,10 @@ theorem llm_outcome_JustBot_vs_DupocBot :
     have d2 : Provable k
         (.impl (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
                (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))) :=
-      atom_box_provable_impl k (.bot (DupocBot k)) (DupocBot k) .C
+      -- UNSOUND-AXIOM REMOVED (`atom_box_provable_impl`): box-introduction on the
+      -- unproven cooperative atom. No sound rule supplies it pre-fixed-point.
+      -- Left as `sorry` — this matchup is not soundly proved. See Axioms.lean.
+      sorry
     have hKk : k ≤ K := by simp only [K]; omega
     have hszBox_fBD : (Formula.box k fBD).size ≤ K := by
       simp only [K, Formula.size]; omega

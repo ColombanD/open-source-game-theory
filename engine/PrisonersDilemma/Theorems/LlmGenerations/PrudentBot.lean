@@ -1071,7 +1071,11 @@ theorem loeb_premise_provable :
     have := hKsz k hkS; omega
   have bridge : Provable k (.impl (φP k) (φD k)) :=
     Provable.implTrans (φP k) (.box k (φP k)) (φD k) k k
-      (atom_box_provable_impl k (PrudentBot k) (DupocBot k) Action.C) leg2
+      -- UNSOUND-AXIOM REMOVED: this `φP → □_k φP` box-introduction was the
+      -- `atom_box_provable_impl` use. No sound rule supplies it pre-fixed-point
+      -- (the φP certificate is the fixed point itself). Left as `sorry` — this
+      -- matchup is not soundly proved. See Axioms.lean / COMPUTABLE_EVAL_NOTES.md.
+      (sorry : Provable k (.impl (φP k) (.box k (φP k)))) leg2
       (le_refl k) (le_refl k) hcut1 hsz1
   have hsz2 : (Formula.impl (.box k (φD k)) (φD k)).size ≤ k := by
     simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]

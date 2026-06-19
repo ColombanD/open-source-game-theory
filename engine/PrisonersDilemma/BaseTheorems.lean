@@ -237,7 +237,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun _ _ _ => True)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken
-    ?provSearchThenSearch ?provImplTrans h
+    ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl h
   case const => exact ⟨1, rfl⟩
   case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
   case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
@@ -267,6 +267,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
   case provWeaken => intros; trivial
   case provSearchThenSearch => intros; trivial
   case provImplTrans => intros; trivial
+  case provAtomBoxImpl => intros; trivial
 
 /-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
 theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
@@ -329,6 +330,10 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
         exact ⟨3, by simp only [play, eval, hps₁, hps₂, if_true]⟩)
     -- implTrans: compose the two implications' interps (function composition).
     (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hpsisz _hsz ihab ihbc => fun h => ihbc (ihab h))  -- implTrans
+    -- atomBoxImpl: conclusion `(φ → □_k φ).interp`, i.e. `φ.interp → Provable k φ`.
+    -- The certificate `hatom : AtomProvable k φ` discharges the consequent directly
+    -- (`Provable.atom`), independent of the antecedent — no axiom.
+    (fun {_k} _kBox _p _q _a hatom _hsz _ih => fun _ => Provable.atom hatom)  -- atomBoxImpl
     h
 
 /-
@@ -400,6 +405,11 @@ theorem proofSearch_monotone :
       exact (proofSearch_spec k₂ _).2
         (Provable.implTrans φ ψ χ a b hab hbc (Nat.le_trans hak hk) (Nat.le_trans hbk hk)
           (Nat.le_trans hpsisz hk) (Nat.le_trans hsz hk))
+  | atomBoxImpl kBox p q a hatom hsz =>
+      -- the box certificate stays at its own budget `kBox` (untouched by `k₁ → k₂`);
+      -- only the conclusion's size bound relaxes from `k₁` to `k₂`.
+      exact (proofSearch_spec k₂ _).2
+        (Provable.atomBoxImpl kBox p q a hatom (Nat.le_trans hsz hk))
 
 /-- **Soundness witness for the `atom_box_provable_impl` axiom (Axioms.lean).**
     Object-level bounded Σ₁-completeness for play-atoms, in the *conditional* form

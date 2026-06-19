@@ -268,6 +268,31 @@ mutual
         Provable a (.impl φ ψ) → Provable b (.impl ψ χ) →
         a ≤ k → b ≤ k → ψ.size ≤ k →
         (Formula.impl φ χ).size ≤ k → Provable k (.impl φ χ)
+    /-- **Object-level bounded Σ₁-completeness for play-atoms** (constructive,
+        certificate-carrying): from a bounded play certificate `AtomProvable k
+        (p plays a vs q)`, infer the *object implication*
+        `(p plays a vs q) → □_k (p plays a vs q)` at budget `k`.
+
+        This is the constructive twin of the former axiom `atom_box_provable_impl`
+        (Axioms.lean), and the in-`Provable` realization of `box_provable`'s
+        Σ₁-restricted case. The crucial difference from the axiom: it carries the
+        **certificate** `AtomProvable k (.plays p q a)` as a premise, so it only fires
+        when a size-≤-`k` play transcript actually exists. That is exactly the
+        `atom_cost fuel ≤ k` budget threshold the reviewer flagged as missing — here
+        supplied as a proof-term premise rather than a side hypothesis, which keeps it
+        on the sound Σ₁ side (`φ → □φ` for a `.plays` atom is genuine bounded
+        Σ₁-completeness, NOT the GL-excluded converse-necessitation).
+
+        Sound with NO axiom: the consequent `(□_k φ).interp` is `Provable k φ`, which
+        the premise `AtomProvable k φ` discharges directly via `Provable.atom` —
+        independent of the antecedent (so the implication holds vacuously off the
+        fixed point and genuinely on it). Faithful: S can always weaken a held
+        certificate into the (true) implication, as `weakenImpl` does for a proved
+        consequent. The size side-condition keeps the conclusion within budget `k`. -/
+    | atomBoxImpl (kBox : Nat) (p q : Prog) (a : Action) :
+        AtomProvable kBox (.plays p q a) →
+        (Formula.impl (.plays p q a) (.box kBox (.plays p q a))).size ≤ k →
+        Provable k (.impl (.plays p q a) (.box kBox (.plays p q a)))
 end
 
 -- 4. The proof-search oracle: bounded provability reflected into `Bool` for the
