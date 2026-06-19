@@ -416,7 +416,7 @@ theorem prudent_mirror_loeb_premise :
   have leg2 : Provable k
       (.impl (Formula.plays (PrudentBot k) MirrorBot Action.C)
              (Formula.plays MirrorBot (PrudentBot k) Action.C)) := by
-    have dM : Derivation k (.impl (Formula.plays (PrudentBot k) MirrorBot Action.C)
+    have dM : Derivation (.impl (Formula.plays (PrudentBot k) MirrorBot Action.C)
                                 (Formula.plays MirrorBot (PrudentBot k) Action.C)) :=
       Derivation.simStep MirrorBot .opp .self (PrudentBot k) Action.C rfl
     refine Provable.struct ⟨dM, ?_⟩
@@ -566,7 +566,7 @@ theorem prudent_bot_mirror_loeb_premise :
   have leg2 : Provable k
       (.impl (Formula.plays (PrudentBot k) (.bot MirrorBot) Action.C)
              (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C)) := by
-    have dM : Derivation k (.impl (Formula.plays (PrudentBot k) (.bot MirrorBot) Action.C)
+    have dM : Derivation (.impl (Formula.plays (PrudentBot k) (.bot MirrorBot) Action.C)
                                 (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C)) :=
       Derivation.botSimStep (.bot MirrorBot) .opp .self (PrudentBot k) Action.C rfl
     refine Provable.struct ⟨dM, ?_⟩

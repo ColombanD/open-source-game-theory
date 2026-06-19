@@ -481,17 +481,17 @@ theorem dupoc_mirror_loeb_premise :
   -- `DupocBot k` costs `log2 k + 7`). `linear_log2_add_le 3 25` fits it in `k`.
   obtain ⟨K₀, hK₀⟩ := linear_log2_add_le 3 25
   refine ⟨K₀, fun k hk => ?_⟩
-  let dS : Derivation k (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
+  let dS : Derivation (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
                              (.plays (DupocBot k) MirrorBot .C)) :=
     Derivation.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) MirrorBot rfl
-  let dM : Derivation k (.impl (.plays (DupocBot k) MirrorBot .C)
+  let dM : Derivation (.impl (.plays (DupocBot k) MirrorBot .C)
                              (.plays MirrorBot (DupocBot k) .C)) :=
     Derivation.simStep MirrorBot .opp .self (DupocBot k) .C rfl
   apply Provable.struct
-  refine ⟨.hypSyll _ _ _ dS dM ?_ ?_, ?_⟩ <;>
-    (simp only [Derivation.size, Formula.size, Prog.size, DupocBot, MirrorBot]
-     have := hK₀ k hk
-     omega)
+  refine ⟨.hypSyll _ _ _ dS dM, ?_⟩
+  simp only [Derivation.size, Formula.size, Prog.size, DupocBot, MirrorBot]
+  have := hK₀ k hk
+  omega
 
 /-- Once `proofSearch k = true`, DupocBot's eval against MirrorBot takes the
     cooperate branch. -/

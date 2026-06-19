@@ -761,14 +761,12 @@ theorem llm_outcome_JustBot_vs_DupocBot :
     set fDB := Formula.plays (DupocBot k) (.bot (DupocBot k)) .C with hfDB
     let K : Nat := k + (Formula.impl (.box k fDB) fBD).size
       + (Formula.impl (.box k fBD) fDB).size + (Formula.impl (.box k fDB) fBD).size
-    -- The leaf derivations are budget-polymorphic; instantiate them at the working
-    -- budget `K` (so they slot into `Provable.struct … : Provable K …` directly).
-    have d1 : Derivation K
+    have d1 : Derivation
         (.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
                (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)) :=
       Derivation.botSearchStep k (.plays .opp .self .C) .C .D
         (.bot (DupocBot k)) (DupocBot k) rfl
-    have d3 : Derivation K
+    have d3 : Derivation
         (.impl (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))
                (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)) :=
       Derivation.searchBranch k (.plays .opp .self .C) .C .D

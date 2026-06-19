@@ -41,12 +41,11 @@ theorem proofSearch_spec (k : Nat) (φ : Formula) :
 -- the `PD.Derivation` namespace and dot notation `d.sound` on a
 -- `d : PD.Derivation φ` resolves it — rather than being prefixed by the
 -- ambient `PD.BaseTheorems` namespace.
-theorem _root_.PD.Derivation.sound : ∀ {kb φ}, Derivation kb φ → φ.interp := by
-  intro kb φ d
+theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
+  intro φ d
   induction d with
-  | modusPonens φ ψ _ _ _ ih1 ih2 =>
+  | modusPonens φ ψ _ _ ih1 ih2 =>
       -- `.impl`'s interp is Lean implication, so this is just function application.
-      -- (The cut-formula size bound is irrelevant to soundness.)
       exact ih1 ih2
   | searchBranch k ψ a b me opponent hme =>
       -- `me` is a `.search` node; a provable guard makes `eval` take the
@@ -85,7 +84,7 @@ theorem _root_.PD.Derivation.sound : ∀ {kb φ}, Derivation kb φ → φ.interp
           (ψ.subst (.bot (.search k ψ (.const a) (.const b))) opponent) = true :=
         (proofSearch_spec _ _).2 hguard
       exact ⟨3, by simp only [play, eval, hps, if_true]⟩
-  | hypSyll φ ψ χ _ _ _ _ ih1 ih2 =>
+  | hypSyll φ ψ χ _ _ ih1 ih2 =>
       exact fun h => ih2 (ih1 h)
   | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
       -- `me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0) (.const c1)) q`.
@@ -132,7 +131,7 @@ theorem _root_.PD.Derivation.sound : ∀ {kb φ}, Derivation kb φ → φ.interp
 
 /-- A derivation of size `m` witnesses `proofSearch m φ = true` (structural
     disjunct of `Provable`). -/
-theorem derives {φ : Formula} (d : Derivation φ.size φ) : ∃ m, proofSearch m φ = true :=
+theorem derives {φ : Formula} (d : Derivation φ) : ∃ m, proofSearch m φ = true :=
   ⟨d.size, (proofSearch_spec _ _).2 (Provable.struct ⟨d, Nat.le_refl _⟩)⟩
 
 /-- The **K axiom** of GL, budget-respecting: from a derivation of `φ → ψ` of
@@ -141,14 +140,11 @@ theorem derives {φ : Formula} (d : Derivation φ.size φ) : ∃ m, proofSearch 
     derivation's size is `ψ.size ≤ (φ → ψ).size ≤ n ≤ n + m + 1`. Lifts the
     `modusPonens` constructor to the budgeted `Provable` level. -/
 theorem K_provable (n m : Nat) (φ ψ : Formula)
-    (dImp : Derivation (n + m + 1) (.impl φ ψ)) (hI : dImp.size ≤ n)
-    (dφ : Derivation (n + m + 1) φ) (_hF : dφ.size ≤ m) :
+    (dImp : Derivation (.impl φ ψ)) (hI : dImp.size ≤ n)
+    (dφ : Derivation φ) (_hF : dφ.size ≤ m) :
     Provable (n + m + 1) ψ := by
   -- dImp.size = (φ → ψ).size = φ.size + ψ.size + 1, so ψ.size ≤ n ≤ n+m+1.
-  -- The cut-formula bound `(φ → ψ).size ≤ n+m+1` holds since `dImp.size ≤ n`.
-  have hcut : (Formula.impl φ ψ).size ≤ n + m + 1 := by
-    simp only [Derivation.size] at hI; omega
-  exact Provable.struct ⟨.modusPonens φ ψ dImp dφ hcut, by
+  exact Provable.struct ⟨.modusPonens φ ψ dImp dφ, by
     simp only [Derivation.size] at *; simp [Formula.size] at hI; omega⟩
 
 /--
@@ -383,11 +379,9 @@ theorem proofSearch_monotone :
   intro k₁ k₂ φ hk h1
   cases (proofSearch_spec k₁ φ).1 h1 with
   | struct hd => obtain ⟨d, hsz⟩ := hd
-                 -- lift the derivation to the larger budget (`Derivation.weakenBudget`),
-                 -- relaxing both its index and its size bound through `k₁ ≤ k₂`.
+                 -- the derivation carries over; only its size bound relaxes `k₁ → k₂`.
                  exact (proofSearch_spec k₂ φ).2
-                   (Provable.struct ⟨d.weakenBudget hk, by
-                     rw [Derivation.weakenBudget_size]; exact Nat.le_trans hsz hk⟩)
+                   (Provable.struct ⟨d, Nat.le_trans hsz hk⟩)
   | atom hatom => exact (proofSearch_spec k₂ φ).2 (Provable.atom (atom_monotone k₁ k₂ φ hk hatom))
   | weakenImpl ψ' χ' m hpsi hmk hsz =>
       -- the conclusion's size bound relaxes from `k₁` to `k₂`; the consequent's

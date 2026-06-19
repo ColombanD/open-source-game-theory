@@ -42,37 +42,27 @@ for free (see §3). The single residue is `atom_complete`'s false-guard directio
 --     the axiom `box_provable` (Axioms.lean), like `PBLT`. GL's K, by contrast,
 --     *is* derived — the theorem `K_provable`, from `modusPonens`.
 
-/-- The inductive type for derivations in the proof system `S`, **indexed by a
-    budget `k`** (route ii: bounded `S` so `Provable k φ` is decidable). The budget
-    bounds the size of every *premise* of the two cut rules (`modusPonens`,
-    `hypSyll`) — without it, a derivation of a size-≤k conclusion could rest on
-    arbitrarily large premises (`Derivation.size = conclusion.size` hides them),
-    making `Nonempty (Derivation φ)` non-finite. With every cut premise bounded by
-    `k` and leaf conclusions determined by their parameters, the size-≤k derivation
-    search is finite. Leaf rules are polymorphic in `k`; only the cuts constrain it.
-    Here, we state what S can do. -/
-inductive Derivation : Nat → Formula → Type where
+/-- The inductive type for derivations in the proof system `S`. Here, we state
+    what S can do. -/
+inductive Derivation : Formula → Type where
   -- — Logical core —
   /-- Modus ponens: from `φ → ψ` and `φ`, infer `ψ`. Lets `S` *apply*
-      implication-valued guards (needed for CIMCIC-style bots). The premise
-      `.impl φ ψ` is bounded by the budget `k` (cut-formula bound for decidability). -/
+      implication-valued guards (needed for CIMCIC-style bots). -/
   | modusPonens (φ ψ : Formula) :
-      Derivation k (.impl φ ψ) → Derivation k φ → (Formula.impl φ ψ).size ≤ k → Derivation k ψ
+      Derivation (.impl φ ψ) → Derivation φ → Derivation ψ
   /-- Hypothetical syllogism: chain `φ → ψ` and `ψ → χ` into `φ → χ`. Primitive
       (not derivable from `modusPonens`: `Derivation` has no
-      implication-introduction to discharge a hypothesis). Both premises are
-      bounded by the budget `k` (cut-formula bound for decidability). -/
+      implication-introduction to discharge a hypothesis). -/
   | hypSyll (φ ψ χ : Formula) :
-      Derivation k (.impl φ ψ) → Derivation k (.impl ψ χ) →
-      (Formula.impl φ ψ).size ≤ k → (Formula.impl ψ χ).size ≤ k → Derivation k (.impl φ χ)
+      Derivation (.impl φ ψ) → Derivation (.impl ψ χ) → Derivation (.impl φ χ)
   -- — Source-transparency bridge —
   /-- S can read a `.search` body: a successful guard makes `me` play `a`. -/
   | searchBranch (k : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog)
       (hme : me = .search k ψ (.const a) (.const b)) :
-      Derivation kb (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a))
+      Derivation (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a))
   /-- S can read a `.sim` body: `me` plays `a` iff its closed body does. -/
   | simStep (me p q opponent : Prog) (a : Action) (hme : me = .sim p q) :
-      Derivation kb (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+      Derivation (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
                         (.plays me opponent a))
   /-- S can read a `.bot`-wrapped `.sim` body: `me = .bot (.sim p q)`. `eval`
       unwraps the `.bot` (one step, keeping `me` as the player) and then runs the
@@ -86,7 +76,7 @@ inductive Derivation : Nat → Formula → Type where
       third probe substitutes `.opp ↦ .bot MirrorBot`, making `.bot MirrorBot` a
       *player* whose source S must read; `simStep` requires a bare `.sim`). -/
   | botSimStep (me p q opponent : Prog) (a : Action) (hme : me = .bot (.sim p q)) :
-      Derivation kb (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+      Derivation (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
                         (.plays me opponent a))
   /-- S can read a `.bot`-wrapped `.search` body: `me = .bot (.search k ψ (.const a)
       (.const b))`. `eval` unwraps the `.bot` (one step, keeping `me` as the player)
@@ -105,7 +95,7 @@ inductive Derivation : Nat → Formula → Type where
       `searchBranch`): `□_k ψ' → me plays a`, with `ψ' = ψ.subst me opponent`. -/
   | botSearchStep (k : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog)
       (hme : me = .bot (.search k ψ (.const a) (.const b))) :
-      Derivation kb (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a))
+      Derivation (.impl (.box k (ψ.subst me opponent)) (.plays me opponent a))
   /-- S can read a `.ite` whose **then-branch is itself a `.search`** — the
       PrudentBot shape: `me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0)
       (.const c1)) q`. This fuses the `.ite` guard reading and the inner
@@ -138,12 +128,12 @@ inductive Derivation : Nat → Formula → Type where
       (q me opponent : Prog)
       (hme : me = .ite (.sim .opp (.bot z)) a'
                        (.search k ψ (.const c0) (.const c1)) q) :
-      Derivation kb (.impl (.plays opponent (.bot z) a')
+      Derivation (.impl (.plays opponent (.bot z) a')
                         (.impl (.box k (ψ.subst me opponent))
                                (.plays me opponent c0)))
   /-- S can verify structural identity by reflexivity: any program equals itself. -/
   | eqRefl (p : Prog) :
-      Derivation kb (.eq p p)
+      Derivation (.eq p p)
 
 /-- Proof size: the character count of the **conclusion formula**. This is the
     quantity `proofSearch k φ` tests against: "is there a proof of `φ` whose
@@ -151,31 +141,8 @@ inductive Derivation : Nat → Formula → Type where
     `eqRefl`) each contribute exactly their conclusion's size; combining rules
     (`modusPonens`, `hypSyll`) produce a conclusion that is strictly smaller than
     the sum of the premises, so existing size bounds are preserved. -/
-def Derivation.size : {kb : Nat} → {φ : Formula} → Derivation kb φ → Nat
-  | _, φ, _ => φ.size
-
-/-- **Budget weakening for derivations.** A derivation at budget `k₁` is also a
-    derivation at any larger budget `k₂ ≥ k₁`: the only budget-sensitive fields are
-    the cut-rule premise-size bounds (`modusPonens`/`hypSyll`), which only get easier
-    (`size ≤ k₁ ≤ k₂`). Leaf rules are budget-polymorphic. This is what makes
-    `proofSearch_monotone`'s structural disjunct go through under indexing. -/
-def Derivation.weakenBudget : {k₁ k₂ : Nat} → {φ : Formula} →
-    k₁ ≤ k₂ → Derivation k₁ φ → Derivation k₂ φ
-  | _, _, _, h, .modusPonens φ ψ dI dφ hcut =>
-      .modusPonens φ ψ (dI.weakenBudget h) (dφ.weakenBudget h) (Nat.le_trans hcut h)
-  | _, _, _, h, .hypSyll φ ψ χ d1 d2 hc1 hc2 =>
-      .hypSyll φ ψ χ (d1.weakenBudget h) (d2.weakenBudget h)
-        (Nat.le_trans hc1 h) (Nat.le_trans hc2 h)
-  | _, _, _, _, .searchBranch k ψ a b me opp hme => .searchBranch k ψ a b me opp hme
-  | _, _, _, _, .simStep me p q opp a hme => .simStep me p q opp a hme
-  | _, _, _, _, .botSimStep me p q opp a hme => .botSimStep me p q opp a hme
-  | _, _, _, _, .botSearchStep k ψ a b me opp hme => .botSearchStep k ψ a b me opp hme
-  | _, _, _, _, .iteBranchSearch_t k z a' c0 c1 ψ q me opp hme =>
-      .iteBranchSearch_t k z a' c0 c1 ψ q me opp hme
-  | _, _, _, _, .eqRefl p => .eqRefl p
-
-@[simp] theorem Derivation.weakenBudget_size {k₁ k₂ : Nat} {φ : Formula}
-    (h : k₁ ≤ k₂) (d : Derivation k₁ φ) : (d.weakenBudget h).size = d.size := rfl
+def Derivation.size : {φ : Formula} → Derivation φ → Nat
+  | φ, _ => φ.size
 
 -- 2. Per-step proof-encoding costs (Critch's `e*`, Appendix B(d)): the character
 -- cost of transcribing one `eval`-step into a proof. Concrete (not opaque): every
@@ -241,7 +208,7 @@ mutual
   inductive AtomProvable : Nat → Formula → Prop where
     | mk : PlaysProof me opponent me a n → n ≤ k → AtomProvable k (.plays me opponent a)
   inductive Provable : Nat → Formula → Prop where
-    | struct : (∃ d : Derivation k φ, d.size ≤ k) → Provable k φ
+    | struct : (∃ d : Derivation φ, d.size ≤ k) → Provable k φ
     | atom : AtomProvable k φ → Provable k φ
     /-- **True-consequent implication** (`ψ ⊢ φ → ψ`, the premise of GL's K /
         intuitionistic axiom 1): if the consequent `ψ` is provable (at any budget
