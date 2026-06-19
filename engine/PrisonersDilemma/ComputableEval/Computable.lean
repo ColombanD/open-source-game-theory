@@ -110,21 +110,21 @@ open BaseTheorems in
     reflection axioms, evalC returns `none`) — the intrinsic boundary, not a gap here. -/
 theorem evalC_eq_and_decGuard_sound :
     ∀ fuel,
-      (∀ me opp body a, evalC fuel me opp body = some a → eval fuel me opp body = some a)
+      (∀ me opponent body a, evalC fuel me opponent body = some a → eval fuel me opponent body = some a)
       ∧ (∀ k φ, (decGuard k fuel φ = some true → proofSearch k φ = true)
               ∧ (decGuard k fuel φ = some false → proofSearch k φ = false)) := by
   intro fuel
   induction fuel with
   | zero =>
     refine ⟨?_, ?_⟩
-    · intro me opp body a h; simp [evalC] at h
+    · intro me opponent body a h; simp [evalC] at h
     · intro k φ; exact ⟨fun h => by simp [decGuard] at h, fun h => by simp [decGuard] at h⟩
   | succ n ih =>
     obtain ⟨ihE, ihG⟩ := ih
     -- (E) first: evalC (n+1) = eval (n+1) on committed answers, using ihG for guards.
-    have hE : ∀ me opp body a,
-        evalC (n+1) me opp body = some a → eval (n+1) me opp body = some a := by
-      intro me opp body a h
+    have hE : ∀ me opponent body a,
+        evalC (n+1) me opponent body = some a → eval (n+1) me opponent body = some a := by
+      intro me opponent body a h
       cases body with
       | const c => simp only [evalC] at h; simp only [eval]; exact h
       | self => simp only [evalC] at h; rw [eval]; exact ihE _ _ _ _ h
@@ -133,7 +133,7 @@ theorem evalC_eq_and_decGuard_sound :
       | sim p q => simp only [evalC] at h; rw [eval]; exact ihE _ _ _ _ h
       | ite b a' p q =>
           simp only [evalC] at h; rw [eval]
-          cases hb : evalC n me opp b with
+          cases hb : evalC n me opponent b with
           | none => rw [hb] at h; simp at h
           | some r =>
               rw [hb] at h; simp only at h
@@ -144,17 +144,17 @@ theorem evalC_eq_and_decGuard_sound :
       | search k φ p q =>
           simp only [evalC] at h; rw [eval]
           -- branch on decGuard; ihG bridges it to proofSearch so eval takes the same leg
-          cases hg : decGuard k n (φ.subst me opp) with
+          cases hg : decGuard k n (φ.subst me opponent) with
           | none => rw [hg] at h; simp at h
           | some bguard =>
               cases bguard with
               | true =>
                   rw [hg] at h
-                  rw [if_pos ((ihG k (φ.subst me opp)).1 hg)]
+                  rw [if_pos ((ihG k (φ.subst me opponent)).1 hg)]
                   exact ihE _ _ _ _ h
               | false =>
                   rw [hg] at h
-                  rw [if_neg (by rw [(ihG k (φ.subst me opp)).2 hg]; simp)]
+                  rw [if_neg (by rw [(ihG k (φ.subst me opponent)).2 hg]; simp)]
                   exact ihE _ _ _ _ h
     refine ⟨hE, ?_⟩
     -- (G±) using hE at level n+1.
@@ -210,7 +210,7 @@ theorem evalC_eq_and_decGuard_sound :
           | some b =>
               rw [hpl] at h
               by_cases hba : b = a
-              · subst hba; simp only [if_pos rfl] at h
+              · subst hba; simp only at h
                 by_cases hbud : atom_cost (n+1) ≤ k <;> simp [hbud] at h
               · -- p actually plays b ≠ a, so `.plays p q a` is semantically false,
                 -- hence not Provable k (soundness), so proofSearch k = false.
@@ -251,13 +251,13 @@ def outcomeC (fuel : Nat) (p q : Prog) : Option Outcome := do
 /-! ## Soundness corollaries (the trustworthiness of `#eval evalC`) -/
 
 /-- `evalC`'s committed answer is exactly the classical `eval`'s, at the same fuel. -/
-theorem evalC_sound {fuel : Nat} {me opp body : Prog} {a : Action}
-    (h : evalC fuel me opp body = some a) : eval fuel me opp body = some a :=
-  (evalC_eq_and_decGuard_sound fuel).1 me opp body a h
+theorem evalC_sound {fuel : Nat} {me opponent body : Prog} {a : Action}
+    (h : evalC fuel me opponent body = some a) : eval fuel me opponent body = some a :=
+  (evalC_eq_and_decGuard_sound fuel).1 me opponent body a h
 
 /-- `playC`'s committed answer is the classical `play`'s. -/
-theorem playC_sound {fuel : Nat} {me opp : Prog} {a : Action}
-    (h : playC fuel me opp = some a) : play fuel me opp = some a :=
+theorem playC_sound {fuel : Nat} {me opponent : Prog} {a : Action}
+    (h : playC fuel me opponent = some a) : play fuel me opponent = some a :=
   evalC_sound h
 
 /-- **`outcomeC` is sound**: whenever the computable evaluator commits to an outcome, it
