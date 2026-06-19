@@ -525,6 +525,7 @@ theorem cupod_mirror_loeb_premise :
                              (.plays MirrorBot (CupodBot k) .D)) :=
     Derivation.simStep MirrorBot .opp .self (CupodBot k) .D rfl
   apply Provable.struct
+  -- the conclusion's size bound (`≤ k`) follows from `linear_log2_add_le`.
   refine ⟨.hypSyll _ _ _ dS dM, ?_⟩
   simp only [Derivation.size, Formula.size, Prog.size, CupodBot, MirrorBot]
   have := hK₀ k hk

@@ -408,7 +408,7 @@ theorem prudent_mirror_loeb_premise :
     refine Provable.searchThenSearch_t k k
       (Formula.plays .opp .self Action.C)
       (Formula.plays .opp (.bot DefectBot) Action.D)
-      Action.C Action.D (.const Action.D) (PrudentBot k) MirrorBot rfl hprud ?_
+      Action.C Action.D (.const Action.D) (PrudentBot k) MirrorBot rfl hprud (le_refl k) ?_
     simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     have := hKsz k hkS
     omega
@@ -424,10 +424,10 @@ theorem prudent_mirror_loeb_premise :
     have := hKsz k hkS
     omega
   -- Chain leg1 (`□φ → A`) then leg2 (`A → φ`) into `□_k φ → φ` via `implTrans`.
-  refine Provable.implTrans _ _ _ k k leg1 leg2 ?_
-  simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
-  have := hKsz k hkS
-  omega
+  refine Provable.implTrans _ _ _ k k leg1 leg2 (le_refl k) (le_refl k) ?_ ?_ <;>
+    · simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+      have := hKsz k hkS
+      omega
 
 /-- Once `proofSearch k = true`, PrudentBot's stacked searches both fire (the inner
     prudence guard is the provable Σ₁ atom), so it cooperates with MirrorBot. -/
@@ -559,7 +559,7 @@ theorem prudent_bot_mirror_loeb_premise :
     refine Provable.searchThenSearch_t k k
       (Formula.plays .opp .self Action.C)
       (Formula.plays .opp (.bot DefectBot) Action.D)
-      Action.C Action.D (.const Action.D) (PrudentBot k) (.bot MirrorBot) rfl hprud ?_
+      Action.C Action.D (.const Action.D) (PrudentBot k) (.bot MirrorBot) rfl hprud (le_refl k) ?_
     simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     have := hKsz k hkS
     omega
@@ -573,10 +573,10 @@ theorem prudent_bot_mirror_loeb_premise :
     simp only [Derivation.size, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     have := hKsz k hkS
     omega
-  refine Provable.implTrans _ _ _ k k leg1 leg2 ?_
-  simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
-  have := hKsz k hkS
-  omega
+  refine Provable.implTrans _ _ _ k k leg1 leg2 (le_refl k) (le_refl k) ?_ ?_ <;>
+    · simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+      have := hKsz k hkS
+      omega
 
 /-- Once both searches fire, PrudentBot cooperates with `.bot MirrorBot`. -/
 theorem PrudentBot_plays_C_against_bot_MirrorBot (k fuel : Nat)
@@ -736,7 +736,7 @@ theorem prudent_botmirror_loeb_premise :
                               (.plays (PrudentBot k) (.bot MirrorBot) .C)) := by
     refine Provable.searchThenSearch_t k k (.plays .opp .self .C)
       (.plays .opp (.bot DefectBot) .D) .C .D (.const .D) (PrudentBot k) (.bot MirrorBot)
-      rfl hprud ?_
+      rfl hprud (le_refl k) ?_
     simp only [Formula.size, Prog.size, Formula.subst, Prog.subst, PrudentBot, MirrorBot]
     omega
   have hB : Provable k (.impl (.plays (PrudentBot k) (.bot MirrorBot) .C)
@@ -747,9 +747,9 @@ theorem prudent_botmirror_loeb_premise :
     omega
   refine Provable.implTrans (.box k (.plays (.bot MirrorBot) (PrudentBot k) .C))
     (.plays (PrudentBot k) (.bot MirrorBot) .C)
-    (.plays (.bot MirrorBot) (PrudentBot k) .C) k k hA hB ?_
-  simp only [Formula.size, Prog.size, PrudentBot, MirrorBot]
-  omega
+    (.plays (.bot MirrorBot) (PrudentBot k) .C) k k hA hB (le_refl k) (le_refl k) ?_ ?_ <;>
+    · simp only [Formula.size, Prog.size, PrudentBot, MirrorBot]
+      omega
 
 /-- PrudentBot's outer guard against `.bot MirrorBot` is provable for large k. -/
 theorem prudent_botmirror_coop :
@@ -1053,7 +1053,7 @@ theorem loeb_premise_provable :
     refine Provable.searchThenSearch_t k k
       (Formula.plays .opp .self Action.C)
       (Formula.plays .opp (.bot DefectBot) Action.D)
-      Action.C Action.D (.const Action.D) (PrudentBot k) (DupocBot k) rfl hprud ?_
+      Action.C Action.D (.const Action.D) (PrudentBot k) (DupocBot k) rfl hprud (le_refl k) ?_
     simp only [Formula.subst, Prog.subst, Formula.size, Prog.size,
       PrudentBot, DupocBot, DefectBot]
     have := hKsz k hkS; omega
@@ -1065,13 +1065,23 @@ theorem loeb_premise_provable :
   have hsz1 : (Formula.impl (φP k) (φD k)).size ≤ k := by
     simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
+  -- cut formula for `bridge` is `.box k (φP k)`; its size fits `k`.
+  have hcut1 : (Formula.box k (φP k)).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    have := hKsz k hkS; omega
   have bridge : Provable k (.impl (φP k) (φD k)) :=
     Provable.implTrans (φP k) (.box k (φP k)) (φD k) k k
-      (atom_box_provable_impl k (PrudentBot k) (DupocBot k) Action.C) leg2 hsz1
+      (atom_box_provable_impl k (PrudentBot k) (DupocBot k) Action.C) leg2
+      (le_refl k) (le_refl k) hcut1 hsz1
   have hsz2 : (Formula.impl (.box k (φD k)) (φD k)).size ≤ k := by
     simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
-  exact Provable.implTrans (.box k (φD k)) (φP k) (φD k) k k leg1 bridge hsz2
+  -- cut formula for the final chain is `φP k`; its size fits `k`.
+  have hcut2 : (φP k).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    have := hKsz k hkS; omega
+  exact Provable.implTrans (.box k (φD k)) (φP k) (φD k) k k leg1 bridge
+    (le_refl k) (le_refl k) hcut2 hsz2
 
 /-! ## The outcome -/
 
@@ -1146,7 +1156,7 @@ theorem prudent_self_loeb_premise :
   refine Provable.searchThenSearch_t k k
     (Formula.plays .opp .self Action.C)
     (Formula.plays .opp (.bot DefectBot) Action.D)
-    Action.C Action.D (.const Action.D) (PrudentBot k) (PrudentBot k) rfl hprud ?_
+    Action.C Action.D (.const Action.D) (PrudentBot k) (PrudentBot k) rfl hprud (le_refl k) ?_
   simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, DefectBot]
   have := hKsz k hkS
   omega

@@ -92,11 +92,17 @@ theorem proofSearch_true_for_CIMCIC_vs_CooperateBot :
   show Provable k
     (Formula.impl (.plays (CIMCIC k) CooperateBot Action.C)
                   (.plays CooperateBot (CIMCIC k) Action.C))
-  refine Provable.weakenImpl _ _ (atom_cost 1) (CIMCIC_consequent_CooperateBot k) ?_
-  -- size of the implication fits within `k`.
-  have hb := hK k hk
-  simp only [Formula.size, Prog.size, CIMCIC, CooperateBot]
-  omega
+  refine Provable.weakenImpl _ _ (atom_cost 1) (CIMCIC_consequent_CooperateBot k) ?_ ?_
+  · -- `m = atom_cost 1 = 3 ≤ k`: the implication's size already exceeds `atom_cost 1`,
+    -- and it fits `k`, so the consequent budget does too.
+    have hb := hK k hk
+    have h1 : atom_cost 1 = 3 := by decide
+    rw [h1]
+    omega
+  · -- size of the implication fits within `k`.
+    have hb := hK k hk
+    simp only [Formula.size, Prog.size, CIMCIC, CooperateBot]
+    omega
 
 /-- CIMCIC cooperates against CooperateBot: its guard fires (proved above), so it
     takes the `.const .C` branch. -/

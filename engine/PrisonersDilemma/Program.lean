@@ -38,6 +38,7 @@ mutual
     | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
 end
+deriving instance DecidableEq for Prog, Formula
 
 -- Closing self-reference via substitution.
 --

@@ -642,7 +642,7 @@ theorem prudent_botdupoc_loeb_premise :
     refine Provable.searchThenSearch_t k k
       (Formula.plays .opp .self Action.C)
       (Formula.plays .opp (.bot DefectBot) Action.D)
-      Action.C Action.D (.const Action.D) (PrudentBot k) (.bot (DupocBot k)) rfl hprud ?_
+      Action.C Action.D (.const Action.D) (PrudentBot k) (.bot (DupocBot k)) rfl hprud (le_refl k) ?_
     simp only [Formula.subst, Prog.subst, Formula.size, Prog.size,
       PrudentBot, DupocBot, DefectBot]
     have := hKsz k hkS; omega
@@ -660,18 +660,25 @@ theorem prudent_botdupoc_loeb_premise :
                             (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)).size ≤ k := by
     simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
+  have hcut1 : (Formula.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    have := hKsz k hkS; omega
   have bridge : Provable k
       (.impl (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)
              (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)) :=
     Provable.implTrans _ (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)) _ k k
-      (atom_box_provable_impl k (PrudentBot k) (.bot (DupocBot k)) Action.C) leg2 hsz1
+      (atom_box_provable_impl k (PrudentBot k) (.bot (DupocBot k)) Action.C) leg2
+      (le_refl k) (le_refl k) hcut1 hsz1
   -- closed premise
   have hsz2 : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
                             (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)).size ≤ k := by
     simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
+  have hcut2 : (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    have := hKsz k hkS; omega
   exact Provable.implTrans _ (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C) _ k k
-    leg1 bridge hsz2
+    leg1 bridge (le_refl k) (le_refl k) hcut2 hsz2
 
 /-- PrudentBot's guard against `.bot (DupocBot k)` fires for large `k`. -/
 theorem prudent_botdupoc_coop :
@@ -746,6 +753,14 @@ theorem llm_outcome_JustBot_vs_DupocBot :
     simpa using hlog
   have hLoeb : ∀ k, k > 0 → ∃ m, Provable m (.impl (.box (f k) (φ k)) (φ k)) := by
     intro k _
+    -- Single generous budget dominating `k` and every conclusion/cut size in this
+    -- chain, so the new `implTrans` budget/cut-size side-conditions are omega-trivial.
+    -- (Was: each piece at its own conclusion size with `Nat.le_refl`, which no longer
+    -- satisfies the `a,b ≤ K` bounds since `k` can exceed a conclusion's size.)
+    set fBD := Formula.plays (.bot (DupocBot k)) (DupocBot k) .C with hfBD
+    set fDB := Formula.plays (DupocBot k) (.bot (DupocBot k)) .C with hfDB
+    let K : Nat := k + (Formula.impl (.box k fDB) fBD).size
+      + (Formula.impl (.box k fBD) fDB).size + (Formula.impl (.box k fDB) fBD).size
     have d1 : Derivation
         (.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
                (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)) :=
@@ -760,39 +775,28 @@ theorem llm_outcome_JustBot_vs_DupocBot :
         (.impl (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
                (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))) :=
       atom_box_provable_impl k (.bot (DupocBot k)) (DupocBot k) .C
-    have P1 : Provable
-        (Formula.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
-                      (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)).size
-        (.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
-               (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)) :=
-      Provable.struct ⟨d1, Nat.le_refl _⟩
-    have P3 : Provable
-        (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))
-                      (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)).size
-        (.impl (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))
-               (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)) :=
-      Provable.struct ⟨d3, Nat.le_refl _⟩
-    have BA : Provable
-        (Formula.impl (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
-                      (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)).size
-        (.impl (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
-               (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)) :=
-      Provable.implTrans
-        (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
-        (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))
-        (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)
-        k _ d2 P3 (Nat.le_refl _)
-    have Final : Provable
-        (Formula.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
-                      (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)).size
-        (.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
-               (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)) :=
-      Provable.implTrans
-        (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
-        (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
-        (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)
-        _ _ P1 BA (Nat.le_refl _)
-    exact ⟨_, Final⟩
+    have hKk : k ≤ K := by simp only [K]; omega
+    have hszBox_fBD : (Formula.box k fBD).size ≤ K := by
+      simp only [K, Formula.size]; omega
+    have hszBox_fDB : (Formula.box k fDB).size ≤ K := by
+      simp only [K, Formula.size]; omega
+    have hsz_fBD : fBD.size ≤ K := by simp only [K, Formula.size]; omega
+    have P1 : Provable K (.impl (.box k fDB) fBD) :=
+      Provable.struct ⟨d1, by simp only [Derivation.size, K]; omega⟩
+    have P3 : Provable K (.impl (.box k fBD) fDB) :=
+      Provable.struct ⟨d3, by simp only [Derivation.size, K]; omega⟩
+    -- BA : fBD → fDB, cutting through `□_k fBD`.
+    have hszBA : (Formula.impl fBD fDB).size ≤ K := by simp only [K, Formula.size]; omega
+    have BA : Provable K (.impl fBD fDB) :=
+      Provable.implTrans fBD (.box k fBD) fDB k K d2 P3
+        hKk (Nat.le_refl K) hszBox_fBD hszBA
+    -- Final : □_k fDB → fDB, cutting through `fBD`.
+    have hszFinal : (Formula.impl (.box k fDB) fDB).size ≤ K := by
+      simp only [K, Formula.size]; omega
+    have Final : Provable K (.impl (.box k fDB) fDB) :=
+      Provable.implTrans (.box k fDB) fBD fDB K K P1 BA
+        (Nat.le_refl K) (Nat.le_refl K) hsz_fBD hszFinal
+    exact ⟨K, Final⟩
   obtain ⟨k₂, hk₂⟩ := PBLT φ f 0 hMono hLog hLoeb
   refine ⟨max k₂ (atom_cost 2), ?_⟩
   intro k hk

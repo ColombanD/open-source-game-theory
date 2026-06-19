@@ -1,5 +1,6 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
+import Mathlib.Data.Nat.Log
 
 open PD
 namespace PD.Axioms
@@ -7,9 +8,9 @@ namespace PD.Axioms
 /-!
 # Axioms
 
-Principles of `S` not discharged constructively. Five remain:
+Principles of `S` not discharged constructively. Four remain (`c_guard_mono` is now
+a theorem — the cost constants are concrete, see Derivation.lean):
 
-* `c_guard_mono` — the opaque `c_guard` cost function is monotone in `k`.
 * `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches
   on a *failed* guard has a certificate. Everything else is a theorem.
 * `box_provable` — bounded GL axiom 4 (HBL D2), meta form. Now load-bearing (the
@@ -27,8 +28,12 @@ Everything else is a theorem in `BaseTheorems.lean`.
 
 /-- `c_guard` (the cost of writing the budget numeral `k` in a proof transcript)
     is monotone: a larger `k` takes at least as many characters to write.
-    Needed for `atom_cost_mono`. -/
-axiom c_guard_mono : ∀ {a b : Nat}, a ≤ b → c_guard a ≤ c_guard b
+    Needed for `atom_cost_mono`. Now a *theorem* (was an axiom): with the concrete
+    `c_guard k = Nat.log2 k + 1` (Derivation.lean), monotonicity is `Nat.log2`'s. -/
+theorem c_guard_mono : ∀ {a b : Nat}, a ≤ b → c_guard a ≤ c_guard b := by
+  intro a b h
+  simp only [c_guard, Nat.log2_eq_log_two]
+  exact Nat.add_le_add_right (Nat.log_mono_right h) 1
 
 /-- The irreducible Π₁ residue of σ₁-completeness: a play that has no
     constructive `PlaysProof` certificate (because it branched on a *failed*
@@ -59,12 +64,16 @@ axiom atom_complete_false_guard :
     AtomProvable (atom_cost fuel) (.plays p q a)
 
 /-- Bounded GL axiom 4 (`□_k φ → □_K □_k φ`): if `φ` is provable within budget
-    `k`, then that fact is itself provable at some larger budget `K`. Sound by
-    Solovay / HBL D2; axiomatic here because the budget-indexed box makes a
-    constructive witness impossible without size-indexing `Derivation`. Currently
-    unused. -/
+    `k`, then that fact is itself provable at a budget `K` **bounded by the size of
+    the boxed formula** `□_k φ`. Sound by Solovay / HBL D2; axiomatic here because the
+    budget-indexed box makes a constructive witness impossible without size-indexing
+    `Derivation`. The `K ≤ (.box k φ).size` bound (honest bounded-GL-4) is what lets
+    the consumer `atom_box_provable_impl_sound` feed `K` into the now budget-bounded
+    `weakenImpl` (`m ≤ k`): the boxed atom's size is sub-`k` whenever the implication
+    fits `k`. -/
 axiom box_provable :
-  ∀ (k : Nat) (φ : Formula), Provable k φ → ∃ K, Provable K (.box k φ)
+  ∀ (k : Nat) (φ : Formula), Provable k φ →
+    ∃ K, K ≤ (Formula.box k φ).size ∧ Provable K (.box k φ)
 
 /-- **Object-level Σ₁-completeness for play-atoms** (witness-free form):
     `⊢ (p plays a vs q) → □_k (p plays a vs q)` as a provable `Formula` implication,
