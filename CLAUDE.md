@@ -1,28 +1,106 @@
 # Project Guidelines
 
-## Package management
+**What this project is.** A mechanization of **Open-Source Game Theory (OSGT)** —
+Critch 2022's bounded-proof-search agents (`critch22.pdf`) — in **Lean 4**, plus an
+**LLM pipeline** that automates writing new agents and their correctness proofs. Two
+halves, in dependency order:
 
-Always use `uv` for Python package operations — never `pip` directly.
+1. **`engine/`** — the Lean library: the agent language, evaluator, proof system `S`,
+   the bot zoo, and machine-checked outcome theorems. **This is the foundation; the app
+   sits on top of it.**
+2. **`app/`** — a Python service (`pd_runner`) that drives an LLM to generate bots from
+   natural language and prove their outcomes against the engine.
+
+Other top-level: `latex/` (paper), `Research/` notes live under the engine, `README.md`,
+`critch22.pdf` (the source paper), `Pipeline Figure.jpeg`.
+
+---
+
+# Part I — The Lean engine (`engine/PrisonersDilemma/`)
+
+Build: `cd engine && lake build`. Single root module `PrisonersDilemma.lean` imports
+everything. Namespace `PD`. Layered bottom-up (each file imports the ones above):
+
+| Layer | File(s) | What it defines |
+|---|---|---|
+| **Language** | `Program.lean` | `Action` (C/D), `Outcome`; the mutually-recursive `Prog` (agent source code — `.const/.self/.opp/.bot/.sim/.ite/.search`) and `Formula` (the logic agents reason in — `.plays/.impl/.neg/.box/.eq`); `subst`, `size`. Pure syntax — no actions until `eval`. |
+| **Proof system `S`** | `Derivation.lean` | The inductive `Derivation`/`PlaysProof`/`AtomProvable`/`Provable k φ` (bounded provability, budget `k`); cost constants `c_leaf/c_node/c_guard`; `atom_cost`. This is `S`, the bounded modal logic agents query. |
+| **Dynamics** | `Dynamics.lean` | The fuelled evaluator `eval` (its `.search` guard consults `proofSearch k φ := decide (Provable k φ)` — **currently `noncomputable`, see crux below**); `play`, `outcome`; `Formula.interp` (denotational semantics; `.box` = `Provable`). |
+| **Axioms** | `Axioms.lean` | The **4 reflection axioms** of `S` not yet discharged: `PBLT` (parametric bounded Löb), `box_provable`, `atom_box_provable_impl`, `atom_complete_false_guard`. (`c_guard_mono` was demoted to a theorem.) |
+| **Meta-theorems** | `BaseTheorems.lean`, `SizeLemmas.lean` | Soundness (`Derivation.sound`, `proofSearch_sound`), `proofSearch_spec`/`_monotone`, `atom_complete`, size/log bounds. The bridge from provability to real plays. |
+| **Bots** | `Bots/*.lean`, `Bots/LlmGenerations/*.lean` | The agent zoo: `CooperateBot`, `DefectBot`, `MirrorBot`, `TitForTatBot`, `DupocBot`, `CupodBot`, `EBot`, … and LLM-generated `PrudentBot`, `JustBot`, `CIMCIC`, `DIMCID`. |
+| **Outcome theorems** | `Theorems/*.lean`, `Theorems/LlmGenerations/*.lean` | The headline results: `outcome_X_vs_Y = some (a,b)` (and `∃k₂,∀k>k₂,…` families). Hand-written + LLM-written (`llm_outcome_` prefix; indexed via `Theorems/LlmGenerations.lean`). |
+| **Computable evaluator** | `ComputableEval/` | `evalC` — a sound, total, computable **partial** evaluator (the reviewer-facing demo); see crux. |
+| **Research notes** | `Research/Notes/`, `Research/Readings/`, `Research/Data/` | Theory write-ups (esp. `COMPUTABLE_EVAL_NOTES.md`, `UnderstandingTheLayers.md`), extracted source papers, tournament data. |
+
+**The strict outcome-theorem template** is the linchpin the whole pipeline relies on:
+`outcome_X_Y = some (.Action_X, .Action_Y)`. Because the statement is fully concrete,
+**compilation == correctness** — an LLM-written proof that type-checks is, modulo the
+NL→Lean *bot* translation, a verified result.
+
+## Foundational crux — why `eval` is `noncomputable`, and what would fix it
+
+This is the theoretical heart of the project. Authoritative write-up:
+`engine/PrisonersDilemma/Research/Notes/COMPUTABLE_EVAL_NOTES.md`.
+
+- A reviewer flagged that the central evaluator `eval` is `noncomputable`. The settled,
+  honest answer: this is **axiom-relative, NOT a Gödel/Π₁ wall, NOT fundamental.**
+- The `.search` guard is a bounded-provability oracle `proofSearch k φ = decide (Provable k φ)`.
+  **Bounded** provability (∃ proof TERM of size ≤ k) is *decidable* by enumeration — that is
+  exactly Critch's point vs. Barász's RE PA-hierarchy. The block is only that our `Provable`
+  contains members injected by **witness-free axioms** (`PBLT`, `atom_box_provable_impl`, for the
+  Löb-fixpoint cooperations like PrudentBot↔DupocBot). An axiom asserts provability without a
+  proof term; a running evaluator must *search* and finds nothing → can't satisfy `proofSearch_spec`.
+  Axiom = IOU, eval needs cash.
+- **If S is built fully explicit** (mechanize bounded provability logic + a *constructive* bounded
+  Löb / PBLT that exhibits a size-≤-k proof term), `Provable` collapses to the decidable
+  finite-proof predicate ⇒ **`eval` becomes totally computable** (Löb fixpoints included) and the
+  project axioms drop from 4 toward the 3 Lean-standard ones. One foundational lever, two payoffs.
+- **For the Lean proofs:** under computable `eval`, concrete fixed-(k,fuel) outcomes become
+  `by decide` (much scaffolding deletable); the ∀k FAMILY outcome theorems still need proofs (no
+  `#eval` proves a ∀k) but simpler ones, with a now-proved Löb/PBLT carrying the modal core.
+- **Shipped now (option D, build green, no new axioms):** `engine/PrisonersDilemma/ComputableEval/`
+  — `evalC`, a sound TOTAL computable PARTIAL evaluator (3-valued guard; commits only with a finite
+  witness, returns `none` exactly at the Löb fixpoints; `outcomeC_sound` proven). It answers the
+  reviewer concretely and locates the boundary. `c_guard_mono` was demoted axiom→theorem.
+- **Dead ends (do not retry):** deciding `Provable k φ` by structural recursion on the program
+  (refuted — `subst` of a `.search`-bot into its own guard raises search-depth, machine-checked in
+  `DecMeasure.lean`); the `derivable`/`playsCheck` separate-search-gas checker (non-monotone). The
+  principled route to *total* computability is enumerate-proof-terms after constructive S.
+- **Nearest concrete win:** `atom_complete_false_guard` is bounded + atom-layer (no reflection) ⇒
+  should be eliminable as a constructive theorem, not an axiom.
+
+---
+
+# Part II — The LLM pipeline (`app/`)
+
+Python service `pd_runner` (`app/src/pd_runner/`) that drives an LLM to **generate new
+bots from natural language and prove their outcome theorems against the engine.** The
+engine (Part I) is the ground truth: the LLM writes `.lean`, the Lean kernel judges it.
+
+## Package management — ALWAYS use `uv`, never `pip`
 
 - Install/sync: `uv sync` (inside `app/`)
 - Add a dependency: `uv add <package>` (inside `app/`)
 - Run a script: `uv run <script>` (inside `app/`)
 - Run tests: `uv run pytest` (inside `app/`)
+- Serve the API+UI: `uv run pd-serve --reload`
 
-## Project vision — LLM bot+proof pipeline
+## Pipeline vision
 
-Next phase of the project: automate the creation of bots and proofs that today are written manually (`engine/PrisonersDilemma/Bots/`, `engine/PrisonersDilemma/Theorems/`).
+Two programs enter → game outcome out. Inputs can be LLM-generated, user
+natural-language, or chosen from the predefined zoo. Backend = the Lean engine with an
+LLM writing the proofs, using the existing library as RAG / few-shot context.
 
-**Architecture:**
-- Frontend UI: two programs enter the pipeline → game outcome out. Input programs can be LLM-generated, user natural-language, or chosen from a predefined set.
-- Backend: Lean engine with an LLM writing proofs. Uses the existing library as RAG context / few-shot examples.
-
-**Design decisions:**
+**Cross-cutting design decisions:**
 1. Proof agent may only ADD new files, never modify existing ones (v1 safety).
-2. Theorem statements use a strict template — `outcome_X_Y = some (.Action_X, .Action_Y)` — so compilation == correctness, modulo the NL→Lean bot translation step.
-3. NL→Lean translation accuracy is the remaining weak link; plan is to use an agent reviewer + few-shotting from existing bots.
-4. Human-in-the-loop v1: human accepts each new bot and theorem before it lands in the library.
-5. Foundational issues with the proof system S (temporary axiom for CupodBot self-play) are expected to be fixed before MVP and are not a blocker for design.
+2. Theorem statements use the strict `outcome_X_Y = some (.Action_X, .Action_Y)` template
+   (Part I) ⇒ compilation == correctness, modulo the NL→Lean *bot* translation step.
+3. NL→Lean translation accuracy is the remaining weak link; mitigated by an agent
+   reviewer + few-shotting from existing bots.
+4. Human-in-the-loop v1: a human accepts each new bot and theorem before it lands.
+5. The engine's reflection axioms (Part I crux) are orthogonal to this pipeline and not a
+   blocker for it.
 
 ## Phase 2 milestones (proof-writing first) — COMPLETE ✅
 
