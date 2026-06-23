@@ -25,7 +25,12 @@ it cooperates / defects only with a witness, and answers `none` on the Löb fixp
 Faithfulness (C2, `evalC_sound`): `evalC fuel me opp body = some a ⇒ ∃ N, eval N me opp
 body = some a` — every committed answer is a real classical play. The converse fails (the
 Löb fixpoints: `eval` cooperates, `evalC` says `none`) — that is the intrinsic boundary,
-Löb's theorem, where bounded computation ends and modal reflection begins.
+Löb's theorem, where bounded computation ends and modal reflection begins. This boundary is
+**permanent**, not an artifact of keeping reflection axiomatic: making `S` explicit gives the
+fixpoint a proof of *existence* (`∃ m, Provable m φ`), never the proof *term* a guard search
+needs — the proof-vs-witness gap, machine-checked by spikes S3/S3′
+(`Research/Notes/CONSTRUCTIVE_BOUNDED_LOB.md`). It is NOT, however, a Gödel/Π₁ wall: the
+finite (non-fixpoint) fragment `evalC` commits on is genuinely decidable.
 
 `evalC` answers the reviewer's "noncomputable = misuse" jab concretely (`#eval evalC …`
 runs in the kernel and is provably correct whenever it commits). The library's

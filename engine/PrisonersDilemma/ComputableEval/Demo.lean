@@ -9,17 +9,25 @@ import PrisonersDilemma.Bots.LlmGenerations.PrudentBot
 /-!
 # `#eval` demo — *illustrating* the computability boundary (a figure, not the proof)
 
-This file is an ILLUSTRATION, not the argument. The claim that the central evaluator
-cannot be made totally computable is a fact about the *theory*, not our implementation,
-and it is established elsewhere — NOT here:
-  * the reflection argument: the Löb-fixpoint outcomes are reflected through
-    `proofSearch_spec.2` and have no finite proof-search witness (Löb's theorem), so no
-    terminating function can satisfy the existing `proofSearch_spec`; and
-  * its machine-checked half, `DecMeasure.lean`, which refutes the naive well-founded
-    measure (self-substituting a `.search` bot into its own guard *increases* depth).
-That pair is what proves the limit is fundamental. The library's `eval`/`play`/`outcome`
-stay `noncomputable` for that reason (their `.search` guard is the classical oracle
-`proofSearch k φ := decide (Provable k φ)`).
+This file is an ILLUSTRATION, not the argument. The precise claim (see
+`Research/Notes/COMPUTABLE_EVAL_NOTES.md`, corrected 2026-06-23) is: `eval` is computable
+on the **finite fragment** (every non-self-referential matchup — `evalC` commits there) but
+**not at the Löb fixpoints**, and that residue is NOT removable by making `S` explicit. The
+reason is the **proof-vs-witness gap**, established elsewhere — NOT here:
+  * a proof of bounded Löb (classical, or constructive à la Critch's diagonal lemma)
+    establishes the fixpoint outcome is provable as an *existence* statement
+    `∃ m, Provable m φ` — it does NOT exhibit a finite proof *term*. The guard search needs
+    the term, so no terminating function satisfies the existing `proofSearch_spec` at the
+    fixpoint; and
+  * its machine-checked halves: `DecMeasure.lean` refutes the naive structural measure
+    (self-substituting a `.search` bot into its own guard *increases* depth), and spikes
+    S3/S3′ (`Research/Notes/CONSTRUCTIVE_BOUNDED_LOB.md`) refute the budget-recursion /
+    term-builder route — the witness it would need is `Provable k φ` at the same budget `k`
+    the bot searches.
+That is why the limit is permanent (though NOT a Gödel/Π₁ wall — the finite fragment is
+genuinely decidable). The library's `eval`/`play`/`outcome` stay `noncomputable` for that
+reason (their `.search` guard is the classical oracle `proofSearch k φ := decide (Provable
+k φ)`).
 
 What this file adds is only that the boundary is **constructively locatable**, by example.
 `evalC`/`outcomeC` (Computable.lean) are a SOUND, total, **computable** *partial* evaluator
@@ -31,7 +39,8 @@ for that matchup is the theorem `outcome_PrudentBot_vs_DupocBot`, established vi
 bounded-Σ₁ reflection axioms (PBLT / `atom_box_provable_impl`) — not by computation.
 
 This is a worked example of *where* bounded computation ends and modal reflection begins;
-it does not, by itself, explain *why* — see the reflection argument and `DecMeasure.lean`.
+it does not, by itself, explain *why* — see the proof-vs-witness argument above,
+`DecMeasure.lean`, and the S3/S3′ spikes.
 
 NOTE on fuel/budget: `#eval` on search bots can be costly (the guard re-runs `evalC`), so
 the search-bot demos below use small fuel and a modest budget `k`. The constant/mirror

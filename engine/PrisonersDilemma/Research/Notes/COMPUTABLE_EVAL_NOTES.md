@@ -17,14 +17,29 @@ Below is an LLM generated summary of why no computable eval is possible right no
 - Theoretically, suppose we build S completely from the ground up. We prove the Löb Thm and all our axioms, so everything is constructive. Then in this case, we could create a computable eval.
 - The problem is that we have these theorems as axioms, and so they are kinda non-computable by nature, so eval has to be non computable.
 
+> ⚠️ **Bullet 2 is now known to be too optimistic (correction 2026-06-23).** "Build S from
+> the ground up, prove Löb constructively ⇒ computable eval" does NOT hold at the Löb
+> fixpoints. Proving Löb (even constructively, the Critch way) gives an *existence*
+> statement `∃ proof`, not an extractable proof *term* — and eval's guard needs the term.
+> A *term-builder* Löb would suffice but is refuted for this engine (spikes S3/S3′,
+> `CONSTRUCTIVE_BOUNDED_LOB.md`). So: explicit S shrinks the axioms but eval stays
+> noncomputable AT THE FIXPOINTS (computable everywhere else, already, via `evalC`). See the
+> corrected §1, §2a (⚠️ proof-vs-witness), §2b, and the roadmap scope box below.
+
 
 
 ## 1. The claim
 
-`eval` (and hence `play`/`outcome`) is `noncomputable` **as the development currently
-stands**, and cannot be made totally computable *while the reflection principles are
-kept as witness-free axioms*. That qualifier is the whole point: the limit is **relative
-to our axioms, not absolute** — it is **not** a Gödel/Π₁ wall (§2b shows how it lifts).
+`eval` (and hence `play`/`outcome`) is `noncomputable`. **The honest, corrected claim
+(2026-06-23):** it is computable on the **finite fragment** (every non-self-referential
+matchup — `evalC` commits there, proven sound), but **NOT** at the cooperative **Löb
+fixpoints**, and that block is **not lifted by making `S` explicit**. The limit is **not** a
+Gödel/Π₁ wall (the finite fragment is genuinely decidable) — but it is also **not** the
+purely "axiom-relative, just-go-build-it" limit an earlier draft of this note claimed.
+The fixpoint block is the **proof-vs-witness gap** (§2a ⚠️): a proof of bounded Löb yields
+`∃ m, Provable m φ` (existence), never an extractable proof *term* (witness), and `eval`'s
+guard needs the term. Spikes S3/S3′ (`CONSTRUCTIVE_BOUNDED_LOB.md`) machine-check that the
+witness route is blocked for this engine.
 
 The crucial distinction is between two predicates:
 
@@ -75,30 +90,84 @@ This is *not* "no proof can exist." The Löb proof, **if constructed**, is itsel
 bounded proof term (Löb's theorem is *why* a sound such proof exists). We merely
 postulated it instead of building it. Cash vs. IOU — and the evaluator needs cash.
 
-### 2b. How the block lifts — fully explicit `S`
+> ⚠️ **CORRECTION (2026-06-23) — "a proof of Löb" is NOT "a witness".** The paragraph
+> above (and §2b below) blurs a distinction that turns out to be decisive. There are two
+> different objects both called "the Löb proof":
+> - **(i) an *existence* claim** — `∃ m, Provable m φ`, i.e. "a size-bounded proof of the
+>   fixpoint atom exists." This is what classical Löb / Critch's PBLT (`PBLT_proof.tex`)
+>   delivers. Its argument goes through the **diagonal lemma**: it constructs the
+>   self-referential *formula* ψ and reasons *about the existence* of proofs — it **never
+>   exhibits a derivation tree.**
+> - **(ii) a *witness*** — a computable function returning the actual size-≤-`k` proof
+>   *term*, in `Type`, which `decide`/enumeration can produce.
+>
+> **`eval` needs (ii). Classical/faithful Löb only gives (i). And (i) does NOT yield (ii).**
+> So replacing the `PBLT` *axiom* with a *theorem* proved Critch-style hands you another
+> existential — `decide` still has nothing to enumerate to, `eval` stays noncomputable.
+> **Discharging the axiom changes the axiom count, NOT computability.** The only thing that
+> would help is a *term-builder* form of bounded Löb (ii) — and that is refuted for this
+> engine by spike **S3′** (`Research/Notes/CONSTRUCTIVE_BOUNDED_LOB.md`, `PD.SpikeS3prime`):
+> the witness it would have to produce is `Provable k φ` at the **same** budget `k` (the
+> bot searches at its own `k`; `eval`'s `.search` rule, machine-checked by `rfl`), the
+> self-referential atom — and the diagonal lemma, the only known route to (i), does **not**
+> factor through a size-decreasing term construction. **Both roads are blocked:** (i) gives
+> the wrong kind of object, (ii) cannot be built. See the corrected §2b.
 
-Replace each reflection axiom with a **constructive** theorem that actually exhibits (or
-constructively proves the existence of) a size-≤-`k` proof term — i.e. mechanize bounded
-provability logic and a **constructive (parametric) bounded Löb theorem** (`PBLT`). Then
-`Provable k φ` collapses to `Provable_finite k φ` (every member has a finite witness),
-which is decidable by enumeration. Consequences:
+### 2b. How the block lifts — fully explicit `S` _(CORRECTED 2026-06-23 — see ⚠️)_
+
+The original claim here was: *replace each reflection axiom with a constructive theorem
+exhibiting a size-≤-`k` proof term; then `Provable` collapses to the decidable
+`Provable_finite`, and `eval` becomes computable, Löb fixpoints included.* **The Löb-fixpoint
+half of that is now believed FALSE** — for the precise reason in the ⚠️ box of §2a (proof ≠
+witness) and the machine-checked spikes S3/S3′ (`CONSTRUCTIVE_BOUNDED_LOB.md`).
+
+What survives, and what doesn't:
 
 | | today (axioms) | fully explicit `S` |
 |---|---|---|
 | `Provable_finite k φ` decidable | yes | yes |
-| our `Provable k φ` decidable | **no** (witness-free members) | **yes** |
-| `eval` computable | no | **yes**, Löb fixpoints included |
-| project axioms | 4 | the 3 Lean-standard ones |
+| our `Provable k φ` decidable **on the finite fragment** (non-fixpoint matchups) | effectively yes (`evalC` commits) | yes |
+| our `Provable k φ` decidable **at the Löb fixpoints** | no | **STILL NO** — corrected ✗ |
+| `eval` computable **off the fixpoints** | already (`evalC`) | yes |
+| `eval` computable **at the fixpoints** | no | **STILL NO** — corrected ✗ |
+| `box_provable`, `atom_complete_false_guard` removable | — | **yes** (Phases 1, 3 — genuine wins) |
+| `PBLT` removable as an *axiom* (→ existence *theorem*) | — | yes, but **does not buy computability** |
 
-So a *totally* computable `eval` is reachable — it is **finite, ordinary metamathematics**
-(constructive bounded Löb + HBL conditions), with **no undecidability wall**, precisely
-because the bounded regime is where Gödel does not bite. Hard formalization work, not an
-impossibility.
+**Why the fixpoint cells are corrected to ✗.** Making `S` explicit lets you *prove* the
+fixpoint atom is provable — but only as an **existence statement** `∃ m, Provable m φ`
+(form (i), §2a), because the only known proof of bounded Löb is Critch's **diagonal-lemma**
+argument, which reasons about the existence of proofs and never builds a derivation tree. To
+make `eval` compute the `.search` guard you need form (ii): a **witness** — a computable
+function returning the size-≤-`k` proof *term*. (i) does not yield (ii). The term-builder
+route (ii) — `boundedLob`, recursion on budget — is **refuted by S3′**: the witness it must
+return is `Provable k φ` at the *same* budget `k` (the bot searches at its own `k`; verified
+by `rfl`), the self-referential atom, and the diagonal lemma does not factor through a
+size-decreasing term construction.
 
-> Decision-procedure note: with explicit `S` one decides `Provable k φ` by **enumerating
-> proof terms of size ≤ k** (the `Provable_finite` route — trivially terminating over a
-> finite set), *not* by structural recursion on the program. That sidesteps the
-> obstruction of §2c entirely — §2c only refutes the *structural-recursion* approach.
+So: explicit `S` **shrinks the axiom count** (removing `box_provable`,
+`atom_complete_false_guard`, and demoting `PBLT` to a theorem) — a real, worthwhile result —
+but it does **NOT** make `eval` totally computable. The Löb fixpoints stay noncomputable
+**because a proof of Löb is not a witness**, not because of any Gödel wall. `evalC`'s `none`
+at the fixpoints is therefore the *honest, permanent* boundary of the bounded-search regime,
+not a temporary artifact of unfinished work.
+
+> **Net:** the noncomputability is still **not a Gödel/Π₁ wall** (the *finite fragment* is
+> genuinely decidable), but it is **also not "axiom-relative and liftable"** in the way this
+> section originally claimed. It is liftable for the NON-fixpoint fragment (already is, via
+> `evalC`); at the fixpoints it is blocked by the proof-vs-witness gap, which explicit `S`
+> does not close. The accurate one-liner: *the Löb fixpoints are exactly where bounded
+> provability has a proof of provability but no extractable proof term, so they are decidable
+> in classical existence but not by computation.*
+
+> Decision-procedure note: one decides **`Provable_finite k φ`** by **enumerating proof
+> terms of size ≤ k** (trivially terminating over a finite set), *not* by structural
+> recursion on the program — that sidesteps §2c entirely. **But careful (corrected):** this
+> decides `Provable_finite`, which equals our `Provable` **only off the Löb fixpoints**. At
+> a fixpoint the cooperation has no size-≤-k proof *term* to enumerate to (its only "proof"
+> is the existence statement form (i), §2a) — so enumeration correctly returns `false`/finds
+> nothing there, and that is *not* a decision of the fixpoint's actual (axiom-asserted)
+> membership in `Provable`. Enumeration decides the finite fragment; it does **not** decide
+> `Provable` at the fixpoints, and explicit `S` does not change this.
 
 ### 2c. A refuted shortcut — no naive structural measure (machine-checked)
 
@@ -117,10 +186,16 @@ self-reference), so the natural structural recursion does not bottom out. This r
 *recurse-on-the-program* strategy (it is what sank our own `derivable`/`Decidable`-instance
 attempts); it does **not** contradict §2b, which decides by enumerating proof *terms*.
 
-**Conclusion.** Total computability is blocked *only* by keeping reflection as witness-free
-axioms. Until that foundational work (§2b) is done, `eval` stays classical and we ship the
-sound *partial* `evalC` (§3). The "wall" is an IOU we have not yet cashed — not a Gödelian
-impossibility.
+**Conclusion (corrected 2026-06-23).** This section refutes the *recurse-on-the-program*
+shortcut to deciding `Provable`. It does **not** establish that total computability is
+"just unfinished work." On the **finite fragment** `eval` is computable (enumerate proof
+terms; `evalC` does this). At the **Löb fixpoints** it is blocked — and that block is **not**
+merely "an IOU not yet cashed." The IOU framing was the error: cashing it (proving Löb,
+even constructively) buys an *existence* statement, not the proof *term* `eval` needs (§2a
+⚠️). So `eval` stays classical, we ship the sound *partial* `evalC` (§3), and the `none` it
+returns at the fixpoints is the **honest, permanent** edge of the bounded-search regime —
+not a Gödelian impossibility (the finite fragment is decidable), but not removable by making
+`S` explicit either.
 
 ## 3. The boundary, exhibited — `evalC` (the figure)
 
@@ -167,49 +242,78 @@ which §2b says is movable, not an absolute frontier of computation.
   (§2a) — and we exhibit the precise locus with `evalC` (§3). We are careful NOT to call
   it a fundamental/Gödel limit: §2b shows it lifts once `S` is made fully explicit
   (constructive bounded Löb), after which a *total* computable `eval` is reachable.
-- It also addresses the "too many axioms" point, which is the *same* lever: during this
-  work `c_guard_mono` was demoted from axiom to **theorem** (4 axioms remain: `PBLT`,
-  `box_provable`, `atom_box_provable_impl`, `atom_complete_false_guard`). Discharging
-  these reflection primitives constructively is exactly what would *both* shrink the axiom
-  count toward the 3 Lean-standard ones *and* make `eval` computable — one piece of
-  foundational work, two payoffs.
+- It also addresses the "too many axioms" point — but this is **NOT** the same lever as
+  computability (corrected 2026-06-23; the original claim of "one piece of work, two
+  payoffs" was wrong). During this work `c_guard_mono` was demoted from axiom to
+  **theorem** (4 axioms remain: `PBLT`, `box_provable`, `atom_box_provable_impl`,
+  `atom_complete_false_guard`). Discharging `box_provable` and `atom_complete_false_guard`
+  constructively shrinks the axiom count toward the 3 Lean-standard ones — a real payoff.
+  But discharging `PBLT` (even constructively, Critch-style) yields an **existence**
+  theorem `∃ m, Provable m φ`, not a **witness**, so it does **not** make `eval` computable
+  at the fixpoints (§2a ⚠️, §2b). Axiom-shrinking and fixpoint-computability are
+  **separate** outcomes; the latter is blocked by the proof-vs-witness gap regardless.
 - **`atom_complete_false_guard` is the nearest win**: it is atom-layer and bounded, with
   no reflection self-reference, so its false-guard certificate should be *constructively
   derivable by enumeration* — a theorem, not an axiom. Worth a focused, separate task.
 
 Suggested framing for the paper:
 
-> The evaluator's `.search` guard is a bounded-provability oracle. We do not yet decide
-> it computably: the cooperative Löb-fixpoint outcomes are reflected through the oracle's
-> specification via *axioms* (`PBLT`, `atom_box_provable_impl`) that assert provability
-> without exhibiting a bounded proof term, so a terminating search finds no witness. This
-> is a limitation of the *current axiomatization*, not of bounded provability itself —
-> which is decidable by enumeration. We therefore retain a classical `eval` and supply a
-> separate, sound, computable *partial* evaluator `evalC`, proven equal to `eval`
-> wherever it commits and returning `none` exactly at the as-yet-unconstructed fixpoints.
-> Mechanizing a constructive bounded Löb theorem would discharge those axioms and make
-> `eval` totally computable — future work.
+> The evaluator's `.search` guard is a bounded-provability oracle. On the finite fragment —
+> every matchup that is not a Löb self-reference — it is decidable by enumerating proof
+> terms of size ≤ k, and our sound computable *partial* evaluator `evalC` commits there,
+> proven equal to the classical `eval`. At the cooperative **Löb fixpoints** it returns
+> `none`: these outcomes are reflected through the oracle's specification via *axioms*
+> (`PBLT`, `atom_box_provable_impl`) that assert *provability* without exhibiting a proof
+> *term*. Critically, this is **not** merely an artifact of using axioms — a proof of
+> bounded Löb (classical or constructive, à la Critch's diagonal lemma) establishes that a
+> bounded proof *exists* (`∃ m, Provable m φ`) but does **not** yield an extractable proof
+> *term*, which is what a terminating guard search would need. We prove this boundary is
+> real: in the present engine the fixpoint's required witness is `Provable k φ` at the same
+> budget `k` the bot searches (machine-checked), so no budget-decreasing construction
+> produces it. Thus the Löb fixpoints are exactly where bounded provability has a *proof of
+> provability* but no *computable witness* — decidable in classical existence, not by
+> computation. The noncomputability is therefore **not a Gödel/Π₁ wall** (the finite
+> fragment is genuinely decidable) but also **not liftable** by making `S` explicit: explicit
+> `S` shrinks the axiom count, it does not close the proof-vs-witness gap at the fixpoints.
 
 **Quote-safe facts:** build green, 0 `sorry`, 4 axioms; `outcomeC_sound` (and its `eval`
 / `play` siblings) is fully proved; the `DecMeasure` counterexample is `decide`-checked;
 the `none` at `PrudentBot × DupocBot` is reproducible via `#eval`.
 
-**Do NOT claim:** that `evalC` is total, that it decides the fixpoints, that bounded
-provability is undecidable, or that the noncomputability is a Gödel/fundamental wall (it
-is axiom-relative — §2b). `DecMeasure` only refutes the *structural-recursion* shortcut
-(§2c), not decidability per se.
+**Do NOT claim:** that `evalC` is total; that it decides the fixpoints; that bounded
+provability is undecidable (the *finite fragment* is decidable); that the noncomputability
+is a Gödel/fundamental wall; **or — corrected — that making `S` explicit / discharging the
+axioms would make `eval` totally computable.** It would not: a (constructive) proof of
+bounded Löb gives an existence statement, not the extractable proof *term* the guard needs
+(§2a ⚠️, §2b), and S3′ machine-checks that the term route is blocked for this engine. The
+defensible claim is the proof-vs-witness one: *the Löb fixpoints have a proof of provability
+but no computable witness.* `DecMeasure` refutes the *structural-recursion* shortcut (§2c);
+S3/S3′ (`CONSTRUCTIVE_BOUNDED_LOB.md`) refute the *budget-recursion / term-builder* route.
 
 ---
 
 ## Roadmap to fully-explicit `S` (removing all 4 axioms) — corrected ordering
 
+> ⚠️ **SCOPE (corrected 2026-06-23).** This roadmap is about **removing axioms** (making `S`
+> explicit), which is a worthwhile goal in its own right. It is **NOT** a roadmap to a totally
+> computable `eval`. Earlier this file conflated the two ("one move, two payoffs"); the spikes
+> S3/S3′ (`CONSTRUCTIVE_BOUNDED_LOB.md`) show they come apart. Reading guide for the phases
+> below: **Phases 1 & 3 are genuine** (they remove `box_provable` and
+> `atom_complete_false_guard` by exhibiting real certificates). **Phase 4 removes `PBLT` only
+> as an *existence theorem*** — it does NOT yield a proof *term* for the fixpoint, so the
+> "Phase 2 ⇒ eval computable at the fixpoints" arrow is **FALSE** and struck through below.
+> Phase 2's enumeration decides `Provable_finite` (= `Provable` off the fixpoints) — that part
+> is real; it just does not extend through the fixpoints.
+
 What "make `S` completely explicit" decomposes into, and the dependency order between
 the phases. **The key correction (2026-06-23):** the naive intuition is "decide
 `Provable` first, then constructive Löb falls out." That is BACKWARDS, and `DecMeasure`
-+ `Computable` prove why. Deciding `Provable` by enumeration is only *coherent* AFTER the
-witness-free axioms (PBLT, the removed `atom_box_provable_impl`) are replaced by
-constructive rules that inject finite proof TERMS — i.e. after constructive Löb. So
-constructive bounded Löb (Phase 4), not decidability (Phase 2), is the true keystone.
++ `Computable` prove why. Deciding `Provable_finite` by enumeration is only *coherent* AFTER
+the witness-free axioms are replaced by constructive rules where possible. But note the
+hard truth from S3′: **for the genuine Löb fixpoints there is no finite proof term to inject**
+(the diagonal-lemma proof gives existence, not a term), so even "after constructive Löb"
+`Provable` does not collapse to `Provable_finite` *at the fixpoints* — it collapses only on
+the finite fragment.
 
 ### The single foundational move
 
@@ -228,45 +332,56 @@ Phase 0  size-index Derivation  (Derivation : Nat → Formula → Type)
    │      bounded GL-4 / necessitation made constructive; needs Phase 0's size index
    │      for the `K ≤ (.box k φ).size` bound the axiom currently asserts.
    │
-   └──► Phase 4  constructive bounded Löb ───────► KILLS `PBLT`   ◄── TRUE KEYSTONE
-            │    mechanize critch22 Lemma 3.6: from S ⊢ □_{f(k)}φ(k) → φ(k), BUILD a
-            │    size-≤-f(k) derivation of φ(k). Research-level: needs a Formula/Derivation
-            │    representation of the diagonal fixpoint + size arithmetic. This is what
-            │    gives the Löb fixpoints (PrudentBot↔DupocBot) a FINITE PROOF TERM —
-            │    the thing they lack today (Computable.lean: "no finite play witness").
-            │    Also closes the `sorry`'d Löb matchups (Axioms.lean §REMOVED).
+   └──► Phase 4  constructive bounded Löb ───────► KILLS `PBLT` (as EXISTENCE thm only)
+            │    mechanize critch22 Lemma 3.6: from S ⊢ □_{f(k)}φ(k) → φ(k), prove
+            │    `∃ proof, …` for φ(k). ⚠️ CORRECTED: Critch's proof is the DIAGONAL LEMMA —
+            │    it establishes a proof EXISTS, it does NOT build/exhibit a derivation term.
+            │    So this removes the AXIOM (good) but the fixpoint still has NO extractable
+            │    finite proof term (Computable.lean's "no finite play witness" STANDS).
+            │    S3′ machine-checks why a term-builder can't be substituted in. Does close
+            │    the `sorry`'d Löb matchups as existence results.
             │
-            └──► Phase 2  Decidable (Provable k φ) ─► proofSearch/eval COMPUTABLE
-                     │    NOT doable before Phase 4 — over TODAY's `Provable` it is
-                     │    machine-checked-impossible (witness-free fixpoints have no
-                     │    `true`-returning computation; DecMeasure refutes the structural
-                     │    route, Computable explains the reflection reason). AFTER Phase 4
-                     │    every member has a bounded witness ⇒ "enumerate proof terms of
-                     │    size ≤ k" terminates. Remaining work = a verified Fintype/
-                     │    enumerator over the size-indexed mutual inductive + checker
-                     │    completeness (moderate-hard engineering, no known obstruction).
-                     │    Drops `noncomputable` from proofSearch; concrete outcomes → `by decide`.
-                     │
-                     └──► Phase 3  search_f constructor ─► KILLS `atom_complete_false_guard`
-                              once `Provable k φ` is decidable its NEGATION is too, so the
-                              Π₁ false-guard residue becomes a positive constructor
-                              (`¬ Provable k guard → … → PlaysProof … (.search …)`).
-                              Easy GIVEN Phase 2.
+            ├──► Phase 2  Decidable (Provable_FINITE k φ) ─► eval computable OFF fixpoints
+            │        │    Enumerate proof terms of size ≤ k — terminates over a finite set.
+            │        │    Decides `Provable_finite`, which = `Provable` ONLY off the Löb
+            │        │    fixpoints. DecMeasure refutes the structural-recursion route;
+            │        │    enumeration sidesteps it. Verified Fintype/enumerator over the
+            │        │    size-indexed inductive + checker completeness (moderate engineering).
+            │        │
+            │        ┌──────────────────────────────────────────────────────────────┐
+            │        │ ✗ STRUCK: "Phase 4 ⇒ every member has a witness ⇒ Provable    │
+            │        │   decidable ⇒ eval computable AT THE FIXPOINTS." FALSE. Phase 4│
+            │        │   gives existence, not a witness; the fixpoint members of      │
+            │        │   `Provable` are NOT in `Provable_finite`, so enumeration does │
+            │        │   not decide them. eval stays noncomputable at the fixpoints.  │
+            │        └──────────────────────────────────────────────────────────────┘
+            │
+            └──► Phase 3  search_f constructor ─► KILLS `atom_complete_false_guard`
+                     for the FINITE fragment: once `Provable_finite k φ` is decidable its
+                     negation is too, so the Π₁ false-guard residue becomes a positive
+                     constructor (`¬ Provable_finite k guard → … → PlaysProof … (.search …)`).
+                     Easy GIVEN Phase 2. (Atom-layer, no fixpoint self-reference — safe.)
 ```
 
 ### Difficulty / axiom scorecard
 
-| Axiom | Removed by | Difficulty |
-|---|---|---|
-| `box_provable` | Phase 1 (boxIntro) | moderate |
-| `PBLT` | **Phase 4 (constructive Löb)** | **hard / research — the linchpin** |
-| `atom_complete_false_guard` | Phase 3 (search_f) | easy *given Phase 2* |
-| *(decidability prereq)* | Phase 2 (enumerate bounded proof terms) | moderate-hard *given Phase 4* |
+| Axiom | Removed by | Difficulty | Helps eval-computability? |
+|---|---|---|---|
+| `box_provable` | Phase 1 (boxIntro) | moderate | no (axiom-shrink only) |
+| `PBLT` | Phase 4 (Löb, as **existence** thm) | **hard / research** | **no** — existence ≠ witness |
+| `atom_complete_false_guard` | Phase 3 (search_f, finite fragment) | easy *given Phase 2* | yes (finite fragment) |
+| *(decidability of `Provable_finite`)* | Phase 2 (enumerate proof terms) | moderate-hard | yes, **off fixpoints only** |
 
-End state: `Axioms.lean` → empty (just Lean's `propext`/`Classical.choice`/`Quot.sound`);
-`eval` total & computable; concrete fixed-`(k,fuel)` outcomes by `decide`; ∀k-family
-theorems lean on a *proved* Löb. The whole project's noncomputability is then discharged,
-confirming §2b: axiom-relative, not a Gödel wall.
+End state (corrected): `Axioms.lean` shrinks (`box_provable`, `atom_complete_false_guard`
+removed; `PBLT` demoted to an existence *theorem*) — possibly to just Lean's
+`propext`/`Classical.choice`/`Quot.sound` if the `PBLT` existence theorem itself uses no new
+axioms. `eval` becomes computable **on the finite fragment** and concrete fixed-`(k,fuel)`
+**non-fixpoint** outcomes go `by decide`; ∀k-family theorems lean on a *proved* (existence)
+Löb. **But `eval` stays noncomputable at the genuine Löb fixpoints**, and those concrete
+outcomes are NOT `by decide` — they go through the existence theorem, exactly as today. The
+project's noncomputability is **not** fully discharged: the fixpoint residue is the
+proof-vs-witness gap (§2a ⚠️), which is permanent, not axiom-relative. Still not a Gödel wall
+(finite fragment decidable) — but not liftable either.
 
 ### Why the existing computable-eval work matters here
 
