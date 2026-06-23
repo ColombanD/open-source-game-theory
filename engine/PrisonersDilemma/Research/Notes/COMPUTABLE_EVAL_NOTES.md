@@ -201,6 +201,83 @@ is axiom-relative — §2b). `DecMeasure` only refutes the *structural-recursion
 
 ---
 
+## Roadmap to fully-explicit `S` (removing all 4 axioms) — corrected ordering
+
+What "make `S` completely explicit" decomposes into, and the dependency order between
+the phases. **The key correction (2026-06-23):** the naive intuition is "decide
+`Provable` first, then constructive Löb falls out." That is BACKWARDS, and `DecMeasure`
++ `Computable` prove why. Deciding `Provable` by enumeration is only *coherent* AFTER the
+witness-free axioms (PBLT, the removed `atom_box_provable_impl`) are replaced by
+constructive rules that inject finite proof TERMS — i.e. after constructive Löb. So
+constructive bounded Löb (Phase 4), not decidability (Phase 2), is the true keystone.
+
+### The single foundational move
+
+Size-index `Derivation` (`Derivation : Nat → Formula → Type`, size in the index, not the
+post-hoc conclusion-measure it is today) so that `Provable k φ` can collapse to a
+DECIDABLE, finite, enumerate-the-proof-terms predicate. Every axiom-removal below is a
+consequence of this move.
+
+### Dependency graph (corrected order: 0 → 1 → 4 → 2 → 3)
+
+```
+Phase 0  size-index Derivation  (Derivation : Nat → Formula → Type)
+   │      the enabling refactor; real structural size, not `| φ, _ => φ.size`
+   │
+   ├──► Phase 1  boxIntro constructor ───────────► KILLS `box_provable`
+   │      bounded GL-4 / necessitation made constructive; needs Phase 0's size index
+   │      for the `K ≤ (.box k φ).size` bound the axiom currently asserts.
+   │
+   └──► Phase 4  constructive bounded Löb ───────► KILLS `PBLT`   ◄── TRUE KEYSTONE
+            │    mechanize critch22 Lemma 3.6: from S ⊢ □_{f(k)}φ(k) → φ(k), BUILD a
+            │    size-≤-f(k) derivation of φ(k). Research-level: needs a Formula/Derivation
+            │    representation of the diagonal fixpoint + size arithmetic. This is what
+            │    gives the Löb fixpoints (PrudentBot↔DupocBot) a FINITE PROOF TERM —
+            │    the thing they lack today (Computable.lean: "no finite play witness").
+            │    Also closes the `sorry`'d Löb matchups (Axioms.lean §REMOVED).
+            │
+            └──► Phase 2  Decidable (Provable k φ) ─► proofSearch/eval COMPUTABLE
+                     │    NOT doable before Phase 4 — over TODAY's `Provable` it is
+                     │    machine-checked-impossible (witness-free fixpoints have no
+                     │    `true`-returning computation; DecMeasure refutes the structural
+                     │    route, Computable explains the reflection reason). AFTER Phase 4
+                     │    every member has a bounded witness ⇒ "enumerate proof terms of
+                     │    size ≤ k" terminates. Remaining work = a verified Fintype/
+                     │    enumerator over the size-indexed mutual inductive + checker
+                     │    completeness (moderate-hard engineering, no known obstruction).
+                     │    Drops `noncomputable` from proofSearch; concrete outcomes → `by decide`.
+                     │
+                     └──► Phase 3  search_f constructor ─► KILLS `atom_complete_false_guard`
+                              once `Provable k φ` is decidable its NEGATION is too, so the
+                              Π₁ false-guard residue becomes a positive constructor
+                              (`¬ Provable k guard → … → PlaysProof … (.search …)`).
+                              Easy GIVEN Phase 2.
+```
+
+### Difficulty / axiom scorecard
+
+| Axiom | Removed by | Difficulty |
+|---|---|---|
+| `box_provable` | Phase 1 (boxIntro) | moderate |
+| `PBLT` | **Phase 4 (constructive Löb)** | **hard / research — the linchpin** |
+| `atom_complete_false_guard` | Phase 3 (search_f) | easy *given Phase 2* |
+| *(decidability prereq)* | Phase 2 (enumerate bounded proof terms) | moderate-hard *given Phase 4* |
+
+End state: `Axioms.lean` → empty (just Lean's `propext`/`Classical.choice`/`Quot.sound`);
+`eval` total & computable; concrete fixed-`(k,fuel)` outcomes by `decide`; ∀k-family
+theorems lean on a *proved* Löb. The whole project's noncomputability is then discharged,
+confirming §2b: axiom-relative, not a Gödel wall.
+
+### Why the existing computable-eval work matters here
+
+It gives no head start on the *positive* enumerator, but three things: (1) a machine-checked
+proof that the naive structural-recursion route is a dead end (`DecMeasure`, §2c) — don't
+retry it; (2) the exact diagnosis that the blocker is witness-free AXIOMS, which is *why*
+Phase 4 is the unlock and Phase 2 cannot precede it; (3) `evalC` as a proven-sound fallback
+/ ceiling if Phase 4 resists — correct wherever it commits, `none` exactly at the fixpoints.
+
+---
+
 ## Provenance (not for the paper)
 
 This file supersedes a chronological investigation log. Two total-computability routes

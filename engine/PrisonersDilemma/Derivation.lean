@@ -3,6 +3,48 @@ import PrisonersDilemma.Program
 namespace PD
 open Classical
 
+
+/- So basically S is semi-explicit with the Derivation Type. Its supposed to give
+the rules that S follows to derive facts about formulas. Example, If S can derive
+phi and phi implies psi, then S can derive psi. It is also supposed to be able to understand
+the source code of the bots (the last constructors). These two concepts live together because
+they are both things that S can legitimately conclude.
+
+Now, the problem with S is that it cannot read the atom of formulas, which is a .play.
+.play is the atom because in the end, we have to talk about what bots play, and .play is
+how we do it.
+Since S cannot read the atom (because atoms are decided by execution, not logic), we sidestep this issue
+by creating a new inductive type PlaysProof that directly states whether a bot did .plays against another bot.
+We use atomProvable just to incorporate that it is bounded. We still need derivation though because in some cases,
+we can't get the final play without first deriving some logical reasoning in the middle: □_k ψ → plays a
+
+Now, Provable is the link between both concepts as it states that a formula is provable if either there
+is a derivation of it, or there is an atomProvable of it. So we can use Provable in the
+last constructors of Derivation to link the two concepts together.
+Other stuff (at the end) also are in Provable, kinda like for derivation, and they need to be there because
+they combine formualas and atoms together.
+
+                 ┌─────────────────────────────────────────┐
+                 │  Provable k φ   ("φ provable in budget k")│  ← the oracle .search asks
+                 │  = Derivation (small)  OR  AtomProvable    │
+                 │    + 4 extra reasoning rules that need     │
+                 │      "provability" as a premise            │
+                 └───────────────┬──────────────┬────────────┘
+                   reasoning      │              │   execution
+                ┌─────────────────┘              └────────────────┐
+        ┌───────▼────────┐                          ┌─────────────▼────────┐
+        │  Derivation φ  │                          │  AtomProvable k φ     │
+        │  logic + source│                          │  = PlaysProof + n ≤ k │
+        │  reading; NO   │                          │  (only .plays atoms)  │
+        │  atoms         │                          └─────────────┬─────────┘
+        └────────────────┘                                        │
+                                                          ┌───────▼────────┐
+                                                          │  PlaysProof    │
+                                                          │  = eval transcript│
+                                                          └────────────────┘
+
+--/
+
 /-!
 # The proof system `S`
 
@@ -155,42 +197,37 @@ def c_leaf  : Nat := 1                          -- leaf step (`.const a`)
 def c_node  : Nat := 1                          -- structural step (`.self`/`.opp`/`.bot`/`.sim`/`.ite`)
 def c_guard (k : Nat) : Nat := Nat.log2 k + 1   -- `.search` guard at budget `k`; grows with `k`
 
--- 3. **Atom/provability layer, as one mutual inductive.**
--- * `PlaysProof me opp body a n` — a play certificate: `body` evaluates to `a`
---   (players `me`/`opp`) with a transcript of `n` characters: "with players me/opp,
---   the code body evaluates to action a, and writing down that fact takes n characters."
--- * `AtomProvable k (.plays me opp a)` — a certificate of cost ≤ `k` (`body = me`).
--- * `Provable k φ` — a `Derivation` of size ≤ `k` (`.struct`), or a bounded atom
---   certificate (`.atom`). Same meaning as the old `def`, now an inductive so it
---   can sit in the mutual block with `PlaysProof`.
---
+
+
 -- `search_t` (true guard) carries `Provable k (guard)` — positive, fine. There is
 -- deliberately NO `search_f`: a false-guard play certifies `¬ Provable k (guard)`
 -- (Π₁, "no proof of size ≤ k exists"), which is non-positive (kernel-rejected)
 -- and the genuinely hard direction. So `atom_complete`'s completeness for
 -- false-guard plays stays an axiom (`Axioms.lean`); everything else is a theorem.
 mutual
+-- *PlaysProof* The code ran and produced this action with a cost.
+-- PlaysProof takes in three programs, an action, and a natural number, and returns a proposition.
+-- The proposition PlaysProof ... is true exactly when you can assemble it from the constructors below, and nothing else
+-- | name (explicit args) : premise₁ → premise₂ → … → PlaysProof <indices>
   inductive PlaysProof : (me opponent body : Prog) → Action → Nat → Prop where
-    -- eval: `.const a => some a`
+    -- Running the body .const a yields a at cost c_leaf
     | const :
         PlaysProof me opponent (.const a) a c_leaf
-    -- eval: `.self => eval n me opponent me`
+    -- If running me at cost n yields a, then running .self at cost n + c_node yields a
     | self :
         PlaysProof me opponent me a n →
         PlaysProof me opponent .self a (n + c_node)
-    -- eval: `.opp => eval n me opponent opponent`
     | opp :
         PlaysProof me opponent opponent a n →
         PlaysProof me opponent .opp a (n + c_node)
-    -- eval: `.bot p => eval n me opponent p`
     | bot :
         PlaysProof me opponent p a n →
         PlaysProof me opponent (.bot p) a (n + c_node)
-    -- eval: `.sim p q => eval n p' q' p'` with `p' = p.subst me opp`, `q' = q.subst me opp`
     | sim :
         PlaysProof (p.subst me opponent) (q.subst me opponent) (p.subst me opponent) a n →
         PlaysProof me opponent (.sim p q) a (n + c_node)
-    -- eval: `.ite b a' p q => (eval n .. b) >>= fun r => if r == a' then .. p else .. q`
+    -- If running the guard b at cost m yields r, and r = a', and running p at cost n yields a,
+    -- then running .ite b a' p q at cost m + n + c_node yields a
     | ite_t :
         PlaysProof me opponent b r m → (r == a') = true →
         PlaysProof me opponent p a n →
@@ -205,8 +242,12 @@ mutual
         Provable k (φ.subst me opponent) →
         PlaysProof me opponent p a n →
         PlaysProof me opponent (.search k φ p q) a (n + c_guard k + c_node)
+
+-- *AtomProvable* The run cost fits in the budget k
   inductive AtomProvable : Nat → Formula → Prop where
     | mk : PlaysProof me opponent me a n → n ≤ k → AtomProvable k (.plays me opponent a)
+
+-- *Provable* Provable within budget k by either a derivation or a budgeted atom.
   inductive Provable : Nat → Formula → Prop where
     | struct : (∃ d : Derivation φ, d.size ≤ k) → Provable k φ
     | atom : AtomProvable k φ → Provable k φ

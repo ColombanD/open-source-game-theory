@@ -8,6 +8,15 @@ open PD
 open PD.Axioms
 namespace PD.BaseTheorems
 
+/-- `c_guard` (the cost of writing the budget numeral `k` in a proof transcript)
+    is monotone: a larger `k` takes at least as many characters to write.
+    Needed for `atom_cost_mono`. Now a *theorem* (was an axiom): with the concrete
+    `c_guard k = Nat.log2 k + 1` (Derivation.lean), monotonicity is `Nat.log2`'s. -/
+theorem c_guard_mono : ∀ {a b : Nat}, a ≤ b → c_guard a ≤ c_guard b := by
+  intro a b h
+  simp only [c_guard, Nat.log2_eq_log_two]
+  exact Nat.add_le_add_right (Nat.log_mono_right h) 1
+
 /-- `atom_cost` is monotone in fuel, so bot proofs can lift a small-fuel atom to a
     larger working budget via `proofSearch_monotone`. -/
 theorem atom_cost_mono {a b : Nat} (h : a ≤ b) : atom_cost a ≤ atom_cost b := by
@@ -393,11 +402,11 @@ theorem proofSearch_monotone :
       -- proof and budget bound carry over (transitivity through `k₁ ≤ k₂`).
       exact (proofSearch_spec k₂ _).2
         (Provable.weakenImpl ψ' χ' m hpsi (Nat.le_trans hmk hk) (Nat.le_trans hsz hk))
-  | searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opp hme hprud hk2 hsz =>
+  | searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opponent hme hprud hk2 hsz =>
       -- same as `weakenImpl`: relax the conclusion's size and `k₂` bounds `k₁ → k₂`;
       -- the inner (prudence) proof and `hme` carry over unchanged.
       exact (proofSearch_spec k₂ _).2
-        (Provable.searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opp hme hprud
+        (Provable.searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opponent hme hprud
           (Nat.le_trans hk2 hk) (Nat.le_trans hsz hk))
   | implTrans φ ψ χ a b hab hbc hak hbk hpsisz hsz =>
       -- relax the conclusion's size, both leg budgets, and the cut-formula size
