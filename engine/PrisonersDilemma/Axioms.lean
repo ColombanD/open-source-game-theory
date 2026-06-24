@@ -8,16 +8,30 @@ namespace PD.Axioms
 /-!
 # Axioms
 
-Principles of `S` not discharged constructively. Three remain (`c_guard_mono` is now
+Principles of `S` not discharged constructively. Four remain (`c_guard_mono` is now
 a theorem — the cost constants are concrete, see Derivation.lean; and
-`atom_box_provable_impl` was REMOVED as unsound — see below):
+`atom_box_provable_impl` was REMOVED as unsound — see below). Each is interp-SOUND
+(`box_provable` by HBL/Solovay; `boxK` by `boxK_sound` in BaseTheorems.lean); they are
+axioms only for the *representational* reason that `Derivation` has no box-introduction
+constructor and does not size-index proof trees, so a box-conclusion / box-antecedent
+witness cannot be built structurally.
 
 * `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches
   on a *failed* guard has a certificate. Everything else is a theorem.
 * `box_provable` — bounded GL axiom 4 (HBL D2), meta form. SOUND (provable-Σ₁-
-  completeness on the genuinely-Σ₁ predicate `Provable k φ`); axiomatic only for a
-  representational reason — `Derivation` has no box-introduction constructor and
-  does not size-index proof trees, so the witness cannot be built structurally.
+  completeness on the genuinely-Σ₁ predicate `Provable k φ`).
+* `boxK` — bounded GL axiom K (`□` distributes over `→`) at a single fixed budget `k`,
+  between play-atoms: from a budget-`k` proof transformer `Provable k φ → Provable k α`
+  (α a play-atom), derive the object `□_k φ → □_k α`. SOUND via `boxK_sound` (interp is the
+  transformer itself, tautological). The single-fixed-budget form is forced: separate
+  K/4/necessitation each pick their own existential box budget and cannot be re-aligned to
+  `k`, so they do NOT compose into the cross-bot Löb premise (machine-confirmed,
+  `Research/Spikes/MutualLobSpike.lean`). `boxK` + the two transparency legs derive that
+  premise as the THEOREM `mutual_loeb` (BaseTheorems.lean). NON-collapsible: the caller can
+  only supply the proof transformer via a guard inversion that fires at a genuine two-bot
+  fixpoint, so nothing false (e.g. DefectBot cooperating) becomes provable. This closes the
+  cross-bot fixpoints (PrudentBot↔DupocBot, in three guises) the removed unsound
+  `atom_box_provable_impl` formerly forced.
 * `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
 
 Everything else is a theorem in `BaseTheorems.lean`.
@@ -64,6 +78,30 @@ axiom box_provable :
   ∀ (k : Nat) (φ : Formula), Provable k φ →
     ∃ K, K ≤ (Formula.box k φ).size ∧ Provable K (.box k φ)
 
+/-- **Bounded GL axiom K**, at a single fixed budget `k`, between play-atoms.
+
+    The standard modal axiom K — `□` distributes over `→` — specialized to the
+    budget-aligned form the cross-bot Löb premise actually needs: given a *proof transformer*
+    `hfitD : Provable k φ → Provable k α` (the bounded-`k` content of `⊢ □_k(φ→α)`,
+    necessitation already applied) for a play-atom `α = .plays p q c`, the object box
+    implication `□_k φ → □_k α` is provable **at the same budget `k`** (size permitting).
+
+    Why this single fixed-`k` form (and not separate K/4/necessitation): each of those picks
+    its own existential box budget and they cannot be re-aligned to `k`, so they do not
+    compose into the conclusion (machine-confirmed; see `mutual_loeb` and
+    `Research/Spikes/MutualLobSpike.lean`). Keeping K's input and output box both at `k`,
+    with the proof-transformer premise carrying the budget, is the GL-K content that closes.
+
+    SOUND (`boxK_sound`): `interp (□_k φ → □_k α)` is `Provable k φ → Provable k α`, which is
+    `hfitD` itself — tautological. The play-atom restriction on `α` is what makes a caller
+    able to SUPPLY `hfitD` honestly (via a guard inversion landing at budget `k`), NOT a
+    soundness condition on K. Standard, named, single-budget. -/
+axiom boxK :
+  ∀ (k : Nat) (φ : Formula) (p q : Prog) (c : Action),
+    (Provable k φ → Provable k (.plays p q c)) →
+    (Formula.impl (.box k φ) (.box k (.plays p q c))).size ≤ k →
+    Provable k (.impl (.box k φ) (.box k (.plays p q c)))
+
 /-! ### REMOVED — `atom_box_provable_impl` (was unsound)
 
     Formerly an axiom asserting the *witness-free* object implication
@@ -82,13 +120,14 @@ axiom box_provable :
 
     The matchups that USED the unsound form — `outcome_PrudentBot_vs_DupocBot`,
     `llm_outcome_JustBot_vs_PrudentBot`, `llm_outcome_JustBot_vs_DupocBot` — are
-    genuine Löb fixed points whose box-introduction on the (as-yet-unproven)
-    cooperative atom needs reflection strictly beyond the sound rules currently
-    available: every sound form (incl. GL-4 / `box_provable`) requires the atom's
-    certificate as input, which at the fixed point does not exist before the loop is
-    closed. They are therefore left UNPROVED (`sorry` at the former axiom sites),
-    pending a constructive `box_provable` over a size-indexed `Derivation`. See the
-    soundness analysis in `Research/Notes/COMPUTABLE_EVAL_NOTES.md`. -/
+    genuine Löb fixed points whose box-introduction on the (as-yet-unproven) cooperative
+    atom needs reflection beyond a single bot's transparency. They are now CLOSED (no
+    `sorry`) by the SOUND, standard GL axiom `boxK` above (mutual Löb): rather than boxing
+    a bare atom, the `mutual_loeb` theorem feeds `boxK` a budget-`k` proof transformer
+    `Provable k φP → Provable k φD` — obtained from BOTH bots' transparency legs via a guard
+    inversion that fires only at a genuine two-bot fixpoint — so nothing false (e.g.
+    DefectBot cooperating) becomes provable. See `mutual_loeb`/`mutual_loeb_sound`/`boxK_sound`
+    (BaseTheorems.lean) and `Research/Spikes/MutualLobSpike.lean`. -/
 
 -- Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
 --

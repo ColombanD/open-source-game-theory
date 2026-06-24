@@ -1043,49 +1043,38 @@ theorem ps_k_of_play_dupoc (k n : Nat)
 theorem loeb_premise_provable :
     ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
       Provable k (.impl (.box k (φD k)) (φD k)) := by
-  obtain ⟨kPrud, hkPrud⟩ := prudence_dupoc
   obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 20 200
-  refine ⟨max kPrud Ksz, fun k hk => ?_⟩
-  have hkP : kPrud ≤ k := le_trans (le_max_left _ _) hk
-  have hkS : Ksz ≤ k := le_trans (le_max_right _ _) hk
-  have hprud : Provable k (Formula.plays (DupocBot k) (.bot DefectBot) Action.D) := hkPrud k hkP
-  have leg1 : Provable k (.impl (.box k (φD k)) (φP k)) := by
-    refine Provable.searchThenSearch_t k k
-      (Formula.plays .opp .self Action.C)
-      (Formula.plays .opp (.bot DefectBot) Action.D)
-      Action.C Action.D (.const Action.D) (PrudentBot k) (DupocBot k) rfl hprud (le_refl k) ?_
-    simp only [Formula.subst, Prog.subst, Formula.size, Prog.size,
-      PrudentBot, DupocBot, DefectBot]
-    have := hKsz k hkS; omega
+  refine ⟨Ksz, fun k hk => ?_⟩
+  have hkS : Ksz ≤ k := hk
+  -- `leg2` (DupocBot's `searchBranch` guard): □_k φP → φD.
   have leg2 : Provable k (.impl (.box k (φP k)) (φD k)) := by
     apply Provable.struct
     refine ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) (PrudentBot k) rfl, ?_⟩
     simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
-  have hsz1 : (Formula.impl (φP k) (φD k)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  -- The closed premise `□_k φD → φD` now comes from the SOUND mutual-Löb step
+  -- (`mutual_loeb`, BaseTheorems.lean), replacing the removed unsound box-introduction.
+  -- Role mapping: the conclusion atom is φD, so (P ↦ D, D ↦ P). We supply:
+  --   • `legDP` := leg2 : □_k φP → φD                 (DupocBot's `searchBranch` guard)
+  --   • `hfitD` : Provable k φD → Provable k φP, built from the guard inversion
+  --     `ps_k_of_play_dupoc` (NO atom_cost budget gap — the inversion lands at budget k).
+  have hfitD : Provable k (φD k) → Provable k (φP k) := by
+    intro hφD
+    -- φD provable → φD plays → guard inversion → proofSearch k φP = true → Provable k φP
+    obtain ⟨n, hplay⟩ := Provable_sound k (φD k) hφD
+    exact (proofSearch_spec _ _).1 (ps_k_of_play_dupoc k n hplay)
+  have hszK : (Formula.impl (.box k (φD k)) (.box k (φP k))).size ≤ k := by
+    simp only [φD, φP, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
-  -- cut formula for `bridge` is `.box k (φP k)`; its size fits `k`.
-  have hcut1 : (Formula.box k (φP k)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  have hszBoxP : (Formula.box k (φP k)).size ≤ k := by
+    simp only [φP, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
-  have bridge : Provable k (.impl (φP k) (φD k)) :=
-    Provable.implTrans (φP k) (.box k (φP k)) (φD k) k k
-      -- UNSOUND-AXIOM REMOVED: this `φP → □_k φP` box-introduction was the
-      -- `atom_box_provable_impl` use. No sound rule supplies it pre-fixed-point
-      -- (the φP certificate is the fixed point itself). Left as `sorry` — this
-      -- matchup is not soundly proved. See Axioms.lean / COMPUTABLE_EVAL_NOTES.md.
-      (sorry : Provable k (.impl (φP k) (.box k (φP k)))) leg2
-      (le_refl k) (le_refl k) hcut1 hsz1
-  have hsz2 : (Formula.impl (.box k (φD k)) (φD k)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  have hsz : (Formula.impl (.box k (φD k)) (φD k)).size ≤ k := by
+    simp only [φD, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
-  -- cut formula for the final chain is `φP k`; its size fits `k`.
-  have hcut2 : (φP k).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
-  exact Provable.implTrans (.box k (φD k)) (φP k) (φD k) k k leg1 bridge
-    (le_refl k) (le_refl k) hcut2 hsz2
+  -- role-P = φD (conclusion atom), role-D = φP. boxK cut is □_k φP.
+  exact mutual_loeb k (DupocBot k) (PrudentBot k) (PrudentBot k) (DupocBot k)
+    Action.C Action.C leg2 hfitD hszK hszBoxP hsz
 
 /-! ## The outcome -/
 

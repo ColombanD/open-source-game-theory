@@ -14,7 +14,7 @@ _Status: build green; no `sorry`; 4 axioms. All claims below are backed by check
 Below is an LLM generated summary of why no computable eval is possible right now, but the main things to remember are the following:
 
 - First, Critch fundamentally changes the PA, PA+1, ... tower of Barasz by making its agents computable using proof length. It removes the problem of Pi_1 undecidibility, because everything has a fixed proof length and thus everything is decidable.
-- Theoretically, suppose we build S completely from the ground up. We prove the Löb Thm and all our axioms, so everything is constructive. Then in this case, we could create a computable eval.
+- Theoretically, suppose we build S completely from the ground up. We prove the Löb Thm and all our axioms, so everything is constructive. Then in this case, we could create a computable eval. Actually no, that is not the case (see bellow).
 - The problem is that we have these theorems as axioms, and so they are kinda non-computable by nature, so eval has to be non computable.
 
 > ⚠️ **Bullet 2 is now known to be too optimistic (correction 2026-06-23).** "Build S from

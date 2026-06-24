@@ -449,4 +449,55 @@ theorem atom_box_provable_impl_sound (k fuel : Nat) (p q : Prog) (a : Action)
   have hKk : K ≤ k := Nat.le_trans hKle (Nat.le_trans (Nat.le_of_lt hszbox) hsz)
   exact Provable.weakenImpl (.plays p q a) (.box k (.plays p q a)) K hbox hKk hsz
 
-end PD.BaseTheorems
+/-! ### Soundness of GL axiom `boxK`; the mutual-Löb corollary
+
+`boxK` (Axioms.lean) is bounded GL axiom K at a fixed budget `k`, between play-atoms. Its
+soundness is `boxK_sound`. `mutual_loeb` derives the closed Löb premise `□_k φP → φP` from
+`boxK` + the two transparency legs, by `implTrans`. -/
+
+/-- **`boxK` soundness.** `interp (□_k φ → □_k α)` is `Provable k φ → Provable k α` — which
+    is exactly the proof-transformer premise `hfitD`. So `boxK`'s object implication denotes
+    precisely its hypothesis: tautologically sound, no new semantic content. -/
+theorem boxK_sound (k : Nat) (φ : Formula) (p q : Prog) (c : Action)
+    (hfitD : Provable k φ → Provable k (.plays p q c)) :
+    (Formula.impl (.box k φ) (.box k (.plays p q c))).interp :=
+  hfitD
+
+/-- **Soundness content of `mutual_loeb`.** The interp of `□_k φP → φP` holds, given the
+    opponent leg `legDP` and the budget-fit transparency `hfitD`. Pure `Provable_sound`
+    (no box axiom): under the hypothetical `Provable k φP`, `hfitD` gives `Provable k φD`,
+    `legDP` makes `φP` play. Non-collapsible: needs `legDP` + `hfitD`, which only a genuine
+    two-bot fixpoint supplies. -/
+theorem mutual_loeb_sound (k : Nat) (pP qP pD qD : Prog) (bP bD : Action)
+    (legDP : Provable k (.impl (.box k (.plays pD qD bD)) (.plays pP qP bP)))
+    (hfitD : Provable k (.plays pP qP bP) → Provable k (.plays pD qD bD)) :
+    (Formula.impl (.box k (.plays pP qP bP)) (.plays pP qP bP)).interp := by
+  have hDP : (Formula.impl (.box k (.plays pD qD bD)) (.plays pP qP bP)).interp :=
+    Provable_sound k _ legDP
+  intro hboxP
+  exact hDP (hfitD hboxP)
+
+/-- **Mutual / simultaneous bounded Löb** (object form), derived from GL axiom `boxK`.
+    From the opponent leg `legDP : □_k φD → φP` and the budget-`k` proof transformer
+    `hfitD : Provable k φP → Provable k φD`, build `□_k φP → φP` as a `Provable` object:
+
+      `boxK` ⊳ hfitD : □_k φP → □_k φD       (distribute the box over the transparency)
+      `implTrans` with legDP : □_k φD → φP   ⇒  □_k φP → φP.
+
+    All boxes stay at the single budget `k`, so the only side-conditions are the formula-size
+    bounds (caller supplies `hsz`). This is the standard GL-K route; `boxK`'s single-fixed-`k`
+    form is what lets the cut `□_k φD` meet `legDP` (separate K/4/Nec inflate the budget and
+    do not compose — see `boxK`'s doc / `Research/Spikes/MutualLobSpike.lean`). -/
+theorem mutual_loeb (k : Nat) (pP qP pD qD : Prog) (bP bD : Action)
+    (legDP : Provable k (.impl (.box k (.plays pD qD bD)) (.plays pP qP bP)))
+    (hfitD : Provable k (.plays pP qP bP) → Provable k (.plays pD qD bD))
+    (hszK : (Formula.impl (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))).size ≤ k)
+    (hszBoxD : (Formula.box k (.plays pD qD bD)).size ≤ k)
+    (hsz : (Formula.impl (.box k (.plays pP qP bP)) (.plays pP qP bP)).size ≤ k) :
+    Provable k (.impl (.box k (.plays pP qP bP)) (.plays pP qP bP)) := by
+  -- boxK : □_k φP → □_k φD
+  have hKstep : Provable k (.impl (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))) :=
+    boxK k (.plays pP qP bP) pD qD bD hfitD hszK
+  -- implTrans through the cut formula □_k φD : □_k φP → φP
+  exact Provable.implTrans (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))
+    (.plays pP qP bP) k k hKstep legDP (le_refl k) (le_refl k) hszBoxD hsz
