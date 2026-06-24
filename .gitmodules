@@ -1,0 +1,3 @@
+[submodule "nash-equilbria"]
+	path = nash-equilbria
+	url = https://github.com/RiccardoFormenti/egt-osgt.git
