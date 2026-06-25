@@ -1064,15 +1064,15 @@ theorem loeb_premise_provable :
     obtain ⟨n, hplay⟩ := Provable_sound k (φD k) hφD
     exact (proofSearch_spec _ _).1 (ps_k_of_play_dupoc k n hplay)
   have hszK : (Formula.impl (.box k (φD k)) (.box k (φP k))).size ≤ k := by
-    simp only [φD, φP, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
   have hszBoxP : (Formula.box k (φP k)).size ≤ k := by
-    simp only [φP, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
   have hsz : (Formula.impl (.box k (φD k)) (φD k)).size ≤ k := by
-    simp only [φD, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
-  -- role-P = φD (conclusion atom), role-D = φP. boxK cut is □_k φP.
+  -- role-P = φD (conclusion atom), role-D = φP. boxInternalize cut is □_k φP.
   exact mutual_loeb k (DupocBot k) (PrudentBot k) (PrudentBot k) (DupocBot k)
     Action.C Action.C leg2 hfitD hszK hszBoxP hsz
 

@@ -11,27 +11,27 @@ namespace PD.Axioms
 Principles of `S` not discharged constructively. Four remain (`c_guard_mono` is now
 a theorem — the cost constants are concrete, see Derivation.lean; and
 `atom_box_provable_impl` was REMOVED as unsound — see below). Each is interp-SOUND
-(`box_provable` by HBL/Solovay; `boxK` by `boxK_sound` in BaseTheorems.lean); they are
-axioms only for the *representational* reason that `Derivation` has no box-introduction
-constructor and does not size-index proof trees, so a box-conclusion / box-antecedent
-witness cannot be built structurally.
+(`box_provable` by HBL/Solovay; `boxInternalize` by `boxInternalize_sound` in
+BaseTheorems.lean); they are axioms only for the *representational* reason that `Derivation`
+has no box-introduction constructor and does not size-index proof trees, so a box-conclusion
+/ box-antecedent witness cannot be built structurally.
 
 * `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches
   on a *failed* guard has a certificate. Everything else is a theorem.
 * `box_provable` — bounded GL axiom 4 (HBL D2), meta form. SOUND (provable-Σ₁-
   completeness on the genuinely-Σ₁ predicate `Provable k φ`).
-* `boxK` — bounded GL axiom K (`□` distributes over `→`) at a single fixed budget `k`,
-  between play-atoms: from a budget-`k` proof transformer `Provable k φ → Provable k α`
-  (α a play-atom), derive the object `□_k φ → □_k α`. SOUND via `boxK_sound` (interp is the
-  transformer itself, tautological). The single-fixed-budget form is forced: separate
-  K/4/necessitation each pick their own existential box budget and cannot be re-aligned to
-  `k`, so they do NOT compose into the cross-bot Löb premise (machine-confirmed,
-  `Research/Spikes/MutualLobSpike.lean`). `boxK` + the two transparency legs derive that
-  premise as the THEOREM `mutual_loeb` (BaseTheorems.lean). NON-collapsible: the caller can
-  only supply the proof transformer via a guard inversion that fires at a genuine two-bot
-  fixpoint, so nothing false (e.g. DefectBot cooperating) becomes provable. This closes the
-  cross-bot fixpoints (PrudentBot↔DupocBot, in three guises) the removed unsound
-  `atom_box_provable_impl` formerly forced.
+* `boxInternalize` — box-internalization at a fixed budget `k`, between play-atoms (NOT GL
+  axiom K — see its doc): from a budget-`k` proof transformer `Provable k φ → Provable k α`
+  (α a play-atom), derive the object `□_k φ → □_k α`. SOUND via `boxInternalize_sound`: the
+  conclusion's interp is *definitionally* the transformer itself (`:= hfitD`), so it is NOT
+  false — it asserts nothing beyond its hypothesis. INERT for false atoms (no transformer
+  exists, so e.g. DefectBot-cooperating stays unprovable). The fixed-budget form is FORCED:
+  the faithful object-antecedent GL-K inflates the box budget and cannot be reconciled to the
+  `k` that PBLT + the opponent leg demand (machine-confirmed dead end,
+  `Research/Spikes/HonestKSpike.lean`; cf. `MutualLobSpike.lean`). `boxInternalize` + the two
+  transparency legs derive the cross-bot Löb premise as the THEOREM `mutual_loeb`
+  (BaseTheorems.lean), closing the fixpoints (PrudentBot↔DupocBot, three guises) the removed
+  unsound `atom_box_provable_impl` formerly forced.
 * `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
 
 Everything else is a theorem in `BaseTheorems.lean`.
@@ -78,25 +78,32 @@ axiom box_provable :
   ∀ (k : Nat) (φ : Formula), Provable k φ →
     ∃ K, K ≤ (Formula.box k φ).size ∧ Provable K (.box k φ)
 
-/-- **Bounded GL axiom K**, at a single fixed budget `k`, between play-atoms.
+/-- **Box-internalization at a fixed budget `k`** (NOT GL axiom K — see below).
 
-    The standard modal axiom K — `□` distributes over `→` — specialized to the
-    budget-aligned form the cross-bot Löb premise actually needs: given a *proof transformer*
-    `hfitD : Provable k φ → Provable k α` (the bounded-`k` content of `⊢ □_k(φ→α)`,
-    necessitation already applied) for a play-atom `α = .plays p q c`, the object box
-    implication `□_k φ → □_k α` is provable **at the same budget `k`** (size permitting).
+    Given a budget-`k` *proof transformer* `hfitD : Provable k φ → Provable k α` for a
+    play-atom `α = .plays p q c`, internalize it as the object box implication
+    `□_k φ → □_k α` at budget `k` (size permitting).
 
-    Why this single fixed-`k` form (and not separate K/4/necessitation): each of those picks
-    its own existential box budget and they cannot be re-aligned to `k`, so they do not
-    compose into the conclusion (machine-confirmed; see `mutual_loeb` and
-    `Research/Spikes/MutualLobSpike.lean`). Keeping K's input and output box both at `k`,
-    with the proof-transformer premise carrying the budget, is the GL-K content that closes.
+    **WHY THIS IS SOUND, AND NOT FALSE.** Its `interp` is, definitionally,
+    `Provable k φ → Provable k α` — i.e. *exactly its own hypothesis* `hfitD`. So the axiom
+    asserts nothing beyond what the caller already holds: `boxK_sound` is literally `:= hfitD`,
+    a tautology, and depends only on the Lean-standard axioms. It is INERT where it could do
+    harm: to fire it you must SUPPLY `hfitD`, and for a false atom (e.g. `DefectBot plays C`,
+    interp-false) no such transformer exists, so nothing false becomes provable.
 
-    SOUND (`boxK_sound`): `interp (□_k φ → □_k α)` is `Provable k φ → Provable k α`, which is
-    `hfitD` itself — tautological. The play-atom restriction on `α` is what makes a caller
-    able to SUPPLY `hfitD` honestly (via a guard inversion landing at budget `k`), NOT a
-    soundness condition on K. Standard, named, single-budget. -/
-axiom boxK :
+    **WHY IT IS NOT GL AXIOM K (honest naming).** Real K is `⊢ □_a(φ→ψ) → (□_aφ → □_aψ)`,
+    with an *object* antecedent `□_a(φ→ψ)`. Here the antecedent is a *meta-level* Lean
+    proof-transformer, and the conclusion's box stays at `k` (no necessitation cost paid).
+    This is a budget-aligned *internalization* rule, not K. The faithful object-antecedent K
+    is a DEAD END for this proof: it is sound only with an EXISTENTIAL output box budget (the
+    re-derived atom's certificate cost), which cannot be reconciled to the `k` that `PBLT` and
+    the opponent leg `legDP` both demand — bridging `□_{cert} α → □_k α` would need box-INDEX
+    weakening, which is genuinely unsound. Machine-confirmed in `Research/Spikes/HonestKSpike.lean`
+    (and the budget non-composition of separate K/4/necessitation in `MutualLobSpike.lean`).
+    The fixed-`k` is FORCED, not a shortcut: the bot searches at its own budget `k`
+    (`CONSTRUCTIVE_BOUNDED_LOB.md` S3′), so the true content `Provable k φ → Provable k α`
+    lives at `k`, and internalizing it at `k` is the only sound, semantics-matching form. -/
+axiom boxInternalize :
   ∀ (k : Nat) (φ : Formula) (p q : Prog) (c : Action),
     (Provable k φ → Provable k (.plays p q c)) →
     (Formula.impl (.box k φ) (.box k (.plays p q c))).size ≤ k →
@@ -122,12 +129,13 @@ axiom boxK :
     `llm_outcome_JustBot_vs_PrudentBot`, `llm_outcome_JustBot_vs_DupocBot` — are
     genuine Löb fixed points whose box-introduction on the (as-yet-unproven) cooperative
     atom needs reflection beyond a single bot's transparency. They are now CLOSED (no
-    `sorry`) by the SOUND, standard GL axiom `boxK` above (mutual Löb): rather than boxing
-    a bare atom, the `mutual_loeb` theorem feeds `boxK` a budget-`k` proof transformer
+    `sorry`) by the SOUND `boxInternalize` axiom above (mutual Löb): rather than boxing a
+    bare atom, the `mutual_loeb` theorem feeds `boxInternalize` a budget-`k` proof transformer
     `Provable k φP → Provable k φD` — obtained from BOTH bots' transparency legs via a guard
     inversion that fires only at a genuine two-bot fixpoint — so nothing false (e.g.
-    DefectBot cooperating) becomes provable. See `mutual_loeb`/`mutual_loeb_sound`/`boxK_sound`
-    (BaseTheorems.lean) and `Research/Spikes/MutualLobSpike.lean`. -/
+    DefectBot cooperating) becomes provable. See
+    `mutual_loeb`/`mutual_loeb_sound`/`boxInternalize_sound` (BaseTheorems.lean) and
+    `Research/Spikes/MutualLobSpike.lean`. -/
 
 -- Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
 --
