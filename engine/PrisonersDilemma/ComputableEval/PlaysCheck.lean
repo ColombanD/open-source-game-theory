@@ -33,8 +33,69 @@ live in `Research/Spikes/PortPhaseASpike.lean` / `DecidableFiniteSpike.lean`.
 namespace PD.PlaysCheck
 open PD
 
--- `ppSize` and `otherAction` now live in `Derivation.lean` (relocated BEFORE the `PlaysProof`
--- mutual block, so `search_f` can carry `Provable_fin`'s negation). We reuse them here via `open PD`.
+/-- `otherAction C = D`, `otherAction D = C`. -/
+def otherAction : Action → Action
+  | .C => .D
+  | .D => .C
+
+/-- `ppSize fuel me opp body a` = the minimal size of a `PlaysProof me opp body a _`, or `none`
+    if none fits the structural `fuel`. Mirrors the `PlaysProof` 8-constructor shape with the real
+    cost model. PURELY syntactic (no `PlaysProof`/`Provable`/`proofSearch`). The `.search` arm reads
+    a guard only when it is an ATOM-realized play (the only finitely-decidable guard fragment);
+    non-atom guards → `none`. -/
+def ppSize : Nat → (me opponent body : Prog) → Action → Option Nat
+  | 0,      _,  _,        _,             _ => none
+  | _+1,    _,  _,        .const c,      a => if c == a then some c_leaf else none
+  | fuel+1, me, opponent, .self,         a => (ppSize fuel me opponent me a).map (· + c_node)
+  | fuel+1, me, opponent, .opp,          a => (ppSize fuel me opponent opponent a).map (· + c_node)
+  | fuel+1, me, opponent, .bot p,        a => (ppSize fuel me opponent p a).map (· + c_node)
+  | fuel+1, me, opponent, .sim p q,      a =>
+      (ppSize fuel (p.subst me opponent) (q.subst me opponent) (p.subst me opponent) a).map (· + c_node)
+  | fuel+1, me, opponent, .ite b a' p q, a =>
+      match ppSize fuel me opponent b a', ppSize fuel me opponent p a with
+      | some mg, some np => some (mg + np + c_node)
+      | _, _ =>
+        match ppSize fuel me opponent b (otherAction a'), ppSize fuel me opponent q a with
+        | some mg, some nq => some (mg + nq + c_node)
+        | _, _ => none
+  | fuel+1, me, opponent, .search k φ p q, a =>
+      match φ with
+      | .plays gs gt ga =>
+          let gs' := gs.subst me opponent
+          let gt' := gt.subst me opponent
+          match ppSize fuel gs' gt' gs' ga with
+          | some sg => if sg ≤ k then (ppSize fuel me opponent p a).map (· + c_guard k + c_node)
+                       else none
+          | none => none
+      | _ => none
+
+/-- **`Provable_fin k φ`** — the *finite* (size-≤-k, proof-TERM) bounded-provability predicate, on
+    the play-atom/eq fragment. DECIDABLE, `proofSearch`-free. It is NOT all of `Provable` (the
+    reflection rules / `PBLT`-injected Löb fixpoints are out of fragment — at a fixpoint
+    `Provable_fin` is `false` even though `Provable` is axiom-true: the proof-vs-witness separation).
+
+    This is the computable WITNESS for `atom_complete_false_guard`'s decidability claim (`Axioms.lean`):
+    the axiom postulates a fact that IS decidable (here) but cannot be soundly CARRIED as a `PlaysProof`
+    constructor (the two-wall + ExclusionSpike result). Arms: a play-atom via `ppSize`; an `.eq p q`
+    via `p = q` (the `eqRefl` leaf, agreeing with `Provable.struct ⟨eqRefl,…⟩`); else out of fragment. -/
+def Provable_fin (k : Nat) (φ : Formula) : Prop :=
+  match φ with
+  | .plays p q a => ∃ s, ppSize (k+1) p q p a = some s ∧ s ≤ k
+  | .eq p q      => p = q ∧ (Formula.eq p p).size ≤ k
+  | _            => False
+
+instance instDecProvableFin (k : Nat) (φ : Formula) : Decidable (Provable_fin k φ) := by
+  unfold Provable_fin
+  cases φ with
+  | plays p q a =>
+      cases h : ppSize (k+1) p q p a with
+      | none => exact isFalse (by rintro ⟨s, hs, _⟩; simp [h] at hs)
+      | some s =>
+          by_cases hsk : s ≤ k
+          · exact isTrue ⟨s, h, hsk⟩
+          · exact isFalse (by rintro ⟨s', hs', hs'k⟩; rw [h] at hs'; cases hs'; exact hsk hs'k)
+  | eq p q => exact (inferInstance : Decidable (p = q ∧ (Formula.eq p p).size ≤ k))
+  | _ => exact isFalse (by simp)
 
 /-- **Soundness:** a `some s` from `ppSize` yields a real `PlaysProof` of cost exactly `s`. The
     `.search` arm reconstructs `search_t` via `Provable.atom (AtomProvable.mk …)` (the guard
