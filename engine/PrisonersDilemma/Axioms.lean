@@ -62,7 +62,7 @@ Everything else is a theorem in `BaseTheorems.lean`.
     * **Why it stays an axiom — TWO walls, both now machine-located.**
 
       WALL 1 (positivity, lifted). A `search_f` constructor carrying `¬ Provable`/`¬ PlaysProof`
-      is kernel-impossible (non-positive). This IS liftable: `Provable_fin` (`Derivation.lean`,
+      is kernel-impossible (non-positive). This IS liftable: `Provable_fin` (`PlaysCheck.lean`,
       a decidable `proofSearch`-free finite-provability predicate) is now defined BEFORE the
       `PlaysProof`/`Provable` mutual block (the cycle-break), so a `search_f` carrying
       `decide (Provable_fin k guard) = false` is kernel-POSITIVE and TYPECHECKS. We verified
