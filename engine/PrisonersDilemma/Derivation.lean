@@ -63,10 +63,17 @@ The agents' internal logic, made explicit. This file defines, as one mutual
 Atom-provability used to be `opaque` (and `Provable` a `def`), on the belief that
 the atom self-reference — a `.search` subject's guard `□_k ψ` means `Provable` —
 was a Löb loop Lean must reject. It isn't: that was an artifact of unfolding a
-`def` through an `opaque`. As one mutual inductive the recursion is accepted, and
-being a *least* fixed point it even excludes the genuinely self-referential plays
-for free (see §3). The single residue is `atom_complete`'s false-guard direction
-(`¬ Provable`, Π₁) — still an axiom in `Axioms.lean`.
+`def` through an `opaque`. As one mutual inductive the recursion is accepted.
+
+The single residue is `atom_complete`'s false-guard direction (`¬ Provable`, Π₁) —
+still the axiom `atom_complete_false_guard` in `Axioms.lean`. Its irreducibility is
+now machine-located: a `.search`-bot's ELSE-action has NO certificate term at all
+(neither `Derivation` nor `PlaysProof` produces it — `Research/Spikes/ExclusionSpike.lean`,
+`no_deriv_else`/`provable_else_isAtom`, `[propext]` only). So the axiom postulates a
+true `interp` (`play = some aElse`) whose proof TERM provably does not exist — the
+proof-vs-witness gap at the certificate level. Removing it would need a `PlaysProof`
+rule producing the else-action (a sound `search_f`), which is blocked (see the
+`search_t` comment below and the `atom_complete_false_guard` doc).
 -/
 
 -- 1. The derivation system. Each rule is (i) SOUND — its conclusion's `interp`
@@ -197,13 +204,10 @@ def c_leaf  : Nat := 1                          -- leaf step (`.const a`)
 def c_node  : Nat := 1                          -- structural step (`.self`/`.opp`/`.bot`/`.sim`/`.ite`)
 def c_guard (k : Nat) : Nat := Nat.log2 k + 1   -- `.search` guard at budget `k`; grows with `k`
 
-
-
--- `search_t` (true guard) carries `Provable k (guard)` — positive, fine. There is
--- deliberately NO `search_f`: a false-guard play certifies `¬ Provable k (guard)`
--- (Π₁, "no proof of size ≤ k exists"), which is non-positive (kernel-rejected)
--- and the genuinely hard direction. So `atom_complete`'s completeness for
--- false-guard plays stays an axiom (`Axioms.lean`); everything else is a theorem.
+-- `search_t` (true guard) carries `Provable k (guard)`. There is NO `search_f` (false-guard)
+-- constructor — see the detailed note on `search_t` below for why (a candidate `search_f` carrying
+-- `decide (Provable_fin k guard) = false` — `Provable_fin` lives in `ComputableEval/PlaysCheck.lean`
+-- — would TYPECHECK but is NOT SOUND: the Löb/PBLT entanglement).
 mutual
 -- *PlaysProof* The code ran and produced this action with a cost.
 -- PlaysProof takes in three programs, an action, and a natural number, and returns a proposition.
@@ -237,7 +241,21 @@ mutual
         PlaysProof me opponent q a n →
         PlaysProof me opponent (.ite b a' p q) a (m + n + c_node)
     -- eval: `.search k φ p q => if proofSearch k (φ.subst ..) then .. p else .. q`
-    -- (true-guard branch only; see the no-`search_f` note above)
+    -- (true-guard branch only). A `search_f` (false-guard) constructor is DELIBERATELY ABSENT.
+    -- Two walls (machine-located; see `atom_complete_false_guard` doc in `Axioms.lean` and the
+    -- spikes `{SearchFFeasibility,SizeIndex,ProvableFin,Exclusion}Spike.lean`):
+    --   • POSITIVITY — `¬ Provable`/`¬ PlaysProof` is non-positive in-block. LIFTABLE: a candidate
+    --     `search_f` carrying `decide (Provable_fin k guard) = false` (`Provable_fin` lives in
+    --     `ComputableEval/PlaysCheck.lean`, references no in-block type) IS kernel-positive.
+    --   • SOUNDNESS — NOT liftable. `playsProof_sound` would need `proofSearch k guard = false`
+    --     (eval-exact) to run the else-branch, but `Provable_fin = false` diverges from
+    --     `proofSearch = false` at the Löb fixpoints (`Provable` is `PBLT`-axiom-true there). And
+    --     `eval` cannot be rewired to use `Provable_fin` — the PBLT cooperations (CupodBot.lean:112)
+    --     need `proofSearch = true` at the fixpoint guard.
+    -- Deeper still (`ExclusionSpike.lean`): a `.search`-bot's ELSE-action has NO certificate term
+    -- at all — `no_deriv_else`/`provable_else_isAtom` prove (`[propext]` only) that neither
+    -- `Derivation` nor `PlaysProof` produces it. So the axiom postulates a true `interp` whose proof
+    -- TERM provably does not exist. The false-guard completeness stays the axiom.
     | search_t :
         Provable k (φ.subst me opponent) →
         PlaysProof me opponent p a n →
