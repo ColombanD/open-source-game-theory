@@ -19,7 +19,12 @@
       "Bash(Provable k *)",
       "Bash(echo \"=== PBLT/boxInternalize produce Provable via AXIOM, not constructor. So induction over Provable does NOT see a 'PBLT case' — a PBLT-produced `Provable k phi` is OPAQUE, looks like any other Provable. This is the crux risk. ===\")",
       "Bash(grep -iv \"unused variable\\\\|linter\\\\|^Note:\\\\|^$\")",
-      "Bash(grep -iv \"unused variable\\\\|linter\\\\|^Note:\\\\|^$\\\\|declaration uses .sorry\")"
+      "Bash(grep -iv \"unused variable\\\\|linter\\\\|^Note:\\\\|^$\\\\|declaration uses .sorry\")",
+      "Bash(grep -iv \"linter\\\\|^Note:\\\\|^$\")",
+      "Bash(cd \"/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   }
 }

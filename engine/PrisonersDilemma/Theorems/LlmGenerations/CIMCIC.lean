@@ -133,21 +133,132 @@ theorem CIMCIC_vs_CooperateBot :
     simpa [Nat.add_comm] using play_CooperateBot (fuel + 1) (CIMCIC (K + 1))
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-/-
-## CIMCIC vs DefectBot — left unproved (incompleteness boundary)
+/-!
+## CIMCIC vs DefectBot — (D, D), PROVED with NO axiom
 
-The intended outcome is (D, D): CIMCIC's guard cannot be discharged, so it falls
-through to `.const .D`. But "the guard search returns false" is the Π₁ claim that
-the (semantically true, vacuously-satisfied) implication
+The guard `(.plays (CIMCIC k) DefectBot C) → (.plays DefectBot (CIMCIC k) C)` is vacuously TRUE
+(both antecedent and consequent false) but **structurally UNPROVABLE** within `S`. An earlier note
+left this "deliberately omitted" believing unprovability of a *true* formula could not be certified.
+It can — not by the `interp`-refutation route (the implication's interp IS true), but by a
+**structural exclusion**: NO `Provable` constructor concludes this implication. The KEY is that the
+implication's CONSEQUENT (`DefectBot plays C`) is a genuinely-FALSE atom — refuted by
+`Provable_sound` — which blocks the only realistic path (`weakenImpl`, which needs the consequent
+provable). Combined with a `ForbiddenC`-motive induction excluding the `Derivation` and `implTrans`
+paths, this gives `¬ Provable k guard`, hence `proofSearch = false`, hence CIMCIC defects.
 
-  `.plays (CIMCIC k) DefectBot .C → .plays DefectBot (CIMCIC k) .C`
-
-has no proof of size ≤ k. Our sound proof system cannot certify unprovability of a
-*true* formula, and the `= false` discharge route (`proofSearch_sound` +
-`¬ interp`) is unavailable because the implication's `interp` is true. Closing this
-would require either an oracle-completeness axiom restricted to the decidable
-fragment, or a metatheoretic argument outside `S`. It is therefore deliberately
-omitted rather than stated with `sorry`.
+This does NOT use `atom_complete_false_guard`. The `.impl`-guard false case is genuinely
+dischargeable BECAUSE its consequent is a false atom; contrast the play-atom false guards
+(DupocBot/JustBot/…) whose guard is a play-atom with no such handle.
 -/
+
+/-- The substituted CIMCIC guard against DefectBot. -/
+abbrev cimcic_guard (k : Nat) : Formula :=
+  .impl (.plays (CIMCIC k) DefectBot Action.C) (.plays DefectBot (CIMCIC k) Action.C)
+
+/-- The consequent atom `DefectBot plays C vs CIMCIC` is genuinely UNPROVABLE: DefectBot plays D,
+    so its `interp` is false, refuted by `Provable_sound`. -/
+theorem cimcic_consequent_not_provable (k m : Nat) :
+    ¬ Provable m (.plays DefectBot (CIMCIC k) Action.C) := by
+  intro h
+  obtain ⟨n, hn⟩ := Provable_sound m _ h
+  have : play n DefectBot (CIMCIC k) = some Action.D ∨ play n DefectBot (CIMCIC k) = none := by
+    cases n with
+    | zero => right; rfl
+    | succ n => left; simp [play, eval, DefectBot]
+  rcases this with hD | hNone
+  · rw [hD] at hn; exact absurd hn (by decide)
+  · rw [hNone] at hn; exact absurd hn (by decide)
+
+/-- `ForbiddenC k φ`: φ is, or is an `.impl`-chain ending in, the false consequent `DefectBot plays
+    C vs CIMCIC`. The motive for the structural exclusion. -/
+def CimcicForbiddenC (k : Nat) : Formula → Prop
+  | .plays p q a => p = DefectBot ∧ q = CIMCIC k ∧ a = Action.C
+  | .impl _ ψ    => CimcicForbiddenC k ψ
+  | _            => False
+
+/-- No `Derivation` concludes `.impl _ (false-consequent)`: leaf rules need the consequent-subject
+    `DefectBot` (= `.const D`) to be `.sim`/`.ite`/`.search`; `modusPonens`/`hypSyll` recurse. -/
+theorem cimcic_no_deriv_forbidden (k : Nat) : ∀ {φ}, Derivation φ → ¬ CimcicForbiddenC k φ := by
+  intro φ d
+  induction d with
+  | modusPonens _ _ _ _ ihimpl _ => intro hF; exact ihimpl hF
+  | hypSyll _ _ _ _ _ _ ihbc => intro hF; exact ihbc hF
+  | searchBranch _ _ _ _ _ _ hme => intro hF; subst hme; simp only [CimcicForbiddenC] at hF
+                                    obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
+  | simStep _ _ _ _ _ hme => intro hF; subst hme; simp only [CimcicForbiddenC] at hF
+                             obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
+  | botSimStep _ _ _ _ _ hme => intro hF; subst hme; simp only [CimcicForbiddenC] at hF
+                                obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
+  | botSearchStep _ _ _ _ _ _ hme => intro hF; subst hme; simp only [CimcicForbiddenC] at hF
+                                     obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
+  | iteBranchSearch_t _ _ _ _ _ _ _ _ _ hme => intro hF; subst hme; simp only [CimcicForbiddenC] at hF
+                                               obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
+  | eqRefl _ => intro hF; simp only [CimcicForbiddenC] at hF
+
+/-- No `Provable` concludes `.impl _ (false-consequent)` — covers `weakenImpl` + `implTrans` + the
+    rest. By `Provable.rec`; the `atom` case bottoms out on `cimcic_consequent_not_provable`. -/
+theorem cimcic_no_provable_forbidden (k : Nat) :
+    ∀ {m φ}, Provable m φ → ¬ CimcicForbiddenC k φ := by
+  intro m φ h
+  exact Provable.rec
+    (motive_1 := fun _ _ _ _ _ _ => True)
+    (motive_2 := fun _ _ _ => True)
+    (motive_3 := fun _ φ _ => ¬ CimcicForbiddenC k φ)
+    trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
+    (fun _ _ _ => trivial)
+    (fun {_k} {_φ} hd => by intro hF; obtain ⟨d, _⟩ := hd; exact cimcic_no_deriv_forbidden k d hF)
+    (fun {_k} {_φ} hatom _ => by
+        intro hF
+        cases hatom with
+        | mk cert hle =>
+            simp only [CimcicForbiddenC] at hF; obtain ⟨hp, hq, ha⟩ := hF
+            subst hp; subst hq; subst ha
+            exact cimcic_consequent_not_provable k _ (Provable.atom (.mk cert hle)))
+    (fun _ _ _ _ _ _ ih => by intro hF; exact ih hF)                              -- weakenImpl
+    (fun {_k} _k₁ _k₂ _ψ₁ _ψ₂ _c0 _c1 _q _me _opp hme _hprud _hk2 _hsz _ih => by  -- searchThenSearch_t
+        intro hF; subst hme; simp only [CimcicForbiddenC] at hF
+        obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm)
+    (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hψsz _hsz _ihab ihbc => by intro hF; exact ihbc hF)  -- implTrans
+    (fun {_k} _ _ _ _ _ _ _ => by intro hF; simp only [CimcicForbiddenC] at hF)  -- atomBoxImpl
+    h
+
+/-- CIMCIC's guard against DefectBot is **not provable** within any budget `k`. -/
+theorem cimcic_guard_not_provable (k : Nat) : ¬ Provable k (cimcic_guard k) := by
+  intro h
+  refine cimcic_no_provable_forbidden k h ?_
+  show CimcicForbiddenC k (cimcic_guard k)
+  unfold cimcic_guard CimcicForbiddenC CimcicForbiddenC
+  exact ⟨rfl, rfl, rfl⟩
+
+/-- `proofSearch k guard = false` — from `cimcic_guard_not_provable`. -/
+theorem proofSearch_false_for_CIMCIC_vs_DefectBot (k : Nat) :
+    proofSearch k
+      ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst
+        (CIMCIC k) DefectBot) = false := by
+  show proofSearch k (cimcic_guard k) = false
+  cases hps : proofSearch k (cimcic_guard k) with
+  | false => rfl
+  | true => exact absurd ((proofSearch_spec k (cimcic_guard k)).1 hps) (cimcic_guard_not_provable k)
+
+/-- CIMCIC defects against DefectBot: its guard fails, so it takes the `.const .D` branch. -/
+theorem CIMCIC_plays_D_against_DefectBot (k fuel : Nat) :
+    play (fuel + 2) (CIMCIC k) DefectBot = some .D := by
+  show (if proofSearch k
+            ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst
+              (CIMCIC k) DefectBot)
+          then eval (fuel + 1) (CIMCIC k) DefectBot (.const Action.C)
+          else eval (fuel + 1) (CIMCIC k) DefectBot (.const Action.D)) = some .D
+  rw [proofSearch_false_for_CIMCIC_vs_DefectBot k]; simp [eval]
+
+/-- **CIMCIC vs DefectBot: mutual defection (D, D)** — formerly the deliberately-omitted theorem,
+    now PROVED with NO `atom_complete_false_guard` axiom. -/
+theorem CIMCIC_vs_DefectBot :
+    ∃ k, ∀ fuel, outcome (fuel + 2) (CIMCIC k) DefectBot = some (.D, .D) := by
+  refine ⟨0, fun fuel => ?_⟩
+  have hA : play (fuel + 2) (CIMCIC 0) DefectBot = some .D := CIMCIC_plays_D_against_DefectBot 0 fuel
+  have hB : play (fuel + 2) DefectBot (CIMCIC 0) = some .D := by
+    simpa using play_DefectBot (fuel + 1) (CIMCIC 0)
+  exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems
