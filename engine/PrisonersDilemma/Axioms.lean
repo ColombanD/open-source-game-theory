@@ -38,29 +38,58 @@ Everything else is a theorem in `BaseTheorems.lean`.
 -/
 
 
-/-- The irreducible Π₁ residue of σ₁-completeness: a play that has no
-    constructive `PlaysProof` certificate (because it branched on a *failed*
-    proof search, requiring `¬ Provable k (guard)` — Π₁, non-positive) still
-    has an `AtomProvable` certificate at budget `atom_cost fuel`.
-    Use `atom_complete` (the theorem below) at call sites.
+/-- The Π₁ residue of σ₁-completeness: a play that has no constructive `PlaysProof`
+    certificate (because it branched on a *failed* proof search, requiring
+    `¬ Provable k (guard)` — Π₁, non-positive) still has an `AtomProvable` certificate
+    at budget `atom_cost fuel`. Use `atom_complete` (the theorem below) at call sites.
 
-    NOTE — currently not *force-exercised* by the library. `atom_complete` is the
-    only consumer, via a `by_cases` on whether a constructive `PlaysProof` exists;
-    every call site to date (CupodBot/DupocBot/CupodTrollBot theorems) transcribes
-    a play whose internal guards all fire *true* (or has no guard at all — const
-    bots), so it always lands in the constructive branch and this axiom is never
-    forced. It is referenced (so it compiles) but no theorem's truth yet depends
-    on it.
+    STATUS — LOAD-BEARING and DECIDABLE-but-uncarried (corrected 2026-06-26).
 
-    To genuinely exercise it you need to lift a *failed-guard cooperation* into a
-    provable atom — i.e. some bot `Z` that proof-searches "does my opponent
-    cooperate with me?" (`.search k (.plays .opp .self .C) …`) played against
-    CUPOD. CUPOD cooperates with `Z` by taking its *else* (failed-guard) branch,
-    so certifying `.plays (CupodBot k) Z .C` needs the missing `search_f` step —
-    no constructive `PlaysProof` exists, and `atom_complete` falls through here.
-    No such bot is in the library yet; add one (e.g. a "CupodProber") to make this
-    axiom load-bearing, or drop it and restrict `atom_complete` to the true-guard
-    / const fragment the library actually uses. -/
+    * **It IS load-bearing.** An earlier note here claimed "no theorem's truth depends
+      on it." That was WRONG: a call-site survey found ≈5 genuine false-guard plays that
+      route through this axiom — a `.search`-bot playing its *else*-branch action, e.g.
+      `PrudentBot plays D vs .bot DefectBot` (`prudence_self_prudent`,
+      `Theorems/LlmGenerations/PrudentBot.lean`), `JustBot plays D vs .bot DefectBot`,
+      `CupodTrollBot plays C vs DupocBot`. These feed real cross-bot outcome theorems.
+
+    * **Its content is DECIDABLE, not witness-free.** The fact "no size-≤-k `PlaysProof`
+      of the guard exists" is the negation of a DECIDABLE predicate: the sound, computable
+      checker `ppSize` (`ComputableEval/PlaysCheck.lean`, `ppSize_sound`) decides bounded
+      play-certificate existence by a terminating procedure. So this axiom postulates a
+      decidable fact, not an oracle. The eval-trace bridge `eval_search_false` (same file)
+      connects a failed guard to the real else-branch play.
+
+    * **Why it stays an axiom — TWO walls, both now machine-located.**
+
+      WALL 1 (positivity, lifted). A `search_f` constructor carrying `¬ Provable`/`¬ PlaysProof`
+      is kernel-impossible (non-positive). This IS liftable: `Provable_fin` (`Derivation.lean`,
+      a decidable `proofSearch`-free finite-provability predicate) is now defined BEFORE the
+      `PlaysProof`/`Provable` mutual block (the cycle-break), so a `search_f` carrying
+      `decide (Provable_fin k guard) = false` is kernel-POSITIVE and TYPECHECKS. We verified
+      this in-engine (`ProvableFinSpike.lean`, and a transient real-engine `search_f`).
+
+      WALL 2 (soundness, NOT lifted — the deeper boundary). Even typeable, `search_f` is NOT
+      SOUND. `playsProof_sound` must discharge it for EVERY `search_f` certificate, and that
+      needs `proofSearch k guard = false` (eval-exact: `eval` runs the else-body only when the
+      guard fails). But `decide (Provable_fin k guard) = false` does NOT imply `proofSearch k
+      guard = false`: at a Löb fixpoint `Provable_fin = false` while `Provable`/`proofSearch`
+      is `PBLT`-axiom-TRUE. And `eval` CANNOT be rewired to consult `Provable_fin` instead of
+      `proofSearch` — the PBLT cooperations (e.g. `CupodBot.lean:112`) REQUIRE `proofSearch =
+      true` at the self-referential fixpoint guard, where `Provable_fin` is false. So the
+      sound premise is the Π₁ fact `¬ Provable k guard`, irreducibly non-positive in-block.
+
+      Net: the cycle-break makes the false-guard fact DECIDABLE and the constructor TYPEABLE,
+      but the Löb fixpoint forces the SOUNDNESS premise to be the non-positive Π₁ negation.
+      The two coincide (`Provable_fin = false ↔ proofSearch = false`) exactly OFF the fixpoints
+      — which is the same proof-vs-witness boundary as the noncomputable-`eval` crux. Removing
+      this axiom is entangled with `PBLT` (the Löb axiom) and is NOT independently dischargeable.
+
+    Machine-grounded investigation: `Research/Spikes/{SearchFFeasibilitySpike,SizeIndexSpike,
+    PortPhaseASpike,DecidableFiniteSpike,ProvableFinSpike}.lean`. `Provable_fin` /
+    `instDecProvableFin` / `provableFin_sound` / `ppSize` (the computable, sound decider) are
+    shipped IN-ENGINE (`Derivation.lean`, `ComputableEval/PlaysCheck.lean`): the false-guard
+    fact's existence is decidable; only its SOUND in-`PlaysProof` carriage is blocked, by the
+    Π₁/PBLT entanglement above. -/
 axiom atom_complete_false_guard :
   ∀ p q a fuel, play fuel p q = some a →
     ¬ (∃ _ : PlaysProof p q p a (atom_cost fuel), True) →
