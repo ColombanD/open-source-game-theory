@@ -94,11 +94,11 @@ refactor is NOT a prerequisite for making the finite fragment `by decide` — it
     (weakenImpl + the Derivation-of-impl rules — the spike's `.impl` arm currently does ONLY
     weakenImpl, which suffices for CIMCIC/DIMCID whose impl guard is weakenImpl-only, but a general
     proof must also exclude searchBranch/simStep/iteBranchSearch_t/hypSyll concluding the impl — the
-    `ExclusionSpike`-style structural argument). (b) the fuel bound (≤-cost) à la PortPhaseA.
+    `Exclusion.lean`-style structural argument). (b) the fuel bound (≤-cost) à la PortPhaseA.
   • The Löb fixpoints stay `none`/axiom, permanently — UNCHANGED, the proof-vs-witness boundary.
 
 **Net:** Phase 0 is NOT gating. The remaining Phase-2 work is the SOUNDNESS proof of the fuelled
 decider over the reflection-rule (`weakenImpl`) fragment — moderate engineering, same flavour as
-`ppSize_sound` + `ExclusionSpike`, both already done for the play-atom slice. -/
+`ppSize_sound` + `Exclusion.lean`, both already done for the play-atom slice. -/
 
 end PD.FuelledImplSpike

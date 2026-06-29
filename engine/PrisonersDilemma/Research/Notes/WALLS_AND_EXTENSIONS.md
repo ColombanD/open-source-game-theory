@@ -71,10 +71,11 @@ fact, not a positive fixpoint.
   fixpoint* (`Provable_fin` false while `Provable`/`proofSearch` is PBLT-axiom-true), and `eval`
   can't be rewired to `Provable_fin` because the PBLT cooperations need `proofSearch = true`
   there.
-- **Exclusion Lemma (machine-checked, `[propext]`)**: no `PlaysProof` concludes a search-bot's
-  ELSE-action ⇒ the else-play's **certificate type is provably empty**. The axiom inhabits a true
-  `interp` consequence that has *no term at all*. The honest premise `¬ Provable k guard` is a Π₁
-  negation, kernel-non-positive in the mutual block.
+- **Exclusion Lemma (machine-checked, `[propext]`, root-imported in
+  `ComputableEval/Exclusion.lean`)**: `no_deriv_else` / `provable_else_isAtom` — no `PlaysProof`
+  concludes a search-bot's ELSE-action ⇒ the else-play's **certificate type is provably empty**. The
+  axiom inhabits a true `interp` consequence that has *no term at all*. The honest premise
+  `¬ Provable k guard` is a Π₁ negation, kernel-non-positive in the mutual block.
 
 **Net:** removing the axiom needs a `PlaysProof` rule producing the else-action soundly — blocked
 by Walls 1+2. The *fact* is decidable and the witness is shipped, but it cannot be *carried* as an
@@ -157,10 +158,15 @@ box-intro on top of a **size-indexed `Derivation`** (box budget a tracked index,
   `Nat`) — the Phase-0 refactor (~500 refs) that both the fixpoint box-intro and the false-guard
   track bottom out on. Not yet tried.
 
-**Shipped artifacts that sit exactly at each boundary:**
-- `evalC` (sound, total, computable *partial* evaluator; `none` exactly at the fixpoints).
-- `ppSize` / `Provable_fin` / `instDecProvableFin` (computable, sound decider for the false-guard
-  fact).
+**Shipped artifacts that sit exactly at each boundary (all root-imported, `[propext]`-clean):**
+- `evalC` (`ComputableEval/Computable.lean`) — sound, total, computable *partial* evaluator; `none`
+  exactly at the fixpoints.
+- `ppSize` / `Provable_fin` / `instDecProvableFin` (`ComputableEval/PlaysCheck.lean`) — computable,
+  sound decider for the bounded play-certificate.
+- `no_deriv_else` / `provable_else_isAtom` / `decidablePred_provableFin`
+  (`ComputableEval/Exclusion.lean`) — the **irreducibility proof** for `atom_complete_false_guard`
+  (else-play certificate type provably empty) + the `DecidablePred (Provable_fin k)` named lemma.
+  Promoted from scratch into the engine (Step 1, done).
 
 ---
 
@@ -170,11 +176,13 @@ Read the box-intro work as a **diagnosis, not a removability verdict**: it conve
 four axioms into "removable *iff* one unattempted refactor succeeds," and isolated the fourth as
 genuinely irreducible. The order below reflects payoff-per-risk.
 
-1. **Cheap, independent wins (do regardless).**
-   - `DecidablePred (Provable_finite k)` by enumeration (S2) — bankable, no refactor.
-   - Promote the `ExclusionSpike` lemmas from scratch into the engine — they are the *proof* that
-     `atom_complete_false_guard` is irreducible; worth having root-imported and `#print axioms`-clean
-     as a citable result.
+1. **Cheap, independent wins — DONE ✅ (`ComputableEval/Exclusion.lean`, root-imported,
+   `[propext]`-clean).**
+   - `decidablePred_provableFin` — `DecidablePred (Provable_fin k)`, the finite proof-TERM fragment,
+     computing via `instDecProvableFin`.
+   - `no_deriv_else` / `provable_else_isAtom` — the citable *proof* that
+     `atom_complete_false_guard` is irreducible (else-play certificate type provably empty). Promoted
+     from the (now-deleted) `ExclusionSpike`.
 
 2. **The one lever that moves three axioms — size-indexed `Derivation` (Phase-0).**
    Make the box budget a tracked index instead of a free `Nat`. Predicted payoff (from the box-intro

@@ -68,7 +68,7 @@ was a Löb loop Lean must reject. It isn't: that was an artifact of unfolding a
 The single residue is `atom_complete`'s false-guard direction (`¬ Provable`, Π₁) —
 still the axiom `atom_complete_false_guard` in `Axioms.lean`. Its irreducibility is
 now machine-located: a `.search`-bot's ELSE-action has NO certificate term at all
-(neither `Derivation` nor `PlaysProof` produces it — `Research/Spikes/ExclusionSpike.lean`,
+(neither `Derivation` nor `PlaysProof` produces it — `ComputableEval/Exclusion.lean`,
 `no_deriv_else`/`provable_else_isAtom`, `[propext]` only). So the axiom postulates a
 true `interp` (`play = some aElse`) whose proof TERM provably does not exist — the
 proof-vs-witness gap at the certificate level. Removing it would need a `PlaysProof`
@@ -252,7 +252,7 @@ mutual
     --     `proofSearch = false` at the Löb fixpoints (`Provable` is `PBLT`-axiom-true there). And
     --     `eval` cannot be rewired to use `Provable_fin` — the PBLT cooperations (CupodBot.lean:112)
     --     need `proofSearch = true` at the fixpoint guard.
-    -- Deeper still (`ExclusionSpike.lean`): a `.search`-bot's ELSE-action has NO certificate term
+    -- Deeper still (`ComputableEval/Exclusion.lean`): a `.search`-bot's ELSE-action has NO certificate term
     -- at all — `no_deriv_else`/`provable_else_isAtom` prove (`[propext]` only) that neither
     -- `Derivation` nor `PlaysProof` produces it. So the axiom postulates a true `interp` whose proof
     -- TERM provably does not exist. The false-guard completeness stays the axiom.

@@ -76,7 +76,7 @@ def ppSize : Nat → (me opponent body : Prog) → Action → Option Nat
 
     This is the computable WITNESS for `atom_complete_false_guard`'s decidability claim (`Axioms.lean`):
     the axiom postulates a fact that IS decidable (here) but cannot be soundly CARRIED as a `PlaysProof`
-    constructor (the two-wall + ExclusionSpike result). Arms: a play-atom via `ppSize`; an `.eq p q`
+    constructor (the two-wall + `Exclusion.lean` result). Arms: a play-atom via `ppSize`; an `.eq p q`
     via `p = q` (the `eqRefl` leaf, agreeing with `Provable.struct ⟨eqRefl,…⟩`); else out of fragment. -/
 def Provable_fin (k : Nat) (φ : Formula) : Prop :=
   match φ with
