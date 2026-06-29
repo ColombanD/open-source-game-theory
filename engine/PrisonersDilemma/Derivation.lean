@@ -352,6 +352,25 @@ mutual
         AtomProvable kBox (.plays p q a) →
         (Formula.impl (.plays p q a) (.box kBox (.plays p q a))).size ≤ k →
         Provable k (.impl (.plays p q a) (.box kBox (.plays p q a)))
+    /-- **Box-introduction / bounded necessitation** (HBL D2, the constructive
+        realization of the former axiom `box_provable`): if `φ` is provable within
+        budget `kIn`, then that *fact* — `□_{kIn} φ` — is itself provable, at any output
+        budget `K` at least the conclusion's character size `(.box kIn φ).size` (faithful
+        to `Derivation.size = conclusion.size`; the `size ≤ K` premise makes it self-weaken,
+        keeping `proofSearch_monotone`).
+
+        Sound with NO axiom: `(□_{kIn} φ).interp` is *definitionally* `Provable kIn φ`
+        (Dynamics.lean), which is exactly the premise — so the `Provable_sound` arm is
+        the identity. SAFE (unlike the removed-unsound `atom_box_provable_impl`, which
+        fabricated a certificate from a mere play): the premise here is genuine
+        `Provable kIn φ`, so nothing false is boxed (no `Provable kIn (DefectBot plays C)`
+        premise exists). Faithful: provable-Σ₁-completeness on the Σ₁ predicate
+        `Provable kIn φ` (Solovay / HBL D2). The minimal witness `K = (.box kIn φ).size`
+        gives the consumer the `K ≤ (.box kIn φ).size` bound the former axiom asserted. -/
+    | boxIntro (kIn K : Nat) (φ : Formula) :
+        Provable kIn φ →
+        (Formula.box kIn φ).size ≤ K →
+        Provable K (.box kIn φ)
 end
 
 -- 4. The proof-search oracle: bounded provability reflected into `Bool` for the

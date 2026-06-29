@@ -1,6 +1,15 @@
 /-!
 # Step 2 gate spike — size-indexed box-introduction
 
+⚠️ **SUPERSEDED 2026-06-29 — the refactor this gated is SHELVED as unnecessary.** This spike tested
+a PROOF-TREE size index; `FormulaSizeBoxIntroSpike.lean` then found the real engine uses
+conclusion-`Formula.size`, so box-intro is a LOCAL constructor needing NO re-index. `box_provable`
+was duly eliminated by `Provable.boxIntro` (Derivation.lean) with NO refactor. This file is retained
+only for the K-distribution soundness result (the `distrib`/`k_no_false` part), which informs the
+remaining `boxInternalize` target. See `Research/Notes/WALLS_AND_EXTENSIONS.md`.
+
+---
+
 GO/NO-GO for the ~500-ref size-indexed-`Derivation` refactor. Scope:
 `Research/Notes/STEP2_SIZE_INDEX_SCOPE.md`.
 

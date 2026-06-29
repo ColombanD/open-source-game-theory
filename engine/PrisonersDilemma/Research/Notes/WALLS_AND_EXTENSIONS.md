@@ -8,19 +8,26 @@ have *no finite proof TERM*. Every wall below is one facet of that gap.
 
 ---
 
-## The 4 axioms
+## The 3 axioms (was 4 — `box_provable` ELIMINATED 2026-06-29)
 
-All four are interp-**sound**; they are axioms only because `Derivation` has no *fixpoint*
-box-introduction constructor and does not size-index proof trees, so a witness can't be built
-structurally. (A box-intro constructor for the *witnessed* case — `atomBoxImpl` — DOES exist; see
-the box-introduction section below.)
+All three are interp-**sound**; they are axioms only because `Derivation` has no *fixpoint*
+box-introduction constructor, so a fixpoint witness can't be built structurally. (Plain
+box-introduction DOES exist as constructors — `atomBoxImpl` for the witnessed atom, and now
+`boxIntro` for bare necessitation; see the box-introduction section.)
 
 | Axiom | Role | Removable? |
 |---|---|---|
 | `PBLT` | Parametric Bounded Löb (Critch 3.6); closes the `∀k` cooperation families | Mechanizable **faithfully (route A)** — but stays classical/existential. NOT the constructive lever. |
-| `box_provable` | Bounded GL-4 (Σ₁-completeness, no fixpoint) | **Yes**, as a constructive theorem under size-indexed `Derivation` (gate spike PASS, Step 2). |
-| `boxInternalize` | Box-internalization at fixed budget `k`; closes the 3 cross-bot fixpoints via `mutual_loeb` | **Conditionally** — becomes a sound constructor + a size-matching obligation per `mutual_loeb` leg (gate spike, Step 2). Sound today tautologically (`interp := hfitD`). |
+| `boxInternalize` | Box-internalization at fixed budget `k`; closes the 3 cross-bot fixpoints via `mutual_loeb` | **Conditionally** — needs the K-DISTRIBUTION (`□φ→□α`) form + a size-matching obligation per `mutual_loeb` leg (next target). Sound today tautologically (`interp := hfitD`). |
 | `atom_complete_false_guard` | Π₁ residue: a play branching on a *failed* guard has a cert | **NO — proven irreducible** (Wall 2 below). Load-bearing (~5 false-guard else-plays). |
+
+**`box_provable` (bounded GL-4 / necessitation) — REMOVED, now the THEOREM `BaseTheorems.box_provable`
+(`#print axioms`: depends on NONE).** Discharged by a LOCAL box-introduction constructor
+`Provable.boxIntro` (Derivation.lean), built directly from the premise `Provable k φ` with output
+budget bounded by `(.box k φ).size`. **This did NOT need the size-indexed `Derivation` refactor** —
+the engine's cost model is conclusion-`Formula.size` (not proof-tree size), so no structural index
+was required (see the box-introduction section for the re-scoping that found this). Safe (premise is
+genuine `Provable`, so nothing false is boxed — unlike the removed-unsound `atom_box_provable_impl`).
 
 (`atom_box_provable_impl` was **removed** as unsound; its sound content survives as a theorem +
 the `atomBoxImpl` rule. `c_guard_mono` was demoted axiom→theorem.)
@@ -100,16 +107,25 @@ Both are the proof-vs-witness gap; one positive, one negative. Both **proven**, 
 
 ---
 
-## Box-introduction in `Derivation` — what was tried
+## Box-introduction in `Derivation`/`Provable` — what was tried
 
-"Box-intro" is not one thing. It comes in three flavors, with three different fates. This is the
-representational gap the `box_provable` / `boxInternalize` axioms cite.
+"Box-intro" is not one thing. It comes in four flavors. This is the representational gap the
+`box_provable` (now removed) / `boxInternalize` axioms cite.
+
+**KEY RE-SCOPING (2026-06-29, `FormulaSizeBoxIntroSpike.lean`).** The engine's cost model is
+conclusion-`Formula.size` (`Derivation.size := conclusion.size`), NOT proof-tree size. `box_provable`
+and `mutual_loeb` discharge their budget obligations entirely through `Formula.size` side-conditions,
+which need NO structural index on `Derivation`. The real blocker for box-intro was never a missing
+size index — it was a **missing box-introduction constructor** (`no_box_headed_deriv`: no `Derivation`
+concludes a `.box`-headed formula, even via `modusPonens`). So the ~500-ref size-index refactor was
+testing the WRONG lever; the fix is a LOCAL constructor on `Provable`.
 
 | Flavor | What it is | Status |
 |---|---|---|
 | **Bare unwitnessed atom** | `φ → □_k φ` for an arbitrary atom | **TRIED → REMOVED, unsound.** Was `atom_box_provable_impl`: its interp forces a size-≤-k cert whenever the play happens at *some* fuel — false. |
-| **Witnessed atom** | box the atom only when an `AtomProvable` witness is already held | **TRIED → SHIPPED, no axiom.** Lives as the `atomBoxImpl` constructor (`Derivation.lean:351`), discharged constructively. |
-| **Fixpoint (unwitnessed cooperation)** | box the cooperative atom at a Löb fixpoint | **TRIED two ways (spiked), settled with `boxInternalize`** — see below. |
+| **Witnessed atom** | box the atom only when an `AtomProvable` witness is already held | **SHIPPED, no axiom.** The `atomBoxImpl` constructor (`Derivation.lean`). |
+| **Bare necessitation** | `Provable k φ → □_k φ` (premise is genuine provability) | **SHIPPED 2026-06-29, no axiom — this is what KILLED `box_provable`.** The `boxIntro` constructor (`Derivation.lean`): output budget bounded by `(.box k φ).size`, `Provable_sound` arm is the identity (`interp (.box k φ) := Provable k φ`). SAFE — premise is genuine `Provable`, inert on false atoms. |
+| **Fixpoint (unwitnessed cooperation)** | box the cooperative atom at a Löb fixpoint | **TRIED two ways (spiked), settled with `boxInternalize`** — see below. Still axiom. |
 
 **The fixpoint case (`MutualLobSpike.lean`, machine-checked):**
 - **Route 1** (chain bare outputs): FAILS — only *relocates* the bare-atom box-intro (φP→φD);
@@ -126,11 +142,14 @@ representational gap the `box_provable` / `boxInternalize` axioms cite.
   budget = cert cost, which can't be reconciled to the `k` that PBLT + the opponent leg demand;
   bridging `□_{cert} α → □_k α` needs unsound box-index weakening.
 
-**Net:** a constructor-level box-intro exists for the *witnessed* atom (`atomBoxImpl`); for the
-*fixpoint* no sound constructor-level box-intro is reachable in the current architecture, which is
-exactly why `boxInternalize` (meta-transformer) carries it. The one **unattempted** lever is
-box-intro on top of a **size-indexed `Derivation`** (box budget a tracked index, not a free `Nat`)
-— the same Phase-0 refactor (~500 refs) the false-guard track also bottoms out on.
+**Net:** constructor-level box-intro now exists for the *witnessed* atom (`atomBoxImpl`) AND for
+*bare necessitation* (`boxIntro`, which discharged `box_provable`). For the *fixpoint*, the missing
+piece is the K-DISTRIBUTION `□φ → □α` (not bare necessitation): `boxIntro` gives `□(φ→α)` but not the
+distributed `□φ → □α` that `mutual_loeb` consumes. A same-`k` GL axiom-K constructor for this is sound
+(gate spike `SizeIndexBoxIntroSpike.lean`: false atom stays underivable) but carries a per-leg
+size-matching obligation (the `HonestKSpike` budget wall, relocated to a `Formula.size` equality, not
+unsoundness). That is the next box-intro target — and, like `box_provable`, it does NOT need the
+size-index refactor (the obligation is in `Formula.size`, the engine's existing currency).
 
 ---
 
@@ -149,14 +168,14 @@ box-intro on top of a **size-indexed `Derivation`** (box budget a tracked index,
 - Deciding `Provable k φ` by structural recursion on the program — `subst` of a `.search`-bot into
   its own guard raises search-depth (`DecMeasure.lean`).
 - The `derivable`/`playsCheck` separate-search-gas checker — non-monotone.
-- Faithful object-antecedent GL-K for the cross-bot fixpoints (constructor-level fixpoint box-intro)
-  — needs unsound box-index weakening (`HonestKSpike.lean`). See the box-introduction section.
+- Faithful object-antecedent GL-K for the cross-bot fixpoints (existential output budget) — needs
+  unsound box-index weakening (`HonestKSpike.lean`). The *same-`k`* GL-K is sound (gate spike) but
+  carries a size-matching obligation — that's the live `boxInternalize` target, not a dead end.
 - Bare-atom box-intro `φ → □_k φ` (the old `atom_box_provable_impl`) — unsound, removed.
-
-**Unattempted lever (would change the box-intro/`box_provable` story):**
-- Box-introduction on top of a **size-indexed `Derivation`** (box budget a tracked index, not a free
-  `Nat`) — the Phase-0 refactor (~500 refs) that both the fixpoint box-intro and the false-guard
-  track bottom out on. Not yet tried.
+- **The ~500-ref size-indexed `Derivation` refactor — SHELVED as unnecessary.** Re-scoping
+  (`FormulaSizeBoxIntroSpike.lean`) found the engine uses conclusion-`Formula.size`, not proof-tree
+  size, so box-intro is a LOCAL constructor (`boxIntro`, which discharged `box_provable`) — no
+  re-index needed. Do not start the refactor.
 
 **Shipped artifacts that sit exactly at each boundary (all root-imported, `[propext]`-clean):**
 - `evalC` (`ComputableEval/Computable.lean`) — sound, total, computable *partial* evaluator; `none`
@@ -167,14 +186,17 @@ box-intro on top of a **size-indexed `Derivation`** (box budget a tracked index,
   (`ComputableEval/Exclusion.lean`) — the **irreducibility proof** for `atom_complete_false_guard`
   (else-play certificate type provably empty) + the `DecidablePred (Provable_fin k)` named lemma.
   Promoted from scratch into the engine (Step 1, done).
+- `Provable.boxIntro` (`Derivation.lean`) + `BaseTheorems.box_provable` (theorem, no axioms) — the
+  **local box-introduction constructor that eliminated the `box_provable` axiom** (4 → 3),
+  2026-06-29.
 
 ---
 
 ## Next steps
 
-Read the box-intro work as a **diagnosis, not a removability verdict**: it converted three of the
-four axioms into "removable *iff* one unattempted refactor succeeds," and isolated the fourth as
-genuinely irreducible. The order below reflects payoff-per-risk.
+Progress: 4 axioms → **3** (`box_provable` eliminated 2026-06-29). The remaining three split into
+`boxInternalize` (next, local — the K-distribution), `PBLT` (the deep Löb core, route A only), and
+`atom_complete_false_guard` (proven irreducible). The order below reflects payoff-per-risk.
 
 1. **Cheap, independent wins — DONE ✅ (`ComputableEval/Exclusion.lean`, root-imported,
    `[propext]`-clean).**
@@ -184,35 +206,28 @@ genuinely irreducible. The order below reflects payoff-per-risk.
      `atom_complete_false_guard` is irreducible (else-play certificate type provably empty). Promoted
      from the (now-deleted) `ExclusionSpike`.
 
-2. **The one lever that moves three axioms — size-indexed `Derivation` (Phase-0).**
-   Make the box budget a tracked index instead of a free `Nat`. Predicted payoff (from the box-intro
-   findings): a *constructor-level* fixpoint box-intro becomes soundly definable, which would
-   discharge `box_provable` and `boxInternalize` as constructive theorems and let `atomBoxImpl`
-   generalize to the fixpoint case. Cost ~500 refs, long red-build valley.
-   - **GATE SPIKED — CONDITIONAL PASS (GO), 2026-06-29.** `Research/Spikes/bounded_lob/
-     SizeIndexBoxIntroSpike.lean` (sorry-free, `#print axioms` ⊆ {propext}). Findings:
-     - **`box_provable` → theorem: clean PASS.** A size-indexed `boxIntro` constructor IS
-       kernel-positive and computes the output budget from the sub-proof's tracked size — the exact
-       thing the real `Provable` cannot do today. Necessitation becomes a constructive theorem.
-     - **`boxInternalize` → SOUND constructor + a size-matching obligation (not a free theorem).**
-       A same-`k` GL axiom-K (`distrib`) constructor stays sound (false atom provably underivable,
-       no `:= hfitD` tautology). BUT the `HonestKSpike` budget-inflation wall does not vanish — it
-       RELOCATES to a size-EQUALITY side-condition on the two `mutual_loeb` legs (the boxed
-       sub-proofs must have equal size). Dischargeable (sizes can be padded to match), and strictly
-       better than the old unsound existential-budget weakening — but a real per-leg proof
-       obligation the refactor must carry.
-   - **Recommendation:** GO, eyes open. `box_provable` is a clean win; `boxInternalize` becomes
-     "axiom → constructor + size-reconciliation lemmas," not "axiom → free theorem." Budget for the
-     per-leg size-matching proofs.
+2. **`box_provable` eliminated — DONE ✅ (2026-06-29, 4 axioms → 3).** A LOCAL box-introduction
+   constructor `Provable.boxIntro` (Derivation.lean) discharges it: `Provable k φ → □_k φ` with output
+   budget bounded by `(.box k φ).size`, `Provable_sound` arm = identity, SAFE (premise is genuine
+   `Provable`, inert on false atoms). `BaseTheorems.box_provable` depends on NO axioms; no headline
+   theorem regressed (verified `#print axioms`). The size-index refactor was NOT needed — re-scoping
+   found the engine uses conclusion-`Formula.size`. Build green, 3 axioms.
 
-3. **`PBLT` — route A only.** After (2), the remaining axiom is the Löb core. Faithful mechanization
+3. **`boxInternalize` — next axiom target (the K-distribution).** `boxIntro` gives `□(φ→α)` but not
+   the distributed `□φ → □α` that `mutual_loeb` consumes. A same-`k` GL-K constructor for it is sound
+   (gate spike `SizeIndexBoxIntroSpike.lean`) but carries a per-leg `Formula.size`-matching obligation
+   (the `HonestKSpike` budget wall, relocated — NOT unsoundness). Local, like `boxIntro`; no refactor.
+   Whether the per-leg size-matching discharges for the real `mutual_loeb` legs is the open question.
+
+4. **`PBLT` — route A only.** The remaining (and deepest) axiom is the Löb core. Faithful mechanization
    (classical, existential) cleans the surface but leaves `eval` noncomputable at the fixpoints.
-   The constructive route (B) stays closed (S3′). Treat as a separate, larger effort; not gated on (2).
+   The constructive route (B) stays closed (S3′). Separate, larger effort.
 
-4. **Do NOT pursue** (settled): constructive bounded Löb for computable eval (S3′), `search_f` as a
-   constructor (Walls 1+2 + Exclusion), program-recursion deciders, object-antecedent GL-K. These
-   are machine-refuted; revisit only if the size-indexed architecture (2) changes their premises.
+5. **Do NOT pursue** (settled): constructive bounded Löb for computable eval (S3′), `search_f` as a
+   constructor (Walls 1+2 + Exclusion), program-recursion deciders, existential-budget object-GL-K,
+   and the ~500-ref size-index refactor (shelved — unnecessary). Machine-refuted or superseded.
 
 **What no next step changes:** `atom_complete_false_guard` stays irreducible, and `eval` stays
-noncomputable at the genuine Löb fixpoints — both orthogonal to the size-index refactor (it lifts
-Wall 1 of the false-guard track but not Wall 2, and does not touch `eval`'s budget-coincidence wall).
+noncomputable at the genuine Löb fixpoints — both orthogonal to the box-intro work (`boxIntro` is
+positive necessitation; the false-guard wall is the negative Π₁ cert, and the eval wall is budget
+coincidence — neither touched).

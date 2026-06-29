@@ -8,18 +8,17 @@ namespace PD.Axioms
 /-!
 # Axioms
 
-Principles of `S` not discharged constructively. Four remain (`c_guard_mono` is now
-a theorem — the cost constants are concrete, see Derivation.lean; and
-`atom_box_provable_impl` was REMOVED as unsound — see below). Each is interp-SOUND
-(`box_provable` by HBL/Solovay; `boxInternalize` by `boxInternalize_sound` in
+Principles of `S` not discharged constructively. THREE remain (`c_guard_mono` is now
+a theorem — the cost constants are concrete, see Derivation.lean; `atom_box_provable_impl`
+was REMOVED as unsound; and `box_provable` was REMOVED — now the THEOREM
+`BaseTheorems.box_provable`, discharged by the `Provable.boxIntro` constructor — see below).
+Each remaining is interp-SOUND (`boxInternalize` by `boxInternalize_sound` in
 BaseTheorems.lean); they are axioms only for the *representational* reason that `Derivation`
-has no box-introduction constructor and does not size-index proof trees, so a box-conclusion
-/ box-antecedent witness cannot be built structurally.
+has no *fixpoint* box-introduction and does not size-index proof trees. (Plain box-introduction
+DOES exist — `Provable.boxIntro` — which is what discharged `box_provable`.)
 
 * `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches
   on a *failed* guard has a certificate. Everything else is a theorem.
-* `box_provable` — bounded GL axiom 4 (HBL D2), meta form. SOUND (provable-Σ₁-
-  completeness on the genuinely-Σ₁ predicate `Provable k φ`).
 * `boxInternalize` — box-internalization at a fixed budget `k`, between play-atoms (NOT GL
   axiom K — see its doc): from a budget-`k` proof transformer `Provable k φ → Provable k α`
   (α a play-atom), derive the object `□_k φ → □_k α`. SOUND via `boxInternalize_sound`: the
@@ -95,17 +94,17 @@ axiom atom_complete_false_guard :
     ¬ (∃ _ : PlaysProof p q p a (atom_cost fuel), True) →
     AtomProvable (atom_cost fuel) (.plays p q a)
 
-/-- Bounded GL axiom 4 (`□_k φ → □_K □_k φ`): if `φ` is provable within budget
-    `k`, then that fact is itself provable at a budget `K` **bounded by the size of
-    the boxed formula** `□_k φ`. Sound by Solovay / HBL D2; axiomatic here because the
-    budget-indexed box makes a constructive witness impossible without size-indexing
-    `Derivation`. The `K ≤ (.box k φ).size` bound (honest bounded-GL-4) is what lets
-    the consumer `atom_box_provable_impl_sound` feed `K` into the now budget-bounded
-    `weakenImpl` (`m ≤ k`): the boxed atom's size is sub-`k` whenever the implication
-    fits `k`. -/
-axiom box_provable :
-  ∀ (k : Nat) (φ : Formula), Provable k φ →
-    ∃ K, K ≤ (Formula.box k φ).size ∧ Provable K (.box k φ)
+/-! ### REMOVED — `box_provable` (now the THEOREM `BaseTheorems.box_provable`)
+
+    Bounded GL axiom 4 / necessitation (`□_k φ → □_K □_k φ`, HBL D2) was an axiom only
+    because `Provable` had no box-introduction constructor. It now does: `Provable.boxIntro`
+    (Derivation.lean) builds `□_k φ` directly from `Provable k φ` with output budget bounded
+    by `(.box k φ).size` — exactly the former axiom's `K ≤ (.box k φ).size`. The engine's
+    cost model is conclusion-`Formula.size` (`Derivation.size = conclusion.size`), so no
+    structural proof-tree size index is needed; the box-intro is a LOCAL, sound, safe
+    constructor (premise is genuine `Provable k φ`, so nothing false is boxed — unlike the
+    removed-unsound `atom_box_provable_impl`). See `BaseTheorems.box_provable` /
+    `Provable.boxIntro` and `Research/Notes/WALLS_AND_EXTENSIONS.md`. -/
 
 /-- **Box-internalization at a fixed budget `k`** (NOT GL axiom K — see below).
 

@@ -182,6 +182,7 @@ theorem dimcid_no_provable_forbidden (k : Nat) :
         obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm)
     (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hψsz _hsz _ihab ihbc => by intro hF; exact ihbc hF)
     (fun {_k} _ _ _ _ _ _ _ => by intro hF; simp only [DimcidForbiddenD] at hF)
+    (fun _kIn _K _φ _hprem _hsz _ih => by intro hF; simp only [DimcidForbiddenD] at hF)  -- boxIntro
     h
 
 theorem dimcid_guard_not_provable (k : Nat) : ¬ Provable k (dimcid_guard k) := by

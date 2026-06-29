@@ -24,7 +24,8 @@
       "Bash(cd \"/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master *)",
       "Bash(grep -rn \"theorem llm_outcome_CIMCIC\\\\|theorem llm_outcome_DIMCID\\\\|theorem.*CIMCIC.*DefectBot\\\\|theorem.*DIMCID.*Cooperate\" PrisonersDilemma/Theorems/ -r)",
       "Bash(find PrisonersDilemma/Theorems -iname \"*cimcic*\" -o -iname \"*dimcid*\")",
-      "Bash(echo \"=== EXIT: $? ===\")"
+      "Bash(echo \"=== EXIT: $? ===\")",
+      "Bash(echo \"=== EXIT $? ===\")"
     ],
     "additionalDirectories": [
       "/tmp"

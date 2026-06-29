@@ -246,7 +246,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun _ _ _ => True)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken
-    ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl h
+    ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl ?provBoxIntro h
   case const => exact ⟨1, rfl⟩
   case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
   case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
@@ -277,6 +277,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
   case provSearchThenSearch => intros; trivial
   case provImplTrans => intros; trivial
   case provAtomBoxImpl => intros; trivial
+  case provBoxIntro => intros; trivial
 
 /-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
 theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
@@ -343,6 +344,10 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
     -- The certificate `hatom : AtomProvable k φ` discharges the consequent directly
     -- (`Provable.atom`), independent of the antecedent — no axiom.
     (fun {_k} _kBox _p _q _a hatom _hsz _ih => fun _ => Provable.atom hatom)  -- atomBoxImpl
+    -- boxIntro: conclusion `(□_{kIn} φ).interp` is *definitionally* `Provable kIn φ`,
+    -- which is exactly the premise `hprem`. The arm is the identity (`ih : φ.interp`
+    -- is unused — we return the stronger provability the premise already carries).
+    (fun _kIn _K _φ hprem _hsz _ih => hprem)                                  -- boxIntro
     h
 
 /-
@@ -419,6 +424,22 @@ theorem proofSearch_monotone :
       -- only the conclusion's size bound relaxes from `k₁` to `k₂`.
       exact (proofSearch_spec k₂ _).2
         (Provable.atomBoxImpl kBox p q a hatom (Nat.le_trans hsz hk))
+  | boxIntro kIn =>
+      -- the inner proof stays at its own budget `kIn`; the conclusion's `size ≤ k₁`
+      -- bound relaxes to `size ≤ k₂` (self-weakening), so re-apply `boxIntro` at `k₂`.
+      rename_i φ' hprem hsz
+      exact (proofSearch_spec k₂ _).2
+        (Provable.boxIntro kIn k₂ φ' hprem (Nat.le_trans hsz hk))
+
+/-- **Bounded GL axiom 4 / necessitation** (`□_k φ → □_K □_k φ`), HBL D2 — NOW A THEOREM
+    (was the axiom `box_provable`). If `φ` is provable within budget `k`, then that fact
+    `□_k φ` is itself provable, at the output budget `K = (.box k φ).size` (≤ that bound).
+    Discharged constructively by the `Provable.boxIntro` constructor (Derivation.lean): the
+    conclusion `□_k φ` is built directly from the premise `Provable k φ`, with the size bound
+    `(.box k φ).size ≤ K` met by `Nat.le_refl`. Sound + safe — see the `boxIntro` doc. -/
+theorem box_provable (k : Nat) (φ : Formula) (h : Provable k φ) :
+    ∃ K, K ≤ (Formula.box k φ).size ∧ Provable K (.box k φ) :=
+  ⟨(Formula.box k φ).size, Nat.le_refl _, Provable.boxIntro k _ φ h (Nat.le_refl _)⟩
 
 /-- **Soundness witness for the `atom_box_provable_impl` axiom (Axioms.lean).**
     Object-level bounded Σ₁-completeness for play-atoms, in the *conditional* form
