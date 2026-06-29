@@ -18,8 +18,8 @@ the box-introduction section below.)
 | Axiom | Role | Removable? |
 |---|---|---|
 | `PBLT` | Parametric Bounded Löb (Critch 3.6); closes the `∀k` cooperation families | Mechanizable **faithfully (route A)** — but stays classical/existential. NOT the constructive lever. |
-| `box_provable` | Bounded GL-4 (Σ₁-completeness, no fixpoint) | Plausibly, as a constructive theorem (needs size-indexed `Derivation`). |
-| `boxInternalize` | Box-internalization at fixed budget `k`; closes the 3 cross-bot fixpoints via `mutual_loeb` | Corollary-level; depends on the box-intro story. Sound tautologically (`interp := hfitD`). |
+| `box_provable` | Bounded GL-4 (Σ₁-completeness, no fixpoint) | **Yes**, as a constructive theorem under size-indexed `Derivation` (gate spike PASS, Step 2). |
+| `boxInternalize` | Box-internalization at fixed budget `k`; closes the 3 cross-bot fixpoints via `mutual_loeb` | **Conditionally** — becomes a sound constructor + a size-matching obligation per `mutual_loeb` leg (gate spike, Step 2). Sound today tautologically (`interp := hfitD`). |
 | `atom_complete_false_guard` | Π₁ residue: a play branching on a *failed* guard has a cert | **NO — proven irreducible** (Wall 2 below). Load-bearing (~5 false-guard else-plays). |
 
 (`atom_box_provable_impl` was **removed** as unsound; its sound content survives as a theorem +
@@ -188,10 +188,22 @@ genuinely irreducible. The order below reflects payoff-per-risk.
    Make the box budget a tracked index instead of a free `Nat`. Predicted payoff (from the box-intro
    findings): a *constructor-level* fixpoint box-intro becomes soundly definable, which would
    discharge `box_provable` and `boxInternalize` as constructive theorems and let `atomBoxImpl`
-   generalize to the fixpoint case. Cost ~500 refs, long red-build valley; de-risked but unattempted.
-   - **Decision gate first:** scope it as a spike on the toy/`PortPhaseA`-style fragment before
-     committing the full refactor. If the indexed fixpoint box-intro does *not* typecheck soundly on
-     the toy, abort — the refactor's whole value is contingent on it.
+   generalize to the fixpoint case. Cost ~500 refs, long red-build valley.
+   - **GATE SPIKED — CONDITIONAL PASS (GO), 2026-06-29.** `Research/Spikes/bounded_lob/
+     SizeIndexBoxIntroSpike.lean` (sorry-free, `#print axioms` ⊆ {propext}). Findings:
+     - **`box_provable` → theorem: clean PASS.** A size-indexed `boxIntro` constructor IS
+       kernel-positive and computes the output budget from the sub-proof's tracked size — the exact
+       thing the real `Provable` cannot do today. Necessitation becomes a constructive theorem.
+     - **`boxInternalize` → SOUND constructor + a size-matching obligation (not a free theorem).**
+       A same-`k` GL axiom-K (`distrib`) constructor stays sound (false atom provably underivable,
+       no `:= hfitD` tautology). BUT the `HonestKSpike` budget-inflation wall does not vanish — it
+       RELOCATES to a size-EQUALITY side-condition on the two `mutual_loeb` legs (the boxed
+       sub-proofs must have equal size). Dischargeable (sizes can be padded to match), and strictly
+       better than the old unsound existential-budget weakening — but a real per-leg proof
+       obligation the refactor must carry.
+   - **Recommendation:** GO, eyes open. `box_provable` is a clean win; `boxInternalize` becomes
+     "axiom → constructor + size-reconciliation lemmas," not "axiom → free theorem." Budget for the
+     per-leg size-matching proofs.
 
 3. **`PBLT` — route A only.** After (2), the remaining axiom is the Löb core. Faithful mechanization
    (classical, existential) cleans the surface but leaves `eval` noncomputable at the fixpoints.
