@@ -17,9 +17,9 @@ box-introduction DOES exist as constructors — `atomBoxImpl` for the witnessed 
 
 | Axiom | Role | Removable? |
 |---|---|---|
-| `PBLT` | Parametric Bounded Löb (Critch 3.6); closes the `∀k` cooperation families | Mechanizable **faithfully (route A)** — but stays classical/existential. NOT the constructive lever. |
-| `boxInternalize` | Box-internalization at fixed budget `k`; closes the 3 cross-bot fixpoints via `mutual_loeb` | **Conditionally** — needs the K-DISTRIBUTION (`□φ→□α`) form + a size-matching obligation per `mutual_loeb` leg (next target). Sound today tautologically (`interp := hfitD`). |
-| `atom_complete_false_guard` | Π₁ residue: a play branching on a *failed* guard has a cert | **NO — proven irreducible** (Wall 2 below). Load-bearing (~5 false-guard else-plays). |
+| `PBLT` | Parametric Bounded Löb (Critch 3.6); closes the `∀k` cooperation families | **Only by fully-explicit S** (concrete proof-terms). Faithful route A stays classical/existential. NOT removable locally. |
+| `boxInternalize` | Box-internalization at fixed budget `k`; closes the 3 cross-bot fixpoints via `mutual_loeb` | **NO locally — positivity wall (proven, Wall 3 below).** Removable only by fully-explicit S, same lever as `PBLT`. Sound today tautologically (`interp := hfitD`). |
+| `atom_complete_false_guard` | Π₁ residue: a play branching on a *failed* guard has a cert | **NO — proven irreducible** (Wall 2 below), even under fully-explicit S. Load-bearing (~5 false-guard else-plays). |
 
 **`box_provable` (bounded GL-4 / necessitation) — REMOVED, now the THEOREM `BaseTheorems.box_provable`
 (`#print axioms`: depends on NONE).** Discharged by a LOCAL box-introduction constructor
@@ -96,14 +96,58 @@ still route through the axiom — no false-consequent handle.
 
 ---
 
-## How the two walls relate
+## Wall 3 — `boxInternalize`: not removable LOCALLY (positivity, proven 2026-06-29)
 
-| | What's blocked | Why | Scope |
+`box_provable` fell to a local constructor (`boxIntro`); `boxInternalize` does **not**, and the
+reason is structural, not effort.
+
+- **`box_provable` / `boxIntro`** takes a *held proof* `Provable k φ` as its premise — `Provable`
+  occurs **positively**. Legal constructor.
+- **`boxInternalize`** takes a *proof transformer* `Provable k φ → Provable k α` (a machine that
+  consumes proofs of the system being defined) — `Provable` occurs **negatively** (left of `→`).
+  Lean's kernel REJECTS this: *"arg #6 of `Provable.boxInternalize` has a non positive occurrence of
+  the datatypes being declared."* So box-internalization **cannot be a `Provable` constructor.**
+- **Fallback (transformer as a meta-hypothesis, build from positive constructors) — also blocked.**
+  `weakenImpl` would need the boxed consequent `□_k α` provable *outright* (→ `Provable k α`), but the
+  fixpoint supplies α's provability only *conditionally* through the transformer. No positive
+  constructor consumes a conditional/transformer and emits the distributed box-implication.
+  (`BoxInternalizePositiveSpike.lean`: the located `sorry`; `BoxInternalizeConstructorSpike.lean`:
+  soundness + safety hold, but positivity does not.)
+
+**Why this is the genuine difference:** `box_provable` boxes a *held* fact (positive — bookkeeping);
+`boxInternalize` boxes a *conditional dependence* (negative — the antecedent's provability is
+hypothetical). The non-positivity is essential to the content, not an artifact, so it cannot be
+reshaped away **at the current representation**.
+
+**But fully-explicit S DOES remove it — machine-checked (`ExplicitSBoxInternalizeSpike.lean`, no
+axioms, sound).** The positivity wall exists only because a proof is an *abstract* `Prop`. If proofs
+become *concrete, enumerable, sized data* (the fully-explicit-`S` / proof-term program), then
+`boxInternalize`'s ingredient is no longer "a machine that consumes my own undefined proofs" but "a
+concrete proof-term of `φ→α`" — a positive, forward-pointing VALUE. In the toy: `boxIntro` and a GL
+axiom-`K` constructor both take positive proof-TERM premises (legal), and `boxInternalize_thm =
+axK ∘ boxIntro` is a theorem depending on NO axioms; `pf_no_false` confirms adding `axK` keeps the
+system SOUND (false atom underivable), so the result is meaningful. Cost remaining: the explicit-S
+refactor itself PLUS the per-leg budget-reconciliation (the `SizeIndexBoxIntroSpike` / `HonestKSpike`
+`Formula.size`-matching — trivial in the toy because `axK` keeps boxes at `k`, real but sound at
+scale). So under fully-explicit S, `boxInternalize` becomes "theorem + size-matching proofs," not a
+free win — but it IS removable there.
+
+---
+
+## How the three walls relate
+
+| | What's blocked | Why | Removable by fully-explicit S? |
 |---|---|---|---|
-| **Wall 1 — computable eval** | the *positive* fixpoint cooperation cert | budget coincidence (search k = box k); least-fixpoint forbids self-premise | only at genuine Löb fixpoints |
-| **Wall 2 — false-guard axiom** | the *negative* else-play cert | certificate type provably empty; Π₁ negation non-positive | the ~5 false-guard else-plays |
+| **Wall 1 — computable eval** | the *positive* fixpoint cooperation cert | budget coincidence (search k = box k); least-fixpoint forbids self-premise | NO (route B closed, S3′) |
+| **Wall 2 — false-guard axiom** | the *negative* else-play cert | certificate type provably empty; Π₁ negation non-positive | NO (empty cert, not abstractness) |
+| **Wall 3 — `boxInternalize`** | the box-internalization rule | premise is a proof-*transformer* → negative occurrence, kernel-rejected | **YES** — concrete proof-terms make the transformer a positive ingredient (same lever as `PBLT`) |
 
-Both are the proof-vs-witness gap; one positive, one negative. Both **proven**, not unattempted.
+Walls 1 and 2 are the proof-vs-witness gap (positive / negative). Wall 3 is a *representational*
+positivity wall — the only one of the three that fully-explicit S dissolves. All three **proven**.
+
+**The three-way axiom picture:** `box_provable` — gone, locally. `boxInternalize` + `PBLT` —
+removable only by fully-explicit S, **sharing one lever** (concrete proof-terms). `atom_complete_false_guard`
+— irreducible even then.
 
 ---
 
@@ -143,13 +187,13 @@ testing the WRONG lever; the fix is a LOCAL constructor on `Provable`.
   bridging `□_{cert} α → □_k α` needs unsound box-index weakening.
 
 **Net:** constructor-level box-intro now exists for the *witnessed* atom (`atomBoxImpl`) AND for
-*bare necessitation* (`boxIntro`, which discharged `box_provable`). For the *fixpoint*, the missing
-piece is the K-DISTRIBUTION `□φ → □α` (not bare necessitation): `boxIntro` gives `□(φ→α)` but not the
-distributed `□φ → □α` that `mutual_loeb` consumes. A same-`k` GL axiom-K constructor for this is sound
-(gate spike `SizeIndexBoxIntroSpike.lean`: false atom stays underivable) but carries a per-leg
-size-matching obligation (the `HonestKSpike` budget wall, relocated to a `Formula.size` equality, not
-unsoundness). That is the next box-intro target — and, like `box_provable`, it does NOT need the
-size-index refactor (the obligation is in `Formula.size`, the engine's existing currency).
+*bare necessitation* (`boxIntro`, which discharged `box_provable`). For the *fixpoint*, the rule
+needed is `boxInternalize` (internalize a proof *transformer* into `□φ → □α`) — and it is **NOT
+removable locally** (Wall 3 above): the transformer premise is a non-positive occurrence the kernel
+rejects, and no positive constructor builds the distributed implication from a conditional. It is
+removable only by fully-explicit S (concrete proof-terms make the transformer positive), the same
+lever as `PBLT`. So `boxInternalize` stays an axiom for now; do NOT re-attempt it as a local
+constructor (positivity-rejected — `BoxInternalizeConstructorSpike.lean`).
 
 ---
 
@@ -169,8 +213,11 @@ size-index refactor (the obligation is in `Formula.size`, the engine's existing 
   its own guard raises search-depth (`DecMeasure.lean`).
 - The `derivable`/`playsCheck` separate-search-gas checker — non-monotone.
 - Faithful object-antecedent GL-K for the cross-bot fixpoints (existential output budget) — needs
-  unsound box-index weakening (`HonestKSpike.lean`). The *same-`k`* GL-K is sound (gate spike) but
-  carries a size-matching obligation — that's the live `boxInternalize` target, not a dead end.
+  unsound box-index weakening (`HonestKSpike.lean`).
+- **`boxInternalize` as a local `Provable` constructor — KERNEL-REJECTED (Wall 3).** Transformer
+  premise is a non-positive occurrence; the meta-hypothesis fallback is also blocked. Removable only
+  by fully-explicit S, not locally. Do not re-attempt (`BoxInternalizeConstructorSpike.lean`,
+  `BoxInternalizePositiveSpike.lean`).
 - Bare-atom box-intro `φ → □_k φ` (the old `atom_box_provable_impl`) — unsound, removed.
 - **The ~500-ref size-indexed `Derivation` refactor — SHELVED as unnecessary.** Re-scoping
   (`FormulaSizeBoxIntroSpike.lean`) found the engine uses conclusion-`Formula.size`, not proof-tree
@@ -194,9 +241,10 @@ size-index refactor (the obligation is in `Formula.size`, the engine's existing 
 
 ## Next steps
 
-Progress: 4 axioms → **3** (`box_provable` eliminated 2026-06-29). The remaining three split into
-`boxInternalize` (next, local — the K-distribution), `PBLT` (the deep Löb core, route A only), and
-`atom_complete_false_guard` (proven irreducible). The order below reflects payoff-per-risk.
+Progress: 4 axioms → **3** (`box_provable` eliminated 2026-06-29). The remaining three: `boxInternalize`
+and `PBLT` are removable **only by fully-explicit S** (shared lever — concrete proof-terms;
+`boxInternalize` proven NOT removable locally, Wall 3), and `atom_complete_false_guard` is irreducible
+even then. So there is no further LOCAL axiom win available — the next real lever is the big one.
 
 1. **Cheap, independent wins — DONE ✅ (`ComputableEval/Exclusion.lean`, root-imported,
    `[propext]`-clean).**
@@ -213,19 +261,24 @@ Progress: 4 axioms → **3** (`box_provable` eliminated 2026-06-29). The remaini
    theorem regressed (verified `#print axioms`). The size-index refactor was NOT needed — re-scoping
    found the engine uses conclusion-`Formula.size`. Build green, 3 axioms.
 
-3. **`boxInternalize` — next axiom target (the K-distribution).** `boxIntro` gives `□(φ→α)` but not
-   the distributed `□φ → □α` that `mutual_loeb` consumes. A same-`k` GL-K constructor for it is sound
-   (gate spike `SizeIndexBoxIntroSpike.lean`) but carries a per-leg `Formula.size`-matching obligation
-   (the `HonestKSpike` budget wall, relocated — NOT unsoundness). Local, like `boxIntro`; no refactor.
-   Whether the per-leg size-matching discharges for the real `mutual_loeb` legs is the open question.
+3. **`boxInternalize` — NOT removable locally (DONE investigating, 2026-06-29).** Tried as a local
+   `Provable` constructor: KERNEL-REJECTED — the transformer premise `Provable k φ → Provable k α` is
+   a non-positive occurrence (Wall 3). Meta-hypothesis fallback also blocked. Soundness + safety hold
+   (`BoxInternalizeConstructorSpike.lean`) but positivity does not; the build obstruction is located
+   (`BoxInternalizePositiveSpike.lean`). Removable only by fully-explicit S — folded into (4).
 
-4. **`PBLT` — route A only.** The remaining (and deepest) axiom is the Löb core. Faithful mechanization
-   (classical, existential) cleans the surface but leaves `eval` noncomputable at the fixpoints.
-   The constructive route (B) stays closed (S3′). Separate, larger effort.
+4. **Fully-explicit S — the one remaining lever, removes `boxInternalize` AND `PBLT` together.** Make
+   proofs concrete, enumerable, sized data (proof-terms) instead of abstract `Prop`. This (a) makes
+   `boxInternalize`'s transformer a positive, forward-pointing ingredient (Wall 3 dissolves), and (b)
+   gives the faithful `PBLT` mechanization (route A — classical/existential). Cost: the proof-term
+   universe + per-leg budget-reconciliation (`SizeIndexBoxIntroSpike` size-matching, sound but real).
+   Does NOT make `eval` computable at fixpoints (route B stays closed, S3′) and does NOT touch
+   `atom_complete_false_guard`. This is the large, foundational effort; the only path past 3 axioms.
 
 5. **Do NOT pursue** (settled): constructive bounded Löb for computable eval (S3′), `search_f` as a
    constructor (Walls 1+2 + Exclusion), program-recursion deciders, existential-budget object-GL-K,
-   and the ~500-ref size-index refactor (shelved — unnecessary). Machine-refuted or superseded.
+   `boxInternalize` as a local constructor (Wall 3), and the ~500-ref size-index refactor *in
+   isolation* (it only pays off as part of fully-explicit S (4), not for `box_provable`).
 
 **What no next step changes:** `atom_complete_false_guard` stays irreducible, and `eval` stays
 noncomputable at the genuine Löb fixpoints — both orthogonal to the box-intro work (`boxIntro` is
