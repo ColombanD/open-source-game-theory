@@ -124,11 +124,20 @@ The spike campaign closed all the open *questions* (each sorry-free, soundness/c
 So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 axiom**,
 `atom_complete_false_guard`). What's left is a sustained but un-risky BUILD over a real arithmetized
 `S ⊇ PA`:
-  (E1) concrete encoded syntax + `Bew` (Mathlib `ModelTheory` scaffolding);
-  (E2) prove `gammaAx`/`betaGamma` (= `Γ_e` representability) from PA — replacing the toy schemes;
-  (E3) `BridgeSound` = that `S`'s own soundness (toy version done in `ReprObjectSpike.Proves_sound`);
-  (E4) FWD `encode` + S re-deriving each engine `Provable` constructor;
+  (E1) ✅ DONE — concrete encoded syntax + `Bew` as real modules `Reflection/Syntax.lean`
+       (`OFml`, injective `encode`, `e`/`selfApply`/`e_graph`) + `Reflection/Proves.lean` (inductive
+       `⊢_S`, `interp(box)=Proves`, `Proves_sound`, `consistency`, `repr_object`, `mutual_loeb_object`).
+       Decision: BESPOKE minimal `Bew` (Mathlib `ModelTheory` has syntax+semantics but NO proof
+       theory, so `⊢`/`Bew` are hand-built either way). All on 3 std axioms; built via `lake build`.
+  (E2) ✅ DONE — `Reflection/Representability.lean`: `gammaAx_derived`/`betaGamma_derived` are now
+       THEOREMS of a refined system `PrAr` whose only arithmetic rule is `atomTrue` (Σ₁-completeness on
+       decidable atoms) + `leibniz` (equality elim); both SOUND (`PrAr_sound`, `PrAr_consistency`).
+       Honest residue: `atomTrue`/`leibniz` are stated as sound rules, not yet derived from a
+       mechanized PA Δ₀-completeness (standard, no open risk).
+  (E3) `BridgeSound` = `Proves`/`PrAr` soundness composed with the encoding (toy done; needs the
+       engine-`interp` link).
+  (E4) FWD `encode` (engine `Formula → OFml`) + S re-deriving each engine `Provable` constructor;
   (E5) re-thread the `Formula.size` budgets through HBL;
   (E6) instantiate `BPSb`/`pblt_of_bpsb`, delete `PBLT`, repoint the ~6 consumers.
-None of E1–E6 carries an open risk — each is "do the known construction." The de-risking phase is
-COMPLETE; the next phase is the metamathematics engineering.
+None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
+modules; E3–E6 remain.
