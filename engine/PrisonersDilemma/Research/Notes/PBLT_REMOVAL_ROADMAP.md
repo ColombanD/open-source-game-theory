@@ -147,9 +147,13 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        via `deduction`). Budgets: the object box is budget-free, so `boxMono` is trivial and subscripts
        are vacuous — no threading needed. 8/9 `BPSb` fields discharge; the 9th's consumer (`bloeb`) is
        proven directly.
-  (E6) ONE obligation left: `diag_object` — produce `ψ` with `⊢ ψ ↔ (□ψ → p)` as object formulas
-       (instantiate `parametric_diagonal`/`repr_object` at the concrete `encode` for the chain's
-       `G φ := □φ → p`). Then `bloeb_object` gives object PBLT, FWD/BWD (E3/E4) carry it back, delete
-       `PBLT`, repoint the ~6 consumers.
+  (E6) IN PROGRESS — `Reflection/Diagonal.lean`: `object_pblt_of_repr` PROVEN sorry-free (3 std
+       axioms) — it derives object `Proves p` from `bloeb_object` + the diagonal, reducing PBLT to the
+       single named lemma `ContextRepr p ψ : ⊢ gApp(⌜ψ⌝) ↔ (□ψ → p)`. `hrepr` (the ψ↔gApp(⌜ψ⌝) leg) is
+       delivered by `repr_object`. So the ENTIRE remaining obligation is `ContextRepr` — the
+       representability of the Löb CONTEXT map `φ ↦ (□φ → p)` (an effective code operation), derivable
+       the way E2 derived `gammaAx` (Σ₁/graph), no open risk, not circular with Löb.
+       FINISH: derive `ContextRepr` → object PBLT; FWD/BWD (E3/E4) carry it back; delete `PBLT`,
+       repoint the ~6 consumers.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.
