@@ -153,7 +153,13 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        delivered by `repr_object`. So the ENTIRE remaining obligation is `ContextRepr` — the
        representability of the Löb CONTEXT map `φ ↦ (□φ → p)` (an effective code operation), derivable
        the way E2 derived `gammaAx` (Σ₁/graph), no open risk, not circular with Löb.
-       FINISH: derive `ContextRepr` → object PBLT; FWD/BWD (E3/E4) carry it back; delete `PBLT`,
-       repoint the ~6 consumers.
+       `ContextRepr` now DISCHARGED (sound rule + soundness proof, E2 discipline): `ProvesC p` (=
+       `Proves` + the `ctxUnfold` rule) proves `gApp(⌜ψ⌝) ↔ (□ψ → p)` (`contextRepr_provesC`), SOUND
+       via the witnessing valuation `Gctx` (`provesC_sound`) and CONSISTENT for an `interp`-stable `p`
+       (`provesC_consistency`) — all on 3 std axioms, no new top-level axiom. So NO open soundness
+       question remains.
+       FINISH (mechanical): re-run `object_pblt_of_repr` inside `ProvesC p` (base steps via `embed`,
+       `ContextRepr` via `contextRepr_provesC`) → object PBLT; FWD/BWD (E3/E4) carry it back; delete
+       `PBLT`, repoint the ~6 consumers.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.

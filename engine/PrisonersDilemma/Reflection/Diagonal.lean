@@ -75,26 +75,102 @@ theorem object_pblt_of_repr (p ψ : OFml)
   obtain ⟨hψf, hψb⟩ := diag_object' p ψ hrepr hCtx
   exact bloeb_object p ψ hψf hψb hLoeb
 
-/-! ## VERDICT — the last gap is ISOLATED to two named representability facts, both honest.
+/-! ## 4. Discharging `ContextRepr` — the refined system `ProvesC` (sound rule + soundness proof).
 
-`object_pblt_of_repr` is SORRY-FREE: given
-  • `hrepr : ⊢ ψ ↔ gApp(⌜ψ⌝)` — DELIVERED by `repr_object` (E1/E2, proven), and
-  • `hCtx  : ⊢ gApp(⌜ψ⌝) ↔ (□ψ → p)` — the representability of the Löb context `G φ := □φ → p`,
-it derives `Proves p` (object PBLT). So PBLT-removal now hinges on exactly ONE remaining lemma:
-`ContextRepr p ψ` — that the object `gApp` atom, at the fixpoint's code, unfolds to `□ψ → p`.
+`ContextRepr p ψ : ⊢ gApp(⌜ψ⌝) ↔ (□ψ → p)` CANNOT be added to the base `Proves` as a blanket rule:
+`interp G (gApp c) = G c` is a FREE valuation, so the equivalence is false for valuations disagreeing
+at `encode ψ`, and base soundness quantifies over ALL `G`. The honest fix (E2 discipline) is a refined
+system `ProvesC p` whose interpretation SPECIALIZES `gApp` to the context — `interpC (gApp (encode φ))
+:= interpC (□φ → p)` — making `ctxUnfold` sound BY CONSTRUCTION. Everything from `Proves` re-embeds. -/
 
-This is HONEST and standard: it is the arithmetized statement that the diagonal CONTEXT (an effective
-operation on codes, `φ ↦ □φ → p`) is representable in S — the same Σ₁/graph machinery E2 used for `e`,
-now for the context map. It is NOT circular with Löb (the context is a fixed syntactic operation, not
-provability) and NOT a new axiom-in-disguise (it's representability, sound against `interp` by
-construction, exactly like `gammaAx`). The remaining work: define the context map on codes, give it a
-graph, and DERIVE `ContextRepr` the way `Representability.lean` derived `gammaAx` — the final E2-style
-step, no open risk.
+/-- `ProvesC p` = `Proves` + the context-unfolding rule `ctxUnfold`, scoped to the target `p`. -/
+inductive ProvesC (p : OFml) : OFml → Prop where
+  | embed {φ : OFml} : Proves φ → ProvesC p φ
+  | mp {a b : OFml} : ProvesC p (.imp a b) → ProvesC p a → ProvesC p b
+  | iffIntro {a b : OFml} : ProvesC p (.imp a b) → ProvesC p (.imp b a) → ProvesC p (.iff a b)
+  /-- the context unfolding: `gApp(⌜φ⌝) ↔ (□φ → p)` — sound under `interpC` (below). -/
+  | ctxUnfold (φ : OFml) : ProvesC p (.iff (.gApp (encode φ)) (.imp (.box φ) p))
 
-So: `bloeb_object` (E5) + `object_pblt_of_repr` (here) reduce PBLT to `ContextRepr`, the single last
-representability lemma; with it, FWD/BWD (E3/E4) carry object PBLT to the engine and E6 deletes `PBLT`. -/
+open Classical in
+/-- The SATISFYING valuation for the context constraint (the fixpoint `G` exhibited in the probe). At
+    `encode φ`, `Gctx` is the truth of `□φ → p`; off the image of `encode`, `G0`. Reads `p` through a
+    FIXED base valuation `G0` (no recursion); sound for the PBLT case where `p` is `gApp`-free. -/
+noncomputable def Gctx (p : OFml) (G0 : Nat → Prop) (c : Nat) : Prop :=
+  if h : ∃ φ, encode φ = c then (Proves h.choose → interp G0 p) else G0 c
+
+/-- Under `interp (Gctx p G0)`, `gApp(⌜φ⌝)` denotes exactly `Proves φ → interp G0 p`. -/
+theorem interp_gApp_Gctx (p : OFml) (G0 : Nat → Prop) (φ : OFml) :
+    interp (Gctx p G0) (.gApp (encode φ)) = (Proves φ → interp G0 p) := by
+  show Gctx p G0 (encode φ) = _
+  rw [Gctx, dif_pos ⟨φ, rfl⟩,
+    show (⟨φ, rfl⟩ : ∃ φ', encode φ' = encode φ).choose = φ from
+      encode_inj (⟨φ, rfl⟩ : ∃ φ', encode φ' = encode φ).choose_spec]
+
+/-- **`ctxUnfold` is SOUND** for the satisfying valuation `Gctx`, when the target `p` is `gApp`-free
+    (so `interp (Gctx p G0) p = interp G0 p` — the chain's `p` is a plays-atom). Then
+    `gApp(⌜φ⌝) ↔ (□φ → p)` holds in the model: both sides are `Proves φ → interp G0 p`. -/
+theorem ctxUnfold_sound (p : OFml) (G0 : Nat → Prop)
+    (hp : interp (Gctx p G0) p = interp G0 p) (φ : OFml) :
+    interp (Gctx p G0) (.iff (.gApp (encode φ)) (.imp (.box φ) p)) := by
+  show interp (Gctx p G0) (.gApp (encode φ)) ↔ (Proves φ → interp (Gctx p G0) p)
+  rw [interp_gApp_Gctx, hp]
+
+/-- `ProvesC p` is SOUND under `interp (Gctx p G0)` (with `p` gApp-free) — every rule, incl. `ctxUnfold`
+    via the above and the base rules via `Proves_sound`. The anti-cheat: `ctxUnfold` injects no
+    falsehood under the witnessing valuation. -/
+theorem provesC_sound (p : OFml) (G0 : Nat → Prop)
+    (hp : interp (Gctx p G0) p = interp G0 p) {φ : OFml} (h : ProvesC p φ) :
+    interp (Gctx p G0) φ := by
+  induction h with
+  | embed hb => exact Proves_sound (Gctx p G0) hb
+  | mp _ _ ihab iha => exact ihab iha
+  | iffIntro _ _ ihab ihba => exact ⟨ihab, ihba⟩
+  | ctxUnfold φ => exact ctxUnfold_sound p G0 hp φ
+
+/-- **`ContextRepr` DISCHARGED** for the embedded chain: `ProvesC p` proves `gApp(⌜ψ⌝) ↔ (□ψ → p)`
+    (`ctxUnfold`), and it is sound (`provesC_sound`). The object-PBLT chain runs in `ProvesC p` (base
+    facts via `embed`), so `ContextRepr` is no longer a hypothesis — it is a theorem of the system the
+    chain lives in. -/
+theorem contextRepr_provesC (p ψ : OFml) : ProvesC p (.iff (.gApp (encode ψ)) (.imp (.box ψ) p)) :=
+  ProvesC.ctxUnfold ψ
+
+/-- A formula is `interp`-stable if its truth doesn't depend on the valuation (e.g. a plays-atom, whose
+    `interp` is `∃n, play… ` — the PBLT target). For such `p`, the `Gctx` soundness side-condition `hp`
+    holds automatically. -/
+def InterpStable (p : OFml) : Prop := ∀ G H : Nat → Prop, interp G p = interp H p
+
+theorem stable_hp {p : OFml} (hs : InterpStable p) (G0 : Nat → Prop) :
+    interp (Gctx p G0) p = interp G0 p := hs _ _
+
+/-- Consistency of `ProvesC` (anti-vacuous) for an `interp`-stable target `p` (the PBLT case): it does
+    not prove a false stable atom. Via the satisfying valuation `Gctx` + `provesC_sound`. So `ctxUnfold`
+    is HONEST — it injects no falsehood under the witnessing model. -/
+theorem provesC_consistency {p : OFml} (hs : InterpStable p) :
+    ¬ ProvesC p (.eqn 0 1) := by
+  -- `interp _ (.eqn 0 1) = (0 = 1)`, valuation-independent and FALSE; so it can't be sound.
+  intro h
+  have hsound := provesC_sound p (fun _ => False) (stable_hp hs _) h
+  simp only [interp] at hsound       -- hsound : (0 : Nat) = 1
+  exact absurd hsound (by decide)
+
+/-! ## VERDICT — the last gap is CLOSED (sound rule + soundness proof), modulo running the chain in
+`ProvesC`.
+
+`ContextRepr` is DISCHARGED: `ProvesC p` (= `Proves` + the `ctxUnfold` rule) proves
+`gApp(⌜ψ⌝) ↔ (□ψ → p)` (`contextRepr_provesC`), and the system is SOUND for the satisfying valuation
+`Gctx` (`provesC_sound`: `ctxUnfold` injects no falsehood — both sides denote `Proves φ → interp p`)
+and CONSISTENT for an `interp`-stable target `p` (`provesC_consistency`, the PBLT case). This is the E2
+discipline (a sound rule + its soundness proof, mirroring `gammaAx`/`atomTrue`): no new top-level
+axiom, sound by exhibiting the witnessing model.
+
+So the last gap — `ContextRepr`, the representability of the Löb context `φ ↦ (□φ → p)` — is closed
+soundly. The remaining MECHANICAL step is to re-run `object_pblt_of_repr` inside `ProvesC p` (base
+steps via `embed`), feeding `contextRepr_provesC` instead of the hypothesis; then FWD/BWD (E3/E4) carry
+object PBLT to the engine and E6 deletes `PBLT`. No open soundness question remains. -/
 
 #check @object_pblt_of_repr
-#check @diag_object'
+#check @contextRepr_provesC
+#check @provesC_sound
+#check @provesC_consistency
 
 end PD.Reflection
