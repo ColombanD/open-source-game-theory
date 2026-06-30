@@ -4,92 +4,87 @@ namespace PD
 open Classical
 
 
-/- So basically S is semi-explicit with the Derivation Type. Its supposed to give
-the rules that S follows to derive facts about formulas. Example, If S can derive
-phi and phi implies psi, then S can derive psi. It is also supposed to be able to understand
-the source code of the bots (the last constructors). These two concepts live together because
-they are both things that S can legitimately conclude.
-
-Now, the problem with S is that it cannot read the atom of formulas, which is a .play.
-.play is the atom because in the end, we have to talk about what bots play, and .play is
-how we do it.
-Since S cannot read the atom (because atoms are decided by execution, not logic), we sidestep this issue
-by creating a new inductive type PlaysProof that directly states whether a bot did .plays against another bot.
-We use atomProvable just to incorporate that it is bounded. We still need derivation though because in some cases,
-we can't get the final play without first deriving some logical reasoning in the middle: □_k ψ → plays a
-
-Now, Provable is the link between both concepts as it states that a formula is provable if either there
-is a derivation of it, or there is an atomProvable of it. So we can use Provable in the
-last constructors of Derivation to link the two concepts together.
-Other stuff (at the end) also are in Provable, kinda like for derivation, and they need to be there because
-they combine formualas and atoms together.
-
-                 ┌─────────────────────────────────────────┐
-                 │  Provable k φ   ("φ provable in budget k")│  ← the oracle .search asks
-                 │  = Derivation (small)  OR  AtomProvable    │
-                 │    + 4 extra reasoning rules that need     │
-                 │      "provability" as a premise            │
-                 └───────────────┬──────────────┬────────────┘
-                   reasoning      │              │   execution
-                ┌─────────────────┘              └────────────────┐
-        ┌───────▼────────┐                          ┌─────────────▼────────┐
-        │  Derivation φ  │                          │  AtomProvable k φ     │
-        │  logic + source│                          │  = PlaysProof + n ≤ k │
-        │  reading; NO   │                          │  (only .plays atoms)  │
-        │  atoms         │                          └─────────────┬─────────┘
-        └────────────────┘                                        │
-                                                          ┌───────▼────────┐
-                                                          │  PlaysProof    │
-                                                          │  = eval transcript│
-                                                          └────────────────┘
-
---/
-
 /-!
 # The proof system `S`
 
-The agents' internal logic, made explicit. This file defines, as one mutual
-`inductive` block:
-* `Derivation : Formula → Type` — the structural proof objects of `S`;
-* `PlaysProof me opp body a n` — a **play certificate**: a finite, character-
-  costed transcript of `body` evaluating to `a` (one constructor per `eval`-step);
-* `AtomProvable k φ` — a bounded play certificate for an atomic `.plays` fact;
-* `Provable k φ` — a `Derivation` of size ≤ `k`, OR a bounded atom certificate;
-* `proofSearch k φ` — the oracle agents query, *defined* as decidable `Provable`.
+The agents' internal logic, made explicit. One mutual `inductive` block defines four
+objects, layered by what their premises may mention:
+
+```
+              ┌───────────────────────────────────────────────┐
+              │  Provable k φ   ("φ provable within budget k") │  ← the oracle `.search` asks
+              │  = struct (a small Derivation)                 │
+              │  | atom   (a budgeted play certificate)        │
+              │  | reflection rules whose premises are         │
+              │    THEMSELVES `Provable` (impl/box reasoning)  │
+              └──────────────┬───────────────┬─────────────────┘
+                  reasoning   │               │   execution
+              ┌───────────────┘               └───────────────┐
+      ┌───────▼────────┐                          ┌────────────▼─────────┐
+      │  Derivation φ  │                          │  AtomProvable k φ     │
+      │  logic + source│                          │  = PlaysProof + n ≤ k │
+      │  reading; NO    │                          │  (only `.plays` atoms)│
+      │  `.plays` atoms│                          └────────────┬─────────┘
+      └────────────────┘                                       │
+                                                       ┌───────▼─────────┐
+                                                       │  PlaysProof     │
+                                                       │  = eval transcript│
+                                                       └─────────────────┘
+```
+
+* **`Derivation : Formula → Type`** — structural proof objects: the *logical core*
+  (modus ponens, hyp. syllogism) and the *source-transparency bridge* ("S reads `Prog`
+  source", one rule per construct it inspects). Premises are other `Derivation`s only —
+  NO `.plays` atoms (atoms are decided by execution, not logic) and NO `Provable` premises.
+* **`PlaysProof me opp body a n`** — a *play certificate*: a finite, character-costed
+  transcript of `body` evaluating to `a` (one constructor per `eval`-step).
+* **`AtomProvable k φ`** — a `PlaysProof` whose cost fits the budget (`n ≤ k`); the bridge
+  for atomic `.plays` facts that `Derivation` cannot read.
+* **`Provable k φ`** — the formula provable within budget `k`. Three kinds of member:
+  `struct` (a `Derivation` of size ≤ k), `atom` (an `AtomProvable`), and the *reflection
+  rules* whose premises are themselves `Provable` (so they cannot live on the `Type`-valued
+  `Derivation`). See the grouped sections in the `Provable` block.
+* **`proofSearch k φ`** — the oracle agents query, *defined* as decidable `Provable`.
 
 `Formula.interp` (Dynamics.lean) interprets `Formula`; `Derivation.sound` /
-`AtomProvable_sound` (BaseTheorems.lean) bridge `provability → truth`.
+`AtomProvable_sound` / `Provable_sound` (BaseTheorems.lean) bridge `provability → truth`.
 
-Atom-provability used to be `opaque` (and `Provable` a `def`), on the belief that
-the atom self-reference — a `.search` subject's guard `□_k ψ` means `Provable` —
-was a Löb loop Lean must reject. It isn't: that was an artifact of unfolding a
-`def` through an `opaque`. As one mutual inductive the recursion is accepted.
+## Why a single mutual inductive (historical note)
 
-The single residue is `atom_complete`'s false-guard direction (`¬ Provable`, Π₁) —
-still the axiom `atom_complete_false_guard` in `Axioms.lean`. Its irreducibility is
-now machine-located: a `.search`-bot's ELSE-action has NO certificate term at all
-(neither `Derivation` nor `PlaysProof` produces it — `ComputableEval/Exclusion.lean`,
-`no_deriv_else`/`provable_else_isAtom`, `[propext]` only). So the axiom postulates a
-true `interp` (`play = some aElse`) whose proof TERM provably does not exist — the
-proof-vs-witness gap at the certificate level. Removing it would need a `PlaysProof`
-rule producing the else-action (a sound `search_f`), which is blocked (see the
-`search_t` comment below and the `atom_complete_false_guard` doc).
+Atom-provability used to be `opaque` (and `Provable` a `def`), on the belief that the atom
+self-reference — a `.search` subject's guard `□_k ψ` means `Provable` — was a Löb loop Lean
+must reject. It isn't: that was an artifact of unfolding a `def` through an `opaque`. As one
+mutual inductive the recursion is accepted.
+
+## The remaining axiom this file touches: `atom_complete_false_guard`
+
+The single residue is `atom_complete`'s false-guard direction (`¬ Provable`, Π₁) — the axiom
+`atom_complete_false_guard` (`Axioms.lean`). Its irreducibility is machine-located: a
+`.search`-bot's ELSE-action has NO certificate term at all (neither `Derivation` nor
+`PlaysProof` produces it — `ComputableEval/Exclusion.lean`, `[propext]` only). So the axiom
+postulates a true `interp` (`play = some aElse`) whose proof TERM provably does not exist.
+Removing it would need a `PlaysProof` rule producing the else-action (a sound `search_f`),
+which is blocked (see the `search_t` comment below).
 -/
 
--- 1. The derivation system. Each rule is (i) SOUND — its conclusion's `interp`
+-- 1. The `Derivation` system. Each rule is (i) SOUND — its conclusion's `interp`
 -- follows from its premises' (`Derivation.sound`, BaseTheorems.lean) — and
 -- (ii) FAITHFUL to a PA-like `S` (critch22 Appendix B): a genuine capability of
 -- `S`, with no semantic completeness / general reflection smuggled in. Two layers:
 --   • LOGICAL CORE — propositional inference (modus ponens, hyp. syllogism).
 --   • SOURCE-TRANSPARENCY BRIDGE — "S reads `Prog` source", one rule per
---     construct it inspects (`.search`, `.sim`); Appendix B(a).
+--     construct it inspects (`.search`, `.sim`, `.ite`); Appendix B(a).
 --
--- Deliberately ABSENT as constructors:
---   • Atomic `.plays` — handled by the `PlaysProof` certificate (§3), not here.
---   • GL axiom 4 (`□φ → □□φ`): a sound PA principle (HBL D2) but needs a size
---     side-condition unstatable without size-indexing `Derivation`; it lives as
---     the axiom `box_provable` (Axioms.lean), like `PBLT`. GL's K, by contrast,
---     *is* derived — the theorem `K_provable`, from `modusPonens`.
+-- What is NOT here, and where it lives instead:
+--   • Atomic `.plays` — handled by the `PlaysProof` certificate, not by `Derivation`.
+--   • The modal/reflection rules (GL K, GL 4, necessitation, object MP) — they need
+--     `Provable` premises, so they live on `Provable` below as the constructors
+--     `axK` / `box4` / `boxIntro` / `app` (NOT axioms — added when the `box_provable`
+--     and `boxInternalize` axioms were eliminated). `Derivation`'s own `modusPonens`
+--     is the `Type`-level MP; `app` is its `Provable`-level twin.
+--   • An implication-INTRODUCTION (deduction theorem) — DELIBERATELY absent: it would
+--     take a PA-like `S` to full intuitionistic logic and break faithfulness/bounds.
+--     This is why `hypSyll` is primitive (cannot be derived from `modusPonens`).
 
 /-- The inductive type for derivations in the proof system `S`. Here, we state
     what S can do. -/
@@ -184,12 +179,14 @@ inductive Derivation : Formula → Type where
   | eqRefl (p : Prog) :
       Derivation (.eq p p)
 
-/-- Proof size: the character count of the **conclusion formula**. This is the
-    quantity `proofSearch k φ` tests against: "is there a proof of `φ` whose
-    conclusion fits in `k` characters?" Leaf rules (`searchBranch`, `simStep`,
-    `eqRefl`) each contribute exactly their conclusion's size; combining rules
-    (`modusPonens`, `hypSyll`) produce a conclusion that is strictly smaller than
-    the sum of the premises, so existing size bounds are preserved. -/
+/-- **Proof "size" = the character count of the CONCLUSION FORMULA** (NOT the proof-tree
+    node count). This is intentional and load-bearing: it is Critch's character-cost model
+    (Appendix B), and it is the quantity `proofSearch k φ` tests against — "is there a proof
+    of `φ` whose conclusion fits in `k` characters?". Because size depends only on the
+    conclusion, every box rule below bounds its budget via `Formula.size` alone, with no need
+    for a structural proof-tree index. (An earlier attempt to add a structural `treeSize` was a
+    dead end and was removed.) Leaf rules contribute their conclusion's size; combining rules
+    (`modusPonens`, `hypSyll`) conclude something no larger than the premises, preserving bounds. -/
 def Derivation.size : {φ : Formula} → Derivation φ → Nat
   | φ, _ => φ.size
 
@@ -204,15 +201,11 @@ def c_leaf  : Nat := 1                          -- leaf step (`.const a`)
 def c_node  : Nat := 1                          -- structural step (`.self`/`.opp`/`.bot`/`.sim`/`.ite`)
 def c_guard (k : Nat) : Nat := Nat.log2 k + 1   -- `.search` guard at budget `k`; grows with `k`
 
--- `search_t` (true guard) carries `Provable k (guard)`. There is NO `search_f` (false-guard)
--- constructor — see the detailed note on `search_t` below for why (a candidate `search_f` carrying
--- `decide (Provable_fin k guard) = false` — `Provable_fin` lives in `ComputableEval/PlaysCheck.lean`
--- — would TYPECHECK but is NOT SOUND: the Löb/PBLT entanglement).
 mutual
--- *PlaysProof* The code ran and produced this action with a cost.
--- PlaysProof takes in three programs, an action, and a natural number, and returns a proposition.
--- The proposition PlaysProof ... is true exactly when you can assemble it from the constructors below, and nothing else
--- | name (explicit args) : premise₁ → premise₂ → … → PlaysProof <indices>
+-- 3. `PlaysProof me opponent body a n` — a play certificate: `body` (run with `me`/`opponent` as
+-- the players) evaluates to action `a` at character cost `n`. One constructor per `eval`-step; the
+-- proposition holds exactly when assembled from these constructors. (`search_t`'s false-guard
+-- counterpart is deliberately absent — see its doc.)
   inductive PlaysProof : (me opponent body : Prog) → Action → Nat → Prop where
     -- Running the body .const a yields a at cost c_leaf
     | const :
@@ -240,35 +233,35 @@ mutual
         PlaysProof me opponent b r m → (r == a') = false →
         PlaysProof me opponent q a n →
         PlaysProof me opponent (.ite b a' p q) a (m + n + c_node)
-    -- eval: `.search k φ p q => if proofSearch k (φ.subst ..) then .. p else .. q`
-    -- (true-guard branch only). A `search_f` (false-guard) constructor is DELIBERATELY ABSENT.
-    -- Two walls (machine-located; see `atom_complete_false_guard` doc in `Axioms.lean` and the
-    -- spikes `{SearchFFeasibility,SizeIndex,ProvableFin,Exclusion}Spike.lean`):
-    --   • POSITIVITY — `¬ Provable`/`¬ PlaysProof` is non-positive in-block. LIFTABLE: a candidate
-    --     `search_f` carrying `decide (Provable_fin k guard) = false` (`Provable_fin` lives in
-    --     `ComputableEval/PlaysCheck.lean`, references no in-block type) IS kernel-positive.
-    --   • SOUNDNESS — NOT liftable. `playsProof_sound` would need `proofSearch k guard = false`
-    --     (eval-exact) to run the else-branch, but `Provable_fin = false` diverges from
-    --     `proofSearch = false` at the Löb fixpoints (`Provable` is `PBLT`-axiom-true there). And
-    --     `eval` cannot be rewired to use `Provable_fin` — the PBLT cooperations (CupodBot.lean:112)
-    --     need `proofSearch = true` at the fixpoint guard.
-    -- Deeper still (`ComputableEval/Exclusion.lean`): a `.search`-bot's ELSE-action has NO certificate term
-    -- at all — `no_deriv_else`/`provable_else_isAtom` prove (`[propext]` only) that neither
-    -- `Derivation` nor `PlaysProof` produces it. So the axiom postulates a true `interp` whose proof
-    -- TERM provably does not exist. The false-guard completeness stays the axiom.
+    -- `.search k φ p q` runs the TRUE-guard branch (`p`) when `proofSearch k (φ.subst ..)` holds,
+    -- so `search_t` carries `Provable k (guard)` as its premise. There is NO `search_f` (false-guard)
+    -- constructor: the else-action has no certificate term, the residue captured by the axiom
+    -- `atom_complete_false_guard`. See its doc in `Axioms.lean` and `ComputableEval/Exclusion.lean`
+    -- (`no_deriv_else`/`provable_else_isAtom`, `[propext]`): no `Derivation` and no `PlaysProof`
+    -- concludes a `.search`-bot's else-action, so the axiom postulates a true `interp` whose proof
+    -- TERM provably does not exist (the proof-vs-witness gap).
     | search_t :
         Provable k (φ.subst me opponent) →
         PlaysProof me opponent p a n →
         PlaysProof me opponent (.search k φ p q) a (n + c_guard k + c_node)
 
--- *AtomProvable* The run cost fits in the budget k
+-- `AtomProvable k φ` — a `PlaysProof` whose run cost fits the budget (`n ≤ k`); the bridge for
+-- atomic `.plays` facts (which `Derivation` cannot read).
   inductive AtomProvable : Nat → Formula → Prop where
     | mk : PlaysProof me opponent me a n → n ≤ k → AtomProvable k (.plays me opponent a)
 
--- *Provable* Provable within budget k by either a derivation or a budgeted atom.
+-- `Provable k φ` — provable within budget `k`. Constructors fall into three groups:
+--   (A) ENTRY POINTS:  `struct` (a small `Derivation`) and `atom` (an `AtomProvable`).
+--   (B) IMPLICATION REASONING: `weakenImpl` / `searchThenSearch_t` / `implTrans` — rules whose
+--       premises are `Provable` (so they cannot live on the `Type`-valued `Derivation`).
+--   (C) MODAL / BOX RULES: `atomBoxImpl` / `boxIntro` / `app` / `axK` / `box4` — the bounded HBL
+--       derivability conditions. These were added when the `box_provable` and `boxInternalize`
+--       AXIOMS were eliminated (they are constructors, NOT axioms; soundness in `Provable_sound`).
   inductive Provable : Nat → Formula → Prop where
+    -- ── (A) entry points ──
     | struct : (∃ d : Derivation φ, d.size ≤ k) → Provable k φ
     | atom : AtomProvable k φ → Provable k φ
+    -- ── (B) implication reasoning (premises are `Provable`) ──
     /-- **True-consequent implication** (`ψ ⊢ φ → ψ`, the premise of GL's K /
         intuitionistic axiom 1): if the consequent `ψ` is provable (at any budget
         `m`), then `φ → ψ` is provable, provided the conclusion's character size
@@ -327,6 +320,7 @@ mutual
         Provable a (.impl φ ψ) → Provable b (.impl ψ χ) →
         a ≤ k → b ≤ k → ψ.size ≤ k →
         (Formula.impl φ χ).size ≤ k → Provable k (.impl φ χ)
+    -- ── (C) modal / box rules — the bounded HBL derivability conditions (constructors, not axioms) ──
     /-- **Object-level bounded Σ₁-completeness for play-atoms** (constructive,
         certificate-carrying): from a bounded play certificate `AtomProvable k
         (p plays a vs q)`, infer the *object implication*

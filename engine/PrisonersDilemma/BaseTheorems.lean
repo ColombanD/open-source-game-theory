@@ -294,20 +294,18 @@ theorem AtomProvable_sound (k : Nat) (φ : Formula) : AtomProvable k φ → φ.i
   obtain ⟨N, hN⟩ := playsProof_sound cert
   exact ⟨N, hN⟩
 
--- Soundness of bounded provability: anything provable within a budget is true.
--- Three disjuncts now:
---   • structural `Derivation` rules (→ `Derivation.sound`);
---   • an atomic σ₁ fact (→ `AtomProvable_sound`);
---   • a `weakenImpl` true-consequent implication (recursive on the consequent's
---     provability — `Provable m ψ` is a structural subterm, so via `Provable.rec`).
--- `induction`/`cases` can't recurse through the mutual block, so we drive it with
--- `Provable.rec` (mirroring `playsProof_sound`).
+-- **Soundness of bounded provability: anything provable within a budget is true.**
+-- One arm per `Provable` constructor (grouped as in `Derivation.lean`):
+--   • entry points: `struct` (→ `Derivation.sound`), `atom` (→ `AtomProvable_sound`);
+--   • implication reasoning: `weakenImpl`/`searchThenSearch_t`/`implTrans` (interp is Lean
+--     implication, so these are function composition / the IH on the consequent);
+--   • modal/box rules: `atomBoxImpl`/`boxIntro`/`app`/`axK`/`box4` — each interp is `Provable …`
+--     (the box clause), discharged from the premise's provability (`app` runs the implication).
+-- `induction`/`cases` can't recurse through the mutual block, so we drive it with `Provable.rec`
+-- (mirroring `playsProof_sound`); the minor premises are POSITIONAL — all `PlaysProof`/`AtomProvable`
+-- arms have motive `True`, then one arm per `Provable` constructor in declaration order.
 theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
   intro k φ h
-  -- The minor premises of `Provable.rec` are positional (anonymous binders), so
-  -- we supply all twelve in order: the eight `PlaysProof` cases and the
-  -- `AtomProvable` (`mk`) case all have motive `True`; then `struct`, `atom`, and
-  -- the new `weakenImpl`.
   exact Provable.rec
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
@@ -479,21 +477,16 @@ theorem box_provable (k : Nat) (φ : Formula) (h : Provable k φ) :
     ∃ K, K ≤ (Formula.box k φ).size ∧ Provable K (.box k φ) :=
   ⟨(Formula.box k φ).size, Nat.le_refl _, Provable.boxIntro k _ φ h (Nat.le_refl _)⟩
 
-/-- **Soundness witness for the `atom_box_provable_impl` axiom (Axioms.lean).**
-    Object-level bounded Σ₁-completeness for play-atoms, in the *conditional* form
-    that is a kernel-checked THEOREM: when the play actually happens within `fuel`
-    steps AND the budget `k` fits a certificate (`atom_cost fuel ≤ k`), the object
-    implication `(p plays a vs q) → □_k (p plays a vs q)` is provable at `k`. Built
-    from `atom_complete` + `atom_monotone` (→ `Provable k atom`), `box_provable`
-    (→ `Provable K (□_k atom)`), and `weakenImpl` (→ the implication).
+/-- **Object-level bounded Σ₁-completeness for play-atoms** (the conditional, kernel-checked
+    THEOREM). When the play actually happens within `fuel` steps AND the budget `k` fits a
+    certificate (`atom_cost fuel ≤ k`), the object implication `(p plays a vs q) → □_k (p plays a vs q)`
+    is provable at `k`. Built from `atom_complete` + `atom_monotone` (→ `Provable k atom`),
+    `box_provable` (→ `Provable K (□_k atom)`), and `weakenImpl` (→ the implication).
 
-    This certifies the principle the axiom asserts is SOUND under the budget
-    threshold; the axiom drops the `play`/`atom_cost ≤ k` hypotheses so it can be used
-    *witness-free* (the matchup builds its Löb premise before the cooperative play is
-    in hand — see the false-case analysis in `PrudentDupoc.lean`), which is the part
-    that genuinely needs to be axiomatic (Π₁/`box_provable`-style reflection). The
-    threshold `atom_cost fuel ≤ k` is what keeps it on the sound Σ₁ side: it is bounded
-    Σ₁-completeness, NOT the GL-excluded converse-necessitation `φ → □φ`. -/
+    The threshold `atom_cost fuel ≤ k` keeps it on the sound Σ₁ side: bounded Σ₁-completeness, NOT the
+    GL-excluded converse-necessitation `φ → □φ`. (Historical note: the witness-free form was once the
+    axiom `atom_box_provable_impl`, removed as unsound; this conditional theorem and the `atomBoxImpl`
+    constructor are its sound content.) -/
 theorem atom_box_provable_impl_sound (k fuel : Nat) (p q : Prog) (a : Action)
     (hplay : play fuel p q = some a) (hk : atom_cost fuel ≤ k)
     (hsz : (Formula.impl (.plays p q a) (.box k (.plays p q a))).size ≤ k) :
@@ -508,47 +501,24 @@ theorem atom_box_provable_impl_sound (k fuel : Nat) (p q : Prog) (a : Action)
   have hKk : K ≤ k := Nat.le_trans hKle (Nat.le_trans (Nat.le_of_lt hszbox) hsz)
   exact Provable.weakenImpl (.plays p q a) (.box k (.plays p q a)) K hbox hKk hsz
 
-/-! ### Soundness of `boxInternalize`; the mutual-Löb corollary
+/-! ### The mutual-Löb corollary — closes the cross-bot cooperation fixpoints
 
-`boxInternalize` (Axioms.lean) internalizes a budget-`k` proof transformer as an object box
-implication at budget `k`, between play-atoms (it is NOT GL axiom K — see its doc). Its
-soundness is `boxInternalize_sound`. `mutual_loeb` derives the closed Löb premise `□_k φP → φP`
-from `boxInternalize` + the two transparency legs, by `implTrans`. -/
+`mutual_loeb` derives the closed Löb premise `□_k φP → φP` that `PBLT` consumes, from the two
+object transparency legs (`legPD : □φP → φD`, `legDP : □φD → φP`). It uses ONLY constructors
+(`boxIntro`/`axK`/`box4`/`implTrans`) — the "Route 2" assembly that replaced the removed
+`boxInternalize` axiom (which used to internalize a proof *transformer*, a non-positive premise).
+See the `boxInternalize` REMOVED note in `Axioms.lean`. -/
 
-/-- **`boxInternalize` soundness.** `interp (□_k φ → □_k α)` is, definitionally,
-    `Provable k φ → Provable k α` — which is *exactly* the proof-transformer premise `hfitD`.
-    So the object implication denotes precisely its own hypothesis: the proof is `:= hfitD`,
-    tautological, no new semantic content. (This is why the axiom is sound, not false.) -/
-theorem boxInternalize_sound (k : Nat) (φ : Formula) (p q : Prog) (c : Action)
-    (hfitD : Provable k φ → Provable k (.plays p q c)) :
-    (Formula.impl (.box k φ) (.box k (.plays p q c))).interp :=
-  hfitD
+/-- **Mutual / simultaneous bounded Löb** (object form), via Route 2 — ALL CONSTRUCTORS, no axiom.
+    From the two object transparency legs `legPD : □_k φP → φD` and `legDP : □_k φD → φP`, build
+    `□_k φP → φP` as a `Provable` object:
 
-/-- **Soundness content of `mutual_loeb`.** The interp of `□_k φP → φP` holds, given the
-    opponent leg `legDP` and the budget-fit transparency `hfitD`. Pure `Provable_sound`
-    (no box axiom): under the hypothetical `Provable k φP`, `hfitD` gives `Provable k φD`,
-    `legDP` makes `φP` play. Non-collapsible: needs `legDP` + `hfitD`, which only a genuine
-    two-bot fixpoint supplies. -/
-theorem mutual_loeb_sound (k : Nat) (pP qP pD qD : Prog) (bP bD : Action)
-    (legDP : Provable k (.impl (.box k (.plays pD qD bD)) (.plays pP qP bP)))
-    (hfitD : Provable k (.plays pP qP bP) → Provable k (.plays pD qD bD)) :
-    (Formula.impl (.box k (.plays pP qP bP)) (.plays pP qP bP)).interp := by
-  have hDP : (Formula.impl (.box k (.plays pD qD bD)) (.plays pP qP bP)).interp :=
-    Provable_sound k _ legDP
-  intro hboxP
-  exact hDP (hfitD hboxP)
+      `boxIntro` legPD : □_k(□φP → φD)        (necessitate the leg)
+      `axK`            : □_k(□φP) → □_k φD     (GL axiom-K distributes the box)
+      `box4`           : □φP → □(□φP)          (object GL-4)
+      `implTrans` ×2   : □φP → □φD → φP   ⇒    □_k φP → φP.
 
-/-- **Mutual / simultaneous bounded Löb** (object form), derived via `boxInternalize`.
-    From the opponent leg `legDP : □_k φD → φP` and the budget-`k` proof transformer
-    `hfitD : Provable k φP → Provable k φD`, build `□_k φP → φP` as a `Provable` object:
-
-      `boxInternalize` ⊳ hfitD : □_k φP → □_k φD   (internalize the transformer)
-      `implTrans` with legDP : □_k φD → φP         ⇒  □_k φP → φP.
-
-    All boxes stay at the single budget `k`, so the only side-conditions are the formula-size
-    bounds. The single-fixed-`k` form is what lets the cut `□_k φD` meet `legDP`; the faithful
-    object-antecedent GL-K route inflates the budget and does NOT compose (`Research/Spikes/
-    HonestKSpike.lean`, `MutualLobSpike.lean`). -/
+    All boxes stay at the single budget `k`; the side-conditions are formula-size bounds. -/
 theorem mutual_loeb (k : Nat) (pP qP pD qD : Prog) (bP bD : Action)
     (legPD : Provable k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD)))
     (legDP : Provable k (.impl (.box k (.plays pD qD bD)) (.plays pP qP bP)))

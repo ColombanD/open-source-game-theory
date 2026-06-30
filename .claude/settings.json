@@ -26,7 +26,10 @@
       "Bash(find PrisonersDilemma/Theorems -iname \"*cimcic*\" -o -iname \"*dimcid*\")",
       "Bash(echo \"=== EXIT: $? ===\")",
       "Bash(echo \"=== EXIT $? ===\")",
-      "Bash(grep -iA3 \"k m\")"
+      "Bash(grep -iA3 \"k m\")",
+      "Bash(grep -vE \"^%|^$\")",
+      "Bash(grep -nA3 \"| app \\\\|| axK \\\\|| box4 \\\\|| boxIntro \" PrisonersDilemma/Derivation.lean)",
+      "Bash(grep -nA2 \"| weakenImpl\" PrisonersDilemma/Derivation.lean)"
     ],
     "additionalDirectories": [
       "/tmp"

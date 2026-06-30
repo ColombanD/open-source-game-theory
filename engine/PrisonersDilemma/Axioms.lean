@@ -8,160 +8,83 @@ namespace PD.Axioms
 /-!
 # Axioms
 
-Principles of `S` not discharged constructively. THREE remain (`c_guard_mono` is now
-a theorem — the cost constants are concrete, see Derivation.lean; `atom_box_provable_impl`
-was REMOVED as unsound; and `box_provable` was REMOVED — now the THEOREM
-`BaseTheorems.box_provable`, discharged by the `Provable.boxIntro` constructor — see below).
-Each remaining is interp-SOUND (`boxInternalize` by `boxInternalize_sound` in
-BaseTheorems.lean); they are axioms only for the *representational* reason that `Derivation`
-has no *fixpoint* box-introduction and does not size-index proof trees. (Plain box-introduction
-DOES exist — `Provable.boxIntro` — which is what discharged `box_provable`.)
+Principles of `S` not discharged constructively. **TWO remain** (down from four):
 
-* `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches
-  on a *failed* guard has a certificate. Everything else is a theorem.
-* `boxInternalize` — box-internalization at a fixed budget `k`, between play-atoms (NOT GL
-  axiom K — see its doc): from a budget-`k` proof transformer `Provable k φ → Provable k α`
-  (α a play-atom), derive the object `□_k φ → □_k α`. SOUND via `boxInternalize_sound`: the
-  conclusion's interp is *definitionally* the transformer itself (`:= hfitD`), so it is NOT
-  false — it asserts nothing beyond its hypothesis. INERT for false atoms (no transformer
-  exists, so e.g. DefectBot-cooperating stays unprovable). The fixed-budget form is FORCED:
-  the faithful object-antecedent GL-K inflates the box budget and cannot be reconciled to the
-  `k` that PBLT + the opponent leg demand (machine-confirmed dead end,
-  `Research/Spikes/HonestKSpike.lean`; cf. `MutualLobSpike.lean`). `boxInternalize` + the two
-  transparency legs derive the cross-bot Löb premise as the THEOREM `mutual_loeb`
-  (BaseTheorems.lean), closing the fixpoints (PrudentBot↔DupocBot, three guises) the removed
-  unsound `atom_box_provable_impl` formerly forced.
-* `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
+* `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches on a *failed*
+  guard still has an `AtomProvable` certificate. Proven irreducible — the else-action has no
+  certificate TERM at all (`ComputableEval/Exclusion.lean`), so the axiom postulates a true
+  `interp` whose witness provably does not exist (the proof-vs-witness gap).
+* `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6). A genuine metatheorem
+  (bounded-Löb / diagonalization), removable only by a faithful first-order mechanization of `S`
+  (`Bew` + a deduction theorem); see `Research/Notes/EXPLICIT_S_PROPOSAL.md`. Critch's proof is
+  in `PBLT_proof.tex` §5.
+
+Removed (now theorems / constructors, NO new axioms; `Provable_sound` still rests on only the 3
+Lean-standard axioms):
+
+* `box_provable` (bounded GL-4 necessitation) → the `Provable.boxIntro` constructor + the
+  `BaseTheorems.box_provable` theorem.
+* `boxInternalize` (box-internalization at the cross-bot Löb fixpoints) → the `app`/`axK`/`box4`
+  constructors; `mutual_loeb` (BaseTheorems.lean) builds the closed Löb premise from the two object
+  transparency legs (Route 2). The faithful object-antecedent GL-K was a dead end
+  (`Research/Spikes/bounded_lob/HonestKSpike.lean`); the working route uses a proof-TERM premise.
+* `atom_box_provable_impl` — removed as unsound; sound content survives as
+  `atom_box_provable_impl_sound` (theorem) + the `atomBoxImpl` constructor.
+* `c_guard_mono` — now a theorem (the cost constants are concrete, see Derivation.lean).
 
 Everything else is a theorem in `BaseTheorems.lean`.
 -/
 
 
-/-- The Π₁ residue of σ₁-completeness: a play that has no constructive `PlaysProof`
-    certificate (because it branched on a *failed* proof search, requiring
-    `¬ Provable k (guard)` — Π₁, non-positive) still has an `AtomProvable` certificate
-    at budget `atom_cost fuel`. Use `atom_complete` (the theorem below) at call sites.
+/-- **The Π₁ residue of σ₁-completeness.** A play that has no constructive `PlaysProof` certificate
+    (it branched on a *failed* proof search, requiring `¬ Provable k guard` — Π₁, non-positive) still
+    has an `AtomProvable` certificate at budget `atom_cost fuel`. Use `atom_complete` (theorem below)
+    at call sites.
 
-    STATUS — LOAD-BEARING and DECIDABLE-but-uncarried (corrected 2026-06-26).
+    **Load-bearing.** ≈5 false-guard plays route through this axiom — a `.search`-bot playing its
+    *else*-action, e.g. `PrudentBot plays D vs .bot DefectBot` (`prudence_self_prudent`), `JustBot
+    plays D vs .bot DefectBot`, `CupodTrollBot plays C vs DupocBot` — feeding real cross-bot outcomes.
 
-    * **It IS load-bearing.** An earlier note here claimed "no theorem's truth depends
-      on it." That was WRONG: a call-site survey found ≈5 genuine false-guard plays that
-      route through this axiom — a `.search`-bot playing its *else*-branch action, e.g.
-      `PrudentBot plays D vs .bot DefectBot` (`prudence_self_prudent`,
-      `Theorems/LlmGenerations/PrudentBot.lean`), `JustBot plays D vs .bot DefectBot`,
-      `CupodTrollBot plays C vs DupocBot`. These feed real cross-bot outcome theorems.
+    **Decidable, not witness-free.** "No size-≤-k `PlaysProof` of the guard exists" is the negation
+    of a DECIDABLE predicate (`ppSize` / `Provable_fin`, `ComputableEval/PlaysCheck.lean`, computes
+    it soundly). The axiom postulates a decidable fact, not an oracle.
 
-    * **Its content is DECIDABLE, not witness-free.** The fact "no size-≤-k `PlaysProof`
-      of the guard exists" is the negation of a DECIDABLE predicate: the sound, computable
-      checker `ppSize` (`ComputableEval/PlaysCheck.lean`, `ppSize_sound`) decides bounded
-      play-certificate existence by a terminating procedure. So this axiom postulates a
-      decidable fact, not an oracle. The eval-trace bridge `eval_search_false` (same file)
-      connects a failed guard to the real else-branch play.
+    **Irreducible — two walls.** A `search_f` constructor producing the else-action would discharge
+    it, but: (WALL 1, positivity — liftable) `¬ Provable` is non-positive in-block, but a
+    `decide (Provable_fin k guard) = false` premise typechecks via the `Provable_fin` cycle-break;
+    (WALL 2, soundness — NOT liftable) `Provable_fin = false ⇏ proofSearch = false` at a Löb fixpoint
+    (`Provable_fin` false while `proofSearch`/`Provable` is `PBLT`-axiom-true), and `eval` can't be
+    rewired to `Provable_fin` (the PBLT cooperations need `proofSearch = true` at the fixpoint). So
+    the sound premise is the non-positive Π₁ `¬ Provable k guard`. Deepest: the else-play's
+    certificate type is provably EMPTY — no `Derivation`/`PlaysProof`/`Provable` concludes it
+    (`ComputableEval/Exclusion.lean`, `[propext]`). So the axiom postulates a true `interp` whose
+    proof TERM does not exist (the proof-vs-witness gap), entangled with `PBLT` off-fixpoints.
 
-    * **Why it stays an axiom — TWO walls, both now machine-located.**
-
-      WALL 1 (positivity, lifted). A `search_f` constructor carrying `¬ Provable`/`¬ PlaysProof`
-      is kernel-impossible (non-positive). This IS liftable: `Provable_fin` (`PlaysCheck.lean`,
-      a decidable `proofSearch`-free finite-provability predicate) is now defined BEFORE the
-      `PlaysProof`/`Provable` mutual block (the cycle-break), so a `search_f` carrying
-      `decide (Provable_fin k guard) = false` is kernel-POSITIVE and TYPECHECKS. We verified
-      this in-engine (`ProvableFinSpike.lean`, and a transient real-engine `search_f`).
-
-      WALL 2 (soundness, NOT lifted — the deeper boundary). Even typeable, `search_f` is NOT
-      SOUND. `playsProof_sound` must discharge it for EVERY `search_f` certificate, and that
-      needs `proofSearch k guard = false` (eval-exact: `eval` runs the else-body only when the
-      guard fails). But `decide (Provable_fin k guard) = false` does NOT imply `proofSearch k
-      guard = false`: at a Löb fixpoint `Provable_fin = false` while `Provable`/`proofSearch`
-      is `PBLT`-axiom-TRUE. And `eval` CANNOT be rewired to consult `Provable_fin` instead of
-      `proofSearch` — the PBLT cooperations (e.g. `CupodBot.lean:112`) REQUIRE `proofSearch =
-      true` at the self-referential fixpoint guard, where `Provable_fin` is false. So the
-      sound premise is the Π₁ fact `¬ Provable k guard`, irreducibly non-positive in-block.
-
-      Net: the cycle-break makes the false-guard fact DECIDABLE and the constructor TYPEABLE,
-      but the Löb fixpoint forces the SOUNDNESS premise to be the non-positive Π₁ negation.
-      The two coincide (`Provable_fin = false ↔ proofSearch = false`) exactly OFF the fixpoints
-      — which is the same proof-vs-witness boundary as the noncomputable-`eval` crux. Removing
-      this axiom is entangled with `PBLT` (the Löb axiom) and is NOT independently dischargeable.
-
-    Machine-grounded investigation: `Research/Spikes/{SearchFFeasibilitySpike,SizeIndexSpike,
-    PortPhaseASpike,DecidableFiniteSpike,ProvableFinSpike}.lean`. `Provable_fin` /
-    `instDecProvableFin` / `provableFin_sound` / `ppSize` (the computable, sound decider) are
-    shipped IN-ENGINE (`Derivation.lean`, `ComputableEval/PlaysCheck.lean`): the false-guard
-    fact's existence is decidable; only its SOUND in-`PlaysProof` carriage is blocked, by the
-    Π₁/PBLT entanglement above. -/
+    Spikes: `Research/Spikes/atom_complete_false_guard/`. -/
 axiom atom_complete_false_guard :
   ∀ p q a fuel, play fuel p q = some a →
     ¬ (∃ _ : PlaysProof p q p a (atom_cost fuel), True) →
     AtomProvable (atom_cost fuel) (.plays p q a)
 
-/-! ### REMOVED — `box_provable` (now the THEOREM `BaseTheorems.box_provable`)
+-- (The removed axioms `box_provable`, `boxInternalize`, `atom_box_provable_impl`, `c_guard_mono` and
+--  where their content now lives are summarized in the module header above. The two live axioms
+--  follow.)
 
-    Bounded GL axiom 4 / necessitation (`□_k φ → □_K □_k φ`, HBL D2) was an axiom only
-    because `Provable` had no box-introduction constructor. It now does: `Provable.boxIntro`
-    (Derivation.lean) builds `□_k φ` directly from `Provable k φ` with output budget bounded
-    by `(.box k φ).size` — exactly the former axiom's `K ≤ (.box k φ).size`. The engine's
-    cost model is conclusion-`Formula.size` (`Derivation.size = conclusion.size`), so no
-    structural proof-tree size index is needed; the box-intro is a LOCAL, sound, safe
-    constructor (premise is genuine `Provable k φ`, so nothing false is boxed — unlike the
-    removed-unsound `atom_box_provable_impl`). See `BaseTheorems.box_provable` /
-    `Provable.boxIntro` and `Research/Notes/WALLS_AND_EXTENSIONS.md`. -/
+/-- **Parametric Bounded Löb Theorem** (critch22 Lemma 3.6). If `f(k) ≻ O(log k)` and `S` proves
+    `□_{f(k)} φ(k) → φ(k)` for all large `k`, then `S` proves `φ(k)` outright for all large `k`.
 
-/-! ### REMOVED — `boxInternalize` (now derived from constructors; 2026-06-29)
+    A genuine metatheorem (bounded Löb / diagonalization), not a representational wall — removable
+    only by a faithful first-order mechanization of `S` (Gödel `Bew` + a deduction theorem), which
+    `Provable`'s deliberately bounded, deduction-free design does not support. See
+    `Research/Notes/EXPLICIT_S_PROPOSAL.md` (the `BPS` interface spike) and `PBLT_proof.tex` §5.
 
-    Was an axiom internalizing a *proof transformer* `Provable k φ → Provable k α` into the object
-    box implication `□_k φ → □_k α` — non-positive (transformer premise), so it could not be a
-    constructor (Wall 3, Horn A). NOW ELIMINATED: the `mutual_loeb` consumers no longer take a
-    transformer; they supply BOTH object transparency legs (`legPD : □φP→φD`, `legDP : □φD→φP`), and
-    `mutual_loeb` (BaseTheorems.lean) builds `□φP→φP` via the **proof-DATA constructors**
-    `Provable.boxIntro` (necessitate the leg), `Provable.axK` (GL axiom-K, proof-term premise),
-    `Provable.box4` (object GL-4), and `implTrans` — the `MutualLobSpike` Route 2, now ALL
-    constructors, no transformer. The per-leg budget reconciliation (Horn B / Wall 1) is carried by
-    each leg's own source-transparency Derivation (`searchBranch`/`botSearchStep`/`searchThenSearch_t`
-    + the prudence atom), which already exist. `Provable_sound` still depends on only the 3 standard
-    axioms (`app`/`axK`/`box4` are SOUND). See `Research/Notes/EXPLICIT_S_PROPOSAL.md`. -/
-
-/-! ### REMOVED — `atom_box_provable_impl` (was unsound)
-
-    Formerly an axiom asserting the *witness-free* object implication
-    `⊢ (p plays a vs q) → □_k (p plays a vs q)` for ALL `k p q a`, with no
-    threshold. It was **unsound in the `interp` model**: applied through
-    `Provable_sound`, its interp is `(∃n, play n p q = a) → Provable k (.plays p q a)`,
-    which forces a size-≤-`k` certificate to exist whenever the play merely happens
-    at SOME fuel — false for any play whose certificate exceeds `k` (`atom_cost fuel
-    > k`). Now exhibitable since the cost model (`c_guard`, `atom_cost`) is concrete.
-
-    The SOUND content it gestured at survives in two places, neither witness-free:
-    * `BaseTheorems.atom_box_provable_impl_sound` — the conditional THEOREM carrying
-      the threshold `atom_cost fuel ≤ k` (genuine bounded Σ₁-completeness); and
-    * `Provable.atomBoxImpl` (Derivation.lean) — its constructive, certificate-carrying
-      realization as a `Provable` rule, discharged with NO axiom.
-
-    The matchups that USED the unsound form — `outcome_PrudentBot_vs_DupocBot`,
-    `llm_outcome_JustBot_vs_PrudentBot`, `llm_outcome_JustBot_vs_DupocBot` — are
-    genuine Löb fixed points whose box-introduction on the (as-yet-unproven) cooperative
-    atom needs reflection beyond a single bot's transparency. They are now CLOSED (no
-    `sorry`) by the SOUND `boxInternalize` axiom above (mutual Löb): rather than boxing a
-    bare atom, the `mutual_loeb` theorem feeds `boxInternalize` a budget-`k` proof transformer
-    `Provable k φP → Provable k φD` — obtained from BOTH bots' transparency legs via a guard
-    inversion that fires only at a genuine two-bot fixpoint — so nothing false (e.g.
-    DefectBot cooperating) becomes provable. See
-    `mutual_loeb`/`mutual_loeb_sound`/`boxInternalize_sound` (BaseTheorems.lean) and
-    `Research/Spikes/MutualLobSpike.lean`. -/
-
--- Parametric Bounded Löb Theorem (critch22 Lemma 3.6).
---
--- If `f(k) ≻ O(log k)` and S proves `□_{f(k)} φ(k) → φ(k)` for all large k,
--- then S proves `φ(k)` outright for all large k.
---
--- The hypothesis is *unbudgeted* (`∃ m, Provable m …`) — faithful to Critch's
--- `⊢`, which carries no size annotation on the implication proof. Consumers
--- (CupodBot, DupocBot) supply the `f(k) ≻ O(log k)` bound separately via
--- `linear_log2_add_le` and `Derivation.size`.
---
--- We use the per-instance meta-∀ (`∀ k > k₁, ∃ m, Provable m …`) rather than
--- Critch's single universally-quantified object-formula, because `Formula` has
--- no internal ∀ quantifier. This is implied by Critch's statement and sufficient
--- for all consumers.
+    Shape notes:
+    * The hypothesis's proof budget is *unbudgeted* (`∃ m, Provable m …`) — faithful to Critch's
+      `⊢`, which carries no size annotation on the implication proof. Consumers (CupodBot, DupocBot)
+      supply the `f(k) ≻ O(log k)` bound via `linear_log2_add_le` + `Derivation.size`.
+    * We use a per-instance meta-`∀ k` (`∀ k > k₁, ∃ m, …`) rather than Critch's single
+      universally-quantified object-formula, because `Formula` has no internal `∀` quantifier. This
+      is implied by Critch's statement and sufficient for all consumers. -/
 axiom PBLT :
   ∀ (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat),
     (∀ a b, a ≤ b → f a ≤ f b) →
