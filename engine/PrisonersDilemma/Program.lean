@@ -23,7 +23,7 @@ abbrev Outcome := Action × Action
 -- agents reason about agents reasoning about agents.
 
 mutual
-  inductive Prog where
+  inductive Prog: Type where
     | const  : Action → Prog                      -- trivial bots like CB/DB: ignore opp, play a fixed action
     | self   : Prog                               -- placeholder for "my own source" — closed by `subst`
     | opp    : Prog                               -- placeholder for the opponent's source — closed by `subst`
@@ -31,13 +31,14 @@ mutual
     | sim    : Prog → Prog → Prog                 -- source code for "run p with q as opponent"
     | ite    : Prog → Action → Prog → Prog → Prog -- if evaluating guard yields action a, run p, else q
     | search : Nat → Formula → Prog → Prog → Prog -- proof_search(k, φ): if oracle verifies φ in ≤k chars, run p, else q
-  inductive Formula where
+  inductive Formula: Type where
     | plays : Prog → Prog → Action → Formula      -- atomic: "p(q.source) == a"
     | impl  : Formula → Formula → Formula         -- φ → ψ (needed for Löb-style hypotheses like □C → C)
     | neg   : Formula → Formula                   -- ¬ φ
     | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
 end
+deriving instance DecidableEq for Prog, Formula
 
 -- Closing self-reference via substitution.
 --

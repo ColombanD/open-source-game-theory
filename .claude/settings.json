@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"unused variable\\\\|linter.unusedVariables\\\\|^$\")",
+      "Bash(grep -v \"unused variable\\\\|linter.unusedVariables\\\\|constructorNameAsVariable\\\\|resembles constructor\\\\|^Note:\\\\|^$\")",
+      "Bash(grep -iv \"unused variable\\\\|linter\\\\|resembles constructor\\\\|^Note:\\\\|^$\")",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(echo \"GREP_EXIT=$?\")",
+      "Bash(Classical)",
+      "Bash(sorry)",
+      "Bash(grep -v \"^\\\\s*--\\\\|`Classical`\\\\|`sorry`\\\\|no sorry\\\\|NO sorry\\\\|NO Classical\\\\|Classical.dec\\\\|sorry-free\")",
+      "Bash(cp PrisonersDilemma/Research/Spikes/DecidableFiniteSpike.lean /tmp/spike_axcheck.lean)",
+      "Bash(cp /tmp/spike_axcheck.lean PrisonersDilemma/Research/Spikes/_axcheck_tmp.lean)",
+      "Bash(grep -iv \"unused variable\\\\|linter\\\\|resembles constructor\\\\|^Note:\\\\|unusedTactic\\\\|tactic does nothing\\\\|^$\")",
+      "Bash(grep -iv \"unused variable\\\\|linter\\\\|resembles constructor\\\\|^Note:\\\\|unusedSimpArgs\\\\|simp argument\\\\|^$\")",
+      "Bash(grep -iv \"unused\\\\|linter\\\\|resembles\\\\|^Note:\\\\|^$\")",
+      "Bash(grep -iv \"unused\\\\|linter\\\\|resembles\\\\|^Note:\\\\|simp argument\\\\|^$\")",
+      "Bash(grep -rB2 -A2 \"PBLT \" PrisonersDilemma/Theorems/CupodBot.lean)",
+      "Bash(Provable k *)",
+      "Bash(echo \"=== PBLT/boxInternalize produce Provable via AXIOM, not constructor. So induction over Provable does NOT see a 'PBLT case' — a PBLT-produced `Provable k phi` is OPAQUE, looks like any other Provable. This is the crux risk. ===\")",
+      "Bash(grep -iv \"unused variable\\\\|linter\\\\|^Note:\\\\|^$\")",
+      "Bash(grep -iv \"unused variable\\\\|linter\\\\|^Note:\\\\|^$\\\\|declaration uses .sorry\")",
+      "Bash(grep -iv \"linter\\\\|^Note:\\\\|^$\")",
+      "Bash(cd \"/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master *)",
+      "Bash(grep -rn \"theorem llm_outcome_CIMCIC\\\\|theorem llm_outcome_DIMCID\\\\|theorem.*CIMCIC.*DefectBot\\\\|theorem.*DIMCID.*Cooperate\" PrisonersDilemma/Theorems/ -r)",
+      "Bash(find PrisonersDilemma/Theorems -iname \"*cimcic*\" -o -iname \"*dimcid*\")",
+      "Bash(echo \"=== EXIT: $? ===\")",
+      "Bash(echo \"=== EXIT $? ===\")",
+      "Bash(grep -iA3 \"k m\")",
+      "Bash(grep -vE \"^%|^$\")",
+      "Bash(grep -nA3 \"| app \\\\|| axK \\\\|| box4 \\\\|| boxIntro \" PrisonersDilemma/Derivation.lean)",
+      "Bash(grep -nA2 \"| weakenImpl\" PrisonersDilemma/Derivation.lean)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

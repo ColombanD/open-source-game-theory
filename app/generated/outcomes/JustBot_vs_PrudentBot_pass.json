@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260615T203752",
+  "bot_a": "JustBot",
+  "bot_b": "PrudentBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 128000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 7,
+  "elapsed_seconds": 264.64372183299565,
+  "error": null,
+  "final_text_tail": "t → (C, C)** for all sufficiently large `k`. -/\ntheorem llm_outcome_JustBot_vs_PrudentBot :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (JustBot k) (PrudentBot k) = some (.C, .C) := by\n  obtain ⟨k₂, hcoop⟩ := prudent_botdupoc_coop\n  refine ⟨max k₂ (atom_cost 2), fun k hk => ?_⟩\n  have hk2 : k₂ < k := lt_of_le_of_lt (le_max_left _ _) hk\n  have hkAtom : atom_cost 2 ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)\n  -- (A): PrudentBot cooperates vs `.bot (DupocBot k)` -- JustBot's guard\n  have hA_ps : proofSearch k (.plays (PrudentBot k) (.bot (DupocBot k)) .C) = true :=\n    hcoop k hk2\n  -- JustBot plays C vs PrudentBot (its guard is exactly (A))\n  have hJustC : play 2 (JustBot k) (PrudentBot k) = some .C := by\n    refine JustBot_eval_step k 0 (PrudentBot k) .C ?_\n    simpa using hA_ps\n  -- (B): provable that JustBot plays C vs PrudentBot\n  have hB_ps : proofSearch k (.plays (JustBot k) (PrudentBot k) .C) = true :=\n    (proofSearch_spec _ _).2 (Provable.atom (atom_monotone (atom_cost 2) k _ hkAtom\n      (atom_complete (JustBot k) (PrudentBot k) .C 2 hJustC)))\n  -- (C): provable that JustBot plays D vs `.bot DefectBot` (prudence for PrudentBot)\n  have hJustD : play 2 (JustBot k) (.bot DefectBot) = some .D := by\n    simpa using JustBot_plays_D_against_bot_DefectBot_JB k 0\n  have hC_ps : proofSearch k (.plays (JustBot k) (.bot DefectBot) .D) = true :=\n    (proofSearch_spec _ _).2 (Provable.atom (atom_monotone (atom_cost 2) k _ hkAtom\n      (atom_complete (JustBot k) (.bot DefectBot) .D 2 hJustD)))\n  -- PrudentBot cooperates vs JustBot (both guards fire)\n  have hPrudC : play 3 (PrudentBot k) (JustBot k) = some .C := by\n    simpa using prudent_eval_both_true k 0 (JustBot k) hB_ps hC_ps\n  -- JustBot plays C vs PrudentBot at fuel 3\n  have hJustC3 : play 3 (JustBot k) (PrudentBot k) = some .C := by\n    refine JustBot_eval_step k 1 (PrudentBot k) .C ?_\n    simpa using hA_ps\n  exact ⟨3, outcome_of_plays _ _ _ _ _ hJustC3 hPrudC⟩\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}

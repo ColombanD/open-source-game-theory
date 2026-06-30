@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260612T143041",
+  "bot_a": "PrudentBot",
+  "bot_b": "DBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 64000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "C",
+  "iterations_used": 6,
+  "elapsed_seconds": 184.17311366600006,
+  "error": null,
+  "final_text_tail": "stderr empty, exit 0. \n\n```lean\nimport PrisonersDilemma.Bots.LlmGenerations.PrudentBot\nimport PrisonersDilemma.Bots.DBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.BaseTheorems\n\nopen PD\nopen PD.Bots\nopen PD.BaseTheorems\nnamespace PD.Theorems\n\nprivate theorem ps_false_bot_DB_plays_C (k : Nat) (q : Prog) :\n    proofSearch k (.plays (.bot DefectBot) q .C) = false := by\n  cases h : proofSearch k (.plays (.bot DefectBot) q .C) with\n  | true =>\n    exfalso\n    obtain ⟨n, hn⟩ := proofSearch_sound _ _ h\n    rcases n with _ | _ | n\n    · simp [play, eval] at hn\n    · simp [play, eval, DefectBot] at hn\n    · simp [play, eval, DefectBot] at hn\n  | false => rfl\n\ntheorem llm_outcome_PrudentBot_vs_DBot :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (PrudentBot k) DBot = some (.D, .C) := by\n  refine ⟨0, fun k _ => ⟨20, ?_⟩⟩\n  have hfalse := ps_false_bot_DB_plays_C k\n    ((Prog.opp.sim (Prog.const Action.D).bot).ite Action.D\n      (Prog.search k (Formula.plays Prog.opp Prog.self Action.C) (Prog.const Action.C)\n        (Prog.const Action.D))\n      (Prog.const Action.D))\n  simp only [DefectBot] at hfalse\n  simp [outcome, play, eval, PrudentBot, DBot, DefectBot, Prog.subst, Formula.subst,\n        show (Action.D == Action.C) = false from rfl,\n        show (Action.C == Action.D) = false from rfl,\n        hfalse]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}

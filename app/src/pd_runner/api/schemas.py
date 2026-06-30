@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 
 
 class BotConflictResolution(str, Enum):
@@ -20,6 +20,18 @@ class BotSpec(BaseModel):
     conflict_resolution: Optional[BotConflictResolution] = None
 
 
+# Claude models the UI offers, with their max output-token ceilings. The agent
+# spends `max_tokens` on thinking + the final answer combined, so the cap must
+# stay within the chosen model's ceiling. Keep this in sync with the UI dropdown.
+ALLOWED_MODELS: dict[str, int] = {
+    "claude-opus-4-7": 128000,
+    "claude-opus-4-8": 128000,
+    "claude-sonnet-4-6": 64000,
+    "claude-haiku-4-5": 64000,
+}
+ALLOWED_THINKING_EFFORTS = ("low", "medium", "high")
+
+
 class PipelineRequest(BaseModel):
     bot_a: BotSpec
     # bot_b is optional: when None, the pipeline runs in "bot writer only" mode and
@@ -27,11 +39,39 @@ class PipelineRequest(BaseModel):
     bot_b: Optional[BotSpec] = None
     model: str = "claude-sonnet-4-6"
     max_iterations: int = 20
+    # Per-API-call output budget (thinking + answer share it). Capped to the
+    # chosen model's ceiling by the validator below.
+    max_tokens: int = 32000
+    # Adaptive-thinking depth: "low" | "medium" | "high".
+    thinking_effort: str = "medium"
     # Prove-only mode: skip bot generation entirely; both bot_a and bot_b must already
     # exist on disk (in Bots/ or Bots/LlmGenerations/). strategy fields are ignored.
     prove_only: bool = False
     # Log level for streaming: "DEBUG", "INFO", "WARNING". None = no streaming.
     log_level: Optional[str] = None
+
+    @field_validator("model")
+    @classmethod
+    def _check_model(cls, v: str) -> str:
+        if v not in ALLOWED_MODELS:
+            raise ValueError(f"model must be one of {sorted(ALLOWED_MODELS)}, got {v!r}")
+        return v
+
+    @field_validator("thinking_effort")
+    @classmethod
+    def _check_effort(cls, v: str) -> str:
+        if v not in ALLOWED_THINKING_EFFORTS:
+            raise ValueError(f"thinking_effort must be one of {ALLOWED_THINKING_EFFORTS}, got {v!r}")
+        return v
+
+    @model_validator(mode="after")
+    def _clamp_max_tokens(self) -> "PipelineRequest":
+        ceiling = ALLOWED_MODELS[self.model]
+        if self.max_tokens < 1024:
+            raise ValueError("max_tokens must be at least 1024")
+        if self.max_tokens > ceiling:
+            object.__setattr__(self, "max_tokens", ceiling)
+        return self
 
 
 class BotConflict(BaseModel):
