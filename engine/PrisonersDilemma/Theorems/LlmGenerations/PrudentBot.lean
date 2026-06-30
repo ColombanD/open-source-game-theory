@@ -1044,37 +1044,51 @@ theorem loeb_premise_provable :
     ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
       Provable k (.impl (.box k (φD k)) (φD k)) := by
   obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 20 200
-  refine ⟨Ksz, fun k hk => ?_⟩
-  have hkS : Ksz ≤ k := hk
+  obtain ⟨kPr, hkPr⟩ := prudence_dupoc
+  refine ⟨max Ksz kPr, fun k hk => ?_⟩
+  have hkS : Ksz ≤ k := le_trans (le_max_left _ _) hk
+  have hkPrud : kPr ≤ k := le_trans (le_max_right _ _) hk
   -- `leg2` (DupocBot's `searchBranch` guard): □_k φP → φD.
   have leg2 : Provable k (.impl (.box k (φP k)) (φD k)) := by
     apply Provable.struct
     refine ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) (PrudentBot k) rfl, ?_⟩
     simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
-  -- The closed premise `□_k φD → φD` now comes from the SOUND mutual-Löb step
-  -- (`mutual_loeb`, BaseTheorems.lean), replacing the removed unsound box-introduction.
-  -- Role mapping: the conclusion atom is φD, so (P ↦ D, D ↦ P). We supply:
-  --   • `legDP` := leg2 : □_k φP → φD                 (DupocBot's `searchBranch` guard)
-  --   • `hfitD` : Provable k φD → Provable k φP, built from the guard inversion
-  --     `ps_k_of_play_dupoc` (NO atom_cost budget gap — the inversion lands at budget k).
-  have hfitD : Provable k (φD k) → Provable k (φP k) := by
-    intro hφD
-    -- φD provable → φD plays → guard inversion → proofSearch k φP = true → Provable k φP
-    obtain ⟨n, hplay⟩ := Provable_sound k (φD k) hφD
-    exact (proofSearch_spec _ _).1 (ps_k_of_play_dupoc k n hplay)
-  have hszK : (Formula.impl (.box k (φD k)) (.box k (φP k))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
+  -- The closed premise `□_k φD → φD` now comes from the SOUND mutual-Löb step (`mutual_loeb`,
+  -- BaseTheorems.lean), NOW via Route 2 (`boxIntro`/`axK`/`box4` — no transformer, no axiom).
+  -- Role mapping: conclusion atom is φD, so role-P = φD, role-D = φP. We supply BOTH object legs:
+  --   • `legPD` := `legPrud` : □_k φD → φP  (PrudentBot's `searchThenSearch_t` leg — its outer guard
+  --     `□(opp plays C vs me)` substitutes to `□φD`, the inner prudence guard from `prudence_dupoc`);
+  --   • `legDP` := leg2     : □_k φP → φD  (DupocBot's `searchBranch` guard).
+  -- The guard inversion `ps_k_of_play_dupoc` is no longer needed here (Route 2 uses object legs).
+  have legPrud : Provable k (.impl (.box k (φD k)) (φP k)) := by
+    refine Provable.searchThenSearch_t k k
+      (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
+      .C .D (.const .D) (PrudentBot k) (DupocBot k) rfl ?_ (le_refl k) ?_
+    · -- inner prudence guard: Provable k ((plays opp (.bot DefectBot) D).subst PrudentBot DupocBot)
+      --                      = Provable k (plays DupocBot (.bot DefectBot) D) = prudence_dupoc.
+      simpa [Formula.subst, Prog.subst] using hkPr k hkPrud
+    · simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+      have := hKsz k hkS; omega
+  -- size bounds for Route 2 (all `O(log k) ≤ k` for k ≥ Ksz, via `hKsz`).
+  have hsz1 : (Formula.box k (.impl (.box k (φD k)) (φP k))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hsz2 : (Formula.impl (.box k (.box k (φD k))) (.box k (φP k))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hsz3 : (Formula.box k (φD k)).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hsz4 : (Formula.impl (.box k (φD k)) (.box k (.box k (φD k)))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hsz5 : (Formula.box k (.box k (φD k))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hszK4 : (Formula.impl (.box k (φD k)) (.box k (φP k))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
   have hszBoxP : (Formula.box k (φP k)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
   have hsz : (Formula.impl (.box k (φD k)) (φD k)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
-  -- role-P = φD (conclusion atom), role-D = φP. boxInternalize cut is □_k φP.
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
   exact mutual_loeb k (DupocBot k) (PrudentBot k) (PrudentBot k) (DupocBot k)
-    Action.C Action.C leg2 hfitD hszK hszBoxP hsz
+    Action.C Action.C legPrud leg2 hsz1 hsz2 hsz3 hsz4 hsz5 hszK4 hszBoxP hsz
 
 /-! ## The outcome -/
 

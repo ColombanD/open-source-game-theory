@@ -222,6 +222,12 @@ theorem cimcic_no_provable_forbidden (k : Nat) :
     (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hψsz _hsz _ihab ihbc => by intro hF; exact ihbc hF)  -- implTrans
     (fun {_k} _ _ _ _ _ _ _ => by intro hF; simp only [CimcicForbiddenC] at hF)  -- atomBoxImpl
     (fun _kIn _K _φ _hprem _hsz _ih => by intro hF; simp only [CimcicForbiddenC] at hF)  -- boxIntro
+    -- app: conclusion `α`; `CimcicForbiddenC (φ'→α) = CimcicForbiddenC α`, so the IH on the
+    -- IMPLICATION premise discharges the conclusion `α`.
+    (fun _k _m _φ' _α _himpl _hante _hmk ihimpl _ihante => by intro hF; exact ihimpl hF)  -- app
+    -- axK: conclusion `□φ→□α`; `CimcicForbiddenC` peels `.impl` to `□α`, then `.box → False`.
+    (fun _k _K _φ _α _himpl _hsz _ih => by intro hF; simp only [CimcicForbiddenC] at hF)  -- axK
+    (fun _k _K _φ _hksz _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)  -- box4
     h
 
 /-- CIMCIC's guard against DefectBot is **not provable** within any budget `k`. -/

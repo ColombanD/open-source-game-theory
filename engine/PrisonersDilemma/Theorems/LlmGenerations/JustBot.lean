@@ -572,7 +572,7 @@ theorem botDupoc_self_coop :
   exact ps_k_of_play_botDupoc_self k n hn
 
 /-- JustBot vs JustBot: mutual cooperation for sufficiently large `k`. -/
-theorem llm_outcome_JustBot_vs_JustBot :
+theorem outcome_JustBot_vs_JustBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (JustBot k) (JustBot k) = some (.C, .C) := by
   obtain ⟨k₂, hk₂⟩ := botDupoc_self_coop
@@ -626,8 +626,9 @@ theorem prudent_botdupoc_loeb_premise :
       Provable k (.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
                         (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)) := by
   obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 30 300
-  refine ⟨Ksz, fun k hk => ?_⟩
-  have hkS : Ksz ≤ k := hk
+  refine ⟨max Ksz (atom_cost 3), fun k hk => ?_⟩
+  have hkS : Ksz ≤ k := le_trans (le_max_left _ _) hk
+  have hkPrud : atom_cost 3 ≤ k := le_trans (le_max_right _ _) hk
   -- leg2 (`botSearchStep` reading `.bot (DupocBot k)`): □_k φP' → φD'.
   have leg2 : Provable k
       (.impl (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))
@@ -637,27 +638,47 @@ theorem prudent_botdupoc_loeb_premise :
       (.bot (DupocBot k)) (PrudentBot k) rfl, ?_⟩
     simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
     have := hKsz k hkS; omega
-  -- Closed premise `□_k φD' → φD'` via the SOUND mutual-Löb step (role-P = φD', role-D = φP').
-  --   • `legDP` := leg2 : □_k φP' → φD'
-  --   • `hfitD` : Provable k φD' → Provable k φP', via guard inversion `ps_k_of_play_botdupoc`.
-  have hfitD : Provable k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C) →
-               Provable k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C) := by
-    intro hφD
-    obtain ⟨n, hplay⟩ := Provable_sound k _ hφD
-    exact (proofSearch_spec _ _).1 (ps_k_of_play_botdupoc k n hplay)
-  have hszK : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
-                            (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
+  -- Closed premise `□_k φD' → φD'` via the SOUND mutual-Löb step, NOW Route 2 (no transformer):
+  -- role-P = φD' (= .bot DupocBot plays C vs PrudentBot), role-D = φP'. Supply BOTH object legs:
+  --   • `legPrud` : □_k φD' → φP'  (PrudentBot's `searchThenSearch_t`, opponent `.bot (DupocBot k)`);
+  --   • `legDP`   := leg2 : □_k φP' → φD'  (the `botSearchStep` leg above).
+  -- Prudence inner guard: `.bot (DupocBot k)` defects vs `.bot DefectBot` (`bot_dupoc_D_vs_bot_DB`).
+  have hPrudPlay : play 3 (.bot (DupocBot k)) (.bot DefectBot) = some .D := by
+    simpa using bot_DupocBot_plays_D_against_bot_DefectBot_JB k 0
+  have legPrud : Provable k
+      (.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
+             (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)) := by
+    refine Provable.searchThenSearch_t k k
+      (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
+      .C .D (.const .D) (PrudentBot k) (.bot (DupocBot k)) rfl ?_ (le_refl k) ?_
+    · simpa [Formula.subst, Prog.subst] using
+        Provable.atom (atom_monotone (atom_cost 3) k _ hkPrud
+          (atom_complete (.bot (DupocBot k)) (.bot DefectBot) Action.D 3 hPrudPlay))
+    · simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+      have := hKsz k hkS; omega
+  have hs1 : (Formula.box k (.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
+              (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hs2 : (Formula.impl (.box k (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)))
+              (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hs3 : (Formula.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hs4 : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
+              (.box k (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hs5 : (Formula.box k (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
+  have hszK4 : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
+              (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))).size ≤ k := by
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
   have hszBoxP : (Formula.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
   have hsz : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
                            (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
+    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
   exact mutual_loeb k (.bot (DupocBot k)) (PrudentBot k) (PrudentBot k) (.bot (DupocBot k))
-    Action.C Action.C leg2 hfitD hszK hszBoxP hsz
+    Action.C Action.C legPrud leg2 hs1 hs2 hs3 hs4 hs5 hszK4 hszBoxP hsz
 
 /-- PrudentBot's guard against `.bot (DupocBot k)` fires for large `k`. -/
 theorem prudent_botdupoc_coop :
@@ -681,7 +702,7 @@ theorem prudent_botdupoc_coop :
   exact ps_k_of_play_botdupoc k n hplay
 
 /-- **JustBot vs PrudentBot → (C, C)** for all sufficiently large `k`. -/
-theorem llm_outcome_JustBot_vs_PrudentBot :
+theorem outcome_JustBot_vs_PrudentBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (JustBot k) (PrudentBot k) = some (.C, .C) := by
   obtain ⟨k₂, hcoop⟩ := prudent_botdupoc_coop
@@ -716,7 +737,7 @@ theorem llm_outcome_JustBot_vs_PrudentBot :
 
 -- DupocBot --
 
-theorem llm_outcome_JustBot_vs_DupocBot :
+theorem outcome_JustBot_vs_DupocBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (JustBot k) (DupocBot k) = some (.C, .C) := by
   let φ : Nat → Formula :=
@@ -769,17 +790,31 @@ theorem llm_outcome_JustBot_vs_DupocBot :
                 simp [eval, Prog.subst, Formula.subst, hps]
               rw [hd] at hN; cases hN
         exact hgen n hplay
-    have hszK : (Formula.impl (.box k fDB) (.box k fBD)).size ≤ k := by
-      simp only [hfDB, hfBD, Formula.size, Prog.size, DupocBot]
-      have := hKsz k hkS; omega
+    -- Route 2: role-P = fDB, role-D = fBD. `legPD : □fDB → fBD` is `.bot(DupocBot)`'s `botSearchStep`
+    -- guard (it cooperates when it proves `□fDB`); `legDP : □fBD → fDB` is the DupocBot searchBranch.
+    have legPD : Provable k (.impl (.box k fDB) fBD) :=
+      Provable.struct ⟨Derivation.botSearchStep k (.plays .opp .self .C) .C .D
+        (.bot (DupocBot k)) (DupocBot k) rfl, by
+          simp only [Derivation.size, hfDB, hfBD, Formula.size, Prog.size, DupocBot]
+          have := hKsz k hkS; omega⟩
+    have hs1 : (Formula.box k (.impl (.box k fDB) fBD)).size ≤ k := by
+      simp only [hfDB, hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
+    have hs2 : (Formula.impl (.box k (.box k fDB)) (.box k fBD)).size ≤ k := by
+      simp only [hfDB, hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
+    have hs3 : (Formula.box k fDB).size ≤ k := by
+      simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
+    have hs4 : (Formula.impl (.box k fDB) (.box k (.box k fDB))).size ≤ k := by
+      simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
+    have hs5 : (Formula.box k (.box k fDB)).size ≤ k := by
+      simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
+    have hszK4 : (Formula.impl (.box k fDB) (.box k fBD)).size ≤ k := by
+      simp only [hfDB, hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
     have hszBoxBD : (Formula.box k fBD).size ≤ k := by
-      simp only [hfBD, Formula.size, Prog.size, DupocBot]
-      have := hKsz k hkS; omega
+      simp only [hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
     have hsz : (Formula.impl (.box k fDB) fDB).size ≤ k := by
-      simp only [hfDB, Formula.size, Prog.size, DupocBot]
-      have := hKsz k hkS; omega
+      simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
     exact ⟨k, mutual_loeb k (DupocBot k) (.bot (DupocBot k)) (.bot (DupocBot k)) (DupocBot k)
-      Action.C Action.C legDP hfitD hszK hszBoxBD hsz⟩
+      Action.C Action.C legPD legDP hs1 hs2 hs3 hs4 hs5 hszK4 hszBoxBD hsz⟩
   obtain ⟨k₂, hk₂⟩ := PBLT φ f Ksz hMono hLog hLoeb
   refine ⟨max k₂ (atom_cost 2), ?_⟩
   intro k hk
