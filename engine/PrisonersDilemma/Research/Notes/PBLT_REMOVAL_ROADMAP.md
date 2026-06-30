@@ -134,9 +134,13 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        decidable atoms) + `leibniz` (equality elim); both SOUND (`PrAr_sound`, `PrAr_consistency`).
        Honest residue: `atomTrue`/`leibniz` are stated as sound rules, not yet derived from a
        mechanized PA Δ₀-completeness (standard, no open risk).
-  (E3) `BridgeSound` = `Proves`/`PrAr` soundness composed with the encoding (toy done; needs the
-       engine-`interp` link).
-  (E4) FWD `encode` (engine `Formula → OFml`) + S re-deriving each engine `Provable` constructor;
+  (E3) ✅ DONE (load-bearing fragment) — `Reflection/Bridge.lean`: `encodeF : Formula → OFml`,
+       `engineVal` (engine meaning of encoded atoms), `bridgeSound_plays` DERIVES `BridgeSound` for
+       play-atoms from `Proves_sound` (no new principle), `bridge_BWD_plays` chains through the engine's
+       `atom_complete` to land `∃m, Provable m φ`. Deps: 3 std (+ `atom_complete_false_guard` for the
+       BWD landing) — NO `PBLT`, no new axiom.
+  (E4) FWD `encode` (engine `Formula → OFml`: `encodeF` done) + `atomCode` injectivity + S re-deriving
+       each engine `Provable` constructor (the FWD direction `Provable m φ ⟶ Proves (encodeF φ)`);
   (E5) re-thread the `Formula.size` budgets through HBL;
   (E6) instantiate `BPSb`/`pblt_of_bpsb`, delete `PBLT`, repoint the ~6 consumers.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
