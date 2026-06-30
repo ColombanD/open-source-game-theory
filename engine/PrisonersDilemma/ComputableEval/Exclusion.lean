@@ -9,20 +9,19 @@ This module promotes, into the root-imported engine, the machine-checked structu
 *else*-action has NO finite proof TERM, only a true `interp`. The axiom postulates that true
 consequence; the certificate it would need does not exist as a term.
 
-Two deliverables, both `[propext]`-only (verify with `#print axioms`), NEITHER depending on
-`atom_complete_false_guard`:
+All lemmas are `[propext]`-only (verify with `#print axioms`) and do NOT depend on
+`atom_complete_false_guard`. The headline is **`provable_else_isAtom`** — for the false-guard shape
+`me = .search k ψ (.const aT) (.const aE)` with `aT ≠ aE`, any `Provable k (.plays me opp aE)` reduces
+to `AtomProvable`. The `struct`/`Derivation` path is excluded by `no_deriv_else` (no `Derivation`
+concludes the else-action); the reflection rules conclude `.impl`, type-incompatible; the `app`
+(object modus ponens) path is excluded by `no_provable_forbidden` (no `Provable` concludes an
+implication whose consequent is the else-play). And `AtomProvable.mk` needs a `PlaysProof` of the
+else-play, which `search_t` (the only `.search` `PlaysProof` rule, concluding the THEN-action) never
+produces — so the certificate type is empty (`no_pp_else`).
 
-1. **`provable_else_isAtom`** — for the false-guard shape `me = .search k ψ (.const aT) (.const aE)`
-   with `aT ≠ aE`, any `Provable k (.plays me opp aE)` reduces to `AtomProvable` (the `Provable_fin`
-   fragment). The `struct`/`Derivation` path is excluded by `no_deriv_else` (no `Derivation`
-   concludes the else-action); the four reflection rules conclude `.impl`, type-incompatible. And
-   `AtomProvable.mk` needs a `PlaysProof` of the else-play, which `search_t` (the only `.search`
-   `PlaysProof` rule, concluding the THEN-action) never produces — so the certificate type is empty.
-
-2. **`decidablePred_provableFin`** — the finite (size-≤-k, proof-TERM) bounded-provability predicate
-   is a `DecidablePred`. Witness shipped (`PlaysCheck.instDecProvableFin`), surfaced here as a named
-   lemma. This is the positive half of the same boundary: bounded provability of a *term* is
-   decidable; what the axiom asserts is the *negative*, witness-free fact.
+**These lemmas are SOUNDNESS-LOAD-BEARING since the proof-DATA constructors landed:** `app`/`axK`
+could otherwise route a proof to the false else-play; `no_provable_forbidden`/`no_pp_else` prove they
+cannot, keeping the exclusion result (and the irreducibility argument) intact.
 
 Background: `Research/Notes/WALLS_AND_EXTENSIONS.md`, `Research/Spikes/atom_complete_false_guard/`.
 -/
@@ -30,7 +29,7 @@ Background: `Research/Notes/WALLS_AND_EXTENSIONS.md`, `Research/Spikes/atom_comp
 namespace PD.Exclusion
 open PD PD.PlaysCheck
 
-/-! ## 1. The exclusion lemmas (the else-play has no `Derivation`, hence no struct proof) -/
+/-! ## The exclusion lemmas (the else-play has no `Derivation`/`PlaysProof`/`Provable` cert) -/
 
 /-- `Forbidden meS opp aE φ` := `φ` is the else-play `.plays meS opp aE`, or an implication whose
     consequent (transitively) is. The combined "neither shape" motive carries the induction through
@@ -70,6 +69,54 @@ theorem isEmpty_deriv_else (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Prog)
     IsEmpty (Derivation (.plays (.search k ψ0 (.const aT) (.const aE)) q aE)) :=
   ⟨fun d => no_deriv_else k ψ0 aT aE q hne d ⟨rfl, rfl, rfl⟩⟩
 
+/-- **No `PlaysProof` of a `.search`-bot's ELSE-action** as its OWN body. The only `.search`
+    `PlaysProof` rule is `search_t`, which concludes the THEN-action `aT ≠ aE`; the body here is the
+    `.search` bot itself (`body = meS`), so no other rule applies. By `cases` on the certificate. -/
+theorem no_pp_else (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Prog) (hne : aT ≠ aE) {n : Nat}
+    (cert : PlaysProof (.search k ψ0 (.const aT) (.const aE)) q (.search k ψ0 (.const aT) (.const aE)) aE n) :
+    False := by
+  -- the only `.search` rule is `search_t`, whose THEN-branch sub-proof runs `p = .const aT`; a
+  -- `.const aT` can only play `aT`, so the conclusion action is `aT`, forced here to `aE` ⇒ `aT = aE`.
+  cases cert with
+  | search_t _ subcert =>
+      -- subcert : PlaysProof meS q (.const aT) aE — but `.const` only plays its own action, forcing
+      -- `aE = aT`, so `hne : aT ≠ aT`.
+      cases subcert; exact hne rfl
+
+/-- **No `Provable` concludes a `Forbidden` formula** (the else-play, or an implication whose
+    consequent transitively is). Empties the `Provable.app` route to the else-play. Mirrors
+    `cimcic_no_provable_forbidden`'s `Provable.rec` structure; the `atom` else-play case bottoms out
+    on `no_pp_else`. -/
+theorem no_provable_forbidden (k0 : Nat) (ψ0 : Formula) (aT aE : Action) (q0 : Prog) (hne : aT ≠ aE) :
+    ∀ {m φ}, Provable m φ →
+      ¬ Forbidden (.search k0 ψ0 (.const aT) (.const aE)) q0 aE φ := by
+  intro m φ h
+  exact Provable.rec
+    (motive_1 := fun _ _ _ _ _ _ => True)
+    (motive_2 := fun _ _ _ => True)
+    (motive_3 := fun _ φ _ => ¬ Forbidden (.search k0 ψ0 (.const aT) (.const aE)) q0 aE φ)
+    trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
+    (fun _ _ _ => trivial)
+    (fun {_k} {_φ} hd => by intro hF; obtain ⟨d, _⟩ := hd; exact no_deriv_else k0 ψ0 aT aE q0 hne d hF)
+    (fun {_k} {_φ} hatom _ => by
+        intro hF
+        cases hatom with
+        | mk cert _ =>
+            simp only [Forbidden] at hF; obtain ⟨hp, hq, ha⟩ := hF
+            subst hp; subst hq; subst ha; exact no_pp_else _ _ _ _ _ hne cert)
+    (fun _ _ _ _ _ _ ih => by intro hF; exact ih hF)                              -- weakenImpl
+    (fun {_k} _k₁ _k₂ _ψ₁ _ψ₂ _c0 _c1 _q _me _opp hme _hprud _hk2 _hsz _ih => by  -- searchThenSearch_t
+        intro hF; subst hme; simp only [Forbidden] at hF; obtain ⟨hm, _, _⟩ := hF; simp_all)
+    (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hψsz _hsz _ihab ihbc => by intro hF; exact ihbc hF)  -- implTrans
+    (fun {_k} _ _ _ _ _ _ _ => by intro hF; simp only [Forbidden] at hF)         -- atomBoxImpl
+    (fun _kIn _K _φ _hprem _hsz _ih => by intro hF; simp only [Forbidden] at hF) -- boxIntro
+    (fun _k _m _φ' _α _himpl _hante _hmk ihimpl _ihante => by intro hF; exact ihimpl hF)  -- app
+    (fun _k _K _φ _α _himpl _hsz _ih => by intro hF; simp only [Forbidden] at hF) -- axK
+    (fun _k _K _φ _hksz _hsz => by intro hF; simp only [Forbidden] at hF)          -- box4
+    h
+
+
 /-- **The exclusion payoff.** `Provable k (else-play) ⟹ AtomProvable k (else-play)`: `cases` on
     `Provable` — `struct` is excluded by `isEmpty_deriv_else`; the four reflection rules conclude
     `.impl`, type-incompatible with a bare `.plays`; only `atom` survives. PBLT/`boxInternalize` are
@@ -81,15 +128,14 @@ theorem provable_else_isAtom (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Pro
   cases h with
   | struct hd => obtain ⟨d, _⟩ := hd; exact ((isEmpty_deriv_else k ψ0 aT aE q hne).false d).elim
   | atom hatom => exact hatom
-
-/-! ## 2. The positive half — `Provable_fin` is a `DecidablePred`
-
-The finite (size-≤-k, proof-TERM) bounded-provability predicate is genuinely decidable, witnessed
-by `PlaysCheck.instDecProvableFin` (which computes). Surfaced here as a named `DecidablePred`. -/
-
-/-- The finite bounded-provability predicate is a `DecidablePred` (it computes, via
-    `PlaysCheck.instDecProvableFin`). -/
-def decidablePred_provableFin (k : Nat) : DecidablePred (Provable_fin k) :=
-  fun _ => inferInstance
+  | app =>
+      -- `app` could conclude the else-play via modus ponens from `Provable m (φ' → else-play)`. But
+      -- that implication is `Forbidden` (consequent = else-play), and `no_provable_forbidden` empties
+      -- every `Forbidden` `Provable` — so this case is vacuous.
+      -- bound order: `m`, antecedent formula `φ'`, antecedent proof, `m ≤ k`, IMPLICATION proof.
+      rename_i m φ' _hante _hmk himpl
+      have hF : Forbidden (.search k ψ0 (.const aT) (.const aE)) q aE
+          (.impl φ' (.plays (.search k ψ0 (.const aT) (.const aE)) q aE)) := ⟨rfl, rfl, rfl⟩
+      exact (no_provable_forbidden k ψ0 aT aE q hne himpl hF).elim
 
 end PD.Exclusion

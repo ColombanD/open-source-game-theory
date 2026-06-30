@@ -371,6 +371,54 @@ mutual
         Provable kIn φ →
         (Formula.box kIn φ).size ≤ K →
         Provable K (.box kIn φ)
+    /-- **Object-level modus ponens** (the proof-DATA application rule): from `Provable k (φ → α)`
+        and `Provable k φ`, infer `Provable k α`. POSITIVE (both premises are `Provable` VALUES, no
+        transformer — kernel-legal) and SOUND with NO axiom: `interp α` follows from
+        `interp (φ→α) = (φ.interp → α.interp)` applied to `interp φ` — pure function application, NO
+        budget threshold (the consequent is delivered at the same budget `k` the premises hold at).
+
+        This is the rule the abstract engine LACKED: it had modus ponens only inside `Derivation`
+        (`modusPonens`, a `Type`-level rule on `struct` proofs), never as an object
+        `Provable → Provable → Provable` rule. It is exactly the `app` constructor the faithful
+        substrate spike (`Research/Spikes/bounded_lob/FaithfulSubstrateSpike.lean`) identified as the
+        missing piece that lets `axK`'s soundness arm RUN an implication proof. -/
+    | app (k m : Nat) (φ α : Formula) :
+        Provable m (.impl φ α) → Provable m φ → m ≤ k → Provable k α
+    /-- **GL axiom-K at a fixed budget `k`** (the constructive realization of the former axiom
+        `boxInternalize`, via a proof-TERM premise): from `Provable k (□_k (φ → α))`, infer
+        `Provable k (□_k φ → □_k α)` (size permitting).
+
+        POSITIVE — the premise `Provable k (.box k (.impl φ α))` is a `Provable` VALUE (a held proof),
+        not the non-positive transformer `Provable k φ → Provable k α` the old axiom carried
+        (`GLKPositiveSpike.lean`). SOUND via the object modus ponens `app`: the soundness arm needs
+        `Provable k φ → Provable k α`, obtained by `app` from the boxed implication proof (whose
+        `interp` `Provable k (φ→α)` is the held implication) and the hypothetical `Provable k φ`.
+        Size side-condition keeps the conclusion within budget `k`, as for the other reflection rules.
+
+        Together with `boxIntro`, derives `boxInternalize` as a THEOREM (`BaseTheorems`): box the
+        held implication-proof (`boxIntro`), then `axK` distributes — no transformer, no axiom. The
+        per-leg budget reconciliation (Horn B / Wall 1) is carried by each `mutual_loeb` leg's guard
+        inversion, unchanged.
+
+        The PROOF budget `K` is separate from the inner box budget `k` (with `size ≤ K`), so the rule
+        self-weakens (`K` can relax) — keeping `proofSearch_monotone`, exactly as `boxIntro` does. -/
+    | axK (k K : Nat) (φ α : Formula) :
+        Provable k (.box k (.impl φ α)) →
+        (Formula.impl (.box k φ) (.box k α)).size ≤ K →
+        Provable K (.impl (.box k φ) (.box k α))
+    /-- **GL axiom-4 / object necessitation** (`□_k φ → □_k (□_k φ)`): the object form of HBL D2.
+        POSITIVE (no premise carrying `Provable` negatively — it is an axiom-shaped rule, size-gated).
+        SOUND: its `interp` is `Provable k φ → Provable k (□_k φ)`, i.e. `Provable k φ → Provable k φ`
+        (since `interp (□_k φ) = Provable k φ`) — the IDENTITY, discharged by `id` in `Provable_sound`.
+        This is the object companion of the `box_provable` THEOREM (which is the META necessitation
+        `Provable k φ → ∃K, Provable K (□φ)`); together with `axK` it completes the Route-2 chain that
+        derives `boxInternalize` as a theorem (necessitate the searchBranch leg, `axK`-distribute,
+        `box4`-inflate, chain the PrudentBot leg — `MutualLobSpike.lean` Route 2, now all constructors).
+        The PROOF budget `K` is free (with `size ≤ K`), self-weakening for `proofSearch_monotone`. -/
+    | box4 (k K : Nat) (φ : Formula) :
+        (Formula.box k φ).size ≤ k →
+        (Formula.impl (.box k φ) (.box k (.box k φ))).size ≤ K →
+        Provable K (.impl (.box k φ) (.box k (.box k φ)))
 end
 
 -- 4. The proof-search oracle: bounded provability reflected into `Bool` for the

@@ -106,36 +106,19 @@ axiom atom_complete_false_guard :
     removed-unsound `atom_box_provable_impl`). See `BaseTheorems.box_provable` /
     `Provable.boxIntro` and `Research/Notes/WALLS_AND_EXTENSIONS.md`. -/
 
-/-- **Box-internalization at a fixed budget `k`** (NOT GL axiom K — see below).
+/-! ### REMOVED — `boxInternalize` (now derived from constructors; 2026-06-29)
 
-    Given a budget-`k` *proof transformer* `hfitD : Provable k φ → Provable k α` for a
-    play-atom `α = .plays p q c`, internalize it as the object box implication
-    `□_k φ → □_k α` at budget `k` (size permitting).
-
-    **WHY THIS IS SOUND, AND NOT FALSE.** Its `interp` is, definitionally,
-    `Provable k φ → Provable k α` — i.e. *exactly its own hypothesis* `hfitD`. So the axiom
-    asserts nothing beyond what the caller already holds: `boxK_sound` is literally `:= hfitD`,
-    a tautology, and depends only on the Lean-standard axioms. It is INERT where it could do
-    harm: to fire it you must SUPPLY `hfitD`, and for a false atom (e.g. `DefectBot plays C`,
-    interp-false) no such transformer exists, so nothing false becomes provable.
-
-    **WHY IT IS NOT GL AXIOM K (honest naming).** Real K is `⊢ □_a(φ→ψ) → (□_aφ → □_aψ)`,
-    with an *object* antecedent `□_a(φ→ψ)`. Here the antecedent is a *meta-level* Lean
-    proof-transformer, and the conclusion's box stays at `k` (no necessitation cost paid).
-    This is a budget-aligned *internalization* rule, not K. The faithful object-antecedent K
-    is a DEAD END for this proof: it is sound only with an EXISTENTIAL output box budget (the
-    re-derived atom's certificate cost), which cannot be reconciled to the `k` that `PBLT` and
-    the opponent leg `legDP` both demand — bridging `□_{cert} α → □_k α` would need box-INDEX
-    weakening, which is genuinely unsound. Machine-confirmed in `Research/Spikes/HonestKSpike.lean`
-    (and the budget non-composition of separate K/4/necessitation in `MutualLobSpike.lean`).
-    The fixed-`k` is FORCED, not a shortcut: the bot searches at its own budget `k`
-    (`CONSTRUCTIVE_BOUNDED_LOB.md` S3′), so the true content `Provable k φ → Provable k α`
-    lives at `k`, and internalizing it at `k` is the only sound, semantics-matching form. -/
-axiom boxInternalize :
-  ∀ (k : Nat) (φ : Formula) (p q : Prog) (c : Action),
-    (Provable k φ → Provable k (.plays p q c)) →
-    (Formula.impl (.box k φ) (.box k (.plays p q c))).size ≤ k →
-    Provable k (.impl (.box k φ) (.box k (.plays p q c)))
+    Was an axiom internalizing a *proof transformer* `Provable k φ → Provable k α` into the object
+    box implication `□_k φ → □_k α` — non-positive (transformer premise), so it could not be a
+    constructor (Wall 3, Horn A). NOW ELIMINATED: the `mutual_loeb` consumers no longer take a
+    transformer; they supply BOTH object transparency legs (`legPD : □φP→φD`, `legDP : □φD→φP`), and
+    `mutual_loeb` (BaseTheorems.lean) builds `□φP→φP` via the **proof-DATA constructors**
+    `Provable.boxIntro` (necessitate the leg), `Provable.axK` (GL axiom-K, proof-term premise),
+    `Provable.box4` (object GL-4), and `implTrans` — the `MutualLobSpike` Route 2, now ALL
+    constructors, no transformer. The per-leg budget reconciliation (Horn B / Wall 1) is carried by
+    each leg's own source-transparency Derivation (`searchBranch`/`botSearchStep`/`searchThenSearch_t`
+    + the prudence atom), which already exist. `Provable_sound` still depends on only the 3 standard
+    axioms (`app`/`axK`/`box4` are SOUND). See `Research/Notes/EXPLICIT_S_PROPOSAL.md`. -/
 
 /-! ### REMOVED — `atom_box_provable_impl` (was unsound)
 

@@ -25,7 +25,8 @@
       "Bash(grep -rn \"theorem llm_outcome_CIMCIC\\\\|theorem llm_outcome_DIMCID\\\\|theorem.*CIMCIC.*DefectBot\\\\|theorem.*DIMCID.*Cooperate\" PrisonersDilemma/Theorems/ -r)",
       "Bash(find PrisonersDilemma/Theorems -iname \"*cimcic*\" -o -iname \"*dimcid*\")",
       "Bash(echo \"=== EXIT: $? ===\")",
-      "Bash(echo \"=== EXIT $? ===\")"
+      "Bash(echo \"=== EXIT $? ===\")",
+      "Bash(grep -iA3 \"k m\")"
     ],
     "additionalDirectories": [
       "/tmp"

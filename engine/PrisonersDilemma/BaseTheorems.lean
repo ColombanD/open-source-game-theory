@@ -246,7 +246,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun _ _ _ => True)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken
-    ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl ?provBoxIntro h
+    ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl ?provBoxIntro ?provApp ?provAxK ?provBox4 h
   case const => exact ⟨1, rfl⟩
   case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
   case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
@@ -278,6 +278,9 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
   case provImplTrans => intros; trivial
   case provAtomBoxImpl => intros; trivial
   case provBoxIntro => intros; trivial
+  case provApp => intros; trivial
+  case provAxK => intros; trivial
+  case provBox4 => intros; trivial
 
 /-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
 theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
@@ -348,6 +351,17 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
     -- which is exactly the premise `hprem`. The arm is the identity (`ih : φ.interp`
     -- is unused — we return the stronger provability the premise already carries).
     (fun _kIn _K _φ hprem _hsz _ih => hprem)                                  -- boxIntro
+    -- app: conclusion `α.interp`. ihimp : `(φ→α).interp = (φ.interp → α.interp)`;
+    -- ihφ : `φ.interp`. Pure function application — NO budget threshold. (binders: k m φ α impl ante mk)
+    (fun _k _m _φ _α _himp _hante _hmk ihimp ihante => ihimp ihante)           -- app (k m φ α impl ante m≤k)
+    -- axK: conclusion `(□φ → □α).interp = (Provable k φ → Provable k α)`. The IH on the premise
+    -- `Provable k (□(φ→α))` is its interp `Provable k (φ→α)` (the held implication proof); apply it
+    -- to the hypothetical `Provable k φ` via OBJECT modus ponens `Provable.app`. No budget threshold.
+    (fun k _K φ α _himp _hsz ih => (fun hφ => Provable.app k k φ α ih hφ (Nat.le_refl k)))  -- axK
+    -- box4: conclusion `(□_kφ → □_k(□_kφ)).interp = (Provable k φ → Provable k (□_kφ))`. Directly:
+    -- `boxIntro k k φ hφ hksz` builds `Provable k (□_kφ)` (output budget k, since `(□φ).size ≤ k`).
+    (fun k _K φ hksz _hsz =>
+      (show Provable k φ → Provable k (.box k φ) from fun hφ => Provable.boxIntro k k φ hφ hksz))  -- box4
     h
 
 /-
@@ -430,6 +444,30 @@ theorem proofSearch_monotone :
       rename_i φ' hprem hsz
       exact (proofSearch_spec k₂ _).2
         (Provable.boxIntro kIn k₂ φ' hprem (Nat.le_trans hsz hk))
+  | app =>
+      -- object MP at the fixed budget `k₁`; lift each premise `k₁ → k₂` (recursively, via the spec),
+      -- then re-apply `app` at `k₂`. Conclusion formula `α` is unchanged by the budget lift.
+      -- `app k₁ m`'s conclusion budget `k₁` is FREE (premises at `m ≤ k₁`). Lift `k₁ → k₂` by
+      -- re-applying `app` at `k₂` with the SAME premises (unchanged at `m`) and `m ≤ k₁ ≤ k₂`. NO
+      -- recursion needed (premises don't move), so termination is preserved.
+      -- bound order (read from the goal): `m`, a formula, antecedent proof, `m ≤ k₁`, implication.
+      rename_i m _ hante hmk himpl
+      exact (proofSearch_spec k₂ _).2
+        (Provable.app k₂ m _ _ himpl hante (Nat.le_trans hmk hk))
+  | axK kk =>
+      -- `axK`'s INNER box budget `kk` is fixed in the CONCLUSION FORMULA `□_{kk}φ → □_{kk}α` — that
+      -- formula does NOT change with `k₁ → k₂`. The PROOF budget `K` (separate, was `k₁`) self-weakens
+      -- to `k₂`: keep the same premise (inner budget `kk` untouched), relax only the `size ≤ K` bound.
+      rename_i φ' α' himp hsz
+      exact (proofSearch_spec k₂ _).2
+        (Provable.axK kk k₂ φ' α' himp (Nat.le_trans hsz hk))
+  | box4 kk =>
+      -- `box4`'s inner box budget `kk` is fixed in the conclusion formula `□_{kk}φ → □_{kk}□_{kk}φ`;
+      -- the proof budget self-weakens `k₁ → k₂`. Keep the `(□φ).size ≤ kk` guard; relax `size ≤ K`.
+      rename_i φ' hksz hsz
+      exact (proofSearch_spec k₂ _).2
+        (Provable.box4 kk k₂ φ' hksz (Nat.le_trans hsz hk))
+
 
 /-- **Bounded GL axiom 4 / necessitation** (`□_k φ → □_K □_k φ`), HBL D2 — NOW A THEOREM
     (was the axiom `box_provable`). If `φ` is provable within budget `k`, then that fact
@@ -512,15 +550,32 @@ theorem mutual_loeb_sound (k : Nat) (pP qP pD qD : Prog) (bP bD : Action)
     object-antecedent GL-K route inflates the budget and does NOT compose (`Research/Spikes/
     HonestKSpike.lean`, `MutualLobSpike.lean`). -/
 theorem mutual_loeb (k : Nat) (pP qP pD qD : Prog) (bP bD : Action)
+    (legPD : Provable k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD)))
     (legDP : Provable k (.impl (.box k (.plays pD qD bD)) (.plays pP qP bP)))
-    (hfitD : Provable k (.plays pP qP bP) → Provable k (.plays pD qD bD))
-    (hszK : (Formula.impl (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))).size ≤ k)
+    (hs1 : (Formula.box k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD))).size ≤ k)
+    (hs2 : (Formula.impl (.box k (.box k (.plays pP qP bP))) (.box k (.plays pD qD bD))).size ≤ k)
+    (hs3 : (Formula.box k (.plays pP qP bP)).size ≤ k)
+    (hs4 : (Formula.impl (.box k (.plays pP qP bP)) (.box k (.box k (.plays pP qP bP)))).size ≤ k)
+    (hs5 : (Formula.box k (.box k (.plays pP qP bP))).size ≤ k)
+    (hszK4 : (Formula.impl (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))).size ≤ k)
     (hszBoxD : (Formula.box k (.plays pD qD bD)).size ≤ k)
     (hsz : (Formula.impl (.box k (.plays pP qP bP)) (.plays pP qP bP)).size ≤ k) :
     Provable k (.impl (.box k (.plays pP qP bP)) (.plays pP qP bP)) := by
-  -- boxInternalize : □_k φP → □_k φD
-  have hKstep : Provable k (.impl (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))) :=
-    boxInternalize k (.plays pP qP bP) pD qD bD hfitD hszK
-  -- implTrans through the cut formula □_k φD : □_k φP → φP
+  -- Route 2 (MutualLobSpike), now ALL CONSTRUCTORS — no transformer, no `boxInternalize` axiom:
+  -- boxIntro legPD ; axK ; box4 ; implTrans×2.  φP = .plays pP qP bP, φD = .plays pD qD bD.
+  -- 1. box the leg `□φP → φD` : Provable k (□_k(□φP → φD))
+  have h1 : Provable k (Formula.box k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD))) :=
+    Provable.boxIntro k k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD)) legPD hs1
+  -- 2. axK distributes : □_k(□φP) → □_k φD
+  have h2 : Provable k (.impl (.box k (.box k (.plays pP qP bP))) (.box k (.plays pD qD bD))) :=
+    Provable.axK k k (.box k (.plays pP qP bP)) (.plays pD qD bD) h1 hs2
+  -- 3. box4 (object GL-4) : □φP → □(□φP)
+  have h3 : Provable k (.impl (.box k (.plays pP qP bP)) (.box k (.box k (.plays pP qP bP)))) :=
+    Provable.box4 k k (.plays pP qP bP) hs3 hs4
+  -- 4. implTrans h3 ; h2 : □φP → □φD  (cut formula □(□φP), size = hs5)
+  have h4 : Provable k (.impl (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))) :=
+    Provable.implTrans (.box k (.plays pP qP bP)) (.box k (.box k (.plays pP qP bP)))
+      (.box k (.plays pD qD bD)) k k h3 h2 (le_refl k) (le_refl k) hs5 hszK4
+  -- 5. implTrans h4 ; legDP : □φP → φP  (cut formula □φD, size = hszBoxD)
   exact Provable.implTrans (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))
-    (.plays pP qP bP) k k hKstep legDP (le_refl k) (le_refl k) hszBoxD hsz
+    (.plays pP qP bP) k k h4 legDP (le_refl k) (le_refl k) hszBoxD hsz
