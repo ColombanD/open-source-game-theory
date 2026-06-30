@@ -11,25 +11,26 @@ The agents' internal logic, made explicit. One mutual `inductive` block defines 
 objects, layered by what their premises may mention:
 
 ```
-              ┌───────────────────────────────────────────────┐
+              ┌────────────────────────────────────────────────┐
               │  Provable k φ   ("φ provable within budget k") │  ← the oracle `.search` asks
-              │  = struct (a small Derivation)                 │
+              │  =                                             |
+              |  | struct (a small Derivation)                 │
               │  | atom   (a budgeted play certificate)        │
               │  | reflection rules whose premises are         │
               │    THEMSELVES `Provable` (impl/box reasoning)  │
               └──────────────┬───────────────┬─────────────────┘
-                  reasoning   │               │   execution
-              ┌───────────────┘               └───────────────┐
-      ┌───────▼────────┐                          ┌────────────▼─────────┐
-      │  Derivation φ  │                          │  AtomProvable k φ     │
-      │  logic + source│                          │  = PlaysProof + n ≤ k │
-      │  reading; NO    │                          │  (only `.plays` atoms)│
-      │  `.plays` atoms│                          └────────────┬─────────┘
-      └────────────────┘                                       │
-                                                       ┌───────▼─────────┐
-                                                       │  PlaysProof     │
-                                                       │  = eval transcript│
-                                                       └─────────────────┘
+                 reasoning   │               │   execution
+             ┌───────────────┘               └───────────────┐
+      ┌───────▼────────┐                        ┌────────────▼─────────┐
+      │  Derivation φ  │                        │ AtomProvable k φ     │
+      │  logic + source│                        │ = PlaysProof + n ≤ k │
+      │ reading; NO    │                        │ (only `.plays` atoms)│
+      │  `.plays` atoms│                        └────────────┬─────────┘
+      └────────────────┘                                     │
+                                                     ┌───────▼─────────┐
+                                                     │  PlaysProof     │
+                                                     │= eval transcript│
+                                                     └─────────────────┘
 ```
 
 * **`Derivation : Formula → Type`** — structural proof objects: the *logical core*
