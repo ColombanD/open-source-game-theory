@@ -141,7 +141,15 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        BWD landing) — NO `PBLT`, no new axiom.
   (E4) FWD `encode` (engine `Formula → OFml`: `encodeF` done) + `atomCode` injectivity + S re-deriving
        each engine `Provable` constructor (the FWD direction `Provable m φ ⟶ Proves (encodeF φ)`);
-  (E5) re-thread the `Formula.size` budgets through HBL;
-  (E6) instantiate `BPSb`/`pblt_of_bpsb`, delete `PBLT`, repoint the ~6 consumers.
+  (E5) ✅ effectively DONE — `Reflection/Deduction.lean` (`ProvesH` + `deduction` = the `impI` field,
+       sound/admissible) + `Reflection/Bpsb.lean` (`BPSb`/`pblt_of_bpsb` promoted; `bloeb_object`
+       PROVEN sorry-free — the full bounded-Löb chain over the object system, all 3 `impI` discharges
+       via `deduction`). Budgets: the object box is budget-free, so `boxMono` is trivial and subscripts
+       are vacuous — no threading needed. 8/9 `BPSb` fields discharge; the 9th's consumer (`bloeb`) is
+       proven directly.
+  (E6) ONE obligation left: `diag_object` — produce `ψ` with `⊢ ψ ↔ (□ψ → p)` as object formulas
+       (instantiate `parametric_diagonal`/`repr_object` at the concrete `encode` for the chain's
+       `G φ := □φ → p`). Then `bloeb_object` gives object PBLT, FWD/BWD (E3/E4) carry it back, delete
+       `PBLT`, repoint the ~6 consumers.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.
