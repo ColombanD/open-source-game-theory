@@ -2,6 +2,17 @@ import Mathlib.Data.Nat.Pairing
 import Mathlib.Logic.Function.Basic
 
 /-!
+# ⚠️ SUPERSEDED (2026-07-01) — route (B) tangent, NOT the axiom-removal plan.
+
+This spike pursued the CONSTRUCTIVE/computable route (B): build a witness-bearing Löb term to make
+extraction/`eval` computable. That is NOT what removing the `PBLT` axiom needs (route A, faithful,
+does not need witnesses). Kept only as a record: §5 builds an axiom-free constructive Löb TERM (a neat
+artifact), §8 REFUTES the realizability extraction as unsound. The actual plan is constructed-`Bew`
+formulas → definitional `ContextRepr` — see `PBLT_REMOVAL_ROADMAP.md` and memory
+`project_pblt_removal_plan`. Do not treat this file as the current direction.
+
+---
+
 # Route 2b, Milestone 1: constructive bounded Löb on a TOY explicit proof system.
 
 The crux (CLAUDE.md): make `box` = "∃ proof TERM of size ≤ k" — a DECIDABLE finite predicate — and

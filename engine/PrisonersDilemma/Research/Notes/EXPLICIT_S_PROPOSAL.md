@@ -1,5 +1,14 @@
 # Making S explicit — status & the one remaining axiom (`PBLT`)
 
+> **UPDATE (2026-07-01) — this note's "route A = from-scratch research project / stop at 2 axioms"
+> verdict is PARTLY SUPERSEDED.** The two blockers it names (`∀`-quantifier, Gödel encoding) have since
+> been BUILT in the `Reflection/` layer (`Syntax`/`Proves`/`Diagonal`, sorry-free): a real `OFml`
+> encoding, the diagonal lemma (`repr_object`/`diag_object'`), and the §5 chain (`bloeb_object`/
+> `pblt_of_bpsb`). So route A is NOT "from zero" — most of it exists. The one remaining gap is
+> `ContextRepr`, which is blocked ONLY because `gApp`/`box` are opaque atoms; making them CONSTRUCTED
+> `Bew` formulas turns `ContextRepr` definitional. See `PBLT_REMOVAL_ROADMAP.md` (corrected diagnosis)
+> and memory `project_pblt_removal_plan`. Current decision: PURSUE route A (not "stop at 2").
+
 This note tracked the "make provability concrete proof-data" program. Most of it is now **done**:
 two of the four reflection axioms were eliminated by adding sound constructors to `Provable`. What
 remains is `PBLT` (the Löb core) — the last reflection axiom, removable only by a faithful (route-A)

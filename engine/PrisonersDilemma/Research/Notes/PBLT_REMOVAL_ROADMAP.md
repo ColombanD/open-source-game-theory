@@ -3,72 +3,46 @@
 Where things stand and the precise remaining sub-steps. Companions: `EXPLICIT_S_PROPOSAL.md`,
 `Research/Spikes/pblt/`.
 
-## ⚑⚑ SCOPING PIVOT (what removing PBLT ACTUALLY requires — machine-checked)
+## ⚑⚑ CORRECTED DIAGNOSIS (2026-07-01) — the remaining gap is the opaque-`gApp` SHORTCUT, not an irreducible crux
 
-The object-system (`Reflection/`) route hit `provesN_play_extract`, which is EQUIVALENT to PBLT (below).
-But scoping the alternative revealed a much shorter path that the object detour obscured:
+An earlier scoping in this file concluded PBLT-removal "reduces to ONE lemma `provesN_play_extract`,
+equivalent to PBLT, irreducible, needs normalization." **That framing is WRONG and superseded.** It came
+from a shortcut in the `Reflection/` layer, not from the mathematics.
 
-**The engine `Provable` ALREADY has the full HBL toolkit** — `boxIntro` (nec), `app` (object MP),
-`axK` (K), `box4` (four), all sound, no axioms (added in earlier sessions eliminating
-`box_provable`/`boxInternalize`). And extraction at the `Provable` level is TRIVIAL:
-`Provable k (plays…) → the play` is just `Provable_sound` (machine-checked). So the `provesN_play_extract`
-obstacle was an ARTIFACT of working in a separate object system — it vanishes at `Provable`.
+**What the layer actually has (all sorry-free):**
+  • `Bpsb.lean::bloeb_object` — from diagonal legs `ψ↔(□ψ→p)` + Löb premise `□p→p`, derives base
+    `Proves p` (the full bounded-Löb chain). `pblt_of_bpsb` gives PBLT's exact signature from the fields.
+  • `Bridge.lean::bridge_BWD_plays` — `Proves (encodeF φ) → ∃m, Provable m φ` for play-atoms
+    (`Proves_sound` at `engineVal` + `atom_complete`).
+  • `atomCode` injectivity DONE (`Bridge.atomCode_injective`, concrete Gödel code, commit 88e4c1e).
 
-**Removing PBLT reduces to running bounded-Löb at `Provable k` — and scoping this collapsed it to ONE
-lemma:**
-  1. nec / K / four / MP — ✅ ALREADY PRESENT (`boxIntro`/`axK`/`box4`/`app`).
-  2. the combinator chain producing `Provable k (□φ → φ)` from the legs — ✅ ALREADY PRESENT: this is
-     exactly `BaseTheorems.mutual_loeb` (`boxIntro; axK; box4; implTrans×2`, all constructors, sorry-free).
-     So the "deduction theorem" piece #1 DISSOLVED — the discharges are done combinatorially by the
-     existing box-rules + `implTrans`, no hypothesis-discharge needed.
-  3. **THE ONLY REMAINING STEP** — `Provable k (□_k φ → φ) ⟹ Provable k φ` (machine-checked to be the
-     sole gap). This is the Löb knot: `app hLoeb` needs `Provable k (□φ)`, whose only producer
-     `boxIntro` needs `Provable k φ` = the goal. Circular; breakable only by the DIAGONAL (a different
-     sentence `ψ` with `⊢ ψ ↔ (□ψ → φ)`). It carries the full irreducible Löb content (≡ PBLT — the
-     `k = box-k` / Wall-1 budget coincidence lives exactly here), and IS the entire remaining scope of
-     removing PBLT.
+**So the ONLY real gap is `ContextRepr : ⊢ gApp(⌜ψ⌝) ↔ (□ψ→p)`** (Diagonal.lean). And it is not
+base-`Proves`-provable ONLY because `gApp`/`box` were made OPAQUE ATOMS with a FREE valuation
+(`interp (gApp c) = G c`), so the iff fails for valuations disagreeing at `encode ψ`. That forced the
+`ProvesC`/`ProvesN` specializing valuation (`Gctx`), whose `hp0`/outcome-relativity is EXACTLY what
+became `provesN_play_extract`. **That obligation is an ARTIFACT of the opaque-atom stub, NOT irreducible.**
 
-So: PBLT-removal = ONE lemma, `Provable k (□_k φ → φ) → Provable k φ`. But scoping THAT lemma (both
-directions, machine-checked) yields the definitive answer:
+**Critch §5 does it right (and this is the fix):** his diagonal predicate is a CONSTRUCTED formula
+`G(n,k) := (∃m:Bew(m,Eval₁(n,k),g(k))) → p(k)`, so `gApp(⌜ψ⌝)` unfolds to `□ψ→p` BY CONSTRUCTION and
+`ContextRepr` is `Iff.rfl` — sound under EVERY valuation, no `Gctx`, no outcome-relativity, no extraction
+lemma. My `OFml` stubbed `gApp`/`box` as opaque atoms instead of building the real `Bew`-expression.
 
-**⚑ CONVERGENCE — the two routes are provably the SAME difficulty, and the diagonal is irreducible.**
-  • The lemma cannot be a sound bare `Provable` CONSTRUCTOR (route A): its soundness arm is
-    `interp(□φ→φ) → interp φ` = `(Provable k φ → φ.interp) → φ.interp` = `(P→Q)→Q`, INVALID (the
-    hypothesis is just `Provable_sound`, vacuous). Löb is sound only VIA the diagonal's extra structure,
-    invisible at a single `φ`. Machine-checked unsound.
-  • The lemma requires the DIAGONAL sentence `ψ` with `⊢ ψ ↔ (□ψ → φ)` (route B), and **`Formula` CANNOT
-    express `ψ`** — it has `box`/`impl`/`plays` but NO Gödel-encoding constructor, so no `ψ` can refer to
-    its own code. The bots give only `ψ ↔ □ψ` (FairBot, via `.search`), NOT `ψ ↔ (□ψ→φ)` (Path B spike,
-    confirmed again).
-  • Therefore ANY route must EXTEND the syntax with an encoding — which is exactly what `Reflection/`
-    does — and once extended you land on `provesN_play_extract` (≡ PBLT). The "direct at `Provable`"
-    route and the object-system route CONVERGE on the identical irreducible core: build a self-
-    referential syntax + prove the diagonal there. There is no bare-`Provable` shortcut.
+## ⚑ THE PLAN (route A, faithful) — constructed `Bew` formulas
 
-**Definitive scope of removing PBLT:** it REQUIRES the encoded-syntax development (the `Reflection/`
-layer is that development, sorry-free through the diagonal), and its irreducible hard core is the
-Löb-produces-the-outcome content — captured either as `provesN_play_extract` (object route) or the
-equivalent diagonal `Formula` (impossible without encoding). Both are ≡ PBLT. The axiom is removable in
-PRINCIPLE (the `Reflection/` layer is most of the construction) but the final content does not reduce
-below bounded Löb itself — which is the honest, expected answer for a Löb-fixpoint axiom.
+Replace opaque `gApp`/`box` with CONSTRUCTED `Bew`-based `OFml` formulas (`box a := ∃m,Bew(m,⌜a⌝,k)` as
+real object syntax; the diagonal predicate `G := □_g ψ → p` constructed). Then:
+  1. `ContextRepr` becomes definitional (`Iff.rfl`) — the `ProvesC`/`ProvesN`/`Gctx` machinery and
+     `provesN_play_extract` are NO LONGER NEEDED.
+  2. `bloeb_object` (already sorry-free) runs over base `Proves` with the constructed diagonal.
+  3. `bridge_BWD_plays` (already sorry-free) lands `∃m, Provable m φ` → the engine PBLT conclusion.
+The `§5 algebra` is already transcribed sorry-free (`pblt_of_bpsb`). The remaining WORK is the
+"make S explicit" piece: build `Bew` as object syntax + its properties + Critch §3 diagonal over it.
+This is route (A): faithful/classical, existential; it does NOT make `eval` computable (that is route
+(B), a separate open question — see memory `project_pblt_vs_constructive_lob`).
 
-## ⚑ HEADLINE RESULT (machine-established across the reflection layer)
-
-The full metamathematical development (`Reflection/`: Syntax, Proves, Representability, Deduction,
-Bpsb, Diagonal, Native, Engine — all sorry-free, 3 std axioms) REDUCES `PBLT` to a SINGLE clean
-proof-theoretic statement: `provesN_play_extract` (an object proof of a play-atom yields the engine
-play). This is a genuine reduction — every OTHER piece (diagonal, repr, HBL, deduction, faithfulness
-bridge FWD/BWD, the bounded-Löb chain `bloeb_native`) is PROVEN. But it is NOT a simplification of the
-hard content: **`provesN_play_extract` is EQUIVALENT in strength to the PBLT conclusion itself**
-(machine-checked: `engine_pblt_plays` derives PBLT from it; and PBLT+FWD reconstruct it). The
-irreducible content — bounded Löb PRODUCES the outcome — moved from an opaque axiom into a precise
-proof-theoretic lemma, but did not get cheaper. Closing it = proving Löb's computational content: a
-`ProvesN` derivation of a play-atom (whose last rule is `mp` off the diagonal fixpoint) NORMALIZES to a
-finite play witness. That is a real normalization theorem over `ProvesN`, not plumbing — the honest
-remaining core. `atomCode` injectivity (i) — the one routine leftover — is now DISCHARGED
-(`Bridge.atomCode_injective`, a concrete head-tagged `Nat.pair` Gödel code mutually recursive over
-`Prog`/`Formula`/`Action`; on the 3 standard axioms). `engine_pblt_plays` no longer carries `hinj`;
-its SOLE remaining hypothesis is `provesN_play_extract`.
+**SUPERSEDED SUB-DOCS:** `NORMALIZATION_ROADMAP.md` (route-B normalization, dead-ends only) and the
+`ConstructiveLobToy.lean` / `MN1_decidable.lean` spikes (route-B constructive/decidable, superseded).
+Kept only as records of the *computability* question's walls; NOT the axiom-removal plan.
 
 ## The reduction (what's proven, what remains)
 

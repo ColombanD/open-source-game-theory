@@ -2,6 +2,15 @@ import Mathlib.Data.Nat.Pairing
 import Mathlib.Logic.Function.Basic
 
 /-!
+# ⚠️ SUPERSEDED (2026-07-01) — route (B) tangent (decidable box), NOT the axiom-removal plan.
+
+Pursued decidable bounded provability for the CONSTRUCTIVE route (B) / computable `eval`. Not needed to
+remove the `PBLT` axiom (route A, faithful). Kept as a record: the `mp`-cut is size-bounded
+(`mp_cut_bounded`), but enumeration is dead (atom-closure false — see the KILL-TEST). See
+`PBLT_REMOVAL_ROADMAP.md` and memory `project_pblt_removal_plan` for the actual plan (constructed `Bew`).
+
+---
+
 M-N1 spike: decidability of bounded provability for the toy Pf, at fixed φ.
 
 The crux obstruction: `mp` has an unbounded cut formula. We probe whether a character-faithful

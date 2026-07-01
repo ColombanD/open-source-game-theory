@@ -66,7 +66,16 @@ theorem engine_pblt_plays
   rw [hφ]
   exact Provable.atom (atom_complete pr qr a n hn)
 
-/-! ## VERDICT — the assembly is COMPLETE modulo one precise, achievable BWD-extraction lemma.
+/-! ## VERDICT — the assembly is COMPLETE modulo one precise BWD-extraction lemma.
+
+⚠️ CORRECTED FRAMING (2026-07-01): `provesN_play_extract` below is NOT an irreducible crux — it is an
+ARTIFACT of THIS `ProvesN` formulation, where `box := ProvesN`-provability and the diagonal predicate
+`gApp`/`ctxUnfold` are OPAQUE (sound only via the outcome-relative `Gctx`/`hp0`). The faithful route
+(construct `gApp`/`box` as real `Bew`-formulas, so `ContextRepr` is definitional — Critch §5) DISSOLVES
+this obligation: `bloeb_object` (base `Proves`, sorry-free) + `bridge_BWD_plays` (sorry-free) then close
+the engine PBLT with NO extraction lemma. See `Research/Notes/PBLT_REMOVAL_ROADMAP.md` (corrected). The
+paragraphs below describe why THIS (ProvesN) route incurs the obligation — accurate for this route, but
+this route is superseded by the constructed-`Bew` plan.
 
 `engine_pblt_plays` derives the engine's exact `∃m, Provable m (φ k)` PBLT conclusion for the play-atom
 family, with:

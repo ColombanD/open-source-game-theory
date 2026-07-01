@@ -1,6 +1,20 @@
+# ⚠️ SUPERSEDED (2026-07-01) — this roadmap chased route (B), NOT the actual goal.
+
+**Do not follow this as the plan.** This file targets `provesN_play_extract` — the CONSTRUCTIVE /
+computable route (B). That obligation turned out to be an ARTIFACT of the opaque-`gApp` shortcut in the
+`Reflection/` layer, not an irreducible wall. The actual goal (make S explicit → prove PBLT → remove the
+axiom) is route (A), faithful/classical, which does NOT need witness extraction. See
+`PBLT_REMOVAL_ROADMAP.md` (corrected) and memory `project_pblt_removal_plan`. The corrected plan:
+replace opaque `gApp`/`box` with CONSTRUCTED `Bew`-based `OFml` formulas so `ContextRepr` becomes
+definitional; then `bloeb_object` (sorry-free) + `bridge_BWD_plays` (sorry-free) close it with no
+extraction lemma. This file is KEPT only as a record of route (B)'s dead-ends (all model/enumeration
+extractions provably fail — a useful negative characterization of the *computability* question).
+
+---
+
 # Route 2b — Proof-Theoretic Normalization Roadmap (discharging `provesN_play_extract`)
 
-**Goal.** Prove `provesN_play_extract`:
+**Goal (SUPERSEDED — route B, not the axiom-removal goal).** Prove `provesN_play_extract`:
 `ProvesN (encodeF (.plays pr qr a)) [] (encodeF (.plays pr qr a)) → ∃ n, play n pr qr = some a`.
 This is the SOLE remaining hypothesis of `engine_pblt_plays`; discharging it deletes the `PBLT` axiom.
 
