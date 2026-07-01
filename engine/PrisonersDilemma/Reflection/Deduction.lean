@@ -39,8 +39,8 @@ inductive ProvesH : List OFml → OFml → Prop where
   | D3_four (Γ : List OFml) (a : OFml) : ProvesH Γ (.imp (.box a) (.box (.box a)))
   | nec {Γ : List OFml} {a : OFml} : ProvesH [] a → ProvesH Γ (.box a)
   | gammaAx (Γ : List OFml) (n : Nat) : ProvesH Γ (.gamma n (e n))
-  | betaGamma (Γ : List OFml) (n y : Nat) :
-      ProvesH Γ (.imp (.gamma n y) (.iff (.betaA n) (.gApp y)))
+  | betaGamma (Γ : List OFml) (body : OFml) (y : Nat) :
+      ProvesH Γ (.imp (.gamma (encode body) y) (.iff (.betaA body) (.gApp y)))
 
 /-! ## 2. Weakening + the deduction theorem (`impI`). -/
 
@@ -58,7 +58,7 @@ theorem weakenH {Γ Δ : List OFml} {a : OFml} (hsub : Γ ⊆ Δ) (h : ProvesH �
   | D3_four _ a => exact ProvesH.D3_four _ a
   | nec h _ => exact ProvesH.nec h
   | gammaAx _ n => exact ProvesH.gammaAx _ n
-  | betaGamma _ n y => exact ProvesH.betaGamma _ n y
+  | betaGamma _ body y => exact ProvesH.betaGamma _ body y
 
 /-- **The deduction theorem = `impI`** — `ProvesH (p :: Γ) q → ProvesH Γ (.imp p q)`. Admissible
     meta-theorem (S/K/mp), so `impI` carries NO new axiom and no soundness risk. -/
@@ -85,7 +85,7 @@ theorem deduction {Γ : List OFml} {p q : OFml} (h : ProvesH (p :: Γ) q) :
   | D3_four Γ' a => subst hΓ; exact ProvesH.mp (ProvesH.impK _ _ _) (ProvesH.D3_four _ _)
   | @nec Γ' a h _ => subst hΓ; exact ProvesH.mp (ProvesH.impK _ _ _) (ProvesH.nec h)
   | gammaAx Γ' n => subst hΓ; exact ProvesH.mp (ProvesH.impK _ _ _) (ProvesH.gammaAx _ _)
-  | betaGamma Γ' n y => subst hΓ; exact ProvesH.mp (ProvesH.impK _ _ _) (ProvesH.betaGamma _ _ _)
+  | betaGamma Γ' body y => subst hΓ; exact ProvesH.mp (ProvesH.impK _ _ _) (ProvesH.betaGamma _ _ _)
 
 /-! ## 3. Bridge `ProvesH [] φ ↔ Proves φ` — so `impI` lands in the base system.
 
@@ -112,7 +112,7 @@ theorem proves_of_provesH_aux {Γ : List OFml} {φ : OFml}
   | D3_four _ a => exact Proves.D3_four a
   | nec h ih => exact Proves.D1_nec (ih (by simp))
   | gammaAx _ n => exact Proves.gammaAx n
-  | betaGamma _ n y => exact Proves.betaGamma n y
+  | betaGamma _ body y => exact Proves.betaGamma body y
 
 theorem proves_of_provesH {φ : OFml} (h : ProvesH [] φ) : Proves φ :=
   proves_of_provesH_aux (by simp) h
@@ -133,7 +133,7 @@ theorem provesH_of_proves {φ : OFml} (h : Proves φ) : ProvesH [] φ := by
   | D2_K a b => exact ProvesH.D2_K _ a b
   | D3_four a => exact ProvesH.D3_four _ a
   | gammaAx n => exact ProvesH.gammaAx _ n
-  | betaGamma n y => exact ProvesH.betaGamma _ n y
+  | betaGamma body y => exact ProvesH.betaGamma _ body y
 
 /-- Lift a closed base theorem into ANY context via weakening (`[]`-derivation + `weakenH`). -/
 theorem provesH_lift {Γ : List OFml} {φ : OFml} (h : Proves φ) : ProvesH Γ φ :=

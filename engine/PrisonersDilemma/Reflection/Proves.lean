@@ -40,9 +40,11 @@ inductive Proves : OFml → Prop where
   -- ── Γ_e representability (≈ ReprObject gammaAx/betaGamma); E2 will DERIVE these from arithmetic ──
   /-- the graph holds at the true value `e n` (representability of the self-evaluation `e`). -/
   | gammaAx (n : Nat) : Proves (.gamma n (e n))
-  /-- β's functional definition via the graph: `Γ_e(n,y) → (β(n) ↔ G(y))` (= Leibniz congruence of
-      `G` under the equality `e n = y`, since `β(n)` means `G(e n)`). -/
-  | betaGamma (n y : Nat) : Proves (.imp (.gamma n y) (.iff (.betaA n) (.gApp y)))
+  /-- β's functional definition via the graph: `Γ_e(⌜body⌝,y) → (β(⌜body⌝) ↔ G(y))` (= Leibniz
+      congruence of `G` under `e ⌜body⌝ = y`, since `β(⌜body⌝)` means `G(e ⌜body⌝)`). Now structural in
+      `body` (the atom carries the subformula so the diagonal's slot can sit inside). -/
+  | betaGamma (body : OFml) (y : Nat) :
+      Proves (.imp (.gamma (encode body) y) (.iff (.betaA body) (.gApp y)))
 
 /-! ## 2. Soundness — `box` = provability (E1c). The ANTI-CHEAT.
 
@@ -59,7 +61,7 @@ def interp (G : Nat → Prop) : OFml → Prop
   | .quoteC _   => True            -- a code literal is a term, not a proposition; benign
   | .gamma x y  => e x = y
   | .eqn x y    => x = y
-  | .betaA n    => G (e n)
+  | .betaA body => G (e (encode body))
   | .gApp c     => G c
   | .imp a b    => interp G a → interp G b
   | .iff a b    => interp G a ↔ interp G b
@@ -78,7 +80,7 @@ theorem Proves_sound (G : Nat → Prop) {φ : OFml} (h : Proves φ) : interp G �
   | D2_K a b => intro hab ha; exact Proves.mp hab ha
   | D3_four a => intro ha; exact Proves.D1_nec ha
   | gammaAx n => exact rfl
-  | betaGamma n y => intro hg; simp only [interp] at hg ⊢; rw [hg]
+  | betaGamma body y => intro hg; simp only [interp] at hg ⊢; rw [hg]
 
 /-- **Consistency** (anti-vacuous): `Proves` does not prove the atom `0`. Via the `G ≡ False`
     valuation through `Proves_sound`, so the soundness is meaningful, not trivial. -/
@@ -90,10 +92,10 @@ For every `θ`, `⊢_S β(⌜θ⌝) ↔ G(⌜selfApply θ⌝)`. Instantiate `gam
 by `e_graph`, feed to `betaGamma`. No new rule, no defeq. -/
 
 theorem repr_object (θ : OFml) :
-    Proves (.iff (.betaA (encode θ)) (.gApp (encode (selfApply θ)))) := by
+    Proves (.iff (.betaA θ) (.gApp (encode (selfApply θ)))) := by
   have hg : Proves (.gamma (encode θ) (e (encode θ))) := Proves.gammaAx (encode θ)
   rw [e_graph θ] at hg
-  exact Proves.mp (Proves.betaGamma (encode θ) (encode (selfApply θ))) hg
+  exact Proves.mp (Proves.betaGamma θ (encode (selfApply θ))) hg
 
 /-! ## 4. The mutual-Löb skeleton — DERIVED from D1–D3 (promoted from HBLObjectSpike).
 

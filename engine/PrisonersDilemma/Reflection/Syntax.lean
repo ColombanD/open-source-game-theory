@@ -39,7 +39,7 @@ inductive OFml where
   | quoteC (c : Nat)
   | gamma  (x y : Nat)
   | eqn    (x y : Nat)
-  | betaA  (n : Nat)
+  | betaA  (body : OFml)     -- β applied to the code of `body` (a subformula, so `slot` can sit inside)
   | gApp   (c : Nat)
   | imp    (a b : OFml)
   | iff    (a b : OFml)
@@ -57,7 +57,7 @@ def encode : OFml → Nat
   | .quoteC c   => Nat.pair 2 c
   | .gamma x y  => Nat.pair 3 (Nat.pair x y)
   | .eqn x y    => Nat.pair 4 (Nat.pair x y)
-  | .betaA n    => Nat.pair 5 n
+  | .betaA body => Nat.pair 5 (encode body)
   | .gApp c     => Nat.pair 6 c
   | .imp a b    => Nat.pair 7 (Nat.pair (encode a) (encode b))
   | .iff a b    => Nat.pair 8 (Nat.pair (encode a) (encode b))
@@ -71,7 +71,10 @@ theorem encode_inj : Function.Injective encode := by
   | quoteC c => intro y h; cases y <;> simp_all [encode, Nat.pair_eq_pair]
   | gamma x' y' => intro y h; cases y <;> simp_all [encode, Nat.pair_eq_pair]
   | eqn x' y' => intro y h; cases y <;> simp_all [encode, Nat.pair_eq_pair]
-  | betaA n => intro y h; cases y <;> simp_all [encode, Nat.pair_eq_pair]
+  | betaA body ih =>
+      intro y h; cases y with
+      | betaA body' => simp only [encode, Nat.pair_eq_pair] at h; exact congrArg _ (ih h.2)
+      | _ => simp_all [encode, Nat.pair_eq_pair]
   | gApp c => intro y h; cases y <;> simp_all [encode, Nat.pair_eq_pair]
   | imp a b iha ihb =>
       intro y h; cases y with
@@ -102,7 +105,7 @@ def plug (c : Nat) : OFml → OFml
   | .quoteC d   => .quoteC d
   | .gamma x y  => .gamma x y
   | .eqn x y    => .eqn x y
-  | .betaA n    => .betaA n
+  | .betaA body => .betaA (plug c body)
   | .gApp d     => .gApp d
   | .imp a b    => .imp (plug c a) (plug c b)
   | .iff a b    => .iff (plug c a) (plug c b)

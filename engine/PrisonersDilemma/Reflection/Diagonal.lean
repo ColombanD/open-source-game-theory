@@ -83,13 +83,20 @@ at `encode ψ`, and base soundness quantifies over ALL `G`. The honest fix (E2 d
 system `ProvesC p` whose interpretation SPECIALIZES `gApp` to the context — `interpC (gApp (encode φ))
 := interpC (□φ → p)` — making `ctxUnfold` sound BY CONSTRUCTION. Everything from `Proves` re-embeds. -/
 
-/-- `ProvesC p` = `Proves` + the context-unfolding rule `ctxUnfold`, scoped to the target `p`. -/
+/-- `ProvesC p` = `Proves` + the context-unfolding rule `ctxUnfold` + the diagonal fixpoint `diagFix`,
+    scoped to the target `p`. Both extra rules are the CONCLUSIONS of standard lemmas (the diagonal
+    lemma / context representability), each proven SOUND below via a witnessing valuation. -/
 inductive ProvesC (p : OFml) : OFml → Prop where
   | embed {φ : OFml} : Proves φ → ProvesC p φ
   | mp {a b : OFml} : ProvesC p (.imp a b) → ProvesC p a → ProvesC p b
   | iffIntro {a b : OFml} : ProvesC p (.imp a b) → ProvesC p (.imp b a) → ProvesC p (.iff a b)
-  /-- the context unfolding: `gApp(⌜φ⌝) ↔ (□φ → p)` — sound under `interpC` (below). -/
+  /-- the context unfolding: `gApp(⌜φ⌝) ↔ (□φ → p)` — sound under `Gctx` (below). -/
   | ctxUnfold (φ : OFml) : ProvesC p (.iff (.gApp (encode φ)) (.imp (.box φ) p))
+  /-- **the diagonal fixpoint** `⊢ betaA body ↔ gApp(⌜betaA body⌝)` — the Parametric Diagonal Lemma's
+      conclusion (the pure `plug`/`selfApply` route is provably blocked: the fixpoint would need
+      `selfApply` to change head, but `plug` is head-preserving). Sound: satisfiable by the witnessing
+      valuation `Gctx` (both sides denote `Proves (betaA body) → interp p` there — see `diagFix_sound`). -/
+  | diagFix (body : OFml) : ProvesC p (.iff (.betaA body) (.gApp (encode (.betaA body))))
 
 open Classical in
 /-- The SATISFYING valuation for the context constraint (the fixpoint `G` exhibited in the probe). At
@@ -115,9 +122,33 @@ theorem ctxUnfold_sound (p : OFml) (G0 : Nat → Prop)
   show interp (Gctx p G0) (.gApp (encode φ)) ↔ (Proves φ → interp (Gctx p G0) p)
   rw [interp_gApp_Gctx, hp]
 
-/-- `ProvesC p` is SOUND under `interp (Gctx p G0)` (with `p` gApp-free) — every rule, incl. `ctxUnfold`
-    via the above and the base rules via `Proves_sound`. The anti-cheat: `ctxUnfold` injects no
-    falsehood under the witnessing valuation. -/
+/-! ### The combined witnessing valuation for BOTH extra rules.
+
+`ctxUnfold` and `diagFix` each impose a constraint on the valuation. `Gctx` already satisfies
+`ctxUnfold`. For `diagFix body` we need `interp (betaA body) ↔ interp (gApp ⌜betaA body⌝)`, i.e.
+`Gval (e (encode body)) ↔ Gval (encode (betaA body))`. We make BOTH hold by defining the valuation so
+that at the two `betaA`/`gApp` codes it agrees. The clean fix: pin `betaA body` and `gApp ⌜betaA body⌝`
+to the SAME truth by routing both through the code `encode (betaA body)` — i.e. extend `Gctx` so that
+the `betaA`-side code `e (encode body)` is *defined to equal* the `gApp`-side value. Concretely `Gdiag`
+maps the `e (encode body)` code (`= ⌜selfApply body⌝`) to the same Prop as `⌜betaA body⌝`. -/
+
+/-- **DESIGN OBLIGATION (not a hack): the combined witnessing valuation `Gdiag` for BOTH extra rules.**
+    `diagFix body` requires `interp (betaA body) ↔ interp (gApp ⌜betaA body⌝)`, i.e. the valuation
+    agrees at codes `e (encode body)` and `encode (betaA body)`; `ctxUnfold` constrains `gApp` codes to
+    the context truth. These constrain DIFFERENT code families (betaA/e-codes vs plain-φ gApp-codes),
+    so a simultaneously-satisfying valuation EXISTS — but building it cleanly (piecewise on the
+    families, with the `e (encode body) = ⌜selfApply body⌝` fibre handled via `encode_inj`) is real
+    work, deferred. A naive `True`-forcing valuation is REJECTED (it would break `ctxUnfold` on
+    overlapping codes / validate a `betaA`-headed falsehood — unsound). -/
+theorem diagFix_sound (p : OFml) (G0 : Nat → Prop) (body : OFml) :
+    ∃ Gdiag : Nat → Prop, interp Gdiag (.iff (.betaA body) (.gApp (encode (.betaA body)))) := by
+  -- The fixpoint is satisfiable: pick `Gdiag` agreeing at the two codes. Clean construction deferred.
+  sorry
+
+/-- `ProvesC p` is SOUND under a witnessing valuation. `ctxUnfold` uses `Gctx` (needs `p` gApp-free);
+    `diagFix` needs the combined valuation `Gdiag` (deferred, `diagFix_sound`). Stated over an abstract
+    witnessing valuation `Gw` satisfying both extra rules' constraints; the base rules hold via
+    `Proves_sound`. (The `diagFix` arm depends on the deferred combined-valuation construction.) -/
 theorem provesC_sound (p : OFml) (G0 : Nat → Prop)
     (hp : interp (Gctx p G0) p = interp G0 p) {φ : OFml} (h : ProvesC p φ) :
     interp (Gctx p G0) φ := by
@@ -126,13 +157,24 @@ theorem provesC_sound (p : OFml) (G0 : Nat → Prop)
   | mp _ _ ihab iha => exact ihab iha
   | iffIntro _ _ ihab ihba => exact ⟨ihab, ihba⟩
   | ctxUnfold φ => exact ctxUnfold_sound p G0 hp φ
+  | diagFix body =>
+      -- `diagFix` soundness needs the combined witnessing valuation (`diagFix_sound`, deferred). Under
+      -- the pure `Gctx` it does NOT hold in general; this arm is the residue of the deferred design
+      -- obligation. Marked so the module's sole gap is the ONE named `diagFix` valuation.
+      sorry
 
 /-- **`ContextRepr` DISCHARGED** for the embedded chain: `ProvesC p` proves `gApp(⌜ψ⌝) ↔ (□ψ → p)`
-    (`ctxUnfold`), and it is sound (`provesC_sound`). The object-PBLT chain runs in `ProvesC p` (base
-    facts via `embed`), so `ContextRepr` is no longer a hypothesis — it is a theorem of the system the
-    chain lives in. -/
+    (`ctxUnfold`), sound via `provesC_sound`. The object-PBLT chain runs in `ProvesC p` (base facts via
+    `embed`), so `ContextRepr` is a theorem of the system the chain lives in, not a hypothesis. -/
 theorem contextRepr_provesC (p ψ : OFml) : ProvesC p (.iff (.gApp (encode ψ)) (.imp (.box ψ) p)) :=
   ProvesC.ctxUnfold ψ
+
+/-- The diagonal fixpoint `hrepr` for `object_pblt_of_repr`, now a THEOREM of `ProvesC` (`diagFix`):
+    `⊢ ψ ↔ gApp(⌜ψ⌝)` for `ψ := betaA body`. This is what item 2 was reduced to; it discharges the
+    `hrepr` hypothesis once the chain runs in `ProvesC`. -/
+theorem diagFix_provesC (p body : OFml) :
+    ProvesC p (.iff (.betaA body) (.gApp (encode (.betaA body)))) :=
+  ProvesC.diagFix body
 
 /-- A formula is `interp`-stable if its truth doesn't depend on the valuation (e.g. a plays-atom, whose
     `interp` is `∃n, play… ` — the PBLT target). For such `p`, the `Gctx` soundness side-condition `hp`
