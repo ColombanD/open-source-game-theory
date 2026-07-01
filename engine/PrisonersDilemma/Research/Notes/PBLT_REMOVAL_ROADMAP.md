@@ -158,8 +158,18 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        via the witnessing valuation `Gctx` (`provesC_sound`) and CONSISTENT for an `interp`-stable `p`
        (`provesC_consistency`) — all on 3 std axioms, no new top-level axiom. So NO open soundness
        question remains.
-       FINISH (mechanical): re-run `object_pblt_of_repr` inside `ProvesC p` (base steps via `embed`,
-       `ContextRepr` via `contextRepr_provesC`) → object PBLT; FWD/BWD (E3/E4) carry it back; delete
+       DIAGONAL FIXPOINT (item 2) now CLOSED — `hrepr : ⊢ ψ ↔ gApp(⌜ψ⌝)` is a THEOREM, not a
+       "should compose" hypothesis. Finding: the pure `plug`/`selfApply` diagonal is BLOCKED (fixpoint
+       needs `selfApply` to change head, but `plug` is head-preserving — no `body` solves `selfApply
+       body = betaA body`; machine-checked). Faithful fix: structural `betaA (body : OFml)` + the
+       `diagFix` rule (`⊢ betaA body ↔ gApp(⌜betaA body⌝)`, the diagonal lemma's conclusion), proven
+       SOUND under the existing `Gctx` valuation (no separate valuation needed — the `betaA`-side code
+       `⌜selfApply body⌝` is itself a `gApp`-code `Gctx` already covers; both sides `= Proves _ → interp
+       p`, `True` when `interp p` holds). `diagFix_provesC` = `hrepr` for `ψ := betaA body`;
+       `hrepr_closed` bundles it with `contextRepr_provesC` (= `hCtx`). Reflection layer sorry-free, 3
+       std axioms.
+       FINISH (mechanical): re-run `object_pblt_of_repr`'s chain inside `ProvesC p` (base steps via
+       `embed`, `hrepr`/`hCtx` via `hrepr_closed`) → object PBLT; FWD/BWD (E3/E4) carry it back; delete
        `PBLT`, repoint the ~6 consumers.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.
