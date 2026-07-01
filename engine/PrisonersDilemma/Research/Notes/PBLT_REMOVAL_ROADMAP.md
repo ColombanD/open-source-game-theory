@@ -196,5 +196,19 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        from just the Löb premise. Soundness `provesN_sound` (box := ProvesN, NO bridge — the
        negative-box problem dissolves because there are no two box-semantics) + `provesN_consistency`
        (anti-cheat, for a true stable plays-atom `p`). So the object-side PBLT is COMPLETE.
+
+       ENGINE WIRING (`Reflection/Engine.lean`): `engine_pblt_plays` derives the engine's EXACT
+       `∃m, Provable m (φ k)` PBLT conclusion for the play-atom family. FWD (`ProvesN.engineLeaf`
+       transports the engine Löb premise) and object PBLT (`object_pblt_native`) are DISCHARGED.
+       `#print axioms` = {propext, Classical.choice, Quot.sound, atom_complete_false_guard} — NOT
+       `PBLT`, confirming the reflection layer replaces it. TWO obligations remain, both isolated as
+       explicit hypotheses (no misleading sorries):
+         (i)  `atomCode` injective — a concrete engine-`Formula` Gödel code (à la `encode_inj`);
+              currently `atomCode` is `opaque`.
+         (ii) `provesN_play_extract` — read the engine play from an object proof of a play-atom.
+              ACHIEVABLE (the engine `PBLT` axiom witnesses the outcome follows) but NOT obtainable from
+              general `provesN_sound` (which assumes `interp p`, the outcome — circular for extraction);
+              needs a dedicated extraction reading the outcome from the Löb construction. Honest last gap.
+       With (i)+(ii): delete `PBLT`, repoint the ~6 consumers → 1 axiom.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.

@@ -1,4 +1,5 @@
 import PrisonersDilemma.Reflection.Diagonal
+import PrisonersDilemma.Reflection.Bridge
 
 /-!
 # Reflection layer — the NATIVE object theory `ProvesN` (the correct PBLT wiring)
@@ -47,6 +48,9 @@ inductive ProvesN (p : OFml) : List OFml → OFml → Prop where
       ProvesN p Γ (.iff (.betaA body) (.gApp (encode (.betaA body))))
   -- embed base `Proves` (used for atomic leaves; a closed base theorem holds in any Γ)
   | embed {Γ : List OFml} {a : OFml} : Proves a → ProvesN p Γ a
+  -- FWD bridge: an ENGINE-provable formula's encoding is object-provable (the Löb premise enters here).
+  -- Sound: engine-provable ⟹ true (Provable_sound), so it holds under interpN at the engine valuation.
+  | engineLeaf {Γ : List OFml} {m : Nat} {φ : Formula} : Provable m φ → ProvesN p Γ (encodeF φ)
 
 /-! ## 2. Weakening + the deduction theorem (`impI`), native. -/
 
@@ -67,6 +71,7 @@ theorem weakenN {p : OFml} {Γ Δ : List OFml} {a : OFml} (hsub : Γ ⊆ Δ) (h 
   | ctxUnfold _ φ => exact ProvesN.ctxUnfold _ φ
   | diagFix _ body => exact ProvesN.diagFix _ body
   | embed hb => exact ProvesN.embed hb
+  | engineLeaf hpr => exact ProvesN.engineLeaf hpr
 
 /-- **Deduction theorem = `impI`** — `ProvesN p (q :: Γ) r → ProvesN p Γ (q → r)`. Admissible (S/K/mp);
     the closed premises of `iffIntro`/`iffMPF`/`iffMPB`/`necN` are re-derived and weakened via `impK`. -/
@@ -94,6 +99,7 @@ theorem deductionN {p : OFml} {Γ : List OFml} {q r : OFml} (h : ProvesN p (q ::
   | ctxUnfold Γ' φ => subst hΓ; exact ProvesN.mp (ProvesN.impK _ _ _) (ProvesN.ctxUnfold _ _)
   | diagFix Γ' body => subst hΓ; exact ProvesN.mp (ProvesN.impK _ _ _) (ProvesN.diagFix _ _)
   | embed hb => subst hΓ; exact ProvesN.mp (ProvesN.impK _ _ _) (ProvesN.embed hb)
+  | engineLeaf hpr => subst hΓ; exact ProvesN.mp (ProvesN.impK _ _ _) (ProvesN.engineLeaf hpr)
 
 /-! ## 3. Derived helpers: `impI` (closed), transitivity, and the diagonal legs. -/
 
@@ -225,6 +231,7 @@ theorem proves_interpN (p : OFml) (G0 : Nat → Prop) (_hp : interp (Gctx p G0) 
 theorem provesN_sound (p : OFml) (G0 : Nat → Prop)
     (hp : interp (Gctx p G0) p = interp G0 p) (hp0 : interp G0 p)
     (hpN : interpN p G0 p = interp (Gctx p G0) p)     -- `p` box-free (a plays-atom): interpN = interp
+    (hEL : ∀ {m : Nat} {ψ : Formula}, Provable m ψ → interpN p G0 (encodeF ψ))  -- engine leaf soundness
     {Γ : List OFml} {φ : OFml} (hΓ : ∀ a ∈ Γ, interpN p G0 a) (h : ProvesN p Γ φ) :
     interpN p G0 φ := by
   induction h with
@@ -252,17 +259,19 @@ theorem provesN_sound (p : OFml) (G0 : Nat → Prop)
       rw [interpN_betaA, interpN_gApp, interp_betaA_Gctx, interp_gApp_Gctx]
       constructor <;> intro _ _ <;> exact hp0
   | embed hb => exact proves_interpN p G0 hp hp0 hb
+  | engineLeaf hpr => exact hEL hpr
 
 /-- **Consistency** (anti-vacuous) — for an `interp`-stable, satisfiable target `p` (the PBLT case:
     `p` a true plays-atom), `ProvesN p [] (eqn 0 1)` is NOT derivable. `interpN (eqn 0 1) = (0 = 1)`,
     valuation-independent and false, so it can't be sound. Confirms the native system + its diagonal /
     HBL rules inject no falsehood. -/
-theorem provesN_consistency {p : OFml} (hs : InterpStable p)
-    (hp0 : interp (fun _ => False) p)
-    (hpN : interpN p (fun _ => False) p = interp (Gctx p (fun _ => False)) p) :
+theorem provesN_consistency {p : OFml} {G0 : Nat → Prop}
+    (hp : interp (Gctx p G0) p = interp G0 p) (hp0 : interp G0 p)
+    (hpN : interpN p G0 p = interp (Gctx p G0) p)
+    (hEL : ∀ {m : Nat} {ψ : Formula}, Provable m ψ → interpN p G0 (encodeF ψ)) :
     ¬ ProvesN p [] (.eqn 0 1) := by
   intro h
-  have hsound := provesN_sound p (fun _ => False) (stable_hp hs _) hp0 hpN (by simp) h
+  have hsound := provesN_sound p G0 hp hp0 hpN hEL (by simp) h
   have : (0 : Nat) = 1 := hsound
   exact absurd this (by decide)
 
