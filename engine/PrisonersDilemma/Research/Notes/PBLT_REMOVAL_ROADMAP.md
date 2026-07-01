@@ -174,12 +174,21 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        base `Proves`. `bloeb_object`'s base `D1_nec`/`K`/`four` (box = base `Proves`) were a valid
        simplification ONLY while the diagonal legs were base — they are not. So the finish is: make
        `ProvesC` a proper modal system (nec/K/four + deduction over `ProvesC`, with `box := ProvesC`
-       provability in the soundness interp `interpC`), re-prove the (small) HBL soundness there, and run
-       `bloeb` in `ProvesC`. This is a bounded, well-scoped redesign of `ProvesC`'s soundness (the
-       `Gctx`/`ctxUnfold`/`diagFix` proofs adapt to `interpC`), NOT an open question — `necC : ProvesC a
-       → ProvesC (box a)` is sound when `box := ProvesC` (definitional, as base `D1_nec` was). Then
-       FWD/BWD (E3/E4) carry object PBLT to the engine; delete `PBLT`; repoint the ~6 consumers.
-       (Attempted in-place this session; reverted to keep the layer clean — it wants its own focused
-       pass, not a late-session patch.)
+       provability in a soundness interp `interpC`), and run `bloeb` NATIVELY in `ProvesC`.
+
+       DECISIVE ARCHITECTURAL FINDING (machine-checked, two in-place attempts): you CANNOT keep the
+       base chain and merely reinterpret `box` as `ProvesC`. The bridge `interp φ → interpC φ` (needed
+       for the `embed` arm) FAILS on NEGATIVE box occurrences: for `□a → b`, `interp = (Proves a →
+       interp b)` but `interpC = (ProvesC a → interpC b)`, and `embed : Proves a → ProvesC a` runs the
+       WRONG way in the contravariant antecedent (given `ProvesC a` you cannot recover `Proves a`). The
+       chain's `□ψ → p` is exactly such a negative occurrence. So the two box-semantics are genuinely
+       unbridgeable — `ctxUnfold` (whose `□φ→p` was built with `box := base Proves`) conflicts with the
+       chain's need.
+       CONSEQUENCE — the correct build is a from-scratch NATIVE `ProvesC` layer: `box := ProvesC`
+       UNIFORMLY (so `ctxUnfold`'s `□φ→p`, the chain's necessitations, and `interpC` all agree, no
+       bridge), `bloeb` re-proven over `ProvesC`'s own nec/K/four/deduction, base `Proves` embedded only
+       for ATOMIC leaves (gammaAx/betaGamma — never carrying box through the bridge). This is a
+       contained rewrite of the chain + soundness, not a patch — reverted the in-place attempts to keep
+       the layer clean/sorry-free; it wants its own focused session.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.
