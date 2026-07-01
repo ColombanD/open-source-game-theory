@@ -105,3 +105,24 @@ consumers (DupocBot, CupodBot, PrudentBot, JustBot), delete `axiom PBLT` → 1 a
 Start **M-N1**: refactor `ConstructiveLobToy.Pf.size` to character-faithful, then prove
 `Decidable (Boxable p k φ)` at fixed φ. This is self-contained, in the toy, and its outcome (pass/kill)
 determines whether the decidable-box route is viable before any engine porting.
+
+---
+
+## M-N1 PROGRESS (2026-07-01) — `Research/Spikes/pblt/MN1_decidable.lean`
+
+**Half done, sorry-free for the proven part.** Character-faithful `Pf.sizeF` (each leaf pays its
+CONCLUSION's `Fml.size`; the earlier "leaf pays embedded-atom size" was wrong — axiom schemes repeat
+subformulas, so `sizeF_ge_concl` needed conclusion-size charging). Proven:
+  • `sizeF_ge_concl : φ.size ≤ t.sizeF` — a bounded proof has a bounded CONCLUSION.
+  • `mp_cut_bounded : a.size ≤ (mp f g).sizeF` — the `mp` CUT formula is SIZE-bounded.
+So the first half of the decidability obstruction (unbounded `mp` cut) is REMOVED.
+
+**Residual sub-obstruction (the N1 crux, identified precisely):** bounded `Fml.size` ⇏ finite, because
+`atom n`/`gApp c` codes range freely. Need an ATOM-CLOSURE invariant: every formula in a `Pf p φ` proof
+has atoms/codes tracing to SUBFORMULA-codes of `p` (then the atom set is finite ⇒ decidable). Probe
+finding: a bare `atom n`/`gApp c` is concluded by NO rule except `mp` — so bare atoms aren't
+syntactically excluded, but no LEAF concludes a bare atom or an implication INTO one (`ax_k` gives
+`a→(b→a)`; `repr`/`ctx` conclude iffs over gApp/imp/betaA). Likely invariant (next lemma, one `sorry`
+in the spike marks it): every provable formula is imp/iff/box with atoms from `p`'s subformula-codes,
+by rule-induction. **This lemma is the make-or-break of N1.** If it holds → decidable box → resume N2.
+If it fails → escalate to N4/N5.
