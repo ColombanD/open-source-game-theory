@@ -3,6 +3,37 @@
 Where things stand and the precise remaining sub-steps. Companions: `EXPLICIT_S_PROPOSAL.md`,
 `Research/Spikes/pblt/`.
 
+## ⚑⚑ SCOPING PIVOT (what removing PBLT ACTUALLY requires — machine-checked)
+
+The object-system (`Reflection/`) route hit `provesN_play_extract`, which is EQUIVALENT to PBLT (below).
+But scoping the alternative revealed a much shorter path that the object detour obscured:
+
+**The engine `Provable` ALREADY has the full HBL toolkit** — `boxIntro` (nec), `app` (object MP),
+`axK` (K), `box4` (four), all sound, no axioms (added in earlier sessions eliminating
+`box_provable`/`boxInternalize`). And extraction at the `Provable` level is TRIVIAL:
+`Provable k (plays…) → the play` is just `Provable_sound` (machine-checked). So the `provesN_play_extract`
+obstacle was an ARTIFACT of working in a separate object system — it vanishes at `Provable`.
+
+**Removing PBLT therefore reduces to: run the bounded-Löb chain DIRECTLY at `Provable k`.** The chain
+(`bloeb_native`'s shape) needs, at `Provable`:
+  1. nec / K / four / MP — ✅ ALREADY PRESENT (`boxIntro`/`axK`/`box4`/`app`).
+  2. a `Provable`-level DEDUCTION theorem (`impI`) for the 3 hypothesis discharges — NOT present; the
+     genuine missing piece #1. (`app` is MP but there's no `Provable k a → Provable k b ⊢ Provable k
+     (a→b)`; needs a hypothesis-form `Provable` or a direct combinator derivation.)
+  3. the DIAGONAL fixpoint `Provable k (ψ ↔ (□_k ψ → p))` — missing piece #2 (the same diagonal the
+     `Reflection` layer built via `diagFix`, but now needed as a `Provable` fact — the budget-faithful
+     `k = box-k` coincidence is the known Wall-1/S3' subtlety here).
+Then `bloeb` at `Provable` gives `Provable k p`; `Provable_sound` gives the play; DONE — no object
+layer, no bridge, no `extract`.
+
+**Revised estimate:** the two missing pieces (a bounded `Provable` deduction theorem + the diagonal as a
+`Provable` fact) are the REAL scope of removing PBLT. The diagonal (#2) carries the irreducible Löb
+content (still equivalent to PBLT — no free lunch), but the framing is far cleaner than the object
+detour: everything lives in one system (`Provable`) the engine already trusts, and the deduction
+theorem (#1) is standard. The `Reflection/` layer remains a valid, sorry-free metamath artifact and an
+independent second proof of the diagonal's constructibility, but the SHORTEST path to deleting the axiom
+is the direct-at-`Provable` route.
+
 ## ⚑ HEADLINE RESULT (machine-established across the reflection layer)
 
 The full metamathematical development (`Reflection/`: Syntax, Proves, Representability, Deduction,
