@@ -29,7 +29,27 @@
       "Bash(grep -iA3 \"k m\")",
       "Bash(grep -vE \"^%|^$\")",
       "Bash(grep -nA3 \"| app \\\\|| axK \\\\|| box4 \\\\|| boxIntro \" PrisonersDilemma/Derivation.lean)",
-      "Bash(grep -nA2 \"| weakenImpl\" PrisonersDilemma/Derivation.lean)"
+      "Bash(grep -nA2 \"| weakenImpl\" PrisonersDilemma/Derivation.lean)",
+      "Bash(cd \"/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/engine/..\" && sed -n '244,305p' PBLT_proof.tex)",
+      "Read(//Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/**)",
+      "Bash(awk '/\\\\| axK/,/Provable K \\\\\\(\\\\.impl/' PrisonersDilemma/Derivation.lean)",
+      "Bash(awk '/\\\\| box4/,/Provable K/' PrisonersDilemma/Derivation.lean)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(cd \"/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/engine\" && find ~/.elan /root/.elan -path \"*Mathlib/ModelTheory*\" -name \"*.lean\" 2>/dev/null | head -40; echo \"=== or via lake packages ===\"; find . -path \"*Mathlib/ModelTheory*\" -name \"*.lean\" 2>/dev/null | head -40)",
+      "Read(//root/**)",
+      "Bash(sed -n '/inductive Provable/,/^$/p')",
+      "Bash(awk '/inductive Provable : Nat → Formula → Prop/,/^  inductive|^end|^[^ ]/' PrisonersDilemma/Derivation.lean)",
+      "Bash(awk 'NR>=261 && NR<=420' PrisonersDilemma/Derivation.lean)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(perl -0pi -e 's/weakenH \\\\\\(by simp\\\\\\) \\\\\\(provesH_of \\(\\\\w+\\)\\\\\\)/provesH_lift $1/g' PrisonersDilemma/Reflection/Bpsb.lean)",
+      "Bash(perl -0pi -e 's/theorem obj_nec \\\\\\(a : Nat\\\\\\)/theorem obj_nec \\(_a : Nat\\)/; s/theorem obj_K \\\\\\(a : Nat\\\\\\)/theorem obj_K \\(_a : Nat\\)/; s/theorem obj_four \\\\\\(a : Nat\\\\\\)/theorem obj_four \\(_a : Nat\\)/' PrisonersDilemma/Reflection/Bpsb.lean)",
+      "Bash(grep -nA3 \"theorem repr_object\" PrisonersDilemma/Reflection/Proves.lean)",
+      "Bash(sed -n '/theorem repr_object/,/exact Proves.mp/p' PrisonersDilemma/Reflection/Proves.lean)",
+      "Bash(grep -nA6 \"theorem object_pblt_of_repr\" PrisonersDilemma/Reflection/Diagonal.lean)",
+      "Bash(perl -0pi -e 's/\\\\| betaGamma _ n y => exact ProvesH\\\\.betaGamma _ n y/| betaGamma _ body y => exact ProvesH.betaGamma _ body y/g; s/\\\\| betaGamma Γ'\"'\"' n y => subst hΓ; exact ProvesH\\\\.mp \\\\\\(ProvesH\\\\.impK _ _ _\\\\\\) \\\\\\(ProvesH\\\\.betaGamma _ _ _\\\\\\)/| betaGamma Γ'\"'\"' body y => subst hΓ; exact ProvesH.mp \\(ProvesH.impK _ _ _\\) \\(ProvesH.betaGamma _ _ _\\)/g; s/\\\\| betaGamma _ n y => exact Proves\\\\.betaGamma n y/| betaGamma _ body y => exact Proves.betaGamma body y/g; s/\\\\| betaGamma n y => exact ProvesH\\\\.betaGamma _ n y/| betaGamma body y => exact ProvesH.betaGamma _ body y/g' PrisonersDilemma/Reflection/Deduction.lean)",
+      "Bash(grep -nA4 \"searchBranch\" PrisonersDilemma/Derivation.lean)",
+      "Bash(awk '/theorem mutual_loeb /{f=1} f{print} /Provable.*implTrans|exact.*Provable|qed|^  ⟨/{if\\(f && ++c>40\\)exit}' PrisonersDilemma/BaseTheorems.lean)"
     ],
     "additionalDirectories": [
       "/tmp"
