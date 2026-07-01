@@ -106,16 +106,32 @@ mirroring `gammaAx`/`betaGamma`.
   is REDUCED (ctxUnfold no longer contributes the outcome-read) but NOT fully dissolved — the residual
   `hp0` moved into `diagFix` (the self-reference). This is an honest partial result, not the full
   dissolution B1/B2 suggested.
-- **B3-followup (the new open question):** does a DIFFERENT diagonal construction make `diagFix`
-  definitional too? Critch's `β(n) := G(e n)` with `e` representable — the LHS/RHS antecedent mismatch
-  (`selfApply body` vs `betaA body`) is exactly what his `e`-representability + β-definition reconcile
-  WITHOUT assuming the outcome. So the fix likely mirrors `betaGamma`/`repr` (already derived): make the
-  `betaA` denotation route through the SAME `e`-graph so `Gw(⌜selfApply body⌝)` and `Gw(⌜betaA body⌝)`
-  agree by construction, not via `hp0`. NEXT SPIKE.
-- **B4:** wire to engine — once B3-followup removes the `diagFix` `hp0` → engine PBLT with no
+- **B3-followup — ✅ DONE (`Research/Spikes/pblt/BewB3f.lean`, sorry-free). VERDICT: diagFix's hp0 IS
+  removable, but ONLY by rebuilding the diagonal at the PREDICATE level (not by re-denotation).**
+  Machine-traced:
+    • The genuine diagonal IS outcome-free — `DiagonalLemmaSpike.parametric_diagonal` derives
+      `ψ ↔ G(⌜ψ⌝)` from `repr` ALONE (`exact hrepr`, no hp0). So the fixpoint is not intrinsically
+      outcome-dependent.
+    • WHY it closes there: PREDICATE-level. `ψ := selfApply β`; `selfApply θ := ⟨fun _ k => θ.app (code
+      θ) k⟩` DISCARDS the plugged code, so `ψ.app (code ψ)` reduces DEFINITIONALLY to `β.app (code β) =
+      ψ`, matching repr's LHS — the self-reference closes by defeq.
+    • WHY B3's diagFix needs hp0: the OFml diagonal is SUBSTITUTION-level. `selfApply θ = plug (encode
+      θ) θ` genuinely substitutes (plug is HEAD-PRESERVING: `plug_head_preserving`, proven by rfl). So
+      `selfApply θ ≠ betaA θ`, the self-code fixpoint `ψ ↔ gApp(⌜ψ⌝)` that `diag_object'` needs is
+      unreachable, and `diagFix` bridges the gap by ASSERTING it — sound only via hp0.
+  ⇒ FULL route to drop diagFix's hp0: rebuild the OFml diagonal at the predicate level (betaA/selfApply
+  discarding the plugged code, à la parametric_diagonal), port `repr_object` (= `repr`, the one
+  representability input) to it, feed `diag_object'` the DEFEQ fixpoint. Then ctxUnfold (B3, Gw) +
+  diagFix (predicate-level defeq) are BOTH outcome-free ⇒ `provesN_play_extract` FULLY dissolved.
+  De-risked: parametric_diagonal PROVES the predicate-level fixpoint outcome-free. The work is porting
+  betaA/plug → predicate encoding (touches Syntax/Proves/Diagonal — mechanical but non-trivial).
+- **B4 (predicate-level diagonal impl, then wiring):** implement the predicate-level diagonal; then
+  `bloeb_object` (base Proves, outcome-free) + `bridge_BWD_plays` → engine PBLT with no
   `provesN_play_extract`; delete `axiom PBLT`; repoint the 4 consumers → 1 axiom.
 
 ## Immediate next action
-B3 done: ctxUnfold dissolved, diagFix still needs the outcome. Next: **B3-followup** — reconcile
-`diagFix`'s antecedent mismatch via `e`-representability (mirror `betaGamma`), to drop its `hp0`. That is
-now the load-bearing question for full dissolution.
+B3-followup done — the path to full dissolution is IDENTIFIED and de-risked (predicate-level diagonal;
+parametric_diagonal proves it outcome-free). Next: **B4-impl** — port the OFml `betaA`/`plug`
+substitution-diagonal to the predicate-level `selfApply` (discarding plugged code), so `diag_object'`
+gets the defeq fixpoint and `diagFix`'s hp0 vanishes. This is the last mechanical (non-obstruction) step
+before wiring + deleting the axiom.
