@@ -117,12 +117,30 @@ subformulas, so `sizeF_ge_concl` needed conclusion-size charging). Proven:
   • `mp_cut_bounded : a.size ≤ (mp f g).sizeF` — the `mp` CUT formula is SIZE-bounded.
 So the first half of the decidability obstruction (unbounded `mp` cut) is REMOVED.
 
-**Residual sub-obstruction (the N1 crux, identified precisely):** bounded `Fml.size` ⇏ finite, because
-`atom n`/`gApp c` codes range freely. Need an ATOM-CLOSURE invariant: every formula in a `Pf p φ` proof
-has atoms/codes tracing to SUBFORMULA-codes of `p` (then the atom set is finite ⇒ decidable). Probe
-finding: a bare `atom n`/`gApp c` is concluded by NO rule except `mp` — so bare atoms aren't
-syntactically excluded, but no LEAF concludes a bare atom or an implication INTO one (`ax_k` gives
-`a→(b→a)`; `repr`/`ctx` conclude iffs over gApp/imp/betaA). Likely invariant (next lemma, one `sorry`
-in the spike marks it): every provable formula is imp/iff/box with atoms from `p`'s subformula-codes,
-by rule-induction. **This lemma is the make-or-break of N1.** If it holds → decidable box → resume N2.
-If it fails → escalate to N4/N5.
+**Residual sub-obstruction RESOLVED — NEGATIVELY (machine-checked). The atom-closure invariant is FALSE
+and N1's enumeration route is DEAD.** Two facts in the spike:
+  1. `{repr (atom m) | m : Nat}` are ∞-many size-4 proofs with DISTINCT conclusions ⇒ atom-closure
+     FALSE (`repr (atom m)` introduces fresh code `m` at bounded size).
+  2. At FIXED φ, the `mp` cut ranges over ∞-many PROVABLE cut formulas: `ax_k : φ→(a→φ)` + mp gives
+     `a→φ` for EVERY `a` once φ is provable, and `{repr (atom m)}` supplies ∞-many provable `a`.
+So `Decidable (Boxable p k φ)` is NOT obtainable by enumeration.
+
+**Honest scope (no overclaim):** this kills the ENUMERATION method, not decidability-in-principle
+(`Boxable` is a `Prop`; a non-enumerative decision could exist — but it would need cut-elimination /
+subformula-bounded normal forms, which for a system WITH the Löb diagonal IS the open modal-fixpoint
+normalization problem = the same root cause as `Provable`/`proofSearch` being `noncomputable`).
+
+**RE-SCOPE (the correct lesson):** N2/N3 do NOT need general decidability — they need to RUN the ONE
+KNOWN `bloeb` term to an engine witness. So "decidable box" was the wrong framing. BUT: threading a
+witness through the `bloeb` term still requires interpreting its `repr`/`ctx` (diagonal) steps, which
+is EXACTLY the §8 realizability that was REFUTED as unsound. So N2-via-realizability = §8 = dead.
+
+**NET (definitive after this session):** every route to `provesN_play_extract` that has been tried —
+model soundness (needs hp0), realizability (unsound), back-translation (unstateable), classical split
+(Löb knot), decidable-box enumeration (infinite), witness-threading the term (= realizability) — bottoms
+out on the SAME irreducible fact: turning the object Löb PROOF into a play WITNESS is cut-elimination
+for a diagonal-carrying modal system, which is an open problem. `provesN_play_extract` is not merely
+"equivalent to PBLT"; it is equivalent to constructive modal-fixpoint normalization, which no one has
+mechanized. **Recommendation: N5 (bank the floor).** The result is a complete, machine-checked
+CHARACTERIZATION of the crux with every shortcut provably excluded — strong thesis material — plus the
+axiom-free constructive Löb term (M1). Deleting PBLT requires solving the normalization open problem.

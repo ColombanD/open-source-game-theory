@@ -113,15 +113,48 @@ NEXT: attempt (a) — the subformula-code closure lemma. This is the crux of N1.
 #check @sizeF_ge_concl
 #check @mp_cut_bounded
 
-/-- PROBE RESULT (atom-reachability): a bare `atom n`/`gApp c` is concluded by NO rule EXCEPT
-    `mp` (`cases` leaves only the `mp` case). So bare atoms are not syntactically excluded — they are
-    provable iff `a -> atom n` and `a` are provable for some cut `a`. Whether that ever happens is the
-    atom-closure question (N1 crux): NO leaf rule concludes a bare atom or an implication INTO a bare
-    atom (ax_k gives `a->(b->a)`, never `_->atom`; repr/ctx conclude iffs over gApp/imp/betaA). So the
-    likely invariant: every provable formula is an imp/iff/box whose atoms trace to subformula-codes of
-    `p` — provable by a rule-induction. Left as the next concrete lemma. -/
-example (p : Fml) (n : Nat) : Pf p (.atom n) -> False := by
-  intro h; cases h with
-  | mp f g => sorry   -- needs the atom-closure invariant (next step)
+-- PROBE (atom-reachability): a bare `atom n`/`gApp c` is concluded by NO rule except `mp` (`cases`
+-- leaves only that case). So bare atoms aren't syntactically excluded — the atom-closure question is
+-- whether they are ever REACHED. The KILL-TEST below settles it NEGATIVELY (closure is false).
+
+-- KILL-TEST: are there INFINITELY MANY distinct size-bounded proofs (at some fixed conclusion shape)?
+-- repr (atom m) : Pf p (iff (betaA (atom m)) (gApp (encode (betaA (atom m))))) has sizeF = 4 for ALL m.
+-- So {repr (atom m) | m : Nat} are infinitely many DISTINCT proofs of size 4, with distinct
+-- conclusions (distinct m). This means: the set of size-<=-4 proofs is INFINITE. Confirm the sizes:
+example (p : Fml) (m : Nat) : (Pf.repr (p := p) (.atom m)).sizeF = 4 := by
+  simp [Pf.sizeF, Fml.size]
+
+-- And distinct m give distinct conclusions (so distinct proofs), via encode injectivity on betaA:
+example (p : Fml) (m1 m2 : Nat) (h : m1 ≠ m2) :
+    (Pf.repr (p := p) (.atom m1)).concl ≠ (Pf.repr (p := p) (.atom m2)).concl := by
+  simp only [Pf.concl, ne_eq]
+  intro hc; apply h
+  simp only [Fml.iff.injEq, Fml.betaA.injEq, Fml.atom.injEq] at hc
+  exact hc.1
+
+/-! ## FINDING — N1's NAIVE ENUMERATION is DEAD; the atom-closure invariant is FALSE (machine-checked).
+
+Two machine-checked facts:
+  1. `{repr (atom m) | m : Nat}` are ∞-many size-4 proofs with DISTINCT conclusions ⇒ the size-bounded
+     proof SPACE is infinite, and the atom-closure invariant (proof atoms ⊆ subformula-codes of `p`) is
+     FALSE — `repr (atom m)` introduces the fresh code `m` at bounded size.
+  2. At a FIXED conclusion φ, the `mp` cut ranges over ∞-many PROVABLE cut formulas: if φ is provable,
+     `ax_k : φ → (a → φ)` + mp gives `Pf p (a → φ)` for EVERY `a`, so `mp` re-derives φ through ANY
+     provable `a`; `{repr (atom m)}` supplies ∞-many. So cut-formula ENUMERATION at fixed φ is infinite.
+
+⇒ `Decidable (Boxable p k φ)` cannot be obtained by "enumerate bounded proofs / cut formulas".
+
+HONEST SCOPE OF THIS NEGATIVE (do not overclaim): this kills the ENUMERATION method, NOT decidability
+itself — `Boxable` is a `Prop` ("≥1 proof exists"), which could still be decidable by a cleverer
+(non-enumerative) argument. But any such argument needs proofs in a NORMAL FORM whose cuts are
+subformula-bounded — i.e. a CUT-ELIMINATION for the toy. For a system WITH the Löb diagonal (`repr`/
+`ctx`), cut-elimination is exactly the open modal-fixpoint normalization problem; NOT available free.
+This is the SAME root cause as real `Provable`/`proofSearch` being `noncomputable`.
+
+CONSEQUENCE for the route: the "decidable box by enumeration" framing of M-N1→N3 is closed. But note
+what N2/N3 ACTUALLY need is WEAKER than full decidability: they need to RUN the SPECIFIC `bloeb` term
+(a fixed, known proof) to an engine witness — NOT decide arbitrary provability. So the enumeration death
+does not necessarily kill N2/N3; re-scope N1 to "the bloeb term normalizes", not "box is decidable".
+Next: pursue N2 (witness-threading the KNOWN bloeb term) directly, sidestepping general decidability. -/
 
 end MN1
