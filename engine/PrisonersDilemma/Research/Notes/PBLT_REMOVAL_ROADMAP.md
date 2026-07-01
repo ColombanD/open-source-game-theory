@@ -312,10 +312,28 @@ proof-term whose soundness is CONSTRUCTIVE (exhibits the fixpoint's proof term).
 collapses to the decidable predicate ⇒ `eval` computable ⇒ extraction reads the play off the exhibited
 term. This is the CLAUDE.md foundational crux; one lever, two payoffs.
 
-**Milestone 1 SHIPPED (de-risk): `Research/Spikes/pblt/ConstructiveLobToy.lean`.** A self-contained toy
-with an explicit proof-term type `Pf` + `size` + `Boxable k φ := ∃ t:Pf φ, size t ≤ k`. It reduces the
-ENTIRE route-2b problem to ONE definition to fill: replace the provisional `Pf.loeb` CONSTRUCTOR by a
-DEFINITION `Pf.loeb : Pf (□φ→φ) → Pf φ` built from the HBL constructors + a real diagonal proof-term.
-`bounded_loeb_toy` proves the size bound is trivial ONCE the term exists — so all difficulty is
-concentrated in constructing that one term (needs adding an encoding to `Fml` + a constructive diagonal
-constructor). This is the honest next milestone; it is genuine research (weeks+), not plumbing.
+**Milestone 1 DONE — the constructive Löb TERM is built (`Research/Spikes/pblt/ConstructiveLobToy.lean`).**
+The toy now has NO `loeb` constructor. `Pf p φ` (target-indexed, as `ProvesN p`) carries the Hilbert
+core, HBL D1/D2/D3, and the TWO irreducible representability base terms `repr` (`β⌜b⌝ ↔ G⌜selfApply b⌝`)
+and `ctx` (`G⌜ψ⌝ ↔ (□ψ→p)`) — exactly what `repr_object`/`ctxUnfold` rest on. From these:
+  • `Pf.diag : Pf p (ψ ↔ (□ψ→p))` — the diagonal, DERIVED (`iffTrans repr ctx`, `ψ := betaA p`, a
+    genuine self-referential fixpoint since `encode (betaA p)` is a concrete Nat inside `repr`'s RHS);
+  • `Pf.bloeb : Pf p (□p→p) → Pf p p` — bounded Löb, DERIVED as a real proof TERM (the exact
+    `bloeb_from_legs` chain: nec/axK/four/S-combinator/mp), with a computable `Pf.size`.
+`#print axioms Pf.bloeb` = **NO axioms at all**; `Pf.sound` (the anti-cheat, `box := Nonempty (Pf p ·)`,
+diagonal atoms via `Gval`) on the 3 std. Full engine `lake build` green (spike not root-imported).
+
+WHAT MILESTONE 1 PROVES: the fixpoint proof-TERM is genuinely CONSTRUCTIBLE from `repr`+`ctx`+HBL (no
+Löb axiom), with finite computable size. WHAT IT HONESTLY LOCATES (does NOT escape): `Pf.sound` is
+`ht`-RELATIVE (needs the target's truth `t`) because `ctx` is — the faithful mirror of
+`provesN_sound`'s `hp0`. So `bloeb` proves `p` SYNTACTICALLY; extracting the play-witness is still
+outcome-relative. The remaining content is therefore NOT "construct the term" (done) but "give `repr`
+and `ctx` WITNESS-BEARING / decidable-box forms" so that `box a := ∃ t:Pf p a, size t ≤ k` is genuinely
+DECIDABLE and `bloeb`'s term, when evaluated, yields the fixpoint's finite witness. That is Milestone 2.
+
+**Milestone 2 (next): decidable box + witness extraction.** (a) Prove `Pf p φ` (bounded by size ≤ k) is
+DECIDABLE by enumeration (finitely many terms of size ≤ k) — the point Critch makes vs. Barász's RE
+hierarchy. (b) Show `repr`/`ctx` can be given so that a `Pf p p` term COMPUTES to the target witness
+(the toy `p` is abstract; in the engine `p = encodeF(play-atom)` and the witness is a play index). (c)
+Port from the toy `Fml` to the engine `Formula`/`OFml`, feeding the real `Provable` toolkit. This is
+where the genuine research risk concentrates; Milestone 1 removed the "can the term even be built?" risk.
