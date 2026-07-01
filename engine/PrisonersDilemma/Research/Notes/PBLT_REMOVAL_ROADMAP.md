@@ -287,3 +287,35 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        With (i)+(ii): delete `PBLT`, repoint the ~6 consumers → 1 axiom.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.
+
+## (ii) `provesN_play_extract` — the crux, re-derived three ways (2026-07-01 session)
+
+With (i) discharged, (ii) is the SOLE remaining obligation. This session confirmed EXHAUSTIVELY, from
+the code, that (ii) is not a plumbing gap but the project's CENTRAL CRUX (= making `eval` computable).
+Three independent walls, all machine-probed:
+  1. **Model soundness can't extract it.** `provesN_sound` needs `hp0 : interp p` (the outcome) — the
+     diagonal rules `diagFix`/`ctxUnfold` are sound ONLY relative to `hp0`. Circular.
+  2. **Back-translation `ProvesN → Provable` can't be stated.** The intermediate object formulas in a
+     `ProvesN` derivation (`gApp c`, `betaA body`) have NO engine-`Formula` preimage, so an induction
+     mapping object proofs back to engine proofs doesn't typecheck. (The two-route convergence wall.)
+  3. **A classical case split fails even for a concrete `.search`-bot fixpoint.** For `DupocBot` (a real
+     `.search`-bot whose `dupoc_loeb_premise` is a genuine `searchBranch` term, NOT vacuous), `by_cases
+     Provable k φ` hits the naked Löb knot: feeding `□φ` to the premise needs `boxIntro`, which needs
+     `Provable k φ` = the goal. The bot's self-reference does NOT substitute for the diagonal, because
+     necessitation still requires the bare conclusion.
+  Note: the engine already has legs→premise (`mutual_loeb`, axiom-free HBL chain); what's missing is
+  premise→conclusion (`□φ→φ ⟹ φ`), which IS `PBLT`, and needs the diagonal-with-witness.
+
+**Decision (user, 2026-07-01): pursue Route 2b (constructive Löb).** The genuine lever: make the
+diagonal WITNESS-BEARING — `box` = "∃ proof TERM of size ≤ k" (decidable by enumeration) + a diagonal
+proof-term whose soundness is CONSTRUCTIVE (exhibits the fixpoint's proof term). Then `Provable`
+collapses to the decidable predicate ⇒ `eval` computable ⇒ extraction reads the play off the exhibited
+term. This is the CLAUDE.md foundational crux; one lever, two payoffs.
+
+**Milestone 1 SHIPPED (de-risk): `Research/Spikes/pblt/ConstructiveLobToy.lean`.** A self-contained toy
+with an explicit proof-term type `Pf` + `size` + `Boxable k φ := ∃ t:Pf φ, size t ≤ k`. It reduces the
+ENTIRE route-2b problem to ONE definition to fill: replace the provisional `Pf.loeb` CONSTRUCTOR by a
+DEFINITION `Pf.loeb : Pf (□φ→φ) → Pf φ` built from the HBL constructors + a real diagonal proof-term.
+`bounded_loeb_toy` proves the size bound is trivial ONCE the term exists — so all difficulty is
+concentrated in constructing that one term (needs adding an encoding to `Fml` + a constructive diagonal
+constructor). This is the honest next milestone; it is genuine research (weeks+), not plumbing.
