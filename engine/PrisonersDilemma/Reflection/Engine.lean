@@ -19,8 +19,9 @@ it means the general soundness cannot extract it: we need a DEDICATED play-atom 
 the outcome from `bloeb`'s construction (the Löb premise + the fixpoint), not from the outcome-assuming
 soundness. That extraction — `provesN_play_extract` below — is the last piece; stated, not yet proven.
 
-Conditional throughout on `atomCode` injectivity (`hinj`, the last atomic Gödel-code obligation).
-NOT yet root-imported.
+The `atomCode` injectivity obligation is now DISCHARGED (`Bridge.atomCode_injective`, a concrete
+head-tagged Gödel code), so `engine_pblt_plays` no longer carries an `hinj` hypothesis — the ONLY
+remaining assumption is `provesN_play_extract` (the BWD extraction). NOT yet root-imported.
 -/
 
 namespace PD.Reflection
@@ -38,7 +39,7 @@ def provesN_play_extract : Prop :=
 
 /-- **Engine PBLT for a play-atom family**, assembled — modulo `atomCode` injectivity and the BWD
     extraction. FWD + object PBLT are DISCHARGED; only `hExtract` (the last gap) is assumed. -/
-theorem engine_pblt_plays (_hinj : Function.Injective atomCode)
+theorem engine_pblt_plays
     (hExtract : provesN_play_extract)
     (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat)
     (hplays : ∀ k, ∃ pr qr a, φ k = .plays pr qr a)
@@ -88,7 +89,8 @@ family, with:
     bounded Löb), but capturing it needs a genuinely different argument: a soundness for `ProvesN` that
     derives the fixpoint's truth from the Löb premise INTERNALLY (a proof-theoretic Löb, not a model
     argument), OR a cut-elimination / normalization showing the object proof of a play-atom reduces to a
-    play witness. That, plus `hinj` (concrete injective `atomCode`), are the remaining obligations. -/
+    play witness. That is now the SOLE remaining obligation — `hinj` (concrete injective `atomCode`) is
+    discharged (`Bridge.atomCode_injective`). -/
 
 #check @engine_pblt_plays
 #check @provesN_play_extract

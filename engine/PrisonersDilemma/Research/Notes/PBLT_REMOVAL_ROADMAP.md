@@ -65,7 +65,10 @@ irreducible content — bounded Löb PRODUCES the outcome — moved from an opaq
 proof-theoretic lemma, but did not get cheaper. Closing it = proving Löb's computational content: a
 `ProvesN` derivation of a play-atom (whose last rule is `mp` off the diagonal fixpoint) NORMALIZES to a
 finite play witness. That is a real normalization theorem over `ProvesN`, not plumbing — the honest
-remaining core. `atomCode` injectivity (i) is the only routine leftover.
+remaining core. `atomCode` injectivity (i) — the one routine leftover — is now DISCHARGED
+(`Bridge.atomCode_injective`, a concrete head-tagged `Nat.pair` Gödel code mutually recursive over
+`Prog`/`Formula`/`Action`; on the 3 standard axioms). `engine_pblt_plays` no longer carries `hinj`;
+its SOLE remaining hypothesis is `provesN_play_extract`.
 
 ## The reduction (what's proven, what remains)
 
@@ -203,7 +206,8 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        play-atoms from `Proves_sound` (no new principle), `bridge_BWD_plays` chains through the engine's
        `atom_complete` to land `∃m, Provable m φ`. Deps: 3 std (+ `atom_complete_false_guard` for the
        BWD landing) — NO `PBLT`, no new axiom.
-  (E4) FWD `encode` (engine `Formula → OFml`: `encodeF` done) + `atomCode` injectivity + S re-deriving
+  (E4) FWD `encode` (engine `Formula → OFml`: `encodeF` done) + `atomCode` injectivity ✅ DONE
+       (`Bridge.atomCode_injective`, concrete head-tagged Gödel code) + S re-deriving
        each engine `Provable` constructor (the FWD direction `Provable m φ ⟶ Proves (encodeF φ)`);
   (E5) ✅ effectively DONE — `Reflection/Deduction.lean` (`ProvesH` + `deduction` = the `impI` field,
        sound/admissible) + `Reflection/Bpsb.lean` (`BPSb`/`pblt_of_bpsb` promoted; `bloeb_object`
@@ -265,10 +269,11 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        `∃m, Provable m (φ k)` PBLT conclusion for the play-atom family. FWD (`ProvesN.engineLeaf`
        transports the engine Löb premise) and object PBLT (`object_pblt_native`) are DISCHARGED.
        `#print axioms` = {propext, Classical.choice, Quot.sound, atom_complete_false_guard} — NOT
-       `PBLT`, confirming the reflection layer replaces it. TWO obligations remain, both isolated as
-       explicit hypotheses (no misleading sorries):
-         (i)  `atomCode` injective — a concrete engine-`Formula` Gödel code (à la `encode_inj`);
-              currently `atomCode` is `opaque`.
+       `PBLT`, confirming the reflection layer replaces it. ONE obligation now remains (was two):
+         (i)  ✅ DONE — `atomCode` injective (`Bridge.atomCode_injective`): a concrete engine-`Formula`
+              Gödel code (head-tagged `Nat.pair`, mutually recursive `progCode`/`formulaCode`/`actCode`,
+              à la `encode_inj`), on the 3 standard axioms. `atomCode` is no longer `opaque`, and
+              `engine_pblt_plays` no longer carries the `hinj` hypothesis.
          (ii) `provesN_play_extract` — read the engine play from an object proof of a play-atom. DEEPER
               than first thought (explored + machine-checked this session): `provesN_sound` needs
               `interp p` (diagonal rules only sound when the outcome holds → circular). The tempting
