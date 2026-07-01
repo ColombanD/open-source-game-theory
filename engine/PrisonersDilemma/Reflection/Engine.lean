@@ -73,10 +73,22 @@ family, with:
   • object PBLT fully discharged (`object_pblt_native`, sorry-free);
   • BWD reduced to `provesN_play_extract` — read the engine play from an object proof of a play-atom.
 
-`provesN_play_extract` is achievable (the engine `PBLT` axiom itself witnesses that the outcome
-follows), but it CANNOT be obtained from the general `provesN_sound` (which assumes `interp p`, the
-outcome). It needs a dedicated extraction reading the outcome from the Löb construction. That + `hinj`
-(a concrete injective `atomCode`) are the two remaining obligations before `PBLT` can be deleted. -/
+`provesN_play_extract` is the last gap, and it is DEEPER than "run soundness":
+  • `provesN_sound` at `engineVal` would give `interpN p engineVal p` (= the play) — but it REQUIRES
+    `interp p` (the diagonal rules `diagFix`/`ctxUnfold` are only sound when the outcome holds). Circular.
+  • The tempting escape — get `interp p` from the LÖB PREMISE `□p → p` applied to `hpN : ProvesN [] p`
+    — RELOCATES the circularity, it doesn't remove it (explored, machine-checked): the object premise
+    `interpN (imp (box p) p) = (ProvesN [] p → interpN p)` has a `ProvesN`-box antecedent; obtaining it
+    from the ENGINE premise (a `Provable`-box) via faithfulness requires proving "object-provable
+    play-atom ⟹ engine-true", which IS the outcome-assuming BWD. So the Löb-premise route lands back on
+    the same soundness obligation.
+  • Net: `provesN_play_extract` is essentially "the object system is sound for the play-atoms it proves
+    THROUGH the diagonal" — and the diagonal's soundness is exactly the conditional (`hp0`) one. It is
+    achievable (the engine `PBLT` axiom witnesses the outcome DOES follow — that is the whole content of
+    bounded Löb), but capturing it needs a genuinely different argument: a soundness for `ProvesN` that
+    derives the fixpoint's truth from the Löb premise INTERNALLY (a proof-theoretic Löb, not a model
+    argument), OR a cut-elimination / normalization showing the object proof of a play-atom reduces to a
+    play witness. That, plus `hinj` (concrete injective `atomCode`), are the remaining obligations. -/
 
 #check @engine_pblt_plays
 #check @provesN_play_extract

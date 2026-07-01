@@ -205,10 +205,16 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        explicit hypotheses (no misleading sorries):
          (i)  `atomCode` injective — a concrete engine-`Formula` Gödel code (à la `encode_inj`);
               currently `atomCode` is `opaque`.
-         (ii) `provesN_play_extract` — read the engine play from an object proof of a play-atom.
-              ACHIEVABLE (the engine `PBLT` axiom witnesses the outcome follows) but NOT obtainable from
-              general `provesN_sound` (which assumes `interp p`, the outcome — circular for extraction);
-              needs a dedicated extraction reading the outcome from the Löb construction. Honest last gap.
+         (ii) `provesN_play_extract` — read the engine play from an object proof of a play-atom. DEEPER
+              than first thought (explored + machine-checked this session): `provesN_sound` needs
+              `interp p` (diagonal rules only sound when the outcome holds → circular). The tempting
+              escape — get `interp p` from the Löb premise `□p→p` applied to `hpN` — RELOCATES the
+              circularity, doesn't remove it: the object premise's antecedent is a `ProvesN`-box, and
+              obtaining it from the engine's `Provable`-box premise needs "object-provable play-atom ⟹
+              engine-true" = the outcome-assuming BWD again. So (ii) is essentially "ProvesN is sound
+              for the play-atoms it proves through the diagonal" — achievable (bounded Löb IS this
+              content) but needing a PROOF-THEORETIC argument (internal Löb / normalization of the object
+              proof to a play witness), not a model argument. The genuine hard core.
        With (i)+(ii): delete `PBLT`, repoint the ~6 consumers → 1 axiom.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.
