@@ -92,11 +92,30 @@ mirroring `gammaAx`/`betaGamma`.
   `interp`, `Proves_sound`, `repr_object` are UNTOUCHED; only the diagonal soundness valuation changes.
   Remaining: `diagFix` at `Gw` (reduces to the same `e_graph`/`selfApply` identity as `diagFix_sound`,
   minus the hp0 that entered only via the shared `Gctx` target-read).
-- **B3:** replace `ctxUnfold`/`ProvesC` with derived `gAppUnfold`; rebuild `diag_object'`/`bloeb_object`
-  over base `Proves` (no `ProvesN`, no `Gctx`).
-- **B4:** wire to engine — `bloeb_object` + `bridge_BWD_plays` → engine PBLT with no
+- **B3 — ✅ DONE (`Research/Spikes/pblt/BewB3.lean`, sorry-free, 3 std). PARTIAL WIN + a KEY LIMIT found.**
+  Built the UNIFIED system `ProvesU` (plumbing + HBL + repr + ctxUnfold + diagFix + engineLeaf), box :=
+  `ProvesU` uniform (`interpU`), diagonal atoms wrapped by `Gw` (now wrapping with the ProvesU-box
+  context). `provesU_sound` closes. RESULT:
+    • `ctxUnfold` (context representability) — DISSOLVED: closes with only STRUCTURAL conditions
+      (`hpp`/`hpb`, `p` gApp/box-free), NO outcome. This is the real constructed-`Bew` payoff.
+    • `diagFix` (the diagonal FIXPOINT self-reference) — STILL needs `hp0 : interp G0 p` (the outcome).
+      Machine-exposed reason: its two sides denote `ProvesU p (.atom 0)→interp p` (LHS via
+      selfApply=.atom 0) vs `ProvesU p (betaA (.atom 0))→interp p` (RHS); antecedents DIFFER, so the iff
+      holds only when `interp p` makes both consequents True. Same `hp0` the old `diagFix_sound` used.
+  ⇒ **CORRECTED SCOPE: constructed-`Bew` fixes the CONTEXT, not the FIXPOINT.** `provesN_play_extract`
+  is REDUCED (ctxUnfold no longer contributes the outcome-read) but NOT fully dissolved — the residual
+  `hp0` moved into `diagFix` (the self-reference). This is an honest partial result, not the full
+  dissolution B1/B2 suggested.
+- **B3-followup (the new open question):** does a DIFFERENT diagonal construction make `diagFix`
+  definitional too? Critch's `β(n) := G(e n)` with `e` representable — the LHS/RHS antecedent mismatch
+  (`selfApply body` vs `betaA body`) is exactly what his `e`-representability + β-definition reconcile
+  WITHOUT assuming the outcome. So the fix likely mirrors `betaGamma`/`repr` (already derived): make the
+  `betaA` denotation route through the SAME `e`-graph so `Gw(⌜selfApply body⌝)` and `Gw(⌜betaA body⌝)`
+  agree by construction, not via `hp0`. NEXT SPIKE.
+- **B4:** wire to engine — once B3-followup removes the `diagFix` `hp0` → engine PBLT with no
   `provesN_play_extract`; delete `axiom PBLT`; repoint the 4 consumers → 1 axiom.
 
 ## Immediate next action
-B1 PASSED → the route is open. Next: **B2** — port the re-denoted `gApp` into `Proves.lean`'s `interp`
-and re-verify the `_sound` lemmas. This is the medium-risk step (changing the soundness model).
+B3 done: ctxUnfold dissolved, diagFix still needs the outcome. Next: **B3-followup** — reconcile
+`diagFix`'s antecedent mismatch via `e`-representability (mirror `betaGamma`), to drop its `hp0`. That is
+now the load-bearing question for full dissolution.
