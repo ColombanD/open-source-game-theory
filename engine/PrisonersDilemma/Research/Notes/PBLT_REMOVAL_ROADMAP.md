@@ -14,25 +14,24 @@ But scoping the alternative revealed a much shorter path that the object detour 
 `Provable k (plays…) → the play` is just `Provable_sound` (machine-checked). So the `provesN_play_extract`
 obstacle was an ARTIFACT of working in a separate object system — it vanishes at `Provable`.
 
-**Removing PBLT therefore reduces to: run the bounded-Löb chain DIRECTLY at `Provable k`.** The chain
-(`bloeb_native`'s shape) needs, at `Provable`:
+**Removing PBLT reduces to running bounded-Löb at `Provable k` — and scoping this collapsed it to ONE
+lemma:**
   1. nec / K / four / MP — ✅ ALREADY PRESENT (`boxIntro`/`axK`/`box4`/`app`).
-  2. a `Provable`-level DEDUCTION theorem (`impI`) for the 3 hypothesis discharges — NOT present; the
-     genuine missing piece #1. (`app` is MP but there's no `Provable k a → Provable k b ⊢ Provable k
-     (a→b)`; needs a hypothesis-form `Provable` or a direct combinator derivation.)
-  3. the DIAGONAL fixpoint `Provable k (ψ ↔ (□_k ψ → p))` — missing piece #2 (the same diagonal the
-     `Reflection` layer built via `diagFix`, but now needed as a `Provable` fact — the budget-faithful
-     `k = box-k` coincidence is the known Wall-1/S3' subtlety here).
-Then `bloeb` at `Provable` gives `Provable k p`; `Provable_sound` gives the play; DONE — no object
-layer, no bridge, no `extract`.
+  2. the combinator chain producing `Provable k (□φ → φ)` from the legs — ✅ ALREADY PRESENT: this is
+     exactly `BaseTheorems.mutual_loeb` (`boxIntro; axK; box4; implTrans×2`, all constructors, sorry-free).
+     So the "deduction theorem" piece #1 DISSOLVED — the discharges are done combinatorially by the
+     existing box-rules + `implTrans`, no hypothesis-discharge needed.
+  3. **THE ONLY REMAINING STEP** — `Provable k (□_k φ → φ) ⟹ Provable k φ` (machine-checked to be the
+     sole gap). This is the Löb knot: `app hLoeb` needs `Provable k (□φ)`, whose only producer
+     `boxIntro` needs `Provable k φ` = the goal. Circular; breakable only by the DIAGONAL (a different
+     sentence `ψ` with `⊢ ψ ↔ (□ψ → φ)`). It carries the full irreducible Löb content (≡ PBLT — the
+     `k = box-k` / Wall-1 budget coincidence lives exactly here), and IS the entire remaining scope of
+     removing PBLT.
 
-**Revised estimate:** the two missing pieces (a bounded `Provable` deduction theorem + the diagonal as a
-`Provable` fact) are the REAL scope of removing PBLT. The diagonal (#2) carries the irreducible Löb
-content (still equivalent to PBLT — no free lunch), but the framing is far cleaner than the object
-detour: everything lives in one system (`Provable`) the engine already trusts, and the deduction
-theorem (#1) is standard. The `Reflection/` layer remains a valid, sorry-free metamath artifact and an
-independent second proof of the diagonal's constructibility, but the SHORTEST path to deleting the axiom
-is the direct-at-`Provable` route.
+So: PBLT-removal = ONE lemma, `Provable k (□_k φ → φ) → Provable k φ`. Prove it (via a `Provable`-level
+diagonal fixpoint) and `mutual_loeb` + `Provable_sound` finish every consumer directly — no object
+layer, no bridge, no `extract`. The `Reflection/` layer remains a valid sorry-free artifact + an
+independent construction of the diagonal, but the shortest path is this single `Provable` lemma.
 
 ## ⚑ HEADLINE RESULT (machine-established across the reflection layer)
 
