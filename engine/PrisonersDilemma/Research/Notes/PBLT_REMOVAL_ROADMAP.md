@@ -28,10 +28,29 @@ lemma:**
      `k = box-k` / Wall-1 budget coincidence lives exactly here), and IS the entire remaining scope of
      removing PBLT.
 
-So: PBLT-removal = ONE lemma, `Provable k (□_k φ → φ) → Provable k φ`. Prove it (via a `Provable`-level
-diagonal fixpoint) and `mutual_loeb` + `Provable_sound` finish every consumer directly — no object
-layer, no bridge, no `extract`. The `Reflection/` layer remains a valid sorry-free artifact + an
-independent construction of the diagonal, but the shortest path is this single `Provable` lemma.
+So: PBLT-removal = ONE lemma, `Provable k (□_k φ → φ) → Provable k φ`. But scoping THAT lemma (both
+directions, machine-checked) yields the definitive answer:
+
+**⚑ CONVERGENCE — the two routes are provably the SAME difficulty, and the diagonal is irreducible.**
+  • The lemma cannot be a sound bare `Provable` CONSTRUCTOR (route A): its soundness arm is
+    `interp(□φ→φ) → interp φ` = `(Provable k φ → φ.interp) → φ.interp` = `(P→Q)→Q`, INVALID (the
+    hypothesis is just `Provable_sound`, vacuous). Löb is sound only VIA the diagonal's extra structure,
+    invisible at a single `φ`. Machine-checked unsound.
+  • The lemma requires the DIAGONAL sentence `ψ` with `⊢ ψ ↔ (□ψ → φ)` (route B), and **`Formula` CANNOT
+    express `ψ`** — it has `box`/`impl`/`plays` but NO Gödel-encoding constructor, so no `ψ` can refer to
+    its own code. The bots give only `ψ ↔ □ψ` (FairBot, via `.search`), NOT `ψ ↔ (□ψ→φ)` (Path B spike,
+    confirmed again).
+  • Therefore ANY route must EXTEND the syntax with an encoding — which is exactly what `Reflection/`
+    does — and once extended you land on `provesN_play_extract` (≡ PBLT). The "direct at `Provable`"
+    route and the object-system route CONVERGE on the identical irreducible core: build a self-
+    referential syntax + prove the diagonal there. There is no bare-`Provable` shortcut.
+
+**Definitive scope of removing PBLT:** it REQUIRES the encoded-syntax development (the `Reflection/`
+layer is that development, sorry-free through the diagonal), and its irreducible hard core is the
+Löb-produces-the-outcome content — captured either as `provesN_play_extract` (object route) or the
+equivalent diagonal `Formula` (impossible without encoding). Both are ≡ PBLT. The axiom is removable in
+PRINCIPLE (the `Reflection/` layer is most of the construction) but the final content does not reduce
+below bounded Löb itself — which is the honest, expected answer for a Löb-fixpoint axiom.
 
 ## ⚑ HEADLINE RESULT (machine-established across the reflection layer)
 
