@@ -184,11 +184,17 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        chain's `□ψ → p` is exactly such a negative occurrence. So the two box-semantics are genuinely
        unbridgeable — `ctxUnfold` (whose `□φ→p` was built with `box := base Proves`) conflicts with the
        chain's need.
-       CONSEQUENCE — the correct build is a from-scratch NATIVE `ProvesC` layer: `box := ProvesC`
-       UNIFORMLY (so `ctxUnfold`'s `□φ→p`, the chain's necessitations, and `interpC` all agree, no
-       bridge), `bloeb` re-proven over `ProvesC`'s own nec/K/four/deduction, base `Proves` embedded only
-       for ATOMIC leaves (gammaAx/betaGamma — never carrying box through the bridge). This is a
-       contained rewrite of the chain + soundness, not a patch — reverted the in-place attempts to keep
-       the layer clean/sorry-free; it wants its own focused session.
+       CONSEQUENCE — the correct build is a from-scratch NATIVE layer, `box := object-theory`
+       UNIFORMLY. ✅ DONE (`Reflection/Native.lean`, sorry-free, 3 std axioms): the hypothesis-indexed
+       system `ProvesN p Γ φ` with `box := ProvesN`-provability throughout —
+         • `deductionN` (= `impI`, admissible over S/K/mp);
+         • HBL rules `necN`/`kN`/`fourN` (box = ProvesN);
+         • the diagonal rules `ctxUnfold`/`diagFix` (box uniform);
+         • `embed` of base `Proves` for atomic leaves only.
+       `bloeb_native` proves `□p → p ⟹ p` ENTIRELY inside `ProvesN` (diagonal legs from
+       `diagFix`+`ctxUnfold` via `diagLegs`, no hypotheses); `object_pblt_native` gives `ProvesN p [] p`
+       from just the Löb premise. Soundness `provesN_sound` (box := ProvesN, NO bridge — the
+       negative-box problem dissolves because there are no two box-semantics) + `provesN_consistency`
+       (anti-cheat, for a true stable plays-atom `p`). So the object-side PBLT is COMPLETE.
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.
