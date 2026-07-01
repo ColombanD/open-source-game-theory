@@ -3,6 +3,21 @@
 Where things stand and the precise remaining sub-steps. Companions: `EXPLICIT_S_PROPOSAL.md`,
 `Research/Spikes/pblt/`.
 
+## ⚑ HEADLINE RESULT (machine-established across the reflection layer)
+
+The full metamathematical development (`Reflection/`: Syntax, Proves, Representability, Deduction,
+Bpsb, Diagonal, Native, Engine — all sorry-free, 3 std axioms) REDUCES `PBLT` to a SINGLE clean
+proof-theoretic statement: `provesN_play_extract` (an object proof of a play-atom yields the engine
+play). This is a genuine reduction — every OTHER piece (diagonal, repr, HBL, deduction, faithfulness
+bridge FWD/BWD, the bounded-Löb chain `bloeb_native`) is PROVEN. But it is NOT a simplification of the
+hard content: **`provesN_play_extract` is EQUIVALENT in strength to the PBLT conclusion itself**
+(machine-checked: `engine_pblt_plays` derives PBLT from it; and PBLT+FWD reconstruct it). The
+irreducible content — bounded Löb PRODUCES the outcome — moved from an opaque axiom into a precise
+proof-theoretic lemma, but did not get cheaper. Closing it = proving Löb's computational content: a
+`ProvesN` derivation of a play-atom (whose last rule is `mp` off the diagonal fixpoint) NORMALIZES to a
+finite play witness. That is a real normalization theorem over `ProvesN`, not plumbing — the honest
+remaining core. `atomCode` injectivity (i) is the only routine leftover.
+
 ## The reduction (what's proven, what remains)
 
 Removing `PBLT` decomposes into a chain of pieces, all now identified. Two are PROVEN, the rest are
