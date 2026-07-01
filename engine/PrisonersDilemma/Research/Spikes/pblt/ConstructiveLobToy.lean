@@ -216,20 +216,36 @@ theorem Pf.sound (p : Fml) (t : Prop) (G0 : Nat → Prop)
 
 /-! ### Honest note on consistency (why there is NO unconditional consistency theorem here).
 
-`Pf.sound` is `hp0`-RELATIVE: it needs `ht : t` (the target's truth). This is not a weakness of the
-toy — it is the FAITHFUL mirror of `provesN_sound`/`provesC_sound`, which need `hp0`. For a FALSE
-target you cannot supply `ht`, so soundness does not fire, and indeed `Pf p p` for a false `p` may be
-inhabited (via the diagonal). This is EXACTLY the `provesN_play_extract` obstruction reproduced in the
-toy: the constructed `bloeb` term proves `p` SYNTACTICALLY, and its soundness (hence any play-witness
-extraction) is relative to the outcome. So the toy does NOT magically escape the extraction wall — it
-LOCATES it precisely: the wall is that `Pf.sound` is `ht`-relative because `ctx` is. What the toy DOES
-establish (the milestone): the fixpoint proof-TERM is genuinely CONSTRUCTIBLE from `repr`+`ctx`+HBL
-(no `loeb` axiom), and its `size` is finite/computable — so IF `repr`/`ctx` are given witness-bearing
-(decidable-box) forms, `bloeb` computes. That reduction is the real remaining content. -/
+`Pf.sound` is `hp0`-RELATIVE: it needs `hp : interp p t G0 p = t` tying `t` to the target. This is the
+FAITHFUL mirror of `provesN_sound`/`provesC_sound`, which need `hp0`. For a FALSE target you cannot make
+that consistent, so soundness does not certify a false `p` unprovable — and indeed `Pf p p` for a false
+`p` may be inhabited (via the diagonal). This is EXACTLY the `provesN_play_extract` obstruction, in the
+toy — the constructed `bloeb` term proves `p` SYNTACTICALLY, and its soundness is outcome-relative. -/
 
-#check @Pf.bloeb
-#check @Pf.diag
-#check @Pf.sound
-#check @bloeb_exists
+/-! ## 8. Milestone-2 ATTEMPT (realizability) — REFUTED, and WHY (a load-bearing negative result).
+
+The natural idea to escape §7's `hp0`-wall: a witness interpretation `R` where the diagonal atoms
+`gApp`/`betaA` are DEFINED as the Löb context (`Ctx c := Nonempty (Pf p ψ) → Rp` at `c = encode ψ`),
+so `repr`/`ctx` realize DEFINITIONALLY (`Iff.rfl`), seemingly with no `hp0`. A realizer
+`Pf p φ → R p W Rp φ` then type-checks, and `realize (bloeb …) : R p = Rp` would extract the witness.
+
+**This is UNSOUND — machine-checked (`Research/Spikes/pblt/` probes, 2026-07-01).** The realizer holds
+even WITHOUT the `hp : Nonempty (Pf p p) → Rp` hypothesis, and then for a FALSE target atom
+(`W := fun _ => False`, `Rp := False`) it proves `R p = False` from a Löb premise alone — i.e. it
+proves `False`. Reason: defining `Ctx` as the context makes `R` itself an INCONSISTENT model — the
+diagonal `ψ := betaA p` gets `R ψ = (Nonempty (Pf p ψ) → Rp)`, and `bloeb` builds `Nonempty (Pf p ψ)`
+(via `nec hF`), collapsing `R p` to `Rp` unconditionally. The `hp0`-relativity of §7 was NOT dodged;
+it was RELOCATED into `R` being unsound.
+
+**CONCLUSION (definitive).** Sound extraction CANNOT come from a self-contained realizability/model
+interpretation of `Pf p` — any interpretation validating `repr`/`ctx` definitionally proves false
+atoms. The witness for `p` must come from OUTSIDE the object system: the `hp : Nonempty (Pf p p) → Rp`
+hypothesis (engine `Provable_sound`) is IRREDUCIBLE and must be genuinely CONSUMED, not made vacuous.
+That means the extraction is exactly `Nonempty (Pf p p) → (play witness)` = a soundness for the object
+system AT the play-atoms — which is `provesN_play_extract` itself. So Milestone 2 does NOT reduce below
+it either: the constructive term (Milestone 1) exists, but turning it into a witness needs object
+soundness at play-atoms, and THAT is the crux, not further reducible. Route 2b's remaining content is
+therefore: prove object soundness for play-atoms directly (a proof-theoretic normalization of the
+`Pf p p` term to an engine play), NOT a model/realizability argument (all such are unsound, proven). -/
 
 end ConstructiveLobToy

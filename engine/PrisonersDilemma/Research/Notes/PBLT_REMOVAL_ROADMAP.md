@@ -331,9 +331,28 @@ outcome-relative. The remaining content is therefore NOT "construct the term" (d
 and `ctx` WITNESS-BEARING / decidable-box forms" so that `box a := ∃ t:Pf p a, size t ≤ k` is genuinely
 DECIDABLE and `bloeb`'s term, when evaluated, yields the fixpoint's finite witness. That is Milestone 2.
 
-**Milestone 2 (next): decidable box + witness extraction.** (a) Prove `Pf p φ` (bounded by size ≤ k) is
-DECIDABLE by enumeration (finitely many terms of size ≤ k) — the point Critch makes vs. Barász's RE
-hierarchy. (b) Show `repr`/`ctx` can be given so that a `Pf p p` term COMPUTES to the target witness
-(the toy `p` is abstract; in the engine `p = encodeF(play-atom)` and the witness is a play index). (c)
-Port from the toy `Fml` to the engine `Formula`/`OFml`, feeding the real `Provable` toolkit. This is
-where the genuine research risk concentrates; Milestone 1 removed the "can the term even be built?" risk.
+**Milestone 2 ATTEMPT (realizability) — REFUTED, machine-checked (2026-07-01). A load-bearing NEGATIVE.**
+The natural escape from the `hp0`-wall: a witness interpretation `R` where the diagonal atoms are DEFINED
+as the Löb context (`Ctx c := Nonempty (Pf p ψ) → Rp` at `c = encode ψ`), so `repr`/`ctx` realize
+DEFINITIONALLY and a realizer `Pf p φ → R p φ` extracts the witness with seemingly no `hp0`. Built it;
+it type-checks — but it is UNSOUND: the realizer holds even WITHOUT the `hp : Nonempty (Pf p p) → Rp`
+hypothesis, so for a FALSE target atom it proves `R p = False` from a Löb premise alone (proves `False`).
+Root cause: defining `Ctx` as the context makes `R` an INCONSISTENT model (the diagonal `ψ := betaA p`
+gets `R ψ = (Nonempty (Pf p ψ) → Rp)`, and `bloeb` builds `Nonempty (Pf p ψ)` via `nec`, collapsing
+`R p → Rp` unconditionally). The `hp0`-relativity was RELOCATED into `R`, not dodged. (Probes in
+`Research/Spikes/pblt/`; the refutation is recorded in `ConstructiveLobToy.lean §8`.)
+
+**CONSEQUENCE (definitive, sharpens the crux).** Sound extraction CANNOT come from ANY self-contained
+model/realizability interpretation of `Pf p` — every interpretation validating `repr`/`ctx`
+definitionally proves false atoms. The play-witness MUST come from outside: the hypothesis
+`hp : Nonempty (Pf p p) → (play witness)` (= engine `Provable_sound` at the play-atom) is IRREDUCIBLE
+and must be genuinely CONSUMED. But that hypothesis IS `provesN_play_extract` (object-provability of a
+play-atom ⟹ the play). So Milestone 2 does NOT reduce below it: **the only remaining route is a
+PROOF-THEORETIC normalization** — reduce the `Pf p p` term (the constructive `bloeb`) to an engine play
+transcript directly, NOT via any model. This is the genuine, irreducible research core; both the model
+route (this session) and the classical/back-translation routes (prior session) are now closed.
+
+**Net after this session:** Milestone 1 (constructive Löb term, axiom-free) stands as a real result.
+Milestone 2's model/realizability approach is REFUTED (a useful negative — rules out a large class of
+attempts). The crux is now pinned to a single proof-theoretic statement (normalize `bloeb`'s term to a
+play), with every model-based shortcut provably excluded.
