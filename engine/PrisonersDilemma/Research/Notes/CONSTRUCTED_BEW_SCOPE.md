@@ -83,10 +83,15 @@ mirroring `gammaAx`/`betaGamma`.
   CORRECTION from B1: the right denotation is `gApp c := truth of ⌜□(decode c)→p⌝` (Critch's
   `G(n):=□(decode n)→p`), NOT "coded-formula-true" (`decode c`) — the naive version gives `interp ψ` not
   `interp(□ψ→p)`. The `wrap` function carries the `□·→p` wrapping.
-- **B2:** port the re-denotation into `Proves.lean`'s `interp` (`gApp c := interp (□(decode c)→p)` via
-  `wrap`); re-verify `Proves_sound`, `repr_object`, `PrAr_sound` under it. THE MEDIUM-RISK STEP (the
-  soundness interp changes). Care: `gApp`'s denotation now recurses through `wrap`/`decode` — keep it on
-  the `gApp`-free fragment (PBLT target) so it stays well-founded, as B1's `gappCanonical` does.
+- **B2 — ✅ DONE, VALIDATES over the REAL layer (`Research/Spikes/pblt/BewB2.lean`, sorry-free, 3 std).**
+  KEY REFINEMENT: do NOT change base `interp`/`Proves_sound` (they stay `G`-parametric). Instead replace
+  the soundness VALUATION `Gctx` with `Gw` — `Gw p G0 c := interp G0 (□(decode c)→p)` at `betaA` codes,
+  else `G0`. Then `interp (Gw) (gApp ⌜ψ⌝) = interp G0 (□ψ→p)` by `decode_encode`, and `ctxUnfold_Gw` is
+  sound with NO outcome hypothesis — only `hn` (play-atom index ≠ a `betaA` code; structural
+  disjointness, tag 0 vs 5). This is much MORE surgical than "change base interp": base `Proves`,
+  `interp`, `Proves_sound`, `repr_object` are UNTOUCHED; only the diagonal soundness valuation changes.
+  Remaining: `diagFix` at `Gw` (reduces to the same `e_graph`/`selfApply` identity as `diagFix_sound`,
+  minus the hp0 that entered only via the shared `Gctx` target-read).
 - **B3:** replace `ctxUnfold`/`ProvesC` with derived `gAppUnfold`; rebuild `diag_object'`/`bloeb_object`
   over base `Proves` (no `ProvesN`, no `Gctx`).
 - **B4:** wire to engine — `bloeb_object` + `bridge_BWD_plays` → engine PBLT with no
