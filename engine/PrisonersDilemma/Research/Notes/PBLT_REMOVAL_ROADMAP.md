@@ -168,8 +168,18 @@ So "can PBLT be removed?" is answered: **yes, with no new axiom** (floor = **1 a
        p`, `True` when `interp p` holds). `diagFix_provesC` = `hrepr` for `ψ := betaA body`;
        `hrepr_closed` bundles it with `contextRepr_provesC` (= `hCtx`). Reflection layer sorry-free, 3
        std axioms.
-       FINISH (mechanical): re-run `object_pblt_of_repr`'s chain inside `ProvesC p` (base steps via
-       `embed`, `hrepr`/`hCtx` via `hrepr_closed`) → object PBLT; FWD/BWD (E3/E4) carry it back; delete
-       `PBLT`, repoint the ~6 consumers.
+       FINISH — one STRUCTURAL step remains (not pure plumbing, now precisely characterized): the
+       bounded-Löb chain necessitates the diagonal facts (`hψf`/`hF` trace to `diagFix`, which is
+       `ProvesC`-only), so `box` in the chain must denote OBJECT-theory provability = `ProvesC`, not
+       base `Proves`. `bloeb_object`'s base `D1_nec`/`K`/`four` (box = base `Proves`) were a valid
+       simplification ONLY while the diagonal legs were base — they are not. So the finish is: make
+       `ProvesC` a proper modal system (nec/K/four + deduction over `ProvesC`, with `box := ProvesC`
+       provability in the soundness interp `interpC`), re-prove the (small) HBL soundness there, and run
+       `bloeb` in `ProvesC`. This is a bounded, well-scoped redesign of `ProvesC`'s soundness (the
+       `Gctx`/`ctxUnfold`/`diagFix` proofs adapt to `interpC`), NOT an open question — `necC : ProvesC a
+       → ProvesC (box a)` is sound when `box := ProvesC` (definitional, as base `D1_nec` was). Then
+       FWD/BWD (E3/E4) carry object PBLT to the engine; delete `PBLT`; repoint the ~6 consumers.
+       (Attempted in-place this session; reverted to keep the layer clean — it wants its own focused
+       pass, not a late-session patch.)
 None of E1–E6 carries an open risk — each is "do the known construction." E1–E2 landed as maintained
 modules; E3–E6 remain.

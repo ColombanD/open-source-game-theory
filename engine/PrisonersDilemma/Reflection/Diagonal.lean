@@ -85,7 +85,7 @@ system `ProvesC p` whose interpretation SPECIALIZES `gApp` to the context — `i
 
 /-- `ProvesC p` = `Proves` + the context-unfolding rule `ctxUnfold` + the diagonal fixpoint `diagFix`,
     scoped to the target `p`. Both extra rules are the CONCLUSIONS of standard lemmas (the diagonal
-    lemma / context representability), each proven SOUND below via a witnessing valuation. -/
+    lemma / context representability), each proven SOUND below via the witnessing valuation `Gctx`. -/
 inductive ProvesC (p : OFml) : OFml → Prop where
   | embed {φ : OFml} : Proves φ → ProvesC p φ
   | mp {a b : OFml} : ProvesC p (.imp a b) → ProvesC p a → ProvesC p b
