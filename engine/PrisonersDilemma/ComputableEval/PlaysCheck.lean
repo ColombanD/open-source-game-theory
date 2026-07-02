@@ -58,7 +58,7 @@ def ppSize : Nat → (me opponent body : Prog) → Action → Option Nat
         match ppSize fuel me opponent b (otherAction a'), ppSize fuel me opponent q a with
         | some mg, some nq => some (mg + nq + c_node)
         | _, _ => none
-  | fuel+1, me, opponent, .search k φ p q, a =>
+  | fuel+1, me, opponent, .search k φ p _, a =>
       match φ with
       | .plays gs gt ga =>
           let gs' := gs.subst me opponent
@@ -105,9 +105,9 @@ theorem ppSize_sound :
       ppSize fuel me opponent body a = some s → PlaysProof me opponent body a s := by
   intro fuel
   induction fuel with
-  | zero => intro me opp body a s h; simp [ppSize] at h
+  | zero => intro me opponent body a s h; simp [ppSize] at h
   | succ fuel ih =>
-    intro me opp body a s h
+    intro me opponent body a s h
     cases body with
     | const c =>
         simp only [ppSize] at h
@@ -121,60 +121,60 @@ theorem ppSize_sound :
     | self =>
         simp only [ppSize] at h
         rw [Option.map_eq_some_iff] at h
-        obtain ⟨m, hm, hms⟩ := h; subst hms; exact .self (ih me opp me a m hm)
+        obtain ⟨m, hm, hms⟩ := h; subst hms; exact .self (ih me opponent me a m hm)
     | opp =>
         simp only [ppSize] at h
         rw [Option.map_eq_some_iff] at h
-        obtain ⟨m, hm, hms⟩ := h; subst hms; exact .opp (ih me opp opp a m hm)
+        obtain ⟨m, hm, hms⟩ := h; subst hms; exact .opp (ih me opponent opponent a m hm)
     | bot p =>
         simp only [ppSize] at h
         rw [Option.map_eq_some_iff] at h
-        obtain ⟨m, hm, hms⟩ := h; subst hms; exact .bot (ih me opp p a m hm)
+        obtain ⟨m, hm, hms⟩ := h; subst hms; exact .bot (ih me opponent p a m hm)
     | sim p q =>
         simp only [ppSize] at h
         rw [Option.map_eq_some_iff] at h
         obtain ⟨m, hm, hms⟩ := h; subst hms; exact .sim (ih _ _ _ a m hm)
     | ite b a' p q =>
         simp only [ppSize] at h
-        cases hb : ppSize fuel me opp b a' with
+        cases hb : ppSize fuel me opponent b a' with
         | some mg =>
-            cases hp : ppSize fuel me opp p a with
+            cases hp : ppSize fuel me opponent p a with
             | some np =>
                 rw [hb, hp] at h
                 have : s = mg + np + c_node := by simpa using h.symm
                 subst this
-                exact .ite_t (ih me opp b a' mg hb) (by cases a' <;> decide) (ih me opp p a np hp)
+                exact .ite_t (ih me opponent b a' mg hb) (by cases a' <;> decide) (ih me opponent p a np hp)
             | none =>
                 rw [hb, hp] at h; simp only at h
-                cases hbo : ppSize fuel me opp b (otherAction a') with
+                cases hbo : ppSize fuel me opponent b (otherAction a') with
                 | none => rw [hbo] at h; simp at h
                 | some mo =>
-                    cases hq : ppSize fuel me opp q a with
+                    cases hq : ppSize fuel me opponent q a with
                     | none => rw [hbo, hq] at h; simp at h
                     | some nq =>
                         rw [hbo, hq] at h
                         have : s = mo + nq + c_node := by simpa using h.symm
                         subst this
-                        refine .ite_f (ih me opp b _ mo hbo) ?_ (ih me opp q a nq hq)
+                        refine .ite_f (ih me opponent b _ mo hbo) ?_ (ih me opponent q a nq hq)
                         cases a' <;> decide
         | none =>
             rw [hb] at h; simp only at h
-            cases hbo : ppSize fuel me opp b (otherAction a') with
+            cases hbo : ppSize fuel me opponent b (otherAction a') with
             | none => rw [hbo] at h; simp at h
             | some mo =>
-                cases hq : ppSize fuel me opp q a with
+                cases hq : ppSize fuel me opponent q a with
                 | none => rw [hbo, hq] at h; simp at h
                 | some nq =>
                     rw [hbo, hq] at h
                     have : s = mo + nq + c_node := by simpa using h.symm
                     subst this
-                    refine .ite_f (ih me opp b _ mo hbo) ?_ (ih me opp q a nq hq)
+                    refine .ite_f (ih me opponent b _ mo hbo) ?_ (ih me opponent q a nq hq)
                     cases a' <;> decide
     | search k φ p q =>
         cases φ with
         | plays gs gt ga =>
             simp only [ppSize] at h
-            cases hg : ppSize fuel (gs.subst me opp) (gt.subst me opp) (gs.subst me opp) ga with
+            cases hg : ppSize fuel (gs.subst me opponent) (gt.subst me opponent) (gs.subst me opponent) ga with
             | none => rw [hg] at h; simp at h
             | some sg =>
                 rw [hg] at h; simp only at h
@@ -183,11 +183,11 @@ theorem ppSize_sound :
                   rw [Option.map_eq_some_iff] at h
                   obtain ⟨n, hn, hns⟩ := h
                   subst hns
-                  have hguard_pp : PlaysProof (gs.subst me opp) (gt.subst me opp) (gs.subst me opp) ga sg :=
+                  have hguard_pp : PlaysProof (gs.subst me opponent) (gt.subst me opponent) (gs.subst me opponent) ga sg :=
                     ih _ _ _ ga sg hg
-                  have hguard_prov : Provable k ((Formula.plays gs gt ga).subst me opp) :=
+                  have hguard_prov : Provable k ((Formula.plays gs gt ga).subst me opponent) :=
                     Provable.atom (.mk hguard_pp hsgk)
-                  exact PlaysProof.search_t hguard_prov (ih me opp p a n hn)
+                  exact PlaysProof.search_t hguard_prov (ih me opponent p a n hn)
                 · rw [if_neg hsgk] at h; simp at h
         | impl _ _ => simp only [ppSize] at h; exact absurd h (by simp)
         | neg _ => simp only [ppSize] at h; exact absurd h (by simp)
