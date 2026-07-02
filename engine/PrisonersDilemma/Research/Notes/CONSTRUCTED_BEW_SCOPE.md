@@ -1,3 +1,10 @@
+> **✅ RESOLVED (2026-07-01): `PBLT` IS DELETED — via the INTERNALIZATION, not the route this note
+> pursued.** Bounded Löb is proven inside `Provable` itself (`BaseTheorems.bloeb_engine`; the
+> `Formula.diag` fixpoint sentence + `diagF`/`diagB`/`axKf`/`impS2` rules). See
+> `INTERNALIZATION_ROADMAP.md`. This note is KEPT as the research record of the side-layer route,
+> whose findings (the derived predicate-level diagonal, the Gw soundness, the closed dead ends)
+> were the direct blueprint for the internalization. Engine axiom count: 1.
+
 # Scope — constructed `Bew`/context predicate: making `ContextRepr` DERIVED (route A)
 
 **Goal.** Discharge the one real gap in PBLT-removal: `ContextRepr p ψ : ⊢ gApp(⌜ψ⌝) ↔ (□ψ → p)`,

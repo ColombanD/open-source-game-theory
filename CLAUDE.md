@@ -43,32 +43,33 @@ NL→Lean *bot* translation, a verified result.
 This is the theoretical heart of the project. Authoritative write-up:
 `engine/PrisonersDilemma/Research/Notes/COMPUTABLE_EVAL_NOTES.md`.
 
-- A reviewer flagged that the central evaluator `eval` is `noncomputable`. The settled,
-  honest answer: this is **axiom-relative, NOT a Gödel/Π₁ wall, NOT fundamental.**
+- A reviewer flagged that the central evaluator `eval` is `noncomputable`. The current, honest
+  status (updated 2026-07-01, after the `PBLT` deletion): **not a Gödel/Π₁ wall; the Löb side is
+  fully discharged; the remaining block is (a) one irreducible Π₁ axiom and (b) an open
+  decidability question.**
 - The `.search` guard is a bounded-provability oracle `proofSearch k φ = decide (Provable k φ)`.
-  **Bounded** provability (∃ proof TERM of size ≤ k) is *decidable* by enumeration — that is
-  exactly Critch's point vs. Barász's RE PA-hierarchy. The block is only that our `Provable`
-  contains members injected by **witness-free axioms** (`PBLT`, `atom_box_provable_impl`, for the
-  Löb-fixpoint cooperations like PrudentBot↔DupocBot). An axiom asserts provability without a
-  proof term; a running evaluator must *search* and finds nothing → can't satisfy `proofSearch_spec`.
-  Axiom = IOU, eval needs cash.
-- **If S is built fully explicit** (mechanize bounded provability logic + a *constructive* bounded
-  Löb / PBLT that exhibits a size-≤-k proof term), `Provable` collapses to the decidable
-  finite-proof predicate ⇒ **`eval` becomes totally computable** (Löb fixpoints included) and the
-  project axioms drop from 4 toward the 3 Lean-standard ones. One foundational lever, two payoffs.
-- **For the Lean proofs:** under computable `eval`, concrete fixed-(k,fuel) outcomes become
-  `by decide` (much scaffolding deletable); the ∀k FAMILY outcome theorems still need proofs (no
-  `#eval` proves a ∀k) but simpler ones, with a now-proved Löb/PBLT carrying the modal core.
-- **Shipped now (option D, build green, no new axioms):** `engine/PrisonersDilemma/ComputableEval/`
+- **UPDATE (2026-07-01): bounded Löb / `PBLT` is now a THEOREM** (`BaseTheorems.bloeb_engine`/
+  `pblt_engine`, via the internalized fixpoint sentence `Formula.diag` + the `diagF`/`diagB`/
+  `axKf`/`impS2` rules — `Research/Notes/INTERNALIZATION_ROADMAP.md`). Every Löb-fixpoint
+  cooperation (PrudentBot↔DupocBot etc.) now has a REAL constructor tree — no witness-free axiom
+  injects `Provable` members on the Löb side anymore. **Engine axiom count: 1**
+  (`atom_complete_false_guard`, machine-proven irreducible — the Π₁ false-guard residue).
+- **Why `eval` is STILL noncomputable:** decidability of `Provable k φ` (∃ proof TERM of size ≤ k)
+  is OPEN. Naive enumeration is refuted (the `mp`-cut ranges over infinitely many provable cut
+  formulas; atom-closure is false — machine-checked in `Research/Spikes/pblt/MN1_decidable.lean`);
+  a decision procedure would need cut-elimination-style normal forms. Separately,
+  `atom_complete_false_guard` still injects witness-free `AtomProvable` members. So "Löb proven"
+  ≠ "eval computable" — do not conflate (they were decoupled by the internalization).
+- **Shipped (option D, build green, no new axioms):** `engine/PrisonersDilemma/ComputableEval/`
   — `evalC`, a sound TOTAL computable PARTIAL evaluator (3-valued guard; commits only with a finite
   witness, returns `none` exactly at the Löb fixpoints; `outcomeC_sound` proven). It answers the
   reviewer concretely and locates the boundary. `c_guard_mono` was demoted axiom→theorem.
 - **Dead ends (do not retry):** deciding `Provable k φ` by structural recursion on the program
-  (refuted — `subst` of a `.search`-bot into its own guard raises search-depth, machine-checked in
-  `DecMeasure.lean`); the `derivable`/`playsCheck` separate-search-gas checker (non-monotone). The
-  principled route to *total* computability is enumerate-proof-terms after constructive S.
-- **Nearest concrete win:** `atom_complete_false_guard` is bounded + atom-layer (no reflection) ⇒
-  should be eliminable as a constructive theorem, not an axiom.
+  (refuted, `DecMeasure.lean`); the `derivable`/`playsCheck` separate-search-gas checker
+  (non-monotone); decidability by proof-term enumeration (mp-cut wall, `MN1_decidable.lean`);
+  model/realizability witness extraction (unsound, `ConstructiveLobToy.lean` §8).
+- **`atom_complete_false_guard` is the floor:** proven irreducible (the else-play's certificate
+  type is provably EMPTY — `ComputableEval/Exclusion.lean`); it does not fall to any known lever.
 
 ---
 

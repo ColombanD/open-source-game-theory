@@ -52,13 +52,16 @@ Everything else is a theorem in `BaseTheorems.lean`.
     **Irreducible — two walls.** A `search_f` constructor producing the else-action would discharge
     it, but: (WALL 1, positivity — liftable) `¬ Provable` is non-positive in-block, but a
     `decide (Provable_fin k guard) = false` premise typechecks via the `Provable_fin` cycle-break;
-    (WALL 2, soundness — NOT liftable) `Provable_fin = false ⇏ proofSearch = false` at a Löb fixpoint
-    (`Provable_fin` false while `proofSearch`/`Provable` is `PBLT`-axiom-true), and `eval` can't be
-    rewired to `Provable_fin` (the PBLT cooperations need `proofSearch = true` at the fixpoint). So
-    the sound premise is the non-positive Π₁ `¬ Provable k guard`. Deepest: the else-play's
-    certificate type is provably EMPTY — no `Derivation`/`PlaysProof`/`Provable` concludes it
-    (`ComputableEval/Exclusion.lean`, `[propext]`). So the axiom postulates a true `interp` whose
-    proof TERM does not exist (the proof-vs-witness gap), entangled with `PBLT` off-fixpoints.
+    (WALL 2, soundness — NOT liftable) `Provable_fin = false ⇏ proofSearch = false` at a Löb fixpoint:
+    `Provable_fin` (the `PlaysProof`-fragment decider) is false there while `proofSearch`/`Provable`
+    is TRUE — the fixpoint cooperations are DERIVED (since 2026-07-01 via `bloeb_engine`'s `.diag`
+    route, real constructor trees rather than the former `PBLT` axiom, but still not `PlaysProof`
+    certificates) — and `eval` can't be rewired to `Provable_fin` (the Löb cooperations need
+    `proofSearch = true` at the fixpoint). So the sound premise is the non-positive Π₁
+    `¬ Provable k guard`. Deepest: the else-play's certificate type is provably EMPTY — no
+    `Derivation`/`PlaysProof`/`Provable` concludes it (`ComputableEval/Exclusion.lean`, `[propext]`;
+    the exclusion recs cover the `.diag` rules too). So the axiom postulates a true `interp` whose
+    proof TERM does not exist (the proof-vs-witness gap), entangled with the Löb fixpoints.
 
     Spikes: `Research/Spikes/atom_complete_false_guard/`. -/
 axiom atom_complete_false_guard :

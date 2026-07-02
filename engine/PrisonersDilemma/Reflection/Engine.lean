@@ -1,5 +1,18 @@
 import PrisonersDilemma.Reflection.Native
 
+
+/-!
+# ⚑ HISTORICAL (2026-07-01): superseded by the INTERNALIZATION — `PBLT` is deleted.
+
+This module belongs to the side-reflection route, which bottomed out at `provesN_play_extract`
+(object→engine reflection). That route is CLOSED and MOOT: bounded Löb is now proven INSIDE the
+engine's own `Provable` (`BaseTheorems.bloeb_engine`/`pblt_engine`, via `Formula.diag` — see
+`Research/Notes/INTERNALIZATION_ROADMAP.md`), and the `PBLT` axiom is deleted. This file is kept as
+the meta-justification/history of the diagonal's derivation (`repr_object` etc. justify that a
+faithful arithmetization contains the fixpoint sentence `.diag` internalizes). Do not build on the
+`ProvesN`/extraction machinery here.
+-/
+
 /-!
 # Reflection layer — wiring object PBLT to the engine (assembly + the honest last gap)
 

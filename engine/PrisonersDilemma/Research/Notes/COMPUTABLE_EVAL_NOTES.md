@@ -9,6 +9,23 @@ _Status: build green; no `sorry`; 4 axioms. All claims below are backed by check
 
 ---
 
+> **UPDATE (2026-07-01) — the axiom landscape below is superseded; the boundary ANALYSIS largely
+> stands.** The engine is now at **ONE axiom** (`atom_complete_false_guard`): `PBLT` was PROVEN and
+> deleted (bounded Löb internalized — `BaseTheorems.bloeb_engine`, via the `Formula.diag` fixpoint
+> sentence; `Research/Notes/INTERNALIZATION_ROADMAP.md`), and `box_provable`/`atom_box_provable_impl`
+> fell earlier to sound constructors. Consequences for this note:
+> - The "witness-free axiom injects Löb members" story is GONE: every Löb-fixpoint cooperation now
+>   has a real constructor tree in `Provable`.
+> - `eval` is STILL `noncomputable`, but for a sharper reason: **decidability of `Provable k φ` is
+>   open** — naive proof-term enumeration is refuted (mp-cut wall, atom-closure false;
+>   `Research/Spikes/pblt/MN1_decidable.lean`), and `atom_complete_false_guard` still injects
+>   witness-free `AtomProvable` members for the false-guard plays.
+> - `evalC` (option D) and its boundary location are UNCHANGED and remain the reviewer-facing answer:
+>   it returns `none` exactly at the Löb fixpoints — which is still correct, since the internalized
+>   Löb proofs are `.diag`-route trees, not `PlaysProof` certificates `evalC` could find.
+
+---
+
 
 ## 0. Colomban's Writing
 Below is an LLM generated summary of why no computable eval is possible right now, but the main things to remember are the following:
