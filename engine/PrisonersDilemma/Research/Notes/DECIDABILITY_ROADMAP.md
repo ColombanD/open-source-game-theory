@@ -159,6 +159,31 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     not root-imported) not rebuilt.
 - **T3 — the decider `D` (~2–3 weeks, the second hard chunk).** decGuard→full-rule bounded search,
   fuel-stratified with computable eval; `D ↔ Provable` (completeness is THE proof of the project).
+  - **T3.0 — decidability kill-spike. ✅ PASSED (2026-07-02).**
+    `Research/Spikes/transcript/T3DeciderMini.lean`: `Prov` is DECIDABLE for the full mini
+    additive rule set — Löb rules INCLUDED — on the 3 Lean-standard axioms. `decP` (computable
+    backward search) + `decP_sound` + `decP_complete` ⇒ `instance : Decidable (Prov k φ)`;
+    `#eval`-computed consistency. Validated method (binding for T3.1+):
+    1. **fuel = budget suffices**: every rule's premise budgets are STRICTLY below the
+       conclusion's (additive gates + `size_pos`), so the search recurses structurally on fuel
+       with `fuel := k` — no well-founded-recursion gymnastics.
+    2. **`prov_size` (paid conclusions) bounds the space**: cut formulas (`app`/`implTrans`/
+       `impS2`) range over `enumF k` (finite, since every numeral — atom codes included —
+       pays `log2`); the `diagF`/`diagB` gate's free `fb` is paid by the gate formula, so
+       `fb < 2^(k+2)` — the Löb rules do NOT break decidability (bounded-GL analogue).
+    3. **Maximal-budget instantiation**: per rule, check premises at the largest admissible
+       budget (justified by `Prov_mono`) — kills the budget-split blowup except one linear
+       split point for two-premise rules.
+    4. Lean plumbing that worked: one NAMED checker per rule (small match equations; `split at`
+       clean), recursive checkers take the smaller-fuel search as an explicit callback;
+       completeness by induction on `Prov` in the form `∀ fuel K, m ≤ K → K ≤ fuel → decP…`.
+  - **T3.1 (next)**: engine non-atom fragment — same shapes + `struct` (Derivation backward
+    search; its structural transcript now pays subtrees, so premises are size-bounded — same
+    method). **T3.2 (the remaining hard part)**: the `atom`/`PlaysProof` layer — `search_t`'s
+    guard premise sits at a SOURCE-LITERAL budget (up to 2^k, not < k), so plays-atoms need the
+    fuel-stratified evalC-style evaluator; note all `PlaysProof`/`Provable` rules are POSITIVE
+    (no `search_f` — that's the deleted axiom's direction), so a least-fixpoint computation
+    over the finite query universe `{(m, ψ) : ψ.size ≤ m ≤ 2^…}` is the fallback shape.
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
   theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
