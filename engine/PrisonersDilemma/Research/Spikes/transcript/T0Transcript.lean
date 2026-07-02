@@ -267,4 +267,88 @@ theorem pblt_transcript (t : Nat → F) (pm : Nat → Nat) (A B P Q : Nat)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
   · (try simp only [F.size]); omega
 
+/-! ## 6. T1 pre-check — the MUTUAL (two-leg) chain closes at EQUAL source budgets.
+
+The engine's `mutual_loeb` (PrudentBot↔DupocBot etc.) currently composes the legs into
+`□_k φP → φP` at the FULL subscript `k` and then runs Löb. Under transcript accounting that
+factoring breaks: K-distribution pushes the intermediate box subscript ABOVE `k`, and downward
+box-mono is unsound. THE FIX (validated here): derive the Löb premise at a LOWERED subscript
+`fb := k − 64·V` (V = the O(log k) unit) — mono-UP `□_fb A → □_k A` feeds leg 1, and the
+K-distribution then lands at `fb + O(log k) ≤ k`, which mono-UPs onto leg 2's `□_k B`. The result
+`Prov O(log k) (□_fb A → A)` feeds the single-leg `bloeb_transcript` unchanged. So same-`k` bot
+pairs (PrudentBot k vs DupocBot k) STILL cooperate — no bot re-parameterization needed in T1. -/
+
+theorem mutual_pblt_transcript (Af Bf : Nat → F) (p₁ p₂ : Nat → Nat) (Ac Bc P Q : Nat)
+    (hsA : ∀ k, (Af k).size ≤ Ac * Nat.log2 k + Bc)
+    (hsB : ∀ k, (Bf k).size ≤ Ac * Nat.log2 k + Bc)
+    (hp1 : ∀ k, p₁ k ≤ P * Nat.log2 k + Q)
+    (hp2 : ∀ k, p₂ k ≤ P * Nat.log2 k + Q)
+    (hL1 : ∀ k, Prov (p₁ k) (.impl (.box k (Af k)) (Bf k)))
+    (hL2 : ∀ k, Prov (p₂ k) (.impl (.box k (Bf k)) (Af k))) :
+    ∃ K₀, ∀ k, k ≥ K₀ → ∃ m, Prov m (Af k) := by
+  obtain ⟨K₀, hK₀⟩ :=
+    PD.linear_log2_add_le (131072 * (2*P + 2*Ac + 1)) (131072 * (2*Q + 2*Bc + 16))
+  refine ⟨K₀, fun k hk => ?_⟩
+  obtain ⟨V, hV⟩ : ∃ V,
+      V = p₁ k + p₂ k + (Af k).size + (Bf k).size + Nat.log2 k + 16 := ⟨_, rfl⟩
+  have hp1k := hp1 k; have hp2k := hp2 k; have hsAk := hsA k; have hsBk := hsB k
+  have hVk : 131072 * V ≤ k := by
+    have h := hK₀ k hk
+    have hVle : V ≤ (2*P + 2*Ac + 1) * Nat.log2 k + (2*Q + 2*Bc + 16) := by
+      have hexp : (2*P + 2*Ac + 1) * Nat.log2 k
+          = 2*(P * Nat.log2 k) + 2*(Ac * Nat.log2 k) + Nat.log2 k := by ring
+      omega
+    calc 131072 * V
+        ≤ 131072 * ((2*P + 2*Ac + 1) * Nat.log2 k + (2*Q + 2*Bc + 16)) :=
+          Nat.mul_le_mul_left _ hVle
+      _ = 131072 * (2*P + 2*Ac + 1) * Nat.log2 k + 131072 * (2*Q + 2*Bc + 16) := by ring
+      _ ≤ k := h
+  -- the lowered premise subscript: fb + 64V = k (avoids Nat subtraction)
+  obtain ⟨fb, hfb⟩ : ∃ fb, 64 * V + fb = k := Nat.le.dest (by omega)
+  -- every subscript in play is ≤ k, so its numeral's log2 is ≤ log2 k
+  have hLfb : Nat.log2 fb ≤ Nat.log2 k := log2_mono (by omega)
+  have hLm : Nat.log2 (fb + 8*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLc : Nat.log2 (fb + 32*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn : Nat.log2 (16*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₁ : Nat.log2 (512*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLg : Nat.log2 (8192*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₃ : Nat.log2 (16384*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₅ : Nat.log2 (65536*V) ≤ Nat.log2 k := log2_mono (by omega)
+  -- ── the lowered-premise derivation: Prov O(log k) (□_fb A → A) ──
+  -- s1 : □_fb A → □_k A   (mono-UP onto leg 1's antecedent)
+  have s1 : Prov (8*V) (.impl (.box fb (Af k)) (.box k (Af k))) :=
+    Prov.boxMono _ (by omega) (by simp only [F.size]; omega)
+  -- s2 : □_fb A → B
+  have s2 : Prov (16*V) (.impl (.box fb (Af k)) (Bf k)) :=
+    Prov.implTrans _ _ _ s1 (hL1 k) (by simp only [F.size]; omega)
+  -- s3 : □_{16V}(□_fb A → B)
+  have s3 : Prov (32*V) (.box (16*V) (.impl (.box fb (Af k)) (Bf k))) :=
+    Prov.boxIntro _ s2 (by omega) (by simp only [F.size]; omega)
+  -- s4 : K-distribution landing at fb + 32V (< k — THE fix)
+  have s4 : Prov (16*V) (.impl (.box (16*V) (.impl (.box fb (Af k)) (Bf k)))
+      (.impl (.box (fb + 8*V) (.box fb (Af k))) (.box (fb + 32*V) (Bf k)))) :=
+    Prov.axKf _ _ (by omega) (by simp only [F.size]; omega)
+  have s5 : Prov (64*V) (.impl (.box (fb + 8*V) (.box fb (Af k))) (.box (fb + 32*V) (Bf k))) :=
+    Prov.app _ _ s4 s3 (by simp only [F.size]; omega)
+  -- s6 : □_fb A → □_{fb+8V} □_fb A   (four)
+  have s6 : Prov (16*V) (.impl (.box fb (Af k)) (.box (fb + 8*V) (.box fb (Af k)))) :=
+    Prov.four _ (by simp only [F.size]; omega) (by simp only [F.size]; omega)
+  have s7 : Prov (96*V) (.impl (.box fb (Af k)) (.box (fb + 32*V) (Bf k))) :=
+    Prov.implTrans _ _ _ s6 s5 (by simp only [F.size]; omega)
+  -- s8 : □_{fb+32V} B → □_k B   (mono-UP onto leg 2's antecedent)
+  have s8 : Prov (8*V) (.impl (.box (fb + 32*V) (Bf k)) (.box k (Bf k))) :=
+    Prov.boxMono _ (by omega) (by simp only [F.size]; omega)
+  have s9 : Prov (128*V) (.impl (.box fb (Af k)) (.box k (Bf k))) :=
+    Prov.implTrans _ _ _ s7 s8 (by simp only [F.size]; omega)
+  -- s10 : □_fb A → A — the tight Löb premise at the LOWERED subscript, O(log k) transcript
+  have s10 : Prov (160*V) (.impl (.box fb (Af k)) (Af k)) :=
+    Prov.implTrans _ _ _ s9 (hL2 k) (by simp only [F.size]; omega)
+  -- ── single-leg bloeb at fb, unchanged ──
+  refine ⟨16384*V, bloeb_transcript (Af k) (160*V) fb
+    (8192*V) (512*V) (16384*V) (16384*V) (65536*V)
+    (256*V) (256*V) (1024*V) (512*V) (2048*V) (512*V) (512*V)
+    (3072*V) (4096*V) (256*V) (5120*V) (6144*V) (7168*V) (8192*V) (16384*V)
+    s10 ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
+  · (try simp only [F.size]); omega
+
 end T0
