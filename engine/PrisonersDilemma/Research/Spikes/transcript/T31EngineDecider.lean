@@ -901,6 +901,135 @@ theorem decProv_mono (O : Nat → Formula → Bool) :
     · -- chkAtomNeg (oracle only)
       exact Or.inr h
 
+/-- Joint fuel-and-oracle monotonicity: a bigger oracle and more fuel never lose a hit. -/
+theorem decProv_mono2 (O₁ O₂ : Nat → Formula → Bool)
+    (hO : ∀ m ψ, O₁ m ψ = true → O₂ m ψ = true) :
+    ∀ f₁ f₂, f₁ ≤ f₂ → ∀ k φ, decProv O₁ f₁ k φ = true → decProv O₂ f₂ k φ = true := by
+  intro f₁
+  induction f₁ with
+  | zero => intro f₂ _ k φ h; simp [decProv] at h
+  | succ f ih =>
+    intro f₂ hle k φ h
+    obtain ⟨f₂', rfl⟩ : ∃ f₂', f₂ = f₂' + 1 := ⟨f₂ - 1, by omega⟩
+    have hff : f ≤ f₂' := by omega
+    rw [decProv] at h
+    rw [decProv]
+    simp only [Bool.or_eq_true] at h ⊢
+    have step : ∀ m ψ, decProv O₁ f m ψ = true → decProv O₂ f₂' m ψ = true :=
+      fun m ψ => ih f₂' hff m ψ
+    rcases h with ((((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
+      | h) | h) | h) | h
+    · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl h))))))))))))))
+    · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (hO _ _ h)))))))))))))))
+    · -- chkWeaken
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))))))))))
+      unfold chkWeaken at h ⊢
+      split at h
+      · rename_i A B
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, step _ _ h.2⟩
+      · simp at h
+    · -- chkSTS
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inl (Or.inr ?_))))))))))))
+      unfold chkSTS at h ⊢
+      split at h
+      · rename_i k₁ ψ' k₁' ψ₁ k₂ ψ₂ c0' c1 q opnt c0
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, step _ _ h.2⟩
+      · simp at h
+    · -- chkITrans
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inr ?_)))))))))))
+      unfold chkITrans at h ⊢
+      split at h
+      · rename_i A C
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨m₁, hm₁, ψ', hψ', ⟨hg, h1⟩, h2⟩ := h
+        exact ⟨m₁, hm₁, ψ', hψ', ⟨hg, step _ _ h1⟩, step _ _ h2⟩
+      · simp at h
+    · -- chkAtomBox (oracle transfer)
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inr ?_))))))))))
+      unfold chkAtomBox at h ⊢
+      split at h
+      · rename_i p q a kB p' q' a'
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, hO _ _ h.2⟩
+      · simp at h
+    · -- chkBoxIntroE
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inr ?_)))))))))
+      unfold chkBoxIntroE at h ⊢
+      split at h
+      · rename_i kIn ψ
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, step _ _ h.2⟩
+      · simp at h
+    · -- chkAppE
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ?_))))))))
+      unfold chkAppE at h ⊢
+      simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+      obtain ⟨m₁, hm₁, ψ', hψ', ⟨hg, h1⟩, h2⟩ := h
+      exact ⟨m₁, hm₁, ψ', hψ', ⟨hg, step _ _ h1⟩, step _ _ h2⟩
+    · -- chkAxK
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))))
+      unfold chkAxK at h ⊢
+      split at h
+      · rename_i b ψ c α
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨hsz, a, ha, hg, hr⟩ := h
+        exact ⟨hsz, a, ha, hg, step _ _ hr⟩
+      · simp at h
+    · -- chkBox4E (no rec)
+      exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr h))))))
+    · -- chkDiagFE
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))
+      unfold chkDiagFE at h ⊢
+      split at h
+      · rename_i g t g' g'' t' t''
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨hpre, fb, hfb, hr⟩ := h
+        exact ⟨hpre, fb, hfb, step _ _ hr⟩
+      · simp at h
+    · -- chkDiagBE
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ?_))))
+      unfold chkDiagBE at h ⊢
+      split at h
+      · rename_i g g' t t' g'' t''
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨hpre, fb, hfb, hr⟩ := h
+        exact ⟨hpre, fb, hfb, step _ _ hr⟩
+      · simp at h
+    · -- chkAxKfE (no rec)
+      exact Or.inl (Or.inl (Or.inl (Or.inr h)))
+    · -- chkImpS2E
+      refine Or.inl (Or.inl (Or.inr ?_))
+      unfold chkImpS2E at h ⊢
+      split at h
+      · rename_i A C
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨m₁, hm₁, ψ', hψ', ⟨hg, h1⟩, h2⟩ := h
+        exact ⟨m₁, hm₁, ψ', hψ', ⟨hg, step _ _ h1⟩, step _ _ h2⟩
+      · simp at h
+    · -- chkBoxMonoE (no rec)
+      exact Or.inl (Or.inr h)
+    · -- chkAtomNeg (oracle transfer)
+      refine Or.inr ?_
+      unfold chkAtomNeg at h ⊢
+      split at h
+      · rename_i p q aN
+        simp only [Bool.and_eq_true, Bool.or_eq_true] at h ⊢
+        refine ⟨h.1, ?_⟩
+        rcases h.2 with ⟨hOr, hne⟩ | ⟨hOr, hne⟩
+        · exact Or.inl ⟨hO _ _ hOr, hne⟩
+        · exact Or.inr ⟨hO _ _ hOr, hne⟩
+      · simp at h
+
+
 /-! ### `decProv` completeness — ∃-FUEL (semidecidability).
 
 The `∀ fuel ≥ K` form died with the CITE model: `searchThenSearch_t`'s inner premise lives at
@@ -1292,5 +1421,478 @@ theorem decFull_sound : ∀ fuel k φ, decFull fuel k φ = true → Provable k �
   | succ f ih =>
     intro k φ h
     exact decProv_sound _ (certOG_sound _ (fun m ψ => ih m ψ) f) (f+1) k φ h
+
+/-! ### Monotonicity of the atom side, and the bridge into the knot. -/
+
+theorem decCertG_mono2 (D₁ D₂ : Nat → Formula → Bool)
+    (hD : ∀ m ψ, D₁ m ψ = true → D₂ m ψ = true) :
+    ∀ f₁ f₂, f₁ ≤ f₂ → ∀ b me oppo body a,
+      decCertG D₁ f₁ b me oppo body a = true → decCertG D₂ f₂ b me oppo body a = true := by
+  intro f₁
+  induction f₁ with
+  | zero => intro f₂ _ b me oppo body a h; simp [decCertG] at h
+  | succ f ih =>
+    intro f₂ hle b me oppo body a h
+    obtain ⟨f₂', rfl⟩ : ∃ f₂', f₂ = f₂' + 1 := ⟨f₂ - 1, by omega⟩
+    have hff : f ≤ f₂' := by omega
+    rw [decCertG.eq_def] at h
+    rw [decCertG.eq_def]
+    simp only [] at h ⊢
+    cases body with
+    | const c => exact h
+    | self =>
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, ih f₂' hff _ _ _ _ _ h.2⟩
+    | opp =>
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, ih f₂' hff _ _ _ _ _ h.2⟩
+    | bot p =>
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, ih f₂' hff _ _ _ _ _ h.2⟩
+    | sim p q =>
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, ih f₂' hff _ _ _ _ _ h.2⟩
+    | ite g a' p q =>
+        simp only [Bool.and_eq_true, List.any_eq_true] at h ⊢
+        obtain ⟨hb, m, hm, r, hrmem, ⟨hmb, hg⟩, hbr⟩ := h
+        refine ⟨hb, m, hm, r, hrmem, ⟨hmb, ih f₂' hff _ _ _ _ _ hg⟩, ?_⟩
+        by_cases hr : (r == a') = true
+        · rw [if_pos hr] at hbr ⊢; exact ih f₂' hff _ _ _ _ _ hbr
+        · rw [if_neg hr] at hbr ⊢; exact ih f₂' hff _ _ _ _ _ hbr
+    | search kg g p q =>
+        simp only [Bool.or_eq_true, Bool.and_eq_true, List.any_eq_true] at h ⊢
+        rcases h with ⟨⟨hGuard, hc⟩, hr⟩ | ⟨m, hm, ⟨hNeg, hc⟩, hr⟩
+        · exact Or.inl ⟨⟨hD _ _ hGuard, hc⟩, ih f₂' hff _ _ _ _ _ hr⟩
+        · exact Or.inr ⟨m, hm, ⟨hD _ _ hNeg, hc⟩, ih f₂' hff _ _ _ _ _ hr⟩
+
+theorem certOG_mono2 (D₁ D₂ : Nat → Formula → Bool)
+    (hD : ∀ m ψ, D₁ m ψ = true → D₂ m ψ = true) (f₁ f₂ : Nat) (hf : f₁ ≤ f₂) :
+    ∀ k φ, certOG D₁ f₁ k φ = true → certOG D₂ f₂ k φ = true := by
+  intro k φ h
+  unfold certOG at h ⊢
+  split at h
+  · exact decCertG_mono2 D₁ D₂ hD f₁ f₂ hf _ _ _ _ _ h
+  · simp at h
+
+theorem decFull_mono : ∀ f₁ f₂, f₁ ≤ f₂ → ∀ k φ,
+    decFull f₁ k φ = true → decFull f₂ k φ = true := by
+  intro f₁
+  induction f₁ with
+  | zero => intro f₂ _ k φ h; simp [decFull] at h
+  | succ f ih =>
+    intro f₂ hle k φ h
+    obtain ⟨f₂', rfl⟩ : ∃ f₂', f₂ = f₂' + 1 := ⟨f₂ - 1, by omega⟩
+    have hff : f ≤ f₂' := by omega
+    show decProv (certOG (decFull f₂') f₂') (f₂'+1) k φ = true
+    exact decProv_mono2 _ _
+      (certOG_mono2 _ _ (fun m ψ => ih f₂' hff m ψ) f f₂' hff)
+      (f+1) (f₂'+1) (by omega) k φ h
+
+/-- The bridge: a full-enumerator hit at fuel `f ≤ F` fires INSIDE the knot at level `F+1`
+    (i.e. as the `rec` of `decProv (certOG (decFull F) F) (F+1)`). -/
+theorem decFull_le_inner (F : Nat) : ∀ f, f ≤ F → ∀ k φ,
+    decFull f k φ = true → decProv (certOG (decFull F) F) F k φ = true := by
+  intro f hfF k φ h
+  rcases F with _ | F'
+  · obtain rfl : f = 0 := by omega
+    simp [decFull] at h
+  · have h1 : decFull (F'+1) k φ = true := decFull_mono f (F'+1) hfF k φ h
+    exact decProv_mono2 _ _
+      (certOG_mono2 _ _ (fun m ψ => decFull_mono F' (F'+1) (by omega) m ψ) F' (F'+1) (by omega))
+      (F'+1) (F'+1) le_rfl k φ h1
+
+/-! ### ABSOLUTE completeness — every derivation of the whole system is found. -/
+
+set_option maxHeartbeats 1000000 in
+theorem decFull_complete : ∀ {m φ}, Provable m φ →
+    ∀ K, m ≤ K → ∃ fuel, decFull fuel K φ = true := by
+  intro m φ h
+  refine Provable.rec
+    (motive_1 := fun me oppo body a n _ =>
+      ∀ b, n ≤ b → ∃ F, decCertG (decFull F) F b me oppo body a = true)
+    (motive_2 := fun k φ _ => ∀ K, k ≤ K → ∃ F, certOG (decFull F) F K φ = true)
+    (motive_3 := fun k φ _ => ∀ K, k ≤ K → ∃ F, decFull F K φ = true)
+    ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
+    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
+    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
+    h
+  case pConst =>
+      intro me oppo a b hb
+      refine ⟨1, ?_⟩
+      rw [decCertG.eq_def]
+      simp [hb]
+  case pSelf =>
+      intro me oppo a n _ ih b hb
+      have hcn : c_node = 1 := rfl
+      obtain ⟨F, e⟩ := ih (b - c_node) (by omega)
+      refine ⟨F + 1, ?_⟩
+      rw [decCertG.eq_def]
+      simp only [Bool.and_eq_true, decide_eq_true_eq]
+      exact ⟨by omega,
+        decCertG_mono2 _ _ (fun m ψ => decFull_mono F (F+1) (by omega) m ψ) F F le_rfl
+          _ _ _ _ _ e⟩
+  case pOpp =>
+      intro me oppo a n _ ih b hb
+      have hcn : c_node = 1 := rfl
+      obtain ⟨F, e⟩ := ih (b - c_node) (by omega)
+      refine ⟨F + 1, ?_⟩
+      rw [decCertG.eq_def]
+      simp only [Bool.and_eq_true, decide_eq_true_eq]
+      exact ⟨by omega,
+        decCertG_mono2 _ _ (fun m ψ => decFull_mono F (F+1) (by omega) m ψ) F F le_rfl
+          _ _ _ _ _ e⟩
+  case pBot =>
+      intro me oppo p a n _ ih b hb
+      have hcn : c_node = 1 := rfl
+      obtain ⟨F, e⟩ := ih (b - c_node) (by omega)
+      refine ⟨F + 1, ?_⟩
+      rw [decCertG.eq_def]
+      simp only [Bool.and_eq_true, decide_eq_true_eq]
+      exact ⟨by omega,
+        decCertG_mono2 _ _ (fun m ψ => decFull_mono F (F+1) (by omega) m ψ) F F le_rfl
+          _ _ _ _ _ e⟩
+  case pSim =>
+      intro a n me oppo p q _ ih b hb
+      have hcn : c_node = 1 := rfl
+      obtain ⟨F, e⟩ := ih (b - c_node) (by omega)
+      refine ⟨F + 1, ?_⟩
+      rw [decCertG.eq_def]
+      simp only [Bool.and_eq_true, decide_eq_true_eq]
+      exact ⟨by omega,
+        decCertG_mono2 _ _ (fun m ψ => decFull_mono F (F+1) (by omega) m ψ) F F le_rfl
+          _ _ _ _ _ e⟩
+  case pIte_t =>
+      intro me oppo g r m a' p a n q _ hr _ ihg ihp b hb
+      have hcn : c_node = 1 := rfl
+      obtain ⟨F₁, e₁⟩ := ihg m le_rfl
+      obtain ⟨F₂, e₂⟩ := ihp (b - m - c_node) (by omega)
+      refine ⟨max F₁ F₂ + 1, ?_⟩
+      rw [decCertG.eq_def]
+      simp only [Bool.and_eq_true, decide_eq_true_eq, List.any_eq_true, List.mem_range]
+      refine ⟨by omega, m, by omega, r, by cases r <;> simp, ⟨by omega, ?_⟩, ?_⟩
+      · exact decCertG_mono2 _ _
+          (fun mm ψ => decFull_mono F₁ (max F₁ F₂ + 1) (by omega) mm ψ)
+          F₁ (max F₁ F₂) (by omega) _ _ _ _ _ e₁
+      · rw [if_pos hr]
+        exact decCertG_mono2 _ _
+          (fun mm ψ => decFull_mono F₂ (max F₁ F₂ + 1) (by omega) mm ψ)
+          F₂ (max F₁ F₂) (by omega) _ _ _ _ _ e₂
+  case pIte_f =>
+      intro me oppo g r m a' q a n p _ hr _ ihg ihq b hb
+      have hcn : c_node = 1 := rfl
+      obtain ⟨F₁, e₁⟩ := ihg m le_rfl
+      obtain ⟨F₂, e₂⟩ := ihq (b - m - c_node) (by omega)
+      refine ⟨max F₁ F₂ + 1, ?_⟩
+      rw [decCertG.eq_def]
+      simp only [Bool.and_eq_true, decide_eq_true_eq, List.any_eq_true, List.mem_range]
+      refine ⟨by omega, m, by omega, r, by cases r <;> simp, ⟨by omega, ?_⟩, ?_⟩
+      · exact decCertG_mono2 _ _
+          (fun mm ψ => decFull_mono F₁ (max F₁ F₂ + 1) (by omega) mm ψ)
+          F₁ (max F₁ F₂) (by omega) _ _ _ _ _ e₁
+      · rw [if_neg (by simp [hr])]
+        exact decCertG_mono2 _ _
+          (fun mm ψ => decFull_mono F₂ (max F₁ F₂ + 1) (by omega) mm ψ)
+          F₂ (max F₁ F₂) (by omega) _ _ _ _ _ e₂
+  case pSearch_t =>
+      intro kg me oppo p a n g q hguard _ ihg ihp b hb
+      have hcn : c_node = 1 := rfl
+      obtain ⟨F₁, e₁⟩ := ihg kg le_rfl
+      obtain ⟨F₂, e₂⟩ := ihp (b - c_guard kg - c_node) (by omega)
+      refine ⟨max F₁ F₂ + 1, ?_⟩
+      rw [decCertG.eq_def]
+      simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]
+      refine Or.inl ⟨⟨decFull_mono F₁ (max F₁ F₂ + 1) (by omega) _ _ e₁, by omega⟩, ?_⟩
+      exact decCertG_mono2 _ _
+        (fun mm ψ => decFull_mono F₂ (max F₁ F₂ + 1) (by omega) mm ψ)
+        F₂ (max F₁ F₂) (by omega) _ _ _ _ _ e₂
+  case pSearch_f =>
+      intro m me oppo q a n kg g p hneg _ ihn ihq b hb
+      have hcn : c_node = 1 := rfl
+      obtain ⟨F₁, e₁⟩ := ihn m le_rfl
+      obtain ⟨F₂, e₂⟩ := ihq (b - m - kg - c_node) (by omega)
+      refine ⟨max F₁ F₂ + 1, ?_⟩
+      rw [decCertG.eq_def]
+      simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq, List.any_eq_true,
+        List.mem_range]
+      refine Or.inr ⟨m, by omega,
+        ⟨decFull_mono F₁ (max F₁ F₂ + 1) (by omega) _ _ e₁, by omega⟩, ?_⟩
+      exact decCertG_mono2 _ _
+        (fun mm ψ => decFull_mono F₂ (max F₁ F₂ + 1) (by omega) mm ψ)
+        F₂ (max F₁ F₂) (by omega) _ _ _ _ _ e₂
+  case pMk =>
+      intro me oppo a n k cert hle ih K hmK
+      obtain ⟨F, e⟩ := ih K (by omega)
+      exact ⟨F, e⟩
+  case cStruct =>
+      intro φ0 k0 hd K hmK
+      obtain ⟨d, hsz⟩ := hd
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K φ0 = true
+      have hfire := decDeriv_complete d K K (by omega) le_rfl
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cAtom =>
+      intro k0 φ0 _hatom ih K hmK
+      obtain ⟨F, e⟩ := ih K hmK
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K φ0 = true
+      rw [decProv]
+      simp only [e, Bool.or_true, Bool.true_or]
+  case cWeaken =>
+      intro k A B m' hψ hle ih K hmK
+      have h1 := Formula.size_pos (Formula.impl A B)
+      obtain ⟨F, e⟩ := ih (K - (Formula.impl A B).size) (by omega)
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K (Formula.impl A B) = true
+      have hfire : chkWeaken (fun m ψ => decProv (certOG (decFull F) F) F m ψ) K
+          (Formula.impl A B) = true := by
+        unfold chkWeaken
+        have hg : (Formula.impl A B).size ≤ K := by omega
+        have e' := decFull_le_inner F F le_rfl _ _ e
+        simp [e', hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cSTS =>
+      intro k k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle ih K hmK
+      subst hme
+      obtain ⟨F, e⟩ := ih k₂ hmk
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K _ = true
+      have hfire : chkSTS (fun m ψ => decProv (certOG (decFull F) F) F m ψ) K
+          (Formula.impl (.box k₁ (ψ₁.subst
+          (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
+          (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0)) = true := by
+        unfold chkSTS
+        have e' := decFull_le_inner F F le_rfl _ _ e
+        have hg : c_guard k₂ + (Formula.impl (.box k₁ (ψ₁.subst
+          (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
+          (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0)).size ≤ K := by
+          omega
+        simp [e', hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cITrans =>
+      intro k A B C a b h1 h2 hle ih1 ih2 K hmK
+      have hAC := Formula.size_pos (Formula.impl A C)
+      have hi1 := provable_impl_size h1
+      obtain ⟨F₁, e₁⟩ := ih1 a le_rfl
+      obtain ⟨F₂, e₂⟩ := ih2 (K - (Formula.impl A C).size - a) (by omega)
+      refine ⟨max F₁ F₂ + 1, ?_⟩
+      show decProv (certOG (decFull (max F₁ F₂)) (max F₁ F₂)) (max F₁ F₂ + 1) K
+        (Formula.impl A C) = true
+      have e₁' := decFull_le_inner (max F₁ F₂) F₁ (Nat.le_max_left _ _) _ _ e₁
+      have e₂' := decFull_le_inner (max F₁ F₂) F₂ (Nat.le_max_right _ _) _ _ e₂
+      have hfire : chkITrans (fun m ψ => decProv (certOG (decFull (max F₁ F₂)) (max F₁ F₂))
+          (max F₁ F₂) m ψ) K (Formula.impl A C) = true := by
+        unfold chkITrans
+        simp only [List.any_eq_true, List.mem_range]
+        have hBsz : B.size ≤ K := by
+          simp only [Formula.size] at hi1
+          omega
+        refine ⟨a, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
+        have hg : a + (Formula.impl A C).size ≤ K := by omega
+        simp [e₁', e₂', hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cAtomBox =>
+      intro k kBox p q a _hatom hle ih K hmK
+      obtain ⟨F, e⟩ := ih kBox le_rfl
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K
+        (Formula.impl (.plays p q a) (.box kBox (.plays p q a))) = true
+      have hfire : chkAtomBox (certOG (decFull F) F) K
+          (Formula.impl (.plays p q a) (.box kBox (.plays p q a))) = true := by
+        unfold chkAtomBox
+        have hg : kBox + (Formula.impl (.plays p q a) (.box kBox (.plays p q a))).size ≤ K := by
+          omega
+        simp [e, hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cBoxIntro =>
+      intro kIn K' A hprem hle ih K hmK
+      have h1 := Formula.size_pos (Formula.box kIn A)
+      obtain ⟨F, e⟩ := ih kIn le_rfl
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K (Formula.box kIn A) = true
+      have hfire : chkBoxIntroE (fun m ψ => decProv (certOG (decFull F) F) F m ψ) K
+          (Formula.box kIn A) = true := by
+        unfold chkBoxIntroE
+        have e' := decFull_le_inner F F le_rfl _ _ e
+        have hg : kIn + (Formula.box kIn A).size ≤ K := by omega
+        simp [e', hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cApp =>
+      intro k' m₁ m₂ A B h1 h2 hle ih1 ih2 K hmK
+      have hB := Formula.size_pos B
+      have hi1 := provable_impl_size h1
+      obtain ⟨F₁, e₁⟩ := ih1 m₁ le_rfl
+      obtain ⟨F₂, e₂⟩ := ih2 (K - B.size - m₁) (by omega)
+      refine ⟨max F₁ F₂ + 1, ?_⟩
+      show decProv (certOG (decFull (max F₁ F₂)) (max F₁ F₂)) (max F₁ F₂ + 1) K B = true
+      have e₁' := decFull_le_inner (max F₁ F₂) F₁ (Nat.le_max_left _ _) _ _ e₁
+      have e₂' := decFull_le_inner (max F₁ F₂) F₂ (Nat.le_max_right _ _) _ _ e₂
+      have hfire : chkAppE (fun m ψ => decProv (certOG (decFull (max F₁ F₂)) (max F₁ F₂))
+          (max F₁ F₂) m ψ) K B = true := by
+        unfold chkAppE
+        simp only [List.any_eq_true, List.mem_range]
+        have hAsz : A.size ≤ K := by
+          simp only [Formula.size] at hi1
+          omega
+        refine ⟨m₁, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
+        have hg : m₁ + B.size ≤ K := by omega
+        simp [e₁', e₂', hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cAxK =>
+      intro a b c m' K' A B hprem hgate hle ih K hmK
+      have h1 := Formula.size_pos (Formula.impl (.box b A) (.box c B))
+      obtain ⟨F, e⟩ := ih (K - (Formula.impl (.box b A) (.box c B)).size) (by omega)
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K
+        (Formula.impl (.box b A) (.box c B)) = true
+      have hfire : chkAxK (fun m ψ => decProv (certOG (decFull F) F) F m ψ) K
+          (Formula.impl (.box b A) (.box c B)) = true := by
+        unfold chkAxK
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, decide_eq_true_eq]
+        have hB := Formula.size_pos B
+        exact ⟨by omega, a, by omega, by omega, decFull_le_inner F F le_rfl _ _ e⟩
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cBox4 =>
+      intro a b K' A hgate hle K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K
+        (Formula.impl (.box a A) (.box b (.box a A))) = true
+      have hfire : chkBox4E K (Formula.impl (.box a A) (.box b (.box a A))) = true := by
+        unfold chkBox4E
+        have hg : (Formula.impl (.box a A) (.box b (.box a A))).size ≤ K := by omega
+        simp [hgate, hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cDiagF =>
+      intro pm fb g K' tgt hgate hle ih K hmK
+      have h1 := Formula.size_pos (Formula.impl (.diag g tgt)
+        (.impl (.box g (.diag g tgt)) tgt))
+      have hgsz := provable_impl_size hgate
+      obtain ⟨F, e⟩ := ih (K - (Formula.impl (.diag g tgt)
+        (.impl (.box g (.diag g tgt)) tgt)).size) (by omega)
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K
+        (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)) = true
+      have hfire : chkDiagFE (fun m ψ => decProv (certOG (decFull F) F) F m ψ) K
+          (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)) = true := by
+        unfold chkDiagFE
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_self_eq_true,
+          decide_eq_true_eq, Bool.true_and, and_true, true_and]
+        have hg : (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)).size ≤ K := by
+          omega
+        refine ⟨hg, fb, ?_, decFull_le_inner F F le_rfl _ _ e⟩
+        refine lt_two_pow_of_log2_lt ?_
+        simp only [Formula.size] at hgsz
+        omega
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cDiagB =>
+      intro pm fb g K' tgt hgate hle ih K hmK
+      have h1 := Formula.size_pos (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
+        (.diag g tgt))
+      have hgsz := provable_impl_size hgate
+      obtain ⟨F, e⟩ := ih (K - (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
+        (.diag g tgt)).size) (by omega)
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K
+        (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)) = true
+      have hfire : chkDiagBE (fun m ψ => decProv (certOG (decFull F) F) F m ψ) K
+          (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)) = true := by
+        unfold chkDiagBE
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_self_eq_true,
+          decide_eq_true_eq, Bool.true_and, and_true, true_and]
+        have hg : (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)).size ≤ K := by
+          omega
+        refine ⟨hg, fb, ?_, decFull_le_inner F F le_rfl _ _ e⟩
+        refine lt_two_pow_of_log2_lt ?_
+        simp only [Formula.size] at hgsz
+        omega
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cAxKf =>
+      intro a b c K' A B hgate hle K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K (Formula.impl (.box a (.impl A B))
+        (.impl (.box b A) (.box c B))) = true
+      have hfire : chkAxKfE K (Formula.impl (.box a (.impl A B))
+          (.impl (.box b A) (.box c B))) = true := by
+        unfold chkAxKfE
+        have hg : (Formula.impl (.box a (.impl A B)) (.impl (.box b A) (.box c B))).size ≤ K := by
+          omega
+        simp [hgate, hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cImpS2 =>
+      intro A B C m₁ m₂ K' h1 h2 hle ih1 ih2 K hmK
+      have hAC := Formula.size_pos (Formula.impl A C)
+      have hi1 := provable_impl_size h1
+      obtain ⟨F₁, e₁⟩ := ih1 m₁ le_rfl
+      obtain ⟨F₂, e₂⟩ := ih2 (K - (Formula.impl A C).size - m₁) (by omega)
+      refine ⟨max F₁ F₂ + 1, ?_⟩
+      show decProv (certOG (decFull (max F₁ F₂)) (max F₁ F₂)) (max F₁ F₂ + 1) K
+        (Formula.impl A C) = true
+      have e₁' := decFull_le_inner (max F₁ F₂) F₁ (Nat.le_max_left _ _) _ _ e₁
+      have e₂' := decFull_le_inner (max F₁ F₂) F₂ (Nat.le_max_right _ _) _ _ e₂
+      have hfire : chkImpS2E (fun m ψ => decProv (certOG (decFull (max F₁ F₂)) (max F₁ F₂))
+          (max F₁ F₂) m ψ) K (Formula.impl A C) = true := by
+        unfold chkImpS2E
+        simp only [List.any_eq_true, List.mem_range]
+        have hBsz : B.size ≤ K := by
+          simp only [Formula.size] at hi1
+          omega
+        refine ⟨m₁, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
+        have hg : m₁ + (Formula.impl A C).size ≤ K := by omega
+        simp [e₁', e₂', hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cBoxMono =>
+      intro a b K' A hab hle K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K (Formula.impl (.box a A) (.box b A)) = true
+      have hfire : chkBoxMonoE K (Formula.impl (.box a A) (.box b A)) = true := by
+        unfold chkBoxMonoE
+        have hg : (Formula.impl (.box a A) (.box b A)).size ≤ K := by omega
+        simp [hab, hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cAtomNeg =>
+      intro k p q b aN m' _hatom hne hle ih K hmK
+      have h1 := Formula.size_pos (Formula.neg (.plays p q aN))
+      obtain ⟨F, e⟩ := ih (K - (Formula.neg (.plays p q aN)).size) (by omega)
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K (Formula.neg (.plays p q aN)) = true
+      have hfire : chkAtomNeg (certOG (decFull F) F) K
+          (Formula.neg (.plays p q aN)) = true := by
+        unfold chkAtomNeg
+        have hsz : (Formula.neg (.plays p q aN)).size ≤ K := by omega
+        cases b with
+        | C =>
+            have hne' : aN ≠ Action.C := fun hh => hne hh.symm
+            simp [e, hne', hsz]
+        | D =>
+            have hne' : aN ≠ Action.D := fun hh => hne hh.symm
+            simp [e, hne', hsz]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+
+/-! ## 8. THE PAYOFF — **the engine's `Provable` is SEMIDECIDABLE, absolutely.**
+
+`decFull` is a single computable, total function; every hit is a real derivation
+(`decFull_sound`), and every derivation is found (`decFull_complete`). No oracle, no
+hypothesis: bounded provability — Löb fixpoints, floored else-certificates and all — is
+recursively enumerable with a verified enumerator. The residual gap to full DECIDABILITY is
+exactly a computable fuel bound (the cited-premise/query-universe question, T4). -/
+
+theorem Provable_iff_decFull (k : Nat) (φ : Formula) :
+    Provable k φ ↔ ∃ fuel, decFull fuel k φ = true :=
+  ⟨fun h => decFull_complete h k le_rfl,
+   fun ⟨f, hf⟩ => decFull_sound f k φ hf⟩
 
 end PD.T31

@@ -306,10 +306,28 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
       of the decidability question);
     * **`decProv_iff`**: `OracleSound O → OracleComplete O →
       (Provable k φ ↔ ∃ fuel, decProv O fuel k φ = true)`.
-    REMAINING (T3.2c part 2 / T4): (a) instantiate the oracle — the atom-side enumerator
-    (cost-tracking cert search mutual with `decProv`, fuel-stratified; gives absolute
-    semidecidability of `Provable`); (b) the OPEN question: a computable fuel bound
-    (query-universe finiteness across guard hops) — full decidability, `proofSearch := D`,
+  - **T3.2c PART 2 — ✅ SHIPPED (2026-07-03): `Provable` is ABSOLUTELY SEMIDECIDABLE — no
+    oracle, no hypothesis.** Same spike file, §7–8 (green, 3 std axioms). The knot untied by
+    fuel stratification, plain structural recursion:
+    * `decCertG D fuel b me oppo body a` — cost-tracking cert search over the program body
+      (guards consult `D`: the true-guard CITEs `D kg guard`, the false-guard sweeps
+      refutation budgets `m ∈ range (b+1)` and pays the `m + kg` floor — exactly `search_f`);
+    * `certOG D fuel` — the plays-atom oracle from it; and the tie-off
+      **`decFull : Nat → Nat → Formula → Bool`**, `decFull (fuel+1) = decProv (certOG
+      (decFull fuel) fuel) (fuel+1)` — each fuel level feeds the previous level in as the
+      atom oracle. Fully computable, total.
+    * `decFull_sound` — every hit is a real derivation (via `decProv_sound` + `certOG_sound`);
+    * `decCertG_mono2`/`certOG_mono2`/`decFull_mono`/`decFull_le_inner` — the monotonicity
+      lattice (oracle-pointwise + fuel) that lets sub-derivations found at different fuels be
+      lifted to a common level;
+    * `decFull_complete` — joint `Provable.rec` over all three layers (9 `PlaysProof` arms +
+      `mk` + 16 `Provable` arms; motives `∃ F, decCertG (decFull F) F … = true` etc.);
+    * **`Provable_iff_decFull : Provable k φ ↔ ∃ fuel, decFull fuel k φ = true`** — the
+      engine's bounded provability, Löb fixpoints and floored else-certificates included, is
+      r.e. with a verified enumerator, on `[propext, Classical.choice, Quot.sound]` only.
+    REMAINING (T4): the OPEN question — a computable fuel bound as a function of `(k, φ)`
+    (query-universe finiteness across guard hops; the ∃-fuel cannot currently be bounded
+    because cited premises live at source literals) — full decidability, `proofSearch := D`,
     computable `eval`, `by decide` outcomes.
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
   theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
