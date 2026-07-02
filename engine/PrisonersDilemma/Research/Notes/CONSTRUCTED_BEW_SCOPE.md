@@ -141,8 +141,26 @@ mirroring `gammaAx`/`betaGamma`.
   chain FWD (engine `Provable m (□φ→φ)` → `Proves (□p→p)`) + `bridge_BWD_plays` → the engine PBLT
   conclusion with NO `provesN_play_extract`; delete `axiom PBLT`; repoint the 4 consumers → 1 axiom.
 
+- **B4-wire — ✅ CORE DONE (`Research/Spikes/pblt/BewB4wire.lean`; core sorry-free, 3 std). The `hp0`/
+  diagonal obstruction is FULLY DISSOLVED, machine-checked.** Built the unified `ProvesU` with `diagFix`
+  DERIVED (not a rule): `provesU_sound` is now OUTCOME-FREE (diagFix is no longer a soundness arm; the
+  only diagonal arm, `ctxUnfold`, is Gw-outcome-free from B3). Plus `bloebU` (full Löb chain in ProvesU)
+  and `extract_atom`/`extract_play` (the extraction STRUCTURE, `ProvesU (encodeF φ) (encodeF φ) → play`,
+  side-conditions structural — the play-atom index is not a betaA code, machine-checked). `provesU_sound`/
+  `bloebU`/`extract_atom` are all sorry-free on 3 std axioms. **So the outcome-dependence that made
+  `provesN_play_extract` axiom-strength is GONE.**
+- **REMAINING RESIDUE (`hEL`, one `sorry` in `extract_play`) — NOT the diagonal/hp0 obstruction.** It is
+  the FWD-FAITHFULNESS of `engineLeaf` at `interpU`: `provesU_sound` needs each `engineLeaf` leaf
+  `interpU`-true; in the pipeline the only such leaf is the engine Löb premise `Provable m (□φ→φ)`, whose
+  `interpU` reads `box` as `ProvesU` (not engine `Provable`) — the interpU-box vs engine-box mismatch
+  (the same residue the layer's FWD side always carried; `engineLeaf_sound_plays` covers the play-atom
+  leaf, the impl/box Löb-premise leaf needs the analogous BWD-faithfulness). This is a SEPARATE, standard
+  piece (engine-provable ⟹ true), and it does NOT reintroduce `hp0`. It IS required to actually delete
+  `PBLT` end-to-end.
+
 ## Immediate next action
-B4-impl DONE — the diagonal is now DERIVED and outcome-free in the real layer (`selfApply θ := betaA θ`),
-engine green. Both diagonal legs (ctxUnfold via B3/Gw, diagFix via B4) are outcome-free ⇒ the `hp0`
-obstruction is gone. Next: **B4-wire** — assemble `ContextRepr` (Gw-sound) + `object_pblt_real` +
-`bridge_BWD_plays` into the engine PBLT conclusion, then delete the axiom.
+The B-series achieved its goal: the diagonal `hp0` obstruction (the reason `provesN_play_extract` was
+axiom-strength) is DISSOLVED — machine-checked, sorry-free core. To DELETE the axiom end-to-end, close
+the one remaining residue: **B4-hEL** — FWD-faithfulness of the `engineLeaf` Löb-premise leaf at
+`interpU` (relate `ProvesU p (encodeF φ)` to engine `Provable`; the box-mismatch/BWD piece). This is a
+different obligation from the one the B-series removed; standard in content (engine soundness), but real.
