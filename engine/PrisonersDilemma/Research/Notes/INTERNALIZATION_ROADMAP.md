@@ -44,22 +44,45 @@ reflection machinery into `Formula`/`Provable` themselves.** Then the chain conc
 
 ---
 
-## Design decisions to freeze FIRST (I0)
+## ✅ I0 DESIGN FREEZE — DONE (2026-07-01, validated end-to-end in `Research/Spikes/pblt/I0Design.lean`)
 
-1. **The diagonal atoms carry their Löb target.** `Provable` is not target-indexed (unlike `ProvesU p`),
-   so the context must live IN the formula: e.g.
-   - `gamma (x y : Nat)` — the `Γ_e` graph atom (interp: `e x = y`, `e` at Formula level);
-   - `beta (g : Nat) (body tgt : Formula)` — self-evaluation atom carrying the box budget `g` AND the
-     target `tgt` (interp: the wrapped context `Provable g (selfApplyF body tgt) → tgt.interp`;
-     structural recursion OK — `tgt` is a subterm; `Provable` does not recurse through `interp`).
-   Signatures to be finalized against the B4 `ProvesU` shapes; this is the ONE genuinely new design
-   point vs the blueprint (target/budget in the atom, not the judgment).
-2. **`selfApplyF θ tgt := beta g θ tgt`** — the predicate-level self-application (B4's key move), at
-   `Formula` level; `e`/`e_graph` via `formulaCode` (injective, DONE) + choice-fibre decode.
-3. **`Formula.interp` may become `noncomputable`** (decode via choice) — acceptable: `proofSearch` is
-   already classical/noncomputable; `interp` is `Prop`-valued and never executed.
-4. **Budget threading plan** for I4 (see risk #1): which `g(k)/h(k)` play Critch's §5 roles, and which
-   engine log-lemmas (`linear_log2_add_le` etc.) discharge the thresholds.
+The spike is a faithful mini-engine (engine-exact `boxIntro`/`axK`/`box4`/`app`/`implTrans` signatures,
+size-gated) and it validates the ENTIRE design: `bloeb_mini` (the full internal Löb chain) and
+`Prov_sound` (all arms) close with **NO axioms at all**; `sizes_ok` (kill-criterion) on 3 std. The
+frozen design is SIMPLER than this roadmap's draft — no `gamma`, no `gApp`, no Formula-level
+encode/decode, `interp` stays a plain (computable-shape) def:
+
+1. **ONE new `Formula` constructor:** `.diag (g : Nat) (tgt : Formula)` — the Löb fixpoint sentence for
+   target `tgt` at box budget `g`. Its `interp` is SELF-REFERENTIAL BY DESIGN:
+       `| .diag g t => Provable g (.diag g t) → t.interp`
+   Legal (recursion descends only into `t`; `Provable` does not recurse through `interp`). This is B4
+   internalized: the fixpoint is DEFINITIONAL, so the diagonal legs are sound by `id`. Same design
+   pattern as `.box n φ ↦ Provable n φ`; the meta-justification that such a sentence exists in a
+   faithful arithmetization is the (kept) Reflection layer's DERIVED diagonal (B4 `repr_object`).
+   - `subst`: FROZEN (`.diag g t ↦ .diag g t`, like `.bot`/`.eq`-RHS — the diagonal is a closed
+     meta-construction; it never appears in bot source, only in the meta Löb chain).
+   - `size`: `(log2 g + 1) + t.size + 1` (numeral cost, like `.box`).
+2. **FOUR new `Provable` rules** (all size-gated like existing constructors; soundness arms trivial):
+   - `diagF`/`diagB` — the fixpoint legs `ψ → (□_g ψ → t)` and `(□_g ψ → t) → ψ` for `ψ := .diag g t`;
+     sound = `id` (the interp IS the fixpoint).
+   - `axKf` — object-FORMULA K `□_k(φ→α) → (□_k φ → □_k α)`; sound = `app`. NEEDED because the engine's
+     `axK` is RULE-form and Löb's step h3 requires the formula (rule-K provably insufficient there).
+   - `impS2` — closed composition rule `⊢ φ→(ψ→χ) ⟹ ⊢ φ→ψ ⟹ ⊢ φ→χ`; sound = application. Replaces the
+     side layer's deduction theorem (both premises closed, so rule form suffices).
+3. **TIGHT premise, unified subscript:** `bloeb_engine` takes `∀k>k₁, Provable (f k) (□_{f k} φk → φk)`
+   and runs everything at subscript AND budget `u := f k` — no `boxMono`, no deduction theorem, no
+   E-expansion (the engine's cost model is conclusion-size, killing Critch's `E` entirely). The
+   consumers ALREADY produce the tight premise (`dupoc_loeb_premise : Provable k (□_k … → …)`); they
+   currently LOOSEN it to feed the ∃m axiom — the repoint just drops that loosening (4 call sites).
+   The ∃m-loose signature is NOT derivable from tight in general; the replacement theorem is tight.
+4. **KILL-CRITERION PASSED** (`sizes_ok`): the largest chain formula has size exactly
+   `9·log2 k + 6·(φ k).size + 23`; with consumers' `φ k` of size `A·log2 k + B` (DupocBot ≈ `2·log2 k +
+   15`) every side-condition is `A'·log2 k + B' ≤ k`, closed by `linear_log2_add_le` beyond `K₀` —
+   absorbed by the `∃k₂` conclusion. The chain needs 13 such conditions (hs1–hs13 in the spike), all
+   smaller or equal.
+
+BLAST-TABLE SIMPLIFICATION vs the draft: the `encodeF`/`formulaCode` rows stay (one `.diag` case each,
+trivial); the `gamma`/`gApp`/Formula-encode/noncomputable-interp complexity is GONE.
 
 ## Milestones
 
