@@ -125,13 +125,24 @@ mirroring `gammaAx`/`betaGamma`.
   diagFix (predicate-level defeq) are BOTH outcome-free ⇒ `provesN_play_extract` FULLY dissolved.
   De-risked: parametric_diagonal PROVES the predicate-level fixpoint outcome-free. The work is porting
   betaA/plug → predicate encoding (touches Syntax/Proves/Diagonal — mechanical but non-trivial).
-- **B4 (predicate-level diagonal impl, then wiring):** implement the predicate-level diagonal; then
-  `bloeb_object` (base Proves, outcome-free) + `bridge_BWD_plays` → engine PBLT with no
-  `provesN_play_extract`; delete `axiom PBLT`; repoint the 4 consumers → 1 axiom.
+- **B4-impl — ✅ DONE, LANDED IN THE REAL LAYER (`Syntax.lean` changed; `BewB4`/`BewB4port` spikes,
+  sorry-free, 3 std).** The predicate-level diagonal is ONE definitional change:
+  `Syntax.selfApply θ := .betaA θ` (was `plug (encode θ) θ`). Then `e ⌜θ⌝ = ⌜betaA θ⌝`, so the REAL
+  `repr_object` (unchanged, from `gammaAx`/`betaGamma`) yields the SELF-CODE fixpoint `betaA θ ↔
+  gApp(⌜betaA θ⌝)` DIRECTLY — `diagFix_real` (a THEOREM, outcome-free, NO asserted rule).
+  `object_pblt_real` then derives object PBLT (`Proves p`) from the Löb premise + `ContextRepr` via the
+  base-Proves `object_pblt_of_repr`/`bloeb_object` — 3 std axioms, NO `hp0`, NO PBLT. Verified: real
+  `Proves_sound`/`consistency`/`repr_object` STILL hold with the new `selfApply` (soundness preserved);
+  FULL engine `lake build` green. `plug` remains defined but is no longer used by the diagonal.
+  `Representability.lean` was already broken pre-change (stale `betaA : Nat` signature; superseded module,
+  not root-imported) — NOT a regression.
+- **B4-wire (next, the finish):** supply `ContextRepr p (betaA θ)` as a base-`Proves` theorem via the
+  B3 `Gw`-soundness (outcome-free ctxUnfold), so `object_pblt_real` needs only the Löb premise. Then
+  chain FWD (engine `Provable m (□φ→φ)` → `Proves (□p→p)`) + `bridge_BWD_plays` → the engine PBLT
+  conclusion with NO `provesN_play_extract`; delete `axiom PBLT`; repoint the 4 consumers → 1 axiom.
 
 ## Immediate next action
-B3-followup done — the path to full dissolution is IDENTIFIED and de-risked (predicate-level diagonal;
-parametric_diagonal proves it outcome-free). Next: **B4-impl** — port the OFml `betaA`/`plug`
-substitution-diagonal to the predicate-level `selfApply` (discarding plugged code), so `diag_object'`
-gets the defeq fixpoint and `diagFix`'s hp0 vanishes. This is the last mechanical (non-obstruction) step
-before wiring + deleting the axiom.
+B4-impl DONE — the diagonal is now DERIVED and outcome-free in the real layer (`selfApply θ := betaA θ`),
+engine green. Both diagonal legs (ctxUnfold via B3/Gw, diagFix via B4) are outcome-free ⇒ the `hp0`
+obstruction is gone. Next: **B4-wire** — assemble `ContextRepr` (Gw-sound) + `object_pblt_real` +
+`bridge_BWD_plays` into the engine PBLT conclusion, then delete the axiom.

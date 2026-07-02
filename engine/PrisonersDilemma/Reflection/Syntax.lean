@@ -111,8 +111,14 @@ def plug (c : Nat) : OFml → OFml
   | .iff a b    => .iff (plug c a) (plug c b)
   | .box a      => .box (plug c a)
 
-/-- `selfApply θ = θ(⌜θ⌝, -)` — plug θ's own code for its slot. -/
-def selfApply (θ : OFml) : OFml := plug (encode θ) θ
+/-- `selfApply θ` — the PREDICATE-LEVEL self-application: `betaA θ` (the toy `Pred`'s `.app` evaluates
+    `θ` at `⌜θ⌝`; here that self-evaluation IS "wrap in `betaA`"). This REPLACES the substitution form
+    `plug (encode θ) θ`, which was head-preserving and so gave only `selfApply`-code (`betaA θ ↔
+    gApp(⌜selfApply θ⌝)`), forcing the diagonal fixpoint to be an ASSERTED rule needing the outcome
+    (`hp0`). With `selfApply θ := betaA θ`, `e ⌜θ⌝ = ⌜betaA θ⌝`, so `repr_object` yields the SELF-CODE
+    fixpoint `betaA θ ↔ gApp(⌜betaA θ⌝)` DIRECTLY — the diagonal is DERIVED, outcome-free (BewB4 spike).
+    `plug` remains available but is no longer used by the diagonal. -/
+def selfApply (θ : OFml) : OFml := .betaA θ
 
 open Classical in
 /-- The substitution-on-codes function `e` (tex's `e`), realized via the encode-fibre (total by
