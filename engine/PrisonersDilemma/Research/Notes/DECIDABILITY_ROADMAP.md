@@ -221,6 +221,34 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     (cost now program-dependent) + consumer sweep (T1-style); T3.2c — the atom decider
     (budget now strictly decreases through search_t: the T3.0/T3.1 method applies directly).
     Then T4 as planned.
+  - **T3.2a STEP 1 — ✅ SHIPPED (2026-07-02, build green).** `PlaysProof.search_f` (refutation
+    premise `Provable m (.neg guard)` + the cost FLOOR: pays the full failed budget `k`) and
+    `Provable.atomNeg` (refute a play-atom from a certificate of the actual play — eval
+    determinism) are IN; soundness restructured as `BaseTheorems.sound_upto` (joint, by STRONG
+    INDUCTION ON THE BUDGET — the floor makes the hypothetical guard proof strictly smaller,
+    which is what lets `search_f` be sounded at all); `Exclusion.no_pp_else` /
+    `no_provable_forbidden` cost-qualified (the exclusion holds exactly WITHIN the guard's own
+    budget — the unqualified forms were the inconsistent axiom's shape). Public soundness API
+    unchanged. The axiom still present (still inconsistent) — deletion is STEP 2.
+  - **T3.2a STEP 2 — ⚠️ NOT MECHANICAL: outcome theorems CHANGE SEMANTICALLY.** Deleting the
+    axiom requires restating `atom_complete` per-site (certificates constructed with
+    `search_t`/`search_f`), and the FLOOR forces honest game-theory changes wherever a bot
+    consumes ANOTHER bot's else-play within the same budget: the else-certificate costs
+    > that bot's guard budget. Concretely (analysis 2026-07-02):
+    * `DupocBot_vs_DBot` (and OBot/EBot probes): DBot's play crosses Dupoc's FAILED search
+      (probe vs `.bot DefectBot`), so "DBot plays C vs Dupoc_k" is certifiable only ABOVE k —
+      Dupoc_k's guard at k cannot see it ⇒ same-k (C,C) does NOT survive; needs staggered
+      budgets or a NEW refutation-transparency rule (an `iteBranchNeg` reading the probe's
+      refutation at Derivation level — design open).
+    * `outcome_PrudentBot_vs_DupocBot` / JustBot×{Prudent,Dupoc}: prudence facts are
+      else-plays of the partner — same-k cooperation needs restating (e.g. PrudentBot_{f k}
+      vs DupocBot_k with f k ≥ k + O(log k)); this matches Critch (his PrudentBot/FairBot
+      pairs carry budget-function conditions; the same-k theorems were artifacts of the
+      unsound axiom).
+    * Search-free-probe results (PrudentBot×MirrorBot, Dupoc/Cupod self-play & vs
+      const/sim bots) survive as-is (their prudence/probe facts have ordinary certificates).
+    DECISION NEEDED (results-level): which theorems to restate with staggered budgets vs.
+    which to add refutation-transparency rules for — affects the paper's headline results.
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
   theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
