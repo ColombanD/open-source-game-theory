@@ -69,62 +69,85 @@ theorem isEmpty_deriv_else (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Prog)
     IsEmpty (Derivation (.plays (.search k ψ0 (.const aT) (.const aE)) q aE)) :=
   ⟨fun d => no_deriv_else k ψ0 aT aE q hne d ⟨rfl, rfl, rfl⟩⟩
 
-/-- **No `PlaysProof` of a `.search`-bot's ELSE-action** as its OWN body. The only `.search`
-    `PlaysProof` rule is `search_t`, which concludes the THEN-action `aT ≠ aE`; the body here is the
-    `.search` bot itself (`body = meS`), so no other rule applies. By `cases` on the certificate. -/
+/-- **No CHEAP `PlaysProof` of a `.search`-bot's ELSE-action** as its OWN body: no certificate
+    within the guard's own budget `k`. (Since the `search_f` repair, else-certificates DO exist —
+    but their cost pays the full failed budget, so they always exceed `k`: THE FLOOR. This
+    cost-qualified form is exactly what consistency permits; the unqualified version was the
+    inconsistent axiom's shape.) `search_t` concludes the THEN-action `aT ≠ aE`; `search_f`'s
+    cost `n' + m + k + c_node > k` is ruled out by the bound. -/
 theorem no_pp_else (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Prog) (hne : aT ≠ aE) {n : Nat}
+    (hn : n ≤ k)
     (cert : PlaysProof (.search k ψ0 (.const aT) (.const aE)) q (.search k ψ0 (.const aT) (.const aE)) aE n) :
     False := by
-  -- the only `.search` rule is `search_t`, whose THEN-branch sub-proof runs `p = .const aT`; a
-  -- `.const aT` can only play `aT`, so the conclusion action is `aT`, forced here to `aE` ⇒ `aT = aE`.
   cases cert with
   | search_t _ subcert =>
       -- subcert : PlaysProof meS q (.const aT) aE — but `.const` only plays its own action, forcing
       -- `aE = aT`, so `hne : aT ≠ aT`.
       cases subcert; exact hne rfl
+  | search_f _ _ =>
+      -- the else-certificate pays the full failed budget: cost ≥ k + 1 > k ≥ n — the floor.
+      have hcn : c_node = 1 := rfl
+      omega
 
 /-- **No `Provable` concludes a `Forbidden` formula** (the else-play, or an implication whose
     consequent transitively is). Empties the `Provable.app` route to the else-play. Mirrors
     `cimcic_no_provable_forbidden`'s `Provable.rec` structure; the `atom` else-play case bottoms out
     on `no_pp_else`. -/
 theorem no_provable_forbidden (k0 : Nat) (ψ0 : Formula) (aT aE : Action) (q0 : Prog) (hne : aT ≠ aE) :
-    ∀ {m φ}, Provable m φ →
+    ∀ {m φ}, Provable m φ → m ≤ k0 →
       ¬ Forbidden (.search k0 ψ0 (.const aT) (.const aE)) q0 aE φ := by
+  -- COST-QUALIFIED since the `search_f` repair: else-certificates exist ABOVE the floor
+  -- (cost > k0), so the exclusion holds exactly WITHIN the guard's own budget — which is
+  -- all `provable_else_isAtom`/the guard semantics ever needed. The additive gates thread
+  -- the bound through every premise (premise budgets ≤ conclusion budget ≤ k0).
   intro m φ h
   exact Provable.rec
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
-    (motive_3 := fun _ φ _ => ¬ Forbidden (.search k0 ψ0 (.const aT) (.const aE)) q0 aE φ)
+    (motive_3 := fun m φ _ => m ≤ k0 →
+      ¬ Forbidden (.search k0 ψ0 (.const aT) (.const aE)) q0 aE φ)
     trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
+    (fun _ _ _ _ => trivial)
     (fun _ _ _ => trivial)
-    (fun {_k} {_φ} hd => by intro hF; obtain ⟨d, _⟩ := hd; exact no_deriv_else k0 ψ0 aT aE q0 hne d hF)
+    (fun {_k} {_φ} hd => by
+        intro _hm hF; obtain ⟨d, _⟩ := hd; exact no_deriv_else k0 ψ0 aT aE q0 hne d hF)
     (fun {_k} {_φ} hatom _ => by
-        intro hF
+        intro hm hF
         cases hatom with
-        | mk cert _ =>
+        | mk cert hle =>
             simp only [Forbidden] at hF; obtain ⟨hp, hq, ha⟩ := hF
-            subst hp; subst hq; subst ha; exact no_pp_else _ _ _ _ _ hne cert)
-    (fun _ _ _ _ _ ih => by intro hF; exact ih hF)                               -- weakenImpl
+            subst hp; subst hq; subst ha
+            exact no_pp_else _ _ _ _ _ hne (by omega) cert)
+    (fun _φ _ψ _m _hψ hle ih => by intro hm hF; exact ih (by omega) hF)          -- weakenImpl
     (fun {_k} _k₁ _k₂ _m _ψ₁ _ψ₂ _c0 _c1 _q _me _opp hme _hprud _hmk _hle _ih => by      -- searchThenSearch_t
-        intro hF; subst hme; simp only [Forbidden] at hF; obtain ⟨hm, _, _⟩ := hF; simp_all)
-    (fun _φ _ψ _χ _a _b _hab _hbc _hle _ihab ihbc => by intro hF; exact ihbc hF)  -- implTrans
-    (fun {_k} _ _ _ _ _ _ _ => by intro hF; simp only [Forbidden] at hF)         -- atomBoxImpl
-    (fun _kIn _K _φ _hprem _hle _ih => by intro hF; simp only [Forbidden] at hF) -- boxIntro
-    (fun _k _m₁ _m₂ _φ' _α _himpl _hante _hle ihimpl _ihante => by intro hF; exact ihimpl hF)  -- app
+        intro _hm hF; subst hme; simp only [Forbidden] at hF; obtain ⟨hm, _, _⟩ := hF; simp_all)
+    (fun _φ _ψ _χ _a _b _hab _hbc hle _ihab ihbc => by
+        intro hm hF; exact ihbc (by omega) hF)                                    -- implTrans
+    (fun {_k} _ _ _ _ _ _ _ => by intro _hm hF; simp only [Forbidden] at hF)     -- atomBoxImpl
+    (fun _kIn _K _φ _hprem _hle _ih => by intro _hm hF; simp only [Forbidden] at hF) -- boxIntro
+    (fun _k _m₁ _m₂ _φ' _α _himpl _hante hle ihimpl _ihante => by
+        intro hm hF; exact ihimpl (by omega) hF)                                  -- app
     (fun _a _b _c _m _K _φ _α _hprem _hgate _hle _ih => by
-        intro hF; simp only [Forbidden] at hF)                                    -- axK
-    (fun _a _b _K _φ _hgate _hsz => by intro hF; simp only [Forbidden] at hF)     -- box4
+        intro _hm hF; simp only [Forbidden] at hF)                                -- axK
+    (fun _a _b _K _φ _hgate _hsz => by intro _hm hF; simp only [Forbidden] at hF) -- box4
     -- diagF: conclusion peels to `Forbidden tgt`; the LÖB-PREMISE GATE's IH peels to the same — contradiction.
-    (fun _pm _fb _g _K _tgt _hgate _hle ih => by intro hF; exact ih hF)           -- diagF (gated)
+    (fun _pm _fb _g _K _tgt _hgate hle ih => by
+        intro hm hF; exact ih (by omega) hF)                                      -- diagF (gated)
     -- diagB: conclusion peels to `Forbidden (.diag …)` = False (catch-all).
-    (fun _pm _fb _g _K _tgt _hgate _hle _ih => by intro hF; simp only [Forbidden] at hF)  -- diagB
+    (fun _pm _fb _g _K _tgt _hgate _hle _ih => by
+        intro _hm hF; simp only [Forbidden] at hF)                                -- diagB
     -- axKf: conclusion peels to `.box` = False.
-    (fun _a _b _c _K _φ _α _hgate _hsz => by intro hF; simp only [Forbidden] at hF)  -- axKf
+    (fun _a _b _c _K _φ _α _hgate _hsz => by
+        intro _hm hF; simp only [Forbidden] at hF)                                -- axKf
     -- impS2: conclusion `φ→χ` peels to `Forbidden χ`; IH on premise-1 `φ→(ψ→χ)` peels to the same.
-    (fun _φ _ψ _χ _m₁ _m₂ _K _h1 _h2 _hle ih1 _ih2 => by intro hF; exact ih1 hF)  -- impS2
+    (fun _φ _ψ _χ _m₁ _m₂ _K _h1 _h2 hle ih1 _ih2 => by
+        intro hm hF; exact ih1 (by omega) hF)                                     -- impS2
     -- boxMono: conclusion `□_aφ→□_bφ` peels to `.box` = False.
-    (fun _a _b _K _φ _hab _hsz => by intro hF; simp only [Forbidden] at hF)       -- boxMono
+    (fun _a _b _K _φ _hab _hsz => by intro _hm hF; simp only [Forbidden] at hF)   -- boxMono
+    -- atomNeg: conclusion `.neg` = False (catch-all).
+    (fun _p _q _b _aN _m _hatom _hne _hle _ih => by
+        intro _hm hF; simp only [Forbidden] at hF)                                -- atomNeg
     h
 
 
@@ -144,9 +167,11 @@ theorem provable_else_isAtom (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Pro
       -- that implication is `Forbidden` (consequent = else-play), and `no_provable_forbidden` empties
       -- every `Forbidden` `Provable` — so this case is vacuous.
       -- bound order: `m₁ m₂`, antecedent formula `φ'`, antecedent proof, IMPLICATION proof, gate.
-      rename_i m₁ m₂ φ' _hante himpl _hle
+      rename_i m₁ m₂ φ' _hante himpl hle
       have hF : Forbidden (.search k ψ0 (.const aT) (.const aE)) q aE
           (.impl φ' (.plays (.search k ψ0 (.const aT) (.const aE)) q aE)) := ⟨rfl, rfl, rfl⟩
-      exact (no_provable_forbidden k ψ0 aT aE q hne himpl hF).elim
+      have hsp : 1 ≤ (Formula.plays (.search k ψ0 (.const aT) (.const aE)) q aE).size := by
+        simp only [Formula.size]; omega
+      exact (no_provable_forbidden k ψ0 aT aE q hne himpl (by omega) hF).elim
 
 end PD.Exclusion

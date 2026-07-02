@@ -201,6 +201,7 @@ theorem cimcic_no_provable_forbidden (k : Nat) :
     (motive_3 := fun _ φ _ => ¬ CimcicForbiddenC k φ)
     trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
+    (fun _ _ _ _ => trivial)
     (fun _ _ _ => trivial)
     (fun {_k} {_φ} hd => by intro hF; obtain ⟨d, _⟩ := hd; exact cimcic_no_deriv_forbidden k d hF)
     (fun {_k} {_φ} hatom _ => by
@@ -235,6 +236,9 @@ theorem cimcic_no_provable_forbidden (k : Nat) :
     (fun _φ _ψ _χ _m₁ _m₂ _K _h1 _h2 _hle ih1 _ih2 => by intro hF; exact ih1 hF)  -- impS2
     -- boxMono: conclusion `□_aφ→□_bφ` peels to `.box` = False.
     (fun _a _b _K _φ _hab _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)  -- boxMono
+    -- atomNeg: conclusion `.neg` = False (catch-all).
+    (fun _p _q _b _aN _m _hatom _hne _hle _ih => by
+        intro hF; simp only [CimcicForbiddenC] at hF)                               -- atomNeg
     h
 
 /-- CIMCIC's guard against DefectBot is **not provable** within any budget `k`. -/

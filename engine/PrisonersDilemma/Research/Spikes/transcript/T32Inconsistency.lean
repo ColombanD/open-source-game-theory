@@ -69,7 +69,8 @@ theorem D_play_of_false (hps : proofSearch 100 gAtom = false) :
 /-- The else-play has no certificate term (the axiom's own irreducibility result). -/
 theorem no_cert : ¬ (∃ _ : PlaysProof G G G .D (atom_cost 2), True) := by
   rintro ⟨cert, -⟩
-  exact PD.Exclusion.no_pp_else 100 (.plays .self .self .D) .C .D G (by decide) cert
+  -- (post-repair `no_pp_else` is cost-qualified; `atom_cost 2 = 7 ≤ 100` keeps this instance)
+  exact PD.Exclusion.no_pp_else 100 (.plays .self .self .D) .C .D G (by decide) (by decide) cert
 
 /-- **The engine's axiom set proves `False`.** -/
 theorem engine_inconsistent : False := by

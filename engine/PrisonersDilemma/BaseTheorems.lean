@@ -248,71 +248,10 @@ theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}
   | refl => exact h
   | step _ ih => exact eval_mono _ _ _ _ _ ih
 
-/-- **Soundness of the play certificate.** A `PlaysProof` yields an actual play
-    (at some fuel). Via `PlaysProof.rec` (`induction` can't handle the mutual
-    block); `.ite`/`.search` unify the two child fuels with `eval_mono_le` to
-    `max … + 1`. The `.search_t` case reflects its `Provable` guard premise into
-    the `proofSearch` the evaluator consults, via `(proofSearch_spec).2`. -/
-theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body a n) :
-    ∃ N, eval N me opponent body = some a := by
-  refine PlaysProof.rec
-    (motive_1 := fun me opponent body a _ _ => ∃ N, eval N me opponent body = some a)
-    (motive_2 := fun _ _ _ => True)
-    (motive_3 := fun _ _ _ => True)
-    ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken
-    ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl ?provBoxIntro ?provApp ?provAxK ?provBox4
-    ?provDiagF ?provDiagB ?provAxKf ?provImpS2 ?provBoxMono h
-  case const => exact ⟨1, rfl⟩
-  case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
-  case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
-  case bot => intro me opponent p a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
-  case sim => intro a n me opponent p q _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
-  case ite_t =>
-    intro me opponent b r m a' p a n q _ hr _ ihb ihp
-    obtain ⟨Nb, hNb⟩ := ihb; obtain ⟨Np, hNp⟩ := ihp
-    refine ⟨max Nb Np + 1, ?_⟩
-    rw [eval, eval_mono_le hNb _ (Nat.le_max_left Nb Np)]
-    simp only [bind, Option.bind]; rw [if_pos hr]
-    exact eval_mono_le hNp _ (Nat.le_max_right Nb Np)
-  case ite_f =>
-    intro me opponent b r m a' q a n p _ hr _ ihb ihq
-    obtain ⟨Nb, hNb⟩ := ihb; obtain ⟨Nq, hNq⟩ := ihq
-    refine ⟨max Nb Nq + 1, ?_⟩
-    rw [eval, eval_mono_le hNb _ (Nat.le_max_left Nb Nq)]
-    simp only [bind, Option.bind]; rw [if_neg (by simp [hr])]
-    exact eval_mono_le hNq _ (Nat.le_max_right Nb Nq)
-  case search_t =>
-    intro k me opponent p a n φ q hguard _ _ ihp
-    obtain ⟨Np, hNp⟩ := ihp
-    exact ⟨Np+1, by rw [eval, if_pos ((proofSearch_spec k (φ.subst me opponent)).2 hguard)]; exact hNp⟩
-  case atomMk => intros; trivial
-  case provStruct => intros; trivial
-  case provAtom => intros; trivial
-  case provWeaken => intros; trivial
-  case provSearchThenSearch => intros; trivial
-  case provImplTrans => intros; trivial
-  case provAtomBoxImpl => intros; trivial
-  case provBoxIntro => intros; trivial
-  case provApp => intros; trivial
-  case provAxK => intros; trivial
-  case provBox4 => intros; trivial
-  case provDiagF => intros; trivial
-  case provDiagB => intros; trivial
-  case provAxKf => intros; trivial
-  case provImpS2 => intros; trivial
-  case provBoxMono => intros; trivial
-
 /-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
 theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
     AtomProvable k₁ φ → AtomProvable k₂ φ := by
   rintro ⟨cert, hle⟩; exact .mk cert (Nat.le_trans hle hk)
-
-/-- **`AtomProvable_sound` (was an axiom).** A bounded certificate yields a real
-    play, hence the atom's `interp` (`∃ n, play n me opponent = some a`). -/
-theorem AtomProvable_sound (k : Nat) (φ : Formula) : AtomProvable k φ → φ.interp := by
-  rintro ⟨cert, _⟩
-  obtain ⟨N, hN⟩ := playsProof_sound cert
-  exact ⟨N, hN⟩
 
 /-- **Budget monotonicity of `Provable`** — a ≤k₁-transcript proof is a ≤k₂-transcript proof
     (k₁ ≤ k₂). Genuine and structural under the transcript cost model: EVERY rule's final
@@ -343,93 +282,223 @@ theorem Provable_mono : ∀ {k₁ : Nat} {φ : Formula}, Provable k₁ φ →
   | axKf a b c K φ α hgate hle => exact .axKf a b c k₂ φ α hgate (Nat.le_trans hle hk)
   | impS2 φ ψ χ m₁ m₂ K h1 h2 hle => exact .impS2 φ ψ χ m₁ m₂ k₂ h1 h2 (Nat.le_trans hle hk)
   | boxMono a b K φ hab hle => exact .boxMono a b k₂ φ hab (Nat.le_trans hle hk)
+  | atomNeg p q b aN m hatom hne hle =>
+      exact .atomNeg p q b aN m hatom hne (Nat.le_trans hle hk)
 
--- **Soundness of bounded provability: anything provable within a budget is true.**
--- One arm per `Provable` constructor (grouped as in `Derivation.lean`):
---   • entry points: `struct` (→ `Derivation.sound`), `atom` (→ `AtomProvable_sound`);
---   • implication reasoning: `weakenImpl`/`searchThenSearch_t`/`implTrans` (interp is Lean
---     implication, so these are function composition / the IH on the consequent);
---   • modal/box rules: `atomBoxImpl`/`boxIntro`/`app`/`axK`/`box4` — each interp is `Provable …`
---     (the box clause), discharged from the premise's provability (`app` runs the implication).
--- `induction`/`cases` can't recurse through the mutual block, so we drive it with `Provable.rec`
--- (mirroring `playsProof_sound`); the minor premises are POSITIONAL — all `PlaysProof`/`AtomProvable`
--- arms have motive `True`, then one arm per `Provable` constructor in declaration order.
-theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
-  intro k φ h
-  exact Provable.rec
-    (motive_1 := fun _ _ _ _ _ _ => True)
-    (motive_2 := fun _ _ _ => True)
-    (motive_3 := fun _ φ _ => φ.interp)
-    trivial                                   -- const
-    (fun _ _ => trivial)                      -- self
-    (fun _ _ => trivial)                      -- opp
-    (fun _ _ => trivial)                      -- bot
-    (fun _ _ => trivial)                      -- sim
-    (fun _ _ _ _ _ => trivial)                -- ite_t
-    (fun _ _ _ _ _ => trivial)                -- ite_f
-    (fun _ _ _ _ => trivial)                  -- search_t
-    (fun _ _ _ => trivial)                    -- mk (AtomProvable)
-    (fun {k} {φ} hd => by obtain ⟨d, _⟩ := hd; exact d.sound)   -- struct
-    (fun {k} {φ} hatom _ => AtomProvable_sound k φ hatom)       -- atom
-    -- weakenImpl: `(.impl φ ψ).interp` is `φ.interp → ψ.interp`; the IH
-    -- `ih : ψ.interp` (from `Provable m ψ`) discharges it via `fun _ => ih`.
-    (fun _φ _ψ _m _hpsi _hle ih => fun _ => ih)                 -- weakenImpl
-    -- searchThenSearch_t: conclusion `(□_{k₁} ψ₁' → me plays c0).interp`, i.e.
-    -- `Provable k₁ ψ₁' → ∃ n, play n me opponent = some c0`. Given the box
-    -- antecedent (`hbox : Provable k₁ ψ₁'`) and the prudence premise
-    -- (`hprud : Provable k₂ ψ₂'`), both reflect to `proofSearch … = true`, so
-    -- `eval` runs outer `.search` → inner `.search` → `.const c0`. Witness fuel 3.
-    (fun {_k} k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk _hle _ih => by
+/-! ## Joint soundness by STRONG INDUCTION ON THE BUDGET (the `search_f` repair, 2026-07-02).
+
+With the sound false-guard rule `search_f`, soundness can no longer be a plain structural
+induction: its arm must rule out a HYPOTHETICAL guard proof `Provable k guard` that is not a
+sub-derivation. The budget floor in `search_f`'s cost (it pays the full failed budget `k`) is
+exactly what repairs this: the hypothetical proof has transcript ≤ k, STRICTLY below the
+certificate's own cost, so a strong induction on the budget/cost supplies its soundness.
+Within one budget `B`, certificates come first (their `atomNeg`-style premises are
+smaller-cost certificates), then `Provable` (its `atom` entry consumes the certificate half at
+the same `B`). The public `playsProof_sound` / `AtomProvable_sound` / `Provable_sound` keep
+their statements as corollaries. -/
+
+set_option maxHeartbeats 1000000 in
+theorem sound_upto : ∀ B : Nat,
+    (∀ me opponent body a n, PlaysProof me opponent body a n → n ≤ B →
+      ∃ N, eval N me opponent body = some a)
+    ∧ (∀ k φ, Provable k φ → k ≤ B → φ.interp) := by
+  intro B
+  induction B using Nat.strong_induction_on with
+  | _ B IH =>
+    have hplays : ∀ me opponent body a n, PlaysProof me opponent body a n → n ≤ B →
+        ∃ N, eval N me opponent body = some a := by
+      intro me opponent body a n h
+      refine PlaysProof.rec
+        (motive_1 := fun me opponent body a n _ =>
+          n ≤ B → ∃ N, eval N me opponent body = some a)
+        (motive_2 := fun _ _ _ => True)
+        (motive_3 := fun _ _ _ => True)
+        ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk ?provStruct
+        ?provAtom ?provWeaken ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl
+        ?provBoxIntro ?provApp ?provAxK ?provBox4 ?provDiagF ?provDiagB ?provAxKf ?provImpS2
+        ?provBoxMono ?provAtomNeg h
+      case const => exact fun _ => ⟨1, rfl⟩
+      case self =>
+        intro me opponent a n _ ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval]; exact hN⟩
+      case opp =>
+        intro me opponent a n _ ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval]; exact hN⟩
+      case bot =>
+        intro me opponent p a n _ ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval]; exact hN⟩
+      case sim =>
+        intro a n me opponent p q _ ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval]; exact hN⟩
+      case ite_t =>
+        intro me opponent b r m a' p a n q _ hr _ ihb ihp hB
+        obtain ⟨Nb, hNb⟩ := ihb (by omega)
+        obtain ⟨Np, hNp⟩ := ihp (by omega)
+        refine ⟨max Nb Np + 1, ?_⟩
+        rw [eval, eval_mono_le hNb _ (Nat.le_max_left Nb Np)]
+        simp only [bind, Option.bind]; rw [if_pos hr]
+        exact eval_mono_le hNp _ (Nat.le_max_right Nb Np)
+      case ite_f =>
+        intro me opponent b r m a' q a n p _ hr _ ihb ihq hB
+        obtain ⟨Nb, hNb⟩ := ihb (by omega)
+        obtain ⟨Nq, hNq⟩ := ihq (by omega)
+        refine ⟨max Nb Nq + 1, ?_⟩
+        rw [eval, eval_mono_le hNb _ (Nat.le_max_left Nb Nq)]
+        simp only [bind, Option.bind]; rw [if_neg (by simp [hr])]
+        exact eval_mono_le hNq _ (Nat.le_max_right Nb Nq)
+      case search_t =>
+        intro k me opponent p a n φ q hguard _ _ ihp hB
+        obtain ⟨Np, hNp⟩ := ihp (by omega)
+        exact ⟨Np+1, by
+          rw [eval, if_pos ((proofSearch_spec k (φ.subst me opponent)).2 hguard)]
+          exact hNp⟩
+      case search_f =>
+        intro m me opponent q a n k φ p hneg _ _ ihq hB
+        have hcn : c_node = 1 := rfl
+        -- the refutation's interp, via the strong IH strictly below B
+        have hnegI : ¬ (φ.subst me opponent).interp :=
+          (IH m (by omega)).2 m (.neg (φ.subst me opponent)) hneg le_rfl
+        -- the guard is unprovable at its own budget k (< the certificate's cost — the FLOOR)
+        have hps : proofSearch k (φ.subst me opponent) = false := by
+          cases hcase : proofSearch k (φ.subst me opponent) with
+          | false => rfl
+          | true =>
+              exact absurd
+                ((IH k (by omega)).2 k _ ((proofSearch_spec _ _).1 hcase) le_rfl) hnegI
+        obtain ⟨N, hN⟩ := ihq (by omega)
+        exact ⟨N+1, by rw [eval, if_neg (by simp [hps])]; exact hN⟩
+      case atomMk => intros; trivial
+      case provStruct => intros; trivial
+      case provAtom => intros; trivial
+      case provWeaken => intros; trivial
+      case provSearchThenSearch => intros; trivial
+      case provImplTrans => intros; trivial
+      case provAtomBoxImpl => intros; trivial
+      case provBoxIntro => intros; trivial
+      case provApp => intros; trivial
+      case provAxK => intros; trivial
+      case provBox4 => intros; trivial
+      case provDiagF => intros; trivial
+      case provDiagB => intros; trivial
+      case provAxKf => intros; trivial
+      case provImpS2 => intros; trivial
+      case provBoxMono => intros; trivial
+      case provAtomNeg => intros; trivial
+    have hprov : ∀ k φ, Provable k φ → k ≤ B → φ.interp := by
+      intro k φ h
+      refine Provable.rec
+        (motive_1 := fun _ _ _ _ _ _ => True)
+        (motive_2 := fun k φ _ => k ≤ B → φ.interp)
+        (motive_3 := fun k φ _ => k ≤ B → φ.interp)
+        ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pAtomMk
+        ?pStruct ?pAtom ?pWeaken ?pSTS ?pImplTrans ?pAtomBoxImpl ?pBoxIntro ?pApp ?pAxK
+        ?pBox4 ?pDiagF ?pDiagB ?pAxKf ?pImpS2 ?pBoxMono ?pAtomNeg h
+      case pConst => intros; trivial
+      case pSelf => intros; trivial
+      case pOpp => intros; trivial
+      case pBot => intros; trivial
+      case pSim => intros; trivial
+      case pIte_t => intros; trivial
+      case pIte_f => intros; trivial
+      case pSearch_t => intros; trivial
+      case pSearch_f => intros; trivial
+      case pAtomMk =>
+        -- a budgeted certificate yields the real play, via the certificate half at this B
+        intro me opponent a n k cert hle _ih _hB
+        exact hplays me opponent me a n cert (by omega)
+      case pStruct =>
+        intro φ0 k0 hd _hB
+        obtain ⟨d, _⟩ := hd
+        exact d.sound
+      case pAtom =>
+        intro k0 φ0 _hatom ih hB
+        exact ih hB
+      case pWeaken =>
+        intro k0 A B0 m0 _hψ hle ih hB
+        exact fun _ => ih (by omega)
+      case pSTS =>
+        intro k0 k₁ k₂ m0 ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk _hle _ih _hB
         subst hme
         intro hbox
         have hps₁ : proofSearch k₁ (ψ₁.subst
             (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opponent) = true :=
           (proofSearch_spec _ _).2 hbox
-        -- the inner premise is at its own transcript `m ≤ k₂`; budget-monotonicity lifts it
         have hps₂ : proofSearch k₂ (ψ₂.subst
             (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opponent) = true :=
           (proofSearch_spec _ _).2 (Provable_mono hprud hmk)
-        exact ⟨3, by simp only [play, eval, hps₁, hps₂, if_true]⟩)
-    -- implTrans: compose the two implications' interps (function composition).
-    (fun _φ _ψ _χ _a _b _hab _hbc _hle ihab ihbc => fun h => ihbc (ihab h))  -- implTrans
-    -- atomBoxImpl: conclusion `(φ → □_k φ).interp`, i.e. `φ.interp → Provable k φ`.
-    -- The certificate `hatom : AtomProvable k φ` discharges the consequent directly
-    -- (`Provable.atom`), independent of the antecedent — no axiom.
-    (fun {_k} _kBox _p _q _a hatom _hle _ih => fun _ => Provable.atom hatom)  -- atomBoxImpl
-    -- boxIntro: conclusion `(□_{kIn} φ).interp` is *definitionally* `Provable kIn φ`,
-    -- which is exactly the premise `hprem`. The arm is the identity (`ih : φ.interp`
-    -- is unused — we return the stronger provability the premise already carries).
-    (fun _kIn _K _φ hprem _hle _ih => hprem)                                  -- boxIntro
-    -- app: conclusion `α.interp`. ihimp : `(φ→α).interp = (φ.interp → α.interp)`;
-    -- ihφ : `φ.interp`. Pure function application. (binders: k m₁ m₂ φ α impl ante gate)
-    (fun _k _m₁ _m₂ _φ _α _himp _hante _hle ihimp ihante => ihimp ihante)      -- app
-    -- axK: conclusion `(□_b φ → □_c α).interp = (Provable b φ → Provable c α)`. The IH on the
-    -- premise `Provable m (□_a(φ→α))` is its interp `Provable a (φ→α)`; apply it to the
-    -- hypothetical `Provable b φ` via OBJECT modus ponens `Provable.app` at output `c` — the
-    -- additive gate `a + b + α.size ≤ c` is EXACTLY `app`'s side condition (transcript-honest K).
-    (fun a b c _m _K φ α _hprem hgate _hle ih =>
-      (fun hφ => Provable.app c a b φ α ih hφ hgate))                          -- axK
-    -- box4: conclusion `(□_a φ → □_b (□_a φ)).interp = (Provable a φ → Provable b (□_a φ))`:
-    -- `boxIntro` with the additive gate `a + (□_a φ).size ≤ b` (the premise transcript ≤ a).
-    (fun a b _K φ hgate _hsz =>
-      (show Provable a φ → Provable b (.box a φ) from
-        fun hφ => Provable.boxIntro a b φ hφ hgate))                           -- box4
-    -- diagF: conclusion `(ψ → (□_g ψ → tgt)).interp` where `ψ := .diag g tgt` and
-    -- `ψ.interp = (Provable g ψ → tgt.interp)` BY DEFINITION (Dynamics.lean) — the identity.
-    (fun _pm _fb _g _K _tgt _hgate _hle _ih => fun h => h)                     -- diagF
-    -- diagB: `((□_g ψ → tgt) → ψ).interp` — the same identity, other direction.
-    (fun _pm _fb _g _K _tgt _hgate _hle _ih => fun h => h)                     -- diagB
-    -- axKf: `(□_a(φ→α) → (□_bφ → □_cα)).interp = Provable a (φ→α) → Provable b φ → Provable c α`:
-    -- object modus ponens (`Provable.app`) at output `c`; the gate is `app`'s condition.
-    (fun a b c _K φ α hgate _hsz =>
-      fun hab ha => Provable.app c a b φ α hab ha hgate)                       -- axKf
-    -- impS2: `(φ→χ).interp` from ih₁ : `(φ→(ψ→χ)).interp` and ih₂ : `(φ→ψ).interp` — the
-    -- S-combinator, plain function application.
-    (fun _φ _ψ _χ _m₁ _m₂ _K _h1 _h2 _hle ih1 ih2 => fun hφ => (ih1 hφ) (ih2 hφ))  -- impS2
-    -- boxMono: `(□_a φ → □_b φ).interp = (Provable a φ → Provable b φ)` with `a ≤ b` —
-    -- budget monotonicity (`Provable_mono`), the semantic fact the rule internalizes.
-    (fun _a _b _K _φ hab _hsz => fun hpa => Provable_mono hpa hab)             -- boxMono
-    h
+        exact ⟨3, by simp only [play, eval, hps₁, hps₂, if_true]⟩
+      case pImplTrans =>
+        intro k0 A B0 C a b _hab _hbc hle ihab ihbc hB
+        exact fun h => ihbc (by omega) (ihab (by omega) h)
+      case pAtomBoxImpl =>
+        intro k0 kBox p q a hatom _hle _ih _hB
+        exact fun _ => Provable.atom hatom
+      case pBoxIntro =>
+        intro kIn K0 A hprem _hle _ih _hB
+        exact hprem
+      case pApp =>
+        intro k0 m₁ m₂ A B0 _himp _hante hle ihimp ihante hB
+        exact ihimp (by omega) (ihante (by omega))
+      case pAxK =>
+        intro a b c m0 K0 A B0 _hprem hgate hle ih hB
+        exact fun hφ => Provable.app c a b A B0 (ih (by omega)) hφ hgate
+      case pBox4 =>
+        intro a b K0 A hgate _hle _hB
+        exact fun hφ => Provable.boxIntro a b A hφ hgate
+      case pDiagF =>
+        intro pm fb g K0 tgt _hgate _hle _ih _hB
+        exact fun h => h
+      case pDiagB =>
+        intro pm fb g K0 tgt _hgate _hle _ih _hB
+        exact fun h => h
+      case pAxKf =>
+        intro a b c K0 A B0 hgate _hle _hB
+        exact fun hab ha => Provable.app c a b A B0 hab ha hgate
+      case pImpS2 =>
+        intro A B0 C m₁ m₂ K0 _h1 _h2 hle ih1 ih2 hB
+        exact fun hφ => (ih1 (by omega) hφ) (ih2 (by omega) hφ)
+      case pBoxMono =>
+        intro a b K0 A hab _hle _hB
+        exact fun hpa => Provable_mono hpa hab
+      case pAtomNeg =>
+        -- a certificate of the ACTUAL play refutes any other action, by eval determinism
+        intro k0 p q b aN m0 hatom hne hle _ih hB
+        intro hEx
+        obtain ⟨n', hn'⟩ := hEx
+        obtain ⟨cert, hcle⟩ := hatom
+        have hszpos : 1 ≤ (Formula.neg (.plays p q aN)).size := by
+          simp only [Formula.size]; omega
+        obtain ⟨N, hN⟩ := hplays p q p b _ cert (by omega)
+        have h1 : eval (max N n') p q p = some b := eval_mono_le hN _ (Nat.le_max_left _ _)
+        have h2 : eval (max N n') p q p = some aN :=
+          eval_mono_le (show eval n' p q p = some aN from hn') _ (Nat.le_max_right _ _)
+        rw [h1] at h2
+        injection h2 with h3
+        exact hne h3
+    exact ⟨hplays, hprov⟩
+
+/-- **Soundness of the play certificate.** A `PlaysProof` yields an actual play (at some
+    fuel). Corollary of `sound_upto` at `B := n`. -/
+theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body a n) :
+    ∃ N, eval N me opponent body = some a :=
+  (sound_upto n).1 me opponent body a n h le_rfl
+
+/-- **`AtomProvable_sound` (was an axiom).** A bounded certificate yields a real
+    play, hence the atom's `interp` (`∃ n, play n me opponent = some a`). -/
+theorem AtomProvable_sound (k : Nat) (φ : Formula) : AtomProvable k φ → φ.interp := by
+  rintro ⟨cert, hle⟩
+  obtain ⟨N, hN⟩ := playsProof_sound cert
+  exact ⟨N, hN⟩
+
+/-- **Soundness of bounded provability: anything provable within a budget is true.**
+    Corollary of `sound_upto` at `B := k` (which see for the budget-strong-induction
+    structure the `search_f` repair requires). -/
+theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp :=
+  fun k φ h => (sound_upto k).2 k φ h le_rfl
 
 /-
 HOW TO DISCHARGE A `proofSearch k φ = b` GOAL.

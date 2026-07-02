@@ -247,6 +247,28 @@ mutual
         Provable k (φ.subst me opponent) →
         PlaysProof me opponent p a n →
         PlaysProof me opponent (.search k φ p q) a (n + c_guard k + c_node)
+    /-- **FALSE-guard branch — the REPAIR of the deleted-inconsistent `atom_complete_false_guard`
+        axiom** (2026-07-02; `Research/Spikes/transcript/T32Inconsistency.lean`). `.search k φ p q`
+        runs the ELSE branch (`q`) when the guard search fails. Both design points are FORCED:
+
+        * The premise is a **refutation** `Provable m (.neg guard)` — Σ₁, certifiable via the
+          guard subject's actual play plus `eval` determinism (`Provable.atomNeg`) — NOT mere
+          unprovability (Π₁; and premising on unprovability is the non-monotone fixpoint whose
+          paradox is the anti-diagonal bot). For guards that are false-but-irrefutable (the
+          anti-diagonal's own), the else-play stays TRUE BUT UNCERTIFIABLE — the honest Gödelian
+          boundary (`evalC`'s `none`), no axiom papering over it.
+        * The cost pays the FULL failed search budget `k` (the floor): an else-certificate must
+          NEVER fit within the guard budget whose failure it certifies — otherwise
+          `atom_monotone` lifts it back above `k` and re-fires the guard (the machine-checked
+          inconsistency). The floor is also exactly what lets soundness be PROVEN: in the
+          budget-strong-induction (`BaseTheorems.sound_upto`), a hypothetical guard proof has
+          transcript ≤ k < this certificate's cost, so the induction hypothesis refutes it.
+          Faithful: a PA-style proof that a bounded search fails checks every ≤`k`-length
+          candidate — paying `k` characters is generous, not inflated. -/
+    | search_f :
+        Provable m (.neg (φ.subst me opponent)) →
+        PlaysProof me opponent q a n →
+        PlaysProof me opponent (.search k φ p q) a (n + m + k + c_node)
 
 -- `AtomProvable k φ` — a `PlaysProof` whose run cost fits the budget (`n ≤ k`); the bridge for
 -- atomic `.plays` facts (which `Derivation` cannot read).
@@ -461,6 +483,15 @@ mutual
         a ≤ b →
         (Formula.impl (.box a φ) (.box b φ)).size ≤ K →
         Provable K (.impl (.box a φ) (.box b φ))
+    /-- **Refutation of a play-atom from a certificate of the actual play** (eval determinism):
+        if `p` provably plays `b` (a real certificate) and `b ≠ aN`, then `¬(p plays aN)` —
+        sound by `eval` fuel-monotonicity (a committed `b`-play excludes an `aN`-play at every
+        fuel). This is the Σ₁ refutation that `search_f` consumes; NEW with the false-guard
+        repair (2026-07-02). Transcript-charged like every rule. -/
+    | atomNeg (p q : Prog) (b aN : Action) (m : Nat) :
+        AtomProvable m (.plays p q b) → b ≠ aN →
+        m + (Formula.neg (.plays p q aN)).size ≤ k →
+        Provable k (.neg (.plays p q aN))
 end
 
 -- 4. The proof-search oracle: bounded provability reflected into `Bool` for the
