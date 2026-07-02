@@ -105,23 +105,26 @@ theorem no_provable_forbidden (k0 : Nat) (ψ0 : Formula) (aT aE : Action) (q0 : 
         | mk cert _ =>
             simp only [Forbidden] at hF; obtain ⟨hp, hq, ha⟩ := hF
             subst hp; subst hq; subst ha; exact no_pp_else _ _ _ _ _ hne cert)
-    (fun _ _ _ _ _ _ ih => by intro hF; exact ih hF)                              -- weakenImpl
-    (fun {_k} _k₁ _k₂ _ψ₁ _ψ₂ _c0 _c1 _q _me _opp hme _hprud _hk2 _hsz _ih => by  -- searchThenSearch_t
+    (fun _ _ _ _ _ ih => by intro hF; exact ih hF)                               -- weakenImpl
+    (fun {_k} _k₁ _k₂ _m _ψ₁ _ψ₂ _c0 _c1 _q _me _opp hme _hprud _hmk _hle _ih => by      -- searchThenSearch_t
         intro hF; subst hme; simp only [Forbidden] at hF; obtain ⟨hm, _, _⟩ := hF; simp_all)
-    (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hψsz _hsz _ihab ihbc => by intro hF; exact ihbc hF)  -- implTrans
+    (fun _φ _ψ _χ _a _b _hab _hbc _hle _ihab ihbc => by intro hF; exact ihbc hF)  -- implTrans
     (fun {_k} _ _ _ _ _ _ _ => by intro hF; simp only [Forbidden] at hF)         -- atomBoxImpl
-    (fun _kIn _K _φ _hprem _hsz _ih => by intro hF; simp only [Forbidden] at hF) -- boxIntro
-    (fun _k _m _φ' _α _himpl _hante _hmk ihimpl _ihante => by intro hF; exact ihimpl hF)  -- app
-    (fun _k _K _φ _α _himpl _hsz _ih => by intro hF; simp only [Forbidden] at hF) -- axK
-    (fun _k _K _φ _hksz _hsz => by intro hF; simp only [Forbidden] at hF)          -- box4
+    (fun _kIn _K _φ _hprem _hle _ih => by intro hF; simp only [Forbidden] at hF) -- boxIntro
+    (fun _k _m₁ _m₂ _φ' _α _himpl _hante _hle ihimpl _ihante => by intro hF; exact ihimpl hF)  -- app
+    (fun _a _b _c _m _K _φ _α _hprem _hgate _hle _ih => by
+        intro hF; simp only [Forbidden] at hF)                                    -- axK
+    (fun _a _b _K _φ _hgate _hsz => by intro hF; simp only [Forbidden] at hF)     -- box4
     -- diagF: conclusion peels to `Forbidden tgt`; the LÖB-PREMISE GATE's IH peels to the same — contradiction.
-    (fun _g _K _tgt _hgate _hsz ih => by intro hF; exact ih hF)                   -- diagF (gated)
+    (fun _pm _fb _g _K _tgt _hgate _hle ih => by intro hF; exact ih hF)           -- diagF (gated)
     -- diagB: conclusion peels to `Forbidden (.diag …)` = False (catch-all).
-    (fun _g _K _tgt _hgate _hsz _ih => by intro hF; simp only [Forbidden] at hF)     -- diagB
+    (fun _pm _fb _g _K _tgt _hgate _hle _ih => by intro hF; simp only [Forbidden] at hF)  -- diagB
     -- axKf: conclusion peels to `.box` = False.
-    (fun _k _K _φ _α _hsz => by intro hF; simp only [Forbidden] at hF)               -- axKf
+    (fun _a _b _c _K _φ _α _hgate _hsz => by intro hF; simp only [Forbidden] at hF)  -- axKf
     -- impS2: conclusion `φ→χ` peels to `Forbidden χ`; IH on premise-1 `φ→(ψ→χ)` peels to the same.
-    (fun _φ _ψ _χ _m _K _h1 _h2 _hmk _hsz ih1 _ih2 => by intro hF; exact ih1 hF)  -- impS2
+    (fun _φ _ψ _χ _m₁ _m₂ _K _h1 _h2 _hle ih1 _ih2 => by intro hF; exact ih1 hF)  -- impS2
+    -- boxMono: conclusion `□_aφ→□_bφ` peels to `.box` = False.
+    (fun _a _b _K _φ _hab _hsz => by intro hF; simp only [Forbidden] at hF)       -- boxMono
     h
 
 
@@ -140,8 +143,8 @@ theorem provable_else_isAtom (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Pro
       -- `app` could conclude the else-play via modus ponens from `Provable m (φ' → else-play)`. But
       -- that implication is `Forbidden` (consequent = else-play), and `no_provable_forbidden` empties
       -- every `Forbidden` `Provable` — so this case is vacuous.
-      -- bound order: `m`, antecedent formula `φ'`, antecedent proof, `m ≤ k`, IMPLICATION proof.
-      rename_i m φ' _hante _hmk himpl
+      -- bound order: `m₁ m₂`, antecedent formula `φ'`, antecedent proof, IMPLICATION proof, gate.
+      rename_i m₁ m₂ φ' _hante himpl _hle
       have hF : Forbidden (.search k ψ0 (.const aT) (.const aE)) q aE
           (.impl φ' (.plays (.search k ψ0 (.const aT) (.const aE)) q aE)) := ⟨rfl, rfl, rfl⟩
       exact (no_provable_forbidden k ψ0 aT aE q hne himpl hF).elim

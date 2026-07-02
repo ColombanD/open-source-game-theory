@@ -180,15 +180,17 @@ inductive Derivation : Formula → Type where
   | eqRefl (p : Prog) :
       Derivation (.eq p p)
 
-/-- **Proof "size" = the character count of the CONCLUSION FORMULA** (NOT the proof-tree
-    node count). This is intentional and load-bearing: it is Critch's character-cost model
-    (Appendix B), and it is the quantity `proofSearch k φ` tests against — "is there a proof
-    of `φ` whose conclusion fits in `k` characters?". Because size depends only on the
-    conclusion, every box rule below bounds its budget via `Formula.size` alone, with no need
-    for a structural proof-tree index. (An earlier attempt to add a structural `treeSize` was a
-    dead end and was removed.) Leaf rules contribute their conclusion's size; combining rules
-    (`modusPonens`, `hypSyll`) conclude something no larger than the premises, preserving bounds. -/
+/-- **Proof "size" = the character count of the WHOLE TRANSCRIPT** (cumulative over the
+    proof tree). This is Critch's literal character-cost model (Appendix B): `proofSearch k φ`
+    asks "is there a proof of `φ` whose full transcript fits in `k` characters?". Leaf rules
+    cost their conclusion's size; the combining rules (`modusPonens`, `hypSyll`) pay BOTH
+    subtrees plus their own conclusion — so a bounded budget genuinely bounds the premise
+    formulas too (the paid-cut property that makes bounded search finite; the former
+    conclusion-only cost model left `modusPonens` premises unbounded, which is exactly what
+    blocked decidability — `Research/Notes/DECIDABILITY_ROADMAP.md`). -/
 def Derivation.size : {φ : Formula} → Derivation φ → Nat
+  | _, .modusPonens _ ψ d1 d2 => d1.size + d2.size + ψ.size
+  | _, .hypSyll φ _ χ d1 d2 => d1.size + d2.size + (Formula.impl φ χ).size
   | φ, _ => φ.size
 
 -- 2. Per-step proof-encoding costs (Critch's `e*`, Appendix B(d)): the character
@@ -280,7 +282,7 @@ mutual
         `Type`-valued object distinct from the `Prop`-valued `Provable`) cannot
         carry. -/
     | weakenImpl (φ ψ : Formula) (m : Nat) :
-        Provable m ψ → m ≤ k → (Formula.impl φ ψ).size ≤ k → Provable k (.impl φ ψ)
+        Provable m ψ → m + (Formula.impl φ ψ).size ≤ k → Provable k (.impl φ ψ)
     /-- **Stacked-`.search` transparency** (the canonical Critch PrudentBot shape):
         `me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q`. PrudentBot
         plays `c0` exactly when it can prove BOTH its conditions: the outer guard
@@ -303,11 +305,11 @@ mutual
         `.search` then-branch — each an admitted transparency step — and consults
         the already-proved inner guard. The size side-condition keeps the
         conclusion within budget `k`, as for `weakenImpl`. -/
-    | searchThenSearch_t (k₁ k₂ : Nat) (ψ₁ ψ₂ : Formula) (c0 c1 : Action)
+    | searchThenSearch_t (k₁ k₂ m : Nat) (ψ₁ ψ₂ : Formula) (c0 c1 : Action)
         (q me opponent : Prog)
         (hme : me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) :
-        Provable k₂ (ψ₂.subst me opponent) → k₂ ≤ k →
-        (Formula.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0)).size ≤ k →
+        Provable m (ψ₂.subst me opponent) → m ≤ k₂ →
+        m + (Formula.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0)).size ≤ k →
         Provable k (.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0))
     /-- **Transitivity of implication at the `Provable` level** (hypothetical
         syllogism for `Provable`): from `φ → ψ` and `ψ → χ`, infer `φ → χ`.
@@ -319,8 +321,7 @@ mutual
         conclusion within budget `k`, as for `weakenImpl`. -/
     | implTrans (φ ψ χ : Formula) (a b : Nat) :
         Provable a (.impl φ ψ) → Provable b (.impl ψ χ) →
-        a ≤ k → b ≤ k → ψ.size ≤ k →
-        (Formula.impl φ χ).size ≤ k → Provable k (.impl φ χ)
+        a + b + (Formula.impl φ χ).size ≤ k → Provable k (.impl φ χ)
     -- ── (C) modal / box rules — the bounded HBL derivability conditions (constructors, not axioms) ──
     /-- **Object-level bounded Σ₁-completeness for play-atoms** (constructive,
         certificate-carrying): from a bounded play certificate `AtomProvable k
@@ -345,7 +346,7 @@ mutual
         consequent. The size side-condition keeps the conclusion within budget `k`. -/
     | atomBoxImpl (kBox : Nat) (p q : Prog) (a : Action) :
         AtomProvable kBox (.plays p q a) →
-        (Formula.impl (.plays p q a) (.box kBox (.plays p q a))).size ≤ k →
+        kBox + (Formula.impl (.plays p q a) (.box kBox (.plays p q a))).size ≤ k →
         Provable k (.impl (.plays p q a) (.box kBox (.plays p q a)))
     /-- **Box-introduction / bounded necessitation** (HBL D2, the constructive
         realization of the former axiom `box_provable`): if `φ` is provable within
@@ -364,7 +365,7 @@ mutual
         gives the consumer the `K ≤ (.box kIn φ).size` bound the former axiom asserted. -/
     | boxIntro (kIn K : Nat) (φ : Formula) :
         Provable kIn φ →
-        (Formula.box kIn φ).size ≤ K →
+        kIn + (Formula.box kIn φ).size ≤ K →
         Provable K (.box kIn φ)
     /-- **Object-level modus ponens** (the proof-DATA application rule): from `Provable k (φ → α)`
         and `Provable k φ`, infer `Provable k α`. POSITIVE (both premises are `Provable` VALUES, no
@@ -377,8 +378,8 @@ mutual
         `Provable → Provable → Provable` rule. It is exactly the `app` constructor the faithful
         substrate spike (`Research/Spikes/bounded_lob/FaithfulSubstrateSpike.lean`) identified as the
         missing piece that lets `axK`'s soundness arm RUN an implication proof. -/
-    | app (k m : Nat) (φ α : Formula) :
-        Provable m (.impl φ α) → Provable m φ → m ≤ k → Provable k α
+    | app (k m₁ m₂ : Nat) (φ α : Formula) :
+        Provable m₁ (.impl φ α) → Provable m₂ φ → m₁ + m₂ + α.size ≤ k → Provable k α
     /-- **GL axiom-K at a fixed budget `k`** (the constructive realization of the former axiom
         `boxInternalize`, via a proof-TERM premise): from `Provable k (□_k (φ → α))`, infer
         `Provable k (□_k φ → □_k α)` (size permitting).
@@ -397,10 +398,11 @@ mutual
 
         The PROOF budget `K` is separate from the inner box budget `k` (with `size ≤ K`), so the rule
         self-weakens (`K` can relax) — keeping `proofSearch_monotone`, exactly as `boxIntro` does. -/
-    | axK (k K : Nat) (φ α : Formula) :
-        Provable k (.box k (.impl φ α)) →
-        (Formula.impl (.box k φ) (.box k α)).size ≤ K →
-        Provable K (.impl (.box k φ) (.box k α))
+    | axK (a b c m K : Nat) (φ α : Formula) :
+        Provable m (.box a (.impl φ α)) →
+        a + b + α.size ≤ c →
+        m + (Formula.impl (.box b φ) (.box c α)).size ≤ K →
+        Provable K (.impl (.box b φ) (.box c α))
     /-- **GL axiom-4 / object necessitation** (`□_k φ → □_k (□_k φ)`): the object form of HBL D2.
         POSITIVE (no premise carrying `Provable` negatively — it is an axiom-shaped rule, size-gated).
         SOUND: its `interp` is `Provable k φ → Provable k (□_k φ)`, i.e. `Provable k φ → Provable k φ`
@@ -410,10 +412,10 @@ mutual
         derives `boxInternalize` as a theorem (necessitate the searchBranch leg, `axK`-distribute,
         `box4`-inflate, chain the PrudentBot leg — `MutualLobSpike.lean` Route 2, now all constructors).
         The PROOF budget `K` is free (with `size ≤ K`), self-weakening for `proofSearch_monotone`. -/
-    | box4 (k K : Nat) (φ : Formula) :
-        (Formula.box k φ).size ≤ k →
-        (Formula.impl (.box k φ) (.box k (.box k φ))).size ≤ K →
-        Provable K (.impl (.box k φ) (.box k (.box k φ)))
+    | box4 (a b K : Nat) (φ : Formula) :
+        a + (Formula.box a φ).size ≤ b →
+        (Formula.impl (.box a φ) (.box b (.box a φ))).size ≤ K →
+        Provable K (.impl (.box a φ) (.box b (.box a φ)))
     -- ── (D) the Löb-fixpoint rules (internalization of the reflection layer's DERIVED diagonal;
     --        Research/Notes/INTERNALIZATION_ROADMAP.md I0, validated in Spikes/pblt/I0Design.lean) ──
     /-- **Löb-fixpoint leg, forward**: `ψ → (□_g ψ → tgt)` for the fixpoint sentence
@@ -424,28 +426,41 @@ mutual
         etc.): a Forbidden impl-chain in the conclusion forces the premise's chain Forbidden too,
         closing those arms. Faithful: the reflection layer DERIVES this leg from representability
         (`repr_object` with the predicate-level `selfApply`, spike B4). -/
-    | diagF (g K : Nat) (tgt : Formula) :
-        Provable g (.impl (.box g tgt) tgt) →
-        (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)).size ≤ K →
+    | diagF (pm fb g K : Nat) (tgt : Formula) :
+        Provable pm (.impl (.box fb tgt) tgt) →
+        pm + (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)).size ≤ K →
         Provable K (.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt))
     /-- **Löb-fixpoint leg, backward**: `(□_g ψ → tgt) → ψ`. Sound = identity (as `diagF`); same
         Löb-premise gate (symmetry; its exclusion arm closes via the `.diag` catch-all regardless). -/
-    | diagB (g K : Nat) (tgt : Formula) :
-        Provable g (.impl (.box g tgt) tgt) →
-        (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)).size ≤ K →
+    | diagB (pm fb g K : Nat) (tgt : Formula) :
+        Provable pm (.impl (.box fb tgt) tgt) →
+        pm + (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)).size ≤ K →
         Provable K (.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt))
     /-- **GL axiom-K as an object FORMULA** `□_k(φ→α) → (□_k φ → □_k α)` — the `axK` RULE form cannot
         supply Löb's middle step, which needs the implication itself as a premise-free theorem.
         Sound via `app`: the interp is `Provable k (φ→α) → Provable k φ → Provable k α`. -/
-    | axKf (k K : Nat) (φ α : Formula) :
-        (Formula.impl (.box k (.impl φ α)) (.impl (.box k φ) (.box k α))).size ≤ K →
-        Provable K (.impl (.box k (.impl φ α)) (.impl (.box k φ) (.box k α)))
+    | axKf (a b c K : Nat) (φ α : Formula) :
+        a + b + α.size ≤ c →
+        (Formula.impl (.box a (.impl φ α)) (.impl (.box b φ) (.box c α))).size ≤ K →
+        Provable K (.impl (.box a (.impl φ α)) (.impl (.box b φ) (.box c α)))
     /-- **Closed composition** (the S-combinator as a rule; both premises are closed `⊢`, so the rule
         form suffices — replacing the deduction theorem the side layer needed): from `⊢ φ → (ψ → χ)`
         and `⊢ φ → ψ`, infer `⊢ φ → χ`. Sound: function application under `interp`. -/
-    | impS2 (φ ψ χ : Formula) (m K : Nat) :
-        Provable m (.impl φ (.impl ψ χ)) → Provable m (.impl φ ψ) →
-        m ≤ K → (Formula.impl φ χ).size ≤ K → Provable K (.impl φ χ)
+    | impS2 (φ ψ χ : Formula) (m₁ m₂ K : Nat) :
+        Provable m₁ (.impl φ (.impl ψ χ)) → Provable m₂ (.impl φ ψ) →
+        m₁ + m₂ + (Formula.impl φ χ).size ≤ K → Provable K (.impl φ χ)
+    /-- **Upward box-subscript monotonicity as an object formula** (`□_a φ → □_b φ` for `a ≤ b`):
+        a ≤a-cost proof IS a ≤b-cost proof, so the implication is sound — its `interp` is
+        `Provable a φ → Provable b φ`, discharged by budget monotonicity (`Provable_mono`).
+        NEW with the transcript cost model (T0 freeze): the conclusion-cost model never needed it,
+        but under additive budgets the Löb chain's K-distribution outputs land at computed
+        subscripts that must be weakened UP onto the consumers' source-literal boxes
+        (`Research/Spikes/transcript/T0Transcript.lean`). Appended LAST to keep the positional
+        recursors' prefix order stable. -/
+    | boxMono (a b K : Nat) (φ : Formula) :
+        a ≤ b →
+        (Formula.impl (.box a φ) (.box b φ)).size ≤ K →
+        Provable K (.impl (.box a φ) (.box b φ))
 end
 
 -- 4. The proof-search oracle: bounded provability reflected into `Bool` for the

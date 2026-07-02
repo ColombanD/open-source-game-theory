@@ -408,26 +408,24 @@ theorem DupocBot_vs_EBot (fuel : Nat) :
 -- DupocBot --
 
 /-- DUPOC-specific Löb premise (critch22 Theorem 3.7 substitution into PBLT),
-    **character-faithful**. The `searchBranch` derivation concluding
-    `□_k (DUPOC plays C vs DUPOC) → (DUPOC plays C vs DUPOC)` has size exactly
-    `5 * log2 k + 33` characters (`DupocBot k` is structurally identical to
-    `CupodBot k`, so each costs `log2 k + 7`). By `linear_log2_add_le 5 33` this
-    fits within budget `k` for all `k ≥ K₀`, so the implication is `Provable k`
-    outright — the PBLT-shaped hypothesis (no looser `∃ m`).
+    **character-faithful and transcript-tight**. The `searchBranch` derivation concluding
+    `□_k (DUPOC plays C vs DUPOC) → (DUPOC plays C vs DUPOC)` is a single leaf whose
+    transcript is exactly its conclusion: `5 * log2 k + 33` characters (`DupocBot k` is
+    structurally identical to `CupodBot k`, so each costs `log2 k + 7`). Under the
+    transcript cost model the premise is `Provable (5·log2 k + 33)` UNCONDITIONALLY —
+    no `K₀` eventuality — and the small budget is exactly what `pblt_engine_id`
+    consumes (do NOT weaken it up to `k`; the Löb chain needs `pm ≪ k`).
 
     The conclusion is *definitionally* the `searchBranch` conclusion: the guard
     `(.plays .opp .self .C).subst (DupocBot k) (DupocBot k)` unfolds to
     `.plays (DupocBot k) (DupocBot k) .C`. -/
-theorem dupoc_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (.plays (DupocBot k) (DupocBot k) .C))
-                        (.plays (DupocBot k) (DupocBot k) .C)) := by
-  obtain ⟨K₀, hK₀⟩ := linear_log2_add_le 5 33
-  refine ⟨K₀, fun k hk => ?_⟩
+theorem dupoc_loeb_premise (k : Nat) :
+    Provable (5 * Nat.log2 k + 33)
+      (.impl (.box k (.plays (DupocBot k) (DupocBot k) .C))
+             (.plays (DupocBot k) (DupocBot k) .C)) := by
   apply Provable.struct
   refine ⟨.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) (DupocBot k) rfl, ?_⟩
   simp only [Derivation.size, Formula.size, Prog.size, DupocBot]
-  have := hK₀ k hk
   omega
 
 /-- DUPOC self-play cooperates, for `k` large enough — critch22 Theorem 3.7.
@@ -439,20 +437,20 @@ theorem DupocBot_vs_DupocBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (DupocBot k) (DupocBot k) = some (.C, .C) := by
   let φ : Nat → Formula := fun k => .plays (DupocBot k) (DupocBot k) .C
-  obtain ⟨K₀, hK₀⟩ := dupoc_loeb_premise
-  -- `dupoc_loeb_premise` proves the tight `Provable k (…)` — exactly `pblt_engine_id`'s premise
-  -- (the former `PBLT` axiom took a loosened `∃ m`; the internal theorem takes the tight form).
+  -- `dupoc_loeb_premise` proves the premise at its HONEST transcript `5·log2 k + 33` —
+  -- exactly `pblt_engine_id`'s premise shape (the Löb chain needs `pm ≪ k`).
   have hLoeb :
-      ∀ k, k > K₀ →
-        Provable k (.impl (.box k (φ k)) (φ k)) := by
-    intro k hk
-    exact hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+      ∀ k, k > 0 →
+        Provable (5 * Nat.log2 k + 33) (.impl (.box k (φ k)) (φ k)) := by
+    intro k _
+    exact dupoc_loeb_premise k
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (DupocBot k) (DupocBot k) .C).size ≤ _
     simp only [Formula.size, Prog.size, DupocBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
+  have hpm : ∀ k, 5 * Nat.log2 k + 33 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 5 * Nat.log2 k + 33) 0 hφsz hpm hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
@@ -469,25 +467,18 @@ theorem DupocBot_vs_DupocBot :
     transparency for MirrorBot (`φ_B → φ_A`), chained by `Dynamics.hypSyll`
     into the closed `□_k φ → φ` that PBLT requires. (Symmetric to
     `cupod_mirror_loeb_premise`.) -/
-theorem dupoc_mirror_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
-                        (.plays MirrorBot (DupocBot k) .C)) := by
-  -- The `hypSyll` chain concludes `□_k (Mirror plays C vs Dupoc) → (Mirror plays
-  -- C vs Dupoc)`, of size exactly `3 * log2 k + 25` (MirrorBot costs 3, each
-  -- `DupocBot k` costs `log2 k + 7`). `linear_log2_add_le 3 25` fits it in `k`.
-  obtain ⟨K₀, hK₀⟩ := linear_log2_add_le 3 25
-  refine ⟨K₀, fun k hk => ?_⟩
-  let dS : Derivation (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
-                             (.plays (DupocBot k) MirrorBot .C)) :=
-    Derivation.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) MirrorBot rfl
-  let dM : Derivation (.impl (.plays (DupocBot k) MirrorBot .C)
-                             (.plays MirrorBot (DupocBot k) .C)) :=
-    Derivation.simStep MirrorBot .opp .self (DupocBot k) .C rfl
+theorem dupoc_mirror_loeb_premise (k : Nat) :
+    Provable (20 * Nat.log2 k + 150)
+      (.impl (.box k (.plays MirrorBot (DupocBot k) .C))
+             (.plays MirrorBot (DupocBot k) .C)) := by
+  -- The `hypSyll` TRANSCRIPT pays both leaves plus its conclusion (transcript cost model):
+  -- searchBranch leaf + simStep leaf + the `□_k … → …` conclusion — all `O(log k)`;
+  -- `20·log2 k + 150` is a generous uniform bound, valid for ALL `k` (no K₀ eventuality).
   apply Provable.struct
-  refine ⟨.hypSyll _ _ _ dS dM, ?_⟩
+  refine ⟨.hypSyll _ _ _
+    (.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) MirrorBot rfl)
+    (.simStep MirrorBot .opp .self (DupocBot k) .C rfl), ?_⟩
   simp only [Derivation.size, Formula.size, Prog.size, DupocBot, MirrorBot]
-  have := hK₀ k hk
   omega
 
 /-- Once `proofSearch k = true`, DupocBot's eval against MirrorBot takes the
@@ -557,18 +548,18 @@ theorem DupocBot_vs_MirrorBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (DupocBot k) MirrorBot = some (.C, .C) := by
   let φ : Nat → Formula := fun k => .plays MirrorBot (DupocBot k) .C
-  obtain ⟨K₀, hK₀⟩ := dupoc_mirror_loeb_premise
   have hLoeb :
-      ∀ k, k > K₀ →
-        Provable k (.impl (.box k (φ k)) (φ k)) := by
-    intro k hk
-    exact hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+      ∀ k, k > 0 →
+        Provable (20 * Nat.log2 k + 150) (.impl (.box k (φ k)) (φ k)) := by
+    intro k _
+    exact dupoc_mirror_loeb_premise k
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays MirrorBot (DupocBot k) .C).size ≤ _
     simp only [Formula.size, Prog.size, DupocBot, MirrorBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
+  have hpm : ∀ k, 20 * Nat.log2 k + 150 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 20 * Nat.log2 k + 150) 0 hφsz hpm hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk

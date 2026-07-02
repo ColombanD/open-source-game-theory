@@ -92,17 +92,12 @@ theorem proofSearch_true_for_CIMCIC_vs_CooperateBot :
   show Provable k
     (Formula.impl (.plays (CIMCIC k) CooperateBot Action.C)
                   (.plays CooperateBot (CIMCIC k) Action.C))
-  refine Provable.weakenImpl _ _ (atom_cost 1) (CIMCIC_consequent_CooperateBot k) ?_ ?_
-  · -- `m = atom_cost 1 = 3 ≤ k`: the implication's size already exceeds `atom_cost 1`,
-    -- and it fits `k`, so the consequent budget does too.
-    have hb := hK k hk
-    have h1 : atom_cost 1 = 3 := by decide
-    rw [h1]
-    omega
-  · -- size of the implication fits within `k`.
-    have hb := hK k hk
-    simp only [Formula.size, Prog.size, CIMCIC, CooperateBot]
-    omega
+  refine Provable.weakenImpl _ _ (atom_cost 1) (CIMCIC_consequent_CooperateBot k) ?_
+  -- transcript: consequent certificate (`atom_cost 1 = 3`) + the implication's size, ≤ k.
+  have hb := hK k hk
+  have h1 : atom_cost 1 = 3 := by decide
+  simp only [Formula.size, Prog.size, CIMCIC, CooperateBot]
+  omega
 
 /-- CIMCIC cooperates against CooperateBot: its guard fires (proved above), so it
     takes the `.const .C` branch. -/
@@ -215,27 +210,31 @@ theorem cimcic_no_provable_forbidden (k : Nat) :
             simp only [CimcicForbiddenC] at hF; obtain ⟨hp, hq, ha⟩ := hF
             subst hp; subst hq; subst ha
             exact cimcic_consequent_not_provable k _ (Provable.atom (.mk cert hle)))
-    (fun _ _ _ _ _ _ ih => by intro hF; exact ih hF)                              -- weakenImpl
-    (fun {_k} _k₁ _k₂ _ψ₁ _ψ₂ _c0 _c1 _q _me _opp hme _hprud _hk2 _hsz _ih => by  -- searchThenSearch_t
+    (fun _ _ _ _ _ ih => by intro hF; exact ih hF)                               -- weakenImpl
+    (fun {_k} _k₁ _k₂ _m _ψ₁ _ψ₂ _c0 _c1 _q _me _opp hme _hprud _hmk _hle _ih => by      -- searchThenSearch_t
         intro hF; subst hme; simp only [CimcicForbiddenC] at hF
         obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm)
-    (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hψsz _hsz _ihab ihbc => by intro hF; exact ihbc hF)  -- implTrans
+    (fun _φ _ψ _χ _a _b _hab _hbc _hle _ihab ihbc => by intro hF; exact ihbc hF)  -- implTrans
     (fun {_k} _ _ _ _ _ _ _ => by intro hF; simp only [CimcicForbiddenC] at hF)  -- atomBoxImpl
-    (fun _kIn _K _φ _hprem _hsz _ih => by intro hF; simp only [CimcicForbiddenC] at hF)  -- boxIntro
+    (fun _kIn _K _φ _hprem _hle _ih => by intro hF; simp only [CimcicForbiddenC] at hF)  -- boxIntro
     -- app: conclusion `α`; `CimcicForbiddenC (φ'→α) = CimcicForbiddenC α`, so the IH on the
     -- IMPLICATION premise discharges the conclusion `α`.
-    (fun _k _m _φ' _α _himpl _hante _hmk ihimpl _ihante => by intro hF; exact ihimpl hF)  -- app
-    -- axK: conclusion `□φ→□α`; `CimcicForbiddenC` peels `.impl` to `□α`, then `.box → False`.
-    (fun _k _K _φ _α _himpl _hsz _ih => by intro hF; simp only [CimcicForbiddenC] at hF)  -- axK
-    (fun _k _K _φ _hksz _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)  -- box4
+    (fun _k _m₁ _m₂ _φ' _α _himpl _hante _hle ihimpl _ihante => by intro hF; exact ihimpl hF)  -- app
+    -- axK: conclusion `□_bφ→□_cα`; `CimcicForbiddenC` peels `.impl` to `□α`, then `.box → False`.
+    (fun _a _b _c _m _K _φ _α _hprem _hgate _hle _ih => by
+        intro hF; simp only [CimcicForbiddenC] at hF)                             -- axK
+    (fun _a _b _K _φ _hgate _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)  -- box4
     -- diagF: conclusion peels to `CimcicForbiddenC tgt`; the LÖB-PREMISE GATE's IH peels to the same — contradiction.
-    (fun _g _K _tgt _hgate _hsz ih => by intro hF; exact ih hF)                   -- diagF (gated)
+    (fun _pm _fb _g _K _tgt _hgate _hle ih => by intro hF; exact ih hF)           -- diagF (gated)
     -- diagB: conclusion peels to `CimcicForbiddenC (.diag …)` = False (catch-all).
-    (fun _g _K _tgt _hgate _hsz _ih => by intro hF; simp only [CimcicForbiddenC] at hF)     -- diagB
+    (fun _pm _fb _g _K _tgt _hgate _hle _ih => by
+        intro hF; simp only [CimcicForbiddenC] at hF)                             -- diagB
     -- axKf: conclusion peels to `.box` = False.
-    (fun _k _K _φ _α _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)               -- axKf
+    (fun _a _b _c _K _φ _α _hgate _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)  -- axKf
     -- impS2: conclusion `φ→χ` peels to `CimcicForbiddenC χ`; IH on premise-1 `φ→(ψ→χ)` peels to the same.
-    (fun _φ _ψ _χ _m _K _h1 _h2 _hmk _hsz ih1 _ih2 => by intro hF; exact ih1 hF)  -- impS2
+    (fun _φ _ψ _χ _m₁ _m₂ _K _h1 _h2 _hle ih1 _ih2 => by intro hF; exact ih1 hF)  -- impS2
+    -- boxMono: conclusion `□_aφ→□_bφ` peels to `.box` = False.
+    (fun _a _b _K _φ _hab _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)  -- boxMono
     h
 
 /-- CIMCIC's guard against DefectBot is **not provable** within any budget `k`. -/

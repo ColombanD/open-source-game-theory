@@ -372,14 +372,10 @@ theorem MirrorBot_plays_D_vs_bot_DefectBot (fuel : Nat) :
 /-- Hence the prudence atom `MirrorBot plays D vs DefectBot` is provable (for `k`
     large enough to fit the certificate). -/
 theorem prudence_provable :
-    ∃ k₀, ∀ k, k₀ ≤ k →
-      Provable k (Formula.plays MirrorBot (.bot DefectBot) Action.D) := by
-  refine ⟨atom_cost 3, fun k hk => ?_⟩
+    Provable (atom_cost 3) (Formula.plays MirrorBot (.bot DefectBot) Action.D) := by
   have hPlay : play 3 MirrorBot (.bot DefectBot) = some .D := by
     simpa using MirrorBot_plays_D_vs_bot_DefectBot 0
-  have hAtom : AtomProvable (atom_cost 3) (Formula.plays MirrorBot (.bot DefectBot) Action.D) :=
-    atom_complete MirrorBot (.bot DefectBot) Action.D 3 hPlay
-  exact Provable.atom (atom_monotone (atom_cost 3) k _ hk hAtom)
+  exact Provable.atom (atom_complete MirrorBot (.bot DefectBot) Action.D 3 hPlay)
 
 /-- **Löb premise for PrudentBot vs MirrorBot**, built with the new
     `searchThenSearch_t` rule. Two legs, chained by `implTrans`:
@@ -389,45 +385,37 @@ theorem prudence_provable :
     * `simStep` reads MirrorBot's `.sim .opp .self` swap: `(PrudentBot plays C vs
       MirrorBot) → (MirrorBot plays C vs PrudentBot)`.
     The result is the closed `□_k φ → φ` that `PBLT` consumes. -/
-theorem prudent_mirror_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (Formula.plays MirrorBot (PrudentBot k) Action.C))
-                        (Formula.plays MirrorBot (PrudentBot k) Action.C)) := by
-  obtain ⟨kPrud, hkPrud⟩ := prudence_provable
-  -- Conclusion sizes are `5·log2 k + 39` (each `PrudentBot k` carries two `.search`
-  -- nodes, costing `log2 k + 1` apiece); `linear_log2_add_le 6 60` fits them in `k`.
-  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 6 60
-  refine ⟨max kPrud Ksz, fun k hk => ?_⟩
-  have hkP : kPrud ≤ k := le_trans (le_max_left _ _) hk
-  have hkS : Ksz ≤ k := le_trans (le_max_right _ _) hk
-  have hprud : Provable k (Formula.plays MirrorBot (.bot DefectBot) Action.D) := hkPrud k hkP
+theorem prudent_mirror_loeb_premise (k : Nat) (hk : 10 ≤ k) :
+    Provable (50 * Nat.log2 k + 500)
+      (.impl (.box k (Formula.plays MirrorBot (PrudentBot k) Action.C))
+             (Formula.plays MirrorBot (PrudentBot k) Action.C)) := by
+  -- TRANSCRIPT-TIGHT: the whole premise costs O(log k) — searchThenSearch pays the
+  -- prudence certificate (`atom_cost 3 = 10` chars, whence `10 ≤ k` so the inner
+  -- search at budget `k` finds it) + its conclusion; the `.sim` leg is one leaf;
+  -- `implTrans` pays both legs + the conclusion. No `K₀` eventuality.
+  have h10 : atom_cost 3 = 10 := by decide
   -- Leg 1: `□_k φ → (PrudentBot plays C vs Mirror)` via `searchThenSearch_t`.
-  have leg1 : Provable k
+  have leg1 : Provable (20 * Nat.log2 k + 200)
       (.impl (.box k (Formula.plays MirrorBot (PrudentBot k) Action.C))
              (Formula.plays (PrudentBot k) MirrorBot Action.C)) := by
-    refine Provable.searchThenSearch_t k k
+    refine Provable.searchThenSearch_t k k (atom_cost 3)
       (Formula.plays .opp .self Action.C)
       (Formula.plays .opp (.bot DefectBot) Action.D)
-      Action.C Action.D (.const Action.D) (PrudentBot k) MirrorBot rfl hprud (le_refl k) ?_
+      Action.C Action.D (.const Action.D) (PrudentBot k) MirrorBot rfl
+      prudence_provable (by omega) ?_
     simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
-    have := hKsz k hkS
     omega
-  -- Leg 2: MirrorBot's `.sim` swap, as a Derivation → Provable.
-  have leg2 : Provable k
+  -- Leg 2: MirrorBot's `.sim` swap, as a Derivation → Provable (single leaf).
+  have leg2 : Provable (20 * Nat.log2 k + 200)
       (.impl (Formula.plays (PrudentBot k) MirrorBot Action.C)
              (Formula.plays MirrorBot (PrudentBot k) Action.C)) := by
-    have dM : Derivation (.impl (Formula.plays (PrudentBot k) MirrorBot Action.C)
-                                (Formula.plays MirrorBot (PrudentBot k) Action.C)) :=
-      Derivation.simStep MirrorBot .opp .self (PrudentBot k) Action.C rfl
-    refine Provable.struct ⟨dM, ?_⟩
+    refine Provable.struct ⟨Derivation.simStep MirrorBot .opp .self (PrudentBot k) Action.C rfl, ?_⟩
     simp only [Derivation.size, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
-    have := hKsz k hkS
     omega
   -- Chain leg1 (`□φ → A`) then leg2 (`A → φ`) into `□_k φ → φ` via `implTrans`.
-  refine Provable.implTrans _ _ _ k k leg1 leg2 (le_refl k) (le_refl k) ?_ ?_ <;>
-    · simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
-      have := hKsz k hkS
-      omega
+  refine Provable.implTrans _ _ _ (20 * Nat.log2 k + 200) (20 * Nat.log2 k + 200) leg1 leg2 ?_
+  simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+  omega
 
 /-- Once `proofSearch k = true`, PrudentBot's stacked searches both fire (the inner
     prudence guard is the provable Σ₁ atom), so it cooperates with MirrorBot. -/
@@ -491,20 +479,23 @@ theorem outcome_PrudentBot_vs_MirrorBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (PrudentBot k) MirrorBot = some (.C, .C) := by
   let φ : Nat → Formula := fun k => Formula.plays MirrorBot (PrudentBot k) Action.C
-  obtain ⟨kPrud, hkPrud⟩ := prudence_provable
-  obtain ⟨K₀, hK₀⟩ := prudent_mirror_loeb_premise
-  have hLoeb : ∀ k, k > K₀ → Provable k (.impl (.box k (φ k)) (φ k)) := by
+  have hLoeb : ∀ k, k > 10 →
+      Provable (50 * Nat.log2 k + 500) (.impl (.box k (φ k)) (φ k)) := by
     intro k hk
-    exact hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+    exact prudent_mirror_loeb_premise k (by omega)
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays MirrorBot (PrudentBot k) Action.C).size ≤ _
     simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
-  refine ⟨max k₂ kPrud, fun k hk => ?_⟩
+  have hpm : ∀ k, 50 * Nat.log2 k + 500 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 10 hφsz hpm hLoeb
+  refine ⟨max k₂ 10, fun k hk => ?_⟩
   have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
-  have hkP : kPrud ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
+  have hkP : atom_cost 3 ≤ k := by
+    have h10 : atom_cost 3 = 10 := by decide
+    have : (10 : Nat) < k := lt_of_le_of_lt (le_max_right _ _) hk
+    omega
   -- PBLT gives `Provable m (φ k)` at *some* budget `m`; its truth yields a play
   -- witness, which the inversion lemma lifts to `proofSearch k = true` at budget `k`.
   obtain ⟨m, hm⟩ := hk₂ k hk2
@@ -512,7 +503,7 @@ theorem outcome_PrudentBot_vs_MirrorBot :
   have hCoopPS : proofSearch k (Formula.plays MirrorBot (PrudentBot k) Action.C) = true :=
     proofSearch_k_of_play_MirrorBot_prudent k n hMir
   have hPrudPS : proofSearch k (Formula.plays MirrorBot (.bot DefectBot) Action.D) = true :=
-    (proofSearch_spec _ _).2 (hkPrud k hkP)
+    (proofSearch_spec _ _).2 (Provable_mono prudence_provable hkP)
   refine ⟨4, ?_⟩
   have hA : play 4 (PrudentBot k) MirrorBot = some .C := by
     simpa using PrudentBot_plays_C_against_MirrorBot k 1 hCoopPS hPrudPS
@@ -528,52 +519,41 @@ theorem bot_MirrorBot_plays_D_vs_bot_DefectBot (fuel : Nat) :
   simp [eval, Prog.subst, MirrorBot, DefectBot]
 
 theorem prudence_provable_bot :
-    ∃ k₀, ∀ k, k₀ ≤ k →
-      Provable k (Formula.plays (.bot MirrorBot) (.bot DefectBot) Action.D) := by
-  refine ⟨atom_cost 4, fun k hk => ?_⟩
+    Provable (atom_cost 4) (Formula.plays (.bot MirrorBot) (.bot DefectBot) Action.D) := by
   have hPlay : play 4 (.bot MirrorBot) (.bot DefectBot) = some .D := by
     simpa using bot_MirrorBot_plays_D_vs_bot_DefectBot 0
-  have hAtom : AtomProvable (atom_cost 4) (Formula.plays (.bot MirrorBot) (.bot DefectBot) Action.D) :=
-    atom_complete (.bot MirrorBot) (.bot DefectBot) Action.D 4 hPlay
-  exact Provable.atom (atom_monotone (atom_cost 4) k _ hk hAtom)
+  exact Provable.atom (atom_complete (.bot MirrorBot) (.bot DefectBot) Action.D 4 hPlay)
 
 /-- **Löb premise for PrudentBot vs `.bot MirrorBot`.** Identical assembly to the
     bare-MirrorBot premise, but the mirror leg uses `botSimStep` (reading
     `.bot MirrorBot = .bot (.sim .opp .self)`) instead of `simStep`. -/
-theorem prudent_bot_mirror_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C))
-                        (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C)) := by
-  obtain ⟨kPrud, hkPrud⟩ := prudence_provable_bot
-  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 6 70
-  refine ⟨max kPrud Ksz, fun k hk => ?_⟩
-  have hkP : kPrud ≤ k := le_trans (le_max_left _ _) hk
-  have hkS : Ksz ≤ k := le_trans (le_max_right _ _) hk
-  have hprud : Provable k (Formula.plays (.bot MirrorBot) (.bot DefectBot) Action.D) := hkPrud k hkP
-  have leg1 : Provable k
+theorem prudent_bot_mirror_loeb_premise (k : Nat) (hk : 17 ≤ k) :
+    Provable (50 * Nat.log2 k + 500)
+      (.impl (.box k (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C))
+             (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C)) := by
+  -- TRANSCRIPT-TIGHT (see `prudent_mirror_loeb_premise`); `atom_cost 4 = 17 ≤ k` so the
+  -- inner search at budget `k` finds the prudence certificate.
+  have h17 : atom_cost 4 = 17 := by decide
+  have leg1 : Provable (20 * Nat.log2 k + 200)
       (.impl (.box k (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C))
              (Formula.plays (PrudentBot k) (.bot MirrorBot) Action.C)) := by
-    refine Provable.searchThenSearch_t k k
+    refine Provable.searchThenSearch_t k k (atom_cost 4)
       (Formula.plays .opp .self Action.C)
       (Formula.plays .opp (.bot DefectBot) Action.D)
-      Action.C Action.D (.const Action.D) (PrudentBot k) (.bot MirrorBot) rfl hprud (le_refl k) ?_
+      Action.C Action.D (.const Action.D) (PrudentBot k) (.bot MirrorBot) rfl
+      prudence_provable_bot (by omega) ?_
     simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
-    have := hKsz k hkS
     omega
-  have leg2 : Provable k
+  have leg2 : Provable (20 * Nat.log2 k + 200)
       (.impl (Formula.plays (PrudentBot k) (.bot MirrorBot) Action.C)
              (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C)) := by
-    have dM : Derivation (.impl (Formula.plays (PrudentBot k) (.bot MirrorBot) Action.C)
-                                (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C)) :=
-      Derivation.botSimStep (.bot MirrorBot) .opp .self (PrudentBot k) Action.C rfl
-    refine Provable.struct ⟨dM, ?_⟩
+    refine Provable.struct
+      ⟨Derivation.botSimStep (.bot MirrorBot) .opp .self (PrudentBot k) Action.C rfl, ?_⟩
     simp only [Derivation.size, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
-    have := hKsz k hkS
     omega
-  refine Provable.implTrans _ _ _ k k leg1 leg2 (le_refl k) (le_refl k) ?_ ?_ <;>
-    · simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
-      have := hKsz k hkS
-      omega
+  refine Provable.implTrans _ _ _ (20 * Nat.log2 k + 200) (20 * Nat.log2 k + 200) leg1 leg2 ?_
+  simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+  omega
 
 /-- Once both searches fire, PrudentBot cooperates with `.bot MirrorBot`. -/
 theorem PrudentBot_plays_C_against_bot_MirrorBot (k fuel : Nat)
@@ -618,25 +598,28 @@ theorem PrudentBot_plays_C_vs_bot_MirrorBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, play fuel (PrudentBot k) (.bot MirrorBot) = some .C := by
   let φ : Nat → Formula := fun k => Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C
-  obtain ⟨kPrud, hkPrud⟩ := prudence_provable_bot
-  obtain ⟨K₀, hK₀⟩ := prudent_bot_mirror_loeb_premise
-  have hLoeb : ∀ k, k > K₀ → Provable k (.impl (.box k (φ k)) (φ k)) :=
-    fun k hk => hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+  have hLoeb : ∀ k, k > 17 →
+      Provable (50 * Nat.log2 k + 500) (.impl (.box k (φ k)) (φ k)) :=
+    fun k hk => prudent_bot_mirror_loeb_premise k (by omega)
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C).size ≤ _
     simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
-  refine ⟨max k₂ kPrud, fun k hk => ⟨3, ?_⟩⟩
+  have hpm : ∀ k, 50 * Nat.log2 k + 500 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 17 hφsz hpm hLoeb
+  refine ⟨max k₂ 17, fun k hk => ⟨3, ?_⟩⟩
   have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
-  have hkP : kPrud ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
+  have hkP : atom_cost 4 ≤ k := by
+    have h17 : atom_cost 4 = 17 := by decide
+    have : (17 : Nat) < k := lt_of_le_of_lt (le_max_right _ _) hk
+    omega
   obtain ⟨m, hm⟩ := hk₂ k hk2
   obtain ⟨n, hMir⟩ := Provable_sound m (φ k) hm
   have hCoopPS : proofSearch k (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C) = true :=
     proofSearch_k_of_play_bot_MirrorBot_prudent k n hMir
   have hPrudPS : proofSearch k (Formula.plays (.bot MirrorBot) (.bot DefectBot) Action.D) = true :=
-    (proofSearch_spec _ _).2 (hkPrud k hkP)
+    (proofSearch_spec _ _).2 (Provable_mono prudence_provable_bot hkP)
   simpa using PrudentBot_plays_C_against_bot_MirrorBot k 0 hCoopPS hPrudPS
 
 -- EBot --
@@ -708,59 +691,28 @@ theorem EBot_plays_D_vs_bot_DefectBot (k : Nat) :
   exact hInnerIte
 
 /-- Löb premise for PrudentBot cooperating with `.bot MirrorBot`. -/
-theorem prudent_botmirror_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (.plays (.bot MirrorBot) (PrudentBot k) .C))
-                        (.plays (.bot MirrorBot) (PrudentBot k) .C)) := by
-  obtain ⟨K₀log, hK₀log⟩ := linear_log2_add_le 5 41
-  refine ⟨max K₀log (atom_cost 4), fun k hk => ?_⟩
-  have hklog : k ≥ K₀log := le_trans (le_max_left _ _) hk
-  have hkatom : atom_cost 4 ≤ k := le_trans (le_max_right _ _) hk
-  have hbound := hK₀log k hklog
-  have hd : DefectBot.size = 1 := rfl
-  have hm : MirrorBot.size = 3 := rfl
-  -- prudence: bot MirrorBot plays D vs bot DefectBot
-  have hplayPrud : play 4 (.bot MirrorBot) (.bot DefectBot) = some .D := by
-    simp [play, eval, Prog.subst, MirrorBot, DefectBot]
-  have hprud : Provable k (.plays (.bot MirrorBot) (.bot DefectBot) .D) :=
-    Provable.atom (atom_monotone (atom_cost 4) k _ hkatom
-      (atom_complete (.bot MirrorBot) (.bot DefectBot) .D 4 hplayPrud))
-  -- searchThenSearch_t
-  have hA : Provable k (.impl (.box k (.plays (.bot MirrorBot) (PrudentBot k) .C))
-                              (.plays (PrudentBot k) (.bot MirrorBot) .C)) := by
-    refine Provable.searchThenSearch_t k k (.plays .opp .self .C)
-      (.plays .opp (.bot DefectBot) .D) .C .D (.const .D) (PrudentBot k) (.bot MirrorBot)
-      rfl hprud (le_refl k) ?_
-    simp only [Formula.size, Prog.size, Formula.subst, Prog.subst, PrudentBot, MirrorBot]
-    omega
-  have hB : Provable k (.impl (.plays (PrudentBot k) (.bot MirrorBot) .C)
-                              (.plays (.bot MirrorBot) (PrudentBot k) .C)) := by
-    apply Provable.struct
-    refine ⟨Derivation.botSimStep (.bot MirrorBot) .opp .self (PrudentBot k) .C rfl, ?_⟩
-    simp only [Derivation.size, Formula.size, Prog.size, PrudentBot, MirrorBot]
-    omega
-  refine Provable.implTrans (.box k (.plays (.bot MirrorBot) (PrudentBot k) .C))
-    (.plays (PrudentBot k) (.bot MirrorBot) .C)
-    (.plays (.bot MirrorBot) (PrudentBot k) .C) k k hA hB (le_refl k) (le_refl k) ?_ ?_ <;>
-    · simp only [Formula.size, Prog.size, PrudentBot, MirrorBot]
-      omega
+theorem prudent_botmirror_loeb_premise (k : Nat) (hk : 17 ≤ k) :
+    Provable (50 * Nat.log2 k + 500)
+      (.impl (.box k (.plays (.bot MirrorBot) (PrudentBot k) .C))
+             (.plays (.bot MirrorBot) (PrudentBot k) .C)) :=
+  prudent_bot_mirror_loeb_premise k hk
 
 /-- PrudentBot's outer guard against `.bot MirrorBot` is provable for large k. -/
 theorem prudent_botmirror_coop :
     ∃ k₂, ∀ k, k₂ < k →
       proofSearch k (.plays (.bot MirrorBot) (PrudentBot k) .C) = true := by
   let φ : Nat → Formula := fun k => .plays (.bot MirrorBot) (PrudentBot k) .C
-  obtain ⟨K₀, hK₀⟩ := prudent_botmirror_loeb_premise
   have hLoeb :
-      ∀ k, k > K₀ → Provable k (.impl (.box k (φ k)) (φ k)) := by
+      ∀ k, k > 17 → Provable (50 * Nat.log2 k + 500) (.impl (.box k (φ k)) (φ k)) := by
     intro k hk
-    exact hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+    exact prudent_botmirror_loeb_premise k (by omega)
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C).size ≤ _
     simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
+  have hpm : ∀ k, 50 * Nat.log2 k + 500 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 17 hφsz hpm hLoeb
   refine ⟨k₂, fun k hk => ?_⟩
   obtain ⟨m, hm⟩ := hk₂ k hk
   have hInterp : (φ k).interp := Provable_sound m (φ k) hm
@@ -979,14 +931,11 @@ theorem dupoc_plays_D_vs_bot_DB (k fuel : Nat) :
   unfold DupocBot at hg ⊢
   simp [eval, Prog.subst, Formula.subst, hg]
 
-theorem prudence_dupoc :
-    ∃ k₀, ∀ k, k₀ ≤ k →
-      Provable k (Formula.plays (DupocBot k) (.bot DefectBot) Action.D) := by
-  refine ⟨atom_cost 2, fun k hk => ?_⟩
+theorem prudence_dupoc (k : Nat) :
+    Provable (atom_cost 2) (Formula.plays (DupocBot k) (.bot DefectBot) Action.D) := by
   have hPlay : play 2 (DupocBot k) (.bot DefectBot) = some .D := by
     simpa using dupoc_plays_D_vs_bot_DB k 0
-  exact Provable.atom (atom_monotone (atom_cost 2) k _ hk
-    (atom_complete (DupocBot k) (.bot DefectBot) Action.D 2 hPlay))
+  exact Provable.atom (atom_complete (DupocBot k) (.bot DefectBot) Action.D 2 hPlay)
 
 /-- DupocBot cooperates with PrudentBot once its search fires. -/
 theorem dupoc_C_vs_prudent (k fuel : Nat)
@@ -1018,68 +967,34 @@ theorem ps_k_of_play_dupoc (k n : Nat)
       unfold play at h ⊢; exact eval_mono_le h (n + 2) (by omega)
     rw [hC] at hD; cases hD
 
-/-! ## The closed Löb premise, via object-level GL-4 -/
+/-! ## The two transparency legs, transcript-tight (the mutual-Löb inputs)
 
-/-- **The cooperative Löb premise as a `Provable` object**, assembled from the two
-    boxed transparency legs and object-level GL-4 (`box_provable_impl`):
+Under transcript accounting the old factoring (compose the legs into `□_k φD → φD` at the
+full subscript `k` via `mutual_loeb`, then PBLT) is UNDERIVABLE — K-distribution pushes the
+intermediate box subscript above `k`. The two legs now go DIRECTLY into
+`mutual_pblt_engine_id` (BaseTheorems), which lowers the premise subscript internally
+(`fb = k − 64·V`) and runs the Löb chain there. Each leg is O(log k)-transcript. -/
 
-    * leg1 (`searchThenSearch_t`): `□_k φ_D → φ_P`;
-    * leg2 (`searchBranch`):       `□_k φ_P → φ_D`;
-    * `box_provable_impl ⊳ leg2` : `φ_P → φ_D`  (the box on `φ_P` is stripped — the
-      step that the missing `.sim` leg would otherwise have provided);
-    * `leg1 ⊳ (φ_P → φ_D)`       : `□_k φ_D → φ_D`,  the closed premise `PBLT` needs.
+/-- Leg 1 (`□_k φD → φP`): PrudentBot's `searchThenSearch_t` — its outer guard substitutes
+    to `□_k φD`, the inner prudence guard is the `atom_cost 2 = 7`-char certificate
+    `prudence_dupoc` (whence `7 ≤ k`, so PrudentBot's inner search at budget `k` finds it). -/
+theorem prudent_dupoc_legPD (k : Nat) (hk : 7 ≤ k) :
+    Provable (30 * Nat.log2 k + 300) (.impl (.box k (φD k)) (φP k)) := by
+  have h7 : atom_cost 2 = 7 := by decide
+  refine Provable.searchThenSearch_t k k (atom_cost 2)
+    (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
+    .C .D (.const .D) (PrudentBot k) (DupocBot k) rfl
+    (by simpa [Formula.subst, Prog.subst] using prudence_dupoc k) (by omega) ?_
+  simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  omega
 
-    All boxes stay at the single budget `k`, so the `implTrans` size side-conditions
-    fit via `linear_log2_add_le`. -/
-theorem loeb_premise_provable :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (φD k)) (φD k)) := by
-  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 20 200
-  obtain ⟨kPr, hkPr⟩ := prudence_dupoc
-  refine ⟨max Ksz kPr, fun k hk => ?_⟩
-  have hkS : Ksz ≤ k := le_trans (le_max_left _ _) hk
-  have hkPrud : kPr ≤ k := le_trans (le_max_right _ _) hk
-  -- `leg2` (DupocBot's `searchBranch` guard): □_k φP → φD.
-  have leg2 : Provable k (.impl (.box k (φP k)) (φD k)) := by
-    apply Provable.struct
-    refine ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) (PrudentBot k) rfl, ?_⟩
-    simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
-  -- The closed premise `□_k φD → φD` now comes from the SOUND mutual-Löb step (`mutual_loeb`,
-  -- BaseTheorems.lean), NOW via Route 2 (`boxIntro`/`axK`/`box4` — no transformer, no axiom).
-  -- Role mapping: conclusion atom is φD, so role-P = φD, role-D = φP. We supply BOTH object legs:
-  --   • `legPD` := `legPrud` : □_k φD → φP  (PrudentBot's `searchThenSearch_t` leg — its outer guard
-  --     `□(opp plays C vs me)` substitutes to `□φD`, the inner prudence guard from `prudence_dupoc`);
-  --   • `legDP` := leg2     : □_k φP → φD  (DupocBot's `searchBranch` guard).
-  -- The guard inversion `ps_k_of_play_dupoc` is no longer needed here (Route 2 uses object legs).
-  have legPrud : Provable k (.impl (.box k (φD k)) (φP k)) := by
-    refine Provable.searchThenSearch_t k k
-      (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
-      .C .D (.const .D) (PrudentBot k) (DupocBot k) rfl ?_ (le_refl k) ?_
-    · -- inner prudence guard: Provable k ((plays opp (.bot DefectBot) D).subst PrudentBot DupocBot)
-      --                      = Provable k (plays DupocBot (.bot DefectBot) D) = prudence_dupoc.
-      simpa [Formula.subst, Prog.subst] using hkPr k hkPrud
-    · simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-      have := hKsz k hkS; omega
-  -- size bounds for Route 2 (all `O(log k) ≤ k` for k ≥ Ksz, via `hKsz`).
-  have hsz1 : (Formula.box k (.impl (.box k (φD k)) (φP k))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hsz2 : (Formula.impl (.box k (.box k (φD k))) (.box k (φP k))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hsz3 : (Formula.box k (φD k)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hsz4 : (Formula.impl (.box k (φD k)) (.box k (.box k (φD k)))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hsz5 : (Formula.box k (.box k (φD k))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hszK4 : (Formula.impl (.box k (φD k)) (.box k (φP k))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hszBoxP : (Formula.box k (φP k)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hsz : (Formula.impl (.box k (φD k)) (φD k)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  exact mutual_loeb k (DupocBot k) (PrudentBot k) (PrudentBot k) (DupocBot k)
-    Action.C Action.C legPrud leg2 hsz1 hsz2 hsz3 hsz4 hsz5 hszK4 hszBoxP hsz
+/-- Leg 2 (`□_k φP → φD`): DupocBot's `searchBranch` — a single transparency leaf. -/
+theorem prudent_dupoc_legDP (k : Nat) :
+    Provable (30 * Nat.log2 k + 300) (.impl (.box k (φP k)) (φD k)) := by
+  apply Provable.struct
+  refine ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) (PrudentBot k) rfl, ?_⟩
+  simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  omega
 
 /-! ## The outcome -/
 
@@ -1093,19 +1008,24 @@ theorem loeb_premise_provable :
 theorem outcome_PrudentBot_vs_DupocBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (PrudentBot k) (DupocBot k) = some (.C, .C) := by
-  obtain ⟨kPrud, hkPrud⟩ := prudence_dupoc
-  obtain ⟨K₀, hK₀⟩ := loeb_premise_provable
-  have hLoeb : ∀ k, k > K₀ → Provable k (.impl (.box k (φD k)) (φD k)) :=
-    fun k hk => hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φD k).size ≤ 10 * Nat.log2 k + 100 := by
+  have hsD : ∀ k, (φD k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (DupocBot k) (PrudentBot k) Action.C).size ≤ _
     simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φD K₀ hφsz hLoeb
-  refine ⟨max (max k₂ kPrud) (atom_cost 2), fun k hk => ?_⟩
+  have hsP : ∀ k, (φP k).size ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    show (Formula.plays (PrudentBot k) (DupocBot k) Action.C).size ≤ _
+    simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    omega
+  have hpb : ∀ k, 30 * Nat.log2 k + 300 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := mutual_pblt_engine_id φD φP
+    (fun k => 30 * Nat.log2 k + 300) (fun k => 30 * Nat.log2 k + 300) 7
+    hsD hsP hpb hpb
+    (fun k hk => prudent_dupoc_legPD k (by omega))
+    (fun k _ => prudent_dupoc_legDP k)
+  refine ⟨max (max k₂ 7) (atom_cost 2), fun k hk => ?_⟩
   have hk2 : k > k₂ := lt_of_le_of_lt (le_trans (le_max_left _ _) (le_max_left _ _)) hk
-  have hkP : kPrud ≤ k := le_of_lt (lt_of_le_of_lt (le_trans (le_max_right _ _) (le_max_left _ _)) hk)
   have hkAtom : atom_cost 2 ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
   obtain ⟨m, hm⟩ := hk₂ k hk2
   obtain ⟨n, hplayD⟩ := Provable_sound m (φD k) hm
@@ -1116,7 +1036,7 @@ theorem outcome_PrudentBot_vs_DupocBot :
     exact (proofSearch_spec _ _).2 (Provable.atom (atom_monotone (atom_cost 2) k _ hkAtom
       (atom_complete (DupocBot k) (PrudentBot k) Action.C 2 hplay2)))
   have hprud : proofSearch k (.plays (DupocBot k) (.bot DefectBot) Action.D) = true :=
-    (proofSearch_spec _ _).2 (hkPrud k hkP)
+    (proofSearch_spec _ _).2 (Provable_mono (prudence_dupoc k) (by have := hkAtom; omega))
   refine ⟨3, ?_⟩
   have hA : play 3 (PrudentBot k) (DupocBot k) = some .C := by
     simpa using prudent_eval_both_true k 0 (DupocBot k) hpsD hprud
@@ -1128,33 +1048,25 @@ theorem outcome_PrudentBot_vs_DupocBot :
 -- PrudentBot --
 
 /-- Prudence atom for PrudentBot self-play: PrudentBot plays D vs `.bot DefectBot`. -/
-theorem prudence_self_prudent :
-    ∃ k₀, ∀ k, k₀ ≤ k →
-      Provable k (Formula.plays (PrudentBot k) (.bot DefectBot) Action.D) := by
-  refine ⟨atom_cost 2, fun k hk => ?_⟩
+theorem prudence_self_prudent (k : Nat) :
+    Provable (atom_cost 2) (Formula.plays (PrudentBot k) (.bot DefectBot) Action.D) := by
   have hPlay : play 2 (PrudentBot k) (.bot DefectBot) = some .D := by
     simpa using PrudentBot_plays_D_vs_bot_DB k 0
-  exact Provable.atom (atom_monotone (atom_cost 2) k _ hk
-    (atom_complete (PrudentBot k) (.bot DefectBot) Action.D 2 hPlay))
+  exact Provable.atom (atom_complete (PrudentBot k) (.bot DefectBot) Action.D 2 hPlay)
 
 /-- The closed Löb premise for PrudentBot self-play, directly from
     `searchThenSearch_t` (self-play: opponent = me = PrudentBot k). -/
-theorem prudent_self_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (Formula.plays (PrudentBot k) (PrudentBot k) Action.C))
-                        (Formula.plays (PrudentBot k) (PrudentBot k) Action.C)) := by
-  obtain ⟨kPrud, hkPrud⟩ := prudence_self_prudent
-  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 20 200
-  refine ⟨max kPrud Ksz, fun k hk => ?_⟩
-  have hkP : kPrud ≤ k := le_trans (le_max_left _ _) hk
-  have hkS : Ksz ≤ k := le_trans (le_max_right _ _) hk
-  have hprud : Provable k (Formula.plays (PrudentBot k) (.bot DefectBot) Action.D) := hkPrud k hkP
-  refine Provable.searchThenSearch_t k k
+theorem prudent_self_loeb_premise (k : Nat) (hk : 7 ≤ k) :
+    Provable (30 * Nat.log2 k + 300)
+      (.impl (.box k (Formula.plays (PrudentBot k) (PrudentBot k) Action.C))
+             (Formula.plays (PrudentBot k) (PrudentBot k) Action.C)) := by
+  have h7 : atom_cost 2 = 7 := by decide
+  refine Provable.searchThenSearch_t k k (atom_cost 2)
     (Formula.plays .opp .self Action.C)
     (Formula.plays .opp (.bot DefectBot) Action.D)
-    Action.C Action.D (.const Action.D) (PrudentBot k) (PrudentBot k) rfl hprud (le_refl k) ?_
+    Action.C Action.D (.const Action.D) (PrudentBot k) (PrudentBot k) rfl
+    (prudence_self_prudent k) (by omega) ?_
   simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, DefectBot]
-  have := hKsz k hkS
   omega
 
 /-- **PrudentBot vs PrudentBot → (C, C)** for all large enough `k`. -/
@@ -1162,25 +1074,28 @@ theorem outcome_PrudentBot_vs_PrudentBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (PrudentBot k) (PrudentBot k) = some (.C, .C) := by
   let φ : Nat → Formula := fun k => Formula.plays (PrudentBot k) (PrudentBot k) Action.C
-  obtain ⟨kPrud, hkPrud⟩ := prudence_self_prudent
-  obtain ⟨K₀, hK₀⟩ := prudent_self_loeb_premise
-  have hLoeb : ∀ k, k > K₀ → Provable k (.impl (.box k (φ k)) (φ k)) :=
-    fun k hk => hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+  have hLoeb : ∀ k, k > 7 →
+      Provable (30 * Nat.log2 k + 300) (.impl (.box k (φ k)) (φ k)) :=
+    fun k hk => prudent_self_loeb_premise k (by omega)
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (PrudentBot k) (PrudentBot k) Action.C).size ≤ _
     simp only [Formula.size, Prog.size, PrudentBot, DefectBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
-  refine ⟨max k₂ kPrud, fun k hk => ?_⟩
+  have hpm : ∀ k, 30 * Nat.log2 k + 300 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 30 * Nat.log2 k + 300) 7 hφsz hpm hLoeb
+  refine ⟨max k₂ 7, fun k hk => ?_⟩
   have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
-  have hkP : kPrud ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
+  have hkP : atom_cost 2 ≤ k := by
+    have h7 : atom_cost 2 = 7 := by decide
+    have : (7 : Nat) < k := lt_of_le_of_lt (le_max_right _ _) hk
+    omega
   obtain ⟨m, hm⟩ := hk₂ k hk2
   obtain ⟨n, hplay⟩ := Provable_sound m (φ k) hm
   have hpsOuter : proofSearch k (Formula.plays (PrudentBot k) (PrudentBot k) Action.C) = true :=
     prudent_outer_true_of_play_C k n (PrudentBot k) hplay
   have hprud : proofSearch k (Formula.plays (PrudentBot k) (.bot DefectBot) Action.D) = true :=
-    (proofSearch_spec _ _).2 (hkPrud k hkP)
+    (proofSearch_spec _ _).2 (Provable_mono (prudence_self_prudent k) hkP)
   refine ⟨3, ?_⟩
   have hA : play 3 (PrudentBot k) (PrudentBot k) = some .C := by
     simpa using prudent_eval_both_true k 0 (PrudentBot k) hpsOuter hprud

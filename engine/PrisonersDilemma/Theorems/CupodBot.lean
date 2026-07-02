@@ -95,17 +95,14 @@ theorem CupodBot_vs_DefectBot (fuel : Nat):
     guard `(.plays .opp .self .D).subst (CupodBot k) (CupodBot k)` unfolds to
     `.plays (CupodBot k) (CupodBot k) .D`, so the derivation lands in the target
     type with no rewriting. -/
-theorem cupod_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (.plays (CupodBot k) (CupodBot k) .D))
-                        (.plays (CupodBot k) (CupodBot k) .D)) := by
-  obtain ⟨K₀, hK₀⟩ := linear_log2_add_le 5 33
-  refine ⟨K₀, fun k hk => ?_⟩
+theorem cupod_loeb_premise (k : Nat) :
+    Provable (5 * Nat.log2 k + 33)
+      (.impl (.box k (.plays (CupodBot k) (CupodBot k) .D))
+             (.plays (CupodBot k) (CupodBot k) .D)) := by
   apply Provable.struct
   refine ⟨.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) (CupodBot k) rfl, ?_⟩
-  -- d.size = conclusion.size = 5 * log2 k + 33 ≤ k for k ≥ K₀.
+  -- transcript = the single leaf's conclusion: 5 * log2 k + 33 — unconditionally.
   simp only [Derivation.size, Formula.size, Prog.size, CupodBot]
-  have := hK₀ k hk
   omega
 
 /-- CUPOD self-play defects, for `k` large enough — critch22 Theorem 3.4.
@@ -117,20 +114,20 @@ theorem CupodBot_vs_CupodBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (CupodBot k) (CupodBot k) = some (.D, .D) := by
   let φ : Nat → Formula := fun k => .plays (CupodBot k) (CupodBot k) .D
-  obtain ⟨K₀, hK₀⟩ := cupod_loeb_premise
-  -- `cupod_loeb_premise` proves the *tight* bound `Provable k (…)` — exactly
-  -- `pblt_engine_id`'s premise (the former axiom took a loosened `∃ m`).
+  -- `cupod_loeb_premise` proves the premise at its HONEST transcript `5·log2 k + 33` —
+  -- exactly `pblt_engine_id`'s premise shape (the Löb chain needs `pm ≪ k`).
   have hLoeb :
-      ∀ k, k > K₀ →
-        Provable k (.impl (.box k (φ k)) (φ k)) := by
-    intro k hk
-    exact hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+      ∀ k, k > 0 →
+        Provable (5 * Nat.log2 k + 33) (.impl (.box k (φ k)) (φ k)) := by
+    intro k _
+    exact cupod_loeb_premise k
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (CupodBot k) (CupodBot k) .D).size ≤ _
     simp only [Formula.size, Prog.size, CupodBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
+  have hpm : ∀ k, 5 * Nat.log2 k + 33 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 5 * Nat.log2 k + 33) 0 hφsz hpm hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
@@ -500,31 +497,18 @@ theorem mirror_swap_provable (q : Prog) (a : Action) :
     into the closed `□_k φ → φ` that PBLT requires. (Was an `proofSearch`-level
     chain via the deleted `proofSearch_impl_trans`; now one explicit
     Dynamics.) -/
-theorem cupod_mirror_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
-                        (.plays MirrorBot (CupodBot k) .D)) := by
-  -- The `hypSyll` chain concludes `□_k (Mirror plays D vs Cupod) → (Mirror plays
-  -- D vs Cupod)`, of size exactly `3 * log2 k + 25` characters (MirrorBot costs
-  -- 3, each `CupodBot k` costs `log2 k + 7`). `linear_log2_add_le 3 25` fits this
-  -- within budget `k` for `k ≥ K₀`.
-  obtain ⟨K₀, hK₀⟩ := linear_log2_add_le 3 25
-  refine ⟨K₀, fun k hk => ?_⟩
-  -- `□_k (Mirror plays D vs Cupod) → Cupod plays D vs Mirror`, from Cupod's `.search` body.
-  -- The guard `(.plays .opp .self .D).subst (CupodBot k) MirrorBot` reduces
-  -- definitionally to `.plays MirrorBot (CupodBot k) .D`, so this lands in type.
-  let dS : Derivation (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
-                             (.plays (CupodBot k) MirrorBot .D)) :=
-    Derivation.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl
-  -- `Cupod plays D vs Mirror → Mirror plays D vs Cupod`, from Mirror's `.sim` swap.
-  let dM : Derivation (.impl (.plays (CupodBot k) MirrorBot .D)
-                             (.plays MirrorBot (CupodBot k) .D)) :=
-    Derivation.simStep MirrorBot .opp .self (CupodBot k) .D rfl
+theorem cupod_mirror_loeb_premise (k : Nat) :
+    Provable (20 * Nat.log2 k + 150)
+      (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
+             (.plays MirrorBot (CupodBot k) .D)) := by
+  -- The `hypSyll` TRANSCRIPT pays both leaves plus its conclusion (transcript cost
+  -- model): searchBranch leaf + simStep leaf + the `□_k … → …` conclusion — all
+  -- `O(log k)`; `20·log2 k + 150` is a generous uniform bound, valid for ALL `k`.
   apply Provable.struct
-  -- the conclusion's size bound (`≤ k`) follows from `linear_log2_add_le`.
-  refine ⟨.hypSyll _ _ _ dS dM, ?_⟩
+  refine ⟨.hypSyll _ _ _
+    (.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl)
+    (.simStep MirrorBot .opp .self (CupodBot k) .D rfl), ?_⟩
   simp only [Derivation.size, Formula.size, Prog.size, CupodBot, MirrorBot]
-  have := hK₀ k hk
   omega
 
 /-- Once `proofSearch k = true`, CupodBot's eval against MirrorBot is fully
@@ -596,18 +580,18 @@ theorem CupodBot_vs_MirrorBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (CupodBot k) MirrorBot = some (.D, .D) := by
   let φ : Nat → Formula := fun k => .plays MirrorBot (CupodBot k) .D
-  obtain ⟨K₀, hK₀⟩ := cupod_mirror_loeb_premise
   have hLoeb :
-      ∀ k, k > K₀ →
-        Provable k (.impl (.box k (φ k)) (φ k)) := by
-    intro k hk
-    exact hK₀ k (Nat.le_of_lt hk)
-  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+      ∀ k, k > 0 →
+        Provable (20 * Nat.log2 k + 150) (.impl (.box k (φ k)) (φ k)) := by
+    intro k _
+    exact cupod_mirror_loeb_premise k
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays MirrorBot (CupodBot k) .D).size ≤ _
     simp only [Formula.size, Prog.size, CupodBot, MirrorBot]
     omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
+  have hpm : ∀ k, 20 * Nat.log2 k + 150 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 20 * Nat.log2 k + 150) 0 hφsz hpm hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk

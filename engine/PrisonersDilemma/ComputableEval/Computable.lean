@@ -89,11 +89,12 @@ mutual
               else some false        -- plays `b ≠ a`: the atom is refuted
           | none   => none
       | .impl φ' ψ    =>
-          -- weakenImpl (true-consequent): consequent witnessed AND the implication fits
-          -- budget `k` ⇒ `φ' → ψ` provable at `k`. The size check is what keeps this
-          -- faithful to `proofSearch k` (mirrors `weakenImpl`'s own size side-condition).
+          -- weakenImpl (true-consequent): consequent witnessed within the REDUCED budget
+          -- `k − |φ'→ψ|` AND the implication fits `k` ⇒ `φ' → ψ` provable at `k`
+          -- (transcript accounting: the implication's proof CONTAINS the consequent's,
+          -- so `weakenImpl`'s gate is `m + |φ'→ψ| ≤ k`).
           -- We do not attempt to refute an implication computably ⇒ at most `some true`.
-          match decGuard k n ψ with
+          match decGuard (k - (Formula.impl φ' ψ).size) n ψ with
           | some true => if (Formula.impl φ' ψ).size ≤ k then some true else none
           | _         => none
       | _            => none
@@ -186,20 +187,21 @@ theorem evalC_eq_and_decGuard_sound :
                 · simp [hbud] at h
               · simp [hba] at h    -- decGuard = some false, contradicts = some true
       | impl φ' ψ =>
-          -- weakenImpl: consequent ψ provable (ihG via decGuard k n ψ) AND the
-          -- implication fits budget k (the size check `decGuard` performs) ⇒ proofSearch k.
+          -- weakenImpl: consequent ψ provable within the reduced budget (ihG) AND the
+          -- implication fits budget k ⇒ proofSearch k (additive gate: m + |φ'→ψ| ≤ k).
           simp only [decGuard] at h
-          cases hψ : decGuard k n ψ with
+          cases hψ : decGuard (k - (Formula.impl φ' ψ).size) n ψ with
           | none => rw [hψ] at h; simp at h
           | some bψ =>
               cases bψ with
               | true =>
                   rw [hψ] at h
                   by_cases hsz : (Formula.impl φ' ψ).size ≤ k
-                  · -- ψ is provable at budget k (ihG), so `φ' → ψ` is provable via weakenImpl
-                    have hψprov : Provable k ψ := (proofSearch_spec k ψ).1 ((ihG k ψ).1 hψ)
+                  · -- ψ provable at the reduced budget (ihG); weakenImpl pays it + the conclusion
+                    have hψprov : Provable (k - (Formula.impl φ' ψ).size) ψ :=
+                      (proofSearch_spec _ ψ).1 ((ihG _ ψ).1 hψ)
                     exact (proofSearch_spec k _).2
-                      (Provable.weakenImpl φ' ψ k hψprov (Nat.le_refl k) hsz)
+                      (Provable.weakenImpl φ' ψ _ hψprov (by omega))
                   · simp [hsz] at h
               | false => rw [hψ] at h; simp at h
       | neg _ => simp [decGuard] at h
@@ -238,7 +240,7 @@ theorem evalC_eq_and_decGuard_sound :
       | impl φ' ψ =>
           -- the `.impl` branch never returns `some false` (at most `some true`)
           simp only [decGuard] at h
-          cases hψ : decGuard k n ψ with
+          cases hψ : decGuard (k - (Formula.impl φ' ψ).size) n ψ with
           | none => rw [hψ] at h; simp at h
           | some bψ => cases bψ <;> (rw [hψ] at h; simp at h)
       | neg _ => simp [decGuard] at h

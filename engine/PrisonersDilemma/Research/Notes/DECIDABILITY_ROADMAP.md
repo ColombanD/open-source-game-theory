@@ -130,12 +130,33 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
   6. **Derivation/Provable merge: DON'T.** The atom layer (`Derivation`/`PlaysProof` with cumulative
      `atom_cost`) is already transcript-style — keep it; T1 only converts `Provable`'s gates from
      conclusion-size to additive and re-balances `bloeb_engine` with T0's arithmetic.
-- **T1 — accounting refactor (the grind, ~2–3 weeks).** Additive budgets through
-  `Derivation`/`Provable`; re-prove BaseTheorems (`Provable_sound`, `proofSearch_monotone` — now
-  genuine budget-monotonicity, `mutual_loeb`, `bloeb_engine`/`pblt_engine` with T0's arithmetic).
-  Gate: build green; PBLT-as-theorem re-established; outcome theorems' footprints unchanged.
-- **T2 — consumer re-derivations (~1 week).** The ~100 omega blocks across bot theorem files.
-  Compiler-enumerated; new constants, same shapes.
+- **T1 — accounting refactor. ✅ DONE (2026-07-02), T2 absorbed.** Build green (3144 jobs);
+  outcome-theorem axiom footprints UNCHANGED (Dupoc/Cupod on 3 Lean-standard only;
+  Prudent/JustBot + `atom_complete_false_guard`). What shipped:
+  - `Derivation.size` is now STRUCTURAL (leaves = conclusion; `modusPonens`/`hypSyll` pay both
+    subtrees + conclusion — the paid-cut property at the `Derivation` level).
+  - Every `Provable` rule additive: `weakenImpl`/`atomBoxImpl`/`boxIntro`/`implTrans` (cut-size
+    gate DROPPED — premises pay it)/`app` (split `m₁ m₂`)/`impS2`; `axK`+`axKf` in the
+    three-subscript form `□_a(φ→α) → (□_b φ → □_c α)` gated `a+b+|α| ≤ c` (sound arm = `app`);
+    `box4` as `□_a φ → □_b (□_a φ)` gated `a + |□_a φ| ≤ b`; `diagF`/`diagB` gate at the FREE
+    `fb` and charged; NEW `boxMono` (appended LAST — positional-rec prefix stable);
+    `searchThenSearch_t` premise at its OWN transcript `m ≤ k₂` (NOT the inner source literal —
+    charging `k₂` would sink the chain; soundness lifts via `Provable_mono`).
+  - BaseTheorems: NEW `Provable_mono` (genuine budget monotonicity, by `cases` — every rule
+    self-weakens); `proofSearch_monotone` = 1-line corollary; `bloeb_engine` = T0's 21-condition
+    transcript chain; `pblt_engine` takes the premise at its honest `pm k` (do NOT weaken to k!)
+    + ONE headroom bound `8192·W ≤ f k`; `pblt_engine_id` (uniform `100·log2 k + 1000` bounds);
+    `mutual_loeb` = the LOWERED-fb two-leg premise (T0 §6); NEW `mutual_pblt_engine_id` (the
+    cross-bot closer — consumers pass the two O(log k) transparency legs directly).
+  - Consumers: all `*_loeb_premise` lemmas are now TRANSCRIPT-TIGHT (`Provable (c·log2 k + C)`,
+    unconditional — no `K₀` eventuality; `searchThenSearch` premises need `atom_cost ≤ k`, e.g.
+    `atom_cost 2 = 7`, `atom_cost 3 = 10`, `atom_cost 4 = 17`); PrudentBot×Dupoc and JustBot's
+    two mutual sites now go through `mutual_pblt_engine_id` at SAME-k bots (old `loeb_premise_provable`
+    same-subscript assemblies deleted); `decGuard`'s `.impl` case consults the consequent at the
+    REDUCED budget `k − |φ'→ψ|`.
+  - NOT touched: atom layer (`PlaysProof`/`AtomProvable`/`atom_cost`, incl. `search_t`'s
+    `c_guard`-only charge), `proofSearch := decide`, `Formula.interp`. Reflection/* (historical,
+    not root-imported) not rebuilt.
 - **T3 — the decider `D` (~2–3 weeks, the second hard chunk).** decGuard→full-rule bounded search,
   fuel-stratified with computable eval; `D ↔ Provable` (completeness is THE proof of the project).
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`

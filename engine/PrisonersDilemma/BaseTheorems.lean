@@ -144,18 +144,31 @@ theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
 theorem derives {φ : Formula} (d : Derivation φ) : ∃ m, proofSearch m φ = true :=
   ⟨d.size, (proofSearch_spec _ _).2 (Provable.struct ⟨d, Nat.le_refl _⟩)⟩
 
-/-- The **K axiom** of GL, budget-respecting: from a derivation of `φ → ψ` of
-    size `≤ n` and one of `φ` of size `≤ m`, `ψ` is provable within `n + m + 1`.
-    With the character-faithful `Derivation.size = conclusion.size`, the combined
-    derivation's size is `ψ.size ≤ (φ → ψ).size ≤ n ≤ n + m + 1`. Lifts the
-    `modusPonens` constructor to the budgeted `Provable` level. -/
+/-- Every derivation's transcript contains (at least) its conclusion. Base fact of the
+    transcript cost model: leaves cost exactly their conclusion; the combining rules pay
+    their subtrees ON TOP of the conclusion. -/
+theorem _root_.PD.Derivation.concl_size_le : ∀ {φ : Formula} (d : Derivation φ), φ.size ≤ d.size := by
+  intro φ d
+  cases d with
+  | modusPonens φ ψ d1 d2 => simp only [Derivation.size]; omega
+  | hypSyll φ ψ χ d1 d2 => simp only [Derivation.size]; omega
+  | _ => simp only [Derivation.size]; exact Nat.le_refl _
+
+/-- The **K axiom** of GL, budget-respecting: from a derivation of `φ → ψ` of transcript
+    `≤ n` and one of `φ` of transcript `≤ m`, `ψ` is provable within `n + m + n` (the
+    combined transcript pays both subtrees plus the conclusion `ψ`, and
+    `ψ.size < (φ → ψ).size ≤ n` via `concl_size_le`). Lifts the `modusPonens`
+    constructor to the budgeted `Provable` level. -/
 theorem K_provable (n m : Nat) (φ ψ : Formula)
     (dImp : Derivation (.impl φ ψ)) (hI : dImp.size ≤ n)
-    (dφ : Derivation φ) (_hF : dφ.size ≤ m) :
-    Provable (n + m + 1) ψ := by
-  -- dImp.size = (φ → ψ).size = φ.size + ψ.size + 1, so ψ.size ≤ n ≤ n+m+1.
+    (dφ : Derivation φ) (hF : dφ.size ≤ m) :
+    Provable (n + m + n) ψ := by
+  have hψ : ψ.size ≤ n := by
+    have h := dImp.concl_size_le
+    simp only [Formula.size] at h
+    omega
   exact Provable.struct ⟨.modusPonens φ ψ dImp dφ, by
-    simp only [Derivation.size] at *; simp [Formula.size] at hI; omega⟩
+    simp only [Derivation.size]; omega⟩
 
 /--
 S can read source code: if an agent `me` is literally
@@ -248,7 +261,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
     (motive_3 := fun _ _ _ => True)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken
     ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl ?provBoxIntro ?provApp ?provAxK ?provBox4
-    ?provDiagF ?provDiagB ?provAxKf ?provImpS2 h
+    ?provDiagF ?provDiagB ?provAxKf ?provImpS2 ?provBoxMono h
   case const => exact ⟨1, rfl⟩
   case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
   case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
@@ -287,6 +300,7 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
   case provDiagB => intros; trivial
   case provAxKf => intros; trivial
   case provImpS2 => intros; trivial
+  case provBoxMono => intros; trivial
 
 /-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
 theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
@@ -299,6 +313,36 @@ theorem AtomProvable_sound (k : Nat) (φ : Formula) : AtomProvable k φ → φ.i
   rintro ⟨cert, _⟩
   obtain ⟨N, hN⟩ := playsProof_sound cert
   exact ⟨N, hN⟩
+
+/-- **Budget monotonicity of `Provable`** — a ≤k₁-transcript proof is a ≤k₂-transcript proof
+    (k₁ ≤ k₂). Genuine and structural under the transcript cost model: EVERY rule's final
+    side-condition is `… ≤ k` with `k` the output budget, so each constructor re-applies with
+    the bound relaxed — plain `cases`, no recursion. (Replaces the per-rule reasoning that
+    `proofSearch_monotone` used to inline; that theorem is now a one-line corollary.) -/
+theorem Provable_mono : ∀ {k₁ : Nat} {φ : Formula}, Provable k₁ φ →
+    ∀ {k₂ : Nat}, k₁ ≤ k₂ → Provable k₂ φ := by
+  intro k₁ φ h k₂ hk
+  cases h with
+  | struct hd => obtain ⟨d, hsz⟩ := hd; exact .struct ⟨d, Nat.le_trans hsz hk⟩
+  | atom hatom => exact .atom (atom_monotone k₁ k₂ φ hk hatom)
+  | weakenImpl φ ψ m hψ hle => exact .weakenImpl φ ψ m hψ (Nat.le_trans hle hk)
+  | searchThenSearch_t k₁' k₂' m ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk hle =>
+      exact .searchThenSearch_t k₁' k₂' m ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk
+        (Nat.le_trans hle hk)
+  | implTrans φ ψ χ a b h1 h2 hle => exact .implTrans φ ψ χ a b h1 h2 (Nat.le_trans hle hk)
+  | atomBoxImpl kBox p q a hatom hle => exact .atomBoxImpl kBox p q a hatom (Nat.le_trans hle hk)
+  | boxIntro kIn K φ hprem hle => exact .boxIntro kIn k₂ φ hprem (Nat.le_trans hle hk)
+  | app =>
+      rename_i m₁ m₂ φ' h1 h2 hle
+      exact .app k₂ m₁ m₂ φ' _ h2 h1 (Nat.le_trans hle hk)
+  | axK a b c m K φ α hprem hgate hle =>
+      exact .axK a b c m k₂ φ α hprem hgate (Nat.le_trans hle hk)
+  | box4 a b K φ hgate hle => exact .box4 a b k₂ φ hgate (Nat.le_trans hle hk)
+  | diagF pm fb g K tgt hgate hle => exact .diagF pm fb g k₂ tgt hgate (Nat.le_trans hle hk)
+  | diagB pm fb g K tgt hgate hle => exact .diagB pm fb g k₂ tgt hgate (Nat.le_trans hle hk)
+  | axKf a b c K φ α hgate hle => exact .axKf a b c k₂ φ α hgate (Nat.le_trans hle hk)
+  | impS2 φ ψ χ m₁ m₂ K h1 h2 hle => exact .impS2 φ ψ χ m₁ m₂ k₂ h1 h2 (Nat.le_trans hle hk)
+  | boxMono a b K φ hab hle => exact .boxMono a b k₂ φ hab (Nat.le_trans hle hk)
 
 -- **Soundness of bounded provability: anything provable within a budget is true.**
 -- One arm per `Provable` constructor (grouped as in `Derivation.lean`):
@@ -329,54 +373,62 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
     (fun {k} {φ} hatom _ => AtomProvable_sound k φ hatom)       -- atom
     -- weakenImpl: `(.impl φ ψ).interp` is `φ.interp → ψ.interp`; the IH
     -- `ih : ψ.interp` (from `Provable m ψ`) discharges it via `fun _ => ih`.
-    (fun _φ _ψ _m _hpsi _hmk _hsz ih => fun _ => ih)            -- weakenImpl
+    (fun _φ _ψ _m _hpsi _hle ih => fun _ => ih)                 -- weakenImpl
     -- searchThenSearch_t: conclusion `(□_{k₁} ψ₁' → me plays c0).interp`, i.e.
     -- `Provable k₁ ψ₁' → ∃ n, play n me opponent = some c0`. Given the box
     -- antecedent (`hbox : Provable k₁ ψ₁'`) and the prudence premise
     -- (`hprud : Provable k₂ ψ₂'`), both reflect to `proofSearch … = true`, so
     -- `eval` runs outer `.search` → inner `.search` → `.const c0`. Witness fuel 3.
-    (fun {_k} k₁ k₂ ψ₁ ψ₂ c0 c1 q me opponent hme hprud _hk2 _hsz _ih => by
+    (fun {_k} k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk _hle _ih => by
         subst hme
         intro hbox
         have hps₁ : proofSearch k₁ (ψ₁.subst
             (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opponent) = true :=
           (proofSearch_spec _ _).2 hbox
+        -- the inner premise is at its own transcript `m ≤ k₂`; budget-monotonicity lifts it
         have hps₂ : proofSearch k₂ (ψ₂.subst
             (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opponent) = true :=
-          (proofSearch_spec _ _).2 hprud
+          (proofSearch_spec _ _).2 (Provable_mono hprud hmk)
         exact ⟨3, by simp only [play, eval, hps₁, hps₂, if_true]⟩)
     -- implTrans: compose the two implications' interps (function composition).
-    (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hpsisz _hsz ihab ihbc => fun h => ihbc (ihab h))  -- implTrans
+    (fun _φ _ψ _χ _a _b _hab _hbc _hle ihab ihbc => fun h => ihbc (ihab h))  -- implTrans
     -- atomBoxImpl: conclusion `(φ → □_k φ).interp`, i.e. `φ.interp → Provable k φ`.
     -- The certificate `hatom : AtomProvable k φ` discharges the consequent directly
     -- (`Provable.atom`), independent of the antecedent — no axiom.
-    (fun {_k} _kBox _p _q _a hatom _hsz _ih => fun _ => Provable.atom hatom)  -- atomBoxImpl
+    (fun {_k} _kBox _p _q _a hatom _hle _ih => fun _ => Provable.atom hatom)  -- atomBoxImpl
     -- boxIntro: conclusion `(□_{kIn} φ).interp` is *definitionally* `Provable kIn φ`,
     -- which is exactly the premise `hprem`. The arm is the identity (`ih : φ.interp`
     -- is unused — we return the stronger provability the premise already carries).
-    (fun _kIn _K _φ hprem _hsz _ih => hprem)                                  -- boxIntro
+    (fun _kIn _K _φ hprem _hle _ih => hprem)                                  -- boxIntro
     -- app: conclusion `α.interp`. ihimp : `(φ→α).interp = (φ.interp → α.interp)`;
-    -- ihφ : `φ.interp`. Pure function application — NO budget threshold. (binders: k m φ α impl ante mk)
-    (fun _k _m _φ _α _himp _hante _hmk ihimp ihante => ihimp ihante)           -- app (k m φ α impl ante m≤k)
-    -- axK: conclusion `(□φ → □α).interp = (Provable k φ → Provable k α)`. The IH on the premise
-    -- `Provable k (□(φ→α))` is its interp `Provable k (φ→α)` (the held implication proof); apply it
-    -- to the hypothetical `Provable k φ` via OBJECT modus ponens `Provable.app`. No budget threshold.
-    (fun k _K φ α _himp _hsz ih => (fun hφ => Provable.app k k φ α ih hφ (Nat.le_refl k)))  -- axK
-    -- box4: conclusion `(□_kφ → □_k(□_kφ)).interp = (Provable k φ → Provable k (□_kφ))`. Directly:
-    -- `boxIntro k k φ hφ hksz` builds `Provable k (□_kφ)` (output budget k, since `(□φ).size ≤ k`).
-    (fun k _K φ hksz _hsz =>
-      (show Provable k φ → Provable k (.box k φ) from fun hφ => Provable.boxIntro k k φ hφ hksz))  -- box4
+    -- ihφ : `φ.interp`. Pure function application. (binders: k m₁ m₂ φ α impl ante gate)
+    (fun _k _m₁ _m₂ _φ _α _himp _hante _hle ihimp ihante => ihimp ihante)      -- app
+    -- axK: conclusion `(□_b φ → □_c α).interp = (Provable b φ → Provable c α)`. The IH on the
+    -- premise `Provable m (□_a(φ→α))` is its interp `Provable a (φ→α)`; apply it to the
+    -- hypothetical `Provable b φ` via OBJECT modus ponens `Provable.app` at output `c` — the
+    -- additive gate `a + b + α.size ≤ c` is EXACTLY `app`'s side condition (transcript-honest K).
+    (fun a b c _m _K φ α _hprem hgate _hle ih =>
+      (fun hφ => Provable.app c a b φ α ih hφ hgate))                          -- axK
+    -- box4: conclusion `(□_a φ → □_b (□_a φ)).interp = (Provable a φ → Provable b (□_a φ))`:
+    -- `boxIntro` with the additive gate `a + (□_a φ).size ≤ b` (the premise transcript ≤ a).
+    (fun a b _K φ hgate _hsz =>
+      (show Provable a φ → Provable b (.box a φ) from
+        fun hφ => Provable.boxIntro a b φ hφ hgate))                           -- box4
     -- diagF: conclusion `(ψ → (□_g ψ → tgt)).interp` where `ψ := .diag g tgt` and
     -- `ψ.interp = (Provable g ψ → tgt.interp)` BY DEFINITION (Dynamics.lean) — the identity.
-    (fun _g _K _tgt _hgate _hsz _ih => fun h => h)                             -- diagF
+    (fun _pm _fb _g _K _tgt _hgate _hle _ih => fun h => h)                     -- diagF
     -- diagB: `((□_g ψ → tgt) → ψ).interp` — the same identity, other direction.
-    (fun _g _K _tgt _hgate _hsz _ih => fun h => h)                             -- diagB
-    -- axKf: `(□_k(φ→α) → (□_kφ → □_kα)).interp = Provable k (φ→α) → Provable k φ → Provable k α`:
-    -- object modus ponens (`Provable.app`), no budget threshold.
-    (fun k _K φ α _hsz => fun hab ha => Provable.app k k φ α hab ha (Nat.le_refl k))  -- axKf
+    (fun _pm _fb _g _K _tgt _hgate _hle _ih => fun h => h)                     -- diagB
+    -- axKf: `(□_a(φ→α) → (□_bφ → □_cα)).interp = Provable a (φ→α) → Provable b φ → Provable c α`:
+    -- object modus ponens (`Provable.app`) at output `c`; the gate is `app`'s condition.
+    (fun a b c _K φ α hgate _hsz =>
+      fun hab ha => Provable.app c a b φ α hab ha hgate)                       -- axKf
     -- impS2: `(φ→χ).interp` from ih₁ : `(φ→(ψ→χ)).interp` and ih₂ : `(φ→ψ).interp` — the
     -- S-combinator, plain function application.
-    (fun _φ _ψ _χ _m _K _h1 _h2 _hmk _hsz ih1 ih2 => fun hφ => (ih1 hφ) (ih2 hφ))  -- impS2
+    (fun _φ _ψ _χ _m₁ _m₂ _K _h1 _h2 _hle ih1 ih2 => fun hφ => (ih1 hφ) (ih2 hφ))  -- impS2
+    -- boxMono: `(□_a φ → □_b φ).interp = (Provable a φ → Provable b φ)` with `a ≤ b` —
+    -- budget monotonicity (`Provable_mono`), the semantic fact the rule internalizes.
+    (fun _a _b _K _φ hab _hsz => fun hpa => Provable_mono hpa hab)             -- boxMono
     h
 
 /-
@@ -420,83 +472,12 @@ theorem proofSearch_complete_plays :
   exact ⟨atom_cost n,
     (proofSearch_spec _ (.plays p q a)).2 (Provable.atom (atom_complete p q a n hn))⟩
 
--- Monotonicity in proof-search budget: the structural disjunct relaxes its size
--- bound; the `AtomProvable` disjunct carries over by `atom_monotone`.
+-- Monotonicity in proof-search budget: the Bool reflection of `Provable_mono`
+-- (which see — every rule self-weakens in its output budget under transcript cost).
 theorem proofSearch_monotone :
-  ∀ k₁ k₂ φ, k₁ ≤ k₂ → proofSearch k₁ φ = true → proofSearch k₂ φ = true := by
-  intro k₁ k₂ φ hk h1
-  cases (proofSearch_spec k₁ φ).1 h1 with
-  | struct hd => obtain ⟨d, hsz⟩ := hd
-                 -- the derivation carries over; only its size bound relaxes `k₁ → k₂`.
-                 exact (proofSearch_spec k₂ φ).2
-                   (Provable.struct ⟨d, Nat.le_trans hsz hk⟩)
-  | atom hatom => exact (proofSearch_spec k₂ φ).2 (Provable.atom (atom_monotone k₁ k₂ φ hk hatom))
-  | weakenImpl ψ' χ' m hpsi hmk hsz =>
-      -- the conclusion's size bound relaxes from `k₁` to `k₂`; the consequent's
-      -- proof and budget bound carry over (transitivity through `k₁ ≤ k₂`).
-      exact (proofSearch_spec k₂ _).2
-        (Provable.weakenImpl ψ' χ' m hpsi (Nat.le_trans hmk hk) (Nat.le_trans hsz hk))
-  | searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opponent hme hprud hk2 hsz =>
-      -- same as `weakenImpl`: relax the conclusion's size and `k₂` bounds `k₁ → k₂`;
-      -- the inner (prudence) proof and `hme` carry over unchanged.
-      exact (proofSearch_spec k₂ _).2
-        (Provable.searchThenSearch_t a₁ a₂ ψ₁ ψ₂ c0 c1 q me opponent hme hprud
-          (Nat.le_trans hk2 hk) (Nat.le_trans hsz hk))
-  | implTrans φ ψ χ a b hab hbc hak hbk hpsisz hsz =>
-      -- relax the conclusion's size, both leg budgets, and the cut-formula size
-      -- bound `k₁ → k₂` (all via transitivity through `k₁ ≤ k₂`).
-      exact (proofSearch_spec k₂ _).2
-        (Provable.implTrans φ ψ χ a b hab hbc (Nat.le_trans hak hk) (Nat.le_trans hbk hk)
-          (Nat.le_trans hpsisz hk) (Nat.le_trans hsz hk))
-  | atomBoxImpl kBox p q a hatom hsz =>
-      -- the box certificate stays at its own budget `kBox` (untouched by `k₁ → k₂`);
-      -- only the conclusion's size bound relaxes from `k₁` to `k₂`.
-      exact (proofSearch_spec k₂ _).2
-        (Provable.atomBoxImpl kBox p q a hatom (Nat.le_trans hsz hk))
-  | boxIntro kIn =>
-      -- the inner proof stays at its own budget `kIn`; the conclusion's `size ≤ k₁`
-      -- bound relaxes to `size ≤ k₂` (self-weakening), so re-apply `boxIntro` at `k₂`.
-      rename_i φ' hprem hsz
-      exact (proofSearch_spec k₂ _).2
-        (Provable.boxIntro kIn k₂ φ' hprem (Nat.le_trans hsz hk))
-  | app =>
-      -- object MP at the fixed budget `k₁`; lift each premise `k₁ → k₂` (recursively, via the spec),
-      -- then re-apply `app` at `k₂`. Conclusion formula `α` is unchanged by the budget lift.
-      -- `app k₁ m`'s conclusion budget `k₁` is FREE (premises at `m ≤ k₁`). Lift `k₁ → k₂` by
-      -- re-applying `app` at `k₂` with the SAME premises (unchanged at `m`) and `m ≤ k₁ ≤ k₂`. NO
-      -- recursion needed (premises don't move), so termination is preserved.
-      -- bound order (read from the goal): `m`, a formula, antecedent proof, `m ≤ k₁`, implication.
-      rename_i m _ hante hmk himpl
-      exact (proofSearch_spec k₂ _).2
-        (Provable.app k₂ m _ _ himpl hante (Nat.le_trans hmk hk))
-  | axK kk =>
-      -- `axK`'s INNER box budget `kk` is fixed in the CONCLUSION FORMULA `□_{kk}φ → □_{kk}α` — that
-      -- formula does NOT change with `k₁ → k₂`. The PROOF budget `K` (separate, was `k₁`) self-weakens
-      -- to `k₂`: keep the same premise (inner budget `kk` untouched), relax only the `size ≤ K` bound.
-      rename_i φ' α' himp hsz
-      exact (proofSearch_spec k₂ _).2
-        (Provable.axK kk k₂ φ' α' himp (Nat.le_trans hsz hk))
-  | box4 kk =>
-      -- `box4`'s inner box budget `kk` is fixed in the conclusion formula `□_{kk}φ → □_{kk}□_{kk}φ`;
-      -- the proof budget self-weakens `k₁ → k₂`. Keep the `(□φ).size ≤ kk` guard; relax `size ≤ K`.
-      rename_i φ' hksz hsz
-      exact (proofSearch_spec k₂ _).2
-        (Provable.box4 kk k₂ φ' hksz (Nat.le_trans hsz hk))
-  | diagF g =>
-      -- fixpoint-leg budgets: the gate proof and the box subscript `g` are fixed in the conclusion
-      -- formula; only the `size ≤ K` output bound relaxes `k₁ → k₂` (self-weakening).
-      rename_i tgt hgate hsz
-      exact (proofSearch_spec k₂ _).2 (Provable.diagF g k₂ tgt hgate (Nat.le_trans hsz hk))
-  | diagB g =>
-      rename_i tgt hgate hsz
-      exact (proofSearch_spec k₂ _).2 (Provable.diagB g k₂ tgt hgate (Nat.le_trans hsz hk))
-  | axKf kk =>
-      rename_i φ' α' hsz
-      exact (proofSearch_spec k₂ _).2 (Provable.axKf kk k₂ φ' α' (Nat.le_trans hsz hk))
-  | impS2 φ' ψ' χ' m =>
-      rename_i hab hb hmk hsz
-      exact (proofSearch_spec k₂ _).2
-        (Provable.impS2 φ' ψ' χ' m k₂ hab hb (Nat.le_trans hmk hk) (Nat.le_trans hsz hk))
+    ∀ k₁ k₂ φ, k₁ ≤ k₂ → proofSearch k₁ φ = true → proofSearch k₂ φ = true :=
+  fun _k₁ _k₂ φ hk h1 =>
+    (proofSearch_spec _ φ).2 (Provable_mono ((proofSearch_spec _ φ).1 h1) hk)
 
 
 /-- **Bounded GL axiom 4 / necessitation** (`□_k φ → □_K □_k φ`), HBL D2 — NOW A THEOREM
@@ -506,8 +487,8 @@ theorem proofSearch_monotone :
     conclusion `□_k φ` is built directly from the premise `Provable k φ`, with the size bound
     `(.box k φ).size ≤ K` met by `Nat.le_refl`. Sound + safe — see the `boxIntro` doc. -/
 theorem box_provable (k : Nat) (φ : Formula) (h : Provable k φ) :
-    ∃ K, K ≤ (Formula.box k φ).size ∧ Provable K (.box k φ) :=
-  ⟨(Formula.box k φ).size, Nat.le_refl _, Provable.boxIntro k _ φ h (Nat.le_refl _)⟩
+    ∃ K, K ≤ k + (Formula.box k φ).size ∧ Provable K (.box k φ) :=
+  ⟨k + (Formula.box k φ).size, Nat.le_refl _, Provable.boxIntro k _ φ h (Nat.le_refl _)⟩
 
 /-- **Object-level bounded Σ₁-completeness for play-atoms** (the conditional, kernel-checked
     THEOREM). When the play actually happens within `fuel` steps AND the budget `k` fits a
@@ -519,158 +500,270 @@ theorem box_provable (k : Nat) (φ : Formula) (h : Provable k φ) :
     GL-excluded converse-necessitation `φ → □φ`. (Historical note: the witness-free form was once the
     axiom `atom_box_provable_impl`, removed as unsound; this conditional theorem and the `atomBoxImpl`
     constructor are its sound content.) -/
-theorem atom_box_provable_impl_sound (k fuel : Nat) (p q : Prog) (a : Action)
+theorem atom_box_provable_impl_sound (k fuel K : Nat) (p q : Prog) (a : Action)
     (hplay : play fuel p q = some a) (hk : atom_cost fuel ≤ k)
-    (hsz : (Formula.impl (.plays p q a) (.box k (.plays p q a))).size ≤ k) :
-    Provable k (.impl (.plays p q a) (.box k (.plays p q a))) := by
+    (hK : k + (Formula.box k (.plays p q a)).size
+          + (Formula.impl (.plays p q a) (.box k (.plays p q a))).size ≤ K) :
+    Provable K (.impl (.plays p q a) (.box k (.plays p q a))) := by
+  -- Under transcript cost the conclusion can no longer live at the box's own budget `k`
+  -- (the implication's proof CONTAINS the box proof, which contains the `k`-certificate);
+  -- the output budget `K` pays certificate + box + conclusion.
   have hatom : Provable k (.plays p q a) :=
     Provable.atom (atom_monotone (atom_cost fuel) k _ hk (atom_complete p q a fuel hplay))
-  obtain ⟨K, hKle, hbox⟩ := box_provable k (.plays p q a) hatom
-  -- `hKle : K ≤ (□_k atom).size`, and `hsz` forces `(□_k atom).size < (atom → □_k atom).size ≤ k`,
-  -- so `K ≤ k` — exactly the budget bound the now-bounded `weakenImpl` requires.
-  have hszbox : (Formula.box k (.plays p q a)).size < (Formula.impl (.plays p q a) (.box k (.plays p q a))).size := by
-    simp only [Formula.size]; omega
-  have hKk : K ≤ k := Nat.le_trans hKle (Nat.le_trans (Nat.le_of_lt hszbox) hsz)
-  exact Provable.weakenImpl (.plays p q a) (.box k (.plays p q a)) K hbox hKk hsz
+  have hbox : Provable (k + (Formula.box k (.plays p q a)).size) (.box k (.plays p q a)) :=
+    Provable.boxIntro k _ _ hatom (Nat.le_refl _)
+  exact Provable.weakenImpl (.plays p q a) (.box k (.plays p q a)) _ hbox hK
+
+/-- `Nat.log2` is monotone (companion to `c_guard_mono`; used by the `pblt_engine`
+    instantiations to bound the chain's box-subscript numerals by `log2 k`). -/
+theorem log2_mono {a b : Nat} (h : a ≤ b) : Nat.log2 a ≤ Nat.log2 b := by
+  simp only [Nat.log2_eq_log_two]; exact Nat.log_mono_right h
 
 /-! ### The mutual-Löb corollary — closes the cross-bot cooperation fixpoints
 
-`mutual_loeb` derives the closed Löb premise `□_k φP → φP` that `PBLT` consumes, from the two
-object transparency legs (`legPD : □φP → φD`, `legDP : □φD → φP`). It uses ONLY constructors
-(`boxIntro`/`axK`/`box4`/`implTrans`) — the "Route 2" assembly that replaced the removed
-`boxInternalize` axiom (which used to internalize a proof *transformer*, a non-positive premise).
-See the `boxInternalize` REMOVED note in `Axioms.lean`. -/
+`mutual_loeb` derives a closed Löb premise from the two object transparency legs
+(`legPD : □_kP A → B`, `legDP : □_kD B → A`). TRANSCRIPT-COST SHAPE (T0 §6,
+`Research/Spikes/transcript/T0Transcript.lean`): the conclusion lives at a LOWERED box
+subscript `fb` (strictly below the legs' source literals) — `□_fb A → □_kP A` feeds leg 1
+via upward `boxMono`, the K-distribution lands at `c ≤ kD` which mono-UPs onto leg 2's box,
+yielding `□_fb A → A` with an O(log k) transcript. `bloeb_engine`/`pblt_engine` then consume
+the premise at `fb`. (The former same-subscript factoring `□_k φP → φP` is UNDERIVABLE under
+transcript cost: K-distribution pushes the intermediate subscript above `k`, and downward
+box-mono is unsound.) -/
 
-/-- **Mutual / simultaneous bounded Löb** (object form), via Route 2 — ALL CONSTRUCTORS, no axiom.
-    From the two object transparency legs `legPD : □_k φP → φD` and `legDP : □_k φD → φP`, build
-    `□_k φP → φP` as a `Provable` object:
+/-- **Mutual / simultaneous bounded Löb premise** (object form) — ALL CONSTRUCTORS, no axiom.
+    From `legPD : □_kP A → B` and `legDP : □_kD B → A`, build `□_fb A → A` at the lowered
+    subscript `fb`. Free choices: `fb n m c` and the step transcripts `d₁…d₉`; the H-side
+    conditions are what the consumers' omega blocks discharge (all O(log k)-shaped when the
+    legs are transparency leaves). -/
+theorem mutual_loeb (A B : Formula) (kP kD fb n m c pA pB : Nat)
+    (d₁ d₂ d₃ d₄ d₅ d₆ d₇ d₈ d₉ K : Nat)
+    (legPD : Provable pA (.impl (.box kP A) B))
+    (legDP : Provable pB (.impl (.box kD B) A))
+    (H1 : fb ≤ kP)
+    (H2 : (Formula.impl (.box fb A) (.box kP A)).size ≤ d₁)
+    (H3 : d₁ + pA + (Formula.impl (.box fb A) B).size ≤ d₂)
+    (H4 : d₂ ≤ n)
+    (H5 : n + (Formula.box n (.impl (.box fb A) B)).size ≤ d₃)
+    (H6 : n + m + B.size ≤ c)
+    (H7 : (Formula.impl (.box n (.impl (.box fb A) B))
+            (.impl (.box m (.box fb A)) (.box c B))).size ≤ d₄)
+    (H8 : d₄ + d₃ + (Formula.impl (.box m (.box fb A)) (.box c B)).size ≤ d₅)
+    (H9 : fb + (Formula.box fb A).size ≤ m)
+    (H10 : (Formula.impl (.box fb A) (.box m (.box fb A))).size ≤ d₆)
+    (H11 : d₆ + d₅ + (Formula.impl (.box fb A) (.box c B)).size ≤ d₇)
+    (H12 : c ≤ kD)
+    (H13 : (Formula.impl (.box c B) (.box kD B)).size ≤ d₈)
+    (H14 : d₇ + d₈ + (Formula.impl (.box fb A) (.box kD B)).size ≤ d₉)
+    (H15 : d₉ + pB + (Formula.impl (.box fb A) A).size ≤ K) :
+    Provable K (.impl (.box fb A) A) := by
+  -- s1 : □_fb A → □_kP A   (mono-UP onto leg 1's antecedent)
+  have s1 : Provable d₁ (.impl (.box fb A) (.box kP A)) := Provable.boxMono fb kP d₁ A H1 H2
+  -- s2 : □_fb A → B
+  have s2 : Provable d₂ (.impl (.box fb A) B) :=
+    Provable.implTrans _ _ _ d₁ pA s1 legPD H3
+  -- s3 : □_n (□_fb A → B)
+  have s3 : Provable d₃ (.box n (.impl (.box fb A) B)) :=
+    Provable.boxIntro n d₃ _ (Provable_mono s2 H4) H5
+  -- s4 : K-distribution landing at c ≤ kD (THE fix)
+  have s4 : Provable d₄ (.impl (.box n (.impl (.box fb A) B))
+      (.impl (.box m (.box fb A)) (.box c B))) :=
+    Provable.axKf n m c d₄ (.box fb A) B H6 H7
+  have s5 : Provable d₅ (.impl (.box m (.box fb A)) (.box c B)) :=
+    Provable.app d₅ d₄ d₃ _ _ s4 s3 H8
+  -- s6 : □_fb A → □_m □_fb A   (four)
+  have s6 : Provable d₆ (.impl (.box fb A) (.box m (.box fb A))) :=
+    Provable.box4 fb m d₆ A H9 H10
+  have s7 : Provable d₇ (.impl (.box fb A) (.box c B)) :=
+    Provable.implTrans _ _ _ d₆ d₅ s6 s5 H11
+  -- s8 : □_c B → □_kD B   (mono-UP onto leg 2's antecedent)
+  have s8 : Provable d₈ (.impl (.box c B) (.box kD B)) := Provable.boxMono c kD d₈ B H12 H13
+  have s9 : Provable d₉ (.impl (.box fb A) (.box kD B)) :=
+    Provable.implTrans _ _ _ d₇ d₈ s7 s8 H14
+  -- s10 : □_fb A → A — the tight Löb premise at the LOWERED subscript
+  exact Provable.implTrans _ _ _ d₉ pB s9 legDP H15
 
-      `boxIntro` legPD : □_k(□φP → φD)        (necessitate the leg)
-      `axK`            : □_k(□φP) → □_k φD     (GL axiom-K distributes the box)
-      `box4`           : □φP → □(□φP)          (object GL-4)
-      `implTrans` ×2   : □φP → □φD → φP   ⇒    □_k φP → φP.
+/-! ## Bounded Löb INSIDE `Provable` — the internalized chain, TRANSCRIPT-COST (T0).
 
-    All boxes stay at the single budget `k`; the side-conditions are formula-size bounds. -/
-theorem mutual_loeb (k : Nat) (pP qP pD qD : Prog) (bP bD : Action)
-    (legPD : Provable k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD)))
-    (legDP : Provable k (.impl (.box k (.plays pD qD bD)) (.plays pP qP bP)))
-    (hs1 : (Formula.box k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD))).size ≤ k)
-    (hs2 : (Formula.impl (.box k (.box k (.plays pP qP bP))) (.box k (.plays pD qD bD))).size ≤ k)
-    (hs3 : (Formula.box k (.plays pP qP bP)).size ≤ k)
-    (hs4 : (Formula.impl (.box k (.plays pP qP bP)) (.box k (.box k (.plays pP qP bP)))).size ≤ k)
-    (hs5 : (Formula.box k (.box k (.plays pP qP bP))).size ≤ k)
-    (hszK4 : (Formula.impl (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))).size ≤ k)
-    (hszBoxD : (Formula.box k (.plays pD qD bD)).size ≤ k)
-    (hsz : (Formula.impl (.box k (.plays pP qP bP)) (.plays pP qP bP)).size ≤ k) :
-    Provable k (.impl (.box k (.plays pP qP bP)) (.plays pP qP bP)) := by
-  -- Route 2 (MutualLobSpike), now ALL CONSTRUCTORS — no transformer, no `boxInternalize` axiom:
-  -- boxIntro legPD ; axK ; box4 ; implTrans×2.  φP = .plays pP qP bP, φD = .plays pD qD bD.
-  -- 1. box the leg `□φP → φD` : Provable k (□_k(□φP → φD))
-  have h1 : Provable k (Formula.box k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD))) :=
-    Provable.boxIntro k k (.impl (.box k (.plays pP qP bP)) (.plays pD qD bD)) legPD hs1
-  -- 2. axK distributes : □_k(□φP) → □_k φD
-  have h2 : Provable k (.impl (.box k (.box k (.plays pP qP bP))) (.box k (.plays pD qD bD))) :=
-    Provable.axK k k (.box k (.plays pP qP bP)) (.plays pD qD bD) h1 hs2
-  -- 3. box4 (object GL-4) : □φP → □(□φP)
-  have h3 : Provable k (.impl (.box k (.plays pP qP bP)) (.box k (.box k (.plays pP qP bP)))) :=
-    Provable.box4 k k (.plays pP qP bP) hs3 hs4
-  -- 4. implTrans h3 ; h2 : □φP → □φD  (cut formula □(□φP), size = hs5)
-  have h4 : Provable k (.impl (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))) :=
-    Provable.implTrans (.box k (.plays pP qP bP)) (.box k (.box k (.plays pP qP bP)))
-      (.box k (.plays pD qD bD)) k k h3 h2 (le_refl k) (le_refl k) hs5 hszK4
-  -- 5. implTrans h4 ; legDP : □φP → φP  (cut formula □φD, size = hszBoxD)
-  exact Provable.implTrans (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))
-    (.plays pP qP bP) k k h4 legDP (le_refl k) (le_refl k) hszBoxD hsz
+`bloeb_engine` runs Löb's derivation entirely in `Provable` from the TIGHT premise
+`Provable pm (□_fb φ → φ)` — `pm` is the premise's honest transcript (O(log k) for the
+consumers' single-leaf `searchBranch` / `mutual_loeb` premises; do NOT weaken it up to `k`,
+the chain needs `pm ≪ fb`). The fixpoint sentence `ψ := .diag g φ` lives at the FREE subscript
+`g ≺ fb`: under transcript cost ψ's proof CONTAINS the premise's proof, so `□`-ing ψ needs
+`g` to absorb ψ's whole transcript (`H19 : c₁₃ ≤ g`) — Critch's `g ≺ f` dance, validated in
+`Research/Spikes/transcript/T0Transcript.lean` (`bloeb_transcript`, axiom-free). The step
+transcripts `c₁…c₁₄` and the box stages `n₁ n₃ n₄ n₅` are explicit; `pblt_engine` instantiates
+everything as multiples of ONE O(log k) unit and discharges the 21 side-conditions by omega. -/
 
-/-! ## Bounded Löb INSIDE `Provable` — the internalized chain (I4).
+theorem bloeb_engine (φ : Formula) (pm fb g n₁ n₃ n₄ n₅ : Nat)
+    (c₁ c₂ c₃ c₄ c₅ c₆ c₇ c₈ c₉ c₁₀ c₁₁ c₁₂ c₁₃ c₁₄ K : Nat)
+    (hLoeb : Provable pm (.impl (.box fb φ) φ))
+    (H1 : pm + (Formula.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ)).size ≤ c₁)
+    (H2 : pm + (Formula.impl (.impl (.box g (.diag g φ)) φ) (.diag g φ)).size ≤ c₂)
+    (H3 : c₁ ≤ n₁)
+    (H4 : n₁ + (Formula.box n₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ))).size ≤ c₃)
+    (H5 : n₁ + g + (Formula.impl (.box g (.diag g φ)) φ).size ≤ n₃)
+    (H6 : (Formula.impl (.box n₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ)))
+            (.impl (.box g (.diag g φ)) (.box n₃ (.impl (.box g (.diag g φ)) φ)))).size ≤ c₄)
+    (H7 : c₄ + c₃ + (Formula.impl (.box g (.diag g φ))
+            (.box n₃ (.impl (.box g (.diag g φ)) φ))).size ≤ c₅)
+    (H8 : n₃ + n₄ + φ.size ≤ n₅)
+    (H9 : (Formula.impl (.box n₃ (.impl (.box g (.diag g φ)) φ))
+            (.impl (.box n₄ (.box g (.diag g φ))) (.box n₅ φ))).size ≤ c₆)
+    (H10 : g + (Formula.box g (.diag g φ)).size ≤ n₄)
+    (H11 : (Formula.impl (.box g (.diag g φ)) (.box n₄ (.box g (.diag g φ)))).size ≤ c₇)
+    (H12 : c₅ + c₆ + (Formula.impl (.box g (.diag g φ))
+            (.impl (.box n₄ (.box g (.diag g φ))) (.box n₅ φ))).size ≤ c₈)
+    (H13 : c₈ + c₇ + (Formula.impl (.box g (.diag g φ)) (.box n₅ φ)).size ≤ c₉)
+    (H14 : n₅ ≤ fb)
+    (H15 : (Formula.impl (.box n₅ φ) (.box fb φ)).size ≤ c₁₀)
+    (H16 : c₉ + c₁₀ + (Formula.impl (.box g (.diag g φ)) (.box fb φ)).size ≤ c₁₁)
+    (H17 : c₁₁ + pm + (Formula.impl (.box g (.diag g φ)) φ).size ≤ c₁₂)
+    (H18 : c₂ + c₁₂ + (Formula.diag g φ).size ≤ c₁₃)
+    (H19 : c₁₃ ≤ g)
+    (H20 : g + (Formula.box g (.diag g φ)).size ≤ c₁₄)
+    (H21 : c₁₂ + c₁₄ + φ.size ≤ K) :
+    Provable K φ := by
+  -- the two fixpoint legs (gated on hLoeb, charging its transcript)
+  have legF : Provable c₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ)) :=
+    Provable.diagF pm fb g c₁ φ hLoeb H1
+  have legB : Provable c₂ (.impl (.impl (.box g (.diag g φ)) φ) (.diag g φ)) :=
+    Provable.diagB pm fb g c₂ φ hLoeb H2
+  -- hnec : □_{n₁}(ψ → (□_gψ→φ))
+  have hnec : Provable c₃ (.box n₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ))) :=
+    Provable.boxIntro n₁ c₃ _ (Provable_mono legF H3) H4
+  -- hK1 : □_{n₁}(ψ→ctx) → (□_g ψ → □_{n₃} ctx)   [axKf stage 1]
+  have hK1 : Provable c₄ (.impl (.box n₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ)))
+      (.impl (.box g (.diag g φ)) (.box n₃ (.impl (.box g (.diag g φ)) φ)))) :=
+    Provable.axKf n₁ g n₃ c₄ (.diag g φ) (.impl (.box g (.diag g φ)) φ) H5 H6
+  -- h2 : □_g ψ → □_{n₃} ctx
+  have h2 : Provable c₅ (.impl (.box g (.diag g φ)) (.box n₃ (.impl (.box g (.diag g φ)) φ))) :=
+    Provable.app c₅ c₄ c₃ _ _ hK1 hnec H7
+  -- hK2 : □_{n₃}(□_gψ→φ) → (□_{n₄}□_gψ → □_{n₅} φ)   [axKf stage 2]
+  have hK2 : Provable c₆ (.impl (.box n₃ (.impl (.box g (.diag g φ)) φ))
+      (.impl (.box n₄ (.box g (.diag g φ))) (.box n₅ φ))) :=
+    Provable.axKf n₃ n₄ n₅ c₆ (.box g (.diag g φ)) φ H8 H9
+  -- hfour : □_g ψ → □_{n₄} □_g ψ
+  have hfour : Provable c₇ (.impl (.box g (.diag g φ)) (.box n₄ (.box g (.diag g φ)))) :=
+    Provable.box4 g n₄ c₇ (.diag g φ) H10 H11
+  -- h4 : □_g ψ → (□_{n₄}□_gψ → □_{n₅} φ)
+  have h4 : Provable c₈ (.impl (.box g (.diag g φ))
+      (.impl (.box n₄ (.box g (.diag g φ))) (.box n₅ φ))) :=
+    Provable.implTrans _ _ _ c₅ c₆ h2 hK2 H12
+  -- h6 : □_g ψ → □_{n₅} φ   [impS2 — S-composition]
+  have h6 : Provable c₉ (.impl (.box g (.diag g φ)) (.box n₅ φ)) :=
+    Provable.impS2 _ _ _ c₈ c₇ c₉ h4 hfour H13
+  -- hmono : □_{n₅} φ → □_{fb} φ   [upward boxMono — new with the transcript model]
+  have hmono : Provable c₁₀ (.impl (.box n₅ φ) (.box fb φ)) :=
+    Provable.boxMono n₅ fb c₁₀ φ H14 H15
+  -- h6' : □_g ψ → □_{fb} φ
+  have h6' : Provable c₁₁ (.impl (.box g (.diag g φ)) (.box fb φ)) :=
+    Provable.implTrans _ _ _ c₉ c₁₀ h6 hmono H16
+  -- hE : □_g ψ → φ
+  have hE : Provable c₁₂ (.impl (.box g (.diag g φ)) φ) :=
+    Provable.implTrans _ _ _ c₁₁ pm h6' hLoeb H17
+  -- hF : ψ  (contains legB + hE — hence the premise's transcript; H19 : c₁₃ ≤ g absorbs it)
+  have hF : Provable c₁₃ (.diag g φ) := Provable.app c₁₃ c₂ c₁₂ _ _ legB hE H18
+  have hG : Provable c₁₄ (.box g (.diag g φ)) :=
+    Provable.boxIntro g c₁₄ _ (Provable_mono hF H19) H20
+  exact Provable.app K c₁₂ c₁₄ _ _ hE hG H21
 
-`bloeb_engine` runs Löb's derivation entirely in `Provable` at ONE subscript-and-budget `u`, from the
-TIGHT premise `Provable u (□_u φ → φ)`. The fixpoint sentence is `ψ := .diag u φ` (Program.lean), whose
-`interp` IS the fixpoint (Dynamics.lean); the legs are the (Löb-premise-gated) `diagF`/`diagB` rules,
-K-as-formula is `axKf`, and the S-composition is `impS2` — all sound constructors (Provable_sound).
-The 12 size side-conditions are all `O(log u) + O(φ.size)`-shaped; `pblt_engine` discharges them from
-ONE master bound. Design + validation: `Research/Notes/INTERNALIZATION_ROADMAP.md` (I0),
-`Research/Spikes/pblt/I0Design.lean` (`bloeb_mini`, no axioms). -/
-
-theorem bloeb_engine (u : Nat) (φ : Formula)
-    (hLoeb : Provable u (.impl (.box u φ) φ))
-    (hs1 : (Formula.impl (.diag u φ) (.impl (.box u (.diag u φ)) φ)).size ≤ u)
-    (hs2 : (Formula.impl (.impl (.box u (.diag u φ)) φ) (.diag u φ)).size ≤ u)
-    (hs3 : (Formula.box u (Formula.impl (.diag u φ) (.impl (.box u (.diag u φ)) φ))).size ≤ u)
-    (hs5 : (Formula.impl (.box u (.diag u φ)) (.box u (.impl (.box u (.diag u φ)) φ))).size ≤ u)
-    (hs6 : (Formula.impl (.box u (.impl (.box u (.diag u φ)) φ))
-              (.impl (.box u (.box u (.diag u φ))) (.box u φ))).size ≤ u)
-    (hs7 : (Formula.impl (.box u (.diag u φ)) (.impl (.box u (.box u (.diag u φ))) (.box u φ))).size ≤ u)
-    (hs8 : (Formula.box u (.diag u φ)).size ≤ u)
-    (hs9 : (Formula.impl (.box u (.diag u φ)) (.box u (.box u (.diag u φ)))).size ≤ u)
-    (hs10 : (Formula.impl (.box u (.diag u φ)) (.box u φ)).size ≤ u)
-    (hs11 : (Formula.impl (.box u (.diag u φ)) φ).size ≤ u)
-    (hs12 : (Formula.box u (.impl (.box u (.diag u φ)) φ)).size ≤ u)
-    (hs13 : (Formula.box u φ).size ≤ u) :
-    Provable u φ := by
-  -- the two fixpoint legs (gated on hLoeb)
-  have legF : Provable u (.impl (.diag u φ) (.impl (.box u (.diag u φ)) φ)) :=
-    Provable.diagF u u φ hLoeb hs1
-  have legB : Provable u (.impl (.impl (.box u (.diag u φ)) φ) (.diag u φ)) :=
-    Provable.diagB u u φ hLoeb hs2
-  -- h1 : □(ψ → (□ψ→φ))            [boxIntro legF]
-  have h1 : Provable u (.box u (.impl (.diag u φ) (.impl (.box u (.diag u φ)) φ))) :=
-    Provable.boxIntro u u _ legF hs3
-  -- h2 : □ψ → □(□ψ→φ)             [axK-rule on h1]
-  have h2 : Provable u (.impl (.box u (.diag u φ)) (.box u (.impl (.box u (.diag u φ)) φ))) :=
-    Provable.axK u u _ _ h1 hs5
-  -- h3 : □(□ψ→φ) → (□□ψ → □φ)     [axKf — the FORMULA form of K]
-  have h3 : Provable u (.impl (.box u (.impl (.box u (.diag u φ)) φ))
-      (.impl (.box u (.box u (.diag u φ))) (.box u φ))) :=
-    Provable.axKf u u (.box u (.diag u φ)) φ hs6
-  -- h4 : □ψ → (□□ψ → □φ)          [implTrans h2 h3]
-  have h4 : Provable u (.impl (.box u (.diag u φ)) (.impl (.box u (.box u (.diag u φ))) (.box u φ))) :=
-    Provable.implTrans _ _ _ u u h2 h3 (Nat.le_refl u) (Nat.le_refl u) hs12 hs7
-  -- h5 : □ψ → □□ψ                 [box4]
-  have h5 : Provable u (.impl (.box u (.diag u φ)) (.box u (.box u (.diag u φ)))) :=
-    Provable.box4 u u (.diag u φ) hs8 hs9
-  -- h6 : □ψ → □φ                  [impS2 h4 h5 — S-composition]
-  have h6 : Provable u (.impl (.box u (.diag u φ)) (.box u φ)) :=
-    Provable.impS2 _ _ _ u u h4 h5 (Nat.le_refl u) hs10
-  -- h7 : □ψ → φ                   [implTrans h6 hLoeb]
-  have h7 : Provable u (.impl (.box u (.diag u φ)) φ) :=
-    Provable.implTrans _ _ _ u u h6 hLoeb (Nat.le_refl u) (Nat.le_refl u) hs13 hs11
-  -- h8 : ψ ; h9 : □ψ ; φ          [app legB h7 ; boxIntro ; app h7 h9]
-  have h8 : Provable u (.diag u φ) := Provable.app u u _ _ legB h7 (Nat.le_refl u)
-  have h9 : Provable u (.box u (.diag u φ)) := Provable.boxIntro u u _ h8 hs8
-  exact Provable.app u u _ _ h7 h9 (Nat.le_refl u)
-
-/-- **Parametric bounded Löb, INTERNAL** — the `PBLT` conclusion as a THEOREM. Tight premise
-    (`Provable (f k) (□_{f k} φk → φk)` — what the consumers' `*_loeb_premise` lemmas produce) + ONE
-    master size bound (`9·log2(f k) + 6·(φ k).size + 32 ≤ f k`, eventual — from the consumers'
-    `linear_log2_add_le`-style lemmas, since play-atom families have size `O(log k)`). Conclusion is
-    the axiom's exact `∃k₂, ∀k>k₂, ∃m, Provable m (φ k)` shape. -/
-theorem pblt_engine (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat)
-    (hLoeb : ∀ k, k > k₁ → Provable (f k) (.impl (.box (f k) (φ k)) (φ k)))
-    (hsz : ∀ k, k > k₁ → 9 * Nat.log2 (f k) + 6 * (φ k).size + 32 ≤ f k) :
+/-- **Parametric bounded Löb, INTERNAL** — the `PBLT` conclusion as a THEOREM, transcript-cost.
+    Premise at its HONEST transcript `pm k` (O(log k) for all consumers — do not weaken to `f k`);
+    ONE master headroom bound `8192·(pm k + (φ k).size + log2 (f k) + 8) ≤ f k` instantiates the
+    whole chain as multiples of the unit `W := pm + |φ| + log2 (f k) + 8` (T0's assignment:
+    `g = 1024·W` absorbs the fixpoint's proof, the largest stage is `n₅ = 8192·W ≤ f k`). -/
+theorem pblt_engine (φ : Nat → Formula) (f pm : Nat → Nat) (k₁ : Nat)
+    (hLoeb : ∀ k, k > k₁ → Provable (pm k) (.impl (.box (f k) (φ k)) (φ k)))
+    (hsz : ∀ k, k > k₁ → 8192 * (pm k + (φ k).size + Nat.log2 (f k) + 8) ≤ f k) :
     ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (φ k) := by
-  refine ⟨k₁, fun k hk => ⟨f k, ?_⟩⟩
-  have hm := hsz k hk
-  refine bloeb_engine (f k) (φ k) (hLoeb k hk) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · simp only [Formula.size]
-      omega
+  refine ⟨k₁, fun k hk => ?_⟩
+  obtain ⟨W, hW⟩ : ∃ W, W = pm k + (φ k).size + Nat.log2 (f k) + 8 := ⟨_, rfl⟩
+  have hWk : 8192 * W ≤ f k := hW ▸ hsz k hk
+  -- every chosen subscript is ≤ f k, so its numeral's log2 is ≤ log2 (f k)
+  have hlg : Nat.log2 (1024 * W) ≤ Nat.log2 (f k) := log2_mono (by omega)
+  have hl₁ : Nat.log2 (32 * W) ≤ Nat.log2 (f k) := log2_mono (by omega)
+  have hl₃ : Nat.log2 (2048 * W) ≤ Nat.log2 (f k) := log2_mono (by omega)
+  have hl₅ : Nat.log2 (8192 * W) ≤ Nat.log2 (f k) := log2_mono (by omega)
+  refine ⟨4096 * W, bloeb_engine (φ k) (pm k) (f k)
+    (1024 * W) (32 * W) (2048 * W) (2048 * W) (8192 * W)
+    (16 * W) (16 * W) (64 * W) (32 * W) (128 * W) (32 * W) (16 * W)
+    (256 * W) (512 * W) (16 * W) (640 * W) (704 * W) (768 * W) (2048 * W) (4096 * W)
+    (hLoeb k hk)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
+  · (try simp only [Formula.size]); omega
 
-/-- **Consumer-facing PBLT** (`f = id`, the shape every bot theorem uses): tight Löb premise
-    (what the `*_loeb_premise` lemmas produce) + a generous uniform size bound on the play-atom
-    family (`10·log2 k + 100` covers every bot in the zoo — each bot's source is `O(log k)`).
+/-- **Consumer-facing PBLT** (`f = id`, the shape every bot theorem uses): tight Löb premise at
+    its honest transcript `pm k` (what the `*_loeb_premise` lemmas produce — a single
+    transparency leaf, `O(log k)` characters) + generous uniform `10·log2 k + 100` bounds on
+    both the play-atom family and the premise transcript (covers every bot in the zoo).
     Replaces the former `PBLT` axiom at all call sites. -/
-theorem pblt_engine_id (φ : Nat → Formula) (k₁ : Nat)
-    (hφ : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100)
-    (hLoeb : ∀ k, k > k₁ → Provable k (.impl (.box k (φ k)) (φ k))) :
+theorem pblt_engine_id (φ : Nat → Formula) (pm : Nat → Nat) (k₁ : Nat)
+    (hφ : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000)
+    (hpm : ∀ k, pm k ≤ 100 * Nat.log2 k + 1000)
+    (hLoeb : ∀ k, k > k₁ → Provable (pm k) (.impl (.box k (φ k)) (φ k))) :
     ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (φ k) := by
-  -- master bound: 9·log2 k + 6·(10·log2 k + 100) + 32 = 69·log2 k + 632 ≤ k, eventually.
-  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 69 632
-  obtain ⟨k₂, hk₂⟩ := pblt_engine φ id (max k₁ Ksz)
+  -- master bound: 8192·((100L+1000) + (100L+1000) + L + 8) = 1646592·L + 16449536 ≤ k, eventually.
+  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 1646592 16449536
+  obtain ⟨k₂, hk₂⟩ := pblt_engine φ id pm (max k₁ Ksz)
     (fun k hk => hLoeb k (lt_of_le_of_lt (Nat.le_max_left _ _) hk))
     (by
       intro k hk
       have h1 := hKsz k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
       have h2 := hφ k
-      show 9 * Nat.log2 k + 6 * (φ k).size + 32 ≤ k
+      have h3 := hpm k
+      show 8192 * (pm k + (φ k).size + Nat.log2 (id k) + 8) ≤ id k
+      simp only [id]
       omega)
   exact ⟨k₂, hk₂⟩
+
+/-- **Consumer-facing MUTUAL PBLT** (`f = id`): the cross-bot cooperation closer
+    (PrudentBot↔DupocBot, JustBot legs, …). Takes the two transparency legs at their honest
+    O(log k) transcripts and SAME-`k` source literals, derives the lowered premise via
+    `mutual_loeb` (`fb = k − 64·V`), and runs `bloeb_engine` at `fb`. Validated in
+    `T0Transcript.lean` §6 (`mutual_pblt_transcript`). -/
+theorem mutual_pblt_engine_id (Af Bf : Nat → Formula) (p₁ p₂ : Nat → Nat) (k₁ : Nat)
+    (hsA : ∀ k, (Af k).size ≤ 100 * Nat.log2 k + 1000)
+    (hsB : ∀ k, (Bf k).size ≤ 100 * Nat.log2 k + 1000)
+    (hp1 : ∀ k, p₁ k ≤ 100 * Nat.log2 k + 1000)
+    (hp2 : ∀ k, p₂ k ≤ 100 * Nat.log2 k + 1000)
+    (hL1 : ∀ k, k > k₁ → Provable (p₁ k) (.impl (.box k (Af k)) (Bf k)))
+    (hL2 : ∀ k, k > k₁ → Provable (p₂ k) (.impl (.box k (Bf k)) (Af k))) :
+    ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (Af k) := by
+  -- master headroom: 131072·V ≤ k with V ≤ 401·log2 k + 4016.
+  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le (131072 * 401) (131072 * 4016)
+  refine ⟨max k₁ Ksz, fun k hk => ?_⟩
+  obtain ⟨V, hV⟩ : ∃ V,
+      V = p₁ k + p₂ k + (Af k).size + (Bf k).size + Nat.log2 k + 16 := ⟨_, rfl⟩
+  have hp1k := hp1 k; have hp2k := hp2 k; have hsAk := hsA k; have hsBk := hsB k
+  have hVk : 131072 * V ≤ k := by
+    have h := hKsz k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+    have hVle : V ≤ 401 * Nat.log2 k + 4016 := by omega
+    calc 131072 * V ≤ 131072 * (401 * Nat.log2 k + 4016) := Nat.mul_le_mul_left _ hVle
+      _ = 131072 * 401 * Nat.log2 k + 131072 * 4016 := by ring
+      _ ≤ k := h
+  have hkk₁ : k > k₁ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  -- the lowered premise subscript: fb + 64V = k
+  obtain ⟨fb, hfb⟩ : ∃ fb, 64 * V + fb = k := Nat.le.dest (by omega)
+  have hLfb : Nat.log2 fb ≤ Nat.log2 k := log2_mono (by omega)
+  have hLm : Nat.log2 (fb + 8*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLc : Nat.log2 (fb + 32*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn : Nat.log2 (16*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₁ : Nat.log2 (512*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLg : Nat.log2 (8192*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₃ : Nat.log2 (16384*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₅ : Nat.log2 (65536*V) ≤ Nat.log2 k := log2_mono (by omega)
+  -- the lowered Löb premise (mutual_loeb): Provable (160V) (□_fb Af → Af)
+  have s10 : Provable (160*V) (.impl (.box fb (Af k)) (Af k)) := by
+    refine mutual_loeb (Af k) (Bf k) k k fb (16*V) (fb + 8*V) (fb + 32*V) (p₁ k) (p₂ k)
+      (8*V) (16*V) (32*V) (16*V) (64*V) (16*V) (96*V) (8*V) (128*V) (160*V)
+      (hL1 k hkk₁) (hL2 k hkk₁)
+      ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    · (try simp only [Formula.size]); omega
+  -- single-leg bloeb at fb
+  refine ⟨32768*V, bloeb_engine (Af k) (160*V) fb
+    (8192*V) (512*V) (16384*V) (16384*V) (65536*V)
+    (256*V) (256*V) (1024*V) (512*V) (2048*V) (512*V) (512*V)
+    (3072*V) (4096*V) (256*V) (5120*V) (6144*V) (7168*V) (16384*V) (32768*V)
+    s10 ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
+  · (try simp only [Formula.size]); omega
