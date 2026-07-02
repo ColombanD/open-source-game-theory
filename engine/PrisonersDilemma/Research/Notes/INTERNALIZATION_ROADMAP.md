@@ -1,3 +1,13 @@
+# ✅ COMPLETE (2026-07-01) — `PBLT` IS DELETED. The engine is at ONE axiom.
+
+All milestones DONE: I0 (design freeze + kill-criterion, `I0Design.lean`), I1 (`.diag` in `Formula`,
+zero behavior change), I2 (subsumed into I1 — the frozen interp clause), I3 (the four rules in
+`Provable`, all sound, five eliminator sites extended), I4 (`bloeb_engine`: bounded Löb PROVEN inside
+`Provable` — NO axioms; `pblt_engine`: the PBLT conclusion on {propext, Quot.sound}), I5 (all 12 call
+sites repointed to `pblt_engine_id`; `axiom PBLT` DELETED; sweep: DupocBot/CupodBot outcomes on the 3
+Lean-standard axioms ONLY, PrudentBot/JustBot on 3 std + `atom_complete_false_guard` — the single
+remaining, machine-proven-irreducible axiom). Engine axiom count: 4 → 1.
+
 # Internalization Roadmap — making the engine's own S Löb-capable (deleting `PBLT` for real)
 
 **Why this route (context).** The B-series (`CONSTRUCTED_BEW_SCOPE.md`) finished the Löb mathematics in
