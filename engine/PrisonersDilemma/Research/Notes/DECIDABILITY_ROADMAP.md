@@ -100,10 +100,36 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
 
 ## Milestones (kill-criteria first, as with the internalization)
 
-- **T0 — design freeze + kill spike (1–2 sessions).** Mini-engine (I0Design pattern) with additive
-  budgets: re-run the bloeb chain with `boxMono`-up + additive `axKf` + `g ≺ f` balancing; verify the
-  consumer-premise-O(log k)-transcript assumption suffices. Also freeze: Derivation-vs-Provable merge
-  question; exact cost constants. **KILL if the subscript dance cannot close** (then Route A or stop).
+- **T0 — design freeze + kill spike. ✅ PASSED (2026-07-02).** Spike:
+  `Research/Spikes/transcript/T0Transcript.lean`. Mini-engine with fully ADDITIVE budgets (every rule
+  pays premise transcripts + its conclusion's size); `Prov_mono` (genuine budget monotonicity) +
+  `Prov_sound` + `consistency` all **axiom-free**; `bloeb_transcript` (the full Löb chain, 21 explicit
+  side-conditions) **axiom-free**; `pblt_transcript` (kill-criterion: `f = id`, premise transcript
+  `≤ P·log2 k + Q`, target size `≤ A·log2 k + B` ⇒ `∃K₀,∀k≥K₀,∃m, Prov m (tgt k)`) closes on the
+  3 Lean-standard axioms only. **The subscript dance closes** — Route B is GO.
+
+  **T0 freeze decisions (binding for T1):**
+  1. **All budgets are multiples of one O(log k) unit** `W := pm + |tgt| + log2 k + 8`. Working
+     assignment (generous, omega-verified): diag subscript `g := 1024·W`; box stages
+     `n₁, n₃, n₄, n₅ := 32W, 2048W, 2048W, 8192W`; ψ's whole proof transcript `c₁₃ = 768·W ≤ g`
+     (THE crux condition — g absorbs the fixpoint's own proof); final transcript `m = 2048·W`. The
+     ONLY headroom condition is `8192·W ≤ k`, discharged by `linear_log2_add_le
+     (8192·(P+A+1)) (8192·(Q+B+8))` — same consumer-facing shape as today's `pblt_engine_id`.
+  2. **`diagF`/`diagB` keep the tight-Löb gate AND charge its transcript** (`pm + |concl| ≤ k`).
+     Conservative (preserves the CIMCIC/DIMCID/Exclusion invariants the same way as now) and the
+     chain still closes because consumer premises have O(log k) transcripts. ONE signature change vs.
+     the current engine rules: the gate premise's box subscript is the FREE `fb` (= f k, the
+     consumer's premise subscript), not `g` — under transcript cost `g ≺ f` strictly, so the gate
+     can no longer be stated at `g`. Sound arms stay identity.
+  3. **`boxMono` is an OBJECT-formula rule** `⊢ □_a φ → □_b φ` (a ≤ b), sound via `Prov_mono` —
+     upward subscript weakening, the piece the conclusion-cost model never needed.
+  4. **`axKf` goes additive**: gate `a + b + |α| ≤ c` for conclusion `□_a(φ→α) → (□_b φ → □_c α)`;
+     its soundness arm is EXACTLY `Prov.app` (Critch's Implication Distribution, now honest).
+  5. **`boxIntro`** pays the inner transcript: premises `Prov m φ`, `m ≤ g`, `m + |□_g φ| ≤ k`
+     (subscript = inner budget; linear E). **`four`** gate: `a + |□_a φ| ≤ b`.
+  6. **Derivation/Provable merge: DON'T.** The atom layer (`Derivation`/`PlaysProof` with cumulative
+     `atom_cost`) is already transcript-style — keep it; T1 only converts `Provable`'s gates from
+     conclusion-size to additive and re-balances `bloeb_engine` with T0's arithmetic.
 - **T1 — accounting refactor (the grind, ~2–3 weeks).** Additive budgets through
   `Derivation`/`Provable`; re-prove BaseTheorems (`Provable_sound`, `proofSearch_monotone` — now
   genuine budget-monotonicity, `mutual_loeb`, `bloeb_engine`/`pblt_engine` with T0's arithmetic).
