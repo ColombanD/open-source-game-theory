@@ -177,13 +177,29 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     4. Lean plumbing that worked: one NAMED checker per rule (small match equations; `split at`
        clean), recursive checkers take the smaller-fuel search as an explicit callback;
        completeness by induction on `Prov` in the form `∀ fuel K, m ≤ K → K ≤ fuel → decP…`.
-  - **T3.1 (next)**: engine non-atom fragment — same shapes + `struct` (Derivation backward
-    search; its structural transcript now pays subtrees, so premises are size-bounded — same
-    method). **T3.2 (the remaining hard part)**: the `atom`/`PlaysProof` layer — `search_t`'s
-    guard premise sits at a SOURCE-LITERAL budget (up to 2^k, not < k), so plays-atoms need the
-    fuel-stratified evalC-style evaluator; note all `PlaysProof`/`Provable` rules are POSITIVE
-    (no `search_f` — that's the deleted axiom's direction), so a least-fixpoint computation
-    over the finite query universe `{(m, ψ) : ψ.size ≤ m ≤ 2^…}` is the fallback shape.
+  - **T3.1 — engine decider, atom-oracle-relative. ✅ PASSED (2026-07-02).**
+    `Research/Spikes/transcript/T31EngineDecider.lean` (3 Lean-standard axioms; notably NOT
+    `atom_complete_false_guard`): `decProv O` — backward search over ALL 15 `Provable`
+    constructors, incl. `struct` via its own `Derivation` search `decDeriv` (8 rules; leaves =
+    syntactic shape-matching against the transparency conclusions, `DecidableEq`-checked) —
+    sound and complete relative to an atom oracle `O` (`OracleSound`/`OracleComplete` for
+    `AtomProvable`). Headline: `provableRelDecidable` — ANY correct atom decision procedure
+    makes the engine's full `Provable` decidable. New ingredients over T3.0:
+    * mutual `enumProg`/`enumFormula` + joint completeness (actions finite, numerals pay log2);
+    * **atoms are NOT size-paid** — `Provable.atom`'s budget bounds eval-steps, not characters.
+      Sharp replacement: `provable_size_or_atom` (size-paid OR an atom certificate) and
+      `provable_impl_size` (`AtomProvable` never concludes an `.impl`), which re-bounds every
+      cut formula THROUGH its impl-premise — cuts still range over `enumFormula k`;
+    * `axK`'s inner subscript searched over `range (c+1)` (gate `a+b+|α| ≤ c` bounds it);
+      `searchThenSearch_t`'s inner premise at `min k₂ (k − |concl|)`; `atomProvable_pos`
+      (certificates cost ≥ 1) keeps budget-0 empty.
+  - **T3.2 (the remaining hard part)**: decide `AtomProvable` — `search_t`'s guard premise
+    sits at a SOURCE-LITERAL budget (up to 2^k, not < k), so plays-atoms need the
+    fuel-stratified evalC-style evaluator, now with `decProv` available for guards; all
+    `PlaysProof`/`Provable` rules are POSITIVE (no `search_f` — the deleted axiom's direction),
+    so a least-fixpoint computation over the finite query universe
+    `{(m, ψ) : ψ.size ≤ m ≤ 2^…}` is the fallback shape. Then T4 wires
+    `proofSearch := decProv O` and deletes the last axiom.
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
   theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
