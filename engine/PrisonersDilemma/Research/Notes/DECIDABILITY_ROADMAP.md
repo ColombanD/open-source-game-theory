@@ -193,13 +193,34 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     * `axK`'s inner subscript searched over `range (c+1)` (gate `a+b+|α| ≤ c` bounds it);
       `searchThenSearch_t`'s inner premise at `min k₂ (k − |concl|)`; `atomProvable_pos`
       (certificates cost ≥ 1) keeps budget-0 empty.
-  - **T3.2 (the remaining hard part)**: decide `AtomProvable` — `search_t`'s guard premise
-    sits at a SOURCE-LITERAL budget (up to 2^k, not < k), so plays-atoms need the
-    fuel-stratified evalC-style evaluator, now with `decProv` available for guards; all
-    `PlaysProof`/`Provable` rules are POSITIVE (no `search_f` — the deleted axiom's direction),
-    so a least-fixpoint computation over the finite query universe
-    `{(m, ψ) : ψ.size ≤ m ≤ 2^…}` is the fallback shape. Then T4 wires
-    `proofSearch := decProv O` and deletes the last axiom.
+  - **T3.2 — ⚠️ CRITICAL FINDING (2026-07-02): `atom_complete_false_guard` is INCONSISTENT.**
+    `Research/Spikes/transcript/T32Inconsistency.lean`: `engine_inconsistent : False` on
+    [3 std axioms + atom_complete_false_guard]. Witness = the ANTI-DIAGONAL bot
+    `G := .search 100 (.plays .self .self .D) (.const .C) (.const .D)`: guard true ⇒ soundness
+    yields a D-play but eval cooperates (contradiction); guard false ⇒ the axiom injects the
+    else-certificate at `atom_cost 2 = 7 ≤ 100`, monotonicity lifts it above the guard budget,
+    flipping the guard (contradiction). Predates the transcript refactor (all ingredients are
+    from the original engine). Everything downstream of the axiom (all of `atom_complete`'s
+    users, incl. PrudentBot/JustBot outcomes) is vacuous until repaired.
+    The T3.2 decidability analysis had independently arrived at the SAME structural point:
+    * UNCHARGED `search_t` (cost = `c_guard` only) leaves the guard-nesting rank of
+      certificates uncomputable (no fuel bound for a complete atom decider), AND permits the
+      inconsistency (else-facts fit under the budgets they refute).
+    * The **CHARGED atom model** is both the repair and the decidability enabler:
+      then-certificates pay the guard PROOF's transcript (Critch-faithful — PA proofs embed
+      their sub-proofs; only possible post-PBLT-internalization, since the Löb-fixpoint guards
+      now have finite O(log k) non-atomic proofs); else-certificates must EXCEED the guard
+      budget they refute (so monotonicity can never lift them back under it).
+    * The `search_f` endgame needs a stratified decider (`search_f`'s premise = a Bool fact
+      about an ALREADY-DEFINED total decider, keeping positivity); the naive "one D deciding
+      the system containing D-facts" is a non-monotone fixpoint (more provable ⇒ fewer
+      else-certs) — the anti-diagonal bot is exactly its paradox.
+    REVISED PLAN: T3.2a — redesign the atom layer on the charged model (search_t pays the
+    guard proof transcript m' with m' ≤ kg; delete the axiom, whose role is taken by a
+    consistent charged `search_f`/eval-completeness story); T3.2b — re-prove atom_complete
+    (cost now program-dependent) + consumer sweep (T1-style); T3.2c — the atom decider
+    (budget now strictly decreases through search_t: the T3.0/T3.1 method applies directly).
+    Then T4 as planned.
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
   theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.

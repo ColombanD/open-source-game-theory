@@ -63,7 +63,17 @@ Everything else is a theorem in `BaseTheorems.lean`.
     the exclusion recs cover the `.diag` rules too). So the axiom postulates a true `interp` whose
     proof TERM does not exist (the proof-vs-witness gap), entangled with the Löb fixpoints.
 
-    Spikes: `Research/Spikes/atom_complete_false_guard/`. -/
+    Spikes: `Research/Spikes/atom_complete_false_guard/`.
+
+    ⚠️⚠️ **INCONSISTENT — machine-checked (2026-07-02).** The anti-diagonal bot
+    `G := .search 100 (.plays .self .self .D) (.const .C) (.const .D)` refutes this axiom:
+    its else-certificate is injected at `atom_cost 2 = 7`, which `atom_monotone` lifts back
+    above the guard budget it refutes, flipping the guard — both guard values yield `False`
+    (`Research/Spikes/transcript/T32Inconsistency.lean`, `engine_inconsistent : False`).
+    Every result whose `#print axioms` lists this axiom is VACUOUS until it is repaired.
+    Root cause: the injection budget depends only on FUEL and can sit below the refuted
+    guard's own search budget. Repair direction (DECIDABILITY_ROADMAP.md T3.2): the CHARGED
+    atom model — else-certificates must exceed the guard budget they refute. -/
 axiom atom_complete_false_guard :
   ∀ p q a fuel, play fuel p q = some a →
     ¬ (∃ _ : PlaysProof p q p a (atom_cost fuel), True) →
