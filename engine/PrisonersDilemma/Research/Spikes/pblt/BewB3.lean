@@ -135,15 +135,21 @@ theorem provesU_sound (p : OFml) (G0 : Nat → Prop)
       -- interp G0 p (the OUTCOME, hp0) makes both `_ → interp G0 p` True. So diagFix ALONE needs hp0.
       show interpU p G0 (.betaA (.atom 0)) ↔ interpU p G0 (.gApp (encode (.betaA (.atom 0))))
       rw [interpU_betaA, interpU_gApp, interp_betaA_Gw, e_graph, interp_gApp_Gw_betaA]
-      -- LHS Gw p G0 (encode (selfApply (.atom 0))); selfApply (.atom 0) = .atom 0 (plug on atom).
-      have hsa : selfApply (OFml.atom 0) = OFml.atom 0 := rfl
+      -- (B4 UPDATE: `selfApply` has since been redefined to `selfApply θ := betaA θ`, so
+      -- `e ⌜.atom 0⌝ = ⌜betaA (.atom 0)⌝` — a betaA code. The antecedent MISMATCH this arm documented
+      -- (the reason hp0 was needed) is GONE: both sides now denote the SAME context, and the arm
+      -- closes WITHOUT hp0 — exactly the B4 fix. hp0 stays in the signature as a historical record.)
+      have hsa : selfApply (OFml.atom 0) = OFml.betaA (OFml.atom 0) := rfl
       rw [hsa]
-      -- Gw at encode(.atom 0): override via the `∨ c = encode(.atom 0)` branch.
-      have hlhs : Gw p G0 (encode (OFml.atom 0)) = (ProvesU p (OFml.atom 0) → interp G0 p) := by
-        unfold Gw; rw [if_pos (Or.inr rfl), decode_encode]
+      have hex : (∃ b, encode (OFml.betaA b) = encode (OFml.betaA (OFml.atom 0)))
+          ∨ encode (OFml.betaA (OFml.atom 0)) = encode (OFml.atom 0) := Or.inl ⟨OFml.atom 0, rfl⟩
+      have hlhs : Gw p G0 (encode (OFml.betaA (OFml.atom 0)))
+          = (ProvesU p (OFml.betaA (OFml.atom 0)) → interp G0 p) := by
+        unfold Gw
+        split
+        · rw [decode_encode]
+        · rename_i hcon; exact absurd hex hcon
       rw [hlhs]
-      -- both sides `_ → interp G0 p`, and interp G0 p = hp0, so both hold; iff of two True props.
-      constructor <;> intro _ _ <;> exact hp0
   | engineLeaf hpr => exact hEL hpr
 
 #check @provesU_sound

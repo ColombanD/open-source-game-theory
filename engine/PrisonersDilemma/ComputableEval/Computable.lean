@@ -205,6 +205,7 @@ theorem evalC_eq_and_decGuard_sound :
       | neg _ => simp [decGuard] at h
       | box _ _ => simp [decGuard] at h
       | eq _ _ => simp [decGuard] at h
+      | diag _ _ => simp [decGuard] at h
     · -- decGuard = some false → proofSearch k φ = false
       intro h
       cases φ with
@@ -243,6 +244,7 @@ theorem evalC_eq_and_decGuard_sound :
       | neg _ => simp [decGuard] at h
       | box _ _ => simp [decGuard] at h
       | eq _ _ => simp [decGuard] at h
+      | diag _ _ => simp [decGuard] at h
 
 /-- Computable entry points, mirroring `play`/`outcome`. -/
 def playC (fuel : Nat) (me opponent : Prog) : Option Action :=

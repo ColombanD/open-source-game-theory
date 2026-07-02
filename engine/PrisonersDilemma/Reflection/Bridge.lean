@@ -63,6 +63,7 @@ mutual
     | .neg φ       => Nat.pair 2 (formulaCode φ)
     | .box k φ     => Nat.pair 3 (Nat.pair k (formulaCode φ))
     | .eq p q      => Nat.pair 4 (Nat.pair (progCode p) (progCode q))
+    | .diag g φ    => Nat.pair 5 (Nat.pair g (formulaCode φ))
 end
 
 mutual
@@ -134,6 +135,12 @@ mutual
             simp only [formulaCode, Nat.pair_eq_pair] at h
             obtain ⟨_, hp, hq⟩ := h; rw [progCode_inj hp, progCode_inj hq]
         | _ => simp only [formulaCode, Nat.pair_eq_pair] at h; exact absurd h.1 (by decide)
+    | .diag g φ, φ', h => by
+        cases φ' with
+        | diag g'' φ'' =>
+            simp only [formulaCode, Nat.pair_eq_pair] at h
+            obtain ⟨_, hg, hφ⟩ := h; rw [hg, formulaCode_inj hφ]
+        | _ => simp only [formulaCode, Nat.pair_eq_pair] at h; exact absurd h.1 (by decide)
 end
 
 /-- The engine-`Formula` Gödel tag used as an atom key — now concrete (`= formulaCode`). -/
@@ -150,6 +157,7 @@ def encodeF : Formula → OFml
   | .box _ φ     => .box (encodeF φ)
   | .neg φ       => .atom (atomCode (.neg φ))      -- benign; not in PBLT fragment
   | .eq p q      => .atom (atomCode (.eq p q))     -- benign; not in PBLT fragment
+  | .diag g φ    => .atom (atomCode (.diag g φ))   -- benign; the INTERNAL diagonal, not the layer's
 
 /-! ## 2. The engine valuation — each encoded atom gets its ENGINE meaning. -/
 

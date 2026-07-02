@@ -55,6 +55,7 @@ mutual
     | .neg φ       => φ.searchDepth
     | .box _ φ     => φ.searchDepth
     | .eq p _      => p.searchDepth
+    | .diag _ φ    => φ.searchDepth
 end
 
 -- The counterexample, machine-checked: substituting a search-bot into its own guard

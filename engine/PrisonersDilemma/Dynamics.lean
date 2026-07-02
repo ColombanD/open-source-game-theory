@@ -54,5 +54,10 @@ def Formula.interp : Formula → Prop
   | .neg φ       => ¬ φ.interp
   | .box n φ     => Provable n φ
   | .eq p q      => p = q
+  | .diag g φ    => Provable g (.diag g φ) → φ.interp
+  -- `.diag g φ` IS the Löb-fixpoint sentence for target `φ` at box budget `g`: its meaning is
+  -- `interp (□_g (.diag g φ) → φ)` BY DEFINITION (legal: recursion descends only into `φ`; `Provable`
+  -- does not recurse through `interp`). Same design pattern as `.box n φ ↦ Provable n φ`; the
+  -- meta-justification is the Reflection layer's DERIVED diagonal (INTERNALIZATION_ROADMAP.md I0).
 
 end PD

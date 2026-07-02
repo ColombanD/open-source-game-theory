@@ -24,8 +24,12 @@ CONFIRMATION that plug blocks the self-code fixpoint (head-preservation): -/
 namespace PD.Reflection.BewB3f
 open PD PD.Reflection
 
+-- (B4 UPDATE: `selfApply` has since been REDEFINED to the predicate level `selfApply θ := betaA θ`
+-- — the fix this spike's verdict called for. The historical fact below is restated as the pure `plug`
+-- fact it always was: plug is head-preserving, which is WHY the old substitution-level selfApply
+-- could not reach the self-code fixpoint.)
 theorem plug_head_preserving (θ : OFml) :
-    selfApply (.betaA θ) = .betaA (plug (encode (.betaA θ)) θ) := rfl
+    plug (encode (.betaA θ)) (.betaA θ) = .betaA (plug (encode (.betaA θ)) θ) := rfl
 
 -- For the self-code fixpoint diag_object' needs (ψ = betaA θ with selfApply θ = betaA θ), plug would
 -- have to turn θ's body INTO betaA θ — but plug only replaces `slot`↦`quoteC`, never introduces betaA.

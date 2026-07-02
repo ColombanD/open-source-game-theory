@@ -37,6 +37,7 @@ mutual
     | neg   : Formula → Formula                   -- ¬ φ
     | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
+    | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Provable`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (Research/Notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
 end
 deriving instance DecidableEq for Prog, Formula
 
@@ -88,6 +89,7 @@ mutual
     | .neg φ,       m, o => .neg (φ.subst m o)
     | .box n φ,     m, o => .box n (φ.subst m o)
     | .eq p q,      m, o => .eq (p.subst m o) q   -- only the LHS (probe) substitutes; the RHS is a frozen literal target
+    | .diag g φ,    _, _ => .diag g φ             -- FROZEN (like `.bot`/`.eq`-RHS): the diagonal is a closed meta-construction; subst does not descend
 end
 
 -- Syntactic size = character count of source. This is the unit the proof system
@@ -112,6 +114,7 @@ mutual
     | .neg φ       => φ.size + 1
     | .box k φ     => (Nat.log2 k + 1) + φ.size + 1
     | .eq p q      => p.size + q.size + 1
+    | .diag g φ    => (Nat.log2 g + 1) + φ.size + 1   -- numeral cost for `g`, like `.box`
 end
 
 end PD

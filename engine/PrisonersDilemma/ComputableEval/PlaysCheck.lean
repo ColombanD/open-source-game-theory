@@ -193,6 +193,7 @@ theorem ppSize_sound :
         | neg _ => simp only [ppSize] at h; exact absurd h (by simp)
         | box _ _ => simp only [ppSize] at h; exact absurd h (by simp)
         | eq _ _ => simp only [ppSize] at h; exact absurd h (by simp)
+        | diag _ _ => simp only [ppSize] at h; exact absurd h (by simp)
 
 /-- **`Provable_fin` agreement (soundness).** The finite bounded-provability predicate
     (`Derivation.lean`) only proves real things: `Provable_fin k φ → Provable k φ`. Play-atom arm
