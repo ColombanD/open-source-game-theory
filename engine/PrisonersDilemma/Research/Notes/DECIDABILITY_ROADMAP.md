@@ -289,9 +289,28 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
       `prudence_botdupoc` (bot-wrapped floor, `k + log2 k + 17`) + `justbot_prudence`
       (JustBot's own floored defection, `k + log2 k + 16`, consumed by PrudentBot's outer
       budget).
-    All on the 3 Lean-standard axioms. REMAINING T3.2b (deferred): two-tier PrudentBot
-    (inner literal above the outer) for self-play; honest (D,C)-type outcomes for the
-    retired probe pairs (Exclusion-style ¬Provable arguments); staggered JustBot×CupodTroll.
+    All on the 3 Lean-standard axioms. T3.2b TAIL also SHIPPED (2026-07-03): `PrudentBot2`
+    (two-tier, the bounded PA+1) + `outcome_PrudentBot2_self` (k, 4k+100); staggered
+    `outcome_JustBot_vs_CupodTrollBot` (∀j, no eventuality); docs refreshed. Remaining:
+    honest (D,·)-type outcomes for the retired probe pairs (need the ¬Provable side).
+  - **T3.2c PART 1 — ✅ SHIPPED (2026-07-03): `Provable` is SEMIDECIDABLE relative to the
+    atom layer, by a computable enumerator.** `Research/Spikes/transcript/T31EngineDecider.lean`
+    (green, 3 std axioms): the full backward-search `decProv O` now covers ALL 16 `Provable`
+    rules (incl. `atomNeg` via the oracle, `eqNeg` in `decDeriv`, and the CITE-model
+    `searchThenSearch_t`) with
+    * `decProv_sound` — every hit at every fuel is a real derivation;
+    * `decProv_mono` — fuel monotonicity;
+    * `decProv_complete` — every derivation is FOUND at some fuel (∃-fuel form: the
+      `∀ fuel ≥ K` discipline is impossible under the CITE model, since inner premises live
+      at source literals unbounded by the conclusion's budget — this is the precise residual
+      of the decidability question);
+    * **`decProv_iff`**: `OracleSound O → OracleComplete O →
+      (Provable k φ ↔ ∃ fuel, decProv O fuel k φ = true)`.
+    REMAINING (T3.2c part 2 / T4): (a) instantiate the oracle — the atom-side enumerator
+    (cost-tracking cert search mutual with `decProv`, fuel-stratified; gives absolute
+    semidecidability of `Provable`); (b) the OPEN question: a computable fuel bound
+    (query-universe finiteness across guard hops) — full decidability, `proofSearch := D`,
+    computable `eval`, `by decide` outcomes.
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
   theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.

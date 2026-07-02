@@ -195,6 +195,7 @@ theorem provable_size_or_atom : ∀ {k φ}, Provable k φ → φ.size ≤ k ∨ 
   | axKf a b c K φ' α hgate hle => exact Or.inl (by omega)
   | impS2 φ' ψ' χ' m₁ m₂ K h1 h2 hle => exact Or.inl (by omega)
   | boxMono a b K φ' hab hle => exact Or.inl (by omega)
+  | atomNeg p q b aN m hatom hne hle => exact Or.inl (by omega)
 
 /-- Non-`.plays` conclusions ARE size-paid: `AtomProvable` only ever holds at a `.plays`. -/
 theorem provable_impl_size {k : Nat} {A B : Formula}
@@ -215,6 +216,10 @@ def DerivExists (k : Nat) (φ : Formula) : Prop := ∃ d : Derivation φ, d.size
 -- leaf checkers (shape + size gate; leaf transcript = conclusion size)
 def chkEqRefl (k : Nat) : Formula → Bool
   | .eq p q => p == q && decide ((Formula.eq p q).size ≤ k)
+  | _ => false
+
+def chkEqNeg (k : Nat) : Formula → Bool
+  | .neg (.eq p q) => decide (p ≠ q) && decide ((Formula.neg (.eq p q)).size ≤ k)
   | _ => false
 
 def chkSearchBranch (k : Nat) : Formula → Bool
@@ -277,7 +282,8 @@ def decDeriv : Nat → Nat → Formula → Bool
       chkEqRefl k φ || chkSearchBranch k φ || chkSimStep k φ || chkBotSimStep k φ ||
       chkBotSearchStep k φ || chkIteBranchSearch k φ ||
       chkMP (fun m ψ => decDeriv fuel m ψ) k φ ||
-      chkHS (fun m ψ => decDeriv fuel m ψ) k φ
+      chkHS (fun m ψ => decDeriv fuel m ψ) k φ ||
+      chkEqNeg k φ
 
 /-! ### `decDeriv` soundness -/
 
@@ -289,7 +295,7 @@ theorem decDeriv_sound : ∀ fuel k φ, decDeriv fuel k φ = true → DerivExist
     intro k φ h
     rw [decDeriv] at h
     simp only [Bool.or_eq_true] at h
-    rcases h with ((((((h | h) | h) | h) | h) | h) | h) | h
+    rcases h with (((((((h | h) | h) | h) | h) | h) | h) | h) | h
     · -- eqRefl
       unfold chkEqRefl at h
       split at h
@@ -357,6 +363,15 @@ theorem decDeriv_sound : ∀ fuel k φ, decDeriv fuel k φ = true → DerivExist
         exact ⟨.hypSyll A ψ' C d1 d2, by simp only [Derivation.size]; omega⟩
       · simp at h
 
+    · -- eqNeg
+      unfold chkEqNeg at h
+      split at h
+      · rename_i p q
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+        obtain ⟨hne, hsz⟩ := h
+        exact ⟨.eqNeg p q hne, by simpa [Derivation.size] using hsz⟩
+      · simp at h
+
 /-! ### `decDeriv` completeness -/
 
 set_option linter.unusedSimpArgs false in
@@ -364,6 +379,16 @@ theorem decDeriv_complete : ∀ {φ : Formula} (d : Derivation φ),
     ∀ fuel K, d.size ≤ K → K ≤ fuel → decDeriv fuel K φ = true := by
   intro φ d
   induction d with
+  | eqNeg p q hne =>
+      intro fuel K hsz hKf
+      simp only [Derivation.size] at hsz
+      have h1 := Formula.size_pos (Formula.neg (.eq p q))
+      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      have hfire : chkEqNeg K (Formula.neg (.eq p q)) = true := by
+        unfold chkEqNeg
+        simp [hne, hsz]
+      rw [decDeriv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
   | modusPonens A B d1 d2 ih1 ih2 =>
       intro fuel K hsz hKf
       simp only [Derivation.size] at hsz
@@ -513,13 +538,14 @@ def chkWeaken (rec : Nat → Formula → Bool) (k : Nat) : Formula → Bool
 def chkSTS (rec : Nat → Formula → Bool) (k : Nat) : Formula → Bool
   | .impl (.box k₁ ψ')
       (.plays (.search k₁' ψ₁ (.search k₂ ψ₂ (.const c0') (.const c1)) q) opnt c0) =>
+      -- CITE model (2026-07-03): the rule pays `c_guard k₂` and checks the inner premise at
+      -- its literal `k₂` — the premise budget is NOT linked to `k` (this is why decider
+      -- completeness is the ∃-fuel/semidecidability form).
       decide (k₁ = k₁') && decide (c0 = c0') &&
       ψ' == ψ₁.subst (.search k₁' ψ₁ (.search k₂ ψ₂ (.const c0') (.const c1)) q) opnt &&
-      decide ((Formula.impl (.box k₁ ψ')
+      decide (c_guard k₂ + (Formula.impl (.box k₁ ψ')
         (.plays (.search k₁' ψ₁ (.search k₂ ψ₂ (.const c0') (.const c1)) q) opnt c0)).size ≤ k) &&
-      rec (min k₂ (k - (Formula.impl (.box k₁ ψ')
-        (.plays (.search k₁' ψ₁ (.search k₂ ψ₂ (.const c0') (.const c1)) q) opnt c0)).size))
-        (ψ₂.subst (.search k₁' ψ₁ (.search k₂ ψ₂ (.const c0') (.const c1)) q) opnt)
+      rec k₂ (ψ₂.subst (.search k₁' ψ₁ (.search k₂ ψ₂ (.const c0') (.const c1)) q) opnt)
   | _ => false
 
 def chkITrans (rec : Nat → Formula → Bool) (k : Nat) : Formula → Bool
@@ -595,6 +621,13 @@ def chkBoxMonoE (k : Nat) : Formula → Bool
       decide ((Formula.impl (.box a ψ) (.box b ψ)).size ≤ k)
   | _ => false
 
+def chkAtomNeg (O : Nat → Formula → Bool) (k : Nat) : Formula → Bool
+  | .neg (.plays p q aN) =>
+      decide ((Formula.neg (.plays p q aN)).size ≤ k) &&
+      ((O (k - (Formula.neg (.plays p q aN)).size) (.plays p q .C) && decide (aN ≠ Action.C)) ||
+       (O (k - (Formula.neg (.plays p q aN)).size) (.plays p q .D) && decide (aN ≠ Action.D)))
+  | _ => false
+
 def decProv (O : Nat → Formula → Bool) : Nat → Nat → Formula → Bool
   | 0, _, _ => false
   | fuel+1, k, φ =>
@@ -612,7 +645,8 @@ def decProv (O : Nat → Formula → Bool) : Nat → Nat → Formula → Bool
       chkDiagBE (fun m ψ => decProv O fuel m ψ) k φ ||
       chkAxKfE k φ ||
       chkImpS2E (fun m ψ => decProv O fuel m ψ) k φ ||
-      chkBoxMonoE k φ
+      chkBoxMonoE k φ ||
+      chkAtomNeg O k φ
 
 /-! ### `decProv` soundness -/
 
@@ -630,8 +664,8 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
     intro k φ h
     rw [decProv] at h
     simp only [Bool.or_eq_true] at h
-    rcases h with (((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
-      | h) | h) | h
+    rcases h with ((((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
+      | h) | h) | h) | h
     · -- struct
       obtain ⟨d, hsz⟩ := decDeriv_sound k k φ h
       exact Provable.struct ⟨d, hsz⟩
@@ -651,12 +685,8 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i k₁ ψ' k₁' ψ₁ k₂ ψ₂ c0' c1 q opnt c0
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩, hr⟩ := h
-        refine Provable.searchThenSearch_t k₁ k₂ _ ψ₁ ψ₂ c0 c1 q _ opnt rfl
-          (ih _ _ hr) (Nat.min_le_left _ _) ?_
-        have := Nat.min_le_right k₂ (k - (Formula.impl (.box k₁ (ψ₁.subst
-          (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
-          (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0)).size)
-        omega
+        exact Provable.searchThenSearch_t k₁ k₂ k₂ ψ₁ ψ₂ c0 c1 q _ opnt rfl
+          (ih _ _ hr) (Nat.le_refl _) hsz
       · simp at h
     · -- implTrans
       unfold chkITrans at h
@@ -746,69 +776,188 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
         exact Provable.boxMono a b k ψ hab hsz
       · simp at h
 
-/-! ### `decProv` completeness -/
+    · -- atomNeg
+      unfold chkAtomNeg at h
+      split at h
+      · rename_i p q aN
+        simp only [Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq] at h
+        obtain ⟨hsz, hcase⟩ := h
+        have hs1 := Formula.size_pos (Formula.neg (.plays p q aN))
+        rcases hcase with ⟨hOr, hne⟩ | ⟨hOr, hne⟩
+        · exact Provable.atomNeg p q .C aN _ (hO _ _ hOr) (fun hh => hne hh.symm) (by omega)
+        · exact Provable.atomNeg p q .D aN _ (hO _ _ hOr) (fun hh => hne hh.symm) (by omega)
+      · simp at h
+
+/-! ### Fuel monotonicity — more fuel never loses a hit. -/
+
+theorem decProv_mono (O : Nat → Formula → Bool) :
+    ∀ f₁ f₂, f₁ ≤ f₂ → ∀ k φ, decProv O f₁ k φ = true → decProv O f₂ k φ = true := by
+  intro f₁
+  induction f₁ with
+  | zero => intro f₂ _ k φ h; simp [decProv] at h
+  | succ f ih =>
+    intro f₂ hle k φ h
+    obtain ⟨f₂', rfl⟩ : ∃ f₂', f₂ = f₂' + 1 := ⟨f₂ - 1, by omega⟩
+    have hff : f ≤ f₂' := by omega
+    rw [decProv] at h
+    rw [decProv]
+    simp only [Bool.or_eq_true] at h ⊢
+    have step : ∀ m ψ, decProv O f m ψ = true → decProv O f₂' m ψ = true :=
+      fun m ψ => ih f₂' hff m ψ
+    rcases h with ((((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
+      | h) | h) | h) | h
+    · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl h))))))))))))))
+    · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr h))))))))))))))
+    · -- chkWeaken
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))))))))))
+      unfold chkWeaken at h ⊢
+      split at h
+      · rename_i A B
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, step _ _ h.2⟩
+      · simp at h
+    · -- chkSTS
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inl (Or.inr ?_))))))))))))
+      unfold chkSTS at h ⊢
+      split at h
+      · rename_i k₁ ψ' k₁' ψ₁ k₂ ψ₂ c0' c1 q opnt c0
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, step _ _ h.2⟩
+      · simp at h
+    · -- chkITrans
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inl (Or.inr ?_)))))))))))
+      unfold chkITrans at h ⊢
+      split at h
+      · rename_i A C
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨m₁, hm₁, ψ', hψ', ⟨hg, h1⟩, h2⟩ := h
+        exact ⟨m₁, hm₁, ψ', hψ', ⟨hg, step _ _ h1⟩, step _ _ h2⟩
+      · simp at h
+    · -- chkAtomBox (oracle only)
+      exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inr h))))))))))
+    · -- chkBoxIntroE
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (Or.inr ?_)))))))))
+      unfold chkBoxIntroE at h ⊢
+      split at h
+      · rename_i kIn ψ
+        simp only [Bool.and_eq_true] at h ⊢
+        exact ⟨h.1, step _ _ h.2⟩
+      · simp at h
+    · -- chkAppE
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ?_))))))))
+      unfold chkAppE at h ⊢
+      simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+      obtain ⟨m₁, hm₁, ψ', hψ', ⟨hg, h1⟩, h2⟩ := h
+      exact ⟨m₁, hm₁, ψ', hψ', ⟨hg, step _ _ h1⟩, step _ _ h2⟩
+    · -- chkAxK
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))))
+      unfold chkAxK at h ⊢
+      split at h
+      · rename_i b ψ c α
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨hsz, a, ha, hg, hr⟩ := h
+        exact ⟨hsz, a, ha, hg, step _ _ hr⟩
+      · simp at h
+    · -- chkBox4E (no rec)
+      exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr h))))))
+    · -- chkDiagFE
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))
+      unfold chkDiagFE at h ⊢
+      split at h
+      · rename_i g t g' g'' t' t''
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨hpre, fb, hfb, hr⟩ := h
+        exact ⟨hpre, fb, hfb, step _ _ hr⟩
+      · simp at h
+    · -- chkDiagBE
+      refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ?_))))
+      unfold chkDiagBE at h ⊢
+      split at h
+      · rename_i g g' t t' g'' t''
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨hpre, fb, hfb, hr⟩ := h
+        exact ⟨hpre, fb, hfb, step _ _ hr⟩
+      · simp at h
+    · -- chkAxKfE (no rec)
+      exact Or.inl (Or.inl (Or.inl (Or.inr h)))
+    · -- chkImpS2E
+      refine Or.inl (Or.inl (Or.inr ?_))
+      unfold chkImpS2E at h ⊢
+      split at h
+      · rename_i A C
+        simp only [List.any_eq_true, Bool.and_eq_true] at h ⊢
+        obtain ⟨m₁, hm₁, ψ', hψ', ⟨hg, h1⟩, h2⟩ := h
+        exact ⟨m₁, hm₁, ψ', hψ', ⟨hg, step _ _ h1⟩, step _ _ h2⟩
+      · simp at h
+    · -- chkBoxMonoE (no rec)
+      exact Or.inl (Or.inr h)
+    · -- chkAtomNeg (oracle only)
+      exact Or.inr h
+
+/-! ### `decProv` completeness — ∃-FUEL (semidecidability).
+
+The `∀ fuel ≥ K` form died with the CITE model: `searchThenSearch_t`'s inner premise lives at
+a SOURCE literal `k₂` unbounded by the conclusion's budget, so no budget-tied fuel covers it.
+The honest statement — and exactly T3.2c's target — is the enumerator form: every provable
+formula is FOUND at some fuel. -/
 
 set_option linter.unusedSimpArgs false in
 theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) :
     ∀ {m φ}, Provable m φ →
-      ∀ fuel K, m ≤ K → K ≤ fuel → decProv O fuel K φ = true := by
+      ∀ K, m ≤ K → ∃ fuel, decProv O fuel K φ = true := by
   intro m φ h
   refine Provable.rec
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
-    (motive_3 := fun k φ _ => ∀ fuel K, k ≤ K → K ≤ fuel → decProv O fuel K φ = true)
+    (motive_3 := fun k φ _ => ∀ K, k ≤ K → ∃ fuel, decProv O fuel K φ = true)
     trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
+    (fun _ _ _ _ => trivial)
     (fun _ _ _ => trivial)
     ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
-    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono
+    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
     h
   case cStruct =>
-      intro φ0 k0 hd fuel K hmK hKf
+      intro φ0 k0 hd K hmK
       obtain ⟨d, hsz⟩ := hd
-      have hd1 : 1 ≤ d.size := Nat.le_trans (Formula.size_pos _) d.concl_size_le
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      refine ⟨1, ?_⟩
       have hfire := decDeriv_complete d K K (by omega) le_rfl
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cAtom =>
-      intro k0 φ0 hatom _ fuel K hmK hKf
-      have h1 := atomProvable_pos hatom
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      intro k0 φ0 hatom _ K hmK
+      refine ⟨1, ?_⟩
       have hfire : O K _ = true := hO K _ (atom_monotone _ K _ hmK hatom)
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cWeaken =>
-      intro k A B m' hψ hle ih fuel K hmK hKf
+      intro k A B m' hψ hle ih K hmK
       have h1 := Formula.size_pos (Formula.impl A B)
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      obtain ⟨f, e⟩ := ih (K - (Formula.impl A B).size) (by omega)
+      refine ⟨f + 1, ?_⟩
       have hfire : chkWeaken (fun m ψ => decProv O f m ψ) K (Formula.impl A B) = true := by
         unfold chkWeaken
-        have e := ih f (K - (Formula.impl A B).size) (by omega) (by omega)
         have hg : (Formula.impl A B).size ≤ K := by omega
         simp [e, hg]
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cSTS =>
-      intro k k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle ih fuel K hmK hKf
+      intro k k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle ih K hmK
       subst hme
-      have h1 := Formula.size_pos (Formula.impl (.box k₁ (ψ₁.subst
-        (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
-        (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      obtain ⟨f, e⟩ := ih k₂ hmk
+      refine ⟨f + 1, ?_⟩
       have hfire : chkSTS (fun m ψ => decProv O f m ψ) K (Formula.impl (.box k₁ (ψ₁.subst
           (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
           (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0)) = true := by
         unfold chkSTS
-        have e := ih f (min k₂ (K - (Formula.impl (.box k₁ (ψ₁.subst
-          (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
-          (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0)).size))
-          (by omega) (by
-            have := Nat.min_le_right k₂ (K - (Formula.impl (.box k₁ (ψ₁.subst
-              (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
-              (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0)).size)
-            omega)
-        have hg : (Formula.impl (.box k₁ (ψ₁.subst
+        have hg : c_guard k₂ + (Formula.impl (.box k₁ (ψ₁.subst
           (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
           (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0)).size ≤ K := by
           omega
@@ -816,29 +965,29 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cITrans =>
-      intro k A B C a b h1 h2 hle ih1 ih2 fuel K hmK hKf
+      intro k A B C a b h1 h2 hle ih1 ih2 K hmK
       have hAC := Formula.size_pos (Formula.impl A C)
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
       have hi1 := provable_impl_size h1
-      have hA := Formula.size_pos A
-      have hfire : chkITrans (fun m ψ => decProv O f m ψ) K (Formula.impl A C) = true := by
+      obtain ⟨f₁, e₁⟩ := ih1 a le_rfl
+      obtain ⟨f₂, e₂⟩ := ih2 (K - (Formula.impl A C).size - a) (by omega)
+      refine ⟨max f₁ f₂ + 1, ?_⟩
+      have e₁' := decProv_mono O f₁ (max f₁ f₂) (Nat.le_max_left _ _) _ _ e₁
+      have e₂' := decProv_mono O f₂ (max f₁ f₂) (Nat.le_max_right _ _) _ _ e₂
+      have hfire : chkITrans (fun m ψ => decProv O (max f₁ f₂) m ψ) K
+          (Formula.impl A C) = true := by
         unfold chkITrans
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
           simp only [Formula.size] at hi1
           omega
         refine ⟨a, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
-        have e1 : decProv O f a (.impl A B) = true := ih1 f a le_rfl (by omega)
-        have e2 : decProv O f (K - (Formula.impl A C).size - a) (.impl B C) = true :=
-          ih2 f _ (by omega) (by omega)
         have hg : a + (Formula.impl A C).size ≤ K := by omega
-        simp [e1, e2, hg]
+        simp [e₁', e₂', hg]
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cAtomBox =>
-      intro k kBox p q a hatom hle _ fuel K hmK hKf
-      have h1 := Formula.size_pos (Formula.impl (.plays p q a) (.box kBox (.plays p q a)))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      intro k kBox p q a hatom hle _ K hmK
+      refine ⟨1, ?_⟩
       have hfire : chkAtomBox O K
           (Formula.impl (.plays p q a) (.box kBox (.plays p q a))) = true := by
         unfold chkAtomBox
@@ -849,51 +998,52 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cBoxIntro =>
-      intro kIn K' A hprem hle ih fuel K hmK hKf
+      intro kIn K' A hprem hle ih K hmK
       have h1 := Formula.size_pos (Formula.box kIn A)
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      obtain ⟨f, e⟩ := ih kIn le_rfl
+      refine ⟨f + 1, ?_⟩
       have hfire : chkBoxIntroE (fun m ψ => decProv O f m ψ) K (Formula.box kIn A) = true := by
         unfold chkBoxIntroE
-        have e : decProv O f kIn A = true := ih f kIn le_rfl (by omega)
         have hg : kIn + (Formula.box kIn A).size ≤ K := by omega
         simp [e, hg]
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cApp =>
-      intro k' m₁ m₂ A B h1 h2 hle ih1 ih2 fuel K hmK hKf
+      intro k' m₁ m₂ A B h1 h2 hle ih1 ih2 K hmK
       have hB := Formula.size_pos B
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
       have hi1 := provable_impl_size h1
-      have hfire : chkAppE (fun m ψ => decProv O f m ψ) K B = true := by
+      obtain ⟨f₁, e₁⟩ := ih1 m₁ le_rfl
+      obtain ⟨f₂, e₂⟩ := ih2 (K - B.size - m₁) (by omega)
+      refine ⟨max f₁ f₂ + 1, ?_⟩
+      have e₁' := decProv_mono O f₁ (max f₁ f₂) (Nat.le_max_left _ _) _ _ e₁
+      have e₂' := decProv_mono O f₂ (max f₁ f₂) (Nat.le_max_right _ _) _ _ e₂
+      have hfire : chkAppE (fun m ψ => decProv O (max f₁ f₂) m ψ) K B = true := by
         unfold chkAppE
         simp only [List.any_eq_true, List.mem_range]
         have hAsz : A.size ≤ K := by
           simp only [Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
-        have e1 : decProv O f m₁ (.impl A B) = true := ih1 f m₁ le_rfl (by omega)
-        have e2 : decProv O f (K - B.size - m₁) A = true := ih2 f _ (by omega) (by omega)
         have hg : m₁ + B.size ≤ K := by omega
-        simp [e1, e2, hg]
+        simp [e₁', e₂', hg]
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cAxK =>
-      intro a b c m' K' A B hprem hgate hle ih fuel K hmK hKf
+      intro a b c m' K' A B hprem hgate hle ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.box b A) (.box c B))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      obtain ⟨f, e⟩ := ih (K - (Formula.impl (.box b A) (.box c B)).size) (by omega)
+      refine ⟨f + 1, ?_⟩
       have hfire : chkAxK (fun m ψ => decProv O f m ψ) K
           (Formula.impl (.box b A) (.box c B)) = true := by
         unfold chkAxK
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, decide_eq_true_eq]
         have hB := Formula.size_pos B
-        refine ⟨by omega, a, by omega, by omega, ?_⟩
-        exact ih f (K - (Formula.impl (.box b A) (.box c B)).size) (by omega) (by omega)
+        exact ⟨by omega, a, by omega, by omega, e⟩
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cBox4 =>
-      intro a b K' A hgate hle fuel K hmK hKf
-      have h1 := Formula.size_pos (Formula.impl (.box a A) (.box b (.box a A)))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      intro a b K' A hgate hle K hmK
+      refine ⟨1, ?_⟩
       have hfire : chkBox4E K (Formula.impl (.box a A) (.box b (.box a A))) = true := by
         unfold chkBox4E
         have hg : (Formula.impl (.box a A) (.box b (.box a A))).size ≤ K := by omega
@@ -901,11 +1051,13 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cDiagF =>
-      intro pm fb g K' tgt hgate hle ih fuel K hmK hKf
+      intro pm fb g K' tgt hgate hle ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.diag g tgt)
         (.impl (.box g (.diag g tgt)) tgt))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
       have hgsz := provable_impl_size hgate
+      obtain ⟨f, e⟩ := ih (K - (Formula.impl (.diag g tgt)
+        (.impl (.box g (.diag g tgt)) tgt)).size) (by omega)
+      refine ⟨f + 1, ?_⟩
       have hfire : chkDiagFE (fun m ψ => decProv O f m ψ) K
           (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)) = true := by
         unfold chkDiagFE
@@ -913,19 +1065,20 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
           decide_eq_true_eq, Bool.true_and, and_true, true_and]
         have hg : (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)).size ≤ K := by
           omega
-        refine ⟨hg, fb, ?_, ?_⟩
-        · refine lt_two_pow_of_log2_lt ?_
-          simp only [Formula.size] at hgsz
-          omega
-        · exact ih f _ (by omega) (by omega)
+        refine ⟨hg, fb, ?_, e⟩
+        refine lt_two_pow_of_log2_lt ?_
+        simp only [Formula.size] at hgsz
+        omega
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cDiagB =>
-      intro pm fb g K' tgt hgate hle ih fuel K hmK hKf
+      intro pm fb g K' tgt hgate hle ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
         (.diag g tgt))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
       have hgsz := provable_impl_size hgate
+      obtain ⟨f, e⟩ := ih (K - (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
+        (.diag g tgt)).size) (by omega)
+      refine ⟨f + 1, ?_⟩
       have hfire : chkDiagBE (fun m ψ => decProv O f m ψ) K
           (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)) = true := by
         unfold chkDiagBE
@@ -933,18 +1086,15 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
           decide_eq_true_eq, Bool.true_and, and_true, true_and]
         have hg : (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)).size ≤ K := by
           omega
-        refine ⟨hg, fb, ?_, ?_⟩
-        · refine lt_two_pow_of_log2_lt ?_
-          simp only [Formula.size] at hgsz
-          omega
-        · exact ih f _ (by omega) (by omega)
+        refine ⟨hg, fb, ?_, e⟩
+        refine lt_two_pow_of_log2_lt ?_
+        simp only [Formula.size] at hgsz
+        omega
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cAxKf =>
-      intro a b c K' A B hgate hle fuel K hmK hKf
-      have h1 := Formula.size_pos (Formula.impl (.box a (.impl A B))
-        (.impl (.box b A) (.box c B)))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      intro a b c K' A B hgate hle K hmK
+      refine ⟨1, ?_⟩
       have hfire : chkAxKfE K (Formula.impl (.box a (.impl A B))
           (.impl (.box b A) (.box c B))) = true := by
         unfold chkAxKfE
@@ -954,50 +1104,66 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cImpS2 =>
-      intro A B C m₁ m₂ K' h1 h2 hle ih1 ih2 fuel K hmK hKf
+      intro A B C m₁ m₂ K' h1 h2 hle ih1 ih2 K hmK
       have hAC := Formula.size_pos (Formula.impl A C)
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
       have hi1 := provable_impl_size h1
-      have hfire : chkImpS2E (fun m ψ => decProv O f m ψ) K (Formula.impl A C) = true := by
+      obtain ⟨f₁, e₁⟩ := ih1 m₁ le_rfl
+      obtain ⟨f₂, e₂⟩ := ih2 (K - (Formula.impl A C).size - m₁) (by omega)
+      refine ⟨max f₁ f₂ + 1, ?_⟩
+      have e₁' := decProv_mono O f₁ (max f₁ f₂) (Nat.le_max_left _ _) _ _ e₁
+      have e₂' := decProv_mono O f₂ (max f₁ f₂) (Nat.le_max_right _ _) _ _ e₂
+      have hfire : chkImpS2E (fun m ψ => decProv O (max f₁ f₂) m ψ) K
+          (Formula.impl A C) = true := by
         unfold chkImpS2E
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
           simp only [Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
-        have e1 : decProv O f m₁ (.impl A (.impl B C)) = true := ih1 f m₁ le_rfl (by omega)
-        have e2 : decProv O f (K - (Formula.impl A C).size - m₁) (.impl A B) = true :=
-          ih2 f _ (by omega) (by omega)
         have hg : m₁ + (Formula.impl A C).size ≤ K := by omega
-        simp [e1, e2, hg]
+        simp [e₁', e₂', hg]
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cBoxMono =>
-      intro a b K' A hab hle fuel K hmK hKf
-      have h1 := Formula.size_pos (Formula.impl (.box a A) (.box b A))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+      intro a b K' A hab hle K hmK
+      refine ⟨1, ?_⟩
       have hfire : chkBoxMonoE K (Formula.impl (.box a A) (.box b A)) = true := by
         unfold chkBoxMonoE
         have hg : (Formula.impl (.box a A) (.box b A)).size ≤ K := by omega
         simp [hab, hg]
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
+  case cAtomNeg =>
+      intro k p q b aN m' hatom hne hle _ K hmK
+      have h1 := Formula.size_pos (Formula.neg (.plays p q aN))
+      refine ⟨1, ?_⟩
+      have hfire : chkAtomNeg O K (Formula.neg (.plays p q aN)) = true := by
+        unfold chkAtomNeg
+        have e : O (K - (Formula.neg (.plays p q aN)).size) (.plays p q b) = true :=
+          hO _ _ (atom_monotone m' _ _ (by omega) hatom)
+        have hsz : (Formula.neg (.plays p q aN)).size ≤ K := by omega
+        cases b with
+        | C =>
+            have hne' : aN ≠ Action.C := fun hh => hne hh.symm
+            simp [e, hne', hsz]
+        | D =>
+            have hne' : aN ≠ Action.D := fun hh => hne hh.symm
+            simp [e, hne', hsz]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
 
-/-! ## 6. THE PAYOFF — `Provable` is decidable RELATIVE to the atom layer. -/
+/-! ## 6. THE PAYOFF — the engine's `Provable` is SEMIDECIDABLE relative to the atom layer.
+
+`decProv O` is a COMPUTABLE enumerator: with a sound-and-complete atom oracle,
+`Provable k φ ↔ ∃ fuel, decProv O fuel k φ = true`. Soundness holds at EVERY fuel (each hit is
+a real derivation), and every derivation is found at some fuel. Full decidability — a
+computable fuel bound — is open exactly at the CITED premises (`search_t`'s guards,
+`searchThenSearch_t`'s inner searches, both at source literals): the T3.2c/T4 frontier. -/
 
 theorem decProv_iff (O : Nat → Formula → Bool)
     (hOs : OracleSound O) (hOc : OracleComplete O) (k : Nat) (φ : Formula) :
-    decProv O k k φ = true ↔ Provable k φ :=
-  ⟨decProv_sound O hOs k k φ, fun h => decProv_complete O hOc h k k le_rfl le_rfl⟩
-
-/-- **The T3.1 headline.** Given ANY correct decision procedure for the atom layer
-    (`AtomProvable` — the eval entanglement, T3.2), the engine's full `Provable` is decidable:
-    every logical / modal / Löb / source-transparency rule is handled by bounded backward
-    search, made finite by transcript accounting. `proofSearch := decProv O k` then makes
-    `eval` computable (T4). -/
-def provableRelDecidable (O : Nat → Formula → Bool)
-    (hOs : OracleSound O) (hOc : OracleComplete O) (k : Nat) (φ : Formula) :
-    Decidable (Provable k φ) :=
-  decidable_of_iff (decProv O k k φ = true) (decProv_iff O hOs hOc k φ)
+    Provable k φ ↔ ∃ fuel, decProv O fuel k φ = true :=
+  ⟨fun h => decProv_complete O hOc h k le_rfl,
+   fun ⟨f, hf⟩ => decProv_sound O hOs f k φ hf⟩
 
 end PD.T31
