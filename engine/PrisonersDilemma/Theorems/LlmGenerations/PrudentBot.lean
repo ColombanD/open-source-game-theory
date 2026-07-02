@@ -403,7 +403,8 @@ theorem prudent_mirror_loeb_premise (k : Nat) (hk : 27 ≤ k) :
       (Formula.plays .opp (.bot DefectBot) Action.D)
       Action.C Action.D (.const Action.D) (PrudentBot k) MirrorBot rfl
       prudence_provable (by omega) ?_
-    simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+    simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot,
+      DefectBot, c_guard]
     omega
   -- Leg 2: MirrorBot's `.sim` swap, as a Derivation → Provable (single leaf).
   have leg2 : Provable (20 * Nat.log2 k + 200)
@@ -540,7 +541,8 @@ theorem prudent_bot_mirror_loeb_premise (k : Nat) (hk : 81 ≤ k) :
       (Formula.plays .opp (.bot DefectBot) Action.D)
       Action.C Action.D (.const Action.D) (PrudentBot k) (.bot MirrorBot) rfl
       prudence_provable_bot (by omega) ?_
-    simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+    simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot,
+      DefectBot, c_guard]
     omega
   have leg2 : Provable (20 * Nat.log2 k + 200)
       (.impl (Formula.plays (PrudentBot k) (.bot MirrorBot) Action.C)
@@ -873,6 +875,144 @@ self-referentially impossible. -/
 
 
 -- PrudentBot --
+
+/-! ### PrudentBot × DupocBot — RECOVERED with STAGGERED budgets (T3.2b, 2026-07-03).
+
+`PrudentBot (2k+64)` vs `DupocBot k`: the bigger bot's inner search affords the partner's
+`search_f` floor (Dupoc's else-play vs `.bot DefectBot` certifies at `k + log2 k + 15`),
+and the mutual Löb chain runs through the two-budget `mutual_pblt_engine_staggered`.
+Critch-faithful: prudence must live in a strictly larger budget than the bot it probes —
+the bounded analogue of MIRI PrudentBot's PA+1 prudence. -/
+
+/-- Dupoc's else-play vs `.bot DefectBot`, certified at the FLOOR: `search_f` over the
+    `atomNeg` refutation of Dupoc's guard ("botDefect cooperates" — refuted by botDefect's
+    actual bot∘const defection certificate). -/
+theorem prudence_dupoc (k : Nat) :
+    Provable (k + Nat.log2 k + 15) (.plays (DupocBot k) (.bot DefectBot) .D) := by
+  have hneg : Provable (Nat.log2 k + 13)
+      (.neg (.plays (.bot DefectBot) (DupocBot k) .C)) := by
+    refine Provable.atomNeg (.bot DefectBot) (DupocBot k) .D .C 2
+      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
+    simp only [Formula.size, Prog.size, DefectBot, DupocBot]
+    omega
+  have hcert := atom_search_f_top k (Nat.log2 k + 13) (.plays .opp .self .C) .C .D
+    (.bot DefectBot) hneg
+  exact Provable.atom (atom_monotone _ _ _ (by omega) hcert)
+
+/-- Leg 1 (staggered): `□_{2k+64} φD → φP` — `PrudentBot (2k+64)`'s stacked-search read;
+    the inner prudence premise `prudence_dupoc` fits its literal (`k + log2 k + 15 ≤ 2k+64`),
+    and the rule CITES the inner search (`c_guard`), keeping the leg's transcript O(log k). -/
+theorem prudent_dupoc_legPD (k : Nat) :
+    Provable (30 * Nat.log2 k + 700)
+      (.impl (.box (2*k+64) (.plays (DupocBot k) (PrudentBot (2*k+64)) .C))
+             (.plays (PrudentBot (2*k+64)) (DupocBot k) .C)) := by
+  have hlk := log2_le_self k
+  have hlg := log2_stagger_le k
+  refine Provable.searchThenSearch_t (2*k+64) (2*k+64) (k + Nat.log2 k + 15)
+    (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
+    .C .D (.const .D) (PrudentBot (2*k+64)) (DupocBot k) rfl
+    (by simpa [Formula.subst, Prog.subst] using prudence_dupoc k) (by omega) ?_
+  simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot,
+    DefectBot, c_guard]
+  omega
+
+/-- Leg 2 (staggered): `□_k φP → φD` — `DupocBot k`'s `searchBranch` leaf. -/
+theorem prudent_dupoc_legDP (k : Nat) :
+    Provable (30 * Nat.log2 k + 700)
+      (.impl (.box k (.plays (PrudentBot (2*k+64)) (DupocBot k) .C))
+             (.plays (DupocBot k) (PrudentBot (2*k+64)) .C)) := by
+  have hlg := log2_stagger_le k
+  apply Provable.struct
+  refine ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D
+    (DupocBot k) (PrudentBot (2*k+64)) rfl, ?_⟩
+  simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  omega
+
+/-- Dupoc's staggered-opponent play lemmas (generic in the opponent). -/
+theorem dupoc_C_vs_any (k fuel : Nat) (q : Prog)
+    (hk : proofSearch k (.plays q (DupocBot k) .C) = true) :
+    play (fuel + 2) (DupocBot k) q = some .C := by
+  show eval (fuel + 2) (DupocBot k) q (DupocBot k) = some .C
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+theorem dupoc_D_vs_any (k fuel : Nat) (q : Prog)
+    (hk : proofSearch k (.plays q (DupocBot k) .C) = false) :
+    play (fuel + 2) (DupocBot k) q = some .D := by
+  show eval (fuel + 2) (DupocBot k) q (DupocBot k) = some .D
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+theorem ps_k_of_play_dupoc_any (k n : Nat) (q : Prog)
+    (h : play n (DupocBot k) q = some .C) :
+    proofSearch k (.plays q (DupocBot k) .C) = true := by
+  cases hps : proofSearch k (.plays q (DupocBot k) .C) with
+  | true  => rfl
+  | false =>
+    exfalso
+    have hD : play (n + 2) (DupocBot k) q = some .D := dupoc_D_vs_any k n q hps
+    have hC : play (n + 2) (DupocBot k) q = some .C := by
+      unfold play at h ⊢; exact eval_mono_le h (n + 2) (by omega)
+    rw [hC] at hD; cases hD
+
+/-- **PrudentBot (2k+64) vs DupocBot k → (C, C)** for all large enough `k` — the
+    staggered-budget recovery of the retired same-`k` theorem. -/
+theorem outcome_PrudentBot_vs_DupocBot :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ fuel, outcome fuel (PrudentBot (2*k+64)) (DupocBot k) = some (.C, .C) := by
+  obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
+  have hsD : ∀ k, (Formula.plays (DupocBot k) (PrudentBot (2*k+64)) .C).size
+      ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    have hlg := log2_stagger_le k
+    simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    omega
+  have hsP : ∀ k, (Formula.plays (PrudentBot (2*k+64)) (DupocBot k) .C).size
+      ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    have hlg := log2_stagger_le k
+    simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    omega
+  have hpb : ∀ k, 30 * Nat.log2 k + 700 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := mutual_pblt_engine_staggered
+    (fun k => Formula.plays (DupocBot k) (PrudentBot (2*k+64)) .C)
+    (fun k => Formula.plays (PrudentBot (2*k+64)) (DupocBot k) .C)
+    (fun k => 2*k+64)
+    (fun k => 30 * Nat.log2 k + 700) (fun k => 30 * Nat.log2 k + 700) 0
+    (fun k => by show k ≤ 2*k+64; omega) log2_stagger_le hsD hsP hpb hpb
+    (fun k _ => prudent_dupoc_legPD k)
+    (fun k _ => prudent_dupoc_legDP k)
+  refine ⟨max k₂ KL, fun k hk => ?_⟩
+  have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
+  have hKLk : Nat.log2 k + 3 ≤ k := by
+    have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
+    omega
+  obtain ⟨m, hm⟩ := hk₂ k hk2
+  obtain ⟨n, hplayD⟩ := Provable_sound m _ hm
+  -- Dupoc's guard fired (inversion from its actual cooperative play)
+  have hpsP : proofSearch k (.plays (PrudentBot (2*k+64)) (DupocBot k) .C) = true :=
+    ps_k_of_play_dupoc_any k n (PrudentBot (2*k+64)) hplayD
+  -- Dupoc's play atom, certified through its fired search (search_t cites)
+  have hpsD : proofSearch (2*k+64)
+      (.plays (DupocBot k) (PrudentBot (2*k+64)) .C) = true := by
+    refine (proofSearch_spec _ _).2 (Provable.atom
+      (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hpsP) PlaysProof.const, ?_⟩ :
+        AtomProvable (2*k+64) (.plays (DupocBot k) (PrudentBot (2*k+64)) .C)))
+    show c_leaf + c_guard k + c_node ≤ 2*k+64
+    have hlk := log2_le_self k
+    simp only [c_leaf, c_guard, c_node]
+    omega
+  -- Prudent's inner prudence guard at its own (bigger) literal
+  have hprud : proofSearch (2*k+64) (.plays (DupocBot k) (.bot DefectBot) .D) = true := by
+    refine (proofSearch_spec _ _).2 (Provable_mono (prudence_dupoc k) ?_)
+    have hlk := log2_le_self k
+    omega
+  refine ⟨4, ?_⟩
+  have hA : play 4 (PrudentBot (2*k+64)) (DupocBot k) = some .C := by
+    simpa using prudent_eval_both_true (2*k+64) 1 (DupocBot k) hpsD hprud
+  have hB : play 4 (DupocBot k) (PrudentBot (2*k+64)) = some .C := by
+    simpa using dupoc_C_vs_any k 2 (PrudentBot (2*k+64)) hpsP
+  exact outcome_of_plays _ _ _ _ _ hA hB
 
 /-! ### PrudentBot self-play — RETIRED at same-`k` (2026-07-02, the false-guard repair).
 

@@ -337,7 +337,8 @@ mutual
         (q me opponent : Prog)
         (hme : me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) :
         Provable m (ψ₂.subst me opponent) → m ≤ k₂ →
-        m + (Formula.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0)).size ≤ k →
+        c_guard k₂ +
+          (Formula.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0)).size ≤ k →
         Provable k (.impl (.box k₁ (ψ₁.subst me opponent)) (.plays me opponent c0))
     /-- **Transitivity of implication at the `Provable` level** (hypothetical
         syllogism for `Provable`): from `φ → ψ` and `ψ → χ`, infer `φ → χ`.

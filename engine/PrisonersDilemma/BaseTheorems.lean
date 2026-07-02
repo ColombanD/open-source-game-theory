@@ -763,6 +763,7 @@ theorem mutual_loeb (A B : Formula) (kP kD fb n m c pA pB : Nat)
   -- s10 : □_fb A → A — the tight Löb premise at the LOWERED subscript
   exact Provable.implTrans _ _ _ d₉ pB s9 legDP H15
 
+
 /-! ## Bounded Löb INSIDE `Provable` — the internalized chain, TRANSCRIPT-COST (T0).
 
 `bloeb_engine` runs Löb's derivation entirely in `Provable` from the TIGHT premise
@@ -897,6 +898,27 @@ theorem pblt_engine_id (φ : Nat → Formula) (pm : Nat → Nat) (k₁ : Nat)
       omega)
   exact ⟨k₂, hk₂⟩
 
+/-- `log2 k ≤ k` (tiny helper for staggering arithmetic). -/
+theorem log2_le_self (k : Nat) : Nat.log2 k ≤ k := by
+  simp only [Nat.log2_eq_log_two]
+  exact Nat.log_le_self 2 k
+
+/-- The staggering function `2k + 64` costs at most 8 extra characters in its numeral. -/
+theorem log2_stagger_le (k : Nat) : Nat.log2 (2 * k + 64) ≤ Nat.log2 k + 8 := by
+  have h1 : k < 2 ^ (Nat.log2 k + 1) := by
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · exact Nat.two_pow_pos _
+    · rw [Nat.log2_eq_log_two]
+      exact Nat.lt_pow_succ_log_self (by norm_num) k
+  have h2 : (2:Nat) ^ (Nat.log2 k + 9) = 2 ^ (Nat.log2 k + 1) * 256 := by
+    rw [show Nat.log2 k + 9 = (Nat.log2 k + 1) + 8 from rfl, pow_add]
+    norm_num
+  have h3 : 2 * k + 64 < 2 ^ (Nat.log2 k + 9) := by
+    have hp : 1 ≤ (2:Nat) ^ (Nat.log2 k + 1) := Nat.one_le_two_pow
+    omega
+  have := (Nat.log2_lt (by omega)).2 h3
+  omega
+
 /-- **Consumer-facing MUTUAL PBLT** (`f = id`): the cross-bot cooperation closer
     (PrudentBot↔DupocBot, JustBot legs, …). Takes the two transparency legs at their honest
     O(log k) transcripts and SAME-`k` source literals, derives the lowered premise via
@@ -941,6 +963,58 @@ theorem mutual_pblt_engine_id (Af Bf : Nat → Formula) (p₁ p₂ : Nat → Nat
       ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
     · (try simp only [Formula.size]); omega
   -- single-leg bloeb at fb
+  refine ⟨32768*V, bloeb_engine (Af k) (160*V) fb
+    (8192*V) (512*V) (16384*V) (16384*V) (65536*V)
+    (256*V) (256*V) (1024*V) (512*V) (2048*V) (512*V) (512*V)
+    (3072*V) (4096*V) (256*V) (5120*V) (6144*V) (7168*V) (16384*V) (32768*V)
+    s10 ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
+  · (try simp only [Formula.size]); omega
+
+/-- **Consumer-facing MUTUAL PBLT, STAGGERED** (T3.2b): the cross-bot closer for pairs whose
+    legs live at DIFFERENT source budgets — leg 1's box at `kP k ≥ k` (the bigger bot, e.g.
+    `PrudentBot (2k+64)`, whose prudence pays the partner's `search_f` floor), leg 2's at `k`.
+    The internal chain is unchanged (`fb = k − 64·V ≤ k ≤ kP k` mono-UPs onto leg 1; the
+    K-distribution lands at `fb + 32V ≤ k` onto leg 2); `hkPlog` absorbs the bigger numeral. -/
+theorem mutual_pblt_engine_staggered (Af Bf : Nat → Formula) (kP : Nat → Nat)
+    (p₁ p₂ : Nat → Nat) (k₁ : Nat)
+    (hkP : ∀ k, k ≤ kP k)
+    (hkPlog : ∀ k, Nat.log2 (kP k) ≤ Nat.log2 k + 8)
+    (hsA : ∀ k, (Af k).size ≤ 100 * Nat.log2 k + 1000)
+    (hsB : ∀ k, (Bf k).size ≤ 100 * Nat.log2 k + 1000)
+    (hp1 : ∀ k, p₁ k ≤ 100 * Nat.log2 k + 1000)
+    (hp2 : ∀ k, p₂ k ≤ 100 * Nat.log2 k + 1000)
+    (hL1 : ∀ k, k > k₁ → Provable (p₁ k) (.impl (.box (kP k) (Af k)) (Bf k)))
+    (hL2 : ∀ k, k > k₁ → Provable (p₂ k) (.impl (.box k (Bf k)) (Af k))) :
+    ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (Af k) := by
+  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le (131072 * 401) (131072 * 4016)
+  refine ⟨max k₁ Ksz, fun k hk => ?_⟩
+  obtain ⟨V, hV⟩ : ∃ V,
+      V = p₁ k + p₂ k + (Af k).size + (Bf k).size + Nat.log2 k + 16 := ⟨_, rfl⟩
+  have hp1k := hp1 k; have hp2k := hp2 k; have hsAk := hsA k; have hsBk := hsB k
+  have hkPk := hkP k; have hkPlogk := hkPlog k
+  have hVk : 131072 * V ≤ k := by
+    have h := hKsz k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+    have hVle : V ≤ 401 * Nat.log2 k + 4016 := by omega
+    calc 131072 * V ≤ 131072 * (401 * Nat.log2 k + 4016) := Nat.mul_le_mul_left _ hVle
+      _ = 131072 * 401 * Nat.log2 k + 131072 * 4016 := by ring
+      _ ≤ k := h
+  have hkk₁ : k > k₁ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  obtain ⟨fb, hfb⟩ : ∃ fb, 64 * V + fb = k := Nat.le.dest (by omega)
+  have hLfb : Nat.log2 fb ≤ Nat.log2 k := log2_mono (by omega)
+  have hLm : Nat.log2 (fb + 8*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLc : Nat.log2 (fb + 32*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn : Nat.log2 (16*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₁ : Nat.log2 (512*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLg : Nat.log2 (8192*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₃ : Nat.log2 (16384*V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hLn₅ : Nat.log2 (65536*V) ≤ Nat.log2 k := log2_mono (by omega)
+  -- the lowered Löb premise (mutual_loeb, staggered legs): Provable (160V) (□_fb Af → Af)
+  have s10 : Provable (160*V) (.impl (.box fb (Af k)) (Af k)) := by
+    refine mutual_loeb (Af k) (Bf k) (kP k) k fb (16*V) (fb + 8*V) (fb + 32*V) (p₁ k) (p₂ k)
+      (8*V) (16*V) (32*V) (16*V) (64*V) (16*V) (96*V) (8*V) (128*V) (160*V)
+      (hL1 k hkk₁) (hL2 k hkk₁)
+      ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    · (try simp only [Formula.size]); omega
   refine ⟨32768*V, bloeb_engine (Af k) (160*V) fb
     (8192*V) (512*V) (16384*V) (16384*V) (65536*V)
     (256*V) (256*V) (1024*V) (512*V) (2048*V) (512*V) (512*V)

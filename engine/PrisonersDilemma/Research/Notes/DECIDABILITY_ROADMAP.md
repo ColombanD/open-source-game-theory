@@ -274,6 +274,24 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
       is self-referentially impossible — rediscovering why MIRI's PrudentBot checks
       prudence in PA+1. T3.2b = staggered restatements (two-budget mutual wrapper;
       two-tier PrudentBot).
+  - **T3.2b — ✅ CORE SHIPPED (2026-07-03, build green): the headline cross-bot cooperations
+    are RECOVERED with staggered budgets.**
+    * `searchThenSearch_t` now CITES its inner search (`c_guard k₂`) instead of charging the
+      premise transcript — Critch-faithful (like `search_t`; positive premise, no floor
+      needed), and what keeps the staggered legs' transcripts O(log k). The staggering
+      constraint still bites through `m ≤ k₂` (same-`k` remains honestly dead).
+    * NEW `BaseTheorems.mutual_pblt_engine_staggered` (leg 1's box at `kP k ≥ k`, leg 2's at
+      `k`; same internal chain) + `log2_le_self` / `log2_stagger_le` helpers.
+    * **`outcome_PrudentBot_vs_DupocBot`**: `PrudentBot (2k+64)` vs `DupocBot k` → (C,C) —
+      `prudence_dupoc` = the floored `search_f`-over-`atomNeg` certificate
+      (`k + log2 k + 15`), affordable in the bigger inner literal.
+    * **`outcome_JustBot_vs_PrudentBot`**: `JustBot k` vs `PrudentBot (2k+64)` → (C,C) —
+      `prudence_botdupoc` (bot-wrapped floor, `k + log2 k + 17`) + `justbot_prudence`
+      (JustBot's own floored defection, `k + log2 k + 16`, consumed by PrudentBot's outer
+      budget).
+    All on the 3 Lean-standard axioms. REMAINING T3.2b (deferred): two-tier PrudentBot
+    (inner literal above the outer) for self-play; honest (D,C)-type outcomes for the
+    retired probe pairs (Exclusion-style ¬Provable arguments); staggered JustBot×CupodTroll.
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
   theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
