@@ -57,15 +57,19 @@ self-reference — a `.search` subject's guard `□_k ψ` means `Provable` — w
 must reject. It isn't: that was an artifact of unfolding a `def` through an `opaque`. As one
 mutual inductive the recursion is accepted.
 
-## The remaining axiom this file touches: `atom_complete_false_guard`
+## ZERO axioms (2026-07-03)
 
-The single residue is `atom_complete`'s false-guard direction (`¬ Provable`, Π₁) — the axiom
-`atom_complete_false_guard` (`Axioms.lean`). Its irreducibility is machine-located: a
-`.search`-bot's ELSE-action has NO certificate term at all (neither `Derivation` nor
-`PlaysProof` produces it — `ComputableEval/Exclusion.lean`, `[propext]` only). So the axiom
-postulates a true `interp` (`play = some aElse`) whose proof TERM provably does not exist.
-Removing it would need a `PlaysProof` rule producing the else-action (a sound `search_f`),
-which is blocked (see the `search_t` comment below).
+Every principle of `S` in this file is a sound constructor; nothing is postulated. The former
+`atom_complete_false_guard` axiom was machine-checked INCONSISTENT (the anti-diagonal bot —
+`Research/Spikes/transcript/T32Inconsistency.lean`) and is replaced by the sound false-guard
+machinery: `PlaysProof.search_f` (else-certificates from a REFUTATION of the guard, paying
+the full failed budget — the floor), `Provable.atomNeg` (refute a play-atom from a
+certificate of the actual play — eval determinism), and `Derivation.eqNeg` (refute structural
+identity of distinct programs). Soundness is `BaseTheorems.sound_upto`, a strong induction on
+the budget — the floor is what makes `search_f`'s arm provable. Guards that are false but
+IRREFUTABLE (the anti-diagonal's own) leave their else-plays true-but-uncertifiable: the
+honest Gödelian boundary. Costs are TRANSCRIPT-cumulative throughout (Critch's literal model;
+`DECIDABILITY_ROADMAP.md`).
 -/
 
 -- 1. The `Derivation` system. Each rule is (i) SOUND — its conclusion's `interp`

@@ -21,4 +21,20 @@ def PrudentBot (k : Nat) : Prog :=
       (.const Action.D))                -- opp is exploitable → defect
     (.const Action.D)                   -- can't prove opp cooperates → defect
 
+/-- **Two-tier PrudentBot** (T3.2b, 2026-07-03): the prudence search runs at its OWN budget
+    `kIn`, decoupled from the cooperation budget `kOut`. Needed because a prudence fact about
+    a `kOut`-searcher (including PrudentBot ITSELF) is an else-play whose certificate pays the
+    `search_f` floor `kOut` — so `kIn` must exceed `kOut` for self-play and for probing
+    same-strength partners. This is the bounded analogue of the original MIRI PrudentBot,
+    whose prudence check runs in PA+1 (a strictly stronger system) for exactly this reason;
+    `PrudentBot k = PrudentBot2 k k`. -/
+def PrudentBot2 (kOut kIn : Nat) : Prog :=
+  .search kOut
+    (.plays .opp .self Action.C)
+    (.search kIn
+      (.plays .opp (.bot DefectBot) Action.D)
+      (.const Action.C)
+      (.const Action.D))
+    (.const Action.D)
+
 end PD.Bots

@@ -1022,5 +1022,111 @@ OWN outer search — floor `k`, self-referentially unaffordable at any single `k
 two-tier PrudentBot (inner prudence budget above the outer literal — exactly Critch/MIRI's
 PA+1 prudence); T3.2b. -/
 
+/-! ### PrudentBot SELF-PLAY — RECOVERED with the two-tier `PrudentBot2` (T3.2b, 2026-07-03).
+
+`PrudentBot2 k (4k+100)`: prudence at a strictly larger budget than the cooperation search —
+the bounded PA+1. Its self-prudence ("I defect vs `.bot DefectBot`") is an else-play of its
+OWN outer search, floored at `k`; the inner literal `4k+100` affords it. -/
+
+/-- `PrudentBot2 k j` defects against `.bot DefectBot` — certified at the outer FLOOR `k`:
+    `search_f` over the `atomNeg` refutation of the outer guard ("botDefect cooperates
+    with me"). -/
+theorem prudence_P2 (k j : Nat) :
+    Provable (k + Nat.log2 k + Nat.log2 j + 22)
+      (.plays (PrudentBot2 k j) (.bot DefectBot) .D) := by
+  have hneg : Provable (Nat.log2 k + Nat.log2 j + 20)
+      (.neg (.plays (.bot DefectBot) (PrudentBot2 k j) .C)) := by
+    refine Provable.atomNeg (.bot DefectBot) (PrudentBot2 k j) .D .C 2
+      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
+    simp only [Formula.size, Prog.size, DefectBot, PrudentBot2]
+    omega
+  refine Provable.atom (⟨PlaysProof.search_f hneg PlaysProof.const, ?_⟩ :
+    AtomProvable (k + Nat.log2 k + Nat.log2 j + 22)
+      (.plays (PrudentBot2 k j) (.bot DefectBot) .D))
+  show c_leaf + (Nat.log2 k + Nat.log2 j + 20) + k + c_node ≤ _
+  simp only [c_leaf, c_node]
+  omega
+
+/-- Both guards fired ⇒ `PrudentBot2` cooperates. -/
+theorem P2_eval_both_true (k j fuel : Nat) (q : Prog)
+    (h1 : proofSearch k (.plays q (PrudentBot2 k j) .C) = true)
+    (h2 : proofSearch j (.plays q (.bot DefectBot) .D) = true) :
+    play (fuel + 3) (PrudentBot2 k j) q = some .C := by
+  show eval (fuel + 3) (PrudentBot2 k j) q (PrudentBot2 k j) = some .C
+  unfold PrudentBot2 at h1 ⊢
+  simp [eval, Prog.subst, Formula.subst, h1, h2]
+
+/-- Outer guard failed ⇒ `PrudentBot2` defects. -/
+theorem P2_eval_outer_false (k j fuel : Nat) (q : Prog)
+    (h1 : proofSearch k (.plays q (PrudentBot2 k j) .C) = false) :
+    play (fuel + 2) (PrudentBot2 k j) q = some .D := by
+  show eval (fuel + 2) (PrudentBot2 k j) q (PrudentBot2 k j) = some .D
+  unfold PrudentBot2 at h1 ⊢
+  simp [eval, Prog.subst, Formula.subst, h1]
+
+/-- Inversion: a cooperative play forces the outer guard. -/
+theorem P2_outer_true_of_play_C (k j n : Nat) (q : Prog)
+    (h : play n (PrudentBot2 k j) q = some .C) :
+    proofSearch k (.plays q (PrudentBot2 k j) .C) = true := by
+  cases hps : proofSearch k (.plays q (PrudentBot2 k j) .C) with
+  | true => rfl
+  | false =>
+    exfalso
+    have hD : play (n + 2) (PrudentBot2 k j) q = some .D := P2_eval_outer_false k j n q hps
+    have hC : play (n + 2) (PrudentBot2 k j) q = some .C := by
+      unfold play at h ⊢; exact eval_mono_le h (n + 2) (by omega)
+    rw [hC] at hD; cases hD
+
+/-- The self-play Löb premise — `searchThenSearch_t` on the two-tier shape, its inner
+    prudence premise the floored `prudence_P2` (fits: `k + log2 k + log2 j + 22 ≤ 4k+100`). -/
+theorem P2_self_loeb_premise (k : Nat) :
+    Provable (30 * Nat.log2 k + 800)
+      (.impl (.box k (.plays (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) .C))
+             (.plays (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) .C)) := by
+  have hlk := log2_le_self k
+  have hlgj := log2_stagger4_le k
+  refine Provable.searchThenSearch_t k (4*k+100)
+    (k + Nat.log2 k + Nat.log2 (4*k+100) + 22)
+    (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
+    .C .D (.const .D) (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) rfl
+    (by simpa [Formula.subst, Prog.subst] using prudence_P2 k (4*k+100)) (by omega) ?_
+  simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot2, DefectBot,
+    c_guard]
+  omega
+
+/-- **Two-tier PrudentBot self-play → (C, C)** for all large enough `k` — the recovery of
+    the retired same-`k` self-cooperation, at the honest (PA+1-style) parameterization. -/
+theorem outcome_PrudentBot2_self :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ fuel, outcome fuel (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100))
+        = some (.C, .C) := by
+  have hφsz : ∀ k,
+      (Formula.plays (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) .C).size
+      ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    have hlgj := log2_stagger4_le k
+    simp only [Formula.size, Prog.size, PrudentBot2, DefectBot]
+    omega
+  have hpm : ∀ k, 30 * Nat.log2 k + 800 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id
+    (fun k => Formula.plays (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) .C)
+    (fun k => 30 * Nat.log2 k + 800) 0 hφsz hpm
+    (fun k _ => P2_self_loeb_premise k)
+  refine ⟨k₂, fun k hk => ?_⟩
+  have hlk := log2_le_self k
+  have hlgj := log2_stagger4_le k
+  obtain ⟨m, hm⟩ := hk₂ k hk
+  obtain ⟨n, hplay⟩ := Provable_sound m _ hm
+  have hpsOuter : proofSearch k
+      (.plays (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) .C) = true :=
+    P2_outer_true_of_play_C k (4*k+100) n _ hplay
+  have hprud : proofSearch (4*k+100)
+      (.plays (PrudentBot2 k (4*k+100)) (.bot DefectBot) .D) = true := by
+    refine (proofSearch_spec _ _).2 (Provable_mono (prudence_P2 k (4*k+100)) ?_)
+    omega
+  refine ⟨3, ?_⟩
+  have hA : play 3 (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) = some .C := by
+    simpa using P2_eval_both_true k (4*k+100) 0 (PrudentBot2 k (4*k+100)) hpsOuter hprud
+  exact outcome_of_plays _ _ _ _ _ hA hA
 
 end PD.Theorems

@@ -919,6 +919,22 @@ theorem log2_stagger_le (k : Nat) : Nat.log2 (2 * k + 64) ≤ Nat.log2 k + 8 := 
   have := (Nat.log2_lt (by omega)).2 h3
   omega
 
+/-- The wider staggering function `4k + 100` costs at most 9 extra numeral characters. -/
+theorem log2_stagger4_le (k : Nat) : Nat.log2 (4 * k + 100) ≤ Nat.log2 k + 9 := by
+  have h1 : k < 2 ^ (Nat.log2 k + 1) := by
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · exact Nat.two_pow_pos _
+    · rw [Nat.log2_eq_log_two]
+      exact Nat.lt_pow_succ_log_self (by norm_num) k
+  have h2 : (2:Nat) ^ (Nat.log2 k + 10) = 2 ^ (Nat.log2 k + 1) * 512 := by
+    rw [show Nat.log2 k + 10 = (Nat.log2 k + 1) + 9 from rfl, pow_add]
+    norm_num
+  have h3 : 4 * k + 100 < 2 ^ (Nat.log2 k + 10) := by
+    have hp : 1 ≤ (2:Nat) ^ (Nat.log2 k + 1) := Nat.one_le_two_pow
+    omega
+  have := (Nat.log2_lt (by omega)).2 h3
+  omega
+
 /-- **Consumer-facing MUTUAL PBLT** (`f = id`): the cross-bot cooperation closer
     (PrudentBot↔DupocBot, JustBot legs, …). Takes the two transparency legs at their honest
     O(log k) transcripts and SAME-`k` source literals, derives the lowered premise via
