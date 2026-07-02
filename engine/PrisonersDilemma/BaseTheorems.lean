@@ -580,3 +580,76 @@ theorem mutual_loeb (k : Nat) (pP qP pD qD : Prog) (bP bD : Action)
   -- 5. implTrans h4 ; legDP : □φP → φP  (cut formula □φD, size = hszBoxD)
   exact Provable.implTrans (.box k (.plays pP qP bP)) (.box k (.plays pD qD bD))
     (.plays pP qP bP) k k h4 legDP (le_refl k) (le_refl k) hszBoxD hsz
+
+/-! ## Bounded Löb INSIDE `Provable` — the internalized chain (I4).
+
+`bloeb_engine` runs Löb's derivation entirely in `Provable` at ONE subscript-and-budget `u`, from the
+TIGHT premise `Provable u (□_u φ → φ)`. The fixpoint sentence is `ψ := .diag u φ` (Program.lean), whose
+`interp` IS the fixpoint (Dynamics.lean); the legs are the (Löb-premise-gated) `diagF`/`diagB` rules,
+K-as-formula is `axKf`, and the S-composition is `impS2` — all sound constructors (Provable_sound).
+The 12 size side-conditions are all `O(log u) + O(φ.size)`-shaped; `pblt_engine` discharges them from
+ONE master bound. Design + validation: `Research/Notes/INTERNALIZATION_ROADMAP.md` (I0),
+`Research/Spikes/pblt/I0Design.lean` (`bloeb_mini`, no axioms). -/
+
+theorem bloeb_engine (u : Nat) (φ : Formula)
+    (hLoeb : Provable u (.impl (.box u φ) φ))
+    (hs1 : (Formula.impl (.diag u φ) (.impl (.box u (.diag u φ)) φ)).size ≤ u)
+    (hs2 : (Formula.impl (.impl (.box u (.diag u φ)) φ) (.diag u φ)).size ≤ u)
+    (hs3 : (Formula.box u (Formula.impl (.diag u φ) (.impl (.box u (.diag u φ)) φ))).size ≤ u)
+    (hs5 : (Formula.impl (.box u (.diag u φ)) (.box u (.impl (.box u (.diag u φ)) φ))).size ≤ u)
+    (hs6 : (Formula.impl (.box u (.impl (.box u (.diag u φ)) φ))
+              (.impl (.box u (.box u (.diag u φ))) (.box u φ))).size ≤ u)
+    (hs7 : (Formula.impl (.box u (.diag u φ)) (.impl (.box u (.box u (.diag u φ))) (.box u φ))).size ≤ u)
+    (hs8 : (Formula.box u (.diag u φ)).size ≤ u)
+    (hs9 : (Formula.impl (.box u (.diag u φ)) (.box u (.box u (.diag u φ)))).size ≤ u)
+    (hs10 : (Formula.impl (.box u (.diag u φ)) (.box u φ)).size ≤ u)
+    (hs11 : (Formula.impl (.box u (.diag u φ)) φ).size ≤ u)
+    (hs12 : (Formula.box u (.impl (.box u (.diag u φ)) φ)).size ≤ u)
+    (hs13 : (Formula.box u φ).size ≤ u) :
+    Provable u φ := by
+  -- the two fixpoint legs (gated on hLoeb)
+  have legF : Provable u (.impl (.diag u φ) (.impl (.box u (.diag u φ)) φ)) :=
+    Provable.diagF u u φ hLoeb hs1
+  have legB : Provable u (.impl (.impl (.box u (.diag u φ)) φ) (.diag u φ)) :=
+    Provable.diagB u u φ hLoeb hs2
+  -- h1 : □(ψ → (□ψ→φ))            [boxIntro legF]
+  have h1 : Provable u (.box u (.impl (.diag u φ) (.impl (.box u (.diag u φ)) φ))) :=
+    Provable.boxIntro u u _ legF hs3
+  -- h2 : □ψ → □(□ψ→φ)             [axK-rule on h1]
+  have h2 : Provable u (.impl (.box u (.diag u φ)) (.box u (.impl (.box u (.diag u φ)) φ))) :=
+    Provable.axK u u _ _ h1 hs5
+  -- h3 : □(□ψ→φ) → (□□ψ → □φ)     [axKf — the FORMULA form of K]
+  have h3 : Provable u (.impl (.box u (.impl (.box u (.diag u φ)) φ))
+      (.impl (.box u (.box u (.diag u φ))) (.box u φ))) :=
+    Provable.axKf u u (.box u (.diag u φ)) φ hs6
+  -- h4 : □ψ → (□□ψ → □φ)          [implTrans h2 h3]
+  have h4 : Provable u (.impl (.box u (.diag u φ)) (.impl (.box u (.box u (.diag u φ))) (.box u φ))) :=
+    Provable.implTrans _ _ _ u u h2 h3 (Nat.le_refl u) (Nat.le_refl u) hs12 hs7
+  -- h5 : □ψ → □□ψ                 [box4]
+  have h5 : Provable u (.impl (.box u (.diag u φ)) (.box u (.box u (.diag u φ)))) :=
+    Provable.box4 u u (.diag u φ) hs8 hs9
+  -- h6 : □ψ → □φ                  [impS2 h4 h5 — S-composition]
+  have h6 : Provable u (.impl (.box u (.diag u φ)) (.box u φ)) :=
+    Provable.impS2 _ _ _ u u h4 h5 (Nat.le_refl u) hs10
+  -- h7 : □ψ → φ                   [implTrans h6 hLoeb]
+  have h7 : Provable u (.impl (.box u (.diag u φ)) φ) :=
+    Provable.implTrans _ _ _ u u h6 hLoeb (Nat.le_refl u) (Nat.le_refl u) hs13 hs11
+  -- h8 : ψ ; h9 : □ψ ; φ          [app legB h7 ; boxIntro ; app h7 h9]
+  have h8 : Provable u (.diag u φ) := Provable.app u u _ _ legB h7 (Nat.le_refl u)
+  have h9 : Provable u (.box u (.diag u φ)) := Provable.boxIntro u u _ h8 hs8
+  exact Provable.app u u _ _ h7 h9 (Nat.le_refl u)
+
+/-- **Parametric bounded Löb, INTERNAL** — the `PBLT` conclusion as a THEOREM. Tight premise
+    (`Provable (f k) (□_{f k} φk → φk)` — what the consumers' `*_loeb_premise` lemmas produce) + ONE
+    master size bound (`9·log2(f k) + 6·(φ k).size + 32 ≤ f k`, eventual — from the consumers'
+    `linear_log2_add_le`-style lemmas, since play-atom families have size `O(log k)`). Conclusion is
+    the axiom's exact `∃k₂, ∀k>k₂, ∃m, Provable m (φ k)` shape. -/
+theorem pblt_engine (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat)
+    (hLoeb : ∀ k, k > k₁ → Provable (f k) (.impl (.box (f k) (φ k)) (φ k)))
+    (hsz : ∀ k, k > k₁ → 9 * Nat.log2 (f k) + 6 * (φ k).size + 32 ≤ f k) :
+    ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (φ k) := by
+  refine ⟨k₁, fun k hk => ⟨f k, ?_⟩⟩
+  have hm := hsz k hk
+  refine bloeb_engine (f k) (φ k) (hLoeb k hk) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    · simp only [Formula.size]
+      omega
