@@ -414,6 +414,38 @@ mutual
         (Formula.box k φ).size ≤ k →
         (Formula.impl (.box k φ) (.box k (.box k φ))).size ≤ K →
         Provable K (.impl (.box k φ) (.box k (.box k φ)))
+    -- ── (D) the Löb-fixpoint rules (internalization of the reflection layer's DERIVED diagonal;
+    --        Research/Notes/INTERNALIZATION_ROADMAP.md I0, validated in Spikes/pblt/I0Design.lean) ──
+    /-- **Löb-fixpoint leg, forward**: `ψ → (□_g ψ → tgt)` for the fixpoint sentence
+        `ψ := .diag g tgt`. Sound with NO axiom: `ψ.interp` IS `Provable g ψ → tgt.interp`
+        (Dynamics.lean) — the soundness arm is the identity. GATED on the tight Löb premise
+        `Provable g (□_g tgt → tgt)`: the Löb chain always has it (it is bounded Löb's hypothesis),
+        and the gate preserves the structural exclusion invariants (`cimcic_no_provable_forbidden`
+        etc.): a Forbidden impl-chain in the conclusion forces the premise's chain Forbidden too,
+        closing those arms. Faithful: the reflection layer DERIVES this leg from representability
+        (`repr_object` with the predicate-level `selfApply`, spike B4). -/
+    | diagF (g K : Nat) (tgt : Formula) :
+        Provable g (.impl (.box g tgt) tgt) →
+        (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)).size ≤ K →
+        Provable K (.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt))
+    /-- **Löb-fixpoint leg, backward**: `(□_g ψ → tgt) → ψ`. Sound = identity (as `diagF`); same
+        Löb-premise gate (symmetry; its exclusion arm closes via the `.diag` catch-all regardless). -/
+    | diagB (g K : Nat) (tgt : Formula) :
+        Provable g (.impl (.box g tgt) tgt) →
+        (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)).size ≤ K →
+        Provable K (.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt))
+    /-- **GL axiom-K as an object FORMULA** `□_k(φ→α) → (□_k φ → □_k α)` — the `axK` RULE form cannot
+        supply Löb's middle step, which needs the implication itself as a premise-free theorem.
+        Sound via `app`: the interp is `Provable k (φ→α) → Provable k φ → Provable k α`. -/
+    | axKf (k K : Nat) (φ α : Formula) :
+        (Formula.impl (.box k (.impl φ α)) (.impl (.box k φ) (.box k α))).size ≤ K →
+        Provable K (.impl (.box k (.impl φ α)) (.impl (.box k φ) (.box k α)))
+    /-- **Closed composition** (the S-combinator as a rule; both premises are closed `⊢`, so the rule
+        form suffices — replacing the deduction theorem the side layer needed): from `⊢ φ → (ψ → χ)`
+        and `⊢ φ → ψ`, infer `⊢ φ → χ`. Sound: function application under `interp`. -/
+    | impS2 (φ ψ χ : Formula) (m K : Nat) :
+        Provable m (.impl φ (.impl ψ χ)) → Provable m (.impl φ ψ) →
+        m ≤ K → (Formula.impl φ χ).size ≤ K → Provable K (.impl φ χ)
 end
 
 -- 4. The proof-search oracle: bounded provability reflected into `Bool` for the

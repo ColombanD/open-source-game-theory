@@ -228,6 +228,14 @@ theorem cimcic_no_provable_forbidden (k : Nat) :
     -- axK: conclusion `□φ→□α`; `CimcicForbiddenC` peels `.impl` to `□α`, then `.box → False`.
     (fun _k _K _φ _α _himpl _hsz _ih => by intro hF; simp only [CimcicForbiddenC] at hF)  -- axK
     (fun _k _K _φ _hksz _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)  -- box4
+    -- diagF: conclusion peels to `CimcicForbiddenC tgt`; the LÖB-PREMISE GATE's IH peels to the same — contradiction.
+    (fun _g _K _tgt _hgate _hsz ih => by intro hF; exact ih hF)                   -- diagF (gated)
+    -- diagB: conclusion peels to `CimcicForbiddenC (.diag …)` = False (catch-all).
+    (fun _g _K _tgt _hgate _hsz _ih => by intro hF; simp only [CimcicForbiddenC] at hF)     -- diagB
+    -- axKf: conclusion peels to `.box` = False.
+    (fun _k _K _φ _α _hsz => by intro hF; simp only [CimcicForbiddenC] at hF)               -- axKf
+    -- impS2: conclusion `φ→χ` peels to `CimcicForbiddenC χ`; IH on premise-1 `φ→(ψ→χ)` peels to the same.
+    (fun _φ _ψ _χ _m _K _h1 _h2 _hmk _hsz ih1 _ih2 => by intro hF; exact ih1 hF)  -- impS2
     h
 
 /-- CIMCIC's guard against DefectBot is **not provable** within any budget `k`. -/

@@ -246,7 +246,8 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun _ _ _ => True)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?atomMk ?provStruct ?provAtom ?provWeaken
-    ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl ?provBoxIntro ?provApp ?provAxK ?provBox4 h
+    ?provSearchThenSearch ?provImplTrans ?provAtomBoxImpl ?provBoxIntro ?provApp ?provAxK ?provBox4
+    ?provDiagF ?provDiagB ?provAxKf ?provImpS2 h
   case const => exact ⟨1, rfl⟩
   case self => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
   case opp => intro me opponent a n _ ih; obtain ⟨N, hN⟩ := ih; exact ⟨N+1, by rw [eval]; exact hN⟩
@@ -281,6 +282,10 @@ theorem playsProof_sound {me opponent body a n} (h : PlaysProof me opponent body
   case provApp => intros; trivial
   case provAxK => intros; trivial
   case provBox4 => intros; trivial
+  case provDiagF => intros; trivial
+  case provDiagB => intros; trivial
+  case provAxKf => intros; trivial
+  case provImpS2 => intros; trivial
 
 /-- **`atom_monotone` (was an axiom).** Relaxing the certificate's cost bound. -/
 theorem atom_monotone (k₁ k₂ : Nat) (φ : Formula) (hk : k₁ ≤ k₂) :
@@ -360,6 +365,17 @@ theorem Provable_sound : ∀ k φ, Provable k φ → φ.interp := by
     -- `boxIntro k k φ hφ hksz` builds `Provable k (□_kφ)` (output budget k, since `(□φ).size ≤ k`).
     (fun k _K φ hksz _hsz =>
       (show Provable k φ → Provable k (.box k φ) from fun hφ => Provable.boxIntro k k φ hφ hksz))  -- box4
+    -- diagF: conclusion `(ψ → (□_g ψ → tgt)).interp` where `ψ := .diag g tgt` and
+    -- `ψ.interp = (Provable g ψ → tgt.interp)` BY DEFINITION (Dynamics.lean) — the identity.
+    (fun _g _K _tgt _hgate _hsz _ih => fun h => h)                             -- diagF
+    -- diagB: `((□_g ψ → tgt) → ψ).interp` — the same identity, other direction.
+    (fun _g _K _tgt _hgate _hsz _ih => fun h => h)                             -- diagB
+    -- axKf: `(□_k(φ→α) → (□_kφ → □_kα)).interp = Provable k (φ→α) → Provable k φ → Provable k α`:
+    -- object modus ponens (`Provable.app`), no budget threshold.
+    (fun k _K φ α _hsz => fun hab ha => Provable.app k k φ α hab ha (Nat.le_refl k))  -- axKf
+    -- impS2: `(φ→χ).interp` from ih₁ : `(φ→(ψ→χ)).interp` and ih₂ : `(φ→ψ).interp` — the
+    -- S-combinator, plain function application.
+    (fun _φ _ψ _χ _m _K _h1 _h2 _hmk _hsz ih1 ih2 => fun hφ => (ih1 hφ) (ih2 hφ))  -- impS2
     h
 
 /-
@@ -465,6 +481,21 @@ theorem proofSearch_monotone :
       rename_i φ' hksz hsz
       exact (proofSearch_spec k₂ _).2
         (Provable.box4 kk k₂ φ' hksz (Nat.le_trans hsz hk))
+  | diagF g =>
+      -- fixpoint-leg budgets: the gate proof and the box subscript `g` are fixed in the conclusion
+      -- formula; only the `size ≤ K` output bound relaxes `k₁ → k₂` (self-weakening).
+      rename_i tgt hgate hsz
+      exact (proofSearch_spec k₂ _).2 (Provable.diagF g k₂ tgt hgate (Nat.le_trans hsz hk))
+  | diagB g =>
+      rename_i tgt hgate hsz
+      exact (proofSearch_spec k₂ _).2 (Provable.diagB g k₂ tgt hgate (Nat.le_trans hsz hk))
+  | axKf kk =>
+      rename_i φ' α' hsz
+      exact (proofSearch_spec k₂ _).2 (Provable.axKf kk k₂ φ' α' (Nat.le_trans hsz hk))
+  | impS2 φ' ψ' χ' m =>
+      rename_i hab hb hmk hsz
+      exact (proofSearch_spec k₂ _).2
+        (Provable.impS2 φ' ψ' χ' m k₂ hab hb (Nat.le_trans hmk hk) (Nat.le_trans hsz hk))
 
 
 /-- **Bounded GL axiom 4 / necessitation** (`□_k φ → □_K □_k φ`), HBL D2 — NOW A THEOREM
