@@ -190,10 +190,9 @@ theorem extract_play (hinj : Function.Injective atomCode) (pr qr : Prog) (a : Ac
     simp only [encode] at hb
     unfold atomCode formulaCode at hb
     simp only [Nat.pair_eq_pair] at hb; omega
-  · -- hEL: engine leaf soundness at interpU engineVal. For a play-atom leaf (encodeF = .atom code,
-    -- interpU = interp (Gw) = Gw at a non-betaA code = engineVal), this is Provable_sound +
-    -- engineVal_atomCode. The GENERAL case (impl/box leaves) is the FWD-faithfulness residue (the
-    -- interpU-box = ProvesU vs engine-box = Provable mismatch), scoped below.
+  · -- hEL: engine leaf soundness at interpU engineVal. PLAY-ATOM leaves close (Provable_sound +
+    -- engineVal_atomCode). The □φ→φ Löb-premise leaf reduces to BWD faithfulness (see VERDICT) — the
+    -- genuine remaining residue. Scoped as hEL_playAtom + the BWD gap.
     intro mm ψ hProv
     sorry
 
@@ -202,7 +201,33 @@ theorem extract_play (hinj : Function.Injective atomCode) (pr qr : Prog) (a : Ac
 #check @diagFix_derivedU
 #check @extract_play
 
-/-! ## VERDICT — B4-WIRE: the `hp0`/diagonal obstruction is FULLY DISSOLVED. One SEPARATE residue.
+/-- `hEL` for a PLAY-ATOM leaf — PROVEN (Provable_sound + engineVal_atomCode). The impl/box Löb-premise
+    leaf is the BWD residue (below), NOT this. -/
+theorem hEL_playAtom (hinj : Function.Injective atomCode) (p : OFml) (mm : Nat)
+    (pr qr : Prog) (a : Action)
+    (hm_nb : ¬ ∃ body, encode (OFml.betaA body) = atomCode (.plays pr qr a))
+    (hProv : Provable mm (.plays pr qr a)) :
+    interpU p engineVal (encodeF (.plays pr qr a)) := by
+  show Gw p engineVal (atomCode (.plays pr qr a))
+  rw [show Gw p engineVal (atomCode (.plays pr qr a)) = engineVal (atomCode (.plays pr qr a)) from by
+        unfold Gw; exact dif_neg hm_nb, engineVal_atomCode hinj]
+  exact BaseTheorems.Provable_sound mm (.plays pr qr a) hProv
+
+/-- **THE TRUE RESIDUE — BWD faithfulness** (stated). `hEL` at the Löb-premise leaf `□φ→φ` needs
+    `interpU(□p→p) = (ProvesU p p → interpU p)`; the engine premise (via `Provable_sound`) gives
+    `Provable(f)φ → φ.interp`, so the gap is `ProvesU p (encodeF φ) → ∃m, Provable m φ` for the play-atom
+    φ — the reflection of an object proof back to an engine proof. This is the SAME BWD direction the
+    layer never closed; it is what `provesN_play_extract` ultimately WAS (relocated from diagonal→leaf).
+    So B4 dissolved the DIAGONAL's hp0, but the extraction ALSO needs this BWD step — a distinct residue,
+    honestly the genuine remaining hard piece. -/
+def BWD_faithful_plays : Prop :=
+  ∀ (p : OFml) (pr qr : Prog) (a : Action),
+    ProvesU p (encodeF (.plays pr qr a)) → ∃ m, Provable m (.plays pr qr a)
+
+#check @hEL_playAtom
+#check @BWD_faithful_plays
+
+/-! ## VERDICT — B4-WIRE: the `hp0`/diagonal obstruction is DISSOLVED. The residue is BWD faithfulness.
 
 PROVEN (sorry-free, 3 std axioms):
   • `provesU_sound` — OUTCOME-FREE. `diagFix` is now DERIVED (`diagFix_derivedU`, via B4's
@@ -215,17 +240,23 @@ PROVEN (sorry-free, 3 std axioms):
     engine play`, via `provesU_sound` at `engineVal`, all side-conditions STRUCTURAL (the play-atom
     index is not a betaA code — machine-checked). NO outcome hypothesis.
 
-ONE REMAINING RESIDUE (`hEL`, a `sorry` in `extract_play`) — and it is NOT the diagonal/hp0 obstruction:
-it is the FWD-FAITHFULNESS of the `engineLeaf` rule at `interpU`. `provesU_sound` needs every `engineLeaf`
-leaf to be `interpU`-true; in the pipeline the ONLY such leaf is the engine Löb premise `Provable m
-(□φ→φ)`, whose `interpU` reads `box` as `ProvesU` (not engine `Provable`) — the interpU-box vs engine-box
-mismatch (the same residue the whole layer's FWD side carries; `engineLeaf_sound_plays` covers the
-play-atom leaf, the impl/box leaf is the analogous FWD-completeness piece). This is a SEPARATE obligation
-from the one this whole B-series removed (the diagonal outcome-dependence). It must be closed for the
-end-to-end axiom deletion, but it does NOT reintroduce `hp0`.
+THE REMAINING RESIDUE — BWD FAITHFULNESS (`BWD_faithful_plays`; the `hEL` sorry reduces to it):
+  • `hEL_playAtom` — PROVEN: the engineLeaf soundness at a PLAY-ATOM leaf (Provable_sound +
+    engineVal_atomCode). So play-atom leaves are handled.
+  • The `□φ→φ` Löb-premise leaf is NOT: `hEL` there needs `interpU(□p→p) = (ProvesU p p → interpU p)`.
+    The engine premise (via Provable_sound) gives `Provable(f)φ → φ.interp`, so the gap is exactly
+    `ProvesU p (encodeF φ) → ∃m, Provable m φ` for the play-atom φ = `BWD_faithful_plays`.
 
-⇒ NET: the diagonal `hp0` obstruction (the thing that made `provesN_play_extract` axiom-strength) is
-DISSOLVED, machine-checked. What remains for deleting `PBLT` is the FWD-faithfulness of `engineLeaf` at
-the Löb-premise leaf — real, but a different (and standard: engine-provable ⟹ true) piece. -/
+HONEST CORRECTION of the B4-wire-core framing: I earlier called this "FWD-faithfulness". It is BWD —
+reflecting an OBJECT proof (`ProvesU`) back to an ENGINE proof (`Provable`). And it is the SAME direction
+`provesN_play_extract` ultimately WAS: the B-series moved the outcome-dependence OFF the diagonal (real,
+machine-checked progress — that WAS believed the crux), but the play-extraction ALSO rests on BWD
+faithfulness, which is NOT dissolved. So:
+
+⇒ NET (honest): B4 DISSOLVED the diagonal's `hp0` (diagFix is derived, provesU_sound outcome-free) —
+solid, machine-checked. But deleting `PBLT` end-to-end ALSO needs `BWD_faithful_plays` (object→engine
+reflection for play-atoms), which remains open. This is the genuine hard core, and it did NOT go away —
+it was partly masked by the diagonal work. `hEL_playAtom` closes the atomic part; the box/Löb-premise
+part IS BWD faithfulness. Do NOT claim PBLT removable until BWD_faithful_plays is proven. -/
 
 end PD.Reflection.BewB4wire

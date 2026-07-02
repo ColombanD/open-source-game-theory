@@ -149,18 +149,24 @@ mirroring `gammaAx`/`betaGamma`.
   side-conditions structural — the play-atom index is not a betaA code, machine-checked). `provesU_sound`/
   `bloebU`/`extract_atom` are all sorry-free on 3 std axioms. **So the outcome-dependence that made
   `provesN_play_extract` axiom-strength is GONE.**
-- **REMAINING RESIDUE (`hEL`, one `sorry` in `extract_play`) — NOT the diagonal/hp0 obstruction.** It is
-  the FWD-FAITHFULNESS of `engineLeaf` at `interpU`: `provesU_sound` needs each `engineLeaf` leaf
-  `interpU`-true; in the pipeline the only such leaf is the engine Löb premise `Provable m (□φ→φ)`, whose
-  `interpU` reads `box` as `ProvesU` (not engine `Provable`) — the interpU-box vs engine-box mismatch
-  (the same residue the layer's FWD side always carried; `engineLeaf_sound_plays` covers the play-atom
-  leaf, the impl/box Löb-premise leaf needs the analogous BWD-faithfulness). This is a SEPARATE, standard
-  piece (engine-provable ⟹ true), and it does NOT reintroduce `hp0`. It IS required to actually delete
-  `PBLT` end-to-end.
+- **B4-hEL (2026-07-01) — the residue is BWD FAITHFULNESS (honest correction).** `hEL_playAtom` PROVEN
+  (engineLeaf soundness at a PLAY-ATOM leaf, via Provable_sound + engineVal_atomCode). But the `□φ→φ`
+  Löb-premise leaf is NOT: `hEL` there needs `interpU(□p→p) = (ProvesU p p → interpU p)`; the engine
+  premise gives `Provable(f)φ → φ.interp`, so the gap is exactly `ProvesU p (encodeF φ) → ∃m, Provable m
+  φ` for play-atom φ = **`BWD_faithful_plays`** — reflecting an OBJECT proof back to an ENGINE proof.
+  **HONEST CORRECTION:** the B4-wire-core note called this "FWD-faithfulness"; it is BWD, and it is the
+  SAME direction `provesN_play_extract` ultimately WAS. The B-series moved the outcome-dependence OFF the
+  diagonal (real, machine-checked — that WAS believed the crux), but the play-extraction ALSO rests on
+  BWD faithfulness, which is NOT dissolved. `BWD_faithful_plays` by induction on the `ProvesU` derivation
+  of a bare `.atom` hits the `mp`-cut (unbounded cut formula — same wall as decidability). So deleting
+  `PBLT` end-to-end still needs BWD, the genuine hard core; do NOT claim removable until it is proven.
 
 ## Immediate next action
-The B-series achieved its goal: the diagonal `hp0` obstruction (the reason `provesN_play_extract` was
-axiom-strength) is DISSOLVED — machine-checked, sorry-free core. To DELETE the axiom end-to-end, close
-the one remaining residue: **B4-hEL** — FWD-faithfulness of the `engineLeaf` Löb-premise leaf at
-`interpU` (relate `ProvesU p (encodeF φ)` to engine `Provable`; the box-mismatch/BWD piece). This is a
-different obligation from the one the B-series removed; standard in content (engine soundness), but real.
+The B-series DISSOLVED the diagonal `hp0` obstruction (diagFix derived, provesU_sound outcome-free) —
+machine-checked, real. But it did NOT remove the extraction's dependence on **BWD faithfulness**
+(`ProvesU→Provable` for play-atoms), which the diagonal work partly masked. That is the true remaining
+core for axiom deletion. B4-hEL closed the atomic part (`hEL_playAtom`); the Löb-premise/box part IS
+BWD. Next: attack `BWD_faithful_plays` (`ProvesU p (encodeF φ) → ∃m, Provable m φ` for play-atoms) — or
+accept it as the honest floor (the diagonal crux is solved; BWD is a separate, known-hard direction:
+induction on the `ProvesU` proof of a bare `.atom` hits the `mp`-cut, the same unbounded-cut wall as
+decidability).
