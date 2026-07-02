@@ -1,5 +1,6 @@
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Axioms
+import PrisonersDilemma.SizeLemmas
 
 
 open Classical
@@ -653,3 +654,23 @@ theorem pblt_engine (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat)
   refine bloeb_engine (f k) (φ k) (hLoeb k hk) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
     · simp only [Formula.size]
       omega
+
+/-- **Consumer-facing PBLT** (`f = id`, the shape every bot theorem uses): tight Löb premise
+    (what the `*_loeb_premise` lemmas produce) + a generous uniform size bound on the play-atom
+    family (`10·log2 k + 100` covers every bot in the zoo — each bot's source is `O(log k)`).
+    Replaces the former `PBLT` axiom at all call sites. -/
+theorem pblt_engine_id (φ : Nat → Formula) (k₁ : Nat)
+    (hφ : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100)
+    (hLoeb : ∀ k, k > k₁ → Provable k (.impl (.box k (φ k)) (φ k))) :
+    ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (φ k) := by
+  -- master bound: 9·log2 k + 6·(10·log2 k + 100) + 32 = 69·log2 k + 632 ≤ k, eventually.
+  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 69 632
+  obtain ⟨k₂, hk₂⟩ := pblt_engine φ id (max k₁ Ksz)
+    (fun k hk => hLoeb k (lt_of_le_of_lt (Nat.le_max_left _ _) hk))
+    (by
+      intro k hk
+      have h1 := hKsz k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+      have h2 := hφ k
+      show 9 * Nat.log2 k + 6 * (φ k).size + 32 ≤ k
+      omega)
+  exact ⟨k₂, hk₂⟩

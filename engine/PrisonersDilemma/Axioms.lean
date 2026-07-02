@@ -8,16 +8,16 @@ namespace PD.Axioms
 /-!
 # Axioms
 
-Principles of `S` not discharged constructively. **TWO remain** (down from four):
+Principles of `S` not discharged constructively. **ONE remains** (down from four):
 
 * `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches on a *failed*
   guard still has an `AtomProvable` certificate. Proven irreducible — the else-action has no
   certificate TERM at all (`ComputableEval/Exclusion.lean`), so the axiom postulates a true
   `interp` whose witness provably does not exist (the proof-vs-witness gap).
-* `PBLT` — the Parametric Bounded Löb Theorem (critch22 Lemma 3.6). A genuine metatheorem
-  (bounded-Löb / diagonalization), removable only by a faithful first-order mechanization of `S`
-  (`Bew` + a deduction theorem); see `Research/Notes/EXPLICIT_S_PROPOSAL.md`. Critch's proof is
-  in `PBLT_proof.tex` §5.
+
+Removed 2026-07-01: `PBLT` — now a THEOREM (`BaseTheorems.bloeb_engine`/`pblt_engine`), proven
+inside `Provable` via the internalized Löb-fixpoint sentence `Formula.diag` and the
+`diagF`/`diagB`/`axKf`/`impS2` rules; see the note at the end of this file.
 
 Removed (now theorems / constructors, NO new axioms; `Provable_sound` still rests on only the 3
 Lean-standard axioms):
@@ -70,26 +70,24 @@ axiom atom_complete_false_guard :
 --  where their content now lives are summarized in the module header above. The two live axioms
 --  follow.)
 
-/-- **Parametric Bounded Löb Theorem** (critch22 Lemma 3.6). If `f(k) ≻ O(log k)` and `S` proves
-    `□_{f(k)} φ(k) → φ(k)` for all large `k`, then `S` proves `φ(k)` outright for all large `k`.
+/- **`PBLT` — DELETED (2026-07-01): now a THEOREM.** The Parametric Bounded Löb Theorem
+   (critch22 Lemma 3.6) is PROVEN inside `Provable` itself — see `BaseTheorems.bloeb_engine`
+   (Löb's chain at one subscript-and-budget, from the tight premise, via the `.diag` fixpoint
+   sentence and the `diagF`/`diagB`/`axKf`/`impS2` rules) and `BaseTheorems.pblt_engine` /
+   `pblt_engine_id` (the `∃k₂, ∀k>k₂, ∃m, Provable m (φ k)` conclusion the consumers use).
+   `#print axioms pblt_engine` = {propext, Quot.sound} — no axiom beyond Lean's standard ones.
 
-    A genuine metatheorem (bounded Löb / diagonalization), not a representational wall — removable
-    only by a faithful first-order mechanization of `S` (Gödel `Bew` + a deduction theorem), which
-    `Provable`'s deliberately bounded, deduction-free design does not support. See
-    `Research/Notes/EXPLICIT_S_PROPOSAL.md` (the `BPS` interface spike) and `PBLT_proof.tex` §5.
+   The internalization: `Formula.diag g tgt` is the Löb-fixpoint sentence (its `interp` IS the
+   fixpoint, Dynamics.lean — same design pattern as `.box n φ ↦ Provable n φ`); the diagonal
+   rules are Löb-premise-gated sound constructors. Meta-justification (that a faithful
+   arithmetization contains such a sentence): the Reflection layer's DERIVED diagonal
+   (`Reflection/Proves.lean` `repr_object` over the predicate-level `selfApply`). Design +
+   validation: `Research/Notes/INTERNALIZATION_ROADMAP.md`, `Research/Spikes/pblt/I0Design.lean`.
 
-    Shape notes:
-    * The hypothesis's proof budget is *unbudgeted* (`∃ m, Provable m …`) — faithful to Critch's
-      `⊢`, which carries no size annotation on the implication proof. Consumers (CupodBot, DupocBot)
-      supply the `f(k) ≻ O(log k)` bound via `linear_log2_add_le` + `Derivation.size`.
-    * We use a per-instance meta-`∀ k` (`∀ k > k₁, ∃ m, …`) rather than Critch's single
-      universally-quantified object-formula, because `Formula` has no internal `∀` quantifier. This
-      is implied by Critch's statement and sufficient for all consumers. -/
-axiom PBLT :
-  ∀ (φ : Nat → Formula) (f : Nat → Nat) (k₁ : Nat),
-    (∀ a b, a ≤ b → f a ≤ f b) →
-    (∃ c kHat, c > 0 ∧ ∀ k, k > kHat → f k > c * Nat.log2 k) →
-    (∀ k, k > k₁ → ∃ m, Provable m (.impl (.box (f k) (φ k)) (φ k))) →
-      ∃ k₂, ∀ k, k > k₂ → ∃ m, Provable m (φ k)
+   The former axiom's signature differences (both strictly-weaker hypotheses were never used):
+   * it took a LOOSE premise `∃ m, Provable m (…)` — the theorem takes the TIGHT
+     `Provable (f k) (…)`, which is what every consumer's `*_loeb_premise` lemma produces;
+   * it carried monotonicity/log-domination hypotheses on `f` — the theorem takes the one bound
+     it actually needs (`9·log2(f k) + 6·(φ k).size + 32 ≤ f k`, eventual). -/
 
 end PD.Axioms

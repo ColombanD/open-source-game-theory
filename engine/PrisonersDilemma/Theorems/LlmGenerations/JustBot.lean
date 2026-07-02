@@ -552,19 +552,16 @@ theorem botDupoc_self_coop :
     ∃ k₂, ∀ k, k₂ < k →
       proofSearch k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C) = true := by
   let φ : Nat → Formula := fun k => .plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C
-  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
-  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
-    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
-    intro k hk
-    have hlog : Nat.log2 k < k := by
-      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]
-      exact Nat.lt_two_pow_self
-    simpa using hlog
   obtain ⟨K₀, hK₀⟩ := botdupoc_loeb_premise
-  have hLoeb : ∀ k, k > K₀ → ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by
+  have hLoeb : ∀ k, k > K₀ → Provable k (.impl (.box k (φ k)) (φ k)) := by
     intro k hk
-    exact ⟨k, hK₀ k (Nat.le_of_lt hk)⟩
-  obtain ⟨k₂, hk₂⟩ := PBLT φ id K₀ hMono hLog hLoeb
+    exact hK₀ k (Nat.le_of_lt hk)
+  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+    intro k
+    show (Formula.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C).size ≤ _
+    simp only [Formula.size, Prog.size, DupocBot]
+    omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
   refine ⟨k₂, fun k hk => ?_⟩
   obtain ⟨m, hm⟩ := hk₂ k hk
   have hInterp : (φ k).interp := Provable_sound m (φ k) hm
@@ -685,17 +682,15 @@ theorem prudent_botdupoc_coop :
     ∃ k₂, ∀ k, k₂ < k →
       proofSearch k (.plays (PrudentBot k) (.bot (DupocBot k)) .C) = true := by
   let φ : Nat → Formula := fun k => Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C
-  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
-  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
-    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
-    intro k hk
-    have hlog : Nat.log2 k < k := by
-      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]; exact Nat.lt_two_pow_self
-    simpa using hlog
   obtain ⟨K₀, hK₀⟩ := prudent_botdupoc_loeb_premise
-  have hLoeb : ∀ k, k > K₀ → ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) :=
-    fun k hk => ⟨k, hK₀ k (Nat.le_of_lt hk)⟩
-  obtain ⟨k₂, hk₂⟩ := PBLT φ id K₀ hMono hLog hLoeb
+  have hLoeb : ∀ k, k > K₀ → Provable k (.impl (.box k (φ k)) (φ k)) :=
+    fun k hk => hK₀ k (Nat.le_of_lt hk)
+  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+    intro k
+    show (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C).size ≤ _
+    simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ K₀ hφsz hLoeb
   refine ⟨k₂, fun k hk => ?_⟩
   obtain ⟨m, hm⟩ := hk₂ k hk
   obtain ⟨n, hplay⟩ := Provable_sound m (φ k) hm
@@ -743,16 +738,8 @@ theorem outcome_JustBot_vs_DupocBot :
   let φ : Nat → Formula :=
     fun k => Formula.plays (DupocBot k) (.bot (DupocBot k)) .C
   let f : Nat → Nat := fun k => k
-  have hMono : ∀ a b : Nat, a ≤ b → f a ≤ f b := fun _ _ h => h
-  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → f k > c * Nat.log2 k := by
-    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
-    intro k hk
-    have hlog : Nat.log2 k < k := by
-      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]
-      exact Nat.lt_two_pow_self
-    simpa using hlog
   obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 30 300
-  have hLoeb : ∀ k, k > Ksz → ∃ m, Provable m (.impl (.box (f k) (φ k)) (φ k)) := by
+  have hLoeb : ∀ k, k > Ksz → Provable (f k) (.impl (.box (f k) (φ k)) (φ k)) := by
     intro k hkBig
     have hkS : Ksz ≤ k := Nat.le_of_lt hkBig
     set fBD := Formula.plays (.bot (DupocBot k)) (DupocBot k) .C with hfBD
@@ -813,9 +800,14 @@ theorem outcome_JustBot_vs_DupocBot :
       simp only [hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
     have hsz : (Formula.impl (.box k fDB) fDB).size ≤ k := by
       simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    exact ⟨k, mutual_loeb k (DupocBot k) (.bot (DupocBot k)) (.bot (DupocBot k)) (DupocBot k)
-      Action.C Action.C legPD legDP hs1 hs2 hs3 hs4 hs5 hszK4 hszBoxBD hsz⟩
-  obtain ⟨k₂, hk₂⟩ := PBLT φ f Ksz hMono hLog hLoeb
+    exact mutual_loeb k (DupocBot k) (.bot (DupocBot k)) (.bot (DupocBot k)) (DupocBot k)
+      Action.C Action.C legPD legDP hs1 hs2 hs3 hs4 hs5 hszK4 hszBoxBD hsz
+  have hφsz : ∀ k, (φ k).size ≤ 10 * Nat.log2 k + 100 := by
+    intro k
+    show (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C).size ≤ _
+    simp only [Formula.size, Prog.size, DupocBot]
+    omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ Ksz hφsz hLoeb
   refine ⟨max k₂ (atom_cost 2), ?_⟩
   intro k hk
   have hkk2 : k₂ < k := by
