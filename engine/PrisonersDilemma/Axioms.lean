@@ -6,21 +6,35 @@ open PD
 namespace PD.Axioms
 
 /-!
-# Axioms
+# Axioms — **ZERO remain** (2026-07-02).
 
-Principles of `S` not discharged constructively. **ONE remains** (down from four):
+`atom_complete_false_guard`, the last project axiom, is DELETED — it was **INCONSISTENT**
+(machine-checked `False`: the anti-diagonal bot `G := .search 100 (.plays .self .self .D)
+(.const .C) (.const .D)` — its else-certificate was injected at `atom_cost 2 = 7`, which
+`atom_monotone` lifted back above the guard budget it refutes, flipping the guard; both guard
+values yield `False`. `Research/Spikes/transcript/T32Inconsistency.lean`, now stated
+hypothesis-relative). The zoo never built anti-diagonal guards, which is why every outcome
+theorem still type-checked; the results that cited the axiom were vacuous.
 
-* `atom_complete_false_guard` — the irreducible Π₁ residue: a play that branches on a *failed*
-  guard still has an `AtomProvable` certificate. Proven irreducible — the else-action has no
-  certificate TERM at all (`ComputableEval/Exclusion.lean`), so the axiom postulates a true
-  `interp` whose witness provably does not exist (the proof-vs-witness gap).
+**The sound replacement** (2026-07-02, the false-guard repair):
+* `PlaysProof.search_f` — the else-branch certificate, premised on a REFUTATION of the guard
+  (`Provable m (.neg guard)`, Σ₁) and paying the FULL failed budget `k` (the floor — an
+  else-certificate must never fit within the budget whose failure it certifies);
+* `Provable.atomNeg` — refutations of play-atoms from certificates of the actual play
+  (eval determinism);
+* `BaseTheorems.atom_complete_searchfree` / `atom_search_t_top` / `atom_search_f_top` (and
+  `_bot_top` variants) — the constructive certificate toolkit replacing the deleted
+  `atom_complete`. For guards that are false but IRREFUTABLE (the anti-diagonal's own), the
+  else-play is TRUE BUT UNCERTIFIABLE — the honest Gödelian boundary, no axiom papering it.
+
+Consequently some previously-"proved" outcomes were axiom artifacts and are now honestly
+restated or retired (staggered budgets — Critch-faithful; see DECIDABILITY_ROADMAP.md T3.2a).
 
 Removed 2026-07-01: `PBLT` — now a THEOREM (`BaseTheorems.bloeb_engine`/`pblt_engine`), proven
 inside `Provable` via the internalized Löb-fixpoint sentence `Formula.diag` and the
 `diagF`/`diagB`/`axKf`/`impS2` rules; see the note at the end of this file.
 
-Removed (now theorems / constructors, NO new axioms; `Provable_sound` still rests on only the 3
-Lean-standard axioms):
+Removed earlier (now theorems / constructors):
 
 * `box_provable` (bounded GL-4 necessitation) → the `Provable.boxIntro` constructor + the
   `BaseTheorems.box_provable` theorem.
@@ -32,52 +46,9 @@ Lean-standard axioms):
   `atom_box_provable_impl_sound` (theorem) + the `atomBoxImpl` constructor.
 * `c_guard_mono` — now a theorem (the cost constants are concrete, see Derivation.lean).
 
-Everything else is a theorem in `BaseTheorems.lean`.
+This module is kept as the historical record; it declares NOTHING. Every principle of `S` is a
+constructor or a theorem, and the whole engine rests on Lean's three standard axioms.
 -/
-
-
-/-- **The Π₁ residue of σ₁-completeness.** A play that has no constructive `PlaysProof` certificate
-    (it branched on a *failed* proof search, requiring `¬ Provable k guard` — Π₁, non-positive) still
-    has an `AtomProvable` certificate at budget `atom_cost fuel`. Use `atom_complete` (theorem below)
-    at call sites.
-
-    **Load-bearing.** ≈5 false-guard plays route through this axiom — a `.search`-bot playing its
-    *else*-action, e.g. `PrudentBot plays D vs .bot DefectBot` (`prudence_self_prudent`), `JustBot
-    plays D vs .bot DefectBot`, `CupodTrollBot plays C vs DupocBot` — feeding real cross-bot outcomes.
-
-    **Decidable, not witness-free.** "No size-≤-k `PlaysProof` of the guard exists" is the negation
-    of a DECIDABLE predicate (`ppSize` / `Provable_fin`, `ComputableEval/PlaysCheck.lean`, computes
-    it soundly). The axiom postulates a decidable fact, not an oracle.
-
-    **Irreducible — two walls.** A `search_f` constructor producing the else-action would discharge
-    it, but: (WALL 1, positivity — liftable) `¬ Provable` is non-positive in-block, but a
-    `decide (Provable_fin k guard) = false` premise typechecks via the `Provable_fin` cycle-break;
-    (WALL 2, soundness — NOT liftable) `Provable_fin = false ⇏ proofSearch = false` at a Löb fixpoint:
-    `Provable_fin` (the `PlaysProof`-fragment decider) is false there while `proofSearch`/`Provable`
-    is TRUE — the fixpoint cooperations are DERIVED (since 2026-07-01 via `bloeb_engine`'s `.diag`
-    route, real constructor trees rather than the former `PBLT` axiom, but still not `PlaysProof`
-    certificates) — and `eval` can't be rewired to `Provable_fin` (the Löb cooperations need
-    `proofSearch = true` at the fixpoint). So the sound premise is the non-positive Π₁
-    `¬ Provable k guard`. Deepest: the else-play's certificate type is provably EMPTY — no
-    `Derivation`/`PlaysProof`/`Provable` concludes it (`ComputableEval/Exclusion.lean`, `[propext]`;
-    the exclusion recs cover the `.diag` rules too). So the axiom postulates a true `interp` whose
-    proof TERM does not exist (the proof-vs-witness gap), entangled with the Löb fixpoints.
-
-    Spikes: `Research/Spikes/atom_complete_false_guard/`.
-
-    ⚠️⚠️ **INCONSISTENT — machine-checked (2026-07-02).** The anti-diagonal bot
-    `G := .search 100 (.plays .self .self .D) (.const .C) (.const .D)` refutes this axiom:
-    its else-certificate is injected at `atom_cost 2 = 7`, which `atom_monotone` lifts back
-    above the guard budget it refutes, flipping the guard — both guard values yield `False`
-    (`Research/Spikes/transcript/T32Inconsistency.lean`, `engine_inconsistent : False`).
-    Every result whose `#print axioms` lists this axiom is VACUOUS until it is repaired.
-    Root cause: the injection budget depends only on FUEL and can sit below the refuted
-    guard's own search budget. Repair direction (DECIDABILITY_ROADMAP.md T3.2): the CHARGED
-    atom model — else-certificates must exceed the guard budget they refute. -/
-axiom atom_complete_false_guard :
-  ∀ p q a fuel, play fuel p q = some a →
-    ¬ (∃ _ : PlaysProof p q p a (atom_cost fuel), True) →
-    AtomProvable (atom_cost fuel) (.plays p q a)
 
 -- (The removed axioms `box_provable`, `boxInternalize`, `atom_box_provable_impl`, `c_guard_mono` and
 --  where their content now lives are summarized in the module header above. The two live axioms

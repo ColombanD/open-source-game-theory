@@ -36,7 +36,7 @@ theorem proofSearch_false_for_DefectBot (k : Nat) :
 theorem proofSearch_true_for_CooperateBot :
     ∃ k, proofSearch k (.plays CooperateBot (DupocBot k) .C) = true :=
   let k := atom_cost 1
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom (atom_complete CooperateBot (DupocBot k) .C 1 rfl))⟩
+  ⟨k, (proofSearch_spec _ _).2 (Provable.atom ⟨PlaysProof.const, by decide⟩)⟩
 
 
 /-- DupocBot vs DefectBot: uses proof search being false -/
@@ -110,29 +110,16 @@ theorem DBot_plays_C_against_DupocBot (k fuel : Nat) :
     (by rfl) hGuard
   simpa [eval] using hPlay
 
-/-- Proof search is true for DBot vs DupocBot k at budget
-    `atom_cost 4`. -/
-theorem proofSearch_true_for_DBot :
-    ∃ k, proofSearch k (.plays DBot (DupocBot k) .C) = true :=
-  let k := atom_cost 4
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom (atom_complete DBot (DupocBot k) .C 4
-        (by simpa using DBot_plays_C_against_DupocBot k 0)))⟩
+/-! ### DupocBot vs DBot — RETIRED (2026-07-02, the false-guard repair).
 
-/-- DupocBot vs DBot: mutual cooperation. DupocBot's search succeeds (DBot does
-    cooperate against it), and DBot's probe sees DupocBot defect against
-    DefectBot, so DBot cooperates. -/
-theorem DupocBot_vs_DBot (fuel : Nat) :
-    ∃ k, outcome (fuel + 4) (DupocBot k) DBot = some (.C, .C) := by
-  obtain ⟨k, hk⟩ := proofSearch_true_for_DBot
-  refine ⟨k, ?_⟩
-  have hA : play (fuel + 4) (DupocBot k) DBot = some .C := by
-    show eval (fuel + 4) (DupocBot k) DBot (DupocBot k) = some .C
-    unfold DupocBot at hk ⊢
-    simp [eval, Prog.subst, Formula.subst, hk]
-  have hB : play (fuel + 4) DBot (DupocBot k) = some .C :=
-    DBot_plays_C_against_DupocBot k fuel
-  exact outcome_of_plays _ _ _ _ _ hA hB
-
+The former `proofSearch_true_for_DBot`/`DupocBot_vs_DBot` (mutual cooperation at a common
+budget) were ARTIFACTS of the inconsistent `atom_complete_false_guard` axiom. Honestly:
+DBot's play against `DupocBot k` crosses Dupoc's FAILED search (the probe vs `.bot
+DefectBot`), so its certificate pays the `search_f` floor — cost > k for EVERY k — and
+`DupocBot k` can never prove "DBot plays C vs me" within its own budget. The consistent
+outcome is defection on Dupoc's side (Critch-faithful: proving one's own bounded search
+fails takes more than the search budget itself). The honest `(D, C)` outcome theorem is
+future work (needs the ¬Provable side, an Exclusion-style argument). -/
 
 -- OBot --
 
@@ -234,8 +221,7 @@ theorem DupocBot_plays_D_against_OBot (k fuel : Nat)
 theorem proofSearch_true_for_bot_CooperateBot :
     ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
   let k := atom_cost 2
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot CooperateBot) (DupocBot k) .C 2
-        (by simpa using play_bot_CooperateBot 0 (DupocBot k))))⟩
+  ⟨k, (proofSearch_spec _ _).2 (Provable.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
 
 /-- DupocBot vs OBot: mutual defection. -/
 theorem DupocBot_vs_OBot (fuel : Nat) :
@@ -276,16 +262,17 @@ theorem TitForTatBot_plays_C_against_DupocBot (k fuel : Nat)
     can cooperate at fuel 4, then bounded completeness gives the TFT budget. -/
 theorem proofSearch_true_for_TitForTatBot :
     ∃ k, proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true := by
-  let kCB := atom_cost 2
   let kTFT := atom_cost 4
-  have hCB : proofSearch kTFT (.plays (.bot CooperateBot) (DupocBot kTFT) .C) = true :=
-    proofSearch_monotone kCB kTFT _
-      (atom_cost_mono (by omega))
-      ((proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot CooperateBot) (DupocBot kTFT) .C 2
-        (by simpa using play_bot_CooperateBot 0 (DupocBot kTFT)))))
-  have hPlay : play 4 TitForTatBot (DupocBot kTFT) = some .C := by
-    simpa using TitForTatBot_plays_C_against_DupocBot kTFT 0 hCB
-  exact ⟨kTFT, (proofSearch_spec _ _).2 (Provable.atom (atom_complete TitForTatBot (DupocBot kTFT) .C 4 hPlay))⟩
+  -- Dupoc's guard vs `.bot CooperateBot` FIRES; TFT's certificate is built by hand:
+  -- ite_t over the probe (sim → Dupoc's fired search_t) then the cooperate leaf.
+  have hCBprov : Provable kTFT (.plays (.bot CooperateBot) (DupocBot kTFT) .C) :=
+    Provable.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩
+  refine ⟨kTFT, (proofSearch_spec _ _).2 (Provable.atom
+    (⟨PlaysProof.ite_t (PlaysProof.sim (PlaysProof.search_t hCBprov PlaysProof.const))
+      rfl PlaysProof.const, ?_⟩ :
+      AtomProvable kTFT (.plays TitForTatBot (DupocBot kTFT) .C)))⟩
+  show c_leaf + c_guard kTFT + c_node + c_node + c_leaf + c_node ≤ kTFT
+  decide
 
 /-- DupocBot cooperates with TFT once its search for "TFT plays C" succeeds. -/
 theorem DupocBot_plays_C_against_TitForTatBot (k fuel : Nat)
@@ -299,17 +286,18 @@ theorem DupocBot_plays_C_against_TitForTatBot (k fuel : Nat)
     budget `atom_cost 4`. -/
 theorem DupocBot_vs_TitForTatBot (fuel : Nat) :
     ∃ k, outcome (fuel + 4) (DupocBot k) TitForTatBot = some (.C, .C) := by
-  let kCB := atom_cost 2
   let kTFT := atom_cost 4
+  have hCBprov : Provable kTFT (.plays (.bot CooperateBot) (DupocBot kTFT) .C) :=
+    Provable.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩
   have hkCB : proofSearch kTFT (.plays (.bot CooperateBot) (DupocBot kTFT) .C) = true :=
-    proofSearch_monotone kCB kTFT _
-      (atom_cost_mono (by omega))
-      ((proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot CooperateBot) (DupocBot kTFT) .C 2
-        (by simpa using play_bot_CooperateBot 0 (DupocBot kTFT)))))
+    (proofSearch_spec _ _).2 hCBprov
   have hkTFT : proofSearch kTFT (.plays TitForTatBot (DupocBot kTFT) .C) = true := by
-    have hPlay : play 4 TitForTatBot (DupocBot kTFT) = some .C := by
-      simpa using TitForTatBot_plays_C_against_DupocBot kTFT 0 hkCB
-    exact (proofSearch_spec _ _).2 (Provable.atom (atom_complete TitForTatBot (DupocBot kTFT) .C 4 hPlay))
+    refine (proofSearch_spec _ _).2 (Provable.atom
+      (⟨PlaysProof.ite_t (PlaysProof.sim (PlaysProof.search_t hCBprov PlaysProof.const))
+        rfl PlaysProof.const, ?_⟩ :
+        AtomProvable kTFT (.plays TitForTatBot (DupocBot kTFT) .C)))
+    show c_leaf + c_guard kTFT + c_node + c_node + c_leaf + c_node ≤ kTFT
+    decide
   refine ⟨kTFT, ?_⟩
   have hA : play (fuel + 4) (DupocBot kTFT) TitForTatBot = some .C := by
     simpa [Nat.add_assoc] using DupocBot_plays_C_against_TitForTatBot kTFT (fuel + 2) hkTFT
@@ -358,21 +346,12 @@ theorem EBot_plays_C_against_DupocBot (k fuel : Nat)
     (by rfl) hGuard1
   simpa [Nat.add_assoc, hInner] using hPlay
 
-/-- Proof search k is true for EBot vs DupocBot k. The `.bot CooperateBot` guard
-    fires at fuel 2 (budget `atom_cost 2`); lifted
-    to `atom_cost 5` so EBot can play at fuel 5. -/
-theorem proofSearch_true_for_EBot :
-    ∃ k, proofSearch k (.plays EBot (DupocBot k) .C) = true := by
-  let kCB := atom_cost 2
-  let kEBot := atom_cost 5
-  have hCB : proofSearch kEBot (.plays (.bot CooperateBot) (DupocBot kEBot) .C) = true :=
-    proofSearch_monotone kCB kEBot _
-      (atom_cost_mono (by omega))
-      ((proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot CooperateBot) (DupocBot kEBot) .C 2
-        (by simpa using play_bot_CooperateBot 0 (DupocBot kEBot)))))
-  have hPlay : play 5 EBot (DupocBot kEBot) = some .C := by
-    simpa using EBot_plays_C_against_DupocBot kEBot 0 hCB
-  exact ⟨kEBot, (proofSearch_spec _ _).2 (Provable.atom (atom_complete EBot (DupocBot kEBot) .C 5 hPlay))⟩
+/-! ### `proofSearch_true_for_EBot` — RETIRED (2026-07-02, the false-guard repair).
+
+An axiom artifact: EBot's play against `DupocBot k` crosses Dupoc's FAILED search (the
+outer probe vs `.bot DefectBot`), so its certificate pays the `search_f` floor — cost > k
+for every k. `DupocBot k` can never prove "EBot plays C vs me" within its own budget; see
+the DBot tombstone above. -/
 
 /-- DupocBot cooperates with EBot once its search for "EBot plays C" succeeds. -/
 theorem DupocBot_plays_C_against_EBot (k fuel : Nat)
@@ -382,27 +361,7 @@ theorem DupocBot_plays_C_against_EBot (k fuel : Nat)
   unfold DupocBot at hk ⊢
   simp [eval, Prog.subst, Formula.subst, hk]
 
-/-- DupocBot vs EBot: mutual cooperation. Both witnesses at common budget
-    `atom_cost 5`. -/
-theorem DupocBot_vs_EBot (fuel : Nat) :
-    ∃ k, outcome (fuel + 5) (DupocBot k) EBot = some (.C, .C) := by
-  let kCB := atom_cost 2
-  let kEBot := atom_cost 5
-  have hkCB : proofSearch kEBot (.plays (.bot CooperateBot) (DupocBot kEBot) .C) = true :=
-    proofSearch_monotone kCB kEBot _
-      (atom_cost_mono (by omega))
-      ((proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot CooperateBot) (DupocBot kEBot) .C 2
-        (by simpa using play_bot_CooperateBot 0 (DupocBot kEBot)))))
-  have hkEBot : proofSearch kEBot (.plays EBot (DupocBot kEBot) .C) = true := by
-    have hPlay : play 5 EBot (DupocBot kEBot) = some .C := by
-      simpa using EBot_plays_C_against_DupocBot kEBot 0 hkCB
-    exact (proofSearch_spec _ _).2 (Provable.atom (atom_complete EBot (DupocBot kEBot) .C 5 hPlay))
-  refine ⟨kEBot, ?_⟩
-  have hA : play (fuel + 5) (DupocBot kEBot) EBot = some .C := by
-    simpa [Nat.add_assoc] using DupocBot_plays_C_against_EBot kEBot (fuel + 3) hkEBot
-  have hB : play (fuel + 5) EBot (DupocBot kEBot) = some .C :=
-    EBot_plays_C_against_DupocBot kEBot fuel hkCB
-  exact outcome_of_plays _ _ _ _ _ hA hB
+/-! ### `DupocBot_vs_EBot` — RETIRED (2026-07-02): see the tombstones above. -/
 
 
 -- DupocBot --

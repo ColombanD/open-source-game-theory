@@ -25,18 +25,127 @@ theorem atom_cost_mono {a b : Nat} (h : a ≤ b) : atom_cost a ≤ atom_cost b :
   exact Nat.add_le_add_left
     (Nat.mul_le_mul (Nat.add_le_add_left (c_guard_mono h) _) h) _
 
-/-- σ₁-completeness for atoms: every `fuel`-step play has an `AtomProvable`
-    certificate at budget `atom_cost fuel`. Constructive when a `PlaysProof`
-    exists; falls back to `atom_complete_false_guard` otherwise.
-    This means that if p plays a against q within fuel steps,
-    then S can prove that fact within the budget -/
-theorem atom_complete :
-    ∀ p q a fuel, play fuel p q = some a →
-      AtomProvable (atom_cost fuel) (.plays p q a) := by
-  intro p q a fuel h
-  by_cases hc : ∃ _ : PlaysProof p q p a (atom_cost fuel), True
-  · obtain ⟨cert, _⟩ := hc; exact .mk cert (Nat.le_refl _)
-  · exact atom_complete_false_guard p q a fuel h hc
+/-! ## Atom certificates, constructively — the deleted `atom_complete`'s SOUND survivors.
+
+The old `atom_complete` (`play fuel p q = some a → AtomProvable (atom_cost fuel) …`) is GONE
+with its axiom: it was FALSE — an else-play of a failed search has certificates only ABOVE the
+failed budget (the `search_f` floor), and an anti-diagonal else-play has none at all
+(`T32Inconsistency.lean`). What survives, constructively:
+  * SEARCH-FREE runs certify at `3 ^ fuel` (`atom_complete_searchfree` — the honest bound;
+    the old `atom_cost fuel` never actually bounded branching runs, the axiom silently
+    covered the gap);
+  * FIRED top-level searches certify at `log2 k + 3` via `search_t` (`atom_search_t_top` /
+    `…_bot_top`) — cheap, since `search_t` cites the oracle rather than embedding the proof;
+  * FAILED top-level searches certify at `m + k + 2` via `search_f` (`atom_search_f_top` /
+    `…_bot_top`) given a refutation of the guard (`Provable.atomNeg`) — the floor `≥ k + 1`
+    is what consistency forces. Deeper runs compose these per site. -/
+
+theorem cert_searchfree : ∀ (fuel : Nat) (me oppo body : Prog) (a : Action),
+    me.hasSearch = false → oppo.hasSearch = false → body.hasSearch = false →
+    eval fuel me oppo body = some a →
+    ∃ n, PlaysProof me oppo body a n ∧ n ≤ 3 ^ fuel := by
+  intro fuel
+  induction fuel with
+  | zero => intro me oppo body a _ _ _ h; simp [eval] at h
+  | succ f ih =>
+    intro me oppo body a hme ho hb h
+    have h3 : 1 ≤ 3 ^ f := Nat.one_le_pow _ _ (by norm_num)
+    have hpow : 3 ^ (f+1) = 3 ^ f + 3 ^ f + 3 ^ f := by rw [pow_succ]; ring
+    have hcn : c_node = 1 := rfl
+    cases body with
+    | const c =>
+        rw [eval] at h
+        injection h with h'
+        subst h'
+        exact ⟨c_leaf, .const, by have : c_leaf = 1 := rfl; omega⟩
+    | self =>
+        rw [eval] at h
+        obtain ⟨n, cert, hn⟩ := ih me oppo me a hme ho hme h
+        exact ⟨n + c_node, .self cert, by omega⟩
+    | opp =>
+        rw [eval] at h
+        obtain ⟨n, cert, hn⟩ := ih me oppo oppo a hme ho ho h
+        exact ⟨n + c_node, .opp cert, by omega⟩
+    | bot p =>
+        rw [eval] at h
+        have hp : p.hasSearch = false := by simpa [Prog.hasSearch] using hb
+        obtain ⟨n, cert, hn⟩ := ih me oppo p a hme ho hp h
+        exact ⟨n + c_node, .bot cert, by omega⟩
+    | sim p q =>
+        simp only [eval] at h
+        simp only [Prog.hasSearch, Bool.or_eq_false_iff] at hb
+        have hp' := Prog.hasSearch_subst p me oppo hb.1 hme ho
+        have hq' := Prog.hasSearch_subst q me oppo hb.2 hme ho
+        obtain ⟨n, cert, hn⟩ := ih _ _ _ a hp' hq' hp' h
+        exact ⟨n + c_node, .sim cert, by omega⟩
+    | ite b ac p q =>
+        rw [eval] at h
+        cases hg : eval f me oppo b with
+        | none => rw [hg] at h; simp [bind, Option.bind] at h
+        | some r =>
+            rw [hg] at h
+            simp only [bind, Option.bind] at h
+            simp only [Prog.hasSearch, Bool.or_eq_false_iff] at hb
+            obtain ⟨n₁, cert₁, hn₁⟩ := ih me oppo b r hme ho hb.1.1 hg
+            by_cases hr : (r == ac) = true
+            · rw [if_pos hr] at h
+              obtain ⟨n₂, cert₂, hn₂⟩ := ih me oppo p a hme ho hb.1.2 h
+              exact ⟨n₁ + n₂ + c_node, .ite_t cert₁ hr cert₂, by omega⟩
+            · rw [if_neg hr] at h
+              obtain ⟨n₂, cert₂, hn₂⟩ := ih me oppo q a hme ho hb.2 h
+              have hrf : (r == ac) = false := by simpa using hr
+              exact ⟨n₁ + n₂ + c_node, .ite_f cert₁ hrf cert₂, by omega⟩
+    | search k g p q => simp [Prog.hasSearch] at hb
+
+/-- Σ₁-completeness for SEARCH-FREE atoms — the constructive fragment of the deleted
+    `atom_complete`, at the honest bound `3 ^ fuel`. -/
+theorem atom_complete_searchfree (p q : Prog) (a : Action) (fuel : Nat)
+    (hp : p.hasSearch = false) (hq : q.hasSearch = false)
+    (h : play fuel p q = some a) : AtomProvable (3 ^ fuel) (.plays p q a) := by
+  obtain ⟨n, cert, hn⟩ := cert_searchfree fuel p q p a hp hq hp h
+  exact ⟨cert, hn⟩
+
+/-- FIRED top-level search (the Dupoc/Cupod shape): the guard's provability at its own
+    literal certifies the then-play at `log2 k + 3` characters. -/
+theorem atom_search_t_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
+    (hg : Provable k (g.subst (.search k g (.const aT) (.const aE)) oppo)) :
+    AtomProvable (Nat.log2 k + 3)
+      (.plays (.search k g (.const aT) (.const aE)) oppo aT) := by
+  refine ⟨PlaysProof.search_t hg PlaysProof.const, ?_⟩
+  show c_leaf + c_guard k + c_node ≤ Nat.log2 k + 3
+  simp only [c_leaf, c_guard, c_node]
+  omega
+
+/-- FIRED `.bot`-wrapped top-level search (the `.bot DupocBot` shape). -/
+theorem atom_search_t_bot_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
+    (hg : Provable k (g.subst (.bot (.search k g (.const aT) (.const aE))) oppo)) :
+    AtomProvable (Nat.log2 k + 4)
+      (.plays (.bot (.search k g (.const aT) (.const aE))) oppo aT) := by
+  refine ⟨PlaysProof.bot (PlaysProof.search_t hg PlaysProof.const), ?_⟩
+  show c_leaf + c_guard k + c_node + c_node ≤ Nat.log2 k + 4
+  simp only [c_leaf, c_guard, c_node]
+  omega
+
+/-- FAILED top-level search: a refutation of the guard certifies the else-play — at the
+    FLOOR `≥ k + 1` (the cost pays the whole failed budget; consistency forces this). -/
+theorem atom_search_f_top (k m : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
+    (hneg : Provable m (.neg (g.subst (.search k g (.const aT) (.const aE)) oppo))) :
+    AtomProvable (m + k + 2)
+      (.plays (.search k g (.const aT) (.const aE)) oppo aE) := by
+  refine ⟨PlaysProof.search_f hneg PlaysProof.const, ?_⟩
+  show c_leaf + m + k + c_node ≤ m + k + 2
+  simp only [c_leaf, c_node]
+  omega
+
+/-- FAILED `.bot`-wrapped top-level search. -/
+theorem atom_search_f_bot_top (k m : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
+    (hneg : Provable m (.neg (g.subst (.bot (.search k g (.const aT) (.const aE))) oppo))) :
+    AtomProvable (m + k + 3)
+      (.plays (.bot (.search k g (.const aT) (.const aE))) oppo aE) := by
+  refine ⟨PlaysProof.bot (PlaysProof.search_f hneg PlaysProof.const), ?_⟩
+  show c_leaf + m + k + c_node + c_node ≤ m + k + 3
+  simp only [c_leaf, c_node]
+  omega
 
 /-- The bridge `proofSearch ↔ Provable` is now a theorem, not an axiom. -/
 theorem proofSearch_spec (k : Nat) (φ : Formula) :
@@ -138,6 +247,9 @@ theorem _root_.PD.Derivation.sound : ∀ {φ}, Derivation φ → φ.interp := by
   | eqRefl p =>
       -- `.eq p p` interprets as `p = p`, which is `rfl`.
       rfl
+  | eqNeg p q hne =>
+      -- `.neg (.eq p q)` interprets as `¬(p = q)` — exactly the syntactic distinctness.
+      exact hne
 
 /-- A derivation of size `m` witnesses `proofSearch m φ = true` (structural
     disjunct of `Provable`). -/
@@ -533,13 +645,15 @@ theorem proofSearch_sound :
   ∀ k φ, proofSearch k φ = true → φ.interp :=
   fun k φ hk => Provable_sound k φ ((proofSearch_spec k φ).1 hk)
 
-/-- Completeness of bounded proof search for atomic plays-formulas: a play within
-    `fuel` steps is provable within budget `atom_cost fuel`. -/
+/-- Completeness of bounded proof search for SEARCH-FREE plays-atoms (the constructive
+    fragment; the unrestricted form fell with the inconsistent axiom — a failed-search
+    else-play is provable only above its floor, an anti-diagonal one not at all). -/
 theorem proofSearch_complete_plays :
-∀ p q a, (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
-  intro p q a ⟨n, hn⟩
-  exact ⟨atom_cost n,
-    (proofSearch_spec _ (.plays p q a)).2 (Provable.atom (atom_complete p q a n hn))⟩
+    ∀ p q a, p.hasSearch = false → q.hasSearch = false →
+      (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
+  intro p q a hp hq ⟨n, hn⟩
+  exact ⟨3 ^ n, (proofSearch_spec _ (.plays p q a)).2
+    (Provable.atom (atom_complete_searchfree p q a n hp hq hn))⟩
 
 -- Monotonicity in proof-search budget: the Bool reflection of `Provable_mono`
 -- (which see — every rule self-weakens in its output budget under transcript cost).
@@ -562,25 +676,22 @@ theorem box_provable (k : Nat) (φ : Formula) (h : Provable k φ) :
 /-- **Object-level bounded Σ₁-completeness for play-atoms** (the conditional, kernel-checked
     THEOREM). When the play actually happens within `fuel` steps AND the budget `k` fits a
     certificate (`atom_cost fuel ≤ k`), the object implication `(p plays a vs q) → □_k (p plays a vs q)`
-    is provable at `k`. Built from `atom_complete` + `atom_monotone` (→ `Provable k atom`),
-    `box_provable` (→ `Provable K (□_k atom)`), and `weakenImpl` (→ the implication).
-
-    The threshold `atom_cost fuel ≤ k` keeps it on the sound Σ₁ side: bounded Σ₁-completeness, NOT the
-    GL-excluded converse-necessitation `φ → □φ`. (Historical note: the witness-free form was once the
-    axiom `atom_box_provable_impl`, removed as unsound; this conditional theorem and the `atomBoxImpl`
-    constructor are its sound content.) -/
-theorem atom_box_provable_impl_sound (k fuel K : Nat) (p q : Prog) (a : Action)
-    (hplay : play fuel p q = some a) (hk : atom_cost fuel ≤ k)
+    is provable at `K`. Built from the certificate (→ `Provable k atom`),
+    `boxIntro` (→ the box), and `weakenImpl` (→ the implication). The CERTIFICATE premise
+    keeps it on the sound Σ₁ side: bounded Σ₁-completeness, NOT the GL-excluded
+    converse-necessitation `φ → □φ`. (Historical note: the witness-free form was once the
+    axiom `atom_box_provable_impl`, removed as unsound; this conditional theorem and the
+    `atomBoxImpl` constructor are its sound content.) -/
+theorem atom_box_provable_impl_sound (k K : Nat) (p q : Prog) (a : Action)
+    (hatom : AtomProvable k (.plays p q a))
     (hK : k + (Formula.box k (.plays p q a)).size
           + (Formula.impl (.plays p q a) (.box k (.plays p q a))).size ≤ K) :
     Provable K (.impl (.plays p q a) (.box k (.plays p q a))) := by
   -- Under transcript cost the conclusion can no longer live at the box's own budget `k`
   -- (the implication's proof CONTAINS the box proof, which contains the `k`-certificate);
   -- the output budget `K` pays certificate + box + conclusion.
-  have hatom : Provable k (.plays p q a) :=
-    Provable.atom (atom_monotone (atom_cost fuel) k _ hk (atom_complete p q a fuel hplay))
   have hbox : Provable (k + (Formula.box k (.plays p q a)).size) (.box k (.plays p q a)) :=
-    Provable.boxIntro k _ _ hatom (Nat.le_refl _)
+    Provable.boxIntro k _ _ (Provable.atom hatom) (Nat.le_refl _)
   exact Provable.weakenImpl (.plays p q a) (.box k (.plays p q a)) _ hbox hK
 
 /-- `Nat.log2` is monotone (companion to `c_guard_mono`; used by the `pblt_engine`

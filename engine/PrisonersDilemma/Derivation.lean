@@ -179,6 +179,12 @@ inductive Derivation : Formula → Type where
   /-- S can verify structural identity by reflexivity: any program equals itself. -/
   | eqRefl (p : Prog) :
       Derivation (.eq p p)
+  /-- S can REFUTE structural identity of syntactically distinct programs: `¬(p = q)` for
+      `p ≠ q` — the Σ₁ counterpart of `eqRefl` (source-string comparison is decidable for S).
+      NEW with the false-guard repair (2026-07-02): feeds `search_f` for failed `.eq` guards
+      (CupodTrollBot's recognition guard against a non-Cupod opponent). -/
+  | eqNeg (p q : Prog) (hne : p ≠ q) :
+      Derivation (.neg (.eq p q))
 
 /-- **Proof "size" = the character count of the WHOLE TRANSCRIPT** (cumulative over the
     proof tree). This is Critch's literal character-cost model (Appendix B): `proofSearch k φ`

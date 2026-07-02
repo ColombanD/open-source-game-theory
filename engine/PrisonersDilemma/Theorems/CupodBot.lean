@@ -61,7 +61,7 @@ theorem CupodBot_vs_CooperateBot (k fuel : Nat):
 theorem proofSearch_true_for_DefectBot :
     ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
   let k := atom_cost 1
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom (atom_complete DefectBot (CupodBot k) .D 1 rfl))⟩
+  ⟨k, (proofSearch_spec _ _).2 (Provable.atom ⟨PlaysProof.const, by decide⟩)⟩
 
 /-- CupodBot vs DefectBot: uses proof search being true -/
 theorem CupodBot_vs_DefectBot (fuel : Nat):
@@ -223,7 +223,7 @@ theorem CupodBot_vs_TitForTatBot (fuel : Nat):
 theorem proofSearch_true_for_bot_DefectBot :
     ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
   let k := atom_cost 2
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot DefectBot) (CupodBot k) .D 2 rfl))⟩
+  ⟨k, (proofSearch_spec _ _).2 (Provable.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
 
 /-- CUPOD defects against `.bot DefectBot` once its search guard succeeds. -/
 theorem CupodBot_plays_D_against_bot_DefectBot (k fuel : Nat)
@@ -335,23 +335,12 @@ theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
         Action.C Action.D hGuard2)
   simpa [hInner] using hPlay
 
-theorem proofSearch_true_for_OBot :
-    ∃ k, proofSearch k (.plays OBot (CupodBot k) .D) = true := by
-  -- Working budget/index k = atom_cost 5.
-  refine ⟨atom_cost 5, ?_⟩
-  -- Step 1: lift the .bot DefectBot atom from fuel-2 budget to working budget.
-  have hkDefect : proofSearch (atom_cost 5)
-      (.plays (.bot DefectBot) (CupodBot (atom_cost 5)) .D) = true :=
-    proofSearch_monotone (atom_cost 2) _ _
-      (atom_cost_mono (by omega))
-      ((proofSearch_spec _ _).2 (Provable.atom
-        (atom_complete (.bot DefectBot) (CupodBot (atom_cost 5)) .D 2 rfl)))
-  -- Step 2: OBot defects vs CupodBot k at fuel 5.
-  have hobot : play 5 OBot (CupodBot (atom_cost 5)) = some .D := by
-    simpa using OBot_plays_D_against_CupodBot (atom_cost 5) 0 hkDefect
-  -- Step 3: atom_complete at fuel 5 gives the working budget exactly.
-  exact (proofSearch_spec _ _).2 (Provable.atom
-    (atom_complete OBot (CupodBot (atom_cost 5)) .D 5 hobot))
+/-! ### `proofSearch_true_for_OBot` — RETIRED (2026-07-02, the false-guard repair).
+
+An axiom artifact: OBot's play against `CupodBot k` crosses Cupod's FAILED search (the
+first probe vs `.bot CooperateBot` — "botCoop plays D" is false), so its certificate pays
+the `search_f` floor: cost > k for every k, and `CupodBot k` can never prove "OBot plays D
+vs me" within its own budget. See the DBot tombstone in `Theorems/DupocBot.lean`. -/
 
 theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
     (hk : proofSearch k (.plays OBot (CupodBot k) .D) = true) :
@@ -360,29 +349,7 @@ theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
   unfold CupodBot at hk ⊢
   simp [eval, Prog.subst, Formula.subst, hk]
 
-/-- CupodBot vs OBot: mutual defection. -/
-theorem CupodBot_vs_OBot (fuel : Nat) :
-    ∃ k, outcome (fuel + 5) (CupodBot k) OBot = some (.D, .D) := by
-  -- Working budget/index k = atom_cost 5.
-  let k := atom_cost 5
-  have hkDefect : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
-    proofSearch_monotone (atom_cost 2) k _
-      (atom_cost_mono (by omega))
-      ((proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot DefectBot) (CupodBot k) .D 2 rfl)))
-  have hkOBot : proofSearch k (.plays OBot (CupodBot k) .D) = true := by
-    have hobot : play 5 OBot (CupodBot k) = some .D := by
-      simpa using OBot_plays_D_against_CupodBot k 0 hkDefect
-    exact (proofSearch_spec _ _).2 (Provable.atom (atom_complete OBot (CupodBot k) .D 5 hobot))
-
-  refine ⟨k, ?_⟩
-
-  have hA : play (fuel + 5) (CupodBot k) OBot = some .D :=
-    CupodBot_plays_D_against_OBot fuel k hkOBot
-
-  have hB : play (fuel + 5) OBot (CupodBot k) = some .D :=
-    OBot_plays_D_against_CupodBot k fuel hkDefect
-
-  exact outcome_of_plays _ _ _ _ _ hA hB
+/-! ### `CupodBot_vs_OBot` — RETIRED (2026-07-02): see the tombstone above. -/
 
 
 -- EBot --

@@ -72,8 +72,14 @@ theorem no_cert : ¬ (∃ _ : PlaysProof G G G .D (atom_cost 2), True) := by
   -- (post-repair `no_pp_else` is cost-qualified; `atom_cost 2 = 7 ≤ 100` keeps this instance)
   exact PD.Exclusion.no_pp_else 100 (.plays .self .self .D) .C .D G (by decide) (by decide) cert
 
-/-- **The engine's axiom set proves `False`.** -/
-theorem engine_inconsistent : False := by
+/-- **The former axiom implies `False`** — stated hypothesis-relative since its deletion
+    (2026-07-02): the axiom's exact statement is now a hypothesis, and this theorem is the
+    machine-checked record of WHY it had to go. -/
+theorem engine_inconsistent
+    (atom_complete_false_guard :
+      ∀ p q a fuel, play fuel p q = some a →
+        ¬ (∃ _ : PlaysProof p q p a (atom_cost fuel), True) →
+        AtomProvable (atom_cost fuel) (.plays p q a)) : False := by
   by_cases hps : proofSearch 100 gAtom = true
   · -- guard true ⇒ Provable ⇒ sound ⇒ a real D-play exists ⇒ contradicts cooperate-branch
     have hprov : Provable 100 gAtom := (proofSearch_spec _ _).1 hps
@@ -86,7 +92,7 @@ theorem engine_inconsistent : False := by
       · exact absurd h hps
     have hplay : play 2 G G = some .D := D_play_of_false hps'
     have hatom : AtomProvable (atom_cost 2) gAtom :=
-      PD.Axioms.atom_complete_false_guard G G .D 2 hplay no_cert
+      atom_complete_false_guard G G .D 2 hplay no_cert
     have h7 : atom_cost 2 ≤ 100 := by decide
     have hprov : Provable 100 gAtom :=
       Provable.atom (atom_monotone (atom_cost 2) 100 gAtom h7 hatom)

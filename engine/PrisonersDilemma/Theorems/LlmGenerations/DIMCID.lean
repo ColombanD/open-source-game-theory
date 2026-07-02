@@ -54,8 +54,7 @@ the implication is provable whenever its consequent is.
     defects against DIMCID. -/
 theorem DIMCID_consequent_DefectBot (k : Nat) :
     Provable (atom_cost 1) (Formula.plays DefectBot (DIMCID k) Action.D) :=
-  Provable.atom (atom_complete DefectBot (DIMCID k) .D 1
-    (by simpa using play_DefectBot 0 (DIMCID k)))
+  Provable.atom ⟨PlaysProof.const, by decide⟩
 
 /-- DIMCID's guard against DefectBot is provable: `weakenImpl` turns the provable
     consequent into the implication, once `k` is large enough for the
@@ -155,6 +154,7 @@ theorem dimcid_no_deriv_forbidden (k : Nat) : ∀ {φ}, Derivation φ → ¬ Dim
   | iteBranchSearch_t _ _ _ _ _ _ _ _ _ hme => intro hF; subst hme; simp only [DimcidForbiddenD] at hF
                                                obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
   | eqRefl _ => intro hF; simp only [DimcidForbiddenD] at hF
+  | eqNeg _ _ _ => intro hF; simp only [DimcidForbiddenD] at hF
 
 theorem dimcid_no_provable_forbidden (k : Nat) :
     ∀ {m φ}, Provable m φ → ¬ DimcidForbiddenD k φ := by

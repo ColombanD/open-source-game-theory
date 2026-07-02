@@ -247,8 +247,33 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
       unsound axiom).
     * Search-free-probe results (PrudentBot×MirrorBot, Dupoc/Cupod self-play & vs
       const/sim bots) survive as-is (their prudence/probe facts have ordinary certificates).
-    DECISION NEEDED (results-level): which theorems to restate with staggered budgets vs.
-    which to add refutation-transparency rules for — affects the paper's headline results.
+    DECISION (Colomban, 2026-07-02): staggered budgets (recommendation).
+  - **T3.2a STEP 2 — ✅ SHIPPED (2026-07-03, build green): THE AXIOM IS DELETED — ZERO
+    PROJECT AXIOMS.** Every surviving theorem (`#print axioms`) rests on `[propext,
+    Classical.choice, Quot.sound]` only. What shipped:
+    * `Axioms.lean` declares NOTHING (historical record); `T32Inconsistency.lean` restated
+      hypothesis-relative (the machine-checked reason the axiom had to go).
+    * NEW `Derivation.eqNeg` (refute structural identity of distinct programs — feeds
+      `search_f` for failed `.eq` guards).
+    * `atom_complete` DELETED; replaced by the constructive toolkit
+      (`atom_complete_searchfree` at `3^fuel`; `atom_search_t_top`/`_bot_top` at
+      `log2 k + 3/4`; `atom_search_f_top`/`_bot_top` at the floor `m + k + 2/3`);
+      `proofSearch_complete_plays` search-free-qualified; `atom_box_provable_impl_sound`
+      takes the certificate; `decGuard`'s plays-true case restricted to the search-free
+      fragment at `3^(n+1)` (search-crossing commits await the full decider, T3.2c).
+    * SURVIVING (re-certified by hand where needed): Dupoc/Cupod self-play & vs
+      const/sim bots, Dupoc×TitForTat (hand `ite_t∘sim∘search_t` certificate!),
+      Dupoc×OBot (D,D), PrudentBot×MirrorBot & ×botMirror (search-free prudence, new
+      constants 27/81), CupodTroll×Cupod (fired `.eq`), **CupodTroll×Dupoc STAGGERED**
+      (`j`/`k` with `|neg(eq)| + j + 2 ≤ k` — the first staggered-budget theorem, via an
+      `eqNeg`+`search_f` certificate), JustBot self-play & ×TitForTat & ×Dupoc & ×OBot
+      (hand `search_t` certificates, `log2 k + 3 ≤ k` thresholds).
+    * RETIRED with tombstones (axiom artifacts, honestly unprovable at same-`k` — the
+      self-referential floor): Dupoc×{DBot, EBot}, Cupod×OBot, PrudentBot×{EBot, Dupoc,
+      SELF}, JustBot×{DBot, CupodTroll, EBot, PrudentBot}. PrudentBot's same-`k` prudence
+      is self-referentially impossible — rediscovering why MIRI's PrudentBot checks
+      prudence in PA+1. T3.2b = staggered restatements (two-budget mutual wrapper;
+      two-tier PrudentBot).
 - **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
   theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.

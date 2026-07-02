@@ -63,6 +63,7 @@ theorem no_deriv_else (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Prog) (hne
   | iteBranchSearch_t k2 z2 a2' c0 c1 ψ2 q2 me2 opp2 hme2 =>
       intro hF; subst hme2; simp only [Forbidden] at hF; obtain ⟨hm, _, _⟩ := hF; simp_all
   | eqRefl p2 => intro hF; simp only [Forbidden] at hF
+  | eqNeg p2 q2 hne2 => intro hF; simp only [Forbidden] at hF
 
 /-- The else-play has NO `Derivation` (bare-atom corollary of `no_deriv_else`). -/
 theorem isEmpty_deriv_else (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Prog) (hne : aT ≠ aE) :

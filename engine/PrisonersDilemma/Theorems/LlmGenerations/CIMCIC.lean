@@ -69,8 +69,7 @@ PA-like `S` always proves `ψ ⊢ φ → ψ`.
     enough budget: CooperateBot cooperates with CIMCIC. -/
 theorem CIMCIC_consequent_CooperateBot (k : Nat) :
     Provable (atom_cost 1) (Formula.plays CooperateBot (CIMCIC k) Action.C) :=
-  Provable.atom (atom_complete CooperateBot (CIMCIC k) .C 1
-    (by simpa using play_CooperateBot 0 (CIMCIC k)))
+  Provable.atom ⟨PlaysProof.const, by decide⟩
 
 /-- CIMCIC's guard against CooperateBot is provable: the `weakenImpl` rule turns
     the provable consequent into the implication, once the budget `k` is large
@@ -189,6 +188,7 @@ theorem cimcic_no_deriv_forbidden (k : Nat) : ∀ {φ}, Derivation φ → ¬ Cim
   | iteBranchSearch_t _ _ _ _ _ _ _ _ _ hme => intro hF; subst hme; simp only [CimcicForbiddenC] at hF
                                                obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
   | eqRefl _ => intro hF; simp only [CimcicForbiddenC] at hF
+  | eqNeg _ _ _ => intro hF; simp only [CimcicForbiddenC] at hF
 
 /-- No `Provable` concludes `.impl _ (false-consequent)` — covers `weakenImpl` + `implTrans` + the
     rest. By `Provable.rec`; the `atom` case bottoms out on `cimcic_consequent_not_provable`. -/

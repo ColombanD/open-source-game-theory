@@ -49,7 +49,19 @@
       "Bash(grep -nA6 \"theorem object_pblt_of_repr\" PrisonersDilemma/Reflection/Diagonal.lean)",
       "Bash(perl -0pi -e 's/\\\\| betaGamma _ n y => exact ProvesH\\\\.betaGamma _ n y/| betaGamma _ body y => exact ProvesH.betaGamma _ body y/g; s/\\\\| betaGamma Γ'\"'\"' n y => subst hΓ; exact ProvesH\\\\.mp \\\\\\(ProvesH\\\\.impK _ _ _\\\\\\) \\\\\\(ProvesH\\\\.betaGamma _ _ _\\\\\\)/| betaGamma Γ'\"'\"' body y => subst hΓ; exact ProvesH.mp \\(ProvesH.impK _ _ _\\) \\(ProvesH.betaGamma _ _ _\\)/g; s/\\\\| betaGamma _ n y => exact Proves\\\\.betaGamma n y/| betaGamma _ body y => exact Proves.betaGamma body y/g; s/\\\\| betaGamma n y => exact ProvesH\\\\.betaGamma _ n y/| betaGamma body y => exact ProvesH.betaGamma _ body y/g' PrisonersDilemma/Reflection/Deduction.lean)",
       "Bash(grep -nA4 \"searchBranch\" PrisonersDilemma/Derivation.lean)",
-      "Bash(awk '/theorem mutual_loeb /{f=1} f{print} /Provable.*implTrans|exact.*Provable|qed|^  ⟨/{if\\(f && ++c>40\\)exit}' PrisonersDilemma/BaseTheorems.lean)"
+      "Bash(awk '/theorem mutual_loeb /{f=1} f{print} /Provable.*implTrans|exact.*Provable|qed|^  ⟨/{if\\(f && ++c>40\\)exit}' PrisonersDilemma/BaseTheorems.lean)",
+      "Bash(git push *)",
+      "Bash(echo \"=== push exit: $? ===\")",
+      "Bash(git branch *)",
+      "Bash(grep -iE \":\\\\s*sorry|:= sorry| sorry$| sorry;| sorry \")",
+      "Bash(python3 -c ' *)",
+      "Bash(grep -rln \"provesn_extract_is_crux\\\\|Route 2b\\\\|computable-eval crux\" .)",
+      "Bash(head -20 project_computable_eval_routeii.md)",
+      "Bash(python3 -)",
+      "Bash(sed -i '' 's/\\\\[\\\\[project_provesn_extract_is_crux\\\\]\\\\]//' project_pblt_removal_plan.md)",
+      "Bash(sed -i '' 's/, \\\\.$/./' project_pblt_removal_plan.md)",
+      "Bash(mkdir -p \"/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/engine/PrisonersDilemma/Research/Spikes/transcript\")",
+      "Bash(cp \"/private/tmp/claude-501/-Users-colomband-Library-CloudStorage-OneDrive-Personal-Documents-Studies-ETH-Master-Thesis-workspace-open-source-game-theory/45e03dc3-6b3d-4188-b97e-57f9c3c1ed30/scratchpad/T0Transcript.lean\" \"/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/engine/PrisonersDilemma/Research/Spikes/transcript/T0Transcript.lean\")"
     ],
     "additionalDirectories": [
       "/tmp"

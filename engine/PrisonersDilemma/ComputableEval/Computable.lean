@@ -84,9 +84,12 @@ mutual
           match evalC (n+1) p q p with
           | some b =>
               if b = a then
-                -- plays `a`: fire `true` only if the witness fits budget `k`
-                if atom_cost (n+1) ≤ k then some true else none
-              else some false        -- plays `b ≠ a`: the atom is refuted
+                -- plays `a`: commit `true` only on the SEARCH-FREE fragment (post-repair:
+                -- the old `atom_cost` check leaned on the deleted-inconsistent axiom;
+                -- search-crossing certificates need the full decider, T3.2c) within budget
+                if p.hasSearch = false ∧ q.hasSearch = false ∧ 3 ^ (n+1) ≤ k
+                  then some true else none
+              else some false        -- plays `b ≠ a`: the atom is refuted (semantic)
           | none   => none
       | .impl φ' ψ    =>
           -- weakenImpl (true-consequent): consequent witnessed within the REDUCED budget
@@ -178,12 +181,12 @@ theorem evalC_eq_and_decGuard_sound :
               by_cases hba : b = a
               · subst hba
                 simp only [↓reduceIte] at h
-                by_cases hbud : atom_cost (n+1) ≤ k
-                · -- real play at fuel n+1 (via hE), in budget ⇒ Provable k ⇒ proofSearch k
+                by_cases hbud : p.hasSearch = false ∧ q.hasSearch = false ∧ 3 ^ (n+1) ≤ k
+                · -- real search-free play at fuel n+1 (via hE) ⇒ constructive certificate
                   have hplay : play (n+1) p q = some b := hE _ _ _ _ hpl
                   exact (proofSearch_spec k _).2
-                    (Provable.atom (atom_monotone (atom_cost (n+1)) k _ hbud
-                      (atom_complete p q b (n+1) hplay)))
+                    (Provable.atom (atom_monotone (3 ^ (n+1)) k _ hbud.2.2
+                      (atom_complete_searchfree p q b (n+1) hbud.1 hbud.2.1 hplay)))
                 · simp [hbud] at h
               · simp [hba] at h    -- decGuard = some false, contradicts = some true
       | impl φ' ψ =>
