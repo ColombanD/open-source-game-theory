@@ -1166,4 +1166,131 @@ theorem decProv_iff (O : Nat → Formula → Bool)
   ⟨fun h => decProv_complete O hOc h k le_rfl,
    fun ⟨f, hf⟩ => decProv_sound O hOs f k φ hf⟩
 
+/-! ## 7. THE ATOM SIDE — closing the knot (T3.2c part 2, milestone A).
+
+`decCertG D` searches for a play CERTIFICATE within a cost budget, parametrically in a guard
+decider `D` (consulted at `search_t`'s cited literal and for `search_f`'s refutations); the
+knot is tied by plain structural recursion — `decFull (f+1) = decProv (certOG (decFull f) f)
+(f+1)` — so `decFull` is a genuinely computable enumerator for the WHOLE system, atoms
+included, with NO oracle hypothesis. Soundness reuses `decProv_sound` wholesale. -/
+
+def decCertG (D : Nat → Formula → Bool) : Nat → Nat → Prog → Prog → Prog → Action → Bool
+  | 0, _, _, _, _, _ => false
+  | fuel+1, b, me, oppo, body, a =>
+    match body with
+    | .const c => decide (a = c) && decide (c_leaf ≤ b)
+    | .self => decide (c_node ≤ b) && decCertG D fuel (b - c_node) me oppo me a
+    | .opp => decide (c_node ≤ b) && decCertG D fuel (b - c_node) me oppo oppo a
+    | .bot p => decide (c_node ≤ b) && decCertG D fuel (b - c_node) me oppo p a
+    | .sim p q =>
+        decide (c_node ≤ b) &&
+        decCertG D fuel (b - c_node) (p.subst me oppo) (q.subst me oppo) (p.subst me oppo) a
+    | .ite g a' p q =>
+        decide (c_node ≤ b) &&
+        ((List.range (b+1)).any fun m =>
+          [Action.C, Action.D].any fun r =>
+            decide (m + c_node ≤ b) &&
+            decCertG D fuel m me oppo g r &&
+            (if r == a' then decCertG D fuel (b - m - c_node) me oppo p a
+             else decCertG D fuel (b - m - c_node) me oppo q a))
+    | .search kg g p q =>
+        (D kg (g.subst me oppo) && decide (c_guard kg + c_node ≤ b) &&
+           decCertG D fuel (b - c_guard kg - c_node) me oppo p a)
+        ||
+        ((List.range (b+1)).any fun m =>
+           D m (.neg (g.subst me oppo)) && decide (m + kg + c_node ≤ b) &&
+           decCertG D fuel (b - m - kg - c_node) me oppo q a)
+
+/-- The atom oracle induced by a guard decider: certificate search on plays-atoms. -/
+def certOG (D : Nat → Formula → Bool) (fuel : Nat) : Nat → Formula → Bool :=
+  fun k φ => match φ with
+    | .plays p q a => decCertG D fuel k p q p a
+    | _ => false
+
+/-- **The knot**: the full enumerator — logic via `decProv`, atoms via the certificate
+    search, each layer consulting the other one fuel lower. Computable, total. -/
+def decFull : Nat → Nat → Formula → Bool
+  | 0 => fun _ _ => false
+  | fuel+1 => decProv (certOG (decFull fuel) fuel) (fuel+1)
+
+/-! ### Soundness — every hit of the full enumerator is a real derivation. -/
+
+theorem decCertG_sound (D : Nat → Formula → Bool)
+    (hD : ∀ m ψ, D m ψ = true → Provable m ψ) :
+    ∀ fuel b me oppo body a, decCertG D fuel b me oppo body a = true →
+      ∃ n, PlaysProof me oppo body a n ∧ n ≤ b := by
+  intro fuel
+  induction fuel with
+  | zero => intro b me oppo body a h; simp [decCertG] at h
+  | succ f ih =>
+    intro b me oppo body a h
+    rw [decCertG.eq_def] at h
+    simp only [] at h
+    cases body with
+    | const c =>
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+        obtain ⟨rfl, hb⟩ := h
+        exact ⟨c_leaf, .const, hb⟩
+    | self =>
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+        obtain ⟨hb, hr⟩ := h
+        obtain ⟨n, cert, hn⟩ := ih _ _ _ _ _ hr
+        exact ⟨n + c_node, .self cert, by omega⟩
+    | opp =>
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+        obtain ⟨hb, hr⟩ := h
+        obtain ⟨n, cert, hn⟩ := ih _ _ _ _ _ hr
+        exact ⟨n + c_node, .opp cert, by omega⟩
+    | bot p =>
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+        obtain ⟨hb, hr⟩ := h
+        obtain ⟨n, cert, hn⟩ := ih _ _ _ _ _ hr
+        exact ⟨n + c_node, .bot cert, by omega⟩
+    | sim p q =>
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+        obtain ⟨hb, hr⟩ := h
+        obtain ⟨n, cert, hn⟩ := ih _ _ _ _ _ hr
+        exact ⟨n + c_node, .sim cert, by omega⟩
+    | ite g a' p q =>
+        simp only [Bool.and_eq_true, decide_eq_true_eq, List.any_eq_true,
+          List.mem_range] at h
+        obtain ⟨hb, m, hm, r, _, ⟨hmb, hg⟩, hbr⟩ := h
+        obtain ⟨n₁, cert₁, hn₁⟩ := ih _ _ _ _ _ hg
+        by_cases hr : (r == a') = true
+        · rw [if_pos hr] at hbr
+          obtain ⟨n₂, cert₂, hn₂⟩ := ih _ _ _ _ _ hbr
+          exact ⟨n₁ + n₂ + c_node, .ite_t cert₁ hr cert₂, by omega⟩
+        · rw [if_neg hr] at hbr
+          obtain ⟨n₂, cert₂, hn₂⟩ := ih _ _ _ _ _ hbr
+          have hrf : (r == a') = false := by simpa using hr
+          exact ⟨n₁ + n₂ + c_node, .ite_f cert₁ hrf cert₂, by omega⟩
+    | search kg g p q =>
+        simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq, List.any_eq_true,
+          List.mem_range] at h
+        rcases h with ⟨⟨hGuard, hcost⟩, hr⟩ | ⟨m, hm, ⟨hNeg, hcost⟩, hr⟩
+        · obtain ⟨n, cert, hn⟩ := ih _ _ _ _ _ hr
+          exact ⟨n + c_guard kg + c_node, .search_t (hD _ _ hGuard) cert, by omega⟩
+        · obtain ⟨n, cert, hn⟩ := ih _ _ _ _ _ hr
+          exact ⟨n + m + kg + c_node, .search_f (hD _ _ hNeg) cert, by omega⟩
+
+theorem certOG_sound (D : Nat → Formula → Bool)
+    (hD : ∀ m ψ, D m ψ = true → Provable m ψ) (fuel : Nat) :
+    OracleSound (certOG D fuel) := by
+  intro k φ h
+  unfold certOG at h
+  split at h
+  · rename_i p q a
+    obtain ⟨n, cert, hn⟩ := decCertG_sound D hD fuel k p q p a h
+    exact ⟨cert, hn⟩
+  · simp at h
+
+/-- **Soundness of the full enumerator** — three lines, riding `decProv_sound`. -/
+theorem decFull_sound : ∀ fuel k φ, decFull fuel k φ = true → Provable k φ := by
+  intro fuel
+  induction fuel with
+  | zero => intro k φ h; simp [decFull] at h
+  | succ f ih =>
+    intro k φ h
+    exact decProv_sound _ (certOG_sound _ (fun m ψ => ih m ψ) f) (f+1) k φ h
+
 end PD.T31
