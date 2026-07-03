@@ -455,6 +455,24 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     Remaining (part 2): the logic-side space (stratified size bound `Z(b)` over the gated
     base + `guardU` family + its `.neg`s), the 16-checker in-space closure + `stepB`
     congruence, and the countP stabilization ⇒ the fuel bound ⇒ `Decidable`.
+  - **T4.4c part 2a — ✅ SHIPPED (2026-07-03): the GLOBAL query universe.**
+    `Research/Spikes/transcript/T46LogicSpace.lean` (green, no sorry; on
+    `[propext, Quot.sound]`). KEY: the budget ceiling is NON-CIRCULAR — every read either
+    strictly decreases the budget or jumps to a guard cite at a LITERAL, and literals come
+    from the roots (`≤ L₀`) or `modestGate`-gated cut material (`≤ N`): `LU := max L₀ N`
+    bounds every jump, `R := max k₀ LU` every reachable budget. Shipped: the `maxLit` kit
+    (subterm + substitution monotonicity, mutual pairs, omega-driven — omega handles
+    `Nat.max` natively); **`allowedProgs`** (subterm closure of roots + `.self`/`.opp` +
+    every closed modest literal-gated program of size ≤ R — the cut-atom arguments) with
+    subterm-closure/modesty/literal lemmas; **`GF`** — the pair-indexed guard family
+    (T4.3's `guardU u v` glued over `allowedProgs²`), with `GF_args` (members' `.plays`
+    args are universe programs — so cert queries re-enter the space) and `GF_lit`;
+    globalized read interface: `certRead_budget` (every consultation at `≤ max b LU`) and
+    `certRead_mem_GF` (every consulted formula ∈ `GF` or its `.neg`). Remaining (part 2b,
+    the finale): the size-stratified formula space `SL` (`Z b := Z₀ + (R−b)·(R+2)` absorbs
+    cut-composite growth; `GF ∪ .neg GF` fits at every budget), the 16-checker closure +
+    `stepB` congruence, the countP stabilization ⇒ fuel bound `|SL|` ⇒
+    `Decidable (ProvableG (modestGate N) k φ)`.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
 
 **Total: ~7–10 weeks focused.** Risks ranked: (1) T0 subscript re-balance (killed cheaply if fatal);
