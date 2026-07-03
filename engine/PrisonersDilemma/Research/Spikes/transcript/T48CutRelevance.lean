@@ -520,4 +520,79 @@ theorem provable_impl_ant {m : Nat} {B C : Formula} (h : Provable m (.impl B C))
     PAnt B C ∨ ∃ m', m' ≤ m ∧ Provable m' C :=
   provable_posImpl_ant h .head
 
+/-! ## 6. C3a — shape lemmas and the box-inversion (the sibling-sourcing tools).
+
+The system has NO reflection rule, and `Derivation` cannot conclude a box — so box CONTENTS
+never become judgments. Box JUDGMENTS invert to exactly two sources: `boxIntro` (the content
+WAS a judgment) or `app` (the spine). These are the tools the C3 master induction uses to
+source the census holes (`axkPair`/`box4` pairs) from sibling judgments
+(CUT_RELEVANCE.md §5). -/
+
+/-- The formula's positive spine ends in a `.plays` atom. -/
+inductive EndsInPlays : Formula → Prop where
+  | plays {p q : Prog} {a : Action} : EndsInPlays (.plays p q a)
+  | impl {X C : Formula} : EndsInPlays C → EndsInPlays (.impl X C)
+
+/-- Every `Derivation`-derivable formula is a plays-ended implication chain or an
+    equality shape: the Type layer concludes NO boxes, diags, or negated atoms. -/
+theorem derivation_shape : ∀ {φ : Formula}, Derivation φ →
+    EndsInPlays φ ∨ (∃ p, φ = .eq p p) ∨ (∃ p q, φ = .neg (.eq p q)) := by
+  intro φ d
+  induction d with
+  | modusPonens φ' ψ d₁ d₂ ih₁ ih₂ =>
+      rcases ih₁ with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
+      · cases h with
+        | impl h' => exact Or.inl h'
+      · cases hp
+      · cases hp
+  | hypSyll φ' ψ' χ' d₁ d₂ ih₁ ih₂ =>
+      rcases ih₂ with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
+      · cases h with
+        | impl h' => exact Or.inl (.impl h')
+      · cases hp
+      · cases hp
+  | searchBranch k ψ a b me opponent hme => exact Or.inl (.impl .plays)
+  | simStep me p q opponent a hme => exact Or.inl (.impl .plays)
+  | botSimStep me p q opponent a hme => exact Or.inl (.impl .plays)
+  | botSearchStep k ψ a b me opponent hme => exact Or.inl (.impl .plays)
+  | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
+      exact Or.inl (.impl (.impl .plays))
+  | eqRefl p => exact Or.inr (Or.inl ⟨p, rfl⟩)
+  | eqNeg p q hne => exact Or.inr (Or.inr ⟨p, q, rfl⟩)
+
+/-- The Type layer cannot conclude a box. -/
+theorem derivation_no_box {b : Nat} {ψ : Formula} (d : Derivation (.box b ψ)) : False := by
+  rcases derivation_shape d with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
+  · cases h
+  · cases hp
+  · cases hp
+
+/-- Every judgment costs at least one character. -/
+theorem provable_pos {m : Nat} {φ : Formula} (h : Provable m φ) : 1 ≤ m := by
+  rcases provable_size_or_atom h with hsz | hatom
+  · have := Formula.size_pos φ
+    omega
+  · exact atomProvable_pos hatom
+
+/-- **Box-judgment inversion** (the sibling-sourcing tool): a derivable box comes from
+    `boxIntro` — its content WAS a judgment, at a budget below the subscript — or from an
+    `app` spine. No other rule concludes a box (the Type layer can't, atoms are `.plays`,
+    everything else concludes impls/negs). -/
+theorem box_inversion {m b : Nat} {ψ : Formula} (h : Provable m (.box b ψ)) :
+    (∃ mIn, Provable mIn ψ ∧ mIn ≤ b ∧ b + (Formula.box b ψ).size ≤ m) ∨
+    (∃ m₁ m₂ φ', Provable m₁ (.impl φ' (.box b ψ)) ∧ Provable m₂ φ' ∧
+      m₁ + m₂ + (Formula.box b ψ).size ≤ m) := by
+  cases h with
+  | struct hd =>
+      obtain ⟨d, _⟩ := hd
+      exact (derivation_no_box d).elim
+  | atom hatom => cases hatom
+  | boxIntro =>
+      -- index unification: the content's budget IS the subscript `b`
+      rename_i hprem hle
+      exact Or.inl ⟨b, hprem, Nat.le_refl _, hle⟩
+  | app =>
+      rename_i m₁ m₂ φ' h2 h1 hle
+      exact Or.inr ⟨m₁, m₂, φ', h1, h2, hle⟩
+
 end PD.T48

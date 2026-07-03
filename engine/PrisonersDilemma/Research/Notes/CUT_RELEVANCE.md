@@ -113,7 +113,51 @@ material in `AntCl(root)` ∪ (size-paid boxes/diags) ⇒ modest and literal-bou
    a root whose provability requires an unbounded cite-escalation (halting-style); that
    would make `Provable` undecidable, also a publishable resolution.
 
-## 5. Milestones
+## 5. The C3 master-induction architecture (designed 2026-07-03; open contract question)
+
+The tree-invariant and the transformation MERGE into one structural induction (`Provable.rec`),
+because the degeneracy-rewrites produce derivations that neither budget- nor structural
+induction covers separately — so the dichotomy's degenerate disjunct must CARRY its
+transformed witness:
+
+```
+motive₃ (m, φ) :=  (Inv φ → ProvableG GATE m φ)
+                ∧ (∀ B C, PosImpl φ B C → PAnt' B C
+                     ∨ ∃ m' ≤ m, Provable m' C ∧ (Inv C → ProvableG GATE m' C))
+```
+
+Key facts making it close:
+
+* **Cites are structural.** Budget induction dies at `search_t`/STS jumps; `Provable.rec`
+  doesn't — the cited guard judgment is a premise, its IH available.
+* **Degenerate witnesses come with transforms.** `weakenImpl`'s degenerate witness IS its
+  premise (IH attached ✓); `implTrans`'s propagation reassembles via `Provable.app` within
+  budget (C2 verified the arithmetic ✓).
+* **Boxes are never opened** (no reflection rule; `Derivation` cannot conclude a box —
+  T48 §6 `derivation_shape`/`derivation_no_box`). So box CONTENTS never become judgments;
+  their material matters only through the GATES (`modestF` of a recorded cut sees the whole
+  formula). Box-judgment provenance is a two-case inversion (T48 §6 `box_inversion`):
+  `boxIntro` (content was a judgment — IH reaches it) or `app` (spine — IH reaches the
+  impl-premise).
+* **Sibling-sourcing resolves the census holes.** `axkPair`/`box4`-style pairs (`B = .box b ψ`
+  with `ψ` pairwise-invisible) are consumed only at `app` sites where the SIBLING judgment
+  `Provable m₂ B` is present — its IH supplies `B`'s transform; `B`'s `Inv` comes from the
+  sibling's own provenance (box-inversion → `boxIntro`-content judgment or deeper spine).
+
+**The open design question (start here next session):** the `Inv`-contract. `Inv` cannot be
+purely an INPUT (consumer-supplied downward): at `app`, the cut `B`'s `Inv` is needed for
+IH₂ but is not conclusion-visible; sourcing it from the sibling's structure makes it an
+OUTPUT. Candidate resolution: split the motive's first component into
+`ProvableG GATE m φ ∧ SelfInv m φ` where `SelfInv` asserts the judgment's own
+non-conclusion-sourced material (cut formulas it used, box contents it introduced) is
+GATE-tame — produced bottom-up, no input needed; then `app` reads `B`'s tameness from IH₂'s
+`SelfInv` and only the ROOT's conclusion-material needs the (modest-root) hypothesis. The
+GATE's `N₀` then aggregates: root material + `2^(local budgets along the spine)` — the
+budget-relativity of deep judgments is the part to nail down (deep cites at budget `kg`
+have local cuts `< 2^kg`; `kg` itself is source-material of an Inv-tame formula, so the
+aggregation should ground out at `N₀ = 2^(max k L(root closure) + c)` — verify).
+
+## 5b. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
 - **C1 ✅ (2026-07-03, T48 §3–4)**: Derivation-layer antecedent determinacy. KEY DESIGN
@@ -144,7 +188,14 @@ material in `AntCl(root)` ∪ (size-paid boxes/diags) ⇒ modest and literal-bou
   both premises visible (resolves `axkPair`), unfolding `imps2Ant`'s records, and the
   box-content positions (extend `PosImpl` through `.box` if needed). (no implTrans/impS2/app-produced
   impls) — the census above, formalized.
-- **C3**: the tree-invariant (Lemma A's global form; see C2's remaining-content list).
+- **C3a ✅ (2026-07-03, T48 §6)**: the sibling-sourcing tools. `derivation_shape` (the Type
+  layer concludes only plays-ended impl chains and equality shapes) ⇒ `derivation_no_box`;
+  `provable_pos`; **`box_inversion`** — a derivable box comes from `boxIntro` (its content
+  WAS a judgment, at budget = the subscript) or an `app` spine, nothing else. These are the
+  master induction's tools for resolving the census holes from sibling judgments.
+- **C3b**: the master induction (§5 architecture): resolve the `Inv`-contract (the
+  `SelfInv` output-form candidate), formalize `Cl`/GATE aggregation, run the merged
+  transform+dichotomy induction.
 - **C4**: Lemma B rewrites + budget arithmetic (or the budget-inflated fallback).
 - **C5**: assembly — `CutRelevance` (possibly budget-inflated) for modest roots; plug into
   T47 ⇒ `Provable` decidable on the zoo universe; `proofSearch := D`.
