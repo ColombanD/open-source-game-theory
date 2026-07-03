@@ -439,6 +439,22 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     the T4.1a countP stabilization converting ∃-fuel into the computable bound
     `|query space|` ⇒ `Decidable (ProvableG (modestGate N) k φ)` for in-space queries —
     unconditional decidability over the zoo's query universe.
+  - **T4.4c part 1 — ✅ SHIPPED (2026-07-03): the certificate layer's READ INTERFACE.**
+    `Research/Spikes/transcript/T45CertReads.lean` (green, no sorry; on
+    `[propext, Quot.sound]`). Every logic-side read of `stepB` strictly decreases the
+    budget or lands in a finite family — except the reads hidden inside the imported
+    `decCertG`. Now first-class: **`CertRead b me oppo body m ψ`** (budget-indexed
+    reachability of oracle consultations — one constructor per consultation site: guard
+    cite `(kg, g.subst me oppo)`, refutation sweep `(m ≤ b, .neg (g.subst me oppo))` — and
+    per recursion site, overapproximating swept budgets); **`decCertG_congr`** — oracles
+    agreeing on the `CertRead`-set produce the SAME Bool at every fuel (induction on fuel,
+    `anyCongr` through the sweeps; `certOG_congr` wrapper); **`certRead_mem_guardU`** —
+    over the T4.3 modest universe every read formula is a `guardU` member or the `.neg`
+    of one (induction on `CertRead` consuming `step_search`/`step_sim`/subterm lemmas).
+    The atom layer's read-set is FINITE and the atom side of `stepB` is congruent past it.
+    Remaining (part 2): the logic-side space (stratified size bound `Z(b)` over the gated
+    base + `guardU` family + its `.neg`s), the 16-checker in-space closure + `stepB`
+    congruence, and the countP stabilization ⇒ the fuel bound ⇒ `Decidable`.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
 
 **Total: ~7–10 weeks focused.** Risks ranked: (1) T0 subscript re-balance (killed cheaply if fatal);
