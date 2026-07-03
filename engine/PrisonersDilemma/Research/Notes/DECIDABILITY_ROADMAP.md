@@ -345,7 +345,22 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     `outcomeG_sound`): Mirror-style search bot vs CooperateBot `some (C,C)`, vs DefectBot
     `some (D,D)`, self-play `none` — the Löb boundary, computably. This SUPERSEDES `evalC`'s
     role (search-crossing commits both sides vs. evalC's search-free true-commits).
-  - **T4.1 — the fuel-bound analysis (the open mathematics).** Offender census: budgets along
+  - **T4.1a — ✅ SHIPPED (2026-07-03): the bounded-literal world is DECIDABLE — least-fixpoint
+    stabilization beats budget jumps.** `Research/Spikes/transcript/T4QueryBound.lean`
+    (self-contained mini, no engine imports, 3 std axioms). The minimal system exhibiting the
+    engine's residual: mutual `Good`/`Bad` (≈ `Provable`/refutation layer) over programs with
+    `sr kg g p q` nodes whose guard is CITED at its own literal budget `kg` — legal with
+    `kg ≫ k` (only `log2 kg + 2` paid), so T3.0's fuel=budget method is UNAVAILABLE. Yet:
+    `Good k p ↔ decN (Qs p k).length k p true = true` (`Good_iff_decN`), hence
+    `Decidable (Good k p)` (`decideGood`). Method (the template for the engine's `ProvableB`):
+    step operator `stepF` over approximations + soundness + chain monotonicity + ∃-fuel
+    completeness + finite query space `Qs` = (budgets ≤ max(k, source literals)) × subterm
+    closure × polarity + closure lemmas (`stepF` at an in-space query reads only in-space
+    queries — the false side pays its floor LINEARLY, so only source literals are ever
+    jumped to) + `countP` pigeonhole (the monotone chain on the finite Bool-lattice must
+    stabilize within `|Qs|` steps) + agreement propagation. The fuel bound is `|Qs|` —
+    computable from the query alone.
+  - **T4.1b — the fuel-bound analysis (the remaining open mathematics).** Offender census: budgets along
     a backward search DECREASE at every rule except exactly TWO CITE-model hops, both paying
     only `c_guard = log2+1` for a premise at a SOURCE-LITERAL budget: `search_t`'s guard
     (`decCertG`'s `D kg` slot) and `searchThenSearch_t`'s inner premise (at `k₂`). (`boxIntro`
