@@ -468,11 +468,30 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     (T4.3's `guardU u v` glued over `allowedProgs²`), with `GF_args` (members' `.plays`
     args are universe programs — so cert queries re-enter the space) and `GF_lit`;
     globalized read interface: `certRead_budget` (every consultation at `≤ max b LU`) and
-    `certRead_mem_GF` (every consulted formula ∈ `GF` or its `.neg`). Remaining (part 2b,
-    the finale): the size-stratified formula space `SL` (`Z b := Z₀ + (R−b)·(R+2)` absorbs
-    cut-composite growth; `GF ∪ .neg GF` fits at every budget), the 16-checker closure +
-    `stepB` congruence, the countP stabilization ⇒ fuel bound `|SL|` ⇒
-    `Decidable (ProvableG (modestGate N) k φ)`.
+    `certRead_mem_GF` (every consulted formula ∈ `GF` or its `.neg`).
+  - **T4.4c part 2b — ✅ SHIPPED (2026-07-03): PIPELINE (i) COMPLETE — the modest stratum
+    is DECIDABLE, with the computable fuel bound `|SL|`.**
+    `Research/Spikes/transcript/T47Stabilization.lean` (~990 lines, green, no sorry, 3 std
+    axioms). The space: fold-based enum size ceilings (`EB b := foldMax size (enumFormula
+    b)` — no structural enumeration bound needed), subterm-size lemmas, the ceilings
+    `LL`/`RR`/`EBR`/`SB`, the stratification `ZS b := Z₀ + (RR−b)·(EBR+RR+3)` (each
+    strictly-descending read gets one composite's headroom; the pair-glued guard family
+    `GFall` fits at EVERY budget), the invariant `InvP` (atom args ∈ `allowedProgs`,
+    literals ≤ `LL`), and the space list `SL` with intro/elim. **`stepB_congr`** — the
+    16-checker in-space congruence: descending reads by `ZS_step` arithmetic; cut sweeps
+    case on `cutOKb` (false ⇒ both sides false; true ⇒ `enumArg_mem` re-entry);
+    `chkDiagFEB/BEB` case on their duplicated-pattern `beq`s first (false ⇒ trivial;
+    true ⇒ subst); jumps (`chkSTS`, cert cites/refutations) land in `GFall` via T4.5/T4.6.
+    Then the T4.1a countP stabilization verbatim (`Agree`/`agree_succ` via the congruence/
+    `agree_ge`/`exists_agree`/`decB_bound`) and THE PAYOFF:
+    **`ProvableG_iff_decB_bound : ProvableG (modestGate N) k₀ φ₀ ↔
+    decB N |SL| k₀ φ₀ = true`** + **`decideProvableG : Decidable (…)`** — hypotheses just:
+    modest roots (the whole zoo, T4.3) and root atom-args in the universe (automatic for
+    every bot-guard instance via `GF_args`). Bounded provability over the zoo's query
+    universe is decided by a terminating computation. What remains of T4 is ONLY the
+    T4.1b conjecture (cut relevance) separating `ProvableG (modestGate N)` from full
+    `Provable` — plus optional consolidation (promote the spike chain into the engine
+    tree, wire `proofSearch` to the decided fragment).
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
 
 **Total: ~7–10 weeks focused.** Risks ranked: (1) T0 subscript re-balance (killed cheaply if fatal);
