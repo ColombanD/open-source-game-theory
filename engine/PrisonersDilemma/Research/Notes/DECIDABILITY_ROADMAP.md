@@ -329,8 +329,38 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     (query-universe finiteness across guard hops; the ∃-fuel cannot currently be bounded
     because cited premises live at source literals) — full decidability, `proofSearch := D`,
     computable `eval`, `by decide` outcomes.
-- **T4 — the endgame (~1 week).** `proofSearch := D`; `search_f`; `atom_complete_false_guard`
-  theorem + DELETE. Sweep: all outcome theorems on the 3 Lean-standard axioms. `#eval` demos.
+- **T4 — the endgame: from r.e. to decidable.** Remaining open item: a computable fuel bound
+  `f(k, φ)` with `Provable k φ ↔ decFull (f k φ) k φ = true`. Then `proofSearch := decFull ∘ f`
+  is computable, `eval` computable, outcomes `by decide`.
+  - **T4.0 — ✅ SHIPPED (2026-07-03): `evalG` — computable evaluation, both guard polarities,
+    search bots RUN.** Spike §9. A 3-valued guard is sound in BOTH directions with no axiom:
+    `some true` from `decFull` (soundness), `some false` from a DERIVABLE refutation
+    `Provable m (.neg φ)` — soundness + consistency exclude `Provable k φ` at EVERY budget
+    (the honest replacement for what the deleted axiom faked). `evalG G` = `eval`'s recursion
+    with the 3-valued guard, parametric in `G`; `GuardSound G → evalG` commits are `eval`'s
+    answers AT THE SAME FUEL (`evalG_sound`, sharper than `evalC`'s `∃N`). Instances:
+    `guardFull` (decFull both sides; `guardFull_converges_pos/_neg` = `none` escapable on the
+    whole r.e. fragment) and `guardFast` (goal-directed cert search, `Provable.atomNeg`-style
+    refutations; what makes `#eval` practical). Demos (printed, certified by
+    `outcomeG_sound`): Mirror-style search bot vs CooperateBot `some (C,C)`, vs DefectBot
+    `some (D,D)`, self-play `none` — the Löb boundary, computably. This SUPERSEDES `evalC`'s
+    role (search-crossing commits both sides vs. evalC's search-free true-commits).
+  - **T4.1 — the fuel-bound analysis (the open mathematics).** Offender census: budgets along
+    a backward search DECREASE at every rule except exactly TWO CITE-model hops, both paying
+    only `c_guard = log2+1` for a premise at a SOURCE-LITERAL budget: `search_t`'s guard
+    (`decCertG`'s `D kg` slot) and `searchThenSearch_t`'s inner premise (at `k₂`). (`boxIntro`
+    and `atomBoxImpl` pay their subscripts LINEARLY — not offenders.) Source literals of the
+    original query are a fixed finite set — the danger is exclusively CUT FORMULAS
+    (`app`/`implTrans`/`impS2` enumerate any `B` with `size ≤ K`), which can mention fresh
+    `.search` programs with literals up to `2^K`; a guard hop into one raises the budget to
+    `2^K`, whose cuts reach `2^2^K` — the TOWER. So full decidability reduces to a
+    **cut-relevance theorem**: minimal derivations only need cut formulas from a computable
+    universe (substitution instances of source syntax + `.diag` sentences + source-bounded
+    box subscripts — cf. `bloeb_engine`'s actual cut diet). Given that: budgets range over a
+    finite set; cert queries about substitution-grown programs depend only on their
+    budget-depth SLICE (finitely many classes); minimal derivations never repeat a query on a
+    branch ⇒ depth ≤ |query universe| ⇒ `f(k, φ)`. Fallback if cut-relevance resists: the
+    positive-rule least-fixpoint over the sliced universe (all `Provable` rules are positive).
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
 
 **Total: ~7–10 weeks focused.** Risks ranked: (1) T0 subscript re-balance (killed cheaply if fatal);

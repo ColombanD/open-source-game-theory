@@ -1895,4 +1895,249 @@ theorem Provable_iff_decFull (k : Nat) (φ : Formula) :
   ⟨fun h => decFull_complete h k le_rfl,
    fun ⟨f, hf⟩ => decFull_sound f k φ hf⟩
 
+/-! ## 9. T4.0 — `evalG`: COMPUTABLE evaluation backed by the enumerator.
+
+`eval` is noncomputable only through its guard oracle `proofSearch k φ := decide (Provable k φ)`.
+`decFull` semidecides `Provable` (§7–8), and — the repair's dividend — a DERIVABLE refutation
+`Provable m (.neg φ)` semantically excludes `Provable k φ` at EVERY budget (soundness +
+consistency: the honest replacement for what the deleted axiom faked with below-floor
+certificates). So a 3-valued computable guard is sound in BOTH polarities, and plugging it into
+`eval`'s recursion gives a computable partial evaluator `evalG` every commit of which is a real
+classical play. Two guard instances:
+
+* `guardFull` — the conceptual one: `decFull` on the guard, `decFull` on its negation. Sound,
+  and CONVERGES on the whole r.e. fragment (`guardFull_converges_pos/_neg`) — but backward
+  `decProv` sweeps make a `false` verdict exponentially expensive in practice.
+* `guardFast` — the goal-directed one for plays-atom guards (the zoo's dominant shape):
+  certificate search for the atom itself (Σ₁ side) / for the OTHER action (`Provable.atomNeg`'s
+  supplier) — no top-level sweeps, so `#eval` actually runs. Strictly weaker commits, same
+  soundness.
+
+Escaping `none` in general — a computable fuel bound — is T4's remaining open item
+(DECIDABILITY_ROADMAP.md). -/
+
+/-- A guard decider is SOUND when every commitment agrees with `eval`'s oracle. -/
+def GuardSound (G : Nat → Formula → Option Bool) : Prop :=
+  ∀ k φ b, G k φ = some b → proofSearch k φ = b
+
+/-- The enumerator-backed guard. Note the else side consults the negation at ANY budget
+    `m ≤ fuelD`: a derivable refutation refutes provability at every budget. -/
+def guardFull (fuelD : Nat) : Nat → Formula → Option Bool := fun k φ =>
+  if decFull fuelD k φ then some true
+  else if (List.range (fuelD + 1)).any (fun m => decFull fuelD m (.neg φ)) then some false
+  else none
+
+theorem guardFull_sound (fuelD : Nat) : GuardSound (guardFull fuelD) := by
+  intro k φ b h
+  unfold guardFull at h
+  split at h
+  · rename_i ht
+    injection h with h; subst h
+    exact (proofSearch_spec _ _).2 (decFull_sound _ _ _ ht)
+  · split at h
+    · rename_i hf
+      injection h with h; subst h
+      simp only [List.any_eq_true, List.mem_range] at hf
+      obtain ⟨m, _, hm⟩ := hf
+      have hnegI : ¬ φ.interp := Provable_sound _ _ (decFull_sound _ _ _ hm)
+      cases hps : proofSearch k φ with
+      | false => rfl
+      | true => exact absurd (proofSearch_sound _ _ hps) hnegI
+    · simp at h
+
+/-- Goal-directed guard for plays-atom guards: no `decProv` entry point, so no cut sweeps
+    at the top level (guard hops inside `decCertG` still consult `decFull`). -/
+def guardFast (fuelD : Nat) : Nat → Formula → Option Bool := fun k φ =>
+  match φ with
+  | .plays p q a =>
+      if decCertG (decFull fuelD) fuelD k p q p a then some true
+      else if (List.range (fuelD + 1)).any (fun m =>
+          [Action.C, Action.D].any (fun r =>
+            decide (r ≠ a) && decCertG (decFull fuelD) fuelD m p q p r)) then some false
+      else none
+  | _ => none
+
+theorem guardFast_sound (fuelD : Nat) : GuardSound (guardFast fuelD) := by
+  intro k φ b h
+  unfold guardFast at h
+  split at h
+  · rename_i p q a
+    split at h
+    · rename_i ht
+      injection h with h; subst h
+      obtain ⟨n, cert, hn⟩ :=
+        decCertG_sound (decFull fuelD) (fun m ψ => decFull_sound fuelD m ψ) fuelD k p q p a ht
+      exact (proofSearch_spec _ _).2 (Provable.atom (AtomProvable.mk cert hn))
+    · split at h
+      · rename_i hf
+        injection h with h; subst h
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true,
+          decide_eq_true_eq] at hf
+        obtain ⟨m, _, r, _, hne, hcert⟩ := hf
+        obtain ⟨n, cert, _⟩ :=
+          decCertG_sound (decFull fuelD) (fun m' ψ => decFull_sound fuelD m' ψ) fuelD m
+            p q p r hcert
+        have hneg : Provable (n + (Formula.neg (.plays p q a)).size) (.neg (.plays p q a)) :=
+          Provable.atomNeg p q r a n (AtomProvable.mk cert le_rfl) hne le_rfl
+        have hnegI : ¬ (Formula.plays p q a).interp := Provable_sound _ _ hneg
+        cases hps : proofSearch k (.plays p q a) with
+        | false => rfl
+        | true => exact absurd (proofSearch_sound _ _ hps) hnegI
+      · simp at h
+  · simp at h
+
+/-- The COMPUTABLE evaluator: `eval`'s recursion verbatim, with the `.search` guard consulting
+    a 3-valued computable `G`; `none` guard ⇒ `none` result. Parametric in `G` so any sound
+    guard (present or future) inherits the one soundness proof. -/
+def evalG (G : Nat → Formula → Option Bool) : Nat → (me opponent body : Prog) → Option Action
+  | 0, _, _, _ => none
+  | n+1, me, opponent, body => match body with
+    | .const a => some a
+    | .self => evalG G n me opponent me
+    | .opp => evalG G n me opponent opponent
+    | .bot p => evalG G n me opponent p
+    | .sim p q =>
+        let p' := p.subst me opponent
+        let q' := q.subst me opponent
+        evalG G n p' q' p'
+    | .ite b a p q =>
+        match evalG G n me opponent b with
+        | some r => if r == a then evalG G n me opponent p else evalG G n me opponent q
+        | none => none
+    | .search k φ p q =>
+        match G k (φ.subst me opponent) with
+        | some true => evalG G n me opponent p
+        | some false => evalG G n me opponent q
+        | none => none
+
+/-- **Faithfulness at the SAME fuel**: every `evalG` commit is `eval`'s answer. (Sharper than
+    `evalC`'s `∃ N` form — a sound guard agrees with the oracle pointwise, so the two
+    recursions run in lockstep.) -/
+theorem evalG_sound (G : Nat → Formula → Option Bool) (hG : GuardSound G) :
+    ∀ n me opponent body a, evalG G n me opponent body = some a →
+      eval n me opponent body = some a := by
+  intro n
+  induction n with
+  | zero => intro me opponent body a h; simp [evalG] at h
+  | succ n ih =>
+    intro me opponent body a h
+    cases body with
+    | const c => rw [evalG] at h; rw [eval]; exact h
+    | self => rw [evalG] at h; rw [eval]; exact ih _ _ _ _ h
+    | opp => rw [evalG] at h; rw [eval]; exact ih _ _ _ _ h
+    | bot p => rw [evalG] at h; rw [eval]; exact ih _ _ _ _ h
+    | sim p q => rw [evalG] at h; rw [eval]; exact ih _ _ _ _ h
+    | ite g a' p q =>
+        rw [evalG] at h
+        cases hb : evalG G n me opponent g with
+        | none => rw [hb] at h; simp at h
+        | some r =>
+            rw [hb] at h
+            replace h : (if (r == a') = true then evalG G n me opponent p
+                else evalG G n me opponent q) = some a := h
+            rw [eval, ih _ _ _ _ hb]
+            simp only [bind, Option.bind]
+            by_cases hr : (r == a') = true
+            · rw [if_pos hr] at h ⊢; exact ih _ _ _ _ h
+            · rw [if_neg hr] at h ⊢; exact ih _ _ _ _ h
+    | search kg φg p q =>
+        rw [evalG] at h
+        cases hg : G kg (φg.subst me opponent) with
+        | none => rw [hg] at h; simp at h
+        | some gb =>
+            rw [hg] at h
+            have hps := hG _ _ _ hg
+            cases gb with
+            | true =>
+                replace h : evalG G n me opponent p = some a := h
+                rw [eval, if_pos hps]
+                exact ih _ _ _ _ h
+            | false =>
+                replace h : evalG G n me opponent q = some a := h
+                rw [eval, if_neg (by simp [hps])]
+                exact ih _ _ _ _ h
+
+def playG (G : Nat → Formula → Option Bool) (fuel : Nat) (me opponent : Prog) :
+    Option Action :=
+  evalG G fuel me opponent me
+
+def outcomeG (G : Nat → Formula → Option Bool) (fuel : Nat) (p q : Prog) : Option Outcome := do
+  let a ← playG G fuel p q
+  let b ← playG G fuel q p
+  some (a, b)
+
+theorem playG_sound (G : Nat → Formula → Option Bool) (hG : GuardSound G)
+    (fuel : Nat) (me opponent : Prog) (a : Action) :
+    playG G fuel me opponent = some a → play fuel me opponent = some a :=
+  fun h => evalG_sound G hG _ _ _ _ _ h
+
+/-- **Every `#eval`'d outcome below is a machine-checked classical outcome.** -/
+theorem outcomeG_sound (G : Nat → Formula → Option Bool) (hG : GuardSound G)
+    (fuel : Nat) (p q : Prog) (o : Outcome) :
+    outcomeG G fuel p q = some o → outcome fuel p q = some o := by
+  intro h
+  unfold outcomeG at h
+  unfold outcome
+  cases ha : playG G fuel p q with
+  | none => rw [ha] at h; simp [bind, Option.bind] at h
+  | some a =>
+      rw [ha] at h
+      simp only [bind, Option.bind] at h
+      cases hb : playG G fuel q p with
+      | none => rw [hb] at h; simp [bind, Option.bind] at h
+      | some b =>
+          rw [hb] at h
+          simp only [bind, Option.bind] at h
+          rw [playG_sound G hG _ _ _ _ ha]
+          simp only [bind, Option.bind]
+          rw [playG_sound G hG _ _ _ _ hb]
+          simp only [bind, Option.bind]
+          exact h
+
+/-! ### Convergence — `guardFull`'s `none` is escapable on the whole r.e. fragment. -/
+
+/-- Σ₁ side: a provable guard is eventually committed `true`. -/
+theorem guardFull_converges_pos {k : Nat} {φ : Formula} (h : Provable k φ) :
+    ∃ fuelD, guardFull fuelD k φ = some true := by
+  obtain ⟨F, hF⟩ := decFull_complete h k le_rfl
+  refine ⟨F, ?_⟩
+  unfold guardFull
+  rw [if_pos hF]
+
+/-- Refutation side: a DERIVABLE refutation is eventually committed `false` — at every
+    budget `k`, with no floor to clear (the exclusion is semantic, not certificate-level). -/
+theorem guardFull_converges_neg {m : Nat} {φ : Formula} (h : Provable m (.neg φ)) (k : Nat) :
+    ∃ fuelD, guardFull fuelD k φ = some false := by
+  obtain ⟨F, hF⟩ := decFull_complete h m le_rfl
+  refine ⟨max F m, ?_⟩
+  unfold guardFull
+  have hnegI : ¬ φ.interp := Provable_sound _ _ h
+  have h1 : decFull (max F m) k φ = false := by
+    cases hd : decFull (max F m) k φ with
+    | false => rfl
+    | true => exact absurd (Provable_sound _ _ (decFull_sound _ _ _ hd)) hnegI
+  have h2 : ((List.range (max F m + 1)).any fun m' =>
+      decFull (max F m) m' (.neg φ)) = true := by
+    simp only [List.any_eq_true, List.mem_range]
+    exact ⟨m, by omega, decFull_mono F (max F m) (Nat.le_max_left _ _) _ _ hF⟩
+  rw [if_neg (by simp [h1]), if_pos h2]
+
+/-! ### Demos — the engine's search bots actually RUN, for the first time.
+
+A Mirror-style bot at guard budget 2 (an atom certificate costs `c_leaf = 1 ≤ 2`; and at
+budget ≤ 2 the cut-formula universe `enumFormula` is EMPTY — atoms have size ≥ 3 — so the
+`decProv` sweeps triggered by the self-play guard hops are instant). Every `some` printed below is certified by
+`outcomeG_sound ∘ guardFast_sound`: it IS the classical `outcome`. The self-play `none` is
+the honest Löb boundary — the guard is a fixpoint whose provability (`bloeb_engine`-style)
+has no goal-directed certificate; escaping it computably is exactly the T4 fuel-bound
+question. -/
+
+private def CoopB : Prog := .const .C
+private def DefB : Prog := .const .D
+private def MirB : Prog := .search 2 (.plays .opp .self .C) (.const .C) (.const .D)
+
+#eval outcomeG (guardFast 2) 8 MirB CoopB -- expect: some (C, C) — grounded cooperation
+#eval outcomeG (guardFast 2) 8 MirB DefB  -- expect: some (D, D) — refutation-driven defection
+#eval outcomeG (guardFast 2) 8 MirB MirB  -- expect: none — the Löb fixpoint boundary
+
 end PD.T31
