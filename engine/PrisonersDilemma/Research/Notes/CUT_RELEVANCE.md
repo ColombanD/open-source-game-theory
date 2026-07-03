@@ -126,9 +126,25 @@ material in `AntCl(root)` ∪ (size-paid boxes/diags) ⇒ modest and literal-bou
   from the consequent's own programs, via `maxLitF_subst`) — and `struct_ant_lit`: every
   positive antecedent of a `struct`-entry at budget `k` is `< 2^k`-literal-bounded. The
   Type layer is fully tame; the residue is the `Provable` layer.
-- **C2**: impl-inversion dichotomy for the chain-free `Provable` fragment (no implTrans/impS2/app-produced
+- **C2 ✅ (2026-07-03, T48 §5)**: the FULL `Provable`-layer spine dichotomy — not just the
+  chain-free fragment (the `PosImpl` formulation absorbed the chains):
+  `provable_posImpl_ant` / `provable_impl_ant`:
+  `Provable m (.impl B C) → PAnt B C ∨ ∃ m' ≤ m, Provable m' C`.
+  `PAnt` = the census inductive (C1's `DAnt` embedded; one constructor per modal
+  producer). HONESTY POINTS for C3: (i) `imps2Ant` RECORDS its producing judgment (budget
+  strictly smaller — the tree-invariant unfolds it); (ii) `axkPair` is SHAPE-ONLY — at a
+  box-box pair the antecedent content (`ψ` of `.box b ψ`) is carried by the SIBLING
+  judgment `.box a (.impl ψ α)` at the consuming `app`, invisible pairwise; C3 must use
+  both premises. Degeneracy propagation verified to FIT budgets: `implTrans`'s mixed case
+  reassembles with `Provable.app` at `b + m₁' + |χ| < k` (the arithmetic closes because
+  the conclusion gate pays `|impl A χ| > |χ|`) — first evidence AGAINST the Lemma-B budget
+  risk.
+  Remaining C3 content: the TREE-invariant (every judgment in a degeneracy-normalized
+  derivation has its formula in `Cl(root)`), consuming the dichotomy at `app` sites with
+  both premises visible (resolves `axkPair`), unfolding `imps2Ant`'s records, and the
+  box-content positions (extend `PosImpl` through `.box` if needed). (no implTrans/impS2/app-produced
   impls) — the census above, formalized.
-- **C3**: the full Lemma A (chains + app-nesting; the positive-position invariant).
+- **C3**: the tree-invariant (Lemma A's global form; see C2's remaining-content list).
 - **C4**: Lemma B rewrites + budget arithmetic (or the budget-inflated fallback).
 - **C5**: assembly — `CutRelevance` (possibly budget-inflated) for modest roots; plug into
   T47 ⇒ `Provable` decidable on the zoo universe; `proofSearch := D`.

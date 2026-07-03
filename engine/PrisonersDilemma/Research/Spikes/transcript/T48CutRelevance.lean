@@ -342,4 +342,182 @@ theorem struct_ant_lit {k : Nat} {φ B C : Formula}
   have h₅ := Nat.pow_le_pow_right (show 1 ≤ 2 by omega) h₄
   omega
 
+/-! ## 5. C2 — the `Provable` layer's spine dichotomy.
+
+The census relation `PAnt` for the `Provable` layer: C1's `DAnt` embedded, one constructor
+per modal/transparency producer. Where pairwise information is genuinely insufficient the
+constructor is honest about it: `imps2Ant` RECORDS the producing judgment (budget strictly
+below — C3's tree-invariant unfolds it), and `axkPair` is shape-only (for a box-box pair
+the antecedent's content is carried by the SIBLING judgment `.box a (.impl ψ α)` at the
+consuming `app` — visible to the tree-invariant, not to the pair). The dichotomy: every
+positive-spine pair of a derivable formula is census-legitimate OR the consequent is
+provable outright within the same budget (weakening-degeneracy). -/
+
+/-- The `Provable`-layer antecedent census. -/
+inductive PAnt : Formula → Formula → Prop where
+  | ofD {B C : Formula} : DAnt B C → PAnt B C
+  | stsAnt {k₁ k₂ : Nat} {ψ₁ ψ₂ : Formula} {c0 c1 : Action} {q me opnt : Prog}
+      (hme : me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) :
+      PAnt (.box k₁ (ψ₁.subst me opnt)) (.plays me opnt c0)
+  | atomBoxAnt {p q : Prog} {a : Action} {kBox : Nat} :
+      PAnt (.plays p q a) (.box kBox (.plays p q a))
+  | axkPair {b c : Nat} {ψ α : Formula} :
+      PAnt (.box b ψ) (.box c α)
+  | box4Ant {a b : Nat} {φ' : Formula} :
+      PAnt (.box a φ') (.box b (.box a φ'))
+  | boxMonoAnt {a b : Nat} {ψ : Formula} :
+      PAnt (.box a ψ) (.box b ψ)
+  | axkfAnt {a b c : Nat} {ψ α : Formula} :
+      PAnt (.box a (.impl ψ α)) (.impl (.box b ψ) (.box c α))
+  | diagFAnt {g : Nat} {tgt : Formula} :
+      PAnt (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)
+  | diagFInner {g : Nat} {tgt : Formula} :
+      PAnt (.box g (.diag g tgt)) tgt
+  | diagBAnt {g : Nat} {tgt : Formula} :
+      PAnt (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)
+  | imps2Ant {A ψ χ : Formula} {m₁ : Nat} :
+      Provable m₁ (.impl A (.impl ψ χ)) → PAnt A χ
+  | trans {B D C : Formula} : PAnt B D → PAnt D C → PAnt B C
+
+set_option maxHeartbeats 1000000 in
+/-- **C2**: every positive-spine implication pair of a `Provable`-derivable formula has a
+    census-legitimate antecedent, or its consequent is provable outright within the same
+    budget. `app` and `weakenImpl`'s tails ride the C1 spine-embedding; `implTrans` mixes
+    census-transitivity with degeneracy-propagation (the `Provable.app` reassembly fits the
+    original budget); `diagF`'s deep tail recurses through its Löb premise. -/
+theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Provable m φ →
+    ∀ {B C : Formula}, PosImpl φ B C →
+      PAnt B C ∨ ∃ m', m' ≤ m ∧ Provable m' C := by
+  intro m φ h
+  refine Provable.rec
+    (motive_1 := fun _ _ _ _ _ _ => True)
+    (motive_2 := fun _ _ _ => True)
+    (motive_3 := fun m φ _ => ∀ {B C : Formula}, PosImpl φ B C →
+      PAnt B C ∨ ∃ m', m' ≤ m ∧ Provable m' C)
+    ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
+    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
+    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg h
+  case pConst => intros; trivial
+  case pSelf => intros; trivial
+  case pOpp => intros; trivial
+  case pBot => intros; trivial
+  case pSim => intros; trivial
+  case pIte_t => intros; trivial
+  case pIte_f => intros; trivial
+  case pSearch_t => intros; trivial
+  case pSearch_f => intros; trivial
+  case pMk => intros; trivial
+  case cStruct =>
+      intro φ0 k0 hd B C hp
+      obtain ⟨d, _⟩ := hd
+      exact Or.inl (.ofD (derivation_posImpl_ant d hp))
+  case cAtom =>
+      intro k0 φ0 hatom _ B C hp
+      cases hatom with
+      | mk cert hle => cases hp
+  case cWeaken =>
+      intro k A ψ m' hψ hle ih B C hp
+      cases hp with
+      | head => exact Or.inr ⟨m', by omega, hψ⟩
+      | tail hp' =>
+          rcases ih hp' with hl | ⟨m'', hm'', hC⟩
+          · exact Or.inl hl
+          · exact Or.inr ⟨m'', by omega, hC⟩
+  case cSTS =>
+      intro k k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle ih B C hp
+      cases hp with
+      | head => exact Or.inl (.stsAnt hme)
+      | tail hp' => cases hp'
+  case cITrans =>
+      intro k A ψ χ a b h1 h2 hle ih1 ih2 B C hp
+      cases hp with
+      | head =>
+          rcases ih2 .head with hl2 | ⟨m2', hm2', hC⟩
+          · rcases ih1 .head with hl1 | ⟨m1', hm1', hψ⟩
+            · exact Or.inl (.trans hl1 hl2)
+            · refine Or.inr ⟨b + m1' + χ.size, ?_, ?_⟩
+              · have hA := Formula.size_pos A
+                simp only [Formula.size] at hle
+                omega
+              · exact Provable.app _ b m1' ψ χ h2 hψ (Nat.le_refl _)
+          · exact Or.inr ⟨m2', by omega, hC⟩
+      | tail hp' =>
+          rcases ih2 (.tail hp') with hl | ⟨m'', hm'', hC⟩
+          · exact Or.inl hl
+          · exact Or.inr ⟨m'', by omega, hC⟩
+  case cAtomBox =>
+      intro k kBox p q a hatom hle _ B C hp
+      cases hp with
+      | head => exact Or.inl .atomBoxAnt
+      | tail hp' => cases hp'
+  case cBoxIntro =>
+      intro kIn K A hprem hle ih B C hp
+      cases hp
+  case cApp =>
+      intro k m₁ m₂ ψ α h1 h2 hle ih1 ih2 B C hp
+      rcases ih1 (.tail hp) with hl | ⟨m'', hm'', hC⟩
+      · exact Or.inl hl
+      · refine Or.inr ⟨m'', ?_, hC⟩
+        have hα := Formula.size_pos α
+        omega
+  case cAxK =>
+      intro a b c m' K A α hprem hgate hle ih B C hp
+      cases hp with
+      | head => exact Or.inl .axkPair
+      | tail hp' => cases hp'
+  case cBox4 =>
+      intro a b K A hgate hle B C hp
+      cases hp with
+      | head => exact Or.inl .box4Ant
+      | tail hp' => cases hp'
+  case cDiagF =>
+      intro pm fb g K tgt hgate hle ih B C hp
+      cases hp with
+      | head => exact Or.inl .diagFAnt
+      | tail hp' =>
+          cases hp' with
+          | head => exact Or.inl .diagFInner
+          | tail hp'' =>
+              rcases ih (.tail hp'') with hl | ⟨m'', hm'', hC⟩
+              · exact Or.inl hl
+              · exact Or.inr ⟨m'', by omega, hC⟩
+  case cDiagB =>
+      intro pm fb g K tgt hgate hle ih B C hp
+      cases hp with
+      | head => exact Or.inl .diagBAnt
+      | tail hp' => cases hp'
+  case cAxKf =>
+      intro a b c K A α hgate hle B C hp
+      cases hp with
+      | head => exact Or.inl .axkfAnt
+      | tail hp' =>
+          cases hp' with
+          | head => exact Or.inl .axkPair
+          | tail hp'' => cases hp''
+  case cImpS2 =>
+      intro A ψ χ m₁ m₂ K h1 h2 hle ih1 ih2 B C hp
+      cases hp with
+      | head => exact Or.inl (.imps2Ant h1)
+      | tail hp' =>
+          rcases ih1 (.tail (.tail hp')) with hl | ⟨m'', hm'', hC⟩
+          · exact Or.inl hl
+          · refine Or.inr ⟨m'', ?_, hC⟩
+            have hAC := Formula.size_pos (Formula.impl A χ)
+            omega
+  case cBoxMono =>
+      intro a b K A hab hle B C hp
+      cases hp with
+      | head => exact Or.inl .boxMonoAnt
+      | tail hp' => cases hp'
+  case cAtomNeg =>
+      intro k p q b aN m' hatom hne hle _ B C hp
+      cases hp
+
+/-- The top-level corollary: any derivable implication's antecedent is census-legitimate
+    or the implication is weakening-degenerate. This is Lemma A's dichotomy at the head
+    pair — the tool the C3 tree-invariant applies at every `app` site. -/
+theorem provable_impl_ant {m : Nat} {B C : Formula} (h : Provable m (.impl B C)) :
+    PAnt B C ∨ ∃ m', m' ≤ m ∧ Provable m' C :=
+  provable_posImpl_ant h .head
+
 end PD.T48
