@@ -410,6 +410,24 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     each `by rfl`). Remaining for (i), now assembly: the two-sided step operator for
     `ProvableB` over `(budgets ≤ max k N) × (gated enumFormula ∪ guardU-subformulas) ×
     (players² × certU)` + the T4.1a lfp-stabilization verbatim.
+  - **T4.4a — ✅ SHIPPED (2026-07-03): `decB`, the modest-bounded step decider, SOUND.**
+    `Research/Spikes/transcript/T44BoundedDecider.lean` (green, no sorry; imports the T3.1,
+    T4.2, T4.3 spikes — spike oleans build via `lake build <module>`). T4.2 REFACTORED to the
+    gate-parametric `ProvableG (G : Formula → Prop)` (gates on the six conclusion-absent
+    premise FORMULAS — `axK`/`diag` gate the whole premise, subsuming the subscript);
+    `ProvableB N := ProvableG (litGate N)` keeps every T4.2 statement. The DECIDABLE gate is
+    `modestGate N B := maxLitF B ≤ N ∧ modestF B` (literal-bounded ⇒ finite hop budgets;
+    modest ⇒ cut atoms' cert queries stay in the T4.3 universe). Shipped: `cutOKb` + six
+    gated checker variants (`chkITransB`/`chkAppEB`/`chkAxKB`/`chkDiagFEB`/`chkDiagBEB`/
+    `chkImpS2EB`) — T3.1's other ten checkers reused VERBATIM; **`stepB N`** (one
+    rule-firing pass over an approximation; the atom side runs T3.1's `decCertG` with the
+    approximation as guard oracle at fuel `k+1` — cert budgets strictly decrease, so the
+    cert layer needs no stabilization of its own); `decB N fuel := stepB N ^[fuel] ⊥`;
+    `decCertG_soundG`/`certOG_soundG` (T3.1 cert soundness re-targeted at the gated triple);
+    **`decB_sound`**: every hit is a real `ProvableG (modestGate N)` derivation (hence
+    `Provable`). Remaining (T4.4b): ∃-fuel completeness, the formula-side space (gated
+    `enumFormula` ∪ `guardU`-subformula closure), the in-space/congr lemmas, and the
+    countP stabilization ⇒ decidability of the modest stratum.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
 
 **Total: ~7–10 weeks focused.** Risks ranked: (1) T0 subscript re-balance (killed cheaply if fatal);
