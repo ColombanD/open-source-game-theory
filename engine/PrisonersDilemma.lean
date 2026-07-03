@@ -19,3 +19,4 @@ import PrisonersDilemma.Theorems.MirrorBot
 import PrisonersDilemma.Theorems.DBot
 import PrisonersDilemma.Theorems.CupodTrollBot
 import PrisonersDilemma.Theorems.LlmGenerations
+import PrisonersDilemma.Decidability

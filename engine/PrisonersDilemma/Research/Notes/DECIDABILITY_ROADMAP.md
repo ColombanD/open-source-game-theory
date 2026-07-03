@@ -27,6 +27,17 @@ headline API under `PD.Decidability`), and `ComputableEval/Computable.lean`'s he
 marks `evalC` HISTORICAL/superseded-by-`evalG`. Deferred to a future session: rewiring
 `proofSearch` (its right form depends on the conjecture below) and `by decide` outcome demos.
 
+**T4.1b attack launched (2026-07-03): `Research/Notes/CUT_RELEVANCE.md`** — the analysis
+and milestone plan (C0–C5). Key sharpening (C0, PROVEN in
+`Research/Spikes/transcript/T48CutRelevance.lean`): every gated premise position is
+literal-bounded at its OWN judgment (`cut_lit_bound`/`box_lit_bound`/`diag_lit_bound` via
+size-payment + `maxLitF_lt_two_pow_size`), so the tower is fed EXCLUSIVELY by size-exempt
+cut ATOMS; and the antecedent census shows every impl-producer's antecedent is
+conclusion-determined, weakening-degenerate, or chain-recursive — the conjecture reduces to
+the impl-inversion dichotomy (Lemma A) + degeneracy-elimination budget bookkeeping (Lemma B,
+the real risk; a budget-INFLATED fallback `Provable k φ ↔ ProvableG … (f k) φ` would still
+suffice for decidability).
+
 **The ONE remaining open item** is the T4.1b conjecture (`CutRelevance`,
 `T42ProvableB.lean`): a computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ))
 k φ`. Given it, `proofSearch` is decidable ⇒ `eval` computable ⇒ outcomes `by decide`. If it
