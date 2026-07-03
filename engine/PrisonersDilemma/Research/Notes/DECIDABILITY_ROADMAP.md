@@ -376,6 +376,23 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     budget-depth SLICE (finitely many classes); minimal derivations never repeat a query on a
     branch ⇒ depth ≤ |query universe| ⇒ `f(k, φ)`. Fallback if cut-relevance resists: the
     positive-rule least-fixpoint over the sliced universe (all `Provable` rules are positive).
+  - **T4.2 — ✅ SHIPPED (2026-07-03): `ProvableB N`, the literal-bounded stratification — the
+    conjecture is now a precise engine statement.** `Research/Spikes/transcript/T42ProvableB.lean`
+    (green, no sorry; transfer theorems on `[propext, Quot.sound]` only). `maxLitP`/`maxLitF`
+    (the literal vocabulary); the mutual triple `PlaysProofB/AtomProvableB/ProvableB N`
+    mirroring the engine EXACTLY except six gates on the rules whose premises carry material
+    absent from their conclusions: `implTrans`/`app`/`impS2` cut formulas (`maxLitF ≤ N`),
+    `axK`'s inner subscript and `diagF`/`diagB`'s Löb budget (`≤ N`). (`struct` ungated:
+    `Derivation` is size-paid ⇒ literals `< 2^k` automatically.) Shipped: `ProvableB_sound`
+    (erase gates), `PlaysProofB_monoN`/`ProvableB_monoN`, and
+    **`Provable_iff_exists_ProvableB : Provable k φ ↔ ∃ N, ProvableB N k φ`** (every
+    derivation is finitely-cut — max over its own cut diet). `CutRelevance N₀ :=
+    ∀ k φ, Provable k φ → ProvableB (N₀ k φ) k φ` is THE T4.1b conjecture;
+    `Provable_iff_ProvableB_of_cutRelevance` reduces deciding `Provable` to deciding the
+    stratum. Remaining pipeline: (i) the T4.1a stabilization port to `ProvableB` (finite
+    query space needs the subst-closure/slice treatment of programs — finite outright for
+    "modest" bots whose guards mention `.self`/`.opp` only atomically, i.e. the whole zoo);
+    (ii) the conjecture itself.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
 
 **Total: ~7–10 weeks focused.** Risks ranked: (1) T0 subscript re-balance (killed cheaply if fatal);
