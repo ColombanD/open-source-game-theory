@@ -116,9 +116,17 @@ material in `AntCl(root)` ∪ (size-paid boxes/diags) ⇒ modest and literal-bou
 ## 5. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
-- **C1**: Derivation-layer antecedent determinacy (`Derivation (.impl B C)` ⇒ B
-  conclusion-determined — incl. mp/hypSyll recursion).
-- **C2**: impl-inversion dichotomy for the chain-free fragment (no implTrans/impS2/app-produced
+- **C1 ✅ (2026-07-03, T48 §3–4)**: Derivation-layer antecedent determinacy. KEY DESIGN
+  (reusable for C3): state the invariant over the POSITIVE IMPLICATION SPINE
+  (`PosImpl φ B C`) — then `modusPonens` needs NO cut analysis (the conclusion's spine
+  embeds in the impl-premise's spine: `ih₁ (.tail hp)`) and `hypSyll` is exactly
+  `DAnt.trans`. `DAnt` = the census as an inductive (six transparency constructors +
+  transitivity); `derivation_posImpl_ant`/`derivation_impl_ant` prove it; payoff
+  `DAnt_lit` — Derivation antecedents NEVER increase literals (each census step is built
+  from the consequent's own programs, via `maxLitF_subst`) — and `struct_ant_lit`: every
+  positive antecedent of a `struct`-entry at budget `k` is `< 2^k`-literal-bounded. The
+  Type layer is fully tame; the residue is the `Provable` layer.
+- **C2**: impl-inversion dichotomy for the chain-free `Provable` fragment (no implTrans/impS2/app-produced
   impls) — the census above, formalized.
 - **C3**: the full Lemma A (chains + app-nesting; the positive-position invariant).
 - **C4**: Lemma B rewrites + budget arithmetic (or the budget-inflated fallback).

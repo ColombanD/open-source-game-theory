@@ -1,5 +1,6 @@
 import PrisonersDilemma.Decidability.T42ProvableB
 import PrisonersDilemma.Decidability.T31EngineDecider
+import PrisonersDilemma.Decidability.T46LogicSpace
 
 /-!
 # T4.8 spike — cut relevance, C0: the mechanical foundations.
@@ -188,5 +189,157 @@ theorem local_lit_bound {m : Nat} {B : Formula} (h : Provable m B) :
   · right
     cases hatom with
     | mk cert hle => exact ⟨_, _, _, rfl⟩
+
+/-! ## 3. C1 — the Derivation layer has no free antecedents.
+
+The invariant is stated over the POSITIVE IMPLICATION SPINE (`PosImpl φ B C`: the pair
+`.impl B C` occurs along φ's chain of consequents). This makes `modusPonens` free — the
+conclusion's spine embeds in the impl-premise's spine — and `hypSyll` a transitivity step.
+`DAnt B C` enumerates the census (CUT_RELEVANCE.md §2) for the Type layer: one constructor
+per transparency shape, plus transitivity. -/
+
+/-- `.impl B C` occurs in positive position (along the consequent chain) of the formula. -/
+inductive PosImpl : Formula → Formula → Formula → Prop where
+  | head {B C : Formula} : PosImpl (.impl B C) B C
+  | tail {X C' B C : Formula} : PosImpl C' B C → PosImpl (.impl X C') B C
+
+/-- The Derivation layer's legitimate-antecedent relation: transparency shapes (each
+    conclusion-determined via its `hme`-equation) closed under transitivity. -/
+inductive DAnt : Formula → Formula → Prop where
+  | searchBr {k : Nat} {ψ : Formula} {a b : Action} {me opponent : Prog}
+      (hme : me = .search k ψ (.const a) (.const b)) :
+      DAnt (.box k (ψ.subst me opponent)) (.plays me opponent a)
+  | botSearchSt {k : Nat} {ψ : Formula} {a b : Action} {me opponent : Prog}
+      (hme : me = .bot (.search k ψ (.const a) (.const b))) :
+      DAnt (.box k (ψ.subst me opponent)) (.plays me opponent a)
+  | simSt {me p q opponent : Prog} {a : Action} (hme : me = .sim p q) :
+      DAnt (.plays (p.subst me opponent) (q.subst me opponent) a) (.plays me opponent a)
+  | botSimSt {me p q opponent : Prog} {a : Action} (hme : me = .bot (.sim p q)) :
+      DAnt (.plays (p.subst me opponent) (q.subst me opponent) a) (.plays me opponent a)
+  | iteBr₁ {k : Nat} {z : Prog} {a' c0 c1 : Action} {ψ : Formula} {q me opponent : Prog}
+      (hme : me = .ite (.sim .opp (.bot z)) a'
+        (.search k ψ (.const c0) (.const c1)) q) :
+      DAnt (.plays opponent (.bot z) a')
+        (.impl (.box k (ψ.subst me opponent)) (.plays me opponent c0))
+  | iteBr₂ {k : Nat} {z : Prog} {a' c0 c1 : Action} {ψ : Formula} {q me opponent : Prog}
+      (hme : me = .ite (.sim .opp (.bot z)) a'
+        (.search k ψ (.const c0) (.const c1)) q) :
+      DAnt (.box k (ψ.subst me opponent)) (.plays me opponent c0)
+  | trans {B D C : Formula} : DAnt B D → DAnt D C → DAnt B C
+
+/-- **C1**: every positive-position implication of a `Derivation`-derivable formula has a
+    census-legitimate antecedent. `modusPonens` needs NO analysis of its cut (the
+    conclusion's spine embeds in the impl-premise's); `hypSyll` is `DAnt.trans`. -/
+theorem derivation_posImpl_ant : ∀ {φ : Formula}, Derivation φ →
+    ∀ {B C : Formula}, PosImpl φ B C → DAnt B C := by
+  intro φ d
+  induction d with
+  | modusPonens φ' ψ d₁ d₂ ih₁ ih₂ =>
+      intro B C hp
+      exact ih₁ (.tail hp)
+  | hypSyll φ' ψ' χ' d₁ d₂ ih₁ ih₂ =>
+      intro B C hp
+      cases hp with
+      | head => exact .trans (ih₁ .head) (ih₂ .head)
+      | tail hp' => exact ih₂ (.tail hp')
+  | searchBranch k ψ a b me opponent hme =>
+      intro B C hp
+      cases hp with
+      | head => exact .searchBr hme
+      | tail hp' => cases hp'
+  | simStep me p q opponent a hme =>
+      intro B C hp
+      cases hp with
+      | head => exact .simSt hme
+      | tail hp' => cases hp'
+  | botSimStep me p q opponent a hme =>
+      intro B C hp
+      cases hp with
+      | head => exact .botSimSt hme
+      | tail hp' => cases hp'
+  | botSearchStep k ψ a b me opponent hme =>
+      intro B C hp
+      cases hp with
+      | head => exact .botSearchSt hme
+      | tail hp' => cases hp'
+  | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
+      intro B C hp
+      cases hp with
+      | head => exact .iteBr₁ hme
+      | tail hp' =>
+          cases hp' with
+          | head => exact .iteBr₂ hme
+          | tail hp'' => cases hp''
+  | eqRefl p =>
+      intro B C hp
+      cases hp
+  | eqNeg p q hne =>
+      intro B C hp
+      cases hp
+
+/-- The top-level corollary: `Derivation (.impl B C)` forces a census antecedent. -/
+theorem derivation_impl_ant {B C : Formula} (d : Derivation (.impl B C)) : DAnt B C :=
+  derivation_posImpl_ant d .head
+
+/-! ## 4. Provenance payoff: Derivation antecedents never increase literals. -/
+
+open PD.T46 in
+/-- Every census step is literal-nonincreasing — antecedents are built from the
+    consequent's own programs and their source guards (via `maxLitF_subst`), so the
+    Derivation layer cannot smuggle exotic literals into negative positions. -/
+theorem DAnt_lit : ∀ {B C : Formula}, DAnt B C → maxLitF B ≤ maxLitF C := by
+  intro B C h
+  induction h with
+  | @searchBr k ψ a b me opponent hme =>
+      have hs := maxLitF_subst me opponent ψ
+      subst hme
+      simp only [maxLitF, maxLitP] at *
+      omega
+  | @botSearchSt k ψ a b me opponent hme =>
+      have hs := maxLitF_subst me opponent ψ
+      subst hme
+      simp only [maxLitF, maxLitP] at *
+      omega
+  | @simSt me p q opponent a hme =>
+      have hp := maxLitP_subst me opponent p
+      have hq := maxLitP_subst me opponent q
+      subst hme
+      simp only [maxLitF, maxLitP] at *
+      omega
+  | @botSimSt me p q opponent a hme =>
+      have hp := maxLitP_subst me opponent p
+      have hq := maxLitP_subst me opponent q
+      subst hme
+      simp only [maxLitF, maxLitP] at *
+      omega
+  | @iteBr₁ k z a' c0 c1 ψ q me opponent hme =>
+      subst hme
+      simp only [maxLitF, maxLitP] at *
+      omega
+  | @iteBr₂ k z a' c0 c1 ψ q me opponent hme =>
+      have hs := maxLitF_subst me opponent ψ
+      subst hme
+      simp only [maxLitF, maxLitP] at *
+      omega
+  | trans h₁ h₂ ih₁ ih₂ => omega
+
+/-- Combining C0 + C1: a `struct`-entry at budget `k` has all its positive-position
+    antecedents literal-bounded by the conclusion — which is itself `< 2^k`. The Type
+    layer is fully tame; the residue of the conjecture is the `Provable` layer's chains
+    and its size-exempt cut atoms (CUT_RELEVANCE.md C2–C4). -/
+theorem struct_ant_lit {k : Nat} {φ B C : Formula}
+    (h : ∃ d : Derivation φ, d.size ≤ k) (hp : PosImpl φ B C) :
+    maxLitF B < 2 ^ k := by
+  obtain ⟨d, hsz⟩ := h
+  have h₁ := DAnt_lit (derivation_posImpl_ant d hp)
+  have h₂ : maxLitF C ≤ maxLitF φ ∧ maxLitF B ≤ maxLitF φ := by
+    clear h₁ hsz d
+    induction hp with
+    | head => simp only [maxLitF]; omega
+    | tail hp' ih => simp only [maxLitF]; omega
+  have h₃ := maxLitF_lt_two_pow_size φ
+  have h₄ : φ.size ≤ k := Nat.le_trans d.concl_size_le hsz
+  have h₅ := Nat.pow_le_pow_right (show 1 ≤ 2 by omega) h₄
+  omega
 
 end PD.T48
