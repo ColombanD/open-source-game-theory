@@ -425,9 +425,20 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     cert layer needs no stabilization of its own); `decB N fuel := stepB N ^[fuel] ⊥`;
     `decCertG_soundG`/`certOG_soundG` (T3.1 cert soundness re-targeted at the gated triple);
     **`decB_sound`**: every hit is a real `ProvableG (modestGate N)` derivation (hence
-    `Provable`). Remaining (T4.4b): ∃-fuel completeness, the formula-side space (gated
-    `enumFormula` ∪ `guardU`-subformula closure), the in-space/congr lemmas, and the
-    countP stabilization ⇒ decidability of the modest stratum.
+    `Provable`).
+  - **T4.4b — ✅ SHIPPED (2026-07-03): `decB` is COMPLETE — the modest stratum has its own
+    verified enumerator.** Same spike, §6–8: `stepB_mono`/`decB_mono` (per-checker, the
+    T3.1 `decProv_mono` idiom; the lagged-`certOG` oracle slots lift via `certOG_mono2`);
+    `decB_complete` — the 26-arm joint `ProvableG.rec` (cert motive at FIXED fuel `b+1` —
+    cert budgets strictly decrease so only the guard-oracle slot grows; SIMPLER than
+    `decFull_complete`: checkers consume the approximation at the SAME level, no lagged
+    bridge); payoff **`ProvableG_modest_iff_decB`**:
+    `ProvableG (modestGate N) k φ ↔ ∃ fuel, decB N fuel k φ = true`.
+    Remaining (T4.4c, the LAST assembly step): the formula-side space (gated `enumFormula`
+    ∪ `guardU`-subformula closure), the in-space/congruence lemmas (consuming T4.3), and
+    the T4.1a countP stabilization converting ∃-fuel into the computable bound
+    `|query space|` ⇒ `Decidable (ProvableG (modestGate N) k φ)` for in-space queries —
+    unconditional decidability over the zoo's query universe.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
 
 **Total: ~7–10 weeks focused.** Risks ranked: (1) T0 subscript re-balance (killed cheaply if fatal);
