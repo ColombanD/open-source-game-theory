@@ -1,5 +1,5 @@
-import PrisonersDilemma.Research.Spikes.transcript.T44BoundedDecider
-import PrisonersDilemma.Research.Spikes.transcript.T46LogicSpace
+import PrisonersDilemma.Decidability.T44BoundedDecider
+import PrisonersDilemma.Decidability.T46LogicSpace
 
 /-!
 # T4.7 spike — the STABILIZATION space (T4.4c part 2b, chunk 1: the space).

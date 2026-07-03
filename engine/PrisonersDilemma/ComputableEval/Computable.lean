@@ -2,39 +2,27 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 
 /-!
-# A genuinely computable, SOUND partial evaluator `evalC` (the reviewer-facing demo)
+# `evalC` — the ORIGINAL sound computable partial evaluator (HISTORICAL; superseded)
 
-`eval` (Dynamics.lean) is `noncomputable`: its `.search` guard consults the classical
-oracle `proofSearch k φ := decide (Provable k φ)`. This is *forced* — the library's
-57 `proofSearch_spec.2` sites (completeness `Provable → proofSearch = true`) include the
-Löb fixpoints (PrudentBot↔DupocBot cooperation), whose provability has **no finite play
-witness** (it is established by the bounded-Σ₁ reflection axioms PBLT /
-`atom_box_provable_impl`, not by unrolling). No terminating computation can return `true`
-on those, so no computable function can satisfy the existing `proofSearch_spec`.
+**Superseded 2026-07-03 by `Decidability/T31EngineDecider.lean` §9 (`evalG`)**, which commits
+soundly in BOTH guard polarities (true via the verified enumerator `decFull`; false via a
+DERIVABLE refutation plus soundness/consistency), agrees with `eval` at the SAME fuel, and
+runs the actual search bots under `#eval`. `evalC` is kept building as the historical
+first artifact and because its 3-valued-guard design lesson (a 2-valued guard is UNSOUND on
+undecided searches) is documented here.
 
-So we add a SEPARATE, total, computable `evalC`. The subtlety (found the hard way): the
-`.search` guard must be **3-valued** — `decGuard` returns `some true` (a finite play
-witness exists), `some false` (a finite *refutation* exists: the subject actually plays
-something else), or `none` (undecided within fuel). `evalC` runs the then-branch on
-`some true`, the else-branch on `some false`, and returns `none` on `none`. A 2-valued
-guard that silently defected on "undecided" would return the WRONG action on the Löb
-fixpoints (defect where the real bot cooperates) — `decGuard` would then be unsound. The
-3-valued design makes `evalC` a SOUND partial evaluator: it never commits a wrong action;
-it cooperates / defects only with a witness, and answers `none` on the Löb fixpoints.
+Historical context (updated): `eval` (Dynamics.lean) is `noncomputable` because its
+`.search` guard consults the classical oracle `proofSearch k φ := decide (Provable k φ)`.
+`Provable` is now known to be absolutely SEMIDECIDABLE (`Provable_iff_decFull`) and
+DECIDABLE over the modest stratum (`Decidability/T47Stabilization.lean`); full decidability
+— hence a strictly computable `eval` — is open exactly up to the `CutRelevance` conjecture
+(`Decidability/T42ProvableB.lean`). The former claims in this header that the boundary was
+"permanent" and axiom-backed predate the 2026-07-03 axiom deletion and are RETIRED.
 
-Faithfulness (C2, `evalC_sound`): `evalC fuel me opp body = some a ⇒ ∃ N, eval N me opp
-body = some a` — every committed answer is a real classical play. The converse fails (the
-Löb fixpoints: `eval` cooperates, `evalC` says `none`) — that is the intrinsic boundary,
-Löb's theorem, where bounded computation ends and modal reflection begins. This boundary is
-**permanent**, not an artifact of keeping reflection axiomatic: making `S` explicit gives the
-fixpoint a proof of *existence* (`∃ m, Provable m φ`), never the proof *term* a guard search
-needs — the proof-vs-witness gap, machine-checked by spikes S3/S3′
-(`Research/Notes/CONSTRUCTIVE_BOUNDED_LOB.md`). It is NOT, however, a Gödel/Π₁ wall: the
-finite (non-fixpoint) fragment `evalC` commits on is genuinely decidable.
-
-`evalC` answers the reviewer's "noncomputable = misuse" jab concretely (`#eval evalC …`
-runs in the kernel and is provably correct whenever it commits). The library's
-`eval`/`proofSearch`/outcome theorems are untouched.
+`evalC` mirrors `eval` except the `.search` guard consults the 3-valued computable
+`decGuard`: `some true` (a finite play witness fits the budget), `some false` (a finite
+refutation), `none` (undecided — the Löb fixpoints). Faithfulness: `evalC_sound` — every
+committed answer is a real classical play.
 -/
 
 namespace PD

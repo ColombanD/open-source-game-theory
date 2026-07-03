@@ -10,14 +10,22 @@ Everything below T4.1b is DONE, on Lean's 3 standard axioms, no sorries:
 |---|---|
 | ZERO project axioms (the last one was proven INCONSISTENT and repaired) | `Derivation.lean`, `T32Inconsistency.lean`, `BaseTheorems.sound_upto` |
 | Transcript-cumulative costs (Critch's literal model), staggered-budget outcome recoveries, `PrudentBot2` (bounded PA+1) | T1/T2, T3.2b |
-| `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true` — ABSOLUTE semidecidability, verified computable enumerator | `T31EngineDecider.lean` §7–8 |
-| `evalG` — computable evaluation of search bots, sound commits in BOTH guard polarities; `#eval` demos run | `T31EngineDecider.lean` §9 |
-| `ProvableG G` gate-parametric strata; `Provable ↔ ∃N, ProvableB N`; `CutRelevance` stated | `T42ProvableB.lean` |
-| MODESTY: the whole zoo's substitution dynamics live in a finite universe (each bot `by rfl`) | `T43ModestUniverse.lean` |
-| `decB` — the modest-bounded decider, SOUND and ∃-fuel COMPLETE for the stratum | `T44BoundedDecider.lean` |
-| The certificate layer's read interface (`CertRead`, congruence, finite read-set) | `T45CertReads.lean` |
-| The global query universe (non-circular budget ceiling `R = max k₀ (max L₀ N)`) | `T46LogicSpace.lean` |
-| **`Decidable (ProvableG (modestGate N) k φ)`** — fuel bound `\|SL\|`, countP stabilization | `T47Stabilization.lean` |
+| `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true` — ABSOLUTE semidecidability, verified computable enumerator | `Decidability/T31EngineDecider.lean` §7–8 |
+| `evalG` — computable evaluation of search bots, sound commits in BOTH guard polarities; `#eval` demos run | `Decidability/T31EngineDecider.lean` §9 |
+| `ProvableG G` gate-parametric strata; `Provable ↔ ∃N, ProvableB N`; `CutRelevance` stated | `Decidability/T42ProvableB.lean` |
+| MODESTY: the whole zoo's substitution dynamics live in a finite universe (each bot `by rfl`) | `Decidability/T43ModestUniverse.lean` |
+| `decB` — the modest-bounded decider, SOUND and ∃-fuel COMPLETE for the stratum | `Decidability/T44BoundedDecider.lean` |
+| The certificate layer's read interface (`CertRead`, congruence, finite read-set) | `Decidability/T45CertReads.lean` |
+| The global query universe (non-circular budget ceiling `R = max k₀ (max L₀ N)`) | `Decidability/T46LogicSpace.lean` |
+| **`Decidable (ProvableG (modestGate N) k φ)`** — fuel bound `\|SL\|`, countP stabilization | `Decidability/T47Stabilization.lean` |
+
+**T5 consolidation (2026-07-03): PROMOTED.** The chain above moved from
+`Research/Spikes/transcript/` to `PrisonersDilemma/Decidability/` (milestone names and
+namespaces kept — historical entries below cite the old paths), is wired into the default
+`lake build` via the umbrella `PrisonersDilemma/Decidability.lean` (which re-exports the
+headline API under `PD.Decidability`), and `ComputableEval/Computable.lean`'s header now
+marks `evalC` HISTORICAL/superseded-by-`evalG`. Deferred to a future session: rewiring
+`proofSearch` (its right form depends on the conjecture below) and `by decide` outcome demos.
 
 **The ONE remaining open item** is the T4.1b conjecture (`CutRelevance`,
 `T42ProvableB.lean`): a computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ))

@@ -1,5 +1,5 @@
-import PrisonersDilemma.Research.Spikes.transcript.T31EngineDecider
-import PrisonersDilemma.Research.Spikes.transcript.T43ModestUniverse
+import PrisonersDilemma.Decidability.T31EngineDecider
+import PrisonersDilemma.Decidability.T43ModestUniverse
 
 /-!
 # T4.5 spike — the certificate layer's READ INTERFACE (T4.4c part 1).

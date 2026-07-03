@@ -30,7 +30,8 @@ everything. Namespace `PD`. Layered bottom-up (each file imports the ones above)
 | **Meta-theorems** | `BaseTheorems.lean`, `SizeLemmas.lean` | Soundness (`Derivation.sound`, `proofSearch_sound`), `proofSearch_spec`/`_monotone`, `atom_complete`, size/log bounds. The bridge from provability to real plays. |
 | **Bots** | `Bots/*.lean`, `Bots/LlmGenerations/*.lean` | The agent zoo: `CooperateBot`, `DefectBot`, `MirrorBot`, `TitForTatBot`, `DupocBot`, `CupodBot`, `EBot`, … and LLM-generated `PrudentBot`, `JustBot`, `CIMCIC`, `DIMCID`. |
 | **Outcome theorems** | `Theorems/*.lean`, `Theorems/LlmGenerations/*.lean` | The headline results: `outcome_X_vs_Y = some (a,b)` (and `∃k₂,∀k>k₂,…` families). Hand-written + LLM-written (`llm_outcome_` prefix; indexed via `Theorems/LlmGenerations.lean`). |
-| **Computable evaluator** | `ComputableEval/` | `evalC` — a sound, total, computable **partial** evaluator (the reviewer-facing demo); see crux. |
+| **Decidability** | `Decidability/` | The T3.2c/T4 chain (modules keep milestone names `T31`…`T47`; umbrella `Decidability.lean` re-exports the API): `decFull` (verified enumerator, `Provable_iff_decFull`), `evalG` (computable evaluation of search bots, sound both guard polarities, `#eval` demos), `ProvableG` strata + `CutRelevance` (THE open conjecture), the modest universe, and `decideProvableG : Decidable (ProvableG (modestGate N) k φ)` with computable fuel bound. |
+| **Computable evaluator (historical)** | `ComputableEval/` | `evalC` — the original sound computable partial evaluator; SUPERSEDED by `Decidability`'s `evalG` (kept building, header marks it historical). |
 | **Research notes** | `Research/Notes/`, `Research/Readings/`, `Research/Data/` | Theory write-ups (esp. `COMPUTABLE_EVAL_NOTES.md`, `UnderstandingTheLayers.md`), extracted source papers, tournament data. |
 
 **The strict outcome-theorem template** is the linchpin the whole pipeline relies on:
@@ -67,15 +68,17 @@ Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMA
   of MIRI PrudentBot's PA+1 prudence, rediscovered here from consistency alone).
 - **2026-07-03 (later) — `Provable` is ABSOLUTELY SEMIDECIDABLE**: `decFull`, a verified
   computable enumerator with `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true`
-  (`T31EngineDecider.lean` §7–8) — the logic and atom layers tied by fuel stratification, no
-  oracle, no hypothesis. And **search bots RUN**: `evalG` (spike §9) is a computable evaluator
+  (`Decidability/T31EngineDecider.lean` §7–8) — the logic and atom layers tied by fuel
+  stratification, no oracle, no hypothesis. And **search bots RUN**: `evalG` (spike §9) is a computable evaluator
   with SOUND commits in BOTH guard polarities (true via `decFull`; false via a DERIVABLE
   refutation + soundness/consistency — the honest replacement for what the deleted axiom
   faked); `#eval` demos print real outcomes, `none` only at the Löb boundary. This supersedes
   `evalC`'s role.
-- **2026-07-03 (latest) — the T4 pipeline: DECIDABILITY over the zoo universe.** The spike
-  chain `T4QueryBound` → `T42ProvableB` → `T43ModestUniverse` → `T44BoundedDecider` →
-  `T45CertReads` → `T46LogicSpace` → `T47Stabilization` delivers
+- **2026-07-03 (latest) — the T4 pipeline: DECIDABILITY over the zoo universe.** The
+  `Decidability/` chain `T42ProvableB` → `T43ModestUniverse` → `T44BoundedDecider` →
+  `T45CertReads` → `T46LogicSpace` → `T47Stabilization` (promoted 2026-07-03 from
+  `Research/Spikes/transcript/`, wired into `lake build`; the abstract stabilization mini
+  `T4QueryBound` stays a spike) delivers
   **`Decidable (ProvableG (modestGate N) k φ)`** with a computable fuel bound `|SL|`:
   `ProvableG G` is the gate-parametric proof system (six conclusion-absent premise formulas
   gated); `modestGate N` = literal-bounded + modest cuts; MODESTY (all `.sim` args and
@@ -83,7 +86,7 @@ Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMA
   substitution dynamics' query universe finite; the decider `decB` is sound + complete for
   the stratum and stabilizes on the finite space by a countP pigeonhole.
   `Provable ↔ ∃N, ProvableB N` (every derivation is finitely-cut) is a theorem.
-- **Open — exactly ONE conjecture (T4.1b, `CutRelevance` in `T42ProvableB.lean`)**: a
+- **Open — exactly ONE conjecture (T4.1b, `CutRelevance` in `Decidability/T42ProvableB.lean`)**: a
   computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ)) k φ` (minimal
   derivations never need exotic cuts). Given it: `proofSearch` becomes decidable, `eval`
   computable, outcomes `by decide`. If it FAILS, `Provable` is a candidate undecidable

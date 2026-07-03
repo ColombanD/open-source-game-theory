@@ -1,6 +1,6 @@
-import PrisonersDilemma.Research.Spikes.transcript.T31EngineDecider
-import PrisonersDilemma.Research.Spikes.transcript.T42ProvableB
-import PrisonersDilemma.Research.Spikes.transcript.T43ModestUniverse
+import PrisonersDilemma.Decidability.T31EngineDecider
+import PrisonersDilemma.Decidability.T42ProvableB
+import PrisonersDilemma.Decidability.T43ModestUniverse
 
 /-!
 # T4.4 spike — `decB`: the modest-bounded decider (part a: the step operator, SOUND).

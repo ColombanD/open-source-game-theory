@@ -1,5 +1,5 @@
-import PrisonersDilemma.Research.Spikes.transcript.T42ProvableB
-import PrisonersDilemma.Research.Spikes.transcript.T45CertReads
+import PrisonersDilemma.Decidability.T42ProvableB
+import PrisonersDilemma.Decidability.T45CertReads
 
 /-!
 # T4.6 spike — the GLOBAL query universe (T4.4c part 2a).
