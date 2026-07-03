@@ -157,6 +157,58 @@ budget-relativity of deep judgments is the part to nail down (deep cites at budg
 have local cuts `< 2^kg`; `kg` itself is source-material of an Inv-tame formula, so the
 aggregation should ground out at `N₀ = 2^(max k L(root closure) + c)` — verify).
 
+### 5a. C3b design refinements (2026-07-03, second pass — read before attempting)
+
+Working the master induction to the brink of formalization surfaced three load-bearing
+facts that fix the design:
+
+1. **The budget invariant.** If every judgment's FORMULA satisfies `maxLitF ≤ L`
+   (tameness), then every cite targets a literal `≤ L`, so EVERY budget in the derivation
+   is `≤ M := max k L` — and all size-paid material is `< 2^M`, giving the FIXED stratum
+   bound `N₀ := 2^(M+2)` with no aggregation subtleties. Tameness must thread as an INPUT
+   (downward): each rule's premise formulas are conclusion-material (`≤ L` ✓),
+   cite-substs (`maxLitF_subst`, `≤ L` ✓), census antecedents (nonincreasing ✓), or CUTS —
+   which the dichotomy resolves (census ⇒ `≤ L`; degenerate ⇒ rewritten away).
+
+2. **The literal half still needs the census.** Tempting shortcut — "all cuts are
+   size-paid locally, so `< 2^M` suffices" — FAILS: a `2^M`-literal cut formula's programs
+   contain `2^M`-literal `.search` nodes; the cut's own cert obligations cite THOSE guards
+   at budget `~2^M`, breaking the budget invariant and restarting the tower. Only
+   tame-bounded (`≤ L`) cut formulas keep cites at `≤ L`. So the dichotomy/census is
+   load-bearing even for the literal-only statement.
+
+3. **The holes do not compose through `trans`.** `PAnt.trans` chains
+   `B ≤ D-material ≤ C-material` — if `D` is an `axkPair` hole, `B` is bounded by an
+   unbounded intermediate. A generic `PAnt_lit` lemma is therefore false-ish; the hole
+   information must be carried, which the MERGED MOTIVE does naturally. Final motive shape
+   (three components, all parameterized by the tameness bound `L`):
+
+   ```
+   motive₃ (m, φ) :=
+        (Tame L φ → m ≤ M → ProvableB N₀ m φ)                                -- transform
+      ∧ (∀ B C, PosImpl φ B C → censusTame B C ∨                            -- pair dichotomy
+           ∃ m' ≤ m, Provable m' C ∧ (Tame L C → m' ≤ M → ProvableB N₀ m' C))  --  w/ transform
+      ∧ (∀ b ψ, PosBox φ b ψ → contentTame ψ ∨                              -- box contents
+           ∃ mb ≤ b, Provable mb ψ ∧ (Tame L ψ → … → ProvableB N₀ mb ψ))       --  w/ transform
+   ```
+
+   The third component is what resolves the `axkPair`/`box4` holes WITHOUT box_inversion's
+   opaque witnesses breaking the induction: box contents' transforms are carried
+   structurally from `boxIntro`/spine arms, exactly as degenerate witnesses are. The cert
+   layer's motives carry the program-side tameness (the T4.3 universe hypotheses) for the
+   guard-subst premises.
+
+   Modesty rides the same induction: `Tame L φ` becomes `maxLitF φ ≤ L ∧ argsIn U φ` with
+   `U` the T4.3/T4.6 universe, and the same threading arguments apply (census antecedents
+   are subst-instances of consequent programs — `T43.step_*`; cut-args re-enter via the
+   gate — `T47.enumArg_mem`-style).
+
+4. **Expected failure points to watch**: the axK arm's degenerate-content case (rewrite
+   arithmetic — first candidate for the budget-inflation fallback, which would change
+   `ProvableB N₀ m φ` to `ProvableB N₀ (F m) φ` for a fixed computable `F`, harmless for
+   decidability); and `diagF/B`'s Löb-premise pairs at deep positions (covered by the
+   premise IH — verify the budget side-conditions).
+
 ## 5b. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
@@ -193,9 +245,9 @@ aggregation should ground out at `N₀ = 2^(max k L(root closure) + c)` — veri
   `provable_pos`; **`box_inversion`** — a derivable box comes from `boxIntro` (its content
   WAS a judgment, at budget = the subscript) or an `app` spine, nothing else. These are the
   master induction's tools for resolving the census holes from sibling judgments.
-- **C3b**: the master induction (§5 architecture): resolve the `Inv`-contract (the
-  `SelfInv` output-form candidate), formalize `Cl`/GATE aggregation, run the merged
-  transform+dichotomy induction.
+- **C3b**: the master induction per §5a's three-component motive — target theorem
+  (literal half first): `Provable k φ → ProvableB (2^(max k (maxLitF φ) + 2)) k φ`;
+  then the modest half by enriching `Tame`. Fresh-session scope; all design recorded.
 - **C4**: Lemma B rewrites + budget arithmetic (or the budget-inflated fallback).
 - **C5**: assembly — `CutRelevance` (possibly budget-inflated) for modest roots; plug into
   T47 ⇒ `Provable` decidable on the zoo universe; `proofSearch := D`.
