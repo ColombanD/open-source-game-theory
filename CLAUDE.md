@@ -38,7 +38,7 @@ everything. Namespace `PD`. Layered bottom-up (each file imports the ones above)
 **compilation == correctness** — an LLM-written proof that type-checks is, modulo the
 NL→Lean *bot* translation, a verified result.
 
-## Foundational status — zero axioms, transcript costs; `eval` computability is the one open item
+## Foundational status — zero axioms, transcript costs; `eval` computability reduced to ONE conjecture
 
 Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMAP.md` (current),
 `COMPUTABLE_EVAL_NOTES.md`, `INTERNALIZATION_ROADMAP.md` (historical).
@@ -65,10 +65,30 @@ Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMA
   `outcome_JustBot_vs_PrudentBot`; `outcome_JustBot_vs_CupodTrollBot`), and self-play needs the
   two-tier `PrudentBot2` (prudence budget above the cooperation literal — the bounded analogue
   of MIRI PrudentBot's PA+1 prudence, rediscovered here from consistency alone).
-- **Open (T3.2c/T4)**: the atom-layer decider (fuel-stratification of `search_t`'s cited guard
-  premises) and `proofSearch := D`, which would make `eval` fully computable and outcomes
-  `by decide`. `evalC` (`ComputableEval/`) remains the sound computable partial evaluator
-  (true-commits now restricted to the search-free fragment).
+- **2026-07-03 (later) — `Provable` is ABSOLUTELY SEMIDECIDABLE**: `decFull`, a verified
+  computable enumerator with `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true`
+  (`T31EngineDecider.lean` §7–8) — the logic and atom layers tied by fuel stratification, no
+  oracle, no hypothesis. And **search bots RUN**: `evalG` (spike §9) is a computable evaluator
+  with SOUND commits in BOTH guard polarities (true via `decFull`; false via a DERIVABLE
+  refutation + soundness/consistency — the honest replacement for what the deleted axiom
+  faked); `#eval` demos print real outcomes, `none` only at the Löb boundary. This supersedes
+  `evalC`'s role.
+- **2026-07-03 (latest) — the T4 pipeline: DECIDABILITY over the zoo universe.** The spike
+  chain `T4QueryBound` → `T42ProvableB` → `T43ModestUniverse` → `T44BoundedDecider` →
+  `T45CertReads` → `T46LogicSpace` → `T47Stabilization` delivers
+  **`Decidable (ProvableG (modestGate N) k φ)`** with a computable fuel bound `|SL|`:
+  `ProvableG G` is the gate-parametric proof system (six conclusion-absent premise formulas
+  gated); `modestGate N` = literal-bounded + modest cuts; MODESTY (all `.sim` args and
+  guard-atom args are `.self`/`.opp`/frozen — true of the WHOLE zoo, each by `rfl`) makes the
+  substitution dynamics' query universe finite; the decider `decB` is sound + complete for
+  the stratum and stabilizes on the finite space by a countP pigeonhole.
+  `Provable ↔ ∃N, ProvableB N` (every derivation is finitely-cut) is a theorem.
+- **Open — exactly ONE conjecture (T4.1b, `CutRelevance` in `T42ProvableB.lean`)**: a
+  computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ)) k φ` (minimal
+  derivations never need exotic cuts). Given it: `proofSearch` becomes decidable, `eval`
+  computable, outcomes `by decide`. If it FAILS, `Provable` is a candidate undecidable
+  bounded-provability predicate — either resolution is thesis-grade. Evidence for: every
+  library theorem's cut diet is modest and `O(k)`-literal.
 
 **Dead ends (do not retry):** deciding `Provable` by structural recursion on the program
 (`DecMeasure.lean`); the `derivable`/`playsCheck` separate-gas checker; proof-term enumeration
@@ -76,7 +96,10 @@ under CONCLUSION-cost (mp-cut wall, `MN1_decidable.lean` — dissolved by transc
 model/realizability witness extraction (`ConstructiveLobToy.lean` §8); unprovability-premised
 `search_f` (non-monotone fixpoint — the anti-diagonal bot is its paradox); charging
 `searchThenSearch_t`'s inner premise (sinks the staggered Löb chains — cite via `c_guard`, like
-`search_t`).
+`search_t`); uniform (non-budget-stratified) size bounds for the decider's query space
+(cut-composites grow per descent — stratify: `ZS b := Z₀ + (RR−b)·stride`); structural size
+bounds for `enumFormula` members (the enum is a deliberate SUPERSET — bound by `foldMax` over
+the list itself).
 
 ---
 

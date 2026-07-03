@@ -1,5 +1,33 @@
 # Decidability Roadmap — decidable `Provable`, computable `eval`, ZERO axioms
 
+---
+
+## ⚑ STATUS (2026-07-03, end of the T3/T4 arc) — read this first
+
+Everything below T4.1b is DONE, on Lean's 3 standard axioms, no sorries:
+
+| Result | Where |
+|---|---|
+| ZERO project axioms (the last one was proven INCONSISTENT and repaired) | `Derivation.lean`, `T32Inconsistency.lean`, `BaseTheorems.sound_upto` |
+| Transcript-cumulative costs (Critch's literal model), staggered-budget outcome recoveries, `PrudentBot2` (bounded PA+1) | T1/T2, T3.2b |
+| `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true` — ABSOLUTE semidecidability, verified computable enumerator | `T31EngineDecider.lean` §7–8 |
+| `evalG` — computable evaluation of search bots, sound commits in BOTH guard polarities; `#eval` demos run | `T31EngineDecider.lean` §9 |
+| `ProvableG G` gate-parametric strata; `Provable ↔ ∃N, ProvableB N`; `CutRelevance` stated | `T42ProvableB.lean` |
+| MODESTY: the whole zoo's substitution dynamics live in a finite universe (each bot `by rfl`) | `T43ModestUniverse.lean` |
+| `decB` — the modest-bounded decider, SOUND and ∃-fuel COMPLETE for the stratum | `T44BoundedDecider.lean` |
+| The certificate layer's read interface (`CertRead`, congruence, finite read-set) | `T45CertReads.lean` |
+| The global query universe (non-circular budget ceiling `R = max k₀ (max L₀ N)`) | `T46LogicSpace.lean` |
+| **`Decidable (ProvableG (modestGate N) k φ)`** — fuel bound `\|SL\|`, countP stabilization | `T47Stabilization.lean` |
+
+**The ONE remaining open item** is the T4.1b conjecture (`CutRelevance`,
+`T42ProvableB.lean`): a computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ))
+k φ`. Given it, `proofSearch` is decidable ⇒ `eval` computable ⇒ outcomes `by decide`. If it
+fails, `Provable` is a candidate undecidable bounded-provability predicate. Either resolution
+is thesis-grade. (Optional consolidation, T5: promote the spike chain into the engine tree,
+wire `proofSearch` to the decided fragment, retire `evalC`.)
+
+---
+
 **Goal.** Make `Provable k φ` decidable by a computable `D` with `D k φ = true ↔ Provable k φ`.
 Payoffs (all from this ONE lever): `proofSearch := D` ⇒ **`eval` computable** (the project crux);
 `search_f` with the positive premise `D k guard = false` becomes typeable AND sound (both walls of
