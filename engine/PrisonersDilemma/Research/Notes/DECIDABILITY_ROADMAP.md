@@ -393,6 +393,23 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     query space needs the subst-closure/slice treatment of programs — finite outright for
     "modest" bots whose guards mention `.self`/`.opp` only atomically, i.e. the whole zoo);
     (ii) the conjecture itself.
+  - **T4.3 — ✅ SHIPPED (2026-07-03): the MODEST universe — the query space is finite and
+    closed under the evaluation dynamics.** `Research/Spikes/transcript/T43ModestUniverse.lean`
+    (green, no sorry; step lemmas on `[propext, Quot.sound]`). `closedP/closedF`
+    (subst-invariance; `.bot`/`.diag`/`.eq`-RHS frozen by `subst` itself) with
+    `substP_id/substF_id`; **`modestP/modestF`** — every substitution-reachable position
+    (`.sim` args, `.plays`-atom args in guards) is `.self`/`.opp`/frozen — computable and
+    `rfl`-checkable; `subsP/subsF` subterm closure (through guard formulas) with
+    transitivity and modesty-inheritance; `playsArgsF` + `playsArgsF_subst` (substituted
+    modest atoms resolve to the players or frozen originals). The universe: `certU`
+    (bodies) / `players` (roots + frozen subterms) / `guardU` (guards × player pairs), all
+    finite lists, with the STEP LEMMAS `step_sim` (new players stay players), `step_search`
+    (hops land in `guardU`), `guardU_args` (hop formulas' `.plays` args are players) —
+    the `T4QueryBound` in-space closure for real engine programs. THE WHOLE ZOO IS MODEST
+    (`MirrorBot`/`DupocBot`/`CupodBot`/`TitForTat`/`PrudentBot`/`PrudentBot2`/`JustBot`,
+    each `by rfl`). Remaining for (i), now assembly: the two-sided step operator for
+    `ProvableB` over `(budgets ≤ max k N) × (gated enumFormula ∪ guardU-subformulas) ×
+    (players² × certU)` + the T4.1a lfp-stabilization verbatim.
 - **T5 — aftermath.** Retire evalC scaffolding; docs (CLAUDE.md crux → RESOLVED); paper notes.
 
 **Total: ~7–10 weeks focused.** Risks ranked: (1) T0 subscript re-balance (killed cheaply if fatal);
