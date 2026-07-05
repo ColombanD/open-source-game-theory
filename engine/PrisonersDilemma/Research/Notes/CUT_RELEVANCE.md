@@ -296,9 +296,22 @@ CutRelevance. Modesty then rides the same induction (enrich Tame with the T4.3 u
   `provable_pos`; **`box_inversion`** — a derivable box comes from `boxIntro` (its content
   WAS a judgment, at budget = the subscript) or an `app` spine, nothing else. These are the
   master induction's tools for resolving the census holes from sibling judgments.
-- **C3b**: the master induction per §5a′ (the FINAL spec — supersedes §5a's sketch).
-  Foundations (maxSLit measure, subst lemma, split lemma) in T48 §7 ✅ (2026-07-03).
-  Remaining: `PPair` + the master `Provable.rec` (~26 arms, 3×3 composition subcases).
+- **C3b-i ✅ (2026-07-03, T48 §8)**: **THE TAME TRICHOTOMY** — `tame_impl_trichotomy`:
+  `Provable m (.impl B C) → Tri L m B C` where `Tri` = D1 (`maxSLitF C ≤ L → maxSLitF B ≤
+  L` — implicational, composes) ∨ DboxAnt (`B` is a box — sibling-resolvable at its
+  discharge `app`) ∨ DboxMid (a box-antecedent pair recorded in a judgment — the
+  `implTrans`-through-box-middle kernel) ∨ DboxPos (a box-interior pair of a judgment —
+  content-judgment-resolvable) ∨ D2 (degenerate within budget). Over the full `PPair`
+  (spines + one box-content descent). The obstruction disjuncts are SELF-CONTAINED so all
+  compositions pass verbatim; the census cases needed only `DAnt_slit` (search literals
+  never increase — the subscript-blocked cases of the old census are D1 now or honestly
+  Dbox*). The conjecture's residue is now EXACTLY the three box obstructions.
+- **C3b-ii**: the master transform — thread the carried-transform payloads through `Tri`
+  (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
+  DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid
+  is the open kernel — attack via a side induction on the middle's box-structure, or show
+  its wild instances are D2-absorbed as in the confinement argument). Target unchanged:
+  `Provable k φ → ProvableB (2^(max k (maxSLitF φ) + 2)) k φ`.
 - **C4**: Lemma B rewrites + budget arithmetic (or the budget-inflated fallback).
 - **C5**: assembly — `CutRelevance` (possibly budget-inflated) for modest roots; plug into
   T47 ⇒ `Provable` decidable on the zoo universe; `proofSearch := D`.
