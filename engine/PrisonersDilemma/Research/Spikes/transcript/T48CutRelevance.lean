@@ -807,4 +807,286 @@ theorem gate_bound {L M m : Nat} {ψ : Formula} (hLM : L ≤ M) (hm : m ≤ M)
     omega
   omega
 
+/-! ## 8. C3b-i — the TAME TRICHOTOMY over `PPair` (the maxSLit dichotomy, upgraded).
+
+Every positive pair (implication spines + one box-content descent) of a derivable formula
+is: **D1** literal-nonincreasing (`Tame C → Tame B` — implicational, composes through the
+chains), **D2** degenerate (consequent provable within budget), or one of THREE precisely
+named box obstructions — **DboxAnt** (the pair's antecedent is a box: sibling-resolvable at
+its discharge `app`), **DboxMid** (a box-antecedent pair recorded in some judgment: the
+`implTrans`-through-box-middle kernel), **DboxPos** (a box-interior pair of some judgment:
+content-judgment-resolvable). The obstruction disjuncts are SELF-CONTAINED (they mention
+their own witnesses, not the ambient pair), so they pass through every composition
+verbatim. This isolates the conjecture's residue to exactly the box-flavored positions the
+sibling machinery (§6) is designed for. -/
+
+/-- `.box j χ` occurs along the positive consequent chain. -/
+inductive PosBox : Formula → Nat → Formula → Prop where
+  | head {j : Nat} {χ : Formula} : PosBox (.box j χ) j χ
+  | tail {X C' : Formula} {j : Nat} {χ : Formula} :
+      PosBox C' j χ → PosBox (.impl X C') j χ
+
+/-- Positive pairs at box-depth ≤ 1: implication-spine pairs, plus the spine pairs of one
+    positive box's content (what `axK`-premise sourcing needs; deeper box interiors are
+    never consumed — boxes are never opened). -/
+def PPair (φ B C : Formula) : Prop :=
+  PosImpl φ B C ∨ ∃ j χ, PosBox φ j χ ∧ PosImpl χ B C
+
+theorem PPair_tail {X C' B C : Formula} (h : PPair C' B C) : PPair (.impl X C') B C := by
+  rcases h with h | ⟨j, χ, pb, pi⟩
+  · exact Or.inl (.tail h)
+  · exact Or.inr ⟨j, χ, .tail pb, pi⟩
+
+theorem PPair_tail_inv {X C' B C : Formula} (h : PPair (.impl X C') B C) :
+    (B = X ∧ C = C') ∨ PPair C' B C := by
+  rcases h with h | ⟨j, χ, pb, pi⟩
+  · cases h with
+    | head => exact Or.inl ⟨rfl, rfl⟩
+    | tail h' => exact Or.inr (Or.inl h')
+  · cases pb with
+    | tail pb' => exact Or.inr (Or.inr ⟨j, χ, pb', pi⟩)
+
+theorem PPair_box_inv {j₀ : Nat} {χ₀ B C : Formula} (h : PPair (.box j₀ χ₀) B C) :
+    PosImpl χ₀ B C := by
+  rcases h with h | ⟨j, χ, pb, pi⟩
+  · cases h
+  · cases pb with
+    | head => exact pi
+
+/-- Census steps never increase SEARCH literals (box/diag subscripts don't count). -/
+theorem DAnt_slit : ∀ {B C : Formula}, DAnt B C → maxSLitF B ≤ maxSLitF C := by
+  intro B C h
+  induction h with
+  | @searchBr k ψ a b me opponent hme =>
+      have hs := maxSLitF_subst me opponent ψ
+      subst hme
+      simp only [maxSLitF, maxSLitP] at *
+      omega
+  | @botSearchSt k ψ a b me opponent hme =>
+      have hs := maxSLitF_subst me opponent ψ
+      subst hme
+      simp only [maxSLitF, maxSLitP] at *
+      omega
+  | @simSt me p q opponent a hme =>
+      have hp := maxSLitP_subst me opponent p
+      have hq := maxSLitP_subst me opponent q
+      subst hme
+      simp only [maxSLitF, maxSLitP] at *
+      omega
+  | @botSimSt me p q opponent a hme =>
+      have hp := maxSLitP_subst me opponent p
+      have hq := maxSLitP_subst me opponent q
+      subst hme
+      simp only [maxSLitF, maxSLitP] at *
+      omega
+  | @iteBr₁ k z a' c0 c1 ψ q me opponent hme =>
+      subst hme
+      simp only [maxSLitF, maxSLitP] at *
+      omega
+  | @iteBr₂ k z a' c0 c1 ψ q me opponent hme =>
+      have hs := maxSLitF_subst me opponent ψ
+      subst hme
+      simp only [maxSLitF, maxSLitP] at *
+      omega
+  | trans h₁ h₂ ih₁ ih₂ => omega
+
+theorem endsInPlays_no_box : ∀ {φ : Formula} {j : Nat} {χ : Formula},
+    EndsInPlays φ → PosBox φ j χ → False := by
+  intro φ j χ he pb
+  induction pb with
+  | head => cases he
+  | tail pb' ih =>
+      cases he with
+      | impl he' => exact ih he'
+
+/-- The five-way answer. Obstruction disjuncts are self-contained (compose verbatim). -/
+def Tri (L m : Nat) (B C : Formula) : Prop :=
+  (maxSLitF C ≤ L → maxSLitF B ≤ L)
+  ∨ (∃ b ψ₀, B = Formula.box b ψ₀)
+  ∨ (∃ b ψ₀ m' X C', Provable m' X ∧ PPair X (.box b ψ₀) C')
+  ∨ (∃ m' X j χ B' C', Provable m' X ∧ PosBox X j χ ∧ PosImpl χ B' C')
+  ∨ (∃ m', m' ≤ m ∧ Provable m' C)
+
+theorem Tri_mono {L m₁ m₂ : Nat} {B C : Formula} (h : m₁ ≤ m₂) (ht : Tri L m₁ B C) :
+    Tri L m₂ B C := by
+  rcases ht with h1 | h1 | h1 | h1 | ⟨m', hm', hC⟩
+  · exact Or.inl h1
+  · exact Or.inr (Or.inl h1)
+  · exact Or.inr (Or.inr (Or.inl h1))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl h1)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨m', by omega, hC⟩)))
+
+set_option maxHeartbeats 2000000 in
+/-- **C3b-i — the tame trichotomy**: every positive pair of a derivable judgment is
+    literal-nonincreasing, degenerate within budget, or a precisely-named box obstruction. -/
+theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ →
+    ∀ {B C : Formula}, PPair φ B C → Tri L m B C := by
+  intro m φ h
+  refine Provable.rec
+    (motive_1 := fun _ _ _ _ _ _ => True)
+    (motive_2 := fun _ _ _ => True)
+    (motive_3 := fun m φ _ => ∀ {B C : Formula}, PPair φ B C → Tri L m B C)
+    ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
+    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
+    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg h
+  case pConst => intros; trivial
+  case pSelf => intros; trivial
+  case pOpp => intros; trivial
+  case pBot => intros; trivial
+  case pSim => intros; trivial
+  case pIte_t => intros; trivial
+  case pIte_f => intros; trivial
+  case pSearch_t => intros; trivial
+  case pSearch_f => intros; trivial
+  case pMk => intros; trivial
+  case cStruct =>
+      intro φ0 k0 hd B C hp
+      obtain ⟨d, _⟩ := hd
+      rcases hp with hpi | ⟨j, χ, pb, pi⟩
+      · exact Or.inl (fun hC =>
+          Nat.le_trans (DAnt_slit (derivation_posImpl_ant d hpi)) hC)
+      · rcases derivation_shape d with he | ⟨p, hp'⟩ | ⟨p, q, hp'⟩
+        · exact absurd pb (fun pb => endsInPlays_no_box he pb)
+        · subst hp'; cases pb
+        · subst hp'; cases pb
+  case cAtom =>
+      intro k0 φ0 hatom _ B C hp
+      cases hatom with
+      | mk cert hle =>
+          rcases hp with hpi | ⟨j, χ, pb, _⟩
+          · cases hpi
+          · cases pb
+  case cWeaken =>
+      intro k A ψ m' hψ hle ih B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨m', by omega, hψ⟩)))
+      · exact Tri_mono (by omega) (ih hp')
+  case cSTS =>
+      intro k k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle ih B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inr (Or.inl ⟨k₁, _, rfl⟩)
+      · rcases hp' with hpi | ⟨j, χ, pb, _⟩
+        · cases hpi
+        · cases pb
+  case cITrans =>
+      intro k A ψ χ' a b h1 h2 hle ih1 ih2 B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · -- head pair
+        rcases ih2 (Or.inl .head) with d1₂ | ⟨b0, ψ₀, hψeq⟩ | dbm₂ | dbp₂ | ⟨m2', hm2', hC⟩
+        · rcases ih1 (Or.inl .head) with d1₁ | dba₁ | dbm₁ | dbp₁ | ⟨m1', hm1', hψd⟩
+          · exact Or.inl (fun hC => d1₁ (d1₂ hC))
+          · exact Or.inr (Or.inl dba₁)
+          · exact Or.inr (Or.inr (Or.inl dbm₁))
+          · exact Or.inr (Or.inr (Or.inr (Or.inl dbp₁)))
+          · refine Or.inr (Or.inr (Or.inr (Or.inr ⟨b + m1' + C.size, ?_, ?_⟩)))
+            · have hA := Formula.size_pos B
+              simp only [Formula.size] at hle
+              omega
+            · exact Provable.app _ b m1' ψ C h2 hψd (Nat.le_refl _)
+        · refine Or.inr (Or.inr (Or.inl ⟨b0, ψ₀, b, .impl ψ C, C, h2, ?_⟩))
+          rw [hψeq] at *
+          exact Or.inl .head
+        · exact Or.inr (Or.inr (Or.inl dbm₂))
+        · exact Or.inr (Or.inr (Or.inr (Or.inl dbp₂)))
+        · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨m2', by omega, hC⟩)))
+      · exact Tri_mono (by omega) (ih2 (PPair_tail hp'))
+  case cAtomBox =>
+      intro k kBox p q a hatom hle _ B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inl (fun hC => by simp only [maxSLitF] at hC ⊢; omega)
+      · cases PPair_box_inv hp'
+  case cBoxIntro =>
+      intro kIn K A hprem hle ih B C hp
+      have hpi := PPair_box_inv hp
+      exact Tri_mono (by omega) (ih (Or.inl hpi))
+  case cApp =>
+      intro k m₁ m₂ ψ α h1 h2 hle ih1 ih2 B C hp
+      have hα := Formula.size_pos α
+      exact Tri_mono (by omega) (ih1 (PPair_tail hp))
+  case cAxK =>
+      intro a b c m' K A α hprem hgate hle ih B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inr (Or.inl ⟨b, A, rfl⟩)
+      · have hpi := PPair_box_inv hp'
+        exact Tri_mono (by omega) (ih (Or.inr ⟨a, .impl A α, .head, .tail hpi⟩))
+  case cBox4 =>
+      intro a b K A hgate hle B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inr (Or.inl ⟨a, A, rfl⟩)
+      · cases PPair_box_inv hp'
+  case cDiagF =>
+      intro pm fb g K tgt hgate hle ih B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inl (fun hC => by simp only [maxSLitF] at hC ⊢; omega)
+      · rcases PPair_tail_inv hp' with ⟨rfl, rfl⟩ | hp''
+        · exact Or.inr (Or.inl ⟨g, _, rfl⟩)
+        · exact Tri_mono (by omega) (ih (PPair_tail hp''))
+  case cDiagB =>
+      intro pm fb g K tgt hgate hle ih B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inl (fun hC => by simp only [maxSLitF] at hC ⊢; omega)
+      · rcases hp' with hpi | ⟨j, χ, pb, _⟩
+        · cases hpi
+        · cases pb
+  case cAxKf =>
+      intro a b c K A α hgate hle B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inr (Or.inl ⟨a, _, rfl⟩)
+      · rcases PPair_tail_inv hp' with ⟨rfl, rfl⟩ | hp''
+        · exact Or.inr (Or.inl ⟨b, A, rfl⟩)
+        · have hpi := PPair_box_inv hp''
+          refine Or.inr (Or.inr (Or.inr (Or.inl
+            ⟨K, .impl (.box a (.impl A α)) (.impl (.box b A) (.box c α)),
+              c, α, B, C, Provable.axKf a b c K A α hgate hle,
+              .tail (.tail .head), hpi⟩)))
+  case cImpS2 =>
+      intro A ψ χ' m₁ m₂ K h1 h2 hle ih1 ih2 B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · rcases ih1 (Or.inl (.tail .head)) with dt | ⟨b0, ψ₀, hψeq⟩ | dbm | dbp
+          | ⟨mt', hmt', hC⟩
+        · rcases ih1 (Or.inl .head) with d1₁ | dba₁ | dbm₁ | dbp₁ | ⟨m1', hm1', hd⟩
+          · refine Or.inl (fun hC => d1₁ ?_)
+            have := dt hC
+            simp only [maxSLitF]
+            omega
+          · exact Or.inr (Or.inl dba₁)
+          · exact Or.inr (Or.inr (Or.inl dbm₁))
+          · exact Or.inr (Or.inr (Or.inr (Or.inl dbp₁)))
+          · rcases ih2 (Or.inl .head) with d1h | dbah | dbmh | dbph | ⟨m2', hm2', hψd⟩
+            · exact Or.inl (fun hC => d1h (dt hC))
+            · exact Or.inr (Or.inl dbah)
+            · exact Or.inr (Or.inr (Or.inl dbmh))
+            · exact Or.inr (Or.inr (Or.inr (Or.inl dbph)))
+            · refine Or.inr (Or.inr (Or.inr (Or.inr
+                ⟨m1' + m2' + C.size, ?_, ?_⟩)))
+              · have hA := Formula.size_pos B
+                simp only [Formula.size] at hle
+                omega
+              · exact Provable.app _ m1' m2' ψ C hd hψd (Nat.le_refl _)
+        · refine Or.inr (Or.inr (Or.inl ⟨b0, ψ₀, m₁, .impl B (.impl ψ C), C, h1, ?_⟩))
+          rw [hψeq] at *
+          exact Or.inl (.tail .head)
+        · exact Or.inr (Or.inr (Or.inl dbm))
+        · exact Or.inr (Or.inr (Or.inr (Or.inl dbp)))
+        · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨mt', by omega, hC⟩)))
+      · exact Tri_mono (by omega) (ih1 (PPair_tail (PPair_tail hp')))
+  case cBoxMono =>
+      intro a b K A hab hle B C hp
+      rcases PPair_tail_inv hp with ⟨rfl, rfl⟩ | hp'
+      · exact Or.inr (Or.inl ⟨a, A, rfl⟩)
+      · have hpi := PPair_box_inv hp'
+        refine Or.inr (Or.inr (Or.inr (Or.inl
+          ⟨K, .impl (.box a A) (.box b A), b, A, B, C,
+            Provable.boxMono a b K A hab hle, .tail .head, hpi⟩)))
+  case cAtomNeg =>
+      intro k p q b aN m' hatom hne hle _ B C hp
+      rcases hp with hpi | ⟨j, χ, pb, _⟩
+      · cases hpi
+      · cases pb
+
+/-- The judgment-head corollary — Lemma A's dichotomy in its final (maxSLit) form. -/
+theorem tame_impl_trichotomy (L : Nat) {m : Nat} {B C : Formula}
+    (h : Provable m (.impl B C)) : Tri L m B C :=
+  tame_trichotomy L h (Or.inl .head)
+
 end PD.T48
