@@ -595,4 +595,216 @@ theorem box_inversion {m b : Nat} {ψ : Formula} (h : Provable m (.box b ψ)) :
       rename_i m₁ m₂ φ' h2 h1 hle
       exact Or.inr ⟨m₁, m₂, φ', h1, h2, hle⟩
 
+/-! ## 7. C3b foundations — the SPLIT MEASURE `maxSLit`.
+
+Cite targets are ONLY `.search` literals of programs; `.box`/`.diag` subscripts never
+become budgets (boxes are never opened, §6). The master induction's tameness invariant
+therefore tracks `maxSLitF` — search literals only — while subscripts stay size-paid and
+gate-covered. The split lemma reassembles the full-literal gate bound from the two halves.
+(CUT_RELEVANCE.md §5a′.) -/
+
+mutual
+  /-- The largest `.search` budget literal (subscripts of `.box`/`.diag` NOT counted). -/
+  def maxSLitP : Prog → Nat
+    | .const _ => 0
+    | .self => 0
+    | .opp => 0
+    | .bot p => maxSLitP p
+    | .sim p q => max (maxSLitP p) (maxSLitP q)
+    | .ite b _ p q => max (maxSLitP b) (max (maxSLitP p) (maxSLitP q))
+    | .search k φ p q => max k (max (maxSLitF φ) (max (maxSLitP p) (maxSLitP q)))
+
+  def maxSLitF : Formula → Nat
+    | .plays p q _ => max (maxSLitP p) (maxSLitP q)
+    | .impl φ ψ => max (maxSLitF φ) (maxSLitF ψ)
+    | .neg φ => maxSLitF φ
+    | .box _ φ => maxSLitF φ
+    | .eq p q => max (maxSLitP p) (maxSLitP q)
+    | .diag _ φ => maxSLitF φ
+end
+
+/-! Substitution: search literals of an instance come from the parts. -/
+
+mutual
+  theorem maxSLitP_subst (u v : Prog) : ∀ (p : Prog),
+      maxSLitP (p.subst u v) ≤ max (maxSLitP p) (max (maxSLitP u) (maxSLitP v)) := by
+    intro p
+    cases p with
+    | const a => simp only [Prog.subst, maxSLitP]; omega
+    | self => simp only [Prog.subst]; omega
+    | opp => simp only [Prog.subst]; omega
+    | bot p => simp only [Prog.subst]; omega
+    | sim p₁ p₂ =>
+        have h1 := maxSLitP_subst u v p₁
+        have h2 := maxSLitP_subst u v p₂
+        simp only [Prog.subst, maxSLitP] at *
+        omega
+    | ite b a p₁ p₂ =>
+        have h1 := maxSLitP_subst u v b
+        have h2 := maxSLitP_subst u v p₁
+        have h3 := maxSLitP_subst u v p₂
+        simp only [Prog.subst, maxSLitP] at *
+        omega
+    | search k φ p₁ p₂ =>
+        have h1 := maxSLitF_subst u v φ
+        have h2 := maxSLitP_subst u v p₁
+        have h3 := maxSLitP_subst u v p₂
+        simp only [Prog.subst, maxSLitP] at *
+        omega
+
+  theorem maxSLitF_subst (u v : Prog) : ∀ (φ : Formula),
+      maxSLitF (φ.subst u v) ≤ max (maxSLitF φ) (max (maxSLitP u) (maxSLitP v)) := by
+    intro φ
+    cases φ with
+    | plays p₁ p₂ a =>
+        have h1 := maxSLitP_subst u v p₁
+        have h2 := maxSLitP_subst u v p₂
+        simp only [Formula.subst, maxSLitF] at *
+        omega
+    | impl φ ψ =>
+        have h1 := maxSLitF_subst u v φ
+        have h2 := maxSLitF_subst u v ψ
+        simp only [Formula.subst, maxSLitF] at *
+        omega
+    | neg φ =>
+        have h1 := maxSLitF_subst u v φ
+        simp only [Formula.subst, maxSLitF] at *
+        omega
+    | box n φ =>
+        have h1 := maxSLitF_subst u v φ
+        simp only [Formula.subst, maxSLitF] at *
+        omega
+    | eq p₁ p₂ =>
+        have h1 := maxSLitP_subst u v p₁
+        simp only [Formula.subst, maxSLitF] at *
+        omega
+    | diag g φ => simp only [Formula.subst, maxSLitF]; omega
+end
+
+/-! The split lemma: full literals ≤ search literals + subscripts, and subscripts are
+size-bounded — so `maxLitF φ ≤ maxSLitF φ + 2^|φ|`, which is what turns the tameness
+invariant (`maxSLitF ≤ L`) plus local size-payment into the GATE bound
+(`maxLitF ≤ L + 2^M ≤ 2^(M+2)`). -/
+
+mutual
+  theorem maxLitP_split : ∀ p : Prog, maxLitP p ≤ maxSLitP p + 2 ^ p.size := by
+    intro p
+    cases p with
+    | const a => simp only [maxLitP, maxSLitP]; exact Nat.zero_le _
+    | self => simp only [maxLitP, maxSLitP]; exact Nat.zero_le _
+    | opp => simp only [maxLitP, maxSLitP]; exact Nat.zero_le _
+    | bot p =>
+        have h := maxLitP_split p
+        have hm : (2:Nat) ^ p.size ≤ 2 ^ (Prog.bot p).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        simp only [maxLitP, maxSLitP]
+        omega
+    | sim p₁ p₂ =>
+        have h1 := maxLitP_split p₁
+        have h2 := maxLitP_split p₂
+        have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Prog.sim p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Prog.sim p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        simp only [maxLitP, maxSLitP]
+        omega
+    | ite b a p₁ p₂ =>
+        have h0 := maxLitP_split b
+        have h1 := maxLitP_split p₁
+        have h2 := maxLitP_split p₂
+        have hm0 : (2:Nat) ^ b.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        simp only [maxLitP, maxSLitP]
+        omega
+    | search k φ p₁ p₂ =>
+        have h0 := maxLitF_split φ
+        have h1 := maxLitP_split p₁
+        have h2 := maxLitP_split p₂
+        have hm0 : (2:Nat) ^ φ.size ≤ 2 ^ (Prog.search k φ p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Prog.search k φ p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Prog.search k φ p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
+        have hp := Nat.two_pow_pos (Prog.search k φ p₁ p₂).size
+        simp only [maxLitP, maxSLitP]
+        omega
+
+  theorem maxLitF_split : ∀ φ : Formula, maxLitF φ ≤ maxSLitF φ + 2 ^ φ.size := by
+    intro φ
+    cases φ with
+    | plays p₁ p₂ a =>
+        have h1 := maxLitP_split p₁
+        have h2 := maxLitP_split p₂
+        have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Formula.plays p₁ p₂ a).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Formula.plays p₁ p₂ a).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        simp only [maxLitF, maxSLitF]
+        omega
+    | impl φ ψ =>
+        have h1 := maxLitF_split φ
+        have h2 := maxLitF_split ψ
+        have hm1 : (2:Nat) ^ φ.size ≤ 2 ^ (Formula.impl φ ψ).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        have hm2 : (2:Nat) ^ ψ.size ≤ 2 ^ (Formula.impl φ ψ).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        simp only [maxLitF, maxSLitF]
+        omega
+    | neg φ =>
+        have h1 := maxLitF_split φ
+        have hm1 : (2:Nat) ^ φ.size ≤ 2 ^ (Formula.neg φ).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        simp only [maxLitF, maxSLitF]
+        omega
+    | box n φ =>
+        have hn : n < 2 ^ (Formula.box n φ).size :=
+          lt_two_pow_of_log2_lt (by simp only [Formula.size]; omega)
+        have h1 := maxLitF_split φ
+        have hm1 : (2:Nat) ^ φ.size ≤ 2 ^ (Formula.box n φ).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        simp only [maxLitF, maxSLitF]
+        omega
+    | eq p₁ p₂ =>
+        have h1 := maxLitP_split p₁
+        have h2 := maxLitP_split p₂
+        have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Formula.eq p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Formula.eq p₁ p₂).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        simp only [maxLitF, maxSLitF]
+        omega
+    | diag g φ =>
+        have hg : g < 2 ^ (Formula.diag g φ).size :=
+          lt_two_pow_of_log2_lt (by simp only [Formula.size]; omega)
+        have h1 := maxLitF_split φ
+        have hm1 : (2:Nat) ^ φ.size ≤ 2 ^ (Formula.diag g φ).size :=
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
+        simp only [maxLitF, maxSLitF]
+        omega
+end
+
+/-- The gate bound the master induction's arms will use: a size-paid formula that is
+    search-tame has ALL its literals under `2^(M+2)` (with `L ≤ M` and size ≤ budget
+    ≤ M). -/
+theorem gate_bound {L M m : Nat} {ψ : Formula} (hLM : L ≤ M) (hm : m ≤ M)
+    (hsz : ψ.size ≤ m) (htame : maxSLitF ψ ≤ L) :
+    maxLitF ψ ≤ 2 ^ (M + 2) := by
+  have h1 := maxLitF_split ψ
+  have h2 : (2:Nat) ^ ψ.size ≤ 2 ^ M :=
+    Nat.pow_le_pow_right (by omega) (by omega)
+  have h3 : (2:Nat) ^ M + 2 ^ M ≤ 2 ^ (M + 1) := by
+    have : (2:Nat) ^ (M + 1) = 2 ^ M * 2 := Nat.pow_succ ..
+    omega
+  have h4 : (2:Nat) ^ (M + 1) ≤ 2 ^ (M + 2) :=
+    Nat.pow_le_pow_right (by omega) (by omega)
+  have h5 : L ≤ 2 ^ M := by
+    have := Nat.lt_two_pow_self (n := M)
+    omega
+  omega
+
 end PD.T48

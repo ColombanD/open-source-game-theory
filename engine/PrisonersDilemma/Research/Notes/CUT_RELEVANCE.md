@@ -209,6 +209,57 @@ facts that fix the design:
    decidability); and `diagF/B`'s Löb-premise pairs at deep positions (covered by the
    premise IH — verify the budget side-conditions).
 
+### 5a′. C3b final specification (2026-07-03, third pass — THE implementable design)
+
+Pushing §5a to full case analysis produced the decisive refinement and closed every gap:
+
+**The measure split (the breakthrough).** Cite targets are ONLY `.search` literals of
+programs (`search_t`'s `kg`, STS's `k₂`); box/diag SUBSCRIPTS never become budgets — boxes
+are never opened (T48 §6). So the tameness invariant must track `maxSLitF` — the
+search-literals-in-programs measure that IGNORES `.box`/`.diag` subscripts — while
+subscripts stay size-paid (`< 2^M` locally) and are covered by the GATE, not the invariant.
+With `Tame φ := maxSLitF φ ≤ L`:
+  * the budget invariant `M := max k L` holds (cites ≤ L);
+  * `diagFInner`, `boxMono`, `axkf`-HEAD, `axK`-HEAD (via its premise's box-content pair)
+    all become genuine D1 — the subscripts that blocked them don't count;
+  * the gate needs `maxLitF cut ≤ N`: from `Tame` + size-payment,
+    `maxLitF ψ ≤ maxSLitF ψ + 2^|ψ|` (the split lemma, T48 §7) gives
+    `≤ L + 2^M ≤ N := 2^(M+2)`.
+
+**The trichotomy.** Component (B) over `PPair` (positive pairs at box-depth ≤ 1 — impl
+tails, plus ONE box-content descent, which is all `axK`-premise sourcing needs; deeper
+box-interiors are never consumed):
+  * **D1**: `Tame C → Tame B` — an IMPLICATION, which is what makes it compose through
+    `implTrans`/`impS2` heads (absolute tameness does not);
+  * **D2**: `∃ m' ≤ m, Provable m' C ∧ (Tame C → m' ≤ M → ProvableB N m' C)` —
+    degenerate-with-transform;
+  * **D3**: `∃ b c ψ₀ α₀, B = .box b ψ₀ ∧ C = .box c α₀` — shape only. The ONLY D3 source
+    is `axKf`'s tail pair (premise-free rule, box-box pair, contents unlinked at birth);
+    `box4`/`boxMono`/`diagF` export none (trivial or subscript-only), `axK`'s head is D1
+    via its premise.
+
+**The patch theorem (peel order).** An `axKf` conclusion `.impl A (.impl (.box b ψ₀)
+(.box c α₀))` (A = `.box a (.impl ψ₀ α₀)`) is consumed by first discharging A — and THAT
+`app`'s sibling is exactly `A`, whose box-content pair `(ψ₀, α₀)` supplies the link
+`Tame α₀ → Tame ψ₀` (via IH₂'s `PPair` boxT-head + D1). The app arm therefore patches every
+received D3 whose shapes match its sibling's content — and peel order guarantees the
+matching app comes BEFORE the hole can be exposed as a judgment head. Non-matching D3s pass
+through (they meet their own discharge apps later); compositions preserve head antecedents,
+so the right sibling always arrives. Nested holes resolve level-by-level the same way.
+
+**Wildness is confined.** Wild material (non-tame programs) IS derivable (wild-atom certs
+evaluate without visiting junk; `atomBoxImpl`+`boxIntro`+`axK` lift it into boxes) — but
+census steps are `maxSLit`-NONINCREASING, so wild antecedents force wild consequents:
+wildness can never flow into a Tame conclusion non-degenerately; the degenerate branch
+(D2, with carried transform) bypasses it. This is why the theorem is true.
+
+**Assembly**: motive := (A) `Tame φ → m ≤ M → ProvableB N m φ` ∧ (B) the trichotomy over
+`PPair φ`. One `Provable.rec`; composition arms (implTrans/impS2 heads) do 3×3 subcases —
+all verified on paper (D2 absorbs, D1 composes, D3 passes). Target instantiation:
+`L := maxSLitF φ₀ (⊔ k)`, `M := max k L`, `N := 2^(M+2)`:
+**`Provable k φ → ProvableB (2^(max k (maxSLitF φ) + 2)) k φ`** — the literal half of
+CutRelevance. Modesty then rides the same induction (enrich Tame with the T4.3 universe).
+
 ## 5b. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
@@ -245,9 +296,9 @@ facts that fix the design:
   `provable_pos`; **`box_inversion`** — a derivable box comes from `boxIntro` (its content
   WAS a judgment, at budget = the subscript) or an `app` spine, nothing else. These are the
   master induction's tools for resolving the census holes from sibling judgments.
-- **C3b**: the master induction per §5a's three-component motive — target theorem
-  (literal half first): `Provable k φ → ProvableB (2^(max k (maxLitF φ) + 2)) k φ`;
-  then the modest half by enriching `Tame`. Fresh-session scope; all design recorded.
+- **C3b**: the master induction per §5a′ (the FINAL spec — supersedes §5a's sketch).
+  Foundations (maxSLit measure, subst lemma, split lemma) in T48 §7 ✅ (2026-07-03).
+  Remaining: `PPair` + the master `Provable.rec` (~26 arms, 3×3 composition subcases).
 - **C4**: Lemma B rewrites + budget arithmetic (or the budget-inflated fallback).
 - **C5**: assembly — `CutRelevance` (possibly budget-inflated) for modest roots; plug into
   T47 ⇒ `Provable` decidable on the zoo universe; `proofSearch := D`.
