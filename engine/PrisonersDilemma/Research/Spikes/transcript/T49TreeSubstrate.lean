@@ -982,4 +982,241 @@ theorem boxInvGo_wt_le : ∀ (F : Nat) {m : Nat} {ξ core : Formula}
         simp [boxInvGo] at h
     | atomNeg p q b aN m' t hne hle => simp [boxInvGo] at h
 
+/-! ## 12. D2e-2 — THE MASTER TOTALITY THEOREM (contraction-free fragment).
+
+`boxInvGo_total`: on contraction-free states with a box/diag core, the machine ALWAYS
+halts with `some`, at fuel `(P+1)² + wt t + 1` for any potential bound
+`P ≥ wt t + wt s`. The induction is on FUEL alone — every recursive call burns one unit,
+and the D2d ledger's lex measure `(potential, wt t)` lives inside the threshold
+arithmetic (`thr_step` for potential-dropping calls, `thr_same` for `implTrans`'s
+same-potential/smaller-tree call; omega cannot see products, so `(P+1)²` is handled as
+an atom with `Nat.mul_le_mul` and one expansion identity). The impossible arms close by
+`IsCore` reduction, `DStack` index chasing, and `derivation_shape` (a plays-ended spine
+never reaches a box/diag core). Corollary: **`boxInv_total_of_freeS2`** — box honesty is
+TOTAL on the contraction-free fragment, with closed-form fuel. -/
+
+/-- The cores the machine extracts. -/
+def IsCore : Formula → Prop
+  | .box _ _ => True
+  | .diag _ _ => True
+  | _ => False
+
+/-- A plays-ended spine never reaches a box/diag core. -/
+theorem EndsInPlays.no_core_stack {ξ core : Formula}
+    (h : PD.T48.EndsInPlays ξ) (s : DStack ξ core) (hc : IsCore core) : False := by
+  induction h with
+  | plays => cases s; exact hc
+  | impl _ ih =>
+      cases s with
+      | nil => exact hc
+      | cons _ _ s' => exact ih s'
+
+private theorem thr_step {P P' T T' F : Nat}
+    (hF : (P+1)*(P+1) + T + 1 ≤ F) (h2 : P' + 1 ≤ P) (h3 : T' ≤ P') :
+    (P'+1)*(P'+1) + T' + 1 + 1 ≤ F := by
+  have e : (P+1)*(P+1) = P*P + 2*P + 1 := by
+    rw [Nat.succ_mul, Nat.mul_succ]; omega
+  have h4 : (P'+1)*(P'+1) ≤ P*P := Nat.mul_le_mul h2 h2
+  omega
+
+private theorem thr_same {P T T' F : Nat}
+    (hF : (P+1)*(P+1) + T + 1 ≤ F) (h : T' + 1 ≤ T) :
+    (P+1)*(P+1) + T' + 1 + 1 ≤ F := by omega
+
+/-- **Master totality** (contraction-free fragment): the machine halts with `some`. -/
+theorem boxInvGo_total : ∀ (F P : Nat) {m : Nat} {ξ core : Formula}
+    (t : ProvT m ξ) (s : DStack ξ core), t.freeS2 → s.freeS2 → IsCore core →
+    t.wt + s.wt ≤ P → (P+1)*(P+1) + t.wt + 1 ≤ F →
+    (boxInvGo F t s).isSome := by
+  intro F
+  induction F with
+  | zero =>
+      intro P _ _ _ t s _ _ _ _ hF
+      have := Nat.mul_pos (Nat.succ_pos P) (Nat.succ_pos P)
+      omega
+  | succ F ih =>
+    intro P m ξ core t s hf hs hc hP hF
+    cases t with
+    | boxIntro kIn K φ tc hle =>
+        cases s with
+        | nil => simp [boxInvGo]
+    | app k m₁ m₂ φ' α f x hle =>
+        simp only [boxInvGo]
+        have hx1 := x.wt_pos
+        refine ih P f (.cons m₂ x s) hf.1 ⟨hf.2, hs⟩ hc ?_ ?_
+        · simp only [ProvT.wt, DStack.wt] at *; omega
+        · have := thr_same (T' := f.wt) hF (by simp only [ProvT.wt] at *; omega)
+          omega
+    | weakenImpl φ' ψ' m' tw hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD d s' =>
+            simp only [boxInvGo]
+            refine ih P tw s' hf hs.2 hc ?_ ?_
+            · simp only [ProvT.wt, DStack.wt] at *; omega
+            · have := thr_same (T' := tw.wt) hF (by simp only [ProvT.wt] at *; omega)
+              omega
+    | implTrans φ' ψmid χ' a b tA tB hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD dB s' =>
+            simp only [boxInvGo]
+            have h1 := tA.wt_pos
+            refine ih P tB (.cons _ (.app _ a mD φ' ψmid tA dB (Nat.le_refl _)) s')
+              hf.2 ⟨⟨hf.1, hs.1⟩, hs.2⟩ hc ?_ ?_
+            · simp only [ProvT.wt, DStack.wt] at *; omega
+            · have := thr_same (T' := tB.wt) hF (by simp only [ProvT.wt] at *; omega)
+              omega
+    | diagB pm fb g K tgt tP hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD d s' =>
+            cases s' with
+            | nil => simp [boxInvGo]
+    | diagF pm fb g K tgt tP hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => exact hc.elim
+            | cons mD2 d2 s'' =>
+                simp only [boxInvGo]
+                have htP := tP.wt_pos
+                have hd2 := d2.wt_pos
+                have hd1w := d1.wt_pos
+                simp only [ProvT.wt, DStack.wt] at hP
+                have hdive := ih d1.wt d1
+                  (.nil : DStack (.diag g tgt) (.diag g tgt)) hs.1 trivial trivial
+                  (by simp [DStack.wt])
+                  (Nat.le_of_succ_le_succ
+                    (thr_step (P' := d1.wt) hF (by omega) (Nat.le_refl _)))
+                obtain ⟨rx, hd⟩ := Option.isSome_iff_exists.mp hdive
+                rw [hd]
+                have hxw := boxInvGo_wt_le F d1 .nil hs.1 trivial hd
+                obtain ⟨mx, x⟩ := rx
+                simp only [CoreContent.wt, CoreContent.freeS2, DStack.wt] at hxw
+                obtain ⟨hxw1, hxf⟩ := hxw
+                exact ih (P - 1)
+                  (.app _ _ mD2 (.box g (.diag g tgt)) tgt x d2 (Nat.le_refl _))
+                  s'' ⟨hxf, hs.2.1⟩ hs.2.2 hc
+                  (by simp only [ProvT.wt, DStack.wt]; omega)
+                  (by
+                    simp only [ProvT.wt]
+                    have := thr_step (P' := P - 1) (T' := x.wt + d2.wt + 1) hF
+                      (by omega) (by omega)
+                    omega)
+    | atomBoxImpl kBox p q a cert hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD d s' =>
+            cases s' with
+            | nil => simp [boxInvGo]
+    | boxMono a' b' K φ' hab hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo]
+                have hdive := ih dB.wt dB
+                  (.nil : DStack (.box a' φ') (.box a' φ')) hs.1 trivial trivial
+                  (by simp [DStack.wt])
+                  (Nat.le_of_succ_le_succ (thr_step (P' := dB.wt) hF
+                    (by simp only [ProvT.wt, DStack.wt] at hP; omega)
+                    (Nat.le_refl _)))
+                obtain ⟨rc, hd⟩ := Option.isSome_iff_exists.mp hdive
+                rw [hd]
+                obtain ⟨mc, tc, hcc⟩ := rc
+                simp
+    | box4 a' b' K φ' hg1 hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo]
+                have hdive := ih dB.wt dB
+                  (.nil : DStack (.box a' φ') (.box a' φ')) hs.1 trivial trivial
+                  (by simp [DStack.wt])
+                  (Nat.le_of_succ_le_succ (thr_step (P' := dB.wt) hF
+                    (by simp only [ProvT.wt, DStack.wt] at hP; omega)
+                    (Nat.le_refl _)))
+                obtain ⟨rc, hd⟩ := Option.isSome_iff_exists.mp hdive
+                rw [hd]
+                obtain ⟨mc, tc, hcc⟩ := rc
+                simp
+    | axK a'' b'' c'' m'' K φ' α' tP hg1 hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo]
+                have h1 := dB.wt_pos
+                have h2 := tP.wt_pos
+                have hdP := ih tP.wt tP
+                  (.nil : DStack (.box a'' (.impl φ' α')) _) hf trivial trivial
+                  (by simp [DStack.wt])
+                  (Nat.le_of_succ_le_succ (thr_step (P' := tP.wt) hF
+                    (by simp only [ProvT.wt, DStack.wt] at hP; omega)
+                    (Nat.le_refl _)))
+                have hdx := ih dB.wt dB (.nil : DStack (.box b'' φ') _) hs.1
+                  trivial trivial (by simp [DStack.wt])
+                  (Nat.le_of_succ_le_succ (thr_step (P' := dB.wt) hF
+                    (by simp only [ProvT.wt, DStack.wt] at hP; omega)
+                    (Nat.le_refl _)))
+                obtain ⟨rP, hp⟩ := Option.isSome_iff_exists.mp hdP
+                obtain ⟨rx, hx⟩ := Option.isSome_iff_exists.mp hdx
+                rw [hp, hx]
+                obtain ⟨mP, tPc, hPle⟩ := rP
+                obtain ⟨mx, txc, hxle⟩ := rx
+                simp
+    | axKf a'' b'' c'' K φ' α' hg1 hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => exact hc.elim
+            | cons mD2 d2 s'' =>
+                cases s'' with
+                | nil =>
+                    simp only [boxInvGo]
+                    have h1 := d1.wt_pos
+                    have h2 := d2.wt_pos
+                    have hdP := ih d1.wt d1
+                      (.nil : DStack (.box a'' (.impl φ' α')) _) hs.1 trivial
+                      trivial (by simp [DStack.wt])
+                      (Nat.le_of_succ_le_succ (thr_step (P' := d1.wt) hF
+                        (by simp only [ProvT.wt, DStack.wt] at hP; omega)
+                        (Nat.le_refl _)))
+                    have hdx := ih d2.wt d2 (.nil : DStack (.box b'' φ') _) hs.2.1
+                      trivial trivial (by simp [DStack.wt])
+                      (Nat.le_of_succ_le_succ (thr_step (P' := d2.wt) hF
+                        (by simp only [ProvT.wt, DStack.wt] at hP; omega)
+                        (Nat.le_refl _)))
+                    obtain ⟨rP, hp⟩ := Option.isSome_iff_exists.mp hdP
+                    obtain ⟨rx, hx⟩ := Option.isSome_iff_exists.mp hdx
+                    rw [hp, hx]
+                    obtain ⟨mP, tPc, hPle⟩ := rP
+                    obtain ⟨mx, txc, hxle⟩ := rx
+                    simp
+    | impS2 φ' ψ' χ' m₁' m₂' K tf tx hle => exact absurd hf (by simp [ProvT.freeS2])
+    | struct d hd =>
+        rcases PD.T48.derivation_shape d with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
+        · exact (EndsInPlays.no_core_stack h s hc).elim
+        · subst hp; cases s; exact hc.elim
+        · subst hp; cases s; exact hc.elim
+    | atom t => cases t with | mk _ _ => cases s; exact hc.elim
+    | searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme t hm hsz =>
+        cases s with
+        | nil => exact hc.elim
+        | cons _ _ s' => cases s'; exact hc.elim
+    | atomNeg p q b aN m' t hne hle => cases s; exact hc.elim
+
+/-- **Box honesty is TOTAL on the contraction-free fragment**, with closed-form fuel. -/
+theorem boxInv_total_of_freeS2 {m c : Nat} {ψ : Formula}
+    (t : ProvT m (.box c ψ)) (hf : t.freeS2) :
+    (boxInv ((t.wt+1)*(t.wt+1) + t.wt + 1) t).isSome :=
+  boxInvGo_total _ t.wt t .nil hf trivial trivial (by simp [DStack.wt]) (Nat.le_refl _)
+
 end PD.T49

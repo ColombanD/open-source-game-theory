@@ -642,13 +642,22 @@ the termination formalization.
   restructured (tree matched first, stacks in small nested per-arm matches) because the
   combined deep dependent match defeats the equational-theorem generator — without
   equations, `simp only [boxInvGo]` is dead and every proof fights whnf by hand.
-- **D2e-2 (NEXT) — the master totality theorem**: `boxInv_total_of_impS2Free` by strong
-  induction on the lex measure `(wt t + wt s, wt t)`, fuel threshold
-  `θ(P,T) := (P+1)² + T` (per-arm arithmetic checked on paper: P-drop arms, the
-  implTrans same-P case, and the diagF dive all fit under `θ − 1`); the `≤`-quantified
-  statement form absorbs fuel-monotonicity. Includes the uninhabitedness of the `none`
-  arms for box/diag cores. Then the impS2 case (modest-pool ranks), cut-diet
-  bookkeeping, `spineCross`, `TreeModestRelevance` into T47.
+- **D2e-2 ✅ (2026-07-03, T49 §12) — THE MASTER TOTALITY THEOREM**:
+  `boxInvGo_total` — on contraction-free states with a box/diag core the machine ALWAYS
+  halts with `some`, and the corollary **`boxInv_total_of_freeS2`** gives box honesty
+  TOTAL with closed-form fuel `(wt t + 1)² + wt t + 1`. Induction on FUEL alone (each
+  call burns one unit; the lex measure lives in the threshold arithmetic:
+  `thr_step`/`thr_same`, with `(P+1)²` as an omega-opaque atom via `Nat.mul_le_mul` +
+  one expansion identity). Every `none` arm closes by `IsCore` reduction, `DStack`
+  index chasing, or `derivation_shape` (`EndsInPlays.no_core_stack`). LEAN NOTES:
+  pin `thr_step`'s `P'` explicitly (metavariables in omega goals otherwise); get the
+  dive results via `Option.isSome_iff_exists` + `rw` rather than `cases hd :` (cases
+  substitutes the scrutinee in the goal, breaking the later rewrite);
+  `Nat.le_of_succ_le_succ` aligns the `+1+1 ≤ F+1` threshold shapes.
+- **D2f (NEXT)**: the `impS2` case of totality (modest-pool ranks / bounded-contraction
+  fuel — the only remaining gap between `boxInv_total_of_freeS2` and full
+  `BoxInvTotal`); cut-diet bookkeeping (`gateOK` of extracted trees); `spineCross` on
+  the same machine; `TreeModestRelevance` for zoo roots into T47's decider.
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid
