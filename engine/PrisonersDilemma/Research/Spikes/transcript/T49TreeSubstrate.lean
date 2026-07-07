@@ -2243,4 +2243,94 @@ theorem boxInvGo_regate (F : Nat) {m m' : Nat} {ξ core : Formula}
       | atom a => cases a; rfl
       | _ => rfl
 
+/-! ## 20. The normalization proof, part 2 — `Good`: the computability predicate.
+
+The §8 design's centerpiece: `Good`/`GoodStack`/`ContentGood` by well-founded mutual
+recursion on the lex triple `(k, μ, phase)` — guard index first (box contents drop it),
+the formula measure second (arrows, stack entries, and the diag unfolding drop it — the
+latter BECAUSE `μ(box) = 0`), and a phase bit ordering `Good` above `ContentGood` at
+the nil-stack measure tie. Every edge checked in §8; `DStack.mu_core_le` discharges the
+`Good → ContentGood` edge. -/
+
+private theorem lex_fst {a a' b b' c c' : Nat} (h : a' < a) :
+    Prod.Lex (· < ·) (Prod.Lex (· < ·) (· < ·)) (a', b', c') (a, b, c) :=
+  Prod.Lex.left _ _ h
+
+private theorem lex_snd {a b b' c c' : Nat} (h : b' < b) :
+    Prod.Lex (· < ·) (Prod.Lex (· < ·) (· < ·)) (a, b', c') (a, b, c) :=
+  Prod.Lex.right _ (Prod.Lex.left _ _ h)
+
+private theorem lex_thd {a b c c' : Nat} (h : c' < c) :
+    Prod.Lex (· < ·) (Prod.Lex (· < ·) (· < ·)) (a, b, c') (a, b, c) :=
+  Prod.Lex.right _ (Prod.Lex.right _ h)
+
+private theorem lex_le_lt {a b b' c c' : Nat} (hb : b' ≤ b) (hc : c' < c) :
+    Prod.Lex (· < ·) (Prod.Lex (· < ·) (· < ·)) (a, b', c') (a, b, c) := by
+  rcases Nat.lt_or_ge b' b with h | h
+  · exact lex_snd h
+  · have he : b' = b := by omega
+    subst he
+    exact lex_thd hc
+
+private theorem lex_le3 {a a' b b' c c' : Nat} (ha : a' ≤ a) (hb : b' < b) :
+    Prod.Lex (· < ·) (Prod.Lex (· < ·) (· < ·)) (a', b', c') (a, b, c) := by
+  rcases Nat.lt_or_ge a' a with h | h
+  · exact lex_fst h
+  · have he : a' = a := by omega
+    subst he
+    exact lex_snd hb
+
+mutual
+
+/-- Good trees: against every good stack, the machine halts with good content. -/
+def Good (k : Nat) {m : Nat} {ξ : Formula} (t : ProvT m ξ) : Prop :=
+  ∀ {core : Formula} (S : DStack ξ core), GoodStack k S →
+    ∃ (fuel : Nat) (r : CoreContent core),
+      boxInvGo fuel t S = some r ∧ ContentGood k r
+termination_by (k, muF ξ, 1)
+decreasing_by
+  all_goals simp_wf
+  all_goals
+    first
+    | exact lex_thd (by omega)
+    | exact lex_snd (by simp only [muF]; omega)
+    | exact lex_fst (by omega)
+    | exact lex_le_lt (DStack.mu_core_le S) (by omega)
+    | exact lex_le3 (by omega) (by simp only [muF]; omega)
+
+/-- Good stacks: cumulative goodness of every discharge, ending at a real core. -/
+def GoodStack (k : Nat) : {ξ core : Formula} → DStack ξ core → Prop
+  | _, core, .nil => IsCore core
+  | _, _, .cons _ d s => (∀ j, j ≤ k → Good j d) ∧ GoodStack k s
+termination_by ξ _ _ => (k, muF ξ, 0)
+decreasing_by
+  all_goals simp_wf
+  all_goals
+    first
+    | exact lex_thd (by omega)
+    | exact lex_snd (by simp only [muF]; omega)
+    | exact lex_fst (by omega)
+    | exact lex_le_lt (DStack.mu_core_le S) (by omega)
+    | exact lex_le3 (by omega) (by simp only [muF]; omega)
+
+/-- Good contents: box contents are good one guard level down (halting is demanded at
+    every level — only content QUALITY degrades); diag contents at the same level,
+    founded by `μ(unfold) < μ(diag)`. -/
+def ContentGood (k : Nat) : {core : Formula} → CoreContent core → Prop
+  | .box _ _, r => k > 0 → Good (k-1) r.2.1
+  | .diag _ _, r => Good k r.2
+  | .plays _ _ _, r | .impl _ _, r | .neg _, r | .eq _ _, r => True
+termination_by core _ => (k, muF core, 0)
+decreasing_by
+  all_goals simp_wf
+  all_goals
+    first
+    | exact lex_thd (by omega)
+    | exact lex_snd (by simp only [muF]; omega)
+    | exact lex_fst (by omega)
+    | exact lex_le_lt (DStack.mu_core_le S) (by omega)
+    | exact lex_le3 (by omega) (by simp only [muF]; omega)
+
+end
+
 end PD.T49

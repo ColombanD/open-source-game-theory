@@ -189,7 +189,16 @@ t with the ∀k motive), checked arm-by-arm on paper:
 Then **BoxInvTotal = fundamental lemma at k := 1** (halting is already demanded at every
 level; only content quality degrades with k).
 
-**Formalization plan (next session)**: `μ` (10 lines); `Good`/`GoodStack`/`ContentGood`
+**Formalization status (2026-07-03, same day)**: part 1 LANDED (T49 §19: `muF`,
+`DStack.mu_core_le`, fuel-value monotonicity `boxInvGo_fuel_mono` + determinism
+`boxInvGo_det`, gate-irrelevance `boxInvGo_regate`) and part 2a LANDED (T49 §20:
+**the `Good`/`GoodStack`/`ContentGood` mutual WF-definition COMPILES** on the lex
+triple `(k, muF, phase)` — the termination checker accepts every edge, with
+`mu_core_le` discharging the `Good → ContentGood` tie and term-mode lex helpers for
+the rest). Remaining: the application lemma, the 16-arm fundamental lemma, and the
+corollary — mechanical, one session.
+
+**Formalization plan (original)**: `μ` (10 lines); `Good`/`GoodStack`/`ContentGood`
 by WF-recursion on lex (k, μ) — the hardest Lean engineering, likely via a single
 `Good : Nat → Formula → … → Prop` with `termination_by (k, μ ξ)`; the antitonicity
 lemma; the application lemma; the 16-arm fundamental lemma (the run-plumbing reuses the
