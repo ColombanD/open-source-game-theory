@@ -720,10 +720,48 @@ manufactures weight** — `boxInvGo`'s result weighs no more than the state it c
 its weight), so the lemma carries the contraction-freedom hypothesis — the free
 fragment is exactly where extraction is weight-non-increasing. -/
 
+theorem Formula.size_pos : (φ : Formula) → 1 ≤ φ.size := by
+  intro φ
+  cases φ <;> simp [Formula.size] <;> omega
+
+/-- Derivation node count — the walkable weight of a `struct`-tree (stage 2 unfolds
+    `modusPonens`/`hypSyll` into machine steps, so `struct`-weight must be
+    unfold-conserving). -/
+def dNodes : {φ : Formula} → Derivation φ → Nat
+  | _, .modusPonens _ _ d1 d2 => dNodes d1 + dNodes d2 + 1
+  | _, .hypSyll _ _ _ d1 d2 => dNodes d1 + dNodes d2 + 1
+  | _, _ => 1
+
+theorem dNodes_pos : {φ : Formula} → (d : Derivation φ) → 1 ≤ dNodes d
+  | _, .modusPonens _ _ d1 d2 => by simp [dNodes]
+  | _, .hypSyll _ _ _ d1 d2 => by simp [dNodes]
+  | _, .searchBranch _ _ _ _ _ _ _ | _, .simStep _ _ _ _ _ _
+  | _, .botSimStep _ _ _ _ _ _ | _, .botSearchStep _ _ _ _ _ _ _
+  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _ | _, .eqRefl _
+  | _, .eqNeg _ _ _ => Nat.le_refl _
+
+theorem dNodes_le_size : {φ : Formula} → (d : Derivation φ) →
+    dNodes d ≤ d.size := by
+  intro φ d
+  induction d with
+  | modusPonens φ' ψ d1 d2 ih1 ih2 =>
+      have := (Formula.size_pos ψ)
+      simp only [dNodes, Derivation.size]
+      omega
+  | hypSyll φ' ψ χ d1 d2 ih1 ih2 =>
+      have := (Formula.size_pos (Formula.impl φ' χ))
+      simp only [dNodes, Derivation.size]
+      omega
+  | _ =>
+      first
+      | (simp only [dNodes, Derivation.size]
+         exact Formula.size_pos _)
+
 /-- Walkable weight: the machine only ever walks the `ProvT` layer (atom certificates
-    and `Derivation`s are terminal), so those count 1. -/
+    are terminal, and `Derivation`s unfold node-by-node), so atoms count 1 and
+    `struct`s their node count. -/
 def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
-  | _, _, .struct _ _ => 1
+  | _, _, .struct d _ => dNodes d
   | _, _, .atom _ => 1
   | _, _, .weakenImpl _ _ _ t _ => t.wt + 1
   | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => 1
@@ -741,7 +779,8 @@ def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
   | _, _, .atomNeg _ _ _ _ _ _ _ _ => 1
 
 theorem ProvT.wt_pos {m : Nat} {φ : Formula} : (t : ProvT m φ) → 1 ≤ t.wt
-  | .struct _ _ | .atom _ | .atomBoxImpl _ _ _ _ _ _ | .box4 _ _ _ _ _ _
+  | .struct d _ => dNodes_pos d
+  | .atom _ | .atomBoxImpl _ _ _ _ _ _ | .box4 _ _ _ _ _ _
   | .axKf _ _ _ _ _ _ _ _ | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Nat.le_refl _
   | .weakenImpl _ _ _ _ _
@@ -2017,10 +2056,6 @@ diag case stands on: every `□g(diag g tgt)`-unfolding along a run produces mat
 weight `≤ g` — the SAME `g`, fixed by the formula — so unfold-chains at a fixed diag
 formula are weight-capped even though the formula itself recurs. -/
 
-theorem Formula.size_pos : (φ : Formula) → 1 ≤ φ.size := by
-  intro φ
-  cases φ <;> simp [Formula.size] <;> omega
-
 theorem PlaysT.cost_pos {me o b : Prog} {a : Action} {n : Nat} :
     PlaysT me o b a n → 1 ≤ n
   | .const => Nat.le_refl _
@@ -2031,7 +2066,7 @@ theorem PlaysT.cost_pos {me o b : Prog} {a : Action} {n : Nat} :
 /-- **Weight is budget-bounded**: every walkable node is paid for by its gate. -/
 theorem ProvT.wt_le_budget : {m : Nat} → {φ : Formula} → (t : ProvT m φ) → t.wt ≤ m
   | _, _, .struct d hd =>
-      le_trans (le_trans (Formula.size_pos _) d.concl_size_le) hd
+      le_trans (dNodes_le_size d) hd
   | _, _, .atom (.mk c hn) => le_trans c.cost_pos hn
   | _, _, .weakenImpl φ' ψ' m' t hle => by
       have h1 := t.wt_le_budget
