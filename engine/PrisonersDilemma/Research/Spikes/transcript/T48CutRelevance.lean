@@ -1130,4 +1130,107 @@ theorem tame_trichotomy_vacuous (L : Nat) {m : Nat} {φ : Formula}
     (_ : Provable m φ) {B C : Formula} (_ : PPair φ B C) : Tri L m B C :=
   Tri_always L m B C
 
+/-! ## 10. C3b-i′ — the LINKED diagnostic: two machine-checked FALSITY results.
+
+Running the retraction's corrected course (§5c step 1) against the tight, linked targets
+produced findings BEFORE the induction: the linked forms are not merely hard — at two
+precisely-located position classes they are FALSE, so no amount of proof effort closes
+them. This pins down exactly what information a correct formulation must carry.
+
+**Finding 1 (`ppair_linked_false`)**: over full `PPair` (box-content descent included),
+the linked trichotomy `D1 ∨ (B is a box) ∨ D2` is FALSE. Witness: `axKf` is a premise-free
+axiom schema, so its consequent-box CONTENT `α` is arbitrary — put `α := .impl wild eqCD`
+(a wild-slit antecedent and an unprovable consequent) inside and the content pair defeats
+all three disjuncts. Consequence: box-content pairs can NEVER be covered by a
+judgment-local lemma; contents must be sourced at CONSUMPTION (box judgments via
+`box_inversion` — the §5 consumer-side design), and `PPair`'s boxT descent must go.
+
+**Finding 2 (`spine_boxlinked_false`)**: even at SPINE level, the box-LINKED form
+`D1 ∨ (B = □ψ₀ ∧ (Tame C → Tame ψ₀)) ∨ D2` is FALSE at GUARDED tail positions — the
+`axKf` conclusion's tail pair `(□b wild, □c eqCD)` sits behind the undischarged antecedent
+`□a(wild → eqCD)`, and before discharge nothing links its sides. Consequence: pairwise
+judgment-local dichotomies are genuinely false below undischarged antecedents; the guard
+CONTEXT (provability of the guarding antecedents) is necessary information, vindicating
+the discharge-site (`app`-with-sibling) architecture of §5.
+
+**The corrected foundation (C3b-ii′, for the next attack):**
+  * motive = pairs WITH GUARD CONTEXT: `PosImplCtx φ Γ B C` collecting the antecedents `Γ`
+    passed on the way to the pair; the dichotomy hypothesizes `∀ X ∈ Γ, ∃ mX, Provable mX X`
+    (at discharge sites the siblings supply exactly this);
+  * induction = BUDGET-STRONG-INDUCTION with inversion, NOT structural `rec`: the key
+    observation is that pair-queries never cross cites (`searchThenSearch_t`'s and
+    `search_t`'s cited premises contribute NO pairs to their conclusions' spines — checked
+    rule-by-rule), so every pair-relevant premise is at a strictly smaller budget, and the
+    opaque degenerate witnesses (the D2 wall of the merged-motive design) are covered by
+    the same strong IH — no transform-carrying needed for the dichotomy itself;
+  * kernel = `HBoxHead` (the box-chain grounding at HEAD positions only):
+    `Provable m (.impl (.box b₀ ψ₀) C) → (Tame C → Tame ψ₀) ∨ (∃ m' ≤ m, Provable m' C)` —
+    the head-level form dodges both falsity findings (heads are unguarded, and box
+    contents at heads come from constrained producers: the census families, `axK`'s
+    premise-constrained instances, chains, or discharged `axKf` — whose discharge sibling
+    `□a(ψ₀ → α)` constrains the content). -/
+
+/-- Distinct constant programs are never provably equal (soundness). -/
+theorem eq_const_unprovable {m : Nat} :
+    ¬ Provable m (.eq (.const .C) (.const .D)) := by
+  intro h
+  have h2 := PD.BaseTheorems.Provable_sound _ _ h
+  simp only [Formula.interp] at h2
+  exact absurd h2 (by decide)
+
+/-- Nor is any box of that equality (soundness twice: `interp (.box c φ) = Provable c φ`). -/
+theorem box_eq_unprovable {m c : Nat} :
+    ¬ Provable m (.box c (.eq (.const .C) (.const .D))) := by
+  intro h
+  have h2 := PD.BaseTheorems.Provable_sound _ _ h
+  simp only [Formula.interp] at h2
+  exact eq_const_unprovable h2
+
+/-- A formula with a nonzero search literal: `maxSLitF wildF = 1`. -/
+def wildF : Formula :=
+  .plays (.search 1 (.plays .self .self .C) (.const .C) (.const .C)) (.const .C) .C
+
+/-- **Finding 1**: the linked trichotomy over full `PPair` is FALSE — `axKf`'s
+    consequent-box content is arbitrary, so its content pairs defeat all disjuncts. -/
+theorem ppair_linked_false :
+    ∃ (L m : Nat) (φ B C : Formula), Provable m φ ∧ PPair φ B C ∧
+      ¬ ((maxSLitF C ≤ L → maxSLitF B ≤ L)
+         ∨ (∃ b ψ₀, B = Formula.box b ψ₀)
+         ∨ (∃ m', m' ≤ m ∧ Provable m' C)) := by
+  refine ⟨0, 1000, _, wildF, .eq (.const .C) (.const .D),
+    Provable.axKf 0 0 1000 1000 (.plays (.const .C) (.const .C) .C)
+      (.impl wildF (.eq (.const .C) (.const .D))) (by decide) (by decide),
+    Or.inr ⟨1000, _, .tail (.tail .head), .head⟩, ?_⟩
+  rintro (h1 | ⟨b, ψ₀, hB⟩ | ⟨m', _, hC⟩)
+  · have := h1 (by decide)
+    revert this
+    decide
+  · simp only [wildF] at hB
+    cases hB
+  · exact eq_const_unprovable hC
+
+/-- **Finding 2**: even at SPINE level, the box-LINKED dichotomy is FALSE at guarded tail
+    positions — before its antecedent is discharged, `axKf`'s tail pair has no link. -/
+theorem spine_boxlinked_false :
+    ∃ (L m : Nat) (φ B C : Formula), Provable m φ ∧ PosImpl φ B C ∧
+      ¬ ((maxSLitF C ≤ L → maxSLitF B ≤ L)
+         ∨ (∃ b ψ₀, B = Formula.box b ψ₀ ∧
+              (maxSLitF C ≤ L → maxSLitF ψ₀ ≤ L))
+         ∨ (∃ m', m' ≤ m ∧ Provable m' C)) := by
+  refine ⟨0, 1000, _, .box 0 wildF, .box 1000 (.eq (.const .C) (.const .D)),
+    Provable.axKf 0 0 1000 1000 wildF (.eq (.const .C) (.const .D))
+      (by decide) (by decide),
+    .tail .head, ?_⟩
+  rintro (h1 | ⟨b, ψ₀, hB, hlink⟩ | ⟨m', _, hC⟩)
+  · have := h1 (by decide)
+    revert this
+    decide
+  · -- B = .box 0 wildF forces ψ₀ = wildF; the link then demands Tame wildF — false
+    injection hB with hb hψ
+    subst hψ
+    have := hlink (by decide)
+    revert this
+    decide
+  · exact box_eq_unprovable hC
+
 end PD.T48

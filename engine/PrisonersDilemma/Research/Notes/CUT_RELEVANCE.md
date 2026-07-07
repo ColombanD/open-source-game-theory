@@ -294,6 +294,63 @@ C2's value is likewise confined to its non-box-mediated content.)
    consumed toward a non-box conclusion. If THIS grounding fails, the failure is a
    genuine candidate for the undecidability encoding (§4.4).
 
+### 5d. The diagnostic's RESULTS (2026-07-03, T48 §10) — two falsity theorems, one foundation
+
+Running §5c step 1 on paper settled the arms before the induction was worth writing: the
+linked forms are not hard — at two precisely-located position classes they are **FALSE**,
+and both counterexamples are kernel-checked (`ppair_linked_false`,
+`spine_boxlinked_false`, via the soundness-based unprovability helpers
+`eq_const_unprovable`/`box_eq_unprovable`).
+
+1. **Box-content pairs are unfixable** (`ppair_linked_false`). `axKf` is a PREMISE-FREE
+   axiom schema, so its consequent-box content `α` is arbitrary: `α := .impl wildF eqCD`
+   plants a wild-antecedent/unprovable-consequent pair inside a positive box of a
+   derivable judgment, defeating `D1 ∨ Dbox ∨ D2` outright. So `PPair`'s boxT descent
+   must GO from any judgment-local lemma; box contents are sourced only at consumption
+   (box judgments via `box_inversion`) — the §5 consumer-side design, now FORCED rather
+   than chosen. (Retro-explains C3b-i: DboxPos could never have been linked.)
+2. **Guarded tail positions are unfixable pairwise** (`spine_boxlinked_false`). Even
+   spine-only and even GRANTING the box escape its content-link
+   (`B = □ψ₀ ∧ (Tame C → Tame ψ₀)`), the dichotomy fails at tail positions behind an
+   undischarged antecedent: the same `axKf` instance's tail pair `(□b wildF, □c eqCD)`
+   has no link and no degeneracy — before the antecedent `□a(wildF → eqCD)` is
+   discharged (it can't be), the judgment alone carries no information about the pair.
+   Guard CONTEXT is necessary information. (§5's discharge-site architecture, likewise
+   now forced.)
+
+**The corrected foundation (C3b-ii′).** Three components, each checked on paper against
+the failure modes above:
+
+- **Motive: pairs with guard context.** `PosImplCtx φ Γ B C` — spine descent collecting
+  into `Γ` every antecedent passed on the way to the pair; the dichotomy takes
+  `∀ X ∈ Γ, ∃ mX, Provable mX X` as a hypothesis. Both counterexamples dissolve: the
+  `axKf` tail pair's guard is `□a(wildF → eqCD)`, and its provability (the discharge
+  sibling at the consuming `app`) is exactly the constraint whose absence made the pair
+  wild.
+- **Induction: budget-strong-induction with inversion, NOT structural `rec`.** Legal
+  because **pair-queries never cross cites** — checked rule-by-rule: the cited premises
+  of `search_t`/`searchThenSearch_t`/`search_f` and the STS premise (at `m' ≤ k₂`)
+  contribute NO pairs to their conclusions' spines (plays-ended conclusions); `diagF`'s
+  tail-tail pairs come from its premise at `pm < K`. Every pair-relevant premise sits at
+  a strictly smaller budget — and, the decisive advantage over the merged-motive design,
+  the D2 wall vanishes: opaque degenerate WITNESSES are just judgments at smaller
+  budgets, re-analyzable by the same strong IH. No transform-carrying inside the
+  dichotomy.
+- **Kernel: `HBoxHead` — box-chain grounding at HEAD positions only.**
+  `Provable m (.impl (.box b₀ ψ₀) C) → (Tame C → Tame ψ₀) ∨ (∃ m' ≤ m, Provable m' C)`.
+  Heads dodge both falsity findings (unguarded by construction), and the §5c-2 producer
+  census applies: head box-antecedents come from the `searchBranch` family (guard-subst
+  contents — tame), chains (recurse), `axK` (premise-constrained: `□a(ψ₀ → α)` is a real
+  judgment), or post-discharge `axKf` (the discharge sibling constrains the content).
+  On paper the guard-context dichotomy closes ALL arms given `HBoxHead`: box-B heads
+  discharge by `HBoxHead`-at-self; box-middle compositions consume the strong IH's
+  binary answer at the middle judgment; `impS2`'s tail-query carries guard `A`,
+  discharged at its consumption sites.
+
+The conjecture's residue after the diagnostic is `HBoxHead` — one head-level, guard-free
+statement, plausible by census, the natural home for §5c-2's box-depth auxiliary
+induction. If IT fails, §4.4's undecidability encoding starts there.
+
 ## 5b. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
@@ -344,8 +401,18 @@ C2's value is likewise confined to its non-box-mediated content.)
   compositions pass verbatim; the census cases needed only `DAnt_slit` (search literals
   never increase — the subscript-blocked cases of the old census are D1 now or honestly
   Dbox*). The conjecture's residue is now EXACTLY the three box obstructions.
-- **C3b-i′ (the corrected course — see §5c)**: the LINKED trichotomy diagnostic, then the
-  box-chain grounding lemma. Supersedes the retracted C3b-i and the old C3b-ii plan below.
+- **C3b-i′ ✅ (2026-07-03, T48 §10 — the diagnostic, resolved by REFUTATION; see §5d)**:
+  the linked trichotomy is FALSE, twice over — `ppair_linked_false` (box-content pairs of
+  premise-free axioms are arbitrary; boxT descent must go) and `spine_boxlinked_false`
+  (guarded tail pairs carry no pairwise information; guard context is necessary). Output:
+  the corrected foundation — guard-context motive `PosImplCtx`, budget-strong-induction
+  (pair-queries never cross cites), and the single kernel `HBoxHead`. Supersedes the
+  retracted C3b-i and the old C3b-ii plan below.
+- **C3b-ii′ (NEXT)**: build the foundation of §5d — `PosImplCtx`, the guard-context
+  dichotomy by budget-strong-induction with `HBoxHead` as an explicit hypothesis (the
+  theorem "HBoxHead ⇒ full dichotomy" is the deliverable); then attack `HBoxHead` itself
+  (producer census + box-depth induction), or exhibit its failure as the undecidability
+  entry point.
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid
