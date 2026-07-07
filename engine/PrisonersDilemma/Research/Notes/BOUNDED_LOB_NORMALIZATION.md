@@ -1,9 +1,10 @@
 # Normalization for a Bounded-Löb Modal Proof Calculus (the D2f-b theorem)
 
-*Status 2026-07-03: precisely stated, attack fully mapped, three-lemma proof plan below.
-This is the ONLY remaining gap in the T4.1b CutRelevance pipeline — and plausibly a
-stand-alone publishable result. Everything referenced is kernel-checked in
-`Research/Spikes/transcript/T49TreeSubstrate.lean` unless marked OPEN.*
+*Status 2026-07-03 (end of day): **PROVEN** — `boxInv_total`, kernel-checked in
+`Research/Spikes/transcript/T49TreeSubstrate.lean` §19–21, zero sorries. The document
+below is the research record: statement, the nine-route failure map, the Y-combinator
+diagnosis, and the design that closed it. Plausibly the first normalization theorem for
+a bounded provability logic — paper material.*
 
 ## 1. The object
 
@@ -21,12 +22,21 @@ unfold at `diagF` (extract the diag discharge's content, walk it), consume at mo
 leaves. It is fuel-indexed and correct by construction: every `some` is a content tree
 within the box's subscript.
 
-## 2. The theorem (OPEN)
+## 2. The theorem — **PROVEN 2026-07-03** (`boxInv_total`, T49 §21)
 
 **BoxInvTotal**: for every `t : ProvT m (.box c ψ)` there is fuel on which
-`boxInv fuel t` returns `some`.
+`boxInv fuel t` returns `some`. Equivalently: the machine weakly normalizes on all
+well-typed states with box/diag cores. UNCONDITIONAL — no contraction-freedom
+hypothesis; kernel-checked, zero sorries.
 
-Equivalently: the machine weakly normalizes on all well-typed states with box/diag cores.
+The proof is exactly §8's design: the `Good`/`GoodStack`/`ContentGood` computability
+predicate by well-founded recursion on lex `(k, μ, phase)` with `μ(box) = 0` (T49 §20),
+and the FUNDAMENTAL LEMMA (T49 §21) — every well-typed tree is good at every level, by
+structural induction, with contraction paid by hypothesis reuse, the Löb case composed
+by fuel monotonicity, and the modal leaves closed by the cumulative-determinism
+mechanism (`Good_box_levels`). `boxInv_total` is the `k := 1` instance. The fundamental
+lemma actually yields much more: the machine halts on EVERY well-typed state against
+every good stack — full weak normalization for the bounded-Löb calculus.
 
 ## 3. What is already proven (the fenced perimeter)
 
