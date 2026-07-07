@@ -768,7 +768,40 @@ check → `certify`) delivers zoo-scale certificates without the SN theorem.
      those with the crossing + T43 pool-closure for everything ungated yields
      `TreeModestRelevance` for zoo roots.
   5. Plug into `tree_modestRelevance` + T47 ⇒ `Provable` decidable on the zoo
-     universe ⇒ `proofSearch` computable ⇒ `eval` computable ⇒ outcomes `by decide`. Structural insight: every duplication of a discharge happens under a
+     universe ⇒ `proofSearch` computable ⇒ `eval` computable ⇒ outcomes `by decide`.
+
+  **D2g build-spec (2026-07-03, census inventory done — ready to execute):**
+
+  * Extended cores: `CoreContent (.plays p q c) := Σ' k', AtomT k' (.plays p q c)`;
+    `.eq`/`.neg`/`.impl` cores ↦ `Σ' m', ProvT m' core` (tree of the judgment). Nil-base
+    at general cores: return the walker (`some ⟨m, t⟩` — @-pattern). NOTE: this breaks
+    `boxInvGo_wt_lt`'s strictness at general cores — restate it with an `IsCore`
+    hypothesis (box/diag only); all other conservation lemmas gain trivial arms.
+  * `derivCross`: the Derivation-level walker (mutual with the machine), reusing
+    `DStack`. Arms: `hypSyll(d1, d2)` composes like `implTrans` (its middles are
+    C1-tame, size-paid — no gate obligations!); `modusPonens(d1, d2)` walks `d1` with
+    `.struct d2 (le_refl)` pushed; `eqRefl`/`eqNeg` are nil-base leaves. Census leaves
+    with their reconstructions (all branches `.const` — certs are TRIVIAL):
+    - `searchBranch`/`botSearchStep` (+ discharge `u : □k ψ'-tree`):
+      `tc := boxInvT u` (TOTAL now) — and T49's `PlaysT.search_t` takes the `ProvT`
+      guard DIRECTLY (`tc.mono : ProvT k ψ'` — no Prop round-trip, diet preserved by
+      `box_inversion_diet`); branch cert `PlaysT.const`; assemble
+      `.atom (.mk (search_t …) le_refl)` at cost `c_leaf + c_guard k + c_node` — tiny,
+      budget-mono lifts to the site's budget.
+    - `simStep`/`botSimStep` (+ discharge `u : plays-tree`): extract `u`'s `AtomT` via
+      the plays-core machine (mutual recursion — `.atom` base, app-chains walk,
+      `struct` re-enters `derivCross`); its `PlaysT` is exactly the `.sim`-premise
+      shape; wrap with `PlaysT.sim`/`.bot`.
+    - `iteBranchSearch_t` (two segments: guard-atom + box): rebuild via
+      `PlaysT.ite_t(sim-wrapped guard cert, ==-check, search_t branch cert)`; needs
+      `closedP z` (so `z.subst = z` aligns the frames — free for modest material via
+      `substP_id`).
+  * Totality/diet for the extension: rerun the §19–21 `Good` pattern — general-core
+    nil-bases are terminal (measure arguments verbatim); `derivCross` recursions are
+    structural on the Derivation (its middles carry no gates) plus dives already
+    covered by `machine_total`.
+  * Then the excisor (walk + `cutOKb`-check + β-reduce via the extended crossing) and
+    `TreeModestRelevance` for zoo roots. Structural insight: every duplication of a discharge happens under a
   strictly SHALLOWER `impS2`-walker, so tower-bounded fuel (`~wt · 2^(2^D)` at nesting
   depth `D`) EXISTS; the fight is the invariant. **Measure attempts, with exact failure
   points:**
