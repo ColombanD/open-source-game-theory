@@ -807,7 +807,13 @@ theorem gate_bound {L M m : Nat} {ψ : Formula} (hLM : L ≤ M) (hm : m ≤ M)
     omega
   omega
 
-/-! ## 8. C3b-i — the TAME TRICHOTOMY over `PPair` (the maxSLit dichotomy, upgraded).
+/-! ## 8. [RETRACTED — see §9] the "tame trichotomy" over `PPair`.
+
+**STATUS (2026-07-03, post-review): the theorem below is TRUE BUT VACUOUS** — its
+`DboxMid`/`DboxPos` disjuncts do not mention the analyzed pair and are unconditionally
+inhabited (`Tri_always`, §9), so `tame_trichotomy` follows in one line with no analysis.
+The 26 arms are retained ONLY as a map of which cases can maintain which links. Original
+(withdrawn) description follows.
 
 Every positive pair (implication spines + one box-content descent) of a derivable formula
 is: **D1** literal-nonincreasing (`Tame C → Tame B` — implicational, composes through the
@@ -1088,5 +1094,40 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
 theorem tame_impl_trichotomy (L : Nat) {m : Nat} {B C : Formula}
     (h : Provable m (.impl B C)) : Tri L m B C :=
   tame_trichotomy L h (Or.inl .head)
+
+/-! ## 9. RETRACTION of C3b-i — `Tri` is vacuous (machine-checked).
+
+External review (2026-07-03) observed that `Tri`'s third and fourth disjuncts quantify
+their witnesses fully existentially with NO occurrence of the analyzed pair `(B, C)`:
+any provable judgment containing a box-flavored pair — one fixed `box4` instance —
+witnesses them for EVERY input. The kernel confirms: `Tri_always` below holds with no
+hypotheses, so `tame_trichotomy` (§8) carries no information beyond its own arms'
+private bookkeeping. C3b-i is RETRACTED as a milestone.
+
+THE LESSON (recorded in CUT_RELEVANCE.md §5c): when an induction's compositions only
+close after UNLINKING an escape disjunct from the goal, the unlinking does not "isolate
+the obstruction" — it makes the disjunct `True` and the theorem hollow. Composition
+pressure is the signal that the pairwise judgment-local shape cannot carry the
+information; the correct responses are to carry it (linked, with whatever context the
+composition needs) or to handle those cases where the missing context (the sibling
+judgment) is actually present — never to drop the link. The same softness, in milder
+form, affects `PAnt.axkPair` (§5): `PAnt` is trivial on box-box pairs, and `trans` leaks
+this to any pair whose path routes through boxes. -/
+
+/-- One fixed `box4` witness inhabits the `DboxMid` disjunct — unrelated to any pair. -/
+theorem dboxMid_always :
+    ∃ b ψ₀ m' X C', Provable m' X ∧ PPair X (.box b ψ₀) C' := by
+  refine ⟨0, .plays .self .opp .C, 1000, _,
+    .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩
+  exact Provable.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+
+/-- **`Tri` holds for every input whatsoever** — the vacuity, kernel-checked. -/
+theorem Tri_always (L m : Nat) (B C : Formula) : Tri L m B C :=
+  Or.inr (Or.inr (Or.inl dboxMid_always))
+
+/-- The one-line derivation the review predicted: `tame_trichotomy` without induction. -/
+theorem tame_trichotomy_vacuous (L : Nat) {m : Nat} {φ : Formula}
+    (_ : Provable m φ) {B C : Formula} (_ : PPair φ B C) : Tri L m B C :=
+  Tri_always L m B C
 
 end PD.T48

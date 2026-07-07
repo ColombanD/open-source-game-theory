@@ -260,6 +260,40 @@ all verified on paper (D2 absorbs, D1 composes, D3 passes). Target instantiation
 **`Provable k φ → ProvableB (2^(max k (maxSLitF φ) + 2)) k φ`** — the literal half of
 CutRelevance. Modesty then rides the same induction (enrich Tame with the T4.3 universe).
 
+### 5c. The retraction and the corrected course (2026-07-03, post-review)
+
+**What went wrong.** To make the trichotomy's 26 arms compose, the two "recorded
+obstruction" disjuncts were UNLINKED from the analyzed pair `(B, C)`. Unlinked existentials
+over an inhabited domain are `True`: one fixed `box4` instance witnesses them for every
+input (kernel-checked, T48 §9 `Tri_always`), so the theorem carries no information. The
+composition pressure that forced the unlinking was the honest signal that a pairwise,
+judgment-local statement CANNOT carry that information — the correct response was never to
+drop the links. (`PAnt.axkPair` in C2 has the same disease in milder form: `PAnt` is
+trivial on box-box pairs, and `trans` leaks this to any path routing through boxes —
+C2's value is likewise confined to its non-box-mediated content.)
+
+**C3b-i′ — the corrected plan, two steps:**
+
+1. **The LINKED trichotomy diagnostic.** Re-run the 26-arm induction against the tight
+   target with NO escape hatches:
+   `TriL := (Tame C → Tame B) ∨ (∃ b ψ₀, B = .box b ψ₀) ∨ (∃ m' ≤ m, Provable m' C)`
+   (keep `DboxAnt` — it IS linked via `B`, and its consumers hold the sibling). Do not
+   expect it to close; the point is the exact list of arms that break. Predicted breakage:
+   `implTrans`/`impS2` head-compositions where the MIDDLE is a box (`X₂ = DboxAnt`), and
+   the boxT-content pairs of the premise-free rules (`axKf`/`box4`/`boxMono`
+   consequent-contents). Each breakage is a REAL lemma obligation, not a formalization
+   artifact.
+2. **The box-chain grounding lemma** (the predicted missing mathematics, from the
+   producer census): for `Provable b (.impl (.box bb ψ₀) χ)` with `χ` NOT a box, the
+   only non-degenerate producers of box-antecedent/non-box-consequent implications are
+   the `searchBranch` family (⇒ `ψ₀` is a guard-subst of the consequent's programs —
+   TAME relative to `χ`) and chains whose middles recurse; box-middles pass rightward
+   until the consequent is non-box. So conjecture: `χ` non-box ⇒ `(Tame χ → Tame ψ₀)`
+   ∨ degenerate — provable by induction with the box-DEPTH of the consequent as the
+   auxiliary measure for the all-box chains (`axK`-land), which must eventually be
+   consumed toward a non-box conclusion. If THIS grounding fails, the failure is a
+   genuine candidate for the undecidability encoding (§4.4).
+
 ## 5b. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
@@ -296,7 +330,11 @@ CutRelevance. Modesty then rides the same induction (enrich Tame with the T4.3 u
   `provable_pos`; **`box_inversion`** — a derivable box comes from `boxIntro` (its content
   WAS a judgment, at budget = the subscript) or an `app` spine, nothing else. These are the
   master induction's tools for resolving the census holes from sibling judgments.
-- **C3b-i ✅ (2026-07-03, T48 §8)**: **THE TAME TRICHOTOMY** — `tame_impl_trichotomy`:
+- **C3b-i ✗ RETRACTED (2026-07-03, same day — external review + kernel check, T48 §9)**:
+  the "tame trichotomy" below is TRUE BUT VACUOUS — its `DboxMid`/`DboxPos` disjuncts
+  don't mention the analyzed pair and are unconditionally inhabited by one fixed `box4`
+  witness (`Tri_always`); the whole theorem follows in one line (`tame_trichotomy_vacuous`).
+  Withdrawn claim, kept for the record: `tame_impl_trichotomy`:
   `Provable m (.impl B C) → Tri L m B C` where `Tri` = D1 (`maxSLitF C ≤ L → maxSLitF B ≤
   L` — implicational, composes) ∨ DboxAnt (`B` is a box — sibling-resolvable at its
   discharge `app`) ∨ DboxMid (a box-antecedent pair recorded in a judgment — the
@@ -306,7 +344,9 @@ CutRelevance. Modesty then rides the same induction (enrich Tame with the T4.3 u
   compositions pass verbatim; the census cases needed only `DAnt_slit` (search literals
   never increase — the subscript-blocked cases of the old census are D1 now or honestly
   Dbox*). The conjecture's residue is now EXACTLY the three box obstructions.
-- **C3b-ii**: the master transform — thread the carried-transform payloads through `Tri`
+- **C3b-i′ (the corrected course — see §5c)**: the LINKED trichotomy diagnostic, then the
+  box-chain grounding lemma. Supersedes the retracted C3b-i and the old C3b-ii plan below.
+- **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid
   is the open kernel — attack via a side induction on the middle's box-structure, or show
