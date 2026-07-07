@@ -619,10 +619,27 @@ the termination formalization.
   box-structure — computing the return type from the core (`BoxContent core`) fixes it
   with zero casts; shape-excluded arms return `none` (sound; unreachability belongs to
   totality).
-- **D2d (NEXT)**: `BoxInvTotal` — fuel sufficiency via the modest-pool rank argument
-  (per §5g; includes unreachability of the `none` arms for box cores); then cut-diet
-  bookkeeping (`gateOK` of extracted trees); then `spineCross` proper on the same stack
-  machine, and `TreeModestRelevance` for zoo roots into T47's decider.
+- **D2d ✅ (2026-07-03, T49 §9–10 revised) — the totality audit caught a LOOP; the Löb
+  pair is now a second core**: the original `diagF` arm (apply-self, keep peeling)
+  returns to its own state two steps later — sound (fuel runs out) but totality-fatal.
+  Fix: `CoreContent` also makes `.diag` extractable (a diag's content is the implication
+  it abbreviates, budget-free); `diagB` + non-empty stack is the diag base case (its
+  discharge IS the content), and `diagF` extracts its diag discharge's content and
+  applies it — strictly decreasing. New `#eval`: extraction through a full
+  `diagF`/`diagB` fixpoint pair down to a real box, at exactly the subscript.
+  TOTALITY LEDGER (audited arm-by-arm, measure `W = |t| + Σ|stack|`): app −1, weaken
+  −1−|d|, implTrans 0 with |t| strictly down (lex), diagF strictly down (extracted
+  content ⊊ consumed discharge), dives fresh-smaller, leaves terminal; the SOLE
+  obstruction is `impS2` (+|d| — Gentzen contraction, as §5g predicted). All `none`
+  arms have UNINHABITED state types for box/diag cores (DStack index chasing +
+  `derivation_shape`).
+- **D2e (NEXT) — totality**: first `boxInv_total_of_impS2Free` — on contraction-free
+  trees the (W, |t|) lex measure closes it; state the induction as
+  `∀ W, Ψ(t,s) ≤ W → isSome (boxInvGo W t s)` so fuel-monotonicity is absorbed by the
+  `≤` (no 15-arm mono lemma needed). Then the impS2 case via the modest-pool rank
+  argument (or bounded-contraction-depth fuel). Then cut-diet bookkeeping (`gateOK` of
+  extracted trees), `spineCross` on the same machine, `TreeModestRelevance` for zoo
+  roots into T47's decider.
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid

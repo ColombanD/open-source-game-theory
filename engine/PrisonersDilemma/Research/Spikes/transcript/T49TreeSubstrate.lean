@@ -507,15 +507,17 @@ inductive DStack : Formula → Formula → Type where
       DStack (.impl B rest) core
 
 /-- What extraction owes for a given core: for a box, its content within the
-    subscript. -/
-def BoxContent : Formula → Type
+    subscript; for a diag, the implication it abbreviates (budget-free — the leaf
+    gates downstream re-pay). -/
+def CoreContent : Formula → Type
   | .box c ψ => Σ' m', (ProvT m' ψ) ×' (m' ≤ c)
+  | .diag g tgt => Σ' m', ProvT m' (.impl (.box g (.diag g tgt)) tgt)
   | _ => PEmpty
 
 /-- The fueled extractor. `none` = out of fuel (or a shape-excluded arm); every `some`
     is a genuine content tree within the subscript budget, by type. -/
 def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
-    (t : ProvT m ξ) → DStack ξ core → Option (BoxContent core)
+    (t : ProvT m ξ) → DStack ξ core → Option (CoreContent core)
   | 0, _, _, _, _, _ => none
   | fuel + 1, _, _, _, t, stack =>
     match t, stack with
@@ -530,12 +532,15 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
     | .impS2 φ' ψ' χ' m₁' m₂' _ tf tx _, .cons mD dB s' =>
         boxInvGo fuel tf (.cons mD dB (.cons (m₂' + mD + ψ'.size)
           (.app (m₂' + mD + ψ'.size) m₂' mD φ' ψ' tx dB (Nat.le_refl _)) s'))
-    -- the Löb detour: apply the node itself, keep peeling
-    | .diagF pm fb g K tgt tP hle, .cons mD1 d1 s' =>
-        boxInvGo fuel
-          (.app (K + mD1 + (Formula.impl (.box g (.diag g tgt)) tgt).size) K mD1
-            (.diag g tgt) (Formula.impl (.box g (.diag g tgt)) tgt)
-            (.diagF pm fb g K tgt tP hle) d1 (Nat.le_refl _)) s'
+    -- the Löb pair: diag is a second core; diagB is its base, diagF consumes one
+    | .diagB _ _ _ _ _ _ _, .cons mD d .nil => some ⟨mD, d⟩
+    | .diagF _ _ g _ tgt _ _, .cons _ d1 (.cons mD2 d2 s'') =>
+        match boxInvGo fuel d1 (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+        | some ⟨mx, x⟩ =>
+            boxInvGo fuel
+              (.app (mx + mD2 + tgt.size) mx mD2 (.box g (.diag g tgt)) tgt x d2
+                (Nat.le_refl _)) s''
+        | none => none
     -- modal leaves: the gates pay the extraction
     | .atomBoxImpl kBox p q a cert _, .cons _ _ .nil =>
         some ⟨kBox, .atom cert, Nat.le_refl _⟩
@@ -567,7 +572,7 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
 /-- Box-content extraction: any box judgment, content within the subscript — given
     fuel. -/
 def boxInv (fuel : Nat) {m c : Nat} {ψ : Formula} (t : ProvT m (.box c ψ)) :
-    Option (BoxContent (.box c ψ)) :=
+    Option (CoreContent (.box c ψ)) :=
   boxInvGo fuel t .nil
 
 /-- The isolated remaining obligation (the modest-pool rank argument's target): the
@@ -603,5 +608,32 @@ private def demoDetour : ProvT 900 (.box 200 (.impl PD.T48.psi0 PD.T48.wildA)) :
 #eval match boxInv 10 demoDetour with
   | some ⟨m', _, _⟩ => s!"detour: extracted at budget {m'}"
   | none => "detour: out of fuel"
+
+/-! The Löb path: a `diagF` node whose diag discharge routes through `diagB`, ending at
+`demoBox` — the machine unfolds the fixpoint pair and extracts the inner box's content. -/
+
+private def demoTgt : Formula := .box 200 (.impl PD.T48.psi0 PD.T48.wildA)
+
+private def demoLob : ProvT 600 (.impl (.box 44 demoTgt) demoTgt) :=
+  .weakenImpl _ demoTgt 500 demoBox (by decide)
+
+private def demoXz : ProvT 700 (.impl (.box 5000 (.diag 5000 demoTgt)) demoTgt) :=
+  .weakenImpl _ demoTgt 500 demoBox (by decide)
+
+private def demoD1 : ProvT 2000 (.diag 5000 demoTgt) :=
+  .app 2000 1000 700 _ _ (.diagB 600 44 5000 1000 demoTgt demoLob (by decide))
+    demoXz (by decide)
+
+private def demoD2 : ProvT 6000 (.box 5000 (.diag 5000 demoTgt)) :=
+  .boxIntro 5000 6000 _ (ProvT.mono (by omega) demoD1) (by decide)
+
+private def demoDiagF :
+    ProvT 1000 (.impl (.diag 5000 demoTgt)
+      (.impl (.box 5000 (.diag 5000 demoTgt)) demoTgt)) :=
+  .diagF 600 44 5000 1000 demoTgt demoLob (by decide)
+
+#eval match boxInvGo 20 demoDiagF (.cons 2000 demoD1 (.cons 6000 demoD2 .nil)) with
+  | some ⟨m', _, _⟩ => s!"löb: extracted at budget {m'}"
+  | none => "löb: out of fuel"
 
 end PD.T49
