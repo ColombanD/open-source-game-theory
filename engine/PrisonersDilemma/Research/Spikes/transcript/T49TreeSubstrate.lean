@@ -2054,4 +2054,193 @@ theorem boxInvGo_wt_lt : ∀ (F : Nat) {m : Nat} {ξ core : Formula}
         simp [boxInvGo] at h
     | atomNeg p q b aN m' t hne hle => simp [boxInvGo] at h
 
+/-! ## 19. The normalization proof, part 1 — the measure and the two determinism lemmas.
+
+`BOUNDED_LOB_NORMALIZATION.md` §8's design, formalized. This section: the formula
+measure `muF` (boxes are ATOMS — crossing them drops the guard index instead, so the
+diag unfolding measures BELOW the diag: the negative recursive occurrence hides behind
+a box), its spine lemma, and the two mechanical facts the `Good` definition's
+bookkeeping relies on: fuel-value monotonicity (results are fuel-deterministic, so
+different `∀j ≤ k` instantiations of a discharge's goodness speak about the SAME
+extracted content) and gate-irrelevance (the machine never inspects budget-gate proofs,
+so goodness transports along `ProvT.mono`). -/
+
+/-- The formula measure: `μ(box) = 0` (guard-crossings drop `k` instead), hence
+    `μ(diag unfold) = μ(tgt) + 1 < μ(diag) = μ(tgt) + 2`. -/
+def muF : Formula → Nat
+  | .impl B C => max (muF B) (muF C) + 1
+  | .diag _ tgt => muF tgt + 2
+  | _ => 0
+
+/-- The spine-end never measures above the spine. -/
+theorem DStack.mu_core_le : {ξ core : Formula} → DStack ξ core → muF core ≤ muF ξ
+  | _, _, .nil => Nat.le_refl _
+  | _, _, .cons _ _ s => le_trans s.mu_core_le (by simp [muF]; omega)
+
+/-- **Fuel-value monotonicity**: a `some` result is stable under more fuel. -/
+theorem boxInvGo_fuel_mono : ∀ (F F' : Nat), F ≤ F' →
+    ∀ {m : Nat} {ξ core : Formula} (t : ProvT m ξ) (s : DStack ξ core)
+    {r : CoreContent core}, boxInvGo F t s = some r → boxInvGo F' t s = some r := by
+  intro F
+  induction F with
+  | zero => intro _ _ _ _ _ t s r h; simp [boxInvGo] at h
+  | succ F ih =>
+    intro F' hF m ξ core t s r h
+    obtain ⟨F'', rfl⟩ : ∃ F'', F' = F'' + 1 := ⟨F' - 1, by omega⟩
+    have hF'' : F ≤ F'' := by omega
+    cases t with
+    | boxIntro kIn K φ tc hle =>
+        cases s with
+        | nil => simp only [boxInvGo] at h ⊢; exact h
+    | app k m₁ m₂ φ' α f x hle =>
+        simp only [boxInvGo] at h ⊢
+        exact ih F'' hF'' f (.cons m₂ x s) h
+    | weakenImpl φ' ψ' m' tw hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            simp only [boxInvGo] at h ⊢
+            exact ih F'' hF'' tw s' h
+    | implTrans φ' ψmid χ' a b tA tB hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            simp only [boxInvGo] at h ⊢
+            exact ih F'' hF'' tB
+              (.cons _ (.app _ a mD φ' ψmid tA dB (Nat.le_refl _)) s') h
+    | impS2 φ' ψ' χ' m₁' m₂' K tf tx hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            simp only [boxInvGo] at h ⊢
+            exact ih F'' hF'' tf (.cons mD dB (.cons _
+              (.app _ m₂' mD φ' ψ' tx dB (Nat.le_refl _)) s')) h
+    | diagB pm fb g K tgt tP hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            cases s' with
+            | nil => simp only [boxInvGo] at h ⊢; exact h
+    | diagF pm fb g K tgt tP hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => simp [boxInvGo] at h
+            | cons mD2 d2 s'' =>
+                simp only [boxInvGo] at h ⊢
+                cases hd : boxInvGo F d1
+                    (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rx =>
+                    rw [hd] at h
+                    rw [ih F'' hF'' d1 .nil hd]
+                    obtain ⟨mx, x⟩ := rx
+                    exact ih F'' hF'' x (.cons mD2 d2 s'') h
+    | atomBoxImpl kBox p q a cert hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            cases s' with
+            | nil => simp only [boxInvGo] at h ⊢; exact h
+    | boxMono a' b' K φ' hab hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h ⊢
+                cases hd : boxInvGo F dB
+                    (.nil : DStack (.box a' φ') (.box a' φ')) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rc =>
+                    rw [hd] at h
+                    rw [ih F'' hF'' dB .nil hd]
+                    obtain ⟨mc, tc, hcc⟩ := rc
+                    exact h
+    | box4 a' b' K φ' hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h ⊢
+                cases hd : boxInvGo F dB
+                    (.nil : DStack (.box a' φ') (.box a' φ')) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rc =>
+                    rw [hd] at h
+                    rw [ih F'' hF'' dB .nil hd]
+                    obtain ⟨mc, tc, hcc⟩ := rc
+                    exact h
+    | axK a'' b'' c'' m'' K φ' α' tP hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h ⊢
+                cases hp : boxInvGo F tP
+                    (.nil : DStack (.box a'' (.impl φ' α')) _) with
+                | none => rw [hp] at h; exact absurd h (by simp)
+                | some rP =>
+                    cases hx : boxInvGo F dB
+                        (.nil : DStack (.box b'' φ') _) with
+                    | none => rw [hp, hx] at h; exact absurd h (by simp)
+                    | some rx =>
+                        rw [hp, hx] at h
+                        rw [ih F'' hF'' tP .nil hp, ih F'' hF'' dB .nil hx]
+                        obtain ⟨mP, tPc, hPle⟩ := rP
+                        obtain ⟨mx, txc, hxle⟩ := rx
+                        exact h
+    | axKf a'' b'' c'' K φ' α' hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => simp [boxInvGo] at h
+            | cons mD2 d2 s'' =>
+                cases s'' with
+                | nil =>
+                    simp only [boxInvGo] at h ⊢
+                    cases hp : boxInvGo F d1
+                        (.nil : DStack (.box a'' (.impl φ' α')) _) with
+                    | none => rw [hp] at h; exact absurd h (by simp)
+                    | some rP =>
+                        cases hx : boxInvGo F d2
+                            (.nil : DStack (.box b'' φ') _) with
+                        | none => rw [hp, hx] at h; exact absurd h (by simp)
+                        | some rx =>
+                            rw [hp, hx] at h
+                            rw [ih F'' hF'' d1 .nil hp, ih F'' hF'' d2 .nil hx]
+                            obtain ⟨mP, tPc, hPle⟩ := rP
+                            obtain ⟨mx, txc, hxle⟩ := rx
+                            exact h
+    | struct d hd => simp [boxInvGo] at h
+    | atom t => simp [boxInvGo] at h
+    | searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme t hm hsz =>
+        simp [boxInvGo] at h
+    | atomNeg p q b aN m' t hne hle => simp [boxInvGo] at h
+
+/-- Results are fuel-deterministic. -/
+theorem boxInvGo_det {F₁ F₂ : Nat} {m : Nat} {ξ core : Formula}
+    {t : ProvT m ξ} {s : DStack ξ core} {r₁ r₂ : CoreContent core}
+    (h₁ : boxInvGo F₁ t s = some r₁) (h₂ : boxInvGo F₂ t s = some r₂) : r₁ = r₂ := by
+  rcases Nat.le_total F₁ F₂ with h | h
+  · have := boxInvGo_fuel_mono F₁ F₂ h t s h₁
+    rw [this] at h₂; exact Option.some_inj.mp h₂
+  · have := boxInvGo_fuel_mono F₂ F₁ h t s h₂
+    rw [this] at h₁; exact (Option.some_inj.mp h₁).symm
+
+/-- **Gate-irrelevance**: the machine never inspects the root's budget gate. -/
+theorem boxInvGo_regate (F : Nat) {m m' : Nat} {ξ core : Formula}
+    (hmm : m ≤ m') (t : ProvT m ξ) (s : DStack ξ core) :
+    boxInvGo F (t.mono hmm) s = boxInvGo F t s := by
+  cases F with
+  | zero => simp [boxInvGo]
+  | succ F =>
+      cases t with
+      | atom a => cases a; rfl
+      | _ => rfl
+
 end PD.T49
