@@ -351,6 +351,57 @@ The conjecture's residue after the diagnostic is `HBoxHead` — one head-level, 
 statement, plausible by census, the natural home for §5c-2's box-depth auxiliary
 induction. If IT fails, §4.4's undecidability encoding starts there.
 
+### 5e. The third refutation (2026-07-03, T48 §11) — `HBoxHead` is FALSE; the judgment-local program is CLOSED
+
+Probing §5d's kernel before building on it (the lesson of §5c, applied) produced a third
+kernel-checked counterexample, and this one closes the whole program. `deadJ` is a
+**dead implication**: `Provable 10000 (.impl (.box 300 ψ₀) (.box 1000 eqCD))` with `ψ₀`
+wild, the consequent tame and unprovable — refuting `HBoxHead` (`hboxhead_false`) and the
+head-level linked dichotomy itself (`head_dichotomy_false`) at an UNGUARDED HEAD pair.
+The recipe combines four engine facts, each individually innocent:
+provable formulas carry arbitrary search literals (`eqRefl` on any program);
+`weakenImpl` admits arbitrary antecedents; `boxIntro`+`axK` box and distribute the
+degenerate implication, planting the wild content in antecedent position; `impS2`
+against a free `axKf` composes away the middle. Both sides of `deadJ` are unprovable
+(`box_psi0_unprovable`, `box_eq_unprovable`) — it can never fire via `app`.
+
+**Why no pairwise repair exists.** Conditioning on liveness doesn't save it: with a
+budget-BOUNDED degeneracy disjunct (`∃ m' ≤ m, Provable m' C`) the live variant still
+fails — box subscripts are BUDGET COMPRESSORS (`.box c χ` has size `~log c` but asserts
+budget-`c` provability, so a judgment can cheaply mention provability far above its own
+budget; replace `eqCD` by a tame `χ` provable only at `N ≫ m` and choose the `axKf`
+subscript `c ≥ N`). With budget-UNBOUNDED degeneracy the live variant is trivially true
+(apply `app`) and carries no information. Every informative judgment-local statement is
+false; every true one is empty. With §9 (vacuity), §10 (content pairs, guarded tails),
+and §11 (unguarded heads), the program is closed, not paused.
+
+**What survives.** The conjecture. All three counterexamples have unprovable right
+sides — dead weight that no derivation of a provable goal consumes through `app`, and
+that minimality should excise. The information CutRelevance needs lives in minimal
+derivation TREES of provable roots, not in judgments.
+
+**The fork (pick one next session):**
+
+- **(A) Tree-level minimality / excision** — Lemma B's true home. Formalize weighted
+  derivation trees; define LIVE sub-judgments (consequent-side contributes to the root);
+  prove the excision lemma (dead sub-derivations removable, budget non-increasing); then
+  re-run the literal analysis over live judgments only — where every `app` site has its
+  discharge sibling present in the tree, which is exactly the guard context §5d wanted,
+  now with real witnesses instead of hypotheses.
+- **(B) Specialize to the actual consumer.** `decB`/T47 need CutRelevance only for
+  zoo-universe roots (modest, plays-shaped goals in `SL`). Run (A)'s tree analysis
+  specialized to those roots: their derivations are census-dominated (the whole theorem
+  library's cut diet is modest), and the wild-injection machinery may be provably
+  excisable there even if the general statement stays open.
+- **(C) The undecidability route, now with a weapon.** Budget compression is encoding
+  material: `maxLitF` counts box subscripts, so □-compressed cuts are exotic by
+  definition; if some tame provable family can be FORCED to route through
+  `.box c`-cuts whose minimal `c` grows non-computably in `k`, CutRelevance FAILS and
+  `Provable` is undecidable. The §11 injection recipe (weaken-plant + `axK`-distribute)
+  is the tool for building such forcings — the open question is making the wild route
+  NECESSARY, i.e. defeating excision, which is exactly the negation of (A)'s lemma.
+  (A) and (C) are the two faces of one question: is excision always possible?
+
 ## 5b. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
@@ -408,11 +459,16 @@ induction. If IT fails, §4.4's undecidability encoding starts there.
   the corrected foundation — guard-context motive `PosImplCtx`, budget-strong-induction
   (pair-queries never cross cites), and the single kernel `HBoxHead`. Supersedes the
   retracted C3b-i and the old C3b-ii plan below.
-- **C3b-ii′ (NEXT)**: build the foundation of §5d — `PosImplCtx`, the guard-context
-  dichotomy by budget-strong-induction with `HBoxHead` as an explicit hypothesis (the
-  theorem "HBoxHead ⇒ full dichotomy" is the deliverable); then attack `HBoxHead` itself
-  (producer census + box-depth induction), or exhibit its failure as the undecidability
-  entry point.
+- **C3b-ii′ ✗ KERNEL REFUTED (2026-07-03, T48 §11 — see §5e)**: probing `HBoxHead` before
+  building on it found it FALSE (`hboxhead_false`), along with the head-level linked
+  dichotomy itself (`head_dichotomy_false`), via the dead implication `deadJ`
+  (wild boxed antecedent, tame unprovable consequent — never fires via `app`). Third and
+  closing refutation: the judgment-local program is DEAD at every position class. The
+  conjecture survives (all counterexamples are excisable dead weight).
+- **NEXT — the fork (§5e)**: (A) tree-level minimality/excision (Lemma B's true home),
+  probably specialized per (B) to the zoo-universe roots `decB` actually needs; or (C)
+  the undecidability encoding via box budget-compression — (A) and (C) are the two faces
+  of "is excision always possible?".
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid

@@ -1233,4 +1233,101 @@ theorem spine_boxlinked_false :
     decide
   · exact box_eq_unprovable hC
 
+/-! ## 11. C3b-ii′ probe — the kernel `HBoxHead` is ALSO FALSE (the third refutation).
+
+Before building the guard-context dichotomy on §5d's foundation, the kernel got the same
+adversarial probe that caught §9 and §10 — and it fails too. The counterexample is a
+**dead implication**: a derivable judgment whose boxed antecedent is UNPROVABLE (so the
+implication can never fire via `app`), assembled from four engine facts:
+
+  * provable formulas carry arbitrary search literals (`eqRefl` on any program — `wildA`
+    below is provable with `maxSLitF = 1`);
+  * `weakenImpl` puts an ARBITRARY antecedent in front of a provable formula;
+  * `boxIntro` + `axK` box the degenerate implication and distribute it, planting the
+    arbitrary antecedent inside a boxed-antecedent implication;
+  * `impS2` against a free `axKf` instance composes away the middle, leaving
+    `deadJ : Provable 10000 (.impl (.box 300 ψ₀) (.box 1000 eqCD))`
+    with `ψ₀` wild (slit 1), the consequent tame (slit 0) and UNPROVABLE.
+
+`deadJ` defeats both of `HBoxHead`'s disjuncts at an UNGUARDED HEAD pair
+(`hboxhead_false`), and since `maxSLitF (.box 300 ψ₀) = maxSLitF ψ₀`, the same judgment
+refutes the head-level linked dichotomy outright (`head_dichotomy_false`). Combined with
+§10: pairwise judgment-local dichotomies fail at EVERY position class — box content,
+guarded tail, and now unguarded head. The judgment-local program is CLOSED.
+
+What survives, again, is the conjecture: `deadJ` is dead weight — both its sides are
+unprovable (`box_psi0_unprovable`, `box_eq_unprovable`), so no derivation of a provable
+goal ever consumes it through `app`, and minimality should excise it. The analysis must
+move from judgments to MINIMAL DERIVATION TREES of provable roots — see the note's §5e
+for the fork this forces. -/
+
+/-- The §5d kernel, as stated there: box-antecedent grounding at head positions. -/
+def HBoxHead (L : Nat) : Prop :=
+  ∀ m b₀ ψ₀ C, Provable m (.impl (.box b₀ ψ₀) C) →
+    (maxSLitF C ≤ L → maxSLitF ψ₀ ≤ L) ∨ (∃ m', m' ≤ m ∧ Provable m' C)
+
+/-- A program with a positive search subscript (never evaluated — pure literal weight). -/
+def wildQ : Prog := .search 1 (.eq (.const .C) (.const .C)) (.const .C) (.const .C)
+
+/-- Provable (by `eqRefl`) yet wild: `maxSLitF wildA = 1`. Provability does not bound
+    search literals — the atom layer certifies reflexivity for ANY program. -/
+def wildA : Formula := .eq wildQ wildQ
+
+/-- The wild, semantically FALSE antecedent content: `wildA → (C = D)`. -/
+def psi0 : Formula := .impl wildA (.eq (.const .C) (.const .D))
+
+theorem wildA_provable : Provable 100 wildA :=
+  .struct ⟨.eqRefl wildQ, by decide⟩
+
+theorem psi0_unprovable {m : Nat} : ¬ Provable m psi0 := by
+  intro h
+  have h2 := PD.BaseTheorems.Provable_sound _ _ h
+  simp only [psi0, Formula.interp] at h2
+  exact absurd (h2 rfl) (by decide)
+
+/-- `deadJ`'s antecedent never fires: the boxed content is unprovable. -/
+theorem box_psi0_unprovable {m b : Nat} : ¬ Provable m (.box b psi0) := by
+  intro h
+  have h2 := PD.BaseTheorems.Provable_sound _ _ h
+  simp only [Formula.interp] at h2
+  exact psi0_unprovable h2
+
+/-- The dead implication: derivable, wild boxed antecedent, tame unprovable consequent. -/
+theorem deadJ :
+    Provable 10000 (.impl (.box 300 psi0) (.box 1000 (.eq (.const .C) (.const .D)))) := by
+  have h1 : Provable 200 (.impl psi0 wildA) :=
+    .weakenImpl psi0 wildA 100 wildA_provable (by decide)
+  have hbox : Provable 500 (.box 200 (.impl psi0 wildA)) :=
+    .boxIntro 200 500 (.impl psi0 wildA) h1 (by decide)
+  have h2 : Provable 2000 (.impl (.box 300 psi0) (.box 600 wildA)) :=
+    .axK 200 300 600 500 2000 psi0 wildA hbox (by decide) (by decide)
+  have h1' : Provable 3000
+      (.impl (.box 300 psi0)
+             (.impl (.box 600 wildA) (.box 1000 (.eq (.const .C) (.const .D))))) :=
+    .axKf 300 600 1000 3000 wildA (.eq (.const .C) (.const .D)) (by decide) (by decide)
+  exact .impS2 (.box 300 psi0) (.box 600 wildA)
+    (.box 1000 (.eq (.const .C) (.const .D))) 3000 2000 10000 h1' h2 (by decide)
+
+/-- **The third refutation**: the §5d kernel is false — at an unguarded head pair. -/
+theorem hboxhead_false : ¬ HBoxHead 0 := by
+  intro h
+  rcases h 10000 300 psi0 (.box 1000 (.eq (.const .C) (.const .D))) deadJ with
+    h1 | ⟨m', _, hC⟩
+  · have := h1 (by decide)
+    revert this
+    decide
+  · exact box_eq_unprovable hC
+
+/-- The same judgment refutes the head-level linked dichotomy itself (`Γ = []`):
+    with §10, pairwise dichotomies fail at every position class. -/
+theorem head_dichotomy_false :
+    ∃ (m : Nat) (B C : Formula), Provable m (.impl B C) ∧
+      ¬ ((maxSLitF C ≤ 0 → maxSLitF B ≤ 0) ∨ (∃ m', m' ≤ m ∧ Provable m' C)) := by
+  refine ⟨10000, .box 300 psi0, .box 1000 (.eq (.const .C) (.const .D)), deadJ, ?_⟩
+  rintro (h1 | ⟨m', _, hC⟩)
+  · have := h1 (by decide)
+    revert this
+    decide
+  · exact box_eq_unprovable hC
+
 end PD.T48
