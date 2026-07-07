@@ -3053,4 +3053,33 @@ theorem diagInv_total {m g : Nat} {tgt : Formula} (t : ProvT m (.diag g tgt)) :
   obtain ⟨fuel, r, hr⟩ := machine_total t .nil trivial
   exact ⟨fuel, r.1, r.2, hr⟩
 
+/-! ## 24. D2g-2 groundwork — the census reconstruction, validated.
+
+Stage 2's design collapsed further while wiring: `derivCross` is not a separate walker —
+`modusPonens` pushes its argument as a `struct`-tree and keeps walking, `hypSyll`
+materializes like `implTrans`, and the census leaves reconstruct inline; the only new
+mutual component is `atomizeGo` (peel a plays-tree to its certificate past the
+identity base). The riskiest arm is the search-census reconstruction; validated here
+standalone: a discharged guard box becomes a genuine `search_t` play certificate — the
+guard content plugs in as a TREE (T49's `PlaysT` carries `ProvT` cites), the `.const`
+branch costs one step, and the whole atom weighs `c_leaf + c_guard k + c_node`. -/
+
+/-- **The search-census reconstruction**: from a discharged guard box, the census
+    conclusion's play atom — constructively, with the extracted content as the cite. -/
+def censusSearchBranch {k mc : Nat} {ψg : Formula} {me opnt : Prog} {a b : Action}
+    (hme : me = .search k ψg (.const a) (.const b))
+    (tc : ProvT mc (ψg.subst me opnt)) (hc : mc ≤ k) :
+    ProvT (c_leaf + c_guard k + c_node) (.plays me opnt a) := by
+  subst hme
+  exact .atom (.mk (PlaysT.search_t (tc.mono hc) .const) (Nat.le_refl _))
+
+/-- End-to-end: census + total extraction = the play atom, for ANY discharge of the
+    guard box. This is the exact composite the machine's `searchBranch`-cons arm will
+    inline in stage 2. -/
+def censusSearchBranch_of_box {k mu : Nat} {ψg : Formula} {me opnt : Prog}
+    {a b : Action} (hme : me = .search k ψg (.const a) (.const b))
+    (u : ProvT mu (.box k (ψg.subst me opnt))) :
+    ProvT (c_leaf + c_guard k + c_node) (.plays me opnt a) :=
+  censusSearchBranch hme (boxInvT u).2.1 (boxInvT u).2.2
+
 end PD.T49
