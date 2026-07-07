@@ -654,10 +654,28 @@ the termination formalization.
   dive results via `Option.isSome_iff_exists` + `rw` rather than `cases hd :` (cases
   substitutes the scrutinee in the goal, breaking the later rewrite);
   `Nat.le_of_succ_le_succ` aligns the `+1+1 ≤ F+1` threshold shapes.
-- **D2f (NEXT)**: the `impS2` case of totality (modest-pool ranks / bounded-contraction
-  fuel — the only remaining gap between `boxInv_total_of_freeS2` and full
-  `BoxInvTotal`); cut-diet bookkeeping (`gateOK` of extracted trees); `spineCross` on
-  the same machine; `TreeModestRelevance` for zoo roots into T47's decider.
+- **D2f-a ✅ (2026-07-03, T49 §13) — cut-diet bookkeeping: extraction PRESERVES the
+  gate**: `boxInvGo_gateOK` — if the input tree and stack pass `G`, the stack's segment
+  formulas pass `G`, and `G` is box-content-closed (`G (.box b ψ) → G ψ` — true of
+  `litGate` and the modest gate), then the extracted tree passes `G`. The arms align
+  EXACTLY: every materialized `app`'s gated argument is a stack segment whose
+  obligation is supplied by the very node that pushed it (`app`'s own `G φ`,
+  `implTrans`'s/`impS2`'s `G ψ`), except the `axK`/`axKf` leaves which need the one
+  closure hypothesis. NOTE: holds for ALL trees including `impS2` — only TOTALITY
+  needs contraction-freedom; the diet is safe unconditionally. Dives never leak exotic
+  cuts.
+- **D2f-b (OPEN — the contraction case of totality)**: the only gap to full
+  `BoxInvTotal`. Key structural insight from this round's analysis: every duplication
+  of a discharge happens under a strictly SHALLOWER `impS2`-walker (the arm descends to
+  `tf`, and the duplicate is consumed inside `tx`'s walk — both at `s2depth ≤ d − 1`),
+  so total work is tower-bounded (`~wt · 2^(2^D)` for `impS2`-nesting depth `D`) and a
+  computable fuel EXISTS; the fight is the invariant packaging (candidate potentials
+  `2^(s2depth)`-weighted; the unresolved case is a deep discharge `d_dB > d_t` sitting
+  in the stack — its depth doesn't drop at the duplication site, only at its own
+  consumption). Options: stratified outer induction on state-depth with per-level
+  weight vectors (Dershowitz–Manna style), or the mix-rule/shared-environment route.
+  Then: `spineCross` on the same machine; `TreeModestRelevance` for zoo roots into
+  T47's decider.
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid

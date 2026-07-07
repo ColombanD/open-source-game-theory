@@ -1219,4 +1219,194 @@ theorem boxInv_total_of_freeS2 {m c : Nat} {ψ : Formula}
     (boxInv ((t.wt+1)*(t.wt+1) + t.wt + 1) t).isSome :=
   boxInvGo_total _ t.wt t .nil hf trivial trivial (by simp [DStack.wt]) (Nat.le_refl _)
 
+/-! ## 13. D2f-a — the cut-diet bookkeeping: extraction PRESERVES the gate.
+
+Where do the extracted trees' cuts come from? The machine only materializes `app` and
+`boxIntro` nodes. Working the arms: every materialized `app`'s gated argument formula is
+either a STACK SEGMENT — whose `G`-obligation is supplied by the very node that pushed
+it (`app`'s own `G φ`, `implTrans`'s `G ψ`, `impS2`'s `G ψ` — the gates align exactly) —
+or a BOX CONTENT at the `axK`/`axKf` leaves, needing the single closure hypothesis
+`G (.box b ψ) → G ψ` (true of `litGate` — `maxLitF` includes the content — and of the
+modest gate). So: if the input trees and stack pass the gate and the stack's segment
+formulas do too, the extracted tree passes it. This is the excision pipeline's
+bookkeeping lemma: dives never leak exotic cuts. -/
+
+/-- All stack trees pass the gate. -/
+def DStack.gateOK (G : Formula → Prop) : {ξ core : Formula} → DStack ξ core → Prop
+  | _, _, .nil => True
+  | _, _, .cons _ t s => t.gateOK G ∧ s.gateOK G
+
+/-- All stack SEGMENT formulas pass the gate. -/
+def DStack.segsOK (G : Formula → Prop) : {ξ core : Formula} → DStack ξ core → Prop
+  | _, _, .nil => True
+  | _, _, .cons (B := B) _ _ s => G B ∧ s.segsOK G
+
+/-- The extracted tree's diet. -/
+def CoreContent.gateOK (G : Formula → Prop) : {core : Formula} → CoreContent core → Prop :=
+  fun {core} =>
+    match core with
+    | .box _ _ => fun r => r.2.1.gateOK G
+    | .diag _ _ => fun r => r.2.gateOK G
+    | .plays _ _ _ | .impl _ _ | .neg _ | .eq _ _ => fun r => nomatch r
+
+/-- **Extraction preserves the cut diet**, given box-content closure of the gate. -/
+theorem boxInvGo_gateOK {G : Formula → Prop}
+    (Gbox : ∀ b ψ, G (.box b ψ) → G ψ) :
+    ∀ (F : Nat) {m : Nat} {ξ core : Formula}
+    (t : ProvT m ξ) (s : DStack ξ core), t.gateOK G → s.gateOK G → s.segsOK G →
+    ∀ {r : CoreContent core}, boxInvGo F t s = some r →
+    r.gateOK G := by
+  intro F
+  induction F with
+  | zero => intro _ _ _ t s _ _ _ r h; simp [boxInvGo] at h
+  | succ F ih =>
+    intro m ξ core t s hf hs hsg r h
+    cases t with
+    | boxIntro kIn K φ tc hle =>
+        cases s with
+        | nil => simp only [boxInvGo] at h; cases h; exact hf
+    | app k m₁ m₂ φ' α f x hle =>
+        simp only [boxInvGo] at h
+        exact ih f (.cons m₂ x s) hf.2.1 ⟨hf.2.2, hs⟩ ⟨hf.1, hsg⟩ h
+    | weakenImpl φ' ψ' m' tw hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            simp only [boxInvGo] at h
+            exact ih tw s' hf hs.2 hsg.2 h
+    | implTrans φ' ψmid χ' a b tA tB hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            simp only [boxInvGo] at h
+            exact ih tB (.cons _ (.app _ a mD φ' ψmid tA dB (Nat.le_refl _)) s')
+              hf.2.2 ⟨⟨hsg.1, hf.2.1, hs.1⟩, hs.2⟩ ⟨hf.1, hsg.2⟩ h
+    | diagB pm fb g K tgt tP hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            cases s' with
+            | nil => simp only [boxInvGo] at h; cases h; exact hs.1
+    | diagF pm fb g K tgt tP hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => simp [boxInvGo] at h
+            | cons mD2 d2 s'' =>
+                simp only [boxInvGo] at h
+                cases hd : boxInvGo F d1
+                    (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rx =>
+                    rw [hd] at h
+                    have hxg := ih d1 .nil hs.1 trivial trivial hd
+                    obtain ⟨mx, x⟩ := rx
+                    simp only [CoreContent.gateOK] at hxg
+                    exact ih (.app _ _ mD2 (.box g (.diag g tgt)) tgt x d2
+                        (Nat.le_refl _)) s''
+                      ⟨hsg.2.1, hxg, hs.2.1⟩ hs.2.2 hsg.2.2 h
+    | atomBoxImpl kBox p q a cert hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            cases s' with
+            | nil => simp only [boxInvGo] at h; cases h; exact hf
+    | boxMono a' b' K φ' hab hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h
+                cases hd : boxInvGo F dB
+                    (.nil : DStack (.box a' φ') (.box a' φ')) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rc =>
+                    rw [hd] at h
+                    obtain ⟨mc, tc, hcc⟩ := rc
+                    cases h
+                    have := ih dB .nil hs.1 trivial trivial hd
+                    simpa [CoreContent.gateOK] using this
+    | box4 a' b' K φ' hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h
+                cases hd : boxInvGo F dB
+                    (.nil : DStack (.box a' φ') (.box a' φ')) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rc =>
+                    rw [hd] at h
+                    obtain ⟨mc, tc, hcc⟩ := rc
+                    cases h
+                    have := ih dB .nil hs.1 trivial trivial hd
+                    simp only [CoreContent.gateOK] at *
+                    exact (ProvT.mono_gateOK hcc tc).mpr this
+    | axK a'' b'' c'' m'' K φ' α' tP hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h
+                cases hp : boxInvGo F tP
+                    (.nil : DStack (.box a'' (.impl φ' α')) _) with
+                | none => rw [hp] at h; exact absurd h (by simp)
+                | some rP =>
+                    cases hx : boxInvGo F dB
+                        (.nil : DStack (.box b'' φ') _) with
+                    | none => rw [hp, hx] at h; exact absurd h (by simp)
+                    | some rx =>
+                        rw [hp, hx] at h
+                        obtain ⟨mP, tPc, hPle⟩ := rP
+                        obtain ⟨mx, txc, hxle⟩ := rx
+                        cases h
+                        have h1 := ih tP .nil hf.2 trivial trivial hp
+                        have h2 := ih dB .nil hs.1 trivial trivial hx
+                        simp only [CoreContent.gateOK] at *
+                        exact ⟨Gbox _ _ hsg.1, h1, h2⟩
+    | axKf a'' b'' c'' K φ' α' hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => simp [boxInvGo] at h
+            | cons mD2 d2 s'' =>
+                cases s'' with
+                | nil =>
+                    simp only [boxInvGo] at h
+                    cases hp : boxInvGo F d1
+                        (.nil : DStack (.box a'' (.impl φ' α')) _) with
+                    | none => rw [hp] at h; exact absurd h (by simp)
+                    | some rP =>
+                        cases hx : boxInvGo F d2
+                            (.nil : DStack (.box b'' φ') _) with
+                        | none => rw [hp, hx] at h; exact absurd h (by simp)
+                        | some rx =>
+                            rw [hp, hx] at h
+                            obtain ⟨mP, tPc, hPle⟩ := rP
+                            obtain ⟨mx, txc, hxle⟩ := rx
+                            cases h
+                            have h1 := ih d1 .nil hs.1 trivial trivial hp
+                            have h2 := ih d2 .nil hs.2.1 trivial trivial hx
+                            simp only [CoreContent.gateOK] at *
+                            exact ⟨Gbox _ _ hsg.2.1, h1, h2⟩
+    | impS2 φ' ψ' χ' m₁' m₂' K tf tx hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            simp only [boxInvGo] at h
+            exact ih tf (.cons mD dB (.cons _
+                (.app _ m₂' mD φ' ψ' tx dB (Nat.le_refl _)) s'))
+              hf.2.1 ⟨hs.1, ⟨hsg.1, hf.2.2, hs.1⟩, hs.2⟩
+              ⟨hsg.1, hf.1, hsg.2⟩ h
+    | struct d hd => simp [boxInvGo] at h
+    | atom t => simp [boxInvGo] at h
+    | searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme t hm hsz =>
+        simp [boxInvGo] at h
+    | atomNeg p q b aN m' t hne hle => simp [boxInvGo] at h
+
 end PD.T49
