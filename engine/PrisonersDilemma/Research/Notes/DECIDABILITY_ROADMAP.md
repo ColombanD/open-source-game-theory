@@ -46,12 +46,19 @@ milestone ledger; read §5c–§5g before touching anything). Executive summary:
   extraction is weight-conserving, diet-preserving (unconditionally — `litGate` and
   `modestGate` are box-content-closed), depth-conserving, and TOTAL with closed-form
   fuel on the contraction-free fragment (`boxInv_total_of_freeS2`).
-* **The open kernel — contraction totality (D2f-b)**: `impS2` duplicates its discharge;
-  local-charge potentials are PROVABLY insufficient (linear breaks at `diagF`-promotion;
-  multiplicative and even Φ-conservation break at the `axKf` leaf — stack×stack products
-  are intrinsic to Löb/K-distribution). Routes: Tait-style computability over `ProvT`,
-  a Gentzen rank development, or per-instance fuel (the machine already semidecides;
-  concrete zoo trees can be excised by `#eval` with per-theorem certificates).
+* **THE NORMALIZATION THEOREM — PROVEN (2026-07-03, `boxInv_total`, T49 §19–21)**:
+  the extraction machine weakly normalizes on every well-typed box judgment,
+  UNCONDITIONALLY (no contraction-freedom hypothesis) — boundedness defuses the
+  Löb/Y-combinator (`.diag` is a NEGATIVE recursive type; the budget-pinned guard is
+  Nakano's ▷). Proof: Tait computability `Good` on lex `(k, μ, phase)` with
+  `μ(box) = 0` + the fundamental lemma (contraction free by hypothesis reuse; Löb case
+  by fuel monotonicity; modal leaves by cumulative determinism). Plausibly the first
+  normalization theorem for a bounded provability logic —
+  `Research/Notes/BOUNDED_LOB_NORMALIZATION.md` is the paper-grade record. The total
+  computable extractor `boxInvT` + `box_inversion_diet` (diet-controlled constructive
+  box inversion) are the assembly interface. REMAINING to CutRelevance (assembly, no
+  open math): the excisor/crossing over general cores, `TreeModestRelevance` for zoo
+  roots, plug into T47.
 
 **The ONE remaining open item** is the T4.1b conjecture (`CutRelevance`,
 `T42ProvableB.lean`): a computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ))

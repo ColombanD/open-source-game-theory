@@ -95,9 +95,11 @@ Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMA
   `T48`/`T49`): judgment-local invariants REFUTED (3 kernel-checked counterexamples);
   conjecture REDUCED to atom modesty via the tree substrate (`ProvT`, exact) + the
   extraction machine (`boxInvGo` — runs, correct by construction, weight/diet/depth-
-  conserving, total with closed-form fuel on the contraction-free fragment). Open
-  kernel: `impS2`-contraction totality (local-charge measures provably insufficient —
-  needs Tait/Gentzen machinery, or per-instance #eval certificates for zoo trees).
+  conserving, total with closed-form fuel on the contraction-free fragment). The
+  contraction/normalization kernel is PROVEN (2026-07-03, `boxInv_total` in T49 §21:
+  the bounded-Löb calculus weakly normalizes — Tait `Good` on lex (k, μ(box)=0);
+  see `Research/Notes/BOUNDED_LOB_NORMALIZATION.md`, paper-grade). Remaining to
+  CutRelevance: assembly only (excisor over general cores, TreeModestRelevance, T47).
 
 **Dead ends (do not retry):** deciding `Provable` by structural recursion on the program
 (`DecMeasure.lean`); the `derivable`/`playsCheck` separate-gas checker; proof-term enumeration

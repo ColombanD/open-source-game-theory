@@ -2672,4 +2672,38 @@ theorem boxInv_total {m c : Nat} {ψ : Formula} (t : ProvT m (.box c ψ)) :
   obtain ⟨fuel, r, hr, _⟩ := h .nil (by unfold GoodStack; trivial)
   exact ⟨fuel, by simp [boxInv, hr]⟩
 
+/-! ## 22. The harvest — the total extraction interface.
+
+With `boxInv_total`, the fueled machine becomes a TOTAL COMPUTABLE function
+(`Nat.find` over the totality witness), and box honesty assembles into one statement:
+every box judgment yields a content tree within the subscript budget, of no greater
+weight, with no worse a cut diet. This is the interface the excision assembly consumes. -/
+
+/-- The total, computable extractor: fuel found, result guaranteed. -/
+def boxInvT {m c : Nat} {ψ : Formula} (t : ProvT m (.box c ψ)) :
+    CoreContent (.box c ψ) :=
+  (boxInv (Nat.find (boxInv_total t)) t).get (Nat.find_spec (boxInv_total t))
+
+/-- **Box honesty, total**: content within the subscript, weight-conserving (on the
+    contraction-free fragment for the weight half), diet-preserving for any
+    box-content-closed gate. -/
+theorem boxInvT_spec {m c : Nat} {ψ : Formula} (t : ProvT m (.box c ψ)) :
+    (boxInvT t).1 ≤ c ∧
+    ∀ {G : Formula → Prop}, (∀ b ψ', G (.box b ψ') → G ψ') → t.gateOK G →
+      (boxInvT t).2.1.gateOK G := by
+  have hr : boxInv (Nat.find (boxInv_total t)) t = some (boxInvT t) := by
+    simp [boxInvT]
+  refine ⟨(boxInvT t).2.2, fun Gbox hg => ?_⟩
+  exact boxInvGo_gateOK Gbox _ t .nil hg trivial trivial hr
+
+/-- The Prop-level payoff, constructively: box inversion with a diet-controlled tree
+    witness (the classical one-liner `Provable m (□cψ) → Provable c ψ` is soundness;
+    THIS one hands you the tame derivation). -/
+theorem box_inversion_diet {m c : Nat} {ψ : Formula} {G : Formula → Prop}
+    (Gbox : ∀ b ψ', G (.box b ψ') → G ψ')
+    (t : ProvT m (.box c ψ)) (hg : t.gateOK G) :
+    ∃ (m' : Nat) (tc : ProvT m' ψ), m' ≤ c ∧ tc.gateOK G := by
+  obtain ⟨h1, h2⟩ := boxInvT_spec t
+  exact ⟨(boxInvT t).1, (boxInvT t).2.1, h1, h2 Gbox hg⟩
+
 end PD.T49
