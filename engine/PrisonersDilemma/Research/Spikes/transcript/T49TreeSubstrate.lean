@@ -1,5 +1,6 @@
 import PrisonersDilemma.Decidability.T42ProvableB
 import PrisonersDilemma.Decidability.T44BoundedDecider
+import PrisonersDilemma.Research.Spikes.transcript.T48CutRelevance
 
 /-!
 # T4.9 spike — the TREE SUBSTRATE for cut relevance (fork (A), milestone D0).
@@ -437,5 +438,42 @@ theorem cross_weaken_gateOK {G : Formula → Prop} {k m₁ m₂ m : Nat} {B α :
     (h2 : m₁ + m₂ + α.size ≤ k) (hg : tw.gateOK G) :
     (cross_weaken tw h1 h2).gateOK G :=
   (tw.mono_gateOK _).mpr hg
+
+/-! ## 8. D2b probe results — the compression ceiling (see note §5g for the full record).
+
+Designing the `spineCross` master induction arm-by-arm surfaced (a) the GENTZEN WALL —
+`impS2`'s crossing arm DUPLICATES one discharge, breaking every total-size termination
+measure and strict-budget preservation at once (the classic contraction problem; the fix
+is rank-lexicographic measures or shared-discharge environments — a Gentzen-scale
+formalization, recorded in the note) — and (b) a major REDUCTION: with C0's local
+literal bound and the backward-tameness observations, the conjecture's literal half is
+free, and everything rests on the ATOM-MODESTY of some minimal tree. The lemma anchoring
+the reduction is the compression ceiling: box subscripts reachable at budget `k` are
+`< 2^k`, because every box-concluding node PAYS its conclusion — `boxIntro` and `app` by
+their gates, `struct` never (the Type layer concludes no box), atoms never. So
+budget-compression is bounded by the budget's own exponential, and the tower of
+cite-budget escalations is fueled ONLY by cut atoms' fresh programs — the exact frontier
+the modest gate polices. -/
+
+/-- Every box-concluding node pays its conclusion's size (only `boxIntro` and `app` can
+    conclude a box; the Type layer cannot — `derivation_no_box`). -/
+theorem ProvT.box_size_le {k c : Nat} {ψ : Formula} :
+    ProvT k (.box c ψ) → (Formula.box c ψ).size ≤ k
+  | .struct d _ => (PD.T48.derivation_no_box d).elim
+  | .atom t => nomatch t
+  | .boxIntro _ _ _ _ hle => by omega
+  | .app _ _ _ _ _ _ _ hle => by omega
+
+/-- **The compression ceiling**: a box judgment reachable at budget `k` has subscript
+    `< 2^k` — the numeral pays its logarithm into the size, which the node pays into the
+    budget. Budget compression exists (§5e) but is exponentially bounded. -/
+theorem ProvT.box_subscript_lt {k c : Nat} {ψ : Formula} (t : ProvT k (.box c ψ)) :
+    c < 2 ^ k := by
+  have h := t.box_size_le
+  simp only [Formula.size] at h
+  rcases Nat.eq_zero_or_pos c with hc | hc
+  · exact hc ▸ Nat.two_pow_pos k
+  · have hlog : Nat.log2 c < k := by omega
+    exact (Nat.log2_lt (by omega)).mp hlog
 
 end PD.T49

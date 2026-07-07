@@ -451,6 +451,69 @@ the conclusion's programs — `maxLitF_subst` keeps them tame); `struct`-embedde
 `modusPonens`/`hypSyll` chains need the Derivation-level census (C1's `DAnt`, which
 stands).
 
+### 5g. The D2b probe (2026-07-03) — the reduction to ATOM MODESTY, and the Gentzen wall
+
+Designing `spineCross` arm-by-arm before writing it (standing policy) produced one
+strategic simplification, one hard wall, and two failed forcing attempts worth keeping.
+
+**The reduction: the conjecture IS atom modesty.** Assembling what already stands:
+(i) C0's `cut_lit_bound` — every gated cut formula has `maxLitF < 2^(local budget)`, and
+logic-layer node budgets DESCEND from the root (`k`); (ii) the compression ceiling
+(T49 §8, `box_subscript_lt`) — box subscripts reachable at budget `k` are `< 2^k`, since
+every box-concluding node pays its conclusion (`boxIntro`/`app` by gate; the Type layer
+concludes no box; atoms none); (iii) so within any single cite stratum, EVERYTHING is
+`< 2^k`-bounded automatically, and the only escalation channel is a CITE (a
+`search_t`/`search_f` guard, at a budget equal to a program's search subscript) whose
+program comes from a cut ATOM's fresh material — root-pool programs keep cite budgets
+≤ the root's own literals at every depth (substitution instances, `maxLitF_subst`).
+Hence: **if some budget-`k` tree keeps its cut atoms' programs in the root's subterm
+pool, then `N₀ (k, φ) := 2^(max k (maxLitF φ)) + maxLitF φ` tames it uniformly, at every
+cite depth**. The literal half of CutRelevance is FREE; the entire conjecture reduces to:
+*some minimal tree's cut atoms stay in the pool* — exactly the property the modest gate
+polices, and exactly what T43's universe closure already gives for zoo dynamics. Fork
+(B)'s specialization is now the MAIN road, not a shortcut.
+
+**The Gentzen wall.** `spineCross`'s recursion is structural on `t1` for every arm
+EXCEPT the discharge-diving bases (`axK`/`axKf`/`box4` chase their segments' box
+CONTENTS — through `box_inv` — and `diagF/B` chase the Löb premise), which recurse into
+discharge-internals; and `impS2`'s arm DUPLICATES its head discharge (it feeds both
+premise spines — contraction). Consequences, checked arithmetically: (a) every
+total-size termination measure fails (the impS2 arm grows it by one discharge's size);
+(b) strict same-`k` budget preservation fails the same way (the transcript cost model
+charges re-derivations honestly — a tame rewrite may genuinely not fit `k`). The
+standard resolutions: Gentzen rank-lexicographic measures (dives strip a constructor
+off the segment formula; duplications preserve rank), or shared-discharge environments
+(de Bruijn-style, so duplication is reference-copying, free in both size and budget).
+Both are heavyweight; the environment route also REPAIRS strict-`k` (sharing is how a
+real transcript would cite a lemma twice)... but NOTE: the engine's cost model has no
+sharing — `impS2` pays `m₁ + m₂` with the discharge inside both — so if the original
+wild tree could afford duplication, the budget for it EXISTS in `k`; the question is
+whether the tame REPLACEMENT of each copy fits the copy's own budget — it does if
+excision is budget-non-increasing PER SUBTREE (it is: `cross_weaken` shrinks;
+re-gating preserves). So strict-`k` is NOT yet dead — the wall is termination
+bookkeeping, not budgets, PROVIDED excision is stated per-subtree-budget-preserving.
+
+**Failed forcings (fork (C) attempts, kept as evidence FOR the conjecture).**
+(1) Nested compression (`□c₁(□c₂ χ)` roots): the inner subscript lives in the ROOT's own
+syntax, so `N₀`'s dependence on `maxLitF φ` absorbs it. (2) Fresh-provable-middle
+forcing (the `deadJ` recipe as a needed cut): the `axKf`-segment pairing forces the
+middle `X` to satisfy `ψ₀ = X → eqCD` with `ψ₀` fixed by the root — the root carries its
+own wildness or the route dies; no tame-rooted variant found. Both die on Observations
+1&2 (backward-tame subscripts and content). The conjecture keeps surviving adversarial
+probes; its expected resolution remains TRUE-via-excision, with the risk concentrated in
+the termination formalization.
+
+**D2b, re-aimed (the executable plan):**
+1. `box_inv` on trees (`ProvT m (.box c ψ) → Σ' m' ≤ c, ProvT m' ψ`) — mutual with the
+   spine machinery; the axK-dive pays its gate (`a + b + |α| ≤ c` — Observation 1 IS the
+   budget proof).
+2. `spineCross` over MODEST-POOL segments only (fork (B)): segments and discharges
+   restricted to the T43 universe make the diving arms' formulas pool-bounded, the
+   rank-lex measure collapses to (pool-formula rank, tree size) — finitely many ranks —
+   and termination becomes provable without full Gentzen machinery.
+3. Assemble `TreeModestRelevance` for zoo roots; plug into `tree_modestRelevance` +
+   T47's decider: `Provable` decidable on the zoo universe.
+
 ## 5b. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
@@ -532,10 +595,21 @@ stands).
   `app`s drop their argument, same diet, within budget — the entry through which every
   §5e counterexample dies). Design record: §5f (backward-tame subscripts, backward-tame
   content, the budget discipline, the `spineCross` master statement).
-- **D2b (NEXT) — the master induction**: `spineCross` per §5f, mutual with the main
-  tameness induction; assemble `TreeCutRelevance` for zoo-universe roots first (fork
-  (B)); or exhibit a forcing that defeats excision (fork (C), undecidability via box
-  budget-compression) — the two faces of "is excision always possible?".
+- **D2b-probe ✅ (2026-07-03, T49 §8 + §5g) — the reduction + the wall**: the
+  compression ceiling is kernel-checked (`ProvT.box_size_le`, `ProvT.box_subscript_lt`:
+  budget-`k` boxes have subscripts `< 2^k` — only `boxIntro`/`app` conclude boxes, both
+  pay). With C0 and the backward-tameness observations this REDUCES the conjecture to
+  ATOM MODESTY (§5g): the literal half is free at
+  `N₀ (k,φ) := 2^(max k (maxLitF φ)) + maxLitF φ`; what remains is that some minimal
+  tree's cut atoms stay in the root's program pool. Also found: the GENTZEN WALL
+  (`impS2` duplicates a discharge — kills total-size termination; strict-`k` budgets
+  survive IF excision is stated per-subtree-budget-preserving); two fork-(C) forcing
+  attempts died on Observations 1&2 (recorded — evidence FOR the conjecture).
+- **D2c (NEXT) — the modest-pool spineCross**: per §5g's re-aimed plan — `box_inv` on
+  trees (the axK-dive pays its own gate), then `spineCross` with segments/discharges
+  restricted to the T43 universe (finitely many ranks ⇒ termination without full
+  Gentzen machinery), then assemble `TreeModestRelevance` for zoo roots and plug into
+  T47's decider.
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid
