@@ -832,3 +832,59 @@ check → `certify`) delivers zoo-scale certificates without the SN theorem.
 - **C4**: Lemma B rewrites + budget arithmetic (or the budget-inflated fallback).
 - **C5**: assembly — `CutRelevance` (possibly budget-inflated) for modest roots; plug into
   T47 ⇒ `Provable` decidable on the zoo universe; `proofSearch := D`.
+
+---
+
+## §6 — HANDOVER BRIEF: the assembly theorem (for the next session/model)
+
+**Target.** For modest roots `(k₀, φ₀)`: iterated excision yields a tree passing
+`modestGate N₀`, `N₀ := 2^max(k₀, maxLitF φ₀) + maxLitF φ₀`. Literal half is FREE (C0 +
+compression ceiling, §5g). Only the POOL half (atom modesty) needs proof.
+
+**The invariant (design candidate).** Pool `P` := T43/T46 closure of `φ₀`'s programs
+(`allowedProgs` exists in T46). `PoolF ψ` := every atom of `ψ` has programs in `P`.
+Claim: in an excise-FIXPOINT tree of a pool-good root, every gated formula is PoolF.
+Argument sketch: a surviving wild gate must be an `app`-cut (axK/diag premises are
+conclusion-tied; implTrans/impS2 middles — see O4); an `app`-cut has its discharge in
+hand, so the excisor would have crossed it — contradiction with fixpoint — UNLESS the
+crossing fell back (O2/O3).
+
+**Obligations, in order:**
+- **O1 (excise-until-fixpoint).** Current `excise` is one pass. Iterate: crossing
+  outputs can carry NEW wild gates at the `axK`/`axKf` assembly apps (gate = segment-box
+  CONTENT, subformula of a wild segment). Termination of iteration: strict consumption
+  (`crossWtLt`) — each successful cross strictly reduces `wt`; iterate on `wt` or fuel.
+- **O2 (general-core crossing totality).** `machine_total` covers box/diag cores only
+  (`IsCore` in `GoodStack`-nil). Extend the `Good` framework: `GoodStack`-nil := True at
+  ALL cores; general-core `ContentGood` := True. Re-run §21's fundamental (the
+  identity/census bases are terminal — measure arguments carry; the struct-cons arms
+  now recurse through `structCross`, whose dives are covered by the same `∀k`-motive at
+  the SAME fuel-style composition as diagF). If it fights, weaken the fixpoint-theorem
+  to "wild gates only at cores where crossing returned none" and handle those instance-wise.
+- **O3 (diag fallback).** `contentToTree` punts diag cores. Either thread the Löb
+  premise (a diag-cut's consumer context has it) or accept diag-cuts as
+  conclusion-tied (they ARE: `.diag g tgt` gates are `G (.impl (.box fb tgt) tgt)` —
+  tgt conclusion-tied, fb size-paid — CHECK: these never need excision at all).
+- **O4 (implTrans/impS2 middles).** v1 excisor only crosses `app`s. Wild MIDDLES in
+  chains have no local discharge. Two options: (a) show fixpoint trees of pool roots
+  have no wild middles because chains are consumed at apps upstream (the middle becomes
+  an app-cut after the outer crossing — likely TRUE via the machine's implTrans-arm
+  materialization); (b) extend excise to rotate chains into apps. Try (a) first.
+- **O5 (the pool lemma proper).** Census outputs: programs are subst-instances of
+  conclusion programs (T43 `subsP/substF` lemmas + `playsArgsF_subst`); contents:
+  subformulas of segments — pool-good if the SEGMENT-BOX's judgment formula is (the
+  discharge's conclusion, which is a formula of the pre-excised tree — IH). Package as
+  a crossPool induction in the crossWt/crossGateOK style (the transformation recipe is
+  in memory: extract old succ-body, ascribe the `.1`-projection, part-2/3/4 fresh).
+
+**Traps already paid for (do not rediscover):** tactic-mode dispatcher bodies for
+index refinement; flipped equations (`Formula.impl B rest = ξ`) so `cases heq`
+substitutes; census helpers term-mode over concrete programs (rfl-reduction); bare
+And-projections need type ascriptions; 12-space inner nil-arms contain the 8-space
+pattern as a substring; `simp [X]` may close goals leaving `omega` stranded — use
+`simp only`. Full list in the project memory file.
+
+**Also queued:** iteBranchSearch census (recipe: `PlaysT.ite_t` ∘ sim-wrapped guard
+cert + `search_t` branch cert, `closedP z` via `substP_id`); strict-k budget
+conservation of excise (per-arm arithmetic, `crossWtLt`-style); `decFullT` tree
+synthesis (mirror T31's enumerator with `Option ProvT` returns).
