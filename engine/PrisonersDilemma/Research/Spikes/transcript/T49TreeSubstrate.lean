@@ -3844,4 +3844,86 @@ def censusSearchBranch_of_box {k mu : Nat} {ψg : Formula} {opnt : Prog}
       (.plays (.search k ψg (.const a) (.const b)) opnt a) :=
   censusSearchBranch (boxInvT u).2.1 (boxInvT u).2.2
 
+/-! ## 25. THE EXCISOR — walk, check, β-reduce.
+
+The best-effort excisor: walk a tree bottom-up; at every `app` whose cut formula fails
+the Boolean gate, β-reduce the application through the crossing machine and convert the
+result back to a tree of the same judgment (`contentToTree` — extracted box contents
+re-box via `mono`; diag cores and out-of-fuel crossings fall back to the rebuilt app).
+TOTAL and judgment-preserving by construction; the diet is checked afterwards by
+`gateOKb` and certified by `certify` — the executable instance pipeline, now with
+automatic cut elimination. (The remaining THEOREM — that for modest roots the excised
+tree always passes the gate — is the pool analysis, the final assembly step.) -/
+
+/-- Convert a crossing result back to a tree of the core judgment. -/
+def contentToTree : {α : Formula} → CoreContent α → Option (Σ' m', ProvT m' α)
+  | .box c ψ, ⟨_, tc, hc⟩ =>
+      some ⟨c + (Formula.box c ψ).size,
+        .boxIntro c _ ψ (tc.mono hc) (Nat.le_refl _)⟩
+  | .diag _ _, _ => none
+  | .plays _ _ _, r => some r
+  | .impl _ _, r => some r
+  | .neg _, r => some r
+  | .eq _ _, r => some r
+
+/-- The excisor: rebuild, and β-reduce gate-failing `app`s through the machine. -/
+def excise (fuel : Nat) (Gb : Formula → Bool) :
+    {m : Nat} → {ξ : Formula} → ProvT m ξ → Σ' m', ProvT m' ξ
+  | _, _, .app _ _ _ φ' α f x _ =>
+      let f' := excise fuel Gb f
+      let x' := excise fuel Gb x
+      let rebuilt : Σ' m', ProvT m' α :=
+        ⟨f'.1 + x'.1 + α.size, .app _ f'.1 x'.1 φ' α f'.2 x'.2 (Nat.le_refl _)⟩
+      if Gb φ' then rebuilt
+      else
+        match boxInvGo fuel f'.2 (.cons x'.1 x'.2 .nil) with
+        | some r =>
+            match contentToTree r with
+            | some t' => t'
+            | none => rebuilt
+        | none => rebuilt
+  | _, _, .weakenImpl φ' ψ' _ tw _ =>
+      let tw' := excise fuel Gb tw
+      ⟨tw'.1 + (Formula.impl φ' ψ').size,
+        .weakenImpl φ' ψ' tw'.1 tw'.2 (Nat.le_refl _)⟩
+  | _, _, .implTrans φ' ψ' χ' _ _ tA tB _ =>
+      let tA' := excise fuel Gb tA
+      let tB' := excise fuel Gb tB
+      ⟨tA'.1 + tB'.1 + (Formula.impl φ' χ').size,
+        .implTrans φ' ψ' χ' tA'.1 tB'.1 tA'.2 tB'.2 (Nat.le_refl _)⟩
+  | _, _, .impS2 φ' ψ' χ' _ _ _ tf tx _ =>
+      let tf' := excise fuel Gb tf
+      let tx' := excise fuel Gb tx
+      ⟨tf'.1 + tx'.1 + (Formula.impl φ' χ').size,
+        .impS2 φ' ψ' χ' tf'.1 tx'.1 _ tf'.2 tx'.2 (Nat.le_refl _)⟩
+  | _, _, .boxIntro kIn K φ' tc hle =>
+      let tc' := excise fuel Gb tc
+      if h : tc'.1 ≤ kIn then
+        ⟨kIn + (Formula.box kIn φ').size,
+          .boxIntro kIn _ φ' (tc'.2.mono h) (Nat.le_refl _)⟩
+      else ⟨K, .boxIntro kIn K φ' tc hle⟩
+  | _, _, .axK a' b' c' _ _ φ' α' tP hg1 _ =>
+      let tP' := excise fuel Gb tP
+      ⟨tP'.1 + (Formula.impl (.box b' φ') (.box c' α')).size,
+        .axK a' b' c' tP'.1 _ φ' α' tP'.2 hg1 (Nat.le_refl _)⟩
+  | _, _, .diagF pm fb g K tgt tP hle =>
+      let tP' := excise fuel Gb tP
+      ⟨tP'.1 + (Formula.impl (.diag g tgt)
+          (.impl (.box g (.diag g tgt)) tgt)).size,
+        .diagF tP'.1 fb g _ tgt tP'.2 (Nat.le_refl _)⟩
+  | _, _, .diagB pm fb g K tgt tP hle =>
+      let tP' := excise fuel Gb tP
+      ⟨tP'.1 + (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
+          (.diag g tgt)).size,
+        .diagB tP'.1 fb g _ tgt tP'.2 (Nat.le_refl _)⟩
+  | m, _, t => ⟨m, t⟩
+
+-- The excision demo: a wild cut (fresh atom, `deadJ`-style) planted by `weakenImpl`
+-- and discharged by `app` — the excisor drops it; the checker confirms.
+private def demoWildApp : ProvT 500 PD.T48.wildA :=
+  .app 500 200 100 PD.T48.wildA _
+    (.weakenImpl PD.T48.wildA PD.T48.wildA 100 demoA (by decide)) demoA (by decide)
+
+#eval s!"before: {(demoWildApp.gateOKb (fun _ => false))}  after: {((excise 10 (fun _ => false) demoWildApp).2.gateOKb (fun _ => false))}"
+
 end PD.T49
