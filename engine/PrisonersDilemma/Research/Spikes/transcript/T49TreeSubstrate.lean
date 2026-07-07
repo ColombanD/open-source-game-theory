@@ -2706,4 +2706,36 @@ theorem box_inversion_diet {m c : Nat} {ψ : Formula} {G : Formula → Prop}
   obtain ⟨h1, h2⟩ := boxInvT_spec t
   exact ⟨(boxInvT t).1, (boxInvT t).2.1, h1, h2 Gbox hg⟩
 
+/-! ## 23. Full strength — EVERY well-typed state halts.
+
+The fundamental lemma makes every well-typed tree good, so every stack of well-typed
+discharges is good — and therefore every well-typed machine state with a genuine core
+halts. This is the complete weak-normalization theorem in machine form; `boxInv_total`
+and the diag instance are its nil-stack shadows. -/
+
+/-- Stacks of well-typed trees are good at every level. -/
+theorem GoodStack_of_wellTyped (k : Nat) :
+    {ξ core : Formula} → (S : DStack ξ core) → IsCore core → GoodStack k S
+  | _, _, .nil, hc => by unfold GoodStack; exact hc
+  | _, _, .cons _ d s, hc => by
+      unfold GoodStack
+      exact ⟨fun j _ => fundamental d j, GoodStack_of_wellTyped k s hc⟩
+
+/-- **WEAK NORMALIZATION, full machine form**: every well-typed state with a box/diag
+    core halts. -/
+theorem machine_total {m : Nat} {ξ core : Formula}
+    (t : ProvT m ξ) (S : DStack ξ core) (hc : IsCore core) :
+    ∃ (fuel : Nat) (r : CoreContent core), boxInvGo fuel t S = some r := by
+  have h := fundamental t 0
+  unfold Good at h
+  obtain ⟨fuel, r, hr, _⟩ := h S (GoodStack_of_wellTyped 0 S hc)
+  exact ⟨fuel, r, hr⟩
+
+/-- Diag extraction is total: every diag judgment yields its Löb unfolding. -/
+theorem diagInv_total {m g : Nat} {tgt : Formula} (t : ProvT m (.diag g tgt)) :
+    ∃ (fuel : Nat) (m' : Nat) (x : ProvT m' (.impl (.box g (.diag g tgt)) tgt)),
+      boxInvGo fuel t (.nil : DStack (.diag g tgt) (.diag g tgt)) = some ⟨m', x⟩ := by
+  obtain ⟨fuel, r, hr⟩ := machine_total t .nil trivial
+  exact ⟨fuel, r.1, r.2, hr⟩
+
 end PD.T49

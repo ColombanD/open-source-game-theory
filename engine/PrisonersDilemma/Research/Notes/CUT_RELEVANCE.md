@@ -734,8 +734,41 @@ iteration. Meanwhile the thesis does not wait: `boxInv_total_of_freeS2` covers t
 contraction-free fragment, and the executable instance route (synthesize → excise →
 check → `certify`) delivers zoo-scale certificates without the SN theorem.
 
-- **D2f-b (OPEN — the contraction case of totality)**: the only gap to full
-  `BoxInvTotal`. Structural insight: every duplication of a discharge happens under a
+- **D2f-b ✅✅ THE NORMALIZATION THEOREM (2026-07-03, T49 §19–23)**: `boxInv_total` —
+  UNCONDITIONAL, kernel-checked, zero sorries; full machine form `machine_total`
+  (every well-typed state with a box/diag core halts); total computable extractor
+  `boxInvT` + `box_inversion_diet` (diet-controlled constructive box inversion);
+  `diagInv_total`. See `BOUNDED_LOB_NORMALIZATION.md` (paper-grade record: the
+  Y-diagnosis, the nine-route failure map, the `Good` design on lex `(k, μ(box)=0,
+  phase)`, the fundamental lemma).
+- **D2g (NEXT — the assembly; the ONE remaining design task): the general-core
+  crossing.** The excisor must β-reduce wild cuts whose spine ends at ARBITRARY
+  formulas, not just box/diag cores. Design spec:
+  1. Extend `CoreContent` to all formulas: for non-box/diag cores,
+     `CoreContent φ := Σ' m', ProvT m' φ` — the crossing simply returns a tree of the
+     spine-end judgment.
+  2. New machine base cases at plays/eq cores: `atom`-nodes return themselves;
+     `struct`-nodes require the DERIVATION-LEVEL crossing — walk `modusPonens`/`hypSyll`
+     chains with the stack, and at census leaves (`searchBranch` etc.) RECONSTRUCT the
+     atom certificate: extract the discharged guard box (via `boxInvT` — total now!),
+     lift to `Provable` by soundness + budget-mono, and build the `PlaysT.search_t`
+     cert (trivial for `.const` branches — the zoo shape; recursive for nested
+     branches — bounded by the same `Good` machinery). THIS is the remaining
+     sub-problem with content: atom-cert reconstruction at census leaves.
+  3. Totality/diet for the extended machine: rerun the §19–21 pattern (the `Good`
+     framework is core-shape-agnostic except at the base cases — new bases are
+     terminal, so the measure arguments carry over verbatim).
+  4. The excisor: walk any tree of a modest root; gated cuts with `cutOKb`-failures
+     are β-reduced via the extended crossing (their consumers hold the discharges);
+     KEY simplification from §5g + N₀'s self-calibration: with
+     `N₀ := 2^max(k, maxLitF φ) + maxLitF φ`, ALL logic-layer literal-gates pass
+     automatically (C0), `axK`/`diagF/B` premise-gates are conclusion-tied (auto-tame
+     for pool roots) — the ONLY genuinely wild cuts are fresh-ATOM middles in
+     `implTrans`/`app`/`impS2`, and cite-strata escalation through them. Excising
+     those with the crossing + T43 pool-closure for everything ungated yields
+     `TreeModestRelevance` for zoo roots.
+  5. Plug into `tree_modestRelevance` + T47 ⇒ `Provable` decidable on the zoo
+     universe ⇒ `proofSearch` computable ⇒ `eval` computable ⇒ outcomes `by decide`. Structural insight: every duplication of a discharge happens under a
   strictly SHALLOWER `impS2`-walker, so tower-bounded fuel (`~wt · 2^(2^D)` at nesting
   depth `D`) EXISTS; the fight is the invariant. **Measure attempts, with exact failure
   points:**
