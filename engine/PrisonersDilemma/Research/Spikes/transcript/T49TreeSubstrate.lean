@@ -347,4 +347,95 @@ theorem tree_modestRelevance {N₀ : Nat → Formula → Nat} (h : TreeModestRel
     ProvableG (T44.modestGate (N₀ k φ)) k φ :=
   (h k φ hp).elim fun t hg => t.toG hg
 
+/-! ## 7. D2a — the excision toolkit's first layer.
+
+Three foundations the rewrite system needs everywhere, plus the first excision:
+
+  * `ProvT.mono` — budget monotonicity by ROOT re-gating only (every constructor's
+    conclusion budget appears in exactly one relaxable `≤`-gate; the subtree is reused,
+    so the rewrite system may lift budgets freely without touching structure);
+  * `ProvT.mono_gateOK` — re-gating does not change the cut diet;
+  * `ProvT.impl_size_le` — every implication-concluding rule PAYS its conclusion's size
+    (`struct` via `Derivation.concl_size_le`; atoms cannot conclude implications), the
+    arithmetic backbone of the crossing analysis;
+  * `cross_weaken` — the first excision: an `app` whose function node is
+    `weakenImpl`-headed never needed its argument; the consequent's own subtree serves,
+    within budget, with the SAME cut diet (`cross_weaken_gateOK`). This is the entry
+    point through which every §5e counterexample dies. -/
+
+/-- Budget monotonicity: relax the root gate, reuse the tree. -/
+def ProvT.mono {k k' : Nat} {φ : Formula} (h : k ≤ k') : ProvT k φ → ProvT k' φ
+  | .struct d hd => .struct d (le_trans hd h)
+  | .atom (.mk t hn) => .atom (.mk t (le_trans hn h))
+  | .weakenImpl φ ψ m t hle => .weakenImpl φ ψ m t (le_trans hle h)
+  | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme t hm hsz =>
+      .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme t hm (le_trans hsz h)
+  | .implTrans φ ψ χ a b t1 t2 hle => .implTrans φ ψ χ a b t1 t2 (le_trans hle h)
+  | .atomBoxImpl kBox p q a t hle => .atomBoxImpl kBox p q a t (le_trans hle h)
+  | .boxIntro kIn K φ t hle => .boxIntro kIn _ φ t (le_trans hle h)
+  | .app k m₁ m₂ φ α t1 t2 hle => .app _ m₁ m₂ φ α t1 t2 (le_trans hle h)
+  | .axK a b c m K φ α t hg1 hg2 => .axK a b c m _ φ α t hg1 (le_trans hg2 h)
+  | .box4 a b K φ hg1 hg2 => .box4 a b _ φ hg1 (le_trans hg2 h)
+  | .diagF pm fb g K tgt t hle => .diagF pm fb g _ tgt t (le_trans hle h)
+  | .diagB pm fb g K tgt t hle => .diagB pm fb g _ tgt t (le_trans hle h)
+  | .axKf a b c K φ α hg1 hg2 => .axKf a b c _ φ α hg1 (le_trans hg2 h)
+  | .impS2 φ ψ χ m₁ m₂ K t1 t2 hle => .impS2 φ ψ χ m₁ m₂ _ t1 t2 (le_trans hle h)
+  | .boxMono a b K φ hab hle => .boxMono a b _ φ hab (le_trans hle h)
+  | .atomNeg p q b aN m t hne hle => .atomNeg p q b aN m t hne (le_trans hle h)
+
+/-- Re-gating does not change the cut diet. -/
+theorem ProvT.mono_gateOK {G : Formula → Prop} {k k' : Nat} {φ : Formula}
+    (h : k ≤ k') : (t : ProvT k φ) → ((t.mono h).gateOK G ↔ t.gateOK G)
+  | .struct _ _ => Iff.rfl
+  | .atom (.mk _ _) => Iff.rfl
+  | .weakenImpl _ _ _ _ _ => Iff.rfl
+  | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Iff.rfl
+  | .implTrans _ _ _ _ _ _ _ _ => Iff.rfl
+  | .atomBoxImpl _ _ _ _ _ _ => Iff.rfl
+  | .boxIntro _ _ _ _ _ => Iff.rfl
+  | .app _ _ _ _ _ _ _ _ => Iff.rfl
+  | .axK _ _ _ _ _ _ _ _ _ _ => Iff.rfl
+  | .box4 _ _ _ _ _ _ => Iff.rfl
+  | .diagF _ _ _ _ _ _ _ => Iff.rfl
+  | .diagB _ _ _ _ _ _ _ => Iff.rfl
+  | .axKf _ _ _ _ _ _ _ _ => Iff.rfl
+  | .impS2 _ _ _ _ _ _ _ _ _ => Iff.rfl
+  | .boxMono _ _ _ _ _ _ => Iff.rfl
+  | .atomNeg _ _ _ _ _ _ _ _ => Iff.rfl
+
+/-- Every implication-concluding node pays its conclusion's size into its budget.
+    (Atoms conclude only `.plays`, so the `atom` arm is uninhabited.) -/
+theorem ProvT.impl_size_le {k : Nat} {A B : Formula} :
+    ProvT k (.impl A B) → (Formula.impl A B).size ≤ k
+  | .struct d hd => le_trans d.concl_size_le hd
+  | .atom t => nomatch t
+  | .weakenImpl _ _ _ _ hle => by omega
+  | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ hsz => by omega
+  | .implTrans _ _ _ _ _ _ _ hle => by omega
+  | .atomBoxImpl _ _ _ _ _ hle => by omega
+  | .app _ _ _ _ _ _ _ hle => by omega
+  | .axK _ _ _ _ _ _ _ _ _ hg2 => by omega
+  | .box4 _ _ _ _ _ hg2 => by omega
+  | .diagF _ _ _ _ _ _ hle => by omega
+  | .diagB _ _ _ _ _ _ hle => by omega
+  | .axKf _ _ _ _ _ _ _ hg2 => by omega
+  | .impS2 _ _ _ _ _ _ _ _ hle => by omega
+  | .boxMono _ _ _ _ _ hle => by omega
+
+/-- **The first excision**: `app (weakenImpl tw) targ` never needed `targ` — the
+    consequent's subtree `tw` serves within the app node's budget. The wild argument
+    (any of §5e's dead implications' discharges) is simply dropped. -/
+def cross_weaken {k m₁ m₂ m : Nat} {B α : Formula}
+    (tw : ProvT m α) (h1 : m + (Formula.impl B α).size ≤ m₁)
+    (h2 : m₁ + m₂ + α.size ≤ k) : ProvT k α :=
+  tw.mono (by simp only [Formula.size] at h1; omega)
+
+/-- The excised tree's cut diet is `tw`'s own — in particular, the dropped argument's
+    cuts (and the gate obligation `G B` the `app` node carried) vanish with it. -/
+theorem cross_weaken_gateOK {G : Formula → Prop} {k m₁ m₂ m : Nat} {B α : Formula}
+    (tw : ProvT m α) (h1 : m + (Formula.impl B α).size ≤ m₁)
+    (h2 : m₁ + m₂ + α.size ≤ k) (hg : tw.gateOK G) :
+    (cross_weaken tw h1 h2).gateOK G :=
+  (tw.mono_gateOK _).mpr hg
+
 end PD.T49

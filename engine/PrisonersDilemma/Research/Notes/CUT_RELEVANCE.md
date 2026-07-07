@@ -402,6 +402,55 @@ derivation TREES of provable roots, not in judgments.
   NECESSARY, i.e. defeating excision, which is exactly the negation of (A)'s lemma.
   (A) and (C) are the two faces of one question: is excision always possible?
 
+### 5f. The excision design (2026-07-03, D2 planning — read before attempting D2b)
+
+Working the crossing analysis on paper (per the §5c policy: probe before building)
+produced two load-bearing observations, one wall with its fix, and the master statement.
+
+**Observation 1 — subscripts are backward-tame through gates.** Every rule that consumes
+or produces a box subscript CHAINS it arithmetically to its conclusion's content:
+`axK`/`axKf` force `a + b + |α| ≤ c` (premise and antecedent subscripts bounded by the
+consequent's), `boxMono` forces `a ≤ b`, `box4` forces `a + |□aφ| ≤ b`, and the
+search-interface rules (`searchBranch`, `searchThenSearch_t`) pin the subscript to the
+goal's own program literal. So budget-compression wildness (§5e's weapon) CANNOT cross a
+tame interface: a tame consumption site arithmetically bounds every subscript feeding it.
+`deadJ`-style wildness is content-wildness, handled by Observation 2.
+
+**Observation 2 — content is backward-tame through shapes.** At a crossing
+`⟨t1 : ProvT m₁ (.impl B α), t2 : ProvT m₂ B⟩` with `B` wild and `α` tame, most arms of
+`t1` are VACUOUS because the constructor's shape puts `B`'s content inside `α`:
+`atomBoxImpl` (α contains the same atom), `axKf` (α = `.impl (□bφ) (□cα')` contains both
+components of B's content), the censuses (B = box of a guard-subst OF α's own programs,
+tame by `maxLitF_subst`), `box4`/`boxMono` (same φ both sides). The arms that survive:
+`weakenImpl` (the excisable entry — `cross_weaken`, now proven), and the recursive ones
+(`implTrans`/`impS2`/`app`/`struct`-chains), which is where the induction lives.
+
+**The wall and its fix — budget discipline.** Naive β-style rewriting
+(`app(implTrans(tA,tB), targ) ⇒ app(tB, app(tA, targ))`) EXCEEDS the original budget:
+materializing the intermediate judgment pays the cut formula's size `|ψ|`, which the
+original tree paid only once inside `tA`'s budget. Strict-budget cut-ELIMINATION is
+impossible (cuts compress — that is their point), but excision doesn't eliminate tame
+cuts, and for wild ones the fix is: the crossing lemma NEVER materializes intermediates —
+it carries implication/argument pairs abstractly and returns budget `≤ m₁ + m₂`, the
+consumer paying the target's size exactly once (`impl_size_le` supplies the arithmetic:
+every impl node already paid its conclusion).
+
+**The master statement (D2b).** Mutual with the main induction
+(`t : ProvT k φ` with `φ` tame ⇒ ∃ same-budget tame-cut tree):
+`spineCross : (t1 : ProvT m₁ ξ) → ξ an impl-spine over segments [B₁,…,Bₙ] with final
+target α tame → (discharge trees tᵢ : ProvT mᵢ Bᵢ for each segment) → ∃ tame-cut tree of
+α at budget ≤ m₁ + Σmᵢ + |α|` — structural induction on `t1`, wild segments consumed via
+Observation 2's vacuities and `cross_weaken`, tame segments re-gated directly (`G Bᵢ`
+holds), subscript arithmetic via Observation 1. The discharge trees are the guard context
+§5d wanted — now real objects, which is why this formulation dodges all three §5e
+refutations (they are statements about JUDGMENTS; `spineCross` holds trees).
+Open sub-questions for D2b: `diagF/B`'s premise budget `fb` is conclusion-free (but the
+premise formula is gated, so the gate absorbs it); the atom layer's guard cites recurse
+through the main induction at guard budgets (guard formulas are substitution instances of
+the conclusion's programs — `maxLitF_subst` keeps them tame); `struct`-embedded
+`modusPonens`/`hypSyll` chains need the Derivation-level census (C1's `DAnt`, which
+stands).
+
 ## 5b. Milestones
 
 - **C0 ✅ (2026-07-03)**: this analysis; T48 foundations (literal bounds at own judgments).
@@ -475,11 +524,18 @@ derivation TREES of provable roots, not in judgments.
   (plus the modest variant `tree_modestRelevance`). The conjecture is now a statement
   about trees — `∃ t, gateOK … t` — which dead implications cannot refute: excision may
   REPLACE the tree, not just describe it.
-- **D2 (NEXT) — excision**: define tree weight/measures; LIVE sub-judgments; prove dead
-  subtrees excisable (weight non-increasing ⇒ termination); assemble `TreeCutRelevance`
-  for zoo-universe roots first (fork (B)); or exhibit a forcing that defeats excision
-  (fork (C), undecidability via box budget-compression) — the two faces of "is excision
-  always possible?".
+- **D2a ✅ (2026-07-03, T49 §7) — the excision toolkit's first layer**: `ProvT.mono`
+  (budget monotonicity by root re-gating — structure untouched), `ProvT.mono_gateOK`
+  (re-gating preserves the cut diet), `ProvT.impl_size_le` (every impl node pays its
+  conclusion's size — the crossing arithmetic's backbone; atoms cannot conclude impls),
+  and `cross_weaken`/`cross_weaken_gateOK` (the first excision: `weakenImpl`-headed
+  `app`s drop their argument, same diet, within budget — the entry through which every
+  §5e counterexample dies). Design record: §5f (backward-tame subscripts, backward-tame
+  content, the budget discipline, the `spineCross` master statement).
+- **D2b (NEXT) — the master induction**: `spineCross` per §5f, mutual with the main
+  tameness induction; assemble `TreeCutRelevance` for zoo-universe roots first (fork
+  (B)); or exhibit a forcing that defeats excision (fork (C), undecidability via box
+  budget-compression) — the two faces of "is excision always possible?".
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid
