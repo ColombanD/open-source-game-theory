@@ -465,10 +465,21 @@ derivation TREES of provable roots, not in judgments.
   (wild boxed antecedent, tame unprovable consequent — never fires via `app`). Third and
   closing refutation: the judgment-local program is DEAD at every position class. The
   conjecture survives (all counterexamples are excisable dead weight).
-- **NEXT — the fork (§5e)**: (A) tree-level minimality/excision (Lemma B's true home),
-  probably specialized per (B) to the zoo-universe roots `decB` actually needs; or (C)
-  the undecidability encoding via box budget-compression — (A) and (C) are the two faces
-  of "is excision always possible?".
+- **D0+D1 ✅ (2026-07-03, `T49TreeSubstrate.lean`) — the tree substrate, fork (A)'s
+  foundation**: the `Type`-valued mirror triple `PlaysT`/`AtomT`/`ProvT` (constructor for
+  constructor; `struct` carries its `Derivation` witness), `sound` + `complete` —
+  **`Provable k φ ↔ Nonempty (ProvT k φ)`** (`Provable_iff_nonempty_ProvT`); `gateOK G t`
+  (the cut DIET of one specific tree, through the six T42 gate positions AND the atom
+  layer's guard cites); `toG` (a tree with passing residue lands in `ProvableG G`); and
+  the official reduction **`tree_cutRelevance : TreeCutRelevance N₀ → CutRelevance N₀`**
+  (plus the modest variant `tree_modestRelevance`). The conjecture is now a statement
+  about trees — `∃ t, gateOK … t` — which dead implications cannot refute: excision may
+  REPLACE the tree, not just describe it.
+- **D2 (NEXT) — excision**: define tree weight/measures; LIVE sub-judgments; prove dead
+  subtrees excisable (weight non-increasing ⇒ termination); assemble `TreeCutRelevance`
+  for zoo-universe roots first (fork (B)); or exhibit a forcing that defeats excision
+  (fork (C), undecidability via box budget-compression) — the two faces of "is excision
+  always possible?".
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid
