@@ -664,18 +664,32 @@ the termination formalization.
   closure hypothesis. NOTE: holds for ALL trees including `impS2` — only TOTALITY
   needs contraction-freedom; the diet is safe unconditionally. Dives never leak exotic
   cuts.
+- **D2f-a′ ✅ (2026-07-03, T49 §14)**: the gate instances — `litGate_box_closed`,
+  `modestGate_box_closed` (both gates are box-content-closed, so §13 applies to them);
+  the §12 closed-form fuel validated live by `#eval`.
 - **D2f-b (OPEN — the contraction case of totality)**: the only gap to full
-  `BoxInvTotal`. Key structural insight from this round's analysis: every duplication
-  of a discharge happens under a strictly SHALLOWER `impS2`-walker (the arm descends to
-  `tf`, and the duplicate is consumed inside `tx`'s walk — both at `s2depth ≤ d − 1`),
-  so total work is tower-bounded (`~wt · 2^(2^D)` for `impS2`-nesting depth `D`) and a
-  computable fuel EXISTS; the fight is the invariant packaging (candidate potentials
-  `2^(s2depth)`-weighted; the unresolved case is a deep discharge `d_dB > d_t` sitting
-  in the stack — its depth doesn't drop at the duplication site, only at its own
-  consumption). Options: stratified outer induction on state-depth with per-level
-  weight vectors (Dershowitz–Manna style), or the mix-rule/shared-environment route.
-  Then: `spineCross` on the same machine; `TreeModestRelevance` for zoo roots into
-  T47's decider.
+  `BoxInvTotal`. Structural insight: every duplication of a discharge happens under a
+  strictly SHALLOWER `impS2`-walker, so tower-bounded fuel (`~wt · 2^(2^D)` at nesting
+  depth `D`) EXISTS; the fight is the invariant. **Measure attempts, with exact failure
+  points (start here next session):**
+  * Linear-stack potential `Ψ := Φ(t)·(1 + ΣΦ(dᵢ))` with `Φ(impS2 tf tx) := Φtf·(Φtx+2)`
+    — handles `impS2` STRICTLY (the multiplicative node-charge pre-pays the duplicate),
+    and `app`/`weaken`/`implTrans` close with `Φ(app f x) := Φf·(Φx+2)` etc. — but
+    BREAKS on `diagF`: the continuation promotes the EXTRACTED tree to walker over the
+    tail, turning stack-cost multiplicative (`Φx·(Φd2+2)·(1+S'')` vs the linear old
+    `Φ(t)·(1+Φd1+Φd2+S'')` — triple products can't be dominated).
+  * Fully multiplicative `Ψ := Φ(t)·Π(Φ(dᵢ)+2)` — handles `diagF` and the navigation
+    arms (with `+1` paddings for strictness) — but BREAKS on `impS2`: the duplicate
+    makes the new `Ψ` QUADRATIC in `ΦdB`, which no `dB`-independent node-charge
+    `Φ(impS2)` can pre-pay.
+  * Semi-multiplicative (`SP(d::s) := (Φd+1)·SP(s)+1`) — same quadratic failure.
+  So the resolution must STRATIFY BY `s2depth`: below the walker's depth the potential
+  may be multiplicative (duplicates only ever re-duplicated by shallower walkers),
+  at-or-above it must stay linear; i.e. a depth-indexed family `Ψ_d` with the outer
+  induction on `d` (the depth-0 case IS the proven `boxInvGo_total`). Alternatively the
+  shared-environment/mix formulation. A full fresh session for the design, then one for
+  the Lean. Then: `spineCross` on the same machine; `TreeModestRelevance` for zoo roots
+  into T47's decider.
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid

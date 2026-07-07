@@ -1409,4 +1409,27 @@ theorem boxInvGo_gateOK {G : Formula → Prop}
         simp [boxInvGo] at h
     | atomNeg p q b aN m' t hne hle => simp [boxInvGo] at h
 
+/-! ## 14. The gate instances and the fuel bound, validated.
+
+Both gates of interest are box-content-closed, so §13 applies to them; and the
+closed-form fuel of §12 is checked live against the demos. -/
+
+/-- The literal gate is box-content-closed (`maxLitF (.box n φ) = max n (maxLitF φ)`). -/
+theorem litGate_box_closed (N : Nat) : ∀ b ψ, litGate N (.box b ψ) → litGate N ψ := by
+  intro b ψ h
+  simp only [litGate, maxLitF] at *
+  omega
+
+/-- The modest gate is box-content-closed (`modestF` ignores box subscripts). -/
+theorem modestGate_box_closed (N : Nat) :
+    ∀ b ψ, modestGate N (.box b ψ) → modestGate N ψ := by
+  intro b ψ ⟨hlit, hmod⟩
+  refine ⟨?_, ?_⟩
+  · simp only [maxLitF] at hlit; omega
+  · simpa [T43.modestF] using hmod
+
+-- The §12 closed-form fuel, validated live: `demoBox.wt = 3`, so 20 units suffice.
+#eval (boxInv ((ProvT.wt demoBox + 1) * (ProvT.wt demoBox + 1)
+  + ProvT.wt demoBox + 1) demoBox).isSome
+
 end PD.T49
