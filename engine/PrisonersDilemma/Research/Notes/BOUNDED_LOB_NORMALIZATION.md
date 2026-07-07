@@ -135,6 +135,67 @@ consumption instead of formula descent. The remaining design gap is unchanged (L
 C's index across the arrow-quantification), but the negative-type diagnosis explains
 every prior failure at once and pins the novelty: **boundedness defuses Y**.
 
+## 8. THE INDEX THAT CLOSES (2026-07-03, the dedicated attack) — Lemma C designed
+
+The definition that is well-founded on ALL edges. Fix the guard index `k : Nat`
+("remaining box-crossing quality") and the formula measure
+
+```
+μ(atomic)     := 0        -- plays / eq / neg-atoms
+μ(box c ψ)    := 0        -- ★ boxes are ATOMS for μ: crossing them drops k instead
+μ(impl B C)   := max (μ B) (μ C) + 1
+μ(diag g tgt) := μ tgt + 2   -- ★ hence μ(unfold) = μ(impl (□g D) tgt) = μ tgt + 1 < μ(diag)
+```
+
+Define by well-founded recursion on **lex (k, μ ξ)**:
+
+* `Good k ξ t` := ∀ core S, `GoodStack k ξ core S` → the run `(t, S)` HALTS with result
+  `r` satisfying `ContentGood k core r`;
+* `GoodStack k (impl B rest) core (d :: S)` := (∀ j ≤ k, `Good j B d`) ∧
+  `GoodStack k rest core S`  — the ∀j≤k CUMULATIVE form (★ gives antitonicity);
+* `GoodStack k κ κ nil` := True for κ a box/diag core; no clause for other cores
+  (so `Good` is VACUOUS at plays-ended/eq/neg formulas — exactly the never-run trees);
+* `ContentGood k (box c ψ) r` := k > 0 → `Good (k-1) ψ` (r's tree)  — ★ the k-DROP,
+  Nakano's ▷: content QUALITY degrades one level per box-crossing, while HALTING is
+  demanded at every level including k = 0;
+* `ContentGood k (diag g tgt) r` := `Good k (impl (□g (diag g tgt)) tgt)` (r's tree)
+  — same k, μ strictly smaller by ★.
+
+Every recursion edge decreases lex (k, μ): arrows and stack-cons by μ (arguments are
+subformulas; ∀j ≤ k stays in range), box contents by k, the diag unfolding by μ thanks
+to μ(box) = 0. **This is where all nine failed routes are simultaneously repaired**: the
+formula recursion is founded (route 2) because the negative occurrence hides behind a
+box, which μ treats as atomic; the index is not weight/budget (route 5's unbounded
+arrow-arguments are irrelevant — arrows don't touch k); antitonicity is definitional
+(∀j ≤ k), fixing the mixed-variance that blocks monotonicity proofs.
+
+**The fundamental lemma** (∀ well-typed t, ∀ k, `Good k ξ t` — structural induction on
+t with the ∀k motive), checked arm-by-arm on paper:
+
+| arm | how it closes |
+|---|---|
+| `app` | feed the pushed argument's IH into the function's `GoodStack` |
+| `weakenImpl` | drop the head, use the tail hypothesis |
+| `implTrans` | application lemma (`Good (impl B C) f → Good B d → Good C (appNode f d)`, direct from the definition) for the materialized middle |
+| `impS2` | **contraction is free**: the head's `Good` hypothesis is used twice |
+| `boxIntro` | content demand at k−1 from the ∀k-strength IH |
+| `boxMono` | dive result at k−1 is exactly the demand |
+| `box4` | needs the ANTITONICITY lemma (Good k → Good k', k' ≤ k — provable by lex induction thanks to the ∀j-form) for the re-boxed content |
+| `axK`/`axKf` | dives yield contents at k−1; the application lemma at level k−1 assembles the result — levels match exactly |
+| `diagB` | returns its discharge; `ContentGood` at the diag core is verbatim the discharge's hypothesis |
+| `diagF` | dive the diag discharge (Halts from its Good at ANY level); its content is Good at the SAME k (μ-descent, no drop); apply it to the □-discharge at level k — **the Löb case closes with no circle** |
+| `struct`/`atom`/`sTS`/`atomNeg` | vacuous (plays-ended/eq/neg formulas have no good stacks) — and `atomBoxImpl` drops its discharge, returning the node's own certificate |
+
+Then **BoxInvTotal = fundamental lemma at k := 1** (halting is already demanded at every
+level; only content quality degrades with k).
+
+**Formalization plan (next session)**: `μ` (10 lines); `Good`/`GoodStack`/`ContentGood`
+by WF-recursion on lex (k, μ) — the hardest Lean engineering, likely via a single
+`Good : Nat → Formula → … → Prop` with `termination_by (k, μ ξ)`; the antitonicity
+lemma; the application lemma; the 16-arm fundamental lemma (the run-plumbing reuses the
+established machine-proof pattern plus a step-composition lemma); the corollary. One to
+two sessions of mechanical work — the design risk is now zero modulo Lean engineering.
+
 ## 7. Why it matters beyond the thesis
 
 GL (provability logic) does not enjoy cut-elimination in the ordinary sense; the Löb
