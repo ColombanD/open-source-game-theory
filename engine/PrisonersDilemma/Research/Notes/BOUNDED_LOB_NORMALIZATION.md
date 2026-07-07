@@ -106,7 +106,36 @@ genuine risk it needs ordinal-indexed machinery beyond that. Fallbacks unaffecte
 executable per-instance pipeline (extract → check → `certify`) already deliver
 zoo-scale CutRelevance certificates without this theorem.
 
-## 6. Why it matters beyond the thesis
+## 6. THE SHARPEST FINDING (2026-07-03, the Lemma-C design attack): diag is a
+NEGATIVE recursive type — this theorem is about defusing the Y-combinator
+
+`.diag g tgt` satisfies `D ≅ (□g D) → tgt` with `D` in ANTECEDENT (negative) position.
+That is the Curry/Y-combinator recipe: calculi with negative recursive types are NOT
+normalizing in general (the untyped λ-calculus embeds), and the Löb fixpoint is
+literally this pattern at the modal level — which is WHY unbounded GL-style proof
+reduction fails to normalize, and why routes 2/3/9 (formula recursion, type order,
+Tarski fixpoints) had to fail: they fail for Y too.
+
+The bounded calculus escapes the Y-divergence through exactly two facts, both now
+kernel-checked:
+  * **the Löb cap** (`content_wt_le_subscript`): every unfolding of `□g D` yields
+    material of weight ≤ g, pinned by the formula;
+  * **strict consumption** (`boxInvGo_wt_lt`, T49 §18): extraction returns STRICTLY
+    lighter material than the state it consumed — so a Y-loop cannot dynamically
+    regenerate itself (and literal self-reference is impossible: trees are finite).
+
+Consequently the truth-question is sharpened: an infinite run cannot be sustained by
+Löb unfolding (strictly descending) nor by literal cycles (determinism + strictness);
+the only remaining candidate engine of divergence is `impS2`-duplication feeding
+unfoldings with fresh copies — and each fire consumes an `impS2` node of the walker
+while copies are only ever re-fired inside strictly lighter or structurally smaller
+walkers. We conjecture BoxInvTotal is TRUE, with the proof shape: Tait for the
+contraction (∀-hypotheses make duplication free), the diag case broken by strict
+consumption instead of formula descent. The remaining design gap is unchanged (Lemma
+C's index across the arrow-quantification), but the negative-type diagnosis explains
+every prior failure at once and pins the novelty: **boundedness defuses Y**.
+
+## 7. Why it matters beyond the thesis
 
 GL (provability logic) does not enjoy cut-elimination in the ordinary sense; the Löb
 axiom is the obstruction. This engine's BOUNDED Löb — where every box carries a budget
