@@ -705,7 +705,7 @@ def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
   | _, _, .struct _ _ => 1
   | _, _, .atom _ => 1
   | _, _, .weakenImpl _ _ _ t _ => t.wt + 1
-  | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.wt + 1
+  | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => 1
   | _, _, .implTrans _ _ _ _ _ t1 t2 _ => t1.wt + t2.wt + 1
   | _, _, .atomBoxImpl _ _ _ _ _ _ => 1
   | _, _, .boxIntro _ _ _ t _ => t.wt + 1
@@ -721,8 +721,9 @@ def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
 
 theorem ProvT.wt_pos {m : Nat} {φ : Formula} : (t : ProvT m φ) → 1 ≤ t.wt
   | .struct _ _ | .atom _ | .atomBoxImpl _ _ _ _ _ _ | .box4 _ _ _ _ _ _
-  | .axKf _ _ _ _ _ _ _ _ | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _ => Nat.le_refl _
-  | .weakenImpl _ _ _ _ _ | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _
+  | .axKf _ _ _ _ _ _ _ _ | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _
+  | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Nat.le_refl _
+  | .weakenImpl _ _ _ _ _
   | .implTrans _ _ _ _ _ _ _ _ | .boxIntro _ _ _ _ _ | .app _ _ _ _ _ _ _ _
   | .axK _ _ _ _ _ _ _ _ _ _ | .diagF _ _ _ _ _ _ _ | .diagB _ _ _ _ _ _ _
   | .impS2 _ _ _ _ _ _ _ _ _ => by simp [ProvT.wt]
@@ -1771,5 +1772,99 @@ theorem certify {N k : Nat} {φ : Formula} (t : ProvT k φ)
 #eval match boxInv 10 demoBox with
   | some ⟨_, tc, _⟩ => s!"extracted content passes modestGate 2: {tc.gateOKb (T44.cutOKb 2)}"
   | none => "out of fuel"
+
+/-! ## 17. D2f-b ingredient — the QUANTITATIVE LÖB CAP.
+
+The route-map's fact 5 (the diag formula pins its unfolding budget) becomes quantitative:
+walkable weight is bounded by the judgment BUDGET (`wt_le_budget` — each gate pays at
+least one character per walkable node; `searchThenSearch_t`'s premise is cite-jumped and
+never walked, hence its weight is 1), and extraction certifies content budgets `≤ c`;
+composing, **box contents weigh at most their own subscript**
+(`content_wt_le_subscript`). This is the well-foundedness leg the future Tait proof's
+diag case stands on: every `□g(diag g tgt)`-unfolding along a run produces material of
+weight `≤ g` — the SAME `g`, fixed by the formula — so unfold-chains at a fixed diag
+formula are weight-capped even though the formula itself recurs. -/
+
+theorem Formula.size_pos : (φ : Formula) → 1 ≤ φ.size := by
+  intro φ
+  cases φ <;> simp [Formula.size] <;> omega
+
+theorem PlaysT.cost_pos {me o b : Prog} {a : Action} {n : Nat} :
+    PlaysT me o b a n → 1 ≤ n
+  | .const => Nat.le_refl _
+  | .self _ | .opp _ | .bot _ | .sim _ => by simp [c_node]
+  | .ite_t _ _ _ | .ite_f _ _ _ | .search_t _ _ | .search_f _ _ => by
+      simp [c_node]
+
+/-- **Weight is budget-bounded**: every walkable node is paid for by its gate. -/
+theorem ProvT.wt_le_budget : {m : Nat} → {φ : Formula} → (t : ProvT m φ) → t.wt ≤ m
+  | _, _, .struct d hd =>
+      le_trans (le_trans (Formula.size_pos _) d.concl_size_le) hd
+  | _, _, .atom (.mk c hn) => le_trans c.cost_pos hn
+  | _, _, .weakenImpl φ' ψ' m' t hle => by
+      have h1 := t.wt_le_budget
+      have h2 := Formula.size_pos (Formula.impl φ' ψ')
+      simp only [ProvT.wt]; omega
+  | _, _, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme t hm hsz => by
+      have h2 := Formula.size_pos
+        (Formula.impl (.box k₁ (ψ₁.subst me opnt)) (.plays me opnt c0))
+      simp only [ProvT.wt]; omega
+  | _, _, .implTrans φ' ψ' χ' a b t1 t2 hle => by
+      have h1 := t1.wt_le_budget
+      have h2 := t2.wt_le_budget
+      have h3 := Formula.size_pos (Formula.impl φ' χ')
+      simp only [ProvT.wt]; omega
+  | _, _, .atomBoxImpl kBox p q a _ hle => by
+      have h2 := Formula.size_pos
+        (Formula.impl (.plays p q a) (.box kBox (.plays p q a)))
+      simp only [ProvT.wt]; omega
+  | _, _, .boxIntro kIn K φ' t hle => by
+      have h1 := t.wt_le_budget
+      have h2 := Formula.size_pos (Formula.box kIn φ')
+      simp only [ProvT.wt]; omega
+  | _, _, .app _ _ _ φ' α t1 t2 hle => by
+      have h1 := t1.wt_le_budget
+      have h2 := t2.wt_le_budget
+      have h3 := Formula.size_pos α
+      simp only [ProvT.wt]; omega
+  | _, _, .axK a b c m' K φ' α t _ hg2 => by
+      have h1 := t.wt_le_budget
+      have h2 := Formula.size_pos (Formula.impl (.box b φ') (.box c α))
+      simp only [ProvT.wt]; omega
+  | _, _, .box4 a b K φ' _ hg2 => by
+      have h2 := Formula.size_pos (Formula.impl (.box a φ') (.box b (.box a φ')))
+      simp only [ProvT.wt]; omega
+  | _, _, .diagF pm fb g K tgt t hle => by
+      have h1 := t.wt_le_budget
+      have h2 := Formula.size_pos
+        (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt))
+      simp only [ProvT.wt]; omega
+  | _, _, .diagB pm fb g K tgt t hle => by
+      have h1 := t.wt_le_budget
+      have h2 := Formula.size_pos
+        (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt))
+      simp only [ProvT.wt]; omega
+  | _, _, .axKf a b c K φ' α _ hg2 => by
+      have h2 := Formula.size_pos
+        (Formula.impl (.box a (.impl φ' α)) (.impl (.box b φ') (.box c α)))
+      simp only [ProvT.wt]; omega
+  | _, _, .impS2 φ' ψ' χ' m₁ m₂ K t1 t2 hle => by
+      have h1 := t1.wt_le_budget
+      have h2 := t2.wt_le_budget
+      have h3 := Formula.size_pos (Formula.impl φ' χ')
+      simp only [ProvT.wt]; omega
+  | _, _, .boxMono a b K φ' _ hle => by
+      have h2 := Formula.size_pos (Formula.impl (.box a φ') (.box b φ'))
+      simp only [ProvT.wt]; omega
+  | _, _, .atomNeg p q b aN m' _ _ hle => by
+      have h2 := Formula.size_pos (Formula.neg (.plays p q aN))
+      simp only [ProvT.wt]; omega
+
+/-- **The quantitative Löb cap**: an extracted box content weighs at most the box's own
+    subscript — the weight-well-foundedness of diag unfolding at a fixed formula. -/
+theorem content_wt_le_subscript {F m c : Nat} {ψ : Formula} {t : ProvT m (.box c ψ)}
+    {r : CoreContent (.box c ψ)} (h : boxInv F t = some r) :
+    r.2.1.wt ≤ c :=
+  le_trans r.2.1.wt_le_budget r.2.2
 
 end PD.T49

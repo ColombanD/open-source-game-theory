@@ -696,11 +696,49 @@ the termination formalization.
   Per-instance CutRelevance is now: build/synthesize the tree, run the excisor, run
   the checker, `certify`. Missing for zoo-scale instances: a tree SYNTHESIZER
   (`decFullT`-style, or hand-built trees for the flagship theorems).
+### The D2f-b route-map (2026-07-03, deep-dive) — why this is a THEOREM-SIZED problem
+
+Seven standard normalization techniques, each pushed to its exact failure point against
+this machine (do not re-derive):
+
+1. **Local-charge potentials** — provably insufficient: contraction cost depends on
+   discharged material unknown at the node; stack×stack products at `axKf`/`diagF`
+   (details in the milestone entries below).
+2. **Tait on formula structure** — breaks at `.diag`: a RECURSIVE type
+   (`diag g tgt` unfolds to `impl (box g (diag g tgt)) tgt`, which CONTAINS it), so
+   formula-size recursion is ill-founded. The Löb fixpoint doing exactly what it does
+   in GL: defeating naive formula induction.
+3. **Type-order (arrow-depth) ranks** — same failure: `order(diag) = ∞`.
+4. **Step-indexed logical relations** — the index breaks the diag circle but
+   step-indexing proves SAFETY, not termination; useless for totality.
+5. **Budget-indexed Tait** — promising (KEY FACT: the diag formula PINS its unfolding
+   budget — every `□g(diag g tgt)`-content lives at budget `≤ g`, the SAME `g`, forever;
+   Löb unfold-chains are budget-capped, which is WHY this calculus should normalize) —
+   but breaks at arrow-quantification: `Good(impl B C)` must quantify over arguments of
+   arbitrary budget/weight, so no `(budget, |ξ|)` or `(weight, |ξ|)` lex founds the
+   definition.
+6. **Counting/tower measures** (`#impS2`-weighted, `W^N`, towers) — close UNNESTED
+   contraction but break on nested: a fired `impS2` duplicates a discharge whose own
+   count/depth is arbitrary (stack material).
+7. **Syntactic fragments** (stack-monotone, `s2depth ≤ 1`) — violated by the most
+   common REAL pattern: `app(axKf-leaf, huge-Löb-argument)`.
+
+**What a correct proof needs** (the positive residue): Tait with the arrow case
+quantifying over MACHINE-REACHABLE arguments only (biorthogonality over reachable
+stacks — the machine is closed, and weight strictly decreases at every extraction
+along a run), the diag circle broken by the pinned budget `g` (fact 5), outer induction
+on run-closure material. This is normalization for a **bounded-Löb modal proof
+calculus** — plausibly novel (GL lacks ordinary cut-elimination; boundedness is exactly
+what restores it) and plausibly a stand-alone paper. It needs offline mathematical
+iteration. Meanwhile the thesis does not wait: `boxInv_total_of_freeS2` covers the
+contraction-free fragment, and the executable instance route (synthesize → excise →
+check → `certify`) delivers zoo-scale certificates without the SN theorem.
+
 - **D2f-b (OPEN — the contraction case of totality)**: the only gap to full
   `BoxInvTotal`. Structural insight: every duplication of a discharge happens under a
   strictly SHALLOWER `impS2`-walker, so tower-bounded fuel (`~wt · 2^(2^D)` at nesting
   depth `D`) EXISTS; the fight is the invariant. **Measure attempts, with exact failure
-  points (start here next session):**
+  points:**
   * Linear-stack potential `Ψ := Φ(t)·(1 + ΣΦ(dᵢ))` with `Φ(impS2 tf tx) := Φtf·(Φtx+2)`
     — handles `impS2` STRICTLY (the multiplicative node-charge pre-pays the duplicate),
     and `app`/`weaken`/`implTrans` close with `Φ(app f x) := Φf·(Φx+2)` etc. — but
