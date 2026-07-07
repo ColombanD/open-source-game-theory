@@ -1651,4 +1651,125 @@ theorem boxInvGo_s2d_le : ∀ (F : Nat) {m : Nat} {ξ core : Formula}
         simp [boxInvGo] at h
     | atomNeg p q b aN m' t hne hle => simp [boxInvGo] at h
 
+/-! ## 16. Executable diet certificates — `gateOKb`.
+
+`gateOK` is `Prop`-valued, so neither `#eval` nor `decide` can touch it; per-instance
+certificates (route (iii) of the D2f-b verdict) need a Boolean mirror. `gateOKb Gb t`
+computes the diet check for a Boolean gate `Gb`; `gateOKb_sound` bridges to any `G`
+that `Gb` underapproximates — instantiated with `cutOKb N` (whose `cutOKb_iff` gives
+exactly `modestGate N`), a `true` from the checker plus `toG` lands a concrete tree in
+`ProvableG (modestGate N)`. The `#eval` below runs the full pipeline on the demo:
+extract a box content, CHECK its diet, certify. -/
+
+mutual
+  def PlaysT.gateOKb (Gb : Formula → Bool) :
+      {me o b : Prog} → {a : Action} → {n : Nat} → PlaysT me o b a n → Bool
+    | _, _, _, _, _, .const => true
+    | _, _, _, _, _, .self t => t.gateOKb Gb
+    | _, _, _, _, _, .opp t => t.gateOKb Gb
+    | _, _, _, _, _, .bot t => t.gateOKb Gb
+    | _, _, _, _, _, .sim t => t.gateOKb Gb
+    | _, _, _, _, _, .ite_t tb _ tp => tb.gateOKb Gb && tp.gateOKb Gb
+    | _, _, _, _, _, .ite_f tb _ tq => tb.gateOKb Gb && tq.gateOKb Gb
+    | _, _, _, _, _, .search_t tg tp => tg.gateOKb Gb && tp.gateOKb Gb
+    | _, _, _, _, _, .search_f tr tq => tr.gateOKb Gb && tq.gateOKb Gb
+
+  def AtomT.gateOKb (Gb : Formula → Bool) :
+      {k : Nat} → {φ : Formula} → AtomT k φ → Bool
+    | _, _, .mk t _ => t.gateOKb Gb
+
+  def ProvT.gateOKb (Gb : Formula → Bool) :
+      {k : Nat} → {φ : Formula} → ProvT k φ → Bool
+    | _, _, .struct _ _ => true
+    | _, _, .atom t => t.gateOKb Gb
+    | _, _, .weakenImpl _ _ _ t _ => t.gateOKb Gb
+    | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.gateOKb Gb
+    | _, _, .implTrans _ ψ _ _ _ t1 t2 _ => Gb ψ && t1.gateOKb Gb && t2.gateOKb Gb
+    | _, _, .atomBoxImpl _ _ _ _ t _ => t.gateOKb Gb
+    | _, _, .boxIntro _ _ _ t _ => t.gateOKb Gb
+    | _, _, .app _ _ _ φ _ t1 t2 _ => Gb φ && t1.gateOKb Gb && t2.gateOKb Gb
+    | _, _, .axK a _ _ _ _ φ α t _ _ =>
+        Gb (.box a (.impl φ α)) && t.gateOKb Gb
+    | _, _, .box4 _ _ _ _ _ _ => true
+    | _, _, .diagF _ fb _ _ tgt t _ =>
+        Gb (.impl (.box fb tgt) tgt) && t.gateOKb Gb
+    | _, _, .diagB _ fb _ _ tgt t _ =>
+        Gb (.impl (.box fb tgt) tgt) && t.gateOKb Gb
+    | _, _, .axKf _ _ _ _ _ _ _ _ => true
+    | _, _, .impS2 _ ψ _ _ _ _ t1 t2 _ => Gb ψ && t1.gateOKb Gb && t2.gateOKb Gb
+    | _, _, .boxMono _ _ _ _ _ _ => true
+    | _, _, .atomNeg _ _ _ _ _ t _ _ => t.gateOKb Gb
+end
+
+mutual
+  theorem PlaysT.gateOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
+      (hGb : ∀ B, Gb B = true → G B) {me o b : Prog} {a : Action} {n : Nat} :
+      (t : PlaysT me o b a n) → t.gateOKb Gb = true → t.gateOK G
+    | .const, _ => trivial
+    | .self t, h => t.gateOKb_sound hGb h
+    | .opp t, h => t.gateOKb_sound hGb h
+    | .bot t, h => t.gateOKb_sound hGb h
+    | .sim t, h => t.gateOKb_sound hGb h
+    | .ite_t tb _ tp, h => by
+        simp only [PlaysT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨tb.gateOKb_sound hGb h.1, tp.gateOKb_sound hGb h.2⟩
+    | .ite_f tb _ tq, h => by
+        simp only [PlaysT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨tb.gateOKb_sound hGb h.1, tq.gateOKb_sound hGb h.2⟩
+    | .search_t tg tp, h => by
+        simp only [PlaysT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨tg.gateOKb_sound hGb h.1, tp.gateOKb_sound hGb h.2⟩
+    | .search_f tr tq, h => by
+        simp only [PlaysT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨tr.gateOKb_sound hGb h.1, tq.gateOKb_sound hGb h.2⟩
+
+  theorem AtomT.gateOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
+      (hGb : ∀ B, Gb B = true → G B) {k : Nat} {φ : Formula} :
+      (t : AtomT k φ) → t.gateOKb Gb = true → t.gateOK G
+    | .mk t _, h => t.gateOKb_sound hGb h
+
+  theorem ProvT.gateOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
+      (hGb : ∀ B, Gb B = true → G B) {k : Nat} {φ : Formula} :
+      (t : ProvT k φ) → t.gateOKb Gb = true → t.gateOK G
+    | .struct _ _, _ => trivial
+    | .atom t, h => t.gateOKb_sound hGb h
+    | .weakenImpl _ _ _ t _, h => t.gateOKb_sound hGb h
+    | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _, h => t.gateOKb_sound hGb h
+    | .implTrans _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1.1, t1.gateOKb_sound hGb h.1.2, t2.gateOKb_sound hGb h.2⟩
+    | .atomBoxImpl _ _ _ _ t _, h => t.gateOKb_sound hGb h
+    | .boxIntro _ _ _ t _, h => t.gateOKb_sound hGb h
+    | .app _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1.1, t1.gateOKb_sound hGb h.1.2, t2.gateOKb_sound hGb h.2⟩
+    | .axK _ _ _ _ _ _ _ t _ _, h => by
+        simp only [ProvT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1, t.gateOKb_sound hGb h.2⟩
+    | .box4 _ _ _ _ _ _, _ => trivial
+    | .diagF _ _ _ _ _ t _, h => by
+        simp only [ProvT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1, t.gateOKb_sound hGb h.2⟩
+    | .diagB _ _ _ _ _ t _, h => by
+        simp only [ProvT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1, t.gateOKb_sound hGb h.2⟩
+    | .axKf _ _ _ _ _ _ _ _, _ => trivial
+    | .impS2 _ _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.gateOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1.1, t1.gateOKb_sound hGb h.1.2, t2.gateOKb_sound hGb h.2⟩
+    | .boxMono _ _ _ _ _ _, _ => trivial
+    | .atomNeg _ _ _ _ _ t _ _, h => t.gateOKb_sound hGb h
+end
+
+/-- A checked tree lands in the modest stratum: the certificate pipeline's exit. -/
+theorem certify {N k : Nat} {φ : Formula} (t : ProvT k φ)
+    (h : t.gateOKb (T44.cutOKb N) = true) :
+    ProvableG (T44.modestGate N) k φ :=
+  t.toG (t.gateOKb_sound (fun _ hb => T44.cutOKb_iff.mp hb) h)
+
+-- The full pipeline, live: extract a box content from the Löb demo, CHECK its diet.
+#eval match boxInv 10 demoBox with
+  | some ⟨_, tc, _⟩ => s!"extracted content passes modestGate 2: {tc.gateOKb (T44.cutOKb 2)}"
+  | none => "out of fuel"
+
 end PD.T49

@@ -688,6 +688,14 @@ the termination formalization.
   heavyweight); (ii) a Gentzen rank development on segment formulas; (iii) PER-INSTANCE
   fuel — the machine already semidecides, and concrete zoo trees can be excised by
   `#eval` with per-theorem certificates (E-grade thesis content without the SN proof).
+- **D2f-c ✅ (2026-07-03, T49 §16) — executable diet certificates**: `gateOKb` (the
+  Boolean mirror of the cut-diet check, over the full mutual triple),
+  `gateOKb_sound`, and **`certify`** — a concrete tree whose checker returns `true`
+  lands in `ProvableG (modestGate N)` via `toG`. The route-(iii) pipeline runs live:
+  `#eval` extracts a box content and CHECKS its diet (`true` at `modestGate 2`).
+  Per-instance CutRelevance is now: build/synthesize the tree, run the excisor, run
+  the checker, `certify`. Missing for zoo-scale instances: a tree SYNTHESIZER
+  (`decFullT`-style, or hand-built trees for the flagship theorems).
 - **D2f-b (OPEN — the contraction case of totality)**: the only gap to full
   `BoxInvTotal`. Structural insight: every duplication of a discharge happens under a
   strictly SHALLOWER `impS2`-walker, so tower-bounded fuel (`~wt · 2^(2^D)` at nesting
