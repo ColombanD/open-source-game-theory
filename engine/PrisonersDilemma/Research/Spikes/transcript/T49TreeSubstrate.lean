@@ -557,10 +557,7 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
              (match s' with
               | .cons mD2 d2 s'' =>
                   (match boxInvGo fuel d1 (.nil : DStack (.diag g tgt) (.diag g tgt)) with
-                   | some ⟨mx, x⟩ =>
-                       boxInvGo fuel
-                         (.app (mx + mD2 + tgt.size) mx mD2 (.box g (.diag g tgt)) tgt
-                           x d2 (Nat.le_refl _)) s''
+                   | some ⟨mx, x⟩ => boxInvGo fuel x (.cons mD2 d2 s'')
                    | none => none)
               | .nil => none)
          | .nil => none)
@@ -874,8 +871,7 @@ theorem boxInvGo_wt_le : ∀ (F : Nat) {m : Nat} {ξ core : Formula}
                     obtain ⟨mx, x⟩ := rx
                     have hx := ih d1 .nil hs.1 trivial hd
                     simp only [CoreContent.wt, CoreContent.freeS2, DStack.wt] at hx
-                    have := ih (.app _ _ mD2 (.box g (.diag g tgt)) tgt x d2
-                        (Nat.le_refl _)) s'' ⟨hx.2, hs.2.1⟩ hs.2.2 h
+                    have := ih x (.cons mD2 d2 s'') hx.2 ⟨hs.2.1, hs.2.2⟩ h
                     simp only [ProvT.wt, DStack.wt] at *
                     exact ⟨by omega, this.2⟩
     | atomBoxImpl kBox p q a cert hle =>
@@ -1096,13 +1092,10 @@ theorem boxInvGo_total : ∀ (F P : Nat) {m : Nat} {ξ core : Formula}
                 obtain ⟨mx, x⟩ := rx
                 simp only [CoreContent.wt, CoreContent.freeS2, DStack.wt] at hxw
                 obtain ⟨hxw1, hxf⟩ := hxw
-                exact ih (P - 1)
-                  (.app _ _ mD2 (.box g (.diag g tgt)) tgt x d2 (Nat.le_refl _))
-                  s'' ⟨hxf, hs.2.1⟩ hs.2.2 hc
-                  (by simp only [ProvT.wt, DStack.wt]; omega)
+                exact ih (P - 1) x (.cons mD2 d2 s'') hxf ⟨hs.2.1, hs.2.2⟩ hc
+                  (by simp only [DStack.wt]; omega)
                   (by
-                    simp only [ProvT.wt]
-                    have := thr_step (P' := P - 1) (T' := x.wt + d2.wt + 1) hF
+                    have := thr_step (P' := P - 1) (T' := x.wt) hF
                       (by omega) (by omega)
                     omega)
     | atomBoxImpl kBox p q a cert hle =>
@@ -1303,9 +1296,8 @@ theorem boxInvGo_gateOK {G : Formula → Prop}
                     have hxg := ih d1 .nil hs.1 trivial trivial hd
                     obtain ⟨mx, x⟩ := rx
                     simp only [CoreContent.gateOK] at hxg
-                    exact ih (.app _ _ mD2 (.box g (.diag g tgt)) tgt x d2
-                        (Nat.le_refl _)) s''
-                      ⟨hsg.2.1, hxg, hs.2.1⟩ hs.2.2 hsg.2.2 h
+                    exact ih x (.cons mD2 d2 s'') hxg ⟨hs.2.1, hs.2.2⟩
+                      ⟨hsg.2.1, hsg.2.2⟩ h
     | atomBoxImpl kBox p q a cert hle =>
         cases s with
         | nil => simp [boxInvGo] at h
@@ -1431,5 +1423,232 @@ theorem modestGate_box_closed (N : Nat) :
 -- The §12 closed-form fuel, validated live: `demoBox.wt = 3`, so 20 units suffice.
 #eval (boxInv ((ProvT.wt demoBox + 1) * (ProvT.wt demoBox + 1)
   + ProvT.wt demoBox + 1) demoBox).isSome
+
+/-! ## 15. D2f-b groundwork — extraction never increases contraction depth.
+
+The stratified measure (note §5b, D2f-b) will induct on the state's `impS2`-nesting
+depth; its viability rests on depth being CONSERVED by the machine: navigation moves
+subtrees (depth ≤ parent's), and extraction assembles only `app`/`boxIntro` nodes over
+extracted pieces — it never builds an `impS2`. Proven here as `boxInvGo_s2d_le`,
+unconditionally (like the diet lemma): the result's depth is bounded by the state's. -/
+
+/-- `impS2`-nesting depth of the walkable layer. -/
+def ProvT.s2d : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
+  | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => max t1.s2d t2.s2d + 1
+  | _, _, .weakenImpl _ _ _ t _ => t.s2d
+  | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.s2d
+  | _, _, .implTrans _ _ _ _ _ t1 t2 _ => max t1.s2d t2.s2d
+  | _, _, .boxIntro _ _ _ t _ => t.s2d
+  | _, _, .app _ _ _ _ _ t1 t2 _ => max t1.s2d t2.s2d
+  | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.s2d
+  | _, _, .diagF _ _ _ _ _ t _ => t.s2d
+  | _, _, .diagB _ _ _ _ _ t _ => t.s2d
+  | _, _, _ => 0
+
+def DStack.s2d : {ξ core : Formula} → DStack ξ core → Nat
+  | _, _, .nil => 0
+  | _, _, .cons _ t s => max t.s2d s.s2d
+
+/-- Re-gating preserves depth. -/
+theorem ProvT.mono_s2d {k k' : Nat} {φ : Formula}
+    (h : k ≤ k') : (t : ProvT k φ) → (t.mono h).s2d = t.s2d
+  | .struct _ _ => rfl
+  | .atom (.mk _ _) => rfl
+  | .weakenImpl _ _ _ _ _ => rfl
+  | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
+  | .implTrans _ _ _ _ _ _ _ _ => rfl
+  | .atomBoxImpl _ _ _ _ _ _ => rfl
+  | .boxIntro _ _ _ _ _ => rfl
+  | .app _ _ _ _ _ _ _ _ => rfl
+  | .axK _ _ _ _ _ _ _ _ _ _ => rfl
+  | .box4 _ _ _ _ _ _ => rfl
+  | .diagF _ _ _ _ _ _ _ => rfl
+  | .diagB _ _ _ _ _ _ _ => rfl
+  | .axKf _ _ _ _ _ _ _ _ => rfl
+  | .impS2 _ _ _ _ _ _ _ _ _ => rfl
+  | .boxMono _ _ _ _ _ _ => rfl
+  | .atomNeg _ _ _ _ _ _ _ _ => rfl
+
+/-- Depth of what extraction returns. -/
+def CoreContent.s2d : {core : Formula} → CoreContent core → Nat := fun {core} =>
+  match core with
+  | .box _ _ => fun r => r.2.1.s2d
+  | .diag _ _ => fun r => r.2.s2d
+  | .plays _ _ _ | .impl _ _ | .neg _ | .eq _ _ => fun r => nomatch r
+
+/-- **Extraction never increases contraction depth** (unconditionally). -/
+theorem boxInvGo_s2d_le : ∀ (F : Nat) {m : Nat} {ξ core : Formula}
+    (t : ProvT m ξ) (s : DStack ξ core),
+    ∀ {r : CoreContent core}, boxInvGo F t s = some r →
+    r.s2d ≤ max t.s2d s.s2d := by
+  intro F
+  induction F with
+  | zero => intro _ _ _ t s r h; simp [boxInvGo] at h
+  | succ F ih =>
+    intro m ξ core t s r h
+    cases t with
+    | boxIntro kIn K φ tc hle =>
+        cases s with
+        | nil =>
+            simp only [boxInvGo] at h
+            cases h
+            simp [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+    | app k m₁ m₂ φ' α f x hle =>
+        simp only [boxInvGo] at h
+        have := ih f (.cons m₂ x s) h
+        simp only [ProvT.s2d, DStack.s2d] at *
+        omega
+    | weakenImpl φ' ψ' m' tw hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            simp only [boxInvGo] at h
+            have := ih tw s' h
+            simp only [ProvT.s2d, DStack.s2d] at *
+            omega
+    | implTrans φ' ψmid χ' a b tA tB hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            simp only [boxInvGo] at h
+            have := ih tB (.cons _ (.app _ a mD φ' ψmid tA dB (Nat.le_refl _)) s') h
+            simp only [ProvT.s2d, DStack.s2d] at *
+            omega
+    | diagB pm fb g K tgt tP hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h
+                cases h
+                simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+                omega
+    | diagF pm fb g K tgt tP hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => simp [boxInvGo] at h
+            | cons mD2 d2 s'' =>
+                simp only [boxInvGo] at h
+                cases hd : boxInvGo F d1
+                    (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rx =>
+                    rw [hd] at h
+                    have hx := ih d1 .nil hd
+                    obtain ⟨mx, x⟩ := rx
+                    simp only [CoreContent.s2d, DStack.s2d] at hx
+                    have := ih x (.cons mD2 d2 s'') h
+                    simp only [ProvT.s2d, DStack.s2d] at *
+                    omega
+    | atomBoxImpl kBox p q a cert hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD d s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h
+                cases h
+                simp [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+    | boxMono a' b' K φ' hab hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h
+                cases hd : boxInvGo F dB
+                    (.nil : DStack (.box a' φ') (.box a' φ')) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rc =>
+                    rw [hd] at h
+                    obtain ⟨mc, tc, hcc⟩ := rc
+                    cases h
+                    have := ih dB .nil hd
+                    simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d] at *
+                    omega
+    | box4 a' b' K φ' hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h
+                cases hd : boxInvGo F dB
+                    (.nil : DStack (.box a' φ') (.box a' φ')) with
+                | none => rw [hd] at h; exact absurd h (by simp)
+                | some rc =>
+                    rw [hd] at h
+                    obtain ⟨mc, tc, hcc⟩ := rc
+                    cases h
+                    have h1 := ih dB .nil hd
+                    have h2 := ProvT.mono_s2d hcc tc
+                    simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d] at *
+                    omega
+    | axK a'' b'' c'' m'' K φ' α' tP hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            cases s' with
+            | nil =>
+                simp only [boxInvGo] at h
+                cases hp : boxInvGo F tP
+                    (.nil : DStack (.box a'' (.impl φ' α')) _) with
+                | none => rw [hp] at h; exact absurd h (by simp)
+                | some rP =>
+                    cases hx : boxInvGo F dB
+                        (.nil : DStack (.box b'' φ') _) with
+                    | none => rw [hp, hx] at h; exact absurd h (by simp)
+                    | some rx =>
+                        rw [hp, hx] at h
+                        obtain ⟨mP, tPc, hPle⟩ := rP
+                        obtain ⟨mx, txc, hxle⟩ := rx
+                        cases h
+                        have h1 := ih tP .nil hp
+                        have h2 := ih dB .nil hx
+                        simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d] at *
+                        omega
+    | axKf a'' b'' c'' K φ' α' hg1 hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => simp [boxInvGo] at h
+            | cons mD2 d2 s'' =>
+                cases s'' with
+                | nil =>
+                    simp only [boxInvGo] at h
+                    cases hp : boxInvGo F d1
+                        (.nil : DStack (.box a'' (.impl φ' α')) _) with
+                    | none => rw [hp] at h; exact absurd h (by simp)
+                    | some rP =>
+                        cases hx : boxInvGo F d2
+                            (.nil : DStack (.box b'' φ') _) with
+                        | none => rw [hp, hx] at h; exact absurd h (by simp)
+                        | some rx =>
+                            rw [hp, hx] at h
+                            obtain ⟨mP, tPc, hPle⟩ := rP
+                            obtain ⟨mx, txc, hxle⟩ := rx
+                            cases h
+                            have h1 := ih d1 .nil hp
+                            have h2 := ih d2 .nil hx
+                            simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d] at *
+                            omega
+    | impS2 φ' ψ' χ' m₁' m₂' K tf tx hle =>
+        cases s with
+        | nil => simp [boxInvGo] at h
+        | cons mD dB s' =>
+            simp only [boxInvGo] at h
+            have := ih tf (.cons mD dB (.cons _
+                (.app _ m₂' mD φ' ψ' tx dB (Nat.le_refl _)) s')) h
+            simp only [ProvT.s2d, DStack.s2d] at *
+            omega
+    | struct d hd => simp [boxInvGo] at h
+    | atom t => simp [boxInvGo] at h
+    | searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme t hm hsz =>
+        simp [boxInvGo] at h
+    | atomNeg p q b aN m' t hne hle => simp [boxInvGo] at h
 
 end PD.T49

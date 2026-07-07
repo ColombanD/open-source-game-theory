@@ -667,6 +667,16 @@ the termination formalization.
 - **D2f-a′ ✅ (2026-07-03, T49 §14)**: the gate instances — `litGate_box_closed`,
   `modestGate_box_closed` (both gates are box-content-closed, so §13 applies to them);
   the §12 closed-form fuel validated live by `#eval`.
+- **D2f-b groundwork ✅ (2026-07-03, T49 §15 + machine rev)**: the `diagF` continuation
+  INLINED (`(x, d2::S'')` directly — semantically identical, one step cheaper, and the
+  materialized `app`-node charge that polluted every measure candidate is gone from the
+  design space); all three conservation theorems updated (their `diagF` arms
+  simplified). Plus `ProvT.s2d` (`impS2`-nesting depth), `mono_s2d`, and
+  **`boxInvGo_s2d_le`** — extraction never increases contraction depth,
+  unconditionally: navigation moves subtrees, extraction assembles only `app`/`boxIntro`
+  nodes, never an `impS2`. This is the conservation input the stratified measure needs
+  (the depth-indexed `Ψ_d` family is well-defined on machine runs only because depth
+  cannot resurge).
 - **D2f-b (OPEN — the contraction case of totality)**: the only gap to full
   `BoxInvTotal`. Structural insight: every duplication of a discharge happens under a
   strictly SHALLOWER `impS2`-walker, so tower-bounded fuel (`~wt · 2^(2^D)` at nesting
