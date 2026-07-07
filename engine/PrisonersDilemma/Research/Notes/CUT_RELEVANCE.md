@@ -605,11 +605,24 @@ the termination formalization.
   (`impS2` duplicates a discharge — kills total-size termination; strict-`k` budgets
   survive IF excision is stated per-subtree-budget-preserving); two fork-(C) forcing
   attempts died on Observations 1&2 (recorded — evidence FOR the conjecture).
-- **D2c (NEXT) — the modest-pool spineCross**: per §5g's re-aimed plan — `box_inv` on
-  trees (the axK-dive pays its own gate), then `spineCross` with segments/discharges
-  restricted to the T43 universe (finitely many ranks ⇒ termination without full
-  Gentzen machinery), then assemble `TreeModestRelevance` for zoo roots and plug into
-  T47's decider.
+- **D2c ✅ (2026-07-03, T49 §9–10) — `boxInvGo`, the fueled extraction machine, RUNS**:
+  the spine machinery collapsed to a STACK MACHINE over a dependent discharge stack
+  (`DStack ξ core`) — push at `app`, drop at `weakenImpl` (excision), compose at
+  `implTrans`, duplicate at `impS2` (fuel absorbs the Gentzen contraction), apply-self
+  at `diagF`, consume at the modal leaves where each gate pays its own extraction
+  (`axK`/`axKf` at `a+b+|α| ≤ c`, `box4` re-boxes the mono-lifted content at
+  `a+|□aφ| ≤ b`, `boxMono` passes `a ≤ b`). Result type computed from the core
+  (`BoxContent`) ⇒ every `some` is CORRECT BY CONSTRUCTION: **box contents are
+  derivable within their own subscripts** (box honesty). `#eval` demos extract through
+  real trees (direct and behind app/weaken detours), returning at exactly the
+  subscript. LEAN NOTE: dependent matches over `DStack` generalize away the core's
+  box-structure — computing the return type from the core (`BoxContent core`) fixes it
+  with zero casts; shape-excluded arms return `none` (sound; unreachability belongs to
+  totality).
+- **D2d (NEXT)**: `BoxInvTotal` — fuel sufficiency via the modest-pool rank argument
+  (per §5g; includes unreachability of the `none` arms for box cores); then cut-diet
+  bookkeeping (`gateOK` of extracted trees); then `spineCross` proper on the same stack
+  machine, and `TreeModestRelevance` for zoo roots into T47's decider.
 - **C3b-ii (superseded as stated)**: the master transform — thread the carried-transform payloads through `Tri`
   (D2 gains its `ProvableB`-transform; Dbox* resolved by the sibling machinery per §5/§5a′:
   DboxAnt at discharge-apps, DboxPos via box-content judgments (`box_inversion`), DboxMid

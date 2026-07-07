@@ -476,4 +476,132 @@ theorem ProvT.box_subscript_lt {k c : Nat} {ψ : Formula} (t : ProvT k (.box c �
   · have hlog : Nat.log2 c < k := by omega
     exact (Nat.log2_lt (by omega)).mp hlog
 
+/-! ## 9. D2c — `boxInvGo`: fueled box-content extraction, correct by construction.
+
+The §5g plan called for `box_inv` + `spineCross`; designing them surfaced two collapses:
+
+  * the spine machinery is a STACK MACHINE — hold the pending discharges as a dependent
+    stack (`DStack ξ core`: discharge trees for `ξ`'s implication spine down to `core`),
+    PUSH at `app`, DROP at `weakenImpl` (excision!), TRANSFORM at the chain rules
+    (`implTrans` composes onto the head; `impS2` duplicates it — the Gentzen
+    contraction, which FUEL absorbs), CONSUME at the modal leaves;
+  * each modal leaf's own gate PAYS the extraction: `axK`/`axKf` return an `app` of the
+    dived contents at `≤ a + b + |α| ≤ c` (the gate, verbatim — Observation 1 is
+    literally the budget proof); `box4` re-boxes the lifted content at `a + |□aφ| ≤ b`;
+    `boxMono` passes `a ≤ b`; `boxIntro`'s subscript IS its content budget.
+
+Making the machine FUEL-indexed sidesteps the termination question entirely (the
+`decFull` pattern), and computing the result type from the core
+(`BoxContent : Formula → Type`) makes every `some` CORRECT BY CONSTRUCTION: whenever
+extraction halts, **a box's content is derivable within the box's own subscript** — box
+honesty, the load-bearing dive of the excision plan. Shape-excluded arms (`struct`,
+atoms, `searchThenSearch_t`/`diagB` tails) return `none`; their unreachability for box
+cores is part of `BoxInvTotal`, the isolated remaining obligation, where the modest-pool
+rank argument lives. (Cut-diet bookkeeping for extracted trees is D2d.) -/
+
+/-- Discharge stack: trees for each antecedent of `ξ`'s implication spine, down to
+    `core`. -/
+inductive DStack : Formula → Formula → Type where
+  | nil : DStack core core
+  | cons {B rest core : Formula} (m : Nat) (t : ProvT m B) (s : DStack rest core) :
+      DStack (.impl B rest) core
+
+/-- What extraction owes for a given core: for a box, its content within the
+    subscript. -/
+def BoxContent : Formula → Type
+  | .box c ψ => Σ' m', (ProvT m' ψ) ×' (m' ≤ c)
+  | _ => PEmpty
+
+/-- The fueled extractor. `none` = out of fuel (or a shape-excluded arm); every `some`
+    is a genuine content tree within the subscript budget, by type. -/
+def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
+    (t : ProvT m ξ) → DStack ξ core → Option (BoxContent core)
+  | 0, _, _, _, _, _ => none
+  | fuel + 1, _, _, _, t, stack =>
+    match t, stack with
+    -- the box itself
+    | .boxIntro kIn _ φ tc _, .nil => some ⟨kIn, tc, Nat.le_refl _⟩
+    -- spine navigation
+    | .app _ m₁ m₂ φ' α f x _, stack => boxInvGo fuel f (.cons m₂ x stack)
+    | .weakenImpl _ _ _ tw _, .cons _ _ s' => boxInvGo fuel tw s'
+    | .implTrans φ' ψmid χ' a b tA tB _, .cons mD dB s' =>
+        boxInvGo fuel tB (.cons (a + mD + ψmid.size)
+          (.app (a + mD + ψmid.size) a mD φ' ψmid tA dB (Nat.le_refl _)) s')
+    | .impS2 φ' ψ' χ' m₁' m₂' _ tf tx _, .cons mD dB s' =>
+        boxInvGo fuel tf (.cons mD dB (.cons (m₂' + mD + ψ'.size)
+          (.app (m₂' + mD + ψ'.size) m₂' mD φ' ψ' tx dB (Nat.le_refl _)) s'))
+    -- the Löb detour: apply the node itself, keep peeling
+    | .diagF pm fb g K tgt tP hle, .cons mD1 d1 s' =>
+        boxInvGo fuel
+          (.app (K + mD1 + (Formula.impl (.box g (.diag g tgt)) tgt).size) K mD1
+            (.diag g tgt) (Formula.impl (.box g (.diag g tgt)) tgt)
+            (.diagF pm fb g K tgt tP hle) d1 (Nat.le_refl _)) s'
+    -- modal leaves: the gates pay the extraction
+    | .atomBoxImpl kBox p q a cert _, .cons _ _ .nil =>
+        some ⟨kBox, .atom cert, Nat.le_refl _⟩
+    | .boxMono a' b' _ φ' hab _, .cons mD dB .nil =>
+        match boxInvGo fuel dB .nil with
+        | some ⟨mc, tc, hc⟩ => some ⟨mc, tc, by omega⟩
+        | none => none
+    | .box4 a' b' _ φ' hg1 _, .cons mD dB .nil =>
+        match boxInvGo fuel dB .nil with
+        | some ⟨mc, tc, hc⟩ =>
+            some ⟨a' + (Formula.box a' φ').size,
+              .boxIntro a' _ φ' (tc.mono hc) (Nat.le_refl _), hg1⟩
+        | none => none
+    | .axK a'' b'' c'' m'' _ φ' α' tP hg1 _, .cons mD dB .nil =>
+        match boxInvGo fuel tP .nil, boxInvGo fuel dB .nil with
+        | some ⟨mP, tPc, hP⟩, some ⟨mx, txc, hx⟩ =>
+            some ⟨mP + mx + α'.size,
+              .app (mP + mx + α'.size) mP mx φ' α' tPc txc (Nat.le_refl _), by omega⟩
+        | _, _ => none
+    | .axKf a'' b'' c'' _ φ' α' hg1 _, .cons _ d1 (.cons _ d2 .nil) =>
+        match boxInvGo fuel d1 .nil, boxInvGo fuel d2 .nil with
+        | some ⟨mP, tPc, hP⟩, some ⟨mx, txc, hx⟩ =>
+            some ⟨mP + mx + α'.size,
+              .app (mP + mx + α'.size) mP mx φ' α' tPc txc (Nat.le_refl _), by omega⟩
+        | _, _ => none
+    -- shape-excluded or blocked: sound to give up (unreachability = totality's job)
+    | _, _ => none
+
+/-- Box-content extraction: any box judgment, content within the subscript — given
+    fuel. -/
+def boxInv (fuel : Nat) {m c : Nat} {ψ : Formula} (t : ProvT m (.box c ψ)) :
+    Option (BoxContent (.box c ψ)) :=
+  boxInvGo fuel t .nil
+
+/-- The isolated remaining obligation (the modest-pool rank argument's target): the
+    extractor halts on enough fuel. -/
+def BoxInvTotal : Prop :=
+  ∀ {m c : Nat} {ψ : Formula} (t : ProvT m (.box c ψ)), ∃ fuel, (boxInv fuel t).isSome
+
+/-! ## 10. The extractor RUNS — `#eval` demos on real trees.
+
+`deadJ`'s wild box (T48 §11) rebuilt as a tree, then hidden behind an `app`/`weakenImpl`
+detour: the machine navigates the spine, drops the never-needed discharge, and returns
+the content at exactly the subscript's budget. -/
+
+private def demoA : ProvT 100 PD.T48.wildA :=
+  .struct (.eqRefl PD.T48.wildQ) (by decide)
+
+private def demoImpl : ProvT 200 (.impl PD.T48.psi0 PD.T48.wildA) :=
+  .weakenImpl PD.T48.psi0 PD.T48.wildA 100 demoA (by decide)
+
+private def demoBox : ProvT 500 (.box 200 (.impl PD.T48.psi0 PD.T48.wildA)) :=
+  .boxIntro 200 500 _ demoImpl (by decide)
+
+/-- The same box behind a detour: `app (weakenImpl demoBox) demoA`. -/
+private def demoDetour : ProvT 900 (.box 200 (.impl PD.T48.psi0 PD.T48.wildA)) :=
+  .app 900 700 100 PD.T48.wildA _
+    (.weakenImpl PD.T48.wildA _ 500 demoBox (by decide)) demoA (by decide)
+
+-- Extracted content budget: the box's own subscript.
+#eval match boxInv 10 demoBox with
+  | some ⟨m', _, _⟩ => s!"direct: extracted at budget {m'}"
+  | none => "direct: out of fuel"
+
+#eval match boxInv 10 demoDetour with
+  | some ⟨m', _, _⟩ => s!"detour: extracted at budget {m'}"
+  | none => "detour: out of fuel"
+
 end PD.T49
