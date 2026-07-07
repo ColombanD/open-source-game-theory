@@ -27,16 +27,31 @@ headline API under `PD.Decidability`), and `ComputableEval/Computable.lean`'s he
 marks `evalC` HISTORICAL/superseded-by-`evalG`. Deferred to a future session: rewiring
 `proofSearch` (its right form depends on the conjecture below) and `by decide` outcome demos.
 
-**T4.1b attack launched (2026-07-03): `Research/Notes/CUT_RELEVANCE.md`** — the analysis
-and milestone plan (C0–C5). Key sharpening (C0, PROVEN in
-`Research/Spikes/transcript/T48CutRelevance.lean`): every gated premise position is
-literal-bounded at its OWN judgment (`cut_lit_bound`/`box_lit_bound`/`diag_lit_bound` via
-size-payment + `maxLitF_lt_two_pow_size`), so the tower is fed EXCLUSIVELY by size-exempt
-cut ATOMS; and the antecedent census shows every impl-producer's antecedent is
-conclusion-determined, weakening-degenerate, or chain-recursive — the conjecture reduces to
-the impl-inversion dichotomy (Lemma A) + degeneracy-elimination budget bookkeeping (Lemma B,
-the real risk; a budget-INFLATED fallback `Provable k φ ↔ ProvableG … (f k) φ` would still
-suffice for decidability).
+**T4.1b attack — the full 2026-07-03 arc: `Research/Notes/CUT_RELEVANCE.md`** (§5b has the
+milestone ledger; read §5c–§5g before touching anything). Executive summary:
+
+* **The judgment-local program is CLOSED by three kernel-checked refutations**
+  (`T48CutRelevance.lean` §9–§11): the tame trichotomy was vacuous (retracted); linked
+  variants are FALSE at box contents, guarded tails, and unguarded heads (`deadJ`, the
+  dead-implication generator). No pairwise judgment invariant can carry the conjecture.
+* **The conjecture REDUCES to atom modesty**: C0's literal bound + the compression
+  ceiling (`T49 §8`: budget-`k` boxes have subscripts `< 2^k`) + backward-tameness leave
+  ONE escalation channel — cite budgets fueled by cut atoms' fresh programs. The literal
+  half is free at `N₀ := 2^max(k, maxLitF φ) + maxLitF φ`.
+* **The TREE SUBSTRATE + EXTRACTION MACHINE** (`T49TreeSubstrate.lean`): `ProvT` mirror
+  triple with `Provable k φ ↔ Nonempty (ProvT k φ)`; `gateOK` (one tree's cut diet);
+  `tree_cutRelevance : TreeCutRelevance N₀ → CutRelevance N₀` — the official reduction.
+  `boxInvGo`: a fueled stack machine extracting box/diag contents, CORRECT BY
+  CONSTRUCTION, `#eval`-running (incl. through Löb fixpoint pairs). Kernel-checked:
+  extraction is weight-conserving, diet-preserving (unconditionally — `litGate` and
+  `modestGate` are box-content-closed), depth-conserving, and TOTAL with closed-form
+  fuel on the contraction-free fragment (`boxInv_total_of_freeS2`).
+* **The open kernel — contraction totality (D2f-b)**: `impS2` duplicates its discharge;
+  local-charge potentials are PROVABLY insufficient (linear breaks at `diagF`-promotion;
+  multiplicative and even Φ-conservation break at the `axKf` leaf — stack×stack products
+  are intrinsic to Löb/K-distribution). Routes: Tait-style computability over `ProvT`,
+  a Gentzen rank development, or per-instance fuel (the machine already semidecides;
+  concrete zoo trees can be excised by `#eval` with per-theorem certificates).
 
 **The ONE remaining open item** is the T4.1b conjecture (`CutRelevance`,
 `T42ProvableB.lean`): a computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ))

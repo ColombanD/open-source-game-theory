@@ -90,8 +90,14 @@ Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMA
   computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ)) k φ` (minimal
   derivations never need exotic cuts). Given it: `proofSearch` becomes decidable, `eval`
   computable, outcomes `by decide`. If it FAILS, `Provable` is a candidate undecidable
-  bounded-provability predicate — either resolution is thesis-grade. Evidence for: every
-  library theorem's cut diet is modest and `O(k)`-literal.
+  bounded-provability predicate — either resolution is thesis-grade. ATTACK STATE
+  (2026-07-03, see `Research/Notes/CUT_RELEVANCE.md` + `Research/Spikes/transcript/`
+  `T48`/`T49`): judgment-local invariants REFUTED (3 kernel-checked counterexamples);
+  conjecture REDUCED to atom modesty via the tree substrate (`ProvT`, exact) + the
+  extraction machine (`boxInvGo` — runs, correct by construction, weight/diet/depth-
+  conserving, total with closed-form fuel on the contraction-free fragment). Open
+  kernel: `impS2`-contraction totality (local-charge measures provably insufficient —
+  needs Tait/Gentzen machinery, or per-instance #eval certificates for zoo trees).
 
 **Dead ends (do not retry):** deciding `Provable` by structural recursion on the program
 (`DecMeasure.lean`); the `derivable`/`playsCheck` separate-gas checker; proof-term enumeration

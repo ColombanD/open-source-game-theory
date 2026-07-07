@@ -677,6 +677,17 @@ the termination formalization.
   nodes, never an `impS2`. This is the conservation input the stratified measure needs
   (the depth-indexed `Ψ_d` family is well-defined on machine runs only because depth
   cannot resurge).
+- **D2f-b status upgrade (2026-07-03, post-inlining re-check)**: the linear potential's
+  failure is DEEPER than diagF-promotion — even Φ-CONSERVATION breaks at the `axKf`
+  leaf: its result `app(r1, r2)` multiplies two STACK potentials (`Φd1·(Φd2+2)`), and a
+  premise-free leaf has only a constant node-charge to pay with. Stack×stack products
+  are intrinsic to the Löb/K-distribution patterns (`axKf` leaves and `diagF`
+  continuations). CONCLUSION: **every local-charge scheme is provably insufficient** —
+  contraction cost depends on discharged material unknown at the node. Remaining routes:
+  (i) Tait-style computability predicates over `ProvT` (the honest SN proof;
+  heavyweight); (ii) a Gentzen rank development on segment formulas; (iii) PER-INSTANCE
+  fuel — the machine already semidecides, and concrete zoo trees can be excised by
+  `#eval` with per-theorem certificates (E-grade thesis content without the SN proof).
 - **D2f-b (OPEN — the contraction case of totality)**: the only gap to full
   `BoxInvTotal`. Structural insight: every duplication of a discharge happens under a
   strictly SHALLOWER `impS2`-walker, so tower-bounded fuel (`~wt · 2^(2^D)` at nesting
