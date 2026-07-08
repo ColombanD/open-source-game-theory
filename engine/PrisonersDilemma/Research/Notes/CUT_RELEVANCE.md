@@ -1075,7 +1075,26 @@ crossing fell back (O2/O3).
   gate-repair (pool-instance gate) vs conjecture-false.
   GOAL REMAINS: prove the conjecture — the experiment chooses the provable form.
 
-- **THE TRANSPORT v2 DESIGN (2026-07-08, late — the PoolOK knot RESOLVED on paper).**
+- **THE TRANSPORT v3 REFINEMENT (2026-07-08, latest — THE POOL DROPS OUT ENTIRELY;
+  supersedes v2 below).** Closed frames are `argOKP` via `closedP` — so frames never
+  need membership at all. The walk invariant is POOL-FREE:
+  frames (me,o): `argOKP ∧ T43.modestP (RAW) ∧ maxLitP ≤ N`; run-program b:
+  `T43.modestP ∧ maxLitP ≤ N`. Descent is self-propagating: raw-modest b's
+  sim-args are argOK-ATOMIC, resolving to me / o / frozen-closed — all raw, all
+  argOKP; guards stay raw by rawness of b; cite conclusions re-gate via
+  `modestF_subst_inst` (instModest of frames from raw via monotonicity).
+  `memStep`/`closedArgs`/`PoolOK` are NOT needed in the transport — the ∈P
+  disjunct of `argOKP` is exercised only by GATE formulas, never by walks.
+  COST: one new hereditary certificate `rawAtoms` (+ `rawAtomsb` checker):
+  every atom node's formula args are RAW-modest (true of real eval-derived
+  certs; hereditary through cites like citesLE — cite-INTERNAL atoms still need
+  it since cut formulas can smuggle instance frames in adversarial trees).
+  v3 transport = v1 with (argOKP+instModest+lit) frames replaced by
+  (argOKP+rawModest+lit), hP dropped, rawAtoms threaded to the atom arms.
+  PoolOK survives only in `DAnt_instGate`'s simSt arm (where a raw-conclusion
+  variant would also kill it — optional cleanup).
+
+- **THE TRANSPORT v2 DESIGN (2026-07-08, late — superseded by v3 above).**
   Three walk-invariant facts dissolve the knot:
   1. **Frames stay raw members.** The dynamics never substitute frames with novel
      instances: a sim-step's new frame is `p.subst me o` with `p` an argOK-ATOMIC
