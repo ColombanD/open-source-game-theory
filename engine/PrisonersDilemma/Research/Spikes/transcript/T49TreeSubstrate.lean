@@ -4284,4 +4284,185 @@ theorem GoodW_mono {k m m' : Nat} {φ : Formula} (hmm : m ≤ m')
       | atomNeg p' q' b' aN m'' tc hne hle =>
           exact ⟨1, ⟨_, .atomNeg p' q' b' aN m'' tc hne (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
 
+/-- **Derivation goodness** (the struct-crossing part of the wide fundamental): every
+    iteBranch-free Derivation's struct-tree is wide-good, by structural induction on
+    the Derivation. `modusPonens` pushes (IH twice), `hypSyll` materializes
+    (`GoodW_app` + IH), censuses dive the discharge and produce atomizable atoms,
+    sim-censuses use `atomizeW_halts`. -/
+theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
+    ∀ {mm : Nat} (hd : d.size ≤ mm) (k : Nat), GoodW k (.struct d hd)
+  | _, .modusPonens φ ψ d1 d2, hfree, _, hd, k => by
+      unfold GoodW
+      intro core S hS
+      have h1 := GoodD d1 hfree.1 (Nat.le_refl _) k
+      have h2 := fun j (_ : j ≤ k) => GoodD d2 hfree.2 (Nat.le_refl _) j
+      unfold GoodW at h1
+      obtain ⟨F, r, hrun, hcont⟩ := h1 (.cons d2.size (.struct d2 (Nat.le_refl _)) .nil)
+        (by unfold GoodStackW; exact ⟨h2, by unfold GoodStackW; trivial⟩)
+      cases S with
+      | nil =>
+          rcases PD.T48.derivation_shape (Derivation.modusPonens φ ψ d1 d2) with
+            hsh | ⟨p', hp⟩ | ⟨p', q', hp⟩
+          · cases hsh with
+            | plays =>
+                refine ⟨1, ⟨_, .struct (.modusPonens _ _ d1 d2) hd⟩, rfl, ?_⟩
+                unfold ContentGoodW
+                unfold ContentGoodW at hcont
+                obtain ⟨Fa, a, ha⟩ := hcont
+                refine ⟨max (F + 1) Fa + 2, a, ?_⟩
+                simp only [atomizeGo, atomizeStruct]
+                rw [boxInvGo_fuel_mono F (max (F + 1) Fa) (by omega) _ _ hrun]
+                exact (crossFuelMono Fa (max (F + 1) Fa) (by omega)).2.2.1 _ ha
+            | impl _ =>
+                refine ⟨1, ⟨_, .struct (.modusPonens _ _ d1 d2) hd⟩, rfl, ?_⟩
+                unfold ContentGoodW
+                trivial
+          · subst hp
+            refine ⟨1, ⟨_, .struct (.modusPonens _ _ d1 d2) hd⟩, rfl, ?_⟩
+            unfold ContentGoodW
+            trivial
+          · subst hp
+            refine ⟨1, ⟨_, .struct (.modusPonens _ _ d1 d2) hd⟩, rfl, ?_⟩
+            unfold ContentGoodW
+            trivial
+      | cons mD u S' =>
+          obtain ⟨F2, r2, hrun2, hcont2⟩ := h1
+            (.cons d2.size (.struct d2 (Nat.le_refl _)) (.cons mD u S'))
+            (by unfold GoodStackW; exact ⟨h2, hS⟩)
+          exact ⟨F2 + 2, r2, hrun2, hcont2⟩
+  | _, .hypSyll φ ψ χ d1 d2, hfree, _, hd, k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          refine ⟨1, ⟨_, .struct (.hypSyll φ ψ χ d1 d2) hd⟩, rfl, ?_⟩
+          unfold ContentGoodW
+          trivial
+      | cons mD u S' =>
+          unfold GoodStackW at hS
+          have h2 := GoodD d2 hfree.2 (Nat.le_refl _) k
+          have hmat : ∀ j, j ≤ k → GoodW j
+              (ProvT.app (d1.size + mD + ψ.size) d1.size mD φ ψ
+                (.struct d1 (Nat.le_refl _)) u (Nat.le_refl _)) :=
+            fun j hj => GoodW_app (GoodD d1 hfree.1 (Nat.le_refl _) j)
+              (fun j' hj' => hS.1 j' (le_trans hj' hj)) (Nat.le_refl _)
+          unfold GoodW at h2
+          obtain ⟨F, r, hrun, hcont⟩ := h2
+            (.cons _ (.app _ d1.size mD φ ψ (.struct d1 (Nat.le_refl _)) u
+              (Nat.le_refl _)) S')
+            (by unfold GoodStackW; exact ⟨hmat, hS.2⟩)
+          exact ⟨F + 2, r, hrun, hcont⟩
+  | _, .searchBranch kk ψg a b me opnt hme, hfree, _, hd, k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          refine ⟨1, ⟨_, .struct (.searchBranch kk ψg a b me opnt hme) hd⟩, rfl, ?_⟩
+          unfold ContentGoodW
+          trivial
+      | cons mD u S' =>
+          unfold GoodStackW at hS
+          cases S' with
+          | nil =>
+              cases hme
+              have hu := hS.1 k (Nat.le_refl _)
+              unfold GoodW at hu
+              obtain ⟨F, rc, hrun, hcont⟩ := hu .nil (by unfold GoodStackW; trivial)
+              obtain ⟨mc, tc, hc⟩ := rc
+              refine ⟨F + 2, ⟨_, censusSearchBranch tc hc⟩, ?_, ?_⟩
+              · simp only [boxInvGo, structCross]
+                rw [hrun]
+                rfl
+              · unfold ContentGoodW
+                exact ⟨1, ⟨_, .mk (PlaysT.search_t (tc.mono hc) .const)
+                  (Nat.le_refl _)⟩, rfl⟩
+  | _, .botSearchStep kk ψg a b me opnt hme, hfree, _, hd, k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          refine ⟨1, ⟨_, .struct (.botSearchStep kk ψg a b me opnt hme) hd⟩, rfl, ?_⟩
+          unfold ContentGoodW
+          trivial
+      | cons mD u S' =>
+          unfold GoodStackW at hS
+          cases S' with
+          | nil =>
+              cases hme
+              have hu := hS.1 k (Nat.le_refl _)
+              unfold GoodW at hu
+              obtain ⟨F, rc, hrun, hcont⟩ := hu .nil (by unfold GoodStackW; trivial)
+              obtain ⟨mc, tc, hc⟩ := rc
+              refine ⟨F + 2, ⟨_, censusBotSearchStep tc hc⟩, ?_, ?_⟩
+              · simp only [boxInvGo, structCross]
+                rw [hrun]
+                rfl
+              · unfold ContentGoodW
+                exact ⟨1, ⟨_, .mk (.bot (PlaysT.search_t (tc.mono hc) .const))
+                  (Nat.le_refl _)⟩, rfl⟩
+  | _, .simStep me p q opnt a hme, hfree, _, hd, k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          refine ⟨1, ⟨_, .struct (.simStep me p q opnt a hme) hd⟩, rfl, ?_⟩
+          unfold ContentGoodW
+          trivial
+      | cons mD u S' =>
+          unfold GoodStackW at hS
+          cases S' with
+          | nil =>
+              cases hme
+              obtain ⟨Fa, ⟨k', cert⟩, ha⟩ :=
+                atomizeW_halts u (hS.1 0 (Nat.zero_le _))
+              cases cert with
+              | mk pl hn =>
+                  refine ⟨Fa + 2, ⟨_, censusSimStep pl⟩, ?_, ?_⟩
+                  · simp only [boxInvGo, structCross]
+                    rw [ha]
+                    rfl
+                  · unfold ContentGoodW
+                    exact ⟨1, ⟨_, .mk (.sim pl) (Nat.le_refl _)⟩, rfl⟩
+  | _, .botSimStep me p q opnt a hme, hfree, _, hd, k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          refine ⟨1, ⟨_, .struct (.botSimStep me p q opnt a hme) hd⟩, rfl, ?_⟩
+          unfold ContentGoodW
+          trivial
+      | cons mD u S' =>
+          unfold GoodStackW at hS
+          cases S' with
+          | nil =>
+              cases hme
+              obtain ⟨Fa, ⟨k', cert⟩, ha⟩ :=
+                atomizeW_halts u (hS.1 0 (Nat.zero_le _))
+              cases cert with
+              | mk pl hn =>
+                  refine ⟨Fa + 2, ⟨_, censusBotSimStep pl⟩, ?_, ?_⟩
+                  · simp only [boxInvGo, structCross]
+                    rw [ha]
+                    rfl
+                  · unfold ContentGoodW
+                    exact ⟨1, ⟨_, .mk (.bot (.sim pl)) (Nat.le_refl _)⟩, rfl⟩
+  | _, .iteBranchSearch_t kk z a' c0 c1 ψg me opnt hme1 hme2, hfree, _, hd, k =>
+      hfree.elim
+  | _, .eqRefl p, _, _, hd, k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          refine ⟨1, ⟨_, .struct (.eqRefl p) hd⟩, rfl, ?_⟩
+          unfold ContentGoodW
+          trivial
+  | _, .eqNeg p q hne, _, _, hd, k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          refine ⟨1, ⟨_, .struct (.eqNeg p q hne) hd⟩, rfl, ?_⟩
+          unfold ContentGoodW
+          trivial
+
 end PD.T49
