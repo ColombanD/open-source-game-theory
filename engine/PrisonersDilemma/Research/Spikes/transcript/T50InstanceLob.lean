@@ -133,7 +133,7 @@ mutual
     | .bot p => instModestP P p
     | .sim p q => argOKP P p && argOKP P q && instModestP P p && instModestP P q
     | .ite b _ p q => instModestP P b && instModestP P p && instModestP P q
-    | .search _ φ p q => instModestF P φ && instModestP P p && instModestP P q
+    | .search _ φ p q => T43.modestF φ && instModestP P p && instModestP P q
 
   def instModestF (P : List Prog) : Formula → Bool
     | .plays p q _ => argOKP P p && argOKP P q && instModestP P p && instModestP P q
@@ -149,3 +149,110 @@ def instOKb (P : List Prog) (N : Nat) (B : Formula) : Bool :=
 
 -- (d) THE REPAIRED VERDICT: does the RAW bloeb tree pass the instance gate?
 #eval s!"(d) raw tree passes INSTANCE gate: {treeD.gateOKb (instOKb [meD] kD)}"
+
+/-! ## 2. The instance-gate bricks (plan of record, item i).
+
+Structural fact the bricks encode: the RULES only ever substitute RAW stored guards
+(instances are never re-substituted), so the only subst-closure needed is
+raw-modest × pool players → instance-modest. `P` is intended as T43's `players`
+closure (finite; `step_sim` gives frame-closure). -/
+
+/-- The Prop instance gate. -/
+def instGate (P : List Prog) (N : Nat) : Formula → Prop :=
+  fun B => T42.maxLitF B ≤ N ∧ instModestF P B = true
+
+theorem instOKb_iff {P : List Prog} {N : Nat} {B : Formula} :
+    instOKb P N B = true ↔ instGate P N B := by
+  simp [instOKb, instGate, Bool.and_eq_true]
+
+/-- `argOK` positions are `argOKP` positions. -/
+theorem argOK_argOKP {P : List Prog} {p : Prog} (h : T43.argOK p = true) :
+    argOKP P p = true := by
+  simp only [T43.argOK, Bool.or_eq_true] at h
+  simp only [argOKP, Bool.or_eq_true]
+  tauto
+
+mutual
+  /-- Modesty is monotone into instance-modesty. -/
+  theorem modestP_instModestP (P : List Prog) :
+      ∀ (p : Prog), T43.modestP p = true → instModestP P p = true
+    | .const _, _ => rfl
+    | .self, _ => rfl
+    | .opp, _ => rfl
+    | .bot p, h => modestP_instModestP P p h
+    | .sim p q, h => by
+        simp only [T43.modestP, Bool.and_eq_true] at h
+        simp only [instModestP, Bool.and_eq_true]
+        exact ⟨⟨⟨argOK_argOKP h.1.1.1, argOK_argOKP h.1.1.2⟩,
+          modestP_instModestP P p h.1.2⟩, modestP_instModestP P q h.2⟩
+    | .ite b _ p q, h => by
+        simp only [T43.modestP, Bool.and_eq_true] at h
+        simp only [instModestP, Bool.and_eq_true]
+        exact ⟨⟨modestP_instModestP P b h.1.1, modestP_instModestP P p h.1.2⟩,
+          modestP_instModestP P q h.2⟩
+    | .search _ φ p q, h => by
+        simp only [T43.modestP, Bool.and_eq_true] at h
+        simp only [instModestP, Bool.and_eq_true]
+        exact ⟨⟨h.1.1, modestP_instModestP P p h.1.2⟩,
+          modestP_instModestP P q h.2⟩
+
+  theorem modestF_instModestF (P : List Prog) :
+      ∀ (φ : Formula), T43.modestF φ = true → instModestF P φ = true
+    | .plays p q _, h => by
+        simp only [T43.modestF, Bool.and_eq_true] at h
+        simp only [instModestF, Bool.and_eq_true]
+        exact ⟨⟨⟨argOK_argOKP h.1.1.1, argOK_argOKP h.1.1.2⟩,
+          modestP_instModestP P p h.1.2⟩, modestP_instModestP P q h.2⟩
+    | .impl φ ψ, h => by
+        simp only [T43.modestF, Bool.and_eq_true] at h
+        simp only [instModestF, Bool.and_eq_true]
+        exact ⟨modestF_instModestF P φ h.1, modestF_instModestF P ψ h.2⟩
+    | .neg φ, h => modestF_instModestF P φ h
+    | .box _ φ, h => modestF_instModestF P φ h
+    | .eq p q, h => by
+        simp only [T43.modestF, Bool.and_eq_true] at h
+        simp only [instModestF, Bool.and_eq_true]
+        exact ⟨⟨argOK_argOKP h.1.1, modestP_instModestP P p h.1.2⟩,
+          modestP_instModestP P q h.2⟩
+    | .diag _ φ, h => modestF_instModestF P φ h
+end
+
+/-- **The arg-resolution brick**: an `argOK` argument substituted by `argOKP`,
+    instance-modest players is instance-modest — no program recursion needed
+    (argOK args resolve atomically: to a player or frozen). -/
+theorem arg_subst_inst (P : List Prog) (u v : Prog)
+    (hu : argOKP P u = true) (hv : argOKP P v = true)
+    (hum : instModestP P u = true) (hvm : instModestP P v = true)
+    {p : Prog} (ha : T43.argOK p = true) (hm : T43.modestP p = true) :
+    argOKP P (p.subst u v) = true ∧ instModestP P (p.subst u v) = true := by
+  rcases T43.argOK_subst ha u v with h' | h' | ⟨h', _⟩
+  · rw [h']; exact ⟨hu, hum⟩
+  · rw [h']; exact ⟨hv, hvm⟩
+  · rw [h']; exact ⟨argOK_argOKP ha, modestP_instModestP P p hm⟩
+
+/-- **THE INSTANCE-SUBST BRICK (formula half)**: a raw-modest formula substituted by
+    instance-modest players is instance-modest. Recursion is on the FORMULA only —
+    raw-modest formulas hold programs exclusively at argOK-atomic positions. -/
+theorem modestF_subst_inst (P : List Prog) (u v : Prog)
+    (hu : argOKP P u = true) (hv : argOKP P v = true)
+    (hum : instModestP P u = true) (hvm : instModestP P v = true) :
+    ∀ (φ : Formula), T43.modestF φ = true → instModestF P (φ.subst u v) = true
+  | .plays p q _, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, instModestF, Bool.and_eq_true]
+      have hp := arg_subst_inst P u v hu hv hum hvm h.1.1.1 h.1.2
+      have hq := arg_subst_inst P u v hu hv hum hvm h.1.1.2 h.2
+      exact ⟨⟨⟨hp.1, hq.1⟩, hp.2⟩, hq.2⟩
+  | .impl φ ψ, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, instModestF, Bool.and_eq_true]
+      exact ⟨modestF_subst_inst P u v hu hv hum hvm φ h.1,
+        modestF_subst_inst P u v hu hv hum hvm ψ h.2⟩
+  | .neg φ, h => modestF_subst_inst P u v hu hv hum hvm φ h
+  | .box _ φ, h => modestF_subst_inst P u v hu hv hum hvm φ h
+  | .eq p q, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, instModestF, Bool.and_eq_true]
+      have hp := arg_subst_inst P u v hu hv hum hvm h.1.1 h.1.2
+      exact ⟨⟨hp.1, hp.2⟩, modestP_instModestP P q h.2⟩
+  | .diag _ φ, h => modestF_instModestF P _ h
