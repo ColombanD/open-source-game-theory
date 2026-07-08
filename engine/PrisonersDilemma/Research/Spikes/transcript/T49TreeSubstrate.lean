@@ -3411,6 +3411,48 @@ theorem boxInvGo_regate (F : Nat) {m m' : Nat} {ξ core : Formula}
           | cons _ _ _ => rfl
 
 
+/-- Re-gating is invisible at CONS stacks (every cons-arm uses only the fields). -/
+theorem boxInvGo_regate_cons (F : Nat) {m m' mD : Nat} {B rest core : Formula}
+    (hmm : m ≤ m') (t : ProvT m (.impl B rest)) (d : ProvT mD B)
+    (S' : DStack rest core) :
+    boxInvGo F (t.mono hmm) (.cons mD d S') = boxInvGo F t (.cons mD d S') := by
+  cases F with
+  | zero => simp [boxInvGo]
+  | succ F =>
+      cases t with
+      | app _ _ _ _ _ _ _ _ => rfl
+      | atom a => cases a
+      | struct d' hd => rfl
+      | searchThenSearch_t k₁ k₂ m'' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz =>
+          cases hme; rfl
+      | weakenImpl _ _ _ _ _ => rfl
+      | implTrans _ _ _ _ _ _ _ _ => rfl
+      | impS2 _ _ _ _ _ _ _ _ _ => rfl
+      | diagB _ _ _ _ _ _ _ => rfl
+      | diagF _ _ _ _ _ _ _ => rfl
+      | atomBoxImpl _ _ _ _ _ _ => rfl
+      | boxMono _ _ _ _ _ _ => rfl
+      | box4 _ _ _ _ _ _ => rfl
+      | axK _ _ _ _ _ _ _ _ _ _ => rfl
+      | axKf _ _ _ _ _ _ _ _ => rfl
+
+/-- Atomizability transports along re-gating. -/
+theorem atomize_mono {m m' : Nat} {p q : Prog} {c : Action}
+    (hmm : m ≤ m') (t : ProvT m (.plays p q c))
+    (h : ∃ (F : Nat) (a : Σ' k', AtomT k' (.plays p q c)), atomizeGo F t = some a) :
+    ∃ (F : Nat) (a : Σ' k', AtomT k' (.plays p q c)),
+      atomizeGo F (t.mono hmm) = some a := by
+  obtain ⟨F, a, ha⟩ := h
+  cases F with
+  | zero => simp [atomizeGo] at ha
+  | succ F =>
+      cases t with
+      | atom cert =>
+          cases cert with
+          | mk pl hn => exact ⟨F + 1, ⟨_, .mk pl (le_trans hn hmm)⟩, rfl⟩
+      | struct d hd => exact ⟨F + 1, a, ha⟩
+      | app K m₁ m₂ φ α f x hle => exact ⟨F + 1, a, ha⟩
+
 /-! ## 20. The normalization proof, part 2 — `Good`: the computability predicate.
 
 The §8 design's centerpiece: `Good`/`GoodStack`/`ContentGood` by well-founded mutual
