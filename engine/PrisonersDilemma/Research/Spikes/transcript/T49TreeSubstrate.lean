@@ -5711,4 +5711,124 @@ theorem DAnt_gate {N : Nat} {B C : Formula} (h : PD.T48.DAnt B C)
     (hC : modestGate N C) : modestGate N B :=
   ⟨le_trans (PD.T48.DAnt_lit h) hC.1, DAnt_modest h hC.2⟩
 
+/-! ## 28. THE TIE-DOWN — `gateOK` from cut-sites only (design: ledger 2026-07-08).
+
+Atoms are never gate-checked; every non-cut gate site is conclusion-tied (the bricks).
+So the full diet follows from: the root conclusion's gate, the app/implTrans/impS2
+CUT sites' gates, and a hereditary cap on `search_t`/`search_f` cite budgets. -/
+
+/-- The modest gate distributes over implication. -/
+theorem modestGate_impl_iff {N : Nat} {φ ψ : Formula} :
+    modestGate N (.impl φ ψ) ↔ modestGate N φ ∧ modestGate N ψ := by
+  simp only [modestGate, maxLitF, T43.modestF, Bool.and_eq_true]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨⟨by omega, h2⟩, ⟨by omega, h3⟩⟩
+  · rintro ⟨⟨h1, h2⟩, h3, h4⟩
+    exact ⟨by omega, h2, h4⟩
+
+/-- **The struct arm of the tie-down, standalone**: a Derivation whose conclusion
+    passes the gate passes at every `derivGateOK` site — mp cuts and hypSyll middles
+    are census antecedents (`DAnt_gate`); everything else is gate-free. -/
+theorem derivGateOK_of_conclusion {N : Nat} :
+    ∀ {ξ : Formula} (d : Derivation ξ), modestGate N ξ →
+    derivGateOK (modestGate N) d
+  | _, .modusPonens φ ψ d1 d2, hξ => by
+      have hcut : modestGate N φ :=
+        DAnt_gate (PD.T48.derivation_impl_ant d1) hξ
+      exact ⟨hcut, derivGateOK_of_conclusion d1 (modestGate_impl_iff.mpr ⟨hcut, hξ⟩),
+        derivGateOK_of_conclusion d2 hcut⟩
+  | _, .hypSyll φ ψ χ d1 d2, hξ => by
+      have hχ : modestGate N χ := (modestGate_impl_iff.mp hξ).2
+      have hφ : modestGate N φ := (modestGate_impl_iff.mp hξ).1
+      have hmid : modestGate N ψ :=
+        DAnt_gate (PD.T48.derivation_impl_ant d2) hχ
+      exact ⟨hmid,
+        derivGateOK_of_conclusion d1 (modestGate_impl_iff.mpr ⟨hφ, hmid⟩),
+        derivGateOK_of_conclusion d2 (modestGate_impl_iff.mpr ⟨hmid, hχ⟩)⟩
+  | _, .searchBranch _ _ _ _ _ _ _, _ => trivial
+  | _, .botSearchStep _ _ _ _ _ _ _, _ => trivial
+  | _, .simStep _ _ _ _ _ _, _ => trivial
+  | _, .botSimStep _ _ _ _ _ _, _ => trivial
+  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _, _ => trivial
+  | _, .eqRefl _, _ => trivial
+  | _, .eqNeg _ _ _, _ => trivial
+
+mutual
+  /-- Cut-sites only: the app/implTrans/impS2 premise formulas (what the excisor and
+      the middle analysis control); every other constructor recurses. -/
+  def PlaysT.cutsOK (G : Formula → Prop) :
+      {me o b : Prog} → {a : Action} → {n : Nat} → PlaysT me o b a n → Prop
+    | _, _, _, _, _, .const => True
+    | _, _, _, _, _, .self t => t.cutsOK G
+    | _, _, _, _, _, .opp t => t.cutsOK G
+    | _, _, _, _, _, .bot t => t.cutsOK G
+    | _, _, _, _, _, .sim t => t.cutsOK G
+    | _, _, _, _, _, .ite_t tb _ tp => tb.cutsOK G ∧ tp.cutsOK G
+    | _, _, _, _, _, .ite_f tb _ tq => tb.cutsOK G ∧ tq.cutsOK G
+    | _, _, _, _, _, .search_t tg tp => tg.cutsOK G ∧ tp.cutsOK G
+    | _, _, _, _, _, .search_f tr tq => tr.cutsOK G ∧ tq.cutsOK G
+
+  def AtomT.cutsOK (G : Formula → Prop) :
+      {k : Nat} → {φ : Formula} → AtomT k φ → Prop
+    | _, _, .mk t _ => t.cutsOK G
+
+  def ProvT.cutsOK (G : Formula → Prop) : {k : Nat} → {φ : Formula} → ProvT k φ → Prop
+    | _, _, .struct _ _ => True
+    | _, _, .atom t => t.cutsOK G
+    | _, _, .weakenImpl _ _ _ t _ => t.cutsOK G
+    | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.cutsOK G
+    | _, _, .implTrans _ ψ _ _ _ t1 t2 _ => G ψ ∧ t1.cutsOK G ∧ t2.cutsOK G
+    | _, _, .atomBoxImpl _ _ _ _ t _ => t.cutsOK G
+    | _, _, .boxIntro _ _ _ t _ => t.cutsOK G
+    | _, _, .app _ _ _ φ _ t1 t2 _ => G φ ∧ t1.cutsOK G ∧ t2.cutsOK G
+    | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.cutsOK G
+    | _, _, .box4 _ _ _ _ _ _ => True
+    | _, _, .diagF _ _ _ _ _ t _ => t.cutsOK G
+    | _, _, .diagB _ _ _ _ _ t _ => t.cutsOK G
+    | _, _, .axKf _ _ _ _ _ _ _ _ => True
+    | _, _, .impS2 _ ψ _ _ _ _ t1 t2 _ => G ψ ∧ t1.cutsOK G ∧ t2.cutsOK G
+    | _, _, .boxMono _ _ _ _ _ _ => True
+    | _, _, .atomNeg _ _ _ _ _ t _ _ => t.cutsOK G
+end
+
+mutual
+  /-- Hereditary cite-budget cap: every `search_t`/`search_f` guard cite anywhere in
+      the tree runs at budget `≤ M` (the interlock hypothesis, made explicit). -/
+  def PlaysT.citesLE (M : Nat) :
+      {me o b : Prog} → {a : Action} → {n : Nat} → PlaysT me o b a n → Prop
+    | _, _, _, _, _, .const => True
+    | _, _, _, _, _, .self t => t.citesLE M
+    | _, _, _, _, _, .opp t => t.citesLE M
+    | _, _, _, _, _, .bot t => t.citesLE M
+    | _, _, _, _, _, .sim t => t.citesLE M
+    | _, _, _, _, _, .ite_t tb _ tp => tb.citesLE M ∧ tp.citesLE M
+    | _, _, _, _, _, .ite_f tb _ tq => tb.citesLE M ∧ tq.citesLE M
+    | _, _, _, _, _, .search_t (k := kg) tg tp =>
+        kg ≤ M ∧ tg.citesLE M ∧ tp.citesLE M
+    | _, _, _, _, _, .search_f (m := mg) tr tq =>
+        mg ≤ M ∧ tr.citesLE M ∧ tq.citesLE M
+
+  def AtomT.citesLE (M : Nat) : {k : Nat} → {φ : Formula} → AtomT k φ → Prop
+    | _, _, .mk t _ => t.citesLE M
+
+  def ProvT.citesLE (M : Nat) : {k : Nat} → {φ : Formula} → ProvT k φ → Prop
+    | _, _, .struct _ _ => True
+    | _, _, .atom t => t.citesLE M
+    | _, _, .weakenImpl _ _ _ t _ => t.citesLE M
+    | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.citesLE M
+    | _, _, .implTrans _ _ _ _ _ t1 t2 _ => t1.citesLE M ∧ t2.citesLE M
+    | _, _, .atomBoxImpl _ _ _ _ t _ => t.citesLE M
+    | _, _, .boxIntro _ _ _ t _ => t.citesLE M
+    | _, _, .app _ _ _ _ _ t1 t2 _ => t1.citesLE M ∧ t2.citesLE M
+    | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.citesLE M
+    | _, _, .box4 _ _ _ _ _ _ => True
+    | _, _, .diagF _ _ _ _ _ t _ => t.citesLE M
+    | _, _, .diagB _ _ _ _ _ t _ => t.citesLE M
+    | _, _, .axKf _ _ _ _ _ _ _ _ => True
+    | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.citesLE M ∧ t2.citesLE M
+    | _, _, .boxMono _ _ _ _ _ _ => True
+    | _, _, .atomNeg _ _ _ _ _ t _ _ => t.citesLE M
+end
+
 end PD.T49
