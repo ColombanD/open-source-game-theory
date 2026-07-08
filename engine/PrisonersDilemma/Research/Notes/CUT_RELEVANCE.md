@@ -1075,6 +1075,30 @@ crossing fell back (O2/O3).
   gate-repair (pool-instance gate) vs conjecture-false.
   GOAL REMAINS: prove the conjecture — the experiment chooses the provable form.
 
+- **STATUS 2026-07-08 (end of day): REGRESS LEMMA PROVEN; T44–T47 REWORK SIZED.**
+  `T51Regress.lean` (root build): `cutRelevance_modestGate_false` — the
+  falsification is a THEOREM (see the file header for the proof architecture;
+  fording motives over `ProvableG.rec` — mutual-Prop structural recursion
+  stack-overflows, use the recursor with T42's binder orders). Transport v3 is
+  pool-free and landed. **THE T44–T47 instOKb REWORK PLAN** (1–2 sessions,
+  engine files, ~2300 lines affected):
+  1. T44: parametrize the six checkers + `decB` over `(Gb : Formula → Bool)`
+     and a candidate-cut enumeration `enum : Nat → List Formula` (currently
+     hardcoded `cutOKb N` + `enumFormula k`); `cutOKb`/`instOKb` become two
+     instantiations. Soundness re-proofs mechanical (chk-shapes unchanged).
+  2. T46: extend `enumFormula`'s program alphabet with the pool `P`'s members
+     (instance cuts carry pool programs at arg positions); re-prove the
+     COVERAGE lemma (every gate-passing formula within the size bound is
+     enumerated) for `instOKb` — the one real proof; space stays finite
+     (modest shapes × pool args × size bound).
+  3. T47: the stabilization pigeonhole re-run with the enlarged |SL| (the
+     measure arguments are size-generic; expect mechanical).
+  4. Then: `Decidable (ProvableG (instGate P N) k φ)` + rerun the T50 verdicts
+     through the DECIDER (decB should find the Dupoc fact — the end-to-end
+     validation of the repaired pipeline).
+  Also queued: prune dead `PoolOK`/v1-tie from T50; promote T48–T51 out of
+  spikes once the rework lands.
+
 - **v3 IMPLEMENTATION BLOCKER + THE COMPLETE FIX (2026-07-08, last entry — the
   next session's exact worklist).** Attempting v3 surfaced: (1) `PoolOK.argStep`
   is UNPROVABLE for real pools — substituting a search-MEMBER instantiates its
