@@ -5832,4 +5832,188 @@ mutual
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.citesLE M
 end
 
+/-! ## 29. Bool checkers for the tie-down hypotheses (decide-able certificates). -/
+
+mutual
+  def PlaysT.cutsOKb (Gb : Formula → Bool) :
+      {me o b : Prog} → {a : Action} → {n : Nat} → PlaysT me o b a n → Bool
+    | _, _, _, _, _, .const => true
+    | _, _, _, _, _, .self t => t.cutsOKb Gb
+    | _, _, _, _, _, .opp t => t.cutsOKb Gb
+    | _, _, _, _, _, .bot t => t.cutsOKb Gb
+    | _, _, _, _, _, .sim t => t.cutsOKb Gb
+    | _, _, _, _, _, .ite_t tb _ tp => tb.cutsOKb Gb && tp.cutsOKb Gb
+    | _, _, _, _, _, .ite_f tb _ tq => tb.cutsOKb Gb && tq.cutsOKb Gb
+    | _, _, _, _, _, .search_t tg tp => tg.cutsOKb Gb && tp.cutsOKb Gb
+    | _, _, _, _, _, .search_f tr tq => tr.cutsOKb Gb && tq.cutsOKb Gb
+
+  def AtomT.cutsOKb (Gb : Formula → Bool) :
+      {k : Nat} → {φ : Formula} → AtomT k φ → Bool
+    | _, _, .mk t _ => t.cutsOKb Gb
+
+  def ProvT.cutsOKb (Gb : Formula → Bool) :
+      {k : Nat} → {φ : Formula} → ProvT k φ → Bool
+    | _, _, .struct _ _ => true
+    | _, _, .atom t => t.cutsOKb Gb
+    | _, _, .weakenImpl _ _ _ t _ => t.cutsOKb Gb
+    | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.cutsOKb Gb
+    | _, _, .implTrans _ ψ _ _ _ t1 t2 _ => Gb ψ && t1.cutsOKb Gb && t2.cutsOKb Gb
+    | _, _, .atomBoxImpl _ _ _ _ t _ => t.cutsOKb Gb
+    | _, _, .boxIntro _ _ _ t _ => t.cutsOKb Gb
+    | _, _, .app _ _ _ φ _ t1 t2 _ => Gb φ && t1.cutsOKb Gb && t2.cutsOKb Gb
+    | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.cutsOKb Gb
+    | _, _, .box4 _ _ _ _ _ _ => true
+    | _, _, .diagF _ _ _ _ _ t _ => t.cutsOKb Gb
+    | _, _, .diagB _ _ _ _ _ t _ => t.cutsOKb Gb
+    | _, _, .axKf _ _ _ _ _ _ _ _ => true
+    | _, _, .impS2 _ ψ _ _ _ _ t1 t2 _ => Gb ψ && t1.cutsOKb Gb && t2.cutsOKb Gb
+    | _, _, .boxMono _ _ _ _ _ _ => true
+    | _, _, .atomNeg _ _ _ _ _ t _ _ => t.cutsOKb Gb
+end
+
+mutual
+  theorem PlaysT.cutsOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
+      (hGb : ∀ B, Gb B = true → G B) {me o b : Prog} {a : Action} {n : Nat} :
+      (t : PlaysT me o b a n) → t.cutsOKb Gb = true → t.cutsOK G
+    | .const, _ => trivial
+    | .self t, h => t.cutsOKb_sound hGb h
+    | .opp t, h => t.cutsOKb_sound hGb h
+    | .bot t, h => t.cutsOKb_sound hGb h
+    | .sim t, h => t.cutsOKb_sound hGb h
+    | .ite_t tb _ tp, h => by
+        simp only [PlaysT.cutsOKb, Bool.and_eq_true] at h
+        exact ⟨tb.cutsOKb_sound hGb h.1, tp.cutsOKb_sound hGb h.2⟩
+    | .ite_f tb _ tq, h => by
+        simp only [PlaysT.cutsOKb, Bool.and_eq_true] at h
+        exact ⟨tb.cutsOKb_sound hGb h.1, tq.cutsOKb_sound hGb h.2⟩
+    | .search_t tg tp, h => by
+        simp only [PlaysT.cutsOKb, Bool.and_eq_true] at h
+        exact ⟨tg.cutsOKb_sound hGb h.1, tp.cutsOKb_sound hGb h.2⟩
+    | .search_f tr tq, h => by
+        simp only [PlaysT.cutsOKb, Bool.and_eq_true] at h
+        exact ⟨tr.cutsOKb_sound hGb h.1, tq.cutsOKb_sound hGb h.2⟩
+
+  theorem AtomT.cutsOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
+      (hGb : ∀ B, Gb B = true → G B) {k : Nat} {φ : Formula} :
+      (t : AtomT k φ) → t.cutsOKb Gb = true → t.cutsOK G
+    | .mk t _, h => t.cutsOKb_sound hGb h
+
+  theorem ProvT.cutsOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
+      (hGb : ∀ B, Gb B = true → G B) {k : Nat} {φ : Formula} :
+      (t : ProvT k φ) → t.cutsOKb Gb = true → t.cutsOK G
+    | .struct _ _, _ => trivial
+    | .atom t, h => t.cutsOKb_sound hGb h
+    | .weakenImpl _ _ _ t _, h => t.cutsOKb_sound hGb h
+    | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _, h => t.cutsOKb_sound hGb h
+    | .implTrans _ ψ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.cutsOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1.1, t1.cutsOKb_sound hGb h.1.2, t2.cutsOKb_sound hGb h.2⟩
+    | .atomBoxImpl _ _ _ _ t _, h => t.cutsOKb_sound hGb h
+    | .boxIntro _ _ _ t _, h => t.cutsOKb_sound hGb h
+    | .app _ _ _ φ _ t1 t2 _, h => by
+        simp only [ProvT.cutsOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1.1, t1.cutsOKb_sound hGb h.1.2, t2.cutsOKb_sound hGb h.2⟩
+    | .axK _ _ _ _ _ _ _ t _ _, h => t.cutsOKb_sound hGb h
+    | .box4 _ _ _ _ _ _, _ => trivial
+    | .diagF _ _ _ _ _ t _, h => t.cutsOKb_sound hGb h
+    | .diagB _ _ _ _ _ t _, h => t.cutsOKb_sound hGb h
+    | .axKf _ _ _ _ _ _ _ _, _ => trivial
+    | .impS2 _ ψ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.cutsOKb, Bool.and_eq_true] at h
+        exact ⟨hGb _ h.1.1, t1.cutsOKb_sound hGb h.1.2, t2.cutsOKb_sound hGb h.2⟩
+    | .boxMono _ _ _ _ _ _, _ => trivial
+    | .atomNeg _ _ _ _ _ t _ _, h => t.cutsOKb_sound hGb h
+end
+
+mutual
+  def PlaysT.citesLEb (M : Nat) :
+      {me o b : Prog} → {a : Action} → {n : Nat} → PlaysT me o b a n → Bool
+    | _, _, _, _, _, .const => true
+    | _, _, _, _, _, .self t => t.citesLEb M
+    | _, _, _, _, _, .opp t => t.citesLEb M
+    | _, _, _, _, _, .bot t => t.citesLEb M
+    | _, _, _, _, _, .sim t => t.citesLEb M
+    | _, _, _, _, _, .ite_t tb _ tp => tb.citesLEb M && tp.citesLEb M
+    | _, _, _, _, _, .ite_f tb _ tq => tb.citesLEb M && tq.citesLEb M
+    | _, _, _, _, _, .search_t (k := kg) tg tp =>
+        decide (kg ≤ M) && tg.citesLEb M && tp.citesLEb M
+    | _, _, _, _, _, .search_f (m := mg) tr tq =>
+        decide (mg ≤ M) && tr.citesLEb M && tq.citesLEb M
+
+  def AtomT.citesLEb (M : Nat) : {k : Nat} → {φ : Formula} → AtomT k φ → Bool
+    | _, _, .mk t _ => t.citesLEb M
+
+  def ProvT.citesLEb (M : Nat) : {k : Nat} → {φ : Formula} → ProvT k φ → Bool
+    | _, _, .struct _ _ => true
+    | _, _, .atom t => t.citesLEb M
+    | _, _, .weakenImpl _ _ _ t _ => t.citesLEb M
+    | _, _, .searchThenSearch_t _ k₂ _ _ _ _ _ _ _ _ _ t _ _ =>
+        decide (k₂ ≤ M) && t.citesLEb M
+    | _, _, .implTrans _ _ _ _ _ t1 t2 _ => t1.citesLEb M && t2.citesLEb M
+    | _, _, .atomBoxImpl _ _ _ _ t _ => t.citesLEb M
+    | _, _, .boxIntro _ _ _ t _ => t.citesLEb M
+    | _, _, .app _ _ _ _ _ t1 t2 _ => t1.citesLEb M && t2.citesLEb M
+    | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.citesLEb M
+    | _, _, .box4 _ _ _ _ _ _ => true
+    | _, _, .diagF _ _ _ _ _ t _ => t.citesLEb M
+    | _, _, .diagB _ _ _ _ _ t _ => t.citesLEb M
+    | _, _, .axKf _ _ _ _ _ _ _ _ => true
+    | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.citesLEb M && t2.citesLEb M
+    | _, _, .boxMono _ _ _ _ _ _ => true
+    | _, _, .atomNeg _ _ _ _ _ t _ _ => t.citesLEb M
+end
+
+mutual
+  theorem PlaysT.citesLEb_sound {M : Nat} {me o b : Prog} {a : Action} {n : Nat} :
+      (t : PlaysT me o b a n) → t.citesLEb M = true → t.citesLE M
+    | .const, _ => trivial
+    | .self t, h => t.citesLEb_sound h
+    | .opp t, h => t.citesLEb_sound h
+    | .bot t, h => t.citesLEb_sound h
+    | .sim t, h => t.citesLEb_sound h
+    | .ite_t tb _ tp, h => by
+        simp only [PlaysT.citesLEb, Bool.and_eq_true] at h
+        exact ⟨tb.citesLEb_sound h.1, tp.citesLEb_sound h.2⟩
+    | .ite_f tb _ tq, h => by
+        simp only [PlaysT.citesLEb, Bool.and_eq_true] at h
+        exact ⟨tb.citesLEb_sound h.1, tq.citesLEb_sound h.2⟩
+    | .search_t tg tp, h => by
+        simp only [PlaysT.citesLEb, Bool.and_eq_true, decide_eq_true_eq] at h
+        exact ⟨h.1.1, tg.citesLEb_sound h.1.2, tp.citesLEb_sound h.2⟩
+    | .search_f tr tq, h => by
+        simp only [PlaysT.citesLEb, Bool.and_eq_true, decide_eq_true_eq] at h
+        exact ⟨h.1.1, tr.citesLEb_sound h.1.2, tq.citesLEb_sound h.2⟩
+
+  theorem AtomT.citesLEb_sound {M : Nat} {k : Nat} {φ : Formula} :
+      (t : AtomT k φ) → t.citesLEb M = true → t.citesLE M
+    | .mk t _, h => t.citesLEb_sound h
+
+  theorem ProvT.citesLEb_sound {M : Nat} {k : Nat} {φ : Formula} :
+      (t : ProvT k φ) → t.citesLEb M = true → t.citesLE M
+    | .struct _ _, _ => trivial
+    | .atom t, h => t.citesLEb_sound h
+    | .weakenImpl _ _ _ t _, h => t.citesLEb_sound h
+    | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _, h => by
+        simp only [ProvT.citesLEb, Bool.and_eq_true, decide_eq_true_eq] at h
+        exact ⟨h.1, t.citesLEb_sound h.2⟩
+    | .implTrans _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.citesLEb, Bool.and_eq_true] at h
+        exact ⟨t1.citesLEb_sound h.1, t2.citesLEb_sound h.2⟩
+    | .atomBoxImpl _ _ _ _ t _, h => t.citesLEb_sound h
+    | .boxIntro _ _ _ t _, h => t.citesLEb_sound h
+    | .app _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.citesLEb, Bool.and_eq_true] at h
+        exact ⟨t1.citesLEb_sound h.1, t2.citesLEb_sound h.2⟩
+    | .axK _ _ _ _ _ _ _ t _ _, h => t.citesLEb_sound h
+    | .box4 _ _ _ _ _ _, _ => trivial
+    | .diagF _ _ _ _ _ t _, h => t.citesLEb_sound h
+    | .diagB _ _ _ _ _ t _, h => t.citesLEb_sound h
+    | .axKf _ _ _ _ _ _ _ _, _ => trivial
+    | .impS2 _ _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.citesLEb, Bool.and_eq_true] at h
+        exact ⟨t1.citesLEb_sound h.1, t2.citesLEb_sound h.2⟩
+    | .boxMono _ _ _ _ _ _, _ => trivial
+    | .atomNeg _ _ _ _ _ t _ _, h => t.citesLEb_sound h
+end
+
 end PD.T49
