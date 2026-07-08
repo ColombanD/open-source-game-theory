@@ -4527,4 +4527,345 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
           unfold ContentGoodW
           trivial
 
+/-- Cumulative determinism, wide: a box discharge wide-good at all levels `≤ k` yields
+    its ONE content wide-good at all levels `≤ k - 1`. -/
+theorem GoodW_box_levels {k mD c : Nat} {ψ : Formula} {dB : ProvT mD (.box c ψ)}
+    (hk : 1 ≤ k) (hd : ∀ j, j ≤ k → GoodW j dB) {F : Nat} {r : CoreContent (.box c ψ)}
+    (hrun : boxInvGo F dB .nil = some r) :
+    ∀ j, j ≤ k - 1 → GoodW j r.2.1 := by
+  intro j hj
+  have h1 := hd (j + 1) (by omega)
+  unfold GoodW at h1
+  obtain ⟨F', r', hrun', hcont'⟩ := h1 .nil (by unfold GoodStackW; trivial)
+  have hdet := boxInvGo_det hrun' hrun
+  subst hdet
+  unfold ContentGoodW at hcont'
+  exact hcont' (by omega)
+
+/-- **THE WIDE FUNDAMENTAL LEMMA**: every well-typed, iteBranch-free tree is wide-good
+    at every level — the machine halts against ARBITRARY wide-good stacks (general
+    cores admitted at nil), with atomizable plays-contents. The struct arm delegates to
+    `GoodD`; formerly-vacuous nil arms are identity returns; `box4`'s inner transport
+    goes through `GoodW_mono` (no core-typed regate needed). This is the excisor's
+    crossing-totality engine. -/
+theorem fundamentalW : {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → t.dbFree →
+    ∀ (k : Nat), GoodW k t
+  | _, _, .struct d hd => fun hfree k => GoodD d hfree hd k
+  | _, _, .atom a => fun _ k => by
+      cases a with
+      | mk pl hn =>
+          unfold GoodW
+          intro core S hS
+          cases S with
+          | nil =>
+              refine ⟨1, ⟨_, .atom (.mk pl hn)⟩, rfl, ?_⟩
+              unfold ContentGoodW
+              exact ⟨1, ⟨_, .mk pl hn⟩, rfl⟩
+  | _, _, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz =>
+      fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm
+            hsz⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | cons mD u s' =>
+          unfold GoodStackW at hS
+          cases s' with
+          | nil =>
+              cases hme
+              have hu := hS.1 k (Nat.le_refl _)
+              unfold GoodW at hu
+              obtain ⟨F, rc, hrun, hcont⟩ := hu .nil (by unfold GoodStackW; trivial)
+              obtain ⟨mc, tc, hc⟩ := rc
+              refine ⟨F + 1, ⟨_, censusSTS tw hm tc hc⟩, ?_, ?_⟩
+              · simp only [boxInvGo]
+                rw [hrun]
+              · unfold ContentGoodW
+                exact ⟨1, ⟨_, .mk (PlaysT.search_t (tc.mono hc)
+                    (PlaysT.search_t (tw.mono hm) .const)) (Nat.le_refl _)⟩, rfl⟩
+  | _, _, .atomNeg p q b aN m' tc hne hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .atomNeg p q b aN m' tc hne hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+  | _, _, .weakenImpl φ' ψ' m' tw hle => fun hfree k => by
+      have htw := fundamentalW tw hfree
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .weakenImpl φ' ψ' m' tw hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD d s' =>
+          unfold GoodStackW at hS
+          have := htw k
+          unfold GoodW at this
+          obtain ⟨fuel, r, hrun, hcont⟩ := this s' hS.2
+          exact ⟨fuel + 1, r, hrun, hcont⟩
+  | _, _, .app K m₁ m₂ φ' α f x hle => fun hfree k => by
+      have hf := fundamentalW f hfree.1
+      have hx := fundamentalW x hfree.2
+      exact GoodW_app (hf k) (fun j _ => hx j) hle
+  | _, _, .implTrans φ' ψmid χ' a b tA tB hle => fun hfree k => by
+      have hA := fundamentalW tA hfree.1
+      have hB := fundamentalW tB hfree.2
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .implTrans φ' ψmid χ' a b tA tB hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD dB s' =>
+          unfold GoodStackW at hS
+          have hmat : ∀ j, j ≤ k →
+              GoodW j (ProvT.app (a + mD + ψmid.size) a mD φ' ψmid tA dB
+                (Nat.le_refl _)) :=
+            fun j hj => GoodW_app (hA j)
+              (fun j' hj' => hS.1 j' (le_trans hj' hj)) (Nat.le_refl _)
+          have := hB k
+          unfold GoodW at this
+          obtain ⟨fuel, r, hrun, hcont⟩ := this
+            (.cons _ (.app _ a mD φ' ψmid tA dB (Nat.le_refl _)) s')
+            (by unfold GoodStackW; exact ⟨hmat, hS.2⟩)
+          exact ⟨fuel + 1, r, hrun, hcont⟩
+  | _, _, .impS2 φ' ψ' χ' m₁' m₂' K tf tx hle => fun hfree k => by
+      have hf := fundamentalW tf hfree.1
+      have hx := fundamentalW tx hfree.2
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .impS2 φ' ψ' χ' m₁' m₂' K tf tx hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD dB s' =>
+          unfold GoodStackW at hS
+          have hmat : ∀ j, j ≤ k →
+              GoodW j (ProvT.app (m₂' + mD + ψ'.size) m₂' mD φ' ψ' tx dB
+                (Nat.le_refl _)) :=
+            fun j hj => GoodW_app (hx j)
+              (fun j' hj' => hS.1 j' (le_trans hj' hj)) (Nat.le_refl _)
+          have := hf k
+          unfold GoodW at this
+          obtain ⟨fuel, r, hrun, hcont⟩ := this
+            (.cons mD dB (.cons _ (.app _ m₂' mD φ' ψ' tx dB (Nat.le_refl _)) s'))
+            (by unfold GoodStackW; exact ⟨hS.1, by unfold GoodStackW; exact ⟨hmat, hS.2⟩⟩)
+          exact ⟨fuel + 1, r, hrun, hcont⟩
+  | _, _, .boxIntro kIn K φ' tc hle => fun hfree k => by
+      have htc := fundamentalW tc hfree
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          refine ⟨1, ⟨kIn, tc, Nat.le_refl _⟩, rfl, ?_⟩
+          unfold ContentGoodW
+          exact fun _ => htc (k - 1)
+  | _, _, .diagB pm fb g K tgt tP hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .diagB pm fb g K tgt tP hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD d s' =>
+          unfold GoodStackW at hS
+          cases s' with
+          | nil =>
+              refine ⟨1, ⟨mD, d⟩, rfl, ?_⟩
+              unfold ContentGoodW
+              exact hS.1 k (Nat.le_refl _)
+  | _, _, .diagF pm fb g K tgt tP hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .diagF pm fb g K tgt tP hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD1 d1 s' =>
+          unfold GoodStackW at hS
+          cases s' with
+          | nil =>
+              have hd1 := hS.1 k (Nat.le_refl _)
+              unfold GoodW at hd1
+              obtain ⟨F₁, rx, hrun1, hcont1⟩ := hd1
+                (.nil : DStack (.diag g tgt) (.diag g tgt))
+                (by unfold GoodStackW; trivial)
+              obtain ⟨mx, x⟩ := rx
+              refine ⟨F₁ + 1, ⟨mx, x⟩, ?_, by unfold ContentGoodW; trivial⟩
+              simp only [boxInvGo]
+              rw [hrun1]
+          | cons mD2 d2 s'' =>
+              have hd1 := hS.1 k (Nat.le_refl _)
+              unfold GoodW at hd1
+              obtain ⟨F₁, rx, hrun1, hcont1⟩ := hd1
+                (.nil : DStack (.diag g tgt) (.diag g tgt))
+                (by unfold GoodStackW; trivial)
+              unfold ContentGoodW at hcont1
+              obtain ⟨mx, x⟩ := rx
+              have hx := hcont1
+              unfold GoodW at hx
+              obtain ⟨F₂, r, hrun2, hcont2⟩ := hx (.cons mD2 d2 s'') hS.2
+              refine ⟨max F₁ F₂ + 1, r, ?_, hcont2⟩
+              simp only [boxInvGo]
+              rw [boxInvGo_fuel_mono F₁ (max F₁ F₂) (Nat.le_max_left _ _) d1 .nil hrun1]
+              exact boxInvGo_fuel_mono F₂ (max F₁ F₂) (Nat.le_max_right _ _) x _ hrun2
+  | _, _, .atomBoxImpl kBox p q a cert hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .atomBoxImpl kBox p q a cert hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD d s' =>
+          cases s' with
+          | nil =>
+              refine ⟨1, ⟨kBox, .atom cert, Nat.le_refl _⟩, rfl, ?_⟩
+              unfold ContentGoodW
+              intro _
+              unfold GoodW
+              intro core' S' hS'
+              cases S' with
+              | nil =>
+                  refine ⟨1, ⟨_, .atom cert⟩, rfl, ?_⟩
+                  unfold ContentGoodW
+                  exact ⟨1, ⟨_, cert⟩, rfl⟩
+  | _, _, .boxMono a' b' K φ' hab hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .boxMono a' b' K φ' hab hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD dB s' =>
+          unfold GoodStackW at hS
+          cases s' with
+          | nil =>
+              have hd := hS.1 k (Nat.le_refl _)
+              unfold GoodW at hd
+              obtain ⟨F, rc, hrun, hcont⟩ := hd
+                (.nil : DStack (.box a' φ') (.box a' φ'))
+                (by unfold GoodStackW; trivial)
+              unfold ContentGoodW at hcont
+              obtain ⟨mc, tc, hcc⟩ := rc
+              refine ⟨F + 1, ⟨mc, tc, by omega⟩, ?_, ?_⟩
+              · simp only [boxInvGo]
+                rw [hrun]
+              · unfold ContentGoodW
+                exact hcont
+  | _, _, .box4 a' b' K φ' hg1 hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .box4 a' b' K φ' hg1 hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD dB s' =>
+          unfold GoodStackW at hS
+          cases s' with
+          | nil =>
+              have hd := hS.1 k (Nat.le_refl _)
+              unfold GoodW at hd
+              obtain ⟨F, rc, hrun, hcont⟩ := hd
+                (.nil : DStack (.box a' φ') (.box a' φ'))
+                (by unfold GoodStackW; trivial)
+              unfold ContentGoodW at hcont
+              obtain ⟨mc, tc, hcc⟩ := rc
+              refine ⟨F + 1,
+                ⟨a' + (Formula.box a' φ').size,
+                  .boxIntro a' _ φ' (tc.mono hcc) (Nat.le_refl _), hg1⟩, ?_, ?_⟩
+              · simp only [boxInvGo]
+                rw [hrun]
+              · unfold ContentGoodW
+                intro hk
+                unfold GoodW
+                intro core' S' hS'
+                cases S' with
+                | nil =>
+                    refine ⟨1, ⟨a', tc.mono hcc, Nat.le_refl _⟩, rfl, ?_⟩
+                    unfold ContentGoodW
+                    intro hk1
+                    exact GoodW_mono hcc tc
+                      (GoodW_box_levels hk hS.1 hrun (k - 1 - 1) (by omega))
+  | _, _, .axK a'' b'' c'' m'' K φ' α' tP hg1 hle => fun hfree k => by
+      have htP := fundamentalW tP hfree
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .axK a'' b'' c'' m'' K φ' α' tP hg1 hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD dB s' =>
+          unfold GoodStackW at hS
+          cases s' with
+          | nil =>
+              have h1 := htP k
+              unfold GoodW at h1
+              obtain ⟨F₁, rP, hrun1, hcont1⟩ := h1
+                (.nil : DStack (.box a'' (.impl φ' α')) _)
+                (by unfold GoodStackW; trivial)
+              have hd := hS.1 k (Nat.le_refl _)
+              unfold GoodW at hd
+              obtain ⟨F₂, rx, hrun2, hcont2⟩ := hd
+                (.nil : DStack (.box b'' φ') _)
+                (by unfold GoodStackW; trivial)
+              unfold ContentGoodW at hcont1 hcont2
+              obtain ⟨mP, tPc, hPle⟩ := rP
+              obtain ⟨mx, txc, hxle⟩ := rx
+              refine ⟨max F₁ F₂ + 1,
+                ⟨mP + mx + α'.size,
+                  .app _ mP mx φ' α' tPc txc (Nat.le_refl _), by omega⟩, ?_, ?_⟩
+              · simp only [boxInvGo]
+                rw [boxInvGo_fuel_mono F₁ (max F₁ F₂) (Nat.le_max_left _ _) tP .nil
+                    hrun1,
+                  boxInvGo_fuel_mono F₂ (max F₁ F₂) (Nat.le_max_right _ _) dB .nil
+                    hrun2]
+              · unfold ContentGoodW
+                intro hk
+                exact GoodW_app (hcont1 hk) (GoodW_box_levels hk hS.1 hrun2)
+                  (Nat.le_refl _)
+  | _, _, .axKf a'' b'' c'' K φ' α' hg1 hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .axKf a'' b'' c'' K φ' α' hg1 hle⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | cons mD1 d1 s' =>
+          unfold GoodStackW at hS
+          cases s' with
+          | nil =>
+              exact ⟨1, ⟨_, .axK a'' b'' c'' mD1 _ φ' α' d1 hg1 (Nat.le_refl _)⟩, rfl,
+                by unfold ContentGoodW; trivial⟩
+          | cons mD2 d2 s'' =>
+              cases s'' with
+              | nil =>
+                  have hd1 := hS.1 k (Nat.le_refl _)
+                  unfold GoodW at hd1
+                  obtain ⟨F₁, rP, hrun1, hcont1⟩ := hd1
+                    (.nil : DStack (.box a'' (.impl φ' α')) _)
+                    (by unfold GoodStackW; trivial)
+                  unfold GoodStackW at hS
+                  have hd2 := hS.2.1 k (Nat.le_refl _)
+                  unfold GoodW at hd2
+                  obtain ⟨F₂, rx, hrun2, hcont2⟩ := hd2
+                    (.nil : DStack (.box b'' φ') _)
+                    (by unfold GoodStackW; trivial)
+                  unfold ContentGoodW at hcont1 hcont2
+                  obtain ⟨mP, tPc, hPle⟩ := rP
+                  obtain ⟨mx, txc, hxle⟩ := rx
+                  refine ⟨max F₁ F₂ + 1,
+                    ⟨mP + mx + α'.size,
+                      .app _ mP mx φ' α' tPc txc (Nat.le_refl _), by omega⟩, ?_, ?_⟩
+                  · simp only [boxInvGo]
+                    rw [boxInvGo_fuel_mono F₁ (max F₁ F₂) (Nat.le_max_left _ _) d1
+                        .nil hrun1,
+                      boxInvGo_fuel_mono F₂ (max F₁ F₂) (Nat.le_max_right _ _) d2
+                        .nil hrun2]
+                  · unfold ContentGoodW
+                    intro hk
+                    exact GoodW_app (hcont1 hk) (GoodW_box_levels hk hS.2.1 hrun2)
+                      (Nat.le_refl _)
+
 end PD.T49
