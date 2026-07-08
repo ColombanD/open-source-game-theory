@@ -4204,4 +4204,84 @@ theorem atomizeW_halts {m : Nat} {p q : Prog} {c : Action}
           rw [show boxInvGo (max (F + 1) Fa) f (.cons m₂ x .nil) = some r from hb]
           exact (crossFuelMono Fa (max (F + 1) Fa) (Nat.le_max_right _ _)).2.2.1 _ ha
 
+/-- Wide goodness transports along re-gating: cons-stacks by `regate_cons`; nil-stacks
+    by per-constructor analysis (identity arms return the mono tree — fresh content;
+    computing arms are field-identical — reuse the run). -/
+theorem GoodW_mono {k m m' : Nat} {φ : Formula} (hmm : m ≤ m')
+    (t : ProvT m φ) (h : GoodW k t) : GoodW k (t.mono hmm) := by
+  unfold GoodW at h ⊢
+  intro core S hS
+  obtain ⟨F, r, hrun, hcont⟩ := h S hS
+  cases S with
+  | cons mD d S' =>
+      exact ⟨F, r, by rw [boxInvGo_regate_cons]; exact hrun, hcont⟩
+  | nil =>
+      cases t with
+      | boxIntro kIn K ψ tc hle =>
+          cases F with
+          | zero => simp [boxInvGo] at hrun
+          | succ F => exact ⟨F + 1, r, hrun, hcont⟩
+      | app K m₁ m₂ ψ α f x hle =>
+          cases F with
+          | zero => simp [boxInvGo] at hrun
+          | succ F => exact ⟨F + 1, r, hrun, hcont⟩
+      | atom a =>
+          cases a with
+          | mk pl hn =>
+              refine ⟨1, ⟨_, .atom (.mk pl (le_trans hn hmm))⟩, rfl, ?_⟩
+              unfold ContentGoodW
+              exact ⟨1, ⟨_, .mk pl (le_trans hn hmm)⟩, rfl⟩
+      | struct d hd =>
+          cases F with
+          | zero => simp [boxInvGo] at hrun
+          | succ F =>
+              rcases PD.T48.derivation_shape d with hsh | ⟨p', hp⟩ | ⟨p', q', hp⟩
+              · cases hsh with
+                | plays =>
+                    simp only [boxInvGo, mkSelf] at hrun
+                    cases hrun
+                    refine ⟨1, ⟨_, .struct d (le_trans hd hmm)⟩, rfl, ?_⟩
+                    unfold ContentGoodW at hcont ⊢
+                    obtain ⟨Fa, a, ha⟩ := hcont
+                    cases Fa with
+                    | zero => simp [atomizeGo] at ha
+                    | succ Fa => exact ⟨Fa + 1, a, ha⟩
+                | impl _ =>
+                    simp only [boxInvGo, mkSelf] at hrun
+                    cases hrun
+                    exact ⟨1, ⟨_, .struct d (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+              · subst hp
+                simp only [boxInvGo, mkSelf] at hrun
+                cases hrun
+                exact ⟨1, ⟨_, .struct d (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+              · subst hp
+                simp only [boxInvGo, mkSelf] at hrun
+                cases hrun
+                exact ⟨1, ⟨_, .struct d (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | weakenImpl ψ ψ' m'' tw hle =>
+          exact ⟨1, ⟨_, .weakenImpl ψ ψ' m'' tw (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | implTrans ψ ψm χ a b t1 t2 hle =>
+          exact ⟨1, ⟨_, .implTrans ψ ψm χ a b t1 t2 (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | impS2 ψ ψ' χ m₁ m₂ K t1 t2 hle =>
+          exact ⟨1, ⟨_, .impS2 ψ ψ' χ m₁ m₂ _ t1 t2 (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | searchThenSearch_t k₁ k₂ m'' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz =>
+          exact ⟨1, ⟨_, .searchThenSearch_t k₁ k₂ m'' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm
+            (le_trans hsz hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | atomBoxImpl kB p' q' a' cert hle =>
+          exact ⟨1, ⟨_, .atomBoxImpl kB p' q' a' cert (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | boxMono a' b' K ψ hab hle =>
+          exact ⟨1, ⟨_, .boxMono a' b' _ ψ hab (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | box4 a' b' K ψ hg1 hle =>
+          exact ⟨1, ⟨_, .box4 a' b' _ ψ hg1 (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | axK a' b' c' m'' K ψ α tP hg1 hle =>
+          exact ⟨1, ⟨_, .axK a' b' c' m'' _ ψ α tP hg1 (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | axKf a' b' c' K ψ α hg1 hle =>
+          exact ⟨1, ⟨_, .axKf a' b' c' _ ψ α hg1 (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | diagF pm fb g K tgt tP hle =>
+          exact ⟨1, ⟨_, .diagF pm fb g _ tgt tP (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | diagB pm fb g K tgt tP hle =>
+          exact ⟨1, ⟨_, .diagB pm fb g _ tgt tP (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | atomNeg p' q' b' aN m'' tc hne hle =>
+          exact ⟨1, ⟨_, .atomNeg p' q' b' aN m'' tc hne (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+
 end PD.T49
