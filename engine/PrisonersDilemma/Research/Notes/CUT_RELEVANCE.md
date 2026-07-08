@@ -947,7 +947,34 @@ crossing fell back (O2/O3).
   box-shaped and conclusion-tied. The general dichotomy/bracket-abstraction machinery
   is NOT needed for the thesis-grade zoo statement; keep it as the route for full
   generality.
-- **O5 (the pool lemma proper).** Census outputs: programs are subst-instances of
+- **O5 SITE INVENTORY (2026-07-08, verified against the actual defs — supersedes the
+  sketch below).** The assembly = proving `certifyExcised rounds fuel N₀ t = some _`
+  for modest roots. The final check is `gateOKb (cutOKb N₀)` on the survivor; the
+  obligation decomposes over the gate sites of `ProvT.gateOK`/`derivGateOK`:
+  1. **`app` cuts `G φ`** — by the FIXPOINT (needs the progress lemma: each wild fire
+     strictly reduces wt via `crossWtLt` + halts via `crossTotalW`, so wt-many rounds
+     suffice; excision of subtrees with their own wild cuts iterates outside-in).
+  2. **`axK` premise `G (.box a (.impl φ α))`** — DONE: `modestGate_axK_tied` (T49,
+     kernel-checked): fully conclusion-tied, `maxLitF` counts box subscripts and
+     `hg1 : a+b+α.size ≤ c` bounds the premise subscript.
+  3. **`diagF/diagB` gates `G (.impl (.box fb tgt) tgt)`** — `modestGate_diag_tied`
+     (T49, kernel-checked): tied modulo `fb ≤ N` — the ONE literal-half consumer at
+     the ProvT level (fb = the stored Löb premise's subscript, bounded by its budget
+     via compression-ceiling/C0).
+  4. **`implTrans`/`impS2` middles `G ψ`** — the zoo-scoped middle argument (one
+     impl-shape; see the middle-elimination design above).
+  5. **`derivGateOK`: `modusPonens` cuts `G φ` and `hypSyll` middles `G ψ`** — NEW
+     SITES not in the original O5 sketch. φ = d2's Derivation conclusion:
+     `derivation_shape` constrains it to plays-census shapes / impl-census shapes /
+     `eq p p` / `neg (eq p q)`. The exotic risks: **eqNeg cuts** (arbitrary programs
+     p q — must show minimal proofs only refute guard-tied equalities) and mp-chains
+     over census shapes (census conclusions carry concrete conclusion-tied programs).
+  6. **`searchThenSearch_t`'s stored premise tree + all recursive `t.gateOK`** —
+     recurse into the same inventory.
+  Plus the LITERAL HALF as one global induction (budget bounds every stored formula's
+  literals — the `wt_le_budget`/§17 pattern extended to `maxLitF`), consumed by 3 and
+  by the middles' size bounds.
+- **O5 (the pool lemma proper — original sketch).** Census outputs: programs are subst-instances of
   conclusion programs (T43 `subsP/substF` lemmas + `playsArgsF_subst`); contents:
   subformulas of segments — pool-good if the SEGMENT-BOX's judgment formula is (the
   discharge's conclusion, which is a formula of the pre-excised tree — IH). Package as
