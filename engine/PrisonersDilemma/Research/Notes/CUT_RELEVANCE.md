@@ -1075,6 +1075,27 @@ crossing fell back (O2/O3).
   gate-repair (pool-instance gate) vs conjecture-false.
   GOAL REMAINS: prove the conjecture — the experiment chooses the provable form.
 
+- **v3 IMPLEMENTATION BLOCKER + THE COMPLETE FIX (2026-07-08, last entry — the
+  next session's exact worklist).** Attempting v3 surfaced: (1) `PoolOK.argStep`
+  is UNPROVABLE for real pools — substituting a search-MEMBER instantiates its
+  stored guard, violating `instModestP`'s raw-guard requirement — so v1's
+  `DAnt_instModest` is vacuously conditioned and the transport's struct arm
+  (which consumes it) blocks concrete use for ANY pool. (2) The fix is the same
+  raw-propagation insight one level up: define `rawArgsF φ` (plays/eq program
+  args are `T43.modestP`-raw — NOT argOK; compound raw frames allowed) with a
+  subst lemma `rawArgsF (ψ.subst me o)` from raw ψ + raw frames (mirror
+  `modestF_subst_inst`, ~40 lines); restate the census tie as
+  `DAnt_rawGate : DAnt B C → instGate P N C → rawArgsF C →
+  instGate P N B ∧ rawArgsF B` — the simSt ∈P-branch becomes UNREACHABLE
+  (raw me's sim-args are argOK-atomic; resolution by the 3-case with rawness
+  and argOKP both threading); rerun `derivGateOK_of_conclusion_inst` with the
+  rawArgsF side-condition; drop PoolOK everywhere. (3) Then transport v3
+  proper: frames (argOKP ∧ raw ∧ lit), b (raw ∧ lit), `rawAtoms` 4th
+  certificate (family already drafted — in this note's history), rawArgsF
+  threaded at struct arms. The v3 attempt's full arm-by-arm body was written
+  and REVERTED (uncommitted) — reproduce from this design; all arms elaborated
+  except the struct-arm PoolOK reference.
+
 - **THE TRANSPORT v3 REFINEMENT (2026-07-08, latest — THE POOL DROPS OUT ENTIRELY;
   supersedes v2 below).** Closed frames are `argOKP` via `closedP` — so frames never
   need membership at all. The walk invariant is POOL-FREE:
