@@ -256,3 +256,138 @@ theorem modestF_subst_inst (P : List Prog) (u v : Prog)
       have hp := arg_subst_inst P u v hu hv hum hvm h.1.1 h.1.2
       exact ⟨⟨hp.1, hp.2⟩, modestP_instModestP P q h.2⟩
   | .diag _ φ, h => modestF_instModestF P _ h
+
+/-! ## 3. The census tie at the instance gate.
+
+The pool hypothesis is exactly what the sim cases need: member instance-modesty and
+closure of member arg-substitution by admissible frames (for the canonical
+`P := T43.players r₁ r₂` both are theorems — `certU_modest`, `step_sim`). -/
+
+structure PoolOK (P : List Prog) : Prop where
+  modest : ∀ p, p ∈ P → instModestP P p = true
+  argStep : ∀ p me opnt, P.contains p = true →
+    argOKP P me = true → instModestP P me = true →
+    argOKP P opnt = true → instModestP P opnt = true →
+    argOKP P (p.subst me opnt) = true ∧ instModestP P (p.subst me opnt) = true
+
+/-- Uniform arg resolution under frames: the four `argOKP` cases in one lemma. -/
+theorem argOKP_subst_inst {P : List Prog} (hP : PoolOK P) {p me opnt : Prog}
+    (hp : argOKP P p = true) (hpm : instModestP P p = true)
+    (hme : argOKP P me = true) (hmem : instModestP P me = true)
+    (hop : argOKP P opnt = true) (hopm : instModestP P opnt = true) :
+    argOKP P (p.subst me opnt) = true ∧ instModestP P (p.subst me opnt) = true := by
+  simp only [argOKP, Bool.or_eq_true, beq_iff_eq] at hp
+  rcases hp with ((rfl | rfl) | hcl) | hmem'
+  · exact ⟨hme, hmem⟩
+  · exact ⟨hop, hopm⟩
+  · rw [T43.substP_id me opnt p hcl]
+    exact ⟨by simp only [argOKP, hcl, Bool.or_true, Bool.true_or], hpm⟩
+  · exact hP.argStep p me opnt hmem' hme hmem hop hopm
+
+/-- **The census tie, instance-gated**: every census antecedent is instance-modest
+    whenever its consequent is — over any `PoolOK` pool. -/
+theorem DAnt_instModest {P : List Prog} (hP : PoolOK P) :
+    ∀ {B C : Formula}, PD.T48.DAnt B C →
+    instModestF P C = true → instModestF P B = true := by
+  intro B C h
+  induction h with
+  | searchBr hme =>
+      subst hme
+      intro hC
+      simp only [instModestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [instModestP, Bool.and_eq_true] at hm
+      simp only [instModestF]
+      exact modestF_subst_inst P _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.1
+  | botSearchSt hme =>
+      subst hme
+      intro hC
+      simp only [instModestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [instModestP, Bool.and_eq_true] at hm
+      simp only [instModestF]
+      exact modestF_subst_inst P _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.1
+  | simSt hme =>
+      subst hme
+      intro hC
+      simp only [instModestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [instModestP, Bool.and_eq_true] at hm
+      have hp := argOKP_subst_inst hP hm.1.1.1 hm.1.2
+        hC.1.1.1 hC.1.2 hC.1.1.2 hC.2
+      have hq := argOKP_subst_inst hP hm.1.1.2 hm.2
+        hC.1.1.1 hC.1.2 hC.1.1.2 hC.2
+      simp only [instModestF, Bool.and_eq_true]
+      exact ⟨⟨⟨hp.1, hq.1⟩, hp.2⟩, hq.2⟩
+  | botSimSt hme =>
+      subst hme
+      intro hC
+      simp only [instModestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [instModestP, Bool.and_eq_true] at hm
+      have hp := argOKP_subst_inst hP hm.1.1.1 hm.1.2
+        hC.1.1.1 hC.1.2 hC.1.1.2 hC.2
+      have hq := argOKP_subst_inst hP hm.1.1.2 hm.2
+        hC.1.1.1 hC.1.2 hC.1.1.2 hC.2
+      simp only [instModestF, Bool.and_eq_true]
+      exact ⟨⟨⟨hp.1, hq.1⟩, hp.2⟩, hq.2⟩
+  | iteBr₁ hme =>
+      subst hme
+      intro hC
+      simp only [instModestF, Bool.and_eq_true] at hC
+      have hm := hC.2.1.2
+      simp only [instModestP, Bool.and_eq_true] at hm
+      simp only [instModestF, Bool.and_eq_true]
+      exact ⟨⟨⟨hC.2.1.1.2, hm.1.1.1.1.2⟩, hC.2.2⟩, hm.1.1.2⟩
+  | iteBr₂ hme =>
+      subst hme
+      intro hC
+      simp only [instModestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [instModestP, Bool.and_eq_true] at hm
+      simp only [instModestF]
+      exact modestF_subst_inst P _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.2.1.1
+  | trans h1 h2 ih1 ih2 => intro hC; exact ih1 (ih2 hC)
+
+/-- The combined instance-gate transfer for Derivation cuts (literal half is
+    gate-agnostic: T48's `DAnt_lit`). -/
+theorem DAnt_instGate {P : List Prog} {N : Nat} (hP : PoolOK P) {B C : Formula}
+    (h : PD.T48.DAnt B C) (hC : instGate P N C) : instGate P N B :=
+  ⟨le_trans (PD.T48.DAnt_lit h) hC.1, DAnt_instModest hP h hC.2⟩
+
+/-- The instance gate distributes over implication. -/
+theorem instGate_impl_iff {P : List Prog} {N : Nat} {φ ψ : Formula} :
+    instGate P N (.impl φ ψ) ↔ instGate P N φ ∧ instGate P N ψ := by
+  simp only [instGate, T42.maxLitF, instModestF, Bool.and_eq_true]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨⟨by omega, h2⟩, ⟨by omega, h3⟩⟩
+  · rintro ⟨⟨h1, h2⟩, h3, h4⟩
+    exact ⟨by omega, h2, h4⟩
+
+/-- **The struct arm at the instance gate**: a Derivation with an instance-gated
+    conclusion passes at every `derivGateOK` site. -/
+theorem derivGateOK_of_conclusion_inst {P : List Prog} {N : Nat} (hP : PoolOK P) :
+    ∀ {ξ : Formula} (d : Derivation ξ), instGate P N ξ →
+    derivGateOK (instGate P N) d
+  | _, .modusPonens φ ψ d1 d2, hξ => by
+      have hcut : instGate P N φ :=
+        DAnt_instGate hP (PD.T48.derivation_impl_ant d1) hξ
+      exact ⟨hcut,
+        derivGateOK_of_conclusion_inst hP d1 (instGate_impl_iff.mpr ⟨hcut, hξ⟩),
+        derivGateOK_of_conclusion_inst hP d2 hcut⟩
+  | _, .hypSyll φ ψ χ d1 d2, hξ => by
+      have hχ : instGate P N χ := (instGate_impl_iff.mp hξ).2
+      have hφ : instGate P N φ := (instGate_impl_iff.mp hξ).1
+      have hmid : instGate P N ψ :=
+        DAnt_instGate hP (PD.T48.derivation_impl_ant d2) hχ
+      exact ⟨hmid,
+        derivGateOK_of_conclusion_inst hP d1 (instGate_impl_iff.mpr ⟨hφ, hmid⟩),
+        derivGateOK_of_conclusion_inst hP d2 (instGate_impl_iff.mpr ⟨hmid, hχ⟩)⟩
+  | _, .searchBranch _ _ _ _ _ _ _, _ => trivial
+  | _, .botSearchStep _ _ _ _ _ _ _, _ => trivial
+  | _, .simStep _ _ _ _ _ _, _ => trivial
+  | _, .botSimStep _ _ _ _ _ _, _ => trivial
+  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _, _ => trivial
+  | _, .eqRefl _, _ => trivial
+  | _, .eqNeg _ _ _, _ => trivial
