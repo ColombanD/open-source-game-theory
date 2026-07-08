@@ -994,7 +994,10 @@ crossing fell back (O2/O3).
   state; `crossWtLt`'s IsCore restriction is irrelevant here. Remaining for
   progress: excise-walk bookkeeping (each pass fires ≥1 wild app or the app-half
   of the check passes). dbFree-conservation of machine outputs: **DONE 2026-07-08**
-  (`crossDbFree`, T49 — with `DStack.dbFree`/`CoreContent.dbFree`/`mono_dbFree`).
+  (`crossDbFree`, T49 — with `DStack.dbFree`/`CoreContent.dbFree`/`mono_dbFree`),
+  and lifted through the excisor: `excise_dbFree`/`exciseFix_dbFree` — every
+  round's output satisfies `fundamentalW`'s hypothesis (the iteration license,
+  end to end).
 - **O5 (the pool lemma proper — original sketch).** Census outputs: programs are subst-instances of
   conclusion programs (T43 `subsP/substF` lemmas + `playsArgsF_subst`); contents:
   subformulas of segments — pool-good if the SEGMENT-BOX's judgment formula is (the
