@@ -3926,4 +3926,33 @@ private def demoWildApp : ProvT 500 PD.T48.wildA :=
 
 #eval s!"before: {(demoWildApp.gateOKb (fun _ => false))}  after: {((excise 10 (fun _ => false) demoWildApp).2.gateOKb (fun _ => false))}"
 
+/-! ## 26. O1 — excision to fixpoint, and the one-call certified pipeline.
+
+Crossing outputs can expose new wild cuts (`axK`/`axKf` assemblies gate on segment-box
+CONTENTS), so excision iterates: strict consumption bounds the rounds. `certifyExcised`
+is the whole instance pipeline in one call: excise to fixpoint, check the diet, certify
+into the decidable stratum. O3 is settled by inspection: `axK` and `diagF`/`diagB`
+gate-formulas are conclusion-tied and size-paid — only `app`/`implTrans`/`impS2` cuts
+can be wild, so the `app`-crossing excisor targets the right surface. -/
+
+/-- Iterated excision: stop early once the diet passes. -/
+def exciseFix : (rounds fuel : Nat) → (Gb : Formula → Bool) →
+    {m : Nat} → {ξ : Formula} → ProvT m ξ → Σ' m', ProvT m' ξ
+  | 0, _, _, m, _, t => ⟨m, t⟩
+  | rounds + 1, fuel, Gb, _, _, t =>
+      let t' := excise fuel Gb t
+      if t'.2.gateOKb Gb then t' else exciseFix rounds fuel Gb t'.2
+
+/-- **The instance pipeline in one call**: excise → check → certify. Every `some` is a
+    kernel-certified membership in the decidable stratum. -/
+def certifyExcised (rounds fuel N : Nat) {m : Nat} {ξ : Formula} (t : ProvT m ξ) :
+    Option (Σ' m', PLift (ProvableG (T44.modestGate N) m' ξ)) :=
+  let t' := exciseFix rounds fuel (T44.cutOKb N) t
+  if h : t'.2.gateOKb (T44.cutOKb N) = true then
+    some ⟨t'.1, ⟨certify t'.2 h⟩⟩
+  else none
+
+-- The wild-cut demo, end to end: a fresh-atom cut certified away in one call.
+#eval s!"certifyExcised on the wild app: {(certifyExcised 4 10 2 demoWildApp).isSome}"
+
 end PD.T49
