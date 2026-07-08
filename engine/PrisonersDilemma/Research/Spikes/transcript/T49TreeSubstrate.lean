@@ -562,6 +562,19 @@ def censusBotSimStep {p q opnt : Prog} {a : Action} {n : Nat}
     ProvT (n + c_node + c_node) (.plays (.bot (.sim p q)) opnt a) :=
   .atom (.mk (.bot (.sim cert)) (Nat.le_refl _))
 
+/-- The searchThenSearch census: the node's own premise IS the inner guard cite. -/
+def censusSTS {k₁ k₂ m mc : Nat} {ψ₁ ψ₂ : Formula} {q opnt : Prog} {c0 c1 : Action}
+    (tp : ProvT m
+      (ψ₂.subst (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
+    (hm : m ≤ k₂)
+    (tc : ProvT mc
+      (ψ₁.subst (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt))
+    (hc : mc ≤ k₁) :
+    ProvT (c_leaf + c_guard k₂ + c_node + c_guard k₁ + c_node)
+      (.plays (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) opnt c0) :=
+  .atom (.mk (PlaysT.search_t (tc.mono hc)
+    (PlaysT.search_t (tp.mono hm) .const)) (Nat.le_refl _))
+
 mutual
 
 def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
@@ -673,7 +686,14 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
         (match stack with
          | .nil =>
              some ⟨_, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz⟩
-         | .cons _ _ s' => (match s' with | .nil => none))
+         | .cons _ u s' =>
+             (match s' with
+              | .nil =>
+                  (match me, u, tw, hme with
+                   | _, u', tw', rfl =>
+                       match boxInvGo fuel u' .nil with
+                       | some ⟨mc, tc, hc⟩ => some ⟨_, censusSTS tw' hm tc hc⟩
+                       | none => none)))
     | .atomNeg p q b aN m' tc hne hle =>
         (match stack with
          | .nil => some ⟨_, .atomNeg p q b aN m' tc hne hle⟩)
@@ -1250,7 +1270,19 @@ theorem crossWt : ∀ (F : Nat),
                   cases h
                   exact ⟨by simp [CoreContent.wt, DStack.wt],
                     by simpa [CoreContent.freeS2] using hf⟩
-          | cons _ _ s' => cases s' with | nil => simp [boxInvGo] at h
+          | cons mD u s' =>
+              cases s' with
+              | nil =>
+                  cases hme
+                  simp only [boxInvGo] at h
+                  cases hd : boxInvGo F u .nil with
+                  | none => rw [hd] at h; exact absurd h (by simp)
+                  | some rc =>
+                      rw [hd] at h
+                      obtain ⟨mc, tc, hcc⟩ := rc
+                      cases h
+                      exact ⟨by simp [CoreContent.wt, censusSTS, ProvT.wt, DStack.wt],
+                        by simp [CoreContent.freeS2, censusSTS, ProvT.freeS2]⟩
       | atomNeg p q b aN m' t hne hle =>
           cases s with
           | nil =>
@@ -1842,7 +1874,23 @@ theorem crossGateOK {G : Formula → Prop}
                   simp only [boxInvGo] at h
                   cases h
                   simpa [CoreContent.gateOK] using hf
-          | cons _ _ s' => cases s' with | nil => simp [boxInvGo] at h
+          | cons mD u s' =>
+              cases s' with
+              | nil =>
+                  cases hme
+                  simp only [boxInvGo] at h
+                  cases hd : boxInvGo F u .nil with
+                  | none => rw [hd] at h; exact absurd h (by simp)
+                  | some rc =>
+                      rw [hd] at h
+                      have hcg := ih u .nil hs.1 trivial trivial hd
+                      obtain ⟨mc, tc, hcc⟩ := rc
+                      simp only [CoreContent.gateOK] at hcg
+                      cases h
+                      simp only [CoreContent.gateOK, censusSTS, ProvT.gateOK,
+                        AtomT.gateOK, PlaysT.gateOK]
+                      exact ⟨(ProvT.mono_gateOK hcc tc).mpr hcg,
+                        (ProvT.mono_gateOK hm t).mpr hf, trivial⟩
       | atomNeg p q b aN m' t hne hle =>
           cases s with
           | nil =>
@@ -2321,7 +2369,18 @@ theorem crossS2d : ∀ (F : Nat),
                   cases h
                   simp only [CoreContent.s2d, DStack.s2d]
                   omega
-          | cons _ _ s' => cases s' with | nil => simp [boxInvGo] at h
+          | cons mD u s' =>
+              cases s' with
+              | nil =>
+                  cases hme
+                  simp only [boxInvGo] at h
+                  cases hd : boxInvGo F u .nil with
+                  | none => rw [hd] at h; exact absurd h (by simp)
+                  | some rc =>
+                      rw [hd] at h
+                      obtain ⟨mc, tc, hcc⟩ := rc
+                      cases h
+                      simp [CoreContent.s2d, censusSTS, ProvT.s2d, DStack.s2d]
       | atomNeg p q b aN m' t hne hle =>
           cases s with
           | nil =>
@@ -2852,7 +2911,20 @@ theorem crossWtLt : ∀ (F : Nat),
       | searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme t hm hsz =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ s' => cases s' with | nil => simp [boxInvGo] at h
+          | cons mD u s' =>
+              cases s' with
+              | nil =>
+                  cases hme
+                  simp only [boxInvGo] at h
+                  cases hd : boxInvGo F u .nil with
+                  | none => rw [hd] at h; exact absurd h (by simp)
+                  | some rc =>
+                      rw [hd] at h
+                      obtain ⟨mc, tc, hcc⟩ := rc
+                      cases h
+                      have := u.wt_pos
+                      simp only [CoreContent.wt, censusSTS, ProvT.wt, DStack.wt]
+                      omega
       | atomNeg p q b aN m' t hne hle =>
           cases s with
           | nil => exact hc.elim
@@ -3144,7 +3216,17 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
       | searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme t hm hsz =>
           cases s with
           | nil => simp only [boxInvGo] at h ⊢; exact h
-          | cons _ _ s' => cases s' with | nil => simp [boxInvGo] at h
+          | cons mD u s' =>
+              cases s' with
+              | nil =>
+                  cases hme
+                  simp only [boxInvGo] at h ⊢
+                  cases hd : boxInvGo F u .nil with
+                  | none => rw [hd] at h; exact absurd h (by simp)
+                  | some rc =>
+                      rw [hd] at h
+                      rw [(ih F'' hFF).1 _ _ hd]
+                      exact h
       | atomNeg p q b aN m' t hne hle =>
           cases s with
           | nil => simp only [boxInvGo] at h ⊢; exact h
@@ -3280,10 +3362,12 @@ theorem boxInvGo_regate (F : Nat) {m m' : Nat} {ξ core : Formula}
               · subst hp; exact hc.elim
               · subst hp; exact hc.elim
           | cons _ _ _ => rfl
-      | searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
+      | searchThenSearch_t k₁ k₂ m'' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ s' =>
+              cases s' with
+              | nil => cases hme; rfl
       | atomNeg _ _ _ _ _ _ _ _ => cases s with | nil => exact hc.elim
       | weakenImpl _ _ _ _ _ =>
           cases s with
