@@ -900,6 +900,42 @@ crossing fell back (O2/O3).
   have no wild middles because chains are consumed at apps upstream (the middle becomes
   an app-cut after the outer crossing — likely TRUE via the machine's implTrans-arm
   materialization); (b) extend excise to rotate chains into apps. Try (a) first.
+- **O5 DESIGN (2026-07-08, the middle-elimination route — read this first).**
+  The pool argument's ONLY remaining gap is never-applied `implTrans`/`impS2` middles
+  (applied middles LAUNDER: the machine's implTrans-arm materializes `app(tA, dB)` as
+  a segment; the middle formula disappears from the result tree — the result is
+  assembled from subtree INTERNALS + censuses, so its pool-status comes from the
+  subtrees by IH, not from the middle). For never-applied middles, three facts found
+  2026-07-08:
+  1. **The calculus contains the combinatory basis**: `weakenImpl` IS rule-K
+     (`⊢ψ ⟹ ⊢φ→ψ`), `impS2` IS rule-S (`⊢φ→(ψ→χ) ⟹ ⊢φ→ψ ⟹ ⊢φ→χ`), `implTrans` is
+     rule-B. So BRACKET ABSTRACTION over a virtual discharge is definable on the
+     APPLICATIVE fragment: run the machine on the never-applied node with a virtual
+     hypothesis leaf `x̂ : φ'`, then abstract `[x̂]r` — K-steps for x̂-free subtrees,
+     S-steps at apps. The abstraction's new cuts are subformulas of the path types —
+     pool-tied. Budget inflates polynomially (the C4 budget-inflated fallback covers
+     this).
+  2. **Wall 1 — bare returns**: `[x̂]x̂` needs object-I (`⊢ A→A`), which rule-K/S
+     CANNOT derive (object-K `A→(B→A)` is not an axiom here; `I = SKK` needs it).
+     Check whether bare-x̂ returns actually occur: the machine returns the discharge
+     verbatim only at `diagB@cons-nil` (diag content := the discharge) — conjecture:
+     for virtual middles this case is conclusion-tied (diag shapes).
+  3. **Wall 2 — modal embeddings**: x̂ can end up UNDER a `boxIntro` (via the box4 arm
+     re-boxing extracted content that contains x̂). Abstraction cannot cross a box
+     without axK-distribution over a BOXED hypothesis — the GL/necessitation boundary
+     (same wall the normalization theorem dodged with μ(box)=0). Conjecture: x̂ enters
+     box-content only through box-EXTRACTION of x̂-containing discharges, whose sites
+     are census/box-consumption — exactly the CONCLUSION-TIED link shapes (searchBranch
+     antecedent = the link's own guard box, etc.). So the dichotomy to prove:
+     **every x̂-occurrence in a virtual run's result is either applicative (bracket
+     abstraction applies) or at a census/box/diag consumption site (the middle is then
+     conclusion-tied to a primitive link and pool-good directly)**.
+  Plan: (i) formalize the virtual-hypothesis leaf as a ProvT EXTENSION (Type-layer
+  normalization device only — never enters Provable); (ii) prove the dichotomy by the
+  conservation-package induction pattern; (iii) bracket-abstract the applicative side;
+  (iv) fold into the crossPool induction below. Alternatively, if the dichotomy fights:
+  scope CutRelevance to the T47 query universe's actual root shapes and characterize
+  impl-guard bots' chains directly (the zoo's impl guards are few and shallow).
 - **O5 (the pool lemma proper).** Census outputs: programs are subst-instances of
   conclusion programs (T43 `subsP/substF` lemmas + `playsArgsF_subst`); contents:
   subformulas of segments — pool-good if the SEGMENT-BOX's judgment formula is (the
