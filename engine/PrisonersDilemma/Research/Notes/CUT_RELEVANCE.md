@@ -1075,6 +1075,31 @@ crossing fell back (O2/O3).
   gate-repair (pool-instance gate) vs conjecture-false.
   GOAL REMAINS: prove the conjecture — the experiment chooses the provable form.
 
+- **THE TRANSPORT v2 DESIGN (2026-07-08, late — the PoolOK knot RESOLVED on paper).**
+  Three walk-invariant facts dissolve the knot:
+  1. **Frames stay raw members.** The dynamics never substitute frames with novel
+     instances: a sim-step's new frame is `p.subst me o` with `p` an argOK-ATOMIC
+     arg (members are raw-modest), so it resolves to me / o / a frozen closed
+     subterm — this is `step_sim`'s content. Frames are always `∈ players`, raw.
+  2. **Pool-args are dead code inside walks.** The `∈P` disjunct of `argOKP` fires
+     only in FORMULA gates (instance formulas' plays-args are compound members);
+     the PlaysT walk's run-programs are always subterms-of-members, whose sim-args
+     are argOK-atomic. So the walk needs no pool-membership case at all — the
+     b-invariant is `∃ q, P.contains q ∧ b ∈ T43.subsP q` (subterm of a member),
+     closed under descent by `subsP_trans` + atomic resolution.
+  3. **PoolOK v2 fields (all theorems for `players r₁ r₂`)**:
+     `modest` (members raw-modest — `modestP_of_mem`), `memStep`
+     (`p ∈ P → me ∈ P → o ∈ P → p.subst me o ∈ P` — step_sim), `closedArgs`
+     (`q ∈ P → p ∈ subsP q → closedP p → p ∈ P` — players includes closed
+     certU subterms).
+  **PlaysT.transport v2 invariant**: `me ∈ P ∧ o ∈ P` (raw-modesty follows from
+  PoolOK.modest; argOKP from contains; instModest from monotonicity) +
+  `b subterm-of-member` + lits ≤ N. Entry (AtomT): the atom's formula args ∈ P —
+  a NEW Bool-checkable hypothesis (`framesInb P t`, hereditary through cites),
+  the third tree-certificate alongside cutsOKb/citesLEb. ProvT side unchanged
+  except threading. The v1 transport (argOKP-invariant + PoolOK.argStep) stays
+  for the record but v2 is the dischargeable one.
+
 - **THE REGRESS LEMMA — design (2026-07-08, evening; the falsification THEOREM).**
   Statement: `(∃ m, Provable m tgtD) ∧ ∀ N m, ¬ ProvableG (modestGate N) m tgtD`
   (tgtD = the Dupoc self-coop instance; left conjunct = `treeD.sound`). Proof of the
