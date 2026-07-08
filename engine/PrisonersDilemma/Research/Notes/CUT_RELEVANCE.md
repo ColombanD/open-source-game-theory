@@ -993,8 +993,8 @@ crossing fell back (O2/O3).
   < f.wt + x.wt + 1 = wt(app f x)`, plain `crossWt`/`boxInvGo_wt_le` at the app
   state; `crossWtLt`'s IsCore restriction is irrelevant here. Remaining for
   progress: excise-walk bookkeeping (each pass fires ≥1 wild app or the app-half
-  of the check passes) + dbFree-conservation of machine outputs (or fold into the
-  zoo hypothesis).
+  of the check passes). dbFree-conservation of machine outputs: **DONE 2026-07-08**
+  (`crossDbFree`, T49 — with `DStack.dbFree`/`CoreContent.dbFree`/`mono_dbFree`).
 - **O5 (the pool lemma proper — original sketch).** Census outputs: programs are subst-instances of
   conclusion programs (T43 `subsP/substF` lemmas + `playsArgsF_subst`); contents:
   subformulas of segments — pool-good if the SEGMENT-BOX's judgment formula is (the
