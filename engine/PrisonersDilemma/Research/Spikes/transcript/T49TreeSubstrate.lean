@@ -5442,4 +5442,133 @@ theorem exciseFix_dbFree : (rounds fuel : Nat) → (Gb : Formula → Bool) →
       · rw [if_neg hg]
         exact exciseFix_dbFree rounds fuel Gb _ h1
 
+/-- `contentToTree` adds at most the `boxIntro` node, and preserves contraction-freedom. -/
+theorem contentToTree_wt_freeS2 : {α : Formula} → (r : CoreContent α) → r.freeS2 →
+    ∀ {t' : Σ' m', ProvT m' α}, contentToTree r = some t' →
+    t'.2.wt ≤ r.wt + 1 ∧ t'.2.freeS2
+  | .box c ψ, ⟨_, tc, hc⟩, hr, _, h => by
+      cases h
+      constructor
+      · simp only [ProvT.wt, CoreContent.wt, ProvT.mono_wt]
+        omega
+      · simpa [ProvT.freeS2, ProvT.mono_freeS2] using hr
+  | .plays _ _ _, r, hr, _, h => by cases h; exact ⟨by simp only [CoreContent.wt]; omega, hr⟩
+  | .impl _ _, r, hr, _, h => by cases h; exact ⟨by simp only [CoreContent.wt]; omega, hr⟩
+  | .neg _, r, hr, _, h => by cases h; exact ⟨by simp only [CoreContent.wt]; omega, hr⟩
+  | .eq _ _, r, hr, _, h => by cases h; exact ⟨by simp only [CoreContent.wt]; omega, hr⟩
+
+/-- The fire-or-fallback shape for the weight half, over a clean scrutinee. -/
+theorem excise_fire_wt_aux {α : Formula} {W : Nat}
+    (rebuilt : Σ' m', ProvT m' α) (hreb : rebuilt.2.wt ≤ W ∧ rebuilt.2.freeS2)
+    (o : Option (CoreContent α)) (ho : ∀ r, o = some r → r.wt + 1 ≤ W ∧ r.freeS2) :
+    (match o with
+     | some rc =>
+         (match contentToTree rc with
+          | some t' => t'
+          | none => rebuilt)
+     | none => rebuilt).2.wt ≤ W ∧
+    (match o with
+     | some rc =>
+         (match contentToTree rc with
+          | some t' => t'
+          | none => rebuilt)
+     | none => rebuilt).2.freeS2 := by
+  cases o with
+  | none => exact hreb
+  | some r =>
+      show (match contentToTree r with
+            | some t' => t'
+            | none => rebuilt).2.wt ≤ W ∧
+           (match contentToTree r with
+            | some t' => t'
+            | none => rebuilt).2.freeS2
+      cases hC : contentToTree r with
+      | none => exact hreb
+      | some t' =>
+          have := contentToTree_wt_freeS2 r (ho r rfl).2 hC
+          exact ⟨le_trans this.1 (ho r rfl).1, this.2⟩
+
+/-- **Excision never gains weight and preserves contraction-freedom** (the
+    contraction-free progress bound: on `freeS2` trees, each fire strictly consumes
+    the app node's own `+1`, so `wt`-many rounds reach the app-clean fixpoint). -/
+theorem excise_wt_freeS2 (fuel : Nat) (Gb : Formula → Bool) :
+    {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → t.freeS2 →
+    (excise fuel Gb t).2.wt ≤ t.wt ∧ (excise fuel Gb t).2.freeS2
+  | _, _, .app K m₁ m₂ φ' α f x hle, hf => by
+      have hf' := excise_wt_freeS2 fuel Gb f hf.1
+      have hx' := excise_wt_freeS2 fuel Gb x hf.2
+      simp only [excise]
+      by_cases hg : Gb φ' = true
+      · rw [if_pos hg]
+        constructor
+        · simp only [ProvT.wt]
+          omega
+        · exact ⟨hf'.2, hx'.2⟩
+      · rw [if_neg hg]
+        have hsd : DStack.freeS2
+            (.cons (excise fuel Gb x).1 (excise fuel Gb x).2 .nil :
+              DStack (.impl φ' α) α) :=
+          by unfold DStack.freeS2; exact ⟨hx'.2, trivial⟩
+        have hres := excise_fire_wt_aux (W := ProvT.wt f + ProvT.wt x + 1)
+          ⟨(excise fuel Gb f).1 + (excise fuel Gb x).1 + α.size,
+            .app _ (excise fuel Gb f).1 (excise fuel Gb x).1 φ' α
+              (excise fuel Gb f).2 (excise fuel Gb x).2 (Nat.le_refl _)⟩
+          (by constructor
+              · simp only [ProvT.wt]; omega
+              · exact ⟨hf'.2, hx'.2⟩)
+          (boxInvGo fuel (excise fuel Gb f).2
+            (.cons (excise fuel Gb x).1 (excise fuel Gb x).2 .nil))
+          (fun r hr => by
+            have := (crossWt fuel).1 (excise fuel Gb f).2 _ hf'.2 hsd hr
+            simp only [DStack.wt] at this
+            exact ⟨by omega, this.2⟩)
+        simpa [ProvT.wt] using hres
+  | _, _, .weakenImpl φ' ψ' m' tw hle, hf => by
+      have h1 := excise_wt_freeS2 fuel Gb tw hf
+      constructor
+      · simp only [excise, ProvT.wt]; omega
+      · simpa [excise, ProvT.freeS2] using h1.2
+  | _, _, .implTrans φ' ψ' χ' a b tA tB hle, hf => by
+      have h1 := excise_wt_freeS2 fuel Gb tA hf.1
+      have h2 := excise_wt_freeS2 fuel Gb tB hf.2
+      constructor
+      · simp only [excise, ProvT.wt]; omega
+      · exact ⟨h1.2, h2.2⟩
+  | _, _, .impS2 φ' ψ' χ' m₁ m₂ K tf tx hle, hf =>
+      absurd hf (by simp [ProvT.freeS2])
+  | _, _, .boxIntro kIn K φ' tc hle, hf => by
+      have h1 := excise_wt_freeS2 fuel Gb tc hf
+      simp only [excise]
+      by_cases hc : (excise fuel Gb tc).1 ≤ kIn
+      · rw [dif_pos hc]
+        constructor
+        · simp only [ProvT.wt, ProvT.mono_wt]; omega
+        · simpa [ProvT.freeS2, ProvT.mono_freeS2] using h1.2
+      · rw [dif_neg hc]
+        exact ⟨Nat.le_refl _, hf⟩
+  | _, _, .axK a' b' c' m'' K φ' α' tP hg1 hle, hf => by
+      have h1 := excise_wt_freeS2 fuel Gb tP hf
+      constructor
+      · simp only [excise, ProvT.wt]; omega
+      · simpa [excise, ProvT.freeS2] using h1.2
+  | _, _, .diagF pm fb g K tgt tP hle, hf => by
+      have h1 := excise_wt_freeS2 fuel Gb tP hf
+      constructor
+      · simp only [excise, ProvT.wt]; omega
+      · simpa [excise, ProvT.freeS2] using h1.2
+  | _, _, .diagB pm fb g K tgt tP hle, hf => by
+      have h1 := excise_wt_freeS2 fuel Gb tP hf
+      constructor
+      · simp only [excise, ProvT.wt]; omega
+      · simpa [excise, ProvT.freeS2] using h1.2
+  | _, _, .struct d hd, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .atom a, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz, hf =>
+      ⟨Nat.le_refl _, hf⟩
+  | _, _, .atomBoxImpl kB p' q' a' cert hle, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .boxMono a' b' K ψ hab hle, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .box4 a' b' K ψ hg1 hle, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .axKf a' b' c' K ψ α hg1 hle, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .atomNeg p' q' b' aN m'' tc hne hle, hf => ⟨Nat.le_refl _, hf⟩
+
 end PD.T49
