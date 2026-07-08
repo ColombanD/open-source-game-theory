@@ -1036,11 +1036,23 @@ crossing fell back (O2/O3).
   decidability payoff, and the ENTIRE T48/T49 machinery (normalization, excisor,
   conservation packages, bricks) carries over: only the GATE and the T44-T47
   finiteness plumbing change.
-  NEXT: (i) rework T44's `cutOKb` → `instOKb` + re-run the T44-T47 chain's
-  finiteness; (ii) formalize the regress lemma (the falsification half — thesis
-  content!); (iii) re-run T50's (a′) with `instOKb` — expect TRUE on `treeD`
-  DIRECTLY (no excision needed for Löb chains!), which would collapse most of
-  the excision program for zoo facts.
+  **(d) RAN 2026-07-08: `treeD.gateOKb (instOKb [meD] kD) = true` — THE RAW BLOEB
+  TREE PASSES THE INSTANCE GATE.** (`instOKb` defined in T50: `argOKP` admits pool
+  members at argument positions; `instModestP`/`instModestF` mutual.) Löb chains
+  need NO excision under the repaired gate. CONSEQUENCES:
+  * The tie-down/gate-transport program (§28) RESURRECTS at `instGate`: census
+    conclusions ARE instance-modest, so the conclusion-threading that was vacuous
+    at `modestGate` is live again — re-prove the bricks (DAnt_gate,
+    axK/diag ties, modestF_subst) at `instModestF` (subst by pool players is
+    natively closed there — easier, not harder).
+  * REVISED plan of record: (i) `instGate` versions of the §14/§28 bricks +
+    DAnt; (ii) the T44–T47 rework: `cutOKb → instOKb`, enumeration space =
+    (modest shapes)×(pool pairs) — T46's `guardU` is already instance-based, the
+    pigeonhole transfers; (iii) revised CutRelevance
+    `Provable k φ → ProvableG (instGate P N₀) k φ` — for zoo trees plausibly by
+    DIRECT gate-transport (T50's evidence), with excision reserved for genuinely
+    fresh cuts in arbitrary minimal trees; (iv) the regress lemma (modestGate
+    proves no self-referential fact) as the falsification half — thesis content.
 
 - **🎯 THE FALSIFICATION EXPERIMENT (original plan, superseded by the verdict above).**
   Decide the pivot empirically before more theory. Build the ProvT tree of a REAL

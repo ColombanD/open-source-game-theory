@@ -117,3 +117,35 @@ def treeD : ProvT (4096 * W) tgtD :=
   match atomizeGo 2000 treeD with
   | some ⟨_, cert⟩ => (ProvT.atom cert).gateOKb (T44.cutOKb kD)
   | none => false}"
+
+/-! ## THE REPAIR — the instance gate (pool-instances of modest formulas).
+
+`argOK` relaxed: plays/sim/eq argument positions may also be POOL MEMBERS. -/
+
+def argOKP (P : List Prog) (p : Prog) : Bool :=
+  p == .self || p == .opp || T43.closedP p || P.contains p
+
+mutual
+  def instModestP (P : List Prog) : Prog → Bool
+    | .const _ => true
+    | .self => true
+    | .opp => true
+    | .bot p => instModestP P p
+    | .sim p q => argOKP P p && argOKP P q && instModestP P p && instModestP P q
+    | .ite b _ p q => instModestP P b && instModestP P p && instModestP P q
+    | .search _ φ p q => instModestF P φ && instModestP P p && instModestP P q
+
+  def instModestF (P : List Prog) : Formula → Bool
+    | .plays p q _ => argOKP P p && argOKP P q && instModestP P p && instModestP P q
+    | .impl φ ψ => instModestF P φ && instModestF P ψ
+    | .neg φ => instModestF P φ
+    | .box _ φ => instModestF P φ
+    | .eq p q => argOKP P p && instModestP P p && instModestP P q
+    | .diag _ φ => instModestF P φ
+end
+
+def instOKb (P : List Prog) (N : Nat) (B : Formula) : Bool :=
+  decide (T42.maxLitF B ≤ N) && instModestF P B
+
+-- (d) THE REPAIRED VERDICT: does the RAW bloeb tree pass the instance gate?
+#eval s!"(d) raw tree passes INSTANCE gate: {treeD.gateOKb (instOKb [meD] kD)}"
