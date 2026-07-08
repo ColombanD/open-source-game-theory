@@ -4081,4 +4081,97 @@ def certifyExcised (rounds fuel N : Nat) {m : Nat} {ξ : Formula} (t : ProvT m �
 -- The wild-cut demo, end to end: a fresh-atom cut certified away in one call.
 #eval s!"certifyExcised on the wild app: {(certifyExcised 4 10 2 demoWildApp).isSome}"
 
+/-! ## 27. O2 — the WIDE goodness family.
+
+General cores admitted (`GoodStackW`-nil is `True`), plays-contents ATOMIZABLE (the
+enrichment that dissolves the fundamental↔atomize circularity: atomize-halting flows
+through the predicate itself). Duplicated from `Good` — NOT modified — so the proven
+normalization theorem and its whole interface stay untouched; `fundamentalW` will serve
+the excisor's general-core crossings, hypothesized on iteBranch-freedom (the one
+unreconstructible census). -/
+
+/-- No `iteBranchSearch_t` anywhere in the Derivation. -/
+def derivITEFree : {φ : Formula} → Derivation φ → Prop
+  | _, .modusPonens _ _ d1 d2 => derivITEFree d1 ∧ derivITEFree d2
+  | _, .hypSyll _ _ _ d1 d2 => derivITEFree d1 ∧ derivITEFree d2
+  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _ => False
+  | _, _ => True
+
+/-- No `iteBranchSearch_t` in any `struct` of the walkable layer. -/
+def ProvT.dbFree : {m : Nat} → {φ : Formula} → ProvT m φ → Prop
+  | _, _, .struct d _ => derivITEFree d
+  | _, _, .weakenImpl _ _ _ t _ => t.dbFree
+  | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.dbFree
+  | _, _, .implTrans _ _ _ _ _ t1 t2 _ => t1.dbFree ∧ t2.dbFree
+  | _, _, .boxIntro _ _ _ t _ => t.dbFree
+  | _, _, .app _ _ _ _ _ t1 t2 _ => t1.dbFree ∧ t2.dbFree
+  | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.dbFree
+  | _, _, .diagF _ _ _ _ _ t _ => t.dbFree
+  | _, _, .diagB _ _ _ _ _ t _ => t.dbFree
+  | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.dbFree ∧ t2.dbFree
+  | _, _, _ => True
+
+mutual
+
+/-- Wide goodness: against every wide-good stack, the machine halts with wide-good
+    content. -/
+def GoodW (k : Nat) {m : Nat} {ξ : Formula} (t : ProvT m ξ) : Prop :=
+  ∀ {core : Formula} (S : DStack ξ core), GoodStackW k S →
+    ∃ (fuel : Nat) (r : CoreContent core),
+      boxInvGo fuel t S = some r ∧ ContentGoodW k r
+termination_by (k, muF ξ, 1)
+decreasing_by
+  all_goals simp_wf
+  all_goals
+    first
+    | exact lex_thd (by omega)
+    | exact lex_snd (by simp only [muF]; omega)
+    | exact lex_fst (by omega)
+    | exact lex_le_lt (DStack.mu_core_le S) (by omega)
+    | exact lex_le3 (by omega) (by simp only [muF]; omega)
+
+/-- Wide-good stacks: cumulative wide goodness, ANY core at nil. -/
+def GoodStackW (k : Nat) : {ξ core : Formula} → DStack ξ core → Prop
+  | _, _, .nil => True
+  | _, _, .cons _ d s => (∀ j, j ≤ k → GoodW j d) ∧ GoodStackW k s
+termination_by ξ _ _ => (k, muF ξ, 0)
+decreasing_by
+  all_goals simp_wf
+  all_goals
+    first
+    | exact lex_thd (by omega)
+    | exact lex_snd (by simp only [muF]; omega)
+    | exact lex_fst (by omega)
+    | exact lex_le3 (by omega) (by simp only [muF]; omega)
+
+/-- Wide-good contents: box/diag as before; PLAYS contents are atomizable. -/
+def ContentGoodW (k : Nat) : {core : Formula} → CoreContent core → Prop
+  | .box _ _, r => k > 0 → GoodW (k-1) r.2.1
+  | .diag _ _, r => GoodW k r.2
+  | .plays p q c, r =>
+      ∃ (F : Nat) (a : Σ' k', AtomT k' (.plays p q c)), atomizeGo F r.2 = some a
+  | .impl _ _, r | .neg _, r | .eq _ _, r => True
+termination_by core _ => (k, muF core, 0)
+decreasing_by
+  all_goals simp_wf
+  all_goals
+    first
+    | exact lex_thd (by omega)
+    | exact lex_snd (by simp only [muF]; omega)
+    | exact lex_fst (by omega)
+
+end
+
+/-- The application lemma, wide. -/
+theorem GoodW_app {k m₁ m₂ K : Nat} {B C : Formula}
+    {f : ProvT m₁ (.impl B C)} {d : ProvT m₂ B}
+    (hf : GoodW k f) (hd : ∀ j, j ≤ k → GoodW j d)
+    (hle : m₁ + m₂ + C.size ≤ K) :
+    GoodW k (ProvT.app K m₁ m₂ B C f d hle) := by
+  unfold GoodW at hf ⊢
+  intro core S hS
+  obtain ⟨fuel, r, hrun, hcont⟩ := hf (.cons m₂ d S)
+    (by unfold GoodStackW; exact ⟨hd, hS⟩)
+  exact ⟨fuel + 1, r, hrun, hcont⟩
+
 end PD.T49
