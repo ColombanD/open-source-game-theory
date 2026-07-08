@@ -936,6 +936,17 @@ crossing fell back (O2/O3).
   (iv) fold into the crossPool induction below. Alternatively, if the dichotomy fights:
   scope CutRelevance to the T47 query universe's actual root shapes and characterize
   impl-guard bots' chains directly (the zoo's impl guards are few and shallow).
+  **Zoo audit (2026-07-08): the scoped route wins.** Every guard formula in the entire
+  zoo is a PLAYS ATOM (`plays .opp .self C`, `plays .opp (.bot DefectBot) D`, …) except
+  CIMCIC/DIMCID, whose guards are the single shape `impl (plays a b c) (plays d e f)`
+  — depth-1, atoms on both sides. So the recursion closure of T47 root shapes contains
+  exactly ONE impl-shape. CutRelevance-over-the-zoo (which is how T4 is already scoped
+  — the modest universe IS zoo-derived) needs the middle analysis only for
+  `impl atom atom` roots, where the known derivation forms are `weakenImpl(atom-cert)`
+  and the Löb chain `atomBoxImpl → axK/boxMono links → guard-box` — all middles
+  box-shaped and conclusion-tied. The general dichotomy/bracket-abstraction machinery
+  is NOT needed for the thesis-grade zoo statement; keep it as the route for full
+  generality.
 - **O5 (the pool lemma proper).** Census outputs: programs are subst-instances of
   conclusion programs (T43 `subsP/substF` lemmas + `playsArgsF_subst`); contents:
   subformulas of segments — pool-good if the SEGMENT-BOX's judgment formula is (the
