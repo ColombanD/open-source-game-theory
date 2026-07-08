@@ -391,3 +391,28 @@ theorem derivGateOK_of_conclusion_inst {P : List Prog} {N : Nat} (hP : PoolOK P)
   | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _, _ => trivial
   | _, .eqRefl _, _ => trivial
   | _, .eqNeg _ _ _, _ => trivial
+
+/-- axK's premise gate is fully conclusion-tied — instance-gate port. -/
+theorem instGate_axK_tied {P : List Prog} {N a b c : Nat} {φ α : Formula}
+    (h : instGate P N (.impl (.box b φ) (.box c α)))
+    (hg1 : a + b + α.size ≤ c) :
+    instGate P N (.box a (.impl φ α)) := by
+  obtain ⟨hlit, hmod⟩ := h
+  refine ⟨?_, ?_⟩
+  · simp only [T42.maxLitF] at hlit ⊢
+    omega
+  · simp only [instModestF, Bool.and_eq_true] at hmod ⊢
+    exact hmod
+
+/-- diagF/diagB's gate is conclusion-tied modulo the premise subscript —
+    instance-gate port. -/
+theorem instGate_diag_tied {P : List Prog} {N fb g : Nat} {tgt : Formula}
+    (h : instGate P N (.impl (.box g (.diag g tgt)) tgt))
+    (hfb : fb ≤ N) :
+    instGate P N (.impl (.box fb tgt) tgt) := by
+  obtain ⟨hlit, hmod⟩ := h
+  refine ⟨?_, ?_⟩
+  · simp only [T42.maxLitF] at hlit ⊢
+    omega
+  · simp only [instModestF, Bool.and_eq_true] at hmod ⊢
+    exact ⟨hmod.2, hmod.2⟩
