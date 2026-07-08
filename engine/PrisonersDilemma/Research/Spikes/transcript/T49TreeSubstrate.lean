@@ -4868,4 +4868,19 @@ theorem fundamentalW : {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → t.d
                     exact GoodW_app (hcont1 hk) (GoodW_box_levels hk hS.2.1 hrun2)
                       (Nat.le_refl _)
 
+/-- **EXCISOR CROSSING TOTALITY** (the O2 capstone): at every wild-app state
+    `(f, x::nil)` — any implication tree against its argument, ANY result formula —
+    the machine halts with wide-good content, provided both trees are iteBranch-free.
+    This is exactly the state the excisor's beta-step fires on. -/
+theorem crossTotalW {m₁ m₂ : Nat} {B C : Formula}
+    (f : ProvT m₁ (.impl B C)) (x : ProvT m₂ B)
+    (hf : f.dbFree) (hx : x.dbFree) :
+    ∃ (fuel : Nat) (r : CoreContent C),
+      boxInvGo fuel f (.cons m₂ x .nil) = some r ∧ ContentGoodW 0 r := by
+  have h := fundamentalW f hf 0
+  unfold GoodW at h
+  exact h (.cons m₂ x .nil)
+    (by unfold GoodStackW
+        exact ⟨fun j _ => fundamentalW x hx j, by unfold GoodStackW; trivial⟩)
+
 end PD.T49
