@@ -978,6 +978,16 @@ crossing fell back (O2/O3).
   (b) the ProvT mirror transports the Provable-level bounds to stored subtrees
   (`Provable_iff_nonempty_ProvT`). This also answers the weakenImpl worry: antecedents
   ARE size-charged. Item 3's `fb ≤ N₀` = `cut_lit_bound` at the stored premise.
+  **BUT (arm-level check, 2026-07-08): a STANDALONE tree-wide literal lemma is
+  impossible** — `PlaysT.gateOK` recurses into `search_t` cites whose budgets are
+  program search-SUBSCRIPTS (§5g's escalation channel), not sub-budgets of the root;
+  so `∀ t : ProvT m φ, t.gateOK (litGate 2^m)` fails at every atom boundary. The
+  literal and pool halves interlock at exactly the cites: cite budgets ≤ maxLitP ≤
+  the ATOM's program literals, which only the POOL premise bounds (then N₀ :=
+  2^max(k, maxLitF φ₀) covers every stratum). Consequence: ONE simultaneous
+  induction — `t.gateOK (modestGate N₀)` with the cut-atoms-in-pool hypothesis —
+  is the irreducible shape of the assembly theorem; do not attempt split halves.
+  (This is `local_lit_bound`'s docstring caveat, now confirmed at the arm level.)
   ALSO FOUND: **fixpoint progress needs no strict-decrease package** — a β-reduced
   wild app strictly shrinks by the app node's own +1: `r.wt ≤ f.wt + (x.wt + 0)
   < f.wt + x.wt + 1 = wt(app f x)`, plain `crossWt`/`boxInvGo_wt_le` at the app
