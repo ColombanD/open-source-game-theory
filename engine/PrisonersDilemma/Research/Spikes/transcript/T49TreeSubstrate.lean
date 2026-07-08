@@ -575,6 +575,22 @@ def censusSTS {k₁ k₂ m mc : Nat} {ψ₁ ψ₂ : Formula} {q opnt : Prog} {c0
   .atom (.mk (PlaysT.search_t (tc.mono hc)
     (PlaysT.search_t (tp.mono hm) .const)) (Nat.le_refl _))
 
+theorem actionBeqSelf (a : Action) : (a == a) = true := by cases a <;> rfl
+
+/-- The iteBranchSearch census (2026-07-08): sim-wrapped opponent-vs-bot cert for the
+    ite guard, `search_t` + box content for the then-branch. NO closedness
+    side-condition: the `.opp`/`.bot z` substs reduce on the nose. -/
+def censusITE {kk n mc : Nat} {ψg : Formula} {z qe opnt : Prog} {a' c0 c1 : Action}
+    (pl1 : PlaysT opnt (.bot z) opnt a' n)
+    (tc : ProvT mc (ψg.subst
+      (.ite (.sim .opp (.bot z)) a' (.search kk ψg (.const c0) (.const c1)) qe) opnt))
+    (hc : mc ≤ kk) :
+    ProvT ((n + c_node) + (c_leaf + c_guard kk + c_node) + c_node)
+      (.plays (.ite (.sim .opp (.bot z)) a' (.search kk ψg (.const c0) (.const c1)) qe)
+        opnt c0) :=
+  .atom (.mk (PlaysT.ite_t (.sim pl1) (actionBeqSelf a')
+    (PlaysT.search_t (tc.mono hc) .const)) (Nat.le_refl _))
+
 mutual
 
 def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
@@ -753,8 +769,20 @@ def structCross : (fuel : Nat) → {ξ : Formula} → (d : Derivation ξ) → {c
             exact match atomizeGo fuel u with
               | some ⟨k', .mk cert _⟩ => some ⟨_, censusBotSimStep cert⟩
               | none => none
-    | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-        exact none
+    | iteBranchSearch_t kk z a' c0 c1 ψg qe mee oppo hme =>
+        cases heq
+        cases hme
+        cases S' with
+        | nil => exact none
+        | cons mD2 u2 s'' =>
+            cases s'' with
+            | nil =>
+                exact match atomizeGo fuel u with
+                  | some ⟨k', .mk pl1 hn⟩ =>
+                      (match boxInvGo fuel u2 .nil with
+                       | some ⟨mc, tc, hc⟩ => some ⟨_, censusITE pl1 tc hc⟩
+                       | none => none)
+                  | none => none
     | eqRefl p => cases heq
     | eqNeg p q hne => cases heq
 
@@ -1391,7 +1419,27 @@ theorem crossWt : ∀ (F : Nat),
                   refine ⟨?_, trivial⟩
                   simp [CoreContent.wt, censusBotSimStep, ProvT.wt, dNodes, DStack.wt]
       | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          simp [structCross] at h
+          cases hme2
+          cases S' with
+          | nil => simp [structCross] at h
+          | cons mD2 u2 s'' =>
+              cases s'' with
+              | nil =>
+                  simp only [structCross] at h
+                  cases ha : atomizeGo F u with
+                  | none => rw [ha] at h; exact absurd h (by simp)
+                  | some ra =>
+                      rw [ha] at h
+                      obtain ⟨k', pl1, hn⟩ := ra
+                      cases hb : boxInvGo F u2 .nil with
+                      | none => rw [hb] at h; exact absurd h (by simp)
+                      | some rc =>
+                          rw [hb] at h
+                          obtain ⟨mc, tc, hcc⟩ := rc
+                          cases h
+                          exact ⟨by simp [CoreContent.wt, censusITE, ProvT.wt,
+                              dNodes, DStack.wt],
+                            by simp [CoreContent.freeS2, censusITE, ProvT.freeS2]⟩
 
 /-- The machine half, original signature (call sites unchanged). -/
 theorem boxInvGo_wt_le (F : Nat) {m : Nat} {ξ core : Formula}
@@ -2017,7 +2065,32 @@ theorem crossGateOK {G : Formula → Prop}
                   simpa [CoreContent.gateOK, censusBotSimStep, ProvT.gateOK,
                     AtomT.gateOK, PlaysT.gateOK] using hcg
       | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          simp [structCross] at h
+          cases hme2
+          cases S' with
+          | nil => simp [structCross] at h
+          | cons mD2 u2 s'' =>
+              cases s'' with
+              | nil =>
+                  simp only [structCross] at h
+                  cases ha : atomizeGo F u with
+                  | none => rw [ha] at h; exact absurd h (by simp)
+                  | some ra =>
+                      rw [ha] at h
+                      obtain ⟨k', pl1, hn⟩ := ra
+                      cases hb : boxInvGo F u2 .nil with
+                      | none => rw [hb] at h; exact absurd h (by simp)
+                      | some rc =>
+                          rw [hb] at h
+                          have hcg1 := (ihS F (by omega)).2.2.1 u hu ha
+                          have hcg2 := (ihS F (by omega)).1 u2 .nil hS'.1 trivial
+                            trivial hb
+                          obtain ⟨mc, tc, hcc⟩ := rc
+                          simp only [AtomT.gateOK] at hcg1
+                          simp only [CoreContent.gateOK] at hcg2
+                          cases h
+                          simp only [CoreContent.gateOK, censusITE, ProvT.gateOK,
+                            AtomT.gateOK, PlaysT.gateOK]
+                          exact ⟨hcg1, (ProvT.mono_gateOK hcc tc).mpr hcg2, trivial⟩
   · cases F with
     | zero => intro _ _ _ _ t _ r h; simp [atomizeGo] at h
     | succ F =>
@@ -2511,7 +2584,25 @@ theorem crossS2d : ∀ (F : Nat),
                   cases h
                   simp [CoreContent.s2d, censusBotSimStep, ProvT.s2d, DStack.s2d]
       | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          simp [structCross] at h
+          cases hme2
+          cases S' with
+          | nil => simp [structCross] at h
+          | cons mD2 u2 s'' =>
+              cases s'' with
+              | nil =>
+                  simp only [structCross] at h
+                  cases ha : atomizeGo F u with
+                  | none => rw [ha] at h; exact absurd h (by simp)
+                  | some ra =>
+                      rw [ha] at h
+                      obtain ⟨k', pl1, hn⟩ := ra
+                      cases hb : boxInvGo F u2 .nil with
+                      | none => rw [hb] at h; exact absurd h (by simp)
+                      | some rc =>
+                          rw [hb] at h
+                          obtain ⟨mc, tc, hcc⟩ := rc
+                          cases h
+                          simp [CoreContent.s2d, censusITE, ProvT.s2d, DStack.s2d]
 
 /-- The machine half, original signature. -/
 theorem boxInvGo_s2d_le (F : Nat) {m : Nat} {ξ core : Formula}
@@ -3064,7 +3155,28 @@ theorem crossWtLt : ∀ (F : Nat),
                     DStack.wt]
                   omega
       | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          simp [structCross] at h
+          cases hme2
+          cases S' with
+          | nil => simp [structCross] at h
+          | cons mD2 u2 s'' =>
+              cases s'' with
+              | nil =>
+                  simp only [structCross] at h
+                  cases ha : atomizeGo F u with
+                  | none => rw [ha] at h; exact absurd h (by simp)
+                  | some ra =>
+                      rw [ha] at h
+                      obtain ⟨k', pl1, hn⟩ := ra
+                      cases hb : boxInvGo F u2 .nil with
+                      | none => rw [hb] at h; exact absurd h (by simp)
+                      | some rc =>
+                          rw [hb] at h
+                          obtain ⟨mc, tc, hcc⟩ := rc
+                          cases h
+                          have := u.wt_pos
+                          simp only [CoreContent.wt, censusITE, ProvT.wt, dNodes,
+                            DStack.wt]
+                          omega
 
 /-- The machine half, original signature. -/
 theorem boxInvGo_wt_lt (F : Nat) {m : Nat} {ξ core : Formula}
@@ -3350,7 +3462,26 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
                   rw [(ih F'' hFF).2.2.1 _ ha]
                   exact h
       | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          simp [structCross] at h
+          cases hme2
+          cases S' with
+          | nil => simp [structCross] at h
+          | cons mD2 u2 s'' =>
+              cases s'' with
+              | nil =>
+                  simp only [structCross] at h ⊢
+                  cases ha : atomizeGo F u with
+                  | none => rw [ha] at h; exact absurd h (by simp)
+                  | some ra =>
+                      rw [ha] at h
+                      rw [(ih F'' hFF).2.2.1 _ ha]
+                      obtain ⟨k', pl1, hn⟩ := ra
+                      cases hb : boxInvGo F u2 .nil with
+                      | none => rw [hb] at h; exact absurd h (by simp)
+                      | some rc =>
+                          rw [hb] at h
+                          rw [(ih F'' hFF).1 _ _ hb]
+                          obtain ⟨mc, tc, hcc⟩ := rc
+                          exact h
     · intro m p q c t r h
       cases t with
       | atom a => simp only [atomizeGo] at h ⊢; exact h
