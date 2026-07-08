@@ -4174,4 +4174,34 @@ theorem GoodW_app {k m₁ m₂ K : Nat} {B C : Formula}
     (by unfold GoodStackW; exact ⟨hd, hS⟩)
   exact ⟨fuel + 1, r, hrun, hcont⟩
 
+/-- Atomize-halting from wide goodness: the enrichment pays here — the nil-instance's
+    content condition IS (or composes to) the claim. -/
+theorem atomizeW_halts {m : Nat} {p q : Prog} {c : Action}
+    (u : ProvT m (.plays p q c)) (hu : GoodW 0 u) :
+    ∃ (F : Nat) (a : Σ' k', AtomT k' (.plays p q c)), atomizeGo F u = some a := by
+  unfold GoodW at hu
+  obtain ⟨F, r, hrun, hcont⟩ := hu .nil (by unfold GoodStackW; trivial)
+  unfold ContentGoodW at hcont
+  cases u with
+  | atom a => exact ⟨1, ⟨_, a⟩, rfl⟩
+  | struct d hd =>
+      -- the nil run is the identity: r.2 = the tree itself
+      cases F with
+      | zero => simp [boxInvGo] at hrun
+      | succ F =>
+          simp only [boxInvGo, mkSelf] at hrun
+          cases hrun
+          exact hcont
+  | app K m₁ m₂ φ α f x hle =>
+      cases F with
+      | zero => simp [boxInvGo] at hrun
+      | succ F =>
+          obtain ⟨Fa, a, ha⟩ := hcont
+          refine ⟨max (F + 1) Fa + 1, a, ?_⟩
+          simp only [atomizeGo]
+          have hb := boxInvGo_fuel_mono (F + 1) (max (F + 1) Fa + 1)
+            (by omega) (ProvT.app _ m₁ m₂ φ _ f x hle) .nil hrun
+          rw [show boxInvGo (max (F + 1) Fa) f (.cons m₂ x .nil) = some r from hb]
+          exact (crossFuelMono Fa (max (F + 1) Fa) (Nat.le_max_right _ _)).2.2.1 _ ha
+
 end PD.T49
