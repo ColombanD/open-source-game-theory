@@ -2167,6 +2167,36 @@ theorem modestGate_box_closed (N : Nat) :
   · simp only [maxLitF] at hlit; omega
   · simpa [T43.modestF] using hmod
 
+/-- **axK's gate is FULLY conclusion-tied** (O5 brick, 2026-07-08): both gate halves of
+    the premise formula follow from the conclusion's gate — the subscript via
+    `a ≤ c` (hg1), the body literals and modesty verbatim. -/
+theorem modestGate_axK_tied {N a b c : Nat} {φ α : Formula}
+    (h : modestGate N (.impl (.box b φ) (.box c α)))
+    (hg1 : a + b + α.size ≤ c) :
+    modestGate N (.box a (.impl φ α)) := by
+  obtain ⟨hlit, hmod⟩ := h
+  refine ⟨?_, ?_⟩
+  · simp only [maxLitF] at hlit ⊢
+    omega
+  · simpa [T43.modestF, Bool.and_eq_true] using
+      (by simpa [T43.modestF, Bool.and_eq_true] using hmod :
+        T43.modestF φ = true ∧ T43.modestF α = true)
+
+/-- **diagF/diagB's gate is conclusion-tied modulo the premise subscript** (O5 brick):
+    the target and modesty come from the conclusion; only the Löb-premise's box
+    subscript `fb` needs the literal half (budget-bounds-literals). -/
+theorem modestGate_diag_tied {N fb g : Nat} {tgt : Formula}
+    (h : modestGate N (.impl (.box g (.diag g tgt)) tgt))
+    (hfb : fb ≤ N) :
+    modestGate N (.impl (.box fb tgt) tgt) := by
+  obtain ⟨hlit, hmod⟩ := h
+  refine ⟨?_, ?_⟩
+  · simp only [maxLitF] at hlit ⊢
+    omega
+  · simpa [T43.modestF, Bool.and_eq_true] using
+      (by simpa [T43.modestF, Bool.and_eq_true] using hmod :
+        T43.modestF tgt = true)
+
 -- The §12 closed-form fuel, validated live: `demoBox.wt = 3`, so 20 units suffice.
 #eval (boxInv ((ProvT.wt demoBox + 1) * (ProvT.wt demoBox + 1)
   + ProvT.wt demoBox + 1) demoBox).isSome
