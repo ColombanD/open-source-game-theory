@@ -1,0 +1,119 @@
+import PrisonersDilemma.Research.Spikes.transcript.T49TreeSubstrate
+import PrisonersDilemma.Bots.DupocBot
+
+/-! # T50 — THE FALSIFICATION EXPERIMENT (2026-07-08, ledger §6 top)
+
+A REAL instance-Löb fact as a ProvT tree: DupocBot self-cooperation, whose guard
+instance IS the cooperation fact (`tgt = ψg.subst me me = .plays me me C`). Built by
+mirroring `BaseTheorems.bloeb_engine` constructor-for-constructor, Löb premise =
+the searchBranch census. Three verdicts decide the pivot:
+  (a) `certifyExcised` — expect FALSE (v1 excisor: apps only; instance middles remain);
+  (b) `atomizeGo` — expect TRUE (the machine is the Löb-unroller);
+  (c) gate-check of the produced ATOM — decides whether cites must be normalized
+      recursively (predicted: yes — the cite carries the once-unrolled tree). -/
+
+
+namespace PD.T50
+open PD PD.T49
+
+/-- `bloeb_engine`, mirrored into the Type layer verbatim. -/
+def bloebT (φ : Formula) (pm fb g n₁ n₃ n₄ n₅ : Nat)
+    (c₁ c₂ c₃ c₄ c₅ c₆ c₇ c₈ c₉ c₁₀ c₁₁ c₁₂ c₁₃ c₁₄ K : Nat)
+    (hLoeb : ProvT pm (.impl (.box fb φ) φ))
+    (H1 : pm + (Formula.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ)).size ≤ c₁)
+    (H2 : pm + (Formula.impl (.impl (.box g (.diag g φ)) φ) (.diag g φ)).size ≤ c₂)
+    (H3 : c₁ ≤ n₁)
+    (H4 : n₁ + (Formula.box n₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ))).size ≤ c₃)
+    (H5 : n₁ + g + (Formula.impl (.box g (.diag g φ)) φ).size ≤ n₃)
+    (H6 : (Formula.impl (.box n₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ)))
+            (.impl (.box g (.diag g φ)) (.box n₃ (.impl (.box g (.diag g φ)) φ)))).size ≤ c₄)
+    (H7 : c₄ + c₃ + (Formula.impl (.box g (.diag g φ))
+            (.box n₃ (.impl (.box g (.diag g φ)) φ))).size ≤ c₅)
+    (H8 : n₃ + n₄ + φ.size ≤ n₅)
+    (H9 : (Formula.impl (.box n₃ (.impl (.box g (.diag g φ)) φ))
+            (.impl (.box n₄ (.box g (.diag g φ))) (.box n₅ φ))).size ≤ c₆)
+    (H10 : g + (Formula.box g (.diag g φ)).size ≤ n₄)
+    (H11 : (Formula.impl (.box g (.diag g φ)) (.box n₄ (.box g (.diag g φ)))).size ≤ c₇)
+    (H12 : c₅ + c₆ + (Formula.impl (.box g (.diag g φ))
+            (.impl (.box n₄ (.box g (.diag g φ))) (.box n₅ φ))).size ≤ c₈)
+    (H13 : c₈ + c₇ + (Formula.impl (.box g (.diag g φ)) (.box n₅ φ)).size ≤ c₉)
+    (H14 : n₅ ≤ fb)
+    (H15 : (Formula.impl (.box n₅ φ) (.box fb φ)).size ≤ c₁₀)
+    (H16 : c₉ + c₁₀ + (Formula.impl (.box g (.diag g φ)) (.box fb φ)).size ≤ c₁₁)
+    (H17 : c₁₁ + pm + (Formula.impl (.box g (.diag g φ)) φ).size ≤ c₁₂)
+    (H18 : c₂ + c₁₂ + (Formula.diag g φ).size ≤ c₁₃)
+    (H19 : c₁₃ ≤ g)
+    (H20 : g + (Formula.box g (.diag g φ)).size ≤ c₁₄)
+    (H21 : c₁₂ + c₁₄ + φ.size ≤ K) :
+    ProvT K φ :=
+  let legF : ProvT c₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ)) :=
+    .diagF pm fb g c₁ φ hLoeb H1
+  let legB : ProvT c₂ (.impl (.impl (.box g (.diag g φ)) φ) (.diag g φ)) :=
+    .diagB pm fb g c₂ φ hLoeb H2
+  let hnec : ProvT c₃ (.box n₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ))) :=
+    .boxIntro n₁ c₃ _ (legF.mono H3) H4
+  let hK1 : ProvT c₄ (.impl (.box n₁ (.impl (.diag g φ) (.impl (.box g (.diag g φ)) φ)))
+      (.impl (.box g (.diag g φ)) (.box n₃ (.impl (.box g (.diag g φ)) φ)))) :=
+    .axKf n₁ g n₃ c₄ (.diag g φ) (.impl (.box g (.diag g φ)) φ) H5 H6
+  let h2 : ProvT c₅ (.impl (.box g (.diag g φ)) (.box n₃ (.impl (.box g (.diag g φ)) φ))) :=
+    .app c₅ c₄ c₃ _ _ hK1 hnec H7
+  let hK2 : ProvT c₆ (.impl (.box n₃ (.impl (.box g (.diag g φ)) φ))
+      (.impl (.box n₄ (.box g (.diag g φ))) (.box n₅ φ))) :=
+    .axKf n₃ n₄ n₅ c₆ (.box g (.diag g φ)) φ H8 H9
+  let hfour : ProvT c₇ (.impl (.box g (.diag g φ)) (.box n₄ (.box g (.diag g φ)))) :=
+    .box4 g n₄ c₇ (.diag g φ) H10 H11
+  let h4 : ProvT c₈ (.impl (.box g (.diag g φ))
+      (.impl (.box n₄ (.box g (.diag g φ))) (.box n₅ φ))) :=
+    .implTrans _ _ _ c₅ c₆ h2 hK2 H12
+  let h6 : ProvT c₉ (.impl (.box g (.diag g φ)) (.box n₅ φ)) :=
+    .impS2 _ _ _ c₈ c₇ c₉ h4 hfour H13
+  let hmono : ProvT c₁₀ (.impl (.box n₅ φ) (.box fb φ)) :=
+    .boxMono n₅ fb c₁₀ φ H14 H15
+  let h6' : ProvT c₁₁ (.impl (.box g (.diag g φ)) (.box fb φ)) :=
+    .implTrans _ _ _ c₉ c₁₀ h6 hmono H16
+  let hE : ProvT c₁₂ (.impl (.box g (.diag g φ)) φ) :=
+    .implTrans _ _ _ c₁₁ pm h6' hLoeb H17
+  let hF : ProvT c₁₃ (.diag g φ) := .app c₁₃ c₂ c₁₂ _ _ legB hE H18
+  let hG : ProvT c₁₄ (.box g (.diag g φ)) := .boxIntro g c₁₄ _ (hF.mono H19) H20
+  .app K c₁₂ c₁₄ _ _ hE hG H21
+
+/-! ## The Dupoc instance. -/
+
+def kD : Nat := 2097152
+def meD : Prog := Bots.DupocBot kD
+def tgtD : Formula := .plays meD meD Action.C
+
+def dLeg : Derivation (.impl (.box kD tgtD) tgtD) :=
+  .searchBranch kD (.plays .opp .self Action.C) Action.C Action.D meD meD rfl
+
+#eval dLeg.size          -- pm
+#eval tgtD.size          -- |φ|
+#eval Nat.log2 kD
+
+def W : Nat := 224   -- dLeg.size + tgtD.size + log2 kD + 8 = 138+57+21+8
+
+def hLoebT : ProvT 138 (.impl (.box kD tgtD) tgtD) := .struct dLeg (Nat.le_refl _)
+
+/-- THE TREE: DupocBot self-cooperation, the real instance-Löb fact. -/
+def treeD : ProvT (4096 * W) tgtD :=
+  bloebT tgtD 138 kD (1024 * W) (32 * W) (2048 * W) (2048 * W) (8192 * W)
+    (16 * W) (16 * W) (64 * W) (32 * W) (128 * W) (32 * W) (16 * W)
+    (256 * W) (512 * W) (16 * W) (640 * W) (704 * W) (768 * W) (2048 * W) (4096 * W)
+    hLoebT
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)
+
+-- (a′) the pivot's claim, directly: the RAW tree fails the modest gate
+#eval s!"(a′) raw tree passes gate: {treeD.gateOKb (T44.cutOKb kD)}"
+-- (a) v1 excision cannot repair it (apps only; middles/diag remain)
+#eval s!"(a) certifyExcised: {(certifyExcised 4 500 kD treeD).isSome}"
+-- (b) but the machine IS the Löb-unroller: the fact atomizes
+#eval s!"(b) atomizes: {(atomizeGo 2000 treeD).isSome}"
+-- (c) the produced atom's gate status (predicted false: the cite carries the
+--     once-unrolled tree; cite-normalization is the missing pipeline step)
+#eval s!"(c) atom passes gate: {
+  match atomizeGo 2000 treeD with
+  | some ⟨_, cert⟩ => (ProvT.atom cert).gateOKb (T44.cutOKb kD)
+  | none => false}"

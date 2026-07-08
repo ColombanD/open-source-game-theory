@@ -1005,6 +1005,64 @@ crossing fell back (O2/O3).
   and lifted through the excisor: `excise_dbFree`/`exciseFix_dbFree` — every
   round's output satisfies `fundamentalW`'s hypothesis (the iteration license,
   end to end).
+- **💥 THE VERDICT (2026-07-08, T50InstanceLob.lean — the experiment RAN):
+  CutRelevance AS STATED (with `modestGate`) IS FALSE. The conjecture survives with
+  a REPAIRED GATE.** Machine-checked on the real DupocBot self-cooperation tree
+  (`treeD`, the `bloeb_engine` mirror at kD = 2^21, W-multiple budgets, all 21
+  side-conditions `by decide`):
+  * (a′) `treeD.gateOKb (cutOKb kD) = false` — bloeb trees fail the modest gate
+    (literal half passes at N := kD by construction; MODESTY alone fails).
+  * (a) `certifyExcised = false` — v1 excision cannot repair (middles/diag).
+  * (b) `atomizeGo = true` — the machine IS the Löb-unroller on real instances.
+  * (c) the produced atom fails the gate — its `search_t` cite carries the
+    once-unrolled tree, whose own census cite is the SAME tree at the SAME budget
+    `kD`: **the fixpoint's cite chain never descends**. Self-reference = only diag
+    breaks the regress, and `modestGate` blocks diag on instances (instance
+    formulas are never `modestF`). Hence NO `ProvableG (modestGate N)` derivation
+    of a self-referential search fact exists, at any N, any budget — while
+    `Provable` proves it (bloeb). FALSIFICATION, pending only the formal regress
+    lemma ("the gated-modest system proves no self-referential search fact" — a
+    clean induction: every plays-derivation ends in atoms whose cites re-query the
+    guard instance at the guard budget; without diag the regress has no base).
+  **THE REPAIR (the conjecture's true form)**: an INSTANCE GATE —
+  `instGate P N B := B is a pool-instance of a modest formula`
+  (`∃ B₀ u v, modestGate N B₀ ∧ u, v ∈ P ∧ B = B₀.subst u v`, P = T46 players).
+  T46's query universe ALREADY works with instances (guardU is instance-based!),
+  so finiteness survives: T44's checkers enumerate (modest formulas)×(player
+  pairs) — finite; T47's pigeonhole transfers. bloeb's gated sites then pass:
+  diag premise `impl (box fb tgt) tgt` = instance of the raw-modest
+  `impl (box fb ψg') ψg'`-shape by pool players. REVISED CONJECTURE:
+  `Provable k φ → ProvableG (instGate P N₀) k φ` for zoo-pool roots — same
+  decidability payoff, and the ENTIRE T48/T49 machinery (normalization, excisor,
+  conservation packages, bricks) carries over: only the GATE and the T44-T47
+  finiteness plumbing change.
+  NEXT: (i) rework T44's `cutOKb` → `instOKb` + re-run the T44-T47 chain's
+  finiteness; (ii) formalize the regress lemma (the falsification half — thesis
+  content!); (iii) re-run T50's (a′) with `instOKb` — expect TRUE on `treeD`
+  DIRECTLY (no excision needed for Löb chains!), which would collapse most of
+  the excision program for zoo facts.
+
+- **🎯 THE FALSIFICATION EXPERIMENT (original plan, superseded by the verdict above).**
+  Decide the pivot empirically before more theory. Build the ProvT tree of a REAL
+  instance-Löb fact — DupocBot self-cooperation, the cleanest fixpoint (its guard
+  instance IS the cooperation fact: `tgt = ψg.subst me me = .plays me me C`) — by
+  mirroring `BaseTheorems.bloeb_engine` constructor-for-constructor into ProvT
+  (boxMono/implTrans/boxIntro/axKf/app/box4/impS2/diagF/diagB all mirror 1:1), with
+  the Löb premise `hLoeb := .struct (Derivation.searchBranch …)` and ALL budgets
+  concrete (`by decide` for the H-side conditions). Then `#eval` three verdicts:
+  (a) `certifyExcised … |>.isSome` — EXPECT false (v1 excisor doesn't touch
+      middles/diag; instance-gated sites remain);
+  (b) `(atomizeGo F tree).isSome` at generous fuel — EXPECT true (the machine IS
+      the Löb-unroller; this is the normal-form route's live test);
+  (c) if (b): wrap the atom and check `gateOKb (cutOKb N)` — TRUE validates
+      "plays-rooted CutRelevance via atomization" (pure atoms have no gated sites;
+      only cites recurse). FALSE (or (b) false) localizes the obstruction exactly.
+  Whichever way, the outcome REPLACES speculation: (c)=true ⇒ formalize the
+  atomization route (plays-roots) + box-roots via boxInv + the one impl shape;
+  (c)=false ⇒ inspect the produced atom's cites for the failing site and decide
+  gate-repair (pool-instance gate) vs conjecture-false.
+  GOAL REMAINS: prove the conjecture — the experiment chooses the provable form.
+
 - **⚠️ THE INSTANCE-GATE PIVOT (2026-07-08, LATER — read BEFORE the tie-down design
   below; discovered while statement-checking the main induction).**
   **Finding**: guard-INSTANCE formulas are never `modestF` — substituted frames
