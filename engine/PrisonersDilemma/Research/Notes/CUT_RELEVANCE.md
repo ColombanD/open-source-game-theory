@@ -963,12 +963,15 @@ crossing fell back (O2/O3).
      via compression-ceiling/C0).
   4. **`implTrans`/`impS2` middles `G ψ`** — the zoo-scoped middle argument (one
      impl-shape; see the middle-elimination design above).
-  5. **`derivGateOK`: `modusPonens` cuts `G φ` and `hypSyll` middles `G ψ`** — NEW
-     SITES not in the original O5 sketch. φ = d2's Derivation conclusion:
-     `derivation_shape` constrains it to plays-census shapes / impl-census shapes /
-     `eq p p` / `neg (eq p q)`. The exotic risks: **eqNeg cuts** (arbitrary programs
-     p q — must show minimal proofs only refute guard-tied equalities) and mp-chains
-     over census shapes (census conclusions carry concrete conclusion-tied programs).
+  5. **`derivGateOK` sites — CLOSED 2026-07-08** (`DAnt_gate`, T49, kernel-checked):
+     `modestP_subst`/`modestF_subst` (modesty survives substitution by modest argOK
+     players) → `DAnt_modest` → with `T48.DAnt_lit`, every census antecedent passes
+     the gate whenever its consequent does. mp cuts are antecedents of the
+     impl-premise (`derivation_impl_ant`), hypSyll middles are `DAnt.trans` legs —
+     both covered. The feared **eqNeg cuts are IMPOSSIBLE** at the Derivation level:
+     `DAnt` has no eq-shaped antecedent constructor, and every Derivation-level
+     impl-antecedent is DAnt-census-legitimate. What remains for this site in the
+     big induction: the node's CONCLUSION gate (the induction's own invariant).
   6. **`searchThenSearch_t`'s stored premise tree + all recursive `t.gateOK`** —
      recurse into the same inventory.
   Plus the LITERAL HALF — **already kernel-checked (found 2026-07-08)**: T48
