@@ -5816,7 +5816,8 @@ mutual
     | _, _, .struct _ _ => True
     | _, _, .atom t => t.citesLE M
     | _, _, .weakenImpl _ _ _ t _ => t.citesLE M
-    | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.citesLE M
+    | _, _, .searchThenSearch_t _ k₂ _ _ _ _ _ _ _ _ _ t _ _ =>
+        k₂ ≤ M ∧ t.citesLE M
     | _, _, .implTrans _ _ _ _ _ t1 t2 _ => t1.citesLE M ∧ t2.citesLE M
     | _, _, .atomBoxImpl _ _ _ _ t _ => t.citesLE M
     | _, _, .boxIntro _ _ _ t _ => t.citesLE M

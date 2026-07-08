@@ -1,5 +1,6 @@
 import PrisonersDilemma.Research.Spikes.transcript.T49TreeSubstrate
 import PrisonersDilemma.Bots.DupocBot
+import PrisonersDilemma.Decidability.T46LogicSpace
 
 /-! # T50 — THE FALSIFICATION EXPERIMENT (2026-07-08, ledger §6 top)
 
@@ -416,3 +417,213 @@ theorem instGate_diag_tied {P : List Prog} {N fb g : Nat} {tgt : Formula}
     omega
   · simp only [instModestF, Bool.and_eq_true] at hmod ⊢
     exact ⟨hmod.2, hmod.2⟩
+
+/-! ## 4. THE TRANSPORT — full `gateOK (instGate P N)` from cut-sites + cite caps.
+
+The §28 tie-down, live at the repaired gate: conclusions ARE instance-gated now.
+Hypotheses: the node's conclusion gate, `cutsOK` (app/implTrans/impS2 — what
+excision guarantees), `citesLE M` (cite budgets), `m ≤ M`, `2^M ≤ N` (for the
+diag subscripts), and `PoolOK P`. The plays walk carries the frame triple. -/
+
+mutual
+theorem PlaysT.transport {P : List Prog} {N M : Nat} (hP : PoolOK P)
+    (hMN : 2 ^ M ≤ N) :
+    {me o b : Prog} → {a : Action} → {n : Nat} → (t : PlaysT me o b a n) →
+    t.cutsOK (instGate P N) → t.citesLE M →
+    argOKP P me = true → instModestP P me = true → T42.maxLitP me ≤ N →
+    argOKP P o = true → instModestP P o = true → T42.maxLitP o ≤ N →
+    instModestP P b = true → T42.maxLitP b ≤ N →
+    t.gateOK (instGate P N)
+  | _, _, _, _, _, .const, _, _, _, _, _, _, _, _, _, _ => trivial
+  | _, _, _, _, _, .self t, hc, hl, h1, h2, h3, h4, h5, h6, _, _ =>
+      PlaysT.transport hP hMN t hc hl h1 h2 h3 h4 h5 h6 h2 h3
+  | _, _, _, _, _, .opp t, hc, hl, h1, h2, h3, h4, h5, h6, _, _ =>
+      PlaysT.transport hP hMN t hc hl h1 h2 h3 h4 h5 h6 h5 h6
+  | _, _, _, _, _, .bot (p := p) t, hc, hl, h1, h2, h3, h4, h5, h6, hb, hbl => by
+      have hb' : instModestP P p = true := hb
+      have hbl' : T42.maxLitP p ≤ N := by
+        simp only [T42.maxLitP] at hbl; exact hbl
+      exact PlaysT.transport hP hMN t hc hl h1 h2 h3 h4 h5 h6 hb' hbl'
+  | me, o, _, _, _, .sim (p := p) (q := q) t, hc, hl, h1, h2, h3, h4, h5, h6, hb, hbl => by
+      simp only [instModestP, Bool.and_eq_true] at hb
+      have hlp : T42.maxLitP p ≤ N := by
+        simp only [T42.maxLitP] at hbl; omega
+      have hlq : T42.maxLitP q ≤ N := by
+        simp only [T42.maxLitP] at hbl; omega
+      have hp := argOKP_subst_inst hP hb.1.1.1 hb.1.2 h1 h2 h4 h5
+      have hq := argOKP_subst_inst hP hb.1.1.2 hb.2 h1 h2 h4 h5
+      have hlp' : T42.maxLitP (p.subst me o) ≤ N :=
+        le_trans (T46.maxLitP_subst me o p) (by omega)
+      have hlq' : T42.maxLitP (q.subst me o) ≤ N :=
+        le_trans (T46.maxLitP_subst me o q) (by omega)
+      exact PlaysT.transport hP hMN t hc hl hp.1 hp.2 hlp' hq.1 hq.2 hlq' hp.2 hlp'
+  | _, _, _, _, _, .ite_t (b := bg) (p := p) tb hr tp, hc, hl,
+      h1, h2, h3, h4, h5, h6, hb, hbl => by
+      simp only [instModestP, Bool.and_eq_true] at hb
+      have hlb : T42.maxLitP bg ≤ N := by
+        simp only [T42.maxLitP] at hbl; omega
+      have hlp : T42.maxLitP p ≤ N := by
+        simp only [T42.maxLitP] at hbl; omega
+      exact ⟨PlaysT.transport hP hMN tb hc.1 hl.1 h1 h2 h3 h4 h5 h6 hb.1.1 hlb,
+        PlaysT.transport hP hMN tp hc.2 hl.2 h1 h2 h3 h4 h5 h6 hb.1.2 hlp⟩
+  | _, _, _, _, _, .ite_f (b := bg) (q := q) tb hr tq, hc, hl,
+      h1, h2, h3, h4, h5, h6, hb, hbl => by
+      simp only [instModestP, Bool.and_eq_true] at hb
+      have hlb : T42.maxLitP bg ≤ N := by
+        simp only [T42.maxLitP] at hbl; omega
+      have hlq : T42.maxLitP q ≤ N := by
+        simp only [T42.maxLitP] at hbl; omega
+      exact ⟨PlaysT.transport hP hMN tb hc.1 hl.1 h1 h2 h3 h4 h5 h6 hb.1.1 hlb,
+        PlaysT.transport hP hMN tq hc.2 hl.2 h1 h2 h3 h4 h5 h6 hb.2 hlq⟩
+  | me, o, _, _, _, .search_t (k := kg) (φ := φg) (p := pb) tg tp, hc, hl,
+      h1, h2, h3, h4, h5, h6, hb, hbl => by
+      simp only [instModestP, Bool.and_eq_true] at hb
+      have hgate : instGate P N (φg.subst me o) := by
+        constructor
+        · refine le_trans (T46.maxLitF_subst me o φg) ?_
+          have : T42.maxLitF φg ≤ N := by
+            simp only [T42.maxLitP] at hbl; omega
+          omega
+        · exact modestF_subst_inst P me o h1 h4 h2 h5 φg hb.1.1
+      have hlpb : T42.maxLitP pb ≤ N := by
+        simp only [T42.maxLitP] at hbl; omega
+      exact ⟨ProvT.transport hP hMN tg hc.1 hl.2.1 hl.1 hgate,
+        PlaysT.transport hP hMN tp hc.2 hl.2.2 h1 h2 h3 h4 h5 h6 hb.1.2 hlpb⟩
+  | me, o, _, _, _, .search_f (m := mg) (φ := φg) (q := qb) tr tq, hc, hl,
+      h1, h2, h3, h4, h5, h6, hb, hbl => by
+      simp only [instModestP, Bool.and_eq_true] at hb
+      have hgate : instGate P N (.neg (φg.subst me o)) := by
+        constructor
+        · show T42.maxLitF (φg.subst me o) ≤ N
+          refine le_trans (T46.maxLitF_subst me o φg) ?_
+          have : T42.maxLitF φg ≤ N := by
+            simp only [T42.maxLitP] at hbl; omega
+          omega
+        · show instModestF P (φg.subst me o) = true
+          exact modestF_subst_inst P me o h1 h4 h2 h5 φg hb.1.1
+      have hlqb : T42.maxLitP qb ≤ N := by
+        simp only [T42.maxLitP] at hbl; omega
+      exact ⟨ProvT.transport hP hMN tr hc.1 hl.2.1 hl.1 hgate,
+        PlaysT.transport hP hMN tq hc.2 hl.2.2 h1 h2 h3 h4 h5 h6 hb.2 hlqb⟩
+
+theorem AtomT.transport {P : List Prog} {N M : Nat} (hP : PoolOK P)
+    (hMN : 2 ^ M ≤ N) :
+    {k : Nat} → {φ : Formula} → (t : AtomT k φ) →
+    t.cutsOK (instGate P N) → t.citesLE M → instGate P N φ →
+    t.gateOK (instGate P N)
+  | _, _, .mk pl hn, hc, hl, hξ => by
+      obtain ⟨hlit, hmod⟩ := hξ
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [T42.maxLitF] at hlit
+      exact PlaysT.transport hP hMN pl hc hl
+        hmod.1.1.1 hmod.1.2 (by omega) hmod.1.1.2 hmod.2 (by omega)
+        hmod.1.2 (by omega)
+
+theorem ProvT.transport {P : List Prog} {N M : Nat} (hP : PoolOK P)
+    (hMN : 2 ^ M ≤ N) :
+    {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) →
+    t.cutsOK (instGate P N) → t.citesLE M → m ≤ M → instGate P N ξ →
+    t.gateOK (instGate P N)
+  | _, _, .struct d _, _, _, _, hξ => derivGateOK_of_conclusion_inst hP d hξ
+  | _, _, .atom t, hc, hl, _, hξ => AtomT.transport hP hMN t hc hl hξ
+  | _, _, .weakenImpl φ' ψ' m' tw hle, hc, hl, hm, hξ =>
+      ProvT.transport hP hMN tw hc hl
+        (le_trans (by have := Formula.size_pos (.impl φ' ψ'); omega) hm)
+        (instGate_impl_iff.mp hξ).2
+  | _, _, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 qe _ opnt rfl tw hm hsz,
+      hc, hl, hmM, hξ => by
+      have hpl := (instGate_impl_iff.mp hξ).2
+      obtain ⟨hlit, hmod⟩ := hpl
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [T42.maxLitF] at hlit
+      have hmee := hmod.1.2
+      simp only [instModestP, Bool.and_eq_true] at hmee
+      have hgate : instGate P N (ψ₂.subst
+          (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) qe) opnt) := by
+        constructor
+        · refine le_trans (T46.maxLitF_subst
+            (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) qe) opnt ψ₂) ?_
+          have : T42.maxLitF ψ₂ ≤ N := by
+            have := hlit
+            simp only [T42.maxLitP] at this ⊢
+            omega
+          omega
+        · exact modestF_subst_inst P
+            (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) qe) opnt
+            hmod.1.1.1 hmod.1.1.2 hmod.1.2 hmod.2 ψ₂ hmee.1.2.1.1
+      exact ProvT.transport hP hMN tw hc (hl.2) (le_trans hm hl.1) hgate
+  | _, _, .implTrans φ' ψ' χ' a b t1 t2 hle, hc, hl, hm, hξ => by
+      have h1 := (instGate_impl_iff.mp hξ).1
+      have h2 := (instGate_impl_iff.mp hξ).2
+      exact ⟨hc.1,
+        ProvT.transport hP hMN t1 hc.2.1 hl.1
+          (le_trans (by have := Formula.size_pos (.impl φ' χ'); omega) hm)
+          (instGate_impl_iff.mpr ⟨h1, hc.1⟩),
+        ProvT.transport hP hMN t2 hc.2.2 hl.2
+          (le_trans (by have := Formula.size_pos (.impl φ' χ'); omega) hm)
+          (instGate_impl_iff.mpr ⟨hc.1, h2⟩)⟩
+  | _, _, .atomBoxImpl kB p' q' a' cert hle, hc, hl, hm, hξ =>
+      AtomT.transport hP hMN cert hc hl (instGate_impl_iff.mp hξ).1
+  | _, _, .boxIntro kIn K φ' tc hle, hc, hl, hm, hξ => by
+      obtain ⟨hlit, hmod⟩ := hξ
+      simp only [T42.maxLitF] at hlit
+      exact ProvT.transport hP hMN tc hc hl
+        (le_trans (by have := Formula.size_pos (.box kIn φ'); omega) hm)
+        ⟨by omega, hmod⟩
+  | _, _, .app K m₁ m₂ φ' α t1 t2 hle, hc, hl, hm, hξ =>
+      ⟨hc.1,
+        ProvT.transport hP hMN t1 hc.2.1 hl.1
+          (le_trans (by have := Formula.size_pos α; omega) hm)
+          (instGate_impl_iff.mpr ⟨hc.1, hξ⟩),
+        ProvT.transport hP hMN t2 hc.2.2 hl.2
+          (le_trans (by have := Formula.size_pos α; omega) hm) hc.1⟩
+  | _, _, .axK a' b' c' m'' K φ' α' tP hg1 hle, hc, hl, hm, hξ => by
+      have htied := instGate_axK_tied hξ hg1
+      exact ⟨htied, ProvT.transport hP hMN tP hc hl
+        (le_trans (by have := Formula.size_pos (.impl (.box b' φ') (.box c' α')); omega) hm)
+        htied⟩
+  | _, _, .box4 _ _ _ _ _ _, _, _, _, _ => trivial
+  | _, _, .diagF pm fb g K tgt tP hle, hc, hl, hm, hξ => by
+      have hfb : fb ≤ N := by
+        have hd := PD.T48.diag_lit_bound (ProvT.sound tP)
+        have hpm : pm ≤ M := le_trans
+          (by have := Formula.size_pos (.impl (.diag g tgt)
+                (.impl (.box g (.diag g tgt)) tgt)); omega) hm
+        have : (2:Nat) ^ pm ≤ 2 ^ M := Nat.pow_le_pow_right (by omega) hpm
+        omega
+      have htied := instGate_diag_tied (instGate_impl_iff.mp hξ).2 hfb
+      exact ⟨htied, ProvT.transport hP hMN tP hc hl
+        (le_trans (by have := Formula.size_pos (.impl (.diag g tgt)
+          (.impl (.box g (.diag g tgt)) tgt)); omega) hm) htied⟩
+  | _, _, .diagB pm fb g K tgt tP hle, hc, hl, hm, hξ => by
+      have hfb : fb ≤ N := by
+        have hd := PD.T48.diag_lit_bound (ProvT.sound tP)
+        have hpm : pm ≤ M := le_trans
+          (by have := Formula.size_pos (.impl (.impl (.box g (.diag g tgt)) tgt)
+                (.diag g tgt)); omega) hm
+        have : (2:Nat) ^ pm ≤ 2 ^ M := Nat.pow_le_pow_right (by omega) hpm
+        omega
+      have htied := instGate_diag_tied (instGate_impl_iff.mp hξ).1 hfb
+      exact ⟨htied, ProvT.transport hP hMN tP hc hl
+        (le_trans (by have := Formula.size_pos (.impl (.impl (.box g
+          (.diag g tgt)) tgt) (.diag g tgt)); omega) hm) htied⟩
+  | _, _, .axKf _ _ _ _ _ _ _ _, _, _, _, _ => trivial
+  | _, _, .impS2 φ' ψ' χ' m₁ m₂ K t1 t2 hle, hc, hl, hm, hξ => by
+      have h1 := (instGate_impl_iff.mp hξ).1
+      have h2 := (instGate_impl_iff.mp hξ).2
+      exact ⟨hc.1,
+        ProvT.transport hP hMN t1 hc.2.1 hl.1
+          (le_trans (by have := Formula.size_pos (.impl φ' χ'); omega) hm)
+          (instGate_impl_iff.mpr ⟨h1, instGate_impl_iff.mpr ⟨hc.1, h2⟩⟩),
+        ProvT.transport hP hMN t2 hc.2.2 hl.2
+          (le_trans (by have := Formula.size_pos (.impl φ' χ'); omega) hm)
+          (instGate_impl_iff.mpr ⟨h1, hc.1⟩)⟩
+  | _, _, .boxMono _ _ _ _ _ _, _, _, _, _ => trivial
+  | _, _, .atomNeg p' q' b' aN m'' tc hne hle, hc, hl, hm, hξ => by
+      obtain ⟨hlit, hmod⟩ := hξ
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [T42.maxLitF] at hlit
+      exact AtomT.transport hP hMN tc hc hl
+        ⟨by simp only [T42.maxLitF]; omega,
+         by simp only [instModestF, Bool.and_eq_true]; exact hmod⟩
+end

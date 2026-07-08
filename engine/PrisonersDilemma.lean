@@ -20,3 +20,4 @@ import PrisonersDilemma.Theorems.DBot
 import PrisonersDilemma.Theorems.CupodTrollBot
 import PrisonersDilemma.Theorems.LlmGenerations
 import PrisonersDilemma.Decidability
+import PrisonersDilemma.Research.Spikes.transcript.T49TreeSubstrate
