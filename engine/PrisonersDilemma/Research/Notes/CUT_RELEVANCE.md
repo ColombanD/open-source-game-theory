@@ -1075,6 +1075,26 @@ crossing fell back (O2/O3).
   gate-repair (pool-instance gate) vs conjecture-false.
   GOAL REMAINS: prove the conjecture — the experiment chooses the provable form.
 
+- **THE REGRESS LEMMA — design (2026-07-08, evening; the falsification THEOREM).**
+  Statement: `(∃ m, Provable m tgtD) ∧ ∀ N m, ¬ ProvableG (modestGate N) m tgtD`
+  (tgtD = the Dupoc self-coop instance; left conjunct = `treeD.sound`). Proof of the
+  right conjunct by STRONG INDUCTION on m; route analysis for gated plays-conclusions:
+  (a) `.atom`: the gated `search_t` cite is `ProvableG` at budget kD, and the atom's
+      cost `n + c_guard kD + c_node > kD` forces kD < m — DESCENT, IH kills it
+      (check `c_guard k > k`; base: no derivation fits minimal budgets).
+  (b) `.app`/`.mp` with cut B: B = box-instance fails `modestF` (instance
+      non-modesty — decide for concrete Dupoc); B modest ⇒ analyze
+      `impl B tgtD`-derivations: weakenImpl → tgtD at smaller budget (descent);
+      implTrans → same shape, smaller budget; sTS/searchBranch-struct conclude
+      impl-of-box-INSTANCE antecedents (not modest) — blocked; axK-family
+      conclusions are impl-of-boxes ≠ shape — blocked. Needs a joint induction
+      over "modest-antecedent impl-chains ending in tgtD" (T48 PosImpl machinery).
+  (c) `struct`: no Derivation concludes plays-of-a-search-bot: its only census is
+      searchBranch (impl-shaped), and Derivation-mp would need a box-antecedent
+      Derivation (`derivation_no_box`) — dead. Small lemma via T48 shapes.
+  Yield: CutRelevance-with-modestGate REFUTED as a THEOREM (thesis content), the
+  companion to `dupoc_selfcoop_certified` (the repair holding on the same fact).
+
 - **⚠️ THE INSTANCE-GATE PIVOT (2026-07-08, LATER — read BEFORE the tie-down design
   below; discovered while statement-checking the main induction).**
   **Finding**: guard-INSTANCE formulas are never `modestF` — substituted frames
