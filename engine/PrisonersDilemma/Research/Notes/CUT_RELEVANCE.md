@@ -961,7 +961,16 @@ And-projections need type ascriptions; 12-space inner nil-arms contain the 8-spa
 pattern as a substring; `simp [X]` may close goals leaving `omega` stranded — use
 `simp only`. Full list in the project memory file.
 
-**Also queued:** iteBranchSearch census (recipe: `PlaysT.ite_t` ∘ sim-wrapped guard
-cert + `search_t` branch cert, `closedP z` via `substP_id`); strict-k budget
+**Also queued:** ~~iteBranchSearch census~~ **DONE 2026-07-08** (`censusITE`, T49 —
+and the `closedP z` side-condition DISSOLVED: the `.opp`/`.bot z` substs reduce on the
+nose; machine + all five packages extended). REMAINING ite gap: the ONE-discharge
+partial application `(u1 :: nil)` stays `none` — no ProvT constructor concludes the
+ite-me Löb premise `impl (box k (ψ.subst me opnt)) (plays me opnt c0)` for ite-shaped
+`me` (unlike axKf→axK there is no repackage target). So `dbFree` still guards
+GoodD/fundamentalW. Options when it matters: (i) add a partial-ite ProvT constructor
+(premise = the plays fact as a field — sound, mirrors the rule; touches every
+`cases t`), or (ii) a saturation PRE-PASS replacing `app(app(struct(iteBranch),u1),u2)`
+patterns by their census before excision (real zoo proofs use the rule saturated via
+mp). Strict-k budget
 conservation of excise (per-arm arithmetic, `crossWtLt`-style); `decFullT` tree
 synthesis (mirror T31's enumerator with `Option ProvT` returns).
