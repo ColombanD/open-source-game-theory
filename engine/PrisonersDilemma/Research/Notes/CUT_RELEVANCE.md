@@ -988,10 +988,14 @@ crossing fell back (O2/O3).
   induction — `t.gateOK (modestGate N₀)` with the cut-atoms-in-pool hypothesis —
   is the irreducible shape of the assembly theorem; do not attempt split halves.
   (This is `local_lit_bound`'s docstring caveat, now confirmed at the arm level.)
-  ALSO FOUND: **fixpoint progress needs no strict-decrease package** — a β-reduced
-  wild app strictly shrinks by the app node's own +1: `r.wt ≤ f.wt + (x.wt + 0)
-  < f.wt + x.wt + 1 = wt(app f x)`, plain `crossWt`/`boxInvGo_wt_le` at the app
-  state; `crossWtLt`'s IsCore restriction is irrelevant here. Remaining for
+  ALSO FOUND: **fixpoint progress needs no strict-decrease package ON THE
+  CONTRACTION-FREE FRAGMENT** — a β-reduced wild app strictly shrinks by the app
+  node's own +1 (`excise_wt_freeS2`, kernel-checked 2026-07-08: excision never
+  gains weight and preserves freeS2, so wt-many rounds suffice). CAVEAT (correcting
+  an earlier over-claim): `crossWt` is freeS2-CONDITIONED — impS2 crossings have NO
+  weight bound (the Gentzen wall, §5g) — and Löb-bearing zoo trees DO contain impS2
+  (bloeb uses it). So progress for Löb trees still needs the s2depth-stratified
+  potential; only the contraction-free fragment's progress is closed. Remaining for
   progress: excise-walk bookkeeping (each pass fires ≥1 wild app or the app-half
   of the check passes). dbFree-conservation of machine outputs: **DONE 2026-07-08**
   (`crossDbFree`, T49 — with `DStack.dbFree`/`CoreContent.dbFree`/`mono_dbFree`),
