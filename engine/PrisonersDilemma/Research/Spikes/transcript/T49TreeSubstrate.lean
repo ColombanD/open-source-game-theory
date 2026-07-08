@@ -5571,4 +5571,144 @@ theorem excise_wt_freeS2 (fuel : Nat) (Gb : Formula → Bool) :
   | _, _, .axKf a' b' c' K ψ α hg1 hle, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .atomNeg p' q' b' aN m'' tc hne hle, hf => ⟨Nat.le_refl _, hf⟩
 
+/-- `argOK` survives substitution by `argOK` players. -/
+theorem argOK_subst_argOK {p : Prog} (h : T43.argOK p = true) {m o : Prog}
+    (hm : T43.argOK m = true) (ho : T43.argOK o = true) :
+    T43.argOK (p.subst m o) = true := by
+  rcases T43.argOK_subst h m o with h' | h' | ⟨h', hc⟩
+  · rw [h']; exact hm
+  · rw [h']; exact ho
+  · rw [h']; simp [T43.argOK, hc]
+
+mutual
+/-- Modesty of programs survives substitution by modest `argOK` players. -/
+theorem modestP_subst (m o : Prog) (hma : T43.argOK m = true)
+    (hoa : T43.argOK o = true) (hmm : T43.modestP m = true)
+    (hmo : T43.modestP o = true) :
+    ∀ (p : Prog), T43.modestP p = true → T43.modestP (p.subst m o) = true
+  | .const a, h => h
+  | .self, _ => hmm
+  | .opp, _ => hmo
+  | .bot p, h => h
+  | .sim p q, h => by
+      simp only [T43.modestP, Bool.and_eq_true] at h
+      simp only [Prog.subst, T43.modestP, Bool.and_eq_true]
+      exact ⟨⟨⟨argOK_subst_argOK h.1.1.1 hma hoa, argOK_subst_argOK h.1.1.2 hma hoa⟩,
+        modestP_subst m o hma hoa hmm hmo p h.1.2⟩,
+        modestP_subst m o hma hoa hmm hmo q h.2⟩
+  | .ite b a p q, h => by
+      simp only [T43.modestP, Bool.and_eq_true] at h
+      simp only [Prog.subst, T43.modestP, Bool.and_eq_true]
+      exact ⟨⟨modestP_subst m o hma hoa hmm hmo b h.1.1,
+        modestP_subst m o hma hoa hmm hmo p h.1.2⟩,
+        modestP_subst m o hma hoa hmm hmo q h.2⟩
+  | .search k φ p q, h => by
+      simp only [T43.modestP, Bool.and_eq_true] at h
+      simp only [Prog.subst, T43.modestP, Bool.and_eq_true]
+      exact ⟨⟨modestF_subst m o hma hoa hmm hmo φ h.1.1,
+        modestP_subst m o hma hoa hmm hmo p h.1.2⟩,
+        modestP_subst m o hma hoa hmm hmo q h.2⟩
+
+/-- Modesty of formulas survives substitution by modest `argOK` players. -/
+theorem modestF_subst (m o : Prog) (hma : T43.argOK m = true)
+    (hoa : T43.argOK o = true) (hmm : T43.modestP m = true)
+    (hmo : T43.modestP o = true) :
+    ∀ (φ : Formula), T43.modestF φ = true → T43.modestF (φ.subst m o) = true
+  | .plays p q a, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, T43.modestF, Bool.and_eq_true]
+      exact ⟨⟨⟨argOK_subst_argOK h.1.1.1 hma hoa, argOK_subst_argOK h.1.1.2 hma hoa⟩,
+        modestP_subst m o hma hoa hmm hmo p h.1.2⟩,
+        modestP_subst m o hma hoa hmm hmo q h.2⟩
+  | .impl φ ψ, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, T43.modestF, Bool.and_eq_true]
+      exact ⟨modestF_subst m o hma hoa hmm hmo φ h.1,
+        modestF_subst m o hma hoa hmm hmo ψ h.2⟩
+  | .neg φ, h => by
+      simp only [T43.modestF] at h
+      simp only [Formula.subst, T43.modestF]
+      exact modestF_subst m o hma hoa hmm hmo φ h
+  | .box n φ, h => by
+      simp only [T43.modestF] at h
+      simp only [Formula.subst, T43.modestF]
+      exact modestF_subst m o hma hoa hmm hmo φ h
+  | .eq p q, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, T43.modestF, Bool.and_eq_true]
+      exact ⟨⟨argOK_subst_argOK h.1.1 hma hoa,
+        modestP_subst m o hma hoa hmm hmo p h.1.2⟩, h.2⟩
+  | .diag g φ, h => h
+end
+
+/-- **The Derivation layer's cuts are modesty-tied** (site 5 of the assembly): every
+    census-legitimate antecedent is modest whenever its consequent is. With
+    `T48.DAnt_lit` this closes the `derivGateOK` sites — and `derivation_impl_ant`
+    rules out eq-shaped Derivation cuts entirely (no census has an eq antecedent). -/
+theorem DAnt_modest : ∀ {B C : Formula}, PD.T48.DAnt B C →
+    T43.modestF C = true → T43.modestF B = true := by
+  intro B C h
+  induction h with
+  | searchBr hme =>
+      subst hme
+      intro hC
+      simp only [T43.modestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      simp only [T43.modestF]
+      exact modestF_subst _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.1
+  | botSearchSt hme =>
+      subst hme
+      intro hC
+      simp only [T43.modestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      simp only [T43.modestF]
+      exact modestF_subst _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.1
+  | simSt hme =>
+      subst hme
+      intro hC
+      simp only [T43.modestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      simp only [T43.modestF, Bool.and_eq_true]
+      exact ⟨⟨⟨argOK_subst_argOK hm.1.1.1 hC.1.1.1 hC.1.1.2,
+        argOK_subst_argOK hm.1.1.2 hC.1.1.1 hC.1.1.2⟩,
+        modestP_subst _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.2⟩,
+        modestP_subst _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.2⟩
+  | botSimSt hme =>
+      subst hme
+      intro hC
+      simp only [T43.modestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      simp only [T43.modestF, Bool.and_eq_true]
+      exact ⟨⟨⟨argOK_subst_argOK hm.1.1.1 hC.1.1.1 hC.1.1.2,
+        argOK_subst_argOK hm.1.1.2 hC.1.1.1 hC.1.1.2⟩,
+        modestP_subst _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.2⟩,
+        modestP_subst _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.2⟩
+  | iteBr₁ hme =>
+      subst hme
+      intro hC
+      simp only [T43.modestF, Bool.and_eq_true] at hC
+      have hm := hC.2.1.2
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      simp only [T43.modestF, Bool.and_eq_true]
+      exact ⟨⟨⟨hC.2.1.1.2, hm.1.1.1.1.2⟩, hC.2.2⟩, hm.1.1.2⟩
+  | iteBr₂ hme =>
+      subst hme
+      intro hC
+      simp only [T43.modestF, Bool.and_eq_true] at hC
+      have hm := hC.1.2
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      simp only [T43.modestF]
+      exact modestF_subst _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.2.1.1
+  | trans h1 h2 ih1 ih2 => intro hC; exact ih1 (ih2 hC)
+
+/-- The combined gate transfer for Derivation cuts: census antecedents pass the
+    modest gate whenever their consequents do. -/
+theorem DAnt_gate {N : Nat} {B C : Formula} (h : PD.T48.DAnt B C)
+    (hC : modestGate N C) : modestGate N B :=
+  ⟨le_trans (PD.T48.DAnt_lit h) hC.1, DAnt_modest h hC.2⟩
+
 end PD.T49
