@@ -1005,6 +1005,44 @@ crossing fell back (O2/O3).
   and lifted through the excisor: `excise_dbFree`/`exciseFix_dbFree` — every
   round's output satisfies `fundamentalW`'s hypothesis (the iteration license,
   end to end).
+- **THE TIE-DOWN DESIGN (2026-07-08, the centerpiece's final shape — derived to the
+  arm, supersedes all earlier sketches of the interlocked induction).**
+  KEY REALIZATION: atoms' plays-formulas are NEVER gate-checked (`gateOK` gates only
+  the six premise-formula sites and recurses); atom conclusions are conclusion-tied.
+  So the assembly does NOT need atom-pool membership as such — it needs exactly:
+
+  **`gateOK_of_cutsOK`** (the tie-down): for `t : ProvT m ξ`,
+  `modestGate N ξ` (root conclusion gated) + `t.cutsOK (modestGate N)` (ONLY the
+  app/implTrans/impS2 CUT sites pass — everything the excisor + middle analysis
+  deliver) + `t.citesLE M` (every `search_t` cite budget ≤ M, hereditarily) +
+  `m ≤ M` + `2^M ≤ N`  ⟹  `t.gateOK (modestGate N)`.
+  Proof: one induction threading THE NODE'S CONCLUSION GATE downward:
+  * app/implTrans/impS2: children's conclusions = parent conclusion pieces + the
+    HYPOTHESIZED cut/middle gates. weakenImpl/boxIntro: subformulas.
+  * axK: `modestGate_axK_tied` (no budget needed — hg1). diagF/diagB:
+    `modestGate_diag_tied` + `fb < 2^pm ≤ 2^M ≤ N` (T48 `diag_lit_bound`/
+    `cut_lit_bound` via ProvT.sound; budgets descend node-by-node through `hle`
+    EXCEPT at cites, where `citesLE` caps them — THIS is where the interlock
+    was, now an explicit hypothesis).
+  * struct: `DAnt_gate` (mp cuts + hypSyll middles conclusion-tied; eq cuts
+    impossible). sTS: tw's conclusion `ψ₂.subst me opnt` gated via
+    `modestF_subst` + inner-guard extraction from `modestP me` (the DAnt_modest
+    searchBr pattern) + literals ≤ maxLitP me ≤ N.
+  * atom: recursion into cites: the cite's conclusion `φg.subst me' opnt'` gated
+    by `modestF_subst` from the ATOM's conclusion-gate; its budget ≤ M by citesLE;
+    recurse with the same (M, N).
+
+  **Consumers must then supply**: (i) cutsOK of the excise-fixpoint tree = app-half
+  by construction (the cutOKb check drives the fire) + middles (zoo case);
+  (ii) citesLE conservation through crossing/excision (a crossCites package —
+  census cites have budgets = guard subscripts of CONCLUSION programs ≤ maxLitP ≤
+  M; mechanical, the crossDbFree pattern); (iii) citesLE of the ORIGINAL tree —
+  the conjecture's irreducible residue: for zoo roots, cite budgets are guard
+  subscripts of pool programs (≤ maxLitF φ₀); for ARBITRARY minimal trees this is
+  exactly the open core (a gate-passing-but-fresh cut with a huge-subscript
+  search program inside would escalate — the pathology CutRelevance must exclude
+  or excise). N₀ := 2^max(k₀, maxLitF φ₀) + maxLitF φ₀ with M := max k₀ (maxLitF φ₀).
+
 - **O5 (the pool lemma proper — original sketch).** Census outputs: programs are subst-instances of
   conclusion programs (T43 `subsP/substF` lemmas + `playsArgsF_subst`); contents:
   subformulas of segments — pool-good if the SEGMENT-BOX's judgment formula is (the
