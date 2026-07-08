@@ -1031,6 +1031,19 @@ crossing fell back (O2/O3).
   * atom: recursion into cites: the cite's conclusion `φg.subst me' opnt'` gated
     by `modestF_subst` from the ATOM's conclusion-gate; its budget ≤ M by citesLE;
     recurse with the same (M, N).
+  * **The PlaysT half's invariant (derived 2026-07-08)**: the walk changes the
+    frame/program triple `(me, o, b)`, so the atom-arm's induction carries
+    `modestP me ∧ modestP o ∧ modestP b ∧ (maxLitP of all three ≤ N)`. Descent:
+    `.sim`'s new frame is `p.subst me o` with `p` a sim-ARG — `argOK` from
+    `modestP b`, then `argOK_subst` resolves to {me, o, frozen-p}, all covered;
+    `.search_t`'s cite conclusion via `modestF_subst` (guard modest from
+    `modestP b`); `.bot`/`.ite` structural. This replays T43's closure walk
+    (step_sim/guardU_args) as gate-facts — mirror those proofs.
+  **STATUS: §28 open in T49 — `modestGate_impl_iff`, `derivGateOK_of_conclusion`
+  (struct arm PROVEN standalone), `cutsOK` + `citesLE` families defined and
+  compiling. Next: the main mutual induction `gateOK_of_cutsOK` (~16+9 arms, all
+  designed above); then crossCites (conservation of citesLE through the machine,
+  crossDbFree pattern); then the consumers.**
 
   **Consumers must then supply**: (i) cutsOK of the excise-fixpoint tree = app-half
   by construction (the cutOKb check drives the fire) + middles (zoo case);
