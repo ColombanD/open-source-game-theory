@@ -1005,6 +1005,44 @@ crossing fell back (O2/O3).
   and lifted through the excisor: `excise_dbFree`/`exciseFix_dbFree` — every
   round's output satisfies `fundamentalW`'s hypothesis (the iteration license,
   end to end).
+- **⚠️ THE INSTANCE-GATE PIVOT (2026-07-08, LATER — read BEFORE the tie-down design
+  below; discovered while statement-checking the main induction).**
+  **Finding**: guard-INSTANCE formulas are never `modestF` — substituted frames
+  (`me = .search k ψ …` with `.self`/`.opp` inside ψ) fail `argOK` (`closedP` is
+  false through guard formulas). Consequences, checked against T42's rules:
+  1. `diagF`/`diagB` gate the WHOLE Löb premise `impl (box fb tgt) tgt`; zoo Löb
+     derivations take `tgt` = plays-instances ⇒ **no bloeb-style derivation is in
+     `ProvableG (modestGate N)` for ANY N**. Same for axK-over-instance-targets and
+     mp-cuts on box-instances.
+  2. So CutRelevance CANNOT be proven by transporting the given tree's shape with
+     gates checked (the tie-down over arbitrary excised trees is the WRONG
+     centerpiece for instance-rooted facts — its conclusion-threading hypothesis
+     `modestGate N ξ` is false at census shapes; `derivGateOK_of_conclusion` and
+     `DAnt_gate` are TRUE but vacuous at zoo instances).
+  3. **The right centerpiece**: FULL NORMALIZATION. The machine (already total —
+     `crossTotalW`, μ(box)=0 = the Löb-unroller) consumes every diag/axK/mp node
+     when the root is a CORE (plays/box): the survivor of a zoo-rooted fact is
+     atoms + censuses + census-struct glue, whose gate sites are EMPTY or modest —
+     instance facts flow through cites (`search_t` carries `ProvableG` cites at
+     guard budgets), and the cites' trees are recursively normalized at STRICTLY
+     descending budgets (bloeb's own descent bottoming the regress). CutRelevance
+     over the zoo = "the normal form is gate-light", by induction on the cite
+     budget, NOT by gate-transport.
+  4. What survives of the tie-down machinery: the bricks (DAnt_gate,
+     modestGate_axK_tied/diag_tied, modestF_subst) still serve the ABSTRACT/modest
+     fragments and the middle analysis; `citesLE` remains the right budget-descent
+     bookkeeping for the cite recursion; `cutsOK` remains the right interface for
+     what excision guarantees. The `gateOK_of_cutsOK` statement should be RESCOPED:
+     prove it for the NORMAL-FORM grammar (machine outputs at core roots — a much
+     smaller constructor set) instead of all of ProvT.
+  5. NEXT SESSION, first task: characterize the normal-form grammar — what
+     constructors can `boxInvGo`/`atomizeGo` outputs contain at core roots
+     (conjecture: atom / struct-census / boxIntro-of-normal / weakenImpl?-glue /
+     censusITE-atoms; NO app/implTrans/impS2/diag/axK after full extraction —
+     check the identity arms: mkSelf can return ARBITRARY trees at impl cores —
+     impl-guard queries are the residual hard case, aligning with the zoo-middle
+     item). Then: gate-lightness of that grammar by cite-budget induction.
+
 - **THE TIE-DOWN DESIGN (2026-07-08, the centerpiece's final shape — derived to the
   arm, supersedes all earlier sketches of the interlocked induction).**
   KEY REALIZATION: atoms' plays-formulas are NEVER gate-checked (`gateOK` gates only
