@@ -617,7 +617,10 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
                   (match boxInvGo fuel d1 (.nil : DStack (.diag g tgt) (.diag g tgt)) with
                    | some ⟨mx, x⟩ => boxInvGo fuel x (.cons mD2 d2 s'')
                    | none => none)
-              | .nil => none)
+              | .nil =>
+                  (match boxInvGo fuel d1 (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+                   | some ⟨mx, x⟩ => some ⟨mx, x⟩
+                   | none => none))
          | .nil => some ⟨_, .diagF pm fb g K tgt tP hle⟩)
     -- modal leaves: the gates pay the extraction
     | .atomBoxImpl kBox p q a cert hle =>
@@ -670,7 +673,8 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
                              .app (mP + mx + α'.size) mP mx φ' α' tPc txc
                                (Nat.le_refl _), by omega⟩
                        | _, _ => none)
-              | .nil => none)
+              | .nil =>
+                  some ⟨_, .axK a'' b'' c'' mD1 _ φ' α' d1 hg1 (Nat.le_refl _)⟩)
          | .nil => some ⟨_, .axKf a'' b'' c'' K φ' α' hg1 hle⟩)
     -- general cores: an exhausted stack returns the walker; struct/atom with pending
     -- discharges await derivCross (D2g stage 2)
@@ -1117,7 +1121,19 @@ theorem crossWt : ∀ (F : Nat),
                     by simpa [CoreContent.freeS2] using hf⟩
           | cons mD1 d1 s' =>
                   cases s' with
-                  | nil => simp [boxInvGo] at h
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases hd : boxInvGo F d1
+                          (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+                      | none => rw [hd] at h; exact absurd h (by simp)
+                      | some rx =>
+                          rw [hd] at h
+                          obtain ⟨mx, x⟩ := rx
+                          cases h
+                          have hx := ih d1 .nil hs.1 trivial hd
+                          simp only [CoreContent.wt, CoreContent.freeS2, ProvT.wt,
+                            DStack.wt] at hx ⊢
+                          exact ⟨by omega, hx.2⟩
                   | cons mD2 d2 s'' =>
                       simp only [boxInvGo] at h
                       cases hd : boxInvGo F d1 (.nil : DStack (.diag g tgt) (.diag g tgt)) with
@@ -1226,7 +1242,13 @@ theorem crossWt : ∀ (F : Nat),
                     by simpa [CoreContent.freeS2] using hf⟩
           | cons mD1 d1 s' =>
                   cases s' with
-                  | nil => simp [boxInvGo] at h
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases h
+                      constructor
+                      · simp only [CoreContent.wt, ProvT.wt, DStack.wt]
+                        omega
+                      · simpa [CoreContent.freeS2, ProvT.freeS2] using hs.1
                   | cons mD2 d2 s'' =>
                       cases s'' with
                       | nil =>
@@ -1725,7 +1747,17 @@ theorem crossGateOK {G : Formula → Prop}
                   simpa [CoreContent.gateOK] using hf
           | cons mD1 d1 s' =>
                   cases s' with
-                  | nil => simp [boxInvGo] at h
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases hd : boxInvGo F d1
+                          (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+                      | none => rw [hd] at h; exact absurd h (by simp)
+                      | some rx =>
+                          rw [hd] at h
+                          have hxg := ih d1 .nil hs.1 trivial trivial hd
+                          obtain ⟨mx, x⟩ := rx
+                          cases h
+                          simpa [CoreContent.gateOK] using hxg
                   | cons mD2 d2 s'' =>
                       simp only [boxInvGo] at h
                       cases hd : boxInvGo F d1
@@ -1820,7 +1852,11 @@ theorem crossGateOK {G : Formula → Prop}
                   simpa [CoreContent.gateOK] using hf
           | cons mD1 d1 s' =>
                   cases s' with
-                  | nil => simp [boxInvGo] at h
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases h
+                      simp only [CoreContent.gateOK, ProvT.gateOK]
+                      exact ⟨hsg.1, hs.1⟩
                   | cons mD2 d2 s'' =>
                       cases s'' with
                       | nil =>
@@ -2202,7 +2238,18 @@ theorem crossS2d : ∀ (F : Nat),
                   omega
           | cons mD1 d1 s' =>
                   cases s' with
-                  | nil => simp [boxInvGo] at h
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases hd : boxInvGo F d1
+                          (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+                      | none => rw [hd] at h; exact absurd h (by simp)
+                      | some rx =>
+                          rw [hd] at h
+                          have hx := ih d1 .nil hd
+                          obtain ⟨mx, x⟩ := rx
+                          cases h
+                          simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d] at *
+                          omega
                   | cons mD2 d2 s'' =>
                       simp only [boxInvGo] at h
                       cases hd : boxInvGo F d1
@@ -2308,7 +2355,11 @@ theorem crossS2d : ∀ (F : Nat),
                   omega
           | cons mD1 d1 s' =>
                   cases s' with
-                  | nil => simp [boxInvGo] at h
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases h
+                      simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+                      omega
                   | cons mD2 d2 s'' =>
                       cases s'' with
                       | nil =>
@@ -2780,7 +2831,7 @@ theorem crossWtLt : ∀ (F : Nat),
           | nil => exact hc.elim
           | cons mD1 d1 s' =>
                   cases s' with
-                  | nil => simp [boxInvGo] at h
+                  | nil => exact hc.elim
                   | cons mD2 d2 s'' =>
                       simp only [boxInvGo] at h
                       cases hd : boxInvGo F d1
@@ -2871,7 +2922,7 @@ theorem crossWtLt : ∀ (F : Nat),
           | nil => exact hc.elim
           | cons mD1 d1 s' =>
                   cases s' with
-                  | nil => simp [boxInvGo] at h
+                  | nil => exact hc.elim
                   | cons mD2 d2 s'' =>
                       cases s'' with
                       | nil =>
@@ -3113,7 +3164,16 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           | nil => simp only [boxInvGo] at h ⊢; exact h
           | cons mD1 d1 s' =>
               cases s' with
-              | nil => simp [boxInvGo] at h
+              | nil =>
+                  simp only [boxInvGo] at h ⊢
+                  cases hd : boxInvGo F d1
+                      (.nil : DStack (.diag g tgt) (.diag g tgt)) with
+                  | none => rw [hd] at h; exact absurd h (by simp)
+                  | some rx =>
+                      rw [hd] at h
+                      rw [(ih F'' hFF).1 d1 .nil hd]
+                      obtain ⟨mx, x⟩ := rx
+                      exact h
               | cons mD2 d2 s'' =>
                   simp only [boxInvGo] at h ⊢
                   cases hd : boxInvGo F d1
@@ -3185,7 +3245,9 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           | nil => simp only [boxInvGo] at h ⊢; exact h
           | cons mD1 d1 s' =>
               cases s' with
-              | nil => simp [boxInvGo] at h
+              | nil =>
+                  simp only [boxInvGo] at h ⊢
+                  exact h
               | cons mD2 d2 s'' =>
                   cases s'' with
                   | nil =>
