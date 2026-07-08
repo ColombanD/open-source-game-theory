@@ -971,9 +971,20 @@ crossing fell back (O2/O3).
      over census shapes (census conclusions carry concrete conclusion-tied programs).
   6. **`searchThenSearch_t`'s stored premise tree + all recursive `t.gateOK`** —
      recurse into the same inventory.
-  Plus the LITERAL HALF as one global induction (budget bounds every stored formula's
-  literals — the `wt_le_budget`/§17 pattern extended to `maxLitF`), consumed by 3 and
-  by the middles' size bounds.
+  Plus the LITERAL HALF — **already kernel-checked (found 2026-07-08)**: T48
+  `cut_lit_bound`/`box_lit_bound`/`maxLitF_lt_two_pow_size` — `Formula.size` charges
+  `log2+1` per numeral, so every rule's `hle` pays literal digits; NO new induction
+  needed, only glue: (a) budgets descend node-by-node (each constructor's `hle`),
+  (b) the ProvT mirror transports the Provable-level bounds to stored subtrees
+  (`Provable_iff_nonempty_ProvT`). This also answers the weakenImpl worry: antecedents
+  ARE size-charged. Item 3's `fb ≤ N₀` = `cut_lit_bound` at the stored premise.
+  ALSO FOUND: **fixpoint progress needs no strict-decrease package** — a β-reduced
+  wild app strictly shrinks by the app node's own +1: `r.wt ≤ f.wt + (x.wt + 0)
+  < f.wt + x.wt + 1 = wt(app f x)`, plain `crossWt`/`boxInvGo_wt_le` at the app
+  state; `crossWtLt`'s IsCore restriction is irrelevant here. Remaining for
+  progress: excise-walk bookkeeping (each pass fires ≥1 wild app or the app-half
+  of the check passes) + dbFree-conservation of machine outputs (or fold into the
+  zoo hypothesis).
 - **O5 (the pool lemma proper — original sketch).** Census outputs: programs are subst-instances of
   conclusion programs (T43 `subsP/substF` lemmas + `playsArgsF_subst`); contents:
   subformulas of segments — pool-good if the SEGMENT-BOX's judgment formula is (the
