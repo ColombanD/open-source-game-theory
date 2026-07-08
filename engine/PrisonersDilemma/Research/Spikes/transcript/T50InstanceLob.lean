@@ -418,6 +418,235 @@ theorem instGate_diag_tied {P : List Prog} {N fb g : Nat} {tgt : Formula}
   · simp only [instModestF, Bool.and_eq_true] at hmod ⊢
     exact ⟨hmod.2, hmod.2⟩
 
+/-! ## 3b. Raw argument frames — the PoolOK-free census tie (ledger: v3 blocker fix).
+
+`rawArgsF`: the formula's program arguments are RAW-modest (`argOK` NOT required —
+compound raw frames allowed). Under this side condition the census tie needs no pool
+facts at all: raw frames' sim-args are argOK-ATOMIC, so substitution resolves by the
+three-case lemma and rawness self-propagates. -/
+
+def rawArgsF : Formula → Bool
+  | .plays p q _ => T43.modestP p && T43.modestP q
+  | .impl φ ψ => rawArgsF φ && rawArgsF ψ
+  | .neg φ => rawArgsF φ
+  | .box _ φ => rawArgsF φ
+  | .eq p q => T43.modestP p && T43.modestP q
+  | .diag _ φ => rawArgsF φ
+
+/-- Raw-modesty of formulas is weaker than modesty. -/
+theorem modestF_rawArgsF : ∀ (φ : Formula), T43.modestF φ = true → rawArgsF φ = true
+  | .plays p q _, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [rawArgsF, Bool.and_eq_true]
+      exact ⟨h.1.2, h.2⟩
+  | .impl φ ψ, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [rawArgsF, Bool.and_eq_true]
+      exact ⟨modestF_rawArgsF φ h.1, modestF_rawArgsF ψ h.2⟩
+  | .neg φ, h => modestF_rawArgsF φ h
+  | .box _ φ, h => modestF_rawArgsF φ h
+  | .eq p q, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [rawArgsF, Bool.and_eq_true]
+      exact ⟨h.1.2, h.2⟩
+  | .diag _ φ, h => modestF_rawArgsF φ h
+
+/-- Raw-modest formulas substituted by raw frames have raw args (argOK-atomic
+    resolution: to a frame or a frozen raw subprogram). -/
+theorem rawArgsF_subst (me o : Prog) (hme : T43.modestP me = true)
+    (ho : T43.modestP o = true) :
+    ∀ (φ : Formula), T43.modestF φ = true → rawArgsF (φ.subst me o) = true
+  | .plays p q _, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, rawArgsF, Bool.and_eq_true]
+      constructor
+      · rcases T43.argOK_subst h.1.1.1 me o with h' | h' | ⟨h', _⟩
+        · rw [h']; exact hme
+        · rw [h']; exact ho
+        · rw [h']; exact h.1.2
+      · rcases T43.argOK_subst h.1.1.2 me o with h' | h' | ⟨h', _⟩
+        · rw [h']; exact hme
+        · rw [h']; exact ho
+        · rw [h']; exact h.2
+  | .impl φ ψ, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, rawArgsF, Bool.and_eq_true]
+      exact ⟨rawArgsF_subst me o hme ho φ h.1, rawArgsF_subst me o hme ho ψ h.2⟩
+  | .neg φ, h => rawArgsF_subst me o hme ho φ h
+  | .box _ φ, h => rawArgsF_subst me o hme ho φ h
+  | .eq p q, h => by
+      simp only [T43.modestF, Bool.and_eq_true] at h
+      simp only [Formula.subst, rawArgsF, Bool.and_eq_true]
+      constructor
+      · rcases T43.argOK_subst h.1.1 me o with h' | h' | ⟨h', _⟩
+        · rw [h']; exact hme
+        · rw [h']; exact ho
+        · rw [h']; exact h.1.2
+      · exact h.2
+  | .diag _ φ, h => modestF_rawArgsF _ h
+
+/-- The modest+raw halves of the pool-free tie (lit is gate-agnostic, added by
+    the wrapper below). -/
+theorem DAnt_rawModest {P : List Prog} :
+    ∀ {B C : Formula}, PD.T48.DAnt B C →
+    instModestF P C = true → rawArgsF C = true →
+    instModestF P B = true ∧ rawArgsF B = true := by
+  intro B C h
+  induction h with
+  | searchBr hme =>
+      subst hme
+      intro hmod hraw
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [rawArgsF, Bool.and_eq_true] at hraw
+      have hm := hraw.1
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      refine ⟨?_, ?_⟩
+      · simp only [instModestF]
+        exact modestF_subst_inst P _ _ hmod.1.1.1 hmod.1.1.2
+          (modestP_instModestP P _ hraw.1) (modestP_instModestP P _ hraw.2)
+          _ hm.1.1
+      · simp only [rawArgsF]
+        exact rawArgsF_subst _ _ hraw.1 hraw.2 _ hm.1.1
+  | botSearchSt hme =>
+      subst hme
+      intro hmod hraw
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [rawArgsF, Bool.and_eq_true] at hraw
+      have hm := hraw.1
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      refine ⟨?_, ?_⟩
+      · simp only [instModestF]
+        exact modestF_subst_inst P _ _ hmod.1.1.1 hmod.1.1.2
+          (modestP_instModestP P _ hraw.1) (modestP_instModestP P _ hraw.2)
+          _ hm.1.1
+      · simp only [rawArgsF]
+        exact rawArgsF_subst _ _ hraw.1 hraw.2 _ hm.1.1
+  | simSt hme =>
+      subst hme
+      intro hmod hraw
+      rename_i p' q' opnt' a'
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [rawArgsF, Bool.and_eq_true] at hraw
+      have hm := hraw.1
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      have hres : ∀ (r : Prog), T43.argOK r = true → T43.modestP r = true →
+          (argOKP P (r.subst (.sim p' q') opnt') = true ∧
+            instModestP P (r.subst (.sim p' q') opnt') = true) ∧
+          T43.modestP (r.subst (.sim p' q') opnt') = true := by
+        intro r ha hp
+        rcases T43.argOK_subst ha _ _ with h' | h' | ⟨h', hcl⟩
+        · rw [h']
+          exact ⟨⟨hmod.1.1.1, modestP_instModestP P _ hraw.1⟩, hraw.1⟩
+        · rw [h']
+          exact ⟨⟨hmod.1.1.2, modestP_instModestP P _ hraw.2⟩, hraw.2⟩
+        · rw [h']
+          exact ⟨⟨by simp only [argOKP, hcl, Bool.or_true, Bool.true_or],
+            modestP_instModestP P _ hp⟩, hp⟩
+      have hp := hres _ hm.1.1.1 hm.1.2
+      have hq := hres _ hm.1.1.2 hm.2
+      refine ⟨?_, ?_⟩
+      · simp only [instModestF, Bool.and_eq_true]
+        exact ⟨⟨⟨hp.1.1, hq.1.1⟩, hp.1.2⟩, hq.1.2⟩
+      · simp only [rawArgsF, Bool.and_eq_true]
+        exact ⟨hp.2, hq.2⟩
+  | botSimSt hme =>
+      subst hme
+      intro hmod hraw
+      rename_i p' q' opnt' a'
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [rawArgsF, Bool.and_eq_true] at hraw
+      have hm := hraw.1
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      have hres : ∀ (r : Prog), T43.argOK r = true → T43.modestP r = true →
+          (argOKP P (r.subst (.bot (.sim p' q')) opnt') = true ∧
+            instModestP P (r.subst (.bot (.sim p' q')) opnt') = true) ∧
+          T43.modestP (r.subst (.bot (.sim p' q')) opnt') = true := by
+        intro r ha hp
+        rcases T43.argOK_subst ha _ _ with h' | h' | ⟨h', hcl⟩
+        · rw [h']
+          exact ⟨⟨hmod.1.1.1, modestP_instModestP P _ hraw.1⟩, hraw.1⟩
+        · rw [h']
+          exact ⟨⟨hmod.1.1.2, modestP_instModestP P _ hraw.2⟩, hraw.2⟩
+        · rw [h']
+          exact ⟨⟨by simp only [argOKP, hcl, Bool.or_true, Bool.true_or],
+            modestP_instModestP P _ hp⟩, hp⟩
+      have hp := hres _ hm.1.1.1 hm.1.2
+      have hq := hres _ hm.1.1.2 hm.2
+      refine ⟨?_, ?_⟩
+      · simp only [instModestF, Bool.and_eq_true]
+        exact ⟨⟨⟨hp.1.1, hq.1.1⟩, hp.1.2⟩, hq.1.2⟩
+      · simp only [rawArgsF, Bool.and_eq_true]
+        exact ⟨hp.2, hq.2⟩
+  | iteBr₁ hme =>
+      subst hme
+      intro hmod hraw
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [rawArgsF, Bool.and_eq_true] at hraw
+      have hm := hraw.2.1
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      have hmi := hmod.2.1.2
+      simp only [instModestP, Bool.and_eq_true] at hmi
+      refine ⟨?_, ?_⟩
+      · simp only [instModestF, Bool.and_eq_true]
+        exact ⟨⟨⟨hmod.2.1.1.2, hmi.1.1.1.1.2⟩, hmod.2.2⟩, hmi.1.1.2⟩
+      · simp only [rawArgsF, Bool.and_eq_true]
+        exact ⟨hraw.2.2, hm.1.1.2⟩
+  | iteBr₂ hme =>
+      subst hme
+      intro hmod hraw
+      simp only [instModestF, Bool.and_eq_true] at hmod
+      simp only [rawArgsF, Bool.and_eq_true] at hraw
+      have hm := hraw.1
+      simp only [T43.modestP, Bool.and_eq_true] at hm
+      refine ⟨?_, ?_⟩
+      · simp only [instModestF]
+        exact modestF_subst_inst P _ _ hmod.1.1.1 hmod.1.1.2
+          (modestP_instModestP P _ hraw.1) (modestP_instModestP P _ hraw.2)
+          _ hm.1.2.1.1
+      · simp only [rawArgsF]
+        exact rawArgsF_subst _ _ hraw.1 hraw.2 _ hm.1.2.1.1
+  | trans h1 h2 ih1 ih2 =>
+      intro hmod hraw
+      have := ih2 hmod hraw
+      exact ih1 this.1 this.2
+
+/-- **The census tie, pool-free**: under raw args, every census antecedent is
+    instance-gated AND raw-arged whenever its consequent is. -/
+theorem DAnt_rawGate {P : List Prog} {N : Nat} {B C : Formula}
+    (h : PD.T48.DAnt B C) (hC : instGate P N C) (hraw : rawArgsF C = true) :
+    instGate P N B ∧ rawArgsF B = true :=
+  have hm := DAnt_rawModest h hC.2 hraw
+  ⟨⟨le_trans (PD.T48.DAnt_lit h) hC.1, hm.1⟩, hm.2⟩
+
+/-- **The struct arm, pool-free**: instance-gated + raw-arged conclusions pass at
+    every `derivGateOK` site. -/
+theorem derivGateOK_of_conclusion_raw {P : List Prog} {N : Nat} :
+    ∀ {ξ : Formula} (d : Derivation ξ), instGate P N ξ → rawArgsF ξ = true →
+    derivGateOK (instGate P N) d
+  | _, .modusPonens φ ψ d1 d2, hξ, hraw => by
+      have hcut := DAnt_rawGate (PD.T48.derivation_impl_ant d1) hξ hraw
+      exact ⟨hcut.1,
+        derivGateOK_of_conclusion_raw d1 (instGate_impl_iff.mpr ⟨hcut.1, hξ⟩)
+          (by simp only [rawArgsF, Bool.and_eq_true]; exact ⟨hcut.2, hraw⟩),
+        derivGateOK_of_conclusion_raw d2 hcut.1 hcut.2⟩
+  | _, .hypSyll φ ψ χ d1 d2, hξ, hraw => by
+      have hφ := (instGate_impl_iff.mp hξ).1
+      have hχ := (instGate_impl_iff.mp hξ).2
+      simp only [rawArgsF, Bool.and_eq_true] at hraw
+      have hmid := DAnt_rawGate (PD.T48.derivation_impl_ant d2) hχ hraw.2
+      exact ⟨hmid.1,
+        derivGateOK_of_conclusion_raw d1 (instGate_impl_iff.mpr ⟨hφ, hmid.1⟩)
+          (by simp only [rawArgsF, Bool.and_eq_true]; exact ⟨hraw.1, hmid.2⟩),
+        derivGateOK_of_conclusion_raw d2 (instGate_impl_iff.mpr ⟨hmid.1, hχ⟩)
+          (by simp only [rawArgsF, Bool.and_eq_true]; exact ⟨hmid.2, hraw.2⟩)⟩
+  | _, .searchBranch _ _ _ _ _ _ _, _, _ => trivial
+  | _, .botSearchStep _ _ _ _ _ _ _, _, _ => trivial
+  | _, .simStep _ _ _ _ _ _, _, _ => trivial
+  | _, .botSimStep _ _ _ _ _ _, _, _ => trivial
+  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _, _, _ => trivial
+  | _, .eqRefl _, _, _ => trivial
+  | _, .eqNeg _ _ _, _, _ => trivial
+
 /-! ## 4. THE TRANSPORT — full `gateOK (instGate P N)` from cut-sites + cite caps.
 
 The §28 tie-down, live at the repaired gate: conclusions ARE instance-gated now.
