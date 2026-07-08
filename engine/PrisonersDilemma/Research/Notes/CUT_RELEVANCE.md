@@ -849,8 +849,38 @@ conclusion-tied; implTrans/impS2 middles — see O4); an `app`-cut has its disch
 hand, so the excisor would have crossed it — contradiction with fixpoint — UNLESS the
 crossing fell back (O2/O3).
 
-**Obligations, in order:**
-- **O1 (excise-until-fixpoint).** Current `excise` is one pass. Iterate: crossing
+**Status 2026-07-08: O1 ✓ O2 ✓ O3 ✓ (T49 §25–§28). O4/O5 remain.**
+- **O1 DONE** — `exciseFix`/`certifyExcised` (T49 §26); demo certifies the wild app.
+- **O2 DONE, stronger than planned** — instead of weakening the fixpoint theorem, the
+  MACHINE was totalized: the two partial-application gaps (`diagF@cons-nil` extracts the
+  diag content — its tree IS the impl core; `axKf@cons-nil` repackages as an `axK` node
+  with the discharge as premise field, gate paid by the stack's `segsOK` segment, weight
+  exactly `d1.wt+1 ≤ 1+d1.wt`) were closed and all five conservation packages extended.
+  Then the WIDE goodness family (`GoodW`/`GoodStackW`-nil := True/`ContentGoodW` with
+  ATOMIZABLE plays-contents — the enrichment dissolving the fundamental↔atomize
+  circularity), DUPLICATED not modified (zero ripples into §20–§23), hypothesized on
+  `dbFree` (no `iteBranchSearch_t` — the one unreconstructible census):
+  `GoodW_app` → `atomizeW_halts` → `GoodW_mono` (transport WITHOUT core-typed regate —
+  this is why box4's inner content needs no `IsCore`) → `GoodD` (struct-crossing by
+  Derivation-induction; mp-nil proves atomizability inline via the d1-IH at the
+  (struct d2)::nil stack) → `fundamentalW` (16 arms) → **`crossTotalW`**: at EVERY
+  wild-app state `(f, x::nil)`, any result formula, the machine halts with wide-good
+  content. The excisor's beta-step is total on dbFree trees.
+- **O3 DONE (by inspection)** — axK/diagF/diagB gates are conclusion-tied (+ subscripts
+  size-paid); diag-cuts never need excision.
+
+**Obligations remaining:**
+- **O4 WARNING (new counter-scenario, 2026-07-08):** option (a) as stated is too
+  strong: an `implTrans`/`impS2` node that is NEVER applied (e.g. the ROOT itself is
+  impl-shaped and ends in `implTrans`) has no upstream app to convert its middle. For
+  such middles the pool argument must go through the IH directly: the middle is the
+  CONCLUSION of the subtree `tA` (premise formulas are budget-bounded by transcript
+  costs — the size half; the pool half of a conclusion formula follows from the
+  subtree's own pool-invariant). So O4 folds INTO O5's induction: gated-formula
+  pool-goodness needs a simultaneous "conclusion-formula pool-goodness" strand, not an
+  app-conversion detour. For applied middles the machine's implTrans-arm
+  materialization story stands.
+- **O1 (excise-until-fixpoint) — original text.** Current `excise` is one pass. Iterate: crossing
   outputs can carry NEW wild gates at the `axK`/`axKf` assembly apps (gate = segment-box
   CONTENT, subformula of a wild segment). Termination of iteration: strict consumption
   (`crossWtLt`) — each successful cross strictly reduces `wt`; iterate on `wt` or fuel.
