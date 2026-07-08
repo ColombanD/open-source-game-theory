@@ -5340,4 +5340,106 @@ theorem crossTotalW {m₁ m₂ : Nat} {B C : Formula}
     (by unfold GoodStackW
         exact ⟨fun j _ => fundamentalW x hx j, by unfold GoodStackW; trivial⟩)
 
+/-- `contentToTree` preserves iteBranch-freedom. -/
+theorem contentToTree_dbFree : {α : Formula} → (r : CoreContent α) → r.dbFree →
+    ∀ {t' : Σ' m', ProvT m' α}, contentToTree r = some t' → t'.2.dbFree
+  | .box c ψ, ⟨_, tc, hc⟩, hr, _, h => by
+      cases h
+      exact (ProvT.mono_dbFree hc tc).mpr hr
+  | .plays _ _ _, r, hr, _, h => by cases h; exact hr
+  | .impl _ _, r, hr, _, h => by cases h; exact hr
+  | .neg _, r, hr, _, h => by cases h; exact hr
+  | .eq _ _, r, hr, _, h => by cases h; exact hr
+
+/-- The app-arm's fire-or-fallback shape, over a clean scrutinee. -/
+theorem excise_fire_dbFree_aux {α : Formula}
+    (rebuilt : Σ' m', ProvT m' α) (hreb : rebuilt.2.dbFree)
+    (o : Option (CoreContent α)) (ho : ∀ r, o = some r → r.dbFree) :
+    (match o with
+     | some rc =>
+         (match contentToTree rc with
+          | some t' => t'
+          | none => rebuilt)
+     | none => rebuilt).2.dbFree := by
+  cases o with
+  | none => exact hreb
+  | some r =>
+      show (match contentToTree r with
+            | some t' => t'
+            | none => rebuilt).2.dbFree
+      cases hC : contentToTree r with
+      | none => exact hreb
+      | some t' => exact contentToTree_dbFree r (ho r rfl) hC
+
+/-- **Excision preserves iteBranch-freedom** (the exciseFix iteration license):
+    rebuilds transfer, fires go through `crossDbFree` + `contentToTree_dbFree`. -/
+theorem excise_dbFree (fuel : Nat) (Gb : Formula → Bool) :
+    {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → t.dbFree →
+    (excise fuel Gb t).2.dbFree
+  | _, _, .app K m₁ m₂ φ' α f x hle, hf => by
+      have hf' := excise_dbFree fuel Gb f hf.1
+      have hx' := excise_dbFree fuel Gb x hf.2
+      simp only [excise]
+      by_cases hg : Gb φ' = true
+      · rw [if_pos hg]
+        exact ⟨hf', hx'⟩
+      · rw [if_neg hg]
+        have hsd : DStack.dbFree
+            (.cons (excise fuel Gb x).1 (excise fuel Gb x).2 .nil :
+              DStack (.impl φ' α) α) :=
+          by unfold DStack.dbFree; exact ⟨hx', trivial⟩
+        exact excise_fire_dbFree_aux
+          ⟨(excise fuel Gb f).1 + (excise fuel Gb x).1 + α.size,
+            .app _ (excise fuel Gb f).1 (excise fuel Gb x).1 φ' α
+              (excise fuel Gb f).2 (excise fuel Gb x).2 (Nat.le_refl _)⟩
+          ⟨hf', hx'⟩ _
+          (fun r hr => (crossDbFree fuel).1 _ _ hf' hsd hr)
+  | _, _, .weakenImpl φ' ψ' m' tw hle, hf => by
+      have := excise_dbFree fuel Gb tw hf
+      simpa [excise, ProvT.dbFree] using this
+  | _, _, .implTrans φ' ψ' χ' a b tA tB hle, hf => by
+      have h1 := excise_dbFree fuel Gb tA hf.1
+      have h2 := excise_dbFree fuel Gb tB hf.2
+      exact ⟨h1, h2⟩
+  | _, _, .impS2 φ' ψ' χ' m₁ m₂ K tf tx hle, hf => by
+      have h1 := excise_dbFree fuel Gb tf hf.1
+      have h2 := excise_dbFree fuel Gb tx hf.2
+      exact ⟨h1, h2⟩
+  | _, _, .boxIntro kIn K φ' tc hle, hf => by
+      have h1 := excise_dbFree fuel Gb tc hf
+      simp only [excise]
+      by_cases hc : (excise fuel Gb tc).1 ≤ kIn
+      · rw [dif_pos hc]
+        exact (ProvT.mono_dbFree _ _).mpr h1
+      · rw [dif_neg hc]
+        exact hf
+  | _, _, .axK a' b' c' m'' K φ' α' tP hg1 hle, hf =>
+      excise_dbFree fuel Gb tP hf
+  | _, _, .diagF pm fb g K tgt tP hle, hf =>
+      excise_dbFree fuel Gb tP hf
+  | _, _, .diagB pm fb g K tgt tP hle, hf =>
+      excise_dbFree fuel Gb tP hf
+  | _, _, .struct d hd, hf => hf
+  | _, _, .atom a, hf => hf
+  | _, _, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz, hf => hf
+  | _, _, .atomBoxImpl kB p' q' a' cert hle, hf => hf
+  | _, _, .boxMono a' b' K ψ hab hle, hf => hf
+  | _, _, .box4 a' b' K ψ hg1 hle, hf => hf
+  | _, _, .axKf a' b' c' K ψ α hg1 hle, hf => hf
+  | _, _, .atomNeg p' q' b' aN m'' tc hne hle, hf => hf
+
+/-- Iterated excision preserves iteBranch-freedom. -/
+theorem exciseFix_dbFree : (rounds fuel : Nat) → (Gb : Formula → Bool) →
+    {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → t.dbFree →
+    (exciseFix rounds fuel Gb t).2.dbFree
+  | 0, _, _, _, _, _, hf => hf
+  | rounds + 1, fuel, Gb, _, _, t, hf => by
+      have h1 := excise_dbFree fuel Gb t hf
+      simp only [exciseFix]
+      by_cases hg : (excise fuel Gb t).2.gateOKb Gb = true
+      · rw [if_pos hg]
+        exact h1
+      · rw [if_neg hg]
+        exact exciseFix_dbFree rounds fuel Gb _ h1
+
 end PD.T49
