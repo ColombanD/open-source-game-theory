@@ -627,3 +627,17 @@ theorem ProvT.transport {P : List Prog} {N M : Nat} (hP : PoolOK P)
         ⟨by simp only [T42.maxLitF]; omega,
          by simp only [instModestF, Bool.and_eq_true]; exact hmod⟩
 end
+
+/-! ## 5. THE FIRST CERTIFIED INSTANCE of the revised CutRelevance.
+
+DupocBot self-cooperation — a genuine self-referential Löb fact, `Provable` by
+`bloeb_engine` — lands in the INSTANCE-GATED stratum, kernel-checked end to end:
+the raw tree's full diet passes `instOKb` (verdict (d)), soundness bridges to the
+Prop gate, and the gate-generic `toG` produces the `ProvableG` certificate. -/
+
+theorem dupoc_selfcoop_certified :
+    T42.ProvableG (instGate [meD] kD) (4096 * W) tgtD :=
+  ProvT.toG treeD
+    (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeD (by decide))
+
+#eval s!"(e) kernel-certified: ProvableG (instGate [DupocBot]) of the Löb fact ✓"
