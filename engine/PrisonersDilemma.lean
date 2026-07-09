@@ -25,3 +25,4 @@ import PrisonersDilemma.Research.Spikes.transcript.T50InstanceLob
 import PrisonersDilemma.Research.Spikes.transcript.T51Regress
 import PrisonersDilemma.Research.Spikes.transcript.T52DecInst
 import PrisonersDilemma.Research.Spikes.transcript.T53StabInst
+import PrisonersDilemma.Research.Spikes.transcript.T54ZooCert
