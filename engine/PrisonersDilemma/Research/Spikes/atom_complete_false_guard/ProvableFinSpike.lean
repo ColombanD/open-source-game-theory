@@ -1,7 +1,7 @@
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Derivation
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.ComputableEval.PlaysCheck
+import PrisonersDilemma.Research.Spikes.computable_eval.PlaysCheck
 import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Bots.CooperateBot
 

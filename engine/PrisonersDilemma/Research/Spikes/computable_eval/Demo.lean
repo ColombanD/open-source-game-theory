@@ -1,4 +1,4 @@
-import PrisonersDilemma.ComputableEval.Computable
+import PrisonersDilemma.Research.Spikes.computable_eval.Computable
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.MirrorBot
