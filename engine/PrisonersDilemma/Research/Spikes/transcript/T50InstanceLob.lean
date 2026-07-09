@@ -807,3 +807,110 @@ theorem dupoc_selfcoop_certified :
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeD (by decide))
 
 #eval s!"(e) kernel-certified: ProvableG (instGate [DupocBot]) of the Löb fact ✓"
+
+/-! ## 6. The certificate pipeline, packaged: four Bool checks → `ProvableG`. -/
+
+mutual
+  def _root_.PD.T49.PlaysT.rawAtomsb : {me o b : Prog} → {a : Action} → {n : Nat} →
+      PlaysT me o b a n → Bool
+    | _, _, _, _, _, .const => true
+    | _, _, _, _, _, .self t => t.rawAtomsb
+    | _, _, _, _, _, .opp t => t.rawAtomsb
+    | _, _, _, _, _, .bot t => t.rawAtomsb
+    | _, _, _, _, _, .sim t => t.rawAtomsb
+    | _, _, _, _, _, .ite_t tb _ tp => tb.rawAtomsb && tp.rawAtomsb
+    | _, _, _, _, _, .ite_f tb _ tq => tb.rawAtomsb && tq.rawAtomsb
+    | _, _, _, _, _, .search_t tg tp => tg.rawAtomsb && tp.rawAtomsb
+    | _, _, _, _, _, .search_f tr tq => tr.rawAtomsb && tq.rawAtomsb
+
+  def _root_.PD.T49.AtomT.rawAtomsb : {k : Nat} → {φ : Formula} → AtomT k φ → Bool
+    | _, _, .mk (me := me) (opponent := o) pl _ =>
+        T43.modestP me && T43.modestP o && pl.rawAtomsb
+
+  def _root_.PD.T49.ProvT.rawAtomsb : {k : Nat} → {φ : Formula} → ProvT k φ → Bool
+    | _, ξ', .struct _ _ => rawArgsF ξ'
+    | _, _, .atom t => t.rawAtomsb
+    | _, _, .weakenImpl _ _ _ t _ => t.rawAtomsb
+    | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.rawAtomsb
+    | _, _, .implTrans _ _ _ _ _ t1 t2 _ => t1.rawAtomsb && t2.rawAtomsb
+    | _, _, .atomBoxImpl _ _ _ _ t _ => t.rawAtomsb
+    | _, _, .boxIntro _ _ _ t _ => t.rawAtomsb
+    | _, _, .app _ _ _ _ _ t1 t2 _ => t1.rawAtomsb && t2.rawAtomsb
+    | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.rawAtomsb
+    | _, _, .box4 _ _ _ _ _ _ => true
+    | _, _, .diagF _ _ _ _ _ t _ => t.rawAtomsb
+    | _, _, .diagB _ _ _ _ _ t _ => t.rawAtomsb
+    | _, _, .axKf _ _ _ _ _ _ _ _ => true
+    | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.rawAtomsb && t2.rawAtomsb
+    | _, _, .boxMono _ _ _ _ _ _ => true
+    | _, _, .atomNeg _ _ _ _ _ t _ _ => t.rawAtomsb
+end
+
+mutual
+  theorem _root_.PD.T49.PlaysT.rawAtomsb_sound {me o b : Prog} {a : Action} {n : Nat} :
+      (t : PlaysT me o b a n) → t.rawAtomsb = true → t.rawAtoms
+    | .const, _ => trivial
+    | .self t, h => t.rawAtomsb_sound h
+    | .opp t, h => t.rawAtomsb_sound h
+    | .bot t, h => t.rawAtomsb_sound h
+    | .sim t, h => t.rawAtomsb_sound h
+    | .ite_t tb _ tp, h => by
+        simp only [PlaysT.rawAtomsb, Bool.and_eq_true] at h
+        exact ⟨tb.rawAtomsb_sound h.1, tp.rawAtomsb_sound h.2⟩
+    | .ite_f tb _ tq, h => by
+        simp only [PlaysT.rawAtomsb, Bool.and_eq_true] at h
+        exact ⟨tb.rawAtomsb_sound h.1, tq.rawAtomsb_sound h.2⟩
+    | .search_t tg tp, h => by
+        simp only [PlaysT.rawAtomsb, Bool.and_eq_true] at h
+        exact ⟨tg.rawAtomsb_sound h.1, tp.rawAtomsb_sound h.2⟩
+    | .search_f tr tq, h => by
+        simp only [PlaysT.rawAtomsb, Bool.and_eq_true] at h
+        exact ⟨tr.rawAtomsb_sound h.1, tq.rawAtomsb_sound h.2⟩
+
+  theorem _root_.PD.T49.AtomT.rawAtomsb_sound {k : Nat} {φ : Formula} :
+      (t : AtomT k φ) → t.rawAtomsb = true → t.rawAtoms
+    | .mk pl _, h => by
+        simp only [AtomT.rawAtomsb, Bool.and_eq_true] at h
+        exact ⟨⟨h.1.1, h.1.2⟩, pl.rawAtomsb_sound h.2⟩
+
+  theorem _root_.PD.T49.ProvT.rawAtomsb_sound {k : Nat} {φ : Formula} :
+      (t : ProvT k φ) → t.rawAtomsb = true → t.rawAtoms
+    | .struct _ _, h => h
+    | .atom t, h => t.rawAtomsb_sound h
+    | .weakenImpl _ _ _ t _, h => t.rawAtomsb_sound h
+    | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _, h => t.rawAtomsb_sound h
+    | .implTrans _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.rawAtomsb, Bool.and_eq_true] at h
+        exact ⟨t1.rawAtomsb_sound h.1, t2.rawAtomsb_sound h.2⟩
+    | .atomBoxImpl _ _ _ _ t _, h => t.rawAtomsb_sound h
+    | .boxIntro _ _ _ t _, h => t.rawAtomsb_sound h
+    | .app _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.rawAtomsb, Bool.and_eq_true] at h
+        exact ⟨t1.rawAtomsb_sound h.1, t2.rawAtomsb_sound h.2⟩
+    | .axK _ _ _ _ _ _ _ t _ _, h => t.rawAtomsb_sound h
+    | .box4 _ _ _ _ _ _, _ => trivial
+    | .diagF _ _ _ _ _ t _, h => t.rawAtomsb_sound h
+    | .diagB _ _ _ _ _ t _, h => t.rawAtomsb_sound h
+    | .axKf _ _ _ _ _ _ _ _, _ => trivial
+    | .impS2 _ _ _ _ _ _ t1 t2 _, h => by
+        simp only [ProvT.rawAtomsb, Bool.and_eq_true] at h
+        exact ⟨t1.rawAtomsb_sound h.1, t2.rawAtomsb_sound h.2⟩
+    | .boxMono _ _ _ _ _ _, _ => trivial
+    | .atomNeg _ _ _ _ _ t _ _, h => t.rawAtomsb_sound h
+end
+
+/-- **THE CERTIFICATE PIPELINE**: four kernel-decidable checks and one arithmetic
+    fact certify any tree into the instance-gated stratum. -/
+theorem certifyTransport {P : List Prog} {N M : Nat} (hMN : 2 ^ M ≤ N)
+    {m : Nat} {ξ : Formula} (t : ProvT m ξ)
+    (hconc : instOKb P N ξ = true)
+    (hcuts : t.cutsOKb (instOKb P N) = true)
+    (hcites : t.citesLEb M = true)
+    (hraw : t.rawAtomsb = true)
+    (hm : m ≤ M) :
+    T42.ProvableG (instGate P N) m ξ :=
+  ProvT.toG t (ProvT.transport hMN t
+    (ProvT.cutsOKb_sound (fun _ hb => instOKb_iff.mp hb) t hcuts)
+    (ProvT.citesLEb_sound t hcites)
+    (ProvT.rawAtomsb_sound t hraw)
+    hm (instOKb_iff.mp hconc))
