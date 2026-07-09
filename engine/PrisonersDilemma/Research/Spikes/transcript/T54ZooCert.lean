@@ -1,4 +1,5 @@
 import PrisonersDilemma.Research.Spikes.transcript.T53StabInst
+import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 
 /-! # T54 — CERTIFYING THE ZOO (option C): the cross-bot flagship.
 
@@ -143,5 +144,31 @@ theorem prudent_dupoc_certified :
 /-- And soundness closes the loop: the certified tree really is the engine fact. -/
 theorem prudent_dupoc_provable : Provable (32768 * VZ) phiD :=
   ProvT.sound treePD
+
+/-! ## The impl-guard shape: CIMCIC vs CooperateBot.
+
+The ONE impl-shaped guard in the zoo (`impl atom atom`, CIMCIC/DIMCID) — the shape
+every middle-analysis pointed at. Its guard instance is provable by `weakenImpl`
+over the consequent atom, and the tree is cut-free: it certifies trivially. -/
+
+def kC : Nat := 1000
+def CB : Prog := Bots.CIMCIC kC
+def guardCC : Formula :=
+  .impl (.plays CB Bots.CooperateBot .C) (.plays Bots.CooperateBot CB .C)
+
+/-- The impl-guard instance tree: `weakenImpl` over CooperateBot's const atom. -/
+def treeCC : ProvT kC guardCC :=
+  .weakenImpl _ _ 2
+    (ProvT.atom (AtomT.mk (PlaysT.const) (by decide)))
+    (by decide)
+
+#eval s!"CIMCIC impl-guard tree passes instance gate: {
+  treeCC.gateOKb (instOKb [CB] kC)}"
+
+/-- **CERTIFIED**: the zoo's impl-guard shape lands in the instance stratum. -/
+theorem cimcic_coop_certified :
+    T42.ProvableG (instGate [CB] kC) kC guardCC :=
+  ProvT.toG treeCC
+    (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeCC (by decide))
 
 end PD.T54
