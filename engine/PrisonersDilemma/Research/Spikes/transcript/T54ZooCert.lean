@@ -1,5 +1,6 @@
 import PrisonersDilemma.Research.Spikes.transcript.T53StabInst
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
+import PrisonersDilemma.Bots.CupodTrollBot
 
 /-! # T54 — CERTIFYING THE ZOO (option C): the cross-bot flagship.
 
@@ -170,5 +171,29 @@ theorem cimcic_coop_certified :
     T42.ProvableG (instGate [CB] kC) kC guardCC :=
   ProvT.toG treeCC
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeCC (by decide))
+
+/-! ## The eq-guard shape: CupodTrollBot recognizing CupodBot. -/
+
+def kT : Nat := 1000
+def CPB : Prog := Bots.CupodBot kT
+/-- The troll's guard instance against the real CupodBot: `.eq CupodBot CupodBot`
+    (the LHS is the substituted opponent probe; the RHS is the frozen literal). -/
+def guardTT : Formula := .eq CPB CPB
+
+def treeTT : ProvT 200 guardTT :=
+  .struct (Derivation.eqRefl CPB) (by decide)
+
+#eval s!"CupodTroll eq-guard tree passes instance gate: {
+  treeTT.gateOKb (instOKb [CPB] kT)}"
+
+/-- **CERTIFIED**: the eq-guard shape (source-code recognition) lands in the
+    instance stratum. Coverage of the certified zoo's guard shapes is now
+    complete: plays-atom Löb (T50), stacked-search + `search_f` prudence (T54),
+    impl guards (T54), eq guards (here); `atomNeg` refutations exercised inside
+    the prudence certificate. DIMCID is symmetric to CIMCIC. -/
+theorem cupodtroll_eq_certified :
+    T42.ProvableG (instGate [CPB] kT) 200 guardTT :=
+  ProvT.toG treeTT
+    (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeTT (by decide))
 
 end PD.T54
