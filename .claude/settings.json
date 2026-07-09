@@ -64,7 +64,8 @@
       "Bash(cp \"/private/tmp/claude-501/-Users-colomband-Library-CloudStorage-OneDrive-Personal-Documents-Studies-ETH-Master-Thesis-workspace-open-source-game-theory/45e03dc3-6b3d-4188-b97e-57f9c3c1ed30/scratchpad/T0Transcript.lean\" \"/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/engine/PrisonersDilemma/Research/Spikes/transcript/T0Transcript.lean\")",
       "Bash(awk '/inductive Provable : Nat/,/^end$/' PrisonersDilemma/Derivation.lean)",
       "Bash(git rm *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(awk -F: '{print $1}')"
     ],
     "additionalDirectories": [
       "/tmp"

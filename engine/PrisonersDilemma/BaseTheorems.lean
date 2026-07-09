@@ -7,6 +7,27 @@ open Classical
 open PD
 namespace PD.BaseTheorems
 
+/-- `subst` cannot introduce a `.search`: substituting search-free players into a search-free
+    body stays search-free. -/
+theorem Prog.hasSearch_subst : ∀ (p me oppo : Prog), p.hasSearch = false →
+    me.hasSearch = false → oppo.hasSearch = false → (p.subst me oppo).hasSearch = false
+  | .const _, _, _ => fun _ _ _ => rfl
+  | .self, _, _ => fun _ hme _ => by simpa [Prog.subst] using hme
+  | .opp, _, _ => fun _ _ ho => by simpa [Prog.subst] using ho
+  | .bot p, m1, o1 => fun hp _ _ => by simpa [Prog.subst, Prog.hasSearch] using hp
+  | .sim p q, m1, o1 => fun hp hme ho => by
+      simp only [Prog.hasSearch, Bool.or_eq_false_iff] at hp
+      simp only [Prog.subst, Prog.hasSearch, Bool.or_eq_false_iff]
+      exact ⟨Prog.hasSearch_subst p m1 o1 hp.1 hme ho,
+             Prog.hasSearch_subst q m1 o1 hp.2 hme ho⟩
+  | .ite b ac p q, m1, o1 => fun hp hme ho => by
+      simp only [Prog.hasSearch, Bool.or_eq_false_iff] at hp
+      simp only [Prog.subst, Prog.hasSearch, Bool.or_eq_false_iff]
+      exact ⟨⟨Prog.hasSearch_subst b m1 o1 hp.1.1 hme ho,
+              Prog.hasSearch_subst p m1 o1 hp.1.2 hme ho⟩,
+             Prog.hasSearch_subst q m1 o1 hp.2 hme ho⟩
+  | .search _ _ _ _, _, _ => fun hp _ _ => by simp [Prog.hasSearch] at hp
+
 /-- `c_guard` (the cost of writing the budget numeral `k` in a proof transcript)
     is monotone: a larger `k` takes at least as many characters to write.
     Needed for `atom_cost_mono`. Now a *theorem* (was an axiom): with the concrete
