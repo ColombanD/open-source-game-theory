@@ -1,6 +1,8 @@
 import PrisonersDilemma.Research.Spikes.transcript.T53StabInst
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.CupodTrollBot
+import PrisonersDilemma.Bots.LlmGenerations.JustBot
+import PrisonersDilemma.Bots.LlmGenerations.DIMCID
 
 /-! # T54 — CERTIFYING THE ZOO (option C): the cross-bot flagship.
 
@@ -195,5 +197,108 @@ theorem cupodtroll_eq_certified :
     T42.ProvableG (instGate [CPB] kT) 200 guardTT :=
   ProvT.toG treeTT
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeTT (by decide))
+
+/-! ## The JustBot chain: the (botDupoc, Prudent) staggered mutual pair.
+
+JustBot's guard asks about `.bot (DupocBot k)`; its cooperation rests on the
+mutual pair Af = "botDupoc cooperates with Prudent", Bf = "Prudent cooperates
+with botDupoc". Same V-recipe, `.bot`-wrapped frames throughout. -/
+
+def BDB : Prog := .bot DB
+def phiA2 : Formula := .plays BDB PB .C
+def phiB2 : Formula := .plays PB BDB .C
+
+def refute2T : ProvT (Nat.log2 kZ + 14) (.neg (.plays (.bot Bots.DefectBot) BDB .C)) :=
+  ProvT.atomNeg (.bot Bots.DefectBot) BDB .D .C 2
+    (AtomT.mk (PlaysT.bot PlaysT.const) (by decide))
+    (by decide) (by decide)
+
+/-- botDupoc's prudence: the `.bot`-wrapped `search_f` floor. -/
+def prudence2T : ProvT (kZ + Nat.log2 kZ + 17) (.plays BDB (.bot Bots.DefectBot) .D) :=
+  ProvT.atom (AtomT.mk
+    (PlaysT.bot (PlaysT.search_f (k := kZ) (φ := .plays .opp .self .C)
+      (p := .const .C) refute2T PlaysT.const))
+    (by decide))
+
+def legPD2T : ProvT 1570 (.impl (.box kP phiA2) phiB2) :=
+  ProvT.searchThenSearch_t kP kP (kZ + Nat.log2 kZ + 17)
+    (.plays .opp .self .C) (.plays .opp (.bot Bots.DefectBot) .D)
+    .C .D (.const .D) PB BDB rfl
+    prudence2T (by decide) (by decide)
+
+def dLegDP2 : Derivation (.impl (.box kZ phiB2) phiA2) :=
+  .botSearchStep kZ (.plays .opp .self .C) .C .D BDB PB rfl
+
+#eval dLegDP2.size
+def legDP2T : ProvT 256 (.impl (.box kZ phiB2) phiA2) :=
+  .struct dLegDP2 (by decide)
+
+def VZ2 : Nat := 1570 + 256 + 112 + 112 + 29 + 16
+def fbZ2 : Nat := kZ - 64 * VZ2
+
+def prem2T : ProvT (160 * VZ2) (.impl (.box fbZ2 phiA2) phiA2) :=
+  mutualLoebT phiA2 phiB2 kP kZ fbZ2 (16 * VZ2) (fbZ2 + 8 * VZ2) (fbZ2 + 32 * VZ2)
+    1570 256
+    (8 * VZ2) (16 * VZ2) (32 * VZ2) (16 * VZ2) (64 * VZ2) (16 * VZ2) (96 * VZ2)
+    (8 * VZ2) (128 * VZ2) (160 * VZ2)
+    legPD2T legDP2T
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)
+
+/-- botDupoc cooperates with Prudent (Af — the mutual fixpoint output). -/
+def treeA2 : ProvT (32768 * VZ2) phiA2 :=
+  PD.T50.bloebT phiA2 (160 * VZ2) fbZ2
+    (8192 * VZ2) (512 * VZ2) (16384 * VZ2) (16384 * VZ2) (65536 * VZ2)
+    (256 * VZ2) (256 * VZ2) (1024 * VZ2) (512 * VZ2) (2048 * VZ2) (512 * VZ2)
+    (512 * VZ2) (3072 * VZ2) (4096 * VZ2) (256 * VZ2) (5120 * VZ2) (6144 * VZ2)
+    (7168 * VZ2) (16384 * VZ2) (32768 * VZ2)
+    prem2T
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)
+
+/-- Prudent cooperates with botDupoc (Bf = JUSTBOT'S GUARD FACT): leg 1 applied to
+    the boxed fixpoint output. -/
+def treeB2 : ProvT (kP + 2000) phiB2 :=
+  .app (kP + 2000) 1570 (kP + 200) _ _
+    legPD2T
+    (.boxIntro kP (kP + 200) phiA2 (treeA2.mono (by decide)) (by decide))
+    (by decide)
+
+#eval s!"JustBot chain Af raw tree passes instance gate: {
+  treeA2.gateOKb (instOKb [PB, DB, BDB] kP)}"
+#eval s!"JustBot guard fact Bf raw tree passes instance gate: {
+  treeB2.gateOKb (instOKb [PB, DB, BDB] kP)}"
+
+/-- **CERTIFIED**: the botDupoc mutual fixpoint (JustBot's chain, Af). -/
+theorem botdupoc_prudent_certifiedA :
+    T42.ProvableG (instGate [PB, DB, BDB] kP) (32768 * VZ2) phiA2 :=
+  ProvT.toG treeA2
+    (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeA2 (by decide))
+
+/-- **CERTIFIED**: JustBot's guard fact (Bf) — what JustBot's oracle consults. -/
+theorem justbot_guard_certified :
+    T42.ProvableG (instGate [PB, DB, BDB] kP) (kP + 2000) phiB2 :=
+  ProvT.toG treeB2
+    (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeB2 (by decide))
+
+/-! ## DIMCID (symmetric impl guard). -/
+
+def DIB : Prog := Bots.DIMCID kC
+def guardDD : Formula :=
+  .impl (.plays DIB Bots.DefectBot .C) (.plays Bots.DefectBot DIB .D)
+
+def treeDD : ProvT kC guardDD :=
+  .weakenImpl _ _ 2
+    (ProvT.atom (AtomT.mk (PlaysT.const) (by decide)))
+    (by decide)
+
+/-- **CERTIFIED**: DIMCID's impl guard vs DefectBot. -/
+theorem dimcid_defect_certified :
+    T42.ProvableG (instGate [DIB] kC) kC guardDD :=
+  ProvT.toG treeDD
+    (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeDD (by decide))
 
 end PD.T54
