@@ -172,7 +172,7 @@ theorem provable_else_isAtom (k : Nat) (ψ0 : Formula) (aT aE : Action) (q : Pro
       have hF : Forbidden (.search k ψ0 (.const aT) (.const aE)) q aE
           (.impl φ' (.plays (.search k ψ0 (.const aT) (.const aE)) q aE)) := ⟨rfl, rfl, rfl⟩
       have hsp : 1 ≤ (Formula.plays (.search k ψ0 (.const aT) (.const aE)) q aE).size := by
-        simp only [numCost, Formula.size]; omega
+        simp only [Formula.size]; omega
       exact (no_provable_forbidden k ψ0 aT aE q hne himpl (by omega) hF).elim
 
 end PD.Exclusion

@@ -67,27 +67,27 @@ mutual
         rcases hq with rfl | hq
         · exact Nat.le_refl _
         · have := sizeP_of_mem p q hq
-          simp only [numCost, Prog.size]; omega
+          simp only [Prog.size]; omega
     | sim p₁ p₂ =>
         intro q hq
         simp only [subsP, List.mem_cons, List.mem_append] at hq
         rcases hq with rfl | hq | hq
         · exact Nat.le_refl _
         · have := sizeP_of_mem p₁ q hq
-          simp only [numCost, Prog.size]; omega
+          simp only [Prog.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [numCost, Prog.size]; omega
+          simp only [Prog.size]; omega
     | ite b a p₁ p₂ =>
         intro q hq
         simp only [subsP, List.mem_cons, List.mem_append] at hq
         rcases hq with rfl | (hq | hq) | hq
         · exact Nat.le_refl _
         · have := sizeP_of_mem b q hq
-          simp only [numCost, Prog.size]; omega
+          simp only [Prog.size]; omega
         · have := sizeP_of_mem p₁ q hq
-          simp only [numCost, Prog.size]; omega
+          simp only [Prog.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [numCost, Prog.size]; omega
+          simp only [Prog.size]; omega
     | search k φ p₁ p₂ =>
         intro q hq
         simp only [subsP, List.mem_cons, List.mem_append] at hq
@@ -108,21 +108,21 @@ mutual
         simp only [subsF, List.mem_append] at hq
         rcases hq with hq | hq
         · have := sizeP_of_mem p₁ q hq
-          simp only [numCost, Formula.size]; omega
+          simp only [Formula.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [numCost, Formula.size]; omega
+          simp only [Formula.size]; omega
     | impl φ ψ =>
         intro q hq
         simp only [subsF, List.mem_append] at hq
         rcases hq with hq | hq
         · have := sizeF_of_mem φ q hq
-          simp only [numCost, Formula.size]; omega
+          simp only [Formula.size]; omega
         · have := sizeF_of_mem ψ q hq
-          simp only [numCost, Formula.size]; omega
+          simp only [Formula.size]; omega
     | neg φ =>
         intro q hq
         have := sizeF_of_mem φ q hq
-        simp only [numCost, Formula.size]; omega
+        simp only [Formula.size]; omega
     | box n φ =>
         intro q hq
         have := sizeF_of_mem φ q hq
@@ -132,9 +132,9 @@ mutual
         simp only [subsF, List.mem_append] at hq
         rcases hq with hq | hq
         · have := sizeP_of_mem p₁ q hq
-          simp only [numCost, Formula.size]; omega
+          simp only [Formula.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [numCost, Formula.size]; omega
+          simp only [Formula.size]; omega
     | diag g φ =>
         intro q hq
         have := sizeF_of_mem φ q hq
@@ -160,7 +160,7 @@ theorem playsArgs_modest : ∀ (φ : Formula), modestF φ = true →
   case plays =>
       intro p q a _ _ h P hP
       simp only [modestF, Bool.and_eq_true] at h
-      simp only [playsArgsF, List.mem_cons, List.mem_singleton, List.not_mem_nil,
+      simp only [playsArgsF, List.mem_cons, List.not_mem_nil,
         or_false] at hP
       rcases hP with rfl | rfl
       · exact ⟨h.1.1.1, h.1.2⟩
@@ -394,7 +394,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
       have hszB : B.size ≤ ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl A B).size) := by
         have hZ := ZS_anti r₁ r₂ N k₀ φ₀
           (show K - (Formula.impl A B).size ≤ K by omega)
-        simp only [numCost, Formula.size] at hsz
+        simp only [Formula.size] at hsz
         omega
       rw [hag (K - (Formula.impl A B).size) B (by omega) hszB hInvB]
     · rfl
@@ -439,7 +439,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
       apply anyCongr; intro ψ' hψ'
       have hm₁K : m₁ < K := List.mem_range.mp hm₁
       cases hc : cutOKb N ψ' with
-      | false => simp [hc]
+      | false => simp []
       | true =>
           have hψsz := le_EB hψ'
           have hEBR := EB_le_EBR r₁ r₂ N k₀ φ₀ hK
@@ -468,11 +468,11 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
               simp only [maxLitF] at hlit ⊢
               omega
           have hsz1 : (Formula.impl A ψ').size ≤ ZS r₁ r₂ N k₀ φ₀ m₁ := by
-            simp only [numCost, Formula.size] at hsz ⊢
+            simp only [Formula.size] at hsz ⊢
             omega
           have hsz2 : (Formula.impl ψ' C).size ≤
               ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl A C).size - m₁) := by
-            simp only [numCost, Formula.size] at hsz hstep2 ⊢
+            simp only [Formula.size] at hsz hstep2 ⊢
             omega
           rw [hag m₁ _ (by omega) hsz1 hInv1,
             hag (K - (Formula.impl A C).size - m₁) _ (by omega) hsz2 hInv2]
@@ -483,7 +483,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     split
     · rename_i p q a kB p' q' a'
       have hkB : kB ≤ RR r₁ r₂ N k₀ φ₀ := by
-        simp only [maxLitF, maxLitP] at hlit
+        simp only [maxLitF] at hlit
         omega
       have hOG := certOG_congr (kB+1) kB
         (cert_reads_ok r₁ r₂ N k₀ φ₀ h₁ h₂ hag
@@ -498,7 +498,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     split
     · rename_i kIn ψ
       cases hg : decide (kIn + (Formula.box kIn ψ).size ≤ K) with
-      | false => simp [hg]
+      | false => simp []
       | true =>
           have hgle := of_decide_eq_true hg
           have hkK : kIn < K := by
@@ -522,7 +522,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     apply anyCongr; intro ψ' hψ'
     have hm₁K : m₁ < K := List.mem_range.mp hm₁
     cases hc : cutOKb N ψ' with
-    | false => simp [hc]
+    | false => simp []
     | true =>
         have hψsz := le_EB hψ'
         have hEBR := EB_le_EBR r₁ r₂ N k₀ φ₀ hK
@@ -547,7 +547,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
             simp only [maxLitF]
             omega
         have hsz1 : (Formula.impl ψ' φ).size ≤ ZS r₁ r₂ N k₀ φ₀ m₁ := by
-          simp only [numCost, Formula.size]
+          simp only [Formula.size]
           omega
         have hsz2 : ψ'.size ≤ ZS r₁ r₂ N k₀ φ₀ (K - φ.size - m₁) := by
           omega
@@ -558,13 +558,13 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     split
     · rename_i b ψ c α
       cases hgate : decide ((Formula.impl (.box b ψ) (.box c α)).size ≤ K) with
-      | false => simp [hgate]
+      | false => simp []
       | true =>
           have hgle := of_decide_eq_true hgate
           simp only [Bool.true_and]
           apply anyCongr; intro a ha
           cases hc : cutOKb N (.box a (.impl ψ α)) with
-          | false => simp [hc]
+          | false => simp []
           | true =>
               have hcut := cutOKb_iff.mp hc
               have haN : a ≤ N := by
@@ -618,7 +618,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
                   congr 1
                   apply anyCongr; intro fb hfb
                   cases hc : cutOKb N (.impl (.box fb t) t) with
-                  | false => simp [hc]
+                  | false => simp []
                   | true =>
                       have hcut := cutOKb_iff.mp hc
                       have hfbN : fb ≤ N := by
@@ -645,7 +645,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
                         · intro P hP
                           refine hargs P ?_
                           simp only [playsArgsF, List.mem_append, List.not_mem_nil,
-                            false_or, or_false] at hP ⊢
+                            false_or] at hP ⊢
                           rcases hP with hP | hP
                           · exact hP
                           · exact hP
@@ -677,7 +677,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
                   congr 1
                   apply anyCongr; intro fb hfb
                   cases hc : cutOKb N (.impl (.box fb t) t) with
-                  | false => simp [hc]
+                  | false => simp []
                   | true =>
                       have hcut := cutOKb_iff.mp hc
                       have hfbN : fb ≤ N := by
@@ -722,7 +722,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
       apply anyCongr; intro ψ' hψ'
       have hm₁K : m₁ < K := List.mem_range.mp hm₁
       cases hc : cutOKb N ψ' with
-      | false => simp [hc]
+      | false => simp []
       | true =>
           have hψsz := le_EB hψ'
           have hEBR := EB_le_EBR r₁ r₂ N k₀ φ₀ hK
@@ -752,11 +752,11 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
               simp only [maxLitF] at hlit ⊢
               omega
           have hsz1 : (Formula.impl A (.impl ψ' C)).size ≤ ZS r₁ r₂ N k₀ φ₀ m₁ := by
-            simp only [numCost, Formula.size] at hsz ⊢
+            simp only [Formula.size] at hsz ⊢
             omega
           have hsz2 : (Formula.impl A ψ').size ≤
               ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl A C).size - m₁) := by
-            simp only [numCost, Formula.size] at hsz hstep2 ⊢
+            simp only [Formula.size] at hsz hstep2 ⊢
             omega
           rw [hag m₁ _ (by omega) hsz1 hInv1,
             hag (K - (Formula.impl A C).size - m₁) _ (by omega) hsz2 hInv2]
@@ -886,7 +886,7 @@ theorem agree_ge (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
       · have : n = m + 1 := by omega
         subst this; rfl
 
-theorem exists_agree (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true) :
+theorem exists_agree (_ : modestP r₁ = true) (_ : modestP r₂ = true) :
     ∃ n, n ≤ (SL r₁ r₂ N k₀ φ₀).length ∧ Agree r₁ r₂ N k₀ φ₀ n := by
   apply Classical.byContradiction
   intro hcon

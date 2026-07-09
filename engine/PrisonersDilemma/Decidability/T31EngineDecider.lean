@@ -102,18 +102,18 @@ theorem enum_complete : ∀ n : Nat,
             (List.mem_append_left _ ?_)))
           simp
       | bot q =>
-          simp only [numCost, Prog.size] at h
+          simp only [Prog.size] at h
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
             (List.mem_append_right _ ?_)))
           exact List.mem_map.2 ⟨q, ihP q (by omega), rfl⟩
       | sim q r =>
-          simp only [numCost, Prog.size] at h
+          simp only [Prog.size] at h
           have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ ?_))
           exact List.mem_flatMap.2 ⟨q, ihP q (by omega),
             List.mem_map.2 ⟨r, ihP r (by omega), rfl⟩⟩
       | ite b a q r =>
-          simp only [numCost, Prog.size] at h
+          simp only [Prog.size] at h
           have hb := Prog.size_pos b; have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_left _ (List.mem_append_right _ ?_)
           exact List.mem_flatMap.2 ⟨b, ihP b (by omega),
@@ -131,7 +131,7 @@ theorem enum_complete : ∀ n : Nat,
     · intro φ h
       cases φ with
       | plays q r a =>
-          simp only [numCost, Formula.size] at h
+          simp only [Formula.size] at h
           have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
             (List.mem_append_left _ (List.mem_append_left _ ?_))))
@@ -139,14 +139,14 @@ theorem enum_complete : ∀ n : Nat,
             List.mem_flatMap.2 ⟨r, ihP r (by omega),
               List.mem_map.2 ⟨a, mem_action_pair a, rfl⟩⟩⟩
       | impl A B =>
-          simp only [numCost, Formula.size] at h
+          simp only [Formula.size] at h
           have hA := Formula.size_pos A; have hB := Formula.size_pos B
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
             (List.mem_append_left _ (List.mem_append_right _ ?_))))
           exact List.mem_flatMap.2 ⟨A, ihF A (by omega),
             List.mem_map.2 ⟨B, ihF B (by omega), rfl⟩⟩
       | neg A =>
-          simp only [numCost, Formula.size] at h
+          simp only [Formula.size] at h
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
             (List.mem_append_right _ ?_)))
           exact List.mem_map.2 ⟨A, ihF A (by omega), rfl⟩
@@ -157,7 +157,7 @@ theorem enum_complete : ∀ n : Nat,
           exact List.mem_flatMap.2 ⟨k, List.mem_range.2 (lt_two_pow_of_log2_lt (by omega)),
             List.mem_map.2 ⟨A, ihF A (by omega), rfl⟩⟩
       | eq q r =>
-          simp only [numCost, Formula.size] at h
+          simp only [Formula.size] at h
           have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_left _ (List.mem_append_right _ ?_)
           exact List.mem_flatMap.2 ⟨q, ihP q (by omega),
@@ -1630,7 +1630,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
       show decProv (certOG (decFull 0) 0) 1 K φ0 = true
       have hfire := decDeriv_complete d K K (by omega) le_rfl
       rw [decProv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
+      simp only [hfire, Bool.true_or]
   case cAtom =>
       intro k0 φ0 _hatom ih K hmK
       obtain ⟨F, e⟩ := ih K hmK
@@ -1687,7 +1687,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
         unfold chkITrans
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨a, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hg : a + (Formula.impl A C).size ≤ K := by omega
@@ -1737,7 +1737,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
         unfold chkAppE
         simp only [List.any_eq_true, List.mem_range]
         have hAsz : A.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
         have hg : m₁ + B.size ≤ K := by omega
@@ -1784,7 +1784,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
           (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)) = true := by
         unfold chkDiagFE
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_self_eq_true,
-          decide_eq_true_eq, Bool.true_and, and_true, true_and]
+          decide_eq_true_eq, and_true, true_and]
         have hg : (Formula.impl (.diag g tgt) (.impl (.box g (.diag g tgt)) tgt)).size ≤ K := by
           omega
         refine ⟨hg, fb, ?_, decFull_le_inner F F le_rfl _ _ e⟩
@@ -1807,7 +1807,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
           (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)) = true := by
         unfold chkDiagBE
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_self_eq_true,
-          decide_eq_true_eq, Bool.true_and, and_true, true_and]
+          decide_eq_true_eq, and_true, true_and]
         have hg : (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)).size ≤ K := by
           omega
         refine ⟨hg, fb, ?_, decFull_le_inner F F le_rfl _ _ e⟩
@@ -1845,7 +1845,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
         unfold chkImpS2E
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hg : m₁ + (Formula.impl A C).size ≤ K := by omega
@@ -1880,7 +1880,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
             have hne' : aN ≠ Action.D := fun hh => hne hh.symm
             simp [e, hne', hsz]
       rw [decProv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
+      simp only [hfire, Bool.or_true]
 
 /-! ## 8. THE PAYOFF — **the engine's `Provable` is SEMIDECIDABLE, absolutely.**
 
@@ -2084,14 +2084,14 @@ theorem outcomeG_sound (G : Nat → Formula → Option Bool) (hG : GuardSound G)
       rw [ha] at h
       simp only [bind, Option.bind] at h
       cases hb : playG G fuel q p with
-      | none => rw [hb] at h; simp [bind, Option.bind] at h
+      | none => rw [hb] at h; simp [] at h
       | some b =>
           rw [hb] at h
-          simp only [bind, Option.bind] at h
+          simp only [] at h
           rw [playG_sound G hG _ _ _ _ ha]
           simp only [bind, Option.bind]
           rw [playG_sound G hG _ _ _ _ hb]
-          simp only [bind, Option.bind]
+          simp only []
           exact h
 
 /-! ### Convergence — `guardFull`'s `none` is escapable on the whole r.e. fragment. -/

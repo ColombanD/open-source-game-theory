@@ -213,7 +213,7 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       unfold chkITransG at h
       split at h
       · rename_i A C
-        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, cutOKb,
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true,
           decide_eq_true_eq] at h
         obtain ⟨m₁, hm₁, ψ', _, ⟨⟨⟨hg, hsz⟩, h1⟩, h2⟩⟩ := h
         exact ProvableG.implTrans A ψ' C m₁ _ (ih _ _ h1) (ih _ _ h2) (by omega)
@@ -238,7 +238,7 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       · simp at h
     · -- app (gated)
       unfold chkAppEG at h
-      simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, cutOKb,
+      simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true,
         decide_eq_true_eq] at h
       obtain ⟨m₁, hm₁, φ', _, ⟨⟨⟨hg, hsz⟩, h1⟩, h2⟩⟩ := h
       exact ProvableG.app k m₁ _ φ' φ (ih _ _ h1) (ih _ _ h2) (by omega) ((hGb _).mp hg)
@@ -246,7 +246,7 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       unfold chkAxKG at h
       split at h
       · rename_i b ψ c α
-        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, cutOKb,
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true,
           decide_eq_true_eq] at h
         obtain ⟨hsz, a, _, ⟨⟨hg, hgate⟩, hr⟩⟩ := h
         exact ProvableG.axK a b c _ k ψ α (ih _ _ hr) hgate (by omega) ((hGb _).mp hg)
@@ -263,7 +263,7 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       unfold chkDiagFEG at h
       split at h
       · rename_i g t g' g'' t' t''
-        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq, cutOKb,
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq,
           decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hsz⟩, fb, _, ⟨hg, hr⟩⟩ := h
         exact ProvableG.diagF _ fb g k t (ih _ _ hr) (by omega) ((hGb _).mp hg)
@@ -272,7 +272,7 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       unfold chkDiagBEG at h
       split at h
       · rename_i g g' t t' g'' t''
-        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq, cutOKb,
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq,
           decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hsz⟩, fb, _, ⟨hg, hr⟩⟩ := h
         exact ProvableG.diagB _ fb g k t (ih _ _ hr) (by omega) ((hGb _).mp hg)
@@ -289,7 +289,7 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       unfold chkImpS2EG at h
       split at h
       · rename_i A C
-        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, cutOKb,
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true,
           decide_eq_true_eq] at h
         obtain ⟨m₁, hm₁, ψ', _, ⟨⟨⟨hg, hsz⟩, h1⟩, h2⟩⟩ := h
         exact ProvableG.impS2 A ψ' C m₁ _ k (ih _ _ h1) (ih _ _ h2) (by omega)
@@ -591,7 +591,7 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
       rw [decG]
       unfold stepG
       have hfire := decDeriv_complete d K K (by omega) le_rfl
-      simp only [hfire, Bool.or_true, Bool.true_or]
+      simp only [hfire, Bool.true_or]
   case cAtom =>
       intro k0 φ0 _hatom ih K hmK
       obtain ⟨F, e⟩ := ih K hmK
@@ -644,7 +644,7 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
         unfold chkITransG
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨a, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hgg : a + (Formula.impl A C).size ≤ K := by omega
@@ -690,7 +690,7 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
         unfold chkAppEG
         simp only [List.any_eq_true, List.mem_range]
         have hAsz : A.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
         have hgg : m₁ + B.size ≤ K := by omega
@@ -791,7 +791,7 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
         unfold chkImpS2EG
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hgg : m₁ + (Formula.impl A C).size ≤ K := by omega
@@ -825,7 +825,7 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
         | D =>
             have hne' : aN ≠ Action.D := fun hh => hne hh.symm
             simp [e, hne', hsz]
-      simp only [hfire, Bool.or_true, Bool.true_or]
+      simp only [hfire, Bool.or_true]
 
 /-! ## 8. THE PAYOFF (part b) — the modest stratum is semidecidable by its own enumerator;
 the fuel bound over the finite query space (part c) will upgrade this to DECIDABLE. -/

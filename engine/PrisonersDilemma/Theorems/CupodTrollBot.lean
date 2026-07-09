@@ -50,7 +50,7 @@ theorem CupodTrollBot_defects_vs_CupodBot (k fuel : Nat)
     must fit in `k` (`hbudget`). -/
 theorem CupodBot_defects_vs_CupodTrollBot (k fuel : Nat)
     (hk : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k)
-    (hbudget : atom_cost (fuel + 2) ≤ k) :
+    (_ : atom_cost (fuel + 2) ≤ k) :
     play (fuel + 2) (CupodBot k) (CupodTrollBot k) = some .D := by
   -- CupodTrollBot defects against `CupodBot k` (direction A).
   have hA : play (fuel + 2) (CupodTrollBot k) (CupodBot k) = some .D :=

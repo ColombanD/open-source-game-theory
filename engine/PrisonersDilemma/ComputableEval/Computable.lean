@@ -210,7 +210,7 @@ theorem evalC_eq_and_decGuard_sound :
               rw [hpl] at h
               by_cases hba : b = a
               · subst hba; simp only at h
-                by_cases hbud : atom_cost (n+1) ≤ k <;> simp [hbud] at h
+                by_cases hbud : atom_cost (n+1) ≤ k <;> simp [] at h
               · -- p actually plays b ≠ a, so `.plays p q a` is semantically false,
                 -- hence not Provable k (soundness), so proofSearch k = false.
                 cases hps : proofSearch k (Formula.plays p q a) with

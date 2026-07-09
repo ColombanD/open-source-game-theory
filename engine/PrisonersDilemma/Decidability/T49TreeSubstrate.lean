@@ -154,8 +154,8 @@ mutual
     | .struct d hd => .struct ⟨d, hd⟩
     | .atom t => .atom t.sound
     | .weakenImpl φ ψ m t hle => .weakenImpl φ ψ m t.sound hle
-    | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme t hm hsz =>
-        .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme t.sound hm hsz
+    | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz =>
+        .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t.sound hm hsz
     | .implTrans φ ψ χ a b t1 t2 hle => .implTrans φ ψ χ a b t1.sound t2.sound hle
     | .atomBoxImpl kBox p q a t hle => .atomBoxImpl kBox p q a t.sound hle
     | .boxIntro kIn K φ t hle => .boxIntro kIn K φ t.sound hle
@@ -204,9 +204,9 @@ mutual
     | .atom h => (AtomT.complete h).elim fun t => ⟨.atom t⟩
     | .weakenImpl φ ψ m h hle =>
         (ProvT.complete h).elim fun t => ⟨.weakenImpl φ ψ m t hle⟩
-    | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme h hm hsz =>
+    | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme h hm hsz =>
         (ProvT.complete h).elim fun t =>
-          ⟨.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme t hm hsz⟩
+          ⟨.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz⟩
     | .implTrans φ ψ χ a b h1 h2 hle =>
         (ProvT.complete h1).elim fun t1 =>
           (ProvT.complete h2).elim fun t2 => ⟨.implTrans φ ψ χ a b t1 t2 hle⟩
@@ -312,8 +312,8 @@ mutual
     | .struct d hd, _ => .struct ⟨d, hd⟩
     | .atom t, h => .atom (t.toG h)
     | .weakenImpl φ ψ m t hle, h => .weakenImpl φ ψ m (t.toG h) hle
-    | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme t hm hsz, h =>
-        .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme (t.toG h) hm hsz
+    | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz, h =>
+        .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme (t.toG h) hm hsz
     | .implTrans φ ψ χ a b t1 t2 hle, h =>
         .implTrans φ ψ χ a b (t1.toG h.2.1) (t2.toG h.2.2) hle h.1
     | .atomBoxImpl kBox p q a t hle, h => .atomBoxImpl kBox p q a (t.toG h) hle
@@ -375,8 +375,8 @@ def ProvT.mono {k k' : Nat} {φ : Formula} (h : k ≤ k') : ProvT k φ → ProvT
   | .struct d hd => .struct d (le_trans hd h)
   | .atom (.mk t hn) => .atom (.mk t (le_trans hn h))
   | .weakenImpl φ ψ m t hle => .weakenImpl φ ψ m t (le_trans hle h)
-  | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme t hm hsz =>
-      .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opp hme t hm (le_trans hsz h)
+  | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz =>
+      .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm (le_trans hsz h)
   | .implTrans φ ψ χ a b t1 t2 hle => .implTrans φ ψ χ a b t1 t2 (le_trans hle h)
   | .atomBoxImpl kBox p q a t hle => .atomBoxImpl kBox p q a t (le_trans hle h)
   | .boxIntro kIn K φ t hle => .boxIntro kIn _ φ t (le_trans hle h)
@@ -435,7 +435,7 @@ theorem ProvT.impl_size_le {k : Nat} {A B : Formula} :
 def cross_weaken {k m₁ m₂ m : Nat} {B α : Formula}
     (tw : ProvT m α) (h1 : m + (Formula.impl B α).size ≤ m₁)
     (h2 : m₁ + m₂ + α.size ≤ k) : ProvT k α :=
-  tw.mono (by simp only [numCost, Formula.size] at h1; omega)
+  tw.mono (by simp only [Formula.size] at h1; omega)
 
 /-- The excised tree's cut diet is `tw`'s own — in particular, the dropped argument's
     cuts (and the gate obligation `G B` the `app` node carried) vanish with it. -/
@@ -903,7 +903,7 @@ fragment is exactly where extraction is weight-non-increasing. -/
 
 theorem Formula.size_pos : (φ : Formula) → 1 ≤ φ.size := by
   intro φ
-  cases φ <;> simp [numCost, Formula.size] <;> omega
+  cases φ <;> simp [numCost, Formula.size]
 
 /-- Derivation node count — the walkable weight of a `struct`-tree (stage 2 unfolds
     `modusPonens`/`hypSyll` into machine steps, so `struct`-weight must be
@@ -2865,7 +2865,7 @@ theorem ProvT.wt_le_budget : {m : Nat} → {φ : Formula} → (t : ProvT m φ) �
 /-- **The quantitative Löb cap**: an extracted box content weighs at most the box's own
     subscript — the weight-well-foundedness of diag unfolding at a fixed formula. -/
 theorem content_wt_le_subscript {F m c : Nat} {ψ : Formula} {t : ProvT m (.box c ψ)}
-    {r : CoreContent (.box c ψ)} (h : boxInv F t = some r) :
+    {r : CoreContent (.box c ψ)} (_ : boxInv F t = some r) :
     r.2.1.wt ≤ c :=
   le_trans r.2.1.wt_le_budget r.2.2
 
@@ -3720,14 +3720,11 @@ def Good (k : Nat) {m : Nat} {ξ : Formula} (t : ProvT m ξ) : Prop :=
       boxInvGo fuel t S = some r ∧ ContentGood k r
 termination_by (k, muF ξ, 1)
 decreasing_by
-  all_goals simp_wf
   all_goals
     first
     | exact lex_thd (by omega)
-    | exact lex_snd (by simp only [muF]; omega)
     | exact lex_fst (by omega)
     | exact lex_le_lt (DStack.mu_core_le S) (by omega)
-    | exact lex_le3 (by omega) (by simp only [muF]; omega)
 
 /-- Good stacks: cumulative goodness of every discharge, ending at a real core. -/
 def GoodStack (k : Nat) : {ξ core : Formula} → DStack ξ core → Prop
@@ -3735,13 +3732,11 @@ def GoodStack (k : Nat) : {ξ core : Formula} → DStack ξ core → Prop
   | _, _, .cons _ d s => (∀ j, j ≤ k → Good j d) ∧ GoodStack k s
 termination_by ξ _ _ => (k, muF ξ, 0)
 decreasing_by
-  all_goals simp_wf
   all_goals
     first
     | exact lex_thd (by omega)
     | exact lex_snd (by simp only [muF]; omega)
     | exact lex_fst (by omega)
-    | exact lex_le_lt (DStack.mu_core_le S) (by omega)
     | exact lex_le3 (by omega) (by simp only [muF]; omega)
 
 /-- Good contents: box contents are good one guard level down (halting is demanded at
@@ -3750,17 +3745,14 @@ decreasing_by
 def ContentGood (k : Nat) : {core : Formula} → CoreContent core → Prop
   | .box _ _, r => k > 0 → Good (k-1) r.2.1
   | .diag _ _, r => Good k r.2
-  | .plays _ _ _, r | .impl _ _, r | .neg _, r | .eq _ _, r => True
+  | .plays _ _ _, _ | .impl _ _, _ | .neg _, _ | .eq _ _, _ => True
 termination_by core _ => (k, muF core, 0)
 decreasing_by
-  all_goals simp_wf
   all_goals
     first
     | exact lex_thd (by omega)
     | exact lex_snd (by simp only [muF]; omega)
     | exact lex_fst (by omega)
-    | exact lex_le_lt (DStack.mu_core_le S) (by omega)
-    | exact lex_le3 (by omega) (by simp only [muF]; omega)
 
 end
 
@@ -4253,12 +4245,12 @@ def excise (fuel : Nat) (Gb : Formula → Bool) :
       let tP' := excise fuel Gb tP
       ⟨tP'.1 + (Formula.impl (.box b' φ') (.box c' α')).size,
         .axK a' b' c' tP'.1 _ φ' α' tP'.2 hg1 (Nat.le_refl _)⟩
-  | _, _, .diagF pm fb g K tgt tP hle =>
+  | _, _, .diagF _ fb g K tgt tP _ =>
       let tP' := excise fuel Gb tP
       ⟨tP'.1 + (Formula.impl (.diag g tgt)
           (.impl (.box g (.diag g tgt)) tgt)).size,
         .diagF tP'.1 fb g _ tgt tP'.2 (Nat.le_refl _)⟩
-  | _, _, .diagB pm fb g K tgt tP hle =>
+  | _, _, .diagB _ fb g K tgt tP _ =>
       let tP' := excise fuel Gb tP
       ⟨tP'.1 + (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
           (.diag g tgt)).size,
@@ -4638,14 +4630,11 @@ def GoodW (k : Nat) {m : Nat} {ξ : Formula} (t : ProvT m ξ) : Prop :=
       boxInvGo fuel t S = some r ∧ ContentGoodW k r
 termination_by (k, muF ξ, 1)
 decreasing_by
-  all_goals simp_wf
   all_goals
     first
     | exact lex_thd (by omega)
-    | exact lex_snd (by simp only [muF]; omega)
     | exact lex_fst (by omega)
     | exact lex_le_lt (DStack.mu_core_le S) (by omega)
-    | exact lex_le3 (by omega) (by simp only [muF]; omega)
 
 /-- Wide-good stacks: cumulative wide goodness, ANY core at nil. -/
 def GoodStackW (k : Nat) : {ξ core : Formula} → DStack ξ core → Prop
@@ -4653,7 +4642,6 @@ def GoodStackW (k : Nat) : {ξ core : Formula} → DStack ξ core → Prop
   | _, _, .cons _ d s => (∀ j, j ≤ k → GoodW j d) ∧ GoodStackW k s
 termination_by ξ _ _ => (k, muF ξ, 0)
 decreasing_by
-  all_goals simp_wf
   all_goals
     first
     | exact lex_thd (by omega)
@@ -4667,10 +4655,9 @@ def ContentGoodW (k : Nat) : {core : Formula} → CoreContent core → Prop
   | .diag _ _, r => GoodW k r.2
   | .plays p q c, r =>
       ∃ (F : Nat) (a : Σ' k', AtomT k' (.plays p q c)), atomizeGo F r.2 = some a
-  | .impl _ _, r | .neg _, r | .eq _ _, r => True
+  | .impl _ _, _ | .neg _, _ | .eq _ _, _ => True
 termination_by core _ => (k, muF core, 0)
 decreasing_by
-  all_goals simp_wf
   all_goals
     first
     | exact lex_thd (by omega)

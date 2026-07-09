@@ -296,7 +296,7 @@ theorem K_provable (n m : Nat) (φ ψ : Formula)
     Provable (n + m + n) ψ := by
   have hψ : ψ.size ≤ n := by
     have h := dImp.concl_size_le
-    simp only [numCost, Formula.size] at h
+    simp only [Formula.size] at h
     omega
   exact Provable.struct ⟨.modusPonens φ ψ dImp dφ, by
     simp only [Derivation.size]; omega⟩
@@ -597,12 +597,11 @@ theorem sound_upto : ∀ B : Nat,
         exact fun hpa => Provable_mono hpa hab
       case pAtomNeg =>
         -- a certificate of the ACTUAL play refutes any other action, by eval determinism
-        intro k0 p q b aN m0 hatom hne hle _ih hB
-        intro hEx
+        intro k0 p q b aN m0 hatom hne hle _ih hB hEx
         obtain ⟨n', hn'⟩ := hEx
         obtain ⟨cert, hcle⟩ := hatom
         have hszpos : 1 ≤ (Formula.neg (.plays p q aN)).size := by
-          simp only [numCost, Formula.size]; omega
+          simp only [Formula.size]; omega
         obtain ⟨N, hN⟩ := hplays p q p b _ cert (by omega)
         have h1 : eval (max N n') p q p = some b := eval_mono_le hN _ (Nat.le_max_left _ _)
         have h2 : eval (max N n') p q p = some aN :=

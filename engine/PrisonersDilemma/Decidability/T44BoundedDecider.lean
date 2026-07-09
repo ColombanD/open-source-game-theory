@@ -621,7 +621,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       rw [decB]
       unfold stepB
       have hfire := decDeriv_complete d K K (by omega) le_rfl
-      simp only [hfire, Bool.or_true, Bool.true_or]
+      simp only [hfire, Bool.true_or]
   case cAtom =>
       intro k0 φ0 _hatom ih K hmK
       obtain ⟨F, e⟩ := ih K hmK
@@ -674,7 +674,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
         unfold chkITransB
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨a, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hgg : a + (Formula.impl A C).size ≤ K := by omega
@@ -720,7 +720,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
         unfold chkAppEB
         simp only [List.any_eq_true, List.mem_range]
         have hAsz : A.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
         have hgg : m₁ + B.size ≤ K := by omega
@@ -821,7 +821,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
         unfold chkImpS2EB
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [numCost, Formula.size] at hi1
+          simp only [Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hgg : m₁ + (Formula.impl A C).size ≤ K := by omega
@@ -855,7 +855,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
         | D =>
             have hne' : aN ≠ Action.D := fun hh => hne hh.symm
             simp [e, hne', hsz]
-      simp only [hfire, Bool.or_true, Bool.true_or]
+      simp only [hfire, Bool.or_true]
 
 /-! ## 8. THE PAYOFF (part b) — the modest stratum is semidecidable by its own enumerator;
 the fuel bound over the finite query space (part c) will upgrade this to DECIDABLE. -/

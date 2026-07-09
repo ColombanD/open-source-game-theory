@@ -28,27 +28,27 @@ mutual
     intro p
     cases p with
     | const a =>
-        simp only [numCost, maxLitP, Prog.size]
+        simp only [maxLitP, Prog.size]
         exact Nat.two_pow_pos 1
     | self =>
-        simp only [numCost, maxLitP, Prog.size]
+        simp only [maxLitP, Prog.size]
         exact Nat.two_pow_pos 1
     | opp =>
-        simp only [numCost, maxLitP, Prog.size]
+        simp only [maxLitP, Prog.size]
         exact Nat.two_pow_pos 1
     | bot p =>
         have h := maxLitP_lt_two_pow_size p
         have hm : (2:Nat) ^ p.size ≤ 2 ^ (Prog.bot p).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         simp only [maxLitP]
         omega
     | sim p₁ p₂ =>
         have h₁ := maxLitP_lt_two_pow_size p₁
         have h₂ := maxLitP_lt_two_pow_size p₂
         have hm₁ : (2:Nat) ^ p₁.size ≤ 2 ^ (Prog.sim p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         have hm₂ : (2:Nat) ^ p₂.size ≤ 2 ^ (Prog.sim p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         simp only [maxLitP]
         omega
     | ite b a p₁ p₂ =>
@@ -56,11 +56,11 @@ mutual
         have h₁ := maxLitP_lt_two_pow_size p₁
         have h₂ := maxLitP_lt_two_pow_size p₂
         have hm₀ : (2:Nat) ^ b.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         have hm₁ : (2:Nat) ^ p₁.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         have hm₂ : (2:Nat) ^ p₂.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         simp only [maxLitP]
         omega
     | search k φ p₁ p₂ =>
@@ -85,24 +85,24 @@ mutual
         have h₁ := maxLitP_lt_two_pow_size p₁
         have h₂ := maxLitP_lt_two_pow_size p₂
         have hm₁ : (2:Nat) ^ p₁.size ≤ 2 ^ (Formula.plays p₁ p₂ a).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         have hm₂ : (2:Nat) ^ p₂.size ≤ 2 ^ (Formula.plays p₁ p₂ a).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         simp only [maxLitF]
         omega
     | impl φ ψ =>
         have h₁ := maxLitF_lt_two_pow_size φ
         have h₂ := maxLitF_lt_two_pow_size ψ
         have hm₁ : (2:Nat) ^ φ.size ≤ 2 ^ (Formula.impl φ ψ).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         have hm₂ : (2:Nat) ^ ψ.size ≤ 2 ^ (Formula.impl φ ψ).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         simp only [maxLitF]
         omega
     | neg φ =>
         have h₁ := maxLitF_lt_two_pow_size φ
         have hm₁ : (2:Nat) ^ φ.size ≤ 2 ^ (Formula.neg φ).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         simp only [maxLitF]
         omega
     | box n φ =>
@@ -117,9 +117,9 @@ mutual
         have h₁ := maxLitP_lt_two_pow_size p₁
         have h₂ := maxLitP_lt_two_pow_size p₂
         have hm₁ : (2:Nat) ^ p₁.size ≤ 2 ^ (Formula.eq p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         have hm₂ : (2:Nat) ^ p₂.size ≤ 2 ^ (Formula.eq p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         simp only [maxLitF]
         omega
     | diag g φ =>
@@ -142,9 +142,9 @@ theorem cut_lit_bound {a : Nat} {A ψ : Formula} (h : Provable a (.impl A ψ)) :
   have hA := maxLitF_lt_two_pow_size A
   have hψ := maxLitF_lt_two_pow_size ψ
   have hmA : (2:Nat) ^ A.size ≤ 2 ^ a :=
-    Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size] at hsz; omega)
+    Nat.pow_le_pow_right (by omega) (by simp only [Formula.size] at hsz; omega)
   have hmψ : (2:Nat) ^ ψ.size ≤ 2 ^ a :=
-    Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size] at hsz; omega)
+    Nat.pow_le_pow_right (by omega) (by simp only [Formula.size] at hsz; omega)
   omega
 
 /-- `axK`'s enumerated premise `.box a (.impl ψ α)` is subscript-bounded at its own
@@ -433,7 +433,7 @@ theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Provable m φ →
             · exact Or.inl (.trans hl1 hl2)
             · refine Or.inr ⟨b + m1' + χ.size, ?_, ?_⟩
               · have hA := Formula.size_pos A
-                simp only [numCost, Formula.size] at hle
+                simp only [Formula.size] at hle
                 omega
               · exact Provable.app _ b m1' ψ χ h2 hψ (Nat.le_refl _)
           · exact Or.inr ⟨m2', by omega, hC⟩
@@ -692,16 +692,16 @@ mutual
     | bot p =>
         have h := maxLitP_split p
         have hm : (2:Nat) ^ p.size ≤ 2 ^ (Prog.bot p).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         simp only [maxLitP, maxSLitP]
         omega
     | sim p₁ p₂ =>
         have h1 := maxLitP_split p₁
         have h2 := maxLitP_split p₂
         have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Prog.sim p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Prog.sim p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         simp only [maxLitP, maxSLitP]
         omega
     | ite b a p₁ p₂ =>
@@ -709,11 +709,11 @@ mutual
         have h1 := maxLitP_split p₁
         have h2 := maxLitP_split p₂
         have hm0 : (2:Nat) ^ b.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Prog.ite b a p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Prog.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Prog.size]; omega)
         simp only [maxLitP, maxSLitP]
         omega
     | search k φ p₁ p₂ =>
@@ -737,24 +737,24 @@ mutual
         have h1 := maxLitP_split p₁
         have h2 := maxLitP_split p₂
         have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Formula.plays p₁ p₂ a).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Formula.plays p₁ p₂ a).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         simp only [maxLitF, maxSLitF]
         omega
     | impl φ ψ =>
         have h1 := maxLitF_split φ
         have h2 := maxLitF_split ψ
         have hm1 : (2:Nat) ^ φ.size ≤ 2 ^ (Formula.impl φ ψ).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         have hm2 : (2:Nat) ^ ψ.size ≤ 2 ^ (Formula.impl φ ψ).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         simp only [maxLitF, maxSLitF]
         omega
     | neg φ =>
         have h1 := maxLitF_split φ
         have hm1 : (2:Nat) ^ φ.size ≤ 2 ^ (Formula.neg φ).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         simp only [maxLitF, maxSLitF]
         omega
     | box n φ =>
@@ -769,9 +769,9 @@ mutual
         have h1 := maxLitP_split p₁
         have h2 := maxLitP_split p₂
         have hm1 : (2:Nat) ^ p₁.size ≤ 2 ^ (Formula.eq p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         have hm2 : (2:Nat) ^ p₂.size ≤ 2 ^ (Formula.eq p₁ p₂).size :=
-          Nat.pow_le_pow_right (by omega) (by simp only [numCost, Formula.size]; omega)
+          Nat.pow_le_pow_right (by omega) (by simp only [Formula.size]; omega)
         simp only [maxLitF, maxSLitF]
         omega
     | diag g φ =>
@@ -982,7 +982,7 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
           · exact Or.inr (Or.inr (Or.inr (Or.inl dbp₁)))
           · refine Or.inr (Or.inr (Or.inr (Or.inr ⟨b + m1' + C.size, ?_, ?_⟩)))
             · have hA := Formula.size_pos B
-              simp only [numCost, Formula.size] at hle
+              simp only [Formula.size] at hle
               omega
             · exact Provable.app _ b m1' ψ C h2 hψd (Nat.le_refl _)
         · refine Or.inr (Or.inr (Or.inl ⟨b0, ψ₀, b, .impl ψ C, C, h2, ?_⟩))
@@ -1062,7 +1062,7 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
             · refine Or.inr (Or.inr (Or.inr (Or.inr
                 ⟨m1' + m2' + C.size, ?_, ?_⟩)))
               · have hA := Formula.size_pos B
-                simp only [numCost, Formula.size] at hle
+                simp only [Formula.size] at hle
                 omega
               · exact Provable.app _ m1' m2' ψ C hd hψd (Nat.le_refl _)
         · refine Or.inr (Or.inr (Or.inl ⟨b0, ψ₀, m₁, .impl B (.impl ψ C), C, h1, ?_⟩))

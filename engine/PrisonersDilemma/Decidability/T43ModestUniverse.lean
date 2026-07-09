@@ -397,7 +397,7 @@ theorem playsArgsF_subset_subsF : ∀ (φ : Formula) (P : Prog),
   case search => intro _ _ _ _ _ _ _; trivial
   case plays =>
       intro p q a _ _ P hP
-      simp only [playsArgsF, List.mem_cons, List.mem_singleton,
+      simp only [playsArgsF, List.mem_cons,
         List.not_mem_nil, or_false] at hP
       simp only [subsF, List.mem_append]
       rcases hP with rfl | rfl
@@ -434,7 +434,7 @@ theorem playsArgsF_subst (m o : Prog) : ∀ (φ : Formula), modestF φ = true �
   case plays =>
       intro p q a _ _ h P hP
       simp only [modestF, Bool.and_eq_true] at h
-      simp only [Formula.subst, playsArgsF, List.mem_cons, List.mem_singleton,
+      simp only [Formula.subst, playsArgsF, List.mem_cons,
         List.not_mem_nil, or_false] at hP
       rcases hP with rfl | rfl
       · rcases argOK_subst h.1.1.1 m o with h' | h' | ⟨h', hc⟩
