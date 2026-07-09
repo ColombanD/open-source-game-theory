@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Bpsb
+import PrisonersDilemma.Research.Spikes.reflection.Bpsb
 
 /-!
 # Reflection layer — `diag_object`: the diagonal fixpoint for the Löb context (E6, the last gap)

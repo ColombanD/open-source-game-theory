@@ -1,4 +1,4 @@
-import PrisonersDilemma.Research.Spikes.transcript.T53StabInst
+import PrisonersDilemma.Decidability.T53StabInst
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.CupodTrollBot
 import PrisonersDilemma.Bots.LlmGenerations.JustBot

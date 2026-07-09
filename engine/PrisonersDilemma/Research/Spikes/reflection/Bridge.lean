@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Proves
+import PrisonersDilemma.Research.Spikes.reflection.Proves
 import PrisonersDilemma.BaseTheorems
 
 /-!

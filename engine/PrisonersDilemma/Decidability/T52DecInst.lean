@@ -1,5 +1,5 @@
 import PrisonersDilemma.Decidability.T47Stabilization
-import PrisonersDilemma.Research.Spikes.transcript.T50InstanceLob
+import PrisonersDilemma.Decidability.T50InstanceLob
 
 /-! # T52 — THE GATE-PARAMETRIC DECIDER (the T44 layer over an arbitrary Bool gate).
 

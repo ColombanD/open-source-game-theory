@@ -1,5 +1,5 @@
-import PrisonersDilemma.Reflection.Bpsb
-import PrisonersDilemma.Reflection.Diagonal
+import PrisonersDilemma.Research.Spikes.reflection.Bpsb
+import PrisonersDilemma.Research.Spikes.reflection.Diagonal
 
 /-!
 # B4-port verification: with `selfApply θ := betaA θ` in Syntax.lean, the REAL `repr_object` now gives

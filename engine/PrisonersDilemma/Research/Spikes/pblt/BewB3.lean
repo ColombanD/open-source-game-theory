@@ -1,6 +1,6 @@
-import PrisonersDilemma.Reflection.Diagonal
-import PrisonersDilemma.Reflection.Bpsb
-import PrisonersDilemma.Reflection.Bridge
+import PrisonersDilemma.Research.Spikes.reflection.Diagonal
+import PrisonersDilemma.Research.Spikes.reflection.Bpsb
+import PrisonersDilemma.Research.Spikes.reflection.Bridge
 
 /-!
 # B3 spike: UNIFIED object system `ProvesU` + `Gw` soundness (NO hp0) — dissolving `provesN_play_extract`.

@@ -1,4 +1,4 @@
-import PrisonersDilemma.Research.Spikes.transcript.T52DecInst
+import PrisonersDilemma.Decidability.T52DecInst
 
 /-! # T53 — STABILIZATION AT THE INSTANCE GATE: `Decidable (ProvableG (instGate P N))`.
 

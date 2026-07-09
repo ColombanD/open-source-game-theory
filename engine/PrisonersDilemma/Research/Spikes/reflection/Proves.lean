@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Syntax
+import PrisonersDilemma.Research.Spikes.reflection.Syntax
 
 /-!
 # Reflection layer — the object proof system `⊢_S` and its soundness (E1b + E1c)

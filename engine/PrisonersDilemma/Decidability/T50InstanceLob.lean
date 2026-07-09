@@ -1,4 +1,4 @@
-import PrisonersDilemma.Research.Spikes.transcript.T49TreeSubstrate
+import PrisonersDilemma.Decidability.T49TreeSubstrate
 import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Decidability.T46LogicSpace
 

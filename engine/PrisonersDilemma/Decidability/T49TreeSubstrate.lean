@@ -1,6 +1,6 @@
 import PrisonersDilemma.Decidability.T42ProvableB
 import PrisonersDilemma.Decidability.T44BoundedDecider
-import PrisonersDilemma.Research.Spikes.transcript.T48CutRelevance
+import PrisonersDilemma.Decidability.T48CutRelevance
 
 /-!
 # T4.9 spike — the TREE SUBSTRATE for cut relevance (fork (A), milestone D0).

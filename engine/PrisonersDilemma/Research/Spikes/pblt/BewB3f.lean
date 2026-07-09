@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Diagonal
+import PrisonersDilemma.Research.Spikes.reflection.Diagonal
 
 /-!
 # B3-followup — VERDICT: diagFix's hp0 IS removable, but requires the PREDICATE-level diagonal.

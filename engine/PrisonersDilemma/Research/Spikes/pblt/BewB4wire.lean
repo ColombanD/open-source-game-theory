@@ -1,6 +1,6 @@
-import PrisonersDilemma.Reflection.Diagonal
-import PrisonersDilemma.Reflection.Bpsb
-import PrisonersDilemma.Reflection.Bridge
+import PrisonersDilemma.Research.Spikes.reflection.Diagonal
+import PrisonersDilemma.Research.Spikes.reflection.Bpsb
+import PrisonersDilemma.Research.Spikes.reflection.Bridge
 
 /-!
 # B4-wire: with `selfApply θ := betaA θ` (B4-impl), does B3's `diagFix` soundness arm drop `hp0`?

@@ -1,4 +1,4 @@
-import PrisonersDilemma.Research.Spikes.transcript.T50InstanceLob
+import PrisonersDilemma.Decidability.T50InstanceLob
 
 /-! # T51 — THE REGRESS LEMMA: the falsification as a THEOREM.
 

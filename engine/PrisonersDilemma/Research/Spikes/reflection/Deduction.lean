@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Proves
+import PrisonersDilemma.Research.Spikes.reflection.Proves
 
 /-!
 # Reflection layer — the deduction theorem `impI` for the object system (E5 prerequisite)

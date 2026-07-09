@@ -5,6 +5,13 @@ import PrisonersDilemma.Decidability.T44BoundedDecider
 import PrisonersDilemma.Decidability.T45CertReads
 import PrisonersDilemma.Decidability.T46LogicSpace
 import PrisonersDilemma.Decidability.T47Stabilization
+import PrisonersDilemma.Decidability.T48CutRelevance
+import PrisonersDilemma.Decidability.T49TreeSubstrate
+import PrisonersDilemma.Decidability.T50InstanceLob
+import PrisonersDilemma.Decidability.T51Regress
+import PrisonersDilemma.Decidability.T52DecInst
+import PrisonersDilemma.Decidability.T53StabInst
+import PrisonersDilemma.Decidability.T54ZooCert
 
 /-!
 # Decidability — the T3.2c/T4 chain (promoted 2026-07-03 from `Research/Spikes/transcript/`)

@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Diagonal
+import PrisonersDilemma.Research.Spikes.reflection.Diagonal
 
 /-!
 # B2 spike: port the B1 re-denotation onto the REAL `Proves`/`interp`.

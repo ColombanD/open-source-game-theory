@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Deduction
+import PrisonersDilemma.Research.Spikes.reflection.Deduction
 
 /-!
 # Reflection layer — the `BPSb` interface + instance over the object system (E5/E6)

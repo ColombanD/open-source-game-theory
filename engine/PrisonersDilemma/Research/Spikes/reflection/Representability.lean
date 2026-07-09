@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Syntax
+import PrisonersDilemma.Research.Spikes.reflection.Syntax
 
 /-!
 # Reflection layer — `Γ_e` representability from Σ₁-completeness (E2)

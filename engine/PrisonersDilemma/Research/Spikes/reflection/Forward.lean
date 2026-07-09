@@ -1,4 +1,4 @@
-import PrisonersDilemma.Reflection.Bridge
+import PrisonersDilemma.Research.Spikes.reflection.Bridge
 
 /-!
 # Reflection layer — the FWD direction `Provable m φ → Proves (encodeF φ)` (E4)

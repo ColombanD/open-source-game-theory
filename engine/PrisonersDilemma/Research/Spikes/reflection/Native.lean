@@ -1,5 +1,5 @@
-import PrisonersDilemma.Reflection.Diagonal
-import PrisonersDilemma.Reflection.Bridge
+import PrisonersDilemma.Research.Spikes.reflection.Diagonal
+import PrisonersDilemma.Research.Spikes.reflection.Bridge
 
 
 /-!
