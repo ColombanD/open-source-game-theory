@@ -1,5 +1,5 @@
 import Mathlib.Data.Nat.Log
-import PrisonersDilemma.SizeLemmas
+import PrisonersDilemma.Base.Asymptotics
 
 /-!
 # I0 design-freeze spike — the `.diag` constructor + internal Löb chain, validated in miniature.

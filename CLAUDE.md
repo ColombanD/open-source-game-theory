@@ -18,8 +18,11 @@ Other top-level: `latex/` (paper), `Research/` notes live under the engine, `REA
 
 # Part I — The Lean engine (`engine/PrisonersDilemma/`)
 
-Build: `cd engine && lake build`. Single root module `PrisonersDilemma.lean` imports
-everything. Namespace `PD`. Layered bottom-up (each file imports the ones above):
+Build: `cd engine && lake build`. TWO lake targets (both default): `PrisonersDilemma`
+(root module `PrisonersDilemma.lean` — language, proof system, zoo, outcome theorems) and
+`Metatheory` (rooted at `PrisonersDilemma.Decidability` — the T31…T54 decidability chain;
+builds on the engine, the engine never imports it). Namespace `PD`. Layered bottom-up
+(each file imports the ones above):
 
 | Layer | File(s) | What it defines |
 |---|---|---|
@@ -27,7 +30,7 @@ everything. Namespace `PD`. Layered bottom-up (each file imports the ones above)
 | **Proof system `S`** | `Derivation.lean` | The inductive `Derivation`/`PlaysProof`/`AtomProvable`/`Provable k φ` (bounded provability, budget `k`); cost constants `c_leaf/c_node/c_guard`; `atom_cost`. This is `S`, the bounded modal logic agents query. |
 | **Dynamics** | `Dynamics.lean` | The fuelled evaluator `eval` (its `.search` guard consults `proofSearch k φ := decide (Provable k φ)` — **currently `noncomputable`, see crux below**); `play`, `outcome`; `Formula.interp` (denotational semantics; `.box` = `Provable`). |
 | **Axioms** | `Axioms.lean` | **ZERO project axioms** (2026-07-03): the last one, `atom_complete_false_guard`, was machine-checked INCONSISTENT (anti-diagonal bot, `Research/Spikes/transcript/T32Inconsistency.lean`) and DELETED — replaced by the sound `search_f`/`atomNeg`/`eqNeg` machinery with a cost FLOOR. `PBLT` fell 2026-07-01 (theorem via the `.diag` fixpoint); everything rests on Lean's 3 standard axioms. Costs are transcript-cumulative (Critch's literal model) since 2026-07-02. |
-| **Meta-theorems** | `BaseTheorems.lean`, `SizeLemmas.lean` | Soundness (`Derivation.sound`, `proofSearch_sound`), `proofSearch_spec`/`_monotone`, `atom_complete`, size/log bounds. The bridge from provability to real plays. |
+| **Meta-theorems** | `Base/` (`Asymptotics`, `AtomCerts`, `Soundness`, `Loeb`); `BaseTheorems.lean` is the re-exporting umbrella | Split 2026-07-09 (absorbed the former `SizeLemmas.lean` into `Base/Asymptotics`). Soundness (`Derivation.sound`, `sound_upto`, `proofSearch_sound`), monotonicity, `atom_complete_searchfree`, log₂ arithmetic, and the internalized Löb engines (`bloeb_engine`, `pblt_engine`, `mutual_pblt_*`). All names still in `PD.BaseTheorems` (arithmetic in `PD`). The bridge from provability to real plays. |
 | **Bots** | `Bots/*.lean`, `Bots/LlmGenerations/*.lean` | The agent zoo: `CooperateBot`, `DefectBot`, `MirrorBot`, `TitForTatBot`, `DupocBot`, `CupodBot`, `EBot`, … and LLM-generated `PrudentBot`, `JustBot`, `CIMCIC`, `DIMCID`. |
 | **Outcome theorems** | `Theorems/*.lean`, `Theorems/LlmGenerations/*.lean` | The headline results: `outcome_X_vs_Y = some (a,b)` (and `∃k₂,∀k>k₂,…` families). Hand-written + LLM-written (`llm_outcome_` prefix; indexed via `Theorems/LlmGenerations.lean`). |
 | **Decidability** | `Decidability/` | The T3.2c/T4 chain (modules keep milestone names `T31`…`T54`; umbrella `Decidability.lean` re-exports the API): `decFull` (verified enumerator, `Provable_iff_decFull`), `evalG` (computable evaluation of search bots, sound both guard polarities, `#eval` demos), `ProvableG` strata, the modest universe, `decideProvableG` (modest stratum decidable). Then the cut-relevance arc `T48`–`T54`: literal bounds + antecedent census (T48), the tree substrate / extraction machine / normalization theorem / excisor (T49), **the instance gate + transport theorem** (T50), **the falsification theorem** — the original CutRelevance is FALSE (T51), the gate-parametric decider (T52), **decidability at the instance gate** (T53), and **the certified zoo** (T54). |

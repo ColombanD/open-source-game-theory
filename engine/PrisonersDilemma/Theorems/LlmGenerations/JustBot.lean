@@ -15,7 +15,7 @@ import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.CupodTrollBot
 import PrisonersDilemma.Theorems.LlmGenerations.PrudentBot
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.SizeLemmas
+import PrisonersDilemma.Base.Asymptotics
 
 open PD
 open PD.BaseTheorems

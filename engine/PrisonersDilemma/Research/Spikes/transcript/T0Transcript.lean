@@ -1,5 +1,5 @@
 import Mathlib.Data.Nat.Log
-import PrisonersDilemma.SizeLemmas
+import PrisonersDilemma.Base.Asymptotics
 
 /-!
 # T0 spike — transcript-length accounting: the Löb chain closes (kill-criterion for Route B).

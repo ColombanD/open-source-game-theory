@@ -2,6 +2,16 @@ import PrisonersDilemma.Program
 import Mathlib.Data.Nat.Log
 import Mathlib.Tactic
 
+/-!
+# Base/Asymptotics — the numeral/log₂ arithmetic layer
+
+Pure `Nat` facts about `Nat.log2` (the numeral-cost function `numCost k = log2 k + 1`):
+the linear-vs-log threshold lemma `linear_log2_add_le` (absorbed from the former
+`SizeLemmas.lean`), monotonicity, `log2 k ≤ k`, and the staggering bounds
+`log2 (2k+64) ≤ log2 k + 8` / `log2 (4k+100) ≤ log2 k + 9` used by the `pblt_engine`
+instantiations. No proof theory here — only arithmetic.
+-/
+
 namespace PD
 
 /-!
@@ -77,3 +87,50 @@ theorem linear_log2_add_le (A B : Nat) : ∃ K : Nat, ∀ k : Nat, k ≥ K → A
     (le_trans (le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)) hlog_ge)]
 
 end PD
+
+namespace PD.BaseTheorems
+
+/-- `Nat.log2` is monotone (companion to `c_guard_mono`; used by the `pblt_engine`
+    instantiations to bound the chain's box-subscript numerals by `log2 k`). -/
+theorem log2_mono {a b : Nat} (h : a ≤ b) : Nat.log2 a ≤ Nat.log2 b := by
+  simp only [Nat.log2_eq_log_two]; exact Nat.log_mono_right h
+
+
+/-- `log2 k ≤ k` (tiny helper for staggering arithmetic). -/
+theorem log2_le_self (k : Nat) : Nat.log2 k ≤ k := by
+  simp only [Nat.log2_eq_log_two]
+  exact Nat.log_le_self 2 k
+
+/-- The staggering function `2k + 64` costs at most 8 extra characters in its numeral. -/
+theorem log2_stagger_le (k : Nat) : Nat.log2 (2 * k + 64) ≤ Nat.log2 k + 8 := by
+  have h1 : k < 2 ^ (Nat.log2 k + 1) := by
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · exact Nat.two_pow_pos _
+    · rw [Nat.log2_eq_log_two]
+      exact Nat.lt_pow_succ_log_self (by norm_num) k
+  have h2 : (2:Nat) ^ (Nat.log2 k + 9) = 2 ^ (Nat.log2 k + 1) * 256 := by
+    rw [show Nat.log2 k + 9 = (Nat.log2 k + 1) + 8 from rfl, pow_add]
+    norm_num
+  have h3 : 2 * k + 64 < 2 ^ (Nat.log2 k + 9) := by
+    have hp : 1 ≤ (2:Nat) ^ (Nat.log2 k + 1) := Nat.one_le_two_pow
+    omega
+  have := (Nat.log2_lt (by omega)).2 h3
+  omega
+
+/-- The wider staggering function `4k + 100` costs at most 9 extra numeral characters. -/
+theorem log2_stagger4_le (k : Nat) : Nat.log2 (4 * k + 100) ≤ Nat.log2 k + 9 := by
+  have h1 : k < 2 ^ (Nat.log2 k + 1) := by
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · exact Nat.two_pow_pos _
+    · rw [Nat.log2_eq_log_two]
+      exact Nat.lt_pow_succ_log_self (by norm_num) k
+  have h2 : (2:Nat) ^ (Nat.log2 k + 10) = 2 ^ (Nat.log2 k + 1) * 512 := by
+    rw [show Nat.log2 k + 10 = (Nat.log2 k + 1) + 9 from rfl, pow_add]
+    norm_num
+  have h3 : 4 * k + 100 < 2 ^ (Nat.log2 k + 10) := by
+    have hp : 1 ≤ (2:Nat) ^ (Nat.log2 k + 1) := Nat.one_le_two_pow
+    omega
+  have := (Nat.log2_lt (by omega)).2 h3
+  omega
+
+end PD.BaseTheorems

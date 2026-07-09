@@ -12,7 +12,7 @@ import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Theorems.CupodTrollBot
 import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.SizeLemmas
+import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Bots.EBot
 import PrisonersDilemma.Bots.CupodTrollBot
 
