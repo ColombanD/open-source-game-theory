@@ -124,7 +124,7 @@ def treeD : ProvT (4096 * W) tgtD :=
 `argOK` relaxed: plays/sim/eq argument positions may also be POOL MEMBERS. -/
 
 def argOKP (P : List Prog) (p : Prog) : Bool :=
-  p == .self || p == .opp || T43.closedP p || P.contains p
+  p == .self || p == .opp || (T43.closedP p && T43.modestP p) || P.contains p
 
 mutual
   def instModestP (P : List Prog) : Prog → Bool
@@ -167,11 +167,14 @@ theorem instOKb_iff {P : List Prog} {N : Nat} {B : Formula} :
   simp [instOKb, instGate, Bool.and_eq_true]
 
 /-- `argOK` positions are `argOKP` positions. -/
-theorem argOK_argOKP {P : List Prog} {p : Prog} (h : T43.argOK p = true) :
-    argOKP P p = true := by
+theorem argOK_argOKP {P : List Prog} {p : Prog} (h : T43.argOK p = true)
+    (hm : T43.modestP p = true) : argOKP P p = true := by
   simp only [T43.argOK, Bool.or_eq_true] at h
-  simp only [argOKP, Bool.or_eq_true]
-  tauto
+  simp only [argOKP, Bool.or_eq_true, Bool.and_eq_true]
+  rcases h with (h | h) | h
+  · exact Or.inl (Or.inl (Or.inl h))
+  · exact Or.inl (Or.inl (Or.inr h))
+  · exact Or.inl (Or.inr ⟨h, hm⟩)
 
 mutual
   /-- Modesty is monotone into instance-modesty. -/
@@ -184,7 +187,7 @@ mutual
     | .sim p q, h => by
         simp only [T43.modestP, Bool.and_eq_true] at h
         simp only [instModestP, Bool.and_eq_true]
-        exact ⟨⟨⟨argOK_argOKP h.1.1.1, argOK_argOKP h.1.1.2⟩,
+        exact ⟨⟨⟨argOK_argOKP h.1.1.1 h.1.2, argOK_argOKP h.1.1.2 h.2⟩,
           modestP_instModestP P p h.1.2⟩, modestP_instModestP P q h.2⟩
     | .ite b _ p q, h => by
         simp only [T43.modestP, Bool.and_eq_true] at h
@@ -202,7 +205,7 @@ mutual
     | .plays p q _, h => by
         simp only [T43.modestF, Bool.and_eq_true] at h
         simp only [instModestF, Bool.and_eq_true]
-        exact ⟨⟨⟨argOK_argOKP h.1.1.1, argOK_argOKP h.1.1.2⟩,
+        exact ⟨⟨⟨argOK_argOKP h.1.1.1 h.1.2, argOK_argOKP h.1.1.2 h.2⟩,
           modestP_instModestP P p h.1.2⟩, modestP_instModestP P q h.2⟩
     | .impl φ ψ, h => by
         simp only [T43.modestF, Bool.and_eq_true] at h
@@ -213,7 +216,7 @@ mutual
     | .eq p q, h => by
         simp only [T43.modestF, Bool.and_eq_true] at h
         simp only [instModestF, Bool.and_eq_true]
-        exact ⟨⟨argOK_argOKP h.1.1, modestP_instModestP P p h.1.2⟩,
+        exact ⟨⟨argOK_argOKP h.1.1 h.1.2, modestP_instModestP P p h.1.2⟩,
           modestP_instModestP P q h.2⟩
     | .diag _ φ, h => modestF_instModestF P φ h
 end
@@ -229,7 +232,7 @@ theorem arg_subst_inst (P : List Prog) (u v : Prog)
   rcases T43.argOK_subst ha u v with h' | h' | ⟨h', _⟩
   · rw [h']; exact ⟨hu, hum⟩
   · rw [h']; exact ⟨hv, hvm⟩
-  · rw [h']; exact ⟨argOK_argOKP ha, modestP_instModestP P p hm⟩
+  · rw [h']; exact ⟨argOK_argOKP ha hm, modestP_instModestP P p hm⟩
 
 /-- **THE INSTANCE-SUBST BRICK (formula half)**: a raw-modest formula substituted by
     instance-modest players is instance-modest. Recursion is on the FORMULA only —
@@ -281,7 +284,9 @@ theorem argOKP_subst_inst {P : List Prog} (hP : PoolOK P) {p me opnt : Prog}
   rcases hp with ((rfl | rfl) | hcl) | hmem'
   · exact ⟨hme, hmem⟩
   · exact ⟨hop, hopm⟩
-  · rw [T43.substP_id me opnt p hcl]
+  · have hcl' : T43.closedP p = true ∧ T43.modestP p = true := by
+      simpa [Bool.and_eq_true] using hcl
+    rw [T43.substP_id me opnt p hcl'.1]
     exact ⟨by simp only [argOKP, hcl, Bool.or_true, Bool.true_or], hpm⟩
   · exact hP.argStep p me opnt hmem' hme hmem hop hopm
 
@@ -540,7 +545,7 @@ theorem DAnt_rawModest {P : List Prog} :
         · rw [h']
           exact ⟨⟨hmod.1.1.2, modestP_instModestP P _ hraw.2⟩, hraw.2⟩
         · rw [h']
-          exact ⟨⟨by simp only [argOKP, hcl, Bool.or_true, Bool.true_or],
+          exact ⟨⟨by simp only [argOKP, hcl, hp, Bool.and_self, Bool.or_true, Bool.true_or],
             modestP_instModestP P _ hp⟩, hp⟩
       have hp := hres _ hm.1.1.1 hm.1.2
       have hq := hres _ hm.1.1.2 hm.2
@@ -568,7 +573,7 @@ theorem DAnt_rawModest {P : List Prog} :
         · rw [h']
           exact ⟨⟨hmod.1.1.2, modestP_instModestP P _ hraw.2⟩, hraw.2⟩
         · rw [h']
-          exact ⟨⟨by simp only [argOKP, hcl, Bool.or_true, Bool.true_or],
+          exact ⟨⟨by simp only [argOKP, hcl, hp, Bool.and_self, Bool.or_true, Bool.true_or],
             modestP_instModestP P _ hp⟩, hp⟩
       have hp := hres _ hm.1.1.1 hm.1.2
       have hq := hres _ hm.1.1.2 hm.2
@@ -728,13 +733,13 @@ theorem PlaysT.transport {P : List Prog} {N M : Nat}
         · rw [h']; exact ⟨h1, h2⟩
         · rw [h']; exact ⟨h4, h5⟩
         · rw [h']
-          exact ⟨by simp only [argOKP, hcl, Bool.or_true, Bool.true_or], hb.1.2⟩
+          exact ⟨by simp only [argOKP, hcl, hb.1.2, Bool.and_self, Bool.or_true, Bool.true_or], hb.1.2⟩
       have hq : argOKP P (q.subst me o) = true ∧ T43.modestP (q.subst me o) = true := by
         rcases T43.argOK_subst hb.1.1.2 me o with h' | h' | ⟨h', hcl⟩
         · rw [h']; exact ⟨h1, h2⟩
         · rw [h']; exact ⟨h4, h5⟩
         · rw [h']
-          exact ⟨by simp only [argOKP, hcl, Bool.or_true, Bool.true_or], hb.2⟩
+          exact ⟨by simp only [argOKP, hcl, hb.2, Bool.and_self, Bool.or_true, Bool.true_or], hb.2⟩
       have hlp' : T42.maxLitP (p.subst me o) ≤ N :=
         le_trans (T46.maxLitP_subst me o p) (by omega)
       have hlq' : T42.maxLitP (q.subst me o) ≤ N :=
