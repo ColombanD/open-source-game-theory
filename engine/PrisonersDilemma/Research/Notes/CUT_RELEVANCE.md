@@ -1075,6 +1075,25 @@ crossing fell back (O2/O3).
   gate-repair (pool-instance gate) vs conjecture-false.
   GOAL REMAINS: prove the conjecture — the experiment chooses the provable form.
 
+- **STATUS 2026-07-09: T52 LANDED — `ProvableG (instGate P N)` IS SEMIDECIDABLE.**
+  `T52DecInst.lean` (root build): T44's decider gate-parametrized (`Gb`/`G`/`hGb`;
+  the 700-line sound/complete proofs transform mechanically — the gate enters at
+  exactly 8 sites; `enumFormula` already covers ALL formulas by size, so instance
+  cuts need no enumeration work). `ProvableG_inst_iff_decG`:
+  `ProvableG (instGate P N) k φ ↔ ∃ fuel, decG (instOKb P N) fuel k φ`.
+  **T47-instance (full Decidable via the fuel bound) — the remaining piece, NOT
+  mechanical**: T47's stabilization is rooted in the MODEST-universe closure
+  (`InvP`, `SL`, `cert_reads_ok`, `stepB_congr` over `allowedProgs r₁ r₂ N`).
+  The instance version needs: (i) the gate split `lit N × shape-filter`
+  (N stays arithmetic in `LL/RR/ZS`; only the SHAPE half abstracts — `modestF`
+  ↦ `instModestF P`); (ii) `InvP`/`playsArgs_modest` at the instance universe
+  (T50's bricks: `playsArgsF_subst`-analogues via `arg_subst_inst`); (iii)
+  `cert_reads_ok`/`stepB_congr` re-proven with instance formulas admitted into
+  `SL` (guardU is already instance-based — the space stays finite; `GFall`
+  probably IS the right instance family already). Estimate: one focused session.
+  After it: `Decidable (ProvableG (instGate P N) k φ)`, and the revised
+  CutRelevance's decidability payoff is complete.
+
 - **STATUS 2026-07-08 (end of day): REGRESS LEMMA PROVEN; T44–T47 REWORK SIZED.**
   `T51Regress.lean` (root build): `cutRelevance_modestGate_false` — the
   falsification is a THEOREM (see the file header for the proof architecture;
