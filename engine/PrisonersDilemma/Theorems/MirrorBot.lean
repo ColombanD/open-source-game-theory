@@ -4,13 +4,11 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.OBot
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.BaseTheorems
 
 
 open PD.Bots
-open PD.Axioms
 namespace PD.Theorems
 
 theorem MirrorBot_plays_C_against_CooperateBot (fuel : Nat) :

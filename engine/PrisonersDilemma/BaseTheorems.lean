@@ -1,12 +1,10 @@
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.SizeLemmas
 
 
 open Classical
 
 open PD
-open PD.Axioms
 namespace PD.BaseTheorems
 
 /-- `c_guard` (the cost of writing the budget numeral `k` in a proof transcript)

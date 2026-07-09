@@ -1,7 +1,6 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Derivation
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.BaseTheorems
 
 /-!

@@ -1,7 +1,6 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Derivation
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.BaseTheorems
 import Mathlib.Data.Nat.Log
 
@@ -35,7 +34,6 @@ build error pinpoints exactly which modal principle the engine is missing.
 -/
 
 open PD
-open PD.Axioms
 
 namespace PD.MutualLobSpike
 

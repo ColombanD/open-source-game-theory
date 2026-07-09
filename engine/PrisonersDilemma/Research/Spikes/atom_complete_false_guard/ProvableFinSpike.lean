@@ -1,6 +1,5 @@
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Derivation
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.ComputableEval.PlaysCheck
 import PrisonersDilemma.Bots.CupodBot

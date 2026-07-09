@@ -1,7 +1,6 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Derivation
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.CupodBot
 import Mathlib.Data.Nat.Log
@@ -146,7 +145,7 @@ Below: the actual instantiation attempt, with the gap marked by `sorry`, so the 
 is explicit and checkable rather than rhetorical. -/
 
 namespace PD.SpikeS3
-open PD PD.Axioms PD.Bots PD.BaseTheorems PD.Theorems
+open PD PD.Bots PD.BaseTheorems PD.Theorems
 
 /-- The CUPOD self-play fixpoint formula. -/
 def cupodφ (k : Nat) : Formula := .plays (CupodBot k) (CupodBot k) .D

@@ -1,6 +1,5 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Bots.TitForTatBot
@@ -16,7 +15,6 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.SizeLemmas
 
 open PD
-open PD.Axioms
 open PD.Bots
 open PD.BaseTheorems
 namespace PD.Theorems
