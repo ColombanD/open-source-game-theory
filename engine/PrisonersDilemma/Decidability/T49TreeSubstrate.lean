@@ -435,7 +435,7 @@ theorem ProvT.impl_size_le {k : Nat} {A B : Formula} :
 def cross_weaken {k m₁ m₂ m : Nat} {B α : Formula}
     (tw : ProvT m α) (h1 : m + (Formula.impl B α).size ≤ m₁)
     (h2 : m₁ + m₂ + α.size ≤ k) : ProvT k α :=
-  tw.mono (by simp only [Formula.size] at h1; omega)
+  tw.mono (by simp only [numCost, Formula.size] at h1; omega)
 
 /-- The excised tree's cut diet is `tw`'s own — in particular, the dropped argument's
     cuts (and the gate obligation `G B` the `app` node carried) vanish with it. -/
@@ -476,7 +476,7 @@ theorem ProvT.box_size_le {k c : Nat} {ψ : Formula} :
 theorem ProvT.box_subscript_lt {k c : Nat} {ψ : Formula} (t : ProvT k (.box c ψ)) :
     c < 2 ^ k := by
   have h := t.box_size_le
-  simp only [Formula.size] at h
+  simp only [numCost, Formula.size] at h
   rcases Nat.eq_zero_or_pos c with hc | hc
   · exact hc ▸ Nat.two_pow_pos k
   · have hlog : Nat.log2 c < k := by omega
@@ -903,7 +903,7 @@ fragment is exactly where extraction is weight-non-increasing. -/
 
 theorem Formula.size_pos : (φ : Formula) → 1 ≤ φ.size := by
   intro φ
-  cases φ <;> simp [Formula.size] <;> omega
+  cases φ <;> simp [numCost, Formula.size] <;> omega
 
 /-- Derivation node count — the walkable weight of a `struct`-tree (stage 2 unfolds
     `modusPonens`/`hypSyll` into machine steps, so `struct`-weight must be

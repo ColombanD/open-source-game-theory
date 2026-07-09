@@ -98,6 +98,11 @@ end
 -- A numeral `k` costs `Nat.log2 k + 1` characters (critch22 Appendix B(b):
 -- numbers are written in `O(lg k)` characters), so e.g. `.search`/`.box` pay that
 -- for their index. Everything else is `(sum of children) + 1` for the node.
+/-- The character cost of writing the numeral `k` (Critch Appendix B(b): numbers are
+    written in `O(lg k)` characters). Single source of truth for `Prog.size`,
+    `Formula.size` and the proof-step cost `c_guard`. -/
+def numCost (k : Nat) : Nat := Nat.log2 k + 1
+
 mutual
   def Prog.size : Prog → Nat
     | .const _        => 1
@@ -106,15 +111,15 @@ mutual
     | .bot p          => p.size + 1
     | .sim p q        => p.size + q.size + 1
     | .ite b _ p q    => b.size + p.size + q.size + 1
-    | .search k φ p q => (Nat.log2 k + 1) + φ.size + p.size + q.size + 1
+    | .search k φ p q => numCost k + φ.size + p.size + q.size + 1
 
   def Formula.size : Formula → Nat
     | .plays p q _ => p.size + q.size + 1
     | .impl φ ψ    => φ.size + ψ.size + 1
     | .neg φ       => φ.size + 1
-    | .box k φ     => (Nat.log2 k + 1) + φ.size + 1
+    | .box k φ     => numCost k + φ.size + 1
     | .eq p q      => p.size + q.size + 1
-    | .diag g φ    => (Nat.log2 g + 1) + φ.size + 1   -- numeral cost for `g`, like `.box`
+    | .diag g φ    => numCost g + φ.size + 1   -- numeral cost for `g`, like `.box`
 end
 
 /-- Syntactic `.search`-freeness: a program that contains no proof-search node. A search-free

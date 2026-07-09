@@ -72,7 +72,7 @@ theorem proofSearch_true_for_DIMCID_vs_DefectBot :
   -- transcript: consequent certificate (`atom_cost 1 = 3`) + the implication's size, ≤ k.
   have hb := hK k hk
   have h1 : atom_cost 1 = 3 := by decide
-  simp only [Formula.size, Prog.size, DIMCID, DefectBot]
+  simp only [numCost, Formula.size, Prog.size, DIMCID, DefectBot]
   omega
 
 /-- DIMCID defects against DefectBot: its guard fires (proved above), so it takes

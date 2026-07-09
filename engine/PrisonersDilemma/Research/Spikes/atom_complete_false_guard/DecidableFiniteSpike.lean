@@ -710,7 +710,7 @@ theorem playsCheckC_complete
     obtain ⟨F, m, hF, hle, hFn⟩ := ihp
     refine ⟨F+1, m + c_guard k + c_node, ?_, by omega, ?_⟩
     · simp only [playsCheckC, gdc_bwd _ _ hguard, if_true, hF, Option.map_some]
-    · have h1 : 1 ≤ c_guard k := by simp [c_guard]
+    · have h1 : 1 ≤ c_guard k := by simp [numCost, c_guard]
       have h2 : c_node = 1 := rfl
       omega
   case atomMk => intros; trivial

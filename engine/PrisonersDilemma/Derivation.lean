@@ -212,7 +212,7 @@ def Derivation.size : {φ : Formula} → Derivation φ → Nat
 -- monotonicity (`c_guard_mono`, Axioms.lean) is now a theorem, not an axiom.
 def c_leaf  : Nat := 1                          -- leaf step (`.const a`)
 def c_node  : Nat := 1                          -- structural step (`.self`/`.opp`/`.bot`/`.sim`/`.ite`)
-def c_guard (k : Nat) : Nat := Nat.log2 k + 1   -- `.search` guard at budget `k`; grows with `k`
+def c_guard (k : Nat) : Nat := numCost k        -- `.search` guard at budget `k`; grows with `k`
 
 mutual
 -- 3. `PlaysProof me opponent body a n` — a play certificate: `body` (run with `me`/`opponent` as

@@ -408,7 +408,7 @@ theorem outcome_JustBot_vs_CupodTrollBot (j fuel : Nat) :
           (c_leaf + (Formula.neg (.eq (.bot (DupocBot (4*j+100))) (CupodBot j))).size
             + j + c_node)
           (.plays (CupodTrollBot j) (.bot (DupocBot (4*j+100))) .C))))
-    simp only [c_leaf, c_node, Formula.size, Prog.size, DupocBot, CupodBot]
+    simp only [numCost, c_leaf, c_node, Formula.size, Prog.size, DupocBot, CupodBot]
     omega
   have hA : play (fuel + 2) (JustBot (4*j+100)) (CupodTrollBot j) = some .C := by
     refine JustBot_eval_step (4*j+100) fuel (CupodTrollBot j) .C ?_
@@ -453,7 +453,7 @@ theorem botdupoc_loeb_premise (k : Nat) :
   -- transcript-tight: a single `botSearchStep` leaf, O(log k) — unconditionally.
   apply Provable.struct
   refine ⟨.botSearchStep k (.plays .opp .self .C) .C .D (.bot (DupocBot k)) (.bot (DupocBot k)) rfl, ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, DupocBot]
+  simp only [numCost, Derivation.size, Formula.size, Prog.size, DupocBot]
   omega
 
 /-- For large `k`, `.bot DupocBot` self-play cooperates (its guard provably fires). -/
@@ -468,7 +468,7 @@ theorem botDupoc_self_coop :
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C).size ≤ _
-    simp only [Formula.size, Prog.size, DupocBot]
+    simp only [numCost, Formula.size, Prog.size, DupocBot]
     omega
   have hpm : ∀ k, 20 * Nat.log2 k + 150 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 20 * Nat.log2 k + 150) 0 hφsz hpm hLoeb
@@ -496,7 +496,7 @@ theorem outcome_JustBot_vs_JustBot :
       (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hdd) PlaysProof.const, ?_⟩ :
         AtomProvable k (.plays (JustBot k) (.bot (DupocBot k)) .C)))
     show c_leaf + c_guard k + c_node ≤ k
-    simp only [c_leaf, c_guard, c_node]
+    simp only [numCost, c_leaf, c_guard, c_node]
     omega
   have hJJ : ∀ f, play (f + 2) (JustBot k) (JustBot k) = some .C := by
     intro f
@@ -556,7 +556,7 @@ theorem prudence_botdupoc (k : Nat) :
       (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
     refine Provable.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C 2
       ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
-    simp only [Formula.size, Prog.size, DefectBot, DupocBot]
+    simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
     omega
   have hcert := atom_search_f_bot_top k (Nat.log2 k + 14) (.plays .opp .self .C) .C .D
     (.bot DefectBot) hneg
@@ -570,7 +570,7 @@ theorem justbot_prudence (k : Nat) :
       (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
     refine Provable.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C 2
       ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
-    simp only [Formula.size, Prog.size, DefectBot, DupocBot]
+    simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
     omega
   have hcert := atom_search_f_top k (Nat.log2 k + 14)
     (.plays .opp (.bot (DupocBot k)) .C) .C .D (.bot DefectBot) hneg
@@ -588,7 +588,7 @@ theorem prudent_botdupoc_legPD (k : Nat) :
     (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
     .C .D (.const .D) (PrudentBot (2*k+64)) (.bot (DupocBot k)) rfl
     (by simpa [Formula.subst, Prog.subst] using prudence_botdupoc k) (by omega) ?_
-  simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot,
+  simp only [numCost, Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot,
     DefectBot, c_guard]
   omega
 
@@ -601,7 +601,7 @@ theorem prudent_botdupoc_legDP (k : Nat) :
   apply Provable.struct
   refine ⟨Derivation.botSearchStep k (.plays .opp .self .C) .C .D
     (.bot (DupocBot k)) (PrudentBot (2*k+64)) rfl, ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  simp only [numCost, Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
   omega
 
 /-- `.bot (DupocBot k)`'s staggered-opponent play lemmas (generic in the opponent). -/
@@ -634,13 +634,13 @@ theorem outcome_JustBot_vs_PrudentBot :
       ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     have hlg := log2_stagger_le k
-    simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
     omega
   have hsP : ∀ k, (Formula.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C).size
       ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     have hlg := log2_stagger_le k
-    simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
     omega
   have hpb : ∀ k, 30 * Nat.log2 k + 700 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := mutual_pblt_engine_staggered
@@ -674,7 +674,7 @@ theorem outcome_JustBot_vs_PrudentBot :
       (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hA_ps) PlaysProof.const, ?_⟩ :
         AtomProvable (2*k+64) (.plays (JustBot k) (PrudentBot (2*k+64)) .C)))
     show c_leaf + c_guard k + c_node ≤ 2*k+64
-    simp only [c_leaf, c_guard, c_node]
+    simp only [numCost, c_leaf, c_guard, c_node]
     omega
   -- PrudentBot's prudence about JustBot: the floored certificate fits its bigger budget
   have hprud : proofSearch (2*k+64) (.plays (JustBot k) (.bot DefectBot) .D) = true := by
@@ -701,7 +701,7 @@ theorem outcome_JustBot_vs_DupocBot :
     apply Provable.struct
     refine ⟨Derivation.botSearchStep k (.plays .opp .self .C) .C .D
       (.bot (DupocBot k)) (DupocBot k) rfl, ?_⟩
-    simp only [Derivation.size, Formula.size, Prog.size, DupocBot]
+    simp only [numCost, Derivation.size, Formula.size, Prog.size, DupocBot]
     omega
   have legDP : ∀ k, Provable (30 * Nat.log2 k + 300)
       (.impl (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))
@@ -710,17 +710,17 @@ theorem outcome_JustBot_vs_DupocBot :
     apply Provable.struct
     refine ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D
       (DupocBot k) (.bot (DupocBot k)) rfl, ?_⟩
-    simp only [Derivation.size, Formula.size, Prog.size, DupocBot]
+    simp only [numCost, Derivation.size, Formula.size, Prog.size, DupocBot]
     omega
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C).size ≤ _
-    simp only [Formula.size, Prog.size, DupocBot]
+    simp only [numCost, Formula.size, Prog.size, DupocBot]
     omega
   have hsB : ∀ k,
       (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
-    simp only [Formula.size, Prog.size, DupocBot]
+    simp only [numCost, Formula.size, Prog.size, DupocBot]
     omega
   have hpb : ∀ k, 30 * Nat.log2 k + 300 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := mutual_pblt_engine_id φ
@@ -770,7 +770,7 @@ theorem outcome_JustBot_vs_DupocBot :
       (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hBtrue) PlaysProof.const, ?_⟩ :
         AtomProvable k (.plays (DupocBot k) (.bot (DupocBot k)) .C)))
     show c_leaf + c_guard k + c_node ≤ k
-    simp only [c_leaf, c_guard, c_node]
+    simp only [numCost, c_leaf, c_guard, c_node]
     omega
   have hJ : play 2 (JustBot k) (DupocBot k) = some .C := by
     show eval 2 (JustBot k) (DupocBot k) (JustBot k) = some .C
@@ -783,7 +783,7 @@ theorem outcome_JustBot_vs_DupocBot :
       (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hGA) PlaysProof.const, ?_⟩ :
         AtomProvable k (.plays (JustBot k) (DupocBot k) .C)))
     show c_leaf + c_guard k + c_node ≤ k
-    simp only [c_leaf, c_guard, c_node]
+    simp only [numCost, c_leaf, c_guard, c_node]
     omega
   have hD : play 2 (DupocBot k) (JustBot k) = some .C := by
     show eval 2 (DupocBot k) (JustBot k) (DupocBot k) = some .C

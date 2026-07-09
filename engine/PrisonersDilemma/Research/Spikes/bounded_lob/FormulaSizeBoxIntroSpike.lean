@@ -115,7 +115,7 @@ example (k : Nat) (p q : Prog) (a : Action) (K : Nat)
     (hsz : (Formula.impl (.plays p q a) (.box k (.plays p q a))).size ≤ k) : K ≤ k := by
   have hszbox : (Formula.box k (.plays p q a)).size
       < (Formula.impl (.plays p q a) (.box k (.plays p q a))).size := by
-    simp only [Formula.size]; omega
+    simp only [numCost, Formula.size]; omega
   exact Nat.le_trans hKle (Nat.le_trans (Nat.le_of_lt hszbox) hsz)
 
 /-! ## SAFETY — why this box-intro is NOT the unsound `atom_box_provable_impl`

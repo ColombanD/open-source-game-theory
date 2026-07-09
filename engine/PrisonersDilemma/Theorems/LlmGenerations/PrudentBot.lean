@@ -401,7 +401,7 @@ theorem prudent_mirror_loeb_premise (k : Nat) (hk : 27 ≤ k) :
       (Formula.plays .opp (.bot DefectBot) Action.D)
       Action.C Action.D (.const Action.D) (PrudentBot k) MirrorBot rfl
       prudence_provable (by omega) ?_
-    simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot,
+    simp only [numCost, Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot,
       DefectBot, c_guard]
     omega
   -- Leg 2: MirrorBot's `.sim` swap, as a Derivation → Provable (single leaf).
@@ -409,11 +409,11 @@ theorem prudent_mirror_loeb_premise (k : Nat) (hk : 27 ≤ k) :
       (.impl (Formula.plays (PrudentBot k) MirrorBot Action.C)
              (Formula.plays MirrorBot (PrudentBot k) Action.C)) := by
     refine Provable.struct ⟨Derivation.simStep MirrorBot .opp .self (PrudentBot k) Action.C rfl, ?_⟩
-    simp only [Derivation.size, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+    simp only [numCost, Derivation.size, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
   -- Chain leg1 (`□φ → A`) then leg2 (`A → φ`) into `□_k φ → φ` via `implTrans`.
   refine Provable.implTrans _ _ _ (20 * Nat.log2 k + 200) (20 * Nat.log2 k + 200) leg1 leg2 ?_
-  simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+  simp only [numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
   omega
 
 /-- Once `proofSearch k = true`, PrudentBot's stacked searches both fire (the inner
@@ -485,7 +485,7 @@ theorem outcome_PrudentBot_vs_MirrorBot :
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays MirrorBot (PrudentBot k) Action.C).size ≤ _
-    simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
   have hpm : ∀ k, 50 * Nat.log2 k + 500 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 27 hφsz hpm hLoeb
@@ -539,7 +539,7 @@ theorem prudent_bot_mirror_loeb_premise (k : Nat) (hk : 81 ≤ k) :
       (Formula.plays .opp (.bot DefectBot) Action.D)
       Action.C Action.D (.const Action.D) (PrudentBot k) (.bot MirrorBot) rfl
       prudence_provable_bot (by omega) ?_
-    simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot,
+    simp only [numCost, Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot,
       DefectBot, c_guard]
     omega
   have leg2 : Provable (20 * Nat.log2 k + 200)
@@ -547,10 +547,10 @@ theorem prudent_bot_mirror_loeb_premise (k : Nat) (hk : 81 ≤ k) :
              (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C)) := by
     refine Provable.struct
       ⟨Derivation.botSimStep (.bot MirrorBot) .opp .self (PrudentBot k) Action.C rfl, ?_⟩
-    simp only [Derivation.size, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+    simp only [numCost, Derivation.size, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
   refine Provable.implTrans _ _ _ (20 * Nat.log2 k + 200) (20 * Nat.log2 k + 200) leg1 leg2 ?_
-  simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+  simp only [numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
   omega
 
 /-- Once both searches fire, PrudentBot cooperates with `.bot MirrorBot`. -/
@@ -602,7 +602,7 @@ theorem PrudentBot_plays_C_vs_bot_MirrorBot :
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C).size ≤ _
-    simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
   have hpm : ∀ k, 50 * Nat.log2 k + 500 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 81 hφsz hpm hLoeb
@@ -705,7 +705,7 @@ theorem prudent_botmirror_coop :
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C).size ≤ _
-    simp only [Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
   have hpm : ∀ k, 50 * Nat.log2 k + 500 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 81 hφsz hpm hLoeb
@@ -891,7 +891,7 @@ theorem prudence_dupoc (k : Nat) :
       (.neg (.plays (.bot DefectBot) (DupocBot k) .C)) := by
     refine Provable.atomNeg (.bot DefectBot) (DupocBot k) .D .C 2
       ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
-    simp only [Formula.size, Prog.size, DefectBot, DupocBot]
+    simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
     omega
   have hcert := atom_search_f_top k (Nat.log2 k + 13) (.plays .opp .self .C) .C .D
     (.bot DefectBot) hneg
@@ -910,7 +910,7 @@ theorem prudent_dupoc_legPD (k : Nat) :
     (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
     .C .D (.const .D) (PrudentBot (2*k+64)) (DupocBot k) rfl
     (by simpa [Formula.subst, Prog.subst] using prudence_dupoc k) (by omega) ?_
-  simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot,
+  simp only [numCost, Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot,
     DefectBot, c_guard]
   omega
 
@@ -923,7 +923,7 @@ theorem prudent_dupoc_legDP (k : Nat) :
   apply Provable.struct
   refine ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D
     (DupocBot k) (PrudentBot (2*k+64)) rfl, ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  simp only [numCost, Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
   omega
 
 /-- Dupoc's staggered-opponent play lemmas (generic in the opponent). -/
@@ -963,13 +963,13 @@ theorem outcome_PrudentBot_vs_DupocBot :
       ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     have hlg := log2_stagger_le k
-    simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
     omega
   have hsP : ∀ k, (Formula.plays (PrudentBot (2*k+64)) (DupocBot k) .C).size
       ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     have hlg := log2_stagger_le k
-    simp only [Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
     omega
   have hpb : ∀ k, 30 * Nat.log2 k + 700 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := mutual_pblt_engine_staggered
@@ -998,7 +998,7 @@ theorem outcome_PrudentBot_vs_DupocBot :
         AtomProvable (2*k+64) (.plays (DupocBot k) (PrudentBot (2*k+64)) .C)))
     show c_leaf + c_guard k + c_node ≤ 2*k+64
     have hlk := log2_le_self k
-    simp only [c_leaf, c_guard, c_node]
+    simp only [numCost, c_leaf, c_guard, c_node]
     omega
   -- Prudent's inner prudence guard at its own (bigger) literal
   have hprud : proofSearch (2*k+64) (.plays (DupocBot k) (.bot DefectBot) .D) = true := by
@@ -1036,7 +1036,7 @@ theorem prudence_P2 (k j : Nat) :
       (.neg (.plays (.bot DefectBot) (PrudentBot2 k j) .C)) := by
     refine Provable.atomNeg (.bot DefectBot) (PrudentBot2 k j) .D .C 2
       ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
-    simp only [Formula.size, Prog.size, DefectBot, PrudentBot2]
+    simp only [numCost, Formula.size, Prog.size, DefectBot, PrudentBot2]
     omega
   refine Provable.atom (⟨PlaysProof.search_f hneg PlaysProof.const, ?_⟩ :
     AtomProvable (k + Nat.log2 k + Nat.log2 j + 22)
@@ -1088,7 +1088,7 @@ theorem P2_self_loeb_premise (k : Nat) :
     (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
     .C .D (.const .D) (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) rfl
     (by simpa [Formula.subst, Prog.subst] using prudence_P2 k (4*k+100)) (by omega) ?_
-  simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot2, DefectBot,
+  simp only [numCost, Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot2, DefectBot,
     c_guard]
   omega
 
@@ -1103,7 +1103,7 @@ theorem outcome_PrudentBot2_self :
       ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     have hlgj := log2_stagger4_le k
-    simp only [Formula.size, Prog.size, PrudentBot2, DefectBot]
+    simp only [numCost, Formula.size, Prog.size, PrudentBot2, DefectBot]
     omega
   have hpm : ∀ k, 30 * Nat.log2 k + 800 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id

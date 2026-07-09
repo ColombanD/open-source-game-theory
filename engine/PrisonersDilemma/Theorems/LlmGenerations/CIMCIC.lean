@@ -93,7 +93,7 @@ theorem proofSearch_true_for_CIMCIC_vs_CooperateBot :
   -- transcript: consequent certificate (`atom_cost 1 = 3`) + the implication's size, ≤ k.
   have hb := hK k hk
   have h1 : atom_cost 1 = 3 := by decide
-  simp only [Formula.size, Prog.size, CIMCIC, CooperateBot]
+  simp only [numCost, Formula.size, Prog.size, CIMCIC, CooperateBot]
   omega
 
 /-- CIMCIC cooperates against CooperateBot: its guard fires (proved above), so it

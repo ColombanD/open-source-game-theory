@@ -64,7 +64,7 @@ theorem CupodBot_defects_vs_CupodTrollBot (k fuel : Nat)
       (⟨PlaysProof.search_t hEqProv PlaysProof.const, ?_⟩ :
         AtomProvable k (.plays (CupodTrollBot k) (CupodBot k) .D)))
     show c_leaf + c_guard k + c_node ≤ k
-    simp only [Formula.size, Prog.size, CupodBot, c_leaf, c_guard, c_node] at hk ⊢
+    simp only [numCost, Formula.size, Prog.size, CupodBot, c_leaf, c_guard, c_node] at hk ⊢
     omega
   -- CupodBot's `.search` guard `subst`s to exactly `hg`'s formula (`self` = `me`).
   show eval (fuel + 2) (CupodBot k) (CupodTrollBot k) (CupodBot k) = some .D

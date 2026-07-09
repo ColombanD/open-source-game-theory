@@ -39,10 +39,10 @@ theorem lt_two_pow_of_log2_lt {g s : Nat} (h : Nat.log2 g + 1 ≤ s) : g < 2 ^ s
     exact lt_of_lt_of_le h1 (Nat.pow_le_pow_right (by decide) h)
 
 theorem Prog.size_pos : ∀ p : Prog, 1 ≤ p.size := by
-  intro p; cases p <;> simp [Prog.size]
+  intro p; cases p <;> simp [numCost, Prog.size]
 
 theorem Formula.size_pos : ∀ φ : Formula, 1 ≤ φ.size := by
-  intro φ; cases φ <;> simp [Formula.size]
+  intro φ; cases φ <;> simp [numCost, Formula.size]
 
 /-! ## 2. Enumeration — programs/formulas of size ≤ n form a computably finite set
 (numerals pay `log2`, actions are finite). A SUPERSET is all the search needs. -/
@@ -102,18 +102,18 @@ theorem enum_complete : ∀ n : Nat,
             (List.mem_append_left _ ?_)))
           simp
       | bot q =>
-          simp only [Prog.size] at h
+          simp only [numCost, Prog.size] at h
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
             (List.mem_append_right _ ?_)))
           exact List.mem_map.2 ⟨q, ihP q (by omega), rfl⟩
       | sim q r =>
-          simp only [Prog.size] at h
+          simp only [numCost, Prog.size] at h
           have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ ?_))
           exact List.mem_flatMap.2 ⟨q, ihP q (by omega),
             List.mem_map.2 ⟨r, ihP r (by omega), rfl⟩⟩
       | ite b a q r =>
-          simp only [Prog.size] at h
+          simp only [numCost, Prog.size] at h
           have hb := Prog.size_pos b; have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_left _ (List.mem_append_right _ ?_)
           exact List.mem_flatMap.2 ⟨b, ihP b (by omega),
@@ -121,7 +121,7 @@ theorem enum_complete : ∀ n : Nat,
               List.mem_flatMap.2 ⟨q, ihP q (by omega),
                 List.mem_map.2 ⟨r, ihP r (by omega), rfl⟩⟩⟩⟩
       | search k φ q r =>
-          simp only [Prog.size] at h
+          simp only [numCost, Prog.size] at h
           have hφ := Formula.size_pos φ; have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_right _ ?_
           exact List.mem_flatMap.2 ⟨k, List.mem_range.2 (lt_two_pow_of_log2_lt (by omega)),
@@ -131,7 +131,7 @@ theorem enum_complete : ∀ n : Nat,
     · intro φ h
       cases φ with
       | plays q r a =>
-          simp only [Formula.size] at h
+          simp only [numCost, Formula.size] at h
           have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
             (List.mem_append_left _ (List.mem_append_left _ ?_))))
@@ -139,31 +139,31 @@ theorem enum_complete : ∀ n : Nat,
             List.mem_flatMap.2 ⟨r, ihP r (by omega),
               List.mem_map.2 ⟨a, mem_action_pair a, rfl⟩⟩⟩
       | impl A B =>
-          simp only [Formula.size] at h
+          simp only [numCost, Formula.size] at h
           have hA := Formula.size_pos A; have hB := Formula.size_pos B
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
             (List.mem_append_left _ (List.mem_append_right _ ?_))))
           exact List.mem_flatMap.2 ⟨A, ihF A (by omega),
             List.mem_map.2 ⟨B, ihF B (by omega), rfl⟩⟩
       | neg A =>
-          simp only [Formula.size] at h
+          simp only [numCost, Formula.size] at h
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
             (List.mem_append_right _ ?_)))
           exact List.mem_map.2 ⟨A, ihF A (by omega), rfl⟩
       | box k A =>
-          simp only [Formula.size] at h
+          simp only [numCost, Formula.size] at h
           have hA := Formula.size_pos A
           refine List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ ?_))
           exact List.mem_flatMap.2 ⟨k, List.mem_range.2 (lt_two_pow_of_log2_lt (by omega)),
             List.mem_map.2 ⟨A, ihF A (by omega), rfl⟩⟩
       | eq q r =>
-          simp only [Formula.size] at h
+          simp only [numCost, Formula.size] at h
           have hq := Prog.size_pos q; have hr := Prog.size_pos r
           refine List.mem_append_left _ (List.mem_append_right _ ?_)
           exact List.mem_flatMap.2 ⟨q, ihP q (by omega),
             List.mem_map.2 ⟨r, ihP r (by omega), rfl⟩⟩
       | diag g A =>
-          simp only [Formula.size] at h
+          simp only [numCost, Formula.size] at h
           have hA := Formula.size_pos A
           refine List.mem_append_right _ ?_
           exact List.mem_flatMap.2 ⟨g, List.mem_range.2 (lt_two_pow_of_log2_lt (by omega)),
@@ -398,7 +398,7 @@ theorem decDeriv_complete : ∀ {φ : Formula} (d : Derivation φ),
       have hd2p : 1 ≤ d2.size := Nat.le_trans (Formula.size_pos _) d2.concl_size_le
       obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
       have hAsz : A.size ≤ K := by
-        simp only [Formula.size] at hc1
+        simp only [numCost, Formula.size] at hc1
         omega
       have hfire : chkMP (fun m ψ => decDeriv f m ψ) K B = true := by
         unfold chkMP
@@ -419,7 +419,7 @@ theorem decDeriv_complete : ∀ {φ : Formula} (d : Derivation φ),
       have hd2p : 1 ≤ d2.size := Nat.le_trans (Formula.size_pos _) d2.concl_size_le
       obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
       have hBsz : B.size ≤ K := by
-        simp only [Formula.size] at hc1
+        simp only [numCost, Formula.size] at hc1
         omega
       have hfire : chkHS (fun m ψ => decDeriv f m ψ) K (Formula.impl A C) = true := by
         unfold chkHS
@@ -653,7 +653,7 @@ def decProv (O : Nat → Formula → Bool) : Nat → Nat → Formula → Bool
 /-- Every play certificate costs at least one character (each `PlaysProof` step pays ≥ 1). -/
 theorem atomProvable_pos {k : Nat} {φ : Formula} (h : AtomProvable k φ) : 1 ≤ k := by
   obtain ⟨cert, hle⟩ := h
-  cases cert <;> (simp only [c_leaf, c_node, c_guard] at hle; omega)
+  cases cert <;> (simp only [numCost, c_leaf, c_node, c_guard] at hle; omega)
 
 theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
     ∀ fuel k φ, decProv O fuel k φ = true → Provable k φ := by
@@ -1107,7 +1107,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
         unfold chkITrans
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨a, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hg : a + (Formula.impl A C).size ≤ K := by omega
@@ -1150,7 +1150,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
         unfold chkAppE
         simp only [List.any_eq_true, List.mem_range]
         have hAsz : A.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
         have hg : m₁ + B.size ≤ K := by omega
@@ -1196,7 +1196,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
           omega
         refine ⟨hg, fb, ?_, e⟩
         refine lt_two_pow_of_log2_lt ?_
-        simp only [Formula.size] at hgsz
+        simp only [numCost, Formula.size] at hgsz
         omega
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
@@ -1217,7 +1217,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
           omega
         refine ⟨hg, fb, ?_, e⟩
         refine lt_two_pow_of_log2_lt ?_
-        simp only [Formula.size] at hgsz
+        simp only [numCost, Formula.size] at hgsz
         omega
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
@@ -1246,7 +1246,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
         unfold chkImpS2E
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hg : m₁ + (Formula.impl A C).size ≤ K := by omega
@@ -1687,7 +1687,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
         unfold chkITrans
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨a, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hg : a + (Formula.impl A C).size ≤ K := by omega
@@ -1737,7 +1737,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
         unfold chkAppE
         simp only [List.any_eq_true, List.mem_range]
         have hAsz : A.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
         have hg : m₁ + B.size ≤ K := by omega
@@ -1789,7 +1789,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
           omega
         refine ⟨hg, fb, ?_, decFull_le_inner F F le_rfl _ _ e⟩
         refine lt_two_pow_of_log2_lt ?_
-        simp only [Formula.size] at hgsz
+        simp only [numCost, Formula.size] at hgsz
         omega
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
@@ -1812,7 +1812,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
           omega
         refine ⟨hg, fb, ?_, decFull_le_inner F F le_rfl _ _ e⟩
         refine lt_two_pow_of_log2_lt ?_
-        simp only [Formula.size] at hgsz
+        simp only [numCost, Formula.size] at hgsz
         omega
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
@@ -1845,7 +1845,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
         unfold chkImpS2E
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hg : m₁ + (Formula.impl A C).size ≤ K := by omega
@@ -2134,10 +2134,12 @@ question. -/
 
 private def CoopB : Prog := .const .C
 private def DefB : Prog := .const .D
-private def MirB : Prog := .search 2 (.plays .opp .self .C) (.const .C) (.const .D)
+-- A miniature FairBot/DupocBot ("cooperate iff provably cooperated-with") — NOT the
+-- engine's MirrorBot (which is the sim-based `.sim .opp .self`).
+private def FairB : Prog := .search 2 (.plays .opp .self .C) (.const .C) (.const .D)
 
-#eval outcomeG (guardFast 2) 8 MirB CoopB -- expect: some (C, C) — grounded cooperation
-#eval outcomeG (guardFast 2) 8 MirB DefB  -- expect: some (D, D) — refutation-driven defection
-#eval outcomeG (guardFast 2) 8 MirB MirB  -- expect: none — the Löb fixpoint boundary
+#eval outcomeG (guardFast 2) 8 FairB CoopB -- expect: some (C, C) — grounded cooperation
+#eval outcomeG (guardFast 2) 8 FairB DefB  -- expect: some (D, D) — refutation-driven defection
+#eval outcomeG (guardFast 2) 8 FairB FairB  -- expect: none — the Löb fixpoint boundary
 
 end PD.T31

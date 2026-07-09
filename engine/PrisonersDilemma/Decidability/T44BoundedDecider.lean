@@ -550,7 +550,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       have hcn : c_node = 1 := rfl
       have hpos : 1 ≤ n := by
         cases ‹PlaysProofG _ me oppo p a n› <;>
-          simp only [c_leaf, c_node, c_guard] <;> omega
+          simp only [numCost, c_leaf, c_node, c_guard] <;> omega
       obtain ⟨F₁, e₁⟩ := ihg m le_rfl
       obtain ⟨F₂, e₂⟩ := ihp (b - m - c_node) (by omega)
       refine ⟨max F₁ F₂, ?_⟩
@@ -569,7 +569,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       have hcn : c_node = 1 := rfl
       have hpos : 1 ≤ n := by
         cases ‹PlaysProofG _ me oppo q a n› <;>
-          simp only [c_leaf, c_node, c_guard] <;> omega
+          simp only [numCost, c_leaf, c_node, c_guard] <;> omega
       obtain ⟨F₁, e₁⟩ := ihg m le_rfl
       obtain ⟨F₂, e₂⟩ := ihq (b - m - c_node) (by omega)
       refine ⟨max F₁ F₂, ?_⟩
@@ -586,7 +586,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
   case pSearch_t =>
       intro kg me oppo p a n g q _ _ ihg ihp b hb
       have hcn : c_node = 1 := rfl
-      have hcg : 1 ≤ c_guard kg := by unfold c_guard; omega
+      have hcg : 1 ≤ c_guard kg := by unfold c_guard numCost; omega
       obtain ⟨F₁, e₁⟩ := ihg kg le_rfl
       obtain ⟨F₂, e₂⟩ := ihp (b - c_guard kg - c_node) (by omega)
       refine ⟨max F₁ F₂, ?_⟩
@@ -674,7 +674,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
         unfold chkITransB
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨a, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hgg : a + (Formula.impl A C).size ≤ K := by omega
@@ -720,7 +720,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
         unfold chkAppEB
         simp only [List.any_eq_true, List.mem_range]
         have hAsz : A.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
         have hgg : m₁ + B.size ≤ K := by omega
@@ -769,7 +769,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
           omega
         refine ⟨hgg, fb, ?_, cutOKb_iff.mpr hg, e⟩
         refine lt_two_pow_of_log2_lt ?_
-        simp only [Formula.size] at hgsz
+        simp only [numCost, Formula.size] at hgsz
         omega
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cDiagB =>
@@ -791,7 +791,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
           omega
         refine ⟨hgg, fb, ?_, cutOKb_iff.mpr hg, e⟩
         refine lt_two_pow_of_log2_lt ?_
-        simp only [Formula.size] at hgsz
+        simp only [numCost, Formula.size] at hgsz
         omega
       simp only [hfire, Bool.or_true, Bool.true_or]
   case cAxKf =>
@@ -821,7 +821,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
         unfold chkImpS2EB
         simp only [List.any_eq_true, List.mem_range]
         have hBsz : B.size ≤ K := by
-          simp only [Formula.size] at hi1
+          simp only [numCost, Formula.size] at hi1
           omega
         refine ⟨m₁, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
         have hgg : m₁ + (Formula.impl A C).size ≤ K := by omega

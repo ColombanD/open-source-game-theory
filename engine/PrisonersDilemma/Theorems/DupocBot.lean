@@ -382,7 +382,7 @@ theorem dupoc_loeb_premise (k : Nat) :
              (.plays (DupocBot k) (DupocBot k) .C)) := by
   apply Provable.struct
   refine ⟨.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) (DupocBot k) rfl, ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, DupocBot]
+  simp only [numCost, Derivation.size, Formula.size, Prog.size, DupocBot]
   omega
 
 /-- DUPOC self-play cooperates, for `k` large enough — critch22 Theorem 3.7.
@@ -404,7 +404,7 @@ theorem DupocBot_vs_DupocBot :
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (DupocBot k) (DupocBot k) .C).size ≤ _
-    simp only [Formula.size, Prog.size, DupocBot]
+    simp only [numCost, Formula.size, Prog.size, DupocBot]
     omega
   have hpm : ∀ k, 5 * Nat.log2 k + 33 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 5 * Nat.log2 k + 33) 0 hφsz hpm hLoeb
@@ -435,7 +435,7 @@ theorem dupoc_mirror_loeb_premise (k : Nat) :
   refine ⟨.hypSyll _ _ _
     (.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) MirrorBot rfl)
     (.simStep MirrorBot .opp .self (DupocBot k) .C rfl), ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, DupocBot, MirrorBot]
+  simp only [numCost, Derivation.size, Formula.size, Prog.size, DupocBot, MirrorBot]
   omega
 
 /-- Once `proofSearch k = true`, DupocBot's eval against MirrorBot takes the
@@ -513,7 +513,7 @@ theorem DupocBot_vs_MirrorBot :
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays MirrorBot (DupocBot k) .C).size ≤ _
-    simp only [Formula.size, Prog.size, DupocBot, MirrorBot]
+    simp only [numCost, Formula.size, Prog.size, DupocBot, MirrorBot]
     omega
   have hpm : ∀ k, 20 * Nat.log2 k + 150 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 20 * Nat.log2 k + 150) 0 hφsz hpm hLoeb

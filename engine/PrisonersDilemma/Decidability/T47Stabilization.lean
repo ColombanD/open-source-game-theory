@@ -67,38 +67,38 @@ mutual
         rcases hq with rfl | hq
         · exact Nat.le_refl _
         · have := sizeP_of_mem p q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
     | sim p₁ p₂ =>
         intro q hq
         simp only [subsP, List.mem_cons, List.mem_append] at hq
         rcases hq with rfl | hq | hq
         · exact Nat.le_refl _
         · have := sizeP_of_mem p₁ q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
     | ite b a p₁ p₂ =>
         intro q hq
         simp only [subsP, List.mem_cons, List.mem_append] at hq
         rcases hq with rfl | (hq | hq) | hq
         · exact Nat.le_refl _
         · have := sizeP_of_mem b q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
         · have := sizeP_of_mem p₁ q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
     | search k φ p₁ p₂ =>
         intro q hq
         simp only [subsP, List.mem_cons, List.mem_append] at hq
         rcases hq with rfl | (hq | hq) | hq
         · exact Nat.le_refl _
         · have := sizeF_of_mem φ q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
         · have := sizeP_of_mem p₁ q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [Prog.size]; omega
+          simp only [numCost, Prog.size]; omega
 
   theorem sizeF_of_mem : ∀ (φ : Formula) (q : Prog), q ∈ subsF φ → q.size ≤ φ.size := by
     intro φ
@@ -108,37 +108,37 @@ mutual
         simp only [subsF, List.mem_append] at hq
         rcases hq with hq | hq
         · have := sizeP_of_mem p₁ q hq
-          simp only [Formula.size]; omega
+          simp only [numCost, Formula.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [Formula.size]; omega
+          simp only [numCost, Formula.size]; omega
     | impl φ ψ =>
         intro q hq
         simp only [subsF, List.mem_append] at hq
         rcases hq with hq | hq
         · have := sizeF_of_mem φ q hq
-          simp only [Formula.size]; omega
+          simp only [numCost, Formula.size]; omega
         · have := sizeF_of_mem ψ q hq
-          simp only [Formula.size]; omega
+          simp only [numCost, Formula.size]; omega
     | neg φ =>
         intro q hq
         have := sizeF_of_mem φ q hq
-        simp only [Formula.size]; omega
+        simp only [numCost, Formula.size]; omega
     | box n φ =>
         intro q hq
         have := sizeF_of_mem φ q hq
-        simp only [Formula.size]; omega
+        simp only [numCost, Formula.size]; omega
     | eq p₁ p₂ =>
         intro q hq
         simp only [subsF, List.mem_append] at hq
         rcases hq with hq | hq
         · have := sizeP_of_mem p₁ q hq
-          simp only [Formula.size]; omega
+          simp only [numCost, Formula.size]; omega
         · have := sizeP_of_mem p₂ q hq
-          simp only [Formula.size]; omega
+          simp only [numCost, Formula.size]; omega
     | diag g φ =>
         intro q hq
         have := sizeF_of_mem φ q hq
-        simp only [Formula.size]; omega
+        simp only [numCost, Formula.size]; omega
 end
 
 /-- Gated atoms' arguments are `argOK` and modest (recursive collection of `modestF`'s
@@ -394,7 +394,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
       have hszB : B.size ≤ ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl A B).size) := by
         have hZ := ZS_anti r₁ r₂ N k₀ φ₀
           (show K - (Formula.impl A B).size ≤ K by omega)
-        simp only [Formula.size] at hsz
+        simp only [numCost, Formula.size] at hsz
         omega
       rw [hag (K - (Formula.impl A B).size) B (by omega) hszB hInvB]
     · rfl
@@ -468,11 +468,11 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
               simp only [maxLitF] at hlit ⊢
               omega
           have hsz1 : (Formula.impl A ψ').size ≤ ZS r₁ r₂ N k₀ φ₀ m₁ := by
-            simp only [Formula.size] at hsz ⊢
+            simp only [numCost, Formula.size] at hsz ⊢
             omega
           have hsz2 : (Formula.impl ψ' C).size ≤
               ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl A C).size - m₁) := by
-            simp only [Formula.size] at hsz hstep2 ⊢
+            simp only [numCost, Formula.size] at hsz hstep2 ⊢
             omega
           rw [hag m₁ _ (by omega) hsz1 hInv1,
             hag (K - (Formula.impl A C).size - m₁) _ (by omega) hsz2 hInv2]
@@ -503,11 +503,11 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
           have hgle := of_decide_eq_true hg
           have hkK : kIn < K := by
             have := Formula.size_pos ψ
-            simp only [Formula.size] at hgle
+            simp only [numCost, Formula.size] at hgle
             omega
           have hstep := ZS_step r₁ r₂ N k₀ φ₀ hkK hK
           have hszψ : ψ.size ≤ ZS r₁ r₂ N k₀ φ₀ kIn := by
-            simp only [Formula.size] at hsz
+            simp only [numCost, Formula.size] at hsz
             omega
           have hInvψ : InvP r₁ r₂ N k₀ φ₀ ψ := by
             constructor
@@ -547,7 +547,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
             simp only [maxLitF]
             omega
         have hsz1 : (Formula.impl ψ' φ).size ≤ ZS r₁ r₂ N k₀ φ₀ m₁ := by
-          simp only [Formula.size]
+          simp only [numCost, Formula.size]
           omega
         have hsz2 : ψ'.size ≤ ZS r₁ r₂ N k₀ φ₀ (K - φ.size - m₁) := by
           omega
@@ -581,7 +581,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
                 omega
               have hszr : (Formula.box a (Formula.impl ψ α)).size ≤
                   ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl (.box b ψ) (.box c α)).size) := by
-                simp only [Formula.size] at hsz hstep ⊢
+                simp only [numCost, Formula.size] at hsz hstep ⊢
                 omega
               have hInvr : InvP r₁ r₂ N k₀ φ₀ (.box a (.impl ψ α)) := by
                 constructor
@@ -638,7 +638,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
                       have hszr : (Formula.impl (.box fb t) t).size ≤
                           ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl (.diag g t)
                             (.impl (.box g (.diag g t)) t)).size) := by
-                        simp only [Formula.size] at hsz hstep ⊢
+                        simp only [numCost, Formula.size] at hsz hstep ⊢
                         omega
                       have hInvr : InvP r₁ r₂ N k₀ φ₀ (.impl (.box fb t) t) := by
                         constructor
@@ -697,7 +697,7 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
                       have hszr : (Formula.impl (.box fb t) t).size ≤
                           ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl
                             (.impl (.box g (.diag g t)) t) (.diag g t)).size) := by
-                        simp only [Formula.size] at hsz hstep ⊢
+                        simp only [numCost, Formula.size] at hsz hstep ⊢
                         omega
                       have hInvr : InvP r₁ r₂ N k₀ φ₀ (.impl (.box fb t) t) := by
                         constructor
@@ -752,11 +752,11 @@ theorem stepB_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
               simp only [maxLitF] at hlit ⊢
               omega
           have hsz1 : (Formula.impl A (.impl ψ' C)).size ≤ ZS r₁ r₂ N k₀ φ₀ m₁ := by
-            simp only [Formula.size] at hsz ⊢
+            simp only [numCost, Formula.size] at hsz ⊢
             omega
           have hsz2 : (Formula.impl A ψ').size ≤
               ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl A C).size - m₁) := by
-            simp only [Formula.size] at hsz hstep2 ⊢
+            simp only [numCost, Formula.size] at hsz hstep2 ⊢
             omega
           rw [hag m₁ _ (by omega) hsz1 hInv1,
             hag (K - (Formula.impl A C).size - m₁) _ (by omega) hsz2 hInv2]

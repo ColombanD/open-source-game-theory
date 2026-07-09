@@ -13,7 +13,7 @@ namespace PD.BaseTheorems
     `c_guard k = Nat.log2 k + 1` (Derivation.lean), monotonicity is `Nat.log2`'s. -/
 theorem c_guard_mono : ∀ {a b : Nat}, a ≤ b → c_guard a ≤ c_guard b := by
   intro a b h
-  simp only [c_guard, Nat.log2_eq_log_two]
+  simp only [numCost, c_guard, Nat.log2_eq_log_two]
   exact Nat.add_le_add_right (Nat.log_mono_right h) 1
 
 /-- `atom_cost` is monotone in fuel, so bot proofs can lift a small-fuel atom to a
@@ -111,7 +111,7 @@ theorem atom_search_t_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
       (.plays (.search k g (.const aT) (.const aE)) oppo aT) := by
   refine ⟨PlaysProof.search_t hg PlaysProof.const, ?_⟩
   show c_leaf + c_guard k + c_node ≤ Nat.log2 k + 3
-  simp only [c_leaf, c_guard, c_node]
+  simp only [numCost, c_leaf, c_guard, c_node]
   omega
 
 /-- FIRED `.bot`-wrapped top-level search (the `.bot DupocBot` shape). -/
@@ -121,7 +121,7 @@ theorem atom_search_t_bot_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : P
       (.plays (.bot (.search k g (.const aT) (.const aE))) oppo aT) := by
   refine ⟨PlaysProof.bot (PlaysProof.search_t hg PlaysProof.const), ?_⟩
   show c_leaf + c_guard k + c_node + c_node ≤ Nat.log2 k + 4
-  simp only [c_leaf, c_guard, c_node]
+  simp only [numCost, c_leaf, c_guard, c_node]
   omega
 
 /-- FAILED top-level search: a refutation of the guard certifies the else-play — at the
@@ -275,7 +275,7 @@ theorem K_provable (n m : Nat) (φ ψ : Formula)
     Provable (n + m + n) ψ := by
   have hψ : ψ.size ≤ n := by
     have h := dImp.concl_size_le
-    simp only [Formula.size] at h
+    simp only [numCost, Formula.size] at h
     omega
   exact Provable.struct ⟨.modusPonens φ ψ dImp dφ, by
     simp only [Derivation.size]; omega⟩
@@ -581,7 +581,7 @@ theorem sound_upto : ∀ B : Nat,
         obtain ⟨n', hn'⟩ := hEx
         obtain ⟨cert, hcle⟩ := hatom
         have hszpos : 1 ≤ (Formula.neg (.plays p q aN)).size := by
-          simp only [Formula.size]; omega
+          simp only [numCost, Formula.size]; omega
         obtain ⟨N, hN⟩ := hplays p q p b _ cert (by omega)
         have h1 : eval (max N n') p q p = some b := eval_mono_le hN _ (Nat.le_max_left _ _)
         have h2 : eval (max N n') p q p = some aN :=
@@ -870,7 +870,7 @@ theorem pblt_engine (φ : Nat → Formula) (f pm : Nat → Nat) (k₁ : Nat)
     (256 * W) (512 * W) (16 * W) (640 * W) (704 * W) (768 * W) (2048 * W) (4096 * W)
     (hLoeb k hk)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
-  · (try simp only [Formula.size]); omega
+  · (try simp only [numCost, Formula.size]); omega
 
 /-- **Consumer-facing PBLT** (`f = id`, the shape every bot theorem uses): tight Löb premise at
     its honest transcript `pm k` (what the `*_loeb_premise` lemmas produce — a single
@@ -975,14 +975,14 @@ theorem mutual_pblt_engine_id (Af Bf : Nat → Formula) (p₁ p₂ : Nat → Nat
       (8*V) (16*V) (32*V) (16*V) (64*V) (16*V) (96*V) (8*V) (128*V) (160*V)
       (hL1 k hkk₁) (hL2 k hkk₁)
       ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · (try simp only [Formula.size]); omega
+    · (try simp only [numCost, Formula.size]); omega
   -- single-leg bloeb at fb
   refine ⟨32768*V, bloeb_engine (Af k) (160*V) fb
     (8192*V) (512*V) (16384*V) (16384*V) (65536*V)
     (256*V) (256*V) (1024*V) (512*V) (2048*V) (512*V) (512*V)
     (3072*V) (4096*V) (256*V) (5120*V) (6144*V) (7168*V) (16384*V) (32768*V)
     s10 ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
-  · (try simp only [Formula.size]); omega
+  · (try simp only [numCost, Formula.size]); omega
 
 /-- **Consumer-facing MUTUAL PBLT, STAGGERED** (T3.2b): the cross-bot closer for pairs whose
     legs live at DIFFERENT source budgets — leg 1's box at `kP k ≥ k` (the bigger bot, e.g.
@@ -1028,10 +1028,10 @@ theorem mutual_pblt_engine_staggered (Af Bf : Nat → Formula) (kP : Nat → Nat
       (8*V) (16*V) (32*V) (16*V) (64*V) (16*V) (96*V) (8*V) (128*V) (160*V)
       (hL1 k hkk₁) (hL2 k hkk₁)
       ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · (try simp only [Formula.size]); omega
+    · (try simp only [numCost, Formula.size]); omega
   refine ⟨32768*V, bloeb_engine (Af k) (160*V) fb
     (8192*V) (512*V) (16384*V) (16384*V) (65536*V)
     (256*V) (256*V) (1024*V) (512*V) (2048*V) (512*V) (512*V)
     (3072*V) (4096*V) (256*V) (5120*V) (6144*V) (7168*V) (16384*V) (32768*V)
     s10 ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
-  · (try simp only [Formula.size]); omega
+  · (try simp only [numCost, Formula.size]); omega

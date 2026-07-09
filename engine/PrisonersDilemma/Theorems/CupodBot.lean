@@ -100,7 +100,7 @@ theorem cupod_loeb_premise (k : Nat) :
   apply Provable.struct
   refine ⟨.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) (CupodBot k) rfl, ?_⟩
   -- transcript = the single leaf's conclusion: 5 * log2 k + 33 — unconditionally.
-  simp only [Derivation.size, Formula.size, Prog.size, CupodBot]
+  simp only [numCost, Derivation.size, Formula.size, Prog.size, CupodBot]
   omega
 
 /-- CUPOD self-play defects, for `k` large enough — critch22 Theorem 3.4.
@@ -122,7 +122,7 @@ theorem CupodBot_vs_CupodBot :
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays (CupodBot k) (CupodBot k) .D).size ≤ _
-    simp only [Formula.size, Prog.size, CupodBot]
+    simp only [numCost, Formula.size, Prog.size, CupodBot]
     omega
   have hpm : ∀ k, 5 * Nat.log2 k + 33 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 5 * Nat.log2 k + 33) 0 hφsz hpm hLoeb
@@ -473,7 +473,7 @@ theorem cupod_mirror_loeb_premise (k : Nat) :
   refine ⟨.hypSyll _ _ _
     (.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl)
     (.simStep MirrorBot .opp .self (CupodBot k) .D rfl), ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, CupodBot, MirrorBot]
+  simp only [numCost, Derivation.size, Formula.size, Prog.size, CupodBot, MirrorBot]
   omega
 
 /-- Once `proofSearch k = true`, CupodBot's eval against MirrorBot is fully
@@ -553,7 +553,7 @@ theorem CupodBot_vs_MirrorBot :
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     show (Formula.plays MirrorBot (CupodBot k) .D).size ≤ _
-    simp only [Formula.size, Prog.size, CupodBot, MirrorBot]
+    simp only [numCost, Formula.size, Prog.size, CupodBot, MirrorBot]
     omega
   have hpm : ∀ k, 20 * Nat.log2 k + 150 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 20 * Nat.log2 k + 150) 0 hφsz hpm hLoeb
