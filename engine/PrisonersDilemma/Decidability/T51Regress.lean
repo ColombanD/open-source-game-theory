@@ -1,15 +1,22 @@
 import PrisonersDilemma.Decidability.T50InstanceLob
 
-/-! # T51 — THE REGRESS LEMMA: the falsification as a THEOREM.
+/-!
+# Cut relevance IV — the falsification theorem.
 
-`(∃ m, Provable m tgtD) ∧ ∀ N m, ¬ ProvableG (modestGate N) m tgtD`:
-the DupocBot self-cooperation fact is provable (bloeb — `treeD.sound`) but lies
-OUTSIDE the modest stratum at every literal bound. Mechanism: a gated derivation
-of the plays-fact must end in an atom whose `search_t` cite re-derives the SAME
-fact (the fixpoint's guard instance IS the fact — no descent), or in a cut whose
-formula is the guard box-instance (never `modestF`), or in a Derivation of the
-plays-fact (impossible: its only census antecedent is the underivable box).
-`ModChain` closes the impl-chain detours. -/
+`cutRelevance_modestGate_false`:
+`(∃ m, Provable m tgtD) ∧ ∀ N m, ¬ ProvableG (modestGate N) m tgtD` —
+the DupocBot self-cooperation fact is provable (bounded Löb) yet lies outside
+the modest stratum at EVERY literal bound and budget. So the original
+cut-relevance conjecture (`Provable → ProvableG (modestGate N₀)`) is FALSE, and
+the instance gate (T50) is a genuine repair, not a convenience.
+
+Mechanism: a modest-gated derivation of the plays-fact must end in an atom whose
+`search_t` cite re-derives the SAME fact (the fixpoint's guard instance IS the
+fact — no budget descent), or cut on the guard box (never `modestF`), or come
+from a `Derivation` (impossible: its only census antecedent is the underivable
+box). `ModChain` closes the impl-chain detours; the proof runs on the
+`ProvableG` mutual recursor with fording motives.
+-/
 
 namespace PD.T51
 open PD PD.T49 PD.T50

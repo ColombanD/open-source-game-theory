@@ -1,15 +1,21 @@
 import PrisonersDilemma.Decidability.T47Stabilization
 import PrisonersDilemma.Decidability.T50InstanceLob
 
-/-! # T52 — THE GATE-PARAMETRIC DECIDER (the T44 layer over an arbitrary Bool gate).
+/-!
+# Cut relevance V — the gate-parametric bounded decider.
 
-T44's bounded decider, checkers, soundness and completeness, with `cutOKb N`
-abstracted to `(Gb : Formula → Bool)` and `modestGate N` to a Prop gate `G` tied by
-`hGb : ∀ B, Gb B = true ↔ G B`. Coverage needs nothing new: `enumFormula` already
-enumerates ALL formulas by size (`enum_complete`), so instance cuts are proposed and
-only the gate filter decides. Instantiations at the bottom: the original modest gate
-(sanity) and THE INSTANCE GATE — semidecidability of `ProvableG (instGate P N)`.
-Everything below the header is T44's text transformed mechanically. -/
+T44's bounded decider, checkers, soundness and completeness with the gate
+abstracted: `cutOKb N` becomes `(Gb : Formula → Bool)`, `modestGate N` a Prop
+gate `G` tied by `hGb : ∀ B, Gb B = true ↔ G B`. Candidate-cut coverage needs
+nothing new — `enumFormula` enumerates ALL formulas by size (`enum_complete`),
+so only the gate filter distinguishes strata.
+
+Instantiations: `ProvableG_modest_iff_decG` (the original, as a sanity check)
+and `ProvableG_inst_iff_decG` — the instance-gated stratum is semidecidable in
+both directions by a computable enumerator. Everything below the header is
+T44's development transformed mechanically (the gate enters at exactly eight
+sites).
+-/
 
 namespace PD.T52
 open PD PD.T31 PD.T42 PD.T43 PD.T44 PD.T49 PD.T50

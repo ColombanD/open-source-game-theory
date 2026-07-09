@@ -3,23 +3,19 @@ import PrisonersDilemma.Decidability.T31EngineDecider
 import PrisonersDilemma.Decidability.T46LogicSpace
 
 /-!
-# T4.8 spike — cut relevance, C0: the mechanical foundations.
+# Cut relevance I — literal bounds and the antecedent census.
 
-`Research/Notes/CUT_RELEVANCE.md` milestone C0. The LITERAL half of the conjecture is
-locally free: every gated premise position is size-paid at its own judgment, so its
-literals are `< 2^(local budget)`:
+Foundations consumed by the whole T48–T54 arc (research history:
+`Research/Notes/CUT_RELEVANCE.md`):
 
-  * `maxLitP_lt_two_pow_size` / `maxLitF_lt_two_pow_size` — a formula's literals are
-    exponentially bounded by its character size (each literal pays its `log2` in the size);
-  * `cut_lit_bound` — the cut formula of any `implTrans`/`app`/`impS2` premise
-    `Provable a (.impl A ψ)` has `maxLitF ψ < 2^a` (and `maxLitF A < 2^a`);
-  * `box_lit_bound` — `axK`'s enumerated premise `.box a (.impl ψ α)` has `a < 2^m`;
-  * `diag_lit_bound` — `diagF/B`'s enumerated premise `.impl (.box fb t) t` has `fb < 2^m`.
-
-What this does NOT give (the note, §1): the uniform stratum bound — cut ATOMS are
-size-exempt and can smuggle programs whose literals escalate the cite-chain budgets inside
-one derivation. The uniform bound must be STRUCTURAL: the antecedent-provenance dichotomy
-(note §2–3), milestones C1–C5.
+  * **Literal bounds**: every gated premise position is size-paid at its own
+    judgment, so its literals are `< 2^(local budget)` — `maxLitF_lt_two_pow_size`,
+    `cut_lit_bound`, `box_lit_bound`, `diag_lit_bound`, `local_lit_bound`.
+  * **The antecedent census** (`DAnt`, `derivation_impl_ant`, `DAnt_lit`): every
+    positive-position implication a `Derivation` proves has a census-legitimate
+    antecedent — the Type layer has no free hypotheses.
+  * **Shape facts**: `derivation_shape`, `derivation_no_box`, `box_inversion`,
+    the split literals (`maxSLitF`) and the gate-bound arithmetic.
 -/
 
 namespace PD.T48

@@ -2,16 +2,28 @@ import PrisonersDilemma.Decidability.T49TreeSubstrate
 import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Decidability.T46LogicSpace
 
-/-! # T50 — THE FALSIFICATION EXPERIMENT (2026-07-08, ledger §6 top)
+/-!
+# Cut relevance III — the instance gate and the transport theorem.
 
-A REAL instance-Löb fact as a ProvT tree: DupocBot self-cooperation, whose guard
-instance IS the cooperation fact (`tgt = ψg.subst me me = .plays me me C`). Built by
-mirroring `BaseTheorems.bloeb_engine` constructor-for-constructor, Löb premise =
-the searchBranch census. Three verdicts decide the pivot:
-  (a) `certifyExcised` — expect FALSE (v1 excisor: apps only; instance middles remain);
-  (b) `atomizeGo` — expect TRUE (the machine is the Löb-unroller);
-  (c) gate-check of the produced ATOM — decides whether cites must be normalized
-      recursively (predicted: yes — the cite carries the once-unrolled tree). -/
+The modest gate rejects every real Löb derivation (instance formulas are never
+`modestF`); this module builds the REPAIRED gate and proves the transport
+theorem at it (research history: `Research/Notes/CUT_RELEVANCE.md`):
+
+  * **The falsification witness** `treeD`: the DupocBot self-cooperation fact as
+    a concrete `ProvT` tree (`bloeb_engine` mirrored as `bloebT`); `#eval`
+    verdicts show it fails `modestGate` but PASSES the instance gate raw.
+  * **The instance gate** `instGate`/`instOKb`: argument positions may hold pool
+    members and closed raw-modest programs; stored guards stay raw. Bricks:
+    monotonicity, the subst lemmas, the pool-free census tie (`DAnt_rawGate`),
+    the conclusion-tied axK/diag transfers.
+  * **The transport theorem** (`ProvT.transport`, with `AtomT`/`PlaysT` halves):
+    an instance-gated conclusion + gated cut sites (`cutsOK`) + capped cite
+    budgets (`citesLE M`, `2^M ≤ N`) + raw atom frames (`rawAtoms`) yield the
+    FULL gate diet — packaged as `certifyTransport` (four kernel-decidable
+    checks certify any tree into `ProvableG (instGate P N)`).
+  * `dupoc_selfcoop_certified`: the first certified instance — the very fact
+    that refutes the modest gate lands in the instance stratum.
+-/
 
 
 namespace PD.T50

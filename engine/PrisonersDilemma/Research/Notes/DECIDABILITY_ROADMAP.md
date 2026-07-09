@@ -1,5 +1,11 @@
 # Decidability Roadmap — decidable `Provable`, computable `eval`, ZERO axioms
 
+> **STATUS (2026-07-09).** This roadmap ran to completion: the T4 chain is
+> `Decidability/T31…T54`. Its final act — CutRelevance — was FALSIFIED as stated
+> (T51) and REPAIRED at the instance gate (T50/T52/T53), with the zoo certified
+> (T54). See `CUT_RELEVANCE.md` for the ledger and `CLAUDE.md` for the summary.
+
+
 ---
 
 ## ⚑ STATUS (2026-07-03, end of the T3/T4 arc) — read this first

@@ -4,13 +4,26 @@ import PrisonersDilemma.Bots.CupodTrollBot
 import PrisonersDilemma.Bots.LlmGenerations.JustBot
 import PrisonersDilemma.Bots.LlmGenerations.DIMCID
 
-/-! # T54 — CERTIFYING THE ZOO (option C): the cross-bot flagship.
+/-!
+# The certified zoo.
 
-`PrudentBot (2k+64) × DupocBot k` staggered cooperation — the engine's marquee
-mutual-Löb result — built as a concrete `ProvT` tree (legs: the stacked-search
-read with the `search_f` prudence certificate, and Dupoc's `searchBranch` leaf;
-chain: `mutualLoebT` → `bloebT` at the V-multiple recipe) and certified into the
-instance-gated stratum. -/
+Concrete `ProvT` trees for the zoo's oracle facts, each passing the instance
+gate RAW (no excision) and kernel-sealed into `ProvableG (instGate …)`:
+
+  * `dupoc_selfcoop_certified` (T50) — plays-atom Löb fixpoint;
+  * `prudent_dupoc_certified` — PrudentBot (2k+64) × DupocBot k staggered mutual
+    Löb (`mutualLoebT` + `bloebT` at the V-multiple budget recipe), with the
+    `search_f` prudence certificate;
+  * `botdupoc_prudent_certifiedA` / `justbot_guard_certified` — JustBot's chain:
+    the bot-wrapped mutual pair and the guard fact JustBot's oracle consults;
+  * `cimcic_coop_certified` / `dimcid_defect_certified` — the impl guards
+    (`weakenImpl` over an atom; cut-free);
+  * `cupodtroll_eq_certified` — the eq guard (`eqRefl`; cut-free).
+
+Together with `decideProvableG_inst` (T53): the zoo's oracle facts live in a
+decidable stratum, certificate by certificate — every guard shape, every Löb
+pattern, every refutation route the zoo uses.
+-/
 
 namespace PD.T54
 open PD PD.Bots PD.T31 PD.T42 PD.T43 PD.T44 PD.T49 PD.T50 PD.T52

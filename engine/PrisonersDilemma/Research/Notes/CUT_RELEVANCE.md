@@ -1,5 +1,15 @@
 # Cut Relevance (T4.1b) — the analysis and the attack plan
 
+> **RESOLUTION (2026-07-09).** The conjecture as originally stated is **FALSE** —
+> `Decidability/T51Regress.lean` (`cutRelevance_modestGate_false`). The repaired
+> conjecture at the **instance gate** is delivered: transport + four-certificate
+> pipeline (T50), gate-parametric semidecidability (T52), full decidability
+> (T53), and the certified zoo (T54). The universal closure
+> (`Provable → certificates` for arbitrary minimal proofs) remains the open
+> frontier. This file is the research LEDGER of the whole arc — newest entries
+> at the top of §6; read top-down for the final state, bottom-up for history.
+
+
 **The conjecture** (`CutRelevance`, `Decidability/T42ProvableB.lean`): a computable `N₀` with
 
 ```

@@ -30,7 +30,7 @@ everything. Namespace `PD`. Layered bottom-up (each file imports the ones above)
 | **Meta-theorems** | `BaseTheorems.lean`, `SizeLemmas.lean` | Soundness (`Derivation.sound`, `proofSearch_sound`), `proofSearch_spec`/`_monotone`, `atom_complete`, size/log bounds. The bridge from provability to real plays. |
 | **Bots** | `Bots/*.lean`, `Bots/LlmGenerations/*.lean` | The agent zoo: `CooperateBot`, `DefectBot`, `MirrorBot`, `TitForTatBot`, `DupocBot`, `CupodBot`, `EBot`, … and LLM-generated `PrudentBot`, `JustBot`, `CIMCIC`, `DIMCID`. |
 | **Outcome theorems** | `Theorems/*.lean`, `Theorems/LlmGenerations/*.lean` | The headline results: `outcome_X_vs_Y = some (a,b)` (and `∃k₂,∀k>k₂,…` families). Hand-written + LLM-written (`llm_outcome_` prefix; indexed via `Theorems/LlmGenerations.lean`). |
-| **Decidability** | `Decidability/` | The T3.2c/T4 chain (modules keep milestone names `T31`…`T47`; umbrella `Decidability.lean` re-exports the API): `decFull` (verified enumerator, `Provable_iff_decFull`), `evalG` (computable evaluation of search bots, sound both guard polarities, `#eval` demos), `ProvableG` strata + `CutRelevance` (THE open conjecture), the modest universe, and `decideProvableG : Decidable (ProvableG (modestGate N) k φ)` with computable fuel bound. |
+| **Decidability** | `Decidability/` | The T3.2c/T4 chain (modules keep milestone names `T31`…`T54`; umbrella `Decidability.lean` re-exports the API): `decFull` (verified enumerator, `Provable_iff_decFull`), `evalG` (computable evaluation of search bots, sound both guard polarities, `#eval` demos), `ProvableG` strata, the modest universe, `decideProvableG` (modest stratum decidable). Then the cut-relevance arc `T48`–`T54`: literal bounds + antecedent census (T48), the tree substrate / extraction machine / normalization theorem / excisor (T49), **the instance gate + transport theorem** (T50), **the falsification theorem** — the original CutRelevance is FALSE (T51), the gate-parametric decider (T52), **decidability at the instance gate** (T53), and **the certified zoo** (T54). |
 | **Computable evaluator (historical)** | `ComputableEval/` | `evalC` — the original sound computable partial evaluator; SUPERSEDED by `Decidability`'s `evalG` (kept building, header marks it historical). |
 | **Research notes** | `Research/Notes/`, `Research/Readings/`, `Research/Data/` | Theory write-ups (esp. `COMPUTABLE_EVAL_NOTES.md`, `UnderstandingTheLayers.md`), extracted source papers, tournament data. |
 
@@ -86,20 +86,28 @@ Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMA
   substitution dynamics' query universe finite; the decider `decB` is sound + complete for
   the stratum and stabilizes on the finite space by a countP pigeonhole.
   `Provable ↔ ∃N, ProvableB N` (every derivation is finitely-cut) is a theorem.
-- **Open — exactly ONE conjecture (T4.1b, `CutRelevance` in `Decidability/T42ProvableB.lean`)**: a
-  computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ)) k φ` (minimal
-  derivations never need exotic cuts). Given it: `proofSearch` becomes decidable, `eval`
-  computable, outcomes `by decide`. If it FAILS, `Provable` is a candidate undecidable
-  bounded-provability predicate — either resolution is thesis-grade. ATTACK STATE
-  (2026-07-03, see `Research/Notes/CUT_RELEVANCE.md` + `Research/Spikes/transcript/`
-  `T48`/`T49`): judgment-local invariants REFUTED (3 kernel-checked counterexamples);
-  conjecture REDUCED to atom modesty via the tree substrate (`ProvT`, exact) + the
-  extraction machine (`boxInvGo` — runs, correct by construction, weight/diet/depth-
-  conserving, total with closed-form fuel on the contraction-free fragment). The
-  contraction/normalization kernel is PROVEN (2026-07-03, `boxInv_total` in T49 §21:
-  the bounded-Löb calculus weakly normalizes — Tait `Good` on lex (k, μ(box)=0);
-  see `Research/Notes/BOUNDED_LOB_NORMALIZATION.md`, paper-grade). Remaining to
-  CutRelevance: assembly only (excisor over general cores, TreeModestRelevance, T47).
+- **2026-07-08/09 — CutRelevance RESOLVED: falsified as stated, repaired, and the
+  repair delivered** (full history: `Research/Notes/CUT_RELEVANCE.md`):
+  * **FALSIFICATION (theorem, T51)**: `cutRelevance_modestGate_false` — the DupocBot
+    self-cooperation fact is `Provable` (bounded Löb) but `¬ProvableG (modestGate N)`
+    at EVERY `N` and budget: instance formulas are never `modestF`, the modest gate
+    blocks `diagF/diagB` on instances, and only diag breaks the fixpoint's cite
+    regress. The original conjecture is FALSE.
+  * **THE REPAIR (T50)**: the INSTANCE GATE `instGate P N` (argument positions may
+    hold pool members / closed raw-modest programs; stored guards stay raw). Real
+    Löb derivations pass it RAW. `ProvT.transport`/`certifyTransport`: four
+    kernel-decidable certificates put any tree into `ProvableG (instGate P N)`.
+  * **DECIDABILITY (T52/T53)**: the bounded decider is gate-parametric;
+    `ProvableG (instGate P N)` is semidecidable both ways and
+    `decideProvableG_inst` decides it with the computable fuel bound `|SL|`.
+  * **THE CERTIFIED ZOO (T54)**: every zoo guard shape (plays/impl/eq), every Löb
+    pattern (self, staggered mutual, bot-wrapped mutual) and every refutation
+    route is certified into the instance stratum — kernel-sealed, no excision.
+  * **Open frontier (universal closure)**: `Provable k φ → ProvableG (instGate P N₀) k φ`
+    for ARBITRARY minimal proofs (arbitrary trees may need excision + the cite/rawness
+    certificates established; the machinery exists, the composition is unproven).
+    `eval` is computable relative to certificates — uniform computability rests on
+    the universal closure.
 
 **Dead ends (do not retry):** deciding `Provable` by structural recursion on the program
 (`DecMeasure.lean`); the `derivable`/`playsCheck` separate-gas checker; proof-term enumeration

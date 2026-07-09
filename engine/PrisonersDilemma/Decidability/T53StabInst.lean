@@ -1,12 +1,19 @@
 import PrisonersDilemma.Decidability.T52DecInst
 
-/-! # T53 — STABILIZATION AT THE INSTANCE GATE: `Decidable (ProvableG (instGate P N))`.
+/-!
+# Cut relevance VI — decidability at the instance gate.
 
-T47's finite query space (`SL`/`InvP`/`ZS`) is GATE-FREE and reused verbatim; the
-canonical pool is `players r₁ r₂ ⊆ AP`. New content: the instance read-classification
-(`enumArg_mem_inst` — instance-gated cuts' args re-enter the universe: frames are
-self/opp, closed-RAW-modest (the tightened `argOKP`), or players), then the `stepG`
-congruence at `instOKb`, the countP stabilization, and the `Decidable` payoff. -/
+T47's stabilization, re-run at `instOKb`: `decideProvableG_inst` decides
+`ProvableG (instGate (players r₁ r₂) N) k₀ φ₀` with the computable fuel bound
+`|SL|`, under the same hypotheses as the modest original (modest roots,
+universe-resident root arguments).
+
+T47's finite query space (`SL`/`InvP`/`ZS`) is gate-free and reused verbatim;
+the new content is the instance read-classification (`enumArg_mem_inst`:
+instance-gated cuts' arguments re-enter the universe — frames are self/opp,
+closed raw-modest, or players), then the step congruence, the countP
+stabilization, and the `Decidable` payoff, transformed mechanically from T47.
+-/
 
 namespace PD.T53
 open PD PD.BaseTheorems PD.T31 PD.T42 PD.T43 PD.T44 PD.T45 PD.T46 PD.T47

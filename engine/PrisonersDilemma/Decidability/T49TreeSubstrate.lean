@@ -3,30 +3,28 @@ import PrisonersDilemma.Decidability.T44BoundedDecider
 import PrisonersDilemma.Decidability.T48CutRelevance
 
 /-!
-# T4.9 spike — the TREE SUBSTRATE for cut relevance (fork (A), milestone D0).
+# Cut relevance II — the tree substrate and the extraction machine.
 
-`Research/Notes/CUT_RELEVANCE.md` §5e: the three kernel-checked refutations (T48 §9–§11)
-closed the judgment-local program — the information CutRelevance needs lives in
-DERIVATION TREES of provable roots, not in judgments. But `Provable` is `Prop`-valued:
-inside Lean we cannot measure a derivation, count its cuts, or rewrite it with a
-terminating measure. This file supplies the missing object:
+The Type-valued mirror of the proof system and the machinery that computes with
+derivations (research history: `Research/Notes/CUT_RELEVANCE.md`,
+`Research/Notes/BOUNDED_LOB_NORMALIZATION.md`):
 
-  * **`PlaysT`/`AtomT`/`ProvT`** — a `Type`-valued mirror of the
-    `PlaysProof`/`AtomProvable`/`Provable` mutual triple, constructor for constructor
-    (`struct` carries its `Derivation` witness explicitly instead of behind `∃`);
-  * **`sound`** — trees map back to the `Prop` triple (structural recursion, verbatim);
-  * **`complete`** — `Provable k φ → Nonempty (ProvT k φ)` (mutual `Prop` induction;
-    `Nonempty` is all the excision analysis needs, and all `Prop` elimination allows);
-  * **`GateOK G t`** — the gate residue of a tree: every formula at one of T42's six
-    gated positions (`implTrans`'s `ψ`, `app`'s `φ`, `impS2`'s `ψ`, `axK`'s boxed
-    premise, `diagF`/`diagB`'s Löb premise) satisfies `G`, recursively through the whole
-    tree — including the `Provable` cites inside the atom layer (`search_t`/`search_f`
-    guards), which the judgment-local analyses could never reach;
-  * **`toG`** — a tree whose gate residue holds maps into `ProvableG G` — so
-    **`TreeCutRelevance`** (every provable root has SOME tree with a modest, bounded cut
-    diet) implies `CutRelevance` (`tree_cutRelevance`). The conjecture's battleground is
-    now official: build tame trees by EXCISION (milestone D2), tree-by-tree, with the
-    tree itself as the termination measure — no judgment-local invariant required.
+  * **The mirror triple** `ProvT`/`PlaysT`/`AtomT` with `sound`/`complete`
+    (`Provable k φ ↔ Nonempty (ProvT k φ)`) — derivations as measurable trees.
+  * **The extraction machine** `boxInvGo`/`structCross`/`atomizeGo`: a fueled
+    Krivine-style walker that extracts box contents, crosses implications with
+    their discharges, reconstructs census atoms, and is TOTAL at every
+    type-valid state.
+  * **The normalization theorem** (`boxInv_total`, via the Tait-style `Good`
+    family with μ(box) = 0): the bounded-Löb calculus weakly normalizes — the
+    machine halts on every well-typed box judgment.
+  * **Conservation packages** (weight `crossWt`, gate diet `crossGateOK`, depth
+    `crossS2d`, strict consumption `crossWtLt`, fuel stability `crossFuelMono`,
+    iteBranch-freedom `crossDbFree`) and the wide (`GoodW`) framework with
+    `fundamentalW`/`crossTotalW` — crossing totality at arbitrary cores.
+  * **The excisor** (`excise`/`exciseFix`/`certifyExcised`): β-reduce gate-failing
+    cuts through the machine; plus the certificate families (`gateOKb`, `cutsOKb`,
+    `citesLEb`) with soundness, and the transfer `ProvT.toG` into `ProvableG`.
 -/
 
 namespace PD.T49
