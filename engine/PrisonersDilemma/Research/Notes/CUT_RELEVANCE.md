@@ -1075,6 +1075,19 @@ crossing fell back (O2/O3).
   gate-repair (pool-instance gate) vs conjecture-false.
   GOAL REMAINS: prove the conjecture — the experiment chooses the provable form.
 
+- **✅ STATUS 2026-07-09 (later): T53 LANDED — FULL DECIDABILITY AT THE INSTANCE
+  GATE. THE T44–T47 REWORK IS COMPLETE.** `decideProvableG_inst :
+  Decidable (ProvableG (instGate (players r₁ r₂) N) k₀ φ₀)` (fuel `|SL|`, same
+  hypotheses as the modest original). Enablers: the `argOKP` tightening (closed
+  args RAW-modest — the finite universe classifies instance reads; all T50
+  verdicts survived), `enumArg_mem_inst` (stage 1), and the discovery that
+  T47's whole space (`SL`/`InvP`/`ZS`) is gate-free — the 651-line
+  congruence/stabilization/payoff transformed in ONE mechanical pass. The
+  repaired conjecture's payoff chain is complete: transport (4 kernel-decidable
+  certificates) → `ProvableG (instGate)` → DECIDABLE. Remaining: the general
+  `Provable → certificates` closure; housekeeping (prune PoolOK/v1-tie,
+  promote T48–T53 out of spikes).
+
 - **STATUS 2026-07-09: T52 LANDED — `ProvableG (instGate P N)` IS SEMIDECIDABLE.**
   `T52DecInst.lean` (root build): T44's decider gate-parametrized (`Gb`/`G`/`hGb`;
   the 700-line sound/complete proofs transform mechanically — the gate enters at
