@@ -89,6 +89,9 @@ literal-verification price. "Too strong" is backwards.
 3. **Simulational guards** — `.sim` is run-priced, no floor. Probing by *running*
    dodges the floor entirely (DBot's whole side of DBot×DupocBot is certifiable for
    pennies).
+4. **The freeze trick** — replace `.self` in the guard by a FROZEN weaker snapshot and
+   raise the asker's budget: `JustBot2 K k` (guard target `.bot (DupocBot k)`, search
+   budget `K ≥ k + log₂ k + 26`) — see the dedicated section below.
 
 What the floor kills, unavoidably: *same-budget self-referential* cooperation — pairs
 where the partner's play crosses the searching bot's **own** failed search at the
@@ -211,6 +214,65 @@ machine-checked DICHOTOMY: `no_provable_prudence_self_tail` proves the single-ti
 wall, `prudence_P2` + the two-tier `searchThenSearch_t k (4k+100)` application prove
 the escape, and the entire PA/PA+1 gap compresses to one inequality —
 **floor cost ≤ inner budget** — false at `(k, k)`, true at `(k, 4k+100)`.
+
+---
+
+## The freeze trick: `JustBot2` — staggered self-reference via frozen snapshots (2026-07-09)
+
+**The question.** The floor pairs' `(D, C)` outcomes (DupocBot×DBot etc.): could budget
+tuning have rescued cooperation there too, as `PrudentBot2`'s two tiers rescued
+self-play?
+
+**Not by tuning the searcher itself.** `PrudentBot2`'s escape needed two DIFFERENT
+search nodes with independent dials, arranged well-foundedly (inner consumes outer's
+failure). DupocBot has ONE node, and its guard's `.self` makes the requested fact
+("DBot plays C vs ME") about the very node doing the asking: DBot's probe makes THAT
+node fail, so the floor is the asking node's own budget — one node, one dial, turning
+it moves floor and budget together. `.self` in a guard closes the dependency loop at
+the top tier; no assignment of numbers to a single parameter opens it.
+
+**The escape: break `.self` with a frozen weaker snapshot.** Replace the guard's
+`.self` by `.bot (DupocBot k)` and give the asking search a bigger budget `K` — the
+requested fact now crosses the SNAPSHOT's floor `k`, not the asker's:
+
+```
+JustBot2 K k := .search K (.plays .opp (.bot (DupocBot k)) .C) (.const C) (.const D)
+```
+
+This is exactly JustBot's architecture — `JustBot k = JustBot2 k k` — and the
+single-parameter tying is the sole reason `outcome_JustBot_vs_DBot = (D, C)`:
+
+* `provable_DBot_C_vs_botDupoc` — the staggered certificate, constructed by hand:
+  DBot's `ite` replay over the snapshot's `search_f` (floor `k`, `atomNeg` refutation)
+  costs exactly **`k + log₂ k + 26`**;
+* `outcome_JustBot2_vs_DBot = (C, C)` for `JustBot2 (2k+64) k`, at EVERY `k` — the
+  FairBot×DBot handshake recovered at staggered internal budgets
+  (`Theorems/LlmGenerations/JustBot.lean`).
+
+The constructive companion to the floor impossibilities: the `(D, C)` outcomes are
+theorems about budget-TIED bots, not about the matchups.
+
+**The price — proxy ≠ self.** The semantics change from "cooperate iff you provably
+cooperate WITH ME" to "…with my weaker past self". The snapshot is not the bot: an
+opponent could in principle cooperate with `DupocBot k` yet defect against
+`JustBot2 K k`, and JustBot2 would be suckered — a spoofing surface genuine `.self`
+guards don't have. (DBot cannot exploit it — its probe is `.bot DefectBot`-directed,
+blind to the distinction — which is why the handshake above is safe.)
+
+**The design dichotomy (the general lesson).** Bounded agents purchase mutual
+legibility in exactly two currencies:
+
+1. **Löbian self-fulfillment** — same tier, `.self` guards, genuine "with me"
+   semantics; works ONLY for self-fulfilling (cooperation-shaped) facts, never for
+   failure facts (`outcome_PrudentBot_vs_PrudentBot = (D, D)`);
+2. **Budget hierarchy over frozen proxies** — any facts (including failures), but the
+   introspection must point strictly DOWN the budget order (frozen snapshots are how a
+   bot refers to lower tiers of itself), and proxy ≠ self is a real semantic gap.
+
+There is no third option at a single tier — that is the content of the floor theorems.
+Recipe for future bots: put only self-fulfilling fixpoints at the top tier; route
+every failure-fact a guard consumes through a strictly lower tier (internal two-tier
+budgets à la `PrudentBot2`, or frozen snapshots à la `JustBot2`).
 
 ---
 
