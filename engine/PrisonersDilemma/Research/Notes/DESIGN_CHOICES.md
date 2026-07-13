@@ -148,6 +148,72 @@ not missing lower bounds.
 
 ---
 
+## Single-tier prudence is self-defeating — a structural theorem, not a syntax choice (2026-07-09)
+
+**The question.** `outcome_PrudentBot_vs_PrudentBot = (D, D)` at every same-`k`. Is this
+an artifact of PrudentBot's syntax (nesting order, then/else polarity) or of
+`searchThenSearch_t`'s design — could either have been arranged differently to recover
+same-budget cooperative self-play?
+
+**No — and in the strongest sense: `(D, D)` is a fact about `eval`, not about the proof
+rules.** At same-`k` the bot REALLY defects against itself; the outcome theorem reports
+what the evaluator does. Any rule change that let `S` conclude "I play C vs me" while
+`eval` plays D would certify a false play — exactly the unsoundness that killed
+`atom_complete_false_guard`. Rule design is only ever to blame when a TRUE play is
+uncertifiable; here the cooperation is genuinely absent at runtime.
+
+**Where the classical Löb route dies.** Bounded Löb (`pblt_engine`) consumes
+`□_k("I play C vs me") → ("I play C vs me")` as its HYPOTHESIS. For a plain search bot
+(DupocBot) that implication is a one-leaf `searchBranch` read — free, so Dupoc
+self-cooperates. For PrudentBot's stacked shape the only producer is
+`searchThenSearch_t`, whose premise list PRE-PAYS the inner prudence guard:
+`Provable m (inner instance)` with `m ≤ k₂`. In self-play the prudence instance is
+"PrudentBot k plays D vs `.bot DefectBot`" — the else-play of its OWN outer `k`-search,
+floored above `k` (`no_provable_prudence_self_tail`). So the chain dies at step zero:
+
+```
+prudence cert (≤ k) → searchThenSearch_t → □φ→φ → pblt_engine → guard fires
+      ✗ floor            never assembled     no hyp    never runs     false
+```
+
+Löb is never handed its hypothesis; cooperation is then FALSE (the bot plays D), so
+soundness settles the outer guard. (The Lean proof case-splits on the outer guard
+instead of running this analysis — proving the guard false directly would circularly
+need the play first; the true-branch is vacuous-but-handled via the floored prudence.)
+
+**Syntax shuffles don't help — the floor follows the single budget:**
+
+| Variant | Fate |
+|---|---|
+| Prudence outside, cooperation inside | Self-prudence now routes through the INNER cooperation search failing vs DefectBot — floor still `k`. Worse: `searchThenSearch_t` would have to pre-pay the inner guard = the cooperation fixpoint itself — circular; Löb shape destroyed. |
+| Flipped polarity (negative prudence, cooperate on the inner ELSE) | Needs a `searchThenSearch_f` premised on a REFUTATION of the prudence guard; `atomNeg`'s refutation requires the certificate of the ACTUAL play — the same floored else-play. The floor blocks both polarities. |
+| Simulational prudence (`.ite (.sim .opp (.bot DefectBot)) …` wrapping the search) | Runtime prudence becomes fuel-priced — but self-cooperation still needs Löb through the cooperation search, and the only bridge (`iteBranchSearch_t`) is guarded by the ATOM "me plays D vs botDefect", which S must discharge — floored, one step removed. |
+
+The invariant: self-prudence is a fact about MY OWN play against DefectBot, and any
+single-budget bot's play against DefectBot crosses a failed `k`-search somewhere (a
+sound system can never prove "DefectBot cooperates", so whichever search asks, fails).
+The certificate carries that search's floor — always `k`, because there is one dial.
+
+**`searchThenSearch_t` is already at its generosity limit.** Its inner premise is
+CITED, not charged: the size condition pays only `c_guard k₂ = log₂ k₂ + 1`,
+non-cumulatively (charging it fully sinks the staggered Löb chains — see the dead-ends
+list). The one unremovable condition is `m ≤ k₂`, and it is not an accounting choice
+but the bot's own source: `eval` produces the then-play only if the inner guard is
+provable AT `k₂`. Drop the bound and the rule asserts plays the evaluator doesn't make.
+
+**The deep reason (bounded Gödel II, and the MIRI parallel).** Bounded self-prudence
+IS bounded self-consistency: "I defect vs DefectBot" holds because my own search
+FAILS, and certifying one's own failed `k`-search within `k` is the floor's Gödel II
+wall. The unbounded literature hit the identical obstruction: MIRI's PrudentBot runs
+its prudence check in **PA+1**, not PA. `PrudentBot2` (`kIn = 4k+100 > kOut = k`) is
+the bounded transcription, and the mechanization upgrades the folklore to a
+machine-checked DICHOTOMY: `no_provable_prudence_self_tail` proves the single-tier
+wall, `prudence_P2` + the two-tier `searchThenSearch_t k (4k+100)` application prove
+the escape, and the entire PA/PA+1 gap compresses to one inequality —
+**floor cost ≤ inner budget** — false at `(k, k)`, true at `(k, 4k+100)`.
+
+---
+
 ## Transcript-cumulative costs — Route B (2026-07-02)
 
 Every `Derivation`/`Provable` cost is **cumulative**: a rule's conclusion cost contains
