@@ -301,4 +301,91 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
     | boxMono a b K' φ' hab hsz => simp at htail
     | atomNeg p' q' b aN m hcert hne hsz => simp at htail
 
+
+/-! ## The floor at the searcher's own doorstep
+
+The probe-first lemmas price a SIMULATOR's play against a searcher. A third shape
+remains: the searcher's OWN play as the target atom — e.g. PrudentBot's self-prudence
+"I defect vs `.bot DefectBot`", which is the else-play of its own budget-`k` search.
+Here the target atom reaches the floor DIRECTLY (no simulator detour): `search_t` dies
+by soundness of the false guard instance, `search_f` IS the floor. Two extra shape
+hypotheses close the census (`hshape`: the searcher's branches are not both `.const`,
+else `searchBranch` could read it) and the stacked-search bridge (`hinner`: the
+then-branch is not an inner search whose then-action is the target — else
+`searchThenSearch_t` could conclude the target-tailed implication). -/
+
+/-- A search bot whose branches are not both `.const` is not bridge-readable. -/
+theorem not_readable_searchNonConst (k : Nat) (g : Formula) (pT pE : Prog)
+    (hshape : ∀ c0 c1, ¬ (pT = .const c0 ∧ pE = .const c1)) :
+    ¬ ReadableMe (.search k g pT pE) := by
+  rintro (⟨k', ψ, a, b, h⟩ | ⟨p', r, h⟩ | ⟨p', r, h⟩ | ⟨k', ψ, a, b, h⟩ |
+          ⟨w, a', k', ψ, c0, c1, r, h⟩)
+  · simp only [Prog.search.injEq] at h
+    exact hshape a b ⟨h.2.2.1, h.2.2.2⟩
+  · simp at h
+  · simp at h
+  · simp at h
+  · simp at h
+
+set_option maxHeartbeats 1000000 in
+/-- **The floor at the searcher's own play**: no proof of ≤ k characters concludes any
+    formula whose spine tail is "the budget-`k` searcher plays `aTgt` against `O`",
+    when the searcher's guard instance vs `O` is false. The self-referential shape:
+    PrudentBot's same-`k` self-prudence is the canonical instance. -/
+theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
+    (aTgt : Action)
+    (hfalse : ¬ (g.subst (.search k g pT pE) O).interp)
+    (hshape : ∀ c0 c1, ¬ (pT = .const c0 ∧ pE = .const c1))
+    (hinner : ∀ k₂ ψ₂ c1, pT ≠ .search k₂ ψ₂ (.const aTgt) (.const c1)) :
+    ∀ K φ, Provable K φ → K ≤ k →
+      rightTail φ = .plays (.search k g pT pE) O aTgt → False := by
+  intro K
+  induction K using Nat.strong_induction_on with
+  | _ K ih =>
+    intro φ hp hK htail
+    cases hp with
+    | struct h =>
+        obtain ⟨d, _⟩ := h
+        exact not_readable_searchNonConst k g pT pE hshape (tail_plays_readable d htail)
+    | atom h =>
+        cases h with
+        | mk hpp hn =>
+          simp only [rightTail_plays, Formula.plays.injEq] at htail
+          obtain ⟨rfl, rfl, rfl⟩ := htail
+          cases hpp with
+          | search_t hProv hbr => exact hfalse (Provable_sound _ _ hProv)
+          | search_f hneg hbr => simp only [c_node] at hn; omega
+    | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q' me oppo hme hpre hm hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, rfl, rfl⟩ := htail
+        simp only [Prog.search.injEq] at hme
+        exact hinner _ _ _ hme.2.2.1
+    | weakenImpl φ' ψ m hψ hsz =>
+        simp only [rightTail_impl] at htail
+        simp only [Formula.size] at hsz
+        exact ih m (by omega) ψ hψ (by omega) htail
+    | implTrans φ' ψ χ a b h1 h2 hsz =>
+        simp only [rightTail_impl] at htail
+        simp only [Formula.size] at hsz
+        exact ih b (by omega) _ h2 (by omega) (by simpa using htail)
+    | atomBoxImpl kBox p' q' a hcert hsz => simp at htail
+    | boxIntro kIn K' φ' hpre hsz => simp at htail
+    | app k' m₁ m₂ φ' α h1 h2 hsz =>
+        have hα := Formula.size_pos φ
+        exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
+    | axK a b c m K' φ' α hpre hab hsz => simp at htail
+    | box4 a b K' φ' h1 h2 => simp at htail
+    | diagF pm fb g' K' tgt hpre hsz =>
+        simp only [rightTail_impl] at htail
+        simp only [Formula.size] at hsz
+        exact ih pm (by omega) _ hpre (by omega) (by simpa using htail)
+    | diagB pm fb g' K' tgt hpre hsz => simp at htail
+    | axKf a b c K' φ' α h1 h2 => simp at htail
+    | impS2 φ' ψ χ m₁ m₂ K' h1 h2 hsz =>
+        simp only [rightTail_impl] at htail
+        simp only [Formula.size] at hsz
+        exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
+    | boxMono a b K' φ' hab hsz => simp at htail
+    | atomNeg p' q' b aN m hcert hne hsz => simp at htail
+
 end PD.BaseTheorems

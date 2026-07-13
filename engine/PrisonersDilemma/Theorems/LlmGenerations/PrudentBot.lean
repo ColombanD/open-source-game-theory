@@ -1154,13 +1154,72 @@ theorem outcome_PrudentBot_vs_DupocBot :
     simpa using dupoc_C_vs_any k 2 (PrudentBot (2*k+64)) hpsP
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-/-! ### PrudentBot self-play — RETIRED at same-`k` (2026-07-02, the false-guard repair).
+/-! ### PrudentBot same-`k` self-play — the honest `(D, D)` outcome (floor formalized 2026-07-09).
 
-`prudence_self_prudent`/`prudent_self_loeb_premise`/`outcome_PrudentBot_vs_PrudentBot`:
-PrudentBot's prudence about ITSELF ("I defect vs `.bot DefectBot`") is an else-play of its
-OWN outer search — floor `k`, self-referentially unaffordable at any single `k`. Needs a
-two-tier PrudentBot (inner prudence budget above the outer literal — exactly Critch/MIRI's
-PA+1 prudence); T3.2b. -/
+HISTORY: `prudence_self_prudent`/`prudent_self_loeb_premise`/the same-`k`
+`outcome_PrudentBot_vs_PrudentBot` (mutual cooperation) were RETIRED 2026-07-02 as
+axiom artifacts: PrudentBot's prudence about ITSELF ("I defect vs `.bot DefectBot`")
+is an else-play of its OWN outer search — floor `k`, self-referentially unaffordable
+at any single `k`. Cooperative self-play needs the two-tier `PrudentBot2` (below —
+Critch/MIRI's PA+1 prudence).
+
+RESOLVED (2026-07-09): the floor is a THEOREM — `no_provable_prudence_self_tail`, an
+instance of `no_provable_searcherPlay_tail` (Base/Exclusion.lean; the target atom is
+the SEARCHER'S OWN else-play, no simulator detour). The self-prudence guard fails at
+every budget, so whichever way the outer Löbian guard resolves, PrudentBot defects
+against itself: `outcome_PrudentBot_vs_PrudentBot = (D, D)` at every `k`. Bounded
+Hume: a same-strength prover cannot certify its own failed search, so single-tier
+prudence is self-defeating — mutual defection is the honest fixed point, and
+`PrudentBot2`'s budget hierarchy (kIn > kOut) is exactly what escapes it. -/
+
+/-- The floor at PrudentBot's own doorstep: no ≤ k certificate concludes any formula
+    whose spine tail is PrudentBot's self-prudence fact "I play D vs `.bot DefectBot`"
+    — the fact is TRUE (`PrudentBot_plays_D_vs_bot_DefectBot`), but it is the else-play
+    of PrudentBot's own budget-`k` search. -/
+theorem no_provable_prudence_self_tail (k : Nat) :
+    ∀ K φ, Provable K φ → K ≤ k →
+      rightTail φ = .plays (PrudentBot k) (.bot DefectBot) .D → False := by
+  intro K φ hp hK ht
+  refine no_provable_searcherPlay_tail k (.plays .opp .self .C)
+      (.search k (.plays .opp (.bot DefectBot) .D) (.const .C) (.const .D))
+      (.const .D) (.bot DefectBot) .D ?_ ?_ ?_ K φ hp hK ?_
+  · simpa [Formula.subst, Prog.subst, PrudentBot] using
+      interp_bot_DefectBot_plays_C_false (PrudentBot k)
+  · intro c0 c1 h; simp at h
+  · intro k₂ ψ₂ c1 h; simp at h
+  · simpa [PrudentBot] using ht
+
+/-- PrudentBot's prudence guard about ITSELF fails at every budget — the floor's bite:
+    its own defection vs `.bot DefectBot` is real but costs more than `k` to certify. -/
+theorem proofSearch_false_prudence_self (k : Nat) :
+    proofSearch k (.plays (PrudentBot k) (.bot DefectBot) .D) = false := by
+  cases h : proofSearch k (.plays (PrudentBot k) (.bot DefectBot) .D) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_prudence_self_tail k k _ hp le_rfl (by simp))
+  | false => rfl
+
+/-- PrudentBot defects against ITSELF at the same budget: if the outer (Löbian) guard
+    fails, the else defects; if it fires, the self-prudence guard is floor-blocked and
+    the inner else defects. Either way, D. -/
+theorem PrudentBot_plays_D_against_self (k fuel : Nat) :
+    play (fuel + 3) (PrudentBot k) (PrudentBot k) = some .D := by
+  cases h1 : proofSearch k (.plays (PrudentBot k) (PrudentBot k) .C) with
+  | false =>
+      simpa [Nat.add_assoc] using
+        PrudentBot_plays_D_of_search_false k (fuel + 1) (PrudentBot k) h1
+  | true =>
+      exact prudent_eval_inner_false k fuel (PrudentBot k) h1
+        (proofSearch_false_prudence_self k)
+
+/-- **The honest same-`k` PrudentBot self-play — `(D, D)` at every budget.** Two equal
+    provers, each needing to certify its own failed search to trust the other: neither
+    can, both defect. The cooperative fixed point exists only one tier up
+    (`outcome_PrudentBot2_self`, below). -/
+theorem outcome_PrudentBot_vs_PrudentBot (k fuel : Nat) :
+    outcome (fuel + 3) (PrudentBot k) (PrudentBot k) = some (.D, .D) := by
+  have hA := PrudentBot_plays_D_against_self k fuel
+  simp [outcome, hA]
 
 /-! ### PrudentBot SELF-PLAY — RECOVERED with the two-tier `PrudentBot2` (T3.2b, 2026-07-03).
 

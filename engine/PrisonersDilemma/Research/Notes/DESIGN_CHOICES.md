@@ -128,11 +128,23 @@ instance (the floor fires at the FIRST probe, before the simulators' branches di
   (`Theorems/LlmGenerations/JustBot.lean`; the `_botOpp` variant — JustBot's guard
   target is the FROZEN `.bot (DupocBot k)`, one extra `.bot` unwrap in the replay).
 
+* `outcome_PrudentBot_vs_PrudentBot = (D, D)` at every budget
+  (`Theorems/LlmGenerations/PrudentBot.lean`; the THIRD exclusion shape,
+  `no_provable_searcherPlay_tail` — the target atom is the SEARCHER'S OWN else-play,
+  no simulator detour: PrudentBot's self-prudence "I defect vs `.bot DefectBot`" is
+  floor-blocked at its own budget, so single-tier prudence is self-defeating and
+  same-`k` self-play is mutual defection; the cooperative fixed point exists only one
+  tier up, `outcome_PrudentBot2_self`).
+
 The same-`k` retirements with STAGGERED/two-tier replacements (PrudentBot×DupocBot,
-JustBot×PrudentBot, JustBot×CupodTrollBot, PrudentBot2 self-play) were already
-re-certified during the repair; with the six floor pairs above, NO retired outcome
-remains unreplaced. Genuinely open matchups (JustBot×MirrorBot's bistable fixed point)
-are open for semantic reasons, not missing lower bounds.
+JustBot×PrudentBot, JustBot×CupodTrollBot) were already re-certified during the
+repair; with the seven honest theorems above, NO retired outcome remains unreplaced.
+Optional future work: the same-`k` DEFECTION outcomes for those three staggered pairs
+(e.g. Prudent k × Dupoc k = (D, D)) need an ACTION-AWARE census — Dupoc/Cupod-style
+both-const searchers ARE bridge-readable (`searchBranch`), but only their THEN-action
+plays; refining `ReadableMe` to carry the action would close them. Genuinely open
+matchups (JustBot×MirrorBot's bistable fixed point) are open for semantic reasons,
+not missing lower bounds.
 
 ---
 
