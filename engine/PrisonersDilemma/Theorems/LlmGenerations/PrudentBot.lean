@@ -722,12 +722,153 @@ theorem prudent_botmirror_coop :
     rw [heq] at hplay
     exact prudent_outer_true_of_play_C k n (.bot MirrorBot) hplay
 
-/-! ### `outcome_PrudentBot_vs_EBot` — RETIRED (2026-07-02, the false-guard repair).
+/-! ### PrudentBot vs EBot — the honest `(D, C)` outcome (floor formalized 2026-07-09).
 
-An axiom artifact: EBot's play against `PrudentBot k` crosses PrudentBot's own FAILED outer
-search (the probe vs `.bot DefectBot`), so its certificate pays the `search_f` floor —
-cost > k for every k — and PrudentBot's outer guard can never see "EBot plays C vs me"
-within its own budget. See `DECIDABILITY_ROADMAP.md` T3.2a. -/
+HISTORY: `outcome_PrudentBot_vs_EBot` (mutual cooperation at a common budget) was
+RETIRED 2026-07-02 as an axiom artifact: EBot's C-play against `PrudentBot k` crosses
+PrudentBot's own FAILED outer search (the probe vs `.bot DefectBot`), so its certificate
+pays the `search_f` floor — cost > k for every k — and PrudentBot's outer guard can
+never see "EBot plays C vs me" within its own budget. See `DECIDABILITY_ROADMAP.md`.
+
+RESOLVED (2026-07-09): the floor is a THEOREM — `no_provable_EBot_C_vs_Prudent_tail`,
+an instance of `no_provable_probeFirst_C_tail` (Base/Exclusion.lean; PrudentBot matches
+the budget-`k` searcher shape with its prudence search as the then-branch). PrudentBot
+defects at every budget. EBot's own play is pure run-priced simulation: its probes
+watch PrudentBot defect vs `.bot DefectBot` (outer guard refuted by soundness) and vs
+`.bot CooperateBot` (outer guard may or may not fire, but the prudence guard is refuted
+— CooperateBot never defects — so both branches defect), then watch PrudentBot
+COOPERATE vs `.bot MirrorBot` (the Löb fixpoint, `prudent_botmirror_coop`) — so EBot
+cooperates for k past the Löb threshold: `outcome_PrudentBot_vs_EBot = (D, C)`. -/
+
+/-- The floor for the EBot pair: no ≤ k certificate concludes any formula whose spine
+    tail is "EBot plays C against `PrudentBot k`". -/
+theorem no_provable_EBot_C_vs_Prudent_tail (k : Nat) :
+    ∀ K φ, Provable K φ → K ≤ k →
+      rightTail φ = .plays EBot (PrudentBot k) .C → False := by
+  intro K φ hp hK ht
+  refine no_provable_probeFirst_C_tail k DefectBot
+      (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
+      (.plays .opp .self .C)
+      (.search k (.plays .opp (.bot DefectBot) .D) (.const .C) (.const .D))
+      (.const .D) ?_ K φ hp hK ?_
+  · simpa [Formula.subst, Prog.subst, PrudentBot] using
+      interp_bot_DefectBot_plays_C_false (PrudentBot k)
+  · simpa [EBot, PrudentBot] using ht
+
+/-- PrudentBot's outer guard fails against EBot at every budget — the floor's bite. -/
+theorem proofSearch_false_for_EBot_vs_Prudent (k : Nat) :
+    proofSearch k (.plays EBot (PrudentBot k) .C) = false := by
+  cases h : proofSearch k (.plays EBot (PrudentBot k) .C) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_EBot_C_vs_Prudent_tail k k _ hp le_rfl (by simp))
+  | false => rfl
+
+/-- PrudentBot defects against EBot: it can never afford the certificate of EBot's
+    (true!) cooperation. -/
+theorem PrudentBot_plays_D_against_EBot (k fuel : Nat) :
+    play (fuel + 2) (PrudentBot k) EBot = some .D :=
+  PrudentBot_plays_D_of_search_false k fuel EBot (proofSearch_false_for_EBot_vs_Prudent k)
+
+/-- Probe 1: `.bot DefectBot` never cooperates, so PrudentBot's outer guard is refuted
+    by soundness and PrudentBot defects on EBot's first probe. -/
+theorem proofSearch_false_bot_DefectBot_vs_Prudent (k : Nat) :
+    proofSearch k (.plays (.bot DefectBot) (PrudentBot k) .C) = false := by
+  cases h : proofSearch k (.plays (.bot DefectBot) (PrudentBot k) .C) with
+  | true => exact absurd (proofSearch_sound _ _ h) (interp_bot_DefectBot_plays_C_false _)
+  | false => rfl
+
+theorem PrudentBot_plays_D_vs_bot_DefectBot (k fuel : Nat) :
+    play (fuel + 2) (PrudentBot k) (.bot DefectBot) = some .D :=
+  PrudentBot_plays_D_of_search_false k fuel _ (proofSearch_false_bot_DefectBot_vs_Prudent k)
+
+/-- Probe 2, prudence side: `.bot CooperateBot` never defects, so PrudentBot's inner
+    (prudence) guard is refuted by soundness. -/
+theorem proofSearch_false_prudence_bot_CooperateBot (k : Nat) :
+    proofSearch k (.plays (.bot CooperateBot) (.bot DefectBot) .D) = false := by
+  cases h : proofSearch k (.plays (.bot CooperateBot) (.bot DefectBot) .D) with
+  | true => exact absurd (proofSearch_sound _ _ h) (interp_bot_CooperateBot_plays_D_false _)
+  | false => rfl
+
+/-- Probe 2: PrudentBot defects against `.bot CooperateBot` REGARDLESS of whether its
+    outer guard fires — if it fails, the else-branch defects; if it fires, the prudence
+    guard is refuted (CooperateBot is a sucker) and the inner else defects. -/
+theorem PrudentBot_plays_D_vs_bot_CooperateBot (k fuel : Nat) :
+    play (fuel + 3) (PrudentBot k) (.bot CooperateBot) = some .D := by
+  cases h1 : proofSearch k (.plays (.bot CooperateBot) (PrudentBot k) .C) with
+  | false =>
+      simpa [Nat.add_assoc] using
+        PrudentBot_plays_D_of_search_false k (fuel + 1) (.bot CooperateBot) h1
+  | true =>
+      exact prudent_eval_inner_false k fuel (.bot CooperateBot) h1
+        (proofSearch_false_prudence_bot_CooperateBot k)
+
+/-- Probe 3, at arbitrary fuel: past the Löb threshold, PrudentBot cooperates with
+    `.bot MirrorBot` (outer guard by `prudent_botmirror_coop`, prudence by
+    `prudence_provable_bot`). Strengthens `PrudentBot_plays_C_vs_bot_MirrorBot`
+    (which fixes `fuel = 3`) to every fuel offset, as the EBot assembly needs. -/
+theorem PrudentBot_plays_C_vs_bot_MirrorBot_fuel :
+    ∃ k₂, ∀ k, k₂ < k → ∀ fuel,
+      play (fuel + 3) (PrudentBot k) (.bot MirrorBot) = some .C := by
+  obtain ⟨k₂, hOuter⟩ := prudent_botmirror_coop
+  refine ⟨max k₂ 81, fun k hk fuel => ?_⟩
+  have h1 := hOuter k (lt_of_le_of_lt (le_max_left _ _) hk)
+  have h2 : proofSearch k (.plays (.bot MirrorBot) (.bot DefectBot) .D) = true :=
+    (proofSearch_spec _ _).2 (Provable_mono prudence_provable_bot
+      (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)))
+  exact prudent_eval_both_true k fuel _ h1 h2
+
+/-- EBot cooperates with PrudentBot past the Löb threshold: probes 1 and 2 watch
+    PrudentBot defect (descend), probe 3 watches it cooperate with `.bot MirrorBot`
+    (the Löb fixpoint) — EBot takes the cooperate branch. Pure simulation, no floor. -/
+theorem EBot_plays_C_against_PrudentBot :
+    ∃ k₂, ∀ k, k₂ < k → ∀ fuel,
+      play (fuel + 7) EBot (PrudentBot k) = some .C := by
+  obtain ⟨k₂, hMir⟩ := PrudentBot_plays_C_vs_bot_MirrorBot_fuel
+  refine ⟨k₂, fun k hk fuel => ?_⟩
+  have hP1 : play (fuel + 5) (PrudentBot k) (.bot DefectBot) = some .D := by
+    simpa [Nat.add_assoc] using PrudentBot_plays_D_vs_bot_DefectBot k (fuel + 3)
+  have hP2 : play (fuel + 4) (PrudentBot k) (.bot CooperateBot) = some .D := by
+    simpa [Nat.add_assoc] using PrudentBot_plays_D_vs_bot_CooperateBot k (fuel + 1)
+  have hP3 : play (fuel + 3) (PrudentBot k) (.bot MirrorBot) = some .C := hMir k hk fuel
+  have hG1 : eval (fuel + 6) EBot (PrudentBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+    simpa [Nat.add_assoc] using
+      eval_sim_opp_bot_of_play (fuel + 5) EBot (PrudentBot k) DefectBot .D hP1
+  have hG2 : eval (fuel + 5) EBot (PrudentBot k) (.sim .opp (.bot CooperateBot)) = some .D := by
+    simpa [Nat.add_assoc] using
+      eval_sim_opp_bot_of_play (fuel + 4) EBot (PrudentBot k) CooperateBot .D hP2
+  have hG3 : eval (fuel + 4) EBot (PrudentBot k) (.sim .opp (.bot MirrorBot)) = some .C := by
+    simpa [Nat.add_assoc] using
+      eval_sim_opp_bot_of_play (fuel + 3) EBot (PrudentBot k) MirrorBot .C hP3
+  have hIte3 : eval (fuel + 5) EBot (PrudentBot k)
+      (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)) = some .C := by
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG3]; rfl
+  have hIte2 : eval (fuel + 6) EBot (PrudentBot k)
+      (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D))) = some .C := by
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG2]
+    exact hIte3
+  show eval (fuel + 7) EBot (PrudentBot k)
+      (.ite (.sim .opp (.bot DefectBot)) .C (.const .D)
+        (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+          (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))) = some .C
+  rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG1]
+  exact hIte2
+
+/-- **The honest PrudentBot×EBot outcome — `(D, C)` past the Löb threshold.** The
+    simulator cooperates (its third probe watched the PrudentBot↔MirrorBot Löb
+    cooperation), the searcher defects (the floor: EBot's cooperation certificate
+    crosses PrudentBot's own failed probe search). -/
+theorem outcome_PrudentBot_vs_EBot :
+    ∃ k₂, ∀ k, k₂ < k → ∀ fuel,
+      outcome (fuel + 7) (PrudentBot k) EBot = some (.D, .C) := by
+  obtain ⟨k₂, hE⟩ := EBot_plays_C_against_PrudentBot
+  refine ⟨k₂, fun k hk fuel => ?_⟩
+  have hA : play (fuel + 7) (PrudentBot k) EBot = some .D := by
+    simpa [Nat.add_assoc] using PrudentBot_plays_D_against_EBot k (fuel + 5)
+  have hB := hE k hk fuel
+  simp [outcome, hA, hB]
 
 
 -- CupodTrollBot --

@@ -132,81 +132,21 @@ Hence Dupoc's guard search FAILS at its own budget and the honest outcome is `(D
 (`outcome_DupocBot_vs_DBot`) — the asymmetry in the flesh: the simulator (DBot) can
 afford to watch the searcher fail, the searcher can never afford to watch itself. -/
 
-/-- DBot's source shape — an `.ite` whose then-branch is a `.const` — is not
-    `Derivation`-readable: no source-transparency bridge rule concludes its play atoms
-    (`iteBranchSearch_t` needs a `.search` then-branch). -/
-theorem not_readable_DBot : ¬ ReadableMe DBot := by
-  rintro (⟨k, ψ, a, b, h⟩ | ⟨p, q, h⟩ | ⟨p, q, h⟩ | ⟨k, ψ, a, b, h⟩ |
-          ⟨z, a', k, ψ, c0, c1, q, h⟩) <;> simp [DBot] at h
-
-set_option maxHeartbeats 1000000 in
 /-- **The `search_f` floor, formalized as a cost lower bound**: no proof of ≤ k
     characters concludes any formula whose implication-spine tail is
     "DBot plays C against `DupocBot k`" — in particular (spine of length zero) the
-    guard instance itself is unprovable at Dupoc's own budget. -/
+    guard instance itself is unprovable at Dupoc's own budget. Instance of the
+    generalized `no_provable_probeFirst_C_tail` (Base/Exclusion.lean): DBot is the
+    probe-first simulator with `q = .const .C`, DupocBot the budget-`k` searcher. -/
 theorem no_provable_DBot_C_tail (k : Nat) :
     ∀ K φ, Provable K φ → K ≤ k →
       rightTail φ = .plays DBot (DupocBot k) .C → False := by
-  intro K
-  induction K using Nat.strong_induction_on with
-  | _ K ih =>
-    intro φ hp hK htail
-    cases hp with
-    | struct h =>
-        obtain ⟨d, _⟩ := h
-        exact not_readable_DBot (tail_plays_readable d htail)
-    | atom h =>
-        cases h with
-        | mk hpp hn =>
-          simp only [rightTail_plays, Formula.plays.injEq] at htail
-          obtain ⟨rfl, rfl, rfl⟩ := htail
-          unfold DBot at hpp
-          cases hpp with
-          | ite_t hg hr hbr => cases hbr
-          | ite_f hg hr hbr =>
-              cases hg with
-              | sim hin =>
-                simp only [Prog.subst] at hin
-                unfold DupocBot at hin
-                cases hin with
-                | search_t hProv hbr2 =>
-                    exact interp_bot_DefectBot_plays_C_false _
-                      (by simpa [Formula.subst, Prog.subst] using
-                        Provable_sound _ _ hProv)
-                | search_f hneg hbr2 =>
-                    simp only [c_node] at hn
-                    omega
-    | weakenImpl φ' ψ m hψ hsz =>
-        simp only [rightTail_impl] at htail
-        simp only [Formula.size] at hsz
-        exact ih m (by omega) ψ hψ (by omega) htail
-    | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme hpre hm hsz =>
-        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
-        obtain ⟨rfl, -, -⟩ := htail
-        exact absurd hme (by simp [DBot])
-    | implTrans φ' ψ χ a b h1 h2 hsz =>
-        simp only [rightTail_impl] at htail
-        simp only [Formula.size] at hsz
-        exact ih b (by omega) _ h2 (by omega) (by simpa using htail)
-    | atomBoxImpl kBox p q a hcert hsz => simp at htail
-    | boxIntro kIn K' φ' hpre hsz => simp at htail
-    | app k' m₁ m₂ φ' α h1 h2 hsz =>
-        have hα := Formula.size_pos φ
-        exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
-    | axK a b c m K' φ' α hpre hab hsz => simp at htail
-    | box4 a b K' φ' h1 h2 => simp at htail
-    | diagF pm fb g K' tgt hpre hsz =>
-        simp only [rightTail_impl] at htail
-        simp only [Formula.size] at hsz
-        exact ih pm (by omega) _ hpre (by omega) (by simpa using htail)
-    | diagB pm fb g K' tgt hpre hsz => simp at htail
-    | axKf a b c K' φ' α h1 h2 => simp at htail
-    | impS2 φ' ψ χ m₁ m₂ K' h1 h2 hsz =>
-        simp only [rightTail_impl] at htail
-        simp only [Formula.size] at hsz
-        exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
-    | boxMono a b K' φ' hab hsz => simp at htail
-    | atomNeg p q b aN m hcert hne hsz => simp at htail
+  intro K φ hp hK ht
+  refine no_provable_probeFirst_C_tail k DefectBot (.const .C)
+      (.plays .opp .self .C) (.const .C) (.const .D) ?_ K φ hp hK ?_
+  · simpa [Formula.subst, Prog.subst, DupocBot] using
+      interp_bot_DefectBot_plays_C_false (DupocBot k)
+  · simpa [DBot, DupocBot] using ht
 
 /-- Dupoc's guard search fails against DBot AT EVERY budget — the floor's bite: the
     guard formula is true, but every certificate costs more than `k`. -/
@@ -463,12 +403,59 @@ theorem EBot_plays_C_against_DupocBot (k fuel : Nat)
     (by rfl) hGuard1
   simpa [Nat.add_assoc, hInner] using hPlay
 
-/-! ### `proofSearch_true_for_EBot` — RETIRED (2026-07-02, the false-guard repair).
+/-! ### DupocBot vs EBot — the honest `(D, C)` outcome (floor formalized 2026-07-09).
 
-An axiom artifact: EBot's play against `DupocBot k` crosses Dupoc's FAILED search (the
-outer probe vs `.bot DefectBot`), so its certificate pays the `search_f` floor — cost > k
-for every k. `DupocBot k` can never prove "EBot plays C vs me" within its own budget; see
-the DBot tombstone above. -/
+HISTORY: `proofSearch_true_for_EBot`/`DupocBot_vs_EBot` (mutual cooperation at a common
+budget) were RETIRED 2026-07-02 as axiom artifacts: EBot's C-play against `DupocBot k`
+crosses Dupoc's own FAILED outer-probe search (vs `.bot DefectBot`), so its certificate
+pays the `search_f` floor — cost > k for every k.
+
+RESOLVED (2026-07-09): the floor is a THEOREM — `no_provable_EBot_C_tail`, the same
+instance of `no_provable_probeFirst_C_tail` as DBot (EBot shares DBot's first probe;
+only the else-branch `q` differs, and the floor fires before `q` is ever consulted).
+Dupoc's guard fails at every budget, so Dupoc defects while EBot — whose probes are
+run-priced simulations, no floor — cooperates: `outcome_DupocBot_vs_EBot = (D, C)`
+for every `k ≥ 2` (the tiny bound is the Σ₁ price of certifying the `.bot CooperateBot`
+probe that steers EBot's second guard). -/
+
+/-- The floor for the EBot pair: no ≤ k certificate concludes any formula whose
+    spine tail is "EBot plays C against `DupocBot k`". -/
+theorem no_provable_EBot_C_tail (k : Nat) :
+    ∀ K φ, Provable K φ → K ≤ k →
+      rightTail φ = .plays EBot (DupocBot k) .C → False := by
+  intro K φ hp hK ht
+  refine no_provable_probeFirst_C_tail k DefectBot
+      (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
+      (.plays .opp .self .C) (.const .C) (.const .D) ?_ K φ hp hK ?_
+  · simpa [Formula.subst, Prog.subst, DupocBot] using
+      interp_bot_DefectBot_plays_C_false (DupocBot k)
+  · simpa [EBot, DupocBot] using ht
+
+/-- Dupoc's guard search fails against EBot at every budget — the floor's bite. -/
+theorem proofSearch_false_for_EBot_vs_Dupoc (k : Nat) :
+    proofSearch k (.plays EBot (DupocBot k) .C) = false := by
+  cases h : proofSearch k (.plays EBot (DupocBot k) .C) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_EBot_C_tail k k _ hp le_rfl (by simp))
+  | false => rfl
+
+/-- DupocBot defects against EBot: its guard can never afford the certificate of
+    EBot's (true!) cooperation. -/
+theorem DupocBot_plays_D_against_EBot (k fuel : Nat) :
+    play (fuel + 2) (DupocBot k) EBot = some .D := by
+  have hg := proofSearch_false_for_EBot_vs_Dupoc k
+  show eval (fuel + 2) (DupocBot k) EBot (DupocBot k) = some .D
+  unfold DupocBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- The `.bot CooperateBot` probe guard is Σ₁-certifiable at run price (a two-character
+    `bot`+`const` replay), discharging `EBot_plays_C_against_DupocBot`'s hypothesis. -/
+theorem proofSearch_true_for_bot_CooperateBot_vs_Dupoc (k : Nat) (hk : 2 ≤ k) :
+    proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
+  (proofSearch_spec _ _).2 (Provable.atom
+    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
 
 /-- DupocBot cooperates with EBot once its search for "EBot plays C" succeeds. -/
 theorem DupocBot_plays_C_against_EBot (k fuel : Nat)
@@ -478,7 +465,18 @@ theorem DupocBot_plays_C_against_EBot (k fuel : Nat)
   unfold DupocBot at hk ⊢
   simp [eval, Prog.subst, Formula.subst, hk]
 
-/-! ### `DupocBot_vs_EBot` — RETIRED (2026-07-02): see the tombstones above. -/
+/-- **The honest DupocBot×EBot outcome — `(D, C)` for every `k ≥ 2`.** The simulator
+    cooperates (its probes watched Dupoc defect on the DefectBot probe and cooperate on
+    the CooperateBot probe), the searcher defects (the floor: EBot's cooperation
+    certificate crosses Dupoc's own failed probe search). -/
+theorem outcome_DupocBot_vs_EBot (k fuel : Nat) (hk : 2 ≤ k) :
+    outcome (fuel + 5) (DupocBot k) EBot = some (.D, .C) := by
+  have hA : play (fuel + 5) (DupocBot k) EBot = some .D := by
+    simpa [Nat.add_assoc] using DupocBot_plays_D_against_EBot k (fuel + 3)
+  have hB : play (fuel + 5) EBot (DupocBot k) = some .C :=
+    EBot_plays_C_against_DupocBot k fuel
+      (proofSearch_true_for_bot_CooperateBot_vs_Dupoc k hk)
+  simp [outcome, hA, hB]
 
 
 -- DupocBot --

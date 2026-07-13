@@ -114,4 +114,102 @@ theorem tail_plays_readable :
       intro me oppo a h
       simp at h
 
+/-! ## The floor lower bound, generalized
+
+The three floor-killed pairs (DBot×DupocBot, EBot×DupocBot, EBot×PrudentBot) share one
+shape: the SIMULATOR is a probe-first `.ite` — `me = .ite (.sim .opp (.bot z)) .C
+(.const .D) q` (DBot: `q = .const .C`; EBot: `q` = its inner probe cascade) — and the
+OPPONENT is a top-level search bot `.search k g pT pE` whose guard instance against the
+probe `.bot z` is semantically FALSE. Any certificate of "simulator plays C vs the
+searcher" must replay the probe, i.e. certify the searcher's play against `.bot z`:
+`search_t` dies by soundness (the guard instance is false), `search_f` charges the
+literal floor summand `k` — so every certificate costs > k, the searcher's own budget. -/
+
+/-- The probe-first simulator shape is never bridge-readable: its then-branch is a
+    `.const`, and `iteBranchSearch_t` (the only `.ite` bridge) needs a `.search`
+    then-branch. -/
+theorem not_readable_probeFirst (z q : Prog) :
+    ¬ ReadableMe (.ite (.sim .opp (.bot z)) .C (.const .D) q) := by
+  rintro (⟨k, ψ, a, b, h⟩ | ⟨p, r, h⟩ | ⟨p, r, h⟩ | ⟨k, ψ, a, b, h⟩ |
+          ⟨w, a', k, ψ, c0, c1, r, h⟩) <;> simp at h
+
+set_option maxHeartbeats 1000000 in
+/-- **The `search_f` floor as a cost lower bound** (generalized): no proof of ≤ k
+    characters concludes any formula whose implication-spine tail is "the probe-first
+    simulator plays C against the budget-`k` searcher" — in particular (spine of
+    length zero) the searcher's own guard instance is unprovable at its own budget.
+
+    Strong induction on the budget: `struct` dies by the census
+    (`not_readable_probeFirst`); `atom` dies inside the `PlaysProof` replay (the
+    simulator's guard forces the searcher's probe play, where `search_t` is refuted by
+    `hfalse` + soundness and `search_f` carries the literal floor summand `k`); the
+    `app`/`weakenImpl`/`implTrans`/`diagF`/`impS2` regress descends because transcript
+    cumulativity makes every premise budget strictly smaller. The non-cumulative budget
+    citations (`search_t`, `searchThenSearch_t`) never enter the induction — killed
+    semantically / by shape — which is exactly why this pair-shaped bound is provable
+    while the universal closure stays open. -/
+theorem no_provable_probeFirst_C_tail (k : Nat) (z q : Prog) (g : Formula)
+    (pT pE : Prog)
+    (hfalse : ¬ (g.subst (.search k g pT pE) (.bot z)).interp) :
+    ∀ K φ, Provable K φ → K ≤ k →
+      rightTail φ =
+        .plays (.ite (.sim .opp (.bot z)) .C (.const .D) q) (.search k g pT pE) .C →
+      False := by
+  intro K
+  induction K using Nat.strong_induction_on with
+  | _ K ih =>
+    intro φ hp hK htail
+    cases hp with
+    | struct h =>
+        obtain ⟨d, _⟩ := h
+        exact not_readable_probeFirst z q (tail_plays_readable d htail)
+    | atom h =>
+        cases h with
+        | mk hpp hn =>
+          simp only [rightTail_plays, Formula.plays.injEq] at htail
+          obtain ⟨rfl, rfl, rfl⟩ := htail
+          cases hpp with
+          | ite_t hg hr hbr => cases hbr
+          | ite_f hg hr hbr =>
+              cases hg with
+              | sim hin =>
+                simp only [Prog.subst] at hin
+                cases hin with
+                | search_t hProv hbr2 =>
+                    exact hfalse (Provable_sound _ _ hProv)
+                | search_f hneg hbr2 =>
+                    simp only [c_node] at hn
+                    omega
+    | weakenImpl φ' ψ m hψ hsz =>
+        simp only [rightTail_impl] at htail
+        simp only [Formula.size] at hsz
+        exact ih m (by omega) ψ hψ (by omega) htail
+    | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q' me oppo hme hpre hm hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        simp at hme
+    | implTrans φ' ψ χ a b h1 h2 hsz =>
+        simp only [rightTail_impl] at htail
+        simp only [Formula.size] at hsz
+        exact ih b (by omega) _ h2 (by omega) (by simpa using htail)
+    | atomBoxImpl kBox p' q' a hcert hsz => simp at htail
+    | boxIntro kIn K' φ' hpre hsz => simp at htail
+    | app k' m₁ m₂ φ' α h1 h2 hsz =>
+        have hα := Formula.size_pos φ
+        exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
+    | axK a b c m K' φ' α hpre hab hsz => simp at htail
+    | box4 a b K' φ' h1 h2 => simp at htail
+    | diagF pm fb g' K' tgt hpre hsz =>
+        simp only [rightTail_impl] at htail
+        simp only [Formula.size] at hsz
+        exact ih pm (by omega) _ hpre (by omega) (by simpa using htail)
+    | diagB pm fb g' K' tgt hpre hsz => simp at htail
+    | axKf a b c K' φ' α h1 h2 => simp at htail
+    | impS2 φ' ψ χ m₁ m₂ K' h1 h2 hsz =>
+        simp only [rightTail_impl] at htail
+        simp only [Formula.size] at hsz
+        exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
+    | boxMono a b K' φ' hab hsz => simp at htail
+    | atomNeg p' q' b aN m hcert hne hsz => simp at htail
+
 end PD.BaseTheorems

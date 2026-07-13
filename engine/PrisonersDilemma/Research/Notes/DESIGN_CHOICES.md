@@ -98,17 +98,25 @@ bot, glued by `.self` substitution), so no stagger fixes them. Their honest outc
 are defection on the searcher's side; formalizing those needs a `¬Provable k` cost
 lower bound — nontrivial because the guard formula is TRUE (soundness gives nothing).
 
-**The lower bound, delivered for DupocBot×DBot (2026-07-09).** `Base/Exclusion.lean`
+**The lower bound, delivered for ALL THREE pairs (2026-07-09).** `Base/Exclusion.lean`
 proves the reusable **Derivation census** (`tail_plays_readable`: only the five
-bridge-readable player shapes can appear as a plays-atom spine tail of a `Derivation`),
-and `Theorems/DupocBot.lean` instantiates the blueprint: `no_provable_DBot_C_tail` — a
-strong induction on the budget where `struct` dies by the census (DBot's `.ite` with a
-`.const` then-branch is not readable), `atom` dies inside the `PlaysProof` replay
-(`search_t` by soundness of the false probe guard, `search_f` by the literal floor
-summand), and the `app`/`weakenImpl`/`implTrans`/`diagF`/`impS2` regress descends by
-transcript cumulativity. Yields `outcome_DupocBot_vs_DBot = some (.D, .C)` at every
-budget — the first honest negative outcome theorem. The EBot pairs remain open (same
-blueprint expected to apply; their replays route through more bridge shapes).
+bridge-readable player shapes can appear as a plays-atom spine tail of a `Derivation`)
+and the **generalized floor bound** `no_provable_probeFirst_C_tail`: for any probe-first
+simulator `.ite (.sim .opp (.bot z)) .C (.const .D) q` against any budget-`k` searcher
+`.search k g pT pE` whose guard instance vs the probe is false, no ≤ k certificate
+concludes the simulator's cooperation — strong induction on the budget where `struct`
+dies by the census, `atom` dies inside the `PlaysProof` replay (`search_t` by soundness
+of the false probe guard, `search_f` by the literal floor summand), and the
+`app`/`weakenImpl`/`implTrans`/`diagF`/`impS2` regress descends by transcript
+cumulativity. All three tombstones fall as instances (the floor fires at the FIRST
+probe, before the simulators' else-branches differ):
+* `outcome_DupocBot_vs_DBot = some (.D, .C)` at every budget (`Theorems/DupocBot.lean`);
+* `outcome_DupocBot_vs_EBot = some (.D, .C)` for every `k ≥ 2` (ibid.; the bound is the
+  Σ₁ price of the `.bot CooperateBot` probe certificate steering EBot's second guard);
+* `outcome_PrudentBot_vs_EBot = some (.D, .C)` past the Löb threshold
+  (`Theorems/LlmGenerations/PrudentBot.lean`; EBot's third probe watches the
+  PrudentBot↔`.bot MirrorBot` Löb cooperation, so EBot's C-play itself rides
+  `prudent_botmirror_coop` — a negative-outcome theorem whose positive half is PBLT).
 
 ---
 
