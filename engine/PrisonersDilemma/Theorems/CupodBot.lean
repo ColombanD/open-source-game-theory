@@ -33,7 +33,7 @@ theorem proofSearch_false_for_CooperateBot (k : Nat) :
   | false => rfl
 
 /-- CupodBot vs CooperateBot: uses proof search being false -/
-theorem CupodBot_vs_CooperateBot (k fuel : Nat):
+theorem outcome_CupodBot_vs_CooperateBot (k fuel : Nat):
     outcome (fuel + 2) (CupodBot k) CooperateBot = some (.C, .C) := by
   -- Left side: CUPOD executes its `.search` guard. The guard is false by the
   -- lemma above, so the `search` falls through to the final `.const .C` branch.
@@ -62,7 +62,7 @@ theorem proofSearch_true_for_DefectBot :
   ⟨k, (proofSearch_spec _ _).2 (Provable.atom ⟨PlaysProof.const, by decide⟩)⟩
 
 /-- CupodBot vs DefectBot: uses proof search being true -/
-theorem CupodBot_vs_DefectBot (fuel : Nat):
+theorem outcome_CupodBot_vs_DefectBot (fuel : Nat):
     ∃ k, outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_DefectBot
   refine ⟨k, ?_⟩
@@ -108,7 +108,7 @@ theorem cupod_loeb_premise (k : Nat) :
     `f = id`, `k₁ = 0`. The Löb premise comes from `cupod_loeb_premise`,
     soundness collapses bounded provability to a `play` witness, and self-play
     symmetry makes the same `play` discharge both legs of `outcome`. -/
-theorem CupodBot_vs_CupodBot :
+theorem outcome_CupodBot_vs_CupodBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (CupodBot k) (CupodBot k) = some (.D, .D) := by
   let φ : Nat → Formula := fun k => .plays (CupodBot k) (CupodBot k) .D
@@ -202,7 +202,7 @@ theorem proofSearch_false_for_TitForTatBot (k : Nat) :
   | false => rfl
 
 /-- CupodBot vs TitForTatBot: mutual cooperation. -/
-theorem CupodBot_vs_TitForTatBot (fuel : Nat):
+theorem outcome_CupodBot_vs_TitForTatBot (fuel : Nat):
     ∃ k, outcome (fuel + 4) (CupodBot k) TitForTatBot = some (.C, .C) := by
   let k := 0
   refine ⟨k, ?_⟩
@@ -283,7 +283,7 @@ theorem proofSearch_false_for_DBot (k : Nat)
   | false => rfl
 
 /-- CupodBot vs DBot: mutual cooperation. -/
-theorem CupodBot_vs_DBot (fuel : Nat) :
+theorem outcome_CupodBot_vs_DBot (fuel : Nat) :
     ∃ k, outcome (fuel + 4) (CupodBot k) DBot = some (.C, .C) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_bot_DefectBot
   refine ⟨k, ?_⟩
@@ -492,7 +492,7 @@ theorem proofSearch_false_for_EBot (k : Nat)
   | false => rfl
 
 /-- CupodBot vs EBot: mutual cooperation. -/
-theorem CupodBot_vs_EBot (fuel : Nat) :
+theorem outcome_CupodBot_vs_EBot (fuel : Nat) :
     ∃ k, outcome (fuel + 5) (CupodBot k) EBot = some (.C, .C) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_bot_DefectBot
   refine ⟨k, ?_⟩
@@ -599,9 +599,9 @@ theorem proofSearch_k_of_play_MirrorBot
 
 /-- CupodBot vs MirrorBot defects, for `k` large enough. Direct application of
     PBLT with `φ k = .plays MirrorBot (CupodBot k) .D`, `f = id`, `k₁ = 0`.
-    Mirrors `CupodBot_vs_CupodBot`; the play witness lives on the MirrorBot
+    Mirrors `outcome_CupodBot_vs_CupodBot`; the play witness lives on the MirrorBot
     leg and is lifted to the CupodBot leg via the `.sim` swap. -/
-theorem CupodBot_vs_MirrorBot :
+theorem outcome_CupodBot_vs_MirrorBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (CupodBot k) MirrorBot = some (.D, .D) := by
   let φ : Nat → Formula := fun k => .plays MirrorBot (CupodBot k) .D

@@ -114,7 +114,7 @@ theorem CIMCIC_plays_C_against_CooperateBot (k fuel : Nat)
   rw [hk]; simp [eval]
 
 /-- CIMCIC vs CooperateBot: mutual cooperation. -/
-theorem CIMCIC_vs_CooperateBot :
+theorem outcome_CIMCIC_vs_CooperateBot :
     ∃ k, ∀ fuel, outcome (fuel + 2) (CIMCIC k) CooperateBot = some (.C, .C) := by
   obtain ⟨K, hK⟩ := proofSearch_true_for_CIMCIC_vs_CooperateBot
   refine ⟨K + 1, fun fuel => ?_⟩
@@ -269,7 +269,7 @@ theorem CIMCIC_plays_D_against_DefectBot (k fuel : Nat) :
 
 /-- **CIMCIC vs DefectBot: mutual defection (D, D)** — formerly the deliberately-omitted theorem,
     now PROVED with NO `atom_complete_false_guard` axiom. -/
-theorem CIMCIC_vs_DefectBot :
+theorem outcome_CIMCIC_vs_DefectBot :
     ∃ k, ∀ fuel, outcome (fuel + 2) (CIMCIC k) DefectBot = some (.D, .D) := by
   refine ⟨0, fun fuel => ?_⟩
   have hA : play (fuel + 2) (CIMCIC 0) DefectBot = some .D := CIMCIC_plays_D_against_DefectBot 0 fuel

@@ -56,7 +56,7 @@ theorem JustBot_plays_D_against_DefectBot (k fuel : Nat) :
   simpa using proofSearch_false_for_JustBot_vs_DefectBot k
 
 /-- JustBot vs DefectBot: mutual defection. -/
-theorem JustBot_vs_DefectBot (k fuel : Nat) :
+theorem outcome_JustBot_vs_DefectBot (k fuel : Nat) :
     outcome (fuel + 2) (JustBot k) DefectBot = some (.D, .D) := by
   have hA : play (fuel + 2) (JustBot k) DefectBot = some .D :=
     JustBot_plays_D_against_DefectBot k fuel
@@ -80,7 +80,7 @@ theorem JustBot_plays_C_against_CooperateBot (k fuel : Nat)
   simpa using hk
 
 /-- JustBot vs CooperateBot: mutual cooperation. -/
-theorem JustBot_vs_CooperateBot (fuel : Nat) :
+theorem outcome_JustBot_vs_CooperateBot (fuel : Nat) :
     ∃ k, outcome (fuel + 2) (JustBot k) CooperateBot = some (.C, .C) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_JustBot_vs_CooperateBot
   refine ⟨k, ?_⟩
@@ -173,7 +173,7 @@ theorem JustBot_plays_C_against_TitForTatBot (k fuel : Nat)
 
 /-- JustBot vs TitForTatBot: mutual cooperation. Both legs ride the shared guard at
     budget `atom_cost 5`. -/
-theorem JustBot_vs_TitForTatBot :
+theorem outcome_JustBot_vs_TitForTatBot :
     ∃ k, ∀ fuel, outcome (fuel + 5) (JustBot k) TitForTatBot = some (.C, .C) := by
   let k := atom_cost 5
   have hk : proofSearch k (Formula.plays (.bot CooperateBot) (.bot (DupocBot k)) Action.C) = true :=

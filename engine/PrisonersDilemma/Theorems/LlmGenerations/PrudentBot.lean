@@ -66,7 +66,7 @@ theorem PrudentBot_plays_D_against_DefectBot (k fuel : Nat) :
     (proofSearch_false_DefectBot_vs_PrudentBot k)
 
 /-- PrudentBot vs DefectBot: mutual defection, (D, D). -/
-theorem PrudentBot_vs_DefectBot (k fuel : Nat) :
+theorem outcome_PrudentBot_vs_DefectBot (k fuel : Nat) :
     outcome (fuel + 2) (PrudentBot k) DefectBot = some (.D, .D) := by
   have hA : play (fuel + 2) (PrudentBot k) DefectBot = some .D :=
     PrudentBot_plays_D_against_DefectBot k fuel
@@ -117,7 +117,7 @@ theorem PrudentBot_plays_D_against_CooperateBot (k fuel : Nat) :
   · rw [if_neg hc]; rfl
 
 /-- PrudentBot vs CooperateBot: PrudentBot exploits the sucker, (D, C). -/
-theorem PrudentBot_vs_CooperateBot (k fuel : Nat) :
+theorem outcome_PrudentBot_vs_CooperateBot (k fuel : Nat) :
     outcome (fuel + 3) (PrudentBot k) CooperateBot = some (.D, .C) := by
   have hA : play (fuel + 3) (PrudentBot k) CooperateBot = some .D :=
     PrudentBot_plays_D_against_CooperateBot k fuel
@@ -1215,7 +1215,7 @@ theorem PrudentBot_plays_D_against_self (k fuel : Nat) :
 /-- **The honest same-`k` PrudentBot self-play — `(D, D)` at every budget.** Two equal
     provers, each needing to certify its own failed search to trust the other: neither
     can, both defect. The cooperative fixed point exists only one tier up
-    (`outcome_PrudentBot2_self`, below). -/
+    (`outcome_PrudentBot2_vs_PrudentBot2`, below). -/
 theorem outcome_PrudentBot_vs_PrudentBot (k fuel : Nat) :
     outcome (fuel + 3) (PrudentBot k) (PrudentBot k) = some (.D, .D) := by
   have hA := PrudentBot_plays_D_against_self k fuel
@@ -1295,7 +1295,7 @@ theorem P2_self_loeb_premise (k : Nat) :
 
 /-- **Two-tier PrudentBot self-play → (C, C)** for all large enough `k` — the recovery of
     the retired same-`k` self-cooperation, at the honest (PA+1-style) parameterization. -/
-theorem outcome_PrudentBot2_self :
+theorem outcome_PrudentBot2_vs_PrudentBot2 :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100))
         = some (.C, .C) := by

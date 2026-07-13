@@ -13,7 +13,7 @@ substitutes to `□_k φ`. So OPERATIONALLY:
 i.e. `φ` (the play) ↔ `□_k φ` (its provability). That is Löb's fixpoint `ψ ↔ □ψ`, PHYSICALLY PRESENT
 as the bot, not built by a diagonal lemma. The question: does that let us close PBLT here?
 
-WHAT PBLT GIVES HERE (from `DupocBot_vs_DupocBot`):  `∃m, Provable m (□φ → φ)`  ⟹  `∃m, Provable m φ`.
+WHAT PBLT GIVES HERE (from `outcome_DupocBot_vs_DupocBot`):  `∃m, Provable m (□φ → φ)`  ⟹  `∃m, Provable m φ`.
 We have the premise `dupoc_loeb_premise` (a real `searchBranch` derivation). We want `Provable k φ`.
 
 This file PROBES whether the bot structure closes that gap directly (Path B viable) or whether it is

@@ -19,7 +19,7 @@ theorem OBot_plays_C_against_CB(fuel : Nat) :
     simp [eval, Prog.subst]
     decide
 
-theorem OBot_vs_CB (fuel : Nat):
+theorem outcome_OBot_vs_CooperateBot (fuel : Nat):
     outcome (fuel + 5) OBot CooperateBot = some (.C, .C) := by
     have hA : play (fuel + 5) OBot CooperateBot = some .C := OBot_plays_C_against_CB (fuel)
     have hB : play (fuel + 5) CooperateBot OBot = some .C := rfl
@@ -38,14 +38,14 @@ theorem OBot_plays_D_against_DB (fuel : Nat) :
         (by rfl) hGuard
     simpa [eval] using hPlay
 
-theorem OBot_vs_DB (fuel : Nat):
+theorem outcome_OBot_vs_DefectBot (fuel : Nat):
     outcome (fuel + 3) OBot DefectBot = some (.D, .D) := by
     have hA : play (fuel + 3) OBot DefectBot = some .D := OBot_plays_D_against_DB (fuel)
     have hB : play (fuel + 3) DefectBot OBot = some .D := rfl
     simp [outcome, hA, hB]
 
 
-theorem OBot_vs_TitForTatBot (fuel : Nat):
+theorem outcome_OBot_vs_TitForTatBot (fuel : Nat):
     outcome (fuel + 7) OBot TitForTatBot = some (.D, .C) := by
     have hGuard1 : eval (fuel + 6) OBot TitForTatBot (.sim .opp (.bot CooperateBot)) = some .C := by
       simp [eval, Prog.subst, TitForTatBot, CooperateBot]; decide
@@ -89,7 +89,7 @@ theorem OBot_vs_TitForTatBot (fuel : Nat):
     rw [hA, hB]
     rfl
 
-theorem OBot_vs_DBot (fuel : Nat):
+theorem outcome_OBot_vs_DBot (fuel : Nat):
     outcome (fuel + 6) OBot DBot = some (.D, .C) := by
     -- hGuard1: simulates DBot vs (.bot CooperateBot). DBot's inner guard
     -- returns C, so DBot takes its const-D branch.
@@ -132,7 +132,7 @@ theorem OBot_vs_DBot (fuel : Nat):
     simp [outcome, hA, hB]
 
 
-theorem OBot_vs_OBot (fuel : Nat):
+theorem outcome_OBot_vs_OBot (fuel : Nat):
     outcome (fuel + 7) OBot OBot = some (.D, .D) := by
     -- After substitution, OBot's outer guard simulates OBot vs (.bot CooperateBot).
     -- Trace OBot's outer ite (guard = C, take then-branch = inner ite, inner

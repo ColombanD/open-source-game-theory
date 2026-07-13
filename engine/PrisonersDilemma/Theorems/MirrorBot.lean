@@ -17,7 +17,7 @@ theorem MirrorBot_plays_C_against_CooperateBot (fuel : Nat) :
     unfold MirrorBot CooperateBot
     simp only [eval, Prog.subst]
 
-theorem MirrorBot_vs_CooperateBot (fuel : Nat):
+theorem outcome_MirrorBot_vs_CooperateBot (fuel : Nat):
     outcome (fuel + 3) MirrorBot CooperateBot = some (.C, .C) := by
     have hA : play (fuel + 3) MirrorBot CooperateBot = some .C := MirrorBot_plays_C_against_CooperateBot (fuel)
     have hB : play (fuel + 3) CooperateBot MirrorBot = some .C := rfl
@@ -29,7 +29,7 @@ theorem MirrorBot_plays_D_against_DefectBot (fuel : Nat) :
     unfold MirrorBot DefectBot
     simp [eval, Prog.subst]
 
-theorem MirrorBot_vs_DefectBot (fuel : Nat):
+theorem outcome_MirrorBot_vs_DefectBot (fuel : Nat):
     outcome (fuel + 3) MirrorBot DefectBot = some (.D, .D) := by
     have hA : play (fuel + 3) MirrorBot DefectBot = some .D := MirrorBot_plays_D_against_DefectBot (fuel)
     have hB : play (fuel + 3) DefectBot MirrorBot = some .D := rfl
@@ -56,7 +56,7 @@ theorem MirrorBot_plays_C_against_DBot (fuel : Nat) :
         DBot_plays_C_against_MirrorBot (fuel)
     simpa [play, eval, Prog.subst, MirrorBot] using hDBotPlays
 
-theorem MirrorBot_vs_DBot (fuel : Nat):
+theorem outcome_MirrorBot_vs_DBot (fuel : Nat):
     outcome (fuel + 6) MirrorBot DBot = some (.C, .C) := by
     have hA : play (fuel + 6) MirrorBot DBot = some .C := MirrorBot_plays_C_against_DBot (fuel)
     have hB : play (fuel + 6) DBot MirrorBot = some .C := DBot_plays_C_against_MirrorBot (fuel + 1)
@@ -86,7 +86,7 @@ theorem MirrorBot_plays_D_against_OBot (fuel : Nat) :
         OBot_plays_D_against_MirrorBot (fuel)
     simpa [play, eval, Prog.subst, MirrorBot] using hOBotPlays
 
-theorem MirrorBot_vs_OBot (fuel : Nat):
+theorem outcome_MirrorBot_vs_OBot (fuel : Nat):
     outcome (fuel + 7) MirrorBot OBot = some (.D, .D) := by
     have hA : play (fuel + 7) MirrorBot OBot = some .D := MirrorBot_plays_D_against_OBot (fuel)
     have hB : play (fuel + 7) OBot MirrorBot = some .D := OBot_plays_D_against_MirrorBot (fuel + 1)
@@ -109,7 +109,7 @@ theorem MirrorBot_plays_C_against_TitForTatBot (fuel : Nat) :
         TitForTatBot_plays_C_against_MirrorBot (fuel)
     simpa [play, eval, Prog.subst, MirrorBot] using hTitForTatPlays
 
-theorem MirrorBot_vs_TitForTatBot (fuel : Nat):
+theorem outcome_MirrorBot_vs_TitForTatBot (fuel : Nat):
     outcome (fuel + 6) MirrorBot TitForTatBot = some (.C, .C) := by
     have hA : play (fuel + 6) MirrorBot TitForTatBot = some .C := MirrorBot_plays_C_against_TitForTatBot (fuel)
     have hB : play (fuel + 6) TitForTatBot MirrorBot = some .C := TitForTatBot_plays_C_against_MirrorBot (fuel + 1)
@@ -125,7 +125,7 @@ theorem MirrorBot_plays_none_against_MirrorBot (fuel : Nat) :
     | zero => rfl
     | succ n ih => simpa [play, eval, Prog.subst, MirrorBot] using ih
 
-theorem MirrorBot_vs_MirrorBot (fuel : Nat):
+theorem outcome_MirrorBot_vs_MirrorBot (fuel : Nat):
     outcome fuel MirrorBot MirrorBot = none := by
     have hA : play fuel MirrorBot MirrorBot = none := MirrorBot_plays_none_against_MirrorBot fuel
     simp [outcome, hA]

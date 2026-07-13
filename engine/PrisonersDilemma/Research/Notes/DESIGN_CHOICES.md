@@ -134,7 +134,7 @@ instance (the floor fires at the FIRST probe, before the simulators' branches di
   no simulator detour: PrudentBot's self-prudence "I defect vs `.bot DefectBot`" is
   floor-blocked at its own budget, so single-tier prudence is self-defeating and
   same-`k` self-play is mutual defection; the cooperative fixed point exists only one
-  tier up, `outcome_PrudentBot2_self`).
+  tier up, `outcome_PrudentBot2_vs_PrudentBot2`).
 
 The same-`k` retirements with STAGGERED/two-tier replacements (PrudentBot×DupocBot,
 JustBot×PrudentBot, JustBot×CupodTrollBot) were already re-certified during the

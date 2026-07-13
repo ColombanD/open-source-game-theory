@@ -90,7 +90,7 @@ theorem DIMCID_plays_D_against_DefectBot (k fuel : Nat)
   rw [hk]; simp [eval]
 
 /-- DIMCID vs DefectBot: mutual defection. -/
-theorem DIMCID_vs_DefectBot :
+theorem outcome_DIMCID_vs_DefectBot :
     ∃ k, ∀ fuel, outcome (fuel + 2) (DIMCID k) DefectBot = some (.D, .D) := by
   obtain ⟨K, hK⟩ := proofSearch_true_for_DIMCID_vs_DefectBot
   refine ⟨K + 1, fun fuel => ?_⟩
@@ -104,7 +104,7 @@ theorem DIMCID_vs_DefectBot :
 /-!
 ## DIMCID vs CooperateBot — (C, C), PROVED with NO axiom
 
-Symmetric to `CIMCIC_vs_DefectBot`. The guard `(.plays (DIMCID k) CooperateBot C) → (.plays
+Symmetric to `outcome_CIMCIC_vs_DefectBot`. The guard `(.plays (DIMCID k) CooperateBot C) → (.plays
 CooperateBot (DIMCID k) D)` is vacuously TRUE but **structurally UNPROVABLE**: its CONSEQUENT
 `CooperateBot plays D` is a genuinely-FALSE atom (CooperateBot plays C), refuted by `Provable_sound`,
 which blocks `weakenImpl`; a `ForbiddenD`-motive induction excludes the `Derivation`/`implTrans`
@@ -228,7 +228,7 @@ theorem DIMCID_plays_C_against_CooperateBot (k fuel : Nat) :
 
 /-- **DIMCID vs CooperateBot: mutual cooperation (C, C)** — formerly deliberately-omitted, now
     PROVED with NO `atom_complete_false_guard` axiom. -/
-theorem DIMCID_vs_CooperateBot :
+theorem outcome_DIMCID_vs_CooperateBot :
     ∃ k, ∀ fuel, outcome (fuel + 2) (DIMCID k) CooperateBot = some (.C, .C) := by
   refine ⟨0, fun fuel => ?_⟩
   have hA : play (fuel + 2) (DIMCID 0) CooperateBot = some .C := DIMCID_plays_C_against_CooperateBot 0 fuel

@@ -133,7 +133,7 @@ def proof_request_message(
     # fixed point makes them cooperate). An unquantified `outcome … BotA BotB`
     # statement then leaves `k` free and is genuinely unprovable. The right shape
     # is a **large-`k` threshold theorem** binding `k` — exactly the form used by
-    # `DupocBot_vs_DupocBot`. Detect that case and render the threshold template.
+    # `outcome_DupocBot_vs_DupocBot`. Detect that case and render the threshold template.
     parameterized = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
 
     outcome_clause = (
@@ -174,7 +174,7 @@ def proof_request_message(
             )
         else:
             template_hint = (
-                "This threshold shape is exactly how `DupocBot_vs_DupocBot` is stated — read "
+                "This threshold shape is exactly how `outcome_DupocBot_vs_DupocBot` is stated — read "
                 "that theorem (and the `PBLT` application it uses) as your template."
             )
 

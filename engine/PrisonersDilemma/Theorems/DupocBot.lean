@@ -38,7 +38,7 @@ theorem proofSearch_true_for_CooperateBot :
 
 
 /-- DupocBot vs DefectBot: uses proof search being false -/
-theorem DupocBot_vs_DefectBot (k fuel : Nat):
+theorem outcome_DupocBot_vs_DefectBot (k fuel : Nat):
     outcome (fuel + 2) (DupocBot k) DefectBot = some (.D, .D) := by
   -- Left side: Dupoc executes its `.search` guard. The guard is false by the
   -- lemma above, so the `search` falls through to the final `.const .D` branch.
@@ -56,7 +56,7 @@ theorem DupocBot_vs_DefectBot (k fuel : Nat):
   simp [outcome, hA, hB]
 
 /-- DupocBot vs CooperateBot: uses proof search being true -/
-theorem DupocBot_vs_CooperateBot (fuel : Nat):
+theorem outcome_DupocBot_vs_CooperateBot (fuel : Nat):
     ∃ k, outcome (fuel + 2) (DupocBot k) CooperateBot = some (.C, .C) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_CooperateBot
   refine ⟨k, ?_⟩
@@ -282,7 +282,7 @@ theorem proofSearch_true_for_bot_CooperateBot :
   ⟨k, (proofSearch_spec _ _).2 (Provable.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
 
 /-- DupocBot vs OBot: mutual defection. -/
-theorem DupocBot_vs_OBot (fuel : Nat) :
+theorem outcome_DupocBot_vs_OBot (fuel : Nat) :
     ∃ k, outcome (fuel + 5) (DupocBot k) OBot = some (.D, .D) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_bot_CooperateBot
   refine ⟨k, ?_⟩
@@ -342,7 +342,7 @@ theorem DupocBot_plays_C_against_TitForTatBot (k fuel : Nat)
 
 /-- DupocBot vs TitForTatBot: mutual cooperation. Both witnesses at a common
     budget `atom_cost 4`. -/
-theorem DupocBot_vs_TitForTatBot (fuel : Nat) :
+theorem outcome_DupocBot_vs_TitForTatBot (fuel : Nat) :
     ∃ k, outcome (fuel + 4) (DupocBot k) TitForTatBot = some (.C, .C) := by
   let kTFT := atom_cost 4
   have hCBprov : Provable kTFT (.plays (.bot CooperateBot) (DupocBot kTFT) .C) :=
@@ -509,7 +509,7 @@ theorem dupoc_loeb_premise (k : Nat) :
     `f = id`, `k₁ = 0`. The Löb premise comes from `dupoc_loeb_premise`,
     soundness collapses bounded provability to a `play` witness, and self-play
     symmetry makes the same `play` discharge both legs of `outcome`. -/
-theorem DupocBot_vs_DupocBot :
+theorem outcome_DupocBot_vs_DupocBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (DupocBot k) (DupocBot k) = some (.C, .C) := by
   let φ : Nat → Formula := fun k => .plays (DupocBot k) (DupocBot k) .C
@@ -618,9 +618,9 @@ theorem proofSearch_k_of_play_MirrorBot_dupoc
 
 /-- DupocBot vs MirrorBot cooperates, for `k` large enough. Direct application
     of PBLT with `φ k = .plays MirrorBot (DupocBot k) .C`, `f = id`, `k₁ = 0`.
-    Mirrors `DupocBot_vs_DupocBot`; the play witness lives on the MirrorBot leg
+    Mirrors `outcome_DupocBot_vs_DupocBot`; the play witness lives on the MirrorBot leg
     and is lifted to the DupocBot leg via the `.sim` swap. -/
-theorem DupocBot_vs_MirrorBot :
+theorem outcome_DupocBot_vs_MirrorBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (DupocBot k) MirrorBot = some (.C, .C) := by
   let φ : Nat → Formula := fun k => .plays MirrorBot (DupocBot k) .C

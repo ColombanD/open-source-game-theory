@@ -22,7 +22,7 @@ theorem EBot_plays_D_against_CooperateBot (fuel : Nat) :
     have : (Action.C == Action.C) = true := by decide
     simp [this] at h
 
-theorem EBot_vs_CooperateBot (fuel : Nat):
+theorem outcome_EBot_vs_CooperateBot (fuel : Nat):
     outcome (fuel + 3) EBot CooperateBot = some (.D, .C) := by
     have hA : play (fuel + 3) EBot CooperateBot = some .D := EBot_plays_D_against_CooperateBot (fuel)
     have hB : play (fuel + 3) CooperateBot EBot = some .C := rfl
@@ -36,13 +36,13 @@ theorem EBot_plays_D_against_DefectBot (fuel : Nat) :
     intro h
     simp [h]
 
-theorem EBot_vs_DefectBot (fuel : Nat):
+theorem outcome_EBot_vs_DefectBot (fuel : Nat):
     outcome (fuel + 5) EBot DefectBot = some (.D, .D) := by
     have hA : play (fuel + 5) EBot DefectBot = some .D := EBot_plays_D_against_DefectBot (fuel)
     have hB : play (fuel + 5) DefectBot EBot = some .D := rfl
     exact outcome_of_plays _ _ _ _ _ hA hB
 
-theorem EBot_vs_Dbot (fuel : Nat):
+theorem outcome_EBot_vs_DBot (fuel : Nat):
     outcome (fuel + 8) EBot DBot = some (.D, .C) := by
     have hGuard1 : eval (fuel + 7) EBot DBot (.sim .opp (.bot DefectBot)) = some .C := by
       simp [eval, Prog.subst, DBot, DefectBot]; decide
@@ -67,7 +67,7 @@ theorem EBot_vs_Dbot (fuel : Nat):
     exact outcome_of_plays _ _ _ _ _ hA hB
 
 
-theorem EBot_vs_TitForTatBot (fuel : Nat):
+theorem outcome_EBot_vs_TitForTatBot (fuel : Nat):
     outcome (fuel + 7) EBot TitForTatBot = some (.C, .D) := by
     have hGuard1 : eval (fuel + 6) EBot TitForTatBot (.sim .opp (.bot DefectBot)) = some .D := by
       simp [eval, Prog.subst, TitForTatBot, DefectBot, CooperateBot]; decide
@@ -106,7 +106,7 @@ theorem EBot_vs_TitForTatBot (fuel : Nat):
     exact outcome_of_plays _ _ _ _ _ hA hB
 
 
-theorem EBot_vs_OBot (fuel : Nat):
+theorem outcome_EBot_vs_OBot (fuel : Nat):
     outcome (fuel + 8) EBot OBot = some (.C, .D) := by
     -- For hGuard1 we directly trace OBot vs (.bot DefectBot): OBot's outer
     -- guard returns D (since (.bot DefectBot) defects against CooperateBot),
@@ -184,7 +184,7 @@ theorem EBot_plays_C_against_MirrorBot (fuel : Nat) :
         (by rfl) hGuard1
     simpa [eval, hGuard2] using hPlay
 
-theorem EBot_vs_MirrorBot (fuel : Nat):
+theorem outcome_EBot_vs_MirrorBot (fuel : Nat):
     outcome (fuel + 8) EBot MirrorBot = some (.C, .C) := by
     have hA : play (fuel + 8) EBot MirrorBot = some .C := EBot_plays_C_against_MirrorBot (fuel + 1)
     have hB : play (fuel + 8) MirrorBot EBot = some .C := by
@@ -202,7 +202,7 @@ time rather than being captured by the outer EBot/EBot frame. In self-play this
 makes the third guard cleanly evaluate to `C` (EBot mirrors itself against
 MirrorBot, MirrorBot cooperates), so EBot cooperates with itself.
 -/
-theorem EBot_vs_EBot (fuel : Nat):
+theorem outcome_EBot_vs_EBot (fuel : Nat):
     outcome (fuel + 11) EBot EBot = some (.C, .C) := by
   -- Helpers: EBot's behaviour against `.bot`-wrapped probes.
   have hEBotBotD : ∀ k, eval (k + 6) EBot (.bot DefectBot) EBot = some .D := by

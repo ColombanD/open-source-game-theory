@@ -205,7 +205,7 @@ migration is **three layers**, not a one-line edit:
 |---|---|---|
 | **1. keystone** | `boundedLob` (+ `boundedLob_sound`) | NEW. Term-builder, well-founded on `k`. The fundamental thing. |
 | **2. wrapper** | `PBLT` re-stated as a **theorem proved *via* `boundedLob`** | Axiom line in `Axioms.lean` **deleted**; same-named theorem appears elsewhere. Keeps call sites stable. |
-| **3. consumers** | `CupodBot_vs_CupodBot`, `CupodBot_vs_MirrorBot`, … | Signatures **unchanged**, still call `PBLT` — now the theorem. Barely edited. |
+| **3. consumers** | `outcome_CupodBot_vs_CupodBot`, `outcome_CupodBot_vs_MirrorBot`, … | Signatures **unchanged**, still call `PBLT` — now the theorem. Barely edited. |
 
 Consumers never need to know `boundedLob` exists. That is the point of keeping the wrapper.
 
@@ -245,7 +245,7 @@ root) so nothing touches the green build until a step is proven out.
 
 ### Why CUPOD self-play is the gate (not FairBot)
 
-`CupodBot_vs_CupodBot` is the **minimal *positive* Löb fixpoint** and the cleanest possible
+`outcome_CupodBot_vs_CupodBot` is the **minimal *positive* Löb fixpoint** and the cleanest possible
 test:
 - **self-play** → one symmetric leg, no `.sim`-swap bookkeeping (unlike CUPOD↔Mirror);
 - defects via the **true-guard** `search_t` branch — which *has* a constructor carrying
@@ -278,7 +278,7 @@ If `boundedLob` can't close CUPOD self-play, it can't close anything — fail fa
 
 6. Promote the spike: replace the **`PBLT` axiom** with (i) `boundedLob` + `boundedLob_sound`
    as real definitions, (ii) a **budgeted** `PBLT`-shaped *theorem* proved via `boundedLob`.
-   Keep consumer signatures (`CupodBot_vs_CupodBot` etc.) stable — they already supply the
+   Keep consumer signatures (`outcome_CupodBot_vs_CupodBot` etc.) stable — they already supply the
    tight `Provable k` premise (§4b option (a)).
 7. Make `proofSearch` computable (`DecidablePred (Provable k)`); drop `noncomputable`.
 8. Generalize `step` to the `searchThenSearch_t` shape (PrudentBot↔DupocBot); revisit

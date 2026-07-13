@@ -365,7 +365,7 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
       (JustBot's own floored defection, `k + log2 k + 16`, consumed by PrudentBot's outer
       budget).
     All on the 3 Lean-standard axioms. T3.2b TAIL also SHIPPED (2026-07-03): `PrudentBot2`
-    (two-tier, the bounded PA+1) + `outcome_PrudentBot2_self` (k, 4k+100); staggered
+    (two-tier, the bounded PA+1) + `outcome_PrudentBot2_vs_PrudentBot2` (k, 4k+100); staggered
     `outcome_JustBot_vs_CupodTrollBot` (∀j, no eventuality); docs refreshed. Remaining:
     honest (D,·)-type outcomes for the retired probe pairs (need the ¬Provable side).
   - **T3.2c PART 1 — ✅ SHIPPED (2026-07-03): `Provable` is SEMIDECIDABLE relative to the

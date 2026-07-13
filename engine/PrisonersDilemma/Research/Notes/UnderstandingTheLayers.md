@@ -20,7 +20,7 @@ study aid after the reform that made the proof system `S` explicit.
   that answers. **`S = (Derivation, Provable, proofSearch)`**, speaking the
   language `Formula`. This is the logic agents use to reason *about each other*.
 - **Layer 2 — the meta-theory.** Lean itself. When we write
-  `theorem CupodBot_vs_CupodBot …` we reason *about* layers 0 and 1. Its axioms
+  `theorem outcome_CupodBot_vs_CupodBot …` we reason *about* layers 0 and 1. Its axioms
   are Lean's (`propext`, `Classical.choice`, `Quot.sound`).
 
 **Where is `S`? Layer 1.** Not Lean (that's the meta-layer above it), not `Prog`
