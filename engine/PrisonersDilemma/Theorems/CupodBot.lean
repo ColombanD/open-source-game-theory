@@ -333,12 +333,63 @@ theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
         Action.C Action.D hGuard2)
   simpa [hInner] using hPlay
 
-/-! ### `proofSearch_true_for_OBot` — RETIRED (2026-07-02, the false-guard repair).
+/-! ### CupodBot vs OBot — the honest `(C, D)` outcome (floor formalized 2026-07-09).
 
-An axiom artifact: OBot's play against `CupodBot k` crosses Cupod's FAILED search (the
-first probe vs `.bot CooperateBot` — "botCoop plays D" is false), so its certificate pays
-the `search_f` floor: cost > k for every k, and `CupodBot k` can never prove "OBot plays D
-vs me" within its own budget. See the DBot tombstone in `Theorems/DupocBot.lean`. -/
+HISTORY: `proofSearch_true_for_OBot`/`CupodBot_vs_OBot` (mutual defection detected at a
+common budget) were RETIRED 2026-07-02 as axiom artifacts: OBot's D-play against
+`CupodBot k` crosses Cupod's FAILED first-probe search (vs `.bot CooperateBot` —
+"botCoop plays D vs me" is false), so its certificate pays the `search_f` floor —
+cost > k for every k.
+
+RESOLVED (2026-07-09): the floor is a THEOREM — `no_provable_OBot_D_tail`, an instance
+of `no_provable_probeFirst_tail` (Base/Exclusion.lean; note the fully general shape:
+OBot's THEN-branch is its inner probe `ite` and the target action is D — the kill
+happens at the guard certificate, which both `ite` polarities carry). Cupod's search
+for "OBot plays D vs me" fails at every budget, so Cupod falls through to its
+cooperate else-branch while OBot — pure run-priced simulation — defects:
+`outcome_CupodBot_vs_OBot = (C, D)` for every `k ≥ 2`. Critch-faithful and grimly
+honest: the defection-detector gets exploited by exactly the opponent whose defection
+is real but whose certificate crosses the detector's own failed probe. -/
+
+/-- The floor for the OBot pair: no ≤ k certificate concludes any formula whose spine
+    tail is "OBot plays D against `CupodBot k`". -/
+theorem no_provable_OBot_D_tail (k : Nat) :
+    ∀ K φ, Provable K φ → K ≤ k →
+      rightTail φ = .plays OBot (CupodBot k) .D → False := by
+  intro K φ hp hK ht
+  refine no_provable_probeFirst_tail k CooperateBot
+      (.ite (.sim .opp (.bot DefectBot)) .C (.const .C) (.const .D))
+      (.const .D) .C .D (.plays .opp .self .D) (.const .D) (.const .C) ?_ ?_ K φ hp hK ?_
+  · simpa [Formula.subst, Prog.subst, CupodBot] using
+      interp_bot_CooperateBot_plays_D_false (CupodBot k)
+  · intro k' ψ c0 c1 h; simp at h
+  · simpa [OBot, CupodBot] using ht
+
+/-- Cupod's defection search fails against OBot at every budget — the floor's bite:
+    OBot really does defect, but every certificate costs more than `k`. -/
+theorem proofSearch_false_for_OBot_vs_Cupod (k : Nat) :
+    proofSearch k (.plays OBot (CupodBot k) .D) = false := by
+  cases h : proofSearch k (.plays OBot (CupodBot k) .D) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_OBot_D_tail k k _ hp le_rfl (by simp))
+  | false => rfl
+
+/-- CupodBot cooperates with OBot: it can never afford the certificate of OBot's
+    (real!) defection, so it falls through to the trusting else-branch. -/
+theorem CupodBot_plays_C_against_OBot (k fuel : Nat) :
+    play (fuel + 2) (CupodBot k) OBot = some .C := by
+  have hg := proofSearch_false_for_OBot_vs_Cupod k
+  show eval (fuel + 2) (CupodBot k) OBot (CupodBot k) = some .C
+  unfold CupodBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- The `.bot DefectBot` probe guard is Σ₁-certifiable at run price, discharging
+    `OBot_plays_D_against_CupodBot`'s hypothesis at every `k ≥ 2`. -/
+theorem proofSearch_true_for_bot_DefectBot_vs_Cupod (k : Nat) (hk : 2 ≤ k) :
+    proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
+  (proofSearch_spec _ _).2 (Provable.atom
+    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
 
 theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
     (hk : proofSearch k (.plays OBot (CupodBot k) .D) = true) :
@@ -347,7 +398,16 @@ theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
   unfold CupodBot at hk ⊢
   simp [eval, Prog.subst, Formula.subst, hk]
 
-/-! ### `CupodBot_vs_OBot` — RETIRED (2026-07-02): see the tombstone above. -/
+/-- **The honest CupodBot×OBot outcome — `(C, D)` for every `k ≥ 2`.** The trusting
+    searcher gets exploited: OBot's real defection is uncertifiable within Cupod's own
+    budget (the floor), so Cupod cooperates into the sucker payoff. -/
+theorem outcome_CupodBot_vs_OBot (k fuel : Nat) (hk : 2 ≤ k) :
+    outcome (fuel + 5) (CupodBot k) OBot = some (.C, .D) := by
+  have hA : play (fuel + 5) (CupodBot k) OBot = some .C := by
+    simpa [Nat.add_assoc] using CupodBot_plays_C_against_OBot k (fuel + 3)
+  have hB : play (fuel + 5) OBot (CupodBot k) = some .D :=
+    OBot_plays_D_against_CupodBot k fuel (proofSearch_true_for_bot_DefectBot_vs_Cupod k hk)
+  simp [outcome, hA, hB]
 
 
 -- EBot --

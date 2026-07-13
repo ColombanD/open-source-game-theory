@@ -746,14 +746,15 @@ theorem no_provable_EBot_C_vs_Prudent_tail (k : Nat) :
     ∀ K φ, Provable K φ → K ≤ k →
       rightTail φ = .plays EBot (PrudentBot k) .C → False := by
   intro K φ hp hK ht
-  refine no_provable_probeFirst_C_tail k DefectBot
+  refine no_provable_probeFirst_tail k DefectBot (.const .D)
       (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
         (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
-      (.plays .opp .self .C)
+      .C .C (.plays .opp .self .C)
       (.search k (.plays .opp (.bot DefectBot) .D) (.const .C) (.const .D))
-      (.const .D) ?_ K φ hp hK ?_
+      (.const .D) ?_ ?_ K φ hp hK ?_
   · simpa [Formula.subst, Prog.subst, PrudentBot] using
       interp_bot_DefectBot_plays_C_false (PrudentBot k)
+  · intro k' ψ c0 c1 h; simp at h
   · simpa [EBot, PrudentBot] using ht
 
 /-- PrudentBot's outer guard fails against EBot at every budget — the floor's bite. -/

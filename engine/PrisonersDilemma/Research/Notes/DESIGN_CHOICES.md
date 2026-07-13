@@ -98,25 +98,41 @@ bot, glued by `.self` substitution), so no stagger fixes them. Their honest outc
 are defection on the searcher's side; formalizing those needs a `¬Provable k` cost
 lower bound — nontrivial because the guard formula is TRUE (soundness gives nothing).
 
-**The lower bound, delivered for ALL THREE pairs (2026-07-09).** `Base/Exclusion.lean`
+**The lower bound, delivered for ALL SIX floor pairs (2026-07-09).** `Base/Exclusion.lean`
 proves the reusable **Derivation census** (`tail_plays_readable`: only the five
 bridge-readable player shapes can appear as a plays-atom spine tail of a `Derivation`)
-and the **generalized floor bound** `no_provable_probeFirst_C_tail`: for any probe-first
-simulator `.ite (.sim .opp (.bot z)) .C (.const .D) q` against any budget-`k` searcher
-`.search k g pT pE` whose guard instance vs the probe is false, no ≤ k certificate
-concludes the simulator's cooperation — strong induction on the budget where `struct`
-dies by the census, `atom` dies inside the `PlaysProof` replay (`search_t` by soundness
-of the false probe guard, `search_f` by the literal floor summand), and the
-`app`/`weakenImpl`/`implTrans`/`diagF`/`impS2` regress descends by transcript
-cumulativity. All three tombstones fall as instances (the floor fires at the FIRST
-probe, before the simulators' else-branches differ):
-* `outcome_DupocBot_vs_DBot = some (.D, .C)` at every budget (`Theorems/DupocBot.lean`);
-* `outcome_DupocBot_vs_EBot = some (.D, .C)` for every `k ≥ 2` (ibid.; the bound is the
-  Σ₁ price of the `.bot CooperateBot` probe certificate steering EBot's second guard);
-* `outcome_PrudentBot_vs_EBot = some (.D, .C)` past the Löb threshold
+and the **generalized floor bound** `no_provable_probeFirst_tail` (+ the
+`_botOpp` variant for a `.bot`-wrapped searcher): for any probe-first simulator
+`.ite (.sim .opp (.bot z)) aT p q` — test action and BOTH branches fully general, since
+the kill happens at the guard certificate that both `ite` polarities must carry —
+against any budget-`k` searcher (`.search k g pT pE`, bare or `.bot`-wrapped) whose
+guard instance vs the probe is false, no ≤ k certificate concludes the simulator's
+play. Strong induction on the budget: `struct` dies by the census, `atom` dies inside
+the `PlaysProof` replay (`search_t` by soundness of the false probe guard, `search_f`
+by the literal floor summand), and the `app`/`weakenImpl`/`implTrans`/`diagF`/`impS2`
+regress descends by transcript cumulativity. Every floor tombstone falls as an
+instance (the floor fires at the FIRST probe, before the simulators' branches differ):
+* `outcome_DupocBot_vs_DBot = (D, C)` at every budget (`Theorems/DupocBot.lean`);
+* `outcome_DupocBot_vs_EBot = (D, C)` for every `k ≥ 2` (ibid.; the bound is the Σ₁
+  price of the `.bot CooperateBot` probe certificate steering EBot's second guard);
+* `outcome_PrudentBot_vs_EBot = (D, C)` past the Löb threshold
   (`Theorems/LlmGenerations/PrudentBot.lean`; EBot's third probe watches the
   PrudentBot↔`.bot MirrorBot` Löb cooperation, so EBot's C-play itself rides
-  `prudent_botmirror_coop` — a negative-outcome theorem whose positive half is PBLT).
+  `prudent_botmirror_coop` — a negative-outcome theorem whose positive half is PBLT);
+* `outcome_CupodBot_vs_OBot = (C, D)` for every `k ≥ 2` (`Theorems/CupodBot.lean`; the
+  defection-DETECTOR gets exploited — OBot's real defection is uncertifiable within
+  Cupod's own budget, so Cupod cooperates into the sucker payoff; target action D and
+  a then-branch `ite`, exercising the lemma's full generality);
+* `outcome_JustBot_vs_DBot = (D, C)` at every budget and
+  `outcome_JustBot_vs_EBot = (D, C)` for `k ≥ 2`
+  (`Theorems/LlmGenerations/JustBot.lean`; the `_botOpp` variant — JustBot's guard
+  target is the FROZEN `.bot (DupocBot k)`, one extra `.bot` unwrap in the replay).
+
+The same-`k` retirements with STAGGERED/two-tier replacements (PrudentBot×DupocBot,
+JustBot×PrudentBot, JustBot×CupodTrollBot, PrudentBot2 self-play) were already
+re-certified during the repair; with the six floor pairs above, NO retired outcome
+remains unreplaced. Genuinely open matchups (JustBot×MirrorBot's bistable fixed point)
+are open for semantic reasons, not missing lower bounds.
 
 ---
 
