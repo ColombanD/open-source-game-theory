@@ -107,14 +107,14 @@ def legPDT : ProvT 1570 (.impl (.box kP phiD) phiP) :=
     prudenceT (by decide) (by decide)
 
 /-- Leg 2: Dupoc's `searchBranch` leaf. -/
-def dLegDP : Derivation (.impl (.box kZ phiP) phiD) :=
+def dLegDP : PD.T48.LeafPf (.impl (.box kZ phiP) phiD) :=
   .searchBranch kZ (.plays .opp .self .C) .C .D DB PB rfl
 
-#eval dLegDP.size
+#eval (Formula.impl (.box kZ phiP) phiD).size   -- a leaf's transcript = its conclusion
 #eval c_guard kP
 
 def legDPT : ProvT 254 (.impl (.box kZ phiP) phiD) :=
-  .struct dLegDP (by decide)
+  .leaf dLegDP (by decide)
 
 /-- The V-multiple unit (consumer recipe): p₁+p₂+|Af|+|Bf|+log2 k+16. -/
 def VZ : Nat := 1570 + 254 + 111 + 111 + 29 + 16
@@ -196,7 +196,7 @@ def CPB : Prog := Bots.CupodBot kT
 def guardTT : Formula := .eq CPB CPB
 
 def treeTT : ProvT 200 guardTT :=
-  .struct (Derivation.eqRefl CPB) (by decide)
+  .leaf (PD.T48.LeafPf.eqRefl CPB) (by decide)
 
 #eval s!"CupodTroll eq-guard tree passes instance gate: {
   treeTT.gateOKb (instOKb [CPB] kT)}"
@@ -239,12 +239,12 @@ def legPD2T : ProvT 1570 (.impl (.box kP phiA2) phiB2) :=
     .C .D (.const .D) PB BDB rfl
     prudence2T (by decide) (by decide)
 
-def dLegDP2 : Derivation (.impl (.box kZ phiB2) phiA2) :=
+def dLegDP2 : PD.T48.LeafPf (.impl (.box kZ phiB2) phiA2) :=
   .botSearchStep kZ (.plays .opp .self .C) .C .D BDB PB rfl
 
-#eval dLegDP2.size
+#eval (Formula.impl (.box kZ phiB2) phiA2).size   -- a leaf's transcript = its conclusion
 def legDP2T : ProvT 256 (.impl (.box kZ phiB2) phiA2) :=
-  .struct dLegDP2 (by decide)
+  .leaf dLegDP2 (by decide)
 
 def VZ2 : Nat := 1570 + 256 + 112 + 112 + 29 + 16
 def fbZ2 : Nat := kZ - 64 * VZ2

@@ -96,16 +96,16 @@ def kD : Nat := 2097152
 def meD : Prog := Bots.DupocBot kD
 def tgtD : Formula := .plays meD meD Action.C
 
-def dLeg : Derivation (.impl (.box kD tgtD) tgtD) :=
+def dLeg : PD.T48.LeafPf (.impl (.box kD tgtD) tgtD) :=
   .searchBranch kD (.plays .opp .self Action.C) Action.C Action.D meD meD rfl
 
-#eval dLeg.size          -- pm
+#eval (Formula.impl (.box kD tgtD) tgtD).size   -- pm (a leaf's transcript = its conclusion)
 #eval tgtD.size          -- |φ|
 #eval Nat.log2 kD
 
-def W : Nat := 224   -- dLeg.size + tgtD.size + log2 kD + 8 = 138+57+21+8
+def W : Nat := 224   -- concl.size + tgtD.size + log2 kD + 8 = 138+57+21+8
 
-def hLoebT : ProvT 138 (.impl (.box kD tgtD) tgtD) := .struct dLeg (Nat.le_refl _)
+def hLoebT : ProvT 138 (.impl (.box kD tgtD) tgtD) := .leaf dLeg (Nat.le_refl _)
 
 /-- THE TREE: DupocBot self-cooperation, the real instance-Löb fact. -/
 def treeD : ProvT (4096 * W) tgtD :=
@@ -510,42 +510,13 @@ theorem DAnt_rawGate {P : List Prog} {N : Nat} {B C : Formula}
   have hm := DAnt_rawModest h hC.2 hraw
   ⟨⟨le_trans (PD.T48.DAnt_lit h) hC.1, hm.1⟩, hm.2⟩
 
-/-- **The struct arm, pool-free**: instance-gated + raw-arged conclusions pass at
-    every `derivGateOK` site. -/
-theorem derivGateOK_of_conclusion_raw {P : List Prog} {N : Nat} :
-    ∀ {ξ : Formula} (d : Derivation ξ), instGate P N ξ → rawArgsF ξ = true →
-    derivGateOK (instGate P N) d
-  | _, .modusPonens φ ψ d1 d2, hξ, hraw => by
-      have hcut := DAnt_rawGate (PD.T48.derivation_impl_ant d1) hξ hraw
-      exact ⟨hcut.1,
-        derivGateOK_of_conclusion_raw d1 (instGate_impl_iff.mpr ⟨hcut.1, hξ⟩)
-          (by simp only [rawArgsF, Bool.and_eq_true]; exact ⟨hcut.2, hraw⟩),
-        derivGateOK_of_conclusion_raw d2 hcut.1 hcut.2⟩
-  | _, .hypSyll φ ψ χ d1 d2, hξ, hraw => by
-      have hφ := (instGate_impl_iff.mp hξ).1
-      have hχ := (instGate_impl_iff.mp hξ).2
-      simp only [rawArgsF, Bool.and_eq_true] at hraw
-      have hmid := DAnt_rawGate (PD.T48.derivation_impl_ant d2) hχ hraw.2
-      exact ⟨hmid.1,
-        derivGateOK_of_conclusion_raw d1 (instGate_impl_iff.mpr ⟨hφ, hmid.1⟩)
-          (by simp only [rawArgsF, Bool.and_eq_true]; exact ⟨hraw.1, hmid.2⟩),
-        derivGateOK_of_conclusion_raw d2 (instGate_impl_iff.mpr ⟨hmid.1, hχ⟩)
-          (by simp only [rawArgsF, Bool.and_eq_true]; exact ⟨hmid.2, hraw.2⟩)⟩
-  | _, .searchBranch _ _ _ _ _ _ _, _, _ => trivial
-  | _, .botSearchStep _ _ _ _ _ _ _, _, _ => trivial
-  | _, .simStep _ _ _ _ _ _, _, _ => trivial
-  | _, .botSimStep _ _ _ _ _ _, _, _ => trivial
-  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _, _, _ => trivial
-  | _, .eqRefl _, _, _ => trivial
-  | _, .eqNeg _ _ _, _, _ => trivial
-
 /-- Raw frames of a plays walk (read off the type indices). -/
 def _root_.PD.T49.PlaysT.rawFrames {me o b : Prog} {a : Action} {n : Nat}
     (_ : PlaysT me o b a n) : Prop :=
   T43.modestP me = true ∧ T43.modestP o = true
 
 mutual
-  /-- Hereditary rawness: every atom node's frames and every struct node's
+  /-- Hereditary rawness: every atom node's frames and every LEAF node's
       conclusion args are RAW-modest (true of eval-derived certificates; the
       transport's 4th certificate). -/
   def _root_.PD.T49.PlaysT.rawAtoms : {me o b : Prog} → {a : Action} → {n : Nat} →
@@ -564,7 +535,7 @@ mutual
     | _, _, .mk pl _ => pl.rawFrames ∧ pl.rawAtoms
 
   def _root_.PD.T49.ProvT.rawAtoms : {k : Nat} → {φ : Formula} → ProvT k φ → Prop
-    | _, ξ', .struct _ _ => rawArgsF ξ' = true
+    | _, ξ', .leaf _ _ => rawArgsF ξ' = true
     | _, _, .atom t => t.rawAtoms
     | _, _, .weakenImpl _ _ _ t _ => t.rawAtoms
     | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.rawAtoms
@@ -702,7 +673,7 @@ theorem ProvT.transport {P : List Prog} {N M : Nat}
     t.cutsOK (instGate P N) → t.citesLE M → t.rawAtoms → m ≤ M →
     instGate P N ξ →
     t.gateOK (instGate P N)
-  | _, _, .struct d _, _, _, hr, _, hξ => derivGateOK_of_conclusion_raw d hξ hr
+  | _, _, .leaf _ _, _, _, _, _, _ => trivial
   | _, _, .atom t, hc, hl, hr, _, hξ => AtomT.transport hMN t hc hl hr hξ
   | _, _, .weakenImpl φ' ψ' m' tw hle, hc, hl, hr, hm, hξ =>
       ProvT.transport hMN tw hc hl hr
@@ -840,7 +811,7 @@ mutual
         T43.modestP me && T43.modestP o && pl.rawAtomsb
 
   def _root_.PD.T49.ProvT.rawAtomsb : {k : Nat} → {φ : Formula} → ProvT k φ → Bool
-    | _, ξ', .struct _ _ => rawArgsF ξ'
+    | _, ξ', .leaf _ _ => rawArgsF ξ'
     | _, _, .atom t => t.rawAtomsb
     | _, _, .weakenImpl _ _ _ t _ => t.rawAtomsb
     | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.rawAtomsb
@@ -887,7 +858,7 @@ mutual
 
   theorem _root_.PD.T49.ProvT.rawAtomsb_sound {k : Nat} {φ : Formula} :
       (t : ProvT k φ) → t.rawAtomsb = true → t.rawAtoms
-    | .struct _ _, h => h
+    | .leaf _ _, h => h
     | .atom t, h => t.rawAtomsb_sound h
     | .weakenImpl _ _ _ t _, h => t.rawAtomsb_sound h
     | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _, h => t.rawAtomsb_sound h

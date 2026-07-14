@@ -85,25 +85,6 @@ theorem DAnt_chain_to : ∀ {B C : Formula}, PD.T48.DAnt B C → ModChain C →
       subst hD
       exact absurd h1 DAnt_box_consequent
 
-/-- No `Derivation` concludes the Dupoc fact: its only census antecedent is the
-    guard box, and no Derivation concludes a box. -/
-theorem no_deriv_tgtD (d : Derivation tgtD) : False := by
-  cases d with
-  | modusPonens φ ψ d1 d2 =>
-      have hant := PD.T48.derivation_impl_ant d1
-      have := DAnt_chain_to hant ModChain.base
-      subst this
-      exact PD.T48.derivation_no_box d2
-
-/-- No `Derivation` concludes a proper `ModChain` implication either: its census
-    antecedent would be the guard box, which is not modest. -/
-theorem no_deriv_chain {B C : Formula} (d : Derivation (.impl B C))
-    (hB : T43.modestF B = true) (hC : ModChain C) : False := by
-  have hant := PD.T48.derivation_impl_ant d
-  have := DAnt_chain_to hant hC
-  subst this
-  simp [T43.modestF, tgtD_not_modest] at hB
-
 /-- **THE REGRESS**: no modest-gated derivation concludes any `ModChain` formula —
     atoms re-cite the fact itself (structural descent through the recursor), cuts
     and census antecedents into the chain are the non-modest guard box, and
@@ -119,8 +100,8 @@ theorem regress {N : Nat} {m : Nat} {C : Formula}
     (motive_2 := fun _ φ _ => ModChain φ → False)
     (motive_3 := fun _ C _ => ModChain C → False)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
-    ?struct ?atom ?weaken ?sts ?itrans ?atomBox ?boxIntro ?app ?axK ?box4
-    ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg h
+    ?atom ?sb ?ss ?bss ?bsearch ?ite ?eqR ?eqN ?app ?itrans ?weaken ?sts
+    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg h
   case const =>
       intro me oppo a h1 h2
       refine ⟨fun hb => absurd hb.1 (by simp [meD, Bots.DupocBot]), fun c hc => ?_⟩
@@ -175,11 +156,54 @@ theorem regress {N : Nat} {m : Nat} {C : Formula}
       intro me oppo a n k _ hle ih hm
       cases hm with
       | base => exact (ih rfl rfl).1 ⟨rfl, rfl⟩
-  case struct =>
-      intro φ0 k0 hd hm
+  -- the seven transparency leaves: each impl-leaf's census antecedent chains to the
+  -- guard box (`DAnt_chain_to`), which is not modest; eq/neg leaves have no ModChain shape.
+  case sb =>
+      intro k0 g ψ a b me opnt hme hle hm
       cases hm with
-      | base => obtain ⟨d, _⟩ := hd; exact no_deriv_tgtD d
-      | step hB hC' => obtain ⟨d, _⟩ := hd; exact no_deriv_chain d hB hC'
+      | step hB hC' =>
+          have hbox := DAnt_chain_to
+            (PD.T48.LeafPf.impl_ant (.searchBranch g ψ a b me opnt hme)) hC'
+          rw [hbox] at hB
+          simp [T43.modestF, tgtD_not_modest] at hB
+  case ss =>
+      intro k0 me pp qq opnt a hme hle hm
+      cases hm with
+      | step hB hC' =>
+          have hbox := DAnt_chain_to
+            (PD.T48.LeafPf.impl_ant (.simStep me pp qq opnt a hme)) hC'
+          rw [hbox] at hB
+          simp [T43.modestF, tgtD_not_modest] at hB
+  case bss =>
+      intro k0 me pp qq opnt a hme hle hm
+      cases hm with
+      | step hB hC' =>
+          have hbox := DAnt_chain_to
+            (PD.T48.LeafPf.impl_ant (.botSimStep me pp qq opnt a hme)) hC'
+          rw [hbox] at hB
+          simp [T43.modestF, tgtD_not_modest] at hB
+  case bsearch =>
+      intro k0 g ψ a b me opnt hme hle hm
+      cases hm with
+      | step hB hC' =>
+          have hbox := DAnt_chain_to
+            (PD.T48.LeafPf.impl_ant (.botSearchStep g ψ a b me opnt hme)) hC'
+          rw [hbox] at hB
+          simp [T43.modestF, tgtD_not_modest] at hB
+  case ite =>
+      intro k0 g z a' c0 c1 ψ qq me opnt hme hle hm
+      cases hm with
+      | step hB hC' =>
+          have hbox := DAnt_chain_to
+            (PD.T48.LeafPf.impl_ant (.iteBranchSearch_t g z a' c0 c1 ψ qq me opnt hme)) hC'
+          rw [hbox] at hB
+          simp [T43.modestF, tgtD_not_modest] at hB
+  case eqR =>
+      intro k0 p hle hm
+      exact nomatch hm
+  case eqN =>
+      intro k0 p q hne hle hm
+      exact nomatch hm
   case atom =>
       intro k0 φ0 _ ih hm
       exact ih hm

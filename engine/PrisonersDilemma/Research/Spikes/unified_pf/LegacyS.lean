@@ -35,7 +35,11 @@ so "the new oracle decides exactly the old relation" is a THEOREM, not a regress
   constants cannot silently rewrite the baseline — the fidelity `rfl`s below would break loudly.
 * If any edit desynchronizes the snapshot from the live system, the fidelity section STOPS
   COMPILING. That is the intended alarm: the baseline may only be re-frozen deliberately.
-* NOT root-imported. **Retire in Phase 4.5** (archive with a tombstone header).
+* NOT root-imported. **Phase 4.5 decision (2026-07-14): KEPT PERMANENTLY** — the migration is
+  complete (both lake targets Pf-only and green), and this file's `legacy_iff_live` is the
+  standing machine-checked evidence that the unified system proves EXACTLY what the original
+  `S` proved. It compiles against `Program.lean` + the live `Derivation.lean` and should keep
+  doing so; if it ever breaks, the meaning-preservation claim breaks with it.
 
 Check: `lake env lean PrisonersDilemma/Research/Spikes/unified_pf/LegacyS.lean`
 -/

@@ -79,7 +79,7 @@ def chkImpS2EG (Gb : Formula → Bool) (rec : Nat → Formula → Bool) (k : Nat
     approximation `S` as the guard oracle (fuel `k+1` covers the budget-bounded cert
     recursion; guard hops and `search_f` refutations consult `S`). -/
 def stepG (Gb : Formula → Bool) (S : Nat → Formula → Bool) : Nat → Formula → Bool := fun k φ =>
-  decDeriv k k φ ||
+  chkLeaf k φ ||
   certOG S (k+1) k φ ||
   chkWeaken S k φ ||
   chkSTS S k φ ||
@@ -187,9 +187,8 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
     simp only [Bool.or_eq_true] at h
     rcases h with ((((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
       | h) | h) | h) | h
-    · -- struct
-      obtain ⟨d, hsz⟩ := decDeriv_sound k k φ h
-      exact PfG.struct ⟨d, hsz⟩
+    · -- the source-transparency leaves (ungated → any gate)
+      exact chkLeaf_soundG k φ h
     · -- atom (cert search with the lagged approximation as guard oracle)
       exact PfG.atom (certOG_soundG _ (fun m ψ hh => ih m ψ hh) _ k φ h)
     · -- weakenImpl
@@ -241,7 +240,7 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true,
         decide_eq_true_eq] at h
       obtain ⟨m₁, hm₁, φ', _, ⟨⟨⟨hg, hsz⟩, h1⟩, h2⟩⟩ := h
-      exact PfG.mp k m₁ _ φ' φ (ih _ _ h1) (ih _ _ h2) (by omega) ((hGb _).mp hg)
+      exact PfG.mp m₁ _ φ' φ (ih _ _ h1) (ih _ _ h2) (by omega) ((hGb _).mp hg)
     · -- axK (gated)
       unfold chkAxKG at h
       split at h
@@ -471,8 +470,8 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
     (motive_2 := fun k φ _ => ∀ K, k ≤ K → ∃ F, certOG (decG Gb F) (K+1) K φ = true)
     (motive_3 := fun k φ _ => ∀ K, k ≤ K → ∃ F, decG Gb F K φ = true)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
-    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
-    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
+    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
+    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
     h
   case pConst =>
       intro me oppo a b hb
@@ -584,13 +583,59 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
       intro me oppo a n k _ hle ih K hmK
       obtain ⟨F, e⟩ := ih K (by omega)
       exact ⟨F, e⟩
-  case cStruct =>
-      intro φ0 k0 hd K hmK
-      obtain ⟨d, hsz⟩ := hd
+  case cSB =>
+      intro k0 g ψg aT aE me opnt hme hsz K hmK
+      subst hme
       refine ⟨1, ?_⟩
       rw [decG]
       unfold stepG
-      have hfire := decDeriv_complete d K K (by omega) le_rfl
+      have hfire := chkLeaf_searchBranch K g ψg aT aE opnt (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cSS =>
+      intro k0 me pp qq opnt a hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_simStep K pp qq opnt a (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cBSS =>
+      intro k0 me pp qq opnt a hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_botSimStep K pp qq opnt a (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cBSearch =>
+      intro k0 g ψg aT aE me opnt hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_botSearchStep K g ψg aT aE opnt (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cIte =>
+      intro k0 g z a' c0 c1 ψg qq me opnt hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_iteBranchSearch K g z a' c0 c1 ψg qq opnt (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cEqR =>
+      intro k0 p hsz K hmK
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_eqRefl K p (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cEqN =>
+      intro k0 p q hne hsz K hmK
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_eqNeg K p q hne (Nat.le_trans hsz hmK)
       simp only [hfire, Bool.true_or]
   case cAtom =>
       intro k0 φ0 _hatom ih K hmK

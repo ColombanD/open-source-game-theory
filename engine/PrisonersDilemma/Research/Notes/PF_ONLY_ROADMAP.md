@@ -219,7 +219,26 @@ JustBot, CIMCIC, DIMCID}` (hand-port these — do NOT re-run the LLM pipeline mi
 
 ✅ **Gate MET** (see above). **The engine is now Pf-only.**
 
-### Phase 4 — Metatheory (~16k lines; the big one) — **IN PROGRESS 2026-07-14**
+### Phase 4 — Metatheory (~16k lines; the big one) — ✅ **DONE 2026-07-14**
+
+**BOTH LAKE TARGETS GREEN (3158 jobs). The migration's mathematical content is complete.**
+* All 14 modules Pf-only. The golden inventory is STILL byte-identical (81/81) and the
+  axiom audit pristine — `cutRelevance_modestGate_false` (the falsification) and
+  `prudent_dupoc_certified` (the certified-zoo flagship) both on `[propext]` alone.
+* **T54, the D2 acceptance test: PASSED.** All five zoo trees pass the instance gate under
+  uniform gating (PrudentBot×DupocBot staggered, CIMCIC impl-guard, CupodTroll eq-guard,
+  JustBot chain + guard fact) — `#eval`-verified and kernel-certified.
+* **The mid-port design correction that mattered** (recorded in `b6ecce3`): `LeafPf` must be
+  SHAPE-ONLY (`Formula → Type`), with the size gate a separate `Prop` field of the tree node
+  (`.leaf l hd` — the exact `(payload, proof)` shape of the old `struct d hd`). Budget data
+  inside the Type-valued payload breaks every proof-irrelevance `rfl` (regating, mono-wt).
+* **Phase 4.5**: `LegacyS.lean` KEPT permanently (deviation from plan — it is the standing
+  meaning-preservation evidence, not scaffolding); the conjecture is restated over the
+  unified system (T42's `CutRelevance` now reads `Pf k φ → PfB (N₀ k φ) k φ`; the open
+  universal closure is `Pf k φ → PfG (instGate P N₀) k φ`, to be hunted on the unified
+  substrate per D3).
+
+Original plan (~5–10 sessions; actual: ~2):
 
 **Status (commit `ce79594`): 8 of 14 modules GREEN** — T31, T42, T43, T44, T45, T46, T47,
 T48. The D2 decision is EXECUTED (T42 compiled first-pass; uniform gating; stratification

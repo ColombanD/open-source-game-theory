@@ -55,15 +55,15 @@ form depends on how the conjecture resolves — see the roadmap's T5 notes).
 namespace PD.Decidability
 
 -- The headline API under one roof (implementations keep their milestone namespaces).
-export PD.T31 (decFull decFull_sound decFull_complete Provable_iff_decFull
+export PD.T31 (decFull decFull_sound decFull_complete Pf_iff_decFull
   GuardSound guardFull guardFast guardFull_sound guardFast_sound
   guardFull_converges_pos guardFull_converges_neg
   evalG evalG_sound playG playG_sound outcomeG outcomeG_sound)
-export PD.T42 (maxLitP maxLitF PlaysProofG AtomProvableG ProvableG
-  litGate PlaysProofB AtomProvableB ProvableB
-  ProvableG_sound ProvableB_sound ProvableG_monoG ProvableB_monoN
-  Provable_exists_ProvableB Provable_iff_exists_ProvableB
-  CutRelevance Provable_iff_ProvableB_of_cutRelevance)
+export PD.T42 (maxLitP maxLitF PlaysProofG AtomProvableG PfG
+  litGate PlaysProofB AtomProvableB PfB
+  PfG_sound PfB_sound PfG_monoG PfB_monoN
+  Pf_exists_PfB Pf_iff_exists_PfB
+  CutRelevance Pf_iff_PfB_of_cutRelevance)
 export PD.T43 (closedP closedF modestP modestF argOK subsP subsF playsArgsF
   certU players guardU step_sim step_search guardU_args)
 export PD.T44 (modestGate cutOKb stepB decB decB_sound decB_complete decB_mono
