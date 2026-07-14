@@ -174,9 +174,36 @@ Dependency order:
 
 **Gate**: `Base/` compiles; the equivalence scratch still compiles.
 
-### Phase 3 — `Theorems/` + `Bots/` (~7.1k lines, mostly mechanical) — ~2–3 sessions
-`Bots/` unchanged (pure `Prog`). For theorem files, apply the pattern catalogue
-(worked examples in `PfEngineSpike.lean`):
+### Phase 3 — `Theorems/` + `Bots/` — ✅ **DONE 2026-07-14**
+
+**Gate MET, including the headline check**: `lake build PrisonersDilemma` green (3142 jobs),
+and the **golden-inventory diff is EMPTY** — all **81** outcome theorems have byte-identical
+kernel-elaborated types and identical axiom footprints (standard three; zero non-standard),
+on a proof system rebuilt from scratch underneath them
+(`Research/Data/golden_outcomes_post_pf.txt` vs `…_pre_pf.txt`). That is the migration's
+correctness claim, discharged mechanically rather than asserted.
+
+Error counts fell as predicted (242 → 0): the sweep (constructor renames, `struct`-unwrapping,
+`app → mp`) cleared ~95%. Two things needed real thought, both recorded below.
+
+**FINDING (the sequel to Phase 2's census gap).** Phase 2 generalized `hinner` from the
+target-action form to all actions, to feed the new stacked-search disjunct. **That
+generalization is FALSE for PrudentBot**, whose then-branch genuinely IS a const-branched
+`.search` — it is the stacked shape. The honest structure, now in place:
+* `hinner` keeps its **action-specific** form (`pT ≠ .search k₂ ψ₂ (.const aTgt) (.const c1)`).
+  It is what discharges the `searchThenSearch_t` arm — that rule concludes a play of the INNER
+  THEN-action, never the else-action a floor theorem is about. PrudentBot: inner then = `C`,
+  floor target = `D`. The arm dies on the action mismatch, on its merits.
+* `not_readable_searchNonConst` no longer claims `¬ ReadableMe` (which is **false** for a
+  stacked searcher). It now refutes exactly the **five** source-transparency bridge shapes —
+  all the bridge arms can produce. The sixth disjunct belongs to `searchThenSearch_t`, which
+  every floor theorem handles in its own arm.
+
+The lesson generalizes: the two-type split let `searchThenSearch_t` (a `Provable` rule) hide
+from the `Derivation` census, so each floor theorem killed it ad hoc. Unification forces the
+shape into the open, where it must be discharged once, correctly. No outcome changed.
+
+The pattern catalogue as applied (worked examples were in the retired `PfEngineSpike.lean`):
 
 | old pattern | new pattern |
 |---|---|
@@ -190,8 +217,7 @@ Files: `Theorems/{CupodBot, CooperateBot, DefectBot, DupocBot, EBot, Helpers,
 TitForTatBot, OBot, MirrorBot, DBot, CupodTrollBot}` + `Theorems/LlmGenerations/{PrudentBot,
 JustBot, CIMCIC, DIMCID}` (hand-port these — do NOT re-run the LLM pipeline mid-migration).
 
-**Gate**: `lake build` target `PrisonersDilemma` green; golden-statement diff CLEAN
-(byte-identical outcome statements); axiom audit clean. The engine is now Pf-only.
+✅ **Gate MET** (see above). **The engine is now Pf-only.**
 
 ### Phase 4 — Metatheory (~16k lines; the big one) — ~5–10 sessions
 Sub-order (each its own commit):

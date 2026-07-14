@@ -388,23 +388,33 @@ else `searchBranch` could read it) and the stacked-search bridge (`hinner`: the
 then-branch is not an inner search whose then-action is the target — else
 `searchThenSearch_t` could conclude the target-tailed implication). -/
 
-/-- A search bot whose branches are not both `.const` is not bridge-readable. -/
+/-- A search bot whose branches are not both `.const` matches none of the FIVE
+    source-transparency bridge shapes.
+
+    **Pf-only note**: deliberately NOT stated as `¬ ReadableMe` — `ReadableMe`'s sixth disjunct
+    (the STACKED search) is genuinely SATISFIED by e.g. `PrudentBot k`, whose then-branch is a
+    const-branched `.search`. That disjunct belongs to `searchThenSearch_t`, which every floor
+    theorem discharges in its OWN arm (via the action-specific `hinner`: the stacked rule
+    concludes a play of the INNER THEN-action, never the else-action the floor is about). The
+    five bridge arms can only ever produce the first five disjuncts, so this is exactly the
+    strength they need. -/
 theorem not_readable_searchNonConst (k : Nat) (g : Formula) (pT pE : Prog)
-    (hshape : ∀ c0 c1, ¬ (pT = .const c0 ∧ pE = .const c1))
-    (hstack : ∀ k₂ ψ₂ c0 c1, pT ≠ .search k₂ ψ₂ (.const c0) (.const c1)) :
-    ¬ ReadableMe (.search k g pT pE) := by
+    (hshape : ∀ c0 c1, ¬ (pT = .const c0 ∧ pE = .const c1)) :
+    ¬ ((∃ k' ψ a b, (Prog.search k g pT pE) = .search k' ψ (.const a) (.const b)) ∨
+       (∃ p q, (Prog.search k g pT pE) = .sim p q) ∨
+       (∃ p q, (Prog.search k g pT pE) = .bot (.sim p q)) ∨
+       (∃ k' ψ a b, (Prog.search k g pT pE) = .bot (.search k' ψ (.const a) (.const b))) ∨
+       (∃ z a' k' ψ c0 c1 q,
+         (Prog.search k g pT pE) = .ite (.sim .opp (.bot z)) a'
+           (.search k' ψ (.const c0) (.const c1)) q)) := by
   rintro (⟨k', ψ, a, b, h⟩ | ⟨p', r, h⟩ | ⟨p', r, h⟩ | ⟨k', ψ, a, b, h⟩ |
-          ⟨w, a', k', ψ, c0, c1, r, h⟩ | ⟨k₁, ψ₁, k₂, ψ₂, c0, c1, r, h⟩)
+          ⟨w, a', k', ψ, c0, c1, r, h⟩)
   · simp only [Prog.search.injEq] at h
     exact hshape a b ⟨h.2.2.1, h.2.2.2⟩
   · simp at h
   · simp at h
   · simp at h
   · simp at h
-  · -- the STACKED-search shape (new with the merge): refuted by `hstack`, the caller's
-    -- promise that this searcher's then-branch is not itself a const-branched `.search`
-    simp only [Prog.search.injEq] at h
-    exact hstack k₂ ψ₂ c0 c1 h.2.2.1
 
 set_option maxHeartbeats 1000000 in
 /-- **The floor at the searcher's own play**: no proof of ≤ k characters concludes any
@@ -415,7 +425,7 @@ theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
     (aTgt : Action)
     (hfalse : ¬ (g.subst (.search k g pT pE) O).interp)
     (hshape : ∀ c0 c1, ¬ (pT = .const c0 ∧ pE = .const c1))
-    (hinner : ∀ k₂ ψ₂ c0 c1, pT ≠ .search k₂ ψ₂ (.const c0) (.const c1)) :
+    (hinner : ∀ k₂ ψ₂ c1, pT ≠ .search k₂ ψ₂ (.const aTgt) (.const c1)) :
     ∀ K φ, Pf K φ → K ≤ k →
       rightTail φ = .plays (.search k g pT pE) O aTgt → False := by
   intro K
@@ -428,23 +438,23 @@ theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
     | searchBranch gg psi aa bb me oppo hme hsz =>
         simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
         obtain ⟨rfl, -, -⟩ := htail
-        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inl ⟨gg, psi, _, _, hme⟩)
+        exact not_readable_searchNonConst k g pT pE hshape (Or.inl ⟨gg, psi, _, _, hme⟩)
     | simStep me pp qq oppo aa hme hsz =>
         simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
         obtain ⟨rfl, -, -⟩ := htail
-        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inr (Or.inl ⟨pp, qq, hme⟩))
+        exact not_readable_searchNonConst k g pT pE hshape (Or.inr (Or.inl ⟨pp, qq, hme⟩))
     | botSimStep me pp qq oppo aa hme hsz =>
         simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
         obtain ⟨rfl, -, -⟩ := htail
-        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inr (Or.inr (Or.inl ⟨pp, qq, hme⟩)))
+        exact not_readable_searchNonConst k g pT pE hshape (Or.inr (Or.inr (Or.inl ⟨pp, qq, hme⟩)))
     | botSearchStep gg psi aa bb me oppo hme hsz =>
         simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
         obtain ⟨rfl, -, -⟩ := htail
-        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inr (Or.inr (Or.inr (Or.inl ⟨gg, psi, _, _, hme⟩))))
+        exact not_readable_searchNonConst k g pT pE hshape (Or.inr (Or.inr (Or.inr (Or.inl ⟨gg, psi, _, _, hme⟩))))
     | iteBranchSearch_t gg zz aa' cc0 cc1 psi qq me oppo hme hsz =>
         simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
         obtain ⟨rfl, -, -⟩ := htail
-        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨zz, aa', gg, psi, cc0, cc1, qq, hme⟩)))))
+        exact not_readable_searchNonConst k g pT pE hshape (Or.inr (Or.inr (Or.inr (Or.inr ⟨zz, aa', gg, psi, cc0, cc1, qq, hme⟩))))
     | eqRefl pp hsz => simp [rightTail] at htail
     | eqNeg pp qq hne hsz => simp [rightTail] at htail
     | atom h =>
@@ -459,7 +469,7 @@ theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
         simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
         obtain ⟨rfl, rfl, rfl⟩ := htail
         simp only [Prog.search.injEq] at hme
-        exact hinner _ _ _ _ hme.2.2.1
+        exact hinner _ _ _ hme.2.2.1
     | weakenImpl φ' ψ m hψ hsz =>
         simp only [rightTail_impl] at htail
         simp only [Formula.size] at hsz

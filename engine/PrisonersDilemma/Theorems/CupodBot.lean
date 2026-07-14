@@ -59,7 +59,7 @@ theorem outcome_CupodBot_vs_CooperateBot (k fuel : Nat):
 theorem proofSearch_true_for_DefectBot :
     ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
   let k := atom_cost 1
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom ⟨PlaysProof.const, by decide⟩)⟩
+  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
 
 /-- CupodBot vs DefectBot: uses proof search being true -/
 theorem outcome_CupodBot_vs_DefectBot (fuel : Nat):
@@ -86,7 +86,7 @@ theorem outcome_CupodBot_vs_DefectBot (fuel : Nat):
     `5 * log2 k + 33` characters (the guard `ψ.subst (CupodBot k) (CupodBot k)`
     reduces to `.plays (CupodBot k) (CupodBot k) .D`; each `CupodBot k` costs
     `log2 k + 7`). By `linear_log2_add_le 5 33` this fits within budget `k` for
-    all `k ≥ K₀`, so the implication is `Provable k` outright — exactly the
+    all `k ≥ K₀`, so the implication is `Pf k` outright — exactly the
     PBLT-shaped hypothesis (no looser `∃ m` budget).
 
     The conclusion formula is *definitionally* the `searchBranch` conclusion: the
@@ -94,13 +94,12 @@ theorem outcome_CupodBot_vs_DefectBot (fuel : Nat):
     `.plays (CupodBot k) (CupodBot k) .D`, so the derivation lands in the target
     type with no rewriting. -/
 theorem cupod_loeb_premise (k : Nat) :
-    Provable (5 * Nat.log2 k + 33)
+    Pf (5 * Nat.log2 k + 33)
       (.impl (.box k (.plays (CupodBot k) (CupodBot k) .D))
              (.plays (CupodBot k) (CupodBot k) .D)) := by
-  apply Provable.struct
-  refine ⟨.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) (CupodBot k) rfl, ?_⟩
+  refine Pf.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) (CupodBot k) rfl ?_
   -- transcript = the single leaf's conclusion: 5 * log2 k + 33 — unconditionally.
-  simp only [numCost, Derivation.size, Formula.size, Prog.size, CupodBot]
+  simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, CupodBot]
   omega
 
 /-- CUPOD self-play defects, for `k` large enough — critch22 Theorem 3.4.
@@ -116,7 +115,7 @@ theorem outcome_CupodBot_vs_CupodBot :
   -- exactly `pblt_engine_id`'s premise shape (the Löb chain needs `pm ≪ k`).
   have hLoeb :
       ∀ k, k > 0 →
-        Provable (5 * Nat.log2 k + 33) (.impl (.box k (φ k)) (φ k)) := by
+        Pf (5 * Nat.log2 k + 33) (.impl (.box k (φ k)) (φ k)) := by
     intro k _
     exact cupod_loeb_premise k
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
@@ -129,7 +128,7 @@ theorem outcome_CupodBot_vs_CupodBot :
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
+  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
   obtain ⟨n, hn⟩ := hInterp
   refine ⟨n, ?_⟩
   simp [outcome, hn]
@@ -221,7 +220,7 @@ theorem outcome_CupodBot_vs_TitForTatBot (fuel : Nat):
 theorem proofSearch_true_for_bot_DefectBot :
     ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
   let k := atom_cost 2
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
+  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
 
 /-- CUPOD defects against `.bot DefectBot` once its search guard succeeds. -/
 theorem CupodBot_plays_D_against_bot_DefectBot (k fuel : Nat)
@@ -354,7 +353,7 @@ is real but whose certificate crosses the detector's own failed probe. -/
 /-- The floor for the OBot pair: no ≤ k certificate concludes any formula whose spine
     tail is "OBot plays D against `CupodBot k`". -/
 theorem no_provable_OBot_D_tail (k : Nat) :
-    ∀ K φ, Provable K φ → K ≤ k →
+    ∀ K φ, Pf K φ → K ≤ k →
       rightTail φ = .plays OBot (CupodBot k) .D → False := by
   intro K φ hp hK ht
   refine no_provable_probeFirst_tail k CooperateBot
@@ -388,7 +387,7 @@ theorem CupodBot_plays_C_against_OBot (k fuel : Nat) :
     `OBot_plays_D_against_CupodBot`'s hypothesis at every `k ≥ 2`. -/
 theorem proofSearch_true_for_bot_DefectBot_vs_Cupod (k : Nat) (hk : 2 ≤ k) :
     proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
-  (proofSearch_spec _ _).2 (Provable.atom
+  (proofSearch_spec _ _).2 (Pf.atom
     ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
 
 theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
@@ -523,18 +522,19 @@ theorem mirror_swap_provable (q : Prog) (a : Action) :
     chain via the deleted `proofSearch_impl_trans`; now one explicit
     Dynamics.) -/
 theorem cupod_mirror_loeb_premise (k : Nat) :
-    Provable (20 * Nat.log2 k + 150)
+    Pf (20 * Nat.log2 k + 150)
       (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
              (.plays MirrorBot (CupodBot k) .D)) := by
   -- The `hypSyll` TRANSCRIPT pays both leaves plus its conclusion (transcript cost
   -- model): searchBranch leaf + simStep leaf + the `□_k … → …` conclusion — all
   -- `O(log k)`; `20·log2 k + 150` is a generous uniform bound, valid for ALL `k`.
-  apply Provable.struct
-  refine ⟨.hypSyll _ _ _
-    (.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl)
-    (.simStep MirrorBot .opp .self (CupodBot k) .D rfl), ?_⟩
-  simp only [numCost, Derivation.size, Formula.size, Prog.size, CupodBot, MirrorBot]
-  omega
+  -- Pf-only: a `hypSyll` TREE smuggled through `struct` becomes a FLAT `implTrans`
+  -- of two bare leaves — same two transparency steps, same total budget.
+  refine Pf.implTrans _ _ _ (5 * Nat.log2 k + 50) (5 * Nat.log2 k + 50)
+    (Pf.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl ?_)
+    (Pf.simStep MirrorBot .opp .self (CupodBot k) .D rfl ?_) ?_ <;>
+  · simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, CupodBot, MirrorBot]
+    omega
 
 /-- Once `proofSearch k = true`, CupodBot's eval against MirrorBot is fully
     determined. Pattern from `CupodBot_plays_D_against_bot_DefectBot:247`. -/
@@ -607,7 +607,7 @@ theorem outcome_CupodBot_vs_MirrorBot :
   let φ : Nat → Formula := fun k => .plays MirrorBot (CupodBot k) .D
   have hLoeb :
       ∀ k, k > 0 →
-        Provable (20 * Nat.log2 k + 150) (.impl (.box k (φ k)) (φ k)) := by
+        Pf (20 * Nat.log2 k + 150) (.impl (.box k (φ k)) (φ k)) := by
     intro k _
     exact cupod_mirror_loeb_premise k
   have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
@@ -620,7 +620,7 @@ theorem outcome_CupodBot_vs_MirrorBot :
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
+  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
   obtain ⟨n, hMirror⟩ := hInterp
   have hPS : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true :=
     proofSearch_k_of_play_MirrorBot k n hMirror

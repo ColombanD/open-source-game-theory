@@ -31,7 +31,7 @@ theorem proofSearch_true_for_CupodBot (k : Nat)
     (hk : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k) :
     proofSearch k (.eq (CupodBot k) (CupodBot k)) = true :=
   (proofSearch_spec _ _).2
-    (Provable.struct ⟨Derivation.eqRefl (CupodBot k), hk⟩)
+    (Pf.eqRefl (CupodBot k) hk)
 
 /-- CupodTrollBot defects against a literal `CupodBot k`: the guard fires, so the
     bot takes its `.const .D` branch. -/
@@ -57,10 +57,10 @@ theorem CupodBot_defects_vs_CupodTrollBot (k fuel : Nat)
     CupodTrollBot_defects_vs_CupodBot k fuel hk
   -- Certify the play directly: Troll's `.eq` guard FIRES (eqRefl), so `search_t` + the
   -- defect leaf give the certificate at `log2 k + 3` characters (≤ k via `hk`).
-  have hEqProv : Provable k (.eq (CupodBot k) (CupodBot k)) :=
-    Provable.struct ⟨Derivation.eqRefl (CupodBot k), hk⟩
+  have hEqProv : Pf k (.eq (CupodBot k) (CupodBot k)) :=
+    Pf.eqRefl (CupodBot k) hk
   have hg : proofSearch k (.plays (CupodTrollBot k) (CupodBot k) .D) = true := by
-    refine (proofSearch_spec _ _).2 (Provable.atom
+    refine (proofSearch_spec _ _).2 (Pf.atom
       (⟨PlaysProof.search_t hEqProv PlaysProof.const, ?_⟩ :
         AtomProvable k (.plays (CupodTrollBot k) (CupodBot k) .D)))
     show c_leaf + c_guard k + c_node ≤ k
@@ -336,12 +336,12 @@ theorem DupocBot_plays_C_against_CupodTrollBot (j k fuel : Nat)
     play (fuel + 2) (DupocBot k) (CupodTrollBot j) = some .C := by
   have hne : DupocBot k ≠ CupodBot j := by simp [DupocBot, CupodBot]
   -- the guard refutation (eqNeg leaf), at its own size
-  have hneg : Provable ((Formula.neg (.eq (DupocBot k) (CupodBot j))).size)
+  have hneg : Pf ((Formula.neg (.eq (DupocBot k) (CupodBot j))).size)
       (.neg (.eq (DupocBot k) (CupodBot j))) :=
-    Provable.struct ⟨Derivation.eqNeg _ _ hne, Nat.le_refl _⟩
+    Pf.eqNeg _ _ hne (Nat.le_refl _)
   -- Troll's else-certificate: search_f over the refutation, then the cooperate leaf
   have hg : proofSearch k (.plays (CupodTrollBot j) (DupocBot k) .C) = true := by
-    refine (proofSearch_spec _ _).2 (Provable.atom (atom_monotone _ k _ ?_
+    refine (proofSearch_spec _ _).2 (Pf.atom (atom_monotone _ k _ ?_
       (⟨PlaysProof.search_f hneg PlaysProof.const, Nat.le_refl _⟩ :
         AtomProvable (c_leaf + (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + c_node)
           (.plays (CupodTrollBot j) (DupocBot k) .C))))
