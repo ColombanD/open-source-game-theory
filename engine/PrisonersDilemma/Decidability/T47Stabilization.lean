@@ -958,7 +958,7 @@ theorem decB_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     substantive hypotheses: the roots are modest (the whole zoo is, T4.3) and the root
     formula's `.plays` arguments live in the universe (automatic for `guardU` members —
     i.e. for every bot-guard instance — via `GF_args`). -/
-theorem ProvableG_iff_decB_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
+theorem PfG_iff_decB_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
     PfG (modestGate N) k₀ φ₀ ↔
       decB N (SL r₁ r₂ N k₀ φ₀).length k₀ φ₀ = true := by
@@ -975,13 +975,13 @@ theorem ProvableG_iff_decB_bound (h₁ : modestP r₁ = true) (h₂ : modestP r�
 
 /-- The `Decidable` instance — bounded provability over the modest stratum is decided by
     a terminating computation. -/
-def decideProvableG (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
+def decidePfG (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
     Decidable (PfG (modestGate N) k₀ φ₀) :=
   if h : decB N (SL r₁ r₂ N k₀ φ₀).length k₀ φ₀ = true then
-    .isTrue ((ProvableG_iff_decB_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mpr h)
+    .isTrue ((PfG_iff_decB_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mpr h)
   else
-    .isFalse (fun hg => h ((ProvableG_iff_decB_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mp hg))
+    .isFalse (fun hg => h ((PfG_iff_decB_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mp hg))
 
 end Space
 

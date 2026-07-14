@@ -28,7 +28,7 @@ cooperates. Against opponent `X` the guard substitutes to
   `.impl (.plays (DIMCID k) X .C) (.plays X (DIMCID k) .D)`.
 
 This is the mirror image of CIMCIC, and like CIMCIC it is made provable by the
-`Pf.weakenImpl` rule (see `Derivation.lean` and the CIMCIC theorem file):
+`Pf.weakenImpl` rule (see `ProofSystem.lean` and the CIMCIC theorem file):
 the implication is provable whenever its consequent is.
 
 ## The two outcomes
@@ -107,7 +107,7 @@ theorem outcome_DIMCID_vs_DefectBot :
 Symmetric to `outcome_CIMCIC_vs_DefectBot`. The guard `(.plays (DIMCID k) CooperateBot C) → (.plays
 CooperateBot (DIMCID k) D)` is vacuously TRUE but **structurally UNPROVABLE**: its CONSEQUENT
 `CooperateBot plays D` is a genuinely-FALSE atom (CooperateBot plays C), refuted by `Pf_sound`,
-which blocks `weakenImpl`; a `ForbiddenD`-motive induction excludes the `Derivation`/`implTrans`
+which blocks `weakenImpl`; a `ForbiddenD`-motive induction excludes the transparency-leaf/`implTrans`
 paths. Hence `proofSearch = false`, DIMCID falls through to `.const .C`, giving (C, C). NO
 `atom_complete_false_guard`. (Was deliberately omitted under the old belief that unprovability of a
 true formula couldn't be certified — it can, structurally, via the false consequent.)

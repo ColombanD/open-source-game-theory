@@ -1,5 +1,5 @@
 import PrisonersDilemma.Decidability.T31EngineDecider
-import PrisonersDilemma.Decidability.T42ProvableB
+import PrisonersDilemma.Decidability.T42PfB
 import PrisonersDilemma.Decidability.T43ModestUniverse
 
 /-!
@@ -407,7 +407,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
       · simp at h
 
 /-- Corollary: every `decB` hit is a real engine theorem. -/
-theorem decB_sound_Provable (N : Nat) (fuel k : Nat) (φ : Formula)
+theorem decB_sound_Pf (N : Nat) (fuel k : Nat) (φ : Formula)
     (h : decB N fuel k φ = true) : Pf k φ :=
   PfG_sound (decB_sound N fuel k φ h)
 
@@ -963,7 +963,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, PfG (modestGate N) m φ →
 /-! ## 8. THE PAYOFF (part b) — the modest stratum is semidecidable by its own enumerator;
 the fuel bound over the finite query space (part c) will upgrade this to DECIDABLE. -/
 
-theorem ProvableG_modest_iff_decB (N k : Nat) (φ : Formula) :
+theorem PfG_modest_iff_decB (N k : Nat) (φ : Formula) :
     PfG (modestGate N) k φ ↔ ∃ fuel, decB N fuel k φ = true :=
   ⟨fun h => decB_complete N h k le_rfl,
    fun ⟨f, hf⟩ => decB_sound N f k φ hf⟩

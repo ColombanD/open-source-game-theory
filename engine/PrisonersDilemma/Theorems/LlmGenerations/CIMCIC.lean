@@ -35,7 +35,7 @@ from a true consequent — `Derivation` only had `modusPonens`, `hypSyll`,
 proof of `B`. (This is precisely why the earlier automated attempt at CIMCIC
 failed.)
 
-We added the sound, faithful rule `Pf.weakenImpl` (in `Derivation.lean`):
+We added the sound, faithful rule `Pf.weakenImpl` (in `ProofSystem.lean`):
 from `Pf m ψ` conclude `Pf k (.impl φ ψ)` whenever the conclusion's
 character size fits `k`. It is sound because `interp (.impl φ ψ) = φ.interp →
 ψ.interp`, which follows from `ψ.interp` by `fun _ => ·`; it is faithful because a
@@ -135,7 +135,7 @@ It can — not by the `interp`-refutation route (the implication's interp IS tru
 **structural exclusion**: NO `Pf` constructor concludes this implication. The KEY is that the
 implication's CONSEQUENT (`DefectBot plays C`) is a genuinely-FALSE atom — refuted by
 `Pf_sound` — which blocks the only realistic path (`weakenImpl`, which needs the consequent
-provable). Combined with a `ForbiddenC`-motive induction excluding the `Derivation` and `implTrans`
+provable). Combined with a `ForbiddenC`-motive induction excluding the transparency-leaf and `implTrans`
 paths, this gives `¬ Pf k guard`, hence `proofSearch = false`, hence CIMCIC defects.
 
 This does NOT use `atom_complete_false_guard`. The `.impl`-guard false case is genuinely

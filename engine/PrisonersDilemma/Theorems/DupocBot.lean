@@ -121,7 +121,7 @@ formula is TRUE, so soundness gives nothing — only cost accounting closes it).
 
 RESOLVED (2026-07-09): the floor is now a THEOREM — `no_provable_DBot_C_tail` is the
 cost lower bound (no ≤ k certificate exists), by strong induction on the budget:
-* `struct` dies by the Derivation census (`Base/Exclusion.tail_plays_readable`) — DBot's
+* the transparency leaves die by the census (`Base/Exclusion.tail_plays_readable`) — DBot's
   shape (an `.ite` with a `.const` then-branch) is not bridge-readable;
 * `atom` dies inside the `PlaysProof` replay: DBot's guard forces Dupoc's probe play,
   where `search_t` is refuted by soundness (`.bot DefectBot` never cooperates) and

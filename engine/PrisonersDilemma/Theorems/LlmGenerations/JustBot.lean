@@ -530,7 +530,7 @@ floor — JustBot's guard at the same `k` can never afford it. Staggered-budget 
 
 `JustBot (4j+100)` vs `CupodTrollBot j`: JustBot's bigger budget affords Troll's
 `search_f`-floored else-certificate (Troll cooperates because its `.eq` recognition guard
-FAILS against `.bot (DupocBot (4j+100))`, refuted by `Derivation.eqNeg`). Holds for EVERY
+FAILS against `.bot (DupocBot (4j+100))`, refuted by `Pf.eqNeg`). Holds for EVERY
 `j` — no eventuality. -/
 
 theorem outcome_JustBot_vs_CupodTrollBot (j fuel : Nat) :

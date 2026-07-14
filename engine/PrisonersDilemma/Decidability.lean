@@ -1,5 +1,5 @@
 import PrisonersDilemma.Decidability.T31EngineDecider
-import PrisonersDilemma.Decidability.T42ProvableB
+import PrisonersDilemma.Decidability.T42PfB
 import PrisonersDilemma.Decidability.T43ModestUniverse
 import PrisonersDilemma.Decidability.T44BoundedDecider
 import PrisonersDilemma.Decidability.T45CertReads
@@ -23,17 +23,18 @@ table at its top maps every result to its file). The modules keep their mileston
 
 **The story in five steps:**
 
-1. **`Provable` is absolutely SEMIDECIDABLE** (`T31EngineDecider`, §7–8):
+1. **`Pf` is absolutely SEMIDECIDABLE** (`T31EngineDecider`, §7–8):
    `decFull` is a verified computable enumerator with
-   `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true` — logic and atom layers tied by fuel
+   `Pf k φ ↔ ∃ fuel, decFull fuel k φ = true` — logic and atom layers tied by fuel
    stratification, no oracle, no hypothesis.
 2. **Search bots RUN** (`T31EngineDecider`, §9): `evalG` is a computable evaluator whose
    3-valued guard commits soundly in BOTH polarities — `true` via `decFull`, `false` via a
    DERIVABLE refutation plus soundness/consistency. Every commit equals the classical
    `eval` at the same fuel (`evalG_sound`); `#eval` demos print real outcomes, answering
    `none` only at the Löb boundary. Supersedes `ComputableEval/evalC`.
-3. **The gate-parametric strata** (`T42ProvableB`): `ProvableG G` gates the six
-   conclusion-absent premise formulas; `Provable ↔ ∃ N, ProvableB N` (every derivation is
+3. **The gate-parametric strata** (`T42PfB`): `PfG G` gates the six
+   conclusion-absent premise formulas (uniform gating, incl. the merged `mp`/`implTrans` —
+   D2); `Pf ↔ ∃ N, PfB N` (every proof is
    finitely-cut); `CutRelevance` states THE remaining open conjecture (T4.1b).
 4. **The modest universe** (`T43ModestUniverse`): bots whose substitution positions are
    `.self`/`.opp`/frozen — the WHOLE zoo, each by `rfl` — have finite query universes
@@ -43,11 +44,11 @@ table at its top maps every result to its file). The modules keep their mileston
    interface (`CertRead`), the global query universe with its non-circular budget ceiling,
    and the countP stabilization give
    `ProvableG (modestGate N) k φ ↔ decB N |SL| k φ = true` — a terminating decision
-   procedure with a computable fuel bound (`decideProvableG : Decidable …`).
+   procedure with a computable fuel bound (`decidePfG : Decidable …`).
 
 **Open (T4.1b, deferred):** `CutRelevance` — a computable `N₀` with
-`Provable k φ → ProvableG (modestGate (N₀ k φ)) k φ`. Given it, `proofSearch` becomes
-decidable and `eval` computable outright; if it fails, `Provable` is a candidate
+`Pf k φ → PfG (modestGate (N₀ k φ)) k φ`. Given it, `proofSearch` becomes
+decidable and `eval` computable outright; if it fails, `Pf` is a candidate
 undecidable bounded-provability predicate. Also deferred: rewiring `proofSearch` (its right
 form depends on how the conjecture resolves — see the roadmap's T5 notes).
 -/
@@ -67,10 +68,10 @@ export PD.T42 (maxLitP maxLitF PlaysProofG AtomProvableG PfG
 export PD.T43 (closedP closedF modestP modestF argOK subsP subsF playsArgsF
   certU players guardU step_sim step_search guardU_args)
 export PD.T44 (modestGate cutOKb stepB decB decB_sound decB_complete decB_mono
-  ProvableG_modest_iff_decB)
+  PfG_modest_iff_decB)
 export PD.T45 (CertRead decCertG_congr certOG_congr certRead_mem_guardU)
 export PD.T46 (LU allowedProgs GF certRead_budget certRead_mem_GF)
 export PD.T47 (SL ZS InvP stepB_congr decB_bound
-  ProvableG_iff_decB_bound decideProvableG)
+  PfG_iff_decB_bound decidePfG)
 
 end PD.Decidability

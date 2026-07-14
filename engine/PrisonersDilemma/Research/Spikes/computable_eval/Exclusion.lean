@@ -1,4 +1,4 @@
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.Research.Spikes.computable_eval.PlaysCheck
 
 /-!

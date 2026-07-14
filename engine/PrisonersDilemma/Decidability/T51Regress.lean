@@ -13,7 +13,7 @@ the instance gate (T50) is a genuine repair, not a convenience.
 Mechanism: a modest-gated derivation of the plays-fact must end in an atom whose
 `search_t` cite re-derives the SAME fact (the fixpoint's guard instance IS the
 fact — no budget descent), or cut on the guard box (never `modestF`), or come
-from a `Derivation` (impossible: its only census antecedent is the underivable
+from a transparency leaf (impossible: its only census antecedent is the underivable
 box). `ModChain` closes the impl-chain detours; the proof runs on the
 `PfG` mutual recursor with fording motives.
 -/

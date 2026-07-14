@@ -1,5 +1,5 @@
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Research.Spikes.computable_eval.PlaysCheck
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC

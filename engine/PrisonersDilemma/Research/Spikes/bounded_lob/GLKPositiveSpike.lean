@@ -1,4 +1,4 @@
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.ProofSystem
 
 /-!
 # Spike — is GL axiom-K with a proof-TERM premise POSITIVE in the REAL engine?

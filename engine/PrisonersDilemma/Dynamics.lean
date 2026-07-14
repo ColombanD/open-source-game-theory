@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.ProofSystem
 
 namespace PD
 
@@ -8,12 +8,12 @@ namespace PD
 
 The fuelled evaluator `eval`, the entry points `play`/`outcome`, and the
 denotational semantics `Formula.interp`. This layer sits on top of the proof
-system in `Derivation.lean`: `eval`'s `.search` guard consults `proofSearch`,
+system in `ProofSystem.lean`: `eval`'s `.search` guard consults `proofSearch`,
 and `interp`'s box clause is `Pf` (the unified proof system `S`).
 -/
 
 -- The fuelled evaluator. The `.search` guard consults the oracle `proofSearch`
--- (defined in Derivation.lean, which this file imports). `me`/`opponent` are
+-- (defined in ProofSystem.lean, which this file imports). `me`/`opponent` are
 -- the fixed players; `body` is the subterm being reduced; `Option` lets runs
 -- fail when fuel is exhausted, keeping `eval` finite despite the unbounded
 -- self-reference available in `Prog`.

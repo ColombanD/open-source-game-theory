@@ -3,7 +3,7 @@ import PrisonersDilemma.Decidability.T52DecInst
 /-!
 # Cut relevance VI — decidability at the instance gate.
 
-T47's stabilization, re-run at `instOKb`: `decideProvableG_inst` decides
+T47's stabilization, re-run at `instOKb`: `decidePfG_inst` decides
 `PfG (instGate (players r₁ r₂) N) k₀ φ₀` with the computable fuel bound
 `|SL|`, under the same hypotheses as the modest original (modest roots,
 universe-resident root arguments).
@@ -737,7 +737,7 @@ theorem decG_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     substantive hypotheses: the roots are modest (the whole zoo is, T4.3) and the root
     formula's `.plays` arguments live in the universe (automatic for `guardU` members —
     i.e. for every bot-guard instance — via `GF_args`). -/
-theorem ProvableG_inst_iff_decG_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
+theorem PfG_inst_iff_decG_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
     PfG (instGate (PP r₁ r₂) N) k₀ φ₀ ↔
       T52.decG (instOKb (PP r₁ r₂) N) (SL r₁ r₂ N k₀ φ₀).length k₀ φ₀ = true := by
@@ -754,13 +754,13 @@ theorem ProvableG_inst_iff_decG_bound (h₁ : modestP r₁ = true) (h₂ : modes
 
 /-- The `Decidable` instance — bounded provability over the modest stratum is decided by
     a terminating computation. -/
-def decideProvableG_inst (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
+def decidePfG_inst (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
     Decidable (PfG (instGate (PP r₁ r₂) N) k₀ φ₀) :=
   if h : T52.decG (instOKb (PP r₁ r₂) N) (SL r₁ r₂ N k₀ φ₀).length k₀ φ₀ = true then
-    .isTrue ((ProvableG_inst_iff_decG_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mpr h)
+    .isTrue ((PfG_inst_iff_decG_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mpr h)
   else
-    .isFalse (fun hg => h ((ProvableG_inst_iff_decG_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mp hg))
+    .isFalse (fun hg => h ((PfG_inst_iff_decG_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mp hg))
 
 
 end PD.T53

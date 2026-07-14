@@ -20,7 +20,7 @@ gate RAW (no excision) and kernel-sealed into `PfG (instGate …)`:
     (`weakenImpl` over an atom; cut-free);
   * `cupodtroll_eq_certified` — the eq guard (`eqRefl`; cut-free).
 
-Together with `decideProvableG_inst` (T53): the zoo's oracle facts live in a
+Together with `decidePfG_inst` (T53): the zoo's oracle facts live in a
 decidable stratum, certificate by certificate — every guard shape, every Löb
 pattern, every refutation route the zoo uses.
 -/

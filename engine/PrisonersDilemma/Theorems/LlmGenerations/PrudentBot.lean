@@ -404,7 +404,7 @@ theorem prudent_mirror_loeb_premise (k : Nat) (hk : 27 ≤ k) :
     simp only [numCost, Formula.subst, Prog.subst, Formula.size, Prog.size, PrudentBot, MirrorBot,
       DefectBot, c_guard]
     omega
-  -- Leg 2: MirrorBot's `.sim` swap, as a Derivation → Pf (single leaf).
+  -- Leg 2: MirrorBot's `.sim` swap, as a bare `Pf.simStep` leaf.
   have leg2 : Pf (20 * Nat.log2 k + 200)
       (.impl (Formula.plays (PrudentBot k) MirrorBot Action.C)
              (Formula.plays MirrorBot (PrudentBot k) Action.C)) := by

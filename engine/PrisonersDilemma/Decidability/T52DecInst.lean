@@ -10,8 +10,8 @@ gate `G` tied by `hGb : ∀ B, Gb B = true ↔ G B`. Candidate-cut coverage need
 nothing new — `enumFormula` enumerates ALL formulas by size (`enum_complete`),
 so only the gate filter distinguishes strata.
 
-Instantiations: `ProvableG_modest_iff_decG` (the original, as a sanity check)
-and `ProvableG_inst_iff_decG` — the instance-gated stratum is semidecidable in
+Instantiations: `PfG_modest_iff_decG` (the original, as a sanity check)
+and `PfG_inst_iff_decG` — the instance-gated stratum is semidecidable in
 both directions by a computable enumerator. Everything below the header is
 T44's development transformed mechanically (the gate enters at exactly eight
 sites).
@@ -319,7 +319,7 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       · simp at h
 
 /-- Corollary: every `decG` hit is a real engine theorem. -/
-theorem decB_sound_Provable (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) (fuel k : Nat) (φ : Formula)
+theorem decB_sound_Pf (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) (fuel k : Nat) (φ : Formula)
     (h : decG Gb fuel k φ = true) : Pf k φ :=
   PfG_sound (decB_sound Gb hGb fuel k φ h)
 
@@ -875,7 +875,7 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
 /-! ## 8. THE PAYOFF (part b) — the modest stratum is semidecidable by its own enumerator;
 the fuel bound over the finite query space (part c) will upgrade this to DECIDABLE. -/
 
-theorem ProvableG_iff_decG (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
+theorem PfG_iff_decG (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
     (k : Nat) (φ : Formula) :
     PfG G k φ ↔ ∃ fuel, decG Gb fuel k φ = true :=
   ⟨fun h => decB_complete Gb hGb h k le_rfl,
@@ -887,14 +887,14 @@ end
 /-! ## Instantiations. -/
 
 /-- Sanity: the original modest decider is the `cutOKb` instantiation. -/
-theorem ProvableG_modest_iff_decG (N k : Nat) (φ : Formula) :
+theorem PfG_modest_iff_decG (N k : Nat) (φ : Formula) :
     PfG (T44.modestGate N) k φ ↔ ∃ fuel, decG (T44.cutOKb N) fuel k φ = true :=
-  ProvableG_iff_decG (T44.cutOKb N) (fun _ => T44.cutOKb_iff) k φ
+  PfG_iff_decG (T44.cutOKb N) (fun _ => T44.cutOKb_iff) k φ
 
 /-- **THE PAYOFF**: the instance-gated stratum is semidecidable both ways — the
     repaired CutRelevance target is captured by a computable enumerator. -/
-theorem ProvableG_inst_iff_decG (P : List Prog) (N k : Nat) (φ : Formula) :
+theorem PfG_inst_iff_decG (P : List Prog) (N k : Nat) (φ : Formula) :
     PfG (instGate P N) k φ ↔ ∃ fuel, decG (instOKb P N) fuel k φ = true :=
-  ProvableG_iff_decG (instOKb P N) (fun _ => instOKb_iff) k φ
+  PfG_iff_decG (instOKb P N) (fun _ => instOKb_iff) k φ
 
 end PD.T52

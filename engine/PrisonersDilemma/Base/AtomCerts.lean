@@ -39,7 +39,7 @@ theorem Prog.hasSearch_subst : ∀ (p me oppo : Prog), p.hasSearch = false →
 /-- `c_guard` (the cost of writing the budget numeral `k` in a proof transcript)
     is monotone: a larger `k` takes at least as many characters to write.
     Needed for `atom_cost_mono`. Now a *theorem* (was an axiom): with the concrete
-    `c_guard k = Nat.log2 k + 1` (Derivation.lean), monotonicity is `Nat.log2`'s. -/
+    `c_guard k = Nat.log2 k + 1` (ProofSystem.lean), monotonicity is `Nat.log2`'s. -/
 theorem c_guard_mono : ∀ {a b : Nat}, a ≤ b → c_guard a ≤ c_guard b := by
   intro a b h
   simp only [numCost, c_guard, Nat.log2_eq_log_two]

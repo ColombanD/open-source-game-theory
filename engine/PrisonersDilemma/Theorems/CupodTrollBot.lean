@@ -24,7 +24,7 @@ namespace PD.Theorems
 
 /-- The structural-identity guard of CupodTrollBot **fires** when the opponent is
     literally `CupodBot k` and the budget `k` covers the guard formula's size.
-    The witness is `eqRefl`, whose `Derivation.size` is exactly the conclusion's
+    The witness is the `Pf.eqRefl` leaf, whose transcript is exactly the conclusion's
     `Formula.size`. The guard's RHS is frozen by `subst`, so it stays the literal
     `CupodBot k` and `eqRefl` matches the bare opponent. -/
 theorem proofSearch_true_for_CupodBot (k : Nat)
@@ -327,7 +327,7 @@ theorem outcome_CupodTrollBot_vs_EBot (k fuel : Nat) :
 /-- DupocBot cooperates with CupodTrollBot — **STAGGERED BUDGETS** (2026-07-02, the
     false-guard repair; the former same-`k` version was an axiom artifact). CupodTrollBot's
     cooperation against a non-Cupod opponent is an ELSE-play of its own `.eq` search, so its
-    certificate pays the `search_f` floor: the refutation of the guard (`Derivation.eqNeg` —
+    certificate pays the `search_f` floor: the refutation of the guard (`Pf.eqNeg` —
     the programs are syntactically distinct) plus Troll's whole failed budget `j`. `DupocBot k`
     can prove it only when `k` affords that: `hjk`. Critch-faithful: proving a bounded search
     fails costs at least the search budget. -/

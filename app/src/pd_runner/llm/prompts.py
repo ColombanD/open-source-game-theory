@@ -13,7 +13,7 @@ def _bot_uses_search(bot: str) -> bool:
     """True if the bot's source references the `.search` constructor.
 
     Used to decide whether to inject the proof-system modules (Axioms.lean,
-    Derivation.lean, SizeLemmas.lean) into the proof agent's system prompt.
+    ProofSystem.lean, Base/Asymptotics.lean) into the proof agent's system prompt.
     Reads from `Bots/<bot>.lean` or `Bots/LlmGenerations/<bot>.lean`; missing bot → False.
     """
     for candidate in (f"Bots/{bot}.lean", f"Bots/LlmGenerations/{bot}.lean"):
@@ -42,7 +42,7 @@ def build_system_prompt(left_bot: str, right_bot: str) -> str:
     if needs_axioms:
         for relative, label in (
             ("Axioms.lean", "Axioms.lean"),
-            ("Derivation.lean", "Derivation.lean (the explicit proof-system `S`)"),
+            ("ProofSystem.lean", "ProofSystem.lean (the explicit proof-system `S`)"),
             ("SizeLemmas.lean", "SizeLemmas.lean (character-budget lemmas)"),
         ):
             try:

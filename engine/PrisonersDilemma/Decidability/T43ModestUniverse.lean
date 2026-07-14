@@ -13,7 +13,7 @@ import PrisonersDilemma.Bots.LlmGenerations.JustBot
 
 `DECIDABILITY_ROADMAP.md` T4.2 remaining pipeline (i). The T4.1a stabilization template
 (`T4QueryBound.lean`) decides budget-jumping systems over a FINITE query space; the engine
-obstacle to instantiating it on `ProvableB` (`T42ProvableB.lean`) is PROGRAM GROWTH: `eval`'s
+obstacle to instantiating it on `ProvableB` (`T42PfB.lean`) is PROGRAM GROWTH: `eval`'s
 `.sim` step and `.search` guard hop substitute the current players into subterms, and a
 composite argument containing `.self` grows strictly under substitution — iterate and the
 program universe is infinite.

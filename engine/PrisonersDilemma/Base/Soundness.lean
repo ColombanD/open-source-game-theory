@@ -13,7 +13,7 @@ induction over the `Type`-valued half of `S` — is GONE as a standalone theorem
 modusPonens/hypSyll function-application arms) are now arms of `sound_upto`'s single `Pf`
 induction. The old `pStruct` hop (which reached through the `struct` glue into a SECOND
 induction) has no counterpart — that is the merge paying off. `atom_monotone`/`Pf_mono` moved
-to the core (`Derivation.lean`); they are re-exported below for callers.
+to the core (`ProofSystem.lean`); they are re-exported below for callers.
 
 The raw `Pf.rec` is used HERE deliberately (not `Pf.induct`): soundness is the one place where
 the certificate half and the reasoning half must be proved in the SAME induction, since
@@ -105,11 +105,11 @@ theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}
   | refl => exact h
   | step _ ih => exact eval_mono _ _ _ _ _ ih
 
-/-! ### Budget monotonicity — now in the core (`Derivation.lean`)
+/-! ### Budget monotonicity — now in the core (`ProofSystem.lean`)
 
 `atom_monotone` and `Pf_mono` are constructors-level facts (every rule's side-condition is
 `… ≤ k` with `k` the output budget, so each re-applies with the bound relaxed) and moved to
-`Derivation.lean` with the type. Re-exported here under the names callers use. -/
+`ProofSystem.lean` with the type. Re-exported here under the names callers use. -/
 
 export PD (atom_monotone Pf_mono)
 
@@ -395,8 +395,8 @@ fundamental (Σ₁ vs Π₁), not a stylistic choice:
     For a plays-atom `φ = .plays p q a`: produce a real `play n p q = some a`,
     feed it to `atom_complete` (→ `AtomProvable (atom_cost n) φ`), then flip with
     `(proofSearch_spec _ _).2 (Pf.atom …)`. `proofSearch_complete_plays`
-    below packages exactly this. For a structural `φ` (e.g. `.eq p p`), build the
-    `Derivation` and use `Pf.struct-GONE`. You are *constructing* a proof object.
+    below packages exactly this. For a structural `φ` (e.g. `.eq p p`), use the
+    transparency leaf directly (`Pf.eqRefl`). You are *constructing* a proof object.
 
 • `proofSearch k φ = false` — SOUNDNESS side, by refutation. You CANNOT exhibit
     "a proof that no proof exists" (that is Π₁); instead rule out `true` via its
@@ -407,7 +407,7 @@ fundamental (Σ₁ vs Π₁), not a stylistic choice:
     i.e. if it were `true`, `proofSearch_sound` would force `φ.interp` (the bot
     would actually play that), which a computed fact (`interp_…_false`) refutes.
 
-Mnemonic: `= true` builds a proof (atom_complete / Derivation); `= false`
+Mnemonic: `= true` builds a proof (atom_complete / a transparency leaf); `= false`
 destroys a hypothetical one (proofSearch_sound + contradiction). The single place
 these collide is `atom_complete`'s false-guard branch — see `atom_complete_false_guard`
 in Axioms.lean.
@@ -439,7 +439,7 @@ theorem proofSearch_monotone :
 /-- **Bounded GL axiom 4 / necessitation** (`□_k φ → □_K □_k φ`), HBL D2 — NOW A THEOREM
     (was the axiom `box_provable`). If `φ` is provable within budget `k`, then that fact
     `□_k φ` is itself provable, at the output budget `K = (.box k φ).size` (≤ that bound).
-    Discharged constructively by the `Pf.boxIntro` constructor (Derivation.lean): the
+    Discharged constructively by the `Pf.boxIntro` constructor (ProofSystem.lean): the
     conclusion `□_k φ` is built directly from the premise `Pf k φ`, with the size bound
     `(.box k φ).size ≤ K` met by `Nat.le_refl`. Sound + safe — see the `boxIntro` doc. -/
 theorem box_provable (k : Nat) (φ : Formula) (h : Pf k φ) :

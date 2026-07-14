@@ -9,7 +9,7 @@ import PrisonersDilemma.Base.Loeb
 
 Split 2026-07-09 into `Base/Asymptotics` (log₂ arithmetic, absorbed `SizeLemmas`),
 `Base/AtomCerts` (constructive atom certificates), `Base/Soundness` (`sound_upto`,
-`Provable_sound`), `Base/Exclusion` (the Derivation census — negative results), and
+`Pf_sound`), `Base/Exclusion` (the transparency census — negative results), and
 `Base/Loeb` (`bloeb_engine`, `pblt_engine`, the mutual engines).
 All names still live in `PD.BaseTheorems` (arithmetic in `PD`); importing this module
 is equivalent to the old monolith.

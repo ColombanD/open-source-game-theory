@@ -13,12 +13,12 @@ Contents:
 * `Formula.size_pos` — every formula costs at least one character.
 * `rightTail` — the final consequent of a right-nested implication chain (the spine
   tail; `modusPonens`/`app` peel it, `hypSyll`/`implTrans`/`impS2` preserve it).
-* `ReadableMe` — the five player shapes whose plays the `Derivation` source-transparency
+* `ReadableMe` — the six player shapes whose plays the `Pf` source-transparency
   bridge can conclude.
-* `Derivation.tail_plays_readable` — THE CENSUS: if a `Derivation`'s conclusion has a
+* `tail_plays_readable` — THE CENSUS: if a `Pf`'s conclusion has a
   plays-atom spine tail, the player is one of the readable shapes. Contrapositive: a
   bot whose source is not bridge-readable (e.g. DBot — an `.ite` with a `.const`
-  then-branch) has NO `Derivation` route to any formula ending in its play atoms,
+  then-branch) has NO source-transparency route to any formula ending in its play atoms,
   which closes the `struct` entry point of `Pf` in one stroke.
 
 Consumers combine the census with a budget strong-induction over `Pf` (the

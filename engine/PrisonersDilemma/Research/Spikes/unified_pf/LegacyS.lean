@@ -1,5 +1,5 @@
 import PrisonersDilemma.Program
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.ProofSystem
 
 /-!
 # LegacyS — the FROZEN pre-migration proof system `S` (namespace `PD.Legacy`)

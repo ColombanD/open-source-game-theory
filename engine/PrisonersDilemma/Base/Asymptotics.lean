@@ -26,7 +26,7 @@ source-transparency derivation (size `C · log2 k + D`) fit within search budget
 Used by the four Löb premises in `Theorems/CupodBot.lean` and
 `Theorems/DupocBot.lean` (`linear_log2_add_le 5 33` for self-play,
 `linear_log2_add_le 3 25` for the MirrorBot legs). Those premises compute the
-*exact* derivation size inline (`simp [Derivation.size, …]; omega`), so no
+*exact* transcript size inline (`simp [Formula.size, …]; omega`), so no
 per-rule size-bound API is needed here.
 
 Key Mathlib primitives used:

@@ -1,6 +1,6 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.CupodBot
 import Mathlib.Data.Nat.Log

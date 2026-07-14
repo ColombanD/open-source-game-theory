@@ -1,4 +1,4 @@
-import PrisonersDilemma.Decidability.T42ProvableB
+import PrisonersDilemma.Decidability.T42PfB
 import PrisonersDilemma.Decidability.T44BoundedDecider
 import PrisonersDilemma.Decidability.T48CutRelevance
 
@@ -246,7 +246,7 @@ mutual
 end
 
 /-- The substrate is exact: provability = tree existence. -/
-theorem Provable_iff_nonempty_ProvT {k : Nat} {φ : Formula} :
+theorem Pf_iff_nonempty_ProvT {k : Nat} {φ : Formula} :
     Pf k φ ↔ Nonempty (ProvT k φ) :=
   ⟨ProvT.complete, fun ⟨t⟩ => t.sound⟩
 
@@ -367,7 +367,7 @@ Three foundations the rewrite system needs everywhere, plus the first excision:
     so the rewrite system may lift budgets freely without touching structure);
   * `ProvT.mono_gateOK` — re-gating does not change the cut diet;
   * `ProvT.impl_size_le` — every implication-concluding rule PAYS its conclusion's size
-    (`struct` via `Derivation.concl_size_le`; atoms cannot conclude implications), the
+    (leaves via their size side-condition; atoms cannot conclude implications), the
     arithmetic backbone of the crossing analysis;
   * `cross_weaken` — the first excision: an `app` whose function node is
     `weakenImpl`-headed never needed its argument; the consequent's own subtree serves,
@@ -4587,11 +4587,11 @@ theorem GoodW_mono {k m m' : Nat} {φ : Formula} (hmm : m ≤ m')
       | atomNeg p' q' b' aN m'' tc hne hle =>
           exact ⟨1, ⟨_, .atomNeg p' q' b' aN m'' tc hne (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
 
-/-- **Derivation goodness** (the struct-crossing part of the wide fundamental): every
-    iteBranch-free Derivation's struct-tree is wide-good, by structural induction on
-    the Derivation. `modusPonens` pushes (IH twice), `hypSyll` materializes
-    (`GoodW_app` + IH), censuses dive the discharge and produce atomizable atoms,
-    sim-censuses use `atomizeW_halts`. -/
+/-- **Leaf goodness** (the leaf-crossing part of the wide fundamental): every
+    iteBranch-free stored leaf is wide-good. (Pf-only: the former `GoodD` also carried
+    `modusPonens`/`hypSyll` arms; those are `app`/`implTrans` TREE NODES now, covered by
+    `fundamentalW`'s own arms via `GoodW_app`.) Censuses dive the discharge and produce
+    atomizable atoms; sim-censuses use `atomizeW_halts`. -/
 theorem GoodL : {ξ : Formula} → (l : PD.T48.LeafPf ξ) → leafITEFree l →
     ∀ {mm : Nat} (hd : ξ.size ≤ mm) (k : Nat), GoodW k (.leaf l hd)
   | _, .searchBranch kk ψg a b me opnt hme, hfree, _, hd, k => by
@@ -5364,10 +5364,10 @@ theorem modestF_subst (m o : Prog) (hma : T43.argOK m = true)
   | .diag g φ, h => h
 end
 
-/-- **The Derivation layer's cuts are modesty-tied** (site 5 of the assembly): every
+/-- **The transparency layer's cuts are modesty-tied** (site 5 of the assembly): every
     census-legitimate antecedent is modest whenever its consequent is. With
-    `T48.DAnt_lit` this closes the `derivGateOK` sites — and `derivation_impl_ant`
-    rules out eq-shaped Derivation cuts entirely (no census has an eq antecedent). -/
+    `T48.DAnt_lit` this closes the census-cut sites — and `LeafPf.impl_ant`
+    rules out eq-shaped census cuts entirely (no census has an eq antecedent). -/
 theorem DAnt_modest : ∀ {B C : Formula}, PD.T48.DAnt B C →
     T43.modestF C = true → T43.modestF B = true := by
   intro B C h
@@ -5428,7 +5428,7 @@ theorem DAnt_modest : ∀ {B C : Formula}, PD.T48.DAnt B C →
       exact modestF_subst _ _ hC.1.1.1 hC.1.1.2 hC.1.2 hC.2 _ hm.1.2.1.1
   | trans h1 h2 ih1 ih2 => intro hC; exact ih1 (ih2 hC)
 
-/-- The combined gate transfer for Derivation cuts: census antecedents pass the
+/-- The combined gate transfer for census cuts: census antecedents pass the
     modest gate whenever their consequents do. -/
 theorem DAnt_gate {N : Nat} {B C : Formula} (h : PD.T48.DAnt B C)
     (hC : modestGate N C) : modestGate N B :=

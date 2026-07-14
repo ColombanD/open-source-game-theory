@@ -1,4 +1,4 @@
-import PrisonersDilemma.Decidability.T42ProvableB
+import PrisonersDilemma.Decidability.T42PfB
 import PrisonersDilemma.Decidability.T45CertReads
 
 /-!

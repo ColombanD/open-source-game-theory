@@ -5,7 +5,7 @@ import PrisonersDilemma.BaseTheorems
 
 `DECIDABILITY_ROADMAP.md` T3.1. Lifts the T3.0 method (`T3DeciderMini.lean`) to the real engine:
 a computable backward search `decProv` over ALL 15 `Pf` constructors — including `struct`
-(its own `Derivation` backward search `decDeriv`) — parameterized by an **atom oracle**
+(the `chkLeaf` transparency-leaf checkers) — parameterized by an **atom oracle**
 `O : Nat → Formula → Bool` standing in for `AtomProvable` (the `PlaysProof`/eval entanglement,
 T3.2's job). Headline:
 

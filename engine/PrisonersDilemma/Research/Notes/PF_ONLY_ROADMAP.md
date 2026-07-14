@@ -331,9 +331,20 @@ Original plan:
    ("superseded by the migration, see PF_ONLY_ROADMAP"), memory files.
 4. Mark `PfEngineSpike.lean` historical (its demos are now the library's normal style).
 
-### Phase 6 (optional, cosmetic) — renames
-`Derivation.lean → ProofSystem.lean` (or `Pf.lean`), notation `⊢[k] φ`, prune dead
-aliases. Zero urgency; do only if the paper wants the cleaner story.
+### Phase 6 (optional, cosmetic) — renames — ✅ items 1+3 DONE 2026-07-14
+1. ✅ `Derivation.lean → ProofSystem.lean` (module `PrisonersDilemma.ProofSystem`; 20 import
+   lines, the app's prompt embedding, and all live-file references updated; both targets
+   green; app dry-run passes with the renamed embed).
+2. ⏸ Notation `⊢[k] φ` — deliberately deferred to paper-writing time.
+3. ✅ Naming debris swept: `T42ProvableB.lean → T42PfB.lean`; identifiers referencing the
+   RETIRED TYPE NAMES renamed (`decideProvableG(_inst) → decidePfG(_inst)`,
+   `ProvableG_*_iff_* → PfG_*_iff_*`, `Provable_iff_nonempty_ProvT → Pf_iff_nonempty_ProvT`,
+   `decB_sound_Provable → decB_sound_Pf`, T48's census trio → `pf_posImpl_ant`/`pf_impl_ant`/
+   `pf_pos`); a full comment sweep of every live `.lean` file (only explicitly HISTORICAL
+   passages still mention `Derivation`/`Provable` — including the `Pf.struct-GONE` regex
+   debris and the silently-missed `GoodL` docstring, both found and fixed). Policy line:
+   identifiers using "provable" as ENGLISH (`cimcic_guard_not_provable`, `no_provable_*` —
+   they state `¬ Pf …`) keep their names; the concept is still provability.
 
 ## 3. Risk register
 

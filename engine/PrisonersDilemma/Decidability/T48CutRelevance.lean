@@ -1,4 +1,4 @@
-import PrisonersDilemma.Decidability.T42ProvableB
+import PrisonersDilemma.Decidability.T42PfB
 import PrisonersDilemma.Decidability.T31EngineDecider
 import PrisonersDilemma.Decidability.T46LogicSpace
 
@@ -12,7 +12,7 @@ Foundations consumed by the whole T48–T54 arc (research history:
     judgment, so its literals are `< 2^(local budget)` — `maxLitF_lt_two_pow_size`,
     `cut_lit_bound`, `box_lit_bound`, `diag_lit_bound`, `local_lit_bound`.
   * **The antecedent census** (`DAnt`, `LeafPf.impl_ant`, `DAnt_lit`): every
-    positive-position implication a `Derivation` proves has a census-legitimate
+    positive-position implication a transparency LEAF proves has a census-legitimate
     antecedent — the Type layer has no free hypotheses.
   * **Shape facts**: `leafPf_shape`, `leafPf_no_box`, `box_inversion`,
     the split literals (`maxSLitF`) and the gate-bound arithmetic.
@@ -186,7 +186,7 @@ theorem local_lit_bound {m : Nat} {B : Formula} (h : Pf m B) :
     cases hatom with
     | mk cert hle => exact ⟨_, _, _, rfl⟩
 
-/-! ## 3. C1 — the Derivation layer has no free antecedents.
+/-! ## 3. C1 — the transparency layer has no free antecedents.
 
 The invariant is stated over the POSITIVE IMPLICATION SPINE (`PosImpl φ B C`: the pair
 `.impl B C` occurs along φ's chain of consequents). This makes `modusPonens` free — the
@@ -199,7 +199,7 @@ inductive PosImpl : Formula → Formula → Formula → Prop where
   | head {B C : Formula} : PosImpl (.impl B C) B C
   | tail {X C' B C : Formula} : PosImpl C' B C → PosImpl (.impl X C') B C
 
-/-- The Derivation layer's legitimate-antecedent relation: transparency shapes (each
+/-- The transparency layer's legitimate-antecedent relation: the leaf shapes (each
     conclusion-determined via its `hme`-equation) closed under transitivity. -/
 inductive DAnt : Formula → Formula → Prop where
   | searchBr {k : Nat} {ψ : Formula} {a b : Action} {me opponent : Prog}
@@ -326,12 +326,12 @@ theorem LeafPf.posImpl_ant : ∀ {φ : Formula}, LeafPf φ →
 theorem LeafPf.impl_ant {B C : Formula} (l : LeafPf (.impl B C)) : DAnt B C :=
   l.posImpl_ant .head
 
-/-! ## 4. Provenance payoff: Derivation antecedents never increase literals. -/
+/-! ## 4. Provenance payoff: census antecedents never increase literals. -/
 
 open PD.T46 in
 /-- Every census step is literal-nonincreasing — antecedents are built from the
     consequent's own programs and their source guards (via `maxLitF_subst`), so the
-    Derivation layer cannot smuggle exotic literals into negative positions. -/
+    transparency layer cannot smuggle exotic literals into negative positions. -/
 theorem DAnt_lit : ∀ {B C : Formula}, DAnt B C → maxLitF B ≤ maxLitF C := by
   intro B C h
   induction h with
@@ -428,7 +428,7 @@ set_option maxHeartbeats 1000000 in
     budget. `app` and `weakenImpl`'s tails ride the C1 spine-embedding; `implTrans` mixes
     census-transitivity with degeneracy-propagation (the `Pf.mp` reassembly fits the
     original budget); `diagF`'s deep tail recurses through its Löb premise. -/
-theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
+theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
     ∀ {B C : Formula}, PosImpl φ B C →
       PAnt B C ∨ ∃ m', m' ≤ m ∧ Pf m' C := by
   intro m φ h
@@ -589,13 +589,13 @@ theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
 /-- The top-level corollary: any derivable implication's antecedent is census-legitimate
     or the implication is weakening-degenerate. This is Lemma A's dichotomy at the head
     pair — the tool the C3 tree-invariant applies at every `app` site. -/
-theorem provable_impl_ant {m : Nat} {B C : Formula} (h : Pf m (.impl B C)) :
+theorem pf_impl_ant {m : Nat} {B C : Formula} (h : Pf m (.impl B C)) :
     PAnt B C ∨ ∃ m', m' ≤ m ∧ Pf m' C :=
-  provable_posImpl_ant h .head
+  pf_posImpl_ant h .head
 
 /-! ## 6. C3a — shape lemmas and the box-inversion (the sibling-sourcing tools).
 
-The system has NO reflection rule, and `Derivation` cannot conclude a box — so box CONTENTS
+The system has NO reflection rule, and no transparency leaf concludes a box — so box CONTENTS
 never become judgments. Box JUDGMENTS invert to exactly two sources: `boxIntro` (the content
 WAS a judgment) or `app` (the spine). These are the tools the C3 master induction uses to
 source the census holes (`axkPair`/`box4` pairs) from sibling judgments
@@ -630,7 +630,7 @@ theorem leafPf_no_box {b : Nat} {ψ : Formula} (l : LeafPf (.box b ψ)) : False 
   · cases hp
 
 /-- Every judgment costs at least one character. -/
-theorem provable_pos {m : Nat} {φ : Formula} (h : Pf m φ) : 1 ≤ m := by
+theorem pf_pos {m : Nat} {φ : Formula} (h : Pf m φ) : 1 ≤ m := by
   rcases pf_size_or_atom h with hsz | hatom
   · have := Formula.size_pos φ
     omega
