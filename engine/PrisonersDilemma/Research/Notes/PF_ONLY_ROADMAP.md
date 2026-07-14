@@ -1,0 +1,234 @@
+# Roadmap — making `Pf` the ONLY proof system `S`
+
+**Date**: 2026-07-14. **Decision record**: `PF_REPLACEMENT_ASSESSMENT.md` priced full
+replacement and recommended coexistence; the decision is now to REPLACE — retire
+`Derivation`/`Provable`, make the unified `Pf` the one proof system the oracle consults.
+This roadmap plans that migration, incorporating everything the assessment and the two
+spikes established. The assessment's findings become the plan's mitigations, not
+objections:
+
+* the mutualization regression and its cure are machine-checked
+  (`Research/Spikes/unified_pf/PfMutualInductSpike.lean`) — `PfM.induct` is the ship-ready
+  template for the day-one named eliminator;
+* the coexistence layer (`PrisonersDilemma/Pf.lean` + `pf_iff_provable`) is the migration's
+  safety net: until the final flip, every port can be cross-checked against the old system
+  through the iff;
+* the demo ports (`PfEngineSpike.lean`) are the pattern catalogue for Phase 3.
+
+**Measured blast radius** (2026-07-14): 14 files import `PrisonersDilemma.Derivation`
+directly; 16 engine-proper files mention `Provable`; engine proper (Base/ + Theorems/)
+≈ 7.1k lines; Metatheory ≈ 16k lines (9 of 14 modules speak the gated mirror triple, 90
+`Derivation` references). `ComputableEval/` no longer exists on disk (CLAUDE.md row is
+stale — delete it in Phase 5; nothing to port). The Python pipeline embeds
+`Derivation.lean`, `Program.lean`, `BaseTheorems.lean` into the proof agent's system
+prompt BY FILENAME (`app/src/pd_runner/llm/prompts.py`) — keep those filenames and the
+app follows the migration automatically.
+
+---
+
+## 0. Invariants (hold at the end of EVERY phase)
+
+* `lake build` green on the migration branch at each phase boundary (phases = commits;
+  the only intentionally-red window is inside Phase 1's single commit).
+* **Axiom audit**: everything rests on Lean's 3 standard axioms — no new axiom, ever.
+  A `#print axioms` sentinel file per phase.
+* **The golden statements**: every `outcome_*` / `llm_outcome_*` theorem statement is
+  byte-identical before and after (they mention `play`/`outcome`, never `Provable`).
+  Phase 0 dumps the inventory; every later phase diffs against it. This is the
+  compilation-==-correctness regression check for the whole migration.
+* **Semantic anchor**: until Phase 4 deletes the old system, the coexistence iff
+  (re-proved against the frozen legacy copy, see Phase 1) certifies the new oracle decides
+  THE SAME relation — `proofSearch` behaviour provably unchanged, not just re-tested.
+
+## 1. Design decisions (settle before Phase 1; recommendations bolded)
+
+* **D1 — the name.** The unified type keeps the name **`Pf`**; `Provable` is retired
+  (theorems rename `Provable_sound → Pf_sound` etc., pure grep). Rationale: `Pf` is
+  already shipped and self-describing ("proof term, budget k"); reusing the name
+  `Provable` for a different constructor set invites silent confusion in old notes and
+  papers. Optional flourish: notation `⊢[k] φ` for `Pf k φ` for the paper.
+* **D2 — the gates on ex-`Derivation` cuts** (the one real THEORY decision, assessment
+  §2a). In the gated mirror, the merged `mp`/`implTrans` carry the gate where
+  `Derivation.modusPonens`/`hypSyll` inside `struct` were gate-free. **Gate uniformly**
+  (option a): one rule set, one census; the zoo's ex-`Derivation` cut formulas are
+  pool-program plays-atoms, exactly the instance-gate shape, so T54 re-certifies —
+  but that re-certification is a Phase 4 deliverable, not an assumption. Rejected:
+  conditional gates (re-introduces the two-tier structure the merge removes).
+* **D3 — sequencing vs the open conjecture (universal closure).** Phase 4 rewrites the
+  very trees the conjecture quantifies over; any partial progress on old trees is lost.
+  **Restate the conjecture over `PfG` at the END of Phase 4 and hunt it there** — the
+  unified grammar (no `struct` boundary, single-induction skeleton via `Pf.induct`) is a
+  strictly better substrate for the closure proof. Do NOT run Phase 4 and a conjecture
+  hunt concurrently.
+* **D4 — file layout.** Keep the FILENAMES `Derivation.lean` (content becomes the new
+  mutual block; header retitled "the proof system `S`") and `Dynamics.lean` through
+  Phases 1–4: 14 importers and the app's prompt embedding stay untouched. Optional
+  Phase 6 rename (`Derivation.lean → ProofSystem.lean`) is pure cosmetics — decide then.
+* **D5 — what happens to today's coexistence module.** `PrisonersDilemma/Pf.lean`'s
+  inductive moves into `Derivation.lean` (mutualized); its Löb engines move to
+  `Base/Loeb.lean` (dropping the `_pf` suffixes, REPLACING the old engines); the
+  round-trip theorems (`pf_of_provable` etc.) die with `Provable` — except during the
+  migration itself, where they serve as the cross-check (Phase 1).
+
+## 2. Phase plan
+
+### Phase 0 — preflight (on the CURRENT green build) — ~0.5 session
+1. Branch `pf-only`.
+2. **Golden inventory**: script-dump every `outcome_*`/`llm_outcome_*` statement
+   (`grep`-extractable) to `Research/Data/golden_outcomes_pre_pf.txt`.
+3. Freeze a LEGACY snapshot: copy the current mutual block + `Derivation` into
+   `Research/Spikes/unified_pf/LegacyS.lean` (namespace `PD.Legacy`, compiled but not
+   root-imported). This is the reference the Phase-1 equivalence proof targets.
+4. Settle D1–D5 (record any deviation in this file).
+
+### Phase 1 — the core swap (`Derivation.lean`, `Dynamics.lean`) — ~1 session
+The one intentionally-red commit window; everything downstream breaks and is repaired in
+Phases 2–4.
+1. `Derivation.lean` → the new mutual block `{PlaysProof, AtomProvable, Pf}`:
+   * `PlaysProof.search_t`/`search_f` premises re-pointed at `Pf` (the back-edge);
+   * `Pf` = the shipped 22 constructors, `AtomProvable` premises now in-block;
+   * DELETE `Derivation`, `Derivation.size`, `Provable`.
+2. Day-one eliminators, same commit (the PfMutualInductSpike template, verbatim):
+   * `Pf.induct` — named, `@[elab_as_elim]`, motive TAKES the proof term (the
+     proof-irrelevant-motive variant breaks `induction using`'s target computation —
+     learned in the spike);
+   * `PlaysProof.induct` (named, for the Exclusion census) and, if useful,
+     `AtomProvable` inversion lemmas;
+   * `Pf_mono` (from `Pf.lean`, now by `cases` on the mutual block — beware the `cases`
+     field-reordering gotcha on `mp`, solved with `rename_i`).
+3. `Dynamics.lean`: `proofSearch k φ := decide (Pf k φ)`; `Formula.interp`'s `.box` and
+   `.diag` clauses point at `Pf`.
+4. **The safety net**: in `LegacyS`-importing scratch (not root), re-prove the round-trip
+   `Pf k φ ↔ Legacy.Provable k φ` by transplanting `pf_of_provable`/`provable_of_pf`
+   (they were written for exactly these two rule sets). This certifies the oracle's
+   relation is unchanged. Keep it compiling until Phase 4 ends, then archive.
+
+**Gate**: `Derivation.lean` + `Dynamics.lean` + the equivalence scratch compile; axiom
+audit clean.
+
+### Phase 2 — `Base/` re-proof (~1.6k lines) — ~1–2 sessions
+Dependency order:
+1. `Base/Asymptotics` — untouched (arithmetic).
+2. `Base/Soundness` — the delicate file:
+   * `atom_monotone` unchanged; `Provable_mono` deleted (superseded by `Pf_mono`);
+   * `sound_upto` restructured: still budget-strong-induction (the `search_f` floor
+     argument is UNCHANGED — it lives in the cost model, not the type split), but the
+     inner recursor is the new 32-arm mutual one; the old `Derivation.sound` induction
+     FOLDS INTO the `Pf` arms (leaves = their side conditions; `mp`/`implTrans` = the old
+     `modusPonens`/`hypSyll` soundness bodies);
+   * `proofSearch_spec`/`proofSearch_sound`/`proofSearch_monotone` — statements keep
+     their names, proofs repoint.
+3. `Base/AtomCerts` — mechanical rename.
+4. `Base/Exclusion` — the census re-proved via `PlaysProof.induct`/`Pf.induct`: the
+   `Derivation` census (`tail_plays_readable`) merges into the `Pf` induction (no nested
+   hop); `no_provable_probeFirst_tail` (+`_botOpp`, `no_provable_searcherPlay_tail`)
+   rename to `no_pf_*`. The seven floor outcomes' support — treat with care, this is
+   load-bearing for five theorem files.
+5. `Base/Loeb` — adopt the already-ported engines from `Pf.lean` (drop `_pf` suffixes);
+   `mutual_loeb` is a mechanical rename (it never touched `Derivation`).
+6. `BaseTheorems.lean` umbrella + `Axioms.lean` header notes.
+
+**Gate**: `Base/` compiles; the equivalence scratch still compiles.
+
+### Phase 3 — `Theorems/` + `Bots/` (~7.1k lines, mostly mechanical) — ~2–3 sessions
+`Bots/` unchanged (pure `Prog`). For theorem files, apply the pattern catalogue
+(worked examples in `PfEngineSpike.lean`):
+
+| old pattern | new pattern |
+|---|---|
+| `Provable.struct ⟨Derivation.<leaf> …, by simp [Derivation.size]; omega⟩` (19 sites) | bare `Pf.<leaf> … (by simp [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, <bots>]; omega)` |
+| `Provable.struct ⟨.hypSyll _ _ _ l₁ l₂, size⟩` | flat `Pf.implTrans _ _ _ b₁ b₂ leg₁ leg₂ size` (pick per-leaf budgets; generous slack, `omega` closes) |
+| `Provable.rec` exclusion (CIMCIC, DIMCID: the two double-inductions) | ONE `induction h using Pf.induct with` — named arms; DELETE the separate `*_no_deriv_*` lemma |
+| `Provable.weakenImpl/…` constructor calls | same-name `Pf.…` (only `app → mp`) |
+| statements `Provable k g` in guard lemmas | `Pf k g` (grep rename; `proofSearch_spec` bridges to the oracle as before) |
+
+Files: `Theorems/{CupodBot, CooperateBot, DefectBot, DupocBot, EBot, Helpers,
+TitForTatBot, OBot, MirrorBot, DBot, CupodTrollBot}` + `Theorems/LlmGenerations/{PrudentBot,
+JustBot, CIMCIC, DIMCID}` (hand-port these — do NOT re-run the LLM pipeline mid-migration).
+
+**Gate**: `lake build` target `PrisonersDilemma` green; golden-statement diff CLEAN
+(byte-identical outcome statements); axiom audit clean. The engine is now Pf-only.
+
+### Phase 4 — Metatheory (~16k lines; the big one) — ~5–10 sessions
+Sub-order (each its own commit):
+1. **T42 (the gated mirror + D2)**: `{PlaysProofG, AtomProvableG, PfG}` with the gate on
+   the six premise formulas PLUS the merged `mp`/`implTrans` (uniform gating). Re-prove
+   `PfG_sound` (erase gates) and the stratification `Pf ↔ ∃N, PfB N`. Derive `PfG.induct`
+   (same template — the mirror needs its own named eliminator, budget one).
+2. **T31 (enumerator)**: unified `decFull` — ONE grammar to enumerate (no separate
+   `Derivation` enumeration, no `Type`-level size recursion): expect a NET
+   SIMPLIFICATION. Re-prove `Pf_iff_decFull`; re-derive `evalG` sound commits; keep the
+   `#eval` demos as the executable regression test.
+3. **T43–T47**: modest universe, bounded decider, cert reads, logic space, stabilization —
+   re-prove over `PfG`. The countP pigeonhole and query-space stratification arguments are
+   budget-arithmetic, not grammar-specific; expect mechanical.
+4. **T48–T54**: census (T48), the tree substrate (T49, ~6k lines — the largest single
+   rewrite AND the largest simplification: no `struct`-boundary node kinds, no
+   `Derivation`-vs-`Provable` case split in the extraction machine/normalizer/excisor),
+   instance gate + transport (T50), falsification (T51 — re-check: the diag-blocking
+   argument is gate-side, expected to survive verbatim), gate-parametric decider (T52),
+   instance-stratum decidability (T53), **certified zoo (T54: the D2 acceptance test** —
+   every zoo tree's ex-`Derivation` cuts must pass the instance gate; if one does not,
+   revisit D2 before proceeding).
+5. **Retire the legacy**: delete the Phase-1 `LegacyS` scratch + equivalence (archive the
+   file under `Research/Spikes/unified_pf/` with a tombstone header); restate the
+   universal-closure conjecture over `PfG` in `DECIDABILITY_ROADMAP.md`.
+
+**Gate**: `lake build` BOTH targets green; `#eval` demos print the same outcomes as
+pre-migration; axiom audit clean.
+
+### Phase 5 — app + docs — ~0.5–1 session
+1. `app/`: filenames unchanged ⇒ the proof agent's prompt embeds the NEW
+   `Derivation.lean`/`BaseTheorems.lean` automatically. Sweep
+   `app/src/pd_runner/llm/prompts.py` prose for stale rule names (`weakenImpl` etc.
+   survive; `struct`/`Provable.rec` guidance dies). Few-shot retrieval auto-follows the
+   ported theorem library.
+2. **Re-run the Phase-2 eval harness** (10 held-out theorems, `exclude_bots` leak-free
+   config) — the acceptance test that the agent can still write proofs in the new
+   language. Expect ≥ the old 10/10; if the agent stumbles, the fix is prompt-side
+   (add a `Pf.induct` exclusion few-shot), not engine-side.
+3. Docs: CLAUDE.md (rewrite the proof-system row + the `Pf` row; delete the stale
+   `ComputableEval` row), `UNIFIED_PF_SKETCH.md` + `PF_REPLACEMENT_ASSESSMENT.md` addenda
+   ("superseded by the migration, see PF_ONLY_ROADMAP"), memory files.
+4. Mark `PfEngineSpike.lean` historical (its demos are now the library's normal style).
+
+### Phase 6 (optional, cosmetic) — renames
+`Derivation.lean → ProofSystem.lean` (or `Pf.lean`), notation `⊢[k] φ`, prune dead
+aliases. Zero urgency; do only if the paper wants the cleaner story.
+
+## 3. Risk register
+
+| risk | phase | mitigation |
+|---|---|---|
+| `sound_upto` restructure breaks the `search_f` floor argument | 2 | the floor is cost-model-side, untouched; port the strong induction FIRST, keep the old proof text side-by-side while porting |
+| D2 uniform gating rejects a real zoo tree | 4.1/4.4 | T54 is the explicit acceptance test; fallback = weaken the gate on `mp`/`implTrans` to "conclusion-bounded" (documented deviation), not conditional two-tier gating |
+| positional-recursor arity churn (the `cases` reordering gotcha) | 1–4 | `Pf.induct`/`PfG.induct`/`PlaysProof.induct` built FIRST (Phase 1.2/4.1); raw `.rec` allowed ONLY inside the eliminator definitions themselves |
+| oracle semantics silently change | 1–4 | the Phase-1 legacy equivalence (`Pf ↔ Legacy.Provable`) is a THEOREM, kept compiling until Phase 4.5 |
+| golden outcome statement drifts | 3 | byte-diff against the Phase-0 inventory at every gate |
+| conjecture progress lost mid-rewrite | 4 | D3: no concurrent hunt; restate over `PfG` after 4.4 |
+| LLM-generated proofs (CIMCIC/DIMCID) hard to hand-port | 3 | they are the two double-induction files — the exact pattern the spike already ported; budget extra time, not extra risk |
+
+## 4. What does NOT change (the fixed points)
+
+`Program.lean` (syntax, `subst`, `size`), the cost constants and `atom_cost`, `eval`'s
+recursion structure (only the oracle's referent), every bot definition, every outcome
+theorem STATEMENT, the strict `outcome_X_Y` template and compilation-==-correctness, the
+app's architecture (tools, retrieval, harness), and the axiom count (3 standard, 0
+project).
+
+## 5. Effort summary
+
+| phase | scope | estimate (focused sessions) |
+|---|---|---|
+| 0 | preflight | 0.5 |
+| 1 | core swap + eliminators + legacy equivalence | 1 |
+| 2 | Base/ | 1–2 |
+| 3 | Theorems/ | 2–3 |
+| 4 | Metatheory | 5–10 |
+| 5 | app + docs | 0.5–1 |
+| **total** | | **~10–17** |
+
+Front-loaded certainty: after Phase 3 (~4–6 sessions) the ENGINE is fully Pf-only and
+green — the paper's Part-I story is already told at that point. Phase 4 is where the
+estimate variance lives (T49 dominates); it can be scheduled as its own campaign, with
+the engine shipping first.
