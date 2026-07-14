@@ -5,7 +5,7 @@ import PrisonersDilemma.Base.Soundness
 
 The positive layers certify plays; this file starts the NEGATIVE direction, needed by
 the honest outcome theorems for the floor-killed pairs (the tombstones in
-`Theorems/DupocBot.lean` / `Theorems/LlmGenerations/PrudentBot.lean`): `¬Provable k φ`
+`Theorems/DupocBot.lean` / `Theorems/LlmGenerations/PrudentBot.lean`): `¬Pf k φ`
 facts for TRUE formulas, where soundness gives nothing and only cost accounting can
 close the guard.
 
@@ -19,9 +19,9 @@ Contents:
   plays-atom spine tail, the player is one of the readable shapes. Contrapositive: a
   bot whose source is not bridge-readable (e.g. DBot — an `.ite` with a `.const`
   then-branch) has NO `Derivation` route to any formula ending in its play atoms,
-  which closes the `struct` entry point of `Provable` in one stroke.
+  which closes the `struct` entry point of `Pf` in one stroke.
 
-Consumers combine the census with a budget strong-induction over `Provable` (the
+Consumers combine the census with a budget strong-induction over `Pf` (the
 `app`/`weakenImpl`/`implTrans`/`diagF`/`impS2` regress descends because transcript
 cumulativity makes every premise budget strictly smaller) and kill the `atom` entry by
 the `search_f` floor arithmetic — blueprint: `no_provable_DBot_C_tail` in
@@ -54,76 +54,106 @@ def rightTail : Formula → Formula
 @[simp] theorem rightTail_diag (g : Nat) (φ : Formula) :
     rightTail (.diag g φ) = .diag g φ := rfl
 
-/-- The five player shapes whose plays the source-transparency bridge rules can
-    conclude (`searchBranch`, `simStep`, `botSimStep`, `botSearchStep`,
-    `iteBranchSearch_t` — one disjunct each, in that order). A player of any OTHER
-    shape has no `Derivation` route to its play atoms (`tail_plays_readable`). -/
+/-- The SIX player shapes whose plays the source-transparency bridge rules can conclude
+    (`searchBranch`, `simStep`, `botSimStep`, `botSearchStep`, `iteBranchSearch_t`,
+    `searchThenSearch_t` — one disjunct each, in that order). A player of any OTHER shape has no
+    source-transparency route to its play atoms (`tail_plays_readable`).
+
+    **Pf-only note (Phase 2)**: the sixth disjunct (the STACKED search — PrudentBot's canonical
+    shape) is NEW here. It was always a readable shape, but `searchThenSearch_t` lived on the
+    `Prop`-valued `Provable`, so the old `Type`-valued `Derivation` census structurally could not
+    see it: each `Provable` census had to kill that rule in its own `cases` arm instead. With one
+    proof system there is one census, and the shape must be listed. Every `not_readable_*` below
+    refutes it the same way it refutes the others — by syntactic distinctness. -/
 def ReadableMe (me : Prog) : Prop :=
   (∃ k ψ a b, me = .search k ψ (.const a) (.const b)) ∨
   (∃ p q, me = .sim p q) ∨
   (∃ p q, me = .bot (.sim p q)) ∨
   (∃ k ψ a b, me = .bot (.search k ψ (.const a) (.const b))) ∨
   (∃ z a' k ψ c0 c1 q,
-    me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0) (.const c1)) q)
+    me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0) (.const c1)) q) ∨
+  (∃ k₁ ψ₁ k₂ ψ₂ c0 c1 q,
+    me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q)
 
-/-- **The Derivation census**: if a `Derivation`'s conclusion has a plays-atom spine
-    tail, the player is bridge-readable. Induction: the logical core (`modusPonens`,
-    `hypSyll`) preserves the spine tail; each bridge rule's tail names its own (readable)
-    `me`; `eqRefl`/`eqNeg` have non-plays tails. -/
-theorem tail_plays_readable :
-    ∀ {φ : Formula}, Derivation φ →
+/-- **The census of `S`**: if a `Pf`'s conclusion has a plays-atom spine tail, the player is
+    bridge-readable. One induction (`Pf.induct`), over the WHOLE proof system.
+
+    **Pf-only note (Phase 2)**: this used to be TWO theorems — a `Derivation` census
+    (`tail_plays_readable`, over the structural half) plus a `struct` arm in each `Provable`
+    census that reached through the glue into it. The merge collapses them: the bridge rules are
+    now `Pf` constructors, so their arms sit beside `mp`/`implTrans` in a single induction. The
+    modal/box rules and `atom`/`atomNeg` have non-plays tails (`.box`/`.neg`/`.diag`), so they
+    close by `simp` — EXCEPT `atom` itself, whose tail IS a plays-atom: it is handled by the
+    CALLERS (they inspect the certificate; a certificate is not a source-transparency route), so
+    the census takes it as a hypothesis `hatom` on the atom arm. -/
+theorem tail_plays_readable
+    (hatom : ∀ {k : Nat} {φ : Formula}, AtomProvable k φ →
+      ∀ {me oppo : Prog} {a : Action}, rightTail φ = .plays me oppo a → ReadableMe me) :
+    ∀ {k : Nat} {φ : Formula}, Pf k φ →
       ∀ {me oppo : Prog} {a : Action},
         rightTail φ = .plays me oppo a → ReadableMe me := by
-  intro φ d
-  induction d with
-  | modusPonens φ ψ d1 d2 ih1 ih2 =>
+  intro k φ d
+  induction d using Pf.induct with
+  | atom k' φ' h => exact fun {me oppo a} ht => hatom h ht
+  -- the logical core preserves the spine tail
+  | mp k' m₁ m₂ φ' α h1 h2 hle ih1 _ih2 =>
       intro me oppo a h
       exact ih1 (by simpa using h)
-  | hypSyll φ ψ χ d1 d2 ih1 ih2 =>
-      intro me oppo a h
+  | implTrans k' φ' ψ χ a b h1 h2 hle _ih1 ih2 =>
+      intro me oppo a' h
       exact ih2 (by simpa using h)
-  | searchBranch k ψ a b me' oppo' hme =>
+  | weakenImpl k' φ' ψ m hψ hle ih =>
+      intro me oppo a h
+      exact ih (by simpa using h)
+  | impS2 φ' ψ χ m₁ m₂ K h1 h2 hle ih1 _ih2 =>
+      intro me oppo a h
+      exact ih1 (by simpa using h)
+  | diagF pm fb g K tgt hgate hle ih =>
+      intro me oppo a h
+      exact ih (by simpa using h)
+  -- each bridge rule's tail names its own (readable) `me`
+  | searchBranch k' g ψ a b me' oppo' hme hle =>
       intro me oppo a' h
       simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at h
       obtain ⟨rfl, rfl, rfl⟩ := h
-      exact Or.inl ⟨k, ψ, _, _, hme⟩
-  | simStep me' p q oppo' a hme =>
+      exact Or.inl ⟨g, ψ, _, _, hme⟩
+  | simStep k' me' p q oppo' a hme hle =>
       intro me oppo a' h
       simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at h
       obtain ⟨rfl, rfl, rfl⟩ := h
       exact Or.inr (Or.inl ⟨p, q, hme⟩)
-  | botSimStep me' p q oppo' a hme =>
+  | botSimStep k' me' p q oppo' a hme hle =>
       intro me oppo a' h
       simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at h
       obtain ⟨rfl, rfl, rfl⟩ := h
       exact Or.inr (Or.inr (Or.inl ⟨p, q, hme⟩))
-  | botSearchStep k ψ a b me' oppo' hme =>
+  | botSearchStep k' g ψ a b me' oppo' hme hle =>
       intro me oppo a' h
       simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at h
       obtain ⟨rfl, rfl, rfl⟩ := h
-      exact Or.inr (Or.inr (Or.inr (Or.inl ⟨k, ψ, _, _, hme⟩)))
-  | iteBranchSearch_t k z a' c0 c1 ψ q me' oppo' hme =>
+      exact Or.inr (Or.inr (Or.inr (Or.inl ⟨g, ψ, _, _, hme⟩)))
+  | iteBranchSearch_t k' g z a' c0 c1 ψ q me' oppo' hme hle =>
       intro me oppo a'' h
       simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at h
       obtain ⟨rfl, rfl, rfl⟩ := h
-      exact Or.inr (Or.inr (Or.inr (Or.inr ⟨z, a', k, ψ, c0, c1, q, hme⟩)))
-  | eqRefl p =>
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨z, a', g, ψ, c0, c1, q, hme⟩))))
+  | searchThenSearch_t k' k₁ k₂ m ψ₁ ψ₂ c0 c1 q me' oppo' hme hprud hmk hle _ih =>
+      -- the STACKED-search player (PrudentBot's shape) — the sixth readable disjunct
       intro me oppo a h
-      simp at h
-  | eqNeg p q hne =>
-      intro me oppo a h
-      simp at h
-
-/-! ## The floor lower bound, generalized
-
-The three floor-killed pairs (DBot×DupocBot, EBot×DupocBot, EBot×PrudentBot) share one
-shape: the SIMULATOR is a probe-first `.ite` — `me = .ite (.sim .opp (.bot z)) .C
-(.const .D) q` (DBot: `q = .const .C`; EBot: `q` = its inner probe cascade) — and the
-OPPONENT is a top-level search bot `.search k g pT pE` whose guard instance against the
-probe `.bot z` is semantically FALSE. Any certificate of "simulator plays C vs the
-searcher" must replay the probe, i.e. certify the searcher's play against `.bot z`:
-`search_t` dies by soundness (the guard instance is false), `search_f` charges the
-literal floor summand `k` — so every certificate costs > k, the searcher's own budget. -/
+      simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at h
+      obtain ⟨rfl, rfl, rfl⟩ := h
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k₁, ψ₁, k₂, ψ₂, c0, c1, q, hme⟩))))
+  -- non-plays tails (`.eq`, `.neg`, `.box`, `.diag`): the hypothesis is absurd
+  | eqRefl k' p hle => intro me oppo a h; simp [rightTail] at h
+  | eqNeg k' p q hne hle => intro me oppo a h; simp [rightTail] at h
+  | atomNeg k' p q b aN m hcert hne hle => intro me oppo a h; simp [rightTail] at h
+  | atomBoxImpl k' kBox p q a hcert hle => intro me oppo a' h; simp [rightTail] at h
+  | boxIntro kIn K φ' hprem hle _ih => intro me oppo a h; simp [rightTail] at h
+  | axK a b c m K φ' α hprem hgate hle _ih => intro me oppo a' h; simp [rightTail] at h
+  | box4 a b K φ' hgate hsz => intro me oppo a' h; simp [rightTail] at h
+  | diagB pm fb g K tgt hgate hle _ih => intro me oppo a h; simp [rightTail] at h
+  | axKf a b c K φ' α hgate hsz => intro me oppo a' h; simp [rightTail] at h
+  | boxMono a b K φ' hab hsz => intro me oppo a' h; simp [rightTail] at h
 
 /-- The probe-first simulator shape is never bridge-readable, provided its then-branch
     is not a const-branched `.search` (true of every zoo simulator: the branch is a
@@ -133,13 +163,15 @@ theorem not_readable_probeFirst (z p q : Prog) (aT : Action)
     (hshape : ∀ k' ψ c0 c1, p ≠ .search k' ψ (.const c0) (.const c1)) :
     ¬ ReadableMe (.ite (.sim .opp (.bot z)) aT p q) := by
   rintro (⟨k', ψ, a, b, h⟩ | ⟨p', r, h⟩ | ⟨p', r, h⟩ | ⟨k', ψ, a, b, h⟩ |
-          ⟨w, a', k', ψ, c0, c1, r, h⟩)
+          ⟨w, a', k', ψ, c0, c1, r, h⟩ | ⟨k₁, ψ₁, k₂, ψ₂, c0, c1, r, h⟩)
   · simp at h
   · simp at h
   · simp at h
   · simp at h
   · simp only [Prog.ite.injEq] at h
     exact hshape _ _ _ _ h.2.2.1
+  · -- the stacked-search shape is a `.search`, never an `.ite`
+    simp at h
 
 set_option maxHeartbeats 1000000 in
 /-- **The `search_f` floor as a cost lower bound** (generalized): no proof of ≤ k
@@ -161,7 +193,7 @@ theorem no_provable_probeFirst_tail (k : Nat) (z p q : Prog) (aT aTgt : Action)
     (g : Formula) (pT pE : Prog)
     (hfalse : ¬ (g.subst (.search k g pT pE) (.bot z)).interp)
     (hshape : ∀ k' ψ c0 c1, p ≠ .search k' ψ (.const c0) (.const c1)) :
-    ∀ K φ, Provable K φ → K ≤ k →
+    ∀ K φ, Pf K φ → K ≤ k →
       rightTail φ =
         .plays (.ite (.sim .opp (.bot z)) aT p q) (.search k g pT pE) aTgt →
       False := by
@@ -170,9 +202,30 @@ theorem no_provable_probeFirst_tail (k : Nat) (z p q : Prog) (aT aTgt : Action)
   | _ K ih =>
     intro φ hp hK htail
     cases hp with
-    | struct h =>
-        obtain ⟨d, _⟩ := h
-        exact not_readable_probeFirst z p q aT hshape (tail_plays_readable d htail)
+    -- the SIX source-transparency bridge rules (formerly reached via `struct` + the
+    -- `Derivation` census): each names its own readable `me`, which `not_readable_probeFirst z p q aT hshape` refutes.
+    | searchBranch gg psi aa bb me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inl ⟨gg, psi, _, _, hme⟩)
+    | simStep me pp qq oppo aa hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inr (Or.inl ⟨pp, qq, hme⟩))
+    | botSimStep me pp qq oppo aa hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inr (Or.inr (Or.inl ⟨pp, qq, hme⟩)))
+    | botSearchStep gg psi aa bb me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inr (Or.inr (Or.inr (Or.inl ⟨gg, psi, _, _, hme⟩))))
+    | iteBranchSearch_t gg zz aa' cc0 cc1 psi qq me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨zz, aa', gg, psi, cc0, cc1, qq, hme⟩)))))
+    | eqRefl pp hsz => simp [rightTail] at htail
+    | eqNeg pp qq hne hsz => simp [rightTail] at htail
     | atom h =>
         cases h with
         | mk hpp hn =>
@@ -184,14 +237,14 @@ theorem no_provable_probeFirst_tail (k : Nat) (z p q : Prog) (aT aTgt : Action)
               | sim hin =>
                 simp only [Prog.subst] at hin
                 cases hin with
-                | search_t hProv hbr2 => exact hfalse (Provable_sound _ _ hProv)
+                | search_t hProv hbr2 => exact hfalse (Pf_sound _ _ hProv)
                 | search_f hneg hbr2 => simp only [c_node] at hn; omega
           | ite_f hg hr hbr =>
               cases hg with
               | sim hin =>
                 simp only [Prog.subst] at hin
                 cases hin with
-                | search_t hProv hbr2 => exact hfalse (Provable_sound _ _ hProv)
+                | search_t hProv hbr2 => exact hfalse (Pf_sound _ _ hProv)
                 | search_f hneg hbr2 => simp only [c_node] at hn; omega
     | weakenImpl φ' ψ m hψ hsz =>
         simp only [rightTail_impl] at htail
@@ -207,7 +260,7 @@ theorem no_provable_probeFirst_tail (k : Nat) (z p q : Prog) (aT aTgt : Action)
         exact ih b (by omega) _ h2 (by omega) (by simpa using htail)
     | atomBoxImpl kBox p' q' a hcert hsz => simp at htail
     | boxIntro kIn K' φ' hpre hsz => simp at htail
-    | app k' m₁ m₂ φ' α h1 h2 hsz =>
+    | mp m₁ m₂ φ' α h1 h2 hsz =>
         have hα := Formula.size_pos φ
         exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
     | axK a b c m K' φ' α hpre hab hsz => simp at htail
@@ -233,7 +286,7 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
     (g : Formula) (pT pE : Prog)
     (hfalse : ¬ (g.subst (.bot (.search k g pT pE)) (.bot z)).interp)
     (hshape : ∀ k' ψ c0 c1, p ≠ .search k' ψ (.const c0) (.const c1)) :
-    ∀ K φ, Provable K φ → K ≤ k →
+    ∀ K φ, Pf K φ → K ≤ k →
       rightTail φ =
         .plays (.ite (.sim .opp (.bot z)) aT p q) (.bot (.search k g pT pE)) aTgt →
       False := by
@@ -242,9 +295,30 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
   | _ K ih =>
     intro φ hp hK htail
     cases hp with
-    | struct h =>
-        obtain ⟨d, _⟩ := h
-        exact not_readable_probeFirst z p q aT hshape (tail_plays_readable d htail)
+    -- the SIX source-transparency bridge rules (formerly reached via `struct` + the
+    -- `Derivation` census): each names its own readable `me`, which `not_readable_probeFirst z p q aT hshape` refutes.
+    | searchBranch gg psi aa bb me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inl ⟨gg, psi, _, _, hme⟩)
+    | simStep me pp qq oppo aa hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inr (Or.inl ⟨pp, qq, hme⟩))
+    | botSimStep me pp qq oppo aa hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inr (Or.inr (Or.inl ⟨pp, qq, hme⟩)))
+    | botSearchStep gg psi aa bb me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inr (Or.inr (Or.inr (Or.inl ⟨gg, psi, _, _, hme⟩))))
+    | iteBranchSearch_t gg zz aa' cc0 cc1 psi qq me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_probeFirst z p q aT hshape (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨zz, aa', gg, psi, cc0, cc1, qq, hme⟩)))))
+    | eqRefl pp hsz => simp [rightTail] at htail
+    | eqNeg pp qq hne hsz => simp [rightTail] at htail
     | atom h =>
         cases h with
         | mk hpp hn =>
@@ -258,7 +332,7 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
                 cases hin with
                 | bot hin2 =>
                   cases hin2 with
-                  | search_t hProv hbr2 => exact hfalse (Provable_sound _ _ hProv)
+                  | search_t hProv hbr2 => exact hfalse (Pf_sound _ _ hProv)
                   | search_f hneg hbr2 => simp only [c_node] at hn; omega
           | ite_f hg hr hbr =>
               cases hg with
@@ -267,7 +341,7 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
                 cases hin with
                 | bot hin2 =>
                   cases hin2 with
-                  | search_t hProv hbr2 => exact hfalse (Provable_sound _ _ hProv)
+                  | search_t hProv hbr2 => exact hfalse (Pf_sound _ _ hProv)
                   | search_f hneg hbr2 => simp only [c_node] at hn; omega
     | weakenImpl φ' ψ m hψ hsz =>
         simp only [rightTail_impl] at htail
@@ -283,7 +357,7 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
         exact ih b (by omega) _ h2 (by omega) (by simpa using htail)
     | atomBoxImpl kBox p' q' a hcert hsz => simp at htail
     | boxIntro kIn K' φ' hpre hsz => simp at htail
-    | app k' m₁ m₂ φ' α h1 h2 hsz =>
+    | mp m₁ m₂ φ' α h1 h2 hsz =>
         have hα := Formula.size_pos φ
         exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
     | axK a b c m K' φ' α hpre hab hsz => simp at htail
@@ -316,16 +390,21 @@ then-branch is not an inner search whose then-action is the target — else
 
 /-- A search bot whose branches are not both `.const` is not bridge-readable. -/
 theorem not_readable_searchNonConst (k : Nat) (g : Formula) (pT pE : Prog)
-    (hshape : ∀ c0 c1, ¬ (pT = .const c0 ∧ pE = .const c1)) :
+    (hshape : ∀ c0 c1, ¬ (pT = .const c0 ∧ pE = .const c1))
+    (hstack : ∀ k₂ ψ₂ c0 c1, pT ≠ .search k₂ ψ₂ (.const c0) (.const c1)) :
     ¬ ReadableMe (.search k g pT pE) := by
   rintro (⟨k', ψ, a, b, h⟩ | ⟨p', r, h⟩ | ⟨p', r, h⟩ | ⟨k', ψ, a, b, h⟩ |
-          ⟨w, a', k', ψ, c0, c1, r, h⟩)
+          ⟨w, a', k', ψ, c0, c1, r, h⟩ | ⟨k₁, ψ₁, k₂, ψ₂, c0, c1, r, h⟩)
   · simp only [Prog.search.injEq] at h
     exact hshape a b ⟨h.2.2.1, h.2.2.2⟩
   · simp at h
   · simp at h
   · simp at h
   · simp at h
+  · -- the STACKED-search shape (new with the merge): refuted by `hstack`, the caller's
+    -- promise that this searcher's then-branch is not itself a const-branched `.search`
+    simp only [Prog.search.injEq] at h
+    exact hstack k₂ ψ₂ c0 c1 h.2.2.1
 
 set_option maxHeartbeats 1000000 in
 /-- **The floor at the searcher's own play**: no proof of ≤ k characters concludes any
@@ -336,30 +415,51 @@ theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
     (aTgt : Action)
     (hfalse : ¬ (g.subst (.search k g pT pE) O).interp)
     (hshape : ∀ c0 c1, ¬ (pT = .const c0 ∧ pE = .const c1))
-    (hinner : ∀ k₂ ψ₂ c1, pT ≠ .search k₂ ψ₂ (.const aTgt) (.const c1)) :
-    ∀ K φ, Provable K φ → K ≤ k →
+    (hinner : ∀ k₂ ψ₂ c0 c1, pT ≠ .search k₂ ψ₂ (.const c0) (.const c1)) :
+    ∀ K φ, Pf K φ → K ≤ k →
       rightTail φ = .plays (.search k g pT pE) O aTgt → False := by
   intro K
   induction K using Nat.strong_induction_on with
   | _ K ih =>
     intro φ hp hK htail
     cases hp with
-    | struct h =>
-        obtain ⟨d, _⟩ := h
-        exact not_readable_searchNonConst k g pT pE hshape (tail_plays_readable d htail)
+    -- the SIX source-transparency bridge rules (formerly reached via `struct` + the
+    -- `Derivation` census): each names its own readable `me`, which `not_readable_searchNonConst k g pT pE hshape hinner` refutes.
+    | searchBranch gg psi aa bb me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inl ⟨gg, psi, _, _, hme⟩)
+    | simStep me pp qq oppo aa hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inr (Or.inl ⟨pp, qq, hme⟩))
+    | botSimStep me pp qq oppo aa hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inr (Or.inr (Or.inl ⟨pp, qq, hme⟩)))
+    | botSearchStep gg psi aa bb me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inr (Or.inr (Or.inr (Or.inl ⟨gg, psi, _, _, hme⟩))))
+    | iteBranchSearch_t gg zz aa' cc0 cc1 psi qq me oppo hme hsz =>
+        simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
+        obtain ⟨rfl, -, -⟩ := htail
+        exact not_readable_searchNonConst k g pT pE hshape hinner (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨zz, aa', gg, psi, cc0, cc1, qq, hme⟩)))))
+    | eqRefl pp hsz => simp [rightTail] at htail
+    | eqNeg pp qq hne hsz => simp [rightTail] at htail
     | atom h =>
         cases h with
         | mk hpp hn =>
           simp only [rightTail_plays, Formula.plays.injEq] at htail
           obtain ⟨rfl, rfl, rfl⟩ := htail
           cases hpp with
-          | search_t hProv hbr => exact hfalse (Provable_sound _ _ hProv)
+          | search_t hProv hbr => exact hfalse (Pf_sound _ _ hProv)
           | search_f hneg hbr => simp only [c_node] at hn; omega
     | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q' me oppo hme hpre hm hsz =>
         simp only [rightTail_impl, rightTail_plays, Formula.plays.injEq] at htail
         obtain ⟨rfl, rfl, rfl⟩ := htail
         simp only [Prog.search.injEq] at hme
-        exact hinner _ _ _ hme.2.2.1
+        exact hinner _ _ _ _ hme.2.2.1
     | weakenImpl φ' ψ m hψ hsz =>
         simp only [rightTail_impl] at htail
         simp only [Formula.size] at hsz
@@ -370,7 +470,7 @@ theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
         exact ih b (by omega) _ h2 (by omega) (by simpa using htail)
     | atomBoxImpl kBox p' q' a hcert hsz => simp at htail
     | boxIntro kIn K' φ' hpre hsz => simp at htail
-    | app k' m₁ m₂ φ' α h1 h2 hsz =>
+    | mp m₁ m₂ φ' α h1 h2 hsz =>
         have hα := Formula.size_pos φ
         exact ih m₁ (by omega) _ h1 (by omega) (by simpa using htail)
     | axK a b c m K' φ' α hpre hab hsz => simp at htail

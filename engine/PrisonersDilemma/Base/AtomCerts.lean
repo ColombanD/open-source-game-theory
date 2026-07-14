@@ -64,7 +64,7 @@ failed budget (the `search_f` floor), and an anti-diagonal else-play has none at
   * FIRED top-level searches certify at `log2 k + 3` via `search_t` (`atom_search_t_top` /
     `…_bot_top`) — cheap, since `search_t` cites the oracle rather than embedding the proof;
   * FAILED top-level searches certify at `m + k + 2` via `search_f` (`atom_search_f_top` /
-    `…_bot_top`) given a refutation of the guard (`Provable.atomNeg`) — the floor `≥ k + 1`
+    `…_bot_top`) given a refutation of the guard (`Pf.atomNeg`) — the floor `≥ k + 1`
     is what consistency forces. Deeper runs compose these per site. -/
 
 theorem cert_searchfree : ∀ (fuel : Nat) (me oppo body : Prog) (a : Action),
@@ -135,7 +135,7 @@ theorem atom_complete_searchfree (p q : Prog) (a : Action) (fuel : Nat)
 /-- FIRED top-level search (the Dupoc/Cupod shape): the guard's provability at its own
     literal certifies the then-play at `log2 k + 3` characters. -/
 theorem atom_search_t_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
-    (hg : Provable k (g.subst (.search k g (.const aT) (.const aE)) oppo)) :
+    (hg : Pf k (g.subst (.search k g (.const aT) (.const aE)) oppo)) :
     AtomProvable (Nat.log2 k + 3)
       (.plays (.search k g (.const aT) (.const aE)) oppo aT) := by
   refine ⟨PlaysProof.search_t hg PlaysProof.const, ?_⟩
@@ -145,7 +145,7 @@ theorem atom_search_t_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
 
 /-- FIRED `.bot`-wrapped top-level search (the `.bot DupocBot` shape). -/
 theorem atom_search_t_bot_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
-    (hg : Provable k (g.subst (.bot (.search k g (.const aT) (.const aE))) oppo)) :
+    (hg : Pf k (g.subst (.bot (.search k g (.const aT) (.const aE))) oppo)) :
     AtomProvable (Nat.log2 k + 4)
       (.plays (.bot (.search k g (.const aT) (.const aE))) oppo aT) := by
   refine ⟨PlaysProof.bot (PlaysProof.search_t hg PlaysProof.const), ?_⟩
@@ -156,7 +156,7 @@ theorem atom_search_t_bot_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : P
 /-- FAILED top-level search: a refutation of the guard certifies the else-play — at the
     FLOOR `≥ k + 1` (the cost pays the whole failed budget; consistency forces this). -/
 theorem atom_search_f_top (k m : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
-    (hneg : Provable m (.neg (g.subst (.search k g (.const aT) (.const aE)) oppo))) :
+    (hneg : Pf m (.neg (g.subst (.search k g (.const aT) (.const aE)) oppo))) :
     AtomProvable (m + k + 2)
       (.plays (.search k g (.const aT) (.const aE)) oppo aE) := by
   refine ⟨PlaysProof.search_f hneg PlaysProof.const, ?_⟩
@@ -166,7 +166,7 @@ theorem atom_search_f_top (k m : Nat) (g : Formula) (aT aE : Action) (oppo : Pro
 
 /-- FAILED `.bot`-wrapped top-level search. -/
 theorem atom_search_f_bot_top (k m : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
-    (hneg : Provable m (.neg (g.subst (.bot (.search k g (.const aT) (.const aE))) oppo))) :
+    (hneg : Pf m (.neg (g.subst (.bot (.search k g (.const aT) (.const aE))) oppo))) :
     AtomProvable (m + k + 3)
       (.plays (.bot (.search k g (.const aT) (.const aE))) oppo aE) := by
   refine ⟨PlaysProof.bot (PlaysProof.search_f hneg PlaysProof.const), ?_⟩
@@ -174,9 +174,9 @@ theorem atom_search_f_bot_top (k m : Nat) (g : Formula) (aT aE : Action) (oppo :
   simp only [c_leaf, c_node]
   omega
 
-/-- The bridge `proofSearch ↔ Provable` is now a theorem, not an axiom. -/
+/-- The bridge `proofSearch ↔ Pf` is now a theorem, not an axiom. -/
 theorem proofSearch_spec (k : Nat) (φ : Formula) :
-    proofSearch k φ = true ↔ Provable k φ := by
+    proofSearch k φ = true ↔ Pf k φ := by
   unfold proofSearch; exact decide_eq_true_iff
 
 end PD.BaseTheorems
