@@ -223,121 +223,91 @@ inductive DAnt : Formula → Formula → Prop where
       DAnt (.box k (ψ.subst me opponent)) (.plays me opponent c0)
   | trans {B D C : Formula} : DAnt B D → DAnt D C → DAnt B C
 
-/-- **`LeafPf` — the packaged source-transparency leaf** (Type-valued). Under the Pf-only
-    engine the seven transparency rules are LEAF constructors of `Pf` with no recursive
-    premises; this datatype packages exactly their data, and is what the tree substrate
-    (T49) stores where it used to store a whole `Derivation` witness. The ex-`Derivation`
-    logical core (`modusPonens`/`hypSyll`) needs no counterpart: those are `mp`/`implTrans`
-    TREE NODES now, handled by the substrate's own arms. -/
-inductive LeafPf : Nat → Formula → Type where
+/-- **`LeafPf` — the packaged source-transparency leaf** (Type-valued, SHAPE ONLY). Under
+    the Pf-only engine the seven transparency rules are LEAF constructors of `Pf`; this
+    datatype packages exactly their SHAPE data (the `hme` source equations), with the size
+    side-condition kept OUTSIDE as a separate `Prop` (so tree nodes that store a leaf have
+    the same `(payload, size-proof)` shape the former `struct (d, hd)` had — budget
+    weakening then touches only the irrelevant proof, and `rfl`-style regating lemmas
+    survive). The tree substrate (T49) stores this where it used to store a `Derivation`;
+    the ex-`Derivation` logical core needs no counterpart (`mp`/`implTrans` are tree
+    nodes). -/
+inductive LeafPf : Formula → Type where
   | searchBranch (g : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog)
-      (hme : me = .search g ψ (.const a) (.const b))
-      (hle : (Formula.impl (.box g (ψ.subst me opponent)) (.plays me opponent a)).size ≤ k) :
-      LeafPf k (.impl (.box g (ψ.subst me opponent)) (.plays me opponent a))
-  | simStep (me p q opponent : Prog) (a : Action) (hme : me = .sim p q)
-      (hle : (Formula.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
-                           (.plays me opponent a)).size ≤ k) :
-      LeafPf k (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
-                      (.plays me opponent a))
-  | botSimStep (me p q opponent : Prog) (a : Action) (hme : me = .bot (.sim p q))
-      (hle : (Formula.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
-                           (.plays me opponent a)).size ≤ k) :
-      LeafPf k (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
-                      (.plays me opponent a))
+      (hme : me = .search g ψ (.const a) (.const b)) :
+      LeafPf (.impl (.box g (ψ.subst me opponent)) (.plays me opponent a))
+  | simStep (me p q opponent : Prog) (a : Action) (hme : me = .sim p q) :
+      LeafPf (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+                    (.plays me opponent a))
+  | botSimStep (me p q opponent : Prog) (a : Action) (hme : me = .bot (.sim p q)) :
+      LeafPf (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+                    (.plays me opponent a))
   | botSearchStep (g : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog)
-      (hme : me = .bot (.search g ψ (.const a) (.const b)))
-      (hle : (Formula.impl (.box g (ψ.subst me opponent)) (.plays me opponent a)).size ≤ k) :
-      LeafPf k (.impl (.box g (ψ.subst me opponent)) (.plays me opponent a))
+      (hme : me = .bot (.search g ψ (.const a) (.const b))) :
+      LeafPf (.impl (.box g (ψ.subst me opponent)) (.plays me opponent a))
   | iteBranchSearch_t (g : Nat) (z : Prog) (a' c0 c1 : Action) (ψ : Formula)
       (q me opponent : Prog)
-      (hme : me = .ite (.sim .opp (.bot z)) a' (.search g ψ (.const c0) (.const c1)) q)
-      (hle : (Formula.impl (.plays opponent (.bot z) a')
-                           (.impl (.box g (ψ.subst me opponent))
-                                  (.plays me opponent c0))).size ≤ k) :
-      LeafPf k (.impl (.plays opponent (.bot z) a')
-                      (.impl (.box g (ψ.subst me opponent)) (.plays me opponent c0)))
-  | eqRefl (p : Prog) (hle : (Formula.eq p p).size ≤ k) : LeafPf k (.eq p p)
-  | eqNeg (p q : Prog) (hne : p ≠ q) (hle : (Formula.neg (.eq p q)).size ≤ k) :
-      LeafPf k (.neg (.eq p q))
+      (hme : me = .ite (.sim .opp (.bot z)) a' (.search g ψ (.const c0) (.const c1)) q) :
+      LeafPf (.impl (.plays opponent (.bot z) a')
+                    (.impl (.box g (ψ.subst me opponent)) (.plays me opponent c0)))
+  | eqRefl (p : Prog) : LeafPf (.eq p p)
+  | eqNeg (p q : Prog) (hne : p ≠ q) : LeafPf (.neg (.eq p q))
 
-/-- A stored leaf IS a `Pf` (each maps to its constructor). -/
-def LeafPf.toPf : {k : Nat} → {φ : Formula} → LeafPf k φ → Pf k φ
-  | _, _, .searchBranch g ψ a b me opponent hme hle => .searchBranch g ψ a b me opponent hme hle
-  | _, _, .simStep me p q opponent a hme hle => .simStep me p q opponent a hme hle
-  | _, _, .botSimStep me p q opponent a hme hle => .botSimStep me p q opponent a hme hle
-  | _, _, .botSearchStep g ψ a b me opponent hme hle =>
+/-- A stored leaf plus its size gate IS a `Pf`. -/
+def LeafPf.toPf : {φ : Formula} → LeafPf φ → {k : Nat} → φ.size ≤ k → Pf k φ
+  | _, .searchBranch g ψ a b me opponent hme, _, hle =>
+      .searchBranch g ψ a b me opponent hme hle
+  | _, .simStep me p q opponent a hme, _, hle => .simStep me p q opponent a hme hle
+  | _, .botSimStep me p q opponent a hme, _, hle => .botSimStep me p q opponent a hme hle
+  | _, .botSearchStep g ψ a b me opponent hme, _, hle =>
       .botSearchStep g ψ a b me opponent hme hle
-  | _, _, .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
+  | _, .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme, _, hle =>
       .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle
-  | _, _, .eqRefl p hle => .eqRefl p hle
-  | _, _, .eqNeg p q hne hle => .eqNeg p q hne hle
+  | _, .eqRefl p, _, hle => .eqRefl p hle
+  | _, .eqNeg p q hne, _, hle => .eqNeg p q hne hle
 
-/-- A stored leaf injects into the GATED system at any gate (leaves have no premises,
-    so no gate obligation arises). -/
-def LeafPf.toG {G : Formula → Prop} : {k : Nat} → {φ : Formula} → LeafPf k φ → PD.T42.PfG G k φ
-  | _, _, .searchBranch g ψ a b me opponent hme hle => .searchBranch g ψ a b me opponent hme hle
-  | _, _, .simStep me p q opponent a hme hle => .simStep me p q opponent a hme hle
-  | _, _, .botSimStep me p q opponent a hme hle => .botSimStep me p q opponent a hme hle
-  | _, _, .botSearchStep g ψ a b me opponent hme hle =>
+/-- A stored leaf injects into the GATED system at any gate (no premises: no obligation). -/
+def LeafPf.toG {G : Formula → Prop} : {φ : Formula} → LeafPf φ → {k : Nat} → φ.size ≤ k →
+    PD.T42.PfG G k φ
+  | _, .searchBranch g ψ a b me opponent hme, _, hle =>
+      .searchBranch g ψ a b me opponent hme hle
+  | _, .simStep me p q opponent a hme, _, hle => .simStep me p q opponent a hme hle
+  | _, .botSimStep me p q opponent a hme, _, hle => .botSimStep me p q opponent a hme hle
+  | _, .botSearchStep g ψ a b me opponent hme, _, hle =>
       .botSearchStep g ψ a b me opponent hme hle
-  | _, _, .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
+  | _, .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme, _, hle =>
       .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle
-  | _, _, .eqRefl p hle => .eqRefl p hle
-  | _, _, .eqNeg p q hne hle => .eqNeg p q hne hle
-
-/-- A leaf's transcript pays its conclusion (the side-condition IS the size gate). -/
-theorem LeafPf.concl_size_le : {k : Nat} → {φ : Formula} → LeafPf k φ → φ.size ≤ k
-  | _, _, .searchBranch _ _ _ _ _ _ _ hle => hle
-  | _, _, .simStep _ _ _ _ _ _ hle => hle
-  | _, _, .botSimStep _ _ _ _ _ _ hle => hle
-  | _, _, .botSearchStep _ _ _ _ _ _ _ hle => hle
-  | _, _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _ hle => hle
-  | _, _, .eqRefl _ hle => hle
-  | _, _, .eqNeg _ _ _ hle => hle
-
-/-- Budget weakening for stored leaves. -/
-def LeafPf.weaken : {k k' : Nat} → {φ : Formula} → LeafPf k φ → k ≤ k' → LeafPf k' φ
-  | _, _, _, .searchBranch g ψ a b me opponent hme hle, h =>
-      .searchBranch g ψ a b me opponent hme (Nat.le_trans hle h)
-  | _, _, _, .simStep me p q opponent a hme hle, h =>
-      .simStep me p q opponent a hme (Nat.le_trans hle h)
-  | _, _, _, .botSimStep me p q opponent a hme hle, h =>
-      .botSimStep me p q opponent a hme (Nat.le_trans hle h)
-  | _, _, _, .botSearchStep g ψ a b me opponent hme hle, h =>
-      .botSearchStep g ψ a b me opponent hme (Nat.le_trans hle h)
-  | _, _, _, .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle, h =>
-      .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme (Nat.le_trans hle h)
-  | _, _, _, .eqRefl p hle, h => .eqRefl p (Nat.le_trans hle h)
-  | _, _, _, .eqNeg p q hne hle, h => .eqNeg p q hne (Nat.le_trans hle h)
+  | _, .eqRefl p, _, hle => .eqRefl p hle
+  | _, .eqNeg p q hne, _, hle => .eqNeg p q hne hle
 
 /-- **C1, leaf form**: every positive-position implication of a stored leaf has a
     census-legitimate antecedent (was `derivation_posImpl_ant`; the `modusPonens`/`hypSyll`
     cases moved into the master census's `mp`/`implTrans` arms, where they always belonged). -/
-theorem LeafPf.posImpl_ant : ∀ {k : Nat} {φ : Formula}, LeafPf k φ →
+theorem LeafPf.posImpl_ant : ∀ {φ : Formula}, LeafPf φ →
     ∀ {B C : Formula}, PosImpl φ B C → DAnt B C := by
-  intro k φ l
+  intro φ l
   cases l with
-  | searchBranch g ψ a b me opponent hme hle =>
+  | searchBranch g ψ a b me opponent hme =>
       intro B C hp
       cases hp with
       | head => exact .searchBr hme
       | tail hp' => cases hp'
-  | simStep me p q opponent a hme hle =>
+  | simStep me p q opponent a hme =>
       intro B C hp
       cases hp with
       | head => exact .simSt hme
       | tail hp' => cases hp'
-  | botSimStep me p q opponent a hme hle =>
+  | botSimStep me p q opponent a hme =>
       intro B C hp
       cases hp with
       | head => exact .botSimSt hme
       | tail hp' => cases hp'
-  | botSearchStep g ψ a b me opponent hme hle =>
+  | botSearchStep g ψ a b me opponent hme =>
       intro B C hp
       cases hp with
       | head => exact .botSearchSt hme
       | tail hp' => cases hp'
-  | iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
+  | iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme =>
       intro B C hp
       cases hp with
       | head => exact .iteBr₁ hme
@@ -345,15 +315,15 @@ theorem LeafPf.posImpl_ant : ∀ {k : Nat} {φ : Formula}, LeafPf k φ →
           cases hp' with
           | head => exact .iteBr₂ hme
           | tail hp'' => cases hp''
-  | eqRefl p hle =>
+  | eqRefl p =>
       intro B C hp
       cases hp
-  | eqNeg p q hne hle =>
+  | eqNeg p q hne =>
       intro B C hp
       cases hp
 
 /-- The top-level corollary: a stored leaf concluding `.impl B C` forces a census antecedent. -/
-theorem LeafPf.impl_ant {k : Nat} {B C : Formula} (l : LeafPf k (.impl B C)) : DAnt B C :=
+theorem LeafPf.impl_ant {B C : Formula} (l : LeafPf (.impl B C)) : DAnt B C :=
   l.posImpl_ant .head
 
 /-! ## 4. Provenance payoff: Derivation antecedents never increase literals. -/
@@ -403,10 +373,9 @@ theorem DAnt_lit : ∀ {B C : Formula}, DAnt B C → maxLitF B ≤ maxLitF C := 
     transparency layer is fully tame; the residue of the conjecture is the reflective
     chains and their size-exempt cut atoms (CUT_RELEVANCE.md C2–C4). -/
 theorem leaf_ant_lit {k : Nat} {φ B C : Formula}
-    (l : LeafPf k φ) (hp : PosImpl φ B C) :
+    (l : LeafPf φ) (h₄ : φ.size ≤ k) (hp : PosImpl φ B C) :
     maxLitF B < 2 ^ k := by
   have h₁ := DAnt_lit (l.posImpl_ant hp)
-  have h₄ : φ.size ≤ k := l.concl_size_le
   have h₂ : maxLitF C ≤ maxLitF φ ∧ maxLitF B ≤ maxLitF φ := by
     clear h₁ h₄ l
     induction hp with
@@ -640,21 +609,21 @@ inductive EndsInPlays : Formula → Prop where
 /-- Every stored LEAF is a plays-ended implication chain or an equality shape: the
     transparency layer concludes NO boxes, diags, or negated atoms
     (was `derivation_shape`). -/
-theorem leafPf_shape : ∀ {k : Nat} {φ : Formula}, LeafPf k φ →
+theorem leafPf_shape : ∀ {φ : Formula}, LeafPf φ →
     EndsInPlays φ ∨ (∃ p, φ = .eq p p) ∨ (∃ p q, φ = .neg (.eq p q)) := by
-  intro k φ l
+  intro φ l
   cases l with
-  | searchBranch g ψ a b me opponent hme hle => exact Or.inl (.impl .plays)
-  | simStep me p q opponent a hme hle => exact Or.inl (.impl .plays)
-  | botSimStep me p q opponent a hme hle => exact Or.inl (.impl .plays)
-  | botSearchStep g ψ a b me opponent hme hle => exact Or.inl (.impl .plays)
-  | iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
+  | searchBranch g ψ a b me opponent hme => exact Or.inl (.impl .plays)
+  | simStep me p q opponent a hme => exact Or.inl (.impl .plays)
+  | botSimStep me p q opponent a hme => exact Or.inl (.impl .plays)
+  | botSearchStep g ψ a b me opponent hme => exact Or.inl (.impl .plays)
+  | iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme =>
       exact Or.inl (.impl (.impl .plays))
-  | eqRefl p hle => exact Or.inr (Or.inl ⟨p, rfl⟩)
-  | eqNeg p q hne hle => exact Or.inr (Or.inr ⟨p, q, rfl⟩)
+  | eqRefl p => exact Or.inr (Or.inl ⟨p, rfl⟩)
+  | eqNeg p q hne => exact Or.inr (Or.inr ⟨p, q, rfl⟩)
 
 /-- The transparency layer cannot conclude a box (was `derivation_no_box`). -/
-theorem leafPf_no_box {k b : Nat} {ψ : Formula} (l : LeafPf k (.box b ψ)) : False := by
+theorem leafPf_no_box {b : Nat} {ψ : Formula} (l : LeafPf (.box b ψ)) : False := by
   rcases leafPf_shape l with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
   · cases h
   · cases hp

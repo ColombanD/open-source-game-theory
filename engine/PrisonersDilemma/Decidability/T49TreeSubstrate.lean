@@ -76,7 +76,8 @@ mutual
       node, which carried a whole `Derivation` — the ex-`Derivation` `modusPonens`/`hypSyll`
       are `app`/`implTrans` TREE NODES now, so the substrate has no tree-in-a-node). -/
   inductive ProvT : Nat → Formula → Type where
-    | leaf (l : PD.T48.LeafPf k φ) : ProvT k φ
+    | leaf (l : PD.T48.LeafPf φ) :
+        φ.size ≤ k → ProvT k φ
     | atom : AtomT k φ → ProvT k φ
     | weakenImpl (φ ψ : Formula) (m : Nat) :
         ProvT m ψ → m + (Formula.impl φ ψ).size ≤ k → ProvT k (.impl φ ψ)
@@ -153,7 +154,7 @@ mutual
     | .mk t hn => .mk t.sound hn
 
   theorem ProvT.sound {k : Nat} {φ : Formula} : ProvT k φ → Pf k φ
-    | .leaf l => l.toPf
+    | .leaf l hd => l.toPf hd
     | .atom t => .atom t.sound
     | .weakenImpl φ ψ m t hle => .weakenImpl φ ψ m t.sound hle
     | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz =>
@@ -202,14 +203,16 @@ mutual
 
   theorem ProvT.complete {k : Nat} {φ : Formula} :
       Pf k φ → Nonempty (ProvT k φ)
-    | .searchBranch g ψ a b me oppo hme hle => ⟨.leaf (.searchBranch g ψ a b me oppo hme hle)⟩
-    | .simStep me p q oppo a hme hle => ⟨.leaf (.simStep me p q oppo a hme hle)⟩
-    | .botSimStep me p q oppo a hme hle => ⟨.leaf (.botSimStep me p q oppo a hme hle)⟩
-    | .botSearchStep g ψ a b me oppo hme hle => ⟨.leaf (.botSearchStep g ψ a b me oppo hme hle)⟩
+    | .searchBranch g ψ a b me oppo hme hle =>
+        ⟨.leaf (.searchBranch g ψ a b me oppo hme) hle⟩
+    | .simStep me p q oppo a hme hle => ⟨.leaf (.simStep me p q oppo a hme) hle⟩
+    | .botSimStep me p q oppo a hme hle => ⟨.leaf (.botSimStep me p q oppo a hme) hle⟩
+    | .botSearchStep g ψ a b me oppo hme hle =>
+        ⟨.leaf (.botSearchStep g ψ a b me oppo hme) hle⟩
     | .iteBranchSearch_t g z a' c0 c1 ψ q me oppo hme hle =>
-        ⟨.leaf (.iteBranchSearch_t g z a' c0 c1 ψ q me oppo hme hle)⟩
-    | .eqRefl p hle => ⟨.leaf (.eqRefl p hle)⟩
-    | .eqNeg p q hne hle => ⟨.leaf (.eqNeg p q hne hle)⟩
+        ⟨.leaf (.iteBranchSearch_t g z a' c0 c1 ψ q me oppo hme) hle⟩
+    | .eqRefl p hle => ⟨.leaf (.eqRefl p) hle⟩
+    | .eqNeg p q hne hle => ⟨.leaf (.eqNeg p q hne) hle⟩
     | .atom h => (AtomT.complete h).elim fun t => ⟨.atom t⟩
     | .weakenImpl φ ψ m h hle =>
         (ProvT.complete h).elim fun t => ⟨.weakenImpl φ ψ m t hle⟩
@@ -271,7 +274,7 @@ mutual
     | _, _, .mk t _ => t.gateOK G
 
   def ProvT.gateOK (G : Formula → Prop) : {k : Nat} → {φ : Formula} → ProvT k φ → Prop
-    | _, _, .leaf _ => True   -- leaves have no premises: no gate obligation
+    | _, _, .leaf _ _ => True   -- leaves have no premises: no gate obligation
     | _, _, .atom t => t.gateOK G
     | _, _, .weakenImpl _ _ _ t _ => t.gateOK G
     | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.gateOK G
@@ -310,7 +313,7 @@ mutual
 
   theorem ProvT.toG {G : Formula → Prop} {k : Nat} {φ : Formula} :
       (t : ProvT k φ) → t.gateOK G → PfG G k φ
-    | .leaf l, _ => l.toG
+    | .leaf l hd, _ => l.toG hd
     | .atom t, h => .atom (t.toG h)
     | .weakenImpl φ ψ m t hle, h => .weakenImpl φ ψ m (t.toG h) hle
     | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz, h =>
@@ -373,7 +376,7 @@ Three foundations the rewrite system needs everywhere, plus the first excision:
 
 /-- Budget monotonicity: relax the root gate, reuse the tree. -/
 def ProvT.mono {k k' : Nat} {φ : Formula} (h : k ≤ k') : ProvT k φ → ProvT k' φ
-  | .leaf l => .leaf (l.weaken h)
+  | .leaf l hd => .leaf l (le_trans hd h)
   | .atom (.mk t hn) => .atom (.mk t (le_trans hn h))
   | .weakenImpl φ ψ m t hle => .weakenImpl φ ψ m t (le_trans hle h)
   | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz =>
@@ -394,7 +397,7 @@ def ProvT.mono {k k' : Nat} {φ : Formula} (h : k ≤ k') : ProvT k φ → ProvT
 /-- Re-gating does not change the cut diet. -/
 theorem ProvT.mono_gateOK {G : Formula → Prop} {k k' : Nat} {φ : Formula}
     (h : k ≤ k') : (t : ProvT k φ) → ((t.mono h).gateOK G ↔ t.gateOK G)
-  | .leaf _ => Iff.rfl
+  | .leaf _ _ => Iff.rfl
   | .atom (.mk _ _) => Iff.rfl
   | .weakenImpl _ _ _ _ _ => Iff.rfl
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Iff.rfl
@@ -415,7 +418,7 @@ theorem ProvT.mono_gateOK {G : Formula → Prop} {k k' : Nat} {φ : Formula}
     (Atoms conclude only `.plays`, so the `atom` arm is uninhabited.) -/
 theorem ProvT.impl_size_le {k : Nat} {A B : Formula} :
     ProvT k (.impl A B) → (Formula.impl A B).size ≤ k
-  | .leaf l => l.concl_size_le
+  | .leaf _ hd => hd
   | .atom t => nomatch t
   | .weakenImpl _ _ _ _ hle => by omega
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ hsz => by omega
@@ -466,7 +469,7 @@ the modest gate polices. -/
     conclude a box; the Type layer cannot — `derivation_no_box`). -/
 theorem ProvT.box_size_le {k c : Nat} {ψ : Formula} :
     ProvT k (.box c ψ) → (Formula.box c ψ).size ≤ k
-  | .leaf l => (PD.T48.leafPf_no_box l).elim
+  | .leaf l _ => (PD.T48.leafPf_no_box l).elim
   | .atom t => nomatch t
   | .boxIntro _ _ _ _ hle => by omega
   | .app _ _ _ _ _ _ _ hle => by omega
@@ -693,9 +696,9 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
          | .nil => some ⟨_, .axKf a'' b'' c'' K φ' α' hg1 hle⟩)
     -- general cores: an exhausted stack returns the walker; struct/atom with pending
     -- discharges await derivCross (D2g stage 2)
-    | .leaf l =>
+    | .leaf l hd =>
         (match stack with
-         | .nil => mkSelf (.leaf l)
+         | .nil => mkSelf (.leaf l hd)
          | .cons mD u S' => leafCross fuel l _ _ rfl mD u S')
     | .atom a =>
         (match stack with
@@ -722,14 +725,14 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
     `modusPonens`/`hypSyll` trees here — those are `app`/`implTrans` TREE NODES now,
     handled by `boxInvGo`'s own arms, so this walker is census-only.) Takes its own fuel
     tick so the mutual block stays structural. -/
-def leafCross : (fuel : Nat) → {kL : Nat} → {ξ : Formula} → (l : PD.T48.LeafPf kL ξ) →
+def leafCross : (fuel : Nat) → {ξ : Formula} → (l : PD.T48.LeafPf ξ) →
     {core : Formula} →
     (B rest : Formula) → Formula.impl B rest = ξ → (mD : Nat) → (u : ProvT mD B) →
     DStack rest core → Option (CoreContent core)
-  | 0, _, _, _, _, _, _, _, _, _, _ => none
-  | fuel + 1, _, _, l, _, B, rest, heq, mD, u, S' => by
+  | 0, _, _, _, _, _, _, _, _, _ => none
+  | fuel + 1, _, l, _, B, rest, heq, mD, u, S' => by
     cases l with
-    | searchBranch k ψg a b me opnt hme hle =>
+    | searchBranch k ψg a b me opnt hme =>
         cases heq
         cases hme
         cases S' with
@@ -737,7 +740,7 @@ def leafCross : (fuel : Nat) → {kL : Nat} → {ξ : Formula} → (l : PD.T48.L
             exact match boxInvGo fuel u .nil with
               | some ⟨mc, tc, hc⟩ => some ⟨_, censusSearchBranch tc hc⟩
               | none => none
-    | botSearchStep k ψg a b me opnt hme hle =>
+    | botSearchStep k ψg a b me opnt hme =>
         cases heq
         cases hme
         cases S' with
@@ -745,7 +748,7 @@ def leafCross : (fuel : Nat) → {kL : Nat} → {ξ : Formula} → (l : PD.T48.L
             exact match boxInvGo fuel u .nil with
               | some ⟨mc, tc, hc⟩ => some ⟨_, censusBotSearchStep tc hc⟩
               | none => none
-    | simStep me p q opnt a hme hle =>
+    | simStep me p q opnt a hme =>
         cases heq
         cases hme
         cases S' with
@@ -753,7 +756,7 @@ def leafCross : (fuel : Nat) → {kL : Nat} → {ξ : Formula} → (l : PD.T48.L
             exact match atomizeGo fuel u with
               | some ⟨k', .mk cert _⟩ => some ⟨_, censusSimStep cert⟩
               | none => none
-    | botSimStep me p q opnt a hme hle =>
+    | botSimStep me p q opnt a hme =>
         cases heq
         cases hme
         cases S' with
@@ -761,7 +764,7 @@ def leafCross : (fuel : Nat) → {kL : Nat} → {ξ : Formula} → (l : PD.T48.L
             exact match atomizeGo fuel u with
               | some ⟨k', .mk cert _⟩ => some ⟨_, censusBotSimStep cert⟩
               | none => none
-    | iteBranchSearch_t kk z a' c0 c1 ψg qe mee oppo hme hle =>
+    | iteBranchSearch_t kk z a' c0 c1 ψg qe mee oppo hme =>
         cases heq
         cases hme
         cases S' with
@@ -775,8 +778,8 @@ def leafCross : (fuel : Nat) → {kL : Nat} → {ξ : Formula} → (l : PD.T48.L
                        | some ⟨mc, tc, hc⟩ => some ⟨_, censusITE pl1 tc hc⟩
                        | none => none)
                   | none => none
-    | eqRefl p hle => cases heq
-    | eqNeg p q hne hle => cases heq
+    | eqRefl p => cases heq
+    | eqNeg p q hne => cases heq
 
 /-- Peel a plays-tree to its atom certificate (past the identity base): `.atom` is
     done, `.app` walks the machine, bare-plays `struct`s unfold their `modusPonens`. -/
@@ -789,7 +792,7 @@ def atomizeGo : (fuel : Nat) → {m : Nat} → {p q : Prog} → {c : Action} →
     -- Pf-only: a LEAF never concludes a bare `.plays` (all seven conclude impl/eq/neg),
     -- so the `leaf` arm is uninhabited; the old bare-plays `struct (modusPonens …)` route
     -- is an `.app` node now, handled below.
-    | leaf l => exact nomatch l
+    | leaf l hd => exact nomatch l
     | app K m₁ m₂ φ α f x hle =>
         exact match boxInvGo fuel f (.cons m₂ x .nil) with
           | some ⟨_, t'⟩ => atomizeGo fuel t'
@@ -815,7 +818,7 @@ detour: the machine navigates the spine, drops the never-needed discharge, and r
 the content at exactly the subscript's budget. -/
 
 private def demoA : ProvT 100 PD.T48.wildA :=
-  .leaf (.eqRefl PD.T48.wildQ (by decide))
+  .leaf (.eqRefl PD.T48.wildQ) (by decide)
 
 private def demoImpl : ProvT 200 (.impl PD.T48.psi0 PD.T48.wildA) :=
   .weakenImpl PD.T48.psi0 PD.T48.wildA 100 demoA (by decide)
@@ -884,7 +887,7 @@ theorem Formula.size_pos : (φ : Formula) → 1 ≤ φ.size := by
     and leaves are terminal), so atoms and leaves count 1. (Pf-only: the former `struct`
     node carried a whole `Derivation` and weighed its node count; a leaf just weighs 1.) -/
 def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
-  | _, _, .leaf _ => 1
+  | _, _, .leaf _ _ => 1
   | _, _, .atom _ => 1
   | _, _, .weakenImpl _ _ _ t _ => t.wt + 1
   | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => 1
@@ -902,7 +905,7 @@ def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
   | _, _, .atomNeg _ _ _ _ _ _ _ _ => 1
 
 theorem ProvT.wt_pos {m : Nat} {φ : Formula} : (t : ProvT m φ) → 1 ≤ t.wt
-  | .leaf _ => Nat.le_refl _
+  | .leaf _ _ => Nat.le_refl _
   | .atom _ | .atomBoxImpl _ _ _ _ _ _ | .box4 _ _ _ _ _ _
   | .axKf _ _ _ _ _ _ _ _ | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Nat.le_refl _
@@ -935,7 +938,7 @@ def DStack.freeS2 : {ξ core : Formula} → DStack ξ core → Prop
 /-- Re-gating preserves contraction-freedom. -/
 theorem ProvT.mono_freeS2 {k k' : Nat} {φ : Formula}
     (h : k ≤ k') : (t : ProvT k φ) → ((t.mono h).freeS2 ↔ t.freeS2)
-  | .leaf _ => Iff.rfl
+  | .leaf _ _ => Iff.rfl
   | .atom (.mk _ _) => Iff.rfl
   | .weakenImpl _ _ _ _ _ => Iff.rfl
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Iff.rfl
@@ -955,7 +958,7 @@ theorem ProvT.mono_freeS2 {k k' : Nat} {φ : Formula}
 /-- Re-gating preserves weight. -/
 theorem ProvT.mono_wt {k k' : Nat} {φ : Formula}
     (h : k ≤ k') : (t : ProvT k φ) → (t.mono h).wt = t.wt
-  | .struct _ _ => rfl
+  | .leaf _ _ => rfl
   | .atom (.mk _ _) => rfl
   | .weakenImpl _ _ _ _ _ => rfl
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
@@ -1013,10 +1016,11 @@ theorem crossWt : ∀ (F : Nat),
     (∀ {m : Nat} {ξ core : Formula} (t : ProvT m ξ) (s : DStack ξ core),
       t.freeS2 → s.freeS2 → ∀ {r : CoreContent core}, boxInvGo F t s = some r →
       r.wt ≤ t.wt + s.wt ∧ r.freeS2)
-  ∧ (∀ {ξ B rest core : Formula} (d : Derivation ξ) (heq : Formula.impl B rest = ξ)
+  ∧ (∀ {ξ B rest core : Formula} (l : PD.T48.LeafPf ξ)
+      (heq : Formula.impl B rest = ξ)
       (mD : Nat) (u : ProvT mD B) (S' : DStack rest core), u.freeS2 → S'.freeS2 →
-      ∀ {r : CoreContent core}, structCross F d B rest heq mD u S' = some r →
-      r.wt ≤ dNodes d + (u.wt + S'.wt) ∧ r.freeS2) := by
+      ∀ {r : CoreContent core}, leafCross F l B rest heq mD u S' = some r →
+      r.wt ≤ 1 + (u.wt + S'.wt) ∧ r.freeS2) := by
   intro F
   induction F using Nat.strong_induction_on with
   | _ F ihS =>
@@ -1238,14 +1242,14 @@ theorem crossWt : ∀ (F : Nat),
                                     DStack.wt] at *
                                   exact ⟨by omega, h1.2, h2.2⟩
       | impS2 φ' ψ' χ' m₁' m₂' K tf tx hle => exact absurd hf (by simp [ProvT.freeS2])
-      | struct d hd =>
+      | leaf l hd =>
           cases s with
           | nil =>
                   simp only [boxInvGo] at h
                   exact ⟨by rw [mkSelf_wt _ h]; simp [DStack.wt], mkSelf_freeS2 _ h hf⟩
           | cons mD u s' =>
                   simp only [boxInvGo] at h
-                  have := (ihS F (Nat.lt_succ_self F)).2 d _ mD u s' hs.1 hs.2 h
+                  have := (ihS F (Nat.lt_succ_self F)).2 l _ mD u s' hs.1 hs.2 h
                   simpa [ProvT.wt, DStack.wt] using this
       | atom t =>
           cases s with
@@ -1283,30 +1287,16 @@ theorem crossWt : ∀ (F : Nat),
 
 
   · cases F with
-    | zero => intro _ _ _ _ d heq mD u S' _ _ r h; simp [structCross] at h
+    | zero => intro _ _ _ _ l heq mD u S' _ _ r h; simp [leafCross] at h
     | succ F =>
-      intro ξ B rest core d heq mD u S' hu hS' r h
+      intro ξ B rest core l heq mD u S' hu hS' r h
       cases heq
-      cases d with
-      | modusPonens φ ψ d1 d2 =>
-          simp only [structCross] at h
-          have := (ihS F (by omega)).1 (.struct d1 (Nat.le_refl _))
-            (.cons d2.size (.struct d2 (Nat.le_refl _)) (.cons mD u S'))
-            trivial ⟨trivial, hu, hS'⟩ h
-          simp only [ProvT.wt, DStack.wt, dNodes] at *
-          exact ⟨by omega, this.2⟩
-      | hypSyll φ ψ χ d1 d2 =>
-          simp only [structCross] at h
-          have := (ihS F (by omega)).1 (.struct d2 (Nat.le_refl _))
-            (.cons _ (.app _ d1.size mD _ ψ (.struct d1 (Nat.le_refl _)) u
-              (Nat.le_refl _)) S') trivial ⟨⟨trivial, hu⟩, hS'⟩ h
-          simp only [ProvT.wt, DStack.wt, dNodes] at *
-          exact ⟨by omega, this.2⟩
+      cases l with
       | searchBranch k ψg a b me opnt hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.search k ψg (.const a) (.const b)) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -1315,13 +1305,12 @@ theorem crossWt : ∀ (F : Nat),
                   obtain ⟨mc, tc, hc⟩ := rc
                   cases h
                   refine ⟨?_, trivial⟩
-                  simp [CoreContent.wt, censusSearchBranch, ProvT.wt, dNodes,
-                    DStack.wt]
+                  simp [CoreContent.wt, censusSearchBranch, ProvT.wt, DStack.wt]
       | botSearchStep k ψg a b me opnt hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.bot (.search k ψg (.const a) (.const b))) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -1330,13 +1319,12 @@ theorem crossWt : ∀ (F : Nat),
                   obtain ⟨mc, tc, hc⟩ := rc
                   cases h
                   refine ⟨?_, trivial⟩
-                  simp [CoreContent.wt, censusBotSearchStep, ProvT.wt, dNodes,
-                    DStack.wt]
+                  simp [CoreContent.wt, censusBotSearchStep, ProvT.wt, DStack.wt]
       | simStep me p q opnt a hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
@@ -1344,12 +1332,12 @@ theorem crossWt : ∀ (F : Nat),
                   obtain ⟨k', cert, hn⟩ := rc
                   cases h
                   refine ⟨?_, trivial⟩
-                  simp [CoreContent.wt, censusSimStep, ProvT.wt, dNodes, DStack.wt]
+                  simp [CoreContent.wt, censusSimStep, ProvT.wt, DStack.wt]
       | botSimStep me p q opnt a hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
@@ -1357,15 +1345,15 @@ theorem crossWt : ∀ (F : Nat),
                   obtain ⟨k', cert, hn⟩ := rc
                   cases h
                   refine ⟨?_, trivial⟩
-                  simp [CoreContent.wt, censusBotSimStep, ProvT.wt, dNodes, DStack.wt]
-      | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          cases hme2
+                  simp [CoreContent.wt, censusBotSimStep, ProvT.wt, DStack.wt]
+      | iteBranchSearch_t k z a' c0 c1 ψg qe me opnt hme =>
+          cases hme
           cases S' with
-          | nil => simp [structCross] at h
+          | nil => simp [leafCross] at h
           | cons mD2 u2 s'' =>
               cases s'' with
               | nil =>
-                  simp only [structCross] at h
+                  simp only [leafCross] at h
                   cases ha : atomizeGo F u with
                   | none => rw [ha] at h; exact absurd h (by simp)
                   | some ra =>
@@ -1378,7 +1366,7 @@ theorem crossWt : ∀ (F : Nat),
                           obtain ⟨mc, tc, hcc⟩ := rc
                           cases h
                           exact ⟨by simp [CoreContent.wt, censusITE, ProvT.wt,
-                              dNodes, DStack.wt],
+                              DStack.wt],
                             by simp [CoreContent.freeS2, censusITE, ProvT.freeS2]⟩
 
 /-- The machine half, original signature (call sites unchanged). -/
@@ -1604,8 +1592,8 @@ theorem boxInvGo_total : ∀ (F P : Nat) {m : Nat} {ξ core : Formula}
                     obtain ⟨mx, txc, hxle⟩ := rx
                     simp
     | impS2 φ' ψ' χ' m₁' m₂' K tf tx hle => exact absurd hf (by simp [ProvT.freeS2])
-    | struct d hd =>
-        rcases PD.T48.derivation_shape d with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
+    | leaf l =>
+        rcases PD.T48.leafPf_shape l with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
         · exact (EndsInPlays.no_core_stack h s hc).elim
         · subst hp; cases s; exact hc.elim
         · subst hp; cases s; exact hc.elim
@@ -1668,22 +1656,19 @@ theorem crossGateOK {G : Formula → Prop}
     (∀ {m : Nat} {ξ core : Formula} (t : ProvT m ξ) (s : DStack ξ core),
       t.gateOK G → s.gateOK G → s.segsOK G →
       ∀ {r : CoreContent core}, boxInvGo F t s = some r → r.gateOK G)
-  ∧ (∀ {ξ B rest core : Formula} (d : Derivation ξ) (heq : Formula.impl B rest = ξ)
-      (mD : Nat) (u : ProvT mD B) (S' : DStack rest core), G B → derivGateOK G d →
+  ∧ (∀ {ξ B rest core : Formula} (l : PD.T48.LeafPf ξ)
+      (heq : Formula.impl B rest = ξ)
+      (mD : Nat) (u : ProvT mD B) (S' : DStack rest core), G B →
       u.gateOK G → S'.gateOK G → S'.segsOK G →
-      ∀ {r : CoreContent core}, structCross F d B rest heq mD u S' = some r →
+      ∀ {r : CoreContent core}, leafCross F l B rest heq mD u S' = some r →
       r.gateOK G)
   ∧ (∀ {m : Nat} {p q : Prog} {c : Action} (t : ProvT m (.plays p q c)),
       t.gateOK G → ∀ {r : Σ' k', AtomT k' (.plays p q c)}, atomizeGo F t = some r →
-      r.2.gateOK G)
-  ∧ (∀ {ξ : Formula} {p q : Prog} {c : Action} (d : Derivation ξ)
-      (heq : Formula.plays p q c = ξ), derivGateOK G d →
-      ∀ {r : Σ' k', AtomT k' (.plays p q c)}, atomizeStruct F d heq = some r →
       r.2.gateOK G) := by
   intro F
   induction F using Nat.strong_induction_on with
   | _ F ihS =>
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
   · cases F with
     | zero => intro _ _ _ t s _ _ _ r h; simp [boxInvGo] at h
     | succ F =>
@@ -1877,14 +1862,14 @@ theorem crossGateOK {G : Formula → Prop}
                       (.app _ m₂' mD φ' ψ' tx dB (Nat.le_refl _)) s'))
                     hf.2.1 ⟨hs.1, ⟨hsg.1, hf.2.2, hs.1⟩, hs.2⟩
                     ⟨hsg.1, hf.1, hsg.2⟩ h
-      | struct d hd =>
+      | leaf l hd =>
           cases s with
           | nil =>
                   simp only [boxInvGo] at h
                   exact mkSelf_gateOK _ h hf
           | cons mD u s' =>
                   simp only [boxInvGo] at h
-                  exact (ihS F (Nat.lt_succ_self F)).2.1 d _ mD u s' hsg.1 hf hs.1 hs.2
+                  exact (ihS F (Nat.lt_succ_self F)).2.1 l _ mD u s' hsg.1 hs.1 hs.2
                     hsg.2 h
       | atom t =>
           cases s with
@@ -1924,27 +1909,16 @@ theorem crossGateOK {G : Formula → Prop}
 
 
   · cases F with
-    | zero => intro _ _ _ _ d heq mD u S' _ _ _ _ _ r h; simp [structCross] at h
+    | zero => intro _ _ _ _ l heq mD u S' _ _ _ _ r h; simp [leafCross] at h
     | succ F =>
-      intro ξ B rest core d heq mD u S' hGB hf hu hS' hsg r h
+      intro ξ B rest core l heq mD u S' hGB hu hS' hsg r h
       cases heq
-      cases d with
-      | modusPonens φ ψ d1 d2 =>
-          simp only [structCross] at h
-          exact (ihS F (by omega)).1 (.struct d1 (Nat.le_refl _))
-            (.cons d2.size (.struct d2 (Nat.le_refl _)) (.cons mD u S'))
-            hf.2.1 ⟨hf.2.2, hu, hS'⟩ ⟨hf.1, hGB, hsg⟩ h
-      | hypSyll φ ψ χ d1 d2 =>
-          simp only [structCross] at h
-          exact (ihS F (by omega)).1 (.struct d2 (Nat.le_refl _))
-            (.cons _ (.app _ d1.size mD _ ψ (.struct d1 (Nat.le_refl _)) u
-              (Nat.le_refl _)) S')
-            hf.2.2 ⟨⟨hGB, hf.2.1, hu⟩, hS'⟩ ⟨hf.1, hsg⟩ h
+      cases l with
       | searchBranch k ψg a b me opnt hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.search k ψg (.const a) (.const b)) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -1961,7 +1935,7 @@ theorem crossGateOK {G : Formula → Prop}
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.bot (.search k ψg (.const a) (.const b))) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -1978,12 +1952,12 @@ theorem crossGateOK {G : Formula → Prop}
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
                   rw [ha] at h
-                  have hcg := (ihS F (by omega)).2.2.1 u hu ha
+                  have hcg := (ihS F (by omega)).2.2 u hu ha
                   obtain ⟨k', cert, hn⟩ := rc
                   simp only [AtomT.gateOK] at hcg
                   cases h
@@ -1993,25 +1967,25 @@ theorem crossGateOK {G : Formula → Prop}
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
                   rw [ha] at h
-                  have hcg := (ihS F (by omega)).2.2.1 u hu ha
+                  have hcg := (ihS F (by omega)).2.2 u hu ha
                   obtain ⟨k', cert, hn⟩ := rc
                   simp only [AtomT.gateOK] at hcg
                   cases h
                   simpa [CoreContent.gateOK, censusBotSimStep, ProvT.gateOK,
                     AtomT.gateOK, PlaysT.gateOK] using hcg
-      | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          cases hme2
+      | iteBranchSearch_t k z a' c0 c1 ψg qe me opnt hme =>
+          cases hme
           cases S' with
-          | nil => simp [structCross] at h
+          | nil => simp [leafCross] at h
           | cons mD2 u2 s'' =>
               cases s'' with
               | nil =>
-                  simp only [structCross] at h
+                  simp only [leafCross] at h
                   cases ha : atomizeGo F u with
                   | none => rw [ha] at h; exact absurd h (by simp)
                   | some ra =>
@@ -2021,7 +1995,7 @@ theorem crossGateOK {G : Formula → Prop}
                       | none => rw [hb] at h; exact absurd h (by simp)
                       | some rc =>
                           rw [hb] at h
-                          have hcg1 := (ihS F (by omega)).2.2.1 u hu ha
+                          have hcg1 := (ihS F (by omega)).2.2 u hu ha
                           have hcg2 := (ihS F (by omega)).1 u2 .nil hS'.1 trivial
                             trivial hb
                           obtain ⟨mc, tc, hcc⟩ := rc
@@ -2040,9 +2014,7 @@ theorem crossGateOK {G : Formula → Prop}
           simp only [atomizeGo] at h
           cases h
           exact hf
-      | struct d hd =>
-          simp only [atomizeGo] at h
-          exact (ihS F (by omega)).2.2.2 d rfl hf h
+      | leaf l hd => exact nomatch l
       | app K m₁ m₂ φ α f x hle =>
           simp only [atomizeGo] at h
           cases hb : boxInvGo F f (.cons m₂ x .nil) with
@@ -2052,34 +2024,7 @@ theorem crossGateOK {G : Formula → Prop}
               have hcg := (ihS F (by omega)).1 f (.cons m₂ x .nil)
                 hf.2.1 ⟨hf.2.2, trivial⟩ ⟨hf.1, trivial⟩ hb
               simp only [CoreContent.gateOK] at hcg
-              exact (ihS F (by omega)).2.2.1 _ hcg h
-  · cases F with
-    | zero => intro _ _ _ _ d heq _ r h; simp [atomizeStruct] at h
-    | succ F =>
-      intro ξ p q c d heq hf r h
-      cases d with
-      | modusPonens φ ψ d1 d2 =>
-          cases heq
-          simp only [atomizeStruct] at h
-          cases hb : boxInvGo F (.struct d1 (Nat.le_refl _))
-              (.cons d2.size (.struct d2 (Nat.le_refl _)) .nil) with
-          | none => rw [hb] at h; exact absurd h (by simp)
-          | some rc =>
-              rw [hb] at h
-              have hcg := (ihS F (by omega)).1 (.struct d1 (Nat.le_refl _))
-                (.cons d2.size (.struct d2 (Nat.le_refl _)) .nil)
-                hf.2.1 ⟨hf.2.2, trivial⟩ ⟨hf.1, trivial⟩ hb
-              simp only [CoreContent.gateOK] at hcg
-              exact (ihS F (by omega)).2.2.1 _ hcg h
-      | hypSyll φ ψ χ d1 d2 => cases heq
-      | searchBranch k ψg a b me opnt hme => cases heq
-      | botSearchStep k ψg a b me opnt hme => cases heq
-      | simStep me p' q' opnt a hme => cases heq
-      | botSimStep me p' q' opnt a hme => cases heq
-      | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 => cases heq
-      | eqRefl p' => cases heq
-      | eqNeg p' q' hne => cases heq
-
+              exact (ihS F (by omega)).2.2 _ hcg h
 /-- The machine half, original signature (call sites unchanged). -/
 theorem boxInvGo_gateOK {G : Formula → Prop}
     (Gbox : ∀ b ψ, G (.box b ψ) → G ψ) (F : Nat) {m : Nat} {ξ core : Formula}
@@ -2169,7 +2114,7 @@ def DStack.s2d : {ξ core : Formula} → DStack ξ core → Nat
 /-- Re-gating preserves depth. -/
 theorem ProvT.mono_s2d {k k' : Nat} {φ : Formula}
     (h : k ≤ k') : (t : ProvT k φ) → (t.mono h).s2d = t.s2d
-  | .struct _ _ => rfl
+  | .leaf _ _ => rfl
   | .atom (.mk _ _) => rfl
   | .weakenImpl _ _ _ _ _ => rfl
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
@@ -2207,9 +2152,10 @@ theorem crossS2d : ∀ (F : Nat),
     (∀ {m : Nat} {ξ core : Formula} (t : ProvT m ξ) (s : DStack ξ core),
       ∀ {r : CoreContent core}, boxInvGo F t s = some r →
       r.s2d ≤ max t.s2d s.s2d)
-  ∧ (∀ {ξ B rest core : Formula} (d : Derivation ξ) (heq : Formula.impl B rest = ξ)
+  ∧ (∀ {ξ B rest core : Formula} (l : PD.T48.LeafPf ξ)
+      (heq : Formula.impl B rest = ξ)
       (mD : Nat) (u : ProvT mD B) (S' : DStack rest core),
-      ∀ {r : CoreContent core}, structCross F d B rest heq mD u S' = some r →
+      ∀ {r : CoreContent core}, leafCross F l B rest heq mD u S' = some r →
       r.s2d ≤ max u.s2d S'.s2d) := by
   intro F
   induction F using Nat.strong_induction_on with
@@ -2436,7 +2382,7 @@ theorem crossS2d : ∀ (F : Nat),
                       (.app _ m₂' mD φ' ψ' tx dB (Nat.le_refl _)) s')) h
                   simp only [ProvT.s2d, DStack.s2d] at *
                   omega
-      | struct d hd =>
+      | leaf l hd =>
           cases s with
           | nil =>
                   simp only [boxInvGo] at h
@@ -2445,7 +2391,7 @@ theorem crossS2d : ∀ (F : Nat),
                   omega
           | cons mD u s' =>
                   simp only [boxInvGo] at h
-                  have := (ihS F (Nat.lt_succ_self F)).2 d _ mD u s' h
+                  have := (ihS F (Nat.lt_succ_self F)).2 l _ mD u s' h
                   simp only [ProvT.s2d, DStack.s2d] at *
                   omega
       | atom t =>
@@ -2485,29 +2431,16 @@ theorem crossS2d : ∀ (F : Nat),
 
 
   · cases F with
-    | zero => intro _ _ _ _ d heq mD u S' r h; simp [structCross] at h
+    | zero => intro _ _ _ _ l heq mD u S' r h; simp [leafCross] at h
     | succ F =>
-      intro ξ B rest core d heq mD u S' r h
+      intro ξ B rest core l heq mD u S' r h
       cases heq
-      cases d with
-      | modusPonens φ ψ d1 d2 =>
-          simp only [structCross] at h
-          have := (ihS F (by omega)).1 (.struct d1 (Nat.le_refl _))
-            (.cons d2.size (.struct d2 (Nat.le_refl _)) (.cons mD u S')) h
-          simp only [ProvT.s2d, DStack.s2d] at *
-          omega
-      | hypSyll φ ψ χ d1 d2 =>
-          simp only [structCross] at h
-          have := (ihS F (by omega)).1 (.struct d2 (Nat.le_refl _))
-            (.cons _ (.app _ d1.size mD _ ψ (.struct d1 (Nat.le_refl _)) u
-              (Nat.le_refl _)) S') h
-          simp only [ProvT.s2d, DStack.s2d] at *
-          omega
+      cases l with
       | searchBranch k ψg a b me opnt hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.search k ψg (.const a) (.const b)) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -2520,7 +2453,7 @@ theorem crossS2d : ∀ (F : Nat),
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.bot (.search k ψg (.const a) (.const b))) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -2533,7 +2466,7 @@ theorem crossS2d : ∀ (F : Nat),
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
@@ -2545,7 +2478,7 @@ theorem crossS2d : ∀ (F : Nat),
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
@@ -2553,14 +2486,14 @@ theorem crossS2d : ∀ (F : Nat),
                   obtain ⟨k', cert, hn⟩ := rc
                   cases h
                   simp [CoreContent.s2d, censusBotSimStep, ProvT.s2d, DStack.s2d]
-      | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          cases hme2
+      | iteBranchSearch_t k z a' c0 c1 ψg qe me opnt hme =>
+          cases hme
           cases S' with
-          | nil => simp [structCross] at h
+          | nil => simp [leafCross] at h
           | cons mD2 u2 s'' =>
               cases s'' with
               | nil =>
-                  simp only [structCross] at h
+                  simp only [leafCross] at h
                   cases ha : atomizeGo F u with
                   | none => rw [ha] at h; exact absurd h (by simp)
                   | some ra =>
@@ -2591,25 +2524,6 @@ exactly `modestGate N`), a `true` from the checker plus `toG` lands a concrete t
 `PfG (modestGate N)`. The `#eval` below runs the full pipeline on the demo:
 extract a box content, CHECK its diet, certify. -/
 
-def derivGateOKb (Gb : Formula → Bool) : {φ : Formula} → Derivation φ → Bool
-  | _, .modusPonens φ _ d1 d2 => Gb φ && derivGateOKb Gb d1 && derivGateOKb Gb d2
-  | _, .hypSyll _ ψ _ d1 d2 => Gb ψ && derivGateOKb Gb d1 && derivGateOKb Gb d2
-  | _, _ => true
-
-theorem derivGateOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
-    (hGb : ∀ B, Gb B = true → G B) : {φ : Formula} → (d : Derivation φ) →
-    derivGateOKb Gb d = true → derivGateOK G d
-  | _, .modusPonens φ _ d1 d2, h => by
-      simp only [derivGateOKb, Bool.and_eq_true] at h
-      exact ⟨hGb _ h.1.1, derivGateOKb_sound hGb d1 h.1.2, derivGateOKb_sound hGb d2 h.2⟩
-  | _, .hypSyll _ ψ _ d1 d2, h => by
-      simp only [derivGateOKb, Bool.and_eq_true] at h
-      exact ⟨hGb _ h.1.1, derivGateOKb_sound hGb d1 h.1.2, derivGateOKb_sound hGb d2 h.2⟩
-  | _, .searchBranch _ _ _ _ _ _ _, _ | _, .simStep _ _ _ _ _ _, _
-  | _, .botSimStep _ _ _ _ _ _, _ | _, .botSearchStep _ _ _ _ _ _ _, _
-  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _, _ | _, .eqRefl _, _
-  | _, .eqNeg _ _ _, _ => trivial
-
 mutual
   def PlaysT.gateOKb (Gb : Formula → Bool) :
       {me o b : Prog} → {a : Action} → {n : Nat} → PlaysT me o b a n → Bool
@@ -2629,7 +2543,7 @@ mutual
 
   def ProvT.gateOKb (Gb : Formula → Bool) :
       {k : Nat} → {φ : Formula} → ProvT k φ → Bool
-    | _, _, .struct d _ => derivGateOKb Gb d
+    | _, _, .leaf _ _ => true   -- leaves have no premises: nothing to check
     | _, _, .atom t => t.gateOKb Gb
     | _, _, .weakenImpl _ _ _ t _ => t.gateOKb Gb
     | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.gateOKb Gb
@@ -2680,7 +2594,7 @@ mutual
   theorem ProvT.gateOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
       (hGb : ∀ B, Gb B = true → G B) {k : Nat} {φ : Formula} :
       (t : ProvT k φ) → t.gateOKb Gb = true → t.gateOK G
-    | .struct d _, h => derivGateOKb_sound hGb d h
+    | .leaf _ _, h => trivial
     | .atom t, h => t.gateOKb_sound hGb h
     | .weakenImpl _ _ _ t _, h => t.gateOKb_sound hGb h
     | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _, h => t.gateOKb_sound hGb h
@@ -2742,8 +2656,8 @@ theorem PlaysT.cost_pos {me o b : Prog} {a : Action} {n : Nat} :
 
 /-- **Weight is budget-bounded**: every walkable node is paid for by its gate. -/
 theorem ProvT.wt_le_budget : {m : Nat} → {φ : Formula} → (t : ProvT m φ) → t.wt ≤ m
-  | _, _, .struct d hd =>
-      le_trans (dNodes_le_size d) hd
+  | _, _, .leaf _ hd =>
+      le_trans (Formula.size_pos _) hd
   | _, _, .atom (.mk c hn) => le_trans c.cost_pos hn
   | _, _, .weakenImpl φ' ψ' m' t hle => by
       have h1 := t.wt_le_budget
@@ -2829,11 +2743,12 @@ theorem crossWtLt : ∀ (F : Nat),
       IsCore core → t.freeS2 → s.freeS2 →
       ∀ {r : CoreContent core}, boxInvGo F t s = some r →
       r.wt + 1 ≤ t.wt + s.wt)
-  ∧ (∀ {ξ B rest core : Formula} (d : Derivation ξ) (heq : Formula.impl B rest = ξ)
+  ∧ (∀ {ξ B rest core : Formula} (l : PD.T48.LeafPf ξ)
+      (heq : Formula.impl B rest = ξ)
       (mD : Nat) (u : ProvT mD B) (S' : DStack rest core), IsCore core →
       u.freeS2 → S'.freeS2 →
-      ∀ {r : CoreContent core}, structCross F d B rest heq mD u S' = some r →
-      r.wt + 1 ≤ dNodes d + (u.wt + S'.wt)) := by
+      ∀ {r : CoreContent core}, leafCross F l B rest heq mD u S' = some r →
+      r.wt + 1 ≤ 1 + (u.wt + S'.wt)) := by
   intro F
   induction F using Nat.strong_induction_on with
   | _ F ihS =>
@@ -3005,16 +2920,16 @@ theorem crossWtLt : ∀ (F : Nat),
                                   simp only [CoreContent.wt, ProvT.wt, DStack.wt] at *
                                   omega
       | impS2 φ' ψ' χ' m₁' m₂' K tf tx hle => exact absurd hf (by simp [ProvT.freeS2])
-      | struct d hd =>
+      | leaf l hd =>
           cases s with
           | nil =>
-                  rcases PD.T48.derivation_shape d with hsh | ⟨p, hp⟩ | ⟨p, q, hp⟩
+                  rcases PD.T48.leafPf_shape l with hsh | ⟨p, hp⟩ | ⟨p, q, hp⟩
                   · exact (EndsInPlays.no_core_stack hsh .nil hc).elim
                   · subst hp; exact hc.elim
                   · subst hp; exact hc.elim
           | cons mD u s' =>
                   simp only [boxInvGo] at h
-                  have := (ihS F (Nat.lt_succ_self F)).2 d _ mD u s' hc hs.1 hs.2 h
+                  have := (ihS F (Nat.lt_succ_self F)).2 l _ mD u s' hc hs.1 hs.2 h
                   simpa [ProvT.wt, DStack.wt] using this
       | atom t =>
           cases t
@@ -3043,30 +2958,16 @@ theorem crossWtLt : ∀ (F : Nat),
 
 
   · cases F with
-    | zero => intro _ _ _ _ d heq mD u S' _ _ _ r h; simp [structCross] at h
+    | zero => intro _ _ _ _ l heq mD u S' _ _ _ r h; simp [leafCross] at h
     | succ F =>
-      intro ξ B rest core d heq mD u S' hc hu hS' r h
+      intro ξ B rest core l heq mD u S' hc hu hS' r h
       cases heq
-      cases d with
-      | modusPonens φ ψ d1 d2 =>
-          simp only [structCross] at h
-          have := (ihS F (by omega)).1 (.struct d1 (Nat.le_refl _))
-            (.cons d2.size (.struct d2 (Nat.le_refl _)) (.cons mD u S'))
-            hc trivial ⟨trivial, hu, hS'⟩ h
-          simp only [ProvT.wt, DStack.wt, dNodes] at *
-          omega
-      | hypSyll φ ψ χ d1 d2 =>
-          simp only [structCross] at h
-          have := (ihS F (by omega)).1 (.struct d2 (Nat.le_refl _))
-            (.cons _ (.app _ d1.size mD _ ψ (.struct d1 (Nat.le_refl _)) u
-              (Nat.le_refl _)) S') hc trivial ⟨⟨trivial, hu⟩, hS'⟩ h
-          simp only [ProvT.wt, DStack.wt, dNodes] at *
-          omega
+      cases l with
       | searchBranch k ψg a b me opnt hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.search k ψg (.const a) (.const b)) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -3075,14 +2976,14 @@ theorem crossWtLt : ∀ (F : Nat),
                   obtain ⟨mc, tc, hcc⟩ := rc
                   cases h
                   have := u.wt_pos
-                  simp only [CoreContent.wt, censusSearchBranch, ProvT.wt, dNodes,
+                  simp only [CoreContent.wt, censusSearchBranch, ProvT.wt,
                     DStack.wt]
                   omega
       | botSearchStep k ψg a b me opnt hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.bot (.search k ψg (.const a) (.const b))) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -3091,14 +2992,14 @@ theorem crossWtLt : ∀ (F : Nat),
                   obtain ⟨mc, tc, hcc⟩ := rc
                   cases h
                   have := u.wt_pos
-                  simp only [CoreContent.wt, censusBotSearchStep, ProvT.wt, dNodes,
+                  simp only [CoreContent.wt, censusBotSearchStep, ProvT.wt,
                     DStack.wt]
                   omega
       | simStep me p q opnt a hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
@@ -3106,14 +3007,14 @@ theorem crossWtLt : ∀ (F : Nat),
                   obtain ⟨k', cert, hn⟩ := rc
                   cases h
                   have := u.wt_pos
-                  simp only [CoreContent.wt, censusSimStep, ProvT.wt, dNodes,
+                  simp only [CoreContent.wt, censusSimStep, ProvT.wt,
                     DStack.wt]
                   omega
       | botSimStep me p q opnt a hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
@@ -3121,17 +3022,17 @@ theorem crossWtLt : ∀ (F : Nat),
                   obtain ⟨k', cert, hn⟩ := rc
                   cases h
                   have := u.wt_pos
-                  simp only [CoreContent.wt, censusBotSimStep, ProvT.wt, dNodes,
+                  simp only [CoreContent.wt, censusBotSimStep, ProvT.wt,
                     DStack.wt]
                   omega
-      | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          cases hme2
+      | iteBranchSearch_t k z a' c0 c1 ψg qe me opnt hme =>
+          cases hme
           cases S' with
-          | nil => simp [structCross] at h
+          | nil => simp [leafCross] at h
           | cons mD2 u2 s'' =>
               cases s'' with
               | nil =>
-                  simp only [structCross] at h
+                  simp only [leafCross] at h
                   cases ha : atomizeGo F u with
                   | none => rw [ha] at h; exact absurd h (by simp)
                   | some ra =>
@@ -3144,7 +3045,7 @@ theorem crossWtLt : ∀ (F : Nat),
                           obtain ⟨mc, tc, hcc⟩ := rc
                           cases h
                           have := u.wt_pos
-                          simp only [CoreContent.wt, censusITE, ProvT.wt, dNodes,
+                          simp only [CoreContent.wt, censusITE, ProvT.wt,
                             DStack.wt]
                           omega
 
@@ -3183,30 +3084,27 @@ theorem DStack.mu_core_le : {ξ core : Formula} → DStack ξ core → muF core 
 theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
     (∀ {m : Nat} {ξ core : Formula} (t : ProvT m ξ) (s : DStack ξ core)
       {r : CoreContent core}, boxInvGo F t s = some r → boxInvGo F' t s = some r)
-  ∧ (∀ {ξ B rest core : Formula} (d : Derivation ξ) (heq : Formula.impl B rest = ξ)
+  ∧ (∀ {ξ B rest core : Formula} (l : PD.T48.LeafPf ξ)
+      (heq : Formula.impl B rest = ξ)
       (mD : Nat) (u : ProvT mD B) (S' : DStack rest core) {r : CoreContent core},
-      structCross F d B rest heq mD u S' = some r →
-      structCross F' d B rest heq mD u S' = some r)
+      leafCross F l B rest heq mD u S' = some r →
+      leafCross F' l B rest heq mD u S' = some r)
   ∧ (∀ {m : Nat} {p q : Prog} {c : Action} (t : ProvT m (.plays p q c))
       {r : Σ' k', AtomT k' (.plays p q c)}, atomizeGo F t = some r →
-      atomizeGo F' t = some r)
-  ∧ (∀ {ξ : Formula} {p q : Prog} {c : Action} (d : Derivation ξ)
-      (heq : Formula.plays p q c = ξ) {r : Σ' k', AtomT k' (.plays p q c)},
-      atomizeStruct F d heq = some r → atomizeStruct F' d heq = some r) := by
+      atomizeGo F' t = some r) := by
   intro F
   induction F with
   | zero =>
       intro F' _
-      refine ⟨?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_⟩
       · intro _ _ _ t s r h; simp [boxInvGo] at h
-      · intro _ _ _ _ d heq mD u S' r h; simp [structCross] at h
+      · intro _ _ _ _ l heq mD u S' r h; simp [leafCross] at h
       · intro _ _ _ _ t r h; simp [atomizeGo] at h
-      · intro _ _ _ _ d heq r h; simp [atomizeStruct] at h
   | succ F ih =>
     intro F' hF'
     obtain ⟨F'', rfl⟩ : ∃ F'', F' = F'' + 1 := ⟨F' - 1, by omega⟩
     have hFF : F ≤ F'' := by omega
-    refine ⟨?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_⟩
     · intro m ξ core t s r h
       cases t with
       | boxIntro kIn K φ tc hle =>
@@ -3240,7 +3138,7 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           | nil => simp only [boxInvGo] at h ⊢; exact h
           | cons mD d s' =>
               cases s' with
-              | nil => simp only [boxInvGo] at h; cases h; rfl
+              | nil => simp only [boxInvGo] at h; cases h; simp only [boxInvGo]
       | diagF pm fb g K tgt tP hle =>
           cases s with
           | nil => simp only [boxInvGo] at h ⊢; exact h
@@ -3271,7 +3169,7 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           | nil => simp only [boxInvGo] at h ⊢; exact h
           | cons mD d s' =>
               cases s' with
-              | nil => simp only [boxInvGo] at h; cases h; rfl
+              | nil => simp only [boxInvGo] at h; cases h; simp only [boxInvGo]
       | boxMono a' b' K φ' hab hle =>
           cases s with
           | nil => simp only [boxInvGo] at h ⊢; exact h
@@ -3347,12 +3245,12 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
                               obtain ⟨mP, tPc, hPle⟩ := rP
                               obtain ⟨mx, txc, hxle⟩ := rx
                               exact h
-      | struct d hd =>
+      | leaf l hd =>
           cases s with
           | nil => simp only [boxInvGo] at h ⊢; exact h
           | cons mD u s' =>
               simp only [boxInvGo] at h ⊢
-              exact (ih F'' hFF).2.1 d _ mD u s' h
+              exact (ih F'' hFF).2.1 l _ mD u s' h
       | atom t =>
           cases s with
           | nil => simp only [boxInvGo] at h ⊢; exact h
@@ -3376,20 +3274,14 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           | nil => simp only [boxInvGo] at h ⊢; exact h
 
 
-    · intro ξ B rest core d heq mD u S' r h
+    · intro ξ B rest core l heq mD u S' r h
       cases heq
-      cases d with
-      | modusPonens φ ψ d1 d2 =>
-          simp only [structCross] at h ⊢
-          exact (ih F'' hFF).1 _ _ h
-      | hypSyll φ ψ χ d1 d2 =>
-          simp only [structCross] at h ⊢
-          exact (ih F'' hFF).1 _ _ h
+      cases l with
       | searchBranch k ψg a b me opnt hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h ⊢
+              simp only [leafCross] at h ⊢
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.search k ψg (.const a) (.const b)) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -3401,7 +3293,7 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h ⊢
+              simp only [leafCross] at h ⊢
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.bot (.search k ψg (.const a) (.const b))) opnt)) _) with
               | none => rw [hd] at h; exact absurd h (by simp)
@@ -3413,37 +3305,37 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h ⊢
+              simp only [leafCross] at h ⊢
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
                   rw [ha] at h
-                  rw [(ih F'' hFF).2.2.1 _ ha]
+                  rw [(ih F'' hFF).2.2 _ ha]
                   exact h
       | botSimStep me p q opnt a hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h ⊢
+              simp only [leafCross] at h ⊢
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
                   rw [ha] at h
-                  rw [(ih F'' hFF).2.2.1 _ ha]
+                  rw [(ih F'' hFF).2.2 _ ha]
                   exact h
-      | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 =>
-          cases hme2
+      | iteBranchSearch_t k z a' c0 c1 ψg qe me opnt hme =>
+          cases hme
           cases S' with
-          | nil => simp [structCross] at h
+          | nil => simp [leafCross] at h
           | cons mD2 u2 s'' =>
               cases s'' with
               | nil =>
-                  simp only [structCross] at h ⊢
+                  simp only [leafCross] at h ⊢
                   cases ha : atomizeGo F u with
                   | none => rw [ha] at h; exact absurd h (by simp)
                   | some ra =>
                       rw [ha] at h
-                      rw [(ih F'' hFF).2.2.1 _ ha]
+                      rw [(ih F'' hFF).2.2 _ ha]
                       obtain ⟨k', pl1, hn⟩ := ra
                       cases hb : boxInvGo F u2 .nil with
                       | none => rw [hb] at h; exact absurd h (by simp)
@@ -3455,9 +3347,7 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
     · intro m p q c t r h
       cases t with
       | atom a => simp only [atomizeGo] at h ⊢; exact h
-      | struct d hd =>
-          simp only [atomizeGo] at h ⊢
-          exact (ih F'' hFF).2.2.2 d rfl h
+      | leaf l hd => exact nomatch l
       | app K m₁ m₂ φ α f x hle =>
           simp only [atomizeGo] at h ⊢
           cases hb : boxInvGo F f (.cons m₂ x .nil) with
@@ -3465,28 +3355,7 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           | some rc =>
               rw [hb] at h
               rw [(ih F'' hFF).1 _ _ hb]
-              exact (ih F'' hFF).2.2.1 _ h
-    · intro ξ p q c d heq r h
-      cases d with
-      | modusPonens φ ψ d1 d2 =>
-          cases heq
-          simp only [atomizeStruct] at h ⊢
-          cases hb : boxInvGo F (.struct d1 (Nat.le_refl _))
-              (.cons d2.size (.struct d2 (Nat.le_refl _)) .nil) with
-          | none => rw [hb] at h; exact absurd h (by simp)
-          | some rc =>
-              rw [hb] at h
-              rw [(ih F'' hFF).1 _ _ hb]
-              exact (ih F'' hFF).2.2.1 _ h
-      | hypSyll φ ψ χ d1 d2 => cases heq
-      | searchBranch k ψg a b me opnt hme => cases heq
-      | botSearchStep k ψg a b me opnt hme => cases heq
-      | simStep me p' q' opnt a hme => cases heq
-      | botSimStep me p' q' opnt a hme => cases heq
-      | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 => cases heq
-      | eqRefl p' => cases heq
-      | eqNeg p' q' hne => cases heq
-
+              exact (ih F'' hFF).2.2 _ h
 /-- The machine half, original signature. -/
 theorem boxInvGo_fuel_mono (F F' : Nat) (hF : F ≤ F') {m : Nat} {ξ core : Formula}
     (t : ProvT m ξ) (s : DStack ξ core) {r : CoreContent core}
@@ -3511,67 +3380,67 @@ theorem boxInvGo_regate (F : Nat) {m m' : Nat} {ξ core : Formula}
   | zero => simp [boxInvGo]
   | succ F =>
       cases t with
-      | app _ _ _ _ _ _ _ _ => rfl
-      | boxIntro _ _ _ _ _ => rfl
+      | app _ _ _ _ _ _ _ _ => simp only [ProvT.mono, boxInvGo]
+      | boxIntro _ _ _ _ _ => simp only [ProvT.mono, boxInvGo]
       | atom a =>
           cases a
           cases s with
           | nil => exact hc.elim
-      | struct d hd =>
+      | leaf l hd =>
           cases s with
           | nil =>
-              rcases PD.T48.derivation_shape d with hsh | ⟨p, hp⟩ | ⟨p, q, hp⟩
+              rcases PD.T48.leafPf_shape l with hsh | ⟨p, hp⟩ | ⟨p, q, hp⟩
               · exact (EndsInPlays.no_core_stack hsh .nil hc).elim
               · subst hp; exact hc.elim
               · subst hp; exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | searchThenSearch_t k₁ k₂ m'' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz =>
           cases s with
           | nil => exact hc.elim
           | cons _ _ s' =>
               cases s' with
-              | nil => cases hme; rfl
+              | nil => cases hme; simp only [ProvT.mono, boxInvGo]
       | atomNeg _ _ _ _ _ _ _ _ => cases s with | nil => exact hc.elim
       | weakenImpl _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | implTrans _ _ _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | impS2 _ _ _ _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | diagB _ _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | diagF _ _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | atomBoxImpl _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | boxMono _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | box4 _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | axK _ _ _ _ _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | axKf _ _ _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
-          | cons _ _ _ => rfl
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
 
 
 /-- Re-gating is invisible at CONS stacks (every cons-arm uses only the fields). -/
@@ -3585,7 +3454,7 @@ theorem boxInvGo_regate_cons (F : Nat) {m m' mD : Nat} {B rest core : Formula}
       cases t with
       | app _ _ _ _ _ _ _ _ => rfl
       | atom a => cases a
-      | struct d' hd => rfl
+      | leaf l' hd => rfl
       | searchThenSearch_t k₁ k₂ m'' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz =>
           cases hme; rfl
       | weakenImpl _ _ _ _ _ => rfl
@@ -3613,7 +3482,7 @@ theorem atomize_mono {m m' : Nat} {p q : Prog} {c : Action}
       | atom cert =>
           cases cert with
           | mk pl hn => exact ⟨F + 1, ⟨_, .mk pl (le_trans hn hmm)⟩, rfl⟩
-      | struct d hd => exact ⟨F + 1, a, ha⟩
+      | leaf l hd => exact ⟨F + 1, a, ha⟩
       | app K m₁ m₂ φ α f x hle => exact ⟨F + 1, a, ha⟩
 
 /-! ## 20. The normalization proof, part 2 — `Good`: the computability predicate.
@@ -3751,9 +3620,9 @@ theorem Good_box_levels {k mD c : Nat} {ψ : Formula} {dB : ProvT mD (.box c ψ)
 
 /-- **THE FUNDAMENTAL LEMMA**: every well-typed tree is good at every level. -/
 theorem fundamental : {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → ∀ (k : Nat), Good k t
-  | _, _, .struct d hd => by
+  | _, _, .leaf l hd => by
       intro k
-      rcases PD.T48.derivation_shape d with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
+      rcases PD.T48.leafPf_shape l with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
       · exact Good_of_no_core _ (fun core S hc => EndsInPlays.no_core_stack h S hc) k
       · subst hp
         exact Good_of_no_core _ (fun core S hc => by cases S; exact hc) k
@@ -4245,16 +4114,14 @@ normalization theorem and its whole interface stay untouched; `fundamentalW` wil
 the excisor's general-core crossings, hypothesized on iteBranch-freedom (the one
 unreconstructible census). -/
 
-/-- No `iteBranchSearch_t` anywhere in the Derivation. -/
-def derivITEFree : {φ : Formula} → Derivation φ → Prop
-  | _, .modusPonens _ _ d1 d2 => derivITEFree d1 ∧ derivITEFree d2
-  | _, .hypSyll _ _ _ d1 d2 => derivITEFree d1 ∧ derivITEFree d2
+/-- No `iteBranchSearch_t` leaf. -/
+def leafITEFree : {φ : Formula} → PD.T48.LeafPf φ → Prop
   | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _ => False
   | _, _ => True
 
-/-- No `iteBranchSearch_t` in any `struct` of the walkable layer. -/
+/-- No `iteBranchSearch_t` leaf in the walkable layer. -/
 def ProvT.dbFree : {m : Nat} → {φ : Formula} → ProvT m φ → Prop
-  | _, _, .struct d _ => derivITEFree d
+  | _, _, .leaf l _ => leafITEFree l
   | _, _, .weakenImpl _ _ _ t _ => t.dbFree
   | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.dbFree
   | _, _, .implTrans _ _ _ _ _ t1 t2 _ => t1.dbFree ∧ t2.dbFree
@@ -4281,7 +4148,7 @@ def CoreContent.dbFree : {core : Formula} → CoreContent core → Prop := fun {
 /-- Re-gating preserves iteBranch-freedom (mono only touches the top budget field). -/
 theorem ProvT.mono_dbFree {k k' : Nat} {φ : Formula} (h : k ≤ k') :
     (t : ProvT k φ) → (t.mono h).dbFree ↔ t.dbFree
-  | .struct _ _ | .atom (.mk _ _) | .weakenImpl _ _ _ _ _
+  | .leaf _ _ | .atom (.mk _ _) | .weakenImpl _ _ _ _ _
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ | .implTrans _ _ _ _ _ _ _ _
   | .atomBoxImpl _ _ _ _ _ _ | .boxIntro _ _ _ _ _ | .app _ _ _ _ _ _ _ _
   | .axK _ _ _ _ _ _ _ _ _ _ | .box4 _ _ _ _ _ _ | .diagF _ _ _ _ _ _ _
@@ -4295,10 +4162,10 @@ theorem crossDbFree : ∀ (F : Nat),
     (∀ {m : Nat} {ξ core : Formula} (t : ProvT m ξ) (s : DStack ξ core),
       t.dbFree → s.dbFree → ∀ {r : CoreContent core}, boxInvGo F t s = some r →
       r.dbFree)
-  ∧ (∀ {ξ B rest core : Formula} (d : Derivation ξ) (heq : Formula.impl B rest = ξ)
-      (mD : Nat) (u : ProvT mD B) (S' : DStack rest core), derivITEFree d →
+  ∧ (∀ {ξ B rest core : Formula} (l : PD.T48.LeafPf ξ) (heq : Formula.impl B rest = ξ)
+      (mD : Nat) (u : ProvT mD B) (S' : DStack rest core), leafITEFree l →
       u.dbFree → S'.dbFree →
-      ∀ {r : CoreContent core}, structCross F d B rest heq mD u S' = some r →
+      ∀ {r : CoreContent core}, leafCross F l B rest heq mD u S' = some r →
       r.dbFree) := by
   intro F
   induction F using Nat.strong_induction_on with
@@ -4444,10 +4311,10 @@ theorem crossDbFree : ∀ (F : Nat),
                               cases h
                               exact ⟨ih d1 .nil hs.1 trivial hp,
                                 ih d2 .nil hs.2.1 trivial hx⟩
-      | struct d hd =>
+      | leaf l hd =>
           cases s with
           | nil =>
-              rcases PD.T48.derivation_shape d with hsh | ⟨p', hp⟩ | ⟨p', q', hp⟩
+              rcases PD.T48.leafPf_shape l with hsh | ⟨p', hp⟩ | ⟨p', q', hp⟩
               · cases hsh with
                 | plays =>
                     simp only [boxInvGo, mkSelf] at h
@@ -4467,7 +4334,7 @@ theorem crossDbFree : ∀ (F : Nat),
                 exact hf
           | cons mD u S' =>
               simp only [boxInvGo] at h
-              exact (ihS F (Nat.lt_succ_self F)).2 d rfl mD u S' hf hs.1 hs.2 h
+              exact (ihS F (Nat.lt_succ_self F)).2 l rfl mD u S' hf hs.1 hs.2 h
       | atom a =>
           cases s with
           | nil =>
@@ -4493,26 +4360,16 @@ theorem crossDbFree : ∀ (F : Nat),
           cases s with
           | nil => simp only [boxInvGo] at h; cases h; trivial
   · cases F with
-    | zero => intro _ _ _ _ d heq mD u S' _ _ _ r h; simp [structCross] at h
+    | zero => intro _ _ _ _ l heq mD u S' _ _ _ r h; simp [leafCross] at h
     | succ F =>
-      intro ξ B rest core d heq mD u S' hfree hu hS' r h
+      intro ξ B rest core l heq mD u S' hfree hu hS' r h
       cases heq
-      cases d with
-      | modusPonens φ ψ d1 d2 =>
-          simp only [structCross] at h
-          exact (ihS F (Nat.lt_succ_self F)).1 (.struct d1 (Nat.le_refl _))
-            (.cons d2.size (.struct d2 (Nat.le_refl _)) (.cons mD u S'))
-            hfree.1 ⟨hfree.2, hu, hS'⟩ h
-      | hypSyll φ ψ χ d1 d2 =>
-          simp only [structCross] at h
-          exact (ihS F (Nat.lt_succ_self F)).1 (.struct d2 (Nat.le_refl _))
-            (.cons _ (.app _ d1.size mD _ ψ (.struct d1 (Nat.le_refl _)) u
-              (Nat.le_refl _)) S') hfree.2 ⟨⟨hfree.1, hu⟩, hS'⟩ h
+      cases l with
       | searchBranch k ψg a b me opnt hme =>
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.search k ψg (.const a) (.const b)) opnt))
                     _) with
@@ -4526,7 +4383,7 @@ theorem crossDbFree : ∀ (F : Nat),
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases hd : boxInvGo F u (.nil :
                   DStack (.box k (ψg.subst (.bot (.search k ψg (.const a) (.const b)))
                     opnt)) _) with
@@ -4540,7 +4397,7 @@ theorem crossDbFree : ∀ (F : Nat),
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
@@ -4552,7 +4409,7 @@ theorem crossDbFree : ∀ (F : Nat),
           cases hme
           cases S' with
           | nil =>
-              simp only [structCross] at h
+              simp only [leafCross] at h
               cases ha : atomizeGo F u with
               | none => rw [ha] at h; exact absurd h (by simp)
               | some rc =>
@@ -4630,7 +4487,7 @@ theorem atomizeW_halts {m : Nat} {p q : Prog} {c : Action}
   unfold ContentGoodW at hcont
   cases u with
   | atom a => exact ⟨1, ⟨_, a⟩, rfl⟩
-  | struct d hd =>
+  | leaf l hd =>
       -- the nil run is the identity: r.2 = the tree itself
       cases F with
       | zero => simp [boxInvGo] at hrun
@@ -4648,7 +4505,7 @@ theorem atomizeW_halts {m : Nat} {p q : Prog} {c : Action}
           have hb := boxInvGo_fuel_mono (F + 1) (max (F + 1) Fa + 1)
             (by omega) (ProvT.app _ m₁ m₂ φ _ f x hle) .nil hrun
           rw [show boxInvGo (max (F + 1) Fa) f (.cons m₂ x .nil) = some r from hb]
-          exact (crossFuelMono Fa (max (F + 1) Fa) (Nat.le_max_right _ _)).2.2.1 _ ha
+          exact (crossFuelMono Fa (max (F + 1) Fa) (Nat.le_max_right _ _)).2.2 _ ha
 
 /-- Wide goodness transports along re-gating: cons-stacks by `regate_cons`; nil-stacks
     by per-constructor analysis (identity arms return the mono tree — fresh content;
@@ -4677,16 +4534,16 @@ theorem GoodW_mono {k m m' : Nat} {φ : Formula} (hmm : m ≤ m')
               refine ⟨1, ⟨_, .atom (.mk pl (le_trans hn hmm))⟩, rfl, ?_⟩
               unfold ContentGoodW
               exact ⟨1, ⟨_, .mk pl (le_trans hn hmm)⟩, rfl⟩
-      | struct d hd =>
+      | leaf l hd =>
           cases F with
           | zero => simp [boxInvGo] at hrun
           | succ F =>
-              rcases PD.T48.derivation_shape d with hsh | ⟨p', hp⟩ | ⟨p', q', hp⟩
+              rcases PD.T48.leafPf_shape l with hsh | ⟨p', hp⟩ | ⟨p', q', hp⟩
               · cases hsh with
                 | plays =>
                     simp only [boxInvGo, mkSelf] at hrun
                     cases hrun
-                    refine ⟨1, ⟨_, .struct d (le_trans hd hmm)⟩, rfl, ?_⟩
+                    refine ⟨1, ⟨_, .leaf l (le_trans hd hmm)⟩, rfl, ?_⟩
                     unfold ContentGoodW at hcont ⊢
                     obtain ⟨Fa, a, ha⟩ := hcont
                     cases Fa with
@@ -4695,15 +4552,15 @@ theorem GoodW_mono {k m m' : Nat} {φ : Formula} (hmm : m ≤ m')
                 | impl _ =>
                     simp only [boxInvGo, mkSelf] at hrun
                     cases hrun
-                    exact ⟨1, ⟨_, .struct d (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+                    exact ⟨1, ⟨_, .leaf l (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
               · subst hp
                 simp only [boxInvGo, mkSelf] at hrun
                 cases hrun
-                exact ⟨1, ⟨_, .struct d (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+                exact ⟨1, ⟨_, .leaf l (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
               · subst hp
                 simp only [boxInvGo, mkSelf] at hrun
                 cases hrun
-                exact ⟨1, ⟨_, .struct d (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+                exact ⟨1, ⟨_, .leaf l (le_trans hd hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
       | weakenImpl ψ ψ' m'' tw hle =>
           exact ⟨1, ⟨_, .weakenImpl ψ ψ' m'' tw (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
       | implTrans ψ ψm χ a b t1 t2 hle =>
@@ -4735,75 +4592,14 @@ theorem GoodW_mono {k m m' : Nat} {φ : Formula} (hmm : m ≤ m')
     the Derivation. `modusPonens` pushes (IH twice), `hypSyll` materializes
     (`GoodW_app` + IH), censuses dive the discharge and produce atomizable atoms,
     sim-censuses use `atomizeW_halts`. -/
-theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
-    ∀ {mm : Nat} (hd : d.size ≤ mm) (k : Nat), GoodW k (.struct d hd)
-  | _, .modusPonens φ ψ d1 d2, hfree, _, hd, k => by
-      unfold GoodW
-      intro core S hS
-      have h1 := GoodD d1 hfree.1 (Nat.le_refl _) k
-      have h2 := fun j (_ : j ≤ k) => GoodD d2 hfree.2 (Nat.le_refl _) j
-      unfold GoodW at h1
-      obtain ⟨F, r, hrun, hcont⟩ := h1 (.cons d2.size (.struct d2 (Nat.le_refl _)) .nil)
-        (by unfold GoodStackW; exact ⟨h2, by unfold GoodStackW; trivial⟩)
-      cases S with
-      | nil =>
-          rcases PD.T48.derivation_shape (Derivation.modusPonens φ ψ d1 d2) with
-            hsh | ⟨p', hp⟩ | ⟨p', q', hp⟩
-          · cases hsh with
-            | plays =>
-                refine ⟨1, ⟨_, .struct (.modusPonens _ _ d1 d2) hd⟩, rfl, ?_⟩
-                unfold ContentGoodW
-                unfold ContentGoodW at hcont
-                obtain ⟨Fa, a, ha⟩ := hcont
-                refine ⟨max (F + 1) Fa + 2, a, ?_⟩
-                simp only [atomizeGo, atomizeStruct]
-                rw [boxInvGo_fuel_mono F (max (F + 1) Fa) (by omega) _ _ hrun]
-                exact (crossFuelMono Fa (max (F + 1) Fa) (by omega)).2.2.1 _ ha
-            | impl _ =>
-                refine ⟨1, ⟨_, .struct (.modusPonens _ _ d1 d2) hd⟩, rfl, ?_⟩
-                unfold ContentGoodW
-                trivial
-          · subst hp
-            refine ⟨1, ⟨_, .struct (.modusPonens _ _ d1 d2) hd⟩, rfl, ?_⟩
-            unfold ContentGoodW
-            trivial
-          · subst hp
-            refine ⟨1, ⟨_, .struct (.modusPonens _ _ d1 d2) hd⟩, rfl, ?_⟩
-            unfold ContentGoodW
-            trivial
-      | cons mD u S' =>
-          obtain ⟨F2, r2, hrun2, hcont2⟩ := h1
-            (.cons d2.size (.struct d2 (Nat.le_refl _)) (.cons mD u S'))
-            (by unfold GoodStackW; exact ⟨h2, hS⟩)
-          exact ⟨F2 + 2, r2, hrun2, hcont2⟩
-  | _, .hypSyll φ ψ χ d1 d2, hfree, _, hd, k => by
-      unfold GoodW
-      intro core S hS
-      cases S with
-      | nil =>
-          refine ⟨1, ⟨_, .struct (.hypSyll φ ψ χ d1 d2) hd⟩, rfl, ?_⟩
-          unfold ContentGoodW
-          trivial
-      | cons mD u S' =>
-          unfold GoodStackW at hS
-          have h2 := GoodD d2 hfree.2 (Nat.le_refl _) k
-          have hmat : ∀ j, j ≤ k → GoodW j
-              (ProvT.app (d1.size + mD + ψ.size) d1.size mD φ ψ
-                (.struct d1 (Nat.le_refl _)) u (Nat.le_refl _)) :=
-            fun j hj => GoodW_app (GoodD d1 hfree.1 (Nat.le_refl _) j)
-              (fun j' hj' => hS.1 j' (le_trans hj' hj)) (Nat.le_refl _)
-          unfold GoodW at h2
-          obtain ⟨F, r, hrun, hcont⟩ := h2
-            (.cons _ (.app _ d1.size mD φ ψ (.struct d1 (Nat.le_refl _)) u
-              (Nat.le_refl _)) S')
-            (by unfold GoodStackW; exact ⟨hmat, hS.2⟩)
-          exact ⟨F + 2, r, hrun, hcont⟩
+theorem GoodL : {ξ : Formula} → (l : PD.T48.LeafPf ξ) → leafITEFree l →
+    ∀ {mm : Nat} (hd : ξ.size ≤ mm) (k : Nat), GoodW k (.leaf l hd)
   | _, .searchBranch kk ψg a b me opnt hme, hfree, _, hd, k => by
       unfold GoodW
       intro core S hS
       cases S with
       | nil =>
-          refine ⟨1, ⟨_, .struct (.searchBranch kk ψg a b me opnt hme) hd⟩, rfl, ?_⟩
+          refine ⟨1, ⟨_, .leaf (.searchBranch kk ψg a b me opnt hme) hd⟩, rfl, ?_⟩
           unfold ContentGoodW
           trivial
       | cons mD u S' =>
@@ -4816,7 +4612,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
               obtain ⟨F, rc, hrun, hcont⟩ := hu .nil (by unfold GoodStackW; trivial)
               obtain ⟨mc, tc, hc⟩ := rc
               refine ⟨F + 2, ⟨_, censusSearchBranch tc hc⟩, ?_, ?_⟩
-              · simp only [boxInvGo, structCross]
+              · simp only [boxInvGo, leafCross]
                 rw [hrun]
                 rfl
               · unfold ContentGoodW
@@ -4827,7 +4623,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
       intro core S hS
       cases S with
       | nil =>
-          refine ⟨1, ⟨_, .struct (.botSearchStep kk ψg a b me opnt hme) hd⟩, rfl, ?_⟩
+          refine ⟨1, ⟨_, .leaf (.botSearchStep kk ψg a b me opnt hme) hd⟩, rfl, ?_⟩
           unfold ContentGoodW
           trivial
       | cons mD u S' =>
@@ -4840,7 +4636,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
               obtain ⟨F, rc, hrun, hcont⟩ := hu .nil (by unfold GoodStackW; trivial)
               obtain ⟨mc, tc, hc⟩ := rc
               refine ⟨F + 2, ⟨_, censusBotSearchStep tc hc⟩, ?_, ?_⟩
-              · simp only [boxInvGo, structCross]
+              · simp only [boxInvGo, leafCross]
                 rw [hrun]
                 rfl
               · unfold ContentGoodW
@@ -4851,7 +4647,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
       intro core S hS
       cases S with
       | nil =>
-          refine ⟨1, ⟨_, .struct (.simStep me p q opnt a hme) hd⟩, rfl, ?_⟩
+          refine ⟨1, ⟨_, .leaf (.simStep me p q opnt a hme) hd⟩, rfl, ?_⟩
           unfold ContentGoodW
           trivial
       | cons mD u S' =>
@@ -4864,7 +4660,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
               cases cert with
               | mk pl hn =>
                   refine ⟨Fa + 2, ⟨_, censusSimStep pl⟩, ?_, ?_⟩
-                  · simp only [boxInvGo, structCross]
+                  · simp only [boxInvGo, leafCross]
                     rw [ha]
                     rfl
                   · unfold ContentGoodW
@@ -4874,7 +4670,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
       intro core S hS
       cases S with
       | nil =>
-          refine ⟨1, ⟨_, .struct (.botSimStep me p q opnt a hme) hd⟩, rfl, ?_⟩
+          refine ⟨1, ⟨_, .leaf (.botSimStep me p q opnt a hme) hd⟩, rfl, ?_⟩
           unfold ContentGoodW
           trivial
       | cons mD u S' =>
@@ -4887,7 +4683,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
               cases cert with
               | mk pl hn =>
                   refine ⟨Fa + 2, ⟨_, censusBotSimStep pl⟩, ?_, ?_⟩
-                  · simp only [boxInvGo, structCross]
+                  · simp only [boxInvGo, leafCross]
                     rw [ha]
                     rfl
                   · unfold ContentGoodW
@@ -4899,7 +4695,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
       intro core S hS
       cases S with
       | nil =>
-          refine ⟨1, ⟨_, .struct (.eqRefl p) hd⟩, rfl, ?_⟩
+          refine ⟨1, ⟨_, .leaf (.eqRefl p) hd⟩, rfl, ?_⟩
           unfold ContentGoodW
           trivial
   | _, .eqNeg p q hne, _, _, hd, k => by
@@ -4907,7 +4703,7 @@ theorem GoodD : {ξ : Formula} → (d : Derivation ξ) → derivITEFree d →
       intro core S hS
       cases S with
       | nil =>
-          refine ⟨1, ⟨_, .struct (.eqNeg p q hne) hd⟩, rfl, ?_⟩
+          refine ⟨1, ⟨_, .leaf (.eqNeg p q hne) hd⟩, rfl, ?_⟩
           unfold ContentGoodW
           trivial
 
@@ -4929,12 +4725,12 @@ theorem GoodW_box_levels {k mD c : Nat} {ψ : Formula} {dB : ProvT mD (.box c ψ
 /-- **THE WIDE FUNDAMENTAL LEMMA**: every well-typed, iteBranch-free tree is wide-good
     at every level — the machine halts against ARBITRARY wide-good stacks (general
     cores admitted at nil), with atomizable plays-contents. The struct arm delegates to
-    `GoodD`; formerly-vacuous nil arms are identity returns; `box4`'s inner transport
+    `GoodL`; formerly-vacuous nil arms are identity returns; `box4`'s inner transport
     goes through `GoodW_mono` (no core-typed regate needed). This is the excisor's
     crossing-totality engine. -/
 theorem fundamentalW : {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → t.dbFree →
     ∀ (k : Nat), GoodW k t
-  | _, _, .struct d hd => fun hfree k => GoodD d hfree hd k
+  | _, _, .leaf l hd => fun hfree k => GoodL l hfree hd k
   | _, _, .atom a => fun _ k => by
       cases a with
       | mk pl hn =>
@@ -5346,7 +5142,7 @@ theorem excise_dbFree (fuel : Nat) (Gb : Formula → Bool) :
       excise_dbFree fuel Gb tP hf
   | _, _, .diagB pm fb g K tgt tP hle, hf =>
       excise_dbFree fuel Gb tP hf
-  | _, _, .struct d hd, hf => hf
+  | _, _, .leaf l hd, hf => hf
   | _, _, .atom a, hf => hf
   | _, _, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz, hf => hf
   | _, _, .atomBoxImpl kB p' q' a' cert hle, hf => hf
@@ -5488,7 +5284,7 @@ theorem excise_wt_freeS2 (fuel : Nat) (Gb : Formula → Bool) :
       constructor
       · simp only [excise, ProvT.wt]; omega
       · simpa [excise, ProvT.freeS2] using h1.2
-  | _, _, .struct d hd, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .leaf l hd, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .atom a, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .searchThenSearch_t k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme tw hm hsz, hf =>
       ⟨Nat.le_refl _, hf⟩
@@ -5654,33 +5450,6 @@ theorem modestGate_impl_iff {N : Nat} {φ ψ : Formula} :
   · rintro ⟨⟨h1, h2⟩, h3, h4⟩
     exact ⟨by omega, h2, h4⟩
 
-/-- **The struct arm of the tie-down, standalone**: a Derivation whose conclusion
-    passes the gate passes at every `derivGateOK` site — mp cuts and hypSyll middles
-    are census antecedents (`DAnt_gate`); everything else is gate-free. -/
-theorem derivGateOK_of_conclusion {N : Nat} :
-    ∀ {ξ : Formula} (d : Derivation ξ), modestGate N ξ →
-    derivGateOK (modestGate N) d
-  | _, .modusPonens φ ψ d1 d2, hξ => by
-      have hcut : modestGate N φ :=
-        DAnt_gate (PD.T48.derivation_impl_ant d1) hξ
-      exact ⟨hcut, derivGateOK_of_conclusion d1 (modestGate_impl_iff.mpr ⟨hcut, hξ⟩),
-        derivGateOK_of_conclusion d2 hcut⟩
-  | _, .hypSyll φ ψ χ d1 d2, hξ => by
-      have hχ : modestGate N χ := (modestGate_impl_iff.mp hξ).2
-      have hφ : modestGate N φ := (modestGate_impl_iff.mp hξ).1
-      have hmid : modestGate N ψ :=
-        DAnt_gate (PD.T48.derivation_impl_ant d2) hχ
-      exact ⟨hmid,
-        derivGateOK_of_conclusion d1 (modestGate_impl_iff.mpr ⟨hφ, hmid⟩),
-        derivGateOK_of_conclusion d2 (modestGate_impl_iff.mpr ⟨hmid, hχ⟩)⟩
-  | _, .searchBranch _ _ _ _ _ _ _, _ => trivial
-  | _, .botSearchStep _ _ _ _ _ _ _, _ => trivial
-  | _, .simStep _ _ _ _ _ _, _ => trivial
-  | _, .botSimStep _ _ _ _ _ _, _ => trivial
-  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _, _ => trivial
-  | _, .eqRefl _, _ => trivial
-  | _, .eqNeg _ _ _, _ => trivial
-
 mutual
   /-- Cut-sites only: the app/implTrans/impS2 premise formulas (what the excisor and
       the middle analysis control); every other constructor recurses. -/
@@ -5701,7 +5470,7 @@ mutual
     | _, _, .mk t _ => t.cutsOK G
 
   def ProvT.cutsOK (G : Formula → Prop) : {k : Nat} → {φ : Formula} → ProvT k φ → Prop
-    | _, _, .struct _ _ => True
+    | _, _, .leaf _ _ => True
     | _, _, .atom t => t.cutsOK G
     | _, _, .weakenImpl _ _ _ t _ => t.cutsOK G
     | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.cutsOK G
@@ -5740,7 +5509,7 @@ mutual
     | _, _, .mk t _ => t.citesLE M
 
   def ProvT.citesLE (M : Nat) : {k : Nat} → {φ : Formula} → ProvT k φ → Prop
-    | _, _, .struct _ _ => True
+    | _, _, .leaf _ _ => True
     | _, _, .atom t => t.citesLE M
     | _, _, .weakenImpl _ _ _ t _ => t.citesLE M
     | _, _, .searchThenSearch_t _ k₂ _ _ _ _ _ _ _ _ _ t _ _ =>
@@ -5780,7 +5549,7 @@ mutual
 
   def ProvT.cutsOKb (Gb : Formula → Bool) :
       {k : Nat} → {φ : Formula} → ProvT k φ → Bool
-    | _, _, .struct _ _ => true
+    | _, _, .leaf _ _ => true
     | _, _, .atom t => t.cutsOKb Gb
     | _, _, .weakenImpl _ _ _ t _ => t.cutsOKb Gb
     | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.cutsOKb Gb
@@ -5828,7 +5597,7 @@ mutual
   theorem ProvT.cutsOKb_sound {Gb : Formula → Bool} {G : Formula → Prop}
       (hGb : ∀ B, Gb B = true → G B) {k : Nat} {φ : Formula} :
       (t : ProvT k φ) → t.cutsOKb Gb = true → t.cutsOK G
-    | .struct _ _, _ => trivial
+    | .leaf _ _, _ => trivial
     | .atom t, h => t.cutsOKb_sound hGb h
     | .weakenImpl _ _ _ t _, h => t.cutsOKb_sound hGb h
     | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _, h => t.cutsOKb_sound hGb h
@@ -5871,7 +5640,7 @@ mutual
     | _, _, .mk t _ => t.citesLEb M
 
   def ProvT.citesLEb (M : Nat) : {k : Nat} → {φ : Formula} → ProvT k φ → Bool
-    | _, _, .struct _ _ => true
+    | _, _, .leaf _ _ => true
     | _, _, .atom t => t.citesLEb M
     | _, _, .weakenImpl _ _ _ t _ => t.citesLEb M
     | _, _, .searchThenSearch_t _ k₂ _ _ _ _ _ _ _ _ _ t _ _ =>
@@ -5917,7 +5686,7 @@ mutual
 
   theorem ProvT.citesLEb_sound {M : Nat} {k : Nat} {φ : Formula} :
       (t : ProvT k φ) → t.citesLEb M = true → t.citesLE M
-    | .struct _ _, _ => trivial
+    | .leaf _ _, _ => trivial
     | .atom t, h => t.citesLEb_sound h
     | .weakenImpl _ _ _ t _, h => t.citesLEb_sound h
     | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _, h => by
