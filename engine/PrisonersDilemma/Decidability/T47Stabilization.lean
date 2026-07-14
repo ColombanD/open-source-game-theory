@@ -960,7 +960,7 @@ theorem decB_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     i.e. for every bot-guard instance — via `GF_args`). -/
 theorem ProvableG_iff_decB_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
-    ProvableG (modestGate N) k₀ φ₀ ↔
+    PfG (modestGate N) k₀ φ₀ ↔
       decB N (SL r₁ r₂ N k₀ φ₀).length k₀ φ₀ = true := by
   have hk : k₀ ≤ RR r₁ r₂ N k₀ φ₀ := by simp only [RR]; omega
   have hsz : φ₀.size ≤ ZS r₁ r₂ N k₀ φ₀ k₀ := by
@@ -977,7 +977,7 @@ theorem ProvableG_iff_decB_bound (h₁ : modestP r₁ = true) (h₂ : modestP r�
     a terminating computation. -/
 def decideProvableG (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
-    Decidable (ProvableG (modestGate N) k₀ φ₀) :=
+    Decidable (PfG (modestGate N) k₀ φ₀) :=
   if h : decB N (SL r₁ r₂ N k₀ φ₀).length k₀ φ₀ = true then
     .isTrue ((ProvableG_iff_decB_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mpr h)
   else

@@ -11,10 +11,10 @@ Foundations consumed by the whole T48–T54 arc (research history:
   * **Literal bounds**: every gated premise position is size-paid at its own
     judgment, so its literals are `< 2^(local budget)` — `maxLitF_lt_two_pow_size`,
     `cut_lit_bound`, `box_lit_bound`, `diag_lit_bound`, `local_lit_bound`.
-  * **The antecedent census** (`DAnt`, `derivation_impl_ant`, `DAnt_lit`): every
+  * **The antecedent census** (`DAnt`, `LeafPf.impl_ant`, `DAnt_lit`): every
     positive-position implication a `Derivation` proves has a census-legitimate
     antecedent — the Type layer has no free hypotheses.
-  * **Shape facts**: `derivation_shape`, `derivation_no_box`, `box_inversion`,
+  * **Shape facts**: `leafPf_shape`, `leafPf_no_box`, `box_inversion`,
     the split literals (`maxSLitF`) and the gate-bound arithmetic.
 -/
 
@@ -136,9 +136,9 @@ end
 
 /-- The cut formula of any `implTrans`/`app`/`impS2` premise is exponentially
     literal-bounded by the premise's budget (both components). -/
-theorem cut_lit_bound {a : Nat} {A ψ : Formula} (h : Provable a (.impl A ψ)) :
+theorem cut_lit_bound {a : Nat} {A ψ : Formula} (h : Pf a (.impl A ψ)) :
     maxLitF A < 2 ^ a ∧ maxLitF ψ < 2 ^ a := by
-  have hsz := provable_impl_size h
+  have hsz := pf_impl_size h
   have hA := maxLitF_lt_two_pow_size A
   have hψ := maxLitF_lt_two_pow_size ψ
   have hmA : (2:Nat) ^ A.size ≤ 2 ^ a :=
@@ -149,10 +149,10 @@ theorem cut_lit_bound {a : Nat} {A ψ : Formula} (h : Provable a (.impl A ψ)) :
 
 /-- `axK`'s enumerated premise `.box a (.impl ψ α)` is subscript-bounded at its own
     judgment: boxes are non-atoms, hence size-paid. -/
-theorem box_lit_bound {m a : Nat} {ψ : Formula} (h : Provable m (.box a ψ)) :
+theorem box_lit_bound {m a : Nat} {ψ : Formula} (h : Pf m (.box a ψ)) :
     a < 2 ^ m ∧ maxLitF ψ < 2 ^ m := by
   have hsz : (Formula.box a ψ).size ≤ m := by
-    rcases provable_size_or_atom h with hsz | hatom
+    rcases pf_size_or_atom h with hsz | hatom
     · exact hsz
     · cases hatom
   have hψ := maxLitF_lt_two_pow_size ψ
@@ -165,8 +165,8 @@ theorem box_lit_bound {m a : Nat} {ψ : Formula} (h : Provable m (.box a ψ)) :
 /-- `diagF/B`'s enumerated premise `.impl (.box fb t) t` is Löb-budget-bounded at its own
     judgment. -/
 theorem diag_lit_bound {m fb : Nat} {t : Formula}
-    (h : Provable m (.impl (.box fb t) t)) : fb < 2 ^ m := by
-  have hsz := provable_impl_size h
+    (h : Pf m (.impl (.box fb t) t)) : fb < 2 ^ m := by
+  have hsz := pf_impl_size h
   refine lt_two_pow_of_log2_lt ?_
   simp only [numCost, Formula.size] at hsz
   omega
@@ -175,9 +175,9 @@ theorem diag_lit_bound {m fb : Nat} {t : Formula}
     `modestGate`/`litGate` rules carries literals `< 2^m`. (The uniform stratum bound —
     across the cite-escalating sub-judgments of one derivation — is exactly what the
     antecedent-provenance program (CUT_RELEVANCE.md §2–3) must supply.) -/
-theorem local_lit_bound {m : Nat} {B : Formula} (h : Provable m B) :
+theorem local_lit_bound {m : Nat} {B : Formula} (h : Pf m B) :
     maxLitF B < 2 ^ m ∨ ∃ p q a, B = .plays p q a := by
-  rcases provable_size_or_atom h with hsz | hatom
+  rcases pf_size_or_atom h with hsz | hatom
   · left
     have hB := maxLitF_lt_two_pow_size B
     have := Nat.pow_le_pow_right (show 1 ≤ 2 by omega) hsz
@@ -223,42 +223,121 @@ inductive DAnt : Formula → Formula → Prop where
       DAnt (.box k (ψ.subst me opponent)) (.plays me opponent c0)
   | trans {B D C : Formula} : DAnt B D → DAnt D C → DAnt B C
 
-/-- **C1**: every positive-position implication of a `Derivation`-derivable formula has a
-    census-legitimate antecedent. `modusPonens` needs NO analysis of its cut (the
-    conclusion's spine embeds in the impl-premise's); `hypSyll` is `DAnt.trans`. -/
-theorem derivation_posImpl_ant : ∀ {φ : Formula}, Derivation φ →
+/-- **`LeafPf` — the packaged source-transparency leaf** (Type-valued). Under the Pf-only
+    engine the seven transparency rules are LEAF constructors of `Pf` with no recursive
+    premises; this datatype packages exactly their data, and is what the tree substrate
+    (T49) stores where it used to store a whole `Derivation` witness. The ex-`Derivation`
+    logical core (`modusPonens`/`hypSyll`) needs no counterpart: those are `mp`/`implTrans`
+    TREE NODES now, handled by the substrate's own arms. -/
+inductive LeafPf : Nat → Formula → Type where
+  | searchBranch (g : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog)
+      (hme : me = .search g ψ (.const a) (.const b))
+      (hle : (Formula.impl (.box g (ψ.subst me opponent)) (.plays me opponent a)).size ≤ k) :
+      LeafPf k (.impl (.box g (ψ.subst me opponent)) (.plays me opponent a))
+  | simStep (me p q opponent : Prog) (a : Action) (hme : me = .sim p q)
+      (hle : (Formula.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+                           (.plays me opponent a)).size ≤ k) :
+      LeafPf k (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+                      (.plays me opponent a))
+  | botSimStep (me p q opponent : Prog) (a : Action) (hme : me = .bot (.sim p q))
+      (hle : (Formula.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+                           (.plays me opponent a)).size ≤ k) :
+      LeafPf k (.impl (.plays (p.subst me opponent) (q.subst me opponent) a)
+                      (.plays me opponent a))
+  | botSearchStep (g : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog)
+      (hme : me = .bot (.search g ψ (.const a) (.const b)))
+      (hle : (Formula.impl (.box g (ψ.subst me opponent)) (.plays me opponent a)).size ≤ k) :
+      LeafPf k (.impl (.box g (ψ.subst me opponent)) (.plays me opponent a))
+  | iteBranchSearch_t (g : Nat) (z : Prog) (a' c0 c1 : Action) (ψ : Formula)
+      (q me opponent : Prog)
+      (hme : me = .ite (.sim .opp (.bot z)) a' (.search g ψ (.const c0) (.const c1)) q)
+      (hle : (Formula.impl (.plays opponent (.bot z) a')
+                           (.impl (.box g (ψ.subst me opponent))
+                                  (.plays me opponent c0))).size ≤ k) :
+      LeafPf k (.impl (.plays opponent (.bot z) a')
+                      (.impl (.box g (ψ.subst me opponent)) (.plays me opponent c0)))
+  | eqRefl (p : Prog) (hle : (Formula.eq p p).size ≤ k) : LeafPf k (.eq p p)
+  | eqNeg (p q : Prog) (hne : p ≠ q) (hle : (Formula.neg (.eq p q)).size ≤ k) :
+      LeafPf k (.neg (.eq p q))
+
+/-- A stored leaf IS a `Pf` (each maps to its constructor). -/
+def LeafPf.toPf : {k : Nat} → {φ : Formula} → LeafPf k φ → Pf k φ
+  | _, _, .searchBranch g ψ a b me opponent hme hle => .searchBranch g ψ a b me opponent hme hle
+  | _, _, .simStep me p q opponent a hme hle => .simStep me p q opponent a hme hle
+  | _, _, .botSimStep me p q opponent a hme hle => .botSimStep me p q opponent a hme hle
+  | _, _, .botSearchStep g ψ a b me opponent hme hle =>
+      .botSearchStep g ψ a b me opponent hme hle
+  | _, _, .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
+      .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle
+  | _, _, .eqRefl p hle => .eqRefl p hle
+  | _, _, .eqNeg p q hne hle => .eqNeg p q hne hle
+
+/-- A stored leaf injects into the GATED system at any gate (leaves have no premises,
+    so no gate obligation arises). -/
+def LeafPf.toG {G : Formula → Prop} : {k : Nat} → {φ : Formula} → LeafPf k φ → PD.T42.PfG G k φ
+  | _, _, .searchBranch g ψ a b me opponent hme hle => .searchBranch g ψ a b me opponent hme hle
+  | _, _, .simStep me p q opponent a hme hle => .simStep me p q opponent a hme hle
+  | _, _, .botSimStep me p q opponent a hme hle => .botSimStep me p q opponent a hme hle
+  | _, _, .botSearchStep g ψ a b me opponent hme hle =>
+      .botSearchStep g ψ a b me opponent hme hle
+  | _, _, .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
+      .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle
+  | _, _, .eqRefl p hle => .eqRefl p hle
+  | _, _, .eqNeg p q hne hle => .eqNeg p q hne hle
+
+/-- A leaf's transcript pays its conclusion (the side-condition IS the size gate). -/
+theorem LeafPf.concl_size_le : {k : Nat} → {φ : Formula} → LeafPf k φ → φ.size ≤ k
+  | _, _, .searchBranch _ _ _ _ _ _ _ hle => hle
+  | _, _, .simStep _ _ _ _ _ _ hle => hle
+  | _, _, .botSimStep _ _ _ _ _ _ hle => hle
+  | _, _, .botSearchStep _ _ _ _ _ _ _ hle => hle
+  | _, _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _ hle => hle
+  | _, _, .eqRefl _ hle => hle
+  | _, _, .eqNeg _ _ _ hle => hle
+
+/-- Budget weakening for stored leaves. -/
+def LeafPf.weaken : {k k' : Nat} → {φ : Formula} → LeafPf k φ → k ≤ k' → LeafPf k' φ
+  | _, _, _, .searchBranch g ψ a b me opponent hme hle, h =>
+      .searchBranch g ψ a b me opponent hme (Nat.le_trans hle h)
+  | _, _, _, .simStep me p q opponent a hme hle, h =>
+      .simStep me p q opponent a hme (Nat.le_trans hle h)
+  | _, _, _, .botSimStep me p q opponent a hme hle, h =>
+      .botSimStep me p q opponent a hme (Nat.le_trans hle h)
+  | _, _, _, .botSearchStep g ψ a b me opponent hme hle, h =>
+      .botSearchStep g ψ a b me opponent hme (Nat.le_trans hle h)
+  | _, _, _, .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle, h =>
+      .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme (Nat.le_trans hle h)
+  | _, _, _, .eqRefl p hle, h => .eqRefl p (Nat.le_trans hle h)
+  | _, _, _, .eqNeg p q hne hle, h => .eqNeg p q hne (Nat.le_trans hle h)
+
+/-- **C1, leaf form**: every positive-position implication of a stored leaf has a
+    census-legitimate antecedent (was `derivation_posImpl_ant`; the `modusPonens`/`hypSyll`
+    cases moved into the master census's `mp`/`implTrans` arms, where they always belonged). -/
+theorem LeafPf.posImpl_ant : ∀ {k : Nat} {φ : Formula}, LeafPf k φ →
     ∀ {B C : Formula}, PosImpl φ B C → DAnt B C := by
-  intro φ d
-  induction d with
-  | modusPonens φ' ψ d₁ d₂ ih₁ ih₂ =>
-      intro B C hp
-      exact ih₁ (.tail hp)
-  | hypSyll φ' ψ' χ' d₁ d₂ ih₁ ih₂ =>
-      intro B C hp
-      cases hp with
-      | head => exact .trans (ih₁ .head) (ih₂ .head)
-      | tail hp' => exact ih₂ (.tail hp')
-  | searchBranch k ψ a b me opponent hme =>
+  intro k φ l
+  cases l with
+  | searchBranch g ψ a b me opponent hme hle =>
       intro B C hp
       cases hp with
       | head => exact .searchBr hme
       | tail hp' => cases hp'
-  | simStep me p q opponent a hme =>
+  | simStep me p q opponent a hme hle =>
       intro B C hp
       cases hp with
       | head => exact .simSt hme
       | tail hp' => cases hp'
-  | botSimStep me p q opponent a hme =>
+  | botSimStep me p q opponent a hme hle =>
       intro B C hp
       cases hp with
       | head => exact .botSimSt hme
       | tail hp' => cases hp'
-  | botSearchStep k ψ a b me opponent hme =>
+  | botSearchStep g ψ a b me opponent hme hle =>
       intro B C hp
       cases hp with
       | head => exact .botSearchSt hme
       | tail hp' => cases hp'
-  | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
+  | iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
       intro B C hp
       cases hp with
       | head => exact .iteBr₁ hme
@@ -266,16 +345,16 @@ theorem derivation_posImpl_ant : ∀ {φ : Formula}, Derivation φ →
           cases hp' with
           | head => exact .iteBr₂ hme
           | tail hp'' => cases hp''
-  | eqRefl p =>
+  | eqRefl p hle =>
       intro B C hp
       cases hp
-  | eqNeg p q hne =>
+  | eqNeg p q hne hle =>
       intro B C hp
       cases hp
 
-/-- The top-level corollary: `Derivation (.impl B C)` forces a census antecedent. -/
-theorem derivation_impl_ant {B C : Formula} (d : Derivation (.impl B C)) : DAnt B C :=
-  derivation_posImpl_ant d .head
+/-- The top-level corollary: a stored leaf concluding `.impl B C` forces a census antecedent. -/
+theorem LeafPf.impl_ant {k : Nat} {B C : Formula} (l : LeafPf k (.impl B C)) : DAnt B C :=
+  l.posImpl_ant .head
 
 /-! ## 4. Provenance payoff: Derivation antecedents never increase literals. -/
 
@@ -319,28 +398,27 @@ theorem DAnt_lit : ∀ {B C : Formula}, DAnt B C → maxLitF B ≤ maxLitF C := 
       omega
   | trans h₁ h₂ ih₁ ih₂ => omega
 
-/-- Combining C0 + C1: a `struct`-entry at budget `k` has all its positive-position
-    antecedents literal-bounded by the conclusion — which is itself `< 2^k`. The Type
-    layer is fully tame; the residue of the conjecture is the `Provable` layer's chains
-    and its size-exempt cut atoms (CUT_RELEVANCE.md C2–C4). -/
-theorem struct_ant_lit {k : Nat} {φ B C : Formula}
-    (h : ∃ d : Derivation φ, d.size ≤ k) (hp : PosImpl φ B C) :
+/-- Combining C0 + C1: a stored LEAF at budget `k` has all its positive-position
+    antecedents literal-bounded by the conclusion — which is itself `< 2^k`. The
+    transparency layer is fully tame; the residue of the conjecture is the reflective
+    chains and their size-exempt cut atoms (CUT_RELEVANCE.md C2–C4). -/
+theorem leaf_ant_lit {k : Nat} {φ B C : Formula}
+    (l : LeafPf k φ) (hp : PosImpl φ B C) :
     maxLitF B < 2 ^ k := by
-  obtain ⟨d, hsz⟩ := h
-  have h₁ := DAnt_lit (derivation_posImpl_ant d hp)
+  have h₁ := DAnt_lit (l.posImpl_ant hp)
+  have h₄ : φ.size ≤ k := l.concl_size_le
   have h₂ : maxLitF C ≤ maxLitF φ ∧ maxLitF B ≤ maxLitF φ := by
-    clear h₁ hsz d
+    clear h₁ h₄ l
     induction hp with
     | head => simp only [maxLitF]; omega
     | tail hp' ih => simp only [maxLitF]; omega
   have h₃ := maxLitF_lt_two_pow_size φ
-  have h₄ : φ.size ≤ k := Nat.le_trans d.concl_size_le hsz
   have h₅ := Nat.pow_le_pow_right (show 1 ≤ 2 by omega) h₄
   omega
 
-/-! ## 5. C2 — the `Provable` layer's spine dichotomy.
+/-! ## 5. C2 — the `Pf` layer's spine dichotomy.
 
-The census relation `PAnt` for the `Provable` layer: C1's `DAnt` embedded, one constructor
+The census relation `PAnt` for the `Pf` layer: C1's `DAnt` embedded, one constructor
 per modal/transparency producer. Where pairwise information is genuinely insufficient the
 constructor is honest about it: `imps2Ant` RECORDS the producing judgment (budget strictly
 below — C3's tree-invariant unfolds it), and `axkPair` is shape-only (for a box-box pair
@@ -349,7 +427,7 @@ consuming `app` — visible to the tree-invariant, not to the pair). The dichoto
 positive-spine pair of a derivable formula is census-legitimate OR the consequent is
 provable outright within the same budget (weakening-degeneracy). -/
 
-/-- The `Provable`-layer antecedent census. -/
+/-- The `Pf`-layer antecedent census. -/
 inductive PAnt : Formula → Formula → Prop where
   | ofD {B C : Formula} : DAnt B C → PAnt B C
   | stsAnt {k₁ k₂ : Nat} {ψ₁ ψ₂ : Formula} {c0 c1 : Action} {q me opnt : Prog}
@@ -372,27 +450,27 @@ inductive PAnt : Formula → Formula → Prop where
   | diagBAnt {g : Nat} {tgt : Formula} :
       PAnt (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)
   | imps2Ant {A ψ χ : Formula} {m₁ : Nat} :
-      Provable m₁ (.impl A (.impl ψ χ)) → PAnt A χ
+      Pf m₁ (.impl A (.impl ψ χ)) → PAnt A χ
   | trans {B D C : Formula} : PAnt B D → PAnt D C → PAnt B C
 
 set_option maxHeartbeats 1000000 in
-/-- **C2**: every positive-spine implication pair of a `Provable`-derivable formula has a
+/-- **C2**: every positive-spine implication pair of a `Pf`-derivable formula has a
     census-legitimate antecedent, or its consequent is provable outright within the same
     budget. `app` and `weakenImpl`'s tails ride the C1 spine-embedding; `implTrans` mixes
-    census-transitivity with degeneracy-propagation (the `Provable.app` reassembly fits the
+    census-transitivity with degeneracy-propagation (the `Pf.mp` reassembly fits the
     original budget); `diagF`'s deep tail recurses through its Löb premise. -/
-theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Provable m φ →
+theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
     ∀ {B C : Formula}, PosImpl φ B C →
-      PAnt B C ∨ ∃ m', m' ≤ m ∧ Provable m' C := by
+      PAnt B C ∨ ∃ m', m' ≤ m ∧ Pf m' C := by
   intro m φ h
-  refine Provable.rec
+  refine Pf.rec
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun m φ _ => ∀ {B C : Formula}, PosImpl φ B C →
-      PAnt B C ∨ ∃ m', m' ≤ m ∧ Provable m' C)
+      PAnt B C ∨ ∃ m', m' ≤ m ∧ Pf m' C)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
-    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
-    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg h
+    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
+    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg h
   case pConst => intros; trivial
   case pSelf => intros; trivial
   case pOpp => intros; trivial
@@ -403,10 +481,40 @@ theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Provable m φ →
   case pSearch_t => intros; trivial
   case pSearch_f => intros; trivial
   case pMk => intros; trivial
-  case cStruct =>
-      intro φ0 k0 hd B C hp
-      obtain ⟨d, _⟩ := hd
-      exact Or.inl (.ofD (derivation_posImpl_ant d hp))
+  case cSB =>
+      intro k0 g ψ aT bE me opnt hme hle B C hp
+      cases hp with
+      | head => exact Or.inl (.ofD (.searchBr hme))
+      | tail hp' => cases hp'
+  case cSS =>
+      intro k0 me pp qq opnt a hme hle B C hp
+      cases hp with
+      | head => exact Or.inl (.ofD (.simSt hme))
+      | tail hp' => cases hp'
+  case cBSS =>
+      intro k0 me pp qq opnt a hme hle B C hp
+      cases hp with
+      | head => exact Or.inl (.ofD (.botSimSt hme))
+      | tail hp' => cases hp'
+  case cBSearch =>
+      intro k0 g ψ aT bE me opnt hme hle B C hp
+      cases hp with
+      | head => exact Or.inl (.ofD (.botSearchSt hme))
+      | tail hp' => cases hp'
+  case cIte =>
+      intro k0 g z a' c0 c1 ψ qq me opnt hme hle B C hp
+      cases hp with
+      | head => exact Or.inl (.ofD (.iteBr₁ hme))
+      | tail hp' =>
+          cases hp' with
+          | head => exact Or.inl (.ofD (.iteBr₂ hme))
+          | tail hp'' => cases hp''
+  case cEqR =>
+      intro k0 p hle B C hp
+      cases hp
+  case cEqN =>
+      intro k0 p q hne hle B C hp
+      cases hp
   case cAtom =>
       intro k0 φ0 hatom _ B C hp
       cases hatom with
@@ -435,7 +543,7 @@ theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Provable m φ →
               · have hA := Formula.size_pos A
                 simp only [Formula.size] at hle
                 omega
-              · exact Provable.app _ b m1' ψ χ h2 hψ (Nat.le_refl _)
+              · exact Pf.mp b m1' ψ χ h2 hψ (Nat.le_refl _)
           · exact Or.inr ⟨m2', by omega, hC⟩
       | tail hp' =>
           rcases ih2 (.tail hp') with hl | ⟨m'', hm'', hC⟩
@@ -512,8 +620,8 @@ theorem provable_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Provable m φ →
 /-- The top-level corollary: any derivable implication's antecedent is census-legitimate
     or the implication is weakening-degenerate. This is Lemma A's dichotomy at the head
     pair — the tool the C3 tree-invariant applies at every `app` site. -/
-theorem provable_impl_ant {m : Nat} {B C : Formula} (h : Provable m (.impl B C)) :
-    PAnt B C ∨ ∃ m', m' ≤ m ∧ Provable m' C :=
+theorem provable_impl_ant {m : Nat} {B C : Formula} (h : Pf m (.impl B C)) :
+    PAnt B C ∨ ∃ m', m' ≤ m ∧ Pf m' C :=
   provable_posImpl_ant h .head
 
 /-! ## 6. C3a — shape lemmas and the box-inversion (the sibling-sourcing tools).
@@ -529,43 +637,32 @@ inductive EndsInPlays : Formula → Prop where
   | plays {p q : Prog} {a : Action} : EndsInPlays (.plays p q a)
   | impl {X C : Formula} : EndsInPlays C → EndsInPlays (.impl X C)
 
-/-- Every `Derivation`-derivable formula is a plays-ended implication chain or an
-    equality shape: the Type layer concludes NO boxes, diags, or negated atoms. -/
-theorem derivation_shape : ∀ {φ : Formula}, Derivation φ →
+/-- Every stored LEAF is a plays-ended implication chain or an equality shape: the
+    transparency layer concludes NO boxes, diags, or negated atoms
+    (was `derivation_shape`). -/
+theorem leafPf_shape : ∀ {k : Nat} {φ : Formula}, LeafPf k φ →
     EndsInPlays φ ∨ (∃ p, φ = .eq p p) ∨ (∃ p q, φ = .neg (.eq p q)) := by
-  intro φ d
-  induction d with
-  | modusPonens φ' ψ d₁ d₂ ih₁ ih₂ =>
-      rcases ih₁ with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
-      · cases h with
-        | impl h' => exact Or.inl h'
-      · cases hp
-      · cases hp
-  | hypSyll φ' ψ' χ' d₁ d₂ ih₁ ih₂ =>
-      rcases ih₂ with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
-      · cases h with
-        | impl h' => exact Or.inl (.impl h')
-      · cases hp
-      · cases hp
-  | searchBranch k ψ a b me opponent hme => exact Or.inl (.impl .plays)
-  | simStep me p q opponent a hme => exact Or.inl (.impl .plays)
-  | botSimStep me p q opponent a hme => exact Or.inl (.impl .plays)
-  | botSearchStep k ψ a b me opponent hme => exact Or.inl (.impl .plays)
-  | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
+  intro k φ l
+  cases l with
+  | searchBranch g ψ a b me opponent hme hle => exact Or.inl (.impl .plays)
+  | simStep me p q opponent a hme hle => exact Or.inl (.impl .plays)
+  | botSimStep me p q opponent a hme hle => exact Or.inl (.impl .plays)
+  | botSearchStep g ψ a b me opponent hme hle => exact Or.inl (.impl .plays)
+  | iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
       exact Or.inl (.impl (.impl .plays))
-  | eqRefl p => exact Or.inr (Or.inl ⟨p, rfl⟩)
-  | eqNeg p q hne => exact Or.inr (Or.inr ⟨p, q, rfl⟩)
+  | eqRefl p hle => exact Or.inr (Or.inl ⟨p, rfl⟩)
+  | eqNeg p q hne hle => exact Or.inr (Or.inr ⟨p, q, rfl⟩)
 
-/-- The Type layer cannot conclude a box. -/
-theorem derivation_no_box {b : Nat} {ψ : Formula} (d : Derivation (.box b ψ)) : False := by
-  rcases derivation_shape d with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
+/-- The transparency layer cannot conclude a box (was `derivation_no_box`). -/
+theorem leafPf_no_box {k b : Nat} {ψ : Formula} (l : LeafPf k (.box b ψ)) : False := by
+  rcases leafPf_shape l with h | ⟨p, hp⟩ | ⟨p, q, hp⟩
   · cases h
   · cases hp
   · cases hp
 
 /-- Every judgment costs at least one character. -/
-theorem provable_pos {m : Nat} {φ : Formula} (h : Provable m φ) : 1 ≤ m := by
-  rcases provable_size_or_atom h with hsz | hatom
+theorem provable_pos {m : Nat} {φ : Formula} (h : Pf m φ) : 1 ≤ m := by
+  rcases pf_size_or_atom h with hsz | hatom
   · have := Formula.size_pos φ
     omega
   · exact atomProvable_pos hatom
@@ -574,20 +671,19 @@ theorem provable_pos {m : Nat} {φ : Formula} (h : Provable m φ) : 1 ≤ m := b
     `boxIntro` — its content WAS a judgment, at a budget below the subscript — or from an
     `app` spine. No other rule concludes a box (the Type layer can't, atoms are `.plays`,
     everything else concludes impls/negs). -/
-theorem box_inversion {m b : Nat} {ψ : Formula} (h : Provable m (.box b ψ)) :
-    (∃ mIn, Provable mIn ψ ∧ mIn ≤ b ∧ b + (Formula.box b ψ).size ≤ m) ∨
-    (∃ m₁ m₂ φ', Provable m₁ (.impl φ' (.box b ψ)) ∧ Provable m₂ φ' ∧
+theorem box_inversion {m b : Nat} {ψ : Formula} (h : Pf m (.box b ψ)) :
+    (∃ mIn, Pf mIn ψ ∧ mIn ≤ b ∧ b + (Formula.box b ψ).size ≤ m) ∨
+    (∃ m₁ m₂ φ', Pf m₁ (.impl φ' (.box b ψ)) ∧ Pf m₂ φ' ∧
       m₁ + m₂ + (Formula.box b ψ).size ≤ m) := by
+  -- Pf-only: the seven transparency leaves conclude impls/eqs/negs, so `cases` discards
+  -- them automatically against the `.box` index — no `struct` hop, no shape lemma needed.
   cases h with
-  | struct hd =>
-      obtain ⟨d, _⟩ := hd
-      exact (derivation_no_box d).elim
   | atom hatom => cases hatom
   | boxIntro =>
       -- index unification: the content's budget IS the subscript `b`
       rename_i hprem hle
       exact Or.inl ⟨b, hprem, Nat.le_refl _, hle⟩
-  | app =>
+  | mp =>
       rename_i m₁ m₂ φ' h2 h1 hle
       exact Or.inr ⟨m₁, m₂, φ', h1, h2, hle⟩
 
@@ -905,9 +1001,9 @@ theorem endsInPlays_no_box : ∀ {φ : Formula} {j : Nat} {χ : Formula},
 def Tri (L m : Nat) (B C : Formula) : Prop :=
   (maxSLitF C ≤ L → maxSLitF B ≤ L)
   ∨ (∃ b ψ₀, B = Formula.box b ψ₀)
-  ∨ (∃ b ψ₀ m' X C', Provable m' X ∧ PPair X (.box b ψ₀) C')
-  ∨ (∃ m' X j χ B' C', Provable m' X ∧ PosBox X j χ ∧ PosImpl χ B' C')
-  ∨ (∃ m', m' ≤ m ∧ Provable m' C)
+  ∨ (∃ b ψ₀ m' X C', Pf m' X ∧ PPair X (.box b ψ₀) C')
+  ∨ (∃ m' X j χ B' C', Pf m' X ∧ PosBox X j χ ∧ PosImpl χ B' C')
+  ∨ (∃ m', m' ≤ m ∧ Pf m' C)
 
 theorem Tri_mono {L m₁ m₂ : Nat} {B C : Formula} (h : m₁ ≤ m₂) (ht : Tri L m₁ B C) :
     Tri L m₂ B C := by
@@ -921,16 +1017,16 @@ theorem Tri_mono {L m₁ m₂ : Nat} {B C : Formula} (h : m₁ ≤ m₂) (ht : T
 set_option maxHeartbeats 2000000 in
 /-- **C3b-i — the tame trichotomy**: every positive pair of a derivable judgment is
     literal-nonincreasing, degenerate within budget, or a precisely-named box obstruction. -/
-theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ →
+theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Pf m φ →
     ∀ {B C : Formula}, PPair φ B C → Tri L m B C := by
   intro m φ h
-  refine Provable.rec
+  refine Pf.rec
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun m φ _ => ∀ {B C : Formula}, PPair φ B C → Tri L m B C)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
-    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
-    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg h
+    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
+    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg h
   case pConst => intros; trivial
   case pSelf => intros; trivial
   case pOpp => intros; trivial
@@ -941,16 +1037,59 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
   case pSearch_t => intros; trivial
   case pSearch_f => intros; trivial
   case pMk => intros; trivial
-  case cStruct =>
-      intro φ0 k0 hd B C hp
-      obtain ⟨d, _⟩ := hd
-      rcases hp with hpi | ⟨j, χ, pb, pi⟩
-      · exact Or.inl (fun hC =>
-          Nat.le_trans (DAnt_slit (derivation_posImpl_ant d hpi)) hC)
-      · rcases derivation_shape d with he | ⟨p, hp'⟩ | ⟨p, q, hp'⟩
-        · exact absurd pb (fun pb => endsInPlays_no_box he pb)
-        · subst hp'; cases pb
-        · subst hp'; cases pb
+  case cSB =>
+      intro k0 g ψ aT bE me opnt hme hle B C hp
+      rcases hp with hpi | ⟨j, χ, pb, _⟩
+      · refine Or.inl (fun hC => Nat.le_trans (DAnt_slit ?_) hC)
+        cases hpi with
+        | head => exact .searchBr hme
+        | tail hp' => cases hp'
+      · exact absurd pb (fun pb => endsInPlays_no_box (.impl .plays) pb)
+  case cSS =>
+      intro k0 me pp qq opnt a hme hle B C hp
+      rcases hp with hpi | ⟨j, χ, pb, _⟩
+      · refine Or.inl (fun hC => Nat.le_trans (DAnt_slit ?_) hC)
+        cases hpi with
+        | head => exact .simSt hme
+        | tail hp' => cases hp'
+      · exact absurd pb (fun pb => endsInPlays_no_box (.impl .plays) pb)
+  case cBSS =>
+      intro k0 me pp qq opnt a hme hle B C hp
+      rcases hp with hpi | ⟨j, χ, pb, _⟩
+      · refine Or.inl (fun hC => Nat.le_trans (DAnt_slit ?_) hC)
+        cases hpi with
+        | head => exact .botSimSt hme
+        | tail hp' => cases hp'
+      · exact absurd pb (fun pb => endsInPlays_no_box (.impl .plays) pb)
+  case cBSearch =>
+      intro k0 g ψ aT bE me opnt hme hle B C hp
+      rcases hp with hpi | ⟨j, χ, pb, _⟩
+      · refine Or.inl (fun hC => Nat.le_trans (DAnt_slit ?_) hC)
+        cases hpi with
+        | head => exact .botSearchSt hme
+        | tail hp' => cases hp'
+      · exact absurd pb (fun pb => endsInPlays_no_box (.impl .plays) pb)
+  case cIte =>
+      intro k0 g z a' c0 c1 ψ qq me opnt hme hle B C hp
+      rcases hp with hpi | ⟨j, χ, pb, _⟩
+      · refine Or.inl (fun hC => Nat.le_trans (DAnt_slit ?_) hC)
+        cases hpi with
+        | head => exact .iteBr₁ hme
+        | tail hp' =>
+            cases hp' with
+            | head => exact .iteBr₂ hme
+            | tail hp'' => cases hp''
+      · exact absurd pb (fun pb => endsInPlays_no_box (.impl (.impl .plays)) pb)
+  case cEqR =>
+      intro k0 p hle B C hp
+      rcases hp with hpi | ⟨j, χ, pb, _⟩
+      · cases hpi
+      · cases pb
+  case cEqN =>
+      intro k0 p q hne hle B C hp
+      rcases hp with hpi | ⟨j, χ, pb, _⟩
+      · cases hpi
+      · cases pb
   case cAtom =>
       intro k0 φ0 hatom _ B C hp
       cases hatom with
@@ -984,7 +1123,7 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
             · have hA := Formula.size_pos B
               simp only [Formula.size] at hle
               omega
-            · exact Provable.app _ b m1' ψ C h2 hψd (Nat.le_refl _)
+            · exact Pf.mp b m1' ψ C h2 hψd (Nat.le_refl _)
         · refine Or.inr (Or.inr (Or.inl ⟨b0, ψ₀, b, .impl ψ C, C, h2, ?_⟩))
           rw [hψeq] at *
           exact Or.inl .head
@@ -1039,7 +1178,7 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
         · have hpi := PPair_box_inv hp''
           refine Or.inr (Or.inr (Or.inr (Or.inl
             ⟨K, .impl (.box a (.impl A α)) (.impl (.box b A) (.box c α)),
-              c, α, B, C, Provable.axKf a b c K A α hgate hle,
+              c, α, B, C, Pf.axKf a b c K A α hgate hle,
               .tail (.tail .head), hpi⟩)))
   case cImpS2 =>
       intro A ψ χ' m₁ m₂ K h1 h2 hle ih1 ih2 B C hp
@@ -1064,7 +1203,7 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
               · have hA := Formula.size_pos B
                 simp only [Formula.size] at hle
                 omega
-              · exact Provable.app _ m1' m2' ψ C hd hψd (Nat.le_refl _)
+              · exact Pf.mp m1' m2' ψ C hd hψd (Nat.le_refl _)
         · refine Or.inr (Or.inr (Or.inl ⟨b0, ψ₀, m₁, .impl B (.impl ψ C), C, h1, ?_⟩))
           rw [hψeq] at *
           exact Or.inl (.tail .head)
@@ -1079,7 +1218,7 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
       · have hpi := PPair_box_inv hp'
         refine Or.inr (Or.inr (Or.inr (Or.inl
           ⟨K, .impl (.box a A) (.box b A), b, A, B, C,
-            Provable.boxMono a b K A hab hle, .tail .head, hpi⟩)))
+            Pf.boxMono a b K A hab hle, .tail .head, hpi⟩)))
   case cAtomNeg =>
       intro k p q b aN m' hatom hne hle _ B C hp
       rcases hp with hpi | ⟨j, χ, pb, _⟩
@@ -1088,7 +1227,7 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Provable m φ 
 
 /-- The judgment-head corollary — Lemma A's dichotomy in its final (maxSLit) form. -/
 theorem tame_impl_trichotomy (L : Nat) {m : Nat} {B C : Formula}
-    (h : Provable m (.impl B C)) : Tri L m B C :=
+    (h : Pf m (.impl B C)) : Tri L m B C :=
   tame_trichotomy L h (Or.inl .head)
 
 /-! ## 9. RETRACTION of C3b-i — `Tri` is vacuous (machine-checked).
@@ -1112,10 +1251,10 @@ this to any pair whose path routes through boxes. -/
 
 /-- One fixed `box4` witness inhabits the `DboxMid` disjunct — unrelated to any pair. -/
 theorem dboxMid_always :
-    ∃ b ψ₀ m' X C', Provable m' X ∧ PPair X (.box b ψ₀) C' := by
+    ∃ b ψ₀ m' X C', Pf m' X ∧ PPair X (.box b ψ₀) C' := by
   refine ⟨0, .plays .self .opp .C, 1000, _,
     .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩
-  exact Provable.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+  exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
 
 /-- **`Tri` holds for every input whatsoever** — the vacuity, kernel-checked. -/
 theorem Tri_always (L m : Nat) (B C : Formula) : Tri L m B C :=
@@ -1123,7 +1262,7 @@ theorem Tri_always (L m : Nat) (B C : Formula) : Tri L m B C :=
 
 /-- The one-line derivation the review predicted: `tame_trichotomy` without induction. -/
 theorem tame_trichotomy_vacuous (L : Nat) {m : Nat} {φ : Formula}
-    (_ : Provable m φ) {B C : Formula} (_ : PPair φ B C) : Tri L m B C :=
+    (_ : Pf m φ) {B C : Formula} (_ : PPair φ B C) : Tri L m B C :=
   Tri_always L m B C
 
 /-! ## 10. C3b-i′ — the LINKED diagnostic: two machine-checked FALSITY results.
@@ -1151,7 +1290,7 @@ the discharge-site (`app`-with-sibling) architecture of §5.
 
 **The corrected foundation (C3b-ii′, for the next attack):**
   * motive = pairs WITH GUARD CONTEXT: `PosImplCtx φ Γ B C` collecting the antecedents `Γ`
-    passed on the way to the pair; the dichotomy hypothesizes `∀ X ∈ Γ, ∃ mX, Provable mX X`
+    passed on the way to the pair; the dichotomy hypothesizes `∀ X ∈ Γ, ∃ mX, Pf mX X`
     (at discharge sites the siblings supply exactly this);
   * induction = BUDGET-STRONG-INDUCTION with inversion, NOT structural `rec`: the key
     observation is that pair-queries never cross cites (`searchThenSearch_t`'s and
@@ -1160,7 +1299,7 @@ the discharge-site (`app`-with-sibling) architecture of §5.
     opaque degenerate witnesses (the D2 wall of the merged-motive design) are covered by
     the same strong IH — no transform-carrying needed for the dichotomy itself;
   * kernel = `HBoxHead` (the box-chain grounding at HEAD positions only):
-    `Provable m (.impl (.box b₀ ψ₀) C) → (Tame C → Tame ψ₀) ∨ (∃ m' ≤ m, Provable m' C)` —
+    `Pf m (.impl (.box b₀ ψ₀) C) → (Tame C → Tame ψ₀) ∨ (∃ m' ≤ m, Pf m' C)` —
     the head-level form dodges both falsity findings (heads are unguarded, and box
     contents at heads come from constrained producers: the census families, `axK`'s
     premise-constrained instances, chains, or discharged `axKf` — whose discharge sibling
@@ -1168,17 +1307,17 @@ the discharge-site (`app`-with-sibling) architecture of §5.
 
 /-- Distinct constant programs are never provably equal (soundness). -/
 theorem eq_const_unprovable {m : Nat} :
-    ¬ Provable m (.eq (.const .C) (.const .D)) := by
+    ¬ Pf m (.eq (.const .C) (.const .D)) := by
   intro h
-  have h2 := PD.BaseTheorems.Provable_sound _ _ h
+  have h2 := PD.BaseTheorems.Pf_sound _ _ h
   simp only [Formula.interp] at h2
   exact absurd h2 (by decide)
 
-/-- Nor is any box of that equality (soundness twice: `interp (.box c φ) = Provable c φ`). -/
+/-- Nor is any box of that equality (soundness twice: `interp (.box c φ) = Pf c φ`). -/
 theorem box_eq_unprovable {m c : Nat} :
-    ¬ Provable m (.box c (.eq (.const .C) (.const .D))) := by
+    ¬ Pf m (.box c (.eq (.const .C) (.const .D))) := by
   intro h
-  have h2 := PD.BaseTheorems.Provable_sound _ _ h
+  have h2 := PD.BaseTheorems.Pf_sound _ _ h
   simp only [Formula.interp] at h2
   exact eq_const_unprovable h2
 
@@ -1189,12 +1328,12 @@ def wildF : Formula :=
 /-- **Finding 1**: the linked trichotomy over full `PPair` is FALSE — `axKf`'s
     consequent-box content is arbitrary, so its content pairs defeat all disjuncts. -/
 theorem ppair_linked_false :
-    ∃ (L m : Nat) (φ B C : Formula), Provable m φ ∧ PPair φ B C ∧
+    ∃ (L m : Nat) (φ B C : Formula), Pf m φ ∧ PPair φ B C ∧
       ¬ ((maxSLitF C ≤ L → maxSLitF B ≤ L)
          ∨ (∃ b ψ₀, B = Formula.box b ψ₀)
-         ∨ (∃ m', m' ≤ m ∧ Provable m' C)) := by
+         ∨ (∃ m', m' ≤ m ∧ Pf m' C)) := by
   refine ⟨0, 1000, _, wildF, .eq (.const .C) (.const .D),
-    Provable.axKf 0 0 1000 1000 (.plays (.const .C) (.const .C) .C)
+    Pf.axKf 0 0 1000 1000 (.plays (.const .C) (.const .C) .C)
       (.impl wildF (.eq (.const .C) (.const .D))) (by decide) (by decide),
     Or.inr ⟨1000, _, .tail (.tail .head), .head⟩, ?_⟩
   rintro (h1 | ⟨b, ψ₀, hB⟩ | ⟨m', _, hC⟩)
@@ -1208,13 +1347,13 @@ theorem ppair_linked_false :
 /-- **Finding 2**: even at SPINE level, the box-LINKED dichotomy is FALSE at guarded tail
     positions — before its antecedent is discharged, `axKf`'s tail pair has no link. -/
 theorem spine_boxlinked_false :
-    ∃ (L m : Nat) (φ B C : Formula), Provable m φ ∧ PosImpl φ B C ∧
+    ∃ (L m : Nat) (φ B C : Formula), Pf m φ ∧ PosImpl φ B C ∧
       ¬ ((maxSLitF C ≤ L → maxSLitF B ≤ L)
          ∨ (∃ b ψ₀, B = Formula.box b ψ₀ ∧
               (maxSLitF C ≤ L → maxSLitF ψ₀ ≤ L))
-         ∨ (∃ m', m' ≤ m ∧ Provable m' C)) := by
+         ∨ (∃ m', m' ≤ m ∧ Pf m' C)) := by
   refine ⟨0, 1000, _, .box 0 wildF, .box 1000 (.eq (.const .C) (.const .D)),
-    Provable.axKf 0 0 1000 1000 wildF (.eq (.const .C) (.const .D))
+    Pf.axKf 0 0 1000 1000 wildF (.eq (.const .C) (.const .D))
       (by decide) (by decide),
     .tail .head, ?_⟩
   rintro (h1 | ⟨b, ψ₀, hB, hlink⟩ | ⟨m', _, hC⟩)
@@ -1242,7 +1381,7 @@ implication can never fire via `app`), assembled from four engine facts:
   * `boxIntro` + `axK` box the degenerate implication and distribute it, planting the
     arbitrary antecedent inside a boxed-antecedent implication;
   * `impS2` against a free `axKf` instance composes away the middle, leaving
-    `deadJ : Provable 10000 (.impl (.box 300 ψ₀) (.box 1000 eqCD))`
+    `deadJ : Pf 10000 (.impl (.box 300 ψ₀) (.box 1000 eqCD))`
     with `ψ₀` wild (slit 1), the consequent tame (slit 0) and UNPROVABLE.
 
 `deadJ` defeats both of `HBoxHead`'s disjuncts at an UNGUARDED HEAD pair
@@ -1259,45 +1398,45 @@ for the fork this forces. -/
 
 /-- The §5d kernel, as stated there: box-antecedent grounding at head positions. -/
 def HBoxHead (L : Nat) : Prop :=
-  ∀ m b₀ ψ₀ C, Provable m (.impl (.box b₀ ψ₀) C) →
-    (maxSLitF C ≤ L → maxSLitF ψ₀ ≤ L) ∨ (∃ m', m' ≤ m ∧ Provable m' C)
+  ∀ m b₀ ψ₀ C, Pf m (.impl (.box b₀ ψ₀) C) →
+    (maxSLitF C ≤ L → maxSLitF ψ₀ ≤ L) ∨ (∃ m', m' ≤ m ∧ Pf m' C)
 
 /-- A program with a positive search subscript (never evaluated — pure literal weight). -/
 def wildQ : Prog := .search 1 (.eq (.const .C) (.const .C)) (.const .C) (.const .C)
 
-/-- Provable (by `eqRefl`) yet wild: `maxSLitF wildA = 1`. Provability does not bound
+/-- Pf (by `eqRefl`) yet wild: `maxSLitF wildA = 1`. Provability does not bound
     search literals — the atom layer certifies reflexivity for ANY program. -/
 def wildA : Formula := .eq wildQ wildQ
 
 /-- The wild, semantically FALSE antecedent content: `wildA → (C = D)`. -/
 def psi0 : Formula := .impl wildA (.eq (.const .C) (.const .D))
 
-theorem wildA_provable : Provable 100 wildA :=
-  .struct ⟨.eqRefl wildQ, by decide⟩
+theorem wildA_provable : Pf 100 wildA :=
+  .eqRefl wildQ (by decide)
 
-theorem psi0_unprovable {m : Nat} : ¬ Provable m psi0 := by
+theorem psi0_unprovable {m : Nat} : ¬ Pf m psi0 := by
   intro h
-  have h2 := PD.BaseTheorems.Provable_sound _ _ h
+  have h2 := PD.BaseTheorems.Pf_sound _ _ h
   simp only [psi0, Formula.interp] at h2
   exact absurd (h2 rfl) (by decide)
 
 /-- `deadJ`'s antecedent never fires: the boxed content is unprovable. -/
-theorem box_psi0_unprovable {m b : Nat} : ¬ Provable m (.box b psi0) := by
+theorem box_psi0_unprovable {m b : Nat} : ¬ Pf m (.box b psi0) := by
   intro h
-  have h2 := PD.BaseTheorems.Provable_sound _ _ h
+  have h2 := PD.BaseTheorems.Pf_sound _ _ h
   simp only [Formula.interp] at h2
   exact psi0_unprovable h2
 
 /-- The dead implication: derivable, wild boxed antecedent, tame unprovable consequent. -/
 theorem deadJ :
-    Provable 10000 (.impl (.box 300 psi0) (.box 1000 (.eq (.const .C) (.const .D)))) := by
-  have h1 : Provable 200 (.impl psi0 wildA) :=
+    Pf 10000 (.impl (.box 300 psi0) (.box 1000 (.eq (.const .C) (.const .D)))) := by
+  have h1 : Pf 200 (.impl psi0 wildA) :=
     .weakenImpl psi0 wildA 100 wildA_provable (by decide)
-  have hbox : Provable 500 (.box 200 (.impl psi0 wildA)) :=
+  have hbox : Pf 500 (.box 200 (.impl psi0 wildA)) :=
     .boxIntro 200 500 (.impl psi0 wildA) h1 (by decide)
-  have h2 : Provable 2000 (.impl (.box 300 psi0) (.box 600 wildA)) :=
+  have h2 : Pf 2000 (.impl (.box 300 psi0) (.box 600 wildA)) :=
     .axK 200 300 600 500 2000 psi0 wildA hbox (by decide) (by decide)
-  have h1' : Provable 3000
+  have h1' : Pf 3000
       (.impl (.box 300 psi0)
              (.impl (.box 600 wildA) (.box 1000 (.eq (.const .C) (.const .D))))) :=
     .axKf 300 600 1000 3000 wildA (.eq (.const .C) (.const .D)) (by decide) (by decide)
@@ -1317,8 +1456,8 @@ theorem hboxhead_false : ¬ HBoxHead 0 := by
 /-- The same judgment refutes the head-level linked dichotomy itself (`Γ = []`):
     with §10, pairwise dichotomies fail at every position class. -/
 theorem head_dichotomy_false :
-    ∃ (m : Nat) (B C : Formula), Provable m (.impl B C) ∧
-      ¬ ((maxSLitF C ≤ 0 → maxSLitF B ≤ 0) ∨ (∃ m', m' ≤ m ∧ Provable m' C)) := by
+    ∃ (m : Nat) (B C : Formula), Pf m (.impl B C) ∧
+      ¬ ((maxSLitF C ≤ 0 → maxSLitF B ≤ 0) ∨ (∃ m', m' ≤ m ∧ Pf m' C)) := by
   refine ⟨10000, .box 300 psi0, .box 1000 (.eq (.const .C) (.const .D)), deadJ, ?_⟩
   rintro (h1 | ⟨m', _, hC⟩)
   · have := h1 (by decide)

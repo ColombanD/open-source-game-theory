@@ -8,7 +8,7 @@ import PrisonersDilemma.Bots.LlmGenerations.DIMCID
 # The certified zoo.
 
 Concrete `ProvT` trees for the zoo's oracle facts, each passing the instance
-gate RAW (no excision) and kernel-sealed into `ProvableG (instGate …)`:
+gate RAW (no excision) and kernel-sealed into `PfG (instGate …)`:
 
   * `dupoc_selfcoop_certified` (T50) — plays-atom Löb fixpoint;
   * `prudent_dupoc_certified` — PrudentBot (2k+64) × DupocBot k staggered mutual
@@ -153,12 +153,12 @@ def treePD : ProvT (32768 * VZ) phiD :=
 /-- **CERTIFIED**: the engine's marquee cross-bot result — PrudentBot (2k+64) ×
     DupocBot k staggered cooperation — lands in the instance-gated stratum. -/
 theorem prudent_dupoc_certified :
-    T42.ProvableG (instGate [PB, DB] kP) (32768 * VZ) phiD :=
+    T42.PfG (instGate [PB, DB] kP) (32768 * VZ) phiD :=
   ProvT.toG treePD
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treePD (by decide))
 
 /-- And soundness closes the loop: the certified tree really is the engine fact. -/
-theorem prudent_dupoc_provable : Provable (32768 * VZ) phiD :=
+theorem prudent_dupoc_provable : Pf (32768 * VZ) phiD :=
   ProvT.sound treePD
 
 /-! ## The impl-guard shape: CIMCIC vs CooperateBot.
@@ -183,7 +183,7 @@ def treeCC : ProvT kC guardCC :=
 
 /-- **CERTIFIED**: the zoo's impl-guard shape lands in the instance stratum. -/
 theorem cimcic_coop_certified :
-    T42.ProvableG (instGate [CB] kC) kC guardCC :=
+    T42.PfG (instGate [CB] kC) kC guardCC :=
   ProvT.toG treeCC
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeCC (by decide))
 
@@ -207,7 +207,7 @@ def treeTT : ProvT 200 guardTT :=
     impl guards (T54), eq guards (here); `atomNeg` refutations exercised inside
     the prudence certificate. DIMCID is symmetric to CIMCIC. -/
 theorem cupodtroll_eq_certified :
-    T42.ProvableG (instGate [CPB] kT) 200 guardTT :=
+    T42.PfG (instGate [CPB] kT) 200 guardTT :=
   ProvT.toG treeTT
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeTT (by decide))
 
@@ -287,13 +287,13 @@ def treeB2 : ProvT (kP + 2000) phiB2 :=
 
 /-- **CERTIFIED**: the botDupoc mutual fixpoint (JustBot's chain, Af). -/
 theorem botdupoc_prudent_certifiedA :
-    T42.ProvableG (instGate [PB, DB, BDB] kP) (32768 * VZ2) phiA2 :=
+    T42.PfG (instGate [PB, DB, BDB] kP) (32768 * VZ2) phiA2 :=
   ProvT.toG treeA2
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeA2 (by decide))
 
 /-- **CERTIFIED**: JustBot's guard fact (Bf) — what JustBot's oracle consults. -/
 theorem justbot_guard_certified :
-    T42.ProvableG (instGate [PB, DB, BDB] kP) (kP + 2000) phiB2 :=
+    T42.PfG (instGate [PB, DB, BDB] kP) (kP + 2000) phiB2 :=
   ProvT.toG treeB2
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeB2 (by decide))
 
@@ -310,7 +310,7 @@ def treeDD : ProvT kC guardDD :=
 
 /-- **CERTIFIED**: DIMCID's impl guard vs DefectBot. -/
 theorem dimcid_defect_certified :
-    T42.ProvableG (instGate [DIB] kC) kC guardDD :=
+    T42.PfG (instGate [DIB] kC) kC guardDD :=
   ProvT.toG treeDD
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeDD (by decide))
 

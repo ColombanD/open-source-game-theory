@@ -6,7 +6,7 @@ import PrisonersDilemma.Decidability.T43ModestUniverse
 # T4.4 spike — `decB`: the modest-bounded decider (part a: the step operator, SOUND).
 
 `DECIDABILITY_ROADMAP.md` T4.2 pipeline (i), assembly stage. The target relation is
-`ProvableG (modestGate N)` (T4.2's gate-parametric system at the DECIDABLE gate): cut
+`PfG (modestGate N)` (T4.2's gate-parametric system at the DECIDABLE gate): cut
 formulas and the enumerated `axK`/`diag` premises must be literal-bounded (`maxLitF ≤ N` —
 keeps hop budgets in a finite set, T4.1a) AND modest (`modestF` — keeps the cert queries
 their atoms spawn inside the T4.3 finite universe).
@@ -26,10 +26,10 @@ This part ships the computable machinery and its SOUNDNESS:
     iteration whose stabilization (part b) will yield the fuel bound `|query space|`;
   * `decCertG_soundG` / `certOG_soundG` — T3.1's certificate soundness re-targeted at the
     gated triple;
-  * **`decB_sound`** — every hit at every fuel is a real `ProvableG (modestGate N)`
-    derivation (hence `Provable`, via `ProvableG_sound`).
+  * **`decB_sound`** — every hit at every fuel is a real `PfG (modestGate N)`
+    derivation (hence `Pf`, via `PfG_sound`).
 
-Part b (next): ∃-fuel completeness for `ProvableG (modestGate N)`, the in-space closure
+Part b (next): ∃-fuel completeness for `PfG (modestGate N)`, the in-space closure
 (consuming T4.3's step lemmas), and the T4.1a countP-stabilization giving the computable
 fuel bound — decidability of the modest stratum.
 -/
@@ -109,7 +109,7 @@ def chkImpS2EB (N : Nat) (rec : Nat → Formula → Bool) (k : Nat) : Formula �
     approximation `S` as the guard oracle (fuel `k+1` covers the budget-bounded cert
     recursion; guard hops and `search_f` refutations consult `S`). -/
 def stepB (N : Nat) (S : Nat → Formula → Bool) : Nat → Formula → Bool := fun k φ =>
-  decDeriv k k φ ||
+  chkLeaf k φ ||
   certOG S (k+1) k φ ||
   chkWeaken S k φ ||
   chkSTS S k φ ||
@@ -135,7 +135,7 @@ def decB (N : Nat) : Nat → Nat → Formula → Bool
 /-! ## 4. Certificate soundness, re-targeted at the gated triple. -/
 
 theorem decCertG_soundG {G : Formula → Prop} (D : Nat → Formula → Bool)
-    (hD : ∀ m ψ, D m ψ = true → ProvableG G m ψ) :
+    (hD : ∀ m ψ, D m ψ = true → PfG G m ψ) :
     ∀ fuel b me oppo body a, decCertG D fuel b me oppo body a = true →
       ∃ n, PlaysProofG G me oppo body a n ∧ n ≤ b := by
   intro fuel
@@ -193,7 +193,7 @@ theorem decCertG_soundG {G : Formula → Prop} (D : Nat → Formula → Bool)
           exact ⟨n + m + kg + c_node, .search_f (hD _ _ hNeg) cert, by omega⟩
 
 theorem certOG_soundG {G : Formula → Prop} (D : Nat → Formula → Bool)
-    (hD : ∀ m ψ, D m ψ = true → ProvableG G m ψ) (fuel : Nat) :
+    (hD : ∀ m ψ, D m ψ = true → PfG G m ψ) (fuel : Nat) :
     ∀ k φ, certOG D fuel k φ = true → AtomProvableG G k φ := by
   intro k φ h
   unfold certOG at h
@@ -205,8 +205,66 @@ theorem certOG_soundG {G : Formula → Prop} (D : Nat → Formula → Bool)
 
 /-! ## 5. SOUNDNESS of the bounded decider. -/
 
+/-- The seven transparency leaves are UNGATED, so a `chkLeaf` hit injects into `PfG G` for
+    ANY gate `G` — the gated twin of `chkLeaf_sound`. -/
+theorem chkLeaf_soundG {G : Formula → Prop} : ∀ k φ, chkLeaf k φ = true → PfG G k φ := by
+  intro k φ h
+  unfold chkLeaf at h
+  simp only [Bool.or_eq_true] at h
+  rcases h with ((((((h | h) | h) | h) | h) | h) | h)
+  · unfold chkEqRefl at h
+    split at h
+    · rename_i p q
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨rfl, hsz⟩ := h
+      exact PfG.eqRefl p hsz
+    · simp at h
+  · unfold chkSearchBranch at h
+    split at h
+    · rename_i k₁ ψ' k₁' ψg aT aE opnt a
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
+      exact PfG.searchBranch k₁ ψg a aE _ opnt rfl hsz
+    · simp at h
+  · unfold chkSimStep at h
+    split at h
+    · rename_i pp qq a₁ p q opnt a₂
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
+      exact PfG.simStep _ p q opnt a₁ rfl hsz
+    · simp at h
+  · unfold chkBotSimStep at h
+    split at h
+    · rename_i pp qq a₁ p q opnt a₂
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
+      exact PfG.botSimStep _ p q opnt a₁ rfl hsz
+    · simp at h
+  · unfold chkBotSearchStep at h
+    split at h
+    · rename_i k₁ ψ' k₁' ψg aT aE opnt a
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
+      exact PfG.botSearchStep k₁ ψg a aE _ opnt rfl hsz
+    · simp at h
+  · unfold chkIteBranchSearch at h
+    split at h
+    · rename_i opnt1 z a' kg ψ' z' a'' kg' ψg c0 c1 q opnt2 c
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hsz⟩ := h
+      exact PfG.iteBranchSearch_t kg z a' c c1 ψg q _ opnt1 rfl hsz
+    · simp at h
+  · unfold chkEqNeg at h
+    split at h
+    · rename_i p q
+      simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+      obtain ⟨hne, hsz⟩ := h
+      exact PfG.eqNeg p q hne hsz
+    · simp at h
+
+
 theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
-    ProvableG (modestGate N) k φ := by
+    PfG (modestGate N) k φ := by
   intro fuel
   induction fuel with
   | zero => intro k φ h; simp [decB] at h
@@ -217,18 +275,17 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
     simp only [Bool.or_eq_true] at h
     rcases h with ((((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
       | h) | h) | h) | h
-    · -- struct
-      obtain ⟨d, hsz⟩ := decDeriv_sound k k φ h
-      exact ProvableG.struct ⟨d, hsz⟩
+    · -- the source-transparency leaves (ungated → any gate)
+      exact chkLeaf_soundG k φ h
     · -- atom (cert search with the lagged approximation as guard oracle)
-      exact ProvableG.atom (certOG_soundG _ (fun m ψ hh => ih m ψ hh) _ k φ h)
+      exact PfG.atom (certOG_soundG _ (fun m ψ hh => ih m ψ hh) _ k φ h)
     · -- weakenImpl
       unfold chkWeaken at h
       split at h
       · rename_i A B
         simp only [Bool.and_eq_true, decide_eq_true_eq] at h
         obtain ⟨hsz, hr⟩ := h
-        exact ProvableG.weakenImpl A B _ (ih _ _ hr) (by omega)
+        exact PfG.weakenImpl A B _ (ih _ _ hr) (by omega)
       · simp at h
     · -- searchThenSearch_t
       unfold chkSTS at h
@@ -236,7 +293,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
       · rename_i k₁ ψ' k₁' ψ₁ k₂ ψ₂ c0' c1 q opnt c0
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩, hr⟩ := h
-        exact ProvableG.searchThenSearch_t k₁ k₂ k₂ ψ₁ ψ₂ c0 c1 q _ opnt rfl
+        exact PfG.searchThenSearch_t k₁ k₂ k₂ ψ₁ ψ₂ c0 c1 q _ opnt rfl
           (ih _ _ hr) (Nat.le_refl _) hsz
       · simp at h
     · -- implTrans (gated)
@@ -246,7 +303,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, cutOKb,
           decide_eq_true_eq] at h
         obtain ⟨m₁, hm₁, ψ', _, ⟨⟨⟨⟨hlit, hmod⟩, hsz⟩, h1⟩, h2⟩⟩ := h
-        exact ProvableG.implTrans A ψ' C m₁ _ (ih _ _ h1) (ih _ _ h2) (by omega)
+        exact PfG.implTrans A ψ' C m₁ _ (ih _ _ h1) (ih _ _ h2) (by omega)
           ⟨hlit, hmod⟩
       · simp at h
     · -- atomBoxImpl
@@ -255,7 +312,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
       · rename_i p q a kB p' q' a'
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, hgate⟩, hOr⟩ := h
-        exact ProvableG.atomBoxImpl kB p q a
+        exact PfG.atomBoxImpl kB p q a
           (certOG_soundG _ (fun m ψ hh => ih m ψ hh) _ _ _ hOr) hgate
       · simp at h
     · -- boxIntro
@@ -264,14 +321,14 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
       · rename_i kIn ψ
         simp only [Bool.and_eq_true, decide_eq_true_eq] at h
         obtain ⟨hgate, hr⟩ := h
-        exact ProvableG.boxIntro kIn k ψ (ih _ _ hr) hgate
+        exact PfG.boxIntro kIn k ψ (ih _ _ hr) hgate
       · simp at h
     · -- app (gated)
       unfold chkAppEB at h
       simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, cutOKb,
         decide_eq_true_eq] at h
       obtain ⟨m₁, hm₁, φ', _, ⟨⟨⟨⟨hlit, hmod⟩, hsz⟩, h1⟩, h2⟩⟩ := h
-      exact ProvableG.app k m₁ _ φ' φ (ih _ _ h1) (ih _ _ h2) (by omega) ⟨hlit, hmod⟩
+      exact PfG.mp m₁ _ φ' φ (ih _ _ h1) (ih _ _ h2) (by omega) ⟨hlit, hmod⟩
     · -- axK (gated)
       unfold chkAxKB at h
       split at h
@@ -279,7 +336,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, cutOKb,
           decide_eq_true_eq] at h
         obtain ⟨hsz, a, _, ⟨⟨⟨hlit, hmod⟩, hgate⟩, hr⟩⟩ := h
-        exact ProvableG.axK a b c _ k ψ α (ih _ _ hr) hgate (by omega) ⟨hlit, hmod⟩
+        exact PfG.axK a b c _ k ψ α (ih _ _ hr) hgate (by omega) ⟨hlit, hmod⟩
       · simp at h
     · -- box4
       unfold chkBox4E at h
@@ -287,7 +344,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
       · rename_i a ψ b a' ψ'
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨rfl, rfl⟩, hgate⟩, hsz⟩ := h
-        exact ProvableG.box4 a b k ψ hgate hsz
+        exact PfG.box4 a b k ψ hgate hsz
       · simp at h
     · -- diagF (gated)
       unfold chkDiagFEB at h
@@ -296,7 +353,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq, cutOKb,
           decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hsz⟩, fb, _, ⟨⟨hlit, hmod⟩, hr⟩⟩ := h
-        exact ProvableG.diagF _ fb g k t (ih _ _ hr) (by omega) ⟨hlit, hmod⟩
+        exact PfG.diagF _ fb g k t (ih _ _ hr) (by omega) ⟨hlit, hmod⟩
       · simp at h
     · -- diagB (gated)
       unfold chkDiagBEB at h
@@ -305,7 +362,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq, cutOKb,
           decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hsz⟩, fb, _, ⟨⟨hlit, hmod⟩, hr⟩⟩ := h
-        exact ProvableG.diagB _ fb g k t (ih _ _ hr) (by omega) ⟨hlit, hmod⟩
+        exact PfG.diagB _ fb g k t (ih _ _ hr) (by omega) ⟨hlit, hmod⟩
       · simp at h
     · -- axKf
       unfold chkAxKfE at h
@@ -313,7 +370,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
       · rename_i a ψ α b ψ' c α'
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨rfl, rfl⟩, hgate⟩, hsz⟩ := h
-        exact ProvableG.axKf a b c k ψ α hgate hsz
+        exact PfG.axKf a b c k ψ α hgate hsz
       · simp at h
     · -- impS2 (gated)
       unfold chkImpS2EB at h
@@ -322,7 +379,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, cutOKb,
           decide_eq_true_eq] at h
         obtain ⟨m₁, hm₁, ψ', _, ⟨⟨⟨⟨hlit, hmod⟩, hsz⟩, h1⟩, h2⟩⟩ := h
-        exact ProvableG.impS2 A ψ' C m₁ _ k (ih _ _ h1) (ih _ _ h2) (by omega)
+        exact PfG.impS2 A ψ' C m₁ _ k (ih _ _ h1) (ih _ _ h2) (by omega)
           ⟨hlit, hmod⟩
       · simp at h
     · -- boxMono
@@ -331,7 +388,7 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
       · rename_i a ψ b ψ'
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨rfl, hab⟩, hsz⟩ := h
-        exact ProvableG.boxMono a b k ψ hab hsz
+        exact PfG.boxMono a b k ψ hab hsz
       · simp at h
     · -- atomNeg
       unfold chkAtomNeg at h
@@ -341,18 +398,18 @@ theorem decB_sound (N : Nat) : ∀ fuel k φ, decB N fuel k φ = true →
         obtain ⟨hsz, hcase⟩ := h
         have hs1 := Formula.size_pos (Formula.neg (.plays p q aN))
         rcases hcase with ⟨hOr, hne⟩ | ⟨hOr, hne⟩
-        · exact ProvableG.atomNeg p q .C aN _
+        · exact PfG.atomNeg p q .C aN _
             (certOG_soundG _ (fun m ψ hh => ih m ψ hh) _ _ _ hOr)
             (fun hh => hne hh.symm) (by omega)
-        · exact ProvableG.atomNeg p q .D aN _
+        · exact PfG.atomNeg p q .D aN _
             (certOG_soundG _ (fun m ψ hh => ih m ψ hh) _ _ _ hOr)
             (fun hh => hne hh.symm) (by omega)
       · simp at h
 
 /-- Corollary: every `decB` hit is a real engine theorem. -/
 theorem decB_sound_Provable (N : Nat) (fuel k : Nat) (φ : Formula)
-    (h : decB N fuel k φ = true) : Provable k φ :=
-  ProvableG_sound (decB_sound N fuel k φ h)
+    (h : decB N fuel k φ = true) : Pf k φ :=
+  PfG_sound (decB_sound N fuel k φ h)
 
 /-! ## 6. Monotonicity — more fuel never loses a hit (part b). -/
 
@@ -492,17 +549,17 @@ theorem decB_mono (N : Nat) : ∀ f₁ f₂, f₁ ≤ f₂ → ∀ k φ,
 /-! ## 7. ∃-fuel COMPLETENESS — every gated derivation is found. -/
 
 set_option maxHeartbeats 1000000 in
-theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
+theorem decB_complete (N : Nat) : ∀ {m φ}, PfG (modestGate N) m φ →
     ∀ K, m ≤ K → ∃ fuel, decB N fuel K φ = true := by
   intro m φ h
-  refine ProvableG.rec
+  refine PfG.rec
     (motive_1 := fun me oppo body a n _ =>
       ∀ b, n ≤ b → ∃ F, decCertG (decB N F) (b+1) b me oppo body a = true)
     (motive_2 := fun k φ _ => ∀ K, k ≤ K → ∃ F, certOG (decB N F) (K+1) K φ = true)
     (motive_3 := fun k φ _ => ∀ K, k ≤ K → ∃ F, decB N F K φ = true)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
-    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
-    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
+    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
+    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
     h
   case pConst =>
       intro me oppo a b hb
@@ -614,13 +671,59 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       intro me oppo a n k _ hle ih K hmK
       obtain ⟨F, e⟩ := ih K (by omega)
       exact ⟨F, e⟩
-  case cStruct =>
-      intro φ0 k0 hd K hmK
-      obtain ⟨d, hsz⟩ := hd
+  case cSB =>
+      intro k0 g ψg aT aE me opnt hme hsz K hmK
+      subst hme
       refine ⟨1, ?_⟩
       rw [decB]
       unfold stepB
-      have hfire := decDeriv_complete d K K (by omega) le_rfl
+      have hfire := chkLeaf_searchBranch K g ψg aT aE opnt (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cSS =>
+      intro k0 me pp qq opnt a hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decB]
+      unfold stepB
+      have hfire := chkLeaf_simStep K pp qq opnt a (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cBSS =>
+      intro k0 me pp qq opnt a hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decB]
+      unfold stepB
+      have hfire := chkLeaf_botSimStep K pp qq opnt a (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cBSearch =>
+      intro k0 g ψg aT aE me opnt hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decB]
+      unfold stepB
+      have hfire := chkLeaf_botSearchStep K g ψg aT aE opnt (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cIte =>
+      intro k0 g z a' c0 c1 ψg qq me opnt hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decB]
+      unfold stepB
+      have hfire := chkLeaf_iteBranchSearch K g z a' c0 c1 ψg qq opnt (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cEqR =>
+      intro k0 p hsz K hmK
+      refine ⟨1, ?_⟩
+      rw [decB]
+      unfold stepB
+      have hfire := chkLeaf_eqRefl K p (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cEqN =>
+      intro k0 p q hne hsz K hmK
+      refine ⟨1, ?_⟩
+      rw [decB]
+      unfold stepB
+      have hfire := chkLeaf_eqNeg K p q hne (Nat.le_trans hsz hmK)
       simp only [hfire, Bool.true_or]
   case cAtom =>
       intro k0 φ0 _hatom ih K hmK
@@ -669,7 +772,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       unfold stepB
       have e₁' := decB_mono N F₁ (max F₁ F₂) (Nat.le_max_left _ _) _ _ e₁
       have e₂' := decB_mono N F₂ (max F₁ F₂) (Nat.le_max_right _ _) _ _ e₂
-      have hi1 := provable_impl_size (ProvableG_sound h1)
+      have hi1 := pf_impl_size (PfG_sound h1)
       have hfire : chkITransB N (decB N (max F₁ F₂)) K (Formula.impl A C) = true := by
         unfold chkITransB
         simp only [List.any_eq_true, List.mem_range]
@@ -715,7 +818,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       unfold stepB
       have e₁' := decB_mono N F₁ (max F₁ F₂) (Nat.le_max_left _ _) _ _ e₁
       have e₂' := decB_mono N F₂ (max F₁ F₂) (Nat.le_max_right _ _) _ _ e₂
-      have hi1 := provable_impl_size (ProvableG_sound h1)
+      have hi1 := pf_impl_size (PfG_sound h1)
       have hfire : chkAppEB N (decB N (max F₁ F₂)) K B = true := by
         unfold chkAppEB
         simp only [List.any_eq_true, List.mem_range]
@@ -754,7 +857,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       intro pm fb g K' tgt hgate hle hg ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.diag g tgt)
         (.impl (.box g (.diag g tgt)) tgt))
-      have hgsz := provable_impl_size (ProvableG_sound hgate)
+      have hgsz := pf_impl_size (PfG_sound hgate)
       obtain ⟨F, e⟩ := ih (K - (Formula.impl (.diag g tgt)
         (.impl (.box g (.diag g tgt)) tgt)).size) (by omega)
       refine ⟨F + 1, ?_⟩
@@ -776,7 +879,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       intro pm fb g K' tgt hgate hle hg ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
         (.diag g tgt))
-      have hgsz := provable_impl_size (ProvableG_sound hgate)
+      have hgsz := pf_impl_size (PfG_sound hgate)
       obtain ⟨F, e⟩ := ih (K - (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
         (.diag g tgt)).size) (by omega)
       refine ⟨F + 1, ?_⟩
@@ -816,7 +919,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
       unfold stepB
       have e₁' := decB_mono N F₁ (max F₁ F₂) (Nat.le_max_left _ _) _ _ e₁
       have e₂' := decB_mono N F₂ (max F₁ F₂) (Nat.le_max_right _ _) _ _ e₂
-      have hi1 := provable_impl_size (ProvableG_sound h1)
+      have hi1 := pf_impl_size (PfG_sound h1)
       have hfire : chkImpS2EB N (decB N (max F₁ F₂)) K (Formula.impl A C) = true := by
         unfold chkImpS2EB
         simp only [List.any_eq_true, List.mem_range]
@@ -861,7 +964,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, ProvableG (modestGate N) m φ →
 the fuel bound over the finite query space (part c) will upgrade this to DECIDABLE. -/
 
 theorem ProvableG_modest_iff_decB (N k : Nat) (φ : Formula) :
-    ProvableG (modestGate N) k φ ↔ ∃ fuel, decB N fuel k φ = true :=
+    PfG (modestGate N) k φ ↔ ∃ fuel, decB N fuel k φ = true :=
   ⟨fun h => decB_complete N h k le_rfl,
    fun ⟨f, hf⟩ => decB_sound N f k φ hf⟩
 

@@ -20,7 +20,7 @@ theorem at it (research history: `Research/Notes/CUT_RELEVANCE.md`):
     an instance-gated conclusion + gated cut sites (`cutsOK`) + capped cite
     budgets (`citesLE M`, `2^M ≤ N`) + raw atom frames (`rawAtoms`) yield the
     FULL gate diet — packaged as `certifyTransport` (four kernel-decidable
-    checks certify any tree into `ProvableG (instGate P N)`).
+    checks certify any tree into `PfG (instGate P N)`).
   * `dupoc_selfcoop_certified`: the first certified instance — the very fact
     that refutes the modest gate lands in the instance stratum.
 -/
@@ -808,19 +808,19 @@ end
 
 /-! ## 5. THE FIRST CERTIFIED INSTANCE of the revised CutRelevance.
 
-DupocBot self-cooperation — a genuine self-referential Löb fact, `Provable` by
+DupocBot self-cooperation — a genuine self-referential Löb fact, `Pf` by
 `bloeb_engine` — lands in the INSTANCE-GATED stratum, kernel-checked end to end:
 the raw tree's full diet passes `instOKb` (verdict (d)), soundness bridges to the
-Prop gate, and the gate-generic `toG` produces the `ProvableG` certificate. -/
+Prop gate, and the gate-generic `toG` produces the `PfG` certificate. -/
 
 theorem dupoc_selfcoop_certified :
-    T42.ProvableG (instGate [meD] kD) (4096 * W) tgtD :=
+    T42.PfG (instGate [meD] kD) (4096 * W) tgtD :=
   ProvT.toG treeD
     (ProvT.gateOKb_sound (fun _ hb => instOKb_iff.mp hb) treeD (by decide))
 
-#eval s!"(e) kernel-certified: ProvableG (instGate [DupocBot]) of the Löb fact ✓"
+#eval s!"(e) kernel-certified: PfG (instGate [DupocBot]) of the Löb fact ✓"
 
-/-! ## 6. The certificate pipeline, packaged: four Bool checks → `ProvableG`. -/
+/-! ## 6. The certificate pipeline, packaged: four Bool checks → `PfG`. -/
 
 mutual
   def _root_.PD.T49.PlaysT.rawAtomsb : {me o b : Prog} → {a : Action} → {n : Nat} →
@@ -920,7 +920,7 @@ theorem certifyTransport {P : List Prog} {N M : Nat} (hMN : 2 ^ M ≤ N)
     (hcites : t.citesLEb M = true)
     (hraw : t.rawAtomsb = true)
     (hm : m ≤ M) :
-    T42.ProvableG (instGate P N) m ξ :=
+    T42.PfG (instGate P N) m ξ :=
   ProvT.toG t (ProvT.transport hMN t
     (ProvT.cutsOKb_sound (fun _ hb => instOKb_iff.mp hb) t hcuts)
     (ProvT.citesLEb_sound t hcites)

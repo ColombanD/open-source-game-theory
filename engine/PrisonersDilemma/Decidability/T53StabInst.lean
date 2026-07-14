@@ -4,7 +4,7 @@ import PrisonersDilemma.Decidability.T52DecInst
 # Cut relevance VI — decidability at the instance gate.
 
 T47's stabilization, re-run at `instOKb`: `decideProvableG_inst` decides
-`ProvableG (instGate (players r₁ r₂) N) k₀ φ₀` with the computable fuel bound
+`PfG (instGate (players r₁ r₂) N) k₀ φ₀` with the computable fuel bound
 `|SL|`, under the same hypotheses as the modest original (modest roots,
 universe-resident root arguments).
 
@@ -739,7 +739,7 @@ theorem decG_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     i.e. for every bot-guard instance — via `GF_args`). -/
 theorem ProvableG_inst_iff_decG_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
-    ProvableG (instGate (PP r₁ r₂) N) k₀ φ₀ ↔
+    PfG (instGate (PP r₁ r₂) N) k₀ φ₀ ↔
       T52.decG (instOKb (PP r₁ r₂) N) (SL r₁ r₂ N k₀ φ₀).length k₀ φ₀ = true := by
   have hk : k₀ ≤ RR r₁ r₂ N k₀ φ₀ := by simp only [RR]; omega
   have hsz : φ₀.size ≤ ZS r₁ r₂ N k₀ φ₀ k₀ := by
@@ -756,7 +756,7 @@ theorem ProvableG_inst_iff_decG_bound (h₁ : modestP r₁ = true) (h₂ : modes
     a terminating computation. -/
 def decideProvableG_inst (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
-    Decidable (ProvableG (instGate (PP r₁ r₂) N) k₀ φ₀) :=
+    Decidable (PfG (instGate (PP r₁ r₂) N) k₀ φ₀) :=
   if h : T52.decG (instOKb (PP r₁ r₂) N) (SL r₁ r₂ N k₀ φ₀).length k₀ φ₀ = true then
     .isTrue ((ProvableG_inst_iff_decG_bound r₁ r₂ N k₀ φ₀ h₁ h₂ hargs₀).mpr h)
   else

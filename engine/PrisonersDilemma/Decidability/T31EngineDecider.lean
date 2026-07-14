@@ -1,28 +1,28 @@
 import PrisonersDilemma.BaseTheorems
 
 /-!
-# T3.1 spike — the ENGINE's `Provable` is decidable RELATIVE to the atom layer.
+# T3.1 spike — the ENGINE's `Pf` is decidable RELATIVE to the atom layer.
 
 `DECIDABILITY_ROADMAP.md` T3.1. Lifts the T3.0 method (`T3DeciderMini.lean`) to the real engine:
-a computable backward search `decProv` over ALL 15 `Provable` constructors — including `struct`
+a computable backward search `decProv` over ALL 15 `Pf` constructors — including `struct`
 (its own `Derivation` backward search `decDeriv`) — parameterized by an **atom oracle**
 `O : Nat → Formula → Bool` standing in for `AtomProvable` (the `PlaysProof`/eval entanglement,
 T3.2's job). Headline:
 
-  `OracleSound O   → decProv O fuel k φ = true → Provable k φ`
-  `OracleComplete O → Provable k φ → decProv O k k φ = true`
+  `OracleSound O   → decProv O fuel k φ = true → Pf k φ`
+  `OracleComplete O → Pf k φ → decProv O k k φ = true`
 
 so the WHOLE remaining computability question for `proofSearch` is localized into deciding
 `AtomProvable` — every logical/modal/Löb rule is search-complete by the transcript accounting.
 
 ## The one refinement over T3.0: atoms are NOT size-paid
 
-`Provable.atom`'s budget bounds the CERTIFICATE cost (eval steps), not the formula's character
+`Pf.atom`'s budget bounds the CERTIFICATE cost (eval steps), not the formula's character
 size — a huge `.plays` atom can be provable at a tiny budget. So the mini's `prov_size` becomes
-`provable_size_or_atom` (`φ.size ≤ k` OR the proof is an atom certificate), and the search space
+`pf_size_or_atom` (`φ.size ≤ k` OR the proof is an atom certificate), and the search space
 stays bounded because every rule that concludes an `.impl` DOES pay it: a cut formula `φ'` in
-`app`/`implTrans`/`impS2` always also occurs inside an impl-premise `Provable m (.impl φ' _)`,
-whence `φ'.size < m ≤ k` (`provable_impl_size`) — cuts range over `enumFormula k` after all.
+`app`/`implTrans`/`impS2` always also occurs inside an impl-premise `Pf m (.impl φ' _)`,
+whence `φ'.size < m ≤ k` (`pf_impl_size`) — cuts range over `enumFormula k` after all.
 -/
 
 namespace PD.T31
@@ -171,22 +171,27 @@ theorem enum_complete : ∀ n : Nat,
 
 /-! ## 3. Paid conclusions, atom-refined. -/
 
-/-- Every `Provable` proof either pays its conclusion's size or IS an atom certificate
+/-- Every `Pf` proof either pays its conclusion's size or IS an atom certificate
     (whose budget bounds eval-steps, not characters). -/
-theorem provable_size_or_atom : ∀ {k φ}, Provable k φ → φ.size ≤ k ∨ AtomProvable k φ := by
+theorem pf_size_or_atom : ∀ {k φ}, Pf k φ → φ.size ≤ k ∨ AtomProvable k φ := by
   intro k φ h
   cases h with
-  | struct hd =>
-      obtain ⟨d, hsz⟩ := hd
-      exact Or.inl (Nat.le_trans d.concl_size_le hsz)
   | atom hatom => exact Or.inr hatom
+  -- the seven leaves pay exactly their conclusion (their side-condition IS the size gate)
+  | searchBranch g ψ a b me opnt hme hle => exact Or.inl hle
+  | simStep me p q opnt a hme hle => exact Or.inl hle
+  | botSimStep me p q opnt a hme hle => exact Or.inl hle
+  | botSearchStep g ψ a b me opnt hme hle => exact Or.inl hle
+  | iteBranchSearch_t g z a' c0 c1 ψ q me opnt hme hle => exact Or.inl hle
+  | eqRefl p hle => exact Or.inl hle
+  | eqNeg p q hne hle => exact Or.inl hle
   | weakenImpl φ' ψ' m hψ hle => exact Or.inl (by omega)
   | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle => exact Or.inl (by omega)
   | implTrans φ' ψ' χ' a b h1 h2 hle => exact Or.inl (by omega)
   | atomBoxImpl kBox p q a hatom hle => exact Or.inl (by omega)
   | boxIntro kIn K φ' hprem hle => exact Or.inl (by omega)
-  | app =>
-      rename_i m₁ m₂ φ' h1 h2 hle
+  | mp =>
+      rename_i m₁ m₂ φ' h2 h1 hle
       exact Or.inl (by omega)
   | axK a b c m K φ' α hprem hgate hle => exact Or.inl (by omega)
   | box4 a b K φ' hgate hle => exact Or.inl (by omega)
@@ -198,20 +203,21 @@ theorem provable_size_or_atom : ∀ {k φ}, Provable k φ → φ.size ≤ k ∨ 
   | atomNeg p q b aN m hatom hne hle => exact Or.inl (by omega)
 
 /-- Non-`.plays` conclusions ARE size-paid: `AtomProvable` only ever holds at a `.plays`. -/
-theorem provable_impl_size {k : Nat} {A B : Formula}
-    (h : Provable k (.impl A B)) : (Formula.impl A B).size ≤ k := by
-  rcases provable_size_or_atom h with hsz | hatom
+theorem pf_impl_size {k : Nat} {A B : Formula}
+    (h : Pf k (.impl A B)) : (Formula.impl A B).size ≤ k := by
+  rcases pf_size_or_atom h with hsz | hatom
   · exact hsz
   · cases hatom
 
-/-! ## 4. `struct` — backward search for `∃ d : Derivation φ, d.size ≤ k`.
+/-! ## 4. The source-transparency LEAVES — decided by syntactic shape-matching.
 
-Same method: `modusPonens`/`hypSyll` pay both subtrees + conclusion (T1's structural
-`Derivation.size`), so premise budgets strictly decrease and cut formulas are size-bounded
-(`Derivation.concl_size_le`); the source-transparency rules are LEAVES decided by syntactic
-shape-matching (`DecidableEq` on `Prog`/`Formula`). -/
-
-def DerivExists (k : Nat) (φ : Formula) : Prop := ∃ d : Derivation φ, d.size ≤ k
+**Pf-only** (`PF_ONLY_ROADMAP.md` Phase 4.2): this replaces the former `decDeriv` backward
+search over the `Type`-valued `Derivation`. The leaf checkers survive unchanged (they were
+always pure shape+size matchers, `DecidableEq` on `Prog`/`Formula`); the `modusPonens`/
+`hypSyll` recursion `decDeriv` carried is SUBSUMED by `chkAppE`/`chkITrans` below, which
+enumerate cut formulas through the decider's own fuel. `chkLeaf` bundles the seven leaves
+into the single disjunct that occupies `decDeriv`'s old slot in `decProv` — so the decider's
+shape (and every fuel-monotonicity proof) is unchanged. -/
 
 -- leaf checkers (shape + size gate; leaf transcript = conclusion size)
 def chkEqRefl (k : Nat) : Formula → Bool
@@ -264,265 +270,168 @@ def chkIteBranchSearch (k : Nat) : Formula → Bool
           opnt2 c))).size ≤ k)
   | _ => false
 
--- modusPonens (shape-generic; cut over enumFormula k, split point over range k)
-def chkMP (rec : Nat → Formula → Bool) (k : Nat) (φ : Formula) : Bool :=
-  (List.range k).any fun s₁ => (enumFormula k).any fun φ' =>
-    decide (s₁ + φ.size ≤ k) && rec s₁ (.impl φ' φ) && rec (k - φ.size - s₁) φ'
+/-- The leaf decider — one disjunct per source-transparency rule of `Pf`. -/
+def chkLeaf (k : Nat) (φ : Formula) : Bool :=
+  chkEqRefl k φ || chkSearchBranch k φ || chkSimStep k φ || chkBotSimStep k φ ||
+  chkBotSearchStep k φ || chkIteBranchSearch k φ || chkEqNeg k φ
 
-def chkHS (rec : Nat → Formula → Bool) (k : Nat) : Formula → Bool
-  | .impl A C =>
-      (List.range k).any fun s₁ => (enumFormula k).any fun ψ' =>
-        decide (s₁ + (Formula.impl A C).size ≤ k) && rec s₁ (.impl A ψ') &&
-        rec (k - (Formula.impl A C).size - s₁) (.impl ψ' C)
-  | _ => false
+/-! ### `chkLeaf` soundness — each hit is a `Pf` leaf. -/
 
-def decDeriv : Nat → Nat → Formula → Bool
-  | 0, _, _ => false
-  | fuel+1, k, φ =>
-      chkEqRefl k φ || chkSearchBranch k φ || chkSimStep k φ || chkBotSimStep k φ ||
-      chkBotSearchStep k φ || chkIteBranchSearch k φ ||
-      chkMP (fun m ψ => decDeriv fuel m ψ) k φ ||
-      chkHS (fun m ψ => decDeriv fuel m ψ) k φ ||
-      chkEqNeg k φ
+theorem chkLeaf_sound : ∀ k φ, chkLeaf k φ = true → Pf k φ := by
+  intro k φ h
+  unfold chkLeaf at h
+  simp only [Bool.or_eq_true] at h
+  rcases h with ((((((h | h) | h) | h) | h) | h) | h)
+  · -- eqRefl
+    unfold chkEqRefl at h
+    split at h
+    · rename_i p q
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨rfl, hsz⟩ := h
+      exact Pf.eqRefl p hsz
+    · simp at h
+  · -- searchBranch
+    unfold chkSearchBranch at h
+    split at h
+    · rename_i k₁ ψ' k₁' ψg aT aE opnt a
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
+      exact Pf.searchBranch k₁ ψg a aE _ opnt rfl hsz
+    · simp at h
+  · -- simStep
+    unfold chkSimStep at h
+    split at h
+    · rename_i pp qq a₁ p q opnt a₂
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
+      exact Pf.simStep _ p q opnt a₁ rfl hsz
+    · simp at h
+  · -- botSimStep
+    unfold chkBotSimStep at h
+    split at h
+    · rename_i pp qq a₁ p q opnt a₂
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
+      exact Pf.botSimStep _ p q opnt a₁ rfl hsz
+    · simp at h
+  · -- botSearchStep
+    unfold chkBotSearchStep at h
+    split at h
+    · rename_i k₁ ψ' k₁' ψg aT aE opnt a
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
+      exact Pf.botSearchStep k₁ ψg a aE _ opnt rfl hsz
+    · simp at h
+  · -- iteBranchSearch_t
+    unfold chkIteBranchSearch at h
+    split at h
+    · rename_i opnt1 z a' kg ψ' z' a'' kg' ψg c0 c1 q opnt2 c
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hsz⟩ := h
+      exact Pf.iteBranchSearch_t kg z a' c c1 ψg q _ opnt1 rfl hsz
+    · simp at h
+  · -- eqNeg
+    unfold chkEqNeg at h
+    split at h
+    · rename_i p q
+      simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+      obtain ⟨hne, hsz⟩ := h
+      exact Pf.eqNeg p q hne hsz
+    · simp at h
 
-/-! ### `decDeriv` soundness -/
+/-! ### `chkLeaf` firing lemmas — each `Pf` leaf makes it fire (the completeness side). -/
 
-theorem decDeriv_sound : ∀ fuel k φ, decDeriv fuel k φ = true → DerivExists k φ := by
-  intro fuel
-  induction fuel with
-  | zero => intro k φ h; simp [decDeriv] at h
-  | succ f ih =>
-    intro k φ h
-    rw [decDeriv] at h
-    simp only [Bool.or_eq_true] at h
-    rcases h with (((((((h | h) | h) | h) | h) | h) | h) | h) | h
-    · -- eqRefl
-      unfold chkEqRefl at h
-      split at h
-      · rename_i p q
-        simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-        obtain ⟨rfl, hsz⟩ := h
-        exact ⟨.eqRefl p, by simpa [Derivation.size] using hsz⟩
-      · simp at h
-    · -- searchBranch
-      unfold chkSearchBranch at h
-      split at h
-      · rename_i k₁ ψ' k₁' ψg aT aE opnt a
-        simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-        obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
-        exact ⟨.searchBranch k₁ ψg a aE _ opnt rfl, by simpa [Derivation.size] using hsz⟩
-      · simp at h
-    · -- simStep
-      unfold chkSimStep at h
-      split at h
-      · rename_i pp qq a₁ p q opnt a₂
-        simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-        obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
-        exact ⟨.simStep _ p q opnt a₁ rfl, by simpa [Derivation.size] using hsz⟩
-      · simp at h
-    · -- botSimStep
-      unfold chkBotSimStep at h
-      split at h
-      · rename_i pp qq a₁ p q opnt a₂
-        simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-        obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
-        exact ⟨.botSimStep _ p q opnt a₁ rfl, by simpa [Derivation.size] using hsz⟩
-      · simp at h
-    · -- botSearchStep
-      unfold chkBotSearchStep at h
-      split at h
-      · rename_i k₁ ψ' k₁' ψg aT aE opnt a
-        simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-        obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩ := h
-        exact ⟨.botSearchStep k₁ ψg a aE _ opnt rfl, by simpa [Derivation.size] using hsz⟩
-      · simp at h
-    · -- iteBranchSearch_t
-      unfold chkIteBranchSearch at h
-      split at h
-      · rename_i opnt1 z a' kg ψ' z' a'' kg' ψg c0 c1 q opnt2 c
-        simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-        obtain ⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hsz⟩ := h
-        exact ⟨.iteBranchSearch_t kg z a' c c1 ψg q _ opnt1 rfl,
-          by simpa [Derivation.size] using hsz⟩
-      · simp at h
-    · -- modusPonens
-      unfold chkMP at h
-      simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, decide_eq_true_eq] at h
-      obtain ⟨s₁, hs₁, φ', _, ⟨hguard, h1⟩, h2⟩ := h
-      obtain ⟨d1, hd1⟩ := ih s₁ _ h1
-      obtain ⟨d2, hd2⟩ := ih _ _ h2
-      exact ⟨.modusPonens φ' φ d1 d2, by simp only [Derivation.size]; omega⟩
-    · -- hypSyll
-      unfold chkHS at h
-      split at h
-      · rename_i A C
-        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, decide_eq_true_eq] at h
-        obtain ⟨s₁, hs₁, ψ', _, ⟨hguard, h1⟩, h2⟩ := h
-        obtain ⟨d1, hd1⟩ := ih s₁ _ h1
-        obtain ⟨d2, hd2⟩ := ih _ _ h2
-        exact ⟨.hypSyll A ψ' C d1 d2, by simp only [Derivation.size]; omega⟩
-      · simp at h
+theorem chkLeaf_eqRefl (K : Nat) (p : Prog)
+    (hsz : (Formula.eq p p).size ≤ K) : chkLeaf K (.eq p p) = true := by
+  have hfire : chkEqRefl K (.eq p p) = true := by unfold chkEqRefl; simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
 
-    · -- eqNeg
-      unfold chkEqNeg at h
-      split at h
-      · rename_i p q
-        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
-        obtain ⟨hne, hsz⟩ := h
-        exact ⟨.eqNeg p q hne, by simpa [Derivation.size] using hsz⟩
-      · simp at h
+theorem chkLeaf_eqNeg (K : Nat) (p q : Prog) (hne : p ≠ q)
+    (hsz : (Formula.neg (.eq p q)).size ≤ K) : chkLeaf K (.neg (.eq p q)) = true := by
+  have hfire : chkEqNeg K (.neg (.eq p q)) = true := by unfold chkEqNeg; simp [hne, hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
 
-/-! ### `decDeriv` completeness -/
+theorem chkLeaf_searchBranch (K k₁ : Nat) (ψg : Formula) (aT aE : Action) (opnt : Prog)
+    (hsz : (Formula.impl (.box k₁ (ψg.subst (.search k₁ ψg (.const aT) (.const aE)) opnt))
+      (.plays (.search k₁ ψg (.const aT) (.const aE)) opnt aT)).size ≤ K) :
+    chkLeaf K (.impl (.box k₁ (ψg.subst (.search k₁ ψg (.const aT) (.const aE)) opnt))
+      (.plays (.search k₁ ψg (.const aT) (.const aE)) opnt aT)) = true := by
+  have hfire : chkSearchBranch K (.impl (.box k₁ (ψg.subst
+      (.search k₁ ψg (.const aT) (.const aE)) opnt))
+      (.plays (.search k₁ ψg (.const aT) (.const aE)) opnt aT)) = true := by
+    unfold chkSearchBranch
+    simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
 
-set_option linter.unusedSimpArgs false in
-theorem decDeriv_complete : ∀ {φ : Formula} (d : Derivation φ),
-    ∀ fuel K, d.size ≤ K → K ≤ fuel → decDeriv fuel K φ = true := by
-  intro φ d
-  induction d with
-  | eqNeg p q hne =>
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have h1 := Formula.size_pos (Formula.neg (.eq p q))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hfire : chkEqNeg K (Formula.neg (.eq p q)) = true := by
-        unfold chkEqNeg
-        simp [hne, hsz]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
-  | modusPonens A B d1 d2 ih1 ih2 =>
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have hB := Formula.size_pos B
-      have hc1 := d1.concl_size_le
-      have hd1p : 1 ≤ d1.size := Nat.le_trans (Formula.size_pos _) hc1
-      have hd2p : 1 ≤ d2.size := Nat.le_trans (Formula.size_pos _) d2.concl_size_le
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hAsz : A.size ≤ K := by
-        simp only [numCost, Formula.size] at hc1
-        omega
-      have hfire : chkMP (fun m ψ => decDeriv f m ψ) K B = true := by
-        unfold chkMP
-        simp only [List.any_eq_true, List.mem_range]
-        refine ⟨d1.size, by omega, A, (enum_complete K).2 A hAsz, ?_⟩
-        have e1 : decDeriv f d1.size (.impl A B) = true := ih1 f d1.size le_rfl (by omega)
-        have e2 : decDeriv f (K - B.size - d1.size) A = true := ih2 f _ (by omega) (by omega)
-        have hg : d1.size + B.size ≤ K := by omega
-        simp [e1, e2, hg]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
-  | hypSyll A B C d1 d2 ih1 ih2 =>
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have hAC := Formula.size_pos (Formula.impl A C)
-      have hc1 := d1.concl_size_le
-      have hd1p : 1 ≤ d1.size := Nat.le_trans (Formula.size_pos _) hc1
-      have hd2p : 1 ≤ d2.size := Nat.le_trans (Formula.size_pos _) d2.concl_size_le
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hBsz : B.size ≤ K := by
-        simp only [numCost, Formula.size] at hc1
-        omega
-      have hfire : chkHS (fun m ψ => decDeriv f m ψ) K (Formula.impl A C) = true := by
-        unfold chkHS
-        simp only [List.any_eq_true, List.mem_range]
-        refine ⟨d1.size, by omega, B, (enum_complete K).2 B hBsz, ?_⟩
-        have e1 : decDeriv f d1.size (.impl A B) = true := ih1 f d1.size le_rfl (by omega)
-        have e2 : decDeriv f (K - (Formula.impl A C).size - d1.size) (.impl B C) = true :=
-          ih2 f _ (by omega) (by omega)
-        have hg : d1.size + (Formula.impl A C).size ≤ K := by omega
-        simp [e1, e2, hg]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
-  | searchBranch k₁ ψg aT aE me opnt hme =>
-      subst hme
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have h1 := Formula.size_pos (Formula.impl (.box k₁ (ψg.subst
-        (.search k₁ ψg (.const aT) (.const aE)) opnt))
-        (.plays (.search k₁ ψg (.const aT) (.const aE)) opnt aT))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hfire : chkSearchBranch K (Formula.impl (.box k₁ (ψg.subst
-          (.search k₁ ψg (.const aT) (.const aE)) opnt))
-          (.plays (.search k₁ ψg (.const aT) (.const aE)) opnt aT)) = true := by
-        unfold chkSearchBranch
-        simp [hsz]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
-  | simStep me p q opnt a hme =>
-      subst hme
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have h1 := Formula.size_pos (Formula.impl
-        (.plays (p.subst (.sim p q) opnt) (q.subst (.sim p q) opnt) a)
-        (.plays (.sim p q) opnt a))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hfire : chkSimStep K (Formula.impl
-          (.plays (p.subst (.sim p q) opnt) (q.subst (.sim p q) opnt) a)
-          (.plays (.sim p q) opnt a)) = true := by
-        unfold chkSimStep
-        simp [hsz]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
-  | botSimStep me p q opnt a hme =>
-      subst hme
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have h1 := Formula.size_pos (Formula.impl
-        (.plays (p.subst (.bot (.sim p q)) opnt) (q.subst (.bot (.sim p q)) opnt) a)
-        (.plays (.bot (.sim p q)) opnt a))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hfire : chkBotSimStep K (Formula.impl
-          (.plays (p.subst (.bot (.sim p q)) opnt) (q.subst (.bot (.sim p q)) opnt) a)
-          (.plays (.bot (.sim p q)) opnt a)) = true := by
-        unfold chkBotSimStep
-        simp [hsz]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
-  | botSearchStep k₁ ψg aT aE me opnt hme =>
-      subst hme
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have h1 := Formula.size_pos (Formula.impl (.box k₁ (ψg.subst
-        (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt))
-        (.plays (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt aT))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hfire : chkBotSearchStep K (Formula.impl (.box k₁ (ψg.subst
-          (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt))
-          (.plays (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt aT)) = true := by
-        unfold chkBotSearchStep
-        simp [hsz]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
-  | iteBranchSearch_t kg z a' c0 c1 ψg q me opnt hme =>
-      subst hme
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have h1 := Formula.size_pos (Formula.impl (.plays opnt (.bot z) a')
-        (.impl (.box kg (ψg.subst
-          (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q) opnt))
-          (.plays (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q)
-            opnt c0)))
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hfire : chkIteBranchSearch K (Formula.impl (.plays opnt (.bot z) a')
-          (.impl (.box kg (ψg.subst
-            (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q) opnt))
-            (.plays (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q)
-              opnt c0))) = true := by
-        unfold chkIteBranchSearch
-        simp [hsz]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
-  | eqRefl p =>
-      intro fuel K hsz hKf
-      simp only [Derivation.size] at hsz
-      have h1 := Formula.size_pos (Formula.eq p p)
-      obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
-      have hfire : chkEqRefl K (Formula.eq p p) = true := by
-        unfold chkEqRefl
-        simp [hsz]
-      rw [decDeriv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
+theorem chkLeaf_simStep (K : Nat) (p q opnt : Prog) (a : Action)
+    (hsz : (Formula.impl (.plays (p.subst (.sim p q) opnt) (q.subst (.sim p q) opnt) a)
+      (.plays (.sim p q) opnt a)).size ≤ K) :
+    chkLeaf K (.impl (.plays (p.subst (.sim p q) opnt) (q.subst (.sim p q) opnt) a)
+      (.plays (.sim p q) opnt a)) = true := by
+  have hfire : chkSimStep K (.impl
+      (.plays (p.subst (.sim p q) opnt) (q.subst (.sim p q) opnt) a)
+      (.plays (.sim p q) opnt a)) = true := by
+    unfold chkSimStep
+    simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
 
-/-! ## 5. The `Provable` decider — 15 rules, atom-oracle-relative. -/
+theorem chkLeaf_botSimStep (K : Nat) (p q opnt : Prog) (a : Action)
+    (hsz : (Formula.impl
+      (.plays (p.subst (.bot (.sim p q)) opnt) (q.subst (.bot (.sim p q)) opnt) a)
+      (.plays (.bot (.sim p q)) opnt a)).size ≤ K) :
+    chkLeaf K (.impl
+      (.plays (p.subst (.bot (.sim p q)) opnt) (q.subst (.bot (.sim p q)) opnt) a)
+      (.plays (.bot (.sim p q)) opnt a)) = true := by
+  have hfire : chkBotSimStep K (.impl
+      (.plays (p.subst (.bot (.sim p q)) opnt) (q.subst (.bot (.sim p q)) opnt) a)
+      (.plays (.bot (.sim p q)) opnt a)) = true := by
+    unfold chkBotSimStep
+    simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
+
+theorem chkLeaf_botSearchStep (K k₁ : Nat) (ψg : Formula) (aT aE : Action) (opnt : Prog)
+    (hsz : (Formula.impl (.box k₁ (ψg.subst
+      (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt))
+      (.plays (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt aT)).size ≤ K) :
+    chkLeaf K (.impl (.box k₁ (ψg.subst
+      (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt))
+      (.plays (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt aT)) = true := by
+  have hfire : chkBotSearchStep K (.impl (.box k₁ (ψg.subst
+      (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt))
+      (.plays (.bot (.search k₁ ψg (.const aT) (.const aE))) opnt aT)) = true := by
+    unfold chkBotSearchStep
+    simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
+
+theorem chkLeaf_iteBranchSearch (K kg : Nat) (z : Prog) (a' c0 c1 : Action) (ψg : Formula)
+    (q opnt : Prog)
+    (hsz : (Formula.impl (.plays opnt (.bot z) a')
+      (.impl (.box kg (ψg.subst
+        (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q) opnt))
+        (.plays (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q)
+          opnt c0))).size ≤ K) :
+    chkLeaf K (.impl (.plays opnt (.bot z) a')
+      (.impl (.box kg (ψg.subst
+        (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q) opnt))
+        (.plays (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q)
+          opnt c0))) = true := by
+  have hfire : chkIteBranchSearch K (.impl (.plays opnt (.bot z) a')
+      (.impl (.box kg (ψg.subst
+        (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q) opnt))
+        (.plays (.ite (.sim .opp (.bot z)) a' (.search kg ψg (.const c0) (.const c1)) q)
+          opnt c0))) = true := by
+    unfold chkIteBranchSearch
+    simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
+
+/-! ## 5. The `Pf` decider — the leaves + 15 reflective rules, atom-oracle-relative. -/
 
 /-- The stand-in for deciding `AtomProvable` (the `PlaysProof`/eval side — T3.2). -/
 def OracleSound (O : Nat → Formula → Bool) : Prop :=
@@ -631,7 +540,7 @@ def chkAtomNeg (O : Nat → Formula → Bool) (k : Nat) : Formula → Bool
 def decProv (O : Nat → Formula → Bool) : Nat → Nat → Formula → Bool
   | 0, _, _ => false
   | fuel+1, k, φ =>
-      decDeriv k k φ ||
+      chkLeaf k φ ||
       O k φ ||
       chkWeaken (fun m ψ => decProv O fuel m ψ) k φ ||
       chkSTS (fun m ψ => decProv O fuel m ψ) k φ ||
@@ -656,7 +565,7 @@ theorem atomProvable_pos {k : Nat} {φ : Formula} (h : AtomProvable k φ) : 1 �
   cases cert <;> (simp only [numCost, c_leaf, c_node, c_guard] at hle; omega)
 
 theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
-    ∀ fuel k φ, decProv O fuel k φ = true → Provable k φ := by
+    ∀ fuel k φ, decProv O fuel k φ = true → Pf k φ := by
   intro fuel
   induction fuel with
   | zero => intro k φ h; simp [decProv] at h
@@ -666,18 +575,17 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
     simp only [Bool.or_eq_true] at h
     rcases h with ((((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
       | h) | h) | h) | h
-    · -- struct
-      obtain ⟨d, hsz⟩ := decDeriv_sound k k φ h
-      exact Provable.struct ⟨d, hsz⟩
+    · -- the source-transparency leaves
+      exact chkLeaf_sound k φ h
     · -- atom
-      exact Provable.atom (hO k φ h)
+      exact Pf.atom (hO k φ h)
     · -- weakenImpl
       unfold chkWeaken at h
       split at h
       · rename_i A B
         simp only [Bool.and_eq_true, decide_eq_true_eq] at h
         obtain ⟨hsz, hr⟩ := h
-        exact Provable.weakenImpl A B _ (ih _ _ hr) (by omega)
+        exact Pf.weakenImpl A B _ (ih _ _ hr) (by omega)
       · simp at h
     · -- searchThenSearch_t
       unfold chkSTS at h
@@ -685,7 +593,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i k₁ ψ' k₁' ψ₁ k₂ ψ₂ c0' c1 q opnt c0
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, hsz⟩, hr⟩ := h
-        exact Provable.searchThenSearch_t k₁ k₂ k₂ ψ₁ ψ₂ c0 c1 q _ opnt rfl
+        exact Pf.searchThenSearch_t k₁ k₂ k₂ ψ₁ ψ₂ c0 c1 q _ opnt rfl
           (ih _ _ hr) (Nat.le_refl _) hsz
       · simp at h
     · -- implTrans
@@ -694,7 +602,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i A C
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, decide_eq_true_eq] at h
         obtain ⟨m₁, hm₁, ψ', _, ⟨hguard, h1⟩, h2⟩ := h
-        exact Provable.implTrans A ψ' C m₁ _ (ih _ _ h1) (ih _ _ h2) (by omega)
+        exact Pf.implTrans A ψ' C m₁ _ (ih _ _ h1) (ih _ _ h2) (by omega)
       · simp at h
     · -- atomBoxImpl
       unfold chkAtomBox at h
@@ -702,7 +610,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i p q a kB p' q' a'
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, hgate⟩, hOr⟩ := h
-        exact Provable.atomBoxImpl kB p q a (hO _ _ hOr) hgate
+        exact Pf.atomBoxImpl kB p q a (hO _ _ hOr) hgate
       · simp at h
     · -- boxIntro
       unfold chkBoxIntroE at h
@@ -710,20 +618,20 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i kIn ψ
         simp only [Bool.and_eq_true, decide_eq_true_eq] at h
         obtain ⟨hgate, hr⟩ := h
-        exact Provable.boxIntro kIn k ψ (ih _ _ hr) hgate
+        exact Pf.boxIntro kIn k ψ (ih _ _ hr) hgate
       · simp at h
     · -- app
       unfold chkAppE at h
       simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, decide_eq_true_eq] at h
       obtain ⟨m₁, hm₁, φ', _, ⟨hguard, h1⟩, h2⟩ := h
-      exact Provable.app k m₁ _ φ' φ (ih _ _ h1) (ih _ _ h2) (by omega)
+      exact Pf.mp m₁ _ φ' φ (ih _ _ h1) (ih _ _ h2) (by omega)
     · -- axK
       unfold chkAxK at h
       split at h
       · rename_i b ψ c α
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, decide_eq_true_eq] at h
         obtain ⟨hsz, a, _, hgate, hr⟩ := h
-        exact Provable.axK a b c _ k ψ α (ih _ _ hr) hgate (by omega)
+        exact Pf.axK a b c _ k ψ α (ih _ _ hr) hgate (by omega)
       · simp at h
     · -- box4
       unfold chkBox4E at h
@@ -731,7 +639,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i a ψ b a' ψ'
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨rfl, rfl⟩, hgate⟩, hsz⟩ := h
-        exact Provable.box4 a b k ψ hgate hsz
+        exact Pf.box4 a b k ψ hgate hsz
       · simp at h
     · -- diagF
       unfold chkDiagFE at h
@@ -740,7 +648,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq,
           decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hsz⟩, fb, _, hr⟩ := h
-        exact Provable.diagF _ fb g k t (ih _ _ hr) (by omega)
+        exact Pf.diagF _ fb g k t (ih _ _ hr) (by omega)
       · simp at h
     · -- diagB
       unfold chkDiagBE at h
@@ -749,7 +657,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq,
           decide_eq_true_eq] at h
         obtain ⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hsz⟩, fb, _, hr⟩ := h
-        exact Provable.diagB _ fb g k t (ih _ _ hr) (by omega)
+        exact Pf.diagB _ fb g k t (ih _ _ hr) (by omega)
       · simp at h
     · -- axKf
       unfold chkAxKfE at h
@@ -757,7 +665,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i a ψ α b ψ' c α'
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨⟨rfl, rfl⟩, hgate⟩, hsz⟩ := h
-        exact Provable.axKf a b c k ψ α hgate hsz
+        exact Pf.axKf a b c k ψ α hgate hsz
       · simp at h
     · -- impS2
       unfold chkImpS2E at h
@@ -765,7 +673,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i A C
         simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true, decide_eq_true_eq] at h
         obtain ⟨m₁, hm₁, ψ', _, ⟨hguard, h1⟩, h2⟩ := h
-        exact Provable.impS2 A ψ' C m₁ _ k (ih _ _ h1) (ih _ _ h2) (by omega)
+        exact Pf.impS2 A ψ' C m₁ _ k (ih _ _ h1) (ih _ _ h2) (by omega)
       · simp at h
     · -- boxMono
       unfold chkBoxMonoE at h
@@ -773,7 +681,7 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       · rename_i a ψ b ψ'
         simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
         obtain ⟨⟨rfl, hab⟩, hsz⟩ := h
-        exact Provable.boxMono a b k ψ hab hsz
+        exact Pf.boxMono a b k ψ hab hsz
       · simp at h
 
     · -- atomNeg
@@ -784,8 +692,8 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
         obtain ⟨hsz, hcase⟩ := h
         have hs1 := Formula.size_pos (Formula.neg (.plays p q aN))
         rcases hcase with ⟨hOr, hne⟩ | ⟨hOr, hne⟩
-        · exact Provable.atomNeg p q .C aN _ (hO _ _ hOr) (fun hh => hne hh.symm) (by omega)
-        · exact Provable.atomNeg p q .D aN _ (hO _ _ hOr) (fun hh => hne hh.symm) (by omega)
+        · exact Pf.atomNeg p q .C aN _ (hO _ _ hOr) (fun hh => hne hh.symm) (by omega)
+        · exact Pf.atomNeg p q .D aN _ (hO _ _ hOr) (fun hh => hne hh.symm) (by omega)
       · simp at h
 
 /-! ### Fuel monotonicity — more fuel never loses a hit. -/
@@ -1039,10 +947,10 @@ formula is FOUND at some fuel. -/
 
 set_option linter.unusedSimpArgs false in
 theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) :
-    ∀ {m φ}, Provable m φ →
+    ∀ {m φ}, Pf m φ →
       ∀ K, m ≤ K → ∃ fuel, decProv O fuel K φ = true := by
   intro m φ h
-  refine Provable.rec
+  refine Pf.rec
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun k φ _ => ∀ K, k ≤ K → ∃ fuel, decProv O fuel K φ = true)
@@ -1050,16 +958,56 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
     (fun _ _ _ _ => trivial)
     (fun _ _ _ => trivial)
-    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
-    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
+    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
+    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
     h
-  case cStruct =>
-      intro φ0 k0 hd K hmK
-      obtain ⟨d, hsz⟩ := hd
+  case cSB =>
+      intro k0 g ψg aT aE me opnt hme hsz K hmK
+      subst hme
       refine ⟨1, ?_⟩
-      have hfire := decDeriv_complete d K K (by omega) le_rfl
+      have hfire := chkLeaf_searchBranch K g ψg aT aE opnt (Nat.le_trans hsz hmK)
       rw [decProv]
-      simp only [hfire, Bool.or_true, Bool.true_or]
+      simp only [hfire, Bool.true_or]
+  case cSS =>
+      intro k0 me pp qq opnt a hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_simStep K pp qq opnt a (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cBSS =>
+      intro k0 me pp qq opnt a hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_botSimStep K pp qq opnt a (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cBSearch =>
+      intro k0 g ψg aT aE me opnt hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_botSearchStep K g ψg aT aE opnt (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cIte =>
+      intro k0 g z a' c0 c1 ψg qq me opnt hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_iteBranchSearch K g z a' c0 c1 ψg qq opnt (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cEqR =>
+      intro k0 p hsz K hmK
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_eqRefl K p (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cEqN =>
+      intro k0 p q hne hsz K hmK
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_eqNeg K p q hne (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
   case cAtom =>
       intro k0 φ0 hatom _ K hmK
       refine ⟨1, ?_⟩
@@ -1096,7 +1044,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
   case cITrans =>
       intro k A B C a b h1 h2 hle ih1 ih2 K hmK
       have hAC := Formula.size_pos (Formula.impl A C)
-      have hi1 := provable_impl_size h1
+      have hi1 := pf_impl_size h1
       obtain ⟨f₁, e₁⟩ := ih1 a le_rfl
       obtain ⟨f₂, e₂⟩ := ih2 (K - (Formula.impl A C).size - a) (by omega)
       refine ⟨max f₁ f₂ + 1, ?_⟩
@@ -1140,7 +1088,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
   case cApp =>
       intro k' m₁ m₂ A B h1 h2 hle ih1 ih2 K hmK
       have hB := Formula.size_pos B
-      have hi1 := provable_impl_size h1
+      have hi1 := pf_impl_size h1
       obtain ⟨f₁, e₁⟩ := ih1 m₁ le_rfl
       obtain ⟨f₂, e₂⟩ := ih2 (K - B.size - m₁) (by omega)
       refine ⟨max f₁ f₂ + 1, ?_⟩
@@ -1183,7 +1131,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
       intro pm fb g K' tgt hgate hle ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.diag g tgt)
         (.impl (.box g (.diag g tgt)) tgt))
-      have hgsz := provable_impl_size hgate
+      have hgsz := pf_impl_size hgate
       obtain ⟨f, e⟩ := ih (K - (Formula.impl (.diag g tgt)
         (.impl (.box g (.diag g tgt)) tgt)).size) (by omega)
       refine ⟨f + 1, ?_⟩
@@ -1204,7 +1152,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
       intro pm fb g K' tgt hgate hle ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
         (.diag g tgt))
-      have hgsz := provable_impl_size hgate
+      have hgsz := pf_impl_size hgate
       obtain ⟨f, e⟩ := ih (K - (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
         (.diag g tgt)).size) (by omega)
       refine ⟨f + 1, ?_⟩
@@ -1235,7 +1183,7 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
   case cImpS2 =>
       intro A B C m₁ m₂ K' h1 h2 hle ih1 ih2 K hmK
       have hAC := Formula.size_pos (Formula.impl A C)
-      have hi1 := provable_impl_size h1
+      have hi1 := pf_impl_size h1
       obtain ⟨f₁, e₁⟩ := ih1 m₁ le_rfl
       obtain ⟨f₂, e₂⟩ := ih2 (K - (Formula.impl A C).size - m₁) (by omega)
       refine ⟨max f₁ f₂ + 1, ?_⟩
@@ -1281,17 +1229,17 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
       rw [decProv]
       simp only [hfire, Bool.or_true, Bool.true_or]
 
-/-! ## 6. THE PAYOFF — the engine's `Provable` is SEMIDECIDABLE relative to the atom layer.
+/-! ## 6. THE PAYOFF — the engine's `Pf` is SEMIDECIDABLE relative to the atom layer.
 
 `decProv O` is a COMPUTABLE enumerator: with a sound-and-complete atom oracle,
-`Provable k φ ↔ ∃ fuel, decProv O fuel k φ = true`. Soundness holds at EVERY fuel (each hit is
+`Pf k φ ↔ ∃ fuel, decProv O fuel k φ = true`. Soundness holds at EVERY fuel (each hit is
 a real derivation), and every derivation is found at some fuel. Full decidability — a
 computable fuel bound — is open exactly at the CITED premises (`search_t`'s guards,
 `searchThenSearch_t`'s inner searches, both at source literals): the T3.2c/T4 frontier. -/
 
 theorem decProv_iff (O : Nat → Formula → Bool)
     (hOs : OracleSound O) (hOc : OracleComplete O) (k : Nat) (φ : Formula) :
-    Provable k φ ↔ ∃ fuel, decProv O fuel k φ = true :=
+    Pf k φ ↔ ∃ fuel, decProv O fuel k φ = true :=
   ⟨fun h => decProv_complete O hOc h k le_rfl,
    fun ⟨f, hf⟩ => decProv_sound O hOs f k φ hf⟩
 
@@ -1345,7 +1293,7 @@ def decFull : Nat → Nat → Formula → Bool
 /-! ### Soundness — every hit of the full enumerator is a real derivation. -/
 
 theorem decCertG_sound (D : Nat → Formula → Bool)
-    (hD : ∀ m ψ, D m ψ = true → Provable m ψ) :
+    (hD : ∀ m ψ, D m ψ = true → Pf m ψ) :
     ∀ fuel b me oppo body a, decCertG D fuel b me oppo body a = true →
       ∃ n, PlaysProof me oppo body a n ∧ n ≤ b := by
   intro fuel
@@ -1403,7 +1351,7 @@ theorem decCertG_sound (D : Nat → Formula → Bool)
           exact ⟨n + m + kg + c_node, .search_f (hD _ _ hNeg) cert, by omega⟩
 
 theorem certOG_sound (D : Nat → Formula → Bool)
-    (hD : ∀ m ψ, D m ψ = true → Provable m ψ) (fuel : Nat) :
+    (hD : ∀ m ψ, D m ψ = true → Pf m ψ) (fuel : Nat) :
     OracleSound (certOG D fuel) := by
   intro k φ h
   unfold certOG at h
@@ -1414,7 +1362,7 @@ theorem certOG_sound (D : Nat → Formula → Bool)
   · simp at h
 
 /-- **Soundness of the full enumerator** — three lines, riding `decProv_sound`. -/
-theorem decFull_sound : ∀ fuel k φ, decFull fuel k φ = true → Provable k φ := by
+theorem decFull_sound : ∀ fuel k φ, decFull fuel k φ = true → Pf k φ := by
   intro fuel
   induction fuel with
   | zero => intro k φ h; simp [decFull] at h
@@ -1504,17 +1452,17 @@ theorem decFull_le_inner (F : Nat) : ∀ f, f ≤ F → ∀ k φ,
 /-! ### ABSOLUTE completeness — every derivation of the whole system is found. -/
 
 set_option maxHeartbeats 1000000 in
-theorem decFull_complete : ∀ {m φ}, Provable m φ →
+theorem decFull_complete : ∀ {m φ}, Pf m φ →
     ∀ K, m ≤ K → ∃ fuel, decFull fuel K φ = true := by
   intro m φ h
-  refine Provable.rec
+  refine Pf.rec
     (motive_1 := fun me oppo body a n _ =>
       ∀ b, n ≤ b → ∃ F, decCertG (decFull F) F b me oppo body a = true)
     (motive_2 := fun k φ _ => ∀ K, k ≤ K → ∃ F, certOG (decFull F) F K φ = true)
     (motive_3 := fun k φ _ => ∀ K, k ≤ K → ∃ F, decFull F K φ = true)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
-    ?cStruct ?cAtom ?cWeaken ?cSTS ?cITrans ?cAtomBox ?cBoxIntro ?cApp ?cAxK ?cBox4
-    ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
+    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
+    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
     h
   case pConst =>
       intro me oppo a b hb
@@ -1623,12 +1571,58 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
       intro me oppo a n k cert hle ih K hmK
       obtain ⟨F, e⟩ := ih K (by omega)
       exact ⟨F, e⟩
-  case cStruct =>
-      intro φ0 k0 hd K hmK
-      obtain ⟨d, hsz⟩ := hd
+  case cSB =>
+      intro k0 g ψg aT aE me opnt hme hsz K hmK
+      subst hme
       refine ⟨1, ?_⟩
-      show decProv (certOG (decFull 0) 0) 1 K φ0 = true
-      have hfire := decDeriv_complete d K K (by omega) le_rfl
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_searchBranch K g ψg aT aE opnt (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cSS =>
+      intro k0 me pp qq opnt a hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_simStep K pp qq opnt a (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cBSS =>
+      intro k0 me pp qq opnt a hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_botSimStep K pp qq opnt a (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cBSearch =>
+      intro k0 g ψg aT aE me opnt hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_botSearchStep K g ψg aT aE opnt (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cIte =>
+      intro k0 g z a' c0 c1 ψg qq me opnt hme hsz K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_iteBranchSearch K g z a' c0 c1 ψg qq opnt (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cEqR =>
+      intro k0 p hsz K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_eqRefl K p (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cEqN =>
+      intro k0 p q hne hsz K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_eqNeg K p q hne (Nat.le_trans hsz hmK)
       rw [decProv]
       simp only [hfire, Bool.true_or]
   case cAtom =>
@@ -1674,7 +1668,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
   case cITrans =>
       intro k A B C a b h1 h2 hle ih1 ih2 K hmK
       have hAC := Formula.size_pos (Formula.impl A C)
-      have hi1 := provable_impl_size h1
+      have hi1 := pf_impl_size h1
       obtain ⟨F₁, e₁⟩ := ih1 a le_rfl
       obtain ⟨F₂, e₂⟩ := ih2 (K - (Formula.impl A C).size - a) (by omega)
       refine ⟨max F₁ F₂ + 1, ?_⟩
@@ -1725,7 +1719,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
   case cApp =>
       intro k' m₁ m₂ A B h1 h2 hle ih1 ih2 K hmK
       have hB := Formula.size_pos B
-      have hi1 := provable_impl_size h1
+      have hi1 := pf_impl_size h1
       obtain ⟨F₁, e₁⟩ := ih1 m₁ le_rfl
       obtain ⟨F₂, e₂⟩ := ih2 (K - B.size - m₁) (by omega)
       refine ⟨max F₁ F₂ + 1, ?_⟩
@@ -1774,7 +1768,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
       intro pm fb g K' tgt hgate hle ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.diag g tgt)
         (.impl (.box g (.diag g tgt)) tgt))
-      have hgsz := provable_impl_size hgate
+      have hgsz := pf_impl_size hgate
       obtain ⟨F, e⟩ := ih (K - (Formula.impl (.diag g tgt)
         (.impl (.box g (.diag g tgt)) tgt)).size) (by omega)
       refine ⟨F + 1, ?_⟩
@@ -1797,7 +1791,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
       intro pm fb g K' tgt hgate hle ih K hmK
       have h1 := Formula.size_pos (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
         (.diag g tgt))
-      have hgsz := provable_impl_size hgate
+      have hgsz := pf_impl_size hgate
       obtain ⟨F, e⟩ := ih (K - (Formula.impl (.impl (.box g (.diag g tgt)) tgt)
         (.diag g tgt)).size) (by omega)
       refine ⟨F + 1, ?_⟩
@@ -1832,7 +1826,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
   case cImpS2 =>
       intro A B C m₁ m₂ K' h1 h2 hle ih1 ih2 K hmK
       have hAC := Formula.size_pos (Formula.impl A C)
-      have hi1 := provable_impl_size h1
+      have hi1 := pf_impl_size h1
       obtain ⟨F₁, e₁⟩ := ih1 m₁ le_rfl
       obtain ⟨F₂, e₂⟩ := ih2 (K - (Formula.impl A C).size - m₁) (by omega)
       refine ⟨max F₁ F₂ + 1, ?_⟩
@@ -1882,7 +1876,7 @@ theorem decFull_complete : ∀ {m φ}, Provable m φ →
       rw [decProv]
       simp only [hfire, Bool.or_true]
 
-/-! ## 8. THE PAYOFF — **the engine's `Provable` is SEMIDECIDABLE, absolutely.**
+/-! ## 8. THE PAYOFF — **the engine's `Pf` is SEMIDECIDABLE, absolutely.**
 
 `decFull` is a single computable, total function; every hit is a real derivation
 (`decFull_sound`), and every derivation is found (`decFull_complete`). No oracle, no
@@ -1890,16 +1884,16 @@ hypothesis: bounded provability — Löb fixpoints, floored else-certificates an
 recursively enumerable with a verified enumerator. The residual gap to full DECIDABILITY is
 exactly a computable fuel bound (the cited-premise/query-universe question, T4). -/
 
-theorem Provable_iff_decFull (k : Nat) (φ : Formula) :
-    Provable k φ ↔ ∃ fuel, decFull fuel k φ = true :=
+theorem Pf_iff_decFull (k : Nat) (φ : Formula) :
+    Pf k φ ↔ ∃ fuel, decFull fuel k φ = true :=
   ⟨fun h => decFull_complete h k le_rfl,
    fun ⟨f, hf⟩ => decFull_sound f k φ hf⟩
 
 /-! ## 9. T4.0 — `evalG`: COMPUTABLE evaluation backed by the enumerator.
 
-`eval` is noncomputable only through its guard oracle `proofSearch k φ := decide (Provable k φ)`.
-`decFull` semidecides `Provable` (§7–8), and — the repair's dividend — a DERIVABLE refutation
-`Provable m (.neg φ)` semantically excludes `Provable k φ` at EVERY budget (soundness +
+`eval` is noncomputable only through its guard oracle `proofSearch k φ := decide (Pf k φ)`.
+`decFull` semidecides `Pf` (§7–8), and — the repair's dividend — a DERIVABLE refutation
+`Pf m (.neg φ)` semantically excludes `Pf k φ` at EVERY budget (soundness +
 consistency: the honest replacement for what the deleted axiom faked with below-floor
 certificates). So a 3-valued computable guard is sound in BOTH polarities, and plugging it into
 `eval`'s recursion gives a computable partial evaluator `evalG` every commit of which is a real
@@ -1909,7 +1903,7 @@ classical play. Two guard instances:
   and CONVERGES on the whole r.e. fragment (`guardFull_converges_pos/_neg`) — but backward
   `decProv` sweeps make a `false` verdict exponentially expensive in practice.
 * `guardFast` — the goal-directed one for plays-atom guards (the zoo's dominant shape):
-  certificate search for the atom itself (Σ₁ side) / for the OTHER action (`Provable.atomNeg`'s
+  certificate search for the atom itself (Σ₁ side) / for the OTHER action (`Pf.atomNeg`'s
   supplier) — no top-level sweeps, so `#eval` actually runs. Strictly weaker commits, same
   soundness.
 
@@ -1939,7 +1933,7 @@ theorem guardFull_sound (fuelD : Nat) : GuardSound (guardFull fuelD) := by
       injection h with h; subst h
       simp only [List.any_eq_true, List.mem_range] at hf
       obtain ⟨m, _, hm⟩ := hf
-      have hnegI : ¬ φ.interp := Provable_sound _ _ (decFull_sound _ _ _ hm)
+      have hnegI : ¬ φ.interp := Pf_sound _ _ (decFull_sound _ _ _ hm)
       cases hps : proofSearch k φ with
       | false => rfl
       | true => exact absurd (proofSearch_sound _ _ hps) hnegI
@@ -1967,7 +1961,7 @@ theorem guardFast_sound (fuelD : Nat) : GuardSound (guardFast fuelD) := by
       injection h with h; subst h
       obtain ⟨n, cert, hn⟩ :=
         decCertG_sound (decFull fuelD) (fun m ψ => decFull_sound fuelD m ψ) fuelD k p q p a ht
-      exact (proofSearch_spec _ _).2 (Provable.atom (AtomProvable.mk cert hn))
+      exact (proofSearch_spec _ _).2 (Pf.atom (AtomProvable.mk cert hn))
     · split at h
       · rename_i hf
         injection h with h; subst h
@@ -1977,9 +1971,9 @@ theorem guardFast_sound (fuelD : Nat) : GuardSound (guardFast fuelD) := by
         obtain ⟨n, cert, _⟩ :=
           decCertG_sound (decFull fuelD) (fun m' ψ => decFull_sound fuelD m' ψ) fuelD m
             p q p r hcert
-        have hneg : Provable (n + (Formula.neg (.plays p q a)).size) (.neg (.plays p q a)) :=
-          Provable.atomNeg p q r a n (AtomProvable.mk cert le_rfl) hne le_rfl
-        have hnegI : ¬ (Formula.plays p q a).interp := Provable_sound _ _ hneg
+        have hneg : Pf (n + (Formula.neg (.plays p q a)).size) (.neg (.plays p q a)) :=
+          Pf.atomNeg p q r a n (AtomProvable.mk cert le_rfl) hne le_rfl
+        have hnegI : ¬ (Formula.plays p q a).interp := Pf_sound _ _ hneg
         cases hps : proofSearch k (.plays p q a) with
         | false => rfl
         | true => exact absurd (proofSearch_sound _ _ hps) hnegI
@@ -2097,7 +2091,7 @@ theorem outcomeG_sound (G : Nat → Formula → Option Bool) (hG : GuardSound G)
 /-! ### Convergence — `guardFull`'s `none` is escapable on the whole r.e. fragment. -/
 
 /-- Σ₁ side: a provable guard is eventually committed `true`. -/
-theorem guardFull_converges_pos {k : Nat} {φ : Formula} (h : Provable k φ) :
+theorem guardFull_converges_pos {k : Nat} {φ : Formula} (h : Pf k φ) :
     ∃ fuelD, guardFull fuelD k φ = some true := by
   obtain ⟨F, hF⟩ := decFull_complete h k le_rfl
   refine ⟨F, ?_⟩
@@ -2106,16 +2100,16 @@ theorem guardFull_converges_pos {k : Nat} {φ : Formula} (h : Provable k φ) :
 
 /-- Refutation side: a DERIVABLE refutation is eventually committed `false` — at every
     budget `k`, with no floor to clear (the exclusion is semantic, not certificate-level). -/
-theorem guardFull_converges_neg {m : Nat} {φ : Formula} (h : Provable m (.neg φ)) (k : Nat) :
+theorem guardFull_converges_neg {m : Nat} {φ : Formula} (h : Pf m (.neg φ)) (k : Nat) :
     ∃ fuelD, guardFull fuelD k φ = some false := by
   obtain ⟨F, hF⟩ := decFull_complete h m le_rfl
   refine ⟨max F m, ?_⟩
   unfold guardFull
-  have hnegI : ¬ φ.interp := Provable_sound _ _ h
+  have hnegI : ¬ φ.interp := Pf_sound _ _ h
   have h1 : decFull (max F m) k φ = false := by
     cases hd : decFull (max F m) k φ with
     | false => rfl
-    | true => exact absurd (Provable_sound _ _ (decFull_sound _ _ _ hd)) hnegI
+    | true => exact absurd (Pf_sound _ _ (decFull_sound _ _ _ hd)) hnegI
   have h2 : ((List.range (max F m + 1)).any fun m' =>
       decFull (max F m) m' (.neg φ)) = true := by
     simp only [List.any_eq_true, List.mem_range]

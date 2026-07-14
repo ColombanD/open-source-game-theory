@@ -4,10 +4,10 @@ import PrisonersDilemma.Decidability.T50InstanceLob
 # Cut relevance IV — the falsification theorem.
 
 `cutRelevance_modestGate_false`:
-`(∃ m, Provable m tgtD) ∧ ∀ N m, ¬ ProvableG (modestGate N) m tgtD` —
+`(∃ m, Pf m tgtD) ∧ ∀ N m, ¬ PfG (modestGate N) m tgtD` —
 the DupocBot self-cooperation fact is provable (bounded Löb) yet lies outside
 the modest stratum at EVERY literal bound and budget. So the original
-cut-relevance conjecture (`Provable → ProvableG (modestGate N₀)`) is FALSE, and
+cut-relevance conjecture (`Pf → PfG (modestGate N₀)`) is FALSE, and
 the instance gate (T50) is a genuine repair, not a convenience.
 
 Mechanism: a modest-gated derivation of the plays-fact must end in an atom whose
@@ -15,7 +15,7 @@ Mechanism: a modest-gated derivation of the plays-fact must end in an atom whose
 fact — no budget descent), or cut on the guard box (never `modestF`), or come
 from a `Derivation` (impossible: its only census antecedent is the underivable
 box). `ModChain` closes the impl-chain detours; the proof runs on the
-`ProvableG` mutual recursor with fording motives.
+`PfG` mutual recursor with fording motives.
 -/
 
 namespace PD.T51
@@ -110,8 +110,8 @@ theorem no_deriv_chain {B C : Formula} (d : Derivation (.impl B C))
     Derivations are dead. Fording motives: the plays layer carries frame equations,
     the atom layer the chain itself. -/
 theorem regress {N : Nat} {m : Nat} {C : Formula}
-    (h : T42.ProvableG (T44.modestGate N) m C) : ModChain C → False := by
-  refine T42.ProvableG.rec
+    (h : T42.PfG (T44.modestGate N) m C) : ModChain C → False := by
+  refine T42.PfG.rec
     (motive_1 := fun me oppo body a n _ =>
       me = meD → oppo = meD →
       ((body = meD ∧ a = Action.C) → False) ∧
@@ -250,6 +250,6 @@ theorem regress {N : Nat} {m : Nat} {C : Formula}
 /-- **THE FALSIFICATION THEOREM**: the DupocBot self-cooperation fact is provable,
     and lies outside the modest stratum at EVERY literal bound and budget. -/
 theorem cutRelevance_modestGate_false :
-    (∃ m, Provable m tgtD) ∧
-    ∀ (N m : Nat), ¬ T42.ProvableG (T44.modestGate N) m tgtD :=
+    (∃ m, Pf m tgtD) ∧
+    ∀ (N m : Nat), ¬ T42.PfG (T44.modestGate N) m tgtD :=
   ⟨⟨4096 * W, ProvT.sound treeD⟩, fun _ _ h => regress h ModChain.base⟩

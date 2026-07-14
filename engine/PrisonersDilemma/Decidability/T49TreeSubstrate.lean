@@ -10,7 +10,7 @@ derivations (research history: `Research/Notes/CUT_RELEVANCE.md`,
 `Research/Notes/BOUNDED_LOB_NORMALIZATION.md`):
 
   * **The mirror triple** `ProvT`/`PlaysT`/`AtomT` with `sound`/`complete`
-    (`Provable k φ ↔ Nonempty (ProvT k φ)`) — derivations as measurable trees.
+    (`Pf k φ ↔ Nonempty (ProvT k φ)`) — derivations as measurable trees.
   * **The extraction machine** `boxInvGo`/`structCross`/`atomizeGo`: a fueled
     Krivine-style walker that extracts box contents, crosses implications with
     their discharges, reconstructs census atoms, and is TOTAL at every
@@ -24,7 +24,7 @@ derivations (research history: `Research/Notes/CUT_RELEVANCE.md`,
     `fundamentalW`/`crossTotalW` — crossing totality at arbitrary cores.
   * **The excisor** (`excise`/`exciseFix`/`certifyExcised`): β-reduce gate-failing
     cuts through the machine; plus the certificate families (`gateOKb`, `cutsOKb`,
-    `citesLEb`) with soundness, and the transfer `ProvT.toG` into `ProvableG`.
+    `citesLEb`) with soundness, and the transfer `ProvT.toG` into `PfG`.
 -/
 
 namespace PD.T49
@@ -71,10 +71,12 @@ mutual
   inductive AtomT : Nat → Formula → Type where
     | mk : PlaysT me opponent me a n → n ≤ k → AtomT k (.plays me opponent a)
 
-  /-- `Type`-valued mirror of `Provable`; `struct` carries its `Derivation` witness. -/
+  /-- `Type`-valued mirror of `Pf`; the seven transparency leaves are stored as ONE
+      `leaf` node carrying a packaged `T48.LeafPf` (Pf-only: replaces the former `struct`
+      node, which carried a whole `Derivation` — the ex-`Derivation` `modusPonens`/`hypSyll`
+      are `app`/`implTrans` TREE NODES now, so the substrate has no tree-in-a-node). -/
   inductive ProvT : Nat → Formula → Type where
-    | struct (d : Derivation φ) :
-        d.size ≤ k → ProvT k φ
+    | leaf (l : PD.T48.LeafPf k φ) : ProvT k φ
     | atom : AtomT k φ → ProvT k φ
     | weakenImpl (φ ψ : Formula) (m : Nat) :
         ProvT m ψ → m + (Formula.impl φ ψ).size ≤ k → ProvT k (.impl φ ψ)
@@ -150,8 +152,8 @@ mutual
   theorem AtomT.sound {k : Nat} {φ : Formula} : AtomT k φ → AtomProvable k φ
     | .mk t hn => .mk t.sound hn
 
-  theorem ProvT.sound {k : Nat} {φ : Formula} : ProvT k φ → Provable k φ
-    | .struct d hd => .struct ⟨d, hd⟩
+  theorem ProvT.sound {k : Nat} {φ : Formula} : ProvT k φ → Pf k φ
+    | .leaf l => l.toPf
     | .atom t => .atom t.sound
     | .weakenImpl φ ψ m t hle => .weakenImpl φ ψ m t.sound hle
     | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz =>
@@ -159,7 +161,7 @@ mutual
     | .implTrans φ ψ χ a b t1 t2 hle => .implTrans φ ψ χ a b t1.sound t2.sound hle
     | .atomBoxImpl kBox p q a t hle => .atomBoxImpl kBox p q a t.sound hle
     | .boxIntro kIn K φ t hle => .boxIntro kIn K φ t.sound hle
-    | .app k m₁ m₂ φ α t1 t2 hle => .app k m₁ m₂ φ α t1.sound t2.sound hle
+    | .app k m₁ m₂ φ α t1 t2 hle => .mp m₁ m₂ φ α t1.sound t2.sound hle
     | .axK a b c m K φ α t hg1 hg2 => .axK a b c m K φ α t.sound hg1 hg2
     | .box4 a b K φ hg1 hg2 => .box4 a b K φ hg1 hg2
     | .diagF pm fb g K tgt t hle => .diagF pm fb g K tgt t.sound hle
@@ -170,7 +172,7 @@ mutual
     | .atomNeg p q b aN m t hne hle => .atomNeg p q b aN m t.sound hne hle
 end
 
-/-! ## 3. Completeness: every `Provable` has a tree (at the `Nonempty` level — all that
+/-! ## 3. Completeness: every `Pf` has a tree (at the `Nonempty` level — all that
 `Prop` elimination permits, and all that excision needs). -/
 
 mutual
@@ -199,8 +201,15 @@ mutual
     | .mk h hn => (PlaysT.complete h).elim fun t => ⟨.mk t hn⟩
 
   theorem ProvT.complete {k : Nat} {φ : Formula} :
-      Provable k φ → Nonempty (ProvT k φ)
-    | .struct h => h.elim fun d hd => ⟨.struct d hd⟩
+      Pf k φ → Nonempty (ProvT k φ)
+    | .searchBranch g ψ a b me oppo hme hle => ⟨.leaf (.searchBranch g ψ a b me oppo hme hle)⟩
+    | .simStep me p q oppo a hme hle => ⟨.leaf (.simStep me p q oppo a hme hle)⟩
+    | .botSimStep me p q oppo a hme hle => ⟨.leaf (.botSimStep me p q oppo a hme hle)⟩
+    | .botSearchStep g ψ a b me oppo hme hle => ⟨.leaf (.botSearchStep g ψ a b me oppo hme hle)⟩
+    | .iteBranchSearch_t g z a' c0 c1 ψ q me oppo hme hle =>
+        ⟨.leaf (.iteBranchSearch_t g z a' c0 c1 ψ q me oppo hme hle)⟩
+    | .eqRefl p hle => ⟨.leaf (.eqRefl p hle)⟩
+    | .eqNeg p q hne hle => ⟨.leaf (.eqNeg p q hne hle)⟩
     | .atom h => (AtomT.complete h).elim fun t => ⟨.atom t⟩
     | .weakenImpl φ ψ m h hle =>
         (ProvT.complete h).elim fun t => ⟨.weakenImpl φ ψ m t hle⟩
@@ -214,7 +223,7 @@ mutual
         (AtomT.complete h).elim fun t => ⟨.atomBoxImpl kBox p q a t hle⟩
     | .boxIntro kIn K φ h hle =>
         (ProvT.complete h).elim fun t => ⟨.boxIntro kIn K φ t hle⟩
-    | .app k m₁ m₂ φ α h1 h2 hle =>
+    | .mp m₁ m₂ φ α h1 h2 hle =>
         (ProvT.complete h1).elim fun t1 =>
           (ProvT.complete h2).elim fun t2 => ⟨.app k m₁ m₂ φ α t1 t2 hle⟩
     | .axK a b c m K φ α h hg1 hg2 =>
@@ -235,23 +244,15 @@ end
 
 /-- The substrate is exact: provability = tree existence. -/
 theorem Provable_iff_nonempty_ProvT {k : Nat} {φ : Formula} :
-    Provable k φ ↔ Nonempty (ProvT k φ) :=
+    Pf k φ ↔ Nonempty (ProvT k φ) :=
   ⟨ProvT.complete, fun ⟨t⟩ => t.sound⟩
 
 /-! ## 4. The gate residue: which cuts a tree actually uses (D1).
 
 `gateOK G t` holds when every formula at one of T42's six gated positions — throughout
-the tree, INCLUDING the `Provable` cites inside the atom layer's `search_t`/`search_f`
+the tree, INCLUDING the `Pf` cites inside the atom layer's `search_t`/`search_f`
 guards — satisfies `G`. This is the tree-level object the judgment-local program could
 never see: the cut DIET of one specific derivation, not of all derivations at once. -/
-
-/-- Derivation-internal cut diet: `modusPonens`/`hypSyll` premise formulas (size-paid,
-    hence always within a self-calibrated gate — but the machine materializes them as
-    stack segments, so the diet must name them). -/
-def derivGateOK (G : Formula → Prop) : {φ : Formula} → Derivation φ → Prop
-  | _, .modusPonens φ _ d1 d2 => G φ ∧ derivGateOK G d1 ∧ derivGateOK G d2
-  | _, .hypSyll _ ψ _ d1 d2 => G ψ ∧ derivGateOK G d1 ∧ derivGateOK G d2
-  | _, _ => True
 
 mutual
   def PlaysT.gateOK (G : Formula → Prop) :
@@ -270,7 +271,7 @@ mutual
     | _, _, .mk t _ => t.gateOK G
 
   def ProvT.gateOK (G : Formula → Prop) : {k : Nat} → {φ : Formula} → ProvT k φ → Prop
-    | _, _, .struct d _ => derivGateOK G d
+    | _, _, .leaf _ => True   -- leaves have no premises: no gate obligation
     | _, _, .atom t => t.gateOK G
     | _, _, .weakenImpl _ _ _ t _ => t.gateOK G
     | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.gateOK G
@@ -288,7 +289,7 @@ mutual
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.gateOK G
 end
 
-/-! ## 5. The transfer: a tree with a passing gate residue lands in `ProvableG G`. -/
+/-! ## 5. The transfer: a tree with a passing gate residue lands in `PfG G`. -/
 
 mutual
   theorem PlaysT.toG {G : Formula → Prop} {me o b : Prog} {a : Action} {n : Nat} :
@@ -308,8 +309,8 @@ mutual
     | .mk t hn, h => .mk (t.toG h) hn
 
   theorem ProvT.toG {G : Formula → Prop} {k : Nat} {φ : Formula} :
-      (t : ProvT k φ) → t.gateOK G → ProvableG G k φ
-    | .struct d hd, _ => .struct ⟨d, hd⟩
+      (t : ProvT k φ) → t.gateOK G → PfG G k φ
+    | .leaf l, _ => l.toG
     | .atom t, h => .atom (t.toG h)
     | .weakenImpl φ ψ m t hle, h => .weakenImpl φ ψ m (t.toG h) hle
     | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz, h =>
@@ -319,7 +320,7 @@ mutual
     | .atomBoxImpl kBox p q a t hle, h => .atomBoxImpl kBox p q a (t.toG h) hle
     | .boxIntro kIn K φ t hle, h => .boxIntro kIn K φ (t.toG h) hle
     | .app k m₁ m₂ φ α t1 t2 hle, h =>
-        .app k m₁ m₂ φ α (t1.toG h.2.1) (t2.toG h.2.2) hle h.1
+        .mp m₁ m₂ φ α (t1.toG h.2.1) (t2.toG h.2.2) hle h.1
     | .axK a b c m K φ α t hg1 hg2, h => .axK a b c m K φ α (t.toG h.2) hg1 hg2 h.1
     | .box4 a b K φ hg1 hg2, _ => .box4 a b K φ hg1 hg2
     | .diagF pm fb g K tgt t hle, h => .diagF pm fb g K tgt (t.toG h.2) hle h.1
@@ -338,7 +339,7 @@ end
     every judgment-local formulation, it is not refuted by dead implications: excision is
     free to REPLACE the tree, not just describe it. -/
 def TreeCutRelevance (N₀ : Nat → Formula → Nat) : Prop :=
-  ∀ k φ, Provable k φ → ∃ t : ProvT k φ, t.gateOK (T42.litGate (N₀ k φ))
+  ∀ k φ, Pf k φ → ∃ t : ProvT k φ, t.gateOK (T42.litGate (N₀ k φ))
 
 /-- The reduction: tree-level cut relevance implies the T4.1b conjecture. -/
 theorem tree_cutRelevance {N₀ : Nat → Formula → Nat} (h : TreeCutRelevance N₀) :
@@ -347,11 +348,11 @@ theorem tree_cutRelevance {N₀ : Nat → Formula → Nat} (h : TreeCutRelevance
 
 /-- The modest variant — the form T44's decider actually consumes. -/
 def TreeModestRelevance (N₀ : Nat → Formula → Nat) : Prop :=
-  ∀ k φ, Provable k φ → ∃ t : ProvT k φ, t.gateOK (T44.modestGate (N₀ k φ))
+  ∀ k φ, Pf k φ → ∃ t : ProvT k φ, t.gateOK (T44.modestGate (N₀ k φ))
 
 theorem tree_modestRelevance {N₀ : Nat → Formula → Nat} (h : TreeModestRelevance N₀)
-    (k : Nat) (φ : Formula) (hp : Provable k φ) :
-    ProvableG (T44.modestGate (N₀ k φ)) k φ :=
+    (k : Nat) (φ : Formula) (hp : Pf k φ) :
+    PfG (T44.modestGate (N₀ k φ)) k φ :=
   (h k φ hp).elim fun t hg => t.toG hg
 
 /-! ## 7. D2a — the excision toolkit's first layer.
@@ -372,7 +373,7 @@ Three foundations the rewrite system needs everywhere, plus the first excision:
 
 /-- Budget monotonicity: relax the root gate, reuse the tree. -/
 def ProvT.mono {k k' : Nat} {φ : Formula} (h : k ≤ k') : ProvT k φ → ProvT k' φ
-  | .struct d hd => .struct d (le_trans hd h)
+  | .leaf l => .leaf (l.weaken h)
   | .atom (.mk t hn) => .atom (.mk t (le_trans hn h))
   | .weakenImpl φ ψ m t hle => .weakenImpl φ ψ m t (le_trans hle h)
   | .searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme t hm hsz =>
@@ -393,7 +394,7 @@ def ProvT.mono {k k' : Nat} {φ : Formula} (h : k ≤ k') : ProvT k φ → ProvT
 /-- Re-gating does not change the cut diet. -/
 theorem ProvT.mono_gateOK {G : Formula → Prop} {k k' : Nat} {φ : Formula}
     (h : k ≤ k') : (t : ProvT k φ) → ((t.mono h).gateOK G ↔ t.gateOK G)
-  | .struct _ _ => Iff.rfl
+  | .leaf _ => Iff.rfl
   | .atom (.mk _ _) => Iff.rfl
   | .weakenImpl _ _ _ _ _ => Iff.rfl
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Iff.rfl
@@ -414,7 +415,7 @@ theorem ProvT.mono_gateOK {G : Formula → Prop} {k k' : Nat} {φ : Formula}
     (Atoms conclude only `.plays`, so the `atom` arm is uninhabited.) -/
 theorem ProvT.impl_size_le {k : Nat} {A B : Formula} :
     ProvT k (.impl A B) → (Formula.impl A B).size ≤ k
-  | .struct d hd => le_trans d.concl_size_le hd
+  | .leaf l => l.concl_size_le
   | .atom t => nomatch t
   | .weakenImpl _ _ _ _ hle => by omega
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ hsz => by omega
@@ -465,7 +466,7 @@ the modest gate polices. -/
     conclude a box; the Type layer cannot — `derivation_no_box`). -/
 theorem ProvT.box_size_le {k c : Nat} {ψ : Formula} :
     ProvT k (.box c ψ) → (Formula.box c ψ).size ≤ k
-  | .struct d _ => (PD.T48.derivation_no_box d).elim
+  | .leaf l => (PD.T48.leafPf_no_box l).elim
   | .atom t => nomatch t
   | .boxIntro _ _ _ _ hle => by omega
   | .app _ _ _ _ _ _ _ hle => by omega
@@ -692,10 +693,10 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
          | .nil => some ⟨_, .axKf a'' b'' c'' K φ' α' hg1 hle⟩)
     -- general cores: an exhausted stack returns the walker; struct/atom with pending
     -- discharges await derivCross (D2g stage 2)
-    | .struct d hd =>
+    | .leaf l =>
         (match stack with
-         | .nil => mkSelf (.struct d hd)
-         | .cons mD u S' => structCross fuel d _ _ rfl mD u S')
+         | .nil => mkSelf (.leaf l)
+         | .cons mD u S' => leafCross fuel l _ _ rfl mD u S')
     | .atom a =>
         (match stack with
          | .nil => mkSelf (.atom a)
@@ -716,26 +717,19 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
         (match stack with
          | .nil => some ⟨_, .atomNeg p q b aN m' tc hne hle⟩)
 
-/-- Cross a `Derivation`-level implication with its discharge: `modusPonens` pushes,
-    `hypSyll` materializes, the censuses reconstruct their atom certificates. Takes its
-    own fuel tick so the mutual block stays structural. -/
-def structCross : (fuel : Nat) → {ξ : Formula} → (d : Derivation ξ) → {core : Formula} →
+/-- Cross a LEAF-level implication with its discharge: the censuses reconstruct their
+    atom certificates. (Pf-only: the former `structCross` also decomposed stored
+    `modusPonens`/`hypSyll` trees here — those are `app`/`implTrans` TREE NODES now,
+    handled by `boxInvGo`'s own arms, so this walker is census-only.) Takes its own fuel
+    tick so the mutual block stays structural. -/
+def leafCross : (fuel : Nat) → {kL : Nat} → {ξ : Formula} → (l : PD.T48.LeafPf kL ξ) →
+    {core : Formula} →
     (B rest : Formula) → Formula.impl B rest = ξ → (mD : Nat) → (u : ProvT mD B) →
     DStack rest core → Option (CoreContent core)
-  | 0, _, _, _, _, _, _, _, _, _ => none
-  | fuel + 1, _, d, _, B, rest, heq, mD, u, S' => by
-    cases d with
-    | modusPonens φ ψ d1 d2 =>
-        cases heq
-        exact boxInvGo fuel (.struct d1 (Nat.le_refl _))
-          (.cons d2.size (.struct d2 (Nat.le_refl _)) (.cons mD u S'))
-    | hypSyll φ ψ χ d1 d2 =>
-        cases heq
-        exact boxInvGo fuel (.struct d2 (Nat.le_refl _))
-          (.cons (d1.size + mD + ψ.size)
-            (.app (d1.size + mD + ψ.size) d1.size mD _ ψ
-              (.struct d1 (Nat.le_refl _)) u (Nat.le_refl _)) S')
-    | searchBranch k ψg a b me opnt hme =>
+  | 0, _, _, _, _, _, _, _, _, _, _ => none
+  | fuel + 1, _, _, l, _, B, rest, heq, mD, u, S' => by
+    cases l with
+    | searchBranch k ψg a b me opnt hme hle =>
         cases heq
         cases hme
         cases S' with
@@ -743,7 +737,7 @@ def structCross : (fuel : Nat) → {ξ : Formula} → (d : Derivation ξ) → {c
             exact match boxInvGo fuel u .nil with
               | some ⟨mc, tc, hc⟩ => some ⟨_, censusSearchBranch tc hc⟩
               | none => none
-    | botSearchStep k ψg a b me opnt hme =>
+    | botSearchStep k ψg a b me opnt hme hle =>
         cases heq
         cases hme
         cases S' with
@@ -751,7 +745,7 @@ def structCross : (fuel : Nat) → {ξ : Formula} → (d : Derivation ξ) → {c
             exact match boxInvGo fuel u .nil with
               | some ⟨mc, tc, hc⟩ => some ⟨_, censusBotSearchStep tc hc⟩
               | none => none
-    | simStep me p q opnt a hme =>
+    | simStep me p q opnt a hme hle =>
         cases heq
         cases hme
         cases S' with
@@ -759,7 +753,7 @@ def structCross : (fuel : Nat) → {ξ : Formula} → (d : Derivation ξ) → {c
             exact match atomizeGo fuel u with
               | some ⟨k', .mk cert _⟩ => some ⟨_, censusSimStep cert⟩
               | none => none
-    | botSimStep me p q opnt a hme =>
+    | botSimStep me p q opnt a hme hle =>
         cases heq
         cases hme
         cases S' with
@@ -767,7 +761,7 @@ def structCross : (fuel : Nat) → {ξ : Formula} → (d : Derivation ξ) → {c
             exact match atomizeGo fuel u with
               | some ⟨k', .mk cert _⟩ => some ⟨_, censusBotSimStep cert⟩
               | none => none
-    | iteBranchSearch_t kk z a' c0 c1 ψg qe mee oppo hme =>
+    | iteBranchSearch_t kk z a' c0 c1 ψg qe mee oppo hme hle =>
         cases heq
         cases hme
         cases S' with
@@ -781,8 +775,8 @@ def structCross : (fuel : Nat) → {ξ : Formula} → (d : Derivation ξ) → {c
                        | some ⟨mc, tc, hc⟩ => some ⟨_, censusITE pl1 tc hc⟩
                        | none => none)
                   | none => none
-    | eqRefl p => cases heq
-    | eqNeg p q hne => cases heq
+    | eqRefl p hle => cases heq
+    | eqNeg p q hne hle => cases heq
 
 /-- Peel a plays-tree to its atom certificate (past the identity base): `.atom` is
     done, `.app` walks the machine, bare-plays `struct`s unfold their `modusPonens`. -/
@@ -792,33 +786,14 @@ def atomizeGo : (fuel : Nat) → {m : Nat} → {p q : Prog} → {c : Action} →
   | fuel + 1, _, _, _, _, t => by
     cases t with
     | atom a => exact some ⟨_, a⟩
-    | struct d hd => exact atomizeStruct fuel d rfl
+    -- Pf-only: a LEAF never concludes a bare `.plays` (all seven conclude impl/eq/neg),
+    -- so the `leaf` arm is uninhabited; the old bare-plays `struct (modusPonens …)` route
+    -- is an `.app` node now, handled below.
+    | leaf l => exact nomatch l
     | app K m₁ m₂ φ α f x hle =>
         exact match boxInvGo fuel f (.cons m₂ x .nil) with
           | some ⟨_, t'⟩ => atomizeGo fuel t'
           | none => none
-
-/-- Bare-plays `struct`s come only from `modusPonens`; unfold it and re-peel. -/
-def atomizeStruct : (fuel : Nat) → {ξ : Formula} → (d : Derivation ξ) →
-    {p q : Prog} → {c : Action} → Formula.plays p q c = ξ →
-    Option (Σ' k', AtomT k' (.plays p q c))
-  | 0, _, _, _, _, _, _ => none
-  | fuel + 1, _, d, _, _, _, heq => by
-    cases d with
-    | modusPonens φ ψ d1 d2 =>
-        cases heq
-        exact match boxInvGo fuel (.struct d1 (Nat.le_refl _))
-            (.cons d2.size (.struct d2 (Nat.le_refl _)) .nil) with
-          | some ⟨_, t'⟩ => atomizeGo fuel t'
-          | none => none
-    | hypSyll φ ψ χ d1 d2 => cases heq
-    | searchBranch k ψg a b me opnt hme => cases heq
-    | botSearchStep k ψg a b me opnt hme => cases heq
-    | simStep me p q' opnt a hme => cases heq
-    | botSimStep me p q' opnt a hme => cases heq
-    | iteBranchSearch_t k z a' c0 c1 ψg me opnt hme1 hme2 => cases heq
-    | eqRefl p' => cases heq
-    | eqNeg p' q' hne => cases heq
 
 end
 
@@ -840,7 +815,7 @@ detour: the machine navigates the spine, drops the never-needed discharge, and r
 the content at exactly the subscript's budget. -/
 
 private def demoA : ProvT 100 PD.T48.wildA :=
-  .struct (.eqRefl PD.T48.wildQ) (by decide)
+  .leaf (.eqRefl PD.T48.wildQ (by decide))
 
 private def demoImpl : ProvT 200 (.impl PD.T48.psi0 PD.T48.wildA) :=
   .weakenImpl PD.T48.psi0 PD.T48.wildA 100 demoA (by decide)
@@ -993,7 +968,7 @@ def DStack.freeS2 : {ξ core : Formula} → DStack ξ core → Prop
 /-- Re-gating preserves contraction-freedom. -/
 theorem ProvT.mono_freeS2 {k k' : Nat} {φ : Formula}
     (h : k ≤ k') : (t : ProvT k φ) → ((t.mono h).freeS2 ↔ t.freeS2)
-  | .struct _ _ => Iff.rfl
+  | .leaf _ => Iff.rfl
   | .atom (.mk _ _) => Iff.rfl
   | .weakenImpl _ _ _ _ _ => Iff.rfl
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Iff.rfl
@@ -2646,7 +2621,7 @@ certificates (route (iii) of the D2f-b verdict) need a Boolean mirror. `gateOKb 
 computes the diet check for a Boolean gate `Gb`; `gateOKb_sound` bridges to any `G`
 that `Gb` underapproximates — instantiated with `cutOKb N` (whose `cutOKb_iff` gives
 exactly `modestGate N`), a `true` from the checker plus `toG` lands a concrete tree in
-`ProvableG (modestGate N)`. The `#eval` below runs the full pipeline on the demo:
+`PfG (modestGate N)`. The `#eval` below runs the full pipeline on the demo:
 extract a box content, CHECK its diet, certify. -/
 
 def derivGateOKb (Gb : Formula → Bool) : {φ : Formula} → Derivation φ → Bool
@@ -2771,7 +2746,7 @@ end
 /-- A checked tree lands in the modest stratum: the certificate pipeline's exit. -/
 theorem certify {N k : Nat} {φ : Formula} (t : ProvT k φ)
     (h : t.gateOKb (T44.cutOKb N) = true) :
-    ProvableG (T44.modestGate N) k φ :=
+    PfG (T44.modestGate N) k φ :=
   t.toG (t.gateOKb_sound (fun _ hb => T44.cutOKb_iff.mp hb) h)
 
 -- The full pipeline, live: extract a box content from the Löb demo, CHECK its diet.
@@ -4121,7 +4096,7 @@ theorem boxInvT_spec {m c : Nat} {ψ : Formula} (t : ProvT m (.box c ψ)) :
   exact boxInvGo_gateOK Gbox _ t .nil hg trivial trivial hr
 
 /-- The Prop-level payoff, constructively: box inversion with a diet-controlled tree
-    witness (the classical one-liner `Provable m (□cψ) → Provable c ψ` is soundness;
+    witness (the classical one-liner `Pf m (□cψ) → Pf c ψ` is soundness;
     THIS one hands you the tame derivation). -/
 theorem box_inversion_diet {m c : Nat} {ψ : Formula} {G : Formula → Prop}
     (Gbox : ∀ b ψ', G (.box b ψ') → G ψ')
@@ -4285,7 +4260,7 @@ def exciseFix : (rounds fuel : Nat) → (Gb : Formula → Bool) →
 /-- **The instance pipeline in one call**: excise → check → certify. Every `some` is a
     kernel-certified membership in the decidable stratum. -/
 def certifyExcised (rounds fuel N : Nat) {m : Nat} {ξ : Formula} (t : ProvT m ξ) :
-    Option (Σ' m', PLift (ProvableG (T44.modestGate N) m' ξ)) :=
+    Option (Σ' m', PLift (PfG (T44.modestGate N) m' ξ)) :=
   let t' := exciseFix rounds fuel (T44.cutOKb N) t
   if h : t'.2.gateOKb (T44.cutOKb N) = true then
     some ⟨t'.1, ⟨certify t'.2 h⟩⟩
