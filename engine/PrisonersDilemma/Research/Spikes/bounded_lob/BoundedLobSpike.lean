@@ -8,7 +8,7 @@ import Mathlib.Data.Nat.Log
 /-!
 # Spike S1 — does `boundedLob` typecheck? (recursion on the budget `k`)
 
-Companion to `Research/Notes/CONSTRUCTIVE_BOUNDED_LOB.md` §5, step **S1**.
+Companion to `Research/Notes/DeadEnds/CONSTRUCTIVE_BOUNDED_LOB.md` §5, step **S1**.
 
 **Goal of S1 (and ONLY S1):** confirm Lean 4 accepts the productive bounded-Löb
 combinator — *strong recursion on the budget `k`* — as a total, well-founded definition.

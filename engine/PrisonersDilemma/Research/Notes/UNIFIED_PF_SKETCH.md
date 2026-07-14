@@ -3,6 +3,36 @@
 A paper exercise (NO engine change). Shows the merged proof-term type, what it removes, and what two
 of the real bots' proofs would look like before/after. Companion: `EXPLICIT_S_PROPOSAL.md`.
 
+> **2026-07-14 — REALIZED as a coexistence spike (machine-checked, real engine, no toy).**
+> `Research/Spikes/unified_pf/PfEngineSpike.lean` defines the real `Pf : Nat → Formula → Prop`
+> (22 constructors vs the engine's 25; `struct` glue and the `modusPonens`/`app`,
+> `hypSyll`/`implTrans` twins gone) and proves **`pf_iff_provable : Pf k φ ↔ Provable k φ`
+> EXACTLY, at every budget** — `[propext]` only. Key design deltas vs this sketch:
+> * `Pf` is **`Prop`-valued with the budget as an INDEX** (the `PlaysProof` pattern) — the
+>   transcript-cost refactor removed `Derivation`'s only reason to be `Type` (`.size` recursion).
+> * `Pf` is **NON-mutual** (its `AtomProvable` premises are non-recursive; `PlaysProof.search_t`
+>   keeps consuming `Provable`, converted through the iff) — which is what buys named
+>   `induction … with` where the mutual `Provable` forces raw positional `.rec`.
+> * `searchThenSearch_t` stays primitive (its then-branch is a `.search`, not `.const`, so
+>   `searchBranch` + `mp` cannot derive it — the sketch's "derived lemma" line was wrong).
+> * The deduction theorem / Gödel machinery ("the honest cost" below) is MOOT: PBLT fell via
+>   `diagF`/`diagB`/`axKf`/`impS2` (2026-07-01), which merge in as ordinary constructors.
+>
+> Demo port: the CIMCIC exclusion (2 nested inductions, 25 arms, a 26-lambda positional
+> `Provable.rec`) → ONE flat named induction (`cimcic_no_pf_forbidden`), and the engine theorem
+> `¬ Provable k (cimcic_guard k)` re-derived through the iff. The iff makes coexistence free:
+> new proofs can be WRITTEN in `Pf` and SHIPPED as `Provable`. Still open (deliberately): making
+> `Pf` primitive — mutualize with `PlaysProof`, retire `Derivation`/`Provable`, re-prove `Base/`
+> + the ~16k-line `Decidability/` chain. Defer to the post-universal-closure rebuild.
+>
+> **2026-07-14 (later) — PROMOTED to the build**: `PrisonersDilemma/Pf.lean` (root-imported,
+> namespace `PD`) holds `Pf` + `pf_iff_provable` + `Pf_sound` + the ported Löb/PBLT engines;
+> the spike keeps the bot demos (CIMCIC exclusion, DupocBot cooperation end-to-end). The full
+> replacement question (bot proofs + decidability impact, incl. the finding that replacement
+> would make `Pf` MUTUAL and lose the named-induction ergonomics unless a custom eliminator is
+> built, and the gate-on-ex-`Derivation`-cuts design question in `PfG`) is analyzed in
+> `PF_REPLACEMENT_ASSESSMENT.md`. Verdict: coexistence is the resting point.
+
 ## The current shape (what bugs you)
 
 Reasoning is split across **two** types by the `Type`/`Prop` boundary, with `Provable` gluing them:

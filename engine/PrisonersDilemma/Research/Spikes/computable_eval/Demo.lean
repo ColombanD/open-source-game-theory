@@ -21,7 +21,7 @@ reason is the **proof-vs-witness gap**, established elsewhere — NOT here:
     fixpoint; and
   * its machine-checked halves: `DecMeasure.lean` refutes the naive structural measure
     (self-substituting a `.search` bot into its own guard *increases* depth), and spikes
-    S3/S3′ (`Research/Notes/CONSTRUCTIVE_BOUNDED_LOB.md`) refute the budget-recursion /
+    S3/S3′ (`Research/Notes/DeadEnds/CONSTRUCTIVE_BOUNDED_LOB.md`) refute the budget-recursion /
     term-builder route — the witness it would need is `Provable k φ` at the same budget `k`
     the bot searches.
 That is why the limit is permanent (though NOT a Gödel/Π₁ wall — the finite fragment is

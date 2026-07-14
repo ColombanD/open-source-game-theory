@@ -1,3 +1,22 @@
+> **⚰️ DEAD END — but the §6 "proven ceiling" was BROKEN days later (2026-07-01→03), by a route
+> this note considered and dismissed.** The S1/S3/S3′ spike results below still stand: the
+> budget-recursion `boundedLob` design is refuted, machine-checked, and `eval`'s `.search` guard
+> still searches at the bot's own `k` (`Dynamics.lean`). What did NOT survive is the conclusion
+> drawn from them — "the honest ceiling is route (A): PBLT stays an axiom; the computability
+> boundary is proven." The actual resolution was a THIRD route: **internalize the diagonal lemma
+> as syntax** — the `Formula.diag` fixpoint sentence + `diagF`/`diagB` rules (`Derivation.lean`)
+> run Löb's derivation entirely inside `Provable` (`Base/Loeb.lean: bloeb_engine`/`pblt_engine`),
+> exactly the "non-constructive move" §7 said budget-recursion couldn't replace. Combined with
+> transcript-cumulative costs (2026-07-02), this deleted the PBLT axiom, then ALL axioms
+> (`atom_complete_false_guard` — called "eliminable" in §5 — was in fact proven INCONSISTENT,
+> T32), made `Provable` absolutely semidecidable (`decFull`), and gave computable evaluation of
+> search bots (`evalG`, superseding `evalC`) plus decidability over the zoo strata (T4x chain).
+> Only the universal-closure conjecture remains open. Current story:
+> `INTERNALIZATION_ROADMAP.md`, `DECIDABILITY_ROADMAP.md`. The companion
+> `COMPUTABLE_EVAL_NOTES.md` is retired; line numbers and the pre-transcript cost arithmetic
+> below are stale. KEPT as the research record that localized the obligation (`Provable k φ` at
+> the fixpoint, same budget) which the internalization then discharged.
+
 # Constructive Bounded Löb — design note for computable `eval`
 
 _Companion to `COMPUTABLE_EVAL_NOTES.md`. That note diagnoses **why** `eval` is
