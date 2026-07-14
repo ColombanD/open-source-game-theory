@@ -40,7 +40,7 @@ app follows the migration automatically.
   (re-proved against the frozen legacy copy, see Phase 1) certifies the new oracle decides
   THE SAME relation — `proofSearch` behaviour provably unchanged, not just re-tested.
 
-## 1. Design decisions (settle before Phase 1; recommendations bolded)
+## 1. Design decisions — **SETTLED 2026-07-14 (Phase 0)**; recommendations adopted as-is
 
 * **D1 — the name.** The unified type keeps the name **`Pf`**; `Provable` is retired
   (theorems rename `Provable_sound → Pf_sound` etc., pure grep). Rationale: `Pf` is
@@ -72,14 +72,34 @@ app follows the migration automatically.
 
 ## 2. Phase plan
 
-### Phase 0 — preflight (on the CURRENT green build) — ~0.5 session
-1. Branch `pf-only`.
-2. **Golden inventory**: script-dump every `outcome_*`/`llm_outcome_*` statement
-   (`grep`-extractable) to `Research/Data/golden_outcomes_pre_pf.txt`.
-3. Freeze a LEGACY snapshot: copy the current mutual block + `Derivation` into
-   `Research/Spikes/unified_pf/LegacyS.lean` (namespace `PD.Legacy`, compiled but not
-   root-imported). This is the reference the Phase-1 equivalence proof targets.
-4. Settle D1–D5 (record any deviation in this file).
+### Phase 0 — preflight (on the CURRENT green build) — ✅ **DONE 2026-07-14**
+1. ✅ Branch `pf-only` (base commit `1e711ee`, the coexistence-`Pf` commit).
+2. ✅ **Golden inventory** — `Research/Data/golden_outcomes_pre_pf.txt`: **81** outcome
+   theorems, each with its **kernel-elaborated type** and **axiom footprint**. NOT a text
+   grep (statements span lines and would not diff faithfully): a generated probe file,
+   `Research/Data/GoldenProbe.lean`, `#check`s + `#print axioms` every theorem with
+   `pp.fullNames`, and the baseline is that output. All 81 rest on Lean's 3 standard axioms;
+   zero non-standard. Regenerate + diff at every phase gate.
+3. ✅ **Legacy snapshot + FIDELITY anchor** — `Research/Spikes/unified_pf/LegacyS.lean`:
+   the pre-migration `Derivation` + mutual `PlaysProof`/`AtomProvable`/`Provable`, extracted
+   mechanically and re-namespaced `PD → PD.Legacy`, depending only on `Program.lean`.
+   **The snapshot does not merely exist — it is PROVED to be the live system**:
+   * `deriv_fwd`/`deriv_bwd` — the two `Derivation`s embed both ways **at equal `.size`**
+     (the size equality is what transports the `struct` budgets; proved alongside, not after);
+   * `legacy_to_live`/`live_to_legacy` — the full mutual block both ways (all three motives
+     ride in one induction per entry type; every arm is its own twin);
+   * **`legacy_iff_live : Legacy.Provable k φ ↔ PD.Provable k φ`** — the anchor, `[propext]`;
+   * `proofSearch_eq_legacy` — hence the ORACLE is unchanged by re-basing on the snapshot.
+
+   Phase 1 replaces this section's right-hand side with `Pf`, giving the chain
+   `Pf ↔ Legacy.Provable ↔ (the S that proved the 81 golden outcomes)`. A desync between the
+   snapshot and the live system now breaks the BUILD of this file — the intended alarm.
+4. ✅ D1–D5 settled: **all recommendations adopted unchanged** (see §1).
+
+*Deviation from plan*: the roadmap expected a grep-based inventory and a snapshot that was
+merely "compiled". Both were upgraded — kernel-elaborated types, and a machine-checked
+fidelity theorem — because a baseline that is not certified equal to the system it snapshots
+would let the whole migration anchor to a subtly different `S`. Cost: one extra file section.
 
 ### Phase 1 — the core swap (`Derivation.lean`, `Dynamics.lean`) — ~1 session
 The one intentionally-red commit window; everything downstream breaks and is repaired in
