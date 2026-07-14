@@ -7,6 +7,88 @@ each era. Companion notes: `DECIDABILITY_ROADMAP.md` (the T31…T54 arc),
 
 ---
 
+## Story 2 in brief — from a sound oracle to a decidable one (T31…T54, 2026-07-03 → 07-09)
+
+Story 1 ended with a sound engine whose evaluator is CLASSICAL: `eval`'s guard is
+`decide (Provable k φ)` — correct, noncomputable. Story 2 is the campaign to turn that
+oracle into an algorithm. Five phases; everything lives in `Decidability/`.
+
+**A — Run it, with an asterisk (T31).** `decFull`: a computable enumerator with
+`Provable k φ ↔ ∃ fuel, decFull fuel k φ = true` — keep a table of "provable so far",
+each round try to fire every rule against the table, iterate. On top, `evalG`: the
+computable evaluator; programs run directly, `.search` guards consult the oracle,
+which answers `some true` (proof found), `some false` (refutation found), or `none`
+(undetermined). A `none` can mask either polarity at fixed fuel; in the limit it masks
+exactly the false-but-IRREFUTABLE guards (the anti-diagonal's own — the honest
+Gödelian residue). The asterisk: semidecidable — yes-answers eventually, but no
+STOPPING BOUND after which "not found" means "no".
+
+**B — Buy a stopping bound (T42–T47).** Two infinities block a bound. (1) CUTS: six
+rules (`app`, `implTrans`, …) use a stepping-stone formula absent from the conclusion
+— infinitely many candidates. Fix: real proofs write their stepping-stones inside the
+transcript, so `Provable` decomposes into GATED strata `ProvableG G` (cut positions
+must pass gate `G`) with `Provable ↔ ∃N, ProvableB N` — nothing lost in principle.
+(2) QUERIES: deciding one guard spawns new questions (substitution creates new
+player pairs and instances). Fix: zoo bots are MODEST (sim/guard arguments are only
+`.self`/`.opp`/frozen closed bots, checkable by `rfl`), and modest dynamics can never
+invent new material — every reachable question lives in one computable finite list
+`SL`. Then saturation over a finite space must stabilize within `|SL|` rounds
+(pigeonhole): `Decidable (ProvableG (modestGate N) k φ)`. Remaining question
+(CutRelevance): is the modest stratum the WHOLE truth about the zoo?
+
+**C — Proofs as data (T48–T49).** To reason about ALL proofs of a fact: `ProvT`, the
+`Type`-valued mirror (`Provable k φ ↔ Nonempty (ProvT k φ)`) — proof TREES you can
+measure and walk; the census (T48: every implication a `Derivation` proves has a
+catalogued antecedent; literals `< 2^budget`); and the rewriting machine (T49): a
+cut-eliminator (β-reduce stepping-stones away) with a Tait-style normalization theorem
+proving it always halts, packaged as the excisor + kernel-decidable certificate
+families. Built expecting to PROVE CutRelevance by rewriting any proof into the
+stratum.
+
+**D — The falsification (T50 witness, T51 theorem).** Test the hardest fact: Dupoc's
+self-cooperation (the Löb fixpoint), written as a concrete tree — it FAILS the modest
+gate. And unfixably so: `cutRelevance_modestGate_false` — the fact is `Provable` but
+`¬ProvableG (modestGate N)` at EVERY `N` and budget. Simply put: a Löb proof must at
+some point hold the exact self-referential sentence ("Dupoc plays C vs Dupoc" — full
+of concrete bot code) in the very positions the gate restricts to generic shapes, and
+must apply `diag` to it; block that and every proof attempt is circular (the guard's
+content IS the conclusion — citing it re-derives the goal at no budget descent;
+infinite regress, closed case-by-case). The conjecture is FALSE, and informatively:
+the decidable modest stratum excludes exactly the cooperation facts the zoo runs on.
+
+**E — The repair (T50, T52–T54).** The autopsy is the spec: the gate wrongly demanded
+genericity where the zoo needs INSTANCES — argument slots holding pool bots or closed
+modest code, guards stored raw. That is the instance gate `instGate P N`. Surprises,
+in order: the real Löb trees pass it RAW (no rewriting — Phase C's machine was needed
+for the refutation and the certificates, not surgery); the TRANSPORT theorem replaces
+inspection with a 4-item mechanical checklist (`certifyTransport`: gated cuts, capped
+cites, raw atom frames, instance conclusion → the whole tree is in the stratum); the
+decider was gate-parametric all along (T52: the gate enters at eight sites) and the
+finite-space stabilization survives (T53: instance cuts' arguments re-enter `SL`) —
+`decideProvableG_inst`, decidable with the same `|SL|` bound. T54 then certifies every
+guard fact the zoo consults (kernel-evaluated checks, incl. Prudent×Dupoc at
+`k = 2²⁹`). NET: the zoo's oracle is an algorithm with a computable stopping bound.
+OPEN: the universal closure — arbitrary provable facts transport (excise + certify
+composed for arbitrary trees) — on which certificate-free uniform computability rests.
+
+**The algorithm, and why saturation.** All deciders are bottom-up Kleene saturation
+(monotone table + step operator + pigeonhole), NOT goal-directed backward search.
+Chosen for the smallest trusted correctness argument (monotonicity + pigeonhole +
+step congruence — the proof burden dominated the choice), and because backward search
+LOOPS on precisely the Löb fixpoints (the guard instance cites itself; T51's regress
+is that loop) — bottom-up reaches fixpoints from below via `diag` instead of chasing
+cycles. Also: the same operator, fuel-indexed, IS the semidecider `decFull`; and gate
+parametrization is mechanical. Efficiency was a NON-goal: the combinatorics are
+intrinsically exponential, and practical use rides the find/verify asymmetry — search
+offline, check the four cheap transport certificates in the kernel (that is how the
+`2²⁹` facts are settled without running the astronomic search). Known,
+theorem-preserving optimizations if ever needed: semi-naive evaluation (the saturation
+over `SL` is essentially ground Datalog), demand-driven restriction, hash-consing —
+or an untrusted fast searcher emitting kernel-checked certificates, the architecture
+the transport theorem was built for.
+
+---
+
 ## The `search_f` floor: else-certificates cost `n + m + k + c_node` (2026-07-02)
 
 **The decision.** A `PlaysProof` for a search bot's *else*-play (the branch taken when
