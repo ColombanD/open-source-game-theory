@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260714T173810",
+  "bot_a": "OBot",
+  "bot_b": "CooperateBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": 5,
+  "exclude_bots": [
+    "CooperateBot",
+    "OBot"
+  ],
+  "passed": true,
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 2,
+  "elapsed_seconds": 16.457603667000512,
+  "error": null,
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.OBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_OBot_vs_CooperateBot (n : Nat) :\n    outcome (n+5) OBot CooperateBot = some (.C, .C) := by\n  unfold outcome play\n  simp [eval, OBot, CooperateBot, Prog.subst]\n  decide\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}

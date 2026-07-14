@@ -296,7 +296,27 @@ Sub-order (each its own commit):
 **Gate**: `lake build` BOTH targets green; `#eval` demos print the same outcomes as
 pre-migration; axiom audit clean.
 
-### Phase 5 — app + docs — ~0.5–1 session
+### Phase 5 — app + docs — ✅ **DONE 2026-07-14. THE MIGRATION IS COMPLETE.**
+
+1. ✅ App: ZERO changes needed. The proof agent embeds `Derivation.lean`/`BaseTheorems.lean`
+   by filename (D4), so it reads the Pf-only system automatically; the prompt prose had no
+   stale rule references.
+2. ✅ **Eval harness acceptance: 10/10 PASSED** against the Pf-only engine (avg 1.6
+   iterations vs the 1.5 pre-migration baseline; 166s wall; hardest case EBot vs
+   CooperateBot at 3 iterations). The LLM proof agent writes fluent proofs in the unified
+   language with NO prompt-side changes — few-shots flow from the ported theorem library.
+3. ✅ Docs: CLAUDE.md rewritten for the Pf-only engine (proof-system + decidability rows;
+   stale `ComputableEval` row removed); this roadmap is the migration's record.
+4. ✅ Spikes retired at Phase 1 (`TOMBSTONES.md`); `LegacyS.lean` kept as the permanent
+   meaning-preservation evidence.
+
+**FINAL SCORECARD vs the §0 invariants**: 81/81 outcome theorems byte-identical
+(kernel-elaborated types + axiom footprints); 3 standard axioms, 0 project axioms
+throughout; the oracle provably unchanged (`legacy_iff_live`); D2 acceptance passed
+(all five zoo trees instance-gated, `[propext]`); `#eval` demos identical; eval harness
+10/10. Planned ~10–17 sessions; actual ≈ 2.
+
+Original plan:
 1. `app/`: filenames unchanged ⇒ the proof agent's prompt embeds the NEW
    `Derivation.lean`/`BaseTheorems.lean` automatically. Sweep
    `app/src/pd_runner/llm/prompts.py` prose for stale rule names (`weakenImpl` etc.

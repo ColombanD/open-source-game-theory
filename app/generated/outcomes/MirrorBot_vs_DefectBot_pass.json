@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260714T173754",
+  "bot_a": "MirrorBot",
+  "bot_b": "DefectBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": 3,
+  "exclude_bots": [
+    "DefectBot",
+    "MirrorBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "D",
+  "iterations_used": 1,
+  "elapsed_seconds": 10.478085915998236,
+  "error": null,
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.MirrorBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_MirrorBot_vs_DefectBot (n : Nat) :\n    outcome (n+3) MirrorBot DefectBot = some (.D, .D) := by\n  simp [outcome, play, eval, MirrorBot, DefectBot, Prog.subst]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}

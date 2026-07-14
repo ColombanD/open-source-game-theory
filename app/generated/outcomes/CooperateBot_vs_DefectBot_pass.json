@@ -1,10 +1,11 @@
 {
-  "timestamp": "20260516T140400",
+  "timestamp": "20260714T173720",
   "bot_a": "CooperateBot",
   "bot_b": "DefectBot",
   "model": "claude-opus-4-7",
   "max_iterations": 20,
-  "fuel_requested": null,
+  "max_tokens": 32000,
+  "fuel_requested": 1,
   "exclude_bots": [
     "CooperateBot",
     "DefectBot"
@@ -13,7 +14,7 @@
   "left_action": "C",
   "right_action": "D",
   "iterations_used": 1,
-  "elapsed_seconds": 10.532468290999532,
+  "elapsed_seconds": 10.614145583000209,
   "error": null,
   "final_text_tail": "```lean\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_CooperateBot_vs_DefectBot (n : Nat) :\n    outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by\n  rfl\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

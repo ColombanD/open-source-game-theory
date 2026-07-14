@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260714T173948",
+  "bot_a": "EBot",
+  "bot_b": "CooperateBot",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": 3,
+  "exclude_bots": [
+    "CooperateBot",
+    "EBot"
+  ],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "C",
+  "iterations_used": 3,
+  "elapsed_seconds": 42.84459408299881,
+  "error": null,
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_EBot_vs_CooperateBot (n : Nat) :\n    outcome (n+3) EBot CooperateBot = some (.D, .C) := by\n  have hA : play (n+3) EBot CooperateBot = some .D := by\n    show eval (n+3) EBot CooperateBot EBot = some .D\n    unfold EBot\n    simp [eval, Prog.subst, CooperateBot, show (Action.C == Action.C) = true from rfl]\n  have hB : play (n+3) CooperateBot EBot = some .C := rfl\n  simp [outcome, hA, hB]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}
