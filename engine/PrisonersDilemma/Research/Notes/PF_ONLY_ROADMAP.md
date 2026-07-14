@@ -219,7 +219,37 @@ JustBot, CIMCIC, DIMCID}` (hand-port these — do NOT re-run the LLM pipeline mi
 
 ✅ **Gate MET** (see above). **The engine is now Pf-only.**
 
-### Phase 4 — Metatheory (~16k lines; the big one) — ~5–10 sessions
+### Phase 4 — Metatheory (~16k lines; the big one) — **IN PROGRESS 2026-07-14**
+
+**Status (commit `ce79594`): 8 of 14 modules GREEN** — T31, T42, T43, T44, T45, T46, T47,
+T48. The D2 decision is EXECUTED (T42 compiled first-pass; uniform gating; stratification
+re-proved) and the enumerator's `#eval` demos print outcomes IDENTICAL to pre-migration.
+Key artifacts of the done part:
+* `T48.LeafPf` — the packaged Type-valued transparency leaf (7 constructors) with
+  `toPf`/`toG`/`concl_size_le`/`weaken`/`posImpl_ant`/`impl_ant` + `leafPf_shape`/`leafPf_no_box`.
+  THE migration shim: everything that stored/inspected a `Derivation` now stores/inspects this.
+* `T31.chkLeaf` — the 7 leaf checkers bundled into `decDeriv`'s old `decProv` slot (decider
+  shape unchanged ⇒ fuel-mono proofs verbatim), + `chkLeaf_sound`/`chkLeaf_soundG`/7 firing
+  lemmas. `decDeriv`/`chkMP`/`chkHS`/`atomizeStruct`-style Derivation recursion: GONE,
+  subsumed by `chkAppE`/`chkITrans` (cut enumeration through the decider's own fuel).
+
+**T49 (in progress)**: the SUBSTRATE is ported and compiles conceptually — `ProvT.leaf
+(l : LeafPf k φ)` replaced `struct (d : Derivation)`; `leafCross` replaced `structCross`
+(census-only: the mp/hypSyll decomposition arms DIED — they are `app`/`implTrans` tree
+nodes); `atomizeStruct` deleted (a leaf never concludes a bare `.plays`: `nomatch l`);
+`ProvT.wt` counts leaves as 1 (`dNodes` deleted). REMAINING (~90 errors): the six
+machine-invariant theorems at lines ≈1018 (`crossWt`), 1674 (gate preservation), 2212,
+2835, 3188, 4301 — each a strong induction over the machine with (a) a `structCross`
+conjunct to restate over `leafCross` (`dNodes d` bound → `1`), (b) an `atomizeStruct`
+conjunct to DELETE (and the `refine ⟨…⟩` arity shrinks), (c) `| struct d hd =>` node arms
+→ `| leaf l =>` (nil→`mkSelf`, cons→the leafCross conjunct), (d) inside the conjunct
+proofs, `cases d with` → `cases l with`: mp/hypSyll arms DELETE, census arms keep their
+bodies with the extra `hle` binder, `derivGateOK G d` premises become trivial. Then the
+`derivation_shape` call sites (≈1666, 3069, 3581, 3814, 4508, 4742, 4808) → `leafPf_shape l`,
+and T50/T51's `derivation_impl_ant` → `LeafPf.impl_ant`. After T49: T50–T54 renames + the
+same leaf treatment; T54 is the D2 acceptance test.
+
+Original plan (~5–10 sessions):
 Sub-order (each its own commit):
 1. **T42 (the gated mirror + D2)**: `{PlaysProofG, AtomProvableG, PfG}` with the gate on
    the six premise formulas PLUS the merged `mp`/`implTrans` (uniform gating). Re-prove

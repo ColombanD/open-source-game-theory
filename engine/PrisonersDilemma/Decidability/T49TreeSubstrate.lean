@@ -880,44 +880,11 @@ theorem Formula.size_pos : (φ : Formula) → 1 ≤ φ.size := by
   intro φ
   cases φ <;> simp [numCost, Formula.size]
 
-/-- Derivation node count — the walkable weight of a `struct`-tree (stage 2 unfolds
-    `modusPonens`/`hypSyll` into machine steps, so `struct`-weight must be
-    unfold-conserving). -/
-def dNodes : {φ : Formula} → Derivation φ → Nat
-  | _, .modusPonens _ _ d1 d2 => dNodes d1 + dNodes d2 + 1
-  | _, .hypSyll _ _ _ d1 d2 => dNodes d1 + dNodes d2 + 1
-  | _, _ => 1
-
-theorem dNodes_pos : {φ : Formula} → (d : Derivation φ) → 1 ≤ dNodes d
-  | _, .modusPonens _ _ d1 d2 => by simp [dNodes]
-  | _, .hypSyll _ _ _ d1 d2 => by simp [dNodes]
-  | _, .searchBranch _ _ _ _ _ _ _ | _, .simStep _ _ _ _ _ _
-  | _, .botSimStep _ _ _ _ _ _ | _, .botSearchStep _ _ _ _ _ _ _
-  | _, .iteBranchSearch_t _ _ _ _ _ _ _ _ _ _ | _, .eqRefl _
-  | _, .eqNeg _ _ _ => Nat.le_refl _
-
-theorem dNodes_le_size : {φ : Formula} → (d : Derivation φ) →
-    dNodes d ≤ d.size := by
-  intro φ d
-  induction d with
-  | modusPonens φ' ψ d1 d2 ih1 ih2 =>
-      have := (Formula.size_pos ψ)
-      simp only [dNodes, Derivation.size]
-      omega
-  | hypSyll φ' ψ χ d1 d2 ih1 ih2 =>
-      have := (Formula.size_pos (Formula.impl φ' χ))
-      simp only [dNodes, Derivation.size]
-      omega
-  | _ =>
-      first
-      | (simp only [dNodes, Derivation.size]
-         exact Formula.size_pos _)
-
 /-- Walkable weight: the machine only ever walks the `ProvT` layer (atom certificates
-    are terminal, and `Derivation`s unfold node-by-node), so atoms count 1 and
-    `struct`s their node count. -/
+    and leaves are terminal), so atoms and leaves count 1. (Pf-only: the former `struct`
+    node carried a whole `Derivation` and weighed its node count; a leaf just weighs 1.) -/
 def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
-  | _, _, .struct d _ => dNodes d
+  | _, _, .leaf _ => 1
   | _, _, .atom _ => 1
   | _, _, .weakenImpl _ _ _ t _ => t.wt + 1
   | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => 1
@@ -935,7 +902,7 @@ def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
   | _, _, .atomNeg _ _ _ _ _ _ _ _ => 1
 
 theorem ProvT.wt_pos {m : Nat} {φ : Formula} : (t : ProvT m φ) → 1 ≤ t.wt
-  | .struct d _ => dNodes_pos d
+  | .leaf _ => Nat.le_refl _
   | .atom _ | .atomBoxImpl _ _ _ _ _ _ | .box4 _ _ _ _ _ _
   | .axKf _ _ _ _ _ _ _ _ | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Nat.le_refl _
