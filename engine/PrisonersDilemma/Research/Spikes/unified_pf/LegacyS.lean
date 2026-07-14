@@ -456,11 +456,21 @@ end
 A copy is only a trustworthy baseline if it is *provably* the same relation as the thing it
 copies. We discharge that here, while both systems still exist:
 
-    Legacy.Provable k φ  ↔  PD.Provable k φ        (every budget, both directions)
+    Legacy.Provable k φ  ↔  PD.Pf k φ        (every budget, both directions)
 
-After Phase 1 deletes `PD.Provable`, this section's right-hand side becomes `Pf` — same proof
-shape (the two rule sets are constructor-for-constructor twins, so every arm is its own image).
-Composing gives `Pf ↔ Legacy.Provable ↔ (the S that proved the 81 golden outcomes)`.
+**Phase 1 (2026-07-14): re-anchored.** The live system is now the unified `Pf` — `PD.Derivation`
+and `PD.Provable` no longer exist. This is THE theorem the migration turns on: the new oracle
+(`proofSearch := decide (Pf k φ)`) decides EXACTLY the relation that the 81 golden outcome
+theorems were originally proved against. Not a regression test — a proof.
+
+The two rule sets are no longer constructor-for-constructor twins (that was the point of the
+merge), so the arms are the interesting part:
+  * legacy `struct ⟨d, d.size ≤ k⟩` ⟶ `Pf`: recurse into the legacy `Derivation` (`deriv_to_pf`),
+    which lands on the merged `mp`/`implTrans`/leaf rules AT THE SAME transcript size;
+  * legacy `app`/`implTrans` ⟶ the SAME merged `Pf.mp`/`Pf.implTrans` (the duplicate pairs
+    collapse — both legacy sources map onto one target);
+  * `Pf` ⟶ legacy: leaves re-enter through `struct` (a leaf `Derivation`'s size IS its
+    conclusion's size, which is exactly the leaf's `Pf` side-condition).
 
 If a future edit desynchronizes the snapshot, THIS SECTION STOPS COMPILING — the intended alarm.
     ═══════════════════════════════════════════════════════════════════════════════════════ -/
@@ -471,76 +481,52 @@ example : Legacy.c_leaf = PD.c_leaf := rfl
 example : Legacy.c_node = PD.c_node := rfl
 example (k : Nat) : Legacy.c_guard k = PD.c_guard k := rfl
 
-/-! ### `Derivation`: the two `Type`-valued systems agree, AT THE SAME SIZE.
+/-! ### Legacy `Derivation` ⟶ `Pf`, at the same transcript size.
 
-The size equality is what makes the `struct` budgets transfer, so it is proved alongside the
-embedding, not after it. -/
+The live system has no `Derivation` any more: its structural rules are `Pf` constructors. A legacy
+`Derivation` of size `n` becomes a `Pf n` — leaves land on their `Pf` twins (a leaf's `.size` IS
+its conclusion's size = the leaf rule's side-condition), and `modusPonens`/`hypSyll` land on the
+merged `mp`/`implTrans`, whose cost shape (`m₁ + m₂ + conclusion.size`) is exactly the tree's
+transcript size. This is the arm that carries the legacy `struct` rule across. -/
 
-/-- Every legacy `Derivation` is a live one, at the same transcript size. -/
-theorem deriv_fwd : ∀ {φ : Formula} (d : Legacy.Derivation φ),
-    ∃ d' : PD.Derivation φ, d'.size = d.size := by
+theorem deriv_to_pf : ∀ {φ : Formula} (d : Legacy.Derivation φ), PD.Pf d.size φ := by
   intro φ d
   induction d with
   | modusPonens φ' ψ d1 d2 ih1 ih2 =>
-      obtain ⟨e1, h1⟩ := ih1; obtain ⟨e2, h2⟩ := ih2
-      exact ⟨.modusPonens φ' ψ e1 e2, by
-        simp [PD.Derivation.size, Legacy.Derivation.size, h1, h2]⟩
+      exact .mp _ _ φ' ψ ih1 ih2 (by simp [Legacy.Derivation.size])
   | hypSyll φ' ψ χ d1 d2 ih1 ih2 =>
-      obtain ⟨e1, h1⟩ := ih1; obtain ⟨e2, h2⟩ := ih2
-      exact ⟨.hypSyll φ' ψ χ e1 e2, by
-        simp [PD.Derivation.size, Legacy.Derivation.size, h1, h2]⟩
-  | searchBranch k ψ a b me opponent hme => exact ⟨.searchBranch k ψ a b me opponent hme, rfl⟩
-  | simStep me p q opponent a hme => exact ⟨.simStep me p q opponent a hme, rfl⟩
-  | botSimStep me p q opponent a hme => exact ⟨.botSimStep me p q opponent a hme, rfl⟩
-  | botSearchStep k ψ a b me opponent hme =>
-      exact ⟨.botSearchStep k ψ a b me opponent hme, rfl⟩
-  | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
-      exact ⟨.iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme, rfl⟩
-  | eqRefl p => exact ⟨.eqRefl p, rfl⟩
-  | eqNeg p q hne => exact ⟨.eqNeg p q hne, rfl⟩
+      exact .implTrans φ' ψ χ _ _ ih1 ih2 (by simp [Legacy.Derivation.size])
+  | searchBranch g ψ a b me opponent hme =>
+      exact .searchBranch g ψ a b me opponent hme (by simp [Legacy.Derivation.size])
+  | simStep me p q opponent a hme =>
+      exact .simStep me p q opponent a hme (by simp [Legacy.Derivation.size])
+  | botSimStep me p q opponent a hme =>
+      exact .botSimStep me p q opponent a hme (by simp [Legacy.Derivation.size])
+  | botSearchStep g ψ a b me opponent hme =>
+      exact .botSearchStep g ψ a b me opponent hme (by simp [Legacy.Derivation.size])
+  | iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme =>
+      exact .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme (by simp [Legacy.Derivation.size])
+  | eqRefl p => exact .eqRefl p (by simp [Legacy.Derivation.size])
+  | eqNeg p q hne => exact .eqNeg p q hne (by simp [Legacy.Derivation.size])
 
-/-- …and conversely. -/
-theorem deriv_bwd : ∀ {φ : Formula} (d : PD.Derivation φ),
-    ∃ d' : Legacy.Derivation φ, d'.size = d.size := by
-  intro φ d
-  induction d with
-  | modusPonens φ' ψ d1 d2 ih1 ih2 =>
-      obtain ⟨e1, h1⟩ := ih1; obtain ⟨e2, h2⟩ := ih2
-      exact ⟨.modusPonens φ' ψ e1 e2, by
-        simp [PD.Derivation.size, Legacy.Derivation.size, h1, h2]⟩
-  | hypSyll φ' ψ χ d1 d2 ih1 ih2 =>
-      obtain ⟨e1, h1⟩ := ih1; obtain ⟨e2, h2⟩ := ih2
-      exact ⟨.hypSyll φ' ψ χ e1 e2, by
-        simp [PD.Derivation.size, Legacy.Derivation.size, h1, h2]⟩
-  | searchBranch k ψ a b me opponent hme => exact ⟨.searchBranch k ψ a b me opponent hme, rfl⟩
-  | simStep me p q opponent a hme => exact ⟨.simStep me p q opponent a hme, rfl⟩
-  | botSimStep me p q opponent a hme => exact ⟨.botSimStep me p q opponent a hme, rfl⟩
-  | botSearchStep k ψ a b me opponent hme =>
-      exact ⟨.botSearchStep k ψ a b me opponent hme, rfl⟩
-  | iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme =>
-      exact ⟨.iteBranchSearch_t k z a' c0 c1 ψ q me opponent hme, rfl⟩
-  | eqRefl p => exact ⟨.eqRefl p, rfl⟩
-  | eqNeg p q hne => exact ⟨.eqNeg p q hne, rfl⟩
+/-! ### The mutual block: legacy `Provable` and the live `Pf` agree.
 
-/-! ### The mutual block: `Provable` and its two companions agree.
+Both blocks are mutual, so all three motives must ride in the SAME induction (the `atom` /
+`atomNeg` / `atomBoxImpl` rules consume the certificate halves). Hence one recursor application
+per entry type, each carrying all three motives. -/
 
-The block is mutual, so all three motives must ride in the SAME induction (`Provable.atom` /
-`atomNeg` / `atomBoxImpl` consume the certificate halves). Hence: one recursor application per
-entry type, each carrying all three motives. Every arm is the same-named constructor of the other
-system — the snapshot is verbatim, so the twins line up exactly. -/
-
-/-- Legacy ⟶ live, all three components. -/
+/-- Legacy ⟶ live (`Pf`), all three components. -/
 theorem legacy_to_live :
     (∀ {me opponent body : Prog} {a : Action} {n : Nat},
         Legacy.PlaysProof me opponent body a n → PD.PlaysProof me opponent body a n)
     ∧ (∀ {k : Nat} {φ : Formula}, Legacy.AtomProvable k φ → PD.AtomProvable k φ)
-    ∧ (∀ {k : Nat} {φ : Formula}, Legacy.Provable k φ → PD.Provable k φ) := by
+    ∧ (∀ {k : Nat} {φ : Formula}, Legacy.Provable k φ → PD.Pf k φ) := by
   refine ⟨fun h => ?fwdP, fun h => ?fwdA, fun h => ?fwdPr⟩
   case fwdP =>
     exact Legacy.PlaysProof.rec
       (motive_1 := fun me opponent body a n _ => PD.PlaysProof me opponent body a n)
       (motive_2 := fun k φ _ => PD.AtomProvable k φ)
-      (motive_3 := fun k φ _ => PD.Provable k φ)
+      (motive_3 := fun k φ _ => PD.Pf k φ)
       PD.PlaysProof.const
       (fun _ ih => PD.PlaysProof.self ih) (fun _ ih => PD.PlaysProof.opp ih)
       (fun _ ih => PD.PlaysProof.bot ih) (fun _ ih => PD.PlaysProof.sim ih)
@@ -549,30 +535,31 @@ theorem legacy_to_live :
       (fun _ _ ihg ihp => PD.PlaysProof.search_t ihg ihp)
       (fun _ _ ihg ihq => PD.PlaysProof.search_f ihg ihq)
       (fun _ hle ih => PD.AtomProvable.mk ih hle)
-      (fun hd => PD.Provable.struct
-        (hd.elim fun d hsz => (deriv_fwd d).elim fun d' hd' => ⟨d', hd' ▸ hsz⟩))
-      (fun _ ih => PD.Provable.atom ih)
-      (fun φ ψ m _ hle ih => PD.Provable.weakenImpl φ ψ m ih hle)
+      -- legacy `struct` ⟶ the Derivation transport (leaves/mp/implTrans of `Pf`), then relax
+      (fun hd => hd.elim fun d hsz => PD.Pf_mono (deriv_to_pf d) hsz)
+      (fun _ ih => PD.Pf.atom ih)
+      (fun φ ψ m _ hle ih => PD.Pf.weakenImpl φ ψ m ih hle)
       (fun k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme _ hmk hle ih =>
-        PD.Provable.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
-      (fun φ ψ χ a b _ _ hle ih1 ih2 => PD.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
-      (fun kBox p q a _ hle ih => PD.Provable.atomBoxImpl kBox p q a ih hle)
-      (fun kIn K φ _ hle ih => PD.Provable.boxIntro kIn K φ ih hle)
-      (fun k m₁ m₂ φ α _ _ hle ih1 ih2 => PD.Provable.app k m₁ m₂ φ α ih1 ih2 hle)
-      (fun a b c m K φ α _ hgate hle ih => PD.Provable.axK a b c m K φ α ih hgate hle)
-      (fun a b K φ hgate hsz => PD.Provable.box4 a b K φ hgate hsz)
-      (fun pm fb g K tgt _ hle ih => PD.Provable.diagF pm fb g K tgt ih hle)
-      (fun pm fb g K tgt _ hle ih => PD.Provable.diagB pm fb g K tgt ih hle)
-      (fun a b c K φ α hgate hsz => PD.Provable.axKf a b c K φ α hgate hsz)
-      (fun φ ψ χ m₁ m₂ K _ _ hle ih1 ih2 => PD.Provable.impS2 φ ψ χ m₁ m₂ K ih1 ih2 hle)
-      (fun a b K φ hab hsz => PD.Provable.boxMono a b K φ hab hsz)
-      (fun p q b aN m _ hne hle ih => PD.Provable.atomNeg p q b aN m ih hne hle)
+        PD.Pf.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
+      (fun φ ψ χ a b _ _ hle ih1 ih2 => PD.Pf.implTrans φ ψ χ a b ih1 ih2 hle)
+      (fun kBox p q a _ hle ih => PD.Pf.atomBoxImpl kBox p q a ih hle)
+      (fun kIn K φ _ hle ih => PD.Pf.boxIntro kIn K φ ih hle)
+      -- legacy `app` ⟶ the MERGED `mp` (the duplicate pair collapses)
+      (fun _k m₁ m₂ φ α _ _ hle ih1 ih2 => PD.Pf.mp m₁ m₂ φ α ih1 ih2 hle)
+      (fun a b c m K φ α _ hgate hle ih => PD.Pf.axK a b c m K φ α ih hgate hle)
+      (fun a b K φ hgate hsz => PD.Pf.box4 a b K φ hgate hsz)
+      (fun pm fb g K tgt _ hle ih => PD.Pf.diagF pm fb g K tgt ih hle)
+      (fun pm fb g K tgt _ hle ih => PD.Pf.diagB pm fb g K tgt ih hle)
+      (fun a b c K φ α hgate hsz => PD.Pf.axKf a b c K φ α hgate hsz)
+      (fun φ ψ χ m₁ m₂ K _ _ hle ih1 ih2 => PD.Pf.impS2 φ ψ χ m₁ m₂ K ih1 ih2 hle)
+      (fun a b K φ hab hsz => PD.Pf.boxMono a b K φ hab hsz)
+      (fun p q b aN m _ hne hle ih => PD.Pf.atomNeg p q b aN m ih hne hle)
       h
   case fwdA =>
     exact Legacy.AtomProvable.rec
       (motive_1 := fun me opponent body a n _ => PD.PlaysProof me opponent body a n)
       (motive_2 := fun k φ _ => PD.AtomProvable k φ)
-      (motive_3 := fun k φ _ => PD.Provable k φ)
+      (motive_3 := fun k φ _ => PD.Pf k φ)
       PD.PlaysProof.const
       (fun _ ih => PD.PlaysProof.self ih) (fun _ ih => PD.PlaysProof.opp ih)
       (fun _ ih => PD.PlaysProof.bot ih) (fun _ ih => PD.PlaysProof.sim ih)
@@ -581,30 +568,31 @@ theorem legacy_to_live :
       (fun _ _ ihg ihp => PD.PlaysProof.search_t ihg ihp)
       (fun _ _ ihg ihq => PD.PlaysProof.search_f ihg ihq)
       (fun _ hle ih => PD.AtomProvable.mk ih hle)
-      (fun hd => PD.Provable.struct
-        (hd.elim fun d hsz => (deriv_fwd d).elim fun d' hd' => ⟨d', hd' ▸ hsz⟩))
-      (fun _ ih => PD.Provable.atom ih)
-      (fun φ ψ m _ hle ih => PD.Provable.weakenImpl φ ψ m ih hle)
+      -- legacy `struct` ⟶ the Derivation transport (leaves/mp/implTrans of `Pf`), then relax
+      (fun hd => hd.elim fun d hsz => PD.Pf_mono (deriv_to_pf d) hsz)
+      (fun _ ih => PD.Pf.atom ih)
+      (fun φ ψ m _ hle ih => PD.Pf.weakenImpl φ ψ m ih hle)
       (fun k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme _ hmk hle ih =>
-        PD.Provable.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
-      (fun φ ψ χ a b _ _ hle ih1 ih2 => PD.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
-      (fun kBox p q a _ hle ih => PD.Provable.atomBoxImpl kBox p q a ih hle)
-      (fun kIn K φ _ hle ih => PD.Provable.boxIntro kIn K φ ih hle)
-      (fun k m₁ m₂ φ α _ _ hle ih1 ih2 => PD.Provable.app k m₁ m₂ φ α ih1 ih2 hle)
-      (fun a b c m K φ α _ hgate hle ih => PD.Provable.axK a b c m K φ α ih hgate hle)
-      (fun a b K φ hgate hsz => PD.Provable.box4 a b K φ hgate hsz)
-      (fun pm fb g K tgt _ hle ih => PD.Provable.diagF pm fb g K tgt ih hle)
-      (fun pm fb g K tgt _ hle ih => PD.Provable.diagB pm fb g K tgt ih hle)
-      (fun a b c K φ α hgate hsz => PD.Provable.axKf a b c K φ α hgate hsz)
-      (fun φ ψ χ m₁ m₂ K _ _ hle ih1 ih2 => PD.Provable.impS2 φ ψ χ m₁ m₂ K ih1 ih2 hle)
-      (fun a b K φ hab hsz => PD.Provable.boxMono a b K φ hab hsz)
-      (fun p q b aN m _ hne hle ih => PD.Provable.atomNeg p q b aN m ih hne hle)
+        PD.Pf.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
+      (fun φ ψ χ a b _ _ hle ih1 ih2 => PD.Pf.implTrans φ ψ χ a b ih1 ih2 hle)
+      (fun kBox p q a _ hle ih => PD.Pf.atomBoxImpl kBox p q a ih hle)
+      (fun kIn K φ _ hle ih => PD.Pf.boxIntro kIn K φ ih hle)
+      -- legacy `app` ⟶ the MERGED `mp` (the duplicate pair collapses)
+      (fun _k m₁ m₂ φ α _ _ hle ih1 ih2 => PD.Pf.mp m₁ m₂ φ α ih1 ih2 hle)
+      (fun a b c m K φ α _ hgate hle ih => PD.Pf.axK a b c m K φ α ih hgate hle)
+      (fun a b K φ hgate hsz => PD.Pf.box4 a b K φ hgate hsz)
+      (fun pm fb g K tgt _ hle ih => PD.Pf.diagF pm fb g K tgt ih hle)
+      (fun pm fb g K tgt _ hle ih => PD.Pf.diagB pm fb g K tgt ih hle)
+      (fun a b c K φ α hgate hsz => PD.Pf.axKf a b c K φ α hgate hsz)
+      (fun φ ψ χ m₁ m₂ K _ _ hle ih1 ih2 => PD.Pf.impS2 φ ψ χ m₁ m₂ K ih1 ih2 hle)
+      (fun a b K φ hab hsz => PD.Pf.boxMono a b K φ hab hsz)
+      (fun p q b aN m _ hne hle ih => PD.Pf.atomNeg p q b aN m ih hne hle)
       h
   case fwdPr =>
     exact Legacy.Provable.rec
       (motive_1 := fun me opponent body a n _ => PD.PlaysProof me opponent body a n)
       (motive_2 := fun k φ _ => PD.AtomProvable k φ)
-      (motive_3 := fun k φ _ => PD.Provable k φ)
+      (motive_3 := fun k φ _ => PD.Pf k φ)
       PD.PlaysProof.const
       (fun _ ih => PD.PlaysProof.self ih) (fun _ ih => PD.PlaysProof.opp ih)
       (fun _ ih => PD.PlaysProof.bot ih) (fun _ ih => PD.PlaysProof.sim ih)
@@ -613,32 +601,33 @@ theorem legacy_to_live :
       (fun _ _ ihg ihp => PD.PlaysProof.search_t ihg ihp)
       (fun _ _ ihg ihq => PD.PlaysProof.search_f ihg ihq)
       (fun _ hle ih => PD.AtomProvable.mk ih hle)
-      (fun hd => PD.Provable.struct
-        (hd.elim fun d hsz => (deriv_fwd d).elim fun d' hd' => ⟨d', hd' ▸ hsz⟩))
-      (fun _ ih => PD.Provable.atom ih)
-      (fun φ ψ m _ hle ih => PD.Provable.weakenImpl φ ψ m ih hle)
+      -- legacy `struct` ⟶ the Derivation transport (leaves/mp/implTrans of `Pf`), then relax
+      (fun hd => hd.elim fun d hsz => PD.Pf_mono (deriv_to_pf d) hsz)
+      (fun _ ih => PD.Pf.atom ih)
+      (fun φ ψ m _ hle ih => PD.Pf.weakenImpl φ ψ m ih hle)
       (fun k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme _ hmk hle ih =>
-        PD.Provable.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
-      (fun φ ψ χ a b _ _ hle ih1 ih2 => PD.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
-      (fun kBox p q a _ hle ih => PD.Provable.atomBoxImpl kBox p q a ih hle)
-      (fun kIn K φ _ hle ih => PD.Provable.boxIntro kIn K φ ih hle)
-      (fun k m₁ m₂ φ α _ _ hle ih1 ih2 => PD.Provable.app k m₁ m₂ φ α ih1 ih2 hle)
-      (fun a b c m K φ α _ hgate hle ih => PD.Provable.axK a b c m K φ α ih hgate hle)
-      (fun a b K φ hgate hsz => PD.Provable.box4 a b K φ hgate hsz)
-      (fun pm fb g K tgt _ hle ih => PD.Provable.diagF pm fb g K tgt ih hle)
-      (fun pm fb g K tgt _ hle ih => PD.Provable.diagB pm fb g K tgt ih hle)
-      (fun a b c K φ α hgate hsz => PD.Provable.axKf a b c K φ α hgate hsz)
-      (fun φ ψ χ m₁ m₂ K _ _ hle ih1 ih2 => PD.Provable.impS2 φ ψ χ m₁ m₂ K ih1 ih2 hle)
-      (fun a b K φ hab hsz => PD.Provable.boxMono a b K φ hab hsz)
-      (fun p q b aN m _ hne hle ih => PD.Provable.atomNeg p q b aN m ih hne hle)
+        PD.Pf.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
+      (fun φ ψ χ a b _ _ hle ih1 ih2 => PD.Pf.implTrans φ ψ χ a b ih1 ih2 hle)
+      (fun kBox p q a _ hle ih => PD.Pf.atomBoxImpl kBox p q a ih hle)
+      (fun kIn K φ _ hle ih => PD.Pf.boxIntro kIn K φ ih hle)
+      -- legacy `app` ⟶ the MERGED `mp` (the duplicate pair collapses)
+      (fun _k m₁ m₂ φ α _ _ hle ih1 ih2 => PD.Pf.mp m₁ m₂ φ α ih1 ih2 hle)
+      (fun a b c m K φ α _ hgate hle ih => PD.Pf.axK a b c m K φ α ih hgate hle)
+      (fun a b K φ hgate hsz => PD.Pf.box4 a b K φ hgate hsz)
+      (fun pm fb g K tgt _ hle ih => PD.Pf.diagF pm fb g K tgt ih hle)
+      (fun pm fb g K tgt _ hle ih => PD.Pf.diagB pm fb g K tgt ih hle)
+      (fun a b c K φ α hgate hsz => PD.Pf.axKf a b c K φ α hgate hsz)
+      (fun φ ψ χ m₁ m₂ K _ _ hle ih1 ih2 => PD.Pf.impS2 φ ψ χ m₁ m₂ K ih1 ih2 hle)
+      (fun a b K φ hab hsz => PD.Pf.boxMono a b K φ hab hsz)
+      (fun p q b aN m _ hne hle ih => PD.Pf.atomNeg p q b aN m ih hne hle)
       h
 
-/-- Live ⟶ legacy, all three components. -/
+/-- Live (`Pf`) ⟶ legacy, all three components. -/
 theorem live_to_legacy :
     (∀ {me opponent body : Prog} {a : Action} {n : Nat},
         PD.PlaysProof me opponent body a n → Legacy.PlaysProof me opponent body a n)
     ∧ (∀ {k : Nat} {φ : Formula}, PD.AtomProvable k φ → Legacy.AtomProvable k φ)
-    ∧ (∀ {k : Nat} {φ : Formula}, PD.Provable k φ → Legacy.Provable k φ) := by
+    ∧ (∀ {k : Nat} {φ : Formula}, PD.Pf k φ → Legacy.Provable k φ) := by
   refine ⟨fun h => ?bwdP, fun h => ?bwdA, fun h => ?bwdPr⟩
   case bwdP =>
     exact PD.PlaysProof.rec
@@ -653,16 +642,32 @@ theorem live_to_legacy :
       (fun _ _ ihg ihp => Legacy.PlaysProof.search_t ihg ihp)
       (fun _ _ ihg ihq => Legacy.PlaysProof.search_f ihg ihq)
       (fun _ hle ih => Legacy.AtomProvable.mk ih hle)
-      (fun hd => Legacy.Provable.struct
-        (hd.elim fun d hsz => (deriv_bwd d).elim fun d' hd' => ⟨d', hd' ▸ hsz⟩))
+      -- `Pf` arms (22). Leaves re-enter legacy through `struct`: a leaf `Derivation`'s size IS its
+      -- conclusion's size, which is exactly the `Pf` leaf's side-condition.
       (fun _ ih => Legacy.Provable.atom ih)
+      (fun g ψ a b me opponent hme hle => Legacy.Provable.struct
+        ⟨.searchBranch g ψ a b me opponent hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun me p q opponent a hme hle => Legacy.Provable.struct
+        ⟨.simStep me p q opponent a hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun me p q opponent a hme hle => Legacy.Provable.struct
+        ⟨.botSimStep me p q opponent a hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun g ψ a b me opponent hme hle => Legacy.Provable.struct
+        ⟨.botSearchStep g ψ a b me opponent hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun g z a' c0 c1 ψ q me opponent hme hle => Legacy.Provable.struct
+        ⟨.iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme,
+          by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun p hle => Legacy.Provable.struct
+        ⟨.eqRefl p, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun p q hne hle => Legacy.Provable.struct
+        ⟨.eqNeg p q hne, by simpa [Legacy.Derivation.size] using hle⟩)
+      -- merged `mp`/`implTrans` ⟶ legacy's `Provable`-level twins (`app`/`implTrans`)
+      (fun m₁ m₂ φ α _ _ hle ih1 ih2 => Legacy.Provable.app _ m₁ m₂ φ α ih1 ih2 hle)
+      (fun φ ψ χ a b _ _ hle ih1 ih2 => Legacy.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
       (fun φ ψ m _ hle ih => Legacy.Provable.weakenImpl φ ψ m ih hle)
       (fun k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme _ hmk hle ih =>
         Legacy.Provable.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
-      (fun φ ψ χ a b _ _ hle ih1 ih2 => Legacy.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
       (fun kBox p q a _ hle ih => Legacy.Provable.atomBoxImpl kBox p q a ih hle)
       (fun kIn K φ _ hle ih => Legacy.Provable.boxIntro kIn K φ ih hle)
-      (fun k m₁ m₂ φ α _ _ hle ih1 ih2 => Legacy.Provable.app k m₁ m₂ φ α ih1 ih2 hle)
       (fun a b c m K φ α _ hgate hle ih => Legacy.Provable.axK a b c m K φ α ih hgate hle)
       (fun a b K φ hgate hsz => Legacy.Provable.box4 a b K φ hgate hsz)
       (fun pm fb g K tgt _ hle ih => Legacy.Provable.diagF pm fb g K tgt ih hle)
@@ -685,16 +690,32 @@ theorem live_to_legacy :
       (fun _ _ ihg ihp => Legacy.PlaysProof.search_t ihg ihp)
       (fun _ _ ihg ihq => Legacy.PlaysProof.search_f ihg ihq)
       (fun _ hle ih => Legacy.AtomProvable.mk ih hle)
-      (fun hd => Legacy.Provable.struct
-        (hd.elim fun d hsz => (deriv_bwd d).elim fun d' hd' => ⟨d', hd' ▸ hsz⟩))
+      -- `Pf` arms (22). Leaves re-enter legacy through `struct`: a leaf `Derivation`'s size IS its
+      -- conclusion's size, which is exactly the `Pf` leaf's side-condition.
       (fun _ ih => Legacy.Provable.atom ih)
+      (fun g ψ a b me opponent hme hle => Legacy.Provable.struct
+        ⟨.searchBranch g ψ a b me opponent hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun me p q opponent a hme hle => Legacy.Provable.struct
+        ⟨.simStep me p q opponent a hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun me p q opponent a hme hle => Legacy.Provable.struct
+        ⟨.botSimStep me p q opponent a hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun g ψ a b me opponent hme hle => Legacy.Provable.struct
+        ⟨.botSearchStep g ψ a b me opponent hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun g z a' c0 c1 ψ q me opponent hme hle => Legacy.Provable.struct
+        ⟨.iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme,
+          by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun p hle => Legacy.Provable.struct
+        ⟨.eqRefl p, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun p q hne hle => Legacy.Provable.struct
+        ⟨.eqNeg p q hne, by simpa [Legacy.Derivation.size] using hle⟩)
+      -- merged `mp`/`implTrans` ⟶ legacy's `Provable`-level twins (`app`/`implTrans`)
+      (fun m₁ m₂ φ α _ _ hle ih1 ih2 => Legacy.Provable.app _ m₁ m₂ φ α ih1 ih2 hle)
+      (fun φ ψ χ a b _ _ hle ih1 ih2 => Legacy.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
       (fun φ ψ m _ hle ih => Legacy.Provable.weakenImpl φ ψ m ih hle)
       (fun k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme _ hmk hle ih =>
         Legacy.Provable.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
-      (fun φ ψ χ a b _ _ hle ih1 ih2 => Legacy.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
       (fun kBox p q a _ hle ih => Legacy.Provable.atomBoxImpl kBox p q a ih hle)
       (fun kIn K φ _ hle ih => Legacy.Provable.boxIntro kIn K φ ih hle)
-      (fun k m₁ m₂ φ α _ _ hle ih1 ih2 => Legacy.Provable.app k m₁ m₂ φ α ih1 ih2 hle)
       (fun a b c m K φ α _ hgate hle ih => Legacy.Provable.axK a b c m K φ α ih hgate hle)
       (fun a b K φ hgate hsz => Legacy.Provable.box4 a b K φ hgate hsz)
       (fun pm fb g K tgt _ hle ih => Legacy.Provable.diagF pm fb g K tgt ih hle)
@@ -705,7 +726,7 @@ theorem live_to_legacy :
       (fun p q b aN m _ hne hle ih => Legacy.Provable.atomNeg p q b aN m ih hne hle)
       h
   case bwdPr =>
-    exact PD.Provable.rec
+    exact PD.Pf.rec
       (motive_1 := fun me opponent body a n _ => Legacy.PlaysProof me opponent body a n)
       (motive_2 := fun k φ _ => Legacy.AtomProvable k φ)
       (motive_3 := fun k φ _ => Legacy.Provable k φ)
@@ -717,16 +738,32 @@ theorem live_to_legacy :
       (fun _ _ ihg ihp => Legacy.PlaysProof.search_t ihg ihp)
       (fun _ _ ihg ihq => Legacy.PlaysProof.search_f ihg ihq)
       (fun _ hle ih => Legacy.AtomProvable.mk ih hle)
-      (fun hd => Legacy.Provable.struct
-        (hd.elim fun d hsz => (deriv_bwd d).elim fun d' hd' => ⟨d', hd' ▸ hsz⟩))
+      -- `Pf` arms (22). Leaves re-enter legacy through `struct`: a leaf `Derivation`'s size IS its
+      -- conclusion's size, which is exactly the `Pf` leaf's side-condition.
       (fun _ ih => Legacy.Provable.atom ih)
+      (fun g ψ a b me opponent hme hle => Legacy.Provable.struct
+        ⟨.searchBranch g ψ a b me opponent hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun me p q opponent a hme hle => Legacy.Provable.struct
+        ⟨.simStep me p q opponent a hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun me p q opponent a hme hle => Legacy.Provable.struct
+        ⟨.botSimStep me p q opponent a hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun g ψ a b me opponent hme hle => Legacy.Provable.struct
+        ⟨.botSearchStep g ψ a b me opponent hme, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun g z a' c0 c1 ψ q me opponent hme hle => Legacy.Provable.struct
+        ⟨.iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme,
+          by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun p hle => Legacy.Provable.struct
+        ⟨.eqRefl p, by simpa [Legacy.Derivation.size] using hle⟩)
+      (fun p q hne hle => Legacy.Provable.struct
+        ⟨.eqNeg p q hne, by simpa [Legacy.Derivation.size] using hle⟩)
+      -- merged `mp`/`implTrans` ⟶ legacy's `Provable`-level twins (`app`/`implTrans`)
+      (fun m₁ m₂ φ α _ _ hle ih1 ih2 => Legacy.Provable.app _ m₁ m₂ φ α ih1 ih2 hle)
+      (fun φ ψ χ a b _ _ hle ih1 ih2 => Legacy.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
       (fun φ ψ m _ hle ih => Legacy.Provable.weakenImpl φ ψ m ih hle)
       (fun k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme _ hmk hle ih =>
         Legacy.Provable.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme ih hmk hle)
-      (fun φ ψ χ a b _ _ hle ih1 ih2 => Legacy.Provable.implTrans φ ψ χ a b ih1 ih2 hle)
       (fun kBox p q a _ hle ih => Legacy.Provable.atomBoxImpl kBox p q a ih hle)
       (fun kIn K φ _ hle ih => Legacy.Provable.boxIntro kIn K φ ih hle)
-      (fun k m₁ m₂ φ α _ _ hle ih1 ih2 => Legacy.Provable.app k m₁ m₂ φ α ih1 ih2 hle)
       (fun a b c m K φ α _ hgate hle ih => Legacy.Provable.axK a b c m K φ α ih hgate hle)
       (fun a b K φ hgate hsz => Legacy.Provable.box4 a b K φ hgate hsz)
       (fun pm fb g K tgt _ hle ih => Legacy.Provable.diagF pm fb g K tgt ih hle)
@@ -737,14 +774,17 @@ theorem live_to_legacy :
       (fun p q b aN m _ hne hle ih => Legacy.Provable.atomNeg p q b aN m ih hne hle)
       h
 
-/-- **THE PHASE-0 ANCHOR** — the frozen snapshot decides exactly the relation the live engine's
-    oracle decides, at every budget, both directions. The 81 golden outcomes were proved against
-    the right-hand side; Phase 1 re-anchors `Pf` to the left-hand side. -/
-theorem legacy_iff_live {k : Nat} {φ : Formula} : Legacy.Provable k φ ↔ PD.Provable k φ :=
+/-- **THE MIGRATION ANCHOR** — the unified `Pf` proves EXACTLY what the pre-migration system
+    proved, at every budget, both directions. Everything downstream rests on this: the 81 golden
+    outcome theorems were established against the right… er, the LEFT-hand side (the frozen `S`),
+    and the engine now runs on the right. Their equivalence is what makes the migration
+    meaning-preserving rather than merely type-checking. -/
+theorem legacy_iff_live {k : Nat} {φ : Formula} : Legacy.Provable k φ ↔ PD.Pf k φ :=
   ⟨legacy_to_live.2.2, live_to_legacy.2.2⟩
 
-/-- Corollary: the ORACLE is literally unchanged by re-basing it on the snapshot. This is the
-    statement Phase 1 must preserve with `Pf` in place of `PD.Provable`. (`proofSearch` is
+/-- Corollary: the ORACLE is unchanged. `proofSearch` is now `decide (Pf k φ)`; this says it
+    decides the same relation it decided before the migration — so every `eval`/`play`/`outcome`
+    computation in the library takes the same branches it always did. (`proofSearch` is
     classical/noncomputable, hence the `Classical` decidability instance.) -/
 theorem proofSearch_eq_legacy {k : Nat} {φ : Formula} :
     PD.proofSearch k φ = @decide (Legacy.Provable k φ) (Classical.propDecidable _) := by

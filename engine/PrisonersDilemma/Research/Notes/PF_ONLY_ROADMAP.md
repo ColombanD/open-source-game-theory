@@ -101,30 +101,54 @@ merely "compiled". Both were upgraded — kernel-elaborated types, and a machine
 fidelity theorem — because a baseline that is not certified equal to the system it snapshots
 would let the whole migration anchor to a subtly different `S`. Cost: one extra file section.
 
-### Phase 1 — the core swap (`Derivation.lean`, `Dynamics.lean`) — ~1 session
-The one intentionally-red commit window; everything downstream breaks and is repaired in
-Phases 2–4.
-1. `Derivation.lean` → the new mutual block `{PlaysProof, AtomProvable, Pf}`:
-   * `PlaysProof.search_t`/`search_f` premises re-pointed at `Pf` (the back-edge);
-   * `Pf` = the shipped 22 constructors, `AtomProvable` premises now in-block;
-   * DELETE `Derivation`, `Derivation.size`, `Provable`.
-2. Day-one eliminators, same commit (the PfMutualInductSpike template, verbatim):
-   * `Pf.induct` — named, `@[elab_as_elim]`, motive TAKES the proof term (the
-     proof-irrelevant-motive variant breaks `induction using`'s target computation —
-     learned in the spike);
-   * `PlaysProof.induct` (named, for the Exclusion census) and, if useful,
-     `AtomProvable` inversion lemmas;
-   * `Pf_mono` (from `Pf.lean`, now by `cases` on the mutual block — beware the `cases`
-     field-reordering gotcha on `mp`, solved with `rename_i`).
-3. `Dynamics.lean`: `proofSearch k φ := decide (Pf k φ)`; `Formula.interp`'s `.box` and
-   `.diag` clauses point at `Pf`.
-4. **The safety net**: in `LegacyS`-importing scratch (not root), re-prove the round-trip
-   `Pf k φ ↔ Legacy.Provable k φ` by transplanting `pf_of_provable`/`provable_of_pf`
-   (they were written for exactly these two rule sets). This certifies the oracle's
-   relation is unchanged. Keep it compiling until Phase 4 ends, then archive.
+### Phase 1 — the core swap (`Derivation.lean`, `Dynamics.lean`) — ✅ **DONE 2026-07-14**
+The intentionally-red commit window: the core is `Pf`-only and the anchor holds; everything
+downstream is Phases 2–4's repair work.
+1. ✅ `Derivation.lean` → the mutual block `{PlaysProof, AtomProvable, Pf}` (filename kept,
+   per D4 — the 14 importers and the app's prompt-embedding follow automatically):
+   * `PlaysProof.search_t`/`search_f` re-pointed at `Pf` (the back-edge that mutualizes);
+   * `Pf` = the 22 constructors; `Derivation`, `Derivation.size`, `Provable` DELETED.
+2. ✅ Day-one eliminators, same commit (the retired `PfMutualInductSpike` template):
+   `Pf.induct` and `PlaysProof.induct`, both `@[elab_as_elim]`, motives TAKING the proof term.
+   The file header states the rule: **never call `Pf.rec`/`PlaysProof.rec` outside §4**.
+   Also `Pf_mono` + `atom_monotone` (the `cases` field-reordering gotcha on `mp` bites here
+   too — `rename_i`, as in the spike).
+3. ✅ `Dynamics.lean`: `proofSearch k φ := decide (Pf k φ)`; `interp`'s `.box`/`.diag` → `Pf`.
+4. ✅ **The anchor, re-proved against `Pf`** (`LegacyS.lean`):
+   **`legacy_iff_live : Legacy.Provable k φ ↔ PD.Pf k φ`**, `[propext]`, plus
+   `proofSearch_eq_legacy` — the oracle decides the same relation it always did, so every
+   `eval`/`play`/`outcome` in the library takes the same branches. The arms are now the
+   *interesting* part (they were twins before the merge): legacy `struct ⟨d, size⟩` routes
+   through `deriv_to_pf` (a legacy `Derivation` becomes a `Pf` AT THE SAME transcript size);
+   legacy `app` and `implTrans` BOTH land on the merged `Pf.mp`/`Pf.implTrans`; `Pf` leaves
+   re-enter legacy through `struct` (a leaf's `.size` IS its conclusion's size).
+5. ✅ D5 executed: `PrisonersDilemma/Pf.lean` DELETED (its inductive is now the core; its
+   `_pf`-suffixed Löb engines are redundant — `Base/Loeb.lean` holds the same engines, which
+   Phase 2 renames in place). Root import dropped. The three `unified_pf` spikes retired with
+   `TOMBSTONES.md`; `LegacyS.lean` is the only live artifact there (retires in Phase 4.5).
 
-**Gate**: `Derivation.lean` + `Dynamics.lean` + the equivalence scratch compile; axiom
-audit clean.
+**Gate MET**: `Derivation.lean`, `Dynamics.lean`, and the anchor all compile; axiom audit clean
+(3 standard axioms; the anchor itself is `[propext]`).
+
+**Phase 2–4 inbox** (measured — per-file error counts after the swap; the build reaches
+**3126 of 3158 jobs** before the first failure, and every theorem file that never touched the
+proof system directly — DefectBot, CooperateBot, EBot, DBot, TitForTatBot, OBot, MirrorBot,
+Helpers — is **already green**):
+
+| Phase 2 — `Base/` | | Phase 3 — `Theorems/` | | Phase 4 — `Decidability/` | |
+|---|---|---|---|---|---|
+| `Loeb` | 63 | `PrudentBot` | 74 | `T49TreeSubstrate` | 101 |
+| `Soundness` | 34 | `JustBot` | 65 | `T48CutRelevance` | 80 |
+| `AtomCerts` | 7 | `DupocBot` | 40 | `T31EngineDecider` | 39 |
+| `Exclusion` | 4 | `CupodBot` | 25 | `T54ZooCert` | 37 |
+| | | `CIMCIC`/`DIMCID` | 14 each | `T50InstanceLob` | 36 |
+| | | `CupodTrollBot` | 10 | `T42`/`T44`/`T51`/`T52` | 13/10/10/10 |
+| **total** | **108** | **total** | **242** | **total** | **336** |
+
+Caveat on reading those numbers: `Loeb`'s 63 are almost entirely one rename (`Provable.• → Pf.•`,
+`app → mp`) repeated across the 14-step chain — error COUNT is not proof-difficulty. The genuine
+thinking is in `Soundness` (fold the old `Derivation.sound` induction into the `Pf` arms; the
+`search_f` floor argument is cost-model-side and survives) and, later, T42's gate decision (D2).
 
 ### Phase 2 — `Base/` re-proof (~1.6k lines) — ~1–2 sessions
 Dependency order:
