@@ -10,7 +10,8 @@ theorem llm_outcome_TitForTatBot_vs_CooperateBot (n : Nat) :
     outcome (n+3) TitForTatBot CooperateBot = some (.C, .C) := by
   have hA : play (n+3) TitForTatBot CooperateBot = some .C := by
     show eval (n+3) TitForTatBot CooperateBot TitForTatBot = some .C
-    simp [eval, TitForTatBot, CooperateBot, Prog.subst]
+    unfold TitForTatBot CooperateBot
+    simp [eval, Prog.subst]
     decide
   have hB : play (n+3) CooperateBot TitForTatBot = some .C := rfl
   simp [outcome, hA, hB]

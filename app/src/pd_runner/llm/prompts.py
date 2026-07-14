@@ -29,27 +29,34 @@ def build_system_prompt(left_bot: str, right_bot: str) -> str:
     program_src = _read_lean("Program.lean")
     dynamics_src = _read_lean("Dynamics.lean")
 
-    # `BaseTheorems.lean` holds the load-bearing proof vocabulary (`atom_complete`,
-    # `proofSearch_spec`, the soundness lemmas, …) that outcome proofs reference. It
-    # used to live in `Axioms.lean` / `Theorems/ProofSearch.lean`; both were reformed
-    # away, so inject the current module for every proof.
-    base_theorems_src = _read_lean("BaseTheorems.lean")
-    proof_blocks = [f"-- BaseTheorems.lean\n```lean\n{base_theorems_src}\n```"]
+    # The `Base/` layer holds the load-bearing proof vocabulary (`proofSearch_spec`,
+    # `Pf_sound`, `atom_complete_searchfree`, …) that outcome proofs reference. Since the
+    # 2026-07-09 split, `BaseTheorems.lean` is only a re-exporting UMBRELLA (16 lines), so
+    # embed the split modules themselves: soundness + atom certificates for every proof.
+    # Files are read WITHOUT a fallback: a missing module is a bug (the old silent
+    # `except OSError: continue` hid the `SizeLemmas.lean` → `Base/Asymptotics.lean`
+    # rename for days).
+    proof_blocks = []
+    for relative, label in (
+        ("BaseTheorems.lean", "BaseTheorems.lean (umbrella — all names live in `PD.BaseTheorems`)"),
+        ("Base/Soundness.lean", "Base/Soundness.lean (`proofSearch_spec`, `Pf_sound`, eval monotonicity)"),
+        ("Base/AtomCerts.lean", "Base/AtomCerts.lean (constructive atom certificates)"),
+    ):
+        proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
-    # `.search` bots additionally need the axioms they rest on plus the explicit
-    # derivation system and the budget (size) lemmas used to discharge `□`/`search`.
+    # `.search` bots additionally need the proof system itself plus the census/floor
+    # exclusion lemmas, the bounded-Löb engines, and the budget (log₂) arithmetic used
+    # to discharge `□`/`search` side-conditions.
     needs_axioms = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
     if needs_axioms:
         for relative, label in (
             ("Axioms.lean", "Axioms.lean"),
             ("ProofSystem.lean", "ProofSystem.lean (the explicit proof-system `S`)"),
-            ("SizeLemmas.lean", "SizeLemmas.lean (character-budget lemmas)"),
+            ("Base/Asymptotics.lean", "Base/Asymptotics.lean (character-budget / log₂ lemmas)"),
+            ("Base/Loeb.lean", "Base/Loeb.lean (the bounded-Löb / PBLT engines)"),
+            ("Base/Exclusion.lean", "Base/Exclusion.lean (the census + floor exclusion lemmas)"),
         ):
-            try:
-                src = _read_lean(relative)
-            except OSError:
-                continue
-            proof_blocks.append(f"-- {label}\n```lean\n{src}\n```")
+            proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
     proof_system_block = "\n\n" + "\n\n".join(proof_blocks)
 

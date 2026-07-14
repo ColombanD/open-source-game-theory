@@ -1,5 +1,5 @@
 {
-  "timestamp": "20260714T173810",
+  "timestamp": "20260714T175828",
   "bot_a": "OBot",
   "bot_b": "CooperateBot",
   "model": "claude-opus-4-7",
@@ -14,7 +14,7 @@
   "left_action": "C",
   "right_action": "C",
   "iterations_used": 2,
-  "elapsed_seconds": 16.457603667000512,
+  "elapsed_seconds": 19.601121916999546,
   "error": null,
-  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.OBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_OBot_vs_CooperateBot (n : Nat) :\n    outcome (n+5) OBot CooperateBot = some (.C, .C) := by\n  unfold outcome play\n  simp [eval, OBot, CooperateBot, Prog.subst]\n  decide\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.OBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_OBot_vs_CooperateBot (n : Nat) :\n    outcome (n+5) OBot CooperateBot = some (.C, .C) := by\n  have hA : play (n+5) OBot CooperateBot = some .C := by\n    show eval (n+5) OBot CooperateBot OBot = some .C\n    unfold OBot CooperateBot\n    simp [eval, Prog.subst]\n    decide\n  have hB : play (n+5) CooperateBot OBot = some .C := rfl\n  simp [outcome, hA, hB]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

@@ -8,7 +8,8 @@ namespace PD.Theorems
 
 theorem llm_outcome_DBot_vs_CooperateBot (n : Nat) :
     outcome (n+3) DBot CooperateBot = some (.D, .C) := by
-  simp [outcome, play, eval, DBot, CooperateBot, Prog.subst]
+  unfold outcome play DBot CooperateBot
+  simp [eval, Prog.subst]
   decide
 
 end PD.Theorems

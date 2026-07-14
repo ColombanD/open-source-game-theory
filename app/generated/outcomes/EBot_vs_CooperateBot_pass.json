@@ -1,5 +1,5 @@
 {
-  "timestamp": "20260714T173948",
+  "timestamp": "20260714T180033",
   "bot_a": "EBot",
   "bot_b": "CooperateBot",
   "model": "claude-opus-4-7",
@@ -13,8 +13,8 @@
   "passed": true,
   "left_action": "D",
   "right_action": "C",
-  "iterations_used": 3,
-  "elapsed_seconds": 42.84459408299881,
+  "iterations_used": 4,
+  "elapsed_seconds": 60.846718958000565,
   "error": null,
-  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_EBot_vs_CooperateBot (n : Nat) :\n    outcome (n+3) EBot CooperateBot = some (.D, .C) := by\n  have hA : play (n+3) EBot CooperateBot = some .D := by\n    show eval (n+3) EBot CooperateBot EBot = some .D\n    unfold EBot\n    simp [eval, Prog.subst, CooperateBot, show (Action.C == Action.C) = true from rfl]\n  have hB : play (n+3) CooperateBot EBot = some .C := rfl\n  simp [outcome, hA, hB]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "The stderr warning is about the batteries repo, not our proof — exit code 0 and clean stdout.\n\n```lean\nimport PrisonersDilemma.Bots.EBot\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_EBot_vs_CooperateBot (n : Nat) :\n    outcome (n+3) EBot CooperateBot = some (.D, .C) := by\n  have hA : play (n+3) EBot CooperateBot = some Action.D := by\n    show eval (n+3) EBot CooperateBot EBot = some Action.D\n    unfold EBot\n    simp only [eval, Prog.subst, CooperateBot]\n    show ((eval (n+1) (.const Action.C) (.bot DefectBot) (.const Action.C)).bind _) = some Action.D\n    simp only [eval, Option.bind_some]\n    rfl\n  have hB : play (n+3) CooperateBot EBot = some Action.C := rfl\n  simp [outcome, hA, hB]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

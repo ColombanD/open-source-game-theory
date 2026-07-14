@@ -1,5 +1,5 @@
 {
-  "timestamp": "20260714T173905",
+  "timestamp": "20260714T175932",
   "bot_a": "TitForTatBot",
   "bot_b": "DefectBot",
   "model": "claude-opus-4-7",
@@ -14,7 +14,7 @@
   "left_action": "D",
   "right_action": "D",
   "iterations_used": 2,
-  "elapsed_seconds": 18.4708706670026,
+  "elapsed_seconds": 28.650539875001414,
   "error": null,
-  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.TitForTatBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Theorems.DefectBot\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_TitForTatBot_vs_DefectBot (n : Nat) :\n    outcome (n+3) TitForTatBot DefectBot = some (.D, .D) := by\n  have hA : play (n+3) TitForTatBot DefectBot = some .D := by\n    show eval (n+3) TitForTatBot DefectBot TitForTatBot = some .D\n    simp [eval, TitForTatBot, DefectBot, Prog.subst]\n    decide\n  have hB : play (n+3) DefectBot TitForTatBot = some .D := rfl\n  simp [outcome, hA, hB]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.TitForTatBot\nimport PrisonersDilemma.Bots.DefectBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_TitForTatBot_vs_DefectBot (n : Nat) :\n    outcome (n+3) TitForTatBot DefectBot = some (.D, .D) := by\n  have hA : play (n+3) TitForTatBot DefectBot = some .D := by\n    show eval (n+3) TitForTatBot DefectBot TitForTatBot = some .D\n    simp [eval, TitForTatBot, DefectBot, Prog.subst, CooperateBot, show (Action.D == Action.C) = false from rfl]\n  have hB : play (n+3) DefectBot TitForTatBot = some .D := rfl\n  simp [outcome, hA, hB]\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }
