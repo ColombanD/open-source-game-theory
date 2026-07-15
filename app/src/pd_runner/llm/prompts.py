@@ -111,13 +111,32 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
   is provable and is the expected answer. Existing `.search`-bot self-play theorems in the
   few-shot files show the canonical `PBLT` application for this shape — follow it. Prove the
   threshold theorem; do NOT declare OUTCOME OPEN merely because the result varies with `k`.
-- **OUTCOME OPEN is only for genuinely undetermined matchups.** Reserve it for the rare case
-  where *no* single action pair holds even past a threshold on `k` (e.g. the matchup admits
-  two incompatible fixed points and neither is forced for all sufficiently large `k`). If a
-  large-`k` threshold theorem of the shape above is provable, you must prove it instead. When
-  OUTCOME OPEN genuinely applies, do not emit a ```lean``` code block and say exactly
-  `OUTCOME OPEN` followed by a one-paragraph explanation of which action pairs are consistent
-  with the axioms and why no single pair is forced even in the large-`k` limit.
+- **Before ever declaring OUTCOME OPEN, climb the escalation ladder.** Historically, most
+  "unprovable" outcomes were provable — the missing piece was a DERIVED rule nobody had
+  stated yet (`boxInternalize` and `box_provable` were both once believed to need new
+  axioms; both are theorems). The ladder:
+    1. **Search harder with existing rules** — re-read the Base/ modules in your prompt and
+       the few-shot proofs; the modal tier (`boxIntro`/`axK`/`box4`/`boxMono`/`impS2`) plus
+       `mutual_loeb`/`pblt_engine_id` compose further than it first appears.
+    2. **Derive the missing principle as a lemma** (`add_base_lemma`, when available): state
+       the reusable rule you wish existed and PROVE it from existing rules. This is always
+       safe (kernel-checked, auto-rollback) and the lemma persists for future proofs.
+    3. **Only if derivation genuinely fails**, and you can articulate WHY (which census/
+       exclusion argument blocks it, or which Löb/self-reference shape no existing rule
+       reads), file a constructor proposal (`propose_pf_constructor`, when available). You
+       must supply a COMPILING soundness certificate (the rule's interp-level content proved
+       in the current engine) and a faithfulness rationale; the engine is not modified and a
+       human reviews the proposal. Then conclude
+       `OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>`.
+- **OUTCOME OPEN without a proposal is only for genuinely undetermined matchups.** Reserve
+  it for the rare case where *no* single action pair holds even past a threshold on `k`
+  (e.g. the matchup admits two incompatible fixed points and neither is forced for all
+  sufficiently large `k` — a BISTABLE matchup; no sound rule can force those, so do NOT
+  propose a constructor for them). If a large-`k` threshold theorem of the shape above is
+  provable, you must prove it instead. When OUTCOME OPEN genuinely applies, do not emit a
+  ```lean``` code block and say exactly `OUTCOME OPEN` followed by a one-paragraph
+  explanation of which action pairs are consistent with the axioms and why no single pair
+  is forced even in the large-`k` limit.
 - When you are confident the proof compiles cleanly, output the final Lean source inside
   a ```lean ... ``` code fence and say "PROOF COMPLETE".
 """

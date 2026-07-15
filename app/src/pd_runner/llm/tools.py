@@ -53,6 +53,102 @@ _READ_LIBRARY_FILE_TOOL: dict[str, Any] = {
     },
 }
 
+_ADD_BASE_LEMMA_TOOL: dict[str, Any] = {
+    "name": "add_base_lemma",
+    "description": (
+        "Add a DERIVED rule — a new theorem over the existing proof system `Pf` — to the "
+        "persistent lemma library (Theorems/LlmGenerations/LlmLemmas.lean, namespace "
+        "`PD.LlmLemmas`). Use this when a proof needs a reusable principle that is a "
+        "CONSEQUENCE of existing rules but is not yet stated (the project's history shows "
+        "most 'missing rules' are of this kind). The lemma is appended, verified with lake "
+        "build, and ROLLED BACK automatically if it fails — so this call is always safe. "
+        "Sound by construction: theorems only (`axiom`/`sorry`/`inductive`/`native_decide` "
+        "are rejected). Submit BARE declarations — no import/namespace lines; the source "
+        "lands inside `namespace PD.LlmLemmas` with `PD` and `PD.BaseTheorems` open. "
+        "After an OK response, add `import PrisonersDilemma.Theorems.LlmGenerations.LlmLemmas` "
+        "to your proof file and use the lemma via `PD.LlmLemmas.<name>`."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "lemma_name": {
+                "type": "string",
+                "description": "Short identifier for the lemma block (e.g. 'box_impl_chain').",
+            },
+            "lean_source": {
+                "type": "string",
+                "description": (
+                    "Bare Lean declaration(s): `theorem`/`lemma` (and `def` for motives), "
+                    "fully proved, no imports/namespaces."
+                ),
+            },
+        },
+        "required": ["lemma_name", "lean_source"],
+    },
+}
+
+_PROPOSE_PF_CONSTRUCTOR_TOOL: dict[str, Any] = {
+    "name": "propose_pf_constructor",
+    "description": (
+        "File a proposal for a NEW `Pf` CONSTRUCTOR, for the rare case where a needed "
+        "principle is genuinely UNDERIVABLE from the existing rules (you MUST have tried "
+        "`add_base_lemma` first and be able to say why derivation fails). This does NOT "
+        "modify the engine: it records an evidence bundle for human review. The bundle "
+        "requires a SOUNDNESS CERTIFICATE — a complete theorem, which this tool compiles "
+        "against the CURRENT engine, proving the rule's interp-level content (what the "
+        "conclusion's `Formula.interp` asserts, given the premises' interps; imports "
+        "allowed, e.g. `import PrisonersDilemma.BaseTheorems`). A rule whose certificate "
+        "does not compile is rejected outright. If the proposal is recorded, finish with "
+        "`OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>`."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Constructor name (e.g. 'iteBranchSearch_f').",
+            },
+            "constructor_lean": {
+                "type": "string",
+                "description": (
+                    "The constructor declaration exactly as it would appear inside "
+                    "`inductive Pf`, including budget side-conditions in the transcript "
+                    "cost model (leaves pay their conclusion's size; combining rules pay "
+                    "premises + conclusion)."
+                ),
+            },
+            "soundness_certificate_lean": {
+                "type": "string",
+                "description": (
+                    "A COMPLETE Lean file (with imports) proving the rule's interp-level "
+                    "content as a theorem over the unchanged engine. No sorry/axiom."
+                ),
+            },
+            "faithfulness_rationale": {
+                "type": "string",
+                "description": (
+                    "Why a PA-like `S` (critch22 Appendix B) genuinely has this capability: "
+                    "what finite syntactic activity it transcribes, and why it is not "
+                    "semantic completeness / general reflection in disguise."
+                ),
+            },
+            "unblocks": {
+                "type": "string",
+                "description": "The outcome theorem(s) this rule would make provable, and why.",
+            },
+        },
+        "required": [
+            "name", "constructor_lean", "soundness_certificate_lean",
+            "faithfulness_rationale", "unblocks",
+        ],
+    },
+}
+
+# The library-growth tools are only exposed in production mode (empty exclude_bots):
+# the eval harness must not mutate the library mid-run, and its leak-free config
+# predates the lemma library.
+GROWTH_TOOLS: list[dict[str, Any]] = [_ADD_BASE_LEMMA_TOOL, _PROPOSE_PF_CONSTRUCTOR_TOOL]
+
 LEAN_TOOLS: list[dict[str, Any]] = [
     {
         "name": "run_lean_proof",
@@ -256,12 +352,28 @@ def register_lean_tools(handler, exclude_bots: frozenset[str] = frozenset()) -> 
 
     `exclude_bots` is forwarded to `read_library_file` so it refuses to read any
     file whose content references a bot under evaluation (leak prevention).
+    In production mode (empty `exclude_bots`) the library-growth tools are also
+    registered: `add_base_lemma` (Tier 1, autonomous — kernel-checked derived rules)
+    and `propose_pf_constructor` (Tier 2, human-gated — evidence bundles only).
     """
     handler.register_fn("run_lean_proof", _run_lean_proof)
     handler.register_fn(
         "read_library_file",
         lambda relative_path: _read_library_file(relative_path, exclude_bots=exclude_bots),
     )
+    if not exclude_bots:
+        from pd_runner.services.constructor_proposals import propose
+        from pd_runner.services.lemma_library import add_lemma
+
+        handler.register_fn("add_base_lemma", add_lemma)
+        handler.register_fn(
+            "propose_pf_constructor",
+            lambda name, constructor_lean, soundness_certificate_lean,
+                   faithfulness_rationale, unblocks: propose(
+                name, constructor_lean, soundness_certificate_lean,
+                faithfulness_rationale, unblocks,
+            ),
+        )
 
 
 def register_bot_tools(handler) -> None:

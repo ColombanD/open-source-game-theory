@@ -213,7 +213,29 @@ NL description
    - UI shows existing bot source on conflict, per-bot dropdown (use existing / overwrite / rename), rename input pre-filled with `<OldName>2`.
    - Bot review gate shows `existing` / `new` badge per bot. Proof review gate shows full Lean source before accept/reject.
 
-**Deferred:** reviewer with outcome prediction (v2), automatic rewriter loop (v2).
+**The OUTCOME-OPEN escalation ladder (2026-07-14).** The proof agent no longer dead-ends at
+`OUTCOME OPEN` when the missing piece is a missing rule. Two production-only tools (registered
+iff `exclude_bots` is empty — the eval harness never mutates the library):
+1. **`add_base_lemma` (Tier 1, autonomous)** — grow a persistent DERIVED-rule library
+   (`Theorems/LlmGenerations/LlmLemmas.lean`, namespace `PD.LlmLemmas`). Sound by
+   construction (theorems only; `axiom`/`sorry`/`inductive`/`native_decide`/metaprogramming
+   rejected by static guards); additive-only; transactional (byte-identical rollback on a
+   failed `lake build`). Motivated by history: `boxInternalize`/`box_provable` were both
+   thought to need axioms and turned out derivable.
+2. **`propose_pf_constructor` (Tier 2, human-gated)** — for genuinely UNDERIVABLE rules the
+   agent files an evidence bundle (`app/generated/constructor_proposals/<name>/`), never
+   touching the engine. Machine gate: a **soundness certificate** — the rule's interp-level
+   content proved as a theorem against the CURRENT engine, compiled by the tool (rejects
+   FALSE rules; the historically-inconsistent `atom_complete_false_guard` could never have
+   produced one). Human gate: the **faithfulness rationale** (sound-but-unfaithful rules like
+   a semantic-completeness oracle are machine-undetectable by design). Integration follows
+   the Phase-4 playbook in `PF_ONLY_ROADMAP.md`; at that point the floor/exclusion censuses
+   (which quantify over ALL constructors) are the canaries.
+Bare `OUTCOME OPEN` is now reserved for BISTABLE matchups (two fixed points, neither forced —
+e.g. JustBot vs MirrorBot), where no sound rule can exist.
+
+**Deferred:** reviewer with outcome prediction (v2), automatic rewriter loop (v2),
+worktree-based automatic constructor integration (v2 of Tier 2).
 
 ## Phase 4 — Paper experiments (next)
 
