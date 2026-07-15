@@ -122,7 +122,9 @@ def search_proof(request: ProofRequest) -> ProofResult:
     few_shots = retrieve_few_shots(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
     known = list_known_outcome_theorems(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
 
-    system_prompt = build_system_prompt(request.left_bot, request.right_bot)
+    system_prompt = build_system_prompt(
+        request.left_bot, request.right_bot, exclude_bots=request.exclude_bots
+    )
     user_message = proof_request_message(
         left_bot=request.left_bot,
         right_bot=request.right_bot,

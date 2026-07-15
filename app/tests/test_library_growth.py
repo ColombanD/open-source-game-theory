@@ -161,3 +161,65 @@ def test_growth_tools_not_registered_with_exclude_bots() -> None:
     assert "add_base_lemma" in prod._registry and "propose_pf_constructor" in prod._registry
     assert "add_base_lemma" not in harness._registry
     assert "propose_pf_constructor" not in harness._registry
+
+
+# ---------------------------------------------------------------------------
+# Retrieval of agent-grown artifacts in later runs.
+# ---------------------------------------------------------------------------
+
+def test_llm_lemmas_block_filters_excluded_bots(tmp_path, monkeypatch) -> None:
+    import pd_runner.llm.prompts as prompts_mod
+
+    lemmas = tmp_path / "Theorems" / "LlmGenerations" / "LlmLemmas.lean"
+    lemmas.parent.mkdir(parents=True)
+    lemmas.write_text(
+        "-- header\n"
+        "/-! ### generic_lemma (agent-added) -/\n\ntheorem g : True := trivial\n"
+        "/-! ### about_dupoc (agent-added) -/\n\ntheorem d : DupocBot 1 = DupocBot 1 := rfl\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(prompts_mod, "_ENGINE_PD_DIR", tmp_path)
+
+    full = prompts_mod._llm_lemmas_block(frozenset())
+    assert "generic_lemma" in full and "about_dupoc" in full
+
+    filtered = prompts_mod._llm_lemmas_block(frozenset({"DupocBot"}))
+    assert "generic_lemma" in filtered
+    assert "about_dupoc" not in filtered   # leak-filtered in eval mode
+
+
+def test_pending_proposals_block_lists_filed_proposals(tmp_path, monkeypatch) -> None:
+    import json
+
+    import pd_runner.llm.prompts as prompts_mod
+
+    @dataclass
+    class _FakePaths:
+        generated_lean_dir = tmp_path / "generated" / "lean"
+
+    bundle = tmp_path / "generated" / "constructor_proposals" / "eqSym"
+    bundle.mkdir(parents=True)
+    (bundle / "meta.json").write_text(
+        json.dumps({"name": "eqSym", "unblocks": "symmetric guards"}), encoding="utf-8")
+
+    # _pending_proposals_block imports load_paths lazily from pd_runner.config
+    monkeypatch.setattr("pd_runner.config.load_paths", lambda: _FakePaths())
+    out = prompts_mod._pending_proposals_block()
+    assert "eqSym" in out and "symmetric guards" in out and "do NOT re-file" in out
+
+
+def test_propose_rejects_duplicate_name(tmp_path, monkeypatch) -> None:
+    @dataclass
+    class _FakePaths:
+        lean_engine_dir = tmp_path
+        generated_lean_dir = tmp_path / "generated" / "lean"
+
+    monkeypatch.setattr(constructor_proposals, "load_paths", lambda: _FakePaths())
+    monkeypatch.setattr(constructor_proposals, "run_lean_proof_file", lambda *a: _FakeResult(0))
+
+    first = constructor_proposals.propose(
+        "dup", "| dup : ...", "theorem s : True := trivial", _RATIONALE, "u")
+    assert first.startswith("PROPOSAL RECORDED")
+    second = constructor_proposals.propose(
+        "dup", "| dup : ...", "theorem s : True := trivial", _RATIONALE, "u")
+    assert second.startswith("REJECTED") and "already on file" in second

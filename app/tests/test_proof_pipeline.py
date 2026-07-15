@@ -68,7 +68,6 @@ def _write_fake_engine(pd_dir: Path) -> None:
     (pd_dir / "Program.lean").write_text("-- program", encoding="utf-8")
     (pd_dir / "Dynamics.lean").write_text("-- dynamics", encoding="utf-8")
     (pd_dir / "BaseTheorems.lean").write_text("-- base-theorems", encoding="utf-8")
-    (pd_dir / "Axioms.lean").write_text("-- axioms", encoding="utf-8")
     (pd_dir / "ProofSystem.lean").write_text("-- proof-system", encoding="utf-8")
     base_dir = pd_dir / "Base"
     base_dir.mkdir(exist_ok=True)
@@ -103,7 +102,6 @@ def test_build_system_prompt_includes_program_and_dynamics(tmp_path: Path, monke
     assert "-- base-theorems" in prompt
     assert "-- soundness" in prompt
     assert "-- atom-certs" in prompt
-    assert "-- axioms" not in prompt
     assert "-- proof-system" not in prompt
     assert "-- asymptotics" not in prompt
     assert "-- loeb" not in prompt
@@ -127,7 +125,6 @@ def test_build_system_prompt_includes_proof_system_for_search_bots(
     assert "-- base-theorems" in prompt
     assert "-- soundness" in prompt
     assert "-- atom-certs" in prompt
-    assert "-- axioms" in prompt
     assert "-- proof-system" in prompt
     assert "-- asymptotics" in prompt
     assert "-- loeb" in prompt
@@ -163,7 +160,7 @@ def test_search_proof_returns_result_on_success(tmp_path: Path, monkeypatch) -> 
 
     monkeypatch.setattr(proof_service, "retrieve_few_shots", lambda *a, **kw: [])
     monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a, **kw: "None found.")
-    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a: "system")
+    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a, **kw: "system")
     # `search_proof` persists every attempt to `generated/outcomes/`; redirect that
     # to a tmp dir so the test does not clobber the committed fixtures.
     monkeypatch.setattr(proof_service, "_outcomes_dir", lambda: tmp_path)
@@ -184,7 +181,7 @@ def test_search_proof_returns_result_on_success(tmp_path: Path, monkeypatch) -> 
 def test_search_proof_raises_when_no_lean_block(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(proof_service, "retrieve_few_shots", lambda *a, **kw: [])
     monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a, **kw: "None found.")
-    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a: "system")
+    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a, **kw: "system")
     monkeypatch.setattr(proof_service, "_outcomes_dir", lambda: tmp_path)
     monkeypatch.setattr(
         proof_service.AnthropicClient,

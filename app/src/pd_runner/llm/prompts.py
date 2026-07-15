@@ -12,8 +12,9 @@ def _read_lean(relative: str) -> str:
 def _bot_uses_search(bot: str) -> bool:
     """True if the bot's source references the `.search` constructor.
 
-    Used to decide whether to inject the proof-system modules (Axioms.lean,
-    ProofSystem.lean, Base/Asymptotics.lean) into the proof agent's system prompt.
+    Used to decide whether to inject the proof-system modules (ProofSystem.lean,
+    Base/Asymptotics.lean, Base/Loeb.lean, Base/Exclusion.lean) into the proof
+    agent's system prompt.
     Reads from `Bots/<bot>.lean` or `Bots/LlmGenerations/<bot>.lean`; missing bot → False.
     """
     for candidate in (f"Bots/{bot}.lean", f"Bots/LlmGenerations/{bot}.lean"):
@@ -25,7 +26,59 @@ def _bot_uses_search(bot: str) -> bool:
     return False
 
 
-def build_system_prompt(left_bot: str, right_bot: str) -> str:
+def _llm_lemmas_block(exclude_bots: frozenset[str]) -> str:
+    """The agent's own derived-rule library, embedded so lemmas added in earlier runs are
+    RETRIEVABLE in later ones. In eval mode (`exclude_bots` set), agent-added blocks that
+    mention a bot under evaluation are dropped (leak prevention); the delimiters written
+    by `add_base_lemma` (`/-! ### <name> (agent-added) -/`) are the split points."""
+    try:
+        src = _read_lean("Theorems/LlmGenerations/LlmLemmas.lean")
+    except OSError:
+        return ""
+    if exclude_bots:
+        lowered = {b.lower() for b in exclude_bots}
+        parts = src.split("/-! ###")
+        kept = [parts[0]] + [
+            blk for blk in parts[1:] if not any(b in blk.lower() for b in lowered)
+        ]
+        src = "/-! ###".join(kept)
+    return (
+        "\n\n-- Theorems/LlmGenerations/LlmLemmas.lean (YOUR derived-rule library — lemmas "
+        "you or earlier runs added via add_base_lemma; import "
+        "`PrisonersDilemma.Theorems.LlmGenerations.LlmLemmas` and use them as "
+        "`PD.LlmLemmas.<name>`)\n```lean\n" + src + "\n```"
+    )
+
+
+def _pending_proposals_block() -> str:
+    """A short listing of already-filed constructor proposals, so later runs do not
+    re-derive and re-file duplicates. Production-mode only (the caller gates it)."""
+    import json
+
+    from pd_runner.config import load_paths
+
+    root = load_paths().generated_lean_dir.parent / "constructor_proposals"
+    if not root.exists():
+        return ""
+    lines = []
+    for meta in sorted(root.glob("*/meta.json")):
+        try:
+            data = json.loads(meta.read_text(encoding="utf-8"))
+            lines.append(f"- `{data['name']}` — unblocks: {data.get('unblocks', '?')}")
+        except (OSError, json.JSONDecodeError, KeyError):
+            continue
+    if not lines:
+        return ""
+    return (
+        "\n\n# Pending constructor proposals (awaiting human review — do NOT re-file these; "
+        "if one of them is exactly what your proof needs, conclude "
+        "`OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>` referencing it)\n" + "\n".join(lines)
+    )
+
+
+def build_system_prompt(
+    left_bot: str, right_bot: str, exclude_bots: frozenset[str] = frozenset()
+) -> str:
     program_src = _read_lean("Program.lean")
     dynamics_src = _read_lean("Dynamics.lean")
 
@@ -46,11 +99,11 @@ def build_system_prompt(left_bot: str, right_bot: str) -> str:
 
     # `.search` bots additionally need the proof system itself plus the census/floor
     # exclusion lemmas, the bounded-Löb engines, and the budget (log₂) arithmetic used
-    # to discharge `□`/`search` side-conditions.
+    # to discharge `□`/`search` side-conditions. (`Axioms.lean` is gone — the engine has
+    # ZERO project axioms since 2026-07-03 and the file itself was later deleted.)
     needs_axioms = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
     if needs_axioms:
         for relative, label in (
-            ("Axioms.lean", "Axioms.lean"),
             ("ProofSystem.lean", "ProofSystem.lean (the explicit proof-system `S`)"),
             ("Base/Asymptotics.lean", "Base/Asymptotics.lean (character-budget / log₂ lemmas)"),
             ("Base/Loeb.lean", "Base/Loeb.lean (the bounded-Löb / PBLT engines)"),
@@ -59,6 +112,9 @@ def build_system_prompt(left_bot: str, right_bot: str) -> str:
             proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
     proof_system_block = "\n\n" + "\n\n".join(proof_blocks)
+    proof_system_block += _llm_lemmas_block(exclude_bots)
+    if not exclude_bots:
+        proof_system_block += _pending_proposals_block()
 
     return f"""\
 You are an expert Lean 4 proof assistant for the open-source game theory project.

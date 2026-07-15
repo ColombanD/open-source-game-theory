@@ -58,6 +58,14 @@ def propose(
     if not safe_name:
         return "REJECTED: empty proposal name."
 
+    if (proposals_dir() / safe_name).exists():
+        return (
+            f"REJECTED: a proposal named `{safe_name}` is already on file (awaiting human "
+            "review). Do not re-file it — if it is what your proof needs, conclude "
+            f"`OUTCOME OPEN — CONSTRUCTOR PROPOSED {safe_name}`. If your rule is genuinely "
+            "different, use a different name."
+        )
+
     for pattern in _FORBIDDEN_IN_CERT:
         if re.search(pattern, soundness_certificate_lean):
             return (
