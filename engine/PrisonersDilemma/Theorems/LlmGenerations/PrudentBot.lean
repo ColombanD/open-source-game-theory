@@ -928,10 +928,13 @@ consumes. Here neither leg is a `.sim`, so that route is unavailable: composing 
 transparency rules cannot do.
 
 **The closing ingredient is object-form Σ₁-completeness for play-atoms**,
-`atom_box_provable_impl : ⊢ (p plays a vs q) → □_k (p plays a vs q)` (Axioms.lean).
+`⊢ (p plays a vs q) → □_k (p plays a vs q)` — the certificate-gated `Pf.atomBoxImpl`
+constructor (ProofSystem.lean; the witness-free axiom form `atom_box_provable_impl`
+was removed as unsound — its sound conditional content is `atom_box_provable_impl_sound`
+in Base/Soundness).
 A `.plays` atom is Σ₁, so "true ⟹ provable" is sound reflection (NOT the GL-excluded
 general `φ → □φ`, which fails on Π₁ truths). Applied to the play-atom `φ_P`:
-`atom_box_provable_impl ⊳ leg2` yields the *unboxed-antecedent* implication
+`atomBoxImpl ⊳ leg2` yields the *unboxed-antecedent* implication
 `φ_P → φ_D` (stripping the box `searchBranch` needs), which composes with `leg1`
 into `□_k φ_D → φ_D`. That is exactly the role `simStep` plays for the `.sim`
 matchups, now recovered for genuine search-vs-search via Σ₁-reflection rather than

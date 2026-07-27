@@ -61,8 +61,10 @@ theorem proof_system_verifies_sim :
 The atom-side axioms `atom_monotone` and `AtomProvable_sound` are now THEOREMS:
 `AtomProvable` is the constructive `PlaysProof` certificate, so monotonicity is
 just relaxing its cost bound, and soundness is "a certificate yields a real
-play." (Only `atom_complete`'s false-guard *completeness* stays axiomatic — see
-`Axioms.lean`.) -/
+play." (Nothing on the false-guard *completeness* side is axiomatic either: the old
+`atom_complete_false_guard` axiom was machine-checked INCONSISTENT and deleted
+2026-07-03; the sound replacement is the `search_f` floor — see `Base/AtomCerts`
+and `Base/Exclusion`.) -/
 
 /-- Fuel monotonicity of `eval`: a successful run survives more fuel. Standard;
     by strong induction on the fuel, generalized over all of `me`/`opp`/`body`
@@ -393,7 +395,8 @@ fundamental (Σ₁ vs Π₁), not a stylistic choice:
 
 • `proofSearch k φ = true`  — COMPLETENESS / Σ₁ side. Exhibit a witness.
     For a plays-atom `φ = .plays p q a`: produce a real `play n p q = some a`,
-    feed it to `atom_complete` (→ `AtomProvable (atom_cost n) φ`), then flip with
+    feed it to `atom_complete_searchfree` (→ `AtomProvable (3 ^ n) φ`; search-free
+    bots only), then flip with
     `(proofSearch_spec _ _).2 (Pf.atom …)`. `proofSearch_complete_plays`
     below packages exactly this. For a structural `φ` (e.g. `.eq p p`), use the
     transparency leaf directly (`Pf.eqRefl`). You are *constructing* a proof object.
@@ -407,10 +410,13 @@ fundamental (Σ₁ vs Π₁), not a stylistic choice:
     i.e. if it were `true`, `proofSearch_sound` would force `φ.interp` (the bot
     would actually play that), which a computed fact (`interp_…_false`) refutes.
 
-Mnemonic: `= true` builds a proof (atom_complete / a transparency leaf); `= false`
-destroys a hypothetical one (proofSearch_sound + contradiction). The single place
-these collide is `atom_complete`'s false-guard branch — see `atom_complete_false_guard`
-in Axioms.lean.
+Mnemonic: `= true` builds a proof (atom_complete_searchfree / a transparency leaf);
+`= false` destroys a hypothetical one (proofSearch_sound + contradiction). The single
+place these collided was the false-guard branch: the old `atom_complete_false_guard`
+axiom lived there until it was machine-checked INCONSISTENT and deleted (2026-07-03).
+The sound replacement is the `search_f` floor — else-play certificates exist only
+from a Σ₁ refutation of the guard, at the full failed budget (`Base/AtomCerts`,
+`Base/Exclusion`).
 -/
 
 -- Soundness of the proof-search oracle: the `Bool` reflection of `Pf_sound`.
