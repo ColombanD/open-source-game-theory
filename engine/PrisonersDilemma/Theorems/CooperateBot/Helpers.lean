@@ -2,7 +2,8 @@ import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
-import PrisonersDilemma.Theorems.DefectBot
+import PrisonersDilemma.Theorems.DefectBot.Helpers
+import PrisonersDilemma.Theorems.DefectBot.vs_DefectBot
 
 open PD
 open PD.Bots

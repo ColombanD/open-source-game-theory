@@ -1,4 +1,12 @@
-import PrisonersDilemma.Theorems.DupocBot
+import PrisonersDilemma.Theorems.DupocBot.Helpers
+import PrisonersDilemma.Theorems.DupocBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.DupocBot.vs_DBot
+import PrisonersDilemma.Theorems.DupocBot.vs_DefectBot
+import PrisonersDilemma.Theorems.DupocBot.vs_DupocBot
+import PrisonersDilemma.Theorems.DupocBot.vs_EBot
+import PrisonersDilemma.Theorems.DupocBot.vs_MirrorBot
+import PrisonersDilemma.Theorems.DupocBot.vs_OBot
+import PrisonersDilemma.Theorems.DupocBot.vs_TitForTatBot
 
 /-!
 # PBLT Path B spike — can the bot's OWN self-search supply the diagonal fixpoint?

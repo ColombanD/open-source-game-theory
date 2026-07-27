@@ -2,7 +2,8 @@ import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Theorems.DefectBot
+import PrisonersDilemma.Theorems.DefectBot.Helpers
+import PrisonersDilemma.Theorems.DefectBot.vs_DefectBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics

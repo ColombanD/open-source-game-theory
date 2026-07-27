@@ -86,7 +86,8 @@ def _lemma_file(paths) -> Path:
 
 
 def _index_file(paths) -> Path:
-    return paths.lean_engine_dir / "PrisonersDilemma" / "Theorems" / "LlmGenerations.lean"
+    # No-top-level-files layout (2026-07-27): imports are appended to the ROOT module.
+    return paths.lean_engine_dir / "PrisonersDilemma.lean"
 
 
 def _check_source(lean_source: str) -> None:

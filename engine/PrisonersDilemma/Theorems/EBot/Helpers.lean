@@ -4,10 +4,28 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Base.Helpers
-import PrisonersDilemma.Theorems.DBot
-import PrisonersDilemma.Theorems.OBot
-import PrisonersDilemma.Theorems.TitForTatBot
-import PrisonersDilemma.Theorems.MirrorBot
+import PrisonersDilemma.Theorems.DBot.Helpers
+import PrisonersDilemma.Theorems.DBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.DBot.vs_DBot
+import PrisonersDilemma.Theorems.DBot.vs_DefectBot
+import PrisonersDilemma.Theorems.OBot.Helpers
+import PrisonersDilemma.Theorems.OBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.OBot.vs_DBot
+import PrisonersDilemma.Theorems.OBot.vs_DefectBot
+import PrisonersDilemma.Theorems.OBot.vs_OBot
+import PrisonersDilemma.Theorems.OBot.vs_TitForTatBot
+import PrisonersDilemma.Theorems.TitForTatBot.Helpers
+import PrisonersDilemma.Theorems.TitForTatBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.TitForTatBot.vs_DBot
+import PrisonersDilemma.Theorems.TitForTatBot.vs_DefectBot
+import PrisonersDilemma.Theorems.TitForTatBot.vs_TitForTatBot
+import PrisonersDilemma.Theorems.MirrorBot.Helpers
+import PrisonersDilemma.Theorems.MirrorBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.MirrorBot.vs_DBot
+import PrisonersDilemma.Theorems.MirrorBot.vs_DefectBot
+import PrisonersDilemma.Theorems.MirrorBot.vs_MirrorBot
+import PrisonersDilemma.Theorems.MirrorBot.vs_OBot
+import PrisonersDilemma.Theorems.MirrorBot.vs_TitForTatBot
 
 
 open PD.Bots

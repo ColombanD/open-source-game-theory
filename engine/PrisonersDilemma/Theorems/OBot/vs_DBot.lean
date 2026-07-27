@@ -2,8 +2,15 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.OBot
-import PrisonersDilemma.Theorems.DBot
-import PrisonersDilemma.Theorems.TitForTatBot
+import PrisonersDilemma.Theorems.DBot.Helpers
+import PrisonersDilemma.Theorems.DBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.DBot.vs_DBot
+import PrisonersDilemma.Theorems.DBot.vs_DefectBot
+import PrisonersDilemma.Theorems.TitForTatBot.Helpers
+import PrisonersDilemma.Theorems.TitForTatBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.TitForTatBot.vs_DBot
+import PrisonersDilemma.Theorems.TitForTatBot.vs_DefectBot
+import PrisonersDilemma.Theorems.TitForTatBot.vs_TitForTatBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.OBot.Helpers

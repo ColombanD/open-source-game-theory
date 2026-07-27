@@ -1,7 +1,8 @@
 import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.Theorems.DefectBot
+import PrisonersDilemma.Theorems.DefectBot.Helpers
+import PrisonersDilemma.Theorems.DefectBot.vs_DefectBot
 
 /-!
 # Spike — can `boxInternalize` become a `Provable` CONSTRUCTOR (no axiom)?

@@ -43,7 +43,10 @@ def theorem_file_path(result: ProofResult) -> Path:
 
 
 def _llm_generations_index(paths) -> Path:
-    return paths.lean_engine_dir / "PrisonersDilemma" / "Theorems" / "LlmGenerations.lean"
+    # No-top-level-files layout (2026-07-27): there is no Theorems/LlmGenerations.lean
+    # index anymore — new theorem modules are wired in by appending their import to
+    # the engine's ROOT module.
+    return paths.lean_engine_dir / "PrisonersDilemma.lean"
 
 
 def _module_name(result: ProofResult) -> str:

@@ -2,6 +2,7 @@
 -- the agent language, the proof system, the zoo, and the outcome theorems.
 -- The decidability metatheory (T31…T54) is a separate lake target,
 -- `Metatheory`, rooted at `PrisonersDilemma.Decidability`.
+
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot
 import PrisonersDilemma.Theorems.CooperateBot.vs_CooperateBot

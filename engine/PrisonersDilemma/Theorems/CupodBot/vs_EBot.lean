@@ -7,8 +7,11 @@ import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Bots.EBot
 import PrisonersDilemma.Bots.MirrorBot
-import PrisonersDilemma.Theorems.CooperateBot
-import PrisonersDilemma.Theorems.DefectBot
+import PrisonersDilemma.Theorems.CooperateBot.Helpers
+import PrisonersDilemma.Theorems.CooperateBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot
+import PrisonersDilemma.Theorems.DefectBot.Helpers
+import PrisonersDilemma.Theorems.DefectBot.vs_DefectBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
