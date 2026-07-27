@@ -3,7 +3,7 @@ import PrisonersDilemma.Bots.DBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Theorems.DefectBot
-import PrisonersDilemma.Theorems.Helpers
+import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 

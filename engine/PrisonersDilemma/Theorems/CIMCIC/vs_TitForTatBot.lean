@@ -2,7 +2,7 @@ import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Theorems.Helpers
+import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 

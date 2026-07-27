@@ -29,20 +29,32 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
     target_names = {left_bot.lower(), right_bot.lower()}
     excluded = {b.lower() for b in exclude_bots} if exclude_bots else set()
 
-    def _mentions_excluded(path: Path) -> bool:
-        """True if the file is the dedicated file for an excluded bot.
+    def _file_bots(path: Path) -> set[str]:
+        """The bots a file is dedicated to, from its path.
 
-        We only filter on filename stem — a file is "about" an excluded bot if
-        it is named after it (e.g. `Theorems/CupodBot.lean`). Files that merely
-        mention a target bot in passing are kept, since the proof for a pair
-        (A, B) is, by repo convention, located in `Theorems/A.lean` or
-        `Theorems/B.lean`, not in unrelated bots' files.
+        Three layouts coexist: legacy per-bot files (`Theorems/CupodBot.lean` →
+        {cupodbot}), sharded per-pair files (`Theorems/JustBot/vs_DBot.lean` →
+        {justbot, dbot}), and dir-local helpers (`Theorems/JustBot/Helpers.lean`
+        → {justbot}).
         """
-        return path.stem.lower() in excluded
+        stem = path.stem.lower()
+        if stem.startswith("vs_"):
+            return {path.parent.name.lower(), stem[3:]}
+        if stem == "helpers" and path.parent != theorems_dir:
+            return {path.parent.name.lower()}
+        return {stem}
+
+    def _mentions_excluded(path: Path) -> bool:
+        """True if the file is dedicated to an excluded bot (filename/dir based).
+
+        Files that merely mention a target bot in passing are kept, since the
+        proof for a pair (A, B) is, by repo convention, located in a file named
+        for A or B, not in unrelated bots' files.
+        """
+        return bool(_file_bots(path) & excluded)
 
     def _score(path: Path) -> int:
-        stem = path.stem.lower()
-        if stem in target_names:
+        if _file_bots(path) & target_names:
             return 2
         content = path.read_text(encoding="utf-8").lower()
         if any(name in content for name in target_names):
@@ -55,7 +67,7 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
     # the system prompt rather than competing for few-shot slots.
     pool = [
         p
-        for pattern in ("*.lean", "LlmGenerations/*.lean")
+        for pattern in ("*.lean", "LlmGenerations/*.lean", "*/vs_*.lean", "*/Helpers.lean")
         for p in theorems_dir.glob(pattern)
         if p.stem != "LlmLemmas" and not _mentions_excluded(p)
     ]
@@ -69,9 +81,15 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
         if _score(path) == 0 and len(results) >= 2:
             break
         try:
-            results.append((path.name, path.read_text(encoding="utf-8")))
+            content = path.read_text(encoding="utf-8")
         except OSError:
             continue
+        # Skip umbrella/index files (pure import lists) — no proof content to learn from.
+        if "theorem" not in content:
+            continue
+        # Label with the Theorems-relative path: per-pair files share basenames
+        # across bot directories (every dir has a vs_DBot.lean eventually).
+        results.append((str(path.relative_to(theorems_dir)), content))
 
     return results
 

@@ -1,4 +1,4 @@
-import PrisonersDilemma.Theorems.LlmGenerations.PrudentBot
+import PrisonersDilemma.Theorems.PrudentBot.Helpers
 
 /-!
 # Spike — can the PrudentBot↔DupocBot leg's box-internalization be built WITHOUT `boxInternalize`?

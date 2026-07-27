@@ -5,7 +5,7 @@ import PrisonersDilemma.Base.Soundness
 
 The positive layers certify plays; this file starts the NEGATIVE direction, needed by
 the honest outcome theorems for the floor-killed pairs (the tombstones in
-`Theorems/DupocBot.lean` / `Theorems/LlmGenerations/PrudentBot.lean`): `¬Pf k φ`
+`Theorems/DupocBot.lean` / `Theorems/PrudentBot/`): `¬Pf k φ`
 facts for TRUE formulas, where soundness gives nothing and only cost accounting can
 close the guard.
 

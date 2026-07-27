@@ -276,15 +276,24 @@ def _read_library_file(relative_path: str, exclude_bots: frozenset[str] = frozen
         return f"Error reading file: {exc}"
 
     if exclude_bots:
-        # Block only files named after a target bot — i.e. the bot's own definition
-        # or its dedicated theorem file. Files that merely mention a target bot in
-        # passing (e.g. a comparison theorem in another bot's file) are allowed,
-        # since the leak risk lives in files primarily about a target bot.
+        # Block only files dedicated to a target bot. Files that merely mention a
+        # target bot in passing (e.g. a comparison theorem in another bot's file)
+        # are allowed, since the leak risk lives in files primarily about a target
+        # bot. Dedication is derived from the path across all three layouts:
+        #   legacy per-bot file   Theorems/X.lean            -> {X}
+        #   per-pair file         Theorems/X/vs_Y.lean       -> {X, Y}
+        #   dir-local helpers     Theorems/X/Helpers.lean    -> {X}
         stem_lower = target.stem.lower()
+        if stem_lower.startswith("vs_"):
+            file_bots = {target.parent.name.lower(), stem_lower[3:]}
+        elif stem_lower == "helpers" and target.parent != base / "Theorems":
+            file_bots = {target.parent.name.lower()}
+        else:
+            file_bots = {stem_lower}
         excluded_lower = {b.lower() for b in exclude_bots}
-        if stem_lower in excluded_lower:
+        if file_bots & excluded_lower:
             return (
-                f"Error: access denied — `{relative_path}` is the dedicated file for one of "
+                f"Error: access denied — `{relative_path}` is a dedicated file for one of "
                 f"the bots under evaluation ({', '.join(sorted(exclude_bots))}). "
                 f"To prevent answer leakage during the bot-matrix run, files named after "
                 f"the target bots cannot be read via this tool. Reason about the bot "

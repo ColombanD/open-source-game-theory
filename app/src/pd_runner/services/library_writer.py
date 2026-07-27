@@ -30,11 +30,16 @@ class LibraryWriteError(RuntimeError):
 
 
 def theorem_file_path(result: ProofResult) -> Path:
-    """Return the canonical path for this proof inside the LLM generations subfolder."""
+    """Canonical per-pair path: Theorems/<LeftBot>/vs_<RightBot>.lean.
+
+    Sharded-by-left-bot layout (2026-07-27 refactor): one file per ordered
+    matchup, directories keep the file count per level at ~N. Dir-local shared
+    lemmas live in Theorems/<LeftBot>/Helpers.lean; reusable rules go to
+    LlmLemmas via add_base_lemma.
+    """
     paths = load_paths()
-    llm_dir = paths.lean_engine_dir / "PrisonersDilemma" / "Theorems" / "LlmGenerations"
-    filename = f"outcome_{result.left_bot}_vs_{result.right_bot}.lean"
-    return llm_dir / filename
+    theorems_dir = paths.lean_engine_dir / "PrisonersDilemma" / "Theorems"
+    return theorems_dir / result.left_bot / f"vs_{result.right_bot}.lean"
 
 
 def _llm_generations_index(paths) -> Path:
@@ -42,7 +47,7 @@ def _llm_generations_index(paths) -> Path:
 
 
 def _module_name(result: ProofResult) -> str:
-    return f"PrisonersDilemma.Theorems.LlmGenerations.outcome_{result.left_bot}_vs_{result.right_bot}"
+    return f"PrisonersDilemma.Theorems.{result.left_bot}.vs_{result.right_bot}"
 
 
 def write_proof_to_library(
@@ -87,7 +92,7 @@ def write_proof_to_library(
 
     paths = load_paths()
 
-    # Ensure the LlmGenerations directory exists.
+    # Ensure the per-bot directory (Theorems/<LeftBot>/) exists.
     target.parent.mkdir(parents=True, exist_ok=True)
 
     target.write_text(result.lean_source + "\n", encoding="utf-8")

@@ -274,7 +274,9 @@ def _discover_outcome_theorems(
         re.DOTALL,
     )
 
-    for lean_file in theorems_dir.glob("*.lean"):
+    # Recursive: covers legacy per-bot files (Theorems/X.lean), the LlmGenerations
+    # folder, and the sharded per-pair layout (Theorems/<LeftBot>/vs_<RightBot>.lean).
+    for lean_file in sorted(theorems_dir.rglob("*.lean")):
         content = lean_file.read_text(encoding="utf-8")
         for theorem_match in theorem_pattern.finditer(content):
             theorem_name = theorem_match.group(1)

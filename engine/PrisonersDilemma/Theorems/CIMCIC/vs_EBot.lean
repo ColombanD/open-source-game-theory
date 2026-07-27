@@ -5,7 +5,7 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
-import PrisonersDilemma.Theorems.Helpers
+import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 
