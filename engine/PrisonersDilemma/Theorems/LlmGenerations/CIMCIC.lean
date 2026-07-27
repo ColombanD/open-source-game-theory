@@ -47,18 +47,15 @@ PA-like `S` always proves `ψ ⊢ φ → ψ`.
   (CIMCIC k) .C` is provable (CooperateBot cooperates with everything), so the
   guard is provable via `weakenImpl`, CIMCIC's search fires, and it cooperates.
 
-* **vs DefectBot — NOT provable, by design (incompleteness boundary).** Here the
-  consequent `.plays DefectBot (CIMCIC k) .C` is *false* (DefectBot never plays C),
-  so `weakenImpl` does not apply. The implication is nonetheless *semantically
-  true* — its antecedent `.plays (CIMCIC k) DefectBot .C` is false (CIMCIC defects
-  against DefectBot), so it holds vacuously. To make CIMCIC *defect* against
-  DefectBot we would need `proofSearch k guard = false`, i.e. to certify that this
-  true-but-vacuous implication is **unprovable** within budget `k`. That is a Π₁
-  statement about the oracle's incompleteness, which the sound rules cannot
-  establish (the `= false` direction is discharged by refuting `guard.interp`, but
-  here `guard.interp` is *true*). So CIMCIC vs DefectBot sits on the genuine
-  incompleteness boundary and is deliberately left unproved. See the note at the
-  bottom of the file.
+* **vs DefectBot — (D, D), proved below.** Here the consequent `.plays DefectBot
+  (CIMCIC k) .C` is *false* (DefectBot never plays C), so `weakenImpl` does not
+  apply. The implication is nonetheless *semantically true* — its antecedent
+  `.plays (CIMCIC k) DefectBot .C` is false too, so it holds vacuously — which rules
+  out the `interp`-refutation route to `proofSearch = false`. Instead the guard is
+  shown *structurally unprovable*: a `ForbiddenC`-motive induction over `Pf` shows
+  no constructor can conclude it (the false consequent blocks the `weakenImpl`/atom
+  paths), so `proofSearch = false` and CIMCIC takes the `.const .D` else-branch.
+  See the second half of the file.
 -/
 
 -- CooperateBot --

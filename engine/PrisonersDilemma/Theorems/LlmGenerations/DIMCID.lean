@@ -37,13 +37,12 @@ the implication is provable whenever its consequent is.
   (DIMCID k) .D` is provable (DefectBot defects against everything), so the guard
   is provable via `weakenImpl`, DIMCID's search fires, and it defects.
 
-* **vs CooperateBot — NOT provable, by design (incompleteness boundary).** The
-  consequent `.plays CooperateBot (DIMCID k) .D` is *false* (CooperateBot never
-  defects), so `weakenImpl` does not apply. The implication is semantically true
-  vacuously, so making DIMCID *cooperate* (take the else-branch) would require
-  certifying the guard *unprovable* — a Π₁ statement the sound rules cannot
-  establish. Deliberately left unproved; see the bottom of the file (symmetric to
-  CIMCIC vs DefectBot).
+* **vs CooperateBot — (C, C), proved below.** The consequent `.plays CooperateBot
+  (DIMCID k) .D` is *false* (CooperateBot never defects), so `weakenImpl` does not
+  apply and the vacuously-true guard is *structurally unprovable*: a
+  `ForbiddenD`-motive induction over `Pf` shows no constructor can conclude it,
+  so `proofSearch = false` and DIMCID takes the `.const .C` else-branch. See the
+  second half of the file (symmetric to CIMCIC vs DefectBot).
 -/
 
 -- DefectBot --
