@@ -1,11 +1,19 @@
 name = "PrisonersDilemma"
 version = "0.1.0"
-defaultTargets = ["PrisonersDilemma"]
+defaultTargets = ["PrisonersDilemma", "Metatheory"]
 
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.28.0"
 
+# The engine: agent language, proof system S, bot zoo, outcome theorems.
 [[lean_lib]]
 name = "PrisonersDilemma"
+
+# The decidability metatheory (T31…T54): decFull, evalG, the gated systems,
+# the modest universe, the instance-gate decider, the certified zoo.
+# Builds on top of the engine; the engine never imports it.
+[[lean_lib]]
+name = "Metatheory"
+roots = ["PrisonersDilemma.Decidability"]

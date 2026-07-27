@@ -1,6 +1,5 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.LlmGenerations.DIMCID
@@ -8,10 +7,9 @@ import PrisonersDilemma.Theorems.CooperateBot
 import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.SizeLemmas
+import PrisonersDilemma.Base.Asymptotics
 
 open PD
-open PD.Axioms
 open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
@@ -30,7 +28,7 @@ cooperates. Against opponent `X` the guard substitutes to
   `.impl (.plays (DIMCID k) X .C) (.plays X (DIMCID k) .D)`.
 
 This is the mirror image of CIMCIC, and like CIMCIC it is made provable by the
-`Provable.weakenImpl` rule (see `Derivation.lean` and the CIMCIC theorem file):
+`Pf.weakenImpl` rule (see `ProofSystem.lean` and the CIMCIC theorem file):
 the implication is provable whenever its consequent is.
 
 ## The two outcomes
@@ -53,9 +51,8 @@ the implication is provable whenever its consequent is.
 /-- The consequent of DIMCID's guard against DefectBot is provable: DefectBot
     defects against DIMCID. -/
 theorem DIMCID_consequent_DefectBot (k : Nat) :
-    Provable (atom_cost 1) (Formula.plays DefectBot (DIMCID k) Action.D) :=
-  Provable.atom (atom_complete DefectBot (DIMCID k) .D 1
-    (by simpa using play_DefectBot 0 (DIMCID k)))
+    Pf (atom_cost 1) (Formula.plays DefectBot (DIMCID k) Action.D) :=
+  Pf.atom ⟨PlaysProof.const, by decide⟩
 
 /-- DIMCID's guard against DefectBot is provable: `weakenImpl` turns the provable
     consequent into the implication, once `k` is large enough for the
@@ -68,17 +65,15 @@ theorem proofSearch_true_for_DIMCID_vs_DefectBot :
   obtain ⟨K, hK⟩ := linear_log2_add_le 10 100
   refine ⟨K, fun k hk => ?_⟩
   refine (proofSearch_spec _ _).2 ?_
-  show Provable k
+  show Pf k
     (Formula.impl (.plays (DIMCID k) DefectBot Action.C)
                   (.plays DefectBot (DIMCID k) Action.D))
-  refine Provable.weakenImpl _ _ (atom_cost 1) (DIMCID_consequent_DefectBot k) ?_ ?_
-  · -- `m = atom_cost 1 = 3 ≤ k`.
-    have hb := hK k hk
-    have h1 : atom_cost 1 = 3 := by decide
-    rw [h1]; omega
-  · have hb := hK k hk
-    simp only [Formula.size, Prog.size, DIMCID, DefectBot]
-    omega
+  refine Pf.weakenImpl _ _ (atom_cost 1) (DIMCID_consequent_DefectBot k) ?_
+  -- transcript: consequent certificate (`atom_cost 1 = 3`) + the implication's size, ≤ k.
+  have hb := hK k hk
+  have h1 : atom_cost 1 = 3 := by decide
+  simp only [numCost, Formula.size, Prog.size, DIMCID, DefectBot]
+  omega
 
 /-- DIMCID defects against DefectBot: its guard fires (proved above), so it takes
     the `.const .D` branch. -/
@@ -95,7 +90,7 @@ theorem DIMCID_plays_D_against_DefectBot (k fuel : Nat)
   rw [hk]; simp [eval]
 
 /-- DIMCID vs DefectBot: mutual defection. -/
-theorem DIMCID_vs_DefectBot :
+theorem outcome_DIMCID_vs_DefectBot :
     ∃ k, ∀ fuel, outcome (fuel + 2) (DIMCID k) DefectBot = some (.D, .D) := by
   obtain ⟨K, hK⟩ := proofSearch_true_for_DIMCID_vs_DefectBot
   refine ⟨K + 1, fun fuel => ?_⟩
@@ -109,10 +104,10 @@ theorem DIMCID_vs_DefectBot :
 /-!
 ## DIMCID vs CooperateBot — (C, C), PROVED with NO axiom
 
-Symmetric to `CIMCIC_vs_DefectBot`. The guard `(.plays (DIMCID k) CooperateBot C) → (.plays
+Symmetric to `outcome_CIMCIC_vs_DefectBot`. The guard `(.plays (DIMCID k) CooperateBot C) → (.plays
 CooperateBot (DIMCID k) D)` is vacuously TRUE but **structurally UNPROVABLE**: its CONSEQUENT
-`CooperateBot plays D` is a genuinely-FALSE atom (CooperateBot plays C), refuted by `Provable_sound`,
-which blocks `weakenImpl`; a `ForbiddenD`-motive induction excludes the `Derivation`/`implTrans`
+`CooperateBot plays D` is a genuinely-FALSE atom (CooperateBot plays C), refuted by `Pf_sound`,
+which blocks `weakenImpl`; a `ForbiddenD`-motive induction excludes the transparency-leaf/`implTrans`
 paths. Hence `proofSearch = false`, DIMCID falls through to `.const .C`, giving (C, C). NO
 `atom_complete_false_guard`. (Was deliberately omitted under the old belief that unprovability of a
 true formula couldn't be certified — it can, structurally, via the false consequent.)
@@ -124,9 +119,9 @@ abbrev dimcid_guard (k : Nat) : Formula :=
 
 /-- The consequent atom `CooperateBot plays D vs DIMCID` is UNPROVABLE: CooperateBot plays C. -/
 theorem dimcid_consequent_not_provable (k m : Nat) :
-    ¬ Provable m (.plays CooperateBot (DIMCID k) Action.D) := by
+    ¬ Pf m (.plays CooperateBot (DIMCID k) Action.D) := by
   intro h
-  obtain ⟨n, hn⟩ := Provable_sound m _ h
+  obtain ⟨n, hn⟩ := Pf_sound m _ h
   have : play n CooperateBot (DIMCID k) = some Action.C ∨ play n CooperateBot (DIMCID k) = none := by
     cases n with
     | zero => right; rfl
@@ -141,54 +136,63 @@ def DimcidForbiddenD (k : Nat) : Formula → Prop
   | .impl _ ψ    => DimcidForbiddenD k ψ
   | _            => False
 
-theorem dimcid_no_deriv_forbidden (k : Nat) : ∀ {φ}, Derivation φ → ¬ DimcidForbiddenD k φ := by
-  intro φ d
-  induction d with
-  | modusPonens _ _ _ _ ihimpl _ => intro hF; exact ihimpl hF
-  | hypSyll _ _ _ _ _ _ ihbc => intro hF; exact ihbc hF
-  | searchBranch _ _ _ _ _ _ hme => intro hF; subst hme; simp only [DimcidForbiddenD] at hF
-                                    obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
-  | simStep _ _ _ _ _ hme => intro hF; subst hme; simp only [DimcidForbiddenD] at hF
-                             obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
-  | botSimStep _ _ _ _ _ hme => intro hF; subst hme; simp only [DimcidForbiddenD] at hF
-                                obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
-  | botSearchStep _ _ _ _ _ _ hme => intro hF; subst hme; simp only [DimcidForbiddenD] at hF
-                                     obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
-  | iteBranchSearch_t _ _ _ _ _ _ _ _ _ hme => intro hF; subst hme; simp only [DimcidForbiddenD] at hF
-                                               obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
-  | eqRefl _ => intro hF; simp only [DimcidForbiddenD] at hF
+/-- **No `Pf` concludes `.impl _ (false-consequent)`** — ONE flat induction over the unified
+    proof system.
 
+    **Pf-only note (Phase 3)**: replaces the former PAIR — `dimcid_no_deriv_forbidden` (a
+    `Derivation` induction) plus a 26-argument POSITIONAL `Pf.rec` whose `struct` arm
+    reached through the glue into it. One proof system, one induction, NAMED arms via
+    `Pf.induct`. The `atom` arm bottoms out on `dimcid_consequent_not_provable` (the consequent
+    is a genuinely FALSE atom, refuted by soundness); the implication-forming rules recurse on
+    the premise carrying the consequent chain; every other rule concludes a shape the motive
+    maps to `False`. -/
 theorem dimcid_no_provable_forbidden (k : Nat) :
-    ∀ {m φ}, Provable m φ → ¬ DimcidForbiddenD k φ := by
+    ∀ {m : Nat} {φ : Formula}, Pf m φ → ¬ DimcidForbiddenD k φ := by
   intro m φ h
-  exact Provable.rec
-    (motive_1 := fun _ _ _ _ _ _ => True)
-    (motive_2 := fun _ _ _ => True)
-    (motive_3 := fun _ φ _ => ¬ DimcidForbiddenD k φ)
-    trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
-    (fun _ _ _ => trivial)
-    (fun {_k} {_φ} hd => by intro hF; obtain ⟨d, _⟩ := hd; exact dimcid_no_deriv_forbidden k d hF)
-    (fun {_k} {_φ} hatom _ => by
-        intro hF
-        cases hatom with
-        | mk cert hle =>
-            simp only [DimcidForbiddenD] at hF; obtain ⟨hp, hq, ha⟩ := hF
-            subst hp; subst hq; subst ha
-            exact dimcid_consequent_not_provable k _ (Provable.atom (.mk cert hle)))
-    (fun _ _ _ _ _ _ ih => by intro hF; exact ih hF)
-    (fun {_k} _k₁ _k₂ _ψ₁ _ψ₂ _c0 _c1 _q _me _opp hme _hprud _hk2 _hsz _ih => by
-        intro hF; subst hme; simp only [DimcidForbiddenD] at hF
-        obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm)
-    (fun _φ _ψ _χ _a _b _hab _hbc _hak _hbk _hψsz _hsz _ihab ihbc => by intro hF; exact ihbc hF)
-    (fun {_k} _ _ _ _ _ _ _ => by intro hF; simp only [DimcidForbiddenD] at hF)
-    (fun _kIn _K _φ _hprem _hsz _ih => by intro hF; simp only [DimcidForbiddenD] at hF)  -- boxIntro
-    (fun _k _m _φ' _α _himpl _hante _hmk ihimpl _ihante => by intro hF; exact ihimpl hF)  -- app
-    (fun _k _K _φ _α _himpl _hsz _ih => by intro hF; simp only [DimcidForbiddenD] at hF)  -- axK
-    (fun _k _K _φ _hksz _hsz => by intro hF; simp only [DimcidForbiddenD] at hF)  -- box4
-    h
+  induction h using Pf.induct with
+  | atom k' φ' hatom =>
+      intro hF
+      cases hatom with
+      | mk cert hle =>
+          simp only [DimcidForbiddenD] at hF
+          obtain ⟨hp, hq, ha⟩ := hF
+          subst hp; subst hq; subst ha
+          exact dimcid_consequent_not_provable k _ (Pf.atom (.mk cert hle))
+  | searchBranch k' g ψ a b me opponent hme hle =>
+      intro hF; subst hme; simp only [DimcidForbiddenD] at hF
+      obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
+  | simStep k' me p q opponent a hme hle =>
+      intro hF; subst hme; simp only [DimcidForbiddenD] at hF
+      obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
+  | botSimStep k' me p q opponent a hme hle =>
+      intro hF; subst hme; simp only [DimcidForbiddenD] at hF
+      obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
+  | botSearchStep k' g ψ a b me opponent hme hle =>
+      intro hF; subst hme; simp only [DimcidForbiddenD] at hF
+      obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
+  | iteBranchSearch_t k' g z a' c0 c1 ψ q me opponent hme hle =>
+      intro hF; subst hme; simp only [DimcidForbiddenD] at hF
+      obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
+  | searchThenSearch_t k' k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk hle _ih =>
+      intro hF; subst hme; simp only [DimcidForbiddenD] at hF
+      obtain ⟨hm, _, _⟩ := hF; simp [CooperateBot] at hm
+  | mp k' m₁ m₂ φ' α h1 h2 hle ih1 _ih2 => intro hF; exact ih1 hF
+  | implTrans k' φ' ψ χ a b h1 h2 hle _ih1 ih2 => intro hF; exact ih2 hF
+  | weakenImpl k' φ' ψ m' hψ hle ih => intro hF; exact ih hF
+  | impS2 φ' ψ χ m₁ m₂ K h1 h2 hle ih1 _ih2 => intro hF; exact ih1 hF
+  | diagF pm fb g K tgt hgate hle ih => intro hF; exact ih hF
+  | eqRefl k' p hle => intro hF; simp only [DimcidForbiddenD] at hF
+  | eqNeg k' p q hne hle => intro hF; simp only [DimcidForbiddenD] at hF
+  | atomNeg k' p q b aN m' hatom hne hle => intro hF; simp only [DimcidForbiddenD] at hF
+  | atomBoxImpl k' kBox p q a hatom hle => intro hF; simp only [DimcidForbiddenD] at hF
+  | boxIntro kIn K φ' hprem hle _ih => intro hF; simp only [DimcidForbiddenD] at hF
+  | axK a b c m' K φ' α hprem hgate hle _ih => intro hF; simp only [DimcidForbiddenD] at hF
+  | box4 a b K φ' hgate hsz => intro hF; simp only [DimcidForbiddenD] at hF
+  | diagB pm fb g K tgt hgate hle _ih => intro hF; simp only [DimcidForbiddenD] at hF
+  | axKf a b c K φ' α hgate hsz => intro hF; simp only [DimcidForbiddenD] at hF
+  | boxMono a b K φ' hab hsz => intro hF; simp only [DimcidForbiddenD] at hF
 
-theorem dimcid_guard_not_provable (k : Nat) : ¬ Provable k (dimcid_guard k) := by
+theorem dimcid_guard_not_provable (k : Nat) : ¬ Pf k (dimcid_guard k) := by
   intro h
   refine dimcid_no_provable_forbidden k h ?_
   show DimcidForbiddenD k (dimcid_guard k)
@@ -216,7 +220,7 @@ theorem DIMCID_plays_C_against_CooperateBot (k fuel : Nat) :
 
 /-- **DIMCID vs CooperateBot: mutual cooperation (C, C)** — formerly deliberately-omitted, now
     PROVED with NO `atom_complete_false_guard` axiom. -/
-theorem DIMCID_vs_CooperateBot :
+theorem outcome_DIMCID_vs_CooperateBot :
     ∃ k, ∀ fuel, outcome (fuel + 2) (DIMCID k) CooperateBot = some (.C, .C) := by
   refine ⟨0, fun fuel => ?_⟩
   have hA : play (fuel + 2) (DIMCID 0) CooperateBot = some .C := DIMCID_plays_C_against_CooperateBot 0 fuel

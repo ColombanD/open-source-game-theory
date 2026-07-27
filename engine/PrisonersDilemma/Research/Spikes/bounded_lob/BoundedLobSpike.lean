@@ -1,7 +1,6 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Derivation
-import PrisonersDilemma.Axioms
+import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.CupodBot
 import Mathlib.Data.Nat.Log
@@ -9,7 +8,7 @@ import Mathlib.Data.Nat.Log
 /-!
 # Spike S1 — does `boundedLob` typecheck? (recursion on the budget `k`)
 
-Companion to `Research/Notes/CONSTRUCTIVE_BOUNDED_LOB.md` §5, step **S1**.
+Companion to `Research/Notes/DeadEnds/CONSTRUCTIVE_BOUNDED_LOB.md` §5, step **S1**.
 
 **Goal of S1 (and ONLY S1):** confirm Lean 4 accepts the productive bounded-Löb
 combinator — *strong recursion on the budget `k`* — as a total, well-founded definition.
@@ -146,7 +145,7 @@ Below: the actual instantiation attempt, with the gap marked by `sorry`, so the 
 is explicit and checkable rather than rhetorical. -/
 
 namespace PD.SpikeS3
-open PD PD.Axioms PD.Bots PD.BaseTheorems PD.Theorems
+open PD PD.Bots PD.BaseTheorems PD.Theorems
 
 /-- The CUPOD self-play fixpoint formula. -/
 def cupodφ (k : Nat) : Formula := .plays (CupodBot k) (CupodBot k) .D

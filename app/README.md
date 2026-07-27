@@ -89,7 +89,8 @@ ProofRequest (bot pair + outcome)
     │
     ├─ retrieval.py        — fetch relevant existing theorem files as few-shot context
     ├─ prompts.py          — build system prompt (embeds Program.lean + Dynamics.lean verbatim;
-    │                        adds Axioms.lean for .search bots like CupodBot/DupocBot)
+    │                        adds ProofSystem.lean + Base/{Asymptotics,Loeb,Exclusion}
+    │                        for .search bots like CupodBot/DupocBot)
     │
     └─ proof_service.py    — agentic loop (AnthropicClient + ToolHandler)
             │
@@ -110,7 +111,7 @@ ProofRequest (bot pair + outcome)
 | `llm/client.py` | `AnthropicClient` — multi-turn tool-use loop with adaptive thinking and system-prompt caching. `ToolHandler` — registry mapping tool names to Python callables. |
 | `llm/tools.py` | Claude tool schemas and implementations: `run_lean_proof` (fast per-iteration Lean check, no `lake build`) and `read_library_file` (read any file under `engine/PrisonersDilemma/`). |
 | `llm/retrieval.py` | `retrieve_few_shots` — returns the most relevant existing theorem files for a bot pair (name match first, then content match). `list_known_outcome_theorems` — scans the discovered theorem registry for already-proven outcomes involving the bots. |
-| `llm/prompts.py` | `build_system_prompt` — embeds the real `Program.lean` and `Dynamics.lean` source; adds `Axioms.lean` when either bot uses `.search` (CupodBot, DupocBot). `proof_request_message` — builds the per-request user message with the theorem stub, known theorems, and few-shot files. |
+| `llm/prompts.py` | `build_system_prompt` — embeds the real `Program.lean` and `Dynamics.lean` source; adds `ProofSystem.lean` + the `Base/` modules when either bot uses `.search` (CupodBot, DupocBot). `proof_request_message` — builds the per-request user message with the theorem stub, known theorems, and few-shot files. |
 | `services/proof_service.py` | `search_proof(ProofRequest) -> ProofResult` — the agentic loop. Retrieves context, builds prompt, runs tool-use loop, extracts final `\`\`\`lean\`\`\`` block. Raises `ProofSearchError` on failure. |
 | `services/library_writer.py` | `write_proof_to_library(ProofResult)` — writes a proven proof to `engine/PrisonersDilemma/Theorems/`, verifies with `lake build`, rolls back on failure. Never overwrites existing files. |
 | `eval/harness.py` | Evaluation harness: re-proves 10 held-out theorems and reports pass rate, iteration count, and wall time. |

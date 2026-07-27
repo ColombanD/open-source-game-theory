@@ -14,7 +14,7 @@ theorem play_DefectBot (n : Nat) (opponent : Prog) :
     simp
 
 -- The interpretation "DB plays D against q" is true.
--- This is the semantic content the completeness axiom will consume.
+-- This is the semantic content bounded completeness (`atom_complete_searchfree`) consumes.
 theorem interp_DefectBot_plays_D_true (q : Prog) :
     (Formula.plays DefectBot q .D).interp := by
   unfold Formula.interp

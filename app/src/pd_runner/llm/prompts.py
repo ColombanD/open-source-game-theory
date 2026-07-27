@@ -12,8 +12,9 @@ def _read_lean(relative: str) -> str:
 def _bot_uses_search(bot: str) -> bool:
     """True if the bot's source references the `.search` constructor.
 
-    Used to decide whether to inject the proof-system modules (Axioms.lean,
-    Derivation.lean, SizeLemmas.lean) into the proof agent's system prompt.
+    Used to decide whether to inject the proof-system modules (ProofSystem.lean,
+    Base/Asymptotics.lean, Base/Loeb.lean, Base/Exclusion.lean) into the proof
+    agent's system prompt.
     Reads from `Bots/<bot>.lean` or `Bots/LlmGenerations/<bot>.lean`; missing bot → False.
     """
     for candidate in (f"Bots/{bot}.lean", f"Bots/LlmGenerations/{bot}.lean"):
@@ -25,40 +26,102 @@ def _bot_uses_search(bot: str) -> bool:
     return False
 
 
-def build_system_prompt(left_bot: str, right_bot: str) -> str:
+def _llm_lemmas_block(exclude_bots: frozenset[str]) -> str:
+    """The agent's own derived-rule library, embedded so lemmas added in earlier runs are
+    RETRIEVABLE in later ones. In eval mode (`exclude_bots` set), agent-added blocks that
+    mention a bot under evaluation are dropped (leak prevention); the delimiters written
+    by `add_base_lemma` (`/-! ### <name> (agent-added) -/`) are the split points."""
+    try:
+        src = _read_lean("Theorems/LlmGenerations/LlmLemmas.lean")
+    except OSError:
+        return ""
+    if exclude_bots:
+        lowered = {b.lower() for b in exclude_bots}
+        parts = src.split("/-! ###")
+        kept = [parts[0]] + [
+            blk for blk in parts[1:] if not any(b in blk.lower() for b in lowered)
+        ]
+        src = "/-! ###".join(kept)
+    return (
+        "\n\n-- Theorems/LlmGenerations/LlmLemmas.lean (YOUR derived-rule library — lemmas "
+        "you or earlier runs added via add_base_lemma; import "
+        "`PrisonersDilemma.Theorems.LlmGenerations.LlmLemmas` and use them as "
+        "`PD.LlmLemmas.<name>`)\n```lean\n" + src + "\n```"
+    )
+
+
+def _pending_proposals_block() -> str:
+    """A short listing of already-filed constructor proposals, so later runs do not
+    re-derive and re-file duplicates. Production-mode only (the caller gates it)."""
+    import json
+
+    from pd_runner.config import load_paths
+
+    root = load_paths().generated_lean_dir.parent / "constructor_proposals"
+    if not root.exists():
+        return ""
+    lines = []
+    for meta in sorted(root.glob("*/meta.json")):
+        try:
+            data = json.loads(meta.read_text(encoding="utf-8"))
+            lines.append(f"- `{data['name']}` — unblocks: {data.get('unblocks', '?')}")
+        except (OSError, json.JSONDecodeError, KeyError):
+            continue
+    if not lines:
+        return ""
+    return (
+        "\n\n# Pending constructor proposals (awaiting human review — do NOT re-file these; "
+        "if one of them is exactly what your proof needs, conclude "
+        "`OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>` referencing it)\n" + "\n".join(lines)
+    )
+
+
+def build_system_prompt(
+    left_bot: str, right_bot: str, exclude_bots: frozenset[str] = frozenset()
+) -> str:
     program_src = _read_lean("Program.lean")
     dynamics_src = _read_lean("Dynamics.lean")
 
-    # `BaseTheorems.lean` holds the load-bearing proof vocabulary (`atom_complete`,
-    # `proofSearch_spec`, the soundness lemmas, …) that outcome proofs reference. It
-    # used to live in `Axioms.lean` / `Theorems/ProofSearch.lean`; both were reformed
-    # away, so inject the current module for every proof.
-    base_theorems_src = _read_lean("BaseTheorems.lean")
-    proof_blocks = [f"-- BaseTheorems.lean\n```lean\n{base_theorems_src}\n```"]
+    # The `Base/` layer holds the load-bearing proof vocabulary (`proofSearch_spec`,
+    # `Pf_sound`, `atom_complete_searchfree`, …) that outcome proofs reference. Since the
+    # 2026-07-09 split, `BaseTheorems.lean` is only a re-exporting UMBRELLA (16 lines), so
+    # embed the split modules themselves: soundness + atom certificates for every proof.
+    # Files are read WITHOUT a fallback: a missing module is a bug (the old silent
+    # `except OSError: continue` hid the `SizeLemmas.lean` → `Base/Asymptotics.lean`
+    # rename for days).
+    proof_blocks = []
+    for relative, label in (
+        ("BaseTheorems.lean", "BaseTheorems.lean (umbrella — all names live in `PD.BaseTheorems`)"),
+        ("Base/Soundness.lean", "Base/Soundness.lean (`proofSearch_spec`, `Pf_sound`, eval monotonicity)"),
+        ("Base/AtomCerts.lean", "Base/AtomCerts.lean (constructive atom certificates)"),
+    ):
+        proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
-    # `.search` bots additionally need the axioms they rest on plus the explicit
-    # derivation system and the budget (size) lemmas used to discharge `□`/`search`.
+    # `.search` bots additionally need the proof system itself plus the census/floor
+    # exclusion lemmas, the bounded-Löb engines, and the budget (log₂) arithmetic used
+    # to discharge `□`/`search` side-conditions. (`Axioms.lean` is gone — the engine has
+    # ZERO project axioms since 2026-07-03 and the file itself was later deleted.)
     needs_axioms = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
     if needs_axioms:
         for relative, label in (
-            ("Axioms.lean", "Axioms.lean"),
-            ("Derivation.lean", "Derivation.lean (the explicit proof-system `S`)"),
-            ("SizeLemmas.lean", "SizeLemmas.lean (character-budget lemmas)"),
+            ("ProofSystem.lean", "ProofSystem.lean (the explicit proof-system `S`)"),
+            ("Base/Asymptotics.lean", "Base/Asymptotics.lean (character-budget / log₂ lemmas)"),
+            ("Base/Loeb.lean", "Base/Loeb.lean (the bounded-Löb / PBLT engines)"),
+            ("Base/Exclusion.lean", "Base/Exclusion.lean (the census + floor exclusion lemmas)"),
         ):
-            try:
-                src = _read_lean(relative)
-            except OSError:
-                continue
-            proof_blocks.append(f"-- {label}\n```lean\n{src}\n```")
+            proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
     proof_system_block = "\n\n" + "\n\n".join(proof_blocks)
+    proof_system_block += _llm_lemmas_block(exclude_bots)
+    if not exclude_bots:
+        proof_system_block += _pending_proposals_block()
 
     return f"""\
 You are an expert Lean 4 proof assistant for the open-source game theory project.
 
 # Library definitions
 
-These are the exact source files that define the types, evaluator, and axioms you must use.
+These are the exact source files that define the types, evaluator, and proof rules you must use.
 Do not invent definitions — use only what is shown here and imported in the existing theorem files.
 
 -- Program.lean
@@ -104,13 +167,32 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
   is provable and is the expected answer. Existing `.search`-bot self-play theorems in the
   few-shot files show the canonical `PBLT` application for this shape — follow it. Prove the
   threshold theorem; do NOT declare OUTCOME OPEN merely because the result varies with `k`.
-- **OUTCOME OPEN is only for genuinely undetermined matchups.** Reserve it for the rare case
-  where *no* single action pair holds even past a threshold on `k` (e.g. the matchup admits
-  two incompatible fixed points and neither is forced for all sufficiently large `k`). If a
-  large-`k` threshold theorem of the shape above is provable, you must prove it instead. When
-  OUTCOME OPEN genuinely applies, do not emit a ```lean``` code block and say exactly
-  `OUTCOME OPEN` followed by a one-paragraph explanation of which action pairs are consistent
-  with the axioms and why no single pair is forced even in the large-`k` limit.
+- **Before ever declaring OUTCOME OPEN, climb the escalation ladder.** Historically, most
+  "unprovable" outcomes were provable — the missing piece was a DERIVED rule nobody had
+  stated yet (`boxInternalize` and `box_provable` were both once believed to need new
+  axioms; both turned out derivable). The ladder:
+    1. **Search harder with existing rules** — re-read the Base/ modules in your prompt and
+       the few-shot proofs; the modal tier (`boxIntro`/`axK`/`box4`/`boxMono`/`impS2`) plus
+       `mutual_loeb`/`pblt_engine_id` compose further than it first appears.
+    2. **Derive the missing principle as a lemma** (`add_base_lemma`, when available): state
+       the reusable rule you wish existed and PROVE it from existing rules. This is always
+       safe (kernel-checked, auto-rollback) and the lemma persists for future proofs.
+    3. **Only if derivation genuinely fails**, and you can articulate WHY (which census/
+       exclusion argument blocks it, or which Löb/self-reference shape no existing rule
+       reads), file a constructor proposal (`propose_pf_constructor`, when available). You
+       must supply a COMPILING soundness certificate (the rule's interp-level content proved
+       in the current engine) and a faithfulness rationale; the engine is not modified and a
+       human reviews the proposal. Then conclude
+       `OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>`.
+- **OUTCOME OPEN without a proposal is only for genuinely undetermined matchups.** Reserve
+  it for the rare case where *no* single action pair holds even past a threshold on `k`
+  (e.g. the matchup admits two incompatible fixed points and neither is forced for all
+  sufficiently large `k` — a BISTABLE matchup; no sound rule can force those, so do NOT
+  propose a constructor for them). If a large-`k` threshold theorem of the shape above is
+  provable, you must prove it instead. When OUTCOME OPEN genuinely applies, do not emit a
+  ```lean``` code block and say exactly `OUTCOME OPEN` followed by a one-paragraph
+  explanation of which action pairs are consistent with the proof system and why no single pair
+  is forced even in the large-`k` limit.
 - When you are confident the proof compiles cleanly, output the final Lean source inside
   a ```lean ... ``` code fence and say "PROOF COMPLETE".
 """
@@ -133,7 +215,7 @@ def proof_request_message(
     # fixed point makes them cooperate). An unquantified `outcome … BotA BotB`
     # statement then leaves `k` free and is genuinely unprovable. The right shape
     # is a **large-`k` threshold theorem** binding `k` — exactly the form used by
-    # `DupocBot_vs_DupocBot`. Detect that case and render the threshold template.
+    # `outcome_DupocBot_vs_DupocBot`. Detect that case and render the threshold template.
     parameterized = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
 
     outcome_clause = (
@@ -174,7 +256,7 @@ def proof_request_message(
             )
         else:
             template_hint = (
-                "This threshold shape is exactly how `DupocBot_vs_DupocBot` is stated — read "
+                "This threshold shape is exactly how `outcome_DupocBot_vs_DupocBot` is stated — read "
                 "that theorem (and the `PBLT` application it uses) as your template."
             )
 

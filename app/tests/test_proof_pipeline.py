@@ -68,9 +68,14 @@ def _write_fake_engine(pd_dir: Path) -> None:
     (pd_dir / "Program.lean").write_text("-- program", encoding="utf-8")
     (pd_dir / "Dynamics.lean").write_text("-- dynamics", encoding="utf-8")
     (pd_dir / "BaseTheorems.lean").write_text("-- base-theorems", encoding="utf-8")
-    (pd_dir / "Axioms.lean").write_text("-- axioms", encoding="utf-8")
-    (pd_dir / "Derivation.lean").write_text("-- derivation", encoding="utf-8")
-    (pd_dir / "SizeLemmas.lean").write_text("-- size-lemmas", encoding="utf-8")
+    (pd_dir / "ProofSystem.lean").write_text("-- proof-system", encoding="utf-8")
+    base_dir = pd_dir / "Base"
+    base_dir.mkdir(exist_ok=True)
+    (base_dir / "Soundness.lean").write_text("-- soundness", encoding="utf-8")
+    (base_dir / "AtomCerts.lean").write_text("-- atom-certs", encoding="utf-8")
+    (base_dir / "Asymptotics.lean").write_text("-- asymptotics", encoding="utf-8")
+    (base_dir / "Loeb.lean").write_text("-- loeb", encoding="utf-8")
+    (base_dir / "Exclusion.lean").write_text("-- exclusion", encoding="utf-8")
 
     # Bot sources are how `_bot_uses_search` decides whether to inject the
     # search-only proof-system modules: CooperateBot has no `.search`, CupodBot does.
@@ -89,15 +94,18 @@ def test_build_system_prompt_includes_program_and_dynamics(tmp_path: Path, monke
     import pd_runner.llm.prompts as prompts_mod
     monkeypatch.setattr(prompts_mod, "_ENGINE_PD_DIR", pd_dir)
 
-    # Non-search matchup: core proof vocabulary is injected, but the heavier
-    # search-only proof-system modules are not.
+    # Non-search matchup: core proof vocabulary (soundness + atom certificates)
+    # is injected, but the heavier search-only proof-system modules are not.
     prompt = build_system_prompt("CooperateBot", "DefectBot")
     assert "-- program" in prompt
     assert "-- dynamics" in prompt
     assert "-- base-theorems" in prompt
-    assert "-- axioms" not in prompt
-    assert "-- derivation" not in prompt
-    assert "-- size-lemmas" not in prompt
+    assert "-- soundness" in prompt
+    assert "-- atom-certs" in prompt
+    assert "-- proof-system" not in prompt
+    assert "-- asymptotics" not in prompt
+    assert "-- loeb" not in prompt
+    assert "-- exclusion" not in prompt
 
 
 def test_build_system_prompt_includes_proof_system_for_search_bots(
@@ -109,15 +117,18 @@ def test_build_system_prompt_includes_proof_system_for_search_bots(
     import pd_runner.llm.prompts as prompts_mod
     monkeypatch.setattr(prompts_mod, "_ENGINE_PD_DIR", pd_dir)
 
-    # CupodBot uses `.search`, so the full proof-system context (axioms +
-    # explicit derivation system + budget lemmas) must be injected. This is the
-    # regression guard for the engine reform that moved `atom_complete` out of
-    # `Axioms.lean` into `BaseTheorems.lean` and added `Derivation`/`SizeLemmas`.
+    # CupodBot uses `.search`, so the full proof-system context (axioms + the
+    # explicit proof system + budget arithmetic + Löb engines + the exclusion
+    # census) must be injected. Regression guard for the Base/ split: the embeds
+    # must be the SPLIT modules, not just the 16-line BaseTheorems umbrella.
     prompt = build_system_prompt("CupodBot", "CooperateBot")
     assert "-- base-theorems" in prompt
-    assert "-- axioms" in prompt
-    assert "-- derivation" in prompt
-    assert "-- size-lemmas" in prompt
+    assert "-- soundness" in prompt
+    assert "-- atom-certs" in prompt
+    assert "-- proof-system" in prompt
+    assert "-- asymptotics" in prompt
+    assert "-- loeb" in prompt
+    assert "-- exclusion" in prompt
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +160,7 @@ def test_search_proof_returns_result_on_success(tmp_path: Path, monkeypatch) -> 
 
     monkeypatch.setattr(proof_service, "retrieve_few_shots", lambda *a, **kw: [])
     monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a, **kw: "None found.")
-    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a: "system")
+    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a, **kw: "system")
     # `search_proof` persists every attempt to `generated/outcomes/`; redirect that
     # to a tmp dir so the test does not clobber the committed fixtures.
     monkeypatch.setattr(proof_service, "_outcomes_dir", lambda: tmp_path)
@@ -170,7 +181,7 @@ def test_search_proof_returns_result_on_success(tmp_path: Path, monkeypatch) -> 
 def test_search_proof_raises_when_no_lean_block(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(proof_service, "retrieve_few_shots", lambda *a, **kw: [])
     monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a, **kw: "None found.")
-    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a: "system")
+    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a, **kw: "system")
     monkeypatch.setattr(proof_service, "_outcomes_dir", lambda: tmp_path)
     monkeypatch.setattr(
         proof_service.AnthropicClient,

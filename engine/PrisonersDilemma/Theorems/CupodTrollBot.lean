@@ -24,14 +24,14 @@ namespace PD.Theorems
 
 /-- The structural-identity guard of CupodTrollBot **fires** when the opponent is
     literally `CupodBot k` and the budget `k` covers the guard formula's size.
-    The witness is `eqRefl`, whose `Derivation.size` is exactly the conclusion's
+    The witness is the `Pf.eqRefl` leaf, whose transcript is exactly the conclusion's
     `Formula.size`. The guard's RHS is frozen by `subst`, so it stays the literal
     `CupodBot k` and `eqRefl` matches the bare opponent. -/
 theorem proofSearch_true_for_CupodBot (k : Nat)
     (hk : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k) :
     proofSearch k (.eq (CupodBot k) (CupodBot k)) = true :=
   (proofSearch_spec _ _).2
-    (Provable.struct ⟨Derivation.eqRefl (CupodBot k), hk⟩)
+    (Pf.eqRefl (CupodBot k) hk)
 
 /-- CupodTrollBot defects against a literal `CupodBot k`: the guard fires, so the
     bot takes its `.const .D` branch. -/
@@ -50,18 +50,22 @@ theorem CupodTrollBot_defects_vs_CupodBot (k fuel : Nat)
     must fit in `k` (`hbudget`). -/
 theorem CupodBot_defects_vs_CupodTrollBot (k fuel : Nat)
     (hk : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k)
-    (hbudget : atom_cost (fuel + 2) ≤ k) :
+    (_ : atom_cost (fuel + 2) ≤ k) :
     play (fuel + 2) (CupodBot k) (CupodTrollBot k) = some .D := by
   -- CupodTrollBot defects against `CupodBot k` (direction A).
   have hA : play (fuel + 2) (CupodTrollBot k) (CupodBot k) = some .D :=
     CupodTrollBot_defects_vs_CupodBot k fuel hk
-  -- Lift that play to a proof-search fact, then up to CupodBot's budget `k`.
-  have hatom : proofSearch (atom_cost (fuel + 2))
-      (.plays (CupodTrollBot k) (CupodBot k) .D) = true :=
-    (proofSearch_spec _ _).2
-      (Provable.atom (atom_complete (CupodTrollBot k) (CupodBot k) .D (fuel + 2) hA))
-  have hg : proofSearch k (.plays (CupodTrollBot k) (CupodBot k) .D) = true :=
-    proofSearch_monotone _ _ _ hbudget hatom
+  -- Certify the play directly: Troll's `.eq` guard FIRES (eqRefl), so `search_t` + the
+  -- defect leaf give the certificate at `log2 k + 3` characters (≤ k via `hk`).
+  have hEqProv : Pf k (.eq (CupodBot k) (CupodBot k)) :=
+    Pf.eqRefl (CupodBot k) hk
+  have hg : proofSearch k (.plays (CupodTrollBot k) (CupodBot k) .D) = true := by
+    refine (proofSearch_spec _ _).2 (Pf.atom
+      (⟨PlaysProof.search_t hEqProv PlaysProof.const, ?_⟩ :
+        AtomProvable k (.plays (CupodTrollBot k) (CupodBot k) .D)))
+    show c_leaf + c_guard k + c_node ≤ k
+    simp only [numCost, Formula.size, Prog.size, CupodBot, c_leaf, c_guard, c_node] at hk ⊢
+    omega
   -- CupodBot's `.search` guard `subst`s to exactly `hg`'s formula (`self` = `me`).
   show eval (fuel + 2) (CupodBot k) (CupodTrollBot k) (CupodBot k) = some .D
   unfold CupodBot at hg ⊢
@@ -320,39 +324,44 @@ theorem outcome_CupodTrollBot_vs_EBot (k fuel : Nat) :
 
 --- DupocBot ---
 
-/-- DupocBot cooperates with CupodTrollBot. Its `.search` guard is
-    `□(CupodTrollBot plays C vs me)`; since CupodTrollBot *does* cooperate, the
-    guard's atom is provable, so once the budget `k` covers it (`hbudget`) the
-    guard fires and DupocBot takes its `.const .C` branch. So the outcome is mutual
-    cooperation, not `(.C, .D)`. -/
-theorem DupocBot_plays_C_against_CupodTrollBot (k fuel : Nat)
-    (hbudget : atom_cost (fuel + 2) ≤ k) :
-    play (fuel + 2) (DupocBot k) (CupodTrollBot k) = some .C := by
-  -- CupodTrollBot cooperates against `DupocBot k` (the guard's content).
-  have hC : play (fuel + 2) (CupodTrollBot k) (DupocBot k) = some .C :=
-    CupodTrollBot_cooperates_if_opp_not_CupodBot k fuel (DupocBot k) (by simp [DupocBot, CupodBot])
-  -- Lift that play to a proof-search fact, then up to DupocBot's budget `k`.
-  have hatom : proofSearch (atom_cost (fuel + 2))
-      (.plays (CupodTrollBot k) (DupocBot k) .C) = true :=
-    (proofSearch_spec _ _).2
-      (Provable.atom (atom_complete (CupodTrollBot k) (DupocBot k) .C (fuel + 2) hC))
-  have hg : proofSearch k (.plays (CupodTrollBot k) (DupocBot k) .C) = true :=
-    proofSearch_monotone _ _ _ hbudget hatom
+/-- DupocBot cooperates with CupodTrollBot — **STAGGERED BUDGETS** (2026-07-02, the
+    false-guard repair; the former same-`k` version was an axiom artifact). CupodTrollBot's
+    cooperation against a non-Cupod opponent is an ELSE-play of its own `.eq` search, so its
+    certificate pays the `search_f` floor: the refutation of the guard (`Pf.eqNeg` —
+    the programs are syntactically distinct) plus Troll's whole failed budget `j`. `DupocBot k`
+    can prove it only when `k` affords that: `hjk`. Critch-faithful: proving a bounded search
+    fails costs at least the search budget. -/
+theorem DupocBot_plays_C_against_CupodTrollBot (j k fuel : Nat)
+    (hjk : (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + 2 ≤ k) :
+    play (fuel + 2) (DupocBot k) (CupodTrollBot j) = some .C := by
+  have hne : DupocBot k ≠ CupodBot j := by simp [DupocBot, CupodBot]
+  -- the guard refutation (eqNeg leaf), at its own size
+  have hneg : Pf ((Formula.neg (.eq (DupocBot k) (CupodBot j))).size)
+      (.neg (.eq (DupocBot k) (CupodBot j))) :=
+    Pf.eqNeg _ _ hne (Nat.le_refl _)
+  -- Troll's else-certificate: search_f over the refutation, then the cooperate leaf
+  have hg : proofSearch k (.plays (CupodTrollBot j) (DupocBot k) .C) = true := by
+    refine (proofSearch_spec _ _).2 (Pf.atom (atom_monotone _ k _ ?_
+      (⟨PlaysProof.search_f hneg PlaysProof.const, Nat.le_refl _⟩ :
+        AtomProvable (c_leaf + (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + c_node)
+          (.plays (CupodTrollBot j) (DupocBot k) .C))))
+    simp only [c_leaf, c_node]
+    omega
   -- DupocBot's `.search` guard `subst`s to exactly `hg`'s formula (`self` = `me`).
-  show eval (fuel + 2) (DupocBot k) (CupodTrollBot k) (DupocBot k) = some .C
+  show eval (fuel + 2) (DupocBot k) (CupodTrollBot j) (DupocBot k) = some .C
   unfold DupocBot at hg ⊢
   simp [eval, Prog.subst, Formula.subst, hg]
 
-theorem outcome_CupodTrollBot_vs_DupocBot (k fuel : Nat)
-    (hbudget : atom_cost (fuel + 2) ≤ k) :
-    outcome (fuel + 2) (CupodTrollBot k) (DupocBot k) = some (.C, .C) := by
+theorem outcome_CupodTrollBot_vs_DupocBot (j k fuel : Nat)
+    (hjk : (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + 2 ≤ k) :
+    outcome (fuel + 2) (CupodTrollBot j) (DupocBot k) = some (.C, .C) := by
   -- CupodTrollBot cooperates against `DupocBot` (direction A).
-  have hA : play (fuel + 2) (CupodTrollBot k) (DupocBot k) = some .C :=
-    CupodTrollBot_cooperates_if_opp_not_CupodBot k fuel (DupocBot k)
+  have hA : play (fuel + 2) (CupodTrollBot j) (DupocBot k) = some .C :=
+    CupodTrollBot_cooperates_if_opp_not_CupodBot j fuel (DupocBot k)
       (by simp [DupocBot, CupodBot])
-  -- `DupocBot` cooperates with CupodTrollBot once its guard fires (direction B).
-  have hB : play (fuel + 2) (DupocBot k) (CupodTrollBot k) = some .C :=
-    DupocBot_plays_C_against_CupodTrollBot k fuel hbudget
+  -- `DupocBot` cooperates with CupodTrollBot once its guard affords the floor (direction B).
+  have hB : play (fuel + 2) (DupocBot k) (CupodTrollBot j) = some .C :=
+    DupocBot_plays_C_against_CupodTrollBot j k fuel hjk
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 

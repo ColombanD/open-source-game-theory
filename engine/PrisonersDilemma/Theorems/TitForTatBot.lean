@@ -17,7 +17,7 @@ theorem TitForTatBot_plays_C_against_CB (fuel : Nat) :
     simp [eval, Prog.subst]
     decide
 
-theorem TitForTatBot_vs_CB (fuel : Nat):
+theorem outcome_TitForTatBot_vs_CooperateBot (fuel : Nat):
     outcome (fuel + 3) TitForTatBot CooperateBot = some (.C, .C) := by
     have hA : play (fuel + 3) TitForTatBot CooperateBot = some .C := TitForTatBot_plays_C_against_CB (fuel)
     have hB : play (fuel + 3) CooperateBot TitForTatBot = some .C := rfl
@@ -30,14 +30,14 @@ theorem TitForTatBot_plays_D_against_DB (fuel : Nat) :
     simp [eval, Prog.subst]
     decide
 
-theorem TitForTatBot_vs_DB (fuel : Nat):
+theorem outcome_TitForTatBot_vs_DefectBot (fuel : Nat):
     outcome (fuel + 3) TitForTatBot DefectBot = some (.D, .D) := by
     have hA : play (fuel + 3) TitForTatBot DefectBot = some .D := TitForTatBot_plays_D_against_DB (fuel)
     have hB : play (fuel + 3) DefectBot TitForTatBot = some .D := rfl
     simp [outcome, hA, hB]
 
 
-theorem TitForTatBot_vs_TitForTatBot (fuel : Nat):
+theorem outcome_TitForTatBot_vs_TitForTatBot (fuel : Nat):
     outcome (fuel + 6) TitForTatBot TitForTatBot = some (.C, .C) := by
     have hGuard : eval (fuel + 5) TitForTatBot TitForTatBot (.sim .opp (.bot CooperateBot)) = some .C := by
       simp [eval, Prog.subst, TitForTatBot, CooperateBot]; decide
@@ -50,7 +50,7 @@ theorem TitForTatBot_vs_TitForTatBot (fuel : Nat):
         simpa [eval] using hPlay
     simp [outcome, hA]
 
-theorem TitForTatBot_vs_DBot (fuel : Nat):
+theorem outcome_TitForTatBot_vs_DBot (fuel : Nat):
     outcome (fuel + 6) TitForTatBot DBot = some (.D, .C) := by
     have hGuard1 : eval (fuel + 5) TitForTatBot DBot (.sim .opp (.bot CooperateBot)) = some .D := by
       simp [eval, Prog.subst, DBot, CooperateBot, DefectBot]; decide

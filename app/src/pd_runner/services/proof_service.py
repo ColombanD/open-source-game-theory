@@ -16,7 +16,7 @@ from pd_runner.config import load_paths
 from pd_runner.llm.client import AnthropicClient, ToolHandler
 from pd_runner.llm.prompts import build_system_prompt, proof_request_message
 from pd_runner.llm.retrieval import list_known_outcome_theorems, retrieve_few_shots
-from pd_runner.llm.tools import LEAN_TOOLS, register_lean_tools
+from pd_runner.llm.tools import GROWTH_TOOLS, LEAN_TOOLS, register_lean_tools
 from pd_runner.logging_config import get_logger, TRACE
 
 _log = get_logger("services.proof_service")
@@ -122,7 +122,9 @@ def search_proof(request: ProofRequest) -> ProofResult:
     few_shots = retrieve_few_shots(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
     known = list_known_outcome_theorems(request.left_bot, request.right_bot, exclude_bots=set(request.exclude_bots))
 
-    system_prompt = build_system_prompt(request.left_bot, request.right_bot)
+    system_prompt = build_system_prompt(
+        request.left_bot, request.right_bot, exclude_bots=request.exclude_bots
+    )
     user_message = proof_request_message(
         left_bot=request.left_bot,
         right_bot=request.right_bot,
@@ -139,9 +141,13 @@ def search_proof(request: ProofRequest) -> ProofResult:
     handler = ToolHandler()
     register_lean_tools(handler, exclude_bots=request.exclude_bots)
 
+    # Library growth (Tier-1 lemmas / Tier-2 constructor proposals) is production-only:
+    # the eval harness runs with exclude_bots set and must not mutate the library.
+    tools = LEAN_TOOLS + GROWTH_TOOLS if not request.exclude_bots else LEAN_TOOLS
+
     client = AnthropicClient(
         system_prompt=system_prompt,
-        tools=LEAN_TOOLS,
+        tools=tools,
         model=request.model,
         max_iterations=request.max_iterations,
         max_tokens=request.max_tokens,
@@ -167,11 +173,16 @@ def search_proof(request: ProofRequest) -> ProofResult:
 
         if lean_source is None:
             if "OUTCOME OPEN" in final_text:
+                proposed = "CONSTRUCTOR PROPOSED" in final_text
                 err = (
                     f"Agent declared outcome OPEN for "
                     f"{request.left_bot} vs {request.right_bot} "
-                    f"(matchup is oracle-dependent and no unconditional outcome is provable).\n"
-                    f"Agent explanation:\n{final_text}"
+                    + ("(a Pf-constructor proposal was filed under "
+                       "generated/constructor_proposals/ — review its faithfulness "
+                       "rationale; integration is human-gated).\n"
+                       if proposed else
+                       "(matchup is oracle-dependent and no unconditional outcome is provable).\n")
+                    + f"Agent explanation:\n{final_text}"
                 )
             else:
                 err = (

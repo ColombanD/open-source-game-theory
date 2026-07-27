@@ -1,8 +1,7 @@
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Derivation
-import PrisonersDilemma.Axioms
+import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.ComputableEval.PlaysCheck
+import PrisonersDilemma.Research.Spikes.computable_eval.PlaysCheck
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.CooperateBot

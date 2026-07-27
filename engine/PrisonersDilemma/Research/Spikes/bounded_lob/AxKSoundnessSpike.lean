@@ -1,4 +1,4 @@
-import PrisonersDilemma.Derivation
+import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 

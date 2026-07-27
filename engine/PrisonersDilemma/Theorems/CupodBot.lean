@@ -1,6 +1,5 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Bots.TitForTatBot
@@ -13,10 +12,9 @@ import PrisonersDilemma.Theorems.DefectBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.SizeLemmas
+import PrisonersDilemma.Base.Asymptotics
 
 open PD
-open PD.Axioms
 open PD.Bots
 open PD.BaseTheorems
 namespace PD.Theorems
@@ -35,7 +33,7 @@ theorem proofSearch_false_for_CooperateBot (k : Nat) :
   | false => rfl
 
 /-- CupodBot vs CooperateBot: uses proof search being false -/
-theorem CupodBot_vs_CooperateBot (k fuel : Nat):
+theorem outcome_CupodBot_vs_CooperateBot (k fuel : Nat):
     outcome (fuel + 2) (CupodBot k) CooperateBot = some (.C, .C) := by
   -- Left side: CUPOD executes its `.search` guard. The guard is false by the
   -- lemma above, so the `search` falls through to the final `.const .C` branch.
@@ -61,10 +59,10 @@ theorem CupodBot_vs_CooperateBot (k fuel : Nat):
 theorem proofSearch_true_for_DefectBot :
     ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
   let k := atom_cost 1
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom (atom_complete DefectBot (CupodBot k) .D 1 rfl))⟩
+  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
 
 /-- CupodBot vs DefectBot: uses proof search being true -/
-theorem CupodBot_vs_DefectBot (fuel : Nat):
+theorem outcome_CupodBot_vs_DefectBot (fuel : Nat):
     ∃ k, outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_DefectBot
   refine ⟨k, ?_⟩
@@ -88,24 +86,20 @@ theorem CupodBot_vs_DefectBot (fuel : Nat):
     `5 * log2 k + 33` characters (the guard `ψ.subst (CupodBot k) (CupodBot k)`
     reduces to `.plays (CupodBot k) (CupodBot k) .D`; each `CupodBot k` costs
     `log2 k + 7`). By `linear_log2_add_le 5 33` this fits within budget `k` for
-    all `k ≥ K₀`, so the implication is `Provable k` outright — exactly the
+    all `k ≥ K₀`, so the implication is `Pf k` outright — exactly the
     PBLT-shaped hypothesis (no looser `∃ m` budget).
 
     The conclusion formula is *definitionally* the `searchBranch` conclusion: the
     guard `(.plays .opp .self .D).subst (CupodBot k) (CupodBot k)` unfolds to
     `.plays (CupodBot k) (CupodBot k) .D`, so the derivation lands in the target
     type with no rewriting. -/
-theorem cupod_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (.plays (CupodBot k) (CupodBot k) .D))
-                        (.plays (CupodBot k) (CupodBot k) .D)) := by
-  obtain ⟨K₀, hK₀⟩ := linear_log2_add_le 5 33
-  refine ⟨K₀, fun k hk => ?_⟩
-  apply Provable.struct
-  refine ⟨.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) (CupodBot k) rfl, ?_⟩
-  -- d.size = conclusion.size = 5 * log2 k + 33 ≤ k for k ≥ K₀.
-  simp only [Derivation.size, Formula.size, Prog.size, CupodBot]
-  have := hK₀ k hk
+theorem cupod_loeb_premise (k : Nat) :
+    Pf (5 * Nat.log2 k + 33)
+      (.impl (.box k (.plays (CupodBot k) (CupodBot k) .D))
+             (.plays (CupodBot k) (CupodBot k) .D)) := by
+  refine Pf.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) (CupodBot k) rfl ?_
+  -- transcript = the single leaf's conclusion: 5 * log2 k + 33 — unconditionally.
+  simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, CupodBot]
   omega
 
 /-- CUPOD self-play defects, for `k` large enough — critch22 Theorem 3.4.
@@ -113,32 +107,28 @@ theorem cupod_loeb_premise :
     `f = id`, `k₁ = 0`. The Löb premise comes from `cupod_loeb_premise`,
     soundness collapses bounded provability to a `play` witness, and self-play
     symmetry makes the same `play` discharge both legs of `outcome`. -/
-theorem CupodBot_vs_CupodBot :
+theorem outcome_CupodBot_vs_CupodBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (CupodBot k) (CupodBot k) = some (.D, .D) := by
   let φ : Nat → Formula := fun k => .plays (CupodBot k) (CupodBot k) .D
-  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
-  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
-    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
-    intro k hk
-    have hlog : Nat.log2 k < k := by
-      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]
-      exact Nat.lt_two_pow_self
-    simpa using hlog
-  obtain ⟨K₀, hK₀⟩ := cupod_loeb_premise
-  -- `cupod_loeb_premise` proves the *tight* bound `Provable k (…)` (size ≤ k,
-  -- keeping `Derivation.size` load-bearing); PBLT only needs the existential
-  -- `∃ m, Provable m (…)`, so we weaken.
+  -- `cupod_loeb_premise` proves the premise at its HONEST transcript `5·log2 k + 33` —
+  -- exactly `pblt_engine_id`'s premise shape (the Löb chain needs `pm ≪ k`).
   have hLoeb :
-      ∀ k, k > K₀ →
-        ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by
-    intro k hk
-    exact ⟨k, hK₀ k (Nat.le_of_lt hk)⟩
-  obtain ⟨k₂, hk₂⟩ := PBLT φ id K₀ hMono hLog hLoeb
+      ∀ k, k > 0 →
+        Pf (5 * Nat.log2 k + 33) (.impl (.box k (φ k)) (φ k)) := by
+    intro k _
+    exact cupod_loeb_premise k
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    show (Formula.plays (CupodBot k) (CupodBot k) .D).size ≤ _
+    simp only [numCost, Formula.size, Prog.size, CupodBot]
+    omega
+  have hpm : ∀ k, 5 * Nat.log2 k + 33 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 5 * Nat.log2 k + 33) 0 hφsz hpm hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
+  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
   obtain ⟨n, hn⟩ := hInterp
   refine ⟨n, ?_⟩
   simp [outcome, hn]
@@ -211,7 +201,7 @@ theorem proofSearch_false_for_TitForTatBot (k : Nat) :
   | false => rfl
 
 /-- CupodBot vs TitForTatBot: mutual cooperation. -/
-theorem CupodBot_vs_TitForTatBot (fuel : Nat):
+theorem outcome_CupodBot_vs_TitForTatBot (fuel : Nat):
     ∃ k, outcome (fuel + 4) (CupodBot k) TitForTatBot = some (.C, .C) := by
   let k := 0
   refine ⟨k, ?_⟩
@@ -230,7 +220,7 @@ theorem CupodBot_vs_TitForTatBot (fuel : Nat):
 theorem proofSearch_true_for_bot_DefectBot :
     ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
   let k := atom_cost 2
-  ⟨k, (proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot DefectBot) (CupodBot k) .D 2 rfl))⟩
+  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
 
 /-- CUPOD defects against `.bot DefectBot` once its search guard succeeds. -/
 theorem CupodBot_plays_D_against_bot_DefectBot (k fuel : Nat)
@@ -292,7 +282,7 @@ theorem proofSearch_false_for_DBot (k : Nat)
   | false => rfl
 
 /-- CupodBot vs DBot: mutual cooperation. -/
-theorem CupodBot_vs_DBot (fuel : Nat) :
+theorem outcome_CupodBot_vs_DBot (fuel : Nat) :
     ∃ k, outcome (fuel + 4) (CupodBot k) DBot = some (.C, .C) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_bot_DefectBot
   refine ⟨k, ?_⟩
@@ -342,23 +332,63 @@ theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
         Action.C Action.D hGuard2)
   simpa [hInner] using hPlay
 
-theorem proofSearch_true_for_OBot :
-    ∃ k, proofSearch k (.plays OBot (CupodBot k) .D) = true := by
-  -- Working budget/index k = atom_cost 5.
-  refine ⟨atom_cost 5, ?_⟩
-  -- Step 1: lift the .bot DefectBot atom from fuel-2 budget to working budget.
-  have hkDefect : proofSearch (atom_cost 5)
-      (.plays (.bot DefectBot) (CupodBot (atom_cost 5)) .D) = true :=
-    proofSearch_monotone (atom_cost 2) _ _
-      (atom_cost_mono (by omega))
-      ((proofSearch_spec _ _).2 (Provable.atom
-        (atom_complete (.bot DefectBot) (CupodBot (atom_cost 5)) .D 2 rfl)))
-  -- Step 2: OBot defects vs CupodBot k at fuel 5.
-  have hobot : play 5 OBot (CupodBot (atom_cost 5)) = some .D := by
-    simpa using OBot_plays_D_against_CupodBot (atom_cost 5) 0 hkDefect
-  -- Step 3: atom_complete at fuel 5 gives the working budget exactly.
-  exact (proofSearch_spec _ _).2 (Provable.atom
-    (atom_complete OBot (CupodBot (atom_cost 5)) .D 5 hobot))
+/-! ### CupodBot vs OBot — the honest `(C, D)` outcome (floor formalized 2026-07-09).
+
+HISTORY: `proofSearch_true_for_OBot`/`CupodBot_vs_OBot` (mutual defection detected at a
+common budget) were RETIRED 2026-07-02 as axiom artifacts: OBot's D-play against
+`CupodBot k` crosses Cupod's FAILED first-probe search (vs `.bot CooperateBot` —
+"botCoop plays D vs me" is false), so its certificate pays the `search_f` floor —
+cost > k for every k.
+
+RESOLVED (2026-07-09): the floor is a THEOREM — `no_provable_OBot_D_tail`, an instance
+of `no_provable_probeFirst_tail` (Base/Exclusion.lean; note the fully general shape:
+OBot's THEN-branch is its inner probe `ite` and the target action is D — the kill
+happens at the guard certificate, which both `ite` polarities carry). Cupod's search
+for "OBot plays D vs me" fails at every budget, so Cupod falls through to its
+cooperate else-branch while OBot — pure run-priced simulation — defects:
+`outcome_CupodBot_vs_OBot = (C, D)` for every `k ≥ 2`. Critch-faithful and grimly
+honest: the defection-detector gets exploited by exactly the opponent whose defection
+is real but whose certificate crosses the detector's own failed probe. -/
+
+/-- The floor for the OBot pair: no ≤ k certificate concludes any formula whose spine
+    tail is "OBot plays D against `CupodBot k`". -/
+theorem no_provable_OBot_D_tail (k : Nat) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      rightTail φ = .plays OBot (CupodBot k) .D → False := by
+  intro K φ hp hK ht
+  refine no_provable_probeFirst_tail k CooperateBot
+      (.ite (.sim .opp (.bot DefectBot)) .C (.const .C) (.const .D))
+      (.const .D) .C .D (.plays .opp .self .D) (.const .D) (.const .C) ?_ ?_ K φ hp hK ?_
+  · simpa [Formula.subst, Prog.subst, CupodBot] using
+      interp_bot_CooperateBot_plays_D_false (CupodBot k)
+  · intro k' ψ c0 c1 h; simp at h
+  · simpa [OBot, CupodBot] using ht
+
+/-- Cupod's defection search fails against OBot at every budget — the floor's bite:
+    OBot really does defect, but every certificate costs more than `k`. -/
+theorem proofSearch_false_for_OBot_vs_Cupod (k : Nat) :
+    proofSearch k (.plays OBot (CupodBot k) .D) = false := by
+  cases h : proofSearch k (.plays OBot (CupodBot k) .D) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_OBot_D_tail k k _ hp le_rfl (by simp))
+  | false => rfl
+
+/-- CupodBot cooperates with OBot: it can never afford the certificate of OBot's
+    (real!) defection, so it falls through to the trusting else-branch. -/
+theorem CupodBot_plays_C_against_OBot (k fuel : Nat) :
+    play (fuel + 2) (CupodBot k) OBot = some .C := by
+  have hg := proofSearch_false_for_OBot_vs_Cupod k
+  show eval (fuel + 2) (CupodBot k) OBot (CupodBot k) = some .C
+  unfold CupodBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- The `.bot DefectBot` probe guard is Σ₁-certifiable at run price, discharging
+    `OBot_plays_D_against_CupodBot`'s hypothesis at every `k ≥ 2`. -/
+theorem proofSearch_true_for_bot_DefectBot_vs_Cupod (k : Nat) (hk : 2 ≤ k) :
+    proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
+  (proofSearch_spec _ _).2 (Pf.atom
+    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
 
 theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
     (hk : proofSearch k (.plays OBot (CupodBot k) .D) = true) :
@@ -367,29 +397,16 @@ theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
   unfold CupodBot at hk ⊢
   simp [eval, Prog.subst, Formula.subst, hk]
 
-/-- CupodBot vs OBot: mutual defection. -/
-theorem CupodBot_vs_OBot (fuel : Nat) :
-    ∃ k, outcome (fuel + 5) (CupodBot k) OBot = some (.D, .D) := by
-  -- Working budget/index k = atom_cost 5.
-  let k := atom_cost 5
-  have hkDefect : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
-    proofSearch_monotone (atom_cost 2) k _
-      (atom_cost_mono (by omega))
-      ((proofSearch_spec _ _).2 (Provable.atom (atom_complete (.bot DefectBot) (CupodBot k) .D 2 rfl)))
-  have hkOBot : proofSearch k (.plays OBot (CupodBot k) .D) = true := by
-    have hobot : play 5 OBot (CupodBot k) = some .D := by
-      simpa using OBot_plays_D_against_CupodBot k 0 hkDefect
-    exact (proofSearch_spec _ _).2 (Provable.atom (atom_complete OBot (CupodBot k) .D 5 hobot))
-
-  refine ⟨k, ?_⟩
-
-  have hA : play (fuel + 5) (CupodBot k) OBot = some .D :=
-    CupodBot_plays_D_against_OBot fuel k hkOBot
-
+/-- **The honest CupodBot×OBot outcome — `(C, D)` for every `k ≥ 2`.** The trusting
+    searcher gets exploited: OBot's real defection is uncertifiable within Cupod's own
+    budget (the floor), so Cupod cooperates into the sucker payoff. -/
+theorem outcome_CupodBot_vs_OBot (k fuel : Nat) (hk : 2 ≤ k) :
+    outcome (fuel + 5) (CupodBot k) OBot = some (.C, .D) := by
+  have hA : play (fuel + 5) (CupodBot k) OBot = some .C := by
+    simpa [Nat.add_assoc] using CupodBot_plays_C_against_OBot k (fuel + 3)
   have hB : play (fuel + 5) OBot (CupodBot k) = some .D :=
-    OBot_plays_D_against_CupodBot k fuel hkDefect
-
-  exact outcome_of_plays _ _ _ _ _ hA hB
+    OBot_plays_D_against_CupodBot k fuel (proofSearch_true_for_bot_DefectBot_vs_Cupod k hk)
+  simp [outcome, hA, hB]
 
 
 -- EBot --
@@ -474,7 +491,7 @@ theorem proofSearch_false_for_EBot (k : Nat)
   | false => rfl
 
 /-- CupodBot vs EBot: mutual cooperation. -/
-theorem CupodBot_vs_EBot (fuel : Nat) :
+theorem outcome_CupodBot_vs_EBot (fuel : Nat) :
     ∃ k, outcome (fuel + 5) (CupodBot k) EBot = some (.C, .C) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_bot_DefectBot
   refine ⟨k, ?_⟩
@@ -504,32 +521,20 @@ theorem mirror_swap_provable (q : Prog) (a : Action) :
     into the closed `□_k φ → φ` that PBLT requires. (Was an `proofSearch`-level
     chain via the deleted `proofSearch_impl_trans`; now one explicit
     Dynamics.) -/
-theorem cupod_mirror_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
-                        (.plays MirrorBot (CupodBot k) .D)) := by
-  -- The `hypSyll` chain concludes `□_k (Mirror plays D vs Cupod) → (Mirror plays
-  -- D vs Cupod)`, of size exactly `3 * log2 k + 25` characters (MirrorBot costs
-  -- 3, each `CupodBot k` costs `log2 k + 7`). `linear_log2_add_le 3 25` fits this
-  -- within budget `k` for `k ≥ K₀`.
-  obtain ⟨K₀, hK₀⟩ := linear_log2_add_le 3 25
-  refine ⟨K₀, fun k hk => ?_⟩
-  -- `□_k (Mirror plays D vs Cupod) → Cupod plays D vs Mirror`, from Cupod's `.search` body.
-  -- The guard `(.plays .opp .self .D).subst (CupodBot k) MirrorBot` reduces
-  -- definitionally to `.plays MirrorBot (CupodBot k) .D`, so this lands in type.
-  let dS : Derivation (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
-                             (.plays (CupodBot k) MirrorBot .D)) :=
-    Derivation.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl
-  -- `Cupod plays D vs Mirror → Mirror plays D vs Cupod`, from Mirror's `.sim` swap.
-  let dM : Derivation (.impl (.plays (CupodBot k) MirrorBot .D)
-                             (.plays MirrorBot (CupodBot k) .D)) :=
-    Derivation.simStep MirrorBot .opp .self (CupodBot k) .D rfl
-  apply Provable.struct
-  -- the conclusion's size bound (`≤ k`) follows from `linear_log2_add_le`.
-  refine ⟨.hypSyll _ _ _ dS dM, ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, CupodBot, MirrorBot]
-  have := hK₀ k hk
-  omega
+theorem cupod_mirror_loeb_premise (k : Nat) :
+    Pf (20 * Nat.log2 k + 150)
+      (.impl (.box k (.plays MirrorBot (CupodBot k) .D))
+             (.plays MirrorBot (CupodBot k) .D)) := by
+  -- The `hypSyll` TRANSCRIPT pays both leaves plus its conclusion (transcript cost
+  -- model): searchBranch leaf + simStep leaf + the `□_k … → …` conclusion — all
+  -- `O(log k)`; `20·log2 k + 150` is a generous uniform bound, valid for ALL `k`.
+  -- Pf-only: a `hypSyll` TREE smuggled through `struct` becomes a FLAT `implTrans`
+  -- of two bare leaves — same two transparency steps, same total budget.
+  refine Pf.implTrans _ _ _ (5 * Nat.log2 k + 50) (5 * Nat.log2 k + 50)
+    (Pf.searchBranch k (.plays .opp .self .D) .D .C (CupodBot k) MirrorBot rfl ?_)
+    (Pf.simStep MirrorBot .opp .self (CupodBot k) .D rfl ?_) ?_ <;>
+  · simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, CupodBot, MirrorBot]
+    omega
 
 /-- Once `proofSearch k = true`, CupodBot's eval against MirrorBot is fully
     determined. Pattern from `CupodBot_plays_D_against_bot_DefectBot:247`. -/
@@ -594,31 +599,28 @@ theorem proofSearch_k_of_play_MirrorBot
 
 /-- CupodBot vs MirrorBot defects, for `k` large enough. Direct application of
     PBLT with `φ k = .plays MirrorBot (CupodBot k) .D`, `f = id`, `k₁ = 0`.
-    Mirrors `CupodBot_vs_CupodBot`; the play witness lives on the MirrorBot
+    Mirrors `outcome_CupodBot_vs_CupodBot`; the play witness lives on the MirrorBot
     leg and is lifted to the CupodBot leg via the `.sim` swap. -/
-theorem CupodBot_vs_MirrorBot :
+theorem outcome_CupodBot_vs_MirrorBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (CupodBot k) MirrorBot = some (.D, .D) := by
   let φ : Nat → Formula := fun k => .plays MirrorBot (CupodBot k) .D
-  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
-  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
-    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
-    intro k hk
-    have hlog : Nat.log2 k < k := by
-      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]
-      exact Nat.lt_two_pow_self
-    simpa using hlog
-  obtain ⟨K₀, hK₀⟩ := cupod_mirror_loeb_premise
   have hLoeb :
-      ∀ k, k > K₀ →
-        ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by
-    intro k hk
-    exact ⟨k, hK₀ k (Nat.le_of_lt hk)⟩
-  obtain ⟨k₂, hk₂⟩ := PBLT φ id K₀ hMono hLog hLoeb
+      ∀ k, k > 0 →
+        Pf (20 * Nat.log2 k + 150) (.impl (.box k (φ k)) (φ k)) := by
+    intro k _
+    exact cupod_mirror_loeb_premise k
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    show (Formula.plays MirrorBot (CupodBot k) .D).size ≤ _
+    simp only [numCost, Formula.size, Prog.size, CupodBot, MirrorBot]
+    omega
+  have hpm : ∀ k, 20 * Nat.log2 k + 150 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 20 * Nat.log2 k + 150) 0 hφsz hpm hLoeb
   refine ⟨k₂, ?_⟩
   intro k hk
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
+  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
   obtain ⟨n, hMirror⟩ := hInterp
   have hPS : proofSearch k (.plays MirrorBot (CupodBot k) .D) = true :=
     proofSearch_k_of_play_MirrorBot k n hMirror

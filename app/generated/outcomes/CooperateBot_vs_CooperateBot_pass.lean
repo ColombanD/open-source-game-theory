@@ -1,9 +1,8 @@
-import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Dynamics
 
 open PD
 open PD.Bots
-
 namespace PD.Theorems
 
 theorem llm_outcome_CooperateBot_vs_CooperateBot (n : Nat) :

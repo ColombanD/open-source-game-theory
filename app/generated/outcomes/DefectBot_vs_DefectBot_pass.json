@@ -1,10 +1,11 @@
 {
-  "timestamp": "20260516T153326",
+  "timestamp": "20260714T173729",
   "bot_a": "DefectBot",
   "bot_b": "DefectBot",
   "model": "claude-opus-4-7",
   "max_iterations": 20,
-  "fuel_requested": null,
+  "max_tokens": 32000,
+  "fuel_requested": 1,
   "exclude_bots": [
     "DefectBot"
   ],
@@ -12,7 +13,7 @@
   "left_action": "D",
   "right_action": "D",
   "iterations_used": 1,
-  "elapsed_seconds": 10.851813542001764,
+  "elapsed_seconds": 8.735401124999044,
   "error": null,
-  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_DefectBot_vs_DefectBot (n : Nat) :\n    outcome (n+1) DefectBot DefectBot = some (.D, .D) := by\n  rfl\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.DefectBot\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_DefectBot_vs_DefectBot (n : Nat) :\n    outcome (n+1) DefectBot DefectBot = some (.D, .D) := by\n  unfold outcome play eval DefectBot\n  rfl\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

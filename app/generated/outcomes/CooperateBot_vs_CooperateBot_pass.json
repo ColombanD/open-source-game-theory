@@ -1,10 +1,11 @@
 {
-  "timestamp": "20260516T140235",
+  "timestamp": "20260714T173710",
   "bot_a": "CooperateBot",
   "bot_b": "CooperateBot",
   "model": "claude-opus-4-7",
   "max_iterations": 20,
-  "fuel_requested": null,
+  "max_tokens": 32000,
+  "fuel_requested": 1,
   "exclude_bots": [
     "CooperateBot"
   ],
@@ -12,7 +13,7 @@
   "left_action": "C",
   "right_action": "C",
   "iterations_used": 1,
-  "elapsed_seconds": 11.212745459000871,
+  "elapsed_seconds": 8.236088291996566,
   "error": null,
-  "final_text_tail": "```lean\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.CooperateBot\n\nopen PD\nopen PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_CooperateBot_vs_CooperateBot (n : Nat) :\n    outcome (n+1) CooperateBot CooperateBot = some (.C, .C) := by\n  rfl\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+  "final_text_tail": "```lean\nimport PrisonersDilemma.Bots.CooperateBot\nimport PrisonersDilemma.Dynamics\n\nopen PD\nopen PD.Bots\nnamespace PD.Theorems\n\ntheorem llm_outcome_CooperateBot_vs_CooperateBot (n : Nat) :\n    outcome (n+1) CooperateBot CooperateBot = some (.C, .C) := by\n  rfl\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
 }

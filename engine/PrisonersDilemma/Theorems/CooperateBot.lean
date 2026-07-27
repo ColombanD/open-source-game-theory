@@ -21,7 +21,7 @@ theorem interp_CooperateBot_plays_C_true (q : Prog) :
   exists 1
 
 -- The interpretation "CB plays D against q" is false.
--- This is the semantic content the soundness axiom will consume.
+-- This is the semantic content soundness (`Pf_sound`/`proofSearch_sound`) consumes.
 theorem interp_CooperateBot_plays_D_false (q : Prog) :
     ¬ (Formula.plays CooperateBot q .D).interp := by
   rintro ⟨n, hn⟩

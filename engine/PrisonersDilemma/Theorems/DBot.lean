@@ -15,7 +15,7 @@ theorem DBot_plays_D_against_CooperateBot (fuel : Nat) :
     simp [eval, Prog.subst]
     decide
 
-theorem DBot_vs_CooperateBot (fuel : Nat):
+theorem outcome_DBot_vs_CooperateBot (fuel : Nat):
     outcome (fuel + 3) DBot CooperateBot = some (.D, .C) := by
     have hA : play (fuel + 3) DBot CooperateBot = some .D := DBot_plays_D_against_CooperateBot (fuel)
     have hB : play (fuel + 3) CooperateBot DBot = some .C := rfl
@@ -28,14 +28,14 @@ theorem DBot_plays_C_against_DefectBot (fuel : Nat) :
     simp [eval, Prog.subst]
     decide
 
-theorem DBot_vs_DefectBot (fuel : Nat):
+theorem outcome_DBot_vs_DefectBot (fuel : Nat):
     outcome (fuel + 3) DBot DefectBot = some (.C, .D) := by
     have hA : play (fuel + 3) DBot DefectBot = some .C := DBot_plays_C_against_DefectBot (fuel)
     have hB : play (fuel + 3) DefectBot DBot = some .D := rfl
     simp [outcome, hA, hB]
 
 
-theorem DBot_vs_DBot (fuel : Nat):
+theorem outcome_DBot_vs_DBot (fuel : Nat):
     outcome (fuel + 6) DBot DBot = some (.D, .D) := by
     -- After substitution, the outer guard reduces to running DBot with
     -- opponent (.bot DefectBot) — not DefectBot — because `.bot` blocks

@@ -18,19 +18,23 @@ Other top-level: `latex/` (paper), `Research/` notes live under the engine, `REA
 
 # Part I — The Lean engine (`engine/PrisonersDilemma/`)
 
-Build: `cd engine && lake build`. Single root module `PrisonersDilemma.lean` imports
-everything. Namespace `PD`. Layered bottom-up (each file imports the ones above):
+Build: `cd engine && lake build`. TWO lake targets (both default): `PrisonersDilemma`
+(root module `PrisonersDilemma.lean` — language, proof system, zoo, outcome theorems) and
+`Metatheory` (rooted at `PrisonersDilemma.Decidability` — the T31…T54 decidability chain;
+builds on the engine, the engine never imports it). Namespace `PD`. Layered bottom-up
+(each file imports the ones above):
 
 | Layer | File(s) | What it defines |
 |---|---|---|
 | **Language** | `Program.lean` | `Action` (C/D), `Outcome`; the mutually-recursive `Prog` (agent source code — `.const/.self/.opp/.bot/.sim/.ite/.search`) and `Formula` (the logic agents reason in — `.plays/.impl/.neg/.box/.eq`); `subst`, `size`. Pure syntax — no actions until `eval`. |
-| **Proof system `S`** | `Derivation.lean` | The inductive `Derivation`/`PlaysProof`/`AtomProvable`/`Provable k φ` (bounded provability, budget `k`); cost constants `c_leaf/c_node/c_guard`; `atom_cost`. This is `S`, the bounded modal logic agents query. |
-| **Dynamics** | `Dynamics.lean` | The fuelled evaluator `eval` (its `.search` guard consults `proofSearch k φ := decide (Provable k φ)` — **currently `noncomputable`, see crux below**); `play`, `outcome`; `Formula.interp` (denotational semantics; `.box` = `Provable`). |
-| **Axioms** | `Axioms.lean` | The **4 reflection axioms** of `S` not yet discharged: `PBLT` (parametric bounded Löb), `box_provable`, `atom_box_provable_impl`, `atom_complete_false_guard`. (`c_guard_mono` was demoted to a theorem.) |
-| **Meta-theorems** | `BaseTheorems.lean`, `SizeLemmas.lean` | Soundness (`Derivation.sound`, `proofSearch_sound`), `proofSearch_spec`/`_monotone`, `atom_complete`, size/log bounds. The bridge from provability to real plays. |
+| **Proof system `S`** | `ProofSystem.lean` | **Pf-only since 2026-07-14** (`PF_ONLY_ROADMAP.md`): the mutual `PlaysProof`/`AtomProvable`/`Pf k φ` block — `Pf` is the ONE unified proof-term type (22 constructors; the former `Derivation`(Type)+`Provable`(Prop) split and its `struct`/`app`/`hypSyll` duplication are GONE). Ships the named eliminators `Pf.induct`/`PlaysProof.induct` (`@[elab_as_elim]`; NEVER use the raw mutual recursors outside `ProofSystem.lean` §4 and `sound_upto`). Cost constants `c_leaf/c_node/c_guard`; `atom_cost`. Meaning-preservation vs the pre-merge `S` is a THEOREM: `legacy_iff_live` in `Research/Spikes/unified_pf/LegacyS.lean`. |
+| **Dynamics** | `Dynamics.lean` | The fuelled evaluator `eval` (its `.search` guard consults `proofSearch k φ := decide (Pf k φ)` — **currently `noncomputable`, see crux below**); `play`, `outcome`; `Formula.interp` (denotational semantics; `.box` = `Pf`). |
+| **Axioms** | *(file deleted — nothing to hold)* | **ZERO project axioms** (2026-07-03): the last one, `atom_complete_false_guard`, was machine-checked INCONSISTENT (anti-diagonal bot, `Research/Spikes/transcript/T32Inconsistency.lean`) and DELETED — replaced by the sound `search_f`/`atomNeg`/`eqNeg` machinery with a cost FLOOR. `PBLT` fell 2026-07-01 (theorem via the `.diag` fixpoint); everything rests on Lean's 3 standard axioms. Costs are transcript-cumulative (Critch's literal model) since 2026-07-02. |
+| **Meta-theorems** | `Base/` (`Asymptotics`, `AtomCerts`, `Soundness`, `Exclusion`, `Loeb`); `BaseTheorems.lean` is the re-exporting umbrella | Split 2026-07-09 (absorbed the former `SizeLemmas.lean` into `Base/Asymptotics`). Soundness (`sound_upto` — the ex-`Derivation.sound` arms folded in, `proofSearch_sound`), monotonicity, `atom_complete_searchfree`, log₂ arithmetic, the internalized Löb engines (`bloeb_engine`, `pblt_engine`, `mutual_pblt_*`), and the NEGATIVE direction (`Exclusion`: the transparency census `tail_plays_readable` + the generalized floor bound `no_provable_probeFirst_tail` (+`_botOpp` for `.bot`-wrapped searchers), plus `no_provable_searcherPlay_tail` for the searcher's OWN else-play, which resolved ALL SEVEN floor tombstones into honest outcomes: `outcome_DupocBot_vs_DBot`, `outcome_DupocBot_vs_EBot`, `outcome_PrudentBot_vs_EBot`, `outcome_JustBot_vs_DBot`, `outcome_JustBot_vs_EBot` — all `(D, C)` — `outcome_CupodBot_vs_OBot = (C, D)` (the defection-detector exploited), and the same-`k` `outcome_PrudentBot_vs_PrudentBot = (D, D)` (single-tier prudence is self-defeating; `PrudentBot2` is the escape)). All names still in `PD.BaseTheorems` (arithmetic in `PD`). The bridge from provability to real plays. |
+| **Unified proof terms** | `ProofSystem.lean` (the system itself) | **The `Pf` migration is COMPLETE (2026-07-14)**: `Pf` IS the proof system (see the row above); the coexistence module `Pf.lean` was absorbed. History and evidence: `Research/Notes/UNIFIED_PF_SKETCH.md` (design), `PF_REPLACEMENT_ASSESSMENT.md` (cost model), `PF_ONLY_ROADMAP.md` (the executed 5-phase plan, all gates met: 81/81 outcome statements byte-identical, 3-axiom footprint, D2 acceptance passed, `#eval` demos unchanged), `Research/Spikes/unified_pf/LegacyS.lean` (the frozen pre-merge `S` + `legacy_iff_live`). |
 | **Bots** | `Bots/*.lean`, `Bots/LlmGenerations/*.lean` | The agent zoo: `CooperateBot`, `DefectBot`, `MirrorBot`, `TitForTatBot`, `DupocBot`, `CupodBot`, `EBot`, … and LLM-generated `PrudentBot`, `JustBot`, `CIMCIC`, `DIMCID`. |
 | **Outcome theorems** | `Theorems/*.lean`, `Theorems/LlmGenerations/*.lean` | The headline results: `outcome_X_vs_Y = some (a,b)` (and `∃k₂,∀k>k₂,…` families). Hand-written + LLM-written (`llm_outcome_` prefix; indexed via `Theorems/LlmGenerations.lean`). |
-| **Computable evaluator** | `ComputableEval/` | `evalC` — a sound, total, computable **partial** evaluator (the reviewer-facing demo); see crux. |
+| **Decidability** | `Decidability/` | The T3.2c/T4 chain (modules keep milestone names `T31`…`T54`; umbrella `Decidability.lean` re-exports the API): `decFull` (verified enumerator, `Pf_iff_decFull`), `evalG` (computable evaluation of search bots, sound both guard polarities, `#eval` demos), `PfG` strata (gate-parametric mirror of the unified `Pf`; uniform gating incl. ex-`Derivation` cuts — D2), the modest universe, `decideProvableG` (modest stratum decidable). Then the cut-relevance arc `T48`–`T54`: literal bounds + antecedent census (T48), the tree substrate / extraction machine / normalization theorem / excisor (T49), **the instance gate + transport theorem** (T50), **the falsification theorem** — the original CutRelevance is FALSE (T51), the gate-parametric decider (T52), **decidability at the instance gate** (T53), and **the certified zoo** (T54). |
 | **Research notes** | `Research/Notes/`, `Research/Readings/`, `Research/Data/` | Theory write-ups (esp. `COMPUTABLE_EVAL_NOTES.md`, `UnderstandingTheLayers.md`), extracted source papers, tournament data. |
 
 **The strict outcome-theorem template** is the linchpin the whole pipeline relies on:
@@ -38,37 +42,86 @@ everything. Namespace `PD`. Layered bottom-up (each file imports the ones above)
 **compilation == correctness** — an LLM-written proof that type-checks is, modulo the
 NL→Lean *bot* translation, a verified result.
 
-## Foundational crux — why `eval` is `noncomputable`, and what would fix it
+## Foundational status — zero axioms, transcript costs; `eval` computability reduced to ONE conjecture
 
-This is the theoretical heart of the project. Authoritative write-up:
-`engine/PrisonersDilemma/Research/Notes/COMPUTABLE_EVAL_NOTES.md`.
+Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMAP.md` (current),
+`COMPUTABLE_EVAL_NOTES.md`, `INTERNALIZATION_ROADMAP.md` (historical).
 
-- A reviewer flagged that the central evaluator `eval` is `noncomputable`. The settled,
-  honest answer: this is **axiom-relative, NOT a Gödel/Π₁ wall, NOT fundamental.**
-- The `.search` guard is a bounded-provability oracle `proofSearch k φ = decide (Provable k φ)`.
-  **Bounded** provability (∃ proof TERM of size ≤ k) is *decidable* by enumeration — that is
-  exactly Critch's point vs. Barász's RE PA-hierarchy. The block is only that our `Provable`
-  contains members injected by **witness-free axioms** (`PBLT`, `atom_box_provable_impl`, for the
-  Löb-fixpoint cooperations like PrudentBot↔DupocBot). An axiom asserts provability without a
-  proof term; a running evaluator must *search* and finds nothing → can't satisfy `proofSearch_spec`.
-  Axiom = IOU, eval needs cash.
-- **If S is built fully explicit** (mechanize bounded provability logic + a *constructive* bounded
-  Löb / PBLT that exhibits a size-≤-k proof term), `Provable` collapses to the decidable
-  finite-proof predicate ⇒ **`eval` becomes totally computable** (Löb fixpoints included) and the
-  project axioms drop from 4 toward the 3 Lean-standard ones. One foundational lever, two payoffs.
-- **For the Lean proofs:** under computable `eval`, concrete fixed-(k,fuel) outcomes become
-  `by decide` (much scaffolding deletable); the ∀k FAMILY outcome theorems still need proofs (no
-  `#eval` proves a ∀k) but simpler ones, with a now-proved Löb/PBLT carrying the modal core.
-- **Shipped now (option D, build green, no new axioms):** `engine/PrisonersDilemma/ComputableEval/`
-  — `evalC`, a sound TOTAL computable PARTIAL evaluator (3-valued guard; commits only with a finite
-  witness, returns `none` exactly at the Löb fixpoints; `outcomeC_sound` proven). It answers the
-  reviewer concretely and locates the boundary. `c_guard_mono` was demoted axiom→theorem.
-- **Dead ends (do not retry):** deciding `Provable k φ` by structural recursion on the program
-  (refuted — `subst` of a `.search`-bot into its own guard raises search-depth, machine-checked in
-  `DecMeasure.lean`); the `derivable`/`playsCheck` separate-search-gas checker (non-monotone). The
-  principled route to *total* computability is enumerate-proof-terms after constructive S.
-- **Nearest concrete win:** `atom_complete_false_guard` is bounded + atom-layer (no reflection) ⇒
-  should be eliminable as a constructive theorem, not an axiom.
+- **2026-07-01 — `PBLT` became a THEOREM** (`BaseTheorems.bloeb_engine`/`pblt_engine`): bounded
+  Löb proven inside `Provable` via the internalized fixpoint sentence `Formula.diag`.
+- **2026-07-02 — transcript-length accounting (Route B)**: every `Provable`/`Derivation` cost is
+  CUMULATIVE ("`k` means characters of proof transcript", Critch's literal model). This paid the
+  cuts (premise formulas are budget-bounded), making bounded proof search genuinely finite:
+  the logical fragment of `Provable` is DECIDABLE relative to the atom layer
+  (`Research/Spikes/transcript/T3DeciderMini.lean`, `T31EngineDecider.lean`).
+- **2026-07-02 — the last axiom was INCONSISTENT**: `atom_complete_false_guard` injected
+  else-play certificates below the guard budgets they refute; the anti-diagonal bot
+  ("if I can prove I defect vs myself, cooperate") yields machine-checked `False`
+  (`T32Inconsistency.lean`). Every result that had cited it was vacuous.
+- **2026-07-03 — the repair, ZERO axioms**: sound `PlaysProof.search_f` (else-certificates from a
+  Σ₁ REFUTATION of the guard, paying the full failed budget — the floor, forced by consistency,
+  by decidability, and by the provability of soundness alike), `Provable.atomNeg` + `Derivation.eqNeg`
+  (the refutation suppliers), soundness by budget-strong-induction (`sound_upto`). Consequences,
+  all Critch-faithful: same-budget results whose proofs consumed a partner's else-play are
+  honestly FALSE and retired (tombstones in the theorem files); the survivors are re-certified
+  constructively; cross-bot cooperation returns at STAGGERED budgets
+  (`outcome_PrudentBot_vs_DupocBot`: `PrudentBot (2k+64)` vs `DupocBot k`;
+  `outcome_JustBot_vs_PrudentBot`; `outcome_JustBot_vs_CupodTrollBot`), and self-play needs the
+  two-tier `PrudentBot2` (prudence budget above the cooperation literal — the bounded analogue
+  of MIRI PrudentBot's PA+1 prudence, rediscovered here from consistency alone).
+- **2026-07-03 (later) — `Provable` is ABSOLUTELY SEMIDECIDABLE**: `decFull`, a verified
+  computable enumerator with `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true`
+  (`Decidability/T31EngineDecider.lean` §7–8) — the logic and atom layers tied by fuel
+  stratification, no oracle, no hypothesis. And **search bots RUN**: `evalG` (spike §9) is a computable evaluator
+  with SOUND commits in BOTH guard polarities (true via `decFull`; false via a DERIVABLE
+  refutation + soundness/consistency — the honest replacement for what the deleted axiom
+  faked); `#eval` demos print real outcomes, `none` only at the Löb boundary. This supersedes
+  `evalC`'s role.
+- **2026-07-03 (latest) — the T4 pipeline: DECIDABILITY over the zoo universe.** The
+  `Decidability/` chain `T42ProvableB` → `T43ModestUniverse` → `T44BoundedDecider` →
+  `T45CertReads` → `T46LogicSpace` → `T47Stabilization` (promoted 2026-07-03 from
+  `Research/Spikes/transcript/`, wired into `lake build`; the abstract stabilization mini
+  `T4QueryBound` stays a spike) delivers
+  **`Decidable (ProvableG (modestGate N) k φ)`** with a computable fuel bound `|SL|`:
+  `ProvableG G` is the gate-parametric proof system (six conclusion-absent premise formulas
+  gated); `modestGate N` = literal-bounded + modest cuts; MODESTY (all `.sim` args and
+  guard-atom args are `.self`/`.opp`/frozen — true of the WHOLE zoo, each by `rfl`) makes the
+  substitution dynamics' query universe finite; the decider `decB` is sound + complete for
+  the stratum and stabilizes on the finite space by a countP pigeonhole.
+  `Provable ↔ ∃N, ProvableB N` (every derivation is finitely-cut) is a theorem.
+- **2026-07-08/09 — CutRelevance RESOLVED: falsified as stated, repaired, and the
+  repair delivered** (full history: `Research/Notes/CUT_RELEVANCE.md`):
+  * **FALSIFICATION (theorem, T51)**: `cutRelevance_modestGate_false` — the DupocBot
+    self-cooperation fact is `Provable` (bounded Löb) but `¬ProvableG (modestGate N)`
+    at EVERY `N` and budget: instance formulas are never `modestF`, the modest gate
+    blocks `diagF/diagB` on instances, and only diag breaks the fixpoint's cite
+    regress. The original conjecture is FALSE.
+  * **THE REPAIR (T50)**: the INSTANCE GATE `instGate P N` (argument positions may
+    hold pool members / closed raw-modest programs; stored guards stay raw). Real
+    Löb derivations pass it RAW. `ProvT.transport`/`certifyTransport`: four
+    kernel-decidable certificates put any tree into `ProvableG (instGate P N)`.
+  * **DECIDABILITY (T52/T53)**: the bounded decider is gate-parametric;
+    `ProvableG (instGate P N)` is semidecidable both ways and
+    `decideProvableG_inst` decides it with the computable fuel bound `|SL|`.
+  * **THE CERTIFIED ZOO (T54)**: every zoo guard shape (plays/impl/eq), every Löb
+    pattern (self, staggered mutual, bot-wrapped mutual) and every refutation
+    route is certified into the instance stratum — kernel-sealed, no excision.
+  * **Open frontier (universal closure)**: `Provable k φ → ProvableG (instGate P N₀) k φ`
+    for ARBITRARY minimal proofs (arbitrary trees may need excision + the cite/rawness
+    certificates established; the machinery exists, the composition is unproven).
+    `eval` is computable relative to certificates — uniform computability rests on
+    the universal closure.
+
+**Dead ends (do not retry):** deciding `Provable` by structural recursion on the program
+(`DecMeasure.lean`); the `derivable`/`playsCheck` separate-gas checker; proof-term enumeration
+under CONCLUSION-cost (mp-cut wall, `MN1_decidable.lean` — dissolved by transcript costs);
+model/realizability witness extraction (`ConstructiveLobToy.lean` §8); unprovability-premised
+`search_f` (non-monotone fixpoint — the anti-diagonal bot is its paradox); charging
+`searchThenSearch_t`'s inner premise (sinks the staggered Löb chains — cite via `c_guard`, like
+`search_t`); uniform (non-budget-stratified) size bounds for the decider's query space
+(cut-composites grow per descent — stratify: `ZS b := Z₀ + (RR−b)·stride`); structural size
+bounds for `enumFormula` members (the enum is a deliberate SUPERSET — bound by `foldMax` over
+the list itself).
 
 ---
 
@@ -160,7 +213,29 @@ NL description
    - UI shows existing bot source on conflict, per-bot dropdown (use existing / overwrite / rename), rename input pre-filled with `<OldName>2`.
    - Bot review gate shows `existing` / `new` badge per bot. Proof review gate shows full Lean source before accept/reject.
 
-**Deferred:** reviewer with outcome prediction (v2), automatic rewriter loop (v2).
+**The OUTCOME-OPEN escalation ladder (2026-07-14).** The proof agent no longer dead-ends at
+`OUTCOME OPEN` when the missing piece is a missing rule. Two production-only tools (registered
+iff `exclude_bots` is empty — the eval harness never mutates the library):
+1. **`add_base_lemma` (Tier 1, autonomous)** — grow a persistent DERIVED-rule library
+   (`Theorems/LlmGenerations/LlmLemmas.lean`, namespace `PD.LlmLemmas`). Sound by
+   construction (theorems only; `axiom`/`sorry`/`inductive`/`native_decide`/metaprogramming
+   rejected by static guards); additive-only; transactional (byte-identical rollback on a
+   failed `lake build`). Motivated by history: `boxInternalize`/`box_provable` were both
+   thought to need axioms and turned out derivable.
+2. **`propose_pf_constructor` (Tier 2, human-gated)** — for genuinely UNDERIVABLE rules the
+   agent files an evidence bundle (`app/generated/constructor_proposals/<name>/`), never
+   touching the engine. Machine gate: a **soundness certificate** — the rule's interp-level
+   content proved as a theorem against the CURRENT engine, compiled by the tool (rejects
+   FALSE rules; the historically-inconsistent `atom_complete_false_guard` could never have
+   produced one). Human gate: the **faithfulness rationale** (sound-but-unfaithful rules like
+   a semantic-completeness oracle are machine-undetectable by design). Integration follows
+   the Phase-4 playbook in `PF_ONLY_ROADMAP.md`; at that point the floor/exclusion censuses
+   (which quantify over ALL constructors) are the canaries.
+Bare `OUTCOME OPEN` is now reserved for BISTABLE matchups (two fixed points, neither forced —
+e.g. JustBot vs MirrorBot), where no sound rule can exist.
+
+**Deferred:** reviewer with outcome prediction (v2), automatic rewriter loop (v2),
+worktree-based automatic constructor integration (v2 of Tier 2).
 
 ## Phase 4 — Paper experiments (next)
 

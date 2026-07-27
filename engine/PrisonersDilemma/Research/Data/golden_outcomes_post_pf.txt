@@ -1,0 +1,282 @@
+# GOLDEN OUTCOME INVENTORY — post-Pf-migration (Phase 3 gate)
+# Generated: 2026-07-14
+# Source commit: bb53d6f (branch pf-only)
+# Producer: PrisonersDilemma/Research/Data/GoldenProbe.lean (kernel-elaborated types, NOT a text grep)
+#
+# CONTRACT: every outcome theorem below must survive the migration with an IDENTICAL
+# elaborated TYPE and an IDENTICAL axiom footprint (Lean's 3 standard axioms).
+# Regenerate with: lake env lean PrisonersDilemma/Research/Data/GoldenProbe.lean
+# and diff against this file at every phase gate.
+
+PD.Theorems.outcome_CIMCIC_vs_CooperateBot : ∃ k,
+  ∀ (fuel : ℕ), PD.outcome (fuel + 2) (PD.Bots.CIMCIC k) PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CIMCIC_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CIMCIC_vs_DefectBot : ∃ k,
+  ∀ (fuel : ℕ), PD.outcome (fuel + 2) (PD.Bots.CIMCIC k) PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_CIMCIC_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CooperateBot_vs_CooperateBot : ∀ (n : ℕ),
+  PD.outcome (n + 1) PD.Bots.CooperateBot PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CooperateBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CooperateBot_vs_DefectBot : ∀ (n : ℕ),
+  PD.outcome (n + 1) PD.Bots.CooperateBot PD.Bots.DefectBot = Option.some (PD.Action.C, PD.Action.D)
+'PD.Theorems.outcome_CooperateBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodBot_vs_CooperateBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 2) (PD.Bots.CupodBot k) PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodBot_vs_CupodBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.CupodBot k) (PD.Bots.CupodBot k) = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_CupodBot_vs_CupodBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodBot_vs_DBot : ∀ (fuel : ℕ),
+  ∃ k, PD.outcome (fuel + 4) (PD.Bots.CupodBot k) PD.Bots.DBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodBot_vs_DefectBot : ∀ (fuel : ℕ),
+  ∃ k, PD.outcome (fuel + 2) (PD.Bots.CupodBot k) PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_CupodBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodBot_vs_EBot : ∀ (fuel : ℕ),
+  ∃ k, PD.outcome (fuel + 5) (PD.Bots.CupodBot k) PD.Bots.EBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodBot_vs_EBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodBot_vs_MirrorBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.CupodBot k) PD.Bots.MirrorBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_CupodBot_vs_MirrorBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodBot_vs_OBot : ∀ (k fuel : ℕ),
+  2 ≤ k → PD.outcome (fuel + 5) (PD.Bots.CupodBot k) PD.Bots.OBot = Option.some (PD.Action.C, PD.Action.D)
+'PD.Theorems.outcome_CupodBot_vs_OBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodBot_vs_TitForTatBot : ∀ (fuel : ℕ),
+  ∃ k, PD.outcome (fuel + 4) (PD.Bots.CupodBot k) PD.Bots.TitForTatBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_CooperateBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 2) (PD.Bots.CupodTrollBot k) PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodTrollBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_CupodBot : ∀ (k fuel : ℕ),
+  (PD.Formula.eq (PD.Bots.CupodBot k) (PD.Bots.CupodBot k)).size ≤ k →
+    PD.atom_cost (fuel + 2) ≤ k →
+      PD.outcome (fuel + 2) (PD.Bots.CupodTrollBot k) (PD.Bots.CupodBot k) = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_CupodTrollBot_vs_CupodBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_CupodTrollBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 3) (PD.Bots.CupodTrollBot k) (PD.Bots.CupodTrollBot k) = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodTrollBot_vs_CupodTrollBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_DBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 4) (PD.Bots.CupodTrollBot k) PD.Bots.DBot = Option.some (PD.Action.C, PD.Action.D)
+'PD.Theorems.outcome_CupodTrollBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_DefectBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 2) (PD.Bots.CupodTrollBot k) PD.Bots.DefectBot = Option.some (PD.Action.C, PD.Action.D)
+'PD.Theorems.outcome_CupodTrollBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_DupocBot : ∀ (j k fuel : ℕ),
+  (PD.Formula.eq (PD.Bots.DupocBot k) (PD.Bots.CupodBot j)).neg.size + j + 2 ≤ k →
+    PD.outcome (fuel + 2) (PD.Bots.CupodTrollBot j) (PD.Bots.DupocBot k) = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodTrollBot_vs_DupocBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_EBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 4) (PD.Bots.CupodTrollBot k) PD.Bots.EBot = Option.some (PD.Action.C, PD.Action.D)
+'PD.Theorems.outcome_CupodTrollBot_vs_EBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_MirrorBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 3) (PD.Bots.CupodTrollBot k) PD.Bots.MirrorBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodTrollBot_vs_MirrorBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_OBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 5) (PD.Bots.CupodTrollBot k) PD.Bots.OBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodTrollBot_vs_OBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_CupodTrollBot_vs_TitForTatBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 4) (PD.Bots.CupodTrollBot k) PD.Bots.TitForTatBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_CupodTrollBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DBot_vs_CooperateBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 3) PD.Bots.DBot PD.Bots.CooperateBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_DBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DBot_vs_DBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 6) PD.Bots.DBot PD.Bots.DBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_DBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DBot_vs_DefectBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 3) PD.Bots.DBot PD.Bots.DefectBot = Option.some (PD.Action.C, PD.Action.D)
+'PD.Theorems.outcome_DBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DIMCID_vs_CooperateBot : ∃ k,
+  ∀ (fuel : ℕ), PD.outcome (fuel + 2) (PD.Bots.DIMCID k) PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_DIMCID_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DIMCID_vs_DefectBot : ∃ k,
+  ∀ (fuel : ℕ), PD.outcome (fuel + 2) (PD.Bots.DIMCID k) PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_DIMCID_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DefectBot_vs_DefectBot : ∀ (n : ℕ),
+  PD.outcome (n + 1) PD.Bots.DefectBot PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_DefectBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DupocBot_vs_CooperateBot : ∀ (fuel : ℕ),
+  ∃ k, PD.outcome (fuel + 2) (PD.Bots.DupocBot k) PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_DupocBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DupocBot_vs_DBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 4) (PD.Bots.DupocBot k) PD.Bots.DBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_DupocBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DupocBot_vs_DefectBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 2) (PD.Bots.DupocBot k) PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_DupocBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DupocBot_vs_DupocBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.DupocBot k) (PD.Bots.DupocBot k) = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_DupocBot_vs_DupocBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DupocBot_vs_EBot : ∀ (k fuel : ℕ),
+  2 ≤ k → PD.outcome (fuel + 5) (PD.Bots.DupocBot k) PD.Bots.EBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_DupocBot_vs_EBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DupocBot_vs_MirrorBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.DupocBot k) PD.Bots.MirrorBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_DupocBot_vs_MirrorBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DupocBot_vs_OBot : ∀ (fuel : ℕ),
+  ∃ k, PD.outcome (fuel + 5) (PD.Bots.DupocBot k) PD.Bots.OBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_DupocBot_vs_OBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_DupocBot_vs_TitForTatBot : ∀ (fuel : ℕ),
+  ∃ k, PD.outcome (fuel + 4) (PD.Bots.DupocBot k) PD.Bots.TitForTatBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_DupocBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_EBot_vs_CooperateBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 3) PD.Bots.EBot PD.Bots.CooperateBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_EBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_EBot_vs_DBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 8) PD.Bots.EBot PD.Bots.DBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_EBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_EBot_vs_DefectBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 5) PD.Bots.EBot PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_EBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_EBot_vs_EBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 11) PD.Bots.EBot PD.Bots.EBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_EBot_vs_EBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_EBot_vs_MirrorBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 8) PD.Bots.EBot PD.Bots.MirrorBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_EBot_vs_MirrorBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_EBot_vs_OBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 8) PD.Bots.EBot PD.Bots.OBot = Option.some (PD.Action.C, PD.Action.D)
+'PD.Theorems.outcome_EBot_vs_OBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_EBot_vs_TitForTatBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 7) PD.Bots.EBot PD.Bots.TitForTatBot = Option.some (PD.Action.C, PD.Action.D)
+'PD.Theorems.outcome_EBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot2_vs_DBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 4) (PD.Bots.JustBot2 (2 * k + 64) k) PD.Bots.DBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_JustBot2_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_CooperateBot : ∀ (fuel : ℕ),
+  ∃ k, PD.outcome (fuel + 2) (PD.Bots.JustBot k) PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_JustBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_CupodTrollBot : ∀ (j fuel : ℕ),
+  PD.outcome (fuel + 2) (PD.Bots.JustBot (4 * j + 100)) (PD.Bots.CupodTrollBot j) =
+    Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_JustBot_vs_CupodTrollBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_DBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 4) (PD.Bots.JustBot k) PD.Bots.DBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_JustBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_DefectBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 2) (PD.Bots.JustBot k) PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_JustBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_DupocBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.JustBot k) (PD.Bots.DupocBot k) = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_JustBot_vs_DupocBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_EBot : ∀ (k fuel : ℕ),
+  2 ≤ k → PD.outcome (fuel + 5) (PD.Bots.JustBot k) PD.Bots.EBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_JustBot_vs_EBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_JustBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.JustBot k) (PD.Bots.JustBot k) = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_JustBot_vs_JustBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_OBot : ∃ k,
+  ∀ (n : ℕ), PD.outcome (n + 6) (PD.Bots.JustBot k) PD.Bots.OBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_JustBot_vs_OBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_PrudentBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k →
+      ∃ fuel,
+        PD.outcome fuel (PD.Bots.JustBot k) (PD.Bots.PrudentBot (2 * k + 64)) = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_JustBot_vs_PrudentBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_JustBot_vs_TitForTatBot : ∃ k,
+  ∀ (fuel : ℕ), PD.outcome (fuel + 5) (PD.Bots.JustBot k) PD.Bots.TitForTatBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_JustBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_MirrorBot_vs_CooperateBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 3) PD.Bots.MirrorBot PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_MirrorBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_MirrorBot_vs_DBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 6) PD.Bots.MirrorBot PD.Bots.DBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_MirrorBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_MirrorBot_vs_DefectBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 3) PD.Bots.MirrorBot PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_MirrorBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_MirrorBot_vs_MirrorBot : ∀ (fuel : ℕ),
+  PD.outcome fuel PD.Bots.MirrorBot PD.Bots.MirrorBot = Option.none
+'PD.Theorems.outcome_MirrorBot_vs_MirrorBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_MirrorBot_vs_OBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 7) PD.Bots.MirrorBot PD.Bots.OBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_MirrorBot_vs_OBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_MirrorBot_vs_TitForTatBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 6) PD.Bots.MirrorBot PD.Bots.TitForTatBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_MirrorBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_OBot_vs_CooperateBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 5) PD.Bots.OBot PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_OBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_OBot_vs_DBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 6) PD.Bots.OBot PD.Bots.DBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_OBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_OBot_vs_DefectBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 3) PD.Bots.OBot PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_OBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_OBot_vs_OBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 7) PD.Bots.OBot PD.Bots.OBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_OBot_vs_OBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_OBot_vs_TitForTatBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 7) PD.Bots.OBot PD.Bots.TitForTatBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_OBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot2_vs_PrudentBot2 : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k →
+      ∃ fuel,
+        PD.outcome fuel (PD.Bots.PrudentBot2 k (4 * k + 100)) (PD.Bots.PrudentBot2 k (4 * k + 100)) =
+          Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_PrudentBot2_vs_PrudentBot2' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_CooperateBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 3) (PD.Bots.PrudentBot k) PD.Bots.CooperateBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_PrudentBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_CupodTrollBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k →
+      ∃ fuel, PD.outcome fuel (PD.Bots.PrudentBot k) (PD.Bots.CupodTrollBot k) = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_PrudentBot_vs_CupodTrollBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_DBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.PrudentBot k) PD.Bots.DBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_PrudentBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_DefectBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 2) (PD.Bots.PrudentBot k) PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_PrudentBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_DupocBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k →
+      ∃ fuel,
+        PD.outcome fuel (PD.Bots.PrudentBot (2 * k + 64)) (PD.Bots.DupocBot k) = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_PrudentBot_vs_DupocBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_EBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k →
+      ∀ (fuel : ℕ), PD.outcome (fuel + 7) (PD.Bots.PrudentBot k) PD.Bots.EBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_PrudentBot_vs_EBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_MirrorBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.PrudentBot k) PD.Bots.MirrorBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_PrudentBot_vs_MirrorBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_OBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k → ∃ fuel, PD.outcome fuel (PD.Bots.PrudentBot k) PD.Bots.OBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_PrudentBot_vs_OBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_PrudentBot : ∀ (k fuel : ℕ),
+  PD.outcome (fuel + 3) (PD.Bots.PrudentBot k) (PD.Bots.PrudentBot k) = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_PrudentBot_vs_PrudentBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_PrudentBot_vs_TitForTatBot : ∃ k₂,
+  ∀ (k : ℕ),
+    k₂ < k →
+      ∃ fuel, PD.outcome fuel (PD.Bots.PrudentBot k) PD.Bots.TitForTatBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_PrudentBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_TitForTatBot_vs_CooperateBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 3) PD.Bots.TitForTatBot PD.Bots.CooperateBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_TitForTatBot_vs_CooperateBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_TitForTatBot_vs_DBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 6) PD.Bots.TitForTatBot PD.Bots.DBot = Option.some (PD.Action.D, PD.Action.C)
+'PD.Theorems.outcome_TitForTatBot_vs_DBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_TitForTatBot_vs_DefectBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 3) PD.Bots.TitForTatBot PD.Bots.DefectBot = Option.some (PD.Action.D, PD.Action.D)
+'PD.Theorems.outcome_TitForTatBot_vs_DefectBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_TitForTatBot_vs_TitForTatBot : ∀ (fuel : ℕ),
+  PD.outcome (fuel + 6) PD.Bots.TitForTatBot PD.Bots.TitForTatBot = Option.some (PD.Action.C, PD.Action.C)
+'PD.Theorems.outcome_TitForTatBot_vs_TitForTatBot' depends on axioms: [propext, Classical.choice, Quot.sound]
+PD.Theorems.outcome_of_plays : ∀ (fuel : ℕ) (p q : PD.Prog) (a b : PD.Action),
+  PD.play fuel p q = Option.some a → PD.play fuel q p = Option.some b → PD.outcome fuel p q = Option.some (a, b)
+'PD.Theorems.outcome_of_plays' depends on axioms: [propext, Classical.choice, Quot.sound]

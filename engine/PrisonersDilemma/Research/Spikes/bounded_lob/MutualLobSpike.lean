@@ -1,14 +1,13 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Derivation
-import PrisonersDilemma.Axioms
+import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.BaseTheorems
 import Mathlib.Data.Nat.Log
 
 /-!
 # Spike — mutual / simultaneous Löb corollary
 
-Companion probe to `Research/Notes/CONSTRUCTIVE_BOUNDED_LOB.md`. The cross-bot
+Companion probe to `Research/Notes/DeadEnds/CONSTRUCTIVE_BOUNDED_LOB.md`. The cross-bot
 fixpoints (PrudentBot↔DupocBot, in three guises) `sorry` because closing the loop
 needs box-introduction `φP → □_k φP` on an UNWITNESSED atom. The user's question:
 can a *mutual Löb* corollary
@@ -35,7 +34,6 @@ build error pinpoints exactly which modal principle the engine is missing.
 -/
 
 open PD
-open PD.Axioms
 
 namespace PD.MutualLobSpike
 

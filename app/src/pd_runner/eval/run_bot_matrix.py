@@ -29,7 +29,7 @@ from pd_runner.services.proof_service import (
 # Tier classification used for stratified reporting.
 # Tier 0: constant bots (.const action, no opponent inspection).
 # Tier 1: reactive bots (read history / opponent action, no .search).
-# Tier 2: .search-using bots (need Axioms.lean).
+# Tier 2: .search-using bots (need the proof-system/Löb machinery).
 _TIER_OVERRIDES: dict[str, int] = {
     "CooperateBot": 0,
     "DefectBot": 0,

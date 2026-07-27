@@ -49,10 +49,17 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
             return 1
         return 0
 
-    candidates = sorted(
-        (p for p in theorems_dir.glob("*.lean") if not _mentions_excluded(p)),
-        key=lambda p: (-_score(p), p.name),
-    )
+    # Include the LLM-generated proof files as few-shot candidates too: the pipeline's
+    # own past successes are often the best examples for a new pair. `LlmLemmas.lean`
+    # is excluded here — it is the agent's derived-rule library, embedded verbatim in
+    # the system prompt rather than competing for few-shot slots.
+    pool = [
+        p
+        for pattern in ("*.lean", "LlmGenerations/*.lean")
+        for p in theorems_dir.glob(pattern)
+        if p.stem != "LlmLemmas" and not _mentions_excluded(p)
+    ]
+    candidates = sorted(pool, key=lambda p: (-_score(p), p.name))
 
     results: list[tuple[str, str]] = []
     for path in candidates:

@@ -1,6 +1,5 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
-import PrisonersDilemma.Axioms
 import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
@@ -16,10 +15,9 @@ import PrisonersDilemma.Theorems.Helpers
 import PrisonersDilemma.Theorems.CupodTrollBot
 import PrisonersDilemma.Theorems.LlmGenerations.PrudentBot
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.SizeLemmas
+import PrisonersDilemma.Base.Asymptotics
 
 open PD
-open PD.Axioms
 open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
@@ -58,7 +56,7 @@ theorem JustBot_plays_D_against_DefectBot (k fuel : Nat) :
   simpa using proofSearch_false_for_JustBot_vs_DefectBot k
 
 /-- JustBot vs DefectBot: mutual defection. -/
-theorem JustBot_vs_DefectBot (k fuel : Nat) :
+theorem outcome_JustBot_vs_DefectBot (k fuel : Nat) :
     outcome (fuel + 2) (JustBot k) DefectBot = some (.D, .D) := by
   have hA : play (fuel + 2) (JustBot k) DefectBot = some .D :=
     JustBot_plays_D_against_DefectBot k fuel
@@ -72,9 +70,7 @@ theorem JustBot_vs_DefectBot (k fuel : Nat) :
     cooperates against DupocBot (it cooperates against everything). -/
 theorem proofSearch_true_for_JustBot_vs_CooperateBot :
     ∃ k, proofSearch k (Formula.plays CooperateBot (.bot (DupocBot k)) Action.C) = true := by
-  refine ⟨atom_cost 1, ?_⟩
-  refine (proofSearch_spec _ _).2 (Provable.atom (atom_complete CooperateBot _ .C 1 ?_))
-  simpa using play_CooperateBot 0 (.bot (DupocBot (atom_cost 1)))
+  exact ⟨atom_cost 1, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
 
 /-- JustBot cooperates against CooperateBot: its guard succeeds. -/
 theorem JustBot_plays_C_against_CooperateBot (k fuel : Nat)
@@ -84,7 +80,7 @@ theorem JustBot_plays_C_against_CooperateBot (k fuel : Nat)
   simpa using hk
 
 /-- JustBot vs CooperateBot: mutual cooperation. -/
-theorem JustBot_vs_CooperateBot (fuel : Nat) :
+theorem outcome_JustBot_vs_CooperateBot (fuel : Nat) :
     ∃ k, outcome (fuel + 2) (JustBot k) CooperateBot = some (.C, .C) := by
   obtain ⟨k, hk⟩ := proofSearch_true_for_JustBot_vs_CooperateBot
   refine ⟨k, ?_⟩
@@ -97,14 +93,15 @@ theorem JustBot_vs_CooperateBot (fuel : Nat) :
 -- TitForTatBot --
 
 /-- The shared guard: `(.bot CooperateBot)` cooperates against `(.bot (DupocBot k))`.
-    Provable at budget `atom_cost 2` (a `.bot`-wrapped constant cooperates in two
+    Pf at budget `atom_cost 2` (a `.bot`-wrapped constant cooperates in two
     steps); we lift it to any `k ≥ atom_cost 2` via monotonicity. -/
 theorem proofSearch_botCB_vs_botDupoc (k : Nat) (hk : k ≥ atom_cost 2) :
     proofSearch k (Formula.plays (.bot CooperateBot) (.bot (DupocBot k)) Action.C) = true := by
-  refine proofSearch_monotone (atom_cost 2) k _ hk ?_
-  exact (proofSearch_spec _ _).2 (Provable.atom
-    (atom_complete (.bot CooperateBot) (.bot (DupocBot k)) .C 2
-      (by simpa using play_bot_CooperateBot 0 (.bot (DupocBot k)))))
+  refine (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, ?_⟩)
+  have h7 : atom_cost 2 = 7 := by decide
+  show c_leaf + c_node ≤ k
+  simp only [c_leaf, c_node]
+  omega
 
 /-- DupocBot (`.bot`-wrapped) cooperates against `.bot CooperateBot`: once the
     shared guard fires, its `.search` takes the `.const .C` branch (after one extra
@@ -176,16 +173,21 @@ theorem JustBot_plays_C_against_TitForTatBot (k fuel : Nat)
 
 /-- JustBot vs TitForTatBot: mutual cooperation. Both legs ride the shared guard at
     budget `atom_cost 5`. -/
-theorem JustBot_vs_TitForTatBot :
+theorem outcome_JustBot_vs_TitForTatBot :
     ∃ k, ∀ fuel, outcome (fuel + 5) (JustBot k) TitForTatBot = some (.C, .C) := by
   let k := atom_cost 5
   have hk : proofSearch k (Formula.plays (.bot CooperateBot) (.bot (DupocBot k)) Action.C) = true :=
     proofSearch_botCB_vs_botDupoc k (atom_cost_mono (by omega))
   have hGuardTFT : proofSearch k (Formula.plays TitForTatBot (.bot (DupocBot k)) Action.C) = true := by
-    have hPlay : play 5 TitForTatBot (.bot (DupocBot k)) = some .C := by
-      simpa using TitForTatBot_plays_C_against_bot_DupocBot k 0 hk
-    exact (proofSearch_spec _ _).2 (Provable.atom
-      (atom_complete TitForTatBot (.bot (DupocBot k)) .C 5 hPlay))
+    -- hand certificate: TFT's probe runs `.bot (DupocBot k)`'s FIRED search (hk), so
+    -- ite_t ∘ sim ∘ bot ∘ search_t ∘ const; cost = log2 k + 7 ≤ k (k = atom_cost 5 = 21).
+    refine (proofSearch_spec _ _).2 (Pf.atom
+      (⟨PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot
+          (PlaysProof.search_t ((proofSearch_spec _ _).1 hk) PlaysProof.const)))
+        rfl PlaysProof.const, ?_⟩ :
+        AtomProvable k (.plays TitForTatBot (.bot (DupocBot k)) .C)))
+    show c_leaf + c_guard k + c_node + c_node + c_node + c_leaf + c_node ≤ k
+    decide
   refine ⟨k, fun fuel => ?_⟩
   have hA : play (fuel + 5) (JustBot k) TitForTatBot = some .C := by
     simpa [Nat.add_assoc] using JustBot_plays_C_against_TitForTatBot k (fuel + 3) hGuardTFT
@@ -253,30 +255,154 @@ theorem DBot_plays_C_against_JustBot_JB (k fuel : Nat) :
     (by rfl) hGuard
   simpa [eval] using hPlay
 
--- JustBot cooperates against DBot when proof search fires
-theorem JustBot_plays_C_against_DBot_JB (k fuel : Nat)
-    (hk : proofSearch k (.plays DBot (.bot (DupocBot k)) .C) = true) :
-    play (fuel + 2) (JustBot k) DBot = some .C := by
-  show eval (fuel + 2) (JustBot k) DBot (JustBot k) = some .C
+/-! ### JustBot vs DBot — the honest `(D, C)` outcome (floor formalized 2026-07-09).
+
+HISTORY: `outcome_JustBot_vs_DBot` was RETIRED 2026-07-02 as an axiom artifact: DBot's
+C-play against `.bot (DupocBot k)` (JustBot's frozen guard target) crosses Dupoc's
+FAILED probe search (vs `.bot DefectBot`), so its certificate pays the `search_f`
+floor — cost > k for every k — and JustBot's guard can never see "DBot plays C vs
+`.bot DupocBot`" within the shared budget `k`.
+
+RESOLVED (2026-07-09): the floor is a THEOREM — `no_provable_DBot_C_vs_botDupoc_tail`,
+an instance of `no_provable_probeFirst_tail_botOpp` (Base/Exclusion.lean; the
+`.bot`-wrapped-searcher variant, since JustBot's guard target is the FROZEN
+`.bot (DupocBot k)`). JustBot's guard fails at every budget, so JustBot defects while
+DBot — whose probe already watched JustBot defect vs `.bot DefectBot` — cooperates:
+`outcome_JustBot_vs_DBot = (D, C)` at every budget. -/
+
+/-- The floor for the DBot pair: no ≤ k certificate concludes any formula whose spine
+    tail is "DBot plays C against `.bot (DupocBot k)`" (JustBot's guard instance). -/
+theorem no_provable_DBot_C_vs_botDupoc_tail (k : Nat) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      rightTail φ = .plays DBot (.bot (DupocBot k)) .C → False := by
+  intro K φ hp hK ht
+  refine no_provable_probeFirst_tail_botOpp k DefectBot (.const .D) (.const .C) .C .C
+      (.plays .opp .self .C) (.const .C) (.const .D) ?_ ?_ K φ hp hK ?_
+  · simpa [Formula.subst, Prog.subst, DupocBot] using
+      interp_bot_DefectBot_plays_C_false (.bot (DupocBot k))
+  · intro k' ψ c0 c1 h; simp at h
+  · simpa [DBot, DupocBot] using ht
+
+/-- JustBot's guard fails against DBot at every budget — the floor's bite. -/
+theorem proofSearch_false_for_DBot_vs_botDupoc (k : Nat) :
+    proofSearch k (.plays DBot (.bot (DupocBot k)) .C) = false := by
+  cases h : proofSearch k (.plays DBot (.bot (DupocBot k)) .C) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_DBot_C_vs_botDupoc_tail k k _ hp le_rfl (by simp))
+  | false => rfl
+
+/-- JustBot defects against DBot: it can never afford the certificate of DBot's
+    (true!) cooperation with `.bot DupocBot`. -/
+theorem JustBot_plays_D_against_DBot (k fuel : Nat) :
+    play (fuel + 2) (JustBot k) DBot = some .D := by
+  have hg := proofSearch_false_for_DBot_vs_botDupoc k
+  show eval (fuel + 2) (JustBot k) DBot (JustBot k) = some .D
   unfold JustBot
-  simp [eval, Prog.subst, Formula.subst, hk]
+  simp [eval, Prog.subst, Formula.subst, hg]
 
-theorem outcome_JustBot_vs_DBot (n : Nat) :
-    ∃ k, outcome (n + 4) (JustBot k) DBot = some (.C, .C) := by
-  let k := atom_cost 5
-  refine ⟨k, ?_⟩
-  have hPlay : play 5 DBot (.bot (DupocBot k)) = some .C := by
-    simpa using DBot_plays_C_against_bot_DupocBot_JB k 0
-  have hk : proofSearch k (.plays DBot (.bot (DupocBot k)) .C) = true :=
-    (proofSearch_spec _ _).2 (Provable.atom (atom_complete DBot (.bot (DupocBot k)) .C 5 hPlay))
-  have hA : play (n + 4) (JustBot k) DBot = some .C := by
-    have h := JustBot_plays_C_against_DBot_JB k (n + 2) hk
-    simpa [Nat.add_assoc] using h
-  have hB : play (n + 4) DBot (JustBot k) = some .C :=
-    DBot_plays_C_against_JustBot_JB k n
-  exact outcome_of_plays _ _ _ _ _ hA hB
+/-- **The honest JustBot×DBot outcome — `(D, C)` at every budget.** -/
+theorem outcome_JustBot_vs_DBot (k fuel : Nat) :
+    outcome (fuel + 4) (JustBot k) DBot = some (.D, .C) := by
+  have hA : play (fuel + 4) (JustBot k) DBot = some .D := by
+    simpa [Nat.add_assoc] using JustBot_plays_D_against_DBot k (fuel + 2)
+  have hB : play (fuel + 4) DBot (JustBot k) = some .C :=
+    DBot_plays_C_against_JustBot_JB k fuel
+  simp [outcome, hA, hB]
 
---- OBot ---
+/-! ### JustBot2 — the FREEZE TRICK: cooperation with DBot recovered (2026-07-09).
+
+`outcome_JustBot_vs_DBot = (D, C)` above is an artifact of BUDGET-TYING, not of the
+matchup: JustBot's guard fact "DBot plays C vs `.bot (DupocBot k)`" costs exactly
+`k + log₂ k + 26` (the snapshot's `search_f` floor `k`, plus the `atomNeg` refutation
+and the replay overhead) — one floor above JustBot's own budget `k`. `JustBot2 K k`
+decouples the dials: at `K ≥ k + log₂ k + 26` the certificate fits, the guard fires,
+and the FairBot×DBot handshake returns at staggered internal budgets. Constructive
+companion to the floor impossibilities: the `(D, C)` outcomes are about budget-TIED
+bots, not about the pairs. -/
+
+/-- **The staggered certificate**: DBot's cooperation with the frozen snapshot IS
+    affordable one floor up — the honest price of the fact JustBot's guard requests.
+    Structure: replay DBot's `ite` (else-branch C), whose guard simulates the snapshot
+    against `.bot DefectBot`; the snapshot's probe search fails, certified by
+    `search_f` over the `atomNeg` refutation (DefectBot's actual D-play refutes the
+    C-claim) — paying the floor `k`. Total: `k + log₂ k + 26`. -/
+theorem provable_DBot_C_vs_botDupoc (k K : Nat) (hK : k + Nat.log2 k + 26 ≤ K) :
+    Pf K (.plays DBot (.bot (DupocBot k)) .C) := by
+  have hneg : Pf (Nat.log2 k + 20)
+      (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
+    refine Pf.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C 2
+      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
+    simp only [Formula.size, Prog.size, DupocBot, DefectBot, numCost]
+    omega
+  refine Pf.atom
+    ⟨PlaysProof.ite_f
+      (PlaysProof.sim (PlaysProof.bot (PlaysProof.search_f hneg PlaysProof.const)))
+      (by decide) PlaysProof.const, ?_⟩
+  simp only [c_leaf, c_node]
+  omega
+
+/-- JustBot2's guard fires against DBot once `K` clears the staggered price. -/
+theorem proofSearch_true_DBot_vs_botDupoc (k K : Nat)
+    (hK : k + Nat.log2 k + 26 ≤ K) :
+    proofSearch K (.plays DBot (.bot (DupocBot k)) .C) = true :=
+  (proofSearch_spec _ _).2 (provable_DBot_C_vs_botDupoc k K hK)
+
+/-- JustBot2 cooperates with DBot: the staggered budget affords the certificate the
+    single-parameter JustBot could never see. -/
+theorem JustBot2_plays_C_against_DBot (k K fuel : Nat)
+    (hK : k + Nat.log2 k + 26 ≤ K) :
+    play (fuel + 2) (JustBot2 K k) DBot = some .C := by
+  have hg := proofSearch_true_DBot_vs_botDupoc k K hK
+  show eval (fuel + 2) (JustBot2 K k) DBot (JustBot2 K k) = some .C
+  unfold JustBot2
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- JustBot2's guard fails against `.bot DefectBot` at every budget (the formula is
+    false — DefectBot never cooperates with the snapshot). -/
+theorem ps_false_bot_DefectBot_vs_botDupoc_J2 (k K : Nat) :
+    proofSearch K (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) = false := by
+  cases h : proofSearch K (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) with
+  | true => exact absurd (proofSearch_sound _ _ h) (interp_bot_DefectBot_plays_C_false _)
+  | false => rfl
+
+theorem JustBot2_plays_D_against_bot_DefectBot (k K fuel : Nat) :
+    play (fuel + 2) (JustBot2 K k) (.bot DefectBot) = some .D := by
+  have hg := ps_false_bot_DefectBot_vs_botDupoc_J2 k K
+  show eval (fuel + 2) (JustBot2 K k) (.bot DefectBot) (JustBot2 K k) = some .D
+  unfold JustBot2
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- DBot cooperates with JustBot2: its probe watches JustBot2 defect vs
+    `.bot DefectBot`. -/
+theorem DBot_plays_C_against_JustBot2 (k K fuel : Nat) :
+    play (fuel + 4) DBot (JustBot2 K k) = some .C := by
+  have hInner : play (fuel + 2) (JustBot2 K k) (.bot DefectBot) = some .D :=
+    JustBot2_plays_D_against_bot_DefectBot k K fuel
+  have hGuard : eval (fuel + 3) DBot (JustBot2 K k) (.sim .opp (.bot DefectBot)) = some .D := by
+    simpa [Nat.add_assoc] using
+      eval_sim_opp_bot_of_play (fuel + 2) DBot (JustBot2 K k) DefectBot .D hInner
+  have hPlay := play_ite_from_guard
+    fuel 3 DBot (JustBot2 K k) (.sim .opp (.bot DefectBot))
+    (.const Action.D) (.const Action.C) Action.C Action.D
+    (by rfl) hGuard
+  simpa [eval] using hPlay
+
+/-- **The recovered handshake — `(C, C)` at staggered internal budgets, every `k`.**
+    The freeze trick in action: `JustBot2 (2k+64) k` affords the certificate of DBot's
+    cooperation with its frozen snapshot (floor `k` < budget `2k+64`), while DBot's
+    run-priced probe needs no proofs at all. Compare `outcome_JustBot_vs_DBot =
+    (D, C)`: same matchup, budgets tied, guard starved by its own floor. -/
+theorem outcome_JustBot2_vs_DBot (k fuel : Nat) :
+    outcome (fuel + 4) (JustBot2 (2*k + 64) k) DBot = some (.C, .C) := by
+  have hK : k + Nat.log2 k + 26 ≤ 2*k + 64 := by
+    have := log2_le_self k
+    omega
+  have hA : play (fuel + 4) (JustBot2 (2*k + 64) k) DBot = some .C := by
+    simpa [Nat.add_assoc] using JustBot2_plays_C_against_DBot k (2*k + 64) (fuel + 2) hK
+  have hB : play (fuel + 4) DBot (JustBot2 (2*k + 64) k) = some .C :=
+    DBot_plays_C_against_JustBot2 k (2*k + 64) fuel
+  simp [outcome, hA, hB]
 
 theorem outcome_JustBot_vs_OBot :
     ∃ k, ∀ n, outcome (n + 6) (JustBot k) OBot = some (.D, .D) := by
@@ -286,10 +412,7 @@ theorem outcome_JustBot_vs_OBot :
   have hPSCB : proofSearch k (.plays (.bot CooperateBot) (.bot (DupocBot k)) .C) = true := by
     have hPlay : play 2 (.bot CooperateBot) (.bot (DupocBot k)) = some .C :=
       play_bot_CooperateBot 0 (.bot (DupocBot k))
-    exact proofSearch_monotone (atom_cost 2) k _
-      (atom_cost_mono (by show 2 ≤ 5; omega))
-      ((proofSearch_spec _ _).2 (Provable.atom
-        (atom_complete (.bot CooperateBot) (.bot (DupocBot k)) .C 2 hPlay)))
+    exact (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)
 
   have hPSDB : proofSearch k (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) = false := by
     cases h : proofSearch k (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) with
@@ -393,125 +516,137 @@ theorem outcome_JustBot_vs_OBot :
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 
-/-- CupodTrollBot --
+-- CupodTrollBot --
 
--- JustBot cooperates against CupodTrollBot for large budget: its guard asks
-    "does CupodTrollBot play C against (bot DupocBot)?" which is true, so once the
-    budget covers the atom the guard fires. -/
-theorem JustBot_plays_C_against_CupodTrollBot (k fuel : Nat)
-    (hbudget : atom_cost (fuel + 2) ≤ k) :
-    play (fuel + 2) (JustBot k) (CupodTrollBot k) = some .C := by
-  -- CupodTrollBot cooperates against `.bot (DupocBot k)`.
-  have hC : play (fuel + 2) (CupodTrollBot k) (.bot (DupocBot k)) = some .C :=
-    CupodTrollBot_cooperates_against_bot k fuel (DupocBot k)
-  have hatom : proofSearch (atom_cost (fuel + 2))
-      (.plays (CupodTrollBot k) (.bot (DupocBot k)) .C) = true :=
-    (proofSearch_spec _ _).2
-      (Provable.atom (atom_complete (CupodTrollBot k) (.bot (DupocBot k)) .C (fuel + 2) hC))
-  have hg : proofSearch k (.plays (CupodTrollBot k) (.bot (DupocBot k)) .C) = true :=
-    proofSearch_monotone _ _ _ hbudget hatom
-  show eval (fuel + 2) (JustBot k) (CupodTrollBot k) (JustBot k) = some .C
-  unfold JustBot at hg ⊢
-  simp [eval, Prog.subst, Formula.subst, hg]
+/-! ### JustBot × CupodTrollBot — RETIRED (2026-07-02, the false-guard repair).
 
-theorem outcome_JustBot_vs_CupodTrollBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (JustBot k) (CupodTrollBot k) = some (.C, .C) := by
-  refine ⟨atom_cost 2, fun k hk => ⟨2, ?_⟩⟩
-  have hbudget : atom_cost (0 + 2) ≤ k := by simpa using Nat.le_of_lt hk
-  -- Direction A: JustBot cooperates.
-  have hA : play 2 (JustBot k) (CupodTrollBot k) = some .C := by
-    simpa using JustBot_plays_C_against_CupodTrollBot k 0 hbudget
-  -- Direction B: CupodTrollBot cooperates (JustBot ≠ CupodBot).
-  have hB : play 2 (CupodTrollBot k) (JustBot k) = some .C := by
-    have := CupodTrollBot_cooperates_if_opp_not_CupodBot k 0 (JustBot k)
+CupodTrollBot's cooperation against `.bot (DupocBot k)` is an ELSE-play of its own `.eq`
+search (the opponent is not literally `CupodBot k`), so its certificate pays the `search_f`
+floor — JustBot's guard at the same `k` can never afford it. Staggered-budget restatement
+(Troll at `j`, JustBot at `k ≥ j + O(log)`) is T3.2b; cf. the staggered
+`outcome_CupodTrollBot_vs_DupocBot` in `Theorems/CupodTrollBot.lean`. -/
+
+/-! ### JustBot × CupodTrollBot — RECOVERED with STAGGERED budgets (T3.2b, 2026-07-03).
+
+`JustBot (4j+100)` vs `CupodTrollBot j`: JustBot's bigger budget affords Troll's
+`search_f`-floored else-certificate (Troll cooperates because its `.eq` recognition guard
+FAILS against `.bot (DupocBot (4j+100))`, refuted by `Pf.eqNeg`). Holds for EVERY
+`j` — no eventuality. -/
+
+theorem outcome_JustBot_vs_CupodTrollBot (j fuel : Nat) :
+    outcome (fuel + 2) (JustBot (4*j+100)) (CupodTrollBot j) = some (.C, .C) := by
+  have hlj := log2_le_self j
+  have hlgj := log2_stagger4_le j
+  have hne : Prog.bot (DupocBot (4*j+100)) ≠ CupodBot j := by simp [CupodBot]
+  -- the eqNeg refutation of Troll's recognition guard, at its own size
+  have hneg : Pf ((Formula.neg (.eq (.bot (DupocBot (4*j+100))) (CupodBot j))).size)
+      (.neg (.eq (.bot (DupocBot (4*j+100))) (CupodBot j))) :=
+    Pf.eqNeg _ _ hne (Nat.le_refl _)
+  -- Troll's floored else-certificate, affordable in JustBot's 4j+100 budget
+  have hguard : proofSearch (4*j+100)
+      (.plays (CupodTrollBot j) (.bot (DupocBot (4*j+100))) .C) = true := by
+    refine (proofSearch_spec _ _).2 (Pf.atom (atom_monotone _ (4*j+100) _ ?_
+      (⟨PlaysProof.search_f hneg PlaysProof.const, Nat.le_refl _⟩ :
+        AtomProvable
+          (c_leaf + (Formula.neg (.eq (.bot (DupocBot (4*j+100))) (CupodBot j))).size
+            + j + c_node)
+          (.plays (CupodTrollBot j) (.bot (DupocBot (4*j+100))) .C))))
+    simp only [numCost, c_leaf, c_node, Formula.size, Prog.size, DupocBot, CupodBot]
+    omega
+  have hA : play (fuel + 2) (JustBot (4*j+100)) (CupodTrollBot j) = some .C := by
+    refine JustBot_eval_step (4*j+100) fuel (CupodTrollBot j) .C ?_
+    simpa using hguard
+  have hB : play (fuel + 2) (CupodTrollBot j) (JustBot (4*j+100)) = some .C :=
+    CupodTrollBot_cooperates_if_opp_not_CupodBot j fuel (JustBot (4*j+100))
       (by simp [JustBot, CupodBot])
-    simpa using this
   exact outcome_of_plays _ _ _ _ _ hA hB
 
+/-! ### JustBot vs EBot — the honest `(D, C)` outcome (floor formalized 2026-07-09).
 
--- EBot --
+HISTORY: `outcome_JustBot_vs_EBot` was RETIRED 2026-07-02 as an axiom artifact: EBot's
+C-play against `.bot (DupocBot k)` crosses Dupoc's FAILED outer-probe search (vs
+`.bot DefectBot`) — the `search_f` floor, unaffordable within the shared budget.
 
-theorem outcome_JustBot_vs_EBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (JustBot k) EBot = some (.C, .C) := by
-  refine ⟨atom_cost 6, ?_⟩
-  intro k hk
-  have h26 : atom_cost 2 ≤ atom_cost 6 := atom_cost_mono (by omega)
-  have hb2 : atom_cost 2 ≤ k := by omega
-  have hb6 : atom_cost 6 ≤ k := by omega
-  -- proof-search facts
-  have hPSf : proofSearch k (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) = false := by
-    cases h : proofSearch k (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) with
-    | true => exact absurd (proofSearch_sound _ _ h) (interp_bot_DefectBot_plays_C_false _)
-    | false => rfl
-  have hPS1 : proofSearch k (.plays (.bot CooperateBot) (.bot (DupocBot k)) .C) = true :=
-    proofSearch_monotone (atom_cost 2) k _ hb2
-      ((proofSearch_spec _ _).2 (Provable.atom
-        (atom_complete (.bot CooperateBot) (.bot (DupocBot k)) .C 2
-          (by simpa using play_bot_CooperateBot 0 (.bot (DupocBot k))))))
-  -- DupocBot (wrapped) defects vs .bot DefectBot, cooperates vs .bot CooperateBot
-  have lemA : ∀ j, play (j+3) (.bot (DupocBot k)) (.bot DefectBot) = some .D := by
-    intro j
-    show eval (j+3) (.bot (DupocBot k)) (.bot DefectBot) (.bot (DupocBot k)) = some .D
-    unfold DupocBot at hPSf ⊢
-    simp [eval, Prog.subst, Formula.subst, hPSf]
-  have lemB : ∀ j, play (j+3) (.bot (DupocBot k)) (.bot CooperateBot) = some .C := by
-    intro j
-    show eval (j+3) (.bot (DupocBot k)) (.bot CooperateBot) (.bot (DupocBot k)) = some .C
-    unfold DupocBot at hPS1 ⊢
-    simp [eval, Prog.subst, Formula.subst, hPS1]
-  -- EBot cooperates whenever the opponent defects vs DefectBot and cooperates vs CooperateBot
-  have ebot_C : ∀ (op : Prog),
-      (∀ j, play (j+3) op (.bot DefectBot) = some .D) →
-      (∀ j, play (j+3) op (.bot CooperateBot) = some .C) →
-      play 6 EBot op = some .C := by
-    intro op hD hC
-    have hG1 : eval 5 EBot op (.sim .opp (.bot DefectBot)) = some .D :=
-      eval_sim_opp_bot_of_play 4 EBot op DefectBot Action.D (hD 1)
-    have hG2 : eval 4 EBot op (.sim .opp (.bot CooperateBot)) = some .C :=
-      eval_sim_opp_bot_of_play 3 EBot op CooperateBot Action.C (hC 0)
-    have hInner : eval 5 EBot op
-        (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
-          (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) = some .C := by
-      simpa using (eval_ite_from_guard 4 EBot op (.sim .opp (.bot CooperateBot)) (.const Action.C)
-        (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))
-        Action.C Action.C hG2)
-    have hPlay := play_ite_from_guard 0 5 EBot op (.sim .opp (.bot DefectBot))
-      (.const Action.D)
-      (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
-        (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
-      Action.C Action.D
-      (by rfl) hG1
-    simpa [hInner] using hPlay
-  have hEO : play 6 EBot (.bot (DupocBot k)) = some .C := ebot_C (.bot (DupocBot k)) lemA lemB
-  have hPS3 : proofSearch k (.plays EBot (.bot (DupocBot k)) .C) = true :=
-    proofSearch_monotone (atom_cost 6) k _ hb6
-      ((proofSearch_spec _ _).2 (Provable.atom
-        (atom_complete EBot (.bot (DupocBot k)) .C 6 hEO)))
-  -- JustBot vs EBot: cooperates
-  have hJ : ∀ j, play (j+2) (JustBot k) EBot = some .C := by
-    intro j
-    show eval (j+2) (JustBot k) EBot (JustBot k) = some .C
-    unfold JustBot
-    unfold DupocBot at hPS3 ⊢
-    simp [eval, Prog.subst, Formula.subst, hPS3]
-  -- JustBot vs .bot DefectBot defects, vs .bot CooperateBot cooperates
-  have lemC : ∀ j, play (j+2) (JustBot k) (.bot DefectBot) = some .D := by
-    intro j
-    show eval (j+2) (JustBot k) (.bot DefectBot) (JustBot k) = some .D
-    unfold JustBot
-    unfold DupocBot at hPSf ⊢
-    simp [eval, Prog.subst, Formula.subst, hPSf]
-  have lemD : ∀ j, play (j+2) (JustBot k) (.bot CooperateBot) = some .C := by
-    intro j
-    show eval (j+2) (JustBot k) (.bot CooperateBot) (JustBot k) = some .C
-    unfold JustBot
-    unfold DupocBot at hPS1 ⊢
-    simp [eval, Prog.subst, Formula.subst, hPS1]
-  have hEJ6 : play 6 EBot (JustBot k) = some .C :=
-    ebot_C (JustBot k) (fun j => lemC (j+1)) (fun j => lemD (j+1))
-  exact ⟨6, outcome_of_plays 6 (JustBot k) EBot .C .C (hJ 4) hEJ6⟩
+RESOLVED (2026-07-09): `no_provable_EBot_C_vs_botDupoc_tail` (the `.bot`-wrapped
+variant, as for DBot above). JustBot defects at every budget; EBot's probes watch
+JustBot defect vs `.bot DefectBot` and cooperate vs `.bot CooperateBot` (both
+run-priced), so EBot cooperates: `outcome_JustBot_vs_EBot = (D, C)` for every
+`k ≥ 2` (the Σ₁ price of the `.bot CooperateBot` probe certificate). -/
+
+/-- The floor for the EBot pair: no ≤ k certificate concludes any formula whose spine
+    tail is "EBot plays C against `.bot (DupocBot k)`" (JustBot's guard instance). -/
+theorem no_provable_EBot_C_vs_botDupoc_tail (k : Nat) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      rightTail φ = .plays EBot (.bot (DupocBot k)) .C → False := by
+  intro K φ hp hK ht
+  refine no_provable_probeFirst_tail_botOpp k DefectBot (.const .D)
+      (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
+      .C .C (.plays .opp .self .C) (.const .C) (.const .D) ?_ ?_ K φ hp hK ?_
+  · simpa [Formula.subst, Prog.subst, DupocBot] using
+      interp_bot_DefectBot_plays_C_false (.bot (DupocBot k))
+  · intro k' ψ c0 c1 h; simp at h
+  · simpa [EBot, DupocBot] using ht
+
+/-- JustBot's guard fails against EBot at every budget — the floor's bite. -/
+theorem proofSearch_false_for_EBot_vs_botDupoc (k : Nat) :
+    proofSearch k (.plays EBot (.bot (DupocBot k)) .C) = false := by
+  cases h : proofSearch k (.plays EBot (.bot (DupocBot k)) .C) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_EBot_C_vs_botDupoc_tail k k _ hp le_rfl (by simp))
+  | false => rfl
+
+/-- JustBot defects against EBot: it can never afford the certificate of EBot's
+    (true!) cooperation with `.bot DupocBot`. -/
+theorem JustBot_plays_D_against_EBot (k fuel : Nat) :
+    play (fuel + 2) (JustBot k) EBot = some .D := by
+  have hg := proofSearch_false_for_EBot_vs_botDupoc k
+  show eval (fuel + 2) (JustBot k) EBot (JustBot k) = some .D
+  unfold JustBot
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- The `.bot CooperateBot` probe guard vs `.bot DupocBot` is Σ₁-certifiable at run
+    price, feeding `JustBot_plays_C_against_bot_CooperateBot` at every `k ≥ 2`. -/
+theorem proofSearch_true_bot_CooperateBot_vs_botDupoc (k : Nat) (hk : 2 ≤ k) :
+    proofSearch k (.plays (.bot CooperateBot) (.bot (DupocBot k)) .C) = true :=
+  (proofSearch_spec _ _).2 (Pf.atom
+    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
+
+/-- EBot cooperates with JustBot: probe 1 watches JustBot defect vs `.bot DefectBot`
+    (descend), probe 2 watches it cooperate vs `.bot CooperateBot` (the shared guard
+    fires Σ₁-cheaply) — EBot takes the cooperate branch. Pure simulation, no floor. -/
+theorem EBot_plays_C_against_JustBot (k fuel : Nat) (hk : 2 ≤ k) :
+    play (fuel + 5) EBot (JustBot k) = some .C := by
+  have hP1 : play (fuel + 3) (JustBot k) (.bot DefectBot) = some .D := by
+    simpa [Nat.add_assoc] using JustBot_plays_D_against_bot_DefectBot_JB k (fuel + 1)
+  have hG1 : eval (fuel + 4) EBot (JustBot k) (.sim .opp (.bot DefectBot)) = some .D := by
+    simpa [Nat.add_assoc] using
+      eval_sim_opp_bot_of_play (fuel + 3) EBot (JustBot k) DefectBot .D hP1
+  have hP2 : play (fuel + 2) (JustBot k) (.bot CooperateBot) = some .C :=
+    JustBot_plays_C_against_bot_CooperateBot k fuel
+      (proofSearch_true_bot_CooperateBot_vs_botDupoc k hk)
+  have hG2 : eval (fuel + 3) EBot (JustBot k) (.sim .opp (.bot CooperateBot)) = some .C := by
+    simpa [Nat.add_assoc] using
+      eval_sim_opp_bot_of_play (fuel + 2) EBot (JustBot k) CooperateBot .C hP2
+  have hInner : eval (fuel + 4) EBot (JustBot k)
+      (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D))) = some .C := by
+    rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG2]; rfl
+  show eval (fuel + 5) EBot (JustBot k)
+      (.ite (.sim .opp (.bot DefectBot)) .C (.const .D)
+        (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+          (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))) = some .C
+  rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG1]
+  exact hInner
+
+/-- **The honest JustBot×EBot outcome — `(D, C)` for every `k ≥ 2`.** -/
+theorem outcome_JustBot_vs_EBot (k fuel : Nat) (hk : 2 ≤ k) :
+    outcome (fuel + 5) (JustBot k) EBot = some (.D, .C) := by
+  have hA : play (fuel + 5) (JustBot k) EBot = some .D := by
+    simpa [Nat.add_assoc] using JustBot_plays_D_against_EBot k (fuel + 3)
+  have hB := EBot_plays_C_against_JustBot k fuel hk
+  simp [outcome, hA, hB]
 
 
 -- JustBot --
@@ -535,16 +670,13 @@ theorem ps_k_of_play_botDupoc_self (k N : Nat)
     cases hD
 
 /-- Löb premise for `.bot DupocBot` self-play, via `botSearchStep`. -/
-theorem botdupoc_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C))
-                        (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C)) := by
-  obtain ⟨K₀, hK₀⟩ := linear_log2_add_le 5 37
-  refine ⟨K₀, fun k hk => ?_⟩
-  apply Provable.struct
-  refine ⟨.botSearchStep k (.plays .opp .self .C) .C .D (.bot (DupocBot k)) (.bot (DupocBot k)) rfl, ?_⟩
-  simp only [Derivation.size, Formula.size, Prog.size, DupocBot]
-  have := hK₀ k hk
+theorem botdupoc_loeb_premise (k : Nat) :
+    Pf (20 * Nat.log2 k + 150)
+      (.impl (.box k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C))
+             (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C)) := by
+  -- transcript-tight: a single `botSearchStep` leaf, O(log k) — unconditionally.
+  refine Pf.botSearchStep k (.plays .opp .self .C) .C .D (.bot (DupocBot k)) (.bot (DupocBot k)) rfl ?_
+  simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, DupocBot]
   omega
 
 /-- For large `k`, `.bot DupocBot` self-play cooperates (its guard provably fires). -/
@@ -552,22 +684,20 @@ theorem botDupoc_self_coop :
     ∃ k₂, ∀ k, k₂ < k →
       proofSearch k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C) = true := by
   let φ : Nat → Formula := fun k => .plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C
-  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
-  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
-    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
-    intro k hk
-    have hlog : Nat.log2 k < k := by
-      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]
-      exact Nat.lt_two_pow_self
-    simpa using hlog
-  obtain ⟨K₀, hK₀⟩ := botdupoc_loeb_premise
-  have hLoeb : ∀ k, k > K₀ → ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) := by
-    intro k hk
-    exact ⟨k, hK₀ k (Nat.le_of_lt hk)⟩
-  obtain ⟨k₂, hk₂⟩ := PBLT φ id K₀ hMono hLog hLoeb
+  have hLoeb : ∀ k, k > 0 →
+      Pf (20 * Nat.log2 k + 150) (.impl (.box k (φ k)) (φ k)) := by
+    intro k _
+    exact botdupoc_loeb_premise k
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    show (Formula.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C).size ≤ _
+    simp only [numCost, Formula.size, Prog.size, DupocBot]
+    omega
+  have hpm : ∀ k, 20 * Nat.log2 k + 150 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 20 * Nat.log2 k + 150) 0 hφsz hpm hLoeb
   refine ⟨k₂, fun k hk => ?_⟩
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Provable_sound m (φ k) hm
+  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
   obtain ⟨n, hn⟩ := hInterp
   exact ps_k_of_play_botDupoc_self k n hn
 
@@ -576,18 +706,21 @@ theorem outcome_JustBot_vs_JustBot :
     ∃ k₂, ∀ k, k₂ < k →
       ∃ fuel, outcome fuel (JustBot k) (JustBot k) = some (.C, .C) := by
   obtain ⟨k₂, hk₂⟩ := botDupoc_self_coop
-  refine ⟨max k₂ (atom_cost 2), fun k hk => ?_⟩
+  obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
+  refine ⟨max k₂ KL, fun k hk => ?_⟩
   have hk2 : k₂ < k := lt_of_le_of_lt (le_max_left _ _) hk
-  have hac2 : atom_cost 2 ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
+  have hKLk : Nat.log2 k + 3 ≤ k := by
+    have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
+    omega
   have hdd : proofSearch k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C) = true := hk₂ k hk2
-  have hJd : ∀ f, play (f + 2) (JustBot k) (.bot (DupocBot k)) = some .C := by
-    intro f
-    refine JustBot_eval_step k f (.bot (DupocBot k)) .C ?_
-    simpa using hdd
   have hd' : proofSearch k (.plays (JustBot k) (.bot (DupocBot k)) .C) = true := by
-    refine proofSearch_monotone (atom_cost 2) k _ hac2 ?_
-    exact (proofSearch_spec _ _).2 (Provable.atom
-      (atom_complete (JustBot k) (.bot (DupocBot k)) .C 2 (by simpa using hJd 0)))
+    -- hand certificate: JustBot's own search FIRED (hdd) — search_t ∘ const, log2 k + 3 chars
+    refine (proofSearch_spec _ _).2 (Pf.atom
+      (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hdd) PlaysProof.const, ?_⟩ :
+        AtomProvable k (.plays (JustBot k) (.bot (DupocBot k)) .C)))
+    show c_leaf + c_guard k + c_node ≤ k
+    simp only [numCost, c_leaf, c_guard, c_node]
+    omega
   have hJJ : ∀ f, play (f + 2) (JustBot k) (JustBot k) = some .C := by
     intro f
     refine JustBot_eval_step k f (JustBot k) .C ?_
@@ -620,120 +753,157 @@ theorem ps_k_of_play_botdupoc (k n : Nat)
       unfold play at h ⊢; exact eval_mono_le h (n + 3) (by omega)
     rw [hC] at hD; cases hD
 
-/-- The closed Löb premise for PrudentBot cooperating with `.bot (DupocBot k)`. -/
-theorem prudent_botdupoc_loeb_premise :
-    ∃ K₀ : Nat, ∀ k : Nat, k ≥ K₀ →
-      Provable k (.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
-                        (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)) := by
-  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 30 300
-  refine ⟨max Ksz (atom_cost 3), fun k hk => ?_⟩
-  have hkS : Ksz ≤ k := le_trans (le_max_left _ _) hk
-  have hkPrud : atom_cost 3 ≤ k := le_trans (le_max_right _ _) hk
-  -- leg2 (`botSearchStep` reading `.bot (DupocBot k)`): □_k φP' → φD'.
-  have leg2 : Provable k
-      (.impl (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))
-             (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)) := by
-    apply Provable.struct
-    refine ⟨Derivation.botSearchStep k (.plays .opp .self .C) .C .D
-      (.bot (DupocBot k)) (PrudentBot k) rfl, ?_⟩
-    simp only [Derivation.size, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-    have := hKsz k hkS; omega
-  -- Closed premise `□_k φD' → φD'` via the SOUND mutual-Löb step, NOW Route 2 (no transformer):
-  -- role-P = φD' (= .bot DupocBot plays C vs PrudentBot), role-D = φP'. Supply BOTH object legs:
-  --   • `legPrud` : □_k φD' → φP'  (PrudentBot's `searchThenSearch_t`, opponent `.bot (DupocBot k)`);
-  --   • `legDP`   := leg2 : □_k φP' → φD'  (the `botSearchStep` leg above).
-  -- Prudence inner guard: `.bot (DupocBot k)` defects vs `.bot DefectBot` (`bot_dupoc_D_vs_bot_DB`).
-  have hPrudPlay : play 3 (.bot (DupocBot k)) (.bot DefectBot) = some .D := by
-    simpa using bot_DupocBot_plays_D_against_bot_DefectBot_JB k 0
-  have legPrud : Provable k
-      (.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
-             (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)) := by
-    refine Provable.searchThenSearch_t k k
-      (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
-      .C .D (.const .D) (PrudentBot k) (.bot (DupocBot k)) rfl ?_ (le_refl k) ?_
-    · simpa [Formula.subst, Prog.subst] using
-        Provable.atom (atom_monotone (atom_cost 3) k _ hkPrud
-          (atom_complete (.bot (DupocBot k)) (.bot DefectBot) Action.D 3 hPrudPlay))
-    · simp only [Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
-      have := hKsz k hkS; omega
-  have hs1 : (Formula.box k (.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
-              (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hs2 : (Formula.impl (.box k (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)))
-              (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hs3 : (Formula.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hs4 : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
-              (.box k (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hs5 : (Formula.box k (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hszK4 : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
-              (.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C))).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hszBoxP : (Formula.box k (Formula.plays (PrudentBot k) (.bot (DupocBot k)) .C)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  have hsz : (Formula.impl (.box k (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C))
-                           (Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C)).size ≤ k := by
-    simp only [Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]; have := hKsz k hkS; omega
-  exact mutual_loeb k (.bot (DupocBot k)) (PrudentBot k) (PrudentBot k) (.bot (DupocBot k))
-    Action.C Action.C legPrud leg2 hs1 hs2 hs3 hs4 hs5 hszK4 hszBoxP hsz
+/-! ### JustBot × PrudentBot — RETIRED at same-`k` (2026-07-02, the false-guard repair).
 
-/-- PrudentBot's guard against `.bot (DupocBot k)` fires for large `k`. -/
-theorem prudent_botdupoc_coop :
-    ∃ k₂, ∀ k, k₂ < k →
-      proofSearch k (.plays (PrudentBot k) (.bot (DupocBot k)) .C) = true := by
-  let φ : Nat → Formula := fun k => Formula.plays (.bot (DupocBot k)) (PrudentBot k) .C
-  have hMono : ∀ a b : Nat, a ≤ b → id a ≤ id b := fun _ _ h => h
-  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → id k > c * Nat.log2 k := by
-    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
-    intro k hk
-    have hlog : Nat.log2 k < k := by
-      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]; exact Nat.lt_two_pow_self
-    simpa using hlog
-  obtain ⟨K₀, hK₀⟩ := prudent_botdupoc_loeb_premise
-  have hLoeb : ∀ k, k > K₀ → ∃ m, Provable m (.impl (.box (id k) (φ k)) (φ k)) :=
-    fun k hk => ⟨k, hK₀ k (Nat.le_of_lt hk)⟩
-  obtain ⟨k₂, hk₂⟩ := PBLT φ id K₀ hMono hLog hLoeb
-  refine ⟨k₂, fun k hk => ?_⟩
-  obtain ⟨m, hm⟩ := hk₂ k hk
-  obtain ⟨n, hplay⟩ := Provable_sound m (φ k) hm
-  exact ps_k_of_play_botdupoc k n hplay
+The former `prudent_botdupoc_legPD`/`legDP`/`prudent_botdupoc_coop`/
+`outcome_JustBot_vs_PrudentBot` were axiom artifacts: PrudentBot's prudence fact
+"`.bot (DupocBot k)` defects vs `.bot DefectBot`" is an ELSE-play of Dupoc's own search
+(floor `k`), unaffordable inside PrudentBot's same-`k` inner search; and JustBot's own
+defection vs `.bot DefectBot` (consumed as PrudentBot's prudence about JustBot) is
+JustBot's OWN else-play — same floor. Staggered budgets (PrudentBot at `j ≥ k + O(log k)`,
+via the two-budget mutual wrapper) are T3.2b; cf. the PrudentBot×DupocBot tombstone in
+`Theorems/LlmGenerations/PrudentBot.lean`. -/
 
-/-- **JustBot vs PrudentBot → (C, C)** for all sufficiently large `k`. -/
+
+/-! ### JustBot × PrudentBot — RECOVERED with STAGGERED budgets (T3.2b, 2026-07-03).
+
+`JustBot k` vs `PrudentBot (2k+64)`: PrudentBot's inner search affords `.bot (DupocBot k)`'s
+`search_f`-floored prudence certificate, and PrudentBot's outer guard affords JustBot's own
+floored defection-vs-DefectBot certificate; the mutual Löb chain runs through
+`mutual_pblt_engine_staggered` on the (botDupoc, PrudentBot) leg pair. -/
+
+/-- `.bot (DupocBot k)`'s else-play vs `.bot DefectBot`, certified at the FLOOR. -/
+theorem prudence_botdupoc (k : Nat) :
+    Pf (k + Nat.log2 k + 17) (.plays (.bot (DupocBot k)) (.bot DefectBot) .D) := by
+  have hneg : Pf (Nat.log2 k + 14)
+      (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
+    refine Pf.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C 2
+      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
+    simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
+    omega
+  have hcert := atom_search_f_bot_top k (Nat.log2 k + 14) (.plays .opp .self .C) .C .D
+    (.bot DefectBot) hneg
+  exact Pf.atom (atom_monotone _ _ _ (by omega) hcert)
+
+/-- JustBot's else-play vs `.bot DefectBot`, certified at the FLOOR (consumed as
+    PrudentBot's prudence fact about JustBot). -/
+theorem justbot_prudence (k : Nat) :
+    Pf (k + Nat.log2 k + 16) (.plays (JustBot k) (.bot DefectBot) .D) := by
+  have hneg : Pf (Nat.log2 k + 14)
+      (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
+    refine Pf.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C 2
+      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
+    simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
+    omega
+  have hcert := atom_search_f_top k (Nat.log2 k + 14)
+    (.plays .opp (.bot (DupocBot k)) .C) .C .D (.bot DefectBot) hneg
+  exact Pf.atom (atom_monotone _ _ _ (by omega) hcert)
+
+/-- Leg 1 (staggered): `□_{2k+64} φD' → φP'` — `PrudentBot (2k+64)` reads its stacked
+    searches against `.bot (DupocBot k)`; the inner prudence is `prudence_botdupoc`. -/
+theorem prudent_botdupoc_legPD (k : Nat) :
+    Pf (30 * Nat.log2 k + 700)
+      (.impl (.box (2*k+64) (.plays (.bot (DupocBot k)) (PrudentBot (2*k+64)) .C))
+             (.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C)) := by
+  have hlk := log2_le_self k
+  have hlg := log2_stagger_le k
+  refine Pf.searchThenSearch_t (2*k+64) (2*k+64) (k + Nat.log2 k + 17)
+    (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
+    .C .D (.const .D) (PrudentBot (2*k+64)) (.bot (DupocBot k)) rfl
+    (by simpa [Formula.subst, Prog.subst] using prudence_botdupoc k) (by omega) ?_
+  simp only [numCost, Formula.subst, Prog.subst, Formula.size, Prog.size, DupocBot, PrudentBot,
+    DefectBot, c_guard]
+  omega
+
+/-- Leg 2 (staggered): `□_k φP' → φD'` — `.bot (DupocBot k)`'s `botSearchStep` leaf. -/
+theorem prudent_botdupoc_legDP (k : Nat) :
+    Pf (30 * Nat.log2 k + 700)
+      (.impl (.box k (.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C))
+             (.plays (.bot (DupocBot k)) (PrudentBot (2*k+64)) .C)) := by
+  have hlg := log2_stagger_le k
+  refine Pf.botSearchStep k (.plays .opp .self .C) .C .D (.bot (DupocBot k)) (PrudentBot (2*k+64)) rfl ?_
+  simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, DupocBot, PrudentBot, DefectBot]
+  omega
+
+/-- `.bot (DupocBot k)`'s staggered-opponent play lemmas (generic in the opponent). -/
+theorem bot_dupoc_D_vs_any (k fuel : Nat) (q : Prog)
+    (hk : proofSearch k (.plays q (.bot (DupocBot k)) .C) = false) :
+    play (fuel + 3) (.bot (DupocBot k)) q = some .D := by
+  show eval (fuel + 3) (.bot (DupocBot k)) q (.bot (DupocBot k)) = some .D
+  unfold DupocBot at hk ⊢
+  simp [eval, Prog.subst, Formula.subst, hk]
+
+theorem ps_k_of_play_botdupoc_any (k n : Nat) (q : Prog)
+    (h : play n (.bot (DupocBot k)) q = some .C) :
+    proofSearch k (.plays q (.bot (DupocBot k)) .C) = true := by
+  cases hps : proofSearch k (.plays q (.bot (DupocBot k)) .C) with
+  | true => rfl
+  | false =>
+    exfalso
+    have hD : play (n + 3) (.bot (DupocBot k)) q = some .D := bot_dupoc_D_vs_any k n q hps
+    have hC : play (n + 3) (.bot (DupocBot k)) q = some .C := by
+      unfold play at h ⊢; exact eval_mono_le h (n + 3) (by omega)
+    rw [hC] at hD; cases hD
+
+/-- **JustBot k vs PrudentBot (2k+64) → (C, C)** for all large enough `k` — the
+    staggered-budget recovery of the retired same-`k` theorem. -/
 theorem outcome_JustBot_vs_PrudentBot :
     ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (JustBot k) (PrudentBot k) = some (.C, .C) := by
-  obtain ⟨k₂, hcoop⟩ := prudent_botdupoc_coop
-  refine ⟨max k₂ (atom_cost 2), fun k hk => ?_⟩
-  have hk2 : k₂ < k := lt_of_le_of_lt (le_max_left _ _) hk
-  have hkAtom : atom_cost 2 ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
-  -- (A): PrudentBot cooperates vs `.bot (DupocBot k)` -- JustBot's guard
-  have hA_ps : proofSearch k (.plays (PrudentBot k) (.bot (DupocBot k)) .C) = true :=
-    hcoop k hk2
-  -- JustBot plays C vs PrudentBot (its guard is exactly (A))
-  have hJustC : play 2 (JustBot k) (PrudentBot k) = some .C := by
-    refine JustBot_eval_step k 0 (PrudentBot k) .C ?_
+      ∃ fuel, outcome fuel (JustBot k) (PrudentBot (2*k+64)) = some (.C, .C) := by
+  obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
+  have hsD : ∀ k, (Formula.plays (.bot (DupocBot k)) (PrudentBot (2*k+64)) .C).size
+      ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    have hlg := log2_stagger_le k
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    omega
+  have hsP : ∀ k, (Formula.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C).size
+      ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    have hlg := log2_stagger_le k
+    simp only [numCost, Formula.size, Prog.size, PrudentBot, DupocBot, DefectBot]
+    omega
+  have hpb : ∀ k, 30 * Nat.log2 k + 700 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := mutual_pblt_engine_staggered
+    (fun k => Formula.plays (.bot (DupocBot k)) (PrudentBot (2*k+64)) .C)
+    (fun k => Formula.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C)
+    (fun k => 2*k+64)
+    (fun k => 30 * Nat.log2 k + 700) (fun k => 30 * Nat.log2 k + 700) 0
+    (fun k => by show k ≤ 2*k+64; omega) log2_stagger_le hsD hsP hpb hpb
+    (fun k _ => prudent_botdupoc_legPD k)
+    (fun k _ => prudent_botdupoc_legDP k)
+  refine ⟨max k₂ KL, fun k hk => ?_⟩
+  have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
+  have hKLk : Nat.log2 k + 3 ≤ k := by
+    have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
+    omega
+  have hlk := log2_le_self k
+  obtain ⟨m, hm⟩ := hk₂ k hk2
+  obtain ⟨n, hplayD⟩ := Pf_sound m _ hm
+  -- botDupoc's guard fired: JustBot's own guard about PrudentBot holds at k
+  have hA_ps : proofSearch k
+      (.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C) = true :=
+    ps_k_of_play_botdupoc_any k n (PrudentBot (2*k+64)) hplayD
+  -- JustBot cooperates (its guard is exactly hA_ps)
+  have hA : play 4 (JustBot k) (PrudentBot (2*k+64)) = some .C := by
+    refine JustBot_eval_step k 2 (PrudentBot (2*k+64)) .C ?_
     simpa using hA_ps
-  -- (B): provable that JustBot plays C vs PrudentBot
-  have hB_ps : proofSearch k (.plays (JustBot k) (PrudentBot k) .C) = true :=
-    (proofSearch_spec _ _).2 (Provable.atom (atom_monotone (atom_cost 2) k _ hkAtom
-      (atom_complete (JustBot k) (PrudentBot k) .C 2 hJustC)))
-  -- (C): provable that JustBot plays D vs `.bot DefectBot` (prudence for PrudentBot)
-  have hJustD : play 2 (JustBot k) (.bot DefectBot) = some .D := by
-    simpa using JustBot_plays_D_against_bot_DefectBot_JB k 0
-  have hC_ps : proofSearch k (.plays (JustBot k) (.bot DefectBot) .D) = true :=
-    (proofSearch_spec _ _).2 (Provable.atom (atom_monotone (atom_cost 2) k _ hkAtom
-      (atom_complete (JustBot k) (.bot DefectBot) .D 2 hJustD)))
-  -- PrudentBot cooperates vs JustBot (both guards fire)
-  have hPrudC : play 3 (PrudentBot k) (JustBot k) = some .C := by
-    simpa using prudent_eval_both_true k 0 (JustBot k) hB_ps hC_ps
-  -- JustBot plays C vs PrudentBot at fuel 3
-  have hJustC3 : play 3 (JustBot k) (PrudentBot k) = some .C := by
-    refine JustBot_eval_step k 1 (PrudentBot k) .C ?_
-    simpa using hA_ps
-  exact ⟨3, outcome_of_plays _ _ _ _ _ hJustC3 hPrudC⟩
+  -- PrudentBot's outer guard: JustBot's cooperative play, certified through its fired search
+  have houter : proofSearch (2*k+64)
+      (.plays (JustBot k) (PrudentBot (2*k+64)) .C) = true := by
+    refine (proofSearch_spec _ _).2 (Pf.atom
+      (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hA_ps) PlaysProof.const, ?_⟩ :
+        AtomProvable (2*k+64) (.plays (JustBot k) (PrudentBot (2*k+64)) .C)))
+    show c_leaf + c_guard k + c_node ≤ 2*k+64
+    simp only [numCost, c_leaf, c_guard, c_node]
+    omega
+  -- PrudentBot's prudence about JustBot: the floored certificate fits its bigger budget
+  have hprud : proofSearch (2*k+64) (.plays (JustBot k) (.bot DefectBot) .D) = true := by
+    refine (proofSearch_spec _ _).2 (Pf_mono (justbot_prudence k) ?_)
+    omega
+  have hB : play 4 (PrudentBot (2*k+64)) (JustBot k) = some .C := by
+    simpa using prudent_eval_both_true (2*k+64) 1 (JustBot k) houter hprud
+  exact ⟨4, outcome_of_plays _ _ _ _ _ hA hB⟩
 
 -- DupocBot --
 
@@ -742,88 +912,49 @@ theorem outcome_JustBot_vs_DupocBot :
       ∃ fuel, outcome fuel (JustBot k) (DupocBot k) = some (.C, .C) := by
   let φ : Nat → Formula :=
     fun k => Formula.plays (DupocBot k) (.bot (DupocBot k)) .C
-  let f : Nat → Nat := fun k => k
-  have hMono : ∀ a b : Nat, a ≤ b → f a ≤ f b := fun _ _ h => h
-  have hLog : ∃ c kHat, c > 0 ∧ ∀ k, k > kHat → f k > c * Nat.log2 k := by
-    refine ⟨1, 0, Nat.zero_lt_one, ?_⟩
-    intro k hk
-    have hlog : Nat.log2 k < k := by
-      rw [Nat.log2_lt (Nat.pos_iff_ne_zero.mp hk)]
-      exact Nat.lt_two_pow_self
-    simpa using hlog
-  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 30 300
-  have hLoeb : ∀ k, k > Ksz → ∃ m, Provable m (.impl (.box (f k) (φ k)) (φ k)) := by
-    intro k hkBig
-    have hkS : Ksz ≤ k := Nat.le_of_lt hkBig
-    set fBD := Formula.plays (.bot (DupocBot k)) (DupocBot k) .C with hfBD
-    set fDB := Formula.plays (DupocBot k) (.bot (DupocBot k)) .C with hfDB
-    -- Conclusion `□_k fDB → fDB` (= □_k φ → φ) via the SOUND mutual-Löb step.
-    -- Role-P = fDB (the conclusion atom), role-D = fBD. We supply:
-    --   • `legDP` := d3 : □_k fBD → fDB           (DupocBot's `searchBranch` guard)
-    --   • `hfitD` : Provable k fDB → Provable k fBD, via guard inversion.
-    have legDP : Provable k (.impl (.box k fBD) fDB) :=
-      Provable.struct ⟨Derivation.searchBranch k (.plays .opp .self .C) .C .D
-        (DupocBot k) (.bot (DupocBot k)) rfl, by
-          simp only [Derivation.size, hfDB, hfBD, Formula.size, Prog.size, DupocBot]
-          have := hKsz k hkS; omega⟩
-    -- hfitD: from a real fDB play (DupocBot plays C vs .bot(DupocBot)), DupocBot's guard
-    -- (`.bot(DupocBot) plays C vs DupocBot` = fBD) must have fired at budget k — else
-    -- DupocBot would defect, contradicting the play.
-    have hfitD : Provable k fDB → Provable k fBD := by
-      intro hfDBp
-      obtain ⟨n, hplay⟩ := Provable_sound k _ hfDBp        -- play n DupocBot (.bot DupocBot) = C
-      cases hps : proofSearch k fBD with
-      | true => exact (proofSearch_spec _ _).1 hps
-      | false =>
-        exfalso
-        rw [hfBD] at hps
-        have hgen : ∀ N, play N (DupocBot k) (.bot (DupocBot k)) = some .C → False := by
-          intro N hN
-          cases N with
-          | zero => simp [play, eval] at hN
-          | succ N0 => cases N0 with
-            | zero => simp [play, eval, DupocBot, Prog.subst, Formula.subst] at hN
-            | succ N1 =>
-              have hd : play (N1 + 2) (DupocBot k) (.bot (DupocBot k)) = some .D := by
-                show eval (N1 + 2) (DupocBot k) (.bot (DupocBot k)) (DupocBot k) = some .D
-                unfold DupocBot at hps ⊢
-                simp [eval, Prog.subst, Formula.subst, hps]
-              rw [hd] at hN; cases hN
-        exact hgen n hplay
-    -- Route 2: role-P = fDB, role-D = fBD. `legPD : □fDB → fBD` is `.bot(DupocBot)`'s `botSearchStep`
-    -- guard (it cooperates when it proves `□fDB`); `legDP : □fBD → fDB` is the DupocBot searchBranch.
-    have legPD : Provable k (.impl (.box k fDB) fBD) :=
-      Provable.struct ⟨Derivation.botSearchStep k (.plays .opp .self .C) .C .D
-        (.bot (DupocBot k)) (DupocBot k) rfl, by
-          simp only [Derivation.size, hfDB, hfBD, Formula.size, Prog.size, DupocBot]
-          have := hKsz k hkS; omega⟩
-    have hs1 : (Formula.box k (.impl (.box k fDB) fBD)).size ≤ k := by
-      simp only [hfDB, hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    have hs2 : (Formula.impl (.box k (.box k fDB)) (.box k fBD)).size ≤ k := by
-      simp only [hfDB, hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    have hs3 : (Formula.box k fDB).size ≤ k := by
-      simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    have hs4 : (Formula.impl (.box k fDB) (.box k (.box k fDB))).size ≤ k := by
-      simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    have hs5 : (Formula.box k (.box k fDB)).size ≤ k := by
-      simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    have hszK4 : (Formula.impl (.box k fDB) (.box k fBD)).size ≤ k := by
-      simp only [hfDB, hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    have hszBoxBD : (Formula.box k fBD).size ≤ k := by
-      simp only [hfBD, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    have hsz : (Formula.impl (.box k fDB) fDB).size ≤ k := by
-      simp only [hfDB, Formula.size, Prog.size, DupocBot]; have := hKsz k hkS; omega
-    exact ⟨k, mutual_loeb k (DupocBot k) (.bot (DupocBot k)) (.bot (DupocBot k)) (DupocBot k)
-      Action.C Action.C legPD legDP hs1 hs2 hs3 hs4 hs5 hszK4 hszBoxBD hsz⟩
-  obtain ⟨k₂, hk₂⟩ := PBLT φ f Ksz hMono hLog hLoeb
-  refine ⟨max k₂ (atom_cost 2), ?_⟩
+-- The two transparency legs, transcript-tight; `mutual_pblt_engine_id` lowers the premise
+  -- subscript internally and runs the Löb chain (the old same-subscript `mutual_loeb`
+  -- factoring is underivable under transcript cost).
+  have legPD : ∀ k, Pf (30 * Nat.log2 k + 300)
+      (.impl (.box k (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C))
+             (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)) := by
+    intro k
+    refine Pf.botSearchStep k (.plays .opp .self .C) .C .D (.bot (DupocBot k)) (DupocBot k) rfl ?_
+    simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, DupocBot]
+    omega
+  have legDP : ∀ k, Pf (30 * Nat.log2 k + 300)
+      (.impl (.box k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C))
+             (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C)) := by
+    intro k
+    refine Pf.searchBranch k (.plays .opp .self .C) .C .D (DupocBot k) (.bot (DupocBot k)) rfl ?_
+    simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, DupocBot]
+    omega
+  have hφsz : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    show (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C).size ≤ _
+    simp only [numCost, Formula.size, Prog.size, DupocBot]
+    omega
+  have hsB : ∀ k,
+      (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C).size ≤ 100 * Nat.log2 k + 1000 := by
+    intro k
+    simp only [numCost, Formula.size, Prog.size, DupocBot]
+    omega
+  have hpb : ∀ k, 30 * Nat.log2 k + 300 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
+  obtain ⟨k₂, hk₂⟩ := mutual_pblt_engine_id φ
+    (fun k => Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
+    (fun k => 30 * Nat.log2 k + 300) (fun k => 30 * Nat.log2 k + 300) 0
+    hφsz hsB hpb hpb (fun k _ => legPD k) (fun k _ => legDP k)
+  obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
+  refine ⟨max k₂ KL, ?_⟩
   intro k hk
   have hkk2 : k₂ < k := by
-    have := Nat.le_max_left k₂ (atom_cost 2); omega
-  have hk2c : atom_cost 2 ≤ k := by
-    have := Nat.le_max_right k₂ (atom_cost 2); omega
+    have := Nat.le_max_left k₂ KL; omega
+  have hKLk : Nat.log2 k + 3 ≤ k := by
+    have h1 := Nat.le_max_right k₂ KL
+    have := hKL k (by omega)
+    omega
   obtain ⟨m, hm⟩ := hk₂ k hkk2
-  have hAint : (φ k).interp := Provable_sound m _ hm
+  have hAint : (φ k).interp := Pf_sound m _ hm
   obtain ⟨n, hplayA⟩ := hAint
   have hBtrue :
       proofSearch k (Formula.plays (.bot (DupocBot k)) (DupocBot k) .C) = true := by
@@ -849,24 +980,28 @@ theorem outcome_JustBot_vs_DupocBot :
     show eval 2 (DupocBot k) (.bot (DupocBot k)) (DupocBot k) = some .C
     unfold DupocBot at hBtrue ⊢
     simp [eval, Prog.subst, Formula.subst, hBtrue]
-  have hatomA : proofSearch (atom_cost 2)
-      (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C) = true :=
-    (proofSearch_spec _ _).2
-      (Provable.atom (atom_complete (DupocBot k) (.bot (DupocBot k)) .C 2 hAplay2))
   have hGA : proofSearch k
-      (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C) = true :=
-    proofSearch_monotone _ _ _ hk2c hatomA
+      (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C) = true := by
+    -- hand certificate: Dupoc's search FIRED (hBtrue) — search_t ∘ const
+    refine (proofSearch_spec _ _).2 (Pf.atom
+      (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hBtrue) PlaysProof.const, ?_⟩ :
+        AtomProvable k (.plays (DupocBot k) (.bot (DupocBot k)) .C)))
+    show c_leaf + c_guard k + c_node ≤ k
+    simp only [numCost, c_leaf, c_guard, c_node]
+    omega
   have hJ : play 2 (JustBot k) (DupocBot k) = some .C := by
     show eval 2 (JustBot k) (DupocBot k) (JustBot k) = some .C
     unfold JustBot
     simp [eval, Prog.subst, Formula.subst, hGA]
-  have hJatom : proofSearch (atom_cost 2)
-      (Formula.plays (JustBot k) (DupocBot k) .C) = true :=
-    (proofSearch_spec _ _).2
-      (Provable.atom (atom_complete (JustBot k) (DupocBot k) .C 2 hJ))
   have hGJ : proofSearch k
-      (Formula.plays (JustBot k) (DupocBot k) .C) = true :=
-    proofSearch_monotone _ _ _ hk2c hJatom
+      (Formula.plays (JustBot k) (DupocBot k) .C) = true := by
+    -- hand certificate: JustBot's search FIRED (hGA) — search_t ∘ const
+    refine (proofSearch_spec _ _).2 (Pf.atom
+      (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hGA) PlaysProof.const, ?_⟩ :
+        AtomProvable k (.plays (JustBot k) (DupocBot k) .C)))
+    show c_leaf + c_guard k + c_node ≤ k
+    simp only [numCost, c_leaf, c_guard, c_node]
+    omega
   have hD : play 2 (DupocBot k) (JustBot k) = some .C := by
     show eval 2 (DupocBot k) (JustBot k) (DupocBot k) = some .C
     unfold DupocBot at hGJ ⊢

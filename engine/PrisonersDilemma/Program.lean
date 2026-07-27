@@ -37,6 +37,7 @@ mutual
     | neg   : Formula → Formula                   -- ¬ φ
     | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
+    | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Pf`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (Research/Notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
 end
 deriving instance DecidableEq for Prog, Formula
 
@@ -88,6 +89,7 @@ mutual
     | .neg φ,       m, o => .neg (φ.subst m o)
     | .box n φ,     m, o => .box n (φ.subst m o)
     | .eq p q,      m, o => .eq (p.subst m o) q   -- only the LHS (probe) substitutes; the RHS is a frozen literal target
+    | .diag g φ,    _, _ => .diag g φ             -- FROZEN (like `.bot`/`.eq`-RHS): the diagonal is a closed meta-construction; subst does not descend
 end
 
 -- Syntactic size = character count of source. This is the unit the proof system
@@ -96,6 +98,11 @@ end
 -- A numeral `k` costs `Nat.log2 k + 1` characters (critch22 Appendix B(b):
 -- numbers are written in `O(lg k)` characters), so e.g. `.search`/`.box` pay that
 -- for their index. Everything else is `(sum of children) + 1` for the node.
+/-- The character cost of writing the numeral `k` (Critch Appendix B(b): numbers are
+    written in `O(lg k)` characters). Single source of truth for `Prog.size`,
+    `Formula.size` and the proof-step cost `c_guard`. -/
+def numCost (k : Nat) : Nat := Nat.log2 k + 1
+
 mutual
   def Prog.size : Prog → Nat
     | .const _        => 1
@@ -104,14 +111,28 @@ mutual
     | .bot p          => p.size + 1
     | .sim p q        => p.size + q.size + 1
     | .ite b _ p q    => b.size + p.size + q.size + 1
-    | .search k φ p q => (Nat.log2 k + 1) + φ.size + p.size + q.size + 1
+    | .search k φ p q => numCost k + φ.size + p.size + q.size + 1
 
   def Formula.size : Formula → Nat
     | .plays p q _ => p.size + q.size + 1
     | .impl φ ψ    => φ.size + ψ.size + 1
     | .neg φ       => φ.size + 1
-    | .box k φ     => (Nat.log2 k + 1) + φ.size + 1
+    | .box k φ     => numCost k + φ.size + 1
     | .eq p q      => p.size + q.size + 1
+    | .diag g φ    => numCost g + φ.size + 1   -- numeral cost for `g`, like `.box`
 end
+
+/-- Syntactic `.search`-freeness: a program that contains no proof-search node. A search-free
+    pair's run never consults the oracle (`subst` cannot introduce a `.search` that isn't in one
+    of its inputs — `hasSearch_subst`), so its play certificates are purely structural — the
+    constructive fragment of the deleted `atom_complete` (see `atom_complete_searchfree`). -/
+def Prog.hasSearch : Prog → Bool
+  | .const _        => false
+  | .self           => false
+  | .opp            => false
+  | .bot p          => p.hasSearch
+  | .sim p q        => p.hasSearch || q.hasSearch
+  | .ite b _ p q    => b.hasSearch || p.hasSearch || q.hasSearch
+  | .search _ _ _ _ => true
 
 end PD
