@@ -136,6 +136,18 @@ _PROPOSE_PF_CONSTRUCTOR_TOOL: dict[str, Any] = {
                 "type": "string",
                 "description": "The outcome theorem(s) this rule would make provable, and why.",
             },
+            "unblocked_proof_lean": {
+                "type": "string",
+                "description": (
+                    "OPTIONAL but strongly encouraged: a COMPLETE Lean file proving the "
+                    "unblocked outcome theorem against the CURRENT engine, with the proposed "
+                    "rule stated as an explicit hypothesis (e.g. a theorem parameter "
+                    "`(hRule : ∀ k φ, <side-condition> → Pf k <conclusion>)`). The tool "
+                    "compiles it and stores it in the bundle — this turns your `unblocks` "
+                    "claim into a kernel-checked artifact the integrator can reuse. If it "
+                    "fails to compile the proposal is NOT recorded."
+                ),
+            },
         },
         "required": [
             "name", "constructor_lean", "soundness_certificate_lean",
@@ -366,14 +378,9 @@ def register_lean_tools(handler, exclude_bots: frozenset[str] = frozenset()) -> 
         from pd_runner.services.lemma_library import add_lemma
 
         handler.register_fn("add_base_lemma", add_lemma)
-        handler.register_fn(
-            "propose_pf_constructor",
-            lambda name, constructor_lean, soundness_certificate_lean,
-                   faithfulness_rationale, unblocks: propose(
-                name, constructor_lean, soundness_certificate_lean,
-                faithfulness_rationale, unblocks,
-            ),
-        )
+        # `propose` accepts keyword args matching the tool schema exactly
+        # (unblocked_proof_lean is optional with a default).
+        handler.register_fn("propose_pf_constructor", propose)
 
 
 def register_bot_tools(handler) -> None:

@@ -52,7 +52,9 @@ def _llm_lemmas_block(exclude_bots: frozenset[str]) -> str:
 
 def _pending_proposals_block() -> str:
     """A short listing of already-filed constructor proposals, so later runs do not
-    re-derive and re-file duplicates. Production-mode only (the caller gates it)."""
+    re-derive and re-file duplicates. Production-mode only (the caller gates it).
+    Integrated proposals are skipped here (they are live rules now) and surfaced by
+    `_integrated_proposals_block` instead."""
     import json
 
     from pd_runner.config import load_paths
@@ -64,6 +66,8 @@ def _pending_proposals_block() -> str:
     for meta in sorted(root.glob("*/meta.json")):
         try:
             data = json.loads(meta.read_text(encoding="utf-8"))
+            if data.get("status") == "integrated":
+                continue
             lines.append(f"- `{data['name']}` — unblocks: {data.get('unblocks', '?')}")
         except (OSError, json.JSONDecodeError, KeyError):
             continue
@@ -73,6 +77,51 @@ def _pending_proposals_block() -> str:
         "\n\n# Pending constructor proposals (awaiting human review — do NOT re-file these; "
         "if one of them is exactly what your proof needs, conclude "
         "`OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>` referencing it)\n" + "\n".join(lines)
+    )
+
+
+def _integrated_proposals_block() -> str:
+    """Conditional outcome proofs of INTEGRATED constructor proposals.
+
+    Once a proposed rule has been integrated, its constructor is live in
+    `ProofSystem.lean` (already embedded in the prompt for `.search` matchups) and
+    the bundle's `unblocked_proof.lean` — written with the rule as an explicit
+    hypothesis — becomes a near-finished proof: discharge the hypothesis with the
+    real constructor and the outcome theorem lands. Surface those proofs so the
+    Stage-E proof run starts from them instead of from scratch."""
+    import json
+
+    from pd_runner.config import load_paths
+
+    root = load_paths().generated_lean_dir.parent / "constructor_proposals"
+    if not root.exists():
+        return ""
+    parts = []
+    for meta in sorted(root.glob("*/meta.json")):
+        try:
+            data = json.loads(meta.read_text(encoding="utf-8"))
+            if data.get("status") != "integrated":
+                continue
+            proof = meta.parent / "unblocked_proof.lean"
+            if not proof.exists():
+                continue
+            parts.append(
+                f"## `{data['name']}` (now a live `Pf` constructor)\n\n"
+                f"```lean\n{proof.read_text(encoding='utf-8')}\n```"
+            )
+        except (OSError, json.JSONDecodeError, KeyError):
+            continue
+    if not parts:
+        return ""
+    return (
+        "\n\n# Integrated constructors — conditional proofs to discharge\n\n"
+        "The following rules were proposed by an earlier run, human-accepted, and are "
+        "NOW LIVE constructors in `Pf`. Each block below is a COMPILED outcome proof "
+        "written with the rule as an explicit hypothesis. If your target theorem "
+        "matches one, adapt it: drop the hypothesis parameter and use the real "
+        "constructor (`Pf.<name> ...`) where the hypothesis was applied. This should "
+        "need only minor edits — verify with run_lean_proof as usual.\n\n"
+        + "\n\n".join(parts)
     )
 
 
@@ -115,6 +164,7 @@ def build_system_prompt(
     proof_system_block += _llm_lemmas_block(exclude_bots)
     if not exclude_bots:
         proof_system_block += _pending_proposals_block()
+        proof_system_block += _integrated_proposals_block()
 
     return f"""\
 You are an expert Lean 4 proof assistant for the open-source game theory project.
@@ -167,6 +217,10 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
   is provable and is the expected answer. Existing `.search`-bot self-play theorems in the
   few-shot files show the canonical `PBLT` application for this shape — follow it. Prove the
   threshold theorem; do NOT declare OUTCOME OPEN merely because the result varies with `k`.
+  Not every self-play matchup cooperates, though: when the Löb premise is NOT derivable at
+  the same budget, the honest outcome is determined DEFECTION — the library precedent is
+  `outcome_PrudentBot_vs_PrudentBot = (D, D)` (same-`k` single-tier prudence is
+  self-defeating), proved via the exclusion census, not declared OPEN.
 - **Before ever declaring OUTCOME OPEN, climb the escalation ladder.** Historically, most
   "unprovable" outcomes were provable — the missing piece was a DERIVED rule nobody had
   stated yet (`boxInternalize` and `box_provable` were both once believed to need new
@@ -177,22 +231,42 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
     2. **Derive the missing principle as a lemma** (`add_base_lemma`, when available): state
        the reusable rule you wish existed and PROVE it from existing rules. This is always
        safe (kernel-checked, auto-rollback) and the lemma persists for future proofs.
+       This rung includes the NEGATIVE direction: "the guard is unprovable" is itself a
+       lemma obligation, not a prose claim — state and prove `¬ Pf k guard` via the
+       structural exclusion pattern (a `ForbiddenC`-style motive + `Pf.induct` /
+       `PlaysProof.induct`; the `search_t` back-edge carries `Pf k guard` as a premise, so
+       the atom arm recurses into the guard — the induction is well-founded on the
+       DERIVATION TREE even when budget induction is not). A proven `¬ Pf k guard` yields a
+       determined else-branch outcome theorem, not OUTCOME OPEN.
     3. **Only if derivation genuinely fails**, and you can articulate WHY (which census/
        exclusion argument blocks it, or which Löb/self-reference shape no existing rule
        reads), file a constructor proposal (`propose_pf_constructor`, when available). You
        must supply a COMPILING soundness certificate (the rule's interp-level content proved
        in the current engine) and a faithfulness rationale; the engine is not modified and a
-       human reviews the proposal. Then conclude
+       human reviews the proposal. Also submit `unblocked_proof_lean`: the outcome proof
+       with your proposed rule stated as an explicit hypothesis — this kernel-checks your
+       "unblocks" claim and preserves the finished proof for the integrator (do the
+       verification anyway; submitting it costs nothing extra). Then conclude
        `OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>`.
-- **OUTCOME OPEN without a proposal is only for genuinely undetermined matchups.** Reserve
-  it for the rare case where *no* single action pair holds even past a threshold on `k`
-  (e.g. the matchup admits two incompatible fixed points and neither is forced for all
-  sufficiently large `k` — a BISTABLE matchup; no sound rule can force those, so do NOT
-  propose a constructor for them). If a large-`k` threshold theorem of the shape above is
-  provable, you must prove it instead. When OUTCOME OPEN genuinely applies, do not emit a
-  ```lean``` code block and say exactly `OUTCOME OPEN` followed by a one-paragraph
-  explanation of which action pairs are consistent with the proof system and why no single pair
-  is forced even in the large-`k` limit.
+- **OUTCOME OPEN without a proposal is only for genuinely undetermined matchups, and it
+  requires a machine artifact, not prose.** Reserve it for the rare case where *no* single
+  action pair holds even past a threshold on `k` (e.g. the matchup admits two incompatible
+  fixed points and neither is forced for all sufficiently large `k` — a BISTABLE matchup,
+  like a guard naming a frozen `.bot` literal; no sound rule can force those, so do NOT
+  propose a constructor for them). Before you may declare bare OUTCOME OPEN you must have
+  BOTH (a) attempted the unprovability lemma of rung 2 and be able to point at which
+  induction arm genuinely fails, AND (b) explained why no sound-and-faithful rule could
+  force either outcome — if such a rule exists, rung 3 (a constructor proposal) is the
+  required exit, not OPEN. Beware the false-bistability trap: "both action pairs are
+  consistent with `Pf`" is true of EVERY search matchup before you determine which side
+  `S` picks — it is not bistability. In particular a guard whose `interp` is TRUE (e.g. a
+  tautology like `A → A`) is NEVER bistable: either its unprovability is provable by
+  structural exclusion (→ determined defection theorem), or the missing capability is a
+  faithful rule a PA-like `S` would have (→ constructor proposal; PA proves `φ → φ`).
+  When OUTCOME OPEN genuinely applies, do not emit a ```lean``` code block and say exactly
+  `OUTCOME OPEN` followed by a one-paragraph explanation of which action pairs are
+  consistent with the proof system, why no single pair is forced even in the large-`k`
+  limit, and why (a) and (b) both fail.
 - When you are confident the proof compiles cleanly, output the final Lean source inside
   a ```lean ... ``` code fence and say "PROOF COMPLETE".
 """

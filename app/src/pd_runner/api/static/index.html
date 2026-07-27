@@ -217,6 +217,7 @@
       <div style="display:flex; align-items:center; gap:0.5rem;">
         <label style="margin:0; white-space:nowrap;" for="effort-select">Thinking</label>
         <select id="effort-select" style="width:auto;">
+          <option value="none">none</option>
           <option value="low">low</option>
           <option value="medium" selected>medium</option>
           <option value="high">high</option>
@@ -254,6 +255,33 @@
     <div id="log-panel">
       <div class="section-label">Logs</div>
       <div id="log-output"></div>
+    </div>
+  </div>
+
+  <div class="card" id="proposals-card">
+    <h2>Constructor proposals</h2>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
+      Tier-2 evidence bundles filed by the proof agent. Integrating one runs an agent in an
+      isolated git worktree (gate 1 = clicking Integrate); you then review the full engine
+      diff (gate 2) before it touches the live tree. Outcome proofs still go through the
+      normal proof gate afterwards.
+    </p>
+    <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.6rem;">
+      <button class="btn" onclick="loadProposals()">Refresh</button>
+      <span id="proposals-empty" style="color:#9ca3af; font-size:0.85rem;"></span>
+    </div>
+    <div id="proposals-list"></div>
+    <div id="integration-panel" style="display:none; margin-top:0.8rem;">
+      <div class="status-row">
+        <div class="spinner" id="integration-spinner"></div>
+        <span class="badge" id="integration-badge">pending</span>
+        <span class="step-text" id="integration-step"></span>
+      </div>
+      <div id="integration-area"></div>
+      <div id="integration-log-panel" style="display:none; margin-top:0.5rem;">
+        <div class="section-label">Integration logs</div>
+        <div id="integration-log-output" style="white-space:pre-wrap; word-break:break-all; font-family:monospace; font-size:0.75rem; max-height:16rem; overflow:auto;"></div>
+      </div>
     </div>
   </div>
 
@@ -709,13 +737,184 @@
       }
     }
 
+    // ------------------------------------------------------------------
+    // Constructor proposals (Tier-2 integration flow)
+    // ------------------------------------------------------------------
+    let integrationJobId = null;
+    let integrationPoll = null;
+    let integrationLogSource = null;
+    let integrationDecisionInFlight = false;
+
+    async function loadProposals() {
+      let resp;
+      try { resp = await fetch('/proposals'); } catch (e) { return; }
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const list = document.getElementById('proposals-list');
+      const empty = document.getElementById('proposals-empty');
+      if (!data.proposals.length) {
+        list.innerHTML = '';
+        empty.textContent = 'No proposals on file.';
+        return;
+      }
+      empty.textContent = '';
+      list.innerHTML = data.proposals.map(p => {
+        const integrated = p.status === 'integrated';
+        const badge = integrated
+          ? '<span class="badge" style="background:#166534;">integrated</span>'
+          : '<span class="badge">awaiting review</span>';
+        const proofTag = p.has_unblocked_proof
+          ? ' <span style="color:#9ca3af; font-size:0.75rem;">(conditional proof attached)</span>' : '';
+        return `
+          <div style="border:1px solid #374151; border-radius:6px; padding:0.6rem; margin-bottom:0.5rem;">
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <strong>${esc(p.name)}</strong> ${badge}
+              <span style="color:#9ca3af; font-size:0.8rem;">${esc(p.date || '')}</span>${proofTag}
+              <span style="flex:1"></span>
+              <button class="btn" onclick="toggleProposalDetails('${esc(p.name)}')">Details</button>
+              <button class="btn btn-primary" onclick="integrateProposal('${esc(p.name)}')"
+                      ${integrated || integrationJobId ? 'disabled' : ''}>Integrate…</button>
+            </div>
+            <div style="color:#9ca3af; font-size:0.8rem; margin-top:0.3rem;">
+              ${esc((p.unblocks || '').slice(0, 220))}${(p.unblocks || '').length > 220 ? '…' : ''}
+            </div>
+            <pre id="proposal-md-${esc(p.name)}" style="display:none; white-space:pre-wrap; word-break:break-word; font-size:0.75rem; max-height:20rem; overflow:auto; margin-top:0.4rem;">${esc(p.proposal_md || '(no proposal.md)')}</pre>
+          </div>`;
+      }).join('');
+    }
+
+    function toggleProposalDetails(name) {
+      const el = document.getElementById(`proposal-md-${name}`);
+      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function integrateProposal(name) {
+      if (integrationJobId) return;  // one integration at a time
+      if (!confirm(`Accept constructor \`${name}\` and start its integration?\n\n` +
+                   'An agent will edit a git worktree of the engine until both lake targets ' +
+                   'build green. The live engine is untouched until you accept the diff.')) return;
+      const settings = modelSettings();
+      const logLevel = document.getElementById('log-level-select').value || 'INFO';
+      let resp;
+      try {
+        resp = await fetch(`/proposals/${encodeURIComponent(name)}/integrate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: settings.model,
+            max_tokens: settings.max_tokens,
+            thinking_effort: settings.thinking_effort,
+            log_level: logLevel,
+          }),
+        });
+      } catch (e) { alert('Request failed: ' + e); return; }
+      if (!resp.ok) {
+        const detail = (await resp.json().catch(() => ({}))).detail;
+        alert('Could not start integration: ' + (detail || resp.status));
+        return;
+      }
+      const job = await resp.json();
+      integrationJobId = job.job_id;
+      document.getElementById('integration-panel').style.display = 'block';
+      startIntegrationLogStream(job.job_id);
+      integrationPoll = setInterval(pollIntegration, 2000);
+      renderIntegration(job);
+      loadProposals();  // re-render list with Integrate buttons disabled
+    }
+
+    function startIntegrationLogStream(jobId) {
+      if (integrationLogSource) { integrationLogSource.close(); integrationLogSource = null; }
+      const out = document.getElementById('integration-log-output');
+      document.getElementById('integration-log-panel').style.display = 'block';
+      out.textContent = '';
+      const es = new EventSource(`/pipeline/${jobId}/logs`);
+      integrationLogSource = es;
+      es.onmessage = (e) => {
+        const atBottom = out.scrollHeight - out.scrollTop <= out.clientHeight + 4;
+        out.textContent += e.data + '\n';
+        if (atBottom) out.scrollTop = out.scrollHeight;
+      };
+      es.addEventListener('done', () => { es.close(); integrationLogSource = null; });
+      es.onerror = () => { es.close(); integrationLogSource = null; };
+    }
+
+    async function pollIntegration() {
+      if (!integrationJobId) return;
+      let resp;
+      try { resp = await fetch(`/pipeline/${integrationJobId}`); } catch (e) { return; }
+      if (resp.status === 404) {
+        clearInterval(integrationPoll);
+        renderIntegration({ status: 'failed', error: 'Job lost (server restarted?).' });
+        integrationJobId = null;
+        return;
+      }
+      if (!resp.ok) return;
+      renderIntegration(await resp.json());
+    }
+
+    async function integrationDecision(endpoint) {
+      if (integrationDecisionInFlight) return;
+      integrationDecisionInFlight = true;
+      document.querySelectorAll('#integration-area .gate-actions button')
+        .forEach(b => { b.disabled = true; });
+      try {
+        await fetch(`/integration/${integrationJobId}/${endpoint}`, { method: 'POST' });
+      } catch (e) { /* poll loop will recover state */ }
+      integrationDecisionInFlight = false;
+    }
+
+    function renderIntegration(job) {
+      const badge = document.getElementById('integration-badge');
+      const step = document.getElementById('integration-step');
+      const spinner = document.getElementById('integration-spinner');
+      const area = document.getElementById('integration-area');
+      badge.textContent = job.status;
+      step.textContent = job.step || '';
+      const terminal = job.status === 'done' || job.status === 'failed';
+      const waiting = job.status === 'diff_ready';
+      spinner.style.display = (terminal || waiting) ? 'none' : 'inline-block';
+
+      if (job.status === 'diff_ready') {
+        if (!document.getElementById('integration-diff')) {
+          area.innerHTML = `
+            <div class="section-label">Agent report</div>
+            <pre style="white-space:pre-wrap; word-break:break-word; font-size:0.75rem; max-height:14rem; overflow:auto;">${esc(job.integration_summary || '')}</pre>
+            <div class="section-label">Engine diff (gate 2 — this is exactly what will be applied)</div>
+            <pre id="integration-diff" style="white-space:pre; font-family:monospace; font-size:0.72rem; max-height:26rem; overflow:auto;">${esc(job.diff || '')}</pre>
+            <div class="gate-actions" style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+              <button class="btn btn-primary" onclick="integrationDecision('accept-diff')">Accept diff — apply to engine</button>
+              <button class="btn" onclick="integrationDecision('reject-diff')">Reject (discard worktree)</button>
+            </div>`;
+        }
+      } else if (job.status === 'done') {
+        clearInterval(integrationPoll);
+        area.innerHTML = `
+          <div class="section-label">Integrated ✓</div>
+          <p style="font-size:0.85rem;">The constructor is live in the engine and both lake targets are green.
+          Now prove the unblocked outcome: run the pipeline above in <strong>prove-only</strong> mode for the
+          matchup — the proof agent automatically receives the proposal's conditional proof to discharge.</p>`;
+        integrationJobId = null;
+        loadProposals();
+      } else if (job.status === 'failed') {
+        clearInterval(integrationPoll);
+        area.innerHTML = `
+          <div class="section-label">Integration failed</div>
+          <pre style="white-space:pre-wrap; word-break:break-word; font-size:0.75rem; max-height:14rem; overflow:auto;">${esc(job.error || 'unknown error')}</pre>`;
+        integrationJobId = null;
+        loadProposals();
+      } else {
+        if (!waiting) area.innerHTML = '';
+      }
+    }
+
     function esc(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    // Initialise mode visibility and model-settings hints on load.
+    // Initialise mode visibility, model-settings hints, and proposals on load.
     onModeChange();
     onModelChange();
+    loadProposals();
   </script>
 
 </body>

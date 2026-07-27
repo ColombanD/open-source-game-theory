@@ -46,14 +46,36 @@ def proposals_dir() -> Path:
     return load_paths().generated_lean_dir.parent / "constructor_proposals"
 
 
+def _compile_in_engine(source: str, prefix: str):
+    """Compile a Lean source in a temp file inside the engine dir; returns the result."""
+    paths = load_paths()
+    lean_dir = paths.lean_engine_dir
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".lean", prefix=prefix, dir=lean_dir, delete=False
+    ) as f:
+        f.write(source)
+        tmp = Path(f.name)
+    try:
+        return run_lean_proof_file(lean_dir, tmp)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def propose(
     name: str,
     constructor_lean: str,
     soundness_certificate_lean: str,
     faithfulness_rationale: str,
     unblocks: str,
+    unblocked_proof_lean: str = "",
 ) -> str:
-    """Validate and persist a constructor proposal; returns a tool-style report."""
+    """Validate and persist a constructor proposal; returns a tool-style report.
+
+    `unblocked_proof_lean` (optional, strongly encouraged) is the outcome proof the
+    rule unblocks, with the proposed rule stated as an explicit hypothesis — compiled
+    against the current engine and stored in the bundle, turning the "unblocks" claim
+    into a machine artifact the integrator can reuse.
+    """
     safe_name = "".join(c if c.isalnum() or c == "_" else "_" for c in name)
     if not safe_name:
         return "REJECTED: empty proposal name."
@@ -83,18 +105,7 @@ def propose(
         )
 
     # Compile the certificate against the CURRENT engine (temp file, like run_lean_proof).
-    paths = load_paths()
-    lean_dir = paths.lean_engine_dir
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".lean", prefix=f"pd_cert_{safe_name}_", dir=lean_dir, delete=False
-    ) as f:
-        f.write(soundness_certificate_lean)
-        tmp = Path(f.name)
-    try:
-        result = run_lean_proof_file(lean_dir, tmp)
-    finally:
-        tmp.unlink(missing_ok=True)
-
+    result = _compile_in_engine(soundness_certificate_lean, f"pd_cert_{safe_name}_")
     if result.returncode != 0:
         return (
             "CERTIFICATE FAILED TO COMPILE — the proposal was NOT recorded.\n"
@@ -106,9 +117,39 @@ def propose(
             "inconsistent.) Fix the certificate or reconsider the rule."
         )
 
+    # Compile the conditional outcome proof (rule as hypothesis), when supplied.
+    if unblocked_proof_lean.strip():
+        for pattern in _FORBIDDEN_IN_CERT:
+            if re.search(pattern, unblocked_proof_lean):
+                return (
+                    f"REJECTED: the unblocked proof contains `{pattern.strip(chr(92)+'b')}` — "
+                    "it must be a complete, hole-free file with the proposed rule stated as "
+                    "an explicit hypothesis. Fix it or omit unblocked_proof_lean."
+                )
+        result = _compile_in_engine(unblocked_proof_lean, f"pd_unblocked_{safe_name}_")
+        if result.returncode != 0:
+            return (
+                "UNBLOCKED PROOF FAILED TO COMPILE — the proposal was NOT recorded.\n"
+                f"--- stdout ---\n{result.stdout or '(empty)'}\n"
+                f"--- stderr ---\n{result.stderr or '(empty)'}\n"
+                "The conditional outcome proof must compile against the current engine with "
+                "the proposed rule as an explicit hypothesis. Fix it, or omit "
+                "unblocked_proof_lean and describe the unblocked theorem in `unblocks` only."
+            )
+
     out = proposals_dir() / safe_name
     out.mkdir(parents=True, exist_ok=True)
     (out / "soundness_certificate.lean").write_text(soundness_certificate_lean, encoding="utf-8")
+    has_unblocked_proof = bool(unblocked_proof_lean.strip())
+    if has_unblocked_proof:
+        (out / "unblocked_proof.lean").write_text(unblocked_proof_lean, encoding="utf-8")
+    unblocked_proof_section = (
+        "\n## Conditional outcome proof — COMPILED with the rule as hypothesis\n\n"
+        "`unblocked_proof.lean` (in this directory) proves the unblocked outcome theorem "
+        "against the CURRENT engine, with the proposed constructor stated as an explicit "
+        "hypothesis. After integration, discharge the hypothesis with the real constructor.\n"
+        if has_unblocked_proof else ""
+    )
     (out / "proposal.md").write_text(
         f"""# Constructor proposal: `{safe_name}`
 
@@ -133,7 +174,7 @@ does not (and cannot) check faithfulness.
 ## What this unblocks
 
 {unblocks.strip()}
-
+{unblocked_proof_section}
 ## Integration checklist (human-initiated; see PF_ONLY_ROADMAP.md Phase 4 for scope)
 
 - [ ] Faithfulness reviewed: is this a genuine capability of a PA-like `S`?
@@ -148,7 +189,12 @@ does not (and cannot) check faithfulness.
         encoding="utf-8",
     )
     (out / "meta.json").write_text(
-        json.dumps({"name": safe_name, "date": date.today().isoformat(), "unblocks": unblocks}, indent=2),
+        json.dumps({
+            "name": safe_name,
+            "date": date.today().isoformat(),
+            "unblocks": unblocks,
+            "has_unblocked_proof": has_unblocked_proof,
+        }, indent=2),
         encoding="utf-8",
     )
     _log.info("Constructor proposal recorded: %s", out)

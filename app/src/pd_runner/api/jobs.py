@@ -44,8 +44,15 @@ class Job:
     # Human decision signals (set by accept/reject endpoints)
     bots_accepted: asyncio.Event = field(default_factory=asyncio.Event)
     proof_accepted: asyncio.Event = field(default_factory=asyncio.Event)
+    diff_accepted: asyncio.Event = field(default_factory=asyncio.Event)
     rejected: bool = False  # True if user rejected at either gate
     stop_after_bots: bool = False  # True if user accepted bots but wants to skip the proof step
+
+    # Constructor-integration jobs only
+    proposal_name: Optional[str] = None
+    diff: Optional[str] = None
+    integration_summary: Optional[str] = None
+    integration_result: Optional[object] = field(default=None, repr=False)  # IntegrationResult
 
     result: Optional[PipelineResult] = None
     error: Optional[str] = None
@@ -81,6 +88,9 @@ class Job:
             "proof": proof,
             "result": self.result,
             "error": self.error,
+            "proposal_name": self.proposal_name,
+            "diff": self.diff,
+            "integration_summary": self.integration_summary,
         }
 
 

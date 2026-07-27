@@ -10,11 +10,13 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from pd_runner.api.integration_task import run_integration
 from pd_runner.api.jobs import store
 from pd_runner.api.pipeline_task import bot_exists, bot_source_on_disk, run_pipeline
 from pd_runner.api.schemas import (
     BotConflict, BotConflictResolution, BotSpec,
-    ConflictResponse, JobResponse, JobStatus, PipelineRequest,
+    ConflictResponse, IntegrationRequest, JobResponse, JobStatus,
+    PipelineRequest, ProposalInfo, ProposalsResponse,
 )
 
 app = FastAPI(title="Open-Source Game Theory Pipeline", version="0.1.0")
@@ -137,6 +139,77 @@ async def reject_proof(job_id: str) -> JobResponse:
     return JobResponse(**job.to_response_dict())
 
 
+@app.get("/proposals", response_model=ProposalsResponse)
+async def list_proposals() -> ProposalsResponse:
+    """List filed constructor proposals (Tier-2 evidence bundles) with status."""
+    import json
+    from pd_runner.services.constructor_proposals import proposals_dir
+
+    out: list[ProposalInfo] = []
+    root = proposals_dir()
+    if root.exists():
+        for meta_path in sorted(root.glob("*/meta.json")):
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            md_path = meta_path.parent / "proposal.md"
+            out.append(ProposalInfo(
+                name=meta.get("name", meta_path.parent.name),
+                date=meta.get("date"),
+                status=meta.get("status", "awaiting_review"),
+                unblocks=meta.get("unblocks"),
+                has_unblocked_proof=meta.get("has_unblocked_proof", False),
+                proposal_md=md_path.read_text(encoding="utf-8") if md_path.exists() else None,
+            ))
+    return ProposalsResponse(proposals=out)
+
+
+@app.post("/proposals/{name}/integrate", response_model=JobResponse, status_code=202)
+async def start_integration(name: str, req: IntegrationRequest, background_tasks: BackgroundTasks):
+    """Human gate 1: accepting the constructor = starting its integration job."""
+    from pd_runner.services.constructor_proposals import proposals_dir
+
+    pdir = proposals_dir() / name
+    if not pdir.exists():
+        raise HTTPException(status_code=404, detail=f"No proposal named {name!r}")
+    import json
+    try:
+        meta = json.loads((pdir / "meta.json").read_text(encoding="utf-8"))
+        if meta.get("status") == "integrated":
+            raise HTTPException(status_code=409, detail=f"Proposal {name!r} is already integrated")
+    except (OSError, json.JSONDecodeError):
+        pass
+
+    job = store.create()
+    background_tasks.add_task(run_integration, job, name, req, store)
+    return JobResponse(**job.to_response_dict())
+
+
+@app.post("/integration/{job_id}/accept-diff", response_model=JobResponse)
+async def accept_diff(job_id: str) -> JobResponse:
+    """Human gate 2: accept the reviewed engine diff — applies it to the live tree."""
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != JobStatus.diff_ready:
+        raise HTTPException(status_code=409, detail=f"Job is not waiting for diff review (status: {job.status})")
+    job.diff_accepted.set()
+    return JobResponse(**job.to_response_dict())
+
+
+@app.post("/integration/{job_id}/reject-diff", response_model=JobResponse)
+async def reject_diff(job_id: str) -> JobResponse:
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != JobStatus.diff_ready:
+        raise HTTPException(status_code=409, detail=f"Job is not waiting for diff review (status: {job.status})")
+    job.rejected = True
+    job.diff_accepted.set()
+    return JobResponse(**job.to_response_dict())
+
+
 @app.get("/pipeline/{job_id}/logs")
 async def stream_logs(job_id: str) -> StreamingResponse:
     job = store.get(job_id)
@@ -160,7 +233,14 @@ async def stream_logs(job_id: str) -> StreamingResponse:
                 # record, which forces uvicorn to flush each SSE event instead
                 # of coalescing a burst of back-to-back yields into one write.
                 line = await asyncio.wait_for(job.log_queue.get(), timeout=10.0)
-                yield f"data: {line}\n\n"
+                # SSE is line-oriented: every line of a multi-line record needs
+                # its own `data: ` prefix (EventSource rejoins them with \n).
+                # Embedding raw newlines in one data field makes the browser
+                # parse the continuation lines as SSE fields and drop them —
+                # which used to eat everything after the first line of Lean
+                # sources, tool results, and assistant text.
+                payload = "".join(f"data: {l}\n" for l in (line.splitlines() or [""]))
+                yield payload + "\n"
             except asyncio.TimeoutError:
                 if job.logs_done and job.log_queue.empty():
                     yield "event: done\ndata: \n\n"

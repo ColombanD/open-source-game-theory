@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 import anthropic
+import httpx
 from typing import Any
 
 from pd_runner.logging_config import get_logger
@@ -14,6 +15,17 @@ _DEFAULT_MODEL = "claude-opus-4-7"
 _MAX_TOOL_ITERATIONS = 20
 _DEFAULT_MAX_TOKENS = 32000
 _DEFAULT_THINKING_EFFORT = "medium"
+
+# Explicit thinking budgets per effort level, used on models that accept
+# `thinking.type = "enabled"` (budgeted thinking streams deltas progressively
+# and bounds thinking length; budgets must stay below max_tokens). Some models
+# (claude-opus-4-8) reject "enabled" and only take `{"type": "adaptive"}` +
+# `output_config.effort` — the client falls back to that automatically. NOTE
+# adaptive thinking on opus-4-8 can go silent for many minutes on hard proof
+# turns (bisected 2026-07-27: the same 88k-token request streamed within 2s
+# without thinking, stalled indefinitely with adaptive medium) — for such
+# models `thinking_effort="none"` (no thinking at all) is the reliable choice.
+_THINKING_BUDGETS = {"low": 4096, "medium": 10000, "high": 16384}
 _RETRY_DELAYS = [5, 15, 30, 60]  # seconds between retries on 529
 
 
@@ -37,11 +49,32 @@ def _stream_once(client: anthropic.Anthropic, kwargs: dict[str, Any]) -> Any:
     next_thinking_mark = _STREAM_PROGRESS_EVERY_CHARS
     next_text_mark = _STREAM_PROGRESS_EVERY_CHARS
     first_token_logged = False
+    t0 = time.monotonic()
+    last_alive_log = t0
 
     with client.messages.stream(**kwargs) as stream:
         for event in stream:
             etype = getattr(event, "type", None)
+            if etype == "message_start":
+                usage = getattr(getattr(event, "message", None), "usage", None)
+                _log.info(
+                    "message_start after %.1fs (input=%s, cache_read=%s, cache_creation=%s tokens)",
+                    time.monotonic() - t0,
+                    getattr(usage, "input_tokens", "?"),
+                    getattr(usage, "cache_read_input_tokens", "?"),
+                    getattr(usage, "cache_creation_input_tokens", "?"),
+                )
+                continue
             if etype != "content_block_delta":
+                # Pings / block boundaries prove the socket is alive even when no
+                # content is being generated — surface that, rate-limited.
+                now = time.monotonic()
+                if now - last_alive_log >= 30:
+                    _log.info(
+                        "...stream alive (last event: %s), %.0fs elapsed, no new content",
+                        etype, now - t0,
+                    )
+                    last_alive_log = now
                 continue
             delta = getattr(event, "delta", None)
             dtype = getattr(delta, "type", None)
@@ -70,6 +103,16 @@ def _create_with_retry(client: anthropic.Anthropic, kwargs: dict[str, Any]) -> A
                 raise
             _log.warning("API overloaded (529), retrying in %ds (attempt %d/%d)...", delay, attempt, len(_RETRY_DELAYS))
             time.sleep(delay)
+        except anthropic.APIConnectionError as exc:
+            # Covers stalled/dropped streams surfaced by the httpx read timeout
+            # (APITimeoutError subclasses APIConnectionError). Tool results are
+            # only appended after a stream completes, so resending the request
+            # never re-executes a tool call.
+            _log.warning(
+                "Connection error mid-request (%s), retrying in %ds (attempt %d/%d)...",
+                type(exc).__name__, delay, attempt, len(_RETRY_DELAYS),
+            )
+            time.sleep(delay)
     return _stream_once(client, kwargs)  # final attempt, let it raise
 
 
@@ -90,11 +133,23 @@ class AnthropicClient:
         max_tokens: int = _DEFAULT_MAX_TOKENS,
         thinking_effort: str = _DEFAULT_THINKING_EFFORT,
     ) -> None:
-        self._client = anthropic.Anthropic(timeout=None)
+        # For a STREAMED request the read timeout is per-chunk, not per-turn:
+        # deltas arrive every few seconds even mid-thinking, so 300s only trips
+        # on a genuinely dead socket (which `timeout=None` would hang on forever).
+        # Total turn length stays unbounded.
+        self._client = anthropic.Anthropic(
+            timeout=httpx.Timeout(connect=30.0, read=300.0, write=30.0, pool=30.0)
+        )
         self.model = model
         self.max_iterations = max_iterations
         self.max_tokens = max_tokens
         self.thinking_effort = thinking_effort
+        # Flips to True (permanently, per client) when the model rejects
+        # budgeted thinking with a 400 telling us to use adaptive instead.
+        self._adaptive_only = False
+        # The live message list of the most recent run() — kept as a reference
+        # so callers can persist the transcript even when run() raises mid-loop.
+        self.last_messages: list[dict[str, Any]] = []
         self.tools = tools or []
         # Cache the system prompt — it is long and stable across iterations.
         self._system: list[dict[str, Any]] = [
@@ -104,6 +159,28 @@ class AnthropicClient:
                 "cache_control": {"type": "ephemeral"},
             }
         ]
+
+    def _thinking_kwargs(self) -> dict[str, Any]:
+        """Thinking-related request params for the current effort level and model.
+
+        `"none"` disables thinking entirely — the reliable choice for models where
+        adaptive thinking can go silent for minutes (see _THINKING_BUDGETS note).
+        """
+        if self.thinking_effort == "none":
+            return {}
+        if self._adaptive_only:
+            return {
+                "thinking": {"type": "adaptive"},
+                "output_config": {"effort": self.thinking_effort},
+            }
+        return {
+            "thinking": {
+                "type": "enabled",
+                "budget_tokens": _THINKING_BUDGETS.get(
+                    self.thinking_effort, _THINKING_BUDGETS["medium"]
+                ),
+            }
+        }
 
     def run(
         self,
@@ -121,6 +198,7 @@ class AnthropicClient:
             The final assistant text response.
         """
         messages: list[dict[str, Any]] = [{"role": "user", "content": user_message}]
+        self.last_messages = messages  # same list object — mutations stay visible
 
         for _ in range(self.max_iterations):
             kwargs: dict[str, Any] = {
@@ -128,13 +206,29 @@ class AnthropicClient:
                 "max_tokens": self.max_tokens,
                 "system": self._system,
                 "messages": messages,
-                "thinking": {"type": "adaptive"},
-                "output_config": {"effort": self.thinking_effort},
+                **self._thinking_kwargs(),
             }
             if self.tools:
                 kwargs["tools"] = self.tools
 
-            response = _create_with_retry(self._client, kwargs)
+            try:
+                response = _create_with_retry(self._client, kwargs)
+            except anthropic.BadRequestError as exc:
+                if self._adaptive_only or "thinking.type.enabled" not in str(exc):
+                    raise
+                # Model only supports adaptive thinking (e.g. claude-opus-4-8).
+                # Remember and retry this turn with the adaptive config.
+                self._adaptive_only = True
+                _log.warning(
+                    "Model %s rejects budgeted thinking; falling back to adaptive "
+                    "(effort=%s). Adaptive can stall for minutes on hard turns — "
+                    "consider thinking_effort='none' for this model.",
+                    self.model, self.thinking_effort,
+                )
+                kwargs.pop("thinking", None)
+                kwargs.pop("output_config", None)
+                kwargs.update(self._thinking_kwargs())
+                response = _create_with_retry(self._client, kwargs)
 
             # Append assistant turn (full content block list preserves thinking blocks).
             messages.append({"role": "assistant", "content": response.content})
@@ -205,6 +299,29 @@ def _serialize_final_content(content: list[Any], stop_reason: str | None) -> str
         else:
             parts.append(f"--- {btype} ---\n{block!r}")
     return "\n".join(parts)
+
+
+def serialize_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """JSON-safe copy of a run's message list, SDK content blocks included.
+
+    Assistant turns hold pydantic block objects (text/thinking/tool_use); user
+    turns hold plain strings or tool_result dicts. Everything is flattened to
+    plain JSON so the full transcript can be persisted alongside an attempt.
+    """
+    out: list[dict[str, Any]] = []
+    for m in messages:
+        content = m["content"]
+        if isinstance(content, str):
+            out.append({"role": m["role"], "content": content})
+            continue
+        blocks: list[Any] = []
+        for b in content:
+            if hasattr(b, "model_dump"):
+                blocks.append(b.model_dump(mode="json", exclude_none=True))
+            else:
+                blocks.append(b)
+        out.append({"role": m["role"], "content": blocks})
+    return out
 
 
 def _fmt_input(tool_input: dict[str, Any]) -> str:

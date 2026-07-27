@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pd_runner.config import load_paths
-from pd_runner.llm.client import AnthropicClient, ToolHandler
+from pd_runner.llm.client import AnthropicClient, ToolHandler, serialize_messages
 from pd_runner.llm.prompts import build_system_prompt, proof_request_message
 from pd_runner.llm.retrieval import list_known_outcome_theorems, retrieve_few_shots
 from pd_runner.llm.tools import GROWTH_TOOLS, LEAN_TOOLS, register_lean_tools
@@ -47,11 +47,20 @@ class ProofResult:
 
 
 class ProofSearchError(RuntimeError):
-    """Raised when proof search fails. Carries iterations_used for the caller."""
+    """Raised when proof search fails. Carries iterations_used and a result kind.
 
-    def __init__(self, message: str, *, iterations_used: int = 0) -> None:
+    `kind` distinguishes designed ladder terminals from genuine failures:
+      - "open_constructor_proposed": OUTCOME OPEN with a Tier-2 proposal filed
+        (a *successful* escalation, pending human review)
+      - "open_bistable": bare OUTCOME OPEN (genuinely undetermined matchup)
+      - "no_output": the agent produced neither a proof nor an OPEN verdict
+      - "error": parse failures and unexpected exceptions
+    """
+
+    def __init__(self, message: str, *, iterations_used: int = 0, kind: str = "error") -> None:
         super().__init__(message)
         self.iterations_used = iterations_used
+        self.kind = kind
 
 
 def _outcomes_dir() -> Path:
@@ -70,26 +79,28 @@ def _persist_attempt(
     iterations: int,
     elapsed_s: float,
     passed: bool,
+    result_kind: str,
     left_action: str | None,
     right_action: str | None,
     error: str | None,
+    transcript: list | None = None,
 ) -> Path:
-    """Write the proof attempt and metadata sidecar for traceability."""
+    """Write the proof attempt, metadata sidecar, and full transcript for traceability."""
     ts = time.strftime("%Y%m%dT%H%M%S")
     stem = f"{request.left_bot}_vs_{request.right_bot}_{'pass' if passed else 'fail'}"
     out_dir = _outcomes_dir()
     lean_path = out_dir / f"{stem}.lean"
     meta_path = out_dir / f"{stem}.json"
+    transcript_path = out_dir / f"{stem}_transcript.json"
     # Remove any previous outcome files for this pair (pass or fail) so only
     # the latest attempt survives.
     for old in out_dir.glob(f"{request.left_bot}_vs_{request.right_bot}_*.lean"):
         old.unlink(missing_ok=True)
     for old in out_dir.glob(f"{request.left_bot}_vs_{request.right_bot}_*.json"):
         old.unlink(missing_ok=True)
-    lean_path.write_text(
-        (lean_source or "-- (agent did not emit a final ```lean code block)\n") + "\n",
-        encoding="utf-8",
-    )
+    # No placeholder file for OPEN/no-output runs — the sidecar carries the story.
+    if lean_source is not None:
+        lean_path.write_text(lean_source + "\n", encoding="utf-8")
     meta = {
         "timestamp": ts,
         "bot_a": request.left_bot,
@@ -100,15 +111,24 @@ def _persist_attempt(
         "fuel_requested": request.fuel,
         "exclude_bots": sorted(request.exclude_bots),
         "passed": passed,
+        "result_kind": result_kind,
         "left_action": left_action,
         "right_action": right_action,
         "iterations_used": iterations,
         "elapsed_seconds": elapsed_s,
         "error": error,
-        "final_text_tail": final_text[-2000:] if final_text else None,
+        "final_text": final_text or None,
     }
     meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
-    _log.info("Persisted attempt to %s", lean_path)
+    if transcript is not None:
+        try:
+            transcript_path.write_text(
+                json.dumps(transcript, indent=2, ensure_ascii=False, default=str),
+                encoding="utf-8",
+            )
+        except (TypeError, ValueError) as exc:
+            _log.warning("Could not serialize transcript for %s: %s", stem, exc)
+    _log.info("Persisted attempt to %s", meta_path)
     return lean_path
 
 
@@ -174,6 +194,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
         if lean_source is None:
             if "OUTCOME OPEN" in final_text:
                 proposed = "CONSTRUCTOR PROPOSED" in final_text
+                kind = "open_constructor_proposed" if proposed else "open_bistable"
                 err = (
                     f"Agent declared outcome OPEN for "
                     f"{request.left_bot} vs {request.right_bot} "
@@ -185,6 +206,7 @@ def search_proof(request: ProofRequest) -> ProofResult:
                     + f"Agent explanation:\n{final_text}"
                 )
             else:
+                kind = "no_output"
                 err = (
                     f"Agent did not produce a final Lean source for "
                     f"{request.left_bot} vs {request.right_bot}.\n"
@@ -193,9 +215,10 @@ def search_proof(request: ProofRequest) -> ProofResult:
             _persist_attempt(
                 request, lean_source=None, final_text=final_text,
                 iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
-                passed=False, left_action=None, right_action=None, error=err,
+                passed=False, result_kind=kind, left_action=None, right_action=None,
+                error=err, transcript=serialize_messages(client.last_messages),
             )
-            raise ProofSearchError(err, iterations_used=iteration_count[0])
+            raise ProofSearchError(err, iterations_used=iteration_count[0], kind=kind)
 
         left_action = request.left_action
         right_action = request.right_action
@@ -210,15 +233,18 @@ def search_proof(request: ProofRequest) -> ProofResult:
                 _persist_attempt(
                     request, lean_source=lean_source, final_text=final_text,
                     iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
-                    passed=False, left_action=None, right_action=None, error=err,
+                    passed=False, result_kind="error", left_action=None, right_action=None,
+                    error=err, transcript=serialize_messages(client.last_messages),
                 )
-                raise ProofSearchError(err, iterations_used=iteration_count[0])
+                raise ProofSearchError(err, iterations_used=iteration_count[0], kind="error")
             left_action, right_action = parsed
 
         _persist_attempt(
             request, lean_source=lean_source, final_text=final_text,
             iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
-            passed=True, left_action=left_action, right_action=right_action, error=None,
+            passed=True, result_kind="proved", left_action=left_action,
+            right_action=right_action, error=None,
+            transcript=serialize_messages(client.last_messages),
         )
         return ProofResult(
             left_bot=request.left_bot,
@@ -234,7 +260,9 @@ def search_proof(request: ProofRequest) -> ProofResult:
         _persist_attempt(
             request, lean_source=lean_source, final_text=final_text,
             iterations=iteration_count[0], elapsed_s=time.monotonic() - t0,
-            passed=False, left_action=None, right_action=None, error=f"{type(exc).__name__}: {exc}",
+            passed=False, result_kind="error", left_action=None, right_action=None,
+            error=f"{type(exc).__name__}: {exc}",
+            transcript=serialize_messages(client.last_messages),
         )
         raise
 

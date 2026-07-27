@@ -29,7 +29,10 @@ ALLOWED_MODELS: dict[str, int] = {
     "claude-sonnet-4-6": 64000,
     "claude-haiku-4-5": 64000,
 }
-ALLOWED_THINKING_EFFORTS = ("low", "medium", "high")
+# "none" disables extended thinking entirely — the reliable choice for models
+# that only support adaptive thinking (claude-opus-4-8), which can go silent
+# for minutes on hard proof turns.
+ALLOWED_THINKING_EFFORTS = ("none", "low", "medium", "high")
 
 
 class PipelineRequest(BaseModel):
@@ -42,7 +45,7 @@ class PipelineRequest(BaseModel):
     # Per-API-call output budget (thinking + answer share it). Capped to the
     # chosen model's ceiling by the validator below.
     max_tokens: int = 32000
-    # Adaptive-thinking depth: "low" | "medium" | "high".
+    # Thinking depth: "none" | "low" | "medium" | "high" ("none" = no thinking).
     thinking_effort: str = "medium"
     # Prove-only mode: skip bot generation entirely; both bot_a and bot_b must already
     # exist on disk (in Bots/ or Bots/LlmGenerations/). strategy fields are ignored.
@@ -91,6 +94,10 @@ class JobStatus(str, Enum):
     proof_ready = "proof_ready"
     done = "done"
     failed = "failed"
+    # Constructor-integration jobs (Stage C/D of an accepted proposal)
+    integrating = "integrating"      # agent working in the worktree
+    diff_ready = "diff_ready"        # human gate 2: review the engine diff
+    applying = "applying"            # applying the accepted patch + live rebuild
 
 
 class BotDraft(BaseModel):
@@ -126,3 +133,42 @@ class JobResponse(BaseModel):
     proof: Optional[ProofDraft] = None
     result: Optional[PipelineResult] = None
     error: Optional[str] = None
+    # Constructor-integration jobs only
+    proposal_name: Optional[str] = None
+    diff: Optional[str] = None
+    integration_summary: Optional[str] = None
+
+
+class ProposalInfo(BaseModel):
+    name: str
+    date: Optional[str] = None
+    status: str = "awaiting_review"       # awaiting_review | integrated
+    unblocks: Optional[str] = None
+    has_unblocked_proof: bool = False
+    proposal_md: Optional[str] = None
+
+
+class ProposalsResponse(BaseModel):
+    proposals: list[ProposalInfo]
+
+
+class IntegrationRequest(BaseModel):
+    model: str = "claude-opus-4-7"
+    max_iterations: int = 60
+    max_tokens: int = 32000
+    thinking_effort: str = "medium"
+    log_level: Optional[str] = None
+
+    @field_validator("model")
+    @classmethod
+    def _check_model(cls, v: str) -> str:
+        if v not in ALLOWED_MODELS:
+            raise ValueError(f"model must be one of {sorted(ALLOWED_MODELS)}, got {v!r}")
+        return v
+
+    @field_validator("thinking_effort")
+    @classmethod
+    def _check_effort(cls, v: str) -> str:
+        if v not in ALLOWED_THINKING_EFFORTS:
+            raise ValueError(f"thinking_effort must be one of {ALLOWED_THINKING_EFFORTS}, got {v!r}")
+        return v

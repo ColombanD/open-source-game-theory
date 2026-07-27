@@ -21,7 +21,9 @@ Safety model:
 
 from __future__ import annotations
 
+import json
 import re
+import time
 from pathlib import Path
 
 from pd_runner.config import load_paths
@@ -123,15 +125,39 @@ def bootstrap(paths=None) -> Path:
     return target
 
 
+def _persist_lemma_attempt(lemma_name: str, lean_source: str, verdict: str, detail: str = "") -> None:
+    """Record every add_base_lemma call under generated/lemma_attempts/.
+
+    Successful lemmas live on in LlmLemmas.lean, but rejected/build-failed attempts
+    are rolled back byte-identically and would otherwise leave no trace — this is
+    the only durable record of Tier-1 ladder activity that didn't stick.
+    """
+    try:
+        ts = time.strftime("%Y%m%dT%H%M%S")
+        safe = "".join(c if c.isalnum() or c in "_-" else "_" for c in lemma_name) or "unnamed"
+        d = load_paths().app_root / "generated" / "lemma_attempts"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{safe}_{ts}.lean").write_text(lean_source + "\n", encoding="utf-8")
+        (d / f"{safe}_{ts}.json").write_text(
+            json.dumps({"lemma_name": lemma_name, "timestamp": ts, "verdict": verdict,
+                        "detail": detail or None}, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except OSError as exc:  # bookkeeping must never break the tool itself
+        _log.warning("Could not persist lemma attempt %s: %s", lemma_name, exc)
+
+
 def add_lemma(lemma_name: str, lean_source: str, *, build=build_lean_project) -> str:
     """Append a lemma block transactionally; returns a tool-style report string.
 
     The block is inserted before the closing `end PD.LlmLemmas`, the module is rebuilt,
     and the file is restored byte-for-byte on failure. `build` is injectable for tests.
+    Every call (ok / rejected / build-failed) is persisted to generated/lemma_attempts/.
     """
     try:
         _check_source(lean_source)
     except LemmaRejected as exc:
+        _persist_lemma_attempt(lemma_name, lean_source, "rejected_static", str(exc))
         return f"REJECTED (static guard): {exc}"
 
     paths = load_paths()
@@ -150,6 +176,10 @@ def add_lemma(lemma_name: str, lean_source: str, *, build=build_lean_project) ->
     if result.returncode != 0:
         target.write_text(original, encoding="utf-8")
         _log.info("Lemma %s rejected by lake build; file rolled back", lemma_name)
+        _persist_lemma_attempt(
+            lemma_name, lean_source, "build_failed",
+            f"--- stdout ---\n{result.stdout or '(empty)'}\n--- stderr ---\n{result.stderr or '(empty)'}",
+        )
         return (
             "BUILD FAILED — the lemma was rolled back (library unchanged).\n"
             f"--- stdout ---\n{result.stdout or '(empty)'}\n"
@@ -158,6 +188,7 @@ def add_lemma(lemma_name: str, lean_source: str, *, build=build_lean_project) ->
         )
 
     _log.info("Lemma %s added to %s", lemma_name, target)
+    _persist_lemma_attempt(lemma_name, lean_source, "ok")
     return (
         f"OK — `{lemma_name}` added to the library and verified by lake build.\n"
         f"Use it in your proof under the `PD.LlmLemmas` namespace after adding\n"
