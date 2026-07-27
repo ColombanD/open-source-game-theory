@@ -4,10 +4,7 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
-import PrisonersDilemma.Theorems.CooperateBot.vs_CooperateBot
-import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot
 import PrisonersDilemma.Theorems.DefectBot.Helpers
-import PrisonersDilemma.Theorems.DefectBot.vs_DefectBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics

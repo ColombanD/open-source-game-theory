@@ -3,7 +3,6 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Theorems.DefectBot.Helpers
-import PrisonersDilemma.Theorems.DefectBot.vs_DefectBot
 import PrisonersDilemma.Base.Helpers
 
 open PD.Bots

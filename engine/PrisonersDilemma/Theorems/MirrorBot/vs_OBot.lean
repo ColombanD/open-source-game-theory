@@ -1,8 +1,4 @@
 import PrisonersDilemma.Bots.MirrorBot
-import PrisonersDilemma.Bots.CooperateBot
-import PrisonersDilemma.Bots.DefectBot
-import PrisonersDilemma.Bots.DBot
-import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems

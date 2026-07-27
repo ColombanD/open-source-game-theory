@@ -7,8 +7,6 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
-import PrisonersDilemma.Theorems.CooperateBot.vs_CooperateBot
-import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot
 
 open PD
 open PD.BaseTheorems

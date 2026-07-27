@@ -1,9 +1,7 @@
 import PrisonersDilemma.Bots.DBot
-import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Theorems.DefectBot.Helpers
-import PrisonersDilemma.Theorems.DefectBot.vs_DefectBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.DBot.Helpers
 

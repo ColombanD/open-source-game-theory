@@ -4,10 +4,10 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Base.Helpers
 
+import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
-import PrisonersDilemma.Theorems.CooperateBot.vs_CooperateBot
-import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot
+import PrisonersDilemma.Theorems.DefectBot.Helpers
 
 open PD
 open PD.BaseTheorems

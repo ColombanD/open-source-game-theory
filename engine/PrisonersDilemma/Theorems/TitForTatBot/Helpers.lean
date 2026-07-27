@@ -1,10 +1,6 @@
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.TitForTatBot
-import PrisonersDilemma.Theorems.DBot.Helpers
-import PrisonersDilemma.Theorems.DBot.vs_CooperateBot
-import PrisonersDilemma.Theorems.DBot.vs_DBot
-import PrisonersDilemma.Theorems.DBot.vs_DefectBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 

@@ -1,13 +1,6 @@
 import PrisonersDilemma.Bots.CupodTrollBot
-import PrisonersDilemma.Bots.CooperateBot
-import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Bots.DupocBot
-import PrisonersDilemma.Bots.DBot
-import PrisonersDilemma.Bots.EBot
-import PrisonersDilemma.Bots.MirrorBot
-import PrisonersDilemma.Bots.OBot
-import PrisonersDilemma.Bots.TitForTatBot
 
 
 import PrisonersDilemma.Dynamics
