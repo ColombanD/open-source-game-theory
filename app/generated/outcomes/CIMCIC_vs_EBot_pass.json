@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260727T144334",
+  "bot_a": "CIMCIC",
+  "bot_b": "EBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 64000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "left_action": "D",
+  "right_action": "C",
+  "iterations_used": 18,
+  "elapsed_seconds": 560.9047736670036,
+  "error": null,
+  "final_text_tail": "c K φ' α hgate hsz => intro hF; simp only [EBotForbiddenC] at hF\n  | boxMono a b K φ' hab hsz => intro hF; simp only [EBotForbiddenC] at hF\n\nabbrev cimcic_guard_EBot (k : Nat) : Formula :=\n  .impl (.plays (CIMCIC k) EBot Action.C) (.plays EBot (CIMCIC k) Action.C)\n\ntheorem cimcic_guard_EBot_not_provable (k : Nat) : ¬ Pf k (cimcic_guard_EBot k) := by\n  intro h\n  refine ebot_no_provable_forbidden k h ?_\n  show EBotForbiddenC k (cimcic_guard_EBot k)\n  unfold cimcic_guard_EBot EBotForbiddenC EBotForbiddenC\n  exact ⟨rfl, rfl, rfl⟩\n\ntheorem proofSearch_false_CIMCIC_vs_EBot (k : Nat) :\n    proofSearch k\n      ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst\n        (CIMCIC k) EBot) = false := by\n  show proofSearch k (cimcic_guard_EBot k) = false\n  cases hps : proofSearch k (cimcic_guard_EBot k) with\n  | false => rfl\n  | true => exact absurd ((proofSearch_spec k _).1 hps) (cimcic_guard_EBot_not_provable k)\n\ntheorem CIMCIC_plays_D_against_EBot (k fuel : Nat) :\n    play (fuel + 2) (CIMCIC k) EBot = some .D := by\n  have hg := proofSearch_false_CIMCIC_vs_EBot k\n  show (if proofSearch k\n            ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst\n              (CIMCIC k) EBot)\n          then eval (fuel + 1) (CIMCIC k) EBot (.const Action.C)\n          else eval (fuel + 1) (CIMCIC k) EBot (.const Action.D)) = some .D\n  rw [hg]; simp [eval]\n\n/-! ## The outcome -/\n\ntheorem llm_outcome_CIMCIC_vs_EBot :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (CIMCIC k) EBot = some (.D, .C) := by\n  obtain ⟨K, hK⟩ := proofSearch_true_CIMCIC_vs_botCoop\n  refine ⟨K, fun k hk => ?_⟩\n  have hk' : k ≥ K := Nat.le_of_lt hk\n  have hbc := hK k hk'\n  refine ⟨7, ?_⟩\n  have hA : play 7 (CIMCIC k) EBot = some .D := by\n    simpa using CIMCIC_plays_D_against_EBot k 5\n  have hB : play 7 EBot (CIMCIC k) = some .C := by\n    simpa using EBot_plays_C_against_CIMCIC k 2 hbc\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}
