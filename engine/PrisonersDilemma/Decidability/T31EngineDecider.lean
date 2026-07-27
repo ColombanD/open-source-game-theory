@@ -345,13 +345,13 @@ theorem chkLeaf_eqRefl (K : Nat) (p : Prog)
     (hsz : (Formula.eq p p).size ≤ K) : chkLeaf K (.eq p p) = true := by
   have hfire : chkEqRefl K (.eq p p) = true := by unfold chkEqRefl; simp [hsz]
   unfold chkLeaf
-  simp only [hfire, Bool.or_true, Bool.true_or]
+  simp only [hfire, Bool.true_or]
 
 theorem chkLeaf_eqNeg (K : Nat) (p q : Prog) (hne : p ≠ q)
     (hsz : (Formula.neg (.eq p q)).size ≤ K) : chkLeaf K (.neg (.eq p q)) = true := by
   have hfire : chkEqNeg K (.neg (.eq p q)) = true := by unfold chkEqNeg; simp [hne, hsz]
   unfold chkLeaf
-  simp only [hfire, Bool.or_true, Bool.true_or]
+  simp only [hfire, Bool.or_true]
 
 theorem chkLeaf_searchBranch (K k₁ : Nat) (ψg : Formula) (aT aE : Action) (opnt : Prog)
     (hsz : (Formula.impl (.box k₁ (ψg.subst (.search k₁ ψg (.const aT) (.const aE)) opnt))

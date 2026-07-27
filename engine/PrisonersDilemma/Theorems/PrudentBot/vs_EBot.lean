@@ -72,7 +72,7 @@ theorem prudent_bot_mirror_loeb_premise (k : Nat) (hk : 81 ≤ k) :
       (.impl (Formula.plays (PrudentBot k) (.bot MirrorBot) Action.C)
              (Formula.plays (.bot MirrorBot) (PrudentBot k) Action.C)) := by
     refine Pf.botSimStep (.bot MirrorBot) .opp .self (PrudentBot k) Action.C rfl ?_
-    simp only [Formula.subst, Prog.subst, numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
+    simp only [Prog.subst, numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
   refine Pf.implTrans _ _ _ (20 * Nat.log2 k + 200) (20 * Nat.log2 k + 200) leg1 leg2 ?_
   simp only [numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
