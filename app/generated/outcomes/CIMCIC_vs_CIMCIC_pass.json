@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260728T204447",
+  "bot_a": "CIMCIC",
+  "bot_b": "CIMCIC",
+  "model": "claude-opus-4-7",
+  "max_iterations": 20,
+  "max_tokens": 32000,
+  "fuel_requested": null,
+  "exclude_bots": [
+    "CIMCIC"
+  ],
+  "passed": true,
+  "result_kind": "proved",
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 4,
+  "elapsed_seconds": 99.91448354200111,
+  "error": null,
+  "final_text": "```lean\nimport PrisonersDilemma.Bots.LlmGenerations.CIMCIC\nimport PrisonersDilemma.BaseTheorems\n\nopen PD PD.BaseTheorems PD.Bots\n\nnamespace PD.Theorems\n\ntheorem llm_outcome_CIMCIC_vs_CIMCIC :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (CIMCIC k) (CIMCIC k) = some (.C, .C) := by\n  obtain ⟨K, hK⟩ := PD.linear_log2_add_le 4 47\n  refine ⟨K, fun k hk => ?_⟩\n  have hkK : K ≤ k := Nat.le_of_lt hk\n  have hsz : (Formula.impl (.plays (CIMCIC k) (CIMCIC k) Action.C)\n                            (.plays (CIMCIC k) (CIMCIC k) Action.C)).size ≤ k := by\n    simp only [Formula.size, Prog.size, CIMCIC, numCost]\n    have := hK k hkK\n    omega\n  have hguard : Pf k (.impl (.plays (CIMCIC k) (CIMCIC k) Action.C)\n                             (.plays (CIMCIC k) (CIMCIC k) Action.C)) :=\n    Pf.implRefl _ hsz\n  have hps : proofSearch k\n    ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst (CIMCIC k) (CIMCIC k)) = true := by\n    apply (proofSearch_spec _ _).2\n    show Pf k _\n    simp only [Formula.subst, Prog.subst]\n    exact hguard\n  refine ⟨2, ?_⟩\n  unfold CIMCIC at hps\n  have heval : eval 2 (CIMCIC k) (CIMCIC k) (CIMCIC k) = some Action.C := by\n    unfold CIMCIC\n    show (if proofSearch k _ = true then _ else _) = some Action.C\n    rw [hps]\n    rfl\n  show outcome 2 (CIMCIC k) (CIMCIC k) = some (Action.C, Action.C)\n  unfold outcome play\n  rw [heval]\n  rfl\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}
