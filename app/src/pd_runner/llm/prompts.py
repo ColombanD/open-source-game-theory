@@ -143,6 +143,8 @@ def build_system_prompt(
         ("BaseTheorems.lean", "BaseTheorems.lean (umbrella — all names live in `PD.BaseTheorems`)"),
         ("Base/Soundness.lean", "Base/Soundness.lean (`proofSearch_spec`, `Pf_sound`, eval monotonicity)"),
         ("Base/AtomCerts.lean", "Base/AtomCerts.lean (constructive atom certificates)"),
+        ("Base/Helpers.lean", "Base/Helpers.lean (outcome assembly: `outcome_of_plays`, "
+         "`play_ite_from_guard`, `eval_sim_opp_bot_of_play`)"),
     ):
         proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
