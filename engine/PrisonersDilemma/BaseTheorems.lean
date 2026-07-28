@@ -2,6 +2,7 @@ import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Base.AtomCerts
 import PrisonersDilemma.Base.Soundness
 import PrisonersDilemma.Base.Exclusion
+import PrisonersDilemma.Base.Closure
 import PrisonersDilemma.Base.Loeb
 
 /-!
