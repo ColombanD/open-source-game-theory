@@ -296,11 +296,19 @@ review your full diff before it touches the real tree.
    The soundness certificate above IS the interp-level content — adapt its proof.
 3. Extend `Pf_mono` (budget monotonicity) with the new arm.
 4. Rebuild the engine (`run_lake_build` target `PrisonersDilemma`) and REPAIR what
-   breaks. Expect the exclusion/floor censuses and `ForbiddenC`-style motives (in
-   `Base/Exclusion.lean` and `Theorems/LlmGenerations/*.lean`) to need new arms or
-   refined motives — they induct over ALL constructors by design (they are the
-   canaries). Repair proofs freely, but do NOT delete or weaken any theorem
-   STATEMENT without listing it under `STATEMENT CHANGES:` in your final report.
+   breaks. The census architecture is TWO-TIER: the generic KERNELS in
+   `Base/Exclusion.lean` (`no_provable_tailToS_floor` + the singleton wrapper and
+   its shape instances, plus `tail_plays_readable`) induct over ALL constructors —
+   they are the canaries and ALWAYS need a new arm. Check first whether the new
+   rule's conclusion SELF-ANNIHILATES under the Guarded invariant (its antecedent
+   carries its consequent's structure, like `implRefl`/`implK`/`implS`): then the
+   kernel arm is two lines and NO downstream change is needed. If instead the arm
+   needs a new KERNEL HYPOTHESIS (a shape disequality or a widened tail-set, as
+   `ctxChain`'s `hctx` did), every matchup-specific instance in `Theorems/*/`
+   (dir-local Helpers and vs-files) gains one bullet — `lake build` will list every
+   site; the repairs are mechanical one-liners. Repair proofs freely, but do NOT
+   delete or weaken any theorem STATEMENT without listing it under
+   `STATEMENT CHANGES:` in your final report.
 5. Rebuild the metatheory (`run_lake_build` target `Metatheory`) and repair it:
    the gate-parametric mirror `PfG` (a new rule mirror + gate decision), the
    `decFull` enumerator + its completeness, the decider disjuncts, and the T49

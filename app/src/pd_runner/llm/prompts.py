@@ -267,7 +267,14 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
        telescope. Each instance is a `refine` plus small shape bullets (the existing
        census instances in the Theorems/ few-shots show the pattern, including the
        `hctx`/`hpthen` mixed-telescope disequalities). A proven `¬ Pf k guard` yields a
-       determined else-branch outcome theorem, not OUTCOME OPEN.
+       determined else-branch outcome theorem, not OUTCOME OPEN. PLACEMENT: your census
+       instance lives in YOUR proof file, with a matchup-specific name — never re-derive
+       an instance that already exists in the library (import its module and cite it;
+       the few-shots and `read_library_file` show what exists). The kernels stay in
+       `Base/Exclusion.lean` — you never write there; when the engine gains a
+       constructor, the kernels are repaired centrally and kernel-INSTANCES survive
+       untouched (or gain one mechanical bullet), which is exactly why you must
+       instantiate kernels instead of hand-rolling inductions.
     3. **Only if derivation genuinely fails**, and you can articulate WHY (which census/
        exclusion argument blocks it, or which Löb/self-reference shape no existing rule
        reads), file a constructor proposal (`propose_pf_constructor`, when available). You
