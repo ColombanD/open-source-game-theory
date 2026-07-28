@@ -20,18 +20,26 @@ from pd_runner.services.proof_service import ProofResult, ProofSearchError, _ext
 
 def test_retrieve_few_shots_returns_bot_file_first(tmp_path: Path, monkeypatch) -> None:
     theorems_dir = tmp_path / "Theorems"
-    theorems_dir.mkdir()
-    (theorems_dir / "CooperateBot.lean").write_text("-- cb", encoding="utf-8")
-    (theorems_dir / "DefectBot.lean").write_text("-- db", encoding="utf-8")
-    (theorems_dir / "Other.lean").write_text("-- other", encoding="utf-8")
+    (theorems_dir / "CooperateBot").mkdir(parents=True)
+    (theorems_dir / "DefectBot").mkdir()
+    (theorems_dir / "Other").mkdir()
+    (theorems_dir / "CooperateBot" / "vs_DefectBot.lean").write_text(
+        "theorem outcome_CooperateBot_vs_DefectBot := by rfl", encoding="utf-8"
+    )
+    (theorems_dir / "DefectBot" / "vs_CooperateBot.lean").write_text(
+        "theorem outcome_DefectBot_vs_CooperateBot := by rfl", encoding="utf-8"
+    )
+    (theorems_dir / "Other" / "vs_Other.lean").write_text(
+        "theorem outcome_Other_vs_Other := by rfl", encoding="utf-8"
+    )
 
     monkeypatch.setattr(retrieval, "_THEOREMS_DIR", theorems_dir)
 
     shots = retrieval.retrieve_few_shots("CooperateBot", "DefectBot")
     filenames = [f for f, _ in shots]
-    assert filenames[0] in {"CooperateBot.lean", "DefectBot.lean"}
-    assert "CooperateBot.lean" in filenames
-    assert "DefectBot.lean" in filenames
+    assert filenames[0] in {"CooperateBot/vs_DefectBot.lean", "DefectBot/vs_CooperateBot.lean"}
+    assert "CooperateBot/vs_DefectBot.lean" in filenames
+    assert "DefectBot/vs_CooperateBot.lean" in filenames
 
 
 def test_retrieve_few_shots_respects_max_files(tmp_path: Path, monkeypatch) -> None:
@@ -249,19 +257,18 @@ def test_read_library_file_missing_file(tmp_path: Path, monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _setup_llm_generations(tmp_path: Path) -> tuple[Path, Path]:
-    """Create the LlmGenerations layout the writer targets.
+def _setup_theorems_layout(tmp_path: Path) -> tuple[Path, Path]:
+    """Create the per-pair layout the writer targets (2026-07-27 refactor).
 
-    Returns (llm_dir, index_file). Proofs are written to
-    `Theorems/LlmGenerations/` and their import lines appended to the
-    `Theorems/LlmGenerations.lean` index, which must already exist.
+    Returns (theorems_dir, index_file). Proofs are written to
+    `Theorems/<LeftBot>/vs_<RightBot>.lean` and their import lines appended
+    to the engine's ROOT `PrisonersDilemma.lean`, which must already exist.
     """
     theorems_dir = tmp_path / "PrisonersDilemma" / "Theorems"
-    llm_dir = theorems_dir / "LlmGenerations"
-    llm_dir.mkdir(parents=True)
-    index = theorems_dir / "LlmGenerations.lean"
-    index.write_text("-- LlmGenerations index\n", encoding="utf-8")
-    return llm_dir, index
+    theorems_dir.mkdir(parents=True)
+    index = tmp_path / "PrisonersDilemma.lean"
+    index.write_text("-- root index\n", encoding="utf-8")
+    return theorems_dir, index
 
 
 def _cooperate_vs_defect_result() -> ProofResult:
@@ -276,7 +283,7 @@ def _cooperate_vs_defect_result() -> ProofResult:
 
 
 def test_write_proof_dry_run_does_not_write(tmp_path: Path, monkeypatch) -> None:
-    llm_dir, _ = _setup_llm_generations(tmp_path)
+    theorems_dir, _ = _setup_theorems_layout(tmp_path)
 
     monkeypatch.setattr(
         library_writer,
@@ -288,15 +295,16 @@ def test_write_proof_dry_run_does_not_write(tmp_path: Path, monkeypatch) -> None
         _cooperate_vs_defect_result(), human_accept=False, dry_run=True
     )
 
-    expected = llm_dir / "outcome_CooperateBot_vs_DefectBot.lean"
+    expected = theorems_dir / "CooperateBot" / "vs_DefectBot.lean"
     assert write_result.path == expected
     assert write_result.build_ok is True
     assert not expected.exists()
 
 
 def test_write_proof_refuses_to_overwrite(tmp_path: Path, monkeypatch) -> None:
-    llm_dir, _ = _setup_llm_generations(tmp_path)
-    existing = llm_dir / "outcome_CooperateBot_vs_DefectBot.lean"
+    theorems_dir, _ = _setup_theorems_layout(tmp_path)
+    existing = theorems_dir / "CooperateBot" / "vs_DefectBot.lean"
+    existing.parent.mkdir()
     existing.write_text("-- already exists", encoding="utf-8")
 
     monkeypatch.setattr(
@@ -314,7 +322,7 @@ def test_write_proof_refuses_to_overwrite(tmp_path: Path, monkeypatch) -> None:
 def test_write_proof_rolls_back_on_build_failure(tmp_path: Path, monkeypatch) -> None:
     from pd_runner.lean.executor import LeanExecResult
 
-    llm_dir, index = _setup_llm_generations(tmp_path)
+    theorems_dir, index = _setup_theorems_layout(tmp_path)
 
     monkeypatch.setattr(
         library_writer,
@@ -333,14 +341,14 @@ def test_write_proof_rolls_back_on_build_failure(tmp_path: Path, monkeypatch) ->
         )
 
     # Both the proof file and the appended index import line are rolled back.
-    assert not (llm_dir / "outcome_CooperateBot_vs_DefectBot.lean").exists()
-    assert "outcome_CooperateBot_vs_DefectBot" not in index.read_text(encoding="utf-8")
+    assert not (theorems_dir / "CooperateBot" / "vs_DefectBot.lean").exists()
+    assert "vs_DefectBot" not in index.read_text(encoding="utf-8")
 
 
 def test_write_proof_writes_and_builds_successfully(tmp_path: Path, monkeypatch) -> None:
     from pd_runner.lean.executor import LeanExecResult
 
-    llm_dir, index = _setup_llm_generations(tmp_path)
+    theorems_dir, index = _setup_theorems_layout(tmp_path)
 
     monkeypatch.setattr(
         library_writer,
@@ -357,9 +365,12 @@ def test_write_proof_writes_and_builds_successfully(tmp_path: Path, monkeypatch)
         _cooperate_vs_defect_result(), human_accept=False
     )
 
-    expected = llm_dir / "outcome_CooperateBot_vs_DefectBot.lean"
+    expected = theorems_dir / "CooperateBot" / "vs_DefectBot.lean"
     assert expected.exists()
     assert "theorem foo" in expected.read_text()
     assert write_result.build_ok is True
-    # The import line was appended to the index.
-    assert "outcome_CooperateBot_vs_DefectBot" in index.read_text(encoding="utf-8")
+    # The import line was appended to the root index.
+    assert (
+        "import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot"
+        in index.read_text(encoding="utf-8")
+    )

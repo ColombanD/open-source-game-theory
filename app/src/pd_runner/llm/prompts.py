@@ -193,6 +193,11 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
 # Rules
 - The file must compile with zero errors and zero warnings in stderr.
 - Import only modules that exist in the PrisonersDilemma library.
+- **Minimal imports.** Import only modules whose definitions or lemmas your file actually
+  uses: the two bot modules, the helper/theorem modules you cite by name, and the core
+  modules you need. Do NOT copy the import block of an example proof wholesale — the
+  few-shot examples may import more than your proof needs, and unused imports accumulate
+  as dead weight in the library (Lean emits no warning for them).
 - The namespace must be `PD.Theorems`.
 - **Do NOT redefine bots in your proof file.** Every bot already lives in its own
   module under `PrisonersDilemma.Bots.*` — import it (e.g. `import PrisonersDilemma.Bots.CupodBot`)

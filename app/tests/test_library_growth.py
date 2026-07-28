@@ -54,13 +54,14 @@ def test_lemma_guards_accept_plain_theorem() -> None:
 
 def test_add_lemma_rolls_back_on_build_failure(tmp_path, monkeypatch) -> None:
     target = tmp_path / "PrisonersDilemma" / "Theorems" / "LlmGenerations" / "LlmLemmas.lean"
-    index = tmp_path / "PrisonersDilemma" / "Theorems" / "LlmGenerations.lean"
-    index.parent.mkdir(parents=True)
+    index = tmp_path / "PrisonersDilemma.lean"
+    (tmp_path / "PrisonersDilemma" / "Theorems").mkdir(parents=True)
     index.write_text("", encoding="utf-8")
 
     @dataclass
     class _FakePaths:
         lean_engine_dir = tmp_path
+        app_root = tmp_path / "app"
 
     monkeypatch.setattr(lemma_library, "load_paths", lambda: _FakePaths())
 
@@ -78,13 +79,14 @@ def test_add_lemma_rolls_back_on_build_failure(tmp_path, monkeypatch) -> None:
 
 
 def test_add_lemma_bootstrap_indexes_module(tmp_path, monkeypatch) -> None:
-    index = tmp_path / "PrisonersDilemma" / "Theorems" / "LlmGenerations.lean"
-    index.parent.mkdir(parents=True)
+    index = tmp_path / "PrisonersDilemma.lean"
+    (tmp_path / "PrisonersDilemma" / "Theorems").mkdir(parents=True)
     index.write_text("import PrisonersDilemma.Theorems.LlmGenerations.Something\n", encoding="utf-8")
 
     @dataclass
     class _FakePaths:
         lean_engine_dir = tmp_path
+        app_root = tmp_path / "app"
 
     monkeypatch.setattr(lemma_library, "load_paths", lambda: _FakePaths())
     add_lemma("g", "theorem g : True := trivial", build=lambda *a, **k: _FakeResult(0))
