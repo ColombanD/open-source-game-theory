@@ -143,6 +143,7 @@ class ProposalInfo(BaseModel):
     name: str
     date: Optional[str] = None
     status: str = "awaiting_review"       # awaiting_review | integrated
+    integrated_as: Optional[str] = None   # live constructor name once integrated
     unblocks: Optional[str] = None
     has_unblocked_proof: bool = False
     proposal_md: Optional[str] = None

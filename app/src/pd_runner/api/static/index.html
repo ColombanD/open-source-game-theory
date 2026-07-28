@@ -761,7 +761,7 @@
       list.innerHTML = data.proposals.map(p => {
         const integrated = p.status === 'integrated';
         const badge = integrated
-          ? '<span class="badge" style="background:#166534;">integrated</span>'
+          ? `<span class="badge" style="background:#166534;">integrated${p.integrated_as ? ' as ' + esc(p.integrated_as) : ''}</span>`
           : '<span class="badge">awaiting review</span>';
         const proofTag = p.has_unblocked_proof
           ? ' <span style="color:#9ca3af; font-size:0.75rem;">(conditional proof attached)</span>' : '';

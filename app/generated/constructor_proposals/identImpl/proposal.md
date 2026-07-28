@@ -1,6 +1,6 @@
 # Constructor proposal: `identImpl`
 
-*Filed by the proof agent on 2026-07-27. Status: **awaiting human review**.*
+*Filed by the proof agent on 2026-07-27. Status: **INTEGRATED** (2026-07-28) — landed as `Pf.implRefl` in the Family-B completion program, together with `implK`/`implS` and the admissible deduction theorem. The unblocked outcome is proven: `llm_outcome_CIMCIC_vs_CIMCIC` (Theorems/CIMCIC/vs_CIMCIC.lean).*
 
 ## The proposed `Pf` constructor
 

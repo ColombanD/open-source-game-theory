@@ -158,6 +158,7 @@ async def list_proposals() -> ProposalsResponse:
                 name=meta.get("name", meta_path.parent.name),
                 date=meta.get("date"),
                 status=meta.get("status", "awaiting_review"),
+                integrated_as=meta.get("integrated_as"),
                 unblocks=meta.get("unblocks"),
                 has_unblocked_proof=meta.get("has_unblocked_proof", False),
                 proposal_md=md_path.read_text(encoding="utf-8") if md_path.exists() else None,
