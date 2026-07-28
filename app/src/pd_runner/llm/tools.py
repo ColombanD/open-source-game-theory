@@ -249,6 +249,29 @@ def _run_lean_proof(lean_source: str, filename_hint: str = "proof_attempt") -> s
         "--- stderr ---",
         result.stderr or "(empty)",
     ]
+
+    # Advisory duplicate-name check: the file compiles STANDALONE even when a helper
+    # lemma duplicates a library declaration in the same namespace — the clash only
+    # surfaces at the umbrella `lake build` when the proof is written to the library,
+    # after this agent session is over. Warn NOW so the agent renames in-loop.
+    if result.returncode == 0:
+        from pd_runner.services.proof_service import find_library_name_collisions
+
+        exclude = None
+        if "_vs_" in safe_hint:
+            left, _, right = safe_hint.partition("_vs_")
+            exclude = f"Theorems/{left}/vs_{right}.lean"
+        collisions = find_library_name_collisions(lean_source, exclude_relpath=exclude)
+        if collisions:
+            listing = "\n".join(f"  - `{n}` already declared in {f}" for n, f in collisions)
+            lines.append(
+                "--- WARNING: library name collisions ---\n"
+                f"{listing}\n"
+                "The file compiles standalone, but writing it to the library WILL FAIL at "
+                "`lake build` (`environment already contains ...`). Rename these "
+                "declarations with a matchup-specific prefix (e.g. "
+                "`dimcid_obot_<lemma>`) before declaring PROOF COMPLETE."
+            )
     return "\n".join(lines)
 
 

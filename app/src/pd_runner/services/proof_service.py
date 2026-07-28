@@ -289,6 +289,53 @@ def _extract_actions_from_source(lean_source: str) -> tuple[str | None, str | No
 _BOT_DEF_RE = re.compile(r"^\s*def\s+(\w+)\s*:\s*Prog\b", re.MULTILINE)
 
 
+_DECL_RE = re.compile(
+    r"^\s*(?:@\[[^\]]*\]\s*)?(?:private\s+|protected\s+|noncomputable\s+|partial\s+)*"
+    r"(?:theorem|lemma|def|abbrev)\s+([A-Za-z_][A-Za-z0-9_'!?]*)",
+    re.MULTILINE,
+)
+
+
+def find_library_name_collisions(
+    lean_source: str, exclude_relpath: str | None = None
+) -> list[tuple[str, str]]:
+    """Return (name, library-file) pairs for top-level declarations in `lean_source`
+    that already exist somewhere in the engine's `PrisonersDilemma/` tree.
+
+    Why: a proof file compiles STANDALONE even when one of its helper lemmas
+    duplicates a library name in the same namespace (`PD.Theorems`) — the clash only
+    surfaces at the umbrella `lake build`, AFTER the agent session ended (the
+    DIMCID-vs-OBot incident: the agent's census helper reused
+    `no_provable_OBot_D_tail` from `CupodBot/Helpers.lean`). Matching is by bare
+    declaration name across the tree — a slight over-approximation across
+    namespaces, which is fine for an advisory warning and near-exact in practice
+    (all outcome files share `PD.Theorems`).
+
+    `exclude_relpath` skips the target module itself (re-proving a pair REPLACES its
+    file, so self-collisions are not clashes).
+    """
+    from pd_runner.config import load_paths
+
+    names = set(_DECL_RE.findall(lean_source))
+    if not names:
+        return []
+    root = load_paths().lean_engine_dir / "PrisonersDilemma"
+    collisions: list[tuple[str, str]] = []
+    for path in sorted(root.rglob("*.lean")):
+        rel = path.relative_to(root).as_posix()
+        if exclude_relpath is not None and rel == exclude_relpath:
+            continue
+        if "Research/" in rel:
+            continue  # spikes are not in the build targets
+        try:
+            src = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for name in names & set(_DECL_RE.findall(src)):
+            collisions.append((name, rel))
+    return sorted(set(collisions))
+
+
 def _find_bot_redefinitions(lean_source: str) -> list[str]:
     """Return names of any `def X : Prog` declarations in the proof source.
 

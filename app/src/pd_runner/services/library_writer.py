@@ -95,6 +95,27 @@ def write_proof_to_library(
 
     paths = load_paths()
 
+    # Fast pre-write gate: duplicate top-level names would fail the umbrella build
+    # with `environment already contains ...` AFTER an expensive full build — catch
+    # them here with the precise clash list instead (the build rollback below stays
+    # as the backstop for anything the scan cannot see).
+    from pd_runner.services.proof_service import find_library_name_collisions
+
+    engine_root = paths.lean_engine_dir / "PrisonersDilemma"
+    collisions = find_library_name_collisions(
+        result.lean_source,
+        exclude_relpath=target.resolve().relative_to(engine_root.resolve()).as_posix(),
+    )
+    if collisions:
+        listing = "\n".join(f"  - `{n}` already declared in {f}" for n, f in collisions)
+        raise LibraryWriteError(
+            f"refusing to write {target}: it re-declares names that already exist in "
+            f"the library (the umbrella `lake build` would fail with `environment "
+            f"already contains ...`):\n{listing}\n"
+            f"Fix: rename the clashing declarations with a matchup-specific prefix "
+            f"and retry."
+        )
+
     # Ensure the per-bot directory (Theorems/<LeftBot>/) exists.
     target.parent.mkdir(parents=True, exist_ok=True)
 

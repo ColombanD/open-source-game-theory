@@ -201,6 +201,14 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
   few-shot examples may import more than your proof needs, and unused imports accumulate
   as dead weight in the library (Lean emits no warning for them).
 - The namespace must be `PD.Theorems`.
+- **Every declaration name must be UNIQUE across the whole library.** Your file shares
+  the `PD.Theorems` namespace with every existing theorem module, so a helper lemma
+  named like an existing one (e.g. `no_provable_OBot_D_tail`, which already exists for
+  the CupodBot pair) compiles standalone but breaks the library build with
+  `environment already contains ...`. Give EVERY auxiliary lemma a matchup-specific
+  name (e.g. `dimcid_obot_no_provable_forbidden`); only the final theorem uses the
+  `llm_outcome_<Left>_vs_<Right>` name. `run_lean_proof` appends a WARNING listing any
+  collisions — you MUST resolve those warnings before declaring PROOF COMPLETE.
 - **Do NOT redefine bots in your proof file.** Every bot already lives in its own
   module under `PrisonersDilemma.Bots.*` — import it (e.g. `import PrisonersDilemma.Bots.CupodBot`)
   and reference it by name. The proof file must contain only theorems, no `def` of any bot.
