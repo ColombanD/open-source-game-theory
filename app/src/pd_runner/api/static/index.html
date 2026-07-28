@@ -757,8 +757,7 @@
         empty.textContent = 'No proposals on file.';
         return;
       }
-      empty.textContent = '';
-      list.innerHTML = data.proposals.map(p => {
+      const proposalCard = p => {
         const integrated = p.status === 'integrated';
         const badge = integrated
           ? `<span class="badge" style="background:#166534;">integrated${p.integrated_as ? ' as ' + esc(p.integrated_as) : ''}</span>`
@@ -780,7 +779,18 @@
             </div>
             <pre id="proposal-md-${esc(p.name)}" style="display:none; white-space:pre-wrap; word-break:break-word; font-size:0.75rem; max-height:20rem; overflow:auto; margin-top:0.4rem;">${esc(p.proposal_md || '(no proposal.md)')}</pre>
           </div>`;
-      }).join('');
+      };
+      const pending = data.proposals.filter(p => p.status !== 'integrated');
+      const integratedList = data.proposals.filter(p => p.status === 'integrated');
+      empty.textContent = pending.length ? ''
+        : (integratedList.length ? 'No proposals awaiting review.' : '');
+      list.innerHTML = pending.map(proposalCard).join('') + (integratedList.length ? `
+        <details style="margin-top:0.4rem;">
+          <summary style="cursor:pointer; color:#9ca3af; font-size:0.85rem;">
+            Integrated history (${integratedList.length}) — resolved proposals, now live \`Pf\` constructors
+          </summary>
+          <div style="margin-top:0.5rem;">${integratedList.map(proposalCard).join('')}</div>
+        </details>` : '');
     }
 
     function toggleProposalDetails(name) {
