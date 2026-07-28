@@ -133,6 +133,46 @@ mutual
         AtomT m (.plays p q b) → b ≠ aN →
         m + (Formula.neg (.plays p q aN)).size ≤ k →
         ProvT k (.neg (.plays p q aN))
+    -- the Family-B completion leaves (2026-07-28): premise-free, no boxes, no gates.
+    -- NOT packaged into `LeafPf` (its shape census `leafPf_shape` and antecedent
+    -- census `DAnt` are transparency-specific); dedicated nodes like `box4`/`axKf`.
+    | implRefl (φ : Formula) :
+        (Formula.impl φ φ).size ≤ k → ProvT k (.impl φ φ)
+    | implK (φ ψ : Formula) :
+        (Formula.impl φ (.impl ψ φ)).size ≤ k → ProvT k (.impl φ (.impl ψ φ))
+    -- Family-B `.neg`-consumer (2026-07-28). NOT machine-walkable: crossing it with a
+    -- discharge costs an irreducible extra `app` node, which `crossWt` cannot absorb —
+    -- so `dbFree` excludes it (like the ITE leaves) and `boxInvGo` returns `none` on
+    -- cons stacks. `negElim` has NO node: it is vacuous by soundness
+    -- (`ProvT.complete` discharges its arm by contradiction).
+    | contrapose (φ ψ : Formula) (m : Nat) :
+        ProvT m (.impl φ ψ) →
+        m + (Formula.impl (.neg ψ) (.neg φ)).size ≤ k →
+        ProvT k (.impl (.neg ψ) (.neg φ))
+    -- the depth-general search telescope (2026-07-28): a premise-free reading leaf.
+    -- NOT machine-walkable (crossing a chain with a discharge leaves a shorter chain
+    -- that is not itself a leaf conclusion), so `dbFree` excludes it like the ITE
+    -- leaves and contrapose.
+    | searchChain (g₁ : Nat) (ψ₁ : Formula) (e₁ : Prog)
+        (L : List (Nat × Formula × Prog)) (a : Action) (me opponent : Prog)
+        (hme : me = .search g₁ ψ₁ (searchPlug L (.const a)) e₁) :
+        (Formula.impl (.box g₁ (ψ₁.subst me opponent))
+          (implChain (searchGuards me opponent L) (.plays me opponent a))).size ≤ k →
+        ProvT k (.impl (.box g₁ (ψ₁.subst me opponent))
+          (implChain (searchGuards me opponent L) (.plays me opponent a)))
+    -- the MIXED telescope (the ite frontier, 2026-07-28): same dbFree exclusion
+    | ctxChain (hd : CtxLayer) (L : List CtxLayer) (a : Action) (me opponent : Prog)
+        (hme : me = ctxPlug (hd :: L) (.const a)) :
+        (Formula.impl (ctxGuard me opponent hd)
+          (implChain (ctxGuards me opponent L) (.plays me opponent a))).size ≤ k →
+        ProvT k (.impl (ctxGuard me opponent hd)
+          (implChain (ctxGuards me opponent L) (.plays me opponent a)))
+    -- Family-B completeness axioms (2026-07-28): premise-free, dbFree-EXCLUDED like
+    -- contrapose (crossing them costs an irreducible app node)
+    | implS (φ ψ χ : Formula) :
+        (Formula.impl (.impl φ (.impl ψ χ))
+          (.impl (.impl φ ψ) (.impl φ χ))).size ≤ k →
+        ProvT k (.impl (.impl φ (.impl ψ χ)) (.impl (.impl φ ψ) (.impl φ χ)))
 end
 
 /-! ## 2. Soundness: trees map back to the `Prop` triple, verbatim. -/
@@ -171,6 +211,12 @@ mutual
     | .impS2 φ ψ χ m₁ m₂ K t1 t2 hle => .impS2 φ ψ χ m₁ m₂ K t1.sound t2.sound hle
     | .boxMono a b K φ hab hle => .boxMono a b K φ hab hle
     | .atomNeg p q b aN m t hne hle => .atomNeg p q b aN m t.sound hne hle
+    | .implRefl φ hle => .implRefl φ hle
+    | .implK φ ψ hle => .implK φ ψ hle
+    | .contrapose φ ψ m t hle => .contrapose φ ψ m t.sound hle
+    | .searchChain g₁ ψ₁ e₁ L a me opnt hme hle => .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+    | .ctxChain hd L a me opnt hme hle => .ctxChain hd L a me opnt hme hle
+    | .implS φ ψ χ hle => .implS φ ψ χ hle
 end
 
 /-! ## 3. Completeness: every `Pf` has a tree (at the `Nonempty` level — all that
@@ -243,6 +289,15 @@ mutual
     | .boxMono a b K φ hab hle => ⟨.boxMono a b K φ hab hle⟩
     | .atomNeg p q b aN m h hne hle =>
         (AtomT.complete h).elim fun t => ⟨.atomNeg p q b aN m t hne hle⟩
+    | .implRefl φ hle => ⟨.implRefl φ hle⟩
+    | .implK φ ψ hle => ⟨.implK φ ψ hle⟩
+    | .contrapose φ ψ m h hle =>
+        (ProvT.complete h).elim fun t => ⟨.contrapose φ ψ m t hle⟩
+    | .negElim φ ψ m₁ m₂ h1 h2 hle =>
+        absurd (PD.BaseTheorems.Pf_sound _ _ h2) (PD.BaseTheorems.Pf_sound _ _ h1)
+    | .searchChain g₁ ψ₁ e₁ L a me opnt hme hle => ⟨.searchChain g₁ ψ₁ e₁ L a me opnt hme hle⟩
+    | .ctxChain hd L a me opnt hme hle => ⟨.ctxChain hd L a me opnt hme hle⟩
+    | .implS φ ψ χ hle => ⟨.implS φ ψ χ hle⟩
 end
 
 /-- The substrate is exact: provability = tree existence. -/
@@ -290,6 +345,13 @@ mutual
     | _, _, .impS2 _ ψ _ _ _ _ t1 t2 _ => G ψ ∧ t1.gateOK G ∧ t2.gateOK G
     | _, _, .boxMono _ _ _ _ _ _ => True
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.gateOK G
+    | _, _, .implRefl _ _ => True
+    | _, _, .implK _ _ _ => True
+    | _, _, .contrapose _ _ _ t _ => t.gateOK G
+    | _, _, .searchChain _ _ _ _ _ _ _ _ _ => True
+    | _, _, .ctxChain _ _ _ _ _ _ _ => True
+    -- the S-leaf's crossing materializes an application CUT at `ψ`: its gate residue
+    | _, _, .implS _ ψ _ _ => G ψ
 end
 
 /-! ## 5. The transfer: a tree with a passing gate residue lands in `PfG G`. -/
@@ -333,6 +395,14 @@ mutual
         .impS2 φ ψ χ m₁ m₂ K (t1.toG h.2.1) (t2.toG h.2.2) hle h.1
     | .boxMono a b K φ hab hle, _ => .boxMono a b K φ hab hle
     | .atomNeg p q b aN m t hne hle, h => .atomNeg p q b aN m (t.toG h) hne hle
+    | .implRefl φ hle, _ => .implRefl φ hle
+    | .implK φ ψ hle, _ => .implK φ ψ hle
+    | .contrapose φ ψ m t hle, h => .contrapose φ ψ m (t.toG h) hle
+    | .searchChain g₁ ψ₁ e₁ L a me opnt hme hle, _ =>
+        .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+    | .ctxChain hd L a me opnt hme hle, _ =>
+        .ctxChain hd L a me opnt hme hle
+    | .implS φ ψ χ hle, _ => .implS φ ψ χ hle
 end
 
 /-! ## 6. The official reduction: CutRelevance is now a statement about trees. -/
@@ -393,6 +463,14 @@ def ProvT.mono {k k' : Nat} {φ : Formula} (h : k ≤ k') : ProvT k φ → ProvT
   | .impS2 φ ψ χ m₁ m₂ K t1 t2 hle => .impS2 φ ψ χ m₁ m₂ _ t1 t2 (le_trans hle h)
   | .boxMono a b K φ hab hle => .boxMono a b _ φ hab (le_trans hle h)
   | .atomNeg p q b aN m t hne hle => .atomNeg p q b aN m t hne (le_trans hle h)
+  | .implRefl φ hle => .implRefl φ (le_trans hle h)
+  | .implK φ ψ hle => .implK φ ψ (le_trans hle h)
+  | .contrapose φ ψ m t hle => .contrapose φ ψ m t (le_trans hle h)
+  | .searchChain g₁ ψ₁ e₁ L a me opnt hme hle =>
+      .searchChain g₁ ψ₁ e₁ L a me opnt hme (le_trans hle h)
+  | .ctxChain hd L a me opnt hme hle =>
+      .ctxChain hd L a me opnt hme (le_trans hle h)
+  | .implS φ ψ χ hle => .implS φ ψ χ (le_trans hle h)
 
 /-- Re-gating does not change the cut diet. -/
 theorem ProvT.mono_gateOK {G : Formula → Prop} {k k' : Nat} {φ : Formula}
@@ -413,6 +491,12 @@ theorem ProvT.mono_gateOK {G : Formula → Prop} {k k' : Nat} {φ : Formula}
   | .impS2 _ _ _ _ _ _ _ _ _ => Iff.rfl
   | .boxMono _ _ _ _ _ _ => Iff.rfl
   | .atomNeg _ _ _ _ _ _ _ _ => Iff.rfl
+  | .implRefl _ _ => Iff.rfl
+  | .implK _ _ _ => Iff.rfl
+  | .contrapose _ _ _ _ _ => Iff.rfl
+  | .searchChain _ _ _ _ _ _ _ _ _ => Iff.rfl
+  | .ctxChain _ _ _ _ _ _ _ => Iff.rfl
+  | .implS _ _ _ _ => Iff.rfl
 
 /-- Every implication-concluding node pays its conclusion's size into its budget.
     (Atoms conclude only `.plays`, so the `atom` arm is uninhabited.) -/
@@ -432,6 +516,12 @@ theorem ProvT.impl_size_le {k : Nat} {A B : Formula} :
   | .axKf _ _ _ _ _ _ _ hg2 => by omega
   | .impS2 _ _ _ _ _ _ _ _ hle => by omega
   | .boxMono _ _ _ _ _ hle => by omega
+  | .implRefl _ hle => hle
+  | .implK _ _ hle => hle
+  | .contrapose _ _ _ _ hle => by omega
+  | .searchChain _ _ _ _ _ _ _ _ hle => hle
+  | .ctxChain _ _ _ _ _ _ hle => hle
+  | .implS _ _ _ hle => hle
 
 /-- **The first excision**: `app (weakenImpl tw) targ` never needed `targ` — the
     consequent's subtree `tw` serves within the app node's budget. The wild argument
@@ -694,6 +784,58 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
               | .nil =>
                   some ⟨_, .axK a'' b'' c'' mD1 _ φ' α' d1 hg1 (Nat.le_refl _)⟩)
          | .nil => some ⟨_, .axKf a'' b'' c'' K φ' α' hg1 hle⟩)
+    -- the Family-B implication leaves: `implRefl`'s discharge IS the consequent's
+    -- walker; `implK`'s first discharge serves (its second antecedent is dead weight —
+    -- a partial discharge returns the `weakenImpl` residue, mirroring `axKf`'s).
+    | .implRefl φ' hle =>
+        (match stack with
+         | .cons _ dB s' => boxInvGo fuel dB s'
+         | .nil => some ⟨_, .implRefl φ' hle⟩)
+    | .implK φ' ψ' hle =>
+        (match stack with
+         | .cons mD1 d1 s' =>
+             (match s' with
+              | .cons _ _ s'' => boxInvGo fuel d1 s''
+              | .nil => some ⟨_, .weakenImpl ψ' φ' mD1 d1 (Nat.le_refl _)⟩)
+         | .nil => some ⟨_, .implK φ' ψ' hle⟩)
+    -- contrapose is NOT machine-walkable (see the node's docstring): crossing costs an
+    -- irreducible app node; `dbFree` excludes it on the crossing-total fragments
+    | .contrapose φ' ψ' m' tw hle =>
+        (match stack with
+         | .cons _ _ _ => none
+         | .nil => some ⟨_, .contrapose φ' ψ' m' tw hle⟩)
+    | .searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+        (match stack with
+         | .cons _ _ _ => none
+         | .nil => some ⟨_, .searchChain g₁ ψ₁ e₁ L a me' opnt hme hle⟩)
+    | .ctxChain hd L a me' opnt hme hle =>
+        (match stack with
+         | .cons _ _ _ => none
+         | .nil => some ⟨_, .ctxChain hd L a me' opnt hme hle⟩)
+    | .implS φ' ψ' χ' hle =>
+        -- the S-combinator leaf: THREE discharges materialize the raw application
+        -- composition `(d1 ⊛ d3) ⊛ (d2 ⊛ d3)` (apps, not an `impS2` node — `app.s2d`
+        -- is a plain max, keeping the depth ledger exact); partial stacks have no
+        -- residue tree (no good stack ends at a non-core implication)
+        (match stack with
+         | .cons mD1 d1 s' =>
+             (match s' with
+              | .cons mD2 d2 s'' =>
+                  (match s'' with
+                   | .cons mD3 d3 s''' =>
+                       boxInvGo fuel
+                         (.app ((mD1 + mD3 + (Formula.impl ψ' χ').size)
+                             + (mD2 + mD3 + ψ'.size) + χ'.size)
+                           (mD1 + mD3 + (Formula.impl ψ' χ').size)
+                           (mD2 + mD3 + ψ'.size) ψ' χ'
+                           (.app (mD1 + mD3 + (Formula.impl ψ' χ').size) mD1 mD3
+                             φ' (.impl ψ' χ') d1 d3 (Nat.le_refl _))
+                           (.app (mD2 + mD3 + ψ'.size) mD2 mD3 φ' ψ' d2 d3
+                             (Nat.le_refl _))
+                           (Nat.le_refl _)) s'''
+                   | .nil => none)
+              | .nil => none)
+         | .nil => some ⟨_, .implS φ' ψ' χ' hle⟩)
     -- general cores: an exhausted stack returns the walker; struct/atom with pending
     -- discharges await derivCross (D2g stage 2)
     | .leaf l hd =>
@@ -903,13 +1045,21 @@ def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
   | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.wt + t2.wt + 1
   | _, _, .boxMono _ _ _ _ _ _ => 1
   | _, _, .atomNeg _ _ _ _ _ _ _ _ => 1
+  | _, _, .implRefl _ _ => 1
+  | _, _, .implK _ _ _ => 1
+  | _, _, .contrapose _ _ _ t _ => t.wt + 1
+  | _, _, .searchChain _ _ _ _ _ _ _ _ _ => 1
+  | _, _, .ctxChain _ _ _ _ _ _ _ => 1
+  | _, _, .implS _ _ _ _ => 1
 
 theorem ProvT.wt_pos {m : Nat} {φ : Formula} : (t : ProvT m φ) → 1 ≤ t.wt
   | .leaf _ _ => Nat.le_refl _
   | .atom _ | .atomBoxImpl _ _ _ _ _ _ | .box4 _ _ _ _ _ _
   | .axKf _ _ _ _ _ _ _ _ | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _
+  | .implRefl _ _ | .implK _ _ _ | .searchChain _ _ _ _ _ _ _ _ _
+  | .ctxChain _ _ _ _ _ _ _ | .implS _ _ _ _
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Nat.le_refl _
-  | .weakenImpl _ _ _ _ _
+  | .weakenImpl _ _ _ _ _ | .contrapose _ _ _ _ _
   | .implTrans _ _ _ _ _ _ _ _ | .boxIntro _ _ _ _ _ | .app _ _ _ _ _ _ _ _
   | .axK _ _ _ _ _ _ _ _ _ _ | .diagF _ _ _ _ _ _ _ | .diagB _ _ _ _ _ _ _
   | .impS2 _ _ _ _ _ _ _ _ _ => by simp [ProvT.wt]
@@ -921,6 +1071,7 @@ def DStack.wt : {ξ core : Formula} → DStack ξ core → Nat
 /-- Contraction-freedom: no `impS2` node anywhere in the walkable layer. -/
 def ProvT.freeS2 : {m : Nat} → {φ : Formula} → ProvT m φ → Prop
   | _, _, .impS2 _ _ _ _ _ _ _ _ _ => False
+  | _, _, .implS _ _ _ _ => False
   | _, _, .weakenImpl _ _ _ t _ => t.freeS2
   | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.freeS2
   | _, _, .implTrans _ _ _ _ _ t1 t2 _ => t1.freeS2 ∧ t2.freeS2
@@ -929,15 +1080,27 @@ def ProvT.freeS2 : {m : Nat} → {φ : Formula} → ProvT m φ → Prop
   | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.freeS2
   | _, _, .diagF _ _ _ _ _ t _ => t.freeS2
   | _, _, .diagB _ _ _ _ _ t _ => t.freeS2
+  | _, _, .contrapose _ _ _ t _ => t.freeS2
   | _, _, _ => True
 
 def DStack.freeS2 : {ξ core : Formula} → DStack ξ core → Prop
   | _, _, .nil => True
   | _, _, .cons _ t s => t.freeS2 ∧ s.freeS2
 
+/-- A guard chain over a plays-atom ends in plays — the `searchChain` conclusion has
+    no core on its spine (used by the totality/fundamental arms, like the leaf shapes). -/
+theorem implChain_endsInPlays (me opp : Prog) (a : Action) :
+    ∀ (gs : List Formula),
+      PD.T48.EndsInPlays (implChain gs (.plays me opp a)) := by
+  intro gs
+  induction gs with
+  | nil => exact .plays
+  | cons g gs ih => exact .impl ih
+
 /-- Re-gating preserves contraction-freedom. -/
 theorem ProvT.mono_freeS2 {k k' : Nat} {φ : Formula}
     (h : k ≤ k') : (t : ProvT k φ) → ((t.mono h).freeS2 ↔ t.freeS2)
+  | .implS _ _ _ _ => Iff.rfl
   | .leaf _ _ => Iff.rfl
   | .atom (.mk _ _) => Iff.rfl
   | .weakenImpl _ _ _ _ _ => Iff.rfl
@@ -954,6 +1117,11 @@ theorem ProvT.mono_freeS2 {k k' : Nat} {φ : Formula}
   | .impS2 _ _ _ _ _ _ _ _ _ => Iff.rfl
   | .boxMono _ _ _ _ _ _ => Iff.rfl
   | .atomNeg _ _ _ _ _ _ _ _ => Iff.rfl
+  | .implRefl _ _ => Iff.rfl
+  | .implK _ _ _ => Iff.rfl
+  | .contrapose _ _ _ _ _ => Iff.rfl
+  | .searchChain _ _ _ _ _ _ _ _ _ => Iff.rfl
+  | .ctxChain _ _ _ _ _ _ _ => Iff.rfl
 
 /-- Re-gating preserves weight. -/
 theorem ProvT.mono_wt {k k' : Nat} {φ : Formula}
@@ -974,6 +1142,12 @@ theorem ProvT.mono_wt {k k' : Nat} {φ : Formula}
   | .impS2 _ _ _ _ _ _ _ _ _ => rfl
   | .boxMono _ _ _ _ _ _ => rfl
   | .atomNeg _ _ _ _ _ _ _ _ => rfl
+  | .implRefl _ _ => rfl
+  | .implK _ _ _ => rfl
+  | .contrapose _ _ _ _ _ => rfl
+  | .searchChain _ _ _ _ _ _ _ _ _ => rfl
+  | .ctxChain _ _ _ _ _ _ _ => rfl
+  | .implS _ _ _ _ => rfl
 
 /-- The weight of what extraction returns. -/
 def CoreContent.wt : {core : Formula} → CoreContent core → Nat := fun {core} =>
@@ -1056,6 +1230,70 @@ theorem crossWt : ∀ (F : Nat),
                   have := ih tw s' hf hs.2 h
                   simp only [ProvT.wt, DStack.wt] at *
                   exact ⟨by omega, this.2⟩
+      | contrapose φ' ψ' m' tw hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  exact ⟨by simp [CoreContent.wt, DStack.wt],
+                    by simpa [CoreContent.freeS2] using hf⟩
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | ctxChain hd L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  exact ⟨by simp [CoreContent.wt, DStack.wt],
+                    by simpa [CoreContent.freeS2] using hf⟩
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | implS φ0 ψ0 χ0 hle0 => exact absurd hf (by simp [ProvT.freeS2])
+      | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  exact ⟨by simp [CoreContent.wt, DStack.wt],
+                    by simpa [CoreContent.freeS2] using hf⟩
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | implRefl φ' hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  exact ⟨by simp [CoreContent.wt, DStack.wt],
+                    by simpa [CoreContent.freeS2] using hf⟩
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  have := ih d s' hs.1 hs.2 h
+                  simp only [ProvT.wt, DStack.wt] at *
+                  exact ⟨by omega, this.2⟩
+      | implK φ' ψ' hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  exact ⟨by simp [CoreContent.wt, DStack.wt],
+                    by simpa [CoreContent.freeS2] using hf⟩
+          | cons mD1 d1 s' =>
+                  cases s' with
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases h
+                      refine ⟨?_, ?_⟩
+                      · simp only [CoreContent.wt, ProvT.wt, DStack.wt]
+                        omega
+                      · simpa [CoreContent.freeS2, ProvT.freeS2] using hs.1
+                  | cons mD2 d2 s'' =>
+                      simp only [boxInvGo] at h
+                      have := ih d1 s'' hs.1 hs.2.2 h
+                      simp only [ProvT.wt, DStack.wt] at *
+                      exact ⟨by omega, this.2⟩
       | implTrans φ' ψmid χ' a b tA tB hle =>
           cases s with
           | nil =>
@@ -1450,6 +1688,39 @@ theorem boxInvGo_total : ∀ (F P : Nat) {m : Nat} {ξ core : Formula}
             · simp only [ProvT.wt, DStack.wt] at *; omega
             · have := thr_same (T' := tw.wt) hF (by simp only [ProvT.wt] at *; omega)
               omega
+    | contrapose φ' ψ' m' tw hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD d s' => cases s' with | nil => exact hc.elim
+    | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+        exact (EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) s hc).elim
+    | ctxChain hd L a me' opnt hme hle =>
+        exact (EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) s hc).elim
+    | implS φ0 ψ0 χ0 hle0 => exact absurd hf (by simp [ProvT.freeS2])
+    | implRefl φ' hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD d s' =>
+            simp only [boxInvGo]
+            refine ih (d.wt + s'.wt) d s' hs.1 hs.2 hc (Nat.le_refl _) ?_
+            have := thr_step (P' := d.wt + s'.wt) (T' := d.wt) hF
+              (by simp only [ProvT.wt, DStack.wt] at hP; omega)
+              (by omega)
+            omega
+    | implK φ' ψ' hle =>
+        cases s with
+        | nil => exact hc.elim
+        | cons mD1 d1 s' =>
+            cases s' with
+            | nil => exact hc.elim
+            | cons mD2 d2 s'' =>
+                simp only [boxInvGo]
+                have hd2 := d2.wt_pos
+                refine ih (d1.wt + s''.wt) d1 s'' hs.1 hs.2.2 hc (Nat.le_refl _) ?_
+                have := thr_step (P' := d1.wt + s''.wt) (T' := d1.wt) hF
+                  (by simp only [ProvT.wt, DStack.wt] at hP; omega)
+                  (by omega)
+                omega
     | implTrans φ' ψmid χ' a b tA tB hle =>
         cases s with
         | nil => exact hc.elim
@@ -1693,6 +1964,78 @@ theorem crossGateOK {G : Formula → Prop}
           | cons mD d s' =>
                   simp only [boxInvGo] at h
                   exact ih tw s' hf hs.2 hsg.2 h
+      | contrapose φ' ψ' m' tw hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simpa [CoreContent.gateOK] using hf
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | ctxChain hd L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simpa [CoreContent.gateOK] using hf
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | implS φ0 ψ0 χ0 hle0 =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simpa [CoreContent.gateOK] using hf
+          | cons mD1 d1 s1 =>
+              cases s1 with
+              | nil => simp only [boxInvGo] at h; exact absurd h (by simp)
+              | cons mD2 d2 s2 =>
+                  cases s2 with
+                  | nil => simp only [boxInvGo] at h; exact absurd h (by simp)
+                  | cons mD3 d3 s3 =>
+                      simp only [boxInvGo] at h
+                      exact ih (.app _ _ _ ψ0 χ0
+                          (.app (mD1 + mD3 + (Formula.impl ψ0 χ0).size) mD1 mD3
+                            φ0 (.impl ψ0 χ0) d1 d3 (Nat.le_refl _))
+                          (.app (mD2 + mD3 + ψ0.size) mD2 mD3 φ0 ψ0 d2 d3
+                            (Nat.le_refl _)) (Nat.le_refl _)) s3
+                        ⟨hf, ⟨hsg.2.2.1, hs.1, hs.2.2.1⟩, ⟨hsg.2.2.1, hs.2.1, hs.2.2.1⟩⟩
+                        hs.2.2.2 hsg.2.2.2 h
+      | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simpa [CoreContent.gateOK] using hf
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | implRefl φ' hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simpa [CoreContent.gateOK] using hf
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact ih d s' hs.1 hs.2 hsg.2 h
+      | implK φ' ψ' hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simpa [CoreContent.gateOK] using hf
+          | cons mD1 d1 s' =>
+                  cases s' with
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases h
+                      simpa [CoreContent.gateOK, ProvT.gateOK] using hs.1
+                  | cons mD2 d2 s'' =>
+                      simp only [boxInvGo] at h
+                      exact ih d1 s'' hs.1 hs.2.2 hsg.2.2 h
       | implTrans φ' ψmid χ' a b tA tB hle =>
           cases s with
           | nil =>
@@ -2097,6 +2440,7 @@ unconditionally (like the diet lemma): the result's depth is bounded by the stat
 /-- `impS2`-nesting depth of the walkable layer. -/
 def ProvT.s2d : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
   | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => max t1.s2d t2.s2d + 1
+  | _, _, .implS _ _ _ _ => 1
   | _, _, .weakenImpl _ _ _ t _ => t.s2d
   | _, _, .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ t _ _ => t.s2d
   | _, _, .implTrans _ _ _ _ _ t1 t2 _ => max t1.s2d t2.s2d
@@ -2105,6 +2449,7 @@ def ProvT.s2d : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
   | _, _, .axK _ _ _ _ _ _ _ t _ _ => t.s2d
   | _, _, .diagF _ _ _ _ _ t _ => t.s2d
   | _, _, .diagB _ _ _ _ _ t _ => t.s2d
+  | _, _, .contrapose _ _ _ t _ => t.s2d
   | _, _, _ => 0
 
 def DStack.s2d : {ξ core : Formula} → DStack ξ core → Nat
@@ -2114,6 +2459,7 @@ def DStack.s2d : {ξ core : Formula} → DStack ξ core → Nat
 /-- Re-gating preserves depth. -/
 theorem ProvT.mono_s2d {k k' : Nat} {φ : Formula}
     (h : k ≤ k') : (t : ProvT k φ) → (t.mono h).s2d = t.s2d
+  | .implS _ _ _ _ => rfl
   | .leaf _ _ => rfl
   | .atom (.mk _ _) => rfl
   | .weakenImpl _ _ _ _ _ => rfl
@@ -2130,6 +2476,11 @@ theorem ProvT.mono_s2d {k k' : Nat} {φ : Formula}
   | .impS2 _ _ _ _ _ _ _ _ _ => rfl
   | .boxMono _ _ _ _ _ _ => rfl
   | .atomNeg _ _ _ _ _ _ _ _ => rfl
+  | .implRefl _ _ => rfl
+  | .implK _ _ _ => rfl
+  | .contrapose _ _ _ _ _ => rfl
+  | .searchChain _ _ _ _ _ _ _ _ _ => rfl
+  | .ctxChain _ _ _ _ _ _ _ => rfl
 
 /-- Depth of what extraction returns. -/
 def CoreContent.s2d : {core : Formula} → CoreContent core → Nat := fun {core} =>
@@ -2192,6 +2543,89 @@ theorem crossS2d : ∀ (F : Nat),
                   have := ih tw s' h
                   simp only [ProvT.s2d, DStack.s2d] at *
                   omega
+      | contrapose φ' ψ' m' tw hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+                  omega
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | ctxChain hd L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+                  omega
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | implS φ0 ψ0 χ0 hle0 =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+                  omega
+          | cons mD1 d1 s1 =>
+              cases s1 with
+              | nil => simp only [boxInvGo] at h; exact absurd h (by simp)
+              | cons mD2 d2 s2 =>
+                  cases s2 with
+                  | nil => simp only [boxInvGo] at h; exact absurd h (by simp)
+                  | cons mD3 d3 s3 =>
+                      simp only [boxInvGo] at h
+                      have := ih (.app _ _ _ ψ0 χ0
+                          (.app (mD1 + mD3 + (Formula.impl ψ0 χ0).size) mD1 mD3
+                            φ0 (.impl ψ0 χ0) d1 d3 (Nat.le_refl _))
+                          (.app (mD2 + mD3 + ψ0.size) mD2 mD3 φ0 ψ0 d2 d3
+                            (Nat.le_refl _)) (Nat.le_refl _)) s3 h
+                      simp only [ProvT.s2d, DStack.s2d] at *
+                      omega
+      | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+                  omega
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | implRefl φ' hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simp only [CoreContent.s2d, DStack.s2d]
+                  omega
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  have := ih d s' h
+                  simp only [ProvT.s2d, DStack.s2d] at *
+                  omega
+      | implK φ' ψ' hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simp only [CoreContent.s2d, DStack.s2d]
+                  omega
+          | cons mD1 d1 s' =>
+                  cases s' with
+                  | nil =>
+                      simp only [boxInvGo] at h
+                      cases h
+                      simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+                      omega
+                  | cons mD2 d2 s'' =>
+                      simp only [boxInvGo] at h
+                      have := ih d1 s'' h
+                      simp only [ProvT.s2d, DStack.s2d] at *
+                      omega
       | implTrans φ' ψmid χ' a b tA tB hle =>
           cases s with
           | nil =>
@@ -2562,6 +2996,12 @@ mutual
     | _, _, .impS2 _ ψ _ _ _ _ t1 t2 _ => Gb ψ && t1.gateOKb Gb && t2.gateOKb Gb
     | _, _, .boxMono _ _ _ _ _ _ => true
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.gateOKb Gb
+    | _, _, .implRefl _ _ => true
+    | _, _, .implK _ _ _ => true
+    | _, _, .contrapose _ _ _ t _ => t.gateOKb Gb
+    | _, _, .searchChain _ _ _ _ _ _ _ _ _ => true
+    | _, _, .ctxChain _ _ _ _ _ _ _ => true
+    | _, _, .implS _ ψ _ _ => Gb ψ
 end
 
 mutual
@@ -2622,6 +3062,12 @@ mutual
         exact ⟨hGb _ h.1.1, t1.gateOKb_sound hGb h.1.2, t2.gateOKb_sound hGb h.2⟩
     | .boxMono _ _ _ _ _ _, _ => trivial
     | .atomNeg _ _ _ _ _ t _ _, h => t.gateOKb_sound hGb h
+    | .implRefl _ _, _ => trivial
+    | .implK _ _ _, _ => trivial
+    | .contrapose _ _ _ t _, h => t.gateOKb_sound hGb h
+    | .searchChain _ _ _ _ _ _ _ _ _, _ => trivial
+    | .ctxChain _ _ _ _ _ _ _, _ => trivial
+    | .implS _ _ _ _, h => hGb _ h
 end
 
 /-- A checked tree lands in the modest stratum: the certificate pipeline's exit. -/
@@ -2658,6 +3104,15 @@ theorem PlaysT.cost_pos {me o b : Prog} {a : Action} {n : Nat} :
 theorem ProvT.wt_le_budget : {m : Nat} → {φ : Formula} → (t : ProvT m φ) → t.wt ≤ m
   | _, _, .leaf _ hd =>
       le_trans (Formula.size_pos _) hd
+  | _, _, .implRefl _ hd => le_trans (Formula.size_pos _) hd
+  | _, _, .implK _ _ hd => le_trans (Formula.size_pos _) hd
+  | _, _, .contrapose φ' ψ' m' t hd => by
+      have h1 := t.wt_le_budget
+      have h2 := Formula.size_pos (Formula.impl (.neg ψ') (.neg φ'))
+      simp only [ProvT.wt]; omega
+  | _, _, .searchChain _ _ _ _ _ _ _ _ hd => le_trans (Formula.size_pos _) hd
+  | _, _, .ctxChain _ _ _ _ _ _ hd => le_trans (Formula.size_pos _) hd
+  | _, _, .implS _ _ _ hd => le_trans (Formula.size_pos _) hd
   | _, _, .atom (.mk c hn) => le_trans c.cost_pos hn
   | _, _, .weakenImpl φ' ψ' m' t hle => by
       have h1 := t.wt_le_budget
@@ -2782,6 +3237,45 @@ theorem crossWtLt : ∀ (F : Nat),
                   have hd := d.wt_pos
                   simp only [ProvT.wt, DStack.wt] at *
                   omega
+      | contrapose φ' ψ' m' tw hle =>
+          cases s with
+          | nil => exact hc.elim
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | ctxChain hd L a me' opnt hme hle =>
+          cases s with
+          | nil => exact hc.elim
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | implS φ0 ψ0 χ0 hle0 => exact absurd hf (by simp [ProvT.freeS2])
+      | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil => exact hc.elim
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | implRefl φ' hle =>
+          cases s with
+          | nil => exact hc.elim
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  have := ih d s' hc hs.1 hs.2 h
+                  simp only [ProvT.wt, DStack.wt] at *
+                  omega
+      | implK φ' ψ' hle =>
+          cases s with
+          | nil => exact hc.elim
+          | cons mD1 d1 s' =>
+                  cases s' with
+                  | nil => exact hc.elim
+                  | cons mD2 d2 s'' =>
+                      simp only [boxInvGo] at h
+                      have := ih d1 s'' hc hs.1 hs.2.2 h
+                      have hd2 := d2.wt_pos
+                      simp only [ProvT.wt, DStack.wt] at *
+                      omega
       | implTrans φ' ψmid χ' a b tA tB hle =>
           cases s with
           | nil => exact hc.elim
@@ -3119,6 +3613,55 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           | cons mD d s' =>
               simp only [boxInvGo] at h ⊢
               exact (ih F'' hFF).1 tw s' h
+      | contrapose φ' ψ' m' tw hle =>
+          cases s with
+          | nil => simp only [boxInvGo] at h ⊢; exact h
+          | cons mD d s' =>
+              simp only [boxInvGo] at h
+              exact absurd h (by simp)
+      | ctxChain hd L a me' opnt hme hle =>
+          cases s with
+          | nil => simp only [boxInvGo] at h ⊢; exact h
+          | cons mD d s' =>
+              simp only [boxInvGo] at h
+              exact absurd h (by simp)
+      | implS φ0 ψ0 χ0 hle0 =>
+          cases s with
+          | nil => simp only [boxInvGo] at h ⊢; exact h
+          | cons mD1 d1 s1 =>
+              cases s1 with
+              | nil => simp only [boxInvGo] at h; exact absurd h (by simp)
+              | cons mD2 d2 s2 =>
+                  cases s2 with
+                  | nil => simp only [boxInvGo] at h; exact absurd h (by simp)
+                  | cons mD3 d3 s3 =>
+                      simp only [boxInvGo] at h ⊢
+                      exact (ih F'' hFF).1 (.app _ _ _ ψ0 χ0
+                        (.app (mD1 + mD3 + (Formula.impl ψ0 χ0).size) mD1 mD3
+                          φ0 (.impl ψ0 χ0) d1 d3 (Nat.le_refl _))
+                        (.app (mD2 + mD3 + ψ0.size) mD2 mD3 φ0 ψ0 d2 d3
+                          (Nat.le_refl _)) (Nat.le_refl _)) s3 h
+      | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil => simp only [boxInvGo] at h ⊢; exact h
+          | cons mD d s' =>
+              simp only [boxInvGo] at h
+              exact absurd h (by simp)
+      | implRefl φ' hle =>
+          cases s with
+          | nil => simp only [boxInvGo] at h ⊢; exact h
+          | cons mD d s' =>
+              simp only [boxInvGo] at h ⊢
+              exact (ih F'' hFF).1 d s' h
+      | implK φ' ψ' hle =>
+          cases s with
+          | nil => simp only [boxInvGo] at h ⊢; exact h
+          | cons mD1 d1 s' =>
+              cases s' with
+              | nil => simp only [boxInvGo] at h ⊢; exact h
+              | cons mD2 d2 s'' =>
+                  simp only [boxInvGo] at h ⊢
+                  exact (ih F'' hFF).1 d1 s'' h
       | implTrans φ' ψmid χ' a b tA tB hle =>
           cases s with
           | nil => simp only [boxInvGo] at h ⊢; exact h
@@ -3413,6 +3956,16 @@ theorem boxInvGo_regate (F : Nat) {m m' : Nat} {ξ core : Formula}
           cases s with
           | nil => exact hc.elim
           | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
+      | implS _ _ _ _ =>
+          cases s with
+          | nil => exact hc.elim
+          | cons _ _ s1 =>
+              cases s1 with
+              | nil => simp only [ProvT.mono, boxInvGo]
+              | cons _ _ s2 =>
+                  cases s2 with
+                  | nil => simp only [ProvT.mono, boxInvGo]
+                  | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
       | diagB _ _ _ _ _ _ _ =>
           cases s with
           | nil => exact hc.elim
@@ -3441,6 +3994,26 @@ theorem boxInvGo_regate (F : Nat) {m m' : Nat} {ξ core : Formula}
           cases s with
           | nil => exact hc.elim
           | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
+      | implRefl _ _ =>
+          cases s with
+          | nil => exact hc.elim
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
+      | implK _ _ _ =>
+          cases s with
+          | nil => exact hc.elim
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
+      | contrapose _ _ _ _ _ =>
+          cases s with
+          | nil => exact hc.elim
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
+      | ctxChain _ _ _ _ _ _ _ =>
+          cases s with
+          | nil => exact hc.elim
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
+      | searchChain _ _ _ _ _ _ _ _ _ =>
+          cases s with
+          | nil => exact hc.elim
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
 
 
 /-- Re-gating is invisible at CONS stacks (every cons-arm uses only the fields). -/
@@ -3460,6 +4033,10 @@ theorem boxInvGo_regate_cons (F : Nat) {m m' mD : Nat} {B rest core : Formula}
       | weakenImpl _ _ _ _ _ => rfl
       | implTrans _ _ _ _ _ _ _ _ => rfl
       | impS2 _ _ _ _ _ _ _ _ _ => rfl
+      | implS _ _ _ _ =>
+          cases S' with
+          | nil => rfl
+          | cons _ _ S'' => cases S'' <;> rfl
       | diagB _ _ _ _ _ _ _ => rfl
       | diagF _ _ _ _ _ _ _ => rfl
       | atomBoxImpl _ _ _ _ _ _ => rfl
@@ -3467,6 +4044,11 @@ theorem boxInvGo_regate_cons (F : Nat) {m m' mD : Nat} {B rest core : Formula}
       | box4 _ _ _ _ _ _ => rfl
       | axK _ _ _ _ _ _ _ _ _ _ => rfl
       | axKf _ _ _ _ _ _ _ _ => rfl
+      | implRefl _ _ => rfl
+      | implK _ _ _ => rfl
+      | contrapose _ _ _ _ _ => rfl
+      | searchChain _ _ _ _ _ _ _ _ _ => rfl
+      | ctxChain _ _ _ _ _ _ _ => rfl
 
 /-- Atomizability transports along re-gating. -/
 theorem atomize_mono {m m' : Nat} {p q : Prog} {c : Action}
@@ -3650,6 +4232,81 @@ theorem fundamental : {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → ∀ 
           unfold Good at this
           obtain ⟨fuel, r, hrun, hcont⟩ := this s' hS.2
           exact ⟨fuel + 1, r, hrun, hcont⟩
+  | _, _, .contrapose φ' ψ' m' tw hle => by
+      intro k
+      unfold Good
+      intro core S hS
+      cases S with
+      | nil => exact absurd (GoodStack_isCore _ hS) (fun hc => hc)
+      | cons mD d s' =>
+          unfold GoodStack at hS
+          cases s' with
+          | nil => exact absurd (GoodStack_isCore _ hS.2) (fun hc => hc)
+  | _, _, .searchChain g₁ ψ₁ e₁ L a me' opnt hme hle => fun k =>
+      Good_of_no_core _ (fun core S hc =>
+        EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) S hc) k
+  | _, _, .ctxChain hd L a me' opnt hme hle => fun k =>
+      Good_of_no_core _ (fun core S hc =>
+        EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) S hc) k
+  | _, _, .implS φ' ψ' χ' hle => by
+      intro k
+      unfold Good
+      intro core S hS
+      cases S with
+      | nil => exact absurd (GoodStack_isCore _ hS) (fun hc => hc)
+      | cons mD1 d1 s1 =>
+          unfold GoodStack at hS
+          cases s1 with
+          | nil => exact absurd (GoodStack_isCore _ hS.2) (fun hc => hc)
+          | cons mD2 d2 s2 =>
+              unfold GoodStack at hS
+              cases s2 with
+              | nil => exact absurd (GoodStack_isCore _ hS.2.2) (fun hc => hc)
+              | cons mD3 d3 s3 =>
+                  unfold GoodStack at hS
+                  have h1 : ∀ j, j ≤ k → Good j (ProvT.app
+                      (mD1 + mD3 + (Formula.impl ψ' χ').size) mD1 mD3
+                      φ' (.impl ψ' χ') d1 d3 (Nat.le_refl _)) :=
+                    fun j hj => Good_app (hS.1 j hj)
+                      (fun j' hj' => hS.2.2.1 j' (le_trans hj' hj)) (Nat.le_refl _)
+                  have h2 : ∀ j, j ≤ k → Good j (ProvT.app
+                      (mD2 + mD3 + ψ'.size) mD2 mD3 φ' ψ' d2 d3 (Nat.le_refl _)) :=
+                    fun j hj => Good_app (hS.2.1 j hj)
+                      (fun j' hj' => hS.2.2.1 j' (le_trans hj' hj)) (Nat.le_refl _)
+                  have houter := Good_app (h1 k (Nat.le_refl _)) h2
+                    (Nat.le_refl (((mD1 + mD3 + (Formula.impl ψ' χ').size)
+                      + (mD2 + mD3 + ψ'.size) + χ'.size)))
+                  unfold Good at houter
+                  obtain ⟨fuel, r, hrun, hcont⟩ := houter s3 hS.2.2.2
+                  exact ⟨fuel + 1, r, hrun, hcont⟩
+  | _, _, .implRefl φ' hle => by
+      intro k
+      unfold Good
+      intro core S hS
+      cases S with
+      | nil => exact absurd (GoodStack_isCore _ hS) (fun hc => hc)
+      | cons mD d s' =>
+          unfold GoodStack at hS
+          have := hS.1 k (Nat.le_refl _)
+          unfold Good at this
+          obtain ⟨fuel, r, hrun, hcont⟩ := this s' hS.2
+          exact ⟨fuel + 1, r, hrun, hcont⟩
+  | _, _, .implK φ' ψ' hle => by
+      intro k
+      unfold Good
+      intro core S hS
+      cases S with
+      | nil => exact absurd (GoodStack_isCore _ hS) (fun hc => hc)
+      | cons mD1 d1 s' =>
+          unfold GoodStack at hS
+          cases s' with
+          | nil => exact absurd (GoodStack_isCore _ hS.2) (fun hc => hc)
+          | cons mD2 d2 s'' =>
+              unfold GoodStack at hS
+              have := hS.1 k (Nat.le_refl _)
+              unfold Good at this
+              obtain ⟨fuel, r, hrun, hcont⟩ := this s'' hS.2.2
+              exact ⟨fuel + 1, r, hrun, hcont⟩
   | _, _, .app K m₁ m₂ φ' α f x hle => by
       have hf := fundamental f
       have hx := fundamental x
@@ -4131,6 +4788,12 @@ def ProvT.dbFree : {m : Nat} → {φ : Formula} → ProvT m φ → Prop
   | _, _, .diagF _ _ _ _ _ t _ => t.dbFree
   | _, _, .diagB _ _ _ _ _ t _ => t.dbFree
   | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.dbFree ∧ t2.dbFree
+  -- contrapose and the search telescope are excluded from the crossing-total
+  -- fragment for the same reason as the ITE leaves: the machine cannot walk them
+  | _, _, .contrapose _ _ _ _ _ => False
+  | _, _, .searchChain _ _ _ _ _ _ _ _ _ => False
+  | _, _, .ctxChain _ _ _ _ _ _ _ => False
+  | _, _, .implS _ _ _ _ => False
   | _, _, _ => True
 
 /-- Stack discharge trees are iteBranch-free. -/
@@ -4153,7 +4816,10 @@ theorem ProvT.mono_dbFree {k k' : Nat} {φ : Formula} (h : k ≤ k') :
   | .atomBoxImpl _ _ _ _ _ _ | .boxIntro _ _ _ _ _ | .app _ _ _ _ _ _ _ _
   | .axK _ _ _ _ _ _ _ _ _ _ | .box4 _ _ _ _ _ _ | .diagF _ _ _ _ _ _ _
   | .diagB _ _ _ _ _ _ _ | .axKf _ _ _ _ _ _ _ _ | .impS2 _ _ _ _ _ _ _ _ _
-  | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _ => Iff.rfl
+  | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _
+  | .implRefl _ _ | .implK _ _ _ | .contrapose _ _ _ _ _
+  | .searchChain _ _ _ _ _ _ _ _ _ | .ctxChain _ _ _ _ _ _ _
+  | .implS _ _ _ _ => Iff.rfl
 
 /-- **Machine outputs stay iteBranch-free** (exciseFix's re-crossing license): the
     walkable layer of every extracted content comes from the inputs' walkable layers
@@ -4191,6 +4857,28 @@ theorem crossDbFree : ∀ (F : Nat),
           | cons mD d s' =>
               simp only [boxInvGo] at h
               exact ih tw s' hf hs.2 h
+      | contrapose φ' ψ' m' tw hle => exact absurd hf (fun x => x)
+      | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle => exact absurd hf (fun x => x)
+      | ctxChain hd L a me' opnt hme hle => exact absurd hf (fun x => x)
+      | implS φ' ψ' χ' hle => exact absurd hf (fun x => x)
+      | implRefl φ' hle =>
+          cases s with
+          | nil => simp only [boxInvGo] at h; cases h; exact hf
+          | cons mD d s' =>
+              simp only [boxInvGo] at h
+              exact ih d s' hs.1 hs.2 h
+      | implK φ' ψ' hle =>
+          cases s with
+          | nil => simp only [boxInvGo] at h; cases h; exact hf
+          | cons mD1 d1 s' =>
+              cases s' with
+              | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  exact hs.1
+              | cons mD2 d2 s'' =>
+                  simp only [boxInvGo] at h
+                  exact ih d1 s'' hs.1 hs.2.2 h
       | implTrans φ' ψmid χ' a b tA tB hle =>
           cases s with
           | nil => simp only [boxInvGo] at h; cases h; exact hf
@@ -4586,6 +5274,21 @@ theorem GoodW_mono {k m m' : Nat} {φ : Formula} (hmm : m ≤ m')
           exact ⟨1, ⟨_, .diagB pm fb g _ tgt tP (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
       | atomNeg p' q' b' aN m'' tc hne hle =>
           exact ⟨1, ⟨_, .atomNeg p' q' b' aN m'' tc hne (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | implRefl ψ hle =>
+          exact ⟨1, ⟨_, .implRefl ψ (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | contrapose ψ ψ' m'' tw hle =>
+          exact ⟨1, ⟨_, .contrapose ψ ψ' m'' tw (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | searchChain g₁ ψ₁ e₁ L a' me'' opnt hme hle =>
+          exact ⟨1, ⟨_, .searchChain g₁ ψ₁ e₁ L a' me'' opnt hme (le_trans hle hmm)⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | ctxChain hd L a' me'' opnt hme hle =>
+          exact ⟨1, ⟨_, .ctxChain hd L a' me'' opnt hme (le_trans hle hmm)⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | implS ψ0 ψ1 ψ2 hle =>
+          exact ⟨1, ⟨_, .implS ψ0 ψ1 ψ2 (le_trans hle hmm)⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
+      | implK ψ ψ' hle =>
+          exact ⟨1, ⟨_, .implK ψ ψ' (le_trans hle hmm)⟩, rfl, by unfold ContentGoodW; trivial⟩
 
 /-- **Leaf goodness** (the leaf-crossing part of the wide fundamental): every
     iteBranch-free stored leaf is wide-good. (Pf-only: the former `GoodD` also carried
@@ -4785,6 +5488,42 @@ theorem fundamentalW : {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → t.d
           unfold GoodW at this
           obtain ⟨fuel, r, hrun, hcont⟩ := this s' hS.2
           exact ⟨fuel + 1, r, hrun, hcont⟩
+  | _, _, .contrapose φ' ψ' m' tw hle => fun hfree _ => absurd hfree (fun x => x)
+  | _, _, .searchChain g₁ ψ₁ e₁ L a me' opnt hme hle => fun hfree _ =>
+      absurd hfree (fun x => x)
+  | _, _, .ctxChain hd L a me' opnt hme hle => fun hfree _ =>
+      absurd hfree (fun x => x)
+  | _, _, .implS φ' ψ' χ' hle => fun hfree _ => absurd hfree (fun x => x)
+  | _, _, .implRefl φ' hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .implRefl φ' hle⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | cons mD d s' =>
+          unfold GoodStackW at hS
+          have := hS.1 k (Nat.le_refl _)
+          unfold GoodW at this
+          obtain ⟨fuel, r, hrun, hcont⟩ := this s' hS.2
+          exact ⟨fuel + 1, r, hrun, hcont⟩
+  | _, _, .implK φ' ψ' hle => fun _ k => by
+      unfold GoodW
+      intro core S hS
+      cases S with
+      | nil =>
+          exact ⟨1, ⟨_, .implK φ' ψ' hle⟩, rfl, by unfold ContentGoodW; trivial⟩
+      | cons mD1 d1 s' =>
+          unfold GoodStackW at hS
+          cases s' with
+          | nil =>
+              exact ⟨1, ⟨_, .weakenImpl ψ' φ' mD1 d1 (Nat.le_refl _)⟩, rfl,
+                by unfold ContentGoodW; trivial⟩
+          | cons mD2 d2 s'' =>
+              unfold GoodStackW at hS
+              have := hS.1 k (Nat.le_refl _)
+              unfold GoodW at this
+              obtain ⟨fuel, r, hrun, hcont⟩ := this s'' hS.2.2
+              exact ⟨fuel + 1, r, hrun, hcont⟩
   | _, _, .app K m₁ m₂ φ' α f x hle => fun hfree k => by
       have hf := fundamentalW f hfree.1
       have hx := fundamentalW x hfree.2
@@ -5150,6 +5889,12 @@ theorem excise_dbFree (fuel : Nat) (Gb : Formula → Bool) :
   | _, _, .box4 a' b' K ψ hg1 hle, hf => hf
   | _, _, .axKf a' b' c' K ψ α hg1 hle, hf => hf
   | _, _, .atomNeg p' q' b' aN m'' tc hne hle, hf => hf
+  | _, _, .implRefl ψ hle, hf => hf
+  | _, _, .implK ψ ψ' hle, hf => hf
+  | _, _, .contrapose ψ ψ' m' tw hle, hf => hf
+  | _, _, .searchChain _ _ _ _ _ _ _ _ _, hf => hf
+  | _, _, .ctxChain _ _ _ _ _ _ _, hf => hf
+  | _, _, .implS _ _ _ _, hf => hf
 
 /-- Iterated excision preserves iteBranch-freedom. -/
 theorem exciseFix_dbFree : (rounds fuel : Nat) → (Gb : Formula → Bool) →
@@ -5293,6 +6038,12 @@ theorem excise_wt_freeS2 (fuel : Nat) (Gb : Formula → Bool) :
   | _, _, .box4 a' b' K ψ hg1 hle, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .axKf a' b' c' K ψ α hg1 hle, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .atomNeg p' q' b' aN m'' tc hne hle, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .implRefl ψ hle, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .implK ψ ψ' hle, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .contrapose ψ ψ' m' tw hle, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .searchChain _ _ _ _ _ _ _ _ _, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .ctxChain _ _ _ _ _ _ _, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .implS _ _ _ _, hf => ⟨Nat.le_refl _, hf⟩
 
 /-- `argOK` survives substitution by `argOK` players. -/
 theorem argOK_subst_argOK {p : Prog} (h : T43.argOK p = true) {m o : Prog}
@@ -5486,6 +6237,12 @@ mutual
     | _, _, .impS2 _ ψ _ _ _ _ t1 t2 _ => G ψ ∧ t1.cutsOK G ∧ t2.cutsOK G
     | _, _, .boxMono _ _ _ _ _ _ => True
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.cutsOK G
+    | _, _, .implRefl _ _ => True
+    | _, _, .implK _ _ _ => True
+    | _, _, .contrapose _ _ _ t _ => t.cutsOK G
+    | _, _, .searchChain _ _ _ _ _ _ _ _ _ => True
+    | _, _, .ctxChain _ _ _ _ _ _ _ => True
+    | _, _, .implS _ ψ _ _ => G ψ
 end
 
 mutual
@@ -5526,6 +6283,12 @@ mutual
     | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.citesLE M ∧ t2.citesLE M
     | _, _, .boxMono _ _ _ _ _ _ => True
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.citesLE M
+    | _, _, .implRefl _ _ => True
+    | _, _, .implK _ _ _ => True
+    | _, _, .contrapose _ _ _ t _ => t.citesLE M
+    | _, _, .searchChain _ _ _ _ _ _ _ _ _ => True
+    | _, _, .ctxChain _ _ _ _ _ _ _ => True
+    | _, _, .implS _ _ _ _ => True
 end
 
 /-! ## 29. Bool checkers for the tie-down hypotheses (decide-able certificates). -/
@@ -5565,6 +6328,12 @@ mutual
     | _, _, .impS2 _ ψ _ _ _ _ t1 t2 _ => Gb ψ && t1.cutsOKb Gb && t2.cutsOKb Gb
     | _, _, .boxMono _ _ _ _ _ _ => true
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.cutsOKb Gb
+    | _, _, .implRefl _ _ => true
+    | _, _, .implK _ _ _ => true
+    | _, _, .contrapose _ _ _ t _ => t.cutsOKb Gb
+    | _, _, .searchChain _ _ _ _ _ _ _ _ _ => true
+    | _, _, .ctxChain _ _ _ _ _ _ _ => true
+    | _, _, .implS _ ψ _ _ => Gb ψ
 end
 
 mutual
@@ -5619,6 +6388,12 @@ mutual
         exact ⟨hGb _ h.1.1, t1.cutsOKb_sound hGb h.1.2, t2.cutsOKb_sound hGb h.2⟩
     | .boxMono _ _ _ _ _ _, _ => trivial
     | .atomNeg _ _ _ _ _ t _ _, h => t.cutsOKb_sound hGb h
+    | .implRefl _ _, _ => trivial
+    | .implK _ _ _, _ => trivial
+    | .contrapose _ _ _ t _, h => t.cutsOKb_sound hGb h
+    | .searchChain _ _ _ _ _ _ _ _ _, _ => trivial
+    | .ctxChain _ _ _ _ _ _ _, _ => trivial
+    | .implS _ _ _ _, h => hGb _ h
 end
 
 mutual
@@ -5657,6 +6432,12 @@ mutual
     | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.citesLEb M && t2.citesLEb M
     | _, _, .boxMono _ _ _ _ _ _ => true
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.citesLEb M
+    | _, _, .implRefl _ _ => true
+    | _, _, .implK _ _ _ => true
+    | _, _, .contrapose _ _ _ t _ => t.citesLEb M
+    | _, _, .searchChain _ _ _ _ _ _ _ _ _ => true
+    | _, _, .ctxChain _ _ _ _ _ _ _ => true
+    | _, _, .implS _ _ _ _ => true
 end
 
 mutual
@@ -5710,6 +6491,12 @@ mutual
         exact ⟨t1.citesLEb_sound h.1, t2.citesLEb_sound h.2⟩
     | .boxMono _ _ _ _ _ _, _ => trivial
     | .atomNeg _ _ _ _ _ t _ _, h => t.citesLEb_sound h
+    | .implRefl _ _, _ => trivial
+    | .implK _ _ _, _ => trivial
+    | .contrapose _ _ _ t _, h => t.citesLEb_sound h
+    | .searchChain _ _ _ _ _ _ _ _ _, _ => trivial
+    | .ctxChain _ _ _ _ _ _ _, _ => trivial
+    | .implS _ _ _ _, _ => trivial
 end
 
 end PD.T49

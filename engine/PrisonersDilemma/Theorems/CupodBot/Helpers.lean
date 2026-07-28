@@ -257,14 +257,25 @@ is real but whose certificate crosses the detector's own failed probe. -/
     tail is "OBot plays D against `CupodBot k`". -/
 theorem no_provable_OBot_D_tail (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →
-      rightTail φ = .plays OBot (CupodBot k) .D → False := by
+      TailTo (.plays OBot (CupodBot k) .D) φ → False := by
   intro K φ hp hK ht
   refine no_provable_probeFirst_tail k CooperateBot
       (.ite (.sim .opp (.bot DefectBot)) .C (.const .C) (.const .D))
-      (.const .D) .C .D (.plays .opp .self .D) (.const .D) (.const .C) ?_ ?_ K φ hp hK ?_
+      (.const .D) .C .D (.plays .opp .self .D) (.const .D) (.const .C) ?_ ?_ ?_ K φ hp hK ?_
   · simpa [Formula.subst, Prog.subst, CupodBot] using
       interp_bot_CooperateBot_plays_D_false (CupodBot k)
   · intro k' ψ c0 c1 h; simp at h
+  · -- OBot's then-branch is its inner probe `ite`; a plug continuation would put the
+    -- target constant under ITS then-branch, which is `.const .C ≠ .const .D`
+    intro L h
+    cases L with
+    | nil => simp [ctxPlug] at h
+    | cons hd tl =>
+        cases hd with
+        | searchL g' ψ' e' => simp [ctxPlug] at h
+        | iteL z' aT' other' =>
+            simp only [ctxPlug, Prog.ite.injEq] at h
+            exact const_ne_ctxPlug (by decide) tl h.2.2.1
   · simpa [OBot, CupodBot] using ht
 
 /-- Cupod's defection search fails against OBot at every budget — the floor's bite:

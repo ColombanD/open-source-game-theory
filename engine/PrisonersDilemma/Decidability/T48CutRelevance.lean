@@ -199,6 +199,14 @@ inductive PosImpl : Formula → Formula → Formula → Prop where
   | head {B C : Formula} : PosImpl (.impl B C) B C
   | tail {X C' B C : Formula} : PosImpl C' B C → PosImpl (.impl X C') B C
 
+/-- A positive-spine pair is a subformula: its implication is size-bounded by the host. -/
+theorem posImpl_size : ∀ {φ B C : Formula}, PosImpl φ B C →
+    (Formula.impl B C).size ≤ φ.size := by
+  intro φ B C h
+  induction h with
+  | head => exact Nat.le_refl _
+  | tail h' ih => simp only [Formula.size] at ih ⊢; omega
+
 /-- The transparency layer's legitimate-antecedent relation: the leaf shapes (each
     conclusion-determined via its `hme`-equation) closed under transitivity. -/
 inductive DAnt : Formula → Formula → Prop where
@@ -430,16 +438,19 @@ set_option maxHeartbeats 1000000 in
     original budget); `diagF`'s deep tail recurses through its Löb premise. -/
 theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
     ∀ {B C : Formula}, PosImpl φ B C →
-      PAnt B C ∨ ∃ m', m' ≤ m ∧ Pf m' C := by
+      PAnt B C ∨ (∃ m', m' ≤ m ∧ Pf m' C) ∨ (Formula.impl B C).size ≤ m := by
   intro m φ h
   refine Pf.rec
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun m φ _ => ∀ {B C : Formula}, PosImpl φ B C →
-      PAnt B C ∨ ∃ m', m' ≤ m ∧ Pf m' C)
+      PAnt B C ∨ (∃ m', m' ≤ m ∧ Pf m' C) ∨ (Formula.impl B C).size ≤ m)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
-    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
-    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg h
+    ?cAtom ?cAtomNeg ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cSTS ?cSearchChain ?cCtxChain
+    ?cEqR ?cEqN
+    ?cApp ?cITrans ?cWeaken ?cImpS2 ?cImplRefl ?cImplK ?cImplS ?cContrapose
+    ?cNegElim
+    ?cBoxIntro ?cAtomBox ?cAxK ?cAxKf ?cBox4 ?cBoxMono ?cDiagF ?cDiagB h
   case pConst => intros; trivial
   case pSelf => intros; trivial
   case pOpp => intros; trivial
@@ -491,11 +502,12 @@ theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
   case cWeaken =>
       intro k A ψ m' hψ hle ih B C hp
       cases hp with
-      | head => exact Or.inr ⟨m', by omega, hψ⟩
+      | head => exact Or.inr (Or.inl ⟨m', by omega, hψ⟩)
       | tail hp' =>
-          rcases ih hp' with hl | ⟨m'', hm'', hC⟩
+          rcases ih hp' with hl | ⟨m'', hm'', hC⟩ | hsz
           · exact Or.inl hl
-          · exact Or.inr ⟨m'', by omega, hC⟩
+          · exact Or.inr (Or.inl ⟨m'', by omega, hC⟩)
+          · exact Or.inr (Or.inr (by omega))
   case cSTS =>
       intro k k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle ih B C hp
       cases hp with
@@ -505,19 +517,13 @@ theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
       intro k A ψ χ a b h1 h2 hle ih1 ih2 B C hp
       cases hp with
       | head =>
-          rcases ih2 .head with hl2 | ⟨m2', hm2', hC⟩
-          · rcases ih1 .head with hl1 | ⟨m1', hm1', hψ⟩
-            · exact Or.inl (.trans hl1 hl2)
-            · refine Or.inr ⟨b + m1' + χ.size, ?_, ?_⟩
-              · have hA := Formula.size_pos A
-                simp only [Formula.size] at hle
-                omega
-              · exact Pf.mp b m1' ψ χ h2 hψ (Nat.le_refl _)
-          · exact Or.inr ⟨m2', by omega, hC⟩
+          -- the head pair is size-paid outright by the rule's own side condition
+          exact Or.inr (Or.inr (by omega))
       | tail hp' =>
-          rcases ih2 (.tail hp') with hl | ⟨m'', hm'', hC⟩
+          rcases ih2 (.tail hp') with hl | ⟨m'', hm'', hC⟩ | hsz
           · exact Or.inl hl
-          · exact Or.inr ⟨m'', by omega, hC⟩
+          · exact Or.inr (Or.inl ⟨m'', by omega, hC⟩)
+          · exact Or.inr (Or.inr (by omega))
   case cAtomBox =>
       intro k kBox p q a hatom hle _ B C hp
       cases hp with
@@ -528,11 +534,12 @@ theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
       cases hp
   case cApp =>
       intro k m₁ m₂ ψ α h1 h2 hle ih1 ih2 B C hp
-      rcases ih1 (.tail hp) with hl | ⟨m'', hm'', hC⟩
+      rcases ih1 (.tail hp) with hl | ⟨m'', hm'', hC⟩ | hsz
       · exact Or.inl hl
-      · refine Or.inr ⟨m'', ?_, hC⟩
+      · refine Or.inr (Or.inl ⟨m'', ?_, hC⟩)
         have hα := Formula.size_pos α
         omega
+      · exact Or.inr (Or.inr (by omega))
   case cAxK =>
       intro a b c m' K A α hprem hgate hle ih B C hp
       cases hp with
@@ -551,9 +558,10 @@ theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
           cases hp' with
           | head => exact Or.inl .diagFInner
           | tail hp'' =>
-              rcases ih (.tail hp'') with hl | ⟨m'', hm'', hC⟩
+              rcases ih (.tail hp'') with hl | ⟨m'', hm'', hC⟩ | hsz
               · exact Or.inl hl
-              · exact Or.inr ⟨m'', by omega, hC⟩
+              · exact Or.inr (Or.inl ⟨m'', by omega, hC⟩)
+              · exact Or.inr (Or.inr (by omega))
   case cDiagB =>
       intro pm fb g K tgt hgate hle ih B C hp
       cases hp with
@@ -572,11 +580,38 @@ theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
       cases hp with
       | head => exact Or.inl (.imps2Ant h1)
       | tail hp' =>
-          rcases ih1 (.tail (.tail hp')) with hl | ⟨m'', hm'', hC⟩
+          rcases ih1 (.tail (.tail hp')) with hl | ⟨m'', hm'', hC⟩ | hsz
           · exact Or.inl hl
-          · refine Or.inr ⟨m'', ?_, hC⟩
+          · refine Or.inr (Or.inl ⟨m'', ?_, hC⟩)
             have hAC := Formula.size_pos (Formula.impl A χ)
             omega
+          · exact Or.inr (Or.inr (by omega))
+  case cImplRefl =>
+      -- premise-free leaf with an arbitrary spine: every pair is size-paid outright
+      intro k0 A hle B C hp
+      exact Or.inr (Or.inr (Nat.le_trans (posImpl_size hp) hle))
+  case cImplK =>
+      intro k0 A B0 hle B C hp
+      exact Or.inr (Or.inr (Nat.le_trans (posImpl_size hp) hle))
+  case cSearchChain =>
+      -- premise-free telescope leaf: every spine pair is size-paid outright
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle B C hp
+      exact Or.inr (Or.inr (Nat.le_trans (posImpl_size hp) hle))
+  case cCtxChain =>
+      -- premise-free mixed-telescope leaf: same size-paid discharge
+      intro k0 hd L a me opnt hme hle B C hp
+      exact Or.inr (Or.inr (Nat.le_trans (posImpl_size hp) hle))
+  case cImplS =>
+      intro k0 A0 B0 C0 hle B C hp
+      exact Or.inr (Or.inr (Nat.le_trans (posImpl_size hp) hle))
+  case cContrapose =>
+      -- the only spine pair is the head, size-paid by the rule's own side condition
+      intro k0 A B0 m0 _h hle ih B C hp
+      exact Or.inr (Or.inr (by have := posImpl_size hp; simp only [Formula.size] at *; omega))
+  case cNegElim =>
+      -- vacuous: the premises are contradictory by soundness
+      intro k0 A B0 m₁ m₂ h1 h2 hle _ih1 _ih2 B C hp
+      exact absurd (PD.BaseTheorems.Pf_sound _ _ h2) (PD.BaseTheorems.Pf_sound _ _ h1)
   case cBoxMono =>
       intro a b K A hab hle B C hp
       cases hp with
@@ -590,7 +625,7 @@ theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
     or the implication is weakening-degenerate. This is Lemma A's dichotomy at the head
     pair — the tool the C3 tree-invariant applies at every `app` site. -/
 theorem pf_impl_ant {m : Nat} {B C : Formula} (h : Pf m (.impl B C)) :
-    PAnt B C ∨ ∃ m', m' ≤ m ∧ Pf m' C :=
+    PAnt B C ∨ (∃ m', m' ≤ m ∧ Pf m' C) ∨ (Formula.impl B C).size ≤ m :=
   pf_posImpl_ant h .head
 
 /-! ## 6. C3a — shape lemmas and the box-inversion (the sibling-sourcing tools).
@@ -655,6 +690,10 @@ theorem box_inversion {m b : Nat} {ψ : Formula} (h : Pf m (.box b ψ)) :
   | mp =>
       rename_i m₁ m₂ φ' h2 h1 hle
       exact Or.inr ⟨m₁, m₂, φ', h1, h2, hle⟩
+  | negElim =>
+      -- vacuous: the premises are contradictory by soundness
+      rename_i φ' m₁ m₂ h1 h2 hle
+      exact absurd (PD.BaseTheorems.Pf_sound _ _ h2) (PD.BaseTheorems.Pf_sound _ _ h1)
 
 /-! ## 7. C3b foundations — the SPLIT MEASURE `maxSLit`.
 
@@ -994,8 +1033,11 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Pf m φ →
     (motive_2 := fun _ _ _ => True)
     (motive_3 := fun m φ _ => ∀ {B C : Formula}, PPair φ B C → Tri L m B C)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
-    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
-    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg h
+    ?cAtom ?cAtomNeg ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cSTS ?cSearchChain ?cCtxChain
+    ?cEqR ?cEqN
+    ?cApp ?cITrans ?cWeaken ?cImpS2 ?cImplRefl ?cImplK ?cImplS ?cContrapose
+    ?cNegElim
+    ?cBoxIntro ?cAtomBox ?cAxK ?cAxKf ?cBox4 ?cBoxMono ?cDiagF ?cDiagB h
   case pConst => intros; trivial
   case pSelf => intros; trivial
   case pOpp => intros; trivial
@@ -1193,6 +1235,42 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Pf m φ →
       rcases hp with hpi | ⟨j, χ, pb, _⟩
       · cases hpi
       · cases pb
+  -- The Family-B leaves land in the DboxMid disjunct via the fixed witness §9 records —
+  -- `Tri` is RETRACTED-VACUOUS (`Tri_always`), so this is exactly as informative as the
+  -- theorem itself.
+  case cImplRefl =>
+      intro k0 A hle B C hp
+      refine Or.inr (Or.inr (Or.inl ⟨0, .plays .self .opp .C, 1000, _,
+        .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))
+      exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+  case cImplK =>
+      intro k0 A B0 hle B C hp
+      refine Or.inr (Or.inr (Or.inl ⟨0, .plays .self .opp .C, 1000, _,
+        .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))
+      exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+  case cSearchChain =>
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle B C hp
+      refine Or.inr (Or.inr (Or.inl ⟨0, .plays .self .opp .C, 1000, _,
+        .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))
+      exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+  case cCtxChain =>
+      intro k0 hd L a me opnt hme hle B C hp
+      refine Or.inr (Or.inr (Or.inl ⟨0, .plays .self .opp .C, 1000, _,
+        .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))
+      exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+  case cImplS =>
+      intro k0 A0 B0 C0 hle B C hp
+      refine Or.inr (Or.inr (Or.inl ⟨0, .plays .self .opp .C, 1000, _,
+        .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))
+      exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+  case cContrapose =>
+      intro k0 A B0 m0 _h hle ih B C hp
+      refine Or.inr (Or.inr (Or.inl ⟨0, .plays .self .opp .C, 1000, _,
+        .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))
+      exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+  case cNegElim =>
+      intro k0 A B0 m₁ m₂ h1 h2 hle _ih1 _ih2 B C hp
+      exact absurd (PD.BaseTheorems.Pf_sound _ _ h2) (PD.BaseTheorems.Pf_sound _ _ h1)
 
 /-- The judgment-head corollary — Lemma A's dichotomy in its final (maxSLit) form. -/
 theorem tame_impl_trichotomy (L : Nat) {m : Nat} {B C : Formula}

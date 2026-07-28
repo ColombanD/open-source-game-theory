@@ -110,8 +110,9 @@ mutual
   inductive AtomProvableG (G : Formula → Prop) : Nat → Formula → Prop where
     | mk : PlaysProofG G me opponent me a n → n ≤ k → AtomProvableG G k (.plays me opponent a)
 
-  /-- `Pf` with the six gates (see the header). Constructor order matches `Pf` exactly; the
-      seven transparency leaves are UNGATED (no recursive premises). -/
+  /-- `Pf` with the six gates (see the header). Same constructor SET as `Pf` (order differs:
+      the 2026-07-28 Family-B leaves `implRefl`/`implK` are appended last here); the
+      transparency leaves and the premise-free implication leaves are UNGATED. -/
   inductive PfG (G : Formula → Prop) : Nat → Formula → Prop where
     | atom : AtomProvableG G k φ → PfG G k φ
     | searchBranch (g : Nat) (ψ : Formula) (a b : Action) (me opponent : Prog)
@@ -209,6 +210,40 @@ mutual
         AtomProvableG G m (.plays p q b) → b ≠ aN →
         m + (Formula.neg (.plays p q aN)).size ≤ k →
         PfG G k (.neg (.plays p q aN))
+    -- the Family-B completion leaves (2026-07-28): premise-free, hence UNGATED
+    | implRefl (φ : Formula) :
+        (Formula.impl φ φ).size ≤ k → PfG G k (.impl φ φ)
+    | implK (φ ψ : Formula) :
+        (Formula.impl φ (.impl ψ φ)).size ≤ k → PfG G k (.impl φ (.impl ψ φ))
+    -- Family-B `.neg`-consumer (2026-07-28): the premise formula is reconstructible
+    -- from the conclusion, hence UNGATED (like `weakenImpl`). `negElim` has NO mirror:
+    -- it is vacuous in the consistent `S` (its premises cannot coexist, by soundness),
+    -- so `Pf_exists_PfB` discharges its arm by contradiction.
+    | contrapose (φ ψ : Formula) (m : Nat) :
+        PfG G m (.impl φ ψ) →
+        m + (Formula.impl (.neg ψ) (.neg φ)).size ≤ k →
+        PfG G k (.impl (.neg ψ) (.neg φ))
+    -- the depth-general search telescope (2026-07-28): a premise-free reading leaf,
+    -- hence UNGATED
+    | searchChain (g₁ : Nat) (ψ₁ : Formula) (e₁ : Prog)
+        (L : List (Nat × Formula × Prog)) (a : Action) (me opponent : Prog)
+        (hme : me = .search g₁ ψ₁ (searchPlug L (.const a)) e₁) :
+        (Formula.impl (.box g₁ (ψ₁.subst me opponent))
+          (implChain (searchGuards me opponent L) (.plays me opponent a))).size ≤ k →
+        PfG G k (.impl (.box g₁ (ψ₁.subst me opponent))
+          (implChain (searchGuards me opponent L) (.plays me opponent a)))
+    -- the MIXED telescope (the ite frontier, 2026-07-28): premise-free leaf, UNGATED
+    | ctxChain (hd : CtxLayer) (L : List CtxLayer) (a : Action) (me opponent : Prog)
+        (hme : me = ctxPlug (hd :: L) (.const a)) :
+        (Formula.impl (ctxGuard me opponent hd)
+          (implChain (ctxGuards me opponent L) (.plays me opponent a))).size ≤ k →
+        PfG G k (.impl (ctxGuard me opponent hd)
+          (implChain (ctxGuards me opponent L) (.plays me opponent a)))
+    -- Family-B completeness axioms (2026-07-28): premise-free leaves, UNGATED
+    | implS (φ ψ χ : Formula) :
+        (Formula.impl (.impl φ (.impl ψ χ))
+          (.impl (.impl φ ψ) (.impl φ χ))).size ≤ k →
+        PfG G k (.impl (.impl φ (.impl ψ χ)) (.impl (.impl φ ψ) (.impl φ χ)))
 end
 
 /-- The literal-bound gate — the T4.2 strata. -/
@@ -228,7 +263,8 @@ theorem PfG_sound {G : Formula → Prop} : ∀ {k : Nat} {φ : Formula},
     (motive_3 := fun k φ _ => Pf k φ)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?sb ?ss ?bss ?bsearch ?iteB ?eqR ?eqN ?mp ?itrans ?weaken ?sts
-    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg h
+    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg
+    ?implRefl ?implK ?contrapose ?searchChain ?ctxChain ?implS h
   case const => intro me oppo a; exact .const
   case self => intro me oppo a n _ ih; exact .self ih
   case opp => intro me oppo a n _ ih; exact .opp ih
@@ -269,6 +305,16 @@ theorem PfG_sound {G : Formula → Prop} : ∀ {k : Nat} {φ : Formula},
       exact .impS2 A B C m₁ m₂ K ih1 ih2 hle
   case boxMono => intro a b K A hab hle; exact .boxMono a b K A hab hle
   case atomNeg => intro k0 p q b aN m _ hne hle ih; exact .atomNeg p q b aN m ih hne hle
+  case implRefl => intro k0 A hle; exact .implRefl A hle
+  case implK => intro k0 A B hle; exact .implK A B hle
+  case contrapose => intro k0 A B m0 _ hle ih; exact .contrapose A B m0 ih hle
+  case searchChain =>
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle
+      exact .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+  case ctxChain =>
+      intro k0 hd L a me opnt hme hle
+      exact .ctxChain hd L a me opnt hme hle
+  case implS => intro k0 A B C hle; exact .implS A B C hle
 
 theorem PfB_sound {N : Nat} {k : Nat} {φ : Formula} :
     PfB N k φ → Pf k φ := PfG_sound
@@ -285,7 +331,8 @@ theorem PlaysProofG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) 
     (motive_3 := fun k φ _ => PfG G' k φ)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?sb ?ss ?bss ?bsearch ?iteB ?eqR ?eqN ?mp ?itrans ?weaken ?sts
-    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg h
+    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg
+    ?implRefl ?implK ?contrapose ?searchChain ?ctxChain ?implS h
   case const => intro me oppo a; exact .const
   case self => intro me oppo a n _ ih; exact .self ih
   case opp => intro me oppo a n _ ih; exact .opp ih
@@ -326,6 +373,16 @@ theorem PlaysProofG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) 
       exact .impS2 A B C m₁ m₂ K ih1 ih2 hle (hGG _ hg)
   case boxMono => intro a b K A hab hle; exact .boxMono a b K A hab hle
   case atomNeg => intro k0 p q b aN m _ hne hle ih; exact .atomNeg p q b aN m ih hne hle
+  case implRefl => intro k0 A hle; exact .implRefl A hle
+  case implK => intro k0 A B hle; exact .implK A B hle
+  case contrapose => intro k0 A B m0 _ hle ih; exact .contrapose A B m0 ih hle
+  case searchChain =>
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle
+      exact .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+  case ctxChain =>
+      intro k0 hd L a me opnt hme hle
+      exact .ctxChain hd L a me opnt hme hle
+  case implS => intro k0 A B C hle; exact .implS A B C hle
 
 theorem PfG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) :
     ∀ {k : Nat} {φ : Formula},
@@ -337,7 +394,8 @@ theorem PfG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) :
     (motive_3 := fun k φ _ => PfG G' k φ)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?sb ?ss ?bss ?bsearch ?iteB ?eqR ?eqN ?mp ?itrans ?weaken ?sts
-    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg h
+    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg
+    ?implRefl ?implK ?contrapose ?searchChain ?ctxChain ?implS h
   case const => intro me oppo a; exact .const
   case self => intro me oppo a n _ ih; exact .self ih
   case opp => intro me oppo a n _ ih; exact .opp ih
@@ -378,6 +436,16 @@ theorem PfG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) :
       exact .impS2 A B C m₁ m₂ K ih1 ih2 hle (hGG _ hg)
   case boxMono => intro a b K A hab hle; exact .boxMono a b K A hab hle
   case atomNeg => intro k0 p q b aN m _ hne hle ih; exact .atomNeg p q b aN m ih hne hle
+  case implRefl => intro k0 A hle; exact .implRefl A hle
+  case implK => intro k0 A B hle; exact .implK A B hle
+  case contrapose => intro k0 A B m0 _ hle ih; exact .contrapose A B m0 ih hle
+  case searchChain =>
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle
+      exact .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+  case ctxChain =>
+      intro k0 hd L a me opnt hme hle
+      exact .ctxChain hd L a me opnt hme hle
+  case implS => intro k0 A B C hle; exact .implS A B C hle
 
 theorem PlaysProofB_monoN {N N' : Nat} (hNN : N ≤ N') {me oppo body : Prog} {a : Action}
     {n : Nat} : PlaysProofB N me oppo body a n → PlaysProofB N' me oppo body a n :=
@@ -402,8 +470,9 @@ theorem Pf_exists_PfB : ∀ {k : Nat} {φ : Formula},
     (motive_2 := fun k φ _ => ∃ N, AtomProvableB N k φ)
     (motive_3 := fun k φ _ => ∃ N, PfB N k φ)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
-    ?atom ?sb ?ss ?bss ?bsearch ?iteB ?eqR ?eqN ?mp ?itrans ?weaken ?sts
-    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg h
+    ?atom ?atomNeg ?sb ?ss ?bss ?bsearch ?iteB ?sts ?searchChain ?ctxChain ?eqR ?eqN ?mp ?itrans
+    ?weaken ?impS2 ?implRefl ?implK ?implS ?contrapose ?negElim
+    ?boxIntro ?atomBox ?axK ?axKf ?box4 ?boxMono ?diagF ?diagB h
   case const => intro me oppo a; exact ⟨0, .const⟩
   case self => intro me oppo a n _ ih; obtain ⟨N, e⟩ := ih; exact ⟨N, .self e⟩
   case opp => intro me oppo a n _ ih; obtain ⟨N, e⟩ := ih; exact ⟨N, .opp e⟩
@@ -448,6 +517,13 @@ theorem Pf_exists_PfB : ∀ {k : Nat} {φ : Formula},
       exact ⟨0, .iteBranchSearch_t g z a' c0 c1 ψ q me oppo hme hle⟩
   case eqR => intro k0 p hle; exact ⟨0, .eqRefl p hle⟩
   case eqN => intro k0 p q hne hle; exact ⟨0, .eqNeg p q hne hle⟩
+  case searchChain =>
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle
+      exact ⟨0, .searchChain g₁ ψ₁ e₁ L a me opnt hme hle⟩
+  case ctxChain =>
+      intro k0 hd L a me opnt hme hle
+      exact ⟨0, .ctxChain hd L a me opnt hme hle⟩
+  case implS => intro k0 A B C hle; exact ⟨0, .implS A B C hle⟩
   case mp =>
       intro k0 m₁ m₂ A B _ _ hle ih1 ih2
       obtain ⟨N₁, e₁⟩ := ih1
@@ -509,6 +585,16 @@ theorem Pf_exists_PfB : ∀ {k : Nat} {φ : Formula},
       · exact PfB_monoN (by omega) e₂
       · exact Nat.le_max_right _ _
   case boxMono => intro a b K A hab hle; exact ⟨0, .boxMono a b K A hab hle⟩
+  case implRefl => intro k0 A hle; exact ⟨0, .implRefl A hle⟩
+  case implK => intro k0 A B hle; exact ⟨0, .implK A B hle⟩
+  case contrapose =>
+      intro k0 A B m0 _h hle ih
+      obtain ⟨N, e⟩ := ih
+      exact ⟨N, .contrapose A B m0 e hle⟩
+  case negElim =>
+      -- vacuous: the premises are contradictory by soundness
+      intro k0 A B m₁ m₂ h1 h2 hle _ih1 _ih2
+      exact absurd (PD.BaseTheorems.Pf_sound _ _ h2) (PD.BaseTheorems.Pf_sound _ _ h1)
   case atomNeg =>
       intro k0 p q b aN m _ hne hle ih
       obtain ⟨N, e⟩ := ih

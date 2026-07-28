@@ -133,6 +133,96 @@ function-application arms) — the old `struct` arm, which recursed into a separ
 proof where both motives must ride together (`Pf.atom` consumes a certificate; `search_t`
 consumes a `Pf`). Everywhere else, use `Pf.induct`. -/
 
+/-! ### The search-telescope soundness core (ported from the family-completion spike)
+
+`implChain`'s interp is the curried guard implication; `searchPlug_eval` is the
+telescope-eval induction: if every in-frame guard holds, evaluation reaches the
+plugged constant. These discharge the `searchChain` arm of `sound_upto`. -/
+
+theorem implChain_interp {tgt : Formula} : ∀ (gs : List Formula),
+    ((∀ ψ ∈ gs, ψ.interp) → tgt.interp) → (implChain gs tgt).interp := by
+  intro gs
+  induction gs with
+  | nil =>
+      intro h
+      exact h (fun ψ hψ => nomatch hψ)
+  | cons g gs ih =>
+      intro h hgI
+      refine ih (fun hall => h ?_)
+      intro ψ hψ
+      rcases List.mem_cons.mp hψ with h1 | h2
+      · exact h1 ▸ hgI
+      · exact hall ψ h2
+
+theorem searchPlug_eval (me opponent : Prog) (a : Action) :
+    ∀ (L : List (Nat × Formula × Prog)),
+      (∀ ψ ∈ searchGuards me opponent L, ψ.interp) →
+      ∃ n, eval n me opponent (searchPlug L (.const a)) = some a := by
+  intro L
+  induction L with
+  | nil => exact fun _ => ⟨1, rfl⟩
+  | cons hd rest ih =>
+      obtain ⟨g, ψ, e⟩ := hd
+      intro hg
+      have hhead : Pf g (ψ.subst me opponent) := hg _ List.mem_cons_self
+      have hps : proofSearch g (ψ.subst me opponent) = true :=
+        (proofSearch_spec _ _).2 hhead
+      obtain ⟨n, hn⟩ := ih (fun ψ' h' => hg ψ' (List.mem_cons_of_mem _ h'))
+      refine ⟨n + 1, ?_⟩
+      show eval (n + 1) me opponent (.search g ψ (searchPlug rest (.const a)) e) = some a
+      rw [eval, if_pos hps]
+      exact hn
+
+/-- The MIXED-telescope eval induction (the ite frontier, 2026-07-28): if every guard
+    fact of a `CtxLayer` stack holds — provable boxes for search layers, real probe
+    plays for ite layers — evaluation reaches the plugged constant. Generalizes
+    `searchPlug_eval`; the ite leg mirrors `sound_upto`'s `pIteBranchSearch` arm
+    (the probe `.sim .opp (.bot z)` is frame-independent). -/
+theorem ctxPlug_eval (me opponent : Prog) (a : Action) :
+    ∀ (L : List CtxLayer),
+      (∀ ψ ∈ ctxGuards me opponent L, ψ.interp) →
+      ∃ n, eval n me opponent (ctxPlug L (.const a)) = some a := by
+  intro L
+  induction L with
+  | nil => exact fun _ => ⟨1, rfl⟩
+  | cons hd rest ih =>
+      cases hd with
+      | searchL g ψ e =>
+          intro hg
+          have hhead : Pf g (ψ.subst me opponent) := hg _ List.mem_cons_self
+          have hps : proofSearch g (ψ.subst me opponent) = true :=
+            (proofSearch_spec _ _).2 hhead
+          obtain ⟨n, hn⟩ := ih (fun ψ' h' => hg ψ' (List.mem_cons_of_mem _ h'))
+          refine ⟨n + 1, ?_⟩
+          show eval (n + 1) me opponent (.search g ψ (ctxPlug rest (.const a)) e) = some a
+          rw [eval, if_pos hps]
+          exact hn
+      | iteL z aT other =>
+          intro hg
+          have hprobe : (Formula.plays opponent (.bot z) aT).interp :=
+            hg _ List.mem_cons_self
+          obtain ⟨nb, hb⟩ := hprobe
+          -- `nb ≥ 1`: a fuel-`0` play is `none ≠ some aT`.
+          obtain ⟨m, rfl⟩ : ∃ m, nb = m + 1 := by
+            cases nb with
+            | zero => simp [play, eval] at hb
+            | succ m => exact ⟨m, rfl⟩
+          have hguard : eval (m + 1) opponent (.bot z) opponent = some aT := hb
+          obtain ⟨n, hn⟩ := ih (fun ψ' h' => hg ψ' (List.mem_cons_of_mem _ h'))
+          have hguardN : eval (max (m + 1) n + 1) me opponent (.sim .opp (.bot z))
+              = some aT := by
+            rw [show eval (max (m + 1) n + 1) me opponent (.sim .opp (.bot z))
+                  = eval (max (m + 1) n) opponent (.bot z) opponent from rfl]
+            exact eval_mono_le hguard _ (Nat.le_max_left _ _)
+          have hbeq : (aT == aT) = true := by cases aT <;> rfl
+          refine ⟨max (m + 1) n + 1 + 1, ?_⟩
+          show eval _ me opponent
+            (.ite (.sim .opp (.bot z)) aT (ctxPlug rest (.const a)) other) = some a
+          rw [eval, hguardN]
+          simp only [bind, Option.bind]
+          rw [if_pos hbeq]
+          exact eval_mono_le hn _ (Nat.le_trans (Nat.le_max_right _ _) (Nat.le_succ _))
+
 set_option maxHeartbeats 1000000 in
 theorem sound_upto : ∀ B : Nat,
     (∀ me opponent body a n, PlaysProof me opponent body a n → n ≤ B →
@@ -150,9 +240,11 @@ theorem sound_upto : ∀ B : Nat,
         (motive_2 := fun _ _ _ => True)
         (motive_3 := fun _ _ _ => True)
         ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
-        ?pfAtom ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep ?pfIteBranchSearch
-        ?pfEqRefl ?pfEqNeg ?pfMp ?pfImplTrans ?pfWeaken ?pfSTS ?pfAtomBoxImpl ?pfBoxIntro
-        ?pfAxK ?pfBox4 ?pfDiagF ?pfDiagB ?pfAxKf ?pfImpS2 ?pfBoxMono ?pfAtomNeg h
+        ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep
+        ?pfIteBranchSearch ?pfSTS ?pfSearchChain ?pfCtxChain ?pfEqRefl ?pfEqNeg ?pfMp
+        ?pfImplTrans
+        ?pfWeaken ?pfImpS2 ?pfImplRefl ?pfImplK ?pfImplS ?pfContrapose ?pfNegElim
+        ?pfBoxIntro ?pfAtomBoxImpl ?pfAxK ?pfAxKf ?pfBox4 ?pfBoxMono ?pfDiagF ?pfDiagB h
       case const => exact fun _ => ⟨1, rfl⟩
       case self =>
         intro me opponent a n _ ih hB
@@ -216,9 +308,10 @@ theorem sound_upto : ∀ B : Nat,
         (motive_2 := fun k φ _ => k ≤ B → φ.interp)
         (motive_3 := fun k φ _ => k ≤ B → φ.interp)
         ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pAtomMk
-        ?pAtom ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep ?pIteBranchSearch
-        ?pEqRefl ?pEqNeg ?pMp ?pImplTrans ?pWeaken ?pSTS ?pAtomBoxImpl ?pBoxIntro
-        ?pAxK ?pBox4 ?pDiagF ?pDiagB ?pAxKf ?pImpS2 ?pBoxMono ?pAtomNeg h
+        ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep
+        ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
+        ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
+        ?pBoxIntro ?pAtomBoxImpl ?pAxK ?pAxKf ?pBox4 ?pBoxMono ?pDiagF ?pDiagB h
       -- the certificate half's motive is `True` in THIS recursor (proved in `hplays` above)
       case pConst => intros; trivial
       case pSelf => intros; trivial
@@ -349,6 +442,48 @@ theorem sound_upto : ∀ B : Nat,
       case pImpS2 =>
         intro A B0 C m₁ m₂ K0 _h1 _h2 hle ih1 ih2 hB
         exact fun hφ => (ih1 (by omega) hφ) (ih2 (by omega) hφ)
+      case pImplRefl =>
+        -- `⊢ φ → φ`: the interp is the identity
+        intro k0 A _hle _hB
+        exact fun h => h
+      case pImplK =>
+        -- `⊢ φ → (ψ → φ)`: the interp is the constant function
+        intro k0 A B0 _hle _hB
+        exact fun h _ => h
+      case pImplS =>
+        -- `⊢ (φ→(ψ→χ)) → ((φ→ψ) → (φ→χ))`: the S combinator
+        intro k0 A B0 C0 _hle _hB
+        exact fun f g x => f x (g x)
+      case pSearchChain =>
+        -- the telescope-eval induction: every guard fires, so `eval` reaches the
+        -- constant; the head layer is guard #0 of the same induction
+        intro k0 g₁ ψ₁ e₁ L a me opponent hme hle _hB
+        subst hme
+        intro hbox
+        refine implChain_interp _ (fun hg => ?_)
+        obtain ⟨n, hn⟩ := searchPlug_eval _ opponent a (((g₁, ψ₁, e₁)) :: L)
+          (by
+            intro ψ' hψ'
+            rcases List.mem_cons.mp hψ' with h1 | h2
+            · exact h1 ▸ hbox
+            · exact hg ψ' h2)
+        exact ⟨n, hn⟩
+      case pCtxChain =>
+        -- the mixed-telescope eval induction: every guard fact (box or probe) holds,
+        -- so `eval` descends the then-branches to the constant
+        intro k0 hd L a me opponent hme hle _hB
+        subst hme
+        exact implChain_interp
+          (ctxGuards (ctxPlug (hd :: L) (.const a)) opponent (hd :: L))
+          (fun hg => ctxPlug_eval _ opponent a (hd :: L) hg)
+      case pContrapose =>
+        -- classical contraposition of the premise's interp
+        intro k0 A B0 m0 _h hle ih hB
+        exact fun hn hp => hn (ih (by omega) hp)
+      case pNegElim =>
+        -- the premises' interps are contradictory: ex falso, semantically
+        intro k0 A B0 m₁ m₂ _h1 _h2 hle ih1 ih2 hB
+        exact absurd (ih2 (by omega)) (ih1 (by omega))
       case pBoxMono =>
         intro a b K0 A hab _hle _hB
         exact fun hpa => Pf_mono hpa hab

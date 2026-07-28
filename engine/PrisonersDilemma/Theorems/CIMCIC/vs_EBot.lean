@@ -39,63 +39,33 @@ theorem cimcic_botDef_consequent_not_provable (k m : Nat) :
   intro h
   exact interp_bot_DefectBot_plays_C_false (CIMCIC k) (Pf_sound m _ h)
 
-def CimcicBotDefForbiddenC (k : Nat) : Formula → Prop
-  | .plays p q a => p = (.bot DefectBot) ∧ q = CIMCIC k ∧ a = Action.C
-  | .impl _ ψ    => CimcicBotDefForbiddenC k ψ
-  | _            => False
-
+/-- **No `Pf` concludes anything guarded-tailed at the forbidden consequent** — an
+    instance of the shared census `no_provable_tailTo_unreadable` (Base/Exclusion):
+    the consequent atom has no certificate at any budget, and the target player is
+    bridge-unreadable. (Formerly a hand-rolled 22-arm `Pf.induct`; the shared census
+    runs on the Guarded `TailTo` invariant — see Base/Exclusion's header.) -/
 theorem cimcic_botDef_no_provable_forbidden (k : Nat) :
-    ∀ {m : Nat} {φ : Formula}, Pf m φ → ¬ CimcicBotDefForbiddenC k φ := by
-  intro m φ h
-  induction h using Pf.induct with
-  | atom k' φ' hatom =>
-      intro hF
-      cases hatom with
-      | mk cert hle =>
-          simp only [CimcicBotDefForbiddenC] at hF
-          obtain ⟨hp, hq, ha⟩ := hF
-          subst hp; subst hq; subst ha
-          exact cimcic_botDef_consequent_not_provable k _ (Pf.atom (.mk cert hle))
-  | searchBranch k' g ψ a b me opponent hme hle =>
-      intro hF; subst hme; simp only [CimcicBotDefForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | simStep k' me p q opponent a hme hle =>
-      intro hF; subst hme; simp only [CimcicBotDefForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | botSimStep k' me p q opponent a hme hle =>
-      intro hF; subst hme; simp only [CimcicBotDefForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | botSearchStep k' g ψ a b me opponent hme hle =>
-      intro hF; subst hme; simp only [CimcicBotDefForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | iteBranchSearch_t k' g z a' c0 c1 ψ q me opponent hme hle =>
-      intro hF; subst hme; simp only [CimcicBotDefForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | searchThenSearch_t k' k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk hle _ih =>
-      intro hF; subst hme; simp only [CimcicBotDefForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | mp k' m₁ m₂ φ' α h1 h2 hle ih1 _ih2 => intro hF; exact ih1 hF
-  | implTrans k' φ' ψ χ a b h1 h2 hle _ih1 ih2 => intro hF; exact ih2 hF
-  | weakenImpl k' φ' ψ m' hψ hle ih => intro hF; exact ih hF
-  | impS2 φ' ψ χ m₁ m₂ K h1 h2 hle ih1 _ih2 => intro hF; exact ih1 hF
-  | diagF pm fb g K tgt hgate hle ih => intro hF; exact ih hF
-  | eqRefl k' p hle => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | eqNeg k' p q hne hle => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | atomNeg k' p q b aN m' hatom hne hle => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | atomBoxImpl k' kBox p q a hatom hle => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | boxIntro kIn K φ' hprem hle _ih => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | axK a b c m' K φ' α hprem hgate hle _ih => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | box4 a b K φ' hgate hsz => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | diagB pm fb g K tgt hgate hle _ih => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | axKf a b c K φ' α hgate hsz => intro hF; simp only [CimcicBotDefForbiddenC] at hF
-  | boxMono a b K φ' hab hsz => intro hF; simp only [CimcicBotDefForbiddenC] at hF
+    ∀ {m : Nat} {φ : Formula}, Pf m φ →
+      ¬ TailTo (.plays (.bot DefectBot) (CIMCIC k) Action.C) φ :=
+  no_provable_tailTo_unreadable _ _ _
+    (fun n hA => cimcic_botDef_consequent_not_provable k n (.atom hA))
+    (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [DefectBot] at h)
+    (by intro L h
+        cases L with
+        | nil => simp [searchPlug, DefectBot] at h
+        | cons hd tl =>
+            obtain ⟨g, ψ, e⟩ := hd
+            simp [searchPlug, DefectBot] at h)
+    (by intro hd L h
+        cases hd with
+        | searchL g' ψ' e' => simp [ctxPlug, DefectBot] at h
+        | iteL z' aT' other' => simp [ctxPlug, DefectBot] at h)
 
 theorem cimcic_botDef_guard_not_provable (k : Nat) : ¬ Pf k (cimcic_guard_botDef k) := by
   intro h
   refine cimcic_botDef_no_provable_forbidden k h ?_
-  show CimcicBotDefForbiddenC k (cimcic_guard_botDef k)
-  unfold cimcic_guard_botDef CimcicBotDefForbiddenC CimcicBotDefForbiddenC
-  exact ⟨rfl, rfl, rfl⟩
+  exact ⟨rfl, by simp [CIMCIC]⟩
 
 theorem proofSearch_false_CIMCIC_vs_botDef (k : Nat) :
     proofSearch k
@@ -255,56 +225,30 @@ theorem no_cert_EBot_vs_CIMCIC (k : Nat) (a : Action) (n : Nat) :
   | ite_t hg hr hbr => exact no_cert_EBot_guard1_vs_CIMCIC k _ _ hg
   | ite_f hg hr hbr => exact no_cert_EBot_guard1_vs_CIMCIC k _ _ hg
 
-def EBotForbiddenC (k : Nat) : Formula → Prop
-  | .plays p q a => p = EBot ∧ q = CIMCIC k ∧ a = Action.C
-  | .impl _ ψ    => EBotForbiddenC k ψ
-  | _            => False
-
+/-- **No `Pf` concludes anything guarded-tailed at the forbidden consequent** — an
+    instance of the shared census `no_provable_tailTo_unreadable` (Base/Exclusion):
+    the consequent atom has no certificate at any budget, and the target player is
+    bridge-unreadable. (Formerly a hand-rolled 22-arm `Pf.induct`; the shared census
+    runs on the Guarded `TailTo` invariant — see Base/Exclusion's header.) -/
 theorem ebot_no_provable_forbidden (k : Nat) :
-    ∀ {m : Nat} {φ : Formula}, Pf m φ → ¬ EBotForbiddenC k φ := by
-  intro m φ h
-  induction h using Pf.induct with
-  | atom k' φ' hatom =>
-      intro hF
-      cases hatom with
-      | mk cert hle =>
-          simp only [EBotForbiddenC] at hF
-          obtain ⟨hp, hq, ha⟩ := hF
-          subst hp; subst hq; subst ha
-          exact no_cert_EBot_vs_CIMCIC k _ _ cert
-  | searchBranch k' g ψ a b me opponent hme hle =>
-      intro hF; subst hme; simp only [EBotForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [EBot] at hm
-  | simStep k' me p q opponent a hme hle =>
-      intro hF; subst hme; simp only [EBotForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [EBot] at hm
-  | botSimStep k' me p q opponent a hme hle =>
-      intro hF; subst hme; simp only [EBotForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [EBot] at hm
-  | botSearchStep k' g ψ a b me opponent hme hle =>
-      intro hF; subst hme; simp only [EBotForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [EBot] at hm
-  | iteBranchSearch_t k' g z a' c0 c1 ψ q me opponent hme hle =>
-      intro hF; subst hme; simp only [EBotForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [EBot] at hm
-  | searchThenSearch_t k' k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk hle _ih =>
-      intro hF; subst hme; simp only [EBotForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [EBot] at hm
-  | mp k' m₁ m₂ φ' α h1 h2 hle ih1 _ih2 => intro hF; exact ih1 hF
-  | implTrans k' φ' ψ χ a b h1 h2 hle _ih1 ih2 => intro hF; exact ih2 hF
-  | weakenImpl k' φ' ψ m' hψ hle ih => intro hF; exact ih hF
-  | impS2 φ' ψ χ m₁ m₂ K h1 h2 hle ih1 _ih2 => intro hF; exact ih1 hF
-  | diagF pm fb g K tgt hgate hle ih => intro hF; exact ih hF
-  | eqRefl k' p hle => intro hF; simp only [EBotForbiddenC] at hF
-  | eqNeg k' p q hne hle => intro hF; simp only [EBotForbiddenC] at hF
-  | atomNeg k' p q b aN m' hatom hne hle => intro hF; simp only [EBotForbiddenC] at hF
-  | atomBoxImpl k' kBox p q a hatom hle => intro hF; simp only [EBotForbiddenC] at hF
-  | boxIntro kIn K φ' hprem hle _ih => intro hF; simp only [EBotForbiddenC] at hF
-  | axK a b c m' K φ' α hprem hgate hle _ih => intro hF; simp only [EBotForbiddenC] at hF
-  | box4 a b K φ' hgate hsz => intro hF; simp only [EBotForbiddenC] at hF
-  | diagB pm fb g K tgt hgate hle _ih => intro hF; simp only [EBotForbiddenC] at hF
-  | axKf a b c K φ' α hgate hsz => intro hF; simp only [EBotForbiddenC] at hF
-  | boxMono a b K φ' hab hsz => intro hF; simp only [EBotForbiddenC] at hF
+    ∀ {m : Nat} {φ : Formula}, Pf m φ →
+      ¬ TailTo (.plays EBot (CIMCIC k) Action.C) φ :=
+  no_provable_tailTo_unreadable _ _ _
+    (fun n hA => by cases hA with | mk cert hle => exact no_cert_EBot_vs_CIMCIC k _ _ cert)
+    (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [EBot] at h)
+    (by intro L h
+        cases L with
+        | nil => simp [searchPlug, EBot] at h
+        | cons hd tl =>
+            obtain ⟨g, ψ, e⟩ := hd
+            simp [searchPlug, EBot] at h)
+    (by intro hd L h
+        cases hd with
+        | searchL g' ψ' e' => simp [ctxPlug, EBot] at h
+        | iteL z' aT' other' =>
+            simp only [ctxPlug, EBot, Prog.ite.injEq] at h
+            exact const_ne_ctxPlug (by decide) L h.2.2.1)
 
 abbrev cimcic_guard_EBot (k : Nat) : Formula :=
   .impl (.plays (CIMCIC k) EBot Action.C) (.plays EBot (CIMCIC k) Action.C)
@@ -312,9 +256,7 @@ abbrev cimcic_guard_EBot (k : Nat) : Formula :=
 theorem cimcic_guard_EBot_not_provable (k : Nat) : ¬ Pf k (cimcic_guard_EBot k) := by
   intro h
   refine ebot_no_provable_forbidden k h ?_
-  show EBotForbiddenC k (cimcic_guard_EBot k)
-  unfold cimcic_guard_EBot EBotForbiddenC EBotForbiddenC
-  exact ⟨rfl, rfl, rfl⟩
+  exact ⟨rfl, by simp [CIMCIC, EBot]⟩
 
 theorem proofSearch_false_CIMCIC_vs_EBot (k : Nat) :
     proofSearch k

@@ -38,15 +38,45 @@ prudence is self-defeating — mutual defection is the honest fixed point, and
     of PrudentBot's own budget-`k` search. -/
 theorem no_provable_prudence_self_tail (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →
-      rightTail φ = .plays (PrudentBot k) (.bot DefectBot) .D → False := by
+      TailTo (.plays (PrudentBot k) (.bot DefectBot) .D) φ → False := by
   intro K φ hp hK ht
   refine no_provable_searcherPlay_tail k (.plays .opp .self .C)
       (.search k (.plays .opp (.bot DefectBot) .D) (.const .C) (.const .D))
-      (.const .D) (.bot DefectBot) .D ?_ ?_ ?_ K φ hp hK ?_
+      (.const .D) (.bot DefectBot) .D ?_ ?_ ?_ ?_ ?_ K φ hp hK ?_
   · simpa [Formula.subst, Prog.subst, PrudentBot] using
       interp_bot_DefectBot_plays_C_false (PrudentBot k)
   · intro c0 c1 h; simp at h
   · intro k₂ ψ₂ c1 h; simp at h
+  · -- the searcher is not a telescope plugging the ELSE action (its then-actions
+    -- are C at every depth, the target is D)
+    intro L h
+    cases L with
+    | nil => simp [searchPlug] at h
+    | cons hd tl =>
+        obtain ⟨g₁, ψ₁, e₁⟩ := hd
+        simp only [searchPlug, Prog.search.injEq] at h
+        obtain ⟨-, -, h, -⟩ := h
+        cases tl with
+        | nil => simp [searchPlug] at h
+        | cons hd' tl' =>
+            obtain ⟨g₂, ψ₂', e₂⟩ := hd'
+            simp only [searchPlug, Prog.search.injEq] at h
+            obtain ⟨-, -, h, -⟩ := h
+            cases tl' with
+            | nil => simp [searchPlug] at h
+            | cons hd'' tl'' =>
+                obtain ⟨g₃, ψ₃, e₃⟩ := hd''
+                simp [searchPlug] at h
+  · -- nor a MIXED telescope: the inner search's then-branch is `.const .C ≠ .const .D`
+    intro L h
+    cases L with
+    | nil => simp [ctxPlug] at h
+    | cons hd tl =>
+        cases hd with
+        | searchL g' ψ' e' =>
+            simp only [ctxPlug, Prog.search.injEq] at h
+            exact const_ne_ctxPlug (by decide) tl h.2.2.1
+        | iteL z' aT' other' => simp [ctxPlug] at h
   · simpa [PrudentBot] using ht
 
 /-- PrudentBot's prudence guard about ITSELF fails at every budget — the floor's bite:

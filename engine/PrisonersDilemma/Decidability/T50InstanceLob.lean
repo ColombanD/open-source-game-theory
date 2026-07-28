@@ -276,6 +276,11 @@ theorem modestF_subst_inst (P : List Prog) (u v : Prog)
 /-! ## 3. Live instance-gate bricks (the PoolOK-conditioned tie was pruned
 2026-07-09 — superseded by the pool-free §3b; see git history). -/
 
+/-- `.neg` is transparent to both gate components. -/
+theorem instGate_neg_iff {P : List Prog} {N : Nat} {φ : Formula} :
+    instGate P N (.neg φ) ↔ instGate P N φ := by
+  simp only [instGate, T42.maxLitF, instModestF]
+
 theorem instGate_impl_iff {P : List Prog} {N : Nat} {φ ψ : Formula} :
     instGate P N (.impl φ ψ) ↔ instGate P N φ ∧ instGate P N ψ := by
   simp only [instGate, T42.maxLitF, instModestF, Bool.and_eq_true]
@@ -551,6 +556,12 @@ mutual
     | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.rawAtoms ∧ t2.rawAtoms
     | _, _, .boxMono _ _ _ _ _ _ => True
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.rawAtoms
+    | _, _, .implRefl _ _ => True
+    | _, _, .implK _ _ _ => True
+    | _, _, .contrapose _ _ _ t _ => t.rawAtoms
+    | _, _, .searchChain _ _ _ _ _ _ _ _ _ => True
+    | _, _, .ctxChain _ _ _ _ _ _ _ => True
+    | _, _, .implS _ _ _ _ => True
 end
 
 /-! ## 4. THE TRANSPORT — full `gateOK (instGate P N)` from cut-sites + cite caps.
@@ -768,6 +779,19 @@ theorem ProvT.transport {P : List Prog} {N M : Nat}
           (le_trans (by have := Formula.size_pos (.impl φ' χ'); omega) hm)
           (instGate_impl_iff.mpr ⟨h1, hc.1⟩)⟩
   | _, _, .boxMono _ _ _ _ _ _, _, _, _, _, _ => trivial
+  | _, _, .implRefl _ _, _, _, _, _, _ => trivial
+  | _, _, .implK _ _ _, _, _, _, _, _ => trivial
+  | _, _, .searchChain _ _ _ _ _ _ _ _ _, _, _, _, _, _ => trivial
+  | _, _, .ctxChain _ _ _ _ _ _ _, _, _, _, _, _ => trivial
+  -- the S-leaf's gate residue is exactly its cut diet: pass it through
+  | _, _, .implS _ _ _ _, hc, _, _, _, _ => hc
+  | _, _, .contrapose φ' ψ' m' tw hle, hc, hl, hr, hm, hξ =>
+      ProvT.transport hMN tw hc hl hr
+        (le_trans (by
+          have := Formula.size_pos (Formula.impl (.neg ψ') (.neg φ')); omega) hm)
+        (instGate_impl_iff.mpr
+          ⟨instGate_neg_iff.mp (instGate_impl_iff.mp hξ).2,
+           instGate_neg_iff.mp (instGate_impl_iff.mp hξ).1⟩)
   | _, _, .atomNeg p' q' b' aN m'' tc hne hle, hc, hl, hr, hm, hξ => by
       obtain ⟨hlit, hmod⟩ := hξ
       simp only [instModestF, Bool.and_eq_true] at hmod
@@ -827,6 +851,12 @@ mutual
     | _, _, .impS2 _ _ _ _ _ _ t1 t2 _ => t1.rawAtomsb && t2.rawAtomsb
     | _, _, .boxMono _ _ _ _ _ _ => true
     | _, _, .atomNeg _ _ _ _ _ t _ _ => t.rawAtomsb
+    | _, _, .implRefl _ _ => true
+    | _, _, .implK _ _ _ => true
+    | _, _, .contrapose _ _ _ t _ => t.rawAtomsb
+    | _, _, .searchChain _ _ _ _ _ _ _ _ _ => true
+    | _, _, .ctxChain _ _ _ _ _ _ _ => true
+    | _, _, .implS _ _ _ _ => true
 end
 
 mutual
@@ -880,6 +910,12 @@ mutual
         exact ⟨t1.rawAtomsb_sound h.1, t2.rawAtomsb_sound h.2⟩
     | .boxMono _ _ _ _ _ _, _ => trivial
     | .atomNeg _ _ _ _ _ t _ _, h => t.rawAtomsb_sound h
+    | .implRefl _ _, _ => trivial
+    | .implK _ _ _, _ => trivial
+    | .contrapose _ _ _ t _, h => t.rawAtomsb_sound h
+    | .searchChain _ _ _ _ _ _ _ _ _, _ => trivial
+    | .ctxChain _ _ _ _ _ _ _, _ => trivial
+    | .implS _ _ _ _, _ => trivial
 end
 
 /-- **THE CERTIFICATE PIPELINE**: four kernel-decidable checks and one arithmetic

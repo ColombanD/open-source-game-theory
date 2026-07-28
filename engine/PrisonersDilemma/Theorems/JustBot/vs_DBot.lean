@@ -70,13 +70,14 @@ DBot — whose probe already watched JustBot defect vs `.bot DefectBot` — coop
     tail is "DBot plays C against `.bot (DupocBot k)`" (JustBot's guard instance). -/
 theorem no_provable_DBot_C_vs_botDupoc_tail (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →
-      rightTail φ = .plays DBot (.bot (DupocBot k)) .C → False := by
+      TailTo (.plays DBot (.bot (DupocBot k)) .C) φ → False := by
   intro K φ hp hK ht
   refine no_provable_probeFirst_tail_botOpp k DefectBot (.const .D) (.const .C) .C .C
-      (.plays .opp .self .C) (.const .C) (.const .D) ?_ ?_ K φ hp hK ?_
+      (.plays .opp .self .C) (.const .C) (.const .D) ?_ ?_ ?_ K φ hp hK ?_
   · simpa [Formula.subst, Prog.subst, DupocBot] using
       interp_bot_DefectBot_plays_C_false (.bot (DupocBot k))
   · intro k' ψ c0 c1 h; simp at h
+  · exact fun L => const_ne_ctxPlug (by decide) L
   · simpa [DBot, DupocBot] using ht
 
 /-- JustBot's guard fails against DBot at every budget — the floor's bite. -/

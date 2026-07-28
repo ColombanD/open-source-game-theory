@@ -191,13 +191,19 @@ theorem decB_sound (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B) : 
       exact chkLeaf_soundG k φ h
     · -- atom (cert search with the lagged approximation as guard oracle)
       exact PfG.atom (certOG_soundG _ (fun m ψ hh => ih m ψ hh) _ k φ h)
-    · -- weakenImpl
+    · -- weakenImpl / contrapose (the two legs of the shared checker)
       unfold chkWeaken at h
       split at h
       · rename_i A B
-        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
-        obtain ⟨hsz, hr⟩ := h
-        exact PfG.weakenImpl A B _ (ih _ _ hr) (by omega)
+        simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h
+        rcases h with ⟨hsz, hr⟩ | h2
+        · exact PfG.weakenImpl A B _ (ih _ _ hr) (by omega)
+        · split at h2
+          · rename_i B' A'
+            simp only [Bool.and_eq_true, decide_eq_true_eq] at h2
+            obtain ⟨hsz, hr⟩ := h2
+            exact PfG.contrapose A' B' _ (ih _ _ hr) (by omega)
+          · simp at h2
       · simp at h
     · -- searchThenSearch_t
       unfold chkSTS at h
@@ -338,14 +344,21 @@ theorem stepB_mono {Gb : Formula → Bool} {S₁ S₂ : Nat → Formula → Bool
   · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
       (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr
         (certOG_mono2 S₁ S₂ hS _ _ (Nat.le_refl _) _ _ h)))))))))))))))
-  · -- chkWeaken
+  · -- chkWeaken (two legs)
     refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
       (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))))))))))
     unfold chkWeaken at h ⊢
     split at h
     · rename_i A B
-      simp only [Bool.and_eq_true] at h ⊢
-      exact ⟨h.1, hS _ _ h.2⟩
+      simp only [Bool.or_eq_true, Bool.and_eq_true] at h ⊢
+      rcases h with ⟨h1, h2⟩ | h2
+      · exact Or.inl ⟨h1, hS _ _ h2⟩
+      · right
+        split at h2
+        · rename_i B' A'
+          simp only [Bool.and_eq_true] at h2 ⊢
+          exact ⟨h2.1, hS _ _ h2.2⟩
+        · simp at h2
     · simp at h
   · -- chkSTS
     refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
@@ -472,6 +485,7 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
     ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
     ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
+    ?cImplRefl ?cImplK ?cContrapose ?cSearchChain ?cCtxChain ?cImplS
     h
   case pConst =>
       intro me oppo a b hb
@@ -637,6 +651,54 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
       unfold stepG
       have hfire := chkLeaf_eqNeg K p q hne (Nat.le_trans hsz hmK)
       simp only [hfire, Bool.true_or]
+  case cImplRefl =>
+      intro k0 A hsz K hmK
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_implRefl K A (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cImplK =>
+      intro k0 A B hsz K hmK
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_implK K A B (Nat.le_trans hsz hmK)
+      simp only [hfire, Bool.true_or]
+  case cSearchChain =>
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_searchChain K g₁ ψ₁ e₁ L a opnt (Nat.le_trans hle hmK)
+      simp only [hfire, Bool.true_or]
+  case cCtxChain =>
+      intro k0 hd L a me opnt hme hle K hmK
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_ctxChain K me opnt hd L a hme (Nat.le_trans hle hmK)
+      simp only [hfire, Bool.true_or]
+  case cImplS =>
+      intro k0 A B C hle K hmK
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_implS K A B C (Nat.le_trans hle hmK)
+      simp only [hfire, Bool.true_or]
+  case cContrapose =>
+      intro k0 A B m0 _h hle ih K hmK
+      have h1 := Formula.size_pos (Formula.impl (.neg B) (.neg A))
+      obtain ⟨f, e⟩ := ih (K - (Formula.impl (.neg B) (.neg A)).size) (by omega)
+      refine ⟨f + 1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire : chkWeaken (decG Gb f) K (Formula.impl (.neg B) (.neg A)) = true := by
+        unfold chkWeaken
+        have hg : (Formula.impl (.neg B) (.neg A)).size ≤ K := by omega
+        simp [e, hg]
+      simp only [hfire, Bool.or_true, Bool.true_or]
   case cAtom =>
       intro k0 φ0 _hatom ih K hmK
       obtain ⟨F, e⟩ := ih K hmK

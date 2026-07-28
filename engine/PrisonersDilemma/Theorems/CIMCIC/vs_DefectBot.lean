@@ -32,81 +32,34 @@ theorem cimcic_consequent_not_provable (k m : Nat) :
   · rw [hD] at hn; exact absurd hn (by decide)
   · rw [hNone] at hn; exact absurd hn (by decide)
 
-/-- `ForbiddenC k φ`: φ is, or is an `.impl`-chain ending in, the false consequent `DefectBot plays
-    C vs CIMCIC`. The motive for the structural exclusion. -/
-def CimcicForbiddenC (k : Nat) : Formula → Prop
-  | .plays p q a => p = DefectBot ∧ q = CIMCIC k ∧ a = Action.C
-  | .impl _ ψ    => CimcicForbiddenC k ψ
-  | _            => False
-
-/-- **No `Pf` concludes `.impl _ (false-consequent)`** — ONE flat induction over the unified
-    proof system.
-
-    **Pf-only note (Phase 3)**: this replaces the former PAIR of theorems — `cimcic_no_deriv_forbidden`
-    (a `Derivation` induction) plus `cimcic_no_provable_forbidden` (a 26-argument POSITIONAL `Provable.rec`
-    whose `struct` arm reached through the glue into the first). With one proof system there is
-    one induction, with NAMED arms via `Pf.induct`. The `atom` arm bottoms out on
-    `cimcic_consequent_not_provable` (the consequent is a genuinely FALSE atom, refuted by soundness);
-    the implication-forming rules recurse on the premise carrying the consequent chain; every
-    other rule concludes a shape the motive maps to `False`. -/
+/-- **No `Pf` concludes anything guarded-tailed at the forbidden consequent** — an
+    instance of the shared census `no_provable_tailTo_unreadable` (Base/Exclusion):
+    the consequent atom has no certificate at any budget, and the target player is
+    bridge-unreadable. (Formerly a hand-rolled 22-arm `Pf.induct`; the shared census
+    runs on the Guarded `TailTo` invariant — see Base/Exclusion's header.) -/
 theorem cimcic_no_provable_forbidden (k : Nat) :
-    ∀ {m : Nat} {φ : Formula}, Pf m φ → ¬ CimcicForbiddenC k φ := by
-  intro m φ h
-  induction h using Pf.induct with
-  -- the execution bridge: bottoms out on the FALSE consequent atom
-  | atom k' φ' hatom =>
-      intro hF
-      cases hatom with
-      | mk cert hle =>
-          simp only [CimcicForbiddenC] at hF
-          obtain ⟨hp, hq, ha⟩ := hF
-          subst hp; subst hq; subst ha
-          exact cimcic_consequent_not_provable k _ (Pf.atom (.mk cert hle))
-  -- source transparency: the consequent's subject would have to be `DefectBot` (= `.const D`),
-  -- but these rules read `.search`/`.sim`/`.ite` players — syntactic no-confusion.
-  | searchBranch k' g ψ a b me opponent hme hle =>
-      intro hF; subst hme; simp only [CimcicForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | simStep k' me p q opponent a hme hle =>
-      intro hF; subst hme; simp only [CimcicForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | botSimStep k' me p q opponent a hme hle =>
-      intro hF; subst hme; simp only [CimcicForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | botSearchStep k' g ψ a b me opponent hme hle =>
-      intro hF; subst hme; simp only [CimcicForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | iteBranchSearch_t k' g z a' c0 c1 ψ q me opponent hme hle =>
-      intro hF; subst hme; simp only [CimcicForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  | searchThenSearch_t k' k₁ k₂ m' ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk hle _ih =>
-      intro hF; subst hme; simp only [CimcicForbiddenC] at hF
-      obtain ⟨hm, _, _⟩ := hF; simp [DefectBot] at hm
-  -- implication-forming rules: the motive peels the `.impl`; recurse on the carrying premise
-  | mp k' m₁ m₂ φ' α h1 h2 hle ih1 _ih2 => intro hF; exact ih1 hF
-  | implTrans k' φ' ψ χ a b h1 h2 hle _ih1 ih2 => intro hF; exact ih2 hF
-  | weakenImpl k' φ' ψ m' hψ hle ih => intro hF; exact ih hF
-  | impS2 φ' ψ χ m₁ m₂ K h1 h2 hle ih1 _ih2 => intro hF; exact ih1 hF
-  | diagF pm fb g K tgt hgate hle ih => intro hF; exact ih hF
-  -- everything else concludes a `.eq`/`.neg`/`.box`/`.diag` shape: the motive is `False` there
-  | eqRefl k' p hle => intro hF; simp only [CimcicForbiddenC] at hF
-  | eqNeg k' p q hne hle => intro hF; simp only [CimcicForbiddenC] at hF
-  | atomNeg k' p q b aN m' hatom hne hle => intro hF; simp only [CimcicForbiddenC] at hF
-  | atomBoxImpl k' kBox p q a hatom hle => intro hF; simp only [CimcicForbiddenC] at hF
-  | boxIntro kIn K φ' hprem hle _ih => intro hF; simp only [CimcicForbiddenC] at hF
-  | axK a b c m' K φ' α hprem hgate hle _ih => intro hF; simp only [CimcicForbiddenC] at hF
-  | box4 a b K φ' hgate hsz => intro hF; simp only [CimcicForbiddenC] at hF
-  | diagB pm fb g K tgt hgate hle _ih => intro hF; simp only [CimcicForbiddenC] at hF
-  | axKf a b c K φ' α hgate hsz => intro hF; simp only [CimcicForbiddenC] at hF
-  | boxMono a b K φ' hab hsz => intro hF; simp only [CimcicForbiddenC] at hF
+    ∀ {m : Nat} {φ : Formula}, Pf m φ →
+      ¬ TailTo (.plays DefectBot (CIMCIC k) Action.C) φ :=
+  no_provable_tailTo_unreadable _ _ _
+    (fun n hA => cimcic_consequent_not_provable k n (.atom hA))
+    (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [DefectBot] at h)
+    (by intro L h
+        cases L with
+        | nil => simp [searchPlug, DefectBot] at h
+        | cons hd tl =>
+            obtain ⟨g, ψ, e⟩ := hd
+            simp [searchPlug, DefectBot] at h)
+    (by intro hd L h
+        cases hd with
+        | searchL g' ψ' e' => simp [ctxPlug, DefectBot] at h
+        | iteL z' aT' other' => simp [ctxPlug, DefectBot] at h)
 
 /-- CIMCIC's guard against DefectBot is **not provable** within any budget `k`. -/
 theorem cimcic_guard_not_provable (k : Nat) : ¬ Pf k (cimcic_guard k) := by
   intro h
   refine cimcic_no_provable_forbidden k h ?_
-  show CimcicForbiddenC k (cimcic_guard k)
-  unfold cimcic_guard CimcicForbiddenC CimcicForbiddenC
-  exact ⟨rfl, rfl, rfl⟩
+  exact ⟨rfl, by simp [CIMCIC, DefectBot]⟩
 
 /-- `proofSearch k guard = false` — from `cimcic_guard_not_provable`. -/
 theorem proofSearch_false_for_CIMCIC_vs_DefectBot (k : Nat) :

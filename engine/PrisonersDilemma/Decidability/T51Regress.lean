@@ -85,6 +85,85 @@ theorem DAnt_chain_to : ∀ {B C : Formula}, PD.T48.DAnt B C → ModChain C →
       subst hD
       exact absurd h1 DAnt_box_consequent
 
+/-- Every `ModChain` formula is non-modest: its spine tail is the (non-modest) Dupoc
+    fact and `modestF` descends the spine — so the premise-free implication leaves
+    (`implRefl`/`implK`), whose antecedents are literally their consequents' parts,
+    can never conclude a chain formula. -/
+theorem ModChain_not_modest : ∀ {C : Formula}, ModChain C → T43.modestF C = false := by
+  intro C h
+  induction h with
+  | base => exact tgtD_not_modest
+  | step hB hC ih => simp [T43.modestF, ih]
+
+/-- Peeling a guard chain: a `ModChain` on `implChain gs (.plays …)` pins the tail
+    plays-atom to the Dupoc fact (each `.impl` step peels; `base` cannot match an
+    `.impl` and pins a bare atom directly). -/
+theorem ModChain_chain_plays : ∀ (gs : List Formula) {me opnt : Prog} {a : Action},
+    ModChain (implChain gs (.plays me opnt a)) →
+    Formula.plays me opnt a = tgtD := by
+  intro gs
+  induction gs with
+  | nil =>
+      intro me opnt a h
+      generalize hX : Formula.plays me opnt a = X at h
+      cases h with
+      | base => exact rfl
+      | step hB hC => exact Formula.noConfusion hX
+  | cons g gs ih =>
+      intro me opnt a h
+      have h' : ModChain (.impl g (implChain gs (.plays me opnt a))) := h
+      generalize hX : Formula.impl g (implChain gs (.plays me opnt a)) = X at h'
+      cases h' with
+      | base => exact absurd hX (by simp [tgtD])
+      | step hB hC =>
+          injection hX with h1 h2
+          subst h1
+          subst h2
+          exact ih hC
+
+/-- If the telescope's tail is the Dupoc fact, the telescope's player IS `meD` and its
+    FIRST guard box is the (substituted) Dupoc guard — whose content is the non-modest
+    fact itself, so the chain's first `step` cannot be modest. -/
+theorem searchChain_first_guard_not_modest {g₁ : Nat} {ψ₁ : Formula} {e₁ : Prog}
+    {L : List (Nat × Formula × Prog)} {a : Action} {me opnt : Prog}
+    (hme : me = .search g₁ ψ₁ (searchPlug L (.const a)) e₁)
+    (heq : Formula.plays me opnt a = tgtD)
+    (hB : T43.modestF (.box g₁ (ψ₁.subst me opnt)) = true) : False := by
+  simp only [tgtD, Formula.plays.injEq] at heq
+  obtain ⟨hplayer, hopp, ha⟩ := heq
+  subst hplayer; subst hopp; subst ha
+  rw [show meD = .search kD (.plays .opp .self .C) (.const .C) (.const .D) from rfl]
+    at hme
+  simp only [Prog.search.injEq] at hme
+  obtain ⟨hg, hψ, -, -⟩ := hme
+  subst hg
+  rw [← hψ] at hB
+  rw [show T43.modestF (.box kD ((Formula.plays .opp .self .C).subst meD meD))
+      = T43.modestF tgtD from rfl] at hB
+  rw [tgtD_not_modest] at hB
+  cases hB
+
+/-- Plug-agnostic twin of `searchChain_first_guard_not_modest` (for the mixed
+    telescope's `searchL` head): only the head guard components matter. -/
+theorem chainHead_guard_not_modest {g₁ : Nat} {ψ₁ : Formula} {e₁ pT : Prog}
+    {a : Action} {me opnt : Prog}
+    (hme : me = .search g₁ ψ₁ pT e₁)
+    (heq : Formula.plays me opnt a = tgtD)
+    (hB : T43.modestF (.box g₁ (ψ₁.subst me opnt)) = true) : False := by
+  simp only [tgtD, Formula.plays.injEq] at heq
+  obtain ⟨hplayer, hopp, ha⟩ := heq
+  subst hplayer; subst hopp; subst ha
+  rw [show meD = .search kD (.plays .opp .self .C) (.const .C) (.const .D) from rfl]
+    at hme
+  simp only [Prog.search.injEq] at hme
+  obtain ⟨hg, hψ, -, -⟩ := hme
+  subst hg
+  rw [← hψ] at hB
+  rw [show T43.modestF (.box kD ((Formula.plays .opp .self .C).subst meD meD))
+      = T43.modestF tgtD from rfl] at hB
+  rw [tgtD_not_modest] at hB
+  cases hB
+
 /-- **THE REGRESS**: no modest-gated derivation concludes any `ModChain` formula —
     atoms re-cite the fact itself (structural descent through the recursor), cuts
     and census antecedents into the chain are the non-modest guard box, and
@@ -101,7 +180,8 @@ theorem regress {N : Nat} {m : Nat} {C : Formula}
     (motive_3 := fun _ C _ => ModChain C → False)
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?sb ?ss ?bss ?bsearch ?ite ?eqR ?eqN ?app ?itrans ?weaken ?sts
-    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg h
+    ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg
+    ?implRefl ?implK ?contrapose ?searchChain ?ctxChain ?implS h
   case const =>
       intro me oppo a h1 h2
       refine ⟨fun hb => absurd hb.1 (by simp [meD, Bots.DupocBot]), fun c hc => ?_⟩
@@ -211,6 +291,83 @@ theorem regress {N : Nat} {m : Nat} {C : Formula}
       intro k A B mm _ hle ih hm
       cases hm with
       | step hB hC' => exact ih hC'
+  case implRefl =>
+      intro k A hle hm
+      cases hm with
+      | step hB hC' =>
+          rw [ModChain_not_modest hC'] at hB
+          cases hB
+  case implK =>
+      intro k A B hle hm
+      cases hm with
+      | step hB htail =>
+          cases htail with
+          | step hB2 htt =>
+              rw [ModChain_not_modest htt] at hB
+              cases hB
+  case implS =>
+      -- peel three steps: the first guard's own components contain the chain's
+      -- non-modest continuation
+      intro k A B C hle hm
+      cases hm with
+      | step hB htail =>
+          cases htail with
+          | step hB2 htail2 =>
+              cases htail2 with
+              | step hB3 htail3 =>
+                  have hχ := ModChain_not_modest htail3
+                  simp [T43.modestF, hχ] at hB
+  case contrapose =>
+      -- the conclusion's tail is a `.neg`, which no chain shape matches
+      intro k A B m0 _h hle ih hm
+      cases hm with
+      | step hB htail => cases htail
+  case searchChain =>
+      -- a telescope chain reaching the Dupoc fact would need its own first guard
+      -- instance to be modest — but that instance IS the non-modest fact
+      intro k g₁ ψ₁ e₁ L a me opnt hme hle hm
+      generalize hX : Formula.impl (.box g₁ (ψ₁.subst me opnt))
+        (implChain (searchGuards me opnt L) (.plays me opnt a)) = X at hm
+      cases hm with
+      | base => exact absurd hX (by simp [tgtD])
+      | step hB hC =>
+          injection hX with h1 h2
+          subst h1
+          subst h2
+          exact searchChain_first_guard_not_modest hme
+            (ModChain_chain_plays (searchGuards me opnt L) hC) hB
+  case ctxChain =>
+      intro k hd L a me opnt hme hle hm
+      cases hd with
+      | searchL g₁ ψ₁ e₁ =>
+          -- searchL head: same kill as `searchChain` — the head guard instance IS the
+          -- non-modest Dupoc fact
+          generalize hX : Formula.impl (ctxGuard me opnt (.searchL g₁ ψ₁ e₁))
+            (implChain (ctxGuards me opnt L) (.plays me opnt a)) = X at hm
+          cases hm with
+          | base => exact absurd hX (by simp [ctxGuard, tgtD])
+          | step hB hC =>
+              injection hX with h1 h2
+              subst h1
+              subst h2
+              exact chainHead_guard_not_modest (by simpa [ctxPlug] using hme)
+                (ModChain_chain_plays (ctxGuards me opnt L) hC) hB
+      | iteL z aT other =>
+          -- iteL head: the tail forces the player to be the Dupoc SEARCHER, but the
+          -- plug is an `.ite` — shape contradiction
+          generalize hX : Formula.impl (ctxGuard me opnt (.iteL z aT other))
+            (implChain (ctxGuards me opnt L) (.plays me opnt a)) = X at hm
+          cases hm with
+          | base => exact absurd hX (by simp [ctxGuard, tgtD])
+          | step hB hC =>
+              injection hX with h1 h2
+              subst h1
+              subst h2
+              have heq := ModChain_chain_plays (ctxGuards me opnt L) hC
+              simp only [tgtD, Formula.plays.injEq] at heq
+              obtain ⟨hplayer, -, -⟩ := heq
+              rw [hplayer] at hme
+              exact absurd hme (by simp [meD, Bots.DupocBot, ctxPlug])
   case sts =>
       intro k k₁ k₂ mm ψ₁ ψ₂ c0 c1 q me opnt hme _ hmk hle ih hm
       cases hm with

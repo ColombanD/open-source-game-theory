@@ -34,15 +34,16 @@ run-priced), so EBot cooperates: `outcome_JustBot_vs_EBot = (D, C)` for every
     tail is "EBot plays C against `.bot (DupocBot k)`" (JustBot's guard instance). -/
 theorem no_provable_EBot_C_vs_botDupoc_tail (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →
-      rightTail φ = .plays EBot (.bot (DupocBot k)) .C → False := by
+      TailTo (.plays EBot (.bot (DupocBot k)) .C) φ → False := by
   intro K φ hp hK ht
   refine no_provable_probeFirst_tail_botOpp k DefectBot (.const .D)
       (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
         (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
-      .C .C (.plays .opp .self .C) (.const .C) (.const .D) ?_ ?_ K φ hp hK ?_
+      .C .C (.plays .opp .self .C) (.const .C) (.const .D) ?_ ?_ ?_ K φ hp hK ?_
   · simpa [Formula.subst, Prog.subst, DupocBot] using
       interp_bot_DefectBot_plays_C_false (.bot (DupocBot k))
   · intro k' ψ c0 c1 h; simp at h
+  · exact fun L => const_ne_ctxPlug (by decide) L
   · simpa [EBot, DupocBot] using ht
 
 /-- JustBot's guard fails against EBot at every budget — the floor's bite. -/
