@@ -77,6 +77,7 @@ import PrisonersDilemma.Theorems.TitForTatBot.vs_DefectBot
 import PrisonersDilemma.Theorems.TitForTatBot.vs_TitForTatBot
 import PrisonersDilemma.Theorems.TitForTatBot.vs_DBot
 
+import PrisonersDilemma.Theorems.CIMCIC.vs_CIMCIC
 import PrisonersDilemma.Theorems.CIMCIC.vs_CooperateBot
 import PrisonersDilemma.Theorems.CIMCIC.vs_DBot
 import PrisonersDilemma.Theorems.CIMCIC.vs_DefectBot
