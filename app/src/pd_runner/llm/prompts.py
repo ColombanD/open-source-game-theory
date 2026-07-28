@@ -157,6 +157,8 @@ def build_system_prompt(
             ("Base/Asymptotics.lean", "Base/Asymptotics.lean (character-budget / log₂ lemmas)"),
             ("Base/Loeb.lean", "Base/Loeb.lean (the bounded-Löb / PBLT engines)"),
             ("Base/Exclusion.lean", "Base/Exclusion.lean (the census + floor exclusion lemmas)"),
+            ("Base/Closure.lean", "Base/Closure.lean (closure certificates: telescope subsumption, "
+             "sim-composition, SKK=I, the ADMISSIBLE deduction theorem `Deriv`/`deduction_theorem`)"),
         ):
             proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
@@ -231,17 +233,30 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
   stated yet (`boxInternalize` and `box_provable` were both once believed to need new
   axioms; both turned out derivable). The ladder:
     1. **Search harder with existing rules** — re-read the Base/ modules in your prompt and
-       the few-shot proofs; the modal tier (`boxIntro`/`axK`/`box4`/`boxMono`/`impS2`) plus
-       `mutual_loeb`/`pblt_engine_id` compose further than it first appears.
+       the few-shot proofs. The rule inventory is COMPLETE for broad fragments since the
+       2026-07-28 family-completion program: the positive implicational fragment has its
+       full Hilbert basis (`implRefl`, `implK`, `implS` as object formulas — a tautology
+       guard like `A → A` is a ONE-LINE `Pf.implRefl`, and the deduction theorem is
+       ADMISSIBLE via `Base/Closure.deduction_theorem`); source transparency reads search
+       telescopes and mixed search/ite-probe stacks at EVERY depth (`searchChain`,
+       `ctxChain` — the old fused rules are certified instances); `.sim`/`.bot` nestings
+       compose via `read_compose`/`simStep_compose`; and the modal tier
+       (`boxIntro`/`axK`/`box4`/`boxMono`/`impS2`) plus `mutual_loeb`/`pblt_engine_id`
+       compose further than it first appears.
     2. **Derive the missing principle as a lemma** (`add_base_lemma`, when available): state
        the reusable rule you wish existed and PROVE it from existing rules. This is always
        safe (kernel-checked, auto-rollback) and the lemma persists for future proofs.
        This rung includes the NEGATIVE direction: "the guard is unprovable" is itself a
-       lemma obligation, not a prose claim — state and prove `¬ Pf k guard` via the
-       structural exclusion pattern (a `ForbiddenC`-style motive + `Pf.induct` /
-       `PlaysProof.induct`; the `search_t` back-edge carries `Pf k guard` as a premise, so
-       the atom arm recurses into the guard — the induction is well-founded on the
-       DERIVATION TREE even when budget induction is not). A proven `¬ Pf k guard` yields a
+       lemma obligation, not a prose claim. Do NOT hand-roll a `Pf.induct` census (the
+       proof system has ~30 constructors — a hand-rolled induction is a many-iteration
+       trap): instantiate the SHARED kernels in `Base/Exclusion.lean` —
+       `no_provable_tailTo_unreadable` (Gödelian targets: certificates impossible at
+       every budget + unreadable player), `no_provable_probeFirst_tail` /
+       `no_provable_searcherPlay_tail` (the `search_f` floor), or the set-valued
+       `no_provable_tailToS_floor` when the target player decomposes as a mixed
+       telescope. Each instance is a `refine` plus small shape bullets (the existing
+       census instances in the Theorems/ few-shots show the pattern, including the
+       `hctx`/`hpthen` mixed-telescope disequalities). A proven `¬ Pf k guard` yields a
        determined else-branch outcome theorem, not OUTCOME OPEN.
     3. **Only if derivation genuinely fails**, and you can articulate WHY (which census/
        exclusion argument blocks it, or which Löb/self-reference shape no existing rule
@@ -264,10 +279,13 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
   force either outcome — if such a rule exists, rung 3 (a constructor proposal) is the
   required exit, not OPEN. Beware the false-bistability trap: "both action pairs are
   consistent with `Pf`" is true of EVERY search matchup before you determine which side
-  `S` picks — it is not bistability. In particular a guard whose `interp` is TRUE (e.g. a
-  tautology like `A → A`) is NEVER bistable: either its unprovability is provable by
-  structural exclusion (→ determined defection theorem), or the missing capability is a
-  faithful rule a PA-like `S` would have (→ constructor proposal; PA proves `φ → φ`).
+  `S` picks — it is not bistability. In particular a guard whose `interp` is TRUE is NEVER
+  bistable: either its unprovability is provable by structural exclusion (→ determined
+  defection theorem), or the missing capability is a faithful rule a PA-like `S` would
+  have (→ constructor proposal). Historical precedent: the tautology guard `A → A` was
+  exactly such a case — filed as the `identImpl` proposal, integrated as `Pf.implRefl`
+  (2026-07-28), and its blocked outcome became provable. Check the live
+  `ProofSystem.lean` in your prompt before assuming a rule is missing.
   When OUTCOME OPEN genuinely applies, do not emit a ```lean``` code block and say exactly
   `OUTCOME OPEN` followed by a one-paragraph explanation of which action pairs are
   consistent with the proof system, why no single pair is forced even in the large-`k`
