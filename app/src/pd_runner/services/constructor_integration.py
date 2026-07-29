@@ -200,6 +200,55 @@ def _make_tools(wt_engine_dir: Path) -> tuple[list[dict], ToolHandler]:
             return "Error: path escapes the engine directory"
         return target
 
+    # HARD EDIT ALLOWLIST — enforced in code, not just in the prompt. A constructor
+    # integration touches the proof system and its downstream, NEVER the language,
+    # the semantics, or the zoo: those define what the theorems MEAN, and an agent
+    # edit there could make every outcome theorem vacuously "green". Reads stay
+    # broad (context is useful); edits are gated.
+    _EDIT_ALLOWED_PREFIXES = (
+        "PrisonersDilemma/Base/",
+        "PrisonersDilemma/Decidability/",
+        "PrisonersDilemma/Theorems/",
+    )
+    _EDIT_ALLOWED_FILES = (
+        "PrisonersDilemma/ProofSystem.lean",
+        "PrisonersDilemma/BaseTheorems.lean",
+    )
+    _EDIT_FROZEN_REASONS = {
+        "PrisonersDilemma/Program.lean":
+            "the LANGUAGE (Prog/Formula syntax, subst, size) — a proof-system rule "
+            "never changes what programs ARE",
+        "PrisonersDilemma/Dynamics.lean":
+            "the SEMANTICS (eval/interp) — changing it redefines game truth itself; "
+            "if your integration seems to need this, the proposal is unsound",
+        "PrisonersDilemma.lean":
+            "the root index — integration adds no new modules",
+    }
+
+    def _edit_gate(relative_path: str, target: Path) -> str | None:
+        rel = target.relative_to(wt_engine_dir.resolve()).as_posix()
+        if rel in _EDIT_FROZEN_REASONS:
+            return (
+                f"Error: {rel} is FROZEN during integration: "
+                f"{_EDIT_FROZEN_REASONS[rel]}. Report INTEGRATION BLOCKED if you "
+                f"believe the integration cannot proceed without it."
+            )
+        if rel.startswith("PrisonersDilemma/Bots/"):
+            return (
+                "Error: the bot zoo is FROZEN during integration — a proof-system "
+                "rule never changes the agents under study."
+            )
+        if rel in _EDIT_ALLOWED_FILES or any(
+            rel.startswith(p) for p in _EDIT_ALLOWED_PREFIXES
+        ):
+            return None
+        return (
+            f"Error: {rel} is outside the integration edit allowlist "
+            f"(ProofSystem.lean, BaseTheorems.lean, Base/, Decidability/, "
+            f"Theorems/). Report INTEGRATION BLOCKED if the integration cannot "
+            f"proceed without it."
+        )
+
     def read_engine_file(relative_path: str) -> str:
         target = _resolve(relative_path)
         if isinstance(target, str):
@@ -218,6 +267,9 @@ def _make_tools(wt_engine_dir: Path) -> tuple[list[dict], ToolHandler]:
         target = _resolve(relative_path)
         if isinstance(target, str):
             return target
+        gate_error = _edit_gate(relative_path, target)
+        if gate_error is not None:
+            return gate_error
         if not target.exists():
             return f"Error: file not found: {relative_path}"
         try:
@@ -320,6 +372,11 @@ review your full diff before it touches the real tree.
 - Keep the diff MINIMAL: touch only what the checklist and the build force.
 - Never use `sorry`/`admit`/`axiom`/`native_decide`.
 - Do not modify lakefiles, tool configs, or anything outside `PrisonersDilemma/`.
+- HARD-ENFORCED edit allowlist: `ProofSystem.lean`, `BaseTheorems.lean`, `Base/`,
+  `Decidability/`, `Theorems/`. `Program.lean` (the language), `Dynamics.lean` (the
+  semantics), `Bots/` (the zoo), and the root index are FROZEN — the tool refuses
+  edits there. If an integration seems to require them, the proposal is unsound or
+  out of scope: report `INTEGRATION BLOCKED`.
 - If after honest effort a repair is beyond reach, STOP and report
   `INTEGRATION BLOCKED` with the exact failing declaration and error — an honest
   block is far more valuable than a weakened theorem.
