@@ -51,6 +51,9 @@ class ProofSearchError(RuntimeError):
 
     `kind` distinguishes designed ladder terminals from genuine failures:
       - "open_constructor_proposed": OUTCOME OPEN with a Tier-2 proposal filed
+      - "open_blocked": OUTCOME OPEN — BLOCKED: the outcome is semantically
+        DETERMINED but its negative side (a ¬Pf census) is beyond the current
+        exclusion kernels (e.g. the false-probe/recursive-avoid-set wall)
         (a *successful* escalation, pending human review)
       - "open_bistable": bare OUTCOME OPEN (genuinely undetermined matchup)
       - "no_output": the agent produced neither a proof nor an OPEN verdict
@@ -194,7 +197,12 @@ def search_proof(request: ProofRequest) -> ProofResult:
         if lean_source is None:
             if "OUTCOME OPEN" in final_text:
                 proposed = "CONSTRUCTOR PROPOSED" in final_text
-                kind = "open_constructor_proposed" if proposed else "open_bistable"
+                if proposed:
+                    kind = "open_constructor_proposed"
+                elif "BLOCKED" in final_text:
+                    kind = "open_blocked"
+                else:
+                    kind = "open_bistable"
                 err = (
                     f"Agent declared outcome OPEN for "
                     f"{request.left_bot} vs {request.right_bot} "

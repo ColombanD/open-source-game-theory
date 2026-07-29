@@ -303,10 +303,20 @@ Use the `read_library_file` tool to inspect existing bot definitions or existing
   exactly such a case — filed as the `identImpl` proposal, integrated as `Pf.implRefl`
   (2026-07-28), and its blocked outcome became provable. Check the live
   `ProofSystem.lean` in your prompt before assuming a rule is missing.
-  When OUTCOME OPEN genuinely applies, do not emit a ```lean``` code block and say exactly
-  `OUTCOME OPEN` followed by a one-paragraph explanation of which action pairs are
-  consistent with the proof system, why no single pair is forced even in the large-`k`
-  limit, and why (a) and (b) both fail.
+  When OUTCOME OPEN genuinely applies, do not emit a ```lean``` code block, and
+  DISTINGUISH the two very different situations in your verdict line:
+  * `OUTCOME OPEN — BLOCKED BY <wall>`: the outcome IS semantically determined (say
+    which pair, with the eval-level argument), but its negative side — the `¬ Pf k
+    guard` census — is beyond the current exclusion kernels. Name the wall precisely
+    (e.g. "the target player is a `ctxChain` plug whose decomposition carries a FALSE
+    probe over a then-readable searcher — the recursively-closed avoid-set frontier
+    in FAMILY_COMPLETION_DESIGN.md"). This is NOT bistability, and a constructor
+    proposal is NOT the exit (no new provable-formula rule can force a negative
+    metatheorem) — the exit is census research, recorded by this verdict.
+  * bare `OUTCOME OPEN` (bistable): genuinely no single action pair is forced even in
+    the large-`k` limit.
+  Either way, follow with a one-paragraph explanation of which action pairs are
+  consistent with the proof system and why (a) and (b) both fail.
 - When you are confident the proof compiles cleanly, output the final Lean source inside
   a ```lean ... ``` code fence and say "PROOF COMPLETE".
 """

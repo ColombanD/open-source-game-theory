@@ -339,6 +339,32 @@ research track (thesis-chapter scale), not an integration task. Family A is
 COMPLETE-over-derivable-content; the else cell is expressiveness-only, blocked, and
 its attack ladder is fully recorded (`ProvenanceSpike.lean` §4).
 
+**THE WALL'S FIRST OUTCOME CASUALTY (2026-07-28, CIMCIC vs OBot).** The wall is no
+longer expressiveness-only: it now blocks a REAL outcome theorem. CIMCIC vs OBot is
+semantically DETERMINED `(D, D)` — OBot's play is pure eval (probe1: CIMCIC
+cooperates with `.bot CooperateBot`, weakenImpl-provable guard; probe2: CIMCIC
+defects vs `.bot DefectBot`, the Gödelian fall-through → OBot's inner else fires D),
+and CIMCIC's guard `(CIMCIC plays C vs OBot) → (OBot plays C vs CIMCIC)` is
+vacuously-true-but-unprovable. The proof agent PROVED this on 2026-07-27 against the
+22-constructor engine (git `621d183`, `CIMCIC_vs_OBot_pass.*`, never landed in the
+library) using two hand-rolled right-tail censuses. Post-completion, that proof is
+DOUBLY dead: the unguarded right-tail class is falsified by `implRefl` (`⊢ B → B` is
+provable and in-class), and even the modern Guarded/TailToS classes are falsified by
+`ctxChain` — OBot has a THEN-THEN decomposition
+(`probe1 → probe2 → OBot plays C`), and since probe2 ("CIMCIC plays C vs
+`.bot DefectBot`") is FALSE over a THEN-readable searcher (CIMCIC's then-branch is
+`.const .C` = probe2's action), it cannot enter any tail-set (its `searchBranch`
+self-read `□(g') → probe2` is provable-and-classed) — the exact false-probe wall.
+The 2026-07-28 re-run agent independently re-derived ALL of this (kernel-verifying
+the census-falsifying chains in Lean, transcript in
+`app/generated/outcomes/CIMCIC_vs_OBot_fail_transcript.json`) and correctly declined
+to propose a constructor (a negative metatheorem is not a rule). Verdict taxonomy:
+`open_blocked`, NOT bistable. Consolation: extraction through the new chains still
+dies at the false probe, so `(D, D)` remains TRUE — only its mechanization awaits
+the recursive-avoid-set census. This raises the wall's stakes from aesthetics to a
+concrete bounty: whoever solves it re-earns `llm_outcome_CIMCIC_vs_OBot` (and its
+DIMCID sibling).
+
 ## Traps (learned while spiking)
 
 - `rw [eval]` fails while the body is still `C.plug …` — `show` the plug-unfolded
