@@ -239,8 +239,18 @@ iff `exclude_bots` is empty — the eval harness never mutates the library):
 Bare `OUTCOME OPEN` is now reserved for BISTABLE matchups (two fixed points, neither forced —
 e.g. JustBot vs MirrorBot), where no sound rule can exist.
 
-**Deferred:** reviewer with outcome prediction (v2), automatic rewriter loop (v2),
-worktree-based automatic constructor integration (v2 of Tier 2).
+**Constructor integration (Stage C/D, landed 2026-07-27):** accepted Tier-2 proposals
+are integrated by an INTEGRATION AGENT working in a git WORKTREE (never the live
+tree) — constructor + `sound_upto` arm + `Pf_mono`/`Pf.induct` wiring + census/
+metatheory repairs until BOTH lake targets are green (the compiling `sound_upto` arm
+is the machine soundness gate) — then the `git diff` is human-reviewed and only on
+acceptance applied to the real tree (rebuild + rollback). Two human gates end to end
+(`/proposals/{name}/integrate`, `/integration/{job}/accept-diff`). Precedent: the
+first proposal (`identImpl`, 2026-07-27) was integrated MANUALLY as `Pf.implRefl`
+via the family-completion program before this flow ever ran; the agent flow remains
+unexercised in anger.
+
+**Deferred:** reviewer with outcome prediction (v2), automatic rewriter loop (v2).
 
 ## Phase 4 — Paper experiments (next)
 
