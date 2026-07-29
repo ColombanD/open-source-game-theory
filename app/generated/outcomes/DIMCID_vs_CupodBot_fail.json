@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260729T142246",
+  "bot_a": "DIMCID",
+  "bot_b": "CupodBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 124024,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": false,
+  "result_kind": "error",
+  "left_action": null,
+  "right_action": null,
+  "iterations_used": 23,
+  "elapsed_seconds": 468.8353509999997,
+  "error": "RuntimeError: Proof search did not converge within 20 tool-use iterations",
+  "final_text": null
+}

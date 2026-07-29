@@ -792,4 +792,95 @@ theorem no_provable_tailTo_unreadable (P O : Prog) (A : Action)
   · intro k₁ ψ₁ k₂ ψ₂ c1 q hst
     exact hread (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k₁, ψ₁, k₂, ψ₂, A, c1, q, hst⟩)))))
 
+/-! ## The SIZE FLOOR — the cheapest exclusion (2026-07-29)
+
+Every `Pf` rule except the `AtomProvable` bridge carries a side condition paying at
+least its conclusion's `Formula.size` (the transcript-cost model: leaves pay their
+conclusion, combiners pay both subtrees plus their own conclusion). So a proof either
+fits its conclusion's size or concludes a bare plays-atom (whose `AtomProvable` cost
+is the RUN cost, sizeless). Contrapositive, per non-atom shape: an OVERSIZED `.neg`/
+`.impl`/`.box`/`.eq` guard is unprovable at every budget below its size. This is the
+workhorse of the floor-dominated outcome theorems (WaryBot/LegibleBot at small `k`):
+their guards mention the searcher's own substituted source, so the size chases the
+budget and the guard can never fire. (Twin of the decider-side `PD.T31.pf_size_or_atom`;
+duplicated here because the engine target never imports the Metatheory chain.) -/
+
+/-- A proof pays its conclusion's size unless it concludes a bare plays-atom. -/
+theorem pf_size_or_atom : ∀ {k φ}, Pf k φ → φ.size ≤ k ∨ AtomProvable k φ := by
+  intro k φ h
+  cases h with
+  | atom hatom => exact Or.inr hatom
+  | searchBranch g ψ a b me opnt hme hle => exact Or.inl hle
+  | simStep me p q opnt a hme hle => exact Or.inl hle
+  | botSimStep me p q opnt a hme hle => exact Or.inl hle
+  | botSearchStep g ψ a b me opnt hme hle => exact Or.inl hle
+  | iteBranchSearch_t g z a' c0 c1 ψ q me opnt hme hle => exact Or.inl hle
+  | eqRefl p hle => exact Or.inl hle
+  | eqNeg p q hne hle => exact Or.inl hle
+  | implRefl φ' hle => exact Or.inl hle
+  | implK φ' ψ' hle => exact Or.inl hle
+  | implS φ' ψ' χ' hle => exact Or.inl hle
+  | contrapose φ' ψ' m h hle => exact Or.inl (by omega)
+  | negElim =>
+      rename_i φ' m₁ m₂ h1 h2 hle
+      exact Or.inl (by omega)
+  | weakenImpl φ' ψ' m hψ hle => exact Or.inl (by omega)
+  | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle => exact Or.inl (by omega)
+  | searchChain g₁ ψ₁ e₁ L a me opnt hme hle => exact Or.inl hle
+  | ctxChain hd L a me opnt hme hle => exact Or.inl hle
+  | implTrans φ' ψ' χ' a b h1 h2 hle => exact Or.inl (by omega)
+  | atomBoxImpl kBox p q a hatom hle => exact Or.inl (by omega)
+  | boxIntro kIn K φ' hprem hle => exact Or.inl (by omega)
+  | mp =>
+      rename_i m₁ m₂ φ' h2 h1 hle
+      exact Or.inl (by omega)
+  | axK a b c m K φ' α hprem hgate hle => exact Or.inl (by omega)
+  | box4 a b K φ' hgate hle => exact Or.inl (by omega)
+  | diagF pm fb g K tgt hgate hle => exact Or.inl (by omega)
+  | diagB pm fb g K tgt hgate hle => exact Or.inl (by omega)
+  | axKf a b c K φ' α hgate hle => exact Or.inl (by omega)
+  | impS2 φ' ψ' χ' m₁ m₂ K h1 h2 hle => exact Or.inl (by omega)
+  | boxMono a b K φ' hab hle => exact Or.inl (by omega)
+  | atomNeg p q b aN m hatom hne hle => exact Or.inl (by omega)
+
+/-- An oversized `.neg` guard never fires: `proofSearch` is false below the size. -/
+theorem proofSearch_false_neg_undersized {k : Nat} {ψ : Formula}
+    (hsz : k < (Formula.neg ψ).size) : proofSearch k (.neg ψ) = false := by
+  cases hps : proofSearch k (.neg ψ) with
+  | false => rfl
+  | true =>
+      rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
+      · omega
+      · cases hatom
+
+/-- An oversized `.impl` guard never fires. -/
+theorem proofSearch_false_impl_undersized {k : Nat} {φ ψ : Formula}
+    (hsz : k < (Formula.impl φ ψ).size) : proofSearch k (.impl φ ψ) = false := by
+  cases hps : proofSearch k (.impl φ ψ) with
+  | false => rfl
+  | true =>
+      rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
+      · omega
+      · cases hatom
+
+/-- An oversized `.box` guard never fires. -/
+theorem proofSearch_false_box_undersized {k n : Nat} {ψ : Formula}
+    (hsz : k < (Formula.box n ψ).size) : proofSearch k (.box n ψ) = false := by
+  cases hps : proofSearch k (.box n ψ) with
+  | false => rfl
+  | true =>
+      rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
+      · omega
+      · cases hatom
+
+/-- An oversized `.eq` guard never fires. -/
+theorem proofSearch_false_eq_undersized {k : Nat} {p q : Prog}
+    (hsz : k < (Formula.eq p q).size) : proofSearch k (.eq p q) = false := by
+  cases hps : proofSearch k (.eq p q) with
+  | false => rfl
+  | true =>
+      rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
+      · omega
+      · cases hatom
+
 end PD.BaseTheorems
