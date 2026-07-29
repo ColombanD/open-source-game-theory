@@ -1,7 +1,7 @@
 {
-  "timestamp": "20260729T113500",
+  "timestamp": "20260729T114749",
   "bot_a": "CIMCIC",
-  "bot_b": "JustBot",
+  "bot_b": "DupocBot",
   "model": "claude-opus-4-8",
   "max_iterations": 20,
   "max_tokens": 128000,
@@ -11,8 +11,8 @@
   "result_kind": "error",
   "left_action": null,
   "right_action": null,
-  "iterations_used": 23,
-  "elapsed_seconds": 619.1727570420007,
+  "iterations_used": 20,
+  "elapsed_seconds": 676.0613265419997,
   "error": "RuntimeError: Proof search did not converge within 20 tool-use iterations",
   "final_text": null
 }

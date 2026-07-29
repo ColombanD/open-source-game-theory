@@ -2557,6 +2557,92 @@ theorem guardFast_sound (fuelD : Nat) : GuardSound (guardFast fuelD) := by
       · simp at h
   · simp at h
 
+/-- Goal-directed guard EXTENDING `guardFast` beyond plays-atoms (2026-07-29):
+    * `.neg (.plays p q a)` — the refutation twin, both polarities goal-directed:
+      TRUE on a certificate of a DIFFERENT action `r ≠ a` whose `Pf.atomNeg`
+      transcript fits `k`; FALSE on a certificate of `a` itself (soundness refutes
+      the negation at EVERY budget — no floor to clear).
+    * any other non-`.plays` guard — FALSE once `k < φ.size`: by `pf_size_or_atom`
+      a proof either pays its conclusion's size or concludes a plays-atom, so an
+      oversized non-atom guard is unprovable outright (the size floor). This arm
+      decides the small-budget cells `guardFast` leaves `none` — e.g. a searcher
+      whose substituted guard mentions a same-size partner.
+    Plays-atoms delegate to `guardFast`. Strictly more commits, same soundness. -/
+def guardFastN (fuelD : Nat) : Nat → Formula → Option Bool := fun k φ =>
+  match φ with
+  | .plays p q a => guardFast fuelD k (.plays p q a)
+  | .neg (.plays p q a) =>
+      -- size floor FIRST: sound unconditionally, and it short-circuits before any
+      -- `decCertG` hop can reach a `.search` subject and trigger a `decFull` sweep
+      -- (self-play at real budgets OOMs otherwise — that sweep is exponential).
+      if k < (Formula.neg (.plays p q a)).size then some false
+      else if (List.range (fuelD + 1)).any (fun m =>
+          [Action.C, Action.D].any (fun r =>
+            decide (r ≠ a) && decide (m + (Formula.neg (.plays p q a)).size ≤ k) &&
+            decCertG (decFull fuelD) fuelD m p q p r)) then some true
+      else if (List.range (fuelD + 1)).any (fun m =>
+          decCertG (decFull fuelD) fuelD m p q p a) then some false
+      else none
+  | φ => if k < φ.size then some false else none
+
+theorem guardFastN_sound (fuelD : Nat) : GuardSound (guardFastN fuelD) := by
+  intro k φ b h
+  unfold guardFastN at h
+  split at h
+  · exact guardFast_sound fuelD _ _ _ h
+  · rename_i p q a
+    split at h
+    · rename_i hsz
+      injection h with h; subst h
+      cases hps : proofSearch k (.neg (.plays p q a)) with
+      | false => rfl
+      | true =>
+          exfalso
+          rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
+          · omega
+          · cases hatom
+    · split at h
+      · rename_i ht
+        injection h with h; subst h
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true,
+          decide_eq_true_eq] at ht
+        obtain ⟨m, _, r, _, ⟨hne, hbud⟩, hcert⟩ := ht
+        obtain ⟨n, cert, hn⟩ :=
+          decCertG_sound (decFull fuelD) (fun m' ψ => decFull_sound fuelD m' ψ) fuelD m
+            p q p r hcert
+        exact (proofSearch_spec _ _).2
+          (Pf.atomNeg p q r a n (AtomProvable.mk cert le_rfl) hne (by omega))
+      · split at h
+        · rename_i hf
+          injection h with h; subst h
+          simp only [List.any_eq_true, List.mem_range] at hf
+          obtain ⟨m, _, hcert⟩ := hf
+          obtain ⟨n, cert, hn⟩ :=
+            decCertG_sound (decFull fuelD) (fun m' ψ => decFull_sound fuelD m' ψ) fuelD m
+              p q p a hcert
+          have hI : (Formula.plays p q a).interp :=
+            Pf_sound _ _ (Pf.atom (AtomProvable.mk cert hn))
+          cases hps : proofSearch k (.neg (.plays p q a)) with
+          | false => rfl
+          | true =>
+              have hnI : ¬ (Formula.plays p q a).interp :=
+                Pf_sound _ _ ((proofSearch_spec _ _).1 hps)
+              exact absurd hI hnI
+        · simp at h
+  · rename_i hnp hnn
+    split at h
+    · rename_i hsz
+      injection h with h; subst h
+      cases hps : proofSearch k φ with
+      | false => rfl
+      | true =>
+          exfalso
+          rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
+          · omega
+          · cases hatom
+            exact hnp _ _ _ rfl
+    · simp at h
+
 /-- The COMPUTABLE evaluator: `eval`'s recursion verbatim, with the `.search` guard consulting
     a 3-valued computable `G`; `none` guard ⇒ `none` result. Parametric in `G` so any sound
     guard (present or future) inherits the one soundness proof. -/
@@ -2712,5 +2798,18 @@ private def FairB : Prog := .search 2 (.plays .opp .self .C) (.const .C) (.const
 #eval outcomeG (guardFast 2) 8 FairB CoopB -- expect: some (C, C) — grounded cooperation
 #eval outcomeG (guardFast 2) 8 FairB DefB  -- expect: some (D, D) — refutation-driven defection
 #eval outcomeG (guardFast 2) 8 FairB FairB  -- expect: none — the Löb fixpoint boundary
+
+-- The refutation-guard twin (WaryBot-mini, guard budget 16): defect iff a refutation of
+-- the opponent's cooperation is found within 16, else cooperate. `guardFastN` decides all
+-- three cells: vs DefB the TRUE commit (`Pf.atomNeg` from DefB's D-certificate: 1 + the
+-- substituted guard's size 15 ≤ 16), vs CoopB the FALSE commit (CoopB's C-certificate
+-- refutes the negation at every budget), and self-play by the SIZE FLOOR (the substituted
+-- guard costs 26 > 16, so it is unprovable by `pf_size_or_atom`) — the bounded analogue of
+-- "I cannot refute my own partner's cooperation, so I trust".
+private def WaryB : Prog := .search 16 (.neg (.plays .opp .self .C)) (.const .D) (.const .C)
+
+#eval outcomeG (guardFastN 2) 8 WaryB DefB   -- expect: some (D, D)
+#eval outcomeG (guardFastN 2) 8 WaryB CoopB  -- expect: some (C, C)
+#eval outcomeG (guardFastN 2) 8 WaryB WaryB  -- expect: some (C, C) — size-floor trust
 
 end PD.T31

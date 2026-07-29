@@ -1,0 +1,90 @@
+[
+  {
+    "left": "GuardianBot",
+    "right": "CooperateBot",
+    "budget": 4,
+    "fuel_d": 4,
+    "fuel": 64,
+    "status": "determined",
+    "outcome": "(C, C)",
+    "note": "certified: outcomeG_sound \u2218 guardFast_sound",
+    "seconds": 10.978475500000059
+  },
+  {
+    "left": "GuardianBot",
+    "right": "DefectBot",
+    "budget": 4,
+    "fuel_d": 4,
+    "fuel": 64,
+    "status": "determined",
+    "outcome": "(D, D)",
+    "note": "certified: outcomeG_sound \u2218 guardFast_sound",
+    "seconds": 10.997010334000151
+  },
+  {
+    "left": "GuardianBot",
+    "right": "CooperateBot",
+    "budget": 2,
+    "fuel_d": 2,
+    "fuel": 64,
+    "status": "determined",
+    "outcome": "(C, C)",
+    "note": "certified: outcomeG_sound \u2218 guardFast_sound",
+    "seconds": 11.012043582999468
+  },
+  {
+    "left": "GuardianBot",
+    "right": "DefectBot",
+    "budget": 2,
+    "fuel_d": 2,
+    "fuel": 64,
+    "status": "determined",
+    "outcome": "(D, D)",
+    "note": "certified: outcomeG_sound \u2218 guardFast_sound",
+    "seconds": 11.056008709001617
+  },
+  {
+    "left": "GuardianBot",
+    "right": "GuardianBot",
+    "budget": 2,
+    "fuel_d": 2,
+    "fuel": 64,
+    "status": "undetermined",
+    "outcome": null,
+    "note": "L\u00f6b boundary or budget floor at k=2",
+    "seconds": 3.2605007080001087
+  },
+  {
+    "left": "GuardianBot",
+    "right": "DupocBot",
+    "budget": 2,
+    "fuel_d": 2,
+    "fuel": 64,
+    "status": "undetermined",
+    "outcome": null,
+    "note": "L\u00f6b boundary or budget floor at k=2",
+    "seconds": 3.3074712500001624
+  },
+  {
+    "left": "GuardianBot",
+    "right": "DupocBot",
+    "budget": 4,
+    "fuel_d": 4,
+    "fuel": 64,
+    "status": "timeout",
+    "outcome": null,
+    "note": "no verdict within 120s (decFull hop sweep blew up)",
+    "seconds": 120.12436145900028
+  },
+  {
+    "left": "GuardianBot",
+    "right": "GuardianBot",
+    "budget": 4,
+    "fuel_d": 4,
+    "fuel": 64,
+    "status": "timeout",
+    "outcome": null,
+    "note": "no verdict within 120s (decFull hop sweep blew up)",
+    "seconds": 120.06639495800118
+  }
+]
