@@ -99,7 +99,21 @@ def write_proof_to_library(
     # with `environment already contains ...` AFTER an expensive full build — catch
     # them here with the precise clash list instead (the build rollback below stays
     # as the backstop for anything the scan cannot see).
-    from pd_runner.services.proof_service import find_library_name_collisions
+    from pd_runner.services.proof_service import (
+        find_census_inductions,
+        find_library_name_collisions,
+    )
+
+    inductions = find_census_inductions(result.lean_source)
+    if inductions:
+        raise LibraryWriteError(
+            f"refusing to write {target}: the proof uses "
+            f"{', '.join(inductions)} — a hand-rolled census over the full `Pf` "
+            f"inductive. These break with missing-cases on every future constructor "
+            f"addition; matchup censuses must instantiate the shared kernels in "
+            f"Base/Exclusion.lean instead. If this induction is genuinely "
+            f"irreducible to a kernel instance, land the file by hand."
+        )
 
     engine_root = paths.lean_engine_dir / "PrisonersDilemma"
     collisions = find_library_name_collisions(

@@ -255,7 +255,23 @@ def _run_lean_proof(lean_source: str, filename_hint: str = "proof_attempt") -> s
     # surfaces at the umbrella `lake build` when the proof is written to the library,
     # after this agent session is over. Warn NOW so the agent renames in-loop.
     if result.returncode == 0:
-        from pd_runner.services.proof_service import find_library_name_collisions
+        from pd_runner.services.proof_service import (
+            find_census_inductions,
+            find_library_name_collisions,
+        )
+
+        inductions = find_census_inductions(lean_source)
+        if inductions:
+            lines.append(
+                "--- WARNING: hand-rolled Pf induction ---\n"
+                f"Your file uses {', '.join(f'`{t}`' for t in inductions)}. Hand-rolled "
+                "censuses break with missing-cases on EVERY future constructor addition "
+                "and the library writer will REFUSE the file. Instantiate the shared "
+                "kernels from Base/Exclusion.lean instead (no_provable_tailTo_unreadable / "
+                "no_provable_probeFirst_tail / no_provable_searcherPlay_tail / "
+                "no_provable_tailToS_floor) — a `refine` plus shape bullets; the census "
+                "instances in your few-shots show the pattern."
+            )
 
         exclude = None
         if "_vs_" in safe_hint:

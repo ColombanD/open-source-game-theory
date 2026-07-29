@@ -336,6 +336,28 @@ def find_library_name_collisions(
     return sorted(set(collisions))
 
 
+_LINE_COMMENT_RE = re.compile(r"--.*$", re.MULTILINE)
+_BLOCK_COMMENT_RE = re.compile(r"/-[\s\S]*?-/")
+_CENSUS_INDUCTION_TOKENS = ("Pf.induct", "PlaysProof.induct", "Pf.rec", "PlaysProof.rec")
+
+
+def find_census_inductions(lean_source: str) -> list[str]:
+    """Return the raw `Pf`-induction tokens used in the source (comments stripped).
+
+    Hand-rolled censuses (`induction … using Pf.induct`, or worse the raw
+    recursors) in agent proof files are a maintenance hazard: they induct over
+    ALL ~30 constructors, so EVERY future constructor addition breaks them with
+    missing-cases. The library's exclusion architecture is two-tier for exactly
+    this reason — matchup censuses must instantiate the shared kernels in
+    `Base/Exclusion.lean` (`no_provable_tailTo_unreadable`,
+    `no_provable_probeFirst_tail`, `no_provable_searcherPlay_tail`,
+    `no_provable_tailToS_floor`), which absorb new constructors centrally.
+    """
+    stripped = _BLOCK_COMMENT_RE.sub("", lean_source)
+    stripped = _LINE_COMMENT_RE.sub("", stripped)
+    return [tok for tok in _CENSUS_INDUCTION_TOKENS if tok in stripped]
+
+
 def _find_bot_redefinitions(lean_source: str) -> list[str]:
     """Return names of any `def X : Prog` declarations in the proof source.
 
