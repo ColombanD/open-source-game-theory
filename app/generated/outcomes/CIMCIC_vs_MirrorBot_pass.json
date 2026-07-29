@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260729T102117",
+  "bot_a": "CIMCIC",
+  "bot_b": "MirrorBot",
+  "model": "claude-opus-4-8",
+  "max_iterations": 20,
+  "max_tokens": 128000,
+  "fuel_requested": null,
+  "exclude_bots": [],
+  "passed": true,
+  "result_kind": "proved",
+  "left_action": "C",
+  "right_action": "C",
+  "iterations_used": 4,
+  "elapsed_seconds": 80.28129745799993,
+  "error": null,
+  "final_text": "Compiles cleanly with no warnings. The outcome is `(.C, .C)`: CIMCIC's guard (`CIMCIC plays C vs Mirror → Mirror plays C vs CIMCIC`) is directly provable via MirrorBot's `simStep` source transparency (no Löb needed — MirrorBot literally mirrors CIMCIC, so the guard content is exactly a `.sim` reading), so CIMCIC cooperates, and MirrorBot mirrors that cooperation.\n\n```lean\nimport PrisonersDilemma.Program\nimport PrisonersDilemma.Dynamics\nimport PrisonersDilemma.Bots.LlmGenerations.CIMCIC\nimport PrisonersDilemma.Bots.MirrorBot\nimport PrisonersDilemma.Base.Helpers\nimport PrisonersDilemma.BaseTheorems\nimport PrisonersDilemma.Base.Asymptotics\n\nopen PD\nopen PD.Bots\nopen PD.BaseTheorems\nnamespace PD.Theorems\n\ntheorem cimcic_mirror_guard_provable :\n    ∃ K, ∀ k, k ≥ K →\n      proofSearch k\n        ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst\n          (CIMCIC k) MirrorBot) = true := by\n  obtain ⟨K, hK⟩ := linear_log2_add_le 20 200\n  refine ⟨K, fun k hk => ?_⟩\n  refine (proofSearch_spec _ _).2 ?_\n  show Pf k\n    (Formula.impl (.plays (CIMCIC k) MirrorBot Action.C)\n                  (.plays MirrorBot (CIMCIC k) Action.C))\n  have h := Pf.simStep MirrorBot .opp .self (CIMCIC k) Action.C rfl (k := k)\n  simp only [Prog.subst, MirrorBot] at h\n  refine h ?_\n  have hb := hK k hk\n  simp only [numCost, Formula.size, Prog.size, CIMCIC]\n  omega\n\n/-- CIMCIC cooperates against MirrorBot: its guard fires, so it takes the\n    `.const .C` branch. -/\ntheorem CIMCIC_plays_C_against_MirrorBot (k fuel : Nat)\n    (hk : proofSearch k\n        ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst\n          (CIMCIC k) MirrorBot) = true) :\n    play (fuel + 2) (CIMCIC k) MirrorBot = some .C := by\n  show (if proofSearch k\n            ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst\n              (CIMCIC k) MirrorBot)\n          then eval (fuel + 1) (CIMCIC k) MirrorBot (.const Action.C)\n          else eval (fuel + 1) (CIMCIC k) MirrorBot (.const Action.D)) = some .C\n  rw [hk]; simp [eval]\n\n/-- MirrorBot mirrors CIMCIC's cooperate via the `.sim .opp .self` swap. -/\ntheorem MirrorBot_plays_C_against_CIMCIC (k fuel : Nat)\n    (hk : proofSearch k\n        ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst\n          (CIMCIC k) MirrorBot) = true) :\n    play (fuel + 3) MirrorBot (CIMCIC k) = some .C := by\n  have hCimcic : play (fuel + 2) (CIMCIC k) MirrorBot = some .C :=\n    CIMCIC_plays_C_against_MirrorBot k fuel hk\n  simpa [play, eval, Prog.subst, MirrorBot] using hCimcic\n\ntheorem llm_outcome_CIMCIC_vs_MirrorBot :\n    ∃ k₂, ∀ k, k₂ < k →\n      ∃ fuel, outcome fuel (CIMCIC k) MirrorBot = some (.C, .C) := by\n  obtain ⟨K, hK⟩ := cimcic_mirror_guard_provable\n  refine ⟨K, fun k hk => ⟨3, ?_⟩⟩\n  have hg := hK k (Nat.le_of_lt hk)\n  have hA : play 3 (CIMCIC k) MirrorBot = some .C := by\n    simpa using CIMCIC_plays_C_against_MirrorBot k 1 hg\n  have hB : play 3 MirrorBot (CIMCIC k) = some .C := by\n    simpa using MirrorBot_plays_C_against_CIMCIC k 0 hg\n  exact outcome_of_plays _ _ _ _ _ hA hB\n\nend PD.Theorems\n```\n\nPROOF COMPLETE"
+}

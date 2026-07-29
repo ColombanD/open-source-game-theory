@@ -112,3 +112,8 @@ import PrisonersDilemma.Theorems.PrudentBot.vs_PrudentBot
 import PrisonersDilemma.Theorems.PrudentBot.vs_TitForTatBot
 
 import PrisonersDilemma.Theorems.LlmGenerations.LlmLemmas
+import PrisonersDilemma.Theorems.DIMCID.vs_DIMCID
+import PrisonersDilemma.Theorems.DIMCID.vs_DBot
+import PrisonersDilemma.Theorems.CIMCIC.vs_CupodTrollBot
+import PrisonersDilemma.Theorems.CIMCIC.vs_MirrorBot
+import PrisonersDilemma.Theorems.CIMCIC.vs_DIMCID
