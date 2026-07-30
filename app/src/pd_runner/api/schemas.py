@@ -133,10 +133,19 @@ class JobResponse(BaseModel):
     proof: Optional[ProofDraft] = None
     result: Optional[PipelineResult] = None
     error: Optional[str] = None
+    status_note: Optional[str] = None
+    open_suggestion: Optional[dict] = None
     # Constructor-integration jobs only
     proposal_name: Optional[str] = None
     diff: Optional[str] = None
     integration_summary: Optional[str] = None
+
+
+class MatrixStatusRequest(BaseModel):
+    """Curated-status entry to append to outcome_status.toml."""
+    section: str          # "open" | "tried" | "rework"
+    pair: list[str]       # two library bot names, order-insensitive
+    reason: str = ""
 
 
 class ProposalInfo(BaseModel):

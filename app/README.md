@@ -152,3 +152,46 @@ uv run python -m pd_runner.eval.harness --dry-run
 | 1 | CooperateBot, DefectBot | Trivial — `.const` action, `unfold` + `rfl` |
 | 2 | MirrorBot, OBot, DBot | One-step simulation, `unfold` + `simp` |
 | 3 | TitForTatBot, EBot | Multi-step, requires inspecting bot definitions |
+
+## Outcome matrix → Google Sheet
+
+The bot-vs-bot outcome matrix in the tracking Google Sheet (link in
+`engine/README.md`) is generated from the proven theorem library by
+`pd_runner/eval/outcome_matrix.py` and pushed by `pd_runner/services/sheets.py`.
+
+```bash
+uv run python -m pd_runner.eval.outcome_matrix               # print TSV
+uv run python -m pd_runner.eval.outcome_matrix --format md   # markdown
+uv run python -m pd_runner.eval.outcome_matrix --push        # write to the Sheet
+```
+
+The web UI (`uv run pd-serve`) has a "Sync to Google Sheet" button
+(`POST /matrix/sync`), and the pipeline syncs automatically after each accepted
+proof when credentials are present.
+
+Cell semantics (upper triangle only; a cell reads from the row bot's perspective):
+
+- `(C, D)` — proven outcome from an accepted `outcome_A_vs_B` / `llm_outcome_A_vs_B`
+  theorem (for-all-k or large-k threshold statements; suffixed regime variants
+  like `_floor`/`_defended` are excluded). ` †` marks proofs under side
+  hypotheses (floor/size/budget guards).
+- `None` — provably no outcome (`= none`, e.g. MirrorBot self-play).
+- `Open Problem` / `Tried` / `Need rework` — curated in `app/outcome_status.toml`
+  (`Need rework` = a proof exists but not in the accepted large-k form, e.g. only
+  `_floor` regime theorems).
+- empty — not yet attempted.
+
+### One-time Google auth setup (service account)
+
+1. In Google Cloud Console, create (or reuse) a project and enable the
+   **Google Sheets API**.
+2. Create a **service account** (no roles needed), then create a **JSON key**
+   for it and save it as `app/.secrets/sheets-service-account.json`
+   (gitignored; or set `PD_SHEETS_CREDENTIALS=/path/to/key.json`).
+3. Share the tracking spreadsheet with the service account's email address
+   (`...@<project>.iam.gserviceaccount.com`) as **Editor**.
+
+The matrix is written to its own worksheet (default `Auto Matrix`, override
+with `PD_SHEETS_WORKSHEET`; spreadsheet override: `PD_SHEETS_SPREADSHEET_ID`).
+The worksheet is cleared and rewritten on every push — never hand-edit it;
+curate `Open Problem`/`Tried` in `app/outcome_status.toml` instead.

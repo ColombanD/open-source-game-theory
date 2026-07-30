@@ -53,6 +53,37 @@ def _resolve_bot(name: str, strategy: str | None, resolution: BotConflictResolut
     ))
 
 
+async def _record_proof_failure(job: Job, left: str, right: str, exc: ProofSearchError) -> None:
+    """Persist failure-path knowledge: auto-[[tried]] for genuine failures,
+    a human-gated Open Problem suggestion for OUTCOME OPEN verdicts."""
+    import logging as _logging
+    from datetime import date
+
+    if exc.kind.startswith("open"):
+        job.open_suggestion = {"pair": [left, right], "kind": exc.kind}
+        return
+    # no_output / error → the attempt said nothing about the outcome: Tried.
+    try:
+        from pd_runner.eval.outcome_matrix import append_status
+        added = append_status(
+            "tried", (left, right),
+            f"Proof agent failed ({exc.kind}) on {date.today().isoformat()}; see app/generated/outcomes/.",
+        )
+    except Exception as write_exc:
+        _logging.getLogger(__name__).warning("could not record Tried status (non-fatal): %s", write_exc)
+        return
+    if not added:
+        return
+    job.status_note = f"Recorded {left} vs {right} as Tried in outcome_status.toml."
+    from pd_runner.services.sheets import push_matrix, sheets_configured
+    if sheets_configured():
+        try:
+            await asyncio.get_event_loop().run_in_executor(None, push_matrix)
+        except Exception as sync_exc:
+            _logging.getLogger(__name__).warning(
+                "Outcome-matrix sheet sync failed (non-fatal): %s", sync_exc)
+
+
 async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
     import logging as _logging
 
@@ -173,7 +204,11 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
         # --- Step 3: Prove outcome ---
         assert req.bot_b is not None  # bots_only_mode would have returned above
         job.step = f"Proving outcome: {req.bot_a.name} vs {req.bot_b.name}..."
-        proof = await loop.run_in_executor(None, _prove)
+        try:
+            proof = await loop.run_in_executor(None, _prove)
+        except ProofSearchError as exc:
+            await _record_proof_failure(job, req.bot_a.name, req.bot_b.name, exc)
+            raise
 
         # --- Gate 2: Pause for human to review and accept proof ---
         job.status = JobStatus.proof_ready
@@ -189,6 +224,16 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
         # --- Step 4: Write proof to library ---
         job.step = "Writing proof to library..."
         await loop.run_in_executor(None, lambda: _write_proof(proof))
+
+        # --- Step 5: Sync the outcome matrix to the tracking Sheet (best-effort) ---
+        from pd_runner.services.sheets import push_matrix, sheets_configured
+        if sheets_configured():
+            job.step = "Syncing outcome matrix to Google Sheet..."
+            try:
+                await loop.run_in_executor(None, push_matrix)
+            except Exception as exc:
+                _logging.getLogger(__name__).warning(
+                    "Outcome-matrix sheet sync failed (non-fatal): %s", exc)
 
         job.status = JobStatus.done
         job.step = None

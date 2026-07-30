@@ -16,7 +16,7 @@ from pd_runner.api.pipeline_task import bot_exists, bot_source_on_disk, run_pipe
 from pd_runner.api.schemas import (
     BotConflict, BotConflictResolution, BotSpec,
     ConflictResponse, IntegrationRequest, JobResponse, JobStatus,
-    PipelineRequest, ProposalInfo, ProposalsResponse,
+    MatrixStatusRequest, PipelineRequest, ProposalInfo, ProposalsResponse,
 )
 
 app = FastAPI(title="Open-Source Game Theory Pipeline", version="0.1.0")
@@ -58,6 +58,53 @@ async def list_bots() -> dict:
     llm_dir = bots_dir / "LlmGenerations"
     llm = sorted(p.stem for p in llm_dir.glob("*.lean")) if llm_dir.exists() else []
     return {"handwritten": handwritten, "llm": llm}
+
+
+@app.get("/matrix")
+async def get_matrix() -> dict:
+    """The current outcome matrix, rebuilt from the theorem library on each call."""
+    from pd_runner.eval.outcome_matrix import build_outcome_matrix, matrix_rows
+
+    bots, cells = build_outcome_matrix()
+    return {"bots": bots, "rows": matrix_rows(bots, cells)}
+
+
+@app.post("/matrix/sync")
+async def matrix_sync() -> dict:
+    """Rebuild the outcome matrix from the theorem library and push it to the Google Sheet."""
+    from pd_runner.services.sheets import SheetsPushError, push_matrix
+
+    loop = asyncio.get_running_loop()
+    try:
+        return await loop.run_in_executor(None, push_matrix)
+    except SheetsPushError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/matrix/status")
+async def add_matrix_status(req: MatrixStatusRequest) -> dict:
+    """Append a curated status (Open Problem / Tried / Need rework) and re-sync the Sheet."""
+    from pd_runner.eval.outcome_matrix import append_status, library_bots
+
+    if req.section not in ("open", "tried", "rework"):
+        raise HTTPException(status_code=400, detail=f"unknown section {req.section!r}")
+    bots = library_bots()
+    if len(req.pair) != 2 or any(b not in bots for b in req.pair):
+        raise HTTPException(status_code=400, detail=f"pair must be two library bots, got {req.pair}")
+
+    from datetime import date
+    reason = req.reason or f"Marked via app UI on {date.today().isoformat()}."
+    added = append_status(req.section, (req.pair[0], req.pair[1]), reason)
+
+    synced = False
+    from pd_runner.services.sheets import push_matrix, sheets_configured
+    if added and sheets_configured():
+        try:
+            await asyncio.get_running_loop().run_in_executor(None, push_matrix)
+            synced = True
+        except Exception:
+            pass  # sheet sync is best-effort; the TOML entry is the record
+    return {"added": added, "synced": synced}
 
 
 @app.post("/pipeline", response_model=JobResponse, status_code=202,

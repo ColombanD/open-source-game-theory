@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.50",
     "fastapi>=0.135.2",
+    "gspread>=6.2.1",
     "uvicorn[standard]>=0.42.0",
 ]
 

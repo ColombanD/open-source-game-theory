@@ -1,0 +1,122 @@
+# Curated statuses for matchups WITHOUT an accepted outcome theorem.
+#
+# The Lean library only records proofs; "we know this is open" and "we tried
+# and failed" are negative knowledge that lives here. Pairs are UNORDERED
+# (["A", "B"] also covers B vs A). `reason` is for humans; the matrix renderer
+# ignores it. A pair listed here that later gains a proven theorem is
+# overridden by the proof (with a warning to drop the stale entry).
+#
+#   [[open]]   -> cell reads "Open Problem"
+#   [[tried]]  -> cell reads "Tried"
+#   [[rework]] -> cell reads "Need rework" (a proof exists, but not in the
+#                 accepted large-k form — e.g. only `_floor` regime theorems)
+#
+# Anything not proven and not listed stays an empty cell (not yet attempted).
+#
+# A pair may appear in several sections; the strongest wins: open > rework >
+# tried. Failed pipeline proof attempts append [[tried]] entries automatically;
+# OUTCOME OPEN verdicts are recorded as [[open]] only after human confirmation
+# in the app UI.
+
+# ---- Genuinely open (semantic reasons) -------------------------------------
+
+[[open]]
+pair = ["CupodBot", "DupocBot"]
+reason = "Critch's open problem — search × search, expected unprovable in the library as it stands (OSGT_Workshop_Cheat_Sheet.md)."
+
+[[open]]
+pair = ["JustBot", "MirrorBot"]
+reason = "Bistable fixed point — two consistent outcomes, neither forced; no sound rule can decide it (DESIGN_CHOICES.md)."
+
+[[open]]
+pair = ["PrudentBot", "CupodBot"]
+reason = "CupodBot-family search×search matchup — no forcing rule known."
+
+[[open]]
+pair = ["JustBot", "CupodBot"]
+reason = "CupodBot-family search×search matchup — no forcing rule known."
+
+[[open]]
+pair = ["CIMCIC", "CupodBot"]
+reason = "CupodBot-family search×search matchup — no forcing rule known."
+
+[[open]]
+pair = ["DIMCID", "DupocBot"]
+reason = "DupocBot-family search×search matchup — no forcing rule known."
+
+# ---- Floor regime proven (see the _floor theorems), large-k OPEN -----------
+# These pairs have `_floor`/`_floor2` theorems in the library, which the strict
+# large-k acceptance rule excludes; the docstrings mark the large-k side OPEN.
+
+[[rework]]
+pair = ["LegibleBot", "CooperateBot"]
+reason = "Floor proven; large-k is OPEN (needs a .box prover)."
+
+[[rework]]
+pair = ["LegibleBot", "DefectBot"]
+reason = "Floor proven; large-k is OPEN (needs a .box prover)."
+
+[[rework]]
+pair = ["LegibleBot", "DBot"]
+reason = "Floor (D, C) proven; the non-floor regime (guard fits, needs a .box prover) is OPEN."
+
+[[rework]]
+pair = ["LegibleBot", "OBot"]
+reason = "Floor proven; large-k is OPEN (needs a .box prover)."
+
+[[rework]]
+pair = ["LegibleBot", "TitForTatBot"]
+reason = "Floor proven; large-k is OPEN (needs a .box prover)."
+
+[[rework]]
+pair = ["LegibleBot", "MirrorBot"]
+reason = "Floor proven; large-k is OPEN (needs a .box prover)."
+
+[[rework]]
+pair = ["LegibleBot", "EBot"]
+reason = "Floor proven; large-k is OPEN (needs a .box prover)."
+
+[[rework]]
+pair = ["LegibleBot", "CupodTrollBot"]
+reason = "Floor proven; large-k is OPEN (needs a .box prover)."
+
+[[rework]]
+pair = ["LegibleBot", "LegibleBot"]
+reason = "Floor (D, D) proven; large-k self-play is the full two-box Löb fixpoint, OPEN."
+
+[[rework]]
+pair = ["LegibleBot", "CIMCIC"]
+reason = "Floor (D, D) proven; large-k needs a .box prover AND an .impl prover."
+
+[[rework]]
+pair = ["LegibleBot", "DIMCID"]
+reason = "Floor (D, C) proven; large-k needs a .box prover AND an .impl prover."
+
+[[rework]]
+pair = ["WaryBot", "OBot"]
+reason = "Floor proven; large-k is OPEN (.neg-guard Löb fixpoint, no diag analogue for refutation guards)."
+
+[[rework]]
+pair = ["WaryBot", "MirrorBot"]
+reason = "Floor (C, C) proven; large-k is OPEN (.neg-guard Löb fixpoint, no diag analogue for refutation guards)."
+
+[[rework]]
+pair = ["WaryBot", "CIMCIC"]
+reason = "Floor proven; large-k is OPEN (.neg-guard Löb fixpoint)."
+
+[[rework]]
+pair = ["WaryBot", "DIMCID"]
+reason = "Floor proven; large-k is OPEN (.neg-guard Löb fixpoint)."
+
+[[rework]]
+pair = ["WaryBot", "LegibleBot"]
+reason = "Floor proven; large-k is OPEN on BOTH sides."
+
+[[rework]]
+pair = ["WaryBot", "WaryBot"]
+reason = "Floor (C, C) trust proven; large-k self-play is the .neg-guard Löb fixpoint, OPEN."
+
+# ---- Tried but nothing provable yet ----------------------------------------
+# [[tried]]
+# pair = ["SomeBot", "OtherBot"]
+# reason = "Proof agent attempts on 2026-XX-XX failed; no floor/exclusion result either."

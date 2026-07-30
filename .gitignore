@@ -36,6 +36,7 @@ api_keys.json
 config/secrets*
 .apikey
 .credentials
+.secrets/
 
 # AWS, GCP, Azure credentials
 .aws/

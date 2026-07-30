@@ -90,6 +90,20 @@
     .step-text { font-size: 0.85rem; color: #94a3b8; }
     .gate-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
 
+    #matrix-card { max-width: 1200px; }
+    .matrix-wrap { overflow-x: auto; margin-top: 0.9rem; }
+    table.matrix { border-collapse: collapse; font-size: 0.72rem; white-space: nowrap; }
+    table.matrix th, table.matrix td {
+      border: 1px solid #000; padding: 0.28rem 0.55rem; text-align: center;
+    }
+    table.matrix th { color: #93c5fd; font-weight: 600; position: sticky; top: 0; background: #1e2130; }
+    table.matrix td.mx-name { color: #93c5fd; font-weight: 600; text-align: left; }
+    table.matrix td.mx-lower { background: #000; }
+    table.matrix td.mx-open  { background: #7f1d1d; color: #fca5a5; }
+    table.matrix td.mx-tried { background: #92400e; color: #fcd34d; }
+    table.matrix td.mx-rework { background: #1d4ed8; color: #bfdbfe; }
+    table.matrix td.mx-none  { background: #065f46; color: #6ee7b7; }
+
     .section-label {
       font-size: 0.75rem; color: #94a3b8; font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;
@@ -256,6 +270,22 @@
       <div class="section-label">Logs</div>
       <div id="log-output"></div>
     </div>
+  </div>
+
+  <div class="card" id="matrix-card">
+    <h2>Outcome matrix</h2>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
+      Rebuilds the bot-vs-bot outcome matrix from the proven theorem library and writes it to
+      its own worksheet in the tracking Google Sheet. Runs automatically after each accepted
+      proof; use the button to sync manually (e.g. after editing
+      <code>app/outcome_status.toml</code>).
+    </p>
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+      <button class="btn" onclick="loadMatrix()">Refresh</button>
+      <button class="btn btn-primary" id="matrix-sync-btn" onclick="syncMatrix()">Sync to Google Sheet</button>
+      <span id="matrix-sync-status" style="color:#9ca3af; font-size:0.85rem;"></span>
+    </div>
+    <div id="matrix-table"></div>
   </div>
 
   <div class="card" id="proposals-card">
@@ -733,7 +763,44 @@
           ${proofBlock}
         `;
       } else if (job.error) {
-        area.innerHTML = `<div class="error-msg">${esc(job.error)}</div>`;
+        const noteBlock = job.status_note
+          ? `<p style="color:#fcd34d; font-size:0.85rem; margin-top:0.6rem;">${esc(job.status_note)}</p>`
+          : '';
+        let openBlock = '';
+        if (job.open_suggestion) {
+          const a = job.open_suggestion.pair[0], b = job.open_suggestion.pair[1];
+          openBlock = `
+            <div class="gate-actions" id="open-suggest">
+              <button class="btn btn-primary"
+                      onclick="confirmOpenProblem('${esc(a)}', '${esc(b)}', '${esc(job.open_suggestion.kind)}')">
+                Mark ${esc(a)} vs ${esc(b)} as Open Problem</button>
+              <span style="color:#94a3b8; font-size:0.85rem; align-self:center;">
+                Agent verdict: ${esc(job.open_suggestion.kind)} — recording is human-gated.</span>
+            </div>`;
+        }
+        area.innerHTML = `<div class="error-msg">${esc(job.error)}</div>${noteBlock}${openBlock}`;
+      }
+    }
+
+    async function confirmOpenProblem(a, b, kind) {
+      const el = document.getElementById('open-suggest');
+      try {
+        const resp = await fetch('/matrix/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ section: 'open', pair: [a, b],
+                                 reason: `Confirmed via app UI (agent verdict: ${kind}).` }),
+        });
+        const body = await resp.json();
+        if (!resp.ok) {
+          el.innerHTML = `<span style="color:#fca5a5;">Failed: ${esc(body.detail || resp.statusText)}</span>`;
+          return;
+        }
+        el.innerHTML = `<span style="color:#6ee7b7; font-size:0.85rem;">Recorded ${esc(a)} vs ${esc(b)} ` +
+          `as Open Problem${body.synced ? ' and synced to the Sheet' : ''}.</span>`;
+        loadMatrix();
+      } catch (e) {
+        el.innerHTML = `<span style="color:#fca5a5;">Failed: ${esc(e)}</span>`;
       }
     }
 
@@ -921,10 +988,64 @@
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    // Initialise mode visibility, model-settings hints, and proposals on load.
+    async function loadMatrix() {
+      const el = document.getElementById('matrix-table');
+      let data;
+      try {
+        const resp = await fetch('/matrix');
+        data = await resp.json();
+      } catch (e) {
+        el.innerHTML = `<p style="color:#fca5a5; font-size:0.85rem;">Failed to load matrix: ${esc(e)}</p>`;
+        return;
+      }
+      const [header, ...rows] = data.rows;
+      let html = '<div class="matrix-wrap"><table class="matrix"><tr>'
+        + header.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
+      rows.forEach((row, i) => {
+        html += '<tr>' + row.map((cell, j) => {
+          if (j === 0) return `<td class="mx-name">${esc(cell)}</td>`;
+          if (j <= i) return '<td class="mx-lower"></td>';
+          let cls = '';
+          if (cell === 'Open Problem') cls = 'mx-open';
+          else if (cell === 'Tried') cls = 'mx-tried';
+          else if (cell === 'Need rework') cls = 'mx-rework';
+          else if (cell === 'None') cls = 'mx-none';
+          return `<td class="${cls}">${esc(cell)}</td>`;
+        }).join('') + '</tr>';
+      });
+      el.innerHTML = html + '</table></div>';
+    }
+
+    async function syncMatrix() {
+      const btn = document.getElementById('matrix-sync-btn');
+      const status = document.getElementById('matrix-sync-status');
+      btn.disabled = true;
+      status.textContent = 'Syncing…';
+      try {
+        const resp = await fetch('/matrix/sync', { method: 'POST' });
+        const body = await resp.json();
+        if (!resp.ok) {
+          status.textContent = `Failed: ${body.detail || resp.statusText}`;
+        } else {
+          status.innerHTML =
+            `Synced ${body.bots}×${body.bots} to <a href="${esc(body.spreadsheet_url)}" target="_blank">` +
+            `${esc(body.worksheet)}</a> — ${body.proven} proven, ${body.none} None, ` +
+            `${body.open} open, ${body.rework} need rework, ${body.tried} tried, ` +
+            `${body.empty} empty (${esc(body.pushed_at)})`;
+          loadMatrix();
+        }
+      } catch (e) {
+        status.textContent = `Failed: ${e}`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Initialise mode visibility, model-settings hints, proposals, and the matrix on load.
     onModeChange();
     onModelChange();
     loadProposals();
+    loadMatrix();
   </script>
 
 </body>

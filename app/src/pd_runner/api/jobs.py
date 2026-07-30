@@ -57,6 +57,10 @@ class Job:
     result: Optional[PipelineResult] = None
     error: Optional[str] = None
 
+    # Failure-path outcome tracking (proof jobs only)
+    status_note: Optional[str] = None      # e.g. "recorded as Tried in outcome_status.toml"
+    open_suggestion: Optional[dict] = None  # {"pair": [a, b], "kind": "open_*"} — awaiting human confirm
+
     # Log streaming
     log_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
     log_handler: Optional[JobLogHandler] = field(default=None, repr=False)
@@ -88,6 +92,8 @@ class Job:
             "proof": proof,
             "result": self.result,
             "error": self.error,
+            "status_note": self.status_note,
+            "open_suggestion": self.open_suggestion,
             "proposal_name": self.proposal_name,
             "diff": self.diff,
             "integration_summary": self.integration_summary,
