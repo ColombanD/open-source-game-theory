@@ -49,56 +49,8 @@ reason = "DupocBot-family search×search matchup — no forcing rule known."
 # large-k acceptance rule excludes; the docstrings mark the large-k side OPEN.
 
 [[rework]]
-pair = ["LegibleBot", "CooperateBot"]
-reason = "Floor proven; large-k is OPEN (needs a .box prover)."
-
-[[rework]]
-pair = ["LegibleBot", "DefectBot"]
-reason = "Floor proven; large-k is OPEN (needs a .box prover)."
-
-[[rework]]
-pair = ["LegibleBot", "DBot"]
-reason = "Floor (D, C) proven; the non-floor regime (guard fits, needs a .box prover) is OPEN."
-
-[[rework]]
-pair = ["LegibleBot", "OBot"]
-reason = "Floor proven; large-k is OPEN (needs a .box prover)."
-
-[[rework]]
-pair = ["LegibleBot", "TitForTatBot"]
-reason = "Floor proven; large-k is OPEN (needs a .box prover)."
-
-[[rework]]
-pair = ["LegibleBot", "MirrorBot"]
-reason = "Floor proven; large-k is OPEN (needs a .box prover)."
-
-[[rework]]
-pair = ["LegibleBot", "EBot"]
-reason = "Floor proven; large-k is OPEN (needs a .box prover)."
-
-[[rework]]
-pair = ["LegibleBot", "CupodTrollBot"]
-reason = "Floor proven; large-k is OPEN (needs a .box prover)."
-
-[[rework]]
-pair = ["LegibleBot", "LegibleBot"]
-reason = "Floor (D, D) proven; large-k self-play is the full two-box Löb fixpoint, OPEN."
-
-[[rework]]
-pair = ["LegibleBot", "CIMCIC"]
-reason = "Floor (D, D) proven; large-k needs a .box prover AND an .impl prover."
-
-[[rework]]
-pair = ["LegibleBot", "DIMCID"]
-reason = "Floor (D, C) proven; large-k needs a .box prover AND an .impl prover."
-
-[[rework]]
 pair = ["WaryBot", "OBot"]
 reason = "Floor proven; large-k is OPEN (.neg-guard Löb fixpoint, no diag analogue for refutation guards)."
-
-[[rework]]
-pair = ["WaryBot", "MirrorBot"]
-reason = "Floor (C, C) proven; large-k is OPEN (.neg-guard Löb fixpoint, no diag analogue for refutation guards)."
 
 [[rework]]
 pair = ["WaryBot", "CIMCIC"]
@@ -111,10 +63,6 @@ reason = "Floor proven; large-k is OPEN (.neg-guard Löb fixpoint)."
 [[rework]]
 pair = ["WaryBot", "LegibleBot"]
 reason = "Floor proven; large-k is OPEN on BOTH sides."
-
-[[rework]]
-pair = ["WaryBot", "WaryBot"]
-reason = "Floor (C, C) trust proven; large-k self-play is the .neg-guard Löb fixpoint, OPEN."
 
 # ---- Tried but nothing provable yet ----------------------------------------
 # [[tried]]

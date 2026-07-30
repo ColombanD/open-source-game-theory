@@ -365,4 +365,850 @@ theorem WaryBot_cooperates_vs_EBot_large (k fuel : Nat)
   unfold WaryBot at hg ⊢
   simp [eval, Prog.subst, Formula.subst, hg]
 
+
+namespace WaryCensus
+
+/-- The subst-preimage analysis shared by both censuses: under a
+    `.sim`/`.bot (.sim …)` frame, a substitution image can be the literal
+    `WaryBot k` only via `q = .opp` with `o = WaryBot k` — the guard formula's
+    bare `.opp`/`.self` atoms are not producible under a non-atom frame. -/
+theorem subst_eq_wary {k : Nat} {q me o : Prog}
+    (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
+    (h : q.subst me o = WaryBot k) : o = WaryBot k := by
+  cases q with
+  | const a => simp [Prog.subst, WaryBot] at h
+  | self =>
+      rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
+        simp [Prog.subst, WaryBot] at h
+  | opp => simpa [Prog.subst] using h
+  | bot p => simp [Prog.subst, WaryBot] at h
+  | sim p q => simp [Prog.subst, WaryBot] at h
+  | ite b a p q => simp [Prog.subst, WaryBot] at h
+  | search K φg pp qq =>
+      simp only [WaryBot, Prog.subst, Prog.search.injEq] at h
+      obtain ⟨hK, hg, hp, hq⟩ := h
+      cases φg with
+      | plays x y a => simp [Formula.subst] at hg
+      | impl f1 f2 => simp [Formula.subst] at hg
+      | box n' f1 => simp [Formula.subst] at hg
+      | eq p' q' => simp [Formula.subst] at hg
+      | diag g' f1 => simp [Formula.subst] at hg
+      | neg f1 =>
+          simp only [Formula.subst, Formula.neg.injEq] at hg
+          cases f1 with
+          | impl f2 f3 => simp [Formula.subst] at hg
+          | neg f2 => simp [Formula.subst] at hg
+          | box n' f2 => simp [Formula.subst] at hg
+          | eq p' q' => simp [Formula.subst] at hg
+          | diag g' f2 => simp [Formula.subst] at hg
+          | plays x y a =>
+              simp only [Formula.subst, Formula.plays.injEq] at hg
+              obtain ⟨hx, hy, -⟩ := hg
+              cases x with
+              | const a' => simp [Prog.subst] at hx
+              | bot p' => simp [Prog.subst] at hx
+              | sim p' q' => simp [Prog.subst] at hx
+              | ite b' a' p' q' => simp [Prog.subst] at hx
+              | search K' g' p' q' => simp [Prog.subst] at hx
+              | self =>
+                  rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
+                    simp [Prog.subst] at hx
+              | opp =>
+                  simp only [Prog.subst] at hx
+                  cases y with
+                  | const a' => simp [Prog.subst] at hy
+                  | bot p' => simp [Prog.subst] at hy
+                  | sim p' q' => simp [Prog.subst] at hy
+                  | ite b' a' p' q' => simp [Prog.subst] at hy
+                  | search K' g' p' q' => simp [Prog.subst] at hy
+                  | self =>
+                      rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
+                        simp [Prog.subst] at hy
+                  | opp =>
+                      simp only [Prog.subst] at hy
+                      rw [hx] at hy
+                      exact absurd hy (by simp)
+
+/-! #### The modified valuation, PARAMETRIC over the entangled-atom relation
+
+`WV S` is `Formula.interp` with one change: a plays-atom is additionally true
+when its action is `.C` and its player pair is in `S`. Boxes stay RAW `Pf` —
+that is what keeps the modal tier and the transparency leaves sound without
+touching the Löb machinery. -/
+
+def WV (S : Prog → Prog → Prop) : Formula → Prop
+  | .plays p q a => (a = .C ∧ S p q) ∨ (Formula.plays p q a).interp
+  | .impl α β => WV S α → WV S β
+  | .neg φ => ¬ WV S φ
+  | .box n φ => Pf n φ
+  | .eq p q => p = q
+  | .diag g φ => Pf g (.diag g φ) → WV S φ
+
+theorem WV_plays {S : Prog → Prog → Prop} {p q : Prog} {a : Action} :
+    WV S (.plays p q a) = ((a = .C ∧ S p q) ∨ (Formula.plays p q a).interp) := rfl
+theorem WV_impl {S : Prog → Prog → Prop} {α β : Formula} :
+    WV S (.impl α β) = (WV S α → WV S β) := rfl
+theorem WV_neg {S : Prog → Prog → Prop} {φ : Formula} :
+    WV S (.neg φ) = ¬ WV S φ := rfl
+theorem WV_box {S : Prog → Prog → Prop} {n : Nat} {φ : Formula} :
+    WV S (.box n φ) = Pf n φ := rfl
+theorem WV_eq {S : Prog → Prog → Prop} {p q : Prog} :
+    WV S (.eq p q) = (p = q) := rfl
+theorem WV_diag {S : Prog → Prog → Prop} {g : Nat} {φ : Formula} :
+    WV S (.diag g φ) = (Pf g (.diag g φ) → WV S φ) := rfl
+
+/-- Probe atoms (`.bot`-frozen opponent) fall out of any `S` that avoids `.bot`
+    opponents, so their WV is their interp. -/
+theorem interp_of_WV_probe {S : Prog → Prog → Prop}
+    (hnb : ∀ oppo z, ¬ S oppo (.bot z)) {oppo z : Prog} {aT : Action}
+    (h : WV S (.plays oppo (.bot z) aT)) :
+    (Formula.plays oppo (.bot z) aT).interp := by
+  rw [WV_plays] at h
+  rcases h with ⟨-, hSP⟩ | h
+  · exact absurd hSP (hnb oppo z)
+  · exact h
+
+/-- Interp-to-WV bridge along a search-guard chain (box antecedents: WV = interp;
+    the plays tail embeds by `Or.inr`). -/
+theorem WV_of_interp_searchChain {S : Prog → Prog → Prop} (me oppo : Prog)
+    (a : Action) :
+    ∀ L : List (Nat × Formula × Prog),
+      (implChain (searchGuards me oppo L) (.plays me oppo a)).interp →
+      WV S (implChain (searchGuards me oppo L) (.plays me oppo a))
+  | [] => fun h => Or.inr h
+  | (g, ψ, e) :: L => by
+      intro h
+      show WV S (.impl (.box g (ψ.subst me oppo))
+        (implChain (searchGuards me oppo L) (.plays me oppo a)))
+      rw [WV_impl]
+      intro hbox
+      rw [WV_box] at hbox
+      exact WV_of_interp_searchChain me oppo a L (h hbox)
+
+/-- Interp-to-WV bridge along a mixed-telescope guard chain. -/
+theorem WV_of_interp_ctxChain {S : Prog → Prog → Prop}
+    (hnb : ∀ oppo z, ¬ S oppo (.bot z)) (me oppo : Prog) (a : Action) :
+    ∀ L : List CtxLayer,
+      (implChain (ctxGuards me oppo L) (.plays me oppo a)).interp →
+      WV S (implChain (ctxGuards me oppo L) (.plays me oppo a))
+  | [] => fun h => Or.inr h
+  | .searchL g ψ e :: L => by
+      intro h
+      show WV S (.impl (.box g (ψ.subst me oppo))
+        (implChain (ctxGuards me oppo L) (.plays me oppo a)))
+      rw [WV_impl]
+      intro hbox
+      rw [WV_box] at hbox
+      exact WV_of_interp_ctxChain hnb me oppo a L (h hbox)
+  | .iteL z aT other :: L => by
+      intro h
+      show WV S (.impl (.plays oppo (.bot z) aT)
+        (implChain (ctxGuards me oppo L) (.plays me oppo a)))
+      rw [WV_impl]
+      intro hprobe
+      exact WV_of_interp_ctxChain hnb me oppo a L (h (interp_of_WV_probe hnb hprobe))
+
+/-! #### The MirrorBot census: `SPMirror` -/
+
+/-- Atoms entangled with the WaryBot k ↔ MirrorBot fixpoint: base "MirrorBot
+    plays C vs WaryBot k" (raw constructor form, for clean `cases` unification),
+    closed under the two sim-transparency lifts. -/
+inductive SPMirror (k : Nat) : Prog → Prog → Prop where
+  | base : SPMirror k (.sim .opp .self)
+      (.search k (.neg (.plays .opp .self .C)) (.const .D) (.const .C))
+  | simL (p q o : Prog) :
+      SPMirror k (p.subst (.sim p q) o) (q.subst (.sim p q) o) →
+      SPMirror k (.sim p q) o
+  | botSimL (p q o : Prog) :
+      SPMirror k (p.subst (.bot (.sim p q)) o) (q.subst (.bot (.sim p q)) o) →
+      SPMirror k (.bot (.sim p q)) o
+
+theorem SPMirror_me {k : Nat} {me oppo : Prog} (h : SPMirror k me oppo) :
+    (∃ p q, me = .sim p q) ∨ (∃ p q, me = .bot (.sim p q)) := by
+  cases h with
+  | base => exact Or.inl ⟨_, _, rfl⟩
+  | simL p q o _ => exact Or.inl ⟨p, q, rfl⟩
+  | botSimL p q o _ => exact Or.inr ⟨p, q, rfl⟩
+
+/-- The invariant: the opponent slot is always the literal `WaryBot k`. -/
+theorem SPMirror_opp {k : Nat} {me oppo : Prog} (h : SPMirror k me oppo) :
+    oppo = WaryBot k := by
+  induction h with
+  | base => rfl
+  | simL p q o hprem ih => exact subst_eq_wary (Or.inl ⟨p, q, rfl⟩) ih
+  | botSimL p q o hprem ih => exact subst_eq_wary (Or.inr ⟨p, q, rfl⟩) ih
+
+theorem SPMirror_not_bot (k : Nat) : ∀ oppo z, ¬ SPMirror k oppo (.bot z) := by
+  intro oppo z h
+  have hw := SPMirror_opp h
+  simp [WaryBot] at hw
+
+theorem SPMirror_sim_inv {k : Nat} {p q oppo : Prog}
+    (h : SPMirror k (.sim p q) oppo) :
+    (p = .opp ∧ q = .self ∧ oppo = WaryBot k) ∨
+    SPMirror k (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo) := by
+  cases h with
+  | base => exact Or.inl ⟨rfl, rfl, rfl⟩
+  | simL _ _ _ hprem => exact Or.inr hprem
+
+theorem SPMirror_botSim_inv {k : Nat} {p q oppo : Prog}
+    (h : SPMirror k (.bot (.sim p q)) oppo) :
+    SPMirror k (p.subst (.bot (.sim p q)) oppo)
+      (q.subst (.bot (.sim p q)) oppo) := by
+  cases h with
+  | botSimL _ _ _ hprem => exact hprem
+
+/- **PROJECT-CONVENTION NOTE (raw mutual recursor).** The codebase rule is
+"never use the raw mutual recursors outside ProofSystem.lean §4 and
+`sound_upto`". The two `pf_WV_*` inductions below are the THIRD legitimate
+site, for the same reason as `sound_upto`: the proof needs the cross-IH through
+the `PlaysProof.search_t` guard back-edge (a `Pf`-motive fact about the guard
+proof INSIDE a play certificate), which neither `Pf.induct` nor
+`PlaysProof.induct` can supply — the named eliminators hand the mutual premises
+over as data, not as induction hypotheses. Budget induction is no substitute
+(the guard budget does not descend), so the raw recursor is forced. -/
+
+set_option maxHeartbeats 1000000 in
+/-- **WV-soundness for the MirrorBot census**: every `Pf`-provable formula is
+    `WV (SPMirror k)`-true. Mutual structural induction (`Pf.rec`); motives:
+    play-exclusion (an SP player — or WaryBot itself vs MirrorBot — never
+    certifiably plays anything but C), no D-certificate for SP-atoms, and WV. -/
+theorem pf_WV_mirror (k : Nat) : ∀ {K : Nat} {φ : Formula},
+    Pf K φ → WV (SPMirror k) φ := by
+  intro K φ h
+  refine Pf.rec (motive_1 := fun me oppo body a n _ =>
+      (SPMirror k me oppo → (body = me ∨ me = .bot body) → a = .C) ∧
+      (me = WaryBot k → oppo = MirrorBot → body = WaryBot k → a = .C))
+    (motive_2 := fun m ψ _ => ∀ p q, SPMirror k p q → ψ ≠ .plays p q .D)
+    (motive_3 := fun _ ψ _ => WV (SPMirror k) ψ)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    h
+  -- ═══ PlaysProof arms (9) ═══
+  · -- const
+    intro me oppo a
+    constructor
+    · intro hSP hgate
+      rcases SPMirror_me hSP with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> simp_all
+    · intro _ _ h3
+      simp [WaryBot] at h3
+  · -- self
+    intro me oppo a n hpl ih
+    constructor
+    · intro hSP hgate
+      rcases SPMirror_me hSP with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> simp_all
+    · intro _ _ h3
+      simp [WaryBot] at h3
+  · -- opp
+    intro me oppo a n hpl ih
+    constructor
+    · intro hSP hgate
+      rcases SPMirror_me hSP with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> simp_all
+    · intro _ _ h3
+      simp [WaryBot] at h3
+  · -- bot
+    intro me oppo p a n hpl ih
+    constructor
+    · intro hSP hgate
+      rcases hgate with hb | hb
+      · exact ih.1 hSP (Or.inr hb.symm)
+      · rcases SPMirror_me hSP with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;> simp_all
+    · intro _ _ h3
+      simp [WaryBot] at h3
+  · -- sim
+    intro a n me oppo p q hpl ih
+    constructor
+    · intro hSP hgate
+      rcases hgate with hb | hb
+      · subst hb
+        rcases SPMirror_sim_inv hSP with ⟨rfl, rfl, rfl⟩ | hprem
+        · exact ih.2 (by simp [Prog.subst]) (by simp [Prog.subst, MirrorBot])
+            (by simp [Prog.subst])
+        · exact ih.1 hprem (Or.inl rfl)
+      · subst hb
+        exact ih.1 (SPMirror_botSim_inv hSP) (Or.inl rfl)
+    · intro _ _ h3
+      simp [WaryBot] at h3
+  · -- ite_t
+    intro me oppo b r m a' p a n q hb hr hp ihb ihp
+    constructor
+    · intro hSP hgate
+      rcases SPMirror_me hSP with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hg | hg <;> simp_all
+    · intro _ _ h3
+      simp [WaryBot] at h3
+  · -- ite_f
+    intro me oppo b r m a' q a n p hb hr hq ihb ihq
+    constructor
+    · intro hSP hgate
+      rcases SPMirror_me hSP with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hg | hg <;> simp_all
+    · intro _ _ h3
+      simp [WaryBot] at h3
+  · -- search_t : the back-edge. The second clause is the heart of the argument.
+    intro K' me oppo p a n φg q hg hp ihg ihp
+    constructor
+    · intro hSP hgate
+      rcases SPMirror_me hSP with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> simp_all
+    · intro h1 h2 h3
+      unfold WaryBot at h3
+      injection h3 with hK hφ hpp hqq
+      subst hK; subst hφ; subst h1; subst h2
+      simp only [Formula.subst, Prog.subst] at ihg
+      rw [WV_neg] at ihg
+      refine absurd ?_ ihg
+      rw [WV_plays]
+      exact Or.inl ⟨rfl, SPMirror.base⟩
+  · -- search_f : the else-branch plays C, killed by inversion.
+    intro m me oppo q a n K' φg p hg hq ihg ihq
+    constructor
+    · intro hSP hgate
+      rcases SPMirror_me hSP with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> simp_all
+    · intro h1 h2 h3
+      unfold WaryBot at h3
+      injection h3 with hK hφ hpp hqq
+      subst hqq
+      cases hq
+      rfl
+  -- ═══ AtomProvable arm (1) ═══
+  · -- mk
+    intro me oppo a n K hpp hn ih p q hSP heq
+    injection heq with h1 h2 h3
+    subst h1; subst h2; subst h3
+    exact Action.noConfusion (ih.1 hSP (Or.inl rfl))
+  -- ═══ Pf arms (29) ═══
+  · -- atom
+    intro K ψ hatom ih
+    cases hatom with
+    | mk hpp hn =>
+        rw [WV_plays]
+        exact Or.inr (Pf_sound _ _ (Pf.atom ⟨hpp, hn⟩))
+  · -- atomNeg
+    intro K p q b aN m hatom hne hle ih
+    rw [WV_neg, WV_plays]
+    rintro (⟨rfl, hSP⟩ | hint)
+    · cases b with
+      | C => exact hne rfl
+      | D => exact ih p q hSP rfl
+    · have hs := Pf_sound _ _ (Pf.atomNeg p q b aN m hatom hne hle)
+      simp only [Formula.interp] at hs
+      exact hs hint
+  · -- searchBranch
+    intro K g ψ a b me oppo hme hle
+    rw [WV_impl, WV_box]
+    intro hbox
+    rw [WV_plays]
+    exact Or.inr ((Pf_sound _ _ (Pf.searchBranch g ψ a b me oppo hme hle)) hbox)
+  · -- simStep : the SP closure in action
+    intro K me p q oppo a hme hle
+    rw [WV_impl, WV_plays, WV_plays]
+    rintro (⟨rfl, hSP⟩ | hint)
+    · subst hme
+      exact Or.inl ⟨rfl, SPMirror.simL p q oppo hSP⟩
+    · exact Or.inr ((Pf_sound _ _ (Pf.simStep me p q oppo a hme hle)) hint)
+  · -- botSimStep
+    intro K me p q oppo a hme hle
+    rw [WV_impl, WV_plays, WV_plays]
+    rintro (⟨rfl, hSP⟩ | hint)
+    · subst hme
+      exact Or.inl ⟨rfl, SPMirror.botSimL p q oppo hSP⟩
+    · exact Or.inr ((Pf_sound _ _ (Pf.botSimStep me p q oppo a hme hle)) hint)
+  · -- botSearchStep
+    intro K g ψ a b me oppo hme hle
+    rw [WV_impl, WV_box]
+    intro hbox
+    rw [WV_plays]
+    exact Or.inr ((Pf_sound _ _ (Pf.botSearchStep g ψ a b me oppo hme hle)) hbox)
+  · -- iteBranchSearch_t : probe antecedent is never SP (SPMirror_not_bot)
+    intro K g z a' c0 c1 ψ q me oppo hme hle
+    rw [WV_impl, WV_impl, WV_box]
+    intro hprobe hbox
+    rw [WV_plays]
+    exact Or.inr ((Pf_sound _ _
+      (Pf.iteBranchSearch_t g z a' c0 c1 ψ q me oppo hme hle))
+      (interp_of_WV_probe (SPMirror_not_bot k) hprobe) hbox)
+  · -- searchThenSearch_t
+    intro K k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme hprud hmk hle ih
+    rw [WV_impl, WV_box]
+    intro hbox
+    rw [WV_plays]
+    exact Or.inr ((Pf_sound _ _
+      (Pf.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme hprud hmk hle)) hbox)
+  · -- searchChain
+    intro K g₁ ψ₁ e₁ L a me oppo hme hle
+    rw [WV_impl, WV_box]
+    intro hbox
+    exact WV_of_interp_searchChain me oppo a L
+      ((Pf_sound _ _ (Pf.searchChain g₁ ψ₁ e₁ L a me oppo hme hle)) hbox)
+  · -- ctxChain
+    intro K hd L a me oppo hme hle
+    have hs := Pf_sound _ _ (Pf.ctxChain hd L a me oppo hme hle)
+    cases hd with
+    | searchL g ψ e =>
+        simp only [ctxGuard] at hs ⊢
+        rw [WV_impl, WV_box]
+        intro hbox
+        exact WV_of_interp_ctxChain (SPMirror_not_bot k) me oppo a L (hs hbox)
+    | iteL z aT other =>
+        simp only [ctxGuard] at hs ⊢
+        rw [WV_impl]
+        intro hprobe
+        exact WV_of_interp_ctxChain (SPMirror_not_bot k) me oppo a L
+          (hs (interp_of_WV_probe (SPMirror_not_bot k) hprobe))
+  · -- eqRefl
+    intro K p hle
+    rw [WV_eq]
+  · -- eqNeg
+    intro K p q hne hle
+    rw [WV_neg, WV_eq]
+    exact hne
+  · -- mp
+    intro K m₁ m₂ φ' α h1 h2 hle ih1 ih2
+    rw [WV_impl] at ih1
+    exact ih1 ih2
+  · -- implTrans
+    intro K φ' ψ χ a b h1 h2 hle ih1 ih2
+    rw [WV_impl] at ih1 ih2 ⊢
+    exact fun hφ => ih2 (ih1 hφ)
+  · -- weakenImpl
+    intro K φ' ψ m hψ hle ih
+    rw [WV_impl]
+    exact fun _ => ih
+  · -- impS2
+    intro φ' ψ χ m₁ m₂ K h1 h2 hle ih1 ih2
+    rw [WV_impl] at ih1 ih2 ⊢
+    intro hφ
+    have hi := ih1 hφ
+    rw [WV_impl] at hi
+    exact hi (ih2 hφ)
+  · -- implRefl
+    intro K φ' hle
+    rw [WV_impl]
+    exact id
+  · -- implK
+    intro K φ' ψ hle
+    rw [WV_impl]
+    intro hφ
+    rw [WV_impl]
+    exact fun _ => hφ
+  · -- implS
+    intro K φ' ψ χ hle
+    rw [WV_impl]
+    intro hf
+    rw [WV_impl]
+    intro hg
+    rw [WV_impl]
+    intro hx
+    rw [WV_impl] at hf hg
+    have h1 := hf hx
+    rw [WV_impl] at h1
+    exact h1 (hg hx)
+  · -- contrapose : trivially WV-sound (this rule falsifies the TailTo census)
+    intro K φ' ψ m hp hle ih
+    rw [WV_impl] at ih
+    rw [WV_impl, WV_neg, WV_neg]
+    exact fun hnψ hφ => hnψ (ih hφ)
+  · -- negElim
+    intro K φ' ψ m₁ m₂ h1 h2 hle ih1 ih2
+    rw [WV_neg] at ih1
+    exact absurd ih2 ih1
+  · -- boxIntro
+    intro kIn K φ' hprem hle ih
+    rw [WV_box]
+    exact hprem
+  · -- atomBoxImpl
+    intro K kBox p q a hatom hle _ihA
+    show WV (SPMirror k) (.impl (.plays p q a) (.box kBox (.plays p q a)))
+    rw [WV_impl, WV_box]
+    exact fun _ => Pf.atom hatom
+  · -- axK
+    intro a b c m K φ' α hprem hgate hle ih
+    rw [WV_box] at ih
+    rw [WV_impl, WV_box, WV_box]
+    exact fun hb => Pf.mp a b φ' α ih hb hgate
+  · -- axKf
+    intro a b c K φ' α hgate hsz
+    rw [WV_impl, WV_box, WV_impl, WV_box, WV_box]
+    exact fun h1 hb => Pf.mp a b φ' α h1 hb hgate
+  · -- box4
+    intro a b K φ' hgate hsz
+    rw [WV_impl, WV_box, WV_box]
+    exact fun hp => Pf.boxIntro a b φ' hp hgate
+  · -- boxMono
+    intro a b K φ' hab hsz
+    rw [WV_impl, WV_box, WV_box]
+    exact fun hp => Pf_mono hp hab
+  · -- diagF
+    intro pm fb g K tgt hgate hle ih
+    rw [WV_impl, WV_diag, WV_impl, WV_box]
+    exact fun hd => hd
+  · -- diagB
+    intro pm fb g K tgt hgate hle ih
+    rw [WV_impl, WV_impl, WV_box, WV_diag]
+    exact fun hd => hd
+
+/-! #### The self-play census: `SPSelf`
+
+Same closure with base "WaryBot k plays C vs itself" — a SEARCH-headed player,
+so the base kill lives in `motive_1`'s `search_t` arm (the guard IS the excluded
+refutation) instead of the `sim` arm, and `motive_1` needs only one clause. -/
+
+inductive SPSelf (k : Nat) : Prog → Prog → Prop where
+  | base : SPSelf k
+      (.search k (.neg (.plays .opp .self .C)) (.const .D) (.const .C))
+      (.search k (.neg (.plays .opp .self .C)) (.const .D) (.const .C))
+  | simL (p q o : Prog) :
+      SPSelf k (p.subst (.sim p q) o) (q.subst (.sim p q) o) →
+      SPSelf k (.sim p q) o
+  | botSimL (p q o : Prog) :
+      SPSelf k (p.subst (.bot (.sim p q)) o) (q.subst (.bot (.sim p q)) o) →
+      SPSelf k (.bot (.sim p q)) o
+
+theorem SPSelf_me {k : Nat} {me oppo : Prog} (h : SPSelf k me oppo) :
+    me = WaryBot k ∨ (∃ p q, me = .sim p q) ∨ (∃ p q, me = .bot (.sim p q)) := by
+  cases h with
+  | base => exact Or.inl rfl
+  | simL p q o _ => exact Or.inr (Or.inl ⟨p, q, rfl⟩)
+  | botSimL p q o _ => exact Or.inr (Or.inr ⟨p, q, rfl⟩)
+
+theorem SPSelf_opp {k : Nat} {me oppo : Prog} (h : SPSelf k me oppo) :
+    oppo = WaryBot k := by
+  induction h with
+  | base => rfl
+  | simL p q o hprem ih => exact subst_eq_wary (Or.inl ⟨p, q, rfl⟩) ih
+  | botSimL p q o hprem ih => exact subst_eq_wary (Or.inr ⟨p, q, rfl⟩) ih
+
+theorem SPSelf_not_bot (k : Nat) : ∀ oppo z, ¬ SPSelf k oppo (.bot z) := by
+  intro oppo z h
+  have hw := SPSelf_opp h
+  simp [WaryBot] at hw
+
+/-- Inversion at a `.sim` player (the base is `.search`-headed: only the lift). -/
+theorem SPSelf_sim_inv {k : Nat} {p q oppo : Prog}
+    (h : SPSelf k (.sim p q) oppo) :
+    SPSelf k (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo) := by
+  cases h with
+  | simL _ _ _ hprem => exact hprem
+
+theorem SPSelf_botSim_inv {k : Nat} {p q oppo : Prog}
+    (h : SPSelf k (.bot (.sim p q)) oppo) :
+    SPSelf k (p.subst (.bot (.sim p q)) oppo)
+      (q.subst (.bot (.sim p q)) oppo) := by
+  cases h with
+  | botSimL _ _ _ hprem => exact hprem
+
+set_option maxHeartbeats 1000000 in
+/-- **WV-soundness for the self-play census** (see the convention note above
+    `pf_WV_mirror` for why the raw recursor is deliberate here). -/
+theorem pf_WV_self (k : Nat) : ∀ {K : Nat} {φ : Formula},
+    Pf K φ → WV (SPSelf k) φ := by
+  intro K φ h
+  refine Pf.rec (motive_1 := fun me oppo body a n _ =>
+      SPSelf k me oppo → (body = me ∨ me = .bot body) → a = .C)
+    (motive_2 := fun m ψ _ => ∀ p q, SPSelf k p q → ψ ≠ .plays p q .D)
+    (motive_3 := fun _ ψ _ => WV (SPSelf k) ψ)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    h
+  -- ═══ PlaysProof arms (9) ═══
+  · -- const
+    intro me oppo a hSP hgate
+    rcases SPSelf_me hSP with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+      rcases hgate with hb | hb <;> exact absurd hb (by simp [WaryBot])
+  · -- self
+    intro me oppo a n hpl ih hSP hgate
+    rcases SPSelf_me hSP with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+      rcases hgate with hb | hb <;> exact absurd hb (by simp [WaryBot])
+  · -- opp
+    intro me oppo a n hpl ih hSP hgate
+    rcases SPSelf_me hSP with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+      rcases hgate with hb | hb <;> exact absurd hb (by simp [WaryBot])
+  · -- bot
+    intro me oppo p a n hpl ih hSP hgate
+    rcases hgate with hb | hb
+    · exact ih hSP (Or.inr hb.symm)
+    · rcases SPSelf_me hSP with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        exact absurd hb (by simp [WaryBot])
+  · -- sim : both gate shapes route through the SP lift inversions
+    intro a n me oppo p q hpl ih hSP hgate
+    rcases hgate with hb | hb
+    · subst hb
+      exact ih (SPSelf_sim_inv hSP) (Or.inl rfl)
+    · subst hb
+      exact ih (SPSelf_botSim_inv hSP) (Or.inl rfl)
+  · -- ite_t
+    intro me oppo b r m a' p a n q hb' hr hp ihb ihp hSP hgate
+    rcases SPSelf_me hSP with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+      rcases hgate with hg | hg <;> exact absurd hg (by simp [WaryBot])
+  · -- ite_f
+    intro me oppo b r m a' q a n p hb' hr hq ihb ihq hSP hgate
+    rcases SPSelf_me hSP with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+      rcases hgate with hg | hg <;> exact absurd hg (by simp [WaryBot])
+  · -- search_t : THE base kill — the guard is the excluded refutation itself
+    intro K' me oppo p a n φg q hg hp ihg ihp hSP hgate
+    rcases hgate with hb | hb
+    · subst hb
+      cases hSP with
+      | base =>
+          simp only [Formula.subst, Prog.subst] at ihg
+          rw [WV_neg] at ihg
+          refine absurd ?_ ihg
+          rw [WV_plays]
+          exact Or.inl ⟨rfl, SPSelf.base⟩
+    · rcases SPSelf_me hSP with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        exact absurd hb (by simp [WaryBot])
+  · -- search_f : the else-branch is `.const .C`
+    intro m me oppo q a n K' φg p hg hq ihg ihq hSP hgate
+    rcases hgate with hb | hb
+    · subst hb
+      cases hSP with
+      | base =>
+          cases hq
+          rfl
+    · rcases SPSelf_me hSP with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        exact absurd hb (by simp [WaryBot])
+  -- ═══ AtomProvable arm (1) ═══
+  · -- mk
+    intro me oppo a n K hpp hn ih p q hSP heq
+    injection heq with h1 h2 h3
+    subst h1; subst h2; subst h3
+    exact Action.noConfusion (ih hSP (Or.inl rfl))
+  -- ═══ Pf arms (29) ═══
+  · -- atom
+    intro K ψ hatom ih
+    cases hatom with
+    | mk hpp hn =>
+        rw [WV_plays]
+        exact Or.inr (Pf_sound _ _ (Pf.atom ⟨hpp, hn⟩))
+  · -- atomNeg
+    intro K p q b aN m hatom hne hle ih
+    rw [WV_neg, WV_plays]
+    rintro (⟨rfl, hSP⟩ | hint)
+    · cases b with
+      | C => exact hne rfl
+      | D => exact ih p q hSP rfl
+    · have hs := Pf_sound _ _ (Pf.atomNeg p q b aN m hatom hne hle)
+      simp only [Formula.interp] at hs
+      exact hs hint
+  · -- searchBranch : sound even when reading the SP player's own source —
+    -- under the raw box hypothesis the searcher REALLY plays its then-branch
+    intro K g ψ a b me oppo hme hle
+    rw [WV_impl, WV_box]
+    intro hbox
+    rw [WV_plays]
+    exact Or.inr ((Pf_sound _ _ (Pf.searchBranch g ψ a b me oppo hme hle)) hbox)
+  · -- simStep
+    intro K me p q oppo a hme hle
+    rw [WV_impl, WV_plays, WV_plays]
+    rintro (⟨rfl, hSP⟩ | hint)
+    · subst hme
+      exact Or.inl ⟨rfl, SPSelf.simL p q oppo hSP⟩
+    · exact Or.inr ((Pf_sound _ _ (Pf.simStep me p q oppo a hme hle)) hint)
+  · -- botSimStep
+    intro K me p q oppo a hme hle
+    rw [WV_impl, WV_plays, WV_plays]
+    rintro (⟨rfl, hSP⟩ | hint)
+    · subst hme
+      exact Or.inl ⟨rfl, SPSelf.botSimL p q oppo hSP⟩
+    · exact Or.inr ((Pf_sound _ _ (Pf.botSimStep me p q oppo a hme hle)) hint)
+  · -- botSearchStep
+    intro K g ψ a b me oppo hme hle
+    rw [WV_impl, WV_box]
+    intro hbox
+    rw [WV_plays]
+    exact Or.inr ((Pf_sound _ _ (Pf.botSearchStep g ψ a b me oppo hme hle)) hbox)
+  · -- iteBranchSearch_t
+    intro K g z a' c0 c1 ψ q me oppo hme hle
+    rw [WV_impl, WV_impl, WV_box]
+    intro hprobe hbox
+    rw [WV_plays]
+    exact Or.inr ((Pf_sound _ _
+      (Pf.iteBranchSearch_t g z a' c0 c1 ψ q me oppo hme hle))
+      (interp_of_WV_probe (SPSelf_not_bot k) hprobe) hbox)
+  · -- searchThenSearch_t
+    intro K k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme hprud hmk hle ih
+    rw [WV_impl, WV_box]
+    intro hbox
+    rw [WV_plays]
+    exact Or.inr ((Pf_sound _ _
+      (Pf.searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me oppo hme hprud hmk hle)) hbox)
+  · -- searchChain
+    intro K g₁ ψ₁ e₁ L a me oppo hme hle
+    rw [WV_impl, WV_box]
+    intro hbox
+    exact WV_of_interp_searchChain me oppo a L
+      ((Pf_sound _ _ (Pf.searchChain g₁ ψ₁ e₁ L a me oppo hme hle)) hbox)
+  · -- ctxChain
+    intro K hd L a me oppo hme hle
+    have hs := Pf_sound _ _ (Pf.ctxChain hd L a me oppo hme hle)
+    cases hd with
+    | searchL g ψ e =>
+        simp only [ctxGuard] at hs ⊢
+        rw [WV_impl, WV_box]
+        intro hbox
+        exact WV_of_interp_ctxChain (SPSelf_not_bot k) me oppo a L (hs hbox)
+    | iteL z aT other =>
+        simp only [ctxGuard] at hs ⊢
+        rw [WV_impl]
+        intro hprobe
+        exact WV_of_interp_ctxChain (SPSelf_not_bot k) me oppo a L
+          (hs (interp_of_WV_probe (SPSelf_not_bot k) hprobe))
+  · -- eqRefl
+    intro K p hle
+    rw [WV_eq]
+  · -- eqNeg
+    intro K p q hne hle
+    rw [WV_neg, WV_eq]
+    exact hne
+  · -- mp
+    intro K m₁ m₂ φ' α h1 h2 hle ih1 ih2
+    rw [WV_impl] at ih1
+    exact ih1 ih2
+  · -- implTrans
+    intro K φ' ψ χ a b h1 h2 hle ih1 ih2
+    rw [WV_impl] at ih1 ih2 ⊢
+    exact fun hφ => ih2 (ih1 hφ)
+  · -- weakenImpl
+    intro K φ' ψ m hψ hle ih
+    rw [WV_impl]
+    exact fun _ => ih
+  · -- impS2
+    intro φ' ψ χ m₁ m₂ K h1 h2 hle ih1 ih2
+    rw [WV_impl] at ih1 ih2 ⊢
+    intro hφ
+    have hi := ih1 hφ
+    rw [WV_impl] at hi
+    exact hi (ih2 hφ)
+  · -- implRefl
+    intro K φ' hle
+    rw [WV_impl]
+    exact id
+  · -- implK
+    intro K φ' ψ hle
+    rw [WV_impl]
+    intro hφ
+    rw [WV_impl]
+    exact fun _ => hφ
+  · -- implS
+    intro K φ' ψ χ hle
+    rw [WV_impl]
+    intro hf
+    rw [WV_impl]
+    intro hg
+    rw [WV_impl]
+    intro hx
+    rw [WV_impl] at hf hg
+    have h1 := hf hx
+    rw [WV_impl] at h1
+    exact h1 (hg hx)
+  · -- contrapose
+    intro K φ' ψ m hp hle ih
+    rw [WV_impl] at ih
+    rw [WV_impl, WV_neg, WV_neg]
+    exact fun hnψ hφ => hnψ (ih hφ)
+  · -- negElim
+    intro K φ' ψ m₁ m₂ h1 h2 hle ih1 ih2
+    rw [WV_neg] at ih1
+    exact absurd ih2 ih1
+  · -- boxIntro
+    intro kIn K φ' hprem hle ih
+    rw [WV_box]
+    exact hprem
+  · -- atomBoxImpl
+    intro K kBox p q a hatom hle _ihA
+    show WV (SPSelf k) (.impl (.plays p q a) (.box kBox (.plays p q a)))
+    rw [WV_impl, WV_box]
+    exact fun _ => Pf.atom hatom
+  · -- axK
+    intro a b c m K φ' α hprem hgate hle ih
+    rw [WV_box] at ih
+    rw [WV_impl, WV_box, WV_box]
+    exact fun hb => Pf.mp a b φ' α ih hb hgate
+  · -- axKf
+    intro a b c K φ' α hgate hsz
+    rw [WV_impl, WV_box, WV_impl, WV_box, WV_box]
+    exact fun h1 hb => Pf.mp a b φ' α h1 hb hgate
+  · -- box4
+    intro a b K φ' hgate hsz
+    rw [WV_impl, WV_box, WV_box]
+    exact fun hp => Pf.boxIntro a b φ' hp hgate
+  · -- boxMono
+    intro a b K φ' hab hsz
+    rw [WV_impl, WV_box, WV_box]
+    exact fun hp => Pf_mono hp hab
+  · -- diagF
+    intro pm fb g K tgt hgate hle ih
+    rw [WV_impl, WV_diag, WV_impl, WV_box]
+    exact fun hd => hd
+  · -- diagB
+    intro pm fb g K tgt hgate hle ih
+    rw [WV_impl, WV_impl, WV_box, WV_diag]
+    exact fun hd => hd
+
+end WaryCensus
+
+/-! #### Per-matchup facts (still HELPERS — same destination) -/
+
+/-- WaryBot k's refutation guard against MirrorBot is underivable at EVERY
+    budget (both fixpoints are semantically consistent; this is the syntactic
+    exclusion, via `pf_WV_mirror` at the base atom). -/
+theorem no_Pf_neg_mirror_wary (k K : Nat) :
+    ¬ Pf K (.neg (.plays MirrorBot (WaryBot k) .C)) := by
+  intro h
+  have hWV := WaryCensus.pf_WV_mirror k h
+  rw [WaryCensus.WV_neg] at hWV
+  refine hWV ?_
+  rw [WaryCensus.WV_plays]
+  exact Or.inl ⟨rfl, WaryCensus.SPMirror.base⟩
+
+theorem proofSearch_false_wary_MirrorBot (k : Nat) :
+    proofSearch k (.neg (.plays MirrorBot (WaryBot k) .C)) = false := by
+  cases h : proofSearch k (.neg (.plays MirrorBot (WaryBot k) .C)) with
+  | true => exact absurd ((proofSearch_spec _ _).1 h) (no_Pf_neg_mirror_wary k k)
+  | false => rfl
+
+/-- WaryBot trusts MirrorBot at EVERY budget k (not just below the size floor). -/
+theorem WaryBot_cooperates_vs_MirrorBot (k fuel : Nat) :
+    play (fuel + 2) (WaryBot k) MirrorBot = some .C := by
+  have hg := proofSearch_false_wary_MirrorBot k
+  show eval (fuel + 2) (WaryBot k) MirrorBot (WaryBot k) = some .C
+  unfold WaryBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- MirrorBot replays the trust, at every budget. -/
+theorem MirrorBot_plays_C_against_WaryBot (k fuel : Nat) :
+    play (fuel + 3) MirrorBot (WaryBot k) = some .C := by
+  have h := WaryBot_cooperates_vs_MirrorBot k fuel
+  show eval (fuel + 3) MirrorBot (WaryBot k) MirrorBot = some .C
+  simpa [eval, MirrorBot, Prog.subst] using h
+
+/-- WaryBot k's self-refutation guard is underivable at EVERY budget. -/
+theorem no_Pf_neg_wary_self (k K : Nat) :
+    ¬ Pf K (.neg (.plays (WaryBot k) (WaryBot k) .C)) := by
+  intro h
+  have hWV := WaryCensus.pf_WV_self k h
+  rw [WaryCensus.WV_neg] at hWV
+  refine hWV ?_
+  rw [WaryCensus.WV_plays]
+  exact Or.inl ⟨rfl, WaryCensus.SPSelf.base⟩
+
+theorem proofSearch_false_wary_self (k : Nat) :
+    proofSearch k (.neg (.plays (WaryBot k) (WaryBot k) .C)) = false := by
+  cases h : proofSearch k (.neg (.plays (WaryBot k) (WaryBot k) .C)) with
+  | true => exact absurd ((proofSearch_spec _ _).1 h) (no_Pf_neg_wary_self k k)
+  | false => rfl
+
+/-- WaryBot trusts itself at EVERY budget k. -/
+theorem WaryBot_cooperates_vs_WaryBot (k fuel : Nat) :
+    play (fuel + 2) (WaryBot k) (WaryBot k) = some .C := by
+  have hg := proofSearch_false_wary_self k
+  show eval (fuel + 2) (WaryBot k) (WaryBot k) (WaryBot k) = some .C
+  unfold WaryBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
 end PD.Theorems

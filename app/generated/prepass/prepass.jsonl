@@ -130,3 +130,7 @@
 {"left": "GuardianBot", "right": "CIMCIC", "budget": 2, "fuel_d": 2, "fuel": 64, "status": "undetermined", "outcome": null, "note": "guard shape beyond guardFast: CIMCIC (impl guard)", "seconds": 2.734613583000055}
 {"left": "GuardianBot", "right": "DIMCID", "budget": 2, "fuel_d": 2, "fuel": 64, "status": "undetermined", "outcome": null, "note": "guard shape beyond guardFast: DIMCID (impl guard)", "seconds": 2.689426207999986}
 {"left": "GuardianBot", "right": "GuardianBot", "budget": 2, "fuel_d": 2, "fuel": 64, "status": "undetermined", "outcome": null, "note": "L\u00f6b boundary or budget floor at k=2", "seconds": 2.5039329159999397}
+{"left": "WaryBot", "right": "OBot", "budget": 8, "fuel_d": 8, "fuel": 64, "status": "determined", "outcome": "(C, C)", "note": "certified: outcomeG_sound \u2218 guardFast_sound", "seconds": 16.583316124990233}
+{"left": "WaryBot", "right": "OBot", "budget": 16, "fuel_d": 16, "fuel": 64, "status": "undetermined", "outcome": null, "note": "L\u00f6b boundary or budget floor at k=16", "seconds": 16.583974541994394}
+{"left": "WaryBot", "right": "MirrorBot", "budget": 16, "fuel_d": 16, "fuel": 64, "status": "determined", "outcome": "(C, C)", "note": "certified: outcomeG_sound \u2218 guardFast_sound", "seconds": 6.973764416994527}
+{"left": "WaryBot", "right": "MirrorBot", "budget": 8, "fuel_d": 8, "fuel": 64, "status": "determined", "outcome": "(C, C)", "note": "certified: outcomeG_sound \u2218 guardFast_sound", "seconds": 6.974535957997432}

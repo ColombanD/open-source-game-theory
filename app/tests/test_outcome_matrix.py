@@ -58,7 +58,13 @@ def test_matrix_cells() -> None:
     # Curated statuses from outcome_status.toml.
     assert cells[("CupodBot", "DupocBot")] == "Open Problem"
     # Floor-only proofs (wrong statement shape) are curated as Need rework.
-    assert cells[("DBot", "LegibleBot")] == "Need rework"
+    assert cells[("OBot", "WaryBot")] == "Need rework"
+    # WaryBot's .neg-guard fixpoints fell 2026-07-30 (SP/WV valuation census).
+    assert cells[("MirrorBot", "WaryBot")] == "(C, C)"
+    assert cells[("WaryBot", "WaryBot")] == "(C, C)"
+    # LegibleBot's large-k staggered theorems landed 2026-07-30: proven cells now.
+    assert cells[("DBot", "LegibleBot")] == "(D, C)"
+    assert cells[("LegibleBot", "LegibleBot")] == "(C, C)"
     # Untried pairs stay empty.
     assert cells[("CupodBot", "GuardianBot")] == ""
 
