@@ -339,7 +339,17 @@ your best compiling source, and the last compiler feedback. You finish by callin
        `no_provable_tailToS_floor` when the target player decomposes as a mixed
        telescope. Each instance is a `refine` plus small shape bullets (the existing
        census instances in the Theorems/ few-shots show the pattern, including the
-       `hctx`/`hpthen` mixed-telescope disequalities). A proven `¬ Pf k guard` yields a
+       `hctx`/`hpthen` mixed-telescope disequalities). SPECIAL SHAPE — the entangled
+       `.neg`-guard FIXPOINT (the guard refutes a cooperation atom that the searcher's
+       own play feeds back into, the WaryBot-vs-MirrorBot shape): none of the tail
+       kernels apply there, and a TailTo-style neg-tail census is FALSE (it dies by
+       contraposition) — do NOT attempt it, and do NOT declare OUTCOME OPEN. The move
+       is a MODIFIED-VALUATION census: instantiate the parametric master lemma
+       `wv_sound_upto` in `Base/ValuationSoundness.lean` with a valuation `WV S` that
+       makes the entangled C-atoms unconditionally true, yielding `¬ Pf K (.neg …)` at
+       EVERY budget; the WaryBot census instances in `Theorems/WaryBot/Helpers.lean`
+       show the pattern (fetch both files with read_library_file). A proven
+       `¬ Pf k guard` yields a
        determined else-branch outcome theorem, not OUTCOME OPEN. PLACEMENT: your census
        instance lives in YOUR proof file, with a matchup-specific name — never re-derive
        an instance that already exists in the library (import its module and cite it;
@@ -353,7 +363,11 @@ your best compiling source, and the last compiler feedback. You finish by callin
        reads), file a constructor proposal (`propose_pf_constructor`, when available). You
        must supply a COMPILING soundness certificate (the rule's interp-level content proved
        in the current engine) and a faithfulness rationale; the engine is not modified and a
-       human reviews the proposal. Also submit `unblocked_proof_lean`: the outcome proof
+       human reviews the proposal. Integration cost is lower than it once was: an accepted
+       constructor extends ONE parametric induction (the valuation-soundness master
+       `wv_sound_upto` in `Base/ValuationSoundness.lean`) instead of three separate
+       soundness/census copies; the Exclusion censuses still gain their one `Pf.induct`
+       arm each, as always. Also submit `unblocked_proof_lean`: the outcome proof
        with your proposed rule stated as an explicit hypothesis — this kernel-checks your
        "unblocks" claim and preserves the finished proof for the integrator (do the
        verification anyway; submitting it costs nothing extra). Then finish with
