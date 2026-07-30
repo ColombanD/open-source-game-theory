@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from pd_runner import settings
 from pd_runner.llm.client import AnthropicClient, ToolHandler
 from pd_runner.llm.prompts import build_bot_system_prompt, bot_request_message
 from pd_runner.llm.tools import BOT_TOOLS, register_bot_tools
@@ -17,10 +18,10 @@ _log = get_logger("services.bot_service")
 class BotRequest:
     bot_name: str
     strategy_description: str
-    max_iterations: int = 20
-    model: str = "claude-opus-4-7"
-    max_tokens: int = 32000
-    thinking_effort: str = "medium"
+    max_iterations: int = settings.DEFAULT_MAX_ITERATIONS
+    model: str = settings.DEFAULT_MODEL
+    max_tokens: int = settings.DEFAULT_MAX_TOKENS
+    thinking_effort: str = settings.DEFAULT_THINKING_EFFORT
 
 
 @dataclass(frozen=True)
@@ -57,15 +58,6 @@ def search_bot(request: BotRequest) -> BotResult:
         thinking_effort=request.thinking_effort,
     )
 
-    iteration_count = [0]
-    original_call = handler.call
-
-    def counting_call(tool_name: str, tool_input):
-        iteration_count[0] += 1
-        return original_call(tool_name, tool_input)
-
-    handler.call = counting_call  # type: ignore[method-assign]
-
     final_text = client.run(user_message, tool_handler=handler)
 
     lean_source = _extract_lean_source(final_text)
@@ -78,7 +70,7 @@ def search_bot(request: BotRequest) -> BotResult:
     return BotResult(
         bot_name=request.bot_name,
         lean_source=lean_source,
-        iterations_used=iteration_count[0],
+        iterations_used=client.last_tool_calls,
     )
 
 

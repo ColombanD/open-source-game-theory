@@ -1,0 +1,23 @@
+{
+  "timestamp": "20260730T173219",
+  "bot_a": "CooperateBot",
+  "bot_b": "CooperateBot",
+  "model": "claude-opus-4-7",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 2,
+  "tool_calls_used": 2,
+  "usage": {
+    "input_tokens": 7,
+    "output_tokens": 609,
+    "cache_read_tokens": 91944,
+    "cache_creation_tokens": 92350
+  },
+  "elapsed_seconds": 18.344173749996116,
+  "notebook": null,
+  "hidden_bots": [
+    "CooperateBot"
+  ],
+  "final_text": null
+}

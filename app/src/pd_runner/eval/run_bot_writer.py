@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 
+from pd_runner import settings
 from pd_runner.config import load_paths
 from pd_runner.logging_config import setup_logging
 from pd_runner.services.bot_service import BotRequest, BotResult, BotWriteError, search_bot
@@ -91,7 +92,7 @@ def main() -> None:
                         help="Bot name. Repeat for multiple bots (pair each --name with a --strategy in order).")
     parser.add_argument("--strategy", action="append", required=True,
                         help="NL strategy description. Repeat once per --name.")
-    parser.add_argument("--model", default="claude-opus-4-7")
+    parser.add_argument("--model", default=settings.DEFAULT_MODEL)
     parser.add_argument("--max-iterations", type=int, default=20)
     parser.add_argument("--log-level", default="WARNING",
                         choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR"])

@@ -145,6 +145,54 @@ Two programs enter → game outcome out. Inputs can be LLM-generated, user
 natural-language, or chosen from the predefined zoo. Backend = the Lean engine with an
 LLM writing the proofs, using the existing library as RAG / few-shot context.
 
+## Proof-agent architecture (AxProverBase-style rework, 2026-07-30)
+
+The proof agent follows the **Proposer → Compiler → Reviewer → Memory** loop of
+AxProverBase (arXiv 2602.24273), adapted to this domain:
+
+- **Episode loop** (`services/proof_episodes.py::run_proof_search`): up to
+  `max_episodes` (default 3) fresh-context episodes × `max_turns_per_episode`
+  (default 10) API round-trips. Only three things cross episodes: the **lab
+  notebook** (`update_notebook` tool, replace-whole-text ≤4k chars; a forced
+  reflection turn fires at episode end if stale), the best compiling source, and
+  the last compiler feedback. Context overflow ends an episode gracefully
+  (~350k-token guard), never a hard crash.
+- **Structured verdicts** (`services/verdicts.py`): the agent finishes via the
+  `submit_verdict` tool — `proved | open_bistable | open_blocked |
+  constructor_proposed` — never via prose ("PROOF COMPLETE" string sniffing is
+  gone). `search_proof_outcome(request) -> ProofOutcome` is the structured entry
+  point; `search_proof` remains the legacy facade (raises `ProofSearchError`
+  with `.outcome` attached).
+- **Deterministic exit verification** (`proof_episodes.verify_proved_submission`):
+  on `submit_verdict(proved)` the submitted source is RE-COMPILED and checked
+  against the strict template (exact `llm_outcome_<L>_vs_<R>` name, outcome
+  equation, no `proofSearch` premises, no sorry/axiom, no hand-rolled `Pf.induct`
+  census, no library name collisions — the same checks `library_writer` enforces
+  at write time). Rejections bounce back into the episode (cap 3/episode).
+  `CompileService`/`CompileReport.goals` is the reserved v2 seam for sorry-sketch
+  goal-state extraction.
+- **Prompt caching** (`llm/prompts.py::build_system_prompt_blocks` +
+  `llm/client.py`): 4 breakpoints — tools array, system block A (pair-INVARIANT:
+  role + core modules + rules; caches across a whole matrix run), system block B
+  (pair/session: search-tier modules, LlmLemmas, proposals), and a moving marker
+  on the newest user turn. `ProofSystem.lean` and `Base/Exclusion.lean` are
+  embedded as signature digests (`llm/lean_index.py::strip_proof_bodies`);
+  `Loeb/Asymptotics/Closure` stay verbatim (their proof bodies are templates).
+- **Config** (`settings.py`): single source for model default, budgets,
+  `RetryPolicy` (retries 429/500/529, honors retry-after), `RetrievalConfig`,
+  and `EvalGuard` — the explicit split of the old `exclude_bots` overload into
+  `hidden_bots` (leak prevention) vs `allow_library_growth` (mutation).
+- **Eval** (`eval/common.py` shared by `harness.py` + `run_bot_matrix.py`):
+  14 harness cases incl. `.search` Löb self-play, the staggered
+  PrudentBot-vs-DupocBot, the (D,D) census case, and the known-OPEN
+  JustBot-vs-MirrorBot (passes ONLY on the `open_bistable` verdict). Records
+  tokens/cost/cache-hit-rate; every attempt persists to `generated/outcomes/`
+  with timestamped stems (never deleted — longitudinal thesis data).
+
+Growth-tool semantics (Tier-1 `add_base_lemma` / Tier-2 `propose_pf_constructor`,
+human gates, escalation ladder) are UNCHANGED — only the signalling channel moved
+into `submit_verdict`.
+
 **Cross-cutting design decisions:**
 1. Proof agent may only ADD new files, never modify existing ones (v1 safety).
 2. Theorem statements use the strict `outcome_X_Y = some (.Action_X, .Action_Y)` template

@@ -24,6 +24,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from pd_runner import settings
 from pd_runner.config import load_paths
 from pd_runner.lean.executor import build_lean_project
 from pd_runner.llm.client import AnthropicClient, ToolHandler, serialize_messages
@@ -392,10 +393,10 @@ review your full diff before it touches the real tree.
 def integrate_constructor(
     proposal_name: str,
     *,
-    model: str = "claude-opus-4-7",
-    max_iterations: int = 60,
-    max_tokens: int = 32000,
-    thinking_effort: str = "medium",
+    model: str = settings.DEFAULT_MODEL,
+    max_iterations: int = settings.INTEGRATION_MAX_ITERATIONS,
+    max_tokens: int = settings.DEFAULT_MAX_TOKENS,
+    thinking_effort: str = settings.DEFAULT_THINKING_EFFORT,
 ) -> IntegrationResult:
     """Run the integration agent in a fresh worktree; returns the diff for review.
 
@@ -417,15 +418,6 @@ def integrate_constructor(
         max_tokens=max_tokens,
         thinking_effort=thinking_effort,
     )
-
-    iteration_count = [0]
-    original_call = handler.call
-
-    def counting_call(tool_name: str, tool_input):
-        iteration_count[0] += 1
-        return original_call(tool_name, tool_input)
-
-    handler.call = counting_call  # type: ignore[method-assign]
 
     try:
         final_text = client.run(
@@ -465,7 +457,7 @@ def integrate_constructor(
         proposal_name=proposal_name,
         diff=diff,
         summary=final_text,
-        iterations_used=iteration_count[0],
+        iterations_used=client.last_tool_calls,
         worktree_root=wt_root,
     )
 

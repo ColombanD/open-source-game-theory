@@ -5,6 +5,8 @@ from typing import Optional
 
 from pydantic import BaseModel, field_validator, model_validator
 
+from pd_runner import settings
+
 
 class BotConflictResolution(str, Enum):
     overwrite = "overwrite"      # regenerate and overwrite existing
@@ -40,11 +42,11 @@ class PipelineRequest(BaseModel):
     # bot_b is optional: when None, the pipeline runs in "bot writer only" mode and
     # skips the proof step entirely. Only bot_a is generated and written to the library.
     bot_b: Optional[BotSpec] = None
-    model: str = "claude-sonnet-4-6"
-    max_iterations: int = 20
+    model: str = settings.DEFAULT_MODEL
+    max_iterations: int = settings.DEFAULT_MAX_ITERATIONS
     # Per-API-call output budget (thinking + answer share it). Capped to the
     # chosen model's ceiling by the validator below.
-    max_tokens: int = 32000
+    max_tokens: int = settings.DEFAULT_MAX_TOKENS
     # Thinking depth: "none" | "low" | "medium" | "high" ("none" = no thinking).
     thinking_effort: str = "medium"
     # Prove-only mode: skip bot generation entirely; both bot_a and bot_b must already
@@ -163,10 +165,10 @@ class ProposalsResponse(BaseModel):
 
 
 class IntegrationRequest(BaseModel):
-    model: str = "claude-opus-4-7"
-    max_iterations: int = 60
-    max_tokens: int = 32000
-    thinking_effort: str = "medium"
+    model: str = settings.DEFAULT_MODEL
+    max_iterations: int = settings.INTEGRATION_MAX_ITERATIONS
+    max_tokens: int = settings.DEFAULT_MAX_TOKENS
+    thinking_effort: str = settings.DEFAULT_THINKING_EFFORT
     log_level: Optional[str] = None
 
     @field_validator("model")

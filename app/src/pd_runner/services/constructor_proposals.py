@@ -202,5 +202,6 @@ does not (and cannot) check faithfulness.
         f"PROPOSAL RECORDED at generated/constructor_proposals/{safe_name}/ — the soundness "
         "certificate compiled against the current engine. The engine itself was NOT modified; "
         "a human will review the faithfulness rationale before any integration. You may now "
-        f"conclude with `OUTCOME OPEN — CONSTRUCTOR PROPOSED {safe_name}` and a short summary."
+        f"finish with `submit_verdict(verdict=\"constructor_proposed\", "
+        f"proposal_name=\"{safe_name}\", …)` and a short summary in `explanation`."
     )

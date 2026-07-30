@@ -9,8 +9,8 @@ import pytest
 
 from pd_runner.llm import retrieval
 from pd_runner.llm.prompts import build_system_prompt
-from pd_runner.services import library_writer, proof_service
-from pd_runner.services.proof_service import ProofResult, ProofSearchError, _extract_lean_source
+from pd_runner.services import library_writer, proof_service, verdicts
+from pd_runner.services.proof_service import ProofResult, ProofSearchError
 
 
 # ---------------------------------------------------------------------------
@@ -81,9 +81,11 @@ def _write_fake_engine(pd_dir: Path) -> None:
     base_dir.mkdir(exist_ok=True)
     (base_dir / "Soundness.lean").write_text("-- soundness", encoding="utf-8")
     (base_dir / "AtomCerts.lean").write_text("-- atom-certs", encoding="utf-8")
+    (base_dir / "Helpers.lean").write_text("-- base-helpers", encoding="utf-8")
     (base_dir / "Asymptotics.lean").write_text("-- asymptotics", encoding="utf-8")
     (base_dir / "Loeb.lean").write_text("-- loeb", encoding="utf-8")
     (base_dir / "Exclusion.lean").write_text("-- exclusion", encoding="utf-8")
+    (base_dir / "Closure.lean").write_text("-- closure", encoding="utf-8")
 
     # Bot sources are how `_bot_uses_search` decides whether to inject the
     # search-only proof-system modules: CooperateBot has no `.search`, CupodBot does.
@@ -140,67 +142,165 @@ def test_build_system_prompt_includes_proof_system_for_search_bots(
 
 
 # ---------------------------------------------------------------------------
-# proof_service._extract_lean_source
+# verdicts: strict-template statement checks
 # ---------------------------------------------------------------------------
 
+_GOOD_SOURCE = """\
+import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Bots.DefectBot
 
-def test_extract_lean_source_returns_last_block() -> None:
-    text = "first\n```lean\nfoo\n```\nsome text\n```lean\nbar\n```\ndone"
-    assert _extract_lean_source(text) == "bar"
+namespace PD.Theorems
+
+theorem llm_outcome_CooperateBot_vs_DefectBot (n : Nat) :
+    outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by
+  rfl
+
+end PD.Theorems
+"""
+
+_THRESHOLD_SOURCE = """\
+namespace PD.Theorems
+
+theorem llm_outcome_DupocBot_vs_DupocBot :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ fuel, outcome fuel (DupocBot k) (DupocBot k) = some (.C, .C) := by
+  exact proof
+
+end PD.Theorems
+"""
 
 
-def test_extract_lean_source_returns_none_when_absent() -> None:
-    assert _extract_lean_source("no code fence here") is None
+def test_check_proved_source_accepts_template() -> None:
+    assert verdicts.check_proved_source(
+        _GOOD_SOURCE, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    ) == []
 
 
-def test_extract_lean_source_strips_whitespace() -> None:
-    text = "```lean\n\n  theorem foo := by rfl\n\n```"
-    assert _extract_lean_source(text) == "theorem foo := by rfl"
+def test_check_proved_source_accepts_threshold_form() -> None:
+    assert verdicts.check_proved_source(
+        _THRESHOLD_SOURCE, left_bot="DupocBot", right_bot="DupocBot",
+        submitted_left="C", submitted_right="C",
+    ) == []
 
 
-# ---------------------------------------------------------------------------
-# proof_service.search_proof (fully mocked)
-# ---------------------------------------------------------------------------
-
-
-def test_search_proof_returns_result_on_success(tmp_path: Path, monkeypatch) -> None:
-    lean_source = "theorem foo := by rfl"
-
-    monkeypatch.setattr(proof_service, "retrieve_few_shots", lambda *a, **kw: [])
-    monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a, **kw: "None found.")
-    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a, **kw: "system")
-    # `search_proof` persists every attempt to `generated/outcomes/`; redirect that
-    # to a tmp dir so the test does not clobber the committed fixtures.
-    monkeypatch.setattr(proof_service, "_outcomes_dir", lambda: tmp_path)
-    monkeypatch.setattr(
-        proof_service.AnthropicClient,
-        "run",
-        lambda self, msg, tool_handler=None: f"PROOF COMPLETE\n```lean\n{lean_source}\n```",
+def test_check_proved_source_rejects_wrong_theorem_name() -> None:
+    problems = verdicts.check_proved_source(
+        _GOOD_SOURCE, left_bot="DefectBot", right_bot="CooperateBot",
+        submitted_left="D", submitted_right="C",
     )
+    assert any("llm_outcome_DefectBot_vs_CooperateBot" in p for p in problems)
 
+
+def test_check_proved_source_rejects_action_mismatch() -> None:
+    problems = verdicts.check_proved_source(
+        _GOOD_SOURCE, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="D", submitted_right="D",
+    )
+    assert any("do not match" in p for p in problems)
+
+
+def test_check_proved_source_rejects_oracle_premise() -> None:
+    source = _GOOD_SOURCE.replace(
+        "(n : Nat) :", "(n : Nat) (h : proofSearch k φ = false) :"
+    )
+    problems = verdicts.check_proved_source(
+        source, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    )
+    assert any("proofSearch" in p for p in problems)
+
+
+def test_check_proved_source_rejects_forbidden_tokens() -> None:
+    source = _GOOD_SOURCE.replace("rfl", "sorry")
+    problems = verdicts.check_proved_source(
+        source, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    )
+    assert any("sorry" in p for p in problems)
+
+
+def test_check_proved_source_ignores_tokens_in_comments() -> None:
+    source = _GOOD_SOURCE + "\n-- do not use sorry or axiom here\n"
+    assert verdicts.check_proved_source(
+        source, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    ) == []
+
+
+def test_check_proved_source_accepts_none_outcome() -> None:
+    source = _GOOD_SOURCE.replace("= some (.C, .D)", "= none")
+    assert verdicts.check_proved_source(
+        source, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="none", submitted_right="none",
+    ) == []
+
+
+# ---------------------------------------------------------------------------
+# proof_service.search_proof (facade over the episode loop, fully mocked)
+# ---------------------------------------------------------------------------
+
+
+def _outcome(**overrides):
+    from pd_runner.services.verdicts import ProofOutcome
+
+    defaults = dict(
+        left_bot="CooperateBot", right_bot="DefectBot", kind="proved",
+        lean_source="theorem foo := by rfl", left_action="C", right_action="D",
+        explanation="ok", turns_used=3,
+    )
+    defaults.update(overrides)
+    return ProofOutcome(**defaults)
+
+
+def test_search_proof_returns_result_on_proved(monkeypatch) -> None:
+    from pd_runner.services import proof_episodes
+
+    monkeypatch.setattr(proof_episodes, "run_proof_search", lambda req: _outcome())
     result = proof_service.search_proof(
         proof_service.ProofRequest("CooperateBot", "DefectBot", "C", "D")
     )
-    assert result.lean_source == lean_source
-    assert result.left_bot == "CooperateBot"
-    assert result.right_bot == "DefectBot"
+    assert result.lean_source == "theorem foo := by rfl"
+    assert result.left_action == "C"
+    assert result.iterations_used == 3
 
 
-def test_search_proof_raises_when_no_lean_block(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr(proof_service, "retrieve_few_shots", lambda *a, **kw: [])
-    monkeypatch.setattr(proof_service, "list_known_outcome_theorems", lambda *a, **kw: "None found.")
-    monkeypatch.setattr(proof_service, "build_system_prompt", lambda *a, **kw: "system")
-    monkeypatch.setattr(proof_service, "_outcomes_dir", lambda: tmp_path)
-    monkeypatch.setattr(
-        proof_service.AnthropicClient,
-        "run",
-        lambda self, msg, tool_handler=None: "I give up.",
-    )
+def test_search_proof_raises_with_kind_on_open(monkeypatch) -> None:
+    from pd_runner.services import proof_episodes
 
-    with pytest.raises(ProofSearchError, match="did not produce"):
-        proof_service.search_proof(
-            proof_service.ProofRequest("CooperateBot", "DefectBot", "C", "D")
+    for kind, expected in (
+        ("open_bistable", "open_bistable"),
+        ("open_blocked", "open_blocked"),
+        ("constructor_proposed", "open_constructor_proposed"),
+        ("exhausted", "no_output"),
+        ("error", "error"),
+    ):
+        monkeypatch.setattr(
+            proof_episodes, "run_proof_search",
+            lambda req, _k=kind: _outcome(kind=_k, lean_source=None,
+                                          left_action=None, right_action=None),
         )
+        with pytest.raises(ProofSearchError) as excinfo:
+            proof_service.search_proof(
+                proof_service.ProofRequest("CooperateBot", "DefectBot", "C", "D")
+            )
+        assert excinfo.value.kind == expected
+        assert excinfo.value.outcome is not None
+        assert excinfo.value.iterations_used == 3
+
+
+def test_search_proof_outcome_captures_exceptions(monkeypatch) -> None:
+    from pd_runner.services import proof_episodes
+
+    def boom(req):
+        raise RuntimeError("api exploded")
+
+    monkeypatch.setattr(proof_episodes, "run_proof_search", boom)
+    outcome = proof_service.search_proof_outcome(
+        proof_service.ProofRequest("CooperateBot", "DefectBot", "C", "D")
+    )
+    assert outcome.kind == "error"
+    assert "api exploded" in outcome.explanation
 
 
 # ---------------------------------------------------------------------------

@@ -13,15 +13,26 @@ from pd_runner.lean.templates import (
     _UNIVERSAL_OUTCOME_THEOREMS,
     _EXISTENTIAL_OUTCOME_THEOREMS,
 )
+from pd_runner.llm.library_layout import file_bots
+from pd_runner.settings import RetrievalConfig
 
 
-def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 6, exclude_bots: set[str] | None = None) -> list[tuple[str, str]]:
+def retrieve_few_shots(
+    left_bot: str,
+    right_bot: str,
+    max_files: int | None = None,
+    exclude_bots: set[str] | None = None,
+    config: RetrievalConfig | None = None,
+) -> list[tuple[str, str]]:
     """Return (filename, source) pairs for the most relevant existing theorem files.
 
     Ranking: files whose name matches one of the two bots come first; then any
     file that contains a theorem involving either bot name; then other files up
-    to max_files.
+    to the configured cap (plus the reserved cross-directory slots).
     """
+    cfg = config or RetrievalConfig()
+    if max_files is None:
+        max_files = cfg.max_files
     theorems_dir = _THEOREMS_DIR
     if not theorems_dir.exists():
         return []
@@ -30,19 +41,7 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 6, exclud
     excluded = {b.lower() for b in exclude_bots} if exclude_bots else set()
 
     def _file_bots(path: Path) -> set[str]:
-        """The bots a file is dedicated to, from its path.
-
-        Three layouts coexist: legacy per-bot files (`Theorems/CupodBot.lean` →
-        {cupodbot}), sharded per-pair files (`Theorems/JustBot/vs_DBot.lean` →
-        {justbot, dbot}), and dir-local helpers (`Theorems/JustBot/Helpers.lean`
-        → {justbot}).
-        """
-        stem = path.stem.lower()
-        if stem.startswith("vs_"):
-            return {path.parent.name.lower(), stem[3:]}
-        if stem == "helpers" and path.parent != theorems_dir:
-            return {path.parent.name.lower()}
-        return {stem}
+        return file_bots(path, theorems_dir)
 
     def _mentions_excluded(path: Path) -> bool:
         """True if the file is dedicated to an excluded bot (filename/dir based).
@@ -81,8 +80,9 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 6, exclud
         path_hit = bool(_file_bots(path) & target_names)
         if not path_hit and occurrences == 0:
             return 0
-        return (20 if path_hit else 0) + min(occurrences, 10) + \
-            (1 if path.stem.lower() == "helpers" else 0)
+        return (cfg.path_dedicated_score if path_hit else 0) \
+            + min(occurrences, cfg.occurrence_cap) \
+            + (cfg.helpers_bonus if path.stem.lower() == "helpers" else 0)
 
     # Include the LLM-generated proof files as few-shot candidates too: the pipeline's
     # own past successes are often the best examples for a new pair. `LlmLemmas.lean`
@@ -128,8 +128,11 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 6, exclud
     # top substantive content matches so the agent sees the existing machinery
     # (and its NAMES — re-deriving one under the same name breaks the library
     # build).
-    cross = [p for p in candidates if p not in chosen and 0 < _score(p) < 20]
-    for path in cross[:2]:
+    cross = [
+        p for p in candidates
+        if p not in chosen and 0 < _score(p) < cfg.path_dedicated_score
+    ]
+    for path in cross[: cfg.reserved_cross_slots]:
         _take(path)
 
     return results
