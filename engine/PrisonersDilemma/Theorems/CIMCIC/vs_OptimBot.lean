@@ -30,7 +30,7 @@ cooperates.  Outcome `(D, C)`.
     to a `C`-constant in OptimBot passes a `search_f` else-branch, which pays the
     full failed budget `k`. -/
 theorem optim_C_cert_cost (k : Nat) (O : Prog) :
-    ∀ n, PlaysProof (OptimBot k) O (OptimBot k) Action.C n → k < n := by
+    ∀ n, PlaysProof (OptimBot k k) O (OptimBot k k) Action.C n → k < n := by
   intro n cert
   unfold OptimBot at cert
   cases cert with
@@ -44,9 +44,9 @@ theorem optim_C_cert_cost (k : Nat) (O : Prog) :
     vs CIMCIC` — the floor census over the singleton `{B}`. -/
 theorem cimcic_optim_guard_B_unprov (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →
-      TailTo (.plays (OptimBot k) (CIMCIC k) Action.C) φ → False := by
+      TailTo (.plays (OptimBot k k) (CIMCIC k) Action.C) φ → False := by
   intro K φ hp hK htail
-  refine no_provable_tailToS_floor k (· = .plays (OptimBot k) (CIMCIC k) Action.C)
+  refine no_provable_tailToS_floor k (· = .plays (OptimBot k k) (CIMCIC k) Action.C)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
@@ -107,9 +107,9 @@ theorem cimcic_optim_guard_B_unprov (k : Nat) :
     unprovable at budget `k`, via the `search_f` floor census. -/
 theorem cimcic_optim_G3_unprov (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →
-      TailTo (.plays (CIMCIC k) (OptimBot k) Action.D) φ → False := by
+      TailTo (.plays (CIMCIC k) (OptimBot k k) Action.D) φ → False := by
   intro K φ hp hK htail
-  refine no_provable_tailToS_floor k (· = .plays (CIMCIC k) (OptimBot k) Action.D)
+  refine no_provable_tailToS_floor k (· = .plays (CIMCIC k) (OptimBot k k) Action.D)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
@@ -161,8 +161,8 @@ theorem cimcic_optim_G3_unprov (k : Nat) :
 /-- CIMCIC's guard against OptimBot (`A → B`) is unprovable at budget `k`: its spine
     tail `B` is floor-unprovable. -/
 theorem cimcic_optim_guard_unprov (k : Nat) :
-    ¬ Pf k (.impl (.plays (CIMCIC k) (OptimBot k) Action.C)
-                  (.plays (OptimBot k) (CIMCIC k) Action.C)) := by
+    ¬ Pf k (.impl (.plays (CIMCIC k) (OptimBot k k) Action.C)
+                  (.plays (OptimBot k k) (CIMCIC k) Action.C)) := by
   intro h
   refine cimcic_optim_guard_B_unprov k k _ h le_rfl ?_
   refine ⟨rfl, ?_⟩
@@ -173,14 +173,14 @@ theorem cimcic_optim_guard_unprov (k : Nat) :
 theorem cimcic_optim_proofSearch_false_guard (k : Nat) :
     proofSearch k
       ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst
-        (CIMCIC k) (OptimBot k)) = false := by
+        (CIMCIC k) (OptimBot k k)) = false := by
   cases hps : proofSearch k
       ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst
-        (CIMCIC k) (OptimBot k)) with
+        (CIMCIC k) (OptimBot k k)) with
   | false => rfl
   | true =>
-      have hpf : Pf k (.impl (.plays (CIMCIC k) (OptimBot k) Action.C)
-                             (.plays (OptimBot k) (CIMCIC k) Action.C)) := by
+      have hpf : Pf k (.impl (.plays (CIMCIC k) (OptimBot k k) Action.C)
+                             (.plays (OptimBot k k) (CIMCIC k) Action.C)) := by
         have := (proofSearch_spec _ _).1 hps
         simpa [Formula.subst] using this
       exact absurd hpf (cimcic_optim_guard_unprov k)
@@ -188,32 +188,32 @@ theorem cimcic_optim_proofSearch_false_guard (k : Nat) :
 /-- CIMCIC defects against OptimBot: its guard is unprovable, so it takes the
     `.const .D` branch. -/
 theorem CIMCIC_plays_D_against_OptimBot (k fuel : Nat) :
-    play (fuel + 2) (CIMCIC k) (OptimBot k) = some .D := by
+    play (fuel + 2) (CIMCIC k) (OptimBot k k) = some .D := by
   show (if proofSearch k
             ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst
-              (CIMCIC k) (OptimBot k))
-          then eval (fuel + 1) (CIMCIC k) (OptimBot k) (.const Action.C)
-          else eval (fuel + 1) (CIMCIC k) (OptimBot k) (.const Action.D)) = some .D
+              (CIMCIC k) (OptimBot k k))
+          then eval (fuel + 1) (CIMCIC k) (OptimBot k k) (.const Action.C)
+          else eval (fuel + 1) (CIMCIC k) (OptimBot k k) (.const Action.D)) = some .D
   rw [cimcic_optim_proofSearch_false_guard k]; simp [eval]
 
 /-- `CIMCIC plays C vs OptimBot` is semantically false (CIMCIC defects), hence
     unprovable. -/
 theorem cimcic_optim_proofSearch_false_A (k : Nat) :
-    proofSearch k (Formula.plays (CIMCIC k) (OptimBot k) Action.C) = false := by
-  cases hps : proofSearch k (Formula.plays (CIMCIC k) (OptimBot k) Action.C) with
+    proofSearch k (Formula.plays (CIMCIC k) (OptimBot k k) Action.C) = false := by
+  cases hps : proofSearch k (Formula.plays (CIMCIC k) (OptimBot k k) Action.C) with
   | false => rfl
   | true =>
       exfalso
       obtain ⟨n, hn⟩ := Pf_sound _ _ ((proofSearch_spec _ _).1 hps)
-      have hD : play (n + 2) (CIMCIC k) (OptimBot k) = some .D :=
+      have hD : play (n + 2) (CIMCIC k) (OptimBot k k) = some .D :=
         CIMCIC_plays_D_against_OptimBot k n
-      have hC : play (n + 2) (CIMCIC k) (OptimBot k) = some .C :=
+      have hC : play (n + 2) (CIMCIC k) (OptimBot k k) = some .C :=
         eval_mono_le hn (n + 2) (by omega)
       rw [hD] at hC; cases hC
 
 theorem cimcic_optim_proofSearch_false_G3 (k : Nat) :
-    proofSearch k (Formula.plays (CIMCIC k) (OptimBot k) Action.D) = false := by
-  cases hps : proofSearch k (Formula.plays (CIMCIC k) (OptimBot k) Action.D) with
+    proofSearch k (Formula.plays (CIMCIC k) (OptimBot k k) Action.D) = false := by
+  cases hps : proofSearch k (Formula.plays (CIMCIC k) (OptimBot k k) Action.D) with
   | false => rfl
   | true =>
       exact absurd (cimcic_optim_G3_unprov k k _ ((proofSearch_spec _ _).1 hps) le_rfl rfl) id
@@ -221,8 +221,8 @@ theorem cimcic_optim_proofSearch_false_G3 (k : Nat) :
 /-- OptimBot cooperates against CIMCIC: both rung guards (`CIMCIC plays C` and `CIMCIC
     plays D`) are unprovable, so OptimBot falls through every rung to its fallback. -/
 theorem OptimBot_plays_C_against_CIMCIC (k fuel : Nat) :
-    play (fuel + 5) (OptimBot k) (CIMCIC k) = some .C := by
-  show eval (fuel + 5) (OptimBot k) (CIMCIC k) (OptimBot k) = some .C
+    play (fuel + 5) (OptimBot k k) (CIMCIC k) = some .C := by
+  show eval (fuel + 5) (OptimBot k k) (CIMCIC k) (OptimBot k k) = some .C
   have hG1 := cimcic_optim_proofSearch_false_A k
   have hG3 := cimcic_optim_proofSearch_false_G3 k
   conv_lhs => rw [OptimBot]
@@ -234,11 +234,11 @@ theorem OptimBot_plays_C_against_CIMCIC (k fuel : Nat) :
     OptimBot cooperates (falls through to fallback). -/
 theorem llm_outcome_CIMCIC_vs_OptimBot :
     ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) (OptimBot k) = some (.D, .C) := by
+      ∃ fuel, outcome fuel (CIMCIC k) (OptimBot k k) = some (.D, .C) := by
   refine ⟨0, fun k _ => ⟨5, ?_⟩⟩
-  have hA : play 5 (CIMCIC k) (OptimBot k) = some .D := by
+  have hA : play 5 (CIMCIC k) (OptimBot k k) = some .D := by
     simpa using CIMCIC_plays_D_against_OptimBot k 3
-  have hB : play 5 (OptimBot k) (CIMCIC k) = some .C := by
+  have hB : play 5 (OptimBot k k) (CIMCIC k) = some .C := by
     simpa using OptimBot_plays_C_against_CIMCIC k 0
   exact outcome_of_plays _ _ _ _ _ hA hB
 
