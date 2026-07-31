@@ -199,8 +199,10 @@ AxProverBase (arXiv 2602.24273), adapted to this domain:
   14 harness cases incl. `.search` Löb self-play, the staggered
   PrudentBot-vs-DupocBot, the (D,D) census case, and the known-OPEN
   JustBot-vs-MirrorBot (passes ONLY on the `open_bistable` verdict). Records
-  tokens/cost/cache-hit-rate; every attempt persists to `generated/outcomes/`
-  with timestamped stems (never deleted — longitudinal thesis data).
+  tokens/cost/cache-hit-rate; every run persists to one timestamped directory
+  under `generated/outcomes/` — per-episode meta `.json` (notebook embedded) +
+  transcript, plus the final episode's Lean source (never deleted —
+  longitudinal thesis data).
 
 Growth-tool semantics (Tier-1 `add_base_lemma` / Tier-2 `propose_pf_constructor`,
 human gates, escalation ladder) are UNCHANGED — only the signalling channel moved

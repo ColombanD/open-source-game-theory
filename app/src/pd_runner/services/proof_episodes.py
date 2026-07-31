@@ -17,8 +17,10 @@ Proposer → Compiler → Reviewer → Memory, adapted to this project:
     attempt and the last compiler feedback. Hybrid trigger: voluntary during
     the episode, plus one forced reflection turn at episode end if stale.
 
-Every episode is persisted to `generated/outcomes/` with a timestamped stem —
-attempts are never deleted (longitudinal thesis data).
+Every run gets one directory under `generated/outcomes/` (timestamped stem);
+each episode persists its meta recap (notebook embedded) + full transcript,
+and the final episode also persists the Lean source. Attempts are never
+deleted (longitudinal thesis data).
 """
 
 from __future__ import annotations
@@ -372,13 +374,16 @@ def _persist_episode(
     episode_index: int,
     verdict_kind: str | None,
     elapsed_s: float,
+    final: bool,
 ) -> None:
-    """Write one episode's artifacts. Nothing is ever deleted."""
-    out_dir = _outcomes_dir()
-    stem = (
-        f"{request.left_bot}_vs_{request.right_bot}_{run_ts}"
-        f"_ep{episode_index + 1}_{verdict_kind or result.end_reason}"
-    )
+    """Write one episode's artifacts. Nothing is ever deleted.
+
+    Layout: one directory per run, one meta .json + transcript per episode.
+    The notebook lives inside the meta .json; the Lean source (submitted or
+    best attempt) is written only for the run's final episode.
+    """
+    run_dir = _outcomes_dir() / f"{request.left_bot}_vs_{request.right_bot}_{run_ts}"
+    stem = f"ep{episode_index + 1}_{verdict_kind or result.end_reason}"
     meta = {
         "timestamp": run_ts,
         "bot_a": request.left_bot,
@@ -396,28 +401,29 @@ def _persist_episode(
         "final_text": result.final_text or None,
     }
     try:
-        (out_dir / f"{stem}.json").write_text(
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / f"{stem}.json").write_text(
             json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"
         )
-        (out_dir / f"{stem}_transcript.json").write_text(
+        (run_dir / f"{stem}_transcript.json").write_text(
             json.dumps(
                 serialize_messages(result.messages), indent=2, ensure_ascii=False, default=str
             ),
             encoding="utf-8",
         )
-        source = (
-            result.verdict_input.get("lean_source")
-            if result.verdict_input else None
-        ) or state.best_attempt
-        if source:
-            (out_dir / f"{stem}.lean").write_text(source + "\n", encoding="utf-8")
-        if state.notebook:
-            (out_dir / f"{stem}_notebook.md").write_text(
-                state.notebook + "\n", encoding="utf-8"
-            )
+        if final:
+            source = (
+                result.verdict_input.get("lean_source")
+                if result.verdict_input else None
+            ) or state.best_attempt
+            if source:
+                (run_dir / f"{stem}.lean").write_text(source + "\n", encoding="utf-8")
     except OSError as exc:
-        _log.warning("Could not persist episode artifacts for %s: %s", stem, exc)
-    _log.info("Persisted episode %d artifacts as %s.*", episode_index + 1, stem)
+        _log.warning("Could not persist episode artifacts for %s: %s", run_dir / stem, exc)
+    _log.info(
+        "Persisted episode %d artifacts under %s/%s.*",
+        episode_index + 1, run_dir.name, stem,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -547,6 +553,7 @@ def run_proof_search(request: ProofRequest) -> ProofOutcome:
             request, state, result,
             run_ts=run_ts, episode_index=ep, verdict_kind=verdict_kind,
             elapsed_s=time.monotonic() - t0,
+            final=result.verdict_input is not None or ep + 1 == cfg.max_episodes,
         )
         if result.verdict_input is not None:
             return _outcome_from_verdict(

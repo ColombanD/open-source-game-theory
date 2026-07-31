@@ -148,3 +148,4 @@ import PrisonersDilemma.Theorems.LegibleBot.vs_CIMCIC
 import PrisonersDilemma.Theorems.LegibleBot.vs_DIMCID
 import PrisonersDilemma.Theorems.LegibleBot.vs_CupodTrollBot
 import PrisonersDilemma.Theorems.LegibleBot.vs_LegibleBot
+import PrisonersDilemma.Theorems.OptimBot.vs_CooperateBot
