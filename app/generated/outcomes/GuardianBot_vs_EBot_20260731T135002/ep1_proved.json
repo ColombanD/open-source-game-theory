@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T135002",
+  "bot_a": "GuardianBot",
+  "bot_b": "EBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 13,
+  "tool_calls_used": 15,
+  "usage": {
+    "input_tokens": 26,
+    "output_tokens": 17556,
+    "cache_read_tokens": 1534534,
+    "cache_creation_tokens": 48873
+  },
+  "elapsed_seconds": 223.87976708399947,
+  "notebook": "GuardianBot vs EBot analysis:\n- GuardianBot k guard: \"opp plays D vs .bot CooperateBot\".\n- EBot plays D vs .bot CooperateBot (bully!): probe1 = (.bot CooperateBot) vs (.bot DefectBot) = C, so EBot defects D. SEARCH-FREE so certifiable via atom_complete_searchfree at cost 3^fuel; fits budget for large k. => GuardianBot proves guard, fires .const D branch => plays D.\n- EBot vs GuardianBot k: probe1 GuardianBot vs .bot DefectBot = D (guard true), descend; probe2 GuardianBot vs .bot CooperateBot = C (guard \"CB plays D vs botCB\" false), EBot cooperates C.\nOUTCOME = (D, C). Large-k threshold needed only for the guard certificate fitting budget k.\nPlan: prove proofSearch k (.plays EBot (.bot CooperateBot) .D) = true for k large via atom_complete_searchfree + atom_monotone; then GuardianBot plays D; EBot plays C via eval trace (no search needed on EBot side, k>=1 for its GuardianBot-vs-botDefectBot probe).",
+  "hidden_bots": [],
+  "final_text": "It compiles cleanly. Let me submit."
+}

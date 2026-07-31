@@ -149,3 +149,15 @@ import PrisonersDilemma.Theorems.LegibleBot.vs_DIMCID
 import PrisonersDilemma.Theorems.LegibleBot.vs_CupodTrollBot
 import PrisonersDilemma.Theorems.LegibleBot.vs_LegibleBot
 import PrisonersDilemma.Theorems.OptimBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_OBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_EBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_GuardianBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_CupodTrollBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_JustBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_PrudentBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_CupodBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_DupocBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_DBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_TitForTatBot
+import PrisonersDilemma.Theorems.GuardianBot.vs_CIMCIC
+import PrisonersDilemma.Theorems.GuardianBot.vs_DIMCID

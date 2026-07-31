@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T134350",
+  "bot_a": "GuardianBot",
+  "bot_b": "OBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 10,
+  "tool_calls_used": 10,
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 12265,
+    "cache_read_tokens": 1191488,
+    "cache_creation_tokens": 47455
+  },
+  "elapsed_seconds": 178.0984043339995,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "Compiles cleanly with no warnings. The outcome is (C, D): GuardianBot cooperates (its guard \"OBot bullies CooperateBot\" is false since OBot cooperates with CooperateBot), while OBot defects (its probe sees GuardianBot defect against `.bot DefectBot`)."
+}

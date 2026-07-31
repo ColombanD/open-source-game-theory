@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T142323",
+  "bot_a": "GuardianBot",
+  "bot_b": "PrudentBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 16,
+  "tool_calls_used": 16,
+  "usage": {
+    "input_tokens": 32,
+    "output_tokens": 28897,
+    "cache_read_tokens": 2130419,
+    "cache_creation_tokens": 84947
+  },
+  "elapsed_seconds": 397.9201614999911,
+  "notebook": "GuardianBot vs PrudentBot: PROVED (C, D). Mutual FLOOR case.\n- GuardianBot k = .search k (plays opp (.bot CooperateBot) D) (.const D)(.const C).\n- PrudentBot k = .search k (plays opp self C) (.search k (plays opp (.bot DefectBot) D)(.const C)(.const D)) (.const D).\n- Both guards are TRUE but unprovable at budget k (certificate pays search_f floor ≥ k > k).\n  So GuardianBot cooperates (else C), PrudentBot's outer guard fails → defects (else D).\nKEY TECHNIQUE for \"guard TRUE but unprovable at budget k\": use no_provable_tailToS_floor\n  with singleton S = (· = target atom). The five readable-shape kills are ACTION-refined:\n  searchBranch reads THEN action, our target is the ELSE action → hsb holds since then-branch\n  const ≠ target action. For stacked-search (PrudentBot), hsts holds since inner-then const C ≠ D.\n  Atom-killer: cases on PlaysProof; search_t branch either gives wrong-action const (cases closes)\n  or an inner search_f paying floor; search_f pays floor → omega on n ≤ K ≤ k.\n  This works even when the guard interp is TRUE (unlike no_provable_searcherPlay_tail which needs hfalse).\nThe 10 shape obligations: hplays/hatom/hsb/hsim/hbotsim/hbotsearch/hibs/hsts/hplug/hctx.\n  hplug/hctx: case on List L (nil + cons up to enough depth), simp [searchPlug/ctxPlug] discharges.\nAssembling: PrudentBot_plays_D_of_search_false (from PrudentBot/Helpers) + GuardianBot unfold+simp.",
+  "hidden_bots": [],
+  "final_text": "The entire proof compiles cleanly with no errors or warnings. The outcome is (C, D): GuardianBot cooperates, PrudentBot defects.\n\nLet me update my notebook and submit."
+}
