@@ -7,7 +7,7 @@ invocation; the Lean kernel already checked every cell.
 
 Acceptance rules (matching the tracking sheet's conventions):
 - The matrix rows/columns are exactly the bot directories under `Theorems/`
-  (so no `PrudentBot2`/`JustBot2` tier variants, no `OptimBot`).
+  (so no `PrudentBot2`/`JustBot2` tier variants).
 - Only theorems named exactly `outcome_<A>_vs_<B>` or `llm_outcome_<A>_vs_<B>`
   with both `<A>` and `<B>` in that bot set are accepted — suffixed regime
   variants (`_floor`, `_floor2`, `_defended`, `_k<N>`) are ignored: the cell
@@ -23,6 +23,7 @@ Run with:
     uv run python -m pd_runner.eval.outcome_matrix --format md
     uv run python -m pd_runner.eval.outcome_matrix --format csv --output matrix.csv
     uv run python -m pd_runner.eval.outcome_matrix --push
+    uv run python -m pd_runner.eval.outcome_matrix --prune-stale --push
 """
 
 from __future__ import annotations
@@ -198,6 +199,65 @@ def append_status(
     return True
 
 
+_ENTRY_HEADER_RE = re.compile(r"^\[\[(open|tried|rework)\]\]\s*$")
+_ENTRY_PAIR_RE = re.compile(r'pair\s*=\s*\[\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\]')
+
+
+def prune_stale_statuses(
+    status_file: Path = _STATUS_FILE,
+    theorems_dir: Path = _THEOREMS_DIR,
+) -> list[tuple[str, str, str]]:
+    """Delete status entries whose (unordered) pair has an accepted theorem.
+
+    The proof always wins at render time; this removes the stale TOML entries
+    the render-time warning nags about. Only the matching `[[section]]` blocks
+    are dropped — comment banners and every other line survive byte-for-byte.
+    Returns the removed (section, botA, botB) triples, empty when nothing was
+    stale.
+    """
+    if not status_file.exists():
+        return []
+    proven = {
+        tuple(sorted((t.left_bot, t.right_bot)))
+        for t in scan_outcome_theorems(theorems_dir)
+    }
+    lines = status_file.read_text(encoding="utf-8").splitlines(keepends=True)
+    kept: list[str] = []
+    removed: list[tuple[str, str, str]] = []
+    i = 0
+    while i < len(lines):
+        header = _ENTRY_HEADER_RE.match(lines[i])
+        if not header:
+            kept.append(lines[i])
+            i += 1
+            continue
+        # The entry block: `key = value` lines and blank separators after the
+        # header, stopping at the next table header or a comment banner (those
+        # belong to the file, not the entry).
+        j = i + 1
+        while (
+            j < len(lines)
+            and not _ENTRY_HEADER_RE.match(lines[j])
+            and not lines[j].lstrip().startswith("#")
+            and (lines[j].strip() == "" or "=" in lines[j])
+        ):
+            j += 1
+        block = lines[i:j]
+        pair_match = _ENTRY_PAIR_RE.search("".join(block))
+        if pair_match and tuple(sorted(pair_match.groups())) in proven:
+            removed.append((header.group(1), pair_match.group(1), pair_match.group(2)))
+            logger.info(
+                "outcome_status: pruned stale [[%s]] %s vs %s (proven theorem exists)",
+                header.group(1), pair_match.group(1), pair_match.group(2),
+            )
+        else:
+            kept.extend(block)
+        i = j
+    if removed:
+        status_file.write_text("".join(kept), encoding="utf-8")
+    return removed
+
+
 def _bot_order(bots: set[str]) -> list[str]:
     ordered = [b for b in _CANONICAL_ORDER if b in bots]
     ordered += sorted(bots - set(ordered))
@@ -304,7 +364,20 @@ def main() -> None:
     )
     parser.add_argument("--output", type=Path, default=None, help="write to file instead of stdout")
     parser.add_argument("--push", action="store_true", help="push the matrix to the Google Sheet")
+    parser.add_argument(
+        "--prune-stale",
+        action="store_true",
+        help="delete outcome_status.toml entries whose pair now has an accepted theorem",
+    )
     args = parser.parse_args()
+
+    if args.prune_stale:
+        removed = prune_stale_statuses()
+        if removed:
+            for section, a, b in removed:
+                print(f"pruned stale [[{section}]] {a} vs {b}")
+        else:
+            print("no stale status entries")
 
     if args.push:
         from pd_runner.services.sheets import SheetsPushError, push_matrix

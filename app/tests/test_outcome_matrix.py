@@ -8,6 +8,7 @@ from pd_runner.eval.outcome_matrix import (
     format_matrix,
     library_bots,
     load_status,
+    prune_stale_statuses,
     scan_outcome_theorems,
 )
 
@@ -98,6 +99,47 @@ def test_append_status_dedup_and_precedence(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="unknown status section"):
         append_status("bogus", ("A", "B"), "", status)
+
+
+def test_prune_stale_statuses(tmp_path: Path) -> None:
+    import tomllib
+
+    status = tmp_path / "status.toml"
+    status.write_text(
+        "# ---- banner comment that must survive ----\n"
+        "\n"
+        "[[open]]\n"
+        'pair = ["CupodBot", "DupocBot"]\n'
+        'reason = "genuinely open — must survive"\n'
+        "\n"
+        "[[tried]]\n"
+        'pair = ["CooperateBot", "DefectBot"]\n'
+        'reason = "stale: proven theorem exists"\n'
+        "\n"
+        "# ---- trailing banner ----\n"
+        "\n"
+        "[[rework]]\n"
+        'pair = ["WaryBot", "DefectBot"]\n'
+        'reason = "stale in swapped order: outcome_WaryBot_vs_DefectBot landed"\n',
+        encoding="utf-8",
+    )
+
+    removed = prune_stale_statuses(status_file=status)
+    assert ("tried", "CooperateBot", "DefectBot") in removed
+    assert ("rework", "WaryBot", "DefectBot") in removed
+    assert len(removed) == 2
+
+    text = status.read_text(encoding="utf-8")
+    # Live entry and both comment banners survive; the file still parses.
+    assert "genuinely open — must survive" in text
+    assert "banner comment that must survive" in text
+    assert "trailing banner" in text
+    assert "stale" not in text
+    data = tomllib.loads(text)
+    assert data.get("open") and not data.get("tried") and not data.get("rework")
+
+    # Idempotent: a second pass finds nothing.
+    assert prune_stale_statuses(status_file=status) == []
 
 
 def test_format_csv_quotes_pairs() -> None:
