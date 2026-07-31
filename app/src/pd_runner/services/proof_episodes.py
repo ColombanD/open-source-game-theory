@@ -21,6 +21,14 @@ Every run gets one directory under `generated/outcomes/` (timestamped stem);
 each episode persists its meta recap (notebook embedded) + full transcript,
 and the final episode also persists the Lean source. Attempts are never
 deleted (longitudinal thesis data).
+
+Episodes serve two purposes: crash recovery (turn cap, context guard,
+verification-bounce cap end an episode WITHOUT a verdict, and the next episode
+starts fresh) and ONE retry-on-give-up: the first `open_bistable`/`open_blocked`
+verdict of a run is not accepted but triggers a single fresh episode that sees
+the prior open verdict and its explanation. The second open verdict of a run
+(or one submitted on the last available episode) is final. `proved` and
+`constructor_proposed` always end the run immediately.
 """
 
 from __future__ import annotations
@@ -63,6 +71,9 @@ from pd_runner.services.verdicts import (
 _log = get_logger("services.proof_episodes")
 
 _FEEDBACK_TRUNCATE_CHARS = 4_000
+
+# Verdicts that concede the matchup is open — eligible for the one-shot retry.
+_OPEN_VERDICTS = ("open_bistable", "open_blocked")
 
 
 # ---------------------------------------------------------------------------
@@ -111,6 +122,7 @@ class ProofState:
     episodes: list[EpisodeRecord] = field(default_factory=list)
     recorded_proposals: set[str] = field(default_factory=set)
     verification_bounces: int = 0        # failed proved-verdict verifications this episode
+    prior_open_verdict: dict | None = None  # first open verdict of the run; set = retry spent
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +297,7 @@ def _make_submit_verdict(
                 "explanation": explanation,
             })
 
-        if verdict in ("open_bistable", "open_blocked"):
+        if verdict in _OPEN_VERDICTS:
             return EpisodeStop(payload={"verdict": verdict, "explanation": explanation})
 
         return f"Verdict rejected: unknown verdict {verdict!r}."
@@ -338,6 +350,16 @@ def _episode_block(state: ProofState, episode_index: int, max_episodes: int) -> 
     ]
     notebook = state.notebook.strip() or "(empty — no notes were recorded)"
     parts.append(f"## Your lab notebook (from previous attempts)\n\n{notebook}")
+    if state.prior_open_verdict is not None:
+        parts.append(
+            f"## Your previous attempt concluded `{state.prior_open_verdict.get('verdict')}`\n\n"
+            "Explanation you gave:\n"
+            f"{state.prior_open_verdict.get('explanation', '(none)')}\n\n"
+            "That verdict was NOT accepted yet: you get this ONE fresh attempt to "
+            "second-guess it. Re-derive the blocking argument from scratch — do not "
+            "just restate it. If after genuine re-examination the matchup is still "
+            "open, resubmit the open verdict; this time it will be accepted as final."
+        )
     if state.best_attempt:
         parts.append(
             "## Best compiling source so far (exit code 0 — may still fail the "
@@ -549,13 +571,29 @@ def run_proof_search(request: ProofRequest) -> ProofOutcome:
             notebook=state.notebook,
         ))
         verdict_kind = result.verdict_input.get("verdict") if result.verdict_input else None
+        # The FIRST open verdict of a run buys one fresh retry episode instead of
+        # ending the run; the second (or one on the last episode) is final.
+        retry_open = (
+            verdict_kind in _OPEN_VERDICTS
+            and state.prior_open_verdict is None
+            and ep + 1 < cfg.max_episodes
+        )
         _persist_episode(
             request, state, result,
             run_ts=run_ts, episode_index=ep, verdict_kind=verdict_kind,
             elapsed_s=time.monotonic() - t0,
-            final=result.verdict_input is not None or ep + 1 == cfg.max_episodes,
+            final=(result.verdict_input is not None and not retry_open)
+            or ep + 1 == cfg.max_episodes,
         )
         if result.verdict_input is not None:
+            if retry_open:
+                state.prior_open_verdict = result.verdict_input
+                _log.info(
+                    "Episode %d ended with '%s' — granting one fresh retry episode "
+                    "before accepting an open verdict",
+                    ep + 1, verdict_kind,
+                )
+                continue
             return _outcome_from_verdict(
                 request, result.verdict_input, state, totals, turns, tool_calls
             )
@@ -565,6 +603,16 @@ def run_proof_search(request: ProofRequest) -> ProofOutcome:
             "starting fresh episode" if ep + 1 < cfg.max_episodes else "episodes exhausted",
         )
 
+    if state.prior_open_verdict is not None:
+        # The retry episode(s) ended without any verdict — fall back to the
+        # open verdict that triggered the retry rather than reporting nothing.
+        _log.info(
+            "Episodes exhausted without a new verdict — falling back to the "
+            "retried '%s' verdict", state.prior_open_verdict.get("verdict"),
+        )
+        return _outcome_from_verdict(
+            request, state.prior_open_verdict, state, totals, turns, tool_calls
+        )
     explanation = (
         f"No verdict after {cfg.max_episodes} episode(s); last episode ended with "
         f"'{state.episodes[-1].end_reason if state.episodes else 'n/a'}'. "

@@ -152,11 +152,18 @@ AxProverBase (arXiv 2602.24273), adapted to this domain:
 
 - **Episode loop** (`services/proof_episodes.py::run_proof_search`): up to
   `max_episodes` (default 3) fresh-context episodes × `max_turns_per_episode`
-  (default 10) API round-trips. Only three things cross episodes: the **lab
+  (default 10) API round-trips. Only four things cross episodes: the **lab
   notebook** (`update_notebook` tool, replace-whole-text ≤4k chars; a forced
-  reflection turn fires at episode end if stale), the best compiling source, and
-  the last compiler feedback. Context overflow ends an episode gracefully
-  (~350k-token guard), never a hard crash.
+  reflection turn fires at episode end if stale), the best compiling source,
+  the last compiler feedback, and (retry only) the prior open verdict. Context
+  overflow ends an episode gracefully (~350k-token guard), never a hard crash.
+  **Open-verdict retry (2026-07-31)**: the FIRST `open_blocked`/`open_bistable`
+  verdict of a run does not end it — it buys ONE fresh retry episode that sees
+  the prior verdict + explanation and is told to re-derive the blocker from
+  scratch. The second open verdict (or one on the last available episode) is
+  final; if the retry ends with no verdict at all, the run falls back to the
+  retried open verdict rather than reporting `exhausted`. `proved` and
+  `constructor_proposed` always end the run immediately.
 - **Fast compile + sketch-then-fill** (`lean/interact.py`): `run_lean_proof`
   first tries a persistent **LeanInteract** REPL (env cached per import block;
   invalidated when `add_base_lemma` mutates the library; disable with

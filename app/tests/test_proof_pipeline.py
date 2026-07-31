@@ -540,3 +540,114 @@ def test_search_declarations_bad_regex_falls_back_to_literal(tmp_path: Path) -> 
     pd = _write_search_fixture(tmp_path)
     assert search_declarations("probeFirst(", engine_pd_dir=pd) == []
     assert search_declarations("probeFirst_", engine_pd_dir=pd) != []
+
+
+# ---------------------------------------------------------------------------
+# proof_episodes.run_proof_search: open-verdict one-shot retry
+# ---------------------------------------------------------------------------
+
+
+def _episode_result(verdict: dict | None, end_reason: str = "verdict"):
+    from pd_runner.llm.client import EpisodeResult, UsageTotals
+
+    return EpisodeResult(
+        verdict_input=verdict,
+        end_reason=end_reason if verdict is None else "verdict",
+        turns_used=1,
+        tool_calls_used=0,
+        usage=UsageTotals(),
+        final_text="",
+        messages=[],
+    )
+
+
+def _stub_episode_loop(monkeypatch, results: list):
+    """Stub every heavy dependency of run_proof_search; script the episodes."""
+    from pd_runner.services import proof_episodes as pe
+
+    user_contents: list[str] = []
+    persisted: list[dict] = []
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        def run_episode(self, user_content, handler, **kwargs):
+            user_contents.append(user_content)
+            return results[len(user_contents) - 1]
+
+    monkeypatch.setattr(pe, "AnthropicClient", FakeClient)
+    monkeypatch.setattr(pe, "retrieve_few_shots", lambda *a, **k: [])
+    monkeypatch.setattr(pe, "list_known_outcome_theorems", lambda *a, **k: "")
+    monkeypatch.setattr(pe, "build_system_prompt_blocks", lambda *a, **k: ["sys"])
+    monkeypatch.setattr(pe, "proof_request_message", lambda **k: "user")
+    monkeypatch.setattr(pe, "_make_tool_handler", lambda *a, **k: None)
+    monkeypatch.setattr(pe, "_persist_episode", lambda *a, **k: persisted.append(dict(k)))
+    return user_contents, persisted
+
+
+def test_first_open_verdict_triggers_exactly_one_retry(monkeypatch) -> None:
+    from pd_runner.services.proof_episodes import run_proof_search
+
+    open1 = {"verdict": "open_blocked", "explanation": "guard loop with no Löb rescue"}
+    open2 = {"verdict": "open_bistable", "explanation": "still open on re-derivation"}
+    user_contents, persisted = _stub_episode_loop(
+        monkeypatch, [_episode_result(open1), _episode_result(open2)]
+    )
+
+    outcome = run_proof_search(verdicts.ProofRequest("BotA", "BotB", max_episodes=3))
+
+    # The second open verdict is final — no third episode despite max_episodes=3.
+    assert outcome.kind == "open_bistable"
+    assert outcome.episodes_used == 2
+    assert len(user_contents) == 2
+    # The retry episode sees the prior open verdict and its explanation.
+    assert "open_blocked" in user_contents[1]
+    assert "guard loop with no Löb rescue" in user_contents[1]
+    # The retried episode is not persisted as final; the accepting one is.
+    assert [p["final"] for p in persisted] == [False, True]
+
+
+def test_proved_verdict_ends_run_without_retry(monkeypatch) -> None:
+    from pd_runner.services.proof_episodes import run_proof_search
+
+    proved = {
+        "verdict": "proved", "lean_source": "theorem t : True := trivial",
+        "left_action": "C", "right_action": "D", "explanation": "done",
+    }
+    user_contents, _ = _stub_episode_loop(monkeypatch, [_episode_result(proved)])
+
+    outcome = run_proof_search(verdicts.ProofRequest("BotA", "BotB", max_episodes=3))
+
+    assert outcome.kind == "proved"
+    assert len(user_contents) == 1
+
+
+def test_open_verdict_on_last_episode_is_final(monkeypatch) -> None:
+    from pd_runner.services.proof_episodes import run_proof_search
+
+    open1 = {"verdict": "open_blocked", "explanation": "blocked"}
+    user_contents, persisted = _stub_episode_loop(monkeypatch, [_episode_result(open1)])
+
+    outcome = run_proof_search(verdicts.ProofRequest("BotA", "BotB", max_episodes=1))
+
+    assert outcome.kind == "open_blocked"
+    assert len(user_contents) == 1
+    assert persisted[0]["final"] is True
+
+
+def test_retry_without_verdict_falls_back_to_open_verdict(monkeypatch) -> None:
+    from pd_runner.services.proof_episodes import run_proof_search
+
+    open1 = {"verdict": "open_blocked", "explanation": "blocked"}
+    user_contents, _ = _stub_episode_loop(
+        monkeypatch, [_episode_result(open1), _episode_result(None, end_reason="turn_cap")]
+    )
+
+    outcome = run_proof_search(verdicts.ProofRequest("BotA", "BotB", max_episodes=2))
+
+    # The retry episode hit the turn cap with no verdict — the run falls back
+    # to the open verdict that triggered the retry instead of "exhausted".
+    assert outcome.kind == "open_blocked"
+    assert outcome.explanation == "blocked"
+    assert len(user_contents) == 2
