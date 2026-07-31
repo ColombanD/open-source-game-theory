@@ -27,7 +27,8 @@ from pathlib import Path
 from pd_runner import settings
 from pd_runner.config import load_paths
 from pd_runner.lean.executor import build_lean_project
-from pd_runner.llm.client import AnthropicClient, ToolHandler, serialize_messages
+from pd_runner.llm.client import AnthropicClient, EpisodeStop, ToolHandler, serialize_messages
+from pd_runner.llm.tools import UPDATE_NOTEBOOK_TOOL
 from pd_runner.logging_config import get_logger
 from pd_runner.services.constructor_proposals import proposals_dir
 
@@ -144,7 +145,34 @@ def worktree_diff(wt_root: Path) -> str:
 # Agent tools (bound to the worktree's engine dir)
 # ---------------------------------------------------------------------------
 
-def _make_tools(wt_engine_dir: Path) -> tuple[list[dict], ToolHandler]:
+@dataclass
+class _IntegrationState:
+    """What survives across the integration agent's fresh-context episodes
+    (besides the worktree itself, whose edits are on disk)."""
+
+    notebook: str = ""
+    last_build_output: str = ""
+    build_bounces: int = 0  # failed complete-verdict verifications this episode
+
+
+def _verify_worktree_builds(wt_engine_dir: Path) -> list[str]:
+    """Deterministic exit verification for the `complete` verdict: BOTH lake
+    targets must build green in the worktree. Returns failure descriptions
+    (empty = verified)."""
+    problems: list[str] = []
+    for target in _LAKE_TARGETS:
+        result = build_lean_project(wt_engine_dir, target=target)
+        if result.returncode != 0:
+            tail = ((result.stdout or "") + "\n" + (result.stderr or ""))[-_OUTPUT_TAIL:]
+            problems.append(f"`lake build {target}` fails:\n{tail}")
+    return problems
+
+
+def _make_tools(
+    wt_engine_dir: Path, state: _IntegrationState | None = None
+) -> tuple[list[dict], ToolHandler]:
+    if state is None:
+        state = _IntegrationState()
     schemas: list[dict] = [
         {
             "name": "read_engine_file",
@@ -193,6 +221,40 @@ def _make_tools(wt_engine_dir: Path) -> tuple[list[dict], ToolHandler]:
                 "required": ["target"],
             },
         },
+        {
+            "name": "submit_integration_result",
+            "description": (
+                "Submit your FINAL result. This is the ONLY way to finish — prose alone "
+                "does not end the integration. For `complete`, BOTH lake targets are "
+                "re-built in your worktree before acceptance; any failure comes back as "
+                "this tool's result for you to repair. For `blocked`, the summary must "
+                "name the exact failing declaration and error, or the frozen/allowlisted "
+                "file the integration cannot proceed without — an honest block is far "
+                "more valuable than a weakened theorem."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "verdict": {"type": "string", "enum": ["complete", "blocked"]},
+                    "summary": {
+                        "type": "string",
+                        "description": (
+                            "REQUIRED. complete: every file you touched and why. "
+                            "blocked: the exact wall (failing declaration + error)."
+                        ),
+                    },
+                    "statement_changes": {
+                        "type": "string",
+                        "description": (
+                            "Any theorem STATEMENT you changed or weakened (empty if none). "
+                            "Deleting/weakening statements silently is forbidden."
+                        ),
+                    },
+                },
+                "required": ["verdict", "summary"],
+            },
+        },
+        dict(UPDATE_NOTEBOOK_TOOL),
     ]
 
     def _resolve(relative_path: str) -> Path | str:
@@ -231,8 +293,8 @@ def _make_tools(wt_engine_dir: Path) -> tuple[list[dict], ToolHandler]:
         if rel in _EDIT_FROZEN_REASONS:
             return (
                 f"Error: {rel} is FROZEN during integration: "
-                f"{_EDIT_FROZEN_REASONS[rel]}. Report INTEGRATION BLOCKED if you "
-                f"believe the integration cannot proceed without it."
+                f"{_EDIT_FROZEN_REASONS[rel]}. Submit verdict='blocked' via "
+                f"submit_integration_result if the integration cannot proceed without it."
             )
         if rel.startswith("PrisonersDilemma/Bots/"):
             return (
@@ -246,8 +308,8 @@ def _make_tools(wt_engine_dir: Path) -> tuple[list[dict], ToolHandler]:
         return (
             f"Error: {rel} is outside the integration edit allowlist "
             f"(ProofSystem.lean, BaseTheorems.lean, Base/, Decidability/, "
-            f"Theorems/). Report INTEGRATION BLOCKED if the integration cannot "
-            f"proceed without it."
+            f"Theorems/). Submit verdict='blocked' via submit_integration_result "
+            f"if the integration cannot proceed without it."
         )
 
     def read_engine_file(relative_path: str) -> str:
@@ -292,12 +354,57 @@ def _make_tools(wt_engine_dir: Path) -> tuple[list[dict], ToolHandler]:
         out = (result.stdout or "") + "\n" + (result.stderr or "")
         if len(out) > _OUTPUT_TAIL:
             out = "...(truncated)...\n" + out[-_OUTPUT_TAIL:]
-        return f"exit_code: {result.returncode}\n{out}"
+        report = f"exit_code: {result.returncode}\n{out}"
+        state.last_build_output = f"lake build {target} → {report}"[-_OUTPUT_TAIL:]
+        return report
+
+    def update_notebook(notebook: str) -> str:
+        state.notebook = notebook.strip()[:4000]
+        return f"Notebook updated ({len(state.notebook)} characters)."
+
+    def submit_integration_result(
+        verdict: str, summary: str = "", statement_changes: str = ""
+    ):
+        if not summary.strip():
+            return "Result rejected: `summary` is required."
+        if verdict == "blocked":
+            return EpisodeStop(
+                payload={"verdict": "blocked", "summary": summary,
+                         "statement_changes": statement_changes},
+                confirmation_text="Block recorded — the integration ends here.",
+            )
+        if verdict != "complete":
+            return f"Result rejected: unknown verdict {verdict!r}."
+        if state.build_bounces >= settings.INTEGRATION_BUILD_BOUNCES:
+            return EpisodeStop(
+                payload=None,
+                confirmation_text=(
+                    "Too many failed build verifications this episode — it ends here. "
+                    "Update your notebook with the exact remaining failures."
+                ),
+                end_reason="verification_cap",
+            )
+        problems = _verify_worktree_builds(wt_engine_dir)
+        if problems:
+            state.build_bounces += 1
+            remaining = settings.INTEGRATION_BUILD_BOUNCES - state.build_bounces
+            return (
+                "Result rejected — the build verification failed "
+                f"({remaining} attempt(s) left this episode):\n\n"
+                + "\n\n".join(problems)
+            )
+        return EpisodeStop(
+            payload={"verdict": "complete", "summary": summary,
+                     "statement_changes": statement_changes},
+            confirmation_text="Integration verified — both targets build green.",
+        )
 
     handler = ToolHandler()
     handler.register_fn("read_engine_file", read_engine_file)
     handler.register_fn("edit_engine_file", edit_engine_file)
     handler.register_fn("run_lake_build", run_lake_build)
+    handler.register_fn("update_notebook", update_notebook)
+    handler.register_fn("submit_integration_result", submit_integration_result)
     return schemas, handler
 
 
@@ -377,12 +484,20 @@ review your full diff before it touches the real tree.
   `Decidability/`, `Theorems/`. `Program.lean` (the language), `Dynamics.lean` (the
   semantics), `Bots/` (the zoo), and the root index are FROZEN — the tool refuses
   edits there. If an integration seems to require them, the proposal is unsound or
-  out of scope: report `INTEGRATION BLOCKED`.
-- If after honest effort a repair is beyond reach, STOP and report
-  `INTEGRATION BLOCKED` with the exact failing declaration and error — an honest
-  block is far more valuable than a weakened theorem.
-- When both targets are green, end with `INTEGRATION COMPLETE`, a summary of every
-  file you touched and why, and (if any) the `STATEMENT CHANGES:` list.
+  out of scope: submit `verdict="blocked"`.
+- You work in bounded attempts: if you run out of turns, your conversation is
+  DISCARDED and a fresh attempt starts. Your worktree EDITS persist across attempts;
+  so does your lab notebook (`update_notebook`, replace-whole-text — record which
+  checklist steps are done, which repairs remain, and the exact current failure the
+  moment you learn it) and the last build output. Nothing else survives.
+- If after honest effort a repair is beyond reach, STOP and call
+  `submit_integration_result(verdict="blocked", summary=...)` naming the exact
+  failing declaration and error — an honest block is far more valuable than a
+  weakened theorem.
+- When both targets are green, finish with
+  `submit_integration_result(verdict="complete", summary=..., statement_changes=...)`:
+  the summary lists every file you touched and why. Both targets are RE-BUILT
+  before acceptance; a failure comes back as the tool result for you to repair.
 """
 
 
@@ -390,26 +505,54 @@ review your full diff before it touches the real tree.
 # Stage C: run the integration agent
 # ---------------------------------------------------------------------------
 
+_BASE_TASK_MESSAGE = (
+    "Integrate the proposal following the checklist. Read the relevant files "
+    "first; edit; rebuild both targets until green; then submit your result "
+    "with submit_integration_result."
+)
+
+
+def _continuation_block(state: _IntegrationState, episode: int, max_episodes: int) -> str:
+    notebook = state.notebook.strip() or "(empty — no notes were recorded)"
+    last_build = state.last_build_output.strip() or "(no build was run)"
+    return (
+        f"\n\n# Continuation — attempt {episode + 1} of {max_episodes}\n\n"
+        "This is a FRESH attempt: your previous conversation was discarded, but "
+        "your WORKTREE EDITS ARE STILL IN PLACE — read files before re-editing; "
+        "do not redo completed checklist steps.\n\n"
+        f"## Your lab notebook (from previous attempts)\n\n{notebook}\n\n"
+        f"## Last build result\n\n```\n{last_build}\n```"
+    )
+
+
 def integrate_constructor(
     proposal_name: str,
     *,
     model: str = settings.DEFAULT_MODEL,
-    max_iterations: int = settings.INTEGRATION_MAX_ITERATIONS,
+    max_iterations: int = settings.INTEGRATION_TURNS_PER_EPISODE,
+    max_episodes: int = settings.INTEGRATION_MAX_EPISODES,
     max_tokens: int = settings.DEFAULT_MAX_TOKENS,
     thinking_effort: str = settings.DEFAULT_THINKING_EFFORT,
 ) -> IntegrationResult:
     """Run the integration agent in a fresh worktree; returns the diff for review.
 
-    Raises IntegrationError if the agent blocks, the build is not green, or the
-    diff is empty. The worktree is kept on success (Stage D applies from it) and
-    on failure paths that merit inspection is removed.
+    Episode-structured (like the proof agent): up to `max_episodes` fresh-context
+    attempts of `max_iterations` turns each. The worktree's edits, the lab
+    notebook, and the last build output survive across episodes. The agent
+    finishes via `submit_integration_result`; a `complete` verdict is accepted
+    only after BOTH lake targets re-build green in the worktree.
+
+    Raises IntegrationError if the agent blocks, never submits, or the diff is
+    empty. The worktree is kept on success (Stage D applies from it) and removed
+    on every failure path.
     """
     bundle = _load_proposal(proposal_name)
     wt_root = create_worktree(proposal_name)
     repo_root = _repo_root()
     wt_engine_dir = wt_root / _engine_rel(repo_root)
 
-    schemas, handler = _make_tools(wt_engine_dir)
+    state = _IntegrationState()
+    schemas, handler = _make_tools(wt_engine_dir, state)
     client = AnthropicClient(
         system_prompt=_build_integration_prompt(bundle),
         tools=schemas,
@@ -419,34 +562,65 @@ def integrate_constructor(
         thinking_effort=thinking_effort,
     )
 
+    verdict: dict | None = None
+    total_tool_calls = 0
     try:
-        final_text = client.run(
-            "Integrate the proposal following the checklist. Read the relevant files "
-            "first; edit; rebuild both targets until green.",
-            tool_handler=handler,
-        )
+        for ep in range(max_episodes):
+            state.build_bounces = 0
+            user_message = _BASE_TASK_MESSAGE if ep == 0 else (
+                _BASE_TASK_MESSAGE + _continuation_block(state, ep, max_episodes)
+            )
+            _log.info("Integration episode %d/%d for %s", ep + 1, max_episodes, proposal_name)
+            result = client.run_episode(
+                user_message,
+                handler,
+                max_turns=max_iterations,
+                stop_tool="submit_integration_result",
+                notebook_tool="update_notebook",
+            )
+            total_tool_calls += result.tool_calls_used
+            _persist_transcript(
+                proposal_name, serialize_messages(result.messages),
+                result.final_text, episode=ep,
+            )
+            if result.verdict_input is not None:
+                verdict = result.verdict_input
+                break
+            _log.info(
+                "Integration episode %d ended without a verdict (%s)",
+                ep + 1, result.end_reason,
+            )
     except Exception:
         remove_worktree(wt_root)
         raise
 
-    _persist_transcript(proposal_name, serialize_messages(client.last_messages), final_text)
-
-    if "INTEGRATION COMPLETE" not in final_text:
+    if verdict is None:
         remove_worktree(wt_root)
         raise IntegrationError(
-            f"integration agent did not complete (kept nothing — worktree removed).\n"
-            f"Final report:\n{final_text}"
+            f"integration agent submitted no verdict within {max_episodes} episode(s) "
+            f"(kept nothing — worktree removed). Last notebook:\n{state.notebook}"
+        )
+
+    summary = verdict.get("summary", "")
+    if verdict.get("statement_changes", "").strip():
+        summary += f"\n\nSTATEMENT CHANGES:\n{verdict['statement_changes']}"
+
+    if verdict["verdict"] == "blocked":
+        remove_worktree(wt_root)
+        raise IntegrationError(
+            f"integration agent reported BLOCKED (worktree removed).\n{summary}"
         )
 
     # Trust nothing: re-verify both targets ourselves before offering the diff.
-    for target in _LAKE_TARGETS:
-        result = build_lean_project(wt_engine_dir, target=target)
-        if result.returncode != 0:
-            remove_worktree(wt_root)
-            raise IntegrationError(
-                f"agent reported completion but `lake build {target}` fails:\n"
-                f"{(result.stdout or '')[-3000:]}\n{(result.stderr or '')[-3000:]}"
-            )
+    # (The verdict gate already built them; with the warm lake cache this backstop
+    # is cheap, and it guards against any worktree mutation after acceptance.)
+    problems = _verify_worktree_builds(wt_engine_dir)
+    if problems:
+        remove_worktree(wt_root)
+        raise IntegrationError(
+            "agent's verdict was accepted but the backstop re-verification fails:\n"
+            + "\n\n".join(problems)
+        )
 
     diff = worktree_diff(wt_root)
     if not diff.strip():
@@ -456,17 +630,19 @@ def integrate_constructor(
     return IntegrationResult(
         proposal_name=proposal_name,
         diff=diff,
-        summary=final_text,
-        iterations_used=client.last_tool_calls,
+        summary=summary,
+        iterations_used=total_tool_calls,
         worktree_root=wt_root,
     )
 
 
-def _persist_transcript(proposal_name: str, transcript: list, final_text: str) -> None:
+def _persist_transcript(
+    proposal_name: str, transcript: list, final_text: str, episode: int = 0
+) -> None:
     try:
         d = _integrations_dir() / proposal_name
         d.mkdir(parents=True, exist_ok=True)
-        (d / "transcript.json").write_text(
+        (d / f"transcript_ep{episode + 1}.json").write_text(
             json.dumps(transcript, indent=2, ensure_ascii=False, default=str), encoding="utf-8"
         )
         (d / "report.md").write_text(final_text, encoding="utf-8")

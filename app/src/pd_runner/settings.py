@@ -131,7 +131,11 @@ DEFAULT_SETTINGS = AgentSettings()
 DEFAULT_MAX_TOKENS = DEFAULT_SETTINGS.max_tokens
 DEFAULT_THINKING_EFFORT = DEFAULT_SETTINGS.thinking_effort
 DEFAULT_MAX_ITERATIONS = 20              # legacy flat turn cap (pre-episode API surface)
-INTEGRATION_MAX_ITERATIONS = 60          # the engine-editing integration agent runs longer
+# The engine-editing integration agent: same expected total budget as the old
+# flat 60-turn cap, restructured as episodes (20 turns × 3 fresh contexts).
+INTEGRATION_TURNS_PER_EPISODE = 20
+INTEGRATION_MAX_EPISODES = 3
+INTEGRATION_BUILD_BOUNCES = 3            # failed complete-verdict verifications per episode
 
 
 def cost_usd(model: str, *, input_tokens: int, output_tokens: int,

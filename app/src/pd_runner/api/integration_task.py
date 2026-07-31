@@ -46,6 +46,7 @@ async def run_integration(job: Job, proposal_name: str, req: IntegrationRequest,
             proposal_name,
             model=req.model,
             max_iterations=req.max_iterations,
+            max_episodes=req.max_episodes,
             max_tokens=req.max_tokens,
             thinking_effort=req.thinking_effort,
         ))

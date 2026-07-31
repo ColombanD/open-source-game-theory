@@ -166,7 +166,10 @@ class ProposalsResponse(BaseModel):
 
 class IntegrationRequest(BaseModel):
     model: str = settings.DEFAULT_MODEL
-    max_iterations: int = settings.INTEGRATION_MAX_ITERATIONS
+    # Turns per episode × fresh-context episodes (worktree edits + the lab
+    # notebook persist across episodes; the conversation does not).
+    max_iterations: int = settings.INTEGRATION_TURNS_PER_EPISODE
+    max_episodes: int = settings.INTEGRATION_MAX_EPISODES
     max_tokens: int = settings.DEFAULT_MAX_TOKENS
     thinking_effort: str = settings.DEFAULT_THINKING_EFFORT
     log_level: Optional[str] = None
