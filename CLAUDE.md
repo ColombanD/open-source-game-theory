@@ -327,3 +327,41 @@ Workshop paper target: ICML math workshop, 8 pages, framing "first mechanized OS
 4. **E4 — SOTA baseline (small slice).** Run Goedel-Prover-V2 or Kimina-Prover on 10–20 theorems from E1 to quantify the domain gap. Expected outcome: very low pass-rate (these are trained on competition math, not custom inductive types). Even a 0/20 result is publishable — it justifies the bespoke pipeline. Budget: 1–2 days, not a refactor.
 
 **SOTA pipeline decision (not swapping in):** Do NOT replace the current Claude-based agent with DeepSeek-Prover / Goedel / Kimina / TheoremLlama / Lean Copilot / LeanDojo for v1 of the paper. Reasons: (1) those provers are fine-tuned on miniF2F/ProofNet-style competition math and are out-of-distribution for our custom `Prog` inductive type and `outcome_X_Y` templates; (2) LeanDojo/Lean Copilot are infrastructure, not drop-in solvers — our current `tools.py` + agentic loop already implements the LeanDojo retrieve-propose-check pattern; (3) the paper contribution is the mechanized OSGT library + NL→verified-outcome pipeline, not beating SOTA at proof search. Treat SOTA integration as future work, backed by E4 numbers.
+
+## Phase 5 — TauBots: graded transparency (upcoming, design fixed 2026-07-31)
+
+**Authoritative design note: `engine/PrisonersDilemma/Research/Notes/TAUBOT_TRANSPARENCY_DESIGN.md`** —
+read it before touching anything tau. Summary of the FIXED decisions:
+
+- **What it is.** Partial transparency as a Harsanyi type space over the zoo: a bot
+  receives a **signal** — candidates `B₁…Bₙ` with weights `pᵢ` (blur in the weights,
+  NEVER in the programs — prover bots need exact syntax, so every hypothesis is a real
+  zoo member backed by a proven matrix cell). The σ family (temperature `t`) interpolates
+  Critch's OSGT (`t=0`, point mass) ↔ classical opaque PD (`t=∞`, uniform → unconditional
+  strategies). Headline experiment: *how much transparency does Löbian cooperation need?*
+- **THE definition (Def 3 — self probe, base hypotheses):**
+  `TauA(α)(sig) = C iff Σ{pᵢ : A's action in outcome(A, Bᵢ) = C} ≥ α`. Deterministic by
+  expectation-then-threshold (NO probabilistic agents). Anchor theorem: at `t=0` the tau
+  tournament equals the base matrix. REJECTED: Def 1 (tau hypotheses in the signal —
+  ill-typed + ungrounded bistable recursion with no Löb rescue) and Def 2 (reciprocity
+  probe `outcome(Bᵢ, A)` — a generalized-FairBot family, not a lift of A; doesn't
+  converge to A at full transparency). `outcome(A(TauB)) = outcome(A(B))` is FALSE as a
+  theorem (OSGT is intensional; costs scale with term size) but IS Def 3 as a stipulation.
+- **Two dials, never conflated:** σ-temperature `t` = transparency (signal property;
+  % scale via normalized mutual information); `α` = the agent's caution threshold.
+- **Division of labor:** the tau layer is pure matrix-arithmetic ⇒ **experiments live in
+  Python (`app/`)** over the exported matrix (the sheet-sync extraction +
+  `outcome_status.toml` already provide the table incl. open cells) — σ family, behavioral
+  Hamming distances, `(t, α)` phase-diagram sweeps, tau tournaments. A **thin Lean core**
+  keeps only what must be a theorem: the meta-level `Signal`/`coopMass`/`tauPlay` defs,
+  the anchor theorem, a few `decide`-certified sample cells cross-checking the Python.
+- **Order of work:** v1a Python explorer → v1b Lean core → (only if the prover-vs-tau
+  frontier matters) v2 compilation of TauBots to real `Prog`s (fixed signal ⇒ the
+  threshold is a finite monotone boolean function ⇒ nested `.ite`/`.sim` tree, NO
+  language extension) enabling mixed base-vs-tau matches and the **behavioral/prover
+  split theorem** (blur invisible to sim-only bots, detectable exactly by the Löbian
+  fragment).
+- **Conventions still OPEN** (decide before implementing): open matrix cells (pessimistic
+  vs renormalize), canonical budget per pair, static vs dynamic signals (static/compiled
+  ⇒ TauB is extensionally a CONSTANT program — this silently kills the split theorem),
+  δ vs σ inside counterfactual sims, `≥` vs `>` at the threshold.
