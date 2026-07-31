@@ -14,7 +14,11 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from pd_runner.eval.outcome_matrix import build_outcome_matrix, matrix_rows
+from pd_runner.eval.outcome_matrix import (
+    build_outcome_matrix,
+    matrix_rows,
+    prune_stale_statuses,
+)
 
 DEFAULT_SPREADSHEET_ID = "10oNMb88iDmsWcR6SBecopLhrlgilRU-htBB0q07eET8"
 DEFAULT_WORKSHEET = "Auto Matrix"
@@ -89,15 +93,22 @@ def push_matrix(
     spreadsheet_id: str | None = None,
     worksheet_name: str | None = None,
     annotate: bool = False,
+    prune_stale: bool = True,
 ) -> dict:
     """Rebuild the matrix from the theorem library and write it to the Sheet.
 
-    Returns a summary dict (worksheet, spreadsheet_url, cell counts by kind).
+    By default first prunes outcome_status.toml entries whose pair has gained
+    an accepted theorem since they were recorded — every sync self-cleans, so
+    the post-proof-write sync removes the very entry that proof made stale.
+    Returns a summary dict (worksheet, spreadsheet_url, cell counts by kind,
+    pruned entries).
     """
     try:
         import gspread
     except ImportError as exc:  # pragma: no cover
         raise SheetsPushError("gspread is not installed — run `uv add gspread` in app/") from exc
+
+    pruned = prune_stale_statuses() if prune_stale else []
 
     creds = _credentials_path()
     if not creds.exists():
@@ -145,5 +156,6 @@ def push_matrix(
         "tried": sum(1 for v in values if v == "Tried"),
         "rework": sum(1 for v in values if v == "Need rework"),
         "empty": sum(1 for v in values if v == ""),
+        "pruned": [f"[[{section}]] {a} vs {b}" for section, a, b in pruned],
         "pushed_at": stamp,
     }
