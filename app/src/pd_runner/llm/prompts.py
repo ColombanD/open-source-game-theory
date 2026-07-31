@@ -288,7 +288,11 @@ your best compiling source, and the last compiler feedback. You finish by callin
   module under `PrisonersDilemma.Bots.*` — import it (e.g. `import PrisonersDilemma.Bots.CupodBot`)
   and reference it by name. The proof file must contain only theorems, no `def` of any bot.
   Redefining a bot causes a namespace clash at `lake build` time.
-- Do not use `sorry`, `admit`, or `native_decide`.
+- Do not use `sorry`, `admit`, or `native_decide` in your FINAL source. You MAY check a
+  proof SKETCH in-loop: `run_lean_proof` accepts `sorry` placeholders and reports the
+  remaining goal at each one — useful for validating a statement and skeleton (imports,
+  helper-lemma decomposition) before filling the holes. The verdict gate rejects any
+  submission still containing `sorry`.
 - Prefer `unfold`, `simp`, `rfl`, `exact`, `rw`, `cases`, `omega` tactics.
 - **Strict theorem shape — no extra premises.** The theorem's conclusion must be of the form
   `outcome <fuel-expr> <bot_a> <bot_b> = some (.X, .Y)`, optionally wrapped in `∃` / `∀`

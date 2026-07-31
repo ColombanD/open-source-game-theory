@@ -157,6 +157,19 @@ AxProverBase (arXiv 2602.24273), adapted to this domain:
   reflection turn fires at episode end if stale), the best compiling source, and
   the last compiler feedback. Context overflow ends an episode gracefully
   (~350k-token guard), never a hard crash.
+- **Fast compile + sketch-then-fill** (`lean/interact.py`): `run_lean_proof`
+  first tries a persistent **LeanInteract** REPL (env cached per import block;
+  invalidated when `add_base_lemma` mutates the library; disable with
+  `PD_LEAN_INTERACT=0`) and silently degrades to `lake env lean` on any
+  problem. The REPL also reports the GOAL at every `sorry`, so the agent may
+  check sketches in-loop; a sketch never becomes the "best attempt" and the
+  verdict gate rejects `sorry`. The verdict gate and library writer ALWAYS
+  file-compile — acceptance never depends on REPL state.
+- **`search_library` tool** (`llm/library_search.py`): declaration search over
+  the whole engine (name or statement content, regex, leak-filtered like
+  `read_library_file`) — the closed-world replacement for LeanSearch; fixes
+  the find-the-census-in-another-bot's-Helpers problem (the DIMCID-vs-OBot
+  incident) without web access.
 - **Structured verdicts** (`services/verdicts.py`): the agent finishes via the
   `submit_verdict` tool — `proved | open_bistable | open_blocked |
   constructor_proposed` — never via prose ("PROOF COMPLETE" string sniffing is

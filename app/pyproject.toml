@@ -12,6 +12,7 @@ dependencies = [
     "anthropic>=0.50",
     "fastapi>=0.135.2",
     "gspread>=6.2.1",
+    "lean-interact>=0.11.5",
     "uvicorn[standard]>=0.42.0",
 ]
 

@@ -27,6 +27,32 @@ _log = get_logger("llm.tools")
 # Claude tool schemas (passed to the Anthropic messages API via `tools=`)
 # ---------------------------------------------------------------------------
 
+_SEARCH_LIBRARY_TOOL: dict[str, Any] = {
+    "name": "search_library",
+    "description": (
+        "Search every declaration in the engine library by name or statement content. "
+        "Returns declaration kind, name, file:line, and the signature (statement without "
+        "proof body) for each match — use it when you know WHAT you need but not WHERE it "
+        "lives (e.g. 'tailTo', 'no_provable.*OBot', 'floor'), then fetch the full file "
+        "with read_library_file. Case-insensitive; regex supported (falls back to literal "
+        "substring). Files dedicated to the bots under evaluation are excluded to prevent "
+        "answer leakage."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "pattern": {
+                "type": "string",
+                "description": (
+                    "Name or statement fragment to search for, e.g. 'searcherPlay_tail', "
+                    "'wv_sound', 'plays MirrorBot'."
+                ),
+            },
+        },
+        "required": ["pattern"],
+    },
+}
+
 _READ_LIBRARY_FILE_TOOL: dict[str, Any] = {
     "name": "read_library_file",
     "description": (
@@ -34,10 +60,9 @@ _READ_LIBRARY_FILE_TOOL: dict[str, Any] = {
         "Use this to fetch existing theorems as few-shot proof examples or to inspect a bot's "
         "definition before writing a proof about it. "
         "IMPORTANT: pass a full file path ending in `.lean`, not a directory — directory listings "
-        "are not supported. If you're unsure of the exact filename, the bot definitions you need "
-        "are already in your prompt; in general, prefer reasoning from the prompt over guessing "
-        "filenames. Files that mention the bots currently under evaluation are intentionally "
-        "blocked to prevent answer leakage."
+        "are not supported. If you're unsure of the exact filename, find it with `search_library` "
+        "first instead of guessing. Files that mention the bots currently under evaluation are "
+        "intentionally blocked to prevent answer leakage."
     ),
     "input_schema": {
         "type": "object",
@@ -281,6 +306,7 @@ LEAN_TOOLS: list[dict[str, Any]] = [
         },
     },
     _READ_LIBRARY_FILE_TOOL,
+    _SEARCH_LIBRARY_TOOL,
 ]
 
 
@@ -344,18 +370,37 @@ def _run_lean_proof(
             f"Reference the bots by name only."
         )
 
-    result = compile_proof_source(lean_source, filename_hint)
+    # Fast path: persistent LeanInteract REPL (env-cached per import block);
+    # silently degrades to the `lake env lean` file compile on any problem.
+    # The verdict gate always file-compiles — this backend only serves iteration.
+    from pd_runner.lean.interact import try_check
+
+    result = try_check(lean_source)
+    backend = "lean-interact (persistent REPL)"
+    if result is None:
+        result = compile_proof_source(lean_source, filename_hint)
+        backend = "lake env lean"
 
     if on_attempt is not None:
         on_attempt(lean_source, result)
 
     lines = [
-        f"exit_code: {result.returncode}",
+        f"exit_code: {result.returncode}  (checked via {backend})",
         "--- stdout ---",
         result.stdout or "(empty)",
         "--- stderr ---",
         result.stderr or "(empty)",
     ]
+
+    goals = getattr(result, "goals", None)
+    if goals:
+        listing = "\n\n".join(f"goal {i + 1}:\n{g}" for i, g in enumerate(goals))
+        lines.append(
+            "--- goals at sorry positions ---\n"
+            f"{listing}\n"
+            "(sketch check: these goals remain open. Fill every sorry — the final "
+            "submitted source must contain none.)"
+        )
 
     # Advisory duplicate-name check: the file compiles STANDALONE even when a helper
     # lemma duplicates a library declaration in the same namespace — the clash only
@@ -546,11 +591,28 @@ def register_lean_tools(
         "read_library_file",
         lambda relative_path: _read_library_file(relative_path, exclude_bots=guard.hidden_bots),
     )
+
+    def _search_library(pattern: str) -> str:
+        from pd_runner.llm.library_search import format_matches, search_declarations
+
+        matches = search_declarations(pattern, hidden_bots=guard.hidden_bots)
+        return format_matches(matches, pattern)
+
+    handler.register_fn("search_library", _search_library)
     if guard.allow_library_growth:
         from pd_runner.services.constructor_proposals import propose
         from pd_runner.services.lemma_library import add_lemma
 
-        handler.register_fn("add_base_lemma", add_lemma)
+        def _add_lemma_and_invalidate(**kwargs):
+            result = add_lemma(**kwargs)
+            # A landed lemma changes LlmLemmas.lean — cached REPL environments
+            # that imported it are stale. Conservative: always invalidate.
+            from pd_runner.lean.interact import invalidate_cache
+
+            invalidate_cache()
+            return result
+
+        handler.register_fn("add_base_lemma", _add_lemma_and_invalidate)
 
         # `propose` accepts keyword args matching the tool schema exactly
         # (unblocked_proof_lean is optional with a default). Successful filings

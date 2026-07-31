@@ -474,3 +474,69 @@ def test_write_proof_writes_and_builds_successfully(tmp_path: Path, monkeypatch)
         "import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot"
         in index.read_text(encoding="utf-8")
     )
+
+
+# ---------------------------------------------------------------------------
+# library_search.search_declarations
+# ---------------------------------------------------------------------------
+
+
+def _write_search_fixture(root: Path) -> Path:
+    pd = root / "PrisonersDilemma"
+    (pd / "Base").mkdir(parents=True)
+    (pd / "Theorems" / "OBot").mkdir(parents=True)
+    (pd / "Research" / "Spikes").mkdir(parents=True)
+    (pd / "Base" / "Exclusion.lean").write_text(
+        "theorem no_provable_probeFirst_tail (k : Nat)\n"
+        "    (h : tailTo p q) :\n"
+        "    ¬ Pf k φ := by\n"
+        "  exact proof\n\n"
+        "def helperDef : Nat := 3\n",
+        encoding="utf-8",
+    )
+    (pd / "Theorems" / "OBot" / "Helpers.lean").write_text(
+        "theorem obot_floor_census : ¬ Pf k (plays OBot q .D) := by exact x\n",
+        encoding="utf-8",
+    )
+    (pd / "Research" / "Spikes" / "Old.lean").write_text(
+        "theorem no_provable_spike_only : True := trivial\n", encoding="utf-8"
+    )
+    return pd
+
+
+def test_search_declarations_by_name_and_signature(tmp_path: Path) -> None:
+    from pd_runner.llm.library_search import search_declarations
+
+    pd = _write_search_fixture(tmp_path)
+    by_name = search_declarations("probeFirst", engine_pd_dir=pd)
+    assert [m.name for m in by_name] == ["no_provable_probeFirst_tail"]
+    assert by_name[0].name_hit and by_name[0].line == 1
+    assert "¬ Pf k φ" in by_name[0].signature
+    assert ":=" not in by_name[0].signature.split("¬ Pf k φ")[-1]
+
+    # signature-content hit (tailTo appears only in the statement)
+    by_sig = search_declarations("tailTo", engine_pd_dir=pd)
+    assert [m.name for m in by_sig] == ["no_provable_probeFirst_tail"]
+    assert not by_sig[0].name_hit
+
+
+def test_search_declarations_excludes_research_and_hidden_bots(tmp_path: Path) -> None:
+    from pd_runner.llm.library_search import search_declarations
+
+    pd = _write_search_fixture(tmp_path)
+    all_no_provable = search_declarations("no_provable|obot_floor", engine_pd_dir=pd)
+    assert {m.name for m in all_no_provable} == {
+        "no_provable_probeFirst_tail", "obot_floor_census",
+    }  # spike excluded
+    hidden = search_declarations(
+        "no_provable|obot_floor", engine_pd_dir=pd, hidden_bots=frozenset({"OBot"})
+    )
+    assert {m.name for m in hidden} == {"no_provable_probeFirst_tail"}
+
+
+def test_search_declarations_bad_regex_falls_back_to_literal(tmp_path: Path) -> None:
+    from pd_runner.llm.library_search import search_declarations
+
+    pd = _write_search_fixture(tmp_path)
+    assert search_declarations("probeFirst(", engine_pd_dir=pd) == []
+    assert search_declarations("probeFirst_", engine_pd_dir=pd) != []

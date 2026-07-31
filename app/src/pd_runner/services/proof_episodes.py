@@ -304,7 +304,9 @@ def _make_tool_handler(
         state.last_attempt = lean_source
         feedback = result.stderr or result.stdout or "(no compiler output)"
         state.last_feedback = feedback[:_FEEDBACK_TRUNCATE_CHARS]
-        if result.returncode == 0:
+        # A sorry-sketch can "compile" (exit 0 + goals) — never let it displace
+        # a complete compiling proof as the best attempt.
+        if result.returncode == 0 and not getattr(result, "goals", None):
             state.best_attempt = lean_source
 
     register_lean_tools(

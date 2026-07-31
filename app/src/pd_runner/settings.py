@@ -8,6 +8,7 @@ change a default once, and every entry point agrees.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 
 # ---------------------------------------------------------------------------
@@ -32,6 +33,17 @@ MODEL_PRICES: dict[str, tuple[float, float]] = {
 # Cache pricing multipliers relative to input price (Anthropic ephemeral cache).
 CACHE_READ_MULTIPLIER = 0.1
 CACHE_WRITE_MULTIPLIER = 1.25
+
+# LeanInteract checking for the agent's iteration loop (persistent REPL, env
+# cache, sorry-GOAL extraction — the sketch-then-fill feature). Disable with
+# PD_LEAN_INTERACT=0. Measured 2026-07-31 on the 16GB dev machine: cached-env
+# checks ~0.03s vs ~0.7s warm `lake env lean` (~20x), env creation ~2s once
+# per import block. Robustness: the memory guard runs at 0.95 (macOS reports
+# near-full by design), cached envs replay through server restarts, and two
+# consecutive failures disable the backend for the process (each fallback is
+# only ever a slower-but-correct file compile). The verdict gate and library
+# writer are NEVER affected — they always file-compile.
+LEAN_INTERACT_ENABLED = os.getenv("PD_LEAN_INTERACT", "1") != "0"
 
 
 # ---------------------------------------------------------------------------
