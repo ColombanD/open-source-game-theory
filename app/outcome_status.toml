@@ -76,3 +76,7 @@ reason = "Agent verdict open_blocked 2026-07-31 at UNIFORM budgets (now OptimBot
 [[open]]
 pair = ["DIMCID", "CupodBot"]
 reason = "Confirmed via app UI (agent verdict: open_blocked)."
+
+[[open]]
+pair = ["CIMCIC", "OBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."

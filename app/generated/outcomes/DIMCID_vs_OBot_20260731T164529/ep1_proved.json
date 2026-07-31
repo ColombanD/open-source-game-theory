@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T164529",
+  "bot_a": "DIMCID",
+  "bot_b": "OBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 7,
+  "tool_calls_used": 7,
+  "usage": {
+    "input_tokens": 14,
+    "output_tokens": 21665,
+    "cache_read_tokens": 817240,
+    "cache_creation_tokens": 147047
+  },
+  "elapsed_seconds": 266.99872666700685,
+  "notebook": "DIMCID vs OBot = (C, D) — PROVED.\nRoute: OBot probes DIMCID vs .bot CB (DIMCID cooperates, guard unprovable via\nno_provable_tailTo_unreadable) → descends; probes vs .bot DB (DIMCID defects, guard\nconsequent \".bot DB plays D vs DIMCID\" is TRUE → weakenImpl, needs threshold on k) →\nOBot takes defect branch → OBot plays D. DIMCID vs OBot: guard consequent \"OBot plays D\nvs DIMCID\" is TRUE but crosses the search_f floor (OBot's D-play crosses DIMCID's failed\n.bot CB search). Kill via no_provable_probeFirst_tail with z=CooperateBot, hfalse=DIMCID's\nguard vs .bot CB is false-interp (ante true, cons false). So DIMCID cooperates. (C,D).\nThreshold: linear_log2_add_le 4 100, fuel 7. All lemmas prefixed dimcidOb_ to avoid clash.",
+  "hidden_bots": [],
+  "final_text": "The complete proof compiles with zero errors and zero warnings. The outcome is **(C, D)**: DIMCID cooperates (can't prove OBot's D-play, whose certificate crosses the floor), while OBot defects (sees DIMCID defect against `.bot DefectBot`).\n\nLet me update my notebook and submit."
+}
