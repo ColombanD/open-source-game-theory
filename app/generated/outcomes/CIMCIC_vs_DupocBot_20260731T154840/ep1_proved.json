@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T154840",
+  "bot_a": "CIMCIC",
+  "bot_b": "DupocBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 20,
+  "tool_calls_used": 23,
+  "usage": {
+    "input_tokens": 40,
+    "output_tokens": 35805,
+    "cache_read_tokens": 2734242,
+    "cache_creation_tokens": 78862
+  },
+  "elapsed_seconds": 482.4289037080016,
+  "notebook": "SOLVED: llm_outcome_CIMCIC_vs_DupocBot = (C,C). Mutual Löb cooperation.\nKEY TRICK: CIMCIC's guard is (A→B) where A=CIMCIC plays C vs Dupoc, B=Dupoc plays C vs CIMCIC.\nSet mutual_pblt_engine_id's Bf := CIMCIC's guard (A→B) itself, Af := A.\nThen hL2 = CIMCIC searchBranch : □_k(A→B)→A directly. hL1 = Dupoc searchBranch (□_k A→B) + implK (B→(A→B)) + implTrans : □_k A → (A→B).\nEngine gives ∃m Pf m (Af). Then Pf_sound→play hnA.\nDownstream: extract Pf k (Bf) via guard-fired inversion from play; then cheap search_t cert gives Pf k (Af) [cost log2 k+3 ≤ k, threshold via linear_log2_add_le 1 3]; Dupoc guard=Af fires → Dupoc plays C. eval_mono_le lifts CIMCIC play to common fuel.\nFull proof compiled clean.",
+  "hidden_bots": [],
+  "final_text": "The complete proof compiles with zero errors and warnings. Let me update my notebook and submit."
+}

@@ -72,3 +72,7 @@ reason = "Floor proven; large-k is OPEN on BOTH sides."
 [[open]]
 pair = ["OptimBot", "DefectBot"]
 reason = "Agent verdict open_blocked 2026-07-31 at UNIFORM budgets (now OptimBot k k): semantic outcome (C,D), but the required census (not-Pf k of OptimBot own D-play) hits the implTrans/modal-tier wall — no transitivity-closed spine invariant. Staggered kSelf >> kOpp expected to flip to a PROVABLE (D,D); drop this entry when that theorem lands."
+
+[[open]]
+pair = ["DIMCID", "CupodBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."

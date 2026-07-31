@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T153805",
+  "bot_a": "LegibleBot",
+  "bot_b": "PrudentBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 5,
+  "tool_calls_used": 6,
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 7698,
+    "cache_read_tokens": 523832,
+    "cache_creation_tokens": 32731
+  },
+  "elapsed_seconds": 114.30780933400092,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "It compiles cleanly. The outcome is (C, D): LegibleBot cooperates (its guard is about its own transparency, fired via bounded Löb), while PrudentBot defects (its inner prudence check \"LegibleBot defects vs DefectBot\" fails, since LegibleBot cooperates even with DefectBot)."
+}
