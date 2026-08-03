@@ -80,3 +80,7 @@ reason = "Confirmed via app UI (agent verdict: open_blocked)."
 [[open]]
 pair = ["WaryBot", "OBot"]
 reason = "Confirmed via app UI (agent verdict: open_blocked)."
+
+[[open]]
+pair = ["WaryBot", "CupodBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."

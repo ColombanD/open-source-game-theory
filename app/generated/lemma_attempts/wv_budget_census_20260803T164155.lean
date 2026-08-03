@@ -1,39 +1,3 @@
-import PrisonersDilemma.BaseTheorems
-
-/-!
-# LlmLemmas — the proof agent's DERIVED-rule library
-
-Theorems over the existing proof system `Pf`, added autonomously by the proof agent via
-the `add_base_lemma` tool (Tier 1 of the OUTCOME-OPEN escalation ladder). Everything here
-is kernel-checked against the unchanged engine — nothing is postulated, so this file
-carries no trust obligations beyond the engine itself. Additive-only; each block below is
-one tool call.
--/
-
-open PD PD.BaseTheorems
-
-namespace PD.LlmLemmas
-
-/-- Seed example (the expected format): reflect a fired oracle back into provability. -/
-theorem pf_of_proofSearch {k : Nat} {φ : Formula} (h : proofSearch k φ = true) : Pf k φ :=
-  (proofSearch_spec k φ).1 h
-
-
-/-! ### loeb_premise_boxMono (agent-added) -/
-
-/-- Weaken a Löb premise's box subscript DOWN in the antecedent: from `□_b φ → φ`
-    and `a ≤ b`, get `□_a φ → φ` (upward `boxMono` into the premise's antecedent). -/
-theorem loeb_premise_boxMono {a b m K : Nat} {φ : Formula}
-    (h : Pf m (.impl (.box b φ) φ)) (hab : a ≤ b)
-    (hsz : (Formula.impl (.box a φ) (.box b φ)).size + m
-           + (Formula.impl (.box a φ) φ).size ≤ K) :
-    Pf K (.impl (.box a φ) φ) :=
-  Pf.implTrans _ _ _ _ m
-    (Pf.boxMono a b _ φ hab (Nat.le_refl _)) h hsz
-
-
-/-! ### wv_budget_census (agent-added) -/
-
 /-- Parametric budget-gated WV census: for a play-C-forced relation `S` closed under sim,
     whose members never actually-play `.D` within budget `≤ k` (`h_noD`, the FLOOR), every
     `≤ k`-provable formula is `WV S`-true. This is the budget-aware variant of the master
@@ -164,5 +128,3 @@ theorem wv_budget_census (k : Nat) (S : Prog → Prog → Prop)
       intro _hK; rw [WV_impl, WV_diag, WV_impl, WV_box]; exact fun hd => hd
   | diagB pm fb g K0 tgt hgate hle _ih =>
       intro _hK; rw [WV_impl, WV_impl, WV_box, WV_diag]; exact fun hd => hd
-
-end PD.LlmLemmas

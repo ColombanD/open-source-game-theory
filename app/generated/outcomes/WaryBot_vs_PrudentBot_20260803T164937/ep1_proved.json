@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260803T164937",
+  "bot_a": "WaryBot",
+  "bot_b": "PrudentBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 16,
+  "tool_calls_used": 20,
+  "usage": {
+    "input_tokens": 32,
+    "output_tokens": 35945,
+    "cache_read_tokens": 2430602,
+    "cache_creation_tokens": 205679
+  },
+  "elapsed_seconds": 595.5706897079981,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "The full proof compiles with exit code 0 and no errors (the batteries warning is a repo git warning, not a compilation warning). The outcome is (C, D): WaryBot cooperates, PrudentBot defects.\n\nLet me submit the verdict."
+}
