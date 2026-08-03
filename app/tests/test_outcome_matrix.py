@@ -66,8 +66,13 @@ def test_matrix_cells() -> None:
     # LegibleBot's large-k staggered theorems landed 2026-07-30: proven cells now.
     assert cells[("DBot", "LegibleBot")] == "(D, C)"
     assert cells[("LegibleBot", "LegibleBot")] == "(C, C)"
-    # Untried pairs stay empty.
-    assert cells[("CupodBot", "GuardianBot")] == ""
+    # Untried pairs stay empty. OptimBot is the stable example: its Theorems/
+    # directory is an empty placeholder, so its cells cannot fill in until that
+    # bot gains proofs of its own. (This assertion previously named
+    # CupodBot vs GuardianBot, which went green in cf3be39 — pick pairs that
+    # can only change when the bot itself is worked on.)
+    assert cells[("CupodBot", "OptimBot")] == ""
+    assert any(value == "" for value in cells.values())
 
 
 def test_status_file_tried_and_validation(tmp_path: Path) -> None:

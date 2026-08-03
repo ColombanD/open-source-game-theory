@@ -258,6 +258,24 @@ def prune_stale_statuses(
     return removed
 
 
+def index_by_ordered_pair(
+    theorems: list[OutcomeTheorem],
+) -> dict[tuple[str, str], OutcomeTheorem]:
+    """Index accepted theorems by their ORDERED (left, right) pair.
+
+    When a pair has both an `llm_outcome_` and a hand-written theorem, the
+    hand-written one wins. Shared with `pd_runner.tau`, which needs the same
+    acceptance policy but its own (ordered, not triangular) orientation.
+    """
+    by_pair: dict[tuple[str, str], OutcomeTheorem] = {}
+    for t in theorems:
+        key = (t.left_bot, t.right_bot)
+        if key in by_pair and t.name.startswith("llm_"):
+            continue
+        by_pair[key] = t
+    return by_pair
+
+
 def _bot_order(bots: set[str]) -> list[str]:
     ordered = [b for b in _CANONICAL_ORDER if b in bots]
     ordered += sorted(bots - set(ordered))
@@ -280,13 +298,7 @@ def build_outcome_matrix(
     bots = library_bots(theorems_dir)
     statuses = load_status(status_file, bots) if status_file is not None else {}
 
-    by_pair: dict[tuple[str, str], OutcomeTheorem] = {}
-    for t in theorems:
-        key = (t.left_bot, t.right_bot)
-        # When a pair has both an `llm_outcome_` and a plain theorem, prefer plain.
-        if key in by_pair and t.name.startswith("llm_"):
-            continue
-        by_pair[key] = t
+    by_pair = index_by_ordered_pair(theorems)
 
     def render(t: OutcomeTheorem, swapped: bool) -> str:
         if t.pair is None:
