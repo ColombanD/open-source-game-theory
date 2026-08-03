@@ -178,4 +178,3 @@ theorem llm_outcome_WaryBot_vs_PrudentBot :
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems
-

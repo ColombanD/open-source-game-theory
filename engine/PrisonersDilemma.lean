@@ -174,3 +174,5 @@ import PrisonersDilemma.Theorems.JustBot.vs_MirrorBot
 import PrisonersDilemma.Theorems.WaryBot.vs_DupocBot
 import PrisonersDilemma.Theorems.WaryBot.vs_PrudentBot
 import PrisonersDilemma.Theorems.WaryBot.vs_JustBot
+import PrisonersDilemma.Theorems.WaryBot.vs_GuardianBot
+import PrisonersDilemma.Theorems.WaryBot.vs_OptimBot
