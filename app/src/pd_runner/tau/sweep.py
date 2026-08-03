@@ -17,8 +17,12 @@ the phase diagram is piecewise constant with finitely many breakpoints (see
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from pd_runner.tau.matrix import TauMatrix, load_tau_matrix
+
+if TYPE_CHECKING:
+    from pd_runner.tau.channels import SigmaFamily
 from pd_runner.tau.play import tau_match
 from pd_runner.tau.signal import (
     behavioral_distance_matrix,
@@ -34,7 +38,8 @@ class TournamentResult:
 
     # The dial: target transparency in [0, 1], 1 = full, 0 = opaque.
     t: float
-    # The raw softmax temperature that realized the dial (internal knob).
+    # The raw knob value that realized the dial (softmax temperature for the
+    # distance families, ε for the uniform-mixture control).
     temperature: float
     alpha: float
     # MEASURED transparency of the channel — equals the dial up to bisection
@@ -49,6 +54,8 @@ class TournamentResult:
     # Bots that play C against every opponent / D against every opponent.
     unconditional_cooperators: tuple[str, ...] = ()
     unconditional_defectors: tuple[str, ...] = ()
+    # Which σ channel family produced the signals (see `tau.channels`).
+    family: str = "behavioral"
 
     @property
     def is_degenerate(self) -> bool:
@@ -84,15 +91,26 @@ def run_tournament(
     t: float,
     alpha: float,
     distances: dict[tuple[str, str], int] | None = None,
+    family: "SigmaFamily | None" = None,
 ) -> TournamentResult:
     """Every ordered tau-vs-tau pair at one (t, α).
 
     `t ∈ [0, 1]` is the transparency dial: 1 = full (the base matrix), 0 =
-    opaque (the classical-PD limit).
+    opaque (the classical-PD limit). `family` selects the σ channel (see
+    `tau.channels`); None keeps the default behavioral softmax path, whose
+    bisection cache `distances` feeds.
     """
-    dist = distances if distances is not None else behavioral_distance_matrix(matrix)
-    temperature = temperature_for_transparency(matrix, t, distances=dist)
-    channel = signal_family_at_temperature(matrix, temperature, dist)
+    if family is not None:
+        temperature = family.raw_for(t)
+        channel = family.channel(t)
+        measured = family.transparency(t)
+        family_key = family.key
+    else:
+        dist = distances if distances is not None else behavioral_distance_matrix(matrix)
+        temperature = temperature_for_transparency(matrix, t, distances=dist)
+        channel = signal_family_at_temperature(matrix, temperature, dist)
+        measured = transparency(matrix, temperature, dist)
+        family_key = "behavioral"
 
     cells: dict[tuple[str, str], tuple[str, str]] = {}
     for row in matrix.bots:
@@ -116,12 +134,13 @@ def run_tournament(
         t=t,
         temperature=temperature,
         alpha=alpha,
-        transparency=transparency(matrix, temperature, dist),
+        transparency=measured,
         mutual_coop_rate=mutual / total,
         coop_rate=row_coop / total,
         cells=cells,
         unconditional_cooperators=tuple(always_c),
         unconditional_defectors=tuple(always_d),
+        family=family_key,
     )
 
 
@@ -164,15 +183,25 @@ def main() -> None:
     parser.add_argument("--alphas", type=str, default="0.3,0.45,0.62,0.8")
     parser.add_argument("--t-steps", type=int, default=11,
                         help="linear steps on the transparency dial from 1.0 down to 0.0")
+    parser.add_argument("--family", choices=["behavioral", "epsilon", "syntactic"],
+                        default="behavioral", help="σ channel family (see tau.channels)")
     args = parser.parse_args()
 
+    from pd_runner.tau.channels import all_families
+
     matrix = load_tau_matrix()
+    family = all_families(matrix)[args.family]
     alphas = [float(a) for a in args.alphas.split(",")]
     steps = max(args.t_steps, 2)
     ts = [round(1.0 - i / (steps - 1), 4) for i in range(steps)]
 
-    print(f"tau sweep over {len(matrix)} bots ({len(matrix) ** 2} ordered cells)")
-    print(f"anchor theorem at t=1: {'HOLDS' if anchor_holds(matrix) else 'FAILS'}")
+    print(f"tau sweep over {len(matrix)} bots ({len(matrix) ** 2} ordered cells)"
+          f" — σ family: {family.label}")
+    anchored = run_tournament(matrix, 1.0, 0.5, family=family).cells == \
+        base_tournament_cells(matrix)
+    ceiling = family.ceiling()
+    note = "" if ceiling > 1 - 1e-6 else f" (ceiling {ceiling:.1%}: family twins stay blurred)"
+    print(f"anchor at t=1 under this family: {'HOLDS' if anchored else 'FAILS'}{note}")
     print()
     header = f"{'t':>6} {'temp':>9} | " + " | ".join(
         f"α={a:<4} coop mutual" for a in alphas
@@ -183,7 +212,7 @@ def main() -> None:
         row = []
         temp = None
         for a in alphas:
-            r = run_tournament(matrix, t, a)
+            r = run_tournament(matrix, t, a, family=family)
             temp = r.temperature
             flag = "*" if r.is_degenerate else " "
             row.append(f"       {r.coop_rate:>5.2f} {r.mutual_coop_rate:>5.2f}{flag}")

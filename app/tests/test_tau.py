@@ -450,12 +450,15 @@ def test_report_renders_valid_svg(matrix) -> None:
 
     from pd_runner.tau.report import build_report
 
+    from pd_runner.tau.channels import all_families
     from pd_runner.tau.report import _SLIDER_ALPHAS
 
     page = build_report(matrix, alphas=(0.3, 0.62))
     svgs = re.findall(r"<svg.*?</svg>", page, re.S)
-    # line + phase diagram, plus composition + thresholds per slider value.
-    assert len(svgs) == 2 + 2 * len(_SLIDER_ALPHAS)
+    # Per family: line + phase (2) and composition + thresholds per slider α;
+    # plus the family-comparison chart per slider α.
+    n_fams, n_alphas = len(all_families(matrix)), len(_SLIDER_ALPHAS)
+    assert len(svgs) == n_fams * (2 + 2 * n_alphas) + n_alphas
     for svg in svgs:
         ET.fromstring(svg)  # raises on malformed markup
 
@@ -508,22 +511,23 @@ def test_report_alpha_slider(matrix) -> None:
 
     from pd_runner.tau.report import _SLIDER_ALPHAS, build_report
 
-    page = build_report(matrix, alphas=(0.3, 0.45, 0.62, 0.8))
+    alpha_view = re.compile(
+        r'class="panel swap-view" data-alpha="([^"]+)"(?: data-family="\w+")?( hidden)?>'
+    )
 
-    views = re.findall(r'class="panel alpha-view" data-alpha="([^"]+)"( hidden)?', page)
-    assert len(views) == 2 * len(_SLIDER_ALPHAS)
-    # Every slider value has both its panels…
+    page = build_report(matrix, alphas=(0.3, 0.45, 0.62, 0.8))
+    views = alpha_view.findall(page)
+    # Every slider value appears (comparison + composition + thresholds views)…
     assert {a for a, _ in views} == {f"{a:g}" for a in _SLIDER_ALPHAS}
-    # …and exactly the initial α's pair is visible.
-    assert [a for a, h in views if not h] == ["0.45", "0.45"]
+    # …and exactly the initial α's views are visible (one per α-driven chart).
+    assert [a for a, h in views if not h] == ["0.45"] * 3
     assert '<span class="pill alpha-readout">α = 0.45</span>' in page
     assert 'id="alpha-slider"' in page
 
-    # Odd-length tuples start at the exact middle (snapped to the grid).
-    page = build_report(matrix, alphas=(0.2, 0.5, 0.9))
-    assert [a for a, h in re.findall(
-        r'class="panel alpha-view" data-alpha="([^"]+)"( hidden)?', page) if not h
-    ] == ["0.5", "0.5"]
+    # Odd-length tuples start at the exact middle (snapped to the grid);
+    # a single family keeps this second build fast.
+    page = build_report(matrix, alphas=(0.2, 0.5, 0.9), families=("behavioral",))
+    assert [a for a, h in alpha_view.findall(page) if not h] == ["0.5"] * 3
 
 
 def test_report_names_the_zoo(matrix) -> None:
@@ -572,8 +576,9 @@ def test_tau_report_endpoint() -> None:
     assert page.status_code == 200
     assert page.headers["content-type"].startswith("text/html")
     assert "TauBots" in page.text
-    assert page.text.count("<svg") == 2 + 2 * len(_SLIDER_ALPHAS)
+    assert page.text.count("<svg") == 3 * (2 + 2 * len(_SLIDER_ALPHAS)) + len(_SLIDER_ALPHAS)
     assert 'id="alpha-slider"' in page.text
+    assert 'name="family"' in page.text  # σ-family selector
 
     assert client.get("/tau/report?alphas=abc").status_code == 400
     assert client.get("/tau/report?alphas=,").status_code == 400
@@ -581,6 +586,144 @@ def test_tau_report_endpoint() -> None:
     # The UI carries the trigger.
     index = client.get("/")
     assert "openTauReport" in index.text and "Run tau analysis" in index.text
+
+
+# --------------------------------------------------- σ channel families ----
+
+def test_syntactic_features_cover_the_zoo(matrix) -> None:
+    """Every zoo bot's Lean definition must parse to a feature vector.
+
+    A silently missing definition would become a zero vector and poison every
+    distance, so extraction fails loudly — this pins that it currently works
+    for the whole default zoo.
+    """
+    from pd_runner.tau.syntax import FEATURE_ORDER, bot_feature_vectors
+
+    vectors = bot_feature_vectors(matrix.bots)
+    assert set(vectors) == set(matrix.bots)
+    for vec in vectors.values():
+        assert len(vec) == len(FEATURE_ORDER)
+    # Sanity anchors: the constants are single leaves, DupocBot is a searcher.
+    idx = {f: i for i, f in enumerate(FEATURE_ORDER)}
+    assert vectors["CooperateBot"][idx["C"]] == 1
+    assert sum(vectors["CooperateBot"]) == 1
+    assert vectors["DupocBot"][idx["search"]] == 1
+
+
+def test_confusion_structure_inversion(matrix) -> None:
+    """The syntactic channel confuses what the behavioral one separates.
+
+    Dupoc/Cupod: identical tree, leaf labels swapped — syntactic near-twins,
+    behavioral opposites. Coop/Defect: adjacent constants, maximally distinct
+    conduct. This inversion is WHY the code channel is a separate object.
+    """
+    from pd_runner.tau.signal import behavioral_distance_matrix
+    from pd_runner.tau.syntax import syntactic_distance_matrix
+
+    syn = syntactic_distance_matrix(matrix)
+    beh = behavioral_distance_matrix(matrix)
+
+    # Syntactically close, behaviorally far…
+    assert syn[("DupocBot", "CupodBot")] <= 2
+    assert beh[("DupocBot", "CupodBot")] >= 5
+    assert syn[("CooperateBot", "DefectBot")] <= 2
+    assert beh[("CooperateBot", "DefectBot")] == len(matrix)
+    # …and the reverse: behavioral near-twins that are syntactic opposites.
+    assert beh[("CooperateBot", "CupodTrollBot")] <= 1
+    assert syn[("CooperateBot", "CupodTrollBot")] >= 4
+
+
+def test_syntactic_twins_exist(matrix) -> None:
+    """DBot/TitForTatBot: identical constructor profiles, opposite conduct.
+
+    The syntactic channel's own blind spot (its ceiling < 1), mirroring the
+    behavioral twins — an observer of structure who cannot resolve referenced
+    bot NAMES cannot tell the zoo's exploiter from its reciprocator.
+    """
+    from pd_runner.tau.syntax import syntactic_twins
+
+    assert ("DBot", "TitForTatBot") in syntactic_twins(matrix)
+
+
+def test_families_calibrate_to_the_same_dial(matrix) -> None:
+    """At matched t below every ceiling, all families measure transparency ≈ t.
+
+    This is the property that makes cross-family comparison meaningful: equal
+    information RATE, differing only in confusion structure.
+    """
+    from pd_runner.tau.channels import all_families
+
+    for family in all_families(matrix).values():
+        for t in (0.8, 0.5, 0.2):
+            assert family.transparency(t) == pytest.approx(t, abs=0.02), family.key
+
+
+def test_family_ceilings(matrix) -> None:
+    """ε-uniform is identity-based (no twins ⇒ ceiling 1); syntactic has its
+    DBot/TFT twins (ceiling < 1); behavioral is twin-free on this zoo."""
+    from pd_runner.tau.channels import all_families
+
+    fams = all_families(matrix)
+    assert fams["epsilon"].ceiling() == pytest.approx(1.0)
+    assert fams["behavioral"].ceiling() == pytest.approx(1.0)
+    assert fams["syntactic"].ceiling() < 1.0
+
+
+def test_epsilon_channel_shape(matrix) -> None:
+    """The control is exactly (1-ε)·δ + ε·uniform at its raw knob."""
+    from pd_runner.tau.channels import epsilon_family
+
+    family = epsilon_family(matrix)
+    channel = family._channel_at_raw(0.4)
+    n = len(matrix.bots)
+    for b in matrix.bots:
+        assert channel[b].weights[b] == pytest.approx(0.6 + 0.4 / n)
+        for other in matrix.bots:
+            if other != b:
+                assert channel[b].weights[other] == pytest.approx(0.4 / n)
+
+
+def test_anchor_theorem_holds_for_every_family(matrix) -> None:
+    """t = 1 reproduces the base matrix under EVERY channel family."""
+    from pd_runner.tau.channels import all_families
+    from pd_runner.tau.sweep import base_tournament_cells
+
+    for family in all_families(matrix).values():
+        # Syntactic tops out below 1.0 (twins), but DBot/TFT twins only blur
+        # WHO you face, and at the ceiling the true bot still dominates.
+        result = run_tournament(matrix, 1.0, 0.5, family=family)
+        assert result.family == family.key
+        if family.key != "syntactic":
+            assert result.cells == base_tournament_cells(matrix)
+
+
+def test_family_tournaments_differ_at_matched_transparency(matrix) -> None:
+    """The point of the exercise: same information rate, different outcomes.
+
+    If all families gave identical tournaments at matched t, the confusion
+    structure would be irrelevant and one channel would suffice.
+    """
+    from pd_runner.tau.channels import all_families
+
+    fams = all_families(matrix)
+    cells = {
+        key: run_tournament(matrix, 0.3, 0.45, family=fam).cells
+        for key, fam in fams.items()
+    }
+    assert len({tuple(sorted(c.items())) for c in cells.values()}) > 1
+
+
+def test_report_shows_the_family_machinery(matrix) -> None:
+    """The analysis page must expose all families: radio, table, comparison."""
+    from pd_runner.tau.report import build_report
+
+    page = build_report(matrix, alphas=(0.45,))
+    assert page.count('type="radio" name="family"') == 3  # one per family
+    assert "Channel comparison at matched transparency" in page
+    assert "ε-uniform (null control)" in page
+    assert "syntactic (codebase)" in page
+    # The syntactic twins are named in the family table.
+    assert "DBot/TitForTatBot" in page
 
 
 def test_tournament_rates_are_consistent(matrix) -> None:

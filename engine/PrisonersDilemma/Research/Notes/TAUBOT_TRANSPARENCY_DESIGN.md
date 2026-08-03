@@ -32,6 +32,23 @@ takes the weighted vote of its own intended actions.* Deterministic by
 before the decision instead of sampling, so no probabilistic agents, no
 measure-theoretic eval, no probabilistic Löb.
 
+### Harsanyi anchor (why "type space" is the right citation)
+
+Harsanyi (1967–68) models incomplete information by compressing the infinite
+belief hierarchy into a **type**: each player holds a probability distribution
+over a set of types, converting incomplete information into an ordinary game
+with a chance move. Our signal is exactly such a belief: the type set is the
+zoo, and σ's concentration is the information dial (point mass = complete
+information = Critch's regime; uniform = no information = classical PD). Three
+deliberate deviations from full Harsanyi: the hierarchy is truncated (level-k
+with the zoo as level 0, no beliefs-about-beliefs); there is no common prior
+(signals are exogenous, so outputs are phase diagrams, not equilibria); and
+types are **intensional** — they determine the opponent's *term*, not just
+payoffs, which is what makes behaviorally-twin types separable by the Löbian
+fragment. The tau lift is also NOT Bayesian best response (it thresholds A's
+own cooperation mass, preserving A's decision procedure) — the information
+structure is Harsanyi, the decision rule deliberately isn't.
+
 ### Interpolation story (the headline)
 
 - σ = point mass (full transparency) → the tau tournament **provably reproduces
@@ -185,6 +202,53 @@ function of n bits → TauA compiles to an ordinary nested `.ite`/`.sim` `Prog`.
 **No language extension needed** (no arithmetic in `Prog`; p and α are baked in
 at compile time). Caveats: fuel scales with tree size; `.sim` of search-bot
 matchups hits the evalG/Löb boundary.
+
+## σ family roadmap (2026-08-03)
+
+A σ family is **(what leaks) × (how it blurs)** — two orthogonal axes. All
+families are calibrated onto the SAME transparency dial t ∈ [0,1] (normalized
+MI, inverted per family by bisection — `app/src/pd_runner/tau/channels.py`),
+so at matched t the information rate is identical and only the confusion
+structure differs: cross-family gaps are purely about WHICH bots get confused.
+
+**Implemented (v1):**
+1. **behavioral** — softmax over Hamming distance on own-action rows. NOT ad
+   hoc: it is the exact Bayes posterior (uniform prior) of watching every
+   match through a binary symmetric channel, since p^d(1-p)^(n-d) ∝
+   exp(-d·ln((1-p)/p)).
+2. **ε-uniform** — (1-ε)δ + ε·U. The null control: no similarity structure,
+   identity-based (no twin ceiling). Divergence from it isolates the effect
+   of confusion structure itself.
+3. **syntactic (codebase)** — softmax over L1 distance between `Prog`
+   constructor-profile feature vectors extracted from `Bots/*.lean`
+   (`tau/syntax.py`). Partial transparency of the SOURCE — degraded OSGT.
+   **Confusion-structure inversion** (the headline): Dupoc/Cupod are
+   syntactic near-twins (identical tree, leaf labels swapped, d=2) but
+   behavioral opposites; Coop/Defect adjacent constants (d=2) but conduct
+   opposites; while Coop/CupodTroll are behavioral near-twins yet syntactic
+   opposites. Own blind spot: **DBot/TitForTatBot are syntactic twins**
+   (identical constructor profiles, referenced-bot names opaque) ⇒ syntactic
+   ceiling ≈ 0.947 — even full code transparency cannot anchor, mirroring the
+   behavioral twin ceiling.
+
+**Recorded for later (in rough priority):**
+- **AST tree edit distance** (Zhang–Shasha) on real `Prog` terms — replace the
+  feature-vector shadow; wants a Lean-side `#eval` exporter printing canonical
+  S-expressions rather than parsing `.lean` text.
+- **Node-masking generative σ** — observer sees the AST with each node hidden
+  w.p. p; posterior = P(observed fragment | candidate). The finite-zoo
+  approximation of the hole-masked-source ideal below, and the syntactic
+  analogue of the BSC justification.
+- **Sampling/reputation σ** — posterior from m observed past matches; the dial
+  is TIME WATCHED, not noise. The most natural game-theoretic story.
+- **Theorem-library σ** — distance = shared proven outcome facts; the only
+  family whose similarity structure is itself Lean-certified.
+- **Query-signature σ** — what the bot does to YOU leaks (simulates you /
+  proof-searches you / neither): the split-theorem partition as a channel.
+- **Mixtures** λ·behavioral + (1-λ)·syntactic — a second dial for WHAT leaks.
+- Behavioral variants: payoff-weighted / discriminativeness-weighted Hamming,
+  outcome-pair rows, enriched probe sets; architectures: k-NN, truncated
+  support (sparsemax), non-uniform priors.
 
 ## Related dials & future work
 

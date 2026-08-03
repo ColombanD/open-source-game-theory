@@ -16,12 +16,24 @@ from pd_runner.tau.matrix import (
     TauMatrix,
     load_tau_matrix,
 )
+from pd_runner.tau.channels import (
+    SigmaFamily,
+    all_families,
+    behavioral_family,
+    epsilon_family,
+    syntactic_family,
+)
 from pd_runner.tau.signal import (
     Signal,
     behavioral_distance_matrix,
     sigma,
     signal_family,
     softmax_signal,
+)
+from pd_runner.tau.syntax import (
+    bot_feature_vectors,
+    syntactic_distance_matrix,
+    syntactic_twins,
 )
 from pd_runner.tau.play import (
     alpha_breakpoints,
@@ -38,10 +50,18 @@ __all__ = [
     "TauMatrix",
     "load_tau_matrix",
     "Signal",
+    "SigmaFamily",
+    "all_families",
     "behavioral_distance_matrix",
+    "behavioral_family",
+    "bot_feature_vectors",
+    "epsilon_family",
     "sigma",
     "signal_family",
     "softmax_signal",
+    "syntactic_distance_matrix",
+    "syntactic_family",
+    "syntactic_twins",
     "alpha_breakpoints",
     "coop_mass",
     "tau_play",

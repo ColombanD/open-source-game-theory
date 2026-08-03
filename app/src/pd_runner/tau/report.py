@@ -7,18 +7,22 @@ single file that opens anywhere.
     uv run python -m pd_runner.tau.report
     uv run python -m pd_runner.tau.report --output ~/tau.html --open
 
-Four views, in the order the argument runs:
+Six views, in the order the argument runs, controlled by two client-side
+selectors — the α slider and the σ-family radio (all views pre-rendered and
+swapped by ~20 lines of inline JS, since the page must stay self-contained):
 
-1. **Cooperation vs transparency** — the headline. Mutual-cooperation rate as
-   the signal degrades, one line per α. Plotted on the TRANSPARENCY axis
-   (normalized MI), not raw temperature, because t is unitless and its scale
-   depends on the zoo.
-2. **Robustness thresholds** — the transparency at which each bot first departs
-   from its base-matrix row. This is where "how much transparency does Löbian
-   cooperation need?" gets answered per agent.
-3. **(t, α) phase diagram** — the two dials crossed, coloured by mutual
-   cooperation rate.
-4. **The outcome matrix itself** — what everything above is computed from,
+1. **Cooperation vs transparency** — the headline, one line per α, one view
+   per σ family. The x-axis is the TRANSPARENCY dial (normalized MI), not a
+   raw knob, because knobs are unitless and family-specific.
+2. **Channel comparison at matched transparency** — one line per σ family at
+   the selected α. The matched-MI money plot: at equal x, the information
+   RATE is identical and only the confusion STRUCTURE differs, so the gap
+   between the curves is the value of reading source over watching play.
+3. **What cooperation displaces** — the (C,C)/exploitation/(D,D) composition.
+4. **Robustness thresholds** — the transparency at which each bot first
+   departs from its base-matrix row.
+5. **(t, α) phase diagram** — the two dials crossed.
+6. **The outcome matrix itself** — what everything above is computed from,
    with stipulated cells marked.
 """
 
@@ -27,14 +31,17 @@ from __future__ import annotations
 import html
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pd_runner.tau.matrix import TauMatrix, load_tau_matrix
 from pd_runner.tau.signal import (
     behavioral_distance_matrix,
     behavioral_twins,
-    transparency,
 )
 from pd_runner.tau.sweep import run_tournament
+
+if TYPE_CHECKING:
+    from pd_runner.tau.channels import SigmaFamily
 
 # Transparency levels sampled left-to-right on the x-axis (1.0 = full).
 _TRANSPARENCY_GRID = [round(1.0 - 0.025 * i, 3) for i in range(41)]
@@ -51,6 +58,9 @@ _SLIDER_ALPHAS = tuple(round(0.05 * i, 2) for i in range(1, 21))
 # Colour-blind-safe qualitative colours (Okabe–Ito).
 _SERIES_COLORS = ("#0072b2", "#d55e00", "#009e73", "#cc79a7", "#e69f00")
 
+# One fixed colour per σ family (chart 2 legend + consistency across views).
+_FAMILY_COLORS = {"behavioral": "#0072b2", "epsilon": "#8c8c96", "syntactic": "#d55e00"}
+
 
 @dataclass(frozen=True)
 class SweepPoint:
@@ -66,12 +76,13 @@ def sweep_by_transparency(
     matrix: TauMatrix,
     alpha: float,
     targets: list[float] | None = None,
+    family: "SigmaFamily | None" = None,
 ) -> list[SweepPoint]:
     """One tournament per dial value; the dial IS the transparency target."""
-    distances = behavioral_distance_matrix(matrix)
+    distances = behavioral_distance_matrix(matrix) if family is None else None
     points = []
     for target in targets if targets is not None else _TRANSPARENCY_GRID:
-        result = run_tournament(matrix, target, alpha, distances)
+        result = run_tournament(matrix, target, alpha, distances, family=family)
         points.append(SweepPoint(
             target_transparency=target,
             temperature=result.temperature,
@@ -87,17 +98,18 @@ def robustness_thresholds(
     matrix: TauMatrix,
     alpha: float,
     targets: list[float] | None = None,
+    family: "SigmaFamily | None" = None,
 ) -> dict[str, float | None]:
     """Transparency at which each bot first departs from its base-matrix row.
 
     `None` means the bot never deviates — its behavior is blur-proof at this α
     (true of the constant bots, which have no conditionality to lose).
     """
-    distances = behavioral_distance_matrix(matrix)
+    distances = behavioral_distance_matrix(matrix) if family is None else None
     base = {b: tuple(matrix.action(b, o) for o in matrix.bots) for b in matrix.bots}
     thresholds: dict[str, float | None] = dict.fromkeys(matrix.bots)
     for target in targets if targets is not None else _TRANSPARENCY_GRID:
-        result = run_tournament(matrix, target, alpha, distances)
+        result = run_tournament(matrix, target, alpha, distances, family=family)
         for bot in matrix.bots:
             if thresholds[bot] is None:
                 row = tuple(result.cells[(bot, o)][0] for o in matrix.bots)
@@ -224,6 +236,7 @@ def _composition_chart(
     targets: list[float],
     width: int = 720,
     height: int = 300,
+    family: "SigmaFamily | None" = None,
 ) -> str:
     """Stacked bands showing what the non-cooperative cells actually are.
 
@@ -231,7 +244,7 @@ def _composition_chart(
     defection reveals WHICH outcome cooperation is displacing as blur rises —
     the difference between real cooperation and bots being fooled.
     """
-    distances = behavioral_distance_matrix(matrix)
+    distances = behavioral_distance_matrix(matrix) if family is None else None
     pad_l, pad_r, pad_t, pad_b = 56, 200, 16, 44
     plot_w, plot_h = width - pad_l - pad_r, height - pad_t - pad_b
 
@@ -243,7 +256,7 @@ def _composition_chart(
 
     samples = []
     for target in targets:
-        result = run_tournament(matrix, target, alpha, distances)
+        result = run_tournament(matrix, target, alpha, distances, family=family)
         samples.append((target, result.composition, result.is_degenerate))
 
     parts = [f'<svg viewBox="0 0 {width} {height}" class="chart" role="img">']
@@ -307,9 +320,10 @@ def _phase_diagram(
     alphas: list[float],
     targets: list[float],
     width: int = 720,
+    family: "SigmaFamily | None" = None,
 ) -> str:
     """Heatmap of mutual cooperation over the (transparency, α) grid."""
-    distances = behavioral_distance_matrix(matrix)
+    distances = behavioral_distance_matrix(matrix) if family is None else None
     cell_w = (width - 150) / len(targets)
     cell_h = 30
     height = 40 + cell_h * len(alphas) + 34
@@ -322,7 +336,9 @@ def _phase_diagram(
             f'α = {alpha:g}</text>'
         )
         for c, target in enumerate(targets):
-            rate = run_tournament(matrix, target, alpha, distances).mutual_coop_rate
+            rate = run_tournament(
+                matrix, target, alpha, distances, family=family
+            ).mutual_coop_rate
             # Single-hue ramp: pale = defection, saturated blue = cooperation.
             shade = 0.12 + 0.88 * rate
             parts.append(
@@ -415,70 +431,178 @@ code { background:var(--panel); padding:.1rem .3rem; border-radius:4px; font-siz
         vertical-align:middle; margin-left:.4rem; letter-spacing:0; }
 .alpha-control { display:flex; align-items:center; gap:.8rem; flex-wrap:wrap;
                  background:var(--panel); border:1px solid var(--border);
-                 border-radius:10px; padding:.7rem 1rem; margin:2.2rem 0 0; }
+                 border-radius:10px; padding:.7rem 1rem; margin:.6rem 0 0; }
 .alpha-control label { color:var(--muted); font-size:.85rem; }
 .alpha-control input[type="range"] { flex:1; min-width:180px; accent-color:var(--c); }
+.alpha-control input[type="radio"] { accent-color:var(--c); }
+.ctl-label { color:var(--muted); font-size:.85rem; }
+table.fam { border-collapse:collapse; font-size:.82rem; width:100%; }
+table.fam th, table.fam td { border-bottom:1px solid var(--border);
+                             padding:6px 10px; text-align:left; vertical-align:top; }
+table.fam th { color:var(--muted); font-weight:500; }
 """
 
 
-def build_report(matrix: TauMatrix, alphas: tuple[float, ...] = _DEFAULT_ALPHAS) -> str:
-    twins = behavioral_twins(matrix)
-    ceiling = transparency(matrix, 0.0)
+def build_report(
+    matrix: TauMatrix,
+    alphas: tuple[float, ...] = _DEFAULT_ALPHAS,
+    families: tuple[str, ...] | None = None,
+) -> str:
+    """Render the page. `families` restricts the σ channels (None = all)."""
+    from pd_runner.tau.channels import all_families
+    from pd_runner.tau.syntax import syntactic_twins
+
+    fams = all_families(matrix)
+    if families is not None:
+        unknown = set(families) - set(fams)
+        if unknown:
+            raise ValueError(f"unknown σ families: {sorted(unknown)}")
+        fams = {k: fams[k] for k in families}
+
     coarse = [round(1.0 - 0.05 * i, 3) for i in range(21)]
 
-    series = [
-        (
-            f"α = {alpha:g}",
-            [(p.target_transparency, p.mutual_coop_rate)
-             for p in sweep_by_transparency(matrix, alpha)],
-            _SERIES_COLORS[i % len(_SERIES_COLORS)],
-        )
-        for i, alpha in enumerate(alphas)
-    ]
-    # The slider's starting position: the true middle of the requested alphas
-    # (lower-middle for an even-length tuple — the upper-middle silently showed
-    # a different α than a reader scanning the list expected), snapped to the
-    # slider grid. Thresholds are α-sensitive, so the initial value is stated
-    # on the charts and every grid value is one drag away.
+    # The pairs each channel can NEVER separate (its transparency ceiling).
+    family_twins: dict[str, list[tuple[str, ...]]] = {
+        "behavioral": behavioral_twins(matrix),
+        "epsilon": [],  # identity-based by construction — no twins possible
+        "syntactic": syntactic_twins(matrix),
+    }
+
+    # Initial selector positions: the true middle of the requested alphas
+    # snapped to the slider grid (lower-middle for an even-length tuple — the
+    # upper-middle once silently rendered a different α than a reader scanning
+    # the list expected), and the behavioral channel when present.
     mid_alpha = sorted(alphas)[(len(alphas) - 1) // 2]
     initial_alpha = min(_SLIDER_ALPHAS, key=lambda a: (abs(a - mid_alpha), a))
+    initial_index = _SLIDER_ALPHAS.index(initial_alpha)
+    initial_family = "behavioral" if "behavioral" in fams else next(iter(fams))
 
-    # Pre-render the two single-α panels at every slider value; the slider
-    # swaps them client-side (`hidden` attribute), so the page needs no server.
-    def alpha_views(render) -> str:
-        return "".join(
-            f'<div class="panel alpha-view" data-alpha="{a:g}"'
-            f'{"" if a == initial_alpha else " hidden"}>{render(a)}</div>'
-            for a in _SLIDER_ALPHAS
+    # ---- pre-rendered swap views (the page is static; ~20 lines of inline JS
+    # toggle `hidden` by the α slider and the family radio) ------------------
+    def swap_view(content: str, *, alpha: float | None = None,
+                  family: str | None = None) -> str:
+        attrs, hidden = "", False
+        if alpha is not None:
+            attrs += f' data-alpha="{alpha:g}"'
+            hidden = hidden or alpha != initial_alpha
+        if family is not None:
+            attrs += f' data-family="{family}"'
+            hidden = hidden or family != initial_family
+        return (
+            f'<div class="panel swap-view"{attrs}{" hidden" if hidden else ""}>'
+            f"{content}</div>"
         )
 
-    comp_views = alpha_views(lambda a: _composition_chart(matrix, a, coarse))
-    threshold_views = alpha_views(
-        lambda a: _threshold_chart(robustness_thresholds(matrix, a, coarse))
+    # 1 · per family: one line per α over the fine grid.
+    line_views = "".join(
+        swap_view(
+            _line_chart(
+                [
+                    (
+                        f"α = {alpha:g}",
+                        [(p.target_transparency, p.mutual_coop_rate)
+                         for p in sweep_by_transparency(matrix, alpha, family=fam)],
+                        _SERIES_COLORS[i % len(_SERIES_COLORS)],
+                    )
+                    for i, alpha in enumerate(alphas)
+                ],
+                y_label="mutual cooperation rate",
+            ),
+            family=key,
+        )
+        for key, fam in fams.items()
     )
 
-    initial_index = _SLIDER_ALPHAS.index(initial_alpha)
+    # 2 · per α: one line per family — the matched-MI channel comparison.
+    comparison_views = "".join(
+        swap_view(
+            _line_chart(
+                [
+                    (
+                        fam.label,
+                        [(p.target_transparency, p.mutual_coop_rate)
+                         for p in sweep_by_transparency(matrix, a, coarse, family=fam)],
+                        _FAMILY_COLORS.get(key, "#009e73"),
+                    )
+                    for key, fam in fams.items()
+                ],
+                y_label="mutual cooperation rate",
+            ),
+            alpha=a,
+        )
+        for a in _SLIDER_ALPHAS
+    )
+
+    # 3 / 4 · per (family, α).
+    comp_views = "".join(
+        swap_view(_composition_chart(matrix, a, coarse, family=fam),
+                  alpha=a, family=key)
+        for key, fam in fams.items()
+        for a in _SLIDER_ALPHAS
+    )
+    threshold_views = "".join(
+        swap_view(
+            _threshold_chart(robustness_thresholds(matrix, a, coarse, family=fam)),
+            alpha=a, family=key,
+        )
+        for key, fam in fams.items()
+        for a in _SLIDER_ALPHAS
+    )
+
+    # 5 · per family.
+    phase_views = "".join(
+        swap_view(_phase_diagram(matrix, list(alphas), coarse, family=fam),
+                  family=key)
+        for key, fam in fams.items()
+    )
+
+    family_rows = "".join(
+        f"<tr><td><b>{html.escape(fam.label)}</b></td>"
+        f"<td>{fam.ceiling():.1%}</td>"
+        f"<td>{html.escape(', '.join('/'.join(g) for g in family_twins.get(key, [])) or '—')}</td>"
+        f"<td>{html.escape(fam.description)}</td></tr>"
+        for key, fam in fams.items()
+    )
+    family_radios = "".join(
+        f'<label><input type="radio" name="family" value="{key}"'
+        f'{" checked" if key == initial_family else ""}> {html.escape(fam.label)}</label>'
+        for key, fam in fams.items()
+    )
+    initial_family_label = fams[initial_family].label
+
     alphas_js = "[" + ",".join(f'"{a:g}"' for a in _SLIDER_ALPHAS) + "]"
+    labels_js = "{" + ",".join(f'"{k}":"{fam.label}"' for k, fam in fams.items()) + "}"
     # Plain string (not an f-string): JS braces stay literal; values are
     # interpolated into the surrounding template instead.
-    slider_script = (
+    control_script = (
         "<script>(function () {\n"
         f"  var alphas = {alphas_js};\n"
+        f"  var labels = {labels_js};\n"
         '  var slider = document.getElementById("alpha-slider");\n'
         "  function show() {\n"
         "    var a = alphas[+slider.value];\n"
-        '    document.querySelectorAll(".alpha-view").forEach(function (el) {\n'
-        "      el.hidden = el.dataset.alpha !== a;\n"
+        "    var f = document.querySelector('input[name=\"family\"]:checked').value;\n"
+        '    document.querySelectorAll(".swap-view").forEach(function (el) {\n'
+        "      var byAlpha = el.dataset.alpha !== undefined && el.dataset.alpha !== a;\n"
+        "      var byFamily = el.dataset.family !== undefined && el.dataset.family !== f;\n"
+        "      el.hidden = byAlpha || byFamily;\n"
         "    });\n"
         '    document.querySelectorAll(".alpha-readout").forEach(function (el) {\n'
         '      el.textContent = "α = " + a;\n'
         "    });\n"
+        '    document.querySelectorAll(".family-readout").forEach(function (el) {\n'
+        "      el.textContent = labels[f];\n"
+        "    });\n"
         "  }\n"
         '  slider.addEventListener("input", show);\n'
+        "  document.querySelectorAll('input[name=\"family\"]').forEach(function (r) {\n"
+        '    r.addEventListener("change", show);\n'
+        "  });\n"
         "  show();\n"
         "})();</script>"
     )
 
+    twins = family_twins["behavioral"]
     stipulated = len({tuple(sorted(p)) for p in matrix.hypothetical_cells})
     provenance = (
         "every cell machine-checked by Lean"
@@ -496,65 +620,89 @@ def build_report(matrix: TauMatrix, alphas: tuple[float, ...] = _DEFAULT_ALPHAS)
 
 <ul class="stats">
   <li><b>{len(matrix)}</b><span>bots in the zoo</span></li>
-  <li><b>{ceiling:.0%}</b><span>transparency ceiling</span></li>
+  <li><b>{len(fams)}</b><span>σ channel families</span></li>
   <li><b>{len(twins)}</b><span>behavioral twin groups</span></li>
   <li><b>{stipulated}</b><span>stipulated pairs</span></li>
 </ul>
 <p class="note">Provenance: {provenance}.</p>
 
-<h2>1 · Cooperation vs transparency</h2>
-<p class="note">Mutual-cooperation rate as the signal degrades, one line per
-caution threshold α. The x-axis is normalized mutual information, not raw
-temperature — t is unitless and its scale depends on the zoo.</p>
-<div class="panel">{_line_chart(series, y_label="mutual cooperation rate")}</div>
+<h2>σ channel families</h2>
+<p class="note">A σ family is (what leaks) × (how it blurs). Every family is
+calibrated onto the SAME transparency dial t ∈ [0, 1] (normalized mutual
+information), so at equal t the information rate is identical and only the
+confusion structure — WHICH bots get mistaken for which — differs. A ceiling
+below 100% means that family has twins it can never separate.</p>
+<div class="panel"><table class="fam">
+<thead><tr><th>family</th><th>ceiling</th><th>unseparable twins</th><th>what leaks</th></tr></thead>
+<tbody>{family_rows}</tbody></table></div>
 
 <div class="alpha-control">
-  <label for="alpha-slider">caution threshold α — drives charts 2 and 3</label>
+  <span class="ctl-label">σ family</span> {family_radios}
+</div>
+<div class="alpha-control">
+  <label for="alpha-slider">caution threshold α — drives charts 2, 3 and 4</label>
   <input type="range" id="alpha-slider" min="0" max="{len(_SLIDER_ALPHAS) - 1}"
          step="1" value="{initial_index}">
   <span class="pill alpha-readout">α = {initial_alpha:g}</span>
 </div>
 
-<h2>2 · What cooperation displaces <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
+<h2>1 · Cooperation vs transparency <span class="pill family-readout">{html.escape(initial_family_label)}</span></h2>
+<p class="note">Mutual-cooperation rate as the signal degrades, one line per
+caution threshold α, under the selected σ family. The x-axis is normalized
+mutual information, not a raw knob — knobs are unitless and family-specific.</p>
+{line_views}
+
+<h2>2 · Channel comparison at matched transparency <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
+<p class="note">One line per σ family at the selected α. Because every family
+is calibrated to the same MI dial, the gap between curves at equal x is purely
+the effect of confusion STRUCTURE — e.g. the value of reading source over
+watching play. The ε-uniform control has no structure at all: divergence from
+it is what "similarity matters" looks like.</p>
+{comparison_views}
+
+<h2>3 · What cooperation displaces <span class="pill family-readout">{html.escape(initial_family_label)}</span> <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
 <p class="note">The same tournaments, split into all three game outcomes.
 Chart 1 counts only (C,C), which hides <em>which</em> outcome it is displacing.
 Watch the orange band: as the signal degrades, exploitation converts into
 cooperation — bots fooled into cooperating with defectors — so a rising blue
 band at low transparency is not cooperation improving. Inside the dashed region
-every bot plays unconditionally (the classical-PD limit), where these numbers
-reflect the loss of conditioning rather than a transparency effect.</p>
+every bot plays unconditionally (the classical-PD limit).</p>
 {comp_views}
 
-<h2>3 · How much transparency each bot needs <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
+<h2>4 · How much transparency each bot needs <span class="pill family-readout">{html.escape(initial_family_label)}</span> <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
 <p class="note">Transparency at which each bot first departs from its
 base-matrix row. Longer bar = needs a clearer signal to behave as itself.
 Constant bots never deviate: they have no conditionality to lose.
-<strong>These thresholds are α-sensitive</strong> — the ranking changes with the
-caution threshold (drag the slider above to see it), so this chart is one slice
-of chart 4, not a property of the bots alone.</p>
+<strong>These thresholds are α- and channel-sensitive</strong> — the ranking
+changes with the caution threshold and with what leaks, so this chart is one
+slice of chart 5, not a property of the bots alone.</p>
 {threshold_views}
 
-<h2>4 · (transparency, α) phase diagram</h2>
-<p class="note">The two dials crossed. Transparency is a property of the
-environment; α is the agent's own caution. Hover a cell for its value.</p>
-<div class="panel">{_phase_diagram(matrix, list(alphas), coarse)}</div>
+<h2>5 · (transparency, α) phase diagram <span class="pill family-readout">{html.escape(initial_family_label)}</span></h2>
+<p class="note">The two dials crossed, under the selected σ family.
+Transparency is a property of the environment; α is the agent's own caution.
+Hover a cell for its value.</p>
+{phase_views}
 
-<h2>5 · The underlying outcome matrix</h2>
+<h2>6 · The underlying outcome matrix</h2>
 <p class="note">Each cell shows what the ROW bot plays against the column bot.
 Blue = cooperate. Dashed outline = stipulated, not proven.</p>
 <div class="panel">{_matrix_table(matrix)}</div>
 
 <h2>Notes</h2>
 <p class="note">
-Twin groups: {html.escape(str([list(g) for g in twins]) if twins else "none — behavior identifies every bot")}.
-Behaviorally identical bots cannot be separated by any signal at any
-temperature, so they cap the transparency scale below 100%.<br><br>
+Behavioral twin groups: {html.escape(str([list(g) for g in twins]) if twins else "none — behavior identifies every bot")}.
+Each channel family has its own unseparable twins (see the family table): the
+behavioral channel cannot split bots with identical action rows, the syntactic
+channel cannot split bots with identical constructor profiles (DBot vs
+TitForTatBot — same tree shape, opposite conduct), and the ε-uniform control
+separates everything, having no structure to be blind through.<br><br>
 α sweeps should step <em>between</em> breakpoints, never on them: when α sits
 exactly on an agent's achievable cooperation mass, float residue decides the
 play and the agent looks conditional when it is not.
 </p>
 </main>
-{slider_script}"""
+{control_script}"""
 
 
 def main() -> None:
