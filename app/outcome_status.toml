@@ -25,10 +25,6 @@ pair = ["CupodBot", "DupocBot"]
 reason = "Critch's open problem — search × search, expected unprovable in the library as it stands (OSGT_Workshop_Cheat_Sheet.md)."
 
 [[open]]
-pair = ["JustBot", "MirrorBot"]
-reason = "Bistable fixed point — two consistent outcomes, neither forced; no sound rule can decide it (DESIGN_CHOICES.md)."
-
-[[open]]
 pair = ["PrudentBot", "CupodBot"]
 reason = "CupodBot-family search×search matchup — no forcing rule known."
 
@@ -79,4 +75,8 @@ reason = "Confirmed via app UI (agent verdict: open_blocked)."
 
 [[open]]
 pair = ["CIMCIC", "OBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."
+
+[[open]]
+pair = ["WaryBot", "OBot"]
 reason = "Confirmed via app UI (agent verdict: open_blocked)."

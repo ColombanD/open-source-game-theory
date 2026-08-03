@@ -170,3 +170,4 @@ import PrisonersDilemma.Theorems.CIMCIC.vs_DupocBot
 import PrisonersDilemma.Theorems.CIMCIC.vs_JustBot
 import PrisonersDilemma.Theorems.DIMCID.vs_OBot
 import PrisonersDilemma.Theorems.DIMCID.vs_MirrorBot
+import PrisonersDilemma.Theorems.JustBot.vs_MirrorBot
