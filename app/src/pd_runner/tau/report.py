@@ -32,7 +32,6 @@ from pd_runner.tau.matrix import TauMatrix, load_tau_matrix
 from pd_runner.tau.signal import (
     behavioral_distance_matrix,
     behavioral_twins,
-    temperature_for_transparency,
     transparency,
 )
 from pd_runner.tau.sweep import run_tournament
@@ -40,6 +39,14 @@ from pd_runner.tau.sweep import run_tournament
 # Transparency levels sampled left-to-right on the x-axis (1.0 = full).
 _TRANSPARENCY_GRID = [round(1.0 - 0.025 * i, 3) for i in range(41)]
 _DEFAULT_ALPHAS = (0.3, 0.45, 0.62, 0.8)
+
+# The α slider's grid. The report is self-contained static HTML, so the slider
+# works by pre-rendering the two single-α panels (composition, robustness
+# thresholds) at every grid value and swapping them client-side — no server in
+# the loop. 0.05 steps avoid the achievable-mass knife edges (k/11 fractions)
+# everywhere except the harmless α = 1 endpoint, where the fsum/tolerance
+# handling already keeps unanimous masses cooperating.
+_SLIDER_ALPHAS = tuple(round(0.05 * i, 2) for i in range(1, 21))
 
 # Colour-blind-safe qualitative colours (Okabe–Ito).
 _SERIES_COLORS = ("#0072b2", "#d55e00", "#009e73", "#cc79a7", "#e69f00")
@@ -55,38 +62,19 @@ class SweepPoint:
     degenerate: bool
 
 
-def temperature_grid(
-    matrix: TauMatrix,
-    targets: list[float] | None = None,
-) -> list[tuple[float, float]]:
-    """Map each target transparency to the temperature that realizes it.
-
-    Sweeping on transparency rather than temperature is what makes the x-axis
-    interpretable ("cooperation survives down to 40% transparency").
-    """
-    grid = []
-    for target in targets if targets is not None else _TRANSPARENCY_GRID:
-        if target >= 1.0:
-            grid.append((target, 0.0))
-        elif target <= 0.0:
-            grid.append((target, 1e4))
-        else:
-            grid.append((target, temperature_for_transparency(matrix, target)))
-    return grid
-
-
 def sweep_by_transparency(
     matrix: TauMatrix,
     alpha: float,
     targets: list[float] | None = None,
 ) -> list[SweepPoint]:
+    """One tournament per dial value; the dial IS the transparency target."""
     distances = behavioral_distance_matrix(matrix)
     points = []
-    for target, temp in temperature_grid(matrix, targets):
-        result = run_tournament(matrix, temp, alpha, distances)
+    for target in targets if targets is not None else _TRANSPARENCY_GRID:
+        result = run_tournament(matrix, target, alpha, distances)
         points.append(SweepPoint(
             target_transparency=target,
-            temperature=temp,
+            temperature=result.temperature,
             actual_transparency=result.transparency,
             mutual_coop_rate=result.mutual_coop_rate,
             coop_rate=result.coop_rate,
@@ -108,8 +96,8 @@ def robustness_thresholds(
     distances = behavioral_distance_matrix(matrix)
     base = {b: tuple(matrix.action(b, o) for o in matrix.bots) for b in matrix.bots}
     thresholds: dict[str, float | None] = dict.fromkeys(matrix.bots)
-    for target, temp in temperature_grid(matrix, targets):
-        result = run_tournament(matrix, temp, alpha, distances)
+    for target in targets if targets is not None else _TRANSPARENCY_GRID:
+        result = run_tournament(matrix, target, alpha, distances)
         for bot in matrix.bots:
             if thresholds[bot] is None:
                 row = tuple(result.cells[(bot, o)][0] for o in matrix.bots)
@@ -254,8 +242,8 @@ def _composition_chart(
         return pad_t + (1.0 - y) * plot_h
 
     samples = []
-    for target, temp in temperature_grid(matrix, targets):
-        result = run_tournament(matrix, temp, alpha, distances)
+    for target in targets:
+        result = run_tournament(matrix, target, alpha, distances)
         samples.append((target, result.composition, result.is_degenerate))
 
     parts = [f'<svg viewBox="0 0 {width} {height}" class="chart" role="img">']
@@ -322,8 +310,7 @@ def _phase_diagram(
 ) -> str:
     """Heatmap of mutual cooperation over the (transparency, α) grid."""
     distances = behavioral_distance_matrix(matrix)
-    grid = temperature_grid(matrix, targets)
-    cell_w = (width - 150) / len(grid)
+    cell_w = (width - 150) / len(targets)
     cell_h = 30
     height = 40 + cell_h * len(alphas) + 34
 
@@ -334,8 +321,8 @@ def _phase_diagram(
             f'<text x="104" y="{y + cell_h / 2 + 4:.1f}" class="tick end">'
             f'α = {alpha:g}</text>'
         )
-        for c, (target, temp) in enumerate(grid):
-            rate = run_tournament(matrix, temp, alpha, distances).mutual_coop_rate
+        for c, target in enumerate(targets):
+            rate = run_tournament(matrix, target, alpha, distances).mutual_coop_rate
             # Single-hue ramp: pale = defection, saturated blue = cooperation.
             shade = 0.12 + 0.88 * rate
             parts.append(
@@ -345,8 +332,8 @@ def _phase_diagram(
                 f'<title>transparency {target:.0%}, α={alpha:g}: '
                 f'mutual cooperation {rate:.0%}</title></rect>'
             )
-    for c, (target, _) in enumerate(grid):
-        if c % max(1, len(grid) // 8) == 0:
+    for c, target in enumerate(targets):
+        if c % max(1, len(targets) // 8) == 0:
             parts.append(
                 f'<text x="{114 + c * cell_w:.1f}" y="{height - 12}" '
                 f'class="tick mid">{target:.0%}</text>'
@@ -426,6 +413,11 @@ code { background:var(--panel); padding:.1rem .3rem; border-radius:4px; font-siz
 .pill { display:inline-block; background:var(--c); color:#fff; font-size:.72rem;
         font-weight:600; padding:.15rem .5rem; border-radius:999px;
         vertical-align:middle; margin-left:.4rem; letter-spacing:0; }
+.alpha-control { display:flex; align-items:center; gap:.8rem; flex-wrap:wrap;
+                 background:var(--panel); border:1px solid var(--border);
+                 border-radius:10px; padding:.7rem 1rem; margin:2.2rem 0 0; }
+.alpha-control label { color:var(--muted); font-size:.85rem; }
+.alpha-control input[type="range"] { flex:1; min-width:180px; accent-color:var(--c); }
 """
 
 
@@ -443,12 +435,49 @@ def build_report(matrix: TauMatrix, alphas: tuple[float, ...] = _DEFAULT_ALPHAS)
         )
         for i, alpha in enumerate(alphas)
     ]
-    # The true middle: for an even-length tuple `len // 2` is the upper-middle,
-    # which silently renders a different α than a reader scanning the list
-    # expects. Thresholds are α-sensitive (the ranking changes between 0.45 and
-    # 0.62), so the choice has to be both principled and stated on the chart.
+    # The slider's starting position: the true middle of the requested alphas
+    # (lower-middle for an even-length tuple — the upper-middle silently showed
+    # a different α than a reader scanning the list expected), snapped to the
+    # slider grid. Thresholds are α-sensitive, so the initial value is stated
+    # on the charts and every grid value is one drag away.
     mid_alpha = sorted(alphas)[(len(alphas) - 1) // 2]
-    thresholds = robustness_thresholds(matrix, mid_alpha, coarse)
+    initial_alpha = min(_SLIDER_ALPHAS, key=lambda a: (abs(a - mid_alpha), a))
+
+    # Pre-render the two single-α panels at every slider value; the slider
+    # swaps them client-side (`hidden` attribute), so the page needs no server.
+    def alpha_views(render) -> str:
+        return "".join(
+            f'<div class="panel alpha-view" data-alpha="{a:g}"'
+            f'{"" if a == initial_alpha else " hidden"}>{render(a)}</div>'
+            for a in _SLIDER_ALPHAS
+        )
+
+    comp_views = alpha_views(lambda a: _composition_chart(matrix, a, coarse))
+    threshold_views = alpha_views(
+        lambda a: _threshold_chart(robustness_thresholds(matrix, a, coarse))
+    )
+
+    initial_index = _SLIDER_ALPHAS.index(initial_alpha)
+    alphas_js = "[" + ",".join(f'"{a:g}"' for a in _SLIDER_ALPHAS) + "]"
+    # Plain string (not an f-string): JS braces stay literal; values are
+    # interpolated into the surrounding template instead.
+    slider_script = (
+        "<script>(function () {\n"
+        f"  var alphas = {alphas_js};\n"
+        '  var slider = document.getElementById("alpha-slider");\n'
+        "  function show() {\n"
+        "    var a = alphas[+slider.value];\n"
+        '    document.querySelectorAll(".alpha-view").forEach(function (el) {\n'
+        "      el.hidden = el.dataset.alpha !== a;\n"
+        "    });\n"
+        '    document.querySelectorAll(".alpha-readout").forEach(function (el) {\n'
+        '      el.textContent = "α = " + a;\n'
+        "    });\n"
+        "  }\n"
+        '  slider.addEventListener("input", show);\n'
+        "  show();\n"
+        "})();</script>"
+    )
 
     stipulated = len({tuple(sorted(p)) for p in matrix.hypothetical_cells})
     provenance = (
@@ -479,7 +508,14 @@ caution threshold α. The x-axis is normalized mutual information, not raw
 temperature — t is unitless and its scale depends on the zoo.</p>
 <div class="panel">{_line_chart(series, y_label="mutual cooperation rate")}</div>
 
-<h2>2 · What cooperation displaces <span class="pill">α = {mid_alpha:g}</span></h2>
+<div class="alpha-control">
+  <label for="alpha-slider">caution threshold α — drives charts 2 and 3</label>
+  <input type="range" id="alpha-slider" min="0" max="{len(_SLIDER_ALPHAS) - 1}"
+         step="1" value="{initial_index}">
+  <span class="pill alpha-readout">α = {initial_alpha:g}</span>
+</div>
+
+<h2>2 · What cooperation displaces <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
 <p class="note">The same tournaments, split into all three game outcomes.
 Chart 1 counts only (C,C), which hides <em>which</em> outcome it is displacing.
 Watch the orange band: as the signal degrades, exploitation converts into
@@ -487,16 +523,16 @@ cooperation — bots fooled into cooperating with defectors — so a rising blue
 band at low transparency is not cooperation improving. Inside the dashed region
 every bot plays unconditionally (the classical-PD limit), where these numbers
 reflect the loss of conditioning rather than a transparency effect.</p>
-<div class="panel">{_composition_chart(matrix, mid_alpha, coarse)}</div>
+{comp_views}
 
-<h2>3 · How much transparency each bot needs <span class="pill">α = {mid_alpha:g}</span></h2>
+<h2>3 · How much transparency each bot needs <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
 <p class="note">Transparency at which each bot first departs from its
 base-matrix row. Longer bar = needs a clearer signal to behave as itself.
 Constant bots never deviate: they have no conditionality to lose.
 <strong>These thresholds are α-sensitive</strong> — the ranking changes with the
-caution threshold, so this chart is one slice of chart 3, not a property of the
-bots alone.</p>
-<div class="panel">{_threshold_chart(thresholds)}</div>
+caution threshold (drag the slider above to see it), so this chart is one slice
+of chart 4, not a property of the bots alone.</p>
+{threshold_views}
 
 <h2>4 · (transparency, α) phase diagram</h2>
 <p class="note">The two dials crossed. Transparency is a property of the
@@ -517,7 +553,8 @@ temperature, so they cap the transparency scale below 100%.<br><br>
 exactly on an agent's achievable cooperation mass, float residue decides the
 play and the agent looks conditional when it is not.
 </p>
-</main>"""
+</main>
+{slider_script}"""
 
 
 def main() -> None:

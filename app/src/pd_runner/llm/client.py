@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 import anthropic
 import httpx
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from pd_runner.logging_config import get_logger

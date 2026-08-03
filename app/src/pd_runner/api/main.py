@@ -14,8 +14,7 @@ from pd_runner.api.integration_task import run_integration
 from pd_runner.api.jobs import store
 from pd_runner.api.pipeline_task import bot_exists, bot_source_on_disk, run_pipeline
 from pd_runner.api.schemas import (
-    BotConflict, BotConflictResolution, BotSpec,
-    ConflictResponse, IntegrationRequest, JobResponse, JobStatus,
+    BotConflict, ConflictResponse, IntegrationRequest, JobResponse, JobStatus,
     MatrixStatusRequest, PipelineRequest, ProposalInfo, ProposalsResponse,
 )
 
@@ -67,6 +66,34 @@ async def get_matrix() -> dict:
 
     bots, cells = build_outcome_matrix()
     return {"bots": bots, "rows": matrix_rows(bots, cells)}
+
+
+@app.get("/tau/report", response_class=HTMLResponse)
+async def tau_report(alphas: str = "0.3,0.45,0.62,0.8") -> HTMLResponse:
+    """The TauBot graded-transparency analysis, rendered fresh on each request.
+
+    Rebuilds the tau matrix from the theorem library (plus the documented
+    CupodBot stipulations) and returns the self-contained HTML report —
+    cooperation-vs-transparency sweep, outcome composition, per-bot robustness
+    thresholds, (t, α) phase diagram, and the underlying matrix.
+
+    `alphas` is a comma-separated list of caution thresholds to sweep.
+    """
+    from pd_runner.tau.matrix import load_tau_matrix
+    from pd_runner.tau.report import build_report
+
+    try:
+        parsed = tuple(float(a) for a in alphas.split(",") if a.strip())
+    except ValueError:
+        raise HTTPException(status_code=400,
+                            detail=f"alphas must be comma-separated numbers, got {alphas!r}")
+    if not parsed:
+        raise HTTPException(status_code=400, detail="alphas must contain at least one value")
+
+    # The build is pure CPU (a few hundred tournaments); keep the event loop free.
+    loop = asyncio.get_running_loop()
+    page = await loop.run_in_executor(None, lambda: build_report(load_tau_matrix(), parsed))
+    return HTMLResponse(page)
 
 
 @app.post("/matrix/sync")

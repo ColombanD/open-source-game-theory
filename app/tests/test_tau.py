@@ -351,10 +351,10 @@ def test_anchor_theorem_pointwise(matrix) -> None:
 
 
 def test_anchor_theorem_tournament(matrix) -> None:
-    """The whole t = 0 tau tournament IS the base outcome matrix."""
+    """The whole t = 1 (full transparency) tournament IS the base matrix."""
     for alpha in (0.25, 0.5, 0.75, 1.0):
         assert anchor_holds(matrix, alpha)
-    assert run_tournament(matrix, 0.0, 0.5).cells == base_tournament_cells(matrix)
+    assert run_tournament(matrix, 1.0, 0.5).cells == base_tournament_cells(matrix)
 
 
 def test_alpha_zero_is_unconditional_cooperation(matrix) -> None:
@@ -373,11 +373,11 @@ def test_alpha_above_one_is_unconditional_defection(matrix) -> None:
 def test_unanimous_mass_cooperates_at_alpha_one(matrix) -> None:
     """α = 1 boundary must survive float summation error.
 
-    CooperateBot cooperates against all 12 hypotheses, so its mass is exactly
-    1 — but naively summing 12 softmax weights lands an ULP short and would
+    CooperateBot cooperates against every hypothesis, so its mass is exactly
+    1 — but naively summing the softmax weights lands an ULP short and would
     flip it to D on precisely the boundary the phase diagrams sit on.
     """
-    channel = signal_family(matrix, temperature=3.0)
+    channel = signal_family(matrix, t=0.2)
     for signal in channel.values():
         assert coop_mass(matrix, "CooperateBot", signal) == pytest.approx(1.0)
         assert tau_play(matrix, "CooperateBot", 1.0, signal) == "C"
@@ -385,7 +385,7 @@ def test_unanimous_mass_cooperates_at_alpha_one(matrix) -> None:
 
 def test_tau_play_is_monotone_in_alpha(matrix) -> None:
     """Raising caution can only ever turn C into D, never the reverse."""
-    channel = signal_family(matrix, temperature=1.0)
+    channel = signal_family(matrix, t=0.5)
     for actor in matrix.bots:
         for signal in channel.values():
             flips = [
@@ -397,7 +397,7 @@ def test_tau_play_is_monotone_in_alpha(matrix) -> None:
 
 def test_constant_bots_are_alpha_insensitive(matrix) -> None:
     """CooperateBot/DefectBot play the same regardless of blur or caution."""
-    channel = signal_family(matrix, temperature=3.0)
+    channel = signal_family(matrix, t=0.2)
     for signal in channel.values():
         assert tau_play(matrix, "CooperateBot", 1.0, signal) == "C"
         assert tau_play(matrix, "DefectBot", 1e-9, signal) == "D"
@@ -417,7 +417,7 @@ def test_uniform_signal_gives_unconditional_strategies(matrix) -> None:
 
 def test_alpha_breakpoints_capture_every_transition(matrix) -> None:
     """Between consecutive breakpoints behavior is constant, so a sweep is exact."""
-    channel = signal_family(matrix, temperature=1.0)
+    channel = signal_family(matrix, t=0.5)
     breaks = alpha_breakpoints(matrix, channel, quantize=9)
     assert breaks[0] == 0.0
 
@@ -450,9 +450,12 @@ def test_report_renders_valid_svg(matrix) -> None:
 
     from pd_runner.tau.report import build_report
 
+    from pd_runner.tau.report import _SLIDER_ALPHAS
+
     page = build_report(matrix, alphas=(0.3, 0.62))
     svgs = re.findall(r"<svg.*?</svg>", page, re.S)
-    assert len(svgs) == 4  # line, composition, thresholds, phase diagram
+    # line + phase diagram, plus composition + thresholds per slider value.
+    assert len(svgs) == 2 + 2 * len(_SLIDER_ALPHAS)
     for svg in svgs:
         ET.fromstring(svg)  # raises on malformed markup
 
@@ -464,8 +467,8 @@ def test_report_renders_valid_svg(matrix) -> None:
 
 def test_composition_partitions_every_cell(matrix) -> None:
     """The three outcome classes are exhaustive and disjoint: they sum to 1."""
-    for temperature in (0.0, 1.0, 3.0, 1e5):
-        composition = run_tournament(matrix, temperature, 0.45).composition
+    for t in (1.0, 0.5, 0.2, 0.0):
+        composition = run_tournament(matrix, t, 0.45).composition
         assert set(composition) == {"CC", "exploit", "DD"}
         assert sum(composition.values()) == pytest.approx(1.0)
         assert all(v >= 0.0 for v in composition.values())
@@ -473,8 +476,8 @@ def test_composition_partitions_every_cell(matrix) -> None:
 
 def test_composition_cc_matches_the_headline_rate(matrix) -> None:
     """The CC band must be the same number chart 1 plots, not a recomputation."""
-    for temperature in (0.0, 2.0, 1e5):
-        result = run_tournament(matrix, temperature, 0.45)
+    for t in (1.0, 0.3, 0.0):
+        result = run_tournament(matrix, t, 0.45)
         assert result.composition["CC"] == pytest.approx(result.mutual_coop_rate)
 
 
@@ -486,32 +489,41 @@ def test_blur_converts_defection_into_cooperation(matrix) -> None:
     rising blue band at low transparency is bots losing the ability to
     condition, not cooperation improving.
     """
-    clear = run_tournament(matrix, 0.0, 0.45).composition
-    opaque = run_tournament(matrix, 1e5, 0.45).composition
+    clear = run_tournament(matrix, 1.0, 0.45).composition
+    opaque = run_tournament(matrix, 0.0, 0.45).composition
     assert opaque["CC"] > clear["CC"]
     assert opaque["DD"] < clear["DD"]
 
 
-def test_report_labels_the_alpha_it_renders(matrix) -> None:
-    """Chart 2 fixes one α; the page must show WHICH, and pick the true middle.
+def test_report_alpha_slider(matrix) -> None:
+    """Charts 2/3 are α-sensitive; the slider must expose every grid value.
 
-    Thresholds are α-sensitive (the bot ranking changes between 0.45 and 0.62),
-    so an unlabelled or off-by-one α makes the chart unreadable.
+    The report is static HTML, so interactivity means one pre-rendered panel
+    pair per grid α, exactly one pair visible, and readouts naming the initial
+    α — which starts at the true middle of the requested alphas (lower-middle
+    for an even-length tuple; the upper-middle once silently showed a
+    different α than the reader expected).
     """
     import re
 
-    from pd_runner.tau.report import build_report
+    from pd_runner.tau.report import _SLIDER_ALPHAS, build_report
 
-    # The pill badge on chart 2's heading names the rendered α. (Chart 1's
-    # legend lists every α, so match the badge specifically, not the page.)
     page = build_report(matrix, alphas=(0.3, 0.45, 0.62, 0.8))
-    badge = re.search(r'<span class="pill">α = ([\d.]+)</span>', page)
-    assert badge and badge.group(1) == "0.45"  # lower-middle, not upper
 
-    # Odd-length tuples take the exact middle.
+    views = re.findall(r'class="panel alpha-view" data-alpha="([^"]+)"( hidden)?', page)
+    assert len(views) == 2 * len(_SLIDER_ALPHAS)
+    # Every slider value has both its panels…
+    assert {a for a, _ in views} == {f"{a:g}" for a in _SLIDER_ALPHAS}
+    # …and exactly the initial α's pair is visible.
+    assert [a for a, h in views if not h] == ["0.45", "0.45"]
+    assert '<span class="pill alpha-readout">α = 0.45</span>' in page
+    assert 'id="alpha-slider"' in page
+
+    # Odd-length tuples start at the exact middle (snapped to the grid).
     page = build_report(matrix, alphas=(0.2, 0.5, 0.9))
-    badge = re.search(r'<span class="pill">α = ([\d.]+)</span>', page)
-    assert badge and badge.group(1) == "0.5"
+    assert [a for a, h in re.findall(
+        r'class="panel alpha-view" data-alpha="([^"]+)"( hidden)?', page) if not h
+    ] == ["0.5", "0.5"]
 
 
 def test_report_names_the_zoo(matrix) -> None:
@@ -546,30 +558,62 @@ def test_robustness_thresholds_spare_the_constant_bots(matrix) -> None:
     assert any(v is not None for v in thresholds.values())
 
 
+def test_tau_report_endpoint() -> None:
+    """`GET /tau/report` serves the report fresh; bad alphas fail loudly."""
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+
+    from pd_runner.api.main import app
+
+    client = TestClient(app)
+    from pd_runner.tau.report import _SLIDER_ALPHAS
+
+    page = client.get("/tau/report?alphas=0.5")
+    assert page.status_code == 200
+    assert page.headers["content-type"].startswith("text/html")
+    assert "TauBots" in page.text
+    assert page.text.count("<svg") == 2 + 2 * len(_SLIDER_ALPHAS)
+    assert 'id="alpha-slider"' in page.text
+
+    assert client.get("/tau/report?alphas=abc").status_code == 400
+    assert client.get("/tau/report?alphas=,").status_code == 400
+
+    # The UI carries the trigger.
+    index = client.get("/")
+    assert "openTauReport" in index.text and "Run tau analysis" in index.text
+
+
 def test_tournament_rates_are_consistent(matrix) -> None:
-    r = run_tournament(matrix, temperature=1.0, alpha=0.5)
+    r = run_tournament(matrix, t=0.5, alpha=0.5)
     assert 0.0 <= r.mutual_coop_rate <= r.coop_rate <= 1.0
     assert len(r.cells) == len(matrix) ** 2
 
 
 def test_tournament_is_symmetric_under_transpose(matrix) -> None:
     """Cell (A,B) and cell (B,A) must describe the same match."""
-    r = run_tournament(matrix, temperature=1.5, alpha=0.5)
+    r = run_tournament(matrix, t=0.4, alpha=0.5)
     for (row, col), (a, b) in r.cells.items():
         assert r.cells[(col, row)] == (b, a)
 
 
-def test_high_temperature_is_degenerate(matrix) -> None:
-    """The classical-PD limit: everyone plays unconditionally.
+def test_dial_matches_measured_transparency(matrix) -> None:
+    """t IS the transparency: the dial and the measured MI must agree."""
+    for t in (0.8, 0.5, 0.2):
+        r = run_tournament(matrix, t, 0.45)
+        assert r.t == t
+        assert r.transparency == pytest.approx(t, abs=0.02)
+    # The endpoints: t = 1 is the point mass, t = 0 is (near-)opaque.
+    assert run_tournament(matrix, 1.0, 0.45).temperature == 0.0
+    assert run_tournament(matrix, 0.0, 0.45).transparency < 0.01
 
-    α is offset off the knife edge deliberately. At uniform σ an agent's
-    cooperation mass is its coop FRACTION over the zoo, and DupocBot
-    cooperates with exactly 5 of the 10 default bots — landing exactly on
-    α = 0.5, where the ~1e-6 residual non-uniformity at finite t straddles the
-    threshold and decides the play. That is numerical noise, not conditional
-    behavior; see `test_knife_edge_alpha_is_noise_sensitive`.
+
+def test_opaque_limit_is_degenerate(matrix) -> None:
+    """The classical-PD limit at t = 0: everyone plays unconditionally.
+
+    α is offset off the knife edge deliberately — see
+    `test_knife_edge_alpha_is_noise_sensitive`.
     """
-    r = run_tournament(matrix, temperature=1e5, alpha=0.42)
+    r = run_tournament(matrix, t=0.0, alpha=0.42)
     assert r.is_degenerate
     assert r.transparency < 0.01
 
@@ -591,9 +635,9 @@ def test_knife_edge_alpha_is_noise_sensitive(matrix) -> None:
     }
     knife_edge = next(f for f in fractions.values() if 0.0 < f < 1.0)
 
-    on_edge = run_tournament(matrix, temperature=1e5, alpha=knife_edge)
+    on_edge = run_tournament(matrix, t=0.0, alpha=knife_edge)
     assert not on_edge.is_degenerate  # spurious conditionality
 
     # Stepping off the edge (and clear of every other agent's fraction) is stable.
     for alpha in (knife_edge - 0.02, knife_edge + 0.02):
-        assert run_tournament(matrix, temperature=1e5, alpha=alpha).is_degenerate
+        assert run_tournament(matrix, t=0.0, alpha=alpha).is_degenerate

@@ -59,7 +59,10 @@ def test_matrix_cells() -> None:
     # Curated statuses from outcome_status.toml.
     assert cells[("CupodBot", "DupocBot")] == "Open Problem"
     # Floor-only proofs (wrong statement shape) are curated as Need rework.
-    assert cells[("OBot", "WaryBot")] == "Need rework"
+    assert cells[("CIMCIC", "WaryBot")] == "Need rework"
+    # A pair in several sections takes the strongest status: open > rework.
+    # (WaryBot vs OBot has both a [[rework]] entry and a UI-confirmed [[open]].)
+    assert cells[("OBot", "WaryBot")] == "Open Problem"
     # WaryBot's .neg-guard fixpoints fell 2026-07-30 (SP/WV valuation census).
     assert cells[("MirrorBot", "WaryBot")] == "(C, C)"
     assert cells[("WaryBot", "WaryBot")] == "(C, C)"

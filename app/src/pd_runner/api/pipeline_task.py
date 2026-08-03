@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from pd_runner.api.jobs import Job, JobStore
-from pd_runner.api.schemas import BotConflictResolution, BotDraft, JobStatus, PipelineRequest, PipelineResult
+from pd_runner.api.schemas import BotConflictResolution, JobStatus, PipelineRequest, PipelineResult
 from pd_runner.config import load_paths
 from pd_runner.services.bot_service import BotRequest, BotResult, search_bot
 from pd_runner.services.library_writer import LibraryWriteError, write_bot_to_library, write_proof_to_library

@@ -20,7 +20,7 @@ from pd_runner import settings
 from pd_runner.config import load_paths
 from pd_runner.logging_config import setup_logging
 from pd_runner.services.bot_service import BotRequest, BotResult, BotWriteError, search_bot
-from pd_runner.services.library_writer import LibraryWriteError, bot_file_path, write_bot_to_library, write_proof_to_library
+from pd_runner.services.library_writer import LibraryWriteError, write_bot_to_library, write_proof_to_library
 from pd_runner.services.proof_service import ProofRequest, ProofSearchError, search_proof
 
 

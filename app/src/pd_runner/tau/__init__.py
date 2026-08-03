@@ -19,6 +19,8 @@ from pd_runner.tau.matrix import (
 from pd_runner.tau.signal import (
     Signal,
     behavioral_distance_matrix,
+    sigma,
+    signal_family,
     softmax_signal,
 )
 from pd_runner.tau.play import (
@@ -37,6 +39,8 @@ __all__ = [
     "load_tau_matrix",
     "Signal",
     "behavioral_distance_matrix",
+    "sigma",
+    "signal_family",
     "softmax_signal",
     "alpha_breakpoints",
     "coop_mass",

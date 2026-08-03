@@ -288,6 +288,25 @@
     <div id="matrix-table"></div>
   </div>
 
+  <div class="card" id="tau-card">
+    <h2>TauBot analysis</h2>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
+      Graded transparency over the zoo (Def 3 tau lift): cooperation vs
+      transparency, per-bot robustness thresholds, and the (t, α) phase
+      diagram, computed from the proven outcome matrix. Opens the report in a
+      new tab; it is rebuilt from the theorem library on every run.
+    </p>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <label style="color:#9ca3af; font-size:0.85rem;">α values
+        <input id="tau-alphas" type="text" value="0.3,0.45,0.62,0.8"
+               style="width:11rem; margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                      border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                      font-size:0.85rem;">
+      </label>
+      <button class="btn btn-primary" onclick="openTauReport()">Run tau analysis</button>
+    </div>
+  </div>
+
   <div class="card" id="proposals-card">
     <h2>Constructor proposals</h2>
     <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
@@ -1039,6 +1058,14 @@
       } finally {
         btn.disabled = false;
       }
+    }
+
+    function openTauReport() {
+      // The report endpoint renders fresh HTML per request; a plain navigation
+      // in a new tab is all that's needed — no job/polling machinery.
+      const alphas = document.getElementById('tau-alphas').value.trim();
+      const url = '/tau/report' + (alphas ? `?alphas=${encodeURIComponent(alphas)}` : '');
+      window.open(url, '_blank');
     }
 
     // Initialise mode visibility, model-settings hints, proposals, and the matrix on load.
