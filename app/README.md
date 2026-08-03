@@ -118,7 +118,20 @@ ProofRequest (bot pair + outcome)
 
 ### Running the proof agent
 
-Requires `ANTHROPIC_API_KEY` set in your environment (API credits separate from Claude Pro).
+Requires an Anthropic API key (API credits — billed separately from a Claude
+subscription). Put it in `app/.env`, which is gitignored and loaded
+automatically when `pd_runner` is imported:
+
+```bash
+# app/.env
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Do **not** `export ANTHROPIC_API_KEY` from your shell rc file. A global export
+is inherited by every process on the machine — including Claude Code, which
+then bills the API account instead of your subscription. A real environment
+variable still wins over `.env` if you need a one-off override:
+`ANTHROPIC_API_KEY=sk-... uv run ...`.
 
 ```bash
 # Full eval run (calls LLM + Lean for all 10 cases)
