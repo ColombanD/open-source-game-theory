@@ -560,6 +560,7 @@ mutual
     | _, _, .implK _ _ _ => True
     | _, _, .contrapose _ _ _ t _ => t.rawAtoms
     | _, _, .searchChain _ _ _ _ _ _ _ _ _ => True
+    | _, _, .searchElseChain _ _ _ _ _ _ _ => True
     | _, _, .ctxChain _ _ _ _ _ _ _ => True
     | _, _, .implS _ _ _ _ => True
 end
@@ -782,6 +783,7 @@ theorem ProvT.transport {P : List Prog} {N M : Nat}
   | _, _, .implRefl _ _, _, _, _, _, _ => trivial
   | _, _, .implK _ _ _, _, _, _, _, _ => trivial
   | _, _, .searchChain _ _ _ _ _ _ _ _ _, _, _, _, _, _ => trivial
+  | _, _, .searchElseChain _ _ _ _ _ _ _, _, _, _, _, _ => trivial
   | _, _, .ctxChain _ _ _ _ _ _ _, _, _, _, _, _ => trivial
   -- the S-leaf's gate residue is exactly its cut diet: pass it through
   | _, _, .implS _ _ _ _, hc, _, _, _, _ => hc
@@ -855,6 +857,7 @@ mutual
     | _, _, .implK _ _ _ => true
     | _, _, .contrapose _ _ _ t _ => t.rawAtomsb
     | _, _, .searchChain _ _ _ _ _ _ _ _ _ => true
+    | _, _, .searchElseChain _ _ _ _ _ _ _ => true
     | _, _, .ctxChain _ _ _ _ _ _ _ => true
     | _, _, .implS _ _ _ _ => true
 end
@@ -914,6 +917,7 @@ mutual
     | .implK _ _ _, _ => trivial
     | .contrapose _ _ _ t _, h => t.rawAtomsb_sound h
     | .searchChain _ _ _ _ _ _ _ _ _, _ => trivial
+    | .searchElseChain _ _ _ _ _ _ _, _ => trivial
     | .ctxChain _ _ _ _ _ _ _, _ => trivial
     | .implS _ _ _ _, _ => trivial
 end

@@ -211,7 +211,7 @@ theorem chkLeaf_soundG {G : Formula → Prop} : ∀ k φ, chkLeaf k φ = true �
   intro k φ h
   unfold chkLeaf at h
   simp only [Bool.or_eq_true] at h
-  rcases h with (((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
+  rcases h with ((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
   · unfold chkEqRefl at h
     split at h
     · rename_i p q
@@ -314,6 +314,24 @@ theorem chkLeaf_soundG {G : Formula → Prop} : ∀ k φ, chkLeaf k φ = true �
     · simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
       obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hsz⟩ := h
       exact PfG.implS _ _ _ hsz
+    · simp at h
+  · -- searchElseChain: parse the mixed-polarity telescope (same parser, gated target)
+    unfold chkSearchElseChain at h
+    split at h
+    · rename_i A rest
+      split at h
+      · rename_i me opp heq
+        split at h
+        · rename_i L a hgo
+          simp only [decide_eq_true_eq] at h
+          obtain ⟨hb, hφ⟩ := elseChainGo_sound me opp _ _ (Nat.le_refl _) _ _ _ hgo
+          cases L with
+          | nil => exact Formula.noConfusion hφ
+          | cons hd tl =>
+              rw [hφ]
+              exact PfG.searchElseChain hd tl a me opp hb (congrArg Formula.size hφ ▸ h)
+        · simp at h
+      · simp at h
     · simp at h
 
 
@@ -627,7 +645,7 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, PfG (modestGate N) m φ →
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
     ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
     ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
-    ?cImplRefl ?cImplK ?cContrapose ?cSearchChain ?cCtxChain ?cImplS
+    ?cImplRefl ?cImplK ?cContrapose ?cSearchChain ?cSEC ?cCtxChain ?cImplS
     h
   case pConst =>
       intro me oppo a b hb
@@ -821,6 +839,13 @@ theorem decB_complete (N : Nat) : ∀ {m φ}, PfG (modestGate N) m φ →
       rw [decB]
       unfold stepB
       have hfire := chkLeaf_ctxChain K me opnt hd L a hme (Nat.le_trans hle hmK)
+      simp only [hfire, Bool.true_or]
+  case cSEC =>
+      intro k0 hd L a me opnt hme hle K hmK
+      refine ⟨1, ?_⟩
+      rw [decB]
+      unfold stepB
+      have hfire := chkLeaf_searchElseChain K me opnt hd L a hme (Nat.le_trans hle hmK)
       simp only [hfire, Bool.true_or]
   case cImplS =>
       intro k0 A B C hle K hmK

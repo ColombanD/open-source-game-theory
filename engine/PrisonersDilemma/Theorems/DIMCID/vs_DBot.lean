@@ -89,7 +89,7 @@ theorem dimcid_guard_dbot_not_provable (k : Nat) (hk : dimcidThresh k) :
   set S : Formula → Prop := fun φ =>
     φ = .plays DBot (DIMCID k) Action.D ∨
     φ = .plays (DIMCID k) (.bot DefectBot) Action.C with hS
-  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     k _ hp le_rfl ?_
   · rintro φ (rfl | rfl)
     · exact ⟨_, _, _, rfl⟩
@@ -145,6 +145,24 @@ theorem dimcid_guard_dbot_not_provable (k : Nat) (hk : dimcidThresh k) :
           | nil => simp [ctxPlug] at hplug
           | cons hd2 tl2 => cases hd2 <;> simp [ctxPlug] at hplug
       | iteL z aT other => simp [ctxPlug, DIMCID] at hme
+  · -- polarity plug: DBot is an `.ite` (never a `plug2`), and DIMCID's guard is an
+    -- `.impl` (no `elseL` match) with then-slot `.const D ≠` any C-plug
+    rintro me oppo c (h | h) hd L hme
+    · injection h with h1 h2 h3; subst h1; subst h3
+      exfalso
+      cases hd <;> simp [plug2, DBot] at hme
+    · injection h with h1 h2 h3; subst h1; subst h3
+      exfalso
+      cases hd with
+      | thenL g ψ e =>
+          simp only [plug2, DIMCID, Prog.search.injEq] at hme
+          obtain ⟨-, -, hplug, -⟩ := hme
+          cases L with
+          | nil => simp [plug2] at hplug
+          | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+      | elseL g P' Q' c' q =>
+          simp only [plug2, DIMCID, Prog.search.injEq] at hme
+          exact absurd hme.2.1 (by simp)
   · refine ⟨Or.inl rfl, ?_⟩
     intro hcontra
     simp only [hS] at hcontra

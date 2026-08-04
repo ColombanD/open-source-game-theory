@@ -37,6 +37,8 @@ theorem dimcidTFT_no_provable_botCoop (k : Nat) :
         cases hd with
         | searchL g' ψ' e' => simp [ctxPlug, CooperateBot] at h
         | iteL z' aT' other' => simp [ctxPlug, CooperateBot] at h)
+    (by intro hd L h
+        cases hd <;> simp [plug2, CooperateBot] at h)
 
 theorem dimcidTFT_guard_botCoop_not_provable (k : Nat) :
     ¬ Pf k (dimcidTFT_guard_botCoop k) := by
@@ -112,6 +114,8 @@ theorem dimcidTFT_no_provable_TFT (k : Nat) :
         | iteL z' aT' other' =>
             simp only [TitForTatBot, ctxPlug, Prog.ite.injEq] at h
             exact const_ne_ctxPlug (by decide) L h.2.2.1)
+    (by intro hd L h
+        cases hd <;> simp [plug2, TitForTatBot] at h)
 
 /-- The DIMCID guard against TFT. -/
 abbrev dimcidTFT_guard (k : Nat) : Formula :=

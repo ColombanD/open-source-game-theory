@@ -54,6 +54,7 @@ theorem cimcic_no_provable_forbidden (k : Nat) :
         cases hd with
         | searchL g' ψ' e' => simp [ctxPlug, DefectBot] at h
         | iteL z' aT' other' => simp [ctxPlug, DefectBot] at h)
+    (by intro hd L hme; cases hd <;> simp [plug2, DefectBot] at hme)
 
 /-- CIMCIC's guard against DefectBot is **not provable** within any budget `k`. -/
 theorem cimcic_guard_not_provable (k : Nat) : ¬ Pf k (cimcic_guard k) := by

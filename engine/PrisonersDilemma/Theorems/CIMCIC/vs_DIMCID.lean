@@ -18,7 +18,7 @@ theorem cd_no_provable_alpha (k : Nat) :
       TailTo (.plays (DIMCID k) (CIMCIC k) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (DIMCID k) (CIMCIC k) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- atom killer: DIMCID plays C is its else-branch; cert must be search_f → floor
     rintro K' hK' φ' rfl hA
@@ -64,6 +64,20 @@ theorem cd_no_provable_alpha (k : Nat) :
         | nil => simp [ctxPlug] at hplug
         | cons hd2 tl2 => cases hd2 <;> simp [ctxPlug] at hplug
     | iteL z aT other => simp [ctxPlug, DIMCID] at hme
+  · -- polarity plug: DIMCID's guard is an `.impl` — no `elseL` layer can match it
+    rintro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    exfalso
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, DIMCID, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, DIMCID, Prog.search.injEq] at hme
+        exact absurd hme.2.1 (by simp)
 
 /-- β = CIMCIC plays D vs DIMCID (CIMCIC's else-play). Unprovable-tailed at budget k. -/
 theorem cd_no_provable_beta (k : Nat) :
@@ -71,7 +85,7 @@ theorem cd_no_provable_beta (k : Nat) :
       TailTo (.plays (CIMCIC k) (DIMCID k) Action.D) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (CIMCIC k) (DIMCID k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -116,6 +130,20 @@ theorem cd_no_provable_beta (k : Nat) :
         | nil => simp [ctxPlug] at hplug
         | cons hd2 tl2 => cases hd2 <;> simp [ctxPlug] at hplug
     | iteL z aT other => simp [ctxPlug, CIMCIC] at hme
+  · -- polarity plug: CIMCIC's guard is an `.impl` — no `elseL` layer can match it
+    rintro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    exfalso
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, CIMCIC, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, CIMCIC, Prog.search.injEq] at hme
+        exact absurd hme.2.1 (by simp)
 
 theorem cd_cimcic_guard_not_provable (k : Nat) :
     ¬ Pf k (.impl (.plays (CIMCIC k) (DIMCID k) Action.C)

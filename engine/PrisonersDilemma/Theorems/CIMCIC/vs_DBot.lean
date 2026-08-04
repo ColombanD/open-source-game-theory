@@ -57,6 +57,7 @@ theorem cimcic_bot_no_provable_forbidden (k : Nat) :
         cases hd with
         | searchL g' ψ' e' => simp [ctxPlug, DefectBot] at h
         | iteL z' aT' other' => simp [ctxPlug, DefectBot] at h)
+    (by intro hd L hme; cases hd <;> simp [plug2, DefectBot] at hme)
 
 theorem cimcic_botDefect_guard_not_provable (k : Nat) :
     ¬ Pf k (cimcic_guard_botDefect k) := by
@@ -163,6 +164,7 @@ theorem dbot_no_provable_forbidden (k : Nat) :
         | iteL z' aT' other' =>
             simp only [ctxPlug, DBot, Prog.ite.injEq] at h
             exact const_ne_ctxPlug (by decide) L h.2.2.1)
+    (by intro hd L hme; cases hd <;> simp [plug2, DBot] at hme)
 
 abbrev cimcic_guard_DBot (k : Nat) : Formula :=
   .impl (.plays (CIMCIC k) DBot Action.C) (.plays DBot (CIMCIC k) Action.C)

@@ -232,6 +232,16 @@ mutual
           (implChain (searchGuards me opponent L) (.plays me opponent a))).size ≤ k →
         PfG G k (.impl (.box g₁ (ψ₁.subst me opponent))
           (implChain (searchGuards me opponent L) (.plays me opponent a)))
+    -- the MIXED-POLARITY search telescope (2026-08-04): premise-free reading leaf,
+    -- hence UNGATED
+    | searchElseChain (hd : SearchLayer2) (L : List SearchLayer2) (a : Action)
+        (me opponent : Prog)
+        (hme : me = plug2 (hd :: L) (.const a)) :
+        layersCost (hd :: L) +
+          (Formula.impl (guard2 me opponent hd)
+            (implChain (guards2 me opponent L) (.plays me opponent a))).size ≤ k →
+        PfG G k (.impl (guard2 me opponent hd)
+          (implChain (guards2 me opponent L) (.plays me opponent a)))
     -- the MIXED telescope (the ite frontier, 2026-07-28): premise-free leaf, UNGATED
     | ctxChain (hd : CtxLayer) (L : List CtxLayer) (a : Action) (me opponent : Prog)
         (hme : me = ctxPlug (hd :: L) (.const a)) :
@@ -264,7 +274,7 @@ theorem PfG_sound {G : Formula → Prop} : ∀ {k : Nat} {φ : Formula},
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?sb ?ss ?bss ?bsearch ?iteB ?eqR ?eqN ?mp ?itrans ?weaken ?sts
     ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg
-    ?implRefl ?implK ?contrapose ?searchChain ?ctxChain ?implS h
+    ?implRefl ?implK ?contrapose ?searchChain ?searchElseChain ?ctxChain ?implS h
   case const => intro me oppo a; exact .const
   case self => intro me oppo a n _ ih; exact .self ih
   case opp => intro me oppo a n _ ih; exact .opp ih
@@ -311,6 +321,9 @@ theorem PfG_sound {G : Formula → Prop} : ∀ {k : Nat} {φ : Formula},
   case searchChain =>
       intro k0 g₁ ψ₁ e₁ L a me opnt hme hle
       exact .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+  case searchElseChain =>
+      intro k0 hd L a me opnt hme hle
+      exact .searchElseChain hd L a me opnt hme hle
   case ctxChain =>
       intro k0 hd L a me opnt hme hle
       exact .ctxChain hd L a me opnt hme hle
@@ -332,7 +345,7 @@ theorem PlaysProofG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) 
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?sb ?ss ?bss ?bsearch ?iteB ?eqR ?eqN ?mp ?itrans ?weaken ?sts
     ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg
-    ?implRefl ?implK ?contrapose ?searchChain ?ctxChain ?implS h
+    ?implRefl ?implK ?contrapose ?searchChain ?searchElseChain ?ctxChain ?implS h
   case const => intro me oppo a; exact .const
   case self => intro me oppo a n _ ih; exact .self ih
   case opp => intro me oppo a n _ ih; exact .opp ih
@@ -379,6 +392,9 @@ theorem PlaysProofG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) 
   case searchChain =>
       intro k0 g₁ ψ₁ e₁ L a me opnt hme hle
       exact .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+  case searchElseChain =>
+      intro k0 hd L a me opnt hme hle
+      exact .searchElseChain hd L a me opnt hme hle
   case ctxChain =>
       intro k0 hd L a me opnt hme hle
       exact .ctxChain hd L a me opnt hme hle
@@ -395,7 +411,7 @@ theorem PfG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) :
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?sb ?ss ?bss ?bsearch ?iteB ?eqR ?eqN ?mp ?itrans ?weaken ?sts
     ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg
-    ?implRefl ?implK ?contrapose ?searchChain ?ctxChain ?implS h
+    ?implRefl ?implK ?contrapose ?searchChain ?searchElseChain ?ctxChain ?implS h
   case const => intro me oppo a; exact .const
   case self => intro me oppo a n _ ih; exact .self ih
   case opp => intro me oppo a n _ ih; exact .opp ih
@@ -442,6 +458,9 @@ theorem PfG_monoG {G G' : Formula → Prop} (hGG : ∀ B, G B → G' B) :
   case searchChain =>
       intro k0 g₁ ψ₁ e₁ L a me opnt hme hle
       exact .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+  case searchElseChain =>
+      intro k0 hd L a me opnt hme hle
+      exact .searchElseChain hd L a me opnt hme hle
   case ctxChain =>
       intro k0 hd L a me opnt hme hle
       exact .ctxChain hd L a me opnt hme hle
@@ -472,7 +491,7 @@ theorem Pf_exists_PfB : ∀ {k : Nat} {φ : Formula},
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?atomNeg ?sb ?ss ?bss ?bsearch ?iteB ?sts ?searchChain ?ctxChain ?eqR ?eqN ?mp ?itrans
     ?weaken ?impS2 ?implRefl ?implK ?implS ?contrapose ?negElim
-    ?boxIntro ?atomBox ?axK ?axKf ?box4 ?boxMono ?diagF ?diagB h
+    ?boxIntro ?atomBox ?axK ?axKf ?box4 ?boxMono ?diagF ?diagB ?searchElseChain h
   case const => intro me oppo a; exact ⟨0, .const⟩
   case self => intro me oppo a n _ ih; obtain ⟨N, e⟩ := ih; exact ⟨N, .self e⟩
   case opp => intro me oppo a n _ ih; obtain ⟨N, e⟩ := ih; exact ⟨N, .opp e⟩
@@ -520,6 +539,9 @@ theorem Pf_exists_PfB : ∀ {k : Nat} {φ : Formula},
   case searchChain =>
       intro k0 g₁ ψ₁ e₁ L a me opnt hme hle
       exact ⟨0, .searchChain g₁ ψ₁ e₁ L a me opnt hme hle⟩
+  case searchElseChain =>
+      intro k0 hd L a me opnt hme hle
+      exact ⟨0, .searchElseChain hd L a me opnt hme hle⟩
   case ctxChain =>
       intro k0 hd L a me opnt hme hle
       exact ⟨0, .ctxChain hd L a me opnt hme hle⟩

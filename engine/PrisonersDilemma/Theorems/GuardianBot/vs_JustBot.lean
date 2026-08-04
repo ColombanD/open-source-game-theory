@@ -54,7 +54,7 @@ theorem gjb_no_provable_Guardian_C_vs_botDupoc (k : Nat) :
       TailTo (.plays (GuardianBot k) (.bot (DupocBot k)) .C) φ → False := by
   intro K φ hp hK ht
   refine no_provable_tailToS_floor k (· = .plays (GuardianBot k) (.bot (DupocBot k)) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' rfl
     rintro ⟨hpp, hn⟩
@@ -111,6 +111,24 @@ theorem gjb_no_provable_Guardian_C_vs_botDupoc (k : Nat) :
             | iteL z2 a2 o2 => simp [ctxPlug] at hthen
     | iteL z a' o =>
         unfold GuardianBot at hme; simp [ctxPlug] at hme
+  · -- polarity plug: GuardianBot's C IS its else-slot — the matching `elseL`
+    -- decomposition pays GuardianBot's own floor `k`; the `thenL` route dead-ends
+    -- at the then-slot `.const .D ≠` any C-plug
+    intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, GuardianBot, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        exfalso
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, GuardianBot, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
 
 /-- JustBot's guard against GuardianBot fails at budget k. -/
 theorem gjb_JustBot_guard_vs_Guardian_false (k : Nat) :

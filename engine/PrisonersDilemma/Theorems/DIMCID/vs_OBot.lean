@@ -83,6 +83,8 @@ theorem dimcidOb_dimcid_botCB_guard_not_provable (k : Nat) :
         cases hd with
         | searchL g' ψ' e' => simp [ctxPlug, CooperateBot] at hh
         | iteL z' aT' other' => simp [ctxPlug, CooperateBot] at hh)
+    (by intro hd L hme
+        cases hd <;> simp [plug2, CooperateBot] at hme)
     h ?_
   exact ⟨rfl, by simp [DIMCID, CooperateBot]⟩
 

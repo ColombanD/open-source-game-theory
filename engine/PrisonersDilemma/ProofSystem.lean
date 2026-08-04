@@ -151,9 +151,14 @@ THEN-polarity. Probe guards are restricted to the frame-independent
 `.sim .opp (.bot z)` shape — for any other guard the in-frame run differs from the
 standalone atom, making the reading UNSOUND (see `iteBranchSearch_t`'s docstring).
 
-Two polarities are deliberately EXCLUDED, for different reasons:
-* search-ELSE: the antecedent would be `¬□`, which no rule of `S` can ever prove —
-  vacuous expressiveness.
+Polarity status:
+* search-ELSE: originally excluded when conceived with a `¬□` antecedent (which no
+  rule of `S` can ever prove — vacuous). COVERED since 2026-08-04 by
+  `searchElseChain` with the Σ₁ REFUTATION antecedent `.neg ψ'` instead (the
+  `search_f` premise shape, dischargeable via `atomNeg`) and the `search_f` floor
+  charged per crossed layer — which is also what keeps every floor census true: an
+  else-crossing chain costs more than the crossed guard's literal budget, so it dies
+  at census budgets by cost alone.
 * ite-ELSE (full simulator transparency, what would read DBot's cooperation
   outright): SOUND (the soundness lemma `ctxPlug_eval` was validated for both
   polarities), and it flips no outcome (every zoo probe antecedent is
@@ -187,6 +192,46 @@ def ctxGuard (me opponent : Prog) : CtxLayer → Formula
 def ctxGuards (me opponent : Prog) : List CtxLayer → List Formula
   | [] => []
   | hd :: L => ctxGuard me opponent hd :: ctxGuards me opponent L
+
+/-! ### The MIXED-POLARITY search telescope (`searchElseChain`, 2026-08-04)
+
+`SearchLayer2` generalizes the search telescope's layers to BOTH descent polarities:
+a THEN-layer records its else branch and contributes a `.box` guard antecedent
+(exactly `searchPlug`'s layers); an ELSE-layer records its then branch and
+contributes the Σ₁ REFUTATION `.neg` of its guard — the `search_f` premise shape
+lifted to Family A. Else-guards are restricted to PLAYS-ATOM shape, stored
+structurally (the same design as `CtxLayer.iteL`'s probe): for a plays-atom the
+modified valuations' falsity implies interp-falsity (`WV`-falsity of a `.plays` is
+honest), which is what lets the master soundness induction discharge the census
+motive with NO new interface obligation. Every zoo else-crossing has a plays guard.
+`layersCost` charges each else-layer its FULL failed budget plus a node (the
+`search_f` floor — forced by provable-soundness, see the constructor docstring) and
+each then-layer the `c_guard` cite of its fired guard proof. -/
+
+inductive SearchLayer2 where
+  | thenL (g : Nat) (ψ : Formula) (e : Prog)
+  | elseL (g : Nat) (P Q : Prog) (c : Action) (p : Prog)
+
+def plug2 : List SearchLayer2 → Prog → Prog
+  | [], p => p
+  | .thenL g ψ e :: L, p => .search g ψ (plug2 L p) e
+  | .elseL g P Q c q :: L, p => .search g (.plays P Q c) q (plug2 L p)
+
+def guard2 (me opponent : Prog) : SearchLayer2 → Formula
+  | .thenL g ψ _ => .box g (ψ.subst me opponent)
+  | .elseL _ P Q c _ => .neg (.plays (P.subst me opponent) (Q.subst me opponent) c)
+
+def guards2 (me opponent : Prog) : List SearchLayer2 → List Formula
+  | [] => []
+  | hd :: L => guard2 me opponent hd :: guards2 me opponent L
+
+def layerCost : SearchLayer2 → Nat
+  | .thenL g _ _ => c_guard g
+  | .elseL g _ _ _ _ => g + c_node
+
+def layersCost : List SearchLayer2 → Nat
+  | [] => 0
+  | hd :: L => layerCost hd + layersCost L
 
 mutual
 -- 2. `PlaysProof me opponent body a n` — a play certificate: `body` (run with `me`/`opponent` as
@@ -522,6 +567,31 @@ search finite). -/
         Pf pm (.impl (.box fb tgt) tgt) →
         pm + (Formula.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt)).size ≤ K →
         Pf K (.impl (.impl (.box g (.diag g tgt)) tgt) (.diag g tgt))
+    /-- **The MIXED-POLARITY search-telescope reading rule** (`searchElseChain`,
+        integrated 2026-08-04 from the Tier-2 proposal bundle
+        `app/generated/constructor_proposals/searchElseChain/`): for
+        `me = plug2 (hd :: L) (.const a)` — `.search` layers descending the THEN slot
+        (`.box` guard antecedent, as `searchChain`) or the ELSE slot (`.neg` guard
+        antecedent — the Σ₁ REFUTATION of the crossed guard, the premise shape
+        `search_f` consumes) — S proves the full guard chain. Faithful: S replays
+        each FAILED bounded search, paying its full budget (`layersCost`, the
+        `search_f` floor), and cites each fired guard (`c_guard`); the antecedent is
+        a refutation, never an unprovability claim — no internal soundness-reflection
+        is smuggled in. The floor is FORCED by provable-soundness (the master
+        induction's arm refutes a hypothetical crossed-guard proof via the outer IH,
+        which needs the guard budget strictly below this transcript — `search_f`'s
+        argument verbatim) and is what keeps every floor census true: an
+        else-crossing chain at a searcher's literal budget `g` costs `> g`, dying at
+        census budgets by cost alone. Premise-free source-reading leaf; soundness =
+        the mixed-polarity eval induction (`plug2_eval`, Base/ValuationSoundness). -/
+    | searchElseChain (hd : SearchLayer2) (L : List SearchLayer2) (a : Action)
+        (me opponent : Prog)
+        (hme : me = plug2 (hd :: L) (.const a)) :
+        layersCost (hd :: L) +
+          (Formula.impl (guard2 me opponent hd)
+            (implChain (guards2 me opponent L) (.plays me opponent a))).size ≤ k →
+        Pf k (.impl (guard2 me opponent hd)
+          (implChain (guards2 me opponent L) (.plays me opponent a)))
 end
 
 /-! ## 4. The NAMED eliminators — use these, never the raw recursors
@@ -592,6 +662,13 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
         (hle : (Formula.impl (ctxGuard me opponent hd)
           (implChain (ctxGuards me opponent L) (.plays me opponent a))).size ≤ k),
         motive k _ (.ctxChain hd L a me opponent hme hle))
+    (searchElseChain : ∀ (k : Nat) (hd : SearchLayer2) (L : List SearchLayer2)
+        (a : Action) (me opponent : Prog)
+        (hme : me = plug2 (hd :: L) (.const a))
+        (hle : layersCost (hd :: L) +
+          (Formula.impl (guard2 me opponent hd)
+            (implChain (guards2 me opponent L) (.plays me opponent a))).size ≤ k),
+        motive k _ (.searchElseChain hd L a me opponent hme hle))
     (eqRefl : ∀ (k : Nat) (p : Prog) (hle : (Formula.eq p p).size ≤ k),
         motive k _ (.eqRefl p hle))
     (eqNeg : ∀ (k : Nat) (p q : Prog) (hne : p ≠ q)
@@ -711,6 +788,8 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
     (fun a b K φ hab hsz => boxMono a b K φ hab hsz)
     (fun pm fb g K tgt hgate hle ih => diagF pm fb g K tgt hgate hle ih)
     (fun pm fb g K tgt hgate hle ih => diagB pm fb g K tgt hgate hle ih)
+    (fun {k} hd L a me opponent hme hle =>
+      searchElseChain k hd L a me opponent hme hle)
     h
 
 /-- Named eliminator for `PlaysProof` — the workhorse for the execution census
@@ -780,7 +859,7 @@ theorem PlaysProof.induct
     (fun {m} {me opponent q} {a} {n k} {φ} {p} hg hq _ ihq =>
       search_f m me opponent q a n k φ p hg hq ihq)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-    ?_
+    ?_ ?_
     h <;>
   · intros; trivial
 
@@ -825,6 +904,8 @@ theorem Pf_mono : ∀ {k₁ : Nat} {φ : Formula}, Pf k₁ φ →
       exact .searchChain g₁ ψ₁ e₁ L a me opponent hme (Nat.le_trans hle hk)
   | ctxChain hd L a me opponent hme hle =>
       exact .ctxChain hd L a me opponent hme (Nat.le_trans hle hk)
+  | searchElseChain hd L a me opponent hme hle =>
+      exact .searchElseChain hd L a me opponent hme (Nat.le_trans hle hk)
   | atomBoxImpl kBox p q a hatom hle =>
       exact .atomBoxImpl kBox p q a hatom (Nat.le_trans hle hk)
   | boxIntro kIn K φ' hprem hle => exact .boxIntro kIn k₂ φ' hprem (Nat.le_trans hle hk)

@@ -450,7 +450,7 @@ theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
     ?cEqR ?cEqN
     ?cApp ?cITrans ?cWeaken ?cImpS2 ?cImplRefl ?cImplK ?cImplS ?cContrapose
     ?cNegElim
-    ?cBoxIntro ?cAtomBox ?cAxK ?cAxKf ?cBox4 ?cBoxMono ?cDiagF ?cDiagB h
+    ?cBoxIntro ?cAtomBox ?cAxK ?cAxKf ?cBox4 ?cBoxMono ?cDiagF ?cDiagB ?cSEC h
   case pConst => intros; trivial
   case pSelf => intros; trivial
   case pOpp => intros; trivial
@@ -601,6 +601,11 @@ theorem pf_posImpl_ant : ∀ {m : Nat} {φ : Formula}, Pf m φ →
       -- premise-free mixed-telescope leaf: same size-paid discharge
       intro k0 hd L a me opnt hme hle B C hp
       exact Or.inr (Or.inr (Nat.le_trans (posImpl_size hp) hle))
+  case cSEC =>
+      -- premise-free mixed-polarity telescope leaf: size-paid outright (the
+      -- layersCost floor only adds slack above the conclusion's size)
+      intro k0 hd L a me opnt hme hle B C hp
+      exact Or.inr (Or.inr (Nat.le_trans (posImpl_size hp) (by omega)))
   case cImplS =>
       intro k0 A0 B0 C0 hle B C hp
       exact Or.inr (Or.inr (Nat.le_trans (posImpl_size hp) hle))
@@ -1037,7 +1042,7 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Pf m φ →
     ?cEqR ?cEqN
     ?cApp ?cITrans ?cWeaken ?cImpS2 ?cImplRefl ?cImplK ?cImplS ?cContrapose
     ?cNegElim
-    ?cBoxIntro ?cAtomBox ?cAxK ?cAxKf ?cBox4 ?cBoxMono ?cDiagF ?cDiagB h
+    ?cBoxIntro ?cAtomBox ?cAxK ?cAxKf ?cBox4 ?cBoxMono ?cDiagF ?cDiagB ?cSEC h
   case pConst => intros; trivial
   case pSelf => intros; trivial
   case pOpp => intros; trivial
@@ -1254,6 +1259,11 @@ theorem tame_trichotomy (L : Nat) : ∀ {m : Nat} {φ : Formula}, Pf m φ →
         .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))
       exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
   case cCtxChain =>
+      intro k0 hd L a me opnt hme hle B C hp
+      refine Or.inr (Or.inr (Or.inl ⟨0, .plays .self .opp .C, 1000, _,
+        .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))
+      exact Pf.box4 0 1000 1000 (.plays .self .opp .C) (by decide) (by decide)
+  case cSEC =>
       intro k0 hd L a me opnt hme hle B C hp
       refine Or.inr (Or.inr (Or.inl ⟨0, .plays .self .opp .C, 1000, _,
         .box 1000 (.box 0 (.plays .self .opp .C)), ?_, Or.inl .head⟩))

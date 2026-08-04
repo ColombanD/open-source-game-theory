@@ -42,7 +42,7 @@ theorem gvp_prudent_atom_kill (k K : Nat) (hK : K ≤ k) :
 theorem gvp_no_Pf_prudent_D (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K ≤ k)
     (ht : TailTo (.plays (PrudentBot k) (.bot CooperateBot) .D) φ) : False := by
   refine no_provable_tailToS_floor k (· = .plays (PrudentBot k) (.bot CooperateBot) .D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl; exact gvp_prudent_atom_kill k K' hK'
   · rintro me oppo c heq g ψ b hme
@@ -102,6 +102,36 @@ theorem gvp_no_Pf_prudent_D (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K �
             | iteL z3 aT3 o3 => simp [ctxPlug] at hme
         | iteL z2 aT2 o2 => simp [ctxPlug] at hme
     | iteL z aT other => simp [ctxPlug] at hme
+  · -- polarity plug: PrudentBot's D-plays ARE else-slots — every matching
+    -- decomposition routes through an `elseL` layer carrying PrudentBot's own
+    -- floor `k`; the all-`thenL` route dead-ends at the inner then-slot `.const .C`
+    rintro me oppo c heq hd L hme
+    injection heq with h1 h2 h3; subst h1; subst h3
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, PrudentBot, Prog.search.injEq] at hme
+        obtain ⟨rfl, rfl, hplug, rfl⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 =>
+            cases hd2 with
+            | thenL g2 ψ2 e2 =>
+                exfalso
+                simp only [plug2, Prog.search.injEq] at hplug
+                obtain ⟨-, -, hplug2, -⟩ := hplug
+                cases tl2 with
+                | nil => simp [plug2] at hplug2
+                | cons hd3 tl3 => cases hd3 <;> simp [plug2] at hplug2
+            | elseL g2 P2 Q2 c2 q2 =>
+                simp only [plug2, Prog.search.injEq] at hplug
+                obtain ⟨rfl, -, -, -⟩ := hplug
+                simp only [layersCost, layerCost, c_node]
+                omega
+    | elseL g P' Q' c' q =>
+        simp only [plug2, PrudentBot, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
 
 theorem gvp_guardian_guard_false (k : Nat) :
     proofSearch k (.plays (PrudentBot k) (.bot CooperateBot) .D) = false := by
@@ -126,7 +156,7 @@ theorem pvg_guardian_atom_kill (k K : Nat) (hK : K ≤ k) :
 theorem pvg_no_Pf_guardian_C (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K ≤ k)
     (ht : TailTo (.plays (GuardianBot k) (PrudentBot k) .C) φ) : False := by
   refine no_provable_tailToS_floor k (· = .plays (GuardianBot k) (PrudentBot k) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl; exact pvg_guardian_atom_kill k K' hK'
   · rintro me oppo c heq g ψ b hme
@@ -173,6 +203,24 @@ theorem pvg_no_Pf_guardian_C (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K �
         | searchL g2 ψ2 e2 => simp [ctxPlug] at hme
         | iteL z2 aT2 o2 => simp [ctxPlug] at hme
     | iteL z aT other => simp [ctxPlug] at hme
+  · -- polarity plug: GuardianBot's C IS its else-slot — the matching `elseL`
+    -- decomposition pays GuardianBot's own floor `k`; the `thenL` route dead-ends
+    -- at the then-slot `.const .D ≠` any C-plug
+    rintro me oppo c heq hd L hme
+    injection heq with h1 h2 h3; subst h1; subst h3
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, GuardianBot, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        exfalso
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, GuardianBot, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
 
 theorem pvg_prudent_guard_false (k : Nat) :
     proofSearch k (.plays (GuardianBot k) (PrudentBot k) .C) = false := by

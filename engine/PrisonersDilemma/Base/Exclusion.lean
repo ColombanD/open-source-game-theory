@@ -224,7 +224,9 @@ theorem tail_plays_readable
         TailTo (.plays me oppo a) φ →
         ReadableMe me ∨ (∃ hd L a', me = searchPlug (hd :: L) (.const a')) ∨
           (∃ (hd : CtxLayer) (L : List CtxLayer) (a' : Action),
-            me = ctxPlug (hd :: L) (.const a')) := by
+            me = ctxPlug (hd :: L) (.const a')) ∨
+          (∃ (hd : SearchLayer2) (L : List SearchLayer2) (a' : Action),
+            me = plug2 (hd :: L) (.const a')) := by
   intro k φ d
   induction d using Pf.induct with
   | atom k' φ' h => exact fun {me oppo a} ht => Or.inl (hatom h ht)
@@ -331,7 +333,17 @@ theorem tail_plays_readable
       obtain ⟨h1, -⟩ := h'
       simp only [TailTo_plays, Formula.plays.injEq] at h1
       obtain ⟨rfl, rfl, rfl⟩ := h1
-      exact Or.inr (Or.inr ⟨hd, L, _, hme⟩)
+      exact Or.inr (Or.inr (Or.inl ⟨hd, L, _, hme⟩))
+  | searchElseChain k' hd L a me' opponent' hme hle =>
+      -- the mixed-POLARITY telescope player is a (nonempty) polarity plug
+      intro me oppo a' h
+      have h' : TailTo (.plays me oppo a')
+          (implChain (guards2 me' opponent' (hd :: L)) (.plays me' opponent' a)) := h
+      rw [TailTo_implChain] at h'
+      obtain ⟨h1, -⟩ := h'
+      simp only [TailTo_plays, Formula.plays.injEq] at h1
+      obtain ⟨rfl, rfl, rfl⟩ := h1
+      exact Or.inr (Or.inr (Or.inr ⟨hd, L, _, hme⟩))
   -- non-plays tails (`.eq`, `.neg`, `.box`, `.diag`): the hypothesis is absurd
   | eqRefl k' p hle => intro me oppo a h; simp at h
   | eqNeg k' p q hne hle => intro me oppo a h; simp at h
@@ -399,7 +411,10 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
       ∀ (L : List (Nat × Formula × Prog)), me ≠ searchPlug L (.const c))
     (hctx : ∀ me oppo c, S (.plays me oppo c) →
       ∀ (hd : CtxLayer) (L : List CtxLayer), me = ctxPlug (hd :: L) (.const c) →
-      ∃ g ∈ ctxGuards me oppo (hd :: L), S g) :
+      ∃ g ∈ ctxGuards me oppo (hd :: L), S g)
+    (hplug2 : ∀ me oppo c, S (.plays me oppo c) →
+      ∀ (hd : SearchLayer2) (L : List SearchLayer2), me = plug2 (hd :: L) (.const c) →
+      k < layersCost (hd :: L)) :
     ∀ K φ, Pf K φ → K ≤ k → TailToS S φ → False := by
   intro K
   induction K using Nat.strong_induction_on with
@@ -444,6 +459,15 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
         refine hall gG hgmem ?_
         obtain ⟨p', q', c', rfl⟩ := hplays gG hgS
         exact hgS
+    -- THE MIXED-POLARITY TELESCOPE: every else-crossing pays its floor — the chain
+    -- costs more than the census budget
+    | searchElseChain hd L a me oppo hme hsz =>
+        have htail' : TailToS S
+            (implChain (guards2 me oppo (hd :: L)) (.plays me oppo a)) := htail
+        rw [TailToS_implChain] at htail'
+        obtain ⟨h1, -⟩ := htail'
+        have hlt := hplug2 me oppo a h1 hd L hme
+        omega
     -- the atom entry: killed by the supplied certificate-impossibility
     | atom h =>
         cases h with
@@ -539,10 +563,12 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
     (hsts : ∀ k₁ ψ₁ k₂ ψ₂ c1 q,
       P ≠ .search k₁ ψ₁ (.search k₂ ψ₂ (.const aTgt) (.const c1)) q)
     (hplug : ∀ (L : List (Nat × Formula × Prog)), P ≠ searchPlug L (.const aTgt))
-    (hctx : ∀ (hd : CtxLayer) (L : List CtxLayer), P ≠ ctxPlug (hd :: L) (.const aTgt)) :
+    (hctx : ∀ (hd : CtxLayer) (L : List CtxLayer), P ≠ ctxPlug (hd :: L) (.const aTgt))
+    (hplug2 : ∀ (hd : SearchLayer2) (L : List SearchLayer2),
+      P = plug2 (hd :: L) (.const aTgt) → k < layersCost (hd :: L)) :
     ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays P O aTgt) φ → False := by
   intro K φ hp hK htail
-  refine no_provable_tailToS_floor k (· = .plays P O aTgt) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k (· = .plays P O aTgt) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ'
@@ -580,6 +606,10 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
     injection hS with h1 h2 h3
     subst h1; subst h3
     exact absurd hme (hctx hd L)
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    exact hplug2 hd L hme
 
 /-- **The `search_f` floor as a cost lower bound** (probe-first instance): no proof of
     ≤ k characters concludes any formula whose guarded spine tail is "the probe-first
@@ -598,7 +628,7 @@ theorem no_provable_probeFirst_tail (k : Nat) (z p q : Prog) (aT aTgt : Action)
     ∀ K φ, Pf K φ → K ≤ k →
       TailTo (.plays (.ite (.sim .opp (.bot z)) aT p q) (.search k g pT pE) aTgt) φ →
       False := by
-  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ ?_ ?_ ?_
   · -- atom killer: the probe replay — `search_t` by soundness, `search_f` by the floor
     intro K hK hA
     cases hA with
@@ -642,6 +672,9 @@ theorem no_provable_probeFirst_tail (k : Nat) (z p q : Prog) (aT aTgt : Action)
     | iteL z' aT' other' =>
         simp only [ctxPlug, Prog.ite.injEq] at h
         exact hpthen L h.2.2.1
+  · -- an `.ite` is never a polarity plug
+    intro hd L h
+    cases hd <;> simp [plug2] at h
 
 /-- `no_provable_probeFirst_tail` for a `.bot`-WRAPPED searcher opponent (JustBot's
     frozen `.bot (DupocBot k)` guard target): identical cascade with one extra `.bot`
@@ -654,7 +687,7 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
     ∀ K φ, Pf K φ → K ≤ k →
       TailTo (.plays (.ite (.sim .opp (.bot z)) aT p q) (.bot (.search k g pT pE)) aTgt) φ →
       False := by
-  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ ?_ ?_ ?_
   · intro K hK hA
     cases hA with
     | mk hpp hn =>
@@ -697,6 +730,9 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
     | iteL z' aT' other' =>
         simp only [ctxPlug, Prog.ite.injEq] at h
         exact hpthen L h.2.2.1
+  · -- an `.ite` is never a polarity plug
+    intro hd L h
+    cases hd <;> simp [plug2] at h
 
 /-! ## The floor at the searcher's own doorstep
 
@@ -749,10 +785,13 @@ theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
     (hinner : ∀ k₂ ψ₂ c1, pT ≠ .search k₂ ψ₂ (.const aTgt) (.const c1))
     (hplug : ∀ (L : List (Nat × Formula × Prog)),
       Prog.search k g pT pE ≠ searchPlug L (.const aTgt))
-    (hctxT : ∀ (L : List CtxLayer), pT ≠ ctxPlug L (.const aTgt)) :
+    (hctxT : ∀ (L : List CtxLayer), pT ≠ ctxPlug L (.const aTgt))
+    (hplug2 : ∀ (hd : SearchLayer2) (L : List SearchLayer2),
+      Prog.search k g pT pE = plug2 (hd :: L) (.const aTgt) →
+      k < layersCost (hd :: L)) :
     ∀ K φ, Pf K φ → K ≤ k →
       TailTo (.plays (.search k g pT pE) O aTgt) φ → False := by
-  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ hplug ?_
+  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ hplug ?_ hplug2
   · -- atom killer: `search_t` by soundness of the false guard, `search_f` IS the floor
     intro K hK hA
     cases hA with
@@ -783,10 +822,13 @@ theorem no_provable_tailTo_unreadable (P O : Prog) (A : Action)
     (hcert : ∀ n, ¬ AtomProvable n (.plays P O A))
     (hread : ¬ ReadableMe P)
     (hplug : ∀ (L : List (Nat × Formula × Prog)), P ≠ searchPlug L (.const A))
-    (hctx : ∀ (hd : CtxLayer) (L : List CtxLayer), P ≠ ctxPlug (hd :: L) (.const A)) :
+    (hctx : ∀ (hd : CtxLayer) (L : List CtxLayer), P ≠ ctxPlug (hd :: L) (.const A))
+    (hplug2 : ∀ (hd : SearchLayer2) (L : List SearchLayer2),
+      P ≠ plug2 (hd :: L) (.const A)) :
     ∀ {m : Nat} {φ : Formula}, Pf m φ → ¬ TailTo (.plays P O A) φ := by
   intro m φ h hT
-  refine no_provable_tailTo_floor m P O A ?_ ?_ ?_ hplug hctx m φ h le_rfl hT
+  refine no_provable_tailTo_floor m P O A ?_ ?_ ?_ hplug hctx
+    (fun hd L hme => absurd hme (hplug2 hd L)) m φ h le_rfl hT
   · exact fun K _ => hcert K
   · exact fun h5 => hread (h5.imp id (Or.imp id (Or.imp id (Or.imp id Or.inl))))
   · intro k₁ ψ₁ k₂ ψ₂ c1 q hst
@@ -827,6 +869,7 @@ theorem pf_size_or_atom : ∀ {k φ}, Pf k φ → φ.size ≤ k ∨ AtomProvable
   | weakenImpl φ' ψ' m hψ hle => exact Or.inl (by omega)
   | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle => exact Or.inl (by omega)
   | searchChain g₁ ψ₁ e₁ L a me opnt hme hle => exact Or.inl hle
+  | searchElseChain hd L a me opnt hme hle => exact Or.inl (by omega)
   | ctxChain hd L a me opnt hme hle => exact Or.inl hle
   | implTrans φ' ψ' χ' a b h1 h2 hle => exact Or.inl (by omega)
   | atomBoxImpl kBox p q a hatom hle => exact Or.inl (by omega)

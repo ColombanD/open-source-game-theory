@@ -51,6 +51,8 @@ theorem dimcid_no_provable_forbidden (k : Nat) :
         cases hd with
         | searchL g' ψ' e' => simp [ctxPlug, CooperateBot] at h
         | iteL z' aT' other' => simp [ctxPlug, CooperateBot] at h)
+    (by intro hd L h
+        cases hd <;> simp [plug2, CooperateBot] at h)
 
 theorem dimcid_guard_not_provable (k : Nat) : ¬ Pf k (dimcid_guard k) := by
   intro h

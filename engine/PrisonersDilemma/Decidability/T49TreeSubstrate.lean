@@ -160,6 +160,16 @@ mutual
           (implChain (searchGuards me opponent L) (.plays me opponent a))).size ≤ k →
         ProvT k (.impl (.box g₁ (ψ₁.subst me opponent))
           (implChain (searchGuards me opponent L) (.plays me opponent a)))
+    -- the MIXED-POLARITY search telescope (`searchElseChain`, 2026-08-04): a
+    -- premise-free reading leaf like `searchChain`, same dbFree exclusion
+    | searchElseChain (hd : SearchLayer2) (L : List SearchLayer2) (a : Action)
+        (me opponent : Prog)
+        (hme : me = plug2 (hd :: L) (.const a)) :
+        layersCost (hd :: L) +
+          (Formula.impl (guard2 me opponent hd)
+            (implChain (guards2 me opponent L) (.plays me opponent a))).size ≤ k →
+        ProvT k (.impl (guard2 me opponent hd)
+          (implChain (guards2 me opponent L) (.plays me opponent a)))
     -- the MIXED telescope (the ite frontier, 2026-07-28): same dbFree exclusion
     | ctxChain (hd : CtxLayer) (L : List CtxLayer) (a : Action) (me opponent : Prog)
         (hme : me = ctxPlug (hd :: L) (.const a)) :
@@ -215,6 +225,7 @@ mutual
     | .implK φ ψ hle => .implK φ ψ hle
     | .contrapose φ ψ m t hle => .contrapose φ ψ m t.sound hle
     | .searchChain g₁ ψ₁ e₁ L a me opnt hme hle => .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+    | .searchElseChain hd L a me opnt hme hle => .searchElseChain hd L a me opnt hme hle
     | .ctxChain hd L a me opnt hme hle => .ctxChain hd L a me opnt hme hle
     | .implS φ ψ χ hle => .implS φ ψ χ hle
 end
@@ -296,6 +307,7 @@ mutual
     | .negElim φ ψ m₁ m₂ h1 h2 hle =>
         absurd (PD.BaseTheorems.Pf_sound _ _ h2) (PD.BaseTheorems.Pf_sound _ _ h1)
     | .searchChain g₁ ψ₁ e₁ L a me opnt hme hle => ⟨.searchChain g₁ ψ₁ e₁ L a me opnt hme hle⟩
+    | .searchElseChain hd L a me opnt hme hle => ⟨.searchElseChain hd L a me opnt hme hle⟩
     | .ctxChain hd L a me opnt hme hle => ⟨.ctxChain hd L a me opnt hme hle⟩
     | .implS φ ψ χ hle => ⟨.implS φ ψ χ hle⟩
 end
@@ -349,6 +361,7 @@ mutual
     | _, _, .implK _ _ _ => True
     | _, _, .contrapose _ _ _ t _ => t.gateOK G
     | _, _, .searchChain _ _ _ _ _ _ _ _ _ => True
+    | _, _, .searchElseChain _ _ _ _ _ _ _ => True
     | _, _, .ctxChain _ _ _ _ _ _ _ => True
     -- the S-leaf's crossing materializes an application CUT at `ψ`: its gate residue
     | _, _, .implS _ ψ _ _ => G ψ
@@ -400,6 +413,8 @@ mutual
     | .contrapose φ ψ m t hle, h => .contrapose φ ψ m (t.toG h) hle
     | .searchChain g₁ ψ₁ e₁ L a me opnt hme hle, _ =>
         .searchChain g₁ ψ₁ e₁ L a me opnt hme hle
+    | .searchElseChain hd L a me opnt hme hle, _ =>
+        .searchElseChain hd L a me opnt hme hle
     | .ctxChain hd L a me opnt hme hle, _ =>
         .ctxChain hd L a me opnt hme hle
     | .implS φ ψ χ hle, _ => .implS φ ψ χ hle
@@ -468,6 +483,8 @@ def ProvT.mono {k k' : Nat} {φ : Formula} (h : k ≤ k') : ProvT k φ → ProvT
   | .contrapose φ ψ m t hle => .contrapose φ ψ m t (le_trans hle h)
   | .searchChain g₁ ψ₁ e₁ L a me opnt hme hle =>
       .searchChain g₁ ψ₁ e₁ L a me opnt hme (le_trans hle h)
+  | .searchElseChain hd L a me opnt hme hle =>
+      .searchElseChain hd L a me opnt hme (le_trans hle h)
   | .ctxChain hd L a me opnt hme hle =>
       .ctxChain hd L a me opnt hme (le_trans hle h)
   | .implS φ ψ χ hle => .implS φ ψ χ (le_trans hle h)
@@ -495,6 +512,7 @@ theorem ProvT.mono_gateOK {G : Formula → Prop} {k k' : Nat} {φ : Formula}
   | .implK _ _ _ => Iff.rfl
   | .contrapose _ _ _ _ _ => Iff.rfl
   | .searchChain _ _ _ _ _ _ _ _ _ => Iff.rfl
+  | .searchElseChain _ _ _ _ _ _ _ => Iff.rfl
   | .ctxChain _ _ _ _ _ _ _ => Iff.rfl
   | .implS _ _ _ _ => Iff.rfl
 
@@ -520,6 +538,7 @@ theorem ProvT.impl_size_le {k : Nat} {A B : Formula} :
   | .implK _ _ hle => hle
   | .contrapose _ _ _ _ hle => by omega
   | .searchChain _ _ _ _ _ _ _ _ hle => hle
+  | .searchElseChain _ _ _ _ _ _ hle => by omega
   | .ctxChain _ _ _ _ _ _ hle => hle
   | .implS _ _ _ hle => hle
 
@@ -808,6 +827,10 @@ def boxInvGo : (fuel : Nat) → {m : Nat} → {ξ core : Formula} →
         (match stack with
          | .cons _ _ _ => none
          | .nil => some ⟨_, .searchChain g₁ ψ₁ e₁ L a me' opnt hme hle⟩)
+    | .searchElseChain hd L a me' opnt hme hle =>
+        (match stack with
+         | .cons _ _ _ => none
+         | .nil => some ⟨_, .searchElseChain hd L a me' opnt hme hle⟩)
     | .ctxChain hd L a me' opnt hme hle =>
         (match stack with
          | .cons _ _ _ => none
@@ -1049,6 +1072,7 @@ def ProvT.wt : {m : Nat} → {φ : Formula} → ProvT m φ → Nat
   | _, _, .implK _ _ _ => 1
   | _, _, .contrapose _ _ _ t _ => t.wt + 1
   | _, _, .searchChain _ _ _ _ _ _ _ _ _ => 1
+  | _, _, .searchElseChain _ _ _ _ _ _ _ => 1
   | _, _, .ctxChain _ _ _ _ _ _ _ => 1
   | _, _, .implS _ _ _ _ => 1
 
@@ -1057,6 +1081,7 @@ theorem ProvT.wt_pos {m : Nat} {φ : Formula} : (t : ProvT m φ) → 1 ≤ t.wt
   | .atom _ | .atomBoxImpl _ _ _ _ _ _ | .box4 _ _ _ _ _ _
   | .axKf _ _ _ _ _ _ _ _ | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _
   | .implRefl _ _ | .implK _ _ _ | .searchChain _ _ _ _ _ _ _ _ _
+  | .searchElseChain _ _ _ _ _ _ _
   | .ctxChain _ _ _ _ _ _ _ | .implS _ _ _ _
   | .searchThenSearch_t _ _ _ _ _ _ _ _ _ _ _ _ _ _ => Nat.le_refl _
   | .weakenImpl _ _ _ _ _ | .contrapose _ _ _ _ _
@@ -1121,6 +1146,7 @@ theorem ProvT.mono_freeS2 {k k' : Nat} {φ : Formula}
   | .implK _ _ _ => Iff.rfl
   | .contrapose _ _ _ _ _ => Iff.rfl
   | .searchChain _ _ _ _ _ _ _ _ _ => Iff.rfl
+  | .searchElseChain _ _ _ _ _ _ _ => Iff.rfl
   | .ctxChain _ _ _ _ _ _ _ => Iff.rfl
 
 /-- Re-gating preserves weight. -/
@@ -1146,6 +1172,7 @@ theorem ProvT.mono_wt {k k' : Nat} {φ : Formula}
   | .implK _ _ _ => rfl
   | .contrapose _ _ _ _ _ => rfl
   | .searchChain _ _ _ _ _ _ _ _ _ => rfl
+  | .searchElseChain _ _ _ _ _ _ _ => rfl
   | .ctxChain _ _ _ _ _ _ _ => rfl
   | .implS _ _ _ _ => rfl
 
@@ -1252,6 +1279,16 @@ theorem crossWt : ∀ (F : Nat),
                   exact absurd h (by simp)
       | implS φ0 ψ0 χ0 hle0 => exact absurd hf (by simp [ProvT.freeS2])
       | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  exact ⟨by simp [CoreContent.wt, DStack.wt],
+                    by simpa [CoreContent.freeS2] using hf⟩
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | searchElseChain hd0 L a me' opnt hme hle =>
           cases s with
           | nil =>
                   simp only [boxInvGo] at h
@@ -1694,6 +1731,8 @@ theorem boxInvGo_total : ∀ (F P : Nat) {m : Nat} {ξ core : Formula}
         | cons mD d s' => cases s' with | nil => exact hc.elim
     | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
         exact (EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) s hc).elim
+    | searchElseChain hd0 L a me' opnt hme hle =>
+        exact (EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) s hc).elim
     | ctxChain hd L a me' opnt hme hle =>
         exact (EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) s hc).elim
     | implS φ0 ψ0 χ0 hle0 => exact absurd hf (by simp [ProvT.freeS2])
@@ -2004,6 +2043,15 @@ theorem crossGateOK {G : Formula → Prop}
                         ⟨hf, ⟨hsg.2.2.1, hs.1, hs.2.2.1⟩, ⟨hsg.2.2.1, hs.2.1, hs.2.2.1⟩⟩
                         hs.2.2.2 hsg.2.2.2 h
       | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simpa [CoreContent.gateOK] using hf
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | searchElseChain hd0 L a me' opnt hme hle =>
           cases s with
           | nil =>
                   simp only [boxInvGo] at h
@@ -2480,6 +2528,7 @@ theorem ProvT.mono_s2d {k k' : Nat} {φ : Formula}
   | .implK _ _ _ => rfl
   | .contrapose _ _ _ _ _ => rfl
   | .searchChain _ _ _ _ _ _ _ _ _ => rfl
+  | .searchElseChain _ _ _ _ _ _ _ => rfl
   | .ctxChain _ _ _ _ _ _ _ => rfl
 
 /-- Depth of what extraction returns. -/
@@ -2586,6 +2635,16 @@ theorem crossS2d : ∀ (F : Nat),
                       simp only [ProvT.s2d, DStack.s2d] at *
                       omega
       | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil =>
+                  simp only [boxInvGo] at h
+                  cases h
+                  simp only [CoreContent.s2d, ProvT.s2d, DStack.s2d]
+                  omega
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | searchElseChain hd0 L a me' opnt hme hle =>
           cases s with
           | nil =>
                   simp only [boxInvGo] at h
@@ -3000,6 +3059,7 @@ mutual
     | _, _, .implK _ _ _ => true
     | _, _, .contrapose _ _ _ t _ => t.gateOKb Gb
     | _, _, .searchChain _ _ _ _ _ _ _ _ _ => true
+    | _, _, .searchElseChain _ _ _ _ _ _ _ => true
     | _, _, .ctxChain _ _ _ _ _ _ _ => true
     | _, _, .implS _ ψ _ _ => Gb ψ
 end
@@ -3066,6 +3126,7 @@ mutual
     | .implK _ _ _, _ => trivial
     | .contrapose _ _ _ t _, h => t.gateOKb_sound hGb h
     | .searchChain _ _ _ _ _ _ _ _ _, _ => trivial
+    | .searchElseChain _ _ _ _ _ _ _, _ => trivial
     | .ctxChain _ _ _ _ _ _ _, _ => trivial
     | .implS _ _ _ _, h => hGb _ h
 end
@@ -3111,6 +3172,10 @@ theorem ProvT.wt_le_budget : {m : Nat} → {φ : Formula} → (t : ProvT m φ) �
       have h2 := Formula.size_pos (Formula.impl (.neg ψ') (.neg φ'))
       simp only [ProvT.wt]; omega
   | _, _, .searchChain _ _ _ _ _ _ _ _ hd => le_trans (Formula.size_pos _) hd
+  | _, _, .searchElseChain hd0 L a me opnt hme hd => by
+      have h2 := Formula.size_pos (Formula.impl (guard2 me opnt hd0)
+        (implChain (guards2 me opnt L) (.plays me opnt a)))
+      simp only [ProvT.wt]; omega
   | _, _, .ctxChain _ _ _ _ _ _ hd => le_trans (Formula.size_pos _) hd
   | _, _, .implS _ _ _ hd => le_trans (Formula.size_pos _) hd
   | _, _, .atom (.mk c hn) => le_trans c.cost_pos hn
@@ -3251,6 +3316,12 @@ theorem crossWtLt : ∀ (F : Nat),
                   exact absurd h (by simp)
       | implS φ0 ψ0 χ0 hle0 => exact absurd hf (by simp [ProvT.freeS2])
       | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle =>
+          cases s with
+          | nil => exact hc.elim
+          | cons mD d s' =>
+                  simp only [boxInvGo] at h
+                  exact absurd h (by simp)
+      | searchElseChain hd0 L a me' opnt hme hle =>
           cases s with
           | nil => exact hc.elim
           | cons mD d s' =>
@@ -3647,6 +3718,12 @@ theorem crossFuelMono : ∀ (F F' : Nat), F ≤ F' →
           | cons mD d s' =>
               simp only [boxInvGo] at h
               exact absurd h (by simp)
+      | searchElseChain hd0 L a me' opnt hme hle =>
+          cases s with
+          | nil => simp only [boxInvGo] at h ⊢; exact h
+          | cons mD d s' =>
+              simp only [boxInvGo] at h
+              exact absurd h (by simp)
       | implRefl φ' hle =>
           cases s with
           | nil => simp only [boxInvGo] at h ⊢; exact h
@@ -4014,6 +4091,10 @@ theorem boxInvGo_regate (F : Nat) {m m' : Nat} {ξ core : Formula}
           cases s with
           | nil => exact hc.elim
           | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
+      | searchElseChain _ _ _ _ _ _ _ =>
+          cases s with
+          | nil => exact hc.elim
+          | cons _ _ _ => simp only [ProvT.mono, boxInvGo]
 
 
 /-- Re-gating is invisible at CONS stacks (every cons-arm uses only the fields). -/
@@ -4048,6 +4129,7 @@ theorem boxInvGo_regate_cons (F : Nat) {m m' mD : Nat} {B rest core : Formula}
       | implK _ _ _ => rfl
       | contrapose _ _ _ _ _ => rfl
       | searchChain _ _ _ _ _ _ _ _ _ => rfl
+      | searchElseChain _ _ _ _ _ _ _ => rfl
       | ctxChain _ _ _ _ _ _ _ => rfl
 
 /-- Atomizability transports along re-gating. -/
@@ -4243,6 +4325,9 @@ theorem fundamental : {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → ∀ 
           cases s' with
           | nil => exact absurd (GoodStack_isCore _ hS.2) (fun hc => hc)
   | _, _, .searchChain g₁ ψ₁ e₁ L a me' opnt hme hle => fun k =>
+      Good_of_no_core _ (fun core S hc =>
+        EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) S hc) k
+  | _, _, .searchElseChain hd0 L a me' opnt hme hle => fun k =>
       Good_of_no_core _ (fun core S hc =>
         EndsInPlays.no_core_stack (.impl (implChain_endsInPlays _ _ _ _)) S hc) k
   | _, _, .ctxChain hd L a me' opnt hme hle => fun k =>
@@ -4792,6 +4877,7 @@ def ProvT.dbFree : {m : Nat} → {φ : Formula} → ProvT m φ → Prop
   -- fragment for the same reason as the ITE leaves: the machine cannot walk them
   | _, _, .contrapose _ _ _ _ _ => False
   | _, _, .searchChain _ _ _ _ _ _ _ _ _ => False
+  | _, _, .searchElseChain _ _ _ _ _ _ _ => False
   | _, _, .ctxChain _ _ _ _ _ _ _ => False
   | _, _, .implS _ _ _ _ => False
   | _, _, _ => True
@@ -4818,7 +4904,8 @@ theorem ProvT.mono_dbFree {k k' : Nat} {φ : Formula} (h : k ≤ k') :
   | .diagB _ _ _ _ _ _ _ | .axKf _ _ _ _ _ _ _ _ | .impS2 _ _ _ _ _ _ _ _ _
   | .boxMono _ _ _ _ _ _ | .atomNeg _ _ _ _ _ _ _ _
   | .implRefl _ _ | .implK _ _ _ | .contrapose _ _ _ _ _
-  | .searchChain _ _ _ _ _ _ _ _ _ | .ctxChain _ _ _ _ _ _ _
+  | .searchChain _ _ _ _ _ _ _ _ _ | .searchElseChain _ _ _ _ _ _ _
+  | .ctxChain _ _ _ _ _ _ _
   | .implS _ _ _ _ => Iff.rfl
 
 /-- **Machine outputs stay iteBranch-free** (exciseFix's re-crossing license): the
@@ -4859,6 +4946,7 @@ theorem crossDbFree : ∀ (F : Nat),
               exact ih tw s' hf hs.2 h
       | contrapose φ' ψ' m' tw hle => exact absurd hf (fun x => x)
       | searchChain g₁ ψ₁ e₁ L a me' opnt hme hle => exact absurd hf (fun x => x)
+      | searchElseChain hd0 L a me' opnt hme hle => exact absurd hf (fun x => x)
       | ctxChain hd L a me' opnt hme hle => exact absurd hf (fun x => x)
       | implS φ' ψ' χ' hle => exact absurd hf (fun x => x)
       | implRefl φ' hle =>
@@ -5281,6 +5369,9 @@ theorem GoodW_mono {k m m' : Nat} {φ : Formula} (hmm : m ≤ m')
       | searchChain g₁ ψ₁ e₁ L a' me'' opnt hme hle =>
           exact ⟨1, ⟨_, .searchChain g₁ ψ₁ e₁ L a' me'' opnt hme (le_trans hle hmm)⟩, rfl,
             by unfold ContentGoodW; trivial⟩
+      | searchElseChain hd0 L a' me'' opnt hme hle =>
+          exact ⟨1, ⟨_, .searchElseChain hd0 L a' me'' opnt hme (le_trans hle hmm)⟩, rfl,
+            by unfold ContentGoodW; trivial⟩
       | ctxChain hd L a' me'' opnt hme hle =>
           exact ⟨1, ⟨_, .ctxChain hd L a' me'' opnt hme (le_trans hle hmm)⟩, rfl,
             by unfold ContentGoodW; trivial⟩
@@ -5490,6 +5581,8 @@ theorem fundamentalW : {m : Nat} → {ξ : Formula} → (t : ProvT m ξ) → t.d
           exact ⟨fuel + 1, r, hrun, hcont⟩
   | _, _, .contrapose φ' ψ' m' tw hle => fun hfree _ => absurd hfree (fun x => x)
   | _, _, .searchChain g₁ ψ₁ e₁ L a me' opnt hme hle => fun hfree _ =>
+      absurd hfree (fun x => x)
+  | _, _, .searchElseChain hd0 L a me' opnt hme hle => fun hfree _ =>
       absurd hfree (fun x => x)
   | _, _, .ctxChain hd L a me' opnt hme hle => fun hfree _ =>
       absurd hfree (fun x => x)
@@ -5893,6 +5986,7 @@ theorem excise_dbFree (fuel : Nat) (Gb : Formula → Bool) :
   | _, _, .implK ψ ψ' hle, hf => hf
   | _, _, .contrapose ψ ψ' m' tw hle, hf => hf
   | _, _, .searchChain _ _ _ _ _ _ _ _ _, hf => hf
+  | _, _, .searchElseChain _ _ _ _ _ _ _, hf => hf
   | _, _, .ctxChain _ _ _ _ _ _ _, hf => hf
   | _, _, .implS _ _ _ _, hf => hf
 
@@ -6042,6 +6136,7 @@ theorem excise_wt_freeS2 (fuel : Nat) (Gb : Formula → Bool) :
   | _, _, .implK ψ ψ' hle, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .contrapose ψ ψ' m' tw hle, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .searchChain _ _ _ _ _ _ _ _ _, hf => ⟨Nat.le_refl _, hf⟩
+  | _, _, .searchElseChain _ _ _ _ _ _ _, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .ctxChain _ _ _ _ _ _ _, hf => ⟨Nat.le_refl _, hf⟩
   | _, _, .implS _ _ _ _, hf => ⟨Nat.le_refl _, hf⟩
 
@@ -6241,6 +6336,7 @@ mutual
     | _, _, .implK _ _ _ => True
     | _, _, .contrapose _ _ _ t _ => t.cutsOK G
     | _, _, .searchChain _ _ _ _ _ _ _ _ _ => True
+    | _, _, .searchElseChain _ _ _ _ _ _ _ => True
     | _, _, .ctxChain _ _ _ _ _ _ _ => True
     | _, _, .implS _ ψ _ _ => G ψ
 end
@@ -6287,6 +6383,7 @@ mutual
     | _, _, .implK _ _ _ => True
     | _, _, .contrapose _ _ _ t _ => t.citesLE M
     | _, _, .searchChain _ _ _ _ _ _ _ _ _ => True
+    | _, _, .searchElseChain _ _ _ _ _ _ _ => True
     | _, _, .ctxChain _ _ _ _ _ _ _ => True
     | _, _, .implS _ _ _ _ => True
 end
@@ -6332,6 +6429,7 @@ mutual
     | _, _, .implK _ _ _ => true
     | _, _, .contrapose _ _ _ t _ => t.cutsOKb Gb
     | _, _, .searchChain _ _ _ _ _ _ _ _ _ => true
+    | _, _, .searchElseChain _ _ _ _ _ _ _ => true
     | _, _, .ctxChain _ _ _ _ _ _ _ => true
     | _, _, .implS _ ψ _ _ => Gb ψ
 end
@@ -6392,6 +6490,7 @@ mutual
     | .implK _ _ _, _ => trivial
     | .contrapose _ _ _ t _, h => t.cutsOKb_sound hGb h
     | .searchChain _ _ _ _ _ _ _ _ _, _ => trivial
+    | .searchElseChain _ _ _ _ _ _ _, _ => trivial
     | .ctxChain _ _ _ _ _ _ _, _ => trivial
     | .implS _ _ _ _, h => hGb _ h
 end
@@ -6436,6 +6535,7 @@ mutual
     | _, _, .implK _ _ _ => true
     | _, _, .contrapose _ _ _ t _ => t.citesLEb M
     | _, _, .searchChain _ _ _ _ _ _ _ _ _ => true
+    | _, _, .searchElseChain _ _ _ _ _ _ _ => true
     | _, _, .ctxChain _ _ _ _ _ _ _ => true
     | _, _, .implS _ _ _ _ => true
 end
@@ -6495,6 +6595,7 @@ mutual
     | .implK _ _ _, _ => trivial
     | .contrapose _ _ _ t _, h => t.citesLEb_sound h
     | .searchChain _ _ _ _ _ _ _ _ _, _ => trivial
+    | .searchElseChain _ _ _ _ _ _ _, _ => trivial
     | .ctxChain _ _ _ _ _ _ _, _ => trivial
     | .implS _ _ _ _, _ => trivial
 end

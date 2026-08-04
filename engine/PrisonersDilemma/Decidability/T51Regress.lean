@@ -181,7 +181,7 @@ theorem regress {N : Nat} {m : Nat} {C : Formula}
     ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
     ?atom ?sb ?ss ?bss ?bsearch ?ite ?eqR ?eqN ?app ?itrans ?weaken ?sts
     ?atomBox ?boxIntro ?axK ?box4 ?diagF ?diagB ?axKf ?impS2 ?boxMono ?atomNeg
-    ?implRefl ?implK ?contrapose ?searchChain ?ctxChain ?implS h
+    ?implRefl ?implK ?contrapose ?searchChain ?sec ?ctxChain ?implS h
   case const =>
       intro me oppo a h1 h2
       refine ⟨fun hb => absurd hb.1 (by simp [meD, Bots.DupocBot]), fun c hc => ?_⟩
@@ -336,6 +336,45 @@ theorem regress {N : Nat} {m : Nat} {C : Formula}
           subst h2
           exact searchChain_first_guard_not_modest hme
             (ModChain_chain_plays (searchGuards me opnt L) hC) hB
+  case sec =>
+      intro k hd L a me opnt hme hle hm
+      cases hd with
+      | thenL g₁ ψ₁ e₁ =>
+          -- thenL head: same kill as `searchChain` — the head guard instance IS the
+          -- non-modest Dupoc fact
+          generalize hX : Formula.impl (guard2 me opnt (.thenL g₁ ψ₁ e₁))
+            (implChain (guards2 me opnt L) (.plays me opnt a)) = X at hm
+          cases hm with
+          | base => exact absurd hX (by simp [guard2, tgtD])
+          | step hB hC =>
+              injection hX with h1 h2
+              subst h1
+              subst h2
+              exact chainHead_guard_not_modest (by simpa [plug2] using hme)
+                (ModChain_chain_plays (guards2 me opnt L) hC) hB
+      | elseL g₁ P Q c q =>
+          -- elseL head: the tail forces the player to be the Dupoc SEARCHER, whose
+          -- else branch is the bare `.const .D` — but the tail also forces `a = .C`,
+          -- so the else slot cannot be the chain's own plug — shape contradiction
+          generalize hX : Formula.impl (guard2 me opnt (.elseL g₁ P Q c q))
+            (implChain (guards2 me opnt L) (.plays me opnt a)) = X at hm
+          cases hm with
+          | base => exact absurd hX (by simp [guard2, tgtD])
+          | step hB hC =>
+              injection hX with h1 h2
+              subst h1
+              subst h2
+              have heq := ModChain_chain_plays (guards2 me opnt L) hC
+              simp only [tgtD, Formula.plays.injEq] at heq
+              obtain ⟨hplayer, -, ha⟩ := heq
+              rw [hplayer, ha] at hme
+              rw [show meD = .search kD (.plays .opp .self .C) (.const .C)
+                    (.const .D) from rfl] at hme
+              simp only [plug2, Prog.search.injEq] at hme
+              obtain ⟨-, -, -, htl⟩ := hme
+              cases L with
+              | nil => simp [plug2] at htl
+              | cons hd' L' => cases hd' <;> simp [plug2] at htl
   case ctxChain =>
       intro k hd L a me opnt hme hle hm
       cases hd with

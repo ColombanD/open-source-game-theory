@@ -32,7 +32,7 @@ theorem dp_no_provable_pbD (k : Nat) :
       TailTo (.plays (PrudentBot k) (DIMCID k) Action.D) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (PrudentBot k) (DIMCID k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -93,6 +93,37 @@ theorem dp_no_provable_pbD (k : Nat) :
                 exact absurd hinner (const_ne_ctxPlug (by decide) tl2)
             | iteL z2 aT2 other2 => simp [ctxPlug] at hplug
     | iteL z aT other => simp [ctxPlug, PrudentBot] at hme
+  · -- polarity plug: PrudentBot's D-plays ARE else-slots — every matching
+    -- decomposition routes through an `elseL` layer carrying PrudentBot's own
+    -- floor `k`, so `layersCost > k`; the all-`thenL` route dead-ends at the
+    -- inner then-slot `.const C ≠` any D-plug
+    rintro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, PrudentBot, Prog.search.injEq] at hme
+        obtain ⟨rfl, rfl, hplug, rfl⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 =>
+            cases hd2 with
+            | thenL g2 ψ2 e2 =>
+                exfalso
+                simp only [plug2, Prog.search.injEq] at hplug
+                obtain ⟨-, -, hplug2, -⟩ := hplug
+                cases tl2 with
+                | nil => simp [plug2] at hplug2
+                | cons hd3 tl3 => cases hd3 <;> simp [plug2] at hplug2
+            | elseL g2 P2 Q2 c2 q2 =>
+                simp only [plug2, Prog.search.injEq] at hplug
+                obtain ⟨rfl, -, -, -⟩ := hplug
+                simp only [layersCost, layerCost, c_node]
+                omega
+    | elseL g P' Q' c' q =>
+        simp only [plug2, PrudentBot, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
 
 -- === Census 2: "DIMCID plays C vs PrudentBot" is unprovable at budget k. ===
 theorem dp_no_provable_dimcidC (k : Nat) :
@@ -100,7 +131,7 @@ theorem dp_no_provable_dimcidC (k : Nat) :
       TailTo (.plays (DIMCID k) (PrudentBot k) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (DIMCID k) (PrudentBot k) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -145,6 +176,21 @@ theorem dp_no_provable_dimcidC (k : Nat) :
         | nil => simp [ctxPlug] at hplug
         | cons hd2 tl2 => cases hd2 <;> simp [ctxPlug] at hplug
     | iteL z aT other => simp [ctxPlug, DIMCID] at hme
+  · -- polarity plug: DIMCID's guard is an `.impl` — no `elseL` layer can match it,
+    -- and the then-slot holds `.const D ≠` any C-plug
+    rintro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    exfalso
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, DIMCID, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, DIMCID, Prog.search.injEq] at hme
+        exact absurd hme.2.1 (by simp)
 
 -- === DIMCID cooperates against PrudentBot ===
 theorem dp_dimcid_guard_not_provable (k : Nat) :

@@ -485,7 +485,7 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
     ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
     ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
-    ?cImplRefl ?cImplK ?cContrapose ?cSearchChain ?cCtxChain ?cImplS
+    ?cImplRefl ?cImplK ?cContrapose ?cSearchChain ?cSEC ?cCtxChain ?cImplS
     h
   case pConst =>
       intro me oppo a b hb
@@ -679,6 +679,13 @@ theorem decB_complete (Gb : Formula → Bool) (hGb : ∀ B, Gb B = true ↔ G B)
       rw [decG]
       unfold stepG
       have hfire := chkLeaf_ctxChain K me opnt hd L a hme (Nat.le_trans hle hmK)
+      simp only [hfire, Bool.true_or]
+  case cSEC =>
+      intro k0 hd L a me opnt hme hle K hmK
+      refine ⟨1, ?_⟩
+      rw [decG]
+      unfold stepG
+      have hfire := chkLeaf_searchElseChain K me opnt hd L a hme (Nat.le_trans hle hmK)
       simp only [hfire, Bool.true_or]
   case cImplS =>
       intro k0 A B C hle K hmK

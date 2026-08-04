@@ -73,7 +73,7 @@ theorem wd_no_provable_A_tail (k : Nat) :
       TailTo (.plays (WaryBot k) (DupocBot k) .C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (WaryBot k) (DupocBot k) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ' hA
     cases hφ'
@@ -123,6 +123,21 @@ theorem wd_no_provable_A_tail (k : Nat) :
             | searchL g2 ψ2 e2 => simp [ctxPlug] at hthen
             | iteL z2 aT2 o2 => simp [ctxPlug] at hthen
     | iteL z aT o => unfold WaryBot at hme; simp [ctxPlug] at hme
+  · -- polarity plug: WaryBot's `.neg` guard blocks every `elseL` layer, and its
+    -- then-slot `.const .D ≠` any C-plug
+    intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    exfalso
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, WaryBot, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, WaryBot, Prog.search.injEq] at hme
+        exact absurd hme.2.1 (by simp)
 
 /-- DupocBot's guard `A` fails at every budget, so DupocBot defects. -/
 theorem wd_proofSearch_false_A (k : Nat) :

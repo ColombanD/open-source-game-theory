@@ -92,6 +92,8 @@ theorem de_botcoop_no_provable_forbidden (k : Nat) :
         cases hd with
         | searchL g' ψ' e' => simp [ctxPlug, CooperateBot] at h
         | iteL z' aT' other' => simp [ctxPlug, CooperateBot] at h)
+    (by intro hd L h
+        cases hd <;> simp [plug2, CooperateBot] at h)
 
 theorem de_botcoop_guard_not_provable (k : Nat) : ¬ Pf k (de_botcoop_guard k) := by
   intro h
@@ -166,7 +168,7 @@ theorem de_ebot_guard_not_provable (k : Nat) (hk : dimcidEThresh k) :
   set S : Formula → Prop := fun φ =>
     φ = .plays EBot (DIMCID k) Action.D ∨
     φ = .plays (DIMCID k) (.bot DefectBot) Action.C with hS
-  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     k _ hp le_rfl ?_
   · rintro φ (rfl | rfl)
     · exact ⟨_, _, _, rfl⟩
@@ -222,6 +224,24 @@ theorem de_ebot_guard_not_provable (k : Nat) (hk : dimcidEThresh k) :
           | nil => simp [ctxPlug] at hplug
           | cons hd2 tl2 => cases hd2 <;> simp [ctxPlug] at hplug
       | iteL z aT other => simp [ctxPlug, DIMCID] at hme
+  · -- polarity plug: EBot is an `.ite` (no plug2 shape); DIMCID's guard is an
+    -- `.impl` — no `elseL` layer can match it, and the then-slot holds `.const D`
+    rintro me oppo c (h | h) hd L hme
+    · injection h with h1 h2 h3; subst h1; subst h3
+      exfalso
+      cases hd <;> simp [plug2, EBot] at hme
+    · injection h with h1 h2 h3; subst h1; subst h3
+      exfalso
+      cases hd with
+      | thenL g ψ e =>
+          simp only [plug2, DIMCID, Prog.search.injEq] at hme
+          obtain ⟨-, -, hplug, -⟩ := hme
+          cases L with
+          | nil => simp [plug2] at hplug
+          | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+      | elseL g P' Q' c' q =>
+          simp only [plug2, DIMCID, Prog.search.injEq] at hme
+          exact absurd hme.2.1 (by simp)
   · refine ⟨Or.inl rfl, ?_⟩
     intro hcontra
     simp only [hS] at hcontra

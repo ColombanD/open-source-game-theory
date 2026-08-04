@@ -65,9 +65,11 @@ reason = "Floor proven; large-k is OPEN on BOTH sides."
 # pair = ["SomeBot", "OtherBot"]
 # reason = "Proof agent attempts on 2026-XX-XX failed; no floor/exclusion result either."
 
-[[open]]
-pair = ["OptimBot", "DefectBot"]
-reason = "Agent verdict open_blocked 2026-07-31 at UNIFORM budgets (now OptimBot k k): semantic outcome (C,D), but the required census (not-Pf k of OptimBot own D-play) hits the implTrans/modal-tier wall — no transitivity-closed spine invariant. Staggered kSelf >> kOpp expected to flip to a PROVABLE (D,D); drop this entry when that theorem lands."
+# OptimBot/DefectBot entry dropped 2026-08-04: llm_outcome_OptimBot_vs_DefectBot
+# landed — (D,D) at the stagger kSelf = 65536·kOpp, via the searchElseChain
+# constructor (integrated from the Tier-2 proposal). The uniform-budget (C,D) side
+# remains unproven (modal-tier census wall) but the pair now has an accepted
+# large-k theorem.
 
 [[open]]
 pair = ["DIMCID", "CupodBot"]

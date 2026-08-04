@@ -300,7 +300,7 @@ theorem ld_no_provable_tail (k : Nat) :
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (LegibleBot (2*k+64) k) (DIMCID k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- atom killer: D is the else-branch; search_t's branch mismatches, search_f floors
     rintro K' hK' φ' rfl hA
@@ -346,6 +346,19 @@ theorem ld_no_provable_tail (k : Nat) :
         | nil => simp [ctxPlug] at hplug
         | cons hd2 tl2 => cases hd2 <;> simp [ctxPlug] at hplug
     | iteL z aT other => simp [ctxPlug, LegibleBot] at hme
+  · rintro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    exfalso
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, LegibleBot, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, LegibleBot, Prog.search.injEq] at hme
+        exact absurd hme.2.1 (by simp)
 
 /-- DIMCID's substituted guard against LegibleBot is unprovable at DIMCID's own
     budget: its spine tail is the census-blocked D-play, and its antecedent is a

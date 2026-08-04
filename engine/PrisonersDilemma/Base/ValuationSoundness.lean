@@ -180,6 +180,82 @@ theorem ctxPlug_eval (me opponent : Prog) (a : Action) :
           rw [if_pos hbeq]
           exact eval_mono_le hn _ (Nat.le_trans (Nat.le_max_right _ _) (Nat.le_succ _))
 
+/-! ### The mixed-POLARITY telescope helpers (`searchElseChain`, 2026-08-04) -/
+
+/-- A layer's guard fact is among the telescope's guard facts. -/
+theorem guard2_mem_guards2 (me oppo : Prog) :
+    ∀ {L : List SearchLayer2} {l : SearchLayer2}, l ∈ L →
+      guard2 me oppo l ∈ guards2 me oppo L := by
+  intro L
+  induction L with
+  | nil => intro l h; cases h
+  | cons hd tl ih =>
+      intro l h
+      rcases List.mem_cons.mp h with rfl | h'
+      · exact List.mem_cons_self
+      · exact List.mem_cons_of_mem _ (ih h')
+
+/-- A layer's cost is bounded by the telescope's cost. -/
+theorem layerCost_le_of_mem :
+    ∀ {L : List SearchLayer2} {l : SearchLayer2}, l ∈ L →
+      layerCost l ≤ layersCost L := by
+  intro L
+  induction L with
+  | nil => intro l h; cases h
+  | cons hd tl ih =>
+      intro l h
+      rcases List.mem_cons.mp h with rfl | h'
+      · show layerCost l ≤ layerCost l + layersCost tl; omega
+      · have := ih h'
+        show layerCost l ≤ layerCost hd + layersCost tl
+        omega
+
+/-- The mixed-POLARITY telescope eval induction (`searchElseChain`'s soundness
+    core): if every then-layer's guard is provable (the `.box` facts) and every
+    else-layer's guard is UNPROVABLE at its own budget, evaluation reaches the
+    plugged constant. The unprovability is supplied as data — the master arm derives
+    it from the strong IH via the floor (`layersCost` puts each else-budget strictly
+    below the rule's transcript), and post-extraction users derive it from
+    `Pf_sound` plus the refutation's truth. -/
+theorem plug2_eval_noPf (me oppo : Prog) (a : Action) :
+    ∀ (L : List SearchLayer2),
+      (∀ ψ ∈ guards2 me oppo L, ψ.interp) →
+      (∀ g P Q c q, SearchLayer2.elseL g P Q c q ∈ L →
+        ¬ Pf g (.plays (P.subst me oppo) (Q.subst me oppo) c)) →
+      ∃ n, eval n me oppo (plug2 L (.const a)) = some a := by
+  intro L
+  induction L with
+  | nil => exact fun _ _ => ⟨1, rfl⟩
+  | cons hd rest ih =>
+      cases hd with
+      | thenL g ψ e =>
+          intro hg hnp
+          have hhead : Pf g (ψ.subst me oppo) := hg _ List.mem_cons_self
+          have hpst : proofSearch g (ψ.subst me oppo) = true :=
+            (proofSearch_spec _ _).2 hhead
+          obtain ⟨n, hn⟩ := ih (fun ψ' h' => hg ψ' (List.mem_cons_of_mem _ h'))
+            (fun g' P' Q' c' q' h' => hnp g' P' Q' c' q' (List.mem_cons_of_mem _ h'))
+          refine ⟨n + 1, ?_⟩
+          show eval (n + 1) me oppo (.search g ψ (plug2 rest (.const a)) e) = some a
+          rw [eval, if_pos hpst]
+          exact hn
+      | elseL g P Q c q =>
+          intro hg hnp
+          have hnpf := hnp g P Q c q List.mem_cons_self
+          have hps : proofSearch g ((Formula.plays P Q c).subst me oppo) = false := by
+            cases hcase : proofSearch g ((Formula.plays P Q c).subst me oppo) with
+            | false => rfl
+            | true =>
+                exact absurd ((proofSearch_spec _ _).1 hcase)
+                  (by simpa [Formula.subst] using hnpf)
+          obtain ⟨n, hn⟩ := ih (fun ψ' h' => hg ψ' (List.mem_cons_of_mem _ h'))
+            (fun g' P' Q' c' q' h' => hnp g' P' Q' c' q' (List.mem_cons_of_mem _ h'))
+          refine ⟨n + 1, ?_⟩
+          show eval (n + 1) me oppo
+            (.search g (.plays P Q c) q (plug2 rest (.const a))) = some a
+          rw [eval, if_neg (by simp [hps])]
+          exact hn
+
 /-! ## The modified valuation `WV`, parametric over the entangled-atom relation
 
 `WV S` is `Formula.interp` with ONE change: a plays-atom is additionally true when
@@ -260,6 +336,34 @@ theorem WV_of_interp_ctxChain {S : Prog → Prog → Prop}
       intro hprobe
       exact WV_of_interp_ctxChain hnb me oppo a L (h (interp_of_WV_probe hnb hprobe))
 
+/-- Interp-to-WV bridge along a mixed-POLARITY telescope guard chain. Box
+    antecedents are WV-transparent; a `.neg` antecedent over a PLAYS-atom is
+    honest — `WV`-falsity of a plays-atom implies interp-falsity (the S-forcing
+    only makes plays-atoms TRUER) — which is exactly what the structural
+    plays-shape restriction on `SearchLayer2.elseL` buys. -/
+theorem WV_of_interp_plug2 {S : Prog → Prog → Prop} (me oppo : Prog) (a : Action) :
+    ∀ L : List SearchLayer2,
+      (implChain (guards2 me oppo L) (.plays me oppo a)).interp →
+      WV S (implChain (guards2 me oppo L) (.plays me oppo a))
+  | [] => fun h => Or.inr h
+  | .thenL g ψ e :: L => by
+      intro h
+      show WV S (.impl (.box g (ψ.subst me oppo))
+        (implChain (guards2 me oppo L) (.plays me oppo a)))
+      rw [WV_impl]
+      intro hbox
+      rw [WV_box] at hbox
+      exact WV_of_interp_plug2 me oppo a L (h hbox)
+  | .elseL g P Q c q :: L => by
+      intro h
+      show WV S (.impl (.neg (.plays (P.subst me oppo) (Q.subst me oppo) c))
+        (implChain (guards2 me oppo L) (.plays me oppo a)))
+      rw [WV_impl, WV_neg, WV_plays]
+      intro hwn
+      have hni : ¬ (Formula.plays (P.subst me oppo) (Q.subst me oppo) c).interp :=
+        fun hi => hwn (Or.inr hi)
+      exact WV_of_interp_plug2 me oppo a L (h hni)
+
 /-! ## THE MASTER LEMMA -/
 
 set_option maxHeartbeats 1600000 in
@@ -319,7 +423,8 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         ?pfIteBranchSearch ?pfSTS ?pfSearchChain ?pfCtxChain ?pfEqRefl ?pfEqNeg ?pfMp
         ?pfImplTrans
         ?pfWeaken ?pfImpS2 ?pfImplRefl ?pfImplK ?pfImplS ?pfContrapose ?pfNegElim
-        ?pfBoxIntro ?pfAtomBoxImpl ?pfAxK ?pfAxKf ?pfBox4 ?pfBoxMono ?pfDiagF ?pfDiagB h
+        ?pfBoxIntro ?pfAtomBoxImpl ?pfAxK ?pfAxKf ?pfBox4 ?pfBoxMono ?pfDiagF ?pfDiagB
+        ?pfSearchElseChain h
       case const => exact fun _ => ⟨1, rfl⟩
       case self =>
         intro me opponent a n _ ih hB
@@ -392,7 +497,8 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep
         ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
         ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
-        ?pBoxIntro ?pAtomBoxImpl ?pAxK ?pAxKf ?pBox4 ?pBoxMono ?pDiagF ?pDiagB h
+        ?pBoxIntro ?pAtomBoxImpl ?pAxK ?pAxKf ?pBox4 ?pBoxMono ?pDiagF ?pDiagB
+        ?pSearchElseChain h
       -- ── the certificate side: the census play-exclusion clause ──
       case cConst =>
         intro me oppo a _hs hT hgate
@@ -627,6 +733,28 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
               intro hprobe
               exact WV_of_interp_ctxChain h_nb me opponent a L
                 (hI (interp_of_WV_probe h_nb hprobe))
+      case pSearchElseChain =>
+        intro k0 hd L a me opponent hme hle
+        constructor
+        · -- gated soundness: every else-budget sits strictly below `B` (the FLOOR),
+          -- so the strong IH refutes any hypothetical crossed-guard proof
+          intro hB
+          subst hme
+          refine implChain_interp
+            (guards2 (plug2 (hd :: L) (.const a)) opponent (hd :: L)) (fun hg => ?_)
+          obtain ⟨n, hn⟩ := plug2_eval_noPf (plug2 (hd :: L) (.const a)) opponent a
+            (hd :: L) hg
+            (fun g P Q c q hmem hpf => by
+              have hcn : c_node = 1 := rfl
+              have hcost := layerCost_le_of_mem hmem
+              simp only [layerCost] at hcost
+              have hgB : g < B := by omega
+              have hint := ((IH g hgB).2 g _ hpf).1 le_rfl
+              exact (hg _ (guard2_mem_guards2 _ opponent hmem)) hint)
+          exact ⟨n, hn⟩
+        · intro hs
+          exact WV_of_interp_plug2 me opponent a (hd :: L)
+            (hs _ _ (Pf.searchElseChain hd L a me opponent hme hle))
       case pEqRefl =>
         intro k0 p _hle
         exact ⟨fun _ => rfl, fun _ => by rw [WV_eq]⟩

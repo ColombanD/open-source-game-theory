@@ -30,7 +30,7 @@ theorem dj_no_provable_justbotD (k : Nat) :
       TailTo (.plays (JustBot k) (DIMCID k) Action.D) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (JustBot k) (DIMCID k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -75,6 +75,22 @@ theorem dj_no_provable_justbotD (k : Nat) :
         | nil => simp [ctxPlug] at hplug
         | cons hd2 tl2 => cases hd2 <;> simp [ctxPlug] at hplug
     | iteL z aT other => simp [ctxPlug, JustBot] at hme
+  · -- polarity plug: the else-decomposition pays JustBot's own floor `k`
+    rintro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, JustBot, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        exfalso
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, JustBot, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
 
 -- === Census 2: "DIMCID plays C vs .bot (DupocBot k)" is unprovable at budget k. ===
 theorem dj_no_provable_dimcidC (k : Nat) :
@@ -82,7 +98,7 @@ theorem dj_no_provable_dimcidC (k : Nat) :
       TailTo (.plays (DIMCID k) (.bot (DupocBot k)) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (DIMCID k) (.bot (DupocBot k)) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -127,6 +143,21 @@ theorem dj_no_provable_dimcidC (k : Nat) :
         | nil => simp [ctxPlug] at hplug
         | cons hd2 tl2 => cases hd2 <;> simp [ctxPlug] at hplug
     | iteL z aT other => simp [ctxPlug, DIMCID] at hme
+  · -- polarity plug: DIMCID's guard is an `.impl` — no `elseL` layer can match it,
+    -- and the then-slot holds `.const D ≠` any C-plug
+    rintro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    exfalso
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, DIMCID, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, DIMCID, Prog.search.injEq] at hme
+        exact absurd hme.2.1 (by simp)
 
 -- === DIMCID cooperates against JustBot ===
 theorem dj_dimcid_guard_not_provable (k : Nat) :

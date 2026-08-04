@@ -42,7 +42,7 @@ theorem no_provable_prudence_self_tail (k : Nat) :
   intro K φ hp hK ht
   refine no_provable_searcherPlay_tail k (.plays .opp .self .C)
       (.search k (.plays .opp (.bot DefectBot) .D) (.const .C) (.const .D))
-      (.const .D) (.bot DefectBot) .D ?_ ?_ ?_ ?_ ?_ K φ hp hK ?_
+      (.const .D) (.bot DefectBot) .D ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ?_
   · simpa [Formula.subst, Prog.subst, PrudentBot] using
       interp_bot_DefectBot_plays_C_false (PrudentBot k)
   · intro c0 c1 h; simp at h
@@ -77,6 +77,35 @@ theorem no_provable_prudence_self_tail (k : Nat) :
             simp only [ctxPlug, Prog.search.injEq] at h
             exact const_ne_ctxPlug (by decide) tl h.2.2.1
         | iteL z' aT' other' => simp [ctxPlug] at h
+  · -- polarity plug: an `elseL` layer (outer or inner) captures the searcher's own
+    -- literal budget `k`, so the chain costs more than `k`; the all-`thenL` route
+    -- dead-ends at the inner then-slot `.const .C ≠` any D-plug
+    intro hd L hme
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, Prog.search.injEq] at hme
+        obtain ⟨rfl, rfl, hplug, rfl⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 =>
+            cases hd2 with
+            | thenL g2 ψ2 e2 =>
+                exfalso
+                simp only [plug2, Prog.search.injEq] at hplug
+                obtain ⟨-, -, hplug2, -⟩ := hplug
+                cases tl2 with
+                | nil => simp [plug2] at hplug2
+                | cons hd3 tl3 => cases hd3 <;> simp [plug2] at hplug2
+            | elseL g2 P2 Q2 c2 q2 =>
+                simp only [plug2, Prog.search.injEq] at hplug
+                obtain ⟨rfl, -, -, -⟩ := hplug
+                simp only [layersCost, layerCost, c_node]
+                omega
+    | elseL g P' Q' c' q =>
+        simp only [plug2, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
   · simpa [PrudentBot] using ht
 
 /-- PrudentBot's prudence guard about ITSELF fails at every budget — the floor's bite:

@@ -119,6 +119,10 @@ theorem wv_budget_census (k : Nat) (S : Prog → Prog → Prop)
           rw [WV_impl]; intro hprobe
           exact WV_of_interp_ctxChain h_nb me opponent a L
             (hI (interp_of_WV_probe h_nb hprobe))
+  | searchElseChain k' hd L a me opnt hme hle =>
+      intro _hK
+      exact WV_of_interp_plug2 me opnt a (hd :: L)
+        (Pf_sound k' _ (Pf.searchElseChain hd L a me opnt hme hle))
   | eqRefl k' p hle => intro _hK; rw [WV_eq]
   | eqNeg k' p q hne hle => intro _hK; rw [WV_neg, WV_eq]; exact hne
   | mp k' m₁ m₂ A B0 h1 h2 hle ih1 ih2 =>
