@@ -253,17 +253,14 @@ exactly, since every signal is (numerically) a point mass and every
 cooperation mass is $0$ or $1$. On the default zoo this holds on the nose:
 at $t = 1$, $\alpha = 0.5$, zero cells differ from base. It is not clear whether this theorem would hold for Taubots as defined by the first attempt.
 
-\subsection{The caution axis: three regimes and two knife edges}
+\subsection{The caution axis}
 
 Sweeping $\alpha$ at fixed transparency reveals the same three-regime
 structure in both zoos, bracketed by two knife edges.
 
 At the top, \textbf{$\alpha = 1$ collapses instantly}. Unanimity matches
 the base matrix at $t = 1$, but at $t = 0.9$ mutual cooperation crashes to
-$0.01$ (default) and $0.02$ (enlarged) --- exactly the unconditional
-cooperators' self-cells, $1/121$ and $4/256$. A unanimous voter tolerates
-zero blur: the moment any hypothesis mass falls on a defection-eliciting
-bot, cooperation dies.
+$0.01$ (default) and $0.02$ (enlarged).
 
 At the bottom, \textbf{$\alpha \to 0$ saturates --- with one telling
 exception}. At full opacity and $\alpha = 0.1$, an agent cooperates unless
@@ -273,21 +270,25 @@ $\mathrm{CC} = (15/16)^2 = 0.88$. In the default zoo, however,
 \zoobot{PrudentBot} fails it too: it cooperates with just one of eleven
 members ($1/11 = 0.09 < 0.1$), so even a maximally trusting
 tau-\zoobot{PrudentBot} defects under uniform blur, and the ceiling is
-$(9/11)^2 = 0.67$. \zoobot{PrudentBot} is so selective that its lift is a
-near-defector in the opaque limit --- prudence, pushed through the tau
-construction, shades into misanthropy.
+$(9/11)^2 = 0.67$.
 
-Between the edges lies \textbf{a dead zone where $\alpha$ is irrelevant}.
-Only finitely many cooperation masses are achievable at a given $t$, and
-between consecutive masses every $\alpha$ produces the identical
-tournament. At $t = 0.5$ the gap is wide in the default zoo ---
-$(0.41, 0.65)$, so the entire ``moderate caution'' band collapses to one
-behavior --- and much narrower in the enlarged zoo, $(0.55, 0.65)$. With
-158 distinct achievable masses against 98, the enlarged zoo simply offers
-the caution dial more purchase. (A practical corollary for anyone
-extending these sweeps: always step \emph{between} breakpoints; an
-$\alpha$ sitting exactly on an achievable mass lets floating-point noise
-decide plays.)
+Between these two edges lies \textbf{a dead zone in which $\alpha$ has no
+effect at all}. The reason is structural: a cooperation mass is a sum of
+signal weights, so at any fixed $t$ only finitely many masses are
+achievable across the whole tournament, and moving $\alpha$ changes
+nothing until it crosses one of them. Caution is not a continuous dial but
+a staircase, and the interesting question is where its steps fall. At
+$t = 0.5$ the staircase has a wide landing in the default zoo: no
+achievable mass falls in $(0.41, 0.65)$, so an agent demanding $45\%$ of
+its cooperation mass and one demanding $60\%$ play \emph{identically} ---
+the entire moderate-caution band collapses to a single behavior. The
+enlarged zoo narrows this gap to $(0.55, 0.65)$ and offers 158 achievable
+masses against the default zoo's 98: in the richer zoo, caution genuinely
+differentiates agents that the smaller zoo cannot tell apart. One
+practical corollary for anyone extending these sweeps: sample $\alpha$
+\emph{between} consecutive masses, never on one --- an $\alpha$ that lands
+exactly on an achievable mass leaves the comparison
+$\mathit{mass} \ge \alpha$ to floating-point residue.
 
 \subsection{The transparency axis: the effect on cooperation is
 $\alpha$-dependent in sign}
@@ -322,13 +323,11 @@ anchored at the base rate. The question ``does transparency help
 cooperation?'' has no unconditional answer; the honest unit of analysis
 is the $(t, \alpha)$ phase diagram.
 
-\subsection{What the extra cooperation is made of: suckers in one zoo,
-healed provers in the other}
+\subsection{Distinguishing mutual cooperation, exploitation, and mutual defection}
 
 A rising mutual-cooperation rate does not say \emph{which} outcome it
 displaces, so we decompose every tournament cell into mutual cooperation,
-exploitation, and mutual defection. Here the two zoos tell genuinely
-different stories at $\alpha = 0.5$.
+exploitation, and mutual defection, for $\alpha = 0.5$ and the behavioral channel.
 
 In the \textbf{default zoo, blur feeds the defectors}. As transparency
 falls toward $t = 0.3$, exploitation \emph{spikes} from $0.45$ to $0.53$
@@ -396,46 +395,5 @@ cooperation-favoring compared to being confused uniformly --- and twice
 as much so in the enlarged zoo, whose confusion neighborhoods are more
 cooperative. The syntactic channel tracks between the two. The effect is
 real but second-order next to the $t$ and $\alpha$ axes.
-
-\subsection{Head-to-head summary}
-
-\begin{center}
-\small
-\begin{tabular}{lp{0.3\textwidth}p{0.3\textwidth}}
-\toprule
- & default (11) & enlarged (16) \\
-\midrule
-base (CC / exploit / DD) & $0.33$ / $0.45$ / $0.22$ & $0.46$ / $0.34$ / $0.20$ \\
-opaque limit, $\alpha=0.1$ & $0.67$ (excl.\ \zoobot{DefectBot}, \zoobot{PrudentBot}) & $0.88$ (excl.\ \zoobot{DefectBot}) \\
-blur at $\alpha=0.5$ mainly\dots & feeds \zoobot{DefectBot} (exploitation spike at $t \approx 0.3$) & heals prover--prover: DD $0.20 \to 0.06$ \\
-$\alpha$ dead zone at $t=0.5$ & wide, $(0.41, 0.65)$ & narrow, $(0.55, 0.65)$ \\
-distinct $\alpha$ breakpoints & 98 & 158 \\
-structure value at low $t$ & $+0.017$ & $+0.039$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-The enlarged zoo is more cooperative at baseline, gains more from blur,
-suffers less exploitation from it, and gives both dials more resolution.
-But it buys all of this with seven stipulated cells, a broken anchor, and
-two bots whose lifts are permanently distorted. Our working division of
-labor is therefore: use the \textbf{default zoo} for any claim that leans
-on the anchor theorem or on kernel-clean provenance, and the
-\textbf{enlarged zoo} for the phenomena that need the search fragment ---
-above all the floor-healing effect, which simply does not exist in the
-default zoo's flip anatomy.
-
-\subsection{Caveats and next steps}
-
-All enlarged-zoo results are conditional on seven stipulated cells; the
-tooling flags them, and a stipulation can never silently shadow a proven
-cell (the loader fails loudly, which has already caught one stale entry in
-practice). Grids are $t$ in steps of
-$0.05$--$0.1$ and $\alpha$ in steps of $0.1$; the critical band around
-$\alpha \approx 0.5$ deserves a finer sweep. And unless stated otherwise
-the numbers above use the behavioral family --- whether the
-prover-fragment story survives under the \emph{syntactic} channel, where
-what leaks is code rather than conduct, is the most natural next
-experiment.
 
 \end{document}
