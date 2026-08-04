@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260804T151134",
+  "bot_a": "OptimBot",
+  "bot_b": "DBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 1,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 16,
+  "tool_calls_used": 16,
+  "usage": {
+    "input_tokens": 32,
+    "output_tokens": 54491,
+    "cache_read_tokens": 2486519,
+    "cache_creation_tokens": 96853
+  },
+  "elapsed_seconds": 1211.6301261249973,
+  "notebook": "# OptimBot vs DBot — SOLVED. Outcome (C,C) with kSelf = 1e8*k.\nTheorem llm_outcome_OptimBot_vs_DBot COMPILES (exit 0, no warnings). Full source in submission.\n\n## Key structure that WORKED:\n- OptimBot k (1e8*k). Staggering intended.\n- selfD Löb premise via Pf.searchElseChain (elseL,elseL,thenL,thenL layers) — VERIFIED at budget 500k+500log2 S+500log2 k+100000.\n- provable at S=1e8*k via bloeb_engine DIRECTLY (NOT pblt_engine — pblt gives ∃m unbounded!). W = pm+φ.size+log2 S+8, need 8192*W ≤ S. THRESHOLD k>100 needed (k>2 FAILS the omega — worked out 8192W ≤ 1e8k needs k≥11).\n- log2(1e8*k) ≤ log2 k + 27 via Nat.log2_lt + pow bound (2^27=134217728).\n- omega for hWbound: keep S concrete as 100000000*k everywhere (don't `set S` before the omega; rw [hW,hpmdef] then omega with hlogS, hsz, log2_le_self k).\n- DBot coops vs Opt: probes Opt vs .bot DefectBot, sees D (Löb closes) → else C.\n- Opt plays C vs DBot: outer guards \"DBot plays C vs Opt\"@k FALSE (floor no_provable_probeFirst_tail: Opt is searcher, pT=rung1inner, pE=rung2out, z=DefectBot, hfalse=interp_bot_DefectBot_plays_C_false), \"DBot plays D vs Opt\"@k FALSE (DBot coops) → rung3 else const C.\n- Final threshold: max k₂ 2 where k₂ from provable.",
+  "hidden_bots": [],
+  "final_text": "The full proof compiles with exit code 0 and no warnings. The outcome is (C, C). Let me update my notebook and submit."
+}

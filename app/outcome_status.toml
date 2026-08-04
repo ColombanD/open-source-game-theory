@@ -90,3 +90,7 @@ reason = "Confirmed via app UI (agent verdict: open_blocked)."
 [[tried]]
 pair = ["OptimBot", "OBot"]
 reason = "Proof agent failed (no_output) on 2026-08-04; see app/generated/outcomes/."
+
+[[open]]
+pair = ["OptimBot", "MirrorBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."

@@ -180,3 +180,4 @@ import PrisonersDilemma.Theorems.WaryBot.vs_JustBot
 import PrisonersDilemma.Theorems.WaryBot.vs_GuardianBot
 import PrisonersDilemma.Theorems.WaryBot.vs_OptimBot
 import PrisonersDilemma.Theorems.OptimBot.vs_TitForTatBot
+import PrisonersDilemma.Theorems.OptimBot.vs_DBot
