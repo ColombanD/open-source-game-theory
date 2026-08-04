@@ -152,31 +152,22 @@ the equation as a \emph{definition} of how tau agents play --- but that
 stipulation \emph{is} Def.~3, which is why we write
 $\mathrm{outcome}(A, B_i)$ and move on.
 
-\subsection{The transparency dial}
-
-It remains to say what ``40\% transparency'' means. The dial \emph{is} the
-normalized mutual information $I(B;\sigma(B))/H(B)$ of the signalling
-channel under a uniform prior over the zoo, with $t = 1$ full transparency
-and $t = 0$ opaque. Whatever internal knob a signal family uses (a softmax
-temperature, a mixing weight) is bisection-inverted against this scale and
-never exposed. The payoff of this calibration discipline is comparability:
-at matched $t$, every signal family carries the \emph{same information
-rate}, so any difference between families at equal $t$ isolates the effect
-of confusion \emph{structure} --- which bots get mistaken for which ---
-rather than differences in how much information flows.
-
 \section{Experimental setup}
 
 The tau layer is pure matrix arithmetic over the Lean-verified outcome
 table, so the experiments run entirely in Python with the kernel-checked
 matrix as ground truth. Two ingredients vary: the signal family
-$\sigma$, and the sub-zoo the matrix is restricted to.
+$\sigma$, and the sub-zoo the matrix is restricted to. We first define the
+three signal families with their raw internal knobs, then explain how those
+knobs are calibrated onto the single transparency scale $t$ that all the
+results are plotted against.
 
 \subsection{Three $\sigma$ families}
 
 Except for the null control, each family has the form
 $\sigma(B)[B'] \propto \exp(-d(B,B')/T)$ for a family-specific distance
-$d$, with the temperature $T$ calibrated onto the shared $t$ dial.
+$d$ and an internal temperature $T$ (a small $T$ concentrates the signal
+on the true opponent; a large $T$ flattens it toward uniform).
 
 The \textbf{behavioral} family takes $d$ to be the Hamming distance between
 the two bots' own-action rows in the outcome matrix: close means ``plays
@@ -192,8 +183,8 @@ $\sigma = (1-\varepsilon)\,\delta_B + \varepsilon\,U$, is the null control.
 It has no similarity structure at all: every bot is equally confusable with
 every other, so identity leaks but resemblance plays no role. Because it is
 identity-based it has no twin ceiling (below), and divergence between it
-and a structured family at matched $t$ isolates the effect of confusion
-structure itself.
+and a structured family at matched transparency isolates the effect of
+confusion structure itself.
 
 The \textbf{syntactic} family models an observer who partially \emph{reads
 the source} rather than watching play --- degraded open-source game theory
@@ -201,18 +192,35 @@ in the most literal sense. Here $d$ is the normalized Zhang--Shasha tree
 edit distance between parsed \texttt{Prog} terms: the minimum number of
 node insertions, deletions and relabelings turning one abstract syntax tree
 into the other, divided by the larger tree's node count so that the measure
-is scale-free. Two conventions matter. Search \emph{budgets} are erased ---
-$\cupod\,k$ and $\cupod\,(2k{+}64)$ are the same code to this observer,
-because the budget is Critch's own \emph{depth} dial and folding it into
-the code channel would conflate two orthogonal transparency axes. And
-referenced bots are opaque labelled leaves: an observer glimpsing
-\texttt{.bot DefectBot} sees the \emph{name}, not the body. The syntactic
+is scale-free. The syntactic
 channel's confusion structure \emph{inverts} the behavioral one ---
 \dupoc{} and \cupod{} are syntactic near-twins (same tree, swapped action
 leaves) with opposite dispositions, while \zoobot{CooperateBot} and
 \zoobot{CupodTrollBot} are behavioral near-twins with wildly different
 sources --- and globally the two distances correlate at only $+0.16$, so
 the two channels are genuinely different objects, not noisy copies.
+
+\subsection{The transparency dial}
+
+The three families now on the table expose three incomparable knobs: two
+softmax temperatures over different distances, and a mixing weight
+$\varepsilon$. ``Temperature $2.7$ on the behavioral channel'' and
+``$\varepsilon = 0.3$'' say nothing about how much information each signal
+actually carries, so comparing families --- or even plotting one family on
+a meaningful axis --- requires a common scale. That scale is the
+transparency dial $t \in [0,1]$, and it \emph{is} the normalized mutual
+information $I(B;\sigma(B))/H(B)$ of the signalling channel under a
+uniform prior over the zoo: the fraction of the uncertainty about the
+opponent's identity that the signal resolves, with $t = 1$ full
+transparency and $t = 0$ opaque. Each family's internal knob is
+bisection-inverted against this scale and never exposed: dialing
+$t = 0.4$ yields, in every family, a channel whose \emph{measured}
+transparency is 40\%. The payoff of this calibration discipline is
+comparability: at matched $t$, every signal family carries the \emph{same
+information rate}, so any difference between families at equal $t$
+isolates the effect of confusion \emph{structure} --- which bots get
+mistaken for which --- rather than differences in how much information
+flows.
 
 \subsection{Two sub-zoos}
 
@@ -222,10 +230,7 @@ are chosen as closed fragments of the outcome table rather than by fiat.
 The \textbf{default zoo} (11 bots: \zoobot{CooperateBot}, \cupod,
 \zoobot{CupodTrollBot}, \zoobot{DBot}, \zoobot{DefectBot}, \dupoc,
 \zoobot{EBot}, \zoobot{GuardianBot}, \zoobot{OBot}, \zoobot{PrudentBot},
-\zoobot{TitForTatBot}) is the clean instrument. It is behaviorally
-\emph{twin-free} --- no two members share an action row --- so its
-transparency scale reaches exactly $1.0$ and every bot is identifiable
-from behavior alone. It carries two stipulated (unproven) cells involving
+\zoobot{TitForTatBot}) is the clean instrument. It carries two stipulated (unproven) cells involving
 \cupod, flagged as such by the tooling.
 
 The \textbf{enlarged zoo} (16 bots) adds \zoobot{JustBot} and
@@ -237,14 +242,7 @@ rather than proven (all on the search$\times$search frontier), so every
 enlarged-zoo result is conditional on them. \zoobot{MirrorBot}'s self-play
 is the proven-\texttt{none} fifth state $N$ --- mutual simulation never
 terminates --- which we read \emph{pessimistically}: an $N$ hypothesis
-contributes no cooperation mass. And the zoo has two behavioral twin
-groups, $\{$\zoobot{CooperateBot}, \zoobot{LegibleBot}$\}$ and
-$\{$\dupoc, \zoobot{JustBot}$\}$, which cap the behavioral transparency
-ceiling at $0.938$: on this zoo, ``$t = 1$'' means \emph{the most
-informative behavioral signal possible}, not a true point mass. As we will
-see, this ceiling is not a nuisance parameter --- it produces one of the
-more instructive results.
-
+contributes no cooperation mass. 
 \section{Experimental results and analysis}
 
 \subsection{The anchor theorem, and two instructive failures}
@@ -253,35 +251,7 @@ The construction's basic sanity check is the \emph{anchor}: at full
 transparency the tau tournament should reproduce the base outcome matrix
 exactly, since every signal is (numerically) a point mass and every
 cooperation mass is $0$ or $1$. On the default zoo this holds on the nose:
-at $t = 1$, $\alpha = 0.5$, zero cells differ from base.
-
-On the enlarged zoo, three cells differ from base \emph{even at full
-transparency}, and both underlying mechanisms are findings rather than
-bugs. The first is that \textbf{twins make the base matrix unrecoverable
-for any bot that treats twins differently}. A signal that the opponent is
-\dupoc{} is \emph{necessarily} the fifty-fifty mixture
-$\{\dupoc: 0.5,\ \zoobot{JustBot}: 0.5\}$: the two have identical action
-rows, so no behavioral signal, at any blur level, can separate them.
-\dimcid{} happens to be the unique zoo member that plays differently
-against the pair ($D$ against \dupoc, $C$ against \zoobot{JustBot}), so
-its cooperation mass against a ``\dupoc'' signal is exactly $0.50$ --- and
-no caution threshold avoids distortion, since $\alpha \le 0.5$ flips its
-\dupoc{} cell to $C$ while $\alpha > 0.5$ flips its \zoobot{JustBot} cell
-to $D$. The abstract twin ceiling of $0.938$ is thus made concrete in a
-single bot: \dimcid{} can never behave as its base self on this zoo, at
-any transparency.
-
-The second failure is that \textbf{the $N$ cell is unreproducible by
-construction}. Tau agents output only $C$ or $D$; \zoobot{MirrorBot}'s
-proven-\texttt{none} self-play has no image in that codomain, and under
-the pessimistic reading its self-mass is $0$, so tau-\zoobot{MirrorBot}
-defects against itself at every $\alpha > 0$ --- where the base
-\zoobot{MirrorBot} \emph{diverges} against itself.
-
-The honest statement of the anchor theorem is therefore: \emph{full
-transparency reproduces the base matrix on twin-free zoos with no $N$
-cells}. That is exactly the default zoo, and provably not the enlarged
-one.
+at $t = 1$, $\alpha = 0.5$, zero cells differ from base. It is not clear whether this theorem would hold for Taubots as defined by the first attempt.
 
 \subsection{The caution axis: three regimes and two knife edges}
 
@@ -436,7 +406,6 @@ real but second-order next to the $t$ and $\alpha$ axes.
  & default (11) & enlarged (16) \\
 \midrule
 base (CC / exploit / DD) & $0.33$ / $0.45$ / $0.22$ & $0.46$ / $0.34$ / $0.20$ \\
-anchor at $t=1$ & exact & 3 cells off (twins $+$ $N$) \\
 opaque limit, $\alpha=0.1$ & $0.67$ (excl.\ \zoobot{DefectBot}, \zoobot{PrudentBot}) & $0.88$ (excl.\ \zoobot{DefectBot}) \\
 blur at $\alpha=0.5$ mainly\dots & feeds \zoobot{DefectBot} (exploitation spike at $t \approx 0.3$) & heals prover--prover: DD $0.20 \to 0.06$ \\
 $\alpha$ dead zone at $t=0.5$ & wide, $(0.41, 0.65)$ & narrow, $(0.55, 0.65)$ \\
@@ -461,9 +430,7 @@ default zoo's flip anatomy.
 All enlarged-zoo results are conditional on seven stipulated cells; the
 tooling flags them, and a stipulation can never silently shadow a proven
 cell (the loader fails loudly, which has already caught one stale entry in
-practice). The $N$ cell is read pessimistically, and the
-\zoobot{MirrorBot} conclusions should be re-checked under the optimistic
-convention before anything is built on them. Grids are $t$ in steps of
+practice). Grids are $t$ in steps of
 $0.05$--$0.1$ and $\alpha$ in steps of $0.1$; the critical band around
 $\alpha \approx 0.5$ deserves a finer sweep. And unless stated otherwise
 the numbers above use the behavioral family --- whether the
