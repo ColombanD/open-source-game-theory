@@ -1,0 +1,474 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+
+\title{TauBots: graded transparency over the zoo\\
+\large Design, experimental setup, and first results}
+\author{Colomban Duclaux}
+\date{\today}
+
+% Bot names, matching the other notes.
+\newcommand{\zoobot}[1]{\texttt{#1}}
+\newcommand{\dupoc}{\zoobot{DupocBot}}
+\newcommand{\cupod}{\zoobot{CupodBot}}
+\newcommand{\cimcic}{\zoobot{CIMCIC}}
+\newcommand{\dimcid}{\zoobot{DIMCID}}
+\newcommand{\Tau}{\mathrm{Tau}}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+In these notes, we describe an experiment on graded transparency based on the TauBots framework. The headline finding is that transparency's effect on cooperation depends on the agents' caution
+threshold \emph{in sign}: cautious agents need transparency to cooperate at
+all, trusting agents cooperate \emph{more} as the signal degrades, and between
+the two lies a band where the tournament barely moves. On the larger zoo we
+also observe a phenomenon we call \emph{floor healing}: blur restores
+cooperation between prover bots that full transparency, combined with bounded
+proof budgets, had destroyed.
+
+\section{Design choices}
+
+\subsection{Why partial transparency, and what constrains the design}
+
+Two constraints shaped everything that follows. First, we must \textbf{reuse
+the existing zoo and outcome matrix}. Prover bots (\dupoc{} and company) need
+\emph{exact syntax} to prove anything --- a guard like ``the opponent
+provably cooperates'' quantifies over a concrete term, and a corrupted or
+noised source is simply useless to them. Whatever ``blur'' means, it cannot
+mean perturbing programs. Second, we want \textbf{graded intensity}: the
+formalism should let us speak meaningfully of 20\%, 40\%, 60\% transparency,
+so that cooperation can be plotted \emph{against} transparency rather than
+merely compared at the two endpoints.
+
+The first constraint essentially forces the design. If hypotheses must be
+exact programs, then uncertainty can only live in \emph{which} program the
+opponent is. A signal is therefore a probability distribution over the zoo:
+candidates $B_1, \dots, B_n$ with weights $p_1, \dots, p_n$ summing to one.
+Every hypothesis is a real, fully-transparent zoo member backed by a proven
+matrix cell; the blur lives entirely in the weights.
+
+\subsection{Defining the tau lift: a false start and the fix}
+
+Given a signal, how should an agent $A$ act on it? After some research, the
+definition one first writes down is a threshold vote over the hypotheses:
+
+\begin{algorithm}[h]
+\caption{First attempt (rejected): tau hypotheses in the signal}
+\begin{algorithmic}
+\Procedure{$\Tau A(\alpha)$}{$\Tau B_1,\dots,\Tau B_n,\; p_1,\dots,p_n$}
+  \State $\mathit{sumCs} \gets 0$
+  \For{$i = 1, \dots, n$}
+    \If{$\mathrm{outcome}(A(\Tau B_i)) = C$}
+      \State $\mathit{sumCs} \mathrel{+}= p_i$
+    \EndIf
+  \EndFor
+  \If{$\mathit{sumCs} \ge \alpha$} \Return $C$ \Else{} \Return $D$ \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The flaw is hiding in the argument list: the hypotheses are themselves
+\emph{tau} agents. Each $\Tau B_i$'s play depends on a signal about
+\emph{its} opponent, whose play depends on a further signal, and the
+definition recurses with no base case --- one must remove the inner
+$\Tau B \to B$, because otherwise the recursion is infinite. This is not a
+cosmetic problem: unlike the self-referential loops that L\"obian
+cooperation resolves, this regress has no provability structure to anchor
+it, so there is no bounded-L\"ob rescue. It is an ungrounded, potentially
+bistable fixpoint, and we reject the definition outright.
+
+The fix is to ground the hypotheses at the \emph{base} zoo:
+
+\begin{algorithm}[h]
+\caption{Final version (Def.~3): base hypotheses, self probe}
+\begin{algorithmic}
+\Procedure{$\Tau A(\alpha)$}{$B_1,\dots,B_n,\; p_1,\dots,p_n$}
+  \State $\mathit{sumCs} \gets 0$
+  \For{$i = 1, \dots, n$}
+    \If{$\mathrm{outcome}(A(B_i)) = C$}
+      \Comment{$A$'s \emph{own} action in the proven cell $\mathrm{outcome}(A, B_i)$}
+      \State $\mathit{sumCs} \mathrel{+}= p_i$
+    \EndIf
+  \EndFor
+  \If{$\mathit{sumCs} \ge \alpha$} \Return $C$ \Else{} \Return $D$ \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The initial definition could in theory be used to define Tau agents, but it is much more complex to implement in practice, and it is not clear that it would be well-defined, which is why we stick with the final version for this experiment.
+
+\subsection{Harsanyi type spaces -- Literature Review}
+
+The construction is not ad hoc; it is a Harsanyi type space with the zoo as
+the type set. Harsanyi's move for games of incomplete information was to
+compress the infinite belief hierarchy into a \emph{type}, each player
+holding a probability distribution over the opponent's possible types. Our
+signal is exactly such a belief, and the signal's concentration is the
+information dial: a point mass is complete information --- Critch's regime
+--- while the uniform distribution is no information, the classical opaque
+PD.
+
+We deviate from the full Harsanyi apparatus in three deliberate ways. The
+hierarchy is truncated at level one: the zoo is level zero, and there are no
+beliefs about beliefs. There is no common prior: signals are exogenous
+parameters we sweep, so our outputs are phase diagrams rather than
+equilibria. And our types are \emph{intensional} --- a type determines the
+opponent's \emph{term}, not merely its payoffs, which is precisely what lets
+behaviorally identical types be distinguished (or not) by the L\"obian
+fragment. Note also that the tau lift is \emph{not} Bayesian best response:
+it thresholds $A$'s own cooperation mass and thereby preserves $A$'s
+decision procedure. The information structure is Harsanyi's; the decision
+rule deliberately is not.
+
+\subsection{Does the lift commute with the base game?}
+
+A natural question is whether
+$\mathrm{outcome}(A(\Tau B)) = \mathrm{outcome}(A(B))$ --- whether playing
+against a lifted opponent is the same as playing against the base one. The
+conjectured answer is a clean split along the zoo's most meaningful
+boundary. For \textbf{sim-only} agents $A$ (\zoobot{TitForTatBot},
+\zoobot{MirrorBot}, \dots) the equation should hold for sufficient fuel:
+simulators only observe behavior, and a lifted $B$ under a point-mass
+counterfactual signal behaves exactly like $B$. \emph{Blur is invisible to
+behavioral bots.} For \textbf{proof-search} agents $A$ (\dupoc,
+\zoobot{PrudentBot}, \dots) the equation \emph{fails}: their guards are
+provability statements about the opponent's literal term, and
+$\Tau B$'s term is not $B$'s term. \emph{Blur is detectable precisely by
+the bots that read source code.} If proven, this split would both justify
+the construction --- the new phenomena live exactly where Critch's
+machinery lives --- and cut the experimental workload, since behavioral
+base-vs-tau cells reduce to existing matrix cells.
+
+As a general theorem the equation is simply false: open-source game theory
+is intensional, proof costs scale with term size, and the mutual-L\"ob
+fixpoint shapes do not exist against tau-shaped terms. One could stipulate
+the equation as a \emph{definition} of how tau agents play --- but that
+stipulation \emph{is} Def.~3, which is why we write
+$\mathrm{outcome}(A, B_i)$ and move on.
+
+\subsection{The transparency dial}
+
+It remains to say what ``40\% transparency'' means. The dial \emph{is} the
+normalized mutual information $I(B;\sigma(B))/H(B)$ of the signalling
+channel under a uniform prior over the zoo, with $t = 1$ full transparency
+and $t = 0$ opaque. Whatever internal knob a signal family uses (a softmax
+temperature, a mixing weight) is bisection-inverted against this scale and
+never exposed. The payoff of this calibration discipline is comparability:
+at matched $t$, every signal family carries the \emph{same information
+rate}, so any difference between families at equal $t$ isolates the effect
+of confusion \emph{structure} --- which bots get mistaken for which ---
+rather than differences in how much information flows.
+
+\section{Experimental setup}
+
+The tau layer is pure matrix arithmetic over the Lean-verified outcome
+table, so the experiments run entirely in Python with the kernel-checked
+matrix as ground truth. Two ingredients vary: the signal family
+$\sigma$, and the sub-zoo the matrix is restricted to.
+
+\subsection{Three $\sigma$ families}
+
+Except for the null control, each family has the form
+$\sigma(B)[B'] \propto \exp(-d(B,B')/T)$ for a family-specific distance
+$d$, with the temperature $T$ calibrated onto the shared $t$ dial.
+
+The \textbf{behavioral} family takes $d$ to be the Hamming distance between
+the two bots' own-action rows in the outcome matrix: close means ``plays
+like''. This is not an arbitrary choice of kernel --- it is the exact Bayes
+posterior (under a uniform prior) of an observer who watched the bot play
+every zoo member through a noisy channel that flips each observation with
+probability $p$, since $p^d(1-p)^{n-d} \propto \exp(-d \cdot
+\ln\frac{1-p}{p})$ is a softmax in $d$. The behavioral channel is the
+formalization of the classical ``watching it play'' story.
+
+The \textbf{$\varepsilon$-uniform} family,
+$\sigma = (1-\varepsilon)\,\delta_B + \varepsilon\,U$, is the null control.
+It has no similarity structure at all: every bot is equally confusable with
+every other, so identity leaks but resemblance plays no role. Because it is
+identity-based it has no twin ceiling (below), and divergence between it
+and a structured family at matched $t$ isolates the effect of confusion
+structure itself.
+
+The \textbf{syntactic} family models an observer who partially \emph{reads
+the source} rather than watching play --- degraded open-source game theory
+in the most literal sense. Here $d$ is the normalized Zhang--Shasha tree
+edit distance between parsed \texttt{Prog} terms: the minimum number of
+node insertions, deletions and relabelings turning one abstract syntax tree
+into the other, divided by the larger tree's node count so that the measure
+is scale-free. Two conventions matter. Search \emph{budgets} are erased ---
+$\cupod\,k$ and $\cupod\,(2k{+}64)$ are the same code to this observer,
+because the budget is Critch's own \emph{depth} dial and folding it into
+the code channel would conflate two orthogonal transparency axes. And
+referenced bots are opaque labelled leaves: an observer glimpsing
+\texttt{.bot DefectBot} sees the \emph{name}, not the body. The syntactic
+channel's confusion structure \emph{inverts} the behavioral one ---
+\dupoc{} and \cupod{} are syntactic near-twins (same tree, swapped action
+leaves) with opposite dispositions, while \zoobot{CooperateBot} and
+\zoobot{CupodTrollBot} are behavioral near-twins with wildly different
+sources --- and globally the two distances correlate at only $+0.16$, so
+the two channels are genuinely different objects, not noisy copies.
+
+\subsection{Two sub-zoos}
+
+The tau layer demands a \emph{totally proven} ordered submatrix, so zoos
+are chosen as closed fragments of the outcome table rather than by fiat.
+
+The \textbf{default zoo} (11 bots: \zoobot{CooperateBot}, \cupod,
+\zoobot{CupodTrollBot}, \zoobot{DBot}, \zoobot{DefectBot}, \dupoc,
+\zoobot{EBot}, \zoobot{GuardianBot}, \zoobot{OBot}, \zoobot{PrudentBot},
+\zoobot{TitForTatBot}) is the clean instrument. It is behaviorally
+\emph{twin-free} --- no two members share an action row --- so its
+transparency scale reaches exactly $1.0$ and every bot is identifiable
+from behavior alone. It carries two stipulated (unproven) cells involving
+\cupod, flagged as such by the tooling.
+
+The \textbf{enlarged zoo} (16 bots) adds \zoobot{JustBot} and
+\zoobot{LegibleBot} --- the behavioral twins deliberately excluded from
+the default zoo --- together with \cimcic{} and \dimcid{} from the
+search$\times$search frontier, and \zoobot{MirrorBot}. This purchase comes
+with three assumptions worth stating plainly. Seven cells are stipulated
+rather than proven (all on the search$\times$search frontier), so every
+enlarged-zoo result is conditional on them. \zoobot{MirrorBot}'s self-play
+is the proven-\texttt{none} fifth state $N$ --- mutual simulation never
+terminates --- which we read \emph{pessimistically}: an $N$ hypothesis
+contributes no cooperation mass. And the zoo has two behavioral twin
+groups, $\{$\zoobot{CooperateBot}, \zoobot{LegibleBot}$\}$ and
+$\{$\dupoc, \zoobot{JustBot}$\}$, which cap the behavioral transparency
+ceiling at $0.938$: on this zoo, ``$t = 1$'' means \emph{the most
+informative behavioral signal possible}, not a true point mass. As we will
+see, this ceiling is not a nuisance parameter --- it produces one of the
+more instructive results.
+
+\section{Experimental results and analysis}
+
+\subsection{The anchor theorem, and two instructive failures}
+
+The construction's basic sanity check is the \emph{anchor}: at full
+transparency the tau tournament should reproduce the base outcome matrix
+exactly, since every signal is (numerically) a point mass and every
+cooperation mass is $0$ or $1$. On the default zoo this holds on the nose:
+at $t = 1$, $\alpha = 0.5$, zero cells differ from base.
+
+On the enlarged zoo, three cells differ from base \emph{even at full
+transparency}, and both underlying mechanisms are findings rather than
+bugs. The first is that \textbf{twins make the base matrix unrecoverable
+for any bot that treats twins differently}. A signal that the opponent is
+\dupoc{} is \emph{necessarily} the fifty-fifty mixture
+$\{\dupoc: 0.5,\ \zoobot{JustBot}: 0.5\}$: the two have identical action
+rows, so no behavioral signal, at any blur level, can separate them.
+\dimcid{} happens to be the unique zoo member that plays differently
+against the pair ($D$ against \dupoc, $C$ against \zoobot{JustBot}), so
+its cooperation mass against a ``\dupoc'' signal is exactly $0.50$ --- and
+no caution threshold avoids distortion, since $\alpha \le 0.5$ flips its
+\dupoc{} cell to $C$ while $\alpha > 0.5$ flips its \zoobot{JustBot} cell
+to $D$. The abstract twin ceiling of $0.938$ is thus made concrete in a
+single bot: \dimcid{} can never behave as its base self on this zoo, at
+any transparency.
+
+The second failure is that \textbf{the $N$ cell is unreproducible by
+construction}. Tau agents output only $C$ or $D$; \zoobot{MirrorBot}'s
+proven-\texttt{none} self-play has no image in that codomain, and under
+the pessimistic reading its self-mass is $0$, so tau-\zoobot{MirrorBot}
+defects against itself at every $\alpha > 0$ --- where the base
+\zoobot{MirrorBot} \emph{diverges} against itself.
+
+The honest statement of the anchor theorem is therefore: \emph{full
+transparency reproduces the base matrix on twin-free zoos with no $N$
+cells}. That is exactly the default zoo, and provably not the enlarged
+one.
+
+\subsection{The caution axis: three regimes and two knife edges}
+
+Sweeping $\alpha$ at fixed transparency reveals the same three-regime
+structure in both zoos, bracketed by two knife edges.
+
+At the top, \textbf{$\alpha = 1$ collapses instantly}. Unanimity matches
+the base matrix at $t = 1$, but at $t = 0.9$ mutual cooperation crashes to
+$0.01$ (default) and $0.02$ (enlarged) --- exactly the unconditional
+cooperators' self-cells, $1/121$ and $4/256$. A unanimous voter tolerates
+zero blur: the moment any hypothesis mass falls on a defection-eliciting
+bot, cooperation dies.
+
+At the bottom, \textbf{$\alpha \to 0$ saturates --- with one telling
+exception}. At full opacity and $\alpha = 0.1$, an agent cooperates unless
+its \emph{base cooperation fraction} over the zoo falls below $\alpha$. In
+the enlarged zoo only \zoobot{DefectBot} fails this test, giving
+$\mathrm{CC} = (15/16)^2 = 0.88$. In the default zoo, however,
+\zoobot{PrudentBot} fails it too: it cooperates with just one of eleven
+members ($1/11 = 0.09 < 0.1$), so even a maximally trusting
+tau-\zoobot{PrudentBot} defects under uniform blur, and the ceiling is
+$(9/11)^2 = 0.67$. \zoobot{PrudentBot} is so selective that its lift is a
+near-defector in the opaque limit --- prudence, pushed through the tau
+construction, shades into misanthropy.
+
+Between the edges lies \textbf{a dead zone where $\alpha$ is irrelevant}.
+Only finitely many cooperation masses are achievable at a given $t$, and
+between consecutive masses every $\alpha$ produces the identical
+tournament. At $t = 0.5$ the gap is wide in the default zoo ---
+$(0.41, 0.65)$, so the entire ``moderate caution'' band collapses to one
+behavior --- and much narrower in the enlarged zoo, $(0.55, 0.65)$. With
+158 distinct achievable masses against 98, the enlarged zoo simply offers
+the caution dial more purchase. (A practical corollary for anyone
+extending these sweeps: always step \emph{between} breakpoints; an
+$\alpha$ sitting exactly on an achievable mass lets floating-point noise
+decide plays.)
+
+\subsection{The transparency axis: the effect on cooperation is
+$\alpha$-dependent in sign}
+
+The central result of the sweep is easy to state: \emph{whether
+transparency helps cooperation depends on who is asking}. The same pattern
+holds in both zoos and under all three signal families:
+
+\begin{center}
+\small
+\begin{tabular}{lp{0.62\textwidth}}
+\toprule
+regime & effect of \emph{decreasing} transparency \\
+\midrule
+$\alpha \lesssim 0.4$ (trusting) & cooperation \textbf{rises} monotonically
+  (default $0.33 \to 0.67$; enlarged $0.46 \to 0.88$ at $\alpha=0.1$) \\
+$\alpha \approx 0.5$--$0.6$ & flat at the base rate over most of the range \\
+$\alpha \gtrsim 0.7$ (cautious) & cooperation \textbf{falls} monotonically
+  (both zoos $\to$ $\approx 0.01$--$0.06$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For cautious agents, transparency is \emph{necessary} for cooperation:
+as the signal degrades, hypothesis mass leaks onto bots they would defect
+against, and their threshold stops being met. For trusting agents,
+transparency actively \emph{suppresses} cooperation: under blur they
+extend cooperation to nearly anyone, including bots they would correctly
+defect against under full information. And around $\alpha \approx 0.5$
+the two forces roughly cancel, leaving a transparency-invariant band
+anchored at the base rate. The question ``does transparency help
+cooperation?'' has no unconditional answer; the honest unit of analysis
+is the $(t, \alpha)$ phase diagram.
+
+\subsection{What the extra cooperation is made of: suckers in one zoo,
+healed provers in the other}
+
+A rising mutual-cooperation rate does not say \emph{which} outcome it
+displaces, so we decompose every tournament cell into mutual cooperation,
+exploitation, and mutual defection. Here the two zoos tell genuinely
+different stories at $\alpha = 0.5$.
+
+In the \textbf{default zoo, blur feeds the defectors}. As transparency
+falls toward $t = 0.3$, exploitation \emph{spikes} from $0.45$ to $0.53$
+before mutual cooperation ever rises: the newly cooperative cells are
+\cupod, \zoobot{EBot} and \zoobot{GuardianBot} extending cooperation
+\emph{to} \zoobot{DefectBot}, which happily defects back. Meanwhile
+\zoobot{PrudentBot} \emph{loses} its single cooperation (with \dupoc) ---
+prudence collapses under blur. In this zoo, rising cooperation at low
+transparency is substantially bots being suckered.
+
+In the \textbf{enlarged zoo, blur heals prover--prover defection}. The
+same sweep shows six cooperation gains, \emph{zero} losses, and none of
+the gains directed at exploiters: the gainers are \cimcic{} (twice),
+\cupod, \zoobot{CupodTrollBot}, \dupoc{} and \zoobot{JustBot} --- the
+search fragment cooperating \emph{with each other}. Mutual defection
+collapses from $0.20$ to $0.06$ while exploitation stays flat. The
+mechanism deserves spelling out. Many of the enlarged zoo's $(D,D)$ cells
+are not preference facts but \emph{proof-theoretic floor artifacts}: pairs
+of provers that ``want'' to cooperate but cannot certify each other's
+cooperation at matched budgets, because the certificate would have to pay
+the very search floor it reasons about. Under blur, the hypothesis set
+around such an opponent includes its cooperative behavioral neighbors;
+the weighted vote crosses threshold; and the cooperation that proof
+search could not deliver simply appears. \textbf{Ignorance restores
+cooperation that the proof floor destroyed} --- to our knowledge the
+cleanest example in this project of information reducing welfare through
+the provability channel.
+
+\subsection{Robustness: who needs transparency to be themselves}
+
+For each bot we record the highest transparency at which its tau row first
+departs from its base row --- a per-bot fragility measure (higher
+threshold means more fragile). Three patterns emerge.
+
+The constant bots (\zoobot{CooperateBot}, \zoobot{DefectBot},
+\zoobot{LegibleBot}) never deviate at any $\alpha$: unconditional
+behavior has nothing to lose to blur. Among the conditional bots,
+fragility is \textbf{U-shaped in caution}: in the default zoo the most
+robust regime is $\alpha = 0.5$, where every threshold sits at or below
+$0.35$, while at $\alpha = 0.3$ and $\alpha = 0.8$ deviations begin as
+early as $t = 0.65$--$0.75$. Mid-caution agents are the most faithful
+lifts of their base selves --- yet another sense in which
+$\alpha \approx 0.5$ is the construction's stable point. Moreover the
+\emph{identity} of the fragile class rotates with $\alpha$: at high
+caution the provers and probers break first (\dupoc, \zoobot{DBot},
+\zoobot{EBot}, \cimcic, \zoobot{JustBot} at $0.75$--$0.80$), while at low
+caution it is the guarded and trollish bots (\cupod, \zoobot{GuardianBot},
+\zoobot{EBot}); \zoobot{OBot} is strikingly robust at low $\alpha$,
+deviating only at full opacity. In the enlarged zoo, \dimcid{} and
+\zoobot{MirrorBot} sit at threshold $1.00$ for every $\alpha$ --- these
+are the structural twin and $N$ artifacts of \S 3.1, not blur
+sensitivity, and should be read as such.
+
+\subsection{Does confusion structure matter?}
+
+Finally, the comparison the calibration discipline was built for: at
+matched transparency, does it matter \emph{which} bots get confused? Above
+$t \approx 0.5$, essentially not --- the three families agree almost
+everywhere, so moderate blur acts through its information rate alone.
+Below that, structure pays a small but consistent dividend: at
+$\alpha = 0.5$ the behavioral channel exceeds the $\varepsilon$-uniform
+null by $+0.017$ (default) and $+0.039$ (enlarged) in mutual cooperation.
+Being confused with your behavioral neighbors is mildly
+cooperation-favoring compared to being confused uniformly --- and twice
+as much so in the enlarged zoo, whose confusion neighborhoods are more
+cooperative. The syntactic channel tracks between the two. The effect is
+real but second-order next to the $t$ and $\alpha$ axes.
+
+\subsection{Head-to-head summary}
+
+\begin{center}
+\small
+\begin{tabular}{lp{0.3\textwidth}p{0.3\textwidth}}
+\toprule
+ & default (11) & enlarged (16) \\
+\midrule
+base (CC / exploit / DD) & $0.33$ / $0.45$ / $0.22$ & $0.46$ / $0.34$ / $0.20$ \\
+anchor at $t=1$ & exact & 3 cells off (twins $+$ $N$) \\
+opaque limit, $\alpha=0.1$ & $0.67$ (excl.\ \zoobot{DefectBot}, \zoobot{PrudentBot}) & $0.88$ (excl.\ \zoobot{DefectBot}) \\
+blur at $\alpha=0.5$ mainly\dots & feeds \zoobot{DefectBot} (exploitation spike at $t \approx 0.3$) & heals prover--prover: DD $0.20 \to 0.06$ \\
+$\alpha$ dead zone at $t=0.5$ & wide, $(0.41, 0.65)$ & narrow, $(0.55, 0.65)$ \\
+distinct $\alpha$ breakpoints & 98 & 158 \\
+structure value at low $t$ & $+0.017$ & $+0.039$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The enlarged zoo is more cooperative at baseline, gains more from blur,
+suffers less exploitation from it, and gives both dials more resolution.
+But it buys all of this with seven stipulated cells, a broken anchor, and
+two bots whose lifts are permanently distorted. Our working division of
+labor is therefore: use the \textbf{default zoo} for any claim that leans
+on the anchor theorem or on kernel-clean provenance, and the
+\textbf{enlarged zoo} for the phenomena that need the search fragment ---
+above all the floor-healing effect, which simply does not exist in the
+default zoo's flip anatomy.
+
+\subsection{Caveats and next steps}
+
+All enlarged-zoo results are conditional on seven stipulated cells; the
+tooling flags them, and a stipulation can never silently shadow a proven
+cell (the loader fails loudly, which has already caught one stale entry in
+practice). The $N$ cell is read pessimistically, and the
+\zoobot{MirrorBot} conclusions should be re-checked under the optimistic
+convention before anything is built on them. Grids are $t$ in steps of
+$0.05$--$0.1$ and $\alpha$ in steps of $0.1$; the critical band around
+$\alpha \approx 0.5$ deserves a finer sweep. And unless stated otherwise
+the numbers above use the behavioral family --- whether the
+prover-fragment story survives under the \emph{syntactic} channel, where
+what leaks is code rather than conduct, is the most natural next
+experiment.
+
+\end{document}
