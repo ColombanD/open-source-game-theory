@@ -14,8 +14,13 @@ import pytest
 from pd_runner.tau.matrix import (
     CERTIFIED_SUB_ZOO,
     CUPOD_STIPULATIONS,
+    DEFAULT_ZOO,
+    ENLARGED_STIPULATIONS,
+    ENLARGED_SUB_ZOO,
     FULL_CERTIFIED_SUB_ZOO,
     PROVEN_ONLY_SUB_ZOO,
+    ZOOS,
+    get_zoo,
     load_tau_matrix,
     maximum_certified_sub_zoo,
 )
@@ -128,11 +133,78 @@ def test_unproven_bot_is_rejected(matrix) -> None:
         load_tau_matrix(bots=CERTIFIED_SUB_ZOO + ("OptimBot",))
 
 
-def test_mirrorbot_excluded_for_proven_none() -> None:
-    """MirrorBot self-play is proven `none`; v1a does not model that value."""
-    assert "MirrorBot" not in CERTIFIED_SUB_ZOO
-    with pytest.raises(ValueError, match="not total"):
-        load_tau_matrix(bots=("MirrorBot", "CooperateBot"))
+def test_proven_none_loads_as_fifth_state() -> None:
+    """MirrorBot self-play is proven `none` and loads as the "N" cell."""
+    assert "MirrorBot" not in CERTIFIED_SUB_ZOO  # predates the fifth state
+    m = load_tau_matrix(bots=("CooperateBot", "MirrorBot"), hypothetical_cells={})
+    cell = m.cell("MirrorBot", "MirrorBot")
+    assert (cell.row_action, cell.col_action) == ("N", "N")
+    assert cell.shape == "no_outcome"
+    assert not cell.hypothetical
+    assert m.is_fully_proven
+    # Pessimistic reading downstream: "N" is not cooperation.
+    assert not m.cooperates("MirrorBot", "MirrorBot")
+
+
+def test_stipulation_cannot_shadow_a_proven_none() -> None:
+    """The "N" state is kernel-backed — a what-if cell may not replace it."""
+    with pytest.raises(ValueError, match="proven"):
+        load_tau_matrix(
+            bots=("CooperateBot", "MirrorBot"),
+            hypothetical_cells={("MirrorBot", "MirrorBot"): ("C", "C")},
+        )
+
+
+def test_enlarged_zoo_loads_and_is_conditional() -> None:
+    """The 16-bot zoo is total under its stipulations, and says so."""
+    m = load_tau_matrix(ENLARGED_SUB_ZOO, hypothetical_cells=ENLARGED_STIPULATIONS)
+    assert len(m) == 16
+    assert not m.is_fully_proven
+    # Each stipulated pair contributes its cell and its transpose.
+    assert len(m.hypothetical_cells) == 2 * len(ENLARGED_STIPULATIONS)
+    # The only "N" cell is MirrorBot self-play, read from the kernel.
+    n_cells = [
+        (r, c)
+        for r in m.bots
+        for c in m.bots
+        if m.cell(r, c).row_action == "N" or m.cell(r, c).col_action == "N"
+    ]
+    assert n_cells == [("MirrorBot", "MirrorBot")]
+    assert not m.cell("MirrorBot", "MirrorBot").hypothetical
+
+
+def test_every_named_zoo_loads() -> None:
+    """The registry is the UI dropdown's source of truth — all of it must work.
+
+    A zoo whose stipulations have gone stale (a cell got proven) raises here,
+    which is the intended way to notice.
+    """
+    for key, zoo in ZOOS.items():
+        m = zoo.load()
+        assert m.bots == zoo.bots, key
+        assert (len(m.hypothetical_cells) == 0) == (len(zoo.stipulations) == 0), key
+
+
+def test_named_zoo_provenance_claims_hold() -> None:
+    """The zoos advertised as kernel-clean really carry no stipulations."""
+    assert ZOOS["full-certified"].load().is_fully_proven
+    assert ZOOS["proven-only"].load().is_fully_proven
+    assert not ZOOS["enlarged"].load().is_fully_proven
+    assert DEFAULT_ZOO in ZOOS
+
+
+def test_unknown_zoo_lists_the_valid_keys() -> None:
+    with pytest.raises(KeyError, match="unknown zoo"):
+        get_zoo("no-such-zoo")
+
+
+def test_enlarged_zoo_twin_structure() -> None:
+    """The documented twin census for the 16-bot zoo (conditional on stipulations)."""
+    m = load_tau_matrix(ENLARGED_SUB_ZOO, hypothetical_cells=ENLARGED_STIPULATIONS)
+    assert sorted(behavioral_twins(m)) == [
+        ("CooperateBot", "LegibleBot"),
+        ("DupocBot", "JustBot"),
+    ]
 
 
 # ------------------------------------------------- hypothetical (what-if) ----
@@ -522,7 +594,12 @@ def test_report_alpha_slider(matrix) -> None:
     # …and exactly the initial α's views are visible (one per α-driven chart).
     assert [a for a, h in views if not h] == ["0.45"] * 3
     assert '<span class="pill alpha-readout">α = 0.45</span>' in page
-    assert 'id="alpha-slider"' in page
+    # Four synced copies: the top control plus one under each α-driven chart
+    # (2, 3, 4), so α can be adjusted where it is being read. All must start
+    # at the same grid index or the page opens out of sync.
+    starts = re.findall(r'class="alpha-slider"[^>]*value="(\d+)"', page)
+    assert len(starts) == 4
+    assert len(set(starts)) == 1
 
     # Odd-length tuples start at the exact middle (snapped to the grid);
     # a single family keeps this second build fast.
@@ -577,7 +654,7 @@ def test_tau_report_endpoint() -> None:
     assert page.headers["content-type"].startswith("text/html")
     assert "TauBots" in page.text
     assert page.text.count("<svg") == 3 * (2 + 2 * len(_SLIDER_ALPHAS)) + len(_SLIDER_ALPHAS)
-    assert 'id="alpha-slider"' in page.text
+    assert page.text.count('class="alpha-slider"') == 4  # top + charts 2, 3, 4
     assert 'name="family"' in page.text  # σ-family selector
 
     assert client.get("/tau/report?alphas=abc").status_code == 400
@@ -590,32 +667,90 @@ def test_tau_report_endpoint() -> None:
 
 # --------------------------------------------------- σ channel families ----
 
-def test_syntactic_features_cover_the_zoo(matrix) -> None:
-    """Every zoo bot's Lean definition must parse to a feature vector.
+def test_every_zoo_bot_parses_to_an_ast(matrix) -> None:
+    """Every zoo bot's Lean definition must parse into a `Prog` tree.
 
-    A silently missing definition would become a zero vector and poison every
-    distance, so extraction fails loudly — this pins that it currently works
-    for the whole default zoo.
+    The reader is strict by design: a source shape it does not recognize
+    raises rather than yielding a partial tree, because a silently truncated
+    AST would poison every distance involving that bot.
     """
-    from pd_runner.tau.syntax import FEATURE_ORDER, bot_feature_vectors
+    from pd_runner.tau.syntax import bot_asts
 
-    vectors = bot_feature_vectors(matrix.bots)
-    assert set(vectors) == set(matrix.bots)
-    for vec in vectors.values():
-        assert len(vec) == len(FEATURE_ORDER)
-    # Sanity anchors: the constants are single leaves, DupocBot is a searcher.
-    idx = {f: i for i, f in enumerate(FEATURE_ORDER)}
-    assert vectors["CooperateBot"][idx["C"]] == 1
-    assert sum(vectors["CooperateBot"]) == 1
-    assert vectors["DupocBot"][idx["search"]] == 1
+    asts = bot_asts(matrix.bots)
+    assert set(asts) == set(matrix.bots)
+    # Anchors: the constants are `const(action)` pairs; DupocBot is a searcher.
+    assert asts["CooperateBot"].label == "const"
+    assert asts["CooperateBot"].size == 2
+    assert asts["DupocBot"].label == "search"
+    assert asts["DBot"].label == "ite"
+
+
+def test_tree_edit_distance_matches_hand_computed_cases() -> None:
+    """Unit-cost Zhang–Shasha, checked against cases with known answers."""
+    from pd_runner.tau.syntax import Node, tree_edit_distance as ted
+
+    assert ted(Node("a"), Node("a")) == 0
+    assert ted(Node("a"), Node("b")) == 1
+    # Deleting a child, inserting one, and swapping two.
+    f_ab = Node("f", (Node("a"), Node("b")))
+    assert ted(f_ab, Node("f", (Node("a"),))) == 1
+    assert ted(f_ab, Node("f", (Node("a"), Node("b"), Node("c")))) == 1
+    assert ted(f_ab, Node("f", (Node("b"), Node("a")))) == 2
+    # The classic Zhang–Shasha worked example (answer: 2).
+    x = Node("f", (Node("d", (Node("a"), Node("c", (Node("b"),)))), Node("e")))
+    y = Node("f", (Node("c", (Node("d", (Node("a"), Node("b"))),)), Node("e")))
+    assert ted(x, y) == 2
+    assert ted(x, y) == ted(y, x)
+
+
+def test_ast_distance_separates_the_v1_feature_twins(matrix) -> None:
+    """DBot vs TitForTatBot: the defect the AST channel exists to fix.
+
+    Both are `.ite (.sim .opp (.bot X)) C · ·` — identical constructor BAGS,
+    so the v1 feature vector called them twins. They differ in the probe
+    target (DefectBot vs CooperateBot) and in which branch cooperates, and the
+    AST sees both edits.
+    """
+    from pd_runner.tau.syntax import feature_distance_matrix, syntactic_distance_matrix
+
+    assert feature_distance_matrix(matrix)[("DBot", "TitForTatBot")] == 0
+    assert syntactic_distance_matrix(matrix)[("DBot", "TitForTatBot")] > 0
+
+
+def test_ast_distance_is_scale_free(matrix) -> None:
+    """Distance must not be dominated by program SIZE (the v1 defect).
+
+    Unnormalized L1 correlated ≈ +0.75 with node count: big bots were far from
+    everything, and the softmax read that as "big bots are identifiable".
+    Normalizing by the larger tree removes it.
+    """
+    import statistics
+
+    from pd_runner.tau.syntax import bot_ast, syntactic_distance_matrix
+
+    dist = syntactic_distance_matrix(matrix)
+    sizes = [bot_ast(b).size for b in matrix.bots]
+    means = [
+        statistics.mean([dist[(b, c)] for c in matrix.bots]) for b in matrix.bots
+    ]
+    mx, my = statistics.mean(sizes), statistics.mean(means)
+    cov = sum((x - mx) * (y - my) for x, y in zip(sizes, means))
+    den = (
+        sum((x - mx) ** 2 for x in sizes) * sum((y - my) ** 2 for y in means)
+    ) ** 0.5
+    assert abs(cov / den) < 0.45
+
+    # And every distance is a bounded ratio, not an unbounded node count.
+    assert all(0.0 <= d <= 10.0 for d in dist.values())
 
 
 def test_confusion_structure_inversion(matrix) -> None:
     """The syntactic channel confuses what the behavioral one separates.
 
-    Dupoc/Cupod: identical tree, leaf labels swapped — syntactic near-twins,
-    behavioral opposites. Coop/Defect: adjacent constants, maximally distinct
-    conduct. This inversion is WHY the code channel is a separate object.
+    Dupoc/Cupod: same tree, leaf action labels swapped — syntactic near-twins,
+    behavioral opposites. The reverse holds for Coop/CupodTroll. This inversion
+    is WHY the code channel is a separate object, and it must survive the v1→v2
+    distance change.
     """
     from pd_runner.tau.signal import behavioral_distance_matrix
     from pd_runner.tau.syntax import syntactic_distance_matrix
@@ -624,25 +759,37 @@ def test_confusion_structure_inversion(matrix) -> None:
     beh = behavioral_distance_matrix(matrix)
 
     # Syntactically close, behaviorally far…
-    assert syn[("DupocBot", "CupodBot")] <= 2
+    assert syn[("DupocBot", "CupodBot")] < syn[("CooperateBot", "CupodTrollBot")]
     assert beh[("DupocBot", "CupodBot")] >= 5
-    assert syn[("CooperateBot", "DefectBot")] <= 2
-    assert beh[("CooperateBot", "DefectBot")] == len(matrix)
     # …and the reverse: behavioral near-twins that are syntactic opposites.
     assert beh[("CooperateBot", "CupodTrollBot")] <= 1
-    assert syn[("CooperateBot", "CupodTrollBot")] >= 4
+
+    # Globally the two channels must stay near-uncorrelated, or the "second
+    # object" claim collapses into a noisy copy of the behavioral one.
+    pairs = [(a, b) for a in matrix.bots for b in matrix.bots if a < b]
+    xs = [syn[p] for p in pairs]
+    ys = [float(beh[p]) for p in pairs]
+    mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    den = (sum((x - mx) ** 2 for x in xs) * sum((y - my) ** 2 for y in ys)) ** 0.5
+    assert abs(cov / den) < 0.4
 
 
-def test_syntactic_twins_exist(matrix) -> None:
-    """DBot/TitForTatBot: identical constructor profiles, opposite conduct.
+def test_budget_arguments_are_erased(matrix) -> None:
+    """Search budgets are a DIFFERENT transparency axis, not code identity.
 
-    The syntactic channel's own blind spot (its ceiling < 1), mirroring the
-    behavioral twins — an observer of structure who cannot resolve referenced
-    bot NAMES cannot tell the zoo's exploiter from its reciprocator.
+    `CupodBot k` and `CupodBot (2 * k + 64)` are the same code to a source-
+    reading observer; conflating budget with structure would silently merge
+    Critch's depth dial into our breadth dial.
     """
-    from pd_runner.tau.syntax import syntactic_twins
+    from pd_runner.tau.syntax import parse_prog
 
-    assert ("DBot", "TitForTatBot") in syntactic_twins(matrix)
+    plain = parse_prog(".search k (.eq .opp (CupodBot k)) (.const Action.D) (.const Action.C)")
+    scaled = parse_prog(
+        ".search (2 * k + 64) (.eq .opp (CupodBot (2 * k))) "
+        "(.const Action.D) (.const Action.C)"
+    )
+    assert plain == scaled
 
 
 def test_families_calibrate_to_the_same_dial(matrix) -> None:
@@ -659,14 +806,21 @@ def test_families_calibrate_to_the_same_dial(matrix) -> None:
 
 
 def test_family_ceilings(matrix) -> None:
-    """ε-uniform is identity-based (no twins ⇒ ceiling 1); syntactic has its
-    DBot/TFT twins (ceiling < 1); behavioral is twin-free on this zoo."""
+    """A family's ceiling is 1.0 exactly when it has no twins to be blind to.
+
+    All three reach 1.0 on this zoo: ε-uniform is identity-based, behavioral is
+    twin-free here by construction, and the AST syntactic channel resolves the
+    DBot/TitForTatBot pair that the v1 feature vector could not (that pair was
+    the reason this used to assert `< 1.0`).
+    """
     from pd_runner.tau.channels import all_families
+    from pd_runner.tau.syntax import syntactic_twins
 
     fams = all_families(matrix)
     assert fams["epsilon"].ceiling() == pytest.approx(1.0)
     assert fams["behavioral"].ceiling() == pytest.approx(1.0)
-    assert fams["syntactic"].ceiling() < 1.0
+    assert not syntactic_twins(matrix)
+    assert fams["syntactic"].ceiling() == pytest.approx(1.0)
 
 
 def test_epsilon_channel_shape(matrix) -> None:
@@ -689,12 +843,11 @@ def test_anchor_theorem_holds_for_every_family(matrix) -> None:
     from pd_runner.tau.sweep import base_tournament_cells
 
     for family in all_families(matrix).values():
-        # Syntactic tops out below 1.0 (twins), but DBot/TFT twins only blur
-        # WHO you face, and at the ceiling the true bot still dominates.
+        # Now unconditional: with the AST channel every family reaches a true
+        # point mass on this zoo, so no family gets an exemption.
         result = run_tournament(matrix, 1.0, 0.5, family=family)
         assert result.family == family.key
-        if family.key != "syntactic":
-            assert result.cells == base_tournament_cells(matrix)
+        assert result.cells == base_tournament_cells(matrix), family.key
 
 
 def test_family_tournaments_differ_at_matched_transparency(matrix) -> None:
@@ -713,6 +866,104 @@ def test_family_tournaments_differ_at_matched_transparency(matrix) -> None:
     assert len({tuple(sorted(c.items())) for c in cells.values()}) > 1
 
 
+def test_charts_carry_a_valid_cursor_payload(matrix) -> None:
+    """Every x-axis chart ships hover data the cursor script can actually read.
+
+    The payload is embedded as JSON in an attribute, so a quoting or escaping
+    regression would silently disable the cursor on a rendered page rather
+    than raising anywhere — hence parsing every payload back here.
+    """
+    import html as html_mod
+    import json as json_mod
+    import re
+
+    from pd_runner.tau.report import build_report
+
+    page = build_report(matrix, alphas=(0.45,))
+    payloads = re.findall(r"data-cursor='([^']*)'", page)
+    assert payloads, "no chart emitted cursor data"
+    # One hit rectangle and one overlay layer per cursor-bearing chart.
+    assert page.count('class="chart cursor-chart"') == len(payloads)
+    assert page.count('class="cursor-hit"') == len(payloads)
+
+    for blob in payloads:
+        cfg = json_mod.loads(html_mod.unescape(blob))
+        assert cfg["series"], "cursor payload has no series"
+        assert cfg["plotW"] > 0 and cfg["plotH"] > 0
+        lengths = {len(s["points"]) for s in cfg["series"]}
+        # All series must share an x-grid; the script indexes them together.
+        assert len(lengths) == 1
+        for s in cfg["series"]:
+            assert s["label"] and s["colour"]
+            assert all(0.0 <= x <= 1.0 for x, _ in s["points"])
+
+
+def test_composition_cursor_reads_bands_not_stacked_tops(matrix) -> None:
+    """The stacked chart must report each band's own value.
+
+    Reporting the cumulative tops would make the middle band read as
+    "cooperation + exploitation", which is not a quantity anyone wants.
+    """
+    import html as html_mod
+    import json as json_mod
+    import re
+
+    from pd_runner.tau.report import build_report
+
+    page = build_report(matrix, alphas=(0.45,))
+    for blob in re.findall(r"data-cursor='([^']*)'", page):
+        cfg = json_mod.loads(html_mod.unescape(blob))
+        if any("mutual cooperation" in s["label"] for s in cfg["series"]):
+            for i in range(len(cfg["series"][0]["points"])):
+                total = sum(s["points"][i][1] for s in cfg["series"])
+                # Payload values are rounded to 6dp, so three bands can sum a
+                # few ULP-scale units off exactly 1.
+                assert total == pytest.approx(1.0, abs=5e-6)
+            return
+    pytest.fail("no composition chart found in the report")
+
+
+def test_degenerate_label_stays_inside_the_plot(matrix) -> None:
+    """The "degenerate" marker must not run into the legend column.
+
+    The degenerate band is usually narrow — it can be zero-width when only the
+    last sample is degenerate — so a left-anchored label drawn rightward
+    overflowed the plot and printed on top of the "mutual cooperation" legend.
+    Narrow bands right-anchor to the plot edge instead.
+    """
+    import re
+
+    from pd_runner.tau.report import _DEGENERATE_LABEL_W, build_report
+
+    # Geometry of `_composition_chart` at its defaults.
+    plot_left, plot_right, legend_left = 56, 520, 536
+
+    page = build_report(matrix, alphas=(0.3, 0.45))
+    left = {
+        float(x)
+        for x in re.findall(
+            r'<text x="([\d.]+)" y="[\d.]+" class="tick" fill="#d55e00">'
+            r"degenerate</text>",
+            page,
+        )
+    }
+    right = {
+        float(x)
+        for x in re.findall(
+            r'<text x="([\d.]+)" y="[\d.]+" class="tick end" fill="#d55e00">'
+            r"degenerate</text>",
+            page,
+        )
+    }
+    assert left or right, "no degenerate marker rendered"
+    # Left-anchored text grows rightward; right-anchored grows leftward.
+    for x in left:
+        assert x + _DEGENERATE_LABEL_W <= legend_left
+    for x in right:
+        assert x <= plot_right
+        assert x - _DEGENERATE_LABEL_W >= plot_left
+
+
 def test_report_shows_the_family_machinery(matrix) -> None:
     """The analysis page must expose all families: radio, table, comparison."""
     from pd_runner.tau.report import build_report
@@ -721,9 +972,10 @@ def test_report_shows_the_family_machinery(matrix) -> None:
     assert page.count('type="radio" name="family"') == 3  # one per family
     assert "Channel comparison at matched transparency" in page
     assert "ε-uniform (null control)" in page
-    assert "syntactic (codebase)" in page
-    # The syntactic twins are named in the family table.
-    assert "DBot/TitForTatBot" in page
+    assert "syntactic (AST)" in page
+    # Every family's twin column renders — "—" when a family has none, which
+    # is now the syntactic case (the AST resolves the old DBot/TFT pair).
+    assert page.count("<td>") >= 3
 
 
 def test_tournament_rates_are_consistent(matrix) -> None:

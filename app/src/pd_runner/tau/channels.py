@@ -22,16 +22,17 @@ The three v1 families:
   based rather than feature-based, so it has NO twin ceiling (transparency
   reaches 1.0 on any zoo). Differences between it and a feature-based family
   at matched t isolate the effect of confusion structure itself.
-- **syntactic** — softmax over the codebase feature distance (`tau.syntax`).
+- **syntactic** — softmax over normalized AST tree edit distance (`tau.syntax`).
   Partial transparency of the SOURCE — degraded open-source game theory —
   where behavioral σ is really the classical watching-it-play story. Its
-  confusion structure INVERTS the behavioral one (constants confusable with
-  constants, Dupoc with Cupod) and it has its own twins (DBot/TitForTatBot:
-  identical constructor profiles, opposite conduct).
+  confusion structure INVERTS the behavioral one (Dupoc with Cupod: same tree,
+  swapped action leaves, opposite conduct). Upgraded from a constructor-profile
+  feature vector on 2026-08-04; that shadow was structure-blind (it made
+  DBot/TitForTatBot twins) and scale-sensitive (distance tracked program size).
 
-Recorded upgrade path (design note, "σ family roadmap"): AST tree-edit
-distance and node-masking generative σ (syntactic), sampling/reputation σ,
-theorem-library σ, query-signature σ, behavioral×syntactic mixtures.
+Recorded upgrade path (design note, "σ family roadmap"): node-masking
+generative σ (syntactic), sampling/reputation σ, theorem-library σ,
+query-signature σ, behavioral×syntactic mixtures.
 """
 
 from __future__ import annotations
@@ -212,10 +213,10 @@ def syntactic_family(matrix: TauMatrix) -> SigmaFamily:
 
     return SigmaFamily(
         key="syntactic",
-        label="syntactic (codebase)",
+        label="syntactic (AST)",
         description=(
-            "softmax over the L1 feature distance between Prog constructor "
-            "profiles — partial transparency of the SOURCE (degraded OSGT); "
+            "softmax over normalized tree edit distance between parsed Prog "
+            "terms — partial transparency of the SOURCE (degraded OSGT); "
             "confusion structure inverts the behavioral one"
         ),
         bots=matrix.bots,

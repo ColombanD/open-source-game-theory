@@ -297,6 +297,14 @@
       new tab; it is rebuilt from the theorem library on every run.
     </p>
     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <label style="color:#9ca3af; font-size:0.85rem;">sub-zoo
+        <select id="tau-zoo" onchange="onTauZooChange()"
+                style="margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                       border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                       font-size:0.85rem;">
+          <option value="default">default</option>
+        </select>
+      </label>
       <label style="color:#9ca3af; font-size:0.85rem;">α values
         <input id="tau-alphas" type="text" value="0.3,0.45,0.62,0.8"
                style="width:11rem; margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
@@ -305,6 +313,7 @@
       </label>
       <button class="btn btn-primary" onclick="openTauReport()">Run tau analysis</button>
     </div>
+    <p id="tau-zoo-desc" style="color:#6b7280; font-size:0.8rem; margin:0.6rem 0 0;"></p>
   </div>
 
   <div class="card" id="proposals-card">
@@ -1060,12 +1069,48 @@
       }
     }
 
+    let tauZoos = [];
+
+    async function loadTauZoos() {
+      const sel = document.getElementById('tau-zoo');
+      try {
+        const res = await fetch('/tau/zoos');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        tauZoos = data.zoos;
+        sel.innerHTML = tauZoos.map(z =>
+          `<option value="${z.key}"${z.key === data.default ? ' selected' : ''}>${z.label}</option>`
+        ).join('');
+      } catch (err) {
+        // Keep the hard-coded "default" option so the button still works.
+        document.getElementById('tau-zoo-desc').textContent =
+          `Could not load sub-zoo list (${err.message}); using the default zoo.`;
+        return;
+      }
+      onTauZooChange();
+    }
+
+    function onTauZooChange() {
+      const key = document.getElementById('tau-zoo').value;
+      const zoo = tauZoos.find(z => z.key === key);
+      const desc = document.getElementById('tau-zoo-desc');
+      if (!zoo) { desc.textContent = ''; return; }
+      const stip = zoo.stipulated_pairs === 0
+        ? 'every cell machine-checked'
+        : `${zoo.stipulated_pairs} stipulated pair(s) — results are conditional`;
+      desc.textContent = `${zoo.size} bots · ${stip}. ${zoo.description}`;
+    }
+
     function openTauReport() {
       // The report endpoint renders fresh HTML per request; a plain navigation
       // in a new tab is all that's needed — no job/polling machinery.
       const alphas = document.getElementById('tau-alphas').value.trim();
-      const url = '/tau/report' + (alphas ? `?alphas=${encodeURIComponent(alphas)}` : '');
-      window.open(url, '_blank');
+      const zoo = document.getElementById('tau-zoo').value;
+      const params = new URLSearchParams();
+      if (alphas) params.set('alphas', alphas);
+      if (zoo) params.set('zoo', zoo);
+      const qs = params.toString();
+      window.open('/tau/report' + (qs ? `?${qs}` : ''), '_blank');
     }
 
     // Initialise mode visibility, model-settings hints, proposals, and the matrix on load.
@@ -1073,6 +1118,7 @@
     onModelChange();
     loadProposals();
     loadMatrix();
+    loadTauZoos();
   </script>
 
 </body>

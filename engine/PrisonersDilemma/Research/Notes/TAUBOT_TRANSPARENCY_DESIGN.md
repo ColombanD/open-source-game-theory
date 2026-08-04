@@ -4,6 +4,14 @@
 (`app/src/pd_runner/tau/`). Part I below is design + what is implemented;
 Part II is everything not yet implemented.*
 
+*Updated 2026-08-04: the **syntactic σ family was rewritten onto real ASTs**
+(Zhang–Shasha tree edit distance, replacing the constructor-profile feature
+vector — this RETRACTS the old "DBot/TitForTatBot are syntactic twins,
+ceiling ≈ 0.947" claim, which was an artifact of the metric); selectable
+**named sub-zoos** landed (`ZOOS` in `tau/matrix.py`, surfaced in the CLI,
+the API and the UI); and a proven `outcome = none` is now a **fifth cell
+state** `"N"` rather than grounds for excluding a bot.*
+
 ---
 
 # Part I — Design & implemented (v1a)
@@ -131,11 +139,32 @@ as a *definition* is fine — but that stipulation IS Def 3, so just write
 ## Conventions — FIXED (2026-08-03)
 
 1. **Open matrix cells**: restrict the zoo to closed sub-matrices (NOT
-   drop-and-renormalize). Default `CERTIFIED_SUB_ZOO` = 11 bots (LegibleBot +
-   JustBot removed as behavioral twins; CupodBot admitted via 2 stipulated
-   cells; twin-free, transparency ceiling exactly 1.0). Fallbacks:
-   `PROVEN_ONLY_SUB_ZOO` (10 bots, kernel-only) and `FULL_CERTIFIED_SUB_ZOO`
-   (12). MirrorBot excluded (self-play proven `none`).
+   drop-and-renormalize). UNPROVEN cells still fail loudly; a cell may only be
+   filled by an explicit STIPULATION, which is flagged so downstream results
+   report as conditional (`TauMatrix.is_fully_proven`).
+
+   **Named sub-zoos (2026-08-04)** — the `ZOOS` registry in `tau/matrix.py` is
+   the single source of truth, surfaced by `report.py --zoo`, `/tau/report?zoo=`
+   and the UI dropdown. Adding one is a one-place edit.
+
+   | key | bots | provenance |
+   |---|---|---|
+   | `default` | 11 | 2 stipulated pairs; twin-free, ceiling 1.0 |
+   | `enlarged` | 16 | 7 stipulated pairs; 2 behavioral twin groups (ceiling ≈ 0.938); holds the `N` cell |
+   | `full-certified` | 12 | kernel-clean; 2 twin groups (ceiling ≈ 0.843) |
+   | `proven-only` | 10 | kernel-clean; 1 twin pair (ceiling ≈ 0.940) |
+
+   A stipulation may only fill a genuine hole — the loader RAISES if one
+   shadows a proven cell, which is how a stale entry gets caught when its
+   theorem finally lands (this fired for real on DIMCID vs CupodTrollBot).
+1b. **Proven `none` is a FIFTH CELL STATE (2026-08-04), not an exclusion.**
+   `outcome_MirrorBot_vs_MirrorBot = none` (mutual simulation never
+   terminates) loads as a real kernel-backed cell with both actions `"N"`,
+   so MirrorBot is admissible; it was previously excluded for lack of a truth
+   value. Downstream `"N"` reads PESSIMISTICALLY — `cooperates` tests `== "C"`,
+   so a hypothesis whose cell is `N` contributes no cooperation mass — and it
+   is a third symbol for twin/distance purposes. A stipulation may NOT shadow
+   it.
 2. **Budgets**: matrix entries are budget families, often staggered
    (PrudentBot 2k+64 vs Dupoc k); the tau layer uses the collapsed stable
    asymptotic outcome, one canonical convention per pair.
@@ -176,17 +205,65 @@ cross-family gaps are purely about WHICH bots get confused.
 2. **ε-uniform** — (1-ε)δ + ε·U. The null control: no similarity structure,
    identity-based (no twin ceiling). Divergence from it isolates the effect
    of confusion structure itself.
-3. **syntactic (codebase)** — softmax over L1 distance between `Prog`
-   constructor-profile feature vectors extracted from `Bots/*.lean`
-   (`tau/syntax.py`). Partial transparency of the SOURCE — degraded OSGT.
-   **Confusion-structure inversion** (the headline): Dupoc/Cupod are
-   syntactic near-twins (identical tree, leaf labels swapped, d=2) but
-   behavioral opposites; Coop/Defect adjacent constants (d=2) but conduct
-   opposites; while Coop/CupodTroll are behavioral near-twins yet syntactic
-   opposites. Own blind spot: **DBot/TitForTatBot are syntactic twins**
-   (identical constructor profiles, referenced-bot names opaque) ⇒ syntactic
-   ceiling ≈ 0.947 — even full code transparency cannot anchor, mirroring the
-   behavioral twin ceiling.
+3. **syntactic (AST)** — softmax over **normalized Zhang–Shasha tree edit
+   distance** between parsed `Prog` terms (`tau/syntax.py`). Partial
+   transparency of the SOURCE — degraded OSGT.
+   **Confusion-structure inversion** (the headline, and it survives the v2
+   rewrite below): Dupoc/Cupod are syntactic near-twins (same tree, action
+   leaves swapped) but behavioral opposites; while Coop/CupodTroll are
+   behavioral near-twins yet syntactic opposites. Globally the two channels
+   correlate at only **+0.16** over the enlarged zoo, which is what makes the
+   code channel a genuinely second object rather than a noisy copy.
+   **No syntactic twins on any current zoo** ⇒ ceiling 1.0; the residual
+   blindness is budget erasure (two bots differing only in search budget are
+   one program to this observer — see "what the distance erases" below).
+
+   **v2 rewrite (2026-08-04) — was: constructor-profile feature vectors.**
+   v1 counted constructor tokens into a 14-dim bag and took unnormalized L1.
+   Replaced after four defects were measured, each verified before the
+   rewrite:
+   * **Structure blindness.** A bag cannot see argument order or nesting, so
+     `DBot` and `TitForTatBot` — both `.ite (.sim .opp (.bot X)) C · ·` with a
+     *different probe target* and the *branches swapped* — had distance 0.
+     The "DBot/TFT are syntactic twins, ceiling ≈ 0.947" claim this note
+     previously made was therefore an ARTIFACT OF THE METRIC, not a property
+     of the zoo. Under the AST distance they sit at 3.0 and the ceiling is 1.0.
+   * **Reference blindness.** The `ref` feature counted how many bot names
+     appeared, never *which* — so probing CooperateBot and probing DefectBot
+     were indistinguishable, discarding most of what source actually reveals.
+   * **Scale sensitivity.** Unnormalized L1 grows with program SIZE: mean
+     distance correlated **+0.75** with node count (EBot, 22 nodes, sat 17.6
+     from everything; the 1-node constants sat at 8.6). The channel largely
+     encoded "how big is this bot", which the softmax then read as big bots
+     being highly identifiable. Post-normalization the correlation is −0.19.
+   * **Comment bleed.** The body regex stripped `--` lines but not `/- … -/`
+     blocks, feeding JustBot's and PrudentBot's doc-comment prose to the token
+     counter as if it were syntax. Harmless by luck (that prose contains no
+     `.foo` tokens) but a docstring mentioning `.search` would have silently
+     corrupted the vector.
+
+   The v1 metric is retained as `feature_distance_matrix` / `feature_twins`
+   for comparison — the tests assert the twin collapse was real by showing v1
+   gives 0 where the AST gives > 0.
+
+   **What the distance is.** Terms are parsed from `Bots/*.lean` by a strict
+   S-expression reader (it raises rather than returning a partial tree, so a
+   drifted source fails loudly instead of silently getting a wrong distance),
+   then compared by unit-cost Zhang–Shasha tree edit distance — the minimum
+   number of node insertions, deletions and relabels turning one AST into the
+   other — divided by the larger tree's node count, giving a scale-free ratio
+   in [0, 1].
+   **What it erases, deliberately:** (a) **search budgets** — `CupodBot k` and
+   `CupodBot (2*k+64)` are the same code to a source-reading observer; budget
+   is *Critch's own depth dial*, and folding it in would silently merge two
+   transparency axes; (b) **referenced bot bodies** — `.bot DefectBot` is a
+   labelled leaf `ref:DefectBot`, never inlined, because an observer glimpsing
+   the term sees the name, not the body (unchanged from v1).
+
+   Parsing rather than `#eval`-exporting is a deliberate v2 choice: it keeps
+   the tau layer a pure-Python read-only consumer of the engine, with no build
+   step and no `lake` dependency in the analysis path. The exporter remains the
+   recorded upgrade if the reader's strictness ever becomes the bottleneck.
 
 ---
 
@@ -258,9 +335,13 @@ hierarchy at depth 2.
 
 ## σ families — recorded for later (rough priority)
 
-- **AST tree edit distance** (Zhang–Shasha) on real `Prog` terms — replace the
-  feature-vector shadow; wants a Lean-side `#eval` exporter printing canonical
-  S-expressions rather than parsing `.lean` text.
+- ~~**AST tree edit distance** (Zhang–Shasha) on real `Prog` terms~~ —
+  **DONE 2026-08-04**, see the syntactic family in Part I. Implemented by
+  PARSING `Bots/*.lean` with a strict S-expression reader rather than the
+  `#eval` exporter sketched here, to keep the tau layer a pure-Python
+  read-only consumer of the engine (no build step, no `lake` in the analysis
+  path). The exporter stays the recorded upgrade if reader strictness ever
+  becomes the bottleneck.
 - **Node-masking generative σ** — observer sees the AST with each node hidden
   w.p. p; posterior = P(observed fragment | candidate). The finite-zoo
   approximation of the hole-masked-source ideal below, and the syntactic

@@ -19,10 +19,16 @@ Conventions fixed 2026-08-03 (see the design note's "open design decisions"):
 1. **Open cells** — resolved by RESTRICTING THE ZOO.
    `FULL_CERTIFIED_SUB_ZOO` is the maximum set of bots whose induced ordered
    submatrix is totally proven, so the tau layer is a TOTAL function and no
-   open/missing convention is needed. MirrorBot is excluded:
-   `outcome_MirrorBot_vs_MirrorBot = none` is a proven theorem (mutual
-   simulation never terminates), a third truth value we chose not to model in
-   v1a. Every cell here is `some (a, b)`.
+   open/missing convention is needed.
+1a. **Proven `none` is a fifth cell state (2026-08-04).** A proven
+   `outcome_X_vs_Y = none` theorem (MirrorBot self-play: mutual simulation
+   never terminates) loads as a real cell with both actions `"N"`. UNPROVEN
+   cells still fail loudly — `"N"` is a kernel-backed value, not a missing
+   convention. Downstream, `"N"` counts as not-cooperating (the pessimistic
+   reading: `cooperates` tests `== "C"`), rows carry it as a third symbol for
+   twin/distance purposes, and the sweep's mutual-C/mutual-D split treats an
+   (N, N) base cell as neither. `FULL_CERTIFIED_SUB_ZOO` predates this state
+   and still excludes MirrorBot; `ENLARGED_SUB_ZOO` includes it.
 1b. **Behavioral twins** — `CERTIFIED_SUB_ZOO` (the default) further drops
    LegibleBot and JustBot, which are behaviorally identical to other members
    and so cap the transparency scale. See `_TWIN_EXCLUSIONS`.
@@ -109,14 +115,138 @@ PROVEN_ONLY_SUB_ZOO: tuple[str, ...] = tuple(
     b for b in FULL_CERTIFIED_SUB_ZOO if b not in _TWIN_EXCLUSIONS
 )
 
+# The 16-bot enlarged zoo (2026-08-04): everything above plus the twins back
+# in (LegibleBot, JustBot), the search×search frontier bots (CIMCIC, DIMCID),
+# and MirrorBot, whose proven-`none` self-play loads as the "N" fifth state.
+# Load with
+#     load_tau_matrix(ENLARGED_SUB_ZOO, hypothetical_cells=ENLARGED_STIPULATIONS)
+#
+# Twin structure (invariant under the stipulations' proven-cell constraints,
+# computed 2026-08-04): behavioral {CooperateBot, LegibleBot} (all-C rows) and
+# {DupocBot, JustBot} (identical rows); syntactic {DBot, TitForTatBot};
+# ε-uniform none. CupodTrollBot is separated from the all-C group by its
+# proven D against CupodBot.
+ENLARGED_SUB_ZOO: tuple[str, ...] = tuple(
+    sorted(
+        FULL_CERTIFIED_SUB_ZOO
+        + ("CupodBot", "CIMCIC", "DIMCID", "MirrorBot")
+    )
+)
+
+# Stipulated (unproven) cells completing the enlarged zoo's ordered submatrix.
+# All are frontier search×search cells; every result over this zoo is
+# conditional on them (`TauMatrix.is_fully_proven` is False). Drop an entry as
+# soon as its theorem lands — the loader raises on a stipulation that shadows
+# a proven cell, so a stale entry fails loudly, not silently.
+ENLARGED_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {
+    **CUPOD_STIPULATIONS,
+    ("JustBot", "CupodBot"): ("D", "C"),
+    ("CIMCIC", "CupodBot"): ("C", "C"),
+    ("CIMCIC", "OBot"): ("D", "D"),
+    ("DIMCID", "CupodBot"): ("D", "D"),
+    ("DIMCID", "DupocBot"): ("D", "D"),
+    # DIMCID vs CupodTrollBot was stipulated (C, C) here until 2026-08-04, when
+    # `llm_outcome_DIMCID_vs_CupodTrollBot` landed proving exactly that. The
+    # entry is gone rather than kept-and-ignored: the loader raises on a
+    # stipulation shadowing a proven cell, which is how this was caught.
+}
+
+
+@dataclass(frozen=True)
+class NamedZoo:
+    """A selectable sub-zoo: its bot list, its stipulations, and why it exists.
+
+    The registry below is the single source of truth shared by the CLI
+    (`--zoo`), the API (`/tau/report?zoo=`) and the UI dropdown, so a new zoo
+    is added in ONE place and appears everywhere.
+    """
+
+    key: str
+    label: str
+    description: str
+    bots: tuple[str, ...]
+    stipulations: dict[tuple[str, str], tuple[str, str]]
+
+    def load(self, theorems_dir: Path | None = None) -> TauMatrix:
+        return load_tau_matrix(
+            self.bots,
+            theorems_dir=theorems_dir,
+            hypothetical_cells=self.stipulations,
+        )
+
+
+# Selectable zoos, in presentation order (default first).
+ZOOS: dict[str, NamedZoo] = {
+    "default": NamedZoo(
+        key="default",
+        label="default (11 bots, twin-free)",
+        description=(
+            "The twin-free working zoo: transparency ceiling exactly 1.0, so "
+            "every bot is identifiable from behavior alone. Conditional on the "
+            "two CupodBot stipulations."
+        ),
+        bots=CERTIFIED_SUB_ZOO,
+        stipulations=CUPOD_STIPULATIONS,
+    ),
+    "enlarged": NamedZoo(
+        key="enlarged",
+        label="enlarged (16 bots, stipulated)",
+        description=(
+            "The widest zoo: adds the behavioral twins (LegibleBot, JustBot), "
+            "the search×search frontier bots (CIMCIC, DIMCID) and MirrorBot, "
+            "whose proven-`none` self-play is the 'N' state. Most conditional "
+            "— 8 stipulated pairs."
+        ),
+        bots=ENLARGED_SUB_ZOO,
+        stipulations=ENLARGED_STIPULATIONS,
+    ),
+    "full-certified": NamedZoo(
+        key="full-certified",
+        label="full certified (12 bots, proven)",
+        description=(
+            "The maximum totally-proven sub-zoo: zero stipulations, but two "
+            "behavioral twin groups hold the transparency ceiling at ≈0.843."
+        ),
+        bots=FULL_CERTIFIED_SUB_ZOO,
+        stipulations={},
+    ),
+    "proven-only": NamedZoo(
+        key="proven-only",
+        label="proven only (10 bots, kernel-clean)",
+        description=(
+            "Kernel-clean and twin-reduced: no stipulated cells at all, with a "
+            "residual {CooperateBot, CupodTrollBot} twin pair (ceiling ≈0.940). "
+            "Use when a result must rest on the Lean kernel alone."
+        ),
+        bots=PROVEN_ONLY_SUB_ZOO,
+        stipulations={},
+    ),
+}
+
+DEFAULT_ZOO = "default"
+
+
+def get_zoo(key: str) -> NamedZoo:
+    """Look up a named zoo, failing with the valid keys listed."""
+    try:
+        return ZOOS[key]
+    except KeyError:
+        raise KeyError(
+            f"unknown zoo {key!r}; choose one of {sorted(ZOOS)}"
+        ) from None
+
 
 @dataclass(frozen=True)
 class Cell:
     """One ordered matrix entry: what `row` and `col` each play, row first."""
 
-    row_action: str  # "C" | "D" — the action of the ROW bot
+    # "C" | "D" — the action of the ROW bot; "N" when the outcome is a proven
+    # `none` (no fixpoint — MirrorBot self-play). "N" always appears on both
+    # sides at once: it is a property of the match, not of one player.
+    row_action: str
     col_action: str
     # "universal" | "existential" (∃k) | "threshold" (∃k₂, ∀k>k₂)
+    # | "no_outcome" (proven `= none` — the "N" cells)
     # | "HYPOTHETICAL" (stipulated, NOT proven — see `hypothetical`)
     shape: str
     # Proved under extra side hypotheses (floor/size/budget guards) — the `†`
@@ -228,22 +358,21 @@ def load_tau_matrix(
             forward = by_pair.get((row, col))
             reverse = by_pair.get((col, row))
 
-            # A proven `none` (MirrorBot self-play) is not a usable cell here.
-            if forward is not None and forward.pair is None:
-                forward = None
-            if reverse is not None and reverse.pair is None:
-                reverse = None
-
-            # Cross-check both orientations when both exist.
+            # Cross-check both orientations when both exist. A proven `none`
+            # (pair is None) transposes to itself, so the orientations must
+            # agree on none-ness as well as on the actions.
             if forward is not None and reverse is not None and row != col:
-                assert forward.pair is not None and reverse.pair is not None
-                if forward.pair != (reverse.pair[1], reverse.pair[0]):
+                fp, rp = forward.pair, reverse.pair
+                if (fp is None) != (rp is None) or (
+                    fp is not None and rp is not None and fp != (rp[1], rp[0])
+                ):
                     conflicts.append((row, col))
 
             chosen, swapped = (forward, False) if forward is not None else (reverse, True)
 
-            if chosen is not None and chosen.pair is not None:
-                # A stipulation must never contradict the kernel.
+            if chosen is not None:
+                # A stipulation must never contradict the kernel — including a
+                # proven `none`, which is a real value ("N"), not a hole.
                 if (row, col) in stipulated or (col, row) in stipulated:
                     overridden.append((row, col))
             else:
@@ -267,9 +396,12 @@ def load_tau_matrix(
                 )
                 continue
 
-            a, b = chosen.pair
-            if swapped:
-                a, b = b, a
+            if chosen.pair is None:
+                a = b = "N"
+            else:
+                a, b = chosen.pair
+                if swapped:
+                    a, b = b, a
             cells[(row, col)] = Cell(
                 row_action=a,
                 col_action=b,

@@ -29,11 +29,12 @@ swapped by ~20 lines of inline JS, since the page must stay self-contained):
 from __future__ import annotations
 
 import html
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from pd_runner.tau.matrix import TauMatrix, load_tau_matrix
+from pd_runner.tau.matrix import DEFAULT_ZOO, ZOOS, NamedZoo, TauMatrix, get_zoo
 from pd_runner.tau.signal import (
     behavioral_distance_matrix,
     behavioral_twins,
@@ -125,8 +126,14 @@ def _line_chart(
     width: int = 720,
     height: int = 320,
     y_label: str = "",
+    value_format: str = "percent",
 ) -> str:
-    """Inline SVG line chart. `series` = [(label, [(x, y)…], colour)]."""
+    """Inline SVG line chart. `series` = [(label, [(x, y)…], colour)].
+
+    Carries a hover cursor: the series data is emitted as JSON on the `<svg>`
+    so the shared `_CURSOR_SCRIPT` can snap a vertical rule to the nearest
+    sampled transparency and read every series off at that x.
+    """
     pad_l, pad_r, pad_t, pad_b = 56, 130, 16, 44
     plot_w, plot_h = width - pad_l - pad_r, height - pad_t - pad_b
 
@@ -138,7 +145,20 @@ def _line_chart(
     def sy(y: float) -> float:
         return pad_t + (1.0 - y) * plot_h
 
-    parts = [f'<svg viewBox="0 0 {width} {height}" class="chart" role="img">']
+    cursor_data = json.dumps({
+        "padL": pad_l, "padT": pad_t, "plotW": plot_w, "plotH": plot_h,
+        "format": value_format,
+        "series": [
+            {"label": label, "colour": colour,
+             "points": [[round(x, 6), round(y, 6)] for x, y in points]}
+            for label, points, colour in series
+        ],
+    }, separators=(",", ":"))
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" class="chart cursor-chart" '
+        f"role=\"img\" data-cursor='{html.escape(cursor_data, quote=True)}'>"
+    ]
 
     for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
         y = sy(frac)
@@ -179,8 +199,47 @@ def _line_chart(
             f'<text x="{pad_l + plot_w + 44}" y="{ly + 4}" class="legend">'
             f'{html.escape(label)}</text>'
         )
+
+    parts.append(_cursor_overlay(len(series), pad_l, pad_t, plot_w, plot_h))
     parts.append("</svg>")
     return "".join(parts)
+
+
+def _cursor_overlay(
+    n_series: int,
+    pad_l: float,
+    pad_t: float,
+    plot_w: float,
+    plot_h: float,
+) -> str:
+    """The hover furniture: rule, per-series dots, readout box, hit area.
+
+    Emitted hidden; `_CURSOR_SCRIPT` positions and reveals it on pointer move.
+    The hit rectangle is last so it sits above the plotted paths and receives
+    the events regardless of what it covers.
+    """
+    dots = "".join(
+        f'<circle class="cursor-dot" data-i="{i}" r="3.5" cx="0" cy="0" '
+        f'visibility="hidden"/>'
+        for i in range(n_series)
+    )
+    rows = "".join(
+        f'<text class="cursor-row" data-i="{i}" x="0" y="0" '
+        f'visibility="hidden"></text>'
+        for i in range(n_series)
+    )
+    return (
+        f'<g class="cursor-layer" visibility="hidden">'
+        f'<line class="cursor-rule" x1="0" y1="{pad_t}" x2="0" '
+        f'y2="{pad_t + plot_h}"/>'
+        f"{dots}"
+        f'<rect class="cursor-box" x="0" y="0" width="0" height="0" rx="4"/>'
+        f'<text class="cursor-head" x="0" y="0"></text>'
+        f"{rows}"
+        f"</g>"
+        f'<rect class="cursor-hit" x="{pad_l}" y="{pad_t}" '
+        f'width="{plot_w}" height="{plot_h}" fill="transparent"/>'
+    )
 
 
 def _threshold_chart(thresholds: dict[str, float | None], width: int = 720) -> str:
@@ -223,11 +282,96 @@ def _threshold_chart(thresholds: dict[str, float | None], width: int = 720) -> s
     return "".join(parts)
 
 
+# Hover cursor shared by every x-axis chart. Plain string (not an f-string):
+# JS braces stay literal. Snaps to the nearest SAMPLED x rather than
+# interpolating, so the readout always shows a value that was actually
+# computed — an interpolated number would invite reading a tournament that was
+# never run.
+_CURSOR_SCRIPT = """<script>(function () {
+  var FMT = {
+    percent: function (v) { return (v * 100).toFixed(1) + "%"; },
+    number: function (v) { return v.toFixed(2); }
+  };
+  document.querySelectorAll("svg.cursor-chart").forEach(function (svg) {
+    var cfg;
+    try { cfg = JSON.parse(svg.dataset.cursor); } catch (e) { return; }
+    if (!cfg.series.length || !cfg.series[0].points.length) return;
+    var fmt = FMT[cfg.format] || FMT.number;
+    var layer = svg.querySelector(".cursor-layer");
+    var rule = svg.querySelector(".cursor-rule");
+    var box = svg.querySelector(".cursor-box");
+    var head = svg.querySelector(".cursor-head");
+    var dots = svg.querySelectorAll(".cursor-dot");
+    var rows = svg.querySelectorAll(".cursor-row");
+    var hit = svg.querySelector(".cursor-hit");
+    var xs = cfg.series[0].points.map(function (p) { return p[0]; });
+
+    function sx(x) { return cfg.padL + (1 - x) * cfg.plotW; }
+    function sy(y) { return cfg.padT + (1 - y) * cfg.plotH; }
+
+    function move(evt) {
+      // Map client px -> viewBox units; the SVG scales with the page width.
+      var rect = svg.getBoundingClientRect();
+      var vb = svg.viewBox.baseVal;
+      var px = (evt.clientX - rect.left) / rect.width * vb.width;
+      var target = 1 - (px - cfg.padL) / cfg.plotW;
+      var best = 0;
+      for (var i = 1; i < xs.length; i++) {
+        if (Math.abs(xs[i] - target) < Math.abs(xs[best] - target)) best = i;
+      }
+      var x = xs[best];
+      var cx = sx(x);
+      rule.setAttribute("x1", cx); rule.setAttribute("x2", cx);
+      head.textContent = "t = " + (x * 100).toFixed(0) + "%";
+
+      // Longest row decides the box width (no text metrics in plain SVG).
+      var longest = head.textContent.length;
+      cfg.series.forEach(function (s, i) {
+        var v = s.points[best][1];
+        var text = s.label + "  " + fmt(v);
+        if (text.length > longest) longest = text.length;
+        rows[i].textContent = text;
+        rows[i].setAttribute("fill", s.colour);
+        dots[i].setAttribute("cx", cx);
+        dots[i].setAttribute("cy", sy(v));
+        dots[i].setAttribute("fill", s.colour);
+        dots[i].setAttribute("visibility", "visible");
+      });
+
+      var bw = longest * 6.2 + 16, bh = 20 + cfg.series.length * 15;
+      // Flip the box to the left of the rule when it would overflow.
+      var bx = cx + 12;
+      if (bx + bw > cfg.padL + cfg.plotW) bx = cx - 12 - bw;
+      var by = cfg.padT + 6;
+      box.setAttribute("x", bx); box.setAttribute("y", by);
+      box.setAttribute("width", bw); box.setAttribute("height", bh);
+      head.setAttribute("x", bx + 8); head.setAttribute("y", by + 15);
+      rows.forEach(function (r, i) {
+        r.setAttribute("x", bx + 8);
+        r.setAttribute("y", by + 30 + i * 15);
+        r.setAttribute("visibility", "visible");
+      });
+      layer.setAttribute("visibility", "visible");
+    }
+
+    hit.addEventListener("mousemove", move);
+    hit.addEventListener("mouseleave", function () {
+      layer.setAttribute("visibility", "hidden");
+    });
+  });
+})();</script>"""
+
+
 _COMPOSITION_BANDS = (
     ("CC", "#0072b2", "mutual cooperation (C,C)"),
     ("exploit", "#e69f00", "exploitation (C,D) + (D,C)"),
     ("DD", "#8c8c96", "mutual defection (D,D)"),
 )
+
+# Rendered width of the word "degenerate" at the 11px `.tick` size, rounded up.
+# SVG has no text metrics at build time, so the wrap decision uses this
+# estimate rather than measuring.
+_DEGENERATE_LABEL_W = 62
 
 
 def _composition_chart(
@@ -259,7 +403,23 @@ def _composition_chart(
         result = run_tournament(matrix, target, alpha, distances, family=family)
         samples.append((target, result.composition, result.is_degenerate))
 
-    parts = [f'<svg viewBox="0 0 {width} {height}" class="chart" role="img">']
+    # Cursor reads the BAND values (not the stacked tops), which is what a
+    # reader wants: "at 40% transparency, how much is exploitation?".
+    cursor_data = json.dumps({
+        "padL": pad_l, "padT": pad_t, "plotW": plot_w, "plotH": plot_h,
+        "format": "percent",
+        "series": [
+            {"label": label, "colour": colour,
+             "points": [[round(t, 6), round(comp[key], 6)]
+                        for t, comp, _ in samples]}
+            for key, colour, label in _COMPOSITION_BANDS
+        ],
+    }, separators=(",", ":"))
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" class="chart cursor-chart" '
+        f"role=\"img\" data-cursor='{html.escape(cursor_data, quote=True)}'>"
+    ]
 
     # Stack the bands bottom-up: CC, then exploitation, then DD fills to 1.0.
     floor = [0.0] * len(samples)
@@ -280,14 +440,29 @@ def _composition_chart(
     # the classical-PD limit rather than a transparency effect.
     degenerate = [t for t, _, deg in samples if deg]
     if degenerate:
+        edge = sx(max(degenerate))
+        band = pad_l + plot_w - edge
         parts.append(
-            f'<rect x="{sx(max(degenerate)):.1f}" y="{pad_t}" '
-            f'width="{pad_l + plot_w - sx(max(degenerate)):.1f}" height="{plot_h}" '
+            f'<rect x="{edge:.1f}" y="{pad_t}" '
+            f'width="{band:.1f}" height="{plot_h}" '
             f'fill="none" stroke="#d55e00" stroke-width="1.5" '
             f'stroke-dasharray="4 3"/>'
-            f'<text x="{sx(max(degenerate)) + 6:.1f}" y="{pad_t + 14}" '
-            f'class="tick" fill="#d55e00">degenerate</text>'
         )
+        # The label must stay INSIDE the plot: the degenerate band is usually
+        # narrow (it can even be zero-width, at the last sample only), and a
+        # left-anchored label drawn rightward would run past the plot edge and
+        # collide with the legend column. Right-anchor it to the plot edge when
+        # the band is too narrow to hold it.
+        if band >= _DEGENERATE_LABEL_W + 8:
+            parts.append(
+                f'<text x="{edge + 6:.1f}" y="{pad_t + 14}" '
+                f'class="tick" fill="#d55e00">degenerate</text>'
+            )
+        else:
+            parts.append(
+                f'<text x="{pad_l + plot_w - 4:.1f}" y="{pad_t + 14}" '
+                f'class="tick end" fill="#d55e00">degenerate</text>'
+            )
 
     for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
         parts.append(
@@ -311,6 +486,10 @@ def _composition_chart(
             f'<text x="{pad_l + plot_w + 36}" y="{ly + 2}" class="legend">'
             f'{html.escape(label)}</text>'
         )
+
+    parts.append(
+        _cursor_overlay(len(_COMPOSITION_BANDS), pad_l, pad_t, plot_w, plot_h)
+    )
     parts.append("</svg>")
     return "".join(parts)
 
@@ -369,10 +548,12 @@ def _matrix_table(matrix: TauMatrix) -> str:
         cells = []
         for col_bot in matrix.bots:
             cell = matrix.cell(row_bot, col_bot)
-            classes = ["c" if cell.row_action == "C" else "d"]
+            classes = [{"C": "c", "N": "n"}.get(cell.row_action, "d")]
             if cell.hypothetical:
                 classes.append("hyp")
             title = f"{row_bot} vs {col_bot}: ({cell.row_action}, {cell.col_action})"
+            if cell.row_action == "N":
+                title += " — proven `none`: the match has no outcome"
             if cell.hypothetical:
                 title += " — STIPULATED, not proven"
             cells.append(
@@ -413,6 +594,14 @@ h2 { font-size:1.1rem; margin:2.5rem 0 .4rem; letter-spacing:-.01em; }
 .axis { fill:var(--muted); font-size:11px; }
 .never { fill:var(--muted); font-size:11px; font-style:italic; }
 .end { text-anchor:end; } .mid { text-anchor:middle; }
+.cursor-hit { cursor:crosshair; }
+.cursor-rule { stroke:var(--muted); stroke-width:1; stroke-dasharray:3 3; }
+.cursor-dot { stroke:var(--bg); stroke-width:1.5; }
+.cursor-box { fill:var(--bg); stroke:var(--border); stroke-width:1; opacity:.96; }
+.cursor-head { fill:var(--fg); font-size:11px; font-weight:600; }
+.cursor-row { font-size:11px; }
+/* The layer must never eat the pointer events the hit rect is listening for. */
+.cursor-layer { pointer-events:none; }
 .stats { display:flex; flex-wrap:wrap; gap:.6rem; margin:1.2rem 0 0; padding:0; list-style:none; }
 .stats li { background:var(--panel); border:1px solid var(--border); border-radius:8px;
             padding:.6rem .85rem; min-width:130px; }
@@ -424,6 +613,10 @@ table.matrix th, table.matrix td { border:1px solid var(--border); padding:3px 6
 table.matrix .rowhead { text-align:right; font-weight:500; white-space:nowrap; }
 table.matrix td.c { background:var(--c); color:#fff; }
 table.matrix td.d { background:var(--d); }
+/* Proven `= none` — neither C nor D; hatched so it never reads as defection. */
+table.matrix td.n { background:repeating-linear-gradient(45deg,
+    var(--d), var(--d) 4px, transparent 4px, transparent 8px);
+    color:var(--muted); font-style:italic; }
 table.matrix td.hyp { outline:2px dashed #d55e00; outline-offset:-2px; }
 code { background:var(--panel); padding:.1rem .3rem; border-radius:4px; font-size:.9em; }
 .pill { display:inline-block; background:var(--c); color:#fff; font-size:.72rem;
@@ -447,8 +640,13 @@ def build_report(
     matrix: TauMatrix,
     alphas: tuple[float, ...] = _DEFAULT_ALPHAS,
     families: tuple[str, ...] | None = None,
+    zoo: "NamedZoo | None" = None,
 ) -> str:
-    """Render the page. `families` restricts the σ channels (None = all)."""
+    """Render the page. `families` restricts the σ channels (None = all).
+
+    `zoo` is the `NamedZoo` the matrix came from, used only to label the page —
+    the numbers all come from `matrix`, so passing it is optional.
+    """
     from pd_runner.tau.channels import all_families
     from pd_runner.tau.syntax import syntactic_twins
 
@@ -570,6 +768,21 @@ def build_report(
     )
     initial_family_label = fams[initial_family].label
 
+    def alpha_slider(caption: str) -> str:
+        """One α control. Every copy is kept in sync by `control_script`.
+
+        Charts 2–4 each get their own below the plot so α can be adjusted
+        where it is being read, without scrolling back to the top control.
+        """
+        return (
+            f'<div class="alpha-control">'
+            f'<label>{caption}</label>'
+            f'<input type="range" class="alpha-slider" min="0" '
+            f'max="{len(_SLIDER_ALPHAS) - 1}" step="1" value="{initial_index}">'
+            f'<span class="pill alpha-readout">α = {initial_alpha:g}</span>'
+            f"</div>"
+        )
+
     alphas_js = "[" + ",".join(f'"{a:g}"' for a in _SLIDER_ALPHAS) + "]"
     labels_js = "{" + ",".join(f'"{k}":"{fam.label}"' for k, fam in fams.items()) + "}"
     # Plain string (not an f-string): JS braces stay literal; values are
@@ -578,15 +791,19 @@ def build_report(
         "<script>(function () {\n"
         f"  var alphas = {alphas_js};\n"
         f"  var labels = {labels_js};\n"
-        '  var slider = document.getElementById("alpha-slider");\n'
+        '  var sliders = document.querySelectorAll(".alpha-slider");\n'
+        "  var value = sliders.length ? +sliders[0].value : 0;\n"
         "  function show() {\n"
-        "    var a = alphas[+slider.value];\n"
+        "    var a = alphas[value];\n"
         "    var f = document.querySelector('input[name=\"family\"]:checked').value;\n"
         '    document.querySelectorAll(".swap-view").forEach(function (el) {\n'
         "      var byAlpha = el.dataset.alpha !== undefined && el.dataset.alpha !== a;\n"
         "      var byFamily = el.dataset.family !== undefined && el.dataset.family !== f;\n"
         "      el.hidden = byAlpha || byFamily;\n"
         "    });\n"
+        # Every duplicated slider tracks the shared value, so moving any one of
+        # them leaves the others (and their readouts) consistent.
+        "    sliders.forEach(function (s) { if (+s.value !== value) s.value = value; });\n"
         '    document.querySelectorAll(".alpha-readout").forEach(function (el) {\n'
         '      el.textContent = "α = " + a;\n'
         "    });\n"
@@ -594,7 +811,9 @@ def build_report(
         "      el.textContent = labels[f];\n"
         "    });\n"
         "  }\n"
-        '  slider.addEventListener("input", show);\n'
+        "  sliders.forEach(function (s) {\n"
+        '    s.addEventListener("input", function () { value = +s.value; show(); });\n'
+        "  });\n"
         "  document.querySelectorAll('input[name=\"family\"]').forEach(function (r) {\n"
         '    r.addEventListener("change", show);\n'
         "  });\n"
@@ -610,13 +829,44 @@ def build_report(
         else f"{stipulated} stipulated pair(s) — results are CONDITIONAL"
     )
 
-    return f"""<title>TauBots — graded transparency</title>
+    # A proven `= none` cell (MirrorBot self-play) is a fifth state, neither
+    # cooperation nor defection; call it out so "N" in the matrix is not read
+    # as a rendering glitch.
+    none_pairs = sorted(
+        {
+            tuple(sorted((r, c)))
+            for r in matrix.bots
+            for c in matrix.bots
+            if matrix.cell(r, c).row_action == "N"
+        }
+    )
+    none_note = (
+        f'<p class="note">No-outcome cells (proven <code>= none</code>, shown as '
+        f'<code>N</code>): {html.escape(", ".join(" vs ".join(p) for p in none_pairs))}. '
+        f"These matches have no fixpoint at all; the tau layer reads them "
+        f"pessimistically (an <code>N</code> hypothesis contributes no "
+        f"cooperation mass).</p>"
+        if none_pairs
+        else ""
+    )
+
+    zoo_line = (
+        f'<p class="note">Sub-zoo: <b>{html.escape(zoo.label)}</b> — '
+        f"{html.escape(zoo.description)}</p>"
+        if zoo is not None
+        else ""
+    )
+
+    return f"""<title>TauBots — graded transparency{
+        f" ({html.escape(zoo.label)})" if zoo is not None else ""}</title>
 <style>{_CSS}</style>
 <main>
 <h1>TauBots — graded transparency over the zoo</h1>
 <p class="sub">Def 3 tau lift over the Lean-verified outcome matrix ·
 {len(matrix)} bots · {len(matrix) ** 2} ordered cells</p>
+{zoo_line}
 <p class="note">Zoo: <code>{html.escape(", ".join(matrix.bots))}</code></p>
+{none_note}
 
 <ul class="stats">
   <li><b>{len(matrix)}</b><span>bots in the zoo</span></li>
@@ -639,12 +889,7 @@ below 100% means that family has twins it can never separate.</p>
 <div class="alpha-control">
   <span class="ctl-label">σ family</span> {family_radios}
 </div>
-<div class="alpha-control">
-  <label for="alpha-slider">caution threshold α — drives charts 2, 3 and 4</label>
-  <input type="range" id="alpha-slider" min="0" max="{len(_SLIDER_ALPHAS) - 1}"
-         step="1" value="{initial_index}">
-  <span class="pill alpha-readout">α = {initial_alpha:g}</span>
-</div>
+{alpha_slider("caution threshold α — drives charts 2, 3 and 4")}
 
 <h2>1 · Cooperation vs transparency <span class="pill family-readout">{html.escape(initial_family_label)}</span></h2>
 <p class="note">Mutual-cooperation rate as the signal degrades, one line per
@@ -659,6 +904,7 @@ the effect of confusion STRUCTURE — e.g. the value of reading source over
 watching play. The ε-uniform control has no structure at all: divergence from
 it is what "similarity matters" looks like.</p>
 {comparison_views}
+{alpha_slider("α for this chart — synced with every other α control")}
 
 <h2>3 · What cooperation displaces <span class="pill family-readout">{html.escape(initial_family_label)}</span> <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
 <p class="note">The same tournaments, split into all three game outcomes.
@@ -668,6 +914,7 @@ cooperation — bots fooled into cooperating with defectors — so a rising blue
 band at low transparency is not cooperation improving. Inside the dashed region
 every bot plays unconditionally (the classical-PD limit).</p>
 {comp_views}
+{alpha_slider("α for this chart — synced with every other α control")}
 
 <h2>4 · How much transparency each bot needs <span class="pill family-readout">{html.escape(initial_family_label)}</span> <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
 <p class="note">Transparency at which each bot first departs from its
@@ -677,6 +924,7 @@ Constant bots never deviate: they have no conditionality to lose.
 changes with the caution threshold and with what leaks, so this chart is one
 slice of chart 5, not a property of the bots alone.</p>
 {threshold_views}
+{alpha_slider("α for this chart — synced with every other α control")}
 
 <h2>5 · (transparency, α) phase diagram <span class="pill family-readout">{html.escape(initial_family_label)}</span></h2>
 <p class="note">The two dials crossed, under the selected σ family.
@@ -686,7 +934,8 @@ Hover a cell for its value.</p>
 
 <h2>6 · The underlying outcome matrix</h2>
 <p class="note">Each cell shows what the ROW bot plays against the column bot.
-Blue = cooperate. Dashed outline = stipulated, not proven.</p>
+Blue = cooperate. Hatched <code>N</code> = proven <code>none</code>, a match with
+no outcome. Dashed outline = stipulated, not proven.</p>
 <div class="panel">{_matrix_table(matrix)}</div>
 
 <h2>Notes</h2>
@@ -694,15 +943,17 @@ Blue = cooperate. Dashed outline = stipulated, not proven.</p>
 Behavioral twin groups: {html.escape(str([list(g) for g in twins]) if twins else "none — behavior identifies every bot")}.
 Each channel family has its own unseparable twins (see the family table): the
 behavioral channel cannot split bots with identical action rows, the syntactic
-channel cannot split bots with identical constructor profiles (DBot vs
-TitForTatBot — same tree shape, opposite conduct), and the ε-uniform control
-separates everything, having no structure to be blind through.<br><br>
+channel cannot split bots with identical ASTs (budget arguments are erased, so
+two bots differing only in their search budget are one program to it), and the
+ε-uniform control separates everything, having no structure to be blind
+through.<br><br>
 α sweeps should step <em>between</em> breakpoints, never on them: when α sits
 exactly on an agent's achievable cooperation mass, float residue decides the
 play and the agent looks conditional when it is not.
 </p>
 </main>
-{control_script}"""
+{control_script}
+{_CURSOR_SCRIPT}"""
 
 
 def main() -> None:
@@ -712,14 +963,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build the tau HTML report.")
     parser.add_argument("--output", type=Path, default=Path("generated/tau_report.html"))
     parser.add_argument("--alphas", type=str, default="0.3,0.45,0.62,0.8")
+    parser.add_argument(
+        "--zoo",
+        type=str,
+        default=DEFAULT_ZOO,
+        choices=sorted(ZOOS),
+        help="which sub-zoo to analyse (see pd_runner.tau.matrix.ZOOS)",
+    )
     parser.add_argument("--open", action="store_true", help="open in the browser")
     args = parser.parse_args()
 
-    matrix = load_tau_matrix()
+    zoo = get_zoo(args.zoo)
     alphas = tuple(float(a) for a in args.alphas.split(","))
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(build_report(matrix, alphas), encoding="utf-8")
-    print(f"wrote {args.output}")
+    args.output.write_text(
+        build_report(zoo.load(), alphas, zoo=zoo), encoding="utf-8"
+    )
+    print(f"wrote {args.output}  (zoo: {zoo.label})")
     if args.open:
         subprocess.run(["open", str(args.output)], check=False)
 

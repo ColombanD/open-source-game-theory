@@ -31,9 +31,13 @@ from pd_runner.tau.signal import (
     softmax_signal,
 )
 from pd_runner.tau.syntax import (
+    bot_ast,
     bot_feature_vectors,
+    normalized_tree_distance,
+    parse_prog,
     syntactic_distance_matrix,
     syntactic_twins,
+    tree_edit_distance,
 )
 from pd_runner.tau.play import (
     alpha_breakpoints,
@@ -54,14 +58,18 @@ __all__ = [
     "all_families",
     "behavioral_distance_matrix",
     "behavioral_family",
+    "bot_ast",
     "bot_feature_vectors",
     "epsilon_family",
+    "normalized_tree_distance",
+    "parse_prog",
     "sigma",
     "signal_family",
     "softmax_signal",
     "syntactic_distance_matrix",
     "syntactic_family",
     "syntactic_twins",
+    "tree_edit_distance",
     "alpha_breakpoints",
     "coop_mass",
     "tau_play",
