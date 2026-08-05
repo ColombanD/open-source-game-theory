@@ -290,7 +290,63 @@ NL description
 1. **Bot writer agent** ✅ — `services/bot_service.py`. Input = NL description + bot name, output = compiled `.lean` bot file. Uses `run_lean_build` tool (lake env lean, not lake build). Bot files go in `Bots/LlmGenerations/`.
 2. **Bot library writer** ✅ — `write_bot_to_library` in `library_writer.py`. Writes bot to `Bots/LlmGenerations/BotName.lean`. No `lake build` needed (bots imported transitively via theorem files).
 3. **Pipeline script** ✅ — `eval/run_bot_pipeline.py`. CLI: `--bot-a-name`, `--bot-a-strategy`, `--bot-b-name`, `--bot-b-strategy`, `--model`, `--log-level`. Generates two bots, human gates for each, proof agent discovers+proves outcome, human gate for proof, writes to library. Handles existing bot names (overwrite / rename / use existing).
-4. **Reviewer workflow** — deferred. Proof agent discovers outcome on its own; no separate prediction step needed.
+4. **Reviewer workflow** ✅ (2026-08-05, Tiers A+B) — **authoritative design note:
+   `app/docs/BOT_REVIEWER.md`** (architecture, rationale, the rewriter design, the
+   E2 plan, and the open conventions — read it before touching the reviewer).
+   The FAITHFULNESS gate the bot
+   writer never had: its only acceptance criterion was *compiles*, and `Prog` is
+   permissive enough that `.const Action.C` compiles for "defect against bullies".
+   Two tiers, cheap-and-certified first:
+   - **Tier A1 — blind expectation extractor** (`services/bot_expectation.py`):
+     an LLM turns the NL description into a predicted profile against the four
+     canonical opponents **without ever seeing the generated Lean** (enforced by
+     the signature — it takes the description string, never a `BotResult`; there
+     is a test asserting no `lean_source`/`bot_result` parameter appears). A judge
+     that reads both the source and the description just re-derives the writer's
+     reasoning from the same model family with the same blind spots; blindness is
+     what makes the check independent evidence, and it is the only formulation
+     that yields a defensible E2b number. `unspecified` is a first-class answer
+     (partial descriptions are the common case; a pressured guess manufactures
+     false alarms), and `explicit` vs `inferred` confidence decides hard-fail vs
+     warn.
+   - **Tier A2 — certified behavioral profile** (`services/bot_profile.py`):
+     `build_profile` runs the prepass evaluator over the four canonical opponents
+     at `k ∈ {2,4,6,16}`. Every determined cell is machine-certified
+     (`outcomeG_sound ∘ guardFast_sound`) — ground truth, not an opinion.
+     `staged_bot` temporarily places a not-yet-accepted bot where Lean can import
+     it (refusing to clobber an existing library file) so the review runs BEFORE
+     the human gate.
+   - **The comparison** (`bot_expectation.compare`) is pure deterministic code —
+     no judge, nothing to calibrate. Verdicts: `faithful | mismatch |
+     underdetermined`. Wired into `run_bot_pipeline` before each acceptance gate
+     (advisory only, `--no-review` to skip). **UNANIMITY OVERRIDES CONFIDENCE**
+     (`unanimous_mismatch`): one `inferred` mismatch is a warning, but if EVERY
+     certified cell (≥2) contradicts the description the verdict is `mismatch`
+     regardless. Found by review, not by test — an inverted-polarity GuardianBot
+     scored `faithful` on four inferred mismatches because each alone only warned.
+   - **Tier B — judge agent** (`services/bot_judge.py`), on the RESIDUAL only:
+     uncertified cells, phase-dependent ladders, and `structural_claims` behavior
+     cannot separate. Certified cells are passed as settled context and explicitly
+     NOT re-litigated — a judge that can overturn a machine proof is a liability.
+     Unfiltered `read_library_file`/`search_library` (there is no answer to leak:
+     Tier A2 already computed the behavior by proof). Fires only when
+     `comparison.needs_judge`. Verdict via `submit_review`, with
+     `underdetermined` a respectable answer and the default when it fails —
+     a judge that errors must never read as approval.
+   **THE BUDGET SWEEP IS LOAD-BEARING.** Outcomes are genuinely k-dependent
+   (`WaryBot vs DefectBot` = `(C,D)` at k≤6, `(D,D)` at k=16). A single-k reviewer
+   reports that budget artifact as a faithfulness failure. `phase_dependent` is a
+   first-class cell verdict and NEVER a mismatch on its own — it routes to Tier B.
+   **Memory discipline:** `jobs × memory_mb` is what the machine sees, and
+   `build_profile` clamps `jobs` to enforce it (a fourth OOM restart, 2026-08-05,
+   came from two concurrent sweeps × 4 workers × 3GB). The 3072MB per-cell cap is
+   MEASURED, not chosen for comfort — at 2560MB determined cells silently become
+   `undetermined`, which reads exactly like a real Löb boundary. If memory is
+   tight, cut `jobs`, never the cap. Run sweeps sequentially.
+   *Reverses two earlier calls, both made before `outcome_prepass` existed:*
+   "reviewer is a workflow, not a second agent" (Tier A1 IS an agent, but only as
+   blind input to a deterministic comparison) and "no separate prediction step
+   needed" (the prediction is the whole point — it must not derive from the answer).
 5. **End-to-end test** ✅ — KindBot vs MeanBot pipeline ran successfully. Both bots compiled, proof found in 1 iteration, `lake build` green after write.
 6. API+UI ✅ — FastAPI server (`api/main.py`, `pd-serve` CLI). Two-step async job with human acceptance gates at bots and proof. Minimal HTML/JS frontend at `/`. Start with `uv run pd-serve --reload`.
    - `POST /pipeline` returns 409 with `ConflictResponse` if any bot name already exists and no `conflict_resolution` is set.
@@ -330,7 +386,40 @@ first proposal (`identImpl`, 2026-07-27) was integrated MANUALLY as `Pf.implRefl
 via the family-completion program before this flow ever ran; the agent flow remains
 unexercised in anger.
 
-**Deferred:** reviewer with outcome prediction (v2), automatic rewriter loop (v2).
+**Tier B caveat (READ BEFORE CITING IT).** Tier B has **NO ground truth**. Tier A2's
+cells are theorems; the judge's verdict is an opinion from a model in the same family
+as the one that wrote the bot. It is advisory input to the human gate, never an
+acceptance criterion, and **must not be reported in the paper as a verification
+result**. The honest experiment for it: hand-label N generated bots and publish the
+judge's agreement rate against those labels. Until that exists, it is a hint.
+Observed behavior so far (n=2, anecdotal): it correctly resolved WaryBot's
+phase-dependent DefectBot ladder and verified the guard polarity by citing
+`.neg (.plays .opp .self Action.C)`; on the inverted-polarity control it *did* name
+the inverted branch polarity in its notes but still returned `faithful` — its
+top-level verdict is not reliable on its own, which is exactly why Tier A's
+deterministic verdict governs.
+
+**Automatic rewriter loop** ✅ (2026-08-05, `services/bot_rewriter.py`) —
+`rewrite_until_faithful` feeds `mismatch_brief()` (FAILING cells only, never the
+full profile — else the writer fits the four canonical opponents instead of the
+strategy) back into the bot writer via `BotRequest.feedback`. Triggers ONLY on
+`should_rewrite` (explicit or unanimous mismatch), never on inferred warnings,
+uncertified cells, or the judge. The expectation is extracted ONCE per run and
+injected via `evaluate_against`, so the prediction cannot drift toward what the
+bot currently does. Stops on faithful / budget / unchanged behavior / writer
+failure; best attempt wins with ties to the earlier one. Exposed as
+`--max-rewrites` (CLI), the "Faithfulness" dropdown (web app), and
+`review_bots`/`max_rewrites` (API); the web flow shows the verdict, cells,
+rewrite history and advisory judge line at the `bots_ready` gate. NOTHING
+auto-accepts — the human gate is unchanged.
+
+**Deferred:** the E2 harness (Phase-4 experiment: N NL descriptions → compiles? /
+profile matches? / end-to-end — the paper number; everything it needs now exists).
+
+**Known coverage limit:** the fast decider does not commit on every pair —
+`DupocBot` vs CooperateBot/DefectBot times out at 90s even pre-built and unstaged
+(a pre-existing property, not a staging artifact). Coverage against searcher-heavy
+bots is patchier than the WaryBot result suggests; those cells land in Tier B.
 
 ## Phase 4 — Paper experiments (next)
 
@@ -341,7 +430,11 @@ Workshop paper target: ICML math workshop, 8 pages, framing "first mechanized OS
 1. **E1 — Full bot-matrix proof automation (headline).** Run `search_proof` on every ordered pair of bots in the library (N² theorems). Report pass-rate, iterations-to-success, wall-clock. Stratify by bot complexity (constant bots vs. `.search`-using bots). If N grows past ~30, sample a stratified subset.
 2. **E2 — NL→bot synthesis accuracy.** 10–20 NL strategy descriptions (mix of paraphrases of existing bots + genuinely new strategies). Measure: (a) compiles, (b) behaves as described against the four canonical opponents (CooperateBot, DefectBot, MirrorBot, TitForTatBot), (c) full pipeline end-to-end.
 3. **E3 — Ablations.** At minimum: retrieval on/off, tool-feedback on/off (single-shot whole-proof vs. agentic loop).
-4. **E4 — SOTA baseline (small slice).** Run Goedel-Prover-V2 or Kimina-Prover on 10–20 theorems from E1 to quantify the domain gap. Expected outcome: very low pass-rate (these are trained on competition math, not custom inductive types). Even a 0/20 result is publishable — it justifies the bespoke pipeline. Budget: 1–2 days, not a refactor.
+4. **E4 — SOTA baseline (small slice).** Evidence accumulates in
+   `engine/PrisonersDilemma/Research/Notes/PROVER_MODEL_COMPARISON.md` (case study 1,
+   2026-08-05: leanstral-1-5 vs claude-opus-4-8 on DIMCID-vs-CupodBot — leanstral got the
+   semantics right but never submitted a verdict in 62 turns/6h; the gap is metatheoretic
+   judgment + verdict discipline, not Lean syntax). Run Goedel-Prover-V2 or Kimina-Prover on 10–20 theorems from E1 to quantify the domain gap. Expected outcome: very low pass-rate (these are trained on competition math, not custom inductive types). Even a 0/20 result is publishable — it justifies the bespoke pipeline. Budget: 1–2 days, not a refactor.
 
 **SOTA pipeline decision (not swapping in):** Do NOT replace the current Claude-based agent with DeepSeek-Prover / Goedel / Kimina / TheoremLlama / Lean Copilot / LeanDojo for v1 of the paper. Reasons: (1) those provers are fine-tuned on miniF2F/ProofNet-style competition math and are out-of-distribution for our custom `Prog` inductive type and `outcome_X_Y` templates; (2) LeanDojo/Lean Copilot are infrastructure, not drop-in solvers — our current `tools.py` + agentic loop already implements the LeanDojo retrieve-propose-check pattern; (3) the paper contribution is the mechanized OSGT library + NL→verified-outcome pipeline, not beating SOTA at proof search. Treat SOTA integration as future work, backed by E4 numbers.
 

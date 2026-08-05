@@ -19,12 +19,18 @@ import argparse
 from pd_runner import settings
 from pd_runner.config import load_paths
 from pd_runner.logging_config import setup_logging
+from pd_runner.services.bot_expectation import review_bot
+from pd_runner.services.bot_judge import judge_residual
+from pd_runner.services.bot_rewriter import DEFAULT_MAX_REWRITES, rewrite_until_faithful
 from pd_runner.services.bot_service import BotRequest, BotResult, BotWriteError, search_bot
 from pd_runner.services.library_writer import LibraryWriteError, write_bot_to_library, write_proof_to_library
 from pd_runner.services.proof_service import ProofRequest, ProofSearchError, search_proof
 
 
-def _resolve_bot(name: str, strategy: str, model: str, max_iterations: int) -> tuple[str, BotResult] | None:
+def _resolve_bot(
+    name: str, strategy: str, model: str, max_iterations: int, review: bool = True,
+    max_rewrites: int = DEFAULT_MAX_REWRITES,
+) -> tuple[str, BotResult] | None:
     """Handle the case where a bot name may already exist.
 
     Returns (final_name, BotResult) or None if the user aborted.
@@ -53,7 +59,7 @@ def _resolve_bot(name: str, strategy: str, model: str, max_iterations: int) -> t
                 print("Aborted.")
                 return None
             # Recurse with the new name (handles the case where that name also exists)
-            return _resolve_bot(name, strategy, model, max_iterations)
+            return _resolve_bot(name, strategy, model, max_iterations, review, max_rewrites)
         elif choice == "o":
             pass  # fall through to generation + overwrite
         else:
@@ -78,6 +84,14 @@ def _resolve_bot(name: str, strategy: str, model: str, max_iterations: int) -> t
         print(f"Bot generation failed: {exc}")
         return None
 
+    # Faithfulness review — BEFORE the human gate, so it can inform the decision.
+    # With rewrites enabled this may replace bot_result with a better attempt.
+    if review:
+        bot_result = _review_and_maybe_rewrite(
+            name, strategy, bot_result, model=model,
+            max_iterations=max_iterations, max_rewrites=max_rewrites,
+        )
+
     # Human acceptance gate.
     try:
         overwrite = (llm_dir / f"{name}.lean").exists()
@@ -89,6 +103,82 @@ def _resolve_bot(name: str, strategy: str, model: str, max_iterations: int) -> t
         return None
 
 
+def _review_and_maybe_rewrite(
+    name: str, strategy: str, bot_result: BotResult, *,
+    model: str, max_iterations: int, max_rewrites: int,
+) -> BotResult:
+    """Review the bot, rewriting it if the evidence justifies it.
+
+    Returns the bot to put in front of the human — the best attempt when
+    rewriting ran, the original otherwise. NEVER writes to the library and
+    never auto-accepts: the human gate is unchanged.
+    """
+    print("\n--- Faithfulness review (blind prediction vs certified behavior) ---")
+    try:
+        if max_rewrites > 0:
+            run = rewrite_until_faithful(
+                name, strategy, bot_result, model=model,
+                max_iterations=max_iterations, max_rewrites=max_rewrites,
+                progress=lambda m: print(f"  {m}"),
+            )
+            expectation, profile, comparison = (
+                run.expectation, run.best.profile, run.best.comparison
+            )
+            if len(run.attempts) > 1:
+                print()
+                print(run.render())
+                if run.best.index > 0:
+                    print(
+                        f"\n  Showing rewrite {run.best.index} below "
+                        f"(the initial attempt had {run.attempts[0].hard_failures} "
+                        "hard failure(s))."
+                    )
+                    print(f"\n--- Revised Lean source ---\n{run.best.bot.lean_source}\n---")
+            bot_result = run.best.bot
+        else:
+            expectation, profile, comparison = review_bot(
+                name, strategy, bot_result.lean_source, model=model,
+            )
+    except Exception as exc:  # never block the pipeline on a review failure
+        print(f"  review unavailable: {exc}")
+        return bot_result
+
+    lean_source = bot_result.lean_source
+
+    print(expectation.render())
+    print()
+    print(profile.render())
+    print()
+    print(comparison.render())
+
+    # Tier B runs only on the residual, and only when there IS one.
+    if comparison.needs_judge:
+        print()
+        try:
+            print(judge_residual(
+                name, strategy, lean_source, expectation, profile, comparison,
+                model=model,
+            ).render())
+        except Exception as exc:
+            print(f"  judge unavailable: {exc}")
+
+    if comparison.hard_failures:
+        print(
+            f"\n  !! {len(comparison.hard_failures)} explicit mismatch(es) — the bot does "
+            "NOT do what the description says. Consider rejecting."
+        )
+    elif comparison.unanimous_mismatch:
+        print(
+            f"\n  !! EVERY certified cell ({len(comparison.mismatches)}) contradicts the "
+            "description. Individually these were inferred rather than explicit, but no "
+            "reading of the description survives all of them. Consider rejecting."
+        )
+    elif comparison.verdict == "underdetermined":
+        print("\n  ?? No cell could be checked — review gives no evidence either way.")
+    print("---")
+    return bot_result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate two bots and prove their outcome")
     parser.add_argument("--bot-a-name", required=True, help="Name for bot A")
@@ -97,6 +187,16 @@ def main() -> None:
     parser.add_argument("--bot-b-strategy", required=True, help="NL strategy description for bot B")
     parser.add_argument("--model", default=settings.DEFAULT_MODEL)
     parser.add_argument("--max-iterations", type=int, default=20)
+    parser.add_argument(
+        "--max-rewrites", type=int, default=DEFAULT_MAX_REWRITES,
+        help="automatic rewrite attempts when the review finds explicit or unanimous "
+             "mismatches (0 disables rewriting; the review still runs)",
+    )
+    parser.add_argument(
+        "--no-review", action="store_true",
+        help="skip the faithfulness review (blind NL prediction vs certified behavior) "
+             "shown before each bot's acceptance gate",
+    )
     parser.add_argument("--log-level", default="WARNING", choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR"])
     args = parser.parse_args()
 
@@ -104,12 +204,12 @@ def main() -> None:
     print(f"Model: {args.model}  |  Max iterations: {args.max_iterations}")
 
     # --- Step 1 & 2: Resolve both bots (generate or reuse existing) ---
-    resolved_a = _resolve_bot(args.bot_a_name, args.bot_a_strategy, args.model, args.max_iterations)
+    resolved_a = _resolve_bot(args.bot_a_name, args.bot_a_strategy, args.model, args.max_iterations, not args.no_review, args.max_rewrites)
     if resolved_a is None:
         return
     bot_a_name, _ = resolved_a
 
-    resolved_b = _resolve_bot(args.bot_b_name, args.bot_b_strategy, args.model, args.max_iterations)
+    resolved_b = _resolve_bot(args.bot_b_name, args.bot_b_strategy, args.model, args.max_iterations, not args.no_review, args.max_rewrites)
     if resolved_b is None:
         return
     bot_b_name, _ = resolved_b

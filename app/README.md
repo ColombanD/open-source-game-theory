@@ -76,6 +76,15 @@ List bots discovered from the Lean engine:
 - Generated Lean snippets are written to `generated/lean/`.
 - Build/eval logs can be stored in `generated/logs/`.
 
+### Design notes
+
+- [`docs/BOT_REVIEWER.md`](docs/BOT_REVIEWER.md) — the NL→bot faithfulness reviewer:
+  blind expectation extraction, certified behavioral profiles, the judge tier, plus
+  the (unbuilt) rewriter loop and E2 harness designs. **Read before touching
+  `services/bot_profile.py`, `services/bot_expectation.py`, or
+  `services/bot_judge.py`** — it carries the memory-discipline rules that have
+  cost this project three machine restarts.
+
 ---
 
 ## Phase 2 — LLM Proof Agent

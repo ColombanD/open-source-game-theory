@@ -238,6 +238,15 @@
           <option value="high">high</option>
         </select>
       </div>
+      <div style="display:flex; align-items:center; gap:0.5rem;" id="review-wrap">
+        <label style="margin:0; white-space:nowrap;" for="review-select"
+               title="Checks the generated bot against its description using machine-certified behavior, before you accept it. Adds ~30-60s of Lean per bot.">Faithfulness</label>
+        <select id="review-select" style="width:auto;">
+          <option value="rewrite" selected>review + auto-rewrite</option>
+          <option value="review">review only</option>
+          <option value="off">off</option>
+        </select>
+      </div>
       <div style="display:flex; align-items:center; gap:0.5rem;">
         <label style="margin:0; white-space:nowrap;" for="log-level-select">Log streaming</label>
         <select id="log-level-select" style="width:auto;">
@@ -414,6 +423,10 @@
       document.getElementById('bot-a-select').style.display = proveOnly ? '' : 'none';
       document.getElementById('bot-b-select').style.display = proveOnly ? '' : 'none';
 
+      // Faithfulness checks a bot against its DESCRIPTION; prove-only mode has
+      // no descriptions (both bots are loaded from the library), so hide it.
+      document.getElementById('review-wrap').style.display = proveOnly ? 'none' : '';
+
       if (proveOnly) loadBotList();
     }
 
@@ -456,6 +469,7 @@
           ...settings,
         };
       }
+      const reviewMode = document.getElementById('review-select').value; // off | review | rewrite
       const req = {
         bot_a: {
           name: document.getElementById('bot-a-name').value.trim(),
@@ -463,6 +477,8 @@
           conflict_resolution: conflictResolutions[document.getElementById('bot-a-name').value.trim()] || null,
         },
         log_level: logLevel,
+        review_bots: reviewMode !== 'off',
+        max_rewrites: reviewMode === 'rewrite' ? 2 : 0,
         ...settings,
       };
       if (mode === 'full') {
@@ -714,6 +730,55 @@
         document.getElementById('run-btn').disabled = false;
       }
 
+      // Faithfulness review (docs/BOT_REVIEWER.md). The verdict is deterministic
+      // — a blind NL prediction vs machine-certified behavior — but the judge
+      // line is an LLM opinion with no ground truth and is labelled as such.
+      function renderReview(r) {
+        if (!r) return '';
+        const colors = { faithful: '#6ee7b7', mismatch: '#fca5a5', underdetermined: '#fcd34d' };
+        const marks  = { match: '✓', mismatch: '✗', unspecified: '–', uncertified: '?' };
+        const cells = (r.cells || []).map(c =>
+          `<div style="display:flex;gap:0.5rem;padding:0.15rem 0;">
+             <span style="width:1rem;color:${c.kind === 'mismatch' ? '#fca5a5' : c.kind === 'match' ? '#6ee7b7' : '#9ca3af'};">${marks[c.kind] || '·'}</span>
+             <span style="width:8rem;color:#d1d5db;">${esc(c.opponent)}</span>
+             <span style="color:#9ca3af;">${esc(c.detail || '')}</span>
+           </div>`).join('');
+
+        const rewriteBlock = (r.attempts > 1) ? `
+          <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #374151;">
+            <div style="color:#d1d5db;font-weight:600;">
+              Rewritten — showing attempt ${r.selected_attempt} of ${r.attempts - 1}
+              <span style="color:#9ca3af;font-weight:400;">(${esc(r.stop_reason || '')})</span>
+            </div>
+            ${(r.attempt_lines || []).map(l => `<div style="color:#9ca3af;">${esc(l)}</div>`).join('')}
+            ${r.oscillated ? '<div style="color:#fcd34d;">Behavior repeated across attempts — the description may be ambiguous.</div>' : ''}
+          </div>` : '';
+
+        const judgeBlock = r.judge_kind ? `
+          <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #374151;color:#9ca3af;">
+            <em>Judge (advisory, no ground truth):</em> ${esc(r.judge_kind)}${r.judge_notes ? ' — ' + esc(r.judge_notes) : ''}
+          </div>` : '';
+
+        const warn = r.hard_failures > 0
+          ? `<div style="color:#fca5a5;margin-top:0.4rem;">${r.hard_failures} explicit mismatch(es) — the bot does not do what the description says.</div>`
+          : (r.unanimous_mismatch
+            ? '<div style="color:#fca5a5;margin-top:0.4rem;">Every certified cell contradicts the description.</div>'
+            : '');
+
+        return `
+          <div style="margin-top:0.6rem;padding:0.6rem 0.75rem;background:#111827;border:1px solid #374151;border-radius:0.375rem;font-size:0.8rem;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.35rem;">
+              <strong style="color:${colors[r.verdict] || '#d1d5db'};">Faithfulness: ${esc(r.verdict)}</strong>
+              <span style="color:#6b7280;">${esc(r.coverage || '')}</span>
+            </div>
+            ${r.summary ? `<div style="color:#9ca3af;margin-bottom:0.35rem;">Read as: ${esc(r.summary)}</div>` : ''}
+            ${cells}
+            ${warn}
+            ${rewriteBlock}
+            ${judgeBlock}
+          </div>`;
+      }
+
       if (job.status === 'bots_ready' && job.bot_a) {
         const tagA = job.bot_a.is_existing
           ? '<span class="tag-existing">existing</span>'
@@ -725,6 +790,7 @@
             <div>
               <div class="section-label">${esc(job.bot_b.name)} ${tagB}</div>
               <pre>${esc(job.bot_b.source)}</pre>
+              ${renderReview(job.bot_b.review)}
             </div>
         ` : '';
         const continueButton = job.bot_b
@@ -739,6 +805,7 @@
             <div>
               <div class="section-label">${esc(job.bot_a.name)} ${tagA}</div>
               <pre>${esc(job.bot_a.source)}</pre>
+              ${renderReview(job.bot_a.review)}
             </div>
             ${botBBlock}
           </div>

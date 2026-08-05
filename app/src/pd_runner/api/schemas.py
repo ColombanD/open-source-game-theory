@@ -56,6 +56,13 @@ class PipelineRequest(BaseModel):
     # Prove-only mode: skip bot generation entirely; both bot_a and bot_b must already
     # exist on disk (in Bots/ or Bots/LlmGenerations/). strategy fields are ignored.
     prove_only: bool = False
+    # Faithfulness review (docs/BOT_REVIEWER.md): blind NL prediction vs certified
+    # behavior, shown at the bot acceptance gate. Costs ~25-55s of Lean per bot.
+    review_bots: bool = True
+    # Automatic rewrite attempts when the review finds explicit/unanimous
+    # mismatches. 0 = review only, never rewrite. Each attempt costs another
+    # writer run plus another certified sweep.
+    max_rewrites: int = 2
     # Log level for streaming: "DEBUG", "INFO", "WARNING". None = no streaming.
     log_level: Optional[str] = None
 
@@ -106,10 +113,48 @@ class JobStatus(str, Enum):
     applying = "applying"            # applying the accepted patch + live rebuild
 
 
+class ReviewCell(BaseModel):
+    """One opponent's row in the faithfulness review."""
+    opponent: str
+    kind: str                       # match | mismatch | unspecified | uncertified
+    expected: Optional[str] = None
+    expected_confidence: Optional[str] = None
+    actual: Optional[str] = None
+    detail: str = ""
+
+
+class BotReview(BaseModel):
+    """Tier-A faithfulness review, plus the rewrite history when one ran.
+
+    ADVISORY. `verdict` is deterministic (certified behavior vs a blind
+    prediction) but `judge_*` is an LLM opinion with no ground truth — see
+    docs/BOT_REVIEWER.md §5. Never gate acceptance on the judge alone.
+    """
+    verdict: str                    # faithful | mismatch | underdetermined
+    summary: str = ""               # the blind prediction's one-line restatement
+    cells: list[ReviewCell] = []
+    hard_failures: int = 0
+    warnings: int = 0
+    unanimous_mismatch: bool = False
+    coverage: str = ""              # e.g. "3/4 opponents certified"
+    profile_lines: list[str] = []   # rendered certified profile, one line per opponent
+    unresolved: list[str] = []
+    # Rewrite history (absent when rewriting was disabled or never triggered)
+    attempts: int = 1
+    selected_attempt: int = 0
+    stop_reason: Optional[str] = None
+    oscillated: bool = False
+    attempt_lines: list[str] = []
+    # Tier B (advisory only)
+    judge_kind: Optional[str] = None
+    judge_notes: Optional[str] = None
+
+
 class BotDraft(BaseModel):
     name: str
     source: str
     is_existing: bool = False   # True if loaded from disk rather than generated
+    review: Optional[BotReview] = None
 
 
 class ProofDraft(BaseModel):

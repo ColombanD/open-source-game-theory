@@ -45,6 +45,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -56,6 +57,16 @@ from pd_runner.config import load_paths
 # `expr` may use `{k}` for the budget parameter. `guard` is the top-level
 # guard-formula shape of the bot's `.search` nodes (None = no search at all);
 # `guardFast` can only commit on "plays".
+#
+# ARITY IS LOAD-BEARING. A bot taking two `Nat` budgets (`OptimBot`,
+# `LegibleBot`) applied to one argument elaborates to `Nat → Prog`, not `Prog`
+# — `outcomeG` then yields nothing and EVERY cell reads `undetermined`/`oom`
+# at every budget against every opponent, which is indistinguishable from a
+# genuine Löb boundary in the output. This silently invalidated the whole
+# OptimBot row until 2026-08-05. `verify_registry_arity` below cross-checks
+# each template against the binder list in the bot's own .lean source; call it
+# from tests, and use `bot_spec_from_source` for freshly generated bots rather
+# than hand-writing an entry.
 # ---------------------------------------------------------------------------
 
 _BOTS_NS = "PrisonersDilemma.Bots"
@@ -67,6 +78,11 @@ class BotSpec:
     module: str
     expr: str
     guard: str | None  # "plays" | "neg" | "impl" | "eq" | "box" | None
+
+    @property
+    def arity(self) -> int:
+        """Number of `{k}` budget slots this template applies."""
+        return self.expr.count("{k}")
 
 
 REGISTRY: dict[str, BotSpec] = {
@@ -87,7 +103,7 @@ REGISTRY: dict[str, BotSpec] = {
     "JustBot": BotSpec(f"{_LLM_NS}.JustBot", "JustBot {k}", "plays"),
     "CIMCIC": BotSpec(f"{_LLM_NS}.CIMCIC", "CIMCIC {k}", "impl"),
     "DIMCID": BotSpec(f"{_LLM_NS}.DIMCID", "DIMCID {k}", "impl"),
-    "OptimBot": BotSpec(f"{_LLM_NS}.OptimBot", "OptimBot {k}", "plays"),
+    "OptimBot": BotSpec(f"{_LLM_NS}.OptimBot", "OptimBot {k} {k}", "plays"),
     "WaryBot": BotSpec(f"{_LLM_NS}.WaryBot", "WaryBot {k}", "neg"),
     "LegibleBot": BotSpec(f"{_LLM_NS}.LegibleBot", "LegibleBot {k} {k}", "box"),
     "GuardianBot": BotSpec(f"{_LLM_NS}.GuardianBot", "GuardianBot {k}", "plays"),
@@ -95,6 +111,67 @@ REGISTRY: dict[str, BotSpec] = {
 
 _DECIDER_MODULE = "PrisonersDilemma.Decidability.T31EngineDecider"
 _DEFAULT_BOTS = "OptimBot,WaryBot,LegibleBot,GuardianBot"
+
+# `def BotName (k : Nat) (j : Nat) : Prog` / `def BotName (k j : Nat) : Prog`
+# Binders are parenthesised groups, so they may contain `:` — match them
+# explicitly rather than with a colon-free run (which never matches `(k : Nat)`).
+_DEF_RE_TMPL = r"^\s*def\s+{name}\s*(?P<binders>(?:\([^)]*\)\s*)*):\s*Prog\b"
+_BINDER_RE = re.compile(r"\(([^:()]+):\s*Nat\s*\)")
+# Head of the first `.search`'s guard formula: `.search <budget> (.plays ...`
+_GUARD_RE = re.compile(r"\.search\s+\S+\s*\(\s*\.(plays|neg|impl|eq|box)\b")
+
+
+def _lean_source_for(module: str, engine_dir: Path) -> str:
+    return (engine_dir / Path(*module.split("."))).with_suffix(".lean").read_text(
+        encoding="utf-8"
+    )
+
+
+def arity_from_source(name: str, source: str) -> int:
+    """Count `Nat` budget binders on `def <name> ... : Prog`.
+
+    Handles both `(k : Nat) (j : Nat)` and the grouped `(k j : Nat)` form.
+    Returns 0 for a bot with no budget parameter (constant/sim/ite bots).
+    """
+    m = re.search(_DEF_RE_TMPL.format(name=re.escape(name)), source, re.MULTILINE)
+    if not m:
+        raise ValueError(f"no `def {name} ... : Prog` found in source")
+    return sum(len(g.split()) for g in _BINDER_RE.findall(m.group("binders")))
+
+
+def guard_from_source(source: str) -> str | None:
+    """Guard-formula head of the bot's first `.search`, or None if search-free."""
+    m = _GUARD_RE.search(source)
+    return m.group(1) if m else None
+
+
+def bot_spec_from_source(name: str, module: str, source: str) -> BotSpec:
+    """Derive a BotSpec from a bot's Lean source — never guess arity."""
+    arity = arity_from_source(name, source)
+    expr = " ".join([name, *["{k}"] * arity])
+    return BotSpec(module=module, expr=expr, guard=guard_from_source(source))
+
+
+def verify_registry_arity(engine_dir: Path) -> dict[str, str]:
+    """Cross-check every REGISTRY template against its .lean source.
+
+    Returns {bot_name: complaint} for mismatches; empty dict means clean.
+    Intended for tests and for a preflight check before a long sweep.
+    """
+    problems: dict[str, str] = {}
+    for name, spec in REGISTRY.items():
+        try:
+            source = _lean_source_for(spec.module, engine_dir)
+            expected = arity_from_source(name, source)
+        except (OSError, ValueError) as exc:
+            problems[name] = f"could not read/parse source: {exc}"
+            continue
+        if spec.arity != expected:
+            problems[name] = (
+                f"template {spec.expr!r} applies {spec.arity} budget arg(s) but "
+                f"`def {name}` takes {expected} — the term will not elaborate to Prog"
+            )
+    return problems
 
 _OUTCOME_RE = re.compile(r"some \(PD\.Action\.([CD]), PD\.Action\.([CD])\)")
 _OOM_RE = re.compile(r"memory_exception|excessive memory consumption")
@@ -124,11 +201,15 @@ def _scratch_source(left: BotSpec, right: BotSpec, k: int, fuel_d: int, fuel: in
     return "\n".join(lines) + "\n"
 
 
-def _undetermined_note(left_name: str, right_name: str, k: int) -> str:
+def _undetermined_note(
+    left_name: str, right_name: str, k: int,
+    registry: dict[str, BotSpec] | None = None,
+) -> str:
+    reg = registry if registry is not None else REGISTRY
     exotic = [
-        f"{n} ({REGISTRY[n].guard} guard)"
+        f"{n} ({reg[n].guard} guard)"
         for n in (left_name, right_name)
-        if REGISTRY[n].guard not in (None, "plays", "neg")
+        if reg[n].guard not in (None, "plays", "neg")
     ]
     if exotic:
         return ("guard fits budget but shape is beyond guardFastN: "
@@ -136,8 +217,12 @@ def _undetermined_note(left_name: str, right_name: str, k: int) -> str:
     return f"Löb boundary or budget floor at k={k}"
 
 
-def _both_searchers(left_name: str, right_name: str) -> bool:
-    return REGISTRY[left_name].guard is not None and REGISTRY[right_name].guard is not None
+def _both_searchers(
+    left_name: str, right_name: str,
+    registry: dict[str, BotSpec] | None = None,
+) -> bool:
+    reg = registry if registry is not None else REGISTRY
+    return reg[left_name].guard is not None and reg[right_name].guard is not None
 
 
 def _run_cell(
@@ -149,8 +234,10 @@ def _run_cell(
     fuel: int,
     timeout: int,
     memory_mb: int,
+    registry: dict[str, BotSpec] | None = None,
 ) -> CellResult:
-    left, right = REGISTRY[left_name], REGISTRY[right_name]
+    reg = registry if registry is not None else REGISTRY
+    left, right = reg[left_name], reg[right_name]
     start = time.monotonic()
     with tempfile.NamedTemporaryFile(
         "w", suffix=".lean", prefix="prepass_", dir="/tmp", delete=False
@@ -192,7 +279,7 @@ def _run_cell(
     if re.search(r"^none$", out, flags=re.MULTILINE):
         return CellResult(
             left_name, right_name, k, fuel_d, fuel, "undetermined", None,
-            _undetermined_note(left_name, right_name, k), elapsed,
+            _undetermined_note(left_name, right_name, k, reg), elapsed,
         )
     tail = " | ".join(line for line in out.strip().splitlines() if "batteries" not in line)[-300:]
     return CellResult(
@@ -202,8 +289,12 @@ def _run_cell(
     )
 
 
-def _ensure_built(engine_dir: Path, names: list[str]) -> None:
-    modules = sorted({REGISTRY[n].module for n in names} | {_DECIDER_MODULE})
+def _ensure_built(
+    engine_dir: Path, names: list[str],
+    registry: dict[str, BotSpec] | None = None,
+) -> None:
+    reg = registry if registry is not None else REGISTRY
+    modules = sorted({reg[n].module for n in names} | {_DECIDER_MODULE})
     print(f"Building {len(modules)} modules (no-op when cached)...")
     proc = subprocess.run(
         ["lake", "build", *[f"+{m}" for m in modules]],
@@ -249,6 +340,83 @@ def _print_report(results: list[CellResult]) -> None:
             )
 
 
+def run_cells(
+    pairs: list[tuple[str, str, int]],
+    *,
+    registry: dict[str, BotSpec] | None = None,
+    engine_dir: Path | None = None,
+    fuel: int = 64,
+    fuel_d: int | None = None,
+    timeout: int = 90,
+    memory_mb: int = 3072,
+    jobs: int = 2,
+    force_hard: bool = False,
+    ensure_built: bool = True,
+    on_result: Callable[[CellResult], None] | None = None,
+    progress: Callable[[str], None] | None = None,
+) -> list[CellResult]:
+    """Evaluate `(left, right, budget)` cells with the certified evaluator.
+
+    The library entry point behind the CLI: no argparse, no JSONL, no printing
+    unless `progress` is supplied. Every `determined` result carries a
+    machine-certified outcome (`outcomeG_sound ∘ guardFast_sound`).
+
+    `registry` defaults to the module REGISTRY; pass a superset to include
+    freshly generated bots (see `bot_spec_from_source`). `on_result` fires as
+    each cell completes — use it to append to JSONL or drive a progress bar.
+    Results come back in completion order, not input order.
+    """
+    reg = registry if registry is not None else REGISTRY
+    engine = engine_dir if engine_dir is not None else load_paths().lean_engine_dir
+
+    unknown = {n for (l, r, _) in pairs for n in (l, r) if n not in reg}
+    if unknown:
+        raise ValueError(f"unknown bot(s): {', '.join(sorted(unknown))}")
+
+    if ensure_built:
+        _ensure_built(engine, sorted({n for (l, r, _) in pairs for n in (l, r)}), reg)
+
+    results: list[CellResult] = []
+    write_lock = threading.Lock()
+
+    def record(res: CellResult) -> None:
+        with write_lock:
+            results.append(res)
+            if on_result is not None:
+                on_result(res)
+
+    tasks: list[tuple[str, str, int]] = []
+    for (left, right, k) in pairs:
+        if _both_searchers(left, right, reg) and k > 2 and not force_hard:
+            record(CellResult(
+                left, right, k, fuel_d if fuel_d is not None else k, fuel, "skipped", None,
+                "both-searcher cell at k>2 (infeasible in calibration; force_hard to attempt)",
+                0.0,
+            ))
+            continue
+        tasks.append((left, right, k))
+
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        futures = {
+            pool.submit(
+                _run_cell, engine, l, r, k,
+                fuel_d if fuel_d is not None else k, fuel, timeout, memory_mb, reg,
+            ): (l, r, k)
+            for (l, r, k) in tasks
+        }
+        completed = 0
+        for fut in as_completed(futures):
+            res = fut.result()
+            record(res)
+            completed += 1
+            if progress is not None:
+                progress(
+                    f"  [{completed}/{len(tasks)}] {res.left} vs {res.right} "
+                    f"@k={res.budget}: {res.outcome or res.status.upper()}"
+                )
+    return results
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--bots", default=_DEFAULT_BOTS, help="comma-separated left-side bots")
@@ -287,8 +455,6 @@ def main() -> None:
                 done[(r.left, r.right, r.budget)] = r
         print(f"resume: {len(done)} cells already recorded in {out_path}")
 
-    _ensure_built(engine_dir, list(dict.fromkeys(bots + opponents)))
-
     # Ordered pairs, deduped by unordered key: outcomeG (l, r) already yields
     # both plays, so (r, l) would be redundant (it is the swap).
     seen: set[frozenset[str]] = set()
@@ -301,48 +467,34 @@ def main() -> None:
             seen.add(key)
             pairs.append((left, right))
 
-    results: list[CellResult] = list(done.values())
-    write_lock = threading.Lock()
+    cells = [
+        (l, r, k)
+        for (l, r) in pairs
+        for k in budgets
+        if (l, r, k) not in done and (r, l, k) not in done
+    ]
 
-    def record(res: CellResult) -> None:
-        with write_lock:
-            results.append(res)
-            with out_path.open("a") as fh:
-                fh.write(json.dumps(asdict(res)) + "\n")
-
-    tasks: list[tuple[str, str, int]] = []
-    for (l, r) in pairs:
-        for k in budgets:
-            if (l, r, k) in done or (r, l, k) in done:
-                continue
-            if _both_searchers(l, r) and k > 2 and not args.force_hard:
-                record(CellResult(
-                    l, r, k, args.fuel_d or k, args.fuel, "skipped", None,
-                    "both-searcher cell at k>2 (infeasible in calibration; --force-hard to attempt)",
-                    0.0,
-                ))
-                continue
-            tasks.append((l, r, k))
-
-    print(f"{len(tasks)} cells to run ({args.jobs} workers, {args.timeout}s timeout, "
+    print(f"{len(cells)} cells to run ({args.jobs} workers, {args.timeout}s timeout, "
           f"{args.memory_mb}MB cap each)")
-    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {
-            pool.submit(
-                _run_cell, engine_dir, l, r, k, args.fuel_d or k, args.fuel,
-                args.timeout, args.memory_mb,
-            ): (l, r, k)
-            for (l, r, k) in tasks
-        }
-        completed = 0
-        for fut in as_completed(futures):
-            res = fut.result()
-            record(res)
-            completed += 1
-            cell = res.outcome or res.status.upper()
-            print(f"  [{completed}/{len(tasks)}] {res.left} vs {res.right} @k={res.budget}: {cell}")
 
-    _print_report(results)
+    def append_jsonl(res: CellResult) -> None:
+        with out_path.open("a") as fh:
+            fh.write(json.dumps(asdict(res)) + "\n")
+
+    fresh = run_cells(
+        cells,
+        engine_dir=engine_dir,
+        fuel=args.fuel,
+        fuel_d=args.fuel_d or None,  # CLI treats 0 as unset (pre-existing behavior)
+        timeout=args.timeout,
+        memory_mb=args.memory_mb,
+        jobs=args.jobs,
+        force_hard=args.force_hard,
+        on_result=append_jsonl,
+        progress=print,
+    )
+
+    _print_report(list(done.values()) + fresh)
     print(f"\nresults in {out_path}")
 
 

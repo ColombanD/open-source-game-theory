@@ -41,6 +41,11 @@ class Job:
     bot_b_draft: Optional[BotResult] = None
     proof_draft: Optional[ProofResult] = None
 
+    # Faithfulness reviews attached to the drafts (docs/BOT_REVIEWER.md).
+    # `review_payload()` dicts; None when review was off or failed.
+    bot_a_review: Optional[dict] = None
+    bot_b_review: Optional[dict] = None
+
     # Human decision signals (set by accept/reject endpoints)
     bots_accepted: asyncio.Event = field(default_factory=asyncio.Event)
     proof_accepted: asyncio.Event = field(default_factory=asyncio.Event)
@@ -71,11 +76,13 @@ class Job:
         bot_a = None
         if self.bot_a_draft:
             bot_a = BotDraft(name=self.bot_a_draft.bot_name, source=self.bot_a_draft.lean_source,
-                             is_existing=self.bot_a_draft.iterations_used == 0)
+                             is_existing=self.bot_a_draft.iterations_used == 0,
+                             review=self.bot_a_review)
         bot_b = None
         if self.bot_b_draft:
             bot_b = BotDraft(name=self.bot_b_draft.bot_name, source=self.bot_b_draft.lean_source,
-                             is_existing=self.bot_b_draft.iterations_used == 0)
+                             is_existing=self.bot_b_draft.iterations_used == 0,
+                             review=self.bot_b_review)
         proof = None
         if self.proof_draft:
             proof = ProofDraft(

@@ -23,6 +23,9 @@ class BotRequest:
     model: str = settings.DEFAULT_MODEL
     max_tokens: int = settings.DEFAULT_MAX_TOKENS
     thinking_effort: str = settings.DEFAULT_THINKING_EFFORT
+    # Rewriter feedback: the mismatch brief from a previous unfaithful attempt
+    # (docs/BOT_REVIEWER.md §7). None on a first attempt.
+    feedback: str | None = None
 
 
 @dataclass(frozen=True)
@@ -42,7 +45,9 @@ def search_bot(request: BotRequest) -> BotResult:
     Raises BotWriteError if the agent fails to produce a compiling bot definition.
     """
     system_prompt = build_bot_system_prompt()
-    user_message = bot_request_message(request.bot_name, request.strategy_description)
+    user_message = bot_request_message(
+        request.bot_name, request.strategy_description, request.feedback
+    )
 
     _log.log(TRACE, "Bot writer system prompt:\n%s", system_prompt)
     _log.log(TRACE, "Bot writer user message:\n%s", user_message)

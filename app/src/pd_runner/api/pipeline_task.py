@@ -7,6 +7,8 @@ import asyncio
 from pd_runner.api.jobs import Job, JobStore
 from pd_runner.api.schemas import BotConflictResolution, JobStatus, PipelineRequest, PipelineResult
 from pd_runner.config import load_paths
+from pd_runner.services.bot_judge import judge_residual
+from pd_runner.services.bot_rewriter import review_payload, rewrite_until_faithful
 from pd_runner.services.bot_service import BotRequest, BotResult, search_bot
 from pd_runner.services.library_writer import LibraryWriteError, write_bot_to_library, write_proof_to_library
 from pd_runner.services.proof_service import ProofRequest, ProofResult, ProofSearchError, search_proof
@@ -125,6 +127,53 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
         bot_b = _resolve_bot(req.bot_b.name, req.bot_b.strategy, req.bot_b.conflict_resolution, req)
         return bot_a, bot_b
 
+    def _review_bot(name: str, strategy: str | None, bot: BotResult) -> tuple[BotResult, dict | None]:
+        """Faithfulness review (+ optional rewrite) for one generated bot.
+
+        Returns the bot to show the human and the review payload. NEVER
+        auto-accepts — the bots_ready gate is unchanged; this only improves and
+        annotates what reaches it. A review failure is non-fatal: the pipeline
+        must not die because an advisory check broke.
+        """
+        if not req.review_bots or not strategy:
+            return bot, None      # nothing to check against without a description
+        try:
+            run = rewrite_until_faithful(
+                name, strategy, bot,
+                max_rewrites=max(0, req.max_rewrites),
+                model=req.model,
+                max_iterations=req.max_iterations,
+                max_tokens=req.max_tokens,
+                thinking_effort=req.thinking_effort,
+            )
+            judge = None
+            if run.best.comparison.needs_judge:
+                try:
+                    judge = judge_residual(
+                        name, strategy, run.best.bot.lean_source,
+                        run.expectation, run.best.profile, run.best.comparison,
+                        model=req.model,
+                    )
+                except Exception as exc:
+                    _logging.getLogger(__name__).warning(
+                        "judge failed for %s (non-fatal): %s", name, exc)
+            return run.best.bot, review_payload(run, judge)
+        except Exception as exc:
+            _logging.getLogger(__name__).warning(
+                "faithfulness review failed for %s (non-fatal): %s", name, exc)
+            return bot, None
+
+    def _review_bots(
+        bot_a: BotResult, bot_b: BotResult | None,
+    ) -> tuple[BotResult, BotResult | None, dict | None, dict | None]:
+        # Sequential, never concurrent: each review runs a certified Lean sweep,
+        # and `jobs x memory_mb` is what the machine sees (docs/BOT_REVIEWER.md §4).
+        bot_a, review_a = _review_bot(req.bot_a.name, req.bot_a.strategy, bot_a)
+        review_b = None
+        if bot_b is not None and req.bot_b is not None:
+            bot_b, review_b = _review_bot(req.bot_b.name, req.bot_b.strategy, bot_b)
+        return bot_a, bot_b, review_a, review_b
+
     def _write_bots(bot_a: BotResult, bot_b: BotResult | None) -> None:
         pairs = [(bot_a, req.bot_a)]
         if bot_b is not None and req.bot_b is not None:
@@ -168,11 +217,21 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
             job.step = f"Generating {req.bot_a.name} and {req.bot_b.name}..."
         bot_a, bot_b = await loop.run_in_executor(None, _generate_bots)
 
+        # --- Step 1b: Faithfulness review (+ rewrite) before the gate ---
+        review_a = review_b = None
+        if req.review_bots and not req.prove_only:
+            job.step = "Reviewing bots against their descriptions (certified behavior)..."
+            bot_a, bot_b, review_a, review_b = await loop.run_in_executor(
+                None, _review_bots, bot_a, bot_b
+            )
+
         # --- Gate 1: Pause for human to review and accept bots ---
         job.status = JobStatus.bots_ready
         job.step = None
         job.bot_a_draft = bot_a
         job.bot_b_draft = bot_b
+        job.bot_a_review = review_a
+        job.bot_b_review = review_b
         await job.bots_accepted.wait()
 
         if job.rejected:

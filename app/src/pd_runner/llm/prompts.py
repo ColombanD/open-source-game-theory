@@ -662,14 +662,45 @@ Use the `read_library_file` tool to inspect any existing bot for reference.
 """
 
 
-def bot_request_message(bot_name: str, strategy_description: str) -> str:
+def bot_request_message(
+    bot_name: str, strategy_description: str, feedback: str | None = None
+) -> str:
+    """The bot writer's opening user turn.
+
+    `feedback` is the rewriter's mismatch brief (see docs/BOT_REVIEWER.md §7):
+    a previous attempt compiled but did NOT behave as the description says. It
+    deliberately carries only the FAILING cells, never the full certified
+    profile — handing over every cell invites fitting the four canonical
+    opponents instead of implementing the strategy, and such a bot would pass
+    the reviewer while being no more faithful.
+    """
+    retry_block = ""
+    if feedback:
+        retry_block = f"""
+# THIS IS A REWRITE — your previous attempt was not faithful
+
+A previous version of this bot compiled cleanly but did NOT behave the way the
+strategy describes. A certified evaluator (machine-checked, not an opinion)
+found these discrepancies:
+
+{feedback.strip()}
+
+Write a NEW definition that fixes them while still implementing the strategy
+above. The description is the specification and has not changed — do not
+special-case the opponents listed here to make individual cells come out
+right; fix the underlying logic. Common causes: a frozen `.bot X` probe target
+where the actual opponent `.opp` was meant (or vice versa), `.self`/`.opp`
+swapped inside a `.plays` atom, or the then/else branches of a guard exchanged.
+
+"""
+
     return f"""\
 Write a Lean 4 bot definition for the following strategy:
 
 **Bot name:** `{bot_name}`
 
 **Strategy:** {strategy_description}
-
+{retry_block}
 The bot definition should go in the namespace `PD.Bots` and follow this structure:
 
 ```lean
