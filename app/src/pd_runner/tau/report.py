@@ -619,6 +619,11 @@ table.matrix td.n { background:repeating-linear-gradient(45deg,
     color:var(--muted); font-style:italic; }
 table.matrix td.hyp { outline:2px dashed #d55e00; outline-offset:-2px; }
 code { background:var(--panel); padding:.1rem .3rem; border-radius:4px; font-size:.9em; }
+.banner { border-radius:8px; padding:.7rem .9rem; margin:1rem 0 0;
+          font-size:.88rem; line-height:1.5; border:1px solid; }
+.banner.warn { background:rgba(213,94,0,.10); border-color:rgba(213,94,0,.55); }
+.banner.ok { background:rgba(0,158,115,.10); border-color:rgba(0,158,115,.5); }
+.banner code { background:transparent; padding:0; font-size:.95em; }
 .pill { display:inline-block; background:var(--c); color:#fff; font-size:.72rem;
         font-weight:600; padding:.15rem .5rem; border-radius:999px;
         vertical-align:middle; margin-left:.4rem; letter-spacing:0; }
@@ -823,11 +828,28 @@ def build_report(
 
     twins = family_twins["behavioral"]
     stipulated = len({tuple(sorted(p)) for p in matrix.hypothetical_cells})
-    provenance = (
-        "every cell machine-checked by Lean"
-        if matrix.is_fully_proven
-        else f"{stipulated} stipulated pair(s) — results are CONDITIONAL"
-    )
+
+    # A page that leaves the author's hands must carry its own caveat: the
+    # one-line provenance note is too easy to skim past when a reader arrives
+    # at a shared link with no briefing.
+    if matrix.is_fully_proven:
+        provenance_banner = (
+            '<p class="banner ok">Every cell in this matrix is a theorem '
+            "machine-checked by the Lean kernel.</p>"
+        )
+    else:
+        pairs = ", ".join(
+            f"{a} vs {b}"
+            for a, b in sorted({tuple(sorted(p)) for p in matrix.hypothetical_cells})
+        )
+        provenance_banner = (
+            f'<p class="banner warn"><b>Results below are CONDITIONAL.</b> '
+            f"{stipulated} of this zoo's outcome pairs are <i>stipulated</i> — "
+            f"assumed, not proven — because their Lean proofs do not exist yet: "
+            f"<code>{html.escape(pairs)}</code>. Everything else is "
+            f"machine-checked. Any claim taken from this page should be "
+            f"reported as resting on those assumptions.</p>"
+        )
 
     # A proven `= none` cell (MirrorBot self-play) is a fifth state, neither
     # cooperation nor defection; call it out so "N" in the matrix is not read
@@ -874,7 +896,7 @@ def build_report(
   <li><b>{len(twins)}</b><span>behavioral twin groups</span></li>
   <li><b>{stipulated}</b><span>stipulated pairs</span></li>
 </ul>
-<p class="note">Provenance: {provenance}.</p>
+{provenance_banner}
 
 <h2>σ channel families</h2>
 <p class="note">A σ family is (what leaks) × (how it blurs). Every family is
