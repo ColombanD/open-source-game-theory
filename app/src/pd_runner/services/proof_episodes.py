@@ -40,13 +40,13 @@ from pathlib import Path
 
 from pd_runner.config import load_paths
 from pd_runner.llm.client import (
-    AnthropicClient,
     EpisodeResult,
     EpisodeStop,
     ToolHandler,
     UsageTotals,
     serialize_messages,
 )
+from pd_runner.llm.factory import make_llm_client
 from pd_runner.llm.prompts import build_system_prompt_blocks, proof_request_message
 from pd_runner.llm.retrieval import list_known_outcome_theorems, retrieve_few_shots
 from pd_runner.llm.tools import (
@@ -524,7 +524,7 @@ def run_proof_search(request: ProofRequest) -> ProofOutcome:
     tools.append(make_submit_verdict_tool(guard.allow_library_growth))
     tools.append(UPDATE_NOTEBOOK_TOOL)
 
-    client = AnthropicClient(
+    client = make_llm_client(
         system_prompt=system_blocks,
         tools=tools,
         model=cfg.model,

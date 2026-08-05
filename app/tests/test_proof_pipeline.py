@@ -576,7 +576,7 @@ def _stub_episode_loop(monkeypatch, results: list):
             user_contents.append(user_content)
             return results[len(user_contents) - 1]
 
-    monkeypatch.setattr(pe, "AnthropicClient", FakeClient)
+    monkeypatch.setattr(pe, "make_llm_client", FakeClient)
     monkeypatch.setattr(pe, "retrieve_few_shots", lambda *a, **k: [])
     monkeypatch.setattr(pe, "list_known_outcome_theorems", lambda *a, **k: "")
     monkeypatch.setattr(pe, "build_system_prompt_blocks", lambda *a, **k: ["sys"])

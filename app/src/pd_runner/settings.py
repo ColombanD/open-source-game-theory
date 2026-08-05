@@ -28,7 +28,50 @@ MODEL_PRICES: dict[str, tuple[float, float]] = {
     "claude-opus-4-8": (5.0, 25.0),
     "claude-sonnet-4-6": (3.0, 15.0),
     "claude-haiku-4-5": (1.0, 5.0),
+    "leanstral-1-5": (0.0, 0.0),  # Mistral's hosted endpoint is free-tier
 }
+
+
+# ---------------------------------------------------------------------------
+# Non-Anthropic providers (OpenAI-compatible chat-completions endpoints)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class ProviderSpec:
+    """Where to reach an OpenAI-compatible model and how to authenticate."""
+
+    base_url: str
+    api_key_env: str
+    key_optional: bool = False  # self-hosted vLLM needs no key
+    # Wire model ID when the endpoint names the model differently from the
+    # app-level name (which is what the UI, eval records, and MODEL_PRICES use).
+    model_id: str | None = None
+    # reasoning_effort values the endpoint accepts; None = send any. The client
+    # maps the app's thinking_effort onto the nearest supported value.
+    reasoning_efforts: tuple[str, ...] | None = None
+
+
+OPENAI_COMPAT_PROVIDERS: dict[str, ProviderSpec] = {
+    # Lean-specialized agent model (Mistral, Apache-2.0). Free hosted endpoint;
+    # Mistral serves it as labs-leanstral-1-5 (verified via GET /v1/models).
+    # Its reasoning dial is binary (probed 2026-08-05): low/medium map to high.
+    "leanstral-1-5": ProviderSpec(
+        "https://api.mistral.ai/v1", "MISTRAL_API_KEY",
+        model_id="labs-leanstral-1-5", reasoning_efforts=("none", "high"),
+    ),
+}
+
+
+def resolve_provider(model: str) -> ProviderSpec | None:
+    """Provider for a non-Anthropic model, or None if unknown.
+
+    PD_OPENAI_BASE_URL overrides everything (e.g. a self-hosted vLLM serving
+    any model name); its key comes from PD_OPENAI_API_KEY when set.
+    """
+    base_url = os.getenv("PD_OPENAI_BASE_URL")
+    if base_url:
+        return ProviderSpec(base_url, "PD_OPENAI_API_KEY", key_optional=True)
+    return OPENAI_COMPAT_PROVIDERS.get(model)
 
 # Cache pricing multipliers relative to input price (Anthropic ephemeral cache).
 CACHE_READ_MULTIPLIER = 0.1

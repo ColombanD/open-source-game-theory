@@ -706,9 +706,11 @@ def serialize_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     out: list[dict[str, Any]] = []
     for m in messages:
-        content = m["content"]
-        if isinstance(content, str):
-            out.append({"role": m["role"], "content": content})
+        content = m.get("content")
+        if content is None or isinstance(content, str):
+            # Plain-dict message (OpenAI-compat transcripts carry extra keys
+            # like tool_calls / tool_call_id / _reasoning) — already JSON-safe.
+            out.append(dict(m))
             continue
         blocks: list[Any] = []
         for b in content:

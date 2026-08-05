@@ -202,6 +202,16 @@ AxProverBase (arXiv 2602.24273), adapted to this domain:
   `RetryPolicy` (retries 429/500/529, honors retry-after), `RetrievalConfig`,
   and `EvalGuard` — the explicit split of the old `exclude_bots` overload into
   `hidden_bots` (leak prevention) vs `allow_library_growth` (mutation).
+- **Multi-provider clients (2026-08-05)**: every agent constructs its client via
+  `llm/factory.py::make_llm_client` — `claude-*` keeps the calibrated
+  `AnthropicClient` path byte-stable; other model names resolve through
+  `settings.OPENAI_COMPAT_PROVIDERS` (currently `leanstral-1-5` → Mistral's free
+  endpoint, `MISTRAL_API_KEY` in `app/.env`) or the `PD_OPENAI_BASE_URL`
+  override (self-hosted vLLM, any model name) to
+  `llm/openai_client.py::OpenAICompatClient` — same `run`/`run_episode`
+  interface and episode semantics (stop-tool verdicts, reminder, context guard,
+  forced notebook reflection; mirrored 1:1, change both). So
+  `--model leanstral-1-5` works everywhere `--model` already existed.
 - **Eval** (`eval/common.py` shared by `harness.py` + `run_bot_matrix.py`):
   14 harness cases incl. `.search` Löb self-play, the staggered
   PrudentBot-vs-DupocBot, the (D,D) census case, and the known-OPEN

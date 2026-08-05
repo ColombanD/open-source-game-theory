@@ -220,6 +220,7 @@
           <option value="claude-opus-4-8">Opus 4.8 (128K)</option>
           <option value="claude-opus-4-7">Opus 4.7 (128K)</option>
           <option value="claude-haiku-4-5">Haiku 4.5 (64K)</option>
+          <option value="leanstral-1-5">Leanstral 1.5 (Lean-specialized, free)</option>
         </select>
       </div>
       <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -359,7 +360,15 @@
       'claude-opus-4-8': 128000,
       'claude-sonnet-4-6': 64000,
       'claude-haiku-4-5': 64000,
+      'leanstral-1-5': 64000,
     };
+
+    // Thinking levels a model supports — keep in sync with the provider's
+    // reasoning_efforts in settings.OPENAI_COMPAT_PROVIDERS. Absent = all four.
+    const MODEL_EFFORTS = {
+      'leanstral-1-5': ['none', 'high'],  // binary reasoning dial
+    };
+    const ALL_EFFORTS = ['none', 'low', 'medium', 'high'];
 
     function onModelChange() {
       const model = document.getElementById('model-select').value;
@@ -368,6 +377,21 @@
       input.max = ceiling;
       if (parseInt(input.value, 10) > ceiling) input.value = ceiling;
       document.getElementById('max-tokens-ceiling').textContent = `max ${ceiling.toLocaleString()}`;
+
+      // Restrict the thinking dropdown to the model's supported levels; an
+      // unsupported current selection snaps to what the backend would map it
+      // to anyway (any thinking level → the highest supported one).
+      const allowed = MODEL_EFFORTS[model] || ALL_EFFORTS;
+      const effortSel = document.getElementById('effort-select');
+      const previous = effortSel.value;
+      effortSel.innerHTML = allowed
+        .map(e => `<option value="${e}">${e}</option>`)
+        .join('');
+      if (allowed.includes(previous)) {
+        effortSel.value = previous;
+      } else {
+        effortSel.value = previous === 'none' ? 'none' : allowed[allowed.length - 1];
+      }
     }
 
     function currentMode() {

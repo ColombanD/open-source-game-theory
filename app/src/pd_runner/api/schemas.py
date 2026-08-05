@@ -22,14 +22,18 @@ class BotSpec(BaseModel):
     conflict_resolution: Optional[BotConflictResolution] = None
 
 
-# Claude models the UI offers, with their max output-token ceilings. The agent
+# Models the UI offers, with their max output-token ceilings. The agent
 # spends `max_tokens` on thinking + the final answer combined, so the cap must
-# stay within the chosen model's ceiling. Keep this in sync with the UI dropdown.
+# stay within the chosen model's ceiling. Keep this in sync with the UI dropdown
+# (index.html MODEL_CEILINGS). Non-claude entries route through the
+# OpenAI-compatible client (llm/factory.py) and need their provider's API key
+# in app/.env (leanstral-1-5 → MISTRAL_API_KEY).
 ALLOWED_MODELS: dict[str, int] = {
     "claude-opus-4-7": 128000,
     "claude-opus-4-8": 128000,
     "claude-sonnet-4-6": 64000,
     "claude-haiku-4-5": 64000,
+    "leanstral-1-5": 64000,
 }
 # "none" disables extended thinking entirely — the reliable choice for models
 # that only support adaptive thinking (claude-opus-4-8), which can go silent

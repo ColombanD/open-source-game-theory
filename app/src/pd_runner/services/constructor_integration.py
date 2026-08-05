@@ -27,7 +27,8 @@ from pathlib import Path
 from pd_runner import settings
 from pd_runner.config import load_paths
 from pd_runner.lean.executor import build_lean_project
-from pd_runner.llm.client import AnthropicClient, EpisodeStop, ToolHandler, serialize_messages
+from pd_runner.llm.client import EpisodeStop, ToolHandler, serialize_messages
+from pd_runner.llm.factory import make_llm_client
 from pd_runner.llm.tools import UPDATE_NOTEBOOK_TOOL
 from pd_runner.logging_config import get_logger
 from pd_runner.services.constructor_proposals import proposals_dir
@@ -553,7 +554,7 @@ def integrate_constructor(
 
     state = _IntegrationState()
     schemas, handler = _make_tools(wt_engine_dir, state)
-    client = AnthropicClient(
+    client = make_llm_client(
         system_prompt=_build_integration_prompt(bundle),
         tools=schemas,
         model=model,

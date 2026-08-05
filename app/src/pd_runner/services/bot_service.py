@@ -6,7 +6,8 @@ import re
 from dataclasses import dataclass
 
 from pd_runner import settings
-from pd_runner.llm.client import AnthropicClient, ToolHandler
+from pd_runner.llm.client import ToolHandler
+from pd_runner.llm.factory import make_llm_client
 from pd_runner.llm.prompts import build_bot_system_prompt, bot_request_message
 from pd_runner.llm.tools import BOT_TOOLS, register_bot_tools
 from pd_runner.logging_config import get_logger, TRACE
@@ -49,7 +50,7 @@ def search_bot(request: BotRequest) -> BotResult:
     handler = ToolHandler()
     register_bot_tools(handler)
 
-    client = AnthropicClient(
+    client = make_llm_client(
         system_prompt=system_prompt,
         tools=BOT_TOOLS,
         model=request.model,
