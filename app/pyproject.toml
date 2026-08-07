@@ -13,7 +13,15 @@ dependencies = [
     "fastapi>=0.135.2",
     "gspread>=6.2.1",
     "lean-interact>=0.11.5",
+    "matplotlib>=3.11.1",
+    "networkx>=3.6.1",
+    "numpy>=2.4.6",
     "openai>=2.53.0",
+    "pandas>=3.0.5",
+    "pyarrow>=25.0.0",
+    "pygambit>=16.7.0",
+    "scipy>=1.17.1",
+    "tqdm>=4.70.0",
     "uvicorn[standard]>=0.42.0",
 ]
 
