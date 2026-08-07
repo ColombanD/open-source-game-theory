@@ -475,3 +475,82 @@ read it before touching anything tau. Summary of the FIXED decisions:
   vs renormalize), canonical budget per pair, static vs dynamic signals (static/compiled
   ⇒ TauB is extensionally a CONSTANT program — this silently kills the split theorem),
   δ vs σ inside counterfactual sims, `≥` vs `>` at the threshold.
+
+---
+
+# Phase 6 — Evolutionary game theory (`app/src/pd_runner/egt/`, landed 2026-08-07)
+
+**What it answers.** The engine answers *what happens when X meets Y* (one match,
+machine-checked); the tau layer answers *what happens under graded transparency*
+(Def 3, the `(t, α)` dials); `egt/` answers **which bots survive in a POPULATION of
+bots**. Ported from the standalone `egt-osgt-main` repo (removed in the same commit;
+recoverable from `bb51559`) and rewired onto the Lean-certified matrix.
+
+**Four analysis stages**, carried over essentially unchanged — ordinary EGT
+mathematics, validated by their tests against textbook games (Hawk-Dove, RPS,
+coordination), NOT against OSGT:
+
+| Stage | Module | Computes |
+|---|---|---|
+| ii.a | `static_analysis/` | pure ESS (Maynard-Smith two clauses) |
+| ii.b | `invasion/` | `G>`/`G≥` graphs, SCCs, condensation, cycles |
+| ii.c | `faces/` | face equilibria: block solve, replicator Jacobian, tangent eigenvalues |
+| ii.d | `nash/` | extreme NE via best-response polytopes, exact `Fraction` arithmetic |
+
+Stages (iii) replicator dynamics, (iv) Moran process and (v) the report layer were
+never implemented in the source repo and are still absent.
+
+**`ingest.py` is the seam** — it REPLACED the old `src/ingest/` package wholesale.
+The original parsed a hand-transcribed CSV and imputed two special cells from a
+config file; both jobs are done better upstream (cells come from the theorem library
+via `tau.matrix`; open cells are resolved by RESTRICTING THE ZOO, so a `TauMatrix` is
+total by construction). Three entry points: cells → `A`, the base matrix (the `t=1`
+anchor), and a tau tournament at fixed `(t, α)` — the last is what makes the sweep
+possible. The PD convention `(D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c` with `b>c>0` is
+the one piece kept verbatim.
+
+**The unit of work is the distinct MATRIX, not the grid point** (`pipeline.py`). Two
+`(t, α)` points with the same action-pair cells give the same EGT answer, so they
+share one run directory (`generated/egt/runs/<zoo>_t<NNN>_a<NNN>_<hash>/`) and
+`grid_points` records which points mapped where. On the default 6×6 grid: 36 points →
+16 matrices. This is load-bearing, not an optimization — Nash costs ~50s per matrix at
+N=11 while a tournament costs milliseconds.
+
+**Run it:** `uv run python -m pd_runner.egt.pipeline --zoo default --t-steps 6`, or
+from the web app's "Evolutionary analysis (EGT)" card (`POST /egt/sweep`, job + SSE,
+no human gate — nothing lands in the library). `--zoo` is on every stage CLI and reuses
+the `tau.matrix` `ZOOS` registry, so a new zoo appears everywhere at once.
+
+**Things that will bite you:**
+
+1. **α="phases" is a trap at scale.** The `(t, α)` phase diagram IS piecewise constant,
+   so enumerating one α per phase is exact — but at `t < 1` the softmax spreads the
+   cooperation masses so nearly every (bot, signal) pair has its own, giving ~|zoo|²
+   phases per t (measured: 507 grid points → 349 distinct matrices ≈ 5h of Nash). The
+   default is an explicit α list; `--alphas phases` is for ONE t or for stages cheaper
+   than Nash.
+2. **A swept matrix never contains the `"N"` state.** `tau_play` thresholds a
+   cooperation mass and `cooperates()` tests `== "C"`, so a proven-`none` base cell
+   reads as not-cooperating and the tau lift emits a real `D`. **A TauBot always
+   terminates even when the bot it lifts does not.** Consequence: the enlarged zoo
+   analyses 15 types via the base path (MirrorBot dropped by `NonTerminationPolicy`)
+   but 16 anywhere in a sweep. Compare base-vs-swept results only with this in mind.
+3. **`lrsnash` is optional and usually absent.** lrslib is a conda-forge binary `uv`
+   cannot install; it is the SECONDARY Nash solver whose only job is to cross-check
+   pygambit. The pipeline degrades instead of failing and records
+   `cross_check_performed: false` — absence is never written as a passed check. Enable
+   with `conda install -c conda-forge lrslib`; no code change.
+4. **A truncated face enumeration says so.** `--max-support-size` bounds the `2^N-N-1`
+   support enumeration; both `summary.md` and `assumptions.json` then carry a TRUNCATED
+   marker, because "no stable equilibrium found" must not read as complete when it isn't.
+5. **Sweep artefacts are gitignored** (`generated/egt/.gitignore`) — reproducible
+   outputs, unlike the constructor proposals and outcome transcripts that
+   `app/generated/` tracks on purpose.
+
+**Ported-in fixes:** pygambit ≥16.7 indexes `game.players` by label (an int subscript
+raises); `test_faces_hawk_dove` asserted exact float equality on a linear-solve result.
+
+**Status:** the analysis is genuinely `(t, α)`-sensitive — at `t=0.5`, raising α from
+0.3 to 0.8 takes extreme NE 43→25, stable faces 4→2, and SCCs 5→7. No pure ESS exists
+on any zoo tried so far, reproducing the standalone repo's qualitative finding on
+different (certified) data.
