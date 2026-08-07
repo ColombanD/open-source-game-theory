@@ -1,13 +1,24 @@
-"""Matplotlib renderer for the invasion graph and its condensation."""
+"""Matplotlib renderer for the invasion graph and its condensation.
+
+Forces the non-interactive Agg backend. These figures are always written to
+disk, never shown, and a sweep launched from the API renders them on a worker
+thread — where the default macOS backend raises "Cannot create a GUI
+FigureManager outside the main thread". Selecting Agg before pyplot is
+imported is the documented fix and costs nothing here.
+"""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import matplotlib.patches as mpatches  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
-import networkx as nx  # type: ignore
+import matplotlib  # type: ignore
+
+matplotlib.use("Agg", force=True)
+
+import matplotlib.patches as mpatches  # type: ignore  # noqa: E402
+import matplotlib.pyplot as plt  # type: ignore  # noqa: E402
+import networkx as nx  # type: ignore  # noqa: E402
 
 from .analysis import AnalysisResult
 from .layout import compute_layout, compute_condensation_layout

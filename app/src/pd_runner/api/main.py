@@ -25,6 +25,13 @@ _STATIC_DIR = Path(__file__).parent / "static"
 _STATIC_DIR.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
+# EGT sweep artefacts, so the report's links to a run's CSV/parquet/GEXF/figures
+# resolve in the browser. Mounted lazily-safe: the directory is created if the
+# app starts before any sweep has run.
+_EGT_RUNS_DIR = Path("generated/egt/runs")
+_EGT_RUNS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/egt/runs", StaticFiles(directory=_EGT_RUNS_DIR), name="egt-runs")
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> HTMLResponse:
@@ -150,6 +157,29 @@ async def egt_stages() -> dict:
         ],
         "default_alphas": list(DEFAULT_ALPHAS),
     }
+
+
+@app.get("/egt/report", response_class=HTMLResponse)
+async def egt_report() -> HTMLResponse:
+    """The HTML report over the most recent sweep's artefacts.
+
+    Unlike `/tau/report`, which recomputes on every request, this READS the
+    run directories a sweep already wrote — the four stages cost minutes and
+    their artefacts are the record.
+    """
+    from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
+    from pd_runner.egt.report import build_report
+
+    loop = asyncio.get_running_loop()
+    try:
+        # Absolute base: the page is served at /egt/report but the artefacts
+        # are mounted at /egt/runs, so a relative "runs" would 404.
+        page = await loop.run_in_executor(
+            None, lambda: build_report(DEFAULT_OUT_ROOT, artefact_base="/egt/runs")
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return HTMLResponse(page)
 
 
 @app.post("/egt/sweep", response_model=JobResponse, status_code=202)

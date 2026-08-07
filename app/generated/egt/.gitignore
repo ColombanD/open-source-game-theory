@@ -10,3 +10,4 @@
 # Keep a result set by copying it out, or point `--out-root` elsewhere.
 runs/
 sweep_summary.json
+report.html

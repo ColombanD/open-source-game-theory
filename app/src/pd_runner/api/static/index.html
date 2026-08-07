@@ -369,6 +369,8 @@
     </div>
     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-top:0.7rem;">
       <button class="btn btn-primary" id="egt-run-btn" onclick="runEgtSweep()">Run EGT sweep</button>
+      <button class="btn" id="egt-report-btn" onclick="openEgtReport()"
+              title="HTML report over the artefacts of the last sweep">Open report</button>
       <span id="egt-status" style="color:#9ca3af; font-size:0.85rem;"></span>
     </div>
     <p id="egt-zoo-desc" style="color:#6b7280; font-size:0.8rem; margin:0.6rem 0 0;"></p>
@@ -1406,6 +1408,12 @@
             : (job.egt_result ? 'completed with failures' : `failed: ${job.error || ''}`);
         }
       }, 1500);
+    }
+
+    function openEgtReport() {
+      // Reads the artefacts of whatever sweep ran last; 404s with a readable
+      // message if none has.
+      window.open('/egt/report', '_blank');
     }
 
     function renderEgtResults(summary, errorText) {
