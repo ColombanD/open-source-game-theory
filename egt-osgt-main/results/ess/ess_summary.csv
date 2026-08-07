@@ -1,0 +1,9 @@
+type,is_ESS,n_invaders,failing_invaders,notes
+CooperateBot,False,5,DBot|DefectBot|DupocBot|EBot|TitForTatBot,
+CupodBot,False,7,CooperateBot|DBot|DefectBot|DupocBot|EBot|OBot|TitForTatBot,depends on red cell
+DBot,False,6,CupodBot|DefectBot|DupocBot|EBot|OBot|TitForTatBot,
+DefectBot,False,5,CupodBot|DupocBot|EBot|OBot|TitForTatBot,
+DupocBot,False,3,CooperateBot|EBot|TitForTatBot,depends on red cell
+OBot,False,4,CooperateBot|CupodBot|DefectBot|DupocBot,
+TitForTatBot,False,3,CooperateBot|DupocBot|OBot,
+EBot,False,3,DupocBot|OBot|TitForTatBot,

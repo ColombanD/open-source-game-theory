@@ -1,0 +1,2 @@
+timestamp,short_hash,run_id,n_extreme_NE,n_components,b,c,undefined_resolution,pygambit_version,lrsnash_version,notes
+20260514T161841Z,76136a499c38,20260514T161841Z_76136a499c38,16,5,3.0,1.0,"(C, D)",16.6.0,"lrsnash:lrslib_v.7.3_2024.5.30(64bit,lrsgmp.h,hybrid_arithmetic,_gmp_v.6.3)",

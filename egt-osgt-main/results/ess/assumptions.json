@@ -1,0 +1,57 @@
+{
+  "ess_definition": {
+    "form": "Maynard Smith two-condition (pure-strategy, single-population, possibly asymmetric A)",
+    "reference": "Sandholm 2010 Ch. 8; Weibull 1995 Def. 2.1",
+    "clause_a": "A[i,i] > A[j,i]",
+    "clause_b": "A[i,i] == A[j,i] AND A[i,j] > A[j,j]"
+  },
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c",
+    "source": "config.json -> prisoners_dilemma"
+  },
+  "bot_names": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot"
+  ],
+  "excluded_types": {
+    "MirrorBot": "(MirrorBot, MirrorBot) is non-terminating in Critch et al. 2022; MirrorBot is excluded upstream from data/payoff_matrix.csv."
+  },
+  "undefined_cells_resolved": {
+    "(CupodBot, DupocBot)": {
+      "action_pair": "(C, D)",
+      "transpose_filled_by_loader": true,
+      "source": "config.undefined_outcomes.cupod_vs_dupoc",
+      "status": "unresolved in Critch et al. 2022 (red cell in payoff_matrix.png); downstream verdicts that reference this cell are flagged as suspect"
+    }
+  },
+  "diagonal_undefined_policy": {
+    "rule": "If A[i,i] is non-finite, enumerate_pure_ess raises ValueError. The loader currently raises earlier; this is a defence-in-depth check.",
+    "currently_triggered": false,
+    "reason_currently_inactive": "MirrorBot excluded; no diagonal sentinel survives the loader."
+  },
+  "lower_triangle_handling": {
+    "input_state": "data/payoff_matrix.csv is a full square matrix; no blank entries in the lower triangle.",
+    "action_taken": "loader resolves blanks via configured undefined_outcomes and transposes the action pair for the lower triangle; pair-symmetry is not re-derived here."
+  },
+  "tolerance": {
+    "atol": 1e-12,
+    "rationale": "payoffs are exact combinations of {b, -c, b-c, 0}; tolerance guards against float-arithmetic noise only"
+  },
+  "seed": 20260514,
+  "ess_pipeline_version": "0.1.0"
+}

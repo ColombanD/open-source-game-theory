@@ -1,0 +1,64 @@
+{
+  "edge_definition": {
+    "strict": "G>: i -> j iff A[i, j] >  A[j, j]",
+    "weak": "G\u2265: i -> j iff A[i, j] >= A[j, j]",
+    "tie_set": "T = E(G\u2265) \\ E(G>) \u2014 pairs where ESS clause (b) bites"
+  },
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c",
+    "source": "config.json -> prisoners_dilemma"
+  },
+  "bot_names": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot"
+  ],
+  "numeric_matrix_source": "results/ess/payoff_matrix_numeric.csv",
+  "cross_check_against_ingest": {
+    "performed": true,
+    "max_abs_diff": 0.0
+  },
+  "suspect_cells": [
+    [
+      "CupodBot",
+      "DupocBot"
+    ],
+    [
+      "DupocBot",
+      "CupodBot"
+    ]
+  ],
+  "diagonal_handling": {
+    "rule": "If A[i,i] is non-finite, enumerate_pure_ess raises ValueError. The loader currently raises earlier; this is a defence-in-depth check.",
+    "currently_triggered": false,
+    "reason_currently_inactive": "MirrorBot excluded; no diagonal sentinel survives the loader."
+  },
+  "tolerance": {
+    "atol": 1e-12,
+    "rationale": "guards float-noise; payoffs exact"
+  },
+  "cycle_cap": 10000,
+  "layout_backend_graph": "graphviz_agraph_dot",
+  "layout_backend_condensation": "graphviz_agraph_dot",
+  "seed": 20260514,
+  "library_versions": {
+    "networkx": "3.6.1",
+    "numpy": "2.3.3",
+    "matplotlib": "3.10.7"
+  },
+  "invasion_pipeline_version": "0.1.0"
+}

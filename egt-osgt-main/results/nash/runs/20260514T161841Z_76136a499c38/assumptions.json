@@ -1,0 +1,61 @@
+{
+  "stage": "nash_equilibria",
+  "nash_pipeline_version": "0.1.0",
+  "numeric_matrix_source": "results/ess/payoff_matrix_numeric.csv",
+  "n_types": 8,
+  "method": "method2_polytope_vertex_enumeration",
+  "libraries_used": [
+    "pygambit",
+    "lrsnash"
+  ],
+  "tolerance": {
+    "note": "exact rational arithmetic; no numerical tolerance is used"
+  },
+  "payoff_shift": {
+    "c_shift": "2/1",
+    "delta": "1/1",
+    "rationale": "Method 2 polytope construction requires A > 0 entrywise. Adding the same constant to both players preserves the NE set exactly. c_shift is internal; config.json is unchanged."
+  },
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c",
+    "source": "config.json -> prisoners_dilemma"
+  },
+  "bot_names": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot"
+  ],
+  "excluded_types": {
+    "MirrorBot": "(MirrorBot, MirrorBot) is non-terminating in Critch et al. 2022; MirrorBot is excluded upstream from data/payoff_matrix.csv."
+  },
+  "undefined_cells_resolved": {
+    "(CupodBot, DupocBot)": {
+      "action_pair": "(C, D)",
+      "transpose_filled_by_loader": true,
+      "source": "config.undefined_outcomes.cupod_vs_dupoc",
+      "status": "unresolved in Critch et al. 2022 (red cell in payoff_matrix.png); downstream verdicts that reference this cell are flagged as suspect"
+    }
+  },
+  "library_versions": {
+    "pygambit": "16.6.0",
+    "numpy": "2.3.3",
+    "scipy": "1.16.2",
+    "networkx": "3.6.1",
+    "pandas": "2.3.3",
+    "lrsnash": "lrsnash:lrslib_v.7.3_2024.5.30(64bit,lrsgmp.h,hybrid_arithmetic,_gmp_v.6.3)"
+  }
+}

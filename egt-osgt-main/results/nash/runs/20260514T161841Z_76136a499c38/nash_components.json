@@ -1,0 +1,55 @@
+{
+  "components": [
+    {
+      "id": 0,
+      "extreme_NE_indices": [
+        0
+      ],
+      "size": 1,
+      "is_symmetric_component": true
+    },
+    {
+      "id": 1,
+      "extreme_NE_indices": [
+        1,
+        2,
+        3,
+        7,
+        8,
+        9,
+        13,
+        14,
+        15
+      ],
+      "size": 9,
+      "is_symmetric_component": false
+    },
+    {
+      "id": 2,
+      "extreme_NE_indices": [
+        4
+      ],
+      "size": 1,
+      "is_symmetric_component": true
+    },
+    {
+      "id": 3,
+      "extreme_NE_indices": [
+        5,
+        6,
+        11,
+        12
+      ],
+      "size": 4,
+      "is_symmetric_component": false
+    },
+    {
+      "id": 4,
+      "extreme_NE_indices": [
+        10
+      ],
+      "size": 1,
+      "is_symmetric_component": true
+    }
+  ]
+}

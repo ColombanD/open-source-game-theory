@@ -1,0 +1,12 @@
+{
+  "seed": 20260514,
+  "prisoners_dilemma": {
+    "b": 3.0,
+    "c": 1.0,
+    "_doc": "PD payoffs to the row player as a function of (row_action, col_action): (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c. Requires b > c > 0 (strict)."
+  },
+  "undefined_outcomes": {
+    "cupod_vs_dupoc": "(C, D)",
+    "_doc": "Default action pair for the (CupodBot, DupocBot) cell, which is unresolved in Critch et al. 2022. Format: '(row_action, col_action)' with row=CupodBot, col=DupocBot. The (MirrorBot, MirrorBot) non-terminating cell is handled by excluding MirrorBot from the analysis altogether."
+  }
+}

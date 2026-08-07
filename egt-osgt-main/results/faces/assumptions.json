@@ -1,0 +1,52 @@
+{
+  "stage": "face_equilibria",
+  "faces_pipeline_version": "0.1.0",
+  "numeric_matrix_source": "results/ess/payoff_matrix_numeric.csv",
+  "n_types": 8,
+  "n_supports_enumerated": 247,
+  "tolerance": {
+    "tol": 1e-10,
+    "rationale": "single global tolerance used for: singular-system detection, is-interior threshold (x_i > tol), zero-real-part eigenvalue test for non-hyperbolicity, and external-stability test (max_external_fitness < -tol)."
+  },
+  "tangent_projection_method": "orthonormal basis of {v in R^|S| : 1^T v = 0} from scipy.linalg.null_space; J_tan = Q^T J Q; eig via scipy.linalg.eig",
+  "linear_solve_method": "scipy.linalg.solve on the (|S|+1)x(|S|+1) block system",
+  "non_interior_policy": "rows with is_interior=False have within-face Jacobian and eigenvalues NOT computed (tangent_eigvals='[]', max/min_re_eigval=NaN, has_complex_eigvals=False, within_face_class=''); external invasion fitnesses are not computed for non-interior solutions.",
+  "enumeration": "every non-empty support S with |S| >= 2 is enumerated; no pruning by strict domination (Akin 1980) or any other criterion.",
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c",
+    "source": "config.json -> prisoners_dilemma"
+  },
+  "excluded_types": {
+    "MirrorBot": "(MirrorBot, MirrorBot) is non-terminating in Critch et al. 2022; MirrorBot is excluded upstream from data/payoff_matrix.csv."
+  },
+  "undefined_cells_resolved": {
+    "(CupodBot, DupocBot)": {
+      "action_pair": "(C, D)",
+      "transpose_filled_by_loader": true,
+      "source": "config.undefined_outcomes.cupod_vs_dupoc",
+      "status": "unresolved in Critch et al. 2022 (red cell in payoff_matrix.png); downstream verdicts that reference this cell are flagged as suspect"
+    }
+  },
+  "diagonal_undefined_policy": {
+    "rule": "If A[i,i] is non-finite, enumerate_pure_ess raises ValueError. The loader currently raises earlier; this is a defence-in-depth check.",
+    "currently_triggered": false,
+    "reason_currently_inactive": "MirrorBot excluded; no diagonal sentinel survives the loader."
+  },
+  "library_versions": {
+    "numpy": "2.3.3",
+    "scipy": "1.16.2",
+    "pandas": "2.3.3",
+    "pyarrow": "23.0.1",
+    "tqdm": "4.67.3",
+    "networkx": "3.6.1"
+  }
+}

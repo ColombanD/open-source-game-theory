@@ -1,0 +1,9 @@
+,CooperateBot,CupodBot,DBot,DefectBot,DupocBot,OBot,TitForTatBot,EBot
+CooperateBot,2,2,-1,-1,2,2,2,-1
+CupodBot,2,0,2,0,-1,0,2,2
+DBot,3,2,0,-1,2,-1,-1,-1
+DefectBot,3,0,3,0,0,0,0,0
+DupocBot,2,3,2,0,2,0,2,2
+OBot,2,0,3,0,0,0,3,3
+TitForTatBot,2,2,3,0,2,-1,2,3
+EBot,3,2,3,0,2,-1,-1,2

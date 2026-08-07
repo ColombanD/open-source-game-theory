@@ -1,0 +1,213 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2026-05-14">
+    <creator>NetworkX 3.6.1</creator>
+  </meta>
+  <graph defaultedgetype="directed" mode="static" name="">
+    <attributes mode="static" class="edge">
+      <attribute id="4" title="margin" type="double" />
+      <attribute id="5" title="is_tie" type="boolean" />
+      <attribute id="6" title="touches_suspect_cell" type="boolean" />
+    </attributes>
+    <attributes mode="static" class="node">
+      <attribute id="0" title="name" type="string" />
+      <attribute id="1" title="in_deg" type="long" />
+      <attribute id="2" title="out_deg" type="long" />
+      <attribute id="3" title="role" type="string" />
+    </attributes>
+    <nodes>
+      <node id="0" label="0">
+        <attvalues>
+          <attvalue for="0" value="CooperateBot" />
+          <attvalue for="1" value="3" />
+          <attvalue for="2" value="2" />
+          <attvalue for="3" value="in_cycle" />
+        </attvalues>
+      </node>
+      <node id="1" label="1">
+        <attvalues>
+          <attvalue for="0" value="CupodBot" />
+          <attvalue for="1" value="5" />
+          <attvalue for="2" value="1" />
+          <attvalue for="3" value="in_cycle" />
+        </attvalues>
+      </node>
+      <node id="2" label="2">
+        <attvalues>
+          <attvalue for="0" value="DBot" />
+          <attvalue for="1" value="6" />
+          <attvalue for="2" value="2" />
+          <attvalue for="3" value="in_cycle" />
+        </attvalues>
+      </node>
+      <node id="3" label="3">
+        <attvalues>
+          <attvalue for="0" value="DefectBot" />
+          <attvalue for="1" value="0" />
+          <attvalue for="2" value="2" />
+          <attvalue for="3" value="clause_a_candidate" />
+        </attvalues>
+      </node>
+      <node id="4" label="4">
+        <attvalues>
+          <attvalue for="0" value="DupocBot" />
+          <attvalue for="1" value="0" />
+          <attvalue for="2" value="2" />
+          <attvalue for="3" value="clause_a_candidate" />
+        </attvalues>
+      </node>
+      <node id="5" label="5">
+        <attvalues>
+          <attvalue for="0" value="OBot" />
+          <attvalue for="1" value="1" />
+          <attvalue for="2" value="3" />
+          <attvalue for="3" value="in_cycle" />
+        </attvalues>
+      </node>
+      <node id="6" label="6">
+        <attvalues>
+          <attvalue for="0" value="TitForTatBot" />
+          <attvalue for="1" value="1" />
+          <attvalue for="2" value="3" />
+          <attvalue for="3" value="in_cycle" />
+        </attvalues>
+      </node>
+      <node id="7" label="7">
+        <attvalues>
+          <attvalue for="0" value="EBot" />
+          <attvalue for="1" value="2" />
+          <attvalue for="2" value="3" />
+          <attvalue for="3" value="in_cycle" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="0" target="1" id="0">
+        <attvalues>
+          <attvalue for="4" value="2.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="0" target="5" id="1">
+        <attvalues>
+          <attvalue for="4" value="2.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="1" target="2" id="2">
+        <attvalues>
+          <attvalue for="4" value="2.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="2" target="0" id="3">
+        <attvalues>
+          <attvalue for="4" value="1.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="2" target="1" id="4">
+        <attvalues>
+          <attvalue for="4" value="2.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="3" target="0" id="5">
+        <attvalues>
+          <attvalue for="4" value="1.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="3" target="2" id="6">
+        <attvalues>
+          <attvalue for="4" value="3.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="4" target="1" id="7">
+        <attvalues>
+          <attvalue for="4" value="3.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="true" />
+        </attvalues>
+      </edge>
+      <edge source="4" target="2" id="8">
+        <attvalues>
+          <attvalue for="4" value="2.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="5" target="2" id="9">
+        <attvalues>
+          <attvalue for="4" value="3.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="5" target="6" id="10">
+        <attvalues>
+          <attvalue for="4" value="1.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="5" target="7" id="11">
+        <attvalues>
+          <attvalue for="4" value="1.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="6" target="1" id="12">
+        <attvalues>
+          <attvalue for="4" value="2.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="6" target="2" id="13">
+        <attvalues>
+          <attvalue for="4" value="3.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="6" target="7" id="14">
+        <attvalues>
+          <attvalue for="4" value="1.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="7" target="0" id="15">
+        <attvalues>
+          <attvalue for="4" value="1.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="7" target="1" id="16">
+        <attvalues>
+          <attvalue for="4" value="2.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+      <edge source="7" target="2" id="17">
+        <attvalues>
+          <attvalue for="4" value="3.0" />
+          <attvalue for="5" value="false" />
+          <attvalue for="6" value="false" />
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>

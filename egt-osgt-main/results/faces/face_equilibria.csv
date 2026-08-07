@@ -1,0 +1,248 @@
+support_id,support_tuple,support_size,support_mask,x_CooperateBot,x_CupodBot,x_DBot,x_DefectBot,x_DupocBot,x_OBot,x_TitForTatBot,x_EBot,c,c_crosscheck,is_interior,is_singular,tangent_eigvals,max_re_eigval,min_re_eigval,has_complex_eigvals,within_face_class,external_invasion_fitnesses,max_external_fitness,externally_stable,overall_class
+0,"(CooperateBot, CupodBot)",2,11000000,1.0,-0.0,,,,,,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+1,"(CooperateBot, DBot)",2,10100000,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+2,"(CooperateBot, DefectBot)",2,10010000,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+3,"(CooperateBot, DupocBot)",2,10001000,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+4,"(CooperateBot, OBot)",2,10000100,1.0,,,,,-0.0,,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+5,"(CooperateBot, TitForTatBot)",2,10000010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+6,"(CooperateBot, EBot)",2,10000001,1.5,,,,,,,-0.5000000000000001,3.5,3.4999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+7,"(CupodBot, DBot)",2,01100000,,0.5,0.5,,,,,,1.0,1.0,True,False,"[[-1.0, 0.0]]",-1.0,-1.0,False,asymptotically_stable,"{""CooperateBot"": -0.5, ""DefectBot"": 0.5, ""DupocBot"": 1.5, ""OBot"": 0.5, ""TitForTatBot"": 1.5, ""EBot"": 1.5}",1.5,False,asymp_stable_invadable
+8,"(CupodBot, DefectBot)",2,01010000,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+9,"(CupodBot, DupocBot)",2,01001000,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+10,"(CupodBot, OBot)",2,01000100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+11,"(CupodBot, TitForTatBot)",2,01000010,,0.0,,,,,1.0,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+12,"(CupodBot, EBot)",2,01000001,,0.0,,,,,,1.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+13,"(DBot, DefectBot)",2,00110000,,,-0.49999999999999994,1.4999999999999998,,,,,-1.4999999999999998,-1.4999999999999993,False,False,[],,,False,,{},-inf,True,non_interior
+14,"(DBot, DupocBot)",2,00101000,,,0.0,,1.0,,,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+15,"(DBot, OBot)",2,00100100,,,-0.49999999999999994,,,1.4999999999999998,,,-1.4999999999999998,-1.4999999999999993,False,False,[],,,False,,{},-inf,True,non_interior
+16,"(DBot, TitForTatBot)",2,00100010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+17,"(DBot, EBot)",2,00100001,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+18,"(DefectBot, DupocBot)",2,00011000,,,,1.0,0.0,,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+19,"(DefectBot, OBot)",2,00010100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+20,"(DefectBot, TitForTatBot)",2,00010010,,,,1.0,,,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+21,"(DefectBot, EBot)",2,00010001,,,,1.0,,,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+22,"(DupocBot, OBot)",2,00001100,,,,,0.0,1.0,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+23,"(DupocBot, TitForTatBot)",2,00001010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+24,"(DupocBot, EBot)",2,00001001,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+25,"(OBot, TitForTatBot)",2,00000110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+26,"(OBot, EBot)",2,00000101,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+27,"(TitForTatBot, EBot)",2,00000011,,,,,,,-0.5,1.5,3.5,3.5,False,False,[],,,False,,{},-inf,True,non_interior
+28,"(CooperateBot, CupodBot, DBot)",3,11100000,-0.6666666666666666,1.0,0.6666666666666666,,,,,,-0.0,-9.868649107779169e-17,False,False,[],,,False,,{},-inf,True,non_interior
+29,"(CooperateBot, CupodBot, DefectBot)",3,11010000,0.0,0.3333333333333333,,0.6666666666666666,,,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+30,"(CooperateBot, CupodBot, DupocBot)",3,11001000,1.0,-0.0,,,-0.0,,,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+31,"(CooperateBot, CupodBot, OBot)",3,11000100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+32,"(CooperateBot, CupodBot, TitForTatBot)",3,11000010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+33,"(CooperateBot, CupodBot, EBot)",3,11000001,6.0000000000000036,-3.000000000000002,,,,,,-2.0000000000000013,8.000000000000004,8.000000000000007,False,False,[],,,False,,{},-inf,True,non_interior
+34,"(CooperateBot, DBot, DefectBot)",3,10110000,0.3333333333333333,,-0.3333333333333333,1.0,,,,,-1.6653345369377346e-16,4.9343245538895844e-17,False,False,[],,,False,,{},-inf,True,non_interior
+35,"(CooperateBot, DBot, DupocBot)",3,10101000,0.0,,0.0,,1.0,,,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+36,"(CooperateBot, DBot, OBot)",3,10100100,0.625,,0.12500000000000003,,,0.25000000000000006,,,1.625,1.625,True,False,"[[-0.1875000000000001, 0.5266343608235224], [-0.1875000000000001, -0.5266343608235224]]",-0.1875000000000001,-0.1875000000000001,True,asymptotically_stable,"{""CupodBot"": -0.125, ""DefectBot"": 0.625, ""DupocBot"": -0.125, ""TitForTatBot"": -0.25, ""EBot"": 0.375}",0.625,False,asymp_stable_invadable
+37,"(CooperateBot, DBot, TitForTatBot)",3,10100010,0.75,,-1.233581138472396e-17,,,,0.25000000000000006,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+38,"(CooperateBot, DBot, EBot)",3,10100001,1.0000000000000002,,-1.0000000000000004,,,,,1.0000000000000004,2.0,2.000000000000001,False,False,[],,,False,,{},-inf,True,non_interior
+39,"(CooperateBot, DefectBot, DupocBot)",3,10011000,0.6666666666666666,,,-1.1102230246251565e-16,0.3333333333333333,,,,2.0,1.9999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+40,"(CooperateBot, DefectBot, OBot)",3,10010100,0.0,,,0.6666666666666666,,0.3333333333333333,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+41,"(CooperateBot, DefectBot, TitForTatBot)",3,10010010,0.6666666666666666,,,-1.1102230246251565e-16,,,0.3333333333333333,,2.0,1.9999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+42,"(CooperateBot, DefectBot, EBot)",3,10010001,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+43,"(CooperateBot, DupocBot, OBot)",3,10001100,1.0,,,,-0.0,-0.0,,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+44,"(CooperateBot, DupocBot, TitForTatBot)",3,10001010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+45,"(CooperateBot, DupocBot, EBot)",3,10001001,0.0,,,,1.0,,,-0.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+46,"(CooperateBot, OBot, TitForTatBot)",3,10000110,1.0,,,,,-0.0,0.0,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+47,"(CooperateBot, OBot, EBot)",3,10000101,0.5,,,,,0.3333333333333333,,0.16666666666666666,1.5,1.4999999999999998,True,False,"[[-0.08333333333333329, 0.5713045500334203], [-0.08333333333333329, -0.5713045500334203]]",-0.08333333333333329,-0.08333333333333329,True,asymptotically_stable,"{""CupodBot"": -0.16666666666666674, ""DBot"": -0.5, ""DefectBot"": 0.0, ""DupocBot"": -0.16666666666666674, ""TitForTatBot"": -0.33333333333333326}",0.0,False,asymp_stable_invadable
+48,"(CooperateBot, TitForTatBot, EBot)",3,10000011,0.75,,,,,,0.25000000000000006,-0.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+49,"(CupodBot, DBot, DefectBot)",3,01110000,,0.3333333333333333,0.0,0.6666666666666666,,,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+50,"(CupodBot, DBot, DupocBot)",3,01101000,,-1.9999999999999998,1.0,,1.9999999999999998,,,,2.220446049250313e-16,1.7763568394002505e-15,False,False,[],,,False,,{},-inf,True,non_interior
+51,"(CupodBot, DBot, OBot)",3,01100100,,0.3333333333333333,0.0,,,0.6666666666666666,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+52,"(CupodBot, DBot, TitForTatBot)",3,01100010,,1.0,-1.9999999999999998,,,,1.9999999999999998,,2.220446049250313e-16,1.7763568394002505e-15,False,False,[],,,False,,{},-inf,True,non_interior
+53,"(CupodBot, DBot, EBot)",3,01100001,,1.0,-1.9999999999999998,,,,,1.9999999999999998,2.220446049250313e-16,1.7763568394002505e-15,False,False,[],,,False,,{},-inf,True,non_interior
+54,"(CupodBot, DefectBot, DupocBot)",3,01011000,,0.0,,1.0,-0.0,,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+55,"(CupodBot, DefectBot, OBot)",3,01010100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+56,"(CupodBot, DefectBot, TitForTatBot)",3,01010010,,0.0,,1.0,,,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+57,"(CupodBot, DefectBot, EBot)",3,01010001,,0.0,,1.0,,,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+58,"(CupodBot, DupocBot, OBot)",3,01001100,,0.0,,,-0.0,1.0,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+59,"(CupodBot, DupocBot, TitForTatBot)",3,01001010,,0.0,,,-0.0,,1.0000000000000002,,2.0000000000000004,2.000000000000001,False,False,[],,,False,,{},-inf,True,non_interior
+60,"(CupodBot, DupocBot, EBot)",3,01001001,,0.0,,,-0.0,,,1.0000000000000002,2.0000000000000004,2.000000000000001,False,False,[],,,False,,{},-inf,True,non_interior
+61,"(CupodBot, OBot, TitForTatBot)",3,01000110,,0.3333333333333333,,,,0.6666666666666666,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+62,"(CupodBot, OBot, EBot)",3,01000101,,0.3333333333333333,,,,0.6666666666666666,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+63,"(CupodBot, TitForTatBot, EBot)",3,01000011,,-2.9999999999999973,,,,,-1.999999999999999,5.9999999999999964,7.9999999999999964,8.000000000000007,False,False,[],,,False,,{},-inf,True,non_interior
+64,"(DBot, DefectBot, DupocBot)",3,00111000,,,-2.0,3.9999999999999996,-1.0000000000000002,,,,-6.0,-5.999999999999995,False,False,[],,,False,,{},-inf,True,non_interior
+65,"(DBot, DefectBot, OBot)",3,00110100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+66,"(DBot, DefectBot, TitForTatBot)",3,00110010,,,-0.49999999999999994,1.4999999999999998,,,0.0,,-1.4999999999999998,-1.4999999999999993,False,False,[],,,False,,{},-inf,True,non_interior
+67,"(DBot, DefectBot, EBot)",3,00110001,,,-0.49999999999999994,1.4999999999999998,,,,0.0,-1.4999999999999998,-1.4999999999999993,False,False,[],,,False,,{},-inf,True,non_interior
+68,"(DBot, DupocBot, OBot)",3,00101100,,,-2.0000000000000004,,-1.0000000000000004,4.000000000000001,,,-6.000000000000002,-5.999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+69,"(DBot, DupocBot, TitForTatBot)",3,00101010,,,0.0,,1.0,,0.0,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+70,"(DBot, DupocBot, EBot)",3,00101001,,,0.0,,1.0,,,0.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+71,"(DBot, OBot, TitForTatBot)",3,00100110,,,1.0,,,1.0,-1.0,,0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+72,"(DBot, OBot, EBot)",3,00100101,,,1.0,,,1.0,,-1.0,0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+73,"(DBot, TitForTatBot, EBot)",3,00100011,,,3.0000000000000004,,,,1.0000000000000002,-3.0000000000000004,2.0000000000000004,2.0000000000000018,False,False,[],,,False,,{},-inf,True,non_interior
+74,"(DefectBot, DupocBot, OBot)",3,00011100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+75,"(DefectBot, DupocBot, TitForTatBot)",3,00011010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+76,"(DefectBot, DupocBot, EBot)",3,00011001,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+77,"(DefectBot, OBot, TitForTatBot)",3,00010110,,,,1.0,,-0.0,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+78,"(DefectBot, OBot, EBot)",3,00010101,,,,1.0,,-0.0,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+79,"(DefectBot, TitForTatBot, EBot)",3,00010011,,,,1.0,,,0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+80,"(DupocBot, OBot, TitForTatBot)",3,00001110,,,,,0.33333333333333337,-0.0,0.6666666666666666,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+81,"(DupocBot, OBot, EBot)",3,00001101,,,,,0.33333333333333337,-0.0,,0.6666666666666666,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+82,"(DupocBot, TitForTatBot, EBot)",3,00001011,,,,,1.0,,-0.0,0.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+83,"(OBot, TitForTatBot, EBot)",3,00000111,,,,,,0.33333333333333337,-0.3333333333333333,1.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+84,"(CooperateBot, CupodBot, DBot, DefectBot)",4,11110000,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+85,"(CooperateBot, CupodBot, DBot, DupocBot)",4,11101000,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+86,"(CooperateBot, CupodBot, DBot, OBot)",4,11100100,1.0000000000000004,-0.33333333333333365,-1.295260195396016e-16,,,0.3333333333333334,,,2.0000000000000004,2.0000000000000004,False,False,[],,,False,,{},-inf,True,non_interior
+87,"(CooperateBot, CupodBot, DBot, TitForTatBot)",4,11100010,0.75,-8.326672684688674e-17,0.0,,,,0.25,,2.0,1.9999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+88,"(CooperateBot, CupodBot, DBot, EBot)",4,11100001,1.0,-0.0,-1.0000000000000002,,,,,1.0000000000000002,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+89,"(CooperateBot, CupodBot, DefectBot, DupocBot)",4,11011000,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+90,"(CooperateBot, CupodBot, DefectBot, OBot)",4,11010100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+91,"(CooperateBot, CupodBot, DefectBot, TitForTatBot)",4,11010010,0.6666666666666666,0.0,,0.0,,,0.33333333333333337,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+92,"(CooperateBot, CupodBot, DefectBot, EBot)",4,11010001,-0.6666666666666662,0.33333333333333326,,1.6666666666666659,,,,-0.3333333333333331,-1.9999999999999984,-1.9999999999999987,False,False,[],,,False,,{},-inf,True,non_interior
+93,"(CooperateBot, CupodBot, DupocBot, OBot)",4,11001100,1.0,-0.0,,,-0.0,-0.0,,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+94,"(CooperateBot, CupodBot, DupocBot, TitForTatBot)",4,11001010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+95,"(CooperateBot, CupodBot, DupocBot, EBot)",4,11001001,1.500000000000001,1.5000000000000013,,,-1.5000000000000018,,,-0.5000000000000006,3.5000000000000018,3.500000000000005,False,False,[],,,False,,{},-inf,True,non_interior
+96,"(CooperateBot, CupodBot, OBot, TitForTatBot)",4,11000110,1.0,-0.0,,,,-0.0,0.0,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+97,"(CooperateBot, CupodBot, OBot, EBot)",4,11000101,1.0000000000000002,-0.3333333333333334,,,,0.3333333333333333,,0.0,2.0,2.0000000000000004,False,False,[],,,False,,{},-inf,True,non_interior
+98,"(CooperateBot, CupodBot, TitForTatBot, EBot)",4,11000011,0.75,-8.326672684688674e-17,,,,,0.25,-0.0,2.0,1.9999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+99,"(CooperateBot, DBot, DefectBot, DupocBot)",4,10111000,0.3333333333333333,,-0.3333333333333333,1.0,-2.7755575615628914e-17,,,,-1.6653345369377348e-16,4.9343245538895844e-17,False,False,[],,,False,,{},-inf,True,non_interior
+100,"(CooperateBot, DBot, DefectBot, OBot)",4,10110100,7.401486830834377e-17,,-0.5,1.6666666666666667,,-0.16666666666666666,,,-1.4999999999999998,-1.4999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+101,"(CooperateBot, DBot, DefectBot, TitForTatBot)",4,10110010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+102,"(CooperateBot, DBot, DefectBot, EBot)",4,10110001,0.3333333333333333,,-0.3333333333333333,1.0,,,,0.0,-1.6653345369377346e-16,4.9343245538895844e-17,False,False,[],,,False,,{},-inf,True,non_interior
+103,"(CooperateBot, DBot, DupocBot, OBot)",4,10101100,0.5384615384615384,,0.15384615384615388,,0.07692307692307696,0.23076923076923075,,,1.5384615384615383,1.5384615384615388,True,False,"[[-0.2113222307802983, 0.5366101700433794], [-0.2113222307802983, -0.5366101700433794], [0.11495215386828846, 0.0]]",0.11495215386828846,-0.2113222307802983,True,saddle,"{""CupodBot"": -0.23076923076923062, ""DefectBot"": 0.5384615384615388, ""TitForTatBot"": -0.07692307692307665, ""EBot"": 0.4615384615384617}",0.5384615384615388,False,saddle
+104,"(CooperateBot, DBot, DupocBot, TitForTatBot)",4,10101010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+105,"(CooperateBot, DBot, DupocBot, EBot)",4,10101001,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+106,"(CooperateBot, DBot, OBot, TitForTatBot)",4,10100110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+107,"(CooperateBot, DBot, OBot, EBot)",4,10100101,1.0000000000000002,,-1.0000000000000007,,,-1.2810265668751805e-16,,1.0000000000000007,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+108,"(CooperateBot, DBot, TitForTatBot, EBot)",4,10100011,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+109,"(CooperateBot, DefectBot, DupocBot, OBot)",4,10011100,0.0,,,0.6666666666666666,1.850371707708594e-17,0.3333333333333333,,,-0.0,6.847750913376838e-34,False,False,[],,,False,,{},-inf,True,non_interior
+110,"(CooperateBot, DefectBot, DupocBot, TitForTatBot)",4,10011010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+111,"(CooperateBot, DefectBot, DupocBot, EBot)",4,10011001,0.0,,,1.0,0.3333333333333333,,,-0.3333333333333333,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+112,"(CooperateBot, DefectBot, OBot, TitForTatBot)",4,10010110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+113,"(CooperateBot, DefectBot, OBot, EBot)",4,10010101,0.5,,,-0.0,,0.3333333333333333,,0.16666666666666666,1.5,1.4999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+114,"(CooperateBot, DefectBot, TitForTatBot, EBot)",4,10010011,1.1666666666666665,,,-0.6666666666666666,,,0.3333333333333334,0.16666666666666666,3.4999999999999996,3.4999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+115,"(CooperateBot, DupocBot, OBot, TitForTatBot)",4,10001110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+116,"(CooperateBot, DupocBot, OBot, EBot)",4,10001101,0.3333333333333333,,,,0.1111111111111111,0.3333333333333333,,0.22222222222222224,1.3333333333333333,1.333333333333333,True,False,"[[0.1542742936565717, 0.0], [-0.07713714682828567, 0.56048792543526], [-0.07713714682828567, -0.56048792543526]]",0.1542742936565717,-0.07713714682828567,True,saddle,"{""CupodBot"": -0.33333333333333326, ""DBot"": -0.6666666666666664, ""DefectBot"": -0.33333333333333326, ""TitForTatBot"": -0.11111111111111094}",-0.11111111111111094,True,saddle
+117,"(CooperateBot, DupocBot, TitForTatBot, EBot)",4,10001011,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+118,"(CooperateBot, OBot, TitForTatBot, EBot)",4,10000111,1.5000000000000002,,,,,-0.6666666666666667,0.6666666666666669,-0.5000000000000001,3.5000000000000004,3.5000000000000018,False,False,[],,,False,,{},-inf,True,non_interior
+119,"(CupodBot, DBot, DefectBot, DupocBot)",4,01111000,,-0.5,-0.49999999999999994,1.5,0.5,,,,-1.4999999999999998,-1.5,False,False,[],,,False,,{},-inf,True,non_interior
+120,"(CupodBot, DBot, DefectBot, OBot)",4,01110100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+121,"(CupodBot, DBot, DefectBot, TitForTatBot)",4,01110010,,0.1428571428571428,-0.2857142857142857,1.2857142857142856,,,-0.14285714285714285,,-0.8571428571428571,-0.8571428571428569,False,False,[],,,False,,{},-inf,True,non_interior
+122,"(CupodBot, DBot, DefectBot, EBot)",4,01110001,,0.1428571428571428,-0.2857142857142857,1.2857142857142856,,,,-0.14285714285714285,-0.8571428571428571,-0.8571428571428569,False,False,[],,,False,,{},-inf,True,non_interior
+123,"(CupodBot, DBot, DupocBot, OBot)",4,01101100,,-0.5,-0.49999999999999994,,0.5,1.4999999999999998,,,-1.4999999999999998,-1.4999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+124,"(CupodBot, DBot, DupocBot, TitForTatBot)",4,01101010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+125,"(CupodBot, DBot, DupocBot, EBot)",4,01101001,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+126,"(CupodBot, DBot, OBot, TitForTatBot)",4,01100110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+127,"(CupodBot, DBot, OBot, EBot)",4,01100101,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+128,"(CupodBot, DBot, TitForTatBot, EBot)",4,01100011,,-2.220446049250313e-16,3.0000000000000013,,,,1.0000000000000004,-3.0000000000000013,2.0000000000000004,2.000000000000001,False,False,[],,,False,,{},-inf,True,non_interior
+129,"(CupodBot, DefectBot, DupocBot, OBot)",4,01011100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+130,"(CupodBot, DefectBot, DupocBot, TitForTatBot)",4,01011010,,0.0,,1.0,-0.0,,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+131,"(CupodBot, DefectBot, DupocBot, EBot)",4,01011001,,0.0,,1.0,-0.0,,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+132,"(CupodBot, DefectBot, OBot, TitForTatBot)",4,01010110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+133,"(CupodBot, DefectBot, OBot, EBot)",4,01010101,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+134,"(CupodBot, DefectBot, TitForTatBot, EBot)",4,01010011,,0.0,,1.0,,,-0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+135,"(CupodBot, DupocBot, OBot, TitForTatBot)",4,01001110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+136,"(CupodBot, DupocBot, OBot, EBot)",4,01001101,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+137,"(CupodBot, DupocBot, TitForTatBot, EBot)",4,01001011,,1.500000000000001,,,-1.500000000000001,,-0.5000000000000008,1.500000000000001,3.5000000000000018,3.500000000000005,False,False,[],,,False,,{},-inf,True,non_interior
+138,"(CupodBot, OBot, TitForTatBot, EBot)",4,01000111,,0.3333333333333333,,,,0.6666666666666666,-0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+139,"(DBot, DefectBot, DupocBot, OBot)",4,00111100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+140,"(DBot, DefectBot, DupocBot, TitForTatBot)",4,00111010,,,0.0,1.0,0.3333333333333333,,-0.3333333333333333,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+141,"(DBot, DefectBot, DupocBot, EBot)",4,00111001,,,0.0,1.0,0.3333333333333333,,,-0.3333333333333333,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+142,"(DBot, DefectBot, OBot, TitForTatBot)",4,00110110,,,-0.49999999999999994,1.4999999999999998,,-0.0,0.0,,-1.4999999999999998,-1.4999999999999993,False,False,[],,,False,,{},-inf,True,non_interior
+143,"(DBot, DefectBot, OBot, EBot)",4,00110101,,,-0.49999999999999994,1.4999999999999998,,-0.0,,0.0,-1.4999999999999998,-1.4999999999999993,False,False,[],,,False,,{},-inf,True,non_interior
+144,"(DBot, DefectBot, TitForTatBot, EBot)",4,00110011,,,-0.49999999999999994,1.4999999999999998,,,0.0,0.0,-1.4999999999999998,-1.4999999999999993,False,False,[],,,False,,{},-inf,True,non_interior
+145,"(DBot, DupocBot, OBot, TitForTatBot)",4,00101110,,,1.0,,0.0,1.0,-1.0,,0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+146,"(DBot, DupocBot, OBot, EBot)",4,00101101,,,1.0,,0.0,1.0,,-1.0,0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+147,"(DBot, DupocBot, TitForTatBot, EBot)",4,00101011,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+148,"(DBot, OBot, TitForTatBot, EBot)",4,00100111,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+149,"(DefectBot, DupocBot, OBot, TitForTatBot)",4,00011110,,,,1.0,0.0,-0.0,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+150,"(DefectBot, DupocBot, OBot, EBot)",4,00011101,,,,1.0,0.0,-0.0,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+151,"(DefectBot, DupocBot, TitForTatBot, EBot)",4,00011011,,,,1.0,0.0,,-0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+152,"(DefectBot, OBot, TitForTatBot, EBot)",4,00010111,,,,1.0,,-0.0,0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+153,"(DupocBot, OBot, TitForTatBot, EBot)",4,00001111,,,,,0.16666666666666666,0.5,-0.16666666666666666,0.5,1.0,0.9999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+154,"(CooperateBot, CupodBot, DBot, DefectBot, DupocBot)",5,11111000,0.33333333333333326,2.7755575615628914e-17,-0.3333333333333333,1.0,2.0543252740130515e-33,,,,-1.1102230246251564e-16,-2.6521994477156517e-16,False,False,[],,,False,,{},-inf,True,non_interior
+155,"(CooperateBot, CupodBot, DBot, DefectBot, OBot)",5,11110100,-3.700743415417188e-17,0.33333333333333337,3.700743415417188e-17,0.6666666666666666,,0.0,,,-0.0,-5.4782007307014706e-33,False,False,[],,,False,,{},-inf,True,non_interior
+156,"(CooperateBot, CupodBot, DBot, DefectBot, TitForTatBot)",5,11110010,0.22222222222222218,0.1111111111111111,-0.2222222222222222,0.8888888888888888,,,-9.130334551169118e-34,,-7.401486830834377e-17,-5.345518266713717e-17,False,False,[],,,False,,{},-inf,True,non_interior
+157,"(CooperateBot, CupodBot, DBot, DefectBot, EBot)",5,11110001,0.33333333333333326,2.7755575615628914e-17,-0.3333333333333333,1.0,,,,-1.0271626370065256e-33,-1.1102230246251564e-16,-2.6521994477156517e-16,False,False,[],,,False,,{},-inf,True,non_interior
+158,"(CooperateBot, CupodBot, DBot, DupocBot, OBot)",5,11101100,0.6250000000000001,0.12499999999999992,0.12500000000000003,,-0.1249999999999999,0.2500000000000001,,,1.625,1.6250000000000007,False,False,[],,,False,,{},-inf,True,non_interior
+159,"(CooperateBot, CupodBot, DBot, DupocBot, TitForTatBot)",5,11101010,0.75,1.7270135938613543e-17,-2.467162276944792e-17,,-2.467162276944792e-17,,0.25000000000000006,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+160,"(CooperateBot, CupodBot, DBot, DupocBot, EBot)",5,11101001,0.9999999999999999,-2.6645352591003756e-16,-1.0000000000000004,,4.440892098500626e-16,,,1.0000000000000004,1.9999999999999996,2.0000000000000004,False,False,[],,,False,,{},-inf,True,non_interior
+161,"(CooperateBot, CupodBot, DBot, OBot, TitForTatBot)",5,11100110,0.0,0.1111111111111111,0.6666666666666666,,,0.8888888888888888,-0.6666666666666666,,0.0,-1.1513423959075697e-16,False,False,[],,,False,,{},-inf,True,non_interior
+162,"(CooperateBot, CupodBot, DBot, OBot, EBot)",5,11100101,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+163,"(CooperateBot, CupodBot, DBot, TitForTatBot, EBot)",5,11100011,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+164,"(CooperateBot, CupodBot, DefectBot, DupocBot, OBot)",5,11011100,0.0,0.0,,0.6666666666666666,-0.0,0.3333333333333333,,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+165,"(CooperateBot, CupodBot, DefectBot, DupocBot, TitForTatBot)",5,11011010,0.6666666666666666,-2.220446049250313e-16,,1.634495008475925e-16,2.220446049250313e-16,,0.3333333333333334,,1.9999999999999998,2.0000000000000004,False,False,[],,,False,,{},-inf,True,non_interior
+166,"(CooperateBot, CupodBot, DefectBot, DupocBot, EBot)",5,11011001,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+167,"(CooperateBot, CupodBot, DefectBot, OBot, TitForTatBot)",5,11010110,0.0,0.1111111111111111,,0.6666666666666666,,0.2222222222222222,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+168,"(CooperateBot, CupodBot, DefectBot, OBot, EBot)",5,11010101,0.0,0.1111111111111111,,0.6666666666666666,,0.2222222222222222,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+169,"(CooperateBot, CupodBot, DefectBot, TitForTatBot, EBot)",5,11010011,2.6666666666666656,-0.3333333333333335,,-2.6666666666666647,,,0.666666666666667,0.6666666666666662,7.9999999999999964,7.999999999999999,False,False,[],,,False,,{},-inf,True,non_interior
+170,"(CooperateBot, CupodBot, DupocBot, OBot, TitForTatBot)",5,11001110,1.0,-0.0,,,-0.0,-0.0,0.0,,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+171,"(CooperateBot, CupodBot, DupocBot, OBot, EBot)",5,11001101,0.5,0.1666666666666667,,,-0.1666666666666668,0.33333333333333337,,0.1666666666666666,1.5,1.5,False,False,[],,,False,,{},-inf,True,non_interior
+172,"(CooperateBot, CupodBot, DupocBot, TitForTatBot, EBot)",5,11001011,0.75,-3.207310960028229e-17,,,2.4671622769447922e-17,,0.25000000000000006,-0.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+173,"(CooperateBot, CupodBot, OBot, TitForTatBot, EBot)",5,11000111,4.000000000000001,-0.3333333333333337,,,,-2.6666666666666674,2.0000000000000004,-2.0000000000000004,8.000000000000002,7.999999999999987,False,False,[],,,False,,{},-inf,True,non_interior
+174,"(CooperateBot, DBot, DefectBot, DupocBot, OBot)",5,10111100,2.9605947323337506e-16,,-1.9999999999999993,4.666666666666665,-0.9999999999999998,-0.6666666666666665,,,-5.999999999999998,-5.999999999999991,False,False,[],,,False,,{},-inf,True,non_interior
+175,"(CooperateBot, DBot, DefectBot, DupocBot, TitForTatBot)",5,10111010,0.6666666666666665,,-1.0639637319324417e-16,3.191891195797325e-16,0.11111111111111109,,0.22222222222222218,,1.9999999999999993,1.9999999999999991,False,False,[],,,False,,{},-inf,True,non_interior
+176,"(CooperateBot, DBot, DefectBot, DupocBot, EBot)",5,10111001,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+177,"(CooperateBot, DBot, DefectBot, OBot, TitForTatBot)",5,10110110,0.3333333333333333,,-0.3333333333333333,1.0,,-0.1111111111111111,0.11111111111111112,,0.0,7.470019116305066e-17,False,False,[],,,False,,{},-inf,True,non_interior
+178,"(CooperateBot, DBot, DefectBot, OBot, EBot)",5,10110101,-1.0000000000000009,,-1.0000000000000002,4.000000000000002,,-0.6666666666666671,,-0.33333333333333354,-6.0000000000000036,-6.000000000000005,False,False,[],,,False,,{},-inf,True,non_interior
+179,"(CooperateBot, DBot, DefectBot, TitForTatBot, EBot)",5,10110011,0.7777777777777777,,-0.11111111111111117,2.220446049250313e-16,,,0.2222222222222222,0.1111111111111111,1.9999999999999996,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+180,"(CooperateBot, DBot, DupocBot, OBot, TitForTatBot)",5,10101110,0.6666666666666665,,3.4266142735344336e-18,,0.11111111111111112,3.700743415417188e-17,0.2222222222222222,,1.9999999999999998,1.9999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+181,"(CooperateBot, DBot, DupocBot, OBot, EBot)",5,10101101,1.0000000000000007,,-1.000000000000001,,-9.75410228777817e-17,-1.7763568394002496e-16,,1.000000000000001,2.0000000000000004,2.0000000000000018,False,False,[],,,False,,{},-inf,True,non_interior
+182,"(CooperateBot, DBot, DupocBot, TitForTatBot, EBot)",5,10101011,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+183,"(CooperateBot, DBot, OBot, TitForTatBot, EBot)",5,10100111,1.0000000000000002,,-1.0000000000000002,,,-1.3462640309290097e-16,1.6344950084759253e-16,1.0000000000000002,2.0000000000000004,2.000000000000001,False,False,[],,,False,,{},-inf,True,non_interior
+184,"(CooperateBot, DefectBot, DupocBot, OBot, TitForTatBot)",5,10011110,0.666666666666667,,,-3.0531133177191805e-16,0.11111111111111117,-1.356939252319636e-16,0.22222222222222235,,2.000000000000001,2.000000000000001,False,False,[],,,False,,{},-inf,True,non_interior
+185,"(CooperateBot, DefectBot, DupocBot, OBot, EBot)",5,10011101,0.28571428571428575,,,0.2857142857142857,0.04761904761904764,0.2857142857142857,,0.09523809523809525,0.8571428571428572,0.8571428571428573,True,False,"[[-0.07997823800774453, 0.4459179147236928], [-0.07997823800774453, -0.4459179147236928], [0.07997823800774473, 0.06653150317188794], [0.07997823800774473, -0.06653150317188794]]",0.07997823800774473,-0.07997823800774453,True,saddle,"{""CupodBot"": -0.1428571428571429, ""DBot"": -0.5714285714285714, ""TitForTatBot"": -0.19047619047619047}",-0.1428571428571429,True,saddle
+186,"(CooperateBot, DefectBot, DupocBot, TitForTatBot, EBot)",5,10011011,0.666666666666667,,,-3.608224830031759e-16,0.11111111111111112,,0.2222222222222223,1.356939252319636e-16,2.000000000000001,2.0000000000000013,False,False,[],,,False,,{},-inf,True,non_interior
+187,"(CooperateBot, DefectBot, OBot, TitForTatBot, EBot)",5,10010111,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+188,"(CooperateBot, DupocBot, OBot, TitForTatBot, EBot)",5,10001111,0.6666666666666663,,,,0.11111111111111109,3.9320398788807626e-16,0.22222222222222196,2.9605947323337506e-16,1.9999999999999991,1.9999999999999991,False,False,[],,,False,,{},-inf,True,non_interior
+189,"(CupodBot, DBot, DefectBot, DupocBot, OBot)",5,01111100,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+190,"(CupodBot, DBot, DefectBot, DupocBot, TitForTatBot)",5,01111010,,-0.5,-0.49999999999999994,1.5,0.5,,0.0,,-1.4999999999999998,-1.5,False,False,[],,,False,,{},-inf,True,non_interior
+191,"(CupodBot, DBot, DefectBot, DupocBot, EBot)",5,01111001,,-0.5,-0.49999999999999994,1.5,0.5,,,0.0,-1.4999999999999998,-1.5,False,False,[],,,False,,{},-inf,True,non_interior
+192,"(CupodBot, DBot, DefectBot, OBot, TitForTatBot)",5,01110110,,0.3333333333333333,0.0,3.700743415417188e-17,,0.6666666666666666,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+193,"(CupodBot, DBot, DefectBot, OBot, EBot)",5,01110101,,0.3333333333333333,0.0,3.700743415417188e-17,,0.6666666666666666,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+194,"(CupodBot, DBot, DefectBot, TitForTatBot, EBot)",5,01110011,,0.18918918918918926,-0.2162162162162162,1.135135135135135,,,0.05405405405405414,-0.16216216216216223,-0.6486486486486486,-0.6486486486486486,False,False,[],,,False,,{},-inf,True,non_interior
+195,"(CupodBot, DBot, DupocBot, OBot, TitForTatBot)",5,01101110,,0.0,1.0,,-0.0,1.0,-1.0,,0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+196,"(CupodBot, DBot, DupocBot, OBot, EBot)",5,01101101,,0.0,1.0,,-0.0,1.0,,-1.0,0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+197,"(CupodBot, DBot, DupocBot, TitForTatBot, EBot)",5,01101011,,0.0,3.0,,1.4802973661668753e-16,,1.0,-3.0,1.9999999999999996,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+198,"(CupodBot, DBot, OBot, TitForTatBot, EBot)",5,01100111,,0.3333333333333333,0.0,,,0.6666666666666666,-0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+199,"(CupodBot, DefectBot, DupocBot, OBot, TitForTatBot)",5,01011110,,0.0,,1.0,-0.0,-0.0,0.0,,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+200,"(CupodBot, DefectBot, DupocBot, OBot, EBot)",5,01011101,,0.0,,1.0,-0.0,-0.0,,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+201,"(CupodBot, DefectBot, DupocBot, TitForTatBot, EBot)",5,01011011,,0.0,,1.0,-0.0,,0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+202,"(CupodBot, DefectBot, OBot, TitForTatBot, EBot)",5,01010111,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+203,"(CupodBot, DupocBot, OBot, TitForTatBot, EBot)",5,01001111,,0.6666666666666665,,,-0.6666666666666665,0.3333333333333335,-0.3333333333333335,1.0,1.9999999999999996,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+204,"(DBot, DefectBot, DupocBot, OBot, TitForTatBot)",5,00111110,,,-2.0,6.0,-1.0000000000000002,-2.0,0.0,,-6.0,-5.999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+205,"(DBot, DefectBot, DupocBot, OBot, EBot)",5,00111101,,,-2.0,6.0,-1.0000000000000002,-2.0,,0.0,-6.0,-5.999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+206,"(DBot, DefectBot, DupocBot, TitForTatBot, EBot)",5,00111011,,,0.6666666666666664,2.220446049250313e-16,0.7777777777777777,,0.22222222222222204,-0.6666666666666664,1.9999999999999993,1.9999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+207,"(DBot, DefectBot, OBot, TitForTatBot, EBot)",5,00110111,,,-0.49999999999999994,1.4999999999999998,,-0.0,0.0,0.0,-1.4999999999999998,-1.4999999999999993,False,False,[],,,False,,{},-inf,True,non_interior
+208,"(DBot, DupocBot, OBot, TitForTatBot, EBot)",5,00101111,,,2.0,,0.33333333333333337,1.1102230246251565e-16,0.6666666666666666,-2.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+209,"(DefectBot, DupocBot, OBot, TitForTatBot, EBot)",5,00011111,,,,1.0,0.0,-0.0,0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+210,"(CooperateBot, CupodBot, DBot, DefectBot, DupocBot, OBot)",6,11111100,1.1102230246251565e-16,-0.49999999999999983,-0.4999999999999999,1.6666666666666663,0.4999999999999999,-0.1666666666666666,,,-1.4999999999999993,-1.4999999999999991,False,False,[],,,False,,{},-inf,True,non_interior
+211,"(CooperateBot, CupodBot, DBot, DefectBot, DupocBot, TitForTatBot)",6,11111010,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+212,"(CooperateBot, CupodBot, DBot, DefectBot, DupocBot, EBot)",6,11111001,0.33333333333333326,2.7755575615628914e-17,-0.3333333333333333,1.0,-3.083952846180991e-17,,,-1.5419764230904953e-17,-1.1102230246251564e-16,-2.6521994477156517e-16,False,False,[],,,False,,{},-inf,True,non_interior
+213,"(CooperateBot, CupodBot, DBot, DefectBot, OBot, TitForTatBot)",6,11110110,0.49999999999999983,0.05555555555555558,-0.16666666666666674,0.5000000000000003,,-0.05555555555555555,0.1666666666666666,,0.9999999999999993,0.9999999999999992,False,False,[],,,False,,{},-inf,True,non_interior
+214,"(CooperateBot, CupodBot, DBot, DefectBot, OBot, EBot)",6,11110101,1.0,-0.22222222222222218,-0.3333333333333333,1.3877787807814457e-17,,0.22222222222222224,,0.33333333333333337,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+215,"(CooperateBot, CupodBot, DBot, DefectBot, TitForTatBot, EBot)",6,11110011,0.7777777777777777,-6.938893903907228e-18,-0.1111111111111112,2.220446049250313e-16,,,0.2222222222222222,0.11111111111111115,1.9999999999999996,1.9999999999999996,False,False,[],,,False,,{},-inf,True,non_interior
+216,"(CooperateBot, CupodBot, DBot, DupocBot, OBot, TitForTatBot)",6,11101110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+217,"(CooperateBot, CupodBot, DBot, DupocBot, OBot, EBot)",6,11101101,1.0,1.3322676295501878e-16,-0.9999999999999998,,-4.7287276974775186e-17,1.1102230246251568e-16,,0.9999999999999999,2.0000000000000004,2.0000000000000018,False,False,[],,,False,,{},-inf,True,non_interior
+218,"(CooperateBot, CupodBot, DBot, DupocBot, TitForTatBot, EBot)",6,11101011,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+219,"(CooperateBot, CupodBot, DBot, OBot, TitForTatBot, EBot)",6,11100111,1.0000000000000002,-1.6653345369377348e-16,-1.0,,,0.0,-0.0,1.0,2.0,2.0,False,False,[],,,False,,{},-inf,True,non_interior
+220,"(CooperateBot, CupodBot, DefectBot, DupocBot, OBot, TitForTatBot)",6,11011110,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+221,"(CooperateBot, CupodBot, DefectBot, DupocBot, OBot, EBot)",6,11011101,0.5000000000000001,0.16666666666666674,,-1.2335811384723962e-16,-0.16666666666666674,0.3333333333333334,,0.16666666666666674,1.5000000000000004,1.5000000000000007,False,False,[],,,False,,{},-inf,True,non_interior
+222,"(CooperateBot, CupodBot, DefectBot, DupocBot, TitForTatBot, EBot)",6,11011011,1.1666666666666663,0.1666666666666663,,-0.6666666666666663,-0.1666666666666663,,0.3333333333333335,0.16666666666666666,3.499999999999999,3.5,False,False,[],,,False,,{},-inf,True,non_interior
+223,"(CooperateBot, CupodBot, DefectBot, OBot, TitForTatBot, EBot)",6,11010111,0.0,0.1111111111111111,,0.6666666666666666,,0.2222222222222222,0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+224,"(CooperateBot, CupodBot, DupocBot, OBot, TitForTatBot, EBot)",6,11001111,1.5000000000000016,0.1666666666666666,,,-0.16666666666666663,-0.666666666666668,0.6666666666666676,-0.5000000000000009,3.5000000000000027,3.500000000000003,False,False,[],,,False,,{},-inf,True,non_interior
+225,"(CooperateBot, DBot, DefectBot, DupocBot, OBot, TitForTatBot)",6,10111110,0.6666666666666666,,-1.5265566588595902e-16,3.7470027081099033e-16,0.11111111111111105,-3.700743415417188e-17,0.2222222222222222,,1.9999999999999993,1.9999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+226,"(CooperateBot, DBot, DefectBot, DupocBot, OBot, EBot)",6,10111101,0.5,,-0.5,0.9999999999999999,-0.16666666666666666,4.625929269271486e-17,,0.16666666666666669,1.3877787807814454e-16,8.943463253924872e-17,False,False,[],,,False,,{},-inf,True,non_interior
+227,"(CooperateBot, DBot, DefectBot, DupocBot, TitForTatBot, EBot)",6,10111011,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+228,"(CooperateBot, DBot, DefectBot, OBot, TitForTatBot, EBot)",6,10110111,0.3333333333333333,,-0.3333333333333333,0.9999999999999999,,-0.11111111111111109,0.1111111111111111,1.2335811384723961e-17,0.0,7.624216758614116e-17,False,False,[],,,False,,{},-inf,True,non_interior
+229,"(CooperateBot, DBot, DupocBot, OBot, TitForTatBot, EBot)",6,10101111,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+230,"(CooperateBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot)",6,10011111,0.666666666666667,,,-3.0531133177191805e-16,0.11111111111111117,-1.356939252319636e-16,0.22222222222222235,0.0,2.000000000000001,2.000000000000001,False,False,[],,,False,,{},-inf,True,non_interior
+231,"(CupodBot, DBot, DefectBot, DupocBot, OBot, TitForTatBot)",6,01111110,,-0.5,-0.49999999999999994,1.5,0.5,-0.0,0.0,,-1.4999999999999998,-1.5,False,False,[],,,False,,{},-inf,True,non_interior
+232,"(CupodBot, DBot, DefectBot, DupocBot, OBot, EBot)",6,01111101,,-0.5,-0.49999999999999994,1.5,0.5,-0.0,,0.0,-1.4999999999999998,-1.5,False,False,[],,,False,,{},-inf,True,non_interior
+233,"(CupodBot, DBot, DefectBot, DupocBot, TitForTatBot, EBot)",6,01111011,,-0.5,-0.49999999999999994,1.5,0.5,,0.0,0.0,-1.4999999999999998,-1.5,False,False,[],,,False,,{},-inf,True,non_interior
+234,"(CupodBot, DBot, DefectBot, OBot, TitForTatBot, EBot)",6,01110111,,0.3333333333333333,0.0,3.700743415417188e-17,,0.6666666666666666,0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+235,"(CupodBot, DBot, DupocBot, OBot, TitForTatBot, EBot)",6,01101111,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+236,"(CupodBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot)",6,01011111,,0.0,,1.0,-0.0,-0.0,0.0,0.0,-0.0,0.0,False,False,[],,,False,,{},-inf,True,non_interior
+237,"(DBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot)",6,00111111,,,-2.0,6.0,-1.0000000000000002,-2.0,0.0,0.0,-6.0,-5.999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+238,"(CooperateBot, CupodBot, DBot, DefectBot, DupocBot, OBot, TitForTatBot)",7,11111110,0.3333333333333334,-0.22222222222222204,-0.33333333333333326,0.9999999999999998,0.22222222222222207,-0.11111111111111109,0.11111111111111115,,4.440892098500621e-16,4.694461554742175e-16,False,False,[],,,False,,{},-inf,True,non_interior
+239,"(CooperateBot, CupodBot, DBot, DefectBot, DupocBot, OBot, EBot)",7,11111101,-1.0000000000000007,-1.333333333333333,-0.9999999999999998,4.0,1.3333333333333333,-0.6666666666666669,,-0.33333333333333365,-6.000000000000001,-5.999999999999995,False,False,[],,,False,,{},-inf,True,non_interior
+240,"(CooperateBot, CupodBot, DBot, DefectBot, DupocBot, TitForTatBot, EBot)",7,11111011,0.777777777777778,4.163336342344337e-17,-0.11111111111111102,-4.075957678369209e-16,-2.312964634635751e-17,,0.22222222222222235,0.11111111111111116,2.000000000000001,2.000000000000001,False,False,[],,,False,,{},-inf,True,non_interior
+241,"(CooperateBot, CupodBot, DBot, DefectBot, OBot, TitForTatBot, EBot)",7,11110111,0.49999999999999983,0.05555555555555558,-0.16666666666666674,0.5000000000000003,,-0.05555555555555555,0.1666666666666666,0.0,0.9999999999999993,0.9999999999999992,False,False,[],,,False,,{},-inf,True,non_interior
+242,"(CooperateBot, CupodBot, DBot, DupocBot, OBot, TitForTatBot, EBot)",7,11101111,1.0000000000000013,-7.993605777301126e-16,-1.0000000000000042,,6.698503733333117e-16,-3.2867820526029055e-16,-6.630498619289125e-16,1.0000000000000042,2.0000000000000004,2.0000000000000004,False,False,[],,,False,,{},-inf,True,non_interior
+243,"(CooperateBot, CupodBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot)",7,11011111,,,,,,,,,,,False,True,[],,,False,,{},-inf,True,singular
+244,"(CooperateBot, DBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot)",7,10111111,0.6666666666666666,,-1.295260195396016e-16,3.608224830031759e-16,0.11111111111111106,-6.47630097698008e-17,0.22222222222222224,-2.158766992326695e-17,1.9999999999999993,1.9999999999999998,False,False,[],,,False,,{},-inf,True,non_interior
+245,"(CupodBot, DBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot)",7,01111111,,-0.5,-0.49999999999999994,1.5,0.5,-0.0,0.0,0.0,-1.4999999999999998,-1.5,False,False,[],,,False,,{},-inf,True,non_interior
+246,"(CooperateBot, CupodBot, DBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot)",8,11111111,0.3333333333333334,-0.22222222222222204,-0.33333333333333326,0.9999999999999998,0.22222222222222207,-0.1111111111111111,0.11111111111111116,-9.251858538543017e-18,4.440892098500621e-16,4.6790417905112695e-16,False,False,[],,,False,,{},-inf,True,non_interior

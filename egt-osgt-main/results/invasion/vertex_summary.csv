@@ -1,0 +1,9 @@
+name,in_degree,out_degree,role,scc_id,scc_size,in_terminal_SCC,candidate_ESS_by_clause_a,is_ESS_per_ess_summary,agrees_with_ess,responsible_ties,touches_suspect_cell
+CooperateBot,3,2,in_cycle,0,6,True,False,False,True,CupodBot->CooperateBot|DupocBot->CooperateBot|OBot->CooperateBot|TitForTatBot->CooperateBot,False
+CupodBot,5,1,in_cycle,0,6,True,False,False,True,DefectBot->CupodBot|OBot->CupodBot,True
+DBot,6,2,in_cycle,0,6,True,False,False,True,,False
+DefectBot,0,2,clause_a_candidate,1,1,False,True,False,False,CupodBot->DefectBot|DupocBot->DefectBot|OBot->DefectBot|TitForTatBot->DefectBot|EBot->DefectBot,False
+DupocBot,0,2,clause_a_candidate,2,1,False,True,False,False,CooperateBot->DupocBot|DBot->DupocBot|TitForTatBot->DupocBot|EBot->DupocBot,True
+EBot,2,3,in_cycle,0,6,True,False,False,True,CupodBot->EBot|DupocBot->EBot,False
+OBot,1,3,in_cycle,0,6,True,False,False,True,CupodBot->OBot|DefectBot->OBot|DupocBot->OBot,False
+TitForTatBot,1,3,in_cycle,0,6,True,False,False,True,CooperateBot->TitForTatBot|CupodBot->TitForTatBot|DupocBot->TitForTatBot,False

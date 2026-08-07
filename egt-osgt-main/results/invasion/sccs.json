@@ -1,0 +1,78 @@
+{
+  "sccs": [
+    {
+      "scc_id": 0,
+      "members": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7
+      ],
+      "member_names": [
+        "CooperateBot",
+        "CupodBot",
+        "DBot",
+        "OBot",
+        "TitForTatBot",
+        "EBot"
+      ],
+      "size": 6,
+      "is_terminal": true,
+      "in_neighbors": [
+        1,
+        2
+      ],
+      "out_neighbors": []
+    },
+    {
+      "scc_id": 1,
+      "members": [
+        3
+      ],
+      "member_names": [
+        "DefectBot"
+      ],
+      "size": 1,
+      "is_terminal": false,
+      "in_neighbors": [],
+      "out_neighbors": [
+        0
+      ]
+    },
+    {
+      "scc_id": 2,
+      "members": [
+        4
+      ],
+      "member_names": [
+        "DupocBot"
+      ],
+      "size": 1,
+      "is_terminal": false,
+      "in_neighbors": [],
+      "out_neighbors": [
+        0
+      ]
+    }
+  ],
+  "condensation_edges": [
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ]
+  ],
+  "topological_order": [
+    1,
+    2,
+    0
+  ],
+  "terminal_sccs": [
+    0
+  ]
+}

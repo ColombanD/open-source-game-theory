@@ -1,0 +1,90 @@
+{
+  "cap": 10000,
+  "cap_hit": false,
+  "length_bound_if_capped": null,
+  "n_cycles_total": 11,
+  "by_length": {
+    "2": [
+      [
+        "CupodBot",
+        "DBot"
+      ]
+    ],
+    "3": [
+      [
+        "CooperateBot",
+        "CupodBot",
+        "DBot"
+      ],
+      [
+        "CooperateBot",
+        "OBot",
+        "DBot"
+      ],
+      [
+        "CooperateBot",
+        "OBot",
+        "EBot"
+      ]
+    ],
+    "4": [
+      [
+        "CooperateBot",
+        "OBot",
+        "TitForTatBot",
+        "DBot"
+      ],
+      [
+        "CooperateBot",
+        "OBot",
+        "TitForTatBot",
+        "EBot"
+      ],
+      [
+        "CooperateBot",
+        "OBot",
+        "EBot",
+        "DBot"
+      ]
+    ],
+    "5": [
+      [
+        "CooperateBot",
+        "OBot",
+        "TitForTatBot",
+        "CupodBot",
+        "DBot"
+      ],
+      [
+        "CooperateBot",
+        "OBot",
+        "TitForTatBot",
+        "EBot",
+        "DBot"
+      ],
+      [
+        "CooperateBot",
+        "OBot",
+        "EBot",
+        "CupodBot",
+        "DBot"
+      ]
+    ],
+    "6": [
+      [
+        "CooperateBot",
+        "OBot",
+        "TitForTatBot",
+        "EBot",
+        "CupodBot",
+        "DBot"
+      ]
+    ]
+  },
+  "two_cycles": [
+    [
+      "CupodBot",
+      "DBot"
+    ]
+  ]
+}

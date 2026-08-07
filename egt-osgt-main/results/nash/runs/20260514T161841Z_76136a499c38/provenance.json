@@ -1,0 +1,80 @@
+{
+  "run_id": "20260514T161841Z_76136a499c38",
+  "timestamp_utc": "2026-05-14T16:18:41Z",
+  "input_csv_path": "data/payoff_matrix.csv",
+  "input_csv_sha256": "1a6ebb2c46c9507ae890541fe50c9049355bf33bd9198ab0b92e05d7a9e6f3d1",
+  "config_path": "config.json",
+  "config_resolved": {
+    "seed": 20260514,
+    "prisoners_dilemma": {
+      "b": 3.0,
+      "c": 1.0,
+      "_doc": "PD payoffs to the row player as a function of (row_action, col_action): (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c. Requires b > c > 0 (strict)."
+    },
+    "undefined_outcomes": {
+      "cupod_vs_dupoc": "(C, D)",
+      "_doc": "Default action pair for the (CupodBot, DupocBot) cell, which is unresolved in Critch et al. 2022. Format: '(row_action, col_action)' with row=CupodBot, col=DupocBot. The (MirrorBot, MirrorBot) non-terminating cell is handled by excluding MirrorBot from the analysis altogether."
+    }
+  },
+  "bot_names": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot"
+  ],
+  "payoff_shift": {
+    "c_shift": "2/1",
+    "delta": "1/1",
+    "min_A_before": "-1/1",
+    "min_A_after": "1/1"
+  },
+  "library_versions": {
+    "pygambit": "16.6.0",
+    "numpy": "2.3.3",
+    "scipy": "1.16.2",
+    "networkx": "3.6.1",
+    "pandas": "2.3.3",
+    "lrsnash": "lrsnash:lrslib_v.7.3_2024.5.30(64bit,lrsgmp.h,hybrid_arithmetic,_gmp_v.6.3)"
+  },
+  "methods_used": [
+    "pygambit.nash.enummixed_solve(rational=True)",
+    "lrsnash"
+  ],
+  "iterated_dominance": {
+    "removed": [],
+    "survivors_row": [
+      "CooperateBot",
+      "CupodBot",
+      "DBot",
+      "DefectBot",
+      "DupocBot",
+      "OBot",
+      "TitForTatBot",
+      "EBot"
+    ],
+    "survivors_col": [
+      "CooperateBot",
+      "CupodBot",
+      "DBot",
+      "DefectBot",
+      "DupocBot",
+      "OBot",
+      "TitForTatBot",
+      "EBot"
+    ]
+  },
+  "n_extreme_NE": 16,
+  "n_components": 5,
+  "n_pure_NE_direct": 2,
+  "n_pure_NE_in_method2_output": 2,
+  "cross_check_libraries_agree": true,
+  "wallclock_seconds": {
+    "pygambit": 1.7862001250032336,
+    "lrsnash": 0.02805366599932313,
+    "total": 1.8362365829962073
+  }
+}
