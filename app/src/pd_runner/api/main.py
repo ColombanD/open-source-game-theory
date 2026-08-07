@@ -10,12 +10,13 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from pd_runner.api.egt_task import run_egt_sweep
 from pd_runner.api.integration_task import run_integration
 from pd_runner.api.jobs import store
 from pd_runner.api.pipeline_task import bot_exists, bot_source_on_disk, run_pipeline
 from pd_runner.api.schemas import (
-    BotConflict, ConflictResponse, IntegrationRequest, JobResponse, JobStatus,
-    MatrixStatusRequest, PipelineRequest, ProposalInfo, ProposalsResponse,
+    BotConflict, ConflictResponse, EgtSweepRequest, IntegrationRequest, JobResponse,
+    JobStatus, MatrixStatusRequest, PipelineRequest, ProposalInfo, ProposalsResponse,
 )
 
 app = FastAPI(title="Open-Source Game Theory Pipeline", version="0.1.0")
@@ -126,6 +127,51 @@ async def tau_report(
         None, lambda: build_report(named.load(), parsed, zoo=named)
     )
     return HTMLResponse(page)
+
+
+@app.get("/egt/stages")
+async def egt_stages() -> dict:
+    """The analysis stages a sweep can run, in dependency order.
+
+    `ess` writes the numeric payoff matrix the other three read, so it is
+    required; the UI marks it non-optional for that reason.
+    """
+    from pd_runner.egt.pipeline import DEFAULT_ALPHAS, STAGES
+
+    labels = {
+        "ess": "ESS (pure evolutionarily stable strategies)",
+        "invasion": "Invasion graph (SCCs, cycles, condensation)",
+        "faces": "Face equilibria (replicator Jacobian)",
+        "nash": "Nash equilibria (exact, extreme NE) — slowest",
+    }
+    return {
+        "stages": [
+            {"key": s, "label": labels[s], "required": s == "ess"} for s in STAGES
+        ],
+        "default_alphas": list(DEFAULT_ALPHAS),
+    }
+
+
+@app.post("/egt/sweep", response_model=JobResponse, status_code=202)
+async def start_egt_sweep(req: EgtSweepRequest, background_tasks: BackgroundTasks):
+    """Launch an EGT `(t, α)` sweep as a background job.
+
+    Long-running (the Nash stage alone is ~50s per distinct matrix), so this
+    follows the job + SSE pattern rather than rendering synchronously the way
+    `/tau/report` does. No human gate: the sweep reads the proven outcome
+    matrix and writes analysis artefacts, touching nothing in the library.
+    """
+    job = store.create()
+    background_tasks.add_task(run_egt_sweep, job, req)
+    return JobResponse(**job.to_response_dict())
+
+
+@app.get("/egt/sweep/{job_id}", response_model=JobResponse)
+async def get_egt_sweep(job_id: str) -> JobResponse:
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JobResponse(**job.to_response_dict())
 
 
 @app.post("/matrix/sync")

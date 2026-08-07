@@ -59,6 +59,9 @@ class Job:
     integration_summary: Optional[str] = None
     integration_result: Optional[object] = field(default=None, repr=False)  # IntegrationResult
 
+    # EGT sweep jobs only — `egt.pipeline.SweepResult.summary()`
+    egt_result: Optional[dict] = field(default=None, repr=False)
+
     result: Optional[PipelineResult] = None
     error: Optional[str] = None
 
@@ -104,6 +107,7 @@ class Job:
             "proposal_name": self.proposal_name,
             "diff": self.diff,
             "integration_summary": self.integration_summary,
+            "egt_result": self.egt_result,
         }
 
 

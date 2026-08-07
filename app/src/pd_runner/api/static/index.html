@@ -326,6 +326,56 @@
     <p id="tau-zoo-desc" style="color:#6b7280; font-size:0.8rem; margin:0.6rem 0 0;"></p>
   </div>
 
+  <div class="card" id="egt-card">
+    <h2>Evolutionary analysis (EGT)</h2>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
+      Which bots survive in a <em>population</em> of bots. Sweeps the (t, α)
+      grid, turns each tau tournament into a payoff matrix, and runs four
+      analyses over it: pure ESS, the invasion graph, face equilibria, and
+      exact Nash equilibria. Grid points that yield the same matrix are
+      analysed once — the phase diagram is piecewise constant, so this
+      typically halves the work.
+    </p>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <label style="color:#9ca3af; font-size:0.85rem;">sub-zoo
+        <select id="egt-zoo" onchange="onEgtZooChange()"
+                style="margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                       border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                       font-size:0.85rem;">
+          <option value="default">default</option>
+        </select>
+      </label>
+      <label style="color:#9ca3af; font-size:0.85rem;">t steps
+        <input id="egt-t-steps" type="number" min="2" max="21" value="6"
+               oninput="onEgtCostChange()"
+               style="width:4.5rem; margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                      border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                      font-size:0.85rem;">
+      </label>
+      <label style="color:#9ca3af; font-size:0.85rem;" title="comma-separated, or 'phases'">α values
+        <input id="egt-alphas" type="text" placeholder="default" value=""
+               oninput="onEgtCostChange()"
+               style="width:12rem; margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                      border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                      font-size:0.85rem;">
+      </label>
+    </div>
+    <div style="display:flex; gap:0.9rem; align-items:center; flex-wrap:wrap; margin-top:0.6rem;">
+      <span style="color:#9ca3af; font-size:0.85rem;">stages</span>
+      <span id="egt-stages"></span>
+      <label style="color:#9ca3af; font-size:0.85rem;">
+        <input id="egt-render" type="checkbox" checked> figures
+      </label>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-top:0.7rem;">
+      <button class="btn btn-primary" id="egt-run-btn" onclick="runEgtSweep()">Run EGT sweep</button>
+      <span id="egt-status" style="color:#9ca3af; font-size:0.85rem;"></span>
+    </div>
+    <p id="egt-zoo-desc" style="color:#6b7280; font-size:0.8rem; margin:0.6rem 0 0;"></p>
+    <p id="egt-cost-hint" style="color:#6b7280; font-size:0.8rem; margin:0.3rem 0 0;"></p>
+    <div id="egt-results" style="display:none; margin-top:0.9rem;"></div>
+  </div>
+
   <div class="card" id="proposals-card">
     <h2>Constructor proposals</h2>
     <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
@@ -1204,12 +1254,234 @@
       window.open('/tau/report' + (qs ? `?${qs}` : ''), '_blank');
     }
 
+    // ---- EGT sweep -------------------------------------------------------
+
+    let egtZoos = [];
+    let egtPollTimer = null;
+
+    async function loadEgtOptions() {
+      // The zoo list is the same registry the tau card uses, so a zoo added
+      // in tau.matrix appears in both places with no change here.
+      try {
+        const res = await fetch('/tau/zoos');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        egtZoos = data.zoos;
+        document.getElementById('egt-zoo').innerHTML = egtZoos.map(z =>
+          `<option value="${z.key}"${z.key === data.default ? ' selected' : ''}>${z.label}</option>`
+        ).join('');
+      } catch (err) {
+        document.getElementById('egt-zoo-desc').textContent =
+          `Could not load sub-zoo list (${err.message}); using the default zoo.`;
+      }
+
+      try {
+        const res = await fetch('/egt/stages');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        document.getElementById('egt-stages').innerHTML = data.stages.map(s => `
+          <label title="${esc(s.label)}"
+                 style="color:#9ca3af; font-size:0.85rem; margin-right:0.7rem;">
+            <input type="checkbox" class="egt-stage" value="${s.key}" checked
+                   ${s.required ? 'disabled' : ''} onchange="onEgtCostChange()">
+            ${esc(s.key)}${s.required ? ' *' : ''}
+          </label>`).join('');
+        document.getElementById('egt-alphas').placeholder =
+          data.default_alphas.join(',');
+      } catch (err) {
+        document.getElementById('egt-stages').textContent =
+          `Could not load stage list (${err.message}).`;
+      }
+      onEgtZooChange();
+    }
+
+    function onEgtZooChange() {
+      const key = document.getElementById('egt-zoo').value;
+      const zoo = egtZoos.find(z => z.key === key);
+      const desc = document.getElementById('egt-zoo-desc');
+      if (zoo) {
+        const stip = zoo.stipulated_pairs === 0
+          ? 'every cell machine-checked'
+          : `${zoo.stipulated_pairs} stipulated pair(s) — results are conditional`;
+        desc.textContent = `${zoo.size} bots · ${stip}. ${zoo.description}`;
+      } else {
+        desc.textContent = '';
+      }
+      onEgtCostChange();
+    }
+
+    function egtSelectedStages() {
+      return Array.from(document.querySelectorAll('.egt-stage'))
+        .filter(el => el.checked || el.disabled)
+        .map(el => el.value);
+    }
+
+    function onEgtCostChange() {
+      // Rough expectation-setting only. The real cost depends on how many
+      // grid points collapse to the same matrix, which is not known until the
+      // tournaments run — so this is deliberately an upper bound.
+      const hint = document.getElementById('egt-cost-hint');
+      const steps = parseInt(document.getElementById('egt-t-steps').value, 10) || 6;
+      const alphaRaw = document.getElementById('egt-alphas').value.trim();
+      const stages = egtSelectedStages();
+
+      if (alphaRaw === 'phases') {
+        hint.textContent =
+          'α = "phases" enumerates one α per behavioral phase — exact, but ~|zoo|² points ' +
+          'per t. Pair it with a single t, or deselect the nash stage.';
+        return;
+      }
+      const nAlpha = alphaRaw
+        ? alphaRaw.split(',').filter(s => s.trim()).length
+        : (document.getElementById('egt-alphas').placeholder.split(',').length);
+      const points = steps * nAlpha;
+      const nash = stages.includes('nash');
+      // Dedup typically removes about half; Nash dominates at ~50s a matrix.
+      const est = nash ? ` — up to ~${Math.round(points * 50 / 60)} min if nothing dedups` : '';
+      hint.textContent = `${points} grid point(s)${est}. Distinct matrices are analysed once.`;
+    }
+
+    async function runEgtSweep() {
+      const btn = document.getElementById('egt-run-btn');
+      const status = document.getElementById('egt-status');
+      const results = document.getElementById('egt-results');
+      const alphas = document.getElementById('egt-alphas').value.trim();
+
+      btn.disabled = true;
+      results.style.display = 'none';
+      results.innerHTML = '';
+      status.textContent = 'starting…';
+
+      const body = {
+        zoo: document.getElementById('egt-zoo').value,
+        t_steps: parseInt(document.getElementById('egt-t-steps').value, 10) || 6,
+        stages: egtSelectedStages().join(','),
+        render: document.getElementById('egt-render').checked,
+      };
+      if (alphas) body.alphas = alphas;
+
+      try {
+        const res = await fetch('/egt/sweep', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const job = await res.json();
+        startLogStream(job.job_id);
+        pollEgtSweep(job.job_id);
+      } catch (err) {
+        status.textContent = `failed to start: ${err.message}`;
+        btn.disabled = false;
+      }
+    }
+
+    function pollEgtSweep(jobId) {
+      if (egtPollTimer) clearInterval(egtPollTimer);
+      const status = document.getElementById('egt-status');
+
+      egtPollTimer = setInterval(async () => {
+        let job;
+        try {
+          const res = await fetch(`/egt/sweep/${jobId}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          job = await res.json();
+        } catch (err) {
+          status.textContent = `polling error: ${err.message}`;
+          return;
+        }
+
+        if (job.status === 'sweeping') {
+          status.textContent = job.step || 'sweeping…';
+          return;
+        }
+        if (job.status === 'done' || job.status === 'failed') {
+          clearInterval(egtPollTimer);
+          egtPollTimer = null;
+          document.getElementById('egt-run-btn').disabled = false;
+          // A failed sweep can still carry partial results worth showing.
+          if (job.egt_result) renderEgtResults(job.egt_result, job.error);
+          status.textContent = job.status === 'done'
+            ? 'done'
+            : (job.egt_result ? 'completed with failures' : `failed: ${job.error || ''}`);
+        }
+      }, 1500);
+    }
+
+    function renderEgtResults(summary, errorText) {
+      const box = document.getElementById('egt-results');
+      const rows = summary.runs.map(r => {
+        const s = r.stages || {};
+        const cell = (key, pick) => {
+          const st = s[key];
+          if (!st) return '<td style="color:#4b5563;">—</td>';
+          if (!st.ok) return '<td style="color:#f87171;" title="' + esc(st.error || '') + '">failed</td>';
+          return `<td>${pick(st)}</td>`;
+        };
+        const faces = s.faces && s.faces.ok
+          ? Object.entries(s.faces.by_class || {})
+              .filter(([k]) => k.startsWith('asymp_stable'))
+              .reduce((a, [, v]) => a + v, 0)
+          : null;
+        return `
+          <tr>
+            <td style="white-space:nowrap;">t=${r.t}, α=${r.alpha}</td>
+            <td style="color:#6b7280;">${r.n_grid_points}</td>
+            ${cell('ess', st => st.n_pure_ess)}
+            ${cell('invasion', st => `${st.edges_strict} / ${st.n_sccs}`)}
+            ${s.faces ? (s.faces.ok ? `<td>${faces} / ${s.faces.n_supports}</td>`
+                                    : '<td style="color:#f87171;">failed</td>')
+                      : '<td style="color:#4b5563;">—</td>'}
+            ${cell('nash', st => `${st.n_extreme_NE} / ${st.n_components}`)}
+          </tr>`;
+      }).join('');
+
+      const warn = errorText
+        ? `<p style="color:#f87171; font-size:0.85rem; margin:0 0 0.5rem;">${esc(errorText)}</p>`
+        : '';
+      const cond = summary.runs.some(r => r.is_fully_proven === false)
+        ? `<p style="color:#fbbf24; font-size:0.8rem; margin:0.5rem 0 0;">
+             Some cells are stipulated rather than proven — these results are conditional on them.
+           </p>`
+        : '';
+
+      box.innerHTML = `
+        ${warn}
+        <div class="section-label">
+          ${summary.n_distinct_matrices} distinct matrices from
+          ${summary.n_grid_points} grid points
+          (dedup saved ${summary.dedup_saved}) · ${summary.seconds}s
+        </div>
+        <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="color:#9ca3af; text-align:left;">
+              <th style="padding:0.3rem 0.5rem 0.3rem 0;">(t, α)</th>
+              <th style="padding:0.3rem 0.5rem;" title="grid points sharing this matrix">pts</th>
+              <th style="padding:0.3rem 0.5rem;" title="pure ESS count">ESS</th>
+              <th style="padding:0.3rem 0.5rem;" title="strict edges / SCCs">invasion</th>
+              <th style="padding:0.3rem 0.5rem;" title="stable faces / supports">faces</th>
+              <th style="padding:0.3rem 0.5rem;" title="extreme NE / components">nash</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        </div>
+        ${cond}
+        <p style="color:#6b7280; font-size:0.8rem; margin:0.5rem 0 0;">
+          Full artefacts (CSV, parquet, GEXF, figures, reports) under
+          <code>app/generated/egt/runs/</code>.
+        </p>`;
+      box.style.display = 'block';
+    }
+
     // Initialise mode visibility, model-settings hints, proposals, and the matrix on load.
     onModeChange();
     onModelChange();
     loadProposals();
     loadMatrix();
     loadTauZoos();
+    loadEgtOptions();
   </script>
 
 </body>

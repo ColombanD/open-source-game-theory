@@ -111,6 +111,8 @@ class JobStatus(str, Enum):
     integrating = "integrating"      # agent working in the worktree
     diff_ready = "diff_ready"        # human gate 2: review the engine diff
     applying = "applying"            # applying the accepted patch + live rebuild
+    # EGT sweep jobs (no human gate — nothing lands in the library)
+    sweeping = "sweeping"            # analysing the (t, α) grid
 
 
 class ReviewCell(BaseModel):
@@ -190,6 +192,30 @@ class JobResponse(BaseModel):
     proposal_name: Optional[str] = None
     diff: Optional[str] = None
     integration_summary: Optional[str] = None
+    # EGT sweep jobs only — `SweepResult.summary()`
+    egt_result: Optional[dict] = None
+
+
+class EgtSweepRequest(BaseModel):
+    """An evolutionary-game-theory sweep over the `(t, α)` grid.
+
+    Reads only the proven outcome matrix and writes analysis artefacts, so
+    there is no human acceptance gate.
+    """
+
+    zoo: str = "default"
+    # Transparency dials. `ts` overrides `t_steps` when given.
+    t_steps: int = 6
+    ts: Optional[str] = None          # comma-separated, e.g. "1.0,0.5,0.0"
+    # Caution thresholds: comma-separated, or the literal "phases" for one α
+    # per behavioral phase (exact but ~|zoo|² points per t — see
+    # `egt.pipeline.alpha_phase_representatives`). None => DEFAULT_ALPHAS.
+    alphas: Optional[str] = None
+    stages: str = "ess,invasion,faces,nash"
+    # Bound the face enumeration (2^N - N - 1 supports). None = complete.
+    max_support_size: Optional[int] = None
+    # Invasion-graph figures; off makes a long sweep noticeably faster.
+    render: bool = True
 
 
 class MatrixStatusRequest(BaseModel):
