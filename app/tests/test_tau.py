@@ -837,6 +837,84 @@ def test_returning_rows_are_marked_in_the_chart(matrix) -> None:
     )
 
 
+def test_per_bot_charts_share_one_cursor_independent_row_order(matrix) -> None:
+    """Charts 3b/4/4b must list bots in the SAME order at EVERY cursor value.
+
+    The per-bot charts are driven by an α slider and a t slider, and their
+    whole purpose is watching one bot while a dial moves. Sorting each panel by
+    its own live values (threshold, peak deviation, cooperation count) makes a
+    bot jump rows mid-drag, so the reader tracks a moving target and two panels
+    at different cursor settings cannot be compared at all.
+    """
+    import xml.etree.ElementTree as ET
+
+    from pd_runner.tau.report import (
+        _SLIDER_ALPHAS,
+        _SLIDER_TRANSPARENCIES,
+        _alpha_deviation_chart,
+        _per_bot_composition_chart,
+        _threshold_chart,
+        alpha_deviation,
+        per_bot_composition,
+        robustness_thresholds,
+        row_deviation,
+        stable_bot_order,
+    )
+
+    order = stable_bot_order(matrix)
+    assert set(order) == set(matrix.bots)
+    names = set(matrix.bots)
+
+    def rendered_rows(svg: str) -> tuple[str, ...]:
+        """Bot labels top-to-bottom, as the reader sees them."""
+        root = ET.fromstring(svg)
+        found = [
+            (float(e.get("y")), (e.text or "").strip())
+            for e in root.iter()
+            if e.tag.endswith("text") and (e.text or "").strip() in names
+        ]
+        return tuple(name for _, name in sorted(found))
+
+    grid = [round(1.0 - 0.05 * i, 3) for i in range(21)]
+    # A spread of cursor values; the sorts that used to differ did so on the
+    # live numbers, which move most between low and high α.
+    for alpha in (_SLIDER_ALPHAS[0], 0.45, _SLIDER_ALPHAS[-1]):
+        assert rendered_rows(
+            _threshold_chart(
+                robustness_thresholds(matrix, alpha, grid),
+                row_deviation(matrix, alpha, grid),
+                order=order,
+            )
+        ) == order
+    for t in (_SLIDER_TRANSPARENCIES[0], 0.5, _SLIDER_TRANSPARENCIES[-1]):
+        assert rendered_rows(
+            _alpha_deviation_chart(
+                alpha_deviation(matrix, t, _SLIDER_ALPHAS), order=order
+            )
+        ) == order
+    for alpha in (0.2, 0.45, 0.9):
+        for t in (1.0, 0.5, 0.0):
+            assert rendered_rows(
+                _per_bot_composition_chart(
+                    per_bot_composition(matrix, alpha, t), order=order
+                )
+            ) == order
+
+
+def test_stable_bot_order_ignores_the_cursors(matrix) -> None:
+    """The shared order comes from the base matrix, so no dial can perturb it."""
+    from pd_runner.tau.report import stable_bot_order
+
+    order = stable_bot_order(matrix)
+    assert stable_bot_order(matrix) == order  # deterministic
+    # Most cooperative first, least last — the ordering is meaningful, not
+    # merely stable, so the chart still reads top-to-bottom as a gradient.
+    coop = [
+        sum(1 for o in matrix.bots if matrix.cooperates(b, o)) for b in order
+    ]
+    assert coop == sorted(coop, reverse=True)
+
+
 def test_unconditional_bots_never_deviate(matrix) -> None:
     """Constant bots have no conditionality to lose, on either dial."""
     from pd_runner.tau.report import alpha_deviation, row_deviation

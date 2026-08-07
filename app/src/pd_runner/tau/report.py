@@ -114,6 +114,27 @@ def base_rows(matrix: TauMatrix) -> dict[str, tuple[str, ...]]:
     return {b: tuple(matrix.action(b, o) for o in matrix.bots) for b in matrix.bots}
 
 
+def stable_bot_order(matrix: TauMatrix) -> tuple[str, ...]:
+    """The row order EVERY per-bot chart uses, fixed across all cursor values.
+
+    Sorted by base-matrix cooperativeness (most cooperative first), ties broken
+    by name. Derived from the base matrix alone, so it depends on neither t, α
+    nor the σ family.
+
+    That independence is the whole point. Sorting each panel by its own values
+    — by threshold, by peak deviation, by cooperation count — reads better in a
+    single screenshot but destroys the comparison the cursors exist to support:
+    a bot changes row as you drag, so you track a moving target and two panels
+    at different cursor values cannot be read against each other. A fixed order
+    means a bot's row is the same row everywhere, and the eye can follow one
+    strip while the dial moves.
+    """
+    coop = {
+        b: sum(1 for o in matrix.bots if matrix.cooperates(b, o)) for b in matrix.bots
+    }
+    return tuple(sorted(matrix.bots, key=lambda b: (-coop[b], b)))
+
+
 def row_deviation(
     matrix: TauMatrix,
     alpha: float,
@@ -409,6 +430,7 @@ def _threshold_chart(
     thresholds: dict[str, float | None],
     deviation: dict[str, list[tuple[float, float]]] | None = None,
     width: int = 720,
+    order: tuple[str, ...] | None = None,
 ) -> str:
     """Horizontal bars: how much transparency each bot needs to behave as itself.
 
@@ -436,10 +458,16 @@ def _threshold_chart(
     much transparency" is true of the first departure only, and the strip, not
     the tick, is the honest summary.
     """
-    ordered = sorted(
-        thresholds.items(),
-        key=lambda kv: (kv[1] is None, -(kv[1] or 0.0)),
-    )
+    # `order` fixes the rows across every α and family so a bot stays put as
+    # the cursors move; without it each panel sorted by its own thresholds and
+    # bots jumped rows mid-comparison.
+    if order is None:
+        ordered = sorted(
+            thresholds.items(),
+            key=lambda kv: (kv[1] is None, -(kv[1] or 0.0)),
+        )
+    else:
+        ordered = [(b, thresholds[b]) for b in order if b in thresholds]
     row_h, pad_l, pad_r, pad_t = 26, 130, 60, 12
     legend_h = 34 if deviation else 0
     # 28 for the tick row + 16 for the axis title beneath it.
@@ -548,6 +576,7 @@ def _threshold_chart(
 def _alpha_deviation_chart(
     profile: dict[str, list[tuple[float, float]]],
     width: int = 720,
+    order: tuple[str, ...] | None = None,
 ) -> str:
     """One row per bot; one cell per α, shaded by how far the row has drifted.
 
@@ -555,15 +584,22 @@ def _alpha_deviation_chart(
     transparency, this fixes transparency (the cursor) and sweeps the agents'
     own caution, so the two together cover the (t, α) plane one bot-row at a
     time — the thing chart 5's aggregate heatmap necessarily averages away.
+
+    `order` fixes the rows across every t and family (see `stable_bot_order`)
+    so a bot keeps its row as the cursor moves — and the same row it has in
+    chart 4, so the two can be read against each other.
     """
-    bots = sorted(
-        profile,
-        key=lambda b: (
-            # Most-affected first: bots that never move sink to the bottom.
-            -max((d for _, d in profile[b]), default=0.0),
-            b,
-        ),
-    )
+    if order is None:
+        bots = sorted(
+            profile,
+            key=lambda b: (
+                # Most-affected first: bots that never move sink to the bottom.
+                -max((d for _, d in profile[b]), default=0.0),
+                b,
+            ),
+        )
+    else:
+        bots = [b for b in order if b in profile]
     alphas = [a for a, _ in profile[bots[0]]] if bots else []
     row_h, pad_l, pad_r, pad_t = 24, 130, 30, 26
     height = pad_t + row_h * len(bots) + 30 + 30
@@ -616,6 +652,7 @@ _PER_BOT_BANDS = (
 def _per_bot_composition_chart(
     counts: dict[str, dict[str, int]],
     width: int = 720,
+    order: tuple[str, ...] | None = None,
 ) -> str:
     """Stacked bar per bot: its own row split into the four outcome pairs.
 
@@ -623,10 +660,18 @@ def _per_bot_composition_chart(
     the cooperating. Here the first letter is always the row bot's own action,
     so (D,C) and (C,D) are kept apart — pooling them as "exploitation" would
     merge the exploiter with the exploited.
+
+    `order` fixes the rows across every (t, α) so a bot keeps its row as the
+    cursors move (see `stable_bot_order`). This chart has BOTH cursors, so it
+    was the worst offender: re-sorting by live cooperation count meant the bars
+    reshuffled on essentially every drag.
     """
     total = max((sum(c.values()) for c in counts.values()), default=1) or 1
-    # Most-cooperative first: the ordering is the point of the chart.
-    bots = sorted(counts, key=lambda b: (-counts[b]["CC"] - counts[b]["CD"], b))
+    if order is None:
+        # Most-cooperative first — the live-value fallback, for standalone use.
+        bots = sorted(counts, key=lambda b: (-counts[b]["CC"] - counts[b]["CD"], b))
+    else:
+        bots = [b for b in order if b in counts]
 
     row_h, pad_l, pad_r, pad_t = 24, 130, 200, 16
     height = pad_t + row_h * len(bots) + 34
@@ -1058,6 +1103,10 @@ def build_report(
 
     coarse = [round(1.0 - 0.05 * i, 3) for i in range(21)]
 
+    # One row order for every per-bot chart (3b, 4, 4b), fixed across all
+    # cursor values so a bot stays on its row while the sliders move.
+    bot_order = stable_bot_order(matrix)
+
     # The pairs each channel can NEVER separate (its transparency ceiling).
     family_twins: dict[str, list[tuple[str, ...]]] = {
         "behavioral": behavioral_twins(matrix),
@@ -1153,7 +1202,7 @@ def build_report(
     per_bot_views = "".join(
         swap_view(
             _per_bot_composition_chart(
-                per_bot_composition(matrix, a, t, family=fam)
+                per_bot_composition(matrix, a, t, family=fam), order=bot_order
             ),
             alpha=a, family=key, transparency=t,
         )
@@ -1167,6 +1216,7 @@ def build_report(
             _threshold_chart(
                 robustness_thresholds(matrix, a, coarse, family=fam),
                 row_deviation(matrix, a, coarse, family=fam),
+                order=bot_order,
             ),
             alpha=a, family=key,
         )
@@ -1178,7 +1228,8 @@ def build_report(
     alpha_dev_views = "".join(
         swap_view(
             _alpha_deviation_chart(
-                alpha_deviation(matrix, t, _SLIDER_ALPHAS, family=fam)
+                alpha_deviation(matrix, t, _SLIDER_ALPHAS, family=fam),
+                order=bot_order,
             ),
             family=key, transparency=t,
         )
@@ -1410,7 +1461,8 @@ is always <em>this bot's</em> action, so <code>(D,C)</code> (it exploited
 someone) and <code>(C,D)</code> (it got exploited) stay separate — chart 3
 pools them, which is right for a tournament total and wrong per bot. Both
 cursors matter here: a bot's mix is a point in the (t, α) plane, not a curve
-over one dial.</p>
+over one dial. Bots keep a fixed row (shared with charts 4 and 4b), so a bar
+can be watched as the cursors move.</p>
 {per_bot_views}
 {alpha_slider("α for this chart — synced with every other α control")}
 {transparency_slider("transparency t for this chart — synced with chart 4b")}
@@ -1431,9 +1483,12 @@ the same uniform mixture, so every opponent's cooperation mass converges to one
 shared limit — the bot's own base cooperation fraction — and masses reaching it
 from opposite sides can flip two cells in opposite directions at nearby
 budgets, dipping the deviation count. <strong>These thresholds are α- and
-channel-sensitive</strong> — the ranking changes with the caution threshold and
-with what leaks, so this chart is one slice of chart 5, not a property of the
-bots alone.</p>
+channel-sensitive</strong> — they change with the caution threshold and with
+what leaks, so this chart is one slice of chart 5, not a property of the bots
+alone. Rows are in a <strong>fixed order</strong> (most cooperative in the base
+matrix first), identical in charts 3b and 4b, so a bot keeps its row as you
+move the cursors and the panels stay comparable live — read the ranking off
+the tick positions, not off the row order.</p>
 {threshold_views}
 {alpha_slider("α for this chart — synced with every other α control")}
 
@@ -1444,7 +1499,8 @@ behaving like its base bot at the transparency you have fixed. Same colour
 scale as chart 4 — grey means the tau bot's row is identical to the base bot's,
 warmth is the fraction of the row that differs. Together the two charts cover
 the (t, α) plane one bot at a time, which chart 5's aggregate necessarily
-averages away.</p>
+averages away. Rows sit in the same fixed order as charts 3b and 4, so a bot's
+strip here lines up with its strip there.</p>
 {alpha_dev_views}
 {transparency_slider("transparency t for this chart — synced with chart 3b")}
 
