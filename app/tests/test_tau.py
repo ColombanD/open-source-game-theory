@@ -523,14 +523,18 @@ def test_report_renders_valid_svg(matrix) -> None:
     from pd_runner.tau.report import build_report
 
     from pd_runner.tau.channels import all_families
-    from pd_runner.tau.report import _SLIDER_ALPHAS
+    from pd_runner.tau.report import _SLIDER_ALPHAS, _SLIDER_TRANSPARENCIES
 
     page = build_report(matrix, alphas=(0.3, 0.62))
     svgs = re.findall(r"<svg.*?</svg>", page, re.S)
-    # Per family: line + phase (2) and composition + thresholds per slider α;
-    # plus the family-comparison chart per slider α.
-    n_fams, n_alphas = len(all_families(matrix)), len(_SLIDER_ALPHAS)
-    assert len(svgs) == n_fams * (2 + 2 * n_alphas) + n_alphas
+    # Per family: line + phase (2); composition + thresholds per slider α;
+    # per-bot α-deviation per slider t; per-bot composition per (α, t) — the
+    # only view needing BOTH cursors. Plus the family-comparison chart per α.
+    n_fams = len(all_families(matrix))
+    n_alphas, n_ts = len(_SLIDER_ALPHAS), len(_SLIDER_TRANSPARENCIES)
+    assert len(svgs) == (
+        n_fams * (2 + 2 * n_alphas + n_ts + n_alphas * n_ts) + n_alphas
+    )
     for svg in svgs:
         ET.fromstring(svg)  # raises on malformed markup
 
@@ -554,6 +558,314 @@ def test_composition_cc_matches_the_headline_rate(matrix) -> None:
     for t in (1.0, 0.3, 0.0):
         result = run_tournament(matrix, t, 0.45)
         assert result.composition["CC"] == pytest.approx(result.mutual_coop_rate)
+
+
+def test_per_bot_composition_partitions_each_row(matrix) -> None:
+    """Chart 3b's bars must account for every opponent, exactly once.
+
+    Also pins the asymmetry that motivates the chart: (D,C) and (C,D) are
+    tracked separately, so a bot's exploiting and being exploited never merge
+    into chart 3's pooled "exploitation" band.
+    """
+    from pd_runner.tau.report import per_bot_composition
+
+    for t in (1.0, 0.5, 0.0):
+        counts = per_bot_composition(matrix, 0.45, t)
+        assert set(counts) == set(matrix.bots)
+        for bot, c in counts.items():
+            assert sum(c.values()) == len(matrix.bots), bot
+            assert all(v >= 0 for v in c.values())
+
+    # At full transparency the row IS the base matrix row, so the per-bot
+    # counts must reproduce it exactly — the anchor theorem, per bot.
+    counts = per_bot_composition(matrix, 0.45, 1.0)
+    for bot in matrix.bots:
+        expected = {"CC": 0, "DC": 0, "CD": 0, "DD": 0, "other": 0}
+        for opp in matrix.bots:
+            cell = matrix.cell(bot, opp)
+            key = f"{cell.row_action}{cell.col_action}"
+            expected[key if key in expected else "other"] += 1
+        assert counts[bot] == expected, bot
+
+
+def test_per_bot_composition_totals_match_the_aggregate(matrix) -> None:
+    """Chart 3b must be a decomposition of chart 3, not a second computation."""
+    from pd_runner.tau.report import per_bot_composition
+
+    for t in (0.8, 0.4):
+        counts = per_bot_composition(matrix, 0.45, t)
+        aggregate = run_tournament(matrix, t, 0.45).composition
+        total = len(matrix.bots) ** 2
+        cc = sum(c["CC"] for c in counts.values())
+        dd = sum(c["DD"] for c in counts.values())
+        exploit = sum(c["DC"] + c["CD"] for c in counts.values())
+        assert cc / total == pytest.approx(aggregate["CC"])
+        assert dd / total == pytest.approx(aggregate["DD"])
+        assert exploit / total == pytest.approx(aggregate["exploit"])
+
+
+def test_deviation_is_zero_at_full_transparency(matrix) -> None:
+    """The anchor theorem, as the deviation charts must render it.
+
+    At t = 1 every tau row equals its base row, so charts 4/4b must be
+    uniformly "unchanged". If this breaks, the colour gradient is showing
+    drift that the lift does not actually have.
+    """
+    from pd_runner.tau.report import alpha_deviation, row_deviation
+
+    profile = row_deviation(matrix, 0.45, [1.0])
+    assert {d for pts in profile.values() for _, d in pts} == {0.0}
+
+    per_alpha = alpha_deviation(matrix, 1.0)
+    assert {d for pts in per_alpha.values() for _, d in pts} == {0.0}
+
+
+def test_deviation_agrees_with_the_thresholds(matrix) -> None:
+    """Chart 4's threshold TICK and its COLOUR must come from the same event.
+
+    The strip spans the whole axis and the tick marks where it stops being
+    grey, so the first transparency at which deviation goes non-zero has to be
+    exactly the reported threshold — otherwise the tick floats free of the
+    shading it is supposed to explain.
+    """
+    from pd_runner.tau.report import robustness_thresholds, row_deviation
+
+    grid = [round(1.0 - 0.05 * i, 3) for i in range(21)]
+    thresholds = robustness_thresholds(matrix, 0.45, grid)
+    deviation = row_deviation(matrix, 0.45, grid)
+    for bot in matrix.bots:
+        by_t = dict(deviation[bot])
+        first_nonzero = next((t for t in grid if by_t[t] > 0.0), None)
+        assert first_nonzero == thresholds[bot], bot
+
+
+def test_threshold_strip_colours_the_drifted_side(matrix) -> None:
+    """The regression that motivated the strip: colour the RIGHT side of the tick.
+
+    Deviation grows as transparency FALLS, so the informative region is the
+    blurrier side. An earlier version shaded the span from full transparency
+    down to the threshold — i.e. exactly the region that is unchanged by
+    construction — leaving every bar uniformly grey and the gradient useless.
+    Here: left of the tick must be entirely unchanged, and a bot that does
+    deviate must show real colour to the right of it.
+    """
+    import re
+
+    from pd_runner.tau.report import (
+        _deviation_colour,
+        _threshold_chart,
+        robustness_thresholds,
+        row_deviation,
+    )
+
+    grid = [round(1.0 - 0.05 * i, 3) for i in range(21)]
+    thresholds = robustness_thresholds(matrix, 0.45, grid)
+    deviation = row_deviation(matrix, 0.45, grid)
+    grey = _deviation_colour(0.0)
+
+    # Semantic form: nothing has moved above the threshold, something has below.
+    for bot, threshold in thresholds.items():
+        if threshold is None:
+            assert all(d == 0.0 for _, d in deviation[bot]), bot
+            continue
+        for t, d in deviation[bot]:
+            if t > threshold + 1e-9:
+                assert d == 0.0, (bot, t)
+        assert max(d for t, d in deviation[bot] if t <= threshold + 1e-9) > 0.0, bot
+
+    # Rendered form: for each deviating bot, the coloured part of its strip must
+    # sit on the BLURRY side of the tick. Checking the boundary position — not
+    # merely "some colour exists" — is what distinguishes the fix from the bug:
+    # the inverted version also emitted a few coloured segments, but on the
+    # wrong side and hugging the far edge.
+    svg = _threshold_chart(thresholds, deviation)
+    row_rects = re.findall(
+        r'<rect x="([\d.]+)" y="(\d+)" width="([\d.]+)"[^>]*fill="(#[0-9a-f]{6})"', svg
+    )
+    assert row_rects, "threshold strip emitted no segments"
+
+    by_row: dict[str, list[tuple[float, float, str]]] = {}
+    for x, y, w, fill in row_rects:
+        by_row.setdefault(y, []).append((float(x), float(w), fill))
+
+    deviating = [b for b, t in thresholds.items() if t is not None]
+    checked = 0
+    for segments in by_row.values():
+        segments.sort()
+        span = sum(w for _, w, _ in segments)
+        if span < 200:  # legend swatches, not a bot row
+            continue
+        coloured = [x for x, _, f in segments if f != grey]
+        if not coloured:
+            continue
+        left = min(x for x, _, _ in segments)
+        # Every coloured segment starts at or right of the grey/colour boundary,
+        # and that boundary is strictly inside the strip (not pinned to the end).
+        boundary = min(coloured)
+        assert boundary > left, "colour starts at full transparency"
+        assert boundary < left + span, "colour never begins"
+        # The drifted region must be a real span, not a single tail segment.
+        assert sum(w for x, w, f in segments if f != grey) > span * 0.02
+        checked += 1
+    assert checked == len(deviating), (checked, len(deviating))
+
+
+def test_threshold_chart_axis_matches_its_marks(matrix) -> None:
+    """Chart 4's x-axis labels must be placed through the strip's own map.
+
+    The strip, the threshold tick and the axis all encode transparency as
+    `pad_l + (1 - t) * plot_w` — full transparency LEFT, opaque right, like
+    every other chart. The axis once ran the other way (`pad_l + t * plot_w`),
+    which mirrored the labels against the marks: a bot whose threshold was 40%
+    had its tick and its "40%" drawn at the pixel the axis called 60%.
+    """
+    import xml.etree.ElementTree as ET
+
+    from pd_runner.tau.report import (
+        _threshold_chart,
+        robustness_thresholds,
+        row_deviation,
+    )
+
+    width, pad_l, pad_r = 720, 130, 60
+    plot_w = width - pad_l - pad_r
+
+    def decode(x: float) -> float:
+        """Pixel -> transparency, through the map the strip is drawn with."""
+        return 1.0 - (x - pad_l) / plot_w
+
+    grid = [round(1.0 - 0.05 * i, 3) for i in range(21)]
+    thresholds = robustness_thresholds(matrix, 0.45, grid)
+    root = ET.fromstring(
+        _threshold_chart(thresholds, row_deviation(matrix, 0.45, grid))
+    )
+
+    axis = [
+        e for e in root.iter()
+        if e.tag.endswith("text") and e.get("class") == "tick mid"
+        and (e.text or "").endswith("%")
+    ]
+    assert len(axis) == 5
+    for label in axis:
+        printed = float(label.text.rstrip("%")) / 100
+        assert decode(float(label.get("x"))) == pytest.approx(printed, abs=5e-3)
+
+    # Each row's printed threshold must sit exactly on its tick.
+    ticks = sorted(
+        (e for e in root.iter()
+         if e.tag.endswith("line") and e.get("stroke") == "#1a1a1a"),
+        key=lambda e: float(e.get("y1")),
+    )
+    row_labels = sorted(
+        (e for e in root.iter()
+         if e.tag.endswith("text") and e.get("class") == "tick end"
+         and (e.text or "").endswith("%")),
+        key=lambda e: float(e.get("y")),
+    )
+    deviating = [t for t in thresholds.values() if t is not None]
+    assert len(ticks) == len(row_labels) == len(deviating)
+    for tick, label in zip(ticks, row_labels):
+        printed = float(label.text.rstrip("%")) / 100
+        assert decode(float(tick.get("x1"))) == pytest.approx(printed, abs=5e-3)
+
+
+def test_deviation_is_not_monotone_in_transparency(matrix) -> None:
+    """Deviation can DECREASE as the signal degrades — pinned as a real fact.
+
+    A bot may depart from its base row and later return to it. As t → 0 every
+    signal converges to the same uniform mixture, so every opponent's
+    cooperation mass converges to one limit (the actor's own base cooperation
+    fraction); masses reaching it from opposite sides can cross α in opposite
+    directions at nearby t, dipping the flipped-cell count.
+
+    This is asserted rather than merely tolerated because the obvious "tidying"
+    — clamping the profile to a running maximum, or trusting the threshold as
+    a permanent departure — would look like a cleanup and would be a lie. If
+    this test ever fails, the sweep changed; do not delete it to make the chart
+    look monotone.
+    """
+    from pd_runner.tau.report import row_deviation
+
+    grid = [round(1.0 - 0.025 * i, 3) for i in range(41)]
+    dips = [
+        (alpha, bot, points[i][0], points[i][1], points[i + 1][1])
+        for alpha in (0.25, 0.7)
+        for bot, points in row_deviation(matrix, alpha, grid).items()
+        for i in range(len(points) - 1)
+        if points[i + 1][1] < points[i][1] - 1e-12
+    ]
+    assert dips, "expected at least one non-monotone deviation profile"
+    # The dips live at the opaque end, where the masses bunch near their limit.
+    assert all(t <= 0.5 for _, _, t, _, _ in dips)
+
+
+def test_returning_rows_are_marked_in_the_chart(matrix) -> None:
+    """A non-permanent departure must be flagged, not silently ticked.
+
+    The threshold is the FIRST departure. Where a bot returns to its base row
+    at lower transparency, the tick alone reads as "needs this much
+    transparency", which is false — so those rows carry a `°`.
+    """
+    import re
+
+    from pd_runner.tau.report import (
+        _threshold_chart,
+        robustness_thresholds,
+        row_deviation,
+    )
+
+    grid = [round(1.0 - 0.05 * i, 3) for i in range(21)]
+    alpha = 0.25  # OBot returns to base at t = 0.05 under this α.
+    thresholds = robustness_thresholds(matrix, alpha, grid)
+    deviation = row_deviation(matrix, alpha, grid)
+
+    returning = {
+        bot
+        for bot, threshold in thresholds.items()
+        if threshold is not None
+        and any(d == 0.0 for t, d in deviation[bot] if t <= threshold + 1e-9)
+    }
+    assert returning, "fixture no longer exercises a returning row"
+
+    svg = _threshold_chart(thresholds, deviation)
+    marked = len(re.findall(r"°", svg))
+    assert marked == len(returning), (marked, sorted(returning))
+    # And the degree mark never appears when nothing returns.
+    flat = {b: 1.0 for b in matrix.bots}
+    assert "°" not in _threshold_chart(
+        flat, {b: [(1.0, 0.5), (0.5, 0.5)] for b in matrix.bots}
+    )
+
+
+def test_unconditional_bots_never_deviate(matrix) -> None:
+    """Constant bots have no conditionality to lose, on either dial."""
+    from pd_runner.tau.report import alpha_deviation, row_deviation
+
+    grid = [round(1.0 - 0.1 * i, 2) for i in range(11)]
+    by_t = row_deviation(matrix, 0.45, grid)
+    by_alpha = alpha_deviation(matrix, 0.5)
+    for bot in ("CooperateBot", "DefectBot"):
+        assert max(d for _, d in by_t[bot]) == 0.0, bot
+        assert max(d for _, d in by_alpha[bot]) == 0.0, bot
+
+
+def test_deviation_colour_ramp_is_monotone_and_valid(matrix) -> None:
+    """Every deviation maps to a well-formed hex colour, darkening with drift."""
+    import re
+
+    from pd_runner.tau.report import _deviation_colour
+
+    previous = None
+    for i in range(21):
+        colour = _deviation_colour(i / 20)
+        assert re.fullmatch(r"#[0-9a-f]{6}", colour), colour
+        luminance = sum(int(colour[j:j + 2], 16) for j in (1, 3, 5))
+        if previous is not None:
+            assert luminance <= previous, f"ramp brightens at {i / 20}"
+        previous = luminance
+    # Out-of-range input clamps rather than producing a broken colour.
+    assert _deviation_colour(-1.0) == _deviation_colour(0.0)
+    assert _deviation_colour(2.0) == _deviation_colour(1.0)
 
 
 def test_blur_converts_defection_into_cooperation(matrix) -> None:
@@ -584,27 +896,30 @@ def test_report_alpha_slider(matrix) -> None:
     from pd_runner.tau.report import _SLIDER_ALPHAS, build_report
 
     alpha_view = re.compile(
-        r'class="panel swap-view" data-alpha="([^"]+)"(?: data-family="\w+")?( hidden)?>'
+        r'class="panel swap-view" data-alpha="([^"]+)"'
+        r'(?: data-family="\w+")?(?: data-transparency="[^"]+")?( hidden)?>'
     )
 
     page = build_report(matrix, alphas=(0.3, 0.45, 0.62, 0.8))
     views = alpha_view.findall(page)
-    # Every slider value appears (comparison + composition + thresholds views)…
+    # Every slider value appears (comparison + composition + per-bot mix +
+    # thresholds views)…
     assert {a for a, _ in views} == {f"{a:g}" for a in _SLIDER_ALPHAS}
-    # …and exactly the initial α's views are visible (one per α-driven chart).
-    assert [a for a, h in views if not h] == ["0.45"] * 3
+    # …and exactly the initial α's views are visible (one per α-driven chart:
+    # 2, 3, 3b, 4 — 3b is additionally gated on t, which starts mid-dial).
+    assert [a for a, h in views if not h] == ["0.45"] * 4
     assert '<span class="pill alpha-readout">α = 0.45</span>' in page
-    # Four synced copies: the top control plus one under each α-driven chart
-    # (2, 3, 4), so α can be adjusted where it is being read. All must start
-    # at the same grid index or the page opens out of sync.
+    # Five synced copies: the top control plus one under each α-driven chart
+    # (2, 3, 3b, 4), so α can be adjusted where it is being read. All must
+    # start at the same grid index or the page opens out of sync.
     starts = re.findall(r'class="alpha-slider"[^>]*value="(\d+)"', page)
-    assert len(starts) == 4
+    assert len(starts) == 5
     assert len(set(starts)) == 1
 
     # Odd-length tuples start at the exact middle (snapped to the grid);
     # a single family keeps this second build fast.
     page = build_report(matrix, alphas=(0.2, 0.5, 0.9), families=("behavioral",))
-    assert [a for a, h in alpha_view.findall(page) if not h] == ["0.5"] * 3
+    assert [a for a, h in alpha_view.findall(page) if not h] == ["0.5"] * 4
 
 
 def test_report_names_the_zoo(matrix) -> None:
@@ -647,14 +962,17 @@ def test_tau_report_endpoint() -> None:
     from pd_runner.api.main import app
 
     client = TestClient(app)
-    from pd_runner.tau.report import _SLIDER_ALPHAS
+    from pd_runner.tau.report import _SLIDER_ALPHAS, _SLIDER_TRANSPARENCIES
 
+    n_a, n_t = len(_SLIDER_ALPHAS), len(_SLIDER_TRANSPARENCIES)
     page = client.get("/tau/report?alphas=0.5")
     assert page.status_code == 200
     assert page.headers["content-type"].startswith("text/html")
     assert "TauBots" in page.text
-    assert page.text.count("<svg") == 3 * (2 + 2 * len(_SLIDER_ALPHAS)) + len(_SLIDER_ALPHAS)
-    assert page.text.count('class="alpha-slider"') == 4  # top + charts 2, 3, 4
+    assert page.text.count("<svg") == 3 * (2 + 2 * n_a + n_t + n_a * n_t) + n_a
+    # top + charts 2, 3, 3b, 4
+    assert page.text.count('class="alpha-slider"') == 5
+    assert page.text.count('class="t-slider"') == 2  # charts 3b, 4b
     assert 'name="family"' in page.text  # σ-family selector
 
     assert client.get("/tau/report?alphas=abc").status_code == 400

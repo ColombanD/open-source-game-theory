@@ -7,9 +7,10 @@ single file that opens anywhere.
     uv run python -m pd_runner.tau.report
     uv run python -m pd_runner.tau.report --output ~/tau.html --open
 
-Six views, in the order the argument runs, controlled by two client-side
-selectors — the α slider and the σ-family radio (all views pre-rendered and
-swapped by ~20 lines of inline JS, since the page must stay self-contained):
+Eight views, in the order the argument runs, controlled by three client-side
+selectors — the α slider, the transparency (t) slider and the σ-family radio
+(all views pre-rendered and swapped by ~30 lines of inline JS, since the page
+must stay self-contained):
 
 1. **Cooperation vs transparency** — the headline, one line per α, one view
    per σ family. The x-axis is the TRANSPARENCY dial (normalized MI), not a
@@ -19,8 +20,13 @@ swapped by ~20 lines of inline JS, since the page must stay self-contained):
    RATE is identical and only the confusion STRUCTURE differs, so the gap
    between the curves is the value of reading source over watching play.
 3. **What cooperation displaces** — the (C,C)/exploitation/(D,D) composition.
+3b. **Outcome mix per bot** — the same tournament broken out by bot, keeping
+   (D,C) and (C,D) apart (who exploited whom, not just "exploitation").
 4. **Robustness thresholds** — the transparency at which each bot first
-   departs from its base-matrix row.
+   departs from its base-matrix row, the bar shaded by HOW MUCH of the row has
+   changed there.
+4b. **Caution tolerance per bot** — chart 4 transposed onto the α axis with t
+   as the cursor; same deviation colour scale, so the two read together.
 5. **(t, α) phase diagram** — the two dials crossed.
 6. **The outcome matrix itself** — what everything above is computed from,
    with stipulated cells marked.
@@ -55,6 +61,14 @@ _DEFAULT_ALPHAS = (0.3, 0.45, 0.62, 0.8)
 # everywhere except the harmless α = 1 endpoint, where the fsum/tolerance
 # handling already keeps unanimous masses cooperating.
 _SLIDER_ALPHAS = tuple(round(0.05 * i, 2) for i in range(1, 21))
+
+# The transparency slider's grid — the SECOND cursor, driving the two views
+# that are a point in the (t, α) plane rather than a curve over one of them
+# (per-bot composition, per-bot α-deviation). Coarser than `_TRANSPARENCY_GRID`
+# (0.1 steps, 11 values) because every value is a pre-rendered panel and these
+# views multiply with the α grid: 20 α × 11 t × 3 families is already 660
+# tournaments per view.
+_SLIDER_TRANSPARENCIES = tuple(round(1.0 - 0.1 * i, 2) for i in range(11))
 
 # Colour-blind-safe qualitative colours (Okabe–Ito).
 _SERIES_COLORS = ("#0072b2", "#d55e00", "#009e73", "#cc79a7", "#e69f00")
@@ -95,19 +109,125 @@ def sweep_by_transparency(
     return points
 
 
+def base_rows(matrix: TauMatrix) -> dict[str, tuple[str, ...]]:
+    """Each bot's own action row in the BASE matrix — the t = 1 reference."""
+    return {b: tuple(matrix.action(b, o) for o in matrix.bots) for b in matrix.bots}
+
+
+def row_deviation(
+    matrix: TauMatrix,
+    alpha: float,
+    targets: list[float] | None = None,
+    family: "SigmaFamily | None" = None,
+) -> dict[str, list[tuple[float, float]]]:
+    """Per-bot deviation profile: how much the tau row differs from the base row.
+
+    The magnitude at each transparency is the normalized Hamming distance
+    between the bot's tau-lifted action row and its base-matrix row — i.e. the
+    fraction of opponents against which the lift changed the bot's mind. `0.0`
+    means "still behaving as itself"; the threshold chart's bar is exactly the
+    first x where this leaves 0.
+
+    Deviation is graded on purpose: a bot that flips one cell of eleven and a
+    bot that inverts its whole row both cross the same threshold, and the
+    threshold chart alone cannot tell them apart.
+
+    NOT MONOTONE in t, by construction rather than by accident. As t → 0 every
+    signal converges to the same uniform mixture, so every opponent's
+    cooperation mass converges to a single limit — the actor's own base
+    cooperation fraction. Masses approaching that limit from opposite sides can
+    cross α in opposite directions at nearby t, so the flipped-cell count can
+    DECREASE as the signal degrades: a bot may depart from its base row and
+    then return to it. Rare (it needs two cells crossing in opposite directions
+    close together) and concentrated at the opaque end, but real — do not
+    "clean up" a profile that dips, and do not treat the first departure as a
+    permanent one.
+    """
+    distances = behavioral_distance_matrix(matrix) if family is None else None
+    base = base_rows(matrix)
+    n = len(matrix.bots)
+    profile: dict[str, list[tuple[float, float]]] = {b: [] for b in matrix.bots}
+    for target in targets if targets is not None else _TRANSPARENCY_GRID:
+        result = run_tournament(matrix, target, alpha, distances, family=family)
+        for bot in matrix.bots:
+            row = tuple(result.cells[(bot, o)][0] for o in matrix.bots)
+            flipped = sum(1 for a, b in zip(row, base[bot]) if a != b)
+            profile[bot].append((target, flipped / n))
+    return profile
+
+
+def alpha_deviation(
+    matrix: TauMatrix,
+    target: float,
+    alphas: tuple[float, ...] | list[float] = _SLIDER_ALPHAS,
+    family: "SigmaFamily | None" = None,
+) -> dict[str, list[tuple[float, float]]]:
+    """The α-axis transpose of `row_deviation`: fixed transparency, α swept.
+
+    Answers "at THIS much transparency, for which caution thresholds does each
+    bot stop behaving like its base bot?" — the dial the robustness chart holds
+    fixed. Same normalized-Hamming magnitude, so the two charts share a colour
+    scale and can be read against each other.
+    """
+    distances = behavioral_distance_matrix(matrix) if family is None else None
+    base = base_rows(matrix)
+    n = len(matrix.bots)
+    profile: dict[str, list[tuple[float, float]]] = {b: [] for b in matrix.bots}
+    for alpha in alphas:
+        result = run_tournament(matrix, target, alpha, distances, family=family)
+        for bot in matrix.bots:
+            row = tuple(result.cells[(bot, o)][0] for o in matrix.bots)
+            flipped = sum(1 for a, b in zip(row, base[bot]) if a != b)
+            profile[bot].append((alpha, flipped / n))
+    return profile
+
+
+def per_bot_composition(
+    matrix: TauMatrix,
+    alpha: float,
+    target: float,
+    family: "SigmaFamily | None" = None,
+) -> dict[str, dict[str, int]]:
+    """Per-bot outcome counts over its own row: (C,C) / (C,D) / (D,C) / (D,D).
+
+    Read from the ROW bot's seat, so the first letter is always what this bot
+    played: `CD` is "I cooperated, they defected" (I was exploited) and `DC` is
+    "I defected, they cooperated" (I exploited). Chart 3's aggregate pools the
+    two exploitation directions; per bot they are opposite facts about the same
+    bot and must not be pooled.
+    """
+    distances = behavioral_distance_matrix(matrix) if family is None else None
+    result = run_tournament(matrix, target, alpha, distances, family=family)
+    counts: dict[str, dict[str, int]] = {
+        b: {"CC": 0, "DC": 0, "CD": 0, "DD": 0, "other": 0} for b in matrix.bots
+    }
+    for bot in matrix.bots:
+        for opp in matrix.bots:
+            mine, theirs = result.cells[(bot, opp)]
+            key = f"{mine}{theirs}"
+            counts[bot][key if key in counts[bot] else "other"] += 1
+    return counts
+
+
 def robustness_thresholds(
     matrix: TauMatrix,
     alpha: float,
     targets: list[float] | None = None,
     family: "SigmaFamily | None" = None,
 ) -> dict[str, float | None]:
-    """Transparency at which each bot first departs from its base-matrix row.
+    """Transparency at which each bot FIRST departs from its base-matrix row.
 
     `None` means the bot never deviates — its behavior is blur-proof at this α
     (true of the constant bots, which have no conditionality to lose).
+
+    First is not permanent. Deviation is not monotone in t (see
+    `row_deviation`), so a bot may return to its base row at some lower
+    transparency; this number cannot express that, and callers that present it
+    as "the transparency this bot needs" are overclaiming. Pair it with
+    `row_deviation` — the report marks the returning rows with `°`.
     """
     distances = behavioral_distance_matrix(matrix) if family is None else None
-    base = {b: tuple(matrix.action(b, o) for o in matrix.bots) for b in matrix.bots}
+    base = base_rows(matrix)
     thresholds: dict[str, float | None] = dict.fromkeys(matrix.bots)
     for target in targets if targets is not None else _TRANSPARENCY_GRID:
         result = run_tournament(matrix, target, alpha, distances, family=family)
@@ -242,24 +362,108 @@ def _cursor_overlay(
     )
 
 
-def _threshold_chart(thresholds: dict[str, float | None], width: int = 720) -> str:
-    """Horizontal bars: how much transparency each bot needs to behave as itself."""
+# Deviation colour ramp, shared by charts 4 and 5 so the two are comparable at
+# a glance. 0 = "behaves exactly like its base bot" is deliberately rendered as
+# near-background rather than as a pale tint of the deviation hue: the eye
+# should read "no cell present" for no deviation, and every visible warmth as a
+# real behavioral change.
+_DEVIATION_ZERO = "#e8e8ec"
+_DEVIATION_RAMP = (
+    (0.0, (232, 232, 236)),   # unchanged
+    (0.25, (247, 213, 160)),  # a cell or two flipped
+    (0.5, (232, 150, 60)),
+    (0.75, (206, 84, 30)),
+    (1.0, (140, 30, 22)),     # every cell in the row flipped
+)
+
+
+def _deviation_colour(value: float) -> str:
+    """Interpolate the deviation ramp — pale grey (unchanged) → deep red."""
+    v = min(max(value, 0.0), 1.0)
+    for (lo, c_lo), (hi, c_hi) in zip(_DEVIATION_RAMP, _DEVIATION_RAMP[1:]):
+        if v <= hi:
+            span = hi - lo
+            f = 0.0 if span <= 0 else (v - lo) / span
+            r, g, b = (round(a + (b_ - a) * f) for a, b_ in zip(c_lo, c_hi))
+            return f"#{r:02x}{g:02x}{b:02x}"
+    return _DEVIATION_ZERO
+
+
+def _deviation_legend(x: float, y: float, width: float = 150) -> str:
+    """A small horizontal colour key for the deviation ramp."""
+    steps = 24
+    swatches = "".join(
+        f'<rect x="{x + i * width / steps:.1f}" y="{y:.1f}" '
+        f'width="{width / steps + 0.6:.1f}" height="9" '
+        f'fill="{_deviation_colour(i / (steps - 1))}"/>'
+        for i in range(steps)
+    )
+    return (
+        f"{swatches}"
+        f'<text x="{x:.1f}" y="{y + 22:.1f}" class="tick">same</text>'
+        f'<text x="{x + width:.1f}" y="{y + 22:.1f}" class="tick end">row inverted</text>'
+    )
+
+
+def _threshold_chart(
+    thresholds: dict[str, float | None],
+    deviation: dict[str, list[tuple[float, float]]] | None = None,
+    width: int = 720,
+) -> str:
+    """Horizontal bars: how much transparency each bot needs to behave as itself.
+
+    When `deviation` is supplied the row becomes a full-width GRADIENT STRIP
+    spanning the whole transparency axis, shaded at each sample by how much of
+    the bot's row has changed there. The threshold is drawn as a tick on that
+    strip rather than as the length of a bar.
+
+    That is deliberate: deviation grows as transparency FALLS, so the
+    informative region is to the RIGHT of the threshold (the blurrier side).
+    Colouring only the bar — the span from full transparency down to the
+    threshold — paints exactly the region where nothing has happened yet, which
+    is uniformly "unchanged" by construction and says nothing. The strip shows
+    the drift the threshold alone cannot express: a one-cell flip and a full
+    row inversion cross at the same place but end up very differently.
+
+    **Deviation is NOT monotone in t, and the threshold is only the FIRST
+    departure.** A bot can leave its base row and later return to it as the
+    signal degrades further: as t → 0 every signal converges to the same
+    uniform mixture, so every opponent's cooperation mass converges to one
+    shared limit (the bot's own base cooperation fraction). Masses approach
+    that limit from opposite sides, so two cells can flip in opposite
+    directions near the same t and the deviation COUNT dips. Rows where this
+    happens are marked with a ° after the threshold — for those, "needs this
+    much transparency" is true of the first departure only, and the strip, not
+    the tick, is the honest summary.
+    """
     ordered = sorted(
         thresholds.items(),
         key=lambda kv: (kv[1] is None, -(kv[1] or 0.0)),
     )
     row_h, pad_l, pad_r, pad_t = 26, 130, 60, 12
-    height = pad_t + row_h * len(ordered) + 28
+    legend_h = 34 if deviation else 0
+    # 28 for the tick row + 16 for the axis title beneath it.
+    height = pad_t + row_h * len(ordered) + 44 + legend_h
     plot_w = width - pad_l - pad_r
+    grid_bottom = pad_t + row_h * len(ordered)
 
     parts = [f'<svg viewBox="0 0 {width} {height}" class="chart" role="img">']
-    for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
-        x = pad_l + frac * plot_w
+    # x maps transparency 1.0 (full) to the LEFT edge and 0.0 (opaque) to the
+    # right, like every other chart on the page — the reader always moves
+    # left-to-right in the direction of degrading signal. The axis labels must
+    # be placed through the SAME map as the strip segments and the threshold
+    # tick, or the numbers under the chart mirror the marks on it.
+    for frac in (1.0, 0.75, 0.5, 0.25, 0.0):
+        x = pad_l + (1.0 - frac) * plot_w
         parts.append(
             f'<line x1="{x:.1f}" y1="{pad_t}" x2="{x:.1f}" '
-            f'y2="{pad_t + row_h * len(ordered)}" class="grid"/>'
-            f'<text x="{x:.1f}" y="{height - 8}" class="tick mid">{frac:.0%}</text>'
+            f'y2="{grid_bottom}" class="grid"/>'
+            f'<text x="{x:.1f}" y="{grid_bottom + 20}" class="tick mid">{frac:.0%}</text>'
         )
+    parts.append(
+        f'<text x="{pad_l + plot_w / 2:.1f}" y="{grid_bottom + 20}" '
+        f'class="axis mid" dy="16">transparency →  opaque</text>'
+    )
 
     for i, (bot, value) in enumerate(ordered):
         y = pad_t + i * row_h
@@ -267,17 +471,207 @@ def _threshold_chart(thresholds: dict[str, float | None], width: int = 720) -> s
             f'<text x="{pad_l - 10}" y="{y + 17}" class="tick end">{html.escape(bot)}</text>'
         )
         if value is None:
+            if deviation is not None:
+                # Draw the (uniformly unchanged) strip anyway, so the row is
+                # visually comparable instead of blank, then label it.
+                parts.append(
+                    f'<rect x="{pad_l}" y="{y + 5}" width="{plot_w:.1f}" '
+                    f'height="{row_h - 12}" fill="{_deviation_colour(0.0)}">'
+                    f"<title>{html.escape(bot)}: identical to its base row at "
+                    f"every transparency</title></rect>"
+                )
             parts.append(
                 f'<text x="{pad_l + 6}" y="{y + 17}" class="never">'
                 f'never deviates (unconditional)</text>'
             )
-        else:
+            continue
+
+        if deviation is None:
             parts.append(
                 f'<rect x="{pad_l}" y="{y + 5}" width="{value * plot_w:.1f}" '
                 f'height="{row_h - 12}" rx="3" fill="#0072b2" opacity="0.75"/>'
+            )
+            parts.append(
                 f'<text x="{pad_l + value * plot_w + 8:.1f}" y="{y + 17}" '
                 f'class="tick">{value:.0%}</text>'
             )
+            continue
+
+        # Samples run 1.0 → 0.0 (full → opaque), so x maps 1 - t exactly like
+        # the grid. The strip spans the WHOLE axis: the interesting shading is
+        # right of the threshold, where the bot has actually started drifting.
+        samples = sorted(deviation.get(bot, []), key=lambda p: -p[0])
+        for j, (t, dev) in enumerate(samples):
+            x0 = pad_l + (1.0 - t) * plot_w
+            if j + 1 < len(samples):
+                x1 = pad_l + (1.0 - samples[j + 1][0]) * plot_w
+            else:
+                x1 = pad_l + plot_w
+            parts.append(
+                f'<rect x="{x0:.1f}" y="{y + 5}" width="{max(x1 - x0, 1.0):.1f}" '
+                f'height="{row_h - 12}" fill="{_deviation_colour(dev)}">'
+                f"<title>{html.escape(bot)} at transparency {t:.0%}: "
+                f"{dev:.0%} of its row differs from the base matrix</title>"
+                f"</rect>"
+            )
+        # The threshold: where the strip stops being grey. Marked rather than
+        # measured by bar length, so length is never read as magnitude.
+        #
+        # `°` flags a row that RETURNS to its base behavior at some lower
+        # transparency, so the tick is the first departure and not a permanent
+        # one. Without it the tick silently claims monotonicity the deviation
+        # does not have.
+        returns = any(d == 0.0 for t, d in samples if t <= value + 1e-9)
+        tx = pad_l + (1.0 - value) * plot_w
+        note = (
+            f"{html.escape(bot)}: first departs at {value:.0%} transparency"
+            + (
+                " — but returns to its base row at lower transparency, so this "
+                "is not a permanent departure"
+                if returns
+                else ""
+            )
+        )
+        parts.append(
+            f'<line x1="{tx:.1f}" y1="{y + 2}" x2="{tx:.1f}" y2="{y + row_h - 7}" '
+            f'stroke="#1a1a1a" stroke-width="1.6"><title>{note}</title></line>'
+            f'<text x="{tx - 5:.1f}" y="{y + 17}" class="tick end">'
+            f'{value:.0%}{"°" if returns else ""}<title>{note}</title></text>'
+        )
+
+    if deviation:
+        parts.append(_deviation_legend(pad_l, grid_bottom + 46, 150))
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _alpha_deviation_chart(
+    profile: dict[str, list[tuple[float, float]]],
+    width: int = 720,
+) -> str:
+    """One row per bot; one cell per α, shaded by how far the row has drifted.
+
+    The α-axis companion to chart 4. Where that chart fixes α and sweeps
+    transparency, this fixes transparency (the cursor) and sweeps the agents'
+    own caution, so the two together cover the (t, α) plane one bot-row at a
+    time — the thing chart 5's aggregate heatmap necessarily averages away.
+    """
+    bots = sorted(
+        profile,
+        key=lambda b: (
+            # Most-affected first: bots that never move sink to the bottom.
+            -max((d for _, d in profile[b]), default=0.0),
+            b,
+        ),
+    )
+    alphas = [a for a, _ in profile[bots[0]]] if bots else []
+    row_h, pad_l, pad_r, pad_t = 24, 130, 30, 26
+    height = pad_t + row_h * len(bots) + 30 + 30
+    plot_w = width - pad_l - pad_r
+    cell_w = plot_w / max(len(alphas), 1)
+
+    parts = [f'<svg viewBox="0 0 {width} {height}" class="chart" role="img">']
+    parts.append(
+        f'<text x="{pad_l + plot_w / 2:.1f}" y="14" class="axis mid">'
+        f"caution threshold α →</text>"
+    )
+
+    for i, bot in enumerate(bots):
+        y = pad_t + i * row_h
+        parts.append(
+            f'<text x="{pad_l - 10}" y="{y + 16}" class="tick end">'
+            f"{html.escape(bot)}</text>"
+        )
+        for j, (alpha, dev) in enumerate(profile[bot]):
+            parts.append(
+                f'<rect x="{pad_l + j * cell_w:.1f}" y="{y + 3}" '
+                f'width="{cell_w + 0.6:.1f}" height="{row_h - 6}" '
+                f'fill="{_deviation_colour(dev)}">'
+                f"<title>{html.escape(bot)} at α = {alpha:g}: "
+                f"{dev:.0%} of its row differs from the base matrix</title>"
+                f"</rect>"
+            )
+
+    grid_bottom = pad_t + row_h * len(bots)
+    for j, alpha in enumerate(alphas):
+        if j % max(1, len(alphas) // 10) == 0:
+            parts.append(
+                f'<text x="{pad_l + (j + 0.5) * cell_w:.1f}" y="{grid_bottom + 16}" '
+                f'class="tick mid">{alpha:g}</text>'
+            )
+    parts.append(_deviation_legend(pad_l, grid_bottom + 30, 150))
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+_PER_BOT_BANDS = (
+    ("CC", "#0072b2", "(C,C) mutual cooperation"),
+    ("DC", "#e69f00", "(D,C) I exploited them"),
+    ("CD", "#cc79a7", "(C,D) I was exploited"),
+    ("DD", "#8c8c96", "(D,D) mutual defection"),
+    ("other", "#5c5c66", "no outcome (N)"),
+)
+
+
+def _per_bot_composition_chart(
+    counts: dict[str, dict[str, int]],
+    width: int = 720,
+) -> str:
+    """Stacked bar per bot: its own row split into the four outcome pairs.
+
+    Chart 3 aggregates over the whole tournament, which cannot say WHO is doing
+    the cooperating. Here the first letter is always the row bot's own action,
+    so (D,C) and (C,D) are kept apart — pooling them as "exploitation" would
+    merge the exploiter with the exploited.
+    """
+    total = max((sum(c.values()) for c in counts.values()), default=1) or 1
+    # Most-cooperative first: the ordering is the point of the chart.
+    bots = sorted(counts, key=lambda b: (-counts[b]["CC"] - counts[b]["CD"], b))
+
+    row_h, pad_l, pad_r, pad_t = 24, 130, 200, 16
+    height = pad_t + row_h * len(bots) + 34
+    plot_w = width - pad_l - pad_r
+
+    parts = [f'<svg viewBox="0 0 {width} {height}" class="chart" role="img">']
+    for i, bot in enumerate(bots):
+        y = pad_t + i * row_h
+        parts.append(
+            f'<text x="{pad_l - 10}" y="{y + 16}" class="tick end">'
+            f"{html.escape(bot)}</text>"
+        )
+        x = float(pad_l)
+        for key, colour, label in _PER_BOT_BANDS:
+            n = counts[bot].get(key, 0)
+            if not n:
+                continue
+            seg = n / total * plot_w
+            parts.append(
+                f'<rect x="{x:.1f}" y="{y + 3}" width="{seg:.1f}" '
+                f'height="{row_h - 6}" fill="{colour}" opacity="0.9">'
+                f"<title>{html.escape(bot)}: {n} of {total} opponents — "
+                f"{html.escape(label)}</title></rect>"
+            )
+            # Only label a segment wide enough to hold the count legibly.
+            if seg >= 16:
+                parts.append(
+                    f'<text x="{x + seg / 2:.1f}" y="{y + 16}" class="tick mid" '
+                    f'fill="#fff">{n}</text>'
+                )
+            x += seg
+
+    grid_bottom = pad_t + row_h * len(bots)
+    parts.append(
+        f'<text x="{pad_l + plot_w / 2:.1f}" y="{grid_bottom + 20}" class="axis mid">'
+        f"opponents in the zoo ({total} per bot) →</text>"
+    )
+    for idx, (_, colour, label) in enumerate(_PER_BOT_BANDS):
+        ly = pad_t + 12 + idx * 18
+        parts.append(
+            f'<rect x="{pad_l + plot_w + 16}" y="{ly - 8}" width="14" height="11" '
+            f'fill="{colour}" opacity="0.9"/>'
+            f'<text x="{pad_l + plot_w + 36}" y="{ly + 2}" class="legend">'
+            f"{html.escape(label)}</text>"
+        )
     parts.append("</svg>")
     return "".join(parts)
 
@@ -679,11 +1073,17 @@ def build_report(
     initial_alpha = min(_SLIDER_ALPHAS, key=lambda a: (abs(a - mid_alpha), a))
     initial_index = _SLIDER_ALPHAS.index(initial_alpha)
     initial_family = "behavioral" if "behavioral" in fams else next(iter(fams))
+    # The t cursor opens at the MIDDLE of the dial rather than at full
+    # transparency: at t = 1 the anchor theorem makes every deviation zero, so
+    # the deviation views would open completely blank and read as broken.
+    initial_transparency = _SLIDER_TRANSPARENCIES[len(_SLIDER_TRANSPARENCIES) // 2]
+    initial_t_index = _SLIDER_TRANSPARENCIES.index(initial_transparency)
 
     # ---- pre-rendered swap views (the page is static; ~20 lines of inline JS
-    # toggle `hidden` by the α slider and the family radio) ------------------
+    # toggle `hidden` by the two sliders and the family radio) ---------------
     def swap_view(content: str, *, alpha: float | None = None,
-                  family: str | None = None) -> str:
+                  family: str | None = None,
+                  transparency: float | None = None) -> str:
         attrs, hidden = "", False
         if alpha is not None:
             attrs += f' data-alpha="{alpha:g}"'
@@ -691,6 +1091,9 @@ def build_report(
         if family is not None:
             attrs += f' data-family="{family}"'
             hidden = hidden or family != initial_family
+        if transparency is not None:
+            attrs += f' data-transparency="{transparency:g}"'
+            hidden = hidden or transparency != initial_transparency
         return (
             f'<div class="panel swap-view"{attrs}{" hidden" if hidden else ""}>'
             f"{content}</div>"
@@ -743,13 +1146,44 @@ def build_report(
         for key, fam in fams.items()
         for a in _SLIDER_ALPHAS
     )
+
+    # 3b · per (family, α, t): each bot's own row split into the four pairs.
+    # This one needs BOTH cursors — the composition of a bot's row is a point
+    # in the (t, α) plane, not a curve — hence the transparency slider.
+    per_bot_views = "".join(
+        swap_view(
+            _per_bot_composition_chart(
+                per_bot_composition(matrix, a, t, family=fam)
+            ),
+            alpha=a, family=key, transparency=t,
+        )
+        for key, fam in fams.items()
+        for a in _SLIDER_ALPHAS
+        for t in _SLIDER_TRANSPARENCIES
+    )
+
     threshold_views = "".join(
         swap_view(
-            _threshold_chart(robustness_thresholds(matrix, a, coarse, family=fam)),
+            _threshold_chart(
+                robustness_thresholds(matrix, a, coarse, family=fam),
+                row_deviation(matrix, a, coarse, family=fam),
+            ),
             alpha=a, family=key,
         )
         for key, fam in fams.items()
         for a in _SLIDER_ALPHAS
+    )
+
+    # 4b · the α-axis transpose of chart 4: t is the cursor, α is the axis.
+    alpha_dev_views = "".join(
+        swap_view(
+            _alpha_deviation_chart(
+                alpha_deviation(matrix, t, _SLIDER_ALPHAS, family=fam)
+            ),
+            family=key, transparency=t,
+        )
+        for key, fam in fams.items()
+        for t in _SLIDER_TRANSPARENCIES
     )
 
     # 5 · per family.
@@ -788,29 +1222,56 @@ def build_report(
             f"</div>"
         )
 
+    def transparency_slider(caption: str) -> str:
+        """The t cursor, for the views that are a POINT in the (t, α) plane.
+
+        Runs high-index = opaque so dragging right degrades the signal, matching
+        every x-axis on the page (full transparency on the left).
+        """
+        return (
+            f'<div class="alpha-control">'
+            f"<label>{caption}</label>"
+            f'<input type="range" class="t-slider" min="0" '
+            f'max="{len(_SLIDER_TRANSPARENCIES) - 1}" step="1" '
+            f'value="{initial_t_index}">'
+            f'<span class="pill t-readout">t = {initial_transparency:.0%}</span>'
+            f"</div>"
+        )
+
     alphas_js = "[" + ",".join(f'"{a:g}"' for a in _SLIDER_ALPHAS) + "]"
+    ts_js = "[" + ",".join(f'"{t:g}"' for t in _SLIDER_TRANSPARENCIES) + "]"
     labels_js = "{" + ",".join(f'"{k}":"{fam.label}"' for k, fam in fams.items()) + "}"
     # Plain string (not an f-string): JS braces stay literal; values are
     # interpolated into the surrounding template instead.
     control_script = (
         "<script>(function () {\n"
         f"  var alphas = {alphas_js};\n"
+        f"  var ts = {ts_js};\n"
         f"  var labels = {labels_js};\n"
         '  var sliders = document.querySelectorAll(".alpha-slider");\n'
+        '  var tSliders = document.querySelectorAll(".t-slider");\n'
         "  var value = sliders.length ? +sliders[0].value : 0;\n"
+        "  var tValue = tSliders.length ? +tSliders[0].value : 0;\n"
         "  function show() {\n"
         "    var a = alphas[value];\n"
+        "    var t = ts[tValue];\n"
         "    var f = document.querySelector('input[name=\"family\"]:checked').value;\n"
         '    document.querySelectorAll(".swap-view").forEach(function (el) {\n'
         "      var byAlpha = el.dataset.alpha !== undefined && el.dataset.alpha !== a;\n"
         "      var byFamily = el.dataset.family !== undefined && el.dataset.family !== f;\n"
-        "      el.hidden = byAlpha || byFamily;\n"
+        "      var byT = el.dataset.transparency !== undefined"
+        " && el.dataset.transparency !== t;\n"
+        "      el.hidden = byAlpha || byFamily || byT;\n"
         "    });\n"
         # Every duplicated slider tracks the shared value, so moving any one of
         # them leaves the others (and their readouts) consistent.
         "    sliders.forEach(function (s) { if (+s.value !== value) s.value = value; });\n"
+        "    tSliders.forEach(function (s) { if (+s.value !== tValue) s.value = tValue; });\n"
         '    document.querySelectorAll(".alpha-readout").forEach(function (el) {\n'
         '      el.textContent = "α = " + a;\n'
+        "    });\n"
+        '    document.querySelectorAll(".t-readout").forEach(function (el) {\n'
+        '      el.textContent = "t = " + Math.round(+t * 100) + "%";\n'
         "    });\n"
         '    document.querySelectorAll(".family-readout").forEach(function (el) {\n'
         "      el.textContent = labels[f];\n"
@@ -818,6 +1279,9 @@ def build_report(
         "  }\n"
         "  sliders.forEach(function (s) {\n"
         '    s.addEventListener("input", function () { value = +s.value; show(); });\n'
+        "  });\n"
+        "  tSliders.forEach(function (s) {\n"
+        '    s.addEventListener("input", function () { tValue = +s.value; show(); });\n'
         "  });\n"
         "  document.querySelectorAll('input[name=\"family\"]').forEach(function (r) {\n"
         '    r.addEventListener("change", show);\n'
@@ -938,15 +1402,51 @@ every bot plays unconditionally (the classical-PD limit).</p>
 {comp_views}
 {alpha_slider("α for this chart — synced with every other α control")}
 
+<h2>3b · Outcome mix per bot <span class="pill family-readout">{html.escape(initial_family_label)}</span> <span class="pill alpha-readout">α = {initial_alpha:g}</span> <span class="pill t-readout">t = {initial_transparency:.0%}</span></h2>
+<p class="note">The same tournament as chart 3, but broken out by bot instead
+of aggregated: each bar is one bot's own row, counting how many of its
+{len(matrix)} opponents it ends up in each outcome pair with. The first letter
+is always <em>this bot's</em> action, so <code>(D,C)</code> (it exploited
+someone) and <code>(C,D)</code> (it got exploited) stay separate — chart 3
+pools them, which is right for a tournament total and wrong per bot. Both
+cursors matter here: a bot's mix is a point in the (t, α) plane, not a curve
+over one dial.</p>
+{per_bot_views}
+{alpha_slider("α for this chart — synced with every other α control")}
+{transparency_slider("transparency t for this chart — synced with chart 4b")}
+
 <h2>4 · How much transparency each bot needs <span class="pill family-readout">{html.escape(initial_family_label)}</span> <span class="pill alpha-readout">α = {initial_alpha:g}</span></h2>
-<p class="note">Transparency at which each bot first departs from its
-base-matrix row. Longer bar = needs a clearer signal to behave as itself.
-Constant bots never deviate: they have no conditionality to lose.
-<strong>These thresholds are α- and channel-sensitive</strong> — the ranking
-changes with the caution threshold and with what leaks, so this chart is one
-slice of chart 5, not a property of the bots alone.</p>
+<p class="note">Each row is one bot across the whole transparency axis, shaded
+by how much of its row differs from the base matrix there (normalized Hamming
+distance). The <strong>tick</strong> marks the <em>first</em> departure from
+its base-matrix row; a tick further right means it holds its behavior further
+into the blur. Colour is the drift's size: a one-cell flip and a row inversion
+cross at the same tick but end up very differently. Constant bots never deviate
+— they have no conditionality to lose — and stay grey the whole way.</p>
+<p class="note"><strong>Read the strip, not just the tick.</strong> Deviation is
+<em>not</em> monotone in transparency, so a departure need not be permanent: a
+row marked <code>°</code> returns to its base behavior at some lower
+transparency. That is not noise. As transparency → 0 every signal converges to
+the same uniform mixture, so every opponent's cooperation mass converges to one
+shared limit — the bot's own base cooperation fraction — and masses reaching it
+from opposite sides can flip two cells in opposite directions at nearby
+budgets, dipping the deviation count. <strong>These thresholds are α- and
+channel-sensitive</strong> — the ranking changes with the caution threshold and
+with what leaks, so this chart is one slice of chart 5, not a property of the
+bots alone.</p>
 {threshold_views}
 {alpha_slider("α for this chart — synced with every other α control")}
+
+<h2>4b · How much caution each bot can afford <span class="pill family-readout">{html.escape(initial_family_label)}</span> <span class="pill t-readout">t = {initial_transparency:.0%}</span></h2>
+<p class="note">Chart 4 transposed: transparency is now the cursor and α is the
+axis, so this reads off <em>for which caution thresholds</em> each bot stops
+behaving like its base bot at the transparency you have fixed. Same colour
+scale as chart 4 — grey means the tau bot's row is identical to the base bot's,
+warmth is the fraction of the row that differs. Together the two charts cover
+the (t, α) plane one bot at a time, which chart 5's aggregate necessarily
+averages away.</p>
+{alpha_dev_views}
+{transparency_slider("transparency t for this chart — synced with chart 3b")}
 
 <h2>5 · (transparency, α) phase diagram <span class="pill family-readout">{html.escape(initial_family_label)}</span></h2>
 <p class="note">The two dials crossed, under the selected σ family.
