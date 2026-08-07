@@ -1,0 +1,12 @@
+# EGT sweep artefacts are reproducible outputs, not records: one `(t, α)`
+# sweep writes hundreds of files (per-run ess/invasion/faces/nash directories,
+# figures, parquet), and re-running the same sweep regenerates them exactly —
+# the run directory name embeds a hash of the cells it analysed.
+#
+# This is deliberately narrower than ignoring `app/generated/`, which tracks
+# constructor proposals and outcome transcripts on purpose (longitudinal
+# thesis data that cannot be regenerated).
+#
+# Keep a result set by copying it out, or point `--out-root` elsewhere.
+runs/
+sweep_summary.json
