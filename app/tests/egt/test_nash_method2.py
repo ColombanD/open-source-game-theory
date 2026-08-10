@@ -126,3 +126,47 @@ def test_classify_symmetric_vs_asymmetric_pairs_hawk_dove():
     pair_ids = {c.asymmetric_pair_id for c in asym}
     # Both asymmetric NE share a pair_id.
     assert len(pair_ids) == 1 and None not in pair_ids
+
+
+# --------------------------------------------------------------------------
+# Iterated strict dominance on a NON-SQUARE reduced matrix
+# --------------------------------------------------------------------------
+
+
+def test_dominance_handles_non_square_reduced_matrices():
+    """`_strictly_dominated` must use the column count, not the row count.
+
+    The column player's matrix is `len(surv_col) x len(surv_row)`, so the two
+    dimensions diverge the moment one row is eliminated. Using `len(M)` for
+    the inner range read past the end of every row.
+
+    Regression: this crashed every sweep at t=0, where the softmax makes many
+    bots payoff-identical and dominance actually removes something. At t=1
+    nothing was ever removed, so the matrix stayed square and the bug hid.
+    """
+    from pd_runner.egt.nash.dominance import _strictly_dominated
+
+    # 3 rows x 2 cols — the shape Bc takes after one row is dropped.
+    # Before the fix this raised IndexError instead of answering.
+    M = [[F(1), F(2)], [F(0), F(0)], [F(5), F(5)]]
+    # Rows 0 and 2 both strictly dominate row 1; the contract is "return one",
+    # so assert membership rather than pinning the search order.
+    assert _strictly_dominated(M, 1) in (0, 2)
+    assert _strictly_dominated(M, 2) == -1     # nothing dominates the best row
+    assert _strictly_dominated(M, 0) == 2      # only row 2 beats row 0
+
+
+def test_dominance_reduces_a_matrix_with_duplicate_rows():
+    """The t=0 shape: many types payoff-identical, one strictly better."""
+    from pd_runner.egt.nash.dominance import reduce_iteratively
+
+    # C and C' are identical and both strictly dominated by D.
+    A = np.array([
+        [2.0, 2.0, -1.0],
+        [2.0, 2.0, -1.0],
+        [3.0, 3.0, 0.0],
+    ])
+    result = reduce_iteratively(A, ["C", "Cprime", "D"])
+    assert result.survivors_row == [2]
+    assert result.survivors_col == [2]
+    assert {r.strategy_name for r in result.removals} == {"C", "Cprime"}

@@ -6,16 +6,23 @@ CSS-variable palette. What differs is the input — the tau report computes its
 own tournaments, whereas this one READS a sweep that already ran, because the
 four analysis stages cost minutes and their artefacts are the record.
 
-Layout: four cross-cell overviews first (§1 the phase plane, §2-4 trends over
-t), then one deep dive per analysis stage (§5 ESS, §6 invasion, §7 faces,
-§8 Nash), then the whole sweep as a table (§9), then provenance and artefacts.
+Layout: §1 the sweep as one table, then ONE SECTION PER ANALYSIS — §2 ESS,
+§3 invasion, §4 faces, §5 Nash — then provenance and artefacts. Each analysis
+section holds its own cross-cell trend AND its per-cell view, rather than
+splitting those across the page: a reader following "how do face equilibria
+behave" should not have to jump between a chart near the top and a grid near
+the bottom.
 
-The deep dives use two presentations, chosen by how big the per-cell answer
-is: a **(t, α) grid** where it reads at a glance (ESS names, face-class
-counts), and a **(t, α) dropdown** where it is a figure or a table (invasion
-graph, Nash components). Dropdown views are all pre-rendered and toggled by
-`data-kind` + `data-t`/`data-alpha`, so there is no server round-trip and the
-page works from `file://`.
+The sections run strongest claim to weakest: a single unbeatable type (ESS),
+who displaces whom (invasion), whether a mixture holds (faces), what is
+rational at all (Nash).
+
+Per-cell views use two presentations, chosen by how big the answer is: a
+**(t, α) grid** where it reads at a glance (ESS names, face-class counts), and
+a **(t, α) dropdown** where it is a figure or a table (invasion graph, Nash
+components). Dropdown views are all pre-rendered and toggled by `data-kind` +
+`data-t`/`data-alpha`, so there is no server round-trip and the page works
+from `file://`.
 
 Grid points that shared a matrix (dedup) resolve to the same view, so a
 picker never lands on a hole: `_cell_index` maps every requested `(t, α)` to
@@ -632,7 +639,7 @@ def _ess_section(ts, alphas, index) -> str:
         )
 
     return (
-        "<h2>5 · Pure ESS across the plane</h2>"
+        "<h2>2 · Pure ESS</h2>"
         '<p class="note"><b>What this asks.</b> Suppose the whole population is '
         "a single bot type, and a few mutants of some other type appear. If no "
         "mutant can ever gain a foothold, that type is an <i>evolutionarily "
@@ -646,7 +653,7 @@ def _ess_section(ts, alphas, index) -> str:
     )
 
 
-def _faces_section_grid(ts, alphas, index) -> str:
+def _faces_section_grid(ts, alphas, index, chart: str = "") -> str:
     """ii.c — the face-equilibrium class counts, across the plane."""
 
     def render(cell: Cell) -> str:
@@ -671,7 +678,7 @@ def _faces_section_grid(ts, alphas, index) -> str:
         return f'<table class="mini">{rows}</table>{trunc}'
 
     return (
-        "<h2>7 · Face equilibria across the plane</h2>"
+        "<h2>4 · Face equilibria — can a MIXTURE be stable?</h2>"
         '<p class="note"><b>What this asks.</b> A population need not be one '
         "type. Take any subset of bots — is there a proportion of them that "
         "holds steady, where all members earn the same average payoff so none "
@@ -686,11 +693,17 @@ def _faces_section_grid(ts, alphas, index) -> str:
         "<b>non-interior</b> are subsets with no valid equilibrium at all; "
         "they are recorded rather than dropped, which is why they dominate the "
         "counts.</p>"
+        '<h3>How the count moves with transparency</h3>'
+        '<p class="note">Stable plus stable-invadable faces, one line per '
+        "caution threshold. A falling count means blur is destroying the "
+        "coexisting mixtures, pushing the population toward monocultures.</p>"
+        f"{chart}"
+        "<h3>The classes, cell by cell</h3>"
         + _grid_table(ts, alphas, index, render)
     )
 
 
-def _invasion_section(ts, alphas, index, artefact_base: str) -> str:
+def _invasion_section(ts, alphas, index, artefact_base: str, chart: str = "") -> str:
     """ii.b — the invasion graph for one selected cell."""
     views = []
     for t in ts:
@@ -736,24 +749,32 @@ def _invasion_section(ts, alphas, index, artefact_base: str) -> str:
             )
 
     return (
-        "<h2>6 · Invasion graph</h2>"
+        "<h2>3 · Invasion graph — who displaces whom</h2>"
         '<p class="note"><b>What this asks.</b> Draw an arrow <code>i → j</code> '
         "whenever a few <code>i</code> mutants can invade a resident population "
-        "of <code>j</code>. The shape of that graph explains the ESS verdict: "
-        "a type nothing points at is a candidate to be unbeatable, while a "
-        "<b>cycle</b> (A invades B invades C invades A) means there is no "
+        "of <code>j</code>. The shape of that graph explains the ESS verdict "
+        "above: a type nothing points at is a candidate to be unbeatable, while "
+        "a <b>cycle</b> (A invades B invades C invades A) means there is no "
         "endpoint at all — the population churns forever.</p>"
         '<p class="note"><b>Strongly connected components</b> are clusters where '
-        "every type can reach every other. More SCCs means a more fragmented "
-        "population; one giant SCC means most of the zoo is caught in a single "
-        "mutually-invadable tangle.</p>"
+        "every type can reach every other. <b>Few SCCs</b> means most of the "
+        "zoo is caught in one mutually-invadable tangle: whatever the "
+        "population is, something can displace it. <b>Many SCCs</b> means it "
+        "has fragmented into groups with a clear pecking order between them, "
+        "so the dynamics can settle.</p>"
+        "<h3>How the structure moves with transparency</h3>"
+        '<p class="note">SCC count as the signal degrades, one line per caution '
+        "threshold. Rising SCCs as <code>α</code> increases is caution breaking "
+        "the tangle apart.</p>"
+        f"{chart}"
+        "<h3>The graph, cell by cell</h3>"
         + _dial_selects("invasion", ts, alphas)
         + "".join(views)
     )
 
 
-def _nash_section(ts, alphas, index) -> str:
-    """ii.d — Nash components for one selected cell."""
+def _nash_section(ts, alphas, index, heat: str = "", heat_label: str = "") -> str:
+    """ii.d — Nash components for one selected cell, plus the phase plane."""
     views = []
     for t in ts:
         for alpha in alphas:
@@ -801,19 +822,62 @@ def _nash_section(ts, alphas, index) -> str:
                 f'data-alpha="{_key(alpha)}" hidden>{body}</div>'
             )
 
+    # Cells where the stage ran but produced nothing, versus cells where it
+    # was never asked to run. Only the former needs explaining.
+    failed = [
+        (t, a) for t in ts for a in alphas
+        if (c := index.get((_key(t), _key(a)))) is not None
+        and "nash" in c.stages and not c.stages["nash"].get("ok")
+    ]
+    failure_note = (
+        '<p class="banner warn"><b>Not computed at '
+        + html.escape(", ".join(f"(t={t:g}, α={a:g})" for t, a in failed))
+        + ".</b> The Nash stage failed at these points; see the Artefacts "
+        "section for the error. This is a stage failure, not an absence of "
+        "equilibria — Nash 1951 guarantees at least one exists, so a blank "
+        "here never means “none”.</p>"
+        if failed else ""
+    )
+
+    heat_block = (
+        "<h3>Equilibrium count across the plane</h3>"
+        f'<p class="note">{html.escape(heat_label[0].upper() + heat_label[1:])} '
+        "at every analysed <code>(t, α)</code>. One hue, light→dark for "
+        "magnitude; every tile also carries its value, so the colour is "
+        "redundant with the number rather than the only way to read it. Use it "
+        "to spot <i>where</i> behaviour changes — a block of similar numbers is "
+        "one regime, a sharp jump between neighbours is a phase boundary. A "
+        "dash means that point was not analysed.</p>"
+        f'<div class="panel">{heat}</div>'
+        if heat else ""
+    )
+
     return (
-        "<h2>8 · Nash equilibria</h2>"
+        "<h2>5 · Nash equilibria — what is rational at all</h2>"
         '<p class="note"><b>What this asks.</b> Stepping back from evolution: '
         "treated as a plain two-player game, where does neither side want to "
         "deviate? This is a <i>weaker</i> condition than ESS — every ESS is a "
         "Nash equilibrium but not conversely — so it catches resting points the "
-        "evolutionary stages reject, and unlike ESS it can never come back "
-        "empty (Nash 1951 guarantees one exists).</p>"
+        "evolutionary sections above reject, and unlike ESS it can never come "
+        "back empty (Nash 1951 guarantees one exists).</p>"
+        '<p class="note"><b>How to read the count.</b> A <i>high</i> number is '
+        "not good news: it means the game is badly under-determined, with many "
+        "mutually incompatible outcomes all self-consistent and nothing in the "
+        "rules picking between them.</p>"
         '<p class="note">Equilibria are grouped into <b>components</b> — '
         "connected sets that behave as one solution. Watch the spread in "
         "<code>Pr[(C,C)]</code>: a component at 1 is total cooperation, one at "
         "0 is total defection. Both being genuine equilibria of the same game "
         "is Critch’s Open Problem 2 made concrete.</p>"
+        '<p class="note"><b>Why this stage is the slow one.</b> It enumerates '
+        "extreme equilibria by vertex enumeration over best-response polytopes "
+        "in exact rational arithmetic — no floating point anywhere — which "
+        "costs seconds to a minute per matrix while the other three stages "
+        "take milliseconds. That is also why a sweep deduplicates identical "
+        "matrices rather than re-analysing every grid point.</p>"
+        f"{failure_note}"
+        f"{heat_block}"
+        "<h3>The components, cell by cell</h3>"
         + _dial_selects("nash", ts, alphas)
         + "".join(views)
     )
@@ -943,7 +1007,6 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
                             _SERIES_COLORS[i % len(_SERIES_COLORS)]))
         return out
 
-    ne_series = trend(lambda c: c.n_extreme_ne)
     scc_series = trend(lambda c: c.n_sccs)
     stable_series = trend(lambda c: c.stable_faces)
 
@@ -959,9 +1022,8 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
         trend_note = ('<p class="note missing">The sweep has a single '
                       "transparency, so there is no trend to plot — use the "
                       "picker below to read the cell.</p>")
-        ne_chart = scc_chart = stable_chart = trend_note
+        scc_chart = stable_chart = trend_note
     else:
-        ne_chart = chart_or_note(ne_series, "extreme NE")
         scc_chart = chart_or_note(scc_series, "SCCs")
         stable_chart = chart_or_note(stable_series, "stable faces")
 
@@ -1040,10 +1102,15 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
     heat = _phase_grid(cells, ts, alphas, index, heat_metric, heat_label)
 
     # The four per-stage deep dives, appended after the existing layout.
+    # Each deep dive owns its trend chart: the cross-cell view and the
+    # per-cell view of one analysis belong together, not in separate sections.
     ess_section = _ess_section(ts, alphas, index)
-    invasion_section = _invasion_section(ts, alphas, index, artefact_base)
-    faces_deep_section = _faces_section_grid(ts, alphas, index)
-    nash_section = _nash_section(ts, alphas, index)
+    invasion_section = _invasion_section(
+        ts, alphas, index, artefact_base, chart=scc_chart)
+    faces_deep_section = _faces_section_grid(
+        ts, alphas, index, chart=stable_chart)
+    nash_section = _nash_section(
+        ts, alphas, index, heat=heat, heat_label=heat_label)
     artefacts_section = _artefacts_section(cells, artefact_base)
 
     return f"""<title>EGT — evolutionary analysis ({html.escape(zoo)})</title>
@@ -1079,59 +1146,29 @@ through four population analyses. Points whose action-pair cells coincide give
 identical answers, so they are analysed once — that is what <b>saved by
 dedup</b> counts.</p>
 
-<p class="note"><b>Reading the charts below.</b> Sections 1-4 compare cells
-<i>across</i> the plane; sections 5-8 open up one analysis at a time. On every
-chart the x-axis runs full transparency on the <b>left</b> to opaque on the
-<b>right</b>, so moving rightward means the signal is degrading.</p>
+<p class="note"><b>Reading the charts below.</b> On every trend chart the
+x-axis runs full transparency on the <b>left</b> to opaque on the <b>right</b>,
+so moving rightward means the signal is degrading.</p>
 
-<h2>1 · The (t, α) phase plane</h2>
-<p class="note"><b>What this shows.</b> The whole experiment at a glance:
-{html.escape(heat_label)} at every <code>(t, α)</code> analysed. Use it to spot
-<i>where</i> the behaviour changes — a block of similar numbers is one regime,
-a sharp jump between neighbours is a phase boundary worth investigating in the
-per-stage sections below.</p>
-<p class="note">One hue, light→dark for magnitude; every tile also carries its
-value, so the colour is redundant with the number rather than the only way to
-read it. A dash means that point was not analysed in this sweep.</p>
-<div class="panel">{heat}</div>
-
-<h2>2 · Nash equilibria vs transparency</h2>
-<p class="note"><b>What this shows.</b> How many distinct resting points the
-game has as the signal degrades, one line per caution threshold. An equilibrium
-here is a population mix nobody wants to unilaterally move away from.</p>
-<p class="note"><b>Why it matters.</b> A <i>high</i> count is not a good sign —
-it means the game is badly under-determined: many mutually incompatible
-outcomes are all self-consistent, and nothing in the rules picks between them.
-A count falling as transparency drops means the opaque game admits fewer
-resting points, not that it is better behaved. Section 8 shows what those
-equilibria actually are at any chosen cell.</p>
-{ne_chart}
-
-<h2>3 · Population structure vs transparency</h2>
-<p class="note"><b>What this shows.</b> The number of strongly connected
-components in the strict invasion graph — clusters of bots that can all
-ultimately invade one another.</p>
-<p class="note"><b>Why it matters.</b> This is the shape of the competition.
-<b>Few SCCs</b> means most of the zoo is caught in one big mutually-invadable
-tangle: whatever the population is, something can always displace it, and it
-churns. <b>Many SCCs</b> means the population has fragmented into groups with a
-clear pecking order between them, so the dynamics can settle. Rising SCCs as
-<code>α</code> increases is caution breaking the tangle apart.</p>
-{scc_chart}
-
-<h2>4 · Stable faces vs transparency</h2>
-<p class="note"><b>What this shows.</b> How many <i>mixed</i> populations hold
-together — subsets of bots coexisting in proportions where every member earns
-the same average payoff, so none grows at the others' expense. Counted here are
-faces classified <code>asymp_stable</code> or
-<code>asymp_stable_invadable</code>.</p>
-<p class="note"><b>Why it matters.</b> Sections 2 and 3 are about single types
-displacing one another; this is about coalitions surviving <i>together</i>. A
-falling count means blur is destroying the coexisting mixtures, pushing the
-population toward monocultures. Section 7 breaks the count into its classes —
-in particular whether a mixture merely holds internally or also resists
-outsiders.</p>
-{stable_chart}
+<h2>1 · What was analysed</h2>
+<p class="note">Each section below opens one of the four population analyses:
+first what it asks, then how it moves across the plane, then the answer at a
+cell you choose. Sections 2-5 go from the strongest claim (a single unbeatable
+type) to the weakest (any rational resting point at all).</p>
+<div class="panel">
+<table class="fam">
+<thead><tr>
+  <th>cell</th><th class="num">pts</th><th class="num">ESS</th>
+  <th class="num">edges</th><th class="num">SCCs</th>
+  <th class="num">stable faces</th><th class="num">extreme NE</th>
+  <th class="num">components</th>
+</tr></thead>
+<tbody>{rows}</tbody>
+</table>
+</div>
+<p class="note">The whole sweep in one table — every number on this page is
+reachable here without touching a control. <code>—</code> means the stage did
+not run or failed; it never means zero.</p>
 
 {ess_section}
 
@@ -1140,8 +1177,6 @@ outsiders.</p>
 {faces_deep_section}
 
 {nash_section}
-
-<h2>9 · Every matrix, side by side</h2>
 <p class="note">The whole sweep in one table — every number on this page is
 reachable here without touching a control. <code>—</code> means the stage did
 not run or failed; it never means zero.</p>

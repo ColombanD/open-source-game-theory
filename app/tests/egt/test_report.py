@@ -103,10 +103,15 @@ def test_removed_slider_picker_leaves_nothing_behind(swept):
 
 
 def test_absent_stage_is_not_reported_as_zero(swept):
-    """Nash did not run, so its cells must show the dash, never 0."""
+    """Nash did not run in this fixture, so it must read as absent, not 0."""
     _, page = swept
-    assert "nothing to plot" in page
-    assert "<td class=\"num\">—</td>" in page
+    # The overview table dashes the missing columns…
+    assert '<td class="num">—</td>' in page
+    # …and the Nash section says the stage did not run rather than
+    # rendering an empty component table.
+    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    assert "did not run" in section
+    assert "<th>component</th>" not in section
 
 
 def test_conditional_results_are_flagged(swept):
@@ -150,7 +155,7 @@ def test_table_view_lists_every_matrix(swept):
     """The table is the non-interactive path to every number on the page."""
     root, page = swept
     _, cells = load_sweep(root)
-    table = page[page.find("Every matrix, side by side"):]
+    table = page[page.find("<h2>1 ·"):page.find("<h2>2 ·")]
     for cell in cells:
         assert f"t={cell.t:g}, α={cell.alpha:g}" in table
 
@@ -169,21 +174,21 @@ def test_charts_are_inline_svg(swept):
 
 
 # --------------------------------------------------------------------------
-# The per-stage deep dives (sections 5-8)
+# The per-stage deep dives (sections 2-5)
 # --------------------------------------------------------------------------
 
 
 def test_all_four_deep_dive_sections_are_present(swept):
     _, page = swept
-    for heading in ("5 · Pure ESS", "6 · Invasion graph",
-                    "7 · Face equilibria", "8 · Nash equilibria"):
+    for heading in ("2 · Pure ESS", "3 · Invasion graph",
+                    "4 · Face equilibria", "5 · Nash equilibria"):
         assert heading in page
 
 
 def test_original_layout_is_preserved(swept):
-    """Sections 1-4 lead, the deep dives follow, the table closes."""
+    """The overview table leads, then one section per analysis."""
     _, page = swept
-    order = [page.find(f"<h2>{n} ·") for n in range(1, 10)]
+    order = [page.find(f"<h2>{n} ·") for n in range(1, 6)]
     assert all(p > 0 for p in order), "a numbered section is missing"
     assert order == sorted(order), "sections are out of order"
     assert page.find("<h2>Provenance</h2>") > order[-1]
@@ -198,7 +203,7 @@ def test_each_deep_dive_explains_itself(swept):
 def test_ess_grid_covers_the_plane(swept):
     """One cell per (t, α), including deduped points."""
     root, page = swept
-    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
+    section = page[page.find("<h2>2 ·"):page.find("<h2>3 ·")]
     plane = re.search(r'<table class="plane">.*?</table>', section, re.S).group(0)
     assert plane.count("<tr>") == 1 + 2          # header + 2 α rows
     assert plane.count("<td") == 6               # 3 t × 2 α
@@ -207,14 +212,14 @@ def test_ess_grid_covers_the_plane(swept):
 def test_ess_none_is_distinguished_from_stage_absent(swept):
     """"none" (a real finding) must not read like "stage not run"."""
     _, page = swept
-    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
+    section = page[page.find("<h2>2 ·"):page.find("<h2>3 ·")]
     assert 'class="none-found">none<' in section
     assert "stage not run" not in section
 
 
 def test_faces_grid_reports_all_four_classes(swept):
     root, page = swept
-    section = page[page.find("<h2>7 ·"):page.find("<h2>8 ·")]
+    section = page[page.find("<h2>4 ·"):page.find("<h2>5 ·")]
     minis = re.findall(r'<table class="mini">(.*?)</table>', section, re.S)
     assert len(minis) == 6                        # one per grid point
     for mini in minis:
@@ -241,7 +246,7 @@ def test_dial_views_cover_every_grid_point_per_kind(swept):
 def test_nash_section_says_the_stage_is_absent(swept):
     """This fixture skips nash; the section must say so, not show an empty table."""
     _, page = swept
-    section = page[page.find("<h2>8 ·"):page.find("<h2>9 ·")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
     assert "did not run" in section
     assert "<th>component</th>" not in section
 
@@ -261,7 +266,7 @@ def swept_with_nash(tmp_path_factory):
 
 def test_nash_component_table_has_the_requested_columns(swept_with_nash):
     _, page = swept_with_nash
-    section = page[page.find("<h2>8 ·"):page.find("<h2>9 ·")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
     for column in ("component", "equilibria", "payoff", "Pr[(C,C)]", "bots involved"):
         assert f">{column}</th>" in section
 
@@ -282,6 +287,50 @@ def test_nash_components_name_the_bots_involved(swept_with_nash):
     for comp in cells[0].nash_components():
         assert comp["bots"], "a component with no bots is meaningless"
         assert comp["n_equilibria"] >= 1
+
+
+def test_nash_explains_its_cost(swept_with_nash):
+    """The section says why it is the slow stage, since that shapes sweeps."""
+    _, page = swept_with_nash
+    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    assert "exact rational arithmetic" in section
+    assert "deduplicates" in section
+
+
+def test_nash_failure_is_named_and_never_reads_as_no_equilibria(tmp_path):
+    """A failed Nash stage must be called out as a failure, not a blank.
+
+    Nash 1951 guarantees an equilibrium exists, so an empty cell can only ever
+    mean the computation did not happen — the page has to say which.
+    """
+    import json
+
+    from pd_runner.egt.report import build_report
+
+    # Hand-build a run whose nash stage failed, which is what the reader sees
+    # when e.g. the solver crashes on a degenerate matrix.
+    run = tmp_path / "runs" / "default_t000_a030_deadbeef"
+    (run / "ess").mkdir(parents=True)
+    (run / "ess" / "ess_summary.csv").write_text("type,is_ESS\nDefectBot,False\n")
+    (run / "summary.json").write_text(json.dumps({
+        "run": "default_t000_a030_deadbeef", "zoo": "default",
+        "t": 0.0, "alpha": 0.3, "fingerprint": "deadbeef",
+        "n_types": 1, "bots": ["DefectBot"], "excluded_bots": [],
+        "is_fully_proven": True, "grid_points": [[0.0, 0.3]], "ok": False,
+        "stages": {
+            "ess": {"ok": True, "seconds": 0.0, "error": None, "n_pure_ess": 0},
+            "nash": {"ok": False, "seconds": 0.0,
+                     "error": "IndexError: list index out of range"},
+        },
+    }))
+
+    page = build_report(tmp_path)
+    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    assert "Not computed at" in section
+    assert "(t=0, α=0.3)" in section
+    assert "not an absence of equilibria" in section
+    # The error itself stays reachable in the artefacts section.
+    assert "IndexError" in page or "Failed stages" in page
 
 
 def test_ess_bots_none_versus_empty(swept_with_nash):

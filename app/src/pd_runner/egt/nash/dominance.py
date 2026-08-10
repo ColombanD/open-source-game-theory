@@ -41,12 +41,21 @@ class DominanceResult:
 
 
 def _strictly_dominated(M: List[List[Fraction]], i: int) -> int:
-    """Return j != i that strictly dominates row i in matrix M, or -1 if none."""
-    n = len(M)
-    for j in range(n):
+    """Return j != i that strictly dominates row i in matrix M, or -1 if none.
+
+    `M` is NOT necessarily square. The column player's matrix `Bc` is
+    `len(surv_col) x len(surv_row)`, so as soon as one row is eliminated the
+    two dimensions diverge. Using `len(M)` for the inner range (as the
+    original did) then reads past the end of every row — an IndexError that
+    only fires once a reduction has actually removed something, which is why
+    it stayed hidden on matrices with no dominated strategies.
+    """
+    n_rows = len(M)
+    n_cols = len(M[0]) if M else 0
+    for j in range(n_rows):
         if j == i:
             continue
-        if all(M[j][k] > M[i][k] for k in range(n)):
+        if all(M[j][k] > M[i][k] for k in range(n_cols)):
             return j
     return -1
 
