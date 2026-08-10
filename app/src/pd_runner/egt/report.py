@@ -126,6 +126,69 @@ class Cell:
     def ran_stages(self) -> list[str]:
         return list(self.stages)
 
+    # ---- artefact readers -------------------------------------------------
+    # The stage summaries carry COUNTS; the deep-dive sections need the names
+    # and groupings behind them, which live in the stage artefacts on disk.
+
+    def ess_bots(self) -> list[str] | None:
+        """Names of the types that ARE a pure ESS, or None if ii.a is absent.
+
+        `None` and `[]` mean different things and must not be conflated:
+        `None` = the stage never ran, `[]` = it ran and found none.
+        """
+        path = self.run_dir / "ess" / "ess_summary.csv"
+        if not path.exists():
+            return None
+        import csv
+
+        with path.open(newline="") as fh:
+            return [
+                row["type"] for row in csv.DictReader(fh)
+                if row.get("is_ESS", "").strip().lower() == "true"
+            ]
+
+    def invasion_svg(self) -> Path | None:
+        path = self.run_dir / "invasion" / "graph.svg"
+        return path if path.exists() else None
+
+    def nash_components(self) -> list[dict] | None:
+        """Per-component rollup: size, payoff, cooperation rate, bots involved.
+
+        Returns None when the Nash stage is absent. Payoff and cooperation
+        rate are constant within a component on every matrix seen so far, but
+        the range is computed rather than assumed — a component that ever
+        spans several values must say so instead of showing one silently.
+        """
+        runs = sorted((self.run_dir / "nash" / "runs").glob("*/equilibria.jsonl"))
+        if not runs:
+            return None
+        equilibria = [json.loads(line) for line in runs[-1].read_text().splitlines() if line.strip()]
+        if not equilibria:
+            return []
+
+        grouped: dict[int, list[dict]] = {}
+        for eq in equilibria:
+            grouped.setdefault(eq.get("component_id", -1), []).append(eq)
+
+        out = []
+        for cid, members in sorted(grouped.items()):
+            bots = sorted({
+                b for m in members
+                for b in (m.get("support_row_names", []) + m.get("support_col_names", []))
+            })
+            payoffs = sorted({m.get("u_rational") for m in members})
+            coops = sorted({m.get("cooperation_rate_rational") for m in members})
+            out.append({
+                "id": cid,
+                "n_equilibria": len(members),
+                "payoff": payoffs[0] if len(payoffs) == 1 else f"{payoffs[0]}…{payoffs[-1]}",
+                "coop_rate": coops[0] if len(coops) == 1 else f"{coops[0]}…{coops[-1]}",
+                "bots": bots,
+                "has_symmetric": any(m.get("classification") == "symmetric" for m in members),
+                "touches_suspect": any(m.get("touches_suspect_cell") for m in members),
+            })
+        return out
+
 
 def load_sweep(out_root: Path) -> tuple[dict, list[Cell]]:
     """Read `sweep_summary.json` plus every run's `summary.json`.
@@ -593,6 +656,264 @@ def _artefact_links(cell: Cell, artefact_base: str) -> str:
 
 
 # --------------------------------------------------------------------------
+# Deep-dive sections — one per analysis stage
+#
+# Two presentations, chosen by what the stage produces:
+#   * a (t, α) GRID when the per-cell answer is small enough to read at a
+#     glance (ESS names, face-class counts) — the whole plane at once;
+#   * a (t, α) DROPDOWN when it is a figure or a table (invasion graph, Nash
+#     components) — one cell at a time, everything pre-rendered and toggled.
+# --------------------------------------------------------------------------
+
+
+def _dial_selects(kind: str, ts: Sequence[float], alphas: Sequence[float]) -> str:
+    """A `<select>` pair for picking a (t, α) cell within one section."""
+    t_opts = "".join(f'<option value="{_key(t)}">t = {t:g}</option>' for t in ts)
+    a_opts = "".join(f'<option value="{_key(a)}">α = {a:g}</option>' for a in alphas)
+    return (
+        f'<div class="picker">'
+        f'<label for="{kind}-t">transparency t</label>'
+        f'<select id="{kind}-t" class="dial" data-kind="{kind}">{t_opts}</select>'
+        f'<label for="{kind}-a">caution α</label>'
+        f'<select id="{kind}-a" class="dial" data-kind="{kind}">{a_opts}</select>'
+        f"</div>"
+    )
+
+
+def _grid_table(
+    ts: Sequence[float],
+    alphas: Sequence[float],
+    index: dict[tuple[str, str], Cell],
+    render_cell,
+    corner: str = "α \\ t",
+) -> str:
+    """The (t, α) plane as an HTML table — α down the rows, t across.
+
+    A table rather than an SVG because these cells hold TEXT (bot names, four
+    counts), which an SVG grid would clip. It also makes the whole plane
+    copy-pasteable and screen-reader navigable.
+    """
+    head = "".join(f"<th>t = {t:g}</th>" for t in ts)
+    rows = []
+    for alpha in alphas:
+        cells = []
+        for t in ts:
+            cell = index.get((_key(t), _key(alpha)))
+            cells.append(
+                f"<td>{render_cell(cell)}</td>" if cell is not None
+                else '<td class="missing">not analysed</td>'
+            )
+        rows.append(f"<tr><th>α = {alpha:g}</th>{''.join(cells)}</tr>")
+    return (
+        f'<div class="panel"><table class="plane">'
+        f"<thead><tr><th>{html.escape(corner)}</th>{head}</tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table></div>"
+    )
+
+
+def _ess_section(ts, alphas, index) -> str:
+    """ii.a — which single types are unbeatable, across the plane."""
+
+    def render(cell: Cell) -> str:
+        bots = cell.ess_bots()
+        if bots is None:
+            return '<span class="missing">stage not run</span>'
+        if not bots:
+            # The common case on this zoo, and a real result — not an error.
+            return '<span class="none-found">none</span>'
+        return "<br>".join(
+            f'<span class="botpill">{html.escape(b)}</span>' for b in bots
+        )
+
+    return (
+        "<h2>7 · Pure ESS across the plane</h2>"
+        '<p class="note"><b>What this asks.</b> Suppose the whole population is '
+        "a single bot type, and a few mutants of some other type appear. If no "
+        "mutant can ever gain a foothold, that type is an <i>evolutionarily "
+        "stable strategy</i> — a monoculture nothing can crack. It is the "
+        "strongest form of “this is where things end up”.</p>"
+        '<p class="note">Each cell lists the types that are a pure ESS at that '
+        "<code>(t, α)</code>. <b>none</b> is a genuine finding, not a gap: it "
+        "means every type in the zoo is invadable by something, so no "
+        "monoculture survives.</p>"
+        + _grid_table(ts, alphas, index, render)
+    )
+
+
+def _faces_section_grid(ts, alphas, index) -> str:
+    """ii.c — the face-equilibrium class counts, across the plane."""
+
+    def render(cell: Cell) -> str:
+        by_class = cell.faces_by_class
+        if not by_class:
+            return '<span class="missing">stage not run</span>'
+        parts = [
+            ("stable", by_class.get("asymp_stable", 0), "cls-stable"),
+            ("stable/inv", by_class.get("asymp_stable_invadable", 0), "cls-invadable"),
+            ("singular", by_class.get("singular", 0), "cls-muted"),
+            ("non-interior", by_class.get("non_interior", 0), "cls-muted"),
+        ]
+        rows = "".join(
+            f'<tr><td class="{css}">{label}</td>'
+            f'<td class="num {css}">{value}</td></tr>'
+            for label, value, css in parts
+        )
+        trunc = (
+            '<div class="trunc">truncated</div>'
+            if not cell.enumeration_complete else ""
+        )
+        return f'<table class="mini">{rows}</table>{trunc}'
+
+    return (
+        "<h2>9 · Face equilibria across the plane</h2>"
+        '<p class="note"><b>What this asks.</b> A population need not be one '
+        "type. Take any subset of bots — is there a proportion of them that "
+        "holds steady, where all members earn the same average payoff so none "
+        "grows at the others’ expense? Every subset is checked "
+        "(<code>2^N − N − 1</code> of them).</p>"
+        '<p class="note">Two independent stability questions per subset. '
+        "<b>stable</b> (<code>asymp_stable</code>) means the mix returns after "
+        "a nudge <i>and</i> no outsider can invade it. <b>stable/inv</b> "
+        "(<code>asymp_stable_invadable</code>) means it holds together "
+        "internally but an outsider <i>can</i> break in — a coalition that is "
+        "stable only while nobody else shows up. <b>singular</b> and "
+        "<b>non-interior</b> are subsets with no valid equilibrium at all; "
+        "they are recorded rather than dropped, which is why they dominate the "
+        "counts.</p>"
+        + _grid_table(ts, alphas, index, render)
+    )
+
+
+def _invasion_section(ts, alphas, index, artefact_base: str) -> str:
+    """ii.b — the invasion graph for one selected cell."""
+    views = []
+    for t in ts:
+        for alpha in alphas:
+            cell = index.get((_key(t), _key(alpha)))
+            if cell is None:
+                body = '<p class="note missing">This grid point was not analysed.</p>'
+            else:
+                svg = cell.invasion_svg()
+                stats = (
+                    f'<ul class="stats">'
+                    f"<li><b>{_fmt(cell.edges_strict)}</b><span>strict edges</span></li>"
+                    f"<li><b>{_fmt(cell.n_sccs)}</b><span>SCCs</span></li>"
+                    f"<li><b>{_fmt(cell.n_cycles)}</b><span>simple cycles</span></li>"
+                    f"</ul>"
+                )
+                if svg is not None:
+                    figure = f'<div class="panel figure">{_inline_svg(svg)}</div>'
+                else:
+                    figure = (
+                        '<p class="note missing">No figure for this cell — the '
+                        "sweep ran with <code>--no-render</code>, or the "
+                        "invasion stage failed. The counts above still hold.</p>"
+                    )
+                links = []
+                for rel, label in (
+                    ("invasion/report.md", "report"),
+                    ("invasion/edges_strict.csv", "edges (CSV)"),
+                    ("invasion/graph.gexf", "graph (GEXF)"),
+                    ("invasion/condensation.svg", "condensation"),
+                ):
+                    if (cell.run_dir / rel).exists():
+                        links.append(
+                            f'<a href="{artefact_base}/{cell.run}/{rel}">'
+                            f"{html.escape(label)}</a>"
+                        )
+                body = stats + figure + (
+                    f'<p class="note">{" · ".join(links)}</p>' if links else ""
+                )
+            views.append(
+                f'<div class="dial-view" data-kind="invasion" data-t="{_key(t)}" '
+                f'data-alpha="{_key(alpha)}" hidden>{body}</div>'
+            )
+
+    return (
+        "<h2>8 · Invasion graph</h2>"
+        '<p class="note"><b>What this asks.</b> Draw an arrow <code>i → j</code> '
+        "whenever a few <code>i</code> mutants can invade a resident population "
+        "of <code>j</code>. The shape of that graph explains the ESS verdict: "
+        "a type nothing points at is a candidate to be unbeatable, while a "
+        "<b>cycle</b> (A invades B invades C invades A) means there is no "
+        "endpoint at all — the population churns forever.</p>"
+        '<p class="note"><b>Strongly connected components</b> are clusters where '
+        "every type can reach every other. More SCCs means a more fragmented "
+        "population; one giant SCC means most of the zoo is caught in a single "
+        "mutually-invadable tangle.</p>"
+        + _dial_selects("invasion", ts, alphas)
+        + "".join(views)
+    )
+
+
+def _nash_section(ts, alphas, index) -> str:
+    """ii.d — Nash components for one selected cell."""
+    views = []
+    for t in ts:
+        for alpha in alphas:
+            cell = index.get((_key(t), _key(alpha)))
+            if cell is None:
+                body = '<p class="note missing">This grid point was not analysed.</p>'
+            else:
+                comps = cell.nash_components()
+                if comps is None:
+                    body = (
+                        '<p class="note missing">The Nash stage did not run for '
+                        "this sweep.</p>"
+                    )
+                elif not comps:
+                    body = '<p class="note missing">No equilibria recorded.</p>'
+                else:
+                    rows = "".join(
+                        f"<tr><td>{c['id']}</td>"
+                        f'<td class="num">{c["n_equilibria"]}</td>'
+                        f'<td class="num">{html.escape(str(c["payoff"]))}</td>'
+                        f'<td class="num">{html.escape(str(c["coop_rate"]))}</td>'
+                        f"<td>{' '.join(f'<span class=\"botpill\">{html.escape(b)}</span>' for b in c['bots'])}</td>"
+                        f"</tr>"
+                        for c in comps
+                    )
+                    total = sum(c["n_equilibria"] for c in comps)
+                    unverified = (
+                        '<p class="banner note-banner">The pygambit/lrsnash '
+                        "cross-check was skipped for this run — these figures "
+                        "come from one solver.</p>"
+                        if cell.cross_check_performed is False else ""
+                    )
+                    body = (
+                        f'<p class="note">{total} extreme equilibria in '
+                        f"{len(comps)} component(s). Payoff and cooperation "
+                        f"rate are exact rationals.</p>"
+                        f'<div class="panel"><table class="fam">'
+                        f"<thead><tr><th>component</th><th class=\"num\">equilibria</th>"
+                        f'<th class="num">payoff</th><th class="num">Pr[(C,C)]</th>'
+                        f"<th>bots involved</th></tr></thead>"
+                        f"<tbody>{rows}</tbody></table></div>{unverified}"
+                    )
+            views.append(
+                f'<div class="dial-view" data-kind="nash" data-t="{_key(t)}" '
+                f'data-alpha="{_key(alpha)}" hidden>{body}</div>'
+            )
+
+    return (
+        "<h2>10 · Nash equilibria</h2>"
+        '<p class="note"><b>What this asks.</b> Stepping back from evolution: '
+        "treated as a plain two-player game, where does neither side want to "
+        "deviate? This is a <i>weaker</i> condition than ESS — every ESS is a "
+        "Nash equilibrium but not conversely — so it catches resting points the "
+        "evolutionary stages reject, and unlike ESS it can never come back "
+        "empty (Nash 1951 guarantees one exists).</p>"
+        '<p class="note">Equilibria are grouped into <b>components</b> — '
+        "connected sets that behave as one solution. Watch the spread in "
+        "<code>Pr[(C,C)]</code>: a component at 1 is total cooperation, one at "
+        "0 is total defection. Both being genuine equilibria of the same game "
+        "is Critch’s Open Problem 2 made concrete.</p>"
+        + _dial_selects("nash", ts, alphas)
+        + "".join(views)
+    )
+
+
+# --------------------------------------------------------------------------
 # The page
 # --------------------------------------------------------------------------
 
@@ -656,6 +977,25 @@ summary { cursor:pointer; color:var(--muted); font-size:.85rem; }
 .missing { color:var(--muted); font-style:italic; }
 /* Embedded matplotlib figures: scale to the panel, keep aspect from viewBox. */
 .figure svg { width:100%; height:auto; display:block; max-width:100%; }
+/* The (t, α) plane as a table — used by the ESS and faces deep dives. */
+table.plane { border-collapse:collapse; font-size:.82rem; width:100%; }
+table.plane th, table.plane td { border:1px solid var(--border); padding:6px 9px;
+                                 text-align:left; vertical-align:top; }
+table.plane thead th { color:var(--muted); font-weight:500; background:var(--bg); }
+table.plane tbody th { color:var(--muted); font-weight:500; white-space:nowrap; }
+table.mini { border-collapse:collapse; font-size:.75rem; width:100%; }
+table.mini td { border:0; padding:1px 0; }
+table.mini td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.cls-stable { color:#0072b2; font-weight:600; }
+.cls-invadable { color:#d55e00; }
+.cls-muted { color:var(--muted); }
+.trunc { color:#d55e00; font-size:.7rem; font-style:italic; margin-top:2px; }
+.none-found { color:var(--muted); font-style:italic; }
+.botpill { display:inline-block; background:var(--panel); border:1px solid var(--border);
+           border-radius:4px; padding:0 .3rem; font-size:.75rem; margin:1px 1px 0 0;
+           white-space:nowrap; }
+.picker select { background:var(--bg); color:var(--fg); border:1px solid var(--border);
+                 border-radius:6px; padding:.3rem .45rem; font-size:.85rem; }
 /* matplotlib writes an opaque white page rect; in dark mode that would be a
    glaring white slab, so drop the figure's own background and let the panel
    show through. The plotted marks carry their own colours. */
@@ -762,6 +1102,30 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
         "})();</script>"
     )
 
+    # The deep-dive sections each own a (t, α) dropdown pair, keyed by
+    # data-kind so the invasion and Nash pickers move independently.
+    dial_script = (
+        "<script>(function(){\n"
+        '  var kinds = ["invasion", "nash"];\n'
+        "  kinds.forEach(function(kind){\n"
+        '    var tSel = document.getElementById(kind + "-t");\n'
+        '    var aSel = document.getElementById(kind + "-a");\n'
+        "    if (!tSel || !aSel) return;\n"
+        "    var views = document.querySelectorAll(\n"
+        "      '.dial-view[data-kind=\"' + kind + '\"]');\n"
+        "    function show(){\n"
+        "      views.forEach(function(el){\n"
+        "        el.hidden = el.dataset.t !== tSel.value\n"
+        "                 || el.dataset.alpha !== aSel.value;\n"
+        "      });\n"
+        "    }\n"
+        '    tSel.addEventListener("change", show);\n'
+        '    aSel.addEventListener("change", show);\n'
+        "    show();\n"
+        "  });\n"
+        "})();</script>"
+    )
+
     # --- provenance -------------------------------------------------------
     conditional = [c for c in cells if not c.is_fully_proven]
     failed = [c for c in cells if not c.ok]
@@ -811,6 +1175,12 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
         _HEAT_METRICS[0],
     )
     heat = _phase_grid(cells, ts, alphas, index, heat_metric, heat_label)
+
+    # The four per-stage deep dives, appended after the existing layout.
+    ess_section = _ess_section(ts, alphas, index)
+    invasion_section = _invasion_section(ts, alphas, index, artefact_base)
+    faces_deep_section = _faces_section_grid(ts, alphas, index)
+    nash_section = _nash_section(ts, alphas, index)
 
     return f"""<title>EGT — evolutionary analysis ({html.escape(zoo)})</title>
 <style>{_CSS}</style>
@@ -890,6 +1260,14 @@ failed; it never means zero.</p>
 </table>
 </div>
 
+{ess_section}
+
+{invasion_section}
+
+{faces_deep_section}
+
+{nash_section}
+
 <h2>Provenance</h2>
 <p class="note">Payoffs use the donation convention
 <code>(D,C)=b, (C,C)=b−c, (D,D)=0, (C,D)=−c</code> with <code>b&gt;c&gt;0</code>.
@@ -898,6 +1276,7 @@ recording the conventions it used; nothing on this page is imputed. Full
 artefacts live under <code>{html.escape(artefact_base)}/</code>.</p>
 </main>
 {picker_script}
+{dial_script}
 """
 
 

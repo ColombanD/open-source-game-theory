@@ -29,7 +29,14 @@ def swept(tmp_path_factory):
 
 
 def _panels(page: str) -> list[tuple[str, str]]:
-    return re.findall(r'data-t="([^"]+)" data-alpha="([^"]+)"', page)
+    """The section-5 picker panels only.
+
+    Scoped to `class="swap-view"`: the deep-dive sections use the same
+    `data-t`/`data-alpha` attributes on `dial-view` elements, so an unscoped
+    match would count those too.
+    """
+    return re.findall(
+        r'class="swap-view" data-t="([^"]+)" data-alpha="([^"]+)"', page)
 
 
 # --------------------------------------------------------------------------
@@ -153,3 +160,127 @@ def test_charts_are_inline_svg(swept):
     _, page = swept
     assert page.count("<svg") >= 3
     assert "<img" not in page
+
+
+# --------------------------------------------------------------------------
+# The per-stage deep dives (sections 7-10)
+# --------------------------------------------------------------------------
+
+
+def test_all_four_deep_dive_sections_are_present(swept):
+    _, page = swept
+    for heading in ("7 · Pure ESS", "8 · Invasion graph",
+                    "9 · Face equilibria", "10 · Nash equilibria"):
+        assert heading in page
+
+
+def test_original_layout_is_preserved(swept):
+    """Sections 1-6 must be untouched and still come first."""
+    _, page = swept
+    order = [page.find(f"<h2>{n} ·") for n in range(1, 11)]
+    assert all(p > 0 for p in order), "a numbered section is missing"
+    assert order == sorted(order), "sections are out of order"
+    assert page.find("<h2>Provenance</h2>") > order[-1]
+
+
+def test_each_deep_dive_explains_itself(swept):
+    """All four sections lead with what the analysis is asking."""
+    _, page = swept
+    assert page.count("<b>What this asks.</b>") == 4
+
+
+def test_ess_grid_covers_the_plane(swept):
+    """One cell per (t, α), including deduped points."""
+    root, page = swept
+    section = page[page.find("<h2>7 ·"):page.find("<h2>8 ·")]
+    plane = re.search(r'<table class="plane">.*?</table>', section, re.S).group(0)
+    assert plane.count("<tr>") == 1 + 2          # header + 2 α rows
+    assert plane.count("<td") == 6               # 3 t × 2 α
+
+
+def test_ess_none_is_distinguished_from_stage_absent(swept):
+    """"none" (a real finding) must not read like "stage not run"."""
+    _, page = swept
+    section = page[page.find("<h2>7 ·"):page.find("<h2>8 ·")]
+    assert 'class="none-found">none<' in section
+    assert "stage not run" not in section
+
+
+def test_faces_grid_reports_all_four_classes(swept):
+    root, page = swept
+    section = page[page.find("<h2>9 ·"):page.find("<h2>10 ·")]
+    minis = re.findall(r'<table class="mini">(.*?)</table>', section, re.S)
+    assert len(minis) == 6                        # one per grid point
+    for mini in minis:
+        for label in ("stable", "stable/inv", "singular", "non-interior"):
+            assert f">{label}</td>" in mini
+
+
+def test_invasion_and_nash_have_independent_dial_pairs(swept):
+    _, page = swept
+    for kind in ("invasion", "nash"):
+        assert f'id="{kind}-t"' in page
+        assert f'id="{kind}-a"' in page
+
+
+def test_dial_views_cover_every_grid_point_per_kind(swept):
+    _, page = swept
+    for kind in ("invasion", "nash"):
+        views = re.findall(
+            rf'data-kind="{kind}" data-t="([^"]+)" data-alpha="([^"]+)"', page)
+        assert len(views) == 6, f"{kind} has {len(views)} views, expected 6"
+        assert len(set(views)) == 6
+
+
+def test_nash_section_says_the_stage_is_absent(swept):
+    """This fixture skips nash; the section must say so, not show an empty table."""
+    _, page = swept
+    section = page[page.find("<h2>10 ·"):]
+    assert "did not run" in section
+    assert "<th>component</th>" not in section
+
+
+# --------------------------------------------------------------------------
+# The deep dives with a full four-stage sweep
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def swept_with_nash(tmp_path_factory):
+    """A single cell through ALL FOUR stages — Nash costs ~50s, so just one."""
+    root = tmp_path_factory.mktemp("egt_report_nash")
+    sweep(zoo="default", ts=[1.0], alphas=[0.5], out_root=root, render=False)
+    return root, build_report(root)
+
+
+def test_nash_component_table_has_the_requested_columns(swept_with_nash):
+    _, page = swept_with_nash
+    section = page[page.find("<h2>10 ·"):]
+    for column in ("component", "equilibria", "payoff", "Pr[(C,C)]", "bots involved"):
+        assert f">{column}</th>" in section
+
+
+def test_nash_components_report_the_cooperation_split(swept_with_nash):
+    """The cooperative and defecting components must both be visible."""
+    root, page = swept_with_nash
+    _, cells = load_sweep(root)
+    comps = cells[0].nash_components()
+    assert comps is not None and len(comps) >= 2
+    coop_rates = {c["coop_rate"] for c in comps}
+    assert {"1/1", "0/1"} <= coop_rates, f"expected both extremes, got {coop_rates}"
+
+
+def test_nash_components_name_the_bots_involved(swept_with_nash):
+    root, _ = swept_with_nash
+    _, cells = load_sweep(root)
+    for comp in cells[0].nash_components():
+        assert comp["bots"], "a component with no bots is meaningless"
+        assert comp["n_equilibria"] >= 1
+
+
+def test_ess_bots_none_versus_empty(swept_with_nash):
+    """None = stage absent; [] = stage ran and found no ESS. Never conflate."""
+    root, _ = swept_with_nash
+    _, cells = load_sweep(root)
+    assert cells[0].ess_bots() == []          # ran, found none
+    assert cells[0].nash_components() is not None
