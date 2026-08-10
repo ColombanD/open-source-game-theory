@@ -1432,3 +1432,70 @@ def test_knife_edge_alpha_is_noise_sensitive(matrix) -> None:
     # Stepping off the edge (and clear of every other agent's fraction) is stable.
     for alpha in (knife_edge - 0.02, knife_edge + 0.02):
         assert run_tournament(matrix, t=0.0, alpha=alpha).is_degenerate
+
+
+# --------------------------------------------------------------------------
+# The critch8 zoo — the standalone repo's eight types
+# --------------------------------------------------------------------------
+
+
+def test_critch8_zoo_is_registered_and_loads():
+    from pd_runner.tau.matrix import CRITCH8_SUB_ZOO, get_zoo
+
+    zoo = get_zoo("critch8")
+    assert zoo.bots == CRITCH8_SUB_ZOO
+    matrix = zoo.load()
+    assert len(matrix.bots) == 8
+    # Totality is the precondition for every downstream stage.
+    assert len(matrix._cells) == 64
+
+
+def test_critch8_needs_exactly_the_red_cell_stipulated():
+    """Its only hole is the cell Critch et al. leave open.
+
+    The standalone repo marked `(CupodBot, DupocBot)` red and imputed it from
+    config.json. Reaching the same hole from a Lean library that simply has no
+    theorem for it is independent confirmation the gap is in the THEORY.
+    """
+    from pd_runner.tau.matrix import get_zoo, load_tau_matrix
+
+    zoo = get_zoo("critch8")
+    assert set(zoo.stipulations) == {("CupodBot", "DupocBot")}
+    # And the value matches that repo's default.
+    assert zoo.stipulations[("CupodBot", "DupocBot")] == ("C", "D")
+
+    with pytest.raises(ValueError, match="not total"):
+        load_tau_matrix(zoo.bots, hypothetical_cells={})
+
+
+def test_critch8_results_are_flagged_conditional():
+    """One stipulated cell means every result over this zoo is conditional."""
+    assert get_zoo("critch8").load().is_fully_proven is False
+
+
+def test_critch8_transcription_diffs_are_accurate():
+    """The recorded deltas must match what the library actually proves.
+
+    This zoo does NOT reproduce the standalone repo's numbers — its
+    hand-transcribed CSV disagrees with the kernel on 6 of 62 cells. The
+    disagreement is documented as data so the delta can be explained rather
+    than discovered; this test keeps that record honest.
+    """
+    from pd_runner.tau.matrix import CRITCH8_TRANSCRIPTION_DIFFS, get_zoo
+
+    matrix = get_zoo("critch8").load()
+    for (row, col), values in CRITCH8_TRANSCRIPTION_DIFFS.items():
+        cell = matrix.cell(row, col)
+        assert (cell.row_action, cell.col_action) == values["certified"], (
+            f"{row} vs {col}: the library no longer proves "
+            f"{values['certified']} — update CRITCH8_TRANSCRIPTION_DIFFS"
+        )
+        assert values["standalone"] != values["certified"]
+
+
+def test_critch8_has_no_non_terminating_cells():
+    """No MirrorBot, so the "N" state never appears and no bot is dropped."""
+    matrix = get_zoo("critch8").load()
+    for row in matrix.bots:
+        for col in matrix.bots:
+            assert matrix.cell(row, col).row_action in ("C", "D")

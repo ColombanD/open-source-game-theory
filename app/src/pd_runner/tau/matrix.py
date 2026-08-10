@@ -115,6 +115,48 @@ PROVEN_ONLY_SUB_ZOO: tuple[str, ...] = tuple(
     b for b in FULL_CERTIFIED_SUB_ZOO if b not in _TWIN_EXCLUSIONS
 )
 
+# The eight types the standalone `egt-osgt` repo analysed, kept so its
+# published results stay reproducible against the certified matrix rather than
+# against its hand-transcribed CSV.
+#
+# Note which cell is missing: `(CupodBot, DupocBot)` — exactly the one Critch
+# et al. leave unresolved and the standalone repo marked red and imputed from
+# `config.json`. Reaching the same hole from a completely different direction
+# (a Lean library that simply has no theorem for it) is a nice independent
+# confirmation that the gap is in the THEORY, not in either transcription.
+CRITCH8_SUB_ZOO: tuple[str, ...] = (
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot",
+)
+
+# Where the standalone repo's hand-transcribed matrix DISAGREES with the Lean
+# library, measured 2026-08-10 against `egt-osgt-main/data/payoff_matrix.csv`
+# as of commit bb51559: 56 of 62 filled cells agree, these 6 do not.
+#
+# `standalone` is what that CSV said; `certified` is what the theorem library
+# proves. Four of the six are `dagger` cells — proven under a side hypothesis,
+# so a reader comparing them should check the theorem's premises rather than
+# assume a transcription slip. The `DBot`/`DupocBot` pair is NOT: those are
+# plain universal theorems, so the CSV is simply wrong there.
+#
+# Kept as data rather than prose because the honest use of this zoo is
+# "reproduce the standalone analysis and explain the delta", and that needs
+# the delta enumerated.
+CRITCH8_TRANSCRIPTION_DIFFS: dict[tuple[str, str], dict[str, tuple[str, str]]] = {
+    ("CupodBot", "OBot"): {"standalone": ("D", "D"), "certified": ("C", "D")},
+    ("OBot", "CupodBot"): {"standalone": ("D", "D"), "certified": ("D", "C")},
+    ("DBot", "DupocBot"): {"standalone": ("C", "C"), "certified": ("C", "D")},
+    ("DupocBot", "DBot"): {"standalone": ("C", "C"), "certified": ("D", "C")},
+    ("DupocBot", "EBot"): {"standalone": ("C", "C"), "certified": ("D", "C")},
+    ("EBot", "DupocBot"): {"standalone": ("C", "C"), "certified": ("C", "D")},
+}
+
 # The 16-bot enlarged zoo (2026-08-04): everything above plus the twins back
 # in (LegibleBot, JustBot), the search×search frontier bots (CIMCIC, DIMCID),
 # and MirrorBot, whose proven-`none` self-play loads as the "N" fifth state.
@@ -209,6 +251,25 @@ ZOOS: dict[str, NamedZoo] = {
         ),
         bots=FULL_CERTIFIED_SUB_ZOO,
         stipulations={},
+    ),
+    "critch8": NamedZoo(
+        key="critch8",
+        label="critch8 (8 bots, the standalone-repo zoo)",
+        description=(
+            "The eight types the standalone egt-osgt repo analysed. Its one "
+            "hole is the SAME cell Critch et al. left open — (CupodBot, "
+            "DupocBot), the 'red cell' — stipulated (C, D) here, matching that "
+            "repo's config.json default; every result over this zoo is "
+            "conditional on it. NOTE: this zoo does NOT reproduce that repo's "
+            "numbers. Its hand-transcribed matrix disagrees with the Lean "
+            "library on 6 of 62 cells, so the analyses will differ — see "
+            "CRITCH8_TRANSCRIPTION_DIFFS."
+        ),
+        bots=CRITCH8_SUB_ZOO,
+        stipulations={
+            k: v for k, v in CUPOD_STIPULATIONS.items()
+            if k[0] in CRITCH8_SUB_ZOO and k[1] in CRITCH8_SUB_ZOO
+        },
     ),
     "proven-only": NamedZoo(
         key="proven-only",

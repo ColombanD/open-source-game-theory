@@ -542,6 +542,19 @@ share one run directory (`generated/egt/runs/<zoo>_t<NNN>_a<NNN>_<hash>/`) and
 16 matrices. This is load-bearing, not an optimization — Nash costs ~50s per matrix at
 N=11 while a tournament costs milliseconds.
 
+**Zoos.** `--zoo` reuses the `tau.matrix` `ZOOS` registry, so a zoo added there
+appears in the tau card, the EGT card and every stage CLI at once. `critch8`
+(added 2026-08-10) is the standalone repo's original eight types, for
+reproducing its published analysis — but note it does NOT reproduce its
+numbers: that repo's hand-transcribed CSV disagrees with the Lean library on
+**6 of 62 cells** (enumerated in `CRITCH8_TRANSCRIPTION_DIFFS`). Four are
+`dagger` cells proven under a side hypothesis; `DBot`/`DupocBot` is a plain
+universal theorem, so the CSV is simply wrong there. Qualitative findings
+survive (no pure ESS, 3 stable faces) while counts shift (extreme NE 16 → 21,
+SCCs 4 → 3). Its one hole is the SAME cell Critch et al. leave open —
+`(CupodBot, DupocBot)`, the "red cell" — stipulated `(C, D)` to match that
+repo's `config.json`.
+
 **Run it:** `uv run python -m pd_runner.egt.pipeline --zoo default --t-steps 6`, or
 from the web app's "Evolutionary analysis (EGT)" card (`POST /egt/sweep`, job + SSE,
 no human gate — nothing lands in the library). `--zoo` is on every stage CLI and reuses
