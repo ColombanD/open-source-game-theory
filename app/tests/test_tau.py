@@ -1499,3 +1499,94 @@ def test_critch8_has_no_non_terminating_cells():
     for row in matrix.bots:
         for col in matrix.bots:
             assert matrix.cell(row, col).row_action in ("C", "D")
+
+
+# --------------------------------------------------------------------------
+# The superficial-standalone replay zoo
+# --------------------------------------------------------------------------
+
+
+def test_superficial_zoo_reproduces_the_standalone_matrix_exactly():
+    """Every cell matches the standalone repo's CSV, including the wrong ones.
+
+    That is the whole point: feed the pipeline byte-identical input to what
+    that repo analysed, so any difference in the RESULTS isolates to the
+    implementation rather than to the data.
+    """
+    from pd_runner.tau.matrix import CRITCH8_TRANSCRIPTION_DIFFS, get_zoo
+
+    matrix = get_zoo("superficial-standalone").load()
+    for (row, col), diff in CRITCH8_TRANSCRIPTION_DIFFS.items():
+        cell = matrix.cell(row, col)
+        assert (cell.row_action, cell.col_action) == diff["standalone"]
+
+
+def test_superficial_zoo_differs_from_critch8_on_exactly_the_diffs():
+    """The two 8-bot zoos agree everywhere except the transcription deltas."""
+    from pd_runner.tau.matrix import CRITCH8_TRANSCRIPTION_DIFFS, get_zoo
+
+    certified = get_zoo("critch8").load()
+    replay = get_zoo("superficial-standalone").load()
+
+    differing = {
+        (row, col)
+        for row in certified.bots
+        for col in certified.bots
+        if (certified.cell(row, col).row_action,
+            certified.cell(row, col).col_action)
+        != (replay.cell(row, col).row_action, replay.cell(row, col).col_action)
+    }
+    assert differing == set(CRITCH8_TRANSCRIPTION_DIFFS)
+
+
+def test_superficial_zoo_announces_that_it_contradicts_the_kernel():
+    """A knowingly-wrong zoo must be impossible to mistake for a result."""
+    from pd_runner.tau.matrix import get_zoo
+
+    zoo = get_zoo("superficial-standalone")
+    assert zoo.contradicts_the_kernel
+    assert "KNOWINGLY WRONG" in zoo.label
+    # Downstream already treats non-proven matrices as conditional.
+    assert zoo.load().is_fully_proven is False
+
+
+def test_real_zoos_contradict_nothing():
+    """Only the replay zoo may override the library. Everything else is data."""
+    from pd_runner.tau.matrix import ZOOS
+
+    for key, zoo in ZOOS.items():
+        if key == "superficial-standalone":
+            continue
+        assert not zoo.contradicts_the_kernel, f"{key} overrides proven cells"
+
+
+def test_contradictions_apply_to_both_orientations():
+    """One key per pair; the transpose is derived, so it cannot disagree."""
+    from pd_runner.tau.matrix import get_zoo
+
+    matrix = get_zoo("superficial-standalone").load()
+    for row, col in (("CupodBot", "OBot"), ("DBot", "DupocBot"),
+                     ("DupocBot", "EBot")):
+        forward = matrix.cell(row, col)
+        reverse = matrix.cell(col, row)
+        assert (forward.row_action, forward.col_action) == (
+            reverse.col_action, reverse.row_action)
+
+
+def test_contradictions_reject_cells_outside_the_zoo():
+    from pd_runner.tau.matrix import apply_contradictions, get_zoo
+
+    matrix = get_zoo("critch8").load()
+    with pytest.raises(ValueError, match="outside this zoo"):
+        apply_contradictions(matrix, {("NoSuchBot", "DefectBot"): ("C", "C")})
+
+
+def test_stipulations_still_cannot_shadow_a_proven_cell():
+    """The override path must not have weakened the guard it sits beside."""
+    from pd_runner.tau.matrix import CRITCH8_SUB_ZOO, load_tau_matrix
+
+    with pytest.raises(ValueError, match="already have proven theorems"):
+        load_tau_matrix(
+            CRITCH8_SUB_ZOO,
+            hypothetical_cells={("DefectBot", "CooperateBot"): ("C", "C")},
+        )

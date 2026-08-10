@@ -555,6 +555,20 @@ SCCs 4 → 3). Its one hole is the SAME cell Critch et al. leave open —
 `(CupodBot, DupocBot)`, the "red cell" — stipulated `(C, D)` to match that
 repo's `config.json`.
 
+`superficial-standalone` is the companion VALIDATION zoo: same eight types, but
+the six disputed cells forced to the standalone CSV's values — values the
+kernel proves are WRONG. It exists only to feed the pipeline byte-identical
+input to that repo's, so any difference in the analysis isolates to the
+implementation. **It works**: given the same matrix, all 12 comparable metrics
+reproduce exactly (ESS 0, strict edges 18, SCCs 3, cycles 11, faces
+0/3/3/66/175 over 247 supports, 16 extreme NE in 5 components), which is the
+end-to-end evidence that the port preserved the mathematics
+(`tests/egt/test_standalone_parity.py`). Never cite a number from this zoo as
+a finding. Overrides go through `NamedZoo.contradictions` +
+`apply_contradictions`, deliberately SEPARATE from `stipulations` — which may
+only ever fill a genuine hole — so `load_tau_matrix`'s guard against shadowing
+a proven cell stays intact.
+
 **Run it:** `uv run python -m pd_runner.egt.pipeline --zoo default --t-steps 6`, or
 from the web app's "Evolutionary analysis (EGT)" card (`POST /egt/sweep`, job + SSE,
 no human gate — nothing lands in the library). `--zoo` is on every stage CLI and reuses

@@ -40,7 +40,7 @@ Conventions fixed 2026-08-03 (see the design note's "open design decisions"):
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pd_runner.eval.outcome_matrix import (
@@ -208,13 +208,30 @@ class NamedZoo:
     description: str
     bots: tuple[str, ...]
     stipulations: dict[tuple[str, str], tuple[str, str]]
+    # Cells forced to a value that CONTRADICTS the Lean library. Empty for
+    # every real zoo; non-empty only for replay zoos that exist to reproduce
+    # an external dataset (see `superficial-standalone`). Kept separate from
+    # `stipulations` — which may only ever fill a genuine hole — so the two
+    # can never be confused, and so `load_tau_matrix`'s guard against
+    # shadowing a proven cell stays intact.
+    contradictions: dict[tuple[str, str], tuple[str, str]] = field(
+        default_factory=dict
+    )
+
+    @property
+    def contradicts_the_kernel(self) -> bool:
+        """True for replay zoos whose cells are knowingly wrong."""
+        return bool(self.contradictions)
 
     def load(self, theorems_dir: Path | None = None) -> TauMatrix:
-        return load_tau_matrix(
+        matrix = load_tau_matrix(
             self.bots,
             theorems_dir=theorems_dir,
             hypothetical_cells=self.stipulations,
         )
+        if self.contradictions:
+            matrix = apply_contradictions(matrix, self.contradictions)
+        return matrix
 
 
 # Selectable zoos, in presentation order (default first).
@@ -269,6 +286,33 @@ ZOOS: dict[str, NamedZoo] = {
         stipulations={
             k: v for k, v in CUPOD_STIPULATIONS.items()
             if k[0] in CRITCH8_SUB_ZOO and k[1] in CRITCH8_SUB_ZOO
+        },
+    ),
+    "superficial-standalone": NamedZoo(
+        key="superficial-standalone",
+        label="superficial standalone (8 bots, KNOWINGLY WRONG)",
+        description=(
+            "A VALIDATION ZOO, not a result. Same eight types as critch8, but "
+            "six cells are forced to the values in the standalone repo's "
+            "hand-transcribed CSV — values the Lean library proves are WRONG. "
+            "Its only purpose is to feed this pipeline exactly the input that "
+            "repo used, so any remaining difference in the analysis isolates "
+            "to the implementation rather than to the data. Never cite a "
+            "number from this zoo as a finding."
+        ),
+        bots=CRITCH8_SUB_ZOO,
+        stipulations={
+            k: v for k, v in CUPOD_STIPULATIONS.items()
+            if k[0] in CRITCH8_SUB_ZOO and k[1] in CRITCH8_SUB_ZOO
+        },
+        # The standalone side of every disagreement. One key per unordered
+        # pair — `apply_contradictions` derives the transpose, so the replay
+        # cannot become internally inconsistent.
+        contradictions={
+            pair: diff["standalone"]
+            for pair, diff in CRITCH8_TRANSCRIPTION_DIFFS.items()
+            if pair in (("CupodBot", "OBot"), ("DBot", "DupocBot"),
+                        ("DupocBot", "EBot"))
         },
     ),
     "proven-only": NamedZoo(
@@ -488,6 +532,62 @@ def load_tau_matrix(
             f"e.g. {missing[:5]}. Restrict the bot list or prove the cells."
         )
     return TauMatrix(bots, cells)
+
+
+def apply_contradictions(
+    matrix: TauMatrix,
+    contradictions: dict[tuple[str, str], tuple[str, str]],
+) -> TauMatrix:
+    """Force cells to values that CONTRADICT the Lean library.
+
+    This is not `hypothetical_cells`, and must not be confused with it. A
+    stipulation fills a genuine hole; this deliberately overwrites a proven
+    theorem with a different answer. There is exactly one legitimate use:
+    replaying an EXTERNAL dataset through this pipeline so that a difference
+    in results isolates to the implementation rather than to the input.
+
+    Every touched cell is marked `hypothetical`, so `is_fully_proven` goes
+    False and the whole downstream stack — the reports' "conditional" banners,
+    the EGT provenance blocks — already treats the result as untrustworthy
+    without needing to know why.
+
+    Each entry is applied in BOTH orientations from a single key, so a replay
+    matrix can never end up internally inconsistent in a way the source data
+    was not.
+    """
+    cells = dict(matrix._cells)
+    unknown: list[tuple[str, str]] = []
+
+    for (row, col), pair in contradictions.items():
+        if (row, col) not in cells:
+            unknown.append((row, col))
+            continue
+        cells[(row, col)] = Cell(
+            row_action=pair[0],
+            col_action=pair[1],
+            shape="CONTRADICTED",
+            has_hypotheses=False,
+            swapped=False,
+            theorem=f"(contradicts the library: {row} vs {col})",
+            hypothetical=True,
+        )
+        if row != col and (col, row) in cells:
+            cells[(col, row)] = Cell(
+                row_action=pair[1],
+                col_action=pair[0],
+                shape="CONTRADICTED",
+                has_hypotheses=False,
+                swapped=True,
+                theorem=f"(contradicts the library: {row} vs {col})",
+                hypothetical=True,
+            )
+
+    if unknown:
+        raise ValueError(
+            "contradictions name cells outside this zoo: "
+            f"{sorted(unknown)}. The bot list and the override set must agree."
+        )
+    return TauMatrix(matrix.bots, cells)
 
 
 def maximum_certified_sub_zoo(theorems_dir: Path | None = None) -> list[str]:
