@@ -57,7 +57,16 @@ def _sweep(client, **overrides) -> dict:
 
 def test_stages_endpoint_lists_stages_in_dependency_order(client):
     data = client.get("/egt/stages").json()
-    assert [s["key"] for s in data["stages"]] == ["ess", "invasion", "faces", "nash"]
+    assert [s["key"] for s in data["stages"]] == [
+        "ess", "invasion", "faces", "nash", "replicator", "moran",
+    ]
+
+
+def test_every_stage_has_a_human_label(client):
+    """A stage added to STAGES without a label must not break the endpoint."""
+    data = client.get("/egt/stages").json()
+    for stage in data["stages"]:
+        assert stage["label"], f"{stage['key']} has no label"
 
 
 def test_ess_is_marked_required(client):

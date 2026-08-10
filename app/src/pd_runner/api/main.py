@@ -150,10 +150,16 @@ async def egt_stages() -> dict:
         "invasion": "Invasion graph (SCCs, cycles, condensation)",
         "faces": "Face equilibria (replicator Jacobian)",
         "nash": "Nash equilibria (exact, extreme NE) — slowest",
+        "replicator": "Replicator dynamics (basins of attraction)",
+        "moran": "Moran process (fixation, stochastic stability)",
     }
     return {
+        # `.get` rather than `[]`: a stage added to STAGES without a label
+        # here should degrade to its key, not 500 the endpoint and take the
+        # whole UI card down with it.
         "stages": [
-            {"key": s, "label": labels[s], "required": s == "ess"} for s in STAGES
+            {"key": s, "label": labels.get(s, s), "required": s == "ess"}
+            for s in STAGES
         ],
         "default_alphas": list(DEFAULT_ALPHAS),
     }

@@ -14,16 +14,23 @@ import pytest
 from pd_runner.egt.pipeline import sweep
 from pd_runner.egt.report import build_report, load_sweep
 
-CHEAP = ("ess", "invasion", "faces")
+CHEAP = ("ess", "invasion", "faces", "replicator", "moran")
 
 
 @pytest.fixture(scope="module")
 def swept(tmp_path_factory):
-    """A 3×2 grid with dedup, rendered once and shared by the tests."""
+    """A 3×2 grid with dedup, rendered once and shared by the tests.
+
+    `replicator_samples` is cut hard: these tests check that the SECTIONS
+    render and stay honest, not that the basins are well estimated (that is
+    `test_replicator.py`'s job, against games with known answers). At the
+    production default of 200 this fixture alone took 14 minutes.
+    """
     root = tmp_path_factory.mktemp("egt_report")
     sweep(
         zoo="default", ts=[1.0, 0.6, 0.2], alphas=[0.3, 0.8],
         out_root=root, stages=CHEAP, render=False,
+        replicator_samples=8,
     )
     return root, build_report(root)
 
@@ -61,7 +68,7 @@ def test_load_sweep_raises_without_runs(tmp_path):
 
 
 def test_dropdowns_cover_every_grid_point(swept):
-    for kind in ("invasion", "nash"):
+    for kind in ("invasion", "nash", "replicator", "moran"):
         views = _dial_views(swept[1], kind)
         assert len(views) == 6, f"{kind}: {len(views)} views, expected 3 t × 2 α"
         assert len(set(views)) == 6, f"{kind}: duplicate views"
@@ -75,7 +82,7 @@ def test_deduped_points_remain_selectable(swept):
     _, cells = load_sweep(root)
     shared = [c for c in cells if len(c.grid_points) > 1]
     assert shared, "expected at least one deduped matrix in this grid"
-    for kind in ("invasion", "nash"):
+    for kind in ("invasion", "nash", "replicator", "moran"):
         views = set(_dial_views(page, kind))
         for cell in shared:
             for t, alpha in cell.grid_points:
@@ -84,7 +91,7 @@ def test_deduped_points_remain_selectable(swept):
 
 def test_dropdown_options_match_the_axes(swept):
     _, page = swept
-    for kind in ("invasion", "nash"):
+    for kind in ("invasion", "nash", "replicator", "moran"):
         block = page[page.index(f'id="{kind}-t"'):]
         t_opts = re.findall(r'value="([^"]+)"', block[:block.index("</select>")])
         assert t_opts == ["1", "0.6", "0.2"]
@@ -109,7 +116,7 @@ def test_absent_stage_is_not_reported_as_zero(swept):
     assert '<td class="num">—</td>' in page
     # …and the Nash section says the stage did not run rather than
     # rendering an empty component table.
-    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
     assert "did not run" in section
     assert "<th>component</th>" not in section
 
@@ -181,14 +188,15 @@ def test_charts_are_inline_svg(swept):
 def test_all_four_deep_dive_sections_are_present(swept):
     _, page = swept
     for heading in ("2 · Pure ESS", "3 · Invasion graph",
-                    "4 · Face equilibria", "5 · Nash equilibria"):
+                    "4 · Face equilibria", "5 · Nash equilibria",
+                    "6 · Replicator dynamics", "7 · Moran process"):
         assert heading in page
 
 
 def test_original_layout_is_preserved(swept):
     """The overview table leads, then one section per analysis."""
     _, page = swept
-    order = [page.find(f"<h2>{n} ·") for n in range(1, 6)]
+    order = [page.find(f"<h2>{n} ·") for n in range(1, 8)]
     assert all(p > 0 for p in order), "a numbered section is missing"
     assert order == sorted(order), "sections are out of order"
     assert page.find("<h2>Provenance</h2>") > order[-1]
@@ -197,7 +205,7 @@ def test_original_layout_is_preserved(swept):
 def test_each_deep_dive_explains_itself(swept):
     """All four sections lead with what the analysis is asking."""
     _, page = swept
-    assert page.count("<b>What this asks.</b>") == 4
+    assert page.count("<b>What this asks.</b>") == 6
 
 
 def test_ess_grid_covers_the_plane(swept):
@@ -229,7 +237,7 @@ def test_faces_grid_reports_all_four_classes(swept):
 
 def test_invasion_and_nash_have_independent_dial_pairs(swept):
     _, page = swept
-    for kind in ("invasion", "nash"):
+    for kind in ("invasion", "nash", "replicator", "moran"):
         assert f'id="{kind}-t"' in page
         assert f'id="{kind}-a"' in page
 
@@ -246,7 +254,7 @@ def test_dial_views_cover_every_grid_point_per_kind(swept):
 def test_nash_section_says_the_stage_is_absent(swept):
     """This fixture skips nash; the section must say so, not show an empty table."""
     _, page = swept
-    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
     assert "did not run" in section
     assert "<th>component</th>" not in section
 
@@ -266,7 +274,7 @@ def swept_with_nash(tmp_path_factory):
 
 def test_nash_component_table_has_the_requested_columns(swept_with_nash):
     _, page = swept_with_nash
-    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
     for column in ("component", "equilibria", "payoff", "Pr[(C,C)]", "bots involved"):
         assert f">{column}</th>" in section
 
@@ -293,7 +301,7 @@ def test_nash_components_name_the_bots_involved(swept_with_nash):
 def test_whole_numbers_drop_the_denominator(swept_with_nash):
     """`2/1` displays as `2`; the noise is gone but the value is unchanged."""
     _, page = swept_with_nash
-    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
     assert "/1<" not in section, "a `/1` denominator survived into the table"
 
 
@@ -327,7 +335,7 @@ def test_display_formatting_does_not_touch_the_artefacts(swept_with_nash):
 def test_nash_explains_its_cost(swept_with_nash):
     """The section says why it is the slow stage, since that shapes sweeps."""
     _, page = swept_with_nash
-    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
     assert "exact rational arithmetic" in section
     assert "deduplicates" in section
 
@@ -360,7 +368,7 @@ def test_nash_failure_is_named_and_never_reads_as_no_equilibria(tmp_path):
     }))
 
     page = build_report(tmp_path)
-    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
     assert "Not computed at" in section
     assert "(t=0, α=0.3)" in section
     assert "not an absence of equilibria" in section
@@ -374,3 +382,51 @@ def test_ess_bots_none_versus_empty(swept_with_nash):
     _, cells = load_sweep(root)
     assert cells[0].ess_bots() == []          # ran, found none
     assert cells[0].nash_components() is not None
+
+
+# --------------------------------------------------------------------------
+# Sections 6-7: which equilibrium is actually REACHED
+# --------------------------------------------------------------------------
+
+
+def test_dynamics_sections_explain_the_gap_they_close(swept):
+    """The point of 6-7 is reachability, not another list of equilibria."""
+    _, page = swept
+    overview = page[page.find("<h2>1 ·"):page.find("<h2>2 ·")]
+    assert "actually REACHES" in overview
+
+    replicator = page[page.find("<h2>6 ·"):page.find("<h2>7 ·")]
+    assert "basin of attraction" in replicator
+    assert "captures 93% of starting conditions" in replicator
+
+    moran = page[page.find("<h2>7 ·"):page.find("<h2>Provenance")]
+    assert "reachable" in moran and "likely" in moran
+
+
+def test_replicator_section_reports_basins_and_shape(swept):
+    _, page = swept
+    section = page[page.find("<h2>6 ·"):page.find("<h2>7 ·")]
+    for column in ("basin", "starts", "shape", "surviving types", "reached from"):
+        assert f">{column}</th>" in section
+    # A continuum must be labelled as one, not passed off as a point.
+    assert "continuum" in section or "point" in section
+
+
+def test_moran_section_reports_the_two_dials(swept):
+    _, page = swept
+    section = page[page.find("<h2>7 ·"):page.find("<h2>Provenance")]
+    assert ">M</th>" in section and ">β</th>" in section
+    assert "stochastically stable" in section
+
+
+def test_basins_and_moran_are_read_from_the_artefacts(swept):
+    """`None` = stage absent, never conflated with an empty result."""
+    root, _ = swept
+    _, cells = load_sweep(root)
+    for cell in cells:
+        basins = cell.basins()
+        assert basins is not None, "the replicator stage ran in this fixture"
+        assert basins["n_interior_converged"] <= basins["n_interior_samples"]
+        points = cell.moran_points()
+        assert points, "the moran stage ran in this fixture"
+        assert all("stochastically_stable" in p for p in points)

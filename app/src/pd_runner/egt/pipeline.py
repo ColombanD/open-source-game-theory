@@ -66,7 +66,9 @@ from pd_runner.tau.sweep import TournamentResult, run_tournament
 DEFAULT_OUT_ROOT = Path("generated/egt")
 
 # Stage keys, in dependency order. ii.a writes the numeric CSV the rest read.
-STAGES: tuple[str, ...] = ("ess", "invasion", "faces", "nash")
+STAGES: tuple[str, ...] = (
+    "ess", "invasion", "faces", "nash", "replicator", "moran",
+)
 
 
 def cells_fingerprint(payoff: PayoffMatrix) -> str:
@@ -220,6 +222,9 @@ def run_stages(
     seed: int = 20260514,
     render: bool = True,
     lrsnash_bin: str = "lrsnash",
+    replicator_samples: int = 200,
+    moran_populations: tuple[int, ...] = (10, 50, 100),
+    moran_betas: tuple[float, ...] = (0.01, 0.1, 1.0),
     on_event: Callable[[str], None] | None = None,
 ) -> list[StageOutcome]:
     """Run the requested stages over one payoff matrix, in dependency order.
@@ -231,7 +236,9 @@ def run_stages(
     """
     from pd_runner.egt.faces.run import run_faces
     from pd_runner.egt.invasion.cli import run_invasion
+    from pd_runner.egt.moran.run import run_moran
     from pd_runner.egt.nash.cli import run_pipeline as run_nash
+    from pd_runner.egt.replicator.run import run_replicator
     from pd_runner.egt.static_analysis.cli import run_ess
 
     def emit(msg: str) -> None:
@@ -243,7 +250,9 @@ def run_stages(
     ess_ok = False
 
     for stage in stages:
-        if stage != "ess" and stage in ("invasion", "faces", "nash") and not ess_ok:
+        if stage != "ess" and stage in (
+            "invasion", "faces", "nash", "replicator", "moran",
+        ) and not ess_ok:
             # ii.b-ii.d read the numeric CSV that ii.a writes.
             if not paths.numeric_csv.exists():
                 outcomes.append(StageOutcome(
@@ -305,6 +314,45 @@ def run_stages(
                     "n_extreme_NE": prov["n_extreme_NE"],
                     "n_components": prov["n_components"],
                     "cross_check_performed": prov["cross_check_performed"],
+                }
+            elif stage == "replicator":
+                basins = run_replicator(
+                    paths.numeric_csv, out_dir,
+                    inherited_assumptions=paths.ess_assumptions,
+                    n_samples=replicator_samples, seed=seed,
+                )
+                largest = max(
+                    (basins.basin_fraction(a) for a in basins.attractors),
+                    default=0.0,
+                )
+                summary = {
+                    "n_attractors": len(basins.attractors),
+                    "n_unconverged": basins.n_unconverged,
+                    "all_converged": basins.all_converged,
+                    "largest_basin": round(largest, 6),
+                    "dominant_support": next(
+                        (a.support(basins.names) for a in sorted(
+                            basins.attractors, key=lambda a: -a.n_interior)),
+                        [],
+                    ),
+                }
+            elif stage == "moran":
+                points = run_moran(
+                    paths.numeric_csv, out_dir,
+                    inherited_assumptions=paths.ess_assumptions,
+                    populations=moran_populations, betas=moran_betas,
+                )
+                # The strongest-selection, largest-population point is the
+                # headline; the rest live in the artefacts.
+                headline = max(points, key=lambda r: (r.beta, r.population))
+                summary = {
+                    "n_points": len(points),
+                    "all_converged": all(r.converged for r in points),
+                    "headline": {
+                        "population": headline.population,
+                        "beta": headline.beta,
+                        "stochastically_stable": headline.stochastically_stable(),
+                    },
                 }
             else:
                 raise ValueError(f"unknown stage {stage!r}; choose from {STAGES}")

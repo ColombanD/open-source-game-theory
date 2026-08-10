@@ -496,9 +496,35 @@ coordination), NOT against OSGT:
 | ii.b | `invasion/` | `G>`/`G≥` graphs, SCCs, condensation, cycles |
 | ii.c | `faces/` | face equilibria: block solve, replicator Jacobian, tangent eigenvalues |
 | ii.d | `nash/` | extreme NE via best-response polytopes, exact `Fraction` arithmetic |
+| iii | `replicator/` | basins of attraction — WHERE a population lands, not just what rests |
+| iv | `moran/` | finite-population fixation, stochastic stability |
 
-Stages (iii) replicator dynamics, (iv) Moran process and (v) the report layer were
-never implemented in the source repo and are still absent.
+**Stages (iii) and (iv) are NEW CODE, not ported** — the source repo's
+`src/replicator/` and `src/moran/` were never written. They close the gap the
+first four leave: ii.a-ii.d catalogue which resting points EXIST, these two say
+which one a population actually REACHES and how much of the state space leads
+there. Stage (v), a report layer, is covered by `egt/report.py`.
+
+Two things worth knowing about them:
+
+* **Basins group by SUPPORT, not by proximity.** On this zoo the endpoints land
+  on a *continuum* of neutrally-stable rest points: 26 interior samples gave 26
+  distinct endpoints (coordinate distances up to 0.45) sharing 2 supports.
+  Clustering by proximity would report 26 attractors at ~4% each — true
+  arithmetic, complete nonsense as an answer. The spread within a group is
+  reported so a continuum is visible rather than hidden.
+* **Non-convergence is a finding.** A trajectory that never settles is counted
+  in `n_unconverged` and NEVER assigned to an attractor; rock-paper-scissors
+  legitimately produces mostly-unconverged runs. Basin denominators are
+  converged interior samples only, with monoculture starts tracked separately
+  (they are measure-zero).
+
+**The headline result (2026-08-10).** On the default zoo, `DupocBot` — the
+Löbian cooperator — is uniquely stochastically stable at full transparency, and
+its share of the long run RISES with selection intensity: 20% → 55% → 82% → 89%
+across the (M, β) sweep. At `t = 0` that collapses into a four-way tie including
+`DefectBot`. Cooperation under transparency is not merely an available
+equilibrium; it is where the population spends its time.
 
 **`ingest.py` is the seam** — it REPLACED the old `src/ingest/` package wholesale.
 The original parsed a hand-transcribed CSV and imputed two special cells from a

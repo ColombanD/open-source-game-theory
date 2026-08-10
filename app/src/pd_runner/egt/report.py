@@ -201,6 +201,20 @@ class Cell:
         path = self.run_dir / "invasion" / "graph.svg"
         return path if path.exists() else None
 
+    def basins(self) -> dict | None:
+        """Stage (iii) `basins.json`, or None if the stage did not run."""
+        path = self.run_dir / "replicator" / "basins.json"
+        if not path.exists():
+            return None
+        return json.loads(path.read_text())
+
+    def moran_points(self) -> list[dict] | None:
+        """Stage (iv) `(M, beta)` points, or None if the stage did not run."""
+        path = self.run_dir / "moran" / "stationary.json"
+        if not path.exists():
+            return None
+        return json.loads(path.read_text()).get("points", [])
+
     def nash_components(self) -> list[dict] | None:
         """Per-component rollup: size, payoff, cooperation rate, bots involved.
 
@@ -923,6 +937,164 @@ def _nash_section(ts, alphas, index, heat: str = "", heat_label: str = "") -> st
     )
 
 
+def _replicator_section(ts, alphas, index) -> str:
+    """iii — where a population actually ENDS UP, and from how much of the space."""
+    views = []
+    for t in ts:
+        for alpha in alphas:
+            cell = index.get((_key(t), _key(alpha)))
+            if cell is None:
+                body = '<p class="note missing">This grid point was not analysed.</p>'
+            else:
+                data = cell.basins()
+                if data is None:
+                    body = ('<p class="note missing">The replicator stage did '
+                            "not run for this sweep.</p>")
+                else:
+                    unconverged = (
+                        f'<p class="banner warn"><b>{data["n_unconverged"]} of '
+                        f'{data["n_interior_samples"] + data["n_vertex_samples"]} '
+                        "trajectories did not settle.</b> They are excluded from "
+                        "every basin below. A game with closed orbits cycles "
+                        "forever instead of converging — that is a result about "
+                        "the dynamics, not a numerical failure.</p>"
+                        if data["n_unconverged"] else ""
+                    )
+                    rows = []
+                    for a in data["attractors"]:
+                        if not a["n_interior"] and not a["n_vertex"]:
+                            continue
+                        support = " ".join(
+                            f'<span class="botpill">{html.escape(b)}</span>'
+                            for b in a["support"]
+                        ) or "—"
+                        spread = a.get("spread", 0.0)
+                        kind = (
+                            "point" if spread < 1e-3
+                            else f'<span title="endpoints spread over this '
+                                 f'range — the rest points form a continuum">'
+                                 f"continuum ±{spread:.2f}</span>"
+                        )
+                        reached = ", ".join(a["vertex_sources"]) or "—"
+                        rows.append(
+                            f'<tr><td class="num">{a["basin_fraction"]:.1%}</td>'
+                            f'<td class="num">{a["n_interior"]}</td>'
+                            f"<td>{kind}</td><td>{support}</td>"
+                            f'<td class="cls-muted">{html.escape(reached)}</td></tr>'
+                        )
+                    body = (
+                        f"{unconverged}"
+                        f'<p class="note">{data["n_interior_converged"]} of '
+                        f'{data["n_interior_samples"]} interior starts settled. '
+                        "Basins are shares of those; monoculture starts are "
+                        "listed separately in the last column because they are "
+                        "a measure-zero set.</p>"
+                        f'<div class="panel"><table class="fam"><thead><tr>'
+                        f'<th class="num">basin</th><th class="num">starts</th>'
+                        f"<th>shape</th><th>surviving types</th>"
+                        f"<th>reached from</th></tr></thead>"
+                        f"<tbody>{''.join(rows)}</tbody></table></div>"
+                    )
+            views.append(
+                f'<div class="dial-view" data-kind="replicator" data-t="{_key(t)}" '
+                f'data-alpha="{_key(alpha)}" hidden>{body}</div>'
+            )
+
+    return (
+        "<h2>6 · Replicator dynamics — where a population LANDS</h2>"
+        '<p class="note"><b>What this asks.</b> Every section above catalogues '
+        "resting points; none says which one a population actually reaches. "
+        "This one does. Start from a mix, let the types that earn more than "
+        "average grow — <code>ẋᵢ = xᵢ((Ax)ᵢ − xᵀAx)</code> — and see where the "
+        "flow ends. Sample many starting mixes and the share reaching each "
+        "outcome is its <b>basin of attraction</b>.</p>"
+        '<p class="note"><b>Why it matters.</b> This turns "this equilibrium '
+        'exists" into "this equilibrium captures 93% of starting conditions". '
+        "A monoculture can be a perfectly good rest point with a basin of "
+        "<i>zero</i> — reachable only by starting there, which is exactly the "
+        "gap between being an equilibrium and being where things end up.</p>"
+        '<p class="note"><b>Reading the shape column.</b> <code>point</code> '
+        "means every start landed on the same mix. <code>continuum</code> means "
+        "the endpoints spread across a face of neutrally-stable rest points: "
+        "the population settles on that <i>set of types</i>, but the exact "
+        "proportions depend on where it began. Outcomes are grouped by which "
+        "types survive, not by proximity, because a continuum is one answer "
+        "rather than one answer per sample.</p>"
+        + _dial_selects("replicator", ts, alphas)
+        + "".join(views)
+    )
+
+
+def _moran_section(ts, alphas, index) -> str:
+    """iv — finite populations, where drift can beat selection."""
+    views = []
+    for t in ts:
+        for alpha in alphas:
+            cell = index.get((_key(t), _key(alpha)))
+            if cell is None:
+                body = '<p class="note missing">This grid point was not analysed.</p>'
+            else:
+                points = cell.moran_points()
+                if points is None:
+                    body = ('<p class="note missing">The Moran stage did not '
+                            "run for this sweep.</p>")
+                elif not points:
+                    body = '<p class="note missing">No points recorded.</p>'
+                else:
+                    rows = []
+                    for p in points:
+                        stable = " ".join(
+                            f'<span class="botpill">{html.escape(b)}</span>'
+                            for b in p["stochastically_stable"]
+                        ) or '<span class="none-found">none above the cut</span>'
+                        top = ", ".join(
+                            f"{html.escape(n)} {share:.0%}"
+                            for n, share in p["stationary"][:3]
+                        )
+                        warn = "" if p["converged"] else ' <span class="missing">(solve did not converge)</span>'
+                        rows.append(
+                            f'<tr><td class="num">{p["population"]}</td>'
+                            f'<td class="num">{p["beta"]:g}</td>'
+                            f"<td>{stable}</td>"
+                            f'<td class="cls-muted">{top}{warn}</td></tr>'
+                        )
+                    body = (
+                        f'<div class="panel"><table class="fam"><thead><tr>'
+                        f'<th class="num">M</th><th class="num">β</th>'
+                        f"<th>stochastically stable</th>"
+                        f"<th>time spent (top 3)</th></tr></thead>"
+                        f"<tbody>{''.join(rows)}</tbody></table></div>"
+                    )
+            views.append(
+                f'<div class="dial-view" data-kind="moran" data-t="{_key(t)}" '
+                f'data-alpha="{_key(alpha)}" hidden>{body}</div>'
+            )
+
+    return (
+        "<h2>7 · Moran process — what a FINITE population does</h2>"
+        '<p class="note"><b>What this asks.</b> Section 6 assumes an infinite '
+        "population, where a type with any advantage always spreads. Real "
+        "populations are finite, and there random drift can wipe out a type "
+        "that selection favours. This is the difference between cooperation "
+        "being <i>reachable</i> and cooperation being <i>likely</i>.</p>"
+        '<p class="note"><b>What is computed.</b> The chance a single mutant '
+        "takes over (fixation probability), and from that the fraction of TIME "
+        "the population spends as each type once mutations are rare — the "
+        "types carrying the most time are <b>stochastically stable</b>. This "
+        "can disagree with every earlier section: a type that is no ESS and "
+        "sits inside a cycle can still dominate the long run if it is hard to "
+        "invade and easy to reach.</p>"
+        '<p class="note"><b>The two dials.</b> <code>M</code> is population '
+        "size — smaller means drift matters more. <code>β</code> is selection "
+        "intensity: <code>β → 0</code> is pure drift (every type equally "
+        "likely, the sanity floor), large <code>β</code> is selection "
+        "dominating. Watching a type's share climb with β is the signal that "
+        "selection, not chance, is putting it there.</p>"
+        + _dial_selects("moran", ts, alphas)
+        + "".join(views)
+    )
+
+
 # --------------------------------------------------------------------------
 # The page
 # --------------------------------------------------------------------------
@@ -1071,7 +1243,7 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
     # data-kind so the invasion and Nash pickers move independently.
     dial_script = (
         "<script>(function(){\n"
-        '  var kinds = ["invasion", "nash"];\n'
+        '  var kinds = ["invasion", "nash", "replicator", "moran"];\n'
         "  kinds.forEach(function(kind){\n"
         '    var tSel = document.getElementById(kind + "-t");\n'
         '    var aSel = document.getElementById(kind + "-a");\n'
@@ -1151,6 +1323,8 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
         ts, alphas, index, chart=stable_chart)
     nash_section = _nash_section(
         ts, alphas, index, heat=heat, heat_label=heat_label)
+    replicator_section = _replicator_section(ts, alphas, index)
+    moran_section = _moran_section(ts, alphas, index)
     artefacts_section = _artefacts_section(cells, artefact_base)
 
     return f"""<title>EGT — evolutionary analysis ({html.escape(zoo)})</title>
@@ -1191,10 +1365,13 @@ x-axis runs full transparency on the <b>left</b> to opaque on the <b>right</b>,
 so moving rightward means the signal is degrading.</p>
 
 <h2>1 · What was analysed</h2>
-<p class="note">Each section below opens one of the four population analyses:
-first what it asks, then how it moves across the plane, then the answer at a
-cell you choose. Sections 2-5 go from the strongest claim (a single unbeatable
-type) to the weakest (any rational resting point at all).</p>
+<p class="note">Each section below opens one population analysis: first what it
+asks, then how it moves across the plane, then the answer at a cell you choose.
+<b>Sections 2-5 ask which resting points EXIST</b>, from the strongest claim (a
+single unbeatable type) to the weakest (any rational resting point at all).
+<b>Sections 6-7 ask which one a population actually REACHES</b> — the question
+the first four cannot answer, because an equilibrium can be perfectly valid and
+still unreachable from anywhere but itself.</p>
 <div class="panel">
 <table class="fam">
 <thead><tr>
@@ -1217,20 +1394,10 @@ not run or failed; it never means zero.</p>
 {faces_deep_section}
 
 {nash_section}
-<p class="note">The whole sweep in one table — every number on this page is
-reachable here without touching a control. <code>—</code> means the stage did
-not run or failed; it never means zero.</p>
-<div class="panel">
-<table class="fam">
-<thead><tr>
-  <th>cell</th><th class="num">pts</th><th class="num">ESS</th>
-  <th class="num">edges</th><th class="num">SCCs</th>
-  <th class="num">stable faces</th><th class="num">extreme NE</th>
-  <th class="num">components</th>
-</tr></thead>
-<tbody>{rows}</tbody>
-</table>
-</div>
+
+{replicator_section}
+
+{moran_section}
 
 <h2>Provenance</h2>
 <p class="note">Payoffs use the donation convention
