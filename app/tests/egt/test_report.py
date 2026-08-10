@@ -277,8 +277,9 @@ def test_nash_components_report_the_cooperation_split(swept_with_nash):
     _, cells = load_sweep(root)
     comps = cells[0].nash_components()
     assert comps is not None and len(comps) >= 2
+    # Displayed form: whole numbers drop the `/1` (see `_fmt_rational`).
     coop_rates = {c["coop_rate"] for c in comps}
-    assert {"1/1", "0/1"} <= coop_rates, f"expected both extremes, got {coop_rates}"
+    assert {"1", "0"} <= coop_rates, f"expected both extremes, got {coop_rates}"
 
 
 def test_nash_components_name_the_bots_involved(swept_with_nash):
@@ -287,6 +288,40 @@ def test_nash_components_name_the_bots_involved(swept_with_nash):
     for comp in cells[0].nash_components():
         assert comp["bots"], "a component with no bots is meaningless"
         assert comp["n_equilibria"] >= 1
+
+
+def test_whole_numbers_drop_the_denominator(swept_with_nash):
+    """`2/1` displays as `2`; the noise is gone but the value is unchanged."""
+    _, page = swept_with_nash
+    section = page[page.find("<h2>5 ·"):page.find("<h2>Provenance")]
+    assert "/1<" not in section, "a `/1` denominator survived into the table"
+
+
+def test_real_fractions_are_never_rounded(swept_with_nash):
+    """A non-terminating value must stay exact — that is the point."""
+    from pd_runner.egt.report import _fmt_range, _fmt_rational
+
+    assert _fmt_rational("6/7") == "6/7"          # 0.857142857… never rounded
+    assert _fmt_rational("43/147") == "43/147"
+    assert _fmt_rational("3/2") == "3/2"
+    assert _fmt_rational("2/1") == "2"
+    assert _fmt_rational("-1/1") == "-1"
+    # Ranges format both ends.
+    assert _fmt_range(["0/1", "2/1"]) == "0…2"
+    assert _fmt_range(["6/7", "3/2"]) == "6/7…3/2"
+    assert _fmt_range([]) == "—"
+
+
+def test_display_formatting_does_not_touch_the_artefacts(swept_with_nash):
+    """The on-disk schema is pinned and machine-read: it keeps `n/d`."""
+    import json
+
+    root, _ = swept_with_nash
+    files = sorted(root.glob("runs/*/nash/runs/*/equilibria.jsonl"))
+    assert files, "expected a nash artefact"
+    record = json.loads(files[0].read_text().splitlines()[0])
+    assert "/" in record["u_rational"]
+    assert "/" in record["cooperation_rate_rational"]
 
 
 def test_nash_explains_its_cost(swept_with_nash):

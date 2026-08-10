@@ -56,6 +56,44 @@ _D_GREY = "#8c8c96"
 
 
 # --------------------------------------------------------------------------
+# Exact-rational display
+# --------------------------------------------------------------------------
+
+
+def _fmt_rational(value: str) -> str:
+    """Display an exact `numerator/denominator` string, dropping a `/1` tail.
+
+    The Nash stage computes in `fractions.Fraction` and serialises every value
+    as `n/d`, which is right for the artefacts: `43/147` has no terminating
+    decimal, and the whole point of exact arithmetic is that the equilibrium
+    verifies rather than nearly-verifies.
+
+    But `2/1` is just `2`. On matrices whose equilibria are all pure the entire
+    column reads `2/1`, `0/1`, `1/1`, where the denominators carry no
+    information and make the real fractions harder to spot. Rendering an
+    integer as an integer loses nothing — it is still exact.
+
+    Only the DISPLAY changes; the on-disk artefacts keep `n/d` verbatim,
+    because their schema is pinned and machine-read.
+    """
+    if not isinstance(value, str):
+        return str(value)
+    numerator, sep, denominator = value.partition("/")
+    if sep and denominator.strip() == "1":
+        return numerator.strip()
+    return value
+
+
+def _fmt_range(values: Sequence[str]) -> str:
+    """One formatted value, or `lo…hi` when a component spans several."""
+    if not values:
+        return "—"
+    if len(values) == 1:
+        return _fmt_rational(values[0])
+    return f"{_fmt_rational(values[0])}…{_fmt_rational(values[-1])}"
+
+
+# --------------------------------------------------------------------------
 # Loading a sweep from disk
 # --------------------------------------------------------------------------
 
@@ -193,8 +231,10 @@ class Cell:
             out.append({
                 "id": cid,
                 "n_equilibria": len(members),
-                "payoff": payoffs[0] if len(payoffs) == 1 else f"{payoffs[0]}…{payoffs[-1]}",
-                "coop_rate": coops[0] if len(coops) == 1 else f"{coops[0]}…{coops[-1]}",
+                # Formatted for display at construction so both ends of a
+                # range get the same treatment (see `_fmt_rational`).
+                "payoff": _fmt_range(payoffs),
+                "coop_rate": _fmt_range(coops),
                 "bots": bots,
                 "has_symmetric": any(m.get("classification") == "symmetric" for m in members),
                 "touches_suspect": any(m.get("touches_suspect_cell") for m in members),
