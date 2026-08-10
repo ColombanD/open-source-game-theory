@@ -28,7 +28,12 @@ app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 # EGT sweep artefacts, so the report's links to a run's CSV/parquet/GEXF/figures
 # resolve in the browser. Mounted lazily-safe: the directory is created if the
 # app starts before any sweep has run.
-_EGT_RUNS_DIR = Path("generated/egt/runs")
+# Anchored to `app/`, not cwd: a relative path here created a stray
+# `generated/egt/runs/` wherever the server happened to be started from —
+# outside the gitignore, so sweep artefacts showed up in git status.
+from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT as _EGT_OUT_ROOT
+
+_EGT_RUNS_DIR = _EGT_OUT_ROOT / "runs"
 _EGT_RUNS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/egt/runs", StaticFiles(directory=_EGT_RUNS_DIR), name="egt-runs")
 

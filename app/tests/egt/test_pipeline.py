@@ -255,3 +255,25 @@ def test_alpha_phases_collapse_at_full_transparency(tau_matrix):
 def test_sweep_rejects_a_bad_alpha_keyword(tmp_path):
     with pytest.raises(ValueError, match="'phases'"):
         sweep(zoo="default", ts=[1.0], alphas="every", out_root=tmp_path, stages=("ess",))
+
+
+def test_default_out_root_is_anchored_to_the_package_not_cwd(tmp_path, monkeypatch):
+    """A relative default silently changes meaning with the working directory.
+
+    Regression: `DEFAULT_OUT_ROOT` was `Path("generated/egt")`, so a sweep run
+    from the repo root wrote ~120 artefact files to `./generated/`, outside the
+    gitignore, and they turned up in `git status`.
+    """
+    from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
+
+    monkeypatch.chdir(tmp_path)
+    assert DEFAULT_OUT_ROOT.is_absolute()
+    assert DEFAULT_OUT_ROOT.parts[-3:] == ("app", "generated", "egt")
+
+
+def test_api_serves_runs_from_the_same_anchored_root():
+    """The static mount and the sweep output must agree on one directory."""
+    from pd_runner.api.main import _EGT_RUNS_DIR
+    from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
+
+    assert _EGT_RUNS_DIR == DEFAULT_OUT_ROOT / "runs"

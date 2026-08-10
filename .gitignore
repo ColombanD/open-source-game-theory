@@ -65,3 +65,8 @@ npm-debug.log
 
 # Claude Code worktree artifacts
 .claude/worktrees/
+# EGT sweep artefacts written to the REPO ROOT rather than app/generated/.
+# The defaults are now anchored to `app/` so this should not happen, but
+# `--out-root generated/egt` from here still would, and one sweep is ~120
+# files. The tracked copy lives under app/generated/ with its own rules.
+/generated/

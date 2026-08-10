@@ -61,9 +61,20 @@ from pd_runner.tau.signal import (
 )
 from pd_runner.tau.sweep import TournamentResult, run_tournament
 
-# Default output root, relative to `app/`. Mirrors `generated/outcomes/` and
-# `generated/lean/`.
-DEFAULT_OUT_ROOT = Path("generated/egt")
+# Default output root, ANCHORED to `app/` rather than the current directory.
+#
+# This was `Path("generated/egt")` until 2026-08-10, and a relative default
+# silently changes meaning with cwd: run from `app/` it lands in
+# `app/generated/egt/` (gitignored), run from the repo root it lands in
+# `./generated/egt/` (not ignored), dumping ~120 artefact files into git
+# status. Anchoring to the package matches `config.load_paths`, which derives
+# every other generated directory the same way.
+#
+# `--out-root` still accepts a relative path and still resolves against cwd —
+# that is an explicit choice by the caller, not a silent default.
+# parents[3] is `app/` — this file is app/src/pd_runner/egt/pipeline.py, one
+# level deeper than config.py, which uses parents[2] for the same directory.
+DEFAULT_OUT_ROOT = Path(__file__).resolve().parents[3] / "generated" / "egt"
 
 # Stage keys, in dependency order. ii.a writes the numeric CSV the rest read.
 STAGES: tuple[str, ...] = (
