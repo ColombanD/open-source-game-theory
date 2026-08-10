@@ -6,13 +6,18 @@ CSS-variable palette. What differs is the input — the tau report computes its
 own tournaments, whereas this one READS a sweep that already ran, because the
 four analysis stages cost minutes and their artefacts are the record.
 
-The page is organized around a **(t, α) picker**. Every analysed matrix is
-pre-rendered into a hidden panel tagged with `data-cell`; moving either slider
-just toggles which panel is visible. No server round-trip, no recomputation —
-the same trick `tau/report.py` uses for its α slider, and the reason the page
-works from `file://`.
+Layout: four cross-cell overviews first (§1 the phase plane, §2-4 trends over
+t), then one deep dive per analysis stage (§5 ESS, §6 invasion, §7 faces,
+§8 Nash), then the whole sweep as a table (§9), then provenance and artefacts.
 
-Grid points that shared a matrix (dedup) resolve to the same panel, so the
+The deep dives use two presentations, chosen by how big the per-cell answer
+is: a **(t, α) grid** where it reads at a glance (ESS names, face-class
+counts), and a **(t, α) dropdown** where it is a figure or a table (invasion
+graph, Nash components). Dropdown views are all pre-rendered and toggled by
+`data-kind` + `data-t`/`data-alpha`, so there is no server round-trip and the
+page works from `file://`.
+
+Grid points that shared a matrix (dedup) resolve to the same view, so a
 picker never lands on a hole: `_cell_index` maps every requested `(t, α)` to
 the run that actually covers it.
 
@@ -425,34 +430,6 @@ def _phase_grid(
     return "".join(parts)
 
 
-def _bar_row(entries: list[tuple[str, int, str]], width: int = 720) -> str:
-    """Horizontal bars with the label and value outside the mark.
-
-    Labels never sit inside the bar, so a short bar can't clip its own text.
-    """
-    if not entries:
-        return '<p class="note">Nothing to show.</p>'
-    total = max(v for _, v, _ in entries) or 1
-    row_h, pad_l, pad_r = 26, 176, 56
-    plot_w = width - pad_l - pad_r
-    height = row_h * len(entries) + 8
-
-    parts = [f'<svg viewBox="0 0 {width} {height}" class="chart" role="img">']
-    for i, (label, value, colour) in enumerate(entries):
-        y = i * row_h + 4
-        w = (value / total) * plot_w
-        parts.append(
-            f'<text class="tick end" x="{pad_l - 10}" y="{y + 15}">'
-            f"{html.escape(label)}</text>"
-            f'<rect x="{pad_l}" y="{y + 4}" width="{max(w, 1):.1f}" height="14" '
-            f'rx="4" fill="{colour}"/>'
-            f'<text class="cellnum" x="{pad_l + max(w, 1) + 8:.1f}" y="{y + 15}">'
-            f"{value}</text>"
-        )
-    parts.append("</svg>")
-    return "".join(parts)
-
-
 # --------------------------------------------------------------------------
 # Per-cell panels
 # --------------------------------------------------------------------------
@@ -486,126 +463,55 @@ def _inline_svg(path: Path, max_bytes: int = 400_000) -> str:
     return svg
 
 
-def _stat_tiles(cell: Cell) -> str:
-    tiles = [
-        (cell.n_types, "types analysed"),
-        (_fmt(cell.n_pure_ess), "pure ESS"),
-        (_fmt(cell.n_extreme_ne), "extreme NE"),
-        (_fmt(cell.n_components), "Nash components"),
-        (_fmt(cell.stable_faces), "stable faces"),
-        (_fmt(cell.n_sccs), "SCCs"),
-    ]
-    return '<ul class="stats">' + "".join(
-        f"<li><b>{v}</b><span>{html.escape(s)}</span></li>" for v, s in tiles
-    ) + "</ul>"
+def _artefacts_section(cells: Sequence[Cell], artefact_base: str) -> str:
+    """The closing section: per-matrix warnings and links to every artefact.
 
-
-def _faces_section(cell: Cell) -> str:
-    by_class = cell.faces_by_class
-    if not by_class:
-        return '<p class="note">The faces stage did not run for this cell.</p>'
-    order = ["asymp_stable", "asymp_stable_invadable", "saddle", "unstable",
-             "non_hyperbolic", "non_interior", "singular"]
-    colour = {
-        "asymp_stable": _C_BLUE,
-        "asymp_stable_invadable": _C_BLUE,
-        "saddle": _EXPLOIT,
-    }
-    entries = [
-        (k.replace("_", " "), by_class[k], colour.get(k, _D_GREY))
-        for k in order if by_class.get(k)
-    ]
-    entries += [
-        (k.replace("_", " "), v, _D_GREY)
-        for k, v in by_class.items() if k not in order and v
-    ]
-    trunc = (
-        '<p class="banner warn">Enumeration was TRUNCATED — larger faces were '
-        "not examined, so the absence of a stable equilibrium among them is "
-        "unproven, not evidence.</p>"
-        if not cell.enumeration_complete else ""
-    )
-    rows = "".join(
-        f"<tr><td>{html.escape(k.replace('_', ' '))}</td>"
-        f'<td class="num">{v}</td></tr>'
-        for k, v in sorted(by_class.items(), key=lambda kv: -kv[1])
-    )
-    return (
-        f"{trunc}"
-        f'<div class="panel">{_bar_row(entries)}</div>'
-        f'<details><summary>Table view — face classes</summary>'
-        f'<table class="fam"><thead><tr><th>class</th><th class="num">count</th>'
-        f"</tr></thead><tbody>{rows}</tbody></table></details>"
-    )
-
-
-def _cell_panel(cell: Cell, artefact_base: str, repeat_conditional: bool = True) -> str:
-    """Everything shown for one analysed matrix.
-
-    `repeat_conditional=False` suppresses the per-cell "conditional" banner —
-    used when EVERY matrix in the sweep is conditional, so the page-level
-    banner already said it once and repeating it on all twelve panels is
-    noise that trains the reader to skip banners.
+    This is where the per-cell caveats live now that the picker is gone —
+    excluded bots, failed stages, a skipped Nash cross-check. They are
+    matrix-specific, so they cannot be collapsed into the page-level banner;
+    dropping them would hide that a number is missing rather than zero.
     """
-    warnings = []
-    if not cell.is_fully_proven and repeat_conditional:
-        warnings.append(
-            '<p class="banner warn"><b>Conditional.</b> Some cells of this '
-            "matrix are stipulated rather than proven by the Lean library; "
-            "every number below rests on them.</p>"
-        )
-    if cell.excluded_bots:
-        warnings.append(
-            f'<p class="banner warn"><b>Excluded:</b> '
-            f"{html.escape(', '.join(cell.excluded_bots))} — dropped by the "
-            "non-termination policy (a proven <code>none</code> outcome has no "
-            "defensible payoff).</p>"
-        )
-    if cell.failed_stages():
-        warnings.append(
-            f'<p class="banner warn"><b>Failed stages:</b> '
-            f"{html.escape(', '.join(cell.failed_stages()))}. Their numbers are "
-            "absent below, not zero.</p>"
-        )
-    if cell.cross_check_performed is False:
-        warnings.append(
-            '<p class="banner note-banner">The pygambit/lrsnash cross-check '
-            "was <b>skipped</b> (lrslib not installed): the Nash figures come "
-            "from one solver, unverified against a second.</p>"
-        )
+    blocks = []
+    for cell in sorted(cells, key=lambda c: (-c.t, c.alpha)):
+        warnings = []
+        if cell.excluded_bots:
+            warnings.append(
+                f'<p class="banner warn"><b>Excluded:</b> '
+                f"{html.escape(', '.join(cell.excluded_bots))} — dropped by the "
+                "non-termination policy (a proven <code>none</code> outcome has "
+                "no defensible payoff).</p>"
+            )
+        if cell.failed_stages():
+            warnings.append(
+                f'<p class="banner warn"><b>Failed stages:</b> '
+                f"{html.escape(', '.join(cell.failed_stages()))}. Their numbers "
+                "are absent above, not zero.</p>"
+            )
+        if cell.cross_check_performed is False:
+            warnings.append(
+                '<p class="banner note-banner">The pygambit/lrsnash cross-check '
+                "was <b>skipped</b> (lrslib not installed): the Nash figures "
+                "come from one solver, unverified against a second.</p>"
+            )
 
-    shared = ", ".join(f"(t={t:g}, α={a:g})" for t, a in cell.grid_points)
-    dedup = (
-        f'<p class="note">This matrix covers {len(cell.grid_points)} grid '
-        f"points: {html.escape(shared)}. They share one analysis because their "
-        f"action-pair cells are identical.</p>"
-        if len(cell.grid_points) > 1 else ""
-    )
-
-    invasion = (
-        f'<ul class="stats"><li><b>{_fmt(cell.edges_strict)}</b>'
-        f"<span>strict edges</span></li>"
-        f"<li><b>{_fmt(cell.n_sccs)}</b><span>SCCs</span></li>"
-        f"<li><b>{_fmt(cell.n_cycles)}</b><span>simple cycles</span></li></ul>"
-    )
-
-    graph_svg = cell.run_dir / "invasion" / "graph.svg"
-    figure = (
-        # Inline the SVG so the figure IS the page — no broken-image risk under
-        # file://, and it inherits the reader's light/dark surface.
-        f'<div class="panel figure">{_inline_svg(graph_svg)}</div>'
-        if graph_svg.exists() else
-        '<p class="note missing">Figures were not rendered for this run '
-        "(<code>--no-render</code>, or the invasion stage failed).</p>"
-    )
+        covers = (
+            f" · covers {len(cell.grid_points)} grid points"
+            if len(cell.grid_points) > 1 else ""
+        )
+        blocks.append(
+            f"<h3>t = {cell.t:g}, α = {cell.alpha:g}{covers}</h3>"
+            f"{''.join(warnings)}"
+            f"{_artefact_links(cell, artefact_base)}"
+        )
 
     return (
-        f"{''.join(warnings)}"
-        f"{dedup}"
-        f"{_stat_tiles(cell)}"
-        f"<h3>Invasion graph</h3>{invasion}{figure}"
-        f"<h3>Face equilibria</h3>{_faces_section(cell)}"
-        f"<h3>Artefacts</h3>{_artefact_links(cell, artefact_base)}"
+        "<h2>Artefacts</h2>"
+        '<p class="note">Every number on this page traces to a file below. '
+        "Each analysed matrix has its own directory, named "
+        "<code>&lt;zoo&gt;_t&lt;NNN&gt;_a&lt;NNN&gt;_&lt;hash&gt;</code> — the "
+        "hash is of the action-pair cells, so the same analysis always lands in "
+        "the same place and sweeps are reproducible.</p>"
+        + "".join(blocks)
     )
 
 
@@ -726,7 +632,7 @@ def _ess_section(ts, alphas, index) -> str:
         )
 
     return (
-        "<h2>7 · Pure ESS across the plane</h2>"
+        "<h2>5 · Pure ESS across the plane</h2>"
         '<p class="note"><b>What this asks.</b> Suppose the whole population is '
         "a single bot type, and a few mutants of some other type appear. If no "
         "mutant can ever gain a foothold, that type is an <i>evolutionarily "
@@ -765,7 +671,7 @@ def _faces_section_grid(ts, alphas, index) -> str:
         return f'<table class="mini">{rows}</table>{trunc}'
 
     return (
-        "<h2>9 · Face equilibria across the plane</h2>"
+        "<h2>7 · Face equilibria across the plane</h2>"
         '<p class="note"><b>What this asks.</b> A population need not be one '
         "type. Take any subset of bots — is there a proportion of them that "
         "holds steady, where all members earn the same average payoff so none "
@@ -830,7 +736,7 @@ def _invasion_section(ts, alphas, index, artefact_base: str) -> str:
             )
 
     return (
-        "<h2>8 · Invasion graph</h2>"
+        "<h2>6 · Invasion graph</h2>"
         '<p class="note"><b>What this asks.</b> Draw an arrow <code>i → j</code> '
         "whenever a few <code>i</code> mutants can invade a resident population "
         "of <code>j</code>. The shape of that graph explains the ESS verdict: "
@@ -896,7 +802,7 @@ def _nash_section(ts, alphas, index) -> str:
             )
 
     return (
-        "<h2>10 · Nash equilibria</h2>"
+        "<h2>8 · Nash equilibria</h2>"
         '<p class="note"><b>What this asks.</b> Stepping back from evolution: '
         "treated as a plain two-player game, where does neither side want to "
         "deviate? This is a <i>weaker</i> condition than ESS — every ESS is a "
@@ -1059,49 +965,6 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
         scc_chart = chart_or_note(scc_series, "SCCs")
         stable_chart = chart_or_note(stable_series, "stable faces")
 
-    # --- the (t, α) picker ------------------------------------------------
-    # When every matrix is conditional the page-level banner covers it, so the
-    # per-cell repeat is suppressed (see `_cell_panel`).
-    all_conditional = all(not c.is_fully_proven for c in cells)
-    panels = []
-    for t in ts:
-        for alpha in alphas:
-            cell = index.get((_key(t), _key(alpha)))
-            body = (
-                _cell_panel(cell, artefact_base,
-                            repeat_conditional=not all_conditional)
-                if cell is not None else
-                '<p class="note missing">This grid point was not analysed in '
-                "this sweep.</p>"
-            )
-            panels.append(
-                f'<div class="swap-view" data-t="{_key(t)}" '
-                f'data-alpha="{_key(alpha)}" hidden>{body}</div>'
-            )
-
-    ts_js = json.dumps([_key(t) for t in ts])
-    alphas_js = json.dumps([_key(a) for a in alphas])
-
-    picker_script = (
-        "<script>(function(){\n"
-        f"  var ts = {ts_js}, alphas = {alphas_js};\n"
-        '  var tS = document.getElementById("t-slider");\n'
-        '  var aS = document.getElementById("a-slider");\n'
-        '  var views = document.querySelectorAll(".swap-view");\n'
-        "  function show(){\n"
-        "    var t = ts[+tS.value], a = alphas[+aS.value];\n"
-        "    views.forEach(function(el){\n"
-        "      el.hidden = el.dataset.t !== t || el.dataset.alpha !== a;\n"
-        "    });\n"
-        '    document.getElementById("t-out").textContent = "t = " + t;\n'
-        '    document.getElementById("a-out").textContent = "\\u03b1 = " + a;\n'
-        "  }\n"
-        '  tS.addEventListener("input", show);\n'
-        '  aS.addEventListener("input", show);\n'
-        "  show();\n"
-        "})();</script>"
-    )
-
     # The deep-dive sections each own a (t, α) dropdown pair, keyed by
     # data-kind so the invasion and Nash pickers move independently.
     dial_script = (
@@ -1181,6 +1044,7 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
     invasion_section = _invasion_section(ts, alphas, index, artefact_base)
     faces_deep_section = _faces_section_grid(ts, alphas, index)
     nash_section = _nash_section(ts, alphas, index)
+    artefacts_section = _artefacts_section(cells, artefact_base)
 
     return f"""<title>EGT — evolutionary analysis ({html.escape(zoo)})</title>
 <style>{_CSS}</style>
@@ -1198,56 +1062,89 @@ zoo <b>{html.escape(zoo)}</b> · {cells[0].n_types} types ·
 </ul>
 {"".join(banners)}
 
-<p class="note">Each grid point is a tau tournament at transparency <code>t</code>
-and caution threshold <code>α</code>, converted to a payoff matrix and pushed
-through four analyses. Points whose action-pair cells coincide are analysed
-once — that is what <b>saved by dedup</b> counts.</p>
+<p class="note"><b>The two dials.</b> <code>t</code> is <b>transparency</b> — a
+property of the environment. At <code>t = 1</code> each bot sees exactly which
+opponent it faces (Critch's open-source setting); as <code>t</code> falls the
+signal blurs, and at <code>t = 0</code> a bot cannot tell its opponents apart
+at all (the classical opaque Prisoner's Dilemma). <code>α</code> is
+<b>caution</b> — a property of the agent: a bot cooperates only if at least an
+<code>α</code> fraction of the opponents it might be facing are ones it would
+cooperate with. The two are never conflated: transparency is what the world
+reveals, caution is what the agent demands.</p>
+
+<p class="note"><b>What each grid point is.</b> A tau tournament is run at that
+<code>(t, α)</code>, giving one action pair per ordered bot pair. Those become
+a payoff matrix under the donation convention, and that matrix is pushed
+through four population analyses. Points whose action-pair cells coincide give
+identical answers, so they are analysed once — that is what <b>saved by
+dedup</b> counts.</p>
+
+<p class="note"><b>Reading the charts below.</b> Sections 1-4 compare cells
+<i>across</i> the plane; sections 5-8 open up one analysis at a time. On every
+chart the x-axis runs full transparency on the <b>left</b> to opaque on the
+<b>right</b>, so moving rightward means the signal is degrading.</p>
 
 <h2>1 · The (t, α) phase plane</h2>
-<p class="note">{html.escape(heat_label[0].upper() + heat_label[1:])} across the
-plane. One hue, light→dark; every tile carries its value, so the colour is
-redundant with the number rather than the only way to read it. A dash means the
-point was not analysed.</p>
+<p class="note"><b>What this shows.</b> The whole experiment at a glance:
+{html.escape(heat_label)} at every <code>(t, α)</code> analysed. Use it to spot
+<i>where</i> the behaviour changes — a block of similar numbers is one regime,
+a sharp jump between neighbours is a phase boundary worth investigating in the
+per-stage sections below.</p>
+<p class="note">One hue, light→dark for magnitude; every tile also carries its
+value, so the colour is redundant with the number rather than the only way to
+read it. A dash means that point was not analysed in this sweep.</p>
 <div class="panel">{heat}</div>
 
 <h2>2 · Nash equilibria vs transparency</h2>
-<p class="note">How the equilibrium count moves as the signal degrades, one line
-per caution threshold. Lines are labelled at their right endpoint.</p>
+<p class="note"><b>What this shows.</b> How many distinct resting points the
+game has as the signal degrades, one line per caution threshold. An equilibrium
+here is a population mix nobody wants to unilaterally move away from.</p>
+<p class="note"><b>Why it matters.</b> A <i>high</i> count is not a good sign —
+it means the game is badly under-determined: many mutually incompatible
+outcomes are all self-consistent, and nothing in the rules picks between them.
+A count falling as transparency drops means the opaque game admits fewer
+resting points, not that it is better behaved. Section 8 shows what those
+equilibria actually are at any chosen cell.</p>
 {ne_chart}
 
 <h2>3 · Population structure vs transparency</h2>
-<p class="note">Strongly connected components of the strict invasion graph. More
-SCCs means a more fragmented population — fewer mutually-invadable clusters.</p>
+<p class="note"><b>What this shows.</b> The number of strongly connected
+components in the strict invasion graph — clusters of bots that can all
+ultimately invade one another.</p>
+<p class="note"><b>Why it matters.</b> This is the shape of the competition.
+<b>Few SCCs</b> means most of the zoo is caught in one big mutually-invadable
+tangle: whatever the population is, something can always displace it, and it
+churns. <b>Many SCCs</b> means the population has fragmented into groups with a
+clear pecking order between them, so the dynamics can settle. Rising SCCs as
+<code>α</code> increases is caution breaking the tangle apart.</p>
 {scc_chart}
 
 <h2>4 · Stable faces vs transparency</h2>
-<p class="note">Faces classified <code>asymp_stable</code> or
-<code>asymp_stable_invadable</code>: mixed populations that hold together at
-least within their own support.</p>
+<p class="note"><b>What this shows.</b> How many <i>mixed</i> populations hold
+together — subsets of bots coexisting in proportions where every member earns
+the same average payoff, so none grows at the others' expense. Counted here are
+faces classified <code>asymp_stable</code> or
+<code>asymp_stable_invadable</code>.</p>
+<p class="note"><b>Why it matters.</b> Sections 2 and 3 are about single types
+displacing one another; this is about coalitions surviving <i>together</i>. A
+falling count means blur is destroying the coexisting mixtures, pushing the
+population toward monocultures. Section 7 breaks the count into its classes —
+in particular whether a mixture merely holds internally or also resists
+outsiders.</p>
 {stable_chart}
 
-<h2>5 · Pick a cell</h2>
-<p class="note">Everything below is for ONE analysed matrix. Move either slider
-to change which. Grid points that share a matrix show the same panel — the
-picker resolves them, so it never lands on a hole.</p>
-<div class="picker">
-  <label for="t-slider">transparency t</label>
-  <input id="t-slider" type="range" min="0" max="{max(len(ts) - 1, 0)}"
-         step="1" value="0" list="t-marks">
-  <span class="pill" id="t-out"></span>
-</div>
-<div class="picker">
-  <label for="a-slider">caution threshold α</label>
-  <input id="a-slider" type="range" min="0" max="{max(len(alphas) - 1, 0)}"
-         step="1" value="0" list="a-marks">
-  <span class="pill" id="a-out"></span>
-</div>
-{"".join(panels)}
+{ess_section}
 
-<h2>6 · Every matrix, side by side</h2>
-<p class="note">The table view — every number on this page is reachable here
-without hovering or dragging. <code>—</code> means the stage did not run or
-failed; it never means zero.</p>
+{invasion_section}
+
+{faces_deep_section}
+
+{nash_section}
+
+<h2>9 · Every matrix, side by side</h2>
+<p class="note">The whole sweep in one table — every number on this page is
+reachable here without touching a control. <code>—</code> means the stage did
+not run or failed; it never means zero.</p>
 <div class="panel">
 <table class="fam">
 <thead><tr>
@@ -1260,22 +1157,14 @@ failed; it never means zero.</p>
 </table>
 </div>
 
-{ess_section}
-
-{invasion_section}
-
-{faces_deep_section}
-
-{nash_section}
-
 <h2>Provenance</h2>
 <p class="note">Payoffs use the donation convention
 <code>(D,C)=b, (C,C)=b−c, (D,D)=0, (C,D)=−c</code> with <code>b&gt;c&gt;0</code>.
 Every stage writes an <code>assumptions.json</code> next to its outputs
-recording the conventions it used; nothing on this page is imputed. Full
-artefacts live under <code>{html.escape(artefact_base)}/</code>.</p>
+recording the conventions it used; nothing on this page is imputed.</p>
+
+{artefacts_section}
 </main>
-{picker_script}
 {dial_script}
 """
 

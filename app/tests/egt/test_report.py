@@ -1,7 +1,7 @@
 """The EGT HTML report.
 
 Renders against real sweeps (the cheap stages) and asserts the properties a
-reader depends on: the picker covers every grid point, missing data reads as
+reader depends on: every grid point stays reachable, missing data reads as
 missing rather than zero, and conditional results stay flagged.
 """
 
@@ -28,15 +28,10 @@ def swept(tmp_path_factory):
     return root, build_report(root)
 
 
-def _panels(page: str) -> list[tuple[str, str]]:
-    """The section-5 picker panels only.
-
-    Scoped to `class="swap-view"`: the deep-dive sections use the same
-    `data-t`/`data-alpha` attributes on `dial-view` elements, so an unscoped
-    match would count those too.
-    """
+def _dial_views(page: str, kind: str) -> list[tuple[str, str]]:
+    """The (t, α) views belonging to one deep-dive section."""
     return re.findall(
-        r'class="swap-view" data-t="([^"]+)" data-alpha="([^"]+)"', page)
+        rf'data-kind="{kind}" data-t="([^"]+)" data-alpha="([^"]+)"', page)
 
 
 # --------------------------------------------------------------------------
@@ -57,38 +52,49 @@ def test_load_sweep_raises_without_runs(tmp_path):
 
 
 # --------------------------------------------------------------------------
-# The (t, α) picker — the core of the page
+# Cell coverage — every grid point stays reachable
+#
+# The section-5 slider picker was removed; the invasion and Nash dropdowns are
+# now the per-cell views, and they carry the same obligation: no grid point may
+# become unreachable, including points folded away by dedup.
 # --------------------------------------------------------------------------
 
 
-def test_picker_covers_every_grid_point(swept):
-    """One panel per grid point, including points folded away by dedup."""
-    _, page = swept
-    panels = _panels(page)
-    assert len(panels) == 6                      # 3 t × 2 α
-    assert len(set(panels)) == 6                 # no duplicates
-    assert {t for t, _ in panels} == {"1", "0.6", "0.2"}
-    assert {a for _, a in panels} == {"0.3", "0.8"}
+def test_dropdowns_cover_every_grid_point(swept):
+    for kind in ("invasion", "nash"):
+        views = _dial_views(swept[1], kind)
+        assert len(views) == 6, f"{kind}: {len(views)} views, expected 3 t × 2 α"
+        assert len(set(views)) == 6, f"{kind}: duplicate views"
+        assert {t for t, _ in views} == {"1", "0.6", "0.2"}
+        assert {a for _, a in views} == {"0.3", "0.8"}
 
 
-def test_deduped_points_get_their_own_panel(swept):
-    """A folded point must still be selectable, showing the shared analysis."""
+def test_deduped_points_remain_selectable(swept):
+    """A folded point must still be pickable, showing the shared analysis."""
     root, page = swept
     _, cells = load_sweep(root)
     shared = [c for c in cells if len(c.grid_points) > 1]
     assert shared, "expected at least one deduped matrix in this grid"
-    for cell in shared:
-        for t, alpha in cell.grid_points:
-            assert (f"{t:g}", f"{alpha:g}") in _panels(page)
+    for kind in ("invasion", "nash"):
+        views = set(_dial_views(page, kind))
+        for cell in shared:
+            for t, alpha in cell.grid_points:
+                assert (f"{t:g}", f"{alpha:g}") in views
 
 
-def test_picker_slider_bounds_match_the_axes(swept):
+def test_dropdown_options_match_the_axes(swept):
     _, page = swept
-    ts = re.search(r"var ts = (\[[^\]]*\])", page).group(1)
-    assert ts.count(",") == 2                    # three transparencies
-    t_max = re.search(r'id="t-slider"[^>]*max="(\d+)"', page).group(1)
-    a_max = re.search(r'id="a-slider"[^>]*max="(\d+)"', page).group(1)
-    assert (t_max, a_max) == ("2", "1")
+    for kind in ("invasion", "nash"):
+        block = page[page.index(f'id="{kind}-t"'):]
+        t_opts = re.findall(r'value="([^"]+)"', block[:block.index("</select>")])
+        assert t_opts == ["1", "0.6", "0.2"]
+
+
+def test_removed_slider_picker_leaves_nothing_behind(swept):
+    """Section 5 is gone — no orphan markup or dead script."""
+    _, page = swept
+    for orphan in ("swap-view", "t-slider", "a-slider", "Pick a cell"):
+        assert orphan not in page, f"leftover from the removed picker: {orphan}"
 
 
 # --------------------------------------------------------------------------
@@ -109,8 +115,8 @@ def test_conditional_results_are_flagged(swept):
     assert "conditional" in page
 
 
-def test_conditional_banner_is_not_repeated_per_panel(swept):
-    """When every matrix is conditional, say it once, not once per panel."""
+def test_conditional_banner_is_stated_once(swept):
+    """When every matrix is conditional, say it once at page level."""
     _, page = swept
     assert page.count("<b>Conditional.</b>") == 0
 
@@ -163,21 +169,21 @@ def test_charts_are_inline_svg(swept):
 
 
 # --------------------------------------------------------------------------
-# The per-stage deep dives (sections 7-10)
+# The per-stage deep dives (sections 5-8)
 # --------------------------------------------------------------------------
 
 
 def test_all_four_deep_dive_sections_are_present(swept):
     _, page = swept
-    for heading in ("7 · Pure ESS", "8 · Invasion graph",
-                    "9 · Face equilibria", "10 · Nash equilibria"):
+    for heading in ("5 · Pure ESS", "6 · Invasion graph",
+                    "7 · Face equilibria", "8 · Nash equilibria"):
         assert heading in page
 
 
 def test_original_layout_is_preserved(swept):
-    """Sections 1-6 must be untouched and still come first."""
+    """Sections 1-4 lead, the deep dives follow, the table closes."""
     _, page = swept
-    order = [page.find(f"<h2>{n} ·") for n in range(1, 11)]
+    order = [page.find(f"<h2>{n} ·") for n in range(1, 10)]
     assert all(p > 0 for p in order), "a numbered section is missing"
     assert order == sorted(order), "sections are out of order"
     assert page.find("<h2>Provenance</h2>") > order[-1]
@@ -192,7 +198,7 @@ def test_each_deep_dive_explains_itself(swept):
 def test_ess_grid_covers_the_plane(swept):
     """One cell per (t, α), including deduped points."""
     root, page = swept
-    section = page[page.find("<h2>7 ·"):page.find("<h2>8 ·")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
     plane = re.search(r'<table class="plane">.*?</table>', section, re.S).group(0)
     assert plane.count("<tr>") == 1 + 2          # header + 2 α rows
     assert plane.count("<td") == 6               # 3 t × 2 α
@@ -201,14 +207,14 @@ def test_ess_grid_covers_the_plane(swept):
 def test_ess_none_is_distinguished_from_stage_absent(swept):
     """"none" (a real finding) must not read like "stage not run"."""
     _, page = swept
-    section = page[page.find("<h2>7 ·"):page.find("<h2>8 ·")]
+    section = page[page.find("<h2>5 ·"):page.find("<h2>6 ·")]
     assert 'class="none-found">none<' in section
     assert "stage not run" not in section
 
 
 def test_faces_grid_reports_all_four_classes(swept):
     root, page = swept
-    section = page[page.find("<h2>9 ·"):page.find("<h2>10 ·")]
+    section = page[page.find("<h2>7 ·"):page.find("<h2>8 ·")]
     minis = re.findall(r'<table class="mini">(.*?)</table>', section, re.S)
     assert len(minis) == 6                        # one per grid point
     for mini in minis:
@@ -235,7 +241,7 @@ def test_dial_views_cover_every_grid_point_per_kind(swept):
 def test_nash_section_says_the_stage_is_absent(swept):
     """This fixture skips nash; the section must say so, not show an empty table."""
     _, page = swept
-    section = page[page.find("<h2>10 ·"):]
+    section = page[page.find("<h2>8 ·"):page.find("<h2>9 ·")]
     assert "did not run" in section
     assert "<th>component</th>" not in section
 
@@ -255,7 +261,7 @@ def swept_with_nash(tmp_path_factory):
 
 def test_nash_component_table_has_the_requested_columns(swept_with_nash):
     _, page = swept_with_nash
-    section = page[page.find("<h2>10 ·"):]
+    section = page[page.find("<h2>8 ·"):page.find("<h2>9 ·")]
     for column in ("component", "equilibria", "payoff", "Pr[(C,C)]", "bots involved"):
         assert f">{column}</th>" in section
 
