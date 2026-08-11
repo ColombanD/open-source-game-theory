@@ -9,8 +9,8 @@ player", once and for all guard lists:
 
 * `eval_tsearch_of_bits` — the `tsearch` peel: the node plays its then-branch exactly
   when the FIRED MASS (`GuardList.massWhere` over the closed guards' oracle bits)
-  reaches the threshold. Linear induction over the guard list — this is Route B's
-  payoff over the 2^n decision-tree case split.
+  reaches the threshold. This is the lemma that reconciles the eval arm with the tau-layer
+  play lemmas.
 * `eval_iteTree_of_vals` — the behavioral twin for `iteTree` (TauTFTSim): same
   statement with action-valued sim guards (`simMass`) instead of provability bits.
 

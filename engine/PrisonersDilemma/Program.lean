@@ -176,8 +176,9 @@ def GuardList.totalMass : GuardList → Nat
   | .nil           => 0
   | .cons w _ rest => w + rest.totalMass
 
-/-- Mass of the guards selected by a predicate on (closed) guard formulas — the
-    weighted vote. Instantiated with `fun φ => proofSearch k (φ.subst me opp)` in the
+/-- Mass of the guards selected by a predicate on (closed) guard formulas. It is the sum of all weights
+    where proofSearch returns true. Used for lemmas in the Meta theory.
+    Instantiated with `fun φ => proofSearch k (φ.subst me opp)` in the
     tau-layer lemma statements; kept abstract here so Program.lean stays oracle-free. -/
 def GuardList.massWhere (f : Formula → Bool) : GuardList → Nat
   | .nil           => 0

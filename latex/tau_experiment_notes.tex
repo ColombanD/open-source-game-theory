@@ -102,6 +102,50 @@ The fix is to ground the hypotheses at the \emph{base} zoo:
 \end{algorithmic}
 \end{algorithm}
 
+\begin{algorithm}[h]
+\caption{TauDupocBot: a concrete example of modified Def.~3}
+\begin{algorithmic}
+\Procedure{$\Tau$DupocBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
+  \State $\mathit{sumCs} \gets 0$
+  \For{$i = 1, \dots, n$}
+    \If{proofSearch$(\Tau B_i(\alpha)($TauDupocBot$; 1)) = C$}
+      \State $\mathit{sumCs} \mathrel{+}= p_i$
+    \EndIf
+  \EndFor
+  \If{$\mathit{sumCs} \ge \alpha$} \Return $C$ \Else{} \Return $D$ \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+\begin{algorithm}[h]
+\caption{TauTitForTatBot: a concrete example of modified Def.~3}
+\begin{algorithmic}
+\Procedure{$\Tau$TitForTatBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
+  \State $\mathit{sumCs} \gets 0$
+  \For{$i = 1, \dots, n$}
+    \If{proofSearch$(\Tau B_i(\alpha)($TauCooperateBot$; 1)) = C$}
+      \State $\mathit{sumCs} \mathrel{+}= p_i$
+    \EndIf
+  \EndFor
+  \If{$\mathit{sumCs} \ge \alpha$} \Return $C$ \Else{} \Return $D$ \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+\begin{algorithm}[h]
+\caption{TauCooperateBot: a concrete example of modified Def.~3}
+\begin{algorithmic}
+\Procedure{$\Tau$CooperateBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
+\Return $C$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+\begin{algorithm}[h]
+\caption{TauDefectBot: a concrete example of modified Def.~3}
+\begin{algorithmic}
+\Procedure{$\Tau$DefectBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
+\Return $D$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
 The initial definition could in theory be used to define Tau agents, but it is much more complex to implement in practice, and it is not clear that it would be well-defined, which is why we stick with the final version for this experiment.
 
 \subsection{Harsanyi type spaces -- Literature Review}
