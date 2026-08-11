@@ -263,6 +263,32 @@ def test_theorem_regimes_are_classified():
     assert set(lib.regimes_for("TauDupoc", "TauDupoc")) == {"low", "high"}
 
 
+def test_every_matchup_covers_both_alpha_regimes():
+    """Both sides of the α-boundary are proven for EVERY ordered pair.
+
+    Milestone 1 originally proved the defect regime only on the diagonal, which
+    left a quarter of the sweep uncertified at high α. The phase theorems always
+    supported the full matrix; only the statements were missing.
+    """
+    lib = Def4Library.load()
+    for row in lib.bots:
+        for col in lib.bots:
+            regimes = set(lib.regimes_for(row, col))
+            assert regimes, f"{row} vs {col} has no theorem at all"
+            covered = regimes == {"unconditional"} or {"low", "high"} <= regimes
+            assert covered, f"{row} vs {col} only covers {sorted(regimes)}"
+
+
+def test_defect_regime_pairs_are_not_uniformly_DD():
+    """Constants never flip, so a mixed cell has exactly one flipping side."""
+    lib = Def4Library.load()
+    w = {"wC": 25, "wD": 25, "wTs": 25, "wTp": 0, "wL": 25}
+    high = 10**6  # far above any achievable mass
+    assert lib.cell("TauDupoc", "TauCooperate", high, w) == ("D", "C")
+    assert lib.cell("TauCooperate", "TauDupoc", high, w) == ("C", "D")
+    assert lib.cell("TauDupoc", "TauTFTSim", high, w) == ("D", "D")
+
+
 def test_lean_lookup_respects_the_alpha_regime():
     """The same matchup flips with θ — that IS the α-phase boundary."""
     lib = Def4Library.load()
@@ -297,6 +323,10 @@ def test_control_model_agrees_with_the_kernel(control_matrix):
     ver = verify_against_lean(comparisons)
     assert ver.conflicts == (), f"model disagrees with Lean: {ver.conflicts}"
     assert ver.proven > 0, "no cells were actually checked against the kernel"
+    # Every control-zoo cell is covered, in both α regimes: a drop below 100%
+    # means a theorem went missing or a regime stopped being reachable.
+    assert ver.predicted == 0, "control zoo must be fully certified"
+    assert ver.coverage == 1.0
 
 
 def test_separating_zoo_cells_are_honestly_uncertified(separating_matrix):

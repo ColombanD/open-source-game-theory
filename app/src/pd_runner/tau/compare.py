@@ -234,7 +234,22 @@ def _lean_side(
         if key is not None:
             w[key] += round(p * _DISCRETIZATION_SCALE)
     total = sum(w.values())
+
+    # θ must be derived so that an α sitting exactly ON an achievable mass
+    # lands in the LOW regime, matching the `≥ α` tie-break both definitions
+    # use. Two things make the naive `round(α · total)` wrong by one unit:
+    # the per-weight rounding makes `total` drift off the scale (999999, not
+    # 1000000), and α itself is a float mass carrying its own error. So we
+    # rescale α by `total` and then SNAP to any integer mass it matches within
+    # a unit — the snap is what keeps the boundary cell on the proven side.
     theta = round(alpha * total)
+    for candidate in (
+        w["wC"] + w["wTs"] + w["wTp"] + w["wL"],  # the cooperation mass
+        total,
+    ):
+        if abs(theta - candidate) <= 1:
+            theta = candidate
+            break
     return library.cell(lean_row, lean_col, theta, w)
 
 
