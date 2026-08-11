@@ -35,6 +35,54 @@ noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
         if proofSearch k (φ.subst me opponent)
           then eval n me opponent p
           else eval n me opponent q
+    -- Weighted-threshold search: PEEL the guards in list order. A firing guard
+    -- subtracts its weight from the residual threshold (truncated); residual 0
+    -- commits to `p` WITHOUT consulting the remaining guards (the then
+    -- short-circuit); exhausting the list with residual > 0 commits to `q`.
+    -- Each peel step re-enters `eval` on a structurally smaller `.tsearch`, so fuel
+    -- is charged per peel: a full consultation of the node costs `|gs| + 1` fuel
+    -- before the branch runs. Guards are closed against the current frame at each
+    -- consultation, exactly like `.search`. (Two arms with nested patterns — NOT an
+    -- inner `match` — so per-arm equation lemmas generate and `rw [eval]` works.)
+    | .tsearch _ .nil θ p q =>
+        if θ = 0 then eval n me opponent p else eval n me opponent q
+    | .tsearch k (.cons w φ rest) θ p q =>
+        if θ = 0 then eval n me opponent p
+        else if proofSearch k (φ.subst me opponent)
+          then eval n me opponent (.tsearch k rest (θ - w) p q)
+          else eval n me opponent (.tsearch k rest θ p q)
+
+/-! ### `.tsearch` unfolding lemmas
+The peel steps as rewrite equations. The `GuardList` match inside the `eval` arm does
+not reduce syntactically under `rw [eval]` when the list is a variable, so every
+consumer (fuel-monotonicity, the soundness arms, the tau-layer play lemmas) rewrites
+with these four instead of unfolding `eval` directly. -/
+
+theorem eval_tsearch_zero {me opponent : Prog} {k : Nat} {gs : GuardList} {p q : Prog}
+    (n : Nat) :
+    eval (n+1) me opponent (.tsearch k gs 0 p q) = eval n me opponent p := by
+  cases gs with
+  | nil => rw [eval, if_pos rfl]
+  | cons w φ rest => rw [eval, if_pos rfl]
+
+theorem eval_tsearch_nil {me opponent : Prog} {k θ : Nat} {p q : Prog}
+    (n : Nat) (hθ : θ ≠ 0) :
+    eval (n+1) me opponent (.tsearch k .nil θ p q) = eval n me opponent q := by
+  rw [eval, if_neg hθ]
+
+theorem eval_tsearch_cons_t {me opponent : Prog} {k w θ : Nat} {φ : Formula}
+    {rest : GuardList} {p q : Prog} (n : Nat) (hθ : θ ≠ 0)
+    (hg : proofSearch k (φ.subst me opponent) = true) :
+    eval (n+1) me opponent (.tsearch k (.cons w φ rest) θ p q)
+      = eval n me opponent (.tsearch k rest (θ - w) p q) := by
+  rw [eval, if_neg hθ, if_pos hg]
+
+theorem eval_tsearch_cons_f {me opponent : Prog} {k w θ : Nat} {φ : Formula}
+    {rest : GuardList} {p q : Prog} (n : Nat) (hθ : θ ≠ 0)
+    (hg : proofSearch k (φ.subst me opponent) = false) :
+    eval (n+1) me opponent (.tsearch k (.cons w φ rest) θ p q)
+      = eval n me opponent (.tsearch k rest θ p q) := by
+  rw [eval, if_neg hθ, if_neg (by simp [hg])]
 
 noncomputable def play (fuel : Nat) (me opponent : Prog) : Option Action :=
   eval fuel me opponent me

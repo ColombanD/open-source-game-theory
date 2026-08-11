@@ -89,6 +89,27 @@ theorem eval_mono :
         by_cases hg : proofSearch k (φ.subst me opponent) = true
         · rw [if_pos hg] at h ⊢; exact ih _ _ _ _ h
         · rw [if_neg hg] at h ⊢; exact ih _ _ _ _ h
+    | tsearch k gs θ p q =>
+        by_cases hθ : θ = 0
+        · subst hθ
+          rw [eval_tsearch_zero n] at h
+          rw [eval_tsearch_zero (n+1)]
+          exact ih _ _ _ _ h
+        · cases gs with
+          | nil =>
+              rw [eval_tsearch_nil n hθ] at h
+              rw [eval_tsearch_nil (n+1) hθ]
+              exact ih _ _ _ _ h
+          | cons w φ rest =>
+              cases hg : proofSearch k (φ.subst me opponent) with
+              | true =>
+                  rw [eval_tsearch_cons_t n hθ hg] at h
+                  rw [eval_tsearch_cons_t (n+1) hθ hg]
+                  exact ih _ _ _ _ h
+              | false =>
+                  rw [eval_tsearch_cons_f n hθ hg] at h
+                  rw [eval_tsearch_cons_f (n+1) hθ hg]
+                  exact ih _ _ _ _ h
 
 /-- `≤`-form of fuel monotonicity. -/
 theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}
@@ -97,6 +118,36 @@ theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}
   induction hM with
   | refl => exact h
   | step _ ih => exact eval_mono _ _ _ _ _ ih
+
+/-- Peeling a `.tsearch` whose threshold exceeds the TOTAL mass always lands in the
+    else branch: whatever the guard bits, the residual can never reach 0 (each fired
+    guard subtracts at most its weight, and the weights sum below `θ`). This is the
+    soundness core of `PlaysProof.tsearchHigh_f`, which commits else WITHOUT citing
+    any guard content. Induction on the guard list. -/
+theorem eval_tsearch_high (me opponent p q : Prog) (a : Action) (k : Nat) :
+    ∀ (gs : GuardList) (θ : Nat), θ > gs.totalMass →
+      (∃ N, eval N me opponent q = some a) →
+      ∃ N, eval N me opponent (.tsearch k gs θ p q) = some a
+  -- (equation-style recursion: the tactic `induction` refuses the mutually
+  -- inductive `GuardList`; structural recursion on it is fine)
+  | .nil, θ, hθ, h => by
+      have hθ0 : θ ≠ 0 := by simp [GuardList.totalMass] at hθ; omega
+      obtain ⟨N, hN⟩ := h
+      exact ⟨N+1, by rw [eval_tsearch_nil N hθ0]; exact hN⟩
+  | .cons w φ rest, θ, hθ, hq => by
+      have hmass : θ > w + rest.totalMass := by
+        simpa [GuardList.totalMass] using hθ
+      have hθ0 : θ ≠ 0 := by omega
+      cases hg : proofSearch k (φ.subst me opponent) with
+      | true =>
+          obtain ⟨N, hN⟩ :=
+            eval_tsearch_high me opponent p q a k rest (θ - w) (by omega) hq
+          exact ⟨N+1, by rw [eval_tsearch_cons_t N hθ0 hg]; exact hN⟩
+      | false =>
+          obtain ⟨N, hN⟩ :=
+            eval_tsearch_high me opponent p q a k rest θ (by omega) hq
+          exact ⟨N+1, by rw [eval_tsearch_cons_f N hθ0 hg]; exact hN⟩
+termination_by structural gs _ _ _ => gs
 
 theorem implChain_interp {tgt : Formula} : ∀ (gs : List Formula),
     ((∀ ψ ∈ gs, ψ.interp) → tgt.interp) → (implChain gs tgt).interp := by
@@ -382,6 +433,8 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
     (h_botbot : ∀ me oppo p, (S me oppo ∨ S' me oppo) → me = .bot (.bot p) → False)
     (h_botsearch : ∀ me oppo g ψ P Q, (S me oppo ∨ S' me oppo) →
       me = .bot (.search g ψ P Q) → False)
+    (h_tsearch : ∀ me oppo k gs θ P Q, (S me oppo ∨ S' me oppo) →
+      (Prog.tsearch k gs θ P Q = me ∨ me = .bot (.tsearch k gs θ P Q)) → False)
     (h_sim_inv : ∀ p q oppo, (S (.sim p q) oppo ∨ S' (.sim p q) oppo) →
       S (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo) ∨
       S' (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo))
@@ -418,7 +471,9 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
           n ≤ B → ∃ N, eval N me opponent body = some a)
         (motive_2 := fun _ _ _ => True)
         (motive_3 := fun _ _ _ => True)
-        ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f ?atomMk
+        ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f
+        ?tsearchZero_t ?tsearchNil_f ?tsearchCons_t ?tsearchCons_f ?tsearchHigh_f
+        ?atomMk
         ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep
         ?pfIteBranchSearch ?pfSTS ?pfSearchChain ?pfCtxChain ?pfEqRefl ?pfEqNeg ?pfMp
         ?pfImplTrans
@@ -479,6 +534,39 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
                 (((IH k (by omega)).2 k _ ((proofSearch_spec _ _).1 hcase)).1 le_rfl) hnegI
         obtain ⟨N, hN⟩ := ihq (by omega)
         exact ⟨N+1, by rw [eval, if_neg (by simp [hps])]; exact hN⟩
+      case tsearchZero_t =>
+        intro me opponent p q a n k gs _hp ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval_tsearch_zero N]; exact hN⟩
+      case tsearchNil_f =>
+        intro me opponent p q a n k θ hθ _hq ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval_tsearch_nil N hθ]; exact hN⟩
+      case tsearchCons_t =>
+        intro me opponent p q a n k θ w φ rest hθ hguard _hp _ihg ihp hB
+        obtain ⟨N, hN⟩ := ihp (by omega)
+        exact ⟨N+1, by
+          rw [eval_tsearch_cons_t N hθ ((proofSearch_spec k (φ.subst me opponent)).2 hguard)]
+          exact hN⟩
+      case tsearchCons_f =>
+        -- the per-guard floor: cost `n + m + k + c_node` puts both the refutation
+        -- budget `m` and the failed guard budget `k` strictly below `B`, so the
+        -- strong IH refutes a hypothetical guard proof — verbatim the `search_f` argument
+        intro me opponent p q a n k θ w m φ rest hθ hneg _hq _ihg ihq hB
+        have hcn : c_node = 1 := rfl
+        have hnegI : ¬ (φ.subst me opponent).interp :=
+          (((IH m (by omega)).2 m (.neg (φ.subst me opponent)) hneg).1 le_rfl : _)
+        have hps : proofSearch k (φ.subst me opponent) = false := by
+          cases hcase : proofSearch k (φ.subst me opponent) with
+          | false => rfl
+          | true =>
+              exact absurd
+                (((IH k (by omega)).2 k _ ((proofSearch_spec _ _).1 hcase)).1 le_rfl) hnegI
+        obtain ⟨N, hN⟩ := ihq (by omega)
+        exact ⟨N+1, by rw [eval_tsearch_cons_f N hθ hps]; exact hN⟩
+      case tsearchHigh_f =>
+        intro me opponent p q a n k θ gs hθ _hq ihq hB
+        exact eval_tsearch_high me opponent p q a k gs θ hθ (ihq (by omega))
       all_goals (intros; trivial)
     -- ── PASS 2: the `Pf` half (paired motives: gated interp ∧ conditional WV) ──
     have hpf : ∀ k φ, Pf k φ →
@@ -493,7 +581,8 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
           ((∀ K χ, Pf K χ → χ.interp) → ∀ p q, S p q → ψ ≠ .plays p q .D))
         (motive_3 := fun k ψ _ =>
           (k ≤ B → ψ.interp) ∧ ((∀ K χ, Pf K χ → χ.interp) → WV S ψ))
-        ?cConst ?cSelf ?cOpp ?cBot ?cSim ?cIte_t ?cIte_f ?cSearch_t ?cSearch_f ?cAtomMk
+        ?cConst ?cSelf ?cOpp ?cBot ?cSim ?cIte_t ?cIte_f ?cSearch_t ?cSearch_f
+        ?cTZero ?cTNil ?cTCons_t ?cTCons_f ?cTHigh ?cAtomMk
         ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep
         ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
         ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
@@ -540,6 +629,24 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         · subst hb
           exact h_search_f oppo K' φg p q a n hT hq
         · exact (h_botsearch me oppo K' φg p q hT hb).elim
+      -- `.tsearch` shapes are killed outright by `h_tsearch`: no census places a
+      -- threshold-search program in `S ∪ S'` (the tau σ-players are never census
+      -- subjects — probes only ever target the plain-`.search` δ-instances).
+      case cTZero =>
+        intro me oppo p q a n k gs _hp _ih _hs hT hgate
+        exact (h_tsearch me oppo k gs 0 p q hT hgate).elim
+      case cTNil =>
+        intro me oppo p q a n k θ _hθ _hq _ih _hs hT hgate
+        exact (h_tsearch me oppo k .nil θ p q hT hgate).elim
+      case cTCons_t =>
+        intro me oppo p q a n k θ w φ rest _hθ _hg _hp _ihg _ihp _hs hT hgate
+        exact (h_tsearch me oppo k (.cons w φ rest) θ p q hT hgate).elim
+      case cTCons_f =>
+        intro me oppo p q a n k θ w m φ rest _hθ _hg _hq _ihg _ihq _hs hT hgate
+        exact (h_tsearch me oppo k (.cons w φ rest) θ p q hT hgate).elim
+      case cTHigh =>
+        intro me oppo p q a n k θ gs _hθ _hq _ih _hs hT hgate
+        exact (h_tsearch me oppo k gs θ p q hT hgate).elim
       case cAtomMk =>
         intro me oppo a n K hpp hn ih
         constructor

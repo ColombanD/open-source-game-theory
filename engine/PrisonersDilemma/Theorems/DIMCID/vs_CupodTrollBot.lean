@@ -60,12 +60,14 @@ theorem subst_eq_ctb {k : Nat} {q me o : Prog}
           | sim p'' q'' => simp [Prog.subst] at hlhs
           | ite b' a' p'' q'' => simp [Prog.subst] at hlhs
           | search K' g' p'' q'' => simp [Prog.subst] at hlhs
+          | tsearch K' gs' θ' p'' q'' => simp [Prog.subst] at hlhs
           | self =>
               rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
                 simp [Prog.subst] at hlhs
           | opp =>
               simp only [Prog.subst] at hlhs
               right; exact hlhs
+  | tsearch K gs θ pp qq => simp [Prog.subst, CupodTrollBot] at h
 
 theorem subst_eq_opp {q me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -80,6 +82,7 @@ theorem subst_eq_opp {q me o : Prog}
   | sim p q => simp [Prog.subst] at h
   | ite b a p q => simp [Prog.subst] at h
   | search K φg pp qq => simp [Prog.subst] at h
+  | tsearch K gs θ pp qq => simp [Prog.subst] at h
 
 theorem SP_opp {k : Nat} {me oppo : Prog} (h : SP k me oppo) :
     oppo = CupodTrollBot k ∨ oppo = Prog.opp := by
@@ -126,7 +129,7 @@ theorem pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     Pf K φ → WV (SP k) φ := by
   intro K φ h
   refine ((wv_sound_upto (SP k) (fun _ _ => False)
-    (SP_not_bot k) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K).2 K φ h).2 Pf_sound
+    (SP_not_bot k) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K).2 K φ h).2 Pf_sound
   · intro me oppo a hT hgate
     rcases hT with hS | hF
     · rcases SP_me hS with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
@@ -151,6 +154,12 @@ theorem pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     rcases hT with hS | hF
     · rcases SP_me hS with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
         exact absurd hb (by simp [DIMCID])
+    · exact hF.elim
+  · -- h_tsearch : no census member is a `.tsearch` shape
+    intro me oppo k' gs θ P Q hT hgate
+    rcases hT with hS | hF
+    · rcases SP_me hS with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> exact absurd hb (by simp [DIMCID])
     · exact hF.elim
   · intro p q oppo hT
     rcases hT with hS | hF

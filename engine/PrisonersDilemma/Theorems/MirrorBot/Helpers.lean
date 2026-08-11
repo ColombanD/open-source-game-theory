@@ -61,6 +61,7 @@ theorem OBot_plays_D_against_MirrorBot (fuel : Nat) :
         (by rfl) hGuard1
     simpa [eval, hGuard2] using hPlay
 
+set_option maxHeartbeats 800000 in  -- the `.tsearch`-enlarged eval simp-set pushed this deep unfolding over the default budget (2026-08-11)
 theorem MirrorBot_plays_D_against_OBot (fuel : Nat) :
     play (fuel + 7) MirrorBot OBot = some .D := by
     have hOBotPlays : play (fuel + 6) OBot MirrorBot = some .D :=

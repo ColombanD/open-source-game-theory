@@ -293,6 +293,49 @@ mutual
         Pf m (.neg (φ.subst me opponent)) →
         PlaysProof me opponent q a n →
         PlaysProof me opponent (.search k φ p q) a (n + m + k + c_node)
+    /- ── `.tsearch` (weighted-threshold search, the Def-4 TauBot primitive, 2026-08-11) ──
+       FIVE stepwise rules, each mirroring exactly one `eval` peel step (never a
+       subset-combinatorial reading — that shape would poison the decidability chain's
+       certificate search). Polarity discipline inherited from `.search`:
+       * firing a guard CITES a real proof (`tsearchCons_t`, `c_guard k` like `search_t`);
+       * passing a guard REFUTES it and pays the FULL failed budget `k` — the floor,
+         per refuted guard (`tsearchCons_f`, forced by the same `atom_monotone` re-fire
+         inconsistency that forced `search_f`);
+       * `tsearchHigh_f` commits else on the STATIC arithmetic fact `θ > totalMass`
+         (no guard content cited — consistent because the commit is bit-independent);
+         it pays `gs.gsize` for writing out the weight sum. -/
+    /-- Residual threshold met: the vote already succeeded; remaining guards are not
+        consulted (mirrors `eval`'s then short-circuit). -/
+    | tsearchZero_t {me opponent p q : Prog} {a : Action} {n k : Nat} {gs : GuardList} :
+        PlaysProof me opponent p a n →
+        PlaysProof me opponent (.tsearch k gs 0 p q) a (n + c_node)
+    /-- Guards exhausted with residual threshold still positive: the vote failed. -/
+    | tsearchNil_f {me opponent p q : Prog} {a : Action} {n k θ : Nat} :
+        θ ≠ 0 →
+        PlaysProof me opponent q a n →
+        PlaysProof me opponent (.tsearch k .nil θ p q) a (n + c_node)
+    /-- Head guard FIRES: cite its proof (at `c_guard k`, like `search_t`) and continue
+        peeling with the weight subtracted from the residual threshold. -/
+    | tsearchCons_t {me opponent p q : Prog} {a : Action} {n k θ w : Nat} {φ : Formula}
+        {rest : GuardList} :
+        θ ≠ 0 →
+        Pf k (φ.subst me opponent) →
+        PlaysProof me opponent (.tsearch k rest (θ - w) p q) a n →
+        PlaysProof me opponent (.tsearch k (.cons w φ rest) θ p q) a (n + c_guard k + c_node)
+    /-- Head guard FAILS: cite a Σ₁ refutation and pay the full failed budget `k`
+        (the `search_f` floor, per guard) — then continue peeling, threshold unchanged. -/
+    | tsearchCons_f {me opponent p q : Prog} {a : Action} {n k θ w m : Nat} {φ : Formula}
+        {rest : GuardList} :
+        θ ≠ 0 →
+        Pf m (.neg (φ.subst me opponent)) →
+        PlaysProof me opponent (.tsearch k rest θ p q) a n →
+        PlaysProof me opponent (.tsearch k (.cons w φ rest) θ p q) a (n + m + k + c_node)
+    /-- The threshold exceeds the TOTAL mass: no bit pattern can reach it, so the else
+        branch is forced without consulting any guard. Pays the weight-sum arithmetic. -/
+    | tsearchHigh_f {me opponent p q : Prog} {a : Action} {n k θ : Nat} {gs : GuardList} :
+        θ > gs.totalMass →
+        PlaysProof me opponent q a n →
+        PlaysProof me opponent (.tsearch k gs θ p q) a (n + gs.gsize + c_node)
 
 -- 3. `AtomProvable k φ` — a `PlaysProof` whose run cost fits the budget (`n ≤ k`); the bridge for
 -- atomic `.plays` facts (which the reasoning rules cannot read).
@@ -749,10 +792,13 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
     (motive_3 := motive)
-    -- PlaysProof arms (9) + AtomProvable.mk (1): motive is `True`.
+    -- PlaysProof arms (14) + AtomProvable.mk (1): motive is `True`.
     trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
     (fun _ _ _ _ => trivial)
+    -- tsearch arms: Zero_t, Nil_f, Cons_t, Cons_f, High_f
+    (fun _ _ => trivial) (fun _ _ _ => trivial) (fun _ _ _ _ _ => trivial)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ => trivial)
     (fun _ _ _ => trivial)
     -- Pf arms (27, family order A/B/C): route each to its named hypothesis.
     (fun {k} {φ} hatom _ => atom k φ hatom)
@@ -837,6 +883,33 @@ theorem PlaysProof.induct
         (hg : Pf m (.neg (φ.subst me opponent))) (hq : PlaysProof me opponent q a n),
         motive me opponent q a n hq →
         motive me opponent (.search k φ p q) a (n + m + k + c_node) (.search_f hg hq))
+    (tsearchZero_t : ∀ (me opponent p q : Prog) (a : Action) (n k : Nat) (gs : GuardList)
+        (hp : PlaysProof me opponent p a n),
+        motive me opponent p a n hp →
+        motive me opponent (.tsearch k gs 0 p q) a (n + c_node) (.tsearchZero_t hp))
+    (tsearchNil_f : ∀ (me opponent p q : Prog) (a : Action) (n k θ : Nat)
+        (hθ : θ ≠ 0) (hq : PlaysProof me opponent q a n),
+        motive me opponent q a n hq →
+        motive me opponent (.tsearch k .nil θ p q) a (n + c_node) (.tsearchNil_f hθ hq))
+    (tsearchCons_t : ∀ (me opponent p q : Prog) (a : Action) (n k θ w : Nat) (φ : Formula)
+        (rest : GuardList)
+        (hθ : θ ≠ 0) (hg : Pf k (φ.subst me opponent))
+        (hp : PlaysProof me opponent (.tsearch k rest (θ - w) p q) a n),
+        motive me opponent (.tsearch k rest (θ - w) p q) a n hp →
+        motive me opponent (.tsearch k (.cons w φ rest) θ p q) a (n + c_guard k + c_node)
+          (.tsearchCons_t hθ hg hp))
+    (tsearchCons_f : ∀ (me opponent p q : Prog) (a : Action) (n k θ w m : Nat) (φ : Formula)
+        (rest : GuardList)
+        (hθ : θ ≠ 0) (hg : Pf m (.neg (φ.subst me opponent)))
+        (hq : PlaysProof me opponent (.tsearch k rest θ p q) a n),
+        motive me opponent (.tsearch k rest θ p q) a n hq →
+        motive me opponent (.tsearch k (.cons w φ rest) θ p q) a (n + m + k + c_node)
+          (.tsearchCons_f hθ hg hq))
+    (tsearchHigh_f : ∀ (me opponent p q : Prog) (a : Action) (n k θ : Nat) (gs : GuardList)
+        (hθ : θ > gs.totalMass) (hq : PlaysProof me opponent q a n),
+        motive me opponent q a n hq →
+        motive me opponent (.tsearch k gs θ p q) a (n + gs.gsize + c_node)
+          (.tsearchHigh_f hθ hq))
     {me opponent body : Prog} {a : Action} {n : Nat} (h : PlaysProof me opponent body a n) :
     motive me opponent body a n h := by
   -- The 27 `Pf` arms + `AtomProvable.mk` are irrelevant here (their motives are `True`); let
@@ -858,6 +931,16 @@ theorem PlaysProof.induct
       search_t k me opponent p a n φ q hg hp ihp)
     (fun {m} {me opponent q} {a} {n k} {φ} {p} hg hq _ ihq =>
       search_f m me opponent q a n k φ p hg hq ihq)
+    (fun {me opponent p q} {a} {n k} {gs} hp ihp =>
+      tsearchZero_t me opponent p q a n k gs hp ihp)
+    (fun {me opponent p q} {a} {n k θ} hθ hq ihq =>
+      tsearchNil_f me opponent p q a n k θ hθ hq ihq)
+    (fun {me opponent p q} {a} {n k θ w} {φ} {rest} hθ hg hp _ ihp =>
+      tsearchCons_t me opponent p q a n k θ w φ rest hθ hg hp ihp)
+    (fun {me opponent p q} {a} {n k θ w m} {φ} {rest} hθ hg hq _ ihq =>
+      tsearchCons_f me opponent p q a n k θ w m φ rest hθ hg hq ihq)
+    (fun {me opponent p q} {a} {n k θ} {gs} hθ hq ihq =>
+      tsearchHigh_f me opponent p q a n k θ gs hθ hq ihq)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     ?_ ?_
     h <;>
