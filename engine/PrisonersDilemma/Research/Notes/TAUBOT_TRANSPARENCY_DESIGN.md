@@ -472,3 +472,45 @@ cannot see tau terms. Also open: `tsim` (action-vote constructor) for behavioral
 bots — TauTFTSim currently compiles to an `.ite` decision tree; below-Löb-budget
 regimes for TauDupoc (need ¬Pf cost floors); mutual tau probes (reference-by-name /
 zoo environment).
+
+## Def 3 vs Def 4 — the comparison experiment (2026-08-11)
+
+`app/src/pd_runner/tau/{def4,compare}.py`, run with
+`uv run python -m pd_runner.tau.compare --zoo {control,separating}`.
+
+**Method.** Both definitions run over the SAME certified base matrix, the SAME
+σ_t channel, and the SAME exact α-breakpoint bands; only the probe semantics
+differ. Each matchup is instantiated with its own signal `σ_t(true opponent)`,
+which is what makes the comparison fair: the Lean Def-4 bots carry one STATIC
+weight vector, and comparing that against Def 3's correlated signals would show
+a t = 1 difference that is an artefact of the signal model, not of the
+definition. The phase theorems quantify over arbitrary weights, so per-matchup
+instantiation is faithful. All tables are at LARGE k (past the Löb threshold);
+the sub-Löb regime is unproven and not modelled.
+
+**Result 1 — the control zoo cannot separate them.** On
+{Dupoc, Coop, Defect, TFT} the two definitions give byte-identical outcome
+matrices at every (t, α) — 19 phase cells, 0 divergences. And the agreement is
+STRUCTURAL, not sampling luck: every bot's probe bit-vector is identical
+(Dupoc 11010, Coop 11111, Defect 00000, TFT 11010 under both).
+
+**The sharpened criterion.** Raw base-matrix asymmetry is NOT sufficient for
+separation — the control zoo *has* asymmetric cells (Coop/Defect) and still
+cannot separate, because their actors are CONSTANT bots whose bit-vector is
+all-ones/all-zeros under every probe geometry. The right criterion is a
+differing BIT-VECTOR, i.e. an asymmetric cell sitting under a CONDITIONAL bot's
+probe. `compare.asymmetry_report` decides on that and reports the raw asymmetry
+only as a diagnostic.
+
+**Result 2 — one bot separates them.** Adding EBot (`DupocBot vs EBot = (D, C)`
+— Dupoc defects, EBot cooperates) flips TauDupoc's EBot bit (Def3 D → Def4 C,
+vector 11010 → 11011) and three of TauEBot's, and the matrices then genuinely
+diverge: e.g. at t = 1, α = 1, `TauDupoc vs TauEBot` is (D, C) under Def 3 and
+(C, D) under Def 4 — the exploitation flips sides, because Def 3 asks "what do
+I do to EBot" while Def 4 asks "what does EBot do to me".
+
+**Reading.** The control agreement is a genuine anchor result (the two
+definitions coincide wherever outcomes are symmetric — which is most of the
+zoo), NOT evidence that the choice of definition is immaterial. The definitions
+are separated exactly by asymmetric/exploitable matchups, so a Def-3-vs-Def-4
+decision should be made on a zoo containing them.
