@@ -29,7 +29,15 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from pd_runner.tau.def4 import CONTROL_ZOO, Def4Bot, coop_mass_def4, probe_bit
+from pd_runner.tau.def4 import (
+    CONTROL_ZOO,
+    Def4Bot,
+    Probe,
+    coop_mass_def4,
+    probe_bit,
+    tau_play_def4,
+)
+from pd_runner.tau.def4_theorems import BASE_TO_LEAN, Def4Library
 from pd_runner.tau.matrix import TauMatrix
 from pd_runner.tau.play import _MASS_TOL, coop_mass
 from pd_runner.tau.signal import Signal, behavioral_distance_matrix, signal_family
@@ -47,16 +55,31 @@ COMPARISON_BOTS: tuple[str, ...] = (
 
 @dataclass(frozen=True)
 class CellPair:
-    """One matchup under both definitions."""
+    """One matchup under both definitions, with its certification status.
+
+    `certified` carries what the LEAN theorems say about this cell at this
+    (θ, w⃗) — `None` when no theorem covers it (an unbuilt bot, or a regime
+    nobody proved). `def4` is the Python model's answer. When both are present
+    they must agree; `verify_against_lean` is what enforces that, and
+    `certification` reports it.
+    """
 
     row: str
     col: str
     def3: tuple[str, str]
     def4: tuple[str, str]
+    certified: tuple[str, str] | None = None
 
     @property
     def agrees(self) -> bool:
         return self.def3 == self.def4
+
+    @property
+    def certification(self) -> str:
+        """`proven` | `predicted` | `CONFLICT` — the honesty marker."""
+        if self.certified is None:
+            return "predicted"
+        return "proven" if self.certified == self.def4 else "CONFLICT"
 
 
 @dataclass(frozen=True)
@@ -103,13 +126,116 @@ def def4_actions(
     alpha: float,
     channel: dict[str, Signal],
 ) -> tuple[str, str]:
-    """Def 4: each side votes on ITS OWN probe geometry."""
-    row_mass = coop_mass_def4(matrix, zoo[row], row, channel[col])
-    col_mass = coop_mass_def4(matrix, zoo[col], col, channel[row])
+    """Def 4: each side plays by ITS OWN probe geometry.
+
+    Delegates to `tau_play_def4` rather than thresholding a mass inline — the
+    CONSTANT geometry has no mass to threshold (Lean's `TauDefect` is `.const
+    .D`, so it defects even at α = 0), and duplicating the decision here once
+    silently dropped that short-circuit.
+    """
     return (
-        "C" if row_mass >= alpha - _MASS_TOL else "D",
-        "C" if col_mass >= alpha - _MASS_TOL else "D",
+        tau_play_def4(matrix, zoo[row], row, alpha, channel[col]),
+        tau_play_def4(matrix, zoo[col], col, alpha, channel[row]),
     )
+
+
+def _lean_cell(
+    library: Def4Library | None,
+    row: str,
+    col: str,
+    alpha: float,
+    channel: dict[str, Signal],
+) -> tuple[str, str] | None:
+    """What the Lean Def-4 theorems say about this matchup at this (α, signal).
+
+    The theorems are stated over INTEGER weights and threshold; the sweep works
+    in floats. We discretize onto a common denominator: each player's signal
+    supplies the weights `w⃗` its guard list votes over, and `θ = ⌈α·W⌉` — the
+    same `θ = ⌈α·W⌉` correspondence the Lean statements are written against
+    (design note Def-4 convention 3).
+
+    Returns `None` when no theorem covers the cell, which the caller reports as
+    `predicted` rather than substituting the computed value.
+    """
+    if library is None:
+        return None
+    lean_row = BASE_TO_LEAN.get(row)
+    lean_col = BASE_TO_LEAN.get(col)
+    if lean_row is None or lean_col is None:
+        return None
+
+    # A cell's regime is decided by each player's own threshold test against
+    # its own view. The Lean statements bind ONE (θ, w⃗) shared by both sides
+    # of a matchup, so we evaluate each side separately against its own signal
+    # and take the row action from the row player's regime and the column
+    # action from the column player's — which is what `outcome` means.
+    # Each side is looked up in ITS OWN orientation, so its own action is
+    # always the FIRST component: `outcome X Y = (X's action, Y's action)`, so
+    # the reversed lookup `outcome col row` carries the column player's action
+    # at index 0 — taking index 1 there would read the row player's action from
+    # the wrong regime.
+    row_cell = _lean_side(library, lean_row, lean_col, alpha, channel[col])
+    col_cell = _lean_side(library, lean_col, lean_row, alpha, channel[row])
+    if row_cell is None or col_cell is None:
+        return None
+    return (row_cell[0], col_cell[0])
+
+
+# Weight-slot layout of the Lean guard lists (`dupocSig`/`tftPfSig`), in the
+# order their `∀ θ wC wD wTs wTp wL` binders are stated.
+_SLOT_OF_BASE: dict[str, str] = {
+    "CooperateBot": "wC",
+    "DefectBot": "wD",
+    "TitForTatBot": "wTs",
+    "DupocBot": "wL",
+}
+_DISCRETIZATION_SCALE = 10**6
+
+
+def _signal_is_representable(signal: Signal) -> bool:
+    """Can this signal be expressed in the Lean guard lists' weight slots?
+
+    The milestone-1 guard lists (`dupocSig`/`tftPfSig`) have exactly five slots,
+    for the five bots of the Lean zoo. A signal carrying mass on any OTHER
+    hypothesis — EBot, say — cannot be represented: dropping that weight would
+    silently ask the theorems a DIFFERENT question (a renormalized 4-bot
+    signal) and then compare the answer against a model that did see the fifth
+    hypothesis. That mismatch shows up as spurious `CONFLICT`s, so such cells
+    must be reported as `predicted` instead.
+    """
+    return all(
+        p <= _MASS_TOL or base in _SLOT_OF_BASE for base, p in signal.weights.items()
+    )
+
+
+def _lean_side(
+    library: Def4Library,
+    lean_row: str,
+    lean_col: str,
+    alpha: float,
+    signal: Signal,
+) -> tuple[str, str] | None:
+    """Look up one matchup at the (θ, w⃗) induced by `signal`.
+
+    The Lean statements are over INTEGER weights with `θ = ⌈α·W⌉` (design note
+    Def-4 convention 3). Discretizing has one trap: the float cooperation mass
+    and the integer one must round CONSISTENTLY, or a cell sitting exactly on
+    the α-boundary lands in the low regime on one side and the high regime on
+    the other. We therefore derive θ from the SAME rounded weights the regime
+    test uses, and round (rather than ceil) the product so that an α equal to
+    an achievable mass ratio maps to exactly that mass — matching the `≥ α`
+    tie-break both definitions share.
+    """
+    if not _signal_is_representable(signal):
+        return None
+    w: dict[str, int] = {"wC": 0, "wD": 0, "wTs": 0, "wTp": 0, "wL": 0}
+    for base, p in signal.weights.items():
+        key = _SLOT_OF_BASE.get(base)
+        if key is not None:
+            w[key] += round(p * _DISCRETIZATION_SCALE)
+    total = sum(w.values())
+    theta = round(alpha * total)
+    return library.cell(lean_row, lean_col, theta, w)
 
 
 def compare_at(
@@ -119,14 +245,16 @@ def compare_at(
     t: float,
     alpha: float,
     channel: dict[str, Signal],
+    library: Def4Library | None = None,
 ) -> Comparison:
-    """Both matrices at one (t, α)."""
+    """Both matrices at one (t, α), with the Lean cell attached where proven."""
     cells = tuple(
         CellPair(
             row=row,
             col=col,
             def3=def3_actions(matrix, row, col, alpha, channel),
             def4=def4_actions(matrix, zoo, row, col, alpha, channel),
+            certified=_lean_cell(library, row, col, alpha, channel),
         )
         for row in bots
         for col in bots
@@ -139,19 +267,26 @@ def alpha_breakpoints_both(
     zoo: dict[str, Def4Bot],
     bots: tuple[str, ...],
     channel: dict[str, Signal],
-    quantize: int = 9,
 ) -> list[float]:
     """The union of both definitions' achievable cooperation masses.
 
     Between two consecutive breakpoints every α gives identical behavior under
     BOTH definitions, so enumerating these makes the α axis exact rather than
     sampled. We take the union so neither definition's phase change is missed.
+
+    The masses are used UNROUNDED. Rounding them (an earlier version quantized
+    to 9 dp) can nudge a breakpoint ABOVE the mass it represents, and since the
+    threshold is `≥ α` that flips the very cell the breakpoint was meant to
+    probe — visible as a spurious conflict against the Lean theorems, whose
+    integer arithmetic sits exactly on the boundary. Float noise across
+    equal-in-principle masses is harmless here: it produces a few extra
+    breakpoints that agree with their neighbours, never a wrong verdict.
     """
     masses = {0.0}
     for actor in bots:
         for signal in channel.values():
-            masses.add(round(coop_mass(matrix, actor, signal), quantize))
-            masses.add(round(coop_mass_def4(matrix, zoo[actor], actor, signal), quantize))
+            masses.add(coop_mass(matrix, actor, signal))
+            masses.add(coop_mass_def4(matrix, zoo[actor], actor, signal))
     return sorted(masses)
 
 
@@ -176,11 +311,21 @@ def alpha_bands(breakpoints: list[float]) -> list[tuple[float, float, float]]:
 
 @dataclass(frozen=True)
 class Divergence:
-    """A (t, α) region where the two definitions' matrices differ."""
+    """A (t, α) region where the two definitions' matrices differ.
+
+    `constant_artifact` marks the α = 0 corner, where the difference is NOT
+    about probe semantics: Def 3 lifts every base bot uniformly, so its
+    τ(DefectBot) has cooperation mass 0 and therefore COOPERATES at α = 0
+    (`0 ≥ 0`), whereas Lean's Def-4 `TauDefect` is literally `.const .D` and
+    defects at every α. That is a modelling-convention difference between a
+    uniform lift and a hand-written constant, and reporting it as a probe
+    divergence would overstate the comparison's finding.
+    """
 
     t: float
     alpha: float
     cells: tuple[CellPair, ...]
+    constant_artifact: bool = False
 
 
 def sweep(
@@ -188,12 +333,17 @@ def sweep(
     zoo: dict[str, Def4Bot] | None = None,
     bots: tuple[str, ...] = COMPARISON_BOTS,
     t_values: tuple[float, ...] = (0.0, 0.25, 0.5, 0.75, 1.0),
+    library: Def4Library | None = None,
 ) -> tuple[list[Comparison], list[Divergence]]:
     """Compare both definitions across the (t, α) grid.
 
     The α axis is exact (breakpoint bands); `t_values` is sampled, since the
     transparency dial is continuous and its breakpoints are not finitely
     enumerable in the same clean way.
+
+    Pass `library` (a `Def4Library`) to attach the Lean-certified cell to every
+    comparison, so the report can mark each cell proven vs predicted and
+    `verify_against_lean` can check the Python model against the kernel.
     """
     zoo = zoo or CONTROL_ZOO
     distances = behavioral_distance_matrix(matrix)
@@ -203,13 +353,62 @@ def sweep(
         channel = signal_family(matrix, t, distances=distances)
         breakpoints = alpha_breakpoints_both(matrix, zoo, bots, channel)
         for alpha, _lo, _hi in alpha_bands(breakpoints):
-            comp = compare_at(matrix, zoo, bots, t, alpha, channel)
+            comp = compare_at(matrix, zoo, bots, t, alpha, channel, library)
             comparisons.append(comp)
             if not comp.agrees:
+                bad = comp.disagreements
+                # Every cell involving a CONSTANT bot at α = 0 is the lift-vs-
+                # constant artifact, not a probe difference (see `Divergence`).
+                artifact = alpha <= _MASS_TOL and all(
+                    zoo[c.row].probe is Probe.CONSTANT
+                    or zoo[c.col].probe is Probe.CONSTANT
+                    for c in bad
+                )
                 divergences.append(
-                    Divergence(t=t, alpha=alpha, cells=comp.disagreements)
+                    Divergence(
+                        t=t, alpha=alpha, cells=bad, constant_artifact=artifact
+                    )
                 )
     return comparisons, divergences
+
+
+@dataclass(frozen=True)
+class Verification:
+    """How the Python Def-4 model fared against the Lean theorems."""
+
+    proven: int
+    predicted: int
+    conflicts: tuple[CellPair, ...]
+
+    @property
+    def ok(self) -> bool:
+        return not self.conflicts
+
+    @property
+    def coverage(self) -> float:
+        total = self.proven + self.predicted
+        return self.proven / total if total else 0.0
+
+
+def verify_against_lean(comparisons: list[Comparison]) -> Verification:
+    """Check every Lean-covered cell against the Python model.
+
+    A CONFLICT means the arithmetic in `def4.py` has drifted from the certified
+    semantics — the Python is wrong, not the kernel. This is the check that
+    keeps the model honest, and it is why `sweep` bothers to carry the library.
+    """
+    proven = predicted = 0
+    conflicts: list[CellPair] = []
+    for comp in comparisons:
+        for cell in comp.cells:
+            status = cell.certification
+            if status == "proven":
+                proven += 1
+            elif status == "predicted":
+                predicted += 1
+            else:
+                conflicts.append(cell)
+    return Verification(proven=proven, predicted=predicted, conflicts=tuple(conflicts))
 
 
 # ── Why a zoo does (or does not) separate the definitions ──────────────────
@@ -330,8 +529,14 @@ def render_report(
     zoo: dict[str, Def4Bot] | None = None,
     bots: tuple[str, ...] = COMPARISON_BOTS,
     t_values: tuple[float, ...] = (0.0, 0.25, 0.5, 0.75, 1.0),
+    library: Def4Library | None = None,
 ) -> str:
-    """The full comparison report: asymmetry analysis, then the (t, α) tables."""
+    """The full comparison report: asymmetry analysis, then the (t, α) tables.
+
+    When `library` is supplied, every Def-4 cell is checked against the Lean
+    theorems and the report states its certified coverage — so a reader can
+    tell which half of the comparison rests on the kernel.
+    """
     zoo = zoo or CONTROL_ZOO
     labels = {b: (zoo[b].name.replace("Tau", "τ") if b in zoo else b) for b in bots}
     report = asymmetry_report(matrix, zoo, bots)
@@ -415,17 +620,54 @@ def render_report(
             "  (D, C), where Dupoc defects but the hypothesis cooperates.",
         ]
 
-    comparisons, divergences = sweep(matrix, zoo, bots, t_values)
+    comparisons, divergences = sweep(matrix, zoo, bots, t_values, library)
+
+    if library is not None:
+        out += ["", "─" * 100, "LEAN CERTIFICATION", "─" * 100]
+        covered = [b for b in bots if b in BASE_TO_LEAN]
+        uncovered = [b for b in bots if b not in BASE_TO_LEAN]
+        out.append(
+            f"Def-4 theorems loaded: {len(library.theorems)} "
+            f"over {len(library.bots)} tau bots "
+            f"({', '.join(library.bots)})"
+        )
+        out.append(f"Bots with Lean counterparts : {', '.join(covered) or '(none)'}")
+        if uncovered:
+            out.append(
+                f"Bots WITHOUT Lean theorems  : {', '.join(uncovered)}"
+                "   ← their cells are PREDICTED, not proven"
+            )
+        ver = verify_against_lean(comparisons)
+        out.append(
+            f"Cells checked against the kernel : {ver.proven} proven, "
+            f"{ver.predicted} predicted ({ver.coverage:.0%} certified)"
+        )
+        if ver.conflicts:
+            out.append("*** CONFLICTS — the Python model disagrees with Lean: ***")
+            for c in ver.conflicts:
+                out.append(
+                    f"    {c.row} vs {c.col}: model {_fmt_cell(c.def4)} "
+                    f"≠ Lean {_fmt_cell(c.certified)}"
+                )
+        else:
+            out.append("No conflicts: the model agrees with every covered cell.")
 
     out += ["", "─" * 100, f"(t, α) TABLES  —  large k, {len(comparisons)} phase cells", "─" * 100]
     for comp in comparisons:
         out += ["", render_side_by_side(comp, bots, labels)]
 
     out += ["", "═" * 100, "SUMMARY", "═" * 100]
+    real = [d for d in divergences if not d.constant_artifact]
+    artifacts = [d for d in divergences if d.constant_artifact]
     out.append(f"Phase cells compared : {len(comparisons)}")
-    out.append(f"Cells where matrices diverge : {len(divergences)}")
-    if divergences:
-        for d in divergences:
+    out.append(f"Phase cells with a PROBE divergence : {len(real)}")
+    if artifacts:
+        out.append(
+            f"Phase cells differing only by the α=0 constant convention : "
+            f"{len(artifacts)}  (not a probe difference — see below)"
+        )
+    if real:
+        for d in real:
             out.append(f"  t = {d.t:.2f}, α = {d.alpha:.4f}:")
             for c in d.cells:
                 out.append(
@@ -434,6 +676,15 @@ def render_report(
                 )
     else:
         out.append("  (none — see the separation analysis above for why)")
+    if artifacts:
+        out += [
+            "",
+            "α = 0 convention note: Def 3 lifts DefectBot into a bot with",
+            "cooperation mass 0, which COOPERATES at α = 0 (`0 ≥ 0`). Lean's",
+            "Def-4 TauDefect is `.const .D` and defects at every α. That is a",
+            "uniform-lift vs hand-written-constant difference, not a probe",
+            "difference, so it is reported separately from the finding.",
+        ]
     out.append("")
     out.append("Caveat: all tables at LARGE k (past the Löb threshold), where the")
     out.append("Lean Def-4 phase theorems hold. The sub-Löb regime is unproven and")
@@ -480,6 +731,14 @@ def main() -> None:
         action="store_true",
         help="print the separation analysis and summary, skipping the tables",
     )
+    parser.add_argument(
+        "--no-lean",
+        action="store_true",
+        help=(
+            "skip loading the Lean Def-4 theorems (by default they are fetched "
+            "and every covered cell is checked against the kernel)"
+        ),
+    )
     args = parser.parse_args()
 
     zoo = CONTROL_ZOO if args.zoo == "control" else SEPARATING_ZOO
@@ -491,7 +750,8 @@ def main() -> None:
     )
     t_values = tuple(float(x) for x in args.t_values.split(","))
     matrix = load_tau_matrix(bots)
-    text = render_report(matrix, zoo, bots, t_values)
+    library = None if args.no_lean else Def4Library.load()
+    text = render_report(matrix, zoo, bots, t_values, library)
     if args.summary_only:
         lines = text.split("\n")
         start = next(i for i, l in enumerate(lines) if "TABLES" in l)

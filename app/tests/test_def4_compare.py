@@ -22,7 +22,9 @@ from pd_runner.tau.compare import (
     def3_actions,
     def4_actions,
     sweep,
+    verify_against_lean,
 )
+from pd_runner.tau.def4_theorems import TAU_THEOREMS_FILE, Def4Library
 from pd_runner.tau.def4 import (
     CONTROL_BOTS,
     CONTROL_ZOO,
@@ -49,6 +51,36 @@ def separating_matrix():
 
 
 # ── The probe geometries ───────────────────────────────────────────────────
+
+
+def test_constant_bots_are_alpha_independent(control_matrix):
+    """Lean's TauCooperate/TauDefect are `.const`, so α never moves them.
+
+    The α = 0 corner is the discriminating one: a self-probing bot with an
+    all-zero bit-vector would COOPERATE there (mass 0 ≥ 0), which is what an
+    earlier model did — and it contradicted the kernel.
+    """
+    sig = Signal({"CooperateBot": 0.5, "DefectBot": 0.5})
+    for alpha in (0.0, 0.5, 1.0):
+        assert (
+            tau_play_def4(
+                control_matrix, CONTROL_ZOO["DefectBot"], "DefectBot", alpha, sig
+            )
+            == "D"
+        )
+        assert (
+            tau_play_def4(
+                control_matrix, CONTROL_ZOO["CooperateBot"], "CooperateBot", alpha, sig
+            )
+            == "C"
+        )
+
+
+def test_constant_bot_rejects_a_missing_action():
+    with pytest.raises(ValueError, match="action"):
+        Def4Bot("X", Probe.CONSTANT)
+    with pytest.raises(ValueError, match="action"):
+        Def4Bot("X", Probe.SELF, action="C")
 
 
 def test_self_probe_reads_the_actors_own_action(control_matrix):
@@ -134,12 +166,20 @@ def test_control_zoo_asymmetry_does_not_bite(control_matrix):
 
 
 def test_control_zoo_matrices_agree_across_the_grid(control_matrix):
+    """No PROBE divergence anywhere on the control zoo.
+
+    The α = 0 constant-convention artifact is excluded deliberately (see
+    `test_alpha_zero_divergences_are_flagged_as_a_convention_artifact`): it
+    reflects Def 3 lifting DefectBot uniformly vs Lean's hand-written
+    `.const .D`, not a difference in probe semantics.
+    """
     comparisons, divergences = sweep(
         control_matrix, CONTROL_ZOO, CONTROL_BOTS, t_values=(0.0, 0.25, 0.5, 0.75, 1.0)
     )
     assert comparisons  # the sweep actually ran
-    assert divergences == []
-    assert all(c.agrees for c in comparisons)
+    probe_divergences = [d for d in divergences if not d.constant_artifact]
+    assert probe_divergences == []
+    assert all(c.agrees for c in comparisons if c.alpha > 0.0)
 
 
 # ── Fact 2: EBot separates them ────────────────────────────────────────────
@@ -193,3 +233,97 @@ def test_alpha_bands_add_a_probe_above_an_unreachable_top():
     bands = alpha_bands([0.0, 0.5])
     assert bands[-1][0] > 0.5
     assert bands[-1][2] == 1.0
+
+
+# ── The Lean theorems are the ground truth ─────────────────────────────────
+
+
+def test_every_def4_theorem_parses():
+    """All 28 statements in Theorems/Tau/Matrix.lean must be readable.
+
+    A silently-skipped theorem would shrink certified coverage without
+    anyone noticing, which is exactly the failure mode this scanner exists to
+    prevent.
+    """
+    lib = Def4Library.load()
+    declared = len(
+        [l for l in TAU_THEOREMS_FILE.read_text().splitlines()
+         if l.startswith("theorem outcome_")]
+    )
+    assert len(lib.theorems) == declared
+    assert declared >= 28
+
+
+def test_theorem_regimes_are_classified():
+    lib = Def4Library.load()
+    regimes = {t.regime for t in lib.theorems}
+    assert regimes == {"low", "high", "unconditional"}
+    # The constants carry no θ hypothesis; the θ-bots carry both regimes.
+    assert lib.regimes_for("TauDefect", "TauDefect") == ("unconditional",)
+    assert set(lib.regimes_for("TauDupoc", "TauDupoc")) == {"low", "high"}
+
+
+def test_lean_lookup_respects_the_alpha_regime():
+    """The same matchup flips with θ — that IS the α-phase boundary."""
+    lib = Def4Library.load()
+    w = {"wC": 25, "wD": 25, "wTs": 25, "wTp": 0, "wL": 25}   # coop mass 75
+    assert lib.cell("TauDupoc", "TauDupoc", 75, w) == ("C", "C")
+    assert lib.cell("TauDupoc", "TauDupoc", 76, w) == ("D", "D")
+
+
+def test_uncovered_cells_return_none_not_a_guess():
+    lib = Def4Library.load()
+    w = {"wC": 25, "wD": 25, "wTs": 25, "wTp": 0, "wL": 25}
+    # No tau bot named TauEBot exists in Lean.
+    assert lib.cell("TauEBot", "TauDupoc", 10, w) is None
+    assert not lib.covers("TauEBot", "TauDupoc")
+
+
+def test_control_model_agrees_with_the_kernel(control_matrix):
+    """THE central check: the Python Def-4 model must match Lean everywhere.
+
+    A conflict means `def4.py` has drifted from the certified semantics — the
+    Python is wrong, not the kernel. This test caught three real bugs: constant
+    bots modelled as probing bots, a reversed-orientation lookup, and a
+    breakpoint that rounded above its own mass.
+    """
+    comparisons, _ = sweep(
+        control_matrix,
+        CONTROL_ZOO,
+        CONTROL_BOTS,
+        t_values=(0.0, 0.25, 0.5, 0.75, 1.0),
+        library=Def4Library.load(),
+    )
+    ver = verify_against_lean(comparisons)
+    assert ver.conflicts == (), f"model disagrees with Lean: {ver.conflicts}"
+    assert ver.proven > 0, "no cells were actually checked against the kernel"
+
+
+def test_separating_zoo_cells_are_honestly_uncertified(separating_matrix):
+    """EBot has no Lean theorems, so its cells must read `predicted`.
+
+    They must NOT be silently certified against a renormalized 4-bot signal —
+    the theorems' guard lists have no slot for a fifth hypothesis, so a signal
+    carrying EBot weight asks a question they cannot answer.
+    """
+    comparisons, _ = sweep(
+        separating_matrix,
+        SEPARATING_ZOO,
+        SEPARATING_BOTS,
+        t_values=(0.0, 0.5, 1.0),
+        library=Def4Library.load(),
+    )
+    ver = verify_against_lean(comparisons)
+    assert ver.conflicts == ()
+    assert ver.predicted > 0
+    assert ver.coverage < 1.0
+
+
+def test_alpha_zero_divergences_are_flagged_as_a_convention_artifact(control_matrix):
+    """The α = 0 constant difference must not be reported as a probe finding."""
+    _comparisons, divergences = sweep(
+        control_matrix, CONTROL_ZOO, CONTROL_BOTS, t_values=(0.0, 0.5, 1.0)
+    )
+    assert divergences, "the α=0 corner does differ"
+    assert all(d.constant_artifact for d in divergences)
+    assert all(d.alpha == 0.0 for d in divergences)

@@ -69,6 +69,18 @@ class Probe(Enum):
     THIRD_PARTY = "third_party"
     """"What does Bᵢ do against a fixed third party?" — TauTFTSim / TauTFTPf."""
 
+    CONSTANT = "constant"
+    """No probe at all — the bot ignores its signal entirely.
+
+    This is NOT the same as a self-probing bot that happens to have a uniform
+    bit-vector. In Lean, `TauCooperate`/`TauDefect` are literally `.const .C` /
+    `.const .D` ([Tau/Defs.lean]), so they are α-INDEPENDENT: TauDefect defects
+    even at α = 0, where a self-probing bot with an all-zero bit-vector would
+    cooperate (mass 0 ≥ 0). Modelling them as probing bots contradicted the
+    kernel at exactly that corner — caught by `verify_against_lean`, which is
+    why the constant geometry is explicit rather than emergent.
+    """
+
 
 @dataclass(frozen=True)
 class Def4Bot:
@@ -77,18 +89,24 @@ class Def4Bot:
     `name` is the display name. `probe` fixes the guard direction. `referent`
     is the fixed third party the THIRD_PARTY probe measures against — for the
     Lean zoo's two TFTs that is the cooperator, matching base TitForTatBot's
-    `.sim .opp (.bot CooperateBot)` guard.
+    `.sim .opp (.bot CooperateBot)` guard. `action` is the fixed play of a
+    CONSTANT bot.
     """
 
     name: str
     probe: Probe
     referent: str | None = None
+    action: str | None = None
 
     def __post_init__(self) -> None:
         if self.probe is Probe.THIRD_PARTY and self.referent is None:
             raise ValueError(f"{self.name}: THIRD_PARTY probe needs a referent")
         if self.probe is not Probe.THIRD_PARTY and self.referent is not None:
             raise ValueError(f"{self.name}: only THIRD_PARTY probes take a referent")
+        if self.probe is Probe.CONSTANT and self.action not in ("C", "D"):
+            raise ValueError(f"{self.name}: CONSTANT bot needs action 'C' or 'D'")
+        if self.probe is not Probe.CONSTANT and self.action is not None:
+            raise ValueError(f"{self.name}: only CONSTANT bots take a fixed action")
 
 
 def probe_bit(
@@ -104,7 +122,13 @@ def probe_bit(
     certified base matrix: at large `k` the Lean bits coincide with the base
     cells (a shallow instance's provable action IS its action), which is the
     faithfulness claim connecting this arithmetic to `Tau/Certs.lean`.
+
+    A CONSTANT bot has no guard; its bits are meaningless and never consulted
+    (`tau_play_def4` short-circuits). We report its fixed action so that
+    diagnostics like the bit-vector table still render something truthful.
     """
+    if bot.probe is Probe.CONSTANT:
+        return bot.action == "C"
     if bot.probe is Probe.SELF:
         return matrix.cooperates(actor_base, hypothesis)
     if bot.probe is Probe.RECIPROCITY:
@@ -138,7 +162,14 @@ def tau_play_def4(
     alpha: float,
     signal: Signal,
 ) -> str:
-    """Def-4 play ∈ {"C", "D"}, thresholded at `≥ α` (same convention as Def 3)."""
+    """Def-4 play ∈ {"C", "D"}, thresholded at `≥ α` (same convention as Def 3).
+
+    CONSTANT bots bypass the threshold entirely, matching their Lean `.const`
+    definitions — in particular TauDefect defects even at α = 0.
+    """
+    if bot.probe is Probe.CONSTANT:
+        assert bot.action is not None
+        return bot.action
     mass = coop_mass_def4(matrix, bot, actor_base, signal)
     return "C" if mass >= alpha - _MASS_TOL else "D"
 
@@ -147,20 +178,22 @@ def tau_play_def4(
 
 CONTROL_ZOO: dict[str, Def4Bot] = {
     "DupocBot": Def4Bot("TauDupoc", Probe.RECIPROCITY),
-    "CooperateBot": Def4Bot("TauCooperate", Probe.SELF),
-    "DefectBot": Def4Bot("TauDefect", Probe.SELF),
+    "CooperateBot": Def4Bot("TauCooperate", Probe.CONSTANT, action="C"),
+    "DefectBot": Def4Bot("TauDefect", Probe.CONSTANT, action="D"),
     "TitForTatBot": Def4Bot("TauTFTSim", Probe.THIRD_PARTY, referent="CooperateBot"),
 }
 """The 4-bot CONTROL zoo, keyed by the BASE bot each tau bot lifts.
 
-Mirrors the Lean milestone-1 zoo. `TauCooperate`/`TauDefect` are signal-blind
-constants in Lean; giving them the SELF probe reproduces that exactly (a
-constant's bit-vector is all-ones or all-zeros under EVERY probe geometry).
+Mirrors the Lean milestone-1 zoo exactly: `TauCooperate`/`TauDefect` are
+CONSTANT because Lean defines them as `.const .C` / `.const .D`, which makes
+them α-independent. (An earlier version modelled them as self-probing bots with
+uniform bit-vectors; that agrees everywhere except α = 0, where a mass-0 bot
+would cooperate — `verify_against_lean` caught the disagreement against the
+kernel. Keep them CONSTANT.)
 
 **This zoo cannot separate the definitions, by construction** — verified: every
-bot's bit-vector is identical under both. Its asymmetric base cells all sit
-under constant bots, where asymmetry cannot bite. Use it as the anchor/control
-run; use `SEPARATING_ZOO` for the informative one.
+conditional bot's bit-vector is identical under both. Use it as the
+anchor/control run; use `SEPARATING_ZOO` for the informative one.
 """
 
 CONTROL_BOTS: tuple[str, ...] = (
