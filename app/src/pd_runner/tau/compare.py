@@ -188,23 +188,52 @@ _SLOT_OF_BASE: dict[str, str] = {
     "DefectBot": "wD",
     "TitForTatBot": "wTs",
     "DupocBot": "wL",
+    # TauEBot's guard list (`eSig`) reads the δ_E column and binds its
+    # self-hypothesis weight as `wE`; the δ_L-column bots bind theirs as `wL`.
+    # Both map from the SAME base bot set, so a signal is discretized once and
+    # the regime test picks whichever variable that theorem sums.
+    "EBot": "wE",
 }
 _DISCRETIZATION_SCALE = 10**6
 
 
-def _signal_is_representable(signal: Signal) -> bool:
-    """Can this signal be expressed in the Lean guard lists' weight slots?
+# Which hypotheses each Lean guard list actually votes over. This is NOT the
+# same as "which bots have theorems": `dupocSig`/`tftPfSig` have five slots for
+# the FIVE-template milestone-1 zoo and contain no EBot hypothesis, while
+# `eSig` votes over the δ_E column. A signal carrying mass outside a bot's own
+# guard list cannot be handed to its theorems at all.
+_LEAN_HYPOTHESES: dict[str, frozenset[str]] = {
+    "TauDupoc": frozenset({"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot"}),
+    "TauTFTSim": frozenset({"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot"}),
+    "TauTFTPf": frozenset({"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot"}),
+    "TauEBot": frozenset({"CooperateBot", "DefectBot", "TitForTatBot", "EBot"}),
+    # constants ignore their signal entirely, so any signal is representable
+    "TauCooperate": frozenset(
+        {"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot", "EBot"}
+    ),
+    "TauDefect": frozenset(
+        {"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot", "EBot"}
+    ),
+}
 
-    The milestone-1 guard lists (`dupocSig`/`tftPfSig`) have exactly five slots,
-    for the five bots of the Lean zoo. A signal carrying mass on any OTHER
-    hypothesis — EBot, say — cannot be represented: dropping that weight would
-    silently ask the theorems a DIFFERENT question (a renormalized 4-bot
-    signal) and then compare the answer against a model that did see the fifth
-    hypothesis. That mismatch shows up as spurious `CONFLICT`s, so such cells
-    must be reported as `predicted` instead.
+
+def _signal_is_representable(lean_bot: str, signal: Signal) -> bool:
+    """Can this signal be handed to `lean_bot`'s theorems?
+
+    Only if every hypothesis carrying mass appears in THAT bot's Lean guard
+    list. Dropping an unrepresentable weight would silently ask the theorems a
+    DIFFERENT question — a renormalized signal over fewer hypotheses — and then
+    compare the answer against a model that did see the extra one. Those cells
+    must read `predicted`, never `proven` and never `CONFLICT`.
+
+    This is a real scope limit, not a technicality: on the 5-bot zoo, Lean's
+    `TauDupoc` has no EBot hypothesis, so it and the Python `TauDupoc` (which
+    votes over one) are genuinely different bots. Certifying the enlarged zoo
+    end to end would need the milestone-1 guard lists widened to six slots.
     """
+    allowed = _LEAN_HYPOTHESES.get(lean_bot, frozenset())
     return all(
-        p <= _MASS_TOL or base in _SLOT_OF_BASE for base, p in signal.weights.items()
+        p <= _MASS_TOL or base in allowed for base, p in signal.weights.items()
     )
 
 
@@ -226,9 +255,9 @@ def _lean_side(
     an achievable mass ratio maps to exactly that mass — matching the `≥ α`
     tie-break both definitions share.
     """
-    if not _signal_is_representable(signal):
+    if not _signal_is_representable(lean_row, signal):
         return None
-    w: dict[str, int] = {"wC": 0, "wD": 0, "wTs": 0, "wTp": 0, "wL": 0}
+    w: dict[str, int] = {"wC": 0, "wD": 0, "wTs": 0, "wTp": 0, "wL": 0, "wE": 0}
     for base, p in signal.weights.items():
         key = _SLOT_OF_BASE.get(base)
         if key is not None:
@@ -244,7 +273,14 @@ def _lean_side(
     # a unit — the snap is what keeps the boundary cell on the proven side.
     theta = round(alpha * total)
     for candidate in (
-        w["wC"] + w["wTs"] + w["wTp"] + w["wL"],  # the cooperation mass
+        # The achievable cooperation masses, one per guard-list convention.
+        # They DIFFER: the δ_L-column bots fire on everything but Defect
+        # (`wC + wTs + wTp + wL`), while TauEBot fires only on Coop and its own
+        # quine (`wC + wE`) — TitForTat and Dupoc both DEFECT against EBot, so
+        # their probe bits are 0. That difference is the whole reason TauEBot
+        # separates Def 3 from Def 4.
+        w["wC"] + w["wTs"] + w["wTp"] + w["wL"],
+        w["wC"] + w["wE"],
         total,
     ):
         if abs(theta - candidate) <= 1:

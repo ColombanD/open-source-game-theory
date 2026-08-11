@@ -140,6 +140,23 @@ theorem probe_true_of_quine_play (k n : Nat)
       | 2 => simp [play, eval, TauDupocδ, hps'] at h
       | n + 3 => simp [play, eval, TauDupocδ, hps'] at h
 
+/-! ### TauEBot's bits
+
+`TauEBotδ` is definitionally the same shape as `TauDupocδ` (both are the
+self-probing quine `.search k (.plays .self .self C) C D`), so its Löb bit is
+literally the same theorem — stated separately because the two are DIFFERENT
+tau bots whose guard lists probe different columns, and a reader chasing
+TauEBot should find its bit under its own name. -/
+
+/-- `E(δ_C)` cooperates (probes `.const C`), from `c_guard k + 3`. -/
+theorem pf_probe_eOfCoop {k K : Nat} (hk : 2 ≤ k) (hK : c_guard k + 3 ≤ K) :
+    Pf K (probe (eOfCoopδ k)) :=
+  pf_probe_searchOfCoop hk hK
+
+theorem ps_probe_eOfCoop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) :
+    proofSearch k (probe (eOfCoopδ k)) = true :=
+  ps_probe_searchOfCoop hk hkk
+
 /-- **THE LÖB BIT**: past a threshold, the quine's probe atom is provable AT THE
     PROBING BUDGET ITSELF — same-`k` Löbian self-cooperation, Def-4 edition. -/
 theorem ps_probe_quine :
@@ -160,5 +177,68 @@ theorem ps_probe_quine :
   obtain ⟨m, hm⟩ := hk₂ k hk
   obtain ⟨n, hn⟩ := Pf_sound m _ hm
   exact probe_true_of_quine_play k n hn
+
+/-- TauEBot's quine bit — the same Löb argument as `ps_probe_quine`, restated
+    for `TauEBotδ` (definitionally the same term; the bots differ in which
+    column their guard lists probe, not in this instance). -/
+theorem ps_probe_eQuine :
+    ∃ k₂, ∀ k, k₂ < k → proofSearch k (probe (TauEBotδ k)) = true :=
+  ps_probe_quine
+
+/-- `Tp(δ_E)` / `L(δ_E)` **DEFECT**: their probe is about `.const D`, which is
+    refutable, so the guard fails and the else-branch runs. The bit is 0. -/
+theorem interp_probe_searchOfE_false (k : Nat) :
+    ¬ (probe (searchOfEδ k)).interp := by
+  rintro ⟨n, hn⟩
+  -- the guard bit in the form `eval`'s unfolding exposes (defeq to `ps_probe_defect`)
+  have hps : proofSearch k
+      ((probe tauDefectδ).subst
+        (.bot (.search k (probe tauDefectδ) (.const .C) (.const .D)))
+        (.bot (.search k (probe tauDefectδ) (.const .C) (.const .D))))
+      = false := ps_probe_defect k
+  match n with
+  | 0 => simp [play, eval] at hn
+  | 1 => simp [play, eval] at hn
+  | 2 => simp [play, eval, searchOfEδ, probeSearchδ, hps] at hn
+  | n + 3 => simp [play, eval, searchOfEδ, probeSearchδ, hps] at hn
+
+theorem ps_probe_searchOfE (k m : Nat) :
+    proofSearch m (probe (searchOfEδ k)) = false := by
+  cases h : proofSearch m (probe (searchOfEδ k)) with
+  | false => rfl
+  | true =>
+      exact absurd (proofSearch_sound _ _ h) (interp_probe_searchOfE_false k)
+
+/-- `Ts(δ_E)` **DEFECTS**: it runs `.const D` and copies the defection.
+
+    The `.ite` guard is a `.sim` of the frozen `.const D`, so at any fuel ≥ 2
+    the guard yields `D ≠ C` and the else-branch `.const .D` runs. The deep
+    case needs the inner `.bot`/`.const` unfolding supplied explicitly, since
+    `simp` stops at the `bind`. -/
+theorem interp_probe_simOfE_false : ¬ (probe simOfEδ).interp := by
+  rintro ⟨n, hn⟩
+  match n with
+  | 0 => simp [play, eval] at hn
+  | 1 => simp [play, eval] at hn
+  | 2 => simp [play, eval, simOfEδ, tftSimδ, tauDefectδ] at hn
+  | 3 => simp [play, eval, simOfEδ, tftSimδ, tauDefectδ] at hn
+  | n + 4 =>
+      -- `.const` evaluates at ANY positive fuel; the residual here is `n`, so
+      -- case on it rather than guessing an offset.
+      cases n with
+      | zero =>
+          simp only [play, eval, simOfEδ, tftSimδ, tauDefectδ, Prog.subst] at hn
+          simp at hn
+      | succ m =>
+          have hinner : eval (m + 1) (.bot (.const Action.D))
+              (.bot (.const Action.D)) (.const Action.D) = some Action.D := rfl
+          simp only [play, eval, simOfEδ, tftSimδ, tauDefectδ, Prog.subst,
+            hinner] at hn
+          exact absurd hn (by decide)
+
+theorem ps_probe_simOfE (m : Nat) : proofSearch m (probe simOfEδ) = false := by
+  cases h : proofSearch m (probe simOfEδ) with
+  | false => rfl
+  | true => exact absurd (proofSearch_sound _ _ h) interp_probe_simOfE_false
 
 end PD.Tau

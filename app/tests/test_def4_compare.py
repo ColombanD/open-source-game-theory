@@ -300,9 +300,34 @@ def test_lean_lookup_respects_the_alpha_regime():
 def test_uncovered_cells_return_none_not_a_guess():
     lib = Def4Library.load()
     w = {"wC": 25, "wD": 25, "wTs": 25, "wTp": 0, "wL": 25}
-    # No tau bot named TauEBot exists in Lean.
-    assert lib.cell("TauEBot", "TauDupoc", 10, w) is None
-    assert not lib.covers("TauEBot", "TauDupoc")
+    # A tau bot with no theorems at all yields no cell, rather than a guess.
+    assert lib.cell("TauNonexistent", "TauDupoc", 10, w) is None
+    assert not lib.covers("TauNonexistent", "TauDupoc")
+
+
+def test_tau_ebot_is_in_the_library():
+    """TauEBot is now BUILT in Lean, so the separating bot is certified too."""
+    lib = Def4Library.load()
+    assert "TauEBot" in lib.bots
+    assert lib.covers("TauEBot", "TauDupoc")
+    assert set(lib.regimes_for("TauEBot", "TauEBot")) == {"low", "high"}
+
+
+def test_tau_ebot_boundary_differs_from_taudupoc():
+    """TauEBot's cooperation mass is `wC + wE`, NOT all-but-Defect.
+
+    TitForTat and Dupoc both DEFECT against EBot (base cells `(D, C)`), so
+    their reciprocity bits are 0 — which is exactly the asymmetry that makes
+    the two definitions diverge. An earlier Lean version copied TauDupoc's
+    all-but-Defect boundary; the kernel-vs-model check caught it.
+    """
+    lib = Def4Library.load()
+    # wC + wE = 20 here, while wC + wTs + wTp + wL = 55.
+    w = {"wC": 10, "wD": 5, "wTs": 20, "wTp": 15, "wL": 10, "wE": 10}
+    assert lib.cell("TauEBot", "TauCooperate", 20, w) == ("C", "C")
+    assert lib.cell("TauEBot", "TauCooperate", 21, w) == ("D", "C")
+    # TauDupoc at the same θ is still cooperating — different boundary.
+    assert lib.cell("TauDupoc", "TauCooperate", 21, w) == ("C", "C")
 
 
 def test_control_model_agrees_with_the_kernel(control_matrix):
@@ -345,6 +370,9 @@ def test_separating_zoo_cells_are_honestly_uncertified(separating_matrix):
     )
     ver = verify_against_lean(comparisons)
     assert ver.conflicts == ()
+    # TauEBot IS built in Lean now, but the milestone-1 guard lists have no
+    # EBot hypothesis slot, so a signal carrying EBot mass cannot be handed to
+    # TauDupoc/TauTFT's theorems. Those cells stay honestly `predicted`.
     assert ver.predicted > 0
     assert ver.coverage < 1.0
 

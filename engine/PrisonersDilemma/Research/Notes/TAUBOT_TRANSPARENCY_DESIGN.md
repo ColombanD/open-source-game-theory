@@ -502,6 +502,28 @@ differing BIT-VECTOR, i.e. an asymmetric cell sitting under a CONDITIONAL bot's
 probe. `compare.asymmetry_report` decides on that and reports the raw asymmetry
 only as a diagnostic.
 
+**TauEBot is BUILT in Lean (2026-08-11).** The separating bot is no longer a
+Python-only model: `TauEBotδ` (a second `.self` quine), its δ-instances, its
+phase theorem and its 22 matrix cells are proven — 68 Def-4 theorems over six
+tau bots, zero sorry, 3-axiom footprint. **Its α-boundary is `wC + wE`, NOT
+all-but-Defect**: TitForTat and Dupoc both DEFECT against EBot (base cells
+`(D, C)`), so their reciprocity bits are 0. An earlier version copied
+TauDupoc's all-but-Defect shape and the kernel-vs-model check caught it — the
+fifth bug that check has found.
+
+Scouted before building, and the risk did NOT materialize: base EBot's third
+branch probes MirrorBot, whose SELF-play is the one non-terminating cell, but
+MirrorBot is never a hypothesis in this zoo and the branch-3 probes that
+actually run (`DefectBot`/`EBot` vs MirrorBot) both terminate.
+
+**A real scope limit remains.** Lean's `dupocSig`/`tftPfSig` have five slots
+and contain NO EBot hypothesis, so on the 5-bot zoo the Lean `TauDupoc` and the
+Python `TauDupoc` (which votes over an EBot hypothesis) are genuinely different
+bots. `_signal_is_representable` now checks per-bot guard-list membership, so
+those cells read `predicted` rather than producing spurious conflicts: the
+separating run is **18% certified, zero conflicts**. Certifying the enlarged
+zoo end to end would need the milestone-1 guard lists widened to six slots.
+
 **Result 2 — one bot separates them.** Adding EBot (`DupocBot vs EBot = (D, C)`
 — Dupoc defects, EBot cooperates) flips TauDupoc's EBot bit (Def3 D → Def4 C,
 vector 11010 → 11011) and three of TauEBot's, and the matrices then genuinely

@@ -86,6 +86,57 @@ def simOfSearchδ (k : Nat) : Prog := tftSimδ (searchOfCoopδ k)
 /-- `Tp(δ_L)`: the prover TFT seeing TauDupoc — probes `L(δ_C)`. -/
 def searchOfSearchδ (k : Nat) : Prog := probeSearchδ k (searchOfCoopδ k)
 
+/-! ### TauEBot's instances (the SEPARATING bot, 2026-08-11)
+
+`TauEBot` exists to make Def 3 and Def 4 actually differ. Base `EBot vs
+DupocBot = (C, D)` is ASYMMETRIC and sits under CONDITIONAL bots, which is the
+precise condition for the two probe geometries to read different bits: Def 3
+asks TauDupoc "what do I do to EBot" (D), Def 4's reciprocity probe asks "what
+does EBot do to me" (C). One flipped bit moves the cooperation mass and shifts
+the α-boundary.
+
+Like TauDupoc, TauEBot probes the δ_E column ("does B, seeing exactly me,
+cooperate"), so its self-hypothesis is a second cyclic instance — cut by its own
+`.self` quine. Base EBot's `.sim`-of-MirrorBot third branch does NOT propagate
+here: the tau lift probes the reciprocity question through `proofSearch`, so no
+tau instance ever runs MirrorBot against itself (the one non-terminating cell).
+-/
+
+/-- `E(δ_E)` — TauEBot's quine, the second (and last) cyclic instance of the
+    enlarged zoo. Same shape as `TauDupocδ`: cooperate iff provably
+    self-cooperating, closed by `botSearchStep` + `pblt_engine_id`. -/
+def TauEBotδ (k : Nat) : Prog :=
+  .search k (.plays .self .self Action.C) (.const .C) (.const .D)
+
+/-- `L(δ_E)`, `Tp(δ_E)`: a prover seeing TauEBot.
+
+    **Also DEFECTS**, for the same asymmetry: base `DupocBot vs EBot = (D, C)`
+    — Dupoc cannot prove EBot cooperates with it (EBot's DefectBot-branch fires
+    first), so it defects. The tau instance probes a refutable atom, so its
+    guard fails and the else-branch `.const .D` runs. -/
+def searchOfEδ (k : Nat) : Prog := probeSearchδ k tauDefectδ
+
+/-- `Ts(δ_E)`: the behavioral TFT seeing TauEBot.
+
+    **This instance DEFECTS**, and that asymmetry is the whole point of the
+    bot. Base `TitForTatBot vs EBot = (D, C)`: TFT's guard runs the opponent
+    against CooperateBot, and EBot's first branch (`sim opp DefectBot`) makes
+    it defect there, so TFT sees a defection and defects back. The tau lift
+    keeps that: the instance probes `E(δ_C)`-against-Coop, which is `.const .D`
+    at the branch TFT reads.
+
+    Modelling this correctly is what makes TauEBot separate the definitions.
+    An earlier version copied TauDupoc's shape — where every non-Defect
+    hypothesis happens to cooperate — and so wrongly gave TauEBot the
+    `wC + wTs + wTp + wE` boundary; the kernel-vs-model check caught it. -/
+def simOfEδ : Prog := tftSimδ tauDefectδ
+
+/-- `E(δ_C)`: TauEBot seeing TauCooperate — probes `C(δ_E) = .const C`. -/
+def eOfCoopδ (k : Nat) : Prog := probeSearchδ k tauCoopδ
+
+/-- `E(δ_L)`: TauEBot seeing TauDupoc — probes `L(δ_E)`. -/
+def eOfSearchδ (k : Nat) : Prog := probeSearchδ k (searchOfEδ k)
+
 /-! ## The σ-players
 
 Weights `wC wD wTs wTp wL : Nat` over an implicit common denominator `W = Σw`;
@@ -119,6 +170,20 @@ def TauDefect : Prog := .const .D
 /-- The TauDupoc player at guard budget `k`, weights `w⃗`, threshold `θ`. -/
 def TauDupoc (k θ wC wD wTs wTp wL : Nat) : Prog :=
   .tsearch k (dupocSig k wC wD wTs wTp wL) θ (.const .C) (.const .D)
+
+/-- TauEBot's guard list: the δ_E column ("does B, seeing exactly me,
+    cooperate"), quine last. Same reciprocity geometry as `dupocSig`, read one
+    column over — which is exactly why it separates the definitions. -/
+def eSig (k wC wD wTs wTp wE : Nat) : GuardList :=
+  .cons wC (probe tauCoopδ)
+    (.cons wD (probe tauDefectδ)
+      (.cons wTs (probe simOfEδ)
+        (.cons wTp (probe (searchOfEδ k))
+          (.cons wE (probe (TauEBotδ k)) .nil))))
+
+/-- The TauEBot player — the SEPARATING bot (see `eSig`). -/
+def TauEBot (k θ wC wD wTs wTp wE : Nat) : Prog :=
+  .tsearch k (eSig k wC wD wTs wTp wE) θ (.const .C) (.const .D)
 
 /-- The TauTitForTatPf player (prover TFT): thresholds PROVABLE cooperation of the
     δ_C column. -/

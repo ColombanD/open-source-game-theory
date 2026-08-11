@@ -186,6 +186,7 @@ LEAN_TO_BASE: dict[str, str] = {
     "TauDefect": "DefectBot",
     "TauTFTSim": "TitForTatBot",
     "TauTFTPf": "TitForTatBot",
+    "TauEBot": "EBot",
 }
 
 BASE_TO_LEAN: dict[str, str] = {
@@ -193,6 +194,7 @@ BASE_TO_LEAN: dict[str, str] = {
     "CooperateBot": "TauCooperate",
     "DefectBot": "TauDefect",
     "TitForTatBot": "TauTFTSim",
+    "EBot": "TauEBot",
 }
 """Default Lean counterpart per base bot (TFT defaults to the SIM variant).
 

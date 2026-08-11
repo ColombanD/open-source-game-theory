@@ -177,4 +177,53 @@ theorem tauCooperate_plays (opponent : Prog) :
 theorem tauDefect_plays (opponent : Prog) :
     ∃ N, play N TauDefect opponent = some .D := ⟨1, rfl⟩
 
+/-! ## TauEBot — the separating bot
+
+Same reciprocity geometry as TauDupoc, reading the δ_E column — but a
+DIFFERENT α-boundary, and that is exactly why it separates the definitions.
+Only `C(δ_E)` and the quine fire: base `TitForTatBot vs EBot` and `DupocBot vs
+EBot` are both `(D, C)`, so those hypotheses DEFECT against EBot and their
+probe bits are 0. TauEBot's cooperation mass is therefore `wC + wE`, against
+TauDupoc's `wC + wTs + wTp + wL`.
+
+Under Def 3 the same bot would read the OTHER side of those asymmetric cells
+("what do I do to them" — EBot cooperates with both), giving a different mass
+and a different boundary. One asymmetric cell under a conditional bot is all it
+takes. -/
+
+/-- TauEBot's fired mass: only the Coop hypothesis and the quine fire. -/
+theorem eSig_mass (k wC wD wTs wTp wE : Nat) (me opponent : Prog)
+    (hk2 : 2 ≤ k)
+    (hE : proofSearch k (probe (TauEBotδ k)) = true) :
+    (eSig k wC wD wTs wTp wE).massWhere
+        (fun ψ => proofSearch k (ψ.subst me opponent))
+      = wC + wE := by
+  simp only [eSig, GuardList.massWhere, probe_subst,
+    ps_probe_coop hk2, ps_probe_defect, ps_probe_simOfE, ps_probe_searchOfE, hE]
+  simp
+
+/-- **TauEBot α-phase theorem** (Löb-gated, like TauDupoc — but at the `wC + wE`
+    boundary). -/
+theorem tauEBot_phase :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE (opponent : Prog),
+      (θ ≤ wC + wE →
+        ∃ N, play N (TauEBot k θ wC wD wTs wTp wE) opponent = some .C)
+      ∧ (wC + wE < θ →
+        ∃ N, play N (TauEBot k θ wC wD wTs wTp wE) opponent = some .D) := by
+  obtain ⟨kE, hkE⟩ := ps_probe_eQuine
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  refine ⟨max kE kA, fun k hk θ wC wD wTs wTp wE opponent => ?_⟩
+  have hE := hkE k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
+  have hkA' : 1 * Nat.log2 k + 8 ≤ k :=
+    hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+  have hk2 : 2 ≤ k := by omega
+  have hmass := eSig_mass k wC wD wTs wTp wE
+    (.tsearch k (eSig k wC wD wTs wTp wE) θ (.const .C) (.const .D)) opponent
+    hk2 hE
+  constructor
+  · intro hθ
+    exact tau_play_C opponent (by rw [hmass]; exact hθ)
+  · intro hθ
+    exact tau_play_D opponent (by rw [hmass]; omega)
+
 end PD.Tau
