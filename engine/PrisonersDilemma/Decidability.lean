@@ -1,3 +1,13 @@
+/-! # Metatheory umbrella — TEMPORARILY OUT OF THE DEFAULT BUILD (2026-08-11)
+
+The `tsearch` Prog constructor (Def-4 TauBots, Milestone 1) breaks every
+exhaustive Prog/PlaysProof match in this target until the T31–T54 arms are
+written. That migration is **Milestone 2** (enumProg over GuardList, gated
+mirror rules, evalG 3-valued peel, modest/instance-gate walkers, the T49
+substrate); until it lands, this target is unpinned in `lakefile.toml` and the
+decidability results speak about the PRE-tsearch language. Build explicitly
+with `lake build Metatheory` when working on M2. Consequence for the app: the
+certified outcome-prepass (`evalG`/`guardFastN`) cannot see tau terms yet. -/
 import PrisonersDilemma.Decidability.T31EngineDecider
 import PrisonersDilemma.Decidability.T42PfB
 import PrisonersDilemma.Decidability.T43ModestUniverse

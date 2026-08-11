@@ -181,3 +181,8 @@ import PrisonersDilemma.Theorems.WaryBot.vs_GuardianBot
 import PrisonersDilemma.Theorems.WaryBot.vs_OptimBot
 import PrisonersDilemma.Theorems.OptimBot.vs_TitForTatBot
 import PrisonersDilemma.Theorems.OptimBot.vs_DBot
+import PrisonersDilemma.Tau.Defs
+import PrisonersDilemma.Tau.PeelLemmas
+import PrisonersDilemma.Tau.Certs
+import PrisonersDilemma.Tau.Phases
+import PrisonersDilemma.Theorems.Tau.Matrix

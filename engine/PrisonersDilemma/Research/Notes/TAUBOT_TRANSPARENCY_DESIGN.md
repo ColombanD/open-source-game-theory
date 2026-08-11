@@ -398,3 +398,77 @@ the unique choice compatible with constraint 1 at v1 cost.
 **Rejected outright**: syntactic noise on the source (prover bots reason
 soundly from a wrong premise — kills constraint 1); genuinely probabilistic
 agents (measure-theoretic eval + probabilistic Löb — a thesis in itself).
+
+---
+
+# Part III — Definition 4: tau-native bots (design fixed & Milestone 1 SHIPPED 2026-08-11)
+
+**Def 4** generalizes past the Def-3 lift: hypotheses AND probes are TauBots, every
+recursive reference routed through `proofSearch`. This escapes Def 1's rejection —
+Def 1's recursion was semantic (via `play`, fuel-total, no Löb rescue); Def 4's is
+proof-theoretic, so bounded Löb breaks the regress exactly as in base DupocBot
+self-play. Def 4 is a bot LANGUAGE, not a uniform lift: probe direction is per-bot
+(TauDupoc probes reciprocity "B seeing me"; the TFTs probe "B seeing TauCooperate"),
+so its (t, α) diagrams answer a different question than Def 3's.
+
+## Fixed conventions
+
+1. **Signals are weighted lists over template NAMES**; probes re-instantiate the
+   hypothesis at a point-mass signal. The probed objects are the finite closed
+   instance family `B(δ_T)`; for the milestone-1 zoo the reference graph is a DAG
+   except the single `L(δ_L)` self-loop, cut by the `.self` quine `TauDupocδ`.
+2. **Probe atom** `probe I := .plays (.bot I) (.bot I) .C` — `.bot`-freezing is
+   mandatory (subst barrier); the second slot is inert (`.opp`-free programs).
+   Anti-patterns (rejected): encoding "B sees T" in the opponent slot; `.self` in a
+   probing bot's guard (resolves to the σ-player, the wrong object).
+3. **θ = ⌈α·W⌉** over integer weights summing to W; cooperate iff fired mass ≥ θ.
+   Lossless: the α-diagram is piecewise constant with breakpoints at subset sums.
+4. **TauBots are `.opp`-free** — the defining constraint of the tau fragment; under a
+   static signal every tau player is extensionally constant (the static-signal caveat
+   of Part II applies in full force).
+5. **Guard order: Löbian guards LAST** (stepwise rules read in order; low-θ regimes
+   short-circuit before the walled Löb guard).
+6. **Prover instances stay `.search` singletons** (point-mass tsearch ≡ search),
+   keeping `searchBranch`/`botSearchStep` applicable; only σ-players use `.tsearch`.
+
+## The engine extension (Route B, landed)
+
+`Prog.tsearch k gs θ p q` — weighted-threshold proof search; `GuardList` lives in the
+mutual block (not a nested `List` payload). Eval = stepwise PEEL (θ=0 then-shortcut;
+firing subtracts the weight, truncated). Five PlaysProof rules mirror the peel:
+`tsearchZero_t/Nil_f/Cons_t/Cons_f/High_f`; `Cons_f` pays the per-guard `search_f`
+floor (`n+m+k+c_node`); `High_f` commits else on the static arithmetic `θ > totalMass`
+(bit-independent, hence consistent) paying `gs.gsize`. NO new Pf modal rules; the
+Exclusion censuses gained only a kill obligation (`h_tsearch`) — no tsearch program is
+ever a census subject. Meaning preservation: all 81 pre-existing outcome statements
+byte-identical, 3-axiom footprint. Gotchas hit: the equation compiler silently
+compiled the enlarged `subst` mutual block by WF recursion (killing defeq) — forced
+back with `termination_by structural`; an inner `match gs` in the eval arm breaks
+equation generation — use nested patterns (two `.tsearch` arms) instead; the tactic
+`induction` refuses the mutually-inductive `GuardList` — write equation-style
+recursion (`cases` is fine).
+
+## Milestone 1 results (all in `Tau/` + `Theorems/Tau/Matrix.lean`, zero sorry, 3 axioms)
+
+Zoo: TauCooperate, TauDefect, TauDupoc, TauTFTSim (behavioral), TauTFTPf (prover).
+The δ-instance closure is 7 terms. Headline (`Tau/Phases.lean`): all three
+non-constant players cooperate — against every opponent — **iff θ ≤ wC+wTs+wTp+wL**
+(the same α-boundary), at different BUDGET thresholds: TauTFTSim needs only the
+trivial Coop bit (k ≥ 2-ish), TauTFTPf shallow proof budgets, TauDupoc the **Löb
+threshold** (`ps_probe_quine`: past k₂, `proofSearch k (probe (TauDupocδ k)) = true`
+at the probing budget itself — `botSearchStep` + `pblt_engine_id` on the
+`.bot`-wrapped quine fixpoint). **The prover/behavioral split is a budget-phase gap,
+not an α-gap.** Matrix: 25 cooperative-regime cells incl. the `(C, D)` exploitation
+cells against TauDefect (wrong signal costs payoff — the price of partial
+transparency, now a theorem), + 3 defect-regime self-plays exhibiting the α-flip.
+
+## Milestone 2 (open)
+
+Restore `Metatheory` to the default build (unpinned in `lakefile.toml`) and extend
+T31–T54 to `tsearch`: `enumProg` over `GuardList`, gated mirror rules, `evalG`
+3-valued peel (squeeze non-pivotal undetermined guards), modest/instance-gate
+walkers, the T49 substrate (~1wk alone). Until then the certified outcome-prepass
+cannot see tau terms. Also open: `tsim` (action-vote constructor) for behavioral tau
+bots — TauTFTSim currently compiles to an `.ite` decision tree; below-Löb-budget
+regimes for TauDupoc (need ¬Pf cost floors); mutual tau probes (reference-by-name /
+zoo environment).
