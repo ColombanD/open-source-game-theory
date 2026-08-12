@@ -213,6 +213,12 @@ Two readings worth recording:
   information about each other — and that tax is exactly what the Def-4 transparency
   experiments measure as the prover/behavioral split.
 
+#### ⚠️ Summary in one breath: If we want to model the right formal System S, we need to make sure Podlak holds.
+* Your chain is a correct truth argument, and it's cheap — at the meta-level, where cheapness doesn't count.
+* Written in S, one link of the chain — "the budget-k search failed" — is forced to contain Con_{≤k} (four lines, any φ).
+* Under your hypothesis (suppose podlak bound is k and not k^eps), that link costs ~k in S. The discounted engine charging O(log k) for it is therefore not describing S — so no short S-proof exists, so Pudlák stands, and the discount is exposed as unfaithful.
+* Under sub-linear reality instead, that link might genuinely cost only k^ε in S, a k^ε floor would be honest, your chain would fit inside budget k, and (C,C) would be the faithful outcome. Nobody knows which world we're in — that's the open tightness question, and this one matrix cell encodes it.
+
 ### The examined alternative: a "search-free-subject discount" — REJECTED
 
 Proposal: charge the honest `n + m + c_node` when the refuted guard's (post-subst)
