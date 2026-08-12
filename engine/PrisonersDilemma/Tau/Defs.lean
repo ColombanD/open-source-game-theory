@@ -1,15 +1,15 @@
 import PrisonersDilemma.Dynamics
 
 /-!
-# Tau/Defs — the Def-4 TauBot zoo (milestone 1, 2026-08-11)
+# Tau/Defs — the Def-4 TauBot zoo (milestone 1, 2026-08-11; EBot cascade refactor 2026-08-12)
 
 **Definition 4** (TAUBOT_TRANSPARENCY_DESIGN.md, Part III): tau-native agents whose
 signal hypotheses AND probes are TauBots, every recursive reference routed through
 `proofSearch` — the Löbian machinery breaks the regress that sank the old Def 1
 (whose recursion was semantic, via `play`).
 
-Fixed 5-template zoo: TauCooperate (`C`), TauDefect (`D`), TauDupoc (`L`),
-TauTitForTatSim (`Ts`), TauTitForTatPf (`Tp`). Conventions:
+Six-template zoo: TauCooperate (`C`), TauDefect (`D`), TauDupoc (`L`),
+TauTitForTatSim (`Ts`), TauTitForTatPf (`Tp`), TauEBot (`E`). Conventions:
 
 * **Signals are weighted lists over template names**; a probe re-instantiates its
   hypothesis at a POINT-MASS signal. So the probed objects are the finite instance
@@ -20,22 +20,44 @@ TauTitForTatSim (`Ts`), TauTitForTatPf (`Tp`). Conventions:
   `.opp`-free programs; instance-vs-itself is the canonical closed choice).
 * **Tau programs are `.opp`-free** — that IS partial transparency: the signal replaces
   the wire to the actual opponent. Consequently every tau player is extensionally
-  constant (its play depends on its signal only), and the 25-cell outcome matrix
-  factors through the 5 play theorems.
+  constant (its play depends on its signal only), and the outcome matrix factors
+  through the play theorems.
 * **Guard order: Löbian guards LAST**, so low-budget/low-threshold regimes commit via
   the stepwise short-circuits before ever consulting the walled Löb guard.
-* **Prover instances stay `.search` singletons** (a point-mass `tsearch` degenerates
-  to `.search`), keeping the modal reading rules (`searchBranch`/`botSearchStep`)
-  applicable; only the σ-players (never probed by anyone) use `.tsearch`.
+* **Prover instances stay `.search` (singleton/cascade)** (a point-mass `tsearch`
+  degenerates to `.search`), keeping the modal reading rules
+  (`searchBranch`/`botSearchStep`) applicable; only the σ-players (never probed by
+  anyone) use `.tsearch`.
+* **Each template's instance family is its own point-mass instantiation** — the
+  coherence rule the 2026-08-12 refactor restored. The zoo's instances resolve
+  through THREE columns: δ_C ("does B, seeing TauCooperate, cooperate" — both TFTs
+  and TauEBot's reciprocity stage), δ_D ("does B, seeing TauDefect, cooperate" —
+  TauEBot's exploit stage), and δ_L ("does B, seeing TauDupoc, cooperate" —
+  TauDupoc). No δ_E column exists anymore: TauEBot's cascade probes only δ_D/δ_C,
+  which is exactly what grounds the whole family without stipulations (a δ_E-probing
+  EBot and the δ_L-probing Dupoc would form a mutual-quine 2-cycle the language
+  cannot express — the root cause of the retired 2026-08-11 stipulations).
 
-**The instance closure is 7 terms.** TauDupoc's σ-player probes the δ_L column
-(`B(δ_L)`: "does B, seeing exactly me, cooperate"); both TFTs probe the δ_C column
-(`B(δ_C)`: "does B, seeing TauCooperate, cooperate"). Chasing references:
-`C(δ_·) = .const C`, `D(δ_·) = .const D` (signal-blind);
-`L(δ_C) = Tp(δ_C) = probeSearchδ tauCoopδ`; `Ts(δ_C) = tftSimδ tauCoopδ`;
-`Ts(δ_L) = tftSimδ (L(δ_C))`; `Tp(δ_L) = probeSearchδ (L(δ_C))`;
-`L(δ_L)` = the quine. Everything grounds in a DAG except the single `L(δ_L)`
-self-loop, which the `.self` quine cuts.
+**The instance columns and their bits** (`P` = provable at the probing budget,
+large k):
+
+| hypothesis | δ_C column | δ_D column | δ_L column |
+|---|---|---|---|
+| Coop   | C, P | C, P | C, P |
+| Defect | D    | D    | D    |
+| TFTSim | C, P | D    | C, P |
+| TFTPf  | C, P | D    | C, P |
+| Dupoc  | C, P | D    | C, P (quine, Löb) |
+| EBot   | D    | D    | **C, UNPROVABLE (floor)** |
+
+The starred cell is the tau image of base `outcome_DupocBot_vs_EBot = (D, C)`:
+`E(δ_L)` really cooperates, but its cooperation sits behind a FAILED exploit-probe,
+so any certificate pays the `search_f` floor `> k` and TauDupoc's budget-`k` probe
+honestly reads 0 (`Base/Exclusion.no_provable_botSearcherElse_tail`). So the
+provable-cooperation masses are: δ_C `wC+wTs+wTp+wL`, δ_D `wC`, δ_L `wC+wTs+wTp+wL`.
+
+Everything grounds in a DAG except the single `L(δ_L)` self-loop, which the `.self`
+quine cuts.
 -/
 
 open PD
@@ -46,8 +68,9 @@ namespace PD.Tau
 def probe (I : Prog) : Formula := .plays (.bot I) (.bot I) Action.C
 
 /-- One-hypothesis PROVER instance: cooperate iff the probe of `I` is provable within
-    `k`. This is `B(δ_T)` for both prover templates (`L` and `Tp`) — which template it
-    "came from" is recorded only by WHICH instance it is applied to. -/
+    `k`. This is `B(δ_T)` for both single-probe prover templates (`L` and `Tp`) —
+    which template it "came from" is recorded only by WHICH instance it is applied
+    to. -/
 def probeSearchδ (k : Nat) (I : Prog) : Prog :=
   .search k (probe I) (.const .C) (.const .D)
 
@@ -55,6 +78,24 @@ def probeSearchδ (k : Nat) (I : Prog) : Prog :=
     itself and copy cooperation. Sees TRUE plays, not provable ones. -/
 def tftSimδ (I : Prog) : Prog :=
   .ite (.sim (.bot I) (.bot I)) Action.C (.const .C) (.const .D)
+
+/-- One-hypothesis EBOT instance (`E(δ_T)`) — the tau lift of base EBot's decision
+    CASCADE: if the hypothesis provably cooperates with the defector (exploitable),
+    defect; else if it provably cooperates with the cooperator, cooperate; else
+    defect. `I_D` is the hypothesis's δ_D instance, `I_C` its δ_C instance. (Base
+    EBot's third, MirrorBot branch does not propagate: no tau instance ever runs
+    Mirror against itself.)
+
+    THE load-bearing consequence: when `I_D`'s cooperation is false-or-unprovable
+    and `I_C`'s is provable, this instance PLAYS C **through a failed search** — so
+    its own cooperation certificate carries the `search_f` floor and is invisible to
+    any probe at budget ≤ k. That is the faithful mechanism of base
+    `DupocBot vs EBot = (D, C)`, replacing the 2026-08-11 stipulation that modelled
+    `E(δ_L)` as a provable cooperator (caught in review: Def 4 routes every bit
+    through `proofSearch`, so a floor-priced cooperation must read 0). -/
+def eδ (k : Nat) (I_D I_C : Prog) : Prog :=
+  .search k (probe I_D) (.const .D)
+    (.search k (probe I_C) (.const .C) (.const .D))
 
 /-- `L(δ_L)` — the quine: TauDupoc whose point-mass hypothesis is ITSELF. The only
     cyclic instance; `.self` is the built-in quine (an inductive term cannot contain
@@ -66,7 +107,7 @@ def tftSimδ (I : Prog) : Prog :=
 def TauDupocδ (k : Nat) : Prog :=
   .search k (.plays .self .self Action.C) (.const .C) (.const .D)
 
-/-! ## The δ-instance closure (7 terms) -/
+/-! ## The δ-instance closure -/
 
 /-- `C(δ_T)` for every `T` — TauCooperate ignores its signal. -/
 def tauCoopδ : Prog := .const .C
@@ -80,113 +121,66 @@ def searchOfCoopδ (k : Nat) : Prog := probeSearchδ k tauCoopδ
 /-- `Ts(δ_C)`: the behavioral TFT seeing TauCooperate. -/
 def simOfCoopδ : Prog := tftSimδ tauCoopδ
 
+/-- `L(δ_D) = Tp(δ_D)`: a prover seeing TauDefect — probes `D(δ_·) = tauDefectδ`,
+    refutable, so it DEFECTS. (Formerly named `searchOfEδ` and stipulated as
+    "a prover seeing TauEBot"; under the cascade refactor the term keeps only its
+    honest role — the δ_D column entry TauEBot's exploit stage consults.) -/
+def searchOfDefectδ (k : Nat) : Prog := probeSearchδ k tauDefectδ
+
+/-- `Ts(δ_D)`: the behavioral TFT seeing TauDefect — runs `D(δ_C) = .const D` and
+    copies the defection. (Formerly named `simOfEδ`, same term, honest role.) -/
+def simOfDefectδ : Prog := tftSimδ tauDefectδ
+
 /-- `Ts(δ_L)`: the behavioral TFT seeing TauDupoc — runs `L(δ_C)`. -/
 def simOfSearchδ (k : Nat) : Prog := tftSimδ (searchOfCoopδ k)
 
 /-- `Tp(δ_L)`: the prover TFT seeing TauDupoc — probes `L(δ_C)`. -/
 def searchOfSearchδ (k : Nat) : Prog := probeSearchδ k (searchOfCoopδ k)
 
-/-! ### TauEBot's instances (the SEPARATING bot, 2026-08-11)
+/-! ### TauEBot's instances (the SEPARATING bot; cascade-faithful since 2026-08-12)
 
-`TauEBot` exists to make Def 3 and Def 4 actually differ. Base `EBot vs
-DupocBot = (C, D)` is ASYMMETRIC and sits under CONDITIONAL bots, which is the
-precise condition for the two probe geometries to read different bits: Def 3
-asks TauDupoc "what do I do to EBot" (D), Def 4's reciprocity probe asks "what
-does EBot do to me" (C). One flipped bit moves the cooperation mass and shifts
-the α-boundary.
+`TauEBot` exists to make Def 3 and Def 4 actually differ. Base EBot is the zoo's
+exploiter — a non-monotone strategy (it defects against BOTH the exploitable and
+the unreciprocating) — and the cascade lift preserves exactly that structure, which
+Def 3's outcome-averaged monotone thresholds cannot express. -/
 
-Like TauDupoc, TauEBot probes the δ_E column ("does B, seeing exactly me,
-cooperate"), so its self-hypothesis is a second cyclic instance — cut by its own
-`.self` quine. Base EBot's `.sim`-of-MirrorBot third branch does NOT propagate
-here: the tau lift probes the reciprocity question through `proofSearch`, so no
-tau instance ever runs MirrorBot against itself (the one non-terminating cell).
--/
+/-- `E(δ_C)`: TauEBot seeing TauCooperate. **DEFECTS via a FIRING exploit-probe**:
+    `C(δ_D) = tauCoopδ` provably cooperates with the defector, so the first guard
+    fires and the then-branch `.const D` runs — base
+    `EBot vs CooperateBot = (D, C)`, mechanism-faithfully (the 2026-08-11 version
+    got this bit right but through a stipulated refutable guard). This is the
+    hypothesis the δ_C-column bots (both TFTs, and TauEBot's own reciprocity stage)
+    hold about TauEBot. -/
+def eOfCoopδ (k : Nat) : Prog := eδ k tauCoopδ tauCoopδ
 
-/-- `E(δ_E)` — TauEBot's quine, the second (and last) cyclic instance of the
-    enlarged zoo. Same shape as `TauDupocδ`: cooperate iff provably
-    self-cooperating, closed by `botSearchStep` + `pblt_engine_id`. -/
-def TauEBotδ (k : Nat) : Prog :=
-  .search k (.plays .self .self Action.C) (.const .C) (.const .D)
+/-- `E(δ_D)`: TauEBot seeing TauDefect. **DEFECTS** — both probes are about
+    `tauDefectδ`, false, so the cascade falls through to the final `.const D`
+    (base `EBot vs DefectBot = (D, D)`). The δ_D-column entry TauEBot's own
+    exploit stage holds about itself — grounded, NO quine needed. -/
+def eOfDefectδ (k : Nat) : Prog := eδ k tauDefectδ tauDefectδ
 
-/-- `L(δ_E)`, `Tp(δ_E)`: a prover seeing TauEBot.
+/-- `E(δ_L)`: TauEBot seeing TauDupoc — the hypothesis TauDupoc holds about TauEBot.
 
-    **Also DEFECTS**, for the same asymmetry: base `DupocBot vs EBot = (D, C)`
-    — Dupoc cannot prove EBot cooperates with it (EBot's DefectBot-branch fires
-    first), so it defects. The tau instance probes a refutable atom, so its
-    guard fails and the else-branch `.const .D` runs. -/
-def searchOfEδ (k : Nat) : Prog := probeSearchδ k tauDefectδ
-
-/-- `Ts(δ_E)`: the behavioral TFT seeing TauEBot.
-
-    **This instance DEFECTS**, and that asymmetry is the whole point of the
-    bot. Base `TitForTatBot vs EBot = (D, C)`: TFT's guard runs the opponent
-    against CooperateBot, and EBot's first branch (`sim opp DefectBot`) makes
-    it defect there, so TFT sees a defection and defects back. The tau lift
-    keeps that: the instance probes `E(δ_C)`-against-Coop, which is `.const .D`
-    at the branch TFT reads.
-
-    Modelling this correctly is what makes TauEBot separate the definitions.
-    An earlier version copied TauDupoc's shape — where every non-Defect
-    hypothesis happens to cooperate — and so wrongly gave TauEBot the
-    `wC + wTs + wTp + wE` boundary; the kernel-vs-model check caught it. -/
-def simOfEδ : Prog := tftSimδ tauDefectδ
-
-/-- `E(δ_C)`: TauEBot seeing TauCooperate.
-
-    **DEFECTS.** Base `EBot vs CooperateBot = (D, C)`: EBot's first branch runs
-    the opponent against DefectBot, and CooperateBot cooperates there, so EBot
-    reads "exploitable" and defects. The tau instance probes that same
-    exploitability question, whose atom is refutable, so its guard fails. This
-    is the hypothesis the δ_C-column bots (both TFTs) hold about TauEBot. -/
-def eOfCoopδ (k : Nat) : Prog := probeSearchδ k tauDefectδ
-
-/-- `E(δ_L)`: TauEBot seeing TauDupoc — the hypothesis the δ_L-column bots hold
-    about TauEBot.
-
-    **COOPERATES.** Base `EBot vs DupocBot = (C, D)`: Dupoc is not exploitable
-    (it defects against DefectBot), and it cooperates with CooperateBot, so
-    EBot's second branch fires and it cooperates. Note the asymmetry with
-    `L(δ_E)` below — the same base cell read from the two sides — which is
-    exactly what separates Def 3 from Def 4. -/
-def eOfSearchδ (k : Nat) : Prog := probeSearchδ k tauCoopδ
-
-/-- `L(δ_E)` / `Tp(δ_E)` restated for the ENLARGED zoo: the Dupoc-flavoured
-    hypothesis TauEBot holds. **DEFECTS** — `searchOfEδ` above already captures
-    it (base `DupocBot vs EBot = (D, C)`); named here so the six-slot guard
-    lists read symmetrically. -/
-abbrev dupocOfEδ (k : Nat) : Prog := searchOfEδ k
+    **COOPERATES — UNPROVABLY.** The exploit-probe of `L(δ_D)` (Dupoc is not
+    exploitable: `searchOfDefectδ` plays D) FAILS, and the reciprocity-probe of
+    `L(δ_C)` (`searchOfCoopδ` provably cooperates) fires: play C, matching base
+    `EBot vs DupocBot = (C, D)`. But the cooperation sits behind the failed first
+    search, so every certificate of it costs `> k`
+    (`no_provable_botSearcherElse_tail`) and TauDupoc's budget-`k` probe reads 0 —
+    the faithful tau image of the base floor, and the bit the 2026-08-11
+    stipulation (`probeSearchδ k tauCoopδ`, a PROVABLE cooperator) got wrong. -/
+def eOfSearchδ (k : Nat) : Prog := eδ k (searchOfDefectδ k) (searchOfCoopδ k)
 
 /-! ## The σ-players
 
-Weights `wC wD wTs wTp wL : Nat` over an implicit common denominator `W = Σw`;
-`θ` is the α-threshold in that scale (`θ = ⌈α·W⌉`); cooperate iff fired mass `≥ θ`.
-`TauCooperate`/`TauDefect` are signal-blind constants. -/
-
-/-! ## The σ-players (SIX-slot guard lists, enlarged zoo 2026-08-12)
-
-Every guard list votes over all six templates — Coop, Defect, TFTSim, TFTPf,
-Dupoc, EBot — so a signal over the full zoo is representable and the Def-3/Def-4
-comparison can be certified end to end. Löbian/self guards last, as always.
-
-The three columns differ in WHICH instance each hypothesis resolves to, and the
-δ_L and δ_E columns disagree on exactly the EBot/Dupoc pair — the asymmetric
-base cell `EBot vs DupocBot = (C, D)` read from its two sides:
-
-| hypothesis | δ_C column (TFTs) | δ_L column (TauDupoc) | δ_E column (TauEBot) |
-|---|---|---|---|
-| Coop   | C | C | C |
-| Defect | D | D | D |
-| TFTSim | C | C | **D** |
-| TFTPf  | C | C | **D** |
-| Dupoc  | C | C (quine) | **D** |
-| EBot   | **D** | **C** | C (quine) |
-
-So the cooperation masses are: δ_C `wC+wTs+wTp+wL`, δ_L `wC+wTs+wTp+wL+wE`,
-δ_E `wC+wE`. -/
+Weights `wC wD wTs wTp wL wE : Nat` over an implicit common denominator `W = Σw`;
+`θ` is the α-threshold in that scale (`θ = ⌈α·W⌉`); a vote stage fires iff its fired
+mass `≥ θ`. `TauCooperate`/`TauDefect` are signal-blind constants. -/
 
 /-- TauDupoc's guard list: the δ_L column ("does B, seeing exactly me,
-    cooperate"), Löbian guard last. Everything but Defect fires — including
-    EBot, which cooperates with Dupoc. -/
+    cooperate"), Löbian guard last. Provable bits: everything but Defect AND EBot —
+    `E(δ_L)` cooperates, but only floor-priced, so its bit is honestly 0 and the
+    fired mass is `wC + wTs + wTp + wL`. -/
 def dupocSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
   .cons wC (probe tauCoopδ)
     (.cons wD (probe tauDefectδ)
@@ -195,9 +189,10 @@ def dupocSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
           (.cons wE (probe (eOfSearchδ k))
             (.cons wL (probe (TauDupocδ k)) .nil)))))
 
-/-- TauTitForTatPf's guard list: the δ_C column ("does B, seeing TauCooperate,
-    cooperate") — all shallow, no Löb guard. EBot DEFECTS here (it exploits a
-    cooperator), which is what makes the δ_C and δ_L columns differ. -/
+/-- The δ_C-column guard list ("does B, seeing TauCooperate, cooperate") — all
+    shallow, no Löb guard. Shared by TauTitForTatPf (its whole strategy) and by
+    TauEBot (its reciprocity stage). EBot's own bit is 0 here (`eOfCoopδ` exploits
+    a cooperator), so the fired mass is `wC + wTs + wTp + wL`. -/
 def tftPfSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
   .cons wC (probe tauCoopδ)
     (.cons wD (probe tauDefectδ)
@@ -205,6 +200,17 @@ def tftPfSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
         (.cons wTp (probe (searchOfCoopδ k))
           (.cons wE (probe (eOfCoopδ k))
             (.cons wL (probe (searchOfCoopδ k)) .nil)))))
+
+/-- TauEBot's EXPLOIT guard list: the δ_D column ("does B, seeing TauDefect,
+    cooperate"). Only the Coop hypothesis fires — everything else defects against
+    a defector — so the fired mass is `wC`. -/
+def exploitSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
+  .cons wC (probe tauCoopδ)
+    (.cons wD (probe tauDefectδ)
+      (.cons wTs (probe simOfDefectδ)
+        (.cons wTp (probe (searchOfDefectδ k))
+          (.cons wE (probe (eOfDefectδ k))
+            (.cons wL (probe (searchOfDefectδ k)) .nil)))))
 
 /-- The TauCooperate player. -/
 def TauCooperate : Prog := .const .C
@@ -216,20 +222,22 @@ def TauDefect : Prog := .const .D
 def TauDupoc (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
   .tsearch k (dupocSig k wC wD wTs wTp wL wE) θ (.const .C) (.const .D)
 
-/-- TauEBot's guard list: the δ_E column ("does B, seeing exactly me,
-    cooperate"), quine last. Only Coop and the quine fire — TFT and Dupoc both
-    defect against EBot — which is why its boundary is `wC + wE`. -/
-def eSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
-  .cons wC (probe tauCoopδ)
-    (.cons wD (probe tauDefectδ)
-      (.cons wTs (probe simOfEδ)
-        (.cons wTp (probe (searchOfEδ k))
-          (.cons wL (probe (dupocOfEδ k))
-            (.cons wE (probe (TauEBotδ k)) .nil)))))
+/-- The TauEBot player — base EBot's cascade lifted to the vote level, as a
+    NESTED `tsearch`: if the signal's exploitable mass (δ_D column) reaches θ,
+    defect; else if its reciprocating mass (δ_C column) reaches θ, cooperate; else
+    defect. At a point-mass signal this is exactly the instance cascade `eδ`, so
+    the σ-player and its instance family finally cohere (the 2026-08-11 version
+    was a δ_E-probing reciprocity vote — Def 2's rejected geometry — whose
+    instance family could only be stipulated, since two self-probing bots form an
+    inexpressible mutual-quine 2-cycle).
 
-/-- The TauEBot player — the SEPARATING bot (see `eSig`). -/
+    Both stages share the caution threshold θ (one α, two questions). The
+    resulting cooperation region is a WINDOW, `wC < θ ≤ wC + wTs + wTp + wL`:
+    TauEBot defects at BOTH extremes — a non-monotone α-profile no Def-3 lift can
+    express, and the honest structural separation between the definitions. -/
 def TauEBot (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
-  .tsearch k (eSig k wC wD wTs wTp wL wE) θ (.const .C) (.const .D)
+  .tsearch k (exploitSig k wC wD wTs wTp wL wE) θ (.const .D)
+    (.tsearch k (tftPfSig k wC wD wTs wTp wL wE) θ (.const .C) (.const .D))
 
 /-- The TauTitForTatPf player (prover TFT): thresholds PROVABLE cooperation of
     the δ_C column. -/

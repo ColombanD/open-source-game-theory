@@ -811,6 +811,76 @@ theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
         exact hctxT L h.2.2.1
     | iteL z' aT' other' => simp [ctxPlug] at h
 
+/-- **The floor behind the freeze** (the tau-layer workhorse, 2026-08-12): a
+    `.bot`-frozen budget-`kb` searcher plays anything OTHER than its then-action only
+    through `search_f`, so no proof of ≤ kb characters (nor of any smaller census
+    budget `k ≤ kb`) concludes any formula whose spine tail is that play.
+
+    Shape-general in the ELSE branch: the kill happens at the outer search —
+    `search_t` concludes the then-action (killed by the action mismatch `hne`),
+    `search_f` carries the literal floor summand `kb` — so nested else-cascades (the
+    Def-4 `E(δ_L)` instance, whose cooperation sits behind a failed exploit-probe)
+    are covered without inspecting them. No guard-truth hypothesis is needed at all:
+    the guard may be true, false, or undecided; its FIRING route simply cannot
+    produce the target action. This is the honest tau image of the base
+    `outcome_DupocBot_vs_EBot` mechanism: cooperation reached through a failed
+    search is real but invisible to any probe at budget ≤ the search's own. -/
+theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : Action)
+    (pE : Prog) (hne : aT ≠ aTgt) (hk : k ≤ kb) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.bot (.search kb g (.const aT) pE)) O aTgt) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.bot (.search kb g (.const aT) pE)) O aTgt)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · -- the atom killer: `bot` unwraps, then `search_t` mismatches the action and
+    -- `search_f` pays the floor `kb ≥ k`
+    rintro K' hK' φ' rfl hA
+    cases hA with
+    | mk hpp hn =>
+      cases hpp with
+      | bot hin =>
+        cases hin with
+        | search_t hProv hbr => cases hbr; exact hne rfl
+        | search_f hneg hbr => simp only [c_node] at hn; omega
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    simp only [Prog.bot.injEq, Prog.search.injEq, Prog.const.injEq] at hme
+    exact hne hme.2.2.1
+  · intro z a' g' ψ c0 c1 q' oppo hS
+    injection hS with h1 h2 h3
+    simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g', ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd <;> simp [plug2] at hme
+
 /-! ## The budget-free census for unreadable players
 
 The floor lemmas above price certificates OUT of a bounded budget. The CIMCIC/DIMCID

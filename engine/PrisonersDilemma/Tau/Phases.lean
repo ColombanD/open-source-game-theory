@@ -4,16 +4,24 @@ import PrisonersDilemma.Tau.Certs
 /-!
 # Tau/Phases — the α-regime play theorems
 
-The milestone-1 headline, per non-constant tau player: past a budget threshold, the
-player cooperates — against EVERY opponent (tau players are `.opp`-free, hence
-extensionally constant) — **exactly when its scaled threshold θ is within the
-cooperation mass `wC + wTs + wTp + wL`** (everything except the Defect hypothesis).
+The headline, per non-constant tau player: past a budget threshold, the player's
+play against EVERY opponent (tau players are `.opp`-free, hence extensionally
+constant) is decided by where θ sits relative to its PROVABLE cooperation masses.
 
-All three non-constant players share that α-boundary; what separates them is the
-BUDGET at which it becomes available: TauTFTSim needs only shallow fuel + the trivial
-Coop bit, TauTFTPf needs shallow proof budgets, and TauDupoc needs the **Löb
-threshold** for its `wL` bit (`ps_probe_quine`). The prover/behavioral split is a
-budget-phase gap, not an α-gap.
+* TauDupoc, TauTFTPf, TauTFTSim cooperate exactly when `θ ≤ wC + wTs + wTp + wL`.
+  TauDupoc's `wE` bit is 0 DESPITE `E(δ_L)` really cooperating — the cooperation is
+  floor-priced (`ps_probe_eOfSearch_false`), the tau image of base
+  `outcome_DupocBot_vs_EBot = (D, C)`.
+* TauEBot's cooperation region is a WINDOW, `wC < θ ≤ wC + wTs + wTp + wL`: at
+  `θ ≤ wC` its exploit stage fires on the Coop mass (defect), above the window the
+  reciprocity mass falls short (defect). A non-monotone α-profile — the structural
+  Def-3/Def-4 separation.
+
+What separates the cooperators is the BUDGET at which their boundary becomes
+available: TauTFTSim needs only shallow fuel + the trivial Coop bit, TauTFTPf and
+TauEBot need shallow proof budgets, and TauDupoc needs the **Löb threshold** for its
+`wL` bit (`ps_probe_quine`). The prover/behavioral split is a budget-phase gap, not
+an α-gap.
 -/
 
 open PD PD.BaseTheorems
@@ -22,16 +30,17 @@ namespace PD.Tau
 
 /-! ## Mass computations -/
 
-/-- TauDupoc's fired mass at an adequate budget: every bit but Defect fires. -/
+/-- TauDupoc's fired mass at an adequate budget: every bit but Defect AND EBot
+    fires — `E(δ_L)` cooperates, but floor-priced, so its bit is honestly 0. -/
 theorem dupocSig_mass (k wC wD wTs wTp wL wE : Nat) (me opponent : Prog)
     (hk2 : 2 ≤ k) (hk7 : c_guard k + 7 ≤ k) (hk3 : c_guard k + 3 ≤ k)
     (hL : proofSearch k (probe (TauDupocδ k)) = true) :
     (dupocSig k wC wD wTs wTp wL wE).massWhere
         (fun ψ => proofSearch k (ψ.subst me opponent))
-      = wC + wTs + wTp + wL + wE := by
+      = wC + wTs + wTp + wL := by
   simp only [dupocSig, GuardList.massWhere, probe_subst,
     ps_probe_coop hk2, ps_probe_defect, ps_probe_simOfSearch hk2 hk7,
-    ps_probe_searchOfSearch hk2 hk3, ps_probe_eOfSearch hk2 hk3, hL]
+    ps_probe_searchOfSearch hk2 hk3, ps_probe_eOfSearch_false (Nat.le_refl k), hL]
   simp
   omega
 
@@ -43,18 +52,19 @@ theorem tftPfSig_mass (k wC wD wTs wTp wL wE : Nat) (me opponent : Prog)
       = wC + wTs + wTp + wL := by
   simp only [tftPfSig, GuardList.massWhere, probe_subst,
     ps_probe_coop hk2, ps_probe_defect, ps_probe_simOfCoop hk6,
-    ps_probe_searchOfCoop hk2 hk3, ps_probe_eOfCoop_false]
+    ps_probe_searchOfCoop hk2 hk3, ps_probe_eOfCoop_false hk2]
   simp
   omega
 
 /-! ## TauDupoc -/
 
-/-- **TauDupoc α-phase theorem** (Löb-gated). -/
+/-- **TauDupoc α-phase theorem** (Löb-gated). The boundary EXCLUDES `wE`: TauDupoc
+    cannot certify TauEBot's (real) cooperation within its own budget. -/
 theorem tauDupoc_phase :
     ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE (opponent : Prog),
-      (θ ≤ wC + wTs + wTp + wL + wE →
+      (θ ≤ wC + wTs + wTp + wL →
         ∃ N, play N (TauDupoc k θ wC wD wTs wTp wL wE) opponent = some .C)
-      ∧ (wC + wTs + wTp + wL + wE < θ →
+      ∧ (wC + wTs + wTp + wL < θ →
         ∃ N, play N (TauDupoc k θ wC wD wTs wTp wL wE) opponent = some .D) := by
   obtain ⟨kL, hkL⟩ := ps_probe_quine
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
@@ -118,15 +128,15 @@ theorem tftSimSig_mass (k wC wD wTs wTp wL wE : Nat) :
   have hD : tftSimVal k (.sim (.bot tauDefectδ) (.bot tauDefectδ)) = Action.D := by
     simp [tftSimVal]
   have hE : tftSimVal k (.sim (.bot (eOfCoopδ k)) (.bot (eOfCoopδ k))) = Action.D := by
-    simp [tftSimVal, eOfCoopδ, probeSearchδ, tauDefectδ]
+    simp [tftSimVal, eOfCoopδ, eδ, tauCoopδ, tauDefectδ]
   have hC : tftSimVal k (.sim (.bot tauCoopδ) (.bot tauCoopδ)) = Action.C := by
-    simp [tftSimVal, tauCoopδ, tauDefectδ, eOfCoopδ, probeSearchδ]
+    simp [tftSimVal, tauCoopδ, tauDefectδ, eOfCoopδ, eδ]
   have hTs : tftSimVal k (.sim (.bot simOfCoopδ) (.bot simOfCoopδ)) = Action.C := by
-    simp [tftSimVal, simOfCoopδ, tftSimδ, tauCoopδ, tauDefectδ, eOfCoopδ,
-      probeSearchδ]
+    simp [tftSimVal, simOfCoopδ, tftSimδ, tauCoopδ, tauDefectδ, eOfCoopδ, eδ]
   have hTp : tftSimVal k (.sim (.bot (searchOfCoopδ k)) (.bot (searchOfCoopδ k)))
       = Action.C := by
-    simp [tftSimVal, searchOfCoopδ, probeSearchδ, tauCoopδ, tauDefectδ, eOfCoopδ, probe]
+    simp [tftSimVal, searchOfCoopδ, probeSearchδ, tauCoopδ, tauDefectδ, eOfCoopδ,
+      eδ, probe]
   simp only [tftSimSig, simMass, hC, hD, hTs, hTp, hE]
   have h1 : (Action.C == Action.C) = true := rfl
   have h2 : (Action.D == Action.C) = false := rfl
@@ -151,18 +161,25 @@ theorem tftSimSig_vals (k wC wD wTs wTp wL wE : Nat) (me opponent : Prog)
         (.bot (.search k (probe (.const Action.D)) (.const Action.C) (.const Action.D)))
         (.bot (.search k (probe (.const Action.D)) (.const Action.C) (.const Action.D))))
       = false := ps_probe_defect k
+  have hpsE : proofSearch k
+      ((probe (Prog.const Action.C)).subst
+        (.bot (.search k (probe (.const Action.C)) (.const Action.D)
+          (.search k (probe (.const Action.C)) (.const Action.C) (.const Action.D))))
+        (.bot (.search k (probe (.const Action.C)) (.const Action.D)
+          (.search k (probe (.const Action.C)) (.const Action.C) (.const Action.D)))))
+      = true := ps_probe_coop hk2
   have hD : tftSimVal k (.sim (.bot tauDefectδ) (.bot tauDefectδ)) = Action.D := by
     simp [tftSimVal]
   have hE : tftSimVal k (.sim (.bot (eOfCoopδ k)) (.bot (eOfCoopδ k))) = Action.D := by
-    simp [tftSimVal, eOfCoopδ, probeSearchδ, tauDefectδ]
+    simp [tftSimVal, eOfCoopδ, eδ, tauCoopδ, tauDefectδ]
   have hC : tftSimVal k (.sim (.bot tauCoopδ) (.bot tauCoopδ)) = Action.C := by
-    simp [tftSimVal, tauCoopδ, tauDefectδ, eOfCoopδ, probeSearchδ]
+    simp [tftSimVal, tauCoopδ, tauDefectδ, eOfCoopδ, eδ]
   have hTs : tftSimVal k (.sim (.bot simOfCoopδ) (.bot simOfCoopδ)) = Action.C := by
-    simp [tftSimVal, simOfCoopδ, tftSimδ, tauCoopδ, tauDefectδ, eOfCoopδ,
-      probeSearchδ]
+    simp [tftSimVal, simOfCoopδ, tftSimδ, tauCoopδ, tauDefectδ, eOfCoopδ, eδ]
   have hTp : tftSimVal k (.sim (.bot (searchOfCoopδ k)) (.bot (searchOfCoopδ k)))
       = Action.C := by
-    simp [tftSimVal, searchOfCoopδ, probeSearchδ, tauCoopδ, tauDefectδ, eOfCoopδ, probe]
+    simp [tftSimVal, searchOfCoopδ, probeSearchδ, tauCoopδ, tauDefectδ, eOfCoopδ,
+      eδ, probe]
   intro wg hwg
   simp only [tftSimSig, List.mem_cons, List.not_mem_nil, or_false] at hwg
   rcases hwg with rfl | rfl | rfl | rfl | rfl | rfl
@@ -174,7 +191,7 @@ theorem tftSimSig_vals (k wC wD wTs wTp wL wE : Nat) (me opponent : Prog)
   · refine ⟨4, ?_⟩
     rw [hTp]; simp [searchOfCoopδ, probeSearchδ, tauCoopδ, eval, Prog.subst, hps]
   · refine ⟨4, ?_⟩
-    rw [hE]; simp [eOfCoopδ, probeSearchδ, tauDefectδ, eval, Prog.subst, hpsD]
+    rw [hE]; simp [eOfCoopδ, eδ, tauCoopδ, eval, Prog.subst, hpsE]
   · refine ⟨4, ?_⟩
     rw [hTp]; simp [searchOfCoopδ, probeSearchδ, tauCoopδ, eval, Prog.subst, hps]
 
@@ -208,53 +225,63 @@ theorem tauCooperate_plays (opponent : Prog) :
 theorem tauDefect_plays (opponent : Prog) :
     ∃ N, play N TauDefect opponent = some .D := ⟨1, rfl⟩
 
-/-! ## TauEBot — the separating bot
+/-! ## TauEBot — the separating bot (cascade, 2026-08-12)
 
-Same reciprocity geometry as TauDupoc, reading the δ_E column — but a
-DIFFERENT α-boundary, and that is exactly why it separates the definitions.
-Only `C(δ_E)` and the quine fire: base `TitForTatBot vs EBot` and `DupocBot vs
-EBot` are both `(D, C)`, so those hypotheses DEFECT against EBot and their
-probe bits are 0. TauEBot's cooperation mass is therefore `wC + wE`, against
-TauDupoc's `wC + wTs + wTp + wL`.
+Base EBot's exploiter cascade lifted to the vote level: nested `tsearch`, exploit
+stage (δ_D column) then reciprocity stage (δ_C column). Its cooperation region is
+the WINDOW `wC < θ ≤ wC + wTs + wTp + wL` — defection at BOTH extremes. Def 3's
+outcome-averaged lift can only produce one-sided thresholds, so this non-monotone
+profile is the structural separation between the definitions. NO Löb budget is
+needed anywhere (the 2026-08-11 reciprocity-vote TauEBot and its quine are gone —
+they were Def 2's rejected geometry, and their instance family could only be
+stipulated). -/
 
-Under Def 3 the same bot would read the OTHER side of those asymmetric cells
-("what do I do to them" — EBot cooperates with both), giving a different mass
-and a different boundary. One asymmetric cell under a conditional bot is all it
-takes. -/
-
-/-- TauEBot's fired mass: only the Coop hypothesis and the quine fire. -/
-theorem eSig_mass (k wC wD wTs wTp wL wE : Nat) (me opponent : Prog)
-    (hk2 : 2 ≤ k)
-    (hE : proofSearch k (probe (TauEBotδ k)) = true) :
-    (eSig k wC wD wTs wTp wL wE).massWhere
+/-- TauEBot's exploit-stage fired mass: only the Coop hypothesis provably
+    cooperates with a defector. -/
+theorem exploitSig_mass (k wC wD wTs wTp wL wE : Nat) (me opponent : Prog)
+    (hk2 : 2 ≤ k) :
+    (exploitSig k wC wD wTs wTp wL wE).massWhere
         (fun ψ => proofSearch k (ψ.subst me opponent))
-      = wC + wE := by
-  simp only [eSig, GuardList.massWhere, probe_subst, dupocOfEδ,
-    ps_probe_coop hk2, ps_probe_defect, ps_probe_simOfE, ps_probe_searchOfE, hE]
+      = wC := by
+  simp only [exploitSig, GuardList.massWhere, probe_subst,
+    ps_probe_coop hk2, ps_probe_defect, ps_probe_simOfDefect,
+    ps_probe_searchOfDefect, ps_probe_eOfDefect]
   simp
 
-/-- **TauEBot α-phase theorem** (Löb-gated, like TauDupoc — but at the `wC + wE`
-    boundary). -/
+/-- **TauEBot α-phase theorem — THE WINDOW** (shallow budgets, no Löb): defect when
+    the exploit stage fires (`θ ≤ wC`), cooperate inside the window
+    (`wC < θ ≤ wC + wTs + wTp + wL`), defect above it. -/
 theorem tauEBot_phase :
     ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE (opponent : Prog),
-      (θ ≤ wC + wE →
+      (θ ≤ wC →
+        ∃ N, play N (TauEBot k θ wC wD wTs wTp wL wE) opponent = some .D)
+      ∧ (wC < θ → θ ≤ wC + wTs + wTp + wL →
         ∃ N, play N (TauEBot k θ wC wD wTs wTp wL wE) opponent = some .C)
-      ∧ (wC + wE < θ →
+      ∧ (wC + wTs + wTp + wL < θ →
         ∃ N, play N (TauEBot k θ wC wD wTs wTp wL wE) opponent = some .D) := by
-  obtain ⟨kE, hkE⟩ := ps_probe_eQuine
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
-  refine ⟨max kE kA, fun k hk θ wC wD wTs wTp wL wE opponent => ?_⟩
-  have hE := hkE k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
-  have hkA' : 1 * Nat.log2 k + 8 ≤ k :=
-    hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+  refine ⟨kA, fun k hk θ wC wD wTs wTp wL wE opponent => ?_⟩
+  have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (Nat.le_of_lt hk)
   have hk2 : 2 ≤ k := by omega
-  have hmass := eSig_mass k wC wD wTs wTp wL wE
-    (.tsearch k (eSig k wC wD wTs wTp wL wE) θ (.const .C) (.const .D)) opponent
-    hk2 hE
-  constructor
-  · intro hθ
-    exact tau_play_C opponent (by rw [hmass]; exact hθ)
-  · intro hθ
-    exact tau_play_D opponent (by rw [hmass]; omega)
+  have hk6 : 6 ≤ k := by omega
+  have hk3 : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
+  have hmassX := exploitSig_mass k wC wD wTs wTp wL wE
+    (TauEBot k θ wC wD wTs wTp wL wE) opponent hk2
+  have hmassC := tftPfSig_mass k wC wD wTs wTp wL wE
+    (TauEBot k θ wC wD wTs wTp wL wE) opponent hk2 hk6 hk3
+  refine ⟨fun hθ => ?_, fun hθ1 hθ2 => ?_, fun hθ => ?_⟩
+  · -- the exploit stage fires: outer then-branch, defect
+    exact eval_tsearch_of_bits _ opponent (.const .D) _ k .D _ θ
+      ⟨1, by rw [if_pos (by rw [hmassX]; exact hθ)]; rfl⟩
+  · -- the window: outer else, inner then — cooperate
+    refine eval_tsearch_of_bits _ opponent (.const .D) _ k .C _ θ ?_
+    rw [if_neg (by rw [hmassX]; omega)]
+    exact eval_tsearch_of_bits _ opponent (.const .C) (.const .D) k .C _ θ
+      ⟨1, by rw [if_pos (by rw [hmassC]; exact hθ2)]; rfl⟩
+  · -- above the window: outer else, inner else — defect
+    refine eval_tsearch_of_bits _ opponent (.const .D) _ k .D _ θ ?_
+    rw [if_neg (by rw [hmassX]; omega)]
+    exact eval_tsearch_of_bits _ opponent (.const .C) (.const .D) k .D _ θ
+      ⟨1, by rw [if_neg (by rw [hmassC]; omega)]; rfl⟩
 
 end PD.Tau

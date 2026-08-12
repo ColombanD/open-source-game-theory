@@ -2,6 +2,7 @@ import PrisonersDilemma.Tau.Defs
 import PrisonersDilemma.Base.Soundness
 import PrisonersDilemma.Base.Loeb
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Base.Exclusion
 
 /-!
 # Tau/Certs — the guard-bit lemmas
@@ -140,14 +141,6 @@ theorem probe_true_of_quine_play (k n : Nat)
       | 2 => simp [play, eval, TauDupocδ, hps'] at h
       | n + 3 => simp [play, eval, TauDupocδ, hps'] at h
 
-/-! ### TauEBot's bits
-
-`TauEBotδ` is definitionally the same shape as `TauDupocδ` (both are the
-self-probing quine `.search k (.plays .self .self C) C D`), so its Löb bit is
-literally the same theorem — stated separately because the two are DIFFERENT
-tau bots whose guard lists probe different columns, and a reader chasing
-TauEBot should find its bit under its own name. -/
-
 /-- **THE LÖB BIT**: past a threshold, the quine's probe atom is provable AT THE
     PROBING BUDGET ITSELF — same-`k` Löbian self-cooperation, Def-4 edition. -/
 theorem ps_probe_quine :
@@ -169,17 +162,16 @@ theorem ps_probe_quine :
   obtain ⟨n, hn⟩ := Pf_sound m _ hm
   exact probe_true_of_quine_play k n hn
 
-/-- TauEBot's quine bit — the same Löb argument as `ps_probe_quine`, restated
-    for `TauEBotδ` (definitionally the same term; the bots differ in which
-    column their guard lists probe, not in this instance). -/
-theorem ps_probe_eQuine :
-    ∃ k₂, ∀ k, k₂ < k → proofSearch k (probe (TauEBotδ k)) = true :=
-  ps_probe_quine
+/-! ### The δ_D column — TauEBot's exploit stage (cascade refactor, 2026-08-12)
 
-/-- `Tp(δ_E)` / `L(δ_E)` **DEFECT**: their probe is about `.const D`, which is
-    refutable, so the guard fails and the else-branch runs. The bit is 0. -/
-theorem interp_probe_searchOfE_false (k : Nat) :
-    ¬ (probe (searchOfEδ k)).interp := by
+"Does B, seeing TauDefect, cooperate?" Only the Coop hypothesis fires; every
+other instance plays D against a defector, so its probe atom is FALSE and
+soundness kills the bit at every budget. -/
+
+/-- `L(δ_D) = Tp(δ_D)` **DEFECT**: they probe `.const D`, refutable, so the
+    guard fails and the else-branch runs. The bit is 0. -/
+theorem interp_probe_searchOfDefect_false (k : Nat) :
+    ¬ (probe (searchOfDefectδ k)).interp := by
   rintro ⟨n, hn⟩
   -- the guard bit in the form `eval`'s unfolding exposes (defeq to `ps_probe_defect`)
   have hps : proofSearch k
@@ -190,67 +182,150 @@ theorem interp_probe_searchOfE_false (k : Nat) :
   match n with
   | 0 => simp [play, eval] at hn
   | 1 => simp [play, eval] at hn
-  | 2 => simp [play, eval, searchOfEδ, probeSearchδ, hps] at hn
-  | n + 3 => simp [play, eval, searchOfEδ, probeSearchδ, hps] at hn
+  | 2 => simp [play, eval, searchOfDefectδ, probeSearchδ, hps] at hn
+  | n + 3 => simp [play, eval, searchOfDefectδ, probeSearchδ, hps] at hn
 
-theorem ps_probe_searchOfE (k m : Nat) :
-    proofSearch m (probe (searchOfEδ k)) = false := by
-  cases h : proofSearch m (probe (searchOfEδ k)) with
+theorem ps_probe_searchOfDefect (k m : Nat) :
+    proofSearch m (probe (searchOfDefectδ k)) = false := by
+  cases h : proofSearch m (probe (searchOfDefectδ k)) with
   | false => rfl
   | true =>
-      exact absurd (proofSearch_sound _ _ h) (interp_probe_searchOfE_false k)
+      exact absurd (proofSearch_sound _ _ h) (interp_probe_searchOfDefect_false k)
 
-/-- `Ts(δ_E)` **DEFECTS**: it runs `.const D` and copies the defection.
+/-- `Ts(δ_D)` **DEFECTS**: it runs `.const D` and copies the defection.
 
     The `.ite` guard is a `.sim` of the frozen `.const D`, so at any fuel ≥ 2
     the guard yields `D ≠ C` and the else-branch `.const .D` runs. The deep
     case needs the inner `.bot`/`.const` unfolding supplied explicitly, since
     `simp` stops at the `bind`. -/
-theorem interp_probe_simOfE_false : ¬ (probe simOfEδ).interp := by
+theorem interp_probe_simOfDefect_false : ¬ (probe simOfDefectδ).interp := by
   rintro ⟨n, hn⟩
   match n with
   | 0 => simp [play, eval] at hn
   | 1 => simp [play, eval] at hn
-  | 2 => simp [play, eval, simOfEδ, tftSimδ, tauDefectδ] at hn
-  | 3 => simp [play, eval, simOfEδ, tftSimδ, tauDefectδ] at hn
+  | 2 => simp [play, eval, simOfDefectδ, tftSimδ, tauDefectδ] at hn
+  | 3 => simp [play, eval, simOfDefectδ, tftSimδ, tauDefectδ] at hn
   | n + 4 =>
       -- `.const` evaluates at ANY positive fuel; the residual here is `n`, so
       -- case on it rather than guessing an offset.
       cases n with
       | zero =>
-          simp only [play, eval, simOfEδ, tftSimδ, tauDefectδ, Prog.subst] at hn
+          simp only [play, eval, simOfDefectδ, tftSimδ, tauDefectδ, Prog.subst] at hn
           simp at hn
       | succ m =>
           have hinner : eval (m + 1) (.bot (.const Action.D))
               (.bot (.const Action.D)) (.const Action.D) = some Action.D := rfl
-          simp only [play, eval, simOfEδ, tftSimδ, tauDefectδ, Prog.subst,
+          simp only [play, eval, simOfDefectδ, tftSimδ, tauDefectδ, Prog.subst,
             hinner] at hn
           exact absurd hn (by decide)
 
-theorem ps_probe_simOfE (m : Nat) : proofSearch m (probe simOfEδ) = false := by
-  cases h : proofSearch m (probe simOfEδ) with
+theorem ps_probe_simOfDefect (m : Nat) : proofSearch m (probe simOfDefectδ) = false := by
+  cases h : proofSearch m (probe simOfDefectδ) with
   | false => rfl
-  | true => exact absurd (proofSearch_sound _ _ h) interp_probe_simOfE_false
+  | true => exact absurd (proofSearch_sound _ _ h) interp_probe_simOfDefect_false
 
-/-! ### The enlarged-zoo cross bits (2026-08-12)
+/-- `E(δ_D)` **DEFECTS**: both cascade probes are about `.const D` — false — so
+    the cascade falls through both else-branches to the final `.const D`. -/
+theorem interp_probe_eOfDefect_false (k : Nat) :
+    ¬ (probe (eOfDefectδ k)).interp := by
+  rintro ⟨n, hn⟩
+  have hps : proofSearch k
+      ((probe tauDefectδ).subst
+        (.bot (.search k (probe tauDefectδ) (.const .D)
+          (.search k (probe tauDefectδ) (.const .C) (.const .D))))
+        (.bot (.search k (probe tauDefectδ) (.const .D)
+          (.search k (probe tauDefectδ) (.const .C) (.const .D)))))
+      = false := ps_probe_defect k
+  match n with
+  | 0 => simp [play, eval] at hn
+  | 1 => simp [play, eval] at hn
+  | 2 => simp [play, eval, eOfDefectδ, eδ, hps] at hn
+  | n + 3 =>
+      -- the cascade consumes three fuel units (bot + two searches); the residual
+      -- `.const D` evaluates at any fuel to `none` or `some D`, never `some C`
+      simp only [play, eval, eOfDefectδ, eδ, hps] at hn
+      cases n with
+      | zero => simp [eval] at hn
+      | succ m => simp [eval] at hn
 
-The six-slot guard lists add two hypotheses: the δ_L column now holds an EBot
-hypothesis, and the δ_C column does too. Both are decided by base cells:
-`EBot vs DupocBot = (C, D)` fires, `EBot vs CooperateBot = (D, C)` does not. -/
+theorem ps_probe_eOfDefect (k m : Nat) :
+    proofSearch m (probe (eOfDefectδ k)) = false := by
+  cases h : proofSearch m (probe (eOfDefectδ k)) with
+  | false => rfl
+  | true =>
+      exact absurd (proofSearch_sound _ _ h) (interp_probe_eOfDefect_false k)
 
-/-- `E(δ_L)` **COOPERATES**: it probes `.const C`, which is certifiable. -/
-theorem pf_probe_eOfSearch {k K : Nat} (hk : 2 ≤ k) (hK : c_guard k + 3 ≤ K) :
-    Pf K (probe (eOfSearchδ k)) :=
-  pf_probe_searchOfCoop hk hK
+/-! ### The δ_C column's EBot bit -/
 
-theorem ps_probe_eOfSearch {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) :
-    proofSearch k (probe (eOfSearchδ k)) = true :=
-  ps_probe_searchOfCoop hk hkk
+/-- `E(δ_C)` **DEFECTS via a FIRING exploit-probe**: `C(δ_D) = tauCoopδ` provably
+    cooperates with a defector, so the first cascade guard fires and the
+    then-branch `.const D` runs — the mechanism-faithful reading of base
+    `EBot vs CooperateBot = (D, C)`. The bit is 0 at every budget. -/
+theorem interp_probe_eOfCoop_false {k : Nat} (hk : 2 ≤ k) :
+    ¬ (probe (eOfCoopδ k)).interp := by
+  rintro ⟨n, hn⟩
+  have hps : proofSearch k
+      ((probe tauCoopδ).subst
+        (.bot (.search k (probe tauCoopδ) (.const .D)
+          (.search k (probe tauCoopδ) (.const .C) (.const .D))))
+        (.bot (.search k (probe tauCoopδ) (.const .D)
+          (.search k (probe tauCoopδ) (.const .C) (.const .D)))))
+      = true := ps_probe_coop hk
+  match n with
+  | 0 => simp [play, eval] at hn
+  | 1 => simp [play, eval] at hn
+  | 2 => simp [play, eval, eOfCoopδ, eδ, hps] at hn
+  | n + 3 => simp [play, eval, eOfCoopδ, eδ, hps] at hn
 
-/-- `E(δ_C)` **DEFECTS**: it probes `.const D`, refutable, so its guard fails.
-    (`eOfCoopδ` is `searchOfEδ` up to the budget argument — same term.) -/
-theorem ps_probe_eOfCoop_false (k m : Nat) :
-    proofSearch m (probe (eOfCoopδ k)) = false :=
-  ps_probe_searchOfE k m
+theorem ps_probe_eOfCoop_false {k : Nat} (hk : 2 ≤ k) (m : Nat) :
+    proofSearch m (probe (eOfCoopδ k)) = false := by
+  cases h : proofSearch m (probe (eOfCoopδ k)) with
+  | false => rfl
+  | true =>
+      exact absurd (proofSearch_sound _ _ h) (interp_probe_eOfCoop_false hk)
+
+/-! ### The δ_L column's EBot bit — THE FLOOR (the Gödelian pair)
+
+`E(δ_L)` is the tau image of base `outcome_DupocBot_vs_EBot = (D, C)`: the
+instance REALLY COOPERATES (`interp_probe_eOfSearch` — its exploit-probe of
+Dupoc fails, its reciprocity-probe fires), yet its cooperation is UNPROVABLE at
+any budget ≤ k (`ps_probe_eOfSearch_false`) — every certificate must cross the
+failed exploit-search and pay the `search_f` floor `> k`
+(`no_provable_botSearcherElse_tail`). A true bit that reads 0: exactly what the
+2026-08-11 stipulation (a provable cooperator) papered over. -/
+
+/-- The atom is TRUE: `E(δ_L)` plays C (through the failed exploit-probe). -/
+theorem interp_probe_eOfSearch {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) :
+    (probe (eOfSearchδ k)).interp := by
+  have hps1 : proofSearch k
+      ((probe (searchOfDefectδ k)).subst
+        (.bot (.search k (probe (searchOfDefectδ k)) (.const .D)
+          (.search k (probe (searchOfCoopδ k)) (.const .C) (.const .D))))
+        (.bot (.search k (probe (searchOfDefectδ k)) (.const .D)
+          (.search k (probe (searchOfCoopδ k)) (.const .C) (.const .D)))))
+      = false := ps_probe_searchOfDefect k k
+  have hps2 : proofSearch k
+      ((probe (searchOfCoopδ k)).subst
+        (.bot (.search k (probe (searchOfDefectδ k)) (.const .D)
+          (.search k (probe (searchOfCoopδ k)) (.const .C) (.const .D))))
+        (.bot (.search k (probe (searchOfDefectδ k)) (.const .D)
+          (.search k (probe (searchOfCoopδ k)) (.const .C) (.const .D)))))
+      = true := ps_probe_searchOfCoop hk hkk
+  exact ⟨4, by simp [play, eval, eOfSearchδ, eδ, hps1, hps2]⟩
+
+/-- The bit is 0: no proof of ≤ k characters concludes `E(δ_L)`'s cooperation —
+    it sits behind the failed exploit-search, so any certificate pays the
+    `search_f` floor. TauDupoc's budget-`k` probe honestly fails. -/
+theorem ps_probe_eOfSearch_false {k K : Nat} (hK : K ≤ k) :
+    proofSearch K (probe (eOfSearchδ k)) = false := by
+  cases h : proofSearch K (probe (eOfSearchδ k)) with
+  | false => rfl
+  | true =>
+      exfalso
+      exact no_provable_botSearcherElse_tail k k (probe (searchOfDefectδ k))
+        .D .C (.search k (probe (searchOfCoopδ k)) (.const .C) (.const .D))
+        (by decide) (Nat.le_refl k)
+        (.bot (eOfSearchδ k))
+        K _ ((proofSearch_spec _ _).1 h) hK rfl
 
 end PD.Tau
