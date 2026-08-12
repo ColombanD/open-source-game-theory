@@ -8,12 +8,24 @@ base bots, and the whole thing is stratified (layer 1 reads layer-0 cells).
 Def 4 is a LANGUAGE, not an operator: each tau-native bot writes its own guard,
 so the probe direction is a per-bot design choice, hypotheses are tau-level,
 and genuine fixpoints (a bot's belief about its own tau avatar) are allowed.
-The milestone-1 Lean zoo (`engine/PrisonersDilemma/Tau/Defs.lean`) implements
-three probe geometries:
+The Lean zoo (`engine/PrisonersDilemma/Tau/Defs.lean`) implements four probe
+geometries:
 
-    TauDupoc      RECIPROCITY  "does Bᵢ, seeing exactly me, cooperate?"
+    TauDupoc      RECIPROCITY  "does Bᵢ, seeing exactly me, cooperate?"  (proves it)
     TauTFTSim     THIRD PARTY  "does Bᵢ cooperate against TauCooperate?"  (runs it)
     TauTFTPf      THIRD PARTY  "does Bᵢ cooperate against TauCooperate?"  (proves it)
+    TauEBot       CASCADE      "exploitable? defect. reciprocates? cooperate."
+
+**The floor (2026-08-12).** A PROVER probe (proofSearch) reads *provable*
+cooperation, not true cooperation. EBot's instances cooperate only through a
+FAILED exploit-search, so their cooperation certificates pay the `search_f`
+floor `> k` and every prover bit on an EBot hypothesis is 0 even where the
+cooperation is real (`Tau/Certs.lean: interp_probe_eOfSearch` true +
+`ps_probe_eOfSearch_false`). Behavioral (`sim`) probes see TRUE plays and are
+floor-blind. An earlier model read the reciprocity bit off the base matrix
+(structurally floor-blind for provers) and wrongly gave TauDupoc a provable
+EBot bit — caught in review against the base `outcome_DupocBot_vs_EBot = (D,C)`
+mechanism.
 
 This module reproduces those probe semantics as matrix arithmetic over the same
 certified base matrix, the same `Signal` type, and the same σ family the Def-3
@@ -69,6 +81,14 @@ class Probe(Enum):
     THIRD_PARTY = "third_party"
     """"What does Bᵢ do against a fixed third party?" — TauTFTSim / TauTFTPf."""
 
+    CASCADE = "cascade"
+    """Base EBot's exploiter cascade, lifted: defect if the signal's exploitable
+    mass reaches α, else cooperate iff its reciprocating mass does. TWO
+    thresholded masses, hence a cooperation WINDOW (defection at both ends) —
+    the non-monotone α-profile that separates Def 4 from Def 3's one-sided
+    thresholds. Matches Lean's nested-`tsearch` `TauEBot` (exploit stage = the
+    δ_D column, reciprocity stage = the δ_C column)."""
+
     CONSTANT = "constant"
     """No probe at all — the bot ignores its signal entirely.
 
@@ -97,16 +117,32 @@ class Def4Bot:
     probe: Probe
     referent: str | None = None
     action: str | None = None
+    prover: bool = True
+    """True when the probe runs through `proofSearch` (floor-aware: an EBot
+    hypothesis's true-but-floor-priced cooperation reads 0). False for
+    behavioral `sim` probes, which see TRUE plays and are floor-blind.
+    Ignored by CONSTANT bots."""
 
     def __post_init__(self) -> None:
         if self.probe is Probe.THIRD_PARTY and self.referent is None:
             raise ValueError(f"{self.name}: THIRD_PARTY probe needs a referent")
-        if self.probe is not Probe.THIRD_PARTY and self.referent is not None:
+        if self.probe not in (Probe.THIRD_PARTY,) and self.referent is not None:
             raise ValueError(f"{self.name}: only THIRD_PARTY probes take a referent")
         if self.probe is Probe.CONSTANT and self.action not in ("C", "D"):
             raise ValueError(f"{self.name}: CONSTANT bot needs action 'C' or 'D'")
         if self.probe is not Probe.CONSTANT and self.action is not None:
             raise ValueError(f"{self.name}: only CONSTANT bots take a fixed action")
+        if self.probe is Probe.CASCADE and not self.prover:
+            raise ValueError(f"{self.name}: the CASCADE geometry is prover-only")
+
+
+FLOOR_BLOCKED_HYPOTHESES: frozenset[str] = frozenset({"EBot"})
+"""Hypotheses whose TRUE cooperation is invisible to prover probes.
+
+EBot's instances cooperate only via a failed exploit-search, so the certificate
+pays the `search_f` floor and no budget-k probe can cite it
+(`no_provable_botSearcherElse_tail`). The set is structural, not per-cell: base
+EBot reaches EVERY cooperation through its else-cascade."""
 
 
 def probe_bit(
@@ -129,12 +165,72 @@ def probe_bit(
     """
     if bot.probe is Probe.CONSTANT:
         return bot.action == "C"
+    if bot.probe is Probe.CASCADE:
+        # the compound point-mass bit: not exploitable AND reciprocating
+        return (not _exploit_bit(matrix, bot, hypothesis)) and _recip_bit(
+            matrix, bot, hypothesis
+        )
     if bot.probe is Probe.SELF:
-        return matrix.cooperates(actor_base, hypothesis)
-    if bot.probe is Probe.RECIPROCITY:
-        return matrix.cooperates(hypothesis, actor_base)
-    assert bot.referent is not None
-    return matrix.cooperates(hypothesis, bot.referent)
+        raw = matrix.cooperates(actor_base, hypothesis)
+    elif bot.probe is Probe.RECIPROCITY:
+        raw = matrix.cooperates(hypothesis, actor_base)
+    else:
+        assert bot.referent is not None
+        raw = matrix.cooperates(hypothesis, bot.referent)
+    if raw and bot.prover and hypothesis in FLOOR_BLOCKED_HYPOTHESES:
+        return False
+    return raw
+
+
+def _exploit_bit(matrix: TauMatrix, bot: Def4Bot, hypothesis: str) -> bool:
+    """CASCADE stage 1: does the hypothesis (provably) cooperate with a defector?"""
+    raw = matrix.cooperates(hypothesis, "DefectBot")
+    if raw and bot.prover and hypothesis in FLOOR_BLOCKED_HYPOTHESES:
+        return False
+    return raw
+
+
+def _recip_bit(matrix: TauMatrix, bot: Def4Bot, hypothesis: str) -> bool:
+    """CASCADE stage 2: does the hypothesis (provably) cooperate with a cooperator?"""
+    raw = matrix.cooperates(hypothesis, "CooperateBot")
+    if raw and bot.prover and hypothesis in FLOOR_BLOCKED_HYPOTHESES:
+        return False
+    return raw
+
+
+def exploit_mass_def4(
+    matrix: TauMatrix,
+    bot: Def4Bot,
+    signal: Signal,
+) -> float:
+    """Σ pᵢ over exploitable hypotheses — the CASCADE's first threshold mass."""
+    assert bot.probe is Probe.CASCADE
+    return math.fsum(
+        p
+        for hypothesis, p in signal.weights.items()
+        if p > 0 and _exploit_bit(matrix, bot, hypothesis)
+    )
+
+
+def threshold_masses(
+    matrix: TauMatrix,
+    bot: Def4Bot,
+    actor_base: str,
+    signal: Signal,
+) -> tuple[float, ...]:
+    """Every mass this bot thresholds against α — the α-breakpoint sources.
+
+    One mass for the single-stage geometries, TWO for the CASCADE (its exploit
+    mass is a phase boundary too: crossing it flips the bot from the window
+    into low-θ defection)."""
+    if bot.probe is Probe.CONSTANT:
+        return ()
+    if bot.probe is Probe.CASCADE:
+        return (
+            exploit_mass_def4(matrix, bot, signal),
+            coop_mass_def4(matrix, bot, actor_base, signal),
+        )
+    return (coop_mass_def4(matrix, bot, actor_base, signal),)
 
 
 def coop_mass_def4(
@@ -147,7 +243,16 @@ def coop_mass_def4(
 
     Exact (`fsum`) summation, as in `play.coop_mass`: a naive sum is
     order-dependent and can miss an exactly-unanimous mass by an ULP.
+
+    For the CASCADE this is the RECIPROCITY-stage mass (the window's upper
+    boundary); the exploit mass is separate (`exploit_mass_def4`).
     """
+    if bot.probe is Probe.CASCADE:
+        return math.fsum(
+            p
+            for hypothesis, p in signal.weights.items()
+            if p > 0 and _recip_bit(matrix, bot, hypothesis)
+        )
     return math.fsum(
         p
         for hypothesis, p in signal.weights.items()
@@ -170,6 +275,14 @@ def tau_play_def4(
     if bot.probe is Probe.CONSTANT:
         assert bot.action is not None
         return bot.action
+    if bot.probe is Probe.CASCADE:
+        # stage 1: the exploit vote (fires → defect, incl. at α = 0, matching
+        # Lean's θ = 0 short-circuit into the outer then-branch `.const D`)
+        if exploit_mass_def4(matrix, bot, signal) >= alpha - _MASS_TOL:
+            return "D"
+        # stage 2: the reciprocity vote
+        mass = coop_mass_def4(matrix, bot, actor_base, signal)
+        return "C" if mass >= alpha - _MASS_TOL else "D"
     mass = coop_mass_def4(matrix, bot, actor_base, signal)
     return "C" if mass >= alpha - _MASS_TOL else "D"
 
@@ -205,16 +318,21 @@ CONTROL_BOTS: tuple[str, ...] = (
 
 SEPARATING_ZOO: dict[str, Def4Bot] = {
     **CONTROL_ZOO,
-    "EBot": Def4Bot("TauEBot", Probe.RECIPROCITY),
+    "EBot": Def4Bot("TauEBot", Probe.CASCADE),
 }
-"""The control zoo plus EBot — the smallest extension that separates Def 3/Def 4.
+"""The control zoo plus EBot — the extension that separates Def 3/Def 4.
 
-`DupocBot vs EBot = (D, C)` is the needed shape: an ASYMMETRIC cell under a
-CONDITIONAL bot. Under Def 3, TauDupoc's bit for the EBot hypothesis is "what
-do I do against EBot" = D (0); under Def 4's reciprocity probe it is "what does
-EBot do against me" = C (1). One flipped bit moves TauDupoc's cooperation mass
-by that hypothesis's weight, which shifts its α-boundary and makes whole cells
-of the outcome matrix differ.
+Two separations, both honest:
+
+* **The window (structural).** TauEBot thresholds TWO masses (exploit, then
+  reciprocity), so its cooperation region is `exploit_mass < α ≤ recip_mass` —
+  defection at BOTH ends of the α axis. Def 3's lift of EBot is a single
+  one-sided threshold on its outcome row; no Def-3 bot is non-monotone in α.
+* **The bits.** Def 3 reads EBot's row as "what does EBot do to B" (it
+  cooperates with TFT/Dupoc); Def 4's cascade stages read B's δ_D/δ_C columns.
+  And TauDupoc's own EBot bit is 0 under Def 4 (the floor) — for the SAME
+  reason base `DupocBot vs EBot = (D, C)`: EBot's real cooperation sits behind
+  a failed search and cannot be cited within budget.
 """
 
 SEPARATING_BOTS: tuple[str, ...] = CONTROL_BOTS + ("EBot",)

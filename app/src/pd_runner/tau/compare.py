@@ -36,6 +36,7 @@ from pd_runner.tau.def4 import (
     coop_mass_def4,
     probe_bit,
     tau_play_def4,
+    threshold_masses,
 )
 from pd_runner.tau.def4_theorems import BASE_TO_LEAN, Def4Library
 from pd_runner.tau.matrix import TauMatrix
@@ -188,10 +189,9 @@ _SLOT_OF_BASE: dict[str, str] = {
     "DefectBot": "wD",
     "TitForTatBot": "wTs",
     "DupocBot": "wL",
-    # TauEBot's guard list (`eSig`) reads the δ_E column and binds its
-    # self-hypothesis weight as `wE`; the δ_L-column bots bind theirs as `wL`.
-    # Both map from the SAME base bot set, so a signal is discretized once and
-    # the regime test picks whichever variable that theorem sums.
+    # TauEBot's hypothesis weight; since the cascade refactor its own guard
+    # lists are the δ_D/δ_C columns, but every signal still discretizes onto
+    # the same six binders `θ wC wD wTs wTp wL wE`.
     "EBot": "wE",
 }
 _DISCRETIZATION_SCALE = 10**6
@@ -261,15 +261,12 @@ def _lean_side(
     # a unit — the snap is what keeps the boundary cell on the proven side.
     theta = round(alpha * total)
     for candidate in (
-        # The achievable cooperation masses, one per guard-list convention.
-        # They DIFFER: the δ_L-column bots fire on everything but Defect
-        # (`wC + wTs + wTp + wL`), while TauEBot fires only on Coop and its own
-        # quine (`wC + wE`) — TitForTat and Dupoc both DEFECT against EBot, so
-        # their probe bits are 0. That difference is the whole reason TauEBot
-        # separates Def 3 from Def 4.
-        w["wC"] + w["wTs"] + w["wTp"] + w["wL"] + w["wE"],   # δ_L column (TauDupoc)
-        w["wC"] + w["wTs"] + w["wTp"] + w["wL"],             # δ_C column (the TFTs)
-        w["wC"] + w["wE"],                                   # δ_E column (TauEBot)
+        # The achievable phase boundaries after the cascade refactor: ONE
+        # shared cooperation mass for all three cooperators (TauDupoc's wE bit
+        # is floor-blocked, so its mass equals the δ_C column's), plus
+        # TauEBot's exploit boundary `wC` (the lower edge of its window).
+        w["wC"] + w["wTs"] + w["wTp"] + w["wL"],   # the cooperators' boundary
+        w["wC"],                                   # TauEBot's exploit boundary
         total,
     ):
         if abs(theta - candidate) <= 1:
@@ -326,7 +323,7 @@ def alpha_breakpoints_both(
     for actor in bots:
         for signal in channel.values():
             masses.add(coop_mass(matrix, actor, signal))
-            masses.add(coop_mass_def4(matrix, zoo[actor], actor, signal))
+            masses.update(threshold_masses(matrix, zoo[actor], actor, signal))
     return sorted(masses)
 
 

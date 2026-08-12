@@ -502,52 +502,105 @@ differing BIT-VECTOR, i.e. an asymmetric cell sitting under a CONDITIONAL bot's
 probe. `compare.asymmetry_report` decides on that and reports the raw asymmetry
 only as a diagnostic.
 
-**TauEBot is BUILT in Lean (2026-08-11).** The separating bot is no longer a
-Python-only model: `TauEBotδ` (a second `.self` quine), its δ-instances, its
-phase theorem and its 22 matrix cells are proven — 68 Def-4 theorems over six
-tau bots, zero sorry, 3-axiom footprint. **Its α-boundary is `wC + wE`, NOT
-all-but-Defect**: TitForTat and Dupoc both DEFECT against EBot (base cells
-`(D, C)`), so their reciprocity bits are 0. An earlier version copied
-TauDupoc's all-but-Defect shape and the kernel-vs-model check caught it — the
-fifth bug that check has found.
+**TauEBot v1 (2026-08-11) — superseded.** The first Lean TauEBot was a
+δ_E-probing reciprocity vote (`eSig`, a second `.self` quine `TauEBotδ`, boundary
+`wC + wE`), with its δ-instances stipulated from base-matrix cells. The five-slot →
+six-slot widening (2026-08-12, morning) made both runs 100% certified against it
+and surfaced per-column masses plus twenty `_mixedRC/_mixedCR` straddling-cell
+theorems. All of that is retired by the cascade refactor below; it is recorded here
+because the kernel-vs-model check found five real Python bugs along the way
+(constant bots modelled as probing bots; a reversed-orientation lookup; a
+breakpoint rounded above its own mass; a θ off-by-one from weight-rounding drift;
+TauEBot wrongly given TauDupoc's all-but-Defect boundary), which is the standing
+argument for keeping the comparison kernel-verified.
 
-Scouted before building, and the risk did NOT materialize: base EBot's third
-branch probes MirrorBot, whose SELF-play is the one non-terminating cell, but
-MirrorBot is never a hypothesis in this zoo and the branch-3 probes that
-actually run (`DefectBot`/`EBot` vs MirrorBot) both terminate.
+## The faithfulness audit and the cascade refactor (2026-08-12)
 
-**The guard lists are now SIX-slot (2026-08-12), and BOTH runs are 100%
-certified with zero conflicts.** Every bot votes over the whole zoo, so the
-separating comparison — the informative half — rests entirely on the kernel:
-88 Def-4 theorems, control 304/304 cells and separating 1800/1800.
+**The trigger.** In review of the Def3/Def4 divergence table, Colomban asked: *"in
+Def 4, Dupoc should NOT be able to prove that EBot cooperates — like the base
+case?"* Correct: Def 4 routes every bit through `proofSearch`, and base
+`outcome_DupocBot_vs_EBot = (D, C)` holds precisely because EBot's cooperation
+transcript embeds a FAILED search (the `search_f` floor `> k`). The then-current
+`eOfSearchδ = probeSearchδ k tauCoopδ` stipulated a PROVABLE cooperator — bit 1 by
+fiat. The full-zoo audit that followed found four bugs, all in the EBot corner:
 
-Widening exposed two things the five-slot version had hidden:
+1. `eOfSearchδ` (`E(δ_L)`): stipulated provable cooperator — the floor erased.
+2. `eOfCoopδ` (`E(δ_C)`): right bit (0), wrong mechanism (stipulated refutable
+   guard instead of base EBot's FIRING exploit-check).
+3. `searchOfEδ` doing double duty as both `L(δ_E)` and `Tp(δ_E)` — faithfully two
+   different programs (one probes a true-but-floor-blocked atom, one a false one).
+4. **The root cause: TauEBot's σ-player itself.** The δ_E reciprocity vote is
+   Def 2's REJECTED geometry ("a generalized-FairBot family, not a lift of A")
+   wearing EBot's name — and it is *why* the stipulations existed: two self-probing
+   bots need mutual quines (`E(δ_L) ↔ L(δ_E)` is a genuine 2-cycle), which `.self`
+   cannot express, so the instances got faked from base cells.
 
-1. **The three probe columns have DIFFERENT cooperation masses**: δ_L
-   `wC+wTs+wTp+wL+wE` (EBot cooperates with Dupoc), δ_C `wC+wTs+wTp+wL` (EBot
-   DEFECTS against a cooperator, so its bit is 0 there), δ_E `wC+wE` (TFT and
-   Dupoc both defect against EBot). The columns disagree on exactly the
-   EBot/Dupoc pair — the asymmetric base cell read from its two sides.
-2. **MIXED-REGIME cells are a real gap.** With different masses one θ can put
-   one player above its boundary and the other below, and no same-regime
-   theorem can express that. Twenty `_mixedRC`/`_mixedCR` statements now cover
-   the straddling cells; without them the matrix was silently incomplete at
-   precisely the (t, α) points where the definitions differ most.
+**The fix (all landed, engine green, 3 axioms).** Base EBot's exploiter cascade
+lifted at BOTH levels:
 
-A companion Python bug fell out of the same widening: a matchup's two players
-see DIFFERENT signals, so a lookup evaluating both regime conditions against
-one weight vector reads the wrong theorem. `Def4Library.row_action` judges each
-player by its own regime alone; `cell` remains for the shared-signal case.
+* **Instance template** `eδ k I_D I_C := .search k (probe I_D) (.const D)
+  (.search k (probe I_C) (.const C) (.const D))` — exploit-check then reciprocity.
+  `eOfCoopδ = eδ k tauCoopδ tauCoopδ` (defects via a FIRING guard),
+  `eOfDefectδ = eδ k tauDefectδ tauDefectδ`,
+  `eOfSearchδ = eδ k (searchOfDefectδ k) (searchOfCoopδ k)` — which **really
+  cooperates, UNPROVABLY**: `interp_probe_eOfSearch` (true) +
+  `ps_probe_eOfSearch_false` (bit 0 at every budget ≤ k), the Gödelian pair. The
+  old names `searchOfEδ`/`simOfEδ` live on as their honest δ_D-column roles
+  (`searchOfDefectδ`/`simOfDefectδ`). NO quine for E: the cascade probes only the
+  δ_D/δ_C columns, so the whole family GROUNDS — the 2-cycle never forms.
+* **The floor lemma** (`Base/Exclusion.no_provable_botSearcherElse_tail`): a
+  `.bot`-frozen budget-`kb` searcher's non-then-action play is unprovable at every
+  budget ≤ kb — `search_t` dies by action mismatch, `search_f` carries the literal
+  `kb` floor summand; shape-general in the else branch, NO guard-truth hypothesis.
+  Built directly on the action-refined set kernel (`no_provable_tailToS_floor`),
+  whose docstring anticipated exactly this use.
+* **σ-player** `TauEBot = .tsearch k exploitSig θ (.const D) (.tsearch k tftPfSig θ
+  (.const C) (.const D))` — a NESTED tsearch, both stages sharing θ. At point-mass
+  it IS `eδ`, so σ-player and instance family finally cohere. No Löb budget
+  anywhere in its phase theorem.
 
-**Result 2 — one bot separates them.** Adding EBot (`DupocBot vs EBot = (D, C)`
-— Dupoc defects, EBot cooperates) flips TauDupoc's EBot bit (Def3 D → Def4 C,
-vector 11010 → 11011) and three of TauEBot's, and the matrices then genuinely
-diverge: e.g. at t = 1, α = 1, `TauDupoc vs TauEBot` is (D, C) under Def 3 and
-(C, D) under Def 4 — the exploitation flips sides, because Def 3 asks "what do
-I do to EBot" while Def 4 asks "what does EBot do to me".
+**The new phase structure** (`Tau/Phases.lean`, `Theorems/Tau/Matrix.lean` — 79
+theorems: 4 constants, 42 cooperator cells low/high, 33 EBot cells
+exploitθ/window/highθ):
 
-**Reading.** The control agreement is a genuine anchor result (the two
-definitions coincide wherever outcomes are symmetric — which is most of the
-zoo), NOT evidence that the choice of definition is immaterial. The definitions
-are separated exactly by asymmetric/exploitable matchups, so a Def-3-vs-Def-4
-decision should be made on a zoo containing them.
+* All three cooperators share ONE boundary `θ ≤ wC + wTs + wTp + wL` — TauDupoc's
+  mass honestly EXCLUDES `wE` (the floor). No mixed regime exists between them;
+  the twenty straddling-cell theorems were artifacts of the stipulated bit and are
+  deleted.
+* **TauEBot cooperates in a WINDOW** `wC < θ ≤ wC + wTs + wTp + wL`: below it the
+  exploit stage fires on the Coop mass (it DEFECTS against cooperators that
+  cooperate with it — the lifted exploiter exploits, incl. at θ = 0); above it the
+  reciprocity mass runs out. **Defection at both ends of the α axis.**
+
+**The honest separation (both runs re-verified: control 100% certified, separating
+1400/1400 cells, 0 conflicts; 45 of 56 phase cells diverge).**
+
+* TauDupoc's Def-3 and Def-4 bit-vectors now COINCIDE (`11010`): its EBot bit is 0
+  under both — for different reasons (Def 3: "my own action vs EBot is D"; Def 4:
+  "EBot's real cooperation is floor-priced") — so at full transparency the per-side
+  lookups literally reproduce the base cell: `row_action(TauDupoc, TauEBot)` at
+  point-mass = D and `row_action(TauEBot, TauDupoc)` = C, i.e. `(D, C)`. **For the
+  Löbian prover, Def 3 and Def 4 agree exactly when the floor is priced honestly**
+  — the old divergence on Dupoc's row was an artifact of the unfaithful bit.
+* The separation lives where it should: in the EXPLOITER. (i) Bit-level: Def 3
+  reads EBot's outcome row ("what does EBot do to B" — it cooperates with
+  TFT/Dupoc/itself); Def 4's cascade reads B's δ_D/δ_C columns (EBot's self-bit is
+  0 — it fails its own reciprocity stage — so Def-4 TauEBot self-play is (D, D)
+  where Def 3's is (C, C)). (ii) **Structural: the window.** Every Def-3 lift is a
+  one-sided monotone threshold in α; TauEBot's non-monotone α-profile (defect /
+  cooperate / defect) is inexpressible there. This is the thesis-grade statement
+  of the Def3/Def4 difference: **Def 3's outcome-averaging erases strategy
+  structure (the exploit check); Def 4 preserves it, at the price of the floor
+  (provability ≠ truth appears as a real bit).**
+
+**Conventions clarified by the refactor** (supplementing the fixed list above):
+each template's instance family must be its own point-mass instantiation (the
+coherence rule the stipulations violated); self-probe geometries are reserved for
+bots whose base strategy IS the self-probe (Dupoc — the quine stays); and a probe
+column is named by the SIGNAL it instantiates (δ_C, δ_D, δ_L — there is no δ_E
+column anymore).
+
+**Reading.** The control agreement is a genuine anchor result, and the refactored
+separating result is stronger AND cleaner than the one it replaces: one bot — the
+exploiter — separates the definitions, structurally (a window vs a threshold), and
+every cell of the claim is kernel-certified.

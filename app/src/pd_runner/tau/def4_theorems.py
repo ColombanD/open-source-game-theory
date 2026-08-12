@@ -2,30 +2,34 @@
 
 The base outcome matrix is unconditional (`outcome_A_vs_B = some (.C, .D)`), so
 `eval/outcome_matrix.py` can read a cell as a single action pair. Def-4 cells
-are **α-regime-quantified** — the same matchup is `(C, C)` below the boundary
-and `(D, D)` above it — so they need their own scanner:
+are **α-regime-quantified** — the same matchup changes outcome as θ crosses a
+player's boundary — so they need their own scanner:
 
-    theorem outcome_TauDupoc_vs_TauCooperate :
-        ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-          ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) TauCooperate
-            = some (.C, .C) := by
+    theorem outcome_TauEBot_vs_TauDupoc :
+        ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC < θ → θ ≤ wC + wTs + wTp + wL →
+          ∃ N, outcome N (TauEBot k θ …) (TauDupoc k θ …) = some (.C, .C) := by
 
-What this module extracts per theorem: the ordered tau-bot pair, the α-REGIME
-CONDITION (`θ ≤ <mass expr>` or `<mass expr> < θ`), the mass expression itself,
-and the resulting action pair. `certified_cell` then answers the question the
-comparison actually asks — "what do the Lean theorems say this matchup is at
-this (θ, w⃗)?" — by evaluating the regime conditions against concrete weights.
+What this module extracts per theorem: the ordered tau-bot pair, the LIST of
+θ-hypotheses (each `θ ≤ <mass>` or `<mass> < θ`), and the resulting action
+pair. Since the cascade refactor (2026-08-12) the theorems for any pair
+PARTITION the θ-axis — the three cooperators share one boundary
+(`wC + wTs + wTp + wL`) and TauEBot has three regimes (`_exploitθ` at
+`θ ≤ wC`, the unsuffixed WINDOW `wC < θ ≤ wC+wTs+wTp+wL`, and `_highθ`) — so a
+lookup at a concrete `(θ, w⃗)` simply evaluates every theorem's hypotheses in
+conjunction and takes the (unique) one that applies. No per-side mass
+bookkeeping is needed anymore: tau players are `.opp`-free, so instantiating a
+matchup theorem at ONE player's own `(θ, w⃗)` always reads that player's
+component correctly (`row_action`).
 
 This makes `tau/compare.py` read the KERNEL for the Def-4 side rather than
 trusting the Python re-derivation. Purely static: no Lean invocation, the
 kernel already checked every statement.
 
 **Scope.** Only the bots in `engine/PrisonersDilemma/Theorems/Tau/Matrix.lean`
-have theorems. A tau bot modelled in Python but not yet built in Lean (e.g. the
-hypothetical `TauEBot` used to demonstrate divergence) has NO certified cell,
-and `certified_cell` returns `None` for it — that absence is the honest signal
-that a result is predicted rather than proven, and the comparison reports it as
-such instead of silently falling back to arithmetic.
+have theorems. A tau bot modelled in Python but not yet built in Lean has NO
+certified cell, and `certified_cell` returns `None` for it — that absence is
+the honest signal that a result is predicted rather than proven, and the
+comparison reports it as such instead of silently falling back to arithmetic.
 """
 
 from __future__ import annotations
@@ -49,8 +53,8 @@ TAU_THEOREMS_FILE = (
 )
 
 # `theorem outcome_<A>_vs_<B><suffix> : <statement> :=` (with or without `by`).
-# Tau bot names are alphanumeric; the optional suffix (`_highθ`) marks the
-# complementary α-regime of an already-present pair.
+# Tau bot names are alphanumeric; the optional suffix (`_highθ`, `_exploitθ`)
+# marks which α-regime of the pair the theorem covers.
 #
 # The statement body must NOT be allowed to run past its own `:=` into the next
 # theorem — the term-mode proofs of the constant cells end in a bare `:=`, so a
@@ -63,20 +67,21 @@ _THEOREM_RE = re.compile(
     re.DOTALL,
 )
 _PAIR_RE = re.compile(r"=\s*some\s*\(\s*\.([CD])\s*,\s*\.([CD])\s*\)")
-# The α-regime guard: `θ ≤ wC + wTs + wTp + wL →` or `wC + … < θ →`
-_LOW_REGIME_RE = re.compile(r"θ\s*≤\s*([\w\s+]+?)\s*→")
-_HIGH_REGIME_RE = re.compile(r"([\w\s+]+?)\s*<\s*θ\s*→")
+# The θ-hypotheses: `θ ≤ wC + wTs + wTp + wL →` and `wC < θ →`
+_LE_RE = re.compile(r"θ\s*≤\s*([\w\s+]+?)\s*→")
+_LT_RE = re.compile(r"([\w\s+]+?)\s*<\s*θ\s*→")
 # Large-`k` shape: `∃ k₂, ∀ k, k₂ < k →`
 _LARGE_K_RE = re.compile(r"∃\s*k₂\s*,\s*∀\s*k\s*,\s*k₂\s*<\s*k\s*→")
 
 
 class Regime(str):
-    """Which side of the α-boundary a theorem covers."""
+    """Which α-regime of the pair a theorem covers (a reporting label; the
+    lookup itself evaluates the hypotheses, not the label)."""
 
-    LOW = "low"  # θ ≤ mass  (both players cooperative)
-    HIGH = "high"  # mass < θ (both players defecting)
-    MIXED_RC = "mixed_rc"  # row cooperative, column defecting
-    MIXED_CR = "mixed_cr"  # row defecting, column cooperative
+    LOW = "low"  # θ ≤ mass — the cooperators' cooperative regime
+    HIGH = "high"  # mass < θ — everyone defects
+    EXPLOIT = "exploit"  # θ ≤ wC — TauEBot's exploit stage fires (defects)
+    WINDOW = "window"  # wC < θ ≤ mass — TauEBot's cooperation window
     UNCONDITIONAL = "unconditional"  # constants: no θ hypothesis at all
 
 
@@ -88,38 +93,48 @@ class Def4Theorem:
     row: str
     col: str
     regime: str
-    mass_terms: tuple[str, ...]
-    """Weight variables of the ROW player's regime condition."""
+    hypotheses: tuple[tuple[str, tuple[str, ...]], ...]
+    """The θ-hypotheses, in statement order: `("le", terms)` means
+    `θ ≤ Σ terms`, `("lt", terms)` means `Σ terms < θ`. All must hold for the
+    theorem to apply (they are curried conjuncts in the Lean statement)."""
 
     actions: tuple[str, str]
     large_k: bool
     """True when the statement is the `∃k₂, ∀k > k₂` large-budget shape."""
 
-    col_mass_terms: tuple[str, ...] = ()
-    """Weight variables of the COLUMN player's condition (mixed cells only).
-
-    Once the guard lists became six-slot the three probe columns acquired
-    different cooperation masses, so one θ can straddle two players'
-    boundaries. A mixed theorem therefore carries TWO conditions, one per
-    side."""
-
     def applies(self, theta: int, weights: dict[str, int]) -> bool:
-        """Does this theorem's regime cover the given (θ, w⃗)?"""
-        if self.regime == Regime.UNCONDITIONAL:
-            return True
-        mass = sum(weights.get(t, 0) for t in self.mass_terms)
-        if self.regime == Regime.LOW:
-            return theta <= mass
-        if self.regime == Regime.HIGH:
-            return mass < theta
-        col = sum(weights.get(t, 0) for t in self.col_mass_terms)
-        if self.regime == Regime.MIXED_RC:
-            return theta <= mass and col < theta
-        return mass < theta and theta <= col
+        """Does this theorem cover the given (θ, w⃗)?"""
+        for op, terms in self.hypotheses:
+            mass = sum(weights.get(t, 0) for t in terms)
+            if op == "le" and not theta <= mass:
+                return False
+            if op == "lt" and not mass < theta:
+                return False
+        return True
+
+    @property
+    def mass_terms(self) -> tuple[str, ...]:
+        """The first ≤-boundary's terms (reporting convenience)."""
+        for op, terms in self.hypotheses:
+            if op == "le":
+                return terms
+        return ()
 
 
 def _parse_mass_terms(expr: str) -> tuple[str, ...]:
     return tuple(t.strip() for t in expr.split("+") if t.strip())
+
+
+def _classify(suffix: str, hypotheses: tuple) -> str:
+    if not hypotheses:
+        return Regime.UNCONDITIONAL
+    if suffix == "_exploitθ":
+        return Regime.EXPLOIT
+    if suffix == "_highθ":
+        return Regime.HIGH
+    if len(hypotheses) >= 2:
+        return Regime.WINDOW
+    return Regime.LOW if hypotheses[0][0] == "le" else Regime.HIGH
 
 
 def scan_def4_theorems(path: Path | None = None) -> list[Def4Theorem]:
@@ -131,33 +146,24 @@ def scan_def4_theorems(path: Path | None = None) -> list[Def4Theorem]:
         pair = _PAIR_RE.search(statement)
         if not pair:
             continue
-        lows = _LOW_REGIME_RE.findall(statement)
-        highs = _HIGH_REGIME_RE.findall(statement)
-        col_terms: tuple[str, ...] = ()
-        if lows and highs:
-            # a MIXED cell: one player each side of its own boundary. The
-            # statement lists the ROW player's condition first.
-            row_is_low = statement.index("θ ≤") < statement.index("< θ")
-            if row_is_low:
-                regime = Regime.MIXED_RC
-                terms, col_terms = _parse_mass_terms(lows[0]), _parse_mass_terms(highs[0])
-            else:
-                regime = Regime.MIXED_CR
-                terms, col_terms = _parse_mass_terms(highs[0]), _parse_mass_terms(lows[0])
-        elif highs:
-            regime, terms = Regime.HIGH, _parse_mass_terms(highs[0])
-        elif lows:
-            regime, terms = Regime.LOW, _parse_mass_terms(lows[0])
-        else:
-            regime, terms = Regime.UNCONDITIONAL, ()
+        # Reconstruct the hypotheses in statement order so WINDOW reads
+        # (wC < θ, θ ≤ mass) as written; order is irrelevant to `applies`.
+        hyps: list[tuple[int, tuple[str, tuple[str, ...]]]] = []
+        for m in _LE_RE.finditer(statement):
+            hyps.append((m.start(), ("le", _parse_mass_terms(m.group(1)))))
+        for m in _LT_RE.finditer(statement):
+            hyps.append((m.start(), ("lt", _parse_mass_terms(m.group(1)))))
+        # drop the `k₂ < k` budget quantifier the LT regex may have matched
+        hypotheses = tuple(
+            h for _, h in sorted(hyps) if h[1] and all(t != "k₂" for t in h[1])
+        )
         found.append(
             Def4Theorem(
                 name=f"outcome_{row}_vs_{col}{suffix or ''}",
                 row=row,
                 col=col,
-                regime=regime,
-                mass_terms=terms,
-                col_mass_terms=col_terms,
+                regime=_classify(suffix or "", hypotheses),
+                hypotheses=hypotheses,
                 actions=(pair.group(1), pair.group(2)),
                 large_k=_LARGE_K_RE.search(statement) is not None,
             )
@@ -189,38 +195,28 @@ class Def4Library:
     def row_action(
         self, row: str, col: str, theta: int, weights: dict[str, int]
     ) -> str | None:
-        """The ROW player's certified action, judged by ITS OWN regime only.
+        """The ROW player's certified action at ITS OWN (θ, w⃗).
 
-        In a tournament the two players see DIFFERENT signals (each a blur of
-        the other), so their regimes are decided by different weight vectors.
-        `cell` cannot serve here: it evaluates both sides' conditions against a
-        single `weights`, which is only meaningful when both players share a
-        signal. Callers composing a matchup from two per-side lookups must use
-        this, or a mixed-regime cell silently reads the wrong theorem.
+        In a tournament the two players see DIFFERENT signals, but tau players
+        are `.opp`-free: each side's action depends only on its own signal. So
+        instantiating the matchup's theorems at the row player's `(θ, w⃗)` and
+        reading the ROW component is exact, whatever the column player's actual
+        signal is. Since the pair's theorems partition the θ-axis, exactly one
+        applies.
         """
         for t in self._by_pair.get((row, col), []):
-            if t.regime == Regime.UNCONDITIONAL:
-                return t.actions[0]
-            mass = sum(weights.get(x, 0) for x in t.mass_terms)
-            # LOW / MIXED_RC assert the ROW player is cooperative; HIGH /
-            # MIXED_CR assert it is defecting. The column condition, if any,
-            # belongs to a different signal and is not ours to check.
-            if t.regime in (Regime.LOW, Regime.MIXED_RC):
-                if theta <= mass:
-                    return t.actions[0]
-            elif theta > mass:
+            if t.applies(theta, weights):
                 return t.actions[0]
         return None
 
     def cell(
         self, row: str, col: str, theta: int, weights: dict[str, int]
     ) -> tuple[str, str] | None:
-        """The certified outcome for this matchup at (θ, w⃗), or None if uncovered.
+        """The certified outcome for this matchup at a SHARED (θ, w⃗), or None.
 
         `None` means "no Lean theorem covers this cell in this regime" — either
         the bot has no theorems at all, or the (θ, w⃗) falls in a regime nobody
-        proved (e.g. only the cooperative regime is stated for a mixed pair).
-        It is NEVER a silent fallback to computed arithmetic.
+        proved. It is NEVER a silent fallback to computed arithmetic.
         """
         for t in self._by_pair.get((row, col), []):
             if t.applies(theta, weights):
@@ -254,9 +250,9 @@ BASE_TO_LEAN: dict[str, str] = {
 }
 """Default Lean counterpart per base bot (TFT defaults to the SIM variant).
 
-`TauTFTPf` is reachable by name for anyone wanting the prover variant; on the
-milestone-1 zoo the two are proven to have the same α-boundary, so the default
-is the behavioral one that matches base `TitForTatBot`'s `.sim` guard.
+`TauTFTPf` is reachable by name for anyone wanting the prover variant; on this
+zoo the two are proven to have the same α-boundary, so the default is the
+behavioral one that matches base `TitForTatBot`'s `.sim` guard.
 """
 
 
@@ -270,18 +266,21 @@ def main() -> None:
         by_regime[t.regime] = by_regime.get(t.regime, 0) + 1
     for regime, n in sorted(by_regime.items()):
         print(f"  {regime:<15} {n}")
-    print()
-    print("Cells (cooperative regime, θ=1 w⃗=all-1):")
-    weights = {"wC": 1, "wD": 1, "wTs": 1, "wTp": 1, "wL": 1}
+    weights = {"wC": 1, "wD": 1, "wTs": 1, "wTp": 1, "wL": 1, "wE": 1}
     bots = lib.bots
     width = max(len(b) for b in bots) + 2
-    print(" " * width + "".join(b.replace("Tau", "").rjust(width) for b in bots))
-    for row in bots:
-        line = row.ljust(width)
-        for col in bots:
-            cell = lib.cell(row, col, 1, weights)
-            line += (f"({cell[0]},{cell[1]})" if cell else "—").rjust(width)
-        print(line)
+    for theta, label in ((1, "θ=1: TauEBot's exploit stage fires on wC"),
+                         (2, "θ=2: TauEBot's window"),
+                         (5, "θ=5: above every boundary")):
+        print()
+        print(f"Cells at {label} (w⃗ = all-1):")
+        print(" " * width + "".join(b.replace("Tau", "").rjust(width) for b in bots))
+        for row in bots:
+            line = row.ljust(width)
+            for col in bots:
+                cell = lib.cell(row, col, theta, weights)
+                line += (f"({cell[0]},{cell[1]})" if cell else "—").rjust(width)
+            print(line)
 
 
 if __name__ == "__main__":

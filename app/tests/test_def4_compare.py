@@ -92,13 +92,21 @@ def test_self_probe_reads_the_actors_own_action(control_matrix):
 
 
 def test_reciprocity_probe_reads_the_hypothesis_action(separating_matrix):
-    """RECIPROCITY reads the SAME cell from the other side — the Def-4 flip."""
-    bot = Def4Bot("X", Probe.RECIPROCITY)
+    """RECIPROCITY reads the SAME cell from the other side — but a PROVER probe
+    is floor-aware: EBot's real cooperation is unprovable within budget."""
     # DupocBot vs EBot = (D, C): Dupoc defects, EBot cooperates.
     assert separating_matrix.action("DupocBot", "EBot") == "D"
     assert separating_matrix.action("EBot", "DupocBot") == "C"
-    # So the two probes disagree on exactly this hypothesis.
-    assert probe_bit(separating_matrix, bot, "DupocBot", "EBot") is True
+    # A BEHAVIORAL reciprocity probe would see EBot's true cooperation…
+    behavioral = Def4Bot("X", Probe.RECIPROCITY, prover=False)
+    assert probe_bit(separating_matrix, behavioral, "DupocBot", "EBot") is True
+    # …but a PROVER probe reads 0: the cooperation sits behind a failed
+    # exploit-search, so its certificate pays the floor
+    # (Lean: interp_probe_eOfSearch true + ps_probe_eOfSearch_false).
+    prover = Def4Bot("X", Probe.RECIPROCITY)
+    assert probe_bit(separating_matrix, prover, "DupocBot", "EBot") is False
+    # On non-floor-blocked hypotheses the prover bit equals the true bit.
+    assert probe_bit(separating_matrix, prover, "DupocBot", "CooperateBot") is True
     self_bot = Def4Bot("Y", Probe.SELF)
     assert probe_bit(separating_matrix, self_bot, "DupocBot", "EBot") is False
 
@@ -185,10 +193,18 @@ def test_control_zoo_matrices_agree_across_the_grid(control_matrix):
 # ── Fact 2: EBot separates them ────────────────────────────────────────────
 
 
-def test_separating_zoo_flips_dupocs_ebot_bit(separating_matrix):
+def test_separating_zoo_diverges_on_ebots_own_row(separating_matrix):
+    """The separation now lives in EBot's OWN row (the cascade), not in
+    TauDupoc's EBot bit — that one is floor-blocked to 0, matching Def 3's 0
+    (for a different reason: own-action-D vs unprovable-C)."""
     report = asymmetry_report(separating_matrix, SEPARATING_ZOO, SEPARATING_BOTS)
     assert report.can_separate
-    assert ("DupocBot", "EBot", False, True) in report.bit_divergences
+    # Def 3 reads EBot's self-cell (C → 1); the cascade's compound bit for the
+    # EBot hypothesis is 0 (E(δ_E) fails its own reciprocity stage).
+    assert ("EBot", "EBot", True, False) in report.bit_divergences
+    # And TauDupoc's row NO LONGER diverges: both definitions give its EBot
+    # hypothesis bit 0.
+    assert not any(a == "DupocBot" for a, _h, _b3, _b4 in report.bit_divergences)
 
 
 def test_separating_zoo_matrices_diverge(separating_matrix):
@@ -202,20 +218,34 @@ def test_separating_zoo_matrices_diverge(separating_matrix):
     )
 
 
-def test_divergence_at_full_transparency_is_the_exploitation_cell(separating_matrix):
-    """At t = 1 each side sees the truth, so the probe direction is exposed.
-
-    Def 3's TauDupoc asks 'what do I do against EBot' → D. Def 4's asks 'what
-    does EBot do against me' → C. The cell flips accordingly.
-    """
+def test_divergence_at_full_transparency_is_ebots_self_play(separating_matrix):
+    """At t = 1 each side sees the truth, and the definitions split on EBot
+    itself: Def 3's lift reads EBot's self-cell (C) and cooperates; Def 4's
+    cascade fails its own reciprocity stage (E(δ_C) defects) and defects at
+    every α. The exploiter does not trust itself — faithfully."""
     channel = {b: Signal.point_mass(b) for b in SEPARATING_BOTS}
-    alpha = 1.0
-    d3 = def3_actions(separating_matrix, "DupocBot", "EBot", alpha, channel)
+    for alpha in (0.5, 1.0):
+        d3 = def3_actions(separating_matrix, "EBot", "EBot", alpha, channel)
+        d4 = def4_actions(
+            separating_matrix, SEPARATING_ZOO, "EBot", "EBot", alpha, channel
+        )
+        assert d3 == ("C", "C")
+        assert d4 == ("D", "D")
+
+
+def test_dupoc_vs_ebot_reproduces_the_base_floor_cell(separating_matrix):
+    """At t = 1, α = 1, the Def-4 cell IS the base `(D, C)`: Dupoc cannot cite
+    EBot's floor-priced cooperation (bit 0 → defect), while EBot's cascade
+    passes its exploit stage and its reciprocity stage fires on Dupoc."""
+    channel = {b: Signal.point_mass(b) for b in SEPARATING_BOTS}
     d4 = def4_actions(
-        separating_matrix, SEPARATING_ZOO, "DupocBot", "EBot", alpha, channel
+        separating_matrix, SEPARATING_ZOO, "DupocBot", "EBot", 1.0, channel
     )
-    assert d3 != d4
-    assert d3[0] == "D" and d4[0] == "C"
+    assert d4 == ("D", "C")
+    assert d4 == (
+        separating_matrix.action("DupocBot", "EBot"),
+        separating_matrix.action("EBot", "DupocBot"),
+    )
 
 
 # ── The α axis ─────────────────────────────────────────────────────────────
@@ -257,10 +287,12 @@ def test_every_def4_theorem_parses():
 def test_theorem_regimes_are_classified():
     lib = Def4Library.load()
     regimes = {t.regime for t in lib.theorems}
-    assert regimes == {"low", "high", "mixed_rc", "mixed_cr", "unconditional"}
-    # The constants carry no θ hypothesis; the θ-bots carry both regimes.
+    assert regimes == {"low", "high", "exploit", "window", "unconditional"}
+    # The constants carry no θ hypothesis; the cooperators carry both regimes;
+    # every TauEBot pair carries its three.
     assert lib.regimes_for("TauDefect", "TauDefect") == ("unconditional",)
     assert set(lib.regimes_for("TauDupoc", "TauDupoc")) == {"low", "high"}
+    assert set(lib.regimes_for("TauEBot", "TauEBot")) == {"exploit", "window", "high"}
 
 
 def test_every_matchup_covers_both_alpha_regimes():
@@ -275,8 +307,10 @@ def test_every_matchup_covers_both_alpha_regimes():
         for col in lib.bots:
             regimes = set(lib.regimes_for(row, col))
             assert regimes, f"{row} vs {col} has no theorem at all"
-            covered = regimes == {"unconditional"} or {"low", "high"} <= regimes
-            # mixed-boundary pairs additionally carry the two straddling cells
+            if "TauEBot" in (row, col):
+                covered = {"exploit", "window", "high"} <= regimes
+            else:
+                covered = regimes == {"unconditional"} or {"low", "high"} <= regimes
             assert covered, f"{row} vs {col} only covers {sorted(regimes)}"
 
 
@@ -307,19 +341,30 @@ def test_uncovered_cells_return_none_not_a_guess():
 
 
 def test_tau_ebot_is_in_the_library():
-    """TauEBot is now BUILT in Lean, so the separating bot is certified too."""
+    """TauEBot is BUILT in Lean, so the separating bot is certified too."""
     lib = Def4Library.load()
     assert "TauEBot" in lib.bots
     assert lib.covers("TauEBot", "TauDupoc")
-    assert set(lib.regimes_for("TauEBot", "TauEBot")) == {"low", "high"}
+    assert set(lib.regimes_for("TauEBot", "TauDupoc")) == {"exploit", "window", "high"}
 
 
-def test_mixed_regime_cells_exist():
-    """One θ can straddle two players' boundaries, so those cells need their
-    own theorems — the same-regime statements cannot express them."""
+def test_the_theorems_partition_the_theta_axis():
+    """For every pair, exactly ONE theorem applies at each (θ, w⃗) — the
+    cascade refactor made the cooperators share one boundary (no mixed
+    regimes remain) and gave TauEBot a three-regime partition."""
     lib = Def4Library.load()
-    regimes = set(lib.regimes_for("TauDupoc", "TauEBot"))
-    assert {"low", "high", "mixed_rc", "mixed_cr"} <= regimes
+    assert not any(t.regime in ("mixed_rc", "mixed_cr") for t in lib.theorems)
+    w = {"wC": 10, "wD": 5, "wTs": 20, "wTp": 15, "wL": 10, "wE": 10}
+    for row in lib.bots:
+        for col in lib.bots:
+            for theta in (0, 5, 10, 11, 30, 55, 56, 100):
+                applying = [
+                    t for t in lib.theorems
+                    if (t.row, t.col) == (row, col) and t.applies(theta, w)
+                ]
+                assert len(applying) == 1, (
+                    f"{row} vs {col} at θ={theta}: {[t.name for t in applying]}"
+                )
 
 
 def test_row_action_judges_by_the_actors_own_regime():
@@ -330,30 +375,31 @@ def test_row_action_judges_by_the_actors_own_regime():
     theorem for mixed-boundary pairs.
     """
     lib = Def4Library.load()
-    # TauDupoc facing an EBot point mass: its own mass is full, so it cooperates
+    # TauDupoc facing an EBot point mass: the EBot bit is floor-blocked, so its
+    # provable mass is 0 and it DEFECTS — the tau image of base
+    # `DupocBot vs EBot = (D, C)`, read from Dupoc's side.
     w = {"wC": 0, "wD": 0, "wTs": 0, "wTp": 0, "wL": 0, "wE": 100}
-    assert lib.row_action("TauDupoc", "TauEBot", 100, w) == "C"
-    # TauEBot facing a Dupoc point mass: its own mass (wC+wE) is 0, so it defects
+    assert lib.row_action("TauDupoc", "TauEBot", 100, w) == "D"
+    # TauEBot facing a Dupoc point mass: exploit mass 0 < θ ≤ reciprocity mass
+    # 100 — the window — so it COOPERATES: the same base cell from EBot's side.
     w2 = {"wC": 0, "wD": 0, "wTs": 0, "wTp": 0, "wL": 100, "wE": 0}
-    assert lib.row_action("TauEBot", "TauDupoc", 100, w2) == "D"
+    assert lib.row_action("TauEBot", "TauDupoc", 100, w2) == "C"
 
 
-def test_tau_ebot_boundary_differs_from_taudupoc():
-    """TauEBot's cooperation mass is `wC + wE`, NOT all-but-Defect.
-
-    TitForTat and Dupoc both DEFECT against EBot (base cells `(D, C)`), so
-    their reciprocity bits are 0 — which is exactly the asymmetry that makes
-    the two definitions diverge. An earlier Lean version copied TauDupoc's
-    all-but-Defect boundary; the kernel-vs-model check caught it.
-    """
+def test_tau_ebot_cooperation_is_a_window():
+    """TauEBot defects at BOTH ends of the θ axis — the exploit stage fires
+    below `wC`, the reciprocity mass runs out above `wC+wTs+wTp+wL`. No
+    one-sided (Def-3-expressible) threshold has this shape."""
     lib = Def4Library.load()
-    # wC + wE = 20 here, while wC + wTs + wTp + wL = 55.
+    # exploit boundary wC = 10; window upper edge = 10+20+15+10 = 55.
     w = {"wC": 10, "wD": 5, "wTs": 20, "wTp": 15, "wL": 10, "wE": 10}
-    assert lib.row_action("TauEBot", "TauCooperate", 20, w) == "C"
-    assert lib.row_action("TauEBot", "TauCooperate", 21, w) == "D"
-    # TauDupoc at the same θ is still cooperating — different boundary
-    # (its mass is wC+wTs+wTp+wL+wE = 65, EBot's is wC+wE = 20).
-    assert lib.row_action("TauDupoc", "TauCooperate", 21, w) == "C"
+    assert lib.row_action("TauEBot", "TauCooperate", 10, w) == "D"  # exploits
+    assert lib.row_action("TauEBot", "TauCooperate", 11, w) == "C"  # window
+    assert lib.row_action("TauEBot", "TauCooperate", 55, w) == "C"  # window edge
+    assert lib.row_action("TauEBot", "TauCooperate", 56, w) == "D"  # above
+    # TauDupoc has no exploit stage: it cooperates all the way down to θ = 0.
+    assert lib.row_action("TauDupoc", "TauCooperate", 10, w) == "C"
+    assert lib.row_action("TauDupoc", "TauCooperate", 0, w) == "C"
 
 
 def test_control_model_agrees_with_the_kernel(control_matrix):
