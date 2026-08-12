@@ -231,6 +231,32 @@ theorem-priced cost of finite consistency, and `search_f` is that statement wear
 cost annotation. (This subsumes and grounds the older "Σ₁/Π₁ asymmetry" paragraph
 below: the bounded Π₁ is in fact Δ₀ and provable — the wall is its PRICE.)
 
+### The calibration contingency: the cell encodes Pudlák's conjecture
+
+One further honesty layer (raised immediately after the above was written). The
+theorem forbids charging below `k^ε`; nothing EXTERNAL forces charging `k`. A
+hypothetical floor `f(k)` with `k^ε ≤ f(k) < k` would let the EBot-cooperation
+certificate (`f(k) + O(log k)`) fit inside Dupoc's own budget, flipping the cell to
+`(C, C)` — and re-pricing the whole negative-information economy (all seven floor
+tombstones, single-tier prudence, the freeze-trick constants). What pins the engine
+at `> k` is INTERNAL and has a precise modality: the no-premise variant is
+machine-checked inconsistent (T32, absolute); the refutation-premised sub-k variant
+is NOT known inconsistent — its recorded fate is that it breaks the PROVABILITY of
+soundness (the budget-strong induction needs the refuted guard's budget strictly
+below the certificate's cost), and no alternative soundness strategy is known.
+
+Hence the precise status of `outcome_DupocBot_vs_EBot = (D, C)` as a claim about
+faithful bounded provers: **it is equivalent (at the engine level) to the open
+tightness question for finite consistency statements.** If `Con_{≤n}` admits
+`o(n)`-length proofs, a faithful engine could price the floor sub-linearly and the
+honest same-k cell is `(C, C)`; if near-linear lower bounds hold (Pudlák's
+conjecture — the mainstream expectation), the current `(D, C)` is faithful. The
+engine bets with Pudlák. Within this project's rules of the game — soundness must
+be a machine-checked theorem, and the only known proof needs the floor — the bet is
+also the only implementable option; any recalibration owes (1) a new global
+soundness proof, (2) a re-audit of every floor tombstone, (3) an arithmetic
+faithfulness argument against or around the conjecture.
+
 ---
 
 ## The `search_f` floor: else-certificates cost `n + m + k + c_node` (2026-07-02)
