@@ -44,220 +44,176 @@ theorem outcome_TauDefect_vs_TauDefect :
 /-! ## TauDupoc rows/columns -/
 
 theorem outcome_TauDupoc_vs_TauCooperate :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) TauCooperate = some (.C, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) TauCooperate = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ) (tauCooperate_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ) (tauCooperate_plays _)⟩
 
 theorem outcome_TauCooperate_vs_TauDupoc :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N TauCooperate (TauDupoc k θ wC wD wTs wTp wL) = some (.C, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N TauCooperate (TauDupoc k θ wC wD wTs wTp wL wE) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 /-- The exploitation cell: a cooperate-weighted signal against the actual TauDefect —
     the θ-bot pays for its wrong beliefs. -/
 theorem outcome_TauDupoc_vs_TauDefect :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) TauDefect = some (.C, .D) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) TauDefect = some (.C, .D) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ) (tauDefect_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ) (tauDefect_plays _)⟩
 
 theorem outcome_TauDefect_vs_TauDupoc :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N TauDefect (TauDupoc k θ wC wD wTs wTp wL) = some (.D, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N TauDefect (TauDupoc k θ wC wD wTs wTp wL wE) = some (.D, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 /-- **Löbian self-cooperation, Def-4 edition**: TauDupoc vs itself is `(C, C)` in the
     cooperative regime — via the quine fixpoint bit, not via reading the opponent. -/
 theorem outcome_TauDupoc_vs_TauDupoc :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) (TauDupoc k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ)
-      ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)
+      ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 /-! ## TauTFTSim rows/columns -/
 
 theorem outcome_TauTFTSim_vs_TauCooperate :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) TauCooperate = some (.C, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) TauCooperate = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ) (tauCooperate_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ) (tauCooperate_plays _)⟩
 
 theorem outcome_TauCooperate_vs_TauTFTSim :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N TauCooperate (TauTFTSim k θ wC wD wTs wTp wL) = some (.C, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N TauCooperate (TauTFTSim k θ wC wD wTs wTp wL wE) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 theorem outcome_TauTFTSim_vs_TauDefect :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) TauDefect = some (.C, .D) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) TauDefect = some (.C, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ) (tauDefect_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ) (tauDefect_plays _)⟩
 
 theorem outcome_TauDefect_vs_TauTFTSim :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N TauDefect (TauTFTSim k θ wC wD wTs wTp wL) = some (.D, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N TauDefect (TauTFTSim k θ wC wD wTs wTp wL wE) = some (.D, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 theorem outcome_TauTFTSim_vs_TauTFTSim :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) (TauTFTSim k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ)
-      ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)
+      ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 /-! ## TauTFTPf rows/columns -/
 
 theorem outcome_TauTFTPf_vs_TauCooperate :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) TauCooperate = some (.C, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) TauCooperate = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ) (tauCooperate_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ) (tauCooperate_plays _)⟩
 
 theorem outcome_TauCooperate_vs_TauTFTPf :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N TauCooperate (TauTFTPf k θ wC wD wTs wTp wL) = some (.C, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N TauCooperate (TauTFTPf k θ wC wD wTs wTp wL wE) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 theorem outcome_TauTFTPf_vs_TauDefect :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) TauDefect = some (.C, .D) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) TauDefect = some (.C, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ) (tauDefect_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ) (tauDefect_plays _)⟩
 
 theorem outcome_TauDefect_vs_TauTFTPf :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N TauDefect (TauTFTPf k θ wC wD wTs wTp wL) = some (.D, .C) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N TauDefect (TauTFTPf k θ wC wD wTs wTp wL wE) = some (.D, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 theorem outcome_TauTFTPf_vs_TauTFTPf :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) (TauTFTPf k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).1 hθ)
-      ((h k hk θ wC wD wTs wTp wL _).1 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)
+      ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
 
 /-! ## Mixed θ-bot pairs -/
 
-theorem outcome_TauDupoc_vs_TauTFTSim :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) (TauTFTSim k θ wC wD wTs wTp wL)
-        = some (.C, .C) := by
-  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
-  obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
-  exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-
-theorem outcome_TauTFTSim_vs_TauDupoc :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) (TauDupoc k θ wC wD wTs wTp wL)
-        = some (.C, .C) := by
-  obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
-  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
-  exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-
-theorem outcome_TauDupoc_vs_TauTFTPf :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) (TauTFTPf k θ wC wD wTs wTp wL)
-        = some (.C, .C) := by
-  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
-  obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
-  exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-
-theorem outcome_TauTFTPf_vs_TauDupoc :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) (TauDupoc k θ wC wD wTs wTp wL)
-        = some (.C, .C) := by
-  obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
-  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
-  exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-
 theorem outcome_TauTFTSim_vs_TauTFTPf :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) (TauTFTPf k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
   obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ)
 
 theorem outcome_TauTFTPf_vs_TauTFTSim :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) (TauTFTSim k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
   obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ)
 
 /-! ## The α-flip: defect-regime self-plays -/
 
 theorem outcome_TauDupoc_vs_TauDupoc_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) (TauDupoc k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ)
-      ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)
+      ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 theorem outcome_TauTFTSim_vs_TauTFTSim_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) (TauTFTSim k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ)
-      ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)
+      ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 theorem outcome_TauTFTPf_vs_TauTFTPf_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) (TauTFTPf k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ)
-      ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)
+      ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 /-! ## The defect regime for the remaining cells
 
@@ -268,166 +224,122 @@ constants never flip, so a mixed cell has exactly one flipping side — e.g.
 `TauDupoc vs TauCooperate` is `(D, C)` here. -/
 
 theorem outcome_TauDupoc_vs_TauCooperate_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) TauCooperate
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) TauCooperate
         = some (.D, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ) (tauCooperate_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ) (tauCooperate_plays _)⟩
 
 theorem outcome_TauDupoc_vs_TauDefect_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) TauDefect
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) TauDefect
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ) (tauDefect_plays _)⟩
-
-theorem outcome_TauDupoc_vs_TauTFTSim_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) (TauTFTSim k θ wC wD wTs wTp wL)
-        = some (.D, .D) := by
-  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
-  obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
-  exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
-
-theorem outcome_TauDupoc_vs_TauTFTPf_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) (TauTFTPf k θ wC wD wTs wTp wL)
-        = some (.D, .D) := by
-  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
-  obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
-  exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ) (tauDefect_plays _)⟩
 
 theorem outcome_TauCooperate_vs_TauDupoc_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N TauCooperate (TauDupoc k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N TauCooperate (TauDupoc k θ wC wD wTs wTp wL wE)
         = some (.C, .D) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 theorem outcome_TauCooperate_vs_TauTFTSim_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N TauCooperate (TauTFTSim k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N TauCooperate (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.C, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 theorem outcome_TauCooperate_vs_TauTFTPf_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N TauCooperate (TauTFTPf k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N TauCooperate (TauTFTPf k θ wC wD wTs wTp wL wE)
         = some (.C, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 theorem outcome_TauDefect_vs_TauDupoc_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N TauDefect (TauDupoc k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N TauDefect (TauDupoc k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 theorem outcome_TauDefect_vs_TauTFTSim_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N TauDefect (TauTFTSim k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N TauDefect (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 theorem outcome_TauDefect_vs_TauTFTPf_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N TauDefect (TauTFTPf k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N TauDefect (TauTFTPf k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL _).2 hθ)⟩
-
-theorem outcome_TauTFTSim_vs_TauDupoc_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) (TauDupoc k θ wC wD wTs wTp wL)
-        = some (.D, .D) := by
-  obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
-  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
-  exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
 
 theorem outcome_TauTFTSim_vs_TauCooperate_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) TauCooperate
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) TauCooperate
         = some (.D, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ) (tauCooperate_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ) (tauCooperate_plays _)⟩
 
 theorem outcome_TauTFTSim_vs_TauDefect_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) TauDefect
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) TauDefect
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTSim_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ) (tauDefect_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ) (tauDefect_plays _)⟩
 
 theorem outcome_TauTFTSim_vs_TauTFTPf_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) (TauTFTPf k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
   obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
   obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
-
-theorem outcome_TauTFTPf_vs_TauDupoc_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) (TauDupoc k θ wC wD wTs wTp wL)
-        = some (.D, .D) := by
-  obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
-  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
-  exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ)
 
 theorem outcome_TauTFTPf_vs_TauCooperate_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) TauCooperate
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) TauCooperate
         = some (.D, .C) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ) (tauCooperate_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ) (tauCooperate_plays _)⟩
 
 theorem outcome_TauTFTPf_vs_TauDefect_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) TauDefect
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) TauDefect
         = some (.D, .D) := by
   obtain ⟨k₂, h⟩ := tauTFTPf_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL _).2 hθ) (tauDefect_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ) (tauDefect_plays _)⟩
 
 theorem outcome_TauTFTPf_vs_TauTFTSim_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL, wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) (TauTFTSim k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
   obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
   obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
-  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL hθ => ?_⟩
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ)
 
 
 /-! ## TauEBot cells — the SEPARATING bot
@@ -443,217 +355,534 @@ bots threshold against different masses — there is no single shared boundary
 once the zoo contains bots probing different columns. -/
 
 theorem outcome_TauEBot_vs_TauCooperate :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, θ ≤ wC + wE →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) TauCooperate
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) TauCooperate
         = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wE _).1 hθ) (tauCooperate_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ) (tauCooperate_plays _)⟩
 
 theorem outcome_TauEBot_vs_TauDefect :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, θ ≤ wC + wE →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) TauDefect
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) TauDefect
         = some (.C, .D) := by
   obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wE _).1 hθ) (tauDefect_plays _)⟩
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ) (tauDefect_plays _)⟩
 
 theorem outcome_TauEBot_vs_TauDupoc :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) (TauDupoc k θ wC wD wTs wTp wL)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₁, h₁⟩ := tauEBot_phase
   obtain ⟨k₂, h₂⟩ := tauDupoc_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wE _).1 hθ₁)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ₂)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauEBot_vs_TauEBot :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.C, .C) := by
+  obtain ⟨k₂, h⟩ := tauEBot_phase
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)
+      ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
+
+theorem outcome_TauCooperate_vs_TauEBot :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE →
+      ∃ N, outcome N TauCooperate (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.C, .C) := by
+  obtain ⟨k₂, h⟩ := tauEBot_phase
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
+
+theorem outcome_TauDefect_vs_TauEBot :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE →
+      ∃ N, outcome N TauDefect (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
+  obtain ⟨k₂, h⟩ := tauEBot_phase
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL wE _).1 hθ)⟩
+
+theorem outcome_TauDupoc_vs_TauEBot :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE → θ ≤ wC + wE →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.C, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauEBot_vs_TauCooperate_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) TauCooperate
+        = some (.D, .C) := by
+  obtain ⟨k₂, h⟩ := tauEBot_phase
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ) (tauCooperate_plays _)⟩
+
+theorem outcome_TauEBot_vs_TauDefect_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) TauDefect
+        = some (.D, .D) := by
+  obtain ⟨k₂, h⟩ := tauEBot_phase
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ) (tauDefect_plays _)⟩
+
+theorem outcome_TauEBot_vs_TauDupoc_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauEBot_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauEBot_vs_TauEBot_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₂, h⟩ := tauEBot_phase
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)
+      ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
+
+theorem outcome_TauCooperate_vs_TauEBot_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ →
+      ∃ N, outcome N TauCooperate (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₂, h⟩ := tauEBot_phase
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
+
+theorem outcome_TauDefect_vs_TauEBot_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ →
+      ∃ N, outcome N TauDefect (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₂, h⟩ := tauEBot_phase
+  exact ⟨k₂, fun k hk θ wC wD wTs wTp wL wE hθ =>
+    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wL wE _).2 hθ)⟩
+
+theorem outcome_TauDupoc_vs_TauEBot_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+
+theorem outcome_TauDupoc_vs_TauTFTSim :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE → θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
+        = some (.C, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauDupoc_vs_TauTFTPf :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE → θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
+        = some (.C, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
 theorem outcome_TauEBot_vs_TauTFTSim :
     ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) (TauTFTSim k θ wC wD wTs wTp wL)
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₁, h₁⟩ := tauEBot_phase
   obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wE _).1 hθ₁)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ₂)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
 theorem outcome_TauEBot_vs_TauTFTPf :
     ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) (TauTFTPf k θ wC wD wTs wTp wL)
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₁, h₁⟩ := tauEBot_phase
   obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wE _).1 hθ₁)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).1 hθ₂)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
-theorem outcome_TauEBot_vs_TauEBot :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, θ ≤ wC + wE →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) (TauEBot k θ wC wD wTs wTp wE)
+theorem outcome_TauTFTSim_vs_TauDupoc :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL → θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
-  obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wE _).1 hθ)
-      ((h k hk θ wC wD wTs wTp wE _).1 hθ)⟩
-
-theorem outcome_TauCooperate_vs_TauEBot :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, θ ≤ wC + wE →
-      ∃ N, outcome N TauCooperate (TauEBot k θ wC wD wTs wTp wE)
-        = some (.C, .C) := by
-  obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wE _).1 hθ)⟩
-
-theorem outcome_TauDefect_vs_TauEBot :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, θ ≤ wC + wE →
-      ∃ N, outcome N TauDefect (TauEBot k θ wC wD wTs wTp wE)
-        = some (.D, .C) := by
-  obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wE _).1 hθ)⟩
-
-theorem outcome_TauDupoc_vs_TauEBot :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) (TauEBot k θ wC wD wTs wTp wE)
-        = some (.C, .C) := by
-  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
-  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ₂)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wE _).1 hθ₁)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauTFTPf_vs_TauDupoc :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL → θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.C, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
 theorem outcome_TauTFTSim_vs_TauEBot :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) (TauEBot k θ wC wD wTs wTp wE)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL → θ ≤ wC + wE →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
   obtain ⟨k₂, h₂⟩ := tauEBot_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ₂)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wE _).1 hθ₁)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
 theorem outcome_TauTFTPf_vs_TauEBot :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → θ ≤ wC + wTs + wTp + wL →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) (TauEBot k θ wC wD wTs wTp wE)
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL → θ ≤ wC + wE →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
         = some (.C, .C) := by
   obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
   obtain ⟨k₂, h₂⟩ := tauEBot_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).1 hθ₂)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wE _).1 hθ₁)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
-theorem outcome_TauEBot_vs_TauCooperate_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, wC + wE < θ →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) TauCooperate
-        = some (.D, .C) := by
-  obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wE _).2 hθ) (tauCooperate_plays _)⟩
-
-theorem outcome_TauEBot_vs_TauDefect_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, wC + wE < θ →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) TauDefect
+theorem outcome_TauDupoc_vs_TauTFTSim_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ → wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
-  obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wE _).2 hθ) (tauDefect_plays _)⟩
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
 
-theorem outcome_TauEBot_vs_TauDupoc_highθ :
+theorem outcome_TauDupoc_vs_TauTFTPf_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ → wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauEBot_vs_TauTFTSim_highθ :
     ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) (TauDupoc k θ wC wD wTs wTp wL)
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
         = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauEBot_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauEBot_vs_TauTFTPf_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauEBot_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauTFTSim_vs_TauDupoc_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ → wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauTFTPf_vs_TauDupoc_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ → wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauTFTSim_vs_TauEBot_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ → wC + wE < θ →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
+  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauTFTPf_vs_TauEBot_highθ :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ → wC + wE < θ →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
+  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+/-! ## Mixed-regime cells (2026-08-12)
+
+Once the guard lists became six-slot the three columns acquired DIFFERENT
+cooperation masses (δ_L `wC+wTs+wTp+wL+wE`, δ_C `wC+wTs+wTp+wL`, δ_E `wC+wE`),
+so a single θ can put one player above its boundary and the other below. Those
+straddling cells need their own statements — the same-regime theorems above
+cannot express them, and without these the matrix is silently incomplete at
+exactly the (t, α) points where the definitions differ most. -/
+
+theorem outcome_TauDupoc_vs_TauTFTSim_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE → wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauDupoc_vs_TauTFTPf_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE → wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauEBot_vs_TauTFTSim_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauEBot_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauEBot_vs_TauTFTPf_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → wC + wTs + wTp + wL < θ →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauEBot_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauTFTSim_vs_TauDupoc_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL → wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauTFTPf_vs_TauDupoc_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL → wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauTFTSim_vs_TauEBot_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL → wC + wE < θ →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
+  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauTFTPf_vs_TauEBot_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL → wC + wE < θ →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
+  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauDupoc_vs_TauEBot_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wTs + wTp + wL + wE → wC + wE < θ →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
+
+theorem outcome_TauEBot_vs_TauDupoc_mixedRC :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, θ ≤ wC + wE → wC + wTs + wTp + wL + wE < θ →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.C, .D) := by
   obtain ⟨k₁, h₁⟩ := tauEBot_phase
   obtain ⟨k₂, h₂⟩ := tauDupoc_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wE _).2 hθ₁)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ₂)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₂)
 
-theorem outcome_TauEBot_vs_TauTFTSim_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) (TauTFTSim k θ wC wD wTs wTp wL)
-        = some (.D, .D) := by
+theorem outcome_TauDupoc_vs_TauTFTSim_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ → θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauDupoc_vs_TauTFTPf_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ → θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauEBot_vs_TauTFTSim_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauTFTSim k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
   obtain ⟨k₁, h₁⟩ := tauEBot_phase
   obtain ⟨k₂, h₂⟩ := tauTFTSim_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wE _).2 hθ₁)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ₂)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
-theorem outcome_TauEBot_vs_TauTFTPf_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) (TauTFTPf k θ wC wD wTs wTp wL)
-        = some (.D, .D) := by
+theorem outcome_TauEBot_vs_TauTFTPf_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → θ ≤ wC + wTs + wTp + wL →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauTFTPf k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
   obtain ⟨k₁, h₁⟩ := tauEBot_phase
   obtain ⟨k₂, h₂⟩ := tauTFTPf_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wE _).2 hθ₁)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL _).2 hθ₂)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
-theorem outcome_TauEBot_vs_TauEBot_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, wC + wE < θ →
-      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wE) (TauEBot k θ wC wD wTs wTp wE)
-        = some (.D, .D) := by
-  obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays ((h k hk θ wC wD wTs wTp wE _).2 hθ)
-      ((h k hk θ wC wD wTs wTp wE _).2 hθ)⟩
-
-theorem outcome_TauCooperate_vs_TauEBot_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, wC + wE < θ →
-      ∃ N, outcome N TauCooperate (TauEBot k θ wC wD wTs wTp wE)
-        = some (.C, .D) := by
-  obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays (tauCooperate_plays _) ((h k hk θ wC wD wTs wTp wE _).2 hθ)⟩
-
-theorem outcome_TauDefect_vs_TauEBot_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wE, wC + wE < θ →
-      ∃ N, outcome N TauDefect (TauEBot k θ wC wD wTs wTp wE)
-        = some (.D, .D) := by
-  obtain ⟨k₂, h⟩ := tauEBot_phase
-  exact ⟨k₂, fun k hk θ wC wD wTs wTp wE hθ =>
-    outcome_of_ex_plays (tauDefect_plays _) ((h k hk θ wC wD wTs wTp wE _).2 hθ)⟩
-
-theorem outcome_TauDupoc_vs_TauEBot_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL) (TauEBot k θ wC wD wTs wTp wE)
-        = some (.D, .D) := by
-  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
-  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+theorem outcome_TauTFTSim_vs_TauDupoc_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ → θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ₂)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wE _).2 hθ₁)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
-theorem outcome_TauTFTSim_vs_TauEBot_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL) (TauEBot k θ wC wD wTs wTp wE)
-        = some (.D, .D) := by
+theorem outcome_TauTFTPf_vs_TauDupoc_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ → θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauTFTSim_vs_TauEBot_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ → θ ≤ wC + wE →
+      ∃ N, outcome N (TauTFTSim k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
   obtain ⟨k₁, h₁⟩ := tauTFTSim_phase
   obtain ⟨k₂, h₂⟩ := tauEBot_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ₂)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wE _).2 hθ₁)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
-theorem outcome_TauTFTPf_vs_TauEBot_highθ :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → wC + wTs + wTp + wL < θ →
-      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL) (TauEBot k θ wC wD wTs wTp wE)
-        = some (.D, .D) := by
+theorem outcome_TauTFTPf_vs_TauEBot_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL < θ → θ ≤ wC + wE →
+      ∃ N, outcome N (TauTFTPf k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
   obtain ⟨k₁, h₁⟩ := tauTFTPf_phase
   obtain ⟨k₂, h₂⟩ := tauEBot_phase
   refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
   exact outcome_of_ex_plays
-    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL _).2 hθ₂)
-    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wE _).2 hθ₁)
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauDupoc_vs_TauEBot_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wTs + wTp + wL + wE < θ → θ ≤ wC + wE →
+      ∃ N, outcome N (TauDupoc k θ wC wD wTs wTp wL wE) (TauEBot k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauDupoc_phase
+  obtain ⟨k₂, h₂⟩ := tauEBot_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
+
+theorem outcome_TauEBot_vs_TauDupoc_mixedCR :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE, wC + wE < θ → θ ≤ wC + wTs + wTp + wL + wE →
+      ∃ N, outcome N (TauEBot k θ wC wD wTs wTp wL wE) (TauDupoc k θ wC wD wTs wTp wL wE)
+        = some (.D, .C) := by
+  obtain ⟨k₁, h₁⟩ := tauEBot_phase
+  obtain ⟨k₂, h₂⟩ := tauDupoc_phase
+  refine ⟨max k₁ k₂, fun k hk θ wC wD wTs wTp wL wE hθ₁ hθ₂ => ?_⟩
+  exact outcome_of_ex_plays
+    ((h₁ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ wC wD wTs wTp wL wE _).2 hθ₁)
+    ((h₂ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ wC wD wTs wTp wL wE _).1 hθ₂)
 
 end PD.Theorems.Tau

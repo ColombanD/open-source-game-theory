@@ -58,7 +58,7 @@ TAU_THEOREMS_FILE = (
 # theorem's statement. `[^:]*(?::(?!=)[^:]*)*` matches any text containing no
 # `:=`, which stops each statement at its own proof delimiter.
 _THEOREM_RE = re.compile(
-    r"theorem\s+outcome_(Tau[A-Za-z0-9]+)_vs_(Tau[A-Za-z0-9]+)(_high\S*)?\s*:"
+    r"theorem\s+outcome_(Tau[A-Za-z0-9]+)_vs_(Tau[A-Za-z0-9]+)(_\S+)?\s*:"
     r"([^:]*(?::(?!=)[^:]*)*):=",
     re.DOTALL,
 )
@@ -73,8 +73,10 @@ _LARGE_K_RE = re.compile(r"∃\s*k₂\s*,\s*∀\s*k\s*,\s*k₂\s*<\s*k\s*→")
 class Regime(str):
     """Which side of the α-boundary a theorem covers."""
 
-    LOW = "low"  # θ ≤ mass  (the cooperative regime)
-    HIGH = "high"  # mass < θ (the defect regime)
+    LOW = "low"  # θ ≤ mass  (both players cooperative)
+    HIGH = "high"  # mass < θ (both players defecting)
+    MIXED_RC = "mixed_rc"  # row cooperative, column defecting
+    MIXED_CR = "mixed_cr"  # row defecting, column cooperative
     UNCONDITIONAL = "unconditional"  # constants: no θ hypothesis at all
 
 
@@ -87,17 +89,33 @@ class Def4Theorem:
     col: str
     regime: str
     mass_terms: tuple[str, ...]
-    """The weight variables summed in the regime condition, e.g. (wC, wTs, wTp, wL)."""
+    """Weight variables of the ROW player's regime condition."""
+
     actions: tuple[str, str]
     large_k: bool
     """True when the statement is the `∃k₂, ∀k > k₂` large-budget shape."""
+
+    col_mass_terms: tuple[str, ...] = ()
+    """Weight variables of the COLUMN player's condition (mixed cells only).
+
+    Once the guard lists became six-slot the three probe columns acquired
+    different cooperation masses, so one θ can straddle two players'
+    boundaries. A mixed theorem therefore carries TWO conditions, one per
+    side."""
 
     def applies(self, theta: int, weights: dict[str, int]) -> bool:
         """Does this theorem's regime cover the given (θ, w⃗)?"""
         if self.regime == Regime.UNCONDITIONAL:
             return True
-        mass = sum(weights.get(term, 0) for term in self.mass_terms)
-        return theta <= mass if self.regime == Regime.LOW else mass < theta
+        mass = sum(weights.get(t, 0) for t in self.mass_terms)
+        if self.regime == Regime.LOW:
+            return theta <= mass
+        if self.regime == Regime.HIGH:
+            return mass < theta
+        col = sum(weights.get(t, 0) for t in self.col_mass_terms)
+        if self.regime == Regime.MIXED_RC:
+            return theta <= mass and col < theta
+        return mass < theta and theta <= col
 
 
 def _parse_mass_terms(expr: str) -> tuple[str, ...]:
@@ -113,12 +131,23 @@ def scan_def4_theorems(path: Path | None = None) -> list[Def4Theorem]:
         pair = _PAIR_RE.search(statement)
         if not pair:
             continue
-        low = _LOW_REGIME_RE.search(statement)
-        high = _HIGH_REGIME_RE.search(statement)
-        if high is not None:
-            regime, terms = Regime.HIGH, _parse_mass_terms(high.group(1))
-        elif low is not None:
-            regime, terms = Regime.LOW, _parse_mass_terms(low.group(1))
+        lows = _LOW_REGIME_RE.findall(statement)
+        highs = _HIGH_REGIME_RE.findall(statement)
+        col_terms: tuple[str, ...] = ()
+        if lows and highs:
+            # a MIXED cell: one player each side of its own boundary. The
+            # statement lists the ROW player's condition first.
+            row_is_low = statement.index("θ ≤") < statement.index("< θ")
+            if row_is_low:
+                regime = Regime.MIXED_RC
+                terms, col_terms = _parse_mass_terms(lows[0]), _parse_mass_terms(highs[0])
+            else:
+                regime = Regime.MIXED_CR
+                terms, col_terms = _parse_mass_terms(highs[0]), _parse_mass_terms(lows[0])
+        elif highs:
+            regime, terms = Regime.HIGH, _parse_mass_terms(highs[0])
+        elif lows:
+            regime, terms = Regime.LOW, _parse_mass_terms(lows[0])
         else:
             regime, terms = Regime.UNCONDITIONAL, ()
         found.append(
@@ -128,6 +157,7 @@ def scan_def4_theorems(path: Path | None = None) -> list[Def4Theorem]:
                 col=col,
                 regime=regime,
                 mass_terms=terms,
+                col_mass_terms=col_terms,
                 actions=(pair.group(1), pair.group(2)),
                 large_k=_LARGE_K_RE.search(statement) is not None,
             )
@@ -155,6 +185,32 @@ class Def4Library:
             names.add(t.row)
             names.add(t.col)
         return tuple(sorted(names))
+
+    def row_action(
+        self, row: str, col: str, theta: int, weights: dict[str, int]
+    ) -> str | None:
+        """The ROW player's certified action, judged by ITS OWN regime only.
+
+        In a tournament the two players see DIFFERENT signals (each a blur of
+        the other), so their regimes are decided by different weight vectors.
+        `cell` cannot serve here: it evaluates both sides' conditions against a
+        single `weights`, which is only meaningful when both players share a
+        signal. Callers composing a matchup from two per-side lookups must use
+        this, or a mixed-regime cell silently reads the wrong theorem.
+        """
+        for t in self._by_pair.get((row, col), []):
+            if t.regime == Regime.UNCONDITIONAL:
+                return t.actions[0]
+            mass = sum(weights.get(x, 0) for x in t.mass_terms)
+            # LOW / MIXED_RC assert the ROW player is cooperative; HIGH /
+            # MIXED_CR assert it is defecting. The column condition, if any,
+            # belongs to a different signal and is not ours to check.
+            if t.regime in (Regime.LOW, Regime.MIXED_RC):
+                if theta <= mass:
+                    return t.actions[0]
+            elif theta > mass:
+                return t.actions[0]
+        return None
 
     def cell(
         self, row: str, col: str, theta: int, weights: dict[str, int]

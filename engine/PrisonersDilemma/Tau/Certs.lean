@@ -148,15 +148,6 @@ literally the same theorem — stated separately because the two are DIFFERENT
 tau bots whose guard lists probe different columns, and a reader chasing
 TauEBot should find its bit under its own name. -/
 
-/-- `E(δ_C)` cooperates (probes `.const C`), from `c_guard k + 3`. -/
-theorem pf_probe_eOfCoop {k K : Nat} (hk : 2 ≤ k) (hK : c_guard k + 3 ≤ K) :
-    Pf K (probe (eOfCoopδ k)) :=
-  pf_probe_searchOfCoop hk hK
-
-theorem ps_probe_eOfCoop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) :
-    proofSearch k (probe (eOfCoopδ k)) = true :=
-  ps_probe_searchOfCoop hk hkk
-
 /-- **THE LÖB BIT**: past a threshold, the quine's probe atom is provable AT THE
     PROBING BUDGET ITSELF — same-`k` Löbian self-cooperation, Def-4 edition. -/
 theorem ps_probe_quine :
@@ -240,5 +231,26 @@ theorem ps_probe_simOfE (m : Nat) : proofSearch m (probe simOfEδ) = false := by
   cases h : proofSearch m (probe simOfEδ) with
   | false => rfl
   | true => exact absurd (proofSearch_sound _ _ h) interp_probe_simOfE_false
+
+/-! ### The enlarged-zoo cross bits (2026-08-12)
+
+The six-slot guard lists add two hypotheses: the δ_L column now holds an EBot
+hypothesis, and the δ_C column does too. Both are decided by base cells:
+`EBot vs DupocBot = (C, D)` fires, `EBot vs CooperateBot = (D, C)` does not. -/
+
+/-- `E(δ_L)` **COOPERATES**: it probes `.const C`, which is certifiable. -/
+theorem pf_probe_eOfSearch {k K : Nat} (hk : 2 ≤ k) (hK : c_guard k + 3 ≤ K) :
+    Pf K (probe (eOfSearchδ k)) :=
+  pf_probe_searchOfCoop hk hK
+
+theorem ps_probe_eOfSearch {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) :
+    proofSearch k (probe (eOfSearchδ k)) = true :=
+  ps_probe_searchOfCoop hk hkk
+
+/-- `E(δ_C)` **DEFECTS**: it probes `.const D`, refutable, so its guard fails.
+    (`eOfCoopδ` is `searchOfEδ` up to the budget argument — same term.) -/
+theorem ps_probe_eOfCoop_false (k m : Nat) :
+    proofSearch m (probe (eOfCoopδ k)) = false :=
+  ps_probe_searchOfE k m
 
 end PD.Tau

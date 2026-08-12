@@ -257,7 +257,7 @@ def test_every_def4_theorem_parses():
 def test_theorem_regimes_are_classified():
     lib = Def4Library.load()
     regimes = {t.regime for t in lib.theorems}
-    assert regimes == {"low", "high", "unconditional"}
+    assert regimes == {"low", "high", "mixed_rc", "mixed_cr", "unconditional"}
     # The constants carry no θ hypothesis; the θ-bots carry both regimes.
     assert lib.regimes_for("TauDefect", "TauDefect") == ("unconditional",)
     assert set(lib.regimes_for("TauDupoc", "TauDupoc")) == {"low", "high"}
@@ -276,6 +276,7 @@ def test_every_matchup_covers_both_alpha_regimes():
             regimes = set(lib.regimes_for(row, col))
             assert regimes, f"{row} vs {col} has no theorem at all"
             covered = regimes == {"unconditional"} or {"low", "high"} <= regimes
+            # mixed-boundary pairs additionally carry the two straddling cells
             assert covered, f"{row} vs {col} only covers {sorted(regimes)}"
 
 
@@ -313,6 +314,30 @@ def test_tau_ebot_is_in_the_library():
     assert set(lib.regimes_for("TauEBot", "TauEBot")) == {"low", "high"}
 
 
+def test_mixed_regime_cells_exist():
+    """One θ can straddle two players' boundaries, so those cells need their
+    own theorems — the same-regime statements cannot express them."""
+    lib = Def4Library.load()
+    regimes = set(lib.regimes_for("TauDupoc", "TauEBot"))
+    assert {"low", "high", "mixed_rc", "mixed_cr"} <= regimes
+
+
+def test_row_action_judges_by_the_actors_own_regime():
+    """Each player's action is decided by ITS OWN signal, not a shared one.
+
+    In a tournament the two sides see different blurs, so a lookup that
+    evaluated both conditions against one weight vector would read the wrong
+    theorem for mixed-boundary pairs.
+    """
+    lib = Def4Library.load()
+    # TauDupoc facing an EBot point mass: its own mass is full, so it cooperates
+    w = {"wC": 0, "wD": 0, "wTs": 0, "wTp": 0, "wL": 0, "wE": 100}
+    assert lib.row_action("TauDupoc", "TauEBot", 100, w) == "C"
+    # TauEBot facing a Dupoc point mass: its own mass (wC+wE) is 0, so it defects
+    w2 = {"wC": 0, "wD": 0, "wTs": 0, "wTp": 0, "wL": 100, "wE": 0}
+    assert lib.row_action("TauEBot", "TauDupoc", 100, w2) == "D"
+
+
 def test_tau_ebot_boundary_differs_from_taudupoc():
     """TauEBot's cooperation mass is `wC + wE`, NOT all-but-Defect.
 
@@ -324,10 +349,11 @@ def test_tau_ebot_boundary_differs_from_taudupoc():
     lib = Def4Library.load()
     # wC + wE = 20 here, while wC + wTs + wTp + wL = 55.
     w = {"wC": 10, "wD": 5, "wTs": 20, "wTp": 15, "wL": 10, "wE": 10}
-    assert lib.cell("TauEBot", "TauCooperate", 20, w) == ("C", "C")
-    assert lib.cell("TauEBot", "TauCooperate", 21, w) == ("D", "C")
-    # TauDupoc at the same θ is still cooperating — different boundary.
-    assert lib.cell("TauDupoc", "TauCooperate", 21, w) == ("C", "C")
+    assert lib.row_action("TauEBot", "TauCooperate", 20, w) == "C"
+    assert lib.row_action("TauEBot", "TauCooperate", 21, w) == "D"
+    # TauDupoc at the same θ is still cooperating — different boundary
+    # (its mass is wC+wTs+wTp+wL+wE = 65, EBot's is wC+wE = 20).
+    assert lib.row_action("TauDupoc", "TauCooperate", 21, w) == "C"
 
 
 def test_control_model_agrees_with_the_kernel(control_matrix):
@@ -355,11 +381,11 @@ def test_control_model_agrees_with_the_kernel(control_matrix):
 
 
 def test_separating_zoo_cells_are_honestly_uncertified(separating_matrix):
-    """EBot has no Lean theorems, so its cells must read `predicted`.
+    """The separating zoo is fully certified since the six-slot widening.
 
-    They must NOT be silently certified against a renormalized 4-bot signal —
-    the theorems' guard lists have no slot for a fifth hypothesis, so a signal
-    carrying EBot weight asks a question they cannot answer.
+    Kept under its original name as the regression guard: if a future bot is
+    modelled in Python before its Lean counterpart exists, or a guard list
+    loses a hypothesis, coverage drops and this test says so.
     """
     comparisons, _ = sweep(
         separating_matrix,
@@ -370,11 +396,10 @@ def test_separating_zoo_cells_are_honestly_uncertified(separating_matrix):
     )
     ver = verify_against_lean(comparisons)
     assert ver.conflicts == ()
-    # TauEBot IS built in Lean now, but the milestone-1 guard lists have no
-    # EBot hypothesis slot, so a signal carrying EBot mass cannot be handed to
-    # TauDupoc/TauTFT's theorems. Those cells stay honestly `predicted`.
-    assert ver.predicted > 0
-    assert ver.coverage < 1.0
+    # The guard lists are SIX-slot now, so every bot votes over the whole zoo
+    # and the separating comparison — the informative half — is fully certified.
+    assert ver.predicted == 0
+    assert ver.coverage == 1.0
 
 
 def test_alpha_zero_divergences_are_flagged_as_a_convention_artifact(control_matrix):

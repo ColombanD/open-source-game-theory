@@ -131,11 +131,30 @@ def searchOfEδ (k : Nat) : Prog := probeSearchδ k tauDefectδ
     `wC + wTs + wTp + wE` boundary; the kernel-vs-model check caught it. -/
 def simOfEδ : Prog := tftSimδ tauDefectδ
 
-/-- `E(δ_C)`: TauEBot seeing TauCooperate — probes `C(δ_E) = .const C`. -/
-def eOfCoopδ (k : Nat) : Prog := probeSearchδ k tauCoopδ
+/-- `E(δ_C)`: TauEBot seeing TauCooperate.
 
-/-- `E(δ_L)`: TauEBot seeing TauDupoc — probes `L(δ_E)`. -/
-def eOfSearchδ (k : Nat) : Prog := probeSearchδ k (searchOfEδ k)
+    **DEFECTS.** Base `EBot vs CooperateBot = (D, C)`: EBot's first branch runs
+    the opponent against DefectBot, and CooperateBot cooperates there, so EBot
+    reads "exploitable" and defects. The tau instance probes that same
+    exploitability question, whose atom is refutable, so its guard fails. This
+    is the hypothesis the δ_C-column bots (both TFTs) hold about TauEBot. -/
+def eOfCoopδ (k : Nat) : Prog := probeSearchδ k tauDefectδ
+
+/-- `E(δ_L)`: TauEBot seeing TauDupoc — the hypothesis the δ_L-column bots hold
+    about TauEBot.
+
+    **COOPERATES.** Base `EBot vs DupocBot = (C, D)`: Dupoc is not exploitable
+    (it defects against DefectBot), and it cooperates with CooperateBot, so
+    EBot's second branch fires and it cooperates. Note the asymmetry with
+    `L(δ_E)` below — the same base cell read from the two sides — which is
+    exactly what separates Def 3 from Def 4. -/
+def eOfSearchδ (k : Nat) : Prog := probeSearchδ k tauCoopδ
+
+/-- `L(δ_E)` / `Tp(δ_E)` restated for the ENLARGED zoo: the Dupoc-flavoured
+    hypothesis TauEBot holds. **DEFECTS** — `searchOfEδ` above already captures
+    it (base `DupocBot vs EBot = (D, C)`); named here so the six-slot guard
+    lists read symmetrically. -/
+abbrev dupocOfEδ (k : Nat) : Prog := searchOfEδ k
 
 /-! ## The σ-players
 
@@ -143,23 +162,49 @@ Weights `wC wD wTs wTp wL : Nat` over an implicit common denominator `W = Σw`;
 `θ` is the α-threshold in that scale (`θ = ⌈α·W⌉`); cooperate iff fired mass `≥ θ`.
 `TauCooperate`/`TauDefect` are signal-blind constants. -/
 
-/-- TauDupoc's guard list: the δ_L column ("does B, seeing exactly me, cooperate"),
-    Löbian guard last. -/
-def dupocSig (k wC wD wTs wTp wL : Nat) : GuardList :=
+/-! ## The σ-players (SIX-slot guard lists, enlarged zoo 2026-08-12)
+
+Every guard list votes over all six templates — Coop, Defect, TFTSim, TFTPf,
+Dupoc, EBot — so a signal over the full zoo is representable and the Def-3/Def-4
+comparison can be certified end to end. Löbian/self guards last, as always.
+
+The three columns differ in WHICH instance each hypothesis resolves to, and the
+δ_L and δ_E columns disagree on exactly the EBot/Dupoc pair — the asymmetric
+base cell `EBot vs DupocBot = (C, D)` read from its two sides:
+
+| hypothesis | δ_C column (TFTs) | δ_L column (TauDupoc) | δ_E column (TauEBot) |
+|---|---|---|---|
+| Coop   | C | C | C |
+| Defect | D | D | D |
+| TFTSim | C | C | **D** |
+| TFTPf  | C | C | **D** |
+| Dupoc  | C | C (quine) | **D** |
+| EBot   | **D** | **C** | C (quine) |
+
+So the cooperation masses are: δ_C `wC+wTs+wTp+wL`, δ_L `wC+wTs+wTp+wL+wE`,
+δ_E `wC+wE`. -/
+
+/-- TauDupoc's guard list: the δ_L column ("does B, seeing exactly me,
+    cooperate"), Löbian guard last. Everything but Defect fires — including
+    EBot, which cooperates with Dupoc. -/
+def dupocSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
   .cons wC (probe tauCoopδ)
     (.cons wD (probe tauDefectδ)
       (.cons wTs (probe (simOfSearchδ k))
         (.cons wTp (probe (searchOfSearchδ k))
-          (.cons wL (probe (TauDupocδ k)) .nil))))
+          (.cons wE (probe (eOfSearchδ k))
+            (.cons wL (probe (TauDupocδ k)) .nil)))))
 
 /-- TauTitForTatPf's guard list: the δ_C column ("does B, seeing TauCooperate,
-    cooperate") — all shallow, no Löb guard. -/
-def tftPfSig (k wC wD wTs wTp wL : Nat) : GuardList :=
+    cooperate") — all shallow, no Löb guard. EBot DEFECTS here (it exploits a
+    cooperator), which is what makes the δ_C and δ_L columns differ. -/
+def tftPfSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
   .cons wC (probe tauCoopδ)
     (.cons wD (probe tauDefectδ)
       (.cons wTs (probe simOfCoopδ)
         (.cons wTp (probe (searchOfCoopδ k))
-          (.cons wL (probe (searchOfCoopδ k)) .nil))))
+          (.cons wE (probe (eOfCoopδ k))
+            (.cons wL (probe (searchOfCoopδ k)) .nil)))))
 
 /-- The TauCooperate player. -/
 def TauCooperate : Prog := .const .C
@@ -168,50 +213,54 @@ def TauCooperate : Prog := .const .C
 def TauDefect : Prog := .const .D
 
 /-- The TauDupoc player at guard budget `k`, weights `w⃗`, threshold `θ`. -/
-def TauDupoc (k θ wC wD wTs wTp wL : Nat) : Prog :=
-  .tsearch k (dupocSig k wC wD wTs wTp wL) θ (.const .C) (.const .D)
+def TauDupoc (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
+  .tsearch k (dupocSig k wC wD wTs wTp wL wE) θ (.const .C) (.const .D)
 
 /-- TauEBot's guard list: the δ_E column ("does B, seeing exactly me,
-    cooperate"), quine last. Same reciprocity geometry as `dupocSig`, read one
-    column over — which is exactly why it separates the definitions. -/
-def eSig (k wC wD wTs wTp wE : Nat) : GuardList :=
+    cooperate"), quine last. Only Coop and the quine fire — TFT and Dupoc both
+    defect against EBot — which is why its boundary is `wC + wE`. -/
+def eSig (k wC wD wTs wTp wL wE : Nat) : GuardList :=
   .cons wC (probe tauCoopδ)
     (.cons wD (probe tauDefectδ)
       (.cons wTs (probe simOfEδ)
         (.cons wTp (probe (searchOfEδ k))
-          (.cons wE (probe (TauEBotδ k)) .nil))))
+          (.cons wL (probe (dupocOfEδ k))
+            (.cons wE (probe (TauEBotδ k)) .nil)))))
 
 /-- The TauEBot player — the SEPARATING bot (see `eSig`). -/
-def TauEBot (k θ wC wD wTs wTp wE : Nat) : Prog :=
-  .tsearch k (eSig k wC wD wTs wTp wE) θ (.const .C) (.const .D)
+def TauEBot (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
+  .tsearch k (eSig k wC wD wTs wTp wL wE) θ (.const .C) (.const .D)
 
-/-- The TauTitForTatPf player (prover TFT): thresholds PROVABLE cooperation of the
-    δ_C column. -/
-def TauTFTPf (k θ wC wD wTs wTp wL : Nat) : Prog :=
-  .tsearch k (tftPfSig k wC wD wTs wTp wL) θ (.const .C) (.const .D)
+/-- The TauTitForTatPf player (prover TFT): thresholds PROVABLE cooperation of
+    the δ_C column. -/
+def TauTFTPf (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
+  .tsearch k (tftPfSig k wC wD wTs wTp wL wE) θ (.const .C) (.const .D)
 
 /-- Left-spine `.ite` decision tree over weighted action-guards — the behavioral
-    mirror of the `tsearch` peel: each level runs one guard; a C-result subtracts the
-    weight from the residual threshold; residual 0 commits C; exhaustion commits D. -/
+    mirror of the `tsearch` peel: each level runs one guard; a C-result subtracts
+    the weight from the residual threshold; residual 0 commits C; exhaustion
+    commits D. -/
 def iteTree : List (Nat × Prog) → Nat → Prog
   | _, 0 => .const .C
   | [], _ => .const .D
   | (w, g) :: rest, θ => .ite g Action.C (iteTree rest (θ - w)) (iteTree rest θ)
 
-/-- TauTitForTatSim's guard list: the δ_C column as `.sim` probes (run the frozen
-    instance against itself and read off its action). -/
-def tftSimSig (k wC wD wTs wTp wL : Nat) : List (Nat × Prog) :=
+/-- TauTitForTatSim's guard list: the δ_C column as `.sim` probes (run the
+    frozen instance against itself and read off its action). -/
+def tftSimSig (k wC wD wTs wTp wL wE : Nat) : List (Nat × Prog) :=
   [(wC, .sim (.bot tauCoopδ) (.bot tauCoopδ)),
    (wD, .sim (.bot tauDefectδ) (.bot tauDefectδ)),
    (wTs, .sim (.bot simOfCoopδ) (.bot simOfCoopδ)),
    (wTp, .sim (.bot (searchOfCoopδ k)) (.bot (searchOfCoopδ k))),
+   (wE, .sim (.bot (eOfCoopδ k)) (.bot (eOfCoopδ k))),
    (wL, .sim (.bot (searchOfCoopδ k)) (.bot (searchOfCoopδ k)))]
 
-/-- The TauTitForTatSim player (behavioral TFT): thresholds TRUE cooperation of the
-    δ_C column — sim probes yield actions, not provability bits, so `tsearch` does
-    not apply and the threshold compiles to the `.ite` decision tree (recorded
-    limitation; a `tsim` vote constructor is possible future work). -/
-def TauTFTSim (k θ wC wD wTs wTp wL : Nat) : Prog :=
-  iteTree (tftSimSig k wC wD wTs wTp wL) θ
+/-- The TauTitForTatSim player (behavioral TFT): thresholds TRUE cooperation of
+    the δ_C column — sim probes yield actions, not provability bits, so
+    `tsearch` does not apply and the threshold compiles to the `.ite` decision
+    tree (recorded limitation; a `tsim` vote constructor is possible future
+    work). -/
+def TauTFTSim (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
+  iteTree (tftSimSig k wC wD wTs wTp wL wE) θ
 
 end PD.Tau

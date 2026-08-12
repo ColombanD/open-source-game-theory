@@ -174,11 +174,11 @@ def _lean_cell(
     # the reversed lookup `outcome col row` carries the column player's action
     # at index 0 — taking index 1 there would read the row player's action from
     # the wrong regime.
-    row_cell = _lean_side(library, lean_row, lean_col, alpha, channel[col])
-    col_cell = _lean_side(library, lean_col, lean_row, alpha, channel[row])
-    if row_cell is None or col_cell is None:
+    row_act = _lean_side(library, lean_row, lean_col, alpha, channel[col])
+    col_act = _lean_side(library, lean_col, lean_row, alpha, channel[row])
+    if row_act is None or col_act is None:
         return None
-    return (row_cell[0], col_cell[0])
+    return (row_act, col_act)
 
 
 # Weight-slot layout of the Lean guard lists (`dupocSig`/`tftPfSig`), in the
@@ -197,43 +197,31 @@ _SLOT_OF_BASE: dict[str, str] = {
 _DISCRETIZATION_SCALE = 10**6
 
 
-# Which hypotheses each Lean guard list actually votes over. This is NOT the
-# same as "which bots have theorems": `dupocSig`/`tftPfSig` have five slots for
-# the FIVE-template milestone-1 zoo and contain no EBot hypothesis, while
-# `eSig` votes over the δ_E column. A signal carrying mass outside a bot's own
-# guard list cannot be handed to its theorems at all.
-_LEAN_HYPOTHESES: dict[str, frozenset[str]] = {
-    "TauDupoc": frozenset({"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot"}),
-    "TauTFTSim": frozenset({"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot"}),
-    "TauTFTPf": frozenset({"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot"}),
-    "TauEBot": frozenset({"CooperateBot", "DefectBot", "TitForTatBot", "EBot"}),
-    # constants ignore their signal entirely, so any signal is representable
-    "TauCooperate": frozenset(
-        {"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot", "EBot"}
-    ),
-    "TauDefect": frozenset(
-        {"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot", "EBot"}
-    ),
-}
+# Every Lean guard list is now SIX-slot (2026-08-12): each votes over the whole
+# zoo, so any signal over these six bots is representable and the comparison can
+# be certified end to end. The columns still differ in WHICH instance each
+# hypothesis resolves to — that is the probe geometry — but no bot is blind to a
+# hypothesis any more.
+_LEAN_HYPOTHESES: frozenset[str] = frozenset(
+    {"CooperateBot", "DefectBot", "TitForTatBot", "DupocBot", "EBot"}
+)
 
 
 def _signal_is_representable(lean_bot: str, signal: Signal) -> bool:
     """Can this signal be handed to `lean_bot`'s theorems?
 
-    Only if every hypothesis carrying mass appears in THAT bot's Lean guard
-    list. Dropping an unrepresentable weight would silently ask the theorems a
-    DIFFERENT question — a renormalized signal over fewer hypotheses — and then
-    compare the answer against a model that did see the extra one. Those cells
-    must read `predicted`, never `proven` and never `CONFLICT`.
+    Only if every hypothesis carrying mass appears in the Lean guard lists.
+    Dropping an unrepresentable weight would silently ask the theorems a
+    DIFFERENT question — a renormalized signal over fewer hypotheses — so such
+    cells must read `predicted`, never `proven` and never `CONFLICT`.
 
-    This is a real scope limit, not a technicality: on the 5-bot zoo, Lean's
-    `TauDupoc` has no EBot hypothesis, so it and the Python `TauDupoc` (which
-    votes over one) are genuinely different bots. Certifying the enlarged zoo
-    end to end would need the milestone-1 guard lists widened to six slots.
+    Since the guard lists were widened to six slots this is satisfied by the
+    whole comparison zoo; the check remains as the guard for any FUTURE bot
+    added to the Python model before its Lean counterpart exists.
     """
-    allowed = _LEAN_HYPOTHESES.get(lean_bot, frozenset())
     return all(
-        p <= _MASS_TOL or base in allowed for base, p in signal.weights.items()
+        p <= _MASS_TOL or base in _LEAN_HYPOTHESES
+        for base, p in signal.weights.items()
     )
 
 
@@ -243,8 +231,8 @@ def _lean_side(
     lean_col: str,
     alpha: float,
     signal: Signal,
-) -> tuple[str, str] | None:
-    """Look up one matchup at the (θ, w⃗) induced by `signal`.
+) -> str | None:
+    """The acting player's certified action at the (θ, w⃗) induced by `signal`.
 
     The Lean statements are over INTEGER weights with `θ = ⌈α·W⌉` (design note
     Def-4 convention 3). Discretizing has one trap: the float cooperation mass
@@ -279,14 +267,15 @@ def _lean_side(
         # quine (`wC + wE`) — TitForTat and Dupoc both DEFECT against EBot, so
         # their probe bits are 0. That difference is the whole reason TauEBot
         # separates Def 3 from Def 4.
-        w["wC"] + w["wTs"] + w["wTp"] + w["wL"],
-        w["wC"] + w["wE"],
+        w["wC"] + w["wTs"] + w["wTp"] + w["wL"] + w["wE"],   # δ_L column (TauDupoc)
+        w["wC"] + w["wTs"] + w["wTp"] + w["wL"],             # δ_C column (the TFTs)
+        w["wC"] + w["wE"],                                   # δ_E column (TauEBot)
         total,
     ):
         if abs(theta - candidate) <= 1:
             theta = candidate
             break
-    return library.cell(lean_row, lean_col, theta, w)
+    return library.row_action(lean_row, lean_col, theta, w)
 
 
 def compare_at(

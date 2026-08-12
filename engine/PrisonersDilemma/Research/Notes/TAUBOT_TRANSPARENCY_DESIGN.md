@@ -516,13 +516,28 @@ branch probes MirrorBot, whose SELF-play is the one non-terminating cell, but
 MirrorBot is never a hypothesis in this zoo and the branch-3 probes that
 actually run (`DefectBot`/`EBot` vs MirrorBot) both terminate.
 
-**A real scope limit remains.** Lean's `dupocSig`/`tftPfSig` have five slots
-and contain NO EBot hypothesis, so on the 5-bot zoo the Lean `TauDupoc` and the
-Python `TauDupoc` (which votes over an EBot hypothesis) are genuinely different
-bots. `_signal_is_representable` now checks per-bot guard-list membership, so
-those cells read `predicted` rather than producing spurious conflicts: the
-separating run is **18% certified, zero conflicts**. Certifying the enlarged
-zoo end to end would need the milestone-1 guard lists widened to six slots.
+**The guard lists are now SIX-slot (2026-08-12), and BOTH runs are 100%
+certified with zero conflicts.** Every bot votes over the whole zoo, so the
+separating comparison — the informative half — rests entirely on the kernel:
+88 Def-4 theorems, control 304/304 cells and separating 1800/1800.
+
+Widening exposed two things the five-slot version had hidden:
+
+1. **The three probe columns have DIFFERENT cooperation masses**: δ_L
+   `wC+wTs+wTp+wL+wE` (EBot cooperates with Dupoc), δ_C `wC+wTs+wTp+wL` (EBot
+   DEFECTS against a cooperator, so its bit is 0 there), δ_E `wC+wE` (TFT and
+   Dupoc both defect against EBot). The columns disagree on exactly the
+   EBot/Dupoc pair — the asymmetric base cell read from its two sides.
+2. **MIXED-REGIME cells are a real gap.** With different masses one θ can put
+   one player above its boundary and the other below, and no same-regime
+   theorem can express that. Twenty `_mixedRC`/`_mixedCR` statements now cover
+   the straddling cells; without them the matrix was silently incomplete at
+   precisely the (t, α) points where the definitions differ most.
+
+A companion Python bug fell out of the same widening: a matchup's two players
+see DIFFERENT signals, so a lookup evaluating both regime conditions against
+one weight vector reads the wrong theorem. `Def4Library.row_action` judges each
+player by its own regime alone; `cell` remains for the shared-signal case.
 
 **Result 2 — one bot separates them.** Adding EBot (`DupocBot vs EBot = (D, C)`
 — Dupoc defects, EBot cooperates) flips TauDupoc's EBot bit (Def3 D → Def4 C,
