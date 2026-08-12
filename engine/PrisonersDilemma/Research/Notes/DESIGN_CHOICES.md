@@ -89,6 +89,150 @@ the transport theorem was built for.
 
 ---
 
+## The floor is priced finite consistency — Löb, G2, and Pudlák on `search_f` (2026-08-12)
+
+*Companion to the 2026-07-02 floor section below, which records the engine-internal
+forcings (anti-diagonal, soundness induction, decidability). This entry records the
+LOGICAL analysis that resolves the "floor-coarseness question" raised by the Def-4
+comparison (TAUBOT_TRANSPARENCY_DESIGN.md, Part III): is charging `k` for an
+else-certificate too crude when the refuted guard is about a mere constant?*
+
+**Provenance.** The Def-3/Def-4 separating cell `outcome_DupocBot_vs_EBot = (D, C)`
+rests on Dupoc being unable to certify EBot's (true!) cooperation at ANY budget. The
+natural objection, in two escalating forms: (i) *"Dupoc's failed sub-search is about
+DefectBot, a constant — surely `¬(DefectBot plays C)` is cheaply provable, so why pay
+the floor?"* and (ii) *"we are not asking S to reason about its own soundness; we hold
+an actual proof of `¬φ`, doesn't that suffice?"* Both are answered below; the answers
+are Löb's theorem and Gödel II respectively, and the bounded price tag is Pudlák's.
+
+### The two statements, and where each sits in the rule
+
+The guard of `.search k φ p q` branches on `proofSearch k φ`, i.e. on
+
+```
+¬□ₖφ   —   "S has NO proof of φ of length ≤ k"
+```
+
+NOT on `¬φ`. The objection's cheap proof — DefectBot plays D, `D ≠ C`, hence `¬φ` via
+`atomNeg` — is real, and the rule ALREADY admits it: it is the `Pf m (.neg φ)` premise,
+the `m` summand. The `+ k` is the price of the remaining bridge
+
+```
+□(¬φ)  ⟹  ¬□ₖφ        "we proved ¬φ, therefore no proof of φ exists"
+```
+
+which is semantically trivial and syntactically Gödel-hard. Two candidate shortcuts,
+both locked:
+
+### Route 1 — reflection, blocked by Löb
+
+"If S proved φ it would be true; φ is false; hence unprovable" uses `□φ → φ` inside S.
+Löb: `S ⊢ □φ → φ` **iff** `S ⊢ φ`. Our φ is false, hence unprovable, hence the
+reflection instance is underivable — not expensive, *unavailable*.
+
+### Route 2 — consistency, blocked by G2 (the seven-line derivation)
+
+The objection's form (ii) is the schema `□¬φ → ¬□φ` ("S doesn't prove both").
+Suppose S had it:
+
+```
+(H)  S ⊢ □¬φ → ¬□φ                    the proposed principle, internalized
+(1)  S ⊢ ¬φ                            the cheap refutation (atomNeg)
+(2)  S ⊢ □¬φ                           D1 on (1): S checks its own receipt
+(3)  S ⊢ ¬□φ                           MP of (H),(2) — certified UNPROVABILITY
+(4)  S ⊢ □⊥ → □φ                       ⊥→φ tautology; D1+D2 (flooding: a proof
+                                        of ⊥ extends to a proof of anything)
+(5)  S ⊢ ¬□φ → ¬□⊥                     contrapose (4)
+(6)  S ⊢ ¬□⊥  =  Con(S)                from (3),(5)
+(7)  S inconsistent                     Gödel II (meta)
+```
+
+Steps 1, 2, 4, 5 are receipts and gluing; ALL the force is in (3). The slogan that
+explains (5)–(6): **in an inconsistent system nothing is unprovable, so any certified
+unprovability is a certified consistency.** Routes 1 and 2 are the same locked door —
+G2 is Löb at `φ := ⊥`.
+
+### The bounded version: finite consistency, permitted but priced
+
+With budgets, everything survives with a ledger. Bounded flooding: a `j`-proof of ⊥
+extends to a `(j + |φ| + c)`-proof of φ, so with `j := k − |φ| − c`:
+
+```
+S ⊢ □_{k−|φ|−c}⊥ → □ₖφ,   contraposed:   S ⊢ ¬□ₖφ → ¬□_{k−|φ|−c}⊥
+```
+
+Hence the bounded principle `□ₘ¬φ → ¬□ₖφ` is (up to small shifts) the **finite
+consistency statement** `Con_{≤ ≈k}(S) = ¬□_{≤ ≈k}⊥`. The crucial asymmetry with the
+unbounded case: **G2 does NOT forbid finite consistency** — `Con_{≤n}` is a true Δ₀
+sentence for each fixed n (finitely many candidate proofs), so S proves it. *This is
+why `search_f` can exist as a sound rule at all.* What replaces impossibility is a
+price:
+
+* **Theorem (finitized G2 — Pudlák 1986/87, cf. Friedman; survey: Pudlák, "The
+  Lengths of Proofs", Handbook of Proof Theory 1998):** every S-proof of `Con_{≤n}(S)`
+  has ≥ `n^ε` symbols, some ε > 0; and `poly(n)`-length proofs exist. Both bounds are
+  theorems.
+* **The ledger.** If P is the size of a derivation of the bounded principle at budget
+  k, running (1)–(6) with sizes gives `P + m + |φ| + O(1) ≥ (k − |φ| − c)^ε`. In the
+  engine's cases `m, |φ| = O(log k)` (a numeral plus constants), so for all large k:
+  `P ≥ k^ε / 2^{ε+1} = Ω(k^ε)`. Any rule handing out such certificates at
+  `n + m + c_node = O(log k)` is mispriced by an exponential factor — and the T32
+  anti-diagonal is the machine-checked cash-out of exactly that mispricing in the
+  self-referential case.
+* **Epistemic status, carefully.** The `n^ε` lower bound is a THEOREM, not a
+  conjecture. What is open/conjectural: the tightness of the exponent (whether the true
+  cost is near-linear — Pudlák conjectures the upper end) and the broader feasible-
+  incompleteness program (P vs NP linkage). The engine's floor at exactly `k` sits
+  inside the proven band `[k^ε, poly(k)]`; its precise position is calibrated by the
+  machine-checked internal forcings (section below), which are independent of Pudlák.
+  Caveat: length-of-proof results are encoding-sensitive (symbols vs lines, schemata),
+  and the engine's S is a bespoke transcript calculus — Pudlák applies through the
+  Appendix-B "transcripts behave like PA proofs" analogy, as corroboration.
+
+### Case study: `DupocBot × EBot = (D, C)` — where in the chain the toll is paid
+
+The certificate of EBot's cooperation must replay EBot's FIRST probe
+(`.sim .opp (.bot DefectBot)`), i.e. certify **Dupoc's own else-play** against
+`.bot DefectBot` — a `search_f` step at Dupoc's OWN node: cost `n + m + k + c_node`
+with `n, m` small and `k` = Dupoc's budget. So Dupoc's guard, capacity exactly `k`,
+must contain a finite-consistency instance billed at `≥ k` — from inside. Raising k
+raises both sides in lockstep; hence unprovable at EVERY budget
+(`no_provable_EBot_C_tail`), not a small-budget artifact.
+
+Two readings worth recording:
+
+* **The counterfactual is coherent.** `(C, C)` is semantically consistent: the
+  dependency graph Dupoc→(EBot's probes)→(Dupoc vs DefectBot/CooperateBot) is
+  well-founded, no fixpoint needed; under a discounted rule the whole transcript is
+  `O(log k)` and same-k `(C, C)` follows. So `(C, C)` is the behavior of a DIFFERENT
+  logic — one whose agents get bounded-unprovability-of-others for free. That is: a
+  simulator. Granting the discount collapses the prover into the behaviorist.
+* **The cell IS the prover/behaviorist gap, priced at one rule.** `¬φ` is cheap;
+  `¬□ₖφ` is Gödel-priced; the floor is the exchange rate. EBot pays fuel (running is
+  not proving); Dupoc pays consistency. Bounded provers pay a Löbian tax on negative
+  information about each other — and that tax is exactly what the Def-4 transparency
+  experiments measure as the prover/behavioral split.
+
+### The examined alternative: a "search-free-subject discount" — REJECTED
+
+Proposal: charge the honest `n + m + c_node` when the refuted guard's (post-subst)
+plays-subject is `hasSearch = false` (a frozen constant — truth fixed by evaluation,
+no certificate feedback). Verdict against the three independent forcings:
+
+| forcing | verdict |
+|---|---|
+| Consistency | *Plausibly survives*: T32's guard subject contains `.search`; a false guard about a search-free constant cannot be flipped by lifting its own else-certificate. |
+| Provable soundness | **Breaks.** `wv_sound_upto`'s `search_f` arm derives `¬Pf k φ` from `¬φ.interp` via the strong IH *at k*, available only because the floor puts k strictly below the certificate's cost. Discounted, k may exceed the induction budget; and the search-free fragment's own completeness does not substitute (deriving `¬Pf k φ` needs soundness of FULL `Pf` at k — the very statement under induction). A repair would be a new global induction strategy, not a side condition. |
+| Faithfulness | **Fails.** Löb and G2 block the semantic shortcuts even for guards about constants; the certificate vouches for proof-space silence, and the honest price of that is Pudlák-polynomial, not logarithmic. |
+
+So the floor stands for all guard shapes. The general lesson, sharpened: the floor was
+never "we couldn't find a short proof of a provable fact" — it is the intrinsic,
+theorem-priced cost of finite consistency, and `search_f` is that statement wearing a
+cost annotation. (This subsumes and grounds the older "Σ₁/Π₁ asymmetry" paragraph
+below: the bounded Π₁ is in fact Δ₀ and provable — the wall is its PRICE.)
+
+---
+
 ## The `search_f` floor: else-certificates cost `n + m + k + c_node` (2026-07-02)
 
 **The decision.** A `PlaysProof` for a search bot's *else*-play (the branch taken when
@@ -161,6 +305,7 @@ literal-verification price. "Too strong" is backwards.
 | `¬Provable k g` as a premise (unprovability-premised `search_f`) | Non-monotone fixpoint — not even a proof system; the anti-diagonal is its paradox; kills r.e.-ness, hence `decFull`, hence decidability |
 | Refutation premise, no floor (`n + m + c_node`) | Breaks `sound_upto`'s strong induction (needs IH at budget k below the conclusion cost) |
 | Oracle receipts ("point at `decFull`'s run") | Reflection smuggled back in: a short Π₁ certificate about S itself — same Gödel II wall |
+| Search-free-subject discount (`n + m + c_node` when the refuted guard's subject has `hasSearch = false`) | Plausibly consistent, but breaks `sound_upto`'s induction architecture and is unfaithful (Löb/G2/Pudlák) — full analysis in the 2026-08-12 section above |
 
 **How to route around it (bot level, not rule level):**
 
