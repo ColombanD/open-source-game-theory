@@ -250,7 +250,28 @@ THROUGH COLUMNS.
 **Milestone 2 (not now):** TauEBotσ — blocked on the Def-4 τ(EBot) redefinition
 (the crowd-exploiter retraction); when it lands, redo the graph analysis before
 touching the Löb machinery.
-| **5** | `Tau/SysDefs.lean` (σ-zoo as ONE `ProgList` + `Positive` by `decide`) → constants' certificates → mutual premises by peel-chaining → `ps_probe_sysQuine` (vector engine + n-ary eval inversion) → `tauDupocσ_phase` (both legs) → `outcome_TauDupocσ_vs_TauDupocσ` → bistability audit | first Route-A theorem compiles; open cells documented, not fought | 1–2 weeks |
+| **5** ✓ (M1) | `Tau/SysDefs.lean` (σ-zoo as ONE `ProgList` + `Positive` by `decide`) → constants' certificates → mutual premises by peel-chaining → `ps_probe_sysQuine` (vector engine + n-ary eval inversion) → `tauDupocσ_phase` (both legs) → `outcome_TauDupocσ_vs_TauDupocσ` → bistability audit | first Route-A theorem compiles; open cells documented, not fought | 1–2 weeks |
+
+**Phase 5 MILESTONE 1 COMPLETE (2026-08-13, one day, commits 5f421e4…a82e01b):**
+`outcome_TauDupocSys_vs_TauDupocSys = (C,C)` (+ the `(D,D)` α-flip) are THEOREMS —
+Löbian self-cooperation under common-knowledge blur, 3-axiom footprint, build
+green (3308 jobs). The final design point fixed by COST: the Löb premise must be
+O(log k) but a refutation in the peel prefix pays the `search_f` floor ≥ k, so
+the guard order is **[C, L, D, Ts] — Löbian SECOND** — and the 33rd constructor
+`botSysTsearchDefer` (cited head + deferred Löb guard, trailing guards unread)
+derives `□_k φ₁ → φ₁` at `c_guard k + |conclusion|`. Two σ-instance readers
+now exist: `botSysTsearchBranch` (cite/refute/defer — for non-Löb readings) and
+`botSysTsearchDefer` (the Löb chain's). Regimes: instance
+`dC + dT < θ₂ ≤ dC + dL` (the threshold is DECIDED by the quine bit — above the
+C+T mass, within C+L), player `θ ≤ wC + wL` / `wC + wL + wT < θ`, the band
+between honest-OPEN (Gödelian T-bit). Honest-envelope consequence, as
+predicted: `k₂` depends on the weights (`sysB` — a `.sys` probe carries the
+whole system), unlike Def 4's weight-uniform thresholds.
+**Milestone 2 (open):** TauTFTSimSys phase theorems (behavioral watcher —
+semantic play propagation through the σ_C column, the split/budget-inheritance
+theorem), the base-vs-Def-5 comparison cells, TauTFTPf's return (vector
+engine), TauEBotσ (blocked on the Def-4 τ(EBot) redefinition), and the
+Metatheory (T31–T54) migration for `.sys`/`.selfIdx`/`.tsearch`.
 | **6** | Split-collapse theorem pair; Python mirror in `app/src/pd_runner/tau/` for `(t, α)` sweeps → EGT | — | 1 week (parallel with 5's audit) |
 
 The Matrix-level proof shape survives byte-for-byte (`outcome_of_ex_plays` on the
