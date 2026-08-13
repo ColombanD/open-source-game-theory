@@ -6,7 +6,7 @@ and nothing before Phase 2 is Route-A-specific sunk cost. Re-decide after Phase 
 Spike A's budget arithmetic in hand. Parent note: `TAUBOT_TRANSPARENCY_DESIGN.md`
 (Parts I–III: Defs 1–4); this note is its Part IV.
 
-## What Def 5 is
+## What Def 5 isTauA(alpha)(TauBi(alpha); 1)
 
 Def 4 probes hypotheses at **point-mass** signals: `probe(B, δ_T)` = "does B, seeing
 exactly T, cooperate". Def 5 probes at the **σ-blur itself**: `probe(B, σ_T)` = "does
@@ -127,6 +127,27 @@ in the opponent slot (Def-4 anti-pattern, still banned).
 | **1a** | Spike A `Research/Spikes/sysLob/VectorPblt.lean`: n-ary mutual bounded Löb (iterated-unary vs n-ary `Formula.diag` — try both) | budgets close at `O(log k)`, constants poly(n) | 2–3 days |
 | **1b** | Spike B `Research/Spikes/sysLob/MiniSys.lean`: stripped `Prog` clone with `.sys`/`.selfIdx`/`ProgList`; a 2-bot mutual quine `#eval`s correctly | `sysClose`/eval equations stay structural | 1–2 days |
 | **—** | **RE-DECIDE A vs B** with Spike A's arithmetic | — | — |
+
+**Phase 1 RESULTS (2026-08-13, both spikes green, zero sorry, 3-axiom footprint):**
+
+* **Spike A: PASS.** `vector2_full_pblt_engine` is a theorem on the LIVE engine —
+  from the two full-dependency premises `□_k A → (□_k B → A)` and
+  `□_k A → (□_k B → B)` (self-loops included), both sentences are provable past a
+  threshold. Iterated-unary route, ZERO new constructors (Family-B completion's
+  `implS`/`implK` carry the B-combinator glue). The stage lemma
+  `loeb_premise_under_box` is the reusable atom: Löb under a boxed side-antecedent,
+  side box pre-lowered so the K-distribution lands below the premise's self-box.
+  Budget caveat (inside the gate, but worth eyes): threshold constants CASCADE —
+  master `2⁵²·V ≤ k` vs the cycle engine's `2¹⁷·V`, growing `2^(O(n))` in
+  elimination stages. Fine for the 3-instance milestone zoo; the n-ary
+  `Formula.diag` is the poly(n) refinement if ever needed.
+* **Spike B: PASS.** All `rfl` defeq tests hold; `sysClose` stays structural
+  unannotated; nested-`.sys` shadowing is benign; the mutual list member causes no
+  equation trouble. ONE binding constraint found for Phase 2: the guard-list
+  evaluator must THREAD FUEL PER LIST ELEMENT — the naive same-fuel `evalL`
+  silently compiles by well-founded recursion and `rfl` dies (the tsearch landmine,
+  reproduced and dodged at toy scale). `.sys`'s eval must charge fuel per element,
+  like `.tsearch`'s stepwise peel.
 | **2** | Language landing: `Program.lean` mutual block + `sysClose` + size + subst arm; `Dynamics.lean` eval arm | all 81 base + 88 tau outcome statements byte-identical; 3 axioms; `#eval` demos unchanged; Metatheory pinning decided consciously | 3–5 days |
 | **3** | `PlaysProof.sysStep` (twin of `botSearchStep`) + `sound_upto`/`wv_sound_upto` arms + `Pf_mono`/`Pf.induct` wiring + `h_sys` kill obligation in every Exclusion census | both targets green; no existing exclusion theorem weakened | 3–5 days |
 | **4** | Promote Spike A → `Base/Loeb.vector_pblt_engine` (size-parametric; n=2 engines untouched) | consumed hypotheses match Phase-5 needs | 2–3 days |
@@ -152,12 +173,21 @@ phase theorem's `.1`/`.2`); everything new lives below the phase theorem.
 
 ## Part V — Open decisions (deferred, with their decision point)
 
-- **n-ary `Formula.diag` vs iterated unary fixpoints** — Spike A decides (transcript
-  inflation per iteration vs one new internalization + soundness arm).
-- **Engine size hypotheses**: fit the hardcoded `100·log₂ k + 1000` or parametrize —
-  Spike A measures.
+- ~~**n-ary `Formula.diag` vs iterated unary fixpoints**~~ **RESOLVED (Spike A,
+  2026-08-13): iterated unary.** Zero new constructors, closes at `O(log k)`;
+  constants cascade `2^(O(n))` — acceptable at zoo scale. The n-ary diag stays a
+  documented poly(n) refinement, not scheduled.
+- ~~**Engine size hypotheses**~~ **RESOLVED (Spike A): stay parametric.** The
+  cascade's intermediate transcripts (`2²⁸·V`-order) do not fit `100·log₂ k + 1000`;
+  `bloeb_engine`/`mutual_loeb` being budget-parametric absorbed this with no engine
+  change. Phase 4's `vector_pblt_engine` must keep parametric budget hypotheses and
+  NOT copy the `_id` wrappers' hardcoded bounds.
 - **Index type** `Nat` (with `none` out-of-range) vs `Fin` in `.selfIdx`/`.sys` —
-  Spike B decides (ergonomics of the mutual block vs dependent-index pain).
+  Spike B used `Nat` + `Option` throughout with no friction; default to `Nat` at
+  Phase 2 unless the subst arms say otherwise.
+- **NEW (Spike B): fuel-per-element eval.** `.sys`'s list evaluation must thread
+  fuel per element (naive same-fuel list recursion silently compiles well-founded
+  and kills `rfl`). Binding constraint on the Phase-2 `Dynamics.lean` arm.
 - **Metatheory pinning**: the Decidability target is already unpinned pending tau M2;
   decide at Phase 2 whether Def 5 lands before or after the M2 re-pin — modesty of
   `.sys` args (closed terms, plausibly modest) is unexamined.
