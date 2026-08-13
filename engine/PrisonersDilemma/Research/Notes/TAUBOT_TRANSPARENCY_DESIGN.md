@@ -407,9 +407,18 @@ agents (measure-theoretic eval + probabilistic Löb — a thesis in itself).
 recursive reference routed through `proofSearch`. This escapes Def 1's rejection —
 Def 1's recursion was semantic (via `play`, fuel-total, no Löb rescue); Def 4's is
 proof-theoretic, so bounded Löb breaks the regress exactly as in base DupocBot
-self-play. Def 4 is a bot LANGUAGE, not a uniform lift: probe direction is per-bot
-(TauDupoc probes reciprocity "B seeing me"; the TFTs probe "B seeing TauCooperate"),
-so its (t, α) diagrams answer a different question than Def 3's.
+self-play.
+
+> **CORRECTED 2026-08-13 (see the retraction section at the end of this part).**
+> This part originally framed Def 4 as "a bot LANGUAGE, not a uniform lift" with
+> per-bot probe direction, and claimed its (t, α) diagrams answer a different
+> question than Def 3's. That framing was wrong: properly read, Def 4 is a uniform
+> STRUCTURAL SOURCE LIFT of each base bot, its per-hypothesis bit is the self-probe
+> bit, and **Def 4 COINCIDES with Def 3** (at large k, on terminating cells). What
+> Def 4 adds is the in-language, finite-budget implementation — Löb thresholds,
+> floor cells, the prover/behavioral budget gap — not a different phase geometry.
+> The "separating" TauEBot below is retracted as a lift of EBot. A refined
+> definition is being specified separately.
 
 ## Fixed conventions
 
@@ -556,8 +565,11 @@ lifted at BOTH levels:
   whose docstring anticipated exactly this use.
 * **σ-player** `TauEBot = .tsearch k exploitSig θ (.const D) (.tsearch k tftPfSig θ
   (.const C) (.const D))` — a NESTED tsearch, both stages sharing θ. At point-mass
-  it IS `eδ`, so σ-player and instance family finally cohere. No Löb budget
-  anywhere in its phase theorem.
+  it IS `eδ`, so σ-player and instance family cohere there. No Löb budget
+  anywhere in its phase theorem. **[RETRACTED as a lift of EBot, 2026-08-13:
+  away from point-mass, thresholding each STAGE against θ is a different agent
+  from voting once over the per-hypothesis cascade decisions — see the
+  retraction section.]**
 
 **The new phase structure** (`Tau/Phases.lean`, `Theorems/Tau/Matrix.lean` — 79
 theorems: 4 constants, 42 cooperator cells low/high, 33 EBot cells
@@ -572,26 +584,14 @@ exploitθ/window/highθ):
   cooperate with it — the lifted exploiter exploits, incl. at θ = 0); above it the
   reciprocity mass runs out. **Defection at both ends of the α axis.**
 
-**The honest separation (both runs re-verified: control 100% certified, separating
-1400/1400 cells, 0 conflicts; 45 of 56 phase cells diverge).**
-
-* TauDupoc's Def-3 and Def-4 bit-vectors now COINCIDE (`11010`): its EBot bit is 0
-  under both — for different reasons (Def 3: "my own action vs EBot is D"; Def 4:
-  "EBot's real cooperation is floor-priced") — so at full transparency the per-side
-  lookups literally reproduce the base cell: `row_action(TauDupoc, TauEBot)` at
-  point-mass = D and `row_action(TauEBot, TauDupoc)` = C, i.e. `(D, C)`. **For the
-  Löbian prover, Def 3 and Def 4 agree exactly when the floor is priced honestly**
-  — the old divergence on Dupoc's row was an artifact of the unfaithful bit.
-* The separation lives where it should: in the EXPLOITER. (i) Bit-level: Def 3
-  reads EBot's outcome row ("what does EBot do to B" — it cooperates with
-  TFT/Dupoc/itself); Def 4's cascade reads B's δ_D/δ_C columns (EBot's self-bit is
-  0 — it fails its own reciprocity stage — so Def-4 TauEBot self-play is (D, D)
-  where Def 3's is (C, C)). (ii) **Structural: the window.** Every Def-3 lift is a
-  one-sided monotone threshold in α; TauEBot's non-monotone α-profile (defect /
-  cooperate / defect) is inexpressible there. This is the thesis-grade statement
-  of the Def3/Def4 difference: **Def 3's outcome-averaging erases strategy
-  structure (the exploit check); Def 4 preserves it, at the price of the floor
-  (provability ≠ truth appears as a real bit).**
+**Verification state after the refactor**: control 100% certified, separating
+1400/1400 cells, 0 conflicts. One durable finding from that run: **TauDupoc's
+Def-3 and Def-4 bit-vectors COINCIDE** (`11010`) — its EBot bit is 0 under both,
+for matching reasons (Def 3: "my own action vs EBot is D"; Def 4: "EBot's real
+cooperation is floor-priced") — so at full transparency the per-side lookups
+reproduce the base cell `(D, C)` exactly. The run's *separation* claims (45/56
+diverging phase cells, the window-vs-threshold reading) are RETRACTED below:
+they measured the crowd-exploiter σ-player, not a Def-4 lift of EBot.
 
 **Conventions clarified by the refactor** (supplementing the fixed list above):
 each template's instance family must be its own point-mass instantiation (the
@@ -600,7 +600,76 @@ bots whose base strategy IS the self-probe (Dupoc — the quine stays); and a pr
 column is named by the SIGNAL it instantiates (δ_C, δ_D, δ_L — there is no δ_E
 column anymore).
 
-**Reading.** The control agreement is a genuine anchor result, and the refactored
-separating result is stronger AND cleaner than the one it replaces: one bot — the
-exploiter — separates the definitions, structurally (a window vs a threshold), and
-every cell of the claim is kernel-certified.
+## RETRACTION — Def 4, correctly read, COINCIDES with Def 3 (2026-08-13)
+
+Colomban caught the error starting from the Def-4 self-play cell
+`TauEBot vs TauEBot = (D, D)`: that bot should not be defined that way, and once
+Def 4 is stated properly the two definitions coincide. Everything in this part
+claiming a Def3/Def4 SEPARATION is retracted; the mechanics (the audit, the
+instance layer, the floor lemma) stand.
+
+**The correct reading of Def 4: a uniform STRUCTURAL SOURCE LIFT τ**, not a
+per-bot probe-geometry choice. Take base bot A's own code and lift it
+constructor by constructor — `search(k, g, ·, ·)` keeps its shape with every
+program reference replaced by its tau instance, `sim(X, Y) ↦ sim(τX, τY)`,
+`ite` lifts its branches — and let the σ-player take ONE weighted vote over the
+COMPOUND per-hypothesis bits:
+
+```
+TauA(α)(B₁…Bₙ; w₁…wₙ)  =  C   iff   Σ { wᵢ : TauA(δ_{Bᵢ}) plays C } ≥ θ
+```
+
+where `TauA(δ_B)` is A's *entire lifted decision procedure* run at point mass
+on B.
+
+**Why this makes Def 4 = Def 3.** The compound bit for `(A, Bᵢ)` is "what does
+A's code decide against Bᵢ's instance" — the SELF-probe direction. Whenever the
+instances behave like the base opponents (the anchor property: large k,
+terminating cells), that is exactly Def 3's bit "A's action in
+`outcome(A, Bᵢ)`". Both definitions then threshold the SAME bit-vector, so the
+(t, α) phase diagrams coincide. Def 4 is Def 3 *implemented in-language*, not a
+rival definition. Even the floor cells agree: Def 3's Dupoc-on-EBot bit is 0
+because Dupoc's real action is D (the base floor); Def 4's is 0 because the
+lifted search hits the tau floor — the same bit, produced by the same mechanism
+one level up. The TauDupoc bit-vector coincidence found by the audit was the
+first instance of this general fact, misread at the time as a special property
+of reciprocators.
+
+**Where the implemented TauEBot went wrong.** Dupoc and the TFTs have ONE
+decision point, so "vote over guard bits" and "vote over compound decisions"
+agree by accident of shape — they conform to τ. EBot is the first multi-branch
+bot, and the implemented σ-player moved θ INSIDE the cascade: a vote per STAGE
+("is the crowd exploitable?", then "does the crowd reciprocate?"). That is a
+coherent agent — the *crowd-exploiter* — but it is NOT τ(EBot), which runs
+EBot's whole cascade per hypothesis and votes once. τ(EBot)'s bits on this zoo
+are Coop 0, Defect 0, TFT 1, Dupoc 1 (mass `wTs + wTp + wL`) — a ONE-SIDED
+boundary, no window. The window, the `(D, D)` self-play, and the "45/56 phase
+cells diverge" summary are all properties of the crowd-exploiter and must not
+be cited as Def-4 results.
+
+**The residual, honest divergences** — the content Def 4 adds over Def 3, none
+of it a new phase geometry:
+
+1. **Budget structure.** Def 3 stipulates the bits; Def 4 computes them with
+   real `proofSearch` at finite k. Löb thresholds, the prover/behavioral budget
+   gap, floor costs, sub-Löb regimes — all invisible to Def 3, all theorems in
+   Def 4. The definitions agree asymptotically and differ below the thresholds.
+2. **Non-terminating branches.** Base EBot's third branch sims MirrorBot, which
+   is not `.opp`-free-liftable; dropping it flips E's SELF-bit (Def 3 reads 1
+   via the Mirror escape, the truncated lift reads 0). The one genuinely open
+   lift convention.
+3. **Cost intensionality.** `outcome(A vs τB) = outcome(A vs B)` is false as a
+   theorem (term sizes move costs); Def 3 stipulates it, Def 4 computes the
+   left-hand side.
+
+**Status of the artifacts.** The Lean *instance layer* is correct under the new
+reading and is precisely what τ consumes: `eδ` and the per-hypothesis compound
+bits, the Gödelian pair (`interp_probe_eOfSearch` + `ps_probe_eOfSearch_false`),
+the floor lemma `no_provable_botSearcherElse_tail`, and the cooperators' shared
+boundary all stand. The σ-player `TauEBot` (nested tsearch, shared θ) and its 33
+exploit/window/high matrix cells remain in the engine as certified theorems
+*about the crowd-exploiter* — kernel-true, wrongly labelled — pending
+redefinition. The Python comparison's separation summary is retracted with the
+same scope. **A refined Def 4 is being specified separately (Colomban,
+2026-08-13) and will replace the σ-player definition; the redefinition should
+reuse the instance layer unchanged.**
