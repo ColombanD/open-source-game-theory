@@ -51,7 +51,7 @@ theorem gd_no_provable_C_tail (k : Nat) :
       TailTo (.plays (GuardianBot k) (DupocBot k) .C) φ → False := by
   intro K φ hp hK ht
   refine no_provable_tailToS_floor k (· = .plays (GuardianBot k) (DupocBot k) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ'
     cases hφ'
@@ -77,6 +77,10 @@ theorem gd_no_provable_C_tail (k : Nat) :
     subst h1
     unfold GuardianBot at hme; simp at hme
   · intro me oppo c hS g ψ b hme
+    injection hS with h1 h2 h3
+    subst h1
+    unfold GuardianBot at hme; simp at hme
+  · intro me oppo c hS defs i hme
     injection hS with h1 h2 h3
     subst h1
     unfold GuardianBot at hme; simp at hme

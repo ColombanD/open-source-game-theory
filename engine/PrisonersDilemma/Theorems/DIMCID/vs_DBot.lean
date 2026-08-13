@@ -89,7 +89,7 @@ theorem dimcid_guard_dbot_not_provable (k : Nat) (hk : dimcidThresh k) :
   set S : Formula → Prop := fun φ =>
     φ = .plays DBot (DIMCID k) Action.D ∨
     φ = .plays (DIMCID k) (.bot DefectBot) Action.C with hS
-  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     k _ hp le_rfl ?_
   · rintro φ (rfl | rfl)
     · exact ⟨_, _, _, rfl⟩
@@ -104,6 +104,8 @@ theorem dimcid_guard_dbot_not_provable (k : Nat) (hk : dimcidThresh k) :
   · rintro me oppo c (h | h) p q hme <;> injection h with h1 h2 h3 <;> subst h1 <;>
       subst h3 <;> simp [DBot, DIMCID] at hme
   · rintro me oppo c (h | h) g ψ b hme <;> injection h with h1 h2 h3 <;> subst h1 <;>
+      subst h3 <;> simp [DBot, DIMCID] at hme
+  · rintro me oppo c (h | h) defs i hme <;> injection h with h1 h2 h3 <;> subst h1 <;>
       subst h3 <;> simp [DBot, DIMCID] at hme
   · rintro z a' g ψ c0 c1 q oppo (h | h) <;> injection h with h1 h2 h3 <;>
       simp [DBot, DIMCID] at h1

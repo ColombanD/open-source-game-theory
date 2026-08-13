@@ -73,7 +73,7 @@ theorem wd_no_provable_A_tail (k : Nat) :
       TailTo (.plays (WaryBot k) (DupocBot k) .C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (WaryBot k) (DupocBot k) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ' hA
     cases hφ'
@@ -92,6 +92,8 @@ theorem wd_no_provable_A_tail (k : Nat) :
   · intro me oppo c hS p q hme
     injection hS with h1 h2 h3; subst h1; simp [WaryBot] at hme
   · intro me oppo c hS g ψ b hme
+    injection hS with h1 h2 h3; subst h1; simp [WaryBot] at hme
+  · intro me oppo c hS defs i hme
     injection hS with h1 h2 h3; subst h1; simp [WaryBot] at hme
   · intro z a' g ψ c0 c1 q oppo hS
     injection hS with h1 h2 h3; simp [WaryBot] at h1

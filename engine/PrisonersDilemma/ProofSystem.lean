@@ -647,6 +647,39 @@ search finite). -/
             (implChain (guards2 me opponent L) (.plays me opponent a))).size ≤ k →
         Pf k (.impl (guard2 me opponent hd)
           (implChain (guards2 me opponent L) (.plays me opponent a)))
+    /-- **S reads a `.bot`-wrapped SYSTEM member that is a `.tsearch`** — the Def-5
+        σ-instance shape (`Tau/SysDefs`, 2026-08-13). The peel PREFIX is discharged
+        by ACTUAL premises — the head guard FIRES (a cited proof, `search_t`'s
+        `c_guard`), the second guard is REFUTED (a Σ₁ refutation paying the
+        `search_f` floor `m + g`) — and the THIRD guard is DEFERRED: its bit becomes
+        the `□`-antecedent of the conclusion. The θ-arithmetic (`w₁ < θ ≤ w₁ + w₃`)
+        makes the residual hit 0 exactly at the deferred guard, so the peel commits
+        to the then-branch WITHOUT consulting any trailing guard — the
+        irrefutable-risk slots stay unread (the extended guard-order convention).
+        Guards are read in their eval-time closed form (`sysClose`, then `subst` —
+        `.bot`-frozen probes are subst-inert). Sound by the tsearch peel plus the
+        `search_f` floor argument (both the refutation budget `m` and the failed
+        guard budget `g` are paid in the transcript, so the master induction's
+        strong IH refutes a hypothetical crossed-guard proof). THE QUINE INSTANCE:
+        member `i` = `Dupoc(σ_D)` with the deferred guard its OWN probe — bounded
+        Löb's premise `□_g φ₁ → φ₁` in exactly the shape `pblt_engine_id` consumes.
+        Faithful: S replays the failed bounded search (the floor), cites the fired
+        guard, and reads the system's source — no unprovability claim, no internal
+        soundness-reflection. -/
+    | botSysTsearchBranch (g m : Nat) (defs : ProgList) (i : Nat)
+        (w₁ w₂ w₃ : Nat) (ψ₁ ψ₂ ψ₃ : Formula) (rest : GuardList) (θ : Nat)
+        (a b : Action) (me opponent : Prog)
+        (hme : me = .bot (.sys defs i))
+        (hget : defs.get? i = some (.tsearch g
+          (.cons w₁ ψ₁ (.cons w₂ ψ₂ (.cons w₃ ψ₃ rest))) θ (.const a) (.const b)))
+        (h₁ : Pf g ((ψ₁.sysClose defs).subst me opponent))
+        (h₂ : Pf m (.neg ((ψ₂.sysClose defs).subst me opponent)))
+        (hθ₁ : w₁ < θ) (hθ₃ : θ ≤ w₁ + w₃) :
+        c_guard g + m + g +
+          (Formula.impl (.box g ((ψ₃.sysClose defs).subst me opponent))
+            (.plays me opponent a)).size ≤ k →
+        Pf k (.impl (.box g ((ψ₃.sysClose defs).subst me opponent))
+          (.plays me opponent a))
 end
 
 /-! ## 4. The NAMED eliminators — use these, never the raw recursors
@@ -724,6 +757,21 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
           (Formula.impl (guard2 me opponent hd)
             (implChain (guards2 me opponent L) (.plays me opponent a))).size ≤ k),
         motive k _ (.searchElseChain hd L a me opponent hme hle))
+    (botSysTsearchBranch : ∀ (k g m : Nat) (defs : ProgList) (i w₁ w₂ w₃ : Nat)
+        (ψ₁ ψ₂ ψ₃ : Formula) (rest : GuardList) (θ : Nat) (a b : Action)
+        (me opponent : Prog)
+        (hme : me = .bot (.sys defs i))
+        (hget : defs.get? i = some (.tsearch g
+          (.cons w₁ ψ₁ (.cons w₂ ψ₂ (.cons w₃ ψ₃ rest))) θ (.const a) (.const b)))
+        (h₁ : Pf g ((ψ₁.sysClose defs).subst me opponent))
+        (h₂ : Pf m (.neg ((ψ₂.sysClose defs).subst me opponent)))
+        (hθ₁ : w₁ < θ) (hθ₃ : θ ≤ w₁ + w₃)
+        (hle : c_guard g + m + g +
+          (Formula.impl (.box g ((ψ₃.sysClose defs).subst me opponent))
+            (.plays me opponent a)).size ≤ k),
+        motive g _ h₁ → motive m _ h₂ →
+        motive k _ (.botSysTsearchBranch g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b
+          me opponent hme hget h₁ h₂ hθ₁ hθ₃ hle))
     (eqRefl : ∀ (k : Nat) (p : Prog) (hle : (Formula.eq p p).size ≤ k),
         motive k _ (.eqRefl p hle))
     (eqNeg : ∀ (k : Nat) (p q : Prog) (hne : p ≠ q)
@@ -849,6 +897,10 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
     (fun pm fb g K tgt hgate hle ih => diagB pm fb g K tgt hgate hle ih)
     (fun {k} hd L a me opponent hme hle =>
       searchElseChain k hd L a me opponent hme hle)
+    (fun {k} g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b me opponent hme hget h₁ h₂
+        hθ₁ hθ₃ hle ih₁ ih₂ =>
+      botSysTsearchBranch k g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b me opponent
+        hme hget h₁ h₂ hθ₁ hθ₃ hle ih₁ ih₂)
     h
 
 /-- Named eliminator for `PlaysProof` — the workhorse for the execution census
@@ -962,7 +1014,7 @@ theorem PlaysProof.induct
     (fun {me opponent} {defs} {i} {p} {a} {n} hget h ih =>
       sysStep me opponent defs i p a n hget h ih)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-    ?_ ?_
+    ?_ ?_ ?_
     h <;>
   · intros; trivial
 
@@ -1009,6 +1061,10 @@ theorem Pf_mono : ∀ {k₁ : Nat} {φ : Formula}, Pf k₁ φ →
       exact .ctxChain hd L a me opponent hme (Nat.le_trans hle hk)
   | searchElseChain hd L a me opponent hme hle =>
       exact .searchElseChain hd L a me opponent hme (Nat.le_trans hle hk)
+  | botSysTsearchBranch g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b me opponent
+      hme hget h₁ h₂ hθ₁ hθ₃ hle =>
+      exact .botSysTsearchBranch g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b me
+        opponent hme hget h₁ h₂ hθ₁ hθ₃ (Nat.le_trans hle hk)
   | atomBoxImpl kBox p q a hatom hle =>
       exact .atomBoxImpl kBox p q a hatom (Nat.le_trans hle hk)
   | boxIntro kIn K φ' hprem hle => exact .boxIntro kIn k₂ φ' hprem (Nat.le_trans hle hk)

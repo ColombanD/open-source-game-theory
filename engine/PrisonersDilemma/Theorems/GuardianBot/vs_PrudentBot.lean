@@ -42,7 +42,7 @@ theorem gvp_prudent_atom_kill (k K : Nat) (hK : K ≤ k) :
 theorem gvp_no_Pf_prudent_D (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K ≤ k)
     (ht : TailTo (.plays (PrudentBot k) (.bot CooperateBot) .D) φ) : False := by
   refine no_provable_tailToS_floor k (· = .plays (PrudentBot k) (.bot CooperateBot) .D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl; exact gvp_prudent_atom_kill k K' hK'
   · rintro me oppo c heq g ψ b hme
@@ -55,6 +55,9 @@ theorem gvp_no_Pf_prudent_D (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K �
     injection heq with h1 h2 h3; subst h1
     simp [PrudentBot] at hme
   · rintro me oppo c heq g ψ b hme
+    injection heq with h1 h2 h3; subst h1
+    simp [PrudentBot] at hme
+  · rintro me oppo c heq defs i hme
     injection heq with h1 h2 h3; subst h1
     simp [PrudentBot] at hme
   · rintro z a' g ψ c0 c1 q oppo heq
@@ -156,7 +159,7 @@ theorem pvg_guardian_atom_kill (k K : Nat) (hK : K ≤ k) :
 theorem pvg_no_Pf_guardian_C (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K ≤ k)
     (ht : TailTo (.plays (GuardianBot k) (PrudentBot k) .C) φ) : False := by
   refine no_provable_tailToS_floor k (· = .plays (GuardianBot k) (PrudentBot k) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl; exact pvg_guardian_atom_kill k K' hK'
   · rintro me oppo c heq g ψ b hme
@@ -171,6 +174,9 @@ theorem pvg_no_Pf_guardian_C (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K �
     injection heq with h1 h2 h3; subst h1
     simp [GuardianBot] at hme
   · rintro me oppo c heq g ψ b hme
+    injection heq with h1 h2 h3; subst h1
+    simp [GuardianBot] at hme
+  · rintro me oppo c heq defs i hme
     injection heq with h1 h2 h3; subst h1
     simp [GuardianBot] at hme
   · rintro z a' g ψ c0 c1 q oppo heq
