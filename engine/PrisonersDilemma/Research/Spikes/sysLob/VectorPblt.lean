@@ -3,6 +3,11 @@ import PrisonersDilemma.Base.Loeb
 /-!
 # sysLob Spike A — vector bounded Löb (the Def-5 Route-A go/no-go)
 
+**PROMOTED (Phase 4, 2026-08-13):** the glue (`compUnder`/`postUnder`/`swapAnte`),
+the stage lemma and a SIZE-PARAMETRIC `vector2_full_pblt_engine` now live in
+`Base/Loeb.lean` (`PD.BaseTheorems`). This file remains the historical spike
+(hardcoded `100/1000` envelope); consume the engine versions.
+
 `DEF5_SYS_BINDER_ROADMAP.md` Phase 1a. Def-5 σ-probing produces FULL-DEPENDENCY mutual
 Löb premises — each sentence implied by boxes of ALL entangled sentences (its own
 included), the curried shape `□_k φ₁ → (□_k φ₂ → … → φᵢ)` — where the existing engines

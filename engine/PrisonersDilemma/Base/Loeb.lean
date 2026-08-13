@@ -316,4 +316,260 @@ theorem mutual_pblt_engine_staggered (Af Bf : Nat → Formula) (kP : Nat → Nat
     s10 ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
   · (try simp only [numCost, Formula.size]); omega
 
+/-! ## The VECTOR engines — full-dependency mutual Löb (Def-5, Phase 4, 2026-08-13)
+
+Promoted from `Research/Spikes/sysLob/VectorPblt.lean` (Spike A, the Route-A
+go/no-go — see `DEF5_SYS_BINDER_ROADMAP.md`). Def-5 σ-instances produce
+FULL-DEPENDENCY premises — each sentence implied by boxes of ALL entangled
+sentences, its own included (`□_k A → (□_k B → A)`), a shape the cycle engines
+above cannot consume. The iterated-unary reduction closes them with ZERO new
+constructors: the Family-B completion (`implK`/`implS`, 2026-07-28) makes the
+B-combinator glue derivable, and the stage lemma turns a full-dependency premise
+into a compound Löb premise for `bloeb_engine`.
+
+SIZE-PARAMETRIC on purpose: the budget cascade (each stage's `4096·W` output
+transcript feeds the next stage's unit) puts intermediate transcripts far above
+the `100·log₂ k + 1000` envelope of the `_id` wrappers, so the vector engine's
+envelope `C·log₂ k + D` is a parameter — Phase-5 consumers instantiate `C`/`D`
+with their zoo's concrete constants. Threshold constants are `2^(O(n))` in the
+number of elimination stages (master `2⁵²·V ≤ k` here, vs `2¹⁷·V` for the cycle
+engines): fine for a fixed zoo; an n-ary `Formula.diag` is the poly(n)
+refinement if ever needed. -/
+
+/-- Pre-composition under a fixed antecedent: from `⊢ D → (M → N)` and `⊢ X → M`,
+    conclude `⊢ D → (X → N)`. (The B-combinator, via `implK`/`implS`/`impS2`.) -/
+theorem compUnder {D X M N : Formula} {a b : Nat} (K : Nat)
+    (h₁ : Pf a (.impl D (.impl M N)))
+    (h₂ : Pf b (.impl X M))
+    (H : a + b + 32 * (D.size + X.size + M.size + N.size) + 128 ≤ K) :
+    Pf K (.impl D (.impl X N)) := by
+  have s : Pf (2 * M.size + 2 * N.size + X.size + 4)
+      (.impl (.impl M N) (.impl X (.impl M N))) :=
+    .implK _ _ (by simp only [Formula.size]; omega)
+  have t : Pf (a + (2 * M.size + 2 * N.size + X.size + 4)
+        + (D.size + X.size + M.size + N.size + 3))
+      (.impl D (.impl X (.impl M N))) :=
+    .implTrans _ _ _ _ _ h₁ s (by simp only [Formula.size]; omega)
+  have u : Pf (3 * X.size + 2 * M.size + 2 * N.size + 6)
+      (.impl (.impl X (.impl M N)) (.impl (.impl X M) (.impl X N))) :=
+    .implS _ _ _ (by simp only [Formula.size]; omega)
+  have v : Pf (a + 8 * X.size + 8 * M.size + 8 * N.size + 2 * D.size + 24)
+      (.impl D (.impl (.impl X M) (.impl X N))) :=
+    .implTrans _ _ _ _ _ t u (by simp only [Formula.size]; omega)
+  have w : Pf (b + D.size + X.size + M.size + 2) (.impl D (.impl X M)) :=
+    .weakenImpl _ _ _ h₂ (by simp only [Formula.size]; omega)
+  exact .impS2 _ _ _ _ _ K v w (by simp only [Formula.size]; omega)
+
+/-- Post-composition under two antecedents: from `⊢ D → (X → M)` and `⊢ M → N`,
+    conclude `⊢ D → (X → N)`. -/
+theorem postUnder {D X M N : Formula} {a b : Nat} (K : Nat)
+    (h₁ : Pf a (.impl D (.impl X M)))
+    (h₂ : Pf b (.impl M N))
+    (H : a + b + 32 * (D.size + X.size + M.size + N.size) + 128 ≤ K) :
+    Pf K (.impl D (.impl X N)) := by
+  have wk : Pf (b + X.size + M.size + N.size + 2) (.impl X (.impl M N)) :=
+    .weakenImpl _ _ _ h₂ (by simp only [Formula.size]; omega)
+  have u : Pf (3 * X.size + 2 * M.size + 2 * N.size + 6)
+      (.impl (.impl X (.impl M N)) (.impl (.impl X M) (.impl X N))) :=
+    .implS _ _ _ (by simp only [Formula.size]; omega)
+  have m3 : Pf (b + 7 * X.size + 5 * M.size + 5 * N.size + 16)
+      (.impl (.impl X M) (.impl X N)) :=
+    .mp _ _ _ _ u wk (by simp only [Formula.size]; omega)
+  exact .implTrans _ _ _ _ _ h₁ m3 (by simp only [Formula.size]; omega)
+
+/-- Antecedent swap (the C-combinator): from `⊢ φ → (ψ → χ)`, conclude
+    `⊢ ψ → (φ → χ)`. -/
+theorem swapAnte {φ ψ χ : Formula} {a : Nat} (K : Nat)
+    (h : Pf a (.impl φ (.impl ψ χ)))
+    (H : a + 32 * (φ.size + ψ.size + χ.size) + 128 ≤ K) :
+    Pf K (.impl ψ (.impl φ χ)) := by
+  have a₁ : Pf (φ.size + 2 * ψ.size + 2) (.impl ψ (.impl φ ψ)) :=
+    .implK _ _ (by simp only [Formula.size]; omega)
+  have b₁ : Pf (3 * φ.size + 2 * ψ.size + 2 * χ.size + 6)
+      (.impl (.impl φ (.impl ψ χ)) (.impl (.impl φ ψ) (.impl φ χ))) :=
+    .implS _ _ _ (by simp only [Formula.size]; omega)
+  have b₂ : Pf (a + 5 * φ.size + 3 * ψ.size + 3 * χ.size + 9)
+      (.impl (.impl φ ψ) (.impl φ χ)) :=
+    .mp _ _ _ _ b₁ h (by simp only [Formula.size]; omega)
+  exact .implTrans _ _ _ _ _ a₁ b₂ (by simp only [Formula.size]; omega)
+
+/-- **Löb under a boxed side-antecedent** — the Def-5 stage step. From the
+    full-dependency premise `⊢ □_u S → (□_w T → T)` (side box at the FREE
+    subscript `u`, self-box at the source subscript `w`), build the compound Löb
+    premise `□_fb C → C` for `C := □_u S → T`, ready for `bloeb_engine`.
+    Subscript discipline (the `mutual_loeb` lesson, one level up): `box4` applies
+    to the PRE-LOWERED side box, so the K-distribution lands at
+    `c = fb + m + |T| ≤ w`, mono-UP into the premise's self-box. Lowering the
+    side antecedent is free — contravariant position, `boxMono` pre-composes. -/
+theorem loeb_premise_under_box (S T : Formula) (u w fb m c p K : Nat)
+    (P : Pf p (.impl (.box u S) (.impl (.box w T) T)))
+    (Hm : u + (Formula.box u S).size ≤ m)
+    (Hc : fb + m + T.size ≤ c)
+    (Hcw : c ≤ w)
+    (HK : 1024 * ((Formula.box u S).size + T.size
+        + numCost fb + numCost m + numCost c + numCost w + p + 8) ≤ K) :
+    Pf K (.impl (.box fb (.impl (.box u S) T)) (.impl (.box u S) T)) := by
+  obtain ⟨base, hbase⟩ : ∃ base, base = (Formula.box u S).size + T.size
+      + numCost fb + numCost m + numCost c + numCost w + p + 8 := ⟨_, rfl⟩
+  have s₁ : Pf (4 * base) (.impl (.box fb (.impl (.box u S) T))
+      (.impl (.box m (.box u S)) (.box c T))) :=
+    .axKf fb m c _ _ _ Hc (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  have s₂ : Pf (4 * base) (.impl (.box u S) (.box m (.box u S))) :=
+    .box4 u m _ _ Hm (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  have s₃ : Pf (256 * base) (.impl (.box fb (.impl (.box u S) T))
+      (.impl (.box u S) (.box c T))) :=
+    compUnder _ s₁ s₂ (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  have s₄ : Pf (4 * base) (.impl (.box c T) (.box w T)) :=
+    .boxMono c w _ _ Hcw (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  have s₅ : Pf (512 * base) (.impl (.box fb (.impl (.box u S) T))
+      (.impl (.box u S) (.box w T))) :=
+    postUnder _ s₃ s₄ (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  have s₆ : Pf (8 * base) (.impl (.box fb (.impl (.box u S) T))
+      (.impl (.box u S) (.impl (.box w T) T))) :=
+    .weakenImpl _ _ _ P (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  have s₇ : Pf (4 * base) (.impl (.impl (.box u S) (.impl (.box w T) T))
+      (.impl (.impl (.box u S) (.box w T)) (.impl (.box u S) T))) :=
+    .implS _ _ _ (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  have s₈ : Pf (16 * base) (.impl (.box fb (.impl (.box u S) T))
+      (.impl (.impl (.box u S) (.box w T)) (.impl (.box u S) T))) :=
+    .implTrans _ _ _ _ _ s₆ s₇ (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  have s₉ : Pf (1024 * base) (.impl (.box fb (.impl (.box u S) T))
+      (.impl (.box u S) T)) :=
+    .impS2 _ _ _ _ _ _ s₈ s₅ (by simp only [Formula.size, numCost] at hbase ⊢; omega)
+  exact Pf_mono s₉ (by omega)
+
+/-- **Vector PBLT, n = 2, FULL dependencies, SIZE-PARAMETRIC** — the Def-5
+    consumer shape: each sentence implied by boxes of BOTH sentences (self-loops
+    included), sizes and premise transcripts within an ARBITRARY envelope
+    `C·log₂ k + D` (do NOT specialize to the `_id` wrappers' `100/1000` — Def-5
+    probe atoms carry whole systems). Assembly: stage `hL2` at side subscript
+    `xa` and Löb the compound `C₁ = □_xa A → B`; swap + stage `hL1` for
+    `C₂ = □_xa B → A`; the compounds are a staggered CYCLE closed by
+    `mutual_loeb` + `bloeb_engine`; `boxIntro` + `mp` recover `B`. -/
+theorem vector2_full_pblt_engine (Af Bf : Nat → Formula) (p₁ p₂ : Nat → Nat)
+    (k₁ C D : Nat)
+    (hsA : ∀ k, (Af k).size ≤ C * Nat.log2 k + D)
+    (hsB : ∀ k, (Bf k).size ≤ C * Nat.log2 k + D)
+    (hp1 : ∀ k, p₁ k ≤ C * Nat.log2 k + D)
+    (hp2 : ∀ k, p₂ k ≤ C * Nat.log2 k + D)
+    (hL1 : ∀ k, k > k₁ →
+      Pf (p₁ k) (.impl (.box k (Af k)) (.impl (.box k (Bf k)) (Af k))))
+    (hL2 : ∀ k, k > k₁ →
+      Pf (p₂ k) (.impl (.box k (Af k)) (.impl (.box k (Bf k)) (Bf k)))) :
+    ∃ k₂, ∀ k, k > k₂ → (∃ m, Pf m (Af k)) ∧ (∃ m, Pf m (Bf k)) := by
+  -- master headroom: 2⁵²·V ≤ k with V ≤ (4C+1)·log2 k + (4D+16)
+  obtain ⟨Ksz, hKsz⟩ :=
+    linear_log2_add_le (4503599627370496 * (4 * C + 1)) (4503599627370496 * (4 * D + 16))
+  refine ⟨max k₁ Ksz, fun k hk => ?_⟩
+  obtain ⟨V, hV⟩ : ∃ V,
+      V = p₁ k + p₂ k + (Af k).size + (Bf k).size + Nat.log2 k + 16 := ⟨_, rfl⟩
+  have hp1k := hp1 k; have hp2k := hp2 k; have hsAk := hsA k; have hsBk := hsB k
+  have hVk : 4503599627370496 * V ≤ k := by
+    have h := hKsz k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+    have hVle : V ≤ (4 * C + 1) * Nat.log2 k + (4 * D + 16) := by
+      -- expose the nonlinear atom `C * log2 k` to omega by expanding the coefficient
+      have hexp : (4 * C + 1) * Nat.log2 k
+          = C * Nat.log2 k + C * Nat.log2 k + C * Nat.log2 k + C * Nat.log2 k
+            + Nat.log2 k := by ring
+      omega
+    calc 4503599627370496 * V
+        ≤ 4503599627370496 * ((4 * C + 1) * Nat.log2 k + (4 * D + 16)) :=
+          Nat.mul_le_mul_left _ hVle
+      _ = 4503599627370496 * (4 * C + 1) * Nat.log2 k
+          + 4503599627370496 * (4 * D + 16) := by ring
+      _ ≤ k := h
+  have hkk₁ : k > k₁ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  obtain ⟨W₁, hW₁⟩ : ∃ W₁, W₁ = 65536 * V := ⟨_, rfl⟩
+  obtain ⟨W₂, hW₂⟩ : ∃ W₂, W₂ = 1048576 * V := ⟨_, rfl⟩
+  obtain ⟨U, hU⟩ : ∃ U, U = 17179869184 * V := ⟨_, rfl⟩
+  obtain ⟨xa, hxa⟩ : ∃ xa, xa = 131072 * U := ⟨_, rfl⟩
+  obtain ⟨fb₁, hfb₁⟩ : ∃ fb₁, xa + 4 * V + fb₁ = k := Nat.le.dest (by omega)
+  obtain ⟨fb₃, hfb₃⟩ : ∃ fb₃, 64 * U + fb₃ = xa := Nat.le.dest (by omega)
+  have hlxa : Nat.log2 xa ≤ Nat.log2 k := log2_mono (by omega)
+  have hlfb₁ : Nat.log2 fb₁ ≤ Nat.log2 k := log2_mono (by omega)
+  have hlfb₃ : Nat.log2 fb₃ ≤ Nat.log2 k := log2_mono (by omega)
+  have hlm₁ : Nat.log2 (xa + 2 * V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlc₁ : Nat.log2 (fb₁ + xa + 3 * V) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlW₁a : Nat.log2 (32 * W₁) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlW₁b : Nat.log2 (1024 * W₁) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlW₁c : Nat.log2 (2048 * W₁) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlW₁d : Nat.log2 (8192 * W₁) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlW₂a : Nat.log2 (32 * W₂) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlW₂b : Nat.log2 (1024 * W₂) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlW₂c : Nat.log2 (2048 * W₂) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlW₂d : Nat.log2 (8192 * W₂) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlUa : Nat.log2 (16 * U) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlUb : Nat.log2 (512 * U) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlUc : Nat.log2 (8192 * U) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlUd : Nat.log2 (16384 * U) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlUe : Nat.log2 (65536 * U) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlUm : Nat.log2 (fb₃ + 8 * U) ≤ Nat.log2 k := log2_mono (by omega)
+  have hlUc' : Nat.log2 (fb₃ + 32 * U) ≤ Nat.log2 k := log2_mono (by omega)
+  -- ── Stage 1: C₁ := □_xa A → B ─────────────────────────────────────────────
+  have mono₁ : Pf (8 * V) (.impl (.box xa (Af k)) (.box k (Af k))) :=
+    .boxMono xa k _ _ (by omega) (by simp only [Formula.size, numCost]; omega)
+  have P₂' : Pf (p₂ k + 16 * V)
+      (.impl (.box xa (Af k)) (.impl (.box k (Bf k)) (Bf k))) :=
+    .implTrans _ _ _ _ _ mono₁ (hL2 k hkk₁)
+      (by simp only [Formula.size, numCost]; omega)
+  have stage₁ : Pf (32768 * V)
+      (.impl (.box fb₁ (.impl (.box xa (Af k)) (Bf k)))
+        (.impl (.box xa (Af k)) (Bf k))) :=
+    loeb_premise_under_box (Af k) (Bf k) xa k fb₁ (xa + 2 * V) (fb₁ + xa + 3 * V)
+      (p₂ k + 16 * V) _ P₂'
+      (by simp only [Formula.size, numCost]; omega)
+      (by omega) (by omega)
+      (by simp only [Formula.size, numCost]; omega)
+  have hC₁ : Pf (4096 * W₁) (.impl (.box xa (Af k)) (Bf k)) := by
+    refine bloeb_engine _ (32768 * V) fb₁ (1024 * W₁) (32 * W₁) (2048 * W₁)
+      (2048 * W₁) (8192 * W₁) (16 * W₁) (16 * W₁) (64 * W₁) (32 * W₁) (128 * W₁)
+      (32 * W₁) (16 * W₁) (256 * W₁) (512 * W₁) (16 * W₁) (640 * W₁) (704 * W₁)
+      (768 * W₁) (2048 * W₁) (4096 * W₁) stage₁
+      ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    · (try simp only [numCost, Formula.size]); omega
+  -- ── Stage 2: C₂ := □_xa B → A ─────────────────────────────────────────────
+  have swap₁ : Pf (p₁ k + 192 * V)
+      (.impl (.box k (Bf k)) (.impl (.box k (Af k)) (Af k))) :=
+    swapAnte _ (hL1 k hkk₁) (by simp only [Formula.size, numCost]; omega)
+  have mono₂ : Pf (8 * V) (.impl (.box xa (Bf k)) (.box k (Bf k))) :=
+    .boxMono xa k _ _ (by omega) (by simp only [Formula.size, numCost]; omega)
+  have P₁' : Pf (p₁ k + 224 * V)
+      (.impl (.box xa (Bf k)) (.impl (.box k (Af k)) (Af k))) :=
+    .implTrans _ _ _ _ _ mono₂ swap₁
+      (by simp only [Formula.size, numCost]; omega)
+  have stage₂ : Pf (524288 * V)
+      (.impl (.box fb₁ (.impl (.box xa (Bf k)) (Af k)))
+        (.impl (.box xa (Bf k)) (Af k))) :=
+    loeb_premise_under_box (Bf k) (Af k) xa k fb₁ (xa + 2 * V) (fb₁ + xa + 3 * V)
+      (p₁ k + 224 * V) _ P₁'
+      (by simp only [Formula.size, numCost]; omega)
+      (by omega) (by omega)
+      (by simp only [Formula.size, numCost]; omega)
+  have hC₂ : Pf (4096 * W₂) (.impl (.box xa (Bf k)) (Af k)) := by
+    refine bloeb_engine _ (524288 * V) fb₁ (1024 * W₂) (32 * W₂) (2048 * W₂)
+      (2048 * W₂) (8192 * W₂) (16 * W₂) (16 * W₂) (64 * W₂) (32 * W₂) (128 * W₂)
+      (32 * W₂) (16 * W₂) (256 * W₂) (512 * W₂) (16 * W₂) (640 * W₂) (704 * W₂)
+      (768 * W₂) (2048 * W₂) (4096 * W₂) stage₂
+      ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    · (try simp only [numCost, Formula.size]); omega
+  -- ── The mutual closer: C₁/C₂ are a staggered cycle at (xa, xa) ────────────
+  have s10 : Pf (160 * U) (.impl (.box fb₃ (Af k)) (Af k)) := by
+    refine mutual_loeb (Af k) (Bf k) xa xa fb₃ (16 * U) (fb₃ + 8 * U) (fb₃ + 32 * U)
+      (4096 * W₁) (4096 * W₂) (8 * U) (16 * U) (32 * U) (16 * U) (64 * U) (16 * U)
+      (96 * U) (8 * U) (128 * U) (160 * U) hC₁ hC₂
+      ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    · (try simp only [numCost, Formula.size]); omega
+  have hA : Pf (32768 * U) (Af k) := by
+    refine bloeb_engine _ (160 * U) fb₃ (8192 * U) (512 * U) (16384 * U) (16384 * U)
+      (65536 * U) (256 * U) (256 * U) (1024 * U) (512 * U) (2048 * U) (512 * U)
+      (512 * U) (3072 * U) (4096 * U) (256 * U) (5120 * U) (6144 * U) (7168 * U)
+      (16384 * U) (32768 * U) s10
+      ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    · (try simp only [numCost, Formula.size]); omega
+  have hBoxA : Pf (xa + 4 * V) (.box xa (Af k)) :=
+    .boxIntro xa _ _ (Pf_mono hA (by omega))
+      (by simp only [Formula.size, numCost]; omega)
+  exact ⟨⟨32768 * U, hA⟩,
+    ⟨2 * xa, .mp _ _ _ _ hC₁ hBoxA (by omega)⟩⟩
+
 end PD.BaseTheorems

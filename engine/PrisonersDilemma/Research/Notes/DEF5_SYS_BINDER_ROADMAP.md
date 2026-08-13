@@ -186,7 +186,22 @@ frozen σ-player's source) is NOT part of sysStep — it will need either new Pf
 modal rules for `.bot (.sys …)`-wrapped `.tsearch` shapes (with their own
 `sound_upto` arms, the constructor-integration playbook) or a meta-level
 derivation via the Spike-A stage lemma; decide there, not here.
-| **4** | Promote Spike A → `Base/Loeb.vector_pblt_engine` (size-parametric; n=2 engines untouched) | consumed hypotheses match Phase-5 needs | 2–3 days |
+| **4** ✓ | Promote Spike A → `Base/Loeb.vector_pblt_engine` (size-parametric; n=2 engines untouched) | consumed hypotheses match Phase-5 needs | 2–3 days |
+
+**Phase 4 RESULTS (2026-08-13, same session): GATE MET (n=2 scope).**
+`Base/Loeb.lean` gained the glue (`compUnder`/`postUnder`/`swapAnte`), the stage
+lemma `loeb_premise_under_box`, and **`vector2_full_pblt_engine` — SIZE-PARAMETRIC**
+(`C·log₂ k + D` envelope; verified consuming `5000·log₂k + 90000`, far beyond the
+`_id` wrappers). One nonlinear-arithmetic wrinkle: with parametric `C`, omega needs
+the coefficient expansion `(4C+1)·L = C·L + C·L + C·L + C·L + L` supplied by `ring`
+(`C·log₂ k` is an atom). Cycle engines untouched; build green; 3 axioms; the spike
+file remains as historical record with a promotion note.
+**SCOPE NOTE → Phase 5's FIRST decision:** the promoted engine is n = 2. Whether
+Phase 5 needs n = 3 depends on the σ-zoo's REAL dependency graph — in Def 4, TFT
+and Dupoc DEFECT against EBot, so the E-column bits may ground shallowly (refutably)
+under σ too, leaving a 2-sentence Löbian core + shallow satellites. Determine the
+graph first; only build the n=3 tower (2-side-box stage via the
+`arrPost`/`arrCong`/`impS2Under` ladder) if a genuine 3-cycle survives.
 | **5** | `Tau/SysDefs.lean` (σ-zoo as ONE `ProgList` + `Positive` by `decide`) → constants' certificates → mutual premises by peel-chaining → `ps_probe_sysQuine` (vector engine + n-ary eval inversion) → `tauDupocσ_phase` (both legs) → `outcome_TauDupocσ_vs_TauDupocσ` → bistability audit | first Route-A theorem compiles; open cells documented, not fought | 1–2 weeks |
 | **6** | Split-collapse theorem pair; Python mirror in `app/src/pd_runner/tau/` for `(t, α)` sweeps → EGT | — | 1 week (parallel with 5's audit) |
 
