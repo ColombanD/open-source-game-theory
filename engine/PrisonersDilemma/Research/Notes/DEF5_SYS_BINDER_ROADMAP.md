@@ -196,12 +196,47 @@ lemma `loeb_premise_under_box`, and **`vector2_full_pblt_engine` — SIZE-PARAME
 the coefficient expansion `(4C+1)·L = C·L + C·L + C·L + C·L + L` supplied by `ring`
 (`C·log₂ k` is an atom). Cycle engines untouched; build green; 3 axioms; the spike
 file remains as historical record with a promotion note.
-**SCOPE NOTE → Phase 5's FIRST decision:** the promoted engine is n = 2. Whether
-Phase 5 needs n = 3 depends on the σ-zoo's REAL dependency graph — in Def 4, TFT
-and Dupoc DEFECT against EBot, so the E-column bits may ground shallowly (refutably)
-under σ too, leaving a 2-sentence Löbian core + shallow satellites. Determine the
-graph first; only build the n=3 tower (2-side-box stage via the
-`arrPost`/`arrCong`/`impS2Under` ladder) if a genuine 3-cycle survives.
+**SCOPE NOTE (superseded 2026-08-13, zoo design fixed by Colomban):** see the
+Phase-5 blueprint below — the dependency graph is a SPARSE 4-sentence SCC that
+reduces to the shipped n=2 engine via stages + substitutions. No n≥3 tower needed.
+
+## Phase-5 blueprint — the corrected σ-zoo (fixed 2026-08-13)
+
+**Probe semantics (the design decision):** probe DIRECTION survives from Def 4;
+only the SIGNAL blurs. TauDupocσ's bit `i` probes `TauBᵢ(σ_Dupoc)` — "would the
+σ-instance of Bᵢ, whose own signal is the blur of ME, cooperate" (reciprocity,
+blurred self-image). The TFTσ's bit `i` probes `TauBᵢ(σ_Coop)` — "would Bᵢ,
+seeing the blur of a cooperator, cooperate". REJECTED: probing members directly
+(`probe (.selfIdx j)` of the player itself) — it collapses Dupoc into TFT by
+erasing the probe-direction distinction.
+
+**Instance closure = TWO COLUMNS (finite because signals are over TEMPLATE
+names, Def-4 convention 1):** only σ_Dupoc and σ_Coop are ever probe centers.
+`.sys` members (8): shared constants `C`/`D`; `Dupoc(σ_D)` (probes the σ_D
+column INCL. ITSELF — φ₁, Löbian self-loop); `TFTPf(σ_D)` (probes σ_C column —
+φ₂); `TFTSim(σ_D)` (runs σ_C column — behavioral); `Dupoc(σ_C)` (probes σ_D
+column — φ₃); `TFTPf(σ_C)` (probes σ_C column incl. itself — φ₄, self-loop);
+`TFTSim(σ_C)` (behavioral). Top-level players are SEPARATE programs (free
+weights `w⃗`, threshold θ) probing the same members — `outcome_of_ex_plays`
+Matrix shape survives. Inner signal weights `v⃗_D`, `v⃗_C` are parameters; the
+cooperative regime is a CONJUNCTION of per-instance α-conditions.
+
+**The Löb core and its elimination (all with the SHIPPED toolkit):**
+φ₁ ← {φ₁,φ₂}, φ₂ ← {φ₃,φ₄}, φ₃ ← {φ₁,φ₂}, φ₄ ← {φ₃,φ₄} — one SCC of size 4,
+but SPARSE: (1) `loeb_premise_under_box` kills both self-loops →
+`C₁ = □φ₂ → φ₁`, `C₄ = □φ₃ → φ₄`; (2) ONE new derived substitution lemma
+(box + `axKf` + `compUnder`, ~`compUnder`-sized) discharges `□φ₁` from φ₃'s
+premise via `C₁` and `□φ₄` from φ₂'s via `C₄` → `□φ₂ → φ₃`, `□φ₃ → φ₂`;
+(3) that 2-cycle is `mutual_loeb` + `bloeb_engine`; (4) φ₁/φ₄ backfill by
+`boxIntro` + `mp`. No n≥3 tower, no new Pf constructors.
+
+**Revised split prediction:** TFTSim watches the σ_C COLUMN, which contains the
+Löb-gated `Dupoc(σ_C)` — the behavioral bot inherits the Löb budget through
+what it watches: budget inheritance THROUGH COLUMNS, not structural collapse.
+
+**Milestone 2 (not now):** TauEBotσ — blocked on the Def-4 τ(EBot) redefinition
+(the crowd-exploiter retraction); when it lands, redo the graph analysis before
+touching the Löb machinery.
 | **5** | `Tau/SysDefs.lean` (σ-zoo as ONE `ProgList` + `Positive` by `decide`) → constants' certificates → mutual premises by peel-chaining → `ps_probe_sysQuine` (vector engine + n-ary eval inversion) → `tauDupocσ_phase` (both legs) → `outcome_TauDupocσ_vs_TauDupocσ` → bistability audit | first Route-A theorem compiles; open cells documented, not fought | 1–2 weeks |
 | **6** | Split-collapse theorem pair; Python mirror in `app/src/pd_runner/tau/` for `(t, α)` sweeps → EGT | — | 1 week (parallel with 5's audit) |
 
