@@ -504,7 +504,7 @@ theorem pf_WV_mirror (k : Nat) : ∀ {K : Nat} {φ : Formula},
   intro K φ h
   refine ((wv_sound_upto (SPMirror k)
     (fun me oppo => me = WaryBot k ∧ oppo = MirrorBot)
-    (SPMirror_not_bot k) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K).2 K φ h).2 Pf_sound
+    (SPMirror_not_bot k) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K).2 K φ h).2 Pf_sound
   · -- h_const
     intro me oppo a hT hgate
     rcases hT with hS | ⟨rfl, rfl⟩
@@ -535,6 +535,12 @@ theorem pf_WV_mirror (k : Nat) : ∀ {K : Nat} {φ : Formula},
     · exact absurd hb (by simp [WaryBot])
   · -- h_tsearch : no census member is a `.tsearch` shape
     intro me oppo k' gs θ P Q hT hgate
+    rcases hT with hS | ⟨rfl, rfl⟩
+    · rcases SPMirror_me hS with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> simp_all
+    · rcases hgate with hb | hb <;> exact absurd hb (by simp [WaryBot])
+  · -- h_sys : no census member is a `.sys` shape
+    intro me oppo defs i hT hgate
     rcases hT with hS | ⟨rfl, rfl⟩
     · rcases SPMirror_me hS with ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
         rcases hgate with hb | hb <;> simp_all
@@ -631,7 +637,7 @@ theorem pf_WV_self (k : Nat) : ∀ {K : Nat} {φ : Formula},
     Pf K φ → WV (SPSelf k) φ := by
   intro K φ h
   refine ((wv_sound_upto (SPSelf k) (fun _ _ => False)
-    (SPSelf_not_bot k) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K).2 K φ h).2 Pf_sound
+    (SPSelf_not_bot k) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K).2 K φ h).2 Pf_sound
   · -- h_const
     intro me oppo a hT hgate
     rcases hT with hS | hF
@@ -664,6 +670,12 @@ theorem pf_WV_self (k : Nat) : ∀ {K : Nat} {φ : Formula},
     · exact hF.elim
   · -- h_tsearch : no census member is a `.tsearch` shape
     intro me oppo k' gs θ P Q hT hgate
+    rcases hT with hS | hF
+    · rcases SPSelf_me hS with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> exact absurd hb (by simp [WaryBot])
+    · exact hF.elim
+  · -- h_sys : no census member is a `.sys` shape
+    intro me oppo defs i hT hgate
     rcases hT with hS | hF
     · rcases SPSelf_me hS with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
         rcases hgate with hb | hb <;> exact absurd hb (by simp [WaryBot])

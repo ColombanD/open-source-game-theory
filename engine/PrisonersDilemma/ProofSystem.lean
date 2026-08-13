@@ -69,7 +69,7 @@ objects — reasoning and execution, no longer split by a `Type`/`Prop` boundary
 ## The eliminators (`Pf.induct`, `PlaysProof.induct`) — READ THIS BEFORE PROVING
 
 `Pf` is MUTUAL (the `search_t`/`search_f` back-edge above), and Lean's `induction … with`
-tactic does not handle mutual inductives: it would force every proof into the raw 37-minor-
+tactic does not handle mutual inductives: it would force every proof into the raw 38-minor-
 premise positional recursor. So this file ships **named `@[elab_as_elim]` eliminators**
 (§4): use
 
@@ -336,6 +336,18 @@ mutual
         θ > gs.totalMass →
         PlaysProof me opponent q a n →
         PlaysProof me opponent (.tsearch k gs θ p q) a (n + gs.gsize + c_node)
+    /-- `.sys` unfolding (Def-5, 2026-08-13): S reads the system — component `i`,
+        closed one level via `sysClose` — mirroring `eval`'s lazy-unfold arm exactly.
+        Twin of the `.bot` transparency step (a deterministic syntactic rewrap, so it
+        pays `c_node`; the system's source is already written in the statement).
+        There is deliberately NO rule for `.selfIdx`: a dangling reference evals
+        `none`, so nothing about it is provable — absence of a rule IS the honest
+        reading. -/
+    | sysStep {me opponent : Prog} {defs : ProgList} {i : Nat} {p : Prog} {a : Action}
+        {n : Nat} :
+        defs.get? i = some p →
+        PlaysProof me opponent (p.sysClose defs) a n →
+        PlaysProof me opponent (.sys defs i) a (n + c_node)
 
 -- 3. `AtomProvable k φ` — a `PlaysProof` whose run cost fits the budget (`n ≤ k`); the bridge for
 -- atomic `.plays` facts (which the reasoning rules cannot read).
@@ -640,7 +652,7 @@ end
 /-! ## 4. The NAMED eliminators — use these, never the raw recursors
 
 `Pf` is mutual, so `induction h with` is unavailable (Lean does not do mutual structural
-induction). These `@[elab_as_elim]` theorems repackage the raw 37-minor-premise recursor behind
+induction). These `@[elab_as_elim]` theorems repackage the raw 38-minor-premise recursor behind
 NAMED hypotheses, restoring
 
     induction h using Pf.induct with | atom … | mp … | …
@@ -792,13 +804,14 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
     (motive_1 := fun _ _ _ _ _ _ => True)
     (motive_2 := fun _ _ _ => True)
     (motive_3 := motive)
-    -- PlaysProof arms (14) + AtomProvable.mk (1): motive is `True`.
+    -- PlaysProof arms (15, sysStep last) + AtomProvable.mk (1): motive is `True`.
     trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
     (fun _ _ _ _ => trivial)
-    -- tsearch arms: Zero_t, Nil_f, Cons_t, Cons_f, High_f
+    -- tsearch arms: Zero_t, Nil_f, Cons_t, Cons_f, High_f; then sysStep
     (fun _ _ => trivial) (fun _ _ _ => trivial) (fun _ _ _ _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ => trivial)
+    (fun _ _ _ => trivial)
     (fun _ _ _ => trivial)
     -- Pf arms (27, family order A/B/C): route each to its named hypothesis.
     (fun {k} {φ} hatom _ => atom k φ hatom)
@@ -910,6 +923,11 @@ theorem PlaysProof.induct
         motive me opponent q a n hq →
         motive me opponent (.tsearch k gs θ p q) a (n + gs.gsize + c_node)
           (.tsearchHigh_f hθ hq))
+    (sysStep : ∀ (me opponent : Prog) (defs : ProgList) (i : Nat) (p : Prog) (a : Action)
+        (n : Nat) (hget : defs.get? i = some p)
+        (h : PlaysProof me opponent (p.sysClose defs) a n),
+        motive me opponent (p.sysClose defs) a n h →
+        motive me opponent (.sys defs i) a (n + c_node) (.sysStep hget h))
     {me opponent body : Prog} {a : Action} {n : Nat} (h : PlaysProof me opponent body a n) :
     motive me opponent body a n h := by
   -- The 27 `Pf` arms + `AtomProvable.mk` are irrelevant here (their motives are `True`); let
@@ -941,6 +959,8 @@ theorem PlaysProof.induct
       tsearchCons_f me opponent p q a n k θ w m φ rest hθ hg hq ihq)
     (fun {me opponent p q} {a} {n k θ} {gs} hθ hq ihq =>
       tsearchHigh_f me opponent p q a n k θ gs hθ hq ihq)
+    (fun {me opponent} {defs} {i} {p} {a} {n} hget h ih =>
+      sysStep me opponent defs i p a n hget h ih)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     ?_ ?_
     h <;>

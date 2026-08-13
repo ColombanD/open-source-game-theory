@@ -217,7 +217,7 @@ theorem gd_pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     Pf K φ → WV (gdS k) φ := by
   intro K φ h
   refine ((wv_sound_upto (gdS k) (fun _ _ => False)
-    ?nb ?const ?opp ?ite ?botbot ?botsearch ?tsearch ?sim_inv ?botsim_inv ?search_t
+    ?nb ?const ?opp ?ite ?botbot ?botsearch ?tsearch ?sys ?sim_inv ?botsim_inv ?search_t
     ?search_f ?simS ?botsimS K).2 K φ h).2 Pf_sound
   case nb =>
     rintro oppo z ⟨h1, h2⟩; simp [GuardianBot] at h2
@@ -243,6 +243,10 @@ theorem gd_pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     · exact hF.elim
   case tsearch =>
     rintro me oppo k' gs θ P Q (⟨h1, h2⟩ | hF) hgate
+    · subst h1; rcases hgate with hb | hb <;> simp [DIMCID] at hb
+    · exact hF.elim
+  case sys =>
+    rintro me oppo defs i (⟨h1, h2⟩ | hF) hgate
     · subst h1; rcases hgate with hb | hb <;> simp [DIMCID] at hb
     · exact hF.elim
   case sim_inv =>

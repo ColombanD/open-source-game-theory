@@ -165,7 +165,27 @@ re-checked on a representative outcome theorem, Spike A recompiles against the
 extended engine, and a scratch defeq suite (sysClose/get?/subst/size + a real
 4-step eval chain through a 2-member system) passes on the live engine. Metatheory
 debt extended to `.sys`/`.selfIdx` (lakefile note updated).
-| **3** | `PlaysProof.sysStep` (twin of `botSearchStep`) + `sound_upto`/`wv_sound_upto` arms + `Pf_mono`/`Pf.induct` wiring + `h_sys` kill obligation in every Exclusion census | both targets green; no existing exclusion theorem weakened | 3–5 days |
+| **3** ✓ | `PlaysProof.sysStep` (twin of `botSearchStep`) + `sound_upto`/`wv_sound_upto` arms + `Pf_mono`/`Pf.induct` wiring + `h_sys` kill obligation in every Exclusion census | both targets green; no existing exclusion theorem weakened | 3–5 days |
+
+**Phase 3 RESULTS (2026-08-13, same session): GATE MET.** `PlaysProof.sysStep`
+landed — S reads the system (component `i`, one `sysClose` level, `c_node`, the
+`.bot`-transparency twin); deliberately NO rule for `.selfIdx` (dangling evals
+`none`; absence of a rule IS the honest reading). Both named eliminators gained the
+arm (`Pf.induct` trivial-motive; `PlaysProof.induct` full); `Pf_mono` needed
+NOTHING (plain `cases` on `Pf`; `atom_monotone` covers the atom layer). The master
+lemma `wv_sound_upto` gained the `h_sys` census kill hypothesis (the `h_tsearch`
+pattern verbatim) + the PASS-1 soundness arm (`eval_sys_some` — the machine gate,
+compiling) + the PASS-2 census kill arm; all five instantiation sites discharged
+`h_sys` trivially (no census contains a `.sys` shape). `Base/Exclusion.lean`
+untouched entirely — the Pf-tier censuses quantify over `Pf` constructors, which
+did not change. Build green (3305 jobs), zero statement changes, 3-axiom footprint;
+sanity: `Pf 16 (.plays (.sys demo 0) opp .C)` derives via `sysStep ∘ bot ∘ sysStep`
+through the `.bot`-frozen system reference — S genuinely reads mutual systems.
+NOTE for Phase 5: the peel-to-implication machinery (deriving `□φ⃗ → φᵢ` from a
+frozen σ-player's source) is NOT part of sysStep — it will need either new Pf
+modal rules for `.bot (.sys …)`-wrapped `.tsearch` shapes (with their own
+`sound_upto` arms, the constructor-integration playbook) or a meta-level
+derivation via the Spike-A stage lemma; decide there, not here.
 | **4** | Promote Spike A → `Base/Loeb.vector_pblt_engine` (size-parametric; n=2 engines untouched) | consumed hypotheses match Phase-5 needs | 2–3 days |
 | **5** | `Tau/SysDefs.lean` (σ-zoo as ONE `ProgList` + `Positive` by `decide`) → constants' certificates → mutual premises by peel-chaining → `ps_probe_sysQuine` (vector engine + n-ary eval inversion) → `tauDupocσ_phase` (both legs) → `outcome_TauDupocσ_vs_TauDupocσ` → bistability audit | first Route-A theorem compiles; open cells documented, not fought | 1–2 weeks |
 | **6** | Split-collapse theorem pair; Python mirror in `app/src/pd_runner/tau/` for `(t, α)` sweeps → EGT | — | 1 week (parallel with 5's audit) |

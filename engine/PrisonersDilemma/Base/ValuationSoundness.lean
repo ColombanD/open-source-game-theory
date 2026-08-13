@@ -42,7 +42,7 @@ vacuously.
 the raw mutual recursors outside ProofSystem.lean §4 and the soundness spine". This
 file IS the soundness spine's induction — the third and intended FINAL raw-recursor
 site (with `ProofSystem.lean` §4). It exists precisely so that no future valuation
-argument ever re-runs the 39-arm induction: INSTANTIATE `wv_sound_upto`, never
+argument ever re-runs the 40-arm induction: INSTANTIATE `wv_sound_upto`, never
 re-induct. (History: `sound_upto` and the two WaryBot census inductions were three
 separate raw-recursor proofs before 2026-07-30; this lemma is their merge.)
 -/
@@ -443,6 +443,8 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       me = .bot (.search g ψ P Q) → False)
     (h_tsearch : ∀ me oppo k gs θ P Q, (S me oppo ∨ S' me oppo) →
       (Prog.tsearch k gs θ P Q = me ∨ me = .bot (.tsearch k gs θ P Q)) → False)
+    (h_sys : ∀ me oppo defs i, (S me oppo ∨ S' me oppo) →
+      (Prog.sys defs i = me ∨ me = .bot (.sys defs i)) → False)
     (h_sim_inv : ∀ p q oppo, (S (.sim p q) oppo ∨ S' (.sim p q) oppo) →
       S (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo) ∨
       S' (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo))
@@ -481,7 +483,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         (motive_3 := fun _ _ _ => True)
         ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f
         ?tsearchZero_t ?tsearchNil_f ?tsearchCons_t ?tsearchCons_f ?tsearchHigh_f
-        ?atomMk
+        ?sysStep ?atomMk
         ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep
         ?pfIteBranchSearch ?pfSTS ?pfSearchChain ?pfCtxChain ?pfEqRefl ?pfEqNeg ?pfMp
         ?pfImplTrans
@@ -575,6 +577,10 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       case tsearchHigh_f =>
         intro me opponent p q a n k θ gs hθ _hq ihq hB
         exact eval_tsearch_high me opponent p q a k gs θ hθ (ihq (by omega))
+      case sysStep =>
+        intro me opponent defs i p a n hget _h ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval_sys_some N hget]; exact hN⟩
       all_goals (intros; trivial)
     -- ── PASS 2: the `Pf` half (paired motives: gated interp ∧ conditional WV) ──
     have hpf : ∀ k φ, Pf k φ →
@@ -590,7 +596,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         (motive_3 := fun k ψ _ =>
           (k ≤ B → ψ.interp) ∧ ((∀ K χ, Pf K χ → χ.interp) → WV S ψ))
         ?cConst ?cSelf ?cOpp ?cBot ?cSim ?cIte_t ?cIte_f ?cSearch_t ?cSearch_f
-        ?cTZero ?cTNil ?cTCons_t ?cTCons_f ?cTHigh ?cAtomMk
+        ?cTZero ?cTNil ?cTCons_t ?cTCons_f ?cTHigh ?cSys ?cAtomMk
         ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep
         ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
         ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
@@ -655,6 +661,12 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       case cTHigh =>
         intro me oppo p q a n k θ gs _hθ _hq _ih _hs hT hgate
         exact (h_tsearch me oppo k gs θ p q hT hgate).elim
+      -- `.sys` shapes are killed outright by `h_sys`: no census places a system
+      -- reference in `S ∪ S'` (Def-5 probes target `.bot`-frozen σ-instances whose
+      -- CENSUS subjects, if any, will get their own machinery in Phase 5).
+      case cSys =>
+        intro me oppo defs i p a n _hget _hp _ih _hs hT hgate
+        exact (h_sys me oppo defs i hT hgate).elim
       case cAtomMk =>
         intro me oppo a n K hpp hn ih
         constructor
