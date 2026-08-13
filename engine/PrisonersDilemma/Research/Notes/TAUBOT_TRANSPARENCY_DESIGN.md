@@ -673,3 +673,19 @@ redefinition. The Python comparison's separation summary is retracted with the
 same scope. **A refined Def 4 is being specified separately (Colomban,
 2026-08-13) and will replace the σ-player definition; the redefinition should
 reuse the instance layer unchanged.**
+
+---
+
+# Part IV — Definition 5: σ-probing (common-knowledge blur) — see `DEF5_SYS_BINDER_ROADMAP.md`
+
+**Def 5** replaces Def 4's point-mass probes with σ-probes: hypotheses are
+instantiated at the *blurred signal itself* (`probe(B, σ_T)`, not `probe(B, δ_T)`),
+making blur common knowledge rather than a private handicap. No closed `Prog` term
+exists for the σ-zoo (the reference graph is the complete digraph; one `.self` cuts
+one cycle), so Def 5 forces either a mutual-fixpoint binder `.sys` (**Route A**,
+provisionally chosen 2026-08-13) or a belief-order tower over closed lower-level
+instances (**Route B**, the standing fallback, no language change, Löb only at the
+bottom level — i.e. Def 4 is the Löbian base case of Def 5's approximation tower).
+Fixed conventions, predictions (split collapse, non-total matrix), the phased
+roadmap with byte-identity gates, and the kill criteria all live in
+`DEF5_SYS_BINDER_ROADMAP.md` — read it before touching anything `.sys`.
