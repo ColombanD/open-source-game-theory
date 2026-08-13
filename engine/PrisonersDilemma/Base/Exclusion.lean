@@ -325,6 +325,13 @@ theorem tail_plays_readable
       simp only [TailTo_plays, Formula.plays.injEq] at h1
       obtain ⟨rfl, rfl, rfl⟩ := h1
       exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨defs, i, hme⟩))))))
+  | botSysTsearchDefer k' g defs i w₁ w₂ ψ₁ ψ₂ rest θ a b me' oppo'
+      hme hget h₁ hθ₁ hθ₂ hle _ih₁ =>
+      intro me oppo a' h
+      obtain ⟨h1, -⟩ := h
+      simp only [TailTo_plays, Formula.plays.injEq] at h1
+      obtain ⟨rfl, rfl, rfl⟩ := h1
+      exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨defs, i, hme⟩))))))
   | searchChain k' g₁ ψ₁ e₁ L a me' opponent' hme hle =>
       -- the telescope player is a (nonempty) search plug
       intro me oppo a' h
@@ -451,6 +458,10 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
         exact hbotsearch me oppo aa h1 gg psi bb hme
     | botSysTsearchBranch gg mm defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ aa bb me oppo
         hme hget h₁ h₂ hθ₁ hθ₃ hsz =>
+        obtain ⟨h1, -⟩ := htail
+        exact hbotsys me oppo aa h1 defs i hme
+    | botSysTsearchDefer gg defs i w₁ w₂ ψ₁ ψ₂ rest θ aa bb me oppo
+        hme hget h₁ hθ₁ hθ₂ hsz =>
         obtain ⟨h1, -⟩ := htail
         exact hbotsys me oppo aa h1 defs i hme
     | iteBranchSearch_t gg zz aa' cc0 cc1 psi qq me oppo hme hsz =>
@@ -973,6 +984,8 @@ theorem pf_size_or_atom : ∀ {k φ}, Pf k φ → φ.size ≤ k ∨ AtomProvable
   | searchElseChain hd L a me opnt hme hle => exact Or.inl (by omega)
   | botSysTsearchBranch g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b me opnt
       hme hget h₁ h₂ hθ₁ hθ₃ hle => exact Or.inl (by omega)
+  | botSysTsearchDefer g defs i w₁ w₂ ψ₁ ψ₂ rest θ a b me opnt
+      hme hget h₁ hθ₁ hθ₂ hle => exact Or.inl (by omega)
   | ctxChain hd L a me opnt hme hle => exact Or.inl hle
   | implTrans φ' ψ' χ' a b h1 h2 hle => exact Or.inl (by omega)
   | atomBoxImpl kBox p q a hatom hle => exact Or.inl (by omega)

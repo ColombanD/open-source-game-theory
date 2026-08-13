@@ -63,14 +63,21 @@ open PD
 namespace PD.Tau
 
 /-- The σ_Dupoc-column guard list: probes of members {0,1,2,3} at the given
-    weights. Order per the extended convention: shallow-citable (C), refutable
-    (D), Löbian (the member-2 slot), irrefutable-risk (the behavioral slot)
-    LAST. Used by BOTH Dupoc instances (members 2 and 4) — with σ_D and σ_C
-    weights respectively — and, over `.sys` references, by the top player. -/
+    weights. GUARD ORDER (fixed by the Löb COST analysis, 2026-08-13):
+    shallow-citable (C) first, **Löbian (the member-2 slot) SECOND**, then the
+    refutable (D) and irrefutable-risk (behavioral) slots trailing. The Löb
+    premise `□_k φ₁ → φ₁` must have an O(log k) transcript (`pblt` needs
+    `pm ≪ k`), so the peel prefix before the deferred Löb guard may only contain
+    CITED guards (`c_guard` each) — a refutation in the prefix pays the
+    `search_f` floor `≥ k` and sinks the chain. With this order the cooperative
+    regime `wC < θ ≤ wC + wL` commits at the L-guard without consulting D or Ts
+    at all (`botSysTsearchDefer`). Used by BOTH Dupoc instances (members 2 and
+    4) — with σ_D and σ_C weights respectively — and, over `.sys` references,
+    by the top player. -/
 def sysDupocSig (wC wD wL wT : Nat) : GuardList :=
   .cons wC (probe (.selfIdx 0))
-    (.cons wD (probe (.selfIdx 1))
-      (.cons wL (probe (.selfIdx 2))
+    (.cons wL (probe (.selfIdx 2))
+      (.cons wD (probe (.selfIdx 1))
         (.cons wT (probe (.selfIdx 3)) .nil)))
 
 /-- The behavioral watch list over the σ_C column (members {0,1,4,5}): run each
@@ -104,8 +111,8 @@ def sigmaZoo (k θ₂ θ₃ θ₄ θ₅ dC dD dL dT cC cD cL cT : Nat) : ProgLis
 def TauDupocSys (defs : ProgList) (k wC wD wL wT θ : Nat) : Prog :=
   .tsearch k
     (.cons wC (probe (.sys defs 0))
-      (.cons wD (probe (.sys defs 1))
-        (.cons wL (probe (.sys defs 2))
+      (.cons wL (probe (.sys defs 2))
+        (.cons wD (probe (.sys defs 1))
           (.cons wT (probe (.sys defs 3)) .nil))))
     θ (.const .C) (.const .D)
 

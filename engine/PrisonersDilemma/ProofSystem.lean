@@ -680,6 +680,30 @@ search finite). -/
             (.plays me opponent a)).size ≤ k →
         Pf k (.impl (.box g ((ψ₃.sysClose defs).subst me opponent))
           (.plays me opponent a))
+    /-- **The CHEAP σ-instance reading** — `botSysTsearchBranch`'s O(log k) sibling,
+        and the one the Löb chain actually consumes (`pblt` needs the premise
+        transcript ≪ the box budget, so the prefix before the deferred guard may
+        contain only CITED guards — never a refutation, whose `search_f` floor
+        costs ≥ g). Here the head guard fires by a cited proof and the SECOND
+        guard is the deferred `□`-antecedent; `w₁ < θ ≤ w₁ + w₂` commits the peel
+        at the deferred guard, so every trailing guard (refutable and
+        irrefutable-risk alike) stays unread. This is the Def-5 quine's premise
+        rule: member `i` = `Dupoc(σ_D)` with guard order [C, L, …] yields
+        `□_g φ₁ → φ₁` at `c_guard g + |conclusion|` — the exact `pblt_engine`
+        shape. -/
+    | botSysTsearchDefer (g : Nat) (defs : ProgList) (i : Nat)
+        (w₁ w₂ : Nat) (ψ₁ ψ₂ : Formula) (rest : GuardList) (θ : Nat)
+        (a b : Action) (me opponent : Prog)
+        (hme : me = .bot (.sys defs i))
+        (hget : defs.get? i = some (.tsearch g
+          (.cons w₁ ψ₁ (.cons w₂ ψ₂ rest)) θ (.const a) (.const b)))
+        (h₁ : Pf g ((ψ₁.sysClose defs).subst me opponent))
+        (hθ₁ : w₁ < θ) (hθ₂ : θ ≤ w₁ + w₂) :
+        c_guard g +
+          (Formula.impl (.box g ((ψ₂.sysClose defs).subst me opponent))
+            (.plays me opponent a)).size ≤ k →
+        Pf k (.impl (.box g ((ψ₂.sysClose defs).subst me opponent))
+          (.plays me opponent a))
 end
 
 /-! ## 4. The NAMED eliminators — use these, never the raw recursors
@@ -772,6 +796,20 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
         motive g _ h₁ → motive m _ h₂ →
         motive k _ (.botSysTsearchBranch g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b
           me opponent hme hget h₁ h₂ hθ₁ hθ₃ hle))
+    (botSysTsearchDefer : ∀ (k g : Nat) (defs : ProgList) (i w₁ w₂ : Nat)
+        (ψ₁ ψ₂ : Formula) (rest : GuardList) (θ : Nat) (a b : Action)
+        (me opponent : Prog)
+        (hme : me = .bot (.sys defs i))
+        (hget : defs.get? i = some (.tsearch g
+          (.cons w₁ ψ₁ (.cons w₂ ψ₂ rest)) θ (.const a) (.const b)))
+        (h₁ : Pf g ((ψ₁.sysClose defs).subst me opponent))
+        (hθ₁ : w₁ < θ) (hθ₂ : θ ≤ w₁ + w₂)
+        (hle : c_guard g +
+          (Formula.impl (.box g ((ψ₂.sysClose defs).subst me opponent))
+            (.plays me opponent a)).size ≤ k),
+        motive g _ h₁ →
+        motive k _ (.botSysTsearchDefer g defs i w₁ w₂ ψ₁ ψ₂ rest θ a b
+          me opponent hme hget h₁ hθ₁ hθ₂ hle))
     (eqRefl : ∀ (k : Nat) (p : Prog) (hle : (Formula.eq p p).size ≤ k),
         motive k _ (.eqRefl p hle))
     (eqNeg : ∀ (k : Nat) (p q : Prog) (hne : p ≠ q)
@@ -901,6 +939,10 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
         hθ₁ hθ₃ hle ih₁ ih₂ =>
       botSysTsearchBranch k g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b me opponent
         hme hget h₁ h₂ hθ₁ hθ₃ hle ih₁ ih₂)
+    (fun {k} g defs i w₁ w₂ ψ₁ ψ₂ rest θ a b me opponent hme hget h₁
+        hθ₁ hθ₂ hle ih₁ =>
+      botSysTsearchDefer k g defs i w₁ w₂ ψ₁ ψ₂ rest θ a b me opponent
+        hme hget h₁ hθ₁ hθ₂ hle ih₁)
     h
 
 /-- Named eliminator for `PlaysProof` — the workhorse for the execution census
@@ -1014,7 +1056,7 @@ theorem PlaysProof.induct
     (fun {me opponent} {defs} {i} {p} {a} {n} hget h ih =>
       sysStep me opponent defs i p a n hget h ih)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-    ?_ ?_ ?_
+    ?_ ?_ ?_ ?_
     h <;>
   · intros; trivial
 
@@ -1065,6 +1107,10 @@ theorem Pf_mono : ∀ {k₁ : Nat} {φ : Formula}, Pf k₁ φ →
       hme hget h₁ h₂ hθ₁ hθ₃ hle =>
       exact .botSysTsearchBranch g m defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃ rest θ a b me
         opponent hme hget h₁ h₂ hθ₁ hθ₃ (Nat.le_trans hle hk)
+  | botSysTsearchDefer g defs i w₁ w₂ ψ₁ ψ₂ rest θ a b me opponent
+      hme hget h₁ hθ₁ hθ₂ hle =>
+      exact .botSysTsearchDefer g defs i w₁ w₂ ψ₁ ψ₂ rest θ a b me
+        opponent hme hget h₁ hθ₁ hθ₂ (Nat.le_trans hle hk)
   | atomBoxImpl kBox p q a hatom hle =>
       exact .atomBoxImpl kBox p q a hatom (Nat.le_trans hle hk)
   | boxIntro kIn K φ' hprem hle => exact .boxIntro kIn k₂ φ' hprem (Nat.le_trans hle hk)

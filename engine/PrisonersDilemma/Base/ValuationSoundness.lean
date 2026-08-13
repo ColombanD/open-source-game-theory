@@ -489,7 +489,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         ?pfImplTrans
         ?pfWeaken ?pfImpS2 ?pfImplRefl ?pfImplK ?pfImplS ?pfContrapose ?pfNegElim
         ?pfBoxIntro ?pfAtomBoxImpl ?pfAxK ?pfAxKf ?pfBox4 ?pfBoxMono ?pfDiagF ?pfDiagB
-        ?pfSearchElseChain ?pfBotSysTsearch h
+        ?pfSearchElseChain ?pfBotSysTsearch ?pfBotSysTsearchDefer h
       case const => exact fun _ => ⟨1, rfl⟩
       case self =>
         intro me opponent a n _ ih hB
@@ -601,7 +601,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
         ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
         ?pBoxIntro ?pAtomBoxImpl ?pAxK ?pAxKf ?pBox4 ?pBoxMono ?pDiagF ?pDiagB
-        ?pSearchElseChain ?pBotSysTsearch h
+        ?pSearchElseChain ?pBotSysTsearch ?pBotSysTsearchDefer h
       -- ── the certificate side: the census play-exclusion clause ──
       case cConst =>
         intro me oppo a _hs hT hgate
@@ -948,6 +948,50 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
           rw [WV_plays]
           exact Or.inr ((hs _ _ (Pf.botSysTsearchBranch g m0 defs i w₁ w₂ w₃ ψ₁ ψ₂ ψ₃
             rest θ a b me opponent hme hget h₂prem h₃prem hθ₁ hθ₃ hle)) hbox)
+      case pBotSysTsearchDefer =>
+        intro k0 g defs i w₁ w₂ ψ₁ ψ₂ rest θ a b me opponent hme hget
+          h₁prem hθ₁ hθ₂ hle ih₁
+        constructor
+        · -- gated interp: both consulted bits fire (the cited head, the deferred
+          -- box antecedent); the peel commits at residual 0 without reading on
+          intro _hB hbox
+          have hb₁ : proofSearch g ((ψ₁.sysClose defs).subst me opponent) = true :=
+            (proofSearch_spec _ _).2 h₁prem
+          have hb₂ : proofSearch g ((ψ₂.sysClose defs).subst me opponent) = true :=
+            (proofSearch_spec _ _).2 hbox
+          subst hme
+          have s1 : eval (0+1) (.bot (.sys defs i)) opponent (.const a) = some a := rfl
+          have s2 : eval (0+1+1) (.bot (.sys defs i)) opponent
+              (.tsearch g (rest.gsysClose defs) (θ - w₁ - w₂) (.const a) (.const b))
+              = some a := by
+            rw [show θ - w₁ - w₂ = 0 from by omega, eval_tsearch_zero (0+1)]
+            exact s1
+          have s3 : eval (0+1+1+1) (.bot (.sys defs i)) opponent
+              (.tsearch g (.cons w₂ (ψ₂.sysClose defs) (rest.gsysClose defs))
+                (θ - w₁) (.const a) (.const b)) = some a := by
+            rw [eval_tsearch_cons_t (0+1+1) (by omega) hb₂]
+            exact s2
+          have s4 : eval (0+1+1+1+1) (.bot (.sys defs i)) opponent
+              (.tsearch g (.cons w₁ (ψ₁.sysClose defs)
+                (.cons w₂ (ψ₂.sysClose defs) (rest.gsysClose defs)))
+                θ (.const a) (.const b)) = some a := by
+            rw [eval_tsearch_cons_t (0+1+1+1) (by omega) hb₁]
+            exact s3
+          have s5 : eval (0+1+1+1+1+1) (.bot (.sys defs i)) opponent
+              (.sys defs i) = some a := by
+            rw [eval_sys_some (0+1+1+1+1) hget]
+            exact s4
+          exact ⟨0+1+1+1+1+1+1, by
+            show eval (0+1+1+1+1+1+1) (.bot (.sys defs i)) opponent
+              (.bot (.sys defs i)) = some a
+            rw [eval]
+            exact s5⟩
+        · intro hs
+          rw [WV_impl, WV_box]
+          intro hbox
+          rw [WV_plays]
+          exact Or.inr ((hs _ _ (Pf.botSysTsearchDefer g defs i w₁ w₂ ψ₁ ψ₂
+            rest θ a b me opponent hme hget h₁prem hθ₁ hθ₂ hle)) hbox)
       case pEqRefl =>
         intro k0 p _hle
         exact ⟨fun _ => rfl, fun _ => by rw [WV_eq]⟩
