@@ -210,29 +210,42 @@ seeing the blur of a cooperator, cooperate". REJECTED: probing members directly
 (`probe (.selfIdx j)` of the player itself) — it collapses Dupoc into TFT by
 erasing the probe-direction distinction.
 
-**Instance closure = TWO COLUMNS (finite because signals are over TEMPLATE
-names, Def-4 convention 1):** only σ_Dupoc and σ_Coop are ever probe centers.
-`.sys` members (8): shared constants `C`/`D`; `Dupoc(σ_D)` (probes the σ_D
-column INCL. ITSELF — φ₁, Löbian self-loop); `TFTPf(σ_D)` (probes σ_C column —
-φ₂); `TFTSim(σ_D)` (runs σ_C column — behavioral); `Dupoc(σ_C)` (probes σ_D
-column — φ₃); `TFTPf(σ_C)` (probes σ_C column incl. itself — φ₄, self-loop);
-`TFTSim(σ_C)` (behavioral). Top-level players are SEPARATE programs (free
-weights `w⃗`, threshold θ) probing the same members — `outcome_of_ex_plays`
-Matrix shape survives. Inner signal weights `v⃗_D`, `v⃗_C` are parameters; the
-cooperative regime is a CONJUNCTION of per-instance α-conditions.
+**ZOO REVISION (Colomban, 2026-08-13): TauTFTPf is OUT of milestone 1.** The
+closure shrinks to SIX members (`Tau/SysDefs.lean`, LANDED and building):
+0=`C`, 1=`D`, 2=`Dupoc(σ_D)` (probes {0,1,2,3}; slot 2 = ITSELF — the quine
+φ₁), 3=`TFTSim(σ_D)` (runs the σ_C column {0,1,4,5}), 4=`Dupoc(σ_C)` (probes
+{0,1,2,3} at σ_C weights — its L-slot points at MEMBER 2, not itself; the same
+guard list gives the right wiring for both instances by construction),
+5=`TFTSim(σ_C)` (runs {0,1,4,5}; slot 5 sims ITSELF). Top players
+`TauDupocSys`/`TauTFTSimSys` are separate programs over the closed system
+(`.sys defs j` references, free `w⃗`/θ) — `outcome_of_ex_plays` survives.
+Inner signal weights (d-/c-vectors) are parameters; cooperative regime = a
+conjunction of per-instance α-conditions.
 
-**The Löb core and its elimination (all with the SHIPPED toolkit):**
-φ₁ ← {φ₁,φ₂}, φ₂ ← {φ₃,φ₄}, φ₃ ← {φ₁,φ₂}, φ₄ ← {φ₃,φ₄} — one SCC of size 4,
-but SPARSE: (1) `loeb_premise_under_box` kills both self-loops →
-`C₁ = □φ₂ → φ₁`, `C₄ = □φ₃ → φ₄`; (2) ONE new derived substitution lemma
-(box + `axKf` + `compUnder`, ~`compUnder`-sized) discharges `□φ₁` from φ₃'s
-premise via `C₁` and `□φ₄` from φ₂'s via `C₄` → `□φ₂ → φ₃`, `□φ₃ → φ₂`;
-(3) that 2-cycle is `mutual_loeb` + `bloeb_engine`; (4) φ₁/φ₄ backfill by
-`boxIntro` + `mp`. No n≥3 tower, no new Pf constructors.
+**Consequences of dropping TFTPf (all recorded in SysDefs' header):**
+1. **The Löb core is UNARY** — no prover probes the σ_C column anymore, so
+   `probe (Dupoc(σ_C))` never needs provability, only its PLAY (semantic,
+   settled by φ₁'s bit). Milestone 1 uses `pblt_engine_id`; the vector engine
+   waits for milestone 2.
+2. **Regime-dependent divergence — a genuine Def-5 finding.** Member 5's
+   self-sim slot diverges at every fuel (σ's full support makes the behavioral
+   bot observe its own reflection; point-mass Def 4 could not express this).
+   `iteTree`'s structural short-circuit (`θ=0 ↦ .const .C`) means cooperative
+   regimes never RUN the divergent guard; outside them its bits are
+   false-but-IRREFUTABLE (nothing for `atomNeg` to cite) → those bands are
+   honest OPEN cells. Guard-order convention extended: irrefutable-risk LAST.
+3. **The peel-to-implication decision RESOLVES to one new Pf modal rule**
+   (`botSysTsearchBranch`): S reads `.bot (.sys defs i)` with member `i` a
+   `.tsearch`; the peel prefix is discharged by ACTUAL cite/refutation
+   premises; ONE deferred guard becomes the `□`-antecedent; θ-arithmetic as
+   side conditions — `botSearchStep`'s exact generalization, constructor
+   playbook (the `sound_upto` arm is the machine gate). This is the next
+   engine step; then `ps_probe_sysQuine` via `pblt_engine_id`, the phase
+   theorems, and `outcome_TauDupocSys_vs_TauDupocSys`.
 
-**Revised split prediction:** TFTSim watches the σ_C COLUMN, which contains the
-Löb-gated `Dupoc(σ_C)` — the behavioral bot inherits the Löb budget through
-what it watches: budget inheritance THROUGH COLUMNS, not structural collapse.
+**Revised split prediction (unchanged by the TFTPf removal):** TFTSim watches
+the σ_C column containing the Löb-gated `Dupoc(σ_C)` — budget inheritance
+THROUGH COLUMNS.
 
 **Milestone 2 (not now):** TauEBotσ — blocked on the Def-4 τ(EBot) redefinition
 (the crowd-exploiter retraction); when it lands, redo the graph analysis before
