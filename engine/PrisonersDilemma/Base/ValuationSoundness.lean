@@ -110,6 +110,14 @@ theorem eval_mono :
                   rw [eval_tsearch_cons_f n hθ hg] at h
                   rw [eval_tsearch_cons_f (n+1) hθ hg]
                   exact ih _ _ _ _ h
+    | sys defs i =>
+        cases hget : defs.get? i with
+        | some p =>
+            rw [eval_sys_some n hget] at h
+            rw [eval_sys_some (n+1) hget]
+            exact ih _ _ _ _ h
+        | none => rw [eval_sys_none n hget] at h; exact absurd h (by simp)
+    | selfIdx j => rw [eval_selfIdx n] at h; exact absurd h (by simp)
 
 /-- `≤`-form of fuel monotonicity. -/
 theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}

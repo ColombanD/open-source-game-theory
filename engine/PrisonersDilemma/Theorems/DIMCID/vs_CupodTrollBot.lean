@@ -61,6 +61,8 @@ theorem subst_eq_ctb {k : Nat} {q me o : Prog}
           | ite b' a' p'' q'' => simp [Prog.subst] at hlhs
           | search K' g' p'' q'' => simp [Prog.subst] at hlhs
           | tsearch K' gs' θ' p'' q'' => simp [Prog.subst] at hlhs
+          | sys dl' i' => simp [Prog.subst] at hlhs
+          | selfIdx j' => simp [Prog.subst] at hlhs
           | self =>
               rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
                 simp [Prog.subst] at hlhs
@@ -68,6 +70,8 @@ theorem subst_eq_ctb {k : Nat} {q me o : Prog}
               simp only [Prog.subst] at hlhs
               right; exact hlhs
   | tsearch K gs θ pp qq => simp [Prog.subst, CupodTrollBot] at h
+  | sys dl i => simp [Prog.subst, CupodTrollBot] at h
+  | selfIdx j => simp [Prog.subst, CupodTrollBot] at h
 
 theorem subst_eq_opp {q me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -83,6 +87,8 @@ theorem subst_eq_opp {q me o : Prog}
   | ite b a p q => simp [Prog.subst] at h
   | search K φg pp qq => simp [Prog.subst] at h
   | tsearch K gs θ pp qq => simp [Prog.subst] at h
+  | sys dl i => simp [Prog.subst] at h
+  | selfIdx j => simp [Prog.subst] at h
 
 theorem SP_opp {k : Nat} {me oppo : Prog} (h : SP k me oppo) :
     oppo = CupodTrollBot k ∨ oppo = Prog.opp := by

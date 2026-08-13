@@ -411,6 +411,8 @@ theorem subst_eq_wary {k : Nat} {q me o : Prog}
               | ite b' a' p' q' => simp [Prog.subst] at hx
               | search K' g' p' q' => simp [Prog.subst] at hx
               | tsearch K' gs' θ' p' q' => simp [Prog.subst] at hx
+              | sys dl' i' => simp [Prog.subst] at hx
+              | selfIdx j' => simp [Prog.subst] at hx
               | self =>
                   rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
                     simp [Prog.subst] at hx
@@ -423,6 +425,8 @@ theorem subst_eq_wary {k : Nat} {q me o : Prog}
                   | ite b' a' p' q' => simp [Prog.subst] at hy
                   | search K' g' p' q' => simp [Prog.subst] at hy
                   | tsearch K' gs' θ' p' q' => simp [Prog.subst] at hy
+                  | sys dl' i' => simp [Prog.subst] at hy
+                  | selfIdx j' => simp [Prog.subst] at hy
                   | self =>
                       rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
                         simp [Prog.subst] at hy
@@ -431,6 +435,8 @@ theorem subst_eq_wary {k : Nat} {q me o : Prog}
                       rw [hx] at hy
                       exact absurd hy (by simp)
   | tsearch K gs θ pp qq => simp [Prog.subst, WaryBot] at h
+  | sys dl i => simp [Prog.subst, WaryBot] at h
+  | selfIdx j => simp [Prog.subst, WaryBot] at h
 
 /-! #### The MirrorBot census: `SPMirror` -/
 

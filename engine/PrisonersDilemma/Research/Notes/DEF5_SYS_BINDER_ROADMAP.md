@@ -148,7 +148,23 @@ in the opponent slot (Def-4 anti-pattern, still banned).
   silently compiles by well-founded recursion and `rfl` dies (the tsearch landmine,
   reproduced and dodged at toy scale). `.sys`'s eval must charge fuel per element,
   like `.tsearch`'s stepwise peel.
-| **2** | Language landing: `Program.lean` mutual block + `sysClose` + size + subst arm; `Dynamics.lean` eval arm | all 81 base + 88 tau outcome statements byte-identical; 3 axioms; `#eval` demos unchanged; Metatheory pinning decided consciously | 3–5 days |
+| **2** ✓ | Language landing: `Program.lean` mutual block + `sysClose` + size + subst arm; `Dynamics.lean` eval arm | all 81 base + 88 tau outcome statements byte-identical; 3 axioms; `#eval` demos unchanged; Metatheory pinning decided consciously | 3–5 days |
+
+**Phase 2 RESULTS (2026-08-13, one session): GATE MET.** `ProgList` + `.sys`/`.selfIdx`
+landed in the `Program.lean` mutual block; `subst` treats `.sys` as a barrier and
+`.selfIdx` as a fixpoint; the `sysClose` family (Prog/GuardList/Formula, structural,
+`.bot`-transparent, inner-`.sys` shadowing) + `ProgList.get?`/`psize`; honest `.size`
+(a `.sys` reference carries the whole system); `hasSearch := true` for both (kept out
+of the searchfree fragment by overapproximation). `Dynamics.lean`: lazy-unfold eval
+arm (`sysClose` one level per fuel tick, same frame; out-of-range/dangling → `none`)
++ the `eval_sys_some/none`/`eval_selfIdx` unfolding lemmas (the `.tsearch`-quartet
+pattern). Fallout was 6 files, ALL proof-internal match arms (subst-preimage
+censuses in WaryBot/GuardianBot/DIMCID helpers + `hasSearch_subst`/`cert_searchfree`
++ `eval_mono`): **zero statement changes** (verified by diff), 3-axiom footprint
+re-checked on a representative outcome theorem, Spike A recompiles against the
+extended engine, and a scratch defeq suite (sysClose/get?/subst/size + a real
+4-step eval chain through a 2-member system) passes on the live engine. Metatheory
+debt extended to `.sys`/`.selfIdx` (lakefile note updated).
 | **3** | `PlaysProof.sysStep` (twin of `botSearchStep`) + `sound_upto`/`wv_sound_upto` arms + `Pf_mono`/`Pf.induct` wiring + `h_sys` kill obligation in every Exclusion census | both targets green; no existing exclusion theorem weakened | 3–5 days |
 | **4** | Promote Spike A → `Base/Loeb.vector_pblt_engine` (size-parametric; n=2 engines untouched) | consumed hypotheses match Phase-5 needs | 2–3 days |
 | **5** | `Tau/SysDefs.lean` (σ-zoo as ONE `ProgList` + `Positive` by `decide`) → constants' certificates → mutual premises by peel-chaining → `ps_probe_sysQuine` (vector engine + n-ary eval inversion) → `tauDupocσ_phase` (both legs) → `outcome_TauDupocσ_vs_TauDupocσ` → bistability audit | first Route-A theorem compiles; open cells documented, not fought | 1–2 weeks |
