@@ -676,7 +676,14 @@ reuse the instance layer unchanged.**
 
 ---
 
-# Part IV — Definition 5: σ-probing (common-knowledge blur) — see `DEF5_SYS_BINDER_ROADMAP.md`
+# Part IV — Definition 5: σ-probing (common-knowledge blur) — SHELVED; see `DEF5_SYS_BINDER_ROADMAP.md`
+
+**SHELVED 2026-08-17 — the project continues on Def 4.** Def 5 was fully mechanized
+through milestone 1 (2026-08-13: the `.sys` mutual-fixpoint binder, `PlaysProof.sysStep`,
+two σ-instance Pf readers, and `outcome_TauDupocSys_vs_TauDupocSys = (C, C)` as a
+3-axiom theorem), then the engine extensions were reverted; the complete buildable
+state is archived at git tag `def5-route-a`. The Phase-4 vector Löb engine and the
+`sysLob` spikes remain in-tree (no Def-5 dependency). Full record in the roadmap note.
 
 **Def 5** replaces Def 4's point-mass probes with σ-probes: hypotheses are
 instantiated at the *blurred signal itself* (`probe(B, σ_T)`, not `probe(B, δ_T)`),

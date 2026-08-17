@@ -40,17 +40,6 @@ mutual
         -- `.search k φ p q` is behaviorally the singleton `tsearch k [(1,φ)] 1 p q`,
         -- but is kept as its own constructor: the modal reading rules
         -- (`searchBranch`/`botSearchStep`) and all 81 outcome theorems stay untouched.
-    | sys     : ProgList → Nat → Prog
-        -- the MUTUAL-FIXPOINT BINDER (Def-5 σ-probing, DEF5_SYS_BINDER_ROADMAP.md,
-        -- 2026-08-13): `sys defs i` is the i-th component of the mutually-recursive
-        -- system `defs`, whose members refer to each other via `.selfIdx`. LAZY
-        -- unfold: `eval` closes one level per fuel tick via `sysClose` (never at
-        -- definition time). Out-of-range `i` evals to `none`. `.sys` is a BINDER:
-        -- neither `subst` nor an outer `sysClose` descends into `defs` (shadowing).
-    | selfIdx : Nat → Prog
-        -- reference to system component `j` — closed by `sysClose` (the system-level
-        -- closer), NEVER by `subst` (the match-level closer). A bare `.selfIdx`
-        -- outside any system is a dangling reference and evals to `none`.
   /-- The weighted guard list carried by `.tsearch`: a specialized list kept INSIDE the
       mutual block (a nested `List (Nat × Formula)` payload would make `Prog` a nested
       inductive — recursor complications in `subst`/`size`/enumeration everywhere).
@@ -58,13 +47,6 @@ mutual
   inductive GuardList : Type where
     | nil  : GuardList
     | cons : Nat → Formula → GuardList → GuardList
-  /-- The member list carried by `.sys`: the components of a mutually-recursive
-      system, referenced by position via `.selfIdx`. Kept INSIDE the mutual block
-      for the same reason as `GuardList` (a nested `List Prog` payload would make
-      `Prog` a nested inductive — recursor complications everywhere). -/
-  inductive ProgList : Type where
-    | nil  : ProgList
-    | cons : Prog → ProgList → ProgList
   inductive Formula: Type where
     | plays : Prog → Prog → Action → Formula      -- atomic: "p(q.source) == a"
     | impl  : Formula → Formula → Formula         -- φ → ψ (needed for Löb-style hypotheses like □C → C)
@@ -73,7 +55,7 @@ mutual
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
     | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Pf`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (Research/Notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
 end
-deriving instance DecidableEq for Prog, GuardList, Formula, ProgList
+deriving instance DecidableEq for Prog, GuardList, Formula
 
 -- Closing self-reference via substitution.
 --
@@ -117,8 +99,6 @@ mutual
     | .ite b a p q,    m, o => .ite (b.subst m o) a (p.subst m o) (q.subst m o)
     | .search k φ p q, m, o => .search k (φ.subst m o) (p.subst m o) (q.subst m o)
     | .tsearch k gs θ p q, m, o => .tsearch k (gs.gsubst m o) θ (p.subst m o) (q.subst m o)
-    | .sys defs i,     _, _ => .sys defs i       -- BINDER: a subst barrier like `.bot` (members are `.self`/`.opp`-free by convention; the outer frame must not capture)
-    | .selfIdx j,      _, _ => .selfIdx j        -- system-level reference: `subst` (match-level) never touches it; `sysClose` does
   termination_by structural p _ _ => p
 
   /-- `subst` mapped over a guard list: weights and structure unchanged, every guard
@@ -137,54 +117,6 @@ mutual
     | .diag g φ,    _, _ => .diag g φ             -- FROZEN (like `.bot`/`.eq`-RHS): the diagonal is a closed meta-construction; subst does not descend
   termination_by structural f _ _ => f
 end
-
--- The SYSTEM-LEVEL closer (Def-5, DEF5_SYS_BINDER_ROADMAP.md). `sysClose defs`
--- replaces every `.selfIdx j` with `.sys defs j` — and nothing else. It is the
--- complementary closer to `subst`: `subst` (match-level) closes `.self`/`.opp`
--- and treats `.bot` as a barrier; `sysClose` (system-level) closes `.selfIdx`,
--- is TRANSPARENT through `.bot` (the quine probes live under `.bot` freezes),
--- and its ONE barrier is an inner `.sys` — a nested system is a binder whose
--- `.selfIdx` references belong to the inner system (shadowing). Unlike `subst`
--- it is total below the binder (both `.eq` sides, `.diag` bodies): no dangling
--- `.selfIdx` may survive into anything eval or the oracle will ever see.
--- Spike-B validated (Research/Spikes/sysLob/MiniSys.lean): stays structural,
--- definitional unfolding intact.
-mutual
-  def Prog.sysClose (defs : ProgList) : Prog → Prog
-    | .const a            => .const a
-    | .self               => .self
-    | .opp                => .opp
-    | .bot p              => .bot (p.sysClose defs)
-    | .sim p q            => .sim (p.sysClose defs) (q.sysClose defs)
-    | .ite b a p q        => .ite (b.sysClose defs) a (p.sysClose defs) (q.sysClose defs)
-    | .search k φ p q     => .search k (φ.sysClose defs) (p.sysClose defs) (q.sysClose defs)
-    | .tsearch k gs θ p q =>
-        .tsearch k (gs.gsysClose defs) θ (p.sysClose defs) (q.sysClose defs)
-    | .sys dl i           => .sys dl i            -- inner system: BINDER (shadowing)
-    | .selfIdx j          => .sys defs j          -- the closer itself
-  termination_by structural p => p
-
-  def GuardList.gsysClose (defs : ProgList) : GuardList → GuardList
-    | .nil           => .nil
-    | .cons w φ rest => .cons w (φ.sysClose defs) (rest.gsysClose defs)
-  termination_by structural gs => gs
-
-  def Formula.sysClose (defs : ProgList) : Formula → Formula
-    | .plays p q a => .plays (p.sysClose defs) (q.sysClose defs) a
-    | .impl φ ψ    => .impl (φ.sysClose defs) (ψ.sysClose defs)
-    | .neg φ       => .neg (φ.sysClose defs)
-    | .box n φ     => .box n (φ.sysClose defs)
-    | .eq p q      => .eq (p.sysClose defs) (q.sysClose defs)
-    | .diag g φ    => .diag g (φ.sysClose defs)
-  termination_by structural f => f
-end
-
-/-- Positional lookup into a system's member list (`.sys defs i` unfolds to member
-    `i`); out-of-range is `none`, which `eval` propagates as failure. -/
-def ProgList.get? : ProgList → Nat → Option Prog
-  | .nil,         _     => none
-  | .cons p _,    0     => some p
-  | .cons _ rest, n + 1 => rest.get? n
 
 -- Syntactic size = character count of source. This is the unit the proof system
 -- measures budgets in: `□_k φ` means "φ has a proof of ≤ k characters", and a
@@ -207,11 +139,6 @@ mutual
     | .ite b _ p q    => b.size + p.size + q.size + 1
     | .search k φ p q => numCost k + φ.size + p.size + q.size + 1
     | .tsearch k gs θ p q => numCost k + numCost θ + gs.gsize + p.size + q.size + 1
-    | .sys defs i     => defs.psize + numCost i + 1
-        -- HONEST size (Def-5 convention 4): a `.sys` reference carries the WHOLE
-        -- system's source — transcript costs must see every member. This is where
-        -- the n-dependent constant enters every Def-5 budget.
-    | .selfIdx j      => numCost j + 1
 
   /-- Character count of a guard list: each entry pays its weight numeral, its formula,
       and one separator character; the empty list is free (the node itself is charged
@@ -219,12 +146,6 @@ mutual
   def GuardList.gsize : GuardList → Nat
     | .nil           => 0
     | .cons w φ rest => numCost w + φ.size + rest.gsize + 1
-
-  /-- Character count of a system's member list (one separator per member, like
-      `gsize`); the node itself is charged by `.sys`. -/
-  def ProgList.psize : ProgList → Nat
-    | .nil         => 0
-    | .cons p rest => p.size + rest.psize + 1
 
   def Formula.size : Formula → Nat
     | .plays p q _ => p.size + q.size + 1
@@ -248,12 +169,6 @@ def Prog.hasSearch : Prog → Bool
   | .ite b _ p q    => b.hasSearch || p.hasSearch || q.hasSearch
   | .search _ _ _ _ => true
   | .tsearch _ _ _ _ _ => true   -- consults the oracle, like `.search`
-  | .sys _ _        => true      -- CONSERVATIVE: unfolding may consult the oracle through
-                                 -- members; kept out of the searchfree fragment without a
-                                 -- list census (overapproximation is sound — the fragment
-                                 -- only claims things for `hasSearch = false`)
-  | .selfIdx _      => true      -- dangling reference (evals `none`): no play certificate
-                                 -- exists, so it must not enter the searchfree fragment
 
 /-- Total weight carried by a guard list — the mass an all-fire run would accumulate.
     `θ > totalMass` means the threshold is unreachable (the else short-circuit). -/

@@ -5,9 +5,6 @@ version = "0.1.0"
 # until its arms are written — that migration is Milestone 2 (see the Def-4
 # section of TAUBOT_TRANSPARENCY_DESIGN.md). Still explicitly buildable via
 # `lake build Metatheory`; restore it to defaultTargets when M2 lands.
-# 2026-08-13 (Def-5 Phase 2): `sys`/`selfIdx` add to the same debt — the T31–T54
-# migration must cover them too (DEF5_SYS_BINDER_ROADMAP.md; modesty of `.sys`
-# args is unexamined).
 defaultTargets = ["PrisonersDilemma"]
 
 [[require]]

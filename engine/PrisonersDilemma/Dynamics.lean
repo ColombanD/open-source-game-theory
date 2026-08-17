@@ -51,16 +51,6 @@ noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
         else if proofSearch k (φ.subst me opponent)
           then eval n me opponent (.tsearch k rest (θ - w) p q)
           else eval n me opponent (.tsearch k rest θ p q)
-    -- The mutual-fixpoint binder (Def 5): LAZY unfold — close ONE level of system
-    -- reference per fuel tick (`sysClose` replaces `.selfIdx j ↦ .sys defs j`),
-    -- then continue in the SAME me/opponent frame. Repeated unfolding is paid by
-    -- fuel exactly as `.self` re-entry is; an out-of-range index (or a dangling
-    -- `.selfIdx` outside any system) fails like fuel exhaustion.
-    | .sys defs i =>
-        match defs.get? i with
-        | some p => eval n me opponent (p.sysClose defs)
-        | none   => none
-    | .selfIdx _ => none
 
 /-! ### `.tsearch` unfolding lemmas
 The peel steps as rewrite equations. The `GuardList` match inside the `eval` arm does
@@ -93,25 +83,6 @@ theorem eval_tsearch_cons_f {me opponent : Prog} {k w θ : Nat} {φ : Formula}
     eval (n+1) me opponent (.tsearch k (.cons w φ rest) θ p q)
       = eval n me opponent (.tsearch k rest θ p q) := by
   rw [eval, if_neg hθ, if_neg (by simp [hg])]
-
-/-! ### `.sys` unfolding lemmas
-Same service as the `.tsearch` quartet: the `Option` match on `defs.get? i` does not
-reduce under `rw [eval]` when the list is a variable, so consumers rewrite with
-these. -/
-
-theorem eval_sys_some {me opponent : Prog} {defs : ProgList} {i : Nat} {p : Prog}
-    (n : Nat) (hget : defs.get? i = some p) :
-    eval (n+1) me opponent (.sys defs i) = eval n me opponent (p.sysClose defs) := by
-  rw [eval, hget]
-
-theorem eval_sys_none {me opponent : Prog} {defs : ProgList} {i : Nat}
-    (n : Nat) (hget : defs.get? i = none) :
-    eval (n+1) me opponent (.sys defs i) = none := by
-  rw [eval, hget]
-
-theorem eval_selfIdx {me opponent : Prog} {j : Nat} (n : Nat) :
-    eval (n+1) me opponent (.selfIdx j) = none := by
-  rw [eval]
 
 noncomputable def play (fuel : Nat) (me opponent : Prog) : Option Action :=
   eval fuel me opponent me

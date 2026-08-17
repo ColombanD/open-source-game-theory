@@ -1,10 +1,23 @@
 # Definition 5 — σ-probing TauBots via a mutual-fixpoint binder (Route A)
 
-**Status: PROVISIONAL, Phase 0 fixed 2026-08-13.** Route A chosen provisionally over
-Route B (the belief-order tower); Route B remains the fallback at **every** gate below,
-and nothing before Phase 2 is Route-A-specific sunk cost. Re-decide after Phase 1, with
-Spike A's budget arithmetic in hand. Parent note: `TAUBOT_TRANSPARENCY_DESIGN.md`
-(Parts I–III: Defs 1–4); this note is its Part IV.
+**Status: SHELVED 2026-08-17 (project decision: the thesis continues on Def 4).**
+The full Route-A arc was EXECUTED AND COMPLETED through milestone 1 on 2026-08-13 —
+`outcome_TauDupocSys_vs_TauDupocSys = (C, C)` was a machine-checked theorem (3-axiom
+footprint, build green) — and then the engine extensions were REVERTED to keep the
+Def-4 track free of their standing tax (T31–T54 migration arms for `.sys`/`.selfIdx`
++ two extra Pf constructors; the `hbotsys`/`h_sys` census obligations at every future
+call site; proof-agent prompt surface). **The complete buildable state is archived at
+git tag `def5-route-a`** — check it out to rebuild every Def-5 theorem. Retained
+in-tree (no Def-5 dependency, zero maintenance cost): the Phase-4 vector Löb engine
+(`Base/Loeb.lean`: `compUnder`/`postUnder`/`swapAnte`, `loeb_premise_under_box`,
+`vector2_full_pblt_engine` — full-dependency mutual Löb, useful for future Def-4
+cross-bot arcs) and both spikes (`Research/Spikes/sysLob/`). This note is the design
+record and execution log; read it before ever reviving Route A (or building Route B).
+
+Parent note: `TAUBOT_TRANSPARENCY_DESIGN.md` (Parts I–III: Defs 1–4); this note is
+its Part IV. Original status line: provisional, Phase 0 fixed 2026-08-13; Route B
+(the belief-order tower) was the standing fallback and remains the cheaper revival
+path if graded-transparency-as-common-knowledge is ever wanted again.
 
 ## What Def 5 isTauA(alpha)(TauBi(alpha); 1)
 

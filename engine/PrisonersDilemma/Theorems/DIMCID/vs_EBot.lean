@@ -81,8 +81,7 @@ theorem de_botcoop_no_provable_forbidden (k : Nat) :
   no_provable_tailTo_unreadable _ _ _
     (fun n hA => de_botcoop_consequent_not_provable k n (.atom hA))
     (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ |
-          ⟨_, _, h⟩) <;> simp [CooperateBot] at h)
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [CooperateBot] at h)
     (by intro L h
         cases L with
         | nil => simp [searchPlug, CooperateBot] at h
@@ -169,7 +168,7 @@ theorem de_ebot_guard_not_provable (k : Nat) (hk : dimcidEThresh k) :
   set S : Formula → Prop := fun φ =>
     φ = .plays EBot (DIMCID k) Action.D ∨
     φ = .plays (DIMCID k) (.bot DefectBot) Action.C with hS
-  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     k _ hp le_rfl ?_
   · rintro φ (rfl | rfl)
     · exact ⟨_, _, _, rfl⟩
@@ -184,8 +183,6 @@ theorem de_ebot_guard_not_provable (k : Nat) (hk : dimcidEThresh k) :
   · rintro me oppo c (h | h) p q hme <;> injection h with h1 h2 h3 <;> subst h1 <;>
       subst h3 <;> simp [EBot, DIMCID] at hme
   · rintro me oppo c (h | h) g ψ b hme <;> injection h with h1 h2 h3 <;> subst h1 <;>
-      subst h3 <;> simp [EBot, DIMCID] at hme
-  · rintro me oppo c (h | h) defs i hme <;> injection h with h1 h2 h3 <;> subst h1 <;>
       subst h3 <;> simp [EBot, DIMCID] at hme
   · rintro z a' g ψ c0 c1 q oppo (h | h) <;> injection h with h1 h2 h3 <;>
       simp [EBot, DIMCID] at h1

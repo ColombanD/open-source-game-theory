@@ -185,7 +185,4 @@ import PrisonersDilemma.Tau.Defs
 import PrisonersDilemma.Tau.PeelLemmas
 import PrisonersDilemma.Tau.Certs
 import PrisonersDilemma.Tau.Phases
-import PrisonersDilemma.Tau.SysDefs
-import PrisonersDilemma.Tau.SysCerts
-import PrisonersDilemma.Theorems.Tau.SysMatrix
 import PrisonersDilemma.Theorems.Tau.Matrix

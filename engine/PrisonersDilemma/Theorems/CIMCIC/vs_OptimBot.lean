@@ -47,7 +47,7 @@ theorem cimcic_optim_guard_B_unprov (k : Nat) :
       TailTo (.plays (OptimBot k k) (CIMCIC k) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (OptimBot k k) (CIMCIC k) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -59,8 +59,6 @@ theorem cimcic_optim_guard_B_unprov (k : Nat) :
   · rintro me oppo c hS p q hme
     injection hS with h1 h2 h3; subst h1; simp [OptimBot] at hme
   · rintro me oppo c hS g ψ b hme
-    injection hS with h1 h2 h3; subst h1; simp [OptimBot] at hme
-  · rintro me oppo c hS defs i hme
     injection hS with h1 h2 h3; subst h1; simp [OptimBot] at hme
   · rintro z a' g ψ c0 c1 q oppo hS
     injection hS with h1 h2 h3; simp [OptimBot] at h1
@@ -141,7 +139,7 @@ theorem cimcic_optim_G3_unprov (k : Nat) :
       TailTo (.plays (CIMCIC k) (OptimBot k k) Action.D) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (CIMCIC k) (OptimBot k k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -159,8 +157,6 @@ theorem cimcic_optim_G3_unprov (k : Nat) :
   · rintro me oppo c hS p q hme
     injection hS with h1 h2 h3; subst h1; simp [CIMCIC] at hme
   · rintro me oppo c hS g ψ b hme
-    injection hS with h1 h2 h3; subst h1; simp [CIMCIC] at hme
-  · rintro me oppo c hS defs i hme
     injection hS with h1 h2 h3; subst h1; simp [CIMCIC] at hme
   · rintro z a' g ψ c0 c1 q oppo hS
     injection hS with h1 h2 h3; simp [CIMCIC] at h1

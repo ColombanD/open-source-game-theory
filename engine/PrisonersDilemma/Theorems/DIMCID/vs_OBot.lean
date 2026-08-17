@@ -71,8 +71,7 @@ theorem dimcidOb_dimcid_botCB_guard_not_provable (k : Nat) :
   refine no_provable_tailTo_unreadable (.bot CooperateBot) (DIMCID k) Action.D
     (fun n hA => dimcidOb_botCB_D_not_provable k n (.atom hA))
     (by rintro (⟨_, _, _, _, hh⟩ | ⟨_, _, hh⟩ | ⟨_, _, hh⟩ | ⟨_, _, _, _, hh⟩ |
-          ⟨_, _, _, _, _, _, _, hh⟩ | ⟨_, _, _, _, _, _, _, hh⟩ |
-          ⟨_, _, hh⟩) <;>
+          ⟨_, _, _, _, _, _, _, hh⟩ | ⟨_, _, _, _, _, _, _, hh⟩) <;>
           simp [CooperateBot] at hh)
     (by intro L hh
         cases L with

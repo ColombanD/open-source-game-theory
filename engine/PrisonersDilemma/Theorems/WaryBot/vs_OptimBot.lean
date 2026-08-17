@@ -34,7 +34,7 @@ theorem wo_wary_C_vs_optim_unprov (k : Nat) :
       TailTo (.plays (WaryBot k) (OptimBot k k) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (WaryBot k) (OptimBot k k) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -46,8 +46,6 @@ theorem wo_wary_C_vs_optim_unprov (k : Nat) :
   · rintro me oppo c hS p q hme
     injection hS with h1 h2 h3; subst h1; simp [WaryBot] at hme
   · rintro me oppo c hS g ψ b hme
-    injection hS with h1 h2 h3; subst h1; simp [WaryBot] at hme
-  · rintro me oppo c hS defs i hme
     injection hS with h1 h2 h3; subst h1; simp [WaryBot] at hme
   · rintro z a' g ψ c0 c1 q oppo hS
     injection hS with h1 h2 h3; simp [WaryBot] at h1
@@ -143,8 +141,6 @@ theorem wo_subst_eq_optim {k : Nat} {q me o : Prog}
           | ite b' a' p' q' => simp [Prog.subst] at hx
           | search K' g' p' q' => simp [Prog.subst] at hx
           | tsearch K' gs' θ' p' q' => simp [Prog.subst] at hx
-          | sys dl' i' => simp [Prog.subst] at hx
-          | selfIdx j' => simp [Prog.subst] at hx
           | self =>
               rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
                 simp [Prog.subst] at hx
@@ -157,8 +153,6 @@ theorem wo_subst_eq_optim {k : Nat} {q me o : Prog}
               | ite b' a' p' q' => simp [Prog.subst] at hy
               | search K' g' p' q' => simp [Prog.subst] at hy
               | tsearch K' gs' θ' p' q' => simp [Prog.subst] at hy
-              | sys dl' i' => simp [Prog.subst] at hy
-              | selfIdx j' => simp [Prog.subst] at hy
               | self =>
                   rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
                     simp [Prog.subst] at hy
@@ -167,8 +161,6 @@ theorem wo_subst_eq_optim {k : Nat} {q me o : Prog}
                   rw [hx] at hy
                   exact absurd hy (by simp)
   | tsearch K gs θ pp qq => simp [Prog.subst, OptimBot] at h
-  | sys dl i => simp [Prog.subst, OptimBot] at h
-  | selfIdx j => simp [Prog.subst, OptimBot] at h
 
 /-- The entangled C-atom relation for the budget census: the singleton
     `(OptimBot, WaryBot)`. -/

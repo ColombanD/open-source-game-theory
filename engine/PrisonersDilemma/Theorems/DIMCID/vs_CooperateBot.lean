@@ -40,8 +40,7 @@ theorem dimcid_no_provable_forbidden (k : Nat) :
   no_provable_tailTo_unreadable _ _ _
     (fun n hA => dimcid_consequent_not_provable k n (.atom hA))
     (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ |
-          ⟨_, _, h⟩) <;> simp [CooperateBot] at h)
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [CooperateBot] at h)
     (by intro L h
         cases L with
         | nil => simp [searchPlug, CooperateBot] at h
