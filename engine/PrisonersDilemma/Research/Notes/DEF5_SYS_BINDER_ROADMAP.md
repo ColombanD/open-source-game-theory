@@ -7,7 +7,7 @@ footprint, build green) — and then the engine extensions were REVERTED to keep
 Def-4 track free of their standing tax (T31–T54 migration arms for `.sys`/`.selfIdx`
 + two extra Pf constructors; the `hbotsys`/`h_sys` census obligations at every future
 call site; proof-agent prompt surface). **The complete buildable state is archived at
-git tag `def5-route-a`** — check it out to rebuild every Def-5 theorem. Retained
+git tag `taubot-def5-research`** — check it out to rebuild every Def-5 theorem. Retained
 in-tree (no Def-5 dependency, zero maintenance cost): the Phase-4 vector Löb engine
 (`Base/Loeb.lean`: `compUnder`/`postUnder`/`swapAnte`, `loeb_premise_under_box`,
 `vector2_full_pblt_engine` — full-dependency mutual Löb, useful for future Def-4
