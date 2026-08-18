@@ -54,10 +54,11 @@ shapes are REPLACED by one uniform action-vote.*
    (lifted family), hand-writing is the other (native family). The vote layer
    and its phase theorem are shared by both.
    **[UPDATED 2026-08-18, post-Phase-4 review: the DSL is now SCHEDULED as
-   Phase 7 (§7c) — after Phase 5, and explicitly BEFORE the `.sys`/Def-5
-   revival. The Phase-4 layer is correct but is a fixed-6 prototype:
-   hand-written vectors and instances scale quadratically (N=100 ⇒ ~10,000
-   hand terms + ~10,000 proof steps).]**
+   Phase 5 (§6) — immediately after Phase 4b, BEFORE the Python phase and
+   BEFORE the `.sys`/Def-5 revival (reordered same day: certify the layer that
+   persists, not the prototype). The Phase-4 layer is correct but is a fixed-6
+   prototype: hand-written vectors and instances scale quadratically
+   (N=100 ⇒ ~10,000 hand terms + ~10,000 proof steps).]**
 6. **Faithfulness guard while hand-written**: the kernel-vs-Python coincidence
    check (the mechanism that caught every bug so far). Expected outcome after
    the refactor: **Def 4 ≡ Def 3 at large k on every terminating cell** — the
@@ -437,41 +438,7 @@ neither fixed nor worsened it. Repairing `legacy_iff_live` against the current
 (now `tvote`-bearing) system is separate work, unrelated to this roadmap; flagged here
 so the next reader does not mistake it for Phase-4b fallout.
 
-## 6. Phase 5 — Python: from separation-hunt to coincidence-certification
-
-* `def4.py`: replace the per-bot probe-geometry model with the source-lift
-  model — per-hypothesis COMPOUND bits computed by running the lifted cascade
-  at point mass (pure matrix arithmetic, as today). Drop
-  `Probe.*` geometries; keep the floor modelling (it now sits inside compound
-  bits).
-* `compare.py`: the expected headline INVERTS — assert Def3 ≡ Def4 at large k
-  on every terminating cell of both zoos (this is the coincidence theorem,
-  checked kernel-vs-arithmetic cell by cell); report the budget-axis
-  divergences (floor cells, Löb thresholds) as the honest Def-4 content.
-  Any (t, α) divergence on a terminating cell at large k is now a BUG in one
-  side, by definition.
-* `def4_theorems.py`: adapt the scanner to the new theorem names/regimes
-  (one-sided EBot boundary; unchanged cooperator boundary).
-* Retraction banners in these files then come down (replaced by the new
-  model's docstrings).
-
-**Gate 5**: coincidence check 100% on control + separating zoos at large k;
-`uv run pytest` green.
-
-## 7. Phase 6 — docs, memory, cleanup
-
-* `TAUBOT_TRANSPARENCY_DESIGN.md`: Part III gets a one-line pointer to this
-  note as the executed redefinition (full cleanup of that note is a SEPARATE
-  later task — agreed 2026-08-18).
-* Memory: update the Def-4 milestone note; record the locked decisions.
-* M2 debt ledger: `Metatheory` restoration owes `tvote` arms (`enumProg` over
-  `VoteList`, `evalG` peel with entry evaluation, gate walkers) and NO LONGER
-  owes any `tsearch` arms (Phase 4b removes them before M2 starts) — a net
-  shrink of the M2 surface. Still deferred.
-
----
-
-## 7c. Phase 7 — the Spec DSL (scale milestone; AFTER Phase 5, BEFORE `.sys`/Def-5)
+## 6. Phase 5 — the Spec DSL (scale milestone; REORDERED 2026-08-18 to run BEFORE the Python phase, and BEFORE `.sys`/Def-5)
 
 *Spec fixed 2026-08-18 (Colomban + review of the Phase-4 layer). The two findings
 that force it: (a) the instance layer's def-chains (`simOfSearchδ = tftSimδ
@@ -482,13 +449,19 @@ six weight parameters, and the whole layer is O(N²) hand-written terms + proofs
 36 at N=6, ~10,000 + 10,000 at N=100. The DSL replaces hand-writing with one
 compiler and one induction; per-pair MATHEMATICS stays hand-written (it must).*
 
-**Ordering rationale (why before `.sys`):** the specs are route-independent. When
+**Ordering rationale.** (a) *Why before the Python phase (reordered 2026-08-18,
+Colomban):* the coincidence certification should run ONCE, against the layer that
+will persist — the DSL changes the public interface (weights become `ι → Nat`, the
+fixed-6 vectors and shape-named instances retire), so certifying the Phase-4
+prototype first would mean writing the Python `def4` model against an interface
+scheduled for deletion and then redoing both sides. (b) *Why before `.sys`:* the
+specs are route-independent. When
 the `.sys` binder (or a tower) later replaces how mutually-recursive instances are
 EXPRESSED, only the compiler's probed-object resolution changes — the specs, the
 vectors, the mass lemma and every phase-theorem statement survive. Landing `.sys`
 on top of six hand terms would mean redoing this layer twice.
 
-### 7c.1 The types
+### 6.1 The types
 
 ```lean
 inductive Mode | prove | run              -- proofSearch the probe  vs  .sim-run it
@@ -502,7 +475,7 @@ structure Spec (ι) where
   dflt   : Action        -- played when the cascade falls through
 structure Zoo (ι) [DecidableEq ι] where
   spec : ι → Spec ι
-  -- + the termination discipline of §7c.3 (rank + ≤1 self-prober)
+  -- + the termination discipline of §6.3 (rank + ≤1 self-prober)
 ```
 
 The six current templates as specs (the worked table — this IS the zoo definition
@@ -522,7 +495,7 @@ copy, base EBot's Mirror branch, `.neg`-guard bots (WaryBot). A `test : Action`
 field on `Stage` is the recorded extension for negative probes; do not add it until
 a lifted bot needs it.
 
-### 7c.2 The compiler
+### 6.2 The compiler
 
 ```lean
 inst (Z : Zoo ι) : ι → ι → Prog       -- inst A T = A's entire decision at point mass on T
@@ -543,7 +516,7 @@ Probed-object resolution — the ONE place the recursion lives:
   (no recursion — the language's pronoun cuts the diagonal, byte-identical to
   `TauDupocδ`)
 
-### 7c.3 Termination — the measure IS the mutual-quine wall, mechanized
+### 6.3 Termination — the measure IS the mutual-quine wall, mechanized
 
 The recursion `(A,T) → (T,B)` terminates with measure
 `m(A,T) = r A + r T` lexicographically paired with `s A`, where `r : ι → Nat` has
@@ -564,7 +537,7 @@ WF-recursion fights the equation compiler: fuel-indexed `instF` + a proven
 sufficient bound `2·maxRank + 2` + a fuel-independence lemma; the measure version
 is preferred — its failure mode is the feature.)
 
-### 7c.4 Vectors, weights, and the one mass lemma
+### 6.4 Vectors, weights, and the one mass lemma
 
 ```lean
 def vecOf (Z : Zoo ι) (order : List ι) (A : ι) (w : ι → Nat) : VoteList  -- map + fold
@@ -586,7 +559,7 @@ theorem vecOf_bits (b : ι → Action)
 Every per-bot phase theorem becomes: a BIT TABLE `b : ι → Action` + the
 per-hypothesis h-obligation + `tauPlayer_phase_bits`. Nothing else.
 
-### 7c.5 Honest compression estimate — what shrinks, what stays
+### 6.5 Honest compression estimate — what shrinks, what stays
 
 SHRINKS (mechanical, quadratic → constant/linear):
 * N² instance terms → one `inst` compiler (the entire hand-written δ-closure of
@@ -608,7 +581,7 @@ STAYS HAND-WRITTEN (the mathematics — a DSL generates terms, not theorems):
 * run-mode needs TRUE-play versions of the same column facts (today's behavioral
   entries) — same objects, eval-level.
 
-### 7c.6 Migration plan + gates
+### 6.6 Migration plan + gates
 
 1. Land types + compiler + `vecOf` ALONGSIDE the Phase-4 layer (no deletion yet).
 2. **Gate D1 (byte-identity, the tsearch-landing discipline):** `rfl` checks that
@@ -623,7 +596,45 @@ STAYS HAND-WRITTEN (the mathematics — a DSL generates terms, not theorems):
 5. **Gate D2:** engine green, 3 axioms, zero sorry, base outcomes byte-identical,
    tau matrix statements unchanged up to the weight-function refactor.
 
-## 8. Open questions (decide during implementation, none blocking)
+## 7. Phase 6 — Python: from separation-hunt to coincidence-certification
+
+*(Was "Phase 5"; reordered 2026-08-18 to run AFTER the Spec DSL — see §6's ordering rationale. The `def4` model below is written against the DSL's interface: zoo list + `w : ι → Nat`, computed instances.)*
+
+* `def4.py`: replace the per-bot probe-geometry model with the source-lift
+  model — per-hypothesis COMPOUND bits computed by running the lifted cascade
+  at point mass (pure matrix arithmetic, as today). Drop
+  `Probe.*` geometries; keep the floor modelling (it now sits inside compound
+  bits).
+* `compare.py`: the expected headline INVERTS — assert Def3 ≡ Def4 at large k
+  on every terminating cell of both zoos (this is the coincidence theorem,
+  checked kernel-vs-arithmetic cell by cell); report the budget-axis
+  divergences (floor cells, Löb thresholds) as the honest Def-4 content.
+  Any (t, α) divergence on a terminating cell at large k is now a BUG in one
+  side, by definition.
+* `def4_theorems.py`: adapt the scanner to the new theorem names/regimes
+  (one-sided EBot boundary; unchanged cooperator boundary).
+* Retraction banners in these files then come down (replaced by the new
+  model's docstrings).
+
+**Gate 5**: coincidence check 100% on control + separating zoos at large k;
+`uv run pytest` green.
+
+## 8. Phase 7 — docs, memory, cleanup (LAST)
+
+*(Was "Phase 6". Deliberately the final phase: the design-note cleanup and the M2 ledger must describe the POST-DSL layer — writing them before §6 lands would document names and vectors scheduled for deletion.)*
+
+* `TAUBOT_TRANSPARENCY_DESIGN.md`: Part III gets a one-line pointer to this
+  note as the executed redefinition (full cleanup of that note is a SEPARATE
+  later task — agreed 2026-08-18).
+* Memory: update the Def-4 milestone note; record the locked decisions.
+* M2 debt ledger: `Metatheory` restoration owes `tvote` arms (`enumProg` over
+  `VoteList`, `evalG` peel with entry evaluation, gate walkers) and NO LONGER
+  owes any `tsearch` arms (Phase 4b removes them before M2 starts) — a net
+  shrink of the M2 surface. Still deferred.
+
+---
+
+## 9. Open questions (decide during implementation, none blocking)
 
 1. `voteHigh_f` — include from day one (cheap else-commits) or add on demand?
    Default: include (mirrors `tsearchHigh_f`, trivial).
@@ -635,11 +646,11 @@ STAYS HAND-WRITTEN (the mathematics — a DSL generates terms, not theorems):
 4. Sub-Löb / low-budget regimes for the vote entries (TauDupoc's entries below
    the Löb threshold): needs ¬Pf cost floors — recorded as future work, same
    status as before the refactor.
-5. (Phase 7) Whether `ι` is `Fin n` or a string-keyed enum; and whether the
+5. (Phase 5/DSL) Whether `ι` is `Fin n` or a string-keyed enum; and whether the
    interim instance names survive as `abbrev`s or die immediately after Gate D1.
    Cosmetic; decide at implementation.
 
-## 9. Kill criteria
+## 10. Kill criteria
 
 * If the frozen-`VoteList` subst convention breaks any base-engine defeq
   (Gate 1) in a way `termination_by structural` does not fix → fall back to
