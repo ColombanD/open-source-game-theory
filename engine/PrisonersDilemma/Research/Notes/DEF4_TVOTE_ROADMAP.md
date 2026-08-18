@@ -344,7 +344,46 @@ design-note record are the archive). `.tsearch` itself stays (decision 3).
    the 33 crowd-exploiter cells are deleted and replaced by τ(EBot)'s
    two-regime cells (~its row/column against the zoo + self-play, low/high).
 
-**Gate 4**: zero sorry; point-mass coherence lemma proven; τ(EBot) self-play =
+**✅ PHASE 4 LANDED 2026-08-18.** Engine green (3306 jobs), 3 standard axioms, zero
+sorry, base outcome declarations byte-identical, point-mass coherence lemma proven.
+
+**Results.**
+* `Tau/Vote.lean` — `tauPlayer v θ` (ONE player for every bot), the peel workhorse,
+  the **point-mass coherence lemma** `tauPlayer_point_mass`, the generic phase theorem,
+  and the probe↔entry bridge.
+* `Tau/Vectors.lean` — the six decision vectors + entry-play lemmas. τ(EBot) needed
+  three new instances (`eOfSimδ`, `eOfPfδ`, `eOfSelfδ`); all GROUND (the cascade probes
+  only closed δ_D/δ_C columns), so no quine and no stipulation.
+* `Tau/VotePhases.lean` — six α-phase theorems. **τ(EBot)'s boundary is
+  `θ ≤ wTs + wTp + wL` — ONE-SIDED, no window**, exactly as the retraction predicted.
+  The three cooperators keep `θ ≤ wC + wTs + wTp + wL`, TauDupoc's mass still honestly
+  excluding `wE` (the floor cell) — the regression check that the modality move left
+  the Gödelian content where it belongs, inside the entry.
+* `Theorems/Tau/VoteMatrix.lean` — the matrix, including the **separating band**
+  `wTs+wTp+wL < θ ≤ wC+wTs+wTp+wL` (nonempty iff `wC > 0`) where cooperators still
+  cooperate and τ(EBot) has already flipped: `outcome_TauTFTPf_vs_TauEBot_band = (C,D)`.
+* DELETED: `Tau/Phases.lean`, `Tau/PeelLemmas.lean`, `Theorems/Tau/Matrix.lean` (79
+  theorems, 33 about the crowd-exploiter), and the σ-player layer of `Tau/Defs.lean`
+  (guard lists, `iteTree`, the six `.tsearch` players). The instance layer and every
+  `Certs` bit lemma survive UNCHANGED — as the retraction said they would.
+
+**The frame decision that made the reuse work.** A `.tvote` entry runs `.bot`-framed
+(`eval n (.bot I) (.bot I) I`), which is LITERALLY the probe atom's frame. So every
+existing `probe`/`Pf`/`interp` bit lemma applies to entries one `.bot` unfolding apart
+(`entry_C_of_interp`, `entry_D_of_not_interp`, `entry_C_of_pf`). The first draft used
+the bare frame `eval n I I I` and none of the `Certs` layer applied — a half-hour of
+rework avoided permanently by matching the probe convention.
+
+**Proof-craft trap: valuation FUNCTIONS force term equality; use positional bits.**
+`VoteAllVals (val : Prog → Action)` requires proving `val Iᵢ = aᵢ` for six large
+cascade terms, which drags in either `decide` on terms containing the free budget `k`
+(the kernel cannot evaluate it) or a simp-normalization race. Replaced by `VoteBits v
+bs` — the entries' actions supplied POSITIONALLY as a `List (Nat × Action)`, with
+`massOf` computing the C-mass. No term comparison anywhere; every per-bot proof is a
+`.cons` chain of entry-play lemmas. `VoteAllVals` is kept (it reads better when a
+valuation is natural) but `VoteBits` is the interface the phase theorems use.
+
+**Gate 4** (original text): zero sorry; point-mass coherence lemma proven; τ(EBot) self-play =
 `(D, D)` at θ ≤ wTs+wTp+wL? — NO: check carefully — self-bit 0 means E's own
 mass excludes wE, so vs itself both sides play by their own (θ, w⃗); write the
 cells the theorems actually give, do not pattern-match the old table.

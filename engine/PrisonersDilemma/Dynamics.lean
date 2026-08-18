@@ -56,11 +56,13 @@ noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
     -- threshold (truncated); residual 0 commits to `p` WITHOUT consulting the remaining
     -- entries; exhausting the list with residual > 0 commits to `q`.
     --
-    -- The entry runs in its OWN frame `eval n I I I` — entries are closed, `.opp`-free
-    -- δ-instances, and this is the evaluator-level twin of the probe atom
-    -- `.plays (.bot I) (.bot I) .C` (the `.sim` arm is the precedent for entering an
-    -- inner frame inside the fuel monad). A non-terminating entry makes the whole vote
-    -- `none` — a tau player is total exactly when its entries are.
+    -- The entry runs in its own `.bot`-framed closed frame — literally the evaluator
+    -- twin of the probe atom `.plays (.bot I) (.bot I) .C`, so a `Pf`/interp fact about
+    -- `probe I` IS a fact about this entry (the `.sim` arm is the precedent for entering
+    -- an inner frame inside the fuel monad; `.bot` unwraps with one fuel step, binding
+    -- any `.self` inside `I` to `I` itself, which is what the quine instances need).
+    -- A non-terminating entry makes the whole vote `none` — a tau player is total
+    -- exactly when its entries are.
     --
     -- (Two arms with nested patterns for the LIST — NOT an inner `match gs` — so
     -- per-arm equation lemmas generate, as for `.tsearch`. The entry's RESULT, by
@@ -73,7 +75,7 @@ noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
         if θ = 0 then eval n me opponent p else eval n me opponent q
     | .tvote (.cons w I rest) θ p q =>
         if θ = 0 then eval n me opponent p
-        else match eval n I I I with
+        else match eval n (.bot I) (.bot I) I with
           | some Action.C => eval n me opponent (.tvote rest (θ - w) p q)
           | some Action.D => eval n me opponent (.tvote rest θ p q)
           | none          => none
@@ -131,7 +133,7 @@ theorem eval_tvote_nil {me opponent : Prog} {θ : Nat} {p q : Prog}
 /-- The entry PLAYED `C`: subtract its weight and continue. -/
 theorem eval_tvote_cons_c {me opponent : Prog} {w θ : Nat} {I : Prog}
     {rest : VoteList} {p q : Prog} (n : Nat) (hθ : θ ≠ 0)
-    (hI : eval n I I I = some Action.C) :
+    (hI : eval n (.bot I) (.bot I) I = some Action.C) :
     eval (n+1) me opponent (.tvote (.cons w I rest) θ p q)
       = eval n me opponent (.tvote rest (θ - w) p q) := by
   rw [eval, if_neg hθ, hI]
@@ -141,7 +143,7 @@ theorem eval_tvote_cons_c {me opponent : Prog} {w θ : Nat} {I : Prog}
     over terminating entries.) -/
 theorem eval_tvote_cons_d {me opponent : Prog} {w θ : Nat} {I : Prog}
     {rest : VoteList} {p q : Prog} (n : Nat) (hθ : θ ≠ 0)
-    (hI : eval n I I I = some Action.D) :
+    (hI : eval n (.bot I) (.bot I) I = some Action.D) :
     eval (n+1) me opponent (.tvote (.cons w I rest) θ p q)
       = eval n me opponent (.tvote rest θ p q) := by
   rw [eval, if_neg hθ, hI]
@@ -149,7 +151,7 @@ theorem eval_tvote_cons_d {me opponent : Prog} {w θ : Nat} {I : Prog}
 /-- A non-terminating entry sinks the whole vote. -/
 theorem eval_tvote_cons_none {me opponent : Prog} {w θ : Nat} {I : Prog}
     {rest : VoteList} {p q : Prog} (n : Nat) (hθ : θ ≠ 0)
-    (hI : eval n I I I = none) :
+    (hI : eval n (.bot I) (.bot I) I = none) :
     eval (n+1) me opponent (.tvote (.cons w I rest) θ p q) = none := by
   rw [eval, if_neg hθ, hI]
 

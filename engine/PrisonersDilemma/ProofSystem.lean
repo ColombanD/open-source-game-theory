@@ -353,7 +353,7 @@ mutual
          `.search` node the lifted base bot's own code contains (e.g. `eδ`'s failed
          exploit-probe), which is exactly where Def 4 says the base bot puts them.
 
-       An entry is run in its OWN closed frame (`PlaysProof I I I a m`), the transcript
+       An entry is run in its OWN closed frame (`PlaysProof (.bot I) (.bot I) I a m`), the transcript
        twin of `eval n I I I` and of the probe atom `.plays (.bot I) (.bot I) .C`.
        Entries are frozen, so no `subst` appears. A non-terminating entry has no
        transcript and hence no rule — matching `eval`, which returns `none` there. -/
@@ -372,7 +372,7 @@ mutual
     | voteCons_c {me opponent p q : Prog} {a : Action} {n θ w m : Nat} {I : Prog}
         {rest : VoteList} :
         θ ≠ 0 →
-        PlaysProof I I I Action.C m →
+        PlaysProof (.bot I) (.bot I) I Action.C m →
         PlaysProof me opponent (.tvote rest (θ - w) p q) a n →
         PlaysProof me opponent (.tvote (.cons w I rest) θ p q) a (n + m + c_node)
     /-- Head entry PLAYS `D`: cite its transcript — a POSITIVE fact, no refutation and
@@ -380,7 +380,7 @@ mutual
     | voteCons_d {me opponent p q : Prog} {a : Action} {n θ w m : Nat} {I : Prog}
         {rest : VoteList} :
         θ ≠ 0 →
-        PlaysProof I I I Action.D m →
+        PlaysProof (.bot I) (.bot I) I Action.D m →
         PlaysProof me opponent (.tvote rest θ p q) a n →
         PlaysProof me opponent (.tvote (.cons w I rest) θ p q) a (n + m + c_node)
     /-- The threshold exceeds the TOTAL mass: no vote pattern can reach it, so the else
@@ -417,7 +417,7 @@ mutual
   inductive VoteAllPlay : VoteList → Nat → Prop where
     | nil : VoteAllPlay .nil 0
     | cons {w : Nat} {I : Prog} {rest : VoteList} {a : Action} {m c : Nat} :
-        PlaysProof I I I a m → VoteAllPlay rest c → VoteAllPlay (.cons w I rest) (m + c)
+        PlaysProof (.bot I) (.bot I) I a m → VoteAllPlay rest c → VoteAllPlay (.cons w I rest) (m + c)
 
 -- 3. `AtomProvable k φ` — a `PlaysProof` whose run cost fits the budget (`n ≤ k`); the bridge for
 -- atomic `.plays` facts (which the reasoning rules cannot read).
@@ -1014,16 +1014,16 @@ theorem PlaysProof.induct
         motive me opponent (.tvote .nil θ p q) a (n + c_node) (.voteNil_f hθ hq))
     (voteCons_c : ∀ (me opponent p q : Prog) (a : Action) (n θ w m : Nat) (I : Prog)
         (rest : VoteList)
-        (hθ : θ ≠ 0) (hI : PlaysProof I I I Action.C m),
-        motive I I I Action.C m hI →
+        (hθ : θ ≠ 0) (hI : PlaysProof (.bot I) (.bot I) I Action.C m),
+        motive (.bot I) (.bot I) I Action.C m hI →
         ∀ (hp : PlaysProof me opponent (.tvote rest (θ - w) p q) a n),
         motive me opponent (.tvote rest (θ - w) p q) a n hp →
         motive me opponent (.tvote (.cons w I rest) θ p q) a (n + m + c_node)
           (.voteCons_c hθ hI hp))
     (voteCons_d : ∀ (me opponent p q : Prog) (a : Action) (n θ w m : Nat) (I : Prog)
         (rest : VoteList)
-        (hθ : θ ≠ 0) (hI : PlaysProof I I I Action.D m),
-        motive I I I Action.D m hI →
+        (hθ : θ ≠ 0) (hI : PlaysProof (.bot I) (.bot I) I Action.D m),
+        motive (.bot I) (.bot I) I Action.D m hI →
         ∀ (hq : PlaysProof me opponent (.tvote rest θ p q) a n),
         motive me opponent (.tvote rest θ p q) a n hq →
         motive me opponent (.tvote (.cons w I rest) θ p q) a (n + m + c_node)

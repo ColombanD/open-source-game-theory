@@ -126,7 +126,7 @@ theorem eval_mono :
               rw [eval_tvote_nil (n+1) hθ]
               exact ih _ _ _ _ h
           | cons w I rest =>
-              cases hI : eval n I I I with
+              cases hI : eval n (.bot I) (.bot I) I with
               | none => rw [eval_tvote_cons_none n hθ hI] at h; exact absurd h (by simp)
               | some r =>
                   cases r with
@@ -182,7 +182,7 @@ theorem eval_tsearch_high (me opponent p q : Prog) (a : Action) (k : Nat) :
 inductive VoteAllRun : VoteList → Prop where
   | nil : VoteAllRun .nil
   | cons {w : Nat} {I : Prog} {rest : VoteList} :
-      (∃ (a : Action) (N : Nat), eval N I I I = some a) → VoteAllRun rest →
+      (∃ (a : Action) (N : Nat), eval N (.bot I) (.bot I) I = some a) → VoteAllRun rest →
       VoteAllRun (.cons w I rest)
 
 /-- The `.tvote` twin of `eval_tsearch_high`: a vote whose threshold exceeds the TOTAL
@@ -211,7 +211,7 @@ theorem eval_tvote_high (me opponent p q : Prog) (a : Action) :
       have hmass : θ > w + rest.totalMass := by
         simpa [VoteList.totalMass] using hθ
       have hθ0 : θ ≠ 0 := by omega
-      obtain ⟨hIrun, hrest⟩ : (∃ (a' : Action) (N : Nat), eval N I I I = some a')
+      obtain ⟨hIrun, hrest⟩ : (∃ (a' : Action) (N : Nat), eval N (.bot I) (.bot I) I = some a')
           ∧ VoteAllRun rest := by
         cases hterm with
         | cons hI hr => exact ⟨hI, hr⟩
