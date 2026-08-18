@@ -117,7 +117,6 @@ theorem gd_no_opp_image {x me o : Prog}
   | sim p q => simp [Prog.subst] at h
   | ite b a p q => simp [Prog.subst] at h
   | search K g p q => simp [Prog.subst] at h
-  | tsearch K gs θ p q => simp [Prog.subst] at h
   | tvote gs θ p q => simp [Prog.subst] at h
 
 theorem gd_no_self_image {x me o : Prog}
@@ -131,7 +130,6 @@ theorem gd_no_self_image {x me o : Prog}
   | sim p q => simp [Prog.subst] at h
   | ite b a p q => simp [Prog.subst] at h
   | search K g p q => simp [Prog.subst] at h
-  | tsearch K gs θ p q => simp [Prog.subst] at h
   | tvote gs θ p q => simp [Prog.subst] at h
 
 theorem gd_subst_dimcid_forces {k : Nat} {p me o : Prog}
@@ -169,7 +167,6 @@ theorem gd_subst_dimcid_forces {k : Nat} {p me o : Prog}
               by_cases hoself : o = Prog.self
               · subst hoself; exact gd_no_opp_image hme (by simp) hy
               · exact gd_no_self_image hme hoself hx
-  | tsearch K gs θ pp qq => simp [Prog.subst, DIMCID] at h
   | tvote gs θ pp qq => simp [Prog.subst, DIMCID] at h
 
 theorem gd_subst_ne_guardian {k : Nat} {q me o : Prog}
@@ -195,7 +192,6 @@ theorem gd_subst_ne_guardian {k : Nat} {q me o : Prog}
           simp only [Formula.subst, Formula.plays.injEq] at hg
           obtain ⟨hx, hy, -⟩ := hg
           exact gd_no_opp_image hme ho hx
-  | tsearch K gs θ pp qq => simp [Prog.subst, GuardianBot] at h
   | tvote gs θ pp qq => simp [Prog.subst, GuardianBot] at h
 
 theorem gd_simS_impossible {k : Nat} {p q me o : Prog}
@@ -213,7 +209,7 @@ theorem gd_pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     Pf K φ → WV (gdS k) φ := by
   intro K φ h
   refine ((wv_sound_upto (gdS k) (fun _ _ => False)
-    ?nb ?const ?opp ?ite ?botbot ?botsearch ?tsearch ?tvote ?sim_inv ?botsim_inv
+    ?nb ?const ?opp ?ite ?botbot ?botsearch ?tvote ?sim_inv ?botsim_inv
     ?search_t ?search_f ?simS ?botsimS K).2 K φ h).2 Pf_sound
   case nb =>
     rintro oppo z ⟨h1, h2⟩; simp [GuardianBot] at h2
@@ -236,10 +232,6 @@ theorem gd_pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
   case botsearch =>
     rintro me oppo g ψ P Q (⟨h1, h2⟩ | hF) hb
     · subst h1; simp [DIMCID] at hb
-    · exact hF.elim
-  case tsearch =>
-    rintro me oppo k' gs θ P Q (⟨h1, h2⟩ | hF) hgate
-    · subst h1; rcases hgate with hb | hb <;> simp [DIMCID] at hb
     · exact hF.elim
   case tvote =>   -- no census member is a `.tvote` shape either (2026-08-18)
     rintro me oppo v θ P Q (⟨h1, h2⟩ | hF) hgate

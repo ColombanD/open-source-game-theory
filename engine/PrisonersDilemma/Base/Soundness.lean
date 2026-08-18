@@ -112,8 +112,7 @@ theorem sound_upto : ∀ B : Nat,
     (fun _ _ _ _ _ _ hT _ => hT.elim id id)
     (fun _ _ _ hT _ => hT.elim id id)
     (fun _ _ _ _ _ _ hT _ => hT.elim id id)
-    (fun _ _ _ _ _ _ _ hT _ => hT.elim id id)
-    (fun _ _ _ _ _ _ hT _ => hT.elim id id)   -- h_tvote (2026-08-18)
+    (fun _ _ _ _ _ _ hT _ => hT.elim id id)   -- h_tvote
     (fun _ _ _ hT => hT)
     (fun _ _ _ hT => hT)
     (fun _ _ _ _ _ _ _ hT _ _ => (hT.elim id id).elim)

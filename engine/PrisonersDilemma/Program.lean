@@ -31,17 +31,6 @@ mutual
     | sim    : Prog → Prog → Prog                 -- source code for "run p with q as opponent"
     | ite    : Prog → Action → Prog → Prog → Prog -- if evaluating guard yields action a, run p, else q
     | search : Nat → Formula → Prog → Prog → Prog -- proof_search(k, φ): if oracle verifies φ in ≤k chars, run p, else q
-    | tsearch : Nat → GuardList → Nat → Prog → Prog → Prog
-        -- weighted-THRESHOLD proof search (the Def-4 TauBot primitive, 2026-08-11):
-        -- `tsearch k gs θ p q` peels the weighted guards `gs` IN LIST ORDER; a guard
-        -- `(w, φ)` fires iff the oracle verifies `φ` within `k` chars, and firing
-        -- subtracts `w` from the residual threshold (truncated). Residual 0 → run `p`;
-        -- guards exhausted (or unreachable) with residual > 0 → run `q`.
-        -- `.search k φ p q` is behaviorally the singleton `tsearch k [(1,φ)] 1 p q`,
-        -- but is kept as its own constructor: the modal reading rules
-        -- (`searchBranch`/`botSearchStep`) and all 81 outcome theorems stay untouched.
-        -- SCHEDULED FOR REMOVAL (DEF4_TVOTE_ROADMAP.md Phase 4b): `.tvote` subsumes it
-        -- (`tsearch k [(wᵢ,φᵢ)] θ p q ≡ tvote [(wᵢ, .search k φᵢ C D)] θ p q`).
     | tvote : VoteList → Nat → Prog → Prog → Prog
         -- weighted-threshold ACTION vote (the refined Def-4 TauBot primitive, 2026-08-18):
         -- `tvote v θ p q` peels the weighted entries `v` IN LIST ORDER; an entry
@@ -61,19 +50,12 @@ mutual
         -- construction — an entry is a closed instance, never a window on the current
         -- frame.
   /-- The weighted entry list carried by `.tvote`: a specialized list kept INSIDE the
-      mutual block, for the same reason `GuardList` is (a nested `List (Nat × Prog)`
+      mutual block (a nested `List (Nat × Prog)`
       payload would make `Prog` a nested inductive). `cons w I rest` = hypothesis
       instance `I` with signal weight `w`. -/
   inductive VoteList : Type where
     | nil  : VoteList
     | cons : Nat → Prog → VoteList → VoteList
-  /-- The weighted guard list carried by `.tsearch`: a specialized list kept INSIDE the
-      mutual block (a nested `List (Nat × Formula)` payload would make `Prog` a nested
-      inductive — recursor complications in `subst`/`size`/enumeration everywhere).
-      `cons w φ rest` = hypothesis guard `φ` with signal weight `w`. -/
-  inductive GuardList : Type where
-    | nil  : GuardList
-    | cons : Nat → Formula → GuardList → GuardList
   inductive Formula: Type where
     | plays : Prog → Prog → Action → Formula      -- atomic: "p(q.source) == a"
     | impl  : Formula → Formula → Formula         -- φ → ψ (needed for Löb-style hypotheses like □C → C)
@@ -82,7 +64,7 @@ mutual
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
     | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Pf`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (Research/Notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
 end
-deriving instance DecidableEq for Prog, GuardList, VoteList, Formula
+deriving instance DecidableEq for Prog, VoteList, Formula
 
 -- Closing self-reference via substitution.
 --
@@ -125,20 +107,12 @@ mutual
     | .sim p q,        m, o => .sim (p.subst m o) (q.subst m o)
     | .ite b a p q,    m, o => .ite (b.subst m o) a (p.subst m o) (q.subst m o)
     | .search k φ p q, m, o => .search k (φ.subst m o) (p.subst m o) (q.subst m o)
-    | .tsearch k gs θ p q, m, o => .tsearch k (gs.gsubst m o) θ (p.subst m o) (q.subst m o)
     -- Entries are FROZEN — `subst` rewrites only the branches. A `VoteList` holds closed
     -- δ-instances; descending would let the enclosing frame's `me`/`opponent` capture an
     -- instance's internal placeholders (the `.bot` barrier rationale, one level up), and
     -- would break the `.opp`-freeness that makes tau players extensionally constant.
     | .tvote v θ p q,      m, o => .tvote v θ (p.subst m o) (q.subst m o)
   termination_by structural p _ _ => p
-
-  /-- `subst` mapped over a guard list: weights and structure unchanged, every guard
-      formula closed against the current frame (same boundary discipline as `.search`). -/
-  def GuardList.gsubst : GuardList → (me opponent : Prog) → GuardList
-    | .nil,           _, _ => .nil
-    | .cons w φ rest, m, o => .cons w (φ.subst m o) (rest.gsubst m o)
-  termination_by structural gs _ _ => gs
 
   def Formula.subst : Formula → (me opponent : Prog) → Formula
     | .plays p q a, m, o => .plays (p.subst m o) (q.subst m o) a
@@ -170,22 +144,14 @@ mutual
     | .sim p q        => p.size + q.size + 1
     | .ite b _ p q    => b.size + p.size + q.size + 1
     | .search k φ p q => numCost k + φ.size + p.size + q.size + 1
-    | .tsearch k gs θ p q => numCost k + numCost θ + gs.gsize + p.size + q.size + 1
     | .tvote v θ p q      => numCost θ + v.vsize + p.size + q.size + 1
 
   /-- Character count of an entry list: each entry pays its weight numeral, its instance
       program, and one separator character; the empty list is free (the node itself is
-      charged by `.tvote`). Mirrors `GuardList.gsize`. -/
+      charged by `.tvote`). -/
   def VoteList.vsize : VoteList → Nat
     | .nil           => 0
     | .cons w I rest => numCost w + I.size + rest.vsize + 1
-
-  /-- Character count of a guard list: each entry pays its weight numeral, its formula,
-      and one separator character; the empty list is free (the node itself is charged
-      by `.tsearch`). -/
-  def GuardList.gsize : GuardList → Nat
-    | .nil           => 0
-    | .cons w φ rest => numCost w + φ.size + rest.gsize + 1
 
   def Formula.size : Formula → Nat
     | .plays p q _ => p.size + q.size + 1
@@ -208,27 +174,12 @@ def Prog.hasSearch : Prog → Bool
   | .sim p q        => p.hasSearch || q.hasSearch
   | .ite b _ p q    => b.hasSearch || p.hasSearch || q.hasSearch
   | .search _ _ _ _ => true
-  | .tsearch _ _ _ _ _ => true   -- consults the oracle, like `.search`
   -- UNCONDITIONALLY true, NOT a fold over the entries: a vote whose entries happened to
   -- be search-free would otherwise enter the search-free fragment and add a `.tvote`
   -- case to `atom_complete_searchfree` — for no benefit, since tau players are never
   -- census subjects and need no atom certificates. Conservative over-approximation
   -- (DEF4_TVOTE_ROADMAP.md §2).
   | .tvote _ _ _ _     => true
-
-/-- Total weight carried by a guard list — the mass an all-fire run would accumulate.
-    `θ > totalMass` means the threshold is unreachable (the else short-circuit). -/
-def GuardList.totalMass : GuardList → Nat
-  | .nil           => 0
-  | .cons w _ rest => w + rest.totalMass
-
-/-- Mass of the guards selected by a predicate on (closed) guard formulas. It is the sum of all weights
-    where proofSearch returns true. Used for lemmas in the Meta theory.
-    Instantiated with `fun φ => proofSearch k (φ.subst me opp)` in the
-    tau-layer lemma statements; kept abstract here so Program.lean stays oracle-free. -/
-def GuardList.massWhere (f : Formula → Bool) : GuardList → Nat
-  | .nil           => 0
-  | .cons w φ rest => (if f φ then w else 0) + rest.massWhere f
 
 /-- Total weight carried by an entry list — the mass an all-cooperate signal would
     accumulate. `θ > totalMass` means the threshold is unreachable (the else
@@ -240,7 +191,7 @@ def VoteList.totalMass : VoteList → Nat
 /-- Mass of the entries selected by a predicate on (closed) instance programs: the sum of
     the weights whose entry plays `C`. Instantiated with `fun I => eval … I I I == some .C`
     in the tau-layer lemma statements; kept abstract here so `Program.lean` stays free of
-    the evaluator. The action-valued twin of `GuardList.massWhere`. -/
+    the evaluator. -/
 def VoteList.massWhere (f : Prog → Bool) : VoteList → Nat
   | .nil           => 0
   | .cons w I rest => (if f I then w else 0) + rest.massWhere f

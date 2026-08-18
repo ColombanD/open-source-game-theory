@@ -408,6 +408,30 @@ Only after Gate 4 (no user left). One commit, full checklist:
 byte-identical; `grep -r tsearch engine/PrisonersDilemma --include='*.lean'`
 returns only historical comments (or nothing).
 
+**✅ PHASE 4b LANDED 2026-08-18.** Engine green (3306 jobs), 3 standard axioms, zero
+sorry, 78/78 base outcome declarations byte-identical, and the only surviving
+`tsearch`/`GuardList` mentions are prose in doc-comments (the stale ones were
+rewritten to name `tvote`/`VoteList`).
+
+Removed: the constructor and `GuardList` + `gsubst`/`gsize`/`totalMass`/`massWhere`
+(`Program.lean`), 2 eval arms + 4 unfolding lemmas (`Dynamics.lean`), 5 `PlaysProof`
+rules + both eliminators' arms (`ProofSystem.lean`), `eval_tsearch_high` + the
+`eval_mono` case + 5 soundness arms + 5 census arms + the `h_tsearch` obligation
+(`ValuationSoundness.lean`), 2 search-free discharges (`AtomCerts.lean`), and the
+13 `| tsearch` census arms across the 4 theorem files. `sound_upto` and the three
+census instantiations each shed one argument.
+
+**Finding: `Research/Spikes/unified_pf/LegacyS.lean` does NOT compile — but it was
+already broken before this phase.** The roadmap said to verify rather than assume, and
+that was worth doing: it has 30 errors, IDENTICAL in count before and after the
+removal (checked by stashing). It is a research spike outside BOTH lake targets
+(`lakefile.toml` declares only `PrisonersDilemma` and `Metatheory`), untouched since
+the Pf-only migration (98bf9eb), and it broke when `.tsearch` LANDED — the frozen
+pre-merge `S` it defines never gained the constructor's arms. Removing `tsearch`
+neither fixed nor worsened it. Repairing `legacy_iff_live` against the current
+(now `tvote`-bearing) system is separate work, unrelated to this roadmap; flagged here
+so the next reader does not mistake it for Phase-4b fallout.
+
 ## 6. Phase 5 — Python: from separation-hunt to coincidence-certification
 
 * `def4.py`: replace the per-bot probe-geometry model with the source-lift
