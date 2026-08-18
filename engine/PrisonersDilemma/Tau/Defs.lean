@@ -8,17 +8,18 @@ signal hypotheses AND probes are TauBots, every recursive reference routed throu
 `proofSearch` — the Löbian machinery breaks the regress that sank the old Def 1
 (whose recursion was semantic, via `play`).
 
-**⚠ RETRACTION (2026-08-13) — the σ-PLAYER LAYER BELOW IS OUTDATED AND WRONG.**
-The correct Def 4 is the uniform STRUCTURAL SOURCE LIFT τ (design note, Part III
-retraction section): lift A's own code constructor-by-constructor and vote ONCE
-over the compound per-hypothesis decisions `TauA(δ_Bᵢ)` — under which Def 4
-COINCIDES with Def 3 (large k, terminating cells). The `TauEBot` σ-player below
-moves θ INSIDE the cascade (one vote per STAGE) and is NOT τ(EBot) — it is a
-different agent, the "crowd-exploiter"; its window / (D,D)-self-play phase claims
-are retracted. TauDupoc/TauTFTPf/TauTFTSim conform to τ only by accident of
-having a single decision point. The δ-INSTANCE layer (probe, `probeSearchδ`,
-`tftSimδ`, `eδ`, the quine, the Gödelian pair) is CORRECT under the new reading
-and is what the refined τ consumes; the σ-players await redefinition.
+**THIS FILE IS THE δ-INSTANCE LAYER ONLY** (the σ-players it used to also carry were
+retracted 2026-08-13 and DELETED 2026-08-18 — see the note at the bottom).
+
+The correct Def 4 is the uniform STRUCTURAL SOURCE LIFT τ: lift A's own code
+constructor-by-constructor and vote ONCE over the compound per-hypothesis decisions
+`TauA(δ_Bᵢ)`, read by EVALUATION. Everything in this file — the probe atom, the
+instance templates (`probeSearchδ`, `tftSimδ`, `eδ`), the δ-closure, the quine,
+the Gödelian pair — is what that lift CONSUMES, and it survived the retraction
+unchanged. The players themselves are built in `Tau/Vectors.lean` on top of the
+uniform `tauPlayer` of `Tau/Vote.lean`.
+
+Authoritative plan: `Research/Notes/DEF4_TVOTE_ROADMAP.md`.
 
 Six-template zoo: TauCooperate (`C`), TauDefect (`D`), TauDupoc (`L`),
 TauTitForTatSim (`Ts`), TauTitForTatPf (`Tp`), TauEBot (`E`). Conventions:

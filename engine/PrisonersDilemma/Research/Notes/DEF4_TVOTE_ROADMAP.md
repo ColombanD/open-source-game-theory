@@ -53,6 +53,11 @@ shapes are REPLACED by one uniform action-vote.*
    over hypotheses + the shared vote**; τ is merely one *producer* of vectors
    (lifted family), hand-writing is the other (native family). The vote layer
    and its phase theorem are shared by both.
+   **[UPDATED 2026-08-18, post-Phase-4 review: the DSL is now SCHEDULED as
+   Phase 7 (§7c) — after Phase 5, and explicitly BEFORE the `.sys`/Def-5
+   revival. The Phase-4 layer is correct but is a fixed-6 prototype:
+   hand-written vectors and instances scale quadratically (N=100 ⇒ ~10,000
+   hand terms + ~10,000 proof steps).]**
 6. **Faithfulness guard while hand-written**: the kernel-vs-Python coincidence
    check (the mechanism that caught every bug so far). Expected outcome after
    the refactor: **Def 4 ≡ Def 3 at large k on every terminating cell** — the
@@ -466,6 +471,158 @@ so the next reader does not mistake it for Phase-4b fallout.
 
 ---
 
+## 7c. Phase 7 — the Spec DSL (scale milestone; AFTER Phase 5, BEFORE `.sys`/Def-5)
+
+*Spec fixed 2026-08-18 (Colomban + review of the Phase-4 layer). The two findings
+that force it: (a) the instance layer's def-chains (`simOfSearchδ = tftSimδ
+(searchOfCoopδ k)` …) are PURE NAMING — every instance is `rfl`-equal to a plain
+base-bot-style `Prog` tree, so that unease is cosmetic (bad names, fixable); but
+(b) the fixed-arity vectors are a REAL wall: `dupocVec` hardcodes six `.cons` and
+six weight parameters, and the whole layer is O(N²) hand-written terms + proofs —
+36 at N=6, ~10,000 + 10,000 at N=100. The DSL replaces hand-writing with one
+compiler and one induction; per-pair MATHEMATICS stays hand-written (it must).*
+
+**Ordering rationale (why before `.sys`):** the specs are route-independent. When
+the `.sys` binder (or a tower) later replaces how mutually-recursive instances are
+EXPRESSED, only the compiler's probed-object resolution changes — the specs, the
+vectors, the mass lemma and every phase-theorem statement survive. Landing `.sys`
+on top of six hand terms would mean redoing this layer twice.
+
+### 7c.1 The types
+
+```lean
+inductive Mode | prove | run              -- proofSearch the probe  vs  .sim-run it
+inductive Target (ι : Type) | self | name (i : ι)
+structure Stage (ι) where
+  mode   : Mode
+  target : Target ι     -- the counterfactual opponent the hypothesis is imagined facing
+  fire   : Action        -- played when the stage fires (probe/run yields C)
+structure Spec (ι) where
+  stages : List (Stage ι)
+  dflt   : Action        -- played when the cascade falls through
+structure Zoo (ι) [DecidableEq ι] where
+  spec : ι → Spec ι
+  -- + the termination discipline of §7c.3 (rank + ≤1 self-prober)
+```
+
+The six current templates as specs (the worked table — this IS the zoo definition
+afterwards):
+
+| bot | stages | dflt |
+|---|---|---|
+| Coop   | `[]` | C |
+| Defect | `[]` | D |
+| Dupoc  | `[⟨prove, self, C⟩]` | D |
+| TFTPf  | `[⟨prove, name Coop, C⟩]` | D |
+| TFTSim | `[⟨run,   name Coop, C⟩]` | D |
+| EBot   | `[⟨prove, name Defect, D⟩, ⟨prove, name Coop, C⟩]` | D |
+
+Out of scope BY DESIGN (recorded, not hidden): non-cascade shapes — MirrorBot's raw
+copy, base EBot's Mirror branch, `.neg`-guard bots (WaryBot). A `test : Action`
+field on `Stage` is the recorded extension for negative probes; do not add it until
+a lifted bot needs it.
+
+### 7c.2 The compiler
+
+```lean
+inst (Z : Zoo ι) : ι → ι → Prog       -- inst A T = A's entire decision at point mass on T
+```
+
+Cascade compilation, stage by stage (right-nested, exactly the shapes Phase 4
+hand-wrote):
+
+* `prove` stage, probed object `P`:  `.search k (probe P) (.const fire) (rest)`
+* `run` stage, probed object `P`:    `.ite (.sim (.bot P) (.bot P)) .C (.const fire) (rest)`
+* exhausted:                          `.const dflt`
+
+Probed-object resolution — the ONE place the recursion lives:
+
+* `target = name B` → `P := inst Z T B`  (the hypothesis's instance seeing B)
+* `target = self`, `T ≠ A` → `P := inst Z T A`  (the hypothesis's instance seeing ME)
+* `target = self`, `T = A` → emit the QUINE guard `.plays .self .self .C` directly
+  (no recursion — the language's pronoun cuts the diagonal, byte-identical to
+  `TauDupocδ`)
+
+### 7c.3 Termination — the measure IS the mutual-quine wall, mechanized
+
+The recursion `(A,T) → (T,B)` terminates with measure
+`m(A,T) = r A + r T` lexicographically paired with `s A`, where `r : ι → Nat` has
+`r B < r A` for every NAMED target `B` of `A` (constants rank 0), and
+`s A = 1` iff A has a `self` target:
+
+* named target: `m(T,B) = r T + r B < r T + r A = m(A,T)` ✓ (for any T);
+* self target, `T ≠ A`: the sum ties, `s` breaks it — needs `s T = 0`, i.e. **T is
+  not itself a self-prober**;
+* self target, `T = A`: the quine, no recursive call.
+
+So `decreasing_by` closes **exactly when the zoo has at most one self-prober** —
+the ≤1-self-prober restriction stops being prose and becomes the termination
+certificate. Two self-probers = the mutual-quine 2-cycle = a failed
+`decreasing_by`, at compile time. When `.sys` lands, `inst` is redefined by
+binding instead of recursion and the obligation lifts. (Implementation fallback if
+WF-recursion fights the equation compiler: fuel-indexed `instF` + a proven
+sufficient bound `2·maxRank + 2` + a fuel-independence lemma; the measure version
+is preferred — its failure mode is the feature.)
+
+### 7c.4 Vectors, weights, and the one mass lemma
+
+```lean
+def vecOf (Z : Zoo ι) (order : List ι) (A : ι) (w : ι → Nat) : VoteList  -- map + fold
+def TauBot (Z) (order) (A) (w) (θ) : Prog := tauPlayer (vecOf Z order A w) θ
+```
+
+Weights become a FUNCTION `ι → Nat` (kills the `wC wD wTs wTp wL wE` signature
+bloat — already painful at 6, absurd at 100). The per-bot `*_bits` cons-chains are
+replaced by ONE list induction:
+
+```lean
+theorem vecOf_bits (b : ι → Action)
+    (h : ∀ T ∈ order, ∃ N, eval N (.bot (inst Z A T)) (.bot (inst Z A T)) (inst Z A T)
+                        = some (b T)) :
+    VoteBits (vecOf Z order A w) (order.map fun T => (w T, b T))
+-- and massOf (order.map …) = Σ {w T : T ∈ order, b T = C}   (one fold lemma)
+```
+
+Every per-bot phase theorem becomes: a BIT TABLE `b : ι → Action` + the
+per-hypothesis h-obligation + `tauPlayer_phase_bits`. Nothing else.
+
+### 7c.5 Honest compression estimate — what shrinks, what stays
+
+SHRINKS (mechanical, quadratic → constant/linear):
+* N² instance terms → one `inst` compiler (the entire hand-written δ-closure of
+  `Defs.lean` becomes derived notation; the maze of shape-names — `simOfSearchδ`,
+  `searchOfSearchδ` … — retires in favour of `inst Z A T`, fixing the naming
+  complaint at the root);
+* N per-bot vectors + N `*_bits` cons-chains → `vecOf` + `vecOf_bits`;
+* 6-ary weight signatures → `w : ι → Nat`.
+
+STAYS HAND-WRITTEN (the mathematics — a DSL generates terms, not theorems):
+* the COLUMN bit lemmas: what `probe (inst T X)` does at budget k, per hypothesis
+  T and per column X actually used by the zoo's targets. Currently
+  X ∈ {Coop, Defect, self-column}: ~3N lemmas, NOT N² — bits factor through
+  columns because every prover stage probes a column object. This is today's
+  `Certs.lean` reorganized by column; it grows LINEARLY in N (× the number of
+  distinct targets, a property of the zoo's strategy diversity, not of N);
+* the Löb lemma per self-prober (`ps_probe_quine`) and every floor/refutation
+  argument — irreducible, they ARE the content;
+* run-mode needs TRUE-play versions of the same column facts (today's behavioral
+  entries) — same objects, eval-level.
+
+### 7c.6 Migration plan + gates
+
+1. Land types + compiler + `vecOf` ALONGSIDE the Phase-4 layer (no deletion yet).
+2. **Gate D1 (byte-identity, the tsearch-landing discipline):** `rfl` checks that
+   the compiler reproduces the hand-written closure EXACTLY —
+   `inst Z Dupoc Coop = searchOfCoopδ k`, `inst Z Dupoc Dupoc = TauDupocδ k`,
+   `inst Z EBot Dupoc = eOfSearchδ k`, … (full list = the 36 entries of the
+   Phase-4 vectors). A failed `rfl` = the compiler is wrong, not the closure.
+3. Restate the six phase theorems as bit-table corollaries; `Certs` lemmas
+   reorganized by column, statements unchanged.
+4. Retire the hand-written vectors + shape-named instances (keep `abbrev`s for one
+   commit, then delete; git archives).
+5. **Gate D2:** engine green, 3 axioms, zero sorry, base outcomes byte-identical,
+   tau matrix statements unchanged up to the weight-function refactor.
+
 ## 8. Open questions (decide during implementation, none blocking)
 
 1. `voteHigh_f` — include from day one (cheap else-commits) or add on demand?
@@ -478,6 +635,9 @@ so the next reader does not mistake it for Phase-4b fallout.
 4. Sub-Löb / low-budget regimes for the vote entries (TauDupoc's entries below
    the Löb threshold): needs ¬Pf cost floors — recorded as future work, same
    status as before the refactor.
+5. (Phase 7) Whether `ι` is `Fin n` or a string-keyed enum; and whether the
+   interim instance names survive as `abbrev`s or die immediately after Gate D1.
+   Cosmetic; decide at implementation.
 
 ## 9. Kill criteria
 

@@ -294,12 +294,16 @@ mutual
         PlaysProof me opponent q a n →
         PlaysProof me opponent (.search k φ p q) a (n + m + k + c_node)
     /- ── `.tvote` (weighted-threshold ACTION vote, the refined Def-4 primitive, 2026-08-18) ──
-       FIVE stepwise rules mirroring the `eval` peel one step each, exactly as the
-       `.tsearch` block above. The decisive difference is the MODALITY of an entry:
-       `.tsearch` reads a PROVABILITY bit and therefore needs the polarity discipline
-       (cite a proof to fire, cite a Σ₁ refutation + pay the floor to pass), whereas a
-       `.tvote` entry is a closed deterministic PROGRAM whose play is an ATOM. Both
-       "it plays C" and "it plays D" are positive facts with ordinary transcripts, so:
+       FIVE stepwise rules mirroring the `eval` peel one step each — never a
+       subset-combinatorial reading (that shape would poison the decidability chain's
+       certificate search).
+
+       The decisive contrast is with `.search`, and with the short-lived `.tsearch`
+       (removed 2026-08-18, same day): both read a PROVABILITY bit and therefore need
+       the polarity discipline — cite a proof to fire, cite a Σ₁ refutation AND pay the
+       full failed budget (the floor) to pass. A `.tvote` entry is instead a closed
+       deterministic PROGRAM whose play is an ATOM, and both "it plays C" and "it plays
+       D" are positive facts with ordinary transcripts. So:
 
        * **there is NO floor anywhere in this block, and no `Pf` premise at all.** Not an
          oversight — determinism of `eval` is what replaces the refutation. `voteCons_d`
@@ -310,10 +314,14 @@ mutual
          `.search` node the lifted base bot's own code contains (e.g. `eδ`'s failed
          exploit-probe), which is exactly where Def 4 says the base bot puts them.
 
-       An entry is run in its OWN closed frame (`PlaysProof (.bot I) (.bot I) I a m`), the transcript
-       twin of `eval n I I I` and of the probe atom `.plays (.bot I) (.bot I) .C`.
-       Entries are frozen, so no `subst` appears. A non-terminating entry has no
-       transcript and hence no rule — matching `eval`, which returns `none` there. -/
+       An entry is run `.bot`-FRAMED (`PlaysProof (.bot I) (.bot I) I a m`) — the
+       transcript twin of the `eval` arm's `eval n (.bot I) (.bot I) I`, and LITERALLY
+       the frame of the probe atom `.plays (.bot I) (.bot I) .C`. That alignment is what
+       lets the tau layer's existing bit lemmas apply to entries verbatim, one `.bot`
+       unfolding apart (`Tau/Vote.lean`: `entry_C_of_interp` / `entry_D_of_not_interp` /
+       `entry_C_of_pf`). Entries are frozen, so no `subst` appears. A non-terminating
+       entry has no transcript and hence no rule — matching `eval`, which returns `none`
+       there. -/
     /-- Residual threshold met: the vote already succeeded; remaining entries are not
         consulted (mirrors `eval`'s then short-circuit). -/
     | voteZero_t {me opponent p q : Prog} {a : Action} {n : Nat} {v : VoteList} :
