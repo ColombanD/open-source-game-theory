@@ -654,6 +654,35 @@ instance names were NOT abbrev'd — they persist as the ground-truth vocabulary
 **Gate 5**: coincidence check 100% on control + separating zoos at large k;
 `uv run pytest` green.
 
+**✅ PHASE 6 LANDED 2026-08-18.** All three Python tau modules rewritten; full
+pytest green (349 + 198 EGT).
+
+* `def4.py` — the SOURCE-LIFT model, the Python twin of the Lean Spec DSL:
+  `LiftSpec`/`Stage`/`Mode` transcribed 1:1 from `tmplSpec`, and `decide(A, T)`
+  computes compound decisions recursively with two pieces of proof-theoretic
+  bookkeeping — the FLOOR is now STRUCTURAL (a cooperation reached after a failed
+  `prove` stage is true-but-unprovable; the stipulated `FLOOR_BLOCKED_HYPOTHESES`
+  set is gone) and the quine diagonal is the Löb rule. The mutual-quine wall is a
+  loud `UnsupportedDiagonal`, mirroring the Lean termination discipline. The
+  retracted `Probe.*` geometries are deleted.
+* `def4_theorems.py` — the kernel scanner now reads the `VoteBits` theorems of
+  `Tau/VotePhases.lean` (per-template bit rows in `order6` slot order), failing
+  loudly on drift.
+* `compare.py` — INVERTED, as planned: three checks, strongest first. (1) KERNEL:
+  all 36 Python compound decisions equal the Lean bit tables. (2) BITS: Def-4 vs
+  Def-3 base-matrix bits — control 25/25 agree; separating 35/36 with the ONE
+  divergence exactly the whitelisted Mirror-truncation cell (τ(EBot) self-bit,
+  def4 D vs def3 C). A whitelisted cell that AGREES also fails (stale whitelists
+  must not over-approve). (3) PHASE ATTRIBUTION: (t, α) sweeps with the
+  whitelisted bit PATCHED to Def 3's value — control 35/35 divergent cells
+  attributed (all α=0 constant artifacts), separating 167/167 attributed over
+  1400 cells, 0 unexplained. **The zoo that "separated" the definitions under the
+  retracted reading now certifies their coincidence** — the run's headline.
+
+The α=0 constant artifact remains (Def 3's uniform lift cooperates on mass 0 at
+α=0; Lean's `.const .D` defects) — recorded, classified, never counted as probe
+semantics.
+
 ## 8. Phase 7 — docs, memory, cleanup (LAST)
 
 *(Was "Phase 6". Deliberately the final phase: the design-note cleanup and the M2 ledger must describe the POST-DSL layer — writing them before §6 lands would document names and vectors scheduled for deletion.)*

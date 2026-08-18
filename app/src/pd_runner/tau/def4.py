@@ -1,65 +1,40 @@
-"""Def 4 — tau-NATIVE bots, and the Def-3 vs Def-4 comparison.
+"""Def 4 — the uniform SOURCE LIFT, mirrored as matrix-free spec arithmetic.
 
-.. warning:: **RETRACTED FRAMING (2026-08-13).** The "Def 4 is a LANGUAGE, per-bot
-   probe geometry" reading below is OUTDATED AND WRONG. Correct Def 4 is the
-   uniform STRUCTURAL SOURCE LIFT: lift A's own code and vote once over compound
-   per-hypothesis decisions — under which **Def 4 COINCIDES with Def 3** (large k,
-   terminating cells) and no phase-geometry separation exists. The modelled
-   TauEBot is the crowd-exploiter, not τ(EBot); every separation summary computed
-   here is retracted. Kept as the kernel-check harness for the implemented
-   (retracted) zoo. See TAUBOT_TRANSPARENCY_DESIGN.md Part III retraction.
+**This module is the Python twin of the Lean Spec DSL** (`Tau/Spec.lean`, Phase 5 of
+`DEF4_TVOTE_ROADMAP.md`). The refined Def 4 (2026-08-18) is:
 
-Def 3 (`play.py`) is one fixed LIFT operator: for every base bot `A`,
-`τ(A)` votes on the SELF probe `outcome(A, Bᵢ)` — "what would *I* do against
-hypothesis Bᵢ". The direction is part of the definition, the hypotheses are
-base bots, and the whole thing is stratified (layer 1 reads layer-0 cells).
+    TauA(B₁…Bₙ; w⃗, θ) = C   iff   Σ { wᵢ : inst(A, δ_Bᵢ) plays C } ≥ θ
 
-Def 4 is a LANGUAGE, not an operator: each tau-native bot writes its own guard,
-so the probe direction is a per-bot design choice, hypotheses are tau-level,
-and genuine fixpoints (a bot's belief about its own tau avatar) are allowed.
-The Lean zoo (`engine/PrisonersDilemma/Tau/Defs.lean`) implements four probe
-geometries:
+where `inst(A, δ_B)` is base bot A's ENTIRE lifted decision procedure run at point
+mass on hypothesis B, and "plays" is the TRUE play, read by evaluation. Every
+`proofSearch` lives INSIDE an instance, exactly where the lifted base bot's own code
+puts it — never at the vote.
 
-    TauDupoc      RECIPROCITY  "does Bᵢ, seeing exactly me, cooperate?"  (proves it)
-    TauTFTSim     THIRD PARTY  "does Bᵢ cooperate against TauCooperate?"  (runs it)
-    TauTFTPf      THIRD PARTY  "does Bᵢ cooperate against TauCooperate?"  (proves it)
-    TauEBot       CASCADE      "exploitable? defect. reciprocates? cooperate."
+A bot is a `LiftSpec` — an ordered cascade of probe stages plus a default action —
+transcribed 1:1 from the Lean `tmplSpec` table. `decide(zoo, A, T)` computes the
+compound decision of `inst(A, δ_T)` by walking A's cascade, recursing into the
+hypothesis's own instances the same way the Lean compiler does, with two pieces of
+proof-theoretic bookkeeping:
 
-**The floor (2026-08-12).** A PROVER probe (proofSearch) reads *provable*
-cooperation, not true cooperation. EBot's instances cooperate only through a
-FAILED exploit-search, so their cooperation certificates pay the `search_f`
-floor `> k` and every prover bit on an EBot hypothesis is 0 even where the
-cooperation is real (`Tau/Certs.lean: interp_probe_eOfSearch` true +
-`ps_probe_eOfSearch_false`). Behavioral (`sim`) probes see TRUE plays and are
-floor-blind. An earlier model read the reciprocity bit off the base matrix
-(structurally floor-blind for provers) and wrongly gave TauDupoc a provable
-EBot bit — caught in review against the base `outcome_DupocBot_vs_EBot = (D,C)`
-mechanism.
+* **The floor.** A cooperation reached AFTER a failed `prove` stage carries a
+  `search_f` floor in its transcript (`> k`), so it is TRUE but UNPROVABLE at the
+  probing budget: `decide` returns `provable=False` and any prove-mode probe of it
+  reads 0. This is how base `DupocBot vs EBot = (D, C)` reproduces itself one level
+  up, structurally — no stipulated `FLOOR_BLOCKED_HYPOTHESES` set anymore.
+* **The quine.** A `prove`-mode SELF-target stage probed at the diagonal (T = A) is
+  the Löb fixpoint; at large k bounded Löb closes it (`ps_probe_quine`), so the bit
+  is 1 when the stage fires cooperation. Any other diagonal shape is out of the
+  modelled fragment and raises.
 
-This module reproduces those probe semantics as matrix arithmetic over the same
-certified base matrix, the same `Signal` type, and the same σ family the Def-3
-explorer uses — so a side-by-side comparison isolates the PROBE SEMANTICS and
-nothing else.
+Everything here is LARGE-k: the Lean phase theorems quantify past the Löb threshold,
+and the sub-Löb regime is not modelled (unchanged caveat from milestone 1).
 
-## What is and is not certified
-
-The Lean theorems (`Tau/Phases.lean`) prove the Def-4 plays for LARGE `k`, past
-the Löb threshold, and they quantify over arbitrary weights — which is exactly
-what lets us instantiate each cell with that matchup's own σ_t signal here.
-Below the Löb budget the bits would differ (TauDupoc's self-bit switches off);
-that regime is NOT covered by a theorem and is not modelled here. Every table
-this module prints is therefore captioned "large k".
-
-## Why the 4-bot control zoo agrees
-
-Self probe and reciprocity probe can only disagree on ASYMMETRIC base cells
-(where A's action ≠ B's action). On a zoo whose every cell is symmetric — the
-{Dupoc, Coop, Defect, TFT} control — the two definitions induce identical
-bit-vectors, hence identical phase diagrams. That agreement is a real result
-(a computed anchor between the definitions), but it is uninformative about
-whether the definition MATTERS; `asymmetry_report` finds the cells that would
-separate them, and adding one such hypothesis to the zoo is what makes the
-comparison bite.
+**History.** The previous version of this module modelled the RETRACTED per-bot
+probe-geometry reading (reciprocity votes, a per-stage-thresholded cascade — the
+"crowd-exploiter"). Under the corrected source lift those geometries are gone:
+per-bot content is the spec, the vote is uniform, and **Def 4 coincides with Def 3
+at large k on every terminating cell** except the recorded Mirror-branch truncation
+(`compare.py` certifies exactly that).
 """
 
 from __future__ import annotations
@@ -67,256 +42,260 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 
-from pd_runner.tau.matrix import TauMatrix
 from pd_runner.tau.play import _MASS_TOL
 from pd_runner.tau.signal import Signal
 
 
-class Probe(Enum):
-    """The probe geometries a Def-4 bot can use.
+class Mode(Enum):
+    """How a stage consults its probe — the Lean `Mode`."""
 
-    `SELF` is included deliberately: it is the Def-3 direction expressed inside
-    the Def-4 language, which makes it the CONTROL for separating the
-    probe-direction effect from everything else Def 4 changes.
-    """
+    PROVE = "prove"
+    """Bounded proof search over the probe atom (a `.search` node). Floor-aware:
+    reads 1 only on PROVABLE cooperation."""
 
-    SELF = "self"
-    """"What do *I* do against Bᵢ?" — `outcome(actor, Bᵢ)`, Def 3's direction."""
+    RUN = "run"
+    """Execute the probed instance and read its true play (a `.sim`-guarded `.ite`).
+    Floor-blind."""
 
-    RECIPROCITY = "reciprocity"
-    """"What does Bᵢ do against *me*?" — `outcome(Bᵢ, actor)`. TauDupoc."""
 
-    THIRD_PARTY = "third_party"
-    """"What does Bᵢ do against a fixed third party?" — TauTFTSim / TauTFTPf."""
-
-    CASCADE = "cascade"
-    """Base EBot's exploiter cascade, lifted: defect if the signal's exploitable
-    mass reaches α, else cooperate iff its reciprocating mass does. TWO
-    thresholded masses, hence a cooperation WINDOW (defection at both ends) —
-    the non-monotone α-profile that separates Def 4 from Def 3's one-sided
-    thresholds. Matches Lean's nested-`tsearch` `TauEBot` (exploit stage = the
-    δ_D column, reciprocity stage = the δ_C column)."""
-
-    CONSTANT = "constant"
-    """No probe at all — the bot ignores its signal entirely.
-
-    This is NOT the same as a self-probing bot that happens to have a uniform
-    bit-vector. In Lean, `TauCooperate`/`TauDefect` are literally `.const .C` /
-    `.const .D` ([Tau/Defs.lean]), so they are α-INDEPENDENT: TauDefect defects
-    even at α = 0, where a self-probing bot with an all-zero bit-vector would
-    cooperate (mass 0 ≥ 0). Modelling them as probing bots contradicted the
-    kernel at exactly that corner — caught by `verify_against_lean`, which is
-    why the constant geometry is explicit rather than emergent.
-    """
+SELF = "<self>"
+"""The `Target.self` sentinel: the stage imagines the hypothesis facing ME."""
 
 
 @dataclass(frozen=True)
-class Def4Bot:
-    """A tau-native bot: a probe geometry plus (for THIRD_PARTY) its referent.
+class Stage:
+    """One probe stage — the Lean `Stage`: consult the hypothesis's instance-vs-
+    `target` in `mode`; if it cooperates, commit `fire`; else fall through."""
 
-    `name` is the display name. `probe` fixes the guard direction. `referent`
-    is the fixed third party the THIRD_PARTY probe measures against — for the
-    Lean zoo's two TFTs that is the cooperator, matching base TitForTatBot's
-    `.sim .opp (.bot CooperateBot)` guard. `action` is the fixed play of a
-    CONSTANT bot.
+    mode: Mode
+    target: str
+    """A template name, or the `SELF` sentinel."""
+    fire: str
+    """Action committed when the stage fires ("C" or "D")."""
+
+
+@dataclass(frozen=True)
+class LiftSpec:
+    """A bot spec — the Lean `Spec`: the cascade plus the fall-through default."""
+
+    stages: tuple[Stage, ...]
+    default: str
+
+
+# ── The zoo table (the Lean `tmplSpec`, transcribed 1:1) ───────────────────────
+
+ZOO6: dict[str, LiftSpec] = {
+    "TauCooperate": LiftSpec((), "C"),
+    "TauDefect": LiftSpec((), "D"),
+    "TauTFTSim": LiftSpec((Stage(Mode.RUN, "TauCooperate", "C"),), "D"),
+    "TauTFTPf": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "C"),), "D"),
+    "TauDupoc": LiftSpec((Stage(Mode.PROVE, SELF, "C"),), "D"),
+    "TauEBot": LiftSpec(
+        (Stage(Mode.PROVE, "TauDefect", "D"), Stage(Mode.PROVE, "TauCooperate", "C")),
+        "D",
+    ),
+}
+
+TEMPLATES: tuple[str, ...] = (
+    "TauCooperate",
+    "TauDefect",
+    "TauTFTSim",
+    "TauTFTPf",
+    "TauDupoc",
+    "TauEBot",
+)
+"""Canonical template order — matches the Lean `order6`
+([coop, defect, tftSim, tftPf, dupoc, ebot])."""
+
+BASE_OF: dict[str, str] = {
+    "TauCooperate": "CooperateBot",
+    "TauDefect": "DefectBot",
+    "TauTFTSim": "TitForTatBot",
+    "TauTFTPf": "TitForTatBot",
+    "TauDupoc": "DupocBot",
+    "TauEBot": "EBot",
+}
+"""Which base bot each template lifts. The two TFT variants are two lift MODALITIES
+of the same base strategy (behavioral vs prover) — at large k their bits coincide,
+which is the budget-gap claim."""
+
+LEAN_SLOT: dict[str, str] = {
+    "TauCooperate": "coop",
+    "TauDefect": "defect",
+    "TauTFTSim": "tftSim",
+    "TauTFTPf": "tftPf",
+    "TauDupoc": "dupoc",
+    "TauEBot": "ebot",
+}
+"""Template name → the Lean `Tmpl` constructor, for the kernel bit-table check."""
+
+
+# ── The compound decision (the Python `inst` + its play, large k) ──────────────
+
+
+class UnsupportedDiagonal(ValueError):
+    """A diagonal (T = A) stage shape outside the modelled fragment: a `run`-mode
+    self-probe diverges (Mirror-vs-self), and a `prove`-mode self-probe firing D is
+    the anti-diagonal (its fixpoint is the historically INCONSISTENT shape, not a
+    Löb cooperation). Neither occurs in the zoo; refusing loudly beats guessing."""
+
+
+@dataclass(frozen=True)
+class Decision:
+    """What `inst(A, δ_T)` plays, plus whether a ≤k transcript of that play exists.
+
+    `provable=False` marks a FLOOR-priced play: the cascade path that committed it
+    contains a failed `prove` stage, whose `search_f` certificate costs more than
+    the whole probing budget. A prove-mode probe of this instance honestly reads 0
+    even when `action == "C"` — the Gödelian cells (`interp_probe_eOfSearch` true +
+    `ps_probe_eOfSearch_false` in `Tau/Certs.lean`)."""
+
+    action: str
+    provable: bool
+
+
+_MAX_DEPTH = 16
+"""Mirror of the Lean `instFuel`: generous for any zoo whose probe nesting is
+modest; exceeding it means the spec table has a cycle the quine rule does not cut
+(two self-probers — the mutual-quine wall)."""
+
+
+def decide(A: str, T: str, zoo: dict[str, LiftSpec] | None = None) -> Decision:
+    """The compound decision of `inst(A, δ_T)` at large k.
+
+    Walks A's cascade at hypothesis T. Stage bits:
+
+    * `prove` stage, target X: 1 iff `inst(T, δ_X)` PROVABLY cooperates — its
+      decision is C and floor-free;
+    * `run` stage, target X: 1 iff `inst(T, δ_X)` TRULY cooperates;
+    * diagonal self-target (`T == A`, prove, fire C): 1 — bounded Löb closes the
+      fixpoint at large k.
+
+    where X = A for a SELF target (the hypothesis seeing ME), else the named
+    template.
     """
-
-    name: str
-    probe: Probe
-    referent: str | None = None
-    action: str | None = None
-    prover: bool = True
-    """True when the probe runs through `proofSearch` (floor-aware: an EBot
-    hypothesis's true-but-floor-priced cooperation reads 0). False for
-    behavioral `sim` probes, which see TRUE plays and are floor-blind.
-    Ignored by CONSTANT bots."""
-
-    def __post_init__(self) -> None:
-        if self.probe is Probe.THIRD_PARTY and self.referent is None:
-            raise ValueError(f"{self.name}: THIRD_PARTY probe needs a referent")
-        if self.probe not in (Probe.THIRD_PARTY,) and self.referent is not None:
-            raise ValueError(f"{self.name}: only THIRD_PARTY probes take a referent")
-        if self.probe is Probe.CONSTANT and self.action not in ("C", "D"):
-            raise ValueError(f"{self.name}: CONSTANT bot needs action 'C' or 'D'")
-        if self.probe is not Probe.CONSTANT and self.action is not None:
-            raise ValueError(f"{self.name}: only CONSTANT bots take a fixed action")
-        if self.probe is Probe.CASCADE and not self.prover:
-            raise ValueError(f"{self.name}: the CASCADE geometry is prover-only")
+    if zoo is None:
+        return _decide_zoo6(A, T)
+    return _decide(A, T, _MAX_DEPTH, _freeze(zoo))
 
 
-FLOOR_BLOCKED_HYPOTHESES: frozenset[str] = frozenset({"EBot"})
-"""Hypotheses whose TRUE cooperation is invisible to prover probes.
-
-EBot's instances cooperate only via a failed exploit-search, so the certificate
-pays the `search_f` floor and no budget-k probe can cite it
-(`no_provable_botSearcherElse_tail`). The set is structural, not per-cell: base
-EBot reaches EVERY cooperation through its else-cascade."""
+def _freeze(zoo: dict[str, LiftSpec]) -> tuple[tuple[str, LiftSpec], ...]:
+    return tuple(sorted(zoo.items()))
 
 
-def probe_bit(
-    matrix: TauMatrix,
-    bot: Def4Bot,
-    actor_base: str,
-    hypothesis: str,
-) -> bool:
-    """Does `bot`'s guard fire on `hypothesis`?
+@lru_cache(maxsize=None)
+def _decide_zoo6(A: str, T: str) -> Decision:
+    return _decide(A, T, _MAX_DEPTH, _freeze(ZOO6))
 
-    `actor_base` is the base-zoo bot this tau bot lifts — needed by the SELF
-    and RECIPROCITY probes, which mention the actor. The bit is read off the
-    certified base matrix: at large `k` the Lean bits coincide with the base
-    cells (a shallow instance's provable action IS its action), which is the
-    faithfulness claim connecting this arithmetic to `Tau/Certs.lean`.
 
-    A CONSTANT bot has no guard; its bits are meaningless and never consulted
-    (`tau_play_def4` short-circuits). We report its fixed action so that
-    diagnostics like the bit-vector table still render something truthful.
-    """
-    if bot.probe is Probe.CONSTANT:
-        return bot.action == "C"
-    if bot.probe is Probe.CASCADE:
-        # the compound point-mass bit: not exploitable AND reciprocating
-        return (not _exploit_bit(matrix, bot, hypothesis)) and _recip_bit(
-            matrix, bot, hypothesis
+def _decide(
+    A: str, T: str, depth: int, frozen: tuple[tuple[str, LiftSpec], ...]
+) -> Decision:
+    if depth == 0:
+        raise UnsupportedDiagonal(
+            f"probe nesting exceeded {_MAX_DEPTH} at ({A}, {T}) — the spec table has "
+            "a cycle the quine rule does not cut (two self-probers?)"
         )
-    if bot.probe is Probe.SELF:
-        raw = matrix.cooperates(actor_base, hypothesis)
-    elif bot.probe is Probe.RECIPROCITY:
-        raw = matrix.cooperates(hypothesis, actor_base)
-    else:
-        assert bot.referent is not None
-        raw = matrix.cooperates(hypothesis, bot.referent)
-    if raw and bot.prover and hypothesis in FLOOR_BLOCKED_HYPOTHESES:
-        return False
-    return raw
+    zoo = dict(frozen)
+    spec = zoo[A]
+    failed_prove = False
+    for st in spec.stages:
+        if st.target == SELF and T == A:
+            # the quine diagonal: bounded Löb at large k
+            if st.mode is Mode.PROVE and st.fire == "C":
+                bit = True
+            else:
+                raise UnsupportedDiagonal(
+                    f"{A}: diagonal stage {st} is outside the modelled fragment"
+                )
+        else:
+            X = A if st.target == SELF else st.target
+            sub = _decide(T, X, depth - 1, frozen)
+            if st.mode is Mode.PROVE:
+                bit = sub.action == "C" and sub.provable
+            else:
+                bit = sub.action == "C"
+        if bit:
+            return Decision(st.fire, provable=not failed_prove)
+        if st.mode is Mode.PROVE:
+            failed_prove = True
+    return Decision(spec.default, provable=not failed_prove)
 
 
-def _exploit_bit(matrix: TauMatrix, bot: Def4Bot, hypothesis: str) -> bool:
-    """CASCADE stage 1: does the hypothesis (provably) cooperate with a defector?"""
-    raw = matrix.cooperates(hypothesis, "DefectBot")
-    if raw and bot.prover and hypothesis in FLOOR_BLOCKED_HYPOTHESES:
-        return False
-    return raw
+def decision_table(
+    zoo: dict[str, LiftSpec] | None = None,
+    templates: tuple[str, ...] = TEMPLATES,
+) -> dict[str, dict[str, Decision]]:
+    """The full compound-decision table: `table[A][T] = decide(A, T)`."""
+    return {A: {T: decide(A, T, zoo) for T in templates} for A in templates}
 
 
-def _recip_bit(matrix: TauMatrix, bot: Def4Bot, hypothesis: str) -> bool:
-    """CASCADE stage 2: does the hypothesis (provably) cooperate with a cooperator?"""
-    raw = matrix.cooperates(hypothesis, "CooperateBot")
-    if raw and bot.prover and hypothesis in FLOOR_BLOCKED_HYPOTHESES:
-        return False
-    return raw
-
-
-def exploit_mass_def4(
-    matrix: TauMatrix,
-    bot: Def4Bot,
-    signal: Signal,
-) -> float:
-    """Σ pᵢ over exploitable hypotheses — the CASCADE's first threshold mass."""
-    assert bot.probe is Probe.CASCADE
-    return math.fsum(
-        p
-        for hypothesis, p in signal.weights.items()
-        if p > 0 and _exploit_bit(matrix, bot, hypothesis)
-    )
-
-
-def threshold_masses(
-    matrix: TauMatrix,
-    bot: Def4Bot,
-    actor_base: str,
-    signal: Signal,
-) -> tuple[float, ...]:
-    """Every mass this bot thresholds against α — the α-breakpoint sources.
-
-    One mass for the single-stage geometries, TWO for the CASCADE (its exploit
-    mass is a phase boundary too: crossing it flips the bot from the window
-    into low-θ defection)."""
-    if bot.probe is Probe.CONSTANT:
-        return ()
-    if bot.probe is Probe.CASCADE:
-        return (
-            exploit_mass_def4(matrix, bot, signal),
-            coop_mass_def4(matrix, bot, actor_base, signal),
-        )
-    return (coop_mass_def4(matrix, bot, actor_base, signal),)
+# ── The vote (the Lean `tauPlayer`, over base-bot signals) ─────────────────────
 
 
 def coop_mass_def4(
-    matrix: TauMatrix,
-    bot: Def4Bot,
-    actor_base: str,
+    template: str,
     signal: Signal,
+    tmpl_of: dict[str, str],
+    overrides: dict[tuple[str, str], str] | None = None,
 ) -> float:
-    """Σ pᵢ over hypotheses whose probe bit fires — Def 4's cooperation mass.
+    """Σ pᵢ over hypotheses whose COMPOUND bit fires — Def 4's cooperation mass.
 
-    Exact (`fsum`) summation, as in `play.coop_mass`: a naive sum is
-    order-dependent and can miss an exactly-unanimous mass by an ULP.
-
-    For the CASCADE this is the RECIPROCITY-stage mass (the window's upper
-    boundary); the exploit mass is separate (`exploit_mass_def4`).
+    `signal` weights are keyed by BASE bot names (the σ channel's vocabulary);
+    `tmpl_of` maps each base hypothesis to the template that lifts it. `overrides`
+    patches individual compound bits (`(A, T) → action`) — used by the coincidence
+    certification to attribute divergences to whitelisted cells.
     """
-    if bot.probe is Probe.CASCADE:
-        return math.fsum(
-            p
-            for hypothesis, p in signal.weights.items()
-            if p > 0 and _recip_bit(matrix, bot, hypothesis)
-        )
-    return math.fsum(
-        p
-        for hypothesis, p in signal.weights.items()
-        if p > 0 and probe_bit(matrix, bot, actor_base, hypothesis)
-    )
+    total = []
+    for base_hyp, p in signal.weights.items():
+        if p <= 0:
+            continue
+        T = tmpl_of[base_hyp]
+        action = decide(template, T).action
+        if overrides and (template, T) in overrides:
+            action = overrides[(template, T)]
+        if action == "C":
+            total.append(p)
+    return math.fsum(total)
 
 
 def tau_play_def4(
-    matrix: TauMatrix,
-    bot: Def4Bot,
-    actor_base: str,
+    template: str,
     alpha: float,
     signal: Signal,
+    tmpl_of: dict[str, str],
+    overrides: dict[tuple[str, str], str] | None = None,
 ) -> str:
-    """Def-4 play ∈ {"C", "D"}, thresholded at `≥ α` (same convention as Def 3).
+    """Def-4 play ∈ {"C", "D"}: ONE vote over compound decisions, thresholded at
+    `≥ α` (the same convention as Def 3 — which is the point: under the corrected
+    definition the two sides differ ONLY in how the per-hypothesis bit is produced,
+    and at large k they coincide).
 
-    CONSTANT bots bypass the threshold entirely, matching their Lean `.const`
-    definitions — in particular TauDefect defects even at α = 0.
+    Constants short-circuit through the same code path (their compound bits are
+    uniform), EXCEPT that a bot with an empty cascade ignores the threshold in the
+    Lean (`.const` has no vote) — preserved here: an empty-spec bot plays its
+    default at every α, including TauDefect defecting at α = 0.
     """
-    if bot.probe is Probe.CONSTANT:
-        assert bot.action is not None
-        return bot.action
-    if bot.probe is Probe.CASCADE:
-        # stage 1: the exploit vote (fires → defect, incl. at α = 0, matching
-        # Lean's θ = 0 short-circuit into the outer then-branch `.const D`)
-        if exploit_mass_def4(matrix, bot, signal) >= alpha - _MASS_TOL:
-            return "D"
-        # stage 2: the reciprocity vote
-        mass = coop_mass_def4(matrix, bot, actor_base, signal)
-        return "C" if mass >= alpha - _MASS_TOL else "D"
-    mass = coop_mass_def4(matrix, bot, actor_base, signal)
+    zoo6 = ZOO6
+    if not zoo6[template].stages and template in ("TauCooperate", "TauDefect"):
+        return zoo6[template].default
+    mass = coop_mass_def4(template, signal, tmpl_of, overrides)
     return "C" if mass >= alpha - _MASS_TOL else "D"
 
 
-# ── The milestone-1 control zoo ────────────────────────────────────────────
+# ── The comparison zoos (base-bot keyed, as the σ channels are) ────────────────
 
-CONTROL_ZOO: dict[str, Def4Bot] = {
-    "DupocBot": Def4Bot("TauDupoc", Probe.RECIPROCITY),
-    "CooperateBot": Def4Bot("TauCooperate", Probe.CONSTANT, action="C"),
-    "DefectBot": Def4Bot("TauDefect", Probe.CONSTANT, action="D"),
-    "TitForTatBot": Def4Bot("TauTFTSim", Probe.THIRD_PARTY, referent="CooperateBot"),
+CONTROL_ZOO: dict[str, str] = {
+    "DupocBot": "TauDupoc",
+    "CooperateBot": "TauCooperate",
+    "DefectBot": "TauDefect",
+    "TitForTatBot": "TauTFTSim",
 }
-"""The 4-bot CONTROL zoo, keyed by the BASE bot each tau bot lifts.
-
-Mirrors the Lean milestone-1 zoo exactly: `TauCooperate`/`TauDefect` are
-CONSTANT because Lean defines them as `.const .C` / `.const .D`, which makes
-them α-independent. (An earlier version modelled them as self-probing bots with
-uniform bit-vectors; that agrees everywhere except α = 0, where a mass-0 bot
-would cooperate — `verify_against_lean` caught the disagreement against the
-kernel. Keep them CONSTANT.)
-
-**This zoo cannot separate the definitions, by construction** — verified: every
-conditional bot's bit-vector is identical under both. Use it as the
-anchor/control run; use `SEPARATING_ZOO` for the informative one.
-"""
+"""base bot → the template that lifts it, milestone-1 control zoo. Base TFT maps to
+the BEHAVIORAL variant (that is what base TitForTatBot is); the prover variant
+appears in bit tables as the budget-gap twin."""
 
 CONTROL_BOTS: tuple[str, ...] = (
     "DupocBot",
@@ -325,23 +304,9 @@ CONTROL_BOTS: tuple[str, ...] = (
     "TitForTatBot",
 )
 
-SEPARATING_ZOO: dict[str, Def4Bot] = {
-    **CONTROL_ZOO,
-    "EBot": Def4Bot("TauEBot", Probe.CASCADE),
-}
-"""The control zoo plus EBot — the extension that separates Def 3/Def 4.
-
-Two separations, both honest:
-
-* **The window (structural).** TauEBot thresholds TWO masses (exploit, then
-  reciprocity), so its cooperation region is `exploit_mass < α ≤ recip_mass` —
-  defection at BOTH ends of the α axis. Def 3's lift of EBot is a single
-  one-sided threshold on its outcome row; no Def-3 bot is non-monotone in α.
-* **The bits.** Def 3 reads EBot's row as "what does EBot do to B" (it
-  cooperates with TFT/Dupoc); Def 4's cascade stages read B's δ_D/δ_C columns.
-  And TauDupoc's own EBot bit is 0 under Def 4 (the floor) — for the SAME
-  reason base `DupocBot vs EBot = (D, C)`: EBot's real cooperation sits behind
-  a failed search and cannot be cited within budget.
-"""
+SEPARATING_ZOO: dict[str, str] = {**CONTROL_ZOO, "EBot": "TauEBot"}
+"""Control + EBot. Under the RETRACTED reading this zoo separated the definitions;
+under the corrected source lift it must NOT (that inversion is the certification
+`compare.py` runs), except at the whitelisted Mirror-truncation cell."""
 
 SEPARATING_BOTS: tuple[str, ...] = CONTROL_BOTS + ("EBot",)
