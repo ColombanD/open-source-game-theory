@@ -1,31 +1,26 @@
-import PrisonersDilemma.Tau.Vectors
+import PrisonersDilemma.Tau.Spec
 
 /-!
-# Tau/VotePhases — α-phase theorems for the refined Def-4 zoo (2026-08-18)
+# Tau/VotePhases — α-phase theorems for the refined Def-4 zoo (DSL interface, Phase 5)
 
-Each bot's phase theorem is now a two-step corollary of the UNIFORM
-`tauPlayer_phase`: supply a `VoteAllVals` (what every entry plays) and compute the
-vector's `voteMass`. No per-bot induction, no per-bot peel.
+Each bot's phase theorem is a two-step corollary of the uniform machinery: supply a
+`VoteBits` (what every entry of the COMPILED vector plays — the entries are
+`rfl`-equal to the hand-written closure by Gate D1, so the Phase-4 entry-play lemmas
+apply verbatim) and compute the mass. Weights are a function `w : Tmpl → Nat`, per
+the DSL interface.
 
-**The headline correction.** τ(EBot)'s bits are Coop 0, Defect 0, TFTSim 1, TFTPf 1,
-Dupoc 1, EBot 0 — mass `wTs + wTp + wL`, a ONE-SIDED boundary. The retracted
-crowd-exploiter had a cooperation WINDOW (`wC < θ ≤ wC+wTs+wTp+wL`, defecting at both
-α-extremes); that shape belonged to the per-stage vote, not to the lift of EBot.
-
-The three cooperators keep the boundary the milestone-1 layer found,
-`θ ≤ wC + wTs + wTp + wL` — TauDupoc's mass still honestly EXCLUDES `wE` (the floor
-cell), which is a good regression check that the modality move did not disturb the
-Gödelian content.
+**The headline correction stands unchanged**: τ(EBot)'s bits are Coop 0, Defect 0,
+TFTSim 1, TFTPf 1, Dupoc 1, EBot 0 — mass `w .tftSim + w .tftPf + w .dupoc`, a
+ONE-SIDED boundary (the retracted crowd-exploiter's window does not exist). The
+three cooperators share `w .coop + w .tftSim + w .tftPf + w .dupoc`; TauDupoc's mass
+honestly EXCLUDES `w .ebot` (the floor cell).
 -/
 
 open PD PD.BaseTheorems
 
 namespace PD.Tau
 
-/-! ## Mass-arithmetic helpers
-
-`massOf` guards each weight with `a == Action.C`; these two close those `if`s so the
-per-bot masses reduce to plain sums. -/
+/-! ## Mass-arithmetic helpers -/
 
 @[simp] theorem massOf_ifC (w : Nat) :
     (if (Action.C == Action.C) = true then w else 0) = w := if_pos rfl
@@ -36,52 +31,44 @@ per-bot masses reduce to plain sums. -/
 
 /-! ## The constants -/
 
-theorem coopVec_bits (wC wD wTs wTp wL wE : Nat) :
-    VoteBits (coopVec wC wD wTs wTp wL wE)
-      [(wC, .C), (wD, .C), (wTs, .C), (wTp, .C), (wL, .C), (wE, .C)] := by
-  exact .cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩
+theorem coopBits (k : Nat) (w : Tmpl → Nat) :
+    VoteBits (vecOf (zoo6 k) .coop w order6)
+      [(w .coop, .C), (w .defect, .C), (w .tftSim, .C),
+       (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .C)] :=
+  .cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩
     (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ .nil)))))
 
-/-- **τ(CooperateBot)**: signal-blind — its whole mass cooperates, so it plays C for
-    any threshold within the total weight. The lift of a constant is constant. -/
-theorem tauCooperate_phase (wC wD wTs wTp wL wE θ : Nat) (opponent : Prog) :
-    (θ ≤ wC + (wD + (wTs + (wTp + (wL + (wE + 0))))) →
-      ∃ N, play N (TauCooperate wC wD wTs wTp wL wE θ) opponent = some .C)
-    ∧ (¬ θ ≤ wC + (wD + (wTs + (wTp + (wL + (wE + 0))))) →
-      ∃ N, play N (TauCooperate wC wD wTs wTp wL wE θ) opponent = some .D) := by
-  have h := tauPlayer_phase_bits θ (coopVec_bits wC wD wTs wTp wL wE) opponent
-  simpa [massOf, TauCooperate] using h
+/-- **τ(CooperateBot)**: signal-blind — its whole mass cooperates. -/
+theorem tauCooperate_phase (k : Nat) (w : Tmpl → Nat) (θ : Nat) (opponent : Prog) :
+    (θ ≤ w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + 0))))) →
+      ∃ N, play N (TauBotZ k .coop w θ) opponent = some .C)
+    ∧ (¬ θ ≤ w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + 0))))) →
+      ∃ N, play N (TauBotZ k .coop w θ) opponent = some .D) := by
+  have h := tauPlayer_phase_bits θ (coopBits k w) opponent
+  simpa [massOf, TauBotZ] using h
 
-theorem defectVec_bits (wC wD wTs wTp wL wE : Nat) :
-    VoteBits (defectVec wC wD wTs wTp wL wE)
-      [(wC, .D), (wD, .D), (wTs, .D), (wTp, .D), (wL, .D), (wE, .D)] := by
-  exact .cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩
+theorem defectBits (k : Nat) (w : Tmpl → Nat) :
+    VoteBits (vecOf (zoo6 k) .defect w order6)
+      [(w .coop, .D), (w .defect, .D), (w .tftSim, .D),
+       (w .tftPf, .D), (w .dupoc, .D), (w .ebot, .D)] :=
+  .cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩
     (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ .nil)))))
 
-/-- **τ(DefectBot)**: zero cooperation mass — it plays D unless the threshold is 0. -/
-theorem tauDefect_phase (wC wD wTs wTp wL wE θ : Nat) (opponent : Prog) :
-    (θ = 0 → ∃ N, play N (TauDefect wC wD wTs wTp wL wE θ) opponent = some .C)
-    ∧ (θ ≠ 0 → ∃ N, play N (TauDefect wC wD wTs wTp wL wE θ) opponent = some .D) := by
-  have h := tauPlayer_phase_bits θ (defectVec_bits wC wD wTs wTp wL wE) opponent
-  simp only [massOf, TauDefect] at h ⊢
-  exact ⟨fun hθ => h.1 (by simp [hθ]), fun hθ => h.2 (by simp; omega)⟩
+/-- **τ(DefectBot)**: zero cooperation mass. -/
+theorem tauDefect_phase (k : Nat) (w : Tmpl → Nat) (θ : Nat) (opponent : Prog) :
+    (θ = 0 → ∃ N, play N (TauBotZ k .defect w θ) opponent = some .C)
+    ∧ (θ ≠ 0 → ∃ N, play N (TauBotZ k .defect w θ) opponent = some .D) := by
+  have h := tauPlayer_phase_bits θ (defectBits k w) opponent
+  simp only [massOf, massOf_ifD, TauBotZ] at h ⊢
+  exact ⟨fun hθ => h.1 (by omega), fun hθ => h.2 (by omega)⟩
 
-/-! ## τ(EBot) — THE corrected bot
+/-! ## τ(EBot) — the corrected bot, ONE-SIDED boundary -/
 
-Each entry is EBot's whole exploiter cascade at point mass on one hypothesis, and the
-vote runs ONCE over those six compound decisions. Bits: exploits the cooperator
-(Coop 0), gains nothing from the defector (Defect 0), reciprocates both TFTs and Dupoc
-(1, 1, 1), and — lacking base EBot's non-liftable Mirror branch — defects against
-itself (EBot 0).
-
-**Boundary `θ ≤ wTs + wTp + wL`: ONE-SIDED, no window.** The retracted crowd-exploiter
-had a cooperation window `wC < θ ≤ wC+wTs+wTp+wL` and defected at both α-extremes; that
-shape belonged to its per-stage vote, not to any lift of EBot. -/
-
-theorem eVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (wC wD wTs wTp wL wE : Nat) :
-    VoteBits (eVec k wC wD wTs wTp wL wE)
-      [(wC, .D), (wD, .D), (wTs, .C), (wTp, .C), (wL, .C), (wE, .D)] := by
+theorem eBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
+    (w : Tmpl → Nat) :
+    VoteBits (vecOf (zoo6 k) .ebot w order6)
+      [(w .coop, .D), (w .defect, .D), (w .tftSim, .C),
+       (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .D)] := by
   have bCoop : proofSearch k (probe tauCoopδ) = true := ps_probe_coop hk
   have bDef : proofSearch k (probe tauDefectδ) = false := ps_probe_defect k
   have bSimD : proofSearch k (probe simOfDefectδ) = false := ps_probe_simOfDefect k
@@ -92,6 +79,8 @@ theorem eVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     ps_probe_searchOfCoop hk hkk
   have bEDef : proofSearch k (probe (eOfDefectδ k)) = false := ps_probe_eOfDefect k k
   have bECoop : proofSearch k (probe (eOfCoopδ k)) = false := ps_probe_eOfCoop_false hk k
+  -- the compiled entries are rfl-equal to the eδ-instances (Gate D1), so the
+  -- Phase-4 entry-play lemmas close each slot directly
   exact .cons (eδ_plays_D_of_exploit _ _ bCoop)
     (.cons (eδ_plays_D_of_both_false _ _ bDef bDef)
       (.cons (eδ_plays_C _ _ bSimD bSimC)
@@ -99,31 +88,24 @@ theorem eVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
           (.cons (eδ_plays_C _ _ bSchD bSchC)
             (.cons (eδ_plays_D_of_both_false _ _ bEDef bECoop) .nil)))))
 
-/-- **τ(EBot) α-phase theorem — the ONE-SIDED boundary.** -/
+/-- **τ(EBot) α-phase theorem — the ONE-SIDED boundary** `θ ≤ wTs + wTp + wL`. -/
 theorem tauEBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (θ wC wD wTs wTp wL wE : Nat) (opponent : Prog) :
-    (θ ≤ wTs + (wTp + wL) →
-      ∃ N, play N (TauEBot k θ wC wD wTs wTp wL wE) opponent = some .C)
-    ∧ (¬ θ ≤ wTs + (wTp + wL) →
-      ∃ N, play N (TauEBot k θ wC wD wTs wTp wL wE) opponent = some .D) := by
-  have h := tauPlayer_phase_bits θ (eVec_bits hk hkk h6 wC wD wTs wTp wL wE) opponent
-  simp only [massOf, TauEBot] at h ⊢
+    (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+    (θ ≤ w .tftSim + (w .tftPf + w .dupoc) →
+      ∃ N, play N (TauBotZ k .ebot w θ) opponent = some .C)
+    ∧ (¬ θ ≤ w .tftSim + (w .tftPf + w .dupoc) →
+      ∃ N, play N (TauBotZ k .ebot w θ) opponent = some .D) := by
+  have h := tauPlayer_phase_bits θ (eBits hk hkk h6 w) opponent
+  simp only [massOf, massOf_ifC, massOf_ifD, TauBotZ] at h ⊢
   simpa using h
 
-/-! ## The three cooperators
+/-! ## The three cooperators — shared boundary `θ ≤ wC + wTs + wTp + wL` -/
 
-All three share the boundary `θ ≤ wC + wTs + wTp + wL`, at different BUDGET
-thresholds — the prover/behavioral split is a budget-phase gap, not an α-gap.
-TauDupoc's mass honestly EXCLUDES `wE`: `E(δ_L)` really cooperates, but only through a
-failed exploit-search, so no ≤k certificate exists and its entry's guard reads 0. That
-the boundary survived the move from a provability-vote to an action-vote is the
-regression check that the Gödelian content sits where the corrected definition says it
-does — inside the entry, not at the vote. -/
-
-theorem tftPfVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (wC wD wTs wTp wL wE : Nat) :
-    VoteBits (tftPfVec k wC wD wTs wTp wL wE)
-      [(wC, .C), (wD, .D), (wTs, .C), (wTp, .C), (wL, .C), (wE, .D)] :=
+theorem tftPfBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
+    (w : Tmpl → Nat) :
+    VoteBits (vecOf (zoo6 k) .tftPf w order6)
+      [(w .coop, .C), (w .defect, .D), (w .tftSim, .C),
+       (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .D)] :=
   .cons (probeSearchδ_plays_C _ _ (ps_probe_coop hk))
     (.cons (probeSearchδ_plays_D _ _ (ps_probe_defect k))
       (.cons (probeSearchδ_plays_C _ _ (ps_probe_simOfCoop h6))
@@ -133,21 +115,20 @@ theorem tftPfVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
 
 /-- **τ(TitForTatBot), prover variant.** -/
 theorem tauTFTPf_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (θ wC wD wTs wTp wL wE : Nat) (opponent : Prog) :
-    (θ ≤ wC + (wTs + (wTp + wL)) →
-      ∃ N, play N (TauTFTPf k θ wC wD wTs wTp wL wE) opponent = some .C)
-    ∧ (¬ θ ≤ wC + (wTs + (wTp + wL)) →
-      ∃ N, play N (TauTFTPf k θ wC wD wTs wTp wL wE) opponent = some .D) := by
-  have h := tauPlayer_phase_bits θ (tftPfVec_bits hk hkk h6 wC wD wTs wTp wL wE) opponent
-  simp only [massOf, TauTFTPf] at h ⊢
+    (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+    (θ ≤ w .coop + (w .tftSim + (w .tftPf + w .dupoc)) →
+      ∃ N, play N (TauBotZ k .tftPf w θ) opponent = some .C)
+    ∧ (¬ θ ≤ w .coop + (w .tftSim + (w .tftPf + w .dupoc)) →
+      ∃ N, play N (TauBotZ k .tftPf w θ) opponent = some .D) := by
+  have h := tauPlayer_phase_bits θ (tftPfBits hk hkk h6 w) opponent
+  simp only [massOf, massOf_ifC, massOf_ifD, TauBotZ] at h ⊢
   simpa using h
 
-theorem tftSimVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (wC wD wTs wTp wL wE : Nat) :
-    VoteBits (tftSimVec k wC wD wTs wTp wL wE)
-      [(wC, .C), (wD, .D), (wTs, .C), (wTp, .C), (wL, .C), (wE, .D)] := by
-  -- every entry is `tftSimδ H` for a hypothesis `H` whose own play is already known:
-  -- the behavioral read simply copies it (`tftSimδ_plays`).
+theorem tftSimBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
+    (w : Tmpl → Nat) :
+    VoteBits (vecOf (zoo6 k) .tftSim w order6)
+      [(w .coop, .C), (w .defect, .D), (w .tftSim, .C),
+       (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .D)] := by
   refine .cons (tftSimδ_plays _ _ ⟨1, rfl⟩)
     (.cons (tftSimδ_plays _ _ ⟨1, rfl⟩)
       (.cons (tftSimδ_plays _ _ (entry_C_of_interp (Pf_sound _ _ (pf_probe_simOfCoop h6))))
@@ -156,33 +137,33 @@ theorem tftSimVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
           (.cons (tftSimδ_plays _ _
               (entry_C_of_interp (Pf_sound _ _ (pf_probe_searchOfCoop hk hkk))))
             (.cons (tftSimδ_plays _ _ ?_) .nil)))))
-  -- the EBot hypothesis DEFECTS (it exploits a cooperator), so this entry copies D
-  exact entry_D_of_not_interp ⟨3, Action.D, by
-      have hb : proofSearch k (probe tauCoopδ) = true := ps_probe_coop hk
-      rw [eOfCoopδ, eδ, eval, probe_subst, hb]; rfl⟩
-    (interp_probe_eOfCoop_false hk)
+  -- The compiled entry displays in `instGo` form, so state the play against the
+  -- NAMED instance explicitly and let defeq (Gate D1) bridge the two.
+  have hb : proofSearch k (probe tauCoopδ) = true := ps_probe_coop hk
+  have hplay : eval 3 (.bot (eOfCoopδ k)) (.bot (eOfCoopδ k)) (eOfCoopδ k)
+      = some Action.D := by
+    rw [eOfCoopδ, eδ, eval, probe_subst, hb]; rfl
+  exact entry_D_of_not_interp ⟨3, Action.D, hplay⟩ (interp_probe_eOfCoop_false hk)
 
-/-- **τ(TitForTatBot), behavioral variant.** Same boundary as the prover variant,
-    reached at a far smaller budget. -/
+/-- **τ(TitForTatBot), behavioral variant** — same boundary, far smaller budget. -/
 theorem tauTFTSim_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (θ wC wD wTs wTp wL wE : Nat) (opponent : Prog) :
-    (θ ≤ wC + (wTs + (wTp + wL)) →
-      ∃ N, play N (TauTFTSim k θ wC wD wTs wTp wL wE) opponent = some .C)
-    ∧ (¬ θ ≤ wC + (wTs + (wTp + wL)) →
-      ∃ N, play N (TauTFTSim k θ wC wD wTs wTp wL wE) opponent = some .D) := by
-  have h := tauPlayer_phase_bits θ
-    (tftSimVec_bits hk hkk h6 wC wD wTs wTp wL wE) opponent
-  simp only [massOf, TauTFTSim] at h ⊢
+    (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+    (θ ≤ w .coop + (w .tftSim + (w .tftPf + w .dupoc)) →
+      ∃ N, play N (TauBotZ k .tftSim w θ) opponent = some .C)
+    ∧ (¬ θ ≤ w .coop + (w .tftSim + (w .tftPf + w .dupoc)) →
+      ∃ N, play N (TauBotZ k .tftSim w θ) opponent = some .D) := by
+  have h := tauPlayer_phase_bits θ (tftSimBits hk hkk h6 w) opponent
+  simp only [massOf, massOf_ifC, massOf_ifD, TauBotZ] at h ⊢
   simpa using h
 
-/-- τ(DupocBot)'s bits, past the Löb threshold. The Dupoc entry is the `.self` quine
-    (bounded Löb closes it AT the probing budget); the EBot entry is the floor cell. -/
-theorem dupocVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
+/-! ## τ(DupocBot) — Löb-gated, boundary excludes `w .ebot` (the floor) -/
+
+theorem dupocBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hk7 : c_guard k + 7 ≤ k)
-    (hquine : proofSearch k (probe (TauDupocδ k)) = true)
-    (wC wD wTs wTp wL wE : Nat) :
-    VoteBits (dupocVec k wC wD wTs wTp wL wE)
-      [(wC, .C), (wD, .D), (wTs, .C), (wTp, .C), (wL, .C), (wE, .D)] := by
+    (hquine : proofSearch k (probe (TauDupocδ k)) = true) (w : Tmpl → Nat) :
+    VoteBits (vecOf (zoo6 k) .dupoc w order6)
+      [(w .coop, .C), (w .defect, .D), (w .tftSim, .C),
+       (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .D)] := by
   refine .cons (probeSearchδ_plays_C _ _ (ps_probe_coop hk))
     (.cons (probeSearchδ_plays_D _ _ (ps_probe_defect k))
       (.cons (probeSearchδ_plays_C _ _ (ps_probe_simOfSearch hk hk7))
@@ -190,37 +171,36 @@ theorem dupocVec_bits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
           (.cons ?_
             (.cons (probeSearchδ_plays_D _ _ (ps_probe_eOfSearch_false (le_refl k)))
               .nil)))))
-  -- The quine entry. `TauDupocδ k` is a `.search` on its OWN `.self`-probe, so it is
-  -- not a frozen `.bot`-probe of another term and `probeSearchδ_plays_C` does not
-  -- apply: running `.bot`-framed, `subst` closes `.self` to the bot-wrapped quine,
-  -- which IS `probe (TauDupocδ k)` definitionally — the Löb fixpoint whose bit
-  -- `ps_probe_quine` supplies at the probing budget itself.
-  refine ⟨2, ?_⟩
+  -- The quine entry: running `.bot`-framed, subst closes `.self` to the wrapped
+  -- quine, whose guard IS `probe (TauDupocδ k)` — the Löb fixpoint bit. Stated
+  -- against the NAMED quine; defeq (Gate D1) bridges to the compiled form.
   have h : proofSearch k ((Formula.plays Prog.self Prog.self Action.C).subst
       (.bot (TauDupocδ k)) (.bot (TauDupocδ k))) = true := hquine
-  rw [TauDupocδ, eval] at *
-  rw [h]
-  rfl
+  have hq : eval 2 (.bot (TauDupocδ k)) (.bot (TauDupocδ k)) (TauDupocδ k)
+      = some Action.C := by
+    rw [TauDupocδ, eval] at *
+    rw [h]
+    rfl
+  exact ⟨2, hq⟩
 
-/-- **τ(DupocBot) α-phase theorem** — Löb-gated, boundary excludes `wE` (the floor). -/
+/-- **τ(DupocBot) α-phase theorem** — Löb-gated; the mass excludes `w .ebot`. -/
 theorem tauDupoc_phase :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE (opponent : Prog),
-      (θ ≤ wC + (wTs + (wTp + wL)) →
-        ∃ N, play N (TauDupoc k θ wC wD wTs wTp wL wE) opponent = some .C)
-      ∧ (¬ θ ≤ wC + (wTs + (wTp + wL)) →
-        ∃ N, play N (TauDupoc k θ wC wD wTs wTp wL wE) opponent = some .D) := by
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat) (opponent : Prog),
+      (θ ≤ w .coop + (w .tftSim + (w .tftPf + w .dupoc)) →
+        ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .C)
+      ∧ (¬ θ ≤ w .coop + (w .tftSim + (w .tftPf + w .dupoc)) →
+        ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .D) := by
   obtain ⟨kL, hkL⟩ := ps_probe_quine
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
-  refine ⟨max kL kA, fun k hk θ wC wD wTs wTp wL wE opponent => ?_⟩
+  refine ⟨max kL kA, fun k hk θ w opponent => ?_⟩
   have hquine := hkL k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k :=
     hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
   have hk2 : 2 ≤ k := by omega
   have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
   have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
-  have h := tauPlayer_phase_bits θ
-    (dupocVec_bits hk2 hkk hk7 hquine wC wD wTs wTp wL wE) opponent
-  simp only [massOf, TauDupoc] at h ⊢
+  have h := tauPlayer_phase_bits θ (dupocBits hk2 hkk hk7 hquine w) opponent
+  simp only [massOf, massOf_ifC, massOf_ifD, TauBotZ] at h ⊢
   simpa using h
 
 end PD.Tau

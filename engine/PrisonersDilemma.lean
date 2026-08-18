@@ -185,5 +185,6 @@ import PrisonersDilemma.Tau.Defs
 import PrisonersDilemma.Tau.Certs
 import PrisonersDilemma.Tau.Vote
 import PrisonersDilemma.Tau.Vectors
+import PrisonersDilemma.Tau.Spec
 import PrisonersDilemma.Tau.VotePhases
 import PrisonersDilemma.Theorems.Tau.VoteMatrix

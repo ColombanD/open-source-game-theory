@@ -69,84 +69,14 @@ def eOfPfδ (k : Nat) : Prog := eδ k (searchOfDefectδ k) (searchOfCoopδ k)
     genuinely open lift convention, recorded in the design note). -/
 def eOfSelfδ (k : Nat) : Prog := eδ k (eOfDefectδ k) (eOfCoopδ k)
 
-/-! ## The decision vectors
+/-! ## The decision vectors — RETIRED (Phase 5, 2026-08-18)
 
-Weights `wC wD wTs wTp wL wE` over the six hypotheses, in the fixed order
-Coop, Defect, TFTSim, TFTPf, Dupoc, EBot. -/
-
-/-- τ(CooperateBot): signal-blind, every entry cooperates. -/
-def coopVec (wC wD wTs wTp wL wE : Nat) : VoteList :=
-  .cons wC (.const .C) (.cons wD (.const .C) (.cons wTs (.const .C)
-    (.cons wTp (.const .C) (.cons wL (.const .C) (.cons wE (.const .C) .nil)))))
-
-/-- τ(DefectBot): signal-blind, every entry defects. -/
-def defectVec (wC wD wTs wTp wL wE : Nat) : VoteList :=
-  .cons wC (.const .D) (.cons wD (.const .D) (.cons wTs (.const .D)
-    (.cons wTp (.const .D) (.cons wL (.const .D) (.cons wE (.const .D) .nil)))))
-
-/-- τ(DupocBot): each entry asks "can I prove this hypothesis, seeing ME, cooperates?"
-    — the δ_L column. The Dupoc entry is the `.self` quine (Löb); the EBot entry is
-    the FLOOR cell: `E(δ_L)` really cooperates but only through a failed exploit
-    search, so no ≤k certificate exists and the entry's own guard reads 0 ⇒ it plays D. -/
-def dupocVec (k wC wD wTs wTp wL wE : Nat) : VoteList :=
-  .cons wC (probeSearchδ k tauCoopδ)
-    (.cons wD (probeSearchδ k tauDefectδ)
-      (.cons wTs (probeSearchδ k (simOfSearchδ k))
-        (.cons wTp (probeSearchδ k (searchOfSearchδ k))
-          (.cons wL (TauDupocδ k)
-            (.cons wE (probeSearchδ k (eOfSearchδ k)) .nil)))))
-
-/-- τ(TitForTatBot), prover variant: the δ_C column ("does this hypothesis cooperate
-    with a cooperator?"), read by proof. -/
-def tftPfVec (k wC wD wTs wTp wL wE : Nat) : VoteList :=
-  .cons wC (probeSearchδ k tauCoopδ)
-    (.cons wD (probeSearchδ k tauDefectδ)
-      (.cons wTs (probeSearchδ k simOfCoopδ)
-        (.cons wTp (probeSearchδ k (searchOfCoopδ k))
-          (.cons wL (probeSearchδ k (searchOfCoopδ k))
-            (.cons wE (probeSearchδ k (eOfCoopδ k)) .nil)))))
-
-/-- τ(TitForTatBot), behavioral variant: the δ_C column read by SIMULATION. Same
-    α-boundary as the prover variant, reached at a far smaller budget — the
-    prover/behavioral split is a budget-phase gap, not an α-gap. -/
-def tftSimVec (k wC wD wTs wTp wL wE : Nat) : VoteList :=
-  .cons wC (tftSimδ tauCoopδ)
-    (.cons wD (tftSimδ tauDefectδ)
-      (.cons wTs (tftSimδ simOfCoopδ)
-        (.cons wTp (tftSimδ (searchOfCoopδ k))
-          (.cons wL (tftSimδ (searchOfCoopδ k))
-            (.cons wE (tftSimδ (eOfCoopδ k)) .nil)))))
-
-/-- τ(EBot): each entry is the WHOLE exploiter cascade at point mass. One vote over
-    compound decisions — NOT a vote per cascade stage (that was the retracted
-    crowd-exploiter). -/
-def eVec (k wC wD wTs wTp wL wE : Nat) : VoteList :=
-  .cons wC (eOfCoopδ k)
-    (.cons wD (eOfDefectδ k)
-      (.cons wTs (eOfSimδ k)
-        (.cons wTp (eOfPfδ k)
-          (.cons wL (eOfSearchδ k)
-            (.cons wE (eOfSelfδ k) .nil)))))
-
-/-! ## The players -/
-
-def TauCooperate (wC wD wTs wTp wL wE θ : Nat) : Prog :=
-  tauPlayer (coopVec wC wD wTs wTp wL wE) θ
-
-def TauDefect (wC wD wTs wTp wL wE θ : Nat) : Prog :=
-  tauPlayer (defectVec wC wD wTs wTp wL wE) θ
-
-def TauDupoc (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
-  tauPlayer (dupocVec k wC wD wTs wTp wL wE) θ
-
-def TauTFTPf (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
-  tauPlayer (tftPfVec k wC wD wTs wTp wL wE) θ
-
-def TauTFTSim (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
-  tauPlayer (tftSimVec k wC wD wTs wTp wL wE) θ
-
-def TauEBot (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
-  tauPlayer (eVec k wC wD wTs wTp wL wE) θ
+The six hand-written `*Vec` lists and the six fixed-arity players that lived here
+were replaced by the Spec DSL (`Tau/Spec.lean`): vectors are now COMPILED —
+`vecOf (zoo6 k) A w order6` — and the player is `TauBotZ k A w θ`, with weights as a
+function `w : Tmpl → Nat`. Gate D1 in `Spec.lean` certifies the compiled closure
+byte-identical (`rfl`) to the instances below, which remain the ground truth the
+`Certs` bit lemmas speak about. Git archives the retired lists (Phase-5 commit). -/
 
 /-! ## Entry-play lemmas
 

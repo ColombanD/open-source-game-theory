@@ -596,6 +596,41 @@ STAYS HAND-WRITTEN (the mathematics — a DSL generates terms, not theorems):
 5. **Gate D2:** engine green, 3 axioms, zero sorry, base outcomes byte-identical,
    tau matrix statements unchanged up to the weight-function refactor.
 
+**✅ PHASE 5 LANDED 2026-08-18.** Engine green (3307 jobs), 3 standard axioms, zero
+sorry, 78/78 base outcomes byte-identical, **all 26 Gate-D1 `rfl` checks pass on the
+first build** — the compiler reproduces the hand-written closure byte-for-byte,
+including the quine, the floor entry, and τ(EBot)'s whole cascade row.
+
+What landed: `Tau/Spec.lean` (Mode/Target/Stage/Spec/Zoo, the `instGo`/`inst`
+compiler, `vecOf`, the generic `vecOf_bits` list induction, the `zoo6` spec table,
+`TauBotZ`, Gate D1); `VotePhases`/`VoteMatrix` restated on the DSL interface
+(`w : Tmpl → Nat`); the six hand-written `*Vec` lists and fixed-arity players
+RETIRED from `Vectors.lean`. The named instances and `Certs` bit lemmas stay — they
+are the ground truth D1 certifies against and the vocabulary the bits proofs use.
+
+**DEVIATION from §6.3, recorded: FUEL, not the WF measure.** Tested before choosing:
+WF-compiled definitions do NOT reduce by `rfl` even at fully concrete inputs (a toy
+`termination_by` function fails `rfl` with a metavariable mismatch), and Gate D1 is
+BY `rfl` — the measure version would force all 26 checks through simp-normalization
+with a free budget `k`, reviving Phase 4's normalization fights. The fuel version is
+structurally recursive (every call decrements fuel, including the cascade
+continuation), fully `rfl`-reducing, `instFuel = 16` ≫ the zoo's nesting depth.
+What the measure was buying is compensated: mis-compiles INCLUDING fuel exhaustion
+cannot pass D1 (an exhausted compile emits a default constant, never byte-identical
+to the closure). RECORDED DEBT, due when a SECOND zoo instantiates the DSL: the
+generic `Zoo.WellFormed` predicate + fuel-sufficiency lemma — until then, D1-style
+byte checks are the per-zoo certificate.
+
+**Proof-craft note:** with compiled vectors, goals display entries in `instGo` form,
+so `rw` against NAMED instances fails inside the bits proofs — state the entry play
+as an explicitly-annotated `have` on the named instance and let defeq (which Gate D1
+guarantees) bridge via `exact`. Two sites needed this (the tftSim EBot-entry witness
+and the Dupoc quine entry).
+
+Open question 5 resolved: `ι` = a readable enum (`Tmpl`), not `Fin n`; the interim
+instance names were NOT abbrev'd — they persist as the ground-truth vocabulary of
+`Certs`, with D1 tying them to the compiler output.
+
 ## 7. Phase 6 — Python: from separation-hunt to coincidence-certification
 
 *(Was "Phase 5"; reordered 2026-08-18 to run AFTER the Spec DSL — see §6's ordering rationale. The `def4` model below is written against the DSL's interface: zoo list + `w : ι → Nat`, computed instances.)*
