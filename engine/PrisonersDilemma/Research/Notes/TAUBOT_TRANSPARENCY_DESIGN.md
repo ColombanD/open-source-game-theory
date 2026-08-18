@@ -403,6 +403,24 @@ agents (measure-theoretic eval + probabilistic Löb — a thesis in itself).
 
 # Part III — Definition 4: tau-native bots (Milestone 1 SHIPPED 2026-08-11; **READING RETRACTED 2026-08-13 — the correct Def 4 is the uniform SOURCE LIFT, the implemented σ-player TauEBot is wrong; see the retraction section**)
 
+> **STATUS 2026-08-18 — THE REFINED DEF 4 IS FULLY EXECUTED** (all phases of
+> `DEF4_TVOTE_ROADMAP.md`, the authoritative record; this part is HISTORY plus the
+> instance-layer design that survived). What is live in the engine now:
+> * the σ-level primitive is **`.tvote`** (weighted ACTION-vote over frozen
+>   δ-instances); `.tsearch` and `GuardList` are REMOVED from the language
+>   (`tvote` subsumes them — a provability-vote is a `tvote` over
+>   `.search`-wrapped entries);
+> * every tau player is `tauPlayer`/`TauBotZ` over a vector COMPILED by the Spec
+>   DSL (`Tau/Spec.lean`): bots are spec-table rows, instances are `inst Z A T`,
+>   Gate D1 certifies the compiled closure `rfl`-identical to the hand-written
+>   instance layer below (which `Tau/Certs.lean` still speaks about, unchanged);
+> * τ(EBot) has the ONE-SIDED boundary `θ ≤ wTs + wTp + wL` — the crowd-exploiter's
+>   window, its `(D,D)` self-play cells and the old `Matrix.lean` are deleted
+>   (`Theorems/Tau/VoteMatrix.lean` replaces it, incl. the separating band);
+> * the Python side CERTIFIES Def 3 ≡ Def 4 at large k (kernel 36/36; bits 35/36
+>   with exactly the whitelisted Mirror-truncation cell; 1400 phase cells, all
+>   divergences attributed) — the ex-"separating" zoo now certifies coincidence.
+
 **Def 4** generalizes past the Def-3 lift: hypotheses AND probes are TauBots, every
 recursive reference routed through `proofSearch`. This escapes Def 1's rejection —
 Def 1's recursion was semantic (via `play`, fuel-total, no Löb rescue); Def 4's is
@@ -437,8 +455,10 @@ self-play.
    of Part II applies in full force).
 5. **Guard order: Löbian guards LAST** (stepwise rules read in order; low-θ regimes
    short-circuit before the walled Löb guard).
-6. **Prover instances stay `.search` singletons** (point-mass tsearch ≡ search),
-   keeping `searchBranch`/`botSearchStep` applicable; only σ-players use `.tsearch`.
+6. **Prover instances stay `.search` singletons**, keeping
+   `searchBranch`/`botSearchStep` applicable. *(The second half of this convention
+   — "only σ-players use `.tsearch`" — died with the retraction: the corrected
+   players are `.tvote` action-votes, and `.tsearch` was removed 2026-08-18.)*
 
 ## The engine extension (Route B, landed)
 
@@ -474,13 +494,14 @@ transparency, now a theorem), + 3 defect-regime self-plays exhibiting the α-fli
 ## Milestone 2 (open)
 
 Restore `Metatheory` to the default build (unpinned in `lakefile.toml`) and extend
-T31–T54 to `tsearch`: `enumProg` over `GuardList`, gated mirror rules, `evalG`
-3-valued peel (squeeze non-pivotal undetermined guards), modest/instance-gate
-walkers, the T49 substrate (~1wk alone). Until then the certified outcome-prepass
-cannot see tau terms. Also open: `tsim` (action-vote constructor) for behavioral tau
-bots — TauTFTSim currently compiles to an `.ite` decision tree; below-Löb-budget
-regimes for TauDupoc (need ¬Pf cost floors); mutual tau probes (reference-by-name /
-zoo environment).
+T31–T54 to **`tvote`** (2026-08-18: the debt RETARGETED — `tsearch`/`GuardList`
+were removed, so no gated mirror of them is owed): `enumProg` over `VoteList`,
+`evalG` peel with entry evaluation, modest/instance-gate walkers, the T49
+substrate (~1wk alone). Until then the certified outcome-prepass cannot see tau
+terms. RESOLVED along the way: the `tsim` action-vote idea IS `tvote` (landed);
+TauTFTSim's `.ite`-tree compilation is gone. Still open: below-Löb-budget regimes
+for TauDupoc (need ¬Pf cost floors); mutual tau probes — now concretely the `.sys`
+revival, with the Spec DSL's compiler as the single place its resolution changes.
 
 ## Def 3 vs Def 4 — the comparison experiment (2026-08-11)
 
@@ -670,11 +691,12 @@ boundary all stand. The σ-player `TauEBot` (nested tsearch, shared θ) and its 
 exploit/window/high matrix cells remain in the engine as certified theorems
 *about the crowd-exploiter* — kernel-true, wrongly labelled — pending
 redefinition. The Python comparison's separation summary is retracted with the
-same scope. **The refined Def 4 was fixed 2026-08-18 (uniform source lift; top-level
-player = ONE action-vote over own δ-instances via a new `tvote` constructor;
-zoo restricted pending `.sys` revival) — the executed plan is
-`DEF4_TVOTE_ROADMAP.md`, which supersedes this part's σ-player layer and
-reuses the instance layer unchanged.**
+same scope. **The refined Def 4 was fixed AND fully executed 2026-08-18** (uniform source
+lift; players = `tvote` action-votes over vectors compiled by the Spec DSL; the
+crowd-exploiter σ-players deleted; `tsearch` removed; the instance layer reused
+unchanged exactly as this section predicted; Python inverted to a coincidence
+certification that passes). `DEF4_TVOTE_ROADMAP.md` is the complete record —
+plan, per-phase results, deviations, and the open `.sys` frontier.**
 
 ---
 

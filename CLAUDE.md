@@ -440,8 +440,12 @@ Workshop paper target: ICML math workshop, 8 pages, framing "first mechanized OS
 
 ## Phase 5 — TauBots: graded transparency (upcoming, design fixed 2026-07-31)
 
-**Authoritative design note: `engine/PrisonersDilemma/Research/Notes/TAUBOT_TRANSPARENCY_DESIGN.md`** —
-read it before touching anything tau. Summary of the FIXED decisions:
+**Authoritative design notes: `engine/PrisonersDilemma/Research/Notes/TAUBOT_TRANSPARENCY_DESIGN.md`**
+(Defs 1–3, the σ families, and the Def-4 history) **and
+`DEF4_TVOTE_ROADMAP.md`** (the REFINED Def 4 — the uniform source lift, fully
+executed 2026-08-18: the `tvote` action-vote constructor replaced `tsearch`, bots
+are Spec-DSL rows compiled by `Tau/Spec.lean`, and the Python comparison now
+CERTIFIES Def 3 ≡ Def 4 at large k) — read them before touching anything tau. Summary of the FIXED decisions:
 
 - **What it is.** Partial transparency as a Harsanyi type space over the zoo: a bot
   receives a **signal** — candidates `B₁…Bₙ` with weights `pᵢ` (blur in the weights,

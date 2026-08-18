@@ -1,9 +1,12 @@
 # Def-4 refined: the source lift + `tvote` action-vote — refactor roadmap
 
-*Status: plan fixed 2026-08-18 (Colomban + review). Supersedes the σ-player layer of
-`TAUBOT_TRANSPARENCY_DESIGN.md` Part III (whose retraction section this executes).
-The instance layer of milestone 1 is REUSED; the four ad-hoc top-level player
-shapes are REPLACED by one uniform action-vote.*
+*Status: **ALL PHASES LANDED 2026-08-18** (plan fixed, executed, and closed the
+same day — phases 1–4b, 5 (Spec DSL), 6 (Python coincidence certification),
+7 (docs). Supersedes the σ-player layer of `TAUBOT_TRANSPARENCY_DESIGN.md`
+Part III, whose retraction section this executed. The instance layer of
+milestone 1 was reused unchanged, as predicted. **Next frontier: the `.sys`
+revival** (mutual self-probers / full-zoo lift), landing on the Spec DSL — only
+the compiler's probed-object resolution changes.)*
 
 ---
 
@@ -686,6 +689,15 @@ semantics.
 ## 8. Phase 7 — docs, memory, cleanup (LAST)
 
 *(Was "Phase 6". Deliberately the final phase: the design-note cleanup and the M2 ledger must describe the POST-DSL layer — writing them before §6 lands would document names and vectors scheduled for deletion.)*
+
+**✅ PHASE 7 LANDED 2026-08-18 — the roadmap is CLOSED.** Design note Part III got
+a STATUS box (what is live vs history), its stale convention 6 and Milestone-2
+debt were corrected (debt retargeted `tsearch`→`tvote`; the `tsim` idea RESOLVED —
+it IS `tvote`), the retraction pointer now records execution, and CLAUDE.md's tau
+pointer names both notes. Memory consolidated. Remaining debts, all recorded at
+their sites: Metatheory M2 (`tvote` arms), the generic `Zoo.WellFormed` +
+fuel-sufficiency lemma (due at the second zoo), sub-Löb regimes, `LegacyS.lean`
+(broken since the `tsearch` landing, pre-existing), and the `.sys` revival.
 
 * `TAUBOT_TRANSPARENCY_DESIGN.md`: Part III gets a one-line pointer to this
   note as the executed redefinition (full cleanup of that note is a SEPARATE
