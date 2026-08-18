@@ -1,5 +1,10 @@
 """Fetch the Def-4 outcome theorems from the Lean library.
 
+.. warning:: (2026-08-13) The TauEBot window/exploitθ/highθ theorems fetched here
+   are kernel-true statements about the RETRACTED crowd-exploiter σ-player, not
+   about τ(EBot) under the corrected source-lift Def 4. See the retraction in
+   TAUBOT_TRANSPARENCY_DESIGN.md Part III.
+
 The base outcome matrix is unconditional (`outcome_A_vs_B = some (.C, .D)`), so
 `eval/outcome_matrix.py` can read a cell as a single action pair. Def-4 cells
 are **α-regime-quantified** — the same matchup changes outcome as θ crosses a

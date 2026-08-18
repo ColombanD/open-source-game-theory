@@ -3,6 +3,13 @@ import PrisonersDilemma.Tau.Phases
 /-!
 # Theorems/Tau/Matrix — the Def-4 outcome matrix (cascade zoo, 2026-08-12)
 
+**⚠ RETRACTION (2026-08-13):** the σ-player reading of this matrix is OUTDATED —
+correct Def 4 is the uniform source lift, under which Def 4 coincides with Def 3
+(see `Tau/Defs.lean` banner + design note Part III). Every theorem here is
+kernel-true about the IMPLEMENTED programs, but the 33 TauEBot cells (window /
+exploitθ / highθ) describe the crowd-exploiter, NOT τ(EBot), and must not be
+cited as Def-4 results pending the σ-player redefinition.
+
 The ordered outcomes of the 6-template tau zoo, per α-regime — all corollaries of
 the phase theorems (`Tau/Phases`): tau players are `.opp`-free, hence extensionally
 constant, so the matrix is the product of the play vector with itself and each cell

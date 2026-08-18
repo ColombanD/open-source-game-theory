@@ -108,7 +108,7 @@ The fix is to ground the hypotheses at the \emph{base} zoo:
 \Procedure{$\Tau$DupocBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
   \State $\mathit{sumCs} \gets 0$
   \For{$i = 1, \dots, n$}
-    \If{proofSearch$(\Tau B_i(\alpha)($TauDupocBot$; 1)) = C$}
+    \If{proofSearch$(\Tau B_i(\alpha)($TauDupocBot$; 1) = C)$}
       \State $\mathit{sumCs} \mathrel{+}= p_i$
     \EndIf
   \EndFor
@@ -122,7 +122,7 @@ The fix is to ground the hypotheses at the \emph{base} zoo:
 \Procedure{$\Tau$TitForTatBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
   \State $\mathit{sumCs} \gets 0$
   \For{$i = 1, \dots, n$}
-    \If{proofSearch$(\Tau B_i(\alpha)($TauCooperateBot$; 1)) = C$}
+    \If{proofSearch$(\Tau B_i(\alpha)($TauCooperateBot$; 1) = C)$}
       \State $\mathit{sumCs} \mathrel{+}= p_i$
     \EndIf
   \EndFor

@@ -8,6 +8,18 @@ signal hypotheses AND probes are TauBots, every recursive reference routed throu
 `proofSearch` — the Löbian machinery breaks the regress that sank the old Def 1
 (whose recursion was semantic, via `play`).
 
+**⚠ RETRACTION (2026-08-13) — the σ-PLAYER LAYER BELOW IS OUTDATED AND WRONG.**
+The correct Def 4 is the uniform STRUCTURAL SOURCE LIFT τ (design note, Part III
+retraction section): lift A's own code constructor-by-constructor and vote ONCE
+over the compound per-hypothesis decisions `TauA(δ_Bᵢ)` — under which Def 4
+COINCIDES with Def 3 (large k, terminating cells). The `TauEBot` σ-player below
+moves θ INSIDE the cascade (one vote per STAGE) and is NOT τ(EBot) — it is a
+different agent, the "crowd-exploiter"; its window / (D,D)-self-play phase claims
+are retracted. TauDupoc/TauTFTPf/TauTFTSim conform to τ only by accident of
+having a single decision point. The δ-INSTANCE layer (probe, `probeSearchδ`,
+`tftSimδ`, `eδ`, the quine, the Gödelian pair) is CORRECT under the new reading
+and is what the refined τ consumes; the σ-players await redefinition.
+
 Six-template zoo: TauCooperate (`C`), TauDefect (`D`), TauDupoc (`L`),
 TauTitForTatSim (`Ts`), TauTitForTatPf (`Tp`), TauEBot (`E`). Conventions:
 
@@ -234,7 +246,13 @@ def TauDupoc (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
     Both stages share the caution threshold θ (one α, two questions). The
     resulting cooperation region is a WINDOW, `wC < θ ≤ wC + wTs + wTp + wL`:
     TauEBot defects at BOTH extremes — a non-monotone α-profile no Def-3 lift can
-    express, and the honest structural separation between the definitions. -/
+    express, and the honest structural separation between the definitions.
+
+    **[RETRACTED 2026-08-13: this is the CROWD-EXPLOITER, not τ(EBot). The source
+    lift votes ONCE over the compound per-hypothesis cascade decisions; τ(EBot)'s
+    bits on this zoo are Coop 0, Defect 0, TFT 1, Dupoc 1 — a one-sided boundary
+    at `wTs + wTp + wL`, NO window, and no Def3/Def4 separation. Kept, with its
+    kernel-true theorems, until the σ-player redefinition.]** -/
 def TauEBot (k θ wC wD wTs wTp wL wE : Nat) : Prog :=
   .tsearch k (exploitSig k wC wD wTs wTp wL wE) θ (.const .D)
     (.tsearch k (tftPfSig k wC wD wTs wTp wL wE) θ (.const .C) (.const .D))

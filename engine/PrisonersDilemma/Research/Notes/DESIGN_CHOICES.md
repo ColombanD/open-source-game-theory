@@ -97,7 +97,10 @@ LOGICAL analysis that resolves the "floor-coarseness question" raised by the Def
 comparison (TAUBOT_TRANSPARENCY_DESIGN.md, Part III): is charging `k` for an
 else-certificate too crude when the refuted guard is about a mere constant?*
 
-**Provenance.** The Def-3/Def-4 separating cell `outcome_DupocBot_vs_EBot = (D, C)`
+**Provenance.** The Def-4 floor cell `outcome_DupocBot_vs_EBot = (D, C)` (called
+"Def-3/Def-4 separating" before the 2026-08-13 retraction; under the corrected
+source-lift reading both definitions read this bit identically, so it does NOT
+separate them — the floor analysis below stands unchanged)
 rests on Dupoc being unable to certify EBot's (true!) cooperation at ANY budget. The
 natural objection, in two escalating forms: (i) *"Dupoc's failed sub-search is about
 DefectBot, a constant — surely `¬(DefectBot plays C)` is cheaply provable, so why pay

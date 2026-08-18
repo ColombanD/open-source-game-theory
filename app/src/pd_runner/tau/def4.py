@@ -1,5 +1,14 @@
 """Def 4 — tau-NATIVE bots, and the Def-3 vs Def-4 comparison.
 
+.. warning:: **RETRACTED FRAMING (2026-08-13).** The "Def 4 is a LANGUAGE, per-bot
+   probe geometry" reading below is OUTDATED AND WRONG. Correct Def 4 is the
+   uniform STRUCTURAL SOURCE LIFT: lift A's own code and vote once over compound
+   per-hypothesis decisions — under which **Def 4 COINCIDES with Def 3** (large k,
+   terminating cells) and no phase-geometry separation exists. The modelled
+   TauEBot is the crowd-exploiter, not τ(EBot); every separation summary computed
+   here is retracted. Kept as the kernel-check harness for the implemented
+   (retracted) zoo. See TAUBOT_TRANSPARENCY_DESIGN.md Part III retraction.
+
 Def 3 (`play.py`) is one fixed LIFT operator: for every base bot `A`,
 `τ(A)` votes on the SELF probe `outcome(A, Bᵢ)` — "what would *I* do against
 hypothesis Bᵢ". The direction is part of the definition, the hypotheses are

@@ -1,5 +1,11 @@
 """Def 3 vs Def 4 — side-by-side (t, α) outcome matrices.
 
+.. warning:: **SEPARATION SUMMARY RETRACTED (2026-08-13).** Correct Def 4 is the
+   uniform source lift and COINCIDES with Def 3; the "Def-4 side" compared here is
+   the retracted per-bot-geometry zoo (crowd-exploiter TauEBot). Divergence counts
+   from this module (e.g. 45/56 phase cells) must not be cited as Def-4 results.
+   See TAUBOT_TRANSPARENCY_DESIGN.md Part III retraction.
+
 Runs the SAME tournament twice over the same certified base matrix, the same
 σ_t channel and the same α grid, changing only the probe semantics:
 

@@ -401,7 +401,7 @@ agents (measure-theoretic eval + probabilistic Löb — a thesis in itself).
 
 ---
 
-# Part III — Definition 4: tau-native bots (design fixed & Milestone 1 SHIPPED 2026-08-11)
+# Part III — Definition 4: tau-native bots (Milestone 1 SHIPPED 2026-08-11; **READING RETRACTED 2026-08-13 — the correct Def 4 is the uniform SOURCE LIFT, the implemented σ-player TauEBot is wrong; see the retraction section**)
 
 **Def 4** generalizes past the Def-3 lift: hypotheses AND probes are TauBots, every
 recursive reference routed through `proofSearch`. This escapes Def 1's rejection —

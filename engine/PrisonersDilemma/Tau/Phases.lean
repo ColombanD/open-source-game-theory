@@ -250,7 +250,11 @@ theorem exploitSig_mass (k wC wD wTs wTp wL wE : Nat) (me opponent : Prog)
 
 /-- **TauEBot α-phase theorem — THE WINDOW** (shallow budgets, no Löb): defect when
     the exploit stage fires (`θ ≤ wC`), cooperate inside the window
-    (`wC < θ ≤ wC + wTs + wTp + wL`), defect above it. -/
+    (`wC < θ ≤ wC + wTs + wTp + wL`), defect above it.
+
+    **[RETRACTED as a Def-4 result, 2026-08-13: kernel-true, but a property of the
+    crowd-exploiter σ-player, not of τ(EBot) — see the retraction banner in
+    `Tau/Defs.lean`. τ(EBot) has a one-sided boundary, no window.]** -/
 theorem tauEBot_phase :
     ∃ k₂, ∀ k, k₂ < k → ∀ θ wC wD wTs wTp wL wE (opponent : Prog),
       (θ ≤ wC →
