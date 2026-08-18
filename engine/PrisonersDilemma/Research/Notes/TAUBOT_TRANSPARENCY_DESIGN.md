@@ -670,9 +670,11 @@ boundary all stand. The σ-player `TauEBot` (nested tsearch, shared θ) and its 
 exploit/window/high matrix cells remain in the engine as certified theorems
 *about the crowd-exploiter* — kernel-true, wrongly labelled — pending
 redefinition. The Python comparison's separation summary is retracted with the
-same scope. **A refined Def 4 is being specified separately (Colomban,
-2026-08-13) and will replace the σ-player definition; the redefinition should
-reuse the instance layer unchanged.**
+same scope. **The refined Def 4 was fixed 2026-08-18 (uniform source lift; top-level
+player = ONE action-vote over own δ-instances via a new `tvote` constructor;
+zoo restricted pending `.sys` revival) — the executed plan is
+`DEF4_TVOTE_ROADMAP.md`, which supersedes this part's σ-player layer and
+reuses the instance layer unchanged.**
 
 ---
 

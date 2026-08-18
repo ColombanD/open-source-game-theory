@@ -36,6 +36,10 @@ theorem Prog.hasSearch_subst : ∀ (p me oppo : Prog), p.hasSearch = false →
              Prog.hasSearch_subst q m1 o1 hp.2 hme ho⟩
   | .search _ _ _ _, _, _ => fun hp _ _ => by simp [Prog.hasSearch] at hp
   | .tsearch _ _ _ _ _, _, _ => fun hp _ _ => by simp [Prog.hasSearch] at hp
+  -- `.tvote` has `hasSearch = true` UNCONDITIONALLY (Program.lean), so the search-free
+  -- hypothesis is already absurd — the same discharge as `.tsearch`, and precisely the
+  -- reason the roadmap chose the unconditional over-approximation.
+  | .tvote _ _ _ _, _, _ => fun hp _ _ => by simp [Prog.hasSearch] at hp
 
 /-- `c_guard` (the cost of writing the budget numeral `k` in a proof transcript)
     is monotone: a larger `k` takes at least as many characters to write.
@@ -125,6 +129,7 @@ theorem cert_searchfree : ∀ (fuel : Nat) (me oppo body : Prog) (a : Action),
               exact ⟨n₁ + n₂ + c_node, .ite_f cert₁ hrf cert₂, by omega⟩
     | search k g p q => simp [Prog.hasSearch] at hb
     | tsearch k gs θ p q => simp [Prog.hasSearch] at hb
+    | tvote v θ p q => simp [Prog.hasSearch] at hb
 
 /-- Σ₁-completeness for SEARCH-FREE atoms — the constructive fragment of the deleted
     `atom_complete`, at the honest bound `3 ^ fuel`. -/

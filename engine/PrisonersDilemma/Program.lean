@@ -40,6 +40,33 @@ mutual
         -- `.search k φ p q` is behaviorally the singleton `tsearch k [(1,φ)] 1 p q`,
         -- but is kept as its own constructor: the modal reading rules
         -- (`searchBranch`/`botSearchStep`) and all 81 outcome theorems stay untouched.
+        -- SCHEDULED FOR REMOVAL (DEF4_TVOTE_ROADMAP.md Phase 4b): `.tvote` subsumes it
+        -- (`tsearch k [(wᵢ,φᵢ)] θ p q ≡ tvote [(wᵢ, .search k φᵢ C D)] θ p q`).
+    | tvote : VoteList → Nat → Prog → Prog → Prog
+        -- weighted-threshold ACTION vote (the refined Def-4 TauBot primitive, 2026-08-18):
+        -- `tvote v θ p q` peels the weighted entries `v` IN LIST ORDER; an entry
+        -- `(w, I)` fires iff the closed program `I` PLAYS `C` (running against itself —
+        -- entries are `.opp`-free instances), and firing subtracts `w` from the residual
+        -- threshold (truncated). Residual 0 → run `p`; entries exhausted with residual
+        -- > 0 → run `q`.
+        --
+        -- The vote reads TRUE PLAYS, not provability: that is the whole point of the
+        -- refined Def 4 (`DEF4_TVOTE_ROADMAP.md` §0). A tau player votes once over the
+        -- compound decisions of its own δ-instances; every `proofSearch` lives INSIDE
+        -- an entry, exactly where the lifted base bot's own code puts it. NO budget
+        -- argument: the vote itself never consults the oracle.
+        --
+        -- Entries are FROZEN (like `.bot` / the `.eq` RHS / `.diag`): `subst` does not
+        -- descend into a `VoteList`. That is what keeps tau players `.opp`-free by
+        -- construction — an entry is a closed instance, never a window on the current
+        -- frame.
+  /-- The weighted entry list carried by `.tvote`: a specialized list kept INSIDE the
+      mutual block, for the same reason `GuardList` is (a nested `List (Nat × Prog)`
+      payload would make `Prog` a nested inductive). `cons w I rest` = hypothesis
+      instance `I` with signal weight `w`. -/
+  inductive VoteList : Type where
+    | nil  : VoteList
+    | cons : Nat → Prog → VoteList → VoteList
   /-- The weighted guard list carried by `.tsearch`: a specialized list kept INSIDE the
       mutual block (a nested `List (Nat × Formula)` payload would make `Prog` a nested
       inductive — recursor complications in `subst`/`size`/enumeration everywhere).
@@ -55,7 +82,7 @@ mutual
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
     | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Pf`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (Research/Notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
 end
-deriving instance DecidableEq for Prog, GuardList, Formula
+deriving instance DecidableEq for Prog, GuardList, VoteList, Formula
 
 -- Closing self-reference via substitution.
 --
@@ -99,6 +126,11 @@ mutual
     | .ite b a p q,    m, o => .ite (b.subst m o) a (p.subst m o) (q.subst m o)
     | .search k φ p q, m, o => .search k (φ.subst m o) (p.subst m o) (q.subst m o)
     | .tsearch k gs θ p q, m, o => .tsearch k (gs.gsubst m o) θ (p.subst m o) (q.subst m o)
+    -- Entries are FROZEN — `subst` rewrites only the branches. A `VoteList` holds closed
+    -- δ-instances; descending would let the enclosing frame's `me`/`opponent` capture an
+    -- instance's internal placeholders (the `.bot` barrier rationale, one level up), and
+    -- would break the `.opp`-freeness that makes tau players extensionally constant.
+    | .tvote v θ p q,      m, o => .tvote v θ (p.subst m o) (q.subst m o)
   termination_by structural p _ _ => p
 
   /-- `subst` mapped over a guard list: weights and structure unchanged, every guard
@@ -139,6 +171,14 @@ mutual
     | .ite b _ p q    => b.size + p.size + q.size + 1
     | .search k φ p q => numCost k + φ.size + p.size + q.size + 1
     | .tsearch k gs θ p q => numCost k + numCost θ + gs.gsize + p.size + q.size + 1
+    | .tvote v θ p q      => numCost θ + v.vsize + p.size + q.size + 1
+
+  /-- Character count of an entry list: each entry pays its weight numeral, its instance
+      program, and one separator character; the empty list is free (the node itself is
+      charged by `.tvote`). Mirrors `GuardList.gsize`. -/
+  def VoteList.vsize : VoteList → Nat
+    | .nil           => 0
+    | .cons w I rest => numCost w + I.size + rest.vsize + 1
 
   /-- Character count of a guard list: each entry pays its weight numeral, its formula,
       and one separator character; the empty list is free (the node itself is charged
@@ -169,6 +209,12 @@ def Prog.hasSearch : Prog → Bool
   | .ite b _ p q    => b.hasSearch || p.hasSearch || q.hasSearch
   | .search _ _ _ _ => true
   | .tsearch _ _ _ _ _ => true   -- consults the oracle, like `.search`
+  -- UNCONDITIONALLY true, NOT a fold over the entries: a vote whose entries happened to
+  -- be search-free would otherwise enter the search-free fragment and add a `.tvote`
+  -- case to `atom_complete_searchfree` — for no benefit, since tau players are never
+  -- census subjects and need no atom certificates. Conservative over-approximation
+  -- (DEF4_TVOTE_ROADMAP.md §2).
+  | .tvote _ _ _ _     => true
 
 /-- Total weight carried by a guard list — the mass an all-fire run would accumulate.
     `θ > totalMass` means the threshold is unreachable (the else short-circuit). -/
@@ -183,5 +229,20 @@ def GuardList.totalMass : GuardList → Nat
 def GuardList.massWhere (f : Formula → Bool) : GuardList → Nat
   | .nil           => 0
   | .cons w φ rest => (if f φ then w else 0) + rest.massWhere f
+
+/-- Total weight carried by an entry list — the mass an all-cooperate signal would
+    accumulate. `θ > totalMass` means the threshold is unreachable (the else
+    short-circuit, `voteHigh_f`). -/
+def VoteList.totalMass : VoteList → Nat
+  | .nil           => 0
+  | .cons w _ rest => w + rest.totalMass
+
+/-- Mass of the entries selected by a predicate on (closed) instance programs: the sum of
+    the weights whose entry plays `C`. Instantiated with `fun I => eval … I I I == some .C`
+    in the tau-layer lemma statements; kept abstract here so `Program.lean` stays free of
+    the evaluator. The action-valued twin of `GuardList.massWhere`. -/
+def VoteList.massWhere (f : Prog → Bool) : VoteList → Nat
+  | .nil           => 0
+  | .cons w I rest => (if f I then w else 0) + rest.massWhere f
 
 end PD

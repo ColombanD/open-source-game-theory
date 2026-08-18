@@ -10,6 +10,13 @@ import PrisonersDilemma.Theorems.EBot.Helpers
 
 open PD.Bots
 namespace PD.Theorems
+
+-- The `simpa [eval] using hPlay` steps below unfold the whole `eval` match; that
+-- cost grows with each new `Prog` constructor (`.tvote`, 2026-08-18, pushed them past
+-- the default budget). Raised file-wide rather than restructured — these proofs are
+-- shallow, the search is just wide.
+set_option maxHeartbeats 1000000
+
 theorem outcome_EBot_vs_OBot (fuel : Nat):
     outcome (fuel + 8) EBot OBot = some (.C, .D) := by
     -- For hGuard1 we directly trace OBot vs (.bot DefectBot): OBot's outer

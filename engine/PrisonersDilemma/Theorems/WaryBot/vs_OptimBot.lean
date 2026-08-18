@@ -141,6 +141,7 @@ theorem wo_subst_eq_optim {k : Nat} {q me o : Prog}
           | ite b' a' p' q' => simp [Prog.subst] at hx
           | search K' g' p' q' => simp [Prog.subst] at hx
           | tsearch K' gs' θ' p' q' => simp [Prog.subst] at hx
+          | tvote gs' θ' p' q' => simp [Prog.subst] at hx
           | self =>
               rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
                 simp [Prog.subst] at hx
@@ -153,6 +154,7 @@ theorem wo_subst_eq_optim {k : Nat} {q me o : Prog}
               | ite b' a' p' q' => simp [Prog.subst] at hy
               | search K' g' p' q' => simp [Prog.subst] at hy
               | tsearch K' gs' θ' p' q' => simp [Prog.subst] at hy
+              | tvote gs' θ' p' q' => simp [Prog.subst] at hy
               | self =>
                   rcases hme with ⟨p₂, q₂, rfl⟩ | ⟨p₂, q₂, rfl⟩ <;>
                     simp [Prog.subst] at hy
@@ -161,6 +163,7 @@ theorem wo_subst_eq_optim {k : Nat} {q me o : Prog}
                   rw [hx] at hy
                   exact absurd hy (by simp)
   | tsearch K gs θ pp qq => simp [Prog.subst, OptimBot] at h
+  | tvote gs θ pp qq => simp [Prog.subst, OptimBot] at h
 
 /-- The entangled C-atom relation for the budget census: the singleton
     `(OptimBot, WaryBot)`. -/

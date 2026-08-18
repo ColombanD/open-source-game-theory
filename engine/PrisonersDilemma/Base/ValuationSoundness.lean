@@ -110,6 +110,34 @@ theorem eval_mono :
                   rw [eval_tsearch_cons_f n hθ hg] at h
                   rw [eval_tsearch_cons_f (n+1) hθ hg]
                   exact ih _ _ _ _ h
+    -- The action-vote peel. Unlike `.tsearch` (whose guard bit is fuel-independent),
+    -- an entry is EVALUATED at the same fuel — so the entry's own play must be lifted
+    -- by the IH first (the `.ite` guard is the precedent), and only then does the peel
+    -- step transfer. A `none` entry contradicts `h`.
+    | tvote v θ p q =>
+        by_cases hθ : θ = 0
+        · subst hθ
+          rw [eval_tvote_zero n] at h
+          rw [eval_tvote_zero (n+1)]
+          exact ih _ _ _ _ h
+        · cases v with
+          | nil =>
+              rw [eval_tvote_nil n hθ] at h
+              rw [eval_tvote_nil (n+1) hθ]
+              exact ih _ _ _ _ h
+          | cons w I rest =>
+              cases hI : eval n I I I with
+              | none => rw [eval_tvote_cons_none n hθ hI] at h; exact absurd h (by simp)
+              | some r =>
+                  cases r with
+                  | C =>
+                      rw [eval_tvote_cons_c n hθ hI] at h
+                      rw [eval_tvote_cons_c (n+1) hθ (ih _ _ _ _ hI)]
+                      exact ih _ _ _ _ h
+                  | D =>
+                      rw [eval_tvote_cons_d n hθ hI] at h
+                      rw [eval_tvote_cons_d (n+1) hθ (ih _ _ _ _ hI)]
+                      exact ih _ _ _ _ h
 
 /-- `≤`-form of fuel monotonicity. -/
 theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}

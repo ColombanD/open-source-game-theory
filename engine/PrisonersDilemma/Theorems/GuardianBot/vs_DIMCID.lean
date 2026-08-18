@@ -118,6 +118,7 @@ theorem gd_no_opp_image {x me o : Prog}
   | ite b a p q => simp [Prog.subst] at h
   | search K g p q => simp [Prog.subst] at h
   | tsearch K gs θ p q => simp [Prog.subst] at h
+  | tvote gs θ p q => simp [Prog.subst] at h
 
 theorem gd_no_self_image {x me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -131,6 +132,7 @@ theorem gd_no_self_image {x me o : Prog}
   | ite b a p q => simp [Prog.subst] at h
   | search K g p q => simp [Prog.subst] at h
   | tsearch K gs θ p q => simp [Prog.subst] at h
+  | tvote gs θ p q => simp [Prog.subst] at h
 
 theorem gd_subst_dimcid_forces {k : Nat} {p me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -168,6 +170,7 @@ theorem gd_subst_dimcid_forces {k : Nat} {p me o : Prog}
               · subst hoself; exact gd_no_opp_image hme (by simp) hy
               · exact gd_no_self_image hme hoself hx
   | tsearch K gs θ pp qq => simp [Prog.subst, DIMCID] at h
+  | tvote gs θ pp qq => simp [Prog.subst, DIMCID] at h
 
 theorem gd_subst_ne_guardian {k : Nat} {q me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -193,6 +196,7 @@ theorem gd_subst_ne_guardian {k : Nat} {q me o : Prog}
           obtain ⟨hx, hy, -⟩ := hg
           exact gd_no_opp_image hme ho hx
   | tsearch K gs θ pp qq => simp [Prog.subst, GuardianBot] at h
+  | tvote gs θ pp qq => simp [Prog.subst, GuardianBot] at h
 
 theorem gd_simS_impossible {k : Nat} {p q me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))

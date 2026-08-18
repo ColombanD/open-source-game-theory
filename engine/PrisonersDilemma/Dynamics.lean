@@ -51,6 +51,32 @@ noncomputable def eval : Nat → (me opponent body : Prog) → Option Action
         else if proofSearch k (φ.subst me opponent)
           then eval n me opponent (.tsearch k rest (θ - w) p q)
           else eval n me opponent (.tsearch k rest θ p q)
+    -- Weighted-threshold ACTION vote: PEEL the entries in list order. An entry fires
+    -- iff its closed instance PLAYS `C`; firing subtracts its weight from the residual
+    -- threshold (truncated); residual 0 commits to `p` WITHOUT consulting the remaining
+    -- entries; exhausting the list with residual > 0 commits to `q`.
+    --
+    -- The entry runs in its OWN frame `eval n I I I` — entries are closed, `.opp`-free
+    -- δ-instances, and this is the evaluator-level twin of the probe atom
+    -- `.plays (.bot I) (.bot I) .C` (the `.sim` arm is the precedent for entering an
+    -- inner frame inside the fuel monad). A non-terminating entry makes the whole vote
+    -- `none` — a tau player is total exactly when its entries are.
+    --
+    -- (Two arms with nested patterns for the LIST — NOT an inner `match gs` — so
+    -- per-arm equation lemmas generate, as for `.tsearch`. The entry's RESULT, by
+    -- contrast, is matched explicitly rather than bound with `do`: a `do`-bind here
+    -- blocks equation-lemma generation for the arm entirely (`rw [eval]` then fails
+    -- with "failed to generate equality theorems for match expression"), which is why
+    -- the `.ite` arm's `do` has no unfolding lemmas either. With the explicit match,
+    -- all four `eval_tvote_*` lemmas below close by a single `rw`.)
+    | .tvote .nil θ p q =>
+        if θ = 0 then eval n me opponent p else eval n me opponent q
+    | .tvote (.cons w I rest) θ p q =>
+        if θ = 0 then eval n me opponent p
+        else match eval n I I I with
+          | some Action.C => eval n me opponent (.tvote rest (θ - w) p q)
+          | some Action.D => eval n me opponent (.tvote rest θ p q)
+          | none          => none
 
 /-! ### `.tsearch` unfolding lemmas
 The peel steps as rewrite equations. The `GuardList` match inside the `eval` arm does
@@ -83,6 +109,49 @@ theorem eval_tsearch_cons_f {me opponent : Prog} {k w θ : Nat} {φ : Formula}
     eval (n+1) me opponent (.tsearch k (.cons w φ rest) θ p q)
       = eval n me opponent (.tsearch k rest θ p q) := by
   rw [eval, if_neg hθ, if_neg (by simp [hg])]
+
+/-! ### `.tvote` unfolding lemmas
+
+The action-vote peel as rewrite equations — the twins of the `.tsearch` four above,
+with an EVALUATED entry in place of an oracle bit. Same discipline: the `VoteList`
+match inside the `eval` arm does not reduce syntactically when the list is a variable,
+so every consumer rewrites with these rather than unfolding `eval`. -/
+
+theorem eval_tvote_zero {me opponent : Prog} {v : VoteList} {p q : Prog} (n : Nat) :
+    eval (n+1) me opponent (.tvote v 0 p q) = eval n me opponent p := by
+  cases v with
+  | nil => rw [eval, if_pos rfl]
+  | cons w I rest => rw [eval, if_pos rfl]
+
+theorem eval_tvote_nil {me opponent : Prog} {θ : Nat} {p q : Prog}
+    (n : Nat) (hθ : θ ≠ 0) :
+    eval (n+1) me opponent (.tvote .nil θ p q) = eval n me opponent q := by
+  rw [eval, if_neg hθ]
+
+/-- The entry PLAYED `C`: subtract its weight and continue. -/
+theorem eval_tvote_cons_c {me opponent : Prog} {w θ : Nat} {I : Prog}
+    {rest : VoteList} {p q : Prog} (n : Nat) (hθ : θ ≠ 0)
+    (hI : eval n I I I = some Action.C) :
+    eval (n+1) me opponent (.tvote (.cons w I rest) θ p q)
+      = eval n me opponent (.tvote rest (θ - w) p q) := by
+  rw [eval, if_neg hθ, hI]
+
+/-- The entry PLAYED `D`: the threshold is unchanged. (`D` is the only non-`C`
+    action — `Action` is binary, which is what makes the two cons lemmas exhaustive
+    over terminating entries.) -/
+theorem eval_tvote_cons_d {me opponent : Prog} {w θ : Nat} {I : Prog}
+    {rest : VoteList} {p q : Prog} (n : Nat) (hθ : θ ≠ 0)
+    (hI : eval n I I I = some Action.D) :
+    eval (n+1) me opponent (.tvote (.cons w I rest) θ p q)
+      = eval n me opponent (.tvote rest θ p q) := by
+  rw [eval, if_neg hθ, hI]
+
+/-- A non-terminating entry sinks the whole vote. -/
+theorem eval_tvote_cons_none {me opponent : Prog} {w θ : Nat} {I : Prog}
+    {rest : VoteList} {p q : Prog} (n : Nat) (hθ : θ ≠ 0)
+    (hI : eval n I I I = none) :
+    eval (n+1) me opponent (.tvote (.cons w I rest) θ p q) = none := by
+  rw [eval, if_neg hθ, hI]
 
 noncomputable def play (fuel : Nat) (me opponent : Prog) : Option Action :=
   eval fuel me opponent me

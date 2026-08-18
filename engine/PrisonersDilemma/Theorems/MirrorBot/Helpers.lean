@@ -37,11 +37,21 @@ theorem DBot_plays_C_against_MirrorBot (fuel : Nat) :
         (by rfl) hGuard
     simpa [eval] using hPlay
 
+-- The three "MirrorBot copies its opponent's play" steps below used to be
+-- `simpa [play, eval, Prog.subst, MirrorBot]`, i.e. a blind simp over the whole `eval`
+-- match. That cost grew with every new `Prog` constructor (`.tsearch` needed a
+-- heartbeat bump in 2026-08-11; `.tvote` pushed it past `whnf` timeouts in 2026-08-18).
+-- Replaced by the TARGETED mirror step: `MirrorBot = .sim .opp .self`, so one `eval`
+-- unfolding plus `Prog.subst` IS the whole proof. Constructor-count independent — no
+-- budget options needed.
 theorem MirrorBot_plays_C_against_DBot (fuel : Nat) :
     play (fuel + 6) MirrorBot DBot = some .C := by
     have hDBotPlays : play (fuel + 5) DBot MirrorBot = some .C :=
         DBot_plays_C_against_MirrorBot (fuel)
-    simpa [play, eval, Prog.subst, MirrorBot] using hDBotPlays
+    show eval (fuel + 6) MirrorBot DBot MirrorBot = some .C
+    rw [MirrorBot, eval]
+    simp only [Prog.subst]
+    exact hDBotPlays
 
 /-- OBot defects against MirrorBot: OBot probes the opponent against
     CooperateBot (MirrorBot mirrors and cooperates → outer guard returns C, take
@@ -61,12 +71,14 @@ theorem OBot_plays_D_against_MirrorBot (fuel : Nat) :
         (by rfl) hGuard1
     simpa [eval, hGuard2] using hPlay
 
-set_option maxHeartbeats 800000 in  -- the `.tsearch`-enlarged eval simp-set pushed this deep unfolding over the default budget (2026-08-11)
 theorem MirrorBot_plays_D_against_OBot (fuel : Nat) :
     play (fuel + 7) MirrorBot OBot = some .D := by
     have hOBotPlays : play (fuel + 6) OBot MirrorBot = some .D :=
         OBot_plays_D_against_MirrorBot (fuel)
-    simpa [play, eval, Prog.subst, MirrorBot] using hOBotPlays
+    show eval (fuel + 7) MirrorBot OBot MirrorBot = some .D
+    rw [MirrorBot, eval]
+    simp only [Prog.subst]
+    exact hOBotPlays
 
 theorem TitForTatBot_plays_C_against_MirrorBot (fuel : Nat) :
     play (fuel + 5) TitForTatBot MirrorBot = some .C := by
@@ -83,7 +95,10 @@ theorem MirrorBot_plays_C_against_TitForTatBot (fuel : Nat) :
     play (fuel + 6) MirrorBot TitForTatBot = some .C := by
     have hTitForTatPlays : play (fuel + 5) TitForTatBot MirrorBot = some .C :=
         TitForTatBot_plays_C_against_MirrorBot (fuel)
-    simpa [play, eval, Prog.subst, MirrorBot] using hTitForTatPlays
+    show eval (fuel + 6) MirrorBot TitForTatBot MirrorBot = some .C
+    rw [MirrorBot, eval]
+    simp only [Prog.subst]
+    exact hTitForTatPlays
 
 
 /-- MirrorBot vs MirrorBot loops forever: each `.sim .opp .self` step decrements
