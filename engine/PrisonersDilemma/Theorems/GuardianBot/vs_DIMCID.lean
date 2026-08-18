@@ -213,8 +213,8 @@ theorem gd_pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     Pf K φ → WV (gdS k) φ := by
   intro K φ h
   refine ((wv_sound_upto (gdS k) (fun _ _ => False)
-    ?nb ?const ?opp ?ite ?botbot ?botsearch ?tsearch ?sim_inv ?botsim_inv ?search_t
-    ?search_f ?simS ?botsimS K).2 K φ h).2 Pf_sound
+    ?nb ?const ?opp ?ite ?botbot ?botsearch ?tsearch ?tvote ?sim_inv ?botsim_inv
+    ?search_t ?search_f ?simS ?botsimS K).2 K φ h).2 Pf_sound
   case nb =>
     rintro oppo z ⟨h1, h2⟩; simp [GuardianBot] at h2
   case const =>
@@ -239,6 +239,10 @@ theorem gd_pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     · exact hF.elim
   case tsearch =>
     rintro me oppo k' gs θ P Q (⟨h1, h2⟩ | hF) hgate
+    · subst h1; rcases hgate with hb | hb <;> simp [DIMCID] at hb
+    · exact hF.elim
+  case tvote =>   -- no census member is a `.tvote` shape either (2026-08-18)
+    rintro me oppo v θ P Q (⟨h1, h2⟩ | hF) hgate
     · subst h1; rcases hgate with hb | hb <;> simp [DIMCID] at hb
     · exact hF.elim
   case sim_inv =>

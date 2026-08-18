@@ -175,7 +175,62 @@ theorem eval_tsearch_high (me opponent p q : Prog) (a : Action) (k : Nat) :
           obtain ⟨N, hN⟩ :=
             eval_tsearch_high me opponent p q a k rest θ (by omega) hq
           exact ⟨N+1, by rw [eval_tsearch_cons_f N hθ0 hg]; exact hN⟩
-termination_by structural gs _ _ _ => gs
+
+/-- "Every entry of this vote list actually RUNS to some action" — the semantic
+    counterpart of the syntactic `VoteAllPlay`, and the `motive_2` the master lemma's
+    certificate pass carries. -/
+inductive VoteAllRun : VoteList → Prop where
+  | nil : VoteAllRun .nil
+  | cons {w : Nat} {I : Prog} {rest : VoteList} :
+      (∃ (a : Action) (N : Nat), eval N I I I = some a) → VoteAllRun rest →
+      VoteAllRun (.cons w I rest)
+
+/-- The `.tvote` twin of `eval_tsearch_high`: a vote whose threshold exceeds the TOTAL
+    mass lands in the else branch — PROVIDED every entry terminates.
+
+    That proviso is the whole subtlety, and the first draft of `voteHigh_f` omitted it.
+    A `.tsearch` guard bit comes from the total function `proofSearch`, so a guard can
+    always be consulted; a `.tvote` entry is an arbitrary program, and `eval` sinks the
+    whole vote to `none` when one fails to terminate. Without the premise the rule is
+    UNSOUND by a machine-checked counterexample (`tvote [(1, MirrorBot)] 5 C D`:
+    θ = 5 > totalMass = 1, yet the vote is `none` at every fuel). `VoteAllRun` supplies
+    exactly the missing fact; WHICH action each entry plays is genuinely irrelevant
+    here, and that irrelevance is the content of the rule.
+
+    (Equation-style recursion on the entry list: the tactic `induction` refuses the
+    mutually inductive `VoteList`.) -/
+theorem eval_tvote_high (me opponent p q : Prog) (a : Action) :
+    ∀ (v : VoteList) (θ : Nat), θ > v.totalMass → VoteAllRun v →
+      (∃ N, eval N me opponent q = some a) →
+      ∃ N, eval N me opponent (.tvote v θ p q) = some a
+  | .nil, θ, hθ, _, h => by
+      have hθ0 : θ ≠ 0 := by simp [VoteList.totalMass] at hθ; omega
+      obtain ⟨N, hN⟩ := h
+      exact ⟨N+1, by rw [eval_tvote_nil N hθ0]; exact hN⟩
+  | .cons w I rest, θ, hθ, hterm, hq => by
+      have hmass : θ > w + rest.totalMass := by
+        simpa [VoteList.totalMass] using hθ
+      have hθ0 : θ ≠ 0 := by omega
+      obtain ⟨hIrun, hrest⟩ : (∃ (a' : Action) (N : Nat), eval N I I I = some a')
+          ∧ VoteAllRun rest := by
+        cases hterm with
+        | cons hI hr => exact ⟨hI, hr⟩
+      obtain ⟨a', NI, hNI⟩ := hIrun
+      -- the residual after a firing entry is still above the remaining mass, so both
+      -- continuations are available
+      obtain ⟨Nc, hNc⟩ := eval_tvote_high me opponent p q a rest (θ - w) (by omega) hrest hq
+      obtain ⟨Nd, hNd⟩ := eval_tvote_high me opponent p q a rest θ (by omega) hrest hq
+      cases a' with
+      | C =>
+          refine ⟨max NI Nc + 1, ?_⟩
+          rw [eval_tvote_cons_c (max NI Nc) hθ0
+                (eval_mono_le hNI _ (Nat.le_max_left _ _))]
+          exact eval_mono_le hNc _ (Nat.le_max_right _ _)
+      | D =>
+          refine ⟨max NI Nd + 1, ?_⟩
+          rw [eval_tvote_cons_d (max NI Nd) hθ0
+                (eval_mono_le hNI _ (Nat.le_max_left _ _))]
+          exact eval_mono_le hNd _ (Nat.le_max_right _ _)
 
 theorem implChain_interp {tgt : Formula} : ∀ (gs : List Formula),
     ((∀ ψ ∈ gs, ψ.interp) → tgt.interp) → (implChain gs tgt).interp := by
@@ -463,6 +518,10 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       me = .bot (.search g ψ P Q) → False)
     (h_tsearch : ∀ me oppo k gs θ P Q, (S me oppo ∨ S' me oppo) →
       (Prog.tsearch k gs θ P Q = me ∨ me = .bot (.tsearch k gs θ P Q)) → False)
+    -- Twin kill obligation for `.tvote` (2026-08-18). No census subject is ever a tau
+    -- player, so every instantiation discharges this the same trivial way as `h_tsearch`.
+    (h_tvote : ∀ me oppo v θ P Q, (S me oppo ∨ S' me oppo) →
+      (Prog.tvote v θ P Q = me ∨ me = .bot (.tvote v θ P Q)) → False)
     (h_sim_inv : ∀ p q oppo, (S (.sim p q) oppo ∨ S' (.sim p q) oppo) →
       S (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo) ∨
       S' (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo))
@@ -497,10 +556,17 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       refine PlaysProof.rec
         (motive_1 := fun me opponent body a n _ =>
           n ≤ B → ∃ N, eval N me opponent body = some a)
-        (motive_2 := fun _ _ _ => True)
+        -- VoteAllPlay motive: BUDGET-GATED, exactly like motive_1 — every entry runs to
+        -- some action, provided the list's charged cost fits the bound. The gating is
+        -- what lets the `cons` arm hand its entry-IH the `m ≤ B` it needs (costs are
+        -- cumulative: `m + c ≤ B` gives both).
+        (motive_2 := fun v c _ => c ≤ B → VoteAllRun v)
         (motive_3 := fun _ _ _ => True)
+        (motive_4 := fun _ _ _ => True)
         ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f
         ?tsearchZero_t ?tsearchNil_f ?tsearchCons_t ?tsearchCons_f ?tsearchHigh_f
+        ?voteZero_t ?voteNil_f ?voteCons_c ?voteCons_d ?voteHigh_f
+        ?vapNil ?vapCons
         ?atomMk
         ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep
         ?pfIteBranchSearch ?pfSTS ?pfSearchChain ?pfCtxChain ?pfEqRefl ?pfEqNeg ?pfMp
@@ -595,6 +661,49 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       case tsearchHigh_f =>
         intro me opponent p q a n k θ gs hθ _hq ihq hB
         exact eval_tsearch_high me opponent p q a k gs θ hθ (ihq (by omega))
+      -- ── `.tvote` arms (the refined Def-4 action vote) ──
+      -- The design pillar: NO floor and no `Pf` premise anywhere here. An entry premise
+      -- is a transcript for a closed deterministic program, so its IH hands us a real
+      -- run `eval N I I I = some ·` — and the matching `eval_tvote_cons_*` lemma turns
+      -- that run into the peel step. `voteCons_d` needs no refutation precisely because
+      -- "the entry plays D" is a POSITIVE fact: determinism of `eval` does the work that
+      -- `search_f`'s Σ₁-refutation-plus-floor does in the provability-vote world.
+      -- Both IHs are used at the SAME budget bound `B` (costs are cumulative:
+      -- n + m + c_node ≤ B gives both n ≤ B and m ≤ B), so no strong-induction descent
+      -- is needed — another consequence of the atom-tier reading.
+      case voteZero_t =>
+        intro me opponent p q a n v _hp ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval_tvote_zero N]; exact hN⟩
+      case voteNil_f =>
+        intro me opponent p q a n θ hθ _hq ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval_tvote_nil N hθ]; exact hN⟩
+      case voteCons_c =>
+        intro me opponent p q a n θ w m I rest hθ _hI _hp ihI ihp hB
+        obtain ⟨NI, hNI⟩ := ihI (by omega)
+        obtain ⟨N, hN⟩ := ihp (by omega)
+        -- align the two runs' fuel, then peel
+        refine ⟨max NI N + 1, ?_⟩
+        rw [eval_tvote_cons_c (max NI N) hθ
+              (eval_mono_le hNI _ (Nat.le_max_left _ _))]
+        exact eval_mono_le hN _ (Nat.le_max_right _ _)
+      case voteCons_d =>
+        intro me opponent p q a n θ w m I rest hθ _hI _hq ihI ihq hB
+        obtain ⟨NI, hNI⟩ := ihI (by omega)
+        obtain ⟨N, hN⟩ := ihq (by omega)
+        refine ⟨max NI N + 1, ?_⟩
+        rw [eval_tvote_cons_d (max NI N) hθ
+              (eval_mono_le hNI _ (Nat.le_max_left _ _))]
+        exact eval_mono_le hN _ (Nat.le_max_right _ _)
+      case voteHigh_f =>
+        intro me opponent p q a n θ c v hθ _hterm _hq ihterm ihq hB
+        exact eval_tvote_high _ _ _ _ _ _ _ hθ (ihterm (by omega)) (ihq (by omega))
+      -- VoteAllPlay arms: turn each entry's transcript into an actual RUN
+      case vapNil => exact fun _ => VoteAllRun.nil
+      case vapCons =>
+        intro w I rest a' m c hI hrest ihI ihrest hB
+        exact VoteAllRun.cons ⟨a', ihI (by omega)⟩ (ihrest (by omega))
       all_goals (intros; trivial)
     -- ── PASS 2: the `Pf` half (paired motives: gated interp ∧ conditional WV) ──
     have hpf : ∀ k φ, Pf k φ →
@@ -604,19 +713,21 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         (motive_1 := fun me oppo body a n _ =>
           (∀ K χ, Pf K χ → χ.interp) → (S me oppo ∨ S' me oppo) →
           (body = me ∨ me = .bot body) → a = .C)
-        (motive_2 := fun m ψ _ =>
+        -- VoteAllPlay: irrelevant to the Pf half (no formula content), motive `True`
+        (motive_2 := fun _ _ _ => True)
+        (motive_3 := fun m ψ _ =>
           (m ≤ B → ψ.interp) ∧
           ((∀ K χ, Pf K χ → χ.interp) → ∀ p q, S p q → ψ ≠ .plays p q .D))
-        (motive_3 := fun k ψ _ =>
+        (motive_4 := fun k ψ _ =>
           (k ≤ B → ψ.interp) ∧ ((∀ K χ, Pf K χ → χ.interp) → WV S ψ))
         ?cConst ?cSelf ?cOpp ?cBot ?cSim ?cIte_t ?cIte_f ?cSearch_t ?cSearch_f
-        ?cTZero ?cTNil ?cTCons_t ?cTCons_f ?cTHigh ?cAtomMk
+        ?cTZero ?cTNil ?cTCons_t ?cTCons_f ?cTHigh
+        ?cVZero ?cVNil ?cVCons_c ?cVCons_d ?cVHigh ?cVapNil ?cVapCons ?cAtomMk
         ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep
         ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
         ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
         ?pBoxIntro ?pAtomBoxImpl ?pAxK ?pAxKf ?pBox4 ?pBoxMono ?pDiagF ?pDiagB
         ?pSearchElseChain h
-      -- ── the certificate side: the census play-exclusion clause ──
       case cConst =>
         intro me oppo a _hs hT hgate
         exact h_const me oppo a hT hgate
@@ -675,6 +786,26 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       case cTHigh =>
         intro me oppo p q a n k θ gs _hθ _hq _ih _hs hT hgate
         exact (h_tsearch me oppo k gs θ p q hT hgate).elim
+      -- `.tvote` census arms: a tau player is never a census subject (twin of the
+      -- `.tsearch` arms above), so each is killed by `h_tvote`.
+      case cVZero =>
+        intro me oppo p q a n v _hp _ih _hs hT hgate
+        exact (h_tvote me oppo v 0 p q hT hgate).elim
+      case cVNil =>
+        intro me oppo p q a n θ _hθ _hq _ih _hs hT hgate
+        exact (h_tvote me oppo .nil θ p q hT hgate).elim
+      case cVCons_c =>
+        intro me oppo p q a n θ w m I rest _hθ _hI _hp _ihI _ihp _hs hT hgate
+        exact (h_tvote me oppo (.cons w I rest) θ p q hT hgate).elim
+      case cVCons_d =>
+        intro me oppo p q a n θ w m I rest _hθ _hI _hq _ihI _ihq _hs hT hgate
+        exact (h_tvote me oppo (.cons w I rest) θ p q hT hgate).elim
+      case cVHigh =>
+        intro me oppo p q a n θ v c _hθ _hterm _hq _ihterm _ihq _hs hT hgate
+        exact (h_tvote _ _ _ _ _ _ hT hgate).elim
+      -- VoteAllPlay carries no formula content: motive is `True`
+      case cVapNil => trivial
+      case cVapCons => intros; trivial
       case cAtomMk =>
         intro me oppo a n K hpp hn ih
         constructor

@@ -132,7 +132,7 @@ theorem pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     Pf K φ → WV (SP k) φ := by
   intro K φ h
   refine ((wv_sound_upto (SP k) (fun _ _ => False)
-    (SP_not_bot k) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K).2 K φ h).2 Pf_sound
+    (SP_not_bot k) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K).2 K φ h).2 Pf_sound
   · intro me oppo a hT hgate
     rcases hT with hS | hF
     · rcases SP_me hS with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
@@ -160,6 +160,12 @@ theorem pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     · exact hF.elim
   · -- h_tsearch : no census member is a `.tsearch` shape
     intro me oppo k' gs θ P Q hT hgate
+    rcases hT with hS | hF
+    · rcases SP_me hS with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
+        rcases hgate with hb | hb <;> exact absurd hb (by simp [DIMCID])
+    · exact hF.elim
+  · -- h_tvote : no census member is a `.tvote` shape either (2026-08-18)
+    intro me oppo v θ P Q hT hgate
     rcases hT with hS | hF
     · rcases SP_me hS with rfl | ⟨p', q', rfl⟩ | ⟨p', q', rfl⟩ <;>
         rcases hgate with hb | hb <;> exact absurd hb (by simp [DIMCID])

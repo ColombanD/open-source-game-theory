@@ -336,6 +336,88 @@ mutual
         θ > gs.totalMass →
         PlaysProof me opponent q a n →
         PlaysProof me opponent (.tsearch k gs θ p q) a (n + gs.gsize + c_node)
+    /- ── `.tvote` (weighted-threshold ACTION vote, the refined Def-4 primitive, 2026-08-18) ──
+       FIVE stepwise rules mirroring the `eval` peel one step each, exactly as the
+       `.tsearch` block above. The decisive difference is the MODALITY of an entry:
+       `.tsearch` reads a PROVABILITY bit and therefore needs the polarity discipline
+       (cite a proof to fire, cite a Σ₁ refutation + pay the floor to pass), whereas a
+       `.tvote` entry is a closed deterministic PROGRAM whose play is an ATOM. Both
+       "it plays C" and "it plays D" are positive facts with ordinary transcripts, so:
+
+       * **there is NO floor anywhere in this block, and no `Pf` premise at all.** Not an
+         oversight — determinism of `eval` is what replaces the refutation. `voteCons_d`
+         cites the entry's own honest D-transcript; nothing about unprovability is ever
+         asserted, so the `atom_monotone` re-fire inconsistency that forced `search_f`'s
+         floor simply cannot arise here.
+       * Floors still price the tau layer's Gödelian cells — but INSIDE an entry, at the
+         `.search` node the lifted base bot's own code contains (e.g. `eδ`'s failed
+         exploit-probe), which is exactly where Def 4 says the base bot puts them.
+
+       An entry is run in its OWN closed frame (`PlaysProof I I I a m`), the transcript
+       twin of `eval n I I I` and of the probe atom `.plays (.bot I) (.bot I) .C`.
+       Entries are frozen, so no `subst` appears. A non-terminating entry has no
+       transcript and hence no rule — matching `eval`, which returns `none` there. -/
+    /-- Residual threshold met: the vote already succeeded; remaining entries are not
+        consulted (mirrors `eval`'s then short-circuit). -/
+    | voteZero_t {me opponent p q : Prog} {a : Action} {n : Nat} {v : VoteList} :
+        PlaysProof me opponent p a n →
+        PlaysProof me opponent (.tvote v 0 p q) a (n + c_node)
+    /-- Entries exhausted with residual threshold still positive: the vote failed. -/
+    | voteNil_f {me opponent p q : Prog} {a : Action} {n θ : Nat} :
+        θ ≠ 0 →
+        PlaysProof me opponent q a n →
+        PlaysProof me opponent (.tvote .nil θ p q) a (n + c_node)
+    /-- Head entry PLAYS `C`: cite its transcript and continue peeling with the weight
+        subtracted from the residual threshold. -/
+    | voteCons_c {me opponent p q : Prog} {a : Action} {n θ w m : Nat} {I : Prog}
+        {rest : VoteList} :
+        θ ≠ 0 →
+        PlaysProof I I I Action.C m →
+        PlaysProof me opponent (.tvote rest (θ - w) p q) a n →
+        PlaysProof me opponent (.tvote (.cons w I rest) θ p q) a (n + m + c_node)
+    /-- Head entry PLAYS `D`: cite its transcript — a POSITIVE fact, no refutation and
+        no floor — and continue peeling with the threshold unchanged. -/
+    | voteCons_d {me opponent p q : Prog} {a : Action} {n θ w m : Nat} {I : Prog}
+        {rest : VoteList} :
+        θ ≠ 0 →
+        PlaysProof I I I Action.D m →
+        PlaysProof me opponent (.tvote rest θ p q) a n →
+        PlaysProof me opponent (.tvote (.cons w I rest) θ p q) a (n + m + c_node)
+    /-- The threshold exceeds the TOTAL mass: no vote pattern can reach it, so the else
+        branch is forced without reading any entry's ACTION. Pays the weight-sum
+        arithmetic.
+
+        **`hterm` is load-bearing and was missing in the first draft (2026-08-18).**
+        Unlike `.tsearch` — whose guard bit comes from the TOTAL function `proofSearch`,
+        so a guard can always be consulted — a `.tvote` entry is an arbitrary program
+        that may not terminate, and `eval` sinks the whole vote to `none` when one
+        doesn't. Without this premise the rule is UNSOUND, by a machine-checked
+        counterexample: `tvote [(1, MirrorBot)] 5 C D` has `θ = 5 > totalMass = 1`, yet
+        evaluates to `none` at every fuel (MirrorBot vs itself never terminates), so the
+        rule would license a `D`-transcript for a program that never plays. The
+        threshold shortcut may skip READING the entries; it cannot skip their
+        TERMINATION. Each entry is required to play SOMETHING — which action is
+        genuinely irrelevant here, and that irrelevance is the whole content of the
+        rule. The termination evidence is CHARGED (`+ c`, the sum of the entries'
+        transcript costs) like every other premise under the cumulative cost model;
+        without that the budget-strong-induction in `wv_sound_upto` cannot reach the
+        entries' own certificates. -/
+    | voteHigh_f {me opponent p q : Prog} {a : Action} {n θ : Nat} {v : VoteList} :
+        θ > v.totalMass →
+        VoteAllPlay v c →
+        PlaysProof me opponent q a n →
+        PlaysProof me opponent (.tvote v θ p q) a (n + c + v.vsize + c_node)
+
+/-- "Every entry of this vote list plays SOMETHING" — the termination side-condition of
+    `PlaysProof.voteHigh_f`. Lives in the mutual block because it quantifies over
+    `PlaysProof`. Deliberately action-AGNOSTIC: `voteHigh_f`'s content is exactly that
+    the entries' actions do not matter once the threshold is unreachable; what still
+    matters is that they HAVE actions, since a non-terminating entry sinks the vote to
+    `none` (see the rule's docstring for the counterexample that forced this). -/
+  inductive VoteAllPlay : VoteList → Nat → Prop where
+    | nil : VoteAllPlay .nil 0
+    | cons {w : Nat} {I : Prog} {rest : VoteList} {a : Action} {m c : Nat} :
+        PlaysProof I I I a m → VoteAllPlay rest c → VoteAllPlay (.cons w I rest) (m + c)
 
 -- 3. `AtomProvable k φ` — a `PlaysProof` whose run cost fits the budget (`n ≤ k`); the bridge for
 -- atomic `.plays` facts (which the reasoning rules cannot read).
@@ -790,15 +872,23 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
     {k : Nat} {φ : Formula} (h : Pf k φ) : motive k φ h :=
   Pf.rec
     (motive_1 := fun _ _ _ _ _ _ => True)
-    (motive_2 := fun _ _ _ => True)
-    (motive_3 := motive)
-    -- PlaysProof arms (14) + AtomProvable.mk (1): motive is `True`.
+    (motive_2 := fun _ _ _ => True)        -- VoteAllPlay (new 4th inductive, 2026-08-18)
+    (motive_3 := fun _ _ _ => True)
+    (motive_4 := motive)
+    -- PlaysProof arms (19) + VoteAllPlay arms (2) + AtomProvable.mk (1): motive is `True`.
     trivial (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial) (fun _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
     (fun _ _ _ _ => trivial)
     -- tsearch arms: Zero_t, Nil_f, Cons_t, Cons_f, High_f
     (fun _ _ => trivial) (fun _ _ _ => trivial) (fun _ _ _ _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ => trivial)
+    -- tvote arms: Zero_t, Nil_f, Cons_c, Cons_d, High_f (the two cons arms carry an
+    -- extra premise+motive pair for the ENTRY's own transcript; High_f now also carries
+    -- the VoteAllPlay termination premise + its motive)
+    (fun _ _ => trivial) (fun _ _ _ => trivial) (fun _ _ _ _ _ => trivial)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial)
+    -- VoteAllPlay arms: nil, cons
+    trivial (fun _ _ _ _ => trivial)
     (fun _ _ _ => trivial)
     -- Pf arms (27, family order A/B/C): route each to its named hypothesis.
     (fun {k} {φ} hatom _ => atom k φ hatom)
@@ -910,14 +1000,49 @@ theorem PlaysProof.induct
         motive me opponent q a n hq →
         motive me opponent (.tsearch k gs θ p q) a (n + gs.gsize + c_node)
           (.tsearchHigh_f hθ hq))
+    -- `.tvote` arms. NOTE the entry premises (`hI`) carry their own motive obligation, in
+    -- the ENTRY'S frame `I I I` — unlike `.tsearch`, whose guard premise is a `Pf` and
+    -- therefore motive-free. Consumers that only care about the enclosing player (the
+    -- censuses) discharge those with `fun _ => trivial`-style arguments.
+    (voteZero_t : ∀ (me opponent p q : Prog) (a : Action) (n : Nat) (v : VoteList)
+        (hp : PlaysProof me opponent p a n),
+        motive me opponent p a n hp →
+        motive me opponent (.tvote v 0 p q) a (n + c_node) (.voteZero_t hp))
+    (voteNil_f : ∀ (me opponent p q : Prog) (a : Action) (n θ : Nat)
+        (hθ : θ ≠ 0) (hq : PlaysProof me opponent q a n),
+        motive me opponent q a n hq →
+        motive me opponent (.tvote .nil θ p q) a (n + c_node) (.voteNil_f hθ hq))
+    (voteCons_c : ∀ (me opponent p q : Prog) (a : Action) (n θ w m : Nat) (I : Prog)
+        (rest : VoteList)
+        (hθ : θ ≠ 0) (hI : PlaysProof I I I Action.C m),
+        motive I I I Action.C m hI →
+        ∀ (hp : PlaysProof me opponent (.tvote rest (θ - w) p q) a n),
+        motive me opponent (.tvote rest (θ - w) p q) a n hp →
+        motive me opponent (.tvote (.cons w I rest) θ p q) a (n + m + c_node)
+          (.voteCons_c hθ hI hp))
+    (voteCons_d : ∀ (me opponent p q : Prog) (a : Action) (n θ w m : Nat) (I : Prog)
+        (rest : VoteList)
+        (hθ : θ ≠ 0) (hI : PlaysProof I I I Action.D m),
+        motive I I I Action.D m hI →
+        ∀ (hq : PlaysProof me opponent (.tvote rest θ p q) a n),
+        motive me opponent (.tvote rest θ p q) a n hq →
+        motive me opponent (.tvote (.cons w I rest) θ p q) a (n + m + c_node)
+          (.voteCons_d hθ hI hq))
+    (voteHigh_f : ∀ (me opponent p q : Prog) (a : Action) (n θ c : Nat) (v : VoteList)
+        (hθ : θ > v.totalMass) (hterm : VoteAllPlay v c)
+        (hq : PlaysProof me opponent q a n),
+        motive me opponent q a n hq →
+        motive me opponent (.tvote v θ p q) a (n + c + v.vsize + c_node)
+          (.voteHigh_f hθ hterm hq))
     {me opponent body : Prog} {a : Action} {n : Nat} (h : PlaysProof me opponent body a n) :
     motive me opponent body a n h := by
   -- The 27 `Pf` arms + `AtomProvable.mk` are irrelevant here (their motives are `True`); let
   -- Lean generate them rather than hand-counting arities.
   refine PlaysProof.rec
     (motive_1 := motive)
-    (motive_2 := fun _ _ _ => True)
+    (motive_2 := fun _ _ _ => True)        -- VoteAllPlay (new 4th inductive, 2026-08-18)
     (motive_3 := fun _ _ _ => True)
+    (motive_4 := fun _ _ _ => True)
     (fun {me opponent} {a} => const me opponent a)
     (fun {me opponent} {a} {n} h ih => self me opponent a n h ih)
     (fun {me opponent} {a} {n} h ih => opp me opponent a n h ih)
@@ -941,6 +1066,18 @@ theorem PlaysProof.induct
       tsearchCons_f me opponent p q a n k θ w m φ rest hθ hg hq ihq)
     (fun {me opponent p q} {a} {n k θ} {gs} hθ hq ihq =>
       tsearchHigh_f me opponent p q a n k θ gs hθ hq ihq)
+    (fun {me opponent p q} {a} {n} {v} hp ihp =>
+      voteZero_t me opponent p q a n v hp ihp)
+    (fun {me opponent p q} {a} {n θ} hθ hq ihq =>
+      voteNil_f me opponent p q a n θ hθ hq ihq)
+    (fun {me opponent p q} {a} {n θ w m} {I} {rest} hθ hI hp ihI ihp =>
+      voteCons_c me opponent p q a n θ w m I rest hθ hI ihI hp ihp)
+    (fun {me opponent p q} {a} {n θ w m} {I} {rest} hθ hI hq ihI ihq =>
+      voteCons_d me opponent p q a n θ w m I rest hθ hI ihI hq ihq)
+    (fun hθ hterm hq _ihterm ihq =>
+      voteHigh_f _ _ _ _ _ _ _ _ _ hθ hterm hq ihq)
+    -- VoteAllPlay arms (motive `True`): nil, cons
+    trivial (fun _ _ _ _ => trivial)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     ?_ ?_
     h <;>

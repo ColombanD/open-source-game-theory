@@ -244,6 +244,53 @@ matches where a base prover reads a tau player's source would need a
 **Gate 3**: 3-axiom footprint unchanged; zero sorry; all 81 base outcome
 statements byte-identical; `sound_upto` green.
 
+**✅ PHASE 3 LANDED 2026-08-18.** Engine green (3305 jobs), 3 standard axioms, zero
+sorry, 114/114 outcome declarations byte-identical, `wv_sound_upto` proven with all
+five arms, worked transcripts + soundness demo typecheck.
+
+**THE DESIGN PILLAR HOLDS — with one correction the plan did not anticipate.**
+`voteCons_d` needs no refutation and no floor: it cites the entry's own honest
+D-transcript, and eval determinism does the rest. Confirmed by construction (a
+`voteCons_c ∘ voteCons_d ∘ voteNil_f` certificate builds with no `Pf` premise
+anywhere) and by soundness going through. The correction:
+
+**`voteHigh_f` AS SPECIFIED IN §4 WAS UNSOUND.** The spec let the threshold
+shortcut commit to the else-branch citing only `θ > totalMass`. But a `.tvote`
+entry is an arbitrary program that may not TERMINATE, and `eval` sinks the whole
+vote to `none` when one doesn't — whereas `.tsearch`'s guard bit comes from the
+total function `proofSearch`, so its `tsearchHigh_f` twin is fine. Machine-checked
+counterexample: `tvote [(1, MirrorBot)] 5 C D` has `θ = 5 > totalMass = 1` and
+evaluates to `none` at every fuel, yet the rule would have licensed a
+`D`-transcript for a program that never plays. Caught by the soundness arm
+refusing to close — i.e. exactly the gate §9 relies on.
+
+*The repair* (two parts, both forced):
+1. A new `VoteAllPlay v c` predicate in the mutual block — "every entry plays
+   SOMETHING, at total transcript cost `c`" — added as a premise of `voteHigh_f`.
+   WHICH action each entry plays stays irrelevant; that irrelevance is the rule's
+   whole content. The shortcut may skip READING the entries, never their
+   TERMINATION.
+2. The evidence is CHARGED (`n + c + v.vsize + c_node`). Not cosmetic: with the
+   premise uncharged, the budget-strong-induction in `wv_sound_upto` cannot reach
+   the entries' own certificates (`m ≤ B` is unavailable) and the arm is unprovable.
+   Cumulative costs then give both bounds from `m + c ≤ B`.
+
+Consequences worth noting: `VoteAllPlay` is a FOURTH inductive in the mutual block,
+so every `motive_N` in both named eliminators and both `wv_sound_upto` passes
+shifted by one; `wv_sound_upto` gained an `h_tvote` kill obligation (twin of
+`h_tsearch`), discharged trivially at all four instantiation sites (`sound_upto`,
+both WaryBot censuses, DIMCID-vs-CupodTrollBot, GuardianBot-vs-DIMCID) since no
+census subject is ever a tau player. A semantic `VoteAllRun` (the "every entry
+actually runs" counterpart) is the `motive_2` the certificate pass carries, and it
+must be BUDGET-GATED like `motive_1`.
+
+**Proof-craft trap (cost me several iterations):** the raw recursor's argument
+order for a rule with two recursive premises is *all premises first, then all
+motives* (`hθ hI hp ihI ihp`) — NOT premise/motive interleaved. And when a
+positional application still mismatches, `exact f _ _ _ … hyp₁ hyp₂` with
+underscores beats hand-counting binders; the roadmap's "auto-bound implicit order
+is unpredictable" warning applies to eliminator ARGUMENT order too.
+
 ## 5. Phase 4 — the tau layer rebuild (`Tau/`, `Theorems/Tau/`)
 
 **Keep verbatim**: the probe atom, `probeSearchδ`, `tftSimδ`, `eδ`, the quine
