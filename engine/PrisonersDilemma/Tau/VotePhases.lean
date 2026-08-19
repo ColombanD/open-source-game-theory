@@ -185,4 +185,14 @@ theorem tauDupoc_phase :
   simp only [massOf, massOf_ifC, massOf_ifD, TauBotZ] at h ⊢
   simpa using h
 
+/-! ## The two α-boundaries, named
+
+The phase-level vocabulary the outcome files speak: the COOPERATORS' shared
+boundary mass, and τ(EBot)'s strictly lower one (it excludes the cooperator weight
+EBot exploits). Public — every `Theorems/Tau/<L>/vs_<R>.lean` states its regime
+hypotheses in these. -/
+
+abbrev coopMass (w : Tmpl → Nat) : Nat := w .coop + (w .tftSim + (w .tftPf + w .dupoc))
+abbrev eMass (w : Tmpl → Nat) : Nat := w .tftSim + (w .tftPf + w .dupoc)
+
 end PD.Tau

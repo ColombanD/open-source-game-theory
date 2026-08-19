@@ -3,6 +3,13 @@ import PrisonersDilemma.Tau.Vectors
 /-!
 # Tau/Spec — the bot-spec DSL and its compiler (Phase 5, `DEF4_TVOTE_ROADMAP.md` §6)
 
+**Machinery only** (since the 2026-08-18 per-bot-file reorganization): the spec
+TYPES, the compiler, and the vector builder — all generic in the zoo index `ι`.
+The concrete zoo lives in the base-bot-style layout: `Tau/Roster.lean` declares the
+cast, `Tau/Bots/<TauBot>.lean` holds each bot's spec row and doc (one file per bot,
+like `Bots/` for the base zoo), and `Tau/Zoo.lean` assembles them and carries
+Gate D1.
+
 The scale layer of the refined Def 4. A base bot is described by a small SPEC — an
 ordered list of probe stages plus a default action — and the compiler `inst` turns a
 spec zoo into the whole δ-instance closure: `inst Z A T` is bot A's ENTIRE decision
@@ -139,79 +146,5 @@ theorem vecOf_bits (Z : Zoo ι) [DecidableEq ι] (A : ι) (w : ι → Nat) (b : 
   | T :: rest, h =>
       .cons (h T (List.mem_cons_self ..))
         (vecOf_bits Z A w b rest fun t ht => h t (List.mem_cons_of_mem _ ht))
-
-/-! ## The concrete zoo (§6.1's worked table) -/
-
-/-- The six templates. (Open question 5 resolved: a readable enum, not `Fin 6`.) -/
-inductive Tmpl | coop | defect | tftSim | tftPf | dupoc | ebot
-deriving DecidableEq, Repr
-
-/-- The zoo AS DATA — this table now IS the tau zoo definition; everything else is
-    compiled from it. -/
-def tmplSpec : Tmpl → Spec Tmpl
-  | .coop   => ⟨[], .C⟩
-  | .defect => ⟨[], .D⟩
-  | .tftSim => ⟨[⟨.run,   .name .coop,   .C⟩], .D⟩
-  | .tftPf  => ⟨[⟨.prove, .name .coop,   .C⟩], .D⟩
-  | .dupoc  => ⟨[⟨.prove, .self,         .C⟩], .D⟩
-  | .ebot   => ⟨[⟨.prove, .name .defect, .D⟩, ⟨.prove, .name .coop, .C⟩], .D⟩
-
-def zoo6 (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
-
-/-- The canonical hypothesis order (matches the Phase-4 vectors' entry order). -/
-def order6 : List Tmpl := [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot]
-
-/-- **The tau player, DSL interface**: bot A of the six-template zoo at prover
-    budget k, signal weights `w`, caution threshold θ. -/
-def TauBotZ (k : Nat) (A : Tmpl) (w : Tmpl → Nat) (θ : Nat) : Prog :=
-  tauPlayer (vecOf (zoo6 k) A w order6) θ
-
-/-! ## Gate D1 — byte-identity of the compiled closure (§6.6)
-
-Every instance the compiler produces is `rfl`-equal to the hand-written Phase-4
-closure. A failed check = the COMPILER is wrong, not the closure. These persist as
-regression gates: any future change to `instGo` (e.g. the `.sys` rewrite of the
-probed-object resolution) must reproduce them or consciously replace them. -/
-
-section GateD1
-variable (k : Nat)
-
--- constants: signal-blind rows
-example : ∀ T, inst (zoo6 k) .coop T = tauCoopδ := fun T => by cases T <;> rfl
-example : ∀ T, inst (zoo6 k) .defect T = tauDefectδ := fun T => by cases T <;> rfl
-
--- τ(Dupoc)'s row — the δ_L column, incl. the QUINE and the FLOOR entry
-example : inst (zoo6 k) .dupoc .coop   = searchOfCoopδ k := rfl
-example : inst (zoo6 k) .dupoc .defect = searchOfDefectδ k := rfl
-example : inst (zoo6 k) .dupoc .tftSim = probeSearchδ k (simOfSearchδ k) := rfl
-example : inst (zoo6 k) .dupoc .tftPf  = probeSearchδ k (searchOfSearchδ k) := rfl
-example : inst (zoo6 k) .dupoc .dupoc  = TauDupocδ k := rfl          -- the quine
-example : inst (zoo6 k) .dupoc .ebot   = probeSearchδ k (eOfSearchδ k) := rfl  -- the floor
-
--- τ(TFTPf)'s row — the δ_C column, by proof
-example : inst (zoo6 k) .tftPf .coop   = probeSearchδ k tauCoopδ := rfl
-example : inst (zoo6 k) .tftPf .defect = probeSearchδ k tauDefectδ := rfl
-example : inst (zoo6 k) .tftPf .tftSim = probeSearchδ k simOfCoopδ := rfl
-example : inst (zoo6 k) .tftPf .tftPf  = probeSearchδ k (searchOfCoopδ k) := rfl
-example : inst (zoo6 k) .tftPf .dupoc  = probeSearchδ k (searchOfCoopδ k) := rfl
-example : inst (zoo6 k) .tftPf .ebot   = probeSearchδ k (eOfCoopδ k) := rfl
-
--- τ(TFTSim)'s row — the δ_C column, by simulation
-example : inst (zoo6 k) .tftSim .coop   = tftSimδ tauCoopδ := rfl
-example : inst (zoo6 k) .tftSim .defect = tftSimδ tauDefectδ := rfl
-example : inst (zoo6 k) .tftSim .tftSim = tftSimδ simOfCoopδ := rfl
-example : inst (zoo6 k) .tftSim .tftPf  = tftSimδ (searchOfCoopδ k) := rfl
-example : inst (zoo6 k) .tftSim .dupoc  = tftSimδ (searchOfCoopδ k) := rfl
-example : inst (zoo6 k) .tftSim .ebot   = tftSimδ (eOfCoopδ k) := rfl
-
--- τ(EBot)'s row — the whole cascade per hypothesis
-example : inst (zoo6 k) .ebot .coop   = eOfCoopδ k := rfl
-example : inst (zoo6 k) .ebot .defect = eOfDefectδ k := rfl
-example : inst (zoo6 k) .ebot .tftSim = eOfSimδ k := rfl
-example : inst (zoo6 k) .ebot .tftPf  = eOfPfδ k := rfl
-example : inst (zoo6 k) .ebot .dupoc  = eOfSearchδ k := rfl
-example : inst (zoo6 k) .ebot .ebot   = eOfSelfδ k := rfl
-
-end GateD1
 
 end PD.Tau

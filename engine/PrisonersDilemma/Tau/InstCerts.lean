@@ -1,4 +1,4 @@
-import PrisonersDilemma.Tau.Spec
+import PrisonersDilemma.Tau.Zoo
 
 /-!
 # Tau/InstCerts — the bit lemmas, stated over `inst Z A T` (the DSL vocabulary)
