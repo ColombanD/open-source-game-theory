@@ -14,30 +14,58 @@ open PD PD.BaseTheorems
 
 namespace PD.Tau
 
+/-- τ(GuardianBot)'s bit ROW: trust-by-default — D exactly at the two provable
+    bullies. Identical values to `tftSimRow`, for inverted reasons. -/
+def guardianRow : Tmpl → Action
+  | .coop     => .C
+  | .defect   => .D
+  | .tftSim   => .C
+  | .tftPf    => .C
+  | .dupoc    => .C
+  | .ebot     => .D
+  | .just     => .C
+  | .obot     => .C
+  | .guardian => .C
+
+/-- The row's witness: every entry is the punish-probe (`test = .D` prove-stage)
+    fed the guard column's bits. -/
+theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
+    (h10 : 10 ≤ k) :
+    ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .guardian T))
+              (.bot (inst (tauZoo k) .guardian T))
+              (inst (tauZoo k) .guardian T) = some (guardianRow T) :=
+  let gB := ps_probeD_inst_coop hk hkk h6 h10
+  fun T => match T with
+  | .coop     => searchProbeD_plays_C _ _ (gB .coop)
+  | .defect   => searchProbeD_plays_D _ _ (gB .defect)
+  | .tftSim   => searchProbeD_plays_C _ _ (gB .tftSim)
+  | .tftPf    => searchProbeD_plays_C _ _ (gB .tftPf)
+  | .dupoc    => searchProbeD_plays_C _ _ (gB .dupoc)
+  | .ebot     => searchProbeD_plays_D _ _ (gB .ebot)
+  | .just     => searchProbeD_plays_C _ _ (gB .just)
+  | .obot     => searchProbeD_plays_C _ _ (gB .obot)
+  | .guardian => searchProbeD_plays_C _ _ (gB .guardian)
+
+/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
+    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
 theorem guardianBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
     (h10 : 10 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .guardian w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
        (w .guardian, .C)] :=
-  let gB := ps_probeD_inst_coop hk hkk h6 h10
-  .cons (searchProbeD_plays_C _ _ (gB .coop))
-    (.cons (searchProbeD_plays_D _ _ (gB .defect))
-      (.cons (searchProbeD_plays_C _ _ (gB .tftSim))
-        (.cons (searchProbeD_plays_C _ _ (gB .tftPf))
-          (.cons (searchProbeD_plays_C _ _ (gB .dupoc))
-            (.cons (searchProbeD_plays_D _ _ (gB .ebot))
-              (.cons (searchProbeD_plays_C _ _ (gB .just))
-                (.cons (searchProbeD_plays_C _ _ (gB .obot))
-                  (.cons (searchProbeD_plays_C _ _ (gB .guardian)) .nil))))))))
+  vecOf_bits (tauZoo k) .guardian w guardianRow tauOrder
+    fun T _ => guardianRow_plays hk hkk h6 h10 T
 
 /-- **τ(GuardianBot)** — boundary `θ ≤ guardMass`. -/
 theorem tauGuardian_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
     (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ guardMass w → ∃ N, play N (TauBotZ k .guardian w θ) opponent = some .C)
     ∧ (¬ θ ≤ guardMass w → ∃ N, play N (TauBotZ k .guardian w θ) opponent = some .D) := by
-  have h := tauPlayer_phase_bits θ (guardianBits hk hkk h6 h10 w) opponent
-  simp only [massOf, massOf_ifC, massOf_ifD, TauBotZ] at h ⊢
+  have h := phase_of_bits (tauZoo k) .guardian w guardianRow tauOrder θ opponent
+    (fun T _ => guardianRow_plays hk hkk h6 h10 T)
+  simp only [bitMass, tauOrder, List.map, guardianRow, massOf, massOf_ifC, massOf_ifD,
+    TauBotZ] at h ⊢
   simpa [guardMass, simMass] using h
 
 end PD.Tau

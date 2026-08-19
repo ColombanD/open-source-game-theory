@@ -710,6 +710,55 @@ fuel-sufficiency lemma (due at the second zoo), sub-Löb regimes, `LegacyS.lean`
 
 ---
 
+## 8b. Addendum 2026-08-19 — the generality pass, and the SCHEDULED zoo-generic fuel debt
+
+Post-closure work (Colomban: "be as general as possible to invite larger zoos"),
+in three steps; **steps 1+2 LANDED 2026-08-19, step 3 is the scheduled debt.**
+
+**Step 1 — `phase_of_bits`, the generic phase theorem (LANDED).** `Spec.lean` now
+composes `vecOf_bits` + `tauPlayer_phase_bits` ONCE: supply a bit table
+`b : ι → Action` and its witness (`∀ T ∈ order`, the instance plays `b T`), get
+both phase directions thresholded at `bitMass w b order` (`Vote.lean`: `massOf`
+over the mapped table — the fold form of every regime mass). Every per-bot
+`Phase.lean` was restated on it: a bit ROW `def <bot>Row : Tmpl → Action` (9
+explicit arms), a witness lemma `<bot>Row_plays : ∀ T, …` (match arms = the old
+chain's slot proofs), and the phase theorem = `phase_of_bits` + one `simp`
+reduction of `bitMass` to the display mass. The nine hand-rolled 9-deep `.cons`
+chains are GONE; adding a bot to the zoo now costs one row arm + one witness arm
+per file, not a chain restructuring.
+
+**Step 2 — masses as folds (LANDED, display-preserving).** `bitMass` is the
+general mass; the hand-written regime masses (`simMass`, `pfMass`, …) SURVIVE as
+display forms because (a) `Matrix.lean`'s band proofs do `simp only [mass]; omega`
+on literal sums, and (b) they are what `bitMass` reduces to on the concrete
+enumeration. The phase proofs bridge the two by the same simp step.
+
+**Scanner constraint, load-bearing:** the per-bot `<bot>Bits` theorems' LITERAL
+bit lists are read by `app`'s `def4_theorems.py` — their statements must stay
+byte-stable. They are now one-line corollaries of `vecOf_bits` (the mapped row is
+the literal list by defeq on the concrete zoo) and are annotated scanner-facing.
+If the scanner is ever retargeted at the `<bot>Row` tables (easier to parse), the
+corollaries can go.
+
+**Step 3 — SCHEDULED DEBT: `Zoo.WellFormed` + computed fuel (NOT started).** The
+piece that would make MACHINE-GENERATED zoos possible by replacing Gate D1's
+hand-written closures. Components, sketched 2026-08-19:
+* `Spec.probeDepth` / `Zoo.maxDepth` — syntactic probe-nesting depth over the
+  spec table;
+* `fuelFor Z` replacing the bare `instFuel = 16`;
+* the FUEL-STABILITY lemma `depth ≤ n → instGo Z (n+1) … = instGo Z n …` —
+  sufficient fuel is a fixpoint, so `inst` is canonically fuel-independent above
+  the bound (the structural induction needs care at the quine diagonal);
+* `Zoo.WellFormed` (decidable): probe chains bottom out, at most quine-cut
+  self-reference; well-formed ⇒ `fuelFor` suffices.
+Deliberately deferred: with one zoo, D1 IS the certificate, and the design is
+better informed by the first real second zoo (which may be `Fin n`-indexed,
+changing what `WellFormed` quantifies over). DUE when a second zoo instantiates
+the DSL — same trigger as the §6 deviation's original debt note, now with the
+concrete component list.
+
+---
+
 ## 9. Open questions (decide during implementation, none blocking)
 
 1. `voteHigh_f` — include from day one (cheap else-commits) or add on demand?

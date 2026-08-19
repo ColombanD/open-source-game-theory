@@ -139,8 +139,9 @@ def vecOf (Z : Zoo ι) [DecidableEq ι] (A : ι) (w : ι → Nat) : List ι → 
 
 /-- **The generic bits lemma** — ONE list induction replacing every per-bot
     `.cons`-chain: supply, per hypothesis, what A's instance plays, and the whole
-    vector's `VoteBits` follows. With `tauPlayer_phase_bits` this is the entire
-    uniform path from a bit table `b : ι → Action` to a phase theorem. -/
+    vector's `VoteBits` follows. Consumed by `phase_of_bits` below (and by the
+    scanner-facing per-bot `*Bits` corollaries, whose literal rows it produces by
+    defeq on the concrete enumeration). -/
 theorem vecOf_bits (Z : Zoo ι) [DecidableEq ι] (A : ι) (w : ι → Nat) (b : ι → Action) :
     ∀ order : List ι,
       (∀ T ∈ order, ∃ N, eval N (.bot (inst Z A T)) (.bot (inst Z A T)) (inst Z A T)
@@ -150,5 +151,21 @@ theorem vecOf_bits (Z : Zoo ι) [DecidableEq ι] (A : ι) (w : ι → Nat) (b : 
   | T :: rest, h =>
       .cons (h T (List.mem_cons_self ..))
         (vecOf_bits Z A w b rest fun t ht => h t (List.mem_cons_of_mem _ ht))
+
+/-- **THE generic phase theorem** — the entire uniform path from a bit table
+    `b : ι → Action` to a phase theorem, zoo-size independent: supply what A's
+    instance plays at each hypothesis, and A's tau player thresholds the table's
+    C-mass. Every per-bot phase theorem is this plus (a) the bot's witness lemma
+    (column facts, the mathematics a DSL cannot generate) and (b) a `simp`
+    reduction of `bitMass` to the bot's display mass. -/
+theorem phase_of_bits (Z : Zoo ι) [DecidableEq ι] (A : ι) (w : ι → Nat) (b : ι → Action)
+    (order : List ι) (θ : Nat) (opponent : Prog)
+    (h : ∀ T ∈ order, ∃ N, eval N (.bot (inst Z A T)) (.bot (inst Z A T)) (inst Z A T)
+          = some (b T)) :
+    (θ ≤ bitMass w b order →
+      ∃ N, play N (tauPlayer (vecOf Z A w order) θ) opponent = some .C)
+    ∧ (¬ θ ≤ bitMass w b order →
+      ∃ N, play N (tauPlayer (vecOf Z A w order) θ) opponent = some .D) :=
+  tauPlayer_phase_bits θ (vecOf_bits Z A w b order h) opponent
 
 end PD.Tau

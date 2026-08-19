@@ -78,6 +78,13 @@ def massOf : List (Nat × Action) → Nat
   | [] => 0
   | (w, a) :: rest => (if a == Action.C then w else 0) + massOf rest
 
+/-- The C-mass of a BIT TABLE over a zoo enumeration — the fold form of every regime
+    mass: `bitMass w b order = Σ { w T : T ∈ order, b T = .C }`. On a concrete
+    enumeration it reduces (via `massOf`) to the literal weight sum, so the
+    hand-written regime masses are its display forms. -/
+def bitMass {ι : Type} (w : ι → Nat) (b : ι → Action) (order : List ι) : Nat :=
+  massOf (order.map fun T => (w T, b T))
+
 /-- "This vector's entries play these actions, in order." -/
 inductive VoteBits : VoteList → List (Nat × Action) → Prop where
   | nil : VoteBits .nil []

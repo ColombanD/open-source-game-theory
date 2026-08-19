@@ -13,6 +13,40 @@ open PD PD.BaseTheorems
 
 namespace PD.Tau
 
+/-- τ(JustBot)'s bit ROW: the prover δ_L column, read by NAME — identical to
+    `dupocRow`. -/
+def justRow : Tmpl → Action
+  | .coop     => .C
+  | .defect   => .D
+  | .tftSim   => .C
+  | .tftPf    => .C
+  | .dupoc    => .C
+  | .ebot     => .D
+  | .just     => .C
+  | .obot     => .D
+  | .guardian => .D
+
+/-- The row's witness: prove-stages on the δ_L column — including at the `.dupoc`
+    slot, where the probed object is the quine (by name, not by self). -/
+theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
+    (hk7 : c_guard k + 7 ≤ k)
+    (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true) :
+    ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .just T)) (.bot (inst (tauZoo k) .just T))
+              (inst (tauZoo k) .just T) = some (justRow T) :=
+  let bL := ps_probe_inst_dupoc hk hkk hk7 hquine
+  fun T => match T with
+  | .coop     => searchProbe_plays_C _ _ (bL .coop)
+  | .defect   => searchProbe_plays_D _ _ (bL .defect)
+  | .tftSim   => searchProbe_plays_C _ _ (bL .tftSim)
+  | .tftPf    => searchProbe_plays_C _ _ (bL .tftPf)
+  | .dupoc    => searchProbe_plays_C _ _ (bL .dupoc)
+  | .ebot     => searchProbe_plays_D _ _ (bL .ebot)
+  | .just     => searchProbe_plays_C _ _ (bL .just)
+  | .obot     => searchProbe_plays_D _ _ (bL .obot)
+  | .guardian => searchProbe_plays_D _ _ (bL .guardian)
+
+/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
+    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
 theorem justBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hk7 : c_guard k + 7 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
@@ -21,16 +55,8 @@ theorem justBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .D),
        (w .guardian, .D)] :=
-  let bL := ps_probe_inst_dupoc hk hkk hk7 hquine
-  .cons (searchProbe_plays_C _ _ (bL .coop))
-    (.cons (searchProbe_plays_D _ _ (bL .defect))
-      (.cons (searchProbe_plays_C _ _ (bL .tftSim))
-        (.cons (searchProbe_plays_C _ _ (bL .tftPf))
-          (.cons (searchProbe_plays_C _ _ (bL .dupoc))
-            (.cons (searchProbe_plays_D _ _ (bL .ebot))
-              (.cons (searchProbe_plays_C _ _ (bL .just))
-                (.cons (searchProbe_plays_D _ _ (bL .obot))
-                  (.cons (searchProbe_plays_D _ _ (bL .guardian)) .nil))))))))
+  vecOf_bits (tauZoo k) .just w justRow tauOrder
+    fun T _ => justRow_plays hk hkk hk7 hquine T
 
 /-- **τ(JustBot)** — Löb-gated; boundary `θ ≤ dupMass`, same as TauDupoc's. -/
 theorem tauJust_phase :
@@ -46,8 +72,10 @@ theorem tauJust_phase :
   have hk2 : 2 ≤ k := by omega
   have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
   have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
-  have h := tauPlayer_phase_bits θ (justBits hk2 hkk hk7 hquine w) opponent
-  simp only [massOf, massOf_ifC, massOf_ifD, TauBotZ] at h ⊢
+  have h := phase_of_bits (tauZoo k) .just w justRow tauOrder θ opponent
+    (fun T _ => justRow_plays hk2 hkk hk7 hquine T)
+  simp only [bitMass, tauOrder, List.map, justRow, massOf, massOf_ifC, massOf_ifD,
+    TauBotZ] at h ⊢
   simpa [dupMass] using h
 
 end PD.Tau
