@@ -59,34 +59,6 @@ theorem probeD_subst (I me o : Prog) : (probeD I).subst me o = probeD I := rfl
 def tauPlayer (v : VoteList) (θ : Nat) : Prog :=
   .tvote v θ (.const .C) (.const .D)
 
-/-- The C-mass of a vector under a valuation of its entries (which entry plays `C`). -/
-def voteMass (val : Prog → Action) : VoteList → Nat
-  | .nil           => 0
-  | .cons w I rest => (if val I == Action.C then w else 0) + voteMass val rest
-
-/-- "Every entry of the vector runs to the action `val` assigns it" — the hypothesis
-    the peel workhorse consumes. One `VoteAllVals` proof per bot IS that bot's whole
-    per-hypothesis content; everything above it is uniform.
-
-    `val` is a FUNCTION on programs rather than a positional list because the peel
-    recurses structurally on the vector. When two entries of a vector are the same
-    term (as in τ(TFTPf), whose Dupoc and TFTPf hypotheses both resolve to the same
-    instance), they necessarily get the same action — which is correct: an
-    entry's play is a property of the term, and identical terms play identically. -/
-inductive VoteAllVals (val : Prog → Action) : VoteList → Prop where
-  | nil : VoteAllVals val .nil
-  | cons {w : Nat} {I : Prog} {rest : VoteList} :
-      (∃ N, eval N (.bot I) (.bot I) I = some (val I)) → VoteAllVals val rest →
-      VoteAllVals val (.cons w I rest)
-
-/-- Build a `VoteAllVals` step when the entry's action is known independently of
-    `val`'s definitional shape: supply the play and the valuation equation. -/
-theorem VoteAllVals.cons_of {val : Prog → Action} {w : Nat} {I : Prog}
-    {rest : VoteList} {a : Action} (hval : val I = a)
-    (hplay : ∃ N, eval N (.bot I) (.bot I) I = some a) (hrest : VoteAllVals val rest) :
-    VoteAllVals val (.cons w I rest) :=
-  .cons (hval ▸ hplay) hrest
-
 /-! ### Mass from an explicit bit list
 
 Rather than defining a global valuation function (which forces the elaborator to decide
@@ -163,82 +135,6 @@ theorem tauPlayer_phase_bits {v : VoteList} {bs : List (Nat × Action)} (θ : Na
   · obtain ⟨N, hN⟩ := eval_tvote_of_bits (tauPlayer v θ) opponent v bs θ hbits
     exact ⟨N, by rw [play, hN, if_neg hθ]⟩
 
-/-! ## The peel workhorse -/
-
-/-- Unfolding helper: a cooperating head entry contributes its weight. -/
-theorem voteMass_cons_C {val : Prog → Action} {w : Nat} {I : Prog} {rest : VoteList}
-    (h : val I = Action.C) :
-    voteMass val (.cons w I rest) = w + voteMass val rest := by
-  simp only [voteMass, h]
-  rw [if_pos (by decide : ((Action.C == Action.C) = true))]
-
-/-- Unfolding helper: a defecting head entry contributes nothing. -/
-theorem voteMass_cons_D {val : Prog → Action} {w : Nat} {I : Prog} {rest : VoteList}
-    (h : val I = Action.D) :
-    voteMass val (.cons w I rest) = voteMass val rest := by
-  simp [voteMass, h, if_neg (by decide : ¬ ((Action.D == Action.C) = true))]
-
-/-- **The peel workhorse** (twin of the retired `eval_tsearch_of_bits`, with entries
-    EVALUATED instead of probed). If every entry runs to its valuation, the vote plays
-    `C` exactly when the C-mass reaches `θ`.
-
-    Entries are closed and frozen, so they run in their own frame `eval N I I I` and
-    the enclosing `me`/`opponent` never touch them — which is why a tau player's play
-    depends on its signal alone. -/
-theorem eval_tvote_of_vals (me opponent : Prog) (val : Prog → Action) :
-    ∀ (v : VoteList) (θ : Nat), VoteAllVals val v →
-      ∃ N, eval N me opponent (tauPlayer v θ)
-        = some (if θ ≤ voteMass val v then Action.C else Action.D)
-  | .nil, θ, _ => by
-      simp only [voteMass]
-      cases θ with
-      | zero =>
-          refine ⟨2, ?_⟩
-          rw [if_pos (Nat.le_refl 0), tauPlayer, eval_tvote_zero 1]
-          rfl
-      | succ m =>
-          refine ⟨2, ?_⟩
-          rw [if_neg (by simp), tauPlayer, eval_tvote_nil 1 (by omega)]
-          rfl
-  | .cons w I rest, θ, hvals => by
-      obtain ⟨hI, hrest⟩ : (∃ N, eval N (.bot I) (.bot I) I = some (val I)) ∧ VoteAllVals val rest := by
-        cases hvals with
-        | cons h hr => exact ⟨h, hr⟩
-      cases θ with
-      | zero =>
-          refine ⟨2, ?_⟩
-          rw [if_pos (Nat.zero_le _), tauPlayer, eval_tvote_zero 1]
-          rfl
-      | succ m =>
-          obtain ⟨NI, hNI⟩ := hI
-          cases hv : val I with
-          | C =>
-              obtain ⟨Nb, hNb⟩ :=
-                eval_tvote_of_vals me opponent val rest (m + 1 - w) hrest
-              refine ⟨max NI Nb + 1, ?_⟩
-              rw [hv] at hNI
-              rw [tauPlayer, eval_tvote_cons_c (max NI Nb) (by omega)
-                    (eval_mono_le hNI _ (Nat.le_max_left _ _))]
-              have hiff : (m + 1 - w ≤ voteMass val rest)
-                  ↔ (m + 1 ≤ voteMass val (.cons w I rest)) := by
-                rw [voteMass_cons_C (val := val) (w := w) (I := I) (rest := rest) hv]
-                omega
-              rw [← if_congr hiff rfl rfl]
-              exact eval_mono_le hNb _ (Nat.le_max_right _ _)
-          | D =>
-              obtain ⟨Nb, hNb⟩ :=
-                eval_tvote_of_vals me opponent val rest (m + 1) hrest
-              refine ⟨max NI Nb + 1, ?_⟩
-              rw [hv] at hNI
-              rw [tauPlayer, eval_tvote_cons_d (max NI Nb) (by omega)
-                    (eval_mono_le hNI _ (Nat.le_max_left _ _))]
-              have hiff : (m + 1 ≤ voteMass val rest)
-                  ↔ (m + 1 ≤ voteMass val (.cons w I rest)) := by
-                rw [voteMass_cons_D (val := val) (w := w) (I := I) (rest := rest) hv]
-              rw [← if_congr hiff rfl rfl]
-              exact eval_mono_le hNb _ (Nat.le_max_right _ _)
-termination_by structural v _ _ => v
-
 /-! ## The point-mass coherence lemma
 
 **The theorem the retracted crowd-exploiter would have failed.** At a point-mass
@@ -246,6 +142,10 @@ signal — one hypothesis carrying all the weight, with a threshold it can meet 
 tau player plays exactly what its instance plays. This is the σ-level anchor of
 Def 4: `TauA(δ_B) = inst(A, δ_B)` behaviorally, which is what makes the vote a LIFT
 of `A` rather than some new agent built out of `A`'s parts.
+
+**Intentionally unconsumed**: this is a spec-level RESULT (like an outcome
+theorem), whose consumer is the design review and the thesis, not another proof —
+zero in-tree uses is its correct state, not dead code.
 
 The retracted `TauEBot` (nested `tsearch`, θ inside the cascade) satisfies this at
 point mass too — that was the trap. What it fails is coherence AWAY from point mass,
@@ -271,30 +171,6 @@ theorem tauPlayer_point_mass {w θ : Nat} {I : Prog} {a : Action} (me opponent :
       rw [eval_tvote_nil (NI + 1) hθ]
       rfl
 
-/-! ## The generic phase theorem
-
-Proven ONCE over the vote, for every vector — lifted or signal-native. Per-bot work
-reduces to supplying a `VoteAllVals` (what each entry plays) and computing its
-`voteMass`; the α-boundary then falls out of arithmetic. This replaces the four
-per-bot phase theorems of the retracted layer. -/
-
-/-- **The α-phase theorem, uniform.** A tau player cooperates exactly when its
-    cooperation mass reaches the caution threshold — against EVERY opponent, since
-    entries are closed and `.opp`-free. -/
-theorem tauPlayer_phase {val : Prog → Action} {v : VoteList} (θ : Nat)
-    (hvals : VoteAllVals val v) (opponent : Prog) :
-    (θ ≤ voteMass val v → ∃ N, play N (tauPlayer v θ) opponent = some .C)
-    ∧ (¬ θ ≤ voteMass val v → ∃ N, play N (tauPlayer v θ) opponent = some .D) := by
-  constructor
-  · intro hθ
-    obtain ⟨N, hN⟩ := eval_tvote_of_vals (tauPlayer v θ) opponent val v θ hvals
-    exact ⟨N, by rw [play]; rw [hN, if_pos hθ]⟩
-  · intro hθ
-    obtain ⟨N, hN⟩ := eval_tvote_of_vals (tauPlayer v θ) opponent val v θ hvals
-    exact ⟨N, by rw [play]; rw [hN, if_neg hθ]⟩
-
-/-- Package two existential plays into an existential outcome (fuel aligned by
-    monotonicity). Carried over verbatim from the retired `PeelLemmas`. -/
 theorem outcome_of_ex_plays {A B : Prog} {a b : Action}
     (hA : ∃ N, play N A B = some a) (hB : ∃ N, play N B A = some b) :
     ∃ N, outcome N A B = some (a, b) := by
@@ -320,21 +196,6 @@ theorem entry_C_of_interp {I : Prog} (h : (probe I).interp) :
   cases n with
   | zero => simp [play, eval] at hn
   | succ m => exact ⟨m, by rw [play, eval] at hn; exact hn⟩
-
-/-- A false probe atom on a TERMINATING entry gives a defecting entry. (Termination is
-    a real side-condition: `¬interp` alone also holds of an entry that never plays.) -/
-theorem entry_D_of_not_interp {I : Prog}
-    (hterm : ∃ N a, eval N (.bot I) (.bot I) I = some a) (h : ¬ (probe I).interp) :
-    ∃ N, eval N (.bot I) (.bot I) I = some Action.D := by
-  obtain ⟨N, a, hNa⟩ := hterm
-  cases a with
-  | C => exact absurd ⟨N+1, by rw [play, eval]; exact hNa⟩ h
-  | D => exact ⟨N, hNa⟩
-
-/-- A `Pf` of the probe gives a cooperating entry (via soundness). -/
-theorem entry_C_of_pf {I : Prog} {K : Nat} (h : Pf K (probe I)) :
-    ∃ N, eval N (.bot I) (.bot I) I = some Action.C :=
-  entry_C_of_interp (Pf_sound _ _ h)
 
 /-! ## Shape play-lemmas
 

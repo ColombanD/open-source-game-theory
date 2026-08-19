@@ -318,8 +318,8 @@ mutual
        transcript twin of the `eval` arm's `eval n (.bot I) (.bot I) I`, and LITERALLY
        the frame of the probe atom `.plays (.bot I) (.bot I) .C`. That alignment is what
        lets the tau layer's existing bit lemmas apply to entries verbatim, one `.bot`
-       unfolding apart (`Tau/Vote.lean`: `entry_C_of_interp` / `entry_D_of_not_interp` /
-       `entry_C_of_pf`). Entries are frozen, so no `subst` appears. A non-terminating
+       unfolding apart (`Tau/Vote.lean`: `entry_C_of_interp` and the generic
+       false-bit lemmas). Entries are frozen, so no `subst` appears. A non-terminating
        entry has no transcript and hence no rule — matching `eval`, which returns `none`
        there. -/
     /-- Residual threshold met: the vote already succeeded; remaining entries are not
