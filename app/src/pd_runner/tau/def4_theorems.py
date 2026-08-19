@@ -2,7 +2,7 @@
 
 Under the refined Def 4 (the source lift, `DEF4_TVOTE_ROADMAP.md`), each tau bot's
 entire per-hypothesis content is its BIT TABLE — what each compiled instance plays —
-certified in `Tau/VotePhases.lean` as a `VoteBits` theorem per template:
+certified in `Theorems/Tau/<Bot>/Phase.lean` as a `VoteBits` theorem per template:
 
     theorem eBits ... :
         VoteBits (vecOf (zoo6 k) .ebot w order6)
@@ -39,7 +39,7 @@ def _workspace_root() -> Path:
     )
 
 
-VOTE_PHASES = Path("engine/PrisonersDilemma/Tau/VotePhases.lean")
+PHASE_GLOB = "engine/PrisonersDilemma/Theorems/Tau/*/Phase.lean"
 
 ORDER6: tuple[str, ...] = ("coop", "defect", "tftSim", "tftPf", "dupoc", "ebot")
 """The Lean `order6` slot order — every bit list is stated in this order."""
@@ -53,12 +53,18 @@ _ENTRY_RE = re.compile(r"\(w\s*\.(\w+)\s*,\s*\.([CD])\)")
 
 
 def scan_bit_theorems(path: Path | None = None) -> dict[str, dict[str, str]]:
-    """Parse `VotePhases.lean` → `{lean_tmpl: {slot_tmpl: "C"|"D"}}`.
+    """Parse the per-bot `Phase.lean` files → `{lean_tmpl: {slot_tmpl: "C"|"D"}}`.
 
     Raises on structural surprises (wrong slot order, missing slots): a drifted
     source must fail loudly, never silently return a wrong table.
     """
-    src = (path or (_workspace_root() / VOTE_PHASES)).read_text()
+    if path is not None:
+        src = path.read_text()
+    else:
+        files = sorted(_workspace_root().glob(PHASE_GLOB))
+        if not files:
+            raise FileNotFoundError(f"no Phase.lean files match {PHASE_GLOB}")
+        src = "\n".join(f.read_text() for f in files)
     tables: dict[str, dict[str, str]] = {}
     for m in _BITS_RE.finditer(src):
         _name, tmpl, entries_src = m.group(1), m.group(2), m.group(3)
@@ -67,11 +73,11 @@ def scan_bit_theorems(path: Path | None = None) -> dict[str, dict[str, str]]:
         if slots != ORDER6:
             raise ValueError(
                 f"bit theorem for .{tmpl}: slots {slots} do not match order6 "
-                f"{ORDER6} — VotePhases.lean drifted; update the scanner"
+                f"{ORDER6} — the Phase files drifted; update the scanner"
             )
         tables[tmpl] = {slot: action for slot, action in entries}
     if not tables:
-        raise ValueError("no VoteBits theorems found — VotePhases.lean drifted")
+        raise ValueError("no VoteBits theorems found — the Phase files drifted")
     return tables
 
 
@@ -82,7 +88,7 @@ def kernel_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
 
 def main() -> None:
     tables = kernel_bits()
-    print("kernel bit tables (Tau/VotePhases.lean, slot order = order6):")
+    print("kernel bit tables (Theorems/Tau/*/Phase.lean, slot order = order6):")
     for tmpl in ORDER6:
         row = tables.get(tmpl)
         if row is None:
