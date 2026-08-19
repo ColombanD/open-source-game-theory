@@ -1,4 +1,4 @@
-import PrisonersDilemma.Tau.InstCerts
+import PrisonersDilemma.Tau.Certs
 
 /-!
 # Tau/VotePhases — α-phase theorems for the refined Def-4 zoo (DSL interface, Phase 5)
@@ -74,12 +74,12 @@ theorem eBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k
   -- bits, so the whole table is TWO column reads.
   let bD := ps_probe_inst_defect (k := k) hk
   let bC := ps_probe_inst_coop hk hkk h6
-  .cons (eδ_plays_D_of_exploit _ _ (bD .coop))
-    (.cons (eδ_plays_D_of_both_false _ _ (bD .defect) (bC .defect))
-      (.cons (eδ_plays_C _ _ (bD .tftSim) (bC .tftSim))
-        (.cons (eδ_plays_C _ _ (bD .tftPf) (bC .tftPf))
-          (.cons (eδ_plays_C _ _ (bD .dupoc) (bC .dupoc))
-            (.cons (eδ_plays_D_of_both_false _ _ (bD .ebot) (bC .ebot)) .nil)))))
+  .cons (cascade_plays_D_of_exploit _ _ (bD .coop))
+    (.cons (cascade_plays_D_of_both_false _ _ (bD .defect) (bC .defect))
+      (.cons (cascade_plays_C _ _ (bD .tftSim) (bC .tftSim))
+        (.cons (cascade_plays_C _ _ (bD .tftPf) (bC .tftPf))
+          (.cons (cascade_plays_C _ _ (bD .dupoc) (bC .dupoc))
+            (.cons (cascade_plays_D_of_both_false _ _ (bD .ebot) (bC .ebot)) .nil)))))
 
 /-- **τ(EBot) α-phase theorem — the ONE-SIDED boundary** `θ ≤ wTs + wTp + wL`. -/
 theorem tauEBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
@@ -101,12 +101,12 @@ theorem tftPfBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
        (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .D)] :=
   -- τ(TFTPf)'s entry at T probes T's δ_C column bit: ONE column read.
   let bC := ps_probe_inst_coop hk hkk h6
-  .cons (probeSearchδ_plays_C _ _ (bC .coop))
-    (.cons (probeSearchδ_plays_D _ _ (bC .defect))
-      (.cons (probeSearchδ_plays_C _ _ (bC .tftSim))
-        (.cons (probeSearchδ_plays_C _ _ (bC .tftPf))
-          (.cons (probeSearchδ_plays_C _ _ (bC .dupoc))
-            (.cons (probeSearchδ_plays_D _ _ (bC .ebot)) .nil)))))
+  .cons (searchProbe_plays_C _ _ (bC .coop))
+    (.cons (searchProbe_plays_D _ _ (bC .defect))
+      (.cons (searchProbe_plays_C _ _ (bC .tftSim))
+        (.cons (searchProbe_plays_C _ _ (bC .tftPf))
+          (.cons (searchProbe_plays_C _ _ (bC .dupoc))
+            (.cons (searchProbe_plays_D _ _ (bC .ebot)) .nil)))))
 
 /-- **τ(TitForTatBot), prover variant.** -/
 theorem tauTFTPf_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
@@ -126,12 +126,12 @@ theorem tftSimBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
        (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .D)] :=
   -- τ(TFTSim)'s entry at T COPIES T's δ_C-column TRUE play: the behavioral column.
   let pC := inst_coop_plays hk hkk h6
-  .cons (tftSimδ_plays _ _ (pC .coop))
-    (.cons (tftSimδ_plays _ _ (pC .defect))
-      (.cons (tftSimδ_plays _ _ (pC .tftSim))
-        (.cons (tftSimδ_plays _ _ (pC .tftPf))
-          (.cons (tftSimδ_plays _ _ (pC .dupoc))
-            (.cons (tftSimδ_plays _ _ (pC .ebot)) .nil)))))
+  .cons (simCopy_plays _ _ (pC .coop))
+    (.cons (simCopy_plays _ _ (pC .defect))
+      (.cons (simCopy_plays _ _ (pC .tftSim))
+        (.cons (simCopy_plays _ _ (pC .tftPf))
+          (.cons (simCopy_plays _ _ (pC .dupoc))
+            (.cons (simCopy_plays _ _ (pC .ebot)) .nil)))))
 
 /-- **τ(TitForTatBot), behavioral variant** — same boundary, far smaller budget. -/
 theorem tauTFTSim_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
@@ -158,12 +158,12 @@ theorem dupocBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   -- is THE FLOOR: `dupocColBit .ebot = false` although the instance truly
   -- cooperates (the Gödelian pair in InstCerts).
   let bL := ps_probe_inst_dupoc hk hkk hk7 hquine
-  .cons (probeSearchδ_plays_C _ _ (bL .coop))
-    (.cons (probeSearchδ_plays_D _ _ (bL .defect))
-      (.cons (probeSearchδ_plays_C _ _ (bL .tftSim))
-        (.cons (probeSearchδ_plays_C _ _ (bL .tftPf))
+  .cons (searchProbe_plays_C _ _ (bL .coop))
+    (.cons (searchProbe_plays_D _ _ (bL .defect))
+      (.cons (searchProbe_plays_C _ _ (bL .tftSim))
+        (.cons (searchProbe_plays_C _ _ (bL .tftPf))
           (.cons (inst_quine_plays hquine)
-            (.cons (probeSearchδ_plays_D _ _ (bL .ebot)) .nil)))))
+            (.cons (searchProbe_plays_D _ _ (bL .ebot)) .nil)))))
 
 /-- **τ(DupocBot) α-phase theorem** — Löb-gated; the mass excludes `w .ebot`. -/
 theorem tauDupoc_phase :
@@ -172,7 +172,7 @@ theorem tauDupoc_phase :
         ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .C)
       ∧ (¬ θ ≤ w .coop + (w .tftSim + (w .tftPf + w .dupoc)) →
         ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .D) := by
-  obtain ⟨kL, hkL⟩ := ps_probe_quine
+  obtain ⟨kL, hkL⟩ := ps_probe_inst_quine
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
   refine ⟨max kL kA, fun k hk θ w opponent => ?_⟩
   have hquine := hkL k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)

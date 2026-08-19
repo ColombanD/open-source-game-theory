@@ -36,53 +36,58 @@ def zoo6 (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
 def TauBotZ (k : Nat) (A : Tmpl) (w : Tmpl → Nat) (θ : Nat) : Prog :=
   tauPlayer (vecOf (zoo6 k) A w order6) θ
 
-/-! ## Gate D1 — byte-identity of the compiled closure
+/-! ## Gate D1 — the compiler pinned, one peel at a time
 
-Every instance the compiler produces is `rfl`-equal to the hand-written Phase-4
-closure (`Tau/Defs.lean`/`Tau/Vectors.lean`). A failed check = the COMPILER (or a
-spec row) is wrong, not the closure. These persist as regression gates: any future
-change to `instGo` (e.g. the `.sys` rewrite of the probed-object resolution) or to a
-spec row must reproduce them or consciously replace them. -/
+With the hand-written closure retired (2026-08-18 cleanup), the compiler is pinned
+against EXPLICIT one-level unfoldings: each equation exposes exactly one compile
+step, with the probed subterms still written as `inst …` — whose own equations pin
+them in turn, so the composition pins every instance byte-for-byte. All by `rfl`
+(kernel computation). These double as the peel handles the `Certs` proofs rewrite
+with. Any future change to `instGo` (e.g. the `.sys` rewrite of the probed-object
+resolution) must reproduce them or consciously replace them. -/
 
-section GateD1
-variable (k : Nat)
+/-- Constants ignore their hypothesis. -/
+theorem inst_coop_peel (k : Nat) : ∀ T, inst (zoo6 k) .coop T = .const .C :=
+  fun T => by cases T <;> rfl
 
--- constants: signal-blind rows
-example : ∀ T, inst (zoo6 k) .coop T = tauCoopδ := fun T => by cases T <;> rfl
-example : ∀ T, inst (zoo6 k) .defect T = tauDefectδ := fun T => by cases T <;> rfl
+theorem inst_defect_peel (k : Nat) : ∀ T, inst (zoo6 k) .defect T = .const .D :=
+  fun T => by cases T <;> rfl
 
--- τ(Dupoc)'s row — the δ_L column, incl. the QUINE and the FLOOR entry
-example : inst (zoo6 k) .dupoc .coop   = searchOfCoopδ k := rfl
-example : inst (zoo6 k) .dupoc .defect = searchOfDefectδ k := rfl
-example : inst (zoo6 k) .dupoc .tftSim = probeSearchδ k (simOfSearchδ k) := rfl
-example : inst (zoo6 k) .dupoc .tftPf  = probeSearchδ k (searchOfSearchδ k) := rfl
-example : inst (zoo6 k) .dupoc .dupoc  = TauDupocδ k := rfl          -- the quine
-example : inst (zoo6 k) .dupoc .ebot   = probeSearchδ k (eOfSearchδ k) := rfl  -- the floor
+/-- τ(TFTPf)'s row: one prove-stage on the hypothesis's δ_C instance. -/
+theorem inst_tftPf_peel (k : Nat) : ∀ T, inst (zoo6 k) .tftPf T
+    = .search k (probe (inst (zoo6 k) T .coop)) (.const .C) (.const .D) :=
+  fun T => by cases T <;> rfl
 
--- τ(TFTPf)'s row — the δ_C column, by proof
-example : inst (zoo6 k) .tftPf .coop   = probeSearchδ k tauCoopδ := rfl
-example : inst (zoo6 k) .tftPf .defect = probeSearchδ k tauDefectδ := rfl
-example : inst (zoo6 k) .tftPf .tftSim = probeSearchδ k simOfCoopδ := rfl
-example : inst (zoo6 k) .tftPf .tftPf  = probeSearchδ k (searchOfCoopδ k) := rfl
-example : inst (zoo6 k) .tftPf .dupoc  = probeSearchδ k (searchOfCoopδ k) := rfl
-example : inst (zoo6 k) .tftPf .ebot   = probeSearchδ k (eOfCoopδ k) := rfl
+/-- τ(TFTSim)'s row: one run-stage on the same instance — the behavioral read. -/
+theorem inst_tftSim_peel (k : Nat) : ∀ T, inst (zoo6 k) .tftSim T
+    = .ite (.sim (.bot (inst (zoo6 k) T .coop)) (.bot (inst (zoo6 k) T .coop)))
+        Action.C (.const .C) (.const .D) :=
+  fun T => by cases T <;> rfl
 
--- τ(TFTSim)'s row — the δ_C column, by simulation
-example : inst (zoo6 k) .tftSim .coop   = tftSimδ tauCoopδ := rfl
-example : inst (zoo6 k) .tftSim .defect = tftSimδ tauDefectδ := rfl
-example : inst (zoo6 k) .tftSim .tftSim = tftSimδ simOfCoopδ := rfl
-example : inst (zoo6 k) .tftSim .tftPf  = tftSimδ (searchOfCoopδ k) := rfl
-example : inst (zoo6 k) .tftSim .dupoc  = tftSimδ (searchOfCoopδ k) := rfl
-example : inst (zoo6 k) .tftSim .ebot   = tftSimδ (eOfCoopδ k) := rfl
+/-- τ(EBot)'s row: the two-stage cascade over the hypothesis's δ_D and δ_C
+    instances. -/
+theorem inst_ebot_peel (k : Nat) : ∀ T, inst (zoo6 k) .ebot T
+    = .search k (probe (inst (zoo6 k) T .defect)) (.const .D)
+        (.search k (probe (inst (zoo6 k) T .coop)) (.const .C) (.const .D)) :=
+  fun T => by cases T <;> rfl
 
--- τ(EBot)'s row — the whole cascade per hypothesis
-example : inst (zoo6 k) .ebot .coop   = eOfCoopδ k := rfl
-example : inst (zoo6 k) .ebot .defect = eOfDefectδ k := rfl
-example : inst (zoo6 k) .ebot .tftSim = eOfSimδ k := rfl
-example : inst (zoo6 k) .ebot .tftPf  = eOfPfδ k := rfl
-example : inst (zoo6 k) .ebot .dupoc  = eOfSearchδ k := rfl
-example : inst (zoo6 k) .ebot .ebot   = eOfSelfδ k := rfl
+/-- τ(Dupoc)'s row, OFF the diagonal: one prove-stage on the hypothesis's δ_L
+    instance ("does T, seeing me, cooperate?"). -/
+theorem inst_dupoc_peel_coop (k : Nat) : inst (zoo6 k) .dupoc .coop
+    = .search k (probe (inst (zoo6 k) .coop .dupoc)) (.const .C) (.const .D) := rfl
+theorem inst_dupoc_peel_defect (k : Nat) : inst (zoo6 k) .dupoc .defect
+    = .search k (probe (inst (zoo6 k) .defect .dupoc)) (.const .C) (.const .D) := rfl
+theorem inst_dupoc_peel_tftSim (k : Nat) : inst (zoo6 k) .dupoc .tftSim
+    = .search k (probe (inst (zoo6 k) .tftSim .dupoc)) (.const .C) (.const .D) := rfl
+theorem inst_dupoc_peel_tftPf (k : Nat) : inst (zoo6 k) .dupoc .tftPf
+    = .search k (probe (inst (zoo6 k) .tftPf .dupoc)) (.const .C) (.const .D) := rfl
+theorem inst_dupoc_peel_ebot (k : Nat) : inst (zoo6 k) .dupoc .ebot
+    = .search k (probe (inst (zoo6 k) .ebot .dupoc)) (.const .C) (.const .D) := rfl
 
-end GateD1
+/-- τ(Dupoc)'s DIAGONAL — the QUINE, fully literal: the compiler cannot embed the
+    instance in its own guard, so it emits the pronoun, and the guard becomes the
+    Löb fixpoint sentence. -/
+theorem inst_dupoc_quine (k : Nat) : inst (zoo6 k) .dupoc .dupoc
+    = .search k (.plays .self .self Action.C) (.const .C) (.const .D) := rfl
 
 end PD.Tau

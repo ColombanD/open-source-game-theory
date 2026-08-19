@@ -1,4 +1,4 @@
-import PrisonersDilemma.Tau.Vectors
+import PrisonersDilemma.Tau.Vote
 
 /-!
 # Tau/Spec — the bot-spec DSL and its compiler (Phase 5, `DEF4_TVOTE_ROADMAP.md` §6)
@@ -84,7 +84,7 @@ structure Zoo (ι : Type) where
     * stage target `self`, `T = A` → the QUINE: emit the pronoun guard
       (`.plays .self .self .C` / `.sim .self .self`) instead of recursing — a term
       cannot contain itself, and the pronoun is the language's own knot for the
-      diagonal (byte-identical to the hand-written `TauDupocδ`).
+      diagonal (pinned literal by `Zoo.lean`'s `inst_dupoc_quine`).
 
     Fuel exhaustion emits `.const d` — for a well-formed zoo at adequate fuel it is
     unreachable, and Gate D1 certifies that for `zoo6` (an exhausted compile cannot

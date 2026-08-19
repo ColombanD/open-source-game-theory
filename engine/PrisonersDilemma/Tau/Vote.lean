@@ -1,4 +1,4 @@
-import PrisonersDilemma.Tau.Certs
+import PrisonersDilemma.Base.Soundness
 
 /-!
 # Tau/Vote — the uniform tau player and its peel workhorse (refined Def 4, 2026-08-18)
@@ -32,6 +32,19 @@ open PD PD.BaseTheorems
 
 namespace PD.Tau
 
+/-! ## The probe atom -/
+
+/-- Def-4 probe atom for a closed instance `I`: "`I`, frozen, plays C against
+    itself". `.bot`-freezing is the subst barrier (a bare slot would let the
+    enclosing player's `subst` capture the instance's internals); the second slot is
+    inert for `.opp`-free programs; instance-vs-itself is the canonical closed
+    choice. This is ALSO the frame `.tvote` entries run in — the two were aligned by
+    design, so every probe fact doubles as an entry fact. -/
+def probe (I : Prog) : Formula := .plays (.bot I) (.bot I) Action.C
+
+/-- Probe atoms are closed: `subst` cannot touch a `.bot`-frozen instance. -/
+theorem probe_subst (I me o : Prog) : (probe I).subst me o = probe I := rfl
+
 /-! ## The uniform player -/
 
 /-- **THE tau player**: vote over the decision vector `v` with caution threshold `θ`.
@@ -50,8 +63,8 @@ def voteMass (val : Prog → Action) : VoteList → Nat
 
     `val` is a FUNCTION on programs rather than a positional list because the peel
     recurses structurally on the vector. When two entries of a vector are the same
-    term (as in τ(TFTPf), whose Dupoc and TFTPf hypotheses both resolve to
-    `searchOfCoopδ`), they necessarily get the same action — which is correct: an
+    term (as in τ(TFTPf), whose Dupoc and TFTPf hypotheses both resolve to the same
+    instance), they necessarily get the same action — which is correct: an
     entry's play is a property of the term, and identical terms play identically. -/
 inductive VoteAllVals (val : Prog → Action) : VoteList → Prop where
   | nil : VoteAllVals val .nil
@@ -315,5 +328,79 @@ theorem entry_D_of_not_interp {I : Prog}
 theorem entry_C_of_pf {I : Prog} {K : Nat} (h : Pf K (probe I)) :
     ∃ N, eval N (.bot I) (.bot I) I = some Action.C :=
   entry_C_of_interp (Pf_sound _ _ h)
+
+/-! ## Shape play-lemmas
+
+What each COMPILE IDIOM plays, given its probe bits. Stated over the explicit `Prog`
+shapes the Spec compiler emits (a prove-stage, the two-stage cascade, a run-stage) —
+no zoo vocabulary, so they apply to any zoo's compiled entries by defeq. Probes are
+closed (`probe_subst`), so a shape's play never depends on the frame it is consulted
+from — the term-level reason a tau player's action depends on its signal alone. -/
+
+/-- A single prove-stage (`.search` on a probe, constant branches) cooperates exactly
+    when its probe fires… -/
+theorem searchProbe_plays_C {k : Nat} {I : Prog} (me opp : Prog)
+    (h : proofSearch k (probe I) = true) :
+    ∃ N, eval N me opp (.search k (probe I) (.const .C) (.const .D)) = some Action.C := by
+  refine ⟨2, ?_⟩
+  rw [eval, probe_subst, h]
+  rfl
+
+/-- …and defects when it does not. -/
+theorem searchProbe_plays_D {k : Nat} {I : Prog} (me opp : Prog)
+    (h : proofSearch k (probe I) = false) :
+    ∃ N, eval N me opp (.search k (probe I) (.const .C) (.const .D)) = some Action.D := by
+  refine ⟨2, ?_⟩
+  rw [eval, probe_subst, h, if_neg (by simp)]
+  rfl
+
+/-- The two-stage exploiter cascade DEFECTS when its exploit-probe fires… -/
+theorem cascade_plays_D_of_exploit {k : Nat} {I_D I_C : Prog} (me opp : Prog)
+    (h1 : proofSearch k (probe I_D) = true) :
+    ∃ N, eval N me opp (.search k (probe I_D) (.const .D)
+      (.search k (probe I_C) (.const .C) (.const .D))) = some Action.D := by
+  refine ⟨2, ?_⟩
+  rw [eval, probe_subst, h1]
+  rfl
+
+/-- …COOPERATES when the exploit fails but reciprocity fires… -/
+theorem cascade_plays_C {k : Nat} {I_D I_C : Prog} (me opp : Prog)
+    (h1 : proofSearch k (probe I_D) = false)
+    (h2 : proofSearch k (probe I_C) = true) :
+    ∃ N, eval N me opp (.search k (probe I_D) (.const .D)
+      (.search k (probe I_C) (.const .C) (.const .D))) = some Action.C := by
+  refine ⟨3, ?_⟩
+  rw [eval, probe_subst, h1, if_neg (by simp), eval, probe_subst, h2]
+  rfl
+
+/-- …and DEFECTS when neither fires. -/
+theorem cascade_plays_D_of_both_false {k : Nat} {I_D I_C : Prog} (me opp : Prog)
+    (h1 : proofSearch k (probe I_D) = false)
+    (h2 : proofSearch k (probe I_C) = false) :
+    ∃ N, eval N me opp (.search k (probe I_D) (.const .D)
+      (.search k (probe I_C) (.const .C) (.const .D))) = some Action.D := by
+  refine ⟨3, ?_⟩
+  rw [eval, probe_subst, h1, if_neg (by simp), eval, probe_subst, h2,
+      if_neg (by simp)]
+  rfl
+
+/-- A run-stage (`.ite` over a frozen self-sim) COPIES what its probed instance
+    plays — the behavioral read: true plays, floor-blind. -/
+theorem simCopy_plays {I : Prog} {a : Action} (me opp : Prog)
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some a) :
+    ∃ N, eval N me opp (.ite (.sim (.bot I) (.bot I)) Action.C (.const .C) (.const .D))
+      = some a := by
+  obtain ⟨N, hN⟩ := h
+  refine ⟨N + 3, ?_⟩
+  rw [eval]
+  have hg : eval (N + 2) me opp (.sim (.bot I) (.bot I)) = some a := by
+    rw [eval]
+    simp only [Prog.subst]
+    rw [eval]
+    exact eval_mono_le hN _ (by omega)
+  rw [hg]
+  cases a with
+  | C => simp only [bind, Option.bind]; rw [if_pos (by decide)]; rfl
+  | D => simp only [bind, Option.bind]; rw [if_neg (by decide)]; rfl
 
 end PD.Tau

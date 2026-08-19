@@ -181,10 +181,8 @@ import PrisonersDilemma.Theorems.WaryBot.vs_GuardianBot
 import PrisonersDilemma.Theorems.WaryBot.vs_OptimBot
 import PrisonersDilemma.Theorems.OptimBot.vs_TitForTatBot
 import PrisonersDilemma.Theorems.OptimBot.vs_DBot
-import PrisonersDilemma.Tau.Defs
 import PrisonersDilemma.Tau.Certs
 import PrisonersDilemma.Tau.Vote
-import PrisonersDilemma.Tau.Vectors
 import PrisonersDilemma.Tau.Spec
 import PrisonersDilemma.Tau.Roster
 import PrisonersDilemma.Tau.Bots.TauCooperate
@@ -194,7 +192,6 @@ import PrisonersDilemma.Tau.Bots.TauTFTPf
 import PrisonersDilemma.Tau.Bots.TauDupoc
 import PrisonersDilemma.Tau.Bots.TauEBot
 import PrisonersDilemma.Tau.Zoo
-import PrisonersDilemma.Tau.InstCerts
 import PrisonersDilemma.Tau.VotePhases
 import PrisonersDilemma.Theorems.Tau.TauCooperate.vs_TauCooperate
 import PrisonersDilemma.Theorems.Tau.TauCooperate.vs_TauDefect
