@@ -67,11 +67,15 @@ SELF = "<self>"
 @dataclass(frozen=True)
 class Stage:
     """One probe stage — the Lean `Stage`: consult the hypothesis's instance-vs-
-    `target` in `mode`; if it cooperates, commit `fire`; else fall through."""
+    `target` in `mode`; if the consultation yields `test`, commit `fire`; else fall
+    through. `test` mirrors the Lean field added 2026-08-18 (OBot watches for
+    defection, GuardianBot proves it); the original zoo tests "C"."""
 
     mode: Mode
     target: str
     """A template name, or the `SELF` sentinel."""
+    test: str
+    """The action the consultation is tested against ("C" or "D")."""
     fire: str
     """Action committed when the stage fires ("C" or "D")."""
 
@@ -86,16 +90,24 @@ class LiftSpec:
 
 # ── The zoo table (the Lean `tmplSpec`, transcribed 1:1) ───────────────────────
 
-ZOO6: dict[str, LiftSpec] = {
+TAU_ZOO: dict[str, LiftSpec] = {
     "TauCooperate": LiftSpec((), "C"),
     "TauDefect": LiftSpec((), "D"),
-    "TauTFTSim": LiftSpec((Stage(Mode.RUN, "TauCooperate", "C"),), "D"),
-    "TauTFTPf": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "C"),), "D"),
-    "TauDupoc": LiftSpec((Stage(Mode.PROVE, SELF, "C"),), "D"),
+    "TauTFTSim": LiftSpec((Stage(Mode.RUN, "TauCooperate", "C", "C"),), "D"),
+    "TauTFTPf": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "C", "C"),), "D"),
+    "TauDupoc": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
     "TauEBot": LiftSpec(
-        (Stage(Mode.PROVE, "TauDefect", "D"), Stage(Mode.PROVE, "TauCooperate", "C")),
+        (Stage(Mode.PROVE, "TauDefect", "C", "D"),
+         Stage(Mode.PROVE, "TauCooperate", "C", "C")),
         "D",
     ),
+    "TauJust": LiftSpec((Stage(Mode.PROVE, "TauDupoc", "C", "C"),), "D"),
+    "TauOBot": LiftSpec(
+        (Stage(Mode.RUN, "TauCooperate", "D", "D"),
+         Stage(Mode.RUN, "TauDefect", "D", "D")),
+        "C",
+    ),
+    "TauGuardian": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "D", "D"),), "C"),
 }
 
 TEMPLATES: tuple[str, ...] = (
@@ -105,8 +117,11 @@ TEMPLATES: tuple[str, ...] = (
     "TauTFTPf",
     "TauDupoc",
     "TauEBot",
+    "TauJust",
+    "TauOBot",
+    "TauGuardian",
 )
-"""Canonical template order — matches the Lean `order6`
+"""Canonical template order — matches the Lean `tauOrder`
 ([coop, defect, tftSim, tftPf, dupoc, ebot])."""
 
 BASE_OF: dict[str, str] = {
@@ -116,6 +131,9 @@ BASE_OF: dict[str, str] = {
     "TauTFTPf": "TitForTatBot",
     "TauDupoc": "DupocBot",
     "TauEBot": "EBot",
+    "TauJust": "JustBot",
+    "TauOBot": "OBot",
+    "TauGuardian": "GuardianBot",
 }
 """Which base bot each template lifts. The two TFT variants are two lift MODALITIES
 of the same base strategy (behavioral vs prover) — at large k their bits coincide,
@@ -128,6 +146,9 @@ LEAN_SLOT: dict[str, str] = {
     "TauTFTPf": "tftPf",
     "TauDupoc": "dupoc",
     "TauEBot": "ebot",
+    "TauJust": "just",
+    "TauOBot": "obot",
+    "TauGuardian": "guardian",
 }
 """Template name → the Lean `Tmpl` constructor, for the kernel bit-table check."""
 
@@ -177,7 +198,7 @@ def decide(A: str, T: str, zoo: dict[str, LiftSpec] | None = None) -> Decision:
     template.
     """
     if zoo is None:
-        return _decide_zoo6(A, T)
+        return _decide_tauZoo(A, T)
     return _decide(A, T, _MAX_DEPTH, _freeze(zoo))
 
 
@@ -186,8 +207,8 @@ def _freeze(zoo: dict[str, LiftSpec]) -> tuple[tuple[str, LiftSpec], ...]:
 
 
 @lru_cache(maxsize=None)
-def _decide_zoo6(A: str, T: str) -> Decision:
-    return _decide(A, T, _MAX_DEPTH, _freeze(ZOO6))
+def _decide_tauZoo(A: str, T: str) -> Decision:
+    return _decide(A, T, _MAX_DEPTH, _freeze(TAU_ZOO))
 
 
 def _decide(
@@ -200,11 +221,11 @@ def _decide(
         )
     zoo = dict(frozen)
     spec = zoo[A]
-    failed_prove = False
+    floored = False  # a failed prove-stage OR a floored run-consultation en route
     for st in spec.stages:
         if st.target == SELF and T == A:
             # the quine diagonal: bounded Löb at large k
-            if st.mode is Mode.PROVE and st.fire == "C":
+            if st.mode is Mode.PROVE and st.test == "C" and st.fire == "C":
                 bit = True
             else:
                 raise UnsupportedDiagonal(
@@ -214,14 +235,21 @@ def _decide(
             X = A if st.target == SELF else st.target
             sub = _decide(T, X, depth - 1, frozen)
             if st.mode is Mode.PROVE:
-                bit = sub.action == "C" and sub.provable
+                # "provably plays `test`": true play matches AND its transcript is
+                # floor-free (a floor-priced play is invisible to proof search)
+                bit = sub.action == st.test and sub.provable
             else:
-                bit = sub.action == "C"
+                # behavioral read: TRUE play, floor-blind — but the RUN embeds the
+                # consulted transcript, so a floored sub-run floors THIS player's
+                # own transcript (ite_t/ite_f cite the guard run)
+                bit = sub.action == st.test
+                if not sub.provable:
+                    floored = True
         if bit:
-            return Decision(st.fire, provable=not failed_prove)
+            return Decision(st.fire, provable=not floored)
         if st.mode is Mode.PROVE:
-            failed_prove = True
-    return Decision(spec.default, provable=not failed_prove)
+            floored = True
+    return Decision(spec.default, provable=not floored)
 
 
 def decision_table(
@@ -278,9 +306,9 @@ def tau_play_def4(
     Lean (`.const` has no vote) — preserved here: an empty-spec bot plays its
     default at every α, including TauDefect defecting at α = 0.
     """
-    zoo6 = ZOO6
-    if not zoo6[template].stages and template in ("TauCooperate", "TauDefect"):
-        return zoo6[template].default
+    tauZoo = TAU_ZOO
+    if not tauZoo[template].stages and template in ("TauCooperate", "TauDefect"):
+        return tauZoo[template].default
     mass = coop_mass_def4(template, signal, tmpl_of, overrides)
     return "C" if mass >= alpha - _MASS_TOL else "D"
 

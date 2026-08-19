@@ -16,6 +16,6 @@ namespace PD.Tau
 
 /-- τ(TitForTatBot), prover: "prove they'd cooperate with a cooperator; then C;
     else D." -/
-def tauTFTPfSpec : Spec Tmpl := ⟨[⟨.prove, .name .coop, .C⟩], .D⟩
+def tauTFTPfSpec : Spec Tmpl := ⟨[⟨.prove, .name .coop, .C, .C⟩], .D⟩
 
 end PD.Tau

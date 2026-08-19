@@ -23,10 +23,10 @@ namespace PD.Tau
     because `subst` closes the quine's `.self` to the wrapped player. -/
 private theorem quine_loeb_premise (k : Nat) :
     Pf (20 * Nat.log2 k + 150)
-      (.impl (.box k (probe (inst (zoo6 k) .dupoc .dupoc)))
-             (probe (inst (zoo6 k) .dupoc .dupoc))) :=
+      (.impl (.box k (probe (inst (tauZoo k) .dupoc .dupoc)))
+             (probe (inst (tauZoo k) .dupoc .dupoc))) :=
   Pf.botSearchStep k (.plays .self .self .C) .C .D
-    (.bot (inst (zoo6 k) .dupoc .dupoc)) (.bot (inst (zoo6 k) .dupoc .dupoc)) rfl
+    (.bot (inst (tauZoo k) .dupoc .dupoc)) (.bot (inst (tauZoo k) .dupoc .dupoc)) rfl
     (by
       simp only [inst_dupoc_quine, Formula.subst, Prog.subst, Formula.size,
         Prog.size, numCost]
@@ -35,10 +35,10 @@ private theorem quine_loeb_premise (k : Nat) :
 /-- From an actual cooperative play of the wrapped quine against itself, the guard
     must have fired (eval inversion — a false guard forces D). -/
 private theorem probe_true_of_quine_play (k n : Nat)
-    (h : play n (.bot (inst (zoo6 k) .dupoc .dupoc))
-           (.bot (inst (zoo6 k) .dupoc .dupoc)) = some .C) :
-    proofSearch k (probe (inst (zoo6 k) .dupoc .dupoc)) = true := by
-  cases hps : proofSearch k (probe (inst (zoo6 k) .dupoc .dupoc)) with
+    (h : play n (.bot (inst (tauZoo k) .dupoc .dupoc))
+           (.bot (inst (tauZoo k) .dupoc .dupoc)) = some .C) :
+    proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true := by
+  cases hps : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) with
   | true => rfl
   | false =>
       exfalso
@@ -58,8 +58,8 @@ private theorem probe_true_of_quine_play (k n : Nat)
     PROBING BUDGET ITSELF — same-`k` Löbian self-cooperation, Def-4 edition. -/
 theorem ps_probe_inst_quine :
     ∃ k₂, ∀ k, k₂ < k →
-      proofSearch k (probe (inst (zoo6 k) .dupoc .dupoc)) = true := by
-  have hφsz : ∀ k, (probe (inst (zoo6 k) .dupoc .dupoc)).size
+      proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true := by
+  have hφsz : ∀ k, (probe (inst (tauZoo k) .dupoc .dupoc)).size
       ≤ 100 * Nat.log2 k + 1000 := by
     intro k
     simp only [probe, inst_dupoc_quine, Formula.size, Prog.size, numCost]
@@ -67,11 +67,11 @@ theorem ps_probe_inst_quine :
   have hpm : ∀ k, 20 * Nat.log2 k + 150 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   have hLoeb : ∀ k, k > 0 →
       Pf (20 * Nat.log2 k + 150)
-        (.impl (.box k (probe (inst (zoo6 k) .dupoc .dupoc)))
-               (probe (inst (zoo6 k) .dupoc .dupoc))) :=
+        (.impl (.box k (probe (inst (tauZoo k) .dupoc .dupoc)))
+               (probe (inst (tauZoo k) .dupoc .dupoc))) :=
     fun k _ => quine_loeb_premise k
   obtain ⟨k₂, hk₂⟩ :=
-    pblt_engine_id (fun k => probe (inst (zoo6 k) .dupoc .dupoc))
+    pblt_engine_id (fun k => probe (inst (tauZoo k) .dupoc .dupoc))
       (fun k => 20 * Nat.log2 k + 150) 0 hφsz hpm hLoeb
   refine ⟨k₂, fun k hk => ?_⟩
   obtain ⟨m, hm⟩ := hk₂ k hk
@@ -83,9 +83,9 @@ theorem ps_probe_inst_quine :
 /-- The diagonal entry of τ(Dupoc)'s vector: past the Löb threshold the fixpoint
     fires and the entry plays C. -/
 theorem inst_quine_plays {k : Nat}
-    (hquine : proofSearch k (probe (inst (zoo6 k) .dupoc .dupoc)) = true) :
-    ∃ N, eval N (.bot (inst (zoo6 k) .dupoc .dupoc))
-         (.bot (inst (zoo6 k) .dupoc .dupoc)) (inst (zoo6 k) .dupoc .dupoc)
+    (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .dupoc))
+         (.bot (inst (tauZoo k) .dupoc .dupoc)) (inst (tauZoo k) .dupoc .dupoc)
          = some Action.C := by
   have h : proofSearch k ((Formula.plays Prog.self Prog.self Action.C).subst
       (.bot (.search k (.plays .self .self Action.C) (.const .C) (.const .D)))

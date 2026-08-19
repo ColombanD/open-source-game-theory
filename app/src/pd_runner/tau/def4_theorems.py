@@ -5,7 +5,7 @@ entire per-hypothesis content is its BIT TABLE — what each compiled instance p
 certified in `Tau/Theorems/<Bot>/Phase.lean` as a `VoteBits` theorem per template:
 
     theorem eBits ... :
-        VoteBits (vecOf (zoo6 k) .ebot w order6)
+        VoteBits (vecOf (tauZoo k) .ebot w tauOrder)
           [(w .coop, .D), (w .defect, .D), (w .tftSim, .C),
            (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .D)] := ...
 
@@ -16,7 +16,7 @@ rather than trusting its own arithmetic. That check is load-bearing history: the
 kernel-vs-model discipline caught five real Python bugs during milestone 1 and the
 inverted stipulation that triggered the 2026-08-12 audit.
 
-**Scope.** Only the six-template `zoo6` has bit theorems. A template modelled in
+**Scope.** Only the six-template `tauZoo` has bit theorems. A template modelled in
 Python but absent here has NO certified row, and `kernel_bits` omits it — absence is
 the honest signal that a row is predicted rather than proven.
 """
@@ -41,11 +41,12 @@ def _workspace_root() -> Path:
 
 PHASE_GLOB = "engine/PrisonersDilemma/Tau/Theorems/*/Phase.lean"
 
-ORDER6: tuple[str, ...] = ("coop", "defect", "tftSim", "tftPf", "dupoc", "ebot")
-"""The Lean `order6` slot order — every bit list is stated in this order."""
+TAU_ORDER: tuple[str, ...] = (
+    "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian")
+"""The Lean `tauOrder` slot order — every bit list is stated in this order."""
 
 _BITS_RE = re.compile(
-    r"theorem\s+(\w+)\s.*?VoteBits\s*\(vecOf\s*\(zoo6\s+k\)\s*\.(\w+)\s+w\s+order6\)\s*"
+    r"theorem\s+(\w+)\s.*?VoteBits\s*\(vecOf\s*\(tauZoo\s+k\)\s*\.(\w+)\s+w\s+tauOrder\)\s*"
     r"\[(.*?)\]",
     re.S,
 )
@@ -70,10 +71,10 @@ def scan_bit_theorems(path: Path | None = None) -> dict[str, dict[str, str]]:
         _name, tmpl, entries_src = m.group(1), m.group(2), m.group(3)
         entries = _ENTRY_RE.findall(entries_src)
         slots = tuple(slot for slot, _ in entries)
-        if slots != ORDER6:
+        if slots != TAU_ORDER:
             raise ValueError(
-                f"bit theorem for .{tmpl}: slots {slots} do not match order6 "
-                f"{ORDER6} — the Phase files drifted; update the scanner"
+                f"bit theorem for .{tmpl}: slots {slots} do not match tauOrder "
+                f"{TAU_ORDER} — the Phase files drifted; update the scanner"
             )
         tables[tmpl] = {slot: action for slot, action in entries}
     if not tables:
@@ -88,13 +89,13 @@ def kernel_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
 
 def main() -> None:
     tables = kernel_bits()
-    print("kernel bit tables (Tau/Theorems/*/Phase.lean, slot order = order6):")
-    for tmpl in ORDER6:
+    print("kernel bit tables (Tau/Theorems/*/Phase.lean, slot order = tauOrder):")
+    for tmpl in TAU_ORDER:
         row = tables.get(tmpl)
         if row is None:
             print(f"  {tmpl:8s}  (no certified row)")
         else:
-            print(f"  {tmpl:8s}  " + " ".join(row[s] for s in ORDER6))
+            print(f"  {tmpl:8s}  " + " ".join(row[s] for s in TAU_ORDER))
 
 
 if __name__ == "__main__":

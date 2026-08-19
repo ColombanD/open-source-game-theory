@@ -15,6 +15,6 @@ namespace PD.Tau
 
 /-- τ(TitForTatBot), behavioral: "run them against a cooperator; if they cooperate,
     C; else D." -/
-def tauTFTSimSpec : Spec Tmpl := ⟨[⟨.run, .name .coop, .C⟩], .D⟩
+def tauTFTSimSpec : Spec Tmpl := ⟨[⟨.run, .name .coop, .C, .C⟩], .D⟩
 
 end PD.Tau

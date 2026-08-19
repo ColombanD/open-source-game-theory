@@ -3,142 +3,215 @@ import PrisonersDilemma.Tau.Theorems.TauDefect.Phase
 import PrisonersDilemma.Tau.Theorems.TauTFTSim.Phase
 import PrisonersDilemma.Tau.Theorems.TauTFTPf.Phase
 import PrisonersDilemma.Tau.Theorems.TauDupoc.Phase
+import PrisonersDilemma.Tau.Theorems.TauJust.Phase
 import PrisonersDilemma.Tau.Theorems.TauEBot.Phase
+import PrisonersDilemma.Tau.Theorems.TauOBot.Phase
+import PrisonersDilemma.Tau.Theorems.TauGuardian.Phase
 
 /-!
-# Tau/Theorems/Matrix — the outcome matrix, one file
+# Tau/Theorems/Matrix — the outcome matrix of the 9-template zoo
 
-Every cell is two phase theorems glued by `outcome_of_ex_plays`: tau players are
-`.opp`-free, hence extensionally constant, so a match is two INDEPENDENT plays and
-a "per-pair file" would have no pair-local content. That is why the tau matrix is
-ONE file while the base zoo uses per-pair files (base outcome proofs are genuinely
-pair-specific — Löb loops, staggered budgets, floors between the two players).
-The 2026-08-18 per-pair split is deliberately reverted here, same-day, for that
-reason.
+Every cell is two phase theorems glued by `outcome_of_ex_plays` (tau players are
+`.opp`-free, so a match is two independent plays — which is why this is ONE file
+while the base zoo uses per-pair files).
 
-Regimes: the cooperators share `θ ≤ coopMass w`; τ(EBot) flips at `θ ≤ eMass w` —
-strictly lower and ONE-SIDED. The band between them (`eMass < θ ≤ coopMass`,
-nonempty iff `w .coop > 0`) is where the exploiter is observable
-(`outcome_TauTFTPf_vs_TauEBot_band`).
+**The α-regime ladder** (each bot's cooperation boundary, from the phase theorems):
+
+    obotMass = wC  ≤  eMass  ≤  pfMass  ≤  simMass = guardMass
+                       dupMass ≤ pfMass
+
+The headline bands the 9-zoo adds:
+
+* **the MODALITY-SPLIT band** `pfMass < θ ≤ simMass` (nonempty iff `w .guardian > 0`):
+  the behavioral TFT still cooperates while its prover twin has flipped — Guardian's
+  floor-priced cooperation counts for the simulator and not for the prover, so the
+  prover/behavioral split is finally an α-gap;
+* **the TRUST band** `eMass < θ ≤ guardMass`: the exploiter has flipped while the
+  norm enforcer still trusts — `(D, C)`, Guardian pays for failing to convict.
 -/
 
 open PD PD.Tau PD.BaseTheorems
 
 namespace PD.Theorems.Tau
 
+/-- The constants' total mass. -/
+private abbrev fullMass (w : Tmpl → Nat) : Nat :=
+  w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot +
+    (w .just + (w .obot + w .guardian)))))))
+
+/-! ## Constants -/
+
 theorem outcome_TauCooperate_vs_TauCooperate (k : Nat) (w : Tmpl → Nat) (θ : Nat)
-    (hθ : θ ≤ w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + 0)))))) :
+    (hθ : θ ≤ fullMass w) :
     ∃ N, outcome N (TauBotZ k .coop w θ) (TauBotZ k .coop w θ) = some (.C, .C) :=
-  outcome_of_ex_plays
-    ((tauCooperate_phase k w θ _).1 hθ)
+  outcome_of_ex_plays ((tauCooperate_phase k w θ _).1 hθ)
     ((tauCooperate_phase k w θ _).1 hθ)
 
 theorem outcome_TauCooperate_vs_TauDefect (k : Nat) (w : Tmpl → Nat) (θ : Nat)
-    (hθ : θ ≤ w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + 0))))))
-    (hθ0 : θ ≠ 0) :
+    (hθ : θ ≤ fullMass w) (hθ0 : θ ≠ 0) :
     ∃ N, outcome N (TauBotZ k .coop w θ) (TauBotZ k .defect w θ) = some (.C, .D) :=
-  outcome_of_ex_plays
-    ((tauCooperate_phase k w θ _).1 hθ)
+  outcome_of_ex_plays ((tauCooperate_phase k w θ _).1 hθ)
     ((tauDefect_phase k w θ _).2 hθ0)
 
 theorem outcome_TauDefect_vs_TauCooperate (k : Nat) (w : Tmpl → Nat) (θ : Nat)
-    (hθ : θ ≤ w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + 0))))))
-    (hθ0 : θ ≠ 0) :
+    (hθ : θ ≤ fullMass w) (hθ0 : θ ≠ 0) :
     ∃ N, outcome N (TauBotZ k .defect w θ) (TauBotZ k .coop w θ) = some (.D, .C) :=
-  outcome_of_ex_plays
-    ((tauDefect_phase k w θ _).2 hθ0)
+  outcome_of_ex_plays ((tauDefect_phase k w θ _).2 hθ0)
     ((tauCooperate_phase k w θ _).1 hθ)
 
 theorem outcome_TauDefect_vs_TauDefect (k : Nat) (w : Tmpl → Nat) (θ : Nat)
     (hθ0 : θ ≠ 0) :
     ∃ N, outcome N (TauBotZ k .defect w θ) (TauBotZ k .defect w θ) = some (.D, .D) :=
-  outcome_of_ex_plays
+  outcome_of_ex_plays ((tauDefect_phase k w θ _).2 hθ0)
     ((tauDefect_phase k w θ _).2 hθ0)
-    ((tauDefect_phase k w θ _).2 hθ0)
+
+/-! ## The cooperators' self-plays and pairs -/
 
 theorem outcome_TauTFTPf_vs_TauTFTPf {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ coopMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ pfMass w) :
     ∃ N, outcome N (TauBotZ k .tftPf w θ) (TauBotZ k .tftPf w θ) = some (.C, .C) :=
-  outcome_of_ex_plays
-    ((tauTFTPf_phase hk hkk h6 θ w _).1 hθ)
-    ((tauTFTPf_phase hk hkk h6 θ w _).1 hθ)
+  outcome_of_ex_plays ((tauTFTPf_phase hk hkk h6 h10 θ w _).1 hθ)
+    ((tauTFTPf_phase hk hkk h6 h10 θ w _).1 hθ)
 
 theorem outcome_TauTFTSim_vs_TauTFTSim {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ coopMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ simMass w) :
     ∃ N, outcome N (TauBotZ k .tftSim w θ) (TauBotZ k .tftSim w θ) = some (.C, .C) :=
-  outcome_of_ex_plays
-    ((tauTFTSim_phase hk hkk h6 θ w _).1 hθ)
-    ((tauTFTSim_phase hk hkk h6 θ w _).1 hθ)
+  outcome_of_ex_plays ((tauTFTSim_phase hk hkk h6 h10 θ w _).1 hθ)
+    ((tauTFTSim_phase hk hkk h6 h10 θ w _).1 hθ)
 
 theorem outcome_TauTFTPf_vs_TauTFTSim {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ coopMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ pfMass w) :
     ∃ N, outcome N (TauBotZ k .tftPf w θ) (TauBotZ k .tftSim w θ) = some (.C, .C) :=
-  outcome_of_ex_plays
-    ((tauTFTPf_phase hk hkk h6 θ w _).1 hθ)
-    ((tauTFTSim_phase hk hkk h6 θ w _).1 hθ)
+  outcome_of_ex_plays ((tauTFTPf_phase hk hkk h6 h10 θ w _).1 hθ)
+    ((tauTFTSim_phase hk hkk h6 h10 θ w _).1
+      (by simp only [pfMass, simMass] at *; omega))
 
 theorem outcome_TauTFTSim_vs_TauTFTPf {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ coopMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ pfMass w) :
     ∃ N, outcome N (TauBotZ k .tftSim w θ) (TauBotZ k .tftPf w θ) = some (.C, .C) :=
   outcome_of_ex_plays
-    ((tauTFTSim_phase hk hkk h6 θ w _).1 hθ)
-    ((tauTFTPf_phase hk hkk h6 θ w _).1 hθ)
+    ((tauTFTSim_phase hk hkk h6 h10 θ w _).1
+      (by simp only [pfMass, simMass] at *; omega))
+    ((tauTFTPf_phase hk hkk h6 h10 θ w _).1 hθ)
+
+/-! ## THE MODALITY-SPLIT BAND — `pfMass < θ ≤ simMass` (nonempty iff `w .guardian > 0`)
+
+The same base strategy, lifted behaviorally vs by proof, DISAGREES: the simulator
+still counts Guardian's true-but-floor-priced cooperation, the prover cannot. -/
+
+theorem outcome_TauTFTSim_vs_TauTFTPf_band {k : Nat} (hk : 2 ≤ k)
+    (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat)
+    (hlo : ¬ θ ≤ pfMass w) (hhi : θ ≤ simMass w) :
+    ∃ N, outcome N (TauBotZ k .tftSim w θ) (TauBotZ k .tftPf w θ) = some (.C, .D) :=
+  outcome_of_ex_plays ((tauTFTSim_phase hk hkk h6 h10 θ w _).1 hhi)
+    ((tauTFTPf_phase hk hkk h6 h10 θ w _).2 hlo)
+
+theorem outcome_TauTFTPf_vs_TauTFTSim_band {k : Nat} (hk : 2 ≤ k)
+    (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat)
+    (hlo : ¬ θ ≤ pfMass w) (hhi : θ ≤ simMass w) :
+    ∃ N, outcome N (TauBotZ k .tftPf w θ) (TauBotZ k .tftSim w θ) = some (.D, .C) :=
+  outcome_of_ex_plays ((tauTFTPf_phase hk hkk h6 h10 θ w _).2 hlo)
+    ((tauTFTSim_phase hk hkk h6 h10 θ w _).1 hhi)
+
+/-! ## The Löb-gated cells -/
 
 theorem outcome_TauDupoc_vs_TauDupoc :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat), θ ≤ coopMass w →
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .dupoc w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
   exact ⟨k₂, fun k hk θ w hθ =>
     outcome_of_ex_plays ((h k hk θ w _).1 hθ) ((h k hk θ w _).1 hθ)⟩
 
+theorem outcome_TauJust_vs_TauJust :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
+      ∃ N, outcome N (TauBotZ k .just w θ) (TauBotZ k .just w θ) = some (.C, .C) := by
+  obtain ⟨k₂, h⟩ := tauJust_phase
+  exact ⟨k₂, fun k hk θ w hθ =>
+    outcome_of_ex_plays ((h k hk θ w _).1 hθ) ((h k hk θ w _).1 hθ)⟩
+
+/-- Self-based and norm-based reciprocity cooperate — two Löb gates, one threshold
+    (the max of the two). -/
+theorem outcome_TauDupoc_vs_TauJust :
+    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
+      ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .just w θ) = some (.C, .C) := by
+  obtain ⟨kD, hD⟩ := tauDupoc_phase
+  obtain ⟨kJ, hJ⟩ := tauJust_phase
+  exact ⟨max kD kJ, fun k hk θ w hθ =>
+    outcome_of_ex_plays
+      ((hD k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ w _).1 hθ)
+      ((hJ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ w _).1 hθ)⟩
+
 theorem outcome_TauDupoc_vs_TauTFTPf :
-    ∃ k₂, ∀ k, k₂ < k → 2 ≤ k → c_guard k + 3 ≤ k → 6 ≤ k →
-      ∀ θ (w : Tmpl → Nat), θ ≤ coopMass w →
+    ∃ k₂, ∀ k, k₂ < k → 2 ≤ k → c_guard k + 3 ≤ k → 6 ≤ k → 10 ≤ k →
+      ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .tftPf w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk hk2 hkk h6 θ w hθ =>
+  exact ⟨k₂, fun k hk hk2 hkk h6 h10 θ w hθ =>
     outcome_of_ex_plays ((h k hk θ w _).1 hθ)
-      ((tauTFTPf_phase hk2 hkk h6 θ w _).1 hθ)⟩
+      ((tauTFTPf_phase hk2 hkk h6 h10 θ w _).1
+        (by simp only [dupMass, pfMass] at *; omega))⟩
+
+/-! ## τ(EBot)'s cells -/
 
 theorem outcome_TauEBot_vs_TauEBot_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ eMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ eMass w) :
     ∃ N, outcome N (TauBotZ k .ebot w θ) (TauBotZ k .ebot w θ) = some (.C, .C) :=
-  outcome_of_ex_plays
-    ((tauEBot_phase hk hkk h6 θ w _).1 hθ)
-    ((tauEBot_phase hk hkk h6 θ w _).1 hθ)
+  outcome_of_ex_plays ((tauEBot_phase hk hkk h6 h10 θ w _).1 hθ)
+    ((tauEBot_phase hk hkk h6 h10 θ w _).1 hθ)
 
 theorem outcome_TauEBot_vs_TauEBot_high {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : ¬ θ ≤ eMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : ¬ θ ≤ eMass w) :
     ∃ N, outcome N (TauBotZ k .ebot w θ) (TauBotZ k .ebot w θ) = some (.D, .D) :=
-  outcome_of_ex_plays
-    ((tauEBot_phase hk hkk h6 θ w _).2 hθ)
-    ((tauEBot_phase hk hkk h6 θ w _).2 hθ)
+  outcome_of_ex_plays ((tauEBot_phase hk hkk h6 h10 θ w _).2 hθ)
+    ((tauEBot_phase hk hkk h6 h10 θ w _).2 hθ)
 
-/-- **THE SEPARATING BAND** `eMass < θ ≤ coopMass` (nonempty iff `w .coop > 0`):
-    cooperators still cooperate while τ(EBot) has already flipped — the one-sided
-    boundary made observable as a matrix cell. -/
+/-- The exploiter band against the prover TFT (`eMass < θ ≤ pfMass`, nonempty iff
+    `w .coop > 0` — pfMass = eMass + wC). -/
 theorem outcome_TauTFTPf_vs_TauEBot_band {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat)
-    (hlo : ¬ θ ≤ eMass w) (hhi : θ ≤ coopMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat)
+    (hlo : ¬ θ ≤ eMass w) (hhi : θ ≤ pfMass w) :
     ∃ N, outcome N (TauBotZ k .tftPf w θ) (TauBotZ k .ebot w θ) = some (.C, .D) :=
-  outcome_of_ex_plays
-    ((tauTFTPf_phase hk hkk h6 θ w _).1 hhi)
-    ((tauEBot_phase hk hkk h6 θ w _).2 hlo)
+  outcome_of_ex_plays ((tauTFTPf_phase hk hkk h6 h10 θ w _).1 hhi)
+    ((tauEBot_phase hk hkk h6 h10 θ w _).2 hlo)
 
 theorem outcome_TauEBot_vs_TauTFTPf_band {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat)
-    (hlo : ¬ θ ≤ eMass w) (hhi : θ ≤ coopMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat)
+    (hlo : ¬ θ ≤ eMass w) (hhi : θ ≤ pfMass w) :
     ∃ N, outcome N (TauBotZ k .ebot w θ) (TauBotZ k .tftPf w θ) = some (.D, .C) :=
-  outcome_of_ex_plays
-    ((tauEBot_phase hk hkk h6 θ w _).2 hlo)
-    ((tauTFTPf_phase hk hkk h6 θ w _).1 hhi)
+  outcome_of_ex_plays ((tauEBot_phase hk hkk h6 h10 θ w _).2 hlo)
+    ((tauTFTPf_phase hk hkk h6 h10 θ w _).1 hhi)
 
-/-- Inside the shared cooperative regime the exploiter reciprocates the prover TFT. -/
 theorem outcome_TauEBot_vs_TauTFTPf_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ eMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ eMass w) :
     ∃ N, outcome N (TauBotZ k .ebot w θ) (TauBotZ k .tftPf w θ) = some (.C, .C) :=
-  outcome_of_ex_plays
-    ((tauEBot_phase hk hkk h6 θ w _).1 hθ)
-    ((tauTFTPf_phase hk hkk h6 θ w _).1 (by simp only [coopMass, eMass] at *; omega))
+  outcome_of_ex_plays ((tauEBot_phase hk hkk h6 h10 θ w _).1 hθ)
+    ((tauTFTPf_phase hk hkk h6 h10 θ w _).1
+      (by simp only [eMass, pfMass] at *; omega))
+
+/-! ## The new bots' self-plays, and the TRUST band -/
+
+theorem outcome_TauOBot_vs_TauOBot_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ w .coop) :
+    ∃ N, outcome N (TauBotZ k .obot w θ) (TauBotZ k .obot w θ) = some (.C, .C) :=
+  outcome_of_ex_plays ((tauOBot_phase hk hkk h6 h10 θ w _).1 hθ)
+    ((tauOBot_phase hk hkk h6 h10 θ w _).1 hθ)
+
+theorem outcome_TauGuardian_vs_TauGuardian {k : Nat} (hk : 2 ≤ k)
+    (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat)
+    (hθ : θ ≤ guardMass w) :
+    ∃ N, outcome N (TauBotZ k .guardian w θ) (TauBotZ k .guardian w θ) = some (.C, .C) :=
+  outcome_of_ex_plays ((tauGuardian_phase hk hkk h6 h10 θ w _).1 hθ)
+    ((tauGuardian_phase hk hkk h6 h10 θ w _).1 hθ)
+
+/-- **THE TRUST BAND** `eMass < θ ≤ guardMass`: the exploiter has flipped to
+    defection while the norm enforcer — unable to CONVICT the exploiter's own
+    signal-mass of bullying — still trusts. `(D, C)`: trust without proof is paid
+    for. -/
+theorem outcome_TauEBot_vs_TauGuardian_band {k : Nat} (hk : 2 ≤ k)
+    (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat)
+    (hlo : ¬ θ ≤ eMass w) (hhi : θ ≤ guardMass w) :
+    ∃ N, outcome N (TauBotZ k .ebot w θ) (TauBotZ k .guardian w θ) = some (.D, .C) :=
+  outcome_of_ex_plays ((tauEBot_phase hk hkk h6 h10 θ w _).2 hlo)
+    ((tauGuardian_phase hk hkk h6 h10 θ w _).1 hhi)
 
 end PD.Theorems.Tau

@@ -26,6 +26,6 @@ namespace PD.Tau
 
 /-- τ(EBot): "exploitable? then D; else reciprocates? then C; else D." -/
 def tauEBotSpec : Spec Tmpl :=
-  ⟨[⟨.prove, .name .defect, .D⟩, ⟨.prove, .name .coop, .C⟩], .D⟩
+  ⟨[⟨.prove, .name .defect, .C, .D⟩, ⟨.prove, .name .coop, .C, .C⟩], .D⟩
 
 end PD.Tau

@@ -29,7 +29,7 @@ fully `rfl`-reducing, and Gate D1 below certifies the compiler output byte-for-b
 — which also catches fuel exhaustion (an exhausted compile emits a default constant
 that cannot match the hand-written closure). The wall-detection story moves to the
 recorded debt: a generic `Zoo.WellFormed` predicate + fuel-sufficiency lemma, due
-when a SECOND zoo instantiates the DSL (for `zoo6`, D1 IS the certificate).
+when a SECOND zoo instantiates the DSL (for `tauZoo`, D1 IS the certificate).
 -/
 
 open PD
@@ -50,10 +50,14 @@ inductive Target (ι : Type) | self | name (i : ι)
 deriving DecidableEq, Repr
 
 /-- One probe stage: consult the hypothesis's instance-vs-`target` in the given mode;
-    if it cooperates, commit `fire`; else fall through to the next stage. -/
+    if the consultation yields `test`, commit `fire`; else fall through to the next
+    stage. `test` was added 2026-08-18 when the first lifted bots needed it (OBot
+    watches for DEFECTION, GuardianBot proves it); the original zoo's stages all
+    test `.C`. -/
 structure Stage (ι : Type) where
   mode   : Mode
   target : Target ι
+  test   : Action
   fire   : Action
 deriving DecidableEq, Repr
 
@@ -87,7 +91,7 @@ structure Zoo (ι : Type) where
       diagonal (pinned literal by `Zoo.lean`'s `inst_dupoc_quine`).
 
     Fuel exhaustion emits `.const d` — for a well-formed zoo at adequate fuel it is
-    unreachable, and Gate D1 certifies that for `zoo6` (an exhausted compile cannot
+    unreachable, and Gate D1 certifies that for `tauZoo` (an exhausted compile cannot
     be byte-identical to the hand-written closure). -/
 def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι) → Action → Prog
   | 0, _, _, _, d => .const d
@@ -96,23 +100,23 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
       let cont := instGo Z fuel A T rest d
       match st.mode, st.target with
       | .prove, .name B =>
-          .search Z.budget (probe (instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt))
-            (.const st.fire) cont
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .search Z.budget (.plays (.bot P) (.bot P) st.test) (.const st.fire) cont
       | .prove, .self =>
           if T = A then
-            .search Z.budget (.plays .self .self Action.C) (.const st.fire) cont
-          else
-            .search Z.budget (probe (instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt))
-              (.const st.fire) cont
-      | .run, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .ite (.sim (.bot P) (.bot P)) Action.C (.const st.fire) cont
-      | .run, .self =>
-          if T = A then
-            .ite (.sim .self .self) Action.C (.const st.fire) cont
+            .search Z.budget (.plays .self .self st.test) (.const st.fire) cont
           else
             let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
-            .ite (.sim (.bot P) (.bot P)) Action.C (.const st.fire) cont
+            .search Z.budget (.plays (.bot P) (.bot P) st.test) (.const st.fire) cont
+      | .run, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .ite (.sim (.bot P) (.bot P)) st.test (.const st.fire) cont
+      | .run, .self =>
+          if T = A then
+            .ite (.sim .self .self) st.test (.const st.fire) cont
+          else
+            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
+            .ite (.sim (.bot P) (.bot P)) st.test (.const st.fire) cont
 
 /-- Default compile fuel: generous for any zoo whose probe-nesting depth is modest
     (the 6-template zoo needs < 12; adding bots that only name existing columns does

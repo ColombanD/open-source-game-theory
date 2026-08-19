@@ -605,7 +605,7 @@ first build** — the compiler reproduces the hand-written closure byte-for-byte
 including the quine, the floor entry, and τ(EBot)'s whole cascade row.
 
 What landed: `Tau/Spec.lean` (Mode/Target/Stage/Spec/Zoo, the `instGo`/`inst`
-compiler, `vecOf`, the generic `vecOf_bits` list induction, the `zoo6` spec table,
+compiler, `vecOf`, the generic `vecOf_bits` list induction, the `tauZoo` spec table,
 `TauBotZ`, Gate D1); `VotePhases`/`VoteMatrix` restated on the DSL interface
 (`w : Tmpl → Nat`); the six hand-written `*Vec` lists and fixed-arity players
 RETIRED from `Vectors.lean`. The named instances and `Certs` bit lemmas stay — they
@@ -669,7 +669,7 @@ pytest green (349 + 198 EGT).
   loud `UnsupportedDiagonal`, mirroring the Lean termination discipline. The
   retracted `Probe.*` geometries are deleted.
 * `def4_theorems.py` — the kernel scanner now reads the `VoteBits` theorems of
-  `Tau/VotePhases.lean` (per-template bit rows in `order6` slot order), failing
+  `Tau/VotePhases.lean` (per-template bit rows in `tauOrder` slot order), failing
   loudly on drift.
 * `compare.py` — INVERTED, as planned: three checks, strongest first. (1) KERNEL:
   all 36 Python compound decisions equal the Lean bit tables. (2) BITS: Def-4 vs

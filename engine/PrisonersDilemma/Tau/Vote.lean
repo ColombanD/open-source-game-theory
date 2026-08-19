@@ -45,6 +45,13 @@ def probe (I : Prog) : Formula := .plays (.bot I) (.bot I) Action.C
 /-- Probe atoms are closed: `subst` cannot touch a `.bot`-frozen instance. -/
 theorem probe_subst (I me o : Prog) : (probe I).subst me o = probe I := rfl
 
+/-- The DEFECTION probe atom — "`I`, frozen, plays D against itself". Added with the
+    `test` field (2026-08-18): GuardianBot's stage proves defection rather than
+    cooperation. -/
+def probeD (I : Prog) : Formula := .plays (.bot I) (.bot I) Action.D
+
+theorem probeD_subst (I me o : Prog) : (probeD I).subst me o = probeD I := rfl
+
 /-! ## The uniform player -/
 
 /-- **THE tau player**: vote over the decision vector `v` with caution threshold `θ`.
@@ -402,5 +409,125 @@ theorem simCopy_plays {I : Prog} {a : Action} (me opp : Prog)
   cases a with
   | C => simp only [bind, Option.bind]; rw [if_pos (by decide)]; rfl
   | D => simp only [bind, Option.bind]; rw [if_neg (by decide)]; rfl
+
+/-! ## Eval determinism, and the generic false-bit lemmas
+
+`eval` is a function, so a program has ONE play — which makes "the probe atom is
+false" derivable from ANY witness of the opposite play, killing the per-shape
+match-on-fuel proofs for every negative bit. -/
+
+/-- Two successful runs of the same frame agree (lift both to the larger fuel). -/
+theorem eval_det {me opp body : Prog} {a b : Action} {N M : Nat}
+    (ha : eval N me opp body = some a) (hb : eval M me opp body = some b) : a = b := by
+  have ha' := eval_mono_le ha (max N M) (Nat.le_max_left _ _)
+  have hb' := eval_mono_le hb (max N M) (Nat.le_max_right _ _)
+  rw [ha'] at hb'
+  exact Option.some_inj.mp hb'
+
+/-- A D-playing instance's COOPERATION probe is false… -/
+theorem interp_probe_false_of_plays_D {I : Prog}
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.D) :
+    ¬ (probe I).interp := by
+  rintro ⟨n, hn⟩
+  obtain ⟨N, hN⟩ := h
+  have hplay : eval (n+1) (.bot I) (.bot I) (.bot I) = some Action.C := by
+    cases n with
+    | zero => simp [play, eval] at hn
+    | succ m => exact eval_mono_le hn _ (by omega)
+  have hN' : eval (N+1) (.bot I) (.bot I) (.bot I) = some Action.D := by
+    rw [eval]; exact hN
+  exact absurd (eval_det hplay hN') (by decide)
+
+/-- …and unprovable at every budget (soundness). -/
+theorem ps_probe_false_of_plays_D {I : Prog} (m : Nat)
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.D) :
+    proofSearch m (probe I) = false := by
+  cases hps : proofSearch m (probe I) with
+  | false => rfl
+  | true =>
+      exact absurd (proofSearch_sound _ _ hps) (interp_probe_false_of_plays_D h)
+
+/-- A C-playing instance's DEFECTION probe is false… -/
+theorem interp_probeD_false_of_plays_C {I : Prog}
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.C) :
+    ¬ (probeD I).interp := by
+  rintro ⟨n, hn⟩
+  obtain ⟨N, hN⟩ := h
+  have hplay : eval (n+1) (.bot I) (.bot I) (.bot I) = some Action.D := by
+    cases n with
+    | zero => simp [play, eval] at hn
+    | succ m => exact eval_mono_le hn _ (by omega)
+  have hN' : eval (N+1) (.bot I) (.bot I) (.bot I) = some Action.C := by
+    rw [eval]; exact hN
+  exact absurd (eval_det hplay hN') (by decide)
+
+/-- …and unprovable at every budget (soundness). -/
+theorem ps_probeD_false_of_plays_C {I : Prog} (m : Nat)
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.C) :
+    proofSearch m (probeD I) = false := by
+  cases hps : proofSearch m (probeD I) with
+  | false => rfl
+  | true =>
+      exact absurd (proofSearch_sound _ _ hps) (interp_probeD_false_of_plays_C h)
+
+/-! ## Shape play-lemmas for the `test = .D` idioms -/
+
+/-- GuardianBot's idiom fires: a prove-stage on a DEFECTION atom plays its
+    punishment when the atom is provable… -/
+theorem searchProbeD_plays_D {k : Nat} {I : Prog} (me opp : Prog)
+    (h : proofSearch k (probeD I) = true) :
+    ∃ N, eval N me opp (.search k (probeD I) (.const .D) (.const .C)) = some Action.D := by
+  refine ⟨2, ?_⟩
+  rw [eval, probeD_subst, h]
+  rfl
+
+/-- …and trusts (plays C) when it is not. -/
+theorem searchProbeD_plays_C {k : Nat} {I : Prog} (me opp : Prog)
+    (h : proofSearch k (probeD I) = false) :
+    ∃ N, eval N me opp (.search k (probeD I) (.const .D) (.const .C)) = some Action.C := by
+  refine ⟨2, ?_⟩
+  rw [eval, probeD_subst, h, if_neg (by simp)]
+  rfl
+
+/-- OBot's idiom fires: a run-stage testing DEFECTION plays its fire action when the
+    watched instance defects… -/
+theorem simTestD_fires {I : Prog} {cont : Prog} (me opp : Prog)
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.D) :
+    ∃ N, eval N me opp (.ite (.sim (.bot I) (.bot I)) Action.D (.const .D) cont)
+      = some Action.D := by
+  obtain ⟨N, hN⟩ := h
+  refine ⟨N + 3, ?_⟩
+  rw [eval]
+  have hg : eval (N + 2) me opp (.sim (.bot I) (.bot I)) = some Action.D := by
+    rw [eval]
+    simp only [Prog.subst]
+    rw [eval]
+    exact eval_mono_le hN _ (by omega)
+  rw [hg]
+  simp only [bind, Option.bind]
+  rw [if_pos (by decide)]
+  rfl
+
+/-- …and falls through to the continuation when it cooperates. -/
+theorem simTestD_falls {I : Prog} {cont : Prog} {a : Action} (me opp : Prog)
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.C)
+    (hcont : ∃ N, eval N me opp cont = some a) :
+    ∃ N, eval N me opp (.ite (.sim (.bot I) (.bot I)) Action.D (.const .D) cont)
+      = some a := by
+  obtain ⟨N, hN⟩ := h
+  obtain ⟨M, hM⟩ := hcont
+  refine ⟨max (N + 2) M + 1, ?_⟩
+  rw [eval]
+  have hg : eval (max (N + 2) M) me opp (.sim (.bot I) (.bot I)) = some Action.C := by
+    have : eval (N + 2) me opp (.sim (.bot I) (.bot I)) = some Action.C := by
+      rw [eval]
+      simp only [Prog.subst]
+      rw [eval]
+      exact eval_mono_le hN _ (by omega)
+    exact eval_mono_le this _ (Nat.le_max_left _ _)
+  rw [hg]
+  simp only [bind, Option.bind]
+  rw [if_neg (by decide)]
+  exact eval_mono_le hM _ (Nat.le_max_right _ _)
 
 end PD.Tau

@@ -194,6 +194,7 @@ import PrisonersDilemma.Tau.Zoo
 import PrisonersDilemma.Tau.Theorems.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDupoc.Helpers
 import PrisonersDilemma.Tau.Theorems.TauEBot.Helpers
+import PrisonersDilemma.Tau.Theorems.TauGuardian.Helpers
 import PrisonersDilemma.Tau.Theorems.Columns
 import PrisonersDilemma.Tau.Theorems.TauCooperate.Phase
 import PrisonersDilemma.Tau.Theorems.TauDefect.Phase
@@ -201,4 +202,7 @@ import PrisonersDilemma.Tau.Theorems.TauTFTSim.Phase
 import PrisonersDilemma.Tau.Theorems.TauTFTPf.Phase
 import PrisonersDilemma.Tau.Theorems.TauDupoc.Phase
 import PrisonersDilemma.Tau.Theorems.TauEBot.Phase
+import PrisonersDilemma.Tau.Theorems.TauJust.Phase
+import PrisonersDilemma.Tau.Theorems.TauOBot.Phase
+import PrisonersDilemma.Tau.Theorems.TauGuardian.Phase
 import PrisonersDilemma.Tau.Theorems.Matrix

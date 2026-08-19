@@ -15,11 +15,22 @@ bot file, one arm in `Zoo.lean`.
 
 namespace PD.Tau
 
-/-- The six templates. (A readable enum, not `Fin 6` — roadmap open question 5.) -/
-inductive Tmpl | coop | defect | tftSim | tftPf | dupoc | ebot
+/-- The templates. (A readable enum, not `Fin n` — roadmap open question 5.)
+    Extended 2026-08-18 with every base bot liftable WITHOUT `.sys`: `just`
+    (JustBot — third-party prover, target Dupoc), `obot` (OBot — the behavioral
+    defection-detector), `guardian` (GuardianBot — the norm enforcer, the zoo's
+    first `test = .D` prover). Excluded and why: CupodBot/PrudentBot/MirrorBot/
+    LegibleBot/OptimBot are self-probers (the mutual-quine wall — `.sys`);
+    CIMCIC/DIMCID (implication guards), WaryBot (`.neg`), CupodTrollBot (`.eq`)
+    are outside the cascade fragment; DBot needs a NEW Exclusion floor kernel for
+    its δ_L cell (a frozen probe-first player sim-embedding a floor-priced
+    searcher) — liftable once that kernel exists, recorded. -/
+inductive Tmpl
+  | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
-def order6 : List Tmpl := [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot]
+def tauOrder : List Tmpl :=
+  [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian]
 
 end PD.Tau

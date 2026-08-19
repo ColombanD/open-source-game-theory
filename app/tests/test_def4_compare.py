@@ -34,19 +34,22 @@ from pd_runner.tau.def4 import (
     decide,
     decision_table,
 )
-from pd_runner.tau.def4_theorems import ORDER6, kernel_bits
+from pd_runner.tau.def4_theorems import TAU_ORDER, kernel_bits
 from pd_runner.tau.matrix import load_tau_matrix
 
 
 # ── the compound decisions (the Lean bit tables, transcribed) ──────────────────
 
 EXPECTED_ACTIONS: dict[str, str] = {
-    "TauCooperate": "CCCCCC",
-    "TauDefect": "DDDDDD",
-    "TauTFTSim": "CDCCCD",
-    "TauTFTPf": "CDCCCD",
-    "TauDupoc": "CDCCCD",
-    "TauEBot": "DDCCCD",
+    "TauCooperate": "CCCCCCCCC",
+    "TauDefect": "DDDDDDDDD",
+    "TauTFTSim": "CDCCCDCCC",
+    "TauTFTPf": "CDCCCDCCD",
+    "TauDupoc": "CDCCCDCDD",
+    "TauEBot": "DDCCCDCCD",
+    "TauJust": "CDCCCDCDD",
+    "TauOBot": "CDDDDDDDD",
+    "TauGuardian": "CDCCCDCCC",
 }
 
 
@@ -59,13 +62,13 @@ def test_decision_table_matches_lean_bit_tables() -> None:
 
 def test_kernel_check_passes() -> None:
     check = kernel_check()
-    assert check.checked == 36
+    assert check.checked == 81
     assert check.passed, check.mismatches
 
 
 def test_kernel_scanner_finds_all_six_rows() -> None:
     tables = kernel_bits()
-    assert set(tables) == set(ORDER6)
+    assert set(tables) == set(TAU_ORDER)
 
 
 # ── the floor, structural ──────────────────────────────────────────────────────
@@ -98,12 +101,12 @@ def test_shallow_cooperations_are_provable() -> None:
 
 def test_unsupported_diagonals_raise() -> None:
     zoo = {
-        "Weird": LiftSpec((Stage(Mode.RUN, SELF, "C"),), "D"),
+        "Weird": LiftSpec((Stage(Mode.RUN, SELF, "C", "C"),), "D"),
     }
     with pytest.raises(UnsupportedDiagonal):
         decide("Weird", "Weird", zoo)
     anti = {
-        "Anti": LiftSpec((Stage(Mode.PROVE, SELF, "D"),), "C"),
+        "Anti": LiftSpec((Stage(Mode.PROVE, SELF, "C", "D"),), "C"),
     }
     with pytest.raises(UnsupportedDiagonal):
         decide("Anti", "Anti", anti)
@@ -113,8 +116,8 @@ def test_mutual_quine_wall_raises() -> None:
     """Two self-probers form the inexpressible 2-cycle; the model must refuse,
     not loop or guess — the Python shadow of the Lean termination discipline."""
     zoo = {
-        "A": LiftSpec((Stage(Mode.PROVE, SELF, "C"),), "D"),
-        "B": LiftSpec((Stage(Mode.PROVE, SELF, "C"),), "D"),
+        "A": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
+        "B": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
     }
     with pytest.raises(UnsupportedDiagonal):
         decide("A", "B", zoo)
@@ -188,14 +191,52 @@ def test_constants_ignore_alpha() -> None:
     assert tau_play_def4("TauCooperate", 1.0, sig, CONTROL_ZOO) == "C"
 
 
-def test_tft_variants_coincide_at_large_k() -> None:
-    """The prover/behavioral split is a BUDGET gap, not an α gap: at large k the
-    two TFT lifts have identical bit rows."""
+def test_tft_variants_split_exactly_on_guardian() -> None:
+    """HISTORY: on the 6-zoo this test asserted the two TFT lifts have IDENTICAL
+    rows ("the prover/behavioral split is a budget gap, not an α gap"). That claim
+    was zoo-relative, and Guardian falsifies it: its floor-priced cooperation is
+    visible to the simulator and invisible to the prover — the ONE slot where the
+    rows now differ, and only that one."""
     t = decision_table()
-    row_sim = [t["TauTFTSim"][T].action for T in TEMPLATES]
-    row_pf = [t["TauTFTPf"][T].action for T in TEMPLATES]
-    assert row_sim == row_pf
+    for T in TEMPLATES:
+        sim, pf = t["TauTFTSim"][T].action, t["TauTFTPf"][T].action
+        if T == "TauGuardian":
+            assert (sim, pf) == ("C", "D")
+        else:
+            assert sim == pf, T
 
 
 def test_base_of_covers_templates() -> None:
     assert set(BASE_OF) == set(TEMPLATES)
+
+
+# ── the 9-zoo additions (2026-08-18) ──────────────────────────────────────────
+
+
+def test_guardian_cooperation_is_never_provable() -> None:
+    """Guardian's C always sits behind its failed punish-search: every cooperative
+    cell of its row is floor-priced — the third Gödelian phenomenon, and the reason
+    the prover/behavioral split becomes an α-gap with Guardian in the zoo."""
+    for T in TEMPLATES:
+        d = decide("TauGuardian", T)
+        if d.action == "C":
+            assert not d.provable, T
+
+
+def test_modality_split_on_guardian() -> None:
+    """The two TFT lifts finally disagree at large k: the simulator sees Guardian's
+    true cooperation, the prover cannot cite it."""
+    assert decide("TauTFTSim", "TauGuardian").action == "C"
+    assert decide("TauTFTPf", "TauGuardian").action == "D"
+
+
+def test_just_rides_dupocs_column() -> None:
+    """Norm-based and self-based reciprocity coincide on this zoo."""
+    for T in TEMPLATES:
+        assert decide("TauJust", T).action == decide("TauDupoc", T).action
+
+
+def test_obot_cooperates_only_with_the_cooperator() -> None:
+    for T in TEMPLATES:
+        want = "C" if T == "TauCooperate" else "D"
+        assert decide("TauOBot", T).action == want

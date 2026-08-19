@@ -233,7 +233,59 @@ theorem pf_searchProbe_searchProbeC {k K : Nat} (hk : 2 ≤ k)
     (PlaysProof.search_t (pf_searchProbe_constC hk hkk) PlaysProof.const),
     by have := hcl; have := hcn; omega⟩
 
-abbrev coopMass (w : Tmpl → Nat) : Nat := w .coop + (w .tftSim + (w .tftPf + w .dupoc))
-abbrev eMass (w : Tmpl → Nat) : Nat := w .tftSim + (w .tftPf + w .dupoc)
+abbrev simMass (w : Tmpl → Nat) : Nat :=
+  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + w .guardian)))))
+abbrev pfMass (w : Tmpl → Nat) : Nat :=
+  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + w .obot))))
+abbrev dupMass (w : Tmpl → Nat) : Nat :=
+  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + w .just)))
+abbrev eMass (w : Tmpl → Nat) : Nat :=
+  w .tftSim + (w .tftPf + (w .dupoc + (w .just + w .obot)))
+abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
+abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop
+
+/-! ## Shape lemmas — the `test = .D` idioms (9-zoo extension, 2026-08-18) -/
+
+/-- The constant defector PROVABLY defects. -/
+theorem pf_probeD_constD {K : Nat} (hK : 2 ≤ K) :
+    Pf K (probeD (.const .D)) :=
+  Pf.atom ⟨PlaysProof.bot PlaysProof.const, by have := hcl; have := hcn; omega⟩
+
+theorem ps_probeD_constD {k : Nat} (hk : 2 ≤ k) :
+    proofSearch k (probeD (.const .D)) = true :=
+  (proofSearch_spec _ _).2 (pf_probeD_constD hk)
+
+/-- The cascade probed at the constant cooperator PROVABLY defects — its exploit
+    check FIRES, and the firing transcript is cheap (`search_t` cites the probe of
+    the constant). This is the bit GuardianBot reads to punish EBot. -/
+theorem pf_probeD_cascadeConstC {k K : Nat} (hk : 2 ≤ k) (hK : c_guard k + 3 ≤ K) :
+    Pf K (probeD (.search k (probe (.const .C)) (.const .D)
+      (.search k (probe (.const .C)) (.const .C) (.const .D)))) :=
+  Pf.atom ⟨PlaysProof.bot (PlaysProof.search_t (pf_probe_constC hk) PlaysProof.const),
+    by have := hcl; have := hcn; omega⟩
+
+theorem ps_probeD_cascadeConstC {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) :
+    proofSearch k (probeD (.search k (probe (.const .C)) (.const .D)
+      (.search k (probe (.const .C)) (.const .C) (.const .D)))) = true :=
+  (proofSearch_spec _ _).2 (pf_probeD_cascadeConstC hk hkk)
+
+/-- OBot's instance at the cooperator PROVABLY cooperates: both defection-watching
+    stages see the constant cooperator cooperate and fall through to the trusting
+    default; the transcript is two `ite_f`s over constant sims. -/
+theorem pf_probe_obotConstC {K : Nat} (hK : 10 ≤ K) :
+    Pf K (probe (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.D (.const .D)
+      (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.D (.const .D)
+        (.const .C)))) :=
+  Pf.atom ⟨PlaysProof.bot
+    (PlaysProof.ite_f (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) (by decide)
+      (PlaysProof.ite_f (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) (by decide)
+        PlaysProof.const)),
+    by have := hcl; have := hcn; omega⟩
+
+theorem ps_probe_obotConstC {k : Nat} (h10 : 10 ≤ k) :
+    proofSearch k (probe (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.D
+      (.const .D) (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.D
+        (.const .D) (.const .C)))) = true :=
+  (proofSearch_spec _ _).2 (pf_probe_obotConstC h10)
 
 end PD.Tau

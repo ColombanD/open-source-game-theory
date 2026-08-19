@@ -9,13 +9,14 @@ open PD PD.BaseTheorems
 namespace PD.Tau
 
 theorem defectBits (k : Nat) (w : Tmpl → Nat) :
-    VoteBits (vecOf (zoo6 k) .defect w order6)
-      [(w .coop, .D), (w .defect, .D), (w .tftSim, .D),
-       (w .tftPf, .D), (w .dupoc, .D), (w .ebot, .D)] :=
-  .cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩
-    (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ .nil)))))
+    VoteBits (vecOf (tauZoo k) .defect w tauOrder)
+      [(w .coop, .D), (w .defect, .D), (w .tftSim, .D), (w .tftPf, .D),
+       (w .dupoc, .D), (w .ebot, .D), (w .just, .D), (w .obot, .D),
+       (w .guardian, .D)] :=
+  .cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩
+    (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ (.cons ⟨1, rfl⟩ .nil))))))))
 
-/-- **τ(DefectBot)**: zero cooperation mass. -/
+/-- **τ(DefectBot)**: zero mass — cooperates only at θ = 0. -/
 theorem tauDefect_phase (k : Nat) (w : Tmpl → Nat) (θ : Nat) (opponent : Prog) :
     (θ = 0 → ∃ N, play N (TauBotZ k .defect w θ) opponent = some .C)
     ∧ (θ ≠ 0 → ∃ N, play N (TauBotZ k .defect w θ) opponent = some .D) := by
