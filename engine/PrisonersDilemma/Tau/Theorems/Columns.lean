@@ -1,8 +1,8 @@
-import PrisonersDilemma.Theorems.Tau.TauDupoc.Helpers
-import PrisonersDilemma.Theorems.Tau.TauEBot.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDupoc.Helpers
+import PrisonersDilemma.Tau.Theorems.TauEBot.Helpers
 
 /-!
-# Theorems/Tau/Columns — the three consulted columns (the bit API)
+# Tau/Theorems/Columns — the three consulted columns (the bit API)
 
 Cross-bot by type: a column asks one question of EVERY zoo member ("does T's
 instance, seeing X, provably cooperate?"), so these aggregate the per-bot rows —

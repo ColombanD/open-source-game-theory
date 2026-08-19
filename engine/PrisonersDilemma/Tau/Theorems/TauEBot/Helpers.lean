@@ -1,8 +1,8 @@
-import PrisonersDilemma.Theorems.Tau.Helpers
+import PrisonersDilemma.Tau.Theorems.Helpers
 import PrisonersDilemma.Base.Exclusion
 
 /-!
-# Theorems/Tau/TauEBot/Helpers — the Gödelian floor pair
+# Tau/Theorems/TauEBot/Helpers — the Gödelian floor pair
 
 TauEBot's own mathematics: `inst .ebot .dupoc` REALLY cooperates (its exploit-probe
 of Dupoc fails, its reciprocity-probe fires) yet that cooperation is UNPROVABLE at

@@ -1,4 +1,4 @@
-import PrisonersDilemma.Theorems.Tau.Columns
+import PrisonersDilemma.Tau.Theorems.Columns
 
 /-!
 # τ(DupocBot)'s phase — Löb-GATED (`∃ k₂, ∀ k > k₂, …`): its diagonal bit is

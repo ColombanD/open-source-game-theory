@@ -1,4 +1,4 @@
-import PrisonersDilemma.Theorems.Tau.Columns
+import PrisonersDilemma.Tau.Theorems.Columns
 
 /-!
 # τ(EBot)'s phase — the ONE-SIDED boundary `θ ≤ eMass` (no window): it excludes

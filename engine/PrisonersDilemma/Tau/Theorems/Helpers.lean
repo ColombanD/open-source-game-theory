@@ -1,11 +1,11 @@
 import PrisonersDilemma.Tau.Zoo
 
 /-!
-# Theorems/Tau/Helpers — shared shape lemmas and the regime masses
+# Tau/Theorems/Helpers — shared shape lemmas and the regime masses
 
 The base-layout split of the tau mathematics (2026-08-18): `Tau/` holds only
 definitions (machinery + the zoo); everything proved lives here under
-`Theorems/Tau/`, one directory per bot, mirroring `Theorems/<Bot>/` for the base
+`Tau/Theorems/`, one directory per bot, mirroring `Theorems/<Bot>/` for the base
 zoo. THIS file is the shared floor: certificate lemmas for the compile IDIOMS
 (probes of constants, prove-stages, run-stages, cascades — zoo-independent shapes),
 the `massOf` reducers, and the two α-boundary masses. Bot-specific mathematics

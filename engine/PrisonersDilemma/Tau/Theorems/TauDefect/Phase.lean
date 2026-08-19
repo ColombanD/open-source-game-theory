@@ -1,4 +1,4 @@
-import PrisonersDilemma.Theorems.Tau.Columns
+import PrisonersDilemma.Tau.Theorems.Columns
 
 /-!
 # τ(DefectBot)'s phase — zero cooperation mass; defects at every θ ≠ 0.

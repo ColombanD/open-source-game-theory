@@ -1,8 +1,8 @@
-import PrisonersDilemma.Theorems.Tau.Helpers
+import PrisonersDilemma.Tau.Theorems.Helpers
 import PrisonersDilemma.Base.Loeb
 
 /-!
-# Theorems/Tau/TauDupoc/Helpers — the Löb quine
+# Tau/Theorems/TauDupoc/Helpers — the Löb quine
 
 TauDupoc's own mathematics: the ONE cell of the zoo that needs bounded Löb. Its
 diagonal instance probes ITSELF (the compiler emits the pronoun guard), and the

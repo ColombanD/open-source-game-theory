@@ -1,4 +1,4 @@
-import PrisonersDilemma.Theorems.Tau.Columns
+import PrisonersDilemma.Tau.Theorems.Columns
 
 /-!
 # τ(TitForTatBot), prover variant — the δ_C column read by PROOF.

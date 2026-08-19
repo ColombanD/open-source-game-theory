@@ -1,4 +1,4 @@
-import PrisonersDilemma.Theorems.Tau.Columns
+import PrisonersDilemma.Tau.Theorems.Columns
 
 /-!
 # τ(TitForTatBot), behavioral variant — the δ_C column read by SIMULATION.

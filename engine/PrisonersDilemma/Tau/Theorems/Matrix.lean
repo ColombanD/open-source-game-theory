@@ -1,12 +1,12 @@
-import PrisonersDilemma.Theorems.Tau.TauCooperate.Phase
-import PrisonersDilemma.Theorems.Tau.TauDefect.Phase
-import PrisonersDilemma.Theorems.Tau.TauTFTSim.Phase
-import PrisonersDilemma.Theorems.Tau.TauTFTPf.Phase
-import PrisonersDilemma.Theorems.Tau.TauDupoc.Phase
-import PrisonersDilemma.Theorems.Tau.TauEBot.Phase
+import PrisonersDilemma.Tau.Theorems.TauCooperate.Phase
+import PrisonersDilemma.Tau.Theorems.TauDefect.Phase
+import PrisonersDilemma.Tau.Theorems.TauTFTSim.Phase
+import PrisonersDilemma.Tau.Theorems.TauTFTPf.Phase
+import PrisonersDilemma.Tau.Theorems.TauDupoc.Phase
+import PrisonersDilemma.Tau.Theorems.TauEBot.Phase
 
 /-!
-# Theorems/Tau/Matrix — the outcome matrix, one file
+# Tau/Theorems/Matrix — the outcome matrix, one file
 
 Every cell is two phase theorems glued by `outcome_of_ex_plays`: tau players are
 `.opp`-free, hence extensionally constant, so a match is two INDEPENDENT plays and

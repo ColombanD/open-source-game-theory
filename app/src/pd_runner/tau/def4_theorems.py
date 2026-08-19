@@ -2,7 +2,7 @@
 
 Under the refined Def 4 (the source lift, `DEF4_TVOTE_ROADMAP.md`), each tau bot's
 entire per-hypothesis content is its BIT TABLE — what each compiled instance plays —
-certified in `Theorems/Tau/<Bot>/Phase.lean` as a `VoteBits` theorem per template:
+certified in `Tau/Theorems/<Bot>/Phase.lean` as a `VoteBits` theorem per template:
 
     theorem eBits ... :
         VoteBits (vecOf (zoo6 k) .ebot w order6)
@@ -39,7 +39,7 @@ def _workspace_root() -> Path:
     )
 
 
-PHASE_GLOB = "engine/PrisonersDilemma/Theorems/Tau/*/Phase.lean"
+PHASE_GLOB = "engine/PrisonersDilemma/Tau/Theorems/*/Phase.lean"
 
 ORDER6: tuple[str, ...] = ("coop", "defect", "tftSim", "tftPf", "dupoc", "ebot")
 """The Lean `order6` slot order — every bit list is stated in this order."""
@@ -88,7 +88,7 @@ def kernel_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
 
 def main() -> None:
     tables = kernel_bits()
-    print("kernel bit tables (Theorems/Tau/*/Phase.lean, slot order = order6):")
+    print("kernel bit tables (Tau/Theorems/*/Phase.lean, slot order = order6):")
     for tmpl in ORDER6:
         row = tables.get(tmpl)
         if row is None:
