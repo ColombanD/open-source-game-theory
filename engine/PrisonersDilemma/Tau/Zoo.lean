@@ -70,11 +70,13 @@ theorem inst_tftSim_peel (k : Nat) : ∀ T, inst (tauZoo k) .tftSim T
         Action.C (.const .C) (.const .D) :=
   fun T => by cases T <;> rfl
 
-/-- τ(EBot)'s row: the two-stage cascade over the hypothesis's δ_D and δ_C
-    instances. -/
+/-- τ(EBot)'s row: the two-stage RUN cascade (base EBot's own sim modality) over
+    the hypothesis's δ_D and δ_C instances. -/
 theorem inst_ebot_peel (k : Nat) : ∀ T, inst (tauZoo k) .ebot T
-    = .search k (probe (inst (tauZoo k) T .defect)) (.const .D)
-        (.search k (probe (inst (tauZoo k) T .coop)) (.const .C) (.const .D)) :=
+    = .ite (.sim (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect)))
+        .C (.const .D)
+        (.ite (.sim (.bot (inst (tauZoo k) T .coop)) (.bot (inst (tauZoo k) T .coop)))
+          .C (.const .C) (.const .D)) :=
   fun T => by cases T <;> rfl
 
 /-- τ(Dupoc)'s row, OFF the diagonal: one prove-stage on the hypothesis's δ_L

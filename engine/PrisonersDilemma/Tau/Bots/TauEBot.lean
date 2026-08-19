@@ -3,29 +3,38 @@ import PrisonersDilemma.Tau.Roster
 /-!
 # TauEBot — the exploiter, lifted
 
-TWO `prove` stages — base EBot's cascade, and the bot the 2026-08-13 retraction was
-about:
+TWO `run` stages — the faithful modality of base EBot's cascade, whose branches are
+`.sim` WATCHES (`.sim .opp (.bot DefectBot)` / `.sim .opp (.bot CooperateBot)`),
+not proof searches:
 
 1. exploit check: "would they cooperate even with a DEFECTOR? then I defect" (fire D
    — the only D-firing stage in the zoo);
 2. reciprocity check: "would they cooperate with a COOPERATOR? then C"; else D.
 
-The vote never sees the stages separately: the whole cascade runs per hypothesis and
-only its final action is counted — which is exactly the corrected reading (the
-retracted "crowd-exploiter" put a θ-threshold inside each stage instead, and was a
-different agent). Consequences, all theorems: its boundary is ONE-SIDED,
-`θ ≤ wTs + wTp + wL` (no window; it excludes `w .coop` — the weight it exploits);
-every one of its cooperations is FLOOR-priced (reached behind the failed exploit
-probe), which is what TauDupoc's probe honestly reads as 0; and its SELF-bit is 0 —
-base EBot's Mirror-branch escape is not `.opp`-free-liftable, the one recorded lift
-divergence from Def 3 (the whitelisted cell of the Python coincidence
-certification).
+**Modality corrected 2026-08-19.** The stages were `prove` from the original tau
+layer (2026-08-11) through the Def-4 rebuild — a silent sim→search infidelity that
+no zoo cell could see until GuardianBot arrived: Guardian's floor-priced cooperation
+is visible to a sim and invisible to a prover, and the 9-zoo coincidence
+certification flagged `(TauEBot, TauGuardian)` as `D` where base
+`EBot vs GuardianBot` is `C`. With `run` stages the lift is behaviorally faithful
+to base EBot's first two branches; the remaining recorded divergence is the
+MIRROR-BRANCH TRUNCATION (base EBot's third branch sims MirrorBot, which is not
+`.opp`-free-liftable), which keeps its SELF-bit 0 — the whitelisted cell of the
+Python coincidence certification.
+
+Consequences, all theorems: its boundary is ONE-SIDED, `θ ≤ eMass` (now INCLUDING
+`w .guardian` — the behavioral read sees Guardian's true cooperation; still
+excluding `w .coop`, the weight it exploits); and its cooperation with DUPOC is
+floor-priced ONE LEVEL DOWN (stage 1 watches `inst .dupoc .defect`, whose D-play
+certificate pays the embedded `search_f` floor), which is what TauDupoc's probe
+honestly reads as 0 — the embedded-floor census in `Theorems/TauEBot/Helpers.lean`.
 -/
 
 namespace PD.Tau
 
-/-- τ(EBot): "exploitable? then D; else reciprocates? then C; else D." -/
+/-- τ(EBot): "exploitable? then D; else reciprocates? then C; else D" — read by
+    SIMULATION, base EBot's own modality. -/
 def tauEBotSpec : Spec Tmpl :=
-  ⟨[⟨.prove, .name .defect, .C, .D⟩, ⟨.prove, .name .coop, .C, .C⟩], .D⟩
+  ⟨[⟨.run, .name .defect, .C, .D⟩, ⟨.run, .name .coop, .C, .C⟩], .D⟩
 
 end PD.Tau

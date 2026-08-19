@@ -58,6 +58,12 @@ WHITELIST: dict[tuple[str, str], str] = {
         "Mirror-branch truncation: base EBot's third branch sims MirrorBot "
         "(not .opp-free-liftable); the lift drops it, flipping E's self-bit"
     ),
+    ("TauTFTPf", "TauGuardian"): (
+        "Prover-modality floor: TauTFTPf is the PROVER variant of behavioral base "
+        "TFT, and Guardian's cooperation is floor-priced — true (base TFT sims it: "
+        "C) but unprovable at every budget (the prover twin reads D). The α-gap "
+        "headline as a bit-level divergence."
+    ),
 }
 """The recorded bit divergences. Anything else is a bug by definition."""
 

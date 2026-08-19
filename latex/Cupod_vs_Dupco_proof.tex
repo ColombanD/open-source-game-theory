@@ -1,0 +1,396 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,urlcolor=blue!55!black}
+\usepackage{microtype}
+
+% ---- theorem environments ----
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{assumption}[definition]{Assumption}
+\newtheorem{notation}[definition]{Notation}
+\newtheorem{example}[definition]{Example}
+\theoremstyle{plain}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{corollary}[definition]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Remark}
+
+% ---- macros ----
+\newcommand{\Lang}{\mathcal{L}}
+\newcommand{\LS}{\Lang_S}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\proves}{\vdash}
+\newcommand{\bx}[1]{\Box_{#1}}
+\newcommand{\code}[1]{\ulcorner #1 \urcorner}
+\newcommand{\numeral}[1]{\mathring{#1}}
+\newcommand{\Bew}{\mathrm{Bew}}
+\newcommand{\BBew}{\mathrm{BBew}}
+\newcommand{\Gf}{\Gamma_{\!f}}
+\newcommand{\Eval}{\mathsf{Eval}}
+\newcommand{\source}{\mathtt{.source}}
+\newcommand{\lgg}{\operatorname{lg}}
+\newcommand{\Cact}{\mathsf{C}}
+\newcommand{\Dact}{\mathsf{D}}
+\newcommand{\Act}{\mathsf{Act}}
+\newcommand{\tr}{\tau}
+\newcommand{\pc}{\texttt{proof\_checker}}
+\newcommand{\ps}{\texttt{proof\_search}}
+\newcommand{\DUPOC}{\textsc{Dupoc}}
+\newcommand{\CUPOD}{\textsc{Cupod}}
+\newcommand{\defeq}{\vcentcolon=}
+
+\title{\textbf{OSGT Notes}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{definition}
+A first-order language is a triple $\mathcal{L} = \bigl(\mathcal{F},\ \mathcal{P},\ \mathrm{ar}\bigr)$,
+where $\mathcal{F}$ and $\mathcal{P}$ are disjoint sets of function and relation symbols
+respectively, and $\mathrm{ar}\colon \mathcal{F}\cup\mathcal{P}\to\mathbb{N}$ assigns each
+symbol an arity. Nullary function symbols ($\mathrm{ar}=0$) are constants. We assume a fixed
+countable set $\mathrm{Var}=\{x_0,x_1,\dots\}$ of variables and the logical symbols
+$\neg,\to,\forall,(\,),=,\wedge,\vee,\exists$.
+\end{definition}
+
+\begin{definition}
+The set of $\mathcal{L}$-terms is the least set containing every variable and every constant
+and closed under $f(t_1,\dots,t_n)$ for $f\in\mathcal{F}$ of arity $n$ and terms $t_i$.
+Atomic formulas are $t_1=t_2$ and $R(t_1,\dots,t_n)$ for $R\in\mathcal{P}$ of arity $n$.
+The set of $\mathcal{L}$-formulas is the least set containing the atomic formulas and closed
+under the logical symbols.
+\end{definition}
+
+
+
+\begin{definition}\label{def:endomorph}
+    Let $\sigma:\mathcal{C} \to \mathcal{C}$ be a map defined on a set of constant symbols $\mathcal{C}$. The relabeling $\varphi^\sigma$ of a formula $\varphi$ si the formula obtained by replacing every occurrence of each $c \in \mathcal{C}$ in $\varphi$ with $\sigma(c)$.
+\end{definition}
+    
+Constant relabelling commutes with all the logical symbols $\lnot,\to,\forall,(\,),{=},\land,\lor,\exists$, for instance 
+\begin{equation}\label{eq:commute}
+(\lnot\varphi)^{\sigma}=\lnot(\varphi^{\sigma}),\quad
+(\varphi\to\psi)^{\sigma}=\varphi^{\sigma}\to\psi^{\sigma},\quad
+(\forall x\,\varphi)^{\sigma}=\forall x\,(\varphi^{\sigma}),
+\end{equation}
+because $\sigma$ touches only constants and $x\in\mathrm{Var}$. In this sense, $\sigma$ induces an endomorphism over the set of formulas in the language $\mathcal{L}$.
+
+
+\begin{definition}
+A theory $T$ in $\mathcal{L}$ is a set of $\mathcal{L}$-sentences (formulas without free
+variables), called the nonlogical axioms. An $\mathcal{L}$-structure $\mathfrak{M}=(M;\cdot)$ is a
+nonempty domain $M$ with an interpretation of every function and relation symbol and,
+recursively, of every term. Satisfaction $\mathfrak{M}\models\varphi[a_1,\dots]$ is defined
+by the usual Tarski recursion. $\mathfrak{M}$ is a model of $T$ if $\mathfrak{M}\models\theta$
+for all $\theta\in T$, and $T\models\varphi$ means every model of $T$ satisfies $\varphi$.
+\end{definition}
+
+We use a Hilbert-style calculus because the papers measure proof length and need a single notion of "line of a proof."
+
+
+
+\begin{definition}\label{def:hilbert}
+A proof of $\varphi$ from a theory $T$
+is a finite sequence of formulas, each of which is a logical axiom, a member of $T$, or
+obtained from earlier lines by an inference rule,
+ending in $\varphi$. Write $T\vdash\varphi$.
+\end{definition}
+
+\begin{definition}\label{def:godel}
+Fix a first order formal system $S$ with language $\mathcal{L}_S$, and denote $\mathrm{CLTerm}(S)$ the set of closed $\mathcal{L}_S$-terms.
+A G\"odel encoding is an injective map $\#(-)$, defined on all strings over the alphabet of
+$\mathcal{L}_S$ (in particular on $\mathcal{L}_S$-formulas), with values in $\mathbb{N}$,
+together with a numeral map $(\mathring{-})\colon\mathbb{N}\to\mathrm{CLTerm}(S)$ assigning
+each $n$ a closed term $\mathring{n}$ denoting it. Their composite
+\[
+\ulcorner\varphi\urcorner := \mathring{\#\varphi}\in\mathrm{CLTerm}(S)
+\]
+lets $S$ form closed terms that name its own formulas.
+\end{definition}
+
+
+\newpage
+
+\section{The formal system S for OSGT}
+
+We now give the precise object the papers call $S$.
+
+\begin{definition}\label{def:S}
+$S$ consists of:
+\begin{enumerate}[label=(S\arabic*),leftmargin=2.6em]
+\item a first-order language $\Lang_S\supseteq\{0,\mathrm{S},+,\cdot,<\}$ (the language of arithmetic), together with the constants $\mathsf{C},\mathsf{D}$ of
+  Definition~\ref{def:actions}
+\item a theory over $\Lang_S$ extending $\mathrm{PA}$;
+\item the Hilbert calculus of Definition~\ref{def:hilbert}
+\item {\color{red} Other technical assumptions, see \cite{critch2019, osgt2022}.}
+\end{enumerate}
+\end{definition}
+
+
+To talk about agents and their two possible actions in the prisoner dilemma we add two dedicated constants.
+
+\begin{definition}\label{def:actions}
+$\Lang_S$ contains two distinct constant symbols $\Cact,\Dact$ ("cooperate", "defect"), and $S$ contains the nonlogical axiom
+\[
+(\mathrm{Ax}_{\neq})\qquad \Cact \neq \Dact .
+\]
+We write $\Act=\{\Cact,\Dact\}$. The intended reading is that agents are programs whose halting output is one of these two tokens.
+\end{definition}
+
+
+
+
+
+
+
+
+\begin{assumption}[Representability]\label{ass:repr}
+$S$ represents every computable function. In particular there is an
+$\mathcal{L}_S$-formula $\Gamma_{\mathsf{Eval}}$, the graph formula of a universal
+interpreter $\mathsf{Eval}$, with $\mathsf{Eval}(s,x)$ denoting ``the output of running the
+program with source string $s$ on input $x$,'' whenever that computation halts.
+\end{assumption}
+
+
+
+
+
+\begin{definition}\label{def:agent}
+An agent is a program $A$ that halts on every input and outputs an element of $\Act=\{\Cact,\Dact\}$. It is presented by its source string $A\source$, a finite string over the proof-language alphabet. Two roles are kept distinct:
+\begin{itemize}[leftmargin=1.4em]
+\item $A\source$ -- a piece of data (a string), the thing other agents read and reason about;
+\item $A(\cdot)$ -- the function computed by running that source, represented inside $S$ through $\Eval$: ``$A(s)=\Cact$'' abbreviates $\Gamma_{\Eval}[A\source, s, \Cact]$.
+\end{itemize}
+The outcome of a game is the pair obtained by feeding each agent the other's source,
+\[
+\mathrm{outcome}(A,B)\defeq\big(A(B\source),\ B(A\source)\big)\in\Act\times\Act .
+\]
+\end{definition}
+
+
+
+The two trivial agents are $\textsc{Cb}(s)\defeq\Cact$ for all $s$ (CooperateBot); $\textsc{Db}(s)\defeq\Dact$ for all $s$ (DefectBot).
+
+\begin{definition}
+    $\pc(\textit{opp\_source},\ \textit{proof\_string},\ \textit{hypothesis\_string})$ returns a Boolean. See \cite[\S2.1]{osgt2022}: it returns \texttt{True} iff \emph{proof\_string} encodes a logically valid $S$-proof of \emph{hypothesis\_string}, where the hypothesis is a formula about the opponent \emph{opp\_source}.
+\end{definition}
+
+
+
+
+
+
+
+\begin{definition}[\ps]\label{def:ps}
+\[
+\ps(k,\textit{opp\_source},h)\ \defeq\ \big(\exists \text{ string }\rho,\ |\rho|\le k\big)\ \pc(\textit{opp\_source},\rho,h),
+\]
+implemented by enumerating all strings of length $\le k$ in lexicographic order and returning \texttt{True} at the first accepted $\rho$, else \texttt{False}.
+\end{definition}
+
+\begin{definition}\label{def:dupoc}
+For each $k\ge 0$, ``Defect Unless Proof Of Cooperation'' is the agent $\textsc{Dupoc}(k)$:
+\begin{verbatim}
+def DUPOC_k(opp_source):
+    if proof_search(k, opp_source, "opp(DUPOC_k.source) == C"):
+        return C
+    else:
+        return D
+\end{verbatim}
+with $\textsc{Dupoc}(k).\mathsf{source}$ a copy of those lines (with $k$ filled in). Its
+mirror $\textsc{Cupod}(k)$ (``Cooperate Unless Proof Of Defection''), defined officially as
+the $\hat{\tau}$-transpose of $\textsc{Dupoc}(k)$ in Definition~\ref{def:transposed-agents}, searches instead for
+\texttt{"opp(CUPOD\_k.source) == D"}, returning $\mathsf{D}$ on success and $\mathsf{C}$ by
+default.
+\end{definition}
+
+
+
+
+
+
+
+
+
+\begin{definition}[$C/D$ transposition]\label{def:tau}
+Let $\tr\defeq(\Cact\,\Dact)$ be the constant transposition, as in Definition~\ref{def:endomorph}: $\varphi^{\tr}$ replaces every $\Cact$ by $\Dact$ and simultaneously every $\Dact$ by $\Cact$. Note $\tr$ is an involution, $\tr\circ\tr=\mathrm{id}$, and by \eqref{eq:commute} it commutes with the logical symbols.
+\end{definition}
+
+
+
+
+
+\begin{definition}[$\tau$ as a theory automorphism]\label{def:autohyp}
+We say $\tau$ \emph{is an automorphism of} $S$ if $\theta^{\tau}$ is provable in $S$ for
+every nonlogical axiom $\theta$ of $S$ (equivalently, $\tau$ maps the axiom set into the
+theorems). Concretely, for $S$ as above this amounts to:
+\begin{itemize}
+\item[(a)] $(\mathrm{Ax}_{\neq})^{\tau}=(\mathsf{D}\neq\mathsf{C})$ is a theorem, immediate
+  from $(\mathrm{Ax}_{\neq})$ and symmetry of $=$;
+\item[(b)] the arithmetical axioms do not mention $\mathsf{C},\mathsf{D}$, so
+  $\theta^{\tau}=\theta$ for each of them;
+\item[(c)] any further nonlogical axioms of $S$ (cf.\ (S4) and Assumption~1.3) are likewise
+  mapped to theorems.
+\end{itemize}
+\end{definition}
+
+
+
+
+
+
+\begin{theorem}[Transposition invariance of provability]\label{thm:auto}
+Suppose $\tr$ is an automorphism of $S$ (Definition~\ref{def:autohyp}). Then for every formula $\varphi$,
+\[
+S\proves\varphi\quad\Longleftrightarrow\quad S\proves\varphi^{\tr}.
+\]
+Moreover, if $\Cact$ and $\Dact$ have equal encoding length (e.g.\ both are single symbols), then $\tr$ preserves the character length of every formula and every proof, so for every $k$,
+\[
+\bx{k}(\varphi)\ \text{true}\quad\Longleftrightarrow\quad \bx{k}(\varphi^{\tr})\ \text{true},\qquad\text{and}\qquad S\proves\bx{k}(\varphi)\leftrightarrow\bx{k}(\varphi^{\tr}).
+\]
+
+\end{theorem}
+
+\begin{proof}
+$(\Rightarrow)$ Let $\pi=(\rho_1,\dots,\rho_L)$ be an $S$-proof of $\varphi$ (Definition~\ref{def:hilbert}). Apply $\tr$ line by line to get $\pi^{\tr}=(\rho_1^{\tr},\dots,\rho_L^{\tr})$. We check $\pi^{\tr}$ is an $S$-proof of $\varphi^{\tr}=\rho_L^{\tr}$:
+\begin{itemize}[leftmargin=1.4em]
+\item If $\rho_i$ is a \emph{logical} axiom instance, so is $\rho_i^{\tr}$, by the definition \ref{def:autohyp}. (logical and equality axioms are closed under any constant relabeling).
+\item If $\rho_i$ is a \emph{nonlogical} axiom $\theta$, then by hypothesis $\theta^{\tr}=\rho_i^{\tr}$ is a theorem; insert in a fixed finite proof of it (this only enlarges the proof by a constant per axiom-type, irrelevant to provability; for the length claim see below).
+\item If $\rho_i$ follows by modus ponens from $\rho_j=\big(\rho_\ell\to\rho_i\big)$ and $\rho_\ell$, then by \eqref{eq:commute} $\rho_j^{\tr}=\big(\rho_\ell^{\tr}\to\rho_i^{\tr}\big)$, so $\rho_i^{\tr}$ follows by MP from $\rho_j^{\tr},\rho_\ell^{\tr}$. Generalization is identical using $(\forall x\,\psi)^{\tr}=\forall x\,\psi^{\tr}$.
+\end{itemize}
+Hence $S\proves\varphi^{\tr}$. The converse is the same argument applied to $\tr$, using $\tr\circ\tr=\mathrm{id}$.
+
+
+
+\emph{Length.} When $\mathsf{C},\mathsf{D}$ have equal encoding length,
+$|\rho_i^{\tau}|=|\rho_i|$ for every line, so $|\pi^{\tau}|=|\pi|$. For the bounded
+equivalence we additionally need no splices at all; this is exactly the hypothesis that
+$\tau$ maps each nonlogical axiom to an axiom, for then $\pi^{\tau}$ is literally an
+$S$-proof of $\varphi^{\tau}$ of the same length, giving
+$\vdash_k\varphi\Rightarrow\vdash_k\varphi^{\tau}$ and, by symmetry, the equivalence. For
+$S$ as in Definition~\ref{def:S} the hypothesis can be arranged by axiomatizing
+$(\mathrm{Ax}_{\neq})$ symmetrically, taking both $\mathsf{C}\neq\mathsf{D}$ and
+$\mathsf{D}\neq\mathsf{C}$ as axioms; with $\mathsf{C}\neq\mathsf{D}$ alone one only gets
+$\vdash_k\varphi\Rightarrow\vdash_{k+c}\varphi^{\tau}$ for a constant $c$. This points require a more careful argument.
+\end{proof}
+
+\newpage
+
+\begin{definition}\label{def:transposed-agents}
+Let \(\widehat{\tau}\) be the source-code transposition induced by
+\(\tau=(C\,D)\): it replaces every occurrence of the action token \(C\)
+by \(D\), every occurrence of \(D\) by \(C\), and applies the same
+replacement inside language formulas. For each \(k\geq 0\), define
+\[
+\mathrm{Cupod}(k).\mathrm{source}
+\coloneq
+\widehat{\tau}\bigl(\mathrm{Dupoc}(k).\mathrm{source}\bigr).
+\]
+Equivalently,
+\[
+\mathrm{Dupoc}(k).\mathrm{source}
+=
+\widehat{\tau}\bigl(\mathrm{Cupod}(k).\mathrm{source}\bigr),
+\]
+since \(\widehat{\tau}\) is an involution.
+\end{definition}
+
+
+
+
+\begin{proposition}\label{label}
+Assume that $\textsc{Cupod}(k)$ is defined as the $\hat{\tau}$-transpose of
+$\textsc{Dupoc}(k)$, that $\Gamma_{\mathsf{Eval}}$ mentions neither $\mathsf{C}$ nor
+$\mathsf{D}$, and that the encoding is $\tau$-equivariant:
+\[
+\ulcorner\hat{\tau}(s)\urcorner = \bigl(\ulcorner s\urcorner\bigr)^{\tau}
+\qquad\text{for every source string } s.
+\]
+Let
+\[
+\rho_1 := \bigl(\textsc{Cupod}(k)(\textsc{Dupoc}(k).\mathsf{source}) = \mathsf{C}\bigr)
+\]
+and
+\[
+\rho_2 := \bigl(\textsc{Dupoc}(k)(\textsc{Cupod}(k).\mathsf{source}) = \mathsf{D}\bigr).
+\]
+Then
+\[
+\rho_1^{\tau} = \rho_2 \qquad\text{and hence}\qquad \rho_1 = \rho_2^{\tau}.
+\]
+\end{proposition}
+
+
+
+
+
+
+
+
+
+\begin{proof}
+Unfolding Definition~\ref{def:agent},
+\[
+\rho_1 = \Gamma_{\mathsf{Eval}}\bigl[\ulcorner\textsc{Cupod}(k).\mathsf{source}\urcorner,\
+\ulcorner\textsc{Dupoc}(k).\mathsf{source}\urcorner,\ \mathsf{C}\bigr].
+\]
+Apply $\tau$. Since $\Gamma_{\mathsf{Eval}}$ mentions neither $\mathsf{C}$ nor $\mathsf{D}$,
+the transposition acts only on the three substituted arguments. The action constant
+transforms as $\mathsf{C}^{\tau}=\mathsf{D}$, and by $\tau$-equivariance of the encoding
+together with Definition~1.11 the quoted sources transform as
+\[
+\bigl(\ulcorner\textsc{Cupod}(k).\mathsf{source}\urcorner\bigr)^{\tau}
+= \ulcorner\hat{\tau}\bigl(\textsc{Cupod}(k).\mathsf{source}\bigr)\urcorner
+= \ulcorner\textsc{Dupoc}(k).\mathsf{source}\urcorner,
+\]
+and symmetrically $\bigl(\ulcorner\textsc{Dupoc}(k).\mathsf{source}\urcorner\bigr)^{\tau}
+= \ulcorner\textsc{Cupod}(k).\mathsf{source}\urcorner$. Consequently
+\[
+\rho_1^{\tau}
+= \Gamma_{\mathsf{Eval}}\bigl[\ulcorner\textsc{Dupoc}(k).\mathsf{source}\urcorner,\
+\ulcorner\textsc{Cupod}(k).\mathsf{source}\urcorner,\ \mathsf{D}\bigr]
+= \rho_2,
+\]
+and $\rho_1=\rho_2^{\tau}$ follows since $\tau$ is an involution.
+\end{proof}
+
+
+
+We now take the transposition to act on agents. Consider the game $\mathrm{outcome}\big(\DUPOC(k),\CUPOD(k)\big)=(a,b)$ where
+\begin{align*}
+a=\Cact \ &\iff\ \bx{k}(\rho_1)\\
+b=\Dact \ &\iff\ \bx{k}(\rho_2)
+\end{align*}
+with the respective default actions $\Dact$ and $\Cact$ otherwise (each agent acts by default unless its search succeeds).
+
+\begin{theorem}\label{thm:op3}
+Assume $\tr$ is a length-preserving automorphism of $S$ (Theorem~\ref{thm:auto}, equal encoding lengths) and that $S$ is sound for the relevant statements. Then for every $k$,
+\[
+\mathrm{outcome}\big(\DUPOC(k),\CUPOD(k)\big)=(\Dact,\Cact).
+\]
+\end{theorem}
+\begin{proof}
+By Theorem~\ref{label} and $\rho_1=\rho_2^{\tr}$, $\bx{k}(\rho_1)\Leftrightarrow\bx{k}(\rho_2)$; call the common truth value $P$. Suppose $P$ holds. Then $\bx k(\rho_1)$ makes $a=\Cact$, while $\bx k(\rho_2)$ together with soundness gives $\rho_2$ true, i.e.\ $\DUPOC(k)(\CUPOD(k)\source)=\Dact$, i.e.\ $a=\Dact$. As agents are deterministic, $a$ cannot be both; contradiction. Hence $P$ is false: $\bx k(\rho_1)$ fails so $\DUPOC$ falls through to its default $a=\Dact$, and $\bx k(\rho_2)$ fails so $\CUPOD$ falls through to its default $b=\Cact$. The classical unexploitability of Dupoc argument excludes $(a,b)=(\Cact, \Dact)$. Thus $(a,b)=(\Dact,\Cact)$.
+\end{proof}
+
+
+
+
+\begin{thebibliography}{9}
+\bibitem{critch2019} A.~Critch, \emph{A parametric, resource-bounded generalization of L\"ob's theorem, and a robust cooperation criterion for open-source game theory}, J.~Symbolic Logic \textbf{84}(4) (2019), 1368--1381.
+\bibitem{osgt2022} A.~Critch, M.~Dennis, and S.~Russell, \emph{Cooperative and uncooperative institution designs: surprises and problems in open-source game theory}, arXiv:2208.07006v1 [cs.GT] (2022), Center for Human-Compatible AI, UC Berkeley.
+\end{thebibliography}
+
+\end{document}

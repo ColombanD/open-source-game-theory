@@ -740,6 +740,39 @@ the literal list by defeq on the concrete zoo) and are annotated scanner-facing.
 If the scanner is ever retargeted at the `<bot>Row` tables (easier to parse), the
 corollaries can go.
 
+**The 9-zoo coincidence certification (2026-08-19, later the same day) — and what
+it CAUGHT.** Extending `bit_coincidence` to all 81 template cells (`FULL_BOTS`, the
+base matrix is total over the 8 base bots) failed on two cells beyond the recorded
+Mirror one, both at the Guardian hypothesis, both `def4 D` vs `def3 C`:
+
+* `(TauTFTPf, TauGuardian)` — BY DESIGN: the prover variant of behavioral base TFT
+  cannot cite Guardian's floor-priced cooperation. The BASE_OF claim "the twins'
+  bits coincide at large k" was thereby FALSIFIED (it held only floor-free);
+  whitelisted with the honest reason — the α-gap headline as a bit.
+* `(TauEBot, TauGuardian)` — A REAL TRANSCRIPTION INFIDELITY, dating to the
+  original 2026-08-11 tau layer and invisible until Guardian joined the zoo: **base
+  EBot is a SIMULATOR** (`.sim .opp (.bot DefectBot)` / `(.bot CooperateBot)`), but
+  the tau template used `prove` stages. Guardian's floor is the first cell where
+  the modalities disagree at large k, and the certification flagged it on first
+  contact. FIXED (run-mode spec, the faithful lift): `tauEBotSpec` is two `run`
+  stages; Gate D1 re-pinned by `rfl`; `eRow`/`eMass` now include `w .guardian`;
+  the exploiter/trust bands restated (`eMass` and `pfMass` are now incomparable —
+  they differ by wC vs wGuardian; the trust band is nonempty iff wC > 0).
+
+**The run-mode fix forced the EMBEDDED-floor census** — the kernel the DBot lift
+was deferred on, now delivered (`Tau/Theorems/TauEBot/Helpers.lean`,
+`no_provable_botRunCascade_C`): `inst .ebot .dupoc` still truly cooperates and its
+probe is still 0, but the floor moved ONE LEVEL DOWN — any certificate must certify
+the exploit-WATCH falling, i.e. that the watched `inst .dupoc .defect` (a budget-k
+searcher) plays its else-action, and that subproof pays the `search_f` floor. The
+census instantiates `no_provable_tailToS_floor` with a two-level-deeper atom killer
+(`bot → ite_t` fire-mismatch / `ite_f → sim → bot → search_t` const-mismatch /
+`search_f` floor `kb`), needs NO hypothesis on the inner guard, and unblocks the
+DBot lift's recorded blocker. Python's `decide` needed no change (its floored
+run-consultation tracking, built for OBot, already computes the embedded floor);
+whitelist now has exactly TWO entries, and the full-zoo certification passes
+79/81 + 2 whitelisted.
+
 **Step 3 — SCHEDULED DEBT: `Zoo.WellFormed` + computed fuel (NOT started).** The
 piece that would make MACHINE-GENERATED zoos possible by replacing Gate D1's
 hand-written closures. Components, sketched 2026-08-19:

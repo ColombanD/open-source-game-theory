@@ -97,10 +97,10 @@ TAU_ZOO: dict[str, LiftSpec] = {
     "TauTFTPf": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "C", "C"),), "D"),
     "TauDupoc": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
     "TauEBot": LiftSpec(
-        (Stage(Mode.PROVE, "TauDefect", "C", "D"),
-         Stage(Mode.PROVE, "TauCooperate", "C", "C")),
+        (Stage(Mode.RUN, "TauDefect", "C", "D"),
+         Stage(Mode.RUN, "TauCooperate", "C", "C")),
         "D",
-    ),
+    ),  # RUN since 2026-08-19: base EBot's cascade is .sim watches, not searches
     "TauJust": LiftSpec((Stage(Mode.PROVE, "TauDupoc", "C", "C"),), "D"),
     "TauOBot": LiftSpec(
         (Stage(Mode.RUN, "TauCooperate", "D", "D"),
@@ -136,8 +136,11 @@ BASE_OF: dict[str, str] = {
     "TauGuardian": "GuardianBot",
 }
 """Which base bot each template lifts. The two TFT variants are two lift MODALITIES
-of the same base strategy (behavioral vs prover) — at large k their bits coincide,
-which is the budget-gap claim."""
+of the same base strategy (behavioral vs prover). Their bits coincide at large k on
+FLOOR-FREE columns only: GuardianBot's floor-priced cooperation (9-zoo, 2026-08-18)
+is visible to the sim and invisible to the prover at EVERY k, so the prover twin
+carries a PERMANENT whitelisted divergence at the guardian cell — the α-gap as a
+bit."""
 
 LEAN_SLOT: dict[str, str] = {
     "TauCooperate": "coop",
@@ -338,3 +341,15 @@ under the corrected source lift it must NOT (that inversion is the certification
 `compare.py` runs), except at the whitelisted Mirror-truncation cell."""
 
 SEPARATING_BOTS: tuple[str, ...] = CONTROL_BOTS + ("EBot",)
+
+FULL_ZOO: dict[str, str] = {
+    **SEPARATING_ZOO,
+    "JustBot": "TauJust",
+    "OBot": "TauOBot",
+    "GuardianBot": "TauGuardian",
+}
+"""The whole 9-template zoo (8 base bots; TitForTatBot carries both TFT variants).
+The base matrix is total over these, so the coincidence certification runs on all
+81 template cells."""
+
+FULL_BOTS: tuple[str, ...] = SEPARATING_BOTS + ("JustBot", "OBot", "GuardianBot")

@@ -22,6 +22,7 @@ from pd_runner.tau.def4 import (
     BASE_OF,
     CONTROL_BOTS,
     CONTROL_ZOO,
+    FULL_BOTS,
     SEPARATING_BOTS,
     SEPARATING_ZOO,
     TEMPLATES,
@@ -46,7 +47,7 @@ EXPECTED_ACTIONS: dict[str, str] = {
     "TauTFTSim": "CDCCCDCCC",
     "TauTFTPf": "CDCCCDCCD",
     "TauDupoc": "CDCCCDCDD",
-    "TauEBot": "DDCCCDCCD",
+    "TauEBot": "DDCCCDCCC",
     "TauJust": "CDCCCDCDD",
     "TauOBot": "CDDDDDDDD",
     "TauGuardian": "CDCCCDCCC",
@@ -74,12 +75,16 @@ def test_kernel_scanner_finds_all_six_rows() -> None:
 # ── the floor, structural ──────────────────────────────────────────────────────
 
 
-def test_ebot_cooperations_are_floor_priced() -> None:
-    """TauEBot's real cooperations sit behind its failed exploit probe, so they
-    are TRUE but UNPROVABLE — the Gödelian pair, computed rather than stipulated."""
-    for hyp in ("TauTFTSim", "TauTFTPf", "TauDupoc"):
-        d = decide("TauEBot", hyp)
-        assert d == Decision("C", provable=False)
+def test_ebot_cooperations_floor_exactly_at_searcher_hypotheses() -> None:
+    """Run-mode TauEBot (2026-08-19): a cooperation is floor-priced exactly when a
+    WATCHED instance is itself a searcher whose play needs `search_f` — the floor
+    moved one level down. Behavioral hypotheses (tftSim, obot) give cheap positive
+    transcripts; prover hypotheses (tftPf, dupoc) and Guardian's punish-searcher
+    stay true-but-unprovable."""
+    for hyp in ("TauTFTSim", "TauOBot"):
+        assert decide("TauEBot", hyp) == Decision("C", provable=True)
+    for hyp in ("TauTFTPf", "TauDupoc", "TauGuardian"):
+        assert decide("TauEBot", hyp) == Decision("C", provable=False)
 
 
 def test_dupoc_reads_ebot_floor_as_zero() -> None:
@@ -144,8 +149,20 @@ def test_bit_coincidence_separating() -> None:
     assert div[0].def4 == "D" and div[0].def3 == "C"
 
 
-def test_whitelist_is_exactly_the_mirror_cell() -> None:
-    assert set(WHITELIST) == {("TauEBot", "TauEBot")}
+def test_whitelist_is_exactly_the_two_recorded_cells() -> None:
+    assert set(WHITELIST) == {("TauEBot", "TauEBot"), ("TauTFTPf", "TauGuardian")}
+
+
+def test_bit_coincidence_full_zoo() -> None:
+    """All 81 template cells against the total base matrix: 79 agree; the two
+    divergences are exactly the whitelisted Mirror-truncation and prover-modality
+    cells."""
+    matrix = load_tau_matrix(FULL_BOTS)
+    coin = bit_coincidence(matrix)
+    assert len(coin.cells) == 81
+    assert coin.passed, coin.unexpected
+    div = {(c.template, c.hypothesis) for c in coin.whitelisted_divergences}
+    assert div == {("TauEBot", "TauEBot"), ("TauTFTPf", "TauGuardian")}
 
 
 def test_phase_sweep_control_attributed() -> None:

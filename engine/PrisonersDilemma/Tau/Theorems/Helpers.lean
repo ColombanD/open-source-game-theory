@@ -84,36 +84,6 @@ theorem searchProbe_plays_D {k : Nat} {I : Prog} (me opp : Prog)
   rw [eval, probe_subst, h, if_neg (by simp)]
   rfl
 
-/-- The two-stage exploiter cascade DEFECTS when its exploit-probe fires… -/
-theorem cascade_plays_D_of_exploit {k : Nat} {I_D I_C : Prog} (me opp : Prog)
-    (h1 : proofSearch k (probe I_D) = true) :
-    ∃ N, eval N me opp (.search k (probe I_D) (.const .D)
-      (.search k (probe I_C) (.const .C) (.const .D))) = some Action.D := by
-  refine ⟨2, ?_⟩
-  rw [eval, probe_subst, h1]
-  rfl
-
-/-- …COOPERATES when the exploit fails but reciprocity fires… -/
-theorem cascade_plays_C {k : Nat} {I_D I_C : Prog} (me opp : Prog)
-    (h1 : proofSearch k (probe I_D) = false)
-    (h2 : proofSearch k (probe I_C) = true) :
-    ∃ N, eval N me opp (.search k (probe I_D) (.const .D)
-      (.search k (probe I_C) (.const .C) (.const .D))) = some Action.C := by
-  refine ⟨3, ?_⟩
-  rw [eval, probe_subst, h1, if_neg (by simp), eval, probe_subst, h2]
-  rfl
-
-/-- …and DEFECTS when neither fires. -/
-theorem cascade_plays_D_of_both_false {k : Nat} {I_D I_C : Prog} (me opp : Prog)
-    (h1 : proofSearch k (probe I_D) = false)
-    (h2 : proofSearch k (probe I_C) = false) :
-    ∃ N, eval N me opp (.search k (probe I_D) (.const .D)
-      (.search k (probe I_C) (.const .C) (.const .D))) = some Action.D := by
-  refine ⟨3, ?_⟩
-  rw [eval, probe_subst, h1, if_neg (by simp), eval, probe_subst, h2,
-      if_neg (by simp)]
-  rfl
-
 /-- A run-stage (`.ite` over a frozen self-sim) COPIES what its probed instance
     plays — the behavioral read: true plays, floor-blind. -/
 theorem simCopy_plays {I : Prog} {a : Action} (me opp : Prog)
@@ -203,6 +173,49 @@ theorem searchProbeD_plays_C {k : Nat} {I : Prog} (me opp : Prog)
   refine ⟨2, ?_⟩
   rw [eval, probeD_subst, h, if_neg (by simp)]
   rfl
+
+/-- EBot's idiom fires: a run-stage testing COOPERATION plays its fire action when
+    the watched instance cooperates (generic in the fire action — EBot's stage 1
+    fires D, its stage 2 fires C)… -/
+theorem simWatchC_fires {I : Prog} {f : Action} {cont : Prog} (me opp : Prog)
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.C) :
+    ∃ N, eval N me opp (.ite (.sim (.bot I) (.bot I)) Action.C (.const f) cont)
+      = some f := by
+  obtain ⟨N, hN⟩ := h
+  refine ⟨N + 3, ?_⟩
+  rw [eval]
+  have hg : eval (N + 2) me opp (.sim (.bot I) (.bot I)) = some Action.C := by
+    rw [eval]
+    simp only [Prog.subst]
+    rw [eval]
+    exact eval_mono_le hN _ (by omega)
+  rw [hg]
+  simp only [bind, Option.bind]
+  rw [if_pos (by decide)]
+  rfl
+
+/-- …and falls through to the continuation when it defects. -/
+theorem simWatchC_falls {I : Prog} {f : Action} {cont : Prog} {a : Action}
+    (me opp : Prog)
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.D)
+    (hcont : ∃ N, eval N me opp cont = some a) :
+    ∃ N, eval N me opp (.ite (.sim (.bot I) (.bot I)) Action.C (.const f) cont)
+      = some a := by
+  obtain ⟨N, hN⟩ := h
+  obtain ⟨M, hM⟩ := hcont
+  refine ⟨max (N + 2) M + 1, ?_⟩
+  rw [eval]
+  have hg : eval (max (N + 2) M) me opp (.sim (.bot I) (.bot I)) = some Action.D := by
+    have : eval (N + 2) me opp (.sim (.bot I) (.bot I)) = some Action.D := by
+      rw [eval]
+      simp only [Prog.subst]
+      rw [eval]
+      exact eval_mono_le hN _ (by omega)
+    exact eval_mono_le this _ (Nat.le_max_left _ _)
+  rw [hg]
+  simp only [bind, Option.bind]
+  rw [if_neg (by decide)]
+  exact eval_mono_le hM _ (Nat.le_max_right _ _)
 
 /-- OBot's idiom fires: a run-stage testing DEFECTION plays its fire action when the
     watched instance defects… -/
@@ -358,67 +371,6 @@ theorem ps_simCopy_constD (m : Nat) :
   | false => rfl
   | true => exact absurd (proofSearch_sound _ _ h) interp_simCopy_constD_false
 
-/-! ## Shape lemmas — the cascade on constants (τ(EBot)'s coop/defect/self cells) -/
-
-/-- The cascade probed at the CONSTANT COOPERATOR defects via a FIRING exploit
-    check — bit 0 (base `EBot vs CooperateBot = (D, C)`, mechanism-faithful). -/
-theorem interp_cascade_constC_false {k : Nat} (hk : 2 ≤ k) :
-    ¬ (probe (.search k (probe (.const .C)) (.const .D)
-        (.search k (probe (.const .C)) (.const .C) (.const .D)))).interp := by
-  rintro ⟨n, hn⟩
-  have hps : proofSearch k
-      ((probe (.const .C)).subst
-        (.bot (.search k (probe (.const .C)) (.const .D)
-          (.search k (probe (.const .C)) (.const .C) (.const .D))))
-        (.bot (.search k (probe (.const .C)) (.const .D)
-          (.search k (probe (.const .C)) (.const .C) (.const .D)))))
-      = true := ps_probe_constC hk
-  match n with
-  | 0 => simp [play, eval] at hn
-  | 1 => simp [play, eval] at hn
-  | 2 => simp [play, eval, hps] at hn
-  | n + 3 => simp [play, eval, hps] at hn
-
-theorem ps_cascade_constC_false {k : Nat} (hk : 2 ≤ k) (m : Nat) :
-    proofSearch m (probe (.search k (probe (.const .C)) (.const .D)
-      (.search k (probe (.const .C)) (.const .C) (.const .D)))) = false := by
-  cases h : proofSearch m
-      (probe (.search k (probe (.const .C)) (.const .D)
-        (.search k (probe (.const .C)) (.const .C) (.const .D)))) with
-  | false => rfl
-  | true => exact absurd (proofSearch_sound _ _ h) (interp_cascade_constC_false hk)
-
-/-- The cascade probed at the CONSTANT DEFECTOR falls through both stages — bit 0. -/
-theorem interp_cascade_constD_false (k : Nat) :
-    ¬ (probe (.search k (probe (.const .D)) (.const .D)
-        (.search k (probe (.const .D)) (.const .C) (.const .D)))).interp := by
-  rintro ⟨n, hn⟩
-  have hps : proofSearch k
-      ((probe (.const .D)).subst
-        (.bot (.search k (probe (.const .D)) (.const .D)
-          (.search k (probe (.const .D)) (.const .C) (.const .D))))
-        (.bot (.search k (probe (.const .D)) (.const .D)
-          (.search k (probe (.const .D)) (.const .C) (.const .D)))))
-      = false := ps_probe_constD k
-  match n with
-  | 0 => simp [play, eval] at hn
-  | 1 => simp [play, eval] at hn
-  | 2 => simp [play, eval, hps] at hn
-  | n + 3 =>
-      simp only [play, eval, hps] at hn
-      cases n with
-      | zero => simp [eval] at hn
-      | succ m => simp [eval] at hn
-
-theorem ps_cascade_constD_false (k m : Nat) :
-    proofSearch m (probe (.search k (probe (.const .D)) (.const .D)
-      (.search k (probe (.const .D)) (.const .C) (.const .D)))) = false := by
-  cases h : proofSearch m
-      (probe (.search k (probe (.const .D)) (.const .D)
-        (.search k (probe (.const .D)) (.const .C) (.const .D)))) with
-  | false => rfl
-  | true => exact absurd (proofSearch_sound _ _ h) (interp_cascade_constD_false k)
-
 /-! ## Shape lemmas — the δ_L column's two provable conditionals
 
 Both probe `inst .dupoc .coop` — "Dupoc seeing the cooperator" — which is itself a
@@ -454,7 +406,7 @@ abbrev pfMass (w : Tmpl → Nat) : Nat :=
 abbrev dupMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + w .just)))
 abbrev eMass (w : Tmpl → Nat) : Nat :=
-  w .tftSim + (w .tftPf + (w .dupoc + (w .just + w .obot)))
+  w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + w .guardian))))
 abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
 abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop
 
@@ -469,19 +421,26 @@ theorem ps_probeD_constD {k : Nat} (hk : 2 ≤ k) :
     proofSearch k (probeD (.const .D)) = true :=
   (proofSearch_spec _ _).2 (pf_probeD_constD hk)
 
-/-- The cascade probed at the constant cooperator PROVABLY defects — its exploit
-    check FIRES, and the firing transcript is cheap (`search_t` cites the probe of
-    the constant). This is the bit GuardianBot reads to punish EBot. -/
-theorem pf_probeD_cascadeConstC {k K : Nat} (hk : 2 ≤ k) (hK : c_guard k + 3 ≤ K) :
-    Pf K (probeD (.search k (probe (.const .C)) (.const .D)
-      (.search k (probe (.const .C)) (.const .C) (.const .D)))) :=
-  Pf.atom ⟨PlaysProof.bot (PlaysProof.search_t (pf_probe_constC hk) PlaysProof.const),
+/-- EBot's run cascade at the constant cooperator PROVABLY defects — its
+    exploit-WATCH sees the cooperator cooperate and fires, and the firing
+    transcript is a cheap positive `ite_t` over a constant sim. This is the bit
+    GuardianBot reads to punish EBot. -/
+theorem pf_probeD_runCascadeConstC {K : Nat} (hK : 6 ≤ K) :
+    Pf K (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
+      (.const .D)
+      (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C (.const .C)
+        (.const .D)))) :=
+  Pf.atom ⟨PlaysProof.bot
+    (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) rfl
+      PlaysProof.const),
     by have := hcl; have := hcn; omega⟩
 
-theorem ps_probeD_cascadeConstC {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) :
-    proofSearch k (probeD (.search k (probe (.const .C)) (.const .D)
-      (.search k (probe (.const .C)) (.const .C) (.const .D)))) = true :=
-  (proofSearch_spec _ _).2 (pf_probeD_cascadeConstC hk hkk)
+theorem ps_probeD_runCascadeConstC {k : Nat} (h6 : 6 ≤ k) :
+    proofSearch k (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
+      (.const .D)
+      (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C (.const .C)
+        (.const .D)))) = true :=
+  (proofSearch_spec _ _).2 (pf_probeD_runCascadeConstC h6)
 
 /-- OBot's instance at the cooperator PROVABLY cooperates: both defection-watching
     stages see the constant cooperator cooperate and fall through to the trusting

@@ -17,8 +17,9 @@ while the base zoo uses per-pair files).
 
 **The α-regime ladder** (each bot's cooperation boundary, from the phase theorems):
 
-    obotMass = wC  ≤  eMass  ≤  pfMass  ≤  simMass = guardMass
-                       dupMass ≤ pfMass
+    obotMass = wC      dupMass ≤ pfMass ≤ simMass = guardMass
+    eMass ≤ simMass    (eMass and pfMass are INCOMPARABLE since the 2026-08-19
+                        run-mode EBot: they differ by wC vs wGuardian)
 
 The headline bands the 9-zoo adds:
 
@@ -26,8 +27,9 @@ The headline bands the 9-zoo adds:
   the behavioral TFT still cooperates while its prover twin has flipped — Guardian's
   floor-priced cooperation counts for the simulator and not for the prover, so the
   prover/behavioral split is finally an α-gap;
-* **the TRUST band** `eMass < θ ≤ guardMass`: the exploiter has flipped while the
-  norm enforcer still trusts — `(D, C)`, Guardian pays for failing to convict.
+* **the TRUST band** `eMass < θ ≤ guardMass` (nonempty iff `w .coop > 0` —
+  guardMass = eMass + wC since the run-mode EBot): the exploiter has flipped while
+  the norm enforcer still trusts — `(D, C)`, Guardian pays for failing to convict.
 -/
 
 open PD PD.Tau PD.BaseTheorems
@@ -166,7 +168,8 @@ theorem outcome_TauEBot_vs_TauEBot_high {k : Nat} (hk : 2 ≤ k) (hkk : c_guard 
     ((tauEBot_phase hk hkk h6 h10 θ w _).2 hθ)
 
 /-- The exploiter band against the prover TFT (`eMass < θ ≤ pfMass`, nonempty iff
-    `w .coop > 0` — pfMass = eMass + wC). -/
+    `w .coop > w .guardian` — the two masses differ by wC vs wGuardian since the
+    run-mode EBot). -/
 theorem outcome_TauTFTPf_vs_TauEBot_band {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat)
     (hlo : ¬ θ ≤ eMass w) (hhi : θ ≤ pfMass w) :
@@ -182,11 +185,11 @@ theorem outcome_TauEBot_vs_TauTFTPf_band {k : Nat} (hk : 2 ≤ k) (hkk : c_guard
     ((tauTFTPf_phase hk hkk h6 h10 θ w _).1 hhi)
 
 theorem outcome_TauEBot_vs_TauTFTPf_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ eMass w) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ eMass w)
+    (hθp : θ ≤ pfMass w) :
     ∃ N, outcome N (TauBotZ k .ebot w θ) (TauBotZ k .tftPf w θ) = some (.C, .C) :=
   outcome_of_ex_plays ((tauEBot_phase hk hkk h6 h10 θ w _).1 hθ)
-    ((tauTFTPf_phase hk hkk h6 h10 θ w _).1
-      (by simp only [eMass, pfMass] at *; omega))
+    ((tauTFTPf_phase hk hkk h6 h10 θ w _).1 hθp)
 
 /-! ## The new bots' self-plays, and the TRUST band -/
 

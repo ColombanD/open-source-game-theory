@@ -96,7 +96,7 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .tftSim   => ps_simCopy_constC h6
   | .tftPf    => ps_searchProbe_constC hk hkk
   | .dupoc    => ps_searchProbe_constC hk hkk
-  | .ebot     => ps_cascade_constC_false hk k
+  | .ebot     => ps_probe_false_of_plays_D k (simWatchC_fires _ _ ⟨1, rfl⟩)
   | .just     => ps_searchProbe_constC hk hkk
   | .obot     => ps_probe_obotConstC h10
   | .guardian => ps_probe_guardCell_false (le_refl k) _
@@ -115,7 +115,8 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) :
   | .tftSim   => ps_simCopy_constD k
   | .tftPf    => ps_searchProbe_constD k k
   | .dupoc    => ps_searchProbe_constD k k
-  | .ebot     => ps_cascade_constD_false k k
+  | .ebot     => ps_probe_false_of_plays_D k
+      (simWatchC_falls _ _ ⟨1, rfl⟩ (simWatchC_falls _ _ ⟨1, rfl⟩ ⟨1, rfl⟩))
   | .just     => ps_searchProbe_constD k k
   | .obot     => ps_probe_false_of_plays_D k obot_defect_plays_D
   | .guardian => ps_probe_false_of_plays_D k (guardian_defect_plays_D hk)
@@ -167,7 +168,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
   | .dupoc    => ps_probeD_false_of_plays_C k
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
-  | .ebot     => ps_probeD_cascadeConstC hk hkk
+  | .ebot     => ps_probeD_runCascadeConstC h6
   | .just     => ps_probeD_false_of_plays_C k
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
   | .obot     => ps_probeD_false_of_plays_C k
@@ -193,18 +194,7 @@ theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .tftSim   => entry_C_of_interp (Pf_sound _ _ (pf_simCopy_constC h6))
   | .tftPf    => entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk))
   | .dupoc    => entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk))
-  | .ebot     => by
-      have hb : proofSearch k (probe (.const .C)) = true := ps_probe_constC hk
-      have hplay : eval 3
-          (.bot (.search k (probe (.const .C)) (.const .D)
-            (.search k (probe (.const .C)) (.const .C) (.const .D))))
-          (.bot (.search k (probe (.const .C)) (.const .D)
-            (.search k (probe (.const .C)) (.const .C) (.const .D))))
-          (.search k (probe (.const .C)) (.const .D)
-            (.search k (probe (.const .C)) (.const .C) (.const .D)))
-          = some Action.D := by
-        rw [eval, probe_subst, hb]; rfl
-      exact ⟨3, hplay⟩
+  | .ebot     => simWatchC_fires _ _ ⟨1, rfl⟩
   | .just     => entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk))
   | .obot     => entry_C_of_interp (Pf_sound _ _ (pf_probe_obotConstC h10))
   | .guardian => guardian_coop_plays_C
@@ -224,7 +214,7 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k) :
   | .tftSim   => simCopy_plays _ _ ⟨1, rfl⟩
   | .tftPf    => searchProbe_plays_D _ _ (ps_probe_constD k)
   | .dupoc    => searchProbe_plays_D _ _ (ps_probe_constD k)
-  | .ebot     => cascade_plays_D_of_both_false _ _ (ps_probe_constD k) (ps_probe_constD k)
+  | .ebot     => simWatchC_falls _ _ ⟨1, rfl⟩ (simWatchC_falls _ _ ⟨1, rfl⟩ ⟨1, rfl⟩)
   | .just     => searchProbe_plays_D _ _ (ps_probe_constD k)
   | .obot     => obot_defect_plays_D
   | .guardian => guardian_defect_plays_D hk
