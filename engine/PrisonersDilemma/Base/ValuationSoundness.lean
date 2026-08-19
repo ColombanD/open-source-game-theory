@@ -126,6 +126,15 @@ theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}
   | refl => exact h
   | step _ ih => exact eval_mono _ _ _ _ _ ih
 
+/-- `eval` is deterministic: two successful runs of the same frame agree (lift both
+    to the larger fuel). -/
+theorem eval_det {me opp body : Prog} {a b : Action} {N M : Nat}
+    (ha : eval N me opp body = some a) (hb : eval M me opp body = some b) : a = b := by
+  have ha' := eval_mono_le ha (max N M) (Nat.le_max_left _ _)
+  have hb' := eval_mono_le hb (max N M) (Nat.le_max_right _ _)
+  rw [ha'] at hb'
+  exact Option.some_inj.mp hb'
+
 /-- "Every entry of this vote list actually RUNS to some action" — the semantic
     counterpart of the syntactic `VoteAllPlay`, and the `motive_2` the master lemma's
     certificate pass carries. -/
