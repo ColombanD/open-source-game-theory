@@ -113,6 +113,7 @@ theorem sound_upto : ∀ B : Nat,
     (fun _ _ _ hT _ => hT.elim id id)
     (fun _ _ _ _ _ _ hT _ => hT.elim id id)
     (fun _ _ _ _ _ _ hT _ => hT.elim id id)   -- h_tvote
+    (fun _ _ _ _ hT _ => hT.elim id id)       -- h_sys (the .sys binder, 2026-08-20)
     (fun _ _ _ hT => hT)
     (fun _ _ _ hT => hT)
     (fun _ _ _ _ _ _ _ hT _ _ => (hT.elim id id).elim)

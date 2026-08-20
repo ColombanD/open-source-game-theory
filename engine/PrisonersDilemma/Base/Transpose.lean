@@ -72,6 +72,17 @@ mutual
     | .ite b a p q    => .ite b.transpose a.swap p.transpose q.transpose
     | .search k φ p q => .search k φ.transpose p.transpose q.transpose
     | .tvote v θ p q  => .tvote v θ p.transpose q.transpose
+    | .sys defs i     => .sys defs.transpose i
+    | .selfIdx j      => .selfIdx j         -- a bare reference carries no action
+
+  /-- τ̂ on a system's member list. Unlike `.tvote` entries (frozen — their FIRING
+      is C-asymmetric, see the header), a system member is an ordinary program whose
+      action constants must flip; freezing them would make `Pf.transpose`'s
+      `sysStep` arm unprovable (the premise transposes the closed component, so the
+      member list must transpose with it). -/
+  def ProgList.transpose : ProgList → ProgList
+    | .nil         => .nil
+    | .cons p rest => .cons p.transpose rest.transpose
 
   /-- Def 1.3/1.8: constant relabelling `φ^τ` on formulas — replaces every `C`
       by `D` and vice versa, commuting with every logical symbol (eq. (1.1)). -/
@@ -102,6 +113,16 @@ mutual
           Prog.transpose_transpose q]
     | .tvote v θ p q  => by
         simp [Prog.transpose, Prog.transpose_transpose p, Prog.transpose_transpose q]
+    | .sys defs i     => by
+        simp [Prog.transpose, ProgList.transpose_transpose defs]
+    | .selfIdx j      => rfl
+
+  @[simp] theorem ProgList.transpose_transpose :
+      ∀ l : ProgList, l.transpose.transpose = l
+    | .nil         => rfl
+    | .cons p rest => by
+        simp [ProgList.transpose, Prog.transpose_transpose p,
+          ProgList.transpose_transpose rest]
 
   @[simp] theorem Formula.transpose_transpose : ∀ φ : Formula, φ.transpose.transpose = φ
     | .plays p q a => by
@@ -144,6 +165,16 @@ mutual
           Prog.size_transpose q]
     | .tvote v θ p q  => by
         simp [Prog.transpose, Prog.size, Prog.size_transpose p, Prog.size_transpose q]
+    | .sys defs i     => by
+        simp [Prog.transpose, Prog.size, ProgList.psize_transpose defs]
+    | .selfIdx j      => rfl
+
+  @[simp] theorem ProgList.psize_transpose :
+      ∀ l : ProgList, l.transpose.psize = l.psize
+    | .nil         => rfl
+    | .cons p rest => by
+        simp [ProgList.transpose, ProgList.psize, Prog.size_transpose p,
+          ProgList.psize_transpose rest]
 
   @[simp] theorem Formula.size_transpose : ∀ φ : Formula, φ.transpose.size = φ.size
     | .plays p q _ => by
@@ -185,6 +216,8 @@ mutual
     | .tvote v θ p q,  me, o => by
         simp [Prog.subst, Prog.transpose, Prog.subst_transpose p me o,
           Prog.subst_transpose q me o]
+    | .sys defs i,     _,  _ => rfl
+    | .selfIdx j,      _,  _ => rfl
 
   @[simp] theorem Formula.subst_transpose :
       ∀ (φ : Formula) (me opponent : Prog),
@@ -204,6 +237,79 @@ mutual
         simp [Formula.subst, Formula.transpose, Prog.subst_transpose p me o]
     | .diag g φ,    _,  _ => rfl
 end
+
+/-! ## τ̂ commutes with the SYSTEM-level closer
+
+The binder's counterpart to `subst_transpose`, and the one place where `.sys`
+DIFFERS from `.tvote`: τ̂ descends into system MEMBERS (a member is an ordinary
+program whose actions flip) while it freezes vote ENTRIES (whose firing is
+C-asymmetric — see the header). Consequently the equivariance carries the
+transposed system: closing with `defs` then transposing equals transposing then
+closing with `defs.transpose`. Freezing members instead was tried and makes
+`Pf.transpose`'s `sysStep` arm unprovable — the premise transposes the closed
+component, so the member list must transpose with it. -/
+
+/-- τ̂ preserves member lookup: transposing a system transposes the member found at
+    each index. The `sysStep` arm needs it to rebuild `hget` on the τ̂ side. -/
+@[simp] theorem ProgList.get?_transpose :
+    ∀ (l : ProgList) (i : Nat) (p : Prog), l.get? i = some p →
+      l.transpose.get? i = some p.transpose
+  | .nil,         _,     _, h => by simp [ProgList.get?] at h
+  | .cons q _,    0,     p, h => by
+      simp only [ProgList.get?, Option.some.injEq] at h
+      simp [ProgList.transpose, ProgList.get?, h]
+  | .cons _ rest, n + 1, p, h => by
+      simp only [ProgList.get?] at h
+      simpa [ProgList.transpose, ProgList.get?] using
+        ProgList.get?_transpose rest n p h
+
+mutual
+  @[simp] theorem Prog.sysClose_transpose :
+      ∀ (p : Prog) (defs : ProgList),
+        (p.sysClose defs).transpose = p.transpose.sysClose defs.transpose
+    | .const a,        _ => rfl
+    | .self,           _ => rfl
+    | .opp,            _ => rfl
+    | .bot p,          d => by
+        simp [Prog.sysClose, Prog.transpose, Prog.sysClose_transpose p d]
+    | .sim p q,        d => by
+        simp [Prog.sysClose, Prog.transpose, Prog.sysClose_transpose p d,
+          Prog.sysClose_transpose q d]
+    | .ite b a p q,    d => by
+        simp [Prog.sysClose, Prog.transpose, Prog.sysClose_transpose b d,
+          Prog.sysClose_transpose p d, Prog.sysClose_transpose q d]
+    | .search k φ p q, d => by
+        simp [Prog.sysClose, Prog.transpose, Formula.sysClose_transpose φ d,
+          Prog.sysClose_transpose p d, Prog.sysClose_transpose q d]
+    | .tvote v θ p q,  d => by
+        -- entries are frozen for τ̂ but NOT for `sysClose`; the branches commute
+        simp [Prog.sysClose, Prog.transpose, Prog.sysClose_transpose p d,
+          Prog.sysClose_transpose q d]
+    | .sys dl i,       _ => rfl
+    | .selfIdx j,      _ => rfl
+  termination_by structural p => p
+
+  @[simp] theorem Formula.sysClose_transpose :
+      ∀ (φ : Formula) (defs : ProgList),
+        (φ.sysClose defs).transpose = φ.transpose.sysClose defs.transpose
+    | .plays p q a, d => by
+        simp [Formula.sysClose, Formula.transpose, Prog.sysClose_transpose p d,
+          Prog.sysClose_transpose q d]
+    | .impl φ ψ,    d => by
+        simp [Formula.sysClose, Formula.transpose, Formula.sysClose_transpose φ d,
+          Formula.sysClose_transpose ψ d]
+    | .neg φ,       d => by
+        simp [Formula.sysClose, Formula.transpose, Formula.sysClose_transpose φ d]
+    | .box n φ,     d => by
+        simp [Formula.sysClose, Formula.transpose, Formula.sysClose_transpose φ d]
+    | .eq p q,      d => by
+        simp [Formula.sysClose, Formula.transpose, Prog.sysClose_transpose p d,
+          Prog.sysClose_transpose q d]
+    | .diag g φ,    d => by
+        simp [Formula.sysClose, Formula.transpose, Formula.sysClose_transpose φ d]
+  termination_by structural f => f
+end
+
 
 /-! ## τ̂ on the telescope layer lists
 
@@ -402,6 +508,12 @@ theorem Pf.transpose {k : Nat} {φ : Formula} (h : Pf k φ) : Pf k φ.transpose 
     (fun hθ hterm _ _ ihq => by
         simp only [Prog.transpose] at ihq ⊢
         exact PlaysProof.voteHigh_f hθ hterm ihq)
+    -- sysStep: `.sys` is FROZEN under τ̂ (like `.tvote` entries), so the system and
+    -- its index survive verbatim; only the CLOSED COMPONENT in the premise
+    -- transposes, and `sysClose` commutes with τ̂ because both freeze the binder.
+    (fun {me opponent} {defs} {i} {p} {a} {n} hget _h ih => by
+        simp only [Prog.transpose, Prog.sysClose_transpose] at ih ⊢
+        exact PlaysProof.sysStep (ProgList.get?_transpose defs i p hget) ih)
     -- ── VoteAllPlay arms (2): motive is `True` (entries are frozen) ──
     trivial
     (fun _ _ _ _ => trivial)

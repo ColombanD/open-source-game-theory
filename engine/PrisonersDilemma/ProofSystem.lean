@@ -372,6 +372,20 @@ mutual
         VoteAllPlay v c →
         PlaysProof me opponent q a n →
         PlaysProof me opponent (.tvote v θ p q) a (n + c + v.vsize + c_node)
+    /-- `.sys` unfolding (the mutual-fixpoint binder, revived 2026-08-20): S reads the
+        system — component `i`, closed one level via `sysClose` — mirroring `eval`'s
+        lazy-unfold arm exactly. Twin of the `.bot` transparency step (a deterministic
+        syntactic rewrap, so it pays `c_node`; the system's source is already written
+        in the statement).
+
+        There is deliberately NO rule for `.selfIdx`: a dangling reference evals
+        `none`, so nothing about it is provable — absence of a rule IS the honest
+        reading. -/
+    | sysStep {me opponent : Prog} {defs : ProgList} {i : Nat} {p : Prog} {a : Action}
+        {n : Nat} :
+        defs.get? i = some p →
+        PlaysProof me opponent (p.sysClose defs) a n →
+        PlaysProof me opponent (.sys defs i) a (n + c_node)
 
 /-- "Every entry of this vote list plays SOMETHING" — the termination side-condition of
     `PlaysProof.voteHigh_f`. Lives in the mutual block because it quantifies over
@@ -849,6 +863,8 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
     -- the VoteAllPlay termination premise + its motive)
     (fun _ _ => trivial) (fun _ _ _ => trivial) (fun _ _ _ _ _ => trivial)
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial)
+    -- sysStep arm (the `.sys` binder, 2026-08-20)
+    (fun _ _ _ => trivial)
     -- VoteAllPlay arms: nil, cons
     trivial (fun _ _ _ _ => trivial)
     (fun _ _ _ => trivial)
@@ -969,6 +985,11 @@ theorem PlaysProof.induct
         motive me opponent q a n hq →
         motive me opponent (.tvote v θ p q) a (n + c + v.vsize + c_node)
           (.voteHigh_f hθ hterm hq))
+    (sysStep : ∀ (me opponent : Prog) (defs : ProgList) (i : Nat) (p : Prog) (a : Action)
+        (n : Nat) (hget : defs.get? i = some p)
+        (h : PlaysProof me opponent (p.sysClose defs) a n),
+        motive me opponent (p.sysClose defs) a n h →
+        motive me opponent (.sys defs i) a (n + c_node) (.sysStep hget h))
     {me opponent body : Prog} {a : Action} {n : Nat} (h : PlaysProof me opponent body a n) :
     motive me opponent body a n h := by
   -- The 27 `Pf` arms + `AtomProvable.mk` are irrelevant here (their motives are `True`); let
@@ -1001,6 +1022,8 @@ theorem PlaysProof.induct
       voteCons_d me opponent p q a n θ w m I rest hθ hI ihI hq ihq)
     (fun hθ hterm hq _ihterm ihq =>
       voteHigh_f _ _ _ _ _ _ _ _ _ hθ hterm hq ihq)
+    (fun {me opponent} {defs} {i} {p} {a} {n} hget h ih =>
+      sysStep me opponent defs i p a n hget h ih)
     -- VoteAllPlay arms (motive `True`): nil, cons
     trivial (fun _ _ _ _ => trivial)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_

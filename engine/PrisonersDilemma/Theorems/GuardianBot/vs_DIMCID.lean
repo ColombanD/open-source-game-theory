@@ -118,6 +118,8 @@ theorem gd_no_opp_image {x me o : Prog}
   | ite b a p q => simp [Prog.subst] at h
   | search K g p q => simp [Prog.subst] at h
   | tvote gs θ p q => simp [Prog.subst] at h
+  | sys defs i => simp [Prog.subst] at h
+  | selfIdx j => simp [Prog.subst] at h
 
 theorem gd_no_self_image {x me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -131,6 +133,8 @@ theorem gd_no_self_image {x me o : Prog}
   | ite b a p q => simp [Prog.subst] at h
   | search K g p q => simp [Prog.subst] at h
   | tvote gs θ p q => simp [Prog.subst] at h
+  | sys defs i => simp [Prog.subst] at h
+  | selfIdx j => simp [Prog.subst] at h
 
 theorem gd_subst_dimcid_forces {k : Nat} {p me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -168,6 +172,8 @@ theorem gd_subst_dimcid_forces {k : Nat} {p me o : Prog}
               · subst hoself; exact gd_no_opp_image hme (by simp) hy
               · exact gd_no_self_image hme hoself hx
   | tvote gs θ pp qq => simp [Prog.subst, DIMCID] at h
+  | sys defs i => simp [Prog.subst, DIMCID] at h
+  | selfIdx j => simp [Prog.subst, DIMCID] at h
 
 theorem gd_subst_ne_guardian {k : Nat} {q me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -193,6 +199,8 @@ theorem gd_subst_ne_guardian {k : Nat} {q me o : Prog}
           obtain ⟨hx, hy, -⟩ := hg
           exact gd_no_opp_image hme ho hx
   | tvote gs θ pp qq => simp [Prog.subst, GuardianBot] at h
+  | sys defs i => simp [Prog.subst, GuardianBot] at h
+  | selfIdx j => simp [Prog.subst, GuardianBot] at h
 
 theorem gd_simS_impossible {k : Nat} {p q me o : Prog}
     (hme : (∃ p₂ q₂, me = .sim p₂ q₂) ∨ (∃ p₂ q₂, me = .bot (.sim p₂ q₂)))
@@ -209,7 +217,7 @@ theorem gd_pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     Pf K φ → WV (gdS k) φ := by
   intro K φ h
   refine ((wv_sound_upto (gdS k) (fun _ _ => False)
-    ?nb ?const ?opp ?ite ?botbot ?botsearch ?tvote ?sim_inv ?botsim_inv
+    ?nb ?const ?opp ?ite ?botbot ?botsearch ?tvote ?sys ?sim_inv ?botsim_inv
     ?search_t ?search_f ?simS ?botsimS K).2 K φ h).2 Pf_sound
   case nb =>
     rintro oppo z ⟨h1, h2⟩; simp [GuardianBot] at h2
@@ -235,6 +243,10 @@ theorem gd_pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     · exact hF.elim
   case tvote =>   -- no census member is a `.tvote` shape either (2026-08-18)
     rintro me oppo v θ P Q (⟨h1, h2⟩ | hF) hgate
+    · subst h1; rcases hgate with hb | hb <;> simp [DIMCID] at hb
+    · exact hF.elim
+  case sys =>   -- no census member is a `.sys` reference either (2026-08-20)
+    rintro me oppo defs idx (⟨h1, h2⟩ | hF) hgate
     · subst h1; rcases hgate with hb | hb <;> simp [DIMCID] at hb
     · exact hF.elim
   case sim_inv =>

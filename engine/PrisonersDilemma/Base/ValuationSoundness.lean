@@ -117,6 +117,14 @@ theorem eval_mono :
                       rw [eval_tvote_cons_d n hθ hI] at h
                       rw [eval_tvote_cons_d (n+1) hθ (ih _ _ _ _ hI)]
                       exact ih _ _ _ _ h
+    | sys defs i =>
+        cases hget : defs.get? i with
+        | some p =>
+            rw [eval_sys_some n hget] at h
+            rw [eval_sys_some (n+1) hget]
+            exact ih _ _ _ _ h
+        | none => rw [eval_sys_none n hget] at h; exact absurd h (by simp)
+    | selfIdx j => rw [eval_selfIdx n] at h; exact absurd h (by simp)
 
 /-- `≤`-form of fuel monotonicity. -/
 theorem eval_mono_le {me opponent body : Prog} {a : Action} {N : Nat}
@@ -480,6 +488,8 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
     -- constructor, 2026-08-18.)
     (h_tvote : ∀ me oppo v θ P Q, (S me oppo ∨ S' me oppo) →
       (Prog.tvote v θ P Q = me ∨ me = .bot (.tvote v θ P Q)) → False)
+    (h_sys : ∀ me oppo defs i, (S me oppo ∨ S' me oppo) →
+      (Prog.sys defs i = me ∨ me = .bot (.sys defs i)) → False)
     (h_sim_inv : ∀ p q oppo, (S (.sim p q) oppo ∨ S' (.sim p q) oppo) →
       S (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo) ∨
       S' (p.subst (.sim p q) oppo) (q.subst (.sim p q) oppo))
@@ -522,7 +532,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         (motive_3 := fun _ _ _ => True)
         (motive_4 := fun _ _ _ => True)
         ?const ?self ?opp ?bot ?sim ?ite_t ?ite_f ?search_t ?search_f
-        ?voteZero_t ?voteNil_f ?voteCons_c ?voteCons_d ?voteHigh_f
+        ?voteZero_t ?voteNil_f ?voteCons_c ?voteCons_d ?voteHigh_f ?sysStep
         ?vapNil ?vapCons
         ?atomMk
         ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep
@@ -623,6 +633,12 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       case voteHigh_f =>
         intro me opponent p q a n θ c v hθ _hterm _hq ihterm ihq hB
         exact eval_tvote_high _ _ _ _ _ _ _ hθ (ihterm (by omega)) (ihq (by omega))
+      -- the `.sys` binder: the certificate's body is the CLOSED component, and
+      -- `eval_sys_some` is exactly the peel the rule mirrors
+      case sysStep =>
+        intro me opponent defs i p a n hget _h ih hB
+        obtain ⟨N, hN⟩ := ih (by omega)
+        exact ⟨N+1, by rw [eval_sys_some N hget]; exact hN⟩
       -- VoteAllPlay arms: turn each entry's transcript into an actual RUN
       case vapNil => exact fun _ => VoteAllRun.nil
       case vapCons =>
@@ -645,7 +661,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         (motive_4 := fun k ψ _ =>
           (k ≤ B → ψ.interp) ∧ ((∀ K χ, Pf K χ → χ.interp) → WV S ψ))
         ?cConst ?cSelf ?cOpp ?cBot ?cSim ?cIte_t ?cIte_f ?cSearch_t ?cSearch_f
-        ?cVZero ?cVNil ?cVCons_c ?cVCons_d ?cVHigh ?cVapNil ?cVapCons ?cAtomMk
+        ?cVZero ?cVNil ?cVCons_c ?cVCons_d ?cVHigh ?cSys ?cVapNil ?cVapCons ?cAtomMk
         ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep
         ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
         ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
@@ -711,6 +727,12 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
       case cVHigh =>
         intro me oppo p q a n θ v c _hθ _hterm _hq _ihterm _ihq _hs hT hgate
         exact (h_tvote _ _ _ _ _ _ hT hgate).elim
+      -- `.sys` shapes are killed outright by `h_sys`: no census subject is ever a
+      -- system reference (the tau layer probes `.bot`-frozen instances, and a system
+      -- MEMBER is reached through `sysClose`, never as the census subject itself).
+      case cSys =>
+        intro me oppo defs i p a n _hget _hp _ih _hs hT hgate
+        exact (h_sys me oppo defs i hT hgate).elim
       -- VoteAllPlay carries no formula content: motive is `True`
       case cVapNil => trivial
       case cVapCons => intros; trivial
