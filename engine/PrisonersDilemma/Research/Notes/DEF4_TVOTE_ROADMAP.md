@@ -797,6 +797,55 @@ Zoo is now 10 templates over 9 base bots. Remaining unlifted: the 5 self-probers
 (`.sys`) and the 4 non-cascade-fragment bots (CIMCIC/DIMCID impl, WaryBot `.neg`,
 CupodTrollBot `.eq`).
 
+**FRAGMENT EXTENSION 1 + CupodTrollBot LIFTED (2026-08-20) — and §8c's blocker
+classification CORRECTED by Gate D1.** Following §8c.7's recommendation (fragment
+work before `.sys`), the first attempt targeted CIMCIC. The `Mode.proveImpl`
+machinery (the `probeImpl` atom + both compiler arms, with the antecedent's subject
+kept as the `.self` pronoun since the instance cannot contain itself) LANDED and is
+correct — but **Gate D1 refused the CIMCIC row by `rfl`**, on exactly three
+hypotheses: `dupoc`, `just`, `cimcic`.
+
+*The correction it forced:* **CIMCIC is a SELF-PROBER.** Its guard
+`.impl (.plays .self .opp C) (.plays .opp .self C)` mentions BOTH pronouns, so its
+target is `self`, so `inst(cimcic, dupoc)` needs `inst(dupoc, cimcic)` needs
+`inst(cimcic, dupoc)` — the mutual-quine wall, not the fragment wall. Same for
+DIMCID (identical shape) and WaryBot (`.neg (.plays .opp .self C)`). §8c's estimate
+"six bots for no engine tax" was therefore WRONG: it is **one**. The rule the note
+should have applied: *a guard mentioning `.opp`'s view of `.self` is a self-probe,
+whatever its outer connective* — the connective decides the FRAGMENT, the pronouns
+decide the `.sys` question, and they are independent.
+
+*What landed instead:* **`Mode.proveEq` + τ(CupodTrollBot)** — the ONLY unlifted bot
+whose guard names a literal third party (`.eq .opp (.bot (CupodBot k))`) rather than
+the opponent's view of me, hence the only one liftable without `.sys`. Spec
+`⟨[⟨.proveEq, .name .dupoc, .C, .D⟩], .C⟩`; 11th template; Gate D1 green on all rows
+including every pre-existing one (the regression gate §8c.5 demanded).
+
+*Two honest results, both recorded at their sites:*
+1. **τ(CupodTroll) is constant-C on this zoo** — its identity check never fires
+   because the bot it looks for (CupodBot) is `.sys`-blocked and absent. That is a
+   faithful lift of a bot whose only target is missing, not a degenerate one; the row
+   changes the day CupodBot lands, which makes this bot the zoo's standing
+   REGRESSION TEST for the `.sys` milestone.
+2. **It is the zoo's SECOND floor bot.** Its C is reached through a FAILED `.eq`
+   search, so the transcript pays `search_f` and no prover can cite it
+   (`ps_probe_inst_cupodTroll_false`, via `no_provable_botSearcherElse_tail`) — the
+   Guardian shape reached by a different route. Consequence: three new whitelisted
+   coincidence cells (`TauTFTPf`, `TauDupoc`, `TauJust` × `TauCupodTroll`), all
+   `def4 D` vs `def3 C`, all the same mechanism. Whitelist is now 5 cells; the
+   certification passes **121 cells, 116 agree, 5 whitelisted**.
+3. Two Python tests were legitimately FALSIFIED and restated rather than patched:
+   the TFT-variants split is now "exactly at the FLOOR bots" (Guardian ∪ CupodTroll,
+   not Guardian alone), and OBot's boundary is `obotMass = w .coop + w .cupodTroll`
+   (a second bot passes both defection watches). `simMass` gained `w .cupodTroll`;
+   `eMass` did not (τ(EBot) fires on CupodTroll's trust of the defector).
+
+*Revised remaining backlog:* **9 bots, and 8 of them need `.sys`** — CupodBot,
+PrudentBot, MirrorBot, LegibleBot, OptimBot, CIMCIC, DIMCID, WaryBot (all
+self-probers; several ALSO need fragment work). The genuinely fragment-only backlog
+is now EMPTY. This inverts §8c.7's recommendation: the fragment-first argument was
+built on a miscount, and `.sys` is now the only path to any further bot.
+
 **Step 3 — SCHEDULED DEBT: `Zoo.WellFormed` + computed fuel (NOT started).** The
 piece that would make MACHINE-GENERATED zoos possible by replacing Gate D1's
 hand-written closures. Components, sketched 2026-08-19:

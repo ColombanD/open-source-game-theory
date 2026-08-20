@@ -59,6 +59,21 @@ def probeD (I : Prog) : Formula := .plays (.bot I) (.bot I) Action.D
 
 theorem probeD_subst (I me o : Prog) : (probeD I).subst me o = probeD I := rfl
 
+/-- **The IMPLICATION probe atom** (2026-08-20, the `.impl`-guard fragment
+    extension): "if `A`'s instance plays `test` against `B`'s, then `B`'s plays
+    `test` against `A`'s" — both sides frozen, so the whole formula is closed.
+
+    This is the tau reading of CIMCIC's guard
+    `.impl (.plays .self .opp C) (.plays .opp .self C)`: in the lift, "me" is the
+    probing instance and "the opponent" is the probed one, and BOTH are `.bot`-frozen
+    terms rather than pronouns. Unlike `probe`/`probeD` the two slots differ, so the
+    atom takes both instances. -/
+def probeImpl (I J : Prog) (test : Action) : Formula :=
+  .impl (.plays (.bot I) (.bot J) test) (.plays (.bot J) (.bot I) test)
+
+theorem probeImpl_subst (I J : Prog) (test : Action) (me o : Prog) :
+    (probeImpl I J test).subst me o = probeImpl I J test := rfl
+
 /-! ## The uniform player -/
 
 /-- **THE tau player**: vote over the decision vector `v` with caution threshold `θ`.

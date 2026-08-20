@@ -8,6 +8,7 @@ import PrisonersDilemma.Tau.Bots.TauJust
 import PrisonersDilemma.Tau.Bots.TauOBot
 import PrisonersDilemma.Tau.Bots.TauGuardian
 import PrisonersDilemma.Tau.Bots.TauDBot
+import PrisonersDilemma.Tau.Bots.TauCupodTroll
 
 /-!
 # Tau/Zoo — the assembled six-template zoo, its players, and Gate D1
@@ -36,6 +37,7 @@ def tmplSpec : Tmpl → Spec Tmpl
   | .obot   => tauOBotSpec
   | .guardian => tauGuardianSpec
   | .dbot     => tauDBotSpec
+  | .cupodTroll => tauCupodTrollSpec
 
 def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
 
@@ -86,6 +88,14 @@ theorem inst_ebot_peel (k : Nat) : ∀ T, inst (tauZoo k) .ebot T
 theorem inst_dbot_peel (k : Nat) : ∀ T, inst (tauZoo k) .dbot T
     = .ite (.sim (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect)))
         .C (.const .D) (.const .C) :=
+  fun T => by cases T <;> rfl
+
+/-- τ(CupodTroll)'s row: one `proveEq` stage — a structural identity test against
+    the probed instance. The `.opp` subject stays a pronoun (resolved by `subst` at
+    consultation, exactly as base CupodTrollBot's `.eq .opp …` does). -/
+theorem inst_cupodTroll_peel (k : Nat) : ∀ T, inst (tauZoo k) .cupodTroll T
+    = .search k (.eq .opp (.bot (inst (tauZoo k) T .dupoc)))
+        (.const .D) (.const .C) :=
   fun T => by cases T <;> rfl
 
 /-- τ(Dupoc)'s row, OFF the diagonal: one prove-stage on the hypothesis's δ_L

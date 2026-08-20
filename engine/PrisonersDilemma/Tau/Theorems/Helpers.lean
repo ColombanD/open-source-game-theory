@@ -400,7 +400,8 @@ theorem pf_searchProbe_searchProbeC {k K : Nat} (hk : 2 ≤ k)
     by have := hcl; have := hcn; omega⟩
 
 abbrev simMass (w : Tmpl → Nat) : Nat :=
-  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + w .guardian)))))
+  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
+    (w .guardian + w .cupodTroll))))))
 abbrev pfMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + w .obot))))
 abbrev dupMass (w : Tmpl → Nat) : Nat :=
@@ -408,7 +409,7 @@ abbrev dupMass (w : Tmpl → Nat) : Nat :=
 abbrev eMass (w : Tmpl → Nat) : Nat :=
   w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + w .guardian))))
 abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
-abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop
+abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
 /-- τ(DBot)'s mass: everything but the exploitable constant cooperator AND ITSELF
     (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
 abbrev dbotMass (w : Tmpl → Nat) : Nat :=

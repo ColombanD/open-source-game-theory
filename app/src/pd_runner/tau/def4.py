@@ -56,6 +56,13 @@ class Mode(Enum):
     reads 1 only on PROVABLE cooperation."""
 
     RUN = "run"
+
+    PROVE_EQ = "proveEq"
+    """Bounded proof search over a STRUCTURAL IDENTITY atom (`.eq`) — "is the probed
+    instance literally this term?". CupodTrollBot's guard shape (2026-08-20). The
+    identity is decidable in BOTH directions in `S` (`Pf.eqRefl`/`Pf.eqNeg`), so the
+    bit is never in doubt; but a FAILED identity commits via `search_f` and therefore
+    floors this player's transcript exactly like a failed `prove` stage."""
     """Execute the probed instance and read its true play (a `.sim`-guarded `.ite`).
     Floor-blind."""
 
@@ -108,6 +115,7 @@ TAU_ZOO: dict[str, LiftSpec] = {
         "C",
     ),
     "TauDBot": LiftSpec((Stage(Mode.RUN, "TauDefect", "C", "D"),), "C"),
+    "TauCupodTroll": LiftSpec((Stage(Mode.PROVE_EQ, "TauDupoc", "C", "D"),), "C"),
     "TauGuardian": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "D", "D"),), "C"),
 }
 
@@ -122,6 +130,7 @@ TEMPLATES: tuple[str, ...] = (
     "TauOBot",
     "TauGuardian",
     "TauDBot",
+    "TauCupodTroll",
 )
 """Canonical template order — matches the Lean `tauOrder`
 ([coop, defect, tftSim, tftPf, dupoc, ebot])."""
@@ -137,6 +146,7 @@ BASE_OF: dict[str, str] = {
     "TauOBot": "OBot",
     "TauGuardian": "GuardianBot",
     "TauDBot": "DBot",
+    "TauCupodTroll": "CupodTrollBot",
 }
 """Which base bot each template lifts. The two TFT variants are two lift MODALITIES
 of the same base strategy (behavioral vs prover). Their bits coincide at large k on
@@ -156,6 +166,7 @@ LEAN_SLOT: dict[str, str] = {
     "TauOBot": "obot",
     "TauGuardian": "guardian",
     "TauDBot": "dbot",
+    "TauCupodTroll": "cupodTroll",
 }
 """Template name → the Lean `Tmpl` constructor, for the kernel bit-table check."""
 
@@ -241,7 +252,15 @@ def _decide(
         else:
             X = A if st.target == SELF else st.target
             sub = _decide(T, X, depth - 1, frozen)
-            if st.mode is Mode.PROVE:
+            if st.mode is Mode.PROVE_EQ:
+                # SYNTACTIC identity, not behavioral: the guard asks whether the
+                # probed instance is literally `inst(T, X)`. In this zoo the probing
+                # instance and the probed one are always DIFFERENT compiled cascades
+                # (the Lean side proves this by a size argument), so the bit is
+                # uniformly False. It becomes interesting only when the named target
+                # is itself in the zoo — i.e. when CupodBot lands via `.sys`.
+                bit = False
+            elif st.mode is Mode.PROVE:
                 # "provably plays `test`": true play matches AND its transcript is
                 # floor-free (a floor-priced play is invisible to proof search)
                 bit = sub.action == st.test and sub.provable
@@ -254,7 +273,7 @@ def _decide(
                     floored = True
         if bit:
             return Decision(st.fire, provable=not floored)
-        if st.mode is Mode.PROVE:
+        if st.mode in (Mode.PROVE, Mode.PROVE_EQ):
             floored = True
     return Decision(spec.default, provable=not floored)
 
@@ -352,11 +371,12 @@ FULL_ZOO: dict[str, str] = {
     "OBot": "TauOBot",
     "GuardianBot": "TauGuardian",
     "DBot": "TauDBot",
+    "CupodTrollBot": "TauCupodTroll",
 }
 """The whole 9-template zoo (8 base bots; TitForTatBot carries both TFT variants).
 The base matrix is total over these, so the coincidence certification runs on all
 81 template cells."""
 
 FULL_BOTS: tuple[str, ...] = SEPARATING_BOTS + (
-    "JustBot", "OBot", "GuardianBot", "DBot",
+    "JustBot", "OBot", "GuardianBot", "DBot", "CupodTrollBot",
 )

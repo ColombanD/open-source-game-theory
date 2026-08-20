@@ -58,6 +58,18 @@ WHITELIST: dict[tuple[str, str], str] = {
         "Mirror-branch truncation: base EBot's third branch sims MirrorBot "
         "(not .opp-free-liftable); the lift drops it, flipping E's self-bit"
     ),
+    ("TauTFTPf", "TauCupodTroll"): (
+        "Floor over true cooperation (the Guardian shape, second instance): "
+        "τ(CupodTroll)'s C is reached through a FAILED .eq search, so its "
+        "transcript pays search_f and no prover can cite it — while base "
+        "CupodTrollBot simply cooperates. Any PROVER bot probing it reads 0."
+    ),
+    ("TauDupoc", "TauCupodTroll"): (
+        "Floor over true cooperation — same mechanism as (TauTFTPf, TauCupodTroll)."
+    ),
+    ("TauJust", "TauCupodTroll"): (
+        "Floor over true cooperation — same mechanism as (TauTFTPf, TauCupodTroll)."
+    ),
     ("TauTFTPf", "TauGuardian"): (
         "Prover-modality floor: TauTFTPf is the PROVER variant of behavioral base "
         "TFT, and Guardian's cooperation is floor-priced — true (base TFT sims it: "

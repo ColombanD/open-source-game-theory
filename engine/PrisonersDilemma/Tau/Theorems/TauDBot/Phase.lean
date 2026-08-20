@@ -25,6 +25,7 @@ namespace PD.Tau
 def dbotRow : Tmpl → Action
   | .coop => .D
   | .dbot => .D
+  | .cupodTroll => .D
   | _     => .C
 
 /-- The row's witness: one run-stage watching the δ_D behavioral column — every
@@ -47,6 +48,9 @@ theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k) :
   | .dbot     => -- DBot's OWN δ_D instance TRUSTS the defector (defectColPlay .dbot
                  -- = .C), so DBot's self-watch FIRES: it punishes itself.
                  dbot_selfWatch_fires
+  | .cupodTroll => -- CupodTroll TRUSTS the defector (its identity check fails), and
+                   -- trust-toward-a-defector is the punisher's fire condition
+                   dbot_watch_fires_of_trust .cupodTroll (pD .cupodTroll)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -54,7 +58,7 @@ theorem dbotBits {k : Nat} (hk : 2 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .dbot w tauOrder)
       [(w .coop, .D), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D)] :=
   vecOf_bits (tauZoo k) .dbot w dbotRow tauOrder fun T _ => dbotRow_plays hk T
 
 /-- **τ(DBot)** — boundary `θ ≤ dbotMass` (everything but `w .coop`). -/

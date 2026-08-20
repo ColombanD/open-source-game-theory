@@ -1,10 +1,11 @@
 import PrisonersDilemma.Tau.Theorems.Columns
 
 /-!
-# τ(OBot)'s phase — the zoo's NARROWEST boundary, `θ ≤ w .coop`.
+# τ(OBot)'s phase — the zoo's NARROWEST boundary, `θ ≤ obotMass`.
 
-Both defection watches must stay silent, and on this zoo only the unconditional
-cooperator passes both (everyone else defects against the defector). The behavioral
+Both defection watches must stay silent. Two hypotheses pass: the unconditional
+cooperator, and (since 2026-08-20) τ(CupodTroll), whose identity check never fires
+so it too cooperates with everyone. The behavioral
 defection-detector cooperates with almost nobody — but what it sees, it sees truly
 (floor-blind).
 -/
@@ -26,6 +27,7 @@ def obotRow : Tmpl → Action
   | .obot     => .D
   | .guardian => .D
   | .dbot     => .D
+  | .cupodTroll => .C
 
 /-- The row's witness: two chained run-stage defection watches over the δ_C and
     δ_D behavioral columns. -/
@@ -46,6 +48,8 @@ theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
   | .obot     => simTestD_falls _ _ (pC .obot) (simTestD_fires _ _ (pD .obot))
   | .guardian => simTestD_falls _ _ (pC .guardian) (simTestD_fires _ _ (pD .guardian))
   | .dbot     => simTestD_fires _ _ (pC .dbot)
+  | .cupodTroll => simTestD_falls _ _ (pC .cupodTroll)
+      (simTestD_falls _ _ (pD .cupodTroll) ⟨1, rfl⟩)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -54,19 +58,19 @@ theorem obotBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     VoteBits (vecOf (tauZoo k) .obot w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .D), (w .tftPf, .D),
        (w .dupoc, .D), (w .ebot, .D), (w .just, .D), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .C)] :=
   vecOf_bits (tauZoo k) .obot w obotRow tauOrder
     fun T _ => obotRow_plays hk hkk h6 h10 T
 
-/-- **τ(OBot)** — boundary `θ ≤ w .coop`. -/
+/-- **τ(OBot)** — boundary `θ ≤ obotMass`. -/
 theorem tauOBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
     (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
-    (θ ≤ w .coop → ∃ N, play N (TauBotZ k .obot w θ) opponent = some .C)
-    ∧ (¬ θ ≤ w .coop → ∃ N, play N (TauBotZ k .obot w θ) opponent = some .D) := by
+    (θ ≤ obotMass w → ∃ N, play N (TauBotZ k .obot w θ) opponent = some .C)
+    ∧ (¬ θ ≤ obotMass w → ∃ N, play N (TauBotZ k .obot w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .obot w obotRow tauOrder θ opponent
     (fun T _ => obotRow_plays hk hkk h6 h10 T)
   simp only [bitMass, tauOrder, List.map, obotRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
-  simpa using h
+  simpa [obotMass] using h
 
 end PD.Tau

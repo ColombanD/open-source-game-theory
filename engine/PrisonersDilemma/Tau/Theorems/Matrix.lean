@@ -40,7 +40,7 @@ namespace PD.Theorems.Tau
 /-- The constants' total mass. -/
 private abbrev fullMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot +
-    (w .just + (w .obot + (w .guardian + w .dbot))))))))
+    (w .just + (w .obot + (w .guardian + (w .dbot + w .cupodTroll)))))))))
 
 /-! ## Constants -/
 
@@ -195,7 +195,7 @@ theorem outcome_TauEBot_vs_TauTFTPf_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard
 /-! ## The new bots' self-plays, and the TRUST band -/
 
 theorem outcome_TauOBot_vs_TauOBot_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ w .coop) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (hθ : θ ≤ obotMass w) :
     ∃ N, outcome N (TauBotZ k .obot w θ) (TauBotZ k .obot w θ) = some (.C, .C) :=
   outcome_of_ex_plays ((tauOBot_phase hk hkk h6 h10 θ w _).1 hθ)
     ((tauOBot_phase hk hkk h6 h10 θ w _).1 hθ)

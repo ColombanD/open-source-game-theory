@@ -22,17 +22,29 @@ namespace PD.Tau
     first `test = .D` prover). Excluded and why: CupodBot/PrudentBot/MirrorBot/
     LegibleBot/OptimBot are self-probers (the mutual-quine wall — `.sys`);
     CIMCIC/DIMCID (implication guards), WaryBot (`.neg`), CupodTrollBot (`.eq`)
-    are outside the cascade fragment. `dbot` (DBot — the defection-punisher: one
+    were outside the cascade fragment. `cupodTroll` (CupodTrollBot — the identity
+    checker, `.eq .opp (.bot CupodBot)`) was ADDED 2026-08-20: it is the ONLY
+    remaining bot whose guard names a LITERAL third party rather than the opponent's
+    view of me, so it is the only one liftable without `.sys`.
+
+    **Correction recorded 2026-08-20 (Gate D1 caught it):** CIMCIC and DIMCID
+    (`.impl (.plays .self .opp _) (.plays .opp .self _)`) and WaryBot
+    (`.neg (.plays .opp .self C)`) all mention BOTH `.self` and `.opp`, so they are
+    SELF-PROBERS and belong to the `.sys`-blocked class, not the fragment class. The
+    `Mode.proveImpl` machinery for CIMCIC's guard shape is LANDED and correct — it
+    simply cannot be used until `.sys` provides the term. `dbot` (DBot — the defection-punisher: one
     run-stage watching δ_D, trusting by default) was ADDED 2026-08-19 once its
     blocker cleared: its δ_L cell needs a frozen run-stage player sim-embedding a
     floor-priced searcher, which is exactly `no_provable_botRunStage_C`, the
     single-stage twin of the embedded-floor census the run-mode EBot fix forced. -/
 inductive Tmpl
   | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian | dbot
+  | cupodTroll
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
 def tauOrder : List Tmpl :=
-  [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot]
+  [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
+   .cupodTroll]
 
 end PD.Tau

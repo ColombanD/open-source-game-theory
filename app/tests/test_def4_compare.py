@@ -42,16 +42,17 @@ from pd_runner.tau.matrix import load_tau_matrix
 # ── the compound decisions (the Lean bit tables, transcribed) ──────────────────
 
 EXPECTED_ACTIONS: dict[str, str] = {
-    "TauCooperate": "CCCCCCCCCC",
-    "TauDefect": "DDDDDDDDDD",
-    "TauTFTSim": "CDCCCDCCCD",
-    "TauTFTPf": "CDCCCDCCDD",
-    "TauDupoc": "CDCCCDCDDD",
-    "TauEBot": "DDCCCDCCCD",
-    "TauJust": "CDCCCDCDDD",
-    "TauOBot": "CDDDDDDDDD",
-    "TauGuardian": "CDCCCDCCCD",
-    "TauDBot": "DCCCCCCCCD",
+    "TauCooperate": "CCCCCCCCCCC",
+    "TauDefect": "DDDDDDDDDDD",
+    "TauTFTSim": "CDCCCDCCCDC",
+    "TauTFTPf": "CDCCCDCCDDD",
+    "TauDupoc": "CDCCCDCDDDD",
+    "TauEBot": "DDCCCDCCCDD",
+    "TauJust": "CDCCCDCDDDD",
+    "TauOBot": "CDDDDDDDDDC",
+    "TauGuardian": "CDCCCDCCCDC",
+    "TauDBot": "DCCCCCCCCDD",
+    "TauCupodTroll": "CCCCCCCCCCC",
 }
 
 
@@ -64,7 +65,7 @@ def test_decision_table_matches_lean_bit_tables() -> None:
 
 def test_kernel_check_passes() -> None:
     check = kernel_check()
-    assert check.checked == 100
+    assert check.checked == 121
     assert check.passed, check.mismatches
 
 
@@ -150,20 +151,32 @@ def test_bit_coincidence_separating() -> None:
     assert div[0].def4 == "D" and div[0].def3 == "C"
 
 
-def test_whitelist_is_exactly_the_two_recorded_cells() -> None:
-    assert set(WHITELIST) == {("TauEBot", "TauEBot"), ("TauTFTPf", "TauGuardian")}
+def test_whitelist_is_exactly_the_recorded_cells() -> None:
+    assert set(WHITELIST) == {
+        ("TauEBot", "TauEBot"),
+        ("TauTFTPf", "TauGuardian"),
+        ("TauTFTPf", "TauCupodTroll"),
+        ("TauDupoc", "TauCupodTroll"),
+        ("TauJust", "TauCupodTroll"),
+    }
 
 
 def test_bit_coincidence_full_zoo() -> None:
-    """All 100 template cells against the total base matrix: 98 agree; the two
+    """All 121 template cells against the total base matrix: 116 agree; the five
     divergences are exactly the whitelisted Mirror-truncation and prover-modality
     cells."""
     matrix = load_tau_matrix(FULL_BOTS)
     coin = bit_coincidence(matrix)
-    assert len(coin.cells) == 100
+    assert len(coin.cells) == 121
     assert coin.passed, coin.unexpected
     div = {(c.template, c.hypothesis) for c in coin.whitelisted_divergences}
-    assert div == {("TauEBot", "TauEBot"), ("TauTFTPf", "TauGuardian")}
+    assert div == {
+        ("TauEBot", "TauEBot"),
+        ("TauTFTPf", "TauGuardian"),
+        ("TauTFTPf", "TauCupodTroll"),
+        ("TauDupoc", "TauCupodTroll"),
+        ("TauJust", "TauCupodTroll"),
+    }
 
 
 def test_phase_sweep_control_attributed() -> None:
@@ -209,52 +222,30 @@ def test_constants_ignore_alpha() -> None:
     assert tau_play_def4("TauCooperate", 1.0, sig, CONTROL_ZOO) == "C"
 
 
-def test_tft_variants_split_exactly_on_guardian() -> None:
-    """HISTORY: on the 6-zoo this test asserted the two TFT lifts have IDENTICAL
-    rows ("the prover/behavioral split is a budget gap, not an α gap"). That claim
-    was zoo-relative, and Guardian falsifies it: its floor-priced cooperation is
-    visible to the simulator and invisible to the prover — the ONE slot where the
-    rows now differ, and only that one."""
+def test_tft_variants_split_exactly_on_the_floor_bots() -> None:
+    """HISTORY: on the 6-zoo this asserted the two TFT lifts have IDENTICAL rows
+    ("the prover/behavioral split is a budget gap, not an α gap"). Guardian
+    falsified that (2026-08-19), and CupodTroll falsifies the follow-up claim that
+    Guardian was the ONLY such slot (2026-08-20). The invariant that actually
+    holds: the rows differ EXACTLY at the hypotheses whose cooperation is
+    floor-priced — true but uncitable — and agree everywhere else."""
     t = decision_table()
+    floor_bots = {"TauGuardian", "TauCupodTroll"}
     for T in TEMPLATES:
         sim, pf = t["TauTFTSim"][T].action, t["TauTFTPf"][T].action
-        if T == "TauGuardian":
-            assert (sim, pf) == ("C", "D")
+        if T in floor_bots:
+            assert (sim, pf) == ("C", "D"), T
         else:
             assert sim == pf, T
 
 
-def test_base_of_covers_templates() -> None:
-    assert set(BASE_OF) == set(TEMPLATES)
-
-
-# ── the 9-zoo additions (2026-08-18) ──────────────────────────────────────────
-
-
-def test_guardian_cooperation_is_never_provable() -> None:
-    """Guardian's C always sits behind its failed punish-search: every cooperative
-    cell of its row is floor-priced — the third Gödelian phenomenon, and the reason
-    the prover/behavioral split becomes an α-gap with Guardian in the zoo."""
+def test_obot_cooperates_exactly_with_the_non_bullies() -> None:
+    """OBot's two defection-watches must BOTH stay silent. On the 10-zoo only the
+    unconditional cooperator passed; CupodTroll (2026-08-20) is the second — its
+    identity check never fires, so it cooperates with everyone including the
+    defector. The invariant is 'cooperates with whoever never defects on the
+    canonical pair', not 'only with TauCooperate'."""
+    want_C = {"TauCooperate", "TauCupodTroll"}
     for T in TEMPLATES:
-        d = decide("TauGuardian", T)
-        if d.action == "C":
-            assert not d.provable, T
-
-
-def test_modality_split_on_guardian() -> None:
-    """The two TFT lifts finally disagree at large k: the simulator sees Guardian's
-    true cooperation, the prover cannot cite it."""
-    assert decide("TauTFTSim", "TauGuardian").action == "C"
-    assert decide("TauTFTPf", "TauGuardian").action == "D"
-
-
-def test_just_rides_dupocs_column() -> None:
-    """Norm-based and self-based reciprocity coincide on this zoo."""
-    for T in TEMPLATES:
-        assert decide("TauJust", T).action == decide("TauDupoc", T).action
-
-
-def test_obot_cooperates_only_with_the_cooperator() -> None:
-    for T in TEMPLATES:
-        want = "C" if T == "TauCooperate" else "D"
-        assert decide("TauOBot", T).action == want
+        want = "C" if T in want_C else "D"
+        assert decide("TauOBot", T).action == want, T

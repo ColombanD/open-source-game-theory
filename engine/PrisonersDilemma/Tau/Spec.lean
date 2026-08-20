@@ -40,8 +40,23 @@ namespace PD.Tau
 
 /-- How a stage consults its probe: `prove` = bounded proof search over the probe
     atom (a `.search` node); `run` = execute the probed instance and read its true
-    play (a `.sim`-guarded `.ite`). -/
-inductive Mode | prove | run
+    play (a `.sim`-guarded `.ite`); `proveImpl` = bounded proof search over the
+    IMPLICATION atom `probeImpl` — "if I play `test` against them, they play `test`
+    against me" (CIMCIC/DIMCID's guard shape, added 2026-08-20).
+
+    `proveImpl` is a genuinely different MODALITY, not sugar for `prove`: the
+    implication is provable whenever its CONSEQUENT is (`Pf.weakenImpl`), so a
+    `proveImpl` stage fires in strictly more cases than the corresponding `prove`
+    stage on the consequent alone would — it is the conditional-commitment reading
+    ("I cooperate if that would induce cooperation") rather than the
+    evidence-gathering one.
+
+    `proveEq` = bounded proof search over a STRUCTURAL IDENTITY atom
+    (`.eq`): "is the probed instance literally this term?" — CupodTrollBot's guard
+    shape (2026-08-20). Both directions are decidable in `S` (`Pf.eqRefl` /
+    `Pf.eqNeg`), so a `proveEq` bit is never floor-priced: identity is the one
+    question the proof system answers completely. -/
+inductive Mode | prove | run | proveImpl | proveEq
 deriving DecidableEq, Repr
 
 /-- The counterfactual opponent a stage imagines the hypothesis facing: `self` = "me,
@@ -90,6 +105,15 @@ structure Zoo (ι : Type) where
       cannot contain itself, and the pronoun is the language's own knot for the
       diagonal (pinned literal by `Zoo.lean`'s `inst_dupoc_quine`).
 
+    **`proveImpl` uses the SELF PRONOUN for the antecedent's subject** (2026-08-20):
+    the antecedent is "*I* play `test` against the probed instance", and "I" is the
+    term currently being compiled — which cannot contain itself. `.self` is the
+    language's knot for exactly that, closed by `subst` at consultation time to the
+    running instance (the `.plays .self …` convention base CIMCIC already uses). The
+    guard is therefore NOT closed under `subst` — unlike `probe`/`probeD` — so
+    `probeImpl` is the atom the guard becomes AFTER substitution, and the
+    `probeImpl_subst` lemma is about that closed form, not about this one.
+
     Fuel exhaustion emits `.const d` — for a well-formed zoo at adequate fuel it is
     unreachable, and Gate D1 certifies that for `tauZoo` (an exhausted compile cannot
     be byte-identical to the hand-written closure). -/
@@ -117,6 +141,30 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
           else
             let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
             .ite (.sim (.bot P) (.bot P)) st.test (.const st.fire) cont
+      | .proveImpl, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .search Z.budget
+            (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
+            (.const st.fire) cont
+      | .proveEq, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .search Z.budget (.eq .opp (.bot P)) (.const st.fire) cont
+      | .proveEq, .self =>
+          if T = A then
+            .search Z.budget (.eq .opp .self) (.const st.fire) cont
+          else
+            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
+            .search Z.budget (.eq .opp (.bot P)) (.const st.fire) cont
+      | .proveImpl, .self =>
+          if T = A then
+            .search Z.budget
+              (.impl (.plays .self .self st.test) (.plays .self .self st.test))
+              (.const st.fire) cont
+          else
+            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
+            .search Z.budget
+              (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
+              (.const st.fire) cont
 
 /-- Default compile fuel: generous for any zoo whose probe-nesting depth is modest
     (the 6-template zoo needs < 12; adding bots that only name existing columns does
