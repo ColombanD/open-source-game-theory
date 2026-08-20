@@ -89,7 +89,69 @@ structure Zoo (ι : Type) where
   spec   : ι → Spec ι
   budget : Nat
 
-/-! ## The compiler (§6.2) -/
+/-! ## Entanglement: which pairs need the binder (§8c.5, 2026-08-20) -/
+
+/-- Does this bot have a `self` stage — i.e. does it probe "the hypothesis, seeing
+    ME"? Exactly the property that creates reference cycles: two self-probers `A`
+    and `B` need `inst A B ⊃ inst B A ⊃ inst A B`, which no finite tree satisfies. -/
+def Spec.selfProbes {ι : Type} (sp : Spec ι) : Bool :=
+  sp.stages.any fun st => match st.target with | .self => true | .name _ => false
+
+/-- `A` and `T` are ENTANGLED when both self-probe and they are distinct: the
+    2-cycle the `.sys` binder exists to cut. (Same-bot self-probing is the diagonal,
+    already cut by the `.self` pronoun; a pair with at most one self-prober bottoms
+    out by the §6.3 rank argument.) -/
+def Zoo.entangled {ι : Type} [DecidableEq ι] (Z : Zoo ι) (A T : ι) : Bool :=
+  A ≠ T && (Z.spec A).selfProbes && (Z.spec T).selfProbes
+
+/-! ## The compiler (§6.2) —  (system members) and  (instances) -/
+
+mutual
+/-- One member of an entangled pair's system, compiled with the PARTNER replaced by
+    an indexed pronoun. `sysGo Z fuel me partnerIdx stages d` compiles `me`'s cascade
+    where every `self`-target stage probes `.selfIdx partnerIdx` — "the other member
+    of my system, whoever that turns out to be" — instead of recursing into a term
+    that would have to contain this one.
+
+    Non-`self` stages still resolve normally (they name third parties, which are not
+    part of the cycle), so a self-prober's other stages compile exactly as before. -/
+def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) :
+    Nat → ι → ι → List (Stage ι) → Action → Prog
+  | 0, _, _, _, d => .const d
+  | _+1, _, _, [], d => .const d
+  | fuel+1, A, T, st :: rest, d =>
+      let cont := sysGo Z partnerIdx fuel A T rest d
+      match st.mode, st.target with
+      | .prove, .self =>
+          .search Z.budget
+            (.plays (.selfIdx partnerIdx) (.selfIdx partnerIdx) st.test)
+            (.const st.fire) cont
+      | .run, .self =>
+          .ite (.sim (.selfIdx partnerIdx) (.selfIdx partnerIdx)) st.test
+            (.const st.fire) cont
+      | .proveImpl, .self =>
+          .search Z.budget
+            (.impl (.plays .self (.selfIdx partnerIdx) st.test)
+                   (.plays (.selfIdx partnerIdx) .self st.test))
+            (.const st.fire) cont
+      | .proveEq, .self =>
+          .search Z.budget (.eq .opp (.selfIdx partnerIdx)) (.const st.fire) cont
+      -- third-party stages are OUTSIDE the cycle: compile them normally
+      | .prove, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .search Z.budget (.plays (.bot P) (.bot P) st.test) (.const st.fire) cont
+      | .run, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .ite (.sim (.bot P) (.bot P)) st.test (.const st.fire) cont
+      | .proveImpl, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .search Z.budget
+            (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
+            (.const st.fire) cont
+      | .proveEq, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .search Z.budget (.eq .opp (.bot P)) (.const st.fire) cont
+  termination_by structural fuel _ _ _ _ => fuel
 
 /-- Fuel-indexed compiler core. `instGo Z fuel A T l d` compiles the remaining stages
     `l` of bot A's cascade at hypothesis T (with default `d`); every recursive call —
@@ -129,6 +191,13 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
       | .prove, .self =>
           if T = A then
             .search Z.budget (.plays .self .self st.test) (.const st.fire) cont
+          else if Z.entangled A T then
+            -- THE BINDER CASE (2026-08-20): A and T both self-probe, so neither
+            -- instance can contain the other. Emit the 2-member system —
+            -- component 0 is A-seeing-T, component 1 is T-seeing-A, each probing
+            -- the other by INDEX — and take component 0.
+            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
+                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
           else
             let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
             .search Z.budget (.plays (.bot P) (.bot P) st.test) (.const st.fire) cont
@@ -165,6 +234,9 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
             .search Z.budget
               (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
               (.const st.fire) cont
+
+  termination_by structural fuel _ _ _ _ => fuel
+end
 
 /-- Default compile fuel: generous for any zoo whose probe-nesting depth is modest
     (the 6-template zoo needs < 12; adding bots that only name existing columns does
