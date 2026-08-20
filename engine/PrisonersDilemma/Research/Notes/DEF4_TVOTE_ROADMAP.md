@@ -6,7 +6,9 @@ same day — phases 1–4b, 5 (Spec DSL), 6 (Python coincidence certification),
 Part III, whose retraction section this executed. The instance layer of
 milestone 1 was reused unchanged, as predicted. **Next frontier: the `.sys`
 revival** (mutual self-probers / full-zoo lift), landing on the Spec DSL — only
-the compiler's probed-object resolution changes.)*
+the compiler's probed-object resolution changes. **SCOPED 2026-08-20 in §8c**,
+which finds the five "self-probers" are FOUR different blockers and that `.sys`
+cleanly unblocks only ONE of them — read §8c.7 before starting.)*
 
 ---
 
@@ -811,6 +813,214 @@ better informed by the first real second zoo (which may be `Fin n`-indexed,
 changing what `WellFormed` quantifies over). DUE when a second zoo instantiates
 the DSL — same trigger as the §6 deviation's original debt note, now with the
 concrete component list.
+
+---
+
+## 8c. SCOPING NOTE 2026-08-20 — the `.sys` revival for Def-4 self-probers
+
+*Written before any code (Colomban: "scope the `.sys` design first"). Reuses the
+design record of `DEF5_SYS_BINDER_ROADMAP.md` (Route A, SHELVED) but **re-scopes it
+for Def 4**, where the requirement is strictly weaker. Nothing here is committed to
+yet; §8c.7 is the decision list.*
+
+### 8c.0 The headline: `.sys` is an INTEGRATION decision, not a research question
+
+The archived tag **`taubot-def5-research`** holds a complete, machine-checked `.sys`
+implementation: the binder + `ProgList` in `Program.lean`, `sysClose`, the lazy-unfold
+eval arm, `PlaysProof.sysStep`, and milestone 1
+(`outcome_TauDupocSys_vs_TauDupocSys = (C, C)`) — 3-axiom footprint, build green.
+Both go/no-go spikes PASSED (`Research/Spikes/sysLob/`, in-tree, zero maintenance):
+
+* **Spike B (`MiniSys.lean`) — equation-compiler gate: PASS.** `sysClose` is
+  structurally recursive with definitional unfolding *without* annotation; the inner
+  `match` in the `.sys` eval arm caused no equation-generation problem; mutual proofs
+  are ergonomic in equation style. **One binding constraint discovered: the mutual
+  list evaluator must charge fuel PER `cons`** (keeping fuel constant across the list
+  makes the pair non-structural and silently drops to WF recursion, killing `rfl`).
+* **Spike A (`VectorPblt.lean`) — vector-Löb gate: PASS**, and its glue was
+  PROMOTED into `Base/Loeb.lean` and is live today: `compUnder`/`postUnder`/
+  `swapAnte`, `loeb_premise_under_box`, `vector2_full_pblt_engine`. Zero new
+  constructors (Family-B completion made the B-combinator dance derivable).
+
+It was reverted for a stated, non-technical reason: the **standing tax** on the Def-4
+track (T31–T54 Metatheory arms for `.sys`/`.selfIdx`, two extra `Pf` constructors,
+`hbotsys`/`h_sys` census obligations at every future call site, proof-agent prompt
+surface). So the question is not "does this work" but "what is the smallest version
+that unblocks Def-4, and is its tax worth paying now".
+
+### 8c.1 THE RE-SCOPING — Def 4 needs strictly less than Def 5
+
+This is the most important paragraph in the note. Def 5 probes hypotheses **at the
+σ-blur itself** (blur as common knowledge, the full Harsanyi hierarchy); its
+σ-reference graph is the COMPLETE digraph on the non-constant zoo, and its Löb
+premises are FULL-DEPENDENCY vectors — which is exactly why Spike A had to build
+`vector2_full_pblt_engine`.
+
+Def-4 self-probers are a **containment** problem, not a semantic one. The sentences
+stay point-mass Def-4 sentences; only the compiler cannot write the term, because
+`inst(X, δ_Y)` must contain `inst(Y, δ_X)` must contain `inst(X, δ_Y)`.
+
+| | Def 5 (archived) | Def-4 self-probers (this scope) |
+|---|---|---|
+| Sentence system | σ-blurred, complete digraph | point-mass, only between mutually-probing pairs |
+| Löb shape | full-dependency vector | **2-cycles** (pairwise) + the existing diagonal quine |
+| Engine | `vector2_full_pblt_engine` (built, live) | likely `mutual_pblt_engine_id`/`_staggered` — ALREADY LIVE and used by the base zoo |
+| New `Pf` rules | `sysStep` + `botSysTsearchBranch` | **`sysStep` alone** (no `tsearch` exists any more) |
+
+**Measured entanglement.** With today's 10 templates the only self-prober is `dupoc`.
+Adding CupodBot yields exactly ONE 2-cycle (`dupoc ↔ cupod`) — a 2-sentence system,
+which is precisely the shape `mutual_pblt_engine_id`/`_staggered` already close for
+the base zoo (`outcome_PrudentBot_vs_DupocBot` etc.). **The vector engine is probably
+not needed at all** for the first `.sys` bot; it becomes needed only at ≥3 mutually
+probing self-probers (complete digraph on 3 = 3 two-cycles plus 3-cycles).
+
+### 8c.2 The five "self-probers" are FOUR different blockers — only one is `.sys`
+
+Reading the base definitions (`Bots/*.lean`) against the Spec DSL's `Stage`
+vocabulary (`mode : prove | run`, `target : self | name i`, `test`, `fire`):
+
+| bot | base guard | real blocker | verdict |
+|---|---|---|---|
+| **CupodBot** | `.plays .opp .self D` | mutual quine ONLY | **`.sys` alone unblocks it** — spec is `⟨[⟨.prove, .self, .D, .D⟩], .C⟩`, already in the fragment |
+| **PrudentBot** | `.plays .opp .self C` then `.plays .opp (.bot DefectBot) D` | quine **+ a NESTED target** ("opp vs a *third party*", not opp-vs-me) | needs `.sys` AND a `Target` extension |
+| **OptimBot** | `.plays .self .opp …` (both polarities, 3 rungs) | quine **+ SELF-SIDE probes** ("what do *I* do vs them") — a new target kind | needs `.sys` AND a new target kind |
+| **MirrorBot** | `.sim .opp .self` (raw copy) | **not a cascade at all** — no `.ite`, no test | needs a `Mode`/shape extension, `.sys` irrelevant |
+| **LegibleBot** | `.box kIn (…)` | **modal guard** — outside the plays-atom fragment entirely | same class as WaryBot/CIMCIC; `.sys` irrelevant |
+
+**Consequence for planning: "attack the 5 self-probers" is not one project.**
+`.sys` buys exactly **one** bot cleanly (CupodBot), is a *necessary but insufficient*
+condition for two more (PrudentBot, OptimBot), and is **irrelevant** to the last two
+(MirrorBot, LegibleBot — they belong with the 4 non-fragment bots).
+Honest revised count: the fragment-extension work is the bigger half.
+
+### 8c.3 Base-matrix status — openness is a PYTHON constraint, never a Lean one
+
+Asked and answered before designing (Colomban, 2026-08-20): *what if the base matchup
+is open?*
+
+* **Lean does not care.** The tau layer never reads base outcome theorems. `inst A T`
+  is compiled from specs and its bits are proven from the TAU columns. A tau cell is
+  open only if the LIFTED terms have no proof — a fresh question about different
+  objects. (`outcome_JustBot_vs_MirrorBot` is famously bistable-open; it says nothing
+  about `τ(Just)`'s mirror bit.)
+* **Python refuses, loudly, by design.** `load_tau_matrix` demands totality;
+  `bit_coincidence` compares Def-4's bit against `matrix.cooperates(base_a, base_t)`,
+  so an open base cell leaves nothing to compare. This guard is what caught the EBot
+  modality infidelity — do not weaken it.
+* **The third option already exists**: `NamedZoo.stipulations` fills a genuine hole
+  and flips `TauMatrix.is_fully_proven` to False. Policy (unchanged, honor it):
+  stipulations may ONLY fill real holes (the loader raises if one shadows a proven
+  cell — that is how the red-cell removal was forced), and any non-invariant result
+  must be reported as conditional.
+
+**Measured (2026-08-20), each self-prober added to the current 9 base bots:**
+
+| bot | base matrix |
+|---|---|
+| PrudentBot, MirrorBot, LegibleBot | **join cleanly** (no holes) |
+| CupodBot, OptimBot | **blocked** — unproven cells |
+| all five at once | 21 unproven ordered cells |
+
+**The irony worth flagging: the base matrix and the DSL disagree about which bot is
+easiest.** CupodBot is the only clean `.sys` win in Lean but has open base cells;
+PrudentBot/MirrorBot/LegibleBot have total base rows but need fragment extensions.
+So the first `.sys` bot will EITHER carry a recorded stipulation OR require proving
+CupodBot's missing base cells first. That trade is a decision, not a detail (§8c.7).
+
+### 8c.4 Design deltas vs the archived Route A (what changes on re-application)
+
+The archived conventions (Part I of `DEF5_SYS_BINDER_ROADMAP.md`) are adopted
+UNCHANGED — binder + `.selfIdx`, lazy unfold, two complementary closers (`subst` never
+touches `.selfIdx`; `sysClose` never touches `.self`/`.opp`; **`.bot` is a barrier for
+`subst` but TRANSPARENT for `sysClose`**), honest size, unchanged probe-atom shape,
+positivity. Deltas forced by everything that landed since 2026-08-13:
+
+1. **A cherry-pick will NOT apply.** The engine commits (`3b2f130` binder,
+   `1d85be9` `sysStep`) predate: `.tsearch` removal, `.tvote` + `VoteList`,
+   `VoteAllPlay` (a FOURTH mutual inductive — every `motive_N` index shifted), and the
+   Spec DSL. Re-apply guided by the diff, do not `git cherry-pick`.
+2. **The tax is SMALLER than at revert time, in one direction and larger in another.**
+   Smaller: `.tsearch`'s removal deleted exactly the surface `.sys` regrows (5 rules,
+   both eliminators' arms, 5 soundness arms, 13 census arms, the M2 mirror), and the
+   `h_tvote` precedent shows the census obligation is ~7 trivial discharges across 4
+   files. Larger: **Metatheory M2 already owes `tvote` arms and is unpaid** — `.sys`
+   compounds an existing debt rather than opening a fresh one.
+3. **`instGo` is FUEL-based now** (§6 deviation), and Gate D1 is by `rfl`. `.sys`
+   changes probed-object resolution: a `.selfIdx` reference is where the recursion
+   STOPS rather than descends, so it should make fuel sufficiency EASIER, not harder.
+   This interacts with — and may partly discharge — the Step-3 debt (§8b).
+4. **Spike B's binding constraint applies verbatim**: any mutual list traversal added
+   for `ProgList` must charge fuel per `cons`, or the equation compiler silently drops
+   to WF recursion and `rfl` dies (and with it Gate D1).
+5. **`vector2_full_pblt_engine` is already in-tree** — if a ≥3-cycle ever appears the
+   engine is there; the first bot almost certainly does not need it (§8c.1).
+
+### 8c.5 The compiler change (the ONE place the design actually lands)
+
+Today `instGo` emits the quine pronoun only at the diagonal (`target = self, T = A`)
+and recurses otherwise; two self-probers make that recursion non-terminating (§6.3's
+measure fails exactly there — "the failure mode is the feature").
+
+The `.sys` version replaces the recursion with a **binding** step: the entangled
+instances become components of ONE system, and a probe that would revisit a pair
+already on the stack emits `.selfIdx j` instead of recursing. Sketch, to be fixed at
+implementation:
+
+* compute the entangled set (the SCC of the probe-reference digraph containing the
+  pair) — a spec-level, decidable computation;
+* emit `defs : ProgList` = one component per member of the SCC, each compiled with
+  intra-SCC references as `.selfIdx`;
+* `inst Z A T` for an entangled pair = `.sys defs i` at the right index;
+* everything outside the SCC compiles exactly as today (so the 10 current templates'
+  Gate-D1 equations must remain byte-identical — that is the regression gate).
+
+**Gate S1 (the D1 analogue, non-negotiable):** every existing `inst_*_peel` equation
+still holds by `rfl` after the change. A `.sys` revival that perturbs the current zoo's
+compiled terms is wrong.
+
+### 8c.6 Phase sketch (NOT scheduled — costed for the decision)
+
+| phase | content | gate |
+|---|---|---|
+| S0 | Decide §8c.7. Re-read the archived diff; confirm the Löb engine choice against the measured 2-cycle | — |
+| S1 | Binder re-application: `ProgList`/`.sys`/`.selfIdx`, `sysClose`, eval arm, subst/size/hasSearch/DecidableEq | engine green; **all current D1 peels still `rfl`**; base outcomes byte-identical |
+| S2 | `PlaysProof.sysStep` + eliminator arms + `wv_sound_upto` arm + `h_sys` census discharges | 3 axioms, zero sorry, `sound_upto` green |
+| S3 | Compiler: SCC detection + `.selfIdx` emission; `tauCupodSpec`; Gate S1 | Gate S1 + new peel equations by `rfl` |
+| S4 | The mathematics: Cupod's column arms, the `dupoc ↔ cupod` 2-cycle Löb closure, phase theorem | the bits/phase theorems; `is_fully_proven` status recorded |
+| S5 | Python mirror: `.sys` in `def4.py` (the SCC/binder case replacing `UnsupportedDiagonal`), TEMPLATES/TAU_ORDER/LEAN_SLOT/BASE_OF, coincidence re-run | 121 cells, divergences whitelisted-or-explained |
+
+Realistic reading: **S1+S2 are a day of mechanical re-application** (the design is
+settled and the spikes de-risked the compiler questions); **S3 is the genuinely new
+engineering** (SCC detection inside a `rfl`-reducing fuel-based compiler); **S4 is the
+real mathematics** and where surprises live, exactly as Guardian and DBot were.
+
+### 8c.7 OPEN DECISIONS (must be settled before S1)
+
+1. **Is `.sys` worth its standing tax for ONE clean bot?** `.sys` unblocks CupodBot
+   alone; PrudentBot/OptimBot additionally need fragment extensions, MirrorBot and
+   LegibleBot need them INSTEAD. A defensible alternative ordering: do the
+   fragment extensions FIRST (they unblock MirrorBot/LegibleBot/CIMCIC/DIMCID/
+   WaryBot/CupodTrollBot — six bots, no engine tax), and revive `.sys` once ≥2 of the
+   remaining bots genuinely need it. **Recommendation: seriously consider this
+   ordering.** It maximizes bots-per-unit-tax and defers the Metatheory compounding.
+2. **CupodBot's open base cells**: prove them, or admit CupodBot under recorded
+   stipulations with `is_fully_proven = False`? (Note `CUPOD_STIPULATIONS` already
+   exists in `tau/matrix.py` for exactly this bot, with the invariance argument
+   written out — precedent exists, but it was for a DIFFERENT purpose.)
+3. **Route B (the belief-order tower)** remains the standing fallback and is
+   *cheaper*: no language change, Löb only at the bottom level, term size `|zoo|ⁿ`.
+   It approximates A and doubles as A's validation oracle. Worth a re-read before
+   committing to A, since our sentences are point-mass (Route B's convergence story
+   is stronger here than it was for σ-blur).
+4. **MirrorBot's non-termination** (if it is ever lifted): base `outcome` is genuinely
+   `none` on some matchups and `NonTerminationPolicy` drops it from base-path
+   analyses, but **a TauBot always terminates** (a proven-`none` base cell reads as
+   not-cooperating and the lift emits a real D). That is a guaranteed coincidence
+   divergence needing a deliberate whitelist entry — settle it before lifting, not in
+   a failing test.
+5. **Metatheory M2**: `.sys` arms are additional to the unpaid `tvote` arms. Decide
+   whether M2 stays deferred (and the debt is recorded as compounding) or is paid
+   before the surface grows again.
 
 ---
 
