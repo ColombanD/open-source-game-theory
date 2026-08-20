@@ -56,8 +56,10 @@ def test_matrix_cells() -> None:
     assert cells[("DupocBot", "CupodTrollBot")] == "(C, C) †"
     # WaryBot vs DefectBot: the unsuffixed large-k theorem wins, not the floor.
     assert cells[("DefectBot", "WaryBot")] == "(D, D)"
+    # The red cell, proven 2026-08-20 (outcome_DupocBot_vs_CupodBot = (D, C),
+    # the τ-transposition route); the cell is rendered in swapped orientation.
+    assert cells[("CupodBot", "DupocBot")] == "(C, D)"
     # Curated statuses from outcome_status.toml.
-    assert cells[("CupodBot", "DupocBot")] == "Open Problem"
     # Floor-only proofs (wrong statement shape) are curated as Need rework.
     assert cells[("CIMCIC", "WaryBot")] == "Need rework"
     # A pair in several sections takes the strongest status: open > rework.
@@ -117,7 +119,7 @@ def test_prune_stale_statuses(tmp_path: Path) -> None:
         "# ---- banner comment that must survive ----\n"
         "\n"
         "[[open]]\n"
-        'pair = ["CupodBot", "DupocBot"]\n'
+        'pair = ["PrudentBot", "CupodBot"]\n'
         'reason = "genuinely open — must survive"\n'
         "\n"
         "[[tried]]\n"

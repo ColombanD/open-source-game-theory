@@ -151,12 +151,14 @@ def write_report_md(
         lines.append("## Flagged input")
         lines.append("")
         lines.append(
-            "The following pairwise rows reference the red cell "
-            "`(CupodBot, DupocBot)`, which is unresolved in Critch et al. 2022 "
-            "and was filled from `config.undefined_outcomes.cupod_vs_dupoc`. "
-            "Verdicts that depend on these rows should be regarded as conditional "
-            "on the chosen resolution; re-running with the opposite action pair "
-            "is planned but not in scope here."
+            "The following pairwise rows reference STIPULATED (unproven) cells "
+            "of the selected zoo. Verdicts that depend on these rows should be "
+            "regarded as conditional on the chosen resolution; re-running with "
+            "the opposite action pair is planned but not in scope here. (The "
+            "historical single such cell — the Critch 'red cell' "
+            "`(CupodBot, DupocBot)`, once filled from "
+            "`config.undefined_outcomes.cupod_vs_dupoc` — is PROVEN since "
+            "2026-08-20 and is no longer flagged.)"
         )
         lines.append("")
         for r in suspect_rows:

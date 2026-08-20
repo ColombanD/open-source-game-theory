@@ -85,16 +85,22 @@ FULL_CERTIFIED_SUB_ZOO: tuple[str, ...] = (
 # (`outcome_CupodTrollBot_vs_CupodBot`), so the third removal is unnecessary.
 _TWIN_EXCLUSIONS: tuple[str, ...] = ("LegibleBot", "JustBot")
 
-# CupodBot is admitted to break the remaining twin group, at the cost of two
-# STIPULATED cells (its only holes against this zoo). It is the bot whose
-# column separates {CooperateBot, CupodTrollBot}.
+# CupodBot is admitted to break the remaining twin group, at the cost of a
+# STIPULATED cell (its only remaining hole against this zoo). It is the bot
+# whose column separates {CooperateBot, CupodTrollBot}.
 #
-# The stipulations buy MEMBERSHIP, not the result: all 16 assignments of these
-# two cells give a twin-free zoo at ceiling 1.0, so twin-freeness is invariant
+# The stipulation buys MEMBERSHIP, not the result: every assignment of the
+# cell gives a twin-free zoo at ceiling 1.0, so twin-freeness is invariant
 # under the choice. Any result that is NOT invariant must be reported as
 # conditional — `TauMatrix.is_fully_proven` is False for this zoo.
+#
+# HISTORY (2026-08-20): the red cell ("CupodBot", "DupocBot") — Critch's open
+# problem — left this dict when `outcome_DupocBot_vs_CupodBot = (D, C)` was
+# PROVEN via the τ-transposition (`engine .../Base/Transpose.lean`,
+# `Theorems/DupocBot/vs_CupodBot.lean`); the proven value matches what had
+# been stipulated. The loader raises on a stipulation shadowing a proven
+# cell, which is exactly how this removal was forced.
 CUPOD_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {
-    ("CupodBot", "DupocBot"): ("C", "D"),
     ("PrudentBot", "CupodBot"): ("D", "C"),
 }
 
@@ -119,11 +125,13 @@ PROVEN_ONLY_SUB_ZOO: tuple[str, ...] = tuple(
 # published results stay reproducible against the certified matrix rather than
 # against its hand-transcribed CSV.
 #
-# Note which cell is missing: `(CupodBot, DupocBot)` — exactly the one Critch
-# et al. leave unresolved and the standalone repo marked red and imputed from
-# `config.json`. Reaching the same hole from a completely different direction
-# (a Lean library that simply has no theorem for it) is a nice independent
-# confirmation that the gap is in the THEORY, not in either transcription.
+# HISTORY: the cell `(CupodBot, DupocBot)` — the one Critch et al. leave
+# unresolved and the standalone repo marked red and imputed from `config.json`
+# — was for a long time this zoo's only hole (a nice independent confirmation
+# that the gap was in the THEORY, not in either transcription). It is PROVEN
+# since 2026-08-20 (`outcome_DupocBot_vs_CupodBot`, the τ-transposition
+# route), with the value the standalone repo had imputed; this zoo is now
+# fully proven with no stipulations.
 CRITCH8_SUB_ZOO: tuple[str, ...] = (
     "CooperateBot",
     "CupodBot",
@@ -254,7 +262,7 @@ ZOOS: dict[str, NamedZoo] = {
             "The widest zoo: adds the behavioral twins (LegibleBot, JustBot), "
             "the search×search frontier bots (CIMCIC, DIMCID) and MirrorBot, "
             "whose proven-`none` self-play is the 'N' state. Most conditional "
-            "— 8 stipulated pairs."
+            "— 7 stipulated pairs."
         ),
         bots=ENLARGED_SUB_ZOO,
         stipulations=ENLARGED_STIPULATIONS,
@@ -273,13 +281,14 @@ ZOOS: dict[str, NamedZoo] = {
         key="critch8",
         label="critch8 (8 bots, the standalone-repo zoo)",
         description=(
-            "The eight types the standalone egt-osgt repo analysed. Its one "
-            "hole is the SAME cell Critch et al. left open — (CupodBot, "
-            "DupocBot), the 'red cell' — stipulated (C, D) here, matching that "
-            "repo's config.json default; every result over this zoo is "
-            "conditional on it. NOTE: this zoo does NOT reproduce that repo's "
-            "numbers. Its hand-transcribed matrix disagrees with the Lean "
-            "library on 6 of 62 cells, so the analyses will differ — see "
+            "The eight types the standalone egt-osgt repo analysed. Fully "
+            "proven since 2026-08-20: its former one hole — (CupodBot, "
+            "DupocBot), the 'red cell' Critch et al. left open — is now a "
+            "theorem (outcome_DupocBot_vs_CupodBot, the τ-transposition "
+            "route), with the value that repo's config.json had imputed. "
+            "NOTE: this zoo does NOT reproduce that repo's numbers. Its "
+            "hand-transcribed matrix disagrees with the Lean library on 6 of "
+            "62 cells, so the analyses will differ — see "
             "CRITCH8_TRANSCRIPTION_DIFFS."
         ),
         bots=CRITCH8_SUB_ZOO,

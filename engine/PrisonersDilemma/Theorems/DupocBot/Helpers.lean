@@ -7,6 +7,7 @@ import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Bots.EBot
 import PrisonersDilemma.Bots.MirrorBot
+import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Theorems.DefectBot.Helpers
 import PrisonersDilemma.Bots.DefectBot
@@ -490,5 +491,96 @@ theorem proofSearch_k_of_play_MirrorBot_dupoc
         simpa using MirrorBot_plays_D_against_DupocBot k n hps
       rw [hev] at h
       cases h
+
+
+-- CupodBot --
+
+/-! ### The red cell's machinery — the τ-transposition route (2026-08-20)
+
+Cupod is the τ̂-transpose of Dupoc (`Base/Transpose`; the paper's Def 1.11 holds
+by `rfl` here), so the two substituted guards are each other's τ-images:
+`ρ₁ = "Cupod plays C vs Dupoc"` (Dupoc's guard) transposes to
+`ρ₂ = "Dupoc plays D vs Cupod"` (Cupod's guard). `Pf.transpose` (Thm 1.10,
+same budget) plus soundness plus `eval` determinism then kill BOTH guards at
+every budget `k` — no floor census, no exclusion machinery. Consumed by
+`Theorems/DupocBot/vs_CupodBot.lean` (the paper's Thm 1.14). -/
+
+theorem transpose_DupocBot (k : Nat) : (DupocBot k).transpose = CupodBot k := by
+  simp [DupocBot, CupodBot, Prog.transpose, Formula.transpose, Action.swap]
+
+theorem transpose_CupodBot (k : Nat) : (CupodBot k).transpose = DupocBot k := by
+  simp [DupocBot, CupodBot, Prog.transpose, Formula.transpose, Action.swap]
+
+/-- `ρ₁^τ = ρ₂`: Dupoc's substituted guard transposes to Cupod's. -/
+theorem rho1_transpose (k : Nat) :
+    (Formula.plays (CupodBot k) (DupocBot k) Action.C).transpose
+      = .plays (DupocBot k) (CupodBot k) Action.D := by
+  simp [Formula.transpose, transpose_CupodBot, transpose_DupocBot, Action.swap]
+
+/-- `ρ₂^τ = ρ₁` (τ is an involution). -/
+theorem rho2_transpose (k : Nat) :
+    (Formula.plays (DupocBot k) (CupodBot k) Action.D).transpose
+      = .plays (CupodBot k) (DupocBot k) Action.C := by
+  simp [Formula.transpose, transpose_CupodBot, transpose_DupocBot, Action.swap]
+
+/-- Dupoc's guard `ρ₁ = "Cupod plays C vs Dupoc"` is unprovable at Dupoc's own
+    budget: `□_k ρ₁` would fire Dupoc's search (→ Dupoc plays `C`) while its
+    τ-image `□_k ρ₂` is sound (→ Dupoc plays `D`) — `eval` can't do both. -/
+theorem not_Pf_dupoc_guard (k : Nat) :
+    ¬ Pf k (.plays (CupodBot k) (DupocBot k) .C) := by
+  intro h1
+  -- Thm 1.10: transport the proof across τ, so `□_k ρ₂` holds too
+  have h2 : Pf k (.plays (DupocBot k) (CupodBot k) .D) := by
+    have := Pf.transpose h1
+    rwa [rho1_transpose] at this
+  -- `□_k ρ₁` fires Dupoc's search: Dupoc plays C at fuel 2
+  have hps : proofSearch k (.plays (CupodBot k) (DupocBot k) .C) = true :=
+    (proofSearch_spec _ _).2 h1
+  have hC : eval 2 (DupocBot k) (CupodBot k) (DupocBot k) = some .C := by
+    unfold DupocBot at hps ⊢
+    simp [eval, Prog.subst, Formula.subst, hps]
+  -- `□_k ρ₂` is sound: Dupoc plays D at some fuel
+  obtain ⟨N, hD⟩ := Pf_sound _ _ h2
+  have hD' : eval N (DupocBot k) (CupodBot k) (DupocBot k) = some .D := hD
+  exact absurd (eval_det hC hD') (by decide)
+
+/-- Cupod's guard `ρ₂` is unprovable too: its τ-image is `ρ₁`. -/
+theorem not_Pf_cupod_guard (k : Nat) :
+    ¬ Pf k (.plays (DupocBot k) (CupodBot k) .D) := by
+  intro h
+  have h1 : Pf k (.plays (CupodBot k) (DupocBot k) .C) := by
+    have := Pf.transpose h
+    rwa [rho2_transpose] at this
+  exact not_Pf_dupoc_guard k h1
+
+/-- Dupoc's search fails: the oracle's boolean reflection of `not_Pf_dupoc_guard`. -/
+theorem proofSearch_false_dupoc_guard (k : Nat) :
+    proofSearch k (.plays (CupodBot k) (DupocBot k) .C) = false := by
+  cases h : proofSearch k (.plays (CupodBot k) (DupocBot k) .C) with
+  | true => exact absurd ((proofSearch_spec _ _).1 h) (not_Pf_dupoc_guard k)
+  | false => rfl
+
+/-- Cupod's search fails too. -/
+theorem proofSearch_false_cupod_guard (k : Nat) :
+    proofSearch k (.plays (DupocBot k) (CupodBot k) .D) = false := by
+  cases h : proofSearch k (.plays (DupocBot k) (CupodBot k) .D) with
+  | true => exact absurd ((proofSearch_spec _ _).1 h) (not_Pf_cupod_guard k)
+  | false => rfl
+
+/-- Dupoc defaults: `D` against Cupod. -/
+theorem DupocBot_plays_D_vs_CupodBot (k fuel : Nat) :
+    play (fuel + 2) (DupocBot k) (CupodBot k) = some .D := by
+  have hg := proofSearch_false_dupoc_guard k
+  show eval (fuel + 2) (DupocBot k) (CupodBot k) (DupocBot k) = some .D
+  unfold DupocBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
+
+/-- Cupod defaults: `C` against Dupoc. -/
+theorem CupodBot_plays_C_vs_DupocBot (k fuel : Nat) :
+    play (fuel + 2) (CupodBot k) (DupocBot k) = some .C := by
+  have hg := proofSearch_false_cupod_guard k
+  show eval (fuel + 2) (CupodBot k) (DupocBot k) (CupodBot k) = some .C
+  unfold CupodBot at hg ⊢
+  simp [eval, Prog.subst, Formula.subst, hg]
 
 end PD.Theorems

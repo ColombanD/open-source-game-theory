@@ -89,6 +89,89 @@ the transport theorem was built for.
 
 ---
 
+## Why `S` is a RULE SET, not an arithmetized theory (2026-08-20)
+
+*Provenance: the question was posed sharply by the transposition spike
+(`Research/Spikes/transpose/`, the red-cell proof), whose central theorem — "τ = (C D)
+is a length-preserving automorphism of S" — is exactly the kind of statement whose
+difficulty depends entirely on HOW S is presented.*
+
+**The decision.** `S` is presented as a constructor-closed, budget-indexed inductive
+rule set (`Pf`, ProofSystem.lean) — NOT as an arithmetized theory (PA + Gödel encoding
++ Hilbert calculus + representability formula `Γ_Eval`, the literal Def 1.5 of the
+paper notes). "Provable" is stipulated by 30 rules with explicit transcript costs,
+rather than emerging from an axiom set and a proof-string predicate.
+
+**What justifies it — five points, in decreasing order of force:**
+
+1. **It matches the abstraction level of the source material.** Critch 2019/2022 does
+   not fix an arithmetization either: the results are proved against theories
+   satisfying bounded derivability conditions — an interface. The paper-notes' own
+   Def of `S` leaves "(S4) other technical assumptions" open in red for the same
+   reason. The engine mechanizes OSGT at the level OSGT is actually stated at;
+   arithmetizing would be *adding* a commitment the theory doesn't make.
+2. **The blocking prerequisite for the alternative exists nowhere.** A real
+   arithmetized `S` with `□_k` needs QUANTITATIVE proof theory — every substitution
+   lemma, derivability condition, and the diagonal lemma with explicit length bounds
+   threaded through, then bounded Löb (PBLT) on top. No formalization of this exists
+   in any prover. The closest bases: Foundation/FormalizedFormalLogic (Lean 4) has the
+   qualitative stack (FOL with derivations-as-data, IΣ₁ arithmetization, HBL
+   conditions, Gödel I & II, Löb) but nothing costed; mathlib's `ModelTheory` is
+   semantics-first (satisfaction, compactness — no usable proof calculus whose
+   derivations one could even measure) and is the wrong library outright. Estimate:
+   person-years of infrastructure before the FIRST outcome theorem — displacing the
+   actual research (the eval↔proof back-edge, decidability, the LLM pipeline,
+   tau/EGT), none of which needs the encoding.
+3. **Finite presentations make the meta-theorems finite.** Every global property of
+   `S` becomes a per-rule closure check instead of an induction over an open-ended
+   axiom schema: soundness (`sound_upto`'s arms), the exclusion censuses, decidability
+   (the gate enters at eight sites), and now the τ-automorphism — the paper's Def-1.9
+   HYPOTHESIS ("every nonlogical axiom maps to a theorem") became a 47-arm induction
+   that compiled in a day, its "equal encoding length" hypothesis became the EXACT
+   `size_transpose`, and its τ-equivariant-encoding hypothesis became the provable
+   `subst_transpose` (quotation is structural, so the encoding subtlety — Gödel codes
+   are numerals, numerals contain no `C`/`D`, so code-level equivariance needs a
+   nonstandard token encoding and a re-audit of every representability axiom —
+   dissolves). Bonus robustness: the compiler ENFORCES maintenance — a new `Pf`
+   constructor breaks every closure until its arm is written, which is the right
+   failure mode.
+4. **The boundary is relocated, not enlarged.** Every formalization has a
+   spec-fidelity boundary; arithmetizing does not eliminate it, it moves it into
+   murkier territory (WHICH encoding? do de Bruijn indices vs. proof STRINGS give the
+   same character counts? are the Appendix-B constants right for THIS calculus? —
+   length-of-proof results are notoriously encoding-sensitive, cf. the Pudlák caveat
+   in the 2026-08-12 section). The rule presentation concentrates the entire boundary
+   into ONE finite, human-auditable claim: *each of the 30 rules is a genuine
+   capability of a PA-like S, at a faithful transcript cost* — documented per-rule in
+   the constructor docstrings, calibrated against Pudlák where the pricing is deep
+   (the floor), and with a track record that the discipline has teeth: the one rule
+   that could not be faithful (`atom_complete_false_guard`) was machine-checked
+   INCONSISTENT and killed.
+5. **The residual risk is asymmetric and known.** Positive outcomes exhibit proof
+   objects — robust (a richer real `S` only makes them truer). Negative results
+   (`¬Pf`) implicitly claim rule-completeness — that is where faithfulness genuinely
+   bites, and why the floor/census work carries the Pudlák analysis. Notably, the
+   transposition-style negative (the red cell) is the ROBUST kind: it needs only
+   soundness + τ-closure of *whatever the rule set is*, surviving any τ-symmetric
+   extension unchanged, whereas censuses quantify over the literal constructor list.
+
+**Rejected / deferred alternatives:**
+
+| Alternative | Fate |
+|---|---|
+| Full arithmetization on mathlib `ModelTheory` | Wrong niche — no syntactic calculus with derivations as data; items (1)–(3) of the needed stack would be built from bare ground. Do not retry. |
+| Full arithmetization on Foundation | The right base IF ever attempted (derivations are measurable data; qualitative Gödel/Löb stack done), but the quantitative layer is virgin territory and the token-encoding equivariance becomes a real design obligation. Multi-person-year program; future work, not thesis scope. |
+| Interface formalization (middle path) | NOT rejected — flagged as cheap future work: state the abstract "S-interface" (budget-indexed `□` + monotonicity + soundness + size-compatible costs + τ-involution) as a Lean structure, prove outcome theorems generically, instantiate with `Pf`. Turns the faithfulness boundary from prose into a named, finite obligation list a future arithmetized instance would have to discharge. |
+
+**One-line summary.** The rule set is not a stand-in for the "real" `S` we failed to
+build; it is the Critch-faithful abstraction level, chosen so that the trust surface
+is a finite list of audited rules — and three months of axiom-elimination, soundness,
+decidability, and now automorphism results are precisely the campaign of shrinking
+that surface to its current state: three standard Lean axioms plus per-rule
+faithfulness prose.
+
+---
+
 ## The floor is priced finite consistency — Löb, G2, and Pudlák on `search_f` (2026-08-12)
 
 *Companion to the 2026-07-02 floor section below, which records the engine-internal

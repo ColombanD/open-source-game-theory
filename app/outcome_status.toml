@@ -19,10 +19,9 @@
 # in the app UI.
 
 # ---- Genuinely open (semantic reasons) -------------------------------------
-
-[[open]]
-pair = ["CupodBot", "DupocBot"]
-reason = "Critch's open problem — search × search, expected unprovable in the library as it stands (OSGT_Workshop_Cheat_Sheet.md)."
+# (CupodBot, DupocBot) — Critch's open problem, the "red cell" — was listed
+# here until 2026-08-20, when `outcome_DupocBot_vs_CupodBot = (D, C)` landed
+# (the τ-transposition route, Theorems/DupocBot/vs_CupodBot.lean).
 
 [[open]]
 pair = ["PrudentBot", "CupodBot"]

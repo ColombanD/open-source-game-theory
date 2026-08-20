@@ -459,10 +459,12 @@ def write_report_md(
         lines.append("## Flagged input")
         lines.append("")
         lines.append(
-            "The following edges and ties reference the red cell "
-            "`(CupodBot, DupocBot)`, which is unresolved in Critch et al. 2022. "
-            "Verdicts depending on these should be treated as conditional on "
-            "the chosen action-pair resolution."
+            "The following edges and ties reference STIPULATED (unproven) "
+            "cells of the selected zoo. Verdicts depending on these should be "
+            "treated as conditional on the chosen action-pair resolution. "
+            "(The historical single such cell — the Critch 'red cell' "
+            "`(CupodBot, DupocBot)` — is PROVEN since 2026-08-20 and is no "
+            "longer flagged.)"
         )
         if suspect_edges:
             lines.append("")

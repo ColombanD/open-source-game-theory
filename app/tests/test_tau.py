@@ -84,12 +84,15 @@ def test_default_zoo_composition() -> None:
 
 
 def test_default_zoo_is_conditional_on_stipulations() -> None:
-    """CupodBot enters via two STIPULATED cells; that must stay visible."""
+    """CupodBot enters via a STIPULATED cell; that must stay visible."""
     m = load_tau_matrix()
     assert not m.is_fully_proven
     # Each stipulated pair contributes its cell and its transpose.
     assert len(m.hypothetical_cells) == 2 * len(CUPOD_STIPULATIONS)
-    assert m.cell("CupodBot", "DupocBot").hypothetical
+    # The red cell is PROVEN since 2026-08-20 (`outcome_DupocBot_vs_CupodBot`,
+    # the τ-transposition route) — no longer hypothetical.
+    assert not m.cell("CupodBot", "DupocBot").hypothetical
+    assert m.action("CupodBot", "DupocBot") == "C"
     assert m.cell("PrudentBot", "CupodBot").hypothetical
     # Everything else is kernel-backed.
     assert not m.cell("CupodTrollBot", "CupodBot").hypothetical
@@ -182,7 +185,13 @@ def test_every_named_zoo_loads() -> None:
     for key, zoo in ZOOS.items():
         m = zoo.load()
         assert m.bots == zoo.bots, key
-        assert (len(m.hypothetical_cells) == 0) == (len(zoo.stipulations) == 0), key
+        # Hypothetical cells come from BOTH non-kernel inputs: stipulations
+        # (genuine holes) and contradictions (superficial-standalone's
+        # deliberately-wrong CSV replays). Before 2026-08-20 the two were
+        # conflated here — superficial-standalone happened to carry the (now
+        # PROVEN) red-cell stipulation alongside its contradictions.
+        unproven_inputs = len(zoo.stipulations) + len(zoo.contradictions)
+        assert (len(m.hypothetical_cells) == 0) == (unproven_inputs == 0), key
 
 
 def test_named_zoo_provenance_claims_hold() -> None:
@@ -215,10 +224,10 @@ def test_hypothetical_cells_fill_holes_and_are_flagged() -> None:
         hypothetical_cells=dict.fromkeys(CUPOD_STIPULATIONS, ("C", "D"))
     )
     assert not m.is_fully_proven
-    assert m.cell("CupodBot", "DupocBot").shape == "HYPOTHETICAL"
+    assert m.cell("PrudentBot", "CupodBot").shape == "HYPOTHETICAL"
     # The transpose is derived, so the two orientations cannot disagree.
-    assert m.action("CupodBot", "DupocBot") == "C"
-    assert m.action("DupocBot", "CupodBot") == "D"
+    assert m.action("PrudentBot", "CupodBot") == "C"
+    assert m.action("CupodBot", "PrudentBot") == "D"
     # Proven cells in the same matrix stay proven.
     assert not m.cell("CooperateBot", "DefectBot").hypothetical
 
@@ -256,21 +265,22 @@ def test_cupodtrollbot_split_is_earned_not_stipulated() -> None:
 
 
 def test_justbot_split_depends_on_the_stipulation() -> None:
-    """The DupocBot/JustBot split is an ARTIFACT of disagreeing stipulations.
+    """The DupocBot/JustBot split is an ARTIFACT of the JustBot stipulation.
 
-    Over the full zoo (JustBot included), admitting CupodBot separates the pair
-    only when the two stipulated cells assign them different actions against
-    CupodBot. Half of the assignments split them, half do not — so no result
-    should rest on it.
+    Over the full zoo (JustBot included), DupocBot's action against CupodBot is
+    PROVEN since 2026-08-20 (the red cell: D), so admitting CupodBot separates
+    the pair exactly when the still-stipulated JustBot cell assigns JustBot a
+    different action against CupodBot. Half of the assignments split them, half
+    do not — so no result should rest on it.
     """
     import itertools
 
     bots = tuple(sorted(FULL_CERTIFIED_SUB_ZOO + ("CupodBot",)))
-    holes = (("CupodBot", "DupocBot"), ("CupodBot", "JustBot"), ("CupodBot", "PrudentBot"))
+    holes = (("CupodBot", "JustBot"), ("CupodBot", "PrudentBot"))
     values = [("C", "C"), ("C", "D"), ("D", "C"), ("D", "D")]
 
     split = 0
-    for combo in itertools.product(values, repeat=3):
+    for combo in itertools.product(values, repeat=2):
         m = load_tau_matrix(bots=bots, hypothetical_cells=dict(zip(holes, combo)))
         groups = behavioral_twins(m)
         if all({"DupocBot", "JustBot"} - set(g) for g in groups):
@@ -278,7 +288,7 @@ def test_justbot_split_depends_on_the_stipulation() -> None:
         # CooperateBot/LegibleBot survive every assignment — irreducibly twinned.
         assert any({"CooperateBot", "LegibleBot"} <= set(g) for g in groups)
 
-    assert split == 32  # exactly half: a coin flip on an arbitrary choice
+    assert split == 8  # exactly half: a coin flip on an arbitrary choice
 
 
 # ---------------------------------------------------------------- signal ----
@@ -381,9 +391,9 @@ def test_admitting_cupodbot_raises_the_ceiling() -> None:
 def test_twin_freeness_is_invariant_under_the_stipulations() -> None:
     """The what-if buys MEMBERSHIP, not the result.
 
-    All 16 assignments of CupodBot's two unproven cells give a twin-free zoo at
-    ceiling 1.0, so twin-freeness does not depend on the values chosen. A
-    what-if result is trustworthy exactly when it is invariant like this.
+    All assignments of CupodBot's remaining unproven cell(s) give a twin-free
+    zoo at ceiling 1.0, so twin-freeness does not depend on the values chosen.
+    A what-if result is trustworthy exactly when it is invariant like this.
     """
     import itertools
 
@@ -1450,27 +1460,29 @@ def test_critch8_zoo_is_registered_and_loads():
     assert len(matrix._cells) == 64
 
 
-def test_critch8_needs_exactly_the_red_cell_stipulated():
-    """Its only hole is the cell Critch et al. leave open.
+def test_critch8_is_fully_proven_since_the_red_cell_landed():
+    """The zoo's one former hole — the red cell — is now a theorem.
 
     The standalone repo marked `(CupodBot, DupocBot)` red and imputed it from
-    config.json. Reaching the same hole from a Lean library that simply has no
-    theorem for it is independent confirmation the gap is in the THEORY.
+    config.json; Critch et al. leave it open. Since 2026-08-20 the library
+    proves it (`outcome_DupocBot_vs_CupodBot = (D, C)`, the τ-transposition
+    route) — with exactly the value that repo had imputed, so its published
+    qualitative findings survive unconditionally.
     """
     from pd_runner.tau.matrix import get_zoo, load_tau_matrix
 
     zoo = get_zoo("critch8")
-    assert set(zoo.stipulations) == {("CupodBot", "DupocBot")}
-    # And the value matches that repo's default.
-    assert zoo.stipulations[("CupodBot", "DupocBot")] == ("C", "D")
+    assert zoo.stipulations == {}
+    m = load_tau_matrix(zoo.bots, hypothetical_cells={})
+    assert m.is_fully_proven
+    # The proven value matches the standalone repo's config.json default.
+    assert m.action("CupodBot", "DupocBot") == "C"
+    assert m.action("DupocBot", "CupodBot") == "D"
 
-    with pytest.raises(ValueError, match="not total"):
-        load_tau_matrix(zoo.bots, hypothetical_cells={})
 
-
-def test_critch8_results_are_flagged_conditional():
-    """One stipulated cell means every result over this zoo is conditional."""
-    assert get_zoo("critch8").load().is_fully_proven is False
+def test_critch8_results_are_unconditional():
+    """No stipulated cells → nothing over this zoo is conditional anymore."""
+    assert get_zoo("critch8").load().is_fully_proven is True
 
 
 def test_critch8_transcription_diffs_are_accurate():

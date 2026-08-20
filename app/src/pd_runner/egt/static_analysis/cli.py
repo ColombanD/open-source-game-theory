@@ -13,6 +13,8 @@ from pd_runner.egt.static_analysis.reporting import write_all
 # touch one are flagged `touches_suspect_cell` downstream. In the standalone
 # repo this was the single Critch "red cell"; here it is whatever the selected
 # zoo stipulates, so it is derived per-run rather than hardcoded.
+# (This legacy default keeps the red cell as the worked example even though
+# that cell is PROVEN since 2026-08-20 — real runs use `suspect_cells_for`.)
 SUSPECT_CELLS = [
     ("CupodBot", "DupocBot"),
     ("DupocBot", "CupodBot"),
