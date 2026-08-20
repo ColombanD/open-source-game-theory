@@ -42,15 +42,16 @@ from pd_runner.tau.matrix import load_tau_matrix
 # ── the compound decisions (the Lean bit tables, transcribed) ──────────────────
 
 EXPECTED_ACTIONS: dict[str, str] = {
-    "TauCooperate": "CCCCCCCCC",
-    "TauDefect": "DDDDDDDDD",
-    "TauTFTSim": "CDCCCDCCC",
-    "TauTFTPf": "CDCCCDCCD",
-    "TauDupoc": "CDCCCDCDD",
-    "TauEBot": "DDCCCDCCC",
-    "TauJust": "CDCCCDCDD",
-    "TauOBot": "CDDDDDDDD",
-    "TauGuardian": "CDCCCDCCC",
+    "TauCooperate": "CCCCCCCCCC",
+    "TauDefect": "DDDDDDDDDD",
+    "TauTFTSim": "CDCCCDCCCD",
+    "TauTFTPf": "CDCCCDCCDD",
+    "TauDupoc": "CDCCCDCDDD",
+    "TauEBot": "DDCCCDCCCD",
+    "TauJust": "CDCCCDCDDD",
+    "TauOBot": "CDDDDDDDDD",
+    "TauGuardian": "CDCCCDCCCD",
+    "TauDBot": "DCCCCCCCCD",
 }
 
 
@@ -63,11 +64,11 @@ def test_decision_table_matches_lean_bit_tables() -> None:
 
 def test_kernel_check_passes() -> None:
     check = kernel_check()
-    assert check.checked == 81
+    assert check.checked == 100
     assert check.passed, check.mismatches
 
 
-def test_kernel_scanner_finds_all_six_rows() -> None:
+def test_kernel_scanner_finds_all_rows() -> None:
     tables = kernel_bits()
     assert set(tables) == set(TAU_ORDER)
 
@@ -154,12 +155,12 @@ def test_whitelist_is_exactly_the_two_recorded_cells() -> None:
 
 
 def test_bit_coincidence_full_zoo() -> None:
-    """All 81 template cells against the total base matrix: 79 agree; the two
+    """All 100 template cells against the total base matrix: 98 agree; the two
     divergences are exactly the whitelisted Mirror-truncation and prover-modality
     cells."""
     matrix = load_tau_matrix(FULL_BOTS)
     coin = bit_coincidence(matrix)
-    assert len(coin.cells) == 81
+    assert len(coin.cells) == 100
     assert coin.passed, coin.unexpected
     div = {(c.template, c.hypothesis) for c in coin.whitelisted_divergences}
     assert div == {("TauEBot", "TauEBot"), ("TauTFTPf", "TauGuardian")}

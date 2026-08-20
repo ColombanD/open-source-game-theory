@@ -27,6 +27,7 @@ def eRow : Tmpl → Action
   | .just     => .C
   | .obot     => .C
   | .guardian => .C
+  | .dbot     => .D
 
 /-- The row's witness: each entry is the two-stage run cascade fed the δ_D
     (exploit-watch) and δ_C (reciprocity-watch) behavioral columns. -/
@@ -49,6 +50,7 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
   | .obot     => simWatchC_falls _ _ (pD .obot) (simWatchC_fires _ _ (pC .obot))
   | .guardian => simWatchC_falls _ _ (pD .guardian)
       (simWatchC_fires _ _ (pC .guardian))
+  | .dbot     => simWatchC_fires _ _ (pD .dbot)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -57,7 +59,7 @@ theorem eBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k
     VoteBits (vecOf (tauZoo k) .ebot w tauOrder)
       [(w .coop, .D), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C)] :=
+       (w .guardian, .C), (w .dbot, .D)] :=
   vecOf_bits (tauZoo k) .ebot w eRow tauOrder fun T _ => eRow_plays hk hkk h6 h10 T
 
 /-- **τ(EBot)** — one-sided boundary `θ ≤ eMass`, no window. -/

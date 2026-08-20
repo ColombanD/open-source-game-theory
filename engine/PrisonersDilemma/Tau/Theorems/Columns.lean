@@ -1,6 +1,7 @@
 import PrisonersDilemma.Tau.Theorems.TauDupoc.Helpers
 import PrisonersDilemma.Tau.Theorems.TauEBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauGuardian.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDBot.Helpers
 
 /-!
 # Tau/Theorems/Columns — the consulted columns of the 9-template zoo
@@ -78,6 +79,58 @@ theorem guardian_coop_plays_C {k : Nat} :
       (inst (tauZoo k) .guardian .coop) = some Action.C :=
   searchProbeD_plays_C _ _ (ps_probeD_false_of_plays_C k ⟨1, rfl⟩)
 
+/-- `inst .dbot .coop` plays D: its watch sees the constant cooperator cooperate
+    even against a defector — the punish-fire. -/
+theorem dbot_coop_plays_D {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dbot .coop)) (.bot (inst (tauZoo k) .dbot .coop))
+      (inst (tauZoo k) .dbot .coop) = some Action.D := by
+  have h : ∃ N, eval N (.bot (inst (tauZoo k) .coop .defect))
+      (.bot (inst (tauZoo k) .coop .defect)) (inst (tauZoo k) .coop .defect)
+      = some Action.C := ⟨1, rfl⟩
+  have hfire := simWatchC_fires (I := inst (tauZoo k) .coop .defect) (f := Action.D)
+    (cont := .const Action.C) (.bot (inst (tauZoo k) .dbot .coop))
+    (.bot (inst (tauZoo k) .dbot .coop)) h
+  rw [show inst (tauZoo k) .dbot .coop
+      = .ite (.sim (.bot (inst (tauZoo k) .coop .defect))
+          (.bot (inst (tauZoo k) .coop .defect))) .C (.const .D) (.const .C)
+      from inst_dbot_peel k .coop] at hfire ⊢
+  exact hfire
+
+/-- `inst .dbot T` plays C whenever its watch sees the probed δ_D instance DEFECT —
+    the trusting default. -/
+theorem dbot_plays_C_of_defect {k : Nat} (T : Tmpl)
+    (h : ∃ N, eval N (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect))
+           (inst (tauZoo k) T .defect) = some Action.D) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dbot T)) (.bot (inst (tauZoo k) .dbot T))
+      (inst (tauZoo k) .dbot T) = some Action.C := by
+  have htail : ∃ N, eval N (.bot (inst (tauZoo k) .dbot T))
+      (.bot (inst (tauZoo k) .dbot T)) (.const Action.C) = some Action.C := ⟨1, rfl⟩
+  have hfall := simWatchC_falls (I := inst (tauZoo k) T .defect) (f := Action.D)
+    (cont := .const Action.C) (.bot (inst (tauZoo k) .dbot T))
+    (.bot (inst (tauZoo k) .dbot T)) h htail
+  rw [show inst (tauZoo k) .dbot T
+      = .ite (.sim (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect)))
+          .C (.const .D) (.const .C) from inst_dbot_peel k T] at hfall ⊢
+  exact hfall
+
+/-- `inst .dbot .dbot` plays D — τ(DBot) PUNISHES ITSELF. Its watch runs
+    `inst .dbot .defect`, which TRUSTS the defector (a defector is no pushover),
+    and a cooperation-against-a-defector is exactly what the punisher fires on. -/
+theorem dbot_selfWatch_fires {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dbot .dbot)) (.bot (inst (tauZoo k) .dbot .dbot))
+      (inst (tauZoo k) .dbot .dbot) = some Action.D := by
+  have h : ∃ N, eval N (.bot (inst (tauZoo k) .dbot .defect))
+      (.bot (inst (tauZoo k) .dbot .defect)) (inst (tauZoo k) .dbot .defect)
+      = some Action.C := dbot_plays_C_of_defect .defect ⟨1, rfl⟩
+  have hfire := simWatchC_fires (I := inst (tauZoo k) .dbot .defect) (f := Action.D)
+    (cont := .const Action.C) (.bot (inst (tauZoo k) .dbot .dbot))
+    (.bot (inst (tauZoo k) .dbot .dbot)) h
+  rw [show inst (tauZoo k) .dbot .dbot
+      = .ite (.sim (.bot (inst (tauZoo k) .dbot .defect))
+          (.bot (inst (tauZoo k) .dbot .defect))) .C (.const .D) (.const .C)
+      from inst_dbot_peel k .dbot] at hfire ⊢
+  exact hfire
+
 /-! ## The δ_C column (prover bits) -/
 
 /-- δ_C bits. Zero rows: Defect (refutable), EBot (it EXPLOITS a cooperator), and
@@ -86,6 +139,7 @@ def coopColBit : Tmpl → Bool
   | .defect   => false
   | .ebot     => false
   | .guardian => false
+  | .dbot     => false
   | _         => true
 
 theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
@@ -100,15 +154,17 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .just     => ps_searchProbe_constC hk hkk
   | .obot     => ps_probe_obotConstC h10
   | .guardian => ps_probe_guardCell_false (le_refl k) _
+  | .dbot     => ps_probe_false_of_plays_D k dbot_coop_plays_D
 
 /-! ## The δ_D column (prover bits) -/
 
 /-- δ_D bits. Only the unconditional cooperator is exploitable. -/
 def defectColBit : Tmpl → Bool
   | .coop => true
+  | .dbot => true
   | _     => false
 
-theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) :
+theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .defect)) = defectColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
@@ -120,6 +176,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) :
   | .just     => ps_searchProbe_constD k k
   | .obot     => ps_probe_false_of_plays_D k obot_defect_plays_D
   | .guardian => ps_probe_false_of_plays_D k (guardian_defect_plays_D hk)
+  | .dbot     => (proofSearch_spec _ _).2 (pf_probe_dbotConstD hk6)
 
 /-! ## The δ_L column (prover bits) — TauDupoc's AND TauJust's question -/
 
@@ -131,6 +188,7 @@ def dupocColBit : Tmpl → Bool
   | .ebot     => false
   | .obot     => false
   | .guardian => false
+  | .dbot     => false
   | _         => true
 
 theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
@@ -146,6 +204,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .just     => ps_probe_just_dupoc hkk hquine
   | .obot     => ps_probe_false_of_plays_D k (obot_dupoc_plays_D hk)
   | .guardian => ps_probe_guardCell_false (le_refl k) _
+  | .dbot     => ps_probe_inst_dbot_dupoc_false (le_refl k)
 
 /-! ## The GUARD column (probeD bits) — TauGuardian's question -/
 
@@ -155,6 +214,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
 def guardColBit : Tmpl → Bool
   | .defect => true
   | .ebot   => true
+  | .dbot   => true
   | _       => false
 
 theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
@@ -174,6 +234,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .obot     => ps_probeD_false_of_plays_C k
       (entry_C_of_interp (Pf_sound _ _ (pf_probe_obotConstC h10)))
   | .guardian => ps_probeD_false_of_plays_C k guardian_coop_plays_C
+  | .dbot     => ps_probeD_dbotConstC h6
 
 /-! ## The behavioral δ_C column (true plays) — TauTFTSim's and TauOBot's read -/
 
@@ -183,6 +244,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
 def coopColPlay : Tmpl → Action
   | .defect => .D
   | .ebot   => .D
+  | .dbot   => .D
   | _       => .C
 
 theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
@@ -198,12 +260,14 @@ theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .just     => entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk))
   | .obot     => entry_C_of_interp (Pf_sound _ _ (pf_probe_obotConstC h10))
   | .guardian => guardian_coop_plays_C
+  | .dbot     => dbot_coop_plays_D
 
 /-! ## The behavioral δ_D column (true plays) — TauOBot's second watch -/
 
 /-- TRUE plays vs the defector: only the unconditional cooperator cooperates. -/
 def defectColPlay : Tmpl → Action
   | .coop => .C
+  | .dbot => .C
   | _     => .D
 
 theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k) :
@@ -218,5 +282,6 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k) :
   | .just     => searchProbe_plays_D _ _ (ps_probe_constD k)
   | .obot     => obot_defect_plays_D
   | .guardian => guardian_defect_plays_D hk
+  | .dbot     => dbot_plays_C_of_defect .defect ⟨1, rfl⟩
 
 end PD.Tau

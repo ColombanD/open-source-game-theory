@@ -42,7 +42,8 @@ def _workspace_root() -> Path:
 PHASE_GLOB = "engine/PrisonersDilemma/Tau/Theorems/*/Phase.lean"
 
 TAU_ORDER: tuple[str, ...] = (
-    "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian")
+    "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian",
+    "dbot")
 """The Lean `tauOrder` slot order — every bit list is stated in this order."""
 
 _BITS_RE = re.compile(

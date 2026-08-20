@@ -773,6 +773,28 @@ run-consultation tracking, built for OBot, already computes the embedded floor);
 whitelist now has exactly TWO entries, and the full-zoo certification passes
 79/81 + 2 whitelisted.
 
+**DBot LIFTED (2026-08-19) — the 10th template, and the last non-`.sys` bot.**
+Unblocked by the embedded-floor census the run-mode EBot fix had just forced: the
+single-stage twin `no_provable_botRunStage_C` (`Theorems/TauDBot/Helpers.lean`)
+prices out `inst .dbot .dupoc`'s cooperation, which is REAL (its watch sees
+Dupoc-seeing-Defect defect and falls to the trusting default) but sits behind a
+watched budget-`k` searcher whose D-play certificate pays `search_f`. Spec:
+`⟨[⟨.run, .name .defect, .C, .D⟩], .C⟩` — one watch, trusting default.
+
+**The result it produced: τ(DBot) PUNISHES ITSELF** (`dbot_selfWatch_fires`,
+`outcome_TauDBot_vs_TauDBot_high`). Its own instance at the defector TRUSTS (a
+defector is no pushover), and trust-toward-a-defector is exactly what the punisher
+fires on — so `dbotMass` excludes `w .dbot` as well as `w .coop`. The behavioral
+analogue of single-tier PrudentBot's `(D, D)` self-play: a detector whose test
+cannot exempt its own reasoning. Base `outcome_DBot_vs_DBot = (D, D)` agrees, and
+the coincidence certification confirms it independently.
+
+Certification after the lift: **100 cells, 98 agree, 2 whitelisted** (unchanged —
+DBot introduced NO new divergence; all ten of its cells coincide with base DBot).
+Zoo is now 10 templates over 9 base bots. Remaining unlifted: the 5 self-probers
+(`.sys`) and the 4 non-cascade-fragment bots (CIMCIC/DIMCID impl, WaryBot `.neg`,
+CupodTrollBot `.eq`).
+
 **Step 3 — SCHEDULED DEBT: `Zoo.WellFormed` + computed fuel (NOT started).** The
 piece that would make MACHINE-GENERATED zoos possible by replacing Gate D1's
 hand-written closures. Components, sketched 2026-08-19:

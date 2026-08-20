@@ -107,6 +107,7 @@ TAU_ZOO: dict[str, LiftSpec] = {
          Stage(Mode.RUN, "TauDefect", "D", "D")),
         "C",
     ),
+    "TauDBot": LiftSpec((Stage(Mode.RUN, "TauDefect", "C", "D"),), "C"),
     "TauGuardian": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "D", "D"),), "C"),
 }
 
@@ -120,6 +121,7 @@ TEMPLATES: tuple[str, ...] = (
     "TauJust",
     "TauOBot",
     "TauGuardian",
+    "TauDBot",
 )
 """Canonical template order — matches the Lean `tauOrder`
 ([coop, defect, tftSim, tftPf, dupoc, ebot])."""
@@ -134,6 +136,7 @@ BASE_OF: dict[str, str] = {
     "TauJust": "JustBot",
     "TauOBot": "OBot",
     "TauGuardian": "GuardianBot",
+    "TauDBot": "DBot",
 }
 """Which base bot each template lifts. The two TFT variants are two lift MODALITIES
 of the same base strategy (behavioral vs prover). Their bits coincide at large k on
@@ -152,6 +155,7 @@ LEAN_SLOT: dict[str, str] = {
     "TauJust": "just",
     "TauOBot": "obot",
     "TauGuardian": "guardian",
+    "TauDBot": "dbot",
 }
 """Template name → the Lean `Tmpl` constructor, for the kernel bit-table check."""
 
@@ -347,9 +351,12 @@ FULL_ZOO: dict[str, str] = {
     "JustBot": "TauJust",
     "OBot": "TauOBot",
     "GuardianBot": "TauGuardian",
+    "DBot": "TauDBot",
 }
 """The whole 9-template zoo (8 base bots; TitForTatBot carries both TFT variants).
 The base matrix is total over these, so the coincidence certification runs on all
 81 template cells."""
 
-FULL_BOTS: tuple[str, ...] = SEPARATING_BOTS + ("JustBot", "OBot", "GuardianBot")
+FULL_BOTS: tuple[str, ...] = SEPARATING_BOTS + (
+    "JustBot", "OBot", "GuardianBot", "DBot",
+)

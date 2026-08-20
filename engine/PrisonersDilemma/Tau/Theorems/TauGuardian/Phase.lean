@@ -26,6 +26,7 @@ def guardianRow : Tmpl → Action
   | .just     => .C
   | .obot     => .C
   | .guardian => .C
+  | .dbot     => .D
 
 /-- The row's witness: every entry is the punish-probe (`test = .D` prove-stage)
     fed the guard column's bits. -/
@@ -45,6 +46,7 @@ theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (
   | .just     => searchProbeD_plays_C _ _ (gB .just)
   | .obot     => searchProbeD_plays_C _ _ (gB .obot)
   | .guardian => searchProbeD_plays_C _ _ (gB .guardian)
+  | .dbot     => searchProbeD_plays_D _ _ (gB .dbot)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -53,7 +55,7 @@ theorem guardianBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 
     VoteBits (vecOf (tauZoo k) .guardian w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C)] :=
+       (w .guardian, .C), (w .dbot, .D)] :=
   vecOf_bits (tauZoo k) .guardian w guardianRow tauOrder
     fun T _ => guardianRow_plays hk hkk h6 h10 T
 

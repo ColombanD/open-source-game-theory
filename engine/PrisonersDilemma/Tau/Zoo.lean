@@ -7,6 +7,7 @@ import PrisonersDilemma.Tau.Bots.TauEBot
 import PrisonersDilemma.Tau.Bots.TauJust
 import PrisonersDilemma.Tau.Bots.TauOBot
 import PrisonersDilemma.Tau.Bots.TauGuardian
+import PrisonersDilemma.Tau.Bots.TauDBot
 
 /-!
 # Tau/Zoo — the assembled six-template zoo, its players, and Gate D1
@@ -34,6 +35,7 @@ def tmplSpec : Tmpl → Spec Tmpl
   | .just   => tauJustSpec
   | .obot   => tauOBotSpec
   | .guardian => tauGuardianSpec
+  | .dbot     => tauDBotSpec
 
 def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
 
@@ -77,6 +79,13 @@ theorem inst_ebot_peel (k : Nat) : ∀ T, inst (tauZoo k) .ebot T
         .C (.const .D)
         (.ite (.sim (.bot (inst (tauZoo k) T .coop)) (.bot (inst (tauZoo k) T .coop)))
           .C (.const .C) (.const .D)) :=
+  fun T => by cases T <;> rfl
+
+/-- τ(DBot)'s row: ONE run-stage watching the hypothesis's δ_D instance, with a
+    trusting constant tail. -/
+theorem inst_dbot_peel (k : Nat) : ∀ T, inst (tauZoo k) .dbot T
+    = .ite (.sim (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect)))
+        .C (.const .D) (.const .C) :=
   fun T => by cases T <;> rfl
 
 /-- τ(Dupoc)'s row, OFF the diagonal: one prove-stage on the hypothesis's δ_L

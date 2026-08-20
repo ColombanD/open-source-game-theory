@@ -409,6 +409,11 @@ abbrev eMass (w : Tmpl → Nat) : Nat :=
   w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + w .guardian))))
 abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
 abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop
+/-- τ(DBot)'s mass: everything but the exploitable constant cooperator AND ITSELF
+    (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
+abbrev dbotMass (w : Tmpl → Nat) : Nat :=
+  w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
+    (w .obot + w .guardian))))))
 
 /-! ## Shape lemmas — the `test = .D` idioms (9-zoo extension, 2026-08-18) -/
 
@@ -441,6 +446,37 @@ theorem ps_probeD_runCascadeConstC {k : Nat} (h6 : 6 ≤ k) :
       (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C (.const .C)
         (.const .D)))) = true :=
   (proofSearch_spec _ _).2 (pf_probeD_runCascadeConstC h6)
+
+/-- DBot's instance at the constant DEFECTOR provably cooperates: its watch sees
+    the defector defect (an `ite_f` over a constant sim) and falls through to the
+    trusting default. -/
+theorem pf_probe_dbotConstD {K : Nat} (hK : 6 ≤ K) :
+    Pf K (probe (.ite (.sim (.bot (.const .D)) (.bot (.const .D))) Action.C
+      (.const .D) (.const .C))) :=
+  Pf.atom ⟨PlaysProof.bot
+    (PlaysProof.ite_f (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) (by decide)
+      PlaysProof.const),
+    by have := hcl; have := hcn; omega⟩
+
+theorem ps_probe_dbotConstD {k : Nat} (h6 : 6 ≤ k) :
+    proofSearch k (probe (.ite (.sim (.bot (.const .D)) (.bot (.const .D))) Action.C
+      (.const .D) (.const .C))) = true :=
+  (proofSearch_spec _ _).2 (pf_probe_dbotConstD h6)
+
+/-- DBot's instance at the constant COOPERATOR provably DEFECTS: its watch fires
+    (an `ite_t` over a constant sim). The bit GuardianBot reads to punish DBot. -/
+theorem pf_probeD_dbotConstC {K : Nat} (hK : 6 ≤ K) :
+    Pf K (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
+      (.const .D) (.const .C))) :=
+  Pf.atom ⟨PlaysProof.bot
+    (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) rfl
+      PlaysProof.const),
+    by have := hcl; have := hcn; omega⟩
+
+theorem ps_probeD_dbotConstC {k : Nat} (h6 : 6 ≤ k) :
+    proofSearch k (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
+      (.const .D) (.const .C))) = true :=
+  (proofSearch_spec _ _).2 (pf_probeD_dbotConstC h6)
 
 /-- OBot's instance at the cooperator PROVABLY cooperates: both defection-watching
     stages see the constant cooperator cooperate and fall through to the trusting

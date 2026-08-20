@@ -25,6 +25,7 @@ def tftSimRow : Tmpl → Action
   | .just     => .C
   | .obot     => .C
   | .guardian => .C
+  | .dbot     => .D
 
 /-- The row's witness: every entry is a run-stage copy of the δ_C behavioral
     column. -/
@@ -43,6 +44,7 @@ theorem tftSimRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6
   | .just     => simCopy_plays _ _ (pC .just)
   | .obot     => simCopy_plays _ _ (pC .obot)
   | .guardian => simCopy_plays _ _ (pC .guardian)
+  | .dbot     => simCopy_plays _ _ (pC .dbot)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -51,7 +53,7 @@ theorem tftSimBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
     VoteBits (vecOf (tauZoo k) .tftSim w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C)] :=
+       (w .guardian, .C), (w .dbot, .D)] :=
   vecOf_bits (tauZoo k) .tftSim w tftSimRow tauOrder
     fun T _ => tftSimRow_plays hk hkk h6 h10 T
 

@@ -22,15 +22,17 @@ namespace PD.Tau
     first `test = .D` prover). Excluded and why: CupodBot/PrudentBot/MirrorBot/
     LegibleBot/OptimBot are self-probers (the mutual-quine wall — `.sys`);
     CIMCIC/DIMCID (implication guards), WaryBot (`.neg`), CupodTrollBot (`.eq`)
-    are outside the cascade fragment; DBot needs a NEW Exclusion floor kernel for
-    its δ_L cell (a frozen probe-first player sim-embedding a floor-priced
-    searcher) — liftable once that kernel exists, recorded. -/
+    are outside the cascade fragment. `dbot` (DBot — the defection-punisher: one
+    run-stage watching δ_D, trusting by default) was ADDED 2026-08-19 once its
+    blocker cleared: its δ_L cell needs a frozen run-stage player sim-embedding a
+    floor-priced searcher, which is exactly `no_provable_botRunStage_C`, the
+    single-stage twin of the embedded-floor census the run-mode EBot fix forced. -/
 inductive Tmpl
-  | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian
+  | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian | dbot
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
 def tauOrder : List Tmpl :=
-  [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian]
+  [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot]
 
 end PD.Tau
