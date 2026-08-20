@@ -9,6 +9,7 @@ import PrisonersDilemma.Tau.Bots.TauOBot
 import PrisonersDilemma.Tau.Bots.TauGuardian
 import PrisonersDilemma.Tau.Bots.TauDBot
 import PrisonersDilemma.Tau.Bots.TauCupodTroll
+import PrisonersDilemma.Tau.Bots.TauCupod
 
 /-!
 # Tau/Zoo — the assembled six-template zoo, its players, and Gate D1
@@ -38,6 +39,7 @@ def tmplSpec : Tmpl → Spec Tmpl
   | .guardian => tauGuardianSpec
   | .dbot     => tauDBotSpec
   | .cupodTroll => tauCupodTrollSpec
+  | .cupod    => tauCupodSpec
 
 def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
 
@@ -97,6 +99,57 @@ theorem inst_cupodTroll_peel (k : Nat) : ∀ T, inst (tauZoo k) .cupodTroll T
     = .search k (.eq .opp (.bot (inst (tauZoo k) T .dupoc)))
         (.const .D) (.const .C) :=
   fun T => by cases T <;> rfl
+
+/-! ### τ(Cupod)'s row — the FIRST `.sys` row (2026-08-20)
+
+Three shapes, because Cupod is a self-prober meeting another self-prober:
+* off-cycle hypotheses compile to an ordinary prove-stage (the partner is not a
+  self-prober, so the §6.3 rank argument bottoms out);
+* the DIAGONAL is the quine pronoun, exactly like Dupoc's;
+* the ENTANGLED cell (`.dupoc`) is the 2-member `.sys` system — the shape that had
+  no term at all before the binder. -/
+
+theorem inst_cupod_peel_coop (k : Nat) : inst (tauZoo k) .cupod .coop
+    = .search k (probeD (inst (tauZoo k) .coop .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_defect (k : Nat) : inst (tauZoo k) .cupod .defect
+    = .search k (probeD (inst (tauZoo k) .defect .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_tftSim (k : Nat) : inst (tauZoo k) .cupod .tftSim
+    = .search k (probeD (inst (tauZoo k) .tftSim .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_tftPf (k : Nat) : inst (tauZoo k) .cupod .tftPf
+    = .search k (probeD (inst (tauZoo k) .tftPf .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_ebot (k : Nat) : inst (tauZoo k) .cupod .ebot
+    = .search k (probeD (inst (tauZoo k) .ebot .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_just (k : Nat) : inst (tauZoo k) .cupod .just
+    = .search k (probeD (inst (tauZoo k) .just .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_obot (k : Nat) : inst (tauZoo k) .cupod .obot
+    = .search k (probeD (inst (tauZoo k) .obot .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_guardian (k : Nat) : inst (tauZoo k) .cupod .guardian
+    = .search k (probeD (inst (tauZoo k) .guardian .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_dbot (k : Nat) : inst (tauZoo k) .cupod .dbot
+    = .search k (probeD (inst (tauZoo k) .dbot .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_cupodTroll (k : Nat) : inst (tauZoo k) .cupod .cupodTroll
+    = .search k (probeD (inst (tauZoo k) .cupodTroll .cupod)) (.const .D) (.const .C) := rfl
+
+/-- τ(Cupod)'s DIAGONAL — the quine, mirroring Dupoc's with inverted polarity. -/
+theorem inst_cupod_quine (k : Nat) : inst (tauZoo k) .cupod .cupod
+    = .search k (.plays .self .self Action.D) (.const .D) (.const .C) := rfl
+
+/-- **THE ENTANGLED CELL** — τ(Cupod) meeting τ(Dupoc). Component 0 is Cupod-seeing-
+    Dupoc, component 1 is Dupoc-seeing-Cupod, and each probes the other by INDEX.
+    This term did not exist before the `.sys` binder. -/
+theorem inst_cupod_sys_dupoc (k : Nat) : inst (tauZoo k) .cupod .dupoc
+    = .sys (.cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.D)
+                     (.const .D) (.const .C))
+           (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.C)
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+
+/-- …and the same system seen from Dupoc's side: component 0 is now Dupoc-seeing-
+    Cupod. The two cells share one system, with the roles of the indices swapped. -/
+theorem inst_dupoc_sys_cupod (k : Nat) : inst (tauZoo k) .dupoc .cupod
+    = .sys (.cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.C)
+                     (.const .C) (.const .D))
+           (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.D)
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
 
 /-- τ(Dupoc)'s row, OFF the diagonal: one prove-stage on the hypothesis's δ_L
     instance ("does T, seeing me, cooperate?"). -/

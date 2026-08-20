@@ -27,6 +27,11 @@ namespace PD.Tau
     remaining bot whose guard names a LITERAL third party rather than the opponent's
     view of me, so it is the only one liftable without `.sys`.
 
+    **`cupod` (CupodBot) ADDED 2026-08-20 — the FIRST bot through the `.sys`
+    binder.** It self-probes (`.plays .opp .self D`), so with TauDupoc and TauJust
+    already self-probing it forms genuine 2-cycles; `instGo` now emits the
+    mutual-fixpoint system for those pairs instead of failing to terminate.
+
     **Correction recorded 2026-08-20 (Gate D1 caught it):** CIMCIC and DIMCID
     (`.impl (.plays .self .opp _) (.plays .opp .self _)`) and WaryBot
     (`.neg (.plays .opp .self C)`) all mention BOTH `.self` and `.opp`, so they are
@@ -39,12 +44,12 @@ namespace PD.Tau
     single-stage twin of the embedded-floor census the run-mode EBot fix forced. -/
 inductive Tmpl
   | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian | dbot
-  | cupodTroll
+  | cupodTroll | cupod
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
 def tauOrder : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll]
+   .cupodTroll, .cupod]
 
 end PD.Tau
