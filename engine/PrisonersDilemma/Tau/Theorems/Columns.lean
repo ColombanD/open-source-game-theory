@@ -302,8 +302,7 @@ def cupodColBit : Tmpl → Bool
   | .cupod  => true
   | _       => false
 
-theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k)
+theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k)
     (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true) :
     ∀ T, proofSearch k (probeD (inst (tauZoo k) T .cupod)) = cupodColBit T
   | .coop       => ps_probeD_false_of_plays_C k ⟨1, rfl⟩
