@@ -274,6 +274,55 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupod      => ps_probeD_false_of_plays_C k cupod_coop_plays_C
   | .cupodTroll => ps_probeD_inst_cupodTroll_false k _
 
+/-! ## The δ_Cu GUARD column (probeD bits) — τ(Cupod)'s question
+
+"Does T, seeing CUPOD, provably DEFECT?" Cupod punishes exactly what it can convict.
+Only ONE row besides the diagonal is `true`: the constant defector (a trivial atom).
+OBot's cell is the interesting near-miss — it truly plays D (its second watch
+catches Cupod punishing the defector) but the certificate must embed watch 1's
+FALL, i.e. Cupod's floor-priced trust, so it is itself uncitable. The DIAGONAL is Löbian self-defection and enters as a
+hypothesis, like every Löb bit; the `.dupoc` and `.just` rows are OPEN (they read
+the entangled cell) and enter as hypotheses for a different reason — see
+`TauCupod/Helpers`.
+
+Note `tftPf ↦ false` over a genuine D: Cupod's trust is floor-priced, so TFTPf's
+probe fails and it defects — but that defection is an ELSE-play, itself
+floor-priced (`ps_probeD_searchProbe_false`). A true D that no prover can cite. -/
+
+/-- δ_Cu guard bits. -/
+def cupodColBit : Tmpl → Bool
+  | .defect => true
+  | .cupod  => true
+  | _       => false
+
+theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k)
+    (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
+    (hdc : proofSearch k (probeD (inst (tauZoo k) .dupoc .cupod)) = cupodColBit .dupoc)
+    (hjc : proofSearch k (probeD (inst (tauZoo k) .just .cupod)) = cupodColBit .just) :
+    ∀ T, proofSearch k (probeD (inst (tauZoo k) T .cupod)) = cupodColBit T
+  | .coop       => ps_probeD_false_of_plays_C k ⟨1, rfl⟩
+  | .defect     => ps_probeD_constD hk
+  | .tftSim     => ps_probeD_false_of_plays_C k (simCopy_plays _ _ cupod_coop_plays_C)
+  | .tftPf      => ps_probeD_searchProbe_false (le_refl k) _
+  | .dupoc      => hdc
+  | .ebot       => ps_probeD_false_of_plays_C k
+      (simWatchC_falls _ _ (cupod_defect_plays_D hk)
+        (simWatchC_fires _ _ cupod_coop_plays_C))
+  | .just       => hjc
+  -- OBot truly plays D here (its SECOND watch catches Cupod punishing the
+  -- defector), but the certificate must first certify watch 1 FALLING — i.e. that
+  -- Cupod trusts the cooperator — and THAT is floor-priced
+  -- (`ps_probe_inst_cupod_coop_false`). An embedded floor one level up: a true D
+  -- that no prover can cite at budget k.
+  | .obot       => ps_probeD_obotCupod_false (le_refl k)
+  | .guardian   => ps_probeD_false_of_plays_C k
+      (searchProbeD_plays_C _ _ (ps_probeD_false_of_plays_C k cupod_coop_plays_C))
+  | .dbot       => ps_probeD_false_of_plays_C k
+      (dbot_plays_C_of_defect .cupod (cupod_defect_plays_D hk))
+  | .cupodTroll => ps_probeD_false_of_plays_C k (cupodTroll_plays_C .cupod)
+  | .cupod      => hquine
+
 /-! ## The behavioral δ_C column (true plays) — TauTFTSim's and TauOBot's read -/
 
 /-- TRUE plays vs the cooperator. Note `.guardian ↦ .C` against

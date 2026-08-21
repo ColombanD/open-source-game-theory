@@ -434,6 +434,17 @@ theorem pf_probeD_obotSecondFires {K m n : Nat} {P Q : Prog}
       (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot hQ)) rfl PlaysProof.const)),
     by have := hcl; have := hcn; omega⟩
 
+/-- The constant cooperator provably does NOT defect — the refutation that Cupod's
+    trust-transcript cites (`search_f` needs a `.neg` of its guard). -/
+theorem pf_neg_probeD_constC {K : Nat} (hK : 10 ≤ K) :
+    Pf K (.neg (probeD (.const .C))) := by
+  have hl : Nat.log2 1 = 0 := by decide
+  refine Pf.atomNeg (.bot (.const .C)) (.bot (.const .C)) Action.C Action.D (atom_cost 1)
+    ⟨PlaysProof.bot PlaysProof.const, ?_⟩ (by decide) ?_
+  · simp only [atom_cost, c_leaf, c_node, c_guard, numCost, hl]; omega
+  · simp only [Formula.size, Prog.size, atom_cost, c_leaf, c_node, c_guard, numCost, hl]
+    omega
+
 abbrev simMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
     (w .guardian + (w .cupodTroll + w .cupod)))))))

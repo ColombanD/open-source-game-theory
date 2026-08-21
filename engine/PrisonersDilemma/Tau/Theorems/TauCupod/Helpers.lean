@@ -306,6 +306,133 @@ theorem inst_dupoc_cupod_transpose (k : Nat) :
     inst (tauZoo k) .dupoc .cupod = .sys ((cdSys k).transpose) 0 := by
   rw [inst_dupoc_sys_cupod k, cdSys_transpose k]
 
+/-! ## OBot's cell at Cupod — an EMBEDDED floor, `probeD` side
+
+τ(OBot) at Cupod truly DEFECTS: its first watch sees Cupod trust the cooperator and
+falls through, its second sees Cupod punish the defector and fires. But certifying
+that defection means certifying the FALL — i.e. that Cupod trusts, which is itself
+floor-priced (`ps_probe_inst_cupod_coop_false`, the `search_f` route). So the
+defection is real and uncitable: the embedded-floor phenomenon of
+`no_provable_botRunCascade_C`, one level up and on the `probeD` side.
+
+**The kernel caught this.** The bit table first had this cell `true`, with a
+positive `ite_f`/`ite_t` transcript; the cost goal came out as
+`c_leaf + k + k + c_node + … ≤ k`, unsatisfiable because `search_f` charges the
+failed budget TWICE over — once in the refutation, once as the floor. Two `k`s on
+the left of `≤ k` is the signature of an embedded floor. -/
+
+/-- The census: no proof of ≤ k characters says a `.bot`-frozen two-watch cascade
+    DEFECTS, when its first watch tests a frozen budget-`kb` searcher whose
+    then-action is the fire-action. Firing watch 1 gives `.D` directly (`ite_t`) —
+    but only by certifying the watched searcher plays `.D`, i.e. its THEN-branch,
+    which needs the guard PROVED; falling through (`ite_f`) needs it to play
+    something else, and the searcher's else-play is `search_f`-floored at `kb ≥ k`.
+    Either way the budget is blown. -/
+theorem no_provable_botTwoWatchD (k kb : Nat) (hk : k ≤ kb) (g : Formula)
+    (hgfalse : ¬ (g.subst (.bot (.search kb g (.const .D) (.const .C)))
+                          (.bot (.search kb g (.const .D) (.const .C)))).interp)
+    (cont : Prog) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.bot (.ite
+        (.sim (.bot (.search kb g (.const .D) (.const .C)))
+              (.bot (.search kb g (.const .D) (.const .C))))
+        Action.D (.const .D) cont)) O .D) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.bot (.ite
+      (.sim (.bot (.search kb g (.const .D) (.const .C)))
+            (.bot (.search kb g (.const .D) (.const .C))))
+      Action.D (.const .D) cont)) O .D)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · rintro K' hK' φ' rfl hA
+    cases hA with
+    | mk hpp hn =>
+      cases hpp with
+      | bot hin =>
+        cases hin with
+        | ite_t hg hbeq hbr =>
+            -- watch 1 FIRED: its guard says the searcher plays `.D` = its THEN
+            -- branch, so `search_t` must have proved `g`… but `search_f` is the
+            -- only other route and it pays the floor.
+            cases hg with
+            | sim hin2 =>
+                cases hin2 with
+                | bot hin3 =>
+                    cases hin3 with
+                    | search_t hProv hbr2 =>
+                        -- watch 1 fires only if the searcher plays its THEN action,
+                        -- which `search_t` gets by PROVING the guard — but the guard
+                        -- is false, and `S` is sound
+                        exact hgfalse (Pf_sound _ _ hProv)
+                    | search_f hneg hbr2 => simp only [c_node] at hn; omega
+        | ite_f hg hbeq hbr =>
+            cases hg with
+            | sim hin2 =>
+                cases hin2 with
+                | bot hin3 =>
+                    cases hin3 with
+                    | search_t hProv hbr2 => cases hbr2; exact absurd hbeq (by decide)
+                    | search_f hneg hbr2 => simp only [c_node] at hn; omega
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp only [Prog.bot.injEq] at hme
+    simp at hme
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp only [Prog.bot.injEq] at hme
+    simp at hme
+  · intro z a' g' ψ c0 c1 q' oppo hS
+    injection hS with h1 h2 h3
+    simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g', ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd <;> simp [plug2] at hme
+  · intro me oppo c hS defs i hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+
+/-- τ(OBot)'s defection against Cupod is unprovable at every budget ≤ k: any
+    certificate crosses the floor-priced trust of Cupod's first watch. -/
+theorem ps_probeD_obotCupod_false {k K : Nat} (hK : K ≤ k) :
+    proofSearch K (probeD (inst (tauZoo k) .obot .cupod)) = false := by
+  cases h : proofSearch K (probeD (inst (tauZoo k) .obot .cupod)) with
+  | false => rfl
+  | true =>
+      exfalso
+      exact no_provable_botTwoWatchD k k (Nat.le_refl k) (probeD (.const .C))
+        (by
+          simp only [probeD, Formula.subst, Prog.subst]
+          exact interp_probeD_false_of_plays_C ⟨1, rfl⟩)
+        (.ite (.sim (.bot (inst (tauZoo k) .cupod .defect))
+                    (.bot (inst (tauZoo k) .cupod .defect))) Action.D (.const .D) (.const .C))
+        (.bot (inst (tauZoo k) .obot .cupod))
+        K _ ((proofSearch_spec _ _).1 h) hK rfl
+
 /-! ### Why the base red-cell route does NOT transfer (checked, 2026-08-21)
 
 The base proof (`Theorems/DupocBot/vs_CupodBot.lean`, Thm 1.14) closes the red cell
