@@ -28,6 +28,7 @@ def tftPfRow : Tmpl → Action
   | .cupod      => .D
   | .cupodTroll => .D
   | .cimcic     => .C
+  | .dimcid     => .D
 
 /-- The row's witness: every entry is a prove-stage on the δ_C prover column. -/
 theorem tftPfRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
@@ -49,6 +50,7 @@ theorem tftPfRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
   | .cupod      => searchProbe_plays_D _ _ (bC .cupod)
   | .cupodTroll => searchProbe_plays_D _ _ (bC .cupodTroll)
   | .cimcic     => searchProbe_plays_C _ _ (bC .cimcic)
+  | .dimcid     => searchProbe_plays_D _ _ (bC .dimcid)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -57,7 +59,7 @@ theorem tftPfBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     VoteBits (vecOf (tauZoo k) .tftPf w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D)] :=
   vecOf_bits (tauZoo k) .tftPf w tftPfRow tauOrder
     fun T _ => tftPfRow_plays hk hkk h6 h10 hL hcg T
 

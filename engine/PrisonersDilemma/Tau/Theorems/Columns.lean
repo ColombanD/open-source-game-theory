@@ -5,6 +5,7 @@ import PrisonersDilemma.Tau.Theorems.TauDBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 
 /-!
 # Tau/Theorems/Columns — the consulted columns of the 9-template zoo
@@ -155,6 +156,7 @@ theorem dbot_watch_fires_of_trust {k : Nat} (T : Tmpl)
 /-- δ_C bits. Zero rows: Defect (refutable), EBot (it EXPLOITS a cooperator), and
     GUARDIAN — the floor: its trusting C sits behind a failed punish-search. -/
 def coopColBit : Tmpl → Bool
+  | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
   | .defect   => false
@@ -180,18 +182,21 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupod      => ps_probe_inst_cupod_coop_false (le_refl k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
   | .cimcic     => ps_probe_cimcic_coop hL (by omega)
+  | .dimcid     => ps_probe_inst_dimcid_coop_false (le_refl k)
 
 /-! ## The δ_D column (prover bits) -/
 
 /-- δ_D bits. Only the unconditional cooperator is exploitable. -/
 def defectColBit : Tmpl → Bool
+  | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
   | .coop => true
   | .dbot => true
   | _     => false
 
-theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k) :
+theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k)
+    (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .defect)) = defectColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
@@ -207,6 +212,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k) :
   | .cupod      => ps_probe_false_of_plays_D k (cupod_defect_plays_D hk)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
   | .cimcic     => ps_probe_false_of_plays_D k cimcic_defect_plays_D
+  | .dimcid     => ps_probe_inst_dimcid_defect_false hL
 
 /-! ## The δ_L column (prover bits) — TauDupoc's AND TauJust's question -/
 
@@ -214,6 +220,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k) :
     truly defects on Dupoc — the second watch sees Dupoc defect against the
     defector). The diagonal is the Löb quine, supplied as a hypothesis. -/
 def dupocColBit : Tmpl → Bool
+  | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
   | .defect   => false
@@ -245,6 +252,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupod      => ps_probe_inst_cupod_dupoc_false (le_refl k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
   | .cimcic     => hcim
+  | .dimcid     => ps_probe_inst_dimcid_dupoc_false (le_refl k)
 
 /-! ## The GUARD column (probeD bits) — TauGuardian's question -/
 
@@ -252,6 +260,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     constant defector, and EBot (its exploit-check FIRES on the cooperator, and the
     firing transcript is cheap — Guardian catches the exploiter red-handed). -/
 def guardColBit : Tmpl → Bool
+  | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
   | .defect => true
@@ -280,6 +289,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupod      => ps_probeD_false_of_plays_C k cupod_coop_plays_C
   | .cupodTroll => ps_probeD_inst_cupodTroll_false k _
   | .cimcic     => ps_probeD_false_of_plays_C k (cimcic_coop_plays_C hL)
+  | .dimcid     => ps_probeD_inst_dimcid_coop_false
 
 /-! ## The δ_Cu GUARD column (probeD bits) — τ(Cupod)'s question
 
@@ -300,10 +310,20 @@ floor-priced (`ps_probeD_searchProbe_false`). A true D that no prover can cite. 
 def cupodColBit : Tmpl → Bool
   | .defect => true
   | .cupod  => true
+  -- the ALIGNED entangled pair (2026-08-21): DIMCID wants Cupod to defect and
+  -- Cupod fires D; Cupod wants DIMCID to defect and DIMCID fires D. Both
+  -- guards feed each other, so mutual bounded Löb closes the cycle on MUTUAL
+  -- DEFECTION — the first ALIGNED-on-D pair in the zoo (`cimcic × dupoc` is
+  -- the aligned-on-C one). The bit is Löb-gated, hence a hypothesis below.
+  | .dimcid => true
   | _       => false
 
 theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k)
-    (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true) :
+    (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
+    -- the ALIGNED dimcid×cupod pair: mutual Löb on defection, gated like every
+    -- other Löb bit (see `TauDIMCID/Helpers`, "The ENTANGLED cells")
+    (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
+      = cupodColBit .dimcid) :
     ∀ T, proofSearch k (probeD (inst (tauZoo k) T .cupod)) = cupodColBit T
   | .coop       => ps_probeD_false_of_plays_C k ⟨1, rfl⟩
   | .defect     => ps_probeD_constD hk
@@ -329,6 +349,7 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k)
   | .cupodTroll => ps_probeD_false_of_plays_C k (cupodTroll_plays_C .cupod)
   | .cupod      => hquine
   | .cimcic     => ps_probeD_inst_cimcic_cupod_false (le_refl k)
+  | .dimcid     => hdc
 
 /-! ## The behavioral δ_C column (true plays) — TauTFTSim's and TauOBot's read -/
 
@@ -336,6 +357,7 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k)
     `coopColBit .guardian = false`: the floor made visible — the behavioral reader
     sees the cooperation the prover cannot cite. -/
 def coopColPlay : Tmpl → Action
+  | .dimcid     => .C
   | .cupod      => .C
   | .cupodTroll => .C
   | .defect => .D
@@ -360,18 +382,21 @@ theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupod      => cupod_coop_plays_C
   | .cupodTroll => cupodTroll_plays_C _
   | .cimcic     => cimcic_coop_plays_C hL
+  | .dimcid     => dimcid_coop_plays_C
 
 /-! ## The behavioral δ_D column (true plays) — TauOBot's second watch -/
 
 /-- TRUE plays vs the defector: only the unconditional cooperator cooperates. -/
 def defectColPlay : Tmpl → Action
+  | .dimcid     => .D
   | .cupod      => .D
   | .cupodTroll => .C
   | .coop => .C
   | .dbot => .C
   | _     => .D
 
-theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k) :
+theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k)
+    (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect))
               (inst (tauZoo k) T .defect) = some (defectColPlay T)
   | .coop     => ⟨1, rfl⟩
@@ -387,5 +412,6 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k) :
   | .cupod      => cupod_defect_plays_D hk
   | .cupodTroll => cupodTroll_plays_C _
   | .cimcic     => cimcic_defect_plays_D
+  | .dimcid     => dimcid_defect_plays_D hL
 
 end PD.Tau

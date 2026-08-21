@@ -44,7 +44,7 @@ namespace PD.Theorems.Tau
 private abbrev fullMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot +
     (w .just + (w .obot + (w .guardian + (w .dbot + (w .cupodTroll + (w .cupod +
-      w .cimcic)))))))))))
+      (w .cimcic + w .dimcid))))))))))))
 
 /-! ## Constants -/
 
@@ -238,24 +238,27 @@ its own instance TRUSTS a defector, which is exactly what its watch fires on).
 The self-play cell is the behavioral analogue of single-tier PrudentBot's
 `(D, D)` — a detector whose test cannot exempt its own reasoning. -/
 
-theorem outcome_TauDBot_vs_TauDBot_coop {k : Nat} (hk : 2 ≤ k) (θ : Nat)
+theorem outcome_TauDBot_vs_TauDBot_coop {k : Nat} (hk : 2 ≤ k)
+    (hL : 100 * Nat.log2 k + 1000 ≤ k) (θ : Nat)
     (w : Tmpl → Nat) (hθ : θ ≤ dbotMass w) :
     ∃ N, outcome N (TauBotZ k .dbot w θ) (TauBotZ k .dbot w θ) = some (.C, .C) :=
-  outcome_of_ex_plays ((tauDBot_phase hk θ w _).1 hθ) ((tauDBot_phase hk θ w _).1 hθ)
+  outcome_of_ex_plays ((tauDBot_phase hk hL θ w _).1 hθ) ((tauDBot_phase hk hL θ w _).1 hθ)
 
-theorem outcome_TauDBot_vs_TauDBot_high {k : Nat} (hk : 2 ≤ k) (θ : Nat)
+theorem outcome_TauDBot_vs_TauDBot_high {k : Nat} (hk : 2 ≤ k)
+    (hL : 100 * Nat.log2 k + 1000 ≤ k) (θ : Nat)
     (w : Tmpl → Nat) (hθ : ¬ θ ≤ dbotMass w) :
     ∃ N, outcome N (TauBotZ k .dbot w θ) (TauBotZ k .dbot w θ) = some (.D, .D) :=
-  outcome_of_ex_plays ((tauDBot_phase hk θ w _).2 hθ) ((tauDBot_phase hk θ w _).2 hθ)
+  outcome_of_ex_plays ((tauDBot_phase hk hL θ w _).2 hθ) ((tauDBot_phase hk hL θ w _).2 hθ)
 
 /-- **THE PUSHOVER CELL**: the unconditional cooperator is the one hypothesis the
     punisher fires on, so at any θ where both are in their cooperating regimes the
     cooperator is exploited — `(C, D)`. -/
-theorem outcome_TauCooperate_vs_TauDBot {k : Nat} (hk : 2 ≤ k) (θ : Nat)
+theorem outcome_TauCooperate_vs_TauDBot {k : Nat} (hk : 2 ≤ k)
+    (hL : 100 * Nat.log2 k + 1000 ≤ k) (θ : Nat)
     (w : Tmpl → Nat) (hθc : θ ≤ fullMass w) (hθd : ¬ θ ≤ dbotMass w) :
     ∃ N, outcome N (TauBotZ k .coop w θ) (TauBotZ k .dbot w θ) = some (.C, .D) :=
   outcome_of_ex_plays ((tauCooperate_phase k w θ _).1 hθc)
-    ((tauDBot_phase hk θ w _).2 hθd)
+    ((tauDBot_phase hk hL θ w _).2 hθd)
 
 /-- τ(DBot) and the norm enforcer punish each other: Guardian convicts DBot of
     bullying the cooperator (`guardColBit .dbot = true`), and DBot fires on
@@ -266,7 +269,7 @@ theorem outcome_TauDBot_vs_TauGuardian_high {k : Nat} (hk : 2 ≤ k)
     (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat)
     (hlo : ¬ θ ≤ dbotMass w) (hhi : ¬ θ ≤ guardMass w) :
     ∃ N, outcome N (TauBotZ k .dbot w θ) (TauBotZ k .guardian w θ) = some (.D, .D) :=
-  outcome_of_ex_plays ((tauDBot_phase hk θ w _).2 hlo)
+  outcome_of_ex_plays ((tauDBot_phase hk hL θ w _).2 hlo)
     ((tauGuardian_phase hk hkk h6 h10 hL hcg θ w _).2 hhi)
 
 /-! ## τ(CIMCIC)'s cells — the conditional cooperator (2026-08-21)
@@ -305,13 +308,19 @@ theorem outcome_TauCIMCIC_vs_TauDupoc :
     `(D, C)`: the red-cell shape, one tier up. -/
 theorem outcome_TauCIMCIC_vs_TauCupod_band :
     ∃ k₂, ∀ k, k₂ < k →
+      -- Cupod's row is gated on the ALIGNED dimcid pair (mutual Löb on defection)
+      ∀ (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
+          = cupodColBit .dimcid)
+        (hdcP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
+          (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
+          = some Action.D),
       ∀ θ (w : Tmpl → Nat), ¬ θ ≤ cimcicMass w → θ ≤ cupodMass w →
       ∃ N, outcome N (TauBotZ k .cimcic w θ) (TauBotZ k .cupod w θ) = some (.D, .C) := by
   obtain ⟨kM, hM⟩ := tauCIMCIC_phase
   obtain ⟨kC, hC⟩ := tauCupod_phase
-  exact ⟨max kM kC, fun k hk θ w hθm hθc =>
+  exact ⟨max kM kC, fun k hk hdc hdcP θ w hθm hθc =>
     outcome_of_ex_plays
       ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ w _).2 hθm)
-      ((hC k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ w _).1 hθc)⟩
+      ((hC k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hdc hdcP θ w _).1 hθc)⟩
 
 end PD.Theorems.Tau

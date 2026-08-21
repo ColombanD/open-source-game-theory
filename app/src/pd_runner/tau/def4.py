@@ -66,6 +66,13 @@ class Mode(Enum):
     `PROVE`. On the DIAGONAL the substituted guard is literally `φ → φ`
     (`implRefl`): trivially provable, no Löb needed."""
 
+    PROVE_IMPL_D = "proveImplD"
+    """The ASYMMETRIC-consequent implication guard (DIMCID, 2026-08-21): the
+    antecedent says "I play `test`", the consequent says they play the OPPOSITE
+    action back. A separate mode rather than a `Stage` field because the Lean
+    spec rows are positional (see `Tau/Spec.lean`). Its diagonal is a genuine Löb
+    fixpoint on defection, unlike `PROVE_IMPL`'s trivial `implRefl`."""
+
     PROVE_EQ = "proveEq"
     """Bounded proof search over a STRUCTURAL IDENTITY atom (`.eq`) — "is the probed
     instance literally this term?". CupodTrollBot's guard shape (2026-08-20). The
@@ -128,6 +135,9 @@ TAU_ZOO: dict[str, LiftSpec] = {
     "TauCupod": LiftSpec((Stage(Mode.PROVE, SELF, "D", "D"),), "C"),
     "TauGuardian": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "D", "D"),), "C"),
     "TauCIMCIC": LiftSpec((Stage(Mode.PROVE_IMPL, SELF, "C", "C"),), "D"),
+    # CIMCIC's polarity twin: the consequent asks for the OPPOSITE action
+    # (Lean `Mode.proveImplD`). Fire D, default C.
+    "TauDIMCID": LiftSpec((Stage(Mode.PROVE_IMPL_D, SELF, "C", "D"),), "C"),
 }
 
 TEMPLATES: tuple[str, ...] = (
@@ -144,6 +154,7 @@ TEMPLATES: tuple[str, ...] = (
     "TauCupodTroll",
     "TauCupod",
     "TauCIMCIC",
+    "TauDIMCID",
 )
 """Canonical template order — matches the Lean `tauOrder`
 ([coop, defect, tftSim, tftPf, dupoc, ebot])."""
@@ -162,6 +173,7 @@ BASE_OF: dict[str, str] = {
     "TauCupodTroll": "CupodTrollBot",
     "TauCupod": "CupodBot",
     "TauCIMCIC": "CIMCIC",
+    "TauDIMCID": "DIMCID",
 }
 """Which base bot each template lifts. The two TFT variants are two lift MODALITIES
 of the same base strategy (behavioral vs prover). Their bits coincide at large k on
@@ -184,6 +196,7 @@ LEAN_SLOT: dict[str, str] = {
     "TauCupodTroll": "cupodTroll",
     "TauCupod": "cupod",
     "TauCIMCIC": "cimcic",
+    "TauDIMCID": "dimcid",
 }
 """Template name → the Lean `Tmpl` constructor, for the kernel bit-table check."""
 
@@ -286,7 +299,13 @@ def _cycle_feeds(mine: Stage, partner: Stage) -> bool:
     (fire) action. A `prove` guard asks the partner to play `test`; a `proveImpl`
     guard's load-bearing consequent asks it to play C.
     """
-    want = "C" if mine.mode is Mode.PROVE_IMPL else mine.test
+    if mine.mode is Mode.PROVE_IMPL:
+        want = "C"
+    elif mine.mode is Mode.PROVE_IMPL_D:
+        # the load-bearing consequent asks for the OPPOSITE of the antecedent
+        want = "D" if mine.test == "C" else "C"
+    else:
+        want = mine.test
     return partner.fire == want
 
 
@@ -342,6 +361,13 @@ def _decide(
                 # yields SELF-DEFECTION. Lean: `ps_probeD_inst_cupod_quine` +
                 # `inst_cupod_quine_plays_D`.
                 bit = True
+            elif st.mode is Mode.PROVE_IMPL_D and st.test == "C" and st.fire == "D":
+                # DIMCID's diagonal (2026-08-21): the substituted guard names the
+                # SAME player at OPPOSITE actions, so `implRefl` does NOT apply.
+                # A genuine Löb fixpoint on DEFECTION closes it, and since the
+                # fire-action is D the diagonal self-defects. Lean:
+                # `ps_probeD_dimcid_quine` / `dimcid_quine_plays_D`.
+                bit = True
             elif st.mode is Mode.PROVE_IMPL and st.test == "C" and st.fire == "C":
                 # THE IMPLREFL DIAGONAL (TauCIMCIC, 2026-08-21): after subst the
                 # guard is literally `φ → φ` — trivially provable, no Löb. Lean:
@@ -369,6 +395,11 @@ def _decide(
                 # uniformly False. It becomes interesting only when the named target
                 # is itself in the zoo — i.e. when CupodBot lands via `.sys`.
                 bit = False
+            elif st.mode is Mode.PROVE_IMPL_D:
+                # the consequent asks for the OPPOSITE action, and is floor-aware
+                # exactly like PROVE (tau plays are opponent-independent)
+                want = "D" if st.test == "C" else "C"
+                bit = sub.action == want and sub.provable
             elif st.mode in (Mode.PROVE, Mode.PROVE_IMPL):
                 # "provably plays `test`": true play matches AND its transcript is
                 # floor-free (a floor-priced play is invisible to proof search).
@@ -384,7 +415,7 @@ def _decide(
                     floored = True
         if bit:
             return Decision(st.fire, provable=not floored)
-        if st.mode in (Mode.PROVE, Mode.PROVE_IMPL, Mode.PROVE_EQ):
+        if st.mode in (Mode.PROVE, Mode.PROVE_IMPL, Mode.PROVE_IMPL_D, Mode.PROVE_EQ):
             floored = True
     return Decision(spec.default, provable=not floored)
 

@@ -32,10 +32,11 @@ def dbotRow : Tmpl → Action
 /-- The row's witness: one run-stage watching the δ_D behavioral column — every
     hypothesis but the constant cooperator defects against a defector, so the
     watch falls through to trust. -/
-theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k) :
+theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k)
+    (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .dbot T)) (.bot (inst (tauZoo k) .dbot T))
               (inst (tauZoo k) .dbot T) = some (dbotRow T) :=
-  let pD := inst_defect_plays (k := k) hk
+  let pD := inst_defect_plays (k := k) hk hL
   fun T => match T with
   | .coop     => dbot_coop_plays_D
   | .defect   => dbot_plays_C_of_defect .defect (pD .defect)
@@ -54,23 +55,26 @@ theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k) :
                    -- trust-toward-a-defector is the punisher's fire condition
                    dbot_watch_fires_of_trust .cupodTroll (pD .cupodTroll)
   | .cimcic     => dbot_plays_C_of_defect .cimcic (pD .cimcic)
+  | .dimcid     => dbot_plays_C_of_defect .dimcid (pD .dimcid)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
-theorem dbotBits {k : Nat} (hk : 2 ≤ k) (w : Tmpl → Nat) :
+theorem dbotBits {k : Nat} (hk : 2 ≤ k)
+    (hL : 100 * Nat.log2 k + 1000 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .dbot w tauOrder)
       [(w .coop, .D), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C)] :=
-  vecOf_bits (tauZoo k) .dbot w dbotRow tauOrder fun T _ => dbotRow_plays hk T
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C)] :=
+  vecOf_bits (tauZoo k) .dbot w dbotRow tauOrder fun T _ => dbotRow_plays hk hL T
 
 /-- **τ(DBot)** — boundary `θ ≤ dbotMass` (everything but `w .coop`). -/
-theorem tauDBot_phase {k : Nat} (hk : 2 ≤ k) (θ : Nat) (w : Tmpl → Nat)
+theorem tauDBot_phase {k : Nat} (hk : 2 ≤ k)
+    (hL : 100 * Nat.log2 k + 1000 ≤ k) (θ : Nat) (w : Tmpl → Nat)
     (opponent : Prog) :
     (θ ≤ dbotMass w → ∃ N, play N (TauBotZ k .dbot w θ) opponent = some .C)
     ∧ (¬ θ ≤ dbotMass w → ∃ N, play N (TauBotZ k .dbot w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .dbot w dbotRow tauOrder θ opponent
-    (fun T _ => dbotRow_plays hk T)
+    (fun T _ => dbotRow_plays hk hL T)
   simp only [bitMass, tauOrder, List.map, dbotRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [dbotMass] using h

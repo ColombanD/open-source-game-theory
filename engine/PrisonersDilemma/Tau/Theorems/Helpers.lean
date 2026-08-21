@@ -447,13 +447,13 @@ theorem pf_neg_probeD_constC {K : Nat} (hK : 10 ≤ K) :
 
 abbrev simMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
-    (w .guardian + (w .cupodTroll + (w .cupod + w .cimcic))))))))
+    (w .guardian + (w .cupodTroll + (w .cupod + (w .cimcic + w .dimcid)))))))))
 abbrev pfMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + w .cimcic)))))
 abbrev dupMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + w .cimcic))))
 abbrev eMass (w : Tmpl → Nat) : Nat :=
-  w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + (w .guardian + (w .cupod + w .cimcic))))))
+  w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + (w .guardian + (w .cupod + (w .cimcic + w .dimcid)))))))
 abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
 abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
 /-- τ(Cupod)'s mass: everything but the provable bullies — the defector and ITSELF
@@ -466,7 +466,7 @@ abbrev cupodMass (w : Tmpl → Nat) : Nat :=
     (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
 abbrev dbotMass (w : Tmpl → Nat) : Nat :=
   w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
-    (w .obot + (w .guardian + (w .cupod + w .cimcic))))))))
+    (w .obot + (w .guardian + (w .cupod + (w .cimcic + w .dimcid)))))))))
 /-- τ(CIMCIC)'s mass: the hypotheses whose consequent it can certify — the
     cooperator, both TFTs, the mutual-Löb Dupoc, Just (through the same Löb bit)
     and ITSELF (the `implRefl` diagonal). -/

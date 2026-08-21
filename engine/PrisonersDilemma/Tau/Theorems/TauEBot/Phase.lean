@@ -31,6 +31,7 @@ def eRow : Tmpl → Action
   | .cupod      => .C
   | .cupodTroll => .D
   | .cimcic     => .C
+  | .dimcid     => .C
 
 /-- The row's witness: each entry is the two-stage run cascade fed the δ_D
     (exploit-watch) and δ_C (reciprocity-watch) behavioral columns. -/
@@ -38,7 +39,7 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
     (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .ebot T)) (.bot (inst (tauZoo k) .ebot T))
               (inst (tauZoo k) .ebot T) = some (eRow T) :=
-  let pD := inst_defect_plays (k := k) hk
+  let pD := inst_defect_plays (k := k) hk hL
   let pC := inst_coop_plays hk hkk h6 h10 hL
   fun T => match T with
   | .coop     => simWatchC_fires _ _ (pD .coop)
@@ -57,6 +58,7 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
   | .cupod      => simWatchC_falls _ _ (pD .cupod) (simWatchC_fires _ _ (pC .cupod))
   | .cupodTroll => simWatchC_fires _ _ (pD .cupodTroll)
   | .cimcic     => simWatchC_falls _ _ (pD .cimcic) (simWatchC_fires _ _ (pC .cimcic))
+  | .dimcid     => simWatchC_falls _ _ (pD .dimcid) (simWatchC_fires _ _ (pC .dimcid))
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -65,7 +67,7 @@ theorem eBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k
     VoteBits (vecOf (tauZoo k) .ebot w tauOrder)
       [(w .coop, .D), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C)] :=
   vecOf_bits (tauZoo k) .ebot w eRow tauOrder fun T _ => eRow_plays hk hkk h6 h10 hL hcg T
 
 /-- **τ(EBot)** — one-sided boundary `θ ≤ eMass`, no window. -/

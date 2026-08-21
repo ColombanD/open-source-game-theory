@@ -44,19 +44,24 @@ from pd_runner.tau.matrix import load_tau_matrix
 # ── the compound decisions (the Lean bit tables, transcribed) ──────────────────
 
 EXPECTED_ACTIONS: dict[str, str] = {
-    "TauCooperate": "CCCCCCCCCCCCC",
-    "TauDefect": "DDDDDDDDDDDDD",
-    "TauTFTSim": "CDCCCDCCCDCCC",
-    "TauTFTPf": "CDCCCDCCDDDDC",
-    "TauDupoc": "CDCCCDCDDDDDC",
-    "TauEBot": "DDCCCDCCCDDCC",
-    "TauJust": "CDCCCDCDDDDDC",
-    "TauOBot": "CDDDDDDDDDCDD",
-    "TauGuardian": "CDCCCDCCCDCCC",
-    "TauDBot": "DCCCCCCCCDDCC",
-    "TauCupodTroll": "CCCCCCCCCCCCC",
-    "TauCupod": "CDCCCCCCCCCDC",
-    "TauCIMCIC": "CDCCCDCDDDDDC",
+    "TauCooperate": "CCCCCCCCCCCCCC",
+    "TauDefect": "DDDDDDDDDDDDDD",
+    "TauTFTSim": "CDCCCDCCCDCCCC",
+    "TauTFTPf": "CDCCCDCCDDDDCD",
+    "TauDupoc": "CDCCCDCDDDDDCD",
+    "TauEBot": "DDCCCDCCCDDCCC",
+    "TauJust": "CDCCCDCDDDDDCD",
+    "TauOBot": "CDDDDDDDDDCDDD",
+    "TauGuardian": "CDCCCDCCCDCCCC",
+    "TauDBot": "DCCCCCCCCDDCCC",
+    "TauCupodTroll": "CCCCCCCCCCCCCC",
+    "TauCupod": "CDCCCCCCCCCDCD",
+    "TauCIMCIC": "CDCCCDCDDDDDCD",
+    # DIMCID's row: C wherever it cannot certify a defection. Identical to
+    # TauCupod's — the suspicious cooperator and the conditional defector agree
+    # on this zoo, by different mechanisms (a third coincidence of the kind
+    # TauDupoc/TauCIMCIC already exhibit).
+    "TauDIMCID": "CDCCCCCCCCCDCD",
 }
 
 
@@ -81,10 +86,11 @@ def test_no_open_cells_and_six_entangled() -> None:
     from pd_runner.tau.def4 import entangled_cells
 
     assert open_cells() == ()
+    # four self-probers (dupoc, cupod, cimcic, dimcid) -> C(4,2)=6 pairs,
+    # 12 ordered orientations
+    sp = ("TauDupoc", "TauCupod", "TauCIMCIC", "TauDIMCID")
     assert set(entangled_cells()) == {
-        ("TauDupoc", "TauCupod"), ("TauCupod", "TauDupoc"),
-        ("TauDupoc", "TauCIMCIC"), ("TauCIMCIC", "TauDupoc"),
-        ("TauCupod", "TauCIMCIC"), ("TauCIMCIC", "TauCupod"),
+        (a, b) for a in sp for b in sp if a != b
     }
 
 
@@ -103,20 +109,27 @@ def test_entangled_closures_match_lean() -> None:
 
 def test_kernel_check_passes() -> None:
     check = kernel_check()
-    assert check.checked == 169
+    assert check.checked == 182
     assert check.passed, check.mismatches
 
 
-def test_kernel_scanner_finds_all_rows() -> None:
-    """All 13 rows are stated — and since the entangled closures, none carries an
-    open-cell hypothesis (only Löb `∃k₂` gates)."""
+def test_kernel_scanner_finds_all_rows_but_dimcid() -> None:
+    """13 of the 14 rows are stated. `TauDIMCID`'s own `VoteBits` row is NOT: its
+    off-cycle bits hit a POLARITY obstruction (its guard fires into `D`, so a
+    provable guard falsifies its own antecedent and the soundness route CIMCIC
+    used is unavailable) — see `Tau/Theorems/TauDIMCID/Helpers.lean`. Its COLUMN
+    (what every other row plays against it) is fully proven, which is why the
+    kernel check below still passes on 182 cells."""
     tables = kernel_bits()
-    assert set(tables) == set(TAU_ORDER)
+    assert set(tables) == set(TAU_ORDER) - {"dimcid"}
 
 
-def test_kernel_check_has_no_unstated_rows() -> None:
+def test_kernel_check_unstated_is_exactly_dimcid() -> None:
+    """Zero MISMATCHES on 182 checked cells; the one unstated row is DIMCID's
+    (see above). `unstated` and `mismatches` are deliberately different fields —
+    "not yet proven" must never read as "disagrees"."""
     check = kernel_check()
-    assert check.unstated == ()
+    assert check.unstated == ("TauDIMCID",)
     assert not check.mismatches
 
 
@@ -288,7 +301,10 @@ def test_tft_variants_split_exactly_on_the_floor_bots() -> None:
     holds: the rows differ EXACTLY at the hypotheses whose cooperation is
     floor-priced — true but uncitable — and agree everywhere else."""
     t = decision_table()
-    floor_bots = {"TauGuardian", "TauCupodTroll", "TauCupod"}
+    # TauDIMCID joined the floor bots 2026-08-21: like Guardian's and Cupod's,
+    # its cooperation is the ELSE-play of a failed search, so it is TRUE but
+    # uncitable — the behavioral TFT counts it, the prover TFT cannot.
+    floor_bots = {"TauGuardian", "TauCupodTroll", "TauCupod", "TauDIMCID"}
     for T in TEMPLATES:
         if T not in t["TauTFTSim"] or T not in t["TauTFTPf"]:
             continue  # open cell

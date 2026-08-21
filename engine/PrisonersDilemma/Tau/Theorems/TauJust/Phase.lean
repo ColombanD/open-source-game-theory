@@ -29,6 +29,7 @@ def justRow : Tmpl → Action
   | .cupod      => .D
   | .cupodTroll => .D
   | .cimcic     => .C
+  | .dimcid     => .D
 
 /-- The row's witness: prove-stages on the δ_L column — including at the `.dupoc`
     slot, where the probed object is the quine (by name, not by self). -/
@@ -53,6 +54,7 @@ theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupod      => searchProbe_plays_D _ _ (bL .cupod)
   | .cupodTroll => searchProbe_plays_D _ _ (bL .cupodTroll)
   | .cimcic     => searchProbe_plays_C _ _ (bL .cimcic)
+  | .dimcid     => searchProbe_plays_D _ _ (bL .dimcid)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -64,7 +66,7 @@ theorem justBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     VoteBits (vecOf (tauZoo k) .just w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D)] :=
   vecOf_bits (tauZoo k) .just w justRow tauOrder
     fun T _ => justRow_plays hk hkk hk7 hquine hcim T
 

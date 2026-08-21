@@ -31,7 +31,7 @@ theorem cupodTrollBits (k : Nat) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .cupodTroll w tauOrder)
       [(w .coop, .C), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .C), (w .cimcic, .C)] :=
+       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C)] :=
   vecOf_bits (tauZoo k) .cupodTroll w cupodTrollRow tauOrder
     fun T _ => cupodTrollRow_plays k T
 

@@ -28,6 +28,7 @@ def dupocRow : Tmpl → Action
   | .cupod      => .D
   | .cupodTroll => .D
   | .cimcic     => .C
+  | .dimcid     => .D
 
 /-- The row's witness: prove-stages on the δ_L column; the diagonal is the Löb
     quine, supplied as a hypothesis. -/
@@ -56,6 +57,8 @@ theorem dupocRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
       dupoc_cupod_plays_D
   | .cupodTroll => searchProbe_plays_D _ _ (bL .cupodTroll)
   | .cimcic     => hdmP   -- the mutual-Löb cell (∃k₂-gated, TauCIMCIC/Helpers)
+  | .dimcid     => -- the anti-aligned entangled pair, closed by the floor
+      dupoc_dimcid_plays_D
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -70,7 +73,7 @@ theorem dupocBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     VoteBits (vecOf (tauZoo k) .dupoc w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D)] :=
   vecOf_bits (tauZoo k) .dupoc w dupocRow tauOrder
     fun T _ => dupocRow_plays hk hkk hk7 hquine hcim hdmP T
 

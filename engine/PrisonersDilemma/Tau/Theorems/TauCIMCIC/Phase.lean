@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 
 /-!
 # τ(CIMCIC)'s phase — the conditional cooperator: the first `.impl`-guard row.
@@ -27,6 +28,7 @@ def cimcicRow : Tmpl → Action
   | .dupoc    => .C
   | .just     => .C
   | .cimcic   => .C
+  | .dimcid   => .D
   | _         => .D
 
 /-- The row's witness: one `weakenImpl`/census verdict per hypothesis; the
@@ -53,6 +55,7 @@ theorem cimcicRow_plays {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
   | .cupodTroll => cimcic_cupodTroll_plays_D
   | .cupod      => cimcic_cupod_plays_D
   | .cimcic     => cimcic_quine_plays_C hL
+  | .dimcid     => cimcic_dimcid_plays_D
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -67,7 +70,7 @@ theorem cimcicBits {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .D),
        (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D),
-       (w .cimcic, .C)] :=
+       (w .cimcic, .C), (w .dimcid, .D)] :=
   vecOf_bits (tauZoo k) .cimcic w cimcicRow tauOrder
     fun T _ => cimcicRow_plays hL hcg hcq hmdP T
 

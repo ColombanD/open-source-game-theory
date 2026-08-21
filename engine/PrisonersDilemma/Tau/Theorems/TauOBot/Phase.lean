@@ -30,6 +30,7 @@ def obotRow : Tmpl → Action
   | .cupod      => .D
   | .cupodTroll => .C
   | .cimcic     => .D
+  | .dimcid     => .D
 
 /-- The row's witness: two chained run-stage defection watches over the δ_C and
     δ_D behavioral columns. -/
@@ -38,7 +39,7 @@ theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .obot T)) (.bot (inst (tauZoo k) .obot T))
               (inst (tauZoo k) .obot T) = some (obotRow T) :=
   let pC := inst_coop_plays hk hkk h6 h10 hL
-  let pD := inst_defect_plays (k := k) hk
+  let pD := inst_defect_plays (k := k) hk hL
   fun T => match T with
   | .coop     => simTestD_falls _ _ (pC .coop) (simTestD_falls _ _ (pD .coop) ⟨1, rfl⟩)
   | .defect   => simTestD_fires _ _ (pC .defect)
@@ -54,6 +55,7 @@ theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
   | .cupodTroll => simTestD_falls _ _ (pC .cupodTroll)
       (simTestD_falls _ _ (pD .cupodTroll) ⟨1, rfl⟩)
   | .cimcic     => simTestD_falls _ _ (pC .cimcic) (simTestD_fires _ _ (pD .cimcic))
+  | .dimcid     => simTestD_falls _ _ (pC .dimcid) (simTestD_fires _ _ (pD .dimcid))
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -62,7 +64,7 @@ theorem obotBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     VoteBits (vecOf (tauZoo k) .obot w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .D), (w .tftPf, .D),
        (w .dupoc, .D), (w .ebot, .D), (w .just, .D), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .D)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .D), (w .dimcid, .D)] :=
   vecOf_bits (tauZoo k) .obot w obotRow tauOrder
     fun T _ => obotRow_plays hk hkk h6 h10 hL hcg T
 
