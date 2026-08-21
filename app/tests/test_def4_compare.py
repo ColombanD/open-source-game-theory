@@ -44,48 +44,72 @@ from pd_runner.tau.matrix import load_tau_matrix
 # ── the compound decisions (the Lean bit tables, transcribed) ──────────────────
 
 EXPECTED_ACTIONS: dict[str, str] = {
-    "TauCooperate": "CCCCCCCCCCCC",
-    "TauDefect": "DDDDDDDDDDDD",
-    "TauTFTSim": "CDCCCDCCCDCC",
-    "TauTFTPf": "CDCCCDCCDDDD",
-    "TauDupoc": "CDCCCDCDDDD?",
-    "TauEBot": "DDCCCDCCCDDC",
-    "TauJust": "CDCCCDCDDDD?",
-    "TauOBot": "CDDDDDDDDDCD",
-    "TauGuardian": "CDCCCDCCCDCC",
-    "TauDBot": "DCCCCCCCCDDC",
-    "TauCupodTroll": "CCCCCCCCCCCC",
-    "TauCupod": "CDCC?C?CCCCD",
+    "TauCooperate": "CCCCCCCCCCCCC",
+    "TauDefect": "DDDDDDDDDDDDD",
+    "TauTFTSim": "CDCCCDCCCDCCC",
+    "TauTFTPf": "CDCCCDCCDDDDC",
+    "TauDupoc": "CDCCCDCDDDDDC",
+    "TauEBot": "DDCCCDCCCDDCC",
+    "TauJust": "CDCCCDCDDDDDC",
+    "TauOBot": "CDDDDDDDDDCDD",
+    "TauGuardian": "CDCCCDCCCDCCC",
+    "TauDBot": "DCCCCCCCCDDCC",
+    "TauCupodTroll": "CCCCCCCCCCCCC",
+    "TauCupod": "CDCCCCCCCCCDC",
+    "TauCIMCIC": "CDCCCDCDDDDDC",
 }
 
 
 def test_decision_table_matches_lean_bit_tables() -> None:
-    """`?` marks a cell Lean leaves OPEN — the entangled pair and everything whose
-    probe chain runs through it. The model must omit those, never guess."""
+    """TOTAL since the entangled closures (2026-08-21): every cell has a value, and
+    the two entangled pairs carry the CLOSED values — Cupod×Dupoc by the floor
+    (the tau image of the base red cell), CIMCIC×Dupoc by mutual bounded Löb
+    (the tau image of base CIMCIC-vs-DupocBot `(C, C)`). Note τ(CIMCIC)'s row is
+    IDENTICAL to τ(Dupoc)'s: the conditional cooperator and the Löbian cooperator
+    behave the same on this zoo, through different mechanisms."""
     table = decision_table()
     for A in TEMPLATES:
-        got = "".join(
-            table[A][T].action if T in table[A] else "?" for T in TEMPLATES
-        )
+        got = "".join(table[A][T].action for T in TEMPLATES)
         assert got == EXPECTED_ACTIONS[A], f"{A}: {got} ≠ {EXPECTED_ACTIONS[A]}"
 
 
-def test_open_cells_are_exactly_the_entangled_pair() -> None:
-    """The `.sys` binder's frontier: Dupoc and Cupod both self-probe, so their two
-    cross cells are a mutual fixpoint that is NOT Löbian (opposite polarities chain
-    — see `Tau/Theorems/TauCupod/Helpers.lean`). No other pair entangles."""
-    assert set(open_cells()) == {("TauDupoc", "TauCupod"), ("TauCupod", "TauDupoc")}
+def test_no_open_cells_and_six_entangled() -> None:
+    """The `.sys` frontier is CLOSED: `open_cells` is empty, and the six entangled
+    orientations (three self-prober pairs among dupoc/cupod/cimcic) are resolved by
+    `_resolve_entangled` — floor for the anti-aligned pairs, mutual Löb for
+    CIMCIC×Dupoc."""
+    from pd_runner.tau.def4 import entangled_cells
+
+    assert open_cells() == ()
+    assert set(entangled_cells()) == {
+        ("TauDupoc", "TauCupod"), ("TauCupod", "TauDupoc"),
+        ("TauDupoc", "TauCIMCIC"), ("TauCIMCIC", "TauDupoc"),
+        ("TauCupod", "TauCIMCIC"), ("TauCIMCIC", "TauCupod"),
+    }
+
+
+def test_entangled_closures_match_lean() -> None:
+    """The six closed entangled cells, against their Lean theorems."""
+    # Cupod×Dupoc — the floor (ps_probe_inst_cupod_dupoc_false etc.)
+    assert decide("TauCupod", "TauDupoc") == Decision("C", provable=False)
+    assert decide("TauDupoc", "TauCupod") == Decision("D", provable=False)
+    # CIMCIC×Dupoc — mutual bounded Löb (cimcic_dupoc_plays_C / dupoc_cimcic_plays_C)
+    assert decide("TauCIMCIC", "TauDupoc") == Decision("C", provable=True)
+    assert decide("TauDupoc", "TauCIMCIC") == Decision("C", provable=True)
+    # CIMCIC×Cupod — the floor again (cimcic_cupod_plays_D / cupod_cimcic_plays_C)
+    assert decide("TauCIMCIC", "TauCupod") == Decision("D", provable=False)
+    assert decide("TauCupod", "TauCIMCIC") == Decision("C", provable=False)
 
 
 def test_kernel_check_passes() -> None:
     check = kernel_check()
-    assert check.checked == 140
+    assert check.checked == 169
     assert check.passed, check.mismatches
 
 
 def test_kernel_scanner_finds_all_rows() -> None:
-    """All 12 rows are stated (TauCupod's landed 2026-08-21, its open `.dupoc` slot
-    carried as a hypothesis with the canonical value)."""
+    """All 13 rows are stated — and since the entangled closures, none carries an
+    open-cell hypothesis (only Löb `∃k₂` gates)."""
     tables = kernel_bits()
     assert set(tables) == set(TAU_ORDER)
 
@@ -141,18 +165,25 @@ def test_unsupported_diagonals_raise() -> None:
         decide("Anti", "Anti", anti)
 
 
-def test_mutual_quine_pair_is_reported_as_entangled() -> None:
-    """Two self-probers form a 2-cycle. HISTORY: before the `.sys` binder (2026-08-20)
-    the model raised `UnsupportedDiagonal` — "I cannot express this". Lean can now
-    express it (the compiler emits a mutual-fixpoint system), and what it CANNOT do
-    is decide it: the cycle is not Löbian. So the model raises `EntangledCell` —
-    "the answer does not exist" — which is a strictly more informative refusal."""
-    zoo = {
+def test_mutual_quine_pair_resolves_by_alignment() -> None:
+    """Two self-probers form a 2-cycle. HISTORY: before the `.sys` binder the model
+    raised `UnsupportedDiagonal`; for one session after it, `EntangledCell` ("the
+    answer does not exist"). Since the closures (2026-08-21 evening) the answer
+    EXISTS: aligned cycles cooperate by mutual Löb, anti-aligned ones fall to the
+    floor. Two Dupoc-clones align (each wants C, each fires C) → mutual `(C, C)`;
+    a Dupoc-clone against a Cupod-clone anti-aligns → both play defaults,
+    floor-priced."""
+    aligned = {
         "A": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
         "B": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
     }
-    with pytest.raises(EntangledCell):
-        decide("A", "B", zoo)
+    assert decide("A", "B", aligned) == Decision("C", provable=True)
+    anti = {
+        "A": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
+        "B": LiftSpec((Stage(Mode.PROVE, SELF, "D", "D"),), "C"),
+    }
+    assert decide("A", "B", anti) == Decision("D", provable=False)
+    assert decide("B", "A", anti) == Decision("C", provable=False)
 
 
 # ── the coincidence certification ──────────────────────────────────────────────
@@ -186,13 +217,23 @@ def test_whitelist_is_exactly_the_recorded_cells() -> None:
     }
 
 
+# Base CIMCIC↔OBot is the ONE unproven base pair the CIMCIC lift consults on the
+# Def-3 side (the OBot two-watch census exists at the TAU shapes —
+# `no_provable_twoTestD_cimcic_C` — but not yet at the base shapes). Same value the
+# enlarged-zoo stipulations carry; drop when the base theorems land.
+CIMCIC_OBOT_STIPULATION: dict[tuple[str, str], tuple[str, str]] = {
+    ("CIMCIC", "OBot"): ("D", "D"),
+}
+
+
 def test_bit_coincidence_full_zoo() -> None:
-    """All 121 template cells against the total base matrix: 116 agree; the five
-    divergences are exactly the whitelisted Mirror-truncation and prover-modality
-    cells."""
-    matrix = load_tau_matrix(FULL_BOTS)
+    """All 144 template cells against the base matrix (total modulo the one
+    stipulated CIMCIC↔OBot pair): the five whitelisted Mirror-truncation and
+    prover-modality divergences remain the only ones — the entire CIMCIC row and
+    column COINCIDE with the base cells, including the mutual-Löb DupocBot cell."""
+    matrix = load_tau_matrix(FULL_BOTS, hypothetical_cells=CIMCIC_OBOT_STIPULATION)
     coin = bit_coincidence(matrix)
-    assert len(coin.cells) == 121
+    assert len(coin.cells) == 144
     assert coin.passed, coin.unexpected
     div = {(c.template, c.hypothesis) for c in coin.whitelisted_divergences}
     assert div == {

@@ -57,6 +57,15 @@ class Mode(Enum):
 
     RUN = "run"
 
+    PROVE_IMPL = "proveImpl"
+    """Bounded proof search over an IMPLICATION guard — "if I cooperate with the
+    probed instance, it cooperates with me" (CIMCIC's shape, 2026-08-21). The
+    consequent is the load-bearing half: `weakenImpl` fires the guard from a
+    certificate of the partner's cooperation, and the spine-tail census walks
+    through the `.impl` to the consequent, so the bit is floor-aware exactly like
+    `PROVE`. On the DIAGONAL the substituted guard is literally `φ → φ`
+    (`implRefl`): trivially provable, no Löb needed."""
+
     PROVE_EQ = "proveEq"
     """Bounded proof search over a STRUCTURAL IDENTITY atom (`.eq`) — "is the probed
     instance literally this term?". CupodTrollBot's guard shape (2026-08-20). The
@@ -118,6 +127,7 @@ TAU_ZOO: dict[str, LiftSpec] = {
     "TauCupodTroll": LiftSpec((Stage(Mode.PROVE_EQ, "TauDupoc", "C", "D"),), "C"),
     "TauCupod": LiftSpec((Stage(Mode.PROVE, SELF, "D", "D"),), "C"),
     "TauGuardian": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "D", "D"),), "C"),
+    "TauCIMCIC": LiftSpec((Stage(Mode.PROVE_IMPL, SELF, "C", "C"),), "D"),
 }
 
 TEMPLATES: tuple[str, ...] = (
@@ -133,6 +143,7 @@ TEMPLATES: tuple[str, ...] = (
     "TauDBot",
     "TauCupodTroll",
     "TauCupod",
+    "TauCIMCIC",
 )
 """Canonical template order — matches the Lean `tauOrder`
 ([coop, defect, tftSim, tftPf, dupoc, ebot])."""
@@ -150,6 +161,7 @@ BASE_OF: dict[str, str] = {
     "TauDBot": "DBot",
     "TauCupodTroll": "CupodTrollBot",
     "TauCupod": "CupodBot",
+    "TauCIMCIC": "CIMCIC",
 }
 """Which base bot each template lifts. The two TFT variants are two lift MODALITIES
 of the same base strategy (behavioral vs prover). Their bits coincide at large k on
@@ -171,6 +183,7 @@ LEAN_SLOT: dict[str, str] = {
     "TauDBot": "dbot",
     "TauCupodTroll": "cupodTroll",
     "TauCupod": "cupod",
+    "TauCIMCIC": "cimcic",
 }
 """Template name → the Lean `Tmpl` constructor, for the kernel bit-table check."""
 
@@ -179,9 +192,13 @@ LEAN_SLOT: dict[str, str] = {
 
 
 class EntangledCell(Exception):
-    """A cell whose two bots both self-probe: a mutual fixpoint that Lean compiles to
-    a `.sys` system and leaves OPEN. Distinct from `UnsupportedDiagonal` (which means
-    the MODEL cannot express the shape) — this one means the ANSWER does not exist."""
+    """HISTORICAL (2026-08-21, morning): a cell whose two bots both self-probe. For
+    one session these cells were treated as OPEN and this exception was raised. The
+    same day the Lean side CLOSED them — `no_provable_botSysSearcherElse_tail` (the
+    floor decides anti-aligned 2-cycles) and `mutual_pblt_engine_id` through
+    `botSysSearchStep` (aligned ones cooperate) — so `_resolve_entangled` now
+    computes the value and nothing raises this. Kept so old callers' `except`
+    clauses stay valid."""
 
 
 class UnsupportedDiagonal(ValueError):
@@ -250,6 +267,57 @@ def _decide_tauZoo(A: str, T: str) -> Decision:
     return _decide(A, T, _MAX_DEPTH, _freeze(TAU_ZOO))
 
 
+def _self_stage(spec: LiftSpec, name: str) -> Stage:
+    """The single self-target stage of a self-prober (all zoo self-probers are
+    single-stage; a multi-stage self-prober is outside the modelled fragment)."""
+    if len(spec.stages) != 1 or spec.stages[0].target != SELF:
+        raise UnsupportedDiagonal(
+            f"{name}: entangled resolution models single-stage self-probers only"
+        )
+    return spec.stages[0]
+
+
+def _cycle_feeds(mine: Stage, partner: Stage) -> bool:
+    """Does the partner's THEN-action satisfy MY guard's only provable route?
+
+    Mirrors the Lean closure (2026-08-21, `Tau/Theorems/TauCIMCIC/Helpers.lean`):
+    inside a `.sys` system the only rule that concludes a component's play at the
+    probing budget is `search_t`/`botSysSearchStep`, which concludes the THEN
+    (fire) action. A `prove` guard asks the partner to play `test`; a `proveImpl`
+    guard's load-bearing consequent asks it to play C.
+    """
+    want = "C" if mine.mode is Mode.PROVE_IMPL else mine.test
+    return partner.fire == want
+
+
+def _resolve_entangled(
+    A: str, T: str, frozen: tuple[tuple[str, LiftSpec], ...]
+) -> Decision:
+    """The `.sys` 2-cycle, CLOSED (2026-08-21) — the Python mirror of the two Lean
+    mechanisms:
+
+    * **aligned** (each guard's provable route matches the other's fire action):
+      mutual bounded Löb closes the cycle cooperatively — both components FIRE
+      (`mutual_pblt_engine_id` through `botSysSearchStep`; the CIMCIC×Dupoc pair,
+      matching base `llm_outcome_CIMCIC_vs_DupocBot = (C, C)`);
+    * **anti-aligned**: THE FLOOR DECIDES — `search_t` cannot conclude the
+      mismatching action and every other route prices in the partner's failed
+      search at full budget (`no_provable_botSysSearcherElse_tail`), so both
+      guards are provably FALSE and both components play their DEFAULTS,
+      floor-priced (the Cupod×Dupoc pair: the tau image of the base red cell
+      `(D, C)`; and CIMCIC×Cupod, the same shape one tier up).
+
+    No bistability survives the `search_f` floor: the cells are theorems, not
+    stipulations.
+    """
+    zoo = dict(frozen)
+    mine = _self_stage(zoo[A], A)
+    theirs = _self_stage(zoo[T], T)
+    if _cycle_feeds(mine, theirs) and _cycle_feeds(theirs, mine):
+        return Decision(mine.fire, provable=True)
+    return Decision(zoo[A].default, provable=False)
+
+
 def _decide(
     A: str, T: str, depth: int, frozen: tuple[tuple[str, LiftSpec], ...]
 ) -> Decision:
@@ -259,18 +327,7 @@ def _decide(
             "a cycle the quine rule does not cut (two self-probers?)"
         )
     if _entangled(A, T, frozen):
-        # THE BINDER CASE (2026-08-21, mirroring Lean's `.sys` emission): two
-        # self-probers form a 2-cycle that no finite unfolding resolves. In Lean the
-        # compiler emits a mutual-fixpoint system and the cell's bit is GENUINELY
-        # OPEN — the cycle is not Löbian (Cupod's punish-guard and Dupoc's
-        # reward-guard chain in opposite polarities, so no fixpoint is
-        # self-supporting; see `Tau/Theorems/TauCupod/Helpers.lean`). We refuse to
-        # invent a value.
-        raise EntangledCell(
-            f"({A}, {T}) is an entangled pair: both self-probe, so the cell is a "
-            "mutual fixpoint. Lean emits a `.sys` system here and leaves the bit "
-            "OPEN (the 2-cycle is not Löbian). No value is modelled."
-        )
+        return _resolve_entangled(A, T, frozen)
     zoo = dict(frozen)
     spec = zoo[A]
     floored = False  # a failed prove-stage OR a floored run-consultation en route
@@ -284,6 +341,11 @@ def _decide(
                 # this fixpoint too, and because guard and fire agree in polarity it
                 # yields SELF-DEFECTION. Lean: `ps_probeD_inst_cupod_quine` +
                 # `inst_cupod_quine_plays_D`.
+                bit = True
+            elif st.mode is Mode.PROVE_IMPL and st.test == "C" and st.fire == "C":
+                # THE IMPLREFL DIAGONAL (TauCIMCIC, 2026-08-21): after subst the
+                # guard is literally `φ → φ` — trivially provable, no Löb. Lean:
+                # `pf_cimG_quine` / `cimcic_quine_plays_C`.
                 bit = True
             else:
                 raise UnsupportedDiagonal(
@@ -307,9 +369,11 @@ def _decide(
                 # uniformly False. It becomes interesting only when the named target
                 # is itself in the zoo — i.e. when CupodBot lands via `.sys`.
                 bit = False
-            elif st.mode is Mode.PROVE:
+            elif st.mode in (Mode.PROVE, Mode.PROVE_IMPL):
                 # "provably plays `test`": true play matches AND its transcript is
-                # floor-free (a floor-priced play is invisible to proof search)
+                # floor-free (a floor-priced play is invisible to proof search).
+                # PROVE_IMPL reads the same bit through its consequent: tau plays
+                # are opponent-independent, so "coops with me" = "coops" (test=C).
                 bit = sub.action == st.test and sub.provable
             else:
                 # behavioral read: TRUE play, floor-blind — but the RUN embeds the
@@ -320,7 +384,7 @@ def _decide(
                     floored = True
         if bit:
             return Decision(st.fire, provable=not floored)
-        if st.mode in (Mode.PROVE, Mode.PROVE_EQ):
+        if st.mode in (Mode.PROVE, Mode.PROVE_IMPL, Mode.PROVE_EQ):
             floored = True
     return Decision(spec.default, provable=not floored)
 
@@ -331,19 +395,11 @@ def decision_table(
 ) -> dict[str, dict[str, Decision]]:
     """The full compound-decision table: `table[A][T] = decide(A, T)`.
 
-    ENTANGLED cells are omitted (2026-08-21): a pair of self-probers is a mutual
-    fixpoint that Lean compiles to a `.sys` system and leaves OPEN, so there is no
-    value to tabulate. Callers must treat a missing key as "open", never as a
-    default — `open_cells` enumerates them."""
+    TOTAL since 2026-08-21 (evening): entangled cells are RESOLVED
+    (`_resolve_entangled`), so every key is present."""
     out: dict[str, dict[str, Decision]] = {}
     for A in templates:
-        row: dict[str, Decision] = {}
-        for T in templates:
-            try:
-                row[T] = decide(A, T, zoo)
-            except EntangledCell:
-                continue
-        out[A] = row
+        out[A] = {T: decide(A, T, zoo) for T in templates}
     return out
 
 
@@ -351,7 +407,18 @@ def open_cells(
     zoo: dict[str, LiftSpec] | None = None,
     templates: tuple[str, ...] = TEMPLATES,
 ) -> tuple[tuple[str, str], ...]:
-    """The cells `decision_table` omits: entangled pairs, genuinely open."""
+    """EMPTY since 2026-08-21 (evening): the entangled pairs were the only open
+    cells, and the floor/mutual-Löb closures settled them. Kept as the (now
+    vacuous) enumeration so callers need not special-case its removal."""
+    return ()
+
+
+def entangled_cells(
+    zoo: dict[str, LiftSpec] | None = None,
+    templates: tuple[str, ...] = TEMPLATES,
+) -> tuple[tuple[str, str], ...]:
+    """The pairs `_resolve_entangled` computes — CLOSED, but structurally special
+    (they are `.sys` systems in Lean, not plain cascades)."""
     z = zoo or TAU_ZOO
     frozen = _freeze(z)
     return tuple((A, T) for A in templates for T in templates
@@ -444,11 +511,12 @@ FULL_ZOO: dict[str, str] = {
     "GuardianBot": "TauGuardian",
     "DBot": "TauDBot",
     "CupodTrollBot": "TauCupodTroll",
+    "CIMCIC": "TauCIMCIC",
 }
 """The whole 9-template zoo (8 base bots; TitForTatBot carries both TFT variants).
 The base matrix is total over these, so the coincidence certification runs on all
 81 template cells."""
 
 FULL_BOTS: tuple[str, ...] = SEPARATING_BOTS + (
-    "JustBot", "OBot", "GuardianBot", "DBot", "CupodTrollBot",
+    "JustBot", "OBot", "GuardianBot", "DBot", "CupodTrollBot", "CIMCIC",
 )
