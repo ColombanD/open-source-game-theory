@@ -914,12 +914,29 @@ this") — a strictly more informative refusal — and **τ(Cupod) is the zoo's 
 floor bot**, so the prover/behavioral TFT split now shows at three hypotheses
 (Guardian, CupodTroll, Cupod) rather than two.
 
-**Open debt from this milestone**, both recorded at their sites:
-* **the δ_Cu guard column** (`probeD (inst T .cupod)` — "does T, seeing Cupod,
-  provably defect?"). Ten of its twelve arms are routine; it is parked on ONE cell,
-  the OBot idiom's `probeD` side (a `.ite_f` then `.ite_t` transcript whose cost
-  bound needs the arithmetic worked out). `ps_probeD_searchProbe_false` — the
-  floor-priced defection of a failed prove-stage — is PROVEN and in `Helpers`.
+**The τ-route was TRIED and does not transfer (2026-08-21, Colomban's suggestion —
+worth recording because the ingredients all exist).** The base red cell is settled
+without any fixpoint by the τ-transposition, and here: the components ARE each
+other's τ-images (`cdSys_transpose`), `Pf.transpose` HAS its `sysStep` arm, and the
+transposed system is literally the cell in the other order
+(`inst_dupoc_cupod_transpose`, proven). The argument still fails, for a structural
+reason. In the BASE, Dupoc and Cupod are two separate programs whose guards name
+each other directly, so a proof of one guard both fires Dupoc's search AND
+transports to a statement whose soundness makes Dupoc play the opposite action —
+**same program, two actions**, refuted by `eval_det`. In the TAU layer the binder
+makes the pair ONE object and each component names the other by INDEX; τ̂ swaps the
+roles in place, mapping the system to a DIFFERENT system. So the transported proof
+concerns `cdSys.transpose`'s component, not `cdSys`'s, and the closing move has no
+analogue (checked: `(cdSys k).transpose.get? 0 ≠ (cdSys k).get? 1`). What would be
+needed: a τ-argument at the SYSTEM level rather than the component level — relating
+`.sys defs i` to `.sys defs.transpose i` as plays of one object, which the current
+`Prog.transpose` does not give since it descends into members. Open.
+
+**Open debt from this milestone**, recorded at their sites:
+* **the δ_Cu guard column** (`probeD (inst T .cupod)`). Its blocking cell is now
+  PROVEN — `pf_probeD_obotSecondFires` (the OBot idiom's `probeD` transcript; the
+  cost is `m + n + 8`, and the earlier failure was a missing outer `bot`'s
+  `c_node`). The column itself still needs assembling from it.
 * **`TauCupod/Phase.lean`** states its bit row (`cupodRow`, parameterized by the
   open `.dupoc` bit) but not its witness, `VoteBits` or phase theorem; those need
   the δ_Cu column.

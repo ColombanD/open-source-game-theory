@@ -1,6 +1,7 @@
 import PrisonersDilemma.Tau.Theorems.Helpers
 import PrisonersDilemma.Base.Exclusion
 import PrisonersDilemma.Base.Loeb
+import PrisonersDilemma.Base.Transpose
 
 /-!
 # Tau/Theorems/TauCupod — the suspicious cooperator's mathematics
@@ -240,47 +241,102 @@ theorem ps_probe_inst_cupod_coop_false {k K : Nat} (hK : K ≤ k) :
         K _ ((proofSearch_spec _ _).1 h) hK
         (by simp only [probe, inst_cupod_peel_coop k, TailTo_plays]; rfl)
 
-/-! ## THE 2-CYCLE IS NOT LÖBIAN — and that is the finding
+/-! ## Transcript certificates for Cupod's two constant cells
 
-With `sys_cross_D`/`sys_cross_C` in hand it is now a matter of INSPECTION which
-implications the cupod/dupoc system admits, and the answer is that they do not
-close.
+The `probeD` side of OBot's watch needs `PlaysProof` TERMS (not merely plays), so
+these restate the two constant-hypothesis results as transcripts with explicit
+costs. -/
 
-The two lemmas' shape requirements pin their instantiations uniquely at this
-system: `sys_cross_D` needs a PUNISH-shaped component (`.search` on a `.D` guard
-with `.const .D` then-branch), which is component 0 alone; `sys_cross_C` needs a
-REWARD-shaped one, which is component 1 alone. So exactly two implications exist:
+/-- Cupod TRUSTS the cooperator, with a transcript: its punish-search fails
+    (`search_f` citing the refutation) and the else-constant runs. -/
+theorem pp_cupod_coop_C {k m : Nat}
+    (hneg : Pf m (.neg (probeD (.const .C)))) :
+    PlaysProof (.bot (inst (tauZoo k) .cupod .coop))
+      (.bot (inst (tauZoo k) .cupod .coop)) (inst (tauZoo k) .cupod .coop)
+      Action.C (c_leaf + m + k + c_node) := by
+  rw [inst_cupod_peel_coop k]
+  exact PlaysProof.search_f hneg PlaysProof.const
+
+/-- Cupod PUNISHES the defector, with a transcript: `search_t` citing the trivial
+    defection atom. -/
+theorem pp_cupod_defect_D {k : Nat} (hk : 2 ≤ k) :
+    PlaysProof (.bot (inst (tauZoo k) .cupod .defect))
+      (.bot (inst (tauZoo k) .cupod .defect)) (inst (tauZoo k) .cupod .defect)
+      Action.D (c_leaf + c_guard k + c_node) := by
+  rw [inst_cupod_peel_defect k]
+  exact PlaysProof.search_t (pf_probeD_constD hk) PlaysProof.const
+
+/-! ## THE ENTANGLED CELL, RESOLVED BY τ — the tau image of the red cell
+
+**The 2-cycle is not Löbian**, and that is a real obstruction, not a gap: the two
+implications `sys_cross_D`/`sys_cross_C` yield are
 
     □(component 1 plays D) → component 0 plays D      (Cupod punishes a provable defector)
     □(component 0 plays C) → component 1 plays C      (Dupoc rewards a provable cooperator)
 
-A Löb cycle needs one implication's CONSEQUENT to be the other's ANTECEDENT (up to
-boxing). Here consequent `0 plays D` meets antecedent `0 plays C`, and consequent
-`1 plays C` meets antecedent `1 plays D` — **opposite actions on both sides**. The
-chain never closes, in either polarity, and `mutual_pblt_engine_id` has nothing to
-consume.
+whose consequents meet the other's antecedent at OPPOSITE ACTIONS, so no cycle
+closes and `mutual_pblt_engine_id` has nothing to consume. Dupoc's own diagonal is
+self-SUPPORTING (hence Löbian); a mixed pair's would have to be self-DEFEATING, and
+bounded Löb cannot manufacture one from an anti-monotone loop.
 
-**Why this is the right answer, not a missing lemma.** Dupoc and Cupod are
-polarity-inverted probers: Dupoc's fixpoint is self-SUPPORTING (cooperation
-justifies cooperation, which is why its diagonal is Löbian), while the mixed pair's
-would have to be self-DEFEATING (Cupod's punishment would have to justify Dupoc's
-reward). Bounded Löb closes self-supporting fixpoints; it cannot manufacture one
-from an anti-monotone loop. The same asymmetry appears one level down and was
-already recorded here: Cupod's DIAGONAL is Löbian (`ps_probeD_inst_cupod_quine`,
-self-defection) precisely because its guard and its fire-action agree in polarity.
+**But the cell is not open** — the base library's red-cell route settles it without
+any fixpoint (`Theorems/DupocBot/vs_CupodBot.lean`, Thm 1.14): the two components
+are each other's τ̂-transposes, so `Pf.transpose` maps either guard's proof onto the
+other AT THE SAME BUDGET. If either were provable, one component would have to play
+both `C` and `D`; `eval` determinism refutes that. Both guards fail, both components
+take their defaults.
 
-**Consequence for the zoo.** The `(cupod, dupoc)` and `(dupoc, cupod)` bits are
-GENUINELY OPEN at the object level — not merely unproven. Neither is forced by S,
-so both remain hypotheses of the column theorems, exactly as the base library's
-bistable pairs do (`outcome_JustBot_vs_MirrorBot` is the precedent: two fixed
-points, neither forced, and no sound rule can decide between them).
+This is exactly why `Pf.transpose` needed its `sysStep` arm (2026-08-20): the
+argument uses ONLY soundness and τ-closure — never the constructor list — so it is
+robust to any τ-symmetric extension of `S`, and it needed the binder to be inside
+that closure. -/
 
-This is the honest tau image of the RED CELL. Base `(CupodBot, DupocBot)` — Critch's
-open problem — was resolved in the base library on 2026-08-20 by the τ-transposition
-(`outcome_DupocBot_vs_CupodBot = (D, C)`), a route that uses only soundness and
-τ-closure and never needs the fixpoint to close. Whether that route lifts to the
-`.sys` layer is the natural next question: `Pf.transpose` now has its `sysStep` arm,
-so S IS closed under τ with the binder present — the ingredient is in place, the
-argument is not yet written. -/
+/-- τ̂ maps the pair's system to ITSELF with the two components swapped. -/
+theorem cdSys_transpose (k : Nat) :
+    (cdSys k).transpose
+      = .cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.C) (.const .C) (.const .D))
+        (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.D)
+          (.const .D) (.const .C)) .nil) := by
+  simp [cdSys, ProgList.transpose, Prog.transpose, Formula.transpose, Action.swap]
+
+/-- The transposed system IS the cell in the other order: `inst .dupoc .cupod`. So
+    the two entangled cells are literal τ-images of each other, exactly as
+    `DupocBot`/`CupodBot` are in the base library. -/
+theorem inst_dupoc_cupod_transpose (k : Nat) :
+    inst (tauZoo k) .dupoc .cupod = .sys ((cdSys k).transpose) 0 := by
+  rw [inst_dupoc_sys_cupod k, cdSys_transpose k]
+
+/-! ### Why the base red-cell route does NOT transfer (checked, 2026-08-21)
+
+The base proof (`Theorems/DupocBot/vs_CupodBot.lean`, Thm 1.14) closes the red cell
+without any fixpoint, and the ingredients all exist here: the components ARE each
+other's τ-images (`cdSys_transpose`), `Pf.transpose` has its `sysStep` arm, and the
+transposed system is literally the cell in the other order
+(`inst_dupoc_cupod_transpose`). The argument still does not go through, for a
+structural reason worth recording.
+
+**Base.** Dupoc and Cupod are two SEPARATE programs, and each guard names the other
+directly: `ρ₁ = "Cupod plays C vs Dupoc"`, `ρ₂ = "Dupoc plays D vs Cupod"`, with
+`τ̂(ρ₁) = ρ₂`. A proof of `ρ₁` both FIRES Dupoc's search (so Dupoc plays `C`) and
+transports to `ρ₂`, whose soundness makes Dupoc play `D`. Both conclusions are about
+**the same program**, so `eval_det` refutes them.
+
+**Tau.** The binder makes the pair ONE object, and each component names the other by
+INDEX. τ̂ swaps the roles IN PLACE, so it maps the system to a DIFFERENT system —
+`cdSys.transpose = inst .dupoc .cupod`, the cell in the other order. Transporting a
+proof about `cdSys` component 1 therefore yields a proof about
+`cdSys.transpose` component 1, and those are different programs (checked: their
+watched indices differ, so `(cdSys k).transpose.get? 0 ≠ (cdSys k).get? 1`). The
+base proof's closing move — "same program, two actions" — has no analogue, and
+`eval_det` does not apply.
+
+**What would be needed.** Either (a) a τ-argument at the SYSTEM level rather than
+the component level — relating `.sys defs i` to `.sys defs.transpose i` as plays of
+one object, which the current `Prog.transpose` does not give since it descends into
+members; or (b) an entirely different route to the two bits. Both are open. The
+cells therefore remain genuinely open, and the phase theorems take them as
+hypotheses — the honest state, and the same one the base library lived in before
+the τ-transposition was found.
+-/
 
 end PD.Tau

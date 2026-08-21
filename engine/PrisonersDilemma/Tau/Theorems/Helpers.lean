@@ -417,6 +417,23 @@ theorem ps_probeD_searchProbe_false {k K : Nat} (hK : K ≤ k) (I : Prog) :
         (.bot (.search k (probe I) (.const .C) (.const .D)))
         K _ ((proofSearch_spec _ _).1 h) hK (by simp only [probeD, TailTo_plays])
 
+/-- OBot's idiom, `probeD` side: the cascade PROVABLY defects when the first watch
+    FALLS THROUGH (its instance cooperates) and the second FIRES (its instance
+    defects) — `ite_f` over the first sim, then `ite_t` over the second.
+
+    Transcript: `sim(bot hP) = m+2`, `sim(bot hQ) = n+2`, `ite_t = n+4`,
+    `ite_f = m+n+7`, outer `bot = m+n+8`. -/
+theorem pf_probeD_obotSecondFires {K m n : Nat} {P Q : Prog}
+    (hP : PlaysProof (.bot P) (.bot P) P Action.C m)
+    (hQ : PlaysProof (.bot Q) (.bot Q) Q Action.D n)
+    (hK : m + n + 8 ≤ K) :
+    Pf K (probeD (.ite (.sim (.bot P) (.bot P)) Action.D (.const .D)
+      (.ite (.sim (.bot Q) (.bot Q)) Action.D (.const .D) (.const .C)))) :=
+  Pf.atom ⟨PlaysProof.bot
+    (PlaysProof.ite_f (PlaysProof.sim (PlaysProof.bot hP)) (by decide)
+      (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot hQ)) rfl PlaysProof.const)),
+    by have := hcl; have := hcn; omega⟩
+
 abbrev simMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
     (w .guardian + (w .cupodTroll + w .cupod)))))))
