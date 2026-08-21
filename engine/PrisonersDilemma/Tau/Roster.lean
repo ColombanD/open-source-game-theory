@@ -43,19 +43,26 @@ namespace PD.Tau
     (`.neg (.plays .opp .self C)`) all mention BOTH `.self` and `.opp`, so they are
     SELF-PROBERS and belong to the `.sys`-blocked class, not the fragment class. The
     `Mode.proveImpl` machinery for CIMCIC's guard shape is LANDED and correct — it
-    simply cannot be used until `.sys` provides the term. `dbot` (DBot — the defection-punisher: one
+    simply cannot be used until `.sys` provides the term.
+
+    **`dimcid` (DIMCID) ADDED 2026-08-21 — CIMCIC's polarity twin, the FOURTH
+    self-prober.** Its guard is the same implication with an ASYMMETRIC consequent
+    ("if I cooperate, they DEFECT"), which needed the new `Mode.proveImplD`; it
+    entangles with `dupoc`, `cupod` and `cimcic`, giving the zoo four 2-cycles.
+    Unlike CIMCIC's `implRefl` diagonal, its own is a genuine Löb fixpoint on
+    defection. `dbot` (DBot — the defection-punisher: one
     run-stage watching δ_D, trusting by default) was ADDED 2026-08-19 once its
     blocker cleared: its δ_L cell needs a frozen run-stage player sim-embedding a
     floor-priced searcher, which is exactly `no_provable_botRunStage_C`, the
     single-stage twin of the embedded-floor census the run-mode EBot fix forced. -/
 inductive Tmpl
   | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian | dbot
-  | cupodTroll | cupod | cimcic
+  | cupodTroll | cupod | cimcic | dimcid
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
 def tauOrder : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod, .cimcic]
+   .cupodTroll, .cupod, .cimcic, .dimcid]
 
 end PD.Tau

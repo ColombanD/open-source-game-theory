@@ -38,6 +38,13 @@ namespace PD.Tau
 
 /-! ## The types (§6.1) -/
 
+/-- The opposite action — the consequent polarity of a `proveImplD` guard.
+    (`Base/Transpose.Action.swap` is the same function, but this layer does not
+    import the τ machinery; two lines beat an import for one emission arm.) -/
+def otherAction : Action → Action
+  | .C => .D
+  | .D => .C
+
 /-- How a stage consults its probe: `prove` = bounded proof search over the probe
     atom (a `.search` node); `run` = execute the probed instance and read its true
     play (a `.sim`-guarded `.ite`); `proveImpl` = bounded proof search over the
@@ -55,8 +62,18 @@ namespace PD.Tau
     (`.eq`): "is the probed instance literally this term?" — CupodTrollBot's guard
     shape (2026-08-20). Both directions are decidable in `S` (`Pf.eqRefl` /
     `Pf.eqNeg`), so a `proveEq` bit is never floor-priced: identity is the one
-    question the proof system answers completely. -/
-inductive Mode | prove | run | proveImpl | proveEq
+    question the proof system answers completely.
+
+    `proveImplD` (2026-08-21) is the ASYMMETRIC-consequent variant: the antecedent
+    still says "I play `test` against them", but the consequent says they play the
+    OPPOSITE action back — DIMCID's guard shape
+    (`.impl (.plays .self .opp C) (.plays .opp .self D)`, "if I cooperate, they
+    defect"). It is a separate mode rather than a `Stage` field because the
+    anonymous-constructor spec rows (13 of them) take positional arguments, and a
+    new field would break every one; a new mode touches only the two compiler
+    matches. Its diagonal is a genuine Löb fixpoint on DEFECTION (base
+    `llm_outcome_DIMCID_vs_DIMCID`), unlike `proveImpl`'s trivial `implRefl`. -/
+inductive Mode | prove | run | proveImpl | proveImplD | proveEq
 deriving DecidableEq, Repr
 
 /-- The counterfactual opponent a stage imagines the hypothesis facing: `self` = "me,
@@ -135,6 +152,11 @@ def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) :
             (.impl (.plays .self (.bot (.selfIdx partnerIdx)) st.test)
                    (.plays (.bot (.selfIdx partnerIdx)) .self st.test))
             (.const st.fire) cont
+      | .proveImplD, .self =>
+          .search Z.budget
+            (.impl (.plays .self (.bot (.selfIdx partnerIdx)) st.test)
+                   (.plays (.bot (.selfIdx partnerIdx)) .self (otherAction st.test)))
+            (.const st.fire) cont
       | .proveEq, .self =>
           .search Z.budget (.eq .opp (.bot (.selfIdx partnerIdx))) (.const st.fire) cont
       -- third-party stages are OUTSIDE the cycle: compile them normally
@@ -148,6 +170,12 @@ def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) :
           let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
           .search Z.budget
             (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
+            (.const st.fire) cont
+      | .proveImplD, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .search Z.budget
+            (.impl (.plays .self (.bot P) st.test)
+                   (.plays (.bot P) .self (otherAction st.test)))
             (.const st.fire) cont
       | .proveEq, .name B =>
           let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
@@ -247,6 +275,31 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
             let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
             .search Z.budget
               (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
+              (.const st.fire) cont
+      | .proveImplD, .name B =>
+          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
+          .search Z.budget
+            (.impl (.plays .self (.bot P) st.test)
+                   (.plays (.bot P) .self (otherAction st.test)))
+            (.const st.fire) cont
+      | .proveImplD, .self =>
+          if T = A then
+            -- THE DIAGONAL: after subst the guard is `φ → ψ` with φ, ψ the SAME
+            -- player at OPPOSITE actions — not `implRefl` territory (that is
+            -- `proveImpl`'s diagonal). This is the genuine Löb fixpoint on
+            -- defection, base `llm_outcome_DIMCID_vs_DIMCID`.
+            .search Z.budget
+              (.impl (.plays .self .self st.test)
+                     (.plays .self .self (otherAction st.test)))
+              (.const st.fire) cont
+          else if Z.entangled A T then
+            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
+                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
+          else
+            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
+            .search Z.budget
+              (.impl (.plays .self (.bot P) st.test)
+                     (.plays (.bot P) .self (otherAction st.test)))
               (.const st.fire) cont
 
   termination_by structural fuel _ _ _ _ => fuel

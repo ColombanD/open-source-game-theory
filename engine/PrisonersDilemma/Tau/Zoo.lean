@@ -11,6 +11,7 @@ import PrisonersDilemma.Tau.Bots.TauDBot
 import PrisonersDilemma.Tau.Bots.TauCupodTroll
 import PrisonersDilemma.Tau.Bots.TauCupod
 import PrisonersDilemma.Tau.Bots.TauCIMCIC
+import PrisonersDilemma.Tau.Bots.TauDIMCID
 
 /-!
 # Tau/Zoo — the assembled six-template zoo, its players, and Gate D1
@@ -42,6 +43,7 @@ def tmplSpec : Tmpl → Spec Tmpl
   | .cupodTroll => tauCupodTrollSpec
   | .cupod    => tauCupodSpec
   | .cimcic   => tauCIMCICSpec
+  | .dimcid   => tauDIMCIDSpec
 
 def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
 
