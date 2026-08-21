@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Zoo
+import PrisonersDilemma.Base.Exclusion
 
 /-!
 # Tau/Theorems/Helpers — shared shape lemmas and the regime masses
@@ -398,6 +399,23 @@ theorem pf_searchProbe_searchProbeC {k K : Nat} (hk : 2 ≤ k)
   Pf.atom ⟨PlaysProof.bot
     (PlaysProof.search_t (pf_searchProbe_constC hk hkk) PlaysProof.const),
     by have := hcl; have := hcn; omega⟩
+
+/-! ## `probeD` bits for the two idioms the δ_Cu column meets (2026-08-21) -/
+
+/-- A prove-stage whose probe FAILS defects — through `search_f`, so the DEFECTION
+    atom is itself floor-priced: unprovable at every budget ≤ k. The honest reading
+    is "it defects, and you cannot cite that either". Uses the `botSearcherElse`
+    kernel with the ELSE action as the target. -/
+theorem ps_probeD_searchProbe_false {k K : Nat} (hK : K ≤ k) (I : Prog) :
+    proofSearch K (probeD (.search k (probe I) (.const .C) (.const .D))) = false := by
+  cases h : proofSearch K (probeD (.search k (probe I) (.const .C) (.const .D))) with
+  | false => rfl
+  | true =>
+      exfalso
+      exact no_provable_botSearcherElse_tail k k (probe I) .C .D (.const .D)
+        (by decide) (Nat.le_refl k)
+        (.bot (.search k (probe I) (.const .C) (.const .D)))
+        K _ ((proofSearch_spec _ _).1 h) hK (by simp only [probeD, TailTo_plays])
 
 abbrev simMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +

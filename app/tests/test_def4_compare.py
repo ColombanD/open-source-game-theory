@@ -28,6 +28,7 @@ from pd_runner.tau.def4 import (
     TEMPLATES,
     Decision,
     UnsupportedDiagonal,
+    EntangledCell,
     LiftSpec,
     Mode,
     SELF,
@@ -78,13 +79,22 @@ def test_open_cells_are_exactly_the_entangled_pair() -> None:
 
 def test_kernel_check_passes() -> None:
     check = kernel_check()
-    assert check.checked == 121
+    assert check.checked == 129
     assert check.passed, check.mismatches
 
 
-def test_kernel_scanner_finds_all_rows() -> None:
+def test_kernel_scanner_finds_all_stated_rows() -> None:
+    """Every template EXCEPT TauCupod has a stated bit row. Cupod's contains the
+    entangled (open) cell, so its `VoteBits` theorem is still to be written — the
+    scanner reports it as unstated rather than inventing a value."""
     tables = kernel_bits()
-    assert set(tables) == set(TAU_ORDER)
+    assert set(tables) == set(TAU_ORDER) - {"cupod"}
+
+
+def test_kernel_check_reports_cupod_as_unstated() -> None:
+    check = kernel_check()
+    assert check.unstated == ("TauCupod",)
+    assert not check.mismatches
 
 
 # ── the floor, structural ──────────────────────────────────────────────────────
@@ -132,14 +142,17 @@ def test_unsupported_diagonals_raise() -> None:
         decide("Anti", "Anti", anti)
 
 
-def test_mutual_quine_wall_raises() -> None:
-    """Two self-probers form the inexpressible 2-cycle; the model must refuse,
-    not loop or guess — the Python shadow of the Lean termination discipline."""
+def test_mutual_quine_pair_is_reported_as_entangled() -> None:
+    """Two self-probers form a 2-cycle. HISTORY: before the `.sys` binder (2026-08-20)
+    the model raised `UnsupportedDiagonal` — "I cannot express this". Lean can now
+    express it (the compiler emits a mutual-fixpoint system), and what it CANNOT do
+    is decide it: the cycle is not Löbian. So the model raises `EntangledCell` —
+    "the answer does not exist" — which is a strictly more informative refusal."""
     zoo = {
         "A": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
         "B": LiftSpec((Stage(Mode.PROVE, SELF, "C", "C"),), "D"),
     }
-    with pytest.raises(UnsupportedDiagonal):
+    with pytest.raises(EntangledCell):
         decide("A", "B", zoo)
 
 
@@ -243,8 +256,10 @@ def test_tft_variants_split_exactly_on_the_floor_bots() -> None:
     holds: the rows differ EXACTLY at the hypotheses whose cooperation is
     floor-priced — true but uncitable — and agree everywhere else."""
     t = decision_table()
-    floor_bots = {"TauGuardian", "TauCupodTroll"}
+    floor_bots = {"TauGuardian", "TauCupodTroll", "TauCupod"}
     for T in TEMPLATES:
+        if T not in t["TauTFTSim"] or T not in t["TauTFTPf"]:
+            continue  # open cell
         sim, pf = t["TauTFTSim"][T].action, t["TauTFTPf"][T].action
         if T in floor_bots:
             assert (sim, pf) == ("C", "D"), T

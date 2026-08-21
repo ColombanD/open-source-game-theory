@@ -903,6 +903,27 @@ skipping in `kernel_check`/`bit_coincidence`. Openness PROPAGATES correctly: Jus
 and CupodTroll probe the Dupoc column, so their Cupod cells are open too — matching
 Lean, where those rows carry the same hypothesis.
 
+**Certification refreshed for the 12-zoo (2026-08-21):** `kernel_check` now
+distinguishes UNSTATED rows from mismatched ones — 129 cells checked, zero
+mismatches, `TauCupod` reported as unstated (its `VoteBits` theorem awaits the
+δ_Cu guard column, below). `bit_coincidence` passes at 121 cells / 116 agree /
+5 whitelisted / **0 unexpected**. Two tests were legitimately falsified and
+restated rather than patched: the mutual-quine wall now raises `EntangledCell`
+("the answer does not exist") instead of `UnsupportedDiagonal` ("I cannot express
+this") — a strictly more informative refusal — and **τ(Cupod) is the zoo's THIRD
+floor bot**, so the prover/behavioral TFT split now shows at three hypotheses
+(Guardian, CupodTroll, Cupod) rather than two.
+
+**Open debt from this milestone**, both recorded at their sites:
+* **the δ_Cu guard column** (`probeD (inst T .cupod)` — "does T, seeing Cupod,
+  provably defect?"). Ten of its twelve arms are routine; it is parked on ONE cell,
+  the OBot idiom's `probeD` side (a `.ite_f` then `.ite_t` transcript whose cost
+  bound needs the arithmetic worked out). `ps_probeD_searchProbe_false` — the
+  floor-priced defection of a failed prove-stage — is PROVEN and in `Helpers`.
+* **`TauCupod/Phase.lean`** states its bit row (`cupodRow`, parameterized by the
+  open `.dupoc` bit) but not its witness, `VoteBits` or phase theorem; those need
+  the δ_Cu column.
+
 **Status: 12 templates over 10 base bots.** Remaining unlifted: PrudentBot and
 OptimBot (`.sys` + fragment extensions), MirrorBot and LegibleBot (fragment only),
 CIMCIC/DIMCID/WaryBot (self-probers needing the `proveImpl`/`.neg` fragments, which
