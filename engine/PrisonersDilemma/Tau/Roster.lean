@@ -32,6 +32,12 @@ namespace PD.Tau
     already self-probing it forms genuine 2-cycles; `instGo` now emits the
     mutual-fixpoint system for those pairs instead of failing to terminate.
 
+    **`cimcic` (CIMCIC) ADDED 2026-08-21 — the first `.impl`-guard bot, and the
+    THIRD self-prober.** Its `proveImpl` stage targets `self`, so it entangles with
+    BOTH `dupoc` and `cupod`: three 2-cycles in the zoo, each compiled to its own
+    2-member `.sys` system. The `Mode.proveImpl` machinery built for it on
+    2026-08-20 (before its self-probing was recognized) is finally consumed.
+
     **Correction recorded 2026-08-20 (Gate D1 caught it):** CIMCIC and DIMCID
     (`.impl (.plays .self .opp _) (.plays .opp .self _)`) and WaryBot
     (`.neg (.plays .opp .self C)`) all mention BOTH `.self` and `.opp`, so they are
@@ -44,12 +50,12 @@ namespace PD.Tau
     single-stage twin of the embedded-floor census the run-mode EBot fix forced. -/
 inductive Tmpl
   | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian | dbot
-  | cupodTroll | cupod
+  | cupodTroll | cupod | cimcic
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
 def tauOrder : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod]
+   .cupodTroll, .cupod, .cimcic]
 
 end PD.Tau

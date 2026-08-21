@@ -207,6 +207,9 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
       | .run, .self =>
           if T = A then
             .ite (.sim .self .self) st.test (.const st.fire) cont
+          else if Z.entangled A T then
+            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
+                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
           else
             let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
             .ite (.sim (.bot P) (.bot P)) st.test (.const st.fire) cont
@@ -221,6 +224,9 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
       | .proveEq, .self =>
           if T = A then
             .search Z.budget (.eq .opp .self) (.const st.fire) cont
+          else if Z.entangled A T then
+            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
+                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
           else
             let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
             .search Z.budget (.eq .opp (.bot P)) (.const st.fire) cont
@@ -229,6 +235,13 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
             .search Z.budget
               (.impl (.plays .self .self st.test) (.plays .self .self st.test))
               (.const st.fire) cont
+          else if Z.entangled A T then
+            -- the binder case, uniformly with `.prove` (2026-08-21): an asymmetric
+            -- emission (recursing here while the partner's arm emits the system)
+            -- would create TWO syntactic representations of the same instance —
+            -- bot-wrapped and in-system — whose bits would be separately proved
+            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
+                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
           else
             let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
             .search Z.budget
