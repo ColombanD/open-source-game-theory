@@ -18,7 +18,7 @@ theorem cd_no_provable_alpha (k : Nat) :
       TailTo (.plays (DIMCID k) (CIMCIC k) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (DIMCID k) (CIMCIC k) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- atom killer: DIMCID plays C is its else-branch; cert must be search_f → floor
     rintro K' hK' φ' rfl hA
@@ -79,13 +79,18 @@ theorem cd_no_provable_alpha (k : Nat) :
         simp only [plug2, DIMCID, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
 
+  · -- hbotsys: neither census member is a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp [CIMCIC, DIMCID] at hme
 /-- β = CIMCIC plays D vs DIMCID (CIMCIC's else-play). Unprovable-tailed at budget k. -/
 theorem cd_no_provable_beta (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →
       TailTo (.plays (CIMCIC k) (DIMCID k) Action.D) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (CIMCIC k) (DIMCID k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -145,6 +150,11 @@ theorem cd_no_provable_beta (k : Nat) :
         simp only [plug2, CIMCIC, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
 
+  · -- hbotsys: neither census member is a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp [CIMCIC, DIMCID] at hme
 theorem cd_cimcic_guard_not_provable (k : Nat) :
     ¬ Pf k (.impl (.plays (CIMCIC k) (DIMCID k) Action.C)
                   (.plays (DIMCID k) (CIMCIC k) Action.C)) := by

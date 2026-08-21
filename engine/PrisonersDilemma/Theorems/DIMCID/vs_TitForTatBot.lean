@@ -28,7 +28,8 @@ theorem dimcidTFT_no_provable_botCoop (k : Nat) :
   no_provable_tailTo_unreadable _ _ _
     (fun n hA => dimcidTFT_consequent_botCoop_not_provable k n (.atom hA))
     (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [CooperateBot] at h)
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ |
+          ⟨_, _, h⟩) <;> simp [CooperateBot] at h)
     (by intro L h
         cases L with
         | nil => simp [searchPlug, CooperateBot] at h
@@ -103,7 +104,8 @@ theorem dimcidTFT_no_provable_TFT (k : Nat) :
   no_provable_tailTo_unreadable _ _ _
     (fun n hA => dimcidTFT_consequent_TFT_not_provable k n (.atom hA))
     (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [TitForTatBot] at h)
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ |
+          ⟨_, _, h⟩) <;> simp [TitForTatBot] at h)
     (by intro L h
         cases L with
         | nil => simp [searchPlug, TitForTatBot] at h

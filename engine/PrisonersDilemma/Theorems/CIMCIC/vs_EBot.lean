@@ -50,7 +50,8 @@ theorem cimcic_botDef_no_provable_forbidden (k : Nat) :
   no_provable_tailTo_unreadable _ _ _
     (fun n hA => cimcic_botDef_consequent_not_provable k n (.atom hA))
     (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [DefectBot] at h)
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ |
+          ⟨_, _, h⟩) <;> simp [DefectBot] at h)
     (by intro L h
         cases L with
         | nil => simp [searchPlug, DefectBot] at h
@@ -237,7 +238,8 @@ theorem ebot_no_provable_forbidden (k : Nat) :
   no_provable_tailTo_unreadable _ _ _
     (fun n hA => by cases hA with | mk cert hle => exact no_cert_EBot_vs_CIMCIC k _ _ cert)
     (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [EBot] at h)
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ |
+          ⟨_, _, h⟩) <;> simp [EBot] at h)
     (by intro L h
         cases L with
         | nil => simp [searchPlug, EBot] at h

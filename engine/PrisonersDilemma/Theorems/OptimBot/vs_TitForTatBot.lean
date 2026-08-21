@@ -145,7 +145,12 @@ theorem ot_inner_D_at_stagger :
       hLoeb ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
     · (try simp only [numCost, Formula.size]); omega
   exact Pf_mono hpf (by omega)
-
+  · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [CooperateBot] at hme | simp [OptimBot] at hme | simp [TitForTatBot] at hme | simp at hme | simp_all)
 /-! ## Outer Löb premise (searchElseChain) & bootstrap: OptimBot defects against TFT -/
 
 theorem ot_loeb_premise (k K : Nat) (h2 : 2 ≤ k)
@@ -271,7 +276,12 @@ theorem ot_D_provable_at_stagger :
     · (try simp only [numCost, Formula.size]); omega
   have hpfk : Pf KS φ := Pf_mono hpf (by omega)
   exact (proofSearch_spec KS φ).2 hpfk
-
+  · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [CooperateBot] at hme | simp [OptimBot] at hme | simp [TitForTatBot] at hme | simp at hme | simp_all)
 /-! ## Eval side -/
 
 theorem ot_ps_botCB_C (k K : Nat) (hk : 2 ≤ k) :

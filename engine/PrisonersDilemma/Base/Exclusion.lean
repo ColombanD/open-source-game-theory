@@ -207,7 +207,10 @@ def ReadableMe (me : Prog) : Prop :=
   (∃ z a' k ψ c0 c1 q,
     me = .ite (.sim .opp (.bot z)) a' (.search k ψ (.const c0) (.const c1)) q) ∨
   (∃ k₁ ψ₁ k₂ ψ₂ c0 c1 q,
-    me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q)
+    me = .search k₁ ψ₁ (.search k₂ ψ₂ (.const c0) (.const c1)) q) ∨
+  -- the `.sys` binder (2026-08-20): S reads a system COMPONENT through `sysClose`
+  -- (`botSysSearchStep`), so a `.bot`-wrapped system reference is readable too
+  (∃ defs i, me = .bot (.sys defs i))
 
 /-- **The census of `S`**: if a `Pf`'s conclusion has a guarded plays-atom spine tail, the
     player is bridge-readable. One induction (`Pf.induct`), over the WHOLE proof system.
@@ -296,6 +299,12 @@ theorem tail_plays_readable
       simp only [TailTo_plays, Formula.plays.injEq] at h1
       obtain ⟨rfl, rfl, rfl⟩ := h1
       exact Or.inl (Or.inr (Or.inr (Or.inl ⟨p, q, hme⟩)))
+  | botSysSearchStep k' defs i g ψ a b me' oppo' hme hget hle =>
+      intro me oppo a' h
+      obtain ⟨h1, -⟩ := h
+      simp only [TailTo_plays, Formula.plays.injEq] at h1
+      obtain ⟨rfl, rfl, rfl⟩ := h1
+      exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨defs, i, hme⟩))))))
   | botSearchStep k' g ψ a b me' oppo' hme hle =>
       intro me oppo a' h
       obtain ⟨h1, -⟩ := h
@@ -314,7 +323,7 @@ theorem tail_plays_readable
       obtain ⟨h1, -⟩ := h
       simp only [TailTo_plays, Formula.plays.injEq] at h1
       obtain ⟨rfl, rfl, rfl⟩ := h1
-      exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k₁, ψ₁, k₂, ψ₂, c0, c1, q, hme⟩)))))
+      exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨k₁, ψ₁, k₂, ψ₂, c0, c1, q, hme⟩))))))
   | searchChain k' g₁ ψ₁ e₁ L a me' opponent' hme hle =>
       -- the telescope player is a (nonempty) search plug
       intro me oppo a' h
@@ -364,7 +373,8 @@ theorem not_readable_probeFirst (z p q : Prog) (aT : Action)
     (hshape : ∀ k' ψ c0 c1, p ≠ .search k' ψ (.const c0) (.const c1)) :
     ¬ ReadableMe (.ite (.sim .opp (.bot z)) aT p q) := by
   rintro (⟨k', ψ, a, b, h⟩ | ⟨p', r, h⟩ | ⟨p', r, h⟩ | ⟨k', ψ, a, b, h⟩ |
-          ⟨w, a', k', ψ, c0, c1, r, h⟩ | ⟨k₁, ψ₁, k₂, ψ₂, c0, c1, r, h⟩)
+          ⟨w, a', k', ψ, c0, c1, r, h⟩ | ⟨k₁, ψ₁, k₂, ψ₂, c0, c1, r, h⟩ |
+          ⟨dfs, ii, h⟩)
   · simp at h
   · simp at h
   · simp at h
@@ -372,6 +382,8 @@ theorem not_readable_probeFirst (z p q : Prog) (aT : Action)
   · simp only [Prog.ite.injEq] at h
     exact hshape _ _ _ _ h.2.2.1
   · -- the stacked-search shape is a `.search`, never an `.ite`
+    simp at h
+  · -- a `.bot`-wrapped system reference is never an `.ite`
     simp at h
 
 set_option maxHeartbeats 1000000 in
@@ -414,7 +426,9 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
       ∃ g ∈ ctxGuards me oppo (hd :: L), S g)
     (hplug2 : ∀ me oppo c, S (.plays me oppo c) →
       ∀ (hd : SearchLayer2) (L : List SearchLayer2), me = plug2 (hd :: L) (.const c) →
-      k < layersCost (hd :: L)) :
+      k < layersCost (hd :: L))
+    (hbotsys : ∀ me oppo c, S (.plays me oppo c) →
+      ∀ defs i, me ≠ .bot (.sys defs i)) :
     ∀ K φ, Pf K φ → K ≤ k → TailToS S φ → False := by
   intro K
   induction K using Nat.strong_induction_on with
@@ -434,6 +448,9 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
     | botSearchStep gg psi aa bb me oppo hme hsz =>
         obtain ⟨h1, -⟩ := htail
         exact hbotsearch me oppo aa h1 gg psi bb hme
+    | botSysSearchStep dfs ii gg psi aa bb me oppo hme hget hsz =>
+        obtain ⟨h1, -⟩ := htail
+        exact hbotsys me oppo aa h1 dfs ii hme
     | iteBranchSearch_t gg zz aa' cc0 cc1 psi qq me oppo hme hsz =>
         -- the probe joins `S` via `hibs`, contradicting the class's `¬TailToS` probe slot
         obtain ⟨⟨h1, -⟩, hprobe⟩ := htail
@@ -560,6 +577,7 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
        (∃ k' ψ a b, P = .bot (.search k' ψ (.const a) (.const b))) ∨
        (∃ z a' k' ψ c0 c1 q,
          P = .ite (.sim .opp (.bot z)) a' (.search k' ψ (.const c0) (.const c1)) q)))
+    (hbotsysP : ∀ defs i, P ≠ .bot (.sys defs i))
     (hsts : ∀ k₁ ψ₁ k₂ ψ₂ c1 q,
       P ≠ .search k₁ ψ₁ (.search k₂ ψ₂ (.const aTgt) (.const c1)) q)
     (hplug : ∀ (L : List (Nat × Formula × Prog)), P ≠ searchPlug L (.const aTgt))
@@ -568,7 +586,7 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
       P = plug2 (hd :: L) (.const aTgt) → k < layersCost (hd :: L)) :
     ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays P O aTgt) φ → False := by
   intro K φ hp hK htail
-  refine no_provable_tailToS_floor k (· = .plays P O aTgt) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k (· = .plays P O aTgt) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ'
@@ -610,6 +628,11 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
     injection hS with h1 h2 h3
     subst h1; subst h3
     exact hplug2 hd L hme
+  · -- hbotsys: the target player is not a `.sys` reference (hypothesis)
+    intro me oppo c hS defs i hme
+    injection hS with h1 h2 h3
+    subst h1
+    exact hbotsysP defs i hme
 
 /-- **The `search_f` floor as a cost lower bound** (probe-first instance): no proof of
     ≤ k characters concludes any formula whose guarded spine tail is "the probe-first
@@ -628,7 +651,7 @@ theorem no_provable_probeFirst_tail (k : Nat) (z p q : Prog) (aT aTgt : Action)
     ∀ K φ, Pf K φ → K ≤ k →
       TailTo (.plays (.ite (.sim .opp (.bot z)) aT p q) (.search k g pT pE) aTgt) φ →
       False := by
-  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ (by intro _ _; simp) ?_ ?_ ?_ ?_
   · -- atom killer: the probe replay — `search_t` by soundness, `search_f` by the floor
     intro K hK hA
     cases hA with
@@ -687,7 +710,7 @@ theorem no_provable_probeFirst_tail_botOpp (k : Nat) (z p q : Prog) (aT aTgt : A
     ∀ K φ, Pf K φ → K ≤ k →
       TailTo (.plays (.ite (.sim .opp (.bot z)) aT p q) (.bot (.search k g pT pE)) aTgt) φ →
       False := by
-  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ (by intro _ _; simp) ?_ ?_ ?_ ?_
   · intro K hK hA
     cases hA with
     | mk hpp hn =>
@@ -791,7 +814,7 @@ theorem no_provable_searcherPlay_tail (k : Nat) (g : Formula) (pT pE O : Prog)
       k < layersCost (hd :: L)) :
     ∀ K φ, Pf K φ → K ≤ k →
       TailTo (.plays (.search k g pT pE) O aTgt) φ → False := by
-  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ ?_ hplug ?_ hplug2
+  refine no_provable_tailTo_floor k _ _ _ ?_ ?_ (by intro _ _; simp) ?_ hplug ?_ hplug2
   · -- atom killer: `search_t` by soundness of the false guard, `search_f` IS the floor
     intro K hK hA
     cases hA with
@@ -832,7 +855,7 @@ theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : A
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (.bot (.search kb g (.const aT) pE)) O aTgt)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- the atom killer: `bot` unwraps, then `search_t` mismatches the action and
     -- `search_f` pays the floor `kb ≥ k`
@@ -880,6 +903,10 @@ theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : A
     injection hS with h1 h2 h3
     subst h1
     cases hd <;> simp [plug2] at hme
+  · -- hbotsys: this target is not a `.bot`-wrapped system reference
+    intro me oppo c hS defs i hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
 
 /-! ## The budget-free census for unreadable players
 
@@ -897,12 +924,15 @@ theorem no_provable_tailTo_unreadable (P O : Prog) (A : Action)
       P ≠ plug2 (hd :: L) (.const A)) :
     ∀ {m : Nat} {φ : Formula}, Pf m φ → ¬ TailTo (.plays P O A) φ := by
   intro m φ h hT
-  refine no_provable_tailTo_floor m P O A ?_ ?_ ?_ hplug hctx
+  refine no_provable_tailTo_floor m P O A ?_ ?_
+    (fun defs i hme =>
+      hread (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨defs, i, hme⟩)))))))
+    ?_ hplug hctx
     (fun hd L hme => absurd hme (hplug2 hd L)) m φ h le_rfl hT
   · exact fun K _ => hcert K
   · exact fun h5 => hread (h5.imp id (Or.imp id (Or.imp id (Or.imp id Or.inl))))
   · intro k₁ ψ₁ k₂ ψ₂ c1 q hst
-    exact hread (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k₁, ψ₁, k₂, ψ₂, A, c1, q, hst⟩)))))
+    exact hread (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨k₁, ψ₁, k₂, ψ₂, A, c1, q, hst⟩))))))
 
 /-! ## The SIZE FLOOR — the cheapest exclusion (2026-07-29)
 
@@ -926,6 +956,7 @@ theorem pf_size_or_atom : ∀ {k φ}, Pf k φ → φ.size ≤ k ∨ AtomProvable
   | simStep me p q opnt a hme hle => exact Or.inl hle
   | botSimStep me p q opnt a hme hle => exact Or.inl hle
   | botSearchStep g ψ a b me opnt hme hle => exact Or.inl hle
+  | botSysSearchStep defs i g ψ a b me opnt hme hget hle => exact Or.inl hle
   | iteBranchSearch_t g z a' c0 c1 ψ q me opnt hme hle => exact Or.inl hle
   | eqRefl p hle => exact Or.inl hle
   | eqNeg p q hne hle => exact Or.inl hle

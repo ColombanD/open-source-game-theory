@@ -80,7 +80,6 @@ theorem optim_D_provable_at_k :
     · (try simp only [numCost, Formula.size]); omega
   have hpfk : Pf k φ := Pf_mono hpf (by omega)
   exact (proofSearch_spec k φ).2 hpfk
-
 theorem OptimBot_plays_D_against_CooperateBot (k fuel : Nat)
     (hOuter : proofSearch k (Formula.plays CooperateBot (OptimBot k k) Action.C) = true)
     (hD : proofSearch k (Formula.plays (OptimBot k k) CooperateBot Action.D) = true) :

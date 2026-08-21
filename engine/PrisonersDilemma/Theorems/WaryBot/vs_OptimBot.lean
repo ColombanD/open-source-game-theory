@@ -34,7 +34,7 @@ theorem wo_wary_C_vs_optim_unprov (k : Nat) :
       TailTo (.plays (WaryBot k) (OptimBot k k) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (WaryBot k) (OptimBot k k) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -88,7 +88,12 @@ theorem wo_wary_C_vs_optim_unprov (k : Nat) :
     | elseL g P' Q' c' q =>
         simp only [plug2, WaryBot, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
-
+  · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [OptimBot] at hme | simp [WaryBot] at hme | simp at hme | simp_all)
 /-- OptimBot's D-cert vs WaryBot pays the floor: the only cheap path (rung-1 inner D)
     demands a proof of the floor-unprovable `Wary plays C vs Optim`. -/
 theorem wo_optim_noD (k : Nat) :

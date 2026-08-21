@@ -578,7 +578,6 @@ theorem pf_WV_mirror (k : Nat) : ∀ {K : Nat} {φ : Formula},
       rfl
   · exact fun p q oppo h => SPMirror.simL p q oppo h
   · exact fun p q oppo h => SPMirror.botSimL p q oppo h
-
 /-! #### The self-play census: `SPSelf`
 
 Same closure with base "WaryBot k plays C vs itself" — a SEARCH-headed player,
@@ -709,7 +708,6 @@ theorem pf_WV_self (k : Nat) : ∀ {K : Nat} {φ : Formula},
     · exact hF.elim
   · exact fun p q oppo h => SPSelf.simL p q oppo h
   · exact fun p q oppo h => SPSelf.botSimL p q oppo h
-
 end WaryCensus
 
 /-! #### Per-matchup facts (still HELPERS — same destination) -/

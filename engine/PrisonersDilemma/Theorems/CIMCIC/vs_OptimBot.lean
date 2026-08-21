@@ -47,7 +47,7 @@ theorem cimcic_optim_guard_B_unprov (k : Nat) :
       TailTo (.plays (OptimBot k k) (CIMCIC k) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (OptimBot k k) (CIMCIC k) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -131,6 +131,10 @@ theorem cimcic_optim_guard_B_unprov (k : Nat) :
                 cases tl2 with
                 | nil => simp [plug2] at hplug2
                 | cons hd3 tl3 => cases hd3 <;> simp [plug2] at hplug2
+  · rintro me oppo c hS defs i hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp [CIMCIC] at hme
 
 /-- `G3 = CIMCIC plays D vs OptimBot` — the true-but-uncertifiable else-play — is
     unprovable at budget `k`, via the `search_f` floor census. -/
@@ -139,7 +143,7 @@ theorem cimcic_optim_G3_unprov (k : Nat) :
       TailTo (.plays (CIMCIC k) (OptimBot k k) Action.D) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (CIMCIC k) (OptimBot k k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -200,6 +204,10 @@ theorem cimcic_optim_G3_unprov (k : Nat) :
     | elseL g P' Q' c' q =>
         simp only [plug2, CIMCIC, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
+  · rintro me oppo c hS defs i hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp [CIMCIC] at hme
 
 /-- CIMCIC's guard against OptimBot (`A → B`) is unprovable at budget `k`: its spine
     tail `B` is floor-unprovable. -/

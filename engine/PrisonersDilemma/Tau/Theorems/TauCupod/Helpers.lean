@@ -123,4 +123,53 @@ theorem inst_cupod_quine_plays_D {k : Nat}
       from by rw [inst_cupod_quine k], h]
   rfl
 
+/-! ## Cupod's own plays at the two constant hypotheses
+
+Both reduce to shapes the shared `Helpers` already certifies: at the cooperator the
+punish-probe is refutable (`ps_probeD_false_of_plays_C`), at the defector it fires
+(`ps_probeD_constD`). Same structure as Guardian's row — Cupod is a punisher too,
+differing only in WHOM it probes (the hypothesis-vs-me, not the hypothesis-vs-the
+cooperator). -/
+
+/-- τ(Cupod) TRUSTS the unconditional cooperator: nothing to convict. -/
+theorem cupod_coop_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .cupod .coop)) (.bot (inst (tauZoo k) .cupod .coop))
+      (inst (tauZoo k) .cupod .coop) = some Action.C :=
+  searchProbeD_plays_C _ _ (ps_probeD_false_of_plays_C k ⟨1, rfl⟩)
+
+/-- τ(Cupod) PUNISHES the defector: its defection is a trivial positive atom. -/
+theorem cupod_defect_plays_D {k : Nat} (hk : 2 ≤ k) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .cupod .defect))
+      (.bot (inst (tauZoo k) .cupod .defect))
+      (inst (tauZoo k) .cupod .defect) = some Action.D :=
+  searchProbeD_plays_D _ _ (ps_probeD_constD hk)
+
+/-! ## THE ENTANGLED CELL — the open frontier of this milestone
+
+`inst .cupod .dupoc` is the 2-member system: component 0 (Cupod-seeing-Dupoc) fires
+on proving component 1 DEFECTS; component 1 (Dupoc-seeing-Cupod) fires on proving
+component 0 COOPERATES. Each bit is a claim about the other, so neither is settled
+by any column fact — this is a genuine MUTUAL fixpoint, the first in the tau layer.
+
+**What is already in place.** The term exists and is pinned by `rfl`
+(`inst_cupod_sys_dupoc`, and `inst_dupoc_sys_cupod` from the other side); the
+system's `get?` and `sysClose` steps reduce definitionally; `PlaysProof.sysStep`
+lets S read a component; and `Base/Loeb`'s `mutual_pblt_engine_id` consumes exactly
+the shape this cycle produces — two cross-implications `□A → B`, `□B → A` — which
+is why §8c predicted the pairwise engines would suffice here and the heavier
+`vector2_full_pblt_engine` would not be needed.
+
+**What is NOT yet proven** (deliberately recorded rather than papered over): the two
+cross-implications themselves, i.e. the `sysStep`-mediated analogues of
+`quine_loeb_premise` for a TWO-component system. They need S to read one component's
+source through `sysClose` and conclude about the other — the binder's version of
+`botSearchStep`, which currently has no `.sys`-aware twin. Until those land, the
+`.cupod ↔ .dupoc` bits stay open and the columns below take them as HYPOTHESES,
+exactly as the Dupoc quine bit was taken as a hypothesis before its Löb chain
+closed.
+
+The honest reading of the milestone: the WALL is broken (the term exists, evaluates,
+and is readable by S); the MATHEMATICS of what the 2-cycle settles on is the next
+piece of work. -/
+
 end PD.Tau

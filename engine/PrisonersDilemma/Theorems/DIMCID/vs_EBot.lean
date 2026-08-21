@@ -81,7 +81,8 @@ theorem de_botcoop_no_provable_forbidden (k : Nat) :
   no_provable_tailTo_unreadable _ _ _
     (fun n hA => de_botcoop_consequent_not_provable k n (.atom hA))
     (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [CooperateBot] at h)
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ |
+          ⟨_, _, h⟩) <;> simp [CooperateBot] at h)
     (by intro L h
         cases L with
         | nil => simp [searchPlug, CooperateBot] at h
@@ -168,7 +169,7 @@ theorem de_ebot_guard_not_provable (k : Nat) (hk : dimcidEThresh k) :
   set S : Formula → Prop := fun φ =>
     φ = .plays EBot (DIMCID k) Action.D ∨
     φ = .plays (DIMCID k) (.bot DefectBot) Action.C with hS
-  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     k _ hp le_rfl ?_
   · rintro φ (rfl | rfl)
     · exact ⟨_, _, _, rfl⟩
@@ -242,11 +243,15 @@ theorem de_ebot_guard_not_provable (k : Nat) (hk : dimcidEThresh k) :
       | elseL g P' Q' c' q =>
           simp only [plug2, DIMCID, Prog.search.injEq] at hme
           exact absurd hme.2.1 (by simp)
+  · -- hbotsys: no census member is a `.bot`-wrapped system reference
+    rintro me oppo c (h | h) defs i hme <;>
+      · injection h with h1 h2 h3
+        subst h1
+        simp [DIMCID, EBot] at hme
   · refine ⟨Or.inl rfl, ?_⟩
     intro hcontra
     simp only [hS] at hcontra
     rcases hcontra with h | h <;> simp [EBot, DIMCID] at h
-
 theorem de_proofSearch_false_ebot (k : Nat) (hk : dimcidEThresh k) :
     proofSearch k
       ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.D)).subst

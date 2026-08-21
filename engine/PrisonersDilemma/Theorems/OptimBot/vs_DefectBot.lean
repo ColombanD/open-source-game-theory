@@ -158,7 +158,6 @@ theorem od_D_provable_at_stagger :
     · (try simp only [numCost, Formula.size]); omega
   have hpfk : Pf KS φ := Pf_mono hpf (by omega)
   exact (proofSearch_spec KS φ).2 hpfk
-
 /-- The failed rungs: "DefectBot cooperates with OptimBot" is false, hence its
     guard search fails at every budget (soundness). -/
 theorem od_ps_false_defC (k K B : Nat) :

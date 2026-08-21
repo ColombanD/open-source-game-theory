@@ -554,6 +554,17 @@ theorem Pf.transpose {k : Nat} {φ : Formula} (h : Pf k φ) : Pf k φ.transpose 
         rw [← Formula.size_transpose] at hle
         simp only [Formula.transpose, Prog.transpose, Formula.subst_transpose] at hle ⊢
         exact Pf.botSearchStep g ψ.transpose a.swap b.swap _ opponent.transpose rfl hle)
+    -- botSysSearchStep: τ̂ descends into system members, so the transposed component
+    -- sits at the same index (`get?_transpose`) and its guard closes with the
+    -- transposed system (`sysClose_transpose`)
+    (fun defs i g ψ a b me opponent hme hget hle => by
+        subst hme
+        rw [← Formula.size_transpose] at hle
+        simp only [Formula.transpose, Prog.transpose, Formula.subst_transpose,
+          Formula.sysClose_transpose] at hle ⊢
+        exact Pf.botSysSearchStep defs.transpose i g ψ.transpose a.swap b.swap _
+          opponent.transpose rfl
+          (by simpa [Prog.transpose] using ProgList.get?_transpose defs i _ hget) hle)
     -- iteBranchSearch_t
     (fun g z a' c0 c1 ψ q me opponent hme hle => by
         subst hme

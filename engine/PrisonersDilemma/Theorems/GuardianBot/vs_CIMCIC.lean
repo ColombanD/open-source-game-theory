@@ -81,7 +81,7 @@ theorem gc_no_provable_tail (k : Nat) :
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (GuardianBot k) (CIMCIC k) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -142,7 +142,12 @@ theorem gc_no_provable_tail (k : Nat) :
         obtain ⟨rfl, -, -, -⟩ := hme
         simp only [layersCost, layerCost, c_node]
         omega
-
+  · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [CIMCIC] at hme | simp [CooperateBot] at hme | simp [GuardianBot] at hme | simp at hme | simp_all)
 /-- CIMCIC's guard vs GuardianBot is unprovable at budget k (spine tail is the
     floor-killed C-play; the antecedent is a different atom). -/
 theorem gc_cimcic_guard_not_provable (k : Nat) :

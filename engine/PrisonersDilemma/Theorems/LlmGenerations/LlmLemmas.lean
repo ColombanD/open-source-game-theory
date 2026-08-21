@@ -91,6 +91,11 @@ theorem wv_budget_census (k : Nat) (S : Prog → Prog → Prop)
       intro _hK
       rw [WV_impl, WV_box]; intro hbox; rw [WV_plays]
       exact Or.inr ((Pf_sound k' _ (Pf.botSearchStep g ψ a b me opponent hme hle)) hbox)
+  | botSysSearchStep k' defs i g ψ a b me opponent hme hget hle =>
+      intro _hK
+      rw [WV_impl, WV_box]; intro hbox; rw [WV_plays]
+      exact Or.inr ((Pf_sound k' _
+        (Pf.botSysSearchStep defs i g ψ a b me opponent hme hget hle)) hbox)
   | iteBranchSearch_t k' g z a' c0 c1 ψ q me opponent hme hle =>
       intro _hK
       rw [WV_impl, WV_impl, WV_box]; intro hprobe hbox; rw [WV_plays]

@@ -42,7 +42,7 @@ theorem gvp_prudent_atom_kill (k K : Nat) (hK : K ≤ k) :
 theorem gvp_no_Pf_prudent_D (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K ≤ k)
     (ht : TailTo (.plays (PrudentBot k) (.bot CooperateBot) .D) φ) : False := by
   refine no_provable_tailToS_floor k (· = .plays (PrudentBot k) (.bot CooperateBot) .D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl; exact gvp_prudent_atom_kill k K' hK'
   · rintro me oppo c heq g ψ b hme
@@ -132,7 +132,12 @@ theorem gvp_no_Pf_prudent_D (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K �
         obtain ⟨rfl, -, -, -⟩ := hme
         simp only [layersCost, layerCost, c_node]
         omega
-
+  · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [CooperateBot] at hme | simp [DefectBot] at hme | simp [GuardianBot] at hme | simp [PrudentBot] at hme | simp at hme | simp_all)
 theorem gvp_guardian_guard_false (k : Nat) :
     proofSearch k (.plays (PrudentBot k) (.bot CooperateBot) .D) = false := by
   cases h : proofSearch k (.plays (PrudentBot k) (.bot CooperateBot) .D) with
@@ -156,7 +161,7 @@ theorem pvg_guardian_atom_kill (k K : Nat) (hK : K ≤ k) :
 theorem pvg_no_Pf_guardian_C (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K ≤ k)
     (ht : TailTo (.plays (GuardianBot k) (PrudentBot k) .C) φ) : False := by
   refine no_provable_tailToS_floor k (· = .plays (GuardianBot k) (PrudentBot k) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl; exact pvg_guardian_atom_kill k K' hK'
   · rintro me oppo c heq g ψ b hme
@@ -221,7 +226,12 @@ theorem pvg_no_Pf_guardian_C (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K �
         obtain ⟨rfl, -, -, -⟩ := hme
         simp only [layersCost, layerCost, c_node]
         omega
-
+  · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [CooperateBot] at hme | simp [DefectBot] at hme | simp [GuardianBot] at hme | simp [PrudentBot] at hme | simp at hme | simp_all)
 theorem pvg_prudent_guard_false (k : Nat) :
     proofSearch k (.plays (GuardianBot k) (PrudentBot k) .C) = false := by
   cases h : proofSearch k (.plays (GuardianBot k) (PrudentBot k) .C) with

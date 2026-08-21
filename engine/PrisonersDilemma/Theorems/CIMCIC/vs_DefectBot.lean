@@ -43,7 +43,8 @@ theorem cimcic_no_provable_forbidden (k : Nat) :
   no_provable_tailTo_unreadable _ _ _
     (fun n hA => cimcic_consequent_not_provable k n (.atom hA))
     (by rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩) <;> simp [DefectBot] at h)
+          ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ |
+          ⟨_, _, h⟩) <;> simp [DefectBot] at h)
     (by intro L h
         cases L with
         | nil => simp [searchPlug, DefectBot] at h

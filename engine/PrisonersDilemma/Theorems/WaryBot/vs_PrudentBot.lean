@@ -99,7 +99,7 @@ theorem waryPrudent_no_provable_C_tail (k : Nat) :
       TailTo (.plays (WaryBot k) (PrudentBot k) .C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (WaryBot k) (PrudentBot k) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ rfl; exact ⟨_, _, _, rfl⟩
   · rintro K hK φ rfl hA
     cases hA with
@@ -165,7 +165,12 @@ theorem waryPrudent_no_provable_C_tail (k : Nat) :
     | elseL g P' Q' c' q =>
         simp only [plug2, WaryBot, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
-
+  · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i hme
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [DefectBot] at hme | simp [PrudentBot] at hme | simp [WaryBot] at hme | simp at hme | simp_all)
 theorem proofSearch_false_prudent_wary (k : Nat) :
     proofSearch k (.plays (WaryBot k) (PrudentBot k) .C) = false := by
   cases h : proofSearch k (.plays (WaryBot k) (PrudentBot k) .C) with

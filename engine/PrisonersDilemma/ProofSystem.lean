@@ -456,6 +456,28 @@ search finite). -/
         (hme : me = .bot (.search g ψ (.const a) (.const b))) :
         (Formula.impl (.box g (ψ.subst me opponent)) (.plays me opponent a)).size ≤ k →
         Pf k (.impl (.box g (ψ.subst me opponent)) (.plays me opponent a))
+    /-- **S reads a SYSTEM COMPONENT that is a `.search`** — the `.sys` twin of
+        `botSearchStep` (2026-08-20, the mutual-fixpoint milestone).
+
+        `me = .bot (.sys defs i)` whose component `i` is `.search g ψ (.const a)
+        (.const b)`: evaluating `me` unwraps the `.bot`, looks the component up, and
+        closes it one level with `sysClose defs` — so the guard S must read is
+        `(ψ.sysClose defs).subst me opponent`, and firing it yields the then-action
+        `a`. Sound for exactly the reason `botSearchStep` is, with `sysClose`
+        inserted where `eval`'s `.sys` arm puts it.
+
+        **This is the rule the 2-cycle needs.** For an entangled pair, component 0's
+        guard mentions `.selfIdx 1`, which `sysClose` turns into `.sys defs 1` — the
+        PARTNER. So the conclusion is literally "□(partner plays …) → I play …", one
+        of the two cross-implications `mutual_pblt_engine_id` consumes. -/
+    | botSysSearchStep (defs : ProgList) (i : Nat) (g : Nat) (ψ : Formula)
+        (a b : Action) (me opponent : Prog)
+        (hme : me = .bot (.sys defs i))
+        (hget : defs.get? i = some (.search g ψ (.const a) (.const b))) :
+        (Formula.impl (.box g ((ψ.sysClose defs).subst me opponent))
+                      (.plays me opponent a)).size ≤ k →
+        Pf k (.impl (.box g ((ψ.sysClose defs).subst me opponent))
+                    (.plays me opponent a))
     /-- S can read a `.ite` whose **then-branch is itself a `.search`** — the PrudentBot shape.
         Fuses the `.ite` guard reading and the inner `.search` reading into one sound, in-frame
         rule, concluding the Löb-shaped `□_g ψ' → me plays c0` once the guard fires.
@@ -739,6 +761,13 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
         (hme : me = .bot (.search g ψ (.const a) (.const b)))
         (hle : (Formula.impl (.box g (ψ.subst me opponent)) (.plays me opponent a)).size ≤ k),
         motive k _ (.botSearchStep g ψ a b me opponent hme hle))
+    (botSysSearchStep : ∀ (k : Nat) (defs : ProgList) (i g : Nat) (ψ : Formula)
+        (a b : Action) (me opponent : Prog)
+        (hme : me = .bot (.sys defs i))
+        (hget : defs.get? i = some (.search g ψ (.const a) (.const b)))
+        (hle : (Formula.impl (.box g ((ψ.sysClose defs).subst me opponent))
+                             (.plays me opponent a)).size ≤ k),
+        motive k _ (.botSysSearchStep defs i g ψ a b me opponent hme hget hle))
     (iteBranchSearch_t : ∀ (k g : Nat) (z : Prog) (a' c0 c1 : Action) (ψ : Formula)
         (q me opponent : Prog)
         (hme : me = .ite (.sim .opp (.bot z)) a' (.search g ψ (.const c0) (.const c1)) q)
@@ -875,6 +904,8 @@ theorem Pf.induct (motive : (k : Nat) → (φ : Formula) → Pf k φ → Prop)
     (fun {k} me p q opponent a hme hle => simStep k me p q opponent a hme hle)
     (fun {k} me p q opponent a hme hle => botSimStep k me p q opponent a hme hle)
     (fun {k} g ψ a b me opponent hme hle => botSearchStep k g ψ a b me opponent hme hle)
+    (fun {k} defs i g ψ a b me opponent hme hget hle =>
+      botSysSearchStep k defs i g ψ a b me opponent hme hget hle)
     (fun {k} g z a' c0 c1 ψ q me opponent hme hle =>
       iteBranchSearch_t k g z a' c0 c1 ψ q me opponent hme hle)
     (fun {k} k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk hle ih =>
@@ -1027,7 +1058,7 @@ theorem PlaysProof.induct
     -- VoteAllPlay arms (motive `True`): nil, cons
     trivial (fun _ _ _ _ => trivial)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-    ?_ ?_
+    ?_ ?_ ?_
     h <;>
   · intros; trivial
 
@@ -1053,6 +1084,8 @@ theorem Pf_mono : ∀ {k₁ : Nat} {φ : Formula}, Pf k₁ φ →
       exact .botSimStep me p q opponent a hme (Nat.le_trans hle hk)
   | botSearchStep g ψ a b me opponent hme hle =>
       exact .botSearchStep g ψ a b me opponent hme (Nat.le_trans hle hk)
+  | botSysSearchStep defs i g ψ a b me opponent hme hget hle =>
+      exact .botSysSearchStep defs i g ψ a b me opponent hme hget (Nat.le_trans hle hk)
   | iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle =>
       exact .iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme (Nat.le_trans hle hk)
   | eqRefl p hle => exact .eqRefl p (Nat.le_trans hle hk)

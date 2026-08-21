@@ -221,7 +221,6 @@ theorem pf_WV (k : Nat) : ∀ {K : Nat} {φ : Formula},
     · exact hF.elim
   · exact fun p q oppo h => SP.simL p q oppo h
   · exact fun p q oppo h => SP.botSimL p q oppo h
-
 /-- The DIMCID guard against CupodTrollBot is unprovable at every budget. -/
 theorem dimcid_ctb_guard_not_provable (k K : Nat) :
     ¬ Pf K (.impl (.plays (DIMCID k) (CupodTrollBot k) Action.C)
