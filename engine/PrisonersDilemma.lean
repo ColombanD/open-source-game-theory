@@ -83,6 +83,8 @@ import PrisonersDilemma.Theorems.CIMCIC.vs_CooperateBot
 import PrisonersDilemma.Theorems.CIMCIC.vs_DBot
 import PrisonersDilemma.Theorems.CIMCIC.vs_DefectBot
 import PrisonersDilemma.Theorems.CIMCIC.vs_EBot
+import PrisonersDilemma.Theorems.CIMCIC.vs_CupodBot
+import PrisonersDilemma.Theorems.CIMCIC.vs_OBot
 import PrisonersDilemma.Theorems.CIMCIC.vs_TitForTatBot
 
 import PrisonersDilemma.Theorems.DIMCID.vs_CooperateBot
@@ -96,6 +98,7 @@ import PrisonersDilemma.Theorems.JustBot.vs_DBot
 import PrisonersDilemma.Theorems.JustBot.vs_DefectBot
 import PrisonersDilemma.Theorems.JustBot.vs_DupocBot
 import PrisonersDilemma.Theorems.JustBot.vs_EBot
+import PrisonersDilemma.Theorems.JustBot.vs_CupodBot
 import PrisonersDilemma.Theorems.JustBot.vs_JustBot
 import PrisonersDilemma.Theorems.JustBot.vs_OBot
 import PrisonersDilemma.Theorems.JustBot.vs_PrudentBot

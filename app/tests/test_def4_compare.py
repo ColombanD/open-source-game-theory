@@ -217,21 +217,13 @@ def test_whitelist_is_exactly_the_recorded_cells() -> None:
     }
 
 
-# Base CIMCIC↔OBot is the ONE unproven base pair the CIMCIC lift consults on the
-# Def-3 side (the OBot two-watch census exists at the TAU shapes —
-# `no_provable_twoTestD_cimcic_C` — but not yet at the base shapes). Same value the
-# enlarged-zoo stipulations carry; drop when the base theorems land.
-CIMCIC_OBOT_STIPULATION: dict[tuple[str, str], tuple[str, str]] = {
-    ("CIMCIC", "OBot"): ("D", "D"),
-}
-
-
 def test_bit_coincidence_full_zoo() -> None:
-    """All 144 template cells against the base matrix (total modulo the one
-    stipulated CIMCIC↔OBot pair): the five whitelisted Mirror-truncation and
-    prover-modality divergences remain the only ones — the entire CIMCIC row and
-    column COINCIDE with the base cells, including the mutual-Löb DupocBot cell."""
-    matrix = load_tau_matrix(FULL_BOTS, hypothetical_cells=CIMCIC_OBOT_STIPULATION)
+    """All 144 template cells against the TOTAL base matrix (the last unproven
+    pair, CIMCIC↔OBot, became `outcome_CIMCIC_vs_OBot` on 2026-08-21): the five
+    whitelisted Mirror-truncation and prover-modality divergences remain the only
+    ones — the entire CIMCIC row and column COINCIDE with the base cells,
+    including the mutual-Löb DupocBot cell."""
+    matrix = load_tau_matrix(FULL_BOTS)
     coin = bit_coincidence(matrix)
     assert len(coin.cells) == 144
     assert coin.passed, coin.unexpected

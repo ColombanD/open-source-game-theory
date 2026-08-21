@@ -28,14 +28,6 @@ pair = ["PrudentBot", "CupodBot"]
 reason = "CupodBot-family search×search matchup — no forcing rule known."
 
 [[open]]
-pair = ["JustBot", "CupodBot"]
-reason = "CupodBot-family search×search matchup — no forcing rule known."
-
-[[open]]
-pair = ["CIMCIC", "CupodBot"]
-reason = "CupodBot-family search×search matchup — no forcing rule known."
-
-[[open]]
 pair = ["DIMCID", "DupocBot"]
 reason = "DupocBot-family search×search matchup — no forcing rule known."
 
@@ -72,10 +64,6 @@ reason = "Floor proven; large-k is OPEN on BOTH sides."
 
 [[open]]
 pair = ["DIMCID", "CupodBot"]
-reason = "Confirmed via app UI (agent verdict: open_blocked)."
-
-[[open]]
-pair = ["CIMCIC", "OBot"]
 reason = "Confirmed via app UI (agent verdict: open_blocked)."
 
 [[open]]

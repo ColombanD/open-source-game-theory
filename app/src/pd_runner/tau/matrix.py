@@ -190,15 +190,20 @@ ENLARGED_SUB_ZOO: tuple[str, ...] = tuple(
 # a proven cell, so a stale entry fails loudly, not silently.
 ENLARGED_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {
     **CUPOD_STIPULATIONS,
-    ("JustBot", "CupodBot"): ("D", "C"),
-    ("CIMCIC", "CupodBot"): ("C", "C"),
-    ("CIMCIC", "OBot"): ("D", "D"),
     ("DIMCID", "CupodBot"): ("D", "D"),
     ("DIMCID", "DupocBot"): ("D", "D"),
     # DIMCID vs CupodTrollBot was stipulated (C, C) here until 2026-08-04, when
     # `llm_outcome_DIMCID_vs_CupodTrollBot` landed proving exactly that. The
     # entry is gone rather than kept-and-ignored: the loader raises on a
     # stipulation shadowing a proven cell, which is how this was caught.
+    # 2026-08-21: THREE more entries fell to theorems, all predicted by the tau
+    # layer's entangled closures — `outcome_JustBot_vs_CupodBot = (D, C)` (as
+    # stipulated), `outcome_CIMCIC_vs_OBot = (D, D)` (as stipulated), and
+    # `outcome_CIMCIC_vs_CupodBot = (D, C)` — which FALSIFIED the (C, C) this
+    # table had guessed: the (C, C) fixpoint is provability-inconsistent (Cupod's
+    # trust is an else-play at every budget, so CIMCIC's search can never cite
+    # it). Enlarged-zoo analyses run before this date were conditional on a
+    # wrong cell.
 }
 
 

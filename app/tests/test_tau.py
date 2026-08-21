@@ -264,31 +264,26 @@ def test_cupodtrollbot_split_is_earned_not_stipulated() -> None:
         assert all("CupodTrollBot" not in g for g in behavioral_twins(m))
 
 
-def test_justbot_split_depends_on_the_stipulation() -> None:
-    """The DupocBot/JustBot split is an ARTIFACT of the JustBot stipulation.
-
-    Over the full zoo (JustBot included), DupocBot's action against CupodBot is
-    PROVEN since 2026-08-20 (the red cell: D), so admitting CupodBot separates
-    the pair exactly when the still-stipulated JustBot cell assigns JustBot a
-    different action against CupodBot. Half of the assignments split them, half
-    do not — so no result should rest on it.
-    """
-    import itertools
-
+def test_justbot_dupoc_twins_survive_cupod() -> None:
+    """HISTORY: the DupocBot/JustBot split used to be an ARTIFACT of the JustBot
+    stipulation (half the assignments of the then-open JustBot-vs-CupodBot cell
+    split the pair, half did not — the previous version of this test measured
+    exactly that coin flip). `outcome_JustBot_vs_CupodBot` (2026-08-21, the value
+    PREDICTED by the tau layer's entangled closure) resolved it: JustBot defects
+    against CupodBot exactly as DupocBot does, so admitting CupodBot never
+    separates the pair — under every assignment of the one remaining hole
+    (PrudentBot vs CupodBot)."""
     bots = tuple(sorted(FULL_CERTIFIED_SUB_ZOO + ("CupodBot",)))
-    holes = (("CupodBot", "JustBot"), ("CupodBot", "PrudentBot"))
     values = [("C", "C"), ("C", "D"), ("D", "C"), ("D", "D")]
 
-    split = 0
-    for combo in itertools.product(values, repeat=2):
-        m = load_tau_matrix(bots=bots, hypothetical_cells=dict(zip(holes, combo)))
+    for combo in values:
+        m = load_tau_matrix(
+            bots=bots, hypothetical_cells={("CupodBot", "PrudentBot"): combo}
+        )
         groups = behavioral_twins(m)
-        if all({"DupocBot", "JustBot"} - set(g) for g in groups):
-            split += 1
+        assert any({"DupocBot", "JustBot"} <= set(g) for g in groups)
         # CooperateBot/LegibleBot survive every assignment — irreducibly twinned.
         assert any({"CooperateBot", "LegibleBot"} <= set(g) for g in groups)
-
-    assert split == 8  # exactly half: a coin flip on an arbitrary choice
 
 
 # ---------------------------------------------------------------- signal ----

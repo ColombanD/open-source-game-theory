@@ -35,7 +35,7 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
     (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .cupod T)) (.bot (inst (tauZoo k) .cupod T))
               (inst (tauZoo k) .cupod T) = some (cupodRow T) :=
-  let bCu := ps_probeD_inst_cupod hk hkk h6 h10 hquine
+  let bCu := ps_probeD_inst_cupod hk hquine
   fun T => match T with
   | .coop       => searchProbeD_plays_C _ _ (bCu .coop)
   | .defect     => searchProbeD_plays_D _ _ (bCu .defect)
