@@ -27,13 +27,14 @@ def tftPfRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .D
   | .cupodTroll => .D
+  | .cimcic     => .C
 
 /-- The row's witness: every entry is a prove-stage on the δ_C prover column. -/
 theorem tftPfRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .tftPf T)) (.bot (inst (tauZoo k) .tftPf T))
               (inst (tauZoo k) .tftPf T) = some (tftPfRow T) :=
-  let bC := ps_probe_inst_coop hk hkk h6 h10
+  let bC := ps_probe_inst_coop hk hkk h6 h10 hL hcg
   fun T => match T with
   | .coop     => searchProbe_plays_C _ _ (bC .coop)
   | .defect   => searchProbe_plays_D _ _ (bC .defect)
@@ -47,25 +48,26 @@ theorem tftPfRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
   | .dbot     => searchProbe_plays_D _ _ (bC .dbot)
   | .cupod      => searchProbe_plays_D _ _ (bC .cupod)
   | .cupodTroll => searchProbe_plays_D _ _ (bC .cupodTroll)
+  | .cimcic     => searchProbe_plays_C _ _ (bC .cimcic)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
 theorem tftPfBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (w : Tmpl → Nat) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .tftPf w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C)] :=
   vecOf_bits (tauZoo k) .tftPf w tftPfRow tauOrder
-    fun T _ => tftPfRow_plays hk hkk h6 h10 T
+    fun T _ => tftPfRow_plays hk hkk h6 h10 hL hcg T
 
 /-- **τ(TitForTatBot), prover** — boundary `θ ≤ pfMass` (Guardian excluded). -/
 theorem tauTFTPf_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ pfMass w → ∃ N, play N (TauBotZ k .tftPf w θ) opponent = some .C)
     ∧ (¬ θ ≤ pfMass w → ∃ N, play N (TauBotZ k .tftPf w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .tftPf w tftPfRow tauOrder θ opponent
-    (fun T _ => tftPfRow_plays hk hkk h6 h10 T)
+    (fun T _ => tftPfRow_plays hk hkk h6 h10 hL hcg T)
   simp only [bitMass, tauOrder, List.map, tftPfRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [pfMass] using h

@@ -113,7 +113,7 @@ theorem no_provable_botRunCascade_C (k kb : Nat) (hk : k ≤ kb) (g : Formula)
     subst h1
     cases hd <;> simp [plug2] at hme
   · -- hbotsys: the target is not a `.bot`-wrapped system reference
-    intro me oppo c hS defs i hme
+    intro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1; simp at hme
 

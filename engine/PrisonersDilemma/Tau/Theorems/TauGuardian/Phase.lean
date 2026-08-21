@@ -29,15 +29,16 @@ def guardianRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .C
   | .cupodTroll => .C
+  | .cimcic     => .C
 
 /-- The row's witness: every entry is the punish-probe (`test = .D` prove-stage)
     fed the guard column's bits. -/
 theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .guardian T))
               (.bot (inst (tauZoo k) .guardian T))
               (inst (tauZoo k) .guardian T) = some (guardianRow T) :=
-  let gB := ps_probeD_inst_coop hk hkk h6 h10
+  let gB := ps_probeD_inst_coop hk hkk h6 h10 hL
   fun T => match T with
   | .coop     => searchProbeD_plays_C _ _ (gB .coop)
   | .defect   => searchProbeD_plays_D _ _ (gB .defect)
@@ -51,25 +52,26 @@ theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (
   | .dbot     => searchProbeD_plays_D _ _ (gB .dbot)
   | .cupod      => searchProbeD_plays_C _ _ (gB .cupod)
   | .cupodTroll => searchProbeD_plays_C _ _ (gB .cupodTroll)
+  | .cimcic     => searchProbeD_plays_C _ _ (gB .cimcic)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
 theorem guardianBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (w : Tmpl → Nat) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .guardian w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C), (w .cimcic, .C)] :=
   vecOf_bits (tauZoo k) .guardian w guardianRow tauOrder
-    fun T _ => guardianRow_plays hk hkk h6 h10 T
+    fun T _ => guardianRow_plays hk hkk h6 h10 hL hcg T
 
 /-- **τ(GuardianBot)** — boundary `θ ≤ guardMass`. -/
 theorem tauGuardian_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ guardMass w → ∃ N, play N (TauBotZ k .guardian w θ) opponent = some .C)
     ∧ (¬ θ ≤ guardMass w → ∃ N, play N (TauBotZ k .guardian w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .guardian w guardianRow tauOrder θ opponent
-    (fun T _ => guardianRow_plays hk hkk h6 h10 T)
+    (fun T _ => guardianRow_plays hk hkk h6 h10 hL hcg T)
   simp only [bitMass, tauOrder, List.map, guardianRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [guardMass, simMass] using h

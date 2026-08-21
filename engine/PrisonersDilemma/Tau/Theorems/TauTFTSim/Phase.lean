@@ -28,14 +28,15 @@ def tftSimRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .C
   | .cupodTroll => .C
+  | .cimcic     => .C
 
 /-- The row's witness: every entry is a run-stage copy of the δ_C behavioral
     column. -/
 theorem tftSimRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .tftSim T)) (.bot (inst (tauZoo k) .tftSim T))
               (inst (tauZoo k) .tftSim T) = some (tftSimRow T) :=
-  let pC := inst_coop_plays hk hkk h6 h10
+  let pC := inst_coop_plays hk hkk h6 h10 hL
   fun T => match T with
   | .coop     => simCopy_plays _ _ (pC .coop)
   | .defect   => simCopy_plays _ _ (pC .defect)
@@ -49,25 +50,26 @@ theorem tftSimRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6
   | .dbot     => simCopy_plays _ _ (pC .dbot)
   | .cupod      => simCopy_plays _ _ (pC .cupod)
   | .cupodTroll => simCopy_plays _ _ (pC .cupodTroll)
+  | .cimcic     => simCopy_plays _ _ (pC .cimcic)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
 theorem tftSimBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (w : Tmpl → Nat) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .tftSim w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C), (w .cimcic, .C)] :=
   vecOf_bits (tauZoo k) .tftSim w tftSimRow tauOrder
-    fun T _ => tftSimRow_plays hk hkk h6 h10 T
+    fun T _ => tftSimRow_plays hk hkk h6 h10 hL hcg T
 
 /-- **τ(TitForTatBot), behavioral** — boundary `θ ≤ simMass` (incl. Guardian). -/
 theorem tauTFTSim_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ simMass w → ∃ N, play N (TauBotZ k .tftSim w θ) opponent = some .C)
     ∧ (¬ θ ≤ simMass w → ∃ N, play N (TauBotZ k .tftSim w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .tftSim w tftSimRow tauOrder θ opponent
-    (fun T _ => tftSimRow_plays hk hkk h6 h10 T)
+    (fun T _ => tftSimRow_plays hk hkk h6 h10 hL hcg T)
   simp only [bitMass, tauOrder, List.map, tftSimRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [simMass] using h

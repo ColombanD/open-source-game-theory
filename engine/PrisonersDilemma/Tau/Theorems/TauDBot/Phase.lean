@@ -53,6 +53,7 @@ theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k) :
   | .cupodTroll => -- CupodTroll TRUSTS the defector (its identity check fails), and
                    -- trust-toward-a-defector is the punisher's fire condition
                    dbot_watch_fires_of_trust .cupodTroll (pD .cupodTroll)
+  | .cimcic     => dbot_plays_C_of_defect .cimcic (pD .cimcic)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -60,7 +61,7 @@ theorem dbotBits {k : Nat} (hk : 2 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .dbot w tauOrder)
       [(w .coop, .D), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C)] :=
   vecOf_bits (tauZoo k) .dbot w dbotRow tauOrder fun T _ => dbotRow_plays hk T
 
 /-- **τ(DBot)** — boundary `θ ≤ dbotMass` (everything but `w .coop`). -/

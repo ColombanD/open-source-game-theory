@@ -4,6 +4,7 @@ import PrisonersDilemma.Tau.Theorems.TauGuardian.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
+import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers
 
 /-!
 # Tau/Theorems/Columns — the consulted columns of the 9-template zoo
@@ -163,7 +164,8 @@ def coopColBit : Tmpl → Bool
   | _         => true
 
 theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k)
+    (hcg : c_guard k + 20 ≤ k) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .coop)) = coopColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
@@ -177,6 +179,7 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dbot     => ps_probe_false_of_plays_D k dbot_coop_plays_D
   | .cupod      => ps_probe_inst_cupod_coop_false (le_refl k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
+  | .cimcic     => ps_probe_cimcic_coop hL (by omega)
 
 /-! ## The δ_D column (prover bits) -/
 
@@ -203,6 +206,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k) :
   | .dbot     => (proofSearch_spec _ _).2 (pf_probe_dbotConstD hk6)
   | .cupod      => ps_probe_false_of_plays_D k (cupod_defect_plays_D hk)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
+  | .cimcic     => ps_probe_false_of_plays_D k cimcic_defect_plays_D
 
 /-! ## The δ_L column (prover bits) — TauDupoc's AND TauJust's question -/
 
@@ -222,10 +226,11 @@ def dupocColBit : Tmpl → Bool
 theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hk7 : c_guard k + 7 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
-    -- the ENTANGLED bit: genuinely open (see `TauCupod/Helpers`, "the 2-cycle is not
-    -- Löbian"), so it enters as a hypothesis exactly like the quine bit above
-    (hcupodDupoc : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc))
-      = dupocColBit .cupod) :
+    -- the CIMCIC×Dupoc entangled bit is LÖB-GATED (`ps_probe_inst_cimcic_dupoc`),
+    -- so it enters as a hypothesis exactly like the quine bit above; the
+    -- Cupod×Dupoc one is CLOSED BY THE FLOOR (a theorem, used in the `.cupod` arm)
+    (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc))
+      = dupocColBit .cimcic) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .dupoc)) = dupocColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
@@ -237,8 +242,9 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .obot     => ps_probe_false_of_plays_D k (obot_dupoc_plays_D hk)
   | .guardian => ps_probe_guardCell_false (le_refl k) _
   | .dbot     => ps_probe_inst_dbot_dupoc_false (le_refl k)
-  | .cupod      => hcupodDupoc
+  | .cupod      => ps_probe_inst_cupod_dupoc_false (le_refl k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
+  | .cimcic     => hcim
 
 /-! ## The GUARD column (probeD bits) — TauGuardian's question -/
 
@@ -254,7 +260,7 @@ def guardColBit : Tmpl → Bool
   | _       => false
 
 theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, proofSearch k (probeD (inst (tauZoo k) T .coop)) = guardColBit T
   | .coop     => ps_probeD_false_of_plays_C k ⟨1, rfl⟩
   | .defect   => ps_probeD_constD hk
@@ -273,6 +279,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dbot     => ps_probeD_dbotConstC h6
   | .cupod      => ps_probeD_false_of_plays_C k cupod_coop_plays_C
   | .cupodTroll => ps_probeD_inst_cupodTroll_false k _
+  | .cimcic     => ps_probeD_false_of_plays_C k (cimcic_coop_plays_C hL)
 
 /-! ## The δ_Cu GUARD column (probeD bits) — τ(Cupod)'s question
 
@@ -297,14 +304,13 @@ def cupodColBit : Tmpl → Bool
 
 theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (h6 : 6 ≤ k) (h10 : 10 ≤ k)
-    (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
-    (hdc : proofSearch k (probeD (inst (tauZoo k) .dupoc .cupod)) = cupodColBit .dupoc) :
+    (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true) :
     ∀ T, proofSearch k (probeD (inst (tauZoo k) T .cupod)) = cupodColBit T
   | .coop       => ps_probeD_false_of_plays_C k ⟨1, rfl⟩
   | .defect     => ps_probeD_constD hk
   | .tftSim     => ps_probeD_false_of_plays_C k (simCopy_plays _ _ cupod_coop_plays_C)
   | .tftPf      => ps_probeD_searchProbe_false (le_refl k) _
-  | .dupoc      => hdc
+  | .dupoc      => ps_probeD_inst_dupoc_cupod_false (le_refl k)
   | .ebot       => ps_probeD_false_of_plays_C k
       (simWatchC_falls _ _ (cupod_defect_plays_D hk)
         (simWatchC_fires _ _ cupod_coop_plays_C))
@@ -323,6 +329,7 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k
       (dbot_plays_C_of_defect .cupod (cupod_defect_plays_D hk))
   | .cupodTroll => ps_probeD_false_of_plays_C k (cupodTroll_plays_C .cupod)
   | .cupod      => hquine
+  | .cimcic     => ps_probeD_inst_cimcic_cupod_false (le_refl k)
 
 /-! ## The behavioral δ_C column (true plays) — TauTFTSim's and TauOBot's read -/
 
@@ -338,7 +345,7 @@ def coopColPlay : Tmpl → Action
   | _       => .C
 
 theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k) :
+    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) T .coop)) (.bot (inst (tauZoo k) T .coop))
               (inst (tauZoo k) T .coop) = some (coopColPlay T)
   | .coop     => ⟨1, rfl⟩
@@ -353,6 +360,7 @@ theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dbot     => dbot_coop_plays_D
   | .cupod      => cupod_coop_plays_C
   | .cupodTroll => cupodTroll_plays_C _
+  | .cimcic     => cimcic_coop_plays_C hL
 
 /-! ## The behavioral δ_D column (true plays) — TauOBot's second watch -/
 
@@ -379,5 +387,6 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k) :
   | .dbot     => dbot_plays_C_of_defect .defect ⟨1, rfl⟩
   | .cupod      => cupod_defect_plays_D hk
   | .cupodTroll => cupodTroll_plays_C _
+  | .cimcic     => cimcic_defect_plays_D
 
 end PD.Tau

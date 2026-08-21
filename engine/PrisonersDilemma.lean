@@ -212,4 +212,6 @@ import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Phase
 import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupod.Phase
+import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers
+import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Phase
 import PrisonersDilemma.Tau.Theorems.Matrix

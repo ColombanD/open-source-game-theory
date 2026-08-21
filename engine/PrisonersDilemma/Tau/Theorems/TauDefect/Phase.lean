@@ -23,7 +23,7 @@ theorem defectBits (k : Nat) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .defect w tauOrder)
       [(w .coop, .D), (w .defect, .D), (w .tftSim, .D), (w .tftPf, .D),
        (w .dupoc, .D), (w .ebot, .D), (w .just, .D), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .D)] :=
   vecOf_bits (tauZoo k) .defect w defectRow tauOrder fun T _ => defectRow_plays k T
 
 /-- **τ(DefectBot)**: zero mass — cooperates only at θ = 0. -/
