@@ -327,19 +327,46 @@ CIMCIC's floor cells did.
   `□(their guard) → they play D`, which is a THEOREM of `S` and harmless (with
   their guard false, `□` never becomes provable, so it never detaches).
 
-**What the next attempt needs** — one of:
+**Why no hypothesis refinement can fix this — MACHINE-CHECKED (2026-08-21).**
+The obvious repair (parameterize `hbotsearch` by a guard-falsity premise, the
+way `no_provable_botTwoWatchD` threads one through its `ite_t` arm) is
+UNSOUND, because the census STATEMENT is already false for this shape. The
+witness, verified in Lean:
 
-1. an ATOM-level exclusion kernel (`¬ AtomProvable n φ` closed under the bridge
-   rules only), which is the honest granularity for a readable player whose guard
-   is refutable; or
-2. a `TailToS` class that also forbids the box-antecedent, letting the guarded
-   invariant absorb `botSearchStep`; or
-3. a guard-falsity-parameterized variant of `no_provable_tailToS_floor` whose
-   `hbotsearch` slot receives the premise and kills it by soundness.
+    TailTo (.plays (.bot (.search k g (.const a) (.const b))) O a)
+      (.impl (.box k (g.subst … O)) (.plays (.bot (.search k g …)) O a))
 
-Route 3 is the smallest change and matches how `no_provable_botTwoWatchD`
-(`TauCupod/Helpers`) already threads a guard-falsity hypothesis through an
-`ite_t` arm — the same trick, one constructor over.
+holds — the antecedent is a `.box`, never equal to the plays-atom target, so
+`TailTo`'s guard clause is satisfied and the tail matches. `botSearchStep`
+therefore PROVES a formula that `TailTo`-tails at our target (its size side
+condition is `O(log k) ≤ k`, comfortably met), so "no `Pf` tails at this atom"
+is FALSE. No amount of extra hypotheses on the kernel's slots can rescue a
+false conclusion; the fix must change what is being claimed.
+
+**What the next attempt actually needs** — the tail predicate must forbid BOX
+antecedents, so that the search-reading arms die structurally:
+
+    TailToA A S (.impl a ψ) = TailToA A S ψ ∧ ¬ TailToS S a ∧ A a
+    TailToA A S φ           = S φ
+
+with the DIMCID caller taking `A a := ¬ ∃ n φ, a = .box n φ` and every existing
+caller taking `A := fun _ => True` (recovering `TailToS` exactly, via a bridge
+lemma). Every implication-concluding arm of the kernel then gains one `A ant`
+obligation — `trivial` for the existing 25 call sites, fatal for
+`botSearchStep`/`searchBranch`/`iteBranchSearch_t`/`searchThenSearch_t` under
+the box-forbidding instance.
+
+That is a refactor of `no_provable_tailToS_floor` itself (31 arms, ~235 lines)
+plus its 25 call sites — the trusted core of every floor result in the library.
+It is worth doing when a SECOND bot needs it (WaryBot's `.neg` guard is the
+likely candidate), not for one row.
+
+**The detachment note, for the record.** The implication `botSearchStep` proves
+is harmless: with the partner's guard false and `S` sound, `□(their guard)` is
+never provable, so it never detaches. DIMCID's own guard — whose antecedent is
+a plays-atom, not a box — remains plausibly unprovable. The bit values below
+are almost certainly right; they are simply not certifiable with the present
+census.
 
 **Not a bistability.** The cell is NOT open in the `JustBot`-vs-`MirrorBot` sense:
 the second fixed point ("DIMCID defects, so its antecedent is refutable, so the
