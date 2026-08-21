@@ -298,8 +298,7 @@ def cupodColBit : Tmpl → Bool
 theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (h6 : 6 ≤ k) (h10 : 10 ≤ k)
     (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
-    (hdc : proofSearch k (probeD (inst (tauZoo k) .dupoc .cupod)) = cupodColBit .dupoc)
-    (hjc : proofSearch k (probeD (inst (tauZoo k) .just .cupod)) = cupodColBit .just) :
+    (hdc : proofSearch k (probeD (inst (tauZoo k) .dupoc .cupod)) = cupodColBit .dupoc) :
     ∀ T, proofSearch k (probeD (inst (tauZoo k) T .cupod)) = cupodColBit T
   | .coop       => ps_probeD_false_of_plays_C k ⟨1, rfl⟩
   | .defect     => ps_probeD_constD hk
@@ -309,7 +308,9 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k
   | .ebot       => ps_probeD_false_of_plays_C k
       (simWatchC_falls _ _ (cupod_defect_plays_D hk)
         (simWatchC_fires _ _ cupod_coop_plays_C))
-  | .just       => hjc
+  -- τ(Just)'s PLAY here is open (it probes the entangled cell), but its DEFECTION
+  -- bit is false regardless: the D is an else-play, floored either way
+  | .just       => ps_probeD_searchProbe_false (le_refl k) _
   -- OBot truly plays D here (its SECOND watch catches Cupod punishing the
   -- defector), but the certificate must first certify watch 1 FALLING — i.e. that
   -- Cupod trusts the cooperator — and THAT is floor-priced

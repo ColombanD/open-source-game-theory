@@ -54,8 +54,8 @@ EXPECTED_ACTIONS: dict[str, str] = {
     "TauOBot": "CDDDDDDDDDCD",
     "TauGuardian": "CDCCCDCCCDCC",
     "TauDBot": "DCCCCCCCCDDC",
-    "TauCupodTroll": "CCCCCCCCCCC?",
-    "TauCupod": "CDCC?C?CCC?D",
+    "TauCupodTroll": "CCCCCCCCCCCC",
+    "TauCupod": "CDCC?C?CCCCD",
 }
 
 
@@ -79,21 +79,20 @@ def test_open_cells_are_exactly_the_entangled_pair() -> None:
 
 def test_kernel_check_passes() -> None:
     check = kernel_check()
-    assert check.checked == 129
+    assert check.checked == 140
     assert check.passed, check.mismatches
 
 
-def test_kernel_scanner_finds_all_stated_rows() -> None:
-    """Every template EXCEPT TauCupod has a stated bit row. Cupod's contains the
-    entangled (open) cell, so its `VoteBits` theorem is still to be written — the
-    scanner reports it as unstated rather than inventing a value."""
+def test_kernel_scanner_finds_all_rows() -> None:
+    """All 12 rows are stated (TauCupod's landed 2026-08-21, its open `.dupoc` slot
+    carried as a hypothesis with the canonical value)."""
     tables = kernel_bits()
-    assert set(tables) == set(TAU_ORDER) - {"cupod"}
+    assert set(tables) == set(TAU_ORDER)
 
 
-def test_kernel_check_reports_cupod_as_unstated() -> None:
+def test_kernel_check_has_no_unstated_rows() -> None:
     check = kernel_check()
-    assert check.unstated == ("TauCupod",)
+    assert check.unstated == ()
     assert not check.mismatches
 
 

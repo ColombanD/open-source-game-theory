@@ -291,7 +291,14 @@ def _decide(
                 )
         else:
             X = A if st.target == SELF else st.target
-            sub = _decide(T, X, depth - 1, frozen)
+            if st.mode is Mode.PROVE_EQ:
+                # SYNTACTIC identity needs NO sub-decision — computing it eagerly
+                # was a bug (2026-08-21): it propagated EntangledCell through cells
+                # the identity test settles without ever consulting the instance
+                # (e.g. CupodTroll-at-Cupod, trivially C).
+                sub = None
+            else:
+                sub = _decide(T, X, depth - 1, frozen)
             if st.mode is Mode.PROVE_EQ:
                 # SYNTACTIC identity, not behavioral: the guard asks whether the
                 # probed instance is literally `inst(T, X)`. In this zoo the probing
