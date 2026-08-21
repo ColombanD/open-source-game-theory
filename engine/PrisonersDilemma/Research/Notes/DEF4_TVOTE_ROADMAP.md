@@ -965,6 +965,70 @@ changing what `WellFormed` quantifies over). DUE when a second zoo instantiates
 the DSL — same trigger as the §6 deviation's original debt note, now with the
 concrete component list.
 
+**THE ENTANGLED CELLS FALL (2026-08-21, evening) — the "genuinely open" verdict
+above lasted one session, and its own negative finding is what killed it.** Three
+moves, in order:
+
+1. **The wrapped-emission fidelity fix** (`2eeb39b`). `sysGo`'s self-arms emitted
+   bare `.selfIdx j` where every off-cycle guard freezes `.bot P`. Uniformity
+   demanded `.bot (.selfIdx j)` — and turned out to be load-bearing: with wrapped
+   references every entangled guard is a `probe`/`probeD` of the wrapped partner
+   component, exactly the shapes `botSysSearchStep` and the census kernel speak.
+   All Gate D1 peels survived as `rfl`.
+2. **THE FLOOR DECIDES anti-aligned 2-cycles.** The Löb-wall finding said the
+   cupod/dupoc implications meet at OPPOSITE actions — the flip side nobody
+   pushed: if `search_t` cannot conclude the target (action mismatch with the
+   partner's then-branch), the ONLY other route pays the partner's `search_f`
+   floor. New census `no_provable_botSysSearcherElse_tail` (the `hbotsys` kernel
+   obligation became ACTION-REFINED like `hbotsearch` — 25 mechanical call
+   sites): **both bits of an anti-aligned pair are provably FALSE, both
+   components play their defaults, and no bistability survives the cost floor.**
+   `hdc`/`hcdP`/`hcupodDupoc` — the open-cell hypotheses — became theorems with
+   exactly their canonical values: the tau image of the red cell is
+   `(D, C)`, PROVEN. The JustBot-vs-MirrorBot analogy was wrong in an
+   instructive way: bistability needs the self-fulfilling branch to be
+   affordable, and inside `.sys` it never is unless the actions align.
+3. **MUTUAL LÖB THROUGH THE BINDER — CIMCIC lands as the 13th template**
+   (`ebaa425`, `2eeb39b`, and the total-zoo commit). Where the actions DO align
+   the opposite happens: `botSysSearchStep` yields precisely the two
+   box-implications `mutual_pblt_engine_id` consumes, and the base
+   `llm_outcome_CIMCIC_vs_DupocBot` fixpoint transfers to `.sys` verbatim —
+   `outcome_TauCIMCIC_vs_TauDupoc = (C, C)`, the FIRST entangled cell resolved
+   by cooperation. CIMCIC's off-cycle row is the first `.impl`-guard row: TRUE
+   bits by `weakenImpl` (+ `implRefl` on the diagonal — after subst the guard is
+   literally `φ → φ`), FALSE bits by the existing censuses THROUGH the
+   implication (TailTo walks to the consequent), plus two new budget-free
+   censuses (`no_provable_botConst_tail`, `no_provable_twoTestD_cimcic_C`).
+   τ(CIMCIC)'s row comes out IDENTICAL to τ(Dupoc)'s: conditional cooperation
+   and Löbian cooperation coincide on this zoo, by different mechanisms.
+
+**The layer is now TOTAL and hypothesis-free: 13 templates, 169 stated cells, no
+open cells; every phase theorem unconditional modulo its `∃k₂` Löb gate.** The
+δ_Cu-column and TauCupod-phase debts above are PAID. The Python mirror computes
+the entangled cells (`_resolve_entangled`: alignment → mutual Löb, else floor);
+`open_cells()` is empty; kernel check 169/169; Def-3 coincidence 144 cells with
+the same five whitelisted divergences.
+
+The alignment rule, for the record (it is the entire decision procedure): an
+entangled pair cooperates-by-Löb iff each member's guard target (its `test`, or
+`C` for a `proveImpl` consequent) equals the OTHER member's fire action;
+otherwise both bits are floor-false and both members play their defaults.
+
+**Debt from this milestone:** base `CIMCIC ↔ OBot` is the one base pair the
+Def-3 comparison consults without a theorem (stipulated `(D, D)` in the
+comparison and the enlarged zoo) — the two-watch C-target census exists at the
+tau shapes (`no_provable_twoTestD_cimcic_C`) and wants transplanting to the base
+OBot shape (`.sim .opp (.bot z)` watches). The system-level τ-argument (relating
+`.sys defs i` to `.sys defs.transpose i`) remains open but is no longer needed
+for any current cell.
+
+**Remaining unlifted: DIMCID** (CIMCIC's twin — the same machinery with polarity
+flips; expected cheap), **WaryBot** (`.neg` fragment), **MirrorBot** (raw `.sim`
++ the non-termination whitelist decision), **LegibleBot** (`.box`),
+**PrudentBot/OptimBot** (nested/self-side shapes).
+
+---
+
 ---
 
 ## 8c. SCOPING NOTE 2026-08-20 — the `.sys` revival for Def-4 self-probers
