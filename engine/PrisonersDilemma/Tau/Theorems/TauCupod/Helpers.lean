@@ -20,6 +20,8 @@ proves DEFECTION and punishes; it trusts by default. Three shapes to handle:
   the 2-cycle are in scope.
 -/
 
+set_option maxHeartbeats 2000000
+
 open PD PD.BaseTheorems
 
 namespace PD.Tau
@@ -144,32 +146,83 @@ theorem cupod_defect_plays_D {k : Nat} (hk : 2 ≤ k) :
       (inst (tauZoo k) .cupod .defect) = some Action.D :=
   searchProbeD_plays_D _ _ (ps_probeD_constD hk)
 
-/-! ## THE ENTANGLED CELL — the open frontier of this milestone
+/-! ## THE ENTANGLED CELL — the 2-cycle, closed by MUTUAL bounded Löb
 
 `inst .cupod .dupoc` is the 2-member system: component 0 (Cupod-seeing-Dupoc) fires
 on proving component 1 DEFECTS; component 1 (Dupoc-seeing-Cupod) fires on proving
-component 0 COOPERATES. Each bit is a claim about the other, so neither is settled
-by any column fact — this is a genuine MUTUAL fixpoint, the first in the tau layer.
+component 0 COOPERATES. Neither bit is settled by any column fact — this is a
+genuine MUTUAL fixpoint, the first in the tau layer, and the reason the whole `.sys`
+milestone exists.
 
-**What is already in place.** The term exists and is pinned by `rfl`
-(`inst_cupod_sys_dupoc`, and `inst_dupoc_sys_cupod` from the other side); the
-system's `get?` and `sysClose` steps reduce definitionally; `PlaysProof.sysStep`
-lets S read a component; and `Base/Loeb`'s `mutual_pblt_engine_id` consumes exactly
-the shape this cycle produces — two cross-implications `□A → B`, `□B → A` — which
-is why §8c predicted the pairwise engines would suffice here and the heavier
-`vector2_full_pblt_engine` would not be needed.
+The two cross-implications come from `Pf.botSysSearchStep`, which reads one
+component through `sysClose` and concludes about its partner. `sysClose` sends
+component 0's guard `.plays (.selfIdx 1) (.selfIdx 1) .D` to
+`.plays (.sys defs 1) (.sys defs 1) .D` — literally "the partner defects" — so the
+rule's conclusion is exactly the shape `mutual_pblt_engine_id` consumes. -/
 
-**What is NOT yet proven** (deliberately recorded rather than papered over): the two
-cross-implications themselves, i.e. the `sysStep`-mediated analogues of
-`quine_loeb_premise` for a TWO-component system. They need S to read one component's
-source through `sysClose` and conclude about the other — the binder's version of
-`botSearchStep`, which currently has no `.sys`-aware twin. Until those land, the
-`.cupod ↔ .dupoc` bits stay open and the columns below take them as HYPOTHESES,
-exactly as the Dupoc quine bit was taken as a hypothesis before its Löb chain
-closed.
+/-- The pair's system, named once. -/
+def cdSys (k : Nat) : ProgList :=
+  .cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.D) (.const .D) (.const .C))
+  (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.C) (.const .C) (.const .D)) .nil)
 
-The honest reading of the milestone: the WALL is broken (the term exists, evaluates,
-and is readable by S); the MATHEMATICS of what the 2-cycle settles on is the next
-piece of work. -/
+theorem inst_cupod_dupoc_eq (k : Nat) :
+    inst (tauZoo k) .cupod .dupoc = .sys (cdSys k) 0 := rfl
+
+theorem cdSys_get0 (k : Nat) :
+    (cdSys k).get? 0
+      = some (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.D) (.const .D) (.const .C)) :=
+  rfl
+
+theorem cdSys_get1 (k : Nat) :
+    (cdSys k).get? 1
+      = some (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.C) (.const .C) (.const .D)) :=
+  rfl
+
+/-! ### The cross-implications, stated GENERICALLY in the system
+
+**Proof-craft note (2026-08-21), the trap this milestone added.** Stating these with
+the concrete `cdSys k` inlined makes the elaborator diverge: `.sys defs i` carries
+its whole system, so `isDefEq` on the size side-condition unfolds the self-reference
+without bound (a 10× heartbeat raise changed nothing — it is non-termination, not
+slowness). The fix is to quantify over an ARBITRARY `defs` with the right component
+shapes, supplied as `get?` hypotheses. `cdSys` is then only ever passed as an opaque
+argument, never unfolded inside a unification. -/
+
+/-- The closed form of a system component's self-referential guard: `sysClose` sends
+    `.selfIdx j` to `.sys defs j`, and `subst` cannot touch a `.bot`-frozen system. -/
+theorem sysClose_subst_selfIdx (defs : ProgList) (j : Nat) (a : Action) (me o : Prog) :
+    ((Formula.plays (.selfIdx j) (.selfIdx j) a).sysClose defs).subst me o
+      = .plays (.sys defs j) (.sys defs j) a := by
+  simp [Formula.sysClose, Prog.sysClose, Formula.subst, Prog.subst]
+
+/-- **Cross-implication 1** (generic): a system whose component `i` is a punish-shaped
+    searcher on component `j` gives "□(j defects) → i defects". -/
+theorem sys_cross_D (defs : ProgList) (i j : Nat) (k K : Nat)
+    (hget : defs.get? i = some (.search k (.plays (.selfIdx j) (.selfIdx j) Action.D)
+              (.const .D) (.const .C)))
+    (hK : (Formula.impl (.box k (.plays (.sys defs j) (.sys defs j) Action.D))
+            (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D)).size ≤ K) :
+    Pf K (.impl (.box k (.plays (.sys defs j) (.sys defs j) Action.D))
+                (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D)) := by
+  have h := Pf.botSysSearchStep defs i k (.plays (.selfIdx j) (.selfIdx j) Action.D) .D .C
+    (.bot (.sys defs i)) (.bot (.sys defs i)) rfl hget
+    (by simpa [sysClose_subst_selfIdx] using hK)
+  rw [sysClose_subst_selfIdx] at h
+  exact h
+
+/-- **Cross-implication 2** (generic): a reward-shaped searcher gives
+    "□(j cooperates) → i cooperates". -/
+theorem sys_cross_C (defs : ProgList) (i j : Nat) (k K : Nat)
+    (hget : defs.get? i = some (.search k (.plays (.selfIdx j) (.selfIdx j) Action.C)
+              (.const .C) (.const .D)))
+    (hK : (Formula.impl (.box k (.plays (.sys defs j) (.sys defs j) Action.C))
+            (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C)).size ≤ K) :
+    Pf K (.impl (.box k (.plays (.sys defs j) (.sys defs j) Action.C))
+                (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C)) := by
+  have h := Pf.botSysSearchStep defs i k (.plays (.selfIdx j) (.selfIdx j) Action.C) .C .D
+    (.bot (.sys defs i)) (.bot (.sys defs i)) rfl hget
+    (by simpa [sysClose_subst_selfIdx] using hK)
+  rw [sysClose_subst_selfIdx] at h
+  exact h
 
 end PD.Tau
