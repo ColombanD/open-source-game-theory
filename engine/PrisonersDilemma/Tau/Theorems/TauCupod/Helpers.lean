@@ -147,39 +147,68 @@ theorem cupod_defect_plays_D {k : Nat} (hk : 2 ≤ k) :
       (inst (tauZoo k) .cupod .defect) = some Action.D :=
   searchProbeD_plays_D _ _ (ps_probeD_constD hk)
 
-/-! ## THE ENTANGLED CELL — the 2-cycle, closed by MUTUAL bounded Löb
+/-! ## THE ENTANGLED CELL — the 2-cycle, CLOSED BY THE FLOOR (2026-08-21)
 
 `inst .cupod .dupoc` is the 2-member system: component 0 (Cupod-seeing-Dupoc) fires
 on proving component 1 DEFECTS; component 1 (Dupoc-seeing-Cupod) fires on proving
-component 0 COOPERATES. Neither bit is settled by any column fact — this is a
-genuine MUTUAL fixpoint, the first in the tau layer, and the reason the whole `.sys`
-milestone exists.
+component 0 COOPERATES. Since the wrapped-emission fix each component freezes its
+partner exactly as off-cycle guards freeze instances — `.bot (.selfIdx j)`, closing
+to `.bot (.sys defs j)` — so component 0's closed guard is `probeD` of the wrapped
+Dupoc component and component 1's is `probe` of the wrapped Cupod component.
 
-The two cross-implications come from `Pf.botSysSearchStep`, which reads one
-component through `sysClose` and concludes about its partner. `sysClose` sends
-component 0's guard `.plays (.selfIdx 1) (.selfIdx 1) .D` to
-`.plays (.sys defs 1) (.sys defs 1) .D` — literally "the partner defects" — so the
-rule's conclusion is exactly the shape `mutual_pblt_engine_id` consumes. -/
+**Neither guard is provable — a THEOREM, not a hypothesis**
+(`ps_botSys_mismatch_false`, riding `no_provable_botSysSearcherElse_tail`): each
+guard's target action MISMATCHES its subject component's then-action (Cupod wants
+the trusting Dupoc component to defect; Dupoc wants the punishing Cupod component
+to cooperate), so `search_t` cannot conclude it and the only other route prices in
+the partner's `search_f` floor. The 2-cycle bounded Löb cannot close (opposite
+actions — see the cross-implication record below), the floor DECIDES: both
+components play their defaults — Cupod trusts (C), Dupoc defects (D) — the tau
+image of the base red cell `outcome_DupocBot_vs_CupodBot = (D, C)`. What entered
+the phase theorems as hypotheses (`hdc`, `hcdP`, and the δ_L column's
+`hcupodDupoc`) is now supplied by the four closure theorems below. -/
 
-/-- The pair's system, named once. -/
+/-- The pair's system, named once (the `inst .cupod .dupoc` orientation). -/
 def cdSys (k : Nat) : ProgList :=
-  .cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.D) (.const .D) (.const .C))
-  (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.C) (.const .C) (.const .D)) .nil)
+  .cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
+    (.const .D) (.const .C))
+  (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
+    (.const .C) (.const .D)) .nil)
 
 theorem inst_cupod_dupoc_eq (k : Nat) :
     inst (tauZoo k) .cupod .dupoc = .sys (cdSys k) 0 := rfl
 
 theorem cdSys_get0 (k : Nat) :
     (cdSys k).get? 0
-      = some (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.D) (.const .D) (.const .C)) :=
-  rfl
+      = some (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
+          (.const .D) (.const .C)) := rfl
 
 theorem cdSys_get1 (k : Nat) :
     (cdSys k).get? 1
-      = some (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.C) (.const .C) (.const .D)) :=
-  rfl
+      = some (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
+          (.const .C) (.const .D)) := rfl
 
-/-! ### The cross-implications, stated GENERICALLY in the system
+/-- The other orientation's system, `inst .dupoc .cupod`: Dupoc at the head. -/
+def dcSys (k : Nat) : ProgList :=
+  .cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
+    (.const .C) (.const .D))
+  (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
+    (.const .D) (.const .C)) .nil)
+
+theorem inst_dupoc_cupod_eq (k : Nat) :
+    inst (tauZoo k) .dupoc .cupod = .sys (dcSys k) 0 := rfl
+
+theorem dcSys_get0 (k : Nat) :
+    (dcSys k).get? 0
+      = some (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
+          (.const .C) (.const .D)) := rfl
+
+theorem dcSys_get1 (k : Nat) :
+    (dcSys k).get? 1
+      = some (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
+          (.const .D) (.const .C)) := rfl
+
+/-! ### The cross-implications — the record of WHY Löb cannot close this pair
 
 **Proof-craft note (2026-08-21), the trap this milestone added.** Stating these with
 the concrete `cdSys k` inlined makes the elaborator diverge: `.sys defs i` carries
@@ -187,44 +216,99 @@ its whole system, so `isDefEq` on the size side-condition unfolds the self-refer
 without bound (a 10× heartbeat raise changed nothing — it is non-termination, not
 slowness). The fix is to quantify over an ARBITRARY `defs` with the right component
 shapes, supplied as `get?` hypotheses. `cdSys` is then only ever passed as an opaque
-argument, never unfolded inside a unification. -/
+argument, never unfolded inside a unification.
 
-/-- The closed form of a system component's self-referential guard: `sysClose` sends
-    `.selfIdx j` to `.sys defs j`, and `subst` cannot touch a `.bot`-frozen system. -/
-theorem sysClose_subst_selfIdx (defs : ProgList) (j : Nat) (a : Action) (me o : Prog) :
-    ((Formula.plays (.selfIdx j) (.selfIdx j) a).sysClose defs).subst me o
-      = .plays (.sys defs j) (.sys defs j) a := by
-  simp [Formula.sysClose, Prog.sysClose, Formula.subst, Prog.subst]
+The two implications `botSysSearchStep` yields for this pair are
+
+    □(component 1 self-plays D) → component 0 plays D     (`sys_cross_D`)
+    □(component 0 self-plays C) → component 1 plays C     (`sys_cross_C`)
+
+whose consequents meet the other's antecedent at OPPOSITE ACTIONS, so no cycle
+closes and `mutual_pblt_engine_id` has nothing to consume. (Contrast τ(CIMCIC) at
+Dupoc, where the actions ALIGN and the mutual engine fires — `TauCIMCIC/Helpers`.)
+That negative fact is what leaves the floor in charge here. -/
 
 /-- **Cross-implication 1** (generic): a system whose component `i` is a punish-shaped
-    searcher on component `j` gives "□(j defects) → i defects". -/
+    searcher on component `j` gives "□(j self-plays D) → i plays D". -/
 theorem sys_cross_D (defs : ProgList) (i j : Nat) (k K : Nat)
-    (hget : defs.get? i = some (.search k (.plays (.selfIdx j) (.selfIdx j) Action.D)
+    (hget : defs.get? i = some (.search k
+              (.plays (.bot (.selfIdx j)) (.bot (.selfIdx j)) Action.D)
               (.const .D) (.const .C)))
-    (hK : (Formula.impl (.box k (.plays (.sys defs j) (.sys defs j) Action.D))
+    (hK : (Formula.impl (.box k (.plays (.bot (.sys defs j)) (.bot (.sys defs j)) Action.D))
             (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D)).size ≤ K) :
-    Pf K (.impl (.box k (.plays (.sys defs j) (.sys defs j) Action.D))
+    Pf K (.impl (.box k (.plays (.bot (.sys defs j)) (.bot (.sys defs j)) Action.D))
                 (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D)) := by
-  have h := Pf.botSysSearchStep defs i k (.plays (.selfIdx j) (.selfIdx j) Action.D) .D .C
+  have h := Pf.botSysSearchStep defs i k
+    (.plays (.bot (.selfIdx j)) (.bot (.selfIdx j)) Action.D) .D .C
     (.bot (.sys defs i)) (.bot (.sys defs i)) rfl hget
-    (by simpa [sysClose_subst_selfIdx] using hK)
-  rw [sysClose_subst_selfIdx] at h
+    (by simpa [sysClose_subst_botSelfIdx] using hK)
+  rw [sysClose_subst_botSelfIdx] at h
   exact h
 
 /-- **Cross-implication 2** (generic): a reward-shaped searcher gives
-    "□(j cooperates) → i cooperates". -/
+    "□(j self-plays C) → i plays C". -/
 theorem sys_cross_C (defs : ProgList) (i j : Nat) (k K : Nat)
-    (hget : defs.get? i = some (.search k (.plays (.selfIdx j) (.selfIdx j) Action.C)
+    (hget : defs.get? i = some (.search k
+              (.plays (.bot (.selfIdx j)) (.bot (.selfIdx j)) Action.C)
               (.const .C) (.const .D)))
-    (hK : (Formula.impl (.box k (.plays (.sys defs j) (.sys defs j) Action.C))
+    (hK : (Formula.impl (.box k (.plays (.bot (.sys defs j)) (.bot (.sys defs j)) Action.C))
             (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C)).size ≤ K) :
-    Pf K (.impl (.box k (.plays (.sys defs j) (.sys defs j) Action.C))
+    Pf K (.impl (.box k (.plays (.bot (.sys defs j)) (.bot (.sys defs j)) Action.C))
                 (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C)) := by
-  have h := Pf.botSysSearchStep defs i k (.plays (.selfIdx j) (.selfIdx j) Action.C) .C .D
+  have h := Pf.botSysSearchStep defs i k
+    (.plays (.bot (.selfIdx j)) (.bot (.selfIdx j)) Action.C) .C .D
     (.bot (.sys defs i)) (.bot (.sys defs i)) rfl hget
-    (by simpa [sysClose_subst_selfIdx] using hK)
-  rw [sysClose_subst_selfIdx] at h
+    (by simpa [sysClose_subst_botSelfIdx] using hK)
+  rw [sysClose_subst_botSelfIdx] at h
   exact h
+
+/-! ### The closure: all four entangled facts, by the floor -/
+
+/-- δ_L's `.cupod` bit: `probe (inst .cupod .dupoc)` is FALSE at every budget ≤ k —
+    the probed head component is the PUNISHER (then-action D ≠ C). Was the δ_L
+    column's `hcupodDupoc` hypothesis. -/
+theorem ps_probe_inst_cupod_dupoc_false {k K : Nat} (hK : K ≤ k) :
+    proofSearch K (probe (inst (tauZoo k) .cupod .dupoc)) = false := by
+  rw [show probe (inst (tauZoo k) .cupod .dupoc)
+        = .plays (.bot (.sys (cdSys k) 0)) (.bot (.sys (cdSys k) 0)) Action.C
+      from by rw [probe, inst_cupod_dupoc_eq]]
+  exact ps_botSys_mismatch_false hK (cdSys k) 0 k _ .D .C _ (by decide)
+    (Nat.le_refl k) (cdSys_get0 k) _
+
+/-- δ_Cu's `.dupoc` bit: `probeD (inst .dupoc .cupod)` is FALSE — the probed head
+    component is the TRUSTER (then-action C ≠ D). Was the `hdc` hypothesis. -/
+theorem ps_probeD_inst_dupoc_cupod_false {k K : Nat} (hK : K ≤ k) :
+    proofSearch K (probeD (inst (tauZoo k) .dupoc .cupod)) = false := by
+  rw [show probeD (inst (tauZoo k) .dupoc .cupod)
+        = .plays (.bot (.sys (dcSys k) 0)) (.bot (.sys (dcSys k) 0)) Action.D
+      from by rw [probeD, inst_dupoc_cupod_eq]]
+  exact ps_botSys_mismatch_false hK (dcSys k) 0 k _ .C .D _ (by decide)
+    (Nat.le_refl k) (dcSys_get0 k) _
+
+/-- **τ(Cupod) at Dupoc TRUSTS**: its punish-guard aims D at the trusting Dupoc
+    component — floor-false — so the else-constant C runs. Was `hcdP`. -/
+theorem cupod_dupoc_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dupoc))
+      (.bot (inst (tauZoo k) .cupod .dupoc)) (inst (tauZoo k) .cupod .dupoc)
+      = some Action.C := by
+  rw [inst_cupod_dupoc_eq]
+  refine sysSearcher_plays_else _ _ (cdSys_get0 k) ?_
+  rw [sysClose_subst_botSelfIdx]
+  exact ps_botSys_mismatch_false (Nat.le_refl k) (cdSys k) 1 k _ .C .D _ (by decide)
+    (Nat.le_refl k) (cdSys_get1 k) _
+
+/-- **τ(Dupoc) at Cupod DEFECTS**: its trust-guard aims C at the punishing Cupod
+    component — floor-false — so the else-constant D runs. The tau image of the red
+    cell's D. -/
+theorem dupoc_cupod_plays_D {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .cupod))
+      (.bot (inst (tauZoo k) .dupoc .cupod)) (inst (tauZoo k) .dupoc .cupod)
+      = some Action.D := by
+  rw [inst_dupoc_cupod_eq]
+  refine sysSearcher_plays_else _ _ (dcSys_get0 k) ?_
+  rw [sysClose_subst_botSelfIdx]
+  exact ps_botSys_mismatch_false (Nat.le_refl k) (dcSys k) 1 k _ .D .C _ (by decide)
+    (Nat.le_refl k) (dcSys_get1 k) _
 
 /-- τ(Cupod)'s TRUST is floor-priced: it reaches C through a FAILED punish-search,
     so the certificate pays `search_f` and no prover can cite it. The third floor bot
@@ -266,45 +350,25 @@ theorem pp_cupod_defect_D {k : Nat} (hk : 2 ≤ k) :
   rw [inst_cupod_peel_defect k]
   exact PlaysProof.search_t (pf_probeD_constD hk) PlaysProof.const
 
-/-! ## THE ENTANGLED CELL, RESOLVED BY τ — the tau image of the red cell
+/-! ## The τ̂ structure of the pair — kept for the record
 
-**The 2-cycle is not Löbian**, and that is a real obstruction, not a gap: the two
-implications `sys_cross_D`/`sys_cross_C` yield are
+The two orientations' systems are literal τ̂-images of each other, exactly as
+`DupocBot`/`CupodBot` are in the base library. The base red-cell TRANSPORT argument
+still does not transfer (τ̂ maps the system to a DIFFERENT system — the cell in the
+other order — so `eval_det`'s "same program, two actions" move has no analogue);
+the closure above goes through the floor instead, and gets the SAME values the
+base cell has. -/
 
-    □(component 1 plays D) → component 0 plays D      (Cupod punishes a provable defector)
-    □(component 0 plays C) → component 1 plays C      (Dupoc rewards a provable cooperator)
+/-- τ̂ maps the `.cupod .dupoc` system to the `.dupoc .cupod` one: the pair is one
+    object seen from two sides. -/
+theorem cdSys_transpose (k : Nat) : (cdSys k).transpose = dcSys k := by
+  simp [cdSys, dcSys, ProgList.transpose, Prog.transpose, Formula.transpose,
+    Action.swap]
 
-whose consequents meet the other's antecedent at OPPOSITE ACTIONS, so no cycle
-closes and `mutual_pblt_engine_id` has nothing to consume. Dupoc's own diagonal is
-self-SUPPORTING (hence Löbian); a mixed pair's would have to be self-DEFEATING, and
-bounded Löb cannot manufacture one from an anti-monotone loop.
-
-**But the cell is not open** — the base library's red-cell route settles it without
-any fixpoint (`Theorems/DupocBot/vs_CupodBot.lean`, Thm 1.14): the two components
-are each other's τ̂-transposes, so `Pf.transpose` maps either guard's proof onto the
-other AT THE SAME BUDGET. If either were provable, one component would have to play
-both `C` and `D`; `eval` determinism refutes that. Both guards fail, both components
-take their defaults.
-
-This is exactly why `Pf.transpose` needed its `sysStep` arm (2026-08-20): the
-argument uses ONLY soundness and τ-closure — never the constructor list — so it is
-robust to any τ-symmetric extension of `S`, and it needed the binder to be inside
-that closure. -/
-
-/-- τ̂ maps the pair's system to ITSELF with the two components swapped. -/
-theorem cdSys_transpose (k : Nat) :
-    (cdSys k).transpose
-      = .cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.C) (.const .C) (.const .D))
-        (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.D)
-          (.const .D) (.const .C)) .nil) := by
-  simp [cdSys, ProgList.transpose, Prog.transpose, Formula.transpose, Action.swap]
-
-/-- The transposed system IS the cell in the other order: `inst .dupoc .cupod`. So
-    the two entangled cells are literal τ-images of each other, exactly as
-    `DupocBot`/`CupodBot` are in the base library. -/
+/-- The transposed system IS the cell in the other order. -/
 theorem inst_dupoc_cupod_transpose (k : Nat) :
     inst (tauZoo k) .dupoc .cupod = .sys ((cdSys k).transpose) 0 := by
-  rw [inst_dupoc_sys_cupod k, cdSys_transpose k]
+  rw [inst_dupoc_cupod_eq, cdSys_transpose]
 
 /-! ## OBot's cell at Cupod — an EMBEDDED floor, `probeD` side
 
@@ -412,7 +476,7 @@ theorem no_provable_botTwoWatchD (k kb : Nat) (hk : k ≤ kb) (g : Formula)
     injection hS with h1 h2 h3
     subst h1
     cases hd <;> simp [plug2] at hme
-  · intro me oppo c hS defs i hme
+  · intro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1; simp at hme
 
@@ -433,37 +497,29 @@ theorem ps_probeD_obotCupod_false {k K : Nat} (hK : K ≤ k) :
         (.bot (inst (tauZoo k) .obot .cupod))
         K _ ((proofSearch_spec _ _).1 h) hK rfl
 
-/-! ### Why the base red-cell route does NOT transfer (checked, 2026-08-21)
+/-! ### History: how this cell closed (2026-08-21)
 
-The base proof (`Theorems/DupocBot/vs_CupodBot.lean`, Thm 1.14) closes the red cell
-without any fixpoint, and the ingredients all exist here: the components ARE each
-other's τ-images (`cdSys_transpose`), `Pf.transpose` has its `sysStep` arm, and the
-transposed system is literally the cell in the other order
-(`inst_dupoc_cupod_transpose`). The argument still does not go through, for a
-structural reason worth recording.
+Three routes were tried, in order:
 
-**Base.** Dupoc and Cupod are two SEPARATE programs, and each guard names the other
-directly: `ρ₁ = "Cupod plays C vs Dupoc"`, `ρ₂ = "Dupoc plays D vs Cupod"`, with
-`τ̂(ρ₁) = ρ₂`. A proof of `ρ₁` both FIRES Dupoc's search (so Dupoc plays `C`) and
-transports to `ρ₂`, whose soundness makes Dupoc play `D`. Both conclusions are about
-**the same program**, so `eval_det` refutes them.
+1. **Mutual bounded Löb** — fails structurally: the two cross-implications meet at
+   OPPOSITE actions (see the cross-implication record above), so no cycle closes.
+   This is a real asymmetry with τ(CIMCIC)-at-Dupoc, where the actions align and
+   `mutual_pblt_engine_id` fires.
+2. **The base red-cell τ-transport** — fails structurally: in the base, the two
+   guards live on two SEPARATE programs that name each other, so a transported
+   proof lands on the SAME program and `eval_det` closes; in tau the binder makes
+   the pair ONE object and τ̂ maps it to the OTHER orientation's system
+   (`cdSys_transpose`), so there is no "same program, two actions" contradiction.
+3. **The `search_f` floor** — SUCCEEDS, and is this file's closure: precisely
+   BECAUSE route 1's actions mismatch, neither guard can be concluded by
+   `search_t` (then-action ≠ target), and every remaining route prices in the
+   partner's failed search at full budget. Both bits are provably FALSE
+   (`ps_botSys_mismatch_false`), both components play their defaults, and the tau
+   cell equals the base red cell `(D, C)` — Def 3 ≡ Def 4 holds on the entangled
+   pair as a THEOREM.
 
-**Tau.** The binder makes the pair ONE object, and each component names the other by
-INDEX. τ̂ swaps the roles IN PLACE, so it maps the system to a DIFFERENT system —
-`cdSys.transpose = inst .dupoc .cupod`, the cell in the other order. Transporting a
-proof about `cdSys` component 1 therefore yields a proof about
-`cdSys.transpose` component 1, and those are different programs (checked: their
-watched indices differ, so `(cdSys k).transpose.get? 0 ≠ (cdSys k).get? 1`). The
-base proof's closing move — "same program, two actions" — has no analogue, and
-`eval_det` does not apply.
-
-**What would be needed.** Either (a) a τ-argument at the SYSTEM level rather than
-the component level — relating `.sys defs i` to `.sys defs.transpose i` as plays of
-one object, which the current `Prog.transpose` does not give since it descends into
-members; or (b) an entirely different route to the two bits. Both are open. The
-cells therefore remain genuinely open, and the phase theorems take them as
-hypotheses — the honest state, and the same one the base library lived in before
-the τ-transposition was found.
--/
+The Löb-wall finding and the floor closure are two faces of one fact: an
+anti-aligned 2-cycle is not bistable in `S` — the cost floor forbids the
+self-fulfilling branch that would make it so. -/
 
 end PD.Tau

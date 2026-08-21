@@ -468,6 +468,67 @@ abbrev dbotMass (w : Tmpl → Nat) : Nat :=
   w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
     (w .obot + (w .guardian + w .cupod)))))))
 
+/-! ## The `.sys` toolkit — entangled cells, generic in the system (2026-08-21)
+
+The wrapped emission (`.bot (.selfIdx j)`, uniform with how off-cycle guards freeze
+`.bot P`) makes every entangled guard a `probe`/`probeD` of the wrapped partner
+component. Three generic lemmas then settle a whole class of cells:
+
+* `sysClose_subst_botSelfIdx` — the closed-substituted guard form;
+* `sysSearcher_plays_else` / `_then` — what a component actually plays;
+* `ps_botSys_mismatch_false` — **the floor decides**: a probe aimed at a component
+  whose then-action mismatches the target is FALSE at every budget up to the
+  component's own (`no_provable_botSysSearcherElse_tail`). A 2-cycle whose actions
+  do not align therefore has BOTH bits provably false — no bistability survives
+  the `search_f` floor. -/
+
+/-- `sysClose` sends a wrapped self-reference to the wrapped system, and `subst`
+    cannot touch the `.bot` freeze. -/
+theorem sysClose_subst_botSelfIdx (defs : ProgList) (j : Nat) (a : Action)
+    (me o : Prog) :
+    ((Formula.plays (.bot (.selfIdx j)) (.bot (.selfIdx j)) a).sysClose defs).subst me o
+      = .plays (.bot (.sys defs j)) (.bot (.sys defs j)) a := by
+  simp [Formula.sysClose, Prog.sysClose, Formula.subst, Prog.subst]
+
+/-- A system component that is a searcher with constant branches plays its ELSE
+    action whenever its closed guard search fails… -/
+theorem sysSearcher_plays_else {defs : ProgList} {i kb : Nat} {g : Formula}
+    {aT aE : Action} (me opp : Prog)
+    (hget : defs.get? i = some (.search kb g (.const aT) (.const aE)))
+    (hps : proofSearch kb ((g.sysClose defs).subst me opp) = false) :
+    ∃ N, eval N me opp (.sys defs i) = some aE := by
+  refine ⟨3, ?_⟩
+  rw [eval_sys_some 2 hget]
+  simp only [Prog.sysClose]
+  rw [eval, hps, if_neg (by simp)]
+  rfl
+
+/-- …and its THEN action whenever it fires. -/
+theorem sysSearcher_plays_then {defs : ProgList} {i kb : Nat} {g : Formula}
+    {aT aE : Action} (me opp : Prog)
+    (hget : defs.get? i = some (.search kb g (.const aT) (.const aE)))
+    (hps : proofSearch kb ((g.sysClose defs).subst me opp) = true) :
+    ∃ N, eval N me opp (.sys defs i) = some aT := by
+  refine ⟨3, ?_⟩
+  rw [eval_sys_some 2 hget]
+  simp only [Prog.sysClose]
+  rw [eval, hps]
+  rfl
+
+/-- **The floor decides**: a plays-atom aimed at a `.bot`-wrapped component whose
+    then-action mismatches the target action is FALSE at every budget ≤ k. -/
+theorem ps_botSys_mismatch_false {k K : Nat} (hK : K ≤ k) (defs : ProgList)
+    (i kb : Nat) (g : Formula) (aT aTgt : Action) (pE : Prog)
+    (hne : aT ≠ aTgt) (hkb : k ≤ kb)
+    (hget : defs.get? i = some (.search kb g (.const aT) pE)) (O : Prog) :
+    proofSearch K (.plays (.bot (.sys defs i)) O aTgt) = false := by
+  cases h : proofSearch K (.plays (.bot (.sys defs i)) O aTgt) with
+  | false => rfl
+  | true =>
+      exfalso
+      exact no_provable_botSysSearcherElse_tail k defs i kb g aT aTgt pE hne hkb hget O
+        K _ ((proofSearch_spec _ _).1 h) hK rfl
+
 /-! ## Shape lemmas — the `test = .D` idioms (9-zoo extension, 2026-08-18) -/
 
 /-- The constant defector PROVABLY defects. -/

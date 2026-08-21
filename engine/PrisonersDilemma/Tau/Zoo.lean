@@ -140,17 +140,17 @@ theorem inst_cupod_quine (k : Nat) : inst (tauZoo k) .cupod .cupod
     Dupoc, component 1 is Dupoc-seeing-Cupod, and each probes the other by INDEX.
     This term did not exist before the `.sys` binder. -/
 theorem inst_cupod_sys_dupoc (k : Nat) : inst (tauZoo k) .cupod .dupoc
-    = .sys (.cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.D)
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
                      (.const .D) (.const .C))
-           (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.C)
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
                      (.const .C) (.const .D)) .nil)) 0 := rfl
 
 /-- …and the same system seen from Dupoc's side: component 0 is now Dupoc-seeing-
     Cupod. The two cells share one system, with the roles of the indices swapped. -/
 theorem inst_dupoc_sys_cupod (k : Nat) : inst (tauZoo k) .dupoc .cupod
-    = .sys (.cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.C)
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
                      (.const .C) (.const .D))
-           (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.D)
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
                      (.const .D) (.const .C)) .nil)) 0 := rfl
 
 /-! ### τ(CIMCIC)'s row — the first `.impl`-guard row, three shapes (2026-08-21)
@@ -213,32 +213,32 @@ theorem inst_cimcic_quine (k : Nat) : inst (tauZoo k) .cimcic .cimcic
 
 /-- The CIMCIC↔Dupoc entangled system. -/
 theorem inst_cimcic_sys_dupoc (k : Nat) : inst (tauZoo k) .cimcic .dupoc
-    = .sys (.cons (.search k (.impl (.plays .self (.selfIdx 1) Action.C)
-                                    (.plays (.selfIdx 1) .self Action.C))
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.C))
                      (.const .C) (.const .D))
-           (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.C)
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
                      (.const .C) (.const .D)) .nil)) 0 := rfl
 
 /-- The CIMCIC↔Cupod entangled system. -/
 theorem inst_cimcic_sys_cupod (k : Nat) : inst (tauZoo k) .cimcic .cupod
-    = .sys (.cons (.search k (.impl (.plays .self (.selfIdx 1) Action.C)
-                                    (.plays (.selfIdx 1) .self Action.C))
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.C))
                      (.const .C) (.const .D))
-           (.cons (.search k (.plays (.selfIdx 0) (.selfIdx 0) Action.D)
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
                      (.const .D) (.const .C)) .nil)) 0 := rfl
 
 /-- …and the mirrored systems, seen from the partners' sides. -/
 theorem inst_dupoc_sys_cimcic (k : Nat) : inst (tauZoo k) .dupoc .cimcic
-    = .sys (.cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.C)
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
                      (.const .C) (.const .D))
-           (.cons (.search k (.impl (.plays .self (.selfIdx 0) Action.C)
-                                    (.plays (.selfIdx 0) .self Action.C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.C))
                      (.const .C) (.const .D)) .nil)) 0 := rfl
 theorem inst_cupod_sys_cimcic (k : Nat) : inst (tauZoo k) .cupod .cimcic
-    = .sys (.cons (.search k (.plays (.selfIdx 1) (.selfIdx 1) Action.D)
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
                      (.const .D) (.const .C))
-           (.cons (.search k (.impl (.plays .self (.selfIdx 0) Action.C)
-                                    (.plays (.selfIdx 0) .self Action.C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.C))
                      (.const .C) (.const .D)) .nil)) 0 := rfl
 
 /-- τ(Dupoc)'s row, OFF the diagonal: one prove-stage on the hypothesis's δ_L

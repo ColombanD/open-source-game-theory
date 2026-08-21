@@ -124,7 +124,7 @@ theorem cimcic_pb_prudence_unprovable_tail (k : Nat) :
         simp only [plug2, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
   · -- hbotsys: the target is never a `.bot`-wrapped system reference
-    rintro me oppo c hS defs i hme
+    rintro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC] at hme

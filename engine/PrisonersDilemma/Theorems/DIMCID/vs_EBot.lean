@@ -244,7 +244,7 @@ theorem de_ebot_guard_not_provable (k : Nat) (hk : dimcidEThresh k) :
           simp only [plug2, DIMCID, Prog.search.injEq] at hme
           exact absurd hme.2.1 (by simp)
   · -- hbotsys: no census member is a `.bot`-wrapped system reference
-    rintro me oppo c (h | h) defs i hme <;>
+    rintro me oppo c (h | h) defs i _ _ _ hme _ <;>
       · injection h with h1 h2 h3
         subst h1
         simp [DIMCID, EBot] at hme

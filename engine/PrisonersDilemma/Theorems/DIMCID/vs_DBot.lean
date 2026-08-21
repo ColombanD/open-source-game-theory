@@ -164,7 +164,7 @@ theorem dimcid_guard_dbot_not_provable (k : Nat) (hk : dimcidThresh k) :
           simp only [plug2, DIMCID, Prog.search.injEq] at hme
           exact absurd hme.2.1 (by simp)
   · -- hbotsys: neither census member is a `.bot`-wrapped system reference
-    rintro me oppo c (h | h) defs i hme <;>
+    rintro me oppo c (h | h) defs i _ _ _ hme _ <;>
       · injection h with h1 h2 h3
         subst h1
         simp [DIMCID, DBot] at hme

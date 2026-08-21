@@ -427,8 +427,12 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
     (hplug2 : ∀ me oppo c, S (.plays me oppo c) →
       ∀ (hd : SearchLayer2) (L : List SearchLayer2), me = plug2 (hd :: L) (.const c) →
       k < layersCost (hd :: L))
+    -- ACTION-REFINED like `hsb`/`hbotsearch` (2026-08-21): the caller learns the
+    -- member shape via `hget`, so sys-else floor censuses (then-action ≠ target) are
+    -- expressible; shape-killing callers just ignore the extra hypotheses.
     (hbotsys : ∀ me oppo c, S (.plays me oppo c) →
-      ∀ defs i, me ≠ .bot (.sys defs i)) :
+      ∀ defs i g ψ b, me = .bot (.sys defs i) →
+        defs.get? i = some (.search g ψ (.const c) (.const b)) → False) :
     ∀ K φ, Pf K φ → K ≤ k → TailToS S φ → False := by
   intro K
   induction K using Nat.strong_induction_on with
@@ -450,7 +454,7 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
         exact hbotsearch me oppo aa h1 gg psi bb hme
     | botSysSearchStep dfs ii gg psi aa bb me oppo hme hget hsz =>
         obtain ⟨h1, -⟩ := htail
-        exact hbotsys me oppo aa h1 dfs ii hme
+        exact hbotsys me oppo aa h1 dfs ii gg psi bb hme hget
     | iteBranchSearch_t gg zz aa' cc0 cc1 psi qq me oppo hme hsz =>
         -- the probe joins `S` via `hibs`, contradicting the class's `¬TailToS` probe slot
         obtain ⟨⟨h1, -⟩, hprobe⟩ := htail
@@ -629,7 +633,7 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
     subst h1; subst h3
     exact hplug2 hd L hme
   · -- hbotsys: the target player is not a `.sys` reference (hypothesis)
-    intro me oppo c hS defs i hme
+    intro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1
     exact hbotsysP defs i hme
@@ -904,9 +908,95 @@ theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : A
     subst h1
     cases hd <;> simp [plug2] at hme
   · -- hbotsys: this target is not a `.bot`-wrapped system reference
-    intro me oppo c hS defs i hme
+    intro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1; simp at hme
+
+/-- **The `search_f` floor, `.sys` edition** (2026-08-21): the else-play of a
+    `.bot`-wrapped SYSTEM REFERENCE whose component is a searcher with a mismatching
+    then-action is unprovable at every budget up to the component's own. The kill is
+    the bot-searcher one with a `sysStep` unwrap in the middle: `search_t` concludes
+    the then-action (≠ target), `search_f` carries the floor summand `kb ≥ k`; the
+    `botSysSearchStep` bridge is killed by the ACTION refinement of `hbotsys` (its
+    conclusion action is the component's then-action).
+
+    This is what CLOSES the entangled Def-4 cells: each member of a 2-cycle whose
+    target action mismatches the partner's then-action has a provably-FALSE bit, so
+    both members play their else actions — no bistability survives the floor. -/
+theorem no_provable_botSysSearcherElse_tail (k : Nat) (defs : ProgList) (i kb : Nat)
+    (g : Formula) (aT aTgt : Action) (pE : Prog)
+    (hne : aT ≠ aTgt) (hk : k ≤ kb)
+    (hget : defs.get? i = some (.search kb g (.const aT) pE)) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.bot (.sys defs i)) O aTgt) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.bot (.sys defs i)) O aTgt)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · -- the atom killer: `bot` unwraps, `sysStep` closes the component, then
+    -- `search_t` mismatches the action and `search_f` pays the floor `kb ≥ k`
+    rintro K' hK' φ' rfl hA
+    cases hA with
+    | mk hpp hn =>
+      cases hpp with
+      | bot hin =>
+        cases hin with
+        | sysStep hget2 hin2 =>
+          rw [hget] at hget2
+          injection hget2 with he
+          subst he
+          simp only [Prog.sysClose] at hin2
+          cases hin2 with
+          | search_t hProv hbr => cases hbr; exact hne rfl
+          | search_f hneg hbr => simp only [c_node] at hn; omega
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro z a' g' ψ c0 c1 q' oppo hS
+    injection hS with h1 h2 h3
+    simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g', ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd <;> simp [plug2] at hme
+  · -- hbotsys, action-refined: the SAME system member, so its then-action is `aT`;
+    -- the class fixes the conclusion action to `aTgt` — the mismatch closes it
+    intro me oppo c hS defs' i' g' ψ' b' hme hget'
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    injection hme with hsys
+    injection hsys with hdefs hi
+    subst hdefs; subst hi
+    rw [hget] at hget'
+    injection hget' with he
+    injection he with _ _ hbr _
+    injection hbr with ha
+    exact hne ha
 
 /-! ## The budget-free census for unreadable players
 

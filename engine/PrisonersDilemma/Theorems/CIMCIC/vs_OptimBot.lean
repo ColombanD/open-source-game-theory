@@ -131,7 +131,7 @@ theorem cimcic_optim_guard_B_unprov (k : Nat) :
                 cases tl2 with
                 | nil => simp [plug2] at hplug2
                 | cons hd3 tl3 => cases hd3 <;> simp [plug2] at hplug2
-  · rintro me oppo c hS defs i hme
+  · rintro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1
     cases hme
@@ -204,7 +204,7 @@ theorem cimcic_optim_G3_unprov (k : Nat) :
     | elseL g P' Q' c' q =>
         simp only [plug2, CIMCIC, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
-  · rintro me oppo c hS defs i hme
+  · rintro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1
     cases hme

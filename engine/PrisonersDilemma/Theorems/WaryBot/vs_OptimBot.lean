@@ -89,7 +89,7 @@ theorem wo_wary_C_vs_optim_unprov (k : Nat) :
         simp only [plug2, WaryBot, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
   · -- hbotsys: the census target is never a `.bot`-wrapped system reference
-    rintro me oppo c hS defs i hme
+    rintro me oppo c hS defs i _ _ _ hme _
     all_goals (try (injection hS with h1 h2 h3; subst h1))
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)

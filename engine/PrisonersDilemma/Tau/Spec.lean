@@ -109,7 +109,8 @@ def Zoo.entangled {ι : Type} [DecidableEq ι] (Z : Zoo ι) (A T : ι) : Bool :=
 mutual
 /-- One member of an entangled pair's system, compiled with the PARTNER replaced by
     an indexed pronoun. `sysGo Z fuel me partnerIdx stages d` compiles `me`'s cascade
-    where every `self`-target stage probes `.selfIdx partnerIdx` — "the other member
+    where every `self`-target stage probes `.bot (.selfIdx partnerIdx)` — frozen,
+    exactly as the off-cycle arms freeze `.bot P` — "the other member
     of my system, whoever that turns out to be" — instead of recursing into a term
     that would have to contain this one.
 
@@ -124,18 +125,18 @@ def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) :
       match st.mode, st.target with
       | .prove, .self =>
           .search Z.budget
-            (.plays (.selfIdx partnerIdx) (.selfIdx partnerIdx) st.test)
+            (.plays (.bot (.selfIdx partnerIdx)) (.bot (.selfIdx partnerIdx)) st.test)
             (.const st.fire) cont
       | .run, .self =>
-          .ite (.sim (.selfIdx partnerIdx) (.selfIdx partnerIdx)) st.test
+          .ite (.sim (.bot (.selfIdx partnerIdx)) (.bot (.selfIdx partnerIdx))) st.test
             (.const st.fire) cont
       | .proveImpl, .self =>
           .search Z.budget
-            (.impl (.plays .self (.selfIdx partnerIdx) st.test)
-                   (.plays (.selfIdx partnerIdx) .self st.test))
+            (.impl (.plays .self (.bot (.selfIdx partnerIdx)) st.test)
+                   (.plays (.bot (.selfIdx partnerIdx)) .self st.test))
             (.const st.fire) cont
       | .proveEq, .self =>
-          .search Z.budget (.eq .opp (.selfIdx partnerIdx)) (.const st.fire) cont
+          .search Z.budget (.eq .opp (.bot (.selfIdx partnerIdx))) (.const st.fire) cont
       -- third-party stages are OUTSIDE the cycle: compile them normally
       | .prove, .name B =>
           let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
