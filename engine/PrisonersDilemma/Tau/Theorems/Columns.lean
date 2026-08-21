@@ -3,6 +3,7 @@ import PrisonersDilemma.Tau.Theorems.TauEBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauGuardian.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
+import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 
 /-!
 # Tau/Theorems/Columns — the consulted columns of the 9-template zoo
@@ -153,6 +154,7 @@ theorem dbot_watch_fires_of_trust {k : Nat} (T : Tmpl)
 /-- δ_C bits. Zero rows: Defect (refutable), EBot (it EXPLOITS a cooperator), and
     GUARDIAN — the floor: its trusting C sits behind a failed punish-search. -/
 def coopColBit : Tmpl → Bool
+  | .cupod      => false
   | .cupodTroll => false
   | .defect   => false
   | .ebot     => false
@@ -173,12 +175,14 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .obot     => ps_probe_obotConstC h10
   | .guardian => ps_probe_guardCell_false (le_refl k) _
   | .dbot     => ps_probe_false_of_plays_D k dbot_coop_plays_D
+  | .cupod      => ps_probe_inst_cupod_coop_false (le_refl k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
 
 /-! ## The δ_D column (prover bits) -/
 
 /-- δ_D bits. Only the unconditional cooperator is exploitable. -/
 def defectColBit : Tmpl → Bool
+  | .cupod      => false
   | .cupodTroll => false
   | .coop => true
   | .dbot => true
@@ -197,6 +201,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k) :
   | .obot     => ps_probe_false_of_plays_D k obot_defect_plays_D
   | .guardian => ps_probe_false_of_plays_D k (guardian_defect_plays_D hk)
   | .dbot     => (proofSearch_spec _ _).2 (pf_probe_dbotConstD hk6)
+  | .cupod      => ps_probe_false_of_plays_D k (cupod_defect_plays_D hk)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
 
 /-! ## The δ_L column (prover bits) — TauDupoc's AND TauJust's question -/
@@ -205,6 +210,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k) :
     truly defects on Dupoc — the second watch sees Dupoc defect against the
     defector). The diagonal is the Löb quine, supplied as a hypothesis. -/
 def dupocColBit : Tmpl → Bool
+  | .cupod      => false
   | .cupodTroll => false
   | .defect   => false
   | .ebot     => false
@@ -215,7 +221,11 @@ def dupocColBit : Tmpl → Bool
 
 theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hk7 : c_guard k + 7 ≤ k)
-    (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true) :
+    (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
+    -- the ENTANGLED bit: genuinely open (see `TauCupod/Helpers`, "the 2-cycle is not
+    -- Löbian"), so it enters as a hypothesis exactly like the quine bit above
+    (hcupodDupoc : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc))
+      = dupocColBit .cupod) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .dupoc)) = dupocColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
@@ -227,6 +237,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .obot     => ps_probe_false_of_plays_D k (obot_dupoc_plays_D hk)
   | .guardian => ps_probe_guardCell_false (le_refl k) _
   | .dbot     => ps_probe_inst_dbot_dupoc_false (le_refl k)
+  | .cupod      => hcupodDupoc
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
 
 /-! ## The GUARD column (probeD bits) — TauGuardian's question -/
@@ -235,6 +246,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     constant defector, and EBot (its exploit-check FIRES on the cooperator, and the
     firing transcript is cheap — Guardian catches the exploiter red-handed). -/
 def guardColBit : Tmpl → Bool
+  | .cupod      => false
   | .cupodTroll => false
   | .defect => true
   | .ebot   => true
@@ -259,6 +271,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
       (entry_C_of_interp (Pf_sound _ _ (pf_probe_obotConstC h10)))
   | .guardian => ps_probeD_false_of_plays_C k guardian_coop_plays_C
   | .dbot     => ps_probeD_dbotConstC h6
+  | .cupod      => ps_probeD_false_of_plays_C k cupod_coop_plays_C
   | .cupodTroll => ps_probeD_inst_cupodTroll_false k _
 
 /-! ## The behavioral δ_C column (true plays) — TauTFTSim's and TauOBot's read -/
@@ -267,6 +280,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     `coopColBit .guardian = false`: the floor made visible — the behavioral reader
     sees the cooperation the prover cannot cite. -/
 def coopColPlay : Tmpl → Action
+  | .cupod      => .C
   | .cupodTroll => .C
   | .defect => .D
   | .ebot   => .D
@@ -287,12 +301,14 @@ theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .obot     => entry_C_of_interp (Pf_sound _ _ (pf_probe_obotConstC h10))
   | .guardian => guardian_coop_plays_C
   | .dbot     => dbot_coop_plays_D
+  | .cupod      => cupod_coop_plays_C
   | .cupodTroll => cupodTroll_plays_C _
 
 /-! ## The behavioral δ_D column (true plays) — TauOBot's second watch -/
 
 /-- TRUE plays vs the defector: only the unconditional cooperator cooperates. -/
 def defectColPlay : Tmpl → Action
+  | .cupod      => .D
   | .cupodTroll => .C
   | .coop => .C
   | .dbot => .C
@@ -311,6 +327,7 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k) :
   | .obot     => obot_defect_plays_D
   | .guardian => guardian_defect_plays_D hk
   | .dbot     => dbot_plays_C_of_defect .defect ⟨1, rfl⟩
+  | .cupod      => cupod_defect_plays_D hk
   | .cupodTroll => cupodTroll_plays_C _
 
 end PD.Tau

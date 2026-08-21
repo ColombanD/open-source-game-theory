@@ -116,6 +116,7 @@ TAU_ZOO: dict[str, LiftSpec] = {
     ),
     "TauDBot": LiftSpec((Stage(Mode.RUN, "TauDefect", "C", "D"),), "C"),
     "TauCupodTroll": LiftSpec((Stage(Mode.PROVE_EQ, "TauDupoc", "C", "D"),), "C"),
+    "TauCupod": LiftSpec((Stage(Mode.PROVE, SELF, "D", "D"),), "C"),
     "TauGuardian": LiftSpec((Stage(Mode.PROVE, "TauCooperate", "D", "D"),), "C"),
 }
 
@@ -131,6 +132,7 @@ TEMPLATES: tuple[str, ...] = (
     "TauGuardian",
     "TauDBot",
     "TauCupodTroll",
+    "TauCupod",
 )
 """Canonical template order — matches the Lean `tauOrder`
 ([coop, defect, tftSim, tftPf, dupoc, ebot])."""
@@ -147,6 +149,7 @@ BASE_OF: dict[str, str] = {
     "TauGuardian": "GuardianBot",
     "TauDBot": "DBot",
     "TauCupodTroll": "CupodTrollBot",
+    "TauCupod": "CupodBot",
 }
 """Which base bot each template lifts. The two TFT variants are two lift MODALITIES
 of the same base strategy (behavioral vs prover). Their bits coincide at large k on
@@ -167,11 +170,18 @@ LEAN_SLOT: dict[str, str] = {
     "TauGuardian": "guardian",
     "TauDBot": "dbot",
     "TauCupodTroll": "cupodTroll",
+    "TauCupod": "cupod",
 }
 """Template name → the Lean `Tmpl` constructor, for the kernel bit-table check."""
 
 
 # ── The compound decision (the Python `inst` + its play, large k) ──────────────
+
+
+class EntangledCell(Exception):
+    """A cell whose two bots both self-probe: a mutual fixpoint that Lean compiles to
+    a `.sys` system and leaves OPEN. Distinct from `UnsupportedDiagonal` (which means
+    the MODEL cannot express the shape) — this one means the ANSWER does not exist."""
 
 
 class UnsupportedDiagonal(ValueError):
@@ -220,6 +230,17 @@ def decide(A: str, T: str, zoo: dict[str, LiftSpec] | None = None) -> Decision:
     return _decide(A, T, _MAX_DEPTH, _freeze(zoo))
 
 
+def _self_probes(spec: LiftSpec) -> bool:
+    """Does this bot have a `self`-target stage? (Lean: `Spec.selfProbes`.)"""
+    return any(st.target == SELF for st in spec.stages)
+
+
+def _entangled(A: str, T: str, frozen: tuple[tuple[str, LiftSpec], ...]) -> bool:
+    """Both self-probe and distinct — the 2-cycle (Lean: `Zoo.entangled`)."""
+    zoo = dict(frozen)
+    return A != T and _self_probes(zoo[A]) and _self_probes(zoo[T])
+
+
 def _freeze(zoo: dict[str, LiftSpec]) -> tuple[tuple[str, LiftSpec], ...]:
     return tuple(sorted(zoo.items()))
 
@@ -237,6 +258,19 @@ def _decide(
             f"probe nesting exceeded {_MAX_DEPTH} at ({A}, {T}) — the spec table has "
             "a cycle the quine rule does not cut (two self-probers?)"
         )
+    if _entangled(A, T, frozen):
+        # THE BINDER CASE (2026-08-21, mirroring Lean's `.sys` emission): two
+        # self-probers form a 2-cycle that no finite unfolding resolves. In Lean the
+        # compiler emits a mutual-fixpoint system and the cell's bit is GENUINELY
+        # OPEN — the cycle is not Löbian (Cupod's punish-guard and Dupoc's
+        # reward-guard chain in opposite polarities, so no fixpoint is
+        # self-supporting; see `Tau/Theorems/TauCupod/Helpers.lean`). We refuse to
+        # invent a value.
+        raise EntangledCell(
+            f"({A}, {T}) is an entangled pair: both self-probe, so the cell is a "
+            "mutual fixpoint. Lean emits a `.sys` system here and leaves the bit "
+            "OPEN (the 2-cycle is not Löbian). No value is modelled."
+        )
     zoo = dict(frozen)
     spec = zoo[A]
     floored = False  # a failed prove-stage OR a floored run-consultation en route
@@ -244,6 +278,12 @@ def _decide(
         if st.target == SELF and T == A:
             # the quine diagonal: bounded Löb at large k
             if st.mode is Mode.PROVE and st.test == "C" and st.fire == "C":
+                bit = True
+            elif st.mode is Mode.PROVE and st.test == "D" and st.fire == "D":
+                # The PUNISH-polarity quine (TauCupod, 2026-08-21): bounded Löb closes
+                # this fixpoint too, and because guard and fire agree in polarity it
+                # yields SELF-DEFECTION. Lean: `ps_probeD_inst_cupod_quine` +
+                # `inst_cupod_quine_plays_D`.
                 bit = True
             else:
                 raise UnsupportedDiagonal(
@@ -282,8 +322,33 @@ def decision_table(
     zoo: dict[str, LiftSpec] | None = None,
     templates: tuple[str, ...] = TEMPLATES,
 ) -> dict[str, dict[str, Decision]]:
-    """The full compound-decision table: `table[A][T] = decide(A, T)`."""
-    return {A: {T: decide(A, T, zoo) for T in templates} for A in templates}
+    """The full compound-decision table: `table[A][T] = decide(A, T)`.
+
+    ENTANGLED cells are omitted (2026-08-21): a pair of self-probers is a mutual
+    fixpoint that Lean compiles to a `.sys` system and leaves OPEN, so there is no
+    value to tabulate. Callers must treat a missing key as "open", never as a
+    default — `open_cells` enumerates them."""
+    out: dict[str, dict[str, Decision]] = {}
+    for A in templates:
+        row: dict[str, Decision] = {}
+        for T in templates:
+            try:
+                row[T] = decide(A, T, zoo)
+            except EntangledCell:
+                continue
+        out[A] = row
+    return out
+
+
+def open_cells(
+    zoo: dict[str, LiftSpec] | None = None,
+    templates: tuple[str, ...] = TEMPLATES,
+) -> tuple[tuple[str, str], ...]:
+    """The cells `decision_table` omits: entangled pairs, genuinely open."""
+    z = zoo or TAU_ZOO
+    frozen = _freeze(z)
+    return tuple((A, T) for A in templates for T in templates
+                 if _entangled(A, T, frozen))
 
 
 # ── The vote (the Lean `tauPlayer`, over base-bot signals) ─────────────────────

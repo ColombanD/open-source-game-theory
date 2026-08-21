@@ -134,7 +134,7 @@ theorem cimcic_optim_guard_B_unprov (k : Nat) :
   · rintro me oppo c hS defs i hme
     injection hS with h1 h2 h3
     subst h1
-    simp [CIMCIC] at hme
+    cases hme
 
 /-- `G3 = CIMCIC plays D vs OptimBot` — the true-but-uncertifiable else-play — is
     unprovable at budget `k`, via the `search_f` floor census. -/
@@ -207,7 +207,7 @@ theorem cimcic_optim_G3_unprov (k : Nat) :
   · rintro me oppo c hS defs i hme
     injection hS with h1 h2 h3
     subst h1
-    simp [CIMCIC] at hme
+    cases hme
 
 /-- CIMCIC's guard against OptimBot (`A → B`) is unprovable at budget `k`: its spine
     tail `B` is floor-unprovable. -/

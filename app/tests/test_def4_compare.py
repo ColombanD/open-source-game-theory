@@ -33,6 +33,7 @@ from pd_runner.tau.def4 import (
     SELF,
     Stage,
     decide,
+    open_cells,
     decision_table,
 )
 from pd_runner.tau.def4_theorems import TAU_ORDER, kernel_bits
@@ -42,25 +43,37 @@ from pd_runner.tau.matrix import load_tau_matrix
 # ── the compound decisions (the Lean bit tables, transcribed) ──────────────────
 
 EXPECTED_ACTIONS: dict[str, str] = {
-    "TauCooperate": "CCCCCCCCCCC",
-    "TauDefect": "DDDDDDDDDDD",
-    "TauTFTSim": "CDCCCDCCCDC",
-    "TauTFTPf": "CDCCCDCCDDD",
-    "TauDupoc": "CDCCCDCDDDD",
-    "TauEBot": "DDCCCDCCCDD",
-    "TauJust": "CDCCCDCDDDD",
-    "TauOBot": "CDDDDDDDDDC",
-    "TauGuardian": "CDCCCDCCCDC",
-    "TauDBot": "DCCCCCCCCDD",
-    "TauCupodTroll": "CCCCCCCCCCC",
+    "TauCooperate": "CCCCCCCCCCCC",
+    "TauDefect": "DDDDDDDDDDDD",
+    "TauTFTSim": "CDCCCDCCCDCC",
+    "TauTFTPf": "CDCCCDCCDDDD",
+    "TauDupoc": "CDCCCDCDDDD?",
+    "TauEBot": "DDCCCDCCCDDC",
+    "TauJust": "CDCCCDCDDDD?",
+    "TauOBot": "CDDDDDDDDDCD",
+    "TauGuardian": "CDCCCDCCCDCC",
+    "TauDBot": "DCCCCCCCCDDC",
+    "TauCupodTroll": "CCCCCCCCCCC?",
+    "TauCupod": "CDCC?C?CCC?D",
 }
 
 
 def test_decision_table_matches_lean_bit_tables() -> None:
+    """`?` marks a cell Lean leaves OPEN — the entangled pair and everything whose
+    probe chain runs through it. The model must omit those, never guess."""
     table = decision_table()
     for A in TEMPLATES:
-        got = "".join(table[A][T].action for T in TEMPLATES)
+        got = "".join(
+            table[A][T].action if T in table[A] else "?" for T in TEMPLATES
+        )
         assert got == EXPECTED_ACTIONS[A], f"{A}: {got} ≠ {EXPECTED_ACTIONS[A]}"
+
+
+def test_open_cells_are_exactly_the_entangled_pair() -> None:
+    """The `.sys` binder's frontier: Dupoc and Cupod both self-probe, so their two
+    cross cells are a mutual fixpoint that is NOT Löbian (opposite polarities chain
+    — see `Tau/Theorems/TauCupod/Helpers.lean`). No other pair entangles."""
+    assert set(open_cells()) == {("TauDupoc", "TauCupod"), ("TauCupod", "TauDupoc")}
 
 
 def test_kernel_check_passes() -> None:

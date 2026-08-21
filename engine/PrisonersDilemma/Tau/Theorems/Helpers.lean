@@ -401,20 +401,20 @@ theorem pf_searchProbe_searchProbeC {k K : Nat} (hk : 2 ≤ k)
 
 abbrev simMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
-    (w .guardian + w .cupodTroll))))))
+    (w .guardian + (w .cupodTroll + w .cupod)))))))
 abbrev pfMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + w .obot))))
 abbrev dupMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + w .just)))
 abbrev eMass (w : Tmpl → Nat) : Nat :=
-  w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + w .guardian))))
+  w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + (w .guardian + w .cupod)))))
 abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
 abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
 /-- τ(DBot)'s mass: everything but the exploitable constant cooperator AND ITSELF
     (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
 abbrev dbotMass (w : Tmpl → Nat) : Nat :=
   w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
-    (w .obot + w .guardian))))))
+    (w .obot + (w .guardian + w .cupod)))))))
 
 /-! ## Shape lemmas — the `test = .D` idioms (9-zoo extension, 2026-08-18) -/
 

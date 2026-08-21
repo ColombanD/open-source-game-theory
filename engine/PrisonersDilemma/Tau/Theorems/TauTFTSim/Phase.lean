@@ -26,6 +26,7 @@ def tftSimRow : Tmpl → Action
   | .obot     => .C
   | .guardian => .C
   | .dbot     => .D
+  | .cupod      => .C
   | .cupodTroll => .C
 
 /-- The row's witness: every entry is a run-stage copy of the δ_C behavioral
@@ -46,6 +47,7 @@ theorem tftSimRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6
   | .obot     => simCopy_plays _ _ (pC .obot)
   | .guardian => simCopy_plays _ _ (pC .guardian)
   | .dbot     => simCopy_plays _ _ (pC .dbot)
+  | .cupod      => simCopy_plays _ _ (pC .cupod)
   | .cupodTroll => simCopy_plays _ _ (pC .cupodTroll)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
@@ -55,7 +57,7 @@ theorem tftSimBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
     VoteBits (vecOf (tauZoo k) .tftSim w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C)] :=
   vecOf_bits (tauZoo k) .tftSim w tftSimRow tauOrder
     fun T _ => tftSimRow_plays hk hkk h6 h10 T
 

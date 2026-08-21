@@ -210,4 +210,5 @@ import PrisonersDilemma.Tau.Theorems.TauDBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDBot.Phase
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Phase
+import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 import PrisonersDilemma.Tau.Theorems.Matrix

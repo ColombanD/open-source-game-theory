@@ -225,4 +225,62 @@ theorem sys_cross_C (defs : ProgList) (i j : Nat) (k K : Nat)
   rw [sysClose_subst_selfIdx] at h
   exact h
 
+/-- τ(Cupod)'s TRUST is floor-priced: it reaches C through a FAILED punish-search,
+    so the certificate pays `search_f` and no prover can cite it. The third floor bot
+    of the zoo (after Guardian and CupodTroll), and by the same mechanism — trust by
+    default is structurally uncitable. -/
+theorem ps_probe_inst_cupod_coop_false {k K : Nat} (hK : K ≤ k) :
+    proofSearch K (probe (inst (tauZoo k) .cupod .coop)) = false := by
+  cases h : proofSearch K (probe (inst (tauZoo k) .cupod .coop)) with
+  | false => rfl
+  | true =>
+      exfalso
+      exact no_provable_botSearcherElse_tail k k (probeD (.const .C)) .D .C (.const .C)
+        (by decide) (Nat.le_refl k) (.bot (inst (tauZoo k) .cupod .coop))
+        K _ ((proofSearch_spec _ _).1 h) hK
+        (by simp only [probe, inst_cupod_peel_coop k, TailTo_plays]; rfl)
+
+/-! ## THE 2-CYCLE IS NOT LÖBIAN — and that is the finding
+
+With `sys_cross_D`/`sys_cross_C` in hand it is now a matter of INSPECTION which
+implications the cupod/dupoc system admits, and the answer is that they do not
+close.
+
+The two lemmas' shape requirements pin their instantiations uniquely at this
+system: `sys_cross_D` needs a PUNISH-shaped component (`.search` on a `.D` guard
+with `.const .D` then-branch), which is component 0 alone; `sys_cross_C` needs a
+REWARD-shaped one, which is component 1 alone. So exactly two implications exist:
+
+    □(component 1 plays D) → component 0 plays D      (Cupod punishes a provable defector)
+    □(component 0 plays C) → component 1 plays C      (Dupoc rewards a provable cooperator)
+
+A Löb cycle needs one implication's CONSEQUENT to be the other's ANTECEDENT (up to
+boxing). Here consequent `0 plays D` meets antecedent `0 plays C`, and consequent
+`1 plays C` meets antecedent `1 plays D` — **opposite actions on both sides**. The
+chain never closes, in either polarity, and `mutual_pblt_engine_id` has nothing to
+consume.
+
+**Why this is the right answer, not a missing lemma.** Dupoc and Cupod are
+polarity-inverted probers: Dupoc's fixpoint is self-SUPPORTING (cooperation
+justifies cooperation, which is why its diagonal is Löbian), while the mixed pair's
+would have to be self-DEFEATING (Cupod's punishment would have to justify Dupoc's
+reward). Bounded Löb closes self-supporting fixpoints; it cannot manufacture one
+from an anti-monotone loop. The same asymmetry appears one level down and was
+already recorded here: Cupod's DIAGONAL is Löbian (`ps_probeD_inst_cupod_quine`,
+self-defection) precisely because its guard and its fire-action agree in polarity.
+
+**Consequence for the zoo.** The `(cupod, dupoc)` and `(dupoc, cupod)` bits are
+GENUINELY OPEN at the object level — not merely unproven. Neither is forced by S,
+so both remain hypotheses of the column theorems, exactly as the base library's
+bistable pairs do (`outcome_JustBot_vs_MirrorBot` is the precedent: two fixed
+points, neither forced, and no sound rule can decide between them).
+
+This is the honest tau image of the RED CELL. Base `(CupodBot, DupocBot)` — Critch's
+open problem — was resolved in the base library on 2026-08-20 by the τ-transposition
+(`outcome_DupocBot_vs_CupodBot = (D, C)`), a route that uses only soundness and
+τ-closure and never needs the fixpoint to close. Whether that route lifts to the
+`.sys` layer is the natural next question: `Pf.transpose` now has its `sysStep` arm,
+so S IS closed under τ with the binder present — the ingredient is in place, the
+argument is not yet written. -/
+
 end PD.Tau

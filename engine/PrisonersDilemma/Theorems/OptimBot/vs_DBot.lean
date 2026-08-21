@@ -103,12 +103,6 @@ theorem optim_dbot_selfD_provable :
     · (try simp only [numCost, Formula.size]); omega
   have hpfS : Pf (100000000 * k) φ := Pf_mono hpf (by omega)
   exact (proofSearch_spec (100000000 * k) φ).2 hpfS
-  · -- hbotsys: the census target is never a `.bot`-wrapped system reference
-    rintro me oppo c hS defs i hme
-    all_goals (try (injection hS with h1 h2 h3; subst h1))
-    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
-    all_goals (try subst hS)
-    all_goals (first | simp [DBot] at hme | simp [DefectBot] at hme | simp [OptimBot] at hme | simp at hme | simp_all)
 theorem optim_ps_oppC_false (k S : Nat) :
     proofSearch k (.plays DefectBot.bot (OptimBot k S) Action.C) = false := by
   cases h : proofSearch k (.plays DefectBot.bot (OptimBot k S) Action.C) with

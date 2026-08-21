@@ -26,16 +26,18 @@ def justRow : Tmpl → Action
   | .obot     => .D
   | .guardian => .D
   | .dbot     => .D
+  | .cupod      => .D
   | .cupodTroll => .D
 
 /-- The row's witness: prove-stages on the δ_L column — including at the `.dupoc`
     slot, where the probed object is the quine (by name, not by self). -/
 theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hk7 : c_guard k + 7 ≤ k)
-    (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true) :
+    (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
+    (hcd : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc)) = dupocColBit .cupod) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .just T)) (.bot (inst (tauZoo k) .just T))
               (inst (tauZoo k) .just T) = some (justRow T) :=
-  let bL := ps_probe_inst_dupoc hk hkk hk7 hquine
+  let bL := ps_probe_inst_dupoc hk hkk hk7 hquine hcd
   fun T => match T with
   | .coop     => searchProbe_plays_C _ _ (bL .coop)
   | .defect   => searchProbe_plays_D _ _ (bL .defect)
@@ -47,6 +49,7 @@ theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .obot     => searchProbe_plays_D _ _ (bL .obot)
   | .guardian => searchProbe_plays_D _ _ (bL .guardian)
   | .dbot     => searchProbe_plays_D _ _ (bL .dbot)
+  | .cupod      => searchProbe_plays_D _ _ (bL .cupod)
   | .cupodTroll => searchProbe_plays_D _ _ (bL .cupodTroll)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
@@ -54,22 +57,27 @@ theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
 theorem justBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hk7 : c_guard k + 7 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
+    (hcd : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc)) = dupocColBit .cupod)
     (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .just w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D)] :=
   vecOf_bits (tauZoo k) .just w justRow tauOrder
-    fun T _ => justRow_plays hk hkk hk7 hquine T
+    fun T _ => justRow_plays hk hkk hk7 hquine hcd T
 
 /-- **τ(JustBot)** — Löb-gated; boundary `θ ≤ dupMass`, same as TauDupoc's. -/
 theorem tauJust_phase :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat) (opponent : Prog),
+    ∃ k₂, ∀ k, k₂ < k →
+      -- the entangled `.cupod` bit is genuinely OPEN (the 2-cycle is not Löbian —
+      -- see `TauCupod/Helpers`), so it is a hypothesis, exactly as the quine bit was
+      ∀ (hcd : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc)) = dupocColBit .cupod),
+      ∀ θ (w : Tmpl → Nat) (opponent : Prog),
       (θ ≤ dupMass w → ∃ N, play N (TauBotZ k .just w θ) opponent = some .C)
       ∧ (¬ θ ≤ dupMass w → ∃ N, play N (TauBotZ k .just w θ) opponent = some .D) := by
   obtain ⟨kL, hkL⟩ := ps_probe_inst_quine
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
-  refine ⟨max kL kA, fun k hk θ w opponent => ?_⟩
+  refine ⟨max kL kA, fun k hk hcd θ w opponent => ?_⟩
   have hquine := hkL k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k :=
     hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
@@ -77,7 +85,7 @@ theorem tauJust_phase :
   have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
   have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
   have h := phase_of_bits (tauZoo k) .just w justRow tauOrder θ opponent
-    (fun T _ => justRow_plays hk2 hkk hk7 hquine T)
+    (fun T _ => justRow_plays hk2 hkk hk7 hquine hcd T)
   simp only [bitMass, tauOrder, List.map, justRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [dupMass] using h

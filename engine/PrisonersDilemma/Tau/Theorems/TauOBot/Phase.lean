@@ -27,6 +27,7 @@ def obotRow : Tmpl → Action
   | .obot     => .D
   | .guardian => .D
   | .dbot     => .D
+  | .cupod      => .D
   | .cupodTroll => .C
 
 /-- The row's witness: two chained run-stage defection watches over the δ_C and
@@ -48,6 +49,7 @@ theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
   | .obot     => simTestD_falls _ _ (pC .obot) (simTestD_fires _ _ (pD .obot))
   | .guardian => simTestD_falls _ _ (pC .guardian) (simTestD_fires _ _ (pD .guardian))
   | .dbot     => simTestD_fires _ _ (pC .dbot)
+  | .cupod      => simTestD_falls _ _ (pC .cupod) (simTestD_fires _ _ (pD .cupod))
   | .cupodTroll => simTestD_falls _ _ (pC .cupodTroll)
       (simTestD_falls _ _ (pD .cupodTroll) ⟨1, rfl⟩)
 
@@ -58,7 +60,7 @@ theorem obotBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     VoteBits (vecOf (tauZoo k) .obot w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .D), (w .tftPf, .D),
        (w .dupoc, .D), (w .ebot, .D), (w .just, .D), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .C)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .D)] :=
   vecOf_bits (tauZoo k) .obot w obotRow tauOrder
     fun T _ => obotRow_plays hk hkk h6 h10 T
 

@@ -40,7 +40,7 @@ namespace PD.Theorems.Tau
 /-- The constants' total mass. -/
 private abbrev fullMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot +
-    (w .just + (w .obot + (w .guardian + (w .dbot + w .cupodTroll)))))))))
+    (w .just + (w .obot + (w .guardian + (w .dbot + (w .cupodTroll + w .cupod))))))))))
 
 /-! ## Constants -/
 
@@ -119,38 +119,58 @@ theorem outcome_TauTFTPf_vs_TauTFTSim_band {k : Nat} (hk : 2 ≤ k)
 /-! ## The Löb-gated cells -/
 
 theorem outcome_TauDupoc_vs_TauDupoc :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
+    ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hcd : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc)) = dupocColBit .cupod)
+        (hcdP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .cupod))
+          (.bot (inst (tauZoo k) .dupoc .cupod)) (inst (tauZoo k) .dupoc .cupod)
+          = some (dupocRow .cupod)),
+      ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .dupoc w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ w hθ =>
-    outcome_of_ex_plays ((h k hk θ w _).1 hθ) ((h k hk θ w _).1 hθ)⟩
+  exact ⟨k₂, fun k hk hcd hcdP θ w hθ =>
+    outcome_of_ex_plays ((h k hk hcd hcdP θ w _).1 hθ) ((h k hk hcd hcdP θ w _).1 hθ)⟩
 
 theorem outcome_TauJust_vs_TauJust :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
+    ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hcd : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc)) = dupocColBit .cupod)
+        (hcdP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .cupod))
+          (.bot (inst (tauZoo k) .dupoc .cupod)) (inst (tauZoo k) .dupoc .cupod)
+          = some (dupocRow .cupod)),
+      ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .just w θ) (TauBotZ k .just w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauJust_phase
-  exact ⟨k₂, fun k hk θ w hθ =>
-    outcome_of_ex_plays ((h k hk θ w _).1 hθ) ((h k hk θ w _).1 hθ)⟩
+  exact ⟨k₂, fun k hk hcd hcdP θ w hθ =>
+    outcome_of_ex_plays ((h k hk hcd θ w _).1 hθ) ((h k hk hcd θ w _).1 hθ)⟩
 
 /-- Self-based and norm-based reciprocity cooperate — two Löb gates, one threshold
     (the max of the two). -/
 theorem outcome_TauDupoc_vs_TauJust :
-    ∃ k₂, ∀ k, k₂ < k → ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
+    ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hcd : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc)) = dupocColBit .cupod)
+        (hcdP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .cupod))
+          (.bot (inst (tauZoo k) .dupoc .cupod)) (inst (tauZoo k) .dupoc .cupod)
+          = some (dupocRow .cupod)),
+      ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .just w θ) = some (.C, .C) := by
   obtain ⟨kD, hD⟩ := tauDupoc_phase
   obtain ⟨kJ, hJ⟩ := tauJust_phase
-  exact ⟨max kD kJ, fun k hk θ w hθ =>
+  exact ⟨max kD kJ, fun k hk hcd hcdP θ w hθ =>
     outcome_of_ex_plays
-      ((hD k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ w _).1 hθ)
-      ((hJ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ w _).1 hθ)⟩
+      ((hD k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) hcd hcdP θ w _).1 hθ)
+      ((hJ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hcd θ w _).1 hθ)⟩
 
 theorem outcome_TauDupoc_vs_TauTFTPf :
-    ∃ k₂, ∀ k, k₂ < k → 2 ≤ k → c_guard k + 3 ≤ k → 6 ≤ k → 10 ≤ k →
+    ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hcd : proofSearch k (probe (inst (tauZoo k) .cupod .dupoc)) = dupocColBit .cupod)
+        (hcdP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .cupod))
+          (.bot (inst (tauZoo k) .dupoc .cupod)) (inst (tauZoo k) .dupoc .cupod)
+          = some (dupocRow .cupod)),
+      2 ≤ k → c_guard k + 3 ≤ k → 6 ≤ k → 10 ≤ k →
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .tftPf w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk hk2 hkk h6 h10 θ w hθ =>
-    outcome_of_ex_plays ((h k hk θ w _).1 hθ)
+  exact ⟨k₂, fun k hk hcd hcdP hk2 hkk h6 h10 θ w hθ =>
+    outcome_of_ex_plays ((h k hk hcd hcdP θ w _).1 hθ)
       ((tauTFTPf_phase hk2 hkk h6 h10 θ w _).1
         (by simp only [dupMass, pfMass] at *; omega))⟩
 

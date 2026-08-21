@@ -846,6 +846,70 @@ self-probers; several ALSO need fragment work). The genuinely fragment-only back
 is now EMPTY. This inverts §8c.7's recommendation: the fragment-first argument was
 built on a miscount, and `.sys` is now the only path to any further bot.
 
+**THE `.sys` MILESTONE (2026-08-20/21) — the mutual-quine wall is BROKEN, and the
+first thing through it is a NEGATIVE result.** Phases S1–S4 of §8c executed:
+
+* **S1/S2 — the binder** (`9e8135f`): `.sys`/`.selfIdx`/`ProgList`, `sysClose`, the
+  lazy-unfold eval arm, `PlaysProof.sysStep`, soundness, and (new work the archive
+  did not have) τ-closure — τ̂ DESCENDS into system members, unlike frozen vote
+  entries, which forced `ProgList.transpose`, `sysClose_transpose` and
+  `get?_transpose`. Kernel-checked: a mutually-simulating pair evaluates to `none`,
+  fuel-grounded rather than divergent.
+* **S3 — the compiler emits it** (`2b2acff`): `Zoo.entangled` + `sysGo`. **Spike B's
+  landmine hit for real**: with plain `termination_by fuel` the mutual pair compiled
+  by WF recursion and `inst` stopped reducing — Gate D1 failed on the CONSTANT row.
+  `termination_by structural fuel` restores defeq. Gate S1 held: every pre-existing
+  peel still `rfl`.
+* **S4 — CupodBot lifted** (`06b9369`, `83ba46b`): the 12th template, 13 new D1
+  peels including both entangled cells. **τ(Cupod) defects against itself** —
+  polarity-inverted Löb, and a first attempt to get it cheaply from the `search_f`
+  floor was WRONG (that floor excludes the ELSE-play; the guard atom is the
+  THEN-play, which `search_t` reaches — the kernel caught it).
+* **`botSysSearchStep`** (`0231670`): the rule letting S read a component through
+  `sysClose` and conclude about its partner. Soundness passed first try. Its cost
+  was NOT the rule but the census: a `.bot (.sys …)` player is genuinely READABLE,
+  so `ReadableMe` gained a disjunct and ~25 call sites across the library needed a
+  new kill obligation. **Recorded for the next constructor: adding a readable player
+  shape is far more expensive than adding an unreadable one (`tvote`).**
+
+**THE FINDING — the 2-cycle is NOT Löbian.** With `sys_cross_D`/`sys_cross_C`
+derived, the available implications at the cupod/dupoc system are, by inspection of
+the shape requirements, exactly two:
+
+    □(component 1 plays D) → component 0 plays D      (Cupod punishes a provable defector)
+    □(component 0 plays C) → component 1 plays C      (Dupoc rewards a provable cooperator)
+
+A Löb cycle needs one consequent to be the other's antecedent; here they meet at
+OPPOSITE ACTIONS on both sides. The chain never closes and
+`mutual_pblt_engine_id` has nothing to consume. This is the right answer, not a
+missing lemma: Dupoc's fixpoint is self-SUPPORTING (hence its Löbian diagonal),
+while the mixed pair's would have to be self-DEFEATING, and bounded Löb cannot
+manufacture one from an anti-monotone loop. So `(cupod, dupoc)` and `(dupoc, cupod)`
+are **genuinely open at the object level** — the bistable shape, with
+`outcome_JustBot_vs_MirrorBot` as the base-library precedent — and enter the column
+and phase theorems as hypotheses, exactly as the Dupoc quine bit once did.
+
+**The natural next question**, recorded: base `(CupodBot, DupocBot)` — Critch's open
+problem — WAS resolved in the base library (2026-08-20) by the τ-transposition,
+which needs only soundness and τ-closure and never needs the fixpoint to close.
+`Pf.transpose` now has its `sysStep` arm, so S is closed under τ WITH the binder
+present: the ingredient for lifting that route to the `.sys` layer is in place, the
+argument is not yet written.
+
+**Python mirror** extended to match: `EntangledCell` (distinct from
+`UnsupportedDiagonal` — the answer does not exist, rather than the model being
+unable to express it), `open_cells`, the punish-polarity quine, and open-cell
+skipping in `kernel_check`/`bit_coincidence`. Openness PROPAGATES correctly: Just
+and CupodTroll probe the Dupoc column, so their Cupod cells are open too — matching
+Lean, where those rows carry the same hypothesis.
+
+**Status: 12 templates over 10 base bots.** Remaining unlifted: PrudentBot and
+OptimBot (`.sys` + fragment extensions), MirrorBot and LegibleBot (fragment only),
+CIMCIC/DIMCID/WaryBot (self-probers needing the `proveImpl`/`.neg` fragments, which
+`.sys` now unblocks structurally). Debt opened by this milestone: TauCupod's
+`Phase.lean` states its bit row but not yet its phase theorem, and the Python
+certification counts need refreshing for the 12-template zoo.
+
 **Step 3 — SCHEDULED DEBT: `Zoo.WellFormed` + computed fuel (NOT started).** The
 piece that would make MACHINE-GENERATED zoos possible by replacing Gate D1's
 hand-written closures. Components, sketched 2026-08-19:

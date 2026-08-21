@@ -37,6 +37,7 @@ import math
 from dataclasses import dataclass, field
 
 from pd_runner.tau.def4 import (
+    EntangledCell,
     BASE_OF,
     CONTROL_BOTS,
     CONTROL_ZOO,
@@ -107,12 +108,25 @@ def kernel_check() -> KernelCheck:
             mismatches.append(f"{A}: no kernel bit table")
             continue
         for T in TEMPLATES:
+            if T not in computed[A]:
+                continue  # OPEN cell: Lean states no bit, the model tabulates none
             checked += 1
             want = row[LEAN_SLOT[T]]
             got = computed[A][T].action
             if got != want:
                 mismatches.append(f"({A}, {T}): python {got} ≠ kernel {want}")
     return KernelCheck(checked=checked, mismatches=tuple(mismatches))
+
+
+def _cooperates_or_none(A: str, T: str) -> bool:
+    """`decide(A, T) == C`, with an OPEN cell counting as not-cooperating for the
+    mass sweep. The sweep is a coarse (t, α) scan, not a certification: an open cell
+    contributes no mass rather than aborting the scan. Certification itself
+    (`kernel_check`, `bit_coincidence`) SKIPS open cells instead."""
+    try:
+        return decide(A, T).action == "C"
+    except EntangledCell:
+        return False
 
 
 # ── Check 2: bit coincidence (Def 4 vs Def 3, whitelisted) ─────────────────────
@@ -166,7 +180,10 @@ def bit_coincidence(matrix: TauMatrix) -> Coincidence:
             base_a, base_t = BASE_OF[A], BASE_OF[T]
             if base_a not in matrix.bots or base_t not in matrix.bots:
                 continue
-            d4 = decide(A, T).action
+            try:
+                d4 = decide(A, T).action
+            except EntangledCell:
+                continue  # OPEN cell (entangled pair or a chain through one)
             d3 = "C" if matrix.cooperates(base_a, base_t) else "D"
             cells.append(
                 BitCell(
@@ -255,7 +272,7 @@ def _breakpoints(
                 math.fsum(
                     p
                     for hyp, p in signal.weights.items()
-                    if p > 0 and decide(zoo[actor], zoo[hyp]).action == "C"
+                    if p > 0 and _cooperates_or_none(zoo[actor], zoo[hyp])
                 )
             )
     return sorted(masses)

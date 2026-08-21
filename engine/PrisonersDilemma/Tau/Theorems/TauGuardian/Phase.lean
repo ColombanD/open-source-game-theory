@@ -27,6 +27,7 @@ def guardianRow : Tmpl → Action
   | .obot     => .C
   | .guardian => .C
   | .dbot     => .D
+  | .cupod      => .C
   | .cupodTroll => .C
 
 /-- The row's witness: every entry is the punish-probe (`test = .D` prove-stage)
@@ -48,6 +49,7 @@ theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (
   | .obot     => searchProbeD_plays_C _ _ (gB .obot)
   | .guardian => searchProbeD_plays_C _ _ (gB .guardian)
   | .dbot     => searchProbeD_plays_D _ _ (gB .dbot)
+  | .cupod      => searchProbeD_plays_C _ _ (gB .cupod)
   | .cupodTroll => searchProbeD_plays_C _ _ (gB .cupodTroll)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
@@ -57,7 +59,7 @@ theorem guardianBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 
     VoteBits (vecOf (tauZoo k) .guardian w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C)] :=
   vecOf_bits (tauZoo k) .guardian w guardianRow tauOrder
     fun T _ => guardianRow_plays hk hkk h6 h10 T
 
