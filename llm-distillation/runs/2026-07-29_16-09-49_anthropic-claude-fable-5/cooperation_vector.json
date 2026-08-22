@@ -1,0 +1,46 @@
+{
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot",
+    "CupodTrollBot"
+  ],
+  "x": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.6,
+    0.6,
+    0.0,
+    0.0
+  ],
+  "by_bot": {
+    "CooperateBot": 0.0,
+    "CupodBot": 1.0,
+    "DBot": 0.0,
+    "DefectBot": 0.0,
+    "DupocBot": 1.0,
+    "OBot": 0.6,
+    "TitForTatBot": 0.6,
+    "EBot": 0.0,
+    "CupodTrollBot": 0.0
+  },
+  "queries_used": {
+    "CooperateBot": 3,
+    "CupodBot": 3,
+    "DBot": 3,
+    "DefectBot": 3,
+    "DupocBot": 3,
+    "OBot": 5,
+    "TitForTatBot": 5,
+    "EBot": 3,
+    "CupodTrollBot": 3
+  }
+}

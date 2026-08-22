@@ -1,0 +1,20 @@
+{
+  "model": "anthropic/claude-fable-5",
+  "n": 5,
+  "min_n": 3,
+  "temperature": 1.0,
+  "reasoning_effort": "high",
+  "timestamp": "2026-07-29_16-09-49",
+  "matrix_path": "data/payoff_matrix.csv",
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "OBot",
+    "TitForTatBot",
+    "EBot",
+    "CupodTrollBot"
+  ]
+}

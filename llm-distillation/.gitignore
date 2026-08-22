@@ -7,3 +7,4 @@ dist/
 .venv/
 .env
 .env.*
+RESEARCH_NOTES.md

@@ -18,12 +18,6 @@ is a single simultaneous move and no repetition. You must commit to a pure
 action -- either "C" (cooperate) or "D" (defect) -- never a randomized or mixed
 strategy.
 
-Payoff matrix (your payoff, opponent payoff):
-    you C, opp C -> (3, 3)
-    you C, opp D -> (0, 5)
-    you D, opp C -> (5, 0)
-    you D, opp D -> (1, 1)
-
 Notation used in the source code (written as Python-like pseudocode):
   - C, D: the two pure actions, Cooperate and Defect.
   - opp: the opponent's source code, which the bot can read in full.
