@@ -71,7 +71,7 @@ def test_kernel_agrees_with_base_directly() -> None:
     depends on no Python model at all.
 
     182 comparable cells (every template pair whose two base bots are in the
-    zoo), 173 agree, and the 9 divergences are exactly the recorded whitelist —
+    zoo), 175 agree, and the 7 divergences are exactly the recorded whitelist —
     properties of the LIFT, not of any implementation.
 
     Was 144/139/5 until 2026-08-24, when CupodBot and DIMCID were added to
@@ -81,8 +81,8 @@ def test_kernel_agrees_with_base_directly() -> None:
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
     assert len(d.cells) == 182
     assert d.passed, d.unexpected
-    assert d.agreements == 173
-    assert len(d.whitelisted_divergences) == 9
+    assert d.agreements == 175
+    assert len(d.whitelisted_divergences) == 7
     # DIMCID's own row is not stated yet (its off-cycle bits are blocked); its
     # COLUMN is, which is why the count is still the full 144.
     assert d.missing_rows == ("TauDIMCID",)
@@ -115,8 +115,6 @@ def test_whitelist_is_exactly_the_recorded_cells() -> None:
     assert set(WHITELIST) == {
         # coverage: the lift cannot express the base bot's guard
         ("TauEBot", "TauEBot"),
-        ("TauCupodTroll", "TauCupod"),
-        ("TauCupod", "TauCupodTroll"),
         # prover-modality floors (the α-gap), one per floor bot
         ("TauTFTPf", "TauGuardian"),
         ("TauTFTPf", "TauCupodTroll"),
@@ -158,16 +156,10 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
 
     modality = {("TauTFTPf", "TauGuardian"), ("TauTFTPf", "TauCupodTroll"),
                 ("TauTFTPf", "TauCupod"), ("TauTFTPf", "TauDIMCID")}
-    coverage = {("TauEBot", "TauEBot"),
-                ("TauCupodTroll", "TauCupod"), ("TauCupod", "TauCupodTroll")}
+    coverage = {("TauEBot", "TauEBot")}
     # the prover-floor cells are never budget artifacts
     for A, T in modality:
         assert (BASE_OF[A], BASE_OF[T]) not in dagger, (A, T)
-    # NOTE the CupodTroll×Cupod base cells ARE daggered (they carry `hk` and
-    # `hbudget`) — but the stagger is not WHY the lift diverges: the lifted
-    # identity guard cannot fire at ANY budget, so the divergence would persist
-    # even with the base hypotheses discharged. Cause and flag are independent,
-    # and the whitelist note records the cause.
     assert (BASE_OF["TauEBot"], BASE_OF["TauEBot"]) not in dagger
 
     # every prover-floor entry is the PROVER TFT — that is what makes it the α-gap

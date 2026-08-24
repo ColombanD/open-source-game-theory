@@ -33,68 +33,104 @@ open PD PD.BaseTheorems
 
 namespace PD.Tau
 
-/-- The identity guard is REFUTABLE: the two compiled instances are distinct terms,
-    so `.eq` fails and its negation is provable — the `search_f` route. -/
-theorem cupodTroll_guard_false {k : Nat} (T : Tmpl) :
+/-! ## The identity guard, RESTATED (2026-08-24)
+
+The old emission asked `.eq .opp (.bot (inst T .dupoc))` — about `.opp`, a FREE
+pronoun, against a counterfactual probe. It could never fire, so this row was
+uniformly `C` and the bot never did what base CupodTrollBot does. The corrected
+guard asks "is the signal I am treating the lift of CupodBot?", decided from the
+INDEX and witnessed by a closed `.eq` between constants (carrying a compiled
+instance would re-enter the mutual-quine wall — Cupod probes CupodTroll back).
+
+So the row now SPLITS: it defects at `.cupod` and cooperates everywhere else. -/
+
+/-- At the recognised hypothesis the guard is `.eq .C .C` — provable by
+    `Pf.eqRefl`, so the punish branch runs. -/
+theorem cupodTroll_guard_true {k : Nat} (hk : 3 ≤ k) :
     proofSearch k
-      ((Formula.eq .opp (.bot (inst (tauZoo k) T .dupoc))).subst
+      ((Formula.eq (.const Action.C) (.const Action.C)).subst
+        (.bot (inst (tauZoo k) .cupodTroll .cupod))
+        (.bot (inst (tauZoo k) .cupodTroll .cupod)))
+      = true := by
+  refine (proofSearch_spec _ _).2 ?_
+  show Pf k (.eq (.const Action.C) (.const Action.C))
+  exact Pf.eqRefl _ (by simp only [Formula.size, Prog.size]; omega)
+
+/-- Everywhere else it is `.eq .C .D` — refuted by `Pf.eqNeg`, so the cascade
+    falls through to the trusting default. -/
+theorem cupodTroll_guard_false {k : Nat} (T : Tmpl) (hT : T ≠ .cupod) :
+    proofSearch k
+      ((Formula.eq (.const Action.C) (.const Action.D)).subst
         (.bot (inst (tauZoo k) .cupodTroll T)) (.bot (inst (tauZoo k) .cupodTroll T)))
       = false := by
   cases h : proofSearch k
-      ((Formula.eq .opp (.bot (inst (tauZoo k) T .dupoc))).subst
+      ((Formula.eq (.const Action.C) (.const Action.D)).subst
         (.bot (inst (tauZoo k) .cupodTroll T)) (.bot (inst (tauZoo k) .cupodTroll T))) with
   | false => rfl
   | true =>
       exfalso
       have hs := proofSearch_sound _ _ h
-      simp only [Formula.subst, Prog.subst, Formula.interp, inst_cupodTroll_peel] at hs
-      -- `hs` says a `.search` node EQUALS the very term sitting inside its own guard.
-      -- Impossible by SIZE: a program is strictly larger than any of its subterms.
-      have hsz := congrArg Prog.size (Prog.bot.inj hs)
-      simp only [Prog.size, Formula.size, numCost] at hsz
-      omega
+      simp only [Formula.subst, Prog.subst, Formula.interp] at hs
+      exact absurd hs (by simp)
 
-/-- τ(CupodTroll) plays C at every hypothesis: the identity check fails and the
-    cascade falls to its trusting default. -/
-theorem cupodTroll_plays_C {k : Nat} (T : Tmpl) :
+/-- **τ(CupodTroll) DEFECTS against Cupod** — the behaviour base CupodTrollBot was
+    written for, and which the old emission could not produce. -/
+theorem cupodTroll_plays_D_at_cupod {k : Nat} (hk : 3 ≤ k) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .cupodTroll .cupod))
+      (.bot (inst (tauZoo k) .cupodTroll .cupod)) (inst (tauZoo k) .cupodTroll .cupod)
+      = some Action.D := by
+  refine ⟨2, ?_⟩
+  conv_lhs => arg 4; rw [inst_cupodTroll_peel_cupod k]
+  rw [eval, cupodTroll_guard_true hk]
+  rfl
+
+/-- …and cooperates at every other hypothesis. -/
+theorem cupodTroll_plays_C {k : Nat} (T : Tmpl) (hT : T ≠ .cupod) :
     ∃ N, eval N (.bot (inst (tauZoo k) .cupodTroll T))
       (.bot (inst (tauZoo k) .cupodTroll T)) (inst (tauZoo k) .cupodTroll T)
       = some Action.C := by
   refine ⟨2, ?_⟩
-  -- Unfold ONE compile level in the BODY slot only. A bare `rw` would also rewrite
-  -- the two FRAME slots (they are syntactically the same term), after which the
-  -- guard lemma — stated with `inst …` frames — no longer matches. `conv` targets
-  -- the third argument alone.
-  conv_lhs => arg 4; rw [inst_cupodTroll_peel k T]
-  rw [eval, cupodTroll_guard_false T, if_neg (by simp)]
+  conv_lhs => arg 4; rw [inst_cupodTroll_peel k T hT]
+  rw [eval, cupodTroll_guard_false T hT, if_neg (by simp)]
   rfl
 
-/-! ## The column bits — a floor row
+/-! ## The column bits
 
-`inst .cupodTroll T` reaches C through a FAILED `.eq` search, so every certificate
-must cross `search_f` and pay the full failed budget. The identity guard being
-decidable does not help: it is decidably FALSE, and the fall is what costs. So the
-prover columns read 0 over a TRUE cooperation — Guardian's Gödelian shape again,
-reached by a different route. -/
+The C-cells still reach cooperation through a FAILED `.eq` search, so they stay
+floor-priced (Guardian's Gödelian shape, a different route). The `.cupod` cell is
+new: a FIRED guard, so its defection has a cheap positive transcript. -/
 
-/-- The cooperation probe is FALSE-free but floor-priced: unprovable at every
-    budget ≤ k. -/
-theorem ps_probe_inst_cupodTroll_false {k K : Nat} (hK : K ≤ k) (T : Tmpl) :
+/-- The cooperation probe is floor-priced at every hypothesis but `.cupod`. -/
+theorem ps_probe_inst_cupodTroll_false {k K : Nat} (hK : K ≤ k) (T : Tmpl)
+    (hT : T ≠ .cupod) :
     proofSearch K (probe (inst (tauZoo k) .cupodTroll T)) = false := by
   cases h : proofSearch K (probe (inst (tauZoo k) .cupodTroll T)) with
   | false => rfl
   | true =>
       exfalso
       exact no_provable_botSearcherElse_tail k k
-        (.eq .opp (.bot (inst (tauZoo k) T .dupoc))) .D .C (.const .C)
+        (.eq (.const Action.C) (.const Action.D)) .D .C (.const .C)
         (by decide) (Nat.le_refl k)
         (.bot (inst (tauZoo k) .cupodTroll T))
         K _ ((proofSearch_spec _ _).1 h) hK
-        (by simp only [probe, inst_cupodTroll_peel k T, TailTo_plays])
+        (by simp only [probe, inst_cupodTroll_peel k T hT, TailTo_plays])
 
-/-- Its DEFECTION probe is false too — it truly cooperates (eval determinism). -/
-theorem ps_probeD_inst_cupodTroll_false {k : Nat} (m : Nat) (T : Tmpl) :
+/-- Its DEFECTION probe is false off the `.cupod` cell (it truly cooperates). -/
+theorem ps_probeD_inst_cupodTroll_false {k : Nat} (m : Nat) (T : Tmpl)
+    (hT : T ≠ .cupod) :
     proofSearch m (probeD (inst (tauZoo k) .cupodTroll T)) = false :=
-  ps_probeD_false_of_plays_C m (cupodTroll_plays_C T)
+  ps_probeD_false_of_plays_C m (cupodTroll_plays_C T hT)
+
+/-- At `.cupod` the defection IS provable — the guard fired, so `search_t` gives a
+    cheap positive transcript. -/
+theorem ps_probeD_inst_cupodTroll_cupod {k : Nat} (hk : 3 ≤ k)
+    (hkk : c_guard k + 3 ≤ k) :
+    proofSearch k (probeD (inst (tauZoo k) .cupodTroll .cupod)) = true := by
+  refine (proofSearch_spec _ _).2 ?_
+  rw [probeD, inst_cupodTroll_peel_cupod k]
+  refine Pf.atom ⟨PlaysProof.bot (PlaysProof.search_t ?_ PlaysProof.const), ?_⟩
+  · show Pf k (.eq (.const Action.C) (.const Action.C))
+    exact Pf.eqRefl _ (by simp only [Formula.size, Prog.size]; omega)
+  · have := hcl; have := hcn; omega
 
 end PD.Tau

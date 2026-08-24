@@ -58,11 +58,31 @@ def otherAction : Action → Action
     ("I cooperate if that would induce cooperation") rather than the
     evidence-gathering one.
 
-    `proveEq` = bounded proof search over a STRUCTURAL IDENTITY atom
-    (`.eq`): "is the probed instance literally this term?" — CupodTrollBot's guard
-    shape (2026-08-20). Both directions are decidable in `S` (`Pf.eqRefl` /
-    `Pf.eqNeg`), so a `proveEq` bit is never floor-priced: identity is the one
-    question the proof system answers completely.
+    `proveEq` = bounded proof search over a STRUCTURAL IDENTITY atom (`.eq`):
+    **"is the signal I am currently treating the lift of B?"** — CupodTrollBot's
+    guard shape (2026-08-20; RESTATED 2026-08-24).
+
+    The identity is between the HYPOTHESIS's instance and B's, both taken at the
+    probing bot's own frame and both `.bot`-frozen, so the guard is CLOSED like
+    every other probe. It fires exactly when the hypothesis IS `B` (the two sides
+    are then literally the same term, `Pf.eqRefl`), and `Pf.eqNeg` refutes it
+    otherwise.
+
+    **The 2026-08-24 correction.** The original emission was
+    `.eq .opp (.bot (inst T B))`, with two defects. It asked about `.opp`, a FREE
+    pronoun — breaking the layer's design pillar that every probe is closed
+    (`probe_subst`/`probeD_subst`), and meaningless inside a probe, whose frame is
+    instance-vs-itself. And it compared that pronoun against a counterfactual
+    probe `inst T B` ("the hypothesis facing B"), an object of a different kind
+    from anything that could sit across the table. The guard was consequently
+    unsatisfiable at every cell, so τ(CupodTroll)'s row was uniformly `C` and the
+    bot provably never did what it was written to do. The `let P := inst T B`
+    boilerplate came from the four BEHAVIOURAL modes, where `P` is the object to
+    interrogate; an identity test needs the object to RECOGNISE.
+
+    Both directions stay decidable in `S`, so a `proveEq` bit is never
+    floor-priced: identity is the one question the proof system answers
+    completely.
 
     `proveImplD` (2026-08-21) is the ASYMMETRIC-consequent variant: the antecedent
     still says "I play `test` against them", but the consequent says they play the
@@ -158,7 +178,11 @@ def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) :
                    (.plays (.bot (.selfIdx partnerIdx)) .self (otherAction st.test)))
             (.const st.fire) cont
       | .proveEq, .self =>
-          .search Z.budget (.eq .opp (.bot (.selfIdx partnerIdx))) (.const st.fire) cont
+          -- identity against the PARTNER component (see the `.name` arm below for
+          -- the semantics: a question about the HYPOTHESIS, not about `.opp`)
+          .search Z.budget
+            (.eq (.bot (.selfIdx partnerIdx)) (.bot (.selfIdx partnerIdx)))
+            (.const st.fire) cont
       -- third-party stages are OUTSIDE the cycle: compile them normally
       | .prove, .name B =>
           let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
@@ -178,8 +202,16 @@ def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) :
                    (.plays (.bot P) .self (otherAction st.test)))
             (.const st.fire) cont
       | .proveEq, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .search Z.budget (.eq .opp (.bot P)) (.const st.fire) cont
+          -- the guard carries NO compiled instance: mentioning one re-enters the
+          -- mutual-quine wall whenever the recognised bot probes this one back
+          -- (Cupod↔CupodTroll is exactly that pair). The index branch decides the
+          -- bit; the `.eq` is its object-language witness.
+          if T = B then
+            .search Z.budget (.eq (.const st.test) (.const st.test))
+              (.const st.fire) cont
+          else
+            .search Z.budget (.eq (.const st.test) (.const (otherAction st.test)))
+              (.const st.fire) cont
   termination_by structural fuel _ _ _ _ => fuel
 
 /-- Fuel-indexed compiler core. `instGo Z fuel A T l d` compiles the remaining stages
@@ -248,17 +280,33 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι)
             (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
             (.const st.fire) cont
       | .proveEq, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .search Z.budget (.eq .opp (.bot P)) (.const st.fire) cont
+          -- "is the signal I am currently treating the lift of B?" The question is
+          -- about WHICH HYPOTHESIS is in the slot, so it is answered from the
+          -- INDEX — never by compiling B's behaviour (doing so re-creates the
+          -- mutual-quine wall: `inst B A` can probe back to `A`, and no amount of
+          -- fuel reaches a fixpoint). The compiler branches on `T = B` exactly as
+          -- the `.self` arms branch on `T = A`, and emits a CLOSED `.eq` that is
+          -- decidably true or decidably false.
+          -- the guard carries NO compiled instance: mentioning one re-enters the
+          -- mutual-quine wall whenever the recognised bot probes this one back
+          -- (Cupod↔CupodTroll is exactly that pair). The index branch decides the
+          -- bit; the `.eq` is its object-language witness.
+          if T = B then
+            .search Z.budget (.eq (.const st.test) (.const st.test))
+              (.const st.fire) cont
+          else
+            .search Z.budget (.eq (.const st.test) (.const (otherAction st.test)))
+              (.const st.fire) cont
       | .proveEq, .self =>
           if T = A then
-            .search Z.budget (.eq .opp .self) (.const st.fire) cont
+            -- the diagonal: the hypothesis IS me, so the identity holds
+            .search Z.budget (.eq .self .self) (.const st.fire) cont
           else if Z.entangled A T then
             .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
                  (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
           else
             let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
-            .search Z.budget (.eq .opp (.bot P)) (.const st.fire) cont
+            .search Z.budget (.eq (.bot P) (.bot P)) (.const st.fire) cont
       | .proveImpl, .self =>
           if T = A then
             .search Z.budget

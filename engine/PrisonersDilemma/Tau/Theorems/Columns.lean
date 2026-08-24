@@ -180,7 +180,7 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .guardian => ps_probe_guardCell_false (le_refl k) _
   | .dbot     => ps_probe_false_of_plays_D k dbot_coop_plays_D
   | .cupod      => ps_probe_inst_cupod_coop_false (le_refl k)
-  | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
+  | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
   | .cimcic     => ps_probe_cimcic_coop hL (by omega)
   | .dimcid     => ps_probe_inst_dimcid_coop_false (le_refl k)
 
@@ -210,7 +210,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k)
   | .guardian => ps_probe_false_of_plays_D k (guardian_defect_plays_D hk)
   | .dbot     => (proofSearch_spec _ _).2 (pf_probe_dbotConstD hk6)
   | .cupod      => ps_probe_false_of_plays_D k (cupod_defect_plays_D hk)
-  | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
+  | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
   | .cimcic     => ps_probe_false_of_plays_D k cimcic_defect_plays_D
   | .dimcid     => ps_probe_inst_dimcid_defect_false hL
 
@@ -250,7 +250,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .guardian => ps_probe_guardCell_false (le_refl k) _
   | .dbot     => ps_probe_inst_dbot_dupoc_false (le_refl k)
   | .cupod      => ps_probe_inst_cupod_dupoc_false (le_refl k)
-  | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _
+  | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
   | .cimcic     => hcim
   | .dimcid     => ps_probe_inst_dimcid_dupoc_false (le_refl k)
 
@@ -287,7 +287,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .guardian => ps_probeD_false_of_plays_C k guardian_coop_plays_C
   | .dbot     => ps_probeD_dbotConstC h6
   | .cupod      => ps_probeD_false_of_plays_C k cupod_coop_plays_C
-  | .cupodTroll => ps_probeD_inst_cupodTroll_false k _
+  | .cupodTroll => ps_probeD_inst_cupodTroll_false k _ (by decide)
   | .cimcic     => ps_probeD_false_of_plays_C k (cimcic_coop_plays_C hL)
   | .dimcid     => ps_probeD_inst_dimcid_coop_false
 
@@ -316,9 +316,13 @@ def cupodColBit : Tmpl → Bool
   -- DEFECTION — the first ALIGNED-on-D pair in the zoo (`cimcic × dupoc` is
   -- the aligned-on-C one). The bit is Löb-gated, hence a hypothesis below.
   | .dimcid => true
+  -- RESTATED 2026-08-24: with `proveEq` asking about the HYPOTHESIS, the troll
+  -- recognises Cupod and defects on it — base CupodTrollBot's whole point, which
+  -- the old `.opp`-pronoun guard could never express.
+  | .cupodTroll => true
   | _       => false
 
-theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k)
+theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
     -- the ALIGNED dimcid×cupod pair: mutual Löb on defection, gated like every
     -- other Löb bit (see `TauDIMCID/Helpers`, "The ENTANGLED cells")
@@ -346,7 +350,9 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k)
       (searchProbeD_plays_C _ _ (ps_probeD_false_of_plays_C k cupod_coop_plays_C))
   | .dbot       => ps_probeD_false_of_plays_C k
       (dbot_plays_C_of_defect .cupod (cupod_defect_plays_D hk))
-  | .cupodTroll => ps_probeD_false_of_plays_C k (cupodTroll_plays_C .cupod)
+  -- RESTATED 2026-08-24: the identity guard now fires at `.cupod`, so the
+  -- troll DEFECTS here and its defection has a cheap positive transcript
+  | .cupodTroll => ps_probeD_inst_cupodTroll_cupod (by omega) hkk
   | .cupod      => hquine
   | .cimcic     => ps_probeD_inst_cimcic_cupod_false (le_refl k)
   | .dimcid     => hdc
@@ -380,7 +386,7 @@ theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .guardian => guardian_coop_plays_C
   | .dbot     => dbot_coop_plays_D
   | .cupod      => cupod_coop_plays_C
-  | .cupodTroll => cupodTroll_plays_C _
+  | .cupodTroll => cupodTroll_plays_C _ (by decide)
   | .cimcic     => cimcic_coop_plays_C hL
   | .dimcid     => dimcid_coop_plays_C
 
@@ -410,7 +416,7 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k)
   | .guardian => guardian_defect_plays_D hk
   | .dbot     => dbot_plays_C_of_defect .defect ⟨1, rfl⟩
   | .cupod      => cupod_defect_plays_D hk
-  | .cupodTroll => cupodTroll_plays_C _
+  | .cupodTroll => cupodTroll_plays_C _ (by decide)
   | .cimcic     => cimcic_defect_plays_D
   | .dimcid     => dimcid_defect_plays_D hL
 

@@ -96,13 +96,26 @@ theorem inst_dbot_peel (k : Nat) : ∀ T, inst (tauZoo k) .dbot T
         .C (.const .D) (.const .C) :=
   fun T => by cases T <;> rfl
 
-/-- τ(CupodTroll)'s row: one `proveEq` stage — a structural identity test against
-    the probed instance. The `.opp` subject stays a pronoun (resolved by `subst` at
-    consultation, exactly as base CupodTrollBot's `.eq .opp …` does). -/
-theorem inst_cupodTroll_peel (k : Nat) : ∀ T, inst (tauZoo k) .cupodTroll T
-    = .search k (.eq .opp (.bot (inst (tauZoo k) T .dupoc)))
-        (.const .D) (.const .C) :=
-  fun T => by cases T <;> rfl
+/-! τ(CupodTroll)'s row: one `proveEq` stage — "is the signal I am treating the
+lift of CupodBot?" (RESTATED 2026-08-24; the old emission asked about `.opp`, a
+free pronoun, and could never fire). The compiler branches on the INDEX, so the
+row splits into the recognised hypothesis and all the others. -/
+
+/-- τ(CupodTroll) at the ONE hypothesis it recognises: the identity holds
+    (`.eq x x`), so the guard fires and it DEFECTS — base CupodTrollBot's whole
+    point. -/
+theorem inst_cupodTroll_peel_cupod (k : Nat) : inst (tauZoo k) .cupodTroll .cupod
+    = .search k (.eq (.const Action.C) (.const Action.C))
+        (.const .D) (.const .C) := rfl
+
+/-- …and at every OTHER hypothesis the identity is decidably FALSE, so it falls
+    through and cooperates. -/
+theorem inst_cupodTroll_peel (k : Nat) : ∀ T, T ≠ .cupod →
+    inst (tauZoo k) .cupodTroll T
+      = .search k (.eq (.const Action.C) (.const Action.D))
+          (.const .D) (.const .C) := by
+  intro T h
+  cases T <;> first | rfl | exact absurd rfl h
 
 /-! ### τ(Cupod)'s row — the FIRST `.sys` row (2026-08-20)
 

@@ -26,6 +26,9 @@ namespace PD.Tau
 def cupodRow : Tmpl → Action
   | .defect     => .D
   | .cupod      => .D
+  -- RESTATED 2026-08-24: with `proveEq` fixed, τ(CupodTroll) recognises Cupod
+  -- and defects on it — so Cupod convicts the troll in turn.
+  | .cupodTroll => .D
   -- the ALIGNED entangled pair: mutual Löb on DEFECTION (see `TauDIMCID`)
   | .dimcid     => .D
   | _           => .C
@@ -43,7 +46,7 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
       = some Action.D) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .cupod T)) (.bot (inst (tauZoo k) .cupod T))
               (inst (tauZoo k) .cupod T) = some (cupodRow T) :=
-  let bCu := ps_probeD_inst_cupod hk hquine hdc
+  let bCu := ps_probeD_inst_cupod hk hkk hquine hdc
   fun T => match T with
   | .coop       => searchProbeD_plays_C _ _ (bCu .coop)
   | .defect     => searchProbeD_plays_D _ _ (bCu .defect)
@@ -55,7 +58,7 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
   | .obot       => searchProbeD_plays_C _ _ (bCu .obot)
   | .guardian   => searchProbeD_plays_C _ _ (bCu .guardian)
   | .dbot       => searchProbeD_plays_C _ _ (bCu .dbot)
-  | .cupodTroll => searchProbeD_plays_C _ _ (bCu .cupodTroll)
+  | .cupodTroll => searchProbeD_plays_D _ _ (bCu .cupodTroll)
   | .cupod      => inst_cupod_quine_plays_D hquine
   | .cimcic     => cupod_cimcic_plays_C
   | .dimcid     => hdcP
@@ -77,7 +80,7 @@ theorem cupodBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     VoteBits (vecOf (tauZoo k) .cupod w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D)] :=
+       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D)] :=
   vecOf_bits (tauZoo k) .cupod w cupodRow tauOrder
     fun T _ => cupodRow_plays hk hkk h6 h10 hquine hdc hdcP T
 

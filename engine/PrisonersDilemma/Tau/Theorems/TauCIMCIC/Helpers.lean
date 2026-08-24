@@ -392,8 +392,9 @@ theorem ps_cimGuard_cupodTroll_false {k K : Nat} (hK : K ≤ k) :
       exfalso
       have hp := (proofSearch_spec _ _).1 h
       rw [show inst (tauZoo k) .cupodTroll .cimcic
-          = .search k (.eq .opp (.bot (inst (tauZoo k) .cimcic .dupoc)))
-              (.const .D) (.const .C) from inst_cupodTroll_peel k .cimcic] at hp
+          = .search k (.eq (.const Action.C) (.const Action.D))
+              (.const .D) (.const .C)
+          from inst_cupodTroll_peel k .cimcic (by decide)] at hp
       refine no_provable_botSearcherElse_tail k k _ .D .C _ (by decide) (Nat.le_refl k) _
         K _ hp hK ⟨rfl, ?_⟩
       intro hA

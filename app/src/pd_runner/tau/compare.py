@@ -95,26 +95,13 @@ WHITELIST: dict[tuple[str, str], str] = {
         "`no_provable_DIMCID_C_tail`), so the prover TFT reads 0 where the "
         "behavioral base TFT sims a C."
     ),
-    # ── guard-target truncation: the lift cannot express base Troll's guard ──
-    # NOT a floor and NOT budget staggering (both were checked and rejected).
-    # Base CupodTrollBot's guard is `.eq .opp (.bot (CupodBot k))` — "is my
-    # OPPONENT literally CupodBot?", which FIRES against CupodBot, giving (D, D).
-    # The Spec compiler emits `.eq .opp (.bot (inst T .dupoc))`: the frozen
-    # target is the HYPOTHESIS's dupoc-instance, never the running player, so
-    # the identity can never hold and the lifted bot cooperates. The lift asks a
-    # structurally DIFFERENT question than the bot it lifts — the same class as
-    # the EBot Mirror-branch entry above, and it will persist until the `proveEq`
-    # emission can name a zoo member directly.
-    ("TauCupodTroll", "TauCupod"): (
-        "Guard-target truncation: base Troll's identity guard names the BARE bot "
-        "(`CupodBot k`) and fires; the lift's names an INSTANCE "
-        "(`inst T .dupoc`) and never can. Lift-expressiveness gap, not a floor."
-    ),
-    ("TauCupod", "TauCupodTroll"): (
-        "The transpose of (TauCupodTroll, TauCupod) — base gives (D, D) because "
-        "Troll recognises Cupod; with the lifted guard unable to fire, τ(Cupod) "
-        "faces a cooperator and its punish-probe finds nothing to convict."
-    ),
+    # The two (TauCupodTroll, TauCupod) entries recorded here on 2026-08-24 were
+    # REMOVED the same day: the divergence was a COMPILER BUG, not a property of
+    # the lift. `proveEq` emitted `.eq .opp (.bot (inst T B))` — a free pronoun
+    # against a counterfactual probe — so the guard could never fire. Restating it
+    # as "is the signal I am treating the lift of B?" made both cells AGREE with
+    # base. A whitelist entry describing a fixable defect is a rug; the fix is in
+    # `Tau/Spec.lean`.
     ("TauTFTPf", "TauGuardian"): (
         "Prover-modality floor: TauTFTPf is the PROVER variant of behavioral base "
         "TFT, and Guardian's cooperation is floor-priced — true (base TFT sims it: "

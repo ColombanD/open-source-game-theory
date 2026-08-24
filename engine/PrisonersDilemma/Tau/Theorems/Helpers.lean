@@ -456,12 +456,12 @@ abbrev eMass (w : Tmpl → Nat) : Nat :=
   w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + (w .guardian + (w .cupod + (w .cimcic + w .dimcid)))))))
 abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
 abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
-/-- τ(Cupod)'s mass: everything but the provable bullies — the defector and ITSELF
-    (the Löbian self-defection). Conditional on the open entangled slot resolving
-    to `.C` (the base red cell's value). -/
+/-- τ(Cupod)'s mass: everything but the provable bullies — the defector, ITSELF
+    (the Löbian self-defection), and — since the 2026-08-24 `proveEq` restatement
+    — τ(CupodTroll), which now recognises Cupod and defects on it. -/
 abbrev cupodMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
-    (w .obot + (w .guardian + (w .dbot + (w .cupodTroll + w .cimcic)))))))))
+    (w .obot + (w .guardian + (w .dbot + w .cimcic))))))))
 /-- τ(DBot)'s mass: everything but the exploitable constant cooperator AND ITSELF
     (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
 abbrev dbotMass (w : Tmpl → Nat) : Nat :=
