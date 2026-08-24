@@ -77,6 +77,44 @@ WHITELIST: dict[tuple[str, str], str] = {
         "CupodTrollBot j: the 4x+100 stagger is what affords Troll's floor. "
         "Same-k tau cannot reproduce it."
     ),
+    # ── prover-modality floors, 3rd and 4th floor bots (2026-08-24) ──────────
+    # The whitelist was written when the zoo had TWO floor bots (Guardian,
+    # CupodTroll). Cupod and DIMCID are the third and fourth, added later, and
+    # produce the identical divergence against the PROVER TFT.
+    ("TauTFTPf", "TauCupod"): (
+        "Prover-modality floor, same shape as (TauTFTPf, TauGuardian): "
+        "τ(Cupod)'s C is the ELSE-play of a failed punish-search, so its "
+        "transcript pays search_f and no prover can cite it at the same budget "
+        "(`ps_probe_inst_cupod_coop_false`). Base TitForTatBot is the "
+        "BEHAVIORAL bot — it sims and sees the C; its prover lift cannot."
+    ),
+    ("TauTFTPf", "TauDIMCID"): (
+        "Prover-modality floor — τ(DIMCID) is the zoo's FOURTH floor bot. Its C "
+        "is the else-play of a failed impl-guard search "
+        "(`ps_probe_inst_dimcid_coop_false`; the base twin is "
+        "`no_provable_DIMCID_C_tail`), so the prover TFT reads 0 where the "
+        "behavioral base TFT sims a C."
+    ),
+    # ── guard-target truncation: the lift cannot express base Troll's guard ──
+    # NOT a floor and NOT budget staggering (both were checked and rejected).
+    # Base CupodTrollBot's guard is `.eq .opp (.bot (CupodBot k))` — "is my
+    # OPPONENT literally CupodBot?", which FIRES against CupodBot, giving (D, D).
+    # The Spec compiler emits `.eq .opp (.bot (inst T .dupoc))`: the frozen
+    # target is the HYPOTHESIS's dupoc-instance, never the running player, so
+    # the identity can never hold and the lifted bot cooperates. The lift asks a
+    # structurally DIFFERENT question than the bot it lifts — the same class as
+    # the EBot Mirror-branch entry above, and it will persist until the `proveEq`
+    # emission can name a zoo member directly.
+    ("TauCupodTroll", "TauCupod"): (
+        "Guard-target truncation: base Troll's identity guard names the BARE bot "
+        "(`CupodBot k`) and fires; the lift's names an INSTANCE "
+        "(`inst T .dupoc`) and never can. Lift-expressiveness gap, not a floor."
+    ),
+    ("TauCupod", "TauCupodTroll"): (
+        "The transpose of (TauCupodTroll, TauCupod) — base gives (D, D) because "
+        "Troll recognises Cupod; with the lifted guard unable to fire, τ(Cupod) "
+        "faces a cooperator and its punish-probe finds nothing to convict."
+    ),
     ("TauTFTPf", "TauGuardian"): (
         "Prover-modality floor: TauTFTPf is the PROVER variant of behavioral base "
         "TFT, and Guardian's cooperation is floor-priced — true (base TFT sims it: "

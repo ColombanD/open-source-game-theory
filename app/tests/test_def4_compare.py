@@ -30,9 +30,16 @@ from pd_runner.tau.matrix import load_tau_matrix
 FULL_BOTS: tuple[str, ...] = (
     "DupocBot", "CooperateBot", "DefectBot", "TitForTatBot", "EBot",
     "JustBot", "OBot", "GuardianBot", "DBot", "CupodTrollBot", "CIMCIC",
+    "CupodBot", "DIMCID",
 )
 """The base bots the full certification runs over (TitForTatBot carries both TFT
-lift variants, so 11 base bots cover 14 templates)."""
+lift variants, so 13 base bots cover 14 templates).
+
+CupodBot and DIMCID were MISSING here until 2026-08-24, even though their base
+cells landed on 08-21 — so the check silently ran on 144 of the 182 comparable
+cells and reported green while four cells diverged unexamined. Keep this list in
+sync with the base bots that have proven cells, or the certification understates
+its own coverage."""
 
 
 # ── the kernel bit tables ──────────────────────────────────────────────────────
@@ -63,14 +70,19 @@ def test_kernel_agrees_with_base_directly() -> None:
     `VoteBits` theorems and the cells out of the certified base matrix, so a pass
     depends on no Python model at all.
 
-    144 comparable cells (every template pair whose two base bots are in the
-    zoo), 139 agree, and the 5 divergences are exactly the recorded whitelist —
-    properties of the LIFT, not of any implementation."""
+    182 comparable cells (every template pair whose two base bots are in the
+    zoo), 173 agree, and the 9 divergences are exactly the recorded whitelist —
+    properties of the LIFT, not of any implementation.
+
+    Was 144/139/5 until 2026-08-24, when CupodBot and DIMCID were added to
+    `FULL_BOTS`: their base cells had landed on 08-21 but the list was never
+    updated, so 38 comparable cells went unchecked and four divergences sat
+    unexamined behind a green result."""
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
-    assert len(d.cells) == 144
+    assert len(d.cells) == 182
     assert d.passed, d.unexpected
-    assert d.agreements == 139
-    assert len(d.whitelisted_divergences) == 5
+    assert d.agreements == 173
+    assert len(d.whitelisted_divergences) == 9
     # DIMCID's own row is not stated yet (its off-cycle bits are blocked); its
     # COLUMN is, which is why the count is still the full 144.
     assert d.missing_rows == ("TauDIMCID",)
@@ -101,26 +113,42 @@ def test_missing_rows_are_reported_not_guessed() -> None:
 
 def test_whitelist_is_exactly_the_recorded_cells() -> None:
     assert set(WHITELIST) == {
+        # coverage: the lift cannot express the base bot's guard
         ("TauEBot", "TauEBot"),
+        ("TauCupodTroll", "TauCupod"),
+        ("TauCupod", "TauCupodTroll"),
+        # prover-modality floors (the α-gap), one per floor bot
         ("TauTFTPf", "TauGuardian"),
         ("TauTFTPf", "TauCupodTroll"),
+        ("TauTFTPf", "TauCupod"),
+        ("TauTFTPf", "TauDIMCID"),
+        # budget staggering
         ("TauDupoc", "TauCupodTroll"),
         ("TauJust", "TauCupodTroll"),
     }
 
 
-def test_whitelist_splits_into_two_distinct_causes() -> None:
-    """The five whitelisted divergences are NOT one phenomenon, and the notes
-    must not blur them (they did until 2026-08-21):
+def test_whitelist_splits_into_three_distinct_causes() -> None:
+    """The whitelisted divergences are NOT one phenomenon, and the notes must not
+    blur them (they did until 2026-08-21, when two were miscategorised):
 
     * **budget staggering** — the base cell is a DAGGER cell, proven only under a
-      side hypothesis granting one bot a bigger budget (enough to pay the
-      partner's `search_f` floor). `tauZoo k` gives every bot the SAME `k`, so
-      the stagger is unavailable by construction. Base and tau agree on the
-      mathematics; they differ on the budget regime.
-    * **genuine modality / coverage gaps** — the α-gap (a prover lift of a
-      BEHAVIORAL base bot) and EBot's dropped Mirror branch.
-    """
+      side hypothesis (or a stagger baked into the statement) granting one bot a
+      bigger budget, enough to pay the partner's `search_f` floor. `tauZoo k`
+      gives every bot the SAME `k`, so the stagger is unavailable by
+      construction. Base and tau agree on the mathematics and differ on the
+      budget regime.
+    * **prover-modality floors** — the α-gap proper: a PROVER lift of a
+      BEHAVIORAL base bot, facing a partner whose cooperation is true but
+      floor-priced. One entry per floor bot (Guardian, CupodTroll, Cupod,
+      DIMCID).
+    * **coverage / guard-target truncation** — the lift cannot express the base
+      bot's guard at all: EBot's dropped Mirror branch, and CupodTroll's identity
+      guard, which names a BARE bot in base but an INSTANCE in the lift and so
+      can never fire.
+
+    Only the middle group is evidence for the α-gap; conflating the others would
+    overstate it."""
     m = load_tau_matrix(FULL_BOTS)
     dagger = set(m.dagger_cells)
 
@@ -128,13 +156,24 @@ def test_whitelist_splits_into_two_distinct_causes() -> None:
     for A, T in staggering:
         assert (BASE_OF[A], BASE_OF[T]) in dagger, (A, T)
 
-    # genuine modality / coverage gaps: same-budget base cells, no stagger
     modality = {("TauTFTPf", "TauGuardian"), ("TauTFTPf", "TauCupodTroll"),
-                ("TauEBot", "TauEBot")}
+                ("TauTFTPf", "TauCupod"), ("TauTFTPf", "TauDIMCID")}
+    coverage = {("TauEBot", "TauEBot"),
+                ("TauCupodTroll", "TauCupod"), ("TauCupod", "TauCupodTroll")}
+    # the prover-floor cells are never budget artifacts
     for A, T in modality:
         assert (BASE_OF[A], BASE_OF[T]) not in dagger, (A, T)
+    # NOTE the CupodTroll×Cupod base cells ARE daggered (they carry `hk` and
+    # `hbudget`) — but the stagger is not WHY the lift diverges: the lifted
+    # identity guard cannot fire at ANY budget, so the divergence would persist
+    # even with the base hypotheses discharged. Cause and flag are independent,
+    # and the whitelist note records the cause.
+    assert (BASE_OF["TauEBot"], BASE_OF["TauEBot"]) not in dagger
 
-    assert staggering | modality == set(WHITELIST)
+    # every prover-floor entry is the PROVER TFT — that is what makes it the α-gap
+    assert all(A == "TauTFTPf" for A, _ in modality)
+
+    assert staggering | modality | coverage == set(WHITELIST)
 
 
 def test_every_whitelisted_cell_actually_diverges() -> None:
