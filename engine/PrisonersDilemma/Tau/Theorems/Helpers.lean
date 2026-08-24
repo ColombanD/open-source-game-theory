@@ -602,6 +602,38 @@ theorem sys_cross_impl_cim (defs : ProgList) (i j : Nat) (k K : Nat)
   rw [sysClose_subst_cimSelfIdx] at h
   exact h
 
+/-- The closed-substituted form of DIMCID's entangled guard (the asymmetric twin
+    of `sysClose_subst_cimSelfIdx`). -/
+theorem sysClose_subst_cimSelfIdxD (defs : ProgList) (j : Nat) (me o : Prog) :
+    ((Formula.impl (.plays .self (.bot (.selfIdx j)) Action.C)
+                   (.plays (.bot (.selfIdx j)) .self Action.D)).sysClose defs).subst me o
+      = .impl (.plays me (.bot (.sys defs j)) Action.C)
+              (.plays (.bot (.sys defs j)) me Action.D) := by
+  simp [Formula.sysClose, Prog.sysClose, Formula.subst, Prog.subst]
+
+
+/-- DIMCID's member reading, generic in the system: □(its closed guard) → it
+    self-defects. -/
+theorem sys_cross_impl_dim (defs : ProgList) (i j : Nat) (k K : Nat)
+    (hget : defs.get? i = some (.search k
+      (.impl (.plays .self (.bot (.selfIdx j)) Action.C)
+             (.plays (.bot (.selfIdx j)) .self Action.D)) (.const .D) (.const .C)))
+    (hK : (Formula.impl
+        (.box k (.impl (.plays (.bot (.sys defs i)) (.bot (.sys defs j)) Action.C)
+                       (.plays (.bot (.sys defs j)) (.bot (.sys defs i)) Action.D)))
+        (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D)).size ≤ K) :
+    Pf K (.impl
+      (.box k (.impl (.plays (.bot (.sys defs i)) (.bot (.sys defs j)) Action.C)
+                     (.plays (.bot (.sys defs j)) (.bot (.sys defs i)) Action.D)))
+      (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D)) := by
+  have h := Pf.botSysSearchStep defs i k
+    (.impl (.plays .self (.bot (.selfIdx j)) Action.C)
+           (.plays (.bot (.selfIdx j)) .self Action.D)) .D .C
+    (.bot (.sys defs i)) (.bot (.sys defs i)) rfl hget
+    (by simpa [sysClose_subst_cimSelfIdxD] using hK)
+  rw [sysClose_subst_cimSelfIdxD] at h
+  exact h
+
 /-- A FORWARDER component's reading (`Pf.botSysSimStep`), at an arbitrary opponent
     frame and any action: component `j` plays `a` against itself → component `i`,
     a bare copy of `j`, plays `a` against `opp`. -/
@@ -645,6 +677,66 @@ theorem entry_of_interp {I : Prog} {a : Action}
   cases n with
   | zero => simp [play, eval] at hn
   | succ m => exact ⟨m, by rw [play, eval] at hn; exact hn⟩
+
+/-- A FORWARDER component PLAYS what its partner component self-plays. -/
+theorem sysFwd_plays {defs : ProgList} {i j : Nat} {a : Action} (me opp : Prog)
+    (hget : defs.get? i = some (.sim (.bot (.selfIdx j)) (.bot (.selfIdx j))))
+    (h : ∃ N, eval N (.bot (.sys defs j)) (.bot (.sys defs j)) (.sys defs j) = some a) :
+    ∃ N, eval N me opp (.sys defs i) = some a := by
+  obtain ⟨N, hN⟩ := h
+  refine ⟨N + 3, ?_⟩
+  rw [eval_sys_some (N + 2) hget]
+  simp only [Prog.sysClose]
+  rw [eval]
+  simp only [Prog.subst]
+  rw [eval]
+  exact eval_mono_le hN _ (by omega)
+
+/-! ## Searcher heads — eval inversion and the fired-guard play (hoisted 2026-08-24) -/
+
+/-- Eval inversion: a system component that plays its THEN action must have FIRED. -/
+theorem sysSearcher_fired_of_plays {defs : ProgList} {i kb : Nat} {g : Formula}
+    {aT aE : Action} (hne : aT ≠ aE) (me opp : Prog)
+    (hget : defs.get? i = some (.search kb g (.const aT) (.const aE)))
+    (h : ∃ N, eval N me opp (.sys defs i) = some aT) :
+    proofSearch kb ((g.sysClose defs).subst me opp) = true := by
+  cases hps : proofSearch kb ((g.sysClose defs).subst me opp) with
+  | true => rfl
+  | false =>
+      exfalso
+      obtain ⟨N, hN⟩ := h
+      obtain ⟨M, hM⟩ := sysSearcher_plays_else me opp hget hps
+      have h1 := eval_mono_le hN (max N M) (Nat.le_max_left _ _)
+      have h2 := eval_mono_le hM (max N M) (Nat.le_max_right _ _)
+      rw [h1] at h2
+      exact hne (Option.some.inj h2)
+
+/-- A searcher component at the head FIRES once its guard is provable at `k`:
+    `search_t` cites the guard at `c_guard k` (a pointer, not the transcript), and
+    the play is the then-constant. Generic in the polarity. -/
+theorem sysSearcher_head_plays {defs : ProgList} {k i : Nat} {aT aE : Action}
+    (hget : defs.get? 0 = some (.search k
+      (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) aT) (.const aT) (.const aE)))
+    (hcg : c_leaf + c_guard k + c_node + c_node + c_node ≤ k)
+    (hAf : Pf k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) aT)) :
+    ∃ N, eval N (.bot (.sys defs 0)) (.bot (.sys defs 0)) (.sys defs 0) = some aT := by
+  have hpre : Pf k (((Formula.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) aT).sysClose defs).subst
+      (.bot (.sys defs 0)) (.bot (.sys defs 0))) := by
+    rw [sysClose_subst_botSelfIdx]; exact hAf
+  have h1 := PlaysProof.search_t (q := .const aE) hpre
+    (PlaysProof.const (me := .bot (.sys defs 0)) (opponent := .bot (.sys defs 0)) (a := aT))
+  have hbody : PlaysProof (.bot (.sys defs 0)) (.bot (.sys defs 0)) (.sys defs 0) aT
+      (c_leaf + c_guard k + c_node + c_node) :=
+    PlaysProof.sysStep hget (by simp only [Prog.sysClose]; exact h1)
+  exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
+    (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
+
+/-- The `c_guard` headroom every head-fires cell needs, past a threshold. -/
+theorem cg_headroom : ∃ kC, ∀ k, kC ≤ k → c_leaf + c_guard k + c_node + c_node + c_node ≤ k := by
+  obtain ⟨kC, hkC⟩ := linear_log2_add_le 200 4000
+  refine ⟨kC, fun k hk => ?_⟩
+  have := hkC k hk; have := hcl; have := hcn
+  simp only [c_guard, numCost]; omega
 
 /-! ## Shape lemmas — the `test = .D` idioms (9-zoo extension, 2026-08-18) -/
 

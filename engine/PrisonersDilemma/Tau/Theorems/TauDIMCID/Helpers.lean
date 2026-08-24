@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.Helpers
+import PrisonersDilemma.Base.Loeb
 import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers
 
 /-!
@@ -425,15 +426,7 @@ theorem dimcid_plays_C_of_searcherC {k : Nat} (T : Tmpl) (g : Formula) (pE : Pro
 
 /-! ### The entangled systems, named -/
 
-/-- The closed-substituted form of DIMCID's entangled guard (the asymmetric twin
-    of `sysClose_subst_cimSelfIdx`). -/
-theorem sysClose_subst_cimSelfIdxD (defs : ProgList) (j : Nat) (me o : Prog) :
-    ((Formula.impl (.plays .self (.bot (.selfIdx j)) Action.C)
-                   (.plays (.bot (.selfIdx j)) .self Action.D)).sysClose defs).subst me o
-      = .impl (.plays me (.bot (.sys defs j)) Action.C)
-              (.plays (.bot (.sys defs j)) me Action.D) := by
-  simp [Formula.sysClose, Prog.sysClose, Formula.subst, Prog.subst]
-
+-- `sysClose_subst_cimSelfIdxD` hoisted to `Tau/Theorems/Helpers.lean` (2026-08-24).
 
 /-- `inst .dimcid .dupoc`: DIMCID at the head. -/
 def mdSysD (k : Nat) : ProgList :=
@@ -746,5 +739,208 @@ theorem ps_probeD_inst_dimcid_coop_false {k K : Nat} :
 theorem ps_probe_inst_dimcid_dupoc_false' {k K : Nat} (hK : K ≤ k) :
     proofSearch K (probe (inst (tauZoo k) .dimcid .dupoc)) = false :=
   ps_probe_inst_dimcid_dupoc_false hK
+
+/-! ## dimcid × cupod — ALIGNED ON DEFECTION, closed by mutual bounded Löb (2026-08-24)
+
+The first aligned-on-`D` pair. DIMCID's member fires `D` from □(its guard); its
+guard's consequent is "cupod's member defects against me", which cupod's searcher
+concludes from □(DIMCID's member self-defects); and that self-defection is what
+DIMCID's own reading concludes. Both legs are BOXED, so this is `mutual_pblt_engine_id`
+verbatim — the same closure as `cimcic_dupoc_mutual`, at the other polarity, with
+`implK` weakening cupod's reading into DIMCID's implication guard. -/
+
+-- `sys_cross_impl_dim` hoisted to `Tau/Theorems/Helpers.lean` (2026-08-24).
+
+/-- `inst .dimcid .cupod`: DIMCID at the head, Cupod punishing it. (`dcSys` in
+    `TauCupod/Helpers` is the DUPOC×Cupod system — different bot, different name.) -/
+def dimCupSys (k : Nat) : ProgList :=
+  .cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                          (.plays (.bot (.selfIdx 1)) .self Action.D))
+    (.const .D) (.const .C))
+  (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
+    (.const .D) (.const .C)) .nil)
+
+theorem inst_dimcid_cupod_eq (k : Nat) :
+    inst (tauZoo k) .dimcid .cupod = .sys (dimCupSys k) 0 := rfl
+theorem dimCupSys_get0 (k : Nat) :
+    (dimCupSys k).get? 0
+      = some (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                               (.plays (.bot (.selfIdx 1)) .self Action.D))
+          (.const .D) (.const .C)) := rfl
+theorem dimCupSys_get1 (k : Nat) :
+    (dimCupSys k).get? 1
+      = some (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
+          (.const .D) (.const .C)) := rfl
+
+/-- `inst .cupod .dimcid`: Cupod at the head. -/
+def cupDimSys (k : Nat) : ProgList :=
+  .cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
+    (.const .D) (.const .C))
+  (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                           (.plays (.bot (.selfIdx 0)) .self Action.D))
+    (.const .D) (.const .C)) .nil)
+
+theorem inst_cupod_dimcid_eq (k : Nat) :
+    inst (tauZoo k) .cupod .dimcid = .sys (cupDimSys k) 0 := rfl
+theorem cupDimSys_get0 (k : Nat) :
+    (cupDimSys k).get? 0
+      = some (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
+          (.const .D) (.const .C)) := rfl
+theorem cupDimSys_get1 (k : Nat) :
+    (cupDimSys k).get? 1
+      = some (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                               (.plays (.bot (.selfIdx 0)) .self Action.D))
+          (.const .D) (.const .C)) := rfl
+
+private theorem log_facts' (k : Nat) :
+    Nat.log2 k ≤ k ∧ Nat.log2 0 = 0 ∧ Nat.log2 1 = 0 :=
+  ⟨Nat.log2_le_self k, by decide, by decide⟩
+
+/-- **The mutual engine, DIMCID-at-the-head**: `Af` = DIMCID's member (0)
+    self-defects, `Bf` = its closed guard. Leg 1 is cupod's reading weakened by
+    `implK` into the implication guard; leg 2 is DIMCID's own reading. -/
+theorem dimCup_mutual :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ m, Pf m (.plays (.bot (.sys (dimCupSys k) 0)) (.bot (.sys (dimCupSys k) 0)) Action.D) := by
+  refine mutual_pblt_engine_id
+    (fun k => .plays (.bot (.sys (dimCupSys k) 0)) (.bot (.sys (dimCupSys k) 0)) Action.D)
+    (fun k => .impl (.plays (.bot (.sys (dimCupSys k) 0)) (.bot (.sys (dimCupSys k) 1)) Action.C)
+                    (.plays (.bot (.sys (dimCupSys k) 1)) (.bot (.sys (dimCupSys k) 0)) Action.D))
+    (fun k => 100 * Nat.log2 k + 1000) (fun k => 100 * Nat.log2 k + 1000) 0
+    ?_ ?_ (fun k => le_rfl) (fun k => le_rfl) ?_ ?_
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts' k
+    simp only [Formula.size, Prog.size, ProgList.psize, dimCupSys, numCost]; omega
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts' k
+    simp only [Formula.size, Prog.size, ProgList.psize, dimCupSys, numCost]; omega
+  · intro k _
+    have h1 := sys_cross_at (dimCupSys k) 1 0 k
+      ((Formula.impl (.box k (.plays (.bot (.sys (dimCupSys k) 0)) (.bot (.sys (dimCupSys k) 0)) Action.D))
+        (.plays (.bot (.sys (dimCupSys k) 1)) (.bot (.sys (dimCupSys k) 0)) Action.D)).size)
+      (.bot (.sys (dimCupSys k) 0)) .D .C (dimCupSys_get1 k) le_rfl
+    have h2 := Pf.implK
+      (.plays (.bot (.sys (dimCupSys k) 1)) (.bot (.sys (dimCupSys k) 0)) Action.D)
+      (.plays (.bot (.sys (dimCupSys k) 0)) (.bot (.sys (dimCupSys k) 1)) Action.C)
+      (k := (Formula.impl (.plays (.bot (.sys (dimCupSys k) 1)) (.bot (.sys (dimCupSys k) 0)) Action.D)
+        (.impl (.plays (.bot (.sys (dimCupSys k) 0)) (.bot (.sys (dimCupSys k) 1)) Action.C)
+               (.plays (.bot (.sys (dimCupSys k) 1)) (.bot (.sys (dimCupSys k) 0)) Action.D))).size)
+      le_rfl
+    have h3 := Pf.implTrans _ _ _ _ _ h1 h2 (Nat.le_refl _)
+    refine Pf_mono h3 ?_
+    obtain ⟨h, h0, h1'⟩ := log_facts' k
+    simp only [Formula.size, Prog.size, ProgList.psize, dimCupSys, numCost]; omega
+  · intro k _
+    refine Pf_mono (sys_cross_impl_dim (dimCupSys k) 0 1 k _ (dimCupSys_get0 k) le_rfl) ?_
+    obtain ⟨h, h0, h1⟩ := log_facts' k
+    simp only [Formula.size, Prog.size, ProgList.psize, dimCupSys, numCost]; omega
+
+/-- **The mutual engine, Cupod-at-the-head**: DIMCID's member is index 1. -/
+theorem cupDim_mutual :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ m, Pf m (.plays (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 1)) Action.D) := by
+  refine mutual_pblt_engine_id
+    (fun k => .plays (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 1)) Action.D)
+    (fun k => .impl (.plays (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 0)) Action.C)
+                    (.plays (.bot (.sys (cupDimSys k) 0)) (.bot (.sys (cupDimSys k) 1)) Action.D))
+    (fun k => 100 * Nat.log2 k + 1000) (fun k => 100 * Nat.log2 k + 1000) 0
+    ?_ ?_ (fun k => le_rfl) (fun k => le_rfl) ?_ ?_
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts' k
+    simp only [Formula.size, Prog.size, ProgList.psize, cupDimSys, numCost]; omega
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts' k
+    simp only [Formula.size, Prog.size, ProgList.psize, cupDimSys, numCost]; omega
+  · intro k _
+    have h1 := sys_cross_at (cupDimSys k) 0 1 k
+      ((Formula.impl (.box k (.plays (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 1)) Action.D))
+        (.plays (.bot (.sys (cupDimSys k) 0)) (.bot (.sys (cupDimSys k) 1)) Action.D)).size)
+      (.bot (.sys (cupDimSys k) 1)) .D .C (cupDimSys_get0 k) le_rfl
+    have h2 := Pf.implK
+      (.plays (.bot (.sys (cupDimSys k) 0)) (.bot (.sys (cupDimSys k) 1)) Action.D)
+      (.plays (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 0)) Action.C)
+      (k := (Formula.impl (.plays (.bot (.sys (cupDimSys k) 0)) (.bot (.sys (cupDimSys k) 1)) Action.D)
+        (.impl (.plays (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 0)) Action.C)
+               (.plays (.bot (.sys (cupDimSys k) 0)) (.bot (.sys (cupDimSys k) 1)) Action.D))).size)
+      le_rfl
+    have h3 := Pf.implTrans _ _ _ _ _ h1 h2 (Nat.le_refl _)
+    refine Pf_mono h3 ?_
+    obtain ⟨h, h0, h1'⟩ := log_facts' k
+    simp only [Formula.size, Prog.size, ProgList.psize, cupDimSys, numCost]; omega
+  · intro k _
+    refine Pf_mono (sys_cross_impl_dim (cupDimSys k) 1 0 k _ (cupDimSys_get1 k) le_rfl) ?_
+    obtain ⟨h, h0, h1⟩ := log_facts' k
+    simp only [Formula.size, Prog.size, ProgList.psize, cupDimSys, numCost]; omega
+
+/-- The cheap budget-`k` re-certification of the DIMCID member's defection from
+    its FIRED guard (`search_t` cites via `c_guard`). -/
+theorem pf_dimcidSys_D_of_guard {defs : ProgList} {i j k : Nat}
+    (hget : defs.get? i = some (.search k
+      (.impl (.plays .self (.bot (.selfIdx j)) Action.C)
+             (.plays (.bot (.selfIdx j)) .self Action.D)) (.const .D) (.const .C)))
+    (hkk : c_guard k + 5 ≤ k)
+    (hBf : Pf k (.impl (.plays (.bot (.sys defs i)) (.bot (.sys defs j)) Action.C)
+                       (.plays (.bot (.sys defs j)) (.bot (.sys defs i)) Action.D))) :
+    Pf k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D) := by
+  have hpre : Pf k (((Formula.impl (.plays .self (.bot (.selfIdx j)) Action.C)
+      (.plays (.bot (.selfIdx j)) .self Action.D)).sysClose defs).subst
+      (.bot (.sys defs i)) (.bot (.sys defs i))) := by
+    rw [sysClose_subst_cimSelfIdxD]; exact hBf
+  have h1 := PlaysProof.search_t (q := .const .C) hpre
+    (PlaysProof.const (me := .bot (.sys defs i)) (opponent := .bot (.sys defs i))
+      (a := Action.D))
+  have hbody : PlaysProof (.bot (.sys defs i)) (.bot (.sys defs i)) (.sys defs i) Action.D
+      (c_leaf + c_guard k + c_node + c_node) :=
+    PlaysProof.sysStep hget (by simp only [Prog.sysClose]; exact h1)
+  exact Pf.atom ⟨PlaysProof.bot hbody, by have := hcl; have := hcn; omega⟩
+
+/-- **τ(DIMCID) at Cupod DEFECTS** (Löb-gated) — the `.cupod` slot of its row. -/
+theorem dimcid_cupod_plays_D :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .cupod))
+        (.bot (inst (tauZoo k) .dimcid .cupod)) (inst (tauZoo k) .dimcid .cupod)
+        = some Action.D := by
+  obtain ⟨kL, hLb⟩ := dimCup_mutual
+  refine ⟨kL, fun k hk => ?_⟩
+  obtain ⟨m, hm⟩ := hLb k hk
+  rw [inst_dimcid_cupod_eq k]
+  exact entry_of_interp (Pf_sound m _ hm)
+
+/-- **The `hdc` gate**: `probeD (inst .dimcid .cupod)` is PROVABLE at `k` — eval
+    inversion recovers the fired guard, then the cheap re-certification. -/
+theorem ps_probeD_inst_dimcid_cupod :
+    ∃ k₂, ∀ k, k₂ < k →
+      proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod)) = true := by
+  obtain ⟨kL, hLp⟩ := dimcid_cupod_plays_D
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  refine ⟨max kL kA, fun k hk => ?_⟩
+  have hplay := hLp k (by omega)
+  have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
+  have hkk : c_guard k + 5 ≤ k := by simp only [c_guard, numCost]; omega
+  rw [inst_dimcid_cupod_eq k] at hplay
+  have hfired := sysSearcher_fired_of_plays (by decide) _ _ (dimCupSys_get0 k) hplay
+  rw [sysClose_subst_cimSelfIdxD] at hfired
+  rw [probeD, inst_dimcid_cupod_eq k]
+  exact (proofSearch_spec _ _).2
+    (pf_dimcidSys_D_of_guard (dimCupSys_get0 k) hkk ((proofSearch_spec _ _).1 hfired))
+
+/-- **The `hdcP` gate**: τ(Cupod) DEFECTS against τ(DIMCID) — its punish-search
+    fires on the DIMCID member's Löb-certified self-defection. -/
+theorem cupod_dimcid_plays_D :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
+        (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
+        = some Action.D := by
+  obtain ⟨kL, hLb⟩ := cupDim_mutual
+  obtain ⟨kC, hkC⟩ := cg_headroom
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  refine ⟨max kL (max kC kA), fun k hk => ?_⟩
+  obtain ⟨m, hm⟩ := hLb k (by omega)
+  have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
+  have hkk : c_guard k + 5 ≤ k := by simp only [c_guard, numCost]; omega
+  have hplay : ∃ N, eval N (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 1))
+      (.sys (cupDimSys k) 1) = some Action.D := entry_of_interp (Pf_sound m _ hm)
+  have hfired := sysSearcher_fired_of_plays (by decide) _ _ (cupDimSys_get1 k) hplay
+  rw [sysClose_subst_cimSelfIdxD] at hfired
+  have hAf : Pf k (.plays (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 1)) Action.D) :=
+    pf_dimcidSys_D_of_guard (cupDimSys_get1 k) hkk ((proofSearch_spec _ _).1 hfired)
+  rw [inst_cupod_dimcid_eq k]
+  exact sysSearcher_head_plays (cupDimSys_get0 k) (hkC k (by omega)) hAf
 
 end PD.Tau

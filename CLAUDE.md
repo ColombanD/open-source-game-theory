@@ -448,7 +448,7 @@ are Spec-DSL rows compiled by `Tau/Spec.lean` — a TREE DSL since 2026-08-24,
 `Spec = const | sim | ite | search`, i.e. `Prog` with a `Target` hole where the base
 says "`.opp` facing Q", so every τ-bot is written as its base source (τ(Mirror) =
 `sim self`; classifiers' compiled terms byte-identical to the former stage rows) —
-and the Python comparison now CERTIFIES Def 3 ≡ Def 4 at large k) — read them before touching anything tau. Summary of the FIXED decisions:
+and the Python comparison now CERTIFIES Def 3 ≡ Def 4 at large k; 2026-08-24 evening: `Matrix.lean` removed — the per-bot `Phase.lean` theorems ARE the tau matrix (tau players are `.opp`-free, so a match is two independent plays) — all 14 stated phases unconditional, τ(Mirror)'s with an honest `none` regime above its prefix mass; the ONE unstated row is τ(DIMCID), blocked on two then-D-partner cells that need a new provability-tracking census — see the roadmap's 08-24 addendum) — read them before touching anything tau. Summary of the FIXED decisions:
 
 - **What it is.** Partial transparency as a Harsanyi type space over the zoo: a bot
   receives a **signal** — candidates `B₁…Bₙ` with weights `pᵢ` (blur in the weights,

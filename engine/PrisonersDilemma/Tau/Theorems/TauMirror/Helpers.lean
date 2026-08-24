@@ -295,32 +295,7 @@ theorem dupMir_loeb : ∃ k₂, ∀ k, k₂ < k → ∃ m, 2 * m ≤ k ∧ Pf m 
     simp only [dmAf, dmBf, Formula.size, Prog.size, ProgList.psize, dupMirSys, numCost]; omega
   · intro k _; exact dupMir_loeb_premise k
 
-/-- A searcher component at the head FIRES once its guard is provable at `k`:
-    `search_t` cites the guard at `c_guard k` (a pointer, not the transcript), and
-    the play is the then-constant. Generic in the polarity. -/
-theorem sysSearcher_head_plays {defs : ProgList} {k i : Nat} {aT aE : Action}
-    (hget : defs.get? 0 = some (.search k
-      (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) aT) (.const aT) (.const aE)))
-    (hcg : c_leaf + c_guard k + c_node + c_node + c_node ≤ k)
-    (hAf : Pf k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) aT)) :
-    ∃ N, eval N (.bot (.sys defs 0)) (.bot (.sys defs 0)) (.sys defs 0) = some aT := by
-  have hpre : Pf k (((Formula.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) aT).sysClose defs).subst
-      (.bot (.sys defs 0)) (.bot (.sys defs 0))) := by
-    rw [sysClose_subst_botSelfIdx]; exact hAf
-  have h1 := PlaysProof.search_t (q := .const aE) hpre
-    (PlaysProof.const (me := .bot (.sys defs 0)) (opponent := .bot (.sys defs 0)) (a := aT))
-  have hbody : PlaysProof (.bot (.sys defs 0)) (.bot (.sys defs 0)) (.sys defs 0) aT
-      (c_leaf + c_guard k + c_node + c_node) :=
-    PlaysProof.sysStep hget (by simp only [Prog.sysClose]; exact h1)
-  exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
-    (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
-
-/-- The `c_guard` headroom every head-fires cell needs, past a threshold. -/
-private theorem cg_headroom : ∃ kC, ∀ k, kC ≤ k → c_leaf + c_guard k + c_node + c_node + c_node ≤ k := by
-  obtain ⟨kC, hkC⟩ := linear_log2_add_le 200 4000
-  refine ⟨kC, fun k hk => ?_⟩
-  have := hkC k hk; have := hcl; have := hcn
-  simp only [c_guard, numCost]; omega
+-- `sysSearcher_head_plays` / `cg_headroom` hoisted to `Tau/Theorems/Helpers.lean`.
 
 /-- **The `hmirP` gate**: τ(Dupoc) COOPERATES with τ(Mirror) — its searcher's
     guard is the mirror member's self-cooperation, which Löb certifies. -/
@@ -524,6 +499,263 @@ theorem cimcic_mirror_plays_C :
     PlaysProof.sysStep (cimMirSys_get0 k) (by simp only [Prog.sysClose]; exact h1)
   exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
     (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
+
+/-! ### Mirror × CIMCIC, mirror at the head — the other `.sys` term of the
+pair closed above (`cimcic_mirror_plays_C`), same Löb-on-the-guard shape. -/
+
+/-- `inst .mirror .cimcic`: Mirror at the head, CIMCIC probing it. -/
+def mirCimSys (k : Nat) : ProgList :=
+  .cons (.sim (.bot (.selfIdx 1)) (.bot (.selfIdx 1)))
+  (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                           (.plays (.bot (.selfIdx 0)) .self Action.C))
+    (.const .C) (.const .D)) .nil)
+
+theorem inst_mirror_cimcic_eq (k : Nat) :
+    inst (tauZoo k) .mirror .cimcic = .sys (mirCimSys k) 0 := rfl
+theorem mirCimSys_get0 (k : Nat) :
+    (mirCimSys k).get? 0 = some (.sim (.bot (.selfIdx 1)) (.bot (.selfIdx 1))) := rfl
+theorem mirCimSys_get1 (k : Nat) :
+    (mirCimSys k).get? 1
+      = some (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                               (.plays (.bot (.selfIdx 0)) .self Action.C))
+          (.const .C) (.const .D)) := rfl
+
+private def mcG (k : Nat) : Formula :=
+  .impl (.plays (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 0)) Action.C)
+        (.plays (.bot (.sys (mirCimSys k) 0)) (.bot (.sys (mirCimSys k) 1)) Action.C)
+private def mcA (k : Nat) : Formula :=
+  .plays (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 1)) Action.C
+private def mcC (k : Nat) : Formula :=
+  .plays (.bot (.sys (mirCimSys k) 0)) (.bot (.sys (mirCimSys k) 1)) Action.C
+
+theorem mirCim_loeb_premise (k : Nat) :
+    Pf ((Formula.impl (.box k (mcG k)) (mcA k)).size
+        + ((Formula.impl (mcA k) (mcC k)).size
+           + (Formula.impl (mcC k) (mcG k)).size
+           + (Formula.impl (mcA k) (mcG k)).size)
+        + (Formula.impl (.box k (mcG k)) (mcG k)).size)
+      (.impl (.box k (mcG k)) (mcG k)) :=
+  Pf.implTrans _ _ _ _ _
+    (sys_cross_impl_cim (mirCimSys k) 1 0 k _ (mirCimSys_get1 k) le_rfl)
+    (Pf.implTrans _ _ _ _ _
+      (sys_mirror_fwd (mirCimSys k) 0 1 .C _ (.bot (.sys (mirCimSys k) 1))
+        (mirCimSys_get0 k) le_rfl)
+      (Pf.implK (mcC k)
+        (.plays (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 0)) Action.C)
+        le_rfl)
+      le_rfl)
+    le_rfl
+
+theorem mirCim_loeb : ∃ k₂, ∀ k, k₂ < k → ∃ m, 2 * m ≤ k ∧ Pf m (mcG k) := by
+  refine pblt_engine_id_bounded mcG
+    (fun k => (Formula.impl (.box k (mcG k)) (mcA k)).size
+        + ((Formula.impl (mcA k) (mcC k)).size
+           + (Formula.impl (mcC k) (mcG k)).size
+           + (Formula.impl (mcA k) (mcG k)).size)
+        + (Formula.impl (.box k (mcG k)) (mcG k)).size) 0 ?_ ?_ ?_
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts k
+    simp only [mcG, Formula.size, Prog.size, ProgList.psize, mirCimSys, numCost]; omega
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts k
+    simp only [mcG, mcA, mcC, Formula.size, Prog.size, ProgList.psize, mirCimSys, numCost]
+    omega
+  · intro k _; exact mirCim_loeb_premise k
+
+/-- **τ(Mirror) at CIMCIC COOPERATES**: CIMCIC's member fires on the Löb-certified
+    guard and the forwarder copies it. -/
+theorem mirror_cimcic_plays_C :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ N, eval N (.bot (inst (tauZoo k) .mirror .cimcic))
+        (.bot (inst (tauZoo k) .mirror .cimcic)) (inst (tauZoo k) .mirror .cimcic)
+        = some Action.C := by
+  obtain ⟨kL, hLb⟩ := mirCim_loeb
+  obtain ⟨kC, hkC⟩ := cg_headroom
+  refine ⟨max kL kC, fun k hk => ?_⟩
+  obtain ⟨m, hmk, hm⟩ := hLb k (by omega)
+  have hcg := hkC k (by omega)
+  have hpre : Pf k (((Formula.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+      (.plays (.bot (.selfIdx 0)) .self Action.C)).sysClose (mirCimSys k)).subst
+      (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 1))) := by
+    rw [sysClose_subst_cimSelfIdx]; exact Pf_mono hm (by omega)
+  have h1 := PlaysProof.search_t (q := .const .D) hpre
+    (PlaysProof.const (me := .bot (.sys (mirCimSys k) 1))
+      (opponent := .bot (.sys (mirCimSys k) 1)) (a := Action.C))
+  have hbody : PlaysProof (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 1))
+      (.sys (mirCimSys k) 1) Action.C (c_leaf + c_guard k + c_node + c_node) :=
+    PlaysProof.sysStep (mirCimSys_get1 k) (by simp only [Prog.sysClose]; exact h1)
+  have h1play : ∃ N, eval N (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 1))
+      (.sys (mirCimSys k) 1) = some Action.C :=
+    entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
+      (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
+  rw [inst_mirror_cimcic_eq k]
+  exact sysFwd_plays _ _ (mirCimSys_get0 k) h1play
+
+/-! ### Mirror × DIMCID — a Löb fixpoint on DEFECTION through the guard
+
+DIMCID's member fires `D` from □(its guard `(I play C vs mirror) → (mirror plays D
+vs me)`); the forwarder plays whatever DIMCID's member self-plays, so the guard's
+consequent follows from DIMCID's self-defection, and `implK` closes the guard
+from its consequent exactly as in the CIMCIC case — at the other polarity. -/
+
+/-- `inst .mirror .dimcid`: Mirror at the head. -/
+def mirDimSys (k : Nat) : ProgList :=
+  .cons (.sim (.bot (.selfIdx 1)) (.bot (.selfIdx 1)))
+  (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                           (.plays (.bot (.selfIdx 0)) .self Action.D))
+    (.const .D) (.const .C)) .nil)
+
+theorem inst_mirror_dimcid_eq (k : Nat) :
+    inst (tauZoo k) .mirror .dimcid = .sys (mirDimSys k) 0 := rfl
+theorem mirDimSys_get0 (k : Nat) :
+    (mirDimSys k).get? 0 = some (.sim (.bot (.selfIdx 1)) (.bot (.selfIdx 1))) := rfl
+theorem mirDimSys_get1 (k : Nat) :
+    (mirDimSys k).get? 1
+      = some (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                               (.plays (.bot (.selfIdx 0)) .self Action.D))
+          (.const .D) (.const .C)) := rfl
+
+/-- `inst .dimcid .mirror`: DIMCID at the head. -/
+def dimMirSys (k : Nat) : ProgList :=
+  .cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                          (.plays (.bot (.selfIdx 1)) .self Action.D))
+    (.const .D) (.const .C))
+  (.cons (.sim (.bot (.selfIdx 0)) (.bot (.selfIdx 0))) .nil)
+
+theorem inst_dimcid_mirror_eq (k : Nat) :
+    inst (tauZoo k) .dimcid .mirror = .sys (dimMirSys k) 0 := rfl
+theorem dimMirSys_get0 (k : Nat) :
+    (dimMirSys k).get? 0
+      = some (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                               (.plays (.bot (.selfIdx 1)) .self Action.D))
+          (.const .D) (.const .C)) := rfl
+theorem dimMirSys_get1 (k : Nat) :
+    (dimMirSys k).get? 1 = some (.sim (.bot (.selfIdx 0)) (.bot (.selfIdx 0))) := rfl
+
+/-- The Löb subject for a DIMCID member at index `d` with the forwarder at `f`:
+    its closed guard. Generic in the system so both orientations share the proof. -/
+private def dG (defs : ProgList) (d f : Nat) : Formula :=
+  .impl (.plays (.bot (.sys defs d)) (.bot (.sys defs f)) Action.C)
+        (.plays (.bot (.sys defs f)) (.bot (.sys defs d)) Action.D)
+private def dA (defs : ProgList) (d : Nat) : Formula :=
+  .plays (.bot (.sys defs d)) (.bot (.sys defs d)) Action.D
+private def dC (defs : ProgList) (d f : Nat) : Formula :=
+  .plays (.bot (.sys defs f)) (.bot (.sys defs d)) Action.D
+
+/-- `□G → G` for any DIMCID×forwarder system. -/
+theorem dimFwd_loeb_premise (defs : ProgList) (d f k : Nat)
+    (hgetD : defs.get? d = some (.search k
+      (.impl (.plays .self (.bot (.selfIdx f)) Action.C)
+             (.plays (.bot (.selfIdx f)) .self Action.D)) (.const .D) (.const .C)))
+    (hgetF : defs.get? f = some (.sim (.bot (.selfIdx d)) (.bot (.selfIdx d)))) :
+    Pf ((Formula.impl (.box k (dG defs d f)) (dA defs d)).size
+        + ((Formula.impl (dA defs d) (dC defs d f)).size
+           + (Formula.impl (dC defs d f) (dG defs d f)).size
+           + (Formula.impl (dA defs d) (dG defs d f)).size)
+        + (Formula.impl (.box k (dG defs d f)) (dG defs d f)).size)
+      (.impl (.box k (dG defs d f)) (dG defs d f)) :=
+  Pf.implTrans _ _ _ _ _
+    (sys_cross_impl_dim defs d f k _ hgetD le_rfl)
+    (Pf.implTrans _ _ _ _ _
+      (sys_mirror_fwd defs f d .D _ (.bot (.sys defs d)) hgetF le_rfl)
+      (Pf.implK (dC defs d f)
+        (.plays (.bot (.sys defs d)) (.bot (.sys defs f)) Action.C) le_rfl)
+      le_rfl)
+    le_rfl
+
+/-- The DIMCID member at the head of `dimMirSys` self-defects, certified at `k`;
+    and the forwarder at the head of `mirDimSys` copies a self-defecting DIMCID. -/
+theorem dimMir_loeb : ∃ k₂, ∀ k, k₂ < k → ∃ m, 2 * m ≤ k ∧ Pf m (dG (dimMirSys k) 0 1) := by
+  refine pblt_engine_id_bounded (fun k => dG (dimMirSys k) 0 1)
+    (fun k => (Formula.impl (.box k (dG (dimMirSys k) 0 1)) (dA (dimMirSys k) 0)).size
+        + ((Formula.impl (dA (dimMirSys k) 0) (dC (dimMirSys k) 0 1)).size
+           + (Formula.impl (dC (dimMirSys k) 0 1) (dG (dimMirSys k) 0 1)).size
+           + (Formula.impl (dA (dimMirSys k) 0) (dG (dimMirSys k) 0 1)).size)
+        + (Formula.impl (.box k (dG (dimMirSys k) 0 1)) (dG (dimMirSys k) 0 1)).size) 0
+    ?_ ?_ ?_
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts k
+    simp only [dG, Formula.size, Prog.size, ProgList.psize, dimMirSys, numCost]; omega
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts k
+    simp only [dG, dA, dC, Formula.size, Prog.size, ProgList.psize, dimMirSys, numCost]; omega
+  · intro k _; exact dimFwd_loeb_premise (dimMirSys k) 0 1 k (dimMirSys_get0 k) (dimMirSys_get1 k)
+
+theorem mirDim_loeb : ∃ k₂, ∀ k, k₂ < k → ∃ m, 2 * m ≤ k ∧ Pf m (dG (mirDimSys k) 1 0) := by
+  refine pblt_engine_id_bounded (fun k => dG (mirDimSys k) 1 0)
+    (fun k => (Formula.impl (.box k (dG (mirDimSys k) 1 0)) (dA (mirDimSys k) 1)).size
+        + ((Formula.impl (dA (mirDimSys k) 1) (dC (mirDimSys k) 1 0)).size
+           + (Formula.impl (dC (mirDimSys k) 1 0) (dG (mirDimSys k) 1 0)).size
+           + (Formula.impl (dA (mirDimSys k) 1) (dG (mirDimSys k) 1 0)).size)
+        + (Formula.impl (.box k (dG (mirDimSys k) 1 0)) (dG (mirDimSys k) 1 0)).size) 0
+    ?_ ?_ ?_
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts k
+    simp only [dG, Formula.size, Prog.size, ProgList.psize, mirDimSys, numCost]; omega
+  · intro k; obtain ⟨h, h0, h1⟩ := log_facts k
+    simp only [dG, dA, dC, Formula.size, Prog.size, ProgList.psize, mirDimSys, numCost]; omega
+  · intro k _; exact dimFwd_loeb_premise (mirDimSys k) 1 0 k (mirDimSys_get1 k) (mirDimSys_get0 k)
+
+/-- A DIMCID member whose guard is certified at `k` SELF-DEFECTS (generic). -/
+theorem dimcidSys_selfD_of_guard {defs : ProgList} {d f k : Nat}
+    (hgetD : defs.get? d = some (.search k
+      (.impl (.plays .self (.bot (.selfIdx f)) Action.C)
+             (.plays (.bot (.selfIdx f)) .self Action.D)) (.const .D) (.const .C)))
+    (hcg : c_leaf + c_guard k + c_node + c_node + c_node ≤ k)
+    (hG : Pf k (dG defs d f)) :
+    ∃ N, eval N (.bot (.sys defs d)) (.bot (.sys defs d)) (.sys defs d) = some Action.D := by
+  have hpre : Pf k (((Formula.impl (.plays .self (.bot (.selfIdx f)) Action.C)
+      (.plays (.bot (.selfIdx f)) .self Action.D)).sysClose defs).subst
+      (.bot (.sys defs d)) (.bot (.sys defs d))) := by
+    rw [sysClose_subst_cimSelfIdxD]; exact hG
+  have h1 := PlaysProof.search_t (q := .const .C) hpre
+    (PlaysProof.const (me := .bot (.sys defs d)) (opponent := .bot (.sys defs d))
+      (a := Action.D))
+  have hbody : PlaysProof (.bot (.sys defs d)) (.bot (.sys defs d)) (.sys defs d) Action.D
+      (c_leaf + c_guard k + c_node + c_node) :=
+    PlaysProof.sysStep hgetD (by simp only [Prog.sysClose]; exact h1)
+  exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
+    (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
+
+/-- **τ(DIMCID) at Mirror DEFECTS** — the `.mirror` slot of DIMCID's row. -/
+theorem dimcid_mirror_plays_D :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .mirror))
+        (.bot (inst (tauZoo k) .dimcid .mirror)) (inst (tauZoo k) .dimcid .mirror)
+        = some Action.D := by
+  obtain ⟨kL, hLb⟩ := dimMir_loeb
+  obtain ⟨kC, hkC⟩ := cg_headroom
+  refine ⟨max kL kC, fun k hk => ?_⟩
+  obtain ⟨m, hmk, hm⟩ := hLb k (by omega)
+  rw [inst_dimcid_mirror_eq k]
+  exact dimcidSys_selfD_of_guard (dimMirSys_get0 k) (hkC k (by omega)) (Pf_mono hm (by omega))
+
+/-- **τ(Mirror) at DIMCID DEFECTS** — the forwarder copies DIMCID's self-defection. -/
+theorem mirror_dimcid_plays_D :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ N, eval N (.bot (inst (tauZoo k) .mirror .dimcid))
+        (.bot (inst (tauZoo k) .mirror .dimcid)) (inst (tauZoo k) .mirror .dimcid)
+        = some Action.D := by
+  obtain ⟨kL, hLb⟩ := mirDim_loeb
+  obtain ⟨kC, hkC⟩ := cg_headroom
+  refine ⟨max kL kC, fun k hk => ?_⟩
+  obtain ⟨m, hmk, hm⟩ := hLb k (by omega)
+  have h1 : ∃ N, eval N (.bot (.sys (mirDimSys k) 1)) (.bot (.sys (mirDimSys k) 1))
+      (.sys (mirDimSys k) 1) = some Action.D :=
+    dimcidSys_selfD_of_guard (mirDimSys_get1 k) (hkC k (by omega)) (Pf_mono hm (by omega))
+  rw [inst_mirror_dimcid_eq k]
+  exact sysFwd_plays _ _ (mirDimSys_get0 k) h1
+
+/-! ### The diagonal diverges -/
+
+theorem inst_mirror_quine (k : Nat) : inst (tauZoo k) .mirror .mirror = .sim .self .self := rfl
+
+/-- Base MirrorBot's self-play, lifted: `.sim .self .self` never evaluates. -/
+theorem mirror_quine_diverges :
+    ∀ N, eval N (.bot (Prog.sim .self .self)) (.bot (.sim .self .self)) (.sim .self .self)
+      = none
+  | 0 => by simp [eval]
+  | 1 => by simp [eval, Prog.subst]
+  | N + 2 => by
+      rw [eval]
+      simp only [Prog.subst]
+      rw [eval]
+      exact mirror_quine_diverges N
 
 /-! ## What is NOT proven here, and why
 

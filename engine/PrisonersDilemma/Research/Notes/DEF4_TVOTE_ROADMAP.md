@@ -510,6 +510,38 @@ a lifted bot needs it.
 > the phase theorems (`tauDupoc_phase`, `tauJust_phase`, `tauCIMCIC_phase`,
 > `tauCupod_phase` — the last keeps only the dimcid `TailToA` gate).
 >
+> **2026-08-24 evening — the phase layer, made unconditional as far as it goes.**
+> `tauCupod_phase` lost its last gate: the aligned-on-D dimcid×cupod pair is
+> closed by mutual bounded Löb in BOTH orientations (`TauDIMCID/Helpers`,
+> `dimCupSys`/`cupDimSys`). τ(Mirror) has a PHASE THEOREM at last
+> (`TauMirror/Phase.lean`): `C` below the prefix mass of its 14 other slots,
+> and honestly `none` — not `D` — above it, because the vote commits before
+> consulting the divergent diagonal (`Vote.lean`: `eval_tvote_prefix_C`,
+> `eval_tvote_prefix_none`, `tauPlayer_phase_prefix`). Its scanner row is the
+> 14-slot prefix over `tauOrderInit`, diagonal recorded as `N`; the base
+> `none` cell compares as `N` too, so the certification now runs on 210 cells
+> (204 agree, same 6 whitelisted). The two remaining mirror closures
+> (mirror×cimcic at the mirror's head, mirror×dimcid both ways) landed with it.
+>
+> **What is still NOT unconditional: τ(DIMCID)'s own row**, and only because of
+> two cells — its play against `guardian` and `cupodTroll`, the then-`D`
+> searcher partners. Both census techniques in the library fail on them for
+> the SAME reason, now understood precisely: (i) the tail census's class
+> contains `□(partner's guard) → T`, a genuine theorem (`botSearchStep`), so
+> "no proof tails at T" is false as stated; (ii) the valuation census (base
+> `GuardianBot × DIMCID` uses it with `gdS = {(DIMCID, Guardian)}`) needs the
+> forced antecedent pair in `S`, which in the tau frame is `(bot I, bot P)` —
+> a `.bot` OPPONENT, and `h_nb` is not incidental: with such a pair forced,
+> `iteBranchSearch_t` derives a real theorem whose truth depends on the forced
+> atom, so the valuation is unsound exactly in the world the census is meant
+> to exclude. A correct argument must be syntactic and track PROVABILITY of
+> box antecedents along the tail (the reading rule's box is unprovable by
+> soundness; every mp/implTrans with a box in the middle must be discharged
+> from that); that is a new kernel over the 31-arm induction, not a
+> hypothesis tweak. Everything else in DIMCID's row is proven or reachable
+> (tftSim/ebot/dbot: budget-free unreadable census; obot: floor census with a
+> transcript-cost bound; the four other cells and the diagonal are theorems).
+>
 > **RESOLVED 2026-08-24 — the DSL is a TREE now.** MirrorBot's raw copy was the
 > shape that broke the stage list: a forwarder has no `test`/`fire`/fall-through,
 > and encoding it as a one-stage threshold test (`if the watch plays C then C else

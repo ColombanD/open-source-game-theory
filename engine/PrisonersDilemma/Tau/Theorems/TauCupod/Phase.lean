@@ -1,5 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.Columns
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 
 /-!
 # τ(CupodBot)'s phase — the suspicious cooperator, Löb-gated TWICE over.
@@ -99,17 +100,12 @@ theorem cupodBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
   vecOf_bits (tauZoo k) .cupod w cupodRow tauOrder
     fun T _ => cupodRow_plays hk hkk h6 h10 hquine hmirCu hmirP hdc hdcP T
 
-/-- **τ(CupodBot)** — boundary `θ ≤ cupodMass`. Its diagonal is the
-    punish-polarity quine and its mirror slot is a Löb fixpoint on defection
-    (closed 2026-08-24, `TauMirror/Helpers`). The ONE remaining gate is the
-    ALIGNED-on-D dimcid pair — the `TailToA` kernel debt (`TauDIMCID/Helpers`). -/
+/-- **τ(CupodBot)** — boundary `θ ≤ cupodMass`. UNCONDITIONAL since 2026-08-24:
+    its diagonal is the punish-polarity quine, its mirror slot a Löb fixpoint on
+    defection (`TauMirror/Helpers`), and its dimcid slot the first ALIGNED-on-D
+    pair, closed by mutual bounded Löb (`TauDIMCID/Helpers`). -/
 theorem tauCupod_phase :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
-          = cupodColBit .dimcid)
-        (hdcP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
-          (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
-          = some Action.D),
       ∀ θ (w : Tmpl → Nat) (opponent : Prog),
       (θ ≤ cupodMass w → ∃ N, play N (TauBotZ k .cupod w θ) opponent = some .C)
       ∧ (¬ θ ≤ cupodMass w → ∃ N, play N (TauBotZ k .cupod w θ) opponent = some .D) := by
@@ -117,7 +113,11 @@ theorem tauCupod_phase :
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
   obtain ⟨kX, hkX⟩ := ps_probeD_mirror_cupod
   obtain ⟨kY, hkY⟩ := cupod_mirror_plays_D
-  refine ⟨max (max kL kA) (max kX kY), fun k hk hdc hdcP θ w opponent => ?_⟩
+  obtain ⟨kD, hkD⟩ := ps_probeD_inst_dimcid_cupod
+  obtain ⟨kE, hkE⟩ := cupod_dimcid_plays_D
+  refine ⟨max (max kL kA) (max (max kX kY) (max kD kE)), fun k hk θ w opponent => ?_⟩
+  have hdc := hkD k (by omega)
+  have hdcP := hkE k (by omega)
   have hquine := hkL k (by omega)
   have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
   have hmirCu := hkX k (by omega)

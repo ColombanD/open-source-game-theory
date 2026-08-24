@@ -47,10 +47,17 @@ TAU_ORDER: tuple[str, ...] = (
 """The Lean `tauOrder` slot order — every bit list is stated in this order."""
 
 _BITS_RE = re.compile(
-    r"theorem\s+(\w+)\s.*?VoteBits\s*\(vecOf\s*\(tauZoo\s+k\)\s*\.(\w+)\s+w\s+tauOrder\)\s*"
+    r"theorem\s+(\w+)\s.*?VoteBits\s*\(vecOf\s*\(tauZoo\s+k\)\s*\.(\w+)\s+w\s+(tauOrder|tauOrderInit)\)\s*"
     r"\[(.*?)\]",
     re.S,
 )
+# A row stated over `tauOrderInit` (all slots but the last) is a PREFIX row: the
+# bot's own diagonal entry diverges, so it has no play and the vote never reaches
+# it in the C-regime. The scanner records that slot as "N" — the same fifth state
+# the base matrix uses for a proven-`none` outcome (MirrorBot's self-play), so the
+# comparison can say "agrees" there rather than inventing a D.
+_PREFIX_ORDER: tuple[str, ...] = TAU_ORDER[:-1]
+_DIVERGENT_SLOT = TAU_ORDER[-1]
 _ENTRY_RE = re.compile(r"\(w\s*\.(\w+)\s*,\s*\.([CD])\)")
 
 
@@ -69,15 +76,19 @@ def scan_bit_theorems(path: Path | None = None) -> dict[str, dict[str, str]]:
         src = "\n".join(f.read_text() for f in files)
     tables: dict[str, dict[str, str]] = {}
     for m in _BITS_RE.finditer(src):
-        _name, tmpl, entries_src = m.group(1), m.group(2), m.group(3)
+        _name, tmpl, order, entries_src = m.group(1), m.group(2), m.group(3), m.group(4)
         entries = _ENTRY_RE.findall(entries_src)
         slots = tuple(slot for slot, _ in entries)
-        if slots != TAU_ORDER:
+        expected = TAU_ORDER if order == "tauOrder" else _PREFIX_ORDER
+        if slots != expected:
             raise ValueError(
-                f"bit theorem for .{tmpl}: slots {slots} do not match tauOrder "
-                f"{TAU_ORDER} — the Phase files drifted; update the scanner"
+                f"bit theorem for .{tmpl}: slots {slots} do not match {order} "
+                f"{expected} — the Phase files drifted; update the scanner"
             )
-        tables[tmpl] = {slot: action for slot, action in entries}
+        table = {slot: action for slot, action in entries}
+        if order == "tauOrderInit":
+            table[_DIVERGENT_SLOT] = "N"
+        tables[tmpl] = table
     if not tables:
         raise ValueError("no VoteBits theorems found — the Phase files drifted")
     return tables

@@ -30,10 +30,14 @@ from pd_runner.tau.matrix import load_tau_matrix
 FULL_BOTS: tuple[str, ...] = (
     "DupocBot", "CooperateBot", "DefectBot", "TitForTatBot", "EBot",
     "JustBot", "OBot", "GuardianBot", "DBot", "CupodTrollBot", "CIMCIC",
-    "CupodBot", "DIMCID",
+    "CupodBot", "DIMCID", "MirrorBot",
 )
 """The base bots the full certification runs over (TitForTatBot carries both TFT
-lift variants, so 13 base bots cover 14 templates).
+lift variants, so 14 base bots cover 15 templates).
+
+MirrorBot joined on 2026-08-24 evening, once τ(Mirror) had a stated row: its
+proven-`none` self-play loads as the fifth state "N", and the kernel reports
+τ(Mirror)'s divergent diagonal the same way, so that cell compares N = N.
 
 CupodBot and DIMCID were MISSING here until 2026-08-24, even though their base
 cells landed on 08-21 — so the check silently ran on 144 of the 182 comparable
@@ -46,13 +50,15 @@ its own coverage."""
 
 
 def test_kernel_scanner_finds_all_rows_but_dimcid() -> None:
-    """13 of the 14 rows are stated. `TauDIMCID`'s own `VoteBits` row is NOT: its
-    off-cycle bits hit a POLARITY obstruction (its guard fires into `D`, so a
-    provable guard falsifies its own antecedent and the soundness route CIMCIC
-    used is unavailable) — see `Tau/Theorems/TauDIMCID/Helpers.lean`. Its COLUMN
-    (what every other row plays against it) is fully proven."""
+    """14 of the 15 rows are stated — τ(Mirror)'s as a 14-slot PREFIX row over
+    `tauOrderInit` (its diagonal diverges; the scanner records that slot as "N").
+    `TauDIMCID`'s own `VoteBits` row is NOT: two of its off-cycle cells (guardian,
+    cupodTroll — then-D searcher partners) need a census neither the tail kernel
+    nor the valuation kernel can express in the tau frame — see
+    `Tau/Theorems/TauDIMCID/Helpers.lean`. Its COLUMN is fully proven."""
     tables = kernel_bits()
-    assert set(tables) == set(TAU_ORDER) - {"dimcid", "mirror"}
+    assert set(tables) == set(TAU_ORDER) - {"dimcid"}
+    assert tables["mirror"]["mirror"] == "N"
 
 
 def test_every_stated_row_is_complete() -> None:
@@ -70,22 +76,23 @@ def test_kernel_agrees_with_base_directly() -> None:
     `VoteBits` theorems and the cells out of the certified base matrix, so a pass
     depends on no Python model at all.
 
-    182 comparable cells (every template pair whose two base bots are in the
-    zoo), 176 agree, and the 6 divergences are exactly the recorded whitelist —
-    properties of the LIFT, not of any implementation.
+    210 comparable cells (every template pair whose two base bots are in the
+    zoo), 204 agree, and the 6 divergences are exactly the recorded whitelist —
+    properties of the LIFT, not of any implementation. (182/176/6 until
+    2026-08-24 evening, when MirrorBot joined `FULL_BOTS`: τ(Mirror)'s row and
+    every row's mirror slot — 28 cells — agree with base without exception.)
 
     Was 144/139/5 until 2026-08-24, when CupodBot and DIMCID were added to
     `FULL_BOTS`: their base cells had landed on 08-21 but the list was never
     updated, so 38 comparable cells went unchecked and four divergences sat
     unexamined behind a green result."""
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
-    assert len(d.cells) == 182
+    assert len(d.cells) == 210
     assert d.passed, d.unexpected
-    assert d.agreements == 176
+    assert d.agreements == 204
     assert len(d.whitelisted_divergences) == 6
-    # DIMCID's own row is not stated yet (its off-cycle bits are blocked); its
-    # COLUMN is, which is why the count is still the full 144.
-    assert set(d.missing_rows) == {"TauDIMCID", "TauMirror"}
+    # DIMCID's own row is the ONE unstated row; its COLUMN is compared in full.
+    assert set(d.missing_rows) == {"TauDIMCID"}
 
 
 def test_certification_end_to_end() -> None:

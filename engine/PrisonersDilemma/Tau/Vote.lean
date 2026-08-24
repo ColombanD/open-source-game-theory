@@ -164,6 +164,106 @@ theorem tauPlayer_phase_bits {v : VoteList} {bs : List (Nat × Action)} (θ : Na
   · obtain ⟨N, hN⟩ := eval_tvote_of_bits (tauPlayer v θ) opponent v bs θ hbits
     exact ⟨N, by rw [play, hN, if_neg hθ]⟩
 
+/-! ## Prefix commitment and divergent tails (τ(Mirror), 2026-08-24)
+
+A vote COMMITS as soon as its residual threshold hits zero, without consulting
+the remaining entries — so a non-terminating entry at the END of the list only
+sinks the vote when the prefix's C-mass falls short of `θ`. This is what makes
+τ(Mirror) — whose own diagonal entry diverges — a bot with a genuine phase: `C`
+below its prefix mass, and honestly `none` (not `D`) above it. -/
+
+/-- Append on vote lists. -/
+def _root_.PD.VoteList.app : VoteList → VoteList → VoteList
+  | .nil, v => v
+  | .cons w I rest, v => .cons w I (rest.app v)
+
+/-- If the PREFIX's C-mass reaches `θ`, the vote plays `C` whatever the tail. -/
+theorem eval_tvote_prefix_C (me opponent : Prog) :
+    ∀ (v : VoteList) (bs : List (Nat × Action)) (θ : Nat) (tail : VoteList),
+      VoteBits v bs → θ ≤ massOf bs →
+      ∃ N, eval N me opponent (tauPlayer (v.app tail) θ) = some Action.C
+  | .nil, _, θ, tail, .nil, hθ => by
+      simp only [massOf] at hθ
+      have h0 : θ = 0 := by omega
+      subst h0
+      exact ⟨2, by rw [tauPlayer, eval_tvote_zero 1]; rfl⟩
+  | .cons w I rest, _, θ, tail, .cons (a := a) (bs := bs) hI hrest, hθ => by
+      cases θ with
+      | zero => exact ⟨2, by rw [tauPlayer, eval_tvote_zero 1]; rfl⟩
+      | succ m =>
+          obtain ⟨NI, hNI⟩ := hI
+          cases a with
+          | C =>
+              have hθ' : m + 1 - w ≤ massOf bs := by
+                simp only [massOf, if_pos (by decide : ((Action.C == Action.C) = true))] at hθ
+                omega
+              obtain ⟨Nb, hNb⟩ := eval_tvote_prefix_C me opponent rest bs (m + 1 - w) tail hrest hθ'
+              refine ⟨max NI Nb + 1, ?_⟩
+              rw [VoteList.app, tauPlayer, eval_tvote_cons_c (max NI Nb) (by omega)
+                    (eval_mono_le hNI _ (Nat.le_max_left _ _))]
+              exact eval_mono_le hNb _ (Nat.le_max_right _ _)
+          | D =>
+              have hθ' : m + 1 ≤ massOf bs := by
+                simp only [massOf, if_neg (by decide : ¬ ((Action.D == Action.C) = true))] at hθ
+                omega
+              obtain ⟨Nb, hNb⟩ := eval_tvote_prefix_C me opponent rest bs (m + 1) tail hrest hθ'
+              refine ⟨max NI Nb + 1, ?_⟩
+              rw [VoteList.app, tauPlayer, eval_tvote_cons_d (max NI Nb) (by omega)
+                    (eval_mono_le hNI _ (Nat.le_max_left _ _))]
+              exact eval_mono_le hNb _ (Nat.le_max_right _ _)
+
+/-- If the prefix's C-mass falls short of `θ` and the (single) trailing entry
+    DIVERGES, the vote is `none` at every fuel. -/
+theorem eval_tvote_prefix_none (me opponent : Prog) {w' : Nat} {J : Prog}
+    (hJ : ∀ N, eval N (.bot J) (.bot J) J = none) :
+    ∀ (v : VoteList) (bs : List (Nat × Action)) (θ : Nat),
+      VoteBits v bs → ¬ θ ≤ massOf bs →
+      ∀ N, eval N me opponent (tauPlayer (v.app (.cons w' J .nil)) θ) = none
+  | .nil, _, θ, .nil, hθ, N => by
+      simp only [massOf] at hθ
+      cases N with
+      | zero => simp [eval]
+      | succ n => rw [VoteList.app, tauPlayer, eval_tvote_cons_none n (by omega) (hJ n)]
+  | .cons w I rest, _, θ, .cons (a := a) (bs := bs) hI hrest, hθ, N => by
+      cases N with
+      | zero => simp [eval]
+      | succ n =>
+          have hθ0 : θ ≠ 0 := by intro h; subst h; exact hθ (Nat.zero_le _)
+          rw [VoteList.app, tauPlayer]
+          rcases hE : eval n (.bot I) (.bot I) I with _ | a'
+          · rw [eval_tvote_cons_none n hθ0 hE]
+          · obtain ⟨NI, hNI⟩ := hI
+            have haa : a' = a := by
+              have h1 := eval_mono_le hE (max n NI) (Nat.le_max_left _ _)
+              have h2 := eval_mono_le hNI (max n NI) (Nat.le_max_right _ _)
+              exact Option.some.inj (h1.symm.trans h2)
+            subst haa
+            cases a' with
+            | C =>
+                rw [eval_tvote_cons_c n hθ0 hE]
+                exact eval_tvote_prefix_none me opponent hJ rest bs (θ - w) hrest (by
+                  simp only [massOf, if_pos (by decide : ((Action.C == Action.C) = true))] at hθ
+                  omega) n
+            | D =>
+                rw [eval_tvote_cons_d n hθ0 hE]
+                exact eval_tvote_prefix_none me opponent hJ rest bs θ hrest (by
+                  simp only [massOf, if_neg (by decide : ¬ ((Action.D == Action.C) = true))] at hθ
+                  omega) n
+
+/-- **The prefix phase theorem**: a vector whose LAST entry diverges plays `C`
+    below the prefix mass and `none` above it. -/
+theorem tauPlayer_phase_prefix {v : VoteList} {bs : List (Nat × Action)} (θ : Nat)
+    (hbits : VoteBits v bs) {w' : Nat} {J : Prog}
+    (hJ : ∀ N, eval N (.bot J) (.bot J) J = none) (opponent : Prog) :
+    (θ ≤ massOf bs →
+      ∃ N, play N (tauPlayer (v.app (.cons w' J .nil)) θ) opponent = some .C)
+    ∧ (¬ θ ≤ massOf bs →
+      ∀ N, play N (tauPlayer (v.app (.cons w' J .nil)) θ) opponent = none) := by
+  refine ⟨fun hθ => ?_, fun hθ N => ?_⟩
+  · obtain ⟨N, hN⟩ := eval_tvote_prefix_C _ opponent v bs θ (.cons w' J .nil) hbits hθ
+    exact ⟨N, by rw [play]; exact hN⟩
+  · rw [play]; exact eval_tvote_prefix_none _ opponent hJ v bs θ hbits hθ N
+
 /-! ## The point-mass coherence lemma
 
 **The theorem the retracted crowd-exploiter would have failed.** At a point-mass

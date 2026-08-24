@@ -186,7 +186,14 @@ def direct_kernel_vs_base(
             base_a, base_t = BASE_OF[A], BASE_OF[T]
             if base_a not in matrix.bots or base_t not in matrix.bots:
                 continue
-            base_bit = "C" if matrix.cooperates(base_a, base_t) else "D"
+            # A proven-`none` base outcome is the fifth state "N", and the kernel
+            # reports a divergent tau diagonal the same way — so the two can
+            # AGREE there, rather than the comparison inventing a D on one side.
+            base_cell = matrix.cell(base_a, base_t)
+            base_bit = (
+                "N" if base_cell.shape == "no_outcome"
+                else ("C" if matrix.cooperates(base_a, base_t) else "D")
+            )
             cells.append(
                 DirectCell(
                     template=A,

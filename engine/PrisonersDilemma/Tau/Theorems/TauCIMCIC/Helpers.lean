@@ -745,22 +745,7 @@ theorem cimcic_dupoc_mutual :
     simp only [Formula.size, Prog.size, ProgList.psize, mdSys, numCost]
     omega
 
-/-- Eval inversion: a system component that plays its THEN action must have FIRED. -/
-theorem sysSearcher_fired_of_plays {defs : ProgList} {i kb : Nat} {g : Formula}
-    {aT aE : Action} (hne : aT ≠ aE) (me opp : Prog)
-    (hget : defs.get? i = some (.search kb g (.const aT) (.const aE)))
-    (h : ∃ N, eval N me opp (.sys defs i) = some aT) :
-    proofSearch kb ((g.sysClose defs).subst me opp) = true := by
-  cases hps : proofSearch kb ((g.sysClose defs).subst me opp) with
-  | true => rfl
-  | false =>
-      exfalso
-      obtain ⟨N, hN⟩ := h
-      obtain ⟨M, hM⟩ := sysSearcher_plays_else me opp hget hps
-      have h1 := eval_mono_le hN (max N M) (Nat.le_max_left _ _)
-      have h2 := eval_mono_le hM (max N M) (Nat.le_max_right _ _)
-      rw [h1] at h2
-      exact hne (Option.some.inj h2)
+-- `sysSearcher_fired_of_plays` hoisted to `Tau/Theorems/Helpers.lean` (2026-08-24).
 
 /-- The cheap budget-`k` certificate for the CIMCIC component's cooperation, from
     its fired guard (`search_t` cites via `c_guard`, not the premise transcript). -/
