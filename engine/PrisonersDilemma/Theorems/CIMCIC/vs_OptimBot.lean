@@ -135,8 +135,8 @@ theorem cimcic_optim_guard_B_unprov (k : Nat) :
     injection hS with h1 h2 h3
     subst h1
     cases hme
-  · -- hbotsysrun: the `.sys` RUN twin, same shape kill
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, same shape kill
+    rintro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1
     cases hme
@@ -213,8 +213,8 @@ theorem cimcic_optim_G3_unprov (k : Nat) :
     injection hS with h1 h2 h3
     subst h1
     cases hme
-  · -- hbotsysrun: the `.sys` RUN twin, same shape kill
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, same shape kill
+    rintro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1
     cases hme

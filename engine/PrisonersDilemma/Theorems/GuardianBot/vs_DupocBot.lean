@@ -134,8 +134,8 @@ theorem gd_no_provable_C_tail (k : Nat) :
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)
     all_goals (first | simp [CooperateBot] at hme | simp [DupocBot] at hme | simp [GuardianBot] at hme | simp at hme | simp_all)
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    rintro me oppo c hS defs i _ hme _
     all_goals (try (injection hS with h1 h2 h3; subst h1))
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)

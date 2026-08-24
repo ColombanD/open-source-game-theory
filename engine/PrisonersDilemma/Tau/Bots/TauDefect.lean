@@ -11,6 +11,6 @@ constant artifact).
 namespace PD.Tau
 
 /-- τ(DefectBot): empty cascade, default D. -/
-def tauDefectSpec : Spec Tmpl := ⟨[], .D⟩
+def tauDefectSpec : Spec Tmpl := .const .D
 
 end PD.Tau

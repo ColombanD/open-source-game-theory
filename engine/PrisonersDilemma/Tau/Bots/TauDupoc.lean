@@ -22,6 +22,7 @@ interesting cells:
 namespace PD.Tau
 
 /-- τ(DupocBot): "prove the opponent (seeing me) cooperates; then C; else D." -/
-def tauDupocSpec : Spec Tmpl := ⟨[⟨.prove, .self, .C, .C⟩], .D⟩
+def tauDupocSpec : Spec Tmpl :=
+  .search .prove .self .C (.const .C) (.const .D)
 
 end PD.Tau

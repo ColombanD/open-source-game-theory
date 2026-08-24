@@ -585,8 +585,8 @@ theorem no_provable_CupodBot_C_tail (k : Nat) (O : Prog) :
     injection hS with h1 h2 h3
     subst h1
     unfold CupodBot at hme; simp at hme
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    intro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    intro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1
     unfold CupodBot at hme; simp at hme

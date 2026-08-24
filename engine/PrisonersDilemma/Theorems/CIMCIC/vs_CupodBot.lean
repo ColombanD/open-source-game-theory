@@ -100,8 +100,8 @@ theorem cb_no_provable_cimcic_D_tail (k : Nat) (O : Prog) :
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC] at hme
-  · -- hbotsysrun: the `.sys` RUN twin, same shape kill
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, same shape kill
+    rintro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC] at hme

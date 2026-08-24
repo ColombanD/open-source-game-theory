@@ -20,6 +20,7 @@ TauTFTPf does not) — the prover/behavioral split stops being budget-only.
 namespace PD.Tau
 
 /-- τ(GuardianBot): "provably defects vs Coop? → D; else C." -/
-def tauGuardianSpec : Spec Tmpl := ⟨[⟨.prove, .name .coop, .D, .D⟩], .C⟩
+def tauGuardianSpec : Spec Tmpl :=
+  .search .prove (.name .coop) .D (.const .D) (.const .C)
 
 end PD.Tau

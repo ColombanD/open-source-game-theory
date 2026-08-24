@@ -248,8 +248,8 @@ theorem de_ebot_guard_not_provable (k : Nat) (hk : dimcidEThresh k) :
       · injection h with h1 h2 h3
         subst h1
         simp [DIMCID, EBot] at hme
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    rintro me oppo c (h | h) defs i _ _ _ hme _ <;>
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    rintro me oppo c (h | h) defs i _ hme _ <;>
       · injection h with h1 h2 h3
         subst h1
         simp [DIMCID, EBot] at hme

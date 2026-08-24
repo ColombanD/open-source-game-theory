@@ -444,8 +444,11 @@ Workshop paper target: ICML math workshop, 8 pages, framing "first mechanized OS
 (Defs 1–3, the σ families, and the Def-4 history) **and
 `DEF4_TVOTE_ROADMAP.md`** (the REFINED Def 4 — the uniform source lift, fully
 executed 2026-08-18: the `tvote` action-vote constructor replaced `tsearch`, bots
-are Spec-DSL rows compiled by `Tau/Spec.lean`, and the Python comparison now
-CERTIFIES Def 3 ≡ Def 4 at large k) — read them before touching anything tau. Summary of the FIXED decisions:
+are Spec-DSL rows compiled by `Tau/Spec.lean` — a TREE DSL since 2026-08-24,
+`Spec = const | sim | ite | search`, i.e. `Prog` with a `Target` hole where the base
+says "`.opp` facing Q", so every τ-bot is written as its base source (τ(Mirror) =
+`sim self`; classifiers' compiled terms byte-identical to the former stage rows) —
+and the Python comparison now CERTIFIES Def 3 ≡ Def 4 at large k) — read them before touching anything tau. Summary of the FIXED decisions:
 
 - **What it is.** Partial transparency as a Harsanyi type space over the zoo: a bot
   receives a **signal** — candidates `B₁…Bₙ` with weights `pᵢ` (blur in the weights,

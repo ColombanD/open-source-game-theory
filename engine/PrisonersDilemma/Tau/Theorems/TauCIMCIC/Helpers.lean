@@ -610,13 +610,7 @@ theorem cmSys_get1 (k : Nat) :
                                (.plays (.bot (.selfIdx 0)) .self Action.C))
           (.const .C) (.const .D)) := rfl
 
-/-- The closed-substituted form of the entangled CIMCIC guard. -/
-theorem sysClose_subst_cimSelfIdx (defs : ProgList) (j : Nat) (me o : Prog) :
-    ((Formula.impl (.plays .self (.bot (.selfIdx j)) Action.C)
-                   (.plays (.bot (.selfIdx j)) .self Action.C)).sysClose defs).subst me o
-      = .impl (.plays me (.bot (.sys defs j)) Action.C)
-              (.plays (.bot (.sys defs j)) me Action.C) := by
-  simp [Formula.sysClose, Prog.sysClose, Formula.subst, Prog.subst]
+-- `sysClose_subst_cimSelfIdx` hoisted to `Tau/Theorems/Helpers.lean` (2026-08-24).
 
 /-! ## CIMCIC × Cupod — CLOSED BY THE FLOOR (both orientations)
 
@@ -695,27 +689,7 @@ the binder through `Pf.botSysSearchStep`. With
 the two premises are `□Bf → Af` (CIMCIC's own reading) and `□Af → Bf`
 (Dupoc's reading, weakened into the implication by `implK ∘ implTrans`). -/
 
-/-- CIMCIC's side: □(its guard) → it cooperates (generic in the system). -/
-theorem sys_cross_impl_cim (defs : ProgList) (i j : Nat) (k K : Nat)
-    (hget : defs.get? i = some (.search k
-      (.impl (.plays .self (.bot (.selfIdx j)) Action.C)
-             (.plays (.bot (.selfIdx j)) .self Action.C)) (.const .C) (.const .D)))
-    (hK : (Formula.impl
-        (.box k (.impl (.plays (.bot (.sys defs i)) (.bot (.sys defs j)) Action.C)
-                       (.plays (.bot (.sys defs j)) (.bot (.sys defs i)) Action.C)))
-        (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C)).size ≤ K) :
-    Pf K (.impl
-      (.box k (.impl (.plays (.bot (.sys defs i)) (.bot (.sys defs j)) Action.C)
-                     (.plays (.bot (.sys defs j)) (.bot (.sys defs i)) Action.C)))
-      (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C)) := by
-  have h := Pf.botSysSearchStep defs i k
-    (.impl (.plays .self (.bot (.selfIdx j)) Action.C)
-           (.plays (.bot (.selfIdx j)) .self Action.C)) .C .D
-    (.bot (.sys defs i)) (.bot (.sys defs i)) rfl hget
-    (by simpa [sysClose_subst_cimSelfIdx] using hK)
-  rw [sysClose_subst_cimSelfIdx] at h
-  exact h
-
+-- `sys_cross_impl_cim` hoisted to `Tau/Theorems/Helpers.lean` (2026-08-24).
 -- `sys_cross_C_at` was hoisted to `Tau/Theorems/Helpers.lean` (2026-08-24):
 -- it is generic in the system and the mirror pairs need it too.
 

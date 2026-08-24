@@ -22,6 +22,6 @@ namespace PD.Tau
 
 /-- τ(DBot): "exploitable? then punish; else trust." -/
 def tauDBotSpec : Spec Tmpl :=
-  ⟨[⟨.run, .name .defect, .C, .D⟩], .C⟩
+  .ite (.sim (.name .defect)) .C (.const .D) (.const .C)
 
 end PD.Tau

@@ -12,6 +12,6 @@ uniform lift.
 namespace PD.Tau
 
 /-- τ(CooperateBot): empty cascade, default C. -/
-def tauCoopSpec : Spec Tmpl := ⟨[], .C⟩
+def tauCoopSpec : Spec Tmpl := .const .C
 
 end PD.Tau

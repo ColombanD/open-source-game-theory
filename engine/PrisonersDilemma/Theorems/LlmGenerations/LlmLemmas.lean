@@ -96,13 +96,12 @@ theorem wv_budget_census (k : Nat) (S : Prog → Prog → Prop)
       rw [WV_impl, WV_box]; intro hbox; rw [WV_plays]
       exact Or.inr ((Pf_sound k' _
         (Pf.botSysSearchStep defs i g ψ a b me opponent hme hget hle)) hbox)
-  | botSysRunStep k' defs i j test fire cont me opponent hme hget hle =>
+  | botSysSimStep k' defs i j a me opponent hme hget hle =>
       intro _hK
       -- the premise is a probe atom (both sides `.bot`-frozen), so its WV IS its
       -- interp by `h_nb`; the rule's own soundness then closes the conclusion
       rw [WV_impl]; intro hprem; rw [WV_plays]
-      exact Or.inr ((Pf_sound k' _
-        (Pf.botSysRunStep defs i j test fire cont me opponent hme hget hle))
+      exact Or.inr ((Pf_sound k' _ (Pf.botSysSimStep defs i j a me opponent hme hget hle))
         (interp_of_WV_probe h_nb hprem))
   | iteBranchSearch_t k' g z a' c0 c1 ψ q me opponent hme hle =>
       intro _hK

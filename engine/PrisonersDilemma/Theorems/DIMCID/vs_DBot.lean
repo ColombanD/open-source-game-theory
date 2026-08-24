@@ -168,8 +168,8 @@ theorem dimcid_guard_dbot_not_provable (k : Nat) (hk : dimcidThresh k) :
       · injection h with h1 h2 h3
         subst h1
         simp [DIMCID, DBot] at hme
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    rintro me oppo c (h | h) defs i _ _ _ hme _ <;>
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    rintro me oppo c (h | h) defs i _ hme _ <;>
       · injection h with h1 h2 h3
         subst h1
         simp [DIMCID, DBot] at hme

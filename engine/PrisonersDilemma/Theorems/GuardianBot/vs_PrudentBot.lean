@@ -138,8 +138,8 @@ theorem gvp_no_Pf_prudent_D (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K �
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)
     all_goals (first | simp [CooperateBot] at hme | simp [DefectBot] at hme | simp [GuardianBot] at hme | simp [PrudentBot] at hme | simp at hme | simp_all)
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    rintro me oppo c hS defs i _ hme _
     all_goals (try (injection hS with h1 h2 h3; subst h1))
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)
@@ -238,8 +238,8 @@ theorem pvg_no_Pf_guardian_C (k K : Nat) (φ : Formula) (hp : Pf K φ) (hK : K �
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)
     all_goals (first | simp [CooperateBot] at hme | simp [DefectBot] at hme | simp [GuardianBot] at hme | simp [PrudentBot] at hme | simp at hme | simp_all)
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    rintro me oppo c hS defs i _ hme _
     all_goals (try (injection hS with h1 h2 h3; subst h1))
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)

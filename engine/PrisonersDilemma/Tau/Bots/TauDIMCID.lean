@@ -28,6 +28,6 @@ namespace PD.Tau
 /-- τ(DIMCID)'s spec: one `proveImplD` stage on the self-target, fire `D`,
     default `C`. -/
 def tauDIMCIDSpec : Spec Tmpl :=
-  ⟨[⟨.proveImplD, .self, .C, .D⟩], .C⟩
+  .search .proveImplD .self .C (.const .D) (.const .C)
 
 end PD.Tau

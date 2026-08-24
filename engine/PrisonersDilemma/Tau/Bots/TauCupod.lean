@@ -26,6 +26,6 @@ namespace PD.Tau
 
 /-- τ(CupodBot): "provably defects against me? then D, else C." -/
 def tauCupodSpec : Spec Tmpl :=
-  ⟨[⟨.prove, .self, .D, .D⟩], .C⟩
+  .search .prove .self .D (.const .D) (.const .C)
 
 end PD.Tau

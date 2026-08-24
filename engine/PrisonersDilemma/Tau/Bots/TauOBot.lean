@@ -17,6 +17,7 @@ namespace PD.Tau
 
 /-- τ(OBot): "defects vs Coop? → D; defects vs Defect? → D; else C." -/
 def tauOBotSpec : Spec Tmpl :=
-  ⟨[⟨.run, .name .coop, .D, .D⟩, ⟨.run, .name .defect, .D, .D⟩], .C⟩
+  .ite (.sim (.name .coop)) .D (.const .D)
+    (.ite (.sim (.name .defect)) .D (.const .D) (.const .C))
 
 end PD.Tau

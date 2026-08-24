@@ -16,6 +16,7 @@ and its EBot/Guardian bits are floors.
 namespace PD.Tau
 
 /-- τ(JustBot): "prove they'd cooperate with Dupoc; then C; else D." -/
-def tauJustSpec : Spec Tmpl := ⟨[⟨.prove, .name .dupoc, .C, .C⟩], .D⟩
+def tauJustSpec : Spec Tmpl :=
+  .search .prove (.name .dupoc) .C (.const .C) (.const .D)
 
 end PD.Tau

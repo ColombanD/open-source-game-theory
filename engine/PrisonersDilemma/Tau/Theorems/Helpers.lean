@@ -542,8 +542,35 @@ theorem ps_botSys_mismatch_false {k K : Nat} (hK : K ≤ k) (defs : ProgList)
       exact no_provable_botSysSearcherElse_tail k defs i kb g aT aTgt pE hne hkb hget O
         K _ ((proofSearch_spec _ _).1 h) hK rfl
 
+/-- The closed-substituted form of the entangled CIMCIC guard. -/
+theorem sysClose_subst_cimSelfIdx (defs : ProgList) (j : Nat) (me o : Prog) :
+    ((Formula.impl (.plays .self (.bot (.selfIdx j)) Action.C)
+                   (.plays (.bot (.selfIdx j)) .self Action.C)).sysClose defs).subst me o
+      = .impl (.plays me (.bot (.sys defs j)) Action.C)
+              (.plays (.bot (.sys defs j)) me Action.C) := by
+  simp [Formula.sysClose, Prog.sysClose, Formula.subst, Prog.subst]
+
+/-- A searcher component's reading, at an arbitrary opponent frame and EITHER
+    polarity: □(component `i` plays `aT` against itself) → component `j` plays `aT`
+    against `opp`. Generic in the then/else actions — Dupoc's `(C, D)` and Cupod's
+    `(D, C)` searchers are the same lemma. -/
+theorem sys_cross_at (defs : ProgList) (j i : Nat) (k K : Nat) (opp : Prog) (aT aE : Action)
+    (hget : defs.get? j = some (.search k
+      (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) aT) (.const aT) (.const aE)))
+    (hK : (Formula.impl
+        (.box k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) aT))
+        (.plays (.bot (.sys defs j)) opp aT)).size ≤ K) :
+    Pf K (.impl (.box k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) aT))
+                (.plays (.bot (.sys defs j)) opp aT)) := by
+  have h := Pf.botSysSearchStep defs j k
+    (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) aT) aT aE
+    (.bot (.sys defs j)) opp rfl hget
+    (by simpa [sysClose_subst_botSelfIdx] using hK)
+  rw [sysClose_subst_botSelfIdx] at h
+  exact h
+
 /-- Dupoc's side, at an arbitrary opponent frame: □(i cooperates) → j plays C
-    against `opp`. -/
+    against `opp`. (`sys_cross_at` at `(C, D)`.) -/
 theorem sys_cross_C_at (defs : ProgList) (j i : Nat) (k K : Nat) (opp : Prog)
     (hget : defs.get? j = some (.search k
       (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) Action.C) (.const .C) (.const .D)))
@@ -551,13 +578,73 @@ theorem sys_cross_C_at (defs : ProgList) (j i : Nat) (k K : Nat) (opp : Prog)
         (.box k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C))
         (.plays (.bot (.sys defs j)) opp Action.C)).size ≤ K) :
     Pf K (.impl (.box k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C))
-                (.plays (.bot (.sys defs j)) opp Action.C)) := by
-  have h := Pf.botSysSearchStep defs j k
-    (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) Action.C) .C .D
-    (.bot (.sys defs j)) opp rfl hget
-    (by simpa [sysClose_subst_botSelfIdx] using hK)
-  rw [sysClose_subst_botSelfIdx] at h
+                (.plays (.bot (.sys defs j)) opp Action.C)) :=
+  sys_cross_at defs j i k K opp .C .D hget hK
+
+/-- CIMCIC's side: □(its guard) → it cooperates (generic in the system). -/
+theorem sys_cross_impl_cim (defs : ProgList) (i j : Nat) (k K : Nat)
+    (hget : defs.get? i = some (.search k
+      (.impl (.plays .self (.bot (.selfIdx j)) Action.C)
+             (.plays (.bot (.selfIdx j)) .self Action.C)) (.const .C) (.const .D)))
+    (hK : (Formula.impl
+        (.box k (.impl (.plays (.bot (.sys defs i)) (.bot (.sys defs j)) Action.C)
+                       (.plays (.bot (.sys defs j)) (.bot (.sys defs i)) Action.C)))
+        (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C)).size ≤ K) :
+    Pf K (.impl
+      (.box k (.impl (.plays (.bot (.sys defs i)) (.bot (.sys defs j)) Action.C)
+                     (.plays (.bot (.sys defs j)) (.bot (.sys defs i)) Action.C)))
+      (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C)) := by
+  have h := Pf.botSysSearchStep defs i k
+    (.impl (.plays .self (.bot (.selfIdx j)) Action.C)
+           (.plays (.bot (.selfIdx j)) .self Action.C)) .C .D
+    (.bot (.sys defs i)) (.bot (.sys defs i)) rfl hget
+    (by simpa [sysClose_subst_cimSelfIdx] using hK)
+  rw [sysClose_subst_cimSelfIdx] at h
   exact h
+
+/-- A FORWARDER component's reading (`Pf.botSysSimStep`), at an arbitrary opponent
+    frame and any action: component `j` plays `a` against itself → component `i`,
+    a bare copy of `j`, plays `a` against `opp`. -/
+theorem sys_mirror_fwd (defs : ProgList) (i j : Nat) (a : Action) (K : Nat) (opp : Prog)
+    (hget : defs.get? i = some (.sim (.bot (.selfIdx j)) (.bot (.selfIdx j))))
+    (hK : (Formula.impl (.plays (.bot (.sys defs j)) (.bot (.sys defs j)) a)
+                        (.plays (.bot (.sys defs i)) opp a)).size ≤ K) :
+    Pf K (.impl (.plays (.bot (.sys defs j)) (.bot (.sys defs j)) a)
+                (.plays (.bot (.sys defs i)) opp a)) :=
+  Pf.botSysSimStep defs i j a (.bot (.sys defs i)) opp rfl hget hK
+
+/-! ## Forwarders — the bare `.sim` reads (τ(Mirror), 2026-08-24) -/
+
+/-- A bare `.sim` over a frozen instance FORWARDS what that instance plays, in
+    any frame — the behavioural read of a forwarder, both polarities at once. -/
+theorem simFwd_plays {I : Prog} {a : Action} (me opp : Prog)
+    (h : ∃ N, eval N (.bot I) (.bot I) I = some a) :
+    ∃ N, eval N me opp (.sim (.bot I) (.bot I)) = some a := by
+  obtain ⟨N, hN⟩ := h
+  refine ⟨N + 2, ?_⟩
+  rw [eval]
+  simp only [Prog.subst]
+  rw [eval]
+  exact eval_mono_le hN _ (by omega)
+
+/-- …and its transcript: the watched instance's own, plus a `bot` and a `sim`. -/
+theorem playsProof_simFwd {I me opp : Prog} {a : Action} {m : Nat}
+    (hw : PlaysProof (.bot I) (.bot I) I a m) :
+    PlaysProof me opp (.sim (.bot I) (.bot I)) a (m + c_node + c_node) := by
+  refine PlaysProof.sim ?_
+  simp only [Prog.subst]
+  exact PlaysProof.bot hw
+
+/-- A true self-play atom gives a play witness, at either action
+    (`entry_C_of_interp` generalised). -/
+theorem entry_of_interp {I : Prog} {a : Action}
+    (h : (Formula.plays (.bot I) (.bot I) a).interp) :
+    ∃ N, eval N (.bot I) (.bot I) I = some a := by
+  simp only [Formula.interp] at h
+  obtain ⟨n, hn⟩ := h
+  cases n with
+  | zero => simp [play, eval] at hn
+  | succ m => exact ⟨m, by rw [play, eval] at hn; exact hn⟩
 
 /-! ## Shape lemmas — the `test = .D` idioms (9-zoo extension, 2026-08-18) -/
 

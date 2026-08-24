@@ -500,6 +500,23 @@ copy, base EBot's Mirror branch, `.neg`-guard bots (WaryBot). A `test : Action`
 field on `Stage` is the recorded extension for negative probes; do not add it until
 a lifted bot needs it.
 
+> **RESOLVED 2026-08-24 — the DSL is a TREE now.** MirrorBot's raw copy was the
+> shape that broke the stage list: a forwarder has no `test`/`fire`/fall-through,
+> and encoding it as a one-stage threshold test (`if the watch plays C then C else
+> D`) changed its SHAPE from forwarder to classifier — behaviourally identical on
+> `{C, D}`, but `S` reads shape, and the encoding blocked the mirror×cupod cells
+> (a Löb fixpoint on the ELSE branch). `Spec` is now `const | sim | ite | search`
+> — `Prog` with a `Target` hole where the base says "`.opp` facing Q", i.e. the
+> uniform source lift taken literally — and every bot is written as its base
+> source: τ(Mirror) = `sim self`, τ(TFTSim) = `ite (sim (name coop)) C (const C)
+> (const D)`, and so on. `run` is no longer a mode (it is `ite ∘ sim`); `prove`
+> stages are `search` nodes. Every classifier's compiled term is BYTE-IDENTICAL to
+> the stage list's (Gate D1 + every phase theorem's pinned shape, by `rfl`, zero
+> theorem edits); only τ(Mirror)'s term changed, from `.ite (.sim P P) C (.const
+> C) (.const D)` to `.sim P P`. Base EBot's Mirror branch is in scope with it.
+> `.neg`/`.box` guards (WaryBot, LegibleBot) remain the recorded extension — now a
+> `Mode` (guard-descriptor) extension on `search`, not a new node.
+
 ### 6.2 The compiler
 
 ```lean

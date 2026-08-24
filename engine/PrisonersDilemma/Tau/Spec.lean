@@ -10,9 +10,9 @@ cast, `Tau/Bots/<TauBot>.lean` holds each bot's spec row and doc (one file per b
 like `Bots/` for the base zoo), and `Tau/Zoo.lean` assembles them and carries
 Gate D1.
 
-The scale layer of the refined Def 4. A base bot is described by a small SPEC — an
-ordered list of probe stages plus a default action — and the compiler `inst` turns a
-spec zoo into the whole δ-instance closure: `inst Z A T` is bot A's ENTIRE decision
+The scale layer of the refined Def 4. A base bot is described by a SPEC — its own
+source tree with a `Target` hole wherever the base says "`.opp` facing Q" — and the
+compiler `inst` turns a spec zoo into the whole δ-instance closure: `inst Z A T` is bot A's ENTIRE decision
 procedure at point mass on hypothesis T. Vectors are then built by mapping the
 compiler over a zoo list (`vecOf`), so nothing per-bot is hand-written except the
 spec itself and the per-column bit lemmas (`Tau/Certs`) — the mathematics a DSL
@@ -36,7 +36,27 @@ open PD
 
 namespace PD.Tau
 
-/-! ## The types (§6.1) -/
+/-! ## The types (§6.1) — a TREE, since 2026-08-24
+
+**Why a tree and not a stage list.** Def 4 is the UNIFORM SOURCE LIFT: τ(A) is A's
+own source with "the opponent facing `Q`" replaced by "the hypothesis's instance
+facing `Q`". So the spec language should be `Prog` with a HOLE where the base
+source says `.opp` — and that is what `Spec` now is: `Prog` minus the pronouns the
+compiler supplies (`.self`/`.opp`/`.bot`), plus `Target` in the hole.
+
+The previous DSL was a LIST of probe stages plus a default action — a decision-list
+compression of the same trees. It covered every classifier in the zoo (each stage
+= "consult, compare to `test`, commit a constant `fire`, else fall through"), but it
+could not say MirrorBot, whose whole program is a bare `.sim` that FORWARDS the
+observed play instead of testing it. Encoding the forwarder as a one-stage
+threshold test (`if the watch plays C then C else D`) reproduces its behaviour on
+the two-valued `Action` type but changes its SHAPE from forwarder to classifier —
+and `S` reads shape: a bare `.sim` is legible via `simStep` in both polarities, an
+`.ite` needs a reading rule per branch. That mis-encoding is what forced the
+(now-retired) `botSysSimStep` rule and blocked the mirror×cupod cells. The tree
+DSL says `.sim .self` and the problem does not arise. Every classifier's compiled
+term is BYTE-IDENTICAL to what the stage list produced — Gate D1 (`Zoo.lean`) and
+every phase theorem's pinned shape certify that by `rfl`. -/
 
 /-- The opposite action — the consequent polarity of a `proveImplD` guard.
     (`Base/Transpose.Action.swap` is the same function, but this layer does not
@@ -45,94 +65,80 @@ def otherAction : Action → Action
   | .C => .D
   | .D => .C
 
-/-- How a stage consults its probe: `prove` = bounded proof search over the probe
-    atom (a `.search` node); `run` = execute the probed instance and read its true
-    play (a `.sim`-guarded `.ite`); `proveImpl` = bounded proof search over the
-    IMPLICATION atom `probeImpl` — "if I play `test` against them, they play `test`
-    against me" (CIMCIC/DIMCID's guard shape, added 2026-08-20).
+/-- The GUARD KIND of a `search` node: which formula, about the resolved probe
+    object `P`, the bounded proof search is asked. (`run` — execute the probed
+    instance and read its play — is no longer a mode: it is `.ite` over `.sim`,
+    exactly as in the base source.)
 
-    `proveImpl` is a genuinely different MODALITY, not sugar for `prove`: the
-    implication is provable whenever its CONSEQUENT is (`Pf.weakenImpl`), so a
-    `proveImpl` stage fires in strictly more cases than the corresponding `prove`
-    stage on the consequent alone would — it is the conditional-commitment reading
-    ("I cooperate if that would induce cooperation") rather than the
-    evidence-gathering one.
+    `prove` = the probe atom `P plays test against itself`.
 
-    `proveEq` = bounded proof search over a STRUCTURAL IDENTITY atom (`.eq`):
-    **"is the signal I am currently treating the lift of B?"** — CupodTrollBot's
-    guard shape (2026-08-20; RESTATED 2026-08-24).
+    `proveImpl` = the IMPLICATION atom "if I play `test` against them, they play
+    `test` against me" (CIMCIC's guard, added 2026-08-20). A genuinely different
+    MODALITY, not sugar for `prove`: the implication is provable whenever its
+    CONSEQUENT is (`Pf.weakenImpl`), so it fires in strictly more cases — the
+    conditional-commitment reading rather than the evidence-gathering one.
 
-    The identity is between the HYPOTHESIS's instance and B's, both taken at the
-    probing bot's own frame and both `.bot`-frozen, so the guard is CLOSED like
-    every other probe. It fires exactly when the hypothesis IS `B` (the two sides
-    are then literally the same term, `Pf.eqRefl`), and `Pf.eqNeg` refutes it
-    otherwise.
+    `proveImplD` (2026-08-21) = the ASYMMETRIC-consequent variant: "if I play
+    `test`, they play the OPPOSITE back" — DIMCID's guard. Its diagonal is a
+    genuine Löb fixpoint on DEFECTION, unlike `proveImpl`'s trivial `implRefl`.
 
-    **The 2026-08-24 correction.** The original emission was
-    `.eq .opp (.bot (inst T B))`, with two defects. It asked about `.opp`, a FREE
-    pronoun — breaking the layer's design pillar that every probe is closed
-    (`probe_subst`/`probeD_subst`), and meaningless inside a probe, whose frame is
-    instance-vs-itself. And it compared that pronoun against a counterfactual
-    probe `inst T B` ("the hypothesis facing B"), an object of a different kind
-    from anything that could sit across the table. The guard was consequently
-    unsatisfiable at every cell, so τ(CupodTroll)'s row was uniformly `C` and the
-    bot provably never did what it was written to do. The `let P := inst T B`
-    boilerplate came from the four BEHAVIOURAL modes, where `P` is the object to
-    interrogate; an identity test needs the object to RECOGNISE.
-
-    Both directions stay decidable in `S`, so a `proveEq` bit is never
-    floor-priced: identity is the one question the proof system answers
-    completely.
-
-    `proveImplD` (2026-08-21) is the ASYMMETRIC-consequent variant: the antecedent
-    still says "I play `test` against them", but the consequent says they play the
-    OPPOSITE action back — DIMCID's guard shape
-    (`.impl (.plays .self .opp C) (.plays .opp .self D)`, "if I cooperate, they
-    defect"). It is a separate mode rather than a `Stage` field because the
-    anonymous-constructor spec rows (13 of them) take positional arguments, and a
-    new field would break every one; a new mode touches only the two compiler
-    matches. Its diagonal is a genuine Löb fixpoint on DEFECTION (base
-    `llm_outcome_DIMCID_vs_DIMCID`), unlike `proveImpl`'s trivial `implRefl`. -/
-inductive Mode | prove | run | proveImpl | proveImplD | proveEq
+    `proveEq` = a STRUCTURAL IDENTITY atom: **"is the signal I am currently
+    treating the lift of B?"** — CupodTrollBot's guard (2026-08-20; RESTATED
+    2026-08-24: the original asked about `.opp`, a free pronoun, against a
+    counterfactual probe, and was unsatisfiable at every cell). For a NAMED target
+    the question is about WHICH hypothesis is in the slot, so the compiler decides
+    it from the INDEX and emits a closed, decidably-true-or-false `.eq` — never by
+    compiling B's behaviour, which re-enters the mutual-quine wall whenever B
+    probes back (Cupod↔CupodTroll). Both directions stay decidable in `S`, so a
+    `proveEq` bit is never floor-priced. -/
+inductive Mode | prove | proveImpl | proveImplD | proveEq
 deriving DecidableEq, Repr
 
-/-- The counterfactual opponent a stage imagines the hypothesis facing: `self` = "me,
-    the probing bot" (the self-probe geometry — Dupoc's), or a named zoo member. -/
+/-- The counterfactual opponent a probe imagines the hypothesis facing: `self` =
+    "me, the probing bot" (the self-probe geometry — Dupoc's, Mirror's), or a named
+    zoo member. -/
 inductive Target (ι : Type) | self | name (i : ι)
 deriving DecidableEq, Repr
 
-/-- One probe stage: consult the hypothesis's instance-vs-`target` in the given mode;
-    if the consultation yields `test`, commit `fire`; else fall through to the next
-    stage. `test` was added 2026-08-18 when the first lifted bots needed it (OBot
-    watches for DEFECTION, GuardianBot proves it); the original zoo's stages all
-    test `.C`. -/
-structure Stage (ι : Type) where
-  mode   : Mode
-  target : Target ι
-  test   : Action
-  fire   : Action
+/-- A bot spec: `Prog` with a `Target` where the base source has "`.opp` facing Q".
+
+    * `const a`                — play `a`
+    * `sim t`                  — RUN the hypothesis facing `t` and play what it plays
+                                 (base `.sim .opp Q`; MirrorBot is `sim self`)
+    * `ite g test p q`         — base `.ite`: run `g`; if it yields `test`, `p`, else `q`
+    * `search m t test p q`    — base `.search`: bounded proof search over the
+                                 `m`-guard about the hypothesis facing `t`; `p` if
+                                 provable, else `q`
+
+    The old stage rows read off directly: `⟨.run, t, test, fire⟩ :: rest` is
+    `ite (sim t) test (const fire) rest`, and `⟨.prove, t, test, fire⟩ :: rest` is
+    `search .prove t test (const fire) rest`; the default action is the final
+    `const`. -/
+inductive Spec (ι : Type)
+  | const  (a : Action)
+  | sim    (t : Target ι)
+  | ite    (g : Spec ι) (test : Action) (p q : Spec ι)
+  | search (m : Mode) (t : Target ι) (test : Action) (p q : Spec ι)
 deriving DecidableEq, Repr
 
-/-- A bot spec: its probe cascade plus the default action when every stage falls
-    through. Constants are `⟨[], a⟩`. -/
-structure Spec (ι : Type) where
-  stages : List (Stage ι)
-  dflt   : Action
-deriving DecidableEq, Repr
-
-/-- A spec zoo: one spec per index, and the shared prover budget every `prove` stage
-    searches under. -/
+/-- A spec zoo: one spec per index, and the shared prover budget every `search`
+    node searches under. -/
 structure Zoo (ι : Type) where
   spec   : ι → Spec ι
   budget : Nat
 
 /-! ## Entanglement: which pairs need the binder (§8c.5, 2026-08-20) -/
 
-/-- Does this bot have a `self` stage — i.e. does it probe "the hypothesis, seeing
-    ME"? Exactly the property that creates reference cycles: two self-probers `A`
-    and `B` need `inst A B ⊃ inst B A ⊃ inst A B`, which no finite tree satisfies. -/
-def Spec.selfProbes {ι : Type} (sp : Spec ι) : Bool :=
-  sp.stages.any fun st => match st.target with | .self => true | .name _ => false
+/-- Does this bot probe "the hypothesis, seeing ME" anywhere in its tree? Exactly
+    the property that creates reference cycles: two self-probers `A` and `B` need
+    `inst A B ⊃ inst B A ⊃ inst A B`, which no finite tree satisfies. -/
+def Spec.selfProbes {ι : Type} : Spec ι → Bool
+  | .const _                  => false
+  | .sim .self                => true
+  | .sim (.name _)            => false
+  | .ite g _ p q              => g.selfProbes || p.selfProbes || q.selfProbes
+  | .search _ .self _ _ _     => true
+  | .search _ (.name _) _ p q => p.selfProbes || q.selfProbes
 
 /-- `A` and `T` are ENTANGLED when both self-probe and they are distinct: the
     2-cycle the `.sys` binder exists to cut. (Same-bot self-probing is the diagonal,
@@ -141,228 +147,131 @@ def Spec.selfProbes {ι : Type} (sp : Spec ι) : Bool :=
 def Zoo.entangled {ι : Type} [DecidableEq ι] (Z : Zoo ι) (A T : ι) : Bool :=
   A ≠ T && (Z.spec A).selfProbes && (Z.spec T).selfProbes
 
-/-! ## The compiler (§6.2) —  (system members) and  (instances) -/
+/-! ## The compiler (§6.2) -/
+
+/-- The guard formula of a `search` node once its probe object is RESOLVED to
+    `obj` — `.bot P` for a compiled instance, `.bot (.selfIdx j)` inside a system,
+    or the `.self` pronoun on the diagonal (the quine).
+
+    `proveImpl`/`proveImplD` use the SELF PRONOUN for the antecedent's subject
+    (2026-08-20): the antecedent is "*I* play `test` against the probed instance",
+    and "I" is the term currently being compiled — which cannot contain itself.
+    `.self` is the language's knot for exactly that, closed by `subst` at
+    consultation time (the `.plays .self …` convention base CIMCIC already uses).
+    Those guards are therefore NOT closed under `subst` — unlike `probe`/`probeD` —
+    so `probeImpl` is the atom the guard becomes AFTER substitution. -/
+def guardOf (m : Mode) (test : Action) (obj : Prog) : Formula :=
+  match m with
+  | .prove      => .plays obj obj test
+  | .proveImpl  => .impl (.plays .self obj test) (.plays obj .self test)
+  | .proveImplD => .impl (.plays .self obj test) (.plays obj .self (otherAction test))
+  | .proveEq    => .eq obj obj
+
+/-- The index-decided `proveEq` guard for a NAMED target: the guard carries NO
+    compiled instance (see `Mode`); the compiler branches on `T = B` exactly as the
+    `.self` arms branch on the diagonal, and the `.eq` is the bit's object-language
+    witness. -/
+def eqGuardOf {ι : Type} [DecidableEq ι] (T B : ι) (test : Action) : Formula :=
+  if T = B then .eq (.const test) (.const test)
+  else .eq (.const test) (.const (otherAction test))
 
 mutual
+/-- **`instAt Z fuel A T`** — bot A's instance at hypothesis T: the ONE place the
+    entanglement decision is made. If A and T are a self-probing pair, neither
+    instance can contain the other, so emit the 2-member `.sys` system — component
+    0 is A-seeing-T, component 1 is T-seeing-A, each probing the other by INDEX —
+    and take component 0. Otherwise compile A's tree.
+
+    (Until 2026-08-24 this decision lived inside the self-stage arm of the stage
+    compiler and REPLACED that stage — silently discarding the rest of the cascade.
+    Harmless for the zoo, where every self-prober's self stage was first and only;
+    wrong for a tree, where a `.self` node may sit anywhere. The decision belongs
+    to the instance, not to a node.) -/
+def instAt (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → Prog
+  | 0, _, _ => .const .D
+  | fuel+1, A, T =>
+      if Z.entangled A T then
+        .sys (.cons (sysGo Z 1 fuel A T (Z.spec A))
+             (.cons (sysGo Z 0 fuel T A (Z.spec T)) .nil)) 0
+      else instGo Z fuel A T (Z.spec A)
+  termination_by structural fuel _ _ => fuel
+
+/-- Tree compiler for a NON-entangled instance. Probe-object resolution:
+    * target `name B` → `.bot (instAt T B)` — the hypothesis's instance seeing B;
+    * target `self`, `T ≠ A` → `.bot (instAt T A)` — the hypothesis's instance
+      seeing ME (not entangled: `instAt` already ruled that out for this pair);
+    * target `self`, `T = A` → the QUINE: the `.self` pronoun instead of a term
+      that would have to contain itself — the language's own knot for the
+      diagonal (`.plays .self .self C` / `.sim .self .self`, pinned literal by
+      `Zoo.lean`'s `inst_dupoc_quine`).
+
+    Every recursive call decrements fuel, so the recursion is STRUCTURAL and the
+    output reduces by `rfl` — the property Gate D1 lives on. Fuel exhaustion emits
+    `.const .D`; for a well-formed zoo at adequate fuel it is unreachable, and Gate
+    D1 certifies that (an exhausted compile cannot be byte-identical to the
+    hand-written closure). -/
+def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → Spec ι → Prog
+  | 0, _, _, _ => .const .D
+  | fuel+1, A, T, sp =>
+      match sp with
+      | .const a => .const a
+      | .sim t =>
+          let obj : Prog := match t with
+            | .self   => if T = A then .self else .bot (instAt Z fuel T A)
+            | .name B => .bot (instAt Z fuel T B)
+          .sim obj obj
+      | .ite g test p q =>
+          .ite (instGo Z fuel A T g) test (instGo Z fuel A T p) (instGo Z fuel A T q)
+      | .search m t test p q =>
+          let pC := instGo Z fuel A T p
+          let qC := instGo Z fuel A T q
+          match m, t with
+          | .proveEq, .name B => .search Z.budget (eqGuardOf T B test) pC qC
+          | m, .name B => .search Z.budget (guardOf m test (.bot (instAt Z fuel T B))) pC qC
+          | m, .self =>
+              let obj : Prog := if T = A then .self else .bot (instAt Z fuel T A)
+              .search Z.budget (guardOf m test obj) pC qC
+  termination_by structural fuel _ _ _ => fuel
+
 /-- One member of an entangled pair's system, compiled with the PARTNER replaced by
-    an indexed pronoun. `sysGo Z fuel me partnerIdx stages d` compiles `me`'s cascade
-    where every `self`-target stage probes `.bot (.selfIdx partnerIdx)` — frozen,
-    exactly as the off-cycle arms freeze `.bot P` — "the other member
-    of my system, whoever that turns out to be" — instead of recursing into a term
-    that would have to contain this one.
-
-    Non-`self` stages still resolve normally (they name third parties, which are not
-    part of the cycle), so a self-prober's other stages compile exactly as before. -/
-def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) :
-    Nat → ι → ι → List (Stage ι) → Action → Prog
-  | 0, _, _, _, d => .const d
-  | _+1, _, _, [], d => .const d
-  | fuel+1, A, T, st :: rest, d =>
-      let cont := sysGo Z partnerIdx fuel A T rest d
-      match st.mode, st.target with
-      | .prove, .self =>
-          .search Z.budget
-            (.plays (.bot (.selfIdx partnerIdx)) (.bot (.selfIdx partnerIdx)) st.test)
-            (.const st.fire) cont
-      | .run, .self =>
-          .ite (.sim (.bot (.selfIdx partnerIdx)) (.bot (.selfIdx partnerIdx))) st.test
-            (.const st.fire) cont
-      | .proveImpl, .self =>
-          .search Z.budget
-            (.impl (.plays .self (.bot (.selfIdx partnerIdx)) st.test)
-                   (.plays (.bot (.selfIdx partnerIdx)) .self st.test))
-            (.const st.fire) cont
-      | .proveImplD, .self =>
-          .search Z.budget
-            (.impl (.plays .self (.bot (.selfIdx partnerIdx)) st.test)
-                   (.plays (.bot (.selfIdx partnerIdx)) .self (otherAction st.test)))
-            (.const st.fire) cont
-      | .proveEq, .self =>
-          -- identity against the PARTNER component (see the `.name` arm below for
-          -- the semantics: a question about the HYPOTHESIS, not about `.opp`)
-          .search Z.budget
-            (.eq (.bot (.selfIdx partnerIdx)) (.bot (.selfIdx partnerIdx)))
-            (.const st.fire) cont
-      -- third-party stages are OUTSIDE the cycle: compile them normally
-      | .prove, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .search Z.budget (.plays (.bot P) (.bot P) st.test) (.const st.fire) cont
-      | .run, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .ite (.sim (.bot P) (.bot P)) st.test (.const st.fire) cont
-      | .proveImpl, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .search Z.budget
-            (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
-            (.const st.fire) cont
-      | .proveImplD, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .search Z.budget
-            (.impl (.plays .self (.bot P) st.test)
-                   (.plays (.bot P) .self (otherAction st.test)))
-            (.const st.fire) cont
-      | .proveEq, .name B =>
-          -- the guard carries NO compiled instance: mentioning one re-enters the
-          -- mutual-quine wall whenever the recognised bot probes this one back
-          -- (Cupod↔CupodTroll is exactly that pair). The index branch decides the
-          -- bit; the `.eq` is its object-language witness.
-          if T = B then
-            .search Z.budget (.eq (.const st.test) (.const st.test))
-              (.const st.fire) cont
-          else
-            .search Z.budget (.eq (.const st.test) (.const (otherAction st.test)))
-              (.const st.fire) cont
-  termination_by structural fuel _ _ _ _ => fuel
-
-/-- Fuel-indexed compiler core. `instGo Z fuel A T l d` compiles the remaining stages
-    `l` of bot A's cascade at hypothesis T (with default `d`); every recursive call —
-    the cascade continuation AND the probed instances — decrements fuel, so the
-    recursion is STRUCTURAL and the output reduces by `rfl` (the property Gate D1
-    lives on).
-
-    Probed-object resolution (the one place recursion happens):
-    * stage target `name B` → `inst Z T B` — the hypothesis's instance seeing B;
-    * stage target `self`, `T ≠ A` → `inst Z T A` — the hypothesis's instance seeing ME;
-    * stage target `self`, `T = A` → the QUINE: emit the pronoun guard
-      (`.plays .self .self .C` / `.sim .self .self`) instead of recursing — a term
-      cannot contain itself, and the pronoun is the language's own knot for the
-      diagonal (pinned literal by `Zoo.lean`'s `inst_dupoc_quine`).
-
-    **`proveImpl` uses the SELF PRONOUN for the antecedent's subject** (2026-08-20):
-    the antecedent is "*I* play `test` against the probed instance", and "I" is the
-    term currently being compiled — which cannot contain itself. `.self` is the
-    language's knot for exactly that, closed by `subst` at consultation time to the
-    running instance (the `.plays .self …` convention base CIMCIC already uses). The
-    guard is therefore NOT closed under `subst` — unlike `probe`/`probeD` — so
-    `probeImpl` is the atom the guard becomes AFTER substitution, and the
-    `probeImpl_subst` lemma is about that closed form, not about this one.
-
-    Fuel exhaustion emits `.const d` — for a well-formed zoo at adequate fuel it is
-    unreachable, and Gate D1 certifies that for `tauZoo` (an exhausted compile cannot
-    be byte-identical to the hand-written closure). -/
-def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → List (Stage ι) → Action → Prog
-  | 0, _, _, _, d => .const d
-  | _+1, _, _, [], d => .const d
-  | fuel+1, A, T, st :: rest, d =>
-      let cont := instGo Z fuel A T rest d
-      match st.mode, st.target with
-      | .prove, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .search Z.budget (.plays (.bot P) (.bot P) st.test) (.const st.fire) cont
-      | .prove, .self =>
-          if T = A then
-            .search Z.budget (.plays .self .self st.test) (.const st.fire) cont
-          else if Z.entangled A T then
-            -- THE BINDER CASE (2026-08-20): A and T both self-probe, so neither
-            -- instance can contain the other. Emit the 2-member system —
-            -- component 0 is A-seeing-T, component 1 is T-seeing-A, each probing
-            -- the other by INDEX — and take component 0.
-            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
-                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
-          else
-            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
-            .search Z.budget (.plays (.bot P) (.bot P) st.test) (.const st.fire) cont
-      | .run, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .ite (.sim (.bot P) (.bot P)) st.test (.const st.fire) cont
-      | .run, .self =>
-          if T = A then
-            .ite (.sim .self .self) st.test (.const st.fire) cont
-          else if Z.entangled A T then
-            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
-                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
-          else
-            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
-            .ite (.sim (.bot P) (.bot P)) st.test (.const st.fire) cont
-      | .proveImpl, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .search Z.budget
-            (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
-            (.const st.fire) cont
-      | .proveEq, .name B =>
-          -- "is the signal I am currently treating the lift of B?" The question is
-          -- about WHICH HYPOTHESIS is in the slot, so it is answered from the
-          -- INDEX — never by compiling B's behaviour (doing so re-creates the
-          -- mutual-quine wall: `inst B A` can probe back to `A`, and no amount of
-          -- fuel reaches a fixpoint). The compiler branches on `T = B` exactly as
-          -- the `.self` arms branch on `T = A`, and emits a CLOSED `.eq` that is
-          -- decidably true or decidably false.
-          -- the guard carries NO compiled instance: mentioning one re-enters the
-          -- mutual-quine wall whenever the recognised bot probes this one back
-          -- (Cupod↔CupodTroll is exactly that pair). The index branch decides the
-          -- bit; the `.eq` is its object-language witness.
-          if T = B then
-            .search Z.budget (.eq (.const st.test) (.const st.test))
-              (.const st.fire) cont
-          else
-            .search Z.budget (.eq (.const st.test) (.const (otherAction st.test)))
-              (.const st.fire) cont
-      | .proveEq, .self =>
-          if T = A then
-            -- the diagonal: the hypothesis IS me, so the identity holds
-            .search Z.budget (.eq .self .self) (.const st.fire) cont
-          else if Z.entangled A T then
-            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
-                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
-          else
-            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
-            .search Z.budget (.eq (.bot P) (.bot P)) (.const st.fire) cont
-      | .proveImpl, .self =>
-          if T = A then
-            .search Z.budget
-              (.impl (.plays .self .self st.test) (.plays .self .self st.test))
-              (.const st.fire) cont
-          else if Z.entangled A T then
-            -- the binder case, uniformly with `.prove` (2026-08-21): an asymmetric
-            -- emission (recursing here while the partner's arm emits the system)
-            -- would create TWO syntactic representations of the same instance —
-            -- bot-wrapped and in-system — whose bits would be separately proved
-            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
-                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
-          else
-            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
-            .search Z.budget
-              (.impl (.plays .self (.bot P) st.test) (.plays (.bot P) .self st.test))
-              (.const st.fire) cont
-      | .proveImplD, .name B =>
-          let P := instGo Z fuel T B (Z.spec T).stages (Z.spec T).dflt
-          .search Z.budget
-            (.impl (.plays .self (.bot P) st.test)
-                   (.plays (.bot P) .self (otherAction st.test)))
-            (.const st.fire) cont
-      | .proveImplD, .self =>
-          if T = A then
-            -- THE DIAGONAL: after subst the guard is `φ → ψ` with φ, ψ the SAME
-            -- player at OPPOSITE actions — not `implRefl` territory (that is
-            -- `proveImpl`'s diagonal). This is the genuine Löb fixpoint on
-            -- defection, base `llm_outcome_DIMCID_vs_DIMCID`.
-            .search Z.budget
-              (.impl (.plays .self .self st.test)
-                     (.plays .self .self (otherAction st.test)))
-              (.const st.fire) cont
-          else if Z.entangled A T then
-            .sys (.cons (sysGo Z 1 fuel A T (Z.spec A).stages (Z.spec A).dflt)
-                 (.cons (sysGo Z 0 fuel T A (Z.spec T).stages (Z.spec T).dflt) .nil)) 0
-          else
-            let P := instGo Z fuel T A (Z.spec T).stages (Z.spec T).dflt
-            .search Z.budget
-              (.impl (.plays .self (.bot P) st.test)
-                     (.plays (.bot P) .self (otherAction st.test)))
-              (.const st.fire) cont
-
-  termination_by structural fuel _ _ _ _ => fuel
+    an indexed pronoun: every `self` target resolves to `.bot (.selfIdx partnerIdx)`
+    — frozen, exactly as the off-cycle arms freeze `.bot P` — "the other member of
+    my system, whoever that turns out to be" — instead of recursing into a term that
+    would have to contain this one. Named targets are OUTSIDE the cycle (third
+    parties) and resolve normally. -/
+def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) : Nat → ι → ι → Spec ι → Prog
+  | 0, _, _, _ => .const .D
+  | fuel+1, A, T, sp =>
+      match sp with
+      | .const a => .const a
+      | .sim t =>
+          let obj : Prog := match t with
+            | .self   => .bot (.selfIdx partnerIdx)
+            | .name B => .bot (instAt Z fuel T B)
+          .sim obj obj
+      | .ite g test p q =>
+          .ite (sysGo Z partnerIdx fuel A T g) test
+            (sysGo Z partnerIdx fuel A T p) (sysGo Z partnerIdx fuel A T q)
+      | .search m t test p q =>
+          let pC := sysGo Z partnerIdx fuel A T p
+          let qC := sysGo Z partnerIdx fuel A T q
+          match m, t with
+          | .proveEq, .name B => .search Z.budget (eqGuardOf T B test) pC qC
+          | m, .name B => .search Z.budget (guardOf m test (.bot (instAt Z fuel T B))) pC qC
+          | m, .self => .search Z.budget (guardOf m test (.bot (.selfIdx partnerIdx))) pC qC
+  termination_by structural fuel _ _ _ => fuel
 end
 
 /-- Default compile fuel: generous for any zoo whose probe-nesting depth is modest
-    (the 6-template zoo needs < 12; adding bots that only name existing columns does
-    not deepen the nesting). Gate-D1-style byte checks are what certify sufficiency
-    per zoo. -/
+    (the 15-template zoo needs < 12; adding bots that only name existing columns
+    does not deepen the nesting). Gate-D1-style byte checks are what certify
+    sufficiency per zoo. -/
 def instFuel : Nat := 16
 
 /-- **THE COMPILER**: `inst Z A T` = bot A's entire lifted decision procedure at
     point mass on hypothesis T. -/
 def inst (Z : Zoo ι) [DecidableEq ι] (A T : ι) : Prog :=
-  instGo Z instFuel A T (Z.spec A).stages (Z.spec A).dflt
+  instAt Z instFuel A T
 
 /-! ## Vectors from the compiler (§6.4) -/
 

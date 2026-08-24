@@ -109,8 +109,8 @@ theorem no_provable_DIMCID_C_tail (k : Nat) (O : Prog) :
     injection hS with h1 h2 h3
     subst h1
     unfold DIMCID at hme; simp at hme
-  · -- hbotsysrun: the `.sys` RUN twin, same shape kill
-    intro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, same shape kill
+    intro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1
     unfold DIMCID at hme; simp at hme

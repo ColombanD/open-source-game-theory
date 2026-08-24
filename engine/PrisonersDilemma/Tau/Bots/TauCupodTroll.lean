@@ -26,6 +26,6 @@ namespace PD.Tau
 
 /-- τ(CupodTrollBot): "is my opponent literally CupodBot? then D, else C." -/
 def tauCupodTrollSpec : Spec Tmpl :=
-  ⟨[⟨.proveEq, .name .cupod, .C, .D⟩], .C⟩
+  .search .proveEq (.name .cupod) .C (.const .D) (.const .C)
 
 end PD.Tau

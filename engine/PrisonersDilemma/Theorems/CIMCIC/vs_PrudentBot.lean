@@ -128,8 +128,8 @@ theorem cimcic_pb_prudence_unprovable_tail (k : Nat) :
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC] at hme
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    rintro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC] at hme

@@ -84,8 +84,8 @@ theorem cd_no_provable_alpha (k : Nat) :
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC, DIMCID] at hme
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    rintro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC, DIMCID] at hme
@@ -160,8 +160,8 @@ theorem cd_no_provable_beta (k : Nat) :
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC, DIMCID] at hme
-  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
-    rintro me oppo c hS defs i _ _ _ hme _
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    rintro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC, DIMCID] at hme

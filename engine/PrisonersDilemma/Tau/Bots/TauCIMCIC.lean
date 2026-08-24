@@ -26,6 +26,6 @@ namespace PD.Tau
 
 /-- τ(CIMCIC): "can I prove my cooperation induces theirs? then C, else D." -/
 def tauCIMCICSpec : Spec Tmpl :=
-  ⟨[⟨.proveImpl, .self, .C, .C⟩], .D⟩
+  .search .proveImpl .self .C (.const .C) (.const .D)
 
 end PD.Tau

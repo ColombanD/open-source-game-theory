@@ -128,7 +128,7 @@ theorem outcome_TauTFTPf_vs_TauTFTSim_band {k : Nat} (hk : 2 ≤ k)
 `hmir` and `hmirP` used to be hypotheses on every one of these statements: the
 mirror×dupoc entangled cell had no proof, so the theorems were conditional on it.
 Both are now theorems (`Tau/Theorems/TauMirror/Helpers`), proven by bounded Löb
-through the `.sys` binder using the new `Pf.botSysRunStep` reading rule, so they
+through the `.sys` binder using the new `Pf.botSysSimStep` reading rule, so they
 are supplied here rather than assumed. The statements below are UNCONDITIONAL. -/
 
 theorem outcome_TauDupoc_vs_TauDupoc :
@@ -309,36 +309,36 @@ the same shape as the red cell. -/
 
 theorem outcome_TauCIMCIC_vs_TauCIMCIC :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .mirror))
-          (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
-          = some (cimcicRow .mirror)),
       ∀ θ (w : Tmpl → Nat), θ ≤ cimcicMass w →
       ∃ N, outcome N (TauBotZ k .cimcic w θ) (TauBotZ k .cimcic w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauCIMCIC_phase
-  exact ⟨k₂, fun k hk hmirP θ w hθ =>
-    outcome_of_ex_plays ((h k hk hmirP θ w _).1 hθ) ((h k hk hmirP θ w _).1 hθ)⟩
+  obtain ⟨kC, hC⟩ := cimcic_mirror_plays_C
+  refine ⟨max k₂ kC, fun k hk θ w hθ => ?_⟩
+  have hmirC := hC k (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
+  have hk₂ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  exact outcome_of_ex_plays ((h k hk₂ hmirC θ w _).1 hθ) ((h k hk₂ hmirC θ w _).1 hθ)
 
 /-- **The entangled pair, cooperatively**: within both cooperation regimes the
     conditional cooperator and the Löbian cooperator settle on `(C, C)` — the tau
     image of base CIMCIC-vs-DupocBot, THROUGH the binder. -/
 theorem outcome_TauCIMCIC_vs_TauDupoc :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hmirC : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .mirror))
-          (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
-          = some (cimcicRow .mirror))
-        (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
-          = dupocColBit .mirror)
-        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
-          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
-          = some (dupocRow .mirror)),
       ∀ θ (w : Tmpl → Nat), θ ≤ cimcicMass w → θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .cimcic w θ) (TauBotZ k .dupoc w θ) = some (.C, .C) := by
   obtain ⟨kM, hM⟩ := tauCIMCIC_phase
   obtain ⟨kD, hD⟩ := tauDupoc_phase
-  exact ⟨max kM kD, fun k hk hmirC hmir hmirP θ w hθm hθd =>
-    outcome_of_ex_plays
-      ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) hmirC θ w _).1 hθm)
-      ((hD k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hmir hmirP θ w _).1 hθd)⟩
+  obtain ⟨kC, hC⟩ := cimcic_mirror_plays_C
+  obtain ⟨k1, h1⟩ := ps_probe_mirror_dupoc
+  obtain ⟨k2, h2⟩ := dupoc_mirror_plays_C
+  refine ⟨max (max kM kD) (max kC (max k1 k2)), fun k hk θ w hθm hθd => ?_⟩
+  have hR := lt_of_le_of_lt (Nat.le_max_right _ _) hk
+  have hmirC := hC k (lt_of_le_of_lt (Nat.le_max_left _ _) hR)
+  have hmir := h1 k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_right _ _)) hR)
+  have hmirP := h2 k (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)) hR)
+  have hL := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  exact outcome_of_ex_plays
+    ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hL) hmirC θ w _).1 hθm)
+    ((hD k (lt_of_le_of_lt (Nat.le_max_right _ _) hL) hmir hmirP θ w _).1 hθd)
 
 /-- **The CIMCIC×Cupod band** `cimcicMass < θ ≤ cupodMass`: the conditional
     cooperator has flipped (it cannot certify the suspicious cooperator's
@@ -346,16 +346,9 @@ theorem outcome_TauCIMCIC_vs_TauDupoc :
     `(D, C)`: the red-cell shape, one tier up. -/
 theorem outcome_TauCIMCIC_vs_TauCupod_band :
     ∃ k₂, ∀ k, k₂ < k →
-      -- Cupod's row is gated on the ALIGNED dimcid pair and the mirror pair
-      ∀ (hmirC : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .mirror))
-          (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
-          = some (cimcicRow .mirror))
-        (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
-          = cupodColBit .mirror)
-        (hmirCuP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .mirror))
-          (.bot (inst (tauZoo k) .cupod .mirror)) (inst (tauZoo k) .cupod .mirror)
-          = some (cupodRow .mirror))
-        (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
+      -- Cupod's row is still gated on the ALIGNED dimcid pair (`TailToA` debt); the
+      -- mirror gates it used to carry are theorems since 2026-08-24
+      ∀ (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
           = cupodColBit .dimcid)
         (hdcP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
           (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
@@ -364,10 +357,18 @@ theorem outcome_TauCIMCIC_vs_TauCupod_band :
       ∃ N, outcome N (TauBotZ k .cimcic w θ) (TauBotZ k .cupod w θ) = some (.D, .C) := by
   obtain ⟨kM, hM⟩ := tauCIMCIC_phase
   obtain ⟨kC, hC⟩ := tauCupod_phase
-  exact ⟨max kM kC, fun k hk hmirC hmirCu hmirCuP hdc hdcP θ w hθm hθc =>
-    outcome_of_ex_plays
-      ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) hmirC θ w _).2 hθm)
-      ((hC k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hmirCu hmirCuP hdc hdcP
-        θ w _).1 hθc)⟩
+  obtain ⟨kA, hA⟩ := cimcic_mirror_plays_C
+  obtain ⟨kB, hB⟩ := ps_probeD_mirror_cupod
+  obtain ⟨kP, hP⟩ := cupod_mirror_plays_D
+  refine ⟨max (max kM kC) (max kA (max kB kP)), fun k hk hdc hdcP θ w hθm hθc => ?_⟩
+  have hR := lt_of_le_of_lt (Nat.le_max_right _ _) hk
+  have hmirC := hA k (lt_of_le_of_lt (Nat.le_max_left _ _) hR)
+  have hmirCu := hB k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_right _ _)) hR)
+  have hmirCuP := hP k (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)) hR)
+  have hL := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  exact outcome_of_ex_plays
+    ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hL) hmirC θ w _).2 hθm)
+    ((hC k (lt_of_le_of_lt (Nat.le_max_right _ _) hL) hmirCu hmirCuP hdc hdcP
+      θ w _).1 hθc)
 
 end PD.Theorems.Tau
