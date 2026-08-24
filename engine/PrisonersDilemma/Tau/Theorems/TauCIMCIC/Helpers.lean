@@ -716,22 +716,8 @@ theorem sys_cross_impl_cim (defs : ProgList) (i j : Nat) (k K : Nat)
   rw [sysClose_subst_cimSelfIdx] at h
   exact h
 
-/-- Dupoc's side, at an arbitrary opponent frame: □(i cooperates) → j plays C
-    against `opp`. -/
-theorem sys_cross_C_at (defs : ProgList) (j i : Nat) (k K : Nat) (opp : Prog)
-    (hget : defs.get? j = some (.search k
-      (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) Action.C) (.const .C) (.const .D)))
-    (hK : (Formula.impl
-        (.box k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C))
-        (.plays (.bot (.sys defs j)) opp Action.C)).size ≤ K) :
-    Pf K (.impl (.box k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C))
-                (.plays (.bot (.sys defs j)) opp Action.C)) := by
-  have h := Pf.botSysSearchStep defs j k
-    (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) Action.C) .C .D
-    (.bot (.sys defs j)) opp rfl hget
-    (by simpa [sysClose_subst_botSelfIdx] using hK)
-  rw [sysClose_subst_botSelfIdx] at h
-  exact h
+-- `sys_cross_C_at` was hoisted to `Tau/Theorems/Helpers.lean` (2026-08-24):
+-- it is generic in the system and the mirror pairs need it too.
 
 /-- **The mutual engine, CIMCIC-at-the-head orientation**: past a threshold, the
     CIMCIC component's self-cooperation is provable. -/

@@ -29,7 +29,7 @@ theorem no_provable_DIMCID_C_tail (k : Nat) (O : Prog) :
       TailTo (.plays (DIMCID k) O .C) φ → False := by
   intro K φ hp hK ht
   refine no_provable_tailToS_floor k (· = .plays (DIMCID k) O .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ'
     cases hφ'
@@ -106,6 +106,11 @@ theorem no_provable_DIMCID_C_tail (k : Nat) (O : Prog) :
         simp only [layersCost, layerCost, c_node]
         omega
   · intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1
+    unfold DIMCID at hme; simp at hme
+  · -- hbotsysrun: the `.sys` RUN twin, same shape kill
+    intro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1
     unfold DIMCID at hme; simp at hme

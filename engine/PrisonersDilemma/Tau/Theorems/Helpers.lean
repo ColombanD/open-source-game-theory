@@ -468,7 +468,7 @@ abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
     — τ(CupodTroll), which now recognises Cupod and defects on it. -/
 abbrev cupodMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
-    (w .obot + (w .guardian + (w .dbot + (w .cimcic + w .mirror)))))))))
+    (w .obot + (w .guardian + (w .dbot + w .cimcic))))))))
 /-- τ(DBot)'s mass: everything but the exploitable constant cooperator AND ITSELF
     (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
 abbrev dbotMass (w : Tmpl → Nat) : Nat :=
@@ -541,6 +541,23 @@ theorem ps_botSys_mismatch_false {k K : Nat} (hK : K ≤ k) (defs : ProgList)
       exfalso
       exact no_provable_botSysSearcherElse_tail k defs i kb g aT aTgt pE hne hkb hget O
         K _ ((proofSearch_spec _ _).1 h) hK rfl
+
+/-- Dupoc's side, at an arbitrary opponent frame: □(i cooperates) → j plays C
+    against `opp`. -/
+theorem sys_cross_C_at (defs : ProgList) (j i : Nat) (k K : Nat) (opp : Prog)
+    (hget : defs.get? j = some (.search k
+      (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) Action.C) (.const .C) (.const .D)))
+    (hK : (Formula.impl
+        (.box k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C))
+        (.plays (.bot (.sys defs j)) opp Action.C)).size ≤ K) :
+    Pf K (.impl (.box k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.C))
+                (.plays (.bot (.sys defs j)) opp Action.C)) := by
+  have h := Pf.botSysSearchStep defs j k
+    (.plays (.bot (.selfIdx i)) (.bot (.selfIdx i)) Action.C) .C .D
+    (.bot (.sys defs j)) opp rfl hget
+    (by simpa [sysClose_subst_botSelfIdx] using hK)
+  rw [sysClose_subst_botSelfIdx] at h
+  exact h
 
 /-! ## Shape lemmas — the `test = .D` idioms (9-zoo extension, 2026-08-18) -/
 

@@ -29,7 +29,7 @@ def cupodRow : Tmpl → Action
   -- RESTATED 2026-08-24: with `proveEq` fixed, τ(CupodTroll) recognises Cupod
   -- and defects on it — so Cupod convicts the troll in turn.
   | .cupodTroll => .D
-  | .mirror     => .C
+  | .mirror     => .D
   -- the ALIGNED entangled pair: mutual Löb on DEFECTION (see `TauDIMCID`)
   | .dimcid     => .D
   | _           => .C
@@ -94,7 +94,7 @@ theorem cupodBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     VoteBits (vecOf (tauZoo k) .cupod w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .mirror, .C)] :=
+       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .mirror, .D)] :=
   vecOf_bits (tauZoo k) .cupod w cupodRow tauOrder
     fun T _ => cupodRow_plays hk hkk h6 h10 hquine hmirCu hmirP hdc hdcP T
 

@@ -3,6 +3,7 @@ import PrisonersDilemma.Tau.Theorems.TauDefect.Phase
 import PrisonersDilemma.Tau.Theorems.TauTFTSim.Phase
 import PrisonersDilemma.Tau.Theorems.TauTFTPf.Phase
 import PrisonersDilemma.Tau.Theorems.TauDupoc.Phase
+import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 import PrisonersDilemma.Tau.Theorems.TauJust.Phase
 import PrisonersDilemma.Tau.Theorems.TauEBot.Phase
 import PrisonersDilemma.Tau.Theorems.TauOBot.Phase
@@ -122,67 +123,74 @@ theorem outcome_TauTFTPf_vs_TauTFTSim_band {k : Nat} (hk : 2 ≤ k)
   outcome_of_ex_plays ((tauTFTPf_phase hk hkk h6 h10 hL hcg θ w _).2 hlo)
     ((tauTFTSim_phase hk hkk h6 h10 hL hcg θ w _).1 hhi)
 
-/-! ## The Löb-gated cells -/
+/-! ## The formerly Löb-gated cells — the mirror×dupoc gates are DISCHARGED
+
+`hmir` and `hmirP` used to be hypotheses on every one of these statements: the
+mirror×dupoc entangled cell had no proof, so the theorems were conditional on it.
+Both are now theorems (`Tau/Theorems/TauMirror/Helpers`), proven by bounded Löb
+through the `.sys` binder using the new `Pf.botSysRunStep` reading rule, so they
+are supplied here rather than assumed. The statements below are UNCONDITIONAL. -/
 
 theorem outcome_TauDupoc_vs_TauDupoc :
     ∃ k₂, ∀ k, k₂ < k →
-      -- the mirror×dupoc entangled cell, Löb-gated (see `TauDupoc/Phase`)
-      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
-          = dupocColBit .mirror)
-        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
-          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
-          = some (dupocRow .mirror)),
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .dupoc w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk hmir hmirP θ w hθ =>
-    outcome_of_ex_plays ((h k hk hmir hmirP θ w _).1 hθ)
-      ((h k hk hmir hmirP θ w _).1 hθ)⟩
+  obtain ⟨kM, hM⟩ := ps_probe_mirror_dupoc
+  obtain ⟨kP, hP⟩ := dupoc_mirror_plays_C
+  refine ⟨max k₂ (max kM kP), fun k hk θ w hθ => ?_⟩
+  have hmir := hM k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_right _ _)) hk)
+  have hmirP := hP k (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)) hk)
+  have hk₂ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  exact outcome_of_ex_plays ((h k hk₂ hmir hmirP θ w _).1 hθ)
+    ((h k hk₂ hmir hmirP θ w _).1 hθ)
 
 theorem outcome_TauJust_vs_TauJust :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
-          = dupocColBit .mirror),
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .just w θ) (TauBotZ k .just w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauJust_phase
-  exact ⟨k₂, fun k hk hmir θ w hθ =>
-    outcome_of_ex_plays ((h k hk hmir θ w _).1 hθ) ((h k hk hmir θ w _).1 hθ)⟩
+  obtain ⟨kM, hM⟩ := ps_probe_mirror_dupoc
+  refine ⟨max k₂ kM, fun k hk θ w hθ => ?_⟩
+  have hmir := hM k (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
+  have hk₂ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  exact outcome_of_ex_plays ((h k hk₂ hmir θ w _).1 hθ) ((h k hk₂ hmir θ w _).1 hθ)
 
 /-- Self-based and norm-based reciprocity cooperate — two Löb gates, one threshold
     (the max of the two). -/
 theorem outcome_TauDupoc_vs_TauJust :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
-          = dupocColBit .mirror)
-        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
-          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
-          = some (dupocRow .mirror)),
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .just w θ) = some (.C, .C) := by
   obtain ⟨kD, hD⟩ := tauDupoc_phase
   obtain ⟨kJ, hJ⟩ := tauJust_phase
-  exact ⟨max kD kJ, fun k hk hmir hmirP θ w hθ =>
-    outcome_of_ex_plays
-      ((hD k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) hmir hmirP θ w _).1 hθ)
-      ((hJ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hmir θ w _).1 hθ)⟩
+  obtain ⟨kM, hM⟩ := ps_probe_mirror_dupoc
+  obtain ⟨kP, hP⟩ := dupoc_mirror_plays_C
+  refine ⟨max (max kD kJ) (max kM kP), fun k hk θ w hθ => ?_⟩
+  have hmir := hM k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_right _ _)) hk)
+  have hmirP := hP k (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)) hk)
+  exact outcome_of_ex_plays
+    ((hD k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_left _ _)) hk)
+      hmir hmirP θ w _).1 hθ)
+    ((hJ k (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_left _ _)) hk)
+      hmir θ w _).1 hθ)
 
 theorem outcome_TauDupoc_vs_TauTFTPf :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
-          = dupocColBit .mirror)
-        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
-          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
-          = some (dupocRow .mirror)),
       2 ≤ k → c_guard k + 3 ≤ k → 6 ≤ k → 10 ≤ k →
       100 * Nat.log2 k + 1000 ≤ k → c_guard k + 20 ≤ k →
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .tftPf w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk hmir hmirP hk2 hkk h6 h10 hL hcg θ w hθ =>
-    outcome_of_ex_plays ((h k hk hmir hmirP θ w _).1 hθ)
-      ((tauTFTPf_phase hk2 hkk h6 h10 hL hcg θ w _).1
-        (by simp only [dupMass, pfMass] at *; omega))⟩
+  obtain ⟨kM, hM⟩ := ps_probe_mirror_dupoc
+  obtain ⟨kP, hP⟩ := dupoc_mirror_plays_C
+  refine ⟨max k₂ (max kM kP), fun k hk hk2 hkk h6 h10 hL hcg θ w hθ => ?_⟩
+  have hmir := hM k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_right _ _)) hk)
+  have hmirP := hP k (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)) hk)
+  have hk₂ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+  exact outcome_of_ex_plays ((h k hk₂ hmir hmirP θ w _).1 hθ)
+    ((tauTFTPf_phase hk2 hkk h6 h10 hL hcg θ w _).1
+      (by simp only [dupMass, pfMass] at *; omega))
 
 /-! ## τ(EBot)'s cells -/
 

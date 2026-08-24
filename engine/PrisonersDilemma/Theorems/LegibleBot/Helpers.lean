@@ -300,7 +300,7 @@ theorem ld_no_provable_tail (k : Nat) :
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (LegibleBot (2*k+64) k) (DIMCID k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- atom killer: D is the else-branch; search_t's branch mismatches, search_f floors
     rintro K' hK' φ' rfl hA
@@ -360,6 +360,12 @@ theorem ld_no_provable_tail (k : Nat) :
         simp only [plug2, LegibleBot, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
   · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i _ _ _ hme _
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [CIMCIC] at hme | simp [CooperateBot] at hme | simp [DBot] at hme | simp [DIMCID] at hme | simp [DefectBot] at hme | simp [EBot] at hme | simp [LegibleBot] at hme | simp [MirrorBot] at hme | simp [OBot] at hme | simp [TitForTatBot] at hme | simp at hme | simp_all)
+  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
     rintro me oppo c hS defs i _ _ _ hme _
     all_goals (try (injection hS with h1 h2 h3; subst h1))
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))

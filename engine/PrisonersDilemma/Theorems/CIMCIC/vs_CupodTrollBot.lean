@@ -19,7 +19,7 @@ theorem cimcic_ctb_guard_unprovable_tail (k : Nat) :
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (CupodTrollBot k) (CIMCIC k) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
@@ -115,6 +115,11 @@ theorem cimcic_ctb_guard_unprovable_tail (k : Nat) :
         simp only [plug2, Prog.search.injEq] at hme
         exact absurd hme.2.1 (by simp)
   · -- hbotsys: the target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1
+    simp [CupodTrollBot] at hme
+  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
     rintro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1

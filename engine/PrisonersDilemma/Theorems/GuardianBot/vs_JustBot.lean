@@ -54,7 +54,7 @@ theorem gjb_no_provable_Guardian_C_vs_botDupoc (k : Nat) :
       TailTo (.plays (GuardianBot k) (.bot (DupocBot k)) .C) φ → False := by
   intro K φ hp hK ht
   refine no_provable_tailToS_floor k (· = .plays (GuardianBot k) (.bot (DupocBot k)) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' rfl
     rintro ⟨hpp, hn⟩
@@ -130,6 +130,12 @@ theorem gjb_no_provable_Guardian_C_vs_botDupoc (k : Nat) :
         simp only [layersCost, layerCost, c_node]
         omega
   · -- hbotsys: the census target is never a `.bot`-wrapped system reference
+    rintro me oppo c hS defs i _ _ _ hme _
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [CooperateBot] at hme | simp [DupocBot] at hme | simp [GuardianBot] at hme | simp [JustBot] at hme | simp at hme | simp_all)
+  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
     rintro me oppo c hS defs i _ _ _ hme _
     all_goals (try (injection hS with h1 h2 h3; subst h1))
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))

@@ -189,6 +189,51 @@ theorem pblt_engine (φ : Nat → Formula) (f pm : Nat → Nat) (k₁ : Nat)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
   · (try simp only [numCost, Formula.size]); omega
 
+/-- **PBLT, budget-carrying**: identical to `pblt_engine`, but it also reports that
+    the fixpoint's transcript fits in HALF the budget. The engine picks
+    `m = 4096·W` while its own size hypothesis forces `8192·W ≤ f k`, so this costs
+    nothing extra — it just stops throwing the bound away.
+
+    Needed whenever a Löb bit has to be RE-CERTIFIED at budget `k` (a `proofSearch k`
+    gate), rather than merely consumed as an `∃ m` play witness. -/
+theorem pblt_engine_bounded (φ : Nat → Formula) (f pm : Nat → Nat) (k₁ : Nat)
+    (hLoeb : ∀ k, k > k₁ → Pf (pm k) (.impl (.box (f k) (φ k)) (φ k)))
+    (hsz : ∀ k, k > k₁ → 8192 * (pm k + (φ k).size + Nat.log2 (f k) + 8) ≤ f k) :
+    ∃ k₂, ∀ k, k > k₂ → ∃ m, 2 * m ≤ f k ∧ Pf m (φ k) := by
+  refine ⟨k₁, fun k hk => ?_⟩
+  obtain ⟨W, hW⟩ : ∃ W, W = pm k + (φ k).size + Nat.log2 (f k) + 8 := ⟨_, rfl⟩
+  have hWk : 8192 * W ≤ f k := hW ▸ hsz k hk
+  have hlg : Nat.log2 (1024 * W) ≤ Nat.log2 (f k) := log2_mono (by omega)
+  have hl₁ : Nat.log2 (32 * W) ≤ Nat.log2 (f k) := log2_mono (by omega)
+  have hl₃ : Nat.log2 (2048 * W) ≤ Nat.log2 (f k) := log2_mono (by omega)
+  have hl₅ : Nat.log2 (8192 * W) ≤ Nat.log2 (f k) := log2_mono (by omega)
+  refine ⟨4096 * W, by omega, bloeb_engine (φ k) (pm k) (f k)
+    (1024 * W) (32 * W) (2048 * W) (2048 * W) (8192 * W)
+    (16 * W) (16 * W) (64 * W) (32 * W) (128 * W) (32 * W) (16 * W)
+    (256 * W) (512 * W) (16 * W) (640 * W) (704 * W) (768 * W) (2048 * W) (4096 * W)
+    (hLoeb k hk)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
+  · (try simp only [numCost, Formula.size]); omega
+
+/-- `pblt_engine_bounded` at `f = id`: the fixpoint holds at a budget ≤ k/2. -/
+theorem pblt_engine_id_bounded (φ : Nat → Formula) (pm : Nat → Nat) (k₁ : Nat)
+    (hφ : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000)
+    (hpm : ∀ k, pm k ≤ 100 * Nat.log2 k + 1000)
+    (hLoeb : ∀ k, k > k₁ → Pf (pm k) (.impl (.box k (φ k)) (φ k))) :
+    ∃ k₂, ∀ k, k > k₂ → ∃ m, 2 * m ≤ k ∧ Pf m (φ k) := by
+  obtain ⟨Ksz, hKsz⟩ := linear_log2_add_le 1646592 16449536
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_bounded φ id pm (max k₁ Ksz)
+    (fun k hk => hLoeb k (lt_of_le_of_lt (Nat.le_max_left _ _) hk))
+    (by
+      intro k hk
+      have h1 := hKsz k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+      have h2 := hφ k
+      have h3 := hpm k
+      show 8192 * (pm k + (φ k).size + Nat.log2 (id k) + 8) ≤ id k
+      simp only [id]
+      omega)
+  exact ⟨k₂, hk₂⟩
+
 /-- **Consumer-facing PBLT** (`f = id`, the shape every bot theorem uses): tight Löb premise at
     its honest transcript `pm k` (what the `*_loeb_premise` lemmas produce — a single
     transparency leaf, `O(log k)` characters) + generous uniform `10·log2 k + 100` bounds on

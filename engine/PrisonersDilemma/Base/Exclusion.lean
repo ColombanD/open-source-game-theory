@@ -305,6 +305,13 @@ theorem tail_plays_readable
       simp only [TailTo_plays, Formula.plays.injEq] at h1
       obtain ⟨rfl, rfl, rfl⟩ := h1
       exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨defs, i, hme⟩))))))
+  -- the `.sys` RUN twin: same `me` shape (disjunct 7), reached from the impl tail
+  | botSysRunStep k' defs i j test fire cont me' oppo' hme hget hle =>
+      intro me oppo a' h
+      obtain ⟨h1, -⟩ := h
+      simp only [TailTo_plays, Formula.plays.injEq] at h1
+      obtain ⟨rfl, rfl, rfl⟩ := h1
+      exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨defs, i, hme⟩))))))
   | botSearchStep k' g ψ a b me' oppo' hme hle =>
       intro me oppo a' h
       obtain ⟨h1, -⟩ := h
@@ -432,7 +439,14 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
     -- expressible; shape-killing callers just ignore the extra hypotheses.
     (hbotsys : ∀ me oppo c, S (.plays me oppo c) →
       ∀ defs i g ψ b, me = .bot (.sys defs i) →
-        defs.get? i = some (.search g ψ (.const c) (.const b)) → False) :
+        defs.get? i = some (.search g ψ (.const c) (.const b)) → False)
+    -- The `.sys` RUN twin (`botSysRunStep`, 2026-08-24). Action-refined in the
+    -- same style: the caller learns the member is an `.ite` over a frozen watch
+    -- of component `j`, so a floor census can separate on the fire action.
+    (hbotsysrun : ∀ me oppo c, S (.plays me oppo c) →
+      ∀ defs i j test cont, me = .bot (.sys defs i) →
+        defs.get? i = some (.ite (.sim (.bot (.selfIdx j)) (.bot (.selfIdx j)))
+          test (.const c) cont) → False) :
     ∀ K φ, Pf K φ → K ≤ k → TailToS S φ → False := by
   intro K
   induction K using Nat.strong_induction_on with
@@ -455,6 +469,9 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
     | botSysSearchStep dfs ii gg psi aa bb me oppo hme hget hsz =>
         obtain ⟨h1, -⟩ := htail
         exact hbotsys me oppo aa h1 dfs ii gg psi bb hme hget
+    | botSysRunStep dfs ii jj tst fre cnt me oppo hme hget hsz =>
+        obtain ⟨h1, -⟩ := htail
+        exact hbotsysrun me oppo fre h1 dfs ii jj tst cnt hme hget
     | iteBranchSearch_t gg zz aa' cc0 cc1 psi qq me oppo hme hsz =>
         -- the probe joins `S` via `hibs`, contradicting the class's `¬TailToS` probe slot
         obtain ⟨⟨h1, -⟩, hprobe⟩ := htail
@@ -590,7 +607,8 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
       P = plug2 (hd :: L) (.const aTgt) → k < layersCost (hd :: L)) :
     ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays P O aTgt) φ → False := by
   intro K φ hp hK htail
-  refine no_provable_tailToS_floor k (· = .plays P O aTgt) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k (· = .plays P O aTgt)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ'
@@ -633,6 +651,11 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
     subst h1; subst h3
     exact hplug2 hd L hme
   · -- hbotsys: the target player is not a `.sys` reference (hypothesis)
+    intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1
+    exact hbotsysP defs i hme
+  · -- hbotsysrun: same shape kill, the `.sys` RUN twin
     intro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1
@@ -859,7 +882,7 @@ theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : A
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (.bot (.search kb g (.const aT) pE)) O aTgt)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- the atom killer: `bot` unwraps, then `search_t` mismatches the action and
     -- `search_f` pays the floor `kb ≥ k`
@@ -911,6 +934,10 @@ theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : A
     intro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1; simp at hme
+  · -- hbotsysrun: likewise, the `.sys` RUN twin
+    intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
 
 /-- **The `search_f` floor, `.sys` edition** (2026-08-21): the else-play of a
     `.bot`-wrapped SYSTEM REFERENCE whose component is a searcher with a mismatching
@@ -932,7 +959,7 @@ theorem no_provable_botSysSearcherElse_tail (k : Nat) (defs : ProgList) (i kb : 
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (.bot (.sys defs i)) O aTgt)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- the atom killer: `bot` unwraps, `sysStep` closes the component, then
     -- `search_t` mismatches the action and `search_f` pays the floor `kb ≥ k`
@@ -997,6 +1024,17 @@ theorem no_provable_botSysSearcherElse_tail (k : Nat) (defs : ProgList) (i kb : 
     injection he with _ _ hbr _
     injection hbr with ha
     exact hne ha
+  · -- hbotsysrun: the SAME system member, but this census fixes it to a `.search`
+    -- (`hget`) while the RUN bridge requires an `.ite` — a constructor clash
+    intro me oppo c hS defs' i' j' tst' cnt' hme hget'
+    injection hS with h1 h2 h3
+    subst h1
+    injection hme with hsys
+    injection hsys with hdefs hi
+    subst hdefs; subst hi
+    rw [hget] at hget'
+    injection hget' with he
+    exact absurd he (by simp)
 
 /-! ## The budget-free census for unreadable players
 
@@ -1047,6 +1085,7 @@ theorem pf_size_or_atom : ∀ {k φ}, Pf k φ → φ.size ≤ k ∨ AtomProvable
   | botSimStep me p q opnt a hme hle => exact Or.inl hle
   | botSearchStep g ψ a b me opnt hme hle => exact Or.inl hle
   | botSysSearchStep defs i g ψ a b me opnt hme hget hle => exact Or.inl hle
+  | botSysRunStep defs i j test fire cont me opnt hme hget hle => exact Or.inl hle
   | iteBranchSearch_t g z a' c0 c1 ψ q me opnt hme hle => exact Or.inl hle
   | eqRefl p hle => exact Or.inl hle
   | eqNeg p q hne hle => exact Or.inl hle

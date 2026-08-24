@@ -535,7 +535,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         ?voteZero_t ?voteNil_f ?voteCons_c ?voteCons_d ?voteHigh_f ?sysStep
         ?vapNil ?vapCons
         ?atomMk
-        ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep ?pfBotSysSearchStep
+        ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep ?pfBotSysSearchStep ?pfBotSysRunStep
         ?pfIteBranchSearch ?pfSTS ?pfSearchChain ?pfCtxChain ?pfEqRefl ?pfEqNeg ?pfMp
         ?pfImplTrans
         ?pfWeaken ?pfImpS2 ?pfImplRefl ?pfImplK ?pfImplS ?pfContrapose ?pfNegElim
@@ -662,7 +662,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
           (k ≤ B → ψ.interp) ∧ ((∀ K χ, Pf K χ → χ.interp) → WV S ψ))
         ?cConst ?cSelf ?cOpp ?cBot ?cSim ?cIte_t ?cIte_f ?cSearch_t ?cSearch_f
         ?cVZero ?cVNil ?cVCons_c ?cVCons_d ?cVHigh ?cSys ?cVapNil ?cVapCons ?cAtomMk
-        ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep ?pBotSysSearchStep
+        ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep ?pBotSysSearchStep ?pBotSysRunStep
         ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
         ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
         ?pBoxIntro ?pAtomBoxImpl ?pAxK ?pAxKf ?pBox4 ?pBoxMono ?pDiagF ?pDiagB
@@ -863,6 +863,42 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
           rw [WV_plays]
           exact Or.inr
             ((hs _ _ (Pf.botSysSearchStep defs i g ψ a b me opponent hme hget hle)) hbox)
+      case pBotSysRunStep =>
+        intro k0 defs i j test fire cont me opponent hme hget hle
+        constructor
+        · intro _hB
+          subst hme
+          rintro ⟨np, hp⟩
+          -- the premise gives component `j`'s SELF play; the watch is frozen on
+          -- both sides, so the frame is irrelevant and the `.ite` fires
+          refine ⟨np + 4, ?_⟩
+          show eval (np + 4) (.bot (.sys defs i)) opponent (.bot (.sys defs i)) = some fire
+          rw [eval]
+          rw [eval_sys_some (np + 2) hget]
+          rw [Prog.sysClose]
+          rw [eval]
+          -- the guard is the frozen watch, still wrapped in `sysClose`
+          simp only [Prog.sysClose]
+          have hg : eval (np + 1) (.bot (.sys defs i)) opponent
+              (.sim (.bot (.sys defs j)) (.bot (.sys defs j))) = some test := by
+            rw [eval]
+            simp only [Prog.subst]
+            exact eval_mono_le hp _ (by omega)
+          rw [hg]
+          -- guard matched: the then-branch is the literal `fire`, one tick of eval
+          simp only [bind, Option.bind]
+          rw [if_pos (by cases test <;> rfl)]
+          rw [eval]
+        · intro hs
+          rw [WV_impl, WV_plays, WV_plays]
+          -- The premise's VALUATION disjunct is `S (.bot (.sys defs j)) …`, i.e. a
+          -- census subject that is a system reference — killed outright by `h_sys`,
+          -- exactly as `case cSys` above. So only the real `interp` arm survives, and
+          -- there the rule's own soundness (`hs` at the constructor) closes it.
+          rintro (⟨rfl, hSP⟩ | hint)
+          · exact (h_sys _ _ defs j (Or.inl hSP) (Or.inr rfl)).elim
+          · exact Or.inr ((hs _ _ (Pf.botSysRunStep defs i j test fire cont me opponent
+              hme hget hle)) hint)
       case pIteBranchSearch =>
         intro k0 g z a' c0 c1 ψ q me opponent hme hle
         constructor

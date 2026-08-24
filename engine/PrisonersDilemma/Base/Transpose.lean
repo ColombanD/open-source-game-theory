@@ -565,6 +565,16 @@ theorem Pf.transpose {k : Nat} {φ : Formula} (h : Pf k φ) : Pf k φ.transpose 
         exact Pf.botSysSearchStep defs.transpose i g ψ.transpose a.swap b.swap _
           opponent.transpose rfl
           (by simpa [Prog.transpose] using ProgList.get?_transpose defs i _ hget) hle)
+    -- botSysRunStep: same descent as botSysSearchStep — the transposed run
+    -- component sits at the same index, and its frozen `.selfIdx` operands
+    -- transpose to themselves
+    (fun defs i j test fire cont me opponent hme hget hle => by
+        subst hme
+        rw [← Formula.size_transpose] at hle
+        simp only [Formula.transpose, Prog.transpose] at hle ⊢
+        exact Pf.botSysRunStep defs.transpose i j test.swap fire.swap cont.transpose _
+          opponent.transpose rfl
+          (by simpa [Prog.transpose] using ProgList.get?_transpose defs i _ hget) hle)
     -- iteBranchSearch_t
     (fun g z a' c0 c1 ψ q me opponent hme hle => by
         subst hme

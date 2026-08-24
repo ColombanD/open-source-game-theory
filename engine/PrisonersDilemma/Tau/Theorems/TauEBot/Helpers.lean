@@ -51,7 +51,7 @@ theorem no_provable_botRunCascade_C (k kb : Nat) (hk : k ≤ kb) (g : Formula)
     (· = .plays (.bot (.ite
       (.sim (.bot (.search kb g (.const .C) pE)) (.bot (.search kb g (.const .C) pE)))
       .C (.const .D) cont)) O .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- the atom killer: bot → ite_t (fire-action mismatch) / ite_f → sim → bot →
     -- search_t (then-const mismatch with the fall) / search_f (the floor `kb`)
@@ -113,6 +113,10 @@ theorem no_provable_botRunCascade_C (k kb : Nat) (hk : k ≤ kb) (g : Formula)
     subst h1
     cases hd <;> simp [plug2] at hme
   · -- hbotsys: the target is not a `.bot`-wrapped system reference
+    intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
     intro me oppo c hS defs i _ _ _ hme _
     injection hS with h1 h2 h3
     subst h1; simp at hme

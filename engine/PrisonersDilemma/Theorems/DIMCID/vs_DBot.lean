@@ -89,7 +89,7 @@ theorem dimcid_guard_dbot_not_provable (k : Nat) (hk : dimcidThresh k) :
   set S : Formula → Prop := fun φ =>
     φ = .plays DBot (DIMCID k) Action.D ∨
     φ = .plays (DIMCID k) (.bot DefectBot) Action.C with hS
-  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  refine no_provable_tailToS_floor k S ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     k _ hp le_rfl ?_
   · rintro φ (rfl | rfl)
     · exact ⟨_, _, _, rfl⟩
@@ -164,6 +164,11 @@ theorem dimcid_guard_dbot_not_provable (k : Nat) (hk : dimcidThresh k) :
           simp only [plug2, DIMCID, Prog.search.injEq] at hme
           exact absurd hme.2.1 (by simp)
   · -- hbotsys: neither census member is a `.bot`-wrapped system reference
+    rintro me oppo c (h | h) defs i _ _ _ hme _ <;>
+      · injection h with h1 h2 h3
+        subst h1
+        simp [DIMCID, DBot] at hme
+  · -- hbotsysrun: the `.sys` RUN twin, killed by the same shape argument
     rintro me oppo c (h | h) defs i _ _ _ hme _ <;>
       · injection h with h1 h2 h3
         subst h1

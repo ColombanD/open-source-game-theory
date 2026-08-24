@@ -339,8 +339,11 @@ def cupodColBit : Tmpl → Bool
   -- recognises Cupod and defects on it — base CupodTrollBot's whole point, which
   -- the old `.opp`-pronoun guard could never express.
   | .cupodTroll => true
-  -- the mirror×cupod ENTANGLED cell — Löb-gated, hypothesis below
-  | .mirror => false
+  -- the mirror×cupod ENTANGLED cell: the D-cycle is the self-supporting one
+  -- (Cupod punishes, Mirror copies the punishment), so bounded Löb closes it on
+  -- MUTUAL DEFECTION — the tau image of base
+  -- `outcome_CupodBot_vs_MirrorBot = (D, D)`. Löb-gated, hypothesis below.
+  | .mirror => true
   | _       => false
 
 theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
