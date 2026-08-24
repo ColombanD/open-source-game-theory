@@ -88,6 +88,97 @@ def kernel_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
     return scan_bit_theorems(path)
 
 
+
+# ── The template name tables ───────────────────────────────────────────────────
+#
+# Moved here from the deleted `def4.py` (2026-08-24). They are pure naming
+# tables — which templates exist, which base bot each one lifts, and which Lean
+# `Tmpl` constructor names it — with no model arithmetic attached, so they
+# belong with the kernel-scanning layer that the certification now rests on.
+
+TEMPLATES: tuple[str, ...] = (
+    "TauCooperate",
+    "TauDefect",
+    "TauTFTSim",
+    "TauTFTPf",
+    "TauDupoc",
+    "TauEBot",
+    "TauJust",
+    "TauOBot",
+    "TauGuardian",
+    "TauDBot",
+    "TauCupodTroll",
+    "TauCupod",
+    "TauCIMCIC",
+    "TauDIMCID",
+)
+"""Canonical template order."""
+
+BASE_OF: dict[str, str] = {
+    "TauCooperate": "CooperateBot",
+    "TauDefect": "DefectBot",
+    "TauTFTSim": "TitForTatBot",
+    "TauTFTPf": "TitForTatBot",
+    "TauDupoc": "DupocBot",
+    "TauEBot": "EBot",
+    "TauJust": "JustBot",
+    "TauOBot": "OBot",
+    "TauGuardian": "GuardianBot",
+    "TauDBot": "DBot",
+    "TauCupodTroll": "CupodTrollBot",
+    "TauCupod": "CupodBot",
+    "TauCIMCIC": "CIMCIC",
+    "TauDIMCID": "DIMCID",
+}
+"""Which base bot each template lifts. The two TFT variants are two lift
+MODALITIES of the same base strategy (behavioral vs prover); their bits coincide
+on FLOOR-FREE columns only, which is why the prover twin carries whitelisted
+divergences."""
+
+LEAN_SLOT: dict[str, str] = {
+    "TauCooperate": "coop",
+    "TauDefect": "defect",
+    "TauTFTSim": "tftSim",
+    "TauTFTPf": "tftPf",
+    "TauDupoc": "dupoc",
+    "TauEBot": "ebot",
+    "TauJust": "just",
+    "TauOBot": "obot",
+    "TauGuardian": "guardian",
+    "TauDBot": "dbot",
+    "TauCupodTroll": "cupodTroll",
+    "TauCupod": "cupod",
+    "TauCIMCIC": "cimcic",
+    "TauDIMCID": "dimcid",
+}
+"""Template name → the Lean `Tmpl` constructor, for reading the bit tables."""
+
+
+# ── The comparison zoos (base-bot keyed, as the σ channels are) ────────────────
+
+CONTROL_ZOO: dict[str, str] = {
+    "DupocBot": "TauDupoc",
+    "CooperateBot": "TauCooperate",
+    "DefectBot": "TauDefect",
+    "TitForTatBot": "TauTFTSim",
+}
+"""base bot → the template that lifts it. Base TFT maps to the BEHAVIORAL
+variant (that is what base TitForTatBot is); the prover variant appears in the
+bit tables as the budget-gap twin."""
+
+CONTROL_BOTS: tuple[str, ...] = (
+    "DupocBot",
+    "CooperateBot",
+    "DefectBot",
+    "TitForTatBot",
+)
+
+SEPARATING_ZOO: dict[str, str] = {**CONTROL_ZOO, "EBot": "TauEBot"}
+"""Control + EBot."""
+
+SEPARATING_BOTS: tuple[str, ...] = CONTROL_BOTS + ("EBot",)
+
+
 def main() -> None:
     tables = kernel_bits()
     print("kernel bit tables (Tau/Theorems/*/Phase.lean, slot order = tauOrder):")
