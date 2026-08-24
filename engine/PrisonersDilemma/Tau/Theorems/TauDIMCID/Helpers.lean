@@ -673,35 +673,42 @@ theorem dimcid_just_plays_C {k : Nat} :
   dimcid_plays_C_of_searcherC .just _ _ (inst_just_peel k .dimcid)
     (inst_dimcid_peel_just k)
 
-/-! ### Why the ROW still cannot be STATED (2026-08-21, re-checked)
+/-! ### Why the ROW still cannot be STATED (2026-08-25 — TWO cells short)
 
-Seven of the fourteen slots are proven above and in the column corollaries —
-`coop` (C), `defect` (D), `tftPf` (C), `just` (C), `dupoc` (C), `cimcic` (C) and
-the diagonal (D). The remaining seven split three ways, and only the first group
-is a matter of effort:
+Thirteen of the fifteen slots are proven: `coop` C, `defect` D, `tftSim` C,
+`tftPf` C, `dupoc` C, `ebot` C, `just` C, `obot` C, `dbot` C, `cupod` D,
+`cimcic` C, `mirror` D and the diagonal D (the four "reachable" cells landed
+2026-08-25, below). The two that remain — **`guardian` and `cupodTroll`, the
+then-`D` searcher partners** — are blocked, and the blocker is now understood
+precisely rather than recorded as a to-do:
 
-* **`tftSim`, `ebot`, `dbot` — reachable.** Their instances are `.ite` cascades,
-  and DIMCID's guard freezes them, so the consequent's subject is
-  `.bot (.ite …)` — which matches NO `ReadableMe` disjunct (disjunct 3 is
-  `.bot (.sim …)`, 4 is `.bot (.search …)`). `no_provable_tailTo_unreadable`
-  therefore applies and the kill would be BUDGET-FREE. Each needs the watch
-  verdict refuted against the cell's proven play; a generic one-watch census was
-  attempted and is NOT worth it (both live shapes have a branch that can deliver
-  `D`, so the hypothesis set ends up per-shape anyway).
-* **`guardian`, `cupodTroll` — BLOCKED** by the machine-checked false-census
-  result above: their instances are then-`D` searchers, so `botSearchStep`
-  proves a formula that genuinely `TailTo`-tails at the target and the census
-  statement is false. Needs the `TailToA` kernel refactor.
-* **`obot` — needs its own analysis**: unlike the others it really DOES defect
-  against DIMCID, so the consequent is TRUE and the cell may well be `D`. This
-  is the `outcome_CIMCIC_vs_OBot` shape, where soundness did the work — but that
-  route is unavailable here by the polarity obstruction.
+* The TAIL census claims "no proof ≤ k tails at T" for T = "the partner plays D
+  against me". But `botSearchStep` proves `□(partner's guard) → T` outright — a
+  genuine theorem that tails at T (box antecedents are opaque to `TailTo`). The
+  claim is FALSE as stated (machine-checked 2026-08-21), and the natural repair —
+  forbid box antecedents — breaks at every `mp`/`implTrans` arm whose middle
+  formula is a box, while making boxes transparent breaks `diagF` (the Löb
+  premise must stay inside the excluded class).
+* The VALUATION census is how base `GuardianBot × DIMCID` closes
+  (`gdS = {(DIMCID, Guardian)}`). It forces the guard's ANTECEDENT true by fiat,
+  which needs the antecedent's pair in `S`; in the tau frame that pair is
+  `(bot I, bot P)`, a `.bot` OPPONENT, and `wv_sound_upto`'s `h_nb` is not
+  incidental — it is what keeps the `iteBranchSearch_t` arm sound. With such a
+  pair forced, that rule derives a real theorem `A → (□X → an ite-player plays
+  c₀)` whose truth depends on the forced atom, so the valuation is unsound exactly
+  in the world (DIMCID defects) the census exists to exclude. Worse, in that
+  world `S` derives `¬A` outright (permute, `mp`, `contrapose`), so NO sound
+  valuation can make `A` designated there: every semantic route is closed.
 
-**So finishing the three reachable cells would NOT state the row**: `VoteBits`
-needs all fourteen slots, and two of the remaining four are blocked on the
-kernel. The row waits for `TailToA`; the COLUMN (what every other row plays
-against DIMCID) is already complete, which is why the kernel-vs-base check still
-compares the full 144 cells. -/
+So the true argument is PROOF-THEORETIC: `A → T` is not derivable even though
+`¬A` may be — this calculus has no object-level ex falso (`negElim` needs BOTH
+proofs), so `¬A ⊬ A → T`. Formalising that requires a census whose class tracks
+the PROVABILITY of box antecedents along the tail, nested through the partner's
+own guard (T's reading box is `□Y`, Y's reading box is `□G_c`, whose consequent's
+player is an unreadable constant — a three-level target chain), with a separate
+box-tail class per level to kill `Pf (□W)` at `mp`/`implTrans` middles. A new
+kernel, not a hypothesis tweak. Until it exists the row stays unstated and the
+certification reports it as missing rather than guessing. -/
 
 /-! ## Column-facing corollaries
 
@@ -942,5 +949,179 @@ theorem cupod_dimcid_plays_D :
     pf_dimcidSys_D_of_guard (cupDimSys_get1 k) hkk ((proofSearch_spec _ _).1 hfired)
   rw [inst_cupod_dimcid_eq k]
   exact sysSearcher_head_plays (cupDimSys_get0 k) (hkC k (by omega)) hAf
+
+/-! ## The four REACHABLE off-cycle cells (2026-08-25)
+
+The partner's instance against DIMCID is a `.bot`-frozen `.ite` cascade — an
+UNREADABLE player (no `ReadableMe` disjunct is `.bot (.ite …)`), so DIMCID's
+guard `(I play C vs them) → (they play D vs me)` is unprovable as soon as the
+consequent has no certificate in the relevant budget range:
+
+* tftSim, ebot, dbot play `C` against DIMCID, so their `D`-play has NO
+  certificate at any budget (soundness + `eval_det`) — the budget-FREE census
+  `no_provable_tailTo_unreadable`;
+* obot really DOES defect against DIMCID, but every transcript of that
+  defection runs its first watch, `inst .dimcid .coop`, whose `C` is
+  floor-priced — so the certificate costs more than `k`, and the budget-`k`
+  floor census `no_provable_tailTo_floor` closes it.
+
+In all four DIMCID cooperates: the else-play. -/
+
+/-- DIMCID cooperates with any partner whose instance is an `.ite` cascade that
+    plays `C` against it in EVERY frame (the cascade is `.opp`-free, so its play
+    does not depend on the frame). -/
+theorem dimcid_plays_C_of_iteC {k : Nat} (T : Tmpl) (b : Prog) (aT : Action) (p q : Prog)
+    (hpeelT : inst (tauZoo k) T .dimcid = .ite b aT p q)
+    (hpeelD : inst (tauZoo k) .dimcid T
+      = .search k (.impl (.plays .self (.bot (inst (tauZoo k) T .dimcid)) Action.C)
+                         (.plays (.bot (inst (tauZoo k) T .dimcid)) .self Action.D))
+          (.const .D) (.const .C))
+    (hplaysC : ∀ me opp, ∃ N, eval N me opp (inst (tauZoo k) T .dimcid) = some Action.C) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid T))
+      (.bot (inst (tauZoo k) .dimcid T)) (inst (tauZoo k) .dimcid T)
+      = some Action.C := by
+  -- the guard is unprovable at every budget: budget-free unreadable census
+  have hg : proofSearch k
+      ((Formula.impl (.plays .self (.bot (inst (tauZoo k) T .dimcid)) Action.C)
+                     (.plays (.bot (inst (tauZoo k) T .dimcid)) .self Action.D)).subst
+        (.bot (inst (tauZoo k) .dimcid T)) (.bot (inst (tauZoo k) .dimcid T))) = false := by
+    rw [dimG_subst]
+    cases h : proofSearch k (dimG (.bot (inst (tauZoo k) .dimcid T))
+        (inst (tauZoo k) T .dimcid)) with
+    | false => rfl
+    | true =>
+        exfalso
+        have hp := (proofSearch_spec _ _).1 h
+        refine no_provable_tailTo_unreadable (.bot (inst (tauZoo k) T .dimcid))
+          (.bot (inst (tauZoo k) .dimcid T)) .D ?_ ?_ ?_ ?_ ?_ hp ⟨rfl, by simp⟩
+        · -- no D-certificate at any budget: the cascade plays C in this frame
+          intro n hA
+          obtain ⟨m, hm⟩ := Pf_sound n _ (Pf.atom hA)
+          obtain ⟨N, hN⟩ := hplaysC (.bot (inst (tauZoo k) T .dimcid))
+            (.bot (inst (tauZoo k) .dimcid T))
+          have hN' : eval (N + 1) (.bot (inst (tauZoo k) T .dimcid))
+              (.bot (inst (tauZoo k) .dimcid T)) (.bot (inst (tauZoo k) T .dimcid))
+              = some Action.C := by rw [eval]; exact hN
+          rw [play] at hm
+          exact absurd (eval_det hm hN') (by decide)
+        · rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
+            ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, h⟩) <;>
+            simp [hpeelT] at h
+        · intro L
+          cases L with
+          | nil => simp [searchPlug]
+          | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug]
+        · intro hd L; cases hd <;> simp [ctxPlug]
+        · intro hd L; cases hd <;> simp [plug2]
+  generalize hMe : (Prog.bot (inst (tauZoo k) .dimcid T)) = Me at hg ⊢
+  rw [hpeelD]
+  exact searchGuardD_plays_C _ _ hg
+
+/-- τ(DIMCID) at TFTSim COOPERATES. -/
+theorem dimcid_tftSim_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .tftSim))
+      (.bot (inst (tauZoo k) .dimcid .tftSim)) (inst (tauZoo k) .dimcid .tftSim)
+      = some Action.C :=
+  dimcid_plays_C_of_iteC .tftSim _ _ _ _ (inst_tftSim_peel k .dimcid)
+    (inst_dimcid_peel_tftSim k)
+    (fun me opp => by rw [inst_tftSim_peel k .dimcid]; exact simCopy_plays _ _ dimcid_coop_plays_C)
+
+/-- τ(DIMCID) at EBot COOPERATES. -/
+theorem dimcid_ebot_plays_C {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .ebot))
+      (.bot (inst (tauZoo k) .dimcid .ebot)) (inst (tauZoo k) .dimcid .ebot)
+      = some Action.C :=
+  dimcid_plays_C_of_iteC .ebot _ _ _ _ (inst_ebot_peel k .dimcid)
+    (inst_dimcid_peel_ebot k)
+    (fun me opp => by
+      rw [inst_ebot_peel k .dimcid]
+      exact simWatchC_falls _ _ (dimcid_defect_plays_D hL)
+        (simWatchC_fires _ _ dimcid_coop_plays_C))
+
+/-- τ(DIMCID) at DBot COOPERATES. -/
+theorem dimcid_dbot_plays_C {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .dbot))
+      (.bot (inst (tauZoo k) .dimcid .dbot)) (inst (tauZoo k) .dimcid .dbot)
+      = some Action.C :=
+  dimcid_plays_C_of_iteC .dbot _ _ _ _ (inst_dbot_peel k .dimcid)
+    (inst_dimcid_peel_dbot k)
+    (fun me opp => by
+      rw [inst_dbot_peel k .dimcid]
+      exact simWatchC_falls _ _ (dimcid_defect_plays_D hL) ⟨1, rfl⟩)
+
+/-! ### obot — the defector whose defection is too expensive to cite -/
+
+/-- Any transcript of a watch on `inst .dimcid .coop` costs MORE than `k`: a
+    `C` transcript is a certificate of the floor-priced probe, a `D` transcript
+    is unsound. -/
+theorem dimcid_coop_watch_over_budget {k : Nat} {me opp : Prog} {r : Action} {m : Nat}
+    (h : PlaysProof me opp
+      (.sim (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop))) r m)
+    (hm : m ≤ k) : False := by
+  cases h with
+  | sim hin =>
+    simp only [Prog.subst] at hin
+    cases hin with
+    | bot hin3 =>
+      rename_i m₃
+      have hcert : AtomProvable (m₃ + c_node)
+          (.plays (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop)) r) :=
+        ⟨PlaysProof.bot hin3, le_refl _⟩
+      cases r with
+      | C =>
+          have h1 := (proofSearch_spec _ _).2 (Pf.atom hcert)
+          have h2 := ps_probe_inst_dimcid_coop_false (k := k) (K := m₃ + c_node)
+            (by have := hcn; omega)
+          rw [probe] at h2
+          exact absurd (h1.symm.trans h2) (by decide)
+      | D =>
+          obtain ⟨n, hn⟩ := Pf_sound _ _ (Pf.atom hcert)
+          obtain ⟨N, hN⟩ := dimcid_coop_plays_C (k := k)
+          have hN' : eval (N + 1) (.bot (inst (tauZoo k) .dimcid .coop))
+              (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop))
+              = some Action.C := by rw [eval]; exact hN
+          rw [play] at hn
+          exact absurd (eval_det hn hN') (by decide)
+
+/-- τ(DIMCID) at OBot COOPERATES: obot defects against it, but no certificate of
+    that defection fits in `k`, so DIMCID's guard is floor-unprovable. -/
+theorem dimcid_obot_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .obot))
+      (.bot (inst (tauZoo k) .dimcid .obot)) (inst (tauZoo k) .dimcid .obot)
+      = some Action.C := by
+  have hg : proofSearch k
+      ((Formula.impl (.plays .self (.bot (inst (tauZoo k) .obot .dimcid)) Action.C)
+                     (.plays (.bot (inst (tauZoo k) .obot .dimcid)) .self Action.D)).subst
+        (.bot (inst (tauZoo k) .dimcid .obot)) (.bot (inst (tauZoo k) .dimcid .obot))) = false := by
+    rw [dimG_subst]
+    cases h : proofSearch k (dimG (.bot (inst (tauZoo k) .dimcid .obot))
+        (inst (tauZoo k) .obot .dimcid)) with
+    | false => rfl
+    | true =>
+        exfalso
+        have hp := (proofSearch_spec _ _).1 h
+        rw [inst_obot_peel k .dimcid] at hp
+        refine no_provable_tailTo_floor k _ (.bot (inst (tauZoo k) .dimcid .obot)) .D
+          ?_ ?_ ?_ ?_ ?_ ?_ ?_ k _ hp le_rfl ⟨rfl, by simp⟩
+        · -- the cost floor: every D-transcript runs the coop watch
+          rintro K hK ⟨hpp, hn⟩
+          cases hpp with
+          | bot hin =>
+            cases hin with
+            | ite_t hg' _ _ => exact dimcid_coop_watch_over_budget hg' (by omega)
+            | ite_f hg' _ _ => exact dimcid_coop_watch_over_budget hg' (by omega)
+        · rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
+            ⟨_, _, _, _, _, _, _, h⟩) <;> simp at h
+        · intro defs i h; simp at h
+        · intro k₁ ψ₁ k₂ ψ₂ c1 q h; simp at h
+        · intro L
+          cases L with
+          | nil => simp [searchPlug]
+          | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug]
+        · intro hd L; cases hd <;> simp [ctxPlug]
+        · intro hd L h; cases hd <;> simp [plug2] at h
+  generalize hMe : (Prog.bot (inst (tauZoo k) .dimcid .obot)) = Me at hg ⊢
+  rw [inst_dimcid_peel_obot k]
+  exact searchGuardD_plays_C _ _ hg
 
 end PD.Tau
