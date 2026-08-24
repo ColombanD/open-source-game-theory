@@ -21,6 +21,7 @@ from pd_runner.tau.compare import (
 )
 from pd_runner.tau.def4 import (
     BASE_OF,
+    BASE_OF,
     CONTROL_BOTS,
     CONTROL_ZOO,
     FULL_BOTS,
@@ -248,6 +249,43 @@ def test_direct_and_composed_checks_agree() -> None:
     direct = {(c.template, c.hypothesis): c.lean for c in direct_kernel_vs_base(m).cells}
     viamodel = {(c.template, c.hypothesis): c.def4 for c in bit_coincidence(m).cells}
     assert direct == viamodel
+
+
+def test_whitelist_splits_into_two_distinct_causes() -> None:
+    """The five whitelisted divergences are NOT one phenomenon, and the notes
+    must not blur them (they did until 2026-08-21):
+
+    * **budget staggering** — the base cell is a DAGGER cell, proven only under a
+      side hypothesis granting one bot a bigger budget (enough to pay the
+      partner's `search_f` floor). `tauZoo k` gives every bot the SAME `k`, so
+      the stagger is unavailable by construction. Base and tau agree on the
+      mathematics; they differ on the budget regime.
+    * **genuine modality / coverage gaps** — the α-gap (a prover lift of a
+      BEHAVIORAL base bot) and EBot's dropped Mirror branch.
+
+    NOTE the two ways a base cell can be staggered, only ONE of which the matrix
+    flags: `DupocBot × CupodTrollBot` carries an explicit side hypothesis (`hjk`)
+    and so is a DAGGER cell, while `JustBot × CupodTrollBot` bakes the stagger
+    into the statement itself (`JustBot (4*j+100)` vs `CupodTrollBot j`) and is
+    therefore NOT flagged — `has_hypotheses` cannot see it. Same phenomenon,
+    different bookkeeping; the test records both explicitly rather than relying
+    on the dagger flag alone."""
+    m = load_tau_matrix(FULL_BOTS)
+    dagger = set(m.dagger_cells)
+
+    # staggering, flagged by the matrix (explicit side hypothesis)
+    assert (BASE_OF["TauDupoc"], BASE_OF["TauCupodTroll"]) in dagger
+    # staggering, NOT flagged (the stagger lives in the theorem's statement)
+    assert (BASE_OF["TauJust"], BASE_OF["TauCupodTroll"]) not in dagger
+    staggering = {("TauDupoc", "TauCupodTroll"), ("TauJust", "TauCupodTroll")}
+
+    # genuine modality / coverage gaps: same-budget base cells, no stagger
+    modality = {("TauTFTPf", "TauGuardian"), ("TauTFTPf", "TauCupodTroll"),
+                ("TauEBot", "TauEBot")}
+    for A, T in modality:
+        assert (BASE_OF[A], BASE_OF[T]) not in dagger, (A, T)
+
+    assert staggering | modality == set(WHITELIST)
 
 
 def test_whitelist_is_exactly_the_recorded_cells() -> None:

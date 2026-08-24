@@ -60,16 +60,28 @@ WHITELIST: dict[tuple[str, str], str] = {
         "(not .opp-free-liftable); the lift drops it, flipping E's self-bit"
     ),
     ("TauTFTPf", "TauCupodTroll"): (
-        "Floor over true cooperation (the Guardian shape, second instance): "
-        "τ(CupodTroll)'s C is reached through a FAILED .eq search, so its "
-        "transcript pays search_f and no prover can cite it — while base "
-        "CupodTrollBot simply cooperates. Any PROVER bot probing it reads 0."
+        "Floor over true cooperation: τ(CupodTroll)'s C is reached through a "
+        "FAILED .eq search, so its transcript pays search_f and no prover can "
+        "cite it at the SAME budget. Base TitForTatBot is the BEHAVIORAL bot "
+        "(it sims, so it sees the C); its prover lift cannot. A genuine "
+        "modality difference — the α-gap."
     ),
     ("TauDupoc", "TauCupodTroll"): (
-        "Floor over true cooperation — same mechanism as (TauTFTPf, TauCupodTroll)."
+        "**BUDGET STAGGERING, not a modality gap.** Base "
+        "`outcome_CupodTrollBot_vs_DupocBot` really is (C, C) — but it is a "
+        "DAGGER cell, proven only under the side hypothesis `hjk`, which gives "
+        "DupocBot a budget strictly larger than Troll's failed search "
+        "(`|¬(Dupoc = Cupod)| + j + 2 ≤ k`). Paying Troll's search_f floor is "
+        "exactly what that buys. The tau layer gives EVERY bot the same budget "
+        "`k` (`tauZoo k`), so the staggering is unavailable by construction and "
+        "the prove-stage honestly reads 0. Base and tau agree on the "
+        "mathematics and differ on the budget regime."
     ),
     ("TauJust", "TauCupodTroll"): (
-        "Floor over true cooperation — same mechanism as (TauTFTPf, TauCupodTroll)."
+        "Budget staggering — same as (TauDupoc, TauCupodTroll). Base "
+        "`outcome_JustBot_vs_CupodTrollBot` is stated at JustBot (4*j+100) vs "
+        "CupodTrollBot j: the 4x+100 stagger is what affords Troll's floor. "
+        "Same-k tau cannot reproduce it."
     ),
     ("TauTFTPf", "TauGuardian"): (
         "Prover-modality floor: TauTFTPf is the PROVER variant of behavioral base "
