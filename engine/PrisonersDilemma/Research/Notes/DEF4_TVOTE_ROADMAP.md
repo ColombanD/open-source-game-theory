@@ -500,6 +500,16 @@ copy, base EBot's Mirror branch, `.neg`-guard bots (WaryBot). A `test : Action`
 field on `Stage` is the recorded extension for negative probes; do not add it until
 a lifted bot needs it.
 
+> **`Tau/Theorems/Matrix.lean` REMOVED 2026-08-24.** The tau matrix was never
+> stored per pair: tau players are `.opp`-free, so a match is two INDEPENDENT
+> plays and every cell is `outcome_of_ex_plays` of two per-bot PHASE theorems.
+> `Matrix.lean` only spelled out 29 headline cells on top of that, and the
+> Python certification reads the `Phase.lean` bit tables, never `Matrix.lean`.
+> The phase layer is now the ONLY layer: every `outcome_Tau*` name cited below
+> is historical, and the mirror gates those cells carried are discharged INSIDE
+> the phase theorems (`tauDupoc_phase`, `tauJust_phase`, `tauCIMCIC_phase`,
+> `tauCupod_phase` — the last keeps only the dimcid `TailToA` gate).
+>
 > **RESOLVED 2026-08-24 — the DSL is a TREE now.** MirrorBot's raw copy was the
 > shape that broke the stage list: a forwarder has no `test`/`fire`/fall-through,
 > and encoding it as a one-stage threshold test (`if the watch plays C then C else

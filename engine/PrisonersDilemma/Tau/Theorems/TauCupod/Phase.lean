@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 
 /-!
 # τ(CupodBot)'s phase — the suspicious cooperator, Löb-gated TWICE over.
@@ -98,16 +99,13 @@ theorem cupodBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
   vecOf_bits (tauZoo k) .cupod w cupodRow tauOrder
     fun T _ => cupodRow_plays hk hkk h6 h10 hquine hmirCu hmirP hdc hdcP T
 
-/-- **τ(CupodBot)** — Löb-gated (its diagonal is the punish-polarity quine);
-    boundary `θ ≤ cupodMass`. UNCONDITIONAL since the floor closure. -/
+/-- **τ(CupodBot)** — boundary `θ ≤ cupodMass`. Its diagonal is the
+    punish-polarity quine and its mirror slot is a Löb fixpoint on defection
+    (closed 2026-08-24, `TauMirror/Helpers`). The ONE remaining gate is the
+    ALIGNED-on-D dimcid pair — the `TailToA` kernel debt (`TauDIMCID/Helpers`). -/
 theorem tauCupod_phase :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
-          = cupodColBit .mirror)
-        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .mirror))
-          (.bot (inst (tauZoo k) .cupod .mirror)) (inst (tauZoo k) .cupod .mirror)
-          = some (cupodRow .mirror))
-        (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
+      ∀ (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
           = cupodColBit .dimcid)
         (hdcP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
           (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
@@ -117,10 +115,13 @@ theorem tauCupod_phase :
       ∧ (¬ θ ≤ cupodMass w → ∃ N, play N (TauBotZ k .cupod w θ) opponent = some .D) := by
   obtain ⟨kL, hkL⟩ := ps_probeD_inst_cupod_quine
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
-  refine ⟨max kL kA, fun k hk hmirCu hmirP hdc hdcP θ w opponent => ?_⟩
-  have hquine := hkL k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
-  have hkA' : 1 * Nat.log2 k + 12 ≤ k :=
-    hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+  obtain ⟨kX, hkX⟩ := ps_probeD_mirror_cupod
+  obtain ⟨kY, hkY⟩ := cupod_mirror_plays_D
+  refine ⟨max (max kL kA) (max kX kY), fun k hk hdc hdcP θ w opponent => ?_⟩
+  have hquine := hkL k (by omega)
+  have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
+  have hmirCu := hkX k (by omega)
+  have hmirP := hkY k (by omega)
   have hk2 : 2 ≤ k := by omega
   have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
   have h6 : 6 ≤ k := by omega

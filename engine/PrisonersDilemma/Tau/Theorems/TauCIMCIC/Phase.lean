@@ -1,5 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.Columns
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
+import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 
 /-!
 # τ(CIMCIC)'s phase — the conditional cooperator: the first `.impl`-guard row.
@@ -83,24 +84,22 @@ theorem cimcicBits {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
   vecOf_bits (tauZoo k) .cimcic w cimcicRow tauOrder
     fun T _ => cimcicRow_plays hL hcg hcq hmdP hmirP T
 
-/-- **τ(CIMCIC)** — Löb-gated through the entangled dupoc slot; boundary
-    `θ ≤ cimcicMass`. -/
+/-- **τ(CIMCIC)** — boundary `θ ≤ cimcicMass`. UNCONDITIONAL since 2026-08-24:
+    both entangled slots (dupoc, mirror) are closed by bounded Löb. -/
 theorem tauCIMCIC_phase :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .mirror))
-          (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
-          = some (cimcicRow .mirror)),
       ∀ θ (w : Tmpl → Nat) (opponent : Prog),
       (θ ≤ cimcicMass w → ∃ N, play N (TauBotZ k .cimcic w θ) opponent = some .C)
       ∧ (¬ θ ≤ cimcicMass w → ∃ N, play N (TauBotZ k .cimcic w θ) opponent = some .D) := by
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kP, hkP⟩ := cimcic_dupoc_plays_C
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 100 1000
-  refine ⟨max (max kM kP) kA, fun k hk hmirP θ w opponent => ?_⟩
-  have hcq := hkM k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_left _ _)) hk)
-  have hmdP := hkP k (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_left _ _)) hk)
-  have hL : 100 * Nat.log2 k + 1000 ≤ k :=
-    hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+  obtain ⟨kX, hkX⟩ := cimcic_mirror_plays_C
+  refine ⟨max (max kM kP) (max kA kX), fun k hk θ w opponent => ?_⟩
+  have hcq := hkM k (by omega)
+  have hmdP := hkP k (by omega)
+  have hL : 100 * Nat.log2 k + 1000 ≤ k := hkA k (by omega)
+  have hmirP := hkX k (by omega)
   have hcg : c_guard k + 20 ≤ k := by
     have := Nat.log2_le_self k
     simp only [c_guard, numCost]; omega

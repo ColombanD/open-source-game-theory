@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 
 /-!
 # τ(DupocBot)'s phase — Löb-GATED: its diagonal bit is the quine.
@@ -87,17 +88,13 @@ theorem dupocBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   vecOf_bits (tauZoo k) .dupoc w dupocRow tauOrder
     fun T _ => dupocRow_plays hk hkk hk7 hquine hcim hmir hmirP hdmP T
 
-/-- **τ(DupocBot)** — Löb-gated; boundary `θ ≤ dupMass`. -/
+/-- **τ(DupocBot)** — boundary `θ ≤ dupMass`. UNCONDITIONAL: the mirror×dupoc
+    entangled cell (a mutual SIMULATION — mirror forwards, dupoc proves — the tau
+    image of base `outcome_DupocBot_vs_MirrorBot`) is closed by bounded Löb in
+    `TauMirror/Helpers` (2026-08-24), so its bit and its play are supplied here,
+    no longer assumed. -/
 theorem tauDupoc_phase :
     ∃ k₂, ∀ k, k₂ < k →
-      -- the mirror×dupoc entangled cell: a mutual SIMULATION (mirror copies,
-      -- dupoc proves), the tau image of base `outcome_DupocBot_vs_MirrorBot`.
-      -- Löb-gated, so both its bit and its play enter as hypotheses.
-      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
-          = dupocColBit .mirror)
-        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
-          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
-          = some (dupocRow .mirror)),
       ∀ θ (w : Tmpl → Nat) (opponent : Prog),
       (θ ≤ dupMass w → ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .C)
       ∧ (¬ θ ≤ dupMass w → ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .D) := by
@@ -105,12 +102,15 @@ theorem tauDupoc_phase :
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kP, hkP⟩ := dupoc_cimcic_plays_C
-  refine ⟨max (max kL kA) (max kM kP), fun k hk hmir hmirP θ w opponent => ?_⟩
-  have hquine := hkL k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_left _ _)) hk)
-  have hkA' : 1 * Nat.log2 k + 8 ≤ k :=
-    hkA k (Nat.le_of_lt (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_left _ _)) hk))
-  have hcim := hkM k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_right _ _)) hk)
-  have hdmP := hkP k (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_right _ _)) hk)
+  obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
+  obtain ⟨kY, hkY⟩ := dupoc_mirror_plays_C
+  refine ⟨max (max kL kA) (max (max kM kP) (max kX kY)), fun k hk θ w opponent => ?_⟩
+  have hquine := hkL k (by omega)
+  have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
+  have hcim := hkM k (by omega)
+  have hdmP := hkP k (by omega)
+  have hmir := hkX k (by omega)
+  have hmirP := hkY k (by omega)
   have hk2 : 2 ≤ k := by omega
   have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
   have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
