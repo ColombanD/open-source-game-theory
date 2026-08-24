@@ -49,15 +49,13 @@ its own coverage."""
 # ── the kernel bit tables ──────────────────────────────────────────────────────
 
 
-def test_kernel_scanner_finds_all_rows_but_dimcid() -> None:
-    """14 of the 15 rows are stated — τ(Mirror)'s as a 14-slot PREFIX row over
-    `tauOrderInit` (its diagonal diverges; the scanner records that slot as "N").
-    `TauDIMCID`'s own `VoteBits` row is NOT: two of its off-cycle cells (guardian,
-    cupodTroll — then-D searcher partners) need a census neither the tail kernel
-    nor the valuation kernel can express in the tau frame — see
-    `Tau/Theorems/TauDIMCID/Helpers.lean`. Its COLUMN is fully proven."""
+def test_kernel_scanner_finds_all_rows() -> None:
+    """ALL 15 rows are stated (2026-08-25). τ(Mirror)'s is a 14-slot PREFIX row
+    over `tauOrderInit` (its diagonal diverges; the scanner records that slot as
+    "N"). τ(DIMCID)'s — the last to land — needed the provability-tracking tower
+    census (`Base/TowerCensus.lean`) for its two then-D searcher partners."""
     tables = kernel_bits()
-    assert set(tables) == set(TAU_ORDER) - {"dimcid"}
+    assert set(tables) == set(TAU_ORDER)
     assert tables["mirror"]["mirror"] == "N"
 
 
@@ -76,23 +74,23 @@ def test_kernel_agrees_with_base_directly() -> None:
     `VoteBits` theorems and the cells out of the certified base matrix, so a pass
     depends on no Python model at all.
 
-    210 comparable cells (every template pair whose two base bots are in the
-    zoo), 204 agree, and the 6 divergences are exactly the recorded whitelist —
-    properties of the LIFT, not of any implementation. (182/176/6 until
-    2026-08-24 evening, when MirrorBot joined `FULL_BOTS`: τ(Mirror)'s row and
-    every row's mirror slot — 28 cells — agree with base without exception.)
+    225 comparable cells — the FULL 15×15 matrix — 219 agree, and the 6
+    divergences are exactly the recorded whitelist — properties of the LIFT,
+    not of any implementation. (182/176/6 → 210/204/6 on 2026-08-24 when
+    MirrorBot joined `FULL_BOTS`; 225/219/6 on 2026-08-25 when τ(DIMCID)'s row
+    landed: all 15 of its cells agree with base, including the three the tail
+    and valuation censuses could not reach.)
 
     Was 144/139/5 until 2026-08-24, when CupodBot and DIMCID were added to
     `FULL_BOTS`: their base cells had landed on 08-21 but the list was never
     updated, so 38 comparable cells went unchecked and four divergences sat
     unexamined behind a green result."""
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
-    assert len(d.cells) == 210
+    assert len(d.cells) == 225
     assert d.passed, d.unexpected
-    assert d.agreements == 204
+    assert d.agreements == 219
     assert len(d.whitelisted_divergences) == 6
-    # DIMCID's own row is the ONE unstated row; its COLUMN is compared in full.
-    assert set(d.missing_rows) == {"TauDIMCID"}
+    assert d.missing_rows == ()
 
 
 def test_certification_end_to_end() -> None:
@@ -105,11 +103,16 @@ def test_control_zoo_certifies() -> None:
     assert cert.passed
 
 
-def test_missing_rows_are_reported_not_guessed() -> None:
+def test_missing_rows_are_reported_not_guessed(monkeypatch) -> None:
     """An unstated row must be REPORTED, never predicted: absence is the honest
     signal that a bit is unproven. This is the property the removal of the Python
-    model bought — the model would have supplied a DIMCID row from its own
-    arithmetic, with nothing to check it against."""
+    model bought — the model would have supplied a row from its own arithmetic,
+    with nothing to check it against. Every row is stated now, so the property is
+    exercised on a kernel table with DIMCID's row withheld."""
+    from pd_runner.tau import compare as compare_mod
+    full = kernel_bits()
+    withheld = {k: v for k, v in full.items() if k != "dimcid"}
+    monkeypatch.setattr(compare_mod, "kernel_bits", lambda: withheld)
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
     assert "TauDIMCID" in d.missing_rows
     assert all(c.template != "TauDIMCID" for c in d.cells)

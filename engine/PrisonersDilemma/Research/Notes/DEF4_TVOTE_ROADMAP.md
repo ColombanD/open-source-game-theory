@@ -510,6 +510,25 @@ a lifted bot needs it.
 > the phase theorems (`tauDupoc_phase`, `tauJust_phase`, `tauCIMCIC_phase`,
 > `tauCupod_phase` — the last keeps only the dimcid `TailToA` gate).
 >
+> **2026-08-25 — EVERY phase is stated and unconditional.** τ(DIMCID)'s row
+> landed; the certification now runs on the full 15×15 = 225 cells, 219 agree,
+> the same 6 whitelisted, no missing rows. The two cells that blocked it —
+> DIMCID vs guardian and vs cupodTroll — needed a NEW KERNEL,
+> `Base/TowerCensus.lean` (the tower census): a target CHAIN (`T → Y → T₃`, each
+> the guard-box of the previous one's reading rule, ending at a player nothing
+> reads) and, per level, a TOWER of classes indexed by box depth, whose
+> antecedents must avoid every lower index of the level and every deeper level.
+> That single rule makes every premise-free axiom self-annihilate and lets a
+> `mp`/`implTrans` with a box in the middle be discharged by the DEEPER level's
+> already-proven theorem — never an induction hypothesis, which is where both
+> earlier attempts (the note's `TailToA`, the valuation transplant) failed.
+> `tower_census` is 31 arms on the 3 standard axioms; the DIMCID instantiation is
+> three levels for guardian, two for cupodTroll (its second target is the
+> index-decided `.eq`, an atom no rule reads). The four "reachable" cells landed
+> the same day (tftSim/ebot/dbot by the budget-free unreadable census, obot by
+> the floor census with a transcript-cost bound through its watch of
+> `inst .dimcid .coop`).
+>
 > **2026-08-24 evening — the phase layer, made unconditional as far as it goes.**
 > `tauCupod_phase` lost its last gate: the aligned-on-D dimcid×cupod pair is
 > closed by mutual bounded Löb in BOTH orientations (`TauDIMCID/Helpers`,

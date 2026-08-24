@@ -1,5 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.Helpers
 import PrisonersDilemma.Base.Loeb
+import PrisonersDilemma.Base.TowerCensus
 import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers
 
 /-!
@@ -211,6 +212,17 @@ theorem ps_probeD_dimcid_quine :
   have := hcl; have := hcn
   simp only [c_guard, numCost]
   omega
+
+/-- The diagonal SLOT: τ(DIMCID)'s self-play is `D` past the Löb threshold —
+    the certified probe bit, read back through soundness. -/
+theorem dimcid_dimcid_plays_D :
+    ∃ k₂, ∀ k, k₂ < k →
+      ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .dimcid))
+        (.bot (inst (tauZoo k) .dimcid .dimcid)) (inst (tauZoo k) .dimcid .dimcid)
+        = some Action.D := by
+  obtain ⟨k₂, h⟩ := ps_probeD_dimcid_quine
+  refine ⟨k₂, fun k hk => ?_⟩
+  exact entry_of_interp (Pf_sound _ _ ((proofSearch_spec _ _).1 (h k hk)))
 
 /-- **τ(DIMCID) DEFECTS AGAINST ITSELF** past the Löb threshold. -/
 theorem dimcid_quine_plays_D {k : Nat}
@@ -673,42 +685,20 @@ theorem dimcid_just_plays_C {k : Nat} :
   dimcid_plays_C_of_searcherC .just _ _ (inst_just_peel k .dimcid)
     (inst_dimcid_peel_just k)
 
-/-! ### Why the ROW still cannot be STATED (2026-08-25 — TWO cells short)
+/-! ### The row is COMPLETE (2026-08-25)
 
-Thirteen of the fifteen slots are proven: `coop` C, `defect` D, `tftSim` C,
-`tftPf` C, `dupoc` C, `ebot` C, `just` C, `obot` C, `dbot` C, `cupod` D,
-`cimcic` C, `mirror` D and the diagonal D (the four "reachable" cells landed
-2026-08-25, below). The two that remain — **`guardian` and `cupodTroll`, the
-then-`D` searcher partners** — are blocked, and the blocker is now understood
-precisely rather than recorded as a to-do:
-
-* The TAIL census claims "no proof ≤ k tails at T" for T = "the partner plays D
-  against me". But `botSearchStep` proves `□(partner's guard) → T` outright — a
-  genuine theorem that tails at T (box antecedents are opaque to `TailTo`). The
-  claim is FALSE as stated (machine-checked 2026-08-21), and the natural repair —
-  forbid box antecedents — breaks at every `mp`/`implTrans` arm whose middle
-  formula is a box, while making boxes transparent breaks `diagF` (the Löb
-  premise must stay inside the excluded class).
-* The VALUATION census is how base `GuardianBot × DIMCID` closes
-  (`gdS = {(DIMCID, Guardian)}`). It forces the guard's ANTECEDENT true by fiat,
-  which needs the antecedent's pair in `S`; in the tau frame that pair is
-  `(bot I, bot P)`, a `.bot` OPPONENT, and `wv_sound_upto`'s `h_nb` is not
-  incidental — it is what keeps the `iteBranchSearch_t` arm sound. With such a
-  pair forced, that rule derives a real theorem `A → (□X → an ite-player plays
-  c₀)` whose truth depends on the forced atom, so the valuation is unsound exactly
-  in the world (DIMCID defects) the census exists to exclude. Worse, in that
-  world `S` derives `¬A` outright (permute, `mp`, `contrapose`), so NO sound
-  valuation can make `A` designated there: every semantic route is closed.
-
-So the true argument is PROOF-THEORETIC: `A → T` is not derivable even though
-`¬A` may be — this calculus has no object-level ex falso (`negElim` needs BOTH
-proofs), so `¬A ⊬ A → T`. Formalising that requires a census whose class tracks
-the PROVABILITY of box antecedents along the tail, nested through the partner's
-own guard (T's reading box is `□Y`, Y's reading box is `□G_c`, whose consequent's
-player is an unreadable constant — a three-level target chain), with a separate
-box-tail class per level to kill `Pf (□W)` at `mp`/`implTrans` middles. A new
-kernel, not a hypothesis tweak. Until it exists the row stays unstated and the
-certification reports it as missing rather than guessing. -/
+All fifteen slots are theorems; the row and phase live in `TauDIMCID/Phase.lean`.
+The last two cells — `guardian` and `cupodTroll`, the then-`D` searcher partners —
+closed with the TOWER CENSUS (`Base/TowerCensus.lean`, the section at the end of
+this file), after both existing census techniques were shown to fail on them for
+the same reason: the tail census's class contains `□(partner's guard) → T`, a
+genuine theorem; the valuation census needs the forced pair `(bot I, bot P)`, a
+`.bot` OPPONENT, and with it `iteBranchSearch_t` derives a real theorem whose
+truth depends on the forced atom — and in the DIMCID-defects world `S` derives
+`¬A` outright, so no sound valuation designates `A` there. The argument had to be
+proof-theoretic: `¬A ⊬ A → T` (no object-level ex falso), formalised as a class
+that tracks the PROVABILITY of box antecedents along the tail, nested through the
+partner's guard. -/
 
 /-! ## Column-facing corollaries
 
@@ -1122,6 +1112,273 @@ theorem dimcid_obot_plays_C {k : Nat} :
         · intro hd L h; cases hd <;> simp [plug2] at h
   generalize hMe : (Prog.bot (inst (tauZoo k) .dimcid .obot)) = Me at hg ⊢
   rw [inst_dimcid_peel_obot k]
+  exact searchGuardD_plays_C _ _ hg
+
+/-! ## The two then-`D` partner cells — closed by the TOWER CENSUS (2026-08-25)
+
+`Base/TowerCensus.lean` is the provability-tracking kernel built for exactly these
+two cells. Guardian's chain has three targets: DIMCID's consequent `T` ("guardian
+plays D against me"), guardian's guard `Y` ("`inst .dimcid .coop` self-defects"),
+and the consequent `T₃` of THAT instance's guard ("the constant cooperator
+defects") — whose player nothing reads, so the chain ends. CupodTroll's has two:
+its guard is the index-decided `.eq (const C) (const D)`, an atom no rule reads. -/
+
+/-- Level 3: the constant cooperator's defection against `inst .dimcid .coop`. -/
+private abbrev Z₃ (k : Nat) : Formula :=
+  .plays (.bot (.const .C)) (.bot (inst (tauZoo k) .dimcid .coop)) Action.D
+
+private theorem level3 (k : Nat) :
+    ∀ K n φ, Pf K φ → TowerAt (Z₃ k) (DeadAll []) n φ → False := by
+  refine tower_census (Z₃ k) [] ⟨Or.inl ⟨_, _, _, rfl⟩, fun Z' h => by simp at h, trivial⟩
+    DeadAll_nil_kill ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · rintro K ⟨hpp, -⟩
+    cases hpp with
+    | bot hin => cases hin
+  · intro g ψ b c opp h; simp at h
+  · intro p q opp a h; simp at h
+  · intro p q opp a h; simp at h
+  · intro g ψ b c opp h; simp at h
+  · intro defs i opp a h; simp at h
+  · intro z a' g ψ c0 c1 q opp h; simp at h
+  · intro k₁ ψ₁ k₂ ψ₂ c0 c1 q opp h; simp at h
+  · intro g₁ ψ₁ e₁ L a opp h; simp at h
+  · intro hd L a opp h; cases hd <;> simp [ctxPlug] at h
+  · intro hd L a opp h; cases hd <;> simp [plug2] at h
+
+/-- Level 2 (guardian): guardian's guard — `inst .dimcid .coop` self-defects. -/
+private abbrev Y₂ (k : Nat) : Formula :=
+  .plays (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop)) Action.D
+
+private theorem level2 (k : Nat) :
+    ∀ K n φ, Pf K φ → TowerAt (Y₂ k) (DeadAll [Z₃ k]) n φ → False := by
+  refine tower_census (Y₂ k) [Z₃ k]
+    ⟨Or.inl ⟨_, _, _, rfl⟩, ?_, Or.inl ⟨_, _, _, rfl⟩, fun Z' h => by simp at h, trivial⟩
+    (DeadAll_cons_kill (level3 k) DeadAll_nil_kill) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · intro Z' h; simp only [List.mem_singleton] at h; subst h
+    intro h; simp [inst_dimcid_peel_coop] at h
+  · -- no certificate: the instance cooperates
+    intro K h
+    obtain ⟨m, hm⟩ := Pf_sound K _ (Pf.atom h)
+    obtain ⟨N, hN⟩ := dimcid_coop_plays_C (k := k)
+    have hN' : eval (N + 1) (.bot (inst (tauZoo k) .dimcid .coop))
+        (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop))
+        = some Action.C := by rw [eval]; exact hN
+    rw [play] at hm
+    exact absurd (eval_det hm hN') (by decide)
+  · intro g ψ b c opp h; simp [inst_dimcid_peel_coop] at h
+  · intro p q opp a h; simp [inst_dimcid_peel_coop] at h
+  · intro p q opp a h; simp [inst_dimcid_peel_coop] at h
+  · -- THE reading rule: its box is the guard of `inst .dimcid .coop`, a level-3 formula
+    intro g ψ b c opp h
+    simp only [Y₂] at h
+    rw [inst_dimcid_peel_coop] at h
+    simp only [Formula.plays.injEq, Prog.bot.injEq, Prog.search.injEq, Prog.const.injEq] at h
+    obtain ⟨⟨rfl, rfl, rfl, rfl⟩, rfl, -⟩ := h
+    refine Or.inl ⟨1, le_rfl, (TowerAt_succ_box _ _ _ _ _).2 ?_⟩
+    simp only [Formula.subst, Prog.subst, inst_coop_peel k .dimcid]
+    refine (TowerAt_impl _ _ _ _ _).2 ⟨(TowerAt_zero_plays _ _ _ _ _).2 rfl, ?_, fun h => h⟩
+    intro m hm hT
+    have hm0 : m = 0 := by omega
+    subst hm0
+    have := (TowerAt_zero_plays _ _ _ _ _).1 hT
+    simp at this
+  · intro defs i opp a h; simp [inst_dimcid_peel_coop] at h
+  · intro z a' g ψ c0 c1 q opp h; simp [inst_dimcid_peel_coop] at h
+  · intro k₁ ψ₁ k₂ ψ₂ c0 c1 q opp h; simp [inst_dimcid_peel_coop] at h
+  · intro g₁ ψ₁ e₁ L a opp h; simp [inst_dimcid_peel_coop] at h
+  · intro hd L a opp h; cases hd <;> simp [ctxPlug, inst_dimcid_peel_coop] at h
+  · intro hd L a opp h; cases hd <;> simp [plug2, inst_dimcid_peel_coop] at h
+
+/-- Level 1 (guardian): DIMCID's consequent — guardian defects against it. -/
+private abbrev T₁ (k : Nat) : Formula :=
+  .plays (.bot (inst (tauZoo k) .guardian .dimcid)) (.bot (inst (tauZoo k) .dimcid .guardian))
+    Action.D
+
+/-- Guardian COOPERATES with DIMCID in DIMCID's own frame: its punish-search on
+    `inst .dimcid .coop` fails. -/
+private theorem guardian_plays_C_vs_dimcid (k : Nat) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .guardian .dimcid)) (.bot (inst (tauZoo k) .dimcid .guardian))
+      (.bot (inst (tauZoo k) .guardian .dimcid)) = some Action.C := by
+  have hY : proofSearch k
+      ((Formula.plays (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop))
+        Action.D).subst (.bot (inst (tauZoo k) .guardian .dimcid))
+        (.bot (inst (tauZoo k) .dimcid .guardian))) = false := by
+    simp only [Formula.subst, Prog.subst]
+    exact ps_probeD_false_of_plays_C k dimcid_coop_plays_C
+  obtain ⟨N, hN⟩ := searchGuardD_plays_C (k := k)
+    (.bot (inst (tauZoo k) .guardian .dimcid)) (.bot (inst (tauZoo k) .dimcid .guardian)) hY
+  refine ⟨N + 1, ?_⟩
+  rw [eval, inst_guardian_peel k .dimcid]
+  exact hN
+
+private theorem level1 (k : Nat) :
+    ∀ K n φ, Pf K φ → TowerAt (T₁ k) (DeadAll [Y₂ k, Z₃ k]) n φ → False := by
+  refine tower_census (T₁ k) [Y₂ k, Z₃ k]
+    ⟨Or.inl ⟨_, _, _, rfl⟩, ?_,
+     Or.inl ⟨_, _, _, rfl⟩, ?_, Or.inl ⟨_, _, _, rfl⟩, fun Z' h => by simp at h, trivial⟩
+    (DeadAll_cons_kill (level2 k) (DeadAll_cons_kill (level3 k) DeadAll_nil_kill))
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · intro Z' h
+    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl
+    · intro h; simp [inst_guardian_peel, inst_dimcid_peel_coop] at h
+    · intro h; simp [inst_guardian_peel] at h
+  · intro Z' h; simp only [List.mem_singleton] at h; subst h
+    intro h; simp [inst_dimcid_peel_coop] at h
+  · -- no certificate: guardian cooperates
+    intro K h
+    obtain ⟨m, hm⟩ := Pf_sound K _ (Pf.atom h)
+    obtain ⟨N, hN⟩ := guardian_plays_C_vs_dimcid k
+    rw [play] at hm
+    exact absurd (eval_det hm hN) (by decide)
+  · intro g ψ b c opp h; simp [inst_guardian_peel] at h
+  · intro p q opp a h; simp [inst_guardian_peel] at h
+  · intro p q opp a h; simp [inst_guardian_peel] at h
+  · -- THE reading rule: guardian's box is its guard, a level-2 formula
+    intro g ψ b c opp h
+    simp only [T₁] at h
+    rw [inst_guardian_peel k .dimcid] at h
+    simp only [Formula.plays.injEq, Prog.bot.injEq, Prog.search.injEq, Prog.const.injEq] at h
+    obtain ⟨⟨rfl, rfl, rfl, rfl⟩, rfl, -⟩ := h
+    refine Or.inl ⟨1, le_rfl, (TowerAt_succ_box _ _ _ _ _).2 ?_⟩
+    simp only [Formula.subst, Prog.subst]
+    exact (TowerAt_zero_plays _ _ _ _ _).2 rfl
+  · intro defs i opp a h; simp [inst_guardian_peel] at h
+  · intro z a' g ψ c0 c1 q opp h; simp [inst_guardian_peel] at h
+  · intro k₁ ψ₁ k₂ ψ₂ c0 c1 q opp h; simp [inst_guardian_peel] at h
+  · intro g₁ ψ₁ e₁ L a opp h; simp [inst_guardian_peel] at h
+  · intro hd L a opp h; cases hd <;> simp [ctxPlug, inst_guardian_peel] at h
+  · intro hd L a opp h; cases hd <;> simp [plug2, inst_guardian_peel] at h
+
+/-- **τ(DIMCID) at Guardian COOPERATES**: its guard is unprovable at every budget. -/
+theorem dimcid_guardian_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .guardian))
+      (.bot (inst (tauZoo k) .dimcid .guardian)) (inst (tauZoo k) .dimcid .guardian)
+      = some Action.C := by
+  have hg : proofSearch k
+      ((Formula.impl (.plays .self (.bot (inst (tauZoo k) .guardian .dimcid)) Action.C)
+                     (.plays (.bot (inst (tauZoo k) .guardian .dimcid)) .self Action.D)).subst
+        (.bot (inst (tauZoo k) .dimcid .guardian)) (.bot (inst (tauZoo k) .dimcid .guardian)))
+      = false := by
+    rw [dimG_subst]
+    cases h : proofSearch k (dimG (.bot (inst (tauZoo k) .dimcid .guardian))
+        (inst (tauZoo k) .guardian .dimcid)) with
+    | false => rfl
+    | true =>
+        exfalso
+        refine level1 k k 0 _ ((proofSearch_spec _ _).1 h)
+          ((TowerAt_impl _ _ _ _ _).2 ⟨(TowerAt_zero_plays _ _ _ _ _).2 rfl, ?_, ?_⟩)
+        · intro m hm hT
+          have hm0 : m = 0 := by omega
+          subst hm0
+          have := (TowerAt_zero_plays _ _ _ _ _).1 hT
+          simp at this
+        · rintro (⟨m, -, hT⟩ | ⟨m, -, hT⟩ | h)
+          · cases m with
+            | zero => have := (TowerAt_zero_plays _ _ _ _ _).1 hT; simp [inst_guardian_peel, inst_dimcid_peel_coop] at this
+            | succ _ => exact TowerAt_succ_plays _ _ _ _ _ _ hT
+          · cases m with
+            | zero => have := (TowerAt_zero_plays _ _ _ _ _).1 hT; simp at this
+            | succ _ => exact TowerAt_succ_plays _ _ _ _ _ _ hT
+          · exact h
+  generalize hMe : (Prog.bot (inst (tauZoo k) .dimcid .guardian)) = Me at hg ⊢
+  rw [inst_dimcid_peel_guardian k]
+  exact searchGuardD_plays_C _ _ hg
+
+/-! ### cupodTroll — two levels, the second an identity atom -/
+
+private abbrev Zc₂ : Formula := .eq (.const Action.C) (.const Action.D)
+
+private theorem levelc2 :
+    ∀ K n φ, Pf K φ → TowerAt Zc₂ (DeadAll []) n φ → False := by
+  refine tower_census Zc₂ [] ⟨Or.inr ⟨_, _, by simp, rfl⟩, fun Z' h => by simp at h, trivial⟩
+    DeadAll_nil_kill ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · intro K h; cases h
+  all_goals (intros; simp_all)
+
+private abbrev Tc₁ (k : Nat) : Formula :=
+  .plays (.bot (inst (tauZoo k) .cupodTroll .dimcid)) (.bot (inst (tauZoo k) .dimcid .cupodTroll))
+    Action.D
+
+private theorem cupodTroll_plays_C_vs_dimcid (k : Nat) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .cupodTroll .dimcid))
+      (.bot (inst (tauZoo k) .dimcid .cupodTroll)) (.bot (inst (tauZoo k) .cupodTroll .dimcid))
+      = some Action.C := by
+  have hY : proofSearch k
+      ((Formula.eq (.const Action.C) (.const Action.D)).subst
+        (.bot (inst (tauZoo k) .cupodTroll .dimcid)) (.bot (inst (tauZoo k) .dimcid .cupodTroll)))
+      = false := by
+    simp only [Formula.subst, Prog.subst]
+    cases hps : proofSearch k (Formula.eq (.const Action.C) (.const Action.D)) with
+    | false => rfl
+    | true =>
+        have := Pf_sound _ _ ((proofSearch_spec _ _).1 hps)
+        simp [Formula.interp] at this
+  obtain ⟨N, hN⟩ := searchGuardD_plays_C (k := k)
+    (.bot (inst (tauZoo k) .cupodTroll .dimcid)) (.bot (inst (tauZoo k) .dimcid .cupodTroll)) hY
+  refine ⟨N + 1, ?_⟩
+  rw [eval, inst_cupodTroll_peel k .dimcid (by decide)]
+  exact hN
+
+private theorem levelc1 (k : Nat) :
+    ∀ K n φ, Pf K φ → TowerAt (Tc₁ k) (DeadAll [Zc₂]) n φ → False := by
+  refine tower_census (Tc₁ k) [Zc₂]
+    ⟨Or.inl ⟨_, _, _, rfl⟩, fun Z' h => by simp only [List.mem_singleton] at h; subst h; simp,
+     Or.inr ⟨_, _, by simp, rfl⟩, fun Z' h => by simp at h, trivial⟩
+    (DeadAll_cons_kill levelc2 DeadAll_nil_kill) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · intro K h
+    obtain ⟨m, hm⟩ := Pf_sound K _ (Pf.atom h)
+    obtain ⟨N, hN⟩ := cupodTroll_plays_C_vs_dimcid k
+    rw [play] at hm
+    exact absurd (eval_det hm hN) (by decide)
+  · intro g ψ b c opp h; simp [inst_cupodTroll_peel k .dimcid (by decide)] at h
+  · intro p q opp a h; simp [inst_cupodTroll_peel k .dimcid (by decide)] at h
+  · intro p q opp a h; simp [inst_cupodTroll_peel k .dimcid (by decide)] at h
+  · intro g ψ b c opp h
+    simp only [Tc₁] at h
+    rw [inst_cupodTroll_peel k .dimcid (by decide)] at h
+    simp only [Formula.plays.injEq, Prog.bot.injEq, Prog.search.injEq, Prog.const.injEq] at h
+    obtain ⟨⟨rfl, rfl, rfl, rfl⟩, rfl, -⟩ := h
+    refine Or.inl ⟨1, le_rfl, (TowerAt_succ_box _ _ _ _ _).2 ?_⟩
+    simp only [Formula.subst, Prog.subst]
+    exact (TowerAt_zero_eq _ _ _ _).2 rfl
+  · intro defs i opp a h; simp [inst_cupodTroll_peel k .dimcid (by decide)] at h
+  · intro z a' g ψ c0 c1 q opp h; simp [inst_cupodTroll_peel k .dimcid (by decide)] at h
+  · intro k₁ ψ₁ k₂ ψ₂ c0 c1 q opp h; simp [inst_cupodTroll_peel k .dimcid (by decide)] at h
+  · intro g₁ ψ₁ e₁ L a opp h; simp [inst_cupodTroll_peel k .dimcid (by decide)] at h
+  · intro hd L a opp h; cases hd <;> simp [ctxPlug, inst_cupodTroll_peel k .dimcid (by decide)] at h
+  · intro hd L a opp h; cases hd <;> simp [plug2, inst_cupodTroll_peel k .dimcid (by decide)] at h
+
+/-- **τ(DIMCID) at CupodTroll COOPERATES**: its guard is unprovable at every budget. -/
+theorem dimcid_cupodTroll_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .cupodTroll))
+      (.bot (inst (tauZoo k) .dimcid .cupodTroll)) (inst (tauZoo k) .dimcid .cupodTroll)
+      = some Action.C := by
+  have hg : proofSearch k
+      ((Formula.impl (.plays .self (.bot (inst (tauZoo k) .cupodTroll .dimcid)) Action.C)
+                     (.plays (.bot (inst (tauZoo k) .cupodTroll .dimcid)) .self Action.D)).subst
+        (.bot (inst (tauZoo k) .dimcid .cupodTroll)) (.bot (inst (tauZoo k) .dimcid .cupodTroll)))
+      = false := by
+    rw [dimG_subst]
+    cases h : proofSearch k (dimG (.bot (inst (tauZoo k) .dimcid .cupodTroll))
+        (inst (tauZoo k) .cupodTroll .dimcid)) with
+    | false => rfl
+    | true =>
+        exfalso
+        refine levelc1 k k 0 _ ((proofSearch_spec _ _).1 h)
+          ((TowerAt_impl _ _ _ _ _).2 ⟨(TowerAt_zero_plays _ _ _ _ _).2 rfl, ?_, ?_⟩)
+        · intro m hm hT
+          have hm0 : m = 0 := by omega
+          subst hm0
+          have := (TowerAt_zero_plays _ _ _ _ _).1 hT
+          simp at this
+        · rintro (⟨m, -, hT⟩ | h)
+          · cases m with
+            | zero => have := (TowerAt_zero_plays _ _ _ _ _).1 hT; simp at this
+            | succ _ => exact TowerAt_succ_plays _ _ _ _ _ _ hT
+          · exact h
+  generalize hMe : (Prog.bot (inst (tauZoo k) .dimcid .cupodTroll)) = Me at hg ⊢
+  rw [inst_dimcid_peel_cupodTroll k]
   exact searchGuardD_plays_C _ _ hg
 
 end PD.Tau
