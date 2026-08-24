@@ -27,10 +27,6 @@
 pair = ["PrudentBot", "CupodBot"]
 reason = "CupodBot-family search×search matchup — no forcing rule known."
 
-[[open]]
-pair = ["DIMCID", "DupocBot"]
-reason = "DupocBot-family search×search matchup — no forcing rule known."
-
 # ---- Floor regime proven (see the _floor theorems), large-k OPEN -----------
 # These pairs have `_floor`/`_floor2` theorems in the library, which the strict
 # large-k acceptance rule excludes; the docstrings mark the large-k side OPEN.
@@ -61,10 +57,6 @@ reason = "Floor proven; large-k is OPEN on BOTH sides."
 # constructor (integrated from the Tier-2 proposal). The uniform-budget (C,D) side
 # remains unproven (modal-tier census wall) but the pair now has an accepted
 # large-k theorem.
-
-[[open]]
-pair = ["DIMCID", "CupodBot"]
-reason = "Confirmed via app UI (agent verdict: open_blocked)."
 
 [[open]]
 pair = ["WaryBot", "OBot"]

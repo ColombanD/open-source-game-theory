@@ -583,4 +583,98 @@ theorem CupodBot_plays_C_vs_DupocBot (k fuel : Nat) :
   unfold CupodBot at hg ⊢
   simp [eval, Prog.subst, Formula.subst, hg]
 
+/-! ## The defection floor, generic in the opponent (2026-08-21)
+
+DupocBot's `D` is its ELSE-slot, so any certificate of it crosses `search_f` and
+pays the full failed budget. The mirror of `no_provable_DIMCID_C_tail`; together
+they close the ANTI-ALIGNED pair `DIMCID × DupocBot`, exactly as the tau layer's
+alignment rule predicts. -/
+
+/-- No proof of ≤ k characters concludes any formula whose guarded spine tail is
+    "DupocBot plays D against O": `search_t` concludes the then-constant `.C`
+    (action mismatch), `search_f` pays the floor. -/
+theorem no_provable_DupocBot_D_tail (k : Nat) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (DupocBot k) O .D) φ → False := by
+  intro K φ hp hK ht
+  refine no_provable_tailToS_floor k (· = .plays (DupocBot k) O .D)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · intro K' hK' φ' hφ'
+    cases hφ'
+    intro hA
+    cases hA with
+    | mk hpp hn =>
+      unfold DupocBot at hpp
+      cases hpp with
+      | search_t hProv hbr => cases hbr
+      | search_f hneg hbr => simp only [c_node] at hn; omega
+  · intro me oppo c hS g ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    unfold DupocBot at hme
+    injection hme with e1 e2 e3 e4
+    simp at e3
+  · intro me oppo c hS p q hme
+    injection hS with h1 h2 h3
+    subst h1
+    unfold DupocBot at hme; simp at hme
+  · intro me oppo c hS p q hme
+    injection hS with h1 h2 h3
+    subst h1
+    unfold DupocBot at hme; simp at hme
+  · intro me oppo c hS g ψ b hme
+    injection hS with h1 h2 h3
+    subst h1
+    unfold DupocBot at hme; simp at hme
+  · intro z a' g ψ c0 c1 q oppo hS
+    injection hS with h1 h2 h3
+    unfold DupocBot at h1; simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q hme
+    injection hS with h1 h2 h3
+    subst h1
+    unfold DupocBot at hme; simp at hme
+  · intro me oppo c hS L hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    cases L with
+    | nil => unfold DupocBot at hme; simp [searchPlug] at hme
+    | cons hd tl =>
+        obtain ⟨g, ψ, e⟩ := hd
+        unfold DupocBot at hme
+        simp only [searchPlug, Prog.search.injEq] at hme
+        have hcontra := hme.2.2.1
+        rw [searchPlug_eq_ctxPlug tl (.const .D)] at hcontra
+        exact const_ne_ctxPlug (by decide) _ hcontra
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    exfalso
+    cases hd with
+    | searchL g ψ e =>
+        unfold DupocBot at hme
+        simp only [ctxPlug, Prog.search.injEq] at hme
+        have hcontra := hme.2.2.1
+        exact const_ne_ctxPlug (by decide) L hcontra
+    | iteL z aT other => unfold DupocBot at hme; simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3; subst h1; subst h3
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, DupocBot, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        exfalso
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g P' Q' c' q =>
+        simp only [plug2, DupocBot, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
+  · intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1
+    unfold DupocBot at hme; simp at hme
+
 end PD.Theorems

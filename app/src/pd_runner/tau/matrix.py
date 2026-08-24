@@ -190,8 +190,12 @@ ENLARGED_SUB_ZOO: tuple[str, ...] = tuple(
 # a proven cell, so a stale entry fails loudly, not silently.
 ENLARGED_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {
     **CUPOD_STIPULATIONS,
-    ("DIMCID", "CupodBot"): ("D", "D"),
-    ("DIMCID", "DupocBot"): ("D", "D"),
+    # 2026-08-21: the last two DIMCID entries fell to theorems, again predicted
+    # by the tau layer's ALIGNMENT RULE. `outcome_DIMCID_vs_CupodBot = (D, D)`
+    # (ALIGNED — mutual bounded Löb on defection) confirmed its stipulation;
+    # `outcome_DIMCID_vs_DupocBot = (C, D)` (ANTI-aligned — the floor forces both
+    # defaults) FALSIFIED its `(D, D)`, the second wrong guess this method has
+    # caught after `("CIMCIC", "CupodBot")`.
     # DIMCID vs CupodTrollBot was stipulated (C, C) here until 2026-08-04, when
     # `llm_outcome_DIMCID_vs_CupodTrollBot` landed proving exactly that. The
     # entry is gone rather than kept-and-ignored: the loader raises on a
