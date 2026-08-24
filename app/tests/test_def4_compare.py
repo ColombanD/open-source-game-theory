@@ -15,6 +15,7 @@ from pd_runner.tau.compare import (
     WHITELIST,
     bit_coincidence,
     certify,
+    direct_kernel_vs_base,
     kernel_check,
     phase_sweep,
 )
@@ -218,6 +219,35 @@ def test_bit_coincidence_separating() -> None:
     assert len(div) == 1
     assert (div[0].template, div[0].hypothesis) == ("TauEBot", "TauEBot")
     assert div[0].def4 == "D" and div[0].def3 == "C"
+
+
+def test_kernel_agrees_with_base_directly() -> None:
+    """**The end-to-end check, model-free.** `kernel_check` (model vs Lean) and
+    `bit_coincidence` (model vs base) already compose to this, but composing two
+    checks means a shared bug in the Python model could in principle cancel out.
+    This one reads the bits straight out of Lean's `VoteBits` theorems and
+    compares them to the base matrix, so a pass does not depend on the model.
+
+    144 comparable cells (every template pair whose two base bots are in the
+    zoo), 139 agree, and the 5 divergences are exactly the recorded
+    whitelist — properties of the LIFT, not of any implementation."""
+    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
+    assert len(d.cells) == 144
+    assert d.passed, d.unexpected
+    assert len(d.whitelisted_divergences) == 5
+    # DIMCID's own row is not stated yet (its off-cycle bits are blocked); its
+    # COLUMN is, which is why the count is still the full 144.
+    assert d.missing_rows == ("TauDIMCID",)
+
+
+def test_direct_and_composed_checks_agree() -> None:
+    """The direct check and the model-mediated one must reach the same verdict on
+    the same cells — if they ever diverge, the MODEL is wrong (the kernel and the
+    base matrix are both machine-checked)."""
+    m = load_tau_matrix(FULL_BOTS)
+    direct = {(c.template, c.hypothesis): c.lean for c in direct_kernel_vs_base(m).cells}
+    viamodel = {(c.template, c.hypothesis): c.def4 for c in bit_coincidence(m).cells}
+    assert direct == viamodel
 
 
 def test_whitelist_is_exactly_the_recorded_cells() -> None:

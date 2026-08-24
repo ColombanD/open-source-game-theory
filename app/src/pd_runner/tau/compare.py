@@ -49,7 +49,7 @@ from pd_runner.tau.def4 import (
     decision_table,
     tau_play_def4,
 )
-from pd_runner.tau.def4_theorems import kernel_bits
+from pd_runner.tau.def4_theorems import TAU_ORDER, kernel_bits
 from pd_runner.tau.matrix import TauMatrix
 from pd_runner.tau.play import _MASS_TOL, coop_mass, tau_play
 from pd_runner.tau.signal import Signal, behavioral_distance_matrix, signal_family
@@ -208,6 +208,91 @@ def bit_coincidence(matrix: TauMatrix) -> Coincidence:
     return Coincidence(cells=tuple(cells))
 
 
+# ── Check 2b: KERNEL vs BASE, directly ────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class DirectCell:
+    """One (tau bit as STATED IN LEAN) vs (base matrix cell) comparison."""
+
+    template: str
+    hypothesis: str
+    lean: str
+    """The bit read out of the Lean `VoteBits` row — the kernel's own answer."""
+    base: str
+    whitelisted: str | None
+
+    @property
+    def agrees(self) -> bool:
+        return self.lean == self.base
+
+
+@dataclass(frozen=True)
+class DirectCoincidence:
+    cells: tuple[DirectCell, ...]
+    missing_rows: tuple[str, ...]
+    """Templates with no stated Lean row, so nothing to compare."""
+
+    @property
+    def unexpected(self) -> tuple[DirectCell, ...]:
+        return tuple(c for c in self.cells if not c.agrees and c.whitelisted is None)
+
+    @property
+    def whitelisted_divergences(self) -> tuple[DirectCell, ...]:
+        return tuple(c for c in self.cells if not c.agrees and c.whitelisted is not None)
+
+    @property
+    def passed(self) -> bool:
+        return not self.unexpected
+
+
+def direct_kernel_vs_base(matrix: TauMatrix) -> DirectCoincidence:
+    """**The end-to-end check**: Lean's OWN bit rows against the base matrix, with
+    the Python model taken out of the loop entirely.
+
+    `kernel_check` (model vs Lean) and `bit_coincidence` (model vs base) already
+    compose to this, and each is worth having on its own — the first catches
+    model drift, the second is the Def-3 ≡ Def-4 certification. But composing two
+    checks means a shared bug in the model could in principle cancel out. This
+    reads the bits straight out of the `VoteBits` theorems and compares them to
+    the base matrix, so a pass here does not depend on the model being right.
+
+    Same whitelist as `bit_coincidence` — the five recorded divergences are
+    properties of the LIFT (Mirror truncation, prover-modality floors), not of
+    any implementation.
+    """
+    tables = kernel_bits()
+    slot_of_template = LEAN_SLOT
+    template_of_slot = {v: k for k, v in slot_of_template.items()}
+
+    cells: list[DirectCell] = []
+    for A in TEMPLATES:
+        row = tables.get(slot_of_template[A])
+        if row is None:
+            continue
+        for T in TEMPLATES:
+            lean_bit = row.get(slot_of_template[T])
+            if lean_bit is None:
+                continue
+            base_a, base_t = BASE_OF[A], BASE_OF[T]
+            if base_a not in matrix.bots or base_t not in matrix.bots:
+                continue
+            base_bit = "C" if matrix.cooperates(base_a, base_t) else "D"
+            cells.append(
+                DirectCell(
+                    template=A,
+                    hypothesis=T,
+                    lean=lean_bit,
+                    base=base_bit,
+                    whitelisted=WHITELIST.get((A, T)),
+                )
+            )
+    missing = tuple(
+        template_of_slot[s] for s in TAU_ORDER if s not in tables
+    )
+    return DirectCoincidence(cells=tuple(cells), missing_rows=missing)
+
+
 # ── Check 3: phase attribution over (t, α) ─────────────────────────────────────
 
 
@@ -352,12 +437,15 @@ def phase_sweep(
 class Certification:
     kernel: KernelCheck
     bits: Coincidence
+    direct: DirectCoincidence
+    """Lean's own bits vs the base matrix — the model-free end-to-end check."""
     phases: PhaseSweep
     zoo_name: str
 
     @property
     def passed(self) -> bool:
-        return self.kernel.passed and self.bits.passed and self.phases.passed
+        return (self.kernel.passed and self.bits.passed and self.direct.passed
+                and self.phases.passed)
 
 
 def certify(
@@ -370,6 +458,7 @@ def certify(
     return Certification(
         kernel=kernel_check(),
         bits=bit_coincidence(matrix),
+        direct=direct_kernel_vs_base(matrix),
         phases=phase_sweep(matrix, zoo, bots, t_values),
         zoo_name=zoo_name,
     )
@@ -402,6 +491,23 @@ def render(cert: Certification) -> str:
     for c in b.unexpected:
         lines.append(
             f"   ✗ ({c.template}, {c.hypothesis}): def4 {c.def4} vs def3 {c.def3}"
+        )
+    d = cert.direct
+    lines.append(
+        f"2b. KERNEL vs BASE (model-free): "
+        f"{sum(1 for c in d.cells if c.agrees)}/{len(d.cells)} agree; "
+        f"{len(d.whitelisted_divergences)} whitelisted; "
+        f"{len(d.unexpected)} unexpected "
+        + ("— OK" if d.passed else "— FAILED")
+    )
+    if d.missing_rows:
+        lines.append(
+            "   (rows not yet stated in Lean, so not compared: "
+            + ", ".join(d.missing_rows) + ")"
+        )
+    for c in d.unexpected:
+        lines.append(
+            f"   ✗ ({c.template}, {c.hypothesis}): lean {c.lean} vs base {c.base}"
         )
     p = cert.phases
     lines.append(
