@@ -49,10 +49,13 @@ from pd_runner.tau.def4_theorems import (
 from pd_runner.tau.matrix import TauMatrix
 
 WHITELIST: dict[tuple[str, str], str] = {
-    ("TauEBot", "TauEBot"): (
-        "Mirror-branch truncation: base EBot's third branch sims MirrorBot "
-        "(not .opp-free-liftable); the lift drops it, flipping E's self-bit"
-    ),
+    # ("TauEBot", "TauEBot") — REMOVED 2026-08-24. The entry read "Mirror-branch
+    # truncation: base EBot's third branch sims MirrorBot (not .opp-free-liftable);
+    # the lift drops it, flipping E's self-bit". It was a COVERAGE gap, not a
+    # property of the lift: MirrorBot IS liftable — `.sim .opp .self` becomes a
+    # `run` stage on the SELF target, copying in the frozen self frame. With
+    # `.mirror` in the roster EBot's third stage is expressible again, its self
+    # watch fires, and the cell AGREES with base `outcome_EBot_vs_EBot = (C, C)`.
     ("TauTFTPf", "TauCupodTroll"): (
         "Floor over true cooperation: τ(CupodTroll)'s C is reached through a "
         "FAILED .eq search, so its transcript pays search_f and no prover can "

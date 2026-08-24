@@ -29,6 +29,7 @@ def cupodRow : Tmpl → Action
   -- RESTATED 2026-08-24: with `proveEq` fixed, τ(CupodTroll) recognises Cupod
   -- and defects on it — so Cupod convicts the troll in turn.
   | .cupodTroll => .D
+  | .mirror     => .C
   -- the ALIGNED entangled pair: mutual Löb on DEFECTION (see `TauDIMCID`)
   | .dimcid     => .D
   | _           => .C
@@ -38,6 +39,12 @@ def cupodRow : Tmpl → Action
 theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
     (h10 : 10 ≤ k)
     (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
+    -- the mirror×cupod entangled cell (mutual simulation), Löb-gated
+    (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
+      = cupodColBit .mirror)
+    (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .mirror))
+      (.bot (inst (tauZoo k) .cupod .mirror)) (inst (tauZoo k) .cupod .mirror)
+      = some (cupodRow .mirror))
     -- the ALIGNED dimcid pair: mutual Löb on defection, gated like the diagonal
     (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
       = cupodColBit .dimcid)
@@ -46,7 +53,7 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
       = some Action.D) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .cupod T)) (.bot (inst (tauZoo k) .cupod T))
               (inst (tauZoo k) .cupod T) = some (cupodRow T) :=
-  let bCu := ps_probeD_inst_cupod hk hkk hquine hdc
+  let bCu := ps_probeD_inst_cupod hk hkk hquine hdc hmirCu
   fun T => match T with
   | .coop       => searchProbeD_plays_C _ _ (bCu .coop)
   | .defect     => searchProbeD_plays_D _ _ (bCu .defect)
@@ -61,6 +68,7 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
   | .cupodTroll => searchProbeD_plays_D _ _ (bCu .cupodTroll)
   | .cupod      => inst_cupod_quine_plays_D hquine
   | .cimcic     => cupod_cimcic_plays_C
+  | .mirror     => hmirP
   | .dimcid     => hdcP
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
@@ -70,6 +78,12 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
 theorem cupodBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
     (h10 : 10 ≤ k)
     (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
+    -- the mirror×cupod entangled cell (mutual simulation), Löb-gated
+    (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
+      = cupodColBit .mirror)
+    (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .mirror))
+      (.bot (inst (tauZoo k) .cupod .mirror)) (inst (tauZoo k) .cupod .mirror)
+      = some (cupodRow .mirror))
     -- the ALIGNED dimcid pair: mutual Löb on defection, gated like the diagonal
     (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
       = cupodColBit .dimcid)
@@ -80,15 +94,20 @@ theorem cupodBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     VoteBits (vecOf (tauZoo k) .cupod w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D)] :=
+       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .mirror, .C)] :=
   vecOf_bits (tauZoo k) .cupod w cupodRow tauOrder
-    fun T _ => cupodRow_plays hk hkk h6 h10 hquine hdc hdcP T
+    fun T _ => cupodRow_plays hk hkk h6 h10 hquine hmirCu hmirP hdc hdcP T
 
 /-- **τ(CupodBot)** — Löb-gated (its diagonal is the punish-polarity quine);
     boundary `θ ≤ cupodMass`. UNCONDITIONAL since the floor closure. -/
 theorem tauCupod_phase :
     ∃ k₂, ∀ k, k₂ < k →
-      ∀ (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
+      ∀ (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
+          = cupodColBit .mirror)
+        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .mirror))
+          (.bot (inst (tauZoo k) .cupod .mirror)) (inst (tauZoo k) .cupod .mirror)
+          = some (cupodRow .mirror))
+        (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
           = cupodColBit .dimcid)
         (hdcP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
           (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
@@ -98,7 +117,7 @@ theorem tauCupod_phase :
       ∧ (¬ θ ≤ cupodMass w → ∃ N, play N (TauBotZ k .cupod w θ) opponent = some .D) := by
   obtain ⟨kL, hkL⟩ := ps_probeD_inst_cupod_quine
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
-  refine ⟨max kL kA, fun k hk hdc hdcP θ w opponent => ?_⟩
+  refine ⟨max kL kA, fun k hk hmirCu hmirP hdc hdcP θ w opponent => ?_⟩
   have hquine := hkL k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
   have hkA' : 1 * Nat.log2 k + 12 ≤ k :=
     hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
@@ -107,7 +126,7 @@ theorem tauCupod_phase :
   have h6 : 6 ≤ k := by omega
   have h10 : 10 ≤ k := by omega
   have h := phase_of_bits (tauZoo k) .cupod w cupodRow tauOrder θ opponent
-    (fun T _ => cupodRow_plays hk2 hkk h6 h10 hquine hdc hdcP T)
+    (fun T _ => cupodRow_plays hk2 hkk h6 h10 hquine hmirCu hmirP hdc hdcP T)
   simp only [bitMass, tauOrder, List.map, cupodRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [cupodMass] using h

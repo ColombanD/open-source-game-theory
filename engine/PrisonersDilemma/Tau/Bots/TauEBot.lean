@@ -35,6 +35,11 @@ namespace PD.Tau
 /-- τ(EBot): "exploitable? then D; else reciprocates? then C; else D" — read by
     SIMULATION, base EBot's own modality. -/
 def tauEBotSpec : Spec Tmpl :=
-  ⟨[⟨.run, .name .defect, .C, .D⟩, ⟨.run, .name .coop, .C, .C⟩], .D⟩
+  ⟨[⟨.run, .name .defect, .C, .D⟩, ⟨.run, .name .coop, .C, .C⟩,
+    -- the THIRD stage, restored 2026-08-24 once `.mirror` entered the roster:
+    -- base EBot's last branch sims MirrorBot, and until then this stage could
+    -- not be written at all — the sole content of the former
+    -- `(TauEBot, TauEBot)` whitelist entry.
+    ⟨.run, .name .mirror, .C, .C⟩], .D⟩
 
 end PD.Tau

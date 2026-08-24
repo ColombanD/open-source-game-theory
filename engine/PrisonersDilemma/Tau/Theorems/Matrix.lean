@@ -44,7 +44,7 @@ namespace PD.Theorems.Tau
 private abbrev fullMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot +
     (w .just + (w .obot + (w .guardian + (w .dbot + (w .cupodTroll + (w .cupod +
-      (w .cimcic + w .dimcid))))))))))))
+      (w .cimcic + (w .dimcid + w .mirror)))))))))))))
 
 /-! ## Constants -/
 
@@ -126,42 +126,61 @@ theorem outcome_TauTFTPf_vs_TauTFTSim_band {k : Nat} (hk : 2 ≤ k)
 
 theorem outcome_TauDupoc_vs_TauDupoc :
     ∃ k₂, ∀ k, k₂ < k →
+      -- the mirror×dupoc entangled cell, Löb-gated (see `TauDupoc/Phase`)
+      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
+          = dupocColBit .mirror)
+        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
+          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
+          = some (dupocRow .mirror)),
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .dupoc w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk θ w hθ =>
-    outcome_of_ex_plays ((h k hk θ w _).1 hθ) ((h k hk θ w _).1 hθ)⟩
+  exact ⟨k₂, fun k hk hmir hmirP θ w hθ =>
+    outcome_of_ex_plays ((h k hk hmir hmirP θ w _).1 hθ)
+      ((h k hk hmir hmirP θ w _).1 hθ)⟩
 
 theorem outcome_TauJust_vs_TauJust :
     ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
+          = dupocColBit .mirror),
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .just w θ) (TauBotZ k .just w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauJust_phase
-  exact ⟨k₂, fun k hk θ w hθ =>
-    outcome_of_ex_plays ((h k hk θ w _).1 hθ) ((h k hk θ w _).1 hθ)⟩
+  exact ⟨k₂, fun k hk hmir θ w hθ =>
+    outcome_of_ex_plays ((h k hk hmir θ w _).1 hθ) ((h k hk hmir θ w _).1 hθ)⟩
 
 /-- Self-based and norm-based reciprocity cooperate — two Löb gates, one threshold
     (the max of the two). -/
 theorem outcome_TauDupoc_vs_TauJust :
     ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
+          = dupocColBit .mirror)
+        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
+          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
+          = some (dupocRow .mirror)),
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .just w θ) = some (.C, .C) := by
   obtain ⟨kD, hD⟩ := tauDupoc_phase
   obtain ⟨kJ, hJ⟩ := tauJust_phase
-  exact ⟨max kD kJ, fun k hk θ w hθ =>
+  exact ⟨max kD kJ, fun k hk hmir hmirP θ w hθ =>
     outcome_of_ex_plays
-      ((hD k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ w _).1 hθ)
-      ((hJ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ w _).1 hθ)⟩
+      ((hD k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) hmir hmirP θ w _).1 hθ)
+      ((hJ k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hmir θ w _).1 hθ)⟩
 
 theorem outcome_TauDupoc_vs_TauTFTPf :
     ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
+          = dupocColBit .mirror)
+        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
+          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
+          = some (dupocRow .mirror)),
       2 ≤ k → c_guard k + 3 ≤ k → 6 ≤ k → 10 ≤ k →
       100 * Nat.log2 k + 1000 ≤ k → c_guard k + 20 ≤ k →
       ∀ θ (w : Tmpl → Nat), θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .dupoc w θ) (TauBotZ k .tftPf w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauDupoc_phase
-  exact ⟨k₂, fun k hk hk2 hkk h6 h10 hL hcg θ w hθ =>
-    outcome_of_ex_plays ((h k hk θ w _).1 hθ)
+  exact ⟨k₂, fun k hk hmir hmirP hk2 hkk h6 h10 hL hcg θ w hθ =>
+    outcome_of_ex_plays ((h k hk hmir hmirP θ w _).1 hθ)
       ((tauTFTPf_phase hk2 hkk h6 h10 hL hcg θ w _).1
         (by simp only [dupMass, pfMass] at *; omega))⟩
 
@@ -282,25 +301,36 @@ the same shape as the red cell. -/
 
 theorem outcome_TauCIMCIC_vs_TauCIMCIC :
     ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .mirror))
+          (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
+          = some (cimcicRow .mirror)),
       ∀ θ (w : Tmpl → Nat), θ ≤ cimcicMass w →
       ∃ N, outcome N (TauBotZ k .cimcic w θ) (TauBotZ k .cimcic w θ) = some (.C, .C) := by
   obtain ⟨k₂, h⟩ := tauCIMCIC_phase
-  exact ⟨k₂, fun k hk θ w hθ =>
-    outcome_of_ex_plays ((h k hk θ w _).1 hθ) ((h k hk θ w _).1 hθ)⟩
+  exact ⟨k₂, fun k hk hmirP θ w hθ =>
+    outcome_of_ex_plays ((h k hk hmirP θ w _).1 hθ) ((h k hk hmirP θ w _).1 hθ)⟩
 
 /-- **The entangled pair, cooperatively**: within both cooperation regimes the
     conditional cooperator and the Löbian cooperator settle on `(C, C)` — the tau
     image of base CIMCIC-vs-DupocBot, THROUGH the binder. -/
 theorem outcome_TauCIMCIC_vs_TauDupoc :
     ∃ k₂, ∀ k, k₂ < k →
+      ∀ (hmirC : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .mirror))
+          (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
+          = some (cimcicRow .mirror))
+        (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
+          = dupocColBit .mirror)
+        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
+          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
+          = some (dupocRow .mirror)),
       ∀ θ (w : Tmpl → Nat), θ ≤ cimcicMass w → θ ≤ dupMass w →
       ∃ N, outcome N (TauBotZ k .cimcic w θ) (TauBotZ k .dupoc w θ) = some (.C, .C) := by
   obtain ⟨kM, hM⟩ := tauCIMCIC_phase
   obtain ⟨kD, hD⟩ := tauDupoc_phase
-  exact ⟨max kM kD, fun k hk θ w hθm hθd =>
+  exact ⟨max kM kD, fun k hk hmirC hmir hmirP θ w hθm hθd =>
     outcome_of_ex_plays
-      ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ w _).1 hθm)
-      ((hD k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) θ w _).1 hθd)⟩
+      ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) hmirC θ w _).1 hθm)
+      ((hD k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hmir hmirP θ w _).1 hθd)⟩
 
 /-- **The CIMCIC×Cupod band** `cimcicMass < θ ≤ cupodMass`: the conditional
     cooperator has flipped (it cannot certify the suspicious cooperator's
@@ -308,8 +338,16 @@ theorem outcome_TauCIMCIC_vs_TauDupoc :
     `(D, C)`: the red-cell shape, one tier up. -/
 theorem outcome_TauCIMCIC_vs_TauCupod_band :
     ∃ k₂, ∀ k, k₂ < k →
-      -- Cupod's row is gated on the ALIGNED dimcid pair (mutual Löb on defection)
-      ∀ (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
+      -- Cupod's row is gated on the ALIGNED dimcid pair and the mirror pair
+      ∀ (hmirC : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .mirror))
+          (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
+          = some (cimcicRow .mirror))
+        (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
+          = cupodColBit .mirror)
+        (hmirCuP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .mirror))
+          (.bot (inst (tauZoo k) .cupod .mirror)) (inst (tauZoo k) .cupod .mirror)
+          = some (cupodRow .mirror))
+        (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
           = cupodColBit .dimcid)
         (hdcP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
           (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
@@ -318,9 +356,10 @@ theorem outcome_TauCIMCIC_vs_TauCupod_band :
       ∃ N, outcome N (TauBotZ k .cimcic w θ) (TauBotZ k .cupod w θ) = some (.D, .C) := by
   obtain ⟨kM, hM⟩ := tauCIMCIC_phase
   obtain ⟨kC, hC⟩ := tauCupod_phase
-  exact ⟨max kM kC, fun k hk hdc hdcP θ w hθm hθc =>
+  exact ⟨max kM kC, fun k hk hmirC hmirCu hmirCuP hdc hdcP θ w hθm hθc =>
     outcome_of_ex_plays
-      ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) θ w _).2 hθm)
-      ((hC k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hdc hdcP θ w _).1 hθc)⟩
+      ((hM k (lt_of_le_of_lt (Nat.le_max_left _ _) hk) hmirC θ w _).2 hθm)
+      ((hC k (lt_of_le_of_lt (Nat.le_max_right _ _) hk) hmirCu hmirCuP hdc hdcP
+        θ w _).1 hθc)⟩
 
 end PD.Theorems.Tau

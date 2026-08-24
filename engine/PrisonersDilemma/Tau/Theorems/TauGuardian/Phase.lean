@@ -31,6 +31,7 @@ def guardianRow : Tmpl → Action
   | .cupodTroll => .C
   | .cimcic     => .C
   | .dimcid     => .C
+  | .mirror     => .C
 
 /-- The row's witness: every entry is the punish-probe (`test = .D` prove-stage)
     fed the guard column's bits. -/
@@ -55,6 +56,7 @@ theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (
   | .cupodTroll => searchProbeD_plays_C _ _ (gB .cupodTroll)
   | .cimcic     => searchProbeD_plays_C _ _ (gB .cimcic)
   | .dimcid     => searchProbeD_plays_C _ _ (gB .dimcid)
+  | .mirror     => searchProbeD_plays_C _ _ (gB .mirror)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -63,7 +65,7 @@ theorem guardianBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 
     VoteBits (vecOf (tauZoo k) .guardian w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .mirror, .C)] :=
   vecOf_bits (tauZoo k) .guardian w guardianRow tauOrder
     fun T _ => guardianRow_plays hk hkk h6 h10 hL hcg T
 

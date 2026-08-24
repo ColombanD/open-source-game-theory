@@ -43,7 +43,7 @@ PHASE_GLOB = "engine/PrisonersDilemma/Tau/Theorems/*/Phase.lean"
 
 TAU_ORDER: tuple[str, ...] = (
     "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian",
-    "dbot", "cupodTroll", "cupod", "cimcic", "dimcid")
+    "dbot", "cupodTroll", "cupod", "cimcic", "dimcid", "mirror")
 """The Lean `tauOrder` slot order — every bit list is stated in this order."""
 
 _BITS_RE = re.compile(
@@ -111,6 +111,7 @@ TEMPLATES: tuple[str, ...] = (
     "TauCupod",
     "TauCIMCIC",
     "TauDIMCID",
+    "TauMirror",
 )
 """Canonical template order."""
 
@@ -129,6 +130,7 @@ BASE_OF: dict[str, str] = {
     "TauCupod": "CupodBot",
     "TauCIMCIC": "CIMCIC",
     "TauDIMCID": "DIMCID",
+    "TauMirror": "MirrorBot",
 }
 """Which base bot each template lifts. The two TFT variants are two lift
 MODALITIES of the same base strategy (behavioral vs prover); their bits coincide
@@ -150,6 +152,7 @@ LEAN_SLOT: dict[str, str] = {
     "TauCupod": "cupod",
     "TauCIMCIC": "cimcic",
     "TauDIMCID": "dimcid",
+    "TauMirror": "mirror",
 }
 """Template name → the Lean `Tmpl` constructor, for reading the bit tables."""
 

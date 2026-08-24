@@ -6,6 +6,7 @@ import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
+import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 
 /-!
 # Tau/Theorems/Columns — the consulted columns of the 9-template zoo
@@ -156,6 +157,9 @@ theorem dbot_watch_fires_of_trust {k : Nat} (T : Tmpl)
 /-- δ_C bits. Zero rows: Defect (refutable), EBot (it EXPLOITS a cooperator), and
     GUARDIAN — the floor: its trusting C sits behind a failed punish-search. -/
 def coopColBit : Tmpl → Bool
+  -- τ(Mirror) COPIES the constant cooperator's C, and the copy is provable by
+  -- transcript (`ps_probe_mirror_coop`) — no reading rule needed.
+  | .mirror     => true
   | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
@@ -183,11 +187,13 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
   | .cimcic     => ps_probe_cimcic_coop hL (by omega)
   | .dimcid     => ps_probe_inst_dimcid_coop_false (le_refl k)
+  | .mirror     => ps_probe_mirror_coop (by omega)
 
 /-! ## The δ_D column (prover bits) -/
 
 /-- δ_D bits. Only the unconditional cooperator is exploitable. -/
 def defectColBit : Tmpl → Bool
+  | .mirror     => false
   | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
@@ -204,7 +210,9 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k)
   | .tftPf    => ps_searchProbe_constD k k
   | .dupoc    => ps_searchProbe_constD k k
   | .ebot     => ps_probe_false_of_plays_D k
-      (simWatchC_falls _ _ ⟨1, rfl⟩ (simWatchC_falls _ _ ⟨1, rfl⟩ ⟨1, rfl⟩))
+      -- three watches now, all falling on the constant defector
+      (simWatchC_falls _ _ ⟨1, rfl⟩ (simWatchC_falls _ _ ⟨1, rfl⟩
+        (simWatchC_falls _ _ ⟨1, rfl⟩ ⟨1, rfl⟩)))
   | .just     => ps_searchProbe_constD k k
   | .obot     => ps_probe_false_of_plays_D k obot_defect_plays_D
   | .guardian => ps_probe_false_of_plays_D k (guardian_defect_plays_D hk)
@@ -213,6 +221,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
   | .cimcic     => ps_probe_false_of_plays_D k cimcic_defect_plays_D
   | .dimcid     => ps_probe_inst_dimcid_defect_false hL
+  | .mirror     => ps_probe_false_of_plays_D k mirror_defect_plays_D
 
 /-! ## The δ_L column (prover bits) — TauDupoc's AND TauJust's question -/
 
@@ -220,6 +229,10 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k)
     truly defects on Dupoc — the second watch sees Dupoc defect against the
     defector). The diagonal is the Löb quine, supplied as a hypothesis. -/
 def dupocColBit : Tmpl → Bool
+  -- the mirror×dupoc ENTANGLED cell: a mutual SIMULATION (mirror copies, dupoc
+  -- proves), the tau image of base `outcome_DupocBot_vs_MirrorBot = (C, C)`.
+  -- Löb-gated, so it enters as a hypothesis like every other Löb bit.
+  | .mirror     => true
   | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
@@ -237,7 +250,10 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     -- so it enters as a hypothesis exactly like the quine bit above; the
     -- Cupod×Dupoc one is CLOSED BY THE FLOOR (a theorem, used in the `.cupod` arm)
     (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc))
-      = dupocColBit .cimcic) :
+      = dupocColBit .cimcic)
+    -- the mirror×dupoc entangled bit (mutual simulation), Löb-gated
+    (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
+      = dupocColBit .mirror) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .dupoc)) = dupocColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
@@ -253,6 +269,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
   | .cimcic     => hcim
   | .dimcid     => ps_probe_inst_dimcid_dupoc_false (le_refl k)
+  | .mirror     => hmir
 
 /-! ## The GUARD column (probeD bits) — TauGuardian's question -/
 
@@ -260,6 +277,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     constant defector, and EBot (its exploit-check FIRES on the cooperator, and the
     firing transcript is cheap — Guardian catches the exploiter red-handed). -/
 def guardColBit : Tmpl → Bool
+  | .mirror     => false
   | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
@@ -279,7 +297,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
   | .dupoc    => ps_probeD_false_of_plays_C k
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
-  | .ebot     => ps_probeD_runCascadeConstC h6
+  | .ebot     => ps_probeD_runCascadeConstC h6 _
   | .just     => ps_probeD_false_of_plays_C k
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
   | .obot     => ps_probeD_false_of_plays_C k
@@ -290,6 +308,7 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupodTroll => ps_probeD_inst_cupodTroll_false k _ (by decide)
   | .cimcic     => ps_probeD_false_of_plays_C k (cimcic_coop_plays_C hL)
   | .dimcid     => ps_probeD_inst_dimcid_coop_false
+  | .mirror     => ps_probeD_false_of_plays_C k mirror_coop_plays_C
 
 /-! ## The δ_Cu GUARD column (probeD bits) — τ(Cupod)'s question
 
@@ -320,6 +339,8 @@ def cupodColBit : Tmpl → Bool
   -- recognises Cupod and defects on it — base CupodTrollBot's whole point, which
   -- the old `.opp`-pronoun guard could never express.
   | .cupodTroll => true
+  -- the mirror×cupod ENTANGLED cell — Löb-gated, hypothesis below
+  | .mirror => false
   | _       => false
 
 theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
@@ -327,7 +348,10 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k
     -- the ALIGNED dimcid×cupod pair: mutual Löb on defection, gated like every
     -- other Löb bit (see `TauDIMCID/Helpers`, "The ENTANGLED cells")
     (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
-      = cupodColBit .dimcid) :
+      = cupodColBit .dimcid)
+    -- the mirror×cupod entangled bit, Löb-gated
+    (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
+      = cupodColBit .mirror) :
     ∀ T, proofSearch k (probeD (inst (tauZoo k) T .cupod)) = cupodColBit T
   | .coop       => ps_probeD_false_of_plays_C k ⟨1, rfl⟩
   | .defect     => ps_probeD_constD hk
@@ -356,6 +380,7 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k
   | .cupod      => hquine
   | .cimcic     => ps_probeD_inst_cimcic_cupod_false (le_refl k)
   | .dimcid     => hdc
+  | .mirror     => hmirCu
 
 /-! ## The behavioral δ_C column (true plays) — TauTFTSim's and TauOBot's read -/
 
@@ -363,6 +388,7 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k
     `coopColBit .guardian = false`: the floor made visible — the behavioral reader
     sees the cooperation the prover cannot cite. -/
 def coopColPlay : Tmpl → Action
+  | .mirror     => .C
   | .dimcid     => .C
   | .cupod      => .C
   | .cupodTroll => .C
@@ -389,11 +415,13 @@ theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupodTroll => cupodTroll_plays_C _ (by decide)
   | .cimcic     => cimcic_coop_plays_C hL
   | .dimcid     => dimcid_coop_plays_C
+  | .mirror     => mirror_coop_plays_C
 
 /-! ## The behavioral δ_D column (true plays) — TauOBot's second watch -/
 
 /-- TRUE plays vs the defector: only the unconditional cooperator cooperates. -/
 def defectColPlay : Tmpl → Action
+  | .mirror     => .D
   | .dimcid     => .D
   | .cupod      => .D
   | .cupodTroll => .C
@@ -410,7 +438,8 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k)
   | .tftSim   => simCopy_plays _ _ ⟨1, rfl⟩
   | .tftPf    => searchProbe_plays_D _ _ (ps_probe_constD k)
   | .dupoc    => searchProbe_plays_D _ _ (ps_probe_constD k)
-  | .ebot     => simWatchC_falls _ _ ⟨1, rfl⟩ (simWatchC_falls _ _ ⟨1, rfl⟩ ⟨1, rfl⟩)
+  | .ebot     => simWatchC_falls _ _ ⟨1, rfl⟩ (simWatchC_falls _ _ ⟨1, rfl⟩
+      (simWatchC_falls _ _ ⟨1, rfl⟩ ⟨1, rfl⟩))
   | .just     => searchProbe_plays_D _ _ (ps_probe_constD k)
   | .obot     => obot_defect_plays_D
   | .guardian => guardian_defect_plays_D hk
@@ -419,5 +448,6 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k)
   | .cupodTroll => cupodTroll_plays_C _ (by decide)
   | .cimcic     => cimcic_defect_plays_D
   | .dimcid     => dimcid_defect_plays_D hL
+  | .mirror     => mirror_defect_plays_D
 
 end PD.Tau

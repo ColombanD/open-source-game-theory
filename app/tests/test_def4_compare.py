@@ -52,7 +52,7 @@ def test_kernel_scanner_finds_all_rows_but_dimcid() -> None:
     used is unavailable) — see `Tau/Theorems/TauDIMCID/Helpers.lean`. Its COLUMN
     (what every other row plays against it) is fully proven."""
     tables = kernel_bits()
-    assert set(tables) == set(TAU_ORDER) - {"dimcid"}
+    assert set(tables) == set(TAU_ORDER) - {"dimcid", "mirror"}
 
 
 def test_every_stated_row_is_complete() -> None:
@@ -71,7 +71,7 @@ def test_kernel_agrees_with_base_directly() -> None:
     depends on no Python model at all.
 
     182 comparable cells (every template pair whose two base bots are in the
-    zoo), 175 agree, and the 7 divergences are exactly the recorded whitelist —
+    zoo), 176 agree, and the 6 divergences are exactly the recorded whitelist —
     properties of the LIFT, not of any implementation.
 
     Was 144/139/5 until 2026-08-24, when CupodBot and DIMCID were added to
@@ -81,11 +81,11 @@ def test_kernel_agrees_with_base_directly() -> None:
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
     assert len(d.cells) == 182
     assert d.passed, d.unexpected
-    assert d.agreements == 175
-    assert len(d.whitelisted_divergences) == 7
+    assert d.agreements == 176
+    assert len(d.whitelisted_divergences) == 6
     # DIMCID's own row is not stated yet (its off-cycle bits are blocked); its
     # COLUMN is, which is why the count is still the full 144.
-    assert d.missing_rows == ("TauDIMCID",)
+    assert set(d.missing_rows) == {"TauDIMCID", "TauMirror"}
 
 
 def test_certification_end_to_end() -> None:
@@ -113,8 +113,6 @@ def test_missing_rows_are_reported_not_guessed() -> None:
 
 def test_whitelist_is_exactly_the_recorded_cells() -> None:
     assert set(WHITELIST) == {
-        # coverage: the lift cannot express the base bot's guard
-        ("TauEBot", "TauEBot"),
         # prover-modality floors (the α-gap), one per floor bot
         ("TauTFTPf", "TauGuardian"),
         ("TauTFTPf", "TauCupodTroll"),
@@ -156,11 +154,11 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
 
     modality = {("TauTFTPf", "TauGuardian"), ("TauTFTPf", "TauCupodTroll"),
                 ("TauTFTPf", "TauCupod"), ("TauTFTPf", "TauDIMCID")}
-    coverage = {("TauEBot", "TauEBot")}
+    coverage: set[tuple[str, str]] = set()   # empty since 2026-08-24
     # the prover-floor cells are never budget artifacts
     for A, T in modality:
         assert (BASE_OF[A], BASE_OF[T]) not in dagger, (A, T)
-    assert (BASE_OF["TauEBot"], BASE_OF["TauEBot"]) not in dagger
+    assert not coverage
 
     # every prover-floor entry is the PROVER TFT — that is what makes it the α-gap
     assert all(A == "TauTFTPf" for A, _ in modality)

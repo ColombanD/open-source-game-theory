@@ -284,7 +284,10 @@ theorem ps_cimGuard_ebot_false {k K : Nat} (hK : K ≤ k) :
               .C (.const .D)
               (.ite (.sim (.bot (inst (tauZoo k) .cimcic .coop))
                           (.bot (inst (tauZoo k) .cimcic .coop)))
-                .C (.const .C) (.const .D)) from inst_ebot_peel k .cimcic,
+                .C (.const .C)
+                (.ite (.sim (.bot (inst (tauZoo k) .cimcic .mirror))
+                            (.bot (inst (tauZoo k) .cimcic .mirror)))
+                  .C (.const .C) (.const .D))) from inst_ebot_peel k .cimcic,
           show inst (tauZoo k) .cimcic .defect
           = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .defect .cimcic)) Action.C)
                              (.plays (.bot (inst (tauZoo k) .defect .cimcic)) .self Action.C))

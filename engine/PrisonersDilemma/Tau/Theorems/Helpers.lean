@@ -447,13 +447,20 @@ theorem pf_neg_probeD_constC {K : Nat} (hK : 10 ≤ K) :
 
 abbrev simMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
-    (w .guardian + (w .cupodTroll + (w .cupod + (w .cimcic + w .dimcid)))))))))
+    (w .guardian + (w .cupodTroll + (w .cupod + (w .cimcic +
+      (w .dimcid + w .mirror))))))))))
 abbrev pfMass (w : Tmpl → Nat) : Nat :=
-  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + w .cimcic)))))
+  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + (w .cimcic + w .mirror))))))
 abbrev dupMass (w : Tmpl → Nat) : Nat :=
-  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + w .cimcic))))
+  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .cimcic + w .mirror)))))
+/-- τ(EBot)'s mass. Since the THIRD stage was restored (2026-08-24, the `.mirror`
+    template) it INCLUDES `w .ebot`: the mirror watch fires on E's own instance,
+    so E cooperates with itself — the tau image of base
+    `outcome_EBot_vs_EBot = (C, C)`, which the truncated two-stage lift got
+    wrong. -/
 abbrev eMass (w : Tmpl → Nat) : Nat :=
-  w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + (w .guardian + (w .cupod + (w .cimcic + w .dimcid)))))))
+  w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just + (w .obot +
+    (w .guardian + (w .cupod + (w .cimcic + (w .dimcid + w .mirror))))))))) 
 abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
 abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
 /-- τ(Cupod)'s mass: everything but the provable bullies — the defector, ITSELF
@@ -461,17 +468,18 @@ abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
     — τ(CupodTroll), which now recognises Cupod and defects on it. -/
 abbrev cupodMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
-    (w .obot + (w .guardian + (w .dbot + w .cimcic))))))))
+    (w .obot + (w .guardian + (w .dbot + (w .cimcic + w .mirror)))))))))
 /-- τ(DBot)'s mass: everything but the exploitable constant cooperator AND ITSELF
     (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
 abbrev dbotMass (w : Tmpl → Nat) : Nat :=
   w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
-    (w .obot + (w .guardian + (w .cupod + (w .cimcic + w .dimcid)))))))))
+    (w .obot + (w .guardian + (w .cupod + (w .cimcic +
+      (w .dimcid + w .mirror))))))))))
 /-- τ(CIMCIC)'s mass: the hypotheses whose consequent it can certify — the
     cooperator, both TFTs, the mutual-Löb Dupoc, Just (through the same Löb bit)
     and ITSELF (the `implRefl` diagonal). -/
 abbrev cimcicMass (w : Tmpl → Nat) : Nat :=
-  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + w .cimcic))))
+  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .cimcic + w .mirror)))))
 
 /-! ## The `.sys` toolkit — entangled cells, generic in the system (2026-08-21)
 
@@ -549,22 +557,18 @@ theorem ps_probeD_constD {k : Nat} (hk : 2 ≤ k) :
     exploit-WATCH sees the cooperator cooperate and fires, and the firing
     transcript is a cheap positive `ite_t` over a constant sim. This is the bit
     GuardianBot reads to punish EBot. -/
-theorem pf_probeD_runCascadeConstC {K : Nat} (hK : 6 ≤ K) :
+theorem pf_probeD_runCascadeConstC {K : Nat} (hK : 6 ≤ K) (cont : Prog) :
     Pf K (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
-      (.const .D)
-      (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C (.const .C)
-        (.const .D)))) :=
+      (.const .D) cont)) :=
   Pf.atom ⟨PlaysProof.bot
     (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) rfl
       PlaysProof.const),
     by have := hcl; have := hcn; omega⟩
 
-theorem ps_probeD_runCascadeConstC {k : Nat} (h6 : 6 ≤ k) :
+theorem ps_probeD_runCascadeConstC {k : Nat} (h6 : 6 ≤ k) (cont : Prog) :
     proofSearch k (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
-      (.const .D)
-      (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C (.const .C)
-        (.const .D)))) = true :=
-  (proofSearch_spec _ _).2 (pf_probeD_runCascadeConstC h6)
+      (.const .D) cont)) = true :=
+  (proofSearch_spec _ _).2 (pf_probeD_runCascadeConstC h6 cont)
 
 /-- DBot's instance at the constant DEFECTOR provably cooperates: its watch sees
     the defector defect (an `ite_f` over a constant sim) and falls through to the

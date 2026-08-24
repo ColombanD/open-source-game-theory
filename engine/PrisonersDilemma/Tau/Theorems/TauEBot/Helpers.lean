@@ -151,8 +151,13 @@ theorem ps_probe_inst_ebot_dupoc_false {k K : Nat} (hK : K ≤ k) :
       exfalso
       exact no_provable_botRunCascade_C k k (Nat.le_refl k)
         (probe (inst (tauZoo k) .defect .dupoc)) (.const .D)
+        -- the continuation now carries EBot's THIRD stage (the mirror watch,
+        -- restored 2026-08-24); the census is `cont`-generic, so only this
+        -- argument changes
         (.ite (.sim (.bot (inst (tauZoo k) .dupoc .coop))
-          (.bot (inst (tauZoo k) .dupoc .coop))) .C (.const .C) (.const .D))
+          (.bot (inst (tauZoo k) .dupoc .coop))) .C (.const .C)
+          (.ite (.sim (.bot (inst (tauZoo k) .dupoc .mirror))
+            (.bot (inst (tauZoo k) .dupoc .mirror))) .C (.const .C) (.const .D)))
         (.bot (inst (tauZoo k) .ebot .dupoc))
         K _ ((proofSearch_spec _ _).1 h) hK rfl
 

@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 
 /-!
 # τ(EBot)'s phase — the ONE-SIDED boundary `θ ≤ eMass`.
@@ -23,7 +24,7 @@ def eRow : Tmpl → Action
   | .tftSim   => .C
   | .tftPf    => .C
   | .dupoc    => .C
-  | .ebot     => .D
+  | .ebot     => .C
   | .just     => .C
   | .obot     => .C
   | .guardian => .C
@@ -32,6 +33,7 @@ def eRow : Tmpl → Action
   | .cupodTroll => .D
   | .cimcic     => .C
   | .dimcid     => .C
+  | .mirror     => .C
 
 /-- The row's witness: each entry is the two-stage run cascade fed the δ_D
     (exploit-watch) and δ_C (reciprocity-watch) behavioral columns. -/
@@ -44,12 +46,17 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
   fun T => match T with
   | .coop     => simWatchC_fires _ _ (pD .coop)
   | .defect   => simWatchC_falls _ _ (pD .defect)
-      (simWatchC_falls _ _ (pC .defect) ⟨1, rfl⟩)
+      (simWatchC_falls _ _ (pC .defect)
+        (simWatchC_falls _ _ ⟨1, rfl⟩ ⟨1, rfl⟩))
   | .tftSim   => simWatchC_falls _ _ (pD .tftSim) (simWatchC_fires _ _ (pC .tftSim))
   | .tftPf    => simWatchC_falls _ _ (pD .tftPf) (simWatchC_fires _ _ (pC .tftPf))
   | .dupoc    => simWatchC_falls _ _ (pD .dupoc) (simWatchC_fires _ _ (pC .dupoc))
+  -- THE SELF CELL: w1 and w2 fall, and the THIRD watch — restored with the
+  -- `.mirror` template — FIRES, so E cooperates with itself. This is the bit the
+  -- `(TauEBot, TauEBot)` whitelist entry existed for: base EBot-vs-EBot is
+  -- (C, C), and the truncated two-stage lift read D.
   | .ebot     => simWatchC_falls _ _ (pD .ebot)
-      (simWatchC_falls _ _ (pC .ebot) ⟨1, rfl⟩)
+      (simWatchC_falls _ _ (pC .ebot) (simWatchC_fires _ _ (ebot_mirror_plays_C rfl)))
   | .just     => simWatchC_falls _ _ (pD .just) (simWatchC_fires _ _ (pC .just))
   | .obot     => simWatchC_falls _ _ (pD .obot) (simWatchC_fires _ _ (pC .obot))
   | .guardian => simWatchC_falls _ _ (pD .guardian)
@@ -59,6 +66,8 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
   | .cupodTroll => simWatchC_fires _ _ (pD .cupodTroll)
   | .cimcic     => simWatchC_falls _ _ (pD .cimcic) (simWatchC_fires _ _ (pC .cimcic))
   | .dimcid     => simWatchC_falls _ _ (pD .dimcid) (simWatchC_fires _ _ (pC .dimcid))
+  | .mirror     => simWatchC_falls _ _ mirror_defect_plays_D
+      (simWatchC_fires _ _ mirror_coop_plays_C)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
@@ -66,8 +75,8 @@ theorem eBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k
     (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .ebot w tauOrder)
       [(w .coop, .D), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
-       (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C)] :=
+       (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .mirror, .C)] :=
   vecOf_bits (tauZoo k) .ebot w eRow tauOrder fun T _ => eRow_plays hk hkk h6 h10 hL hcg T
 
 /-- **τ(EBot)** — one-sided boundary `θ ≤ eMass`, no window. -/

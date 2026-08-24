@@ -29,6 +29,7 @@ def dupocRow : Tmpl → Action
   | .cupodTroll => .D
   | .cimcic     => .C
   | .dimcid     => .D
+  | .mirror     => .C
 
 /-- The row's witness: prove-stages on the δ_L column; the diagonal is the Löb
     quine, supplied as a hypothesis. -/
@@ -36,12 +37,16 @@ theorem dupocRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hk7 : c_guard k + 7 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
     (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = dupocColBit .cimcic)
+    (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc)) = dupocColBit .mirror)
+    (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
+      (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
+      = some (dupocRow .mirror))
     (hdmP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .cimcic))
       (.bot (inst (tauZoo k) .dupoc .cimcic)) (inst (tauZoo k) .dupoc .cimcic)
       = some (dupocRow .cimcic)) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .dupoc T)) (.bot (inst (tauZoo k) .dupoc T))
               (inst (tauZoo k) .dupoc T) = some (dupocRow T) :=
-  let bL := ps_probe_inst_dupoc hk hkk hk7 hquine hcim
+  let bL := ps_probe_inst_dupoc hk hkk hk7 hquine hcim hmir
   fun T => match T with
   | .coop     => searchProbe_plays_C _ _ (bL .coop)
   | .defect   => searchProbe_plays_D _ _ (bL .defect)
@@ -57,6 +62,7 @@ theorem dupocRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
       dupoc_cupod_plays_D
   | .cupodTroll => searchProbe_plays_D _ _ (bL .cupodTroll)
   | .cimcic     => hdmP   -- the mutual-Löb cell (∃k₂-gated, TauCIMCIC/Helpers)
+  | .mirror     => hmirP   -- the mirror×dupoc entangled cell (gated)
   | .dimcid     => -- the anti-aligned entangled pair, closed by the floor
       dupoc_dimcid_plays_D
 
@@ -66,6 +72,10 @@ theorem dupocBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hk7 : c_guard k + 7 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
     (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = dupocColBit .cimcic)
+    (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc)) = dupocColBit .mirror)
+    (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
+      (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
+      = some (dupocRow .mirror))
     (hdmP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .cimcic))
       (.bot (inst (tauZoo k) .dupoc .cimcic)) (inst (tauZoo k) .dupoc .cimcic)
       = some (dupocRow .cimcic))
@@ -73,13 +83,21 @@ theorem dupocBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     VoteBits (vecOf (tauZoo k) .dupoc w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .mirror, .C)] :=
   vecOf_bits (tauZoo k) .dupoc w dupocRow tauOrder
-    fun T _ => dupocRow_plays hk hkk hk7 hquine hcim hdmP T
+    fun T _ => dupocRow_plays hk hkk hk7 hquine hcim hmir hmirP hdmP T
 
 /-- **τ(DupocBot)** — Löb-gated; boundary `θ ≤ dupMass`. -/
 theorem tauDupoc_phase :
     ∃ k₂, ∀ k, k₂ < k →
+      -- the mirror×dupoc entangled cell: a mutual SIMULATION (mirror copies,
+      -- dupoc proves), the tau image of base `outcome_DupocBot_vs_MirrorBot`.
+      -- Löb-gated, so both its bit and its play enter as hypotheses.
+      ∀ (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
+          = dupocColBit .mirror)
+        (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
+          (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
+          = some (dupocRow .mirror)),
       ∀ θ (w : Tmpl → Nat) (opponent : Prog),
       (θ ≤ dupMass w → ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .C)
       ∧ (¬ θ ≤ dupMass w → ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .D) := by
@@ -87,7 +105,7 @@ theorem tauDupoc_phase :
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kP, hkP⟩ := dupoc_cimcic_plays_C
-  refine ⟨max (max kL kA) (max kM kP), fun k hk θ w opponent => ?_⟩
+  refine ⟨max (max kL kA) (max kM kP), fun k hk hmir hmirP θ w opponent => ?_⟩
   have hquine := hkL k (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_left _ _)) hk)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k :=
     hkA k (Nat.le_of_lt (lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_left _ _)) hk))
@@ -97,7 +115,7 @@ theorem tauDupoc_phase :
   have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
   have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
   have h := phase_of_bits (tauZoo k) .dupoc w dupocRow tauOrder θ opponent
-    (fun T _ => dupocRow_plays hk2 hkk hk7 hquine hcim hdmP T)
+    (fun T _ => dupocRow_plays hk2 hkk hk7 hquine hcim hmir hmirP hdmP T)
   simp only [bitMass, tauOrder, List.map, dupocRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [dupMass] using h

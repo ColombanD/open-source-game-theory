@@ -12,6 +12,7 @@ import PrisonersDilemma.Tau.Bots.TauCupodTroll
 import PrisonersDilemma.Tau.Bots.TauCupod
 import PrisonersDilemma.Tau.Bots.TauCIMCIC
 import PrisonersDilemma.Tau.Bots.TauDIMCID
+import PrisonersDilemma.Tau.Bots.TauMirror
 
 /-!
 # Tau/Zoo — the assembled six-template zoo, its players, and Gate D1
@@ -44,6 +45,7 @@ def tmplSpec : Tmpl → Spec Tmpl
   | .cupod    => tauCupodSpec
   | .cimcic   => tauCIMCICSpec
   | .dimcid   => tauDIMCIDSpec
+  | .mirror   => tauMirrorSpec
 
 def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
 
@@ -80,13 +82,17 @@ theorem inst_tftSim_peel (k : Nat) : ∀ T, inst (tauZoo k) .tftSim T
         Action.C (.const .C) (.const .D) :=
   fun T => by cases T <;> rfl
 
-/-- τ(EBot)'s row: the two-stage RUN cascade (base EBot's own sim modality) over
-    the hypothesis's δ_D and δ_C instances. -/
+/-- τ(EBot)'s row: the THREE-stage RUN cascade (base EBot's own sim modality)
+    over the hypothesis's δ_D, δ_C and δ_M instances. The third stage was
+    restored 2026-08-24 with the `.mirror` template — base EBot's last branch
+    sims MirrorBot, and the lift could not express it before. -/
 theorem inst_ebot_peel (k : Nat) : ∀ T, inst (tauZoo k) .ebot T
     = .ite (.sim (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect)))
         .C (.const .D)
         (.ite (.sim (.bot (inst (tauZoo k) T .coop)) (.bot (inst (tauZoo k) T .coop)))
-          .C (.const .C) (.const .D)) :=
+          .C (.const .C)
+          (.ite (.sim (.bot (inst (tauZoo k) T .mirror)) (.bot (inst (tauZoo k) T .mirror)))
+            .C (.const .C) (.const .D))) :=
   fun T => by cases T <;> rfl
 
 /-- τ(DBot)'s row: ONE run-stage watching the hypothesis's δ_D instance, with a
