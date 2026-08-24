@@ -657,6 +657,59 @@ theorem cimcic_dimcid_plays_D {k : Nat} :
       simp only [TailTo] at hA
       exact absurd hA (by simp)
 
+/-! ### The two prover partners — floor-priced DEFECTIONS
+
+`inst .tftPf .dimcid` and `inst .just .dimcid` really DO defect against DIMCID
+(their probes of DIMCID's floor-priced cooperation fail), so DIMCID's consequent
+is TRUE here — and still uncitable: their `D` is the ELSE-play of a then-`C`
+searcher, so every certificate pays `search_f`. DIMCID cannot convict them and
+cooperates. Two more true-but-unprovable cells, the shape this zoo keeps
+producing. -/
+
+theorem dimcid_tftPf_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .tftPf))
+      (.bot (inst (tauZoo k) .dimcid .tftPf)) (inst (tauZoo k) .dimcid .tftPf)
+      = some Action.C :=
+  dimcid_plays_C_of_searcherC .tftPf _ _ (inst_tftPf_peel k .dimcid)
+    (inst_dimcid_peel_tftPf k)
+
+theorem dimcid_just_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .just))
+      (.bot (inst (tauZoo k) .dimcid .just)) (inst (tauZoo k) .dimcid .just)
+      = some Action.C :=
+  dimcid_plays_C_of_searcherC .just _ _ (inst_just_peel k .dimcid)
+    (inst_dimcid_peel_just k)
+
+/-! ### Why the ROW still cannot be STATED (2026-08-21, re-checked)
+
+Seven of the fourteen slots are proven above and in the column corollaries —
+`coop` (C), `defect` (D), `tftPf` (C), `just` (C), `dupoc` (C), `cimcic` (C) and
+the diagonal (D). The remaining seven split three ways, and only the first group
+is a matter of effort:
+
+* **`tftSim`, `ebot`, `dbot` — reachable.** Their instances are `.ite` cascades,
+  and DIMCID's guard freezes them, so the consequent's subject is
+  `.bot (.ite …)` — which matches NO `ReadableMe` disjunct (disjunct 3 is
+  `.bot (.sim …)`, 4 is `.bot (.search …)`). `no_provable_tailTo_unreadable`
+  therefore applies and the kill would be BUDGET-FREE. Each needs the watch
+  verdict refuted against the cell's proven play; a generic one-watch census was
+  attempted and is NOT worth it (both live shapes have a branch that can deliver
+  `D`, so the hypothesis set ends up per-shape anyway).
+* **`guardian`, `cupodTroll` — BLOCKED** by the machine-checked false-census
+  result above: their instances are then-`D` searchers, so `botSearchStep`
+  proves a formula that genuinely `TailTo`-tails at the target and the census
+  statement is false. Needs the `TailToA` kernel refactor.
+* **`obot` — needs its own analysis**: unlike the others it really DOES defect
+  against DIMCID, so the consequent is TRUE and the cell may well be `D`. This
+  is the `outcome_CIMCIC_vs_OBot` shape, where soundness did the work — but that
+  route is unavailable here by the polarity obstruction.
+
+**So finishing the three reachable cells would NOT state the row**: `VoteBits`
+needs all fourteen slots, and two of the remaining four are blocked on the
+kernel. The row waits for `TailToA`; the COLUMN (what every other row plays
+against DIMCID) is already complete, which is why the kernel-vs-base check still
+compares the full 144 cells. -/
+
 /-! ## Column-facing corollaries
 
 The five columns that depend only on the ground cells, plus the δ_L one that the
