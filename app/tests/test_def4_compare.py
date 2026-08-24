@@ -263,21 +263,16 @@ def test_whitelist_splits_into_two_distinct_causes() -> None:
     * **genuine modality / coverage gaps** — the α-gap (a prover lift of a
       BEHAVIORAL base bot) and EBot's dropped Mirror branch.
 
-    NOTE the two ways a base cell can be staggered, only ONE of which the matrix
-    flags: `DupocBot × CupodTrollBot` carries an explicit side hypothesis (`hjk`)
-    and so is a DAGGER cell, while `JustBot × CupodTrollBot` bakes the stagger
-    into the statement itself (`JustBot (4*j+100)` vs `CupodTrollBot j`) and is
-    therefore NOT flagged — `has_hypotheses` cannot see it. Same phenomenon,
-    different bookkeeping; the test records both explicitly rather than relying
-    on the dagger flag alone."""
+    Both staggering cells are DAGGER cells since 2026-08-21, when the extractor
+    learned to flag a stagger baked into the STATEMENT (`JustBot (4*j+100)` vs
+    `CupodTrollBot j`) and not just an explicit side hypothesis (`hjk`). Before
+    that only the DupocBot cell was flagged, which understated the dagger set."""
     m = load_tau_matrix(FULL_BOTS)
     dagger = set(m.dagger_cells)
 
-    # staggering, flagged by the matrix (explicit side hypothesis)
-    assert (BASE_OF["TauDupoc"], BASE_OF["TauCupodTroll"]) in dagger
-    # staggering, NOT flagged (the stagger lives in the theorem's statement)
-    assert (BASE_OF["TauJust"], BASE_OF["TauCupodTroll"]) not in dagger
     staggering = {("TauDupoc", "TauCupodTroll"), ("TauJust", "TauCupodTroll")}
+    for A, T in staggering:
+        assert (BASE_OF[A], BASE_OF[T]) in dagger, (A, T)
 
     # genuine modality / coverage gaps: same-budget base cells, no stagger
     modality = {("TauTFTPf", "TauGuardian"), ("TauTFTPf", "TauCupodTroll"),

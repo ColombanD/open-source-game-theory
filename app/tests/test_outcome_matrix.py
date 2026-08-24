@@ -68,9 +68,12 @@ def test_matrix_cells() -> None:
     # WaryBot's .neg-guard fixpoints fell 2026-07-30 (SP/WV valuation census).
     assert cells[("MirrorBot", "WaryBot")] == "(C, C)"
     assert cells[("WaryBot", "WaryBot")] == "(C, C)"
-    # LegibleBot's large-k staggered theorems landed 2026-07-30: proven cells now.
-    assert cells[("DBot", "LegibleBot")] == "(D, C)"
-    assert cells[("LegibleBot", "LegibleBot")] == "(C, C)"
+    # LegibleBot's large-k STAGGERED theorems landed 2026-07-30: proven cells,
+    # and daggered since 2026-08-21 — they are stated at `LegibleBot (2*k+64)`
+    # vs an opponent at `k`, so like any side-hypothesis cell they hold only in
+    # the budget regime they name.
+    assert cells[("DBot", "LegibleBot")] == "(D, C) †"
+    assert cells[("LegibleBot", "LegibleBot")] == "(C, C) †"
     # Untried pairs stay empty. OptimBot is the stable example: its Theorems/
     # directory is an empty placeholder, so its cells cannot fill in until that
     # bot gains proofs of its own. (This assertion previously named

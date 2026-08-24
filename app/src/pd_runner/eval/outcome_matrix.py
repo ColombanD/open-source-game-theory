@@ -79,6 +79,26 @@ _NONE_RE = re.compile(r"=\s*none\b")
 # Side-hypothesis binders follow the codebase convention of `h`-prefixed names
 # ((hsz : …), (hjk : …), (hk : 2 ≤ k)); plain budget/fuel binders never do.
 _HYP_RE = re.compile(r"\(\s*h\w*\s*:")
+# A STAGGERED budget: a bot applied to an ARITHMETIC expression rather than a
+# bare variable — `PrudentBot (2*k+64)`, `JustBot (4*j+100)`,
+# `OptimBot k (65536 * k)`. Such a theorem is only about the budget regime it
+# names, exactly like one carrying an explicit side hypothesis, so it must be
+# flagged the same way (2026-08-21: `outcome_JustBot_vs_CupodTrollBot` bakes its
+# stagger into the STATEMENT and so escaped `_HYP_RE`, which silently understated
+# the dagger set).
+#
+# Scoped to the `outcome …` application so the `(fuel + 2)` FUEL argument — which
+# every theorem carries and which says nothing about budgets — is not matched.
+_OUTCOME_CALL_RE = re.compile(r"outcome\s+(?:\(?[^()]*?\)?)\s*(\(.*?)=\s*some", re.S)
+_STAGGER_RE = re.compile(r"[A-Z][A-Za-z0-9]*\s+(?:[a-z]\w*\s+)*\([^()]*[+*][^()]*\)")
+
+
+def _has_staggered_budget(statement: str) -> bool:
+    """Does the `outcome` call apply a bot to a compound budget expression?"""
+    call = _OUTCOME_CALL_RE.search(statement)
+    if call is None:
+        return False
+    return bool(_STAGGER_RE.search(call.group(1)))
 
 
 @dataclass(frozen=True)
@@ -135,7 +155,8 @@ def scan_outcome_theorems(theorems_dir: Path = _THEOREMS_DIR) -> list[OutcomeThe
 
             theorems.append(OutcomeTheorem(
                 name, left, right, pair, shape,
-                has_hypotheses=bool(_HYP_RE.search(statement)),
+                has_hypotheses=(bool(_HYP_RE.search(statement))
+                                or _has_staggered_budget(statement)),
                 file=lean_file.name,
             ))
     return theorems
