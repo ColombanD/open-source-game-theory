@@ -214,8 +214,10 @@ AxProverBase (arXiv 2602.24273), adapted to this domain:
   `--model leanstral-1-5` works everywhere `--model` already existed.
 - **Eval** (`eval/common.py` shared by `harness.py` + `run_bot_matrix.py`):
   14 harness cases incl. `.search` Löb self-play, the staggered
-  PrudentBot-vs-DupocBot, the (D,D) census case, and the known-OPEN
-  JustBot-vs-MirrorBot (passes ONLY on the `open_bistable` verdict). Records
+  PrudentBot-vs-DupocBot, the (D,D) census case, and the frozen-bot-guard Löb
+  case JustBot-vs-MirrorBot (`(C, C)` at large `k`; it was WRONGLY listed as
+  "known-OPEN, passes only on `open_bistable`" until 2026-08-25 — the harness was
+  failing correct proofs). Records
   tokens/cost/cache-hit-rate; every run persists to one timestamped directory
   under `generated/outcomes/` — per-episode meta `.json` (notebook embedded) +
   transcript, plus the final episode's Lean source (never deleted —
@@ -372,8 +374,12 @@ iff `exclude_bots` is empty — the eval harness never mutates the library):
    a semantic-completeness oracle are machine-undetectable by design). Integration follows
    the Phase-4 playbook in `PF_ONLY_ROADMAP.md`; at that point the floor/exclusion censuses
    (which quantify over ALL constructors) are the canaries.
-Bare `OUTCOME OPEN` is now reserved for BISTABLE matchups (two fixed points, neither forced —
-e.g. JustBot vs MirrorBot), where no sound rule can exist.
+Bare `OUTCOME OPEN` is now reserved for BISTABLE matchups (two fixed points, neither forced),
+where no sound rule can exist. (JustBot vs MirrorBot was the running example until it was PROVEN
+`(C, C)` at large `k` — `llm_outcome_JustBot_vs_MirrorBot`, 2026-08-03, Löb on the frozen-bot
+formula via `botSearchStep`; the frozen `.bot` guard was a missing RULE, not a semantic wall.
+No base cell is currently certified bistable; the open cells in `outcome_status.toml` are all
+`open_blocked` — census walls, not fixed-point pairs.)
 
 **Constructor integration (Stage C/D, landed 2026-07-27):** accepted Tier-2 proposals
 are integrated by an INTEGRATION AGENT working in a git WORKTREE (never the live

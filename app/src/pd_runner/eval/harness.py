@@ -7,8 +7,9 @@ Run with:
 Each case hides the existing proof and asks the agent to re-discover it.
 Cases 0–9 are the historical 10 (kept unchanged for continuity); cases 10–13
 exercise the hard path: `.search` self-play (Löb threshold), the staggered
-cross-bot Löb, the exclusion-census negative side, and a known-OPEN bistable
-matchup that passes only on the `open_bistable` verdict (verdict quality).
+cross-bot Löb, the exclusion-census negative side, and Löb on a FROZEN-bot guard
+(JustBot vs MirrorBot — listed as "known-OPEN bistable" until 2026-08-25, but the
+library had proved it `(C, C)` since 2026-08-03).
 
 Reports per case: pass/fail, verdict kind, episodes/turns/tool calls, token
 totals, cost, cache hit rate.
@@ -72,9 +73,14 @@ EVAL_CASES: list[dict] = [
     # Exclusion-census negative side: same-k prudence is self-defeating
     # (library: outcome_PrudentBot_vs_PrudentBot = (D,D)).
     {"left": "PrudentBot",   "right": "PrudentBot",   "la": "D", "ra": "D", "fuel": None},
-    # Known-OPEN bistable matchup (two fixed points, neither forced): passes
-    # ONLY on the open_bistable verdict — a fake proof or giving up both fail.
-    {"left": "JustBot",      "right": "MirrorBot",    "verdict": "open_bistable"},
+    # Löb on a FROZEN-bot guard: JustBot's guard names `.bot (DupocBot k)`, not
+    # `.self`, and still closes by bounded Löb on the frozen-bot formula
+    # (library: llm_outcome_JustBot_vs_MirrorBot, ∃k₂ threshold). This case was
+    # wrongly listed as "known-OPEN bistable, passes only on open_bistable" until
+    # 2026-08-25 — the library had proved it since 2026-08-03; the harness was
+    # failing a correct proof and rewarding a false verdict. No base cell is
+    # currently certified bistable, so the open-verdict path has no harness case.
+    {"left": "JustBot",      "right": "MirrorBot",    "la": "C", "ra": "C", "fuel": None},
 ]
 
 

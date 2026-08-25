@@ -53,8 +53,9 @@ def run_case(
     """Run one matchup and judge it against the expectation.
 
     - `expected_verdict` set: passes iff the agent's verdict kind matches
-      (e.g. a known-OPEN bistable case passes only on `open_bistable` —
-      "proving" it or giving up both fail).
+      (a certified-bistable case would pass only on `open_bistable` —
+      "proving" it or giving up both fail; no such base cell exists as of
+      2026-08-25, JustBot vs MirrorBot having been PROVEN `(C, C)`).
     - `expected_outcome` set: passes iff proved with exactly that action pair.
     - neither: passes iff proved (discover mode — the matrix driver).
     """
