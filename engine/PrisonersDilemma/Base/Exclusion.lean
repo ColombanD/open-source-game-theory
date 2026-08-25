@@ -324,6 +324,12 @@ theorem tail_plays_readable
       simp only [TailTo_plays, Formula.plays.injEq] at h1
       obtain ⟨rfl, rfl, rfl⟩ := h1
       exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨z, a', g, ψ, c0, c1, q, hme⟩)))))
+  | botSysSearchThenSearch k' defs i k₁ k₂ m ψ₁ ψ₂ c0 c1 q me' oppo' hme hget hprud hmk hle _ih =>
+      intro me oppo a' h
+      obtain ⟨h1, -⟩ := h
+      simp only [TailTo_plays, Formula.plays.injEq] at h1
+      obtain ⟨rfl, rfl, rfl⟩ := h1
+      exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨defs, i, hme⟩))))))
   | searchThenSearch_t k' k₁ k₂ m ψ₁ ψ₂ c0 c1 q me' oppo' hme hprud hmk hle _ih =>
       -- the STACKED-search player (PrudentBot's shape) — the sixth readable disjunct
       intro me oppo a h
@@ -445,7 +451,16 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
     -- premise's is — there is no then-action to refine on; callers kill by shape.
     (hbotsyssim : ∀ me oppo c, S (.plays me oppo c) →
       ∀ defs i j, me = .bot (.sys defs i) →
-        defs.get? i = some (.sim (.bot (.selfIdx j)) (.bot (.selfIdx j))) → False) :
+        defs.get? i = some (.sim (.bot (.selfIdx j)) (.bot (.selfIdx j))) → False)
+    -- The `.sys` NESTED-search twin (`botSysSearchThenSearch`, 2026-08-25): the
+    -- member's then-branch is itself a searcher. Action-refined, AND the caller is
+    -- handed the rule's inner premise — the inner guard proven at ≤ k₂ — so a
+    -- census can kill it by the inner guard's unprovability (τ(Prudent)'s C is
+    -- exactly a then-play behind a floor-priced inner check).
+    (hbotsyssts : ∀ me oppo c, S (.plays me oppo c) →
+      ∀ defs i k₁ ψ₁ k₂ ψ₂ c1 q, me = .bot (.sys defs i) →
+        defs.get? i = some (.search k₁ ψ₁ (.search k₂ ψ₂ (.const c) (.const c1)) q) →
+        ∀ m, m ≤ k₂ → Pf m ((ψ₂.sysClose defs).subst me oppo) → False) :
     ∀ K φ, Pf K φ → K ≤ k → TailToS S φ → False := by
   intro K
   induction K using Nat.strong_induction_on with
@@ -476,6 +491,9 @@ theorem no_provable_tailToS_floor (k : Nat) (S : Formula → Prop)
         obtain ⟨⟨h1, -⟩, hprobe⟩ := htail
         exact hprobe (hibs zz aa' gg psi cc0 cc1 qq oppo (hme ▸ h1))
     -- the stacked-search bridge: the action-refined kill
+    | botSysSearchThenSearch dfs ii k₁ k₂ m ψ₁ ψ₂ c0 c1 q' me oppo hme hget hpre hm hsz =>
+        obtain ⟨h1, -⟩ := htail
+        exact hbotsyssts me oppo c0 h1 dfs ii k₁ ψ₁ k₂ ψ₂ c1 q' hme hget m hm hpre
     | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q' me oppo hme hpre hm hsz =>
         obtain ⟨h1, -⟩ := htail
         exact hsts me oppo c0 h1 _ _ _ _ _ _ hme
@@ -607,7 +625,7 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
     ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays P O aTgt) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays P O aTgt)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ'
@@ -656,6 +674,11 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
     exact hbotsysP defs i hme
   · -- hbotsyssim: same shape kill, the `.sys` RUN twin
     intro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1
+    exact hbotsysP defs i hme
+  · -- hbotsyssts: the `.sys` NESTED twin
+    intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
     injection hS with h1 h2 h3
     subst h1
     exact hbotsysP defs i hme
@@ -881,7 +904,7 @@ theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : A
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (.bot (.search kb g (.const aT) pE)) O aTgt)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- the atom killer: `bot` unwraps, then `search_t` mismatches the action and
     -- `search_f` pays the floor `kb ≥ k`
@@ -937,6 +960,10 @@ theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : A
     intro me oppo c hS defs i _ hme _
     injection hS with h1 h2 h3
     subst h1; simp at hme
+  · -- hbotsyssts: the `.sys` NESTED twin
+    intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
 
 /-- **The `search_f` floor, `.sys` edition** (2026-08-21): the else-play of a
     `.bot`-wrapped SYSTEM REFERENCE whose component is a searcher with a mismatching
@@ -958,7 +985,7 @@ theorem no_provable_botSysSearcherElse_tail (k : Nat) (defs : ProgList) (i kb : 
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (.bot (.sys defs i)) O aTgt)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · -- the atom killer: `bot` unwraps, `sysStep` closes the component, then
     -- `search_t` mismatches the action and `search_f` pays the floor `kb ≥ k`
@@ -1034,6 +1061,17 @@ theorem no_provable_botSysSearcherElse_tail (k : Nat) (defs : ProgList) (i kb : 
     rw [hget] at hget'
     injection hget' with he
     exact absurd he (by simp)
+  · -- hbotsyssts: the `.sys` NESTED twin — `hget` fixes the member to a searcher
+    -- with a CONSTANT then-branch, the nested bridge needs a searcher there: clash
+    intro me oppo c hS defs' i' _ _ _ _ _ _ hme hget' _ _ _
+    injection hS with h1 h2 h3
+    subst h1
+    injection hme with hsys
+    injection hsys with hdefs hi
+    subst hdefs; subst hi
+    rw [hget] at hget'
+    injection hget' with he
+    exact absurd he (by simp)
 
 /-! ## The budget-free census for unreadable players
 
@@ -1096,6 +1134,8 @@ theorem pf_size_or_atom : ∀ {k φ}, Pf k φ → φ.size ≤ k ∨ AtomProvable
       rename_i φ' m₁ m₂ h1 h2 hle
       exact Or.inl (by omega)
   | weakenImpl φ' ψ' m hψ hle => exact Or.inl (by omega)
+  | botSysSearchThenSearch defs i k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opnt hme hget hprud hmk hle =>
+      exact Or.inl (by omega)
   | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle => exact Or.inl (by omega)
   | searchChain g₁ ψ₁ e₁ L a me opnt hme hle => exact Or.inl hle
   | searchElseChain hd L a me opnt hme hle => exact Or.inl (by omega)

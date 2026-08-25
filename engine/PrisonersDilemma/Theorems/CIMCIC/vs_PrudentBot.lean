@@ -33,7 +33,7 @@ theorem cimcic_pb_prudence_unprovable_tail (k : Nat) :
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k
     (· = .plays (CIMCIC k) (.bot DefectBot) .D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
@@ -130,6 +130,11 @@ theorem cimcic_pb_prudence_unprovable_tail (k : Nat) :
     simp [CIMCIC] at hme
   · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
     rintro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1
+    simp [CIMCIC] at hme
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    rintro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC] at hme

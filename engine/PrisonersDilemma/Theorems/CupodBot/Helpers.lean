@@ -503,7 +503,7 @@ theorem no_provable_CupodBot_C_tail (k : Nat) (O : Prog) :
       TailTo (.plays (CupodBot k) O .C) φ → False := by
   intro K φ hp hK ht
   refine no_provable_tailToS_floor k (· = .plays (CupodBot k) O .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ'
     cases hφ'
@@ -587,6 +587,11 @@ theorem no_provable_CupodBot_C_tail (k : Nat) (O : Prog) :
     unfold CupodBot at hme; simp at hme
   · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
     intro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1
+    unfold CupodBot at hme; simp at hme
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
     injection hS with h1 h2 h3
     subst h1
     unfold CupodBot at hme; simp at hme

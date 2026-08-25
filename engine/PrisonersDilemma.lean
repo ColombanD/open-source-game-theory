@@ -223,3 +223,5 @@ import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Phase
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 import PrisonersDilemma.Tau.Theorems.TauMirror.Phase
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Phase
+import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
+import PrisonersDilemma.Tau.Theorems.TauPrudent.Phase

@@ -31,6 +31,7 @@ def obotRow : Tmpl → Action
   | .cupodTroll => .C
   | .cimcic     => .D
   | .dimcid     => .D
+  | .prudent    => .D
   | .mirror     => .D
 
 /-- The row's witness: two chained run-stage defection watches over the δ_C and
@@ -57,6 +58,7 @@ theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
       (simTestD_falls _ _ (pD .cupodTroll) ⟨1, rfl⟩)
   | .cimcic     => simTestD_falls _ _ (pC .cimcic) (simTestD_fires _ _ (pD .cimcic))
   | .dimcid     => simTestD_falls _ _ (pC .dimcid) (simTestD_fires _ _ (pD .dimcid))
+  | .prudent    => simTestD_fires _ _ (pC .prudent)
   | .mirror     => simTestD_falls _ _ (pC .mirror) (simTestD_fires _ _ (pD .mirror))
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
@@ -66,7 +68,7 @@ theorem obotBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 �
     VoteBits (vecOf (tauZoo k) .obot w tauOrder)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .D), (w .tftPf, .D),
        (w .dupoc, .D), (w .ebot, .D), (w .just, .D), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .D), (w .dimcid, .D), (w .mirror, .D)] :=
+       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .D), (w .dimcid, .D), (w .prudent, .D), (w .mirror, .D)] :=
   vecOf_bits (tauZoo k) .obot w obotRow tauOrder
     fun T _ => obotRow_plays hk hkk h6 h10 hL hcg T
 

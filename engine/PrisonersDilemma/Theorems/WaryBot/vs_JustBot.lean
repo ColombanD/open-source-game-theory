@@ -26,7 +26,7 @@ theorem wj_no_provable_A_tail (k : Nat) :
       TailTo (.plays (WaryBot k) (.bot (DupocBot k)) .C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (WaryBot k) (.bot (DupocBot k)) .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · intro K' hK' φ' hφ' hA
     cases hφ'
@@ -99,6 +99,12 @@ theorem wj_no_provable_A_tail (k : Nat) :
     all_goals (first | simp [DupocBot] at hme | simp [JustBot] at hme | simp [WaryBot] at hme | simp at hme | simp_all)
   · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
     rintro me oppo c hS defs i _ hme _
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [DupocBot] at hme | simp [JustBot] at hme | simp [WaryBot] at hme | simp at hme | simp_all)
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    rintro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
     all_goals (try (injection hS with h1 h2 h3; subst h1))
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)

@@ -74,6 +74,38 @@ WHITELIST: dict[tuple[str, str], str] = {
         "the prove-stage honestly reads 0. Base and tau agree on the "
         "mathematics and differ on the budget regime."
     ),
+    # ── PrudentBot at a SINGLE budget (2026-08-25) ───────────────────────────
+    # τ(Prudent) = search (probe P) (search (probeD (inst T defect)) C D) D, every
+    # hypothesis at the SAME `k`. Base PrudentBot cooperates with DupocBot/JustBot
+    # only at the STAGGERED budget `PrudentBot (2k+64)` — the extra budget pays
+    # the partner's floor-priced "defects on the defector" else-play. At one `k`
+    # the inner check simply fails (`ps_probeD_inst_dupoc_defect_false`), Prudent
+    # defects, and the partner's probe of it fails by soundness. Four cells, one
+    # cause; the base mathematics agrees, the budget regime differs.
+    ("TauPrudent", "TauDupoc"): (
+        "Budget staggering: base `outcome_PrudentBot_vs_DupocBot` is stated at "
+        "PrudentBot (2*k+64) vs DupocBot k. Prudent's INNER check — Dupoc "
+        "provably defects on the defector — is an else-play floor at budget k "
+        "(`ps_probeD_inst_dupoc_defect_false`); 2k+64 is what pays it. Same-k "
+        "tau cannot, so τ(Prudent) reads D."
+    ),
+    ("TauDupoc", "TauPrudent"): (
+        "Budget staggering, the other orientation of (TauPrudent, TauDupoc): "
+        "Dupoc's probe of Prudent's member fails by SOUNDNESS once Prudent "
+        "defects (`ps_probe_inst_prudent_dupoc_false`), so the (C, C) cycle of "
+        "the staggered base theorem has no same-k fixpoint."
+    ),
+    ("TauPrudent", "TauJust"): (
+        "Budget staggering: base `outcome_JustBot_vs_PrudentBot` is stated at "
+        "JustBot k vs PrudentBot (2*k+64). Just's D on the defector is the same "
+        "floor-priced else-play as Dupoc's (`ps_probeD_inst_just_defect_false`), "
+        "so Prudent's inner check fails at one k."
+    ),
+    ("TauJust", "TauPrudent"): (
+        "Budget staggering, the other orientation of (TauPrudent, TauJust): "
+        "Just's guard is Dupoc's probe (`dupocColBit .prudent = false`), which "
+        "fails by soundness once Prudent defects."
+    ),
     ("TauJust", "TauCupodTroll"): (
         "Budget staggering — same as (TauDupoc, TauCupodTroll). Base "
         "`outcome_JustBot_vs_CupodTrollBot` is stated at JustBot (4*j+100) vs "

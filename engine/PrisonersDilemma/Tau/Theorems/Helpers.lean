@@ -460,21 +460,28 @@ abbrev dupMass (w : Tmpl → Nat) : Nat :=
     wrong. -/
 abbrev eMass (w : Tmpl → Nat) : Nat :=
   w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just + (w .obot +
-    (w .guardian + (w .cupod + (w .cimcic + (w .dimcid + w .mirror))))))))) 
-abbrev guardMass (w : Tmpl → Nat) : Nat := simMass w
+    (w .guardian + (w .cupod + (w .cimcic + (w .dimcid + (w .prudent + w .mirror)))))))))) 
+/-- τ(Guardian)'s mass — `simMass` PLUS the prudent slot (2026-08-25): Guardian
+    trusts τ(Prudent) (it cannot convict it of bullying the cooperator — its
+    exploitation there is a floor-priced else-play), while TFTSim SEES Prudent
+    defect on it. The two masses coincided until Prudent joined the roster. -/
+abbrev guardMass (w : Tmpl → Nat) : Nat :=
+  w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
+    (w .guardian + (w .cupodTroll + (w .cupod + (w .cimcic +
+      (w .dimcid + (w .prudent + w .mirror)))))))))))
 abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
 /-- τ(Cupod)'s mass: everything but the provable bullies — the defector, ITSELF
     (the Löbian self-defection), and — since the 2026-08-24 `proveEq` restatement
     — τ(CupodTroll), which now recognises Cupod and defects on it. -/
 abbrev cupodMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
-    (w .obot + (w .guardian + (w .dbot + w .cimcic))))))))
+    (w .obot + (w .guardian + (w .dbot + (w .cimcic + w .prudent)))))))))
 /-- τ(DBot)'s mass: everything but the exploitable constant cooperator AND ITSELF
     (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
 abbrev dbotMass (w : Tmpl → Nat) : Nat :=
   w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
     (w .obot + (w .guardian + (w .cupod + (w .cimcic +
-      (w .dimcid + w .mirror))))))))))
+      (w .dimcid + (w .prudent + w .mirror)))))))))))
 /-- τ(CIMCIC)'s mass: the hypotheses whose consequent it can certify — the
     cooperator, both TFTs, the mutual-Löb Dupoc, Just (through the same Löb bit)
     and ITSELF (the `implRefl` diagonal). -/

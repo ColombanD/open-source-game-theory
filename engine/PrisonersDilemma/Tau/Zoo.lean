@@ -13,6 +13,7 @@ import PrisonersDilemma.Tau.Bots.TauCupod
 import PrisonersDilemma.Tau.Bots.TauCIMCIC
 import PrisonersDilemma.Tau.Bots.TauDIMCID
 import PrisonersDilemma.Tau.Bots.TauMirror
+import PrisonersDilemma.Tau.Bots.TauPrudent
 
 /-!
 # Tau/Zoo — the assembled six-template zoo, its players, and Gate D1
@@ -45,6 +46,7 @@ def tmplSpec : Tmpl → Spec Tmpl
   | .cupod    => tauCupodSpec
   | .cimcic   => tauCIMCICSpec
   | .dimcid   => tauDIMCIDSpec
+  | .prudent  => tauPrudentSpec
   | .mirror   => tauMirrorSpec
 
 def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
@@ -412,5 +414,53 @@ theorem inst_guardian_peel (k : Nat) : ∀ T, inst (tauZoo k) .guardian T
                         (.bot (inst (tauZoo k) T .coop)) Action.D)
         (.const .D) (.const .C) :=
   fun T => by cases T <;> rfl
+
+/-! τ(Prudent)'s off-cycle shape: outer probe of the hypothesis's instance, inner
+defect-check on its δ_D instance in the then-branch (2026-08-25). -/
+theorem inst_prudent_peel_coop (k : Nat) : inst (tauZoo k) .prudent .coop
+    = .search k (probe (inst (tauZoo k) .coop .prudent))
+        (.search k (probeD (inst (tauZoo k) .coop .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_defect (k : Nat) : inst (tauZoo k) .prudent .defect
+    = .search k (probe (inst (tauZoo k) .defect .prudent))
+        (.search k (probeD (inst (tauZoo k) .defect .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_tftSim (k : Nat) : inst (tauZoo k) .prudent .tftSim
+    = .search k (probe (inst (tauZoo k) .tftSim .prudent))
+        (.search k (probeD (inst (tauZoo k) .tftSim .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_tftPf (k : Nat) : inst (tauZoo k) .prudent .tftPf
+    = .search k (probe (inst (tauZoo k) .tftPf .prudent))
+        (.search k (probeD (inst (tauZoo k) .tftPf .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_ebot (k : Nat) : inst (tauZoo k) .prudent .ebot
+    = .search k (probe (inst (tauZoo k) .ebot .prudent))
+        (.search k (probeD (inst (tauZoo k) .ebot .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_just (k : Nat) : inst (tauZoo k) .prudent .just
+    = .search k (probe (inst (tauZoo k) .just .prudent))
+        (.search k (probeD (inst (tauZoo k) .just .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_obot (k : Nat) : inst (tauZoo k) .prudent .obot
+    = .search k (probe (inst (tauZoo k) .obot .prudent))
+        (.search k (probeD (inst (tauZoo k) .obot .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_guardian (k : Nat) : inst (tauZoo k) .prudent .guardian
+    = .search k (probe (inst (tauZoo k) .guardian .prudent))
+        (.search k (probeD (inst (tauZoo k) .guardian .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_dbot (k : Nat) : inst (tauZoo k) .prudent .dbot
+    = .search k (probe (inst (tauZoo k) .dbot .prudent))
+        (.search k (probeD (inst (tauZoo k) .dbot .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_cupodTroll (k : Nat) : inst (tauZoo k) .prudent .cupodTroll
+    = .search k (probe (inst (tauZoo k) .cupodTroll .prudent))
+        (.search k (probeD (inst (tauZoo k) .cupodTroll .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+/-- τ(Prudent)'s DIAGONAL: the outer quine, the inner check on its own δ_D cell. -/
+theorem inst_prudent_quine (k : Nat) : inst (tauZoo k) .prudent .prudent
+    = .search k (.plays .self .self Action.C)
+        (.search k (probeD (inst (tauZoo k) .prudent .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
 
 end PD.Tau

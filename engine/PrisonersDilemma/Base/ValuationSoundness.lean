@@ -535,7 +535,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
         ?voteZero_t ?voteNil_f ?voteCons_c ?voteCons_d ?voteHigh_f ?sysStep
         ?vapNil ?vapCons
         ?atomMk
-        ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep ?pfBotSysSearchStep ?pfBotSysSimStep
+        ?pfAtom ?pfAtomNeg ?pfSearchBranch ?pfSimStep ?pfBotSimStep ?pfBotSearchStep ?pfBotSysSearchStep ?pfBotSysSimStep ?pfBotSysSTS
         ?pfIteBranchSearch ?pfSTS ?pfSearchChain ?pfCtxChain ?pfEqRefl ?pfEqNeg ?pfMp
         ?pfImplTrans
         ?pfWeaken ?pfImpS2 ?pfImplRefl ?pfImplK ?pfImplS ?pfContrapose ?pfNegElim
@@ -662,7 +662,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
           (k ≤ B → ψ.interp) ∧ ((∀ K χ, Pf K χ → χ.interp) → WV S ψ))
         ?cConst ?cSelf ?cOpp ?cBot ?cSim ?cIte_t ?cIte_f ?cSearch_t ?cSearch_f
         ?cVZero ?cVNil ?cVCons_c ?cVCons_d ?cVHigh ?cSys ?cVapNil ?cVapCons ?cAtomMk
-        ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep ?pBotSysSearchStep ?pBotSysSimStep
+        ?pAtom ?pAtomNeg ?pSearchBranch ?pSimStep ?pBotSimStep ?pBotSearchStep ?pBotSysSearchStep ?pBotSysSimStep ?pBotSysSTS
         ?pIteBranchSearch ?pSTS ?pSearchChain ?pCtxChain ?pEqRefl ?pEqNeg ?pMp ?pImplTrans
         ?pWeaken ?pImpS2 ?pImplRefl ?pImplK ?pImplS ?pContrapose ?pNegElim
         ?pBoxIntro ?pAtomBoxImpl ?pAxK ?pAxKf ?pBox4 ?pBoxMono ?pDiagF ?pDiagB
@@ -919,6 +919,32 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
           exact Or.inr ((hs _ _
             (Pf.iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle))
             (interp_of_WV_probe h_nb hprobe) hbox)
+      case pBotSysSTS =>
+        intro k0 defs i k₁ k₂ m0 ψ₁ ψ₂ c0 c1 q me opponent hme hget hprud hmk hle _ih
+        constructor
+        · intro _hB
+          subst hme
+          intro hbox
+          have hps₁ : proofSearch k₁ ((ψ₁.sysClose defs).subst (.bot (.sys defs i)) opponent)
+              = true := (proofSearch_spec _ _).2 hbox
+          have hps₂ : proofSearch k₂ ((ψ₂.sysClose defs).subst (.bot (.sys defs i)) opponent)
+              = true := (proofSearch_spec _ _).2 (Pf_mono hprud hmk)
+          refine ⟨5, ?_⟩
+          show eval 5 (.bot (.sys defs i)) opponent (.bot (.sys defs i)) = some c0
+          rw [eval]
+          rw [eval_sys_some 3 hget]
+          simp only [Prog.sysClose]
+          rw [eval]
+          simp only [hps₁, if_true]
+          rw [eval]
+          simp only [hps₂, if_true]
+          rfl
+        · intro hs
+          rw [WV_impl, WV_box]
+          intro hbox
+          rw [WV_plays]
+          exact Or.inr ((hs _ _ (Pf.botSysSearchThenSearch defs i k₁ k₂ m0 ψ₁ ψ₂ c0 c1 q me
+            opponent hme hget hprud hmk hle)) hbox)
       case pSTS =>
         intro k0 k₁ k₂ m0 ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk hle _ih
         constructor

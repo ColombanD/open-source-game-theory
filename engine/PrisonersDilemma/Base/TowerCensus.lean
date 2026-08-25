@@ -401,6 +401,10 @@ theorem tower_census (Z : Formula) (rest : List Formula) (hc : GoodChain (Z :: r
         simp only [tailOf] at hT
         obtain ⟨-, hZ'⟩ := TowerAt_plays_eq hT
         subst hme; exact hite _ _ _ _ _ _ _ _ hZ'.symm
+    | botSysSearchThenSearch dfs ii k₁ k₂ m ψ₁ ψ₂ c0 c1 q' me oppo hme hget hpre hm hsz =>
+        obtain ⟨hT, -, -⟩ := (TowerAt_impl _ _ _ _ _).1 ht
+        obtain ⟨-, hZ'⟩ := TowerAt_plays_eq hT
+        subst hme; exact hbotsys _ _ _ _ hZ'.symm
     | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q' me oppo hme hpre hm hsz =>
         obtain ⟨hT, -, -⟩ := (TowerAt_impl _ _ _ _ _).1 ht
         obtain ⟨-, hZ'⟩ := TowerAt_plays_eq hT

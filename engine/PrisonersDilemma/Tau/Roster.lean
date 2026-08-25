@@ -57,12 +57,12 @@ namespace PD.Tau
     single-stage twin of the embedded-floor census the run-mode EBot fix forced. -/
 inductive Tmpl
   | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian | dbot
-  | cupodTroll | cupod | cimcic | dimcid | mirror
+  | cupodTroll | cupod | cimcic | dimcid | prudent | mirror
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
 def tauOrder : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod, .cimcic, .dimcid, .mirror]
+   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .mirror]
 
 end PD.Tau

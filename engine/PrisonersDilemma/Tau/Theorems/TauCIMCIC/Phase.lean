@@ -31,6 +31,7 @@ def cimcicRow : Tmpl → Action
   | .cimcic   => .C
   | .dimcid   => .D
   -- the cimcic×mirror entangled cell, Löb-gated below
+  | .prudent  => .D
   | .mirror   => .C
   | _         => .D
 
@@ -53,6 +54,7 @@ theorem cimcicRow_plays {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
   | .tftSim     => cimcic_tftSim_plays_C hL hcg
   | .tftPf      => cimcic_tftPf_plays_C hL hcg
   | .dupoc      => hmdP
+  | .prudent    => cimcic_prudent_plays_D
   | .mirror     => hmirP
   | .ebot       => cimcic_ebot_plays_D
   | .just       => cimcic_just_plays_C hL hcq
@@ -80,7 +82,7 @@ theorem cimcicBits {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
       [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .D),
        (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D),
-       (w .cimcic, .C), (w .dimcid, .D), (w .mirror, .C)] :=
+       (w .cimcic, .C), (w .dimcid, .D), (w .prudent, .D), (w .mirror, .C)] :=
   vecOf_bits (tauZoo k) .cimcic w cimcicRow tauOrder
     fun T _ => cimcicRow_plays hL hcg hcq hmdP hmirP T
 

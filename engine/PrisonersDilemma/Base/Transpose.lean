@@ -574,6 +574,15 @@ theorem Pf.transpose {k : Nat} {φ : Formula} (h : Pf k φ) : Pf k φ.transpose 
         simp only [Formula.transpose, Prog.transpose] at hle ⊢
         exact Pf.botSysSimStep defs.transpose i j a.swap _ opponent.transpose rfl
           (by simpa [Prog.transpose] using ProgList.get?_transpose defs i _ hget) hle)
+    -- botSysSearchThenSearch: the nested descent inside the binder
+    (fun defs i k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme hget hprud hmk hle ih => by
+        subst hme
+        rw [← Formula.size_transpose] at hle
+        simp only [Formula.transpose, Prog.transpose, Formula.subst_transpose,
+          Formula.sysClose_transpose] at hle ih ⊢
+        exact Pf.botSysSearchThenSearch defs.transpose i k₁ k₂ m ψ₁.transpose ψ₂.transpose
+          c0.swap c1.swap q.transpose _ opponent.transpose rfl
+          (by simpa [Prog.transpose] using ProgList.get?_transpose defs i _ hget) ih hmk hle)
     -- iteBranchSearch_t
     (fun g z a' c0 c1 ψ q me opponent hme hle => by
         subst hme

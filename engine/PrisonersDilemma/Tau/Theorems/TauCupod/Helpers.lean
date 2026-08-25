@@ -407,7 +407,7 @@ theorem no_provable_botTwoWatchD (k kb : Nat) (hk : k ≤ kb) (g : Formula)
       (.sim (.bot (.search kb g (.const .D) (.const .C)))
             (.bot (.search kb g (.const .D) (.const .C))))
       Action.D (.const .D) cont)) O .D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -481,6 +481,10 @@ theorem no_provable_botTwoWatchD (k kb : Nat) (hk : k ≤ kb) (g : Formula)
     subst h1; simp at hme
   · -- hbotsyssim: the `.sys` RUN twin, same shape kill
     intro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
     injection hS with h1 h2 h3
     subst h1; simp at hme
 

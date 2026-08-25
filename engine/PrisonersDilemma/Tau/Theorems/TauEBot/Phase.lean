@@ -33,12 +33,16 @@ def eRow : Tmpl → Action
   | .cupodTroll => .D
   | .cimcic     => .C
   | .dimcid     => .C
+  | .prudent    => .C
   | .mirror     => .C
 
 /-- The row's witness: each entry is the two-stage run cascade fed the δ_D
     (exploit-watch) and δ_C (reciprocity-watch) behavioral columns. -/
 theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k)
+    (hpm : ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror))
+      (.bot (inst (tauZoo k) .prudent .mirror)) (inst (tauZoo k) .prudent .mirror)
+      = some Action.C) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .ebot T)) (.bot (inst (tauZoo k) .ebot T))
               (inst (tauZoo k) .ebot T) = some (eRow T) :=
   let pD := inst_defect_plays (k := k) hk hL
@@ -66,26 +70,35 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
   | .cupodTroll => simWatchC_fires _ _ (pD .cupodTroll)
   | .cimcic     => simWatchC_falls _ _ (pD .cimcic) (simWatchC_fires _ _ (pC .cimcic))
   | .dimcid     => simWatchC_falls _ _ (pD .dimcid) (simWatchC_fires _ _ (pC .dimcid))
+  | .prudent    => -- w1, w2 fall (Prudent defects on both constants); w3 FIRES: it
+                   -- cooperates with the mirror (Löb-gated, hence the hypothesis)
+      simWatchC_falls _ _ (pD .prudent) (simWatchC_falls _ _ (pC .prudent) (simWatchC_fires _ _ hpm))
   | .mirror     => simWatchC_falls _ _ mirror_defect_plays_D
       (simWatchC_fires _ _ mirror_coop_plays_C)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
     literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
 theorem eBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (w : Tmpl → Nat) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k)
+    (hpm : ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror))
+      (.bot (inst (tauZoo k) .prudent .mirror)) (inst (tauZoo k) .prudent .mirror)
+      = some Action.C) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .ebot w tauOrder)
       [(w .coop, .D), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .mirror, .C)] :=
-  vecOf_bits (tauZoo k) .ebot w eRow tauOrder fun T _ => eRow_plays hk hkk h6 h10 hL hcg T
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .prudent, .C), (w .mirror, .C)] :=
+  vecOf_bits (tauZoo k) .ebot w eRow tauOrder fun T _ => eRow_plays hk hkk h6 h10 hL hcg hpm T
 
 /-- **τ(EBot)** — one-sided boundary `θ ≤ eMass`, no window. -/
 theorem tauEBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k)
+    (hpm : ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror))
+      (.bot (inst (tauZoo k) .prudent .mirror)) (inst (tauZoo k) .prudent .mirror)
+      = some Action.C) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ eMass w → ∃ N, play N (TauBotZ k .ebot w θ) opponent = some .C)
     ∧ (¬ θ ≤ eMass w → ∃ N, play N (TauBotZ k .ebot w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .ebot w eRow tauOrder θ opponent
-    (fun T _ => eRow_plays hk hkk h6 h10 hL hcg T)
+    (fun T _ => eRow_plays hk hkk h6 h10 hL hcg hpm T)
   simp only [bitMass, tauOrder, List.map, eRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [eMass] using h

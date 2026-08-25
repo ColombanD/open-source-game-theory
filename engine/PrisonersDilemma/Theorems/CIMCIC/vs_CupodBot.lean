@@ -39,7 +39,7 @@ theorem cb_no_provable_cimcic_D_tail (k : Nat) (O : Prog) :
       TailTo (.plays (CIMCIC k) O Action.D) φ → False := by
   intro K φ hp hK ht
   refine no_provable_tailToS_floor k (· = .plays (CIMCIC k) O Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 ht)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -102,6 +102,11 @@ theorem cb_no_provable_cimcic_D_tail (k : Nat) (O : Prog) :
     simp [CIMCIC] at hme
   · -- hbotsyssim: the `.sys` RUN twin, same shape kill
     rintro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1
+    simp [CIMCIC] at hme
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    rintro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
     injection hS with h1 h2 h3
     subst h1
     simp [CIMCIC] at hme

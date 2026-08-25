@@ -108,6 +108,11 @@ theorem wv_budget_census (k : Nat) (S : Prog → Prog → Prop)
       rw [WV_impl, WV_impl, WV_box]; intro hprobe hbox; rw [WV_plays]
       exact Or.inr ((Pf_sound k' _ (Pf.iteBranchSearch_t g z a' c0 c1 ψ q me opponent hme hle))
         (interp_of_WV_probe h_nb hprobe) hbox)
+  | botSysSearchThenSearch k' defs i k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme hget hprud hmk hle _ih =>
+      intro _hK
+      rw [WV_impl, WV_box]; intro hbox; rw [WV_plays]
+      exact Or.inr ((Pf_sound k' _ (Pf.botSysSearchThenSearch defs i k₁ k₂ m ψ₁ ψ₂ c0 c1 q me
+        opponent hme hget hprud hmk hle)) hbox)
   | searchThenSearch_t k' k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opponent hme hprud hmk hle _ih =>
       intro _hK
       rw [WV_impl, WV_box]; intro hbox; rw [WV_plays]

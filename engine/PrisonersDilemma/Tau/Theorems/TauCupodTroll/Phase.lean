@@ -29,7 +29,7 @@ theorem cupodTrollRow_plays {k : Nat} (hk : 3 ≤ k) :
               (inst (tauZoo k) .cupodTroll T) = some (cupodTrollRow T)
   | .cupod => cupodTroll_plays_D_at_cupod hk
   | .coop | .defect | .tftSim | .tftPf | .dupoc | .ebot | .just | .obot
-  | .guardian | .dbot | .cupodTroll | .cimcic | .dimcid | .mirror =>
+  | .guardian | .dbot | .cupodTroll | .cimcic | .dimcid | .prudent | .mirror =>
       cupodTroll_plays_C _ (by decide)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
@@ -38,7 +38,7 @@ theorem cupodTrollBits {k : Nat} (hk : 3 ≤ k) (w : Tmpl → Nat) :
     VoteBits (vecOf (tauZoo k) .cupodTroll w tauOrder)
       [(w .coop, .C), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .C), (w .mirror, .C)] :=
+       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .C), (w .prudent, .C), (w .mirror, .C)] :=
   vecOf_bits (tauZoo k) .cupodTroll w cupodTrollRow tauOrder
     fun T _ => cupodTrollRow_plays hk T
 

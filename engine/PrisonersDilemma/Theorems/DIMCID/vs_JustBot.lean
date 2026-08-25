@@ -30,7 +30,7 @@ theorem dj_no_provable_justbotD (k : Nat) :
       TailTo (.plays (JustBot k) (DIMCID k) Action.D) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (JustBot k) (DIMCID k) Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -103,13 +103,19 @@ theorem dj_no_provable_justbotD (k : Nat) :
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)
     all_goals (first | simp [DIMCID] at hme | simp [DupocBot] at hme | simp [JustBot] at hme | simp [PrudentBot] at hme | simp at hme | simp_all)
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    rintro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [DIMCID] at hme | simp [DupocBot] at hme | simp [JustBot] at hme | simp [PrudentBot] at hme | simp at hme | simp_all)
 -- === Census 2: "DIMCID plays C vs .bot (DupocBot k)" is unprovable at budget k. ===
 theorem dj_no_provable_dimcidC (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →
       TailTo (.plays (DIMCID k) (.bot (DupocBot k)) Action.C) φ → False := by
   intro K φ hp hK htail
   refine no_provable_tailToS_floor k (· = .plays (DIMCID k) (.bot (DupocBot k)) Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -177,6 +183,12 @@ theorem dj_no_provable_dimcidC (k : Nat) :
     all_goals (first | simp [DIMCID] at hme | simp [DupocBot] at hme | simp [JustBot] at hme | simp [PrudentBot] at hme | simp at hme | simp_all)
   · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
     rintro me oppo c hS defs i _ hme _
+    all_goals (try (injection hS with h1 h2 h3; subst h1))
+    all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
+    all_goals (try subst hS)
+    all_goals (first | simp [DIMCID] at hme | simp [DupocBot] at hme | simp [JustBot] at hme | simp [PrudentBot] at hme | simp at hme | simp_all)
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    rintro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
     all_goals (try (injection hS with h1 h2 h3; subst h1))
     all_goals (try (simp only [Formula.plays.injEq] at hS; obtain ⟨rfl, -, -⟩ := hS))
     all_goals (try subst hS)

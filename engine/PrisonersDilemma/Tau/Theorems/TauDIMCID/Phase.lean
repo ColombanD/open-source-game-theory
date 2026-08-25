@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
+import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 
 /-!
@@ -31,12 +32,13 @@ def dimcidRow : Tmpl → Action
   | .cupod      => .D
   | .cimcic     => .C
   | .dimcid     => .D
+  | .prudent    => .C
   | .mirror     => .D
 
 /-- The display form of the C-mass. -/
 def dimcidMass (w : Tmpl → Nat) : Nat :=
   w .coop + w .tftSim + w .tftPf + w .dupoc + w .ebot + w .just + w .obot + w .guardian
-    + w .dbot + w .cupodTroll + w .cimcic
+    + w .dbot + w .cupodTroll + w .cimcic + w .prudent
 
 theorem dimcidRow_plays :
     ∃ k₂, ∀ k, k₂ < k → ∀ T,
@@ -63,6 +65,7 @@ theorem dimcidRow_plays :
   | cupod => exact h1 k (by omega)
   | cimcic => exact dimcid_cimcic_plays_C
   | dimcid => exact h3 k (by omega)
+  | prudent => exact dimcid_prudent_plays_C
   | mirror => exact h2 k (by omega)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
@@ -72,7 +75,7 @@ theorem dimcidBits :
       VoteBits (vecOf (tauZoo k) .dimcid w tauOrder)
         [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
          (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-         (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .mirror, .D)] := by
+         (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .prudent, .C), (w .mirror, .D)] := by
   obtain ⟨k₂, hrow⟩ := dimcidRow_plays
   exact ⟨k₂, fun k hk w => vecOf_bits (tauZoo k) .dimcid w dimcidRow tauOrder (fun T _ => hrow k hk T)⟩
 

@@ -1317,6 +1317,47 @@ real mathematics** and where surprises live, exactly as Guardian and DBot were.
 
 ---
 
+## Addendum (2026-08-25, evening) — PrudentBot ported at a SINGLE budget
+
+Colomban's call: the tau zoo represents every bot at ONE shared budget `k`;
+base cells that exist only at a staggered budget become whitelisted
+budget-staggering divergences, never a second budget in the lift.
+
+* **Row:** `tauPrudentSpec := .search .prove .self .C (.search .prove (.name .defect) .D (.const .C) (.const .D)) (.const .D)`
+  — Critch's PrudentBot as a tree. Roster slot `.prudent` BEFORE `.mirror`
+  (mirror stays last: its diagonal is the divergent slot). 16 templates.
+* **The row is `D` everywhere except `.mirror = C`**, and the mechanism is
+  uniform (`Tau/Theorems/TauPrudent/Helpers.lean`): the INNER check
+  `probeD (inst T defect)` is an else-play floor for coop/tftPf/dupoc/just/dbot/
+  cupodTroll/cimcic/prudent-itself (`nested_plays_D_of_inner`); where it passes
+  cheaply the OUTER probe fails — by soundness (defect, tftSim, obot), by a
+  watch-cost floor (ebot: its C embeds Prudent's floor-priced D on the defector,
+  `prudent_defect_watch_over_budget`), by the else-play floor (guardian), or by
+  `ps_botSys_mismatch_false` on the entangled partner (cupod, dimcid). The mirror
+  cell is bounded Löb through the binder with the ONE new core rule
+  **`Pf.botSysSearchThenSearch`** — the `.sys` twin of `searchThenSearch_t`
+  (nested searcher member; inner premise held at budget ≤ k₂) — chained after
+  `botSysSimStep` via `implTrans`, `pblt_engine_id_bounded`, both orientations.
+* **Column:** every classifier's `.prudent` arm; τ(EBot)'s row gained the
+  Löb-gated hypothesis `hpm` (its third watch sees Prudent cooperate with the
+  mirror) — supplied by `prudent_mirror_plays_C` in `TauMirror/Phase`.
+  τ(Mirror)'s prefix is now 15 slots (`tauOrderInit` ends `.dimcid, .prudent`).
+* **Self-play:** `prudent_quine_plays_D` — single-tier prudence is self-defeating
+  at one budget, as base `outcome_PrudentBot_vs_PrudentBot = (D, D)`.
+* **Certification:** 256 cells / 246 agree / 10 whitelisted (the 6 prior + the
+  four staggered cells (Prudent, Dupoc), (Dupoc, Prudent), (Prudent, Just),
+  (Just, Prudent) — base `outcome_PrudentBot_vs_DupocBot` and
+  `outcome_JustBot_vs_PrudentBot` are stated at `PrudentBot (2k+64)`). No
+  missing rows; all 16 phases unconditional.
+* **Census kernel:** `no_provable_tailToS_floor` has a 15th hypothesis
+  `hbotsyssts` (the nested-searcher bridge; LAST slot, 17 binders) — in the
+  D-tail census it is a constructor CLASH (`c0 = C`), in the C-tail census it is
+  THE reading rule and is killed by the inner guard's unprovability
+  (`no_provable_sysNested_C_tail` takes that as `hinner`).
+* **Next:** WaryBot (`Mode.proveNeg`, the `.neg`-spine census — time-boxed),
+  LegibleBot (`Mode.proveBox`, single budget, staggered cells whitelisted);
+  OptimBot only on request (6 base cells).
+
 ## 9. Open questions (decide during implementation, none blocking)
 
 1. `voteHigh_f` — include from day one (cheap else-commits) or add on demand?

@@ -56,6 +56,7 @@ theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k)
                    dbot_watch_fires_of_trust .cupodTroll (pD .cupodTroll)
   | .cimcic     => dbot_plays_C_of_defect .cimcic (pD .cimcic)
   | .dimcid     => dbot_plays_C_of_defect .dimcid (pD .dimcid)
+  | .prudent    => dbot_plays_C_of_defect .prudent (pD .prudent)
   | .mirror     => dbot_plays_C_of_defect .mirror (pD .mirror)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
@@ -65,7 +66,7 @@ theorem dbotBits {k : Nat} (hk : 2 ≤ k)
     VoteBits (vecOf (tauZoo k) .dbot w tauOrder)
       [(w .coop, .D), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
        (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .mirror, .C)] :=
+       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .prudent, .C), (w .mirror, .C)] :=
   vecOf_bits (tauZoo k) .dbot w dbotRow tauOrder fun T _ => dbotRow_plays hk hL T
 
 /-- **τ(DBot)** — boundary `θ ≤ dbotMass` (everything but `w .coop`). -/

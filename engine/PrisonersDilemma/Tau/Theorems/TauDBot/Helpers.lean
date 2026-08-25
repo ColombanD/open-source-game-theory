@@ -44,7 +44,7 @@ theorem no_provable_botRunStage_C (k kb : Nat) (hk : k ≤ kb) (g : Formula)
     (· = .plays (.bot (.ite
       (.sim (.bot (.search kb g (.const .C) pE)) (.bot (.search kb g (.const .C) pE)))
       .C (.const .D) (.const .C))) O .C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
   · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
   · rintro K' hK' φ' rfl hA
     cases hA with
@@ -109,6 +109,10 @@ theorem no_provable_botRunStage_C (k kb : Nat) (hk : k ≤ kb) (g : Formula)
     subst h1; simp at hme
   · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
     intro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
     injection hS with h1 h2 h3
     subst h1; simp at hme
 

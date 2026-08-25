@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
+import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
 import PrisonersDilemma.Tau.Theorems.TauTFTSim.Phase
 import PrisonersDilemma.Tau.Theorems.TauTFTPf.Phase
 import PrisonersDilemma.Tau.Theorems.TauEBot.Phase
@@ -37,7 +38,7 @@ namespace PD.Tau
 /-- `tauOrder` without its last slot. -/
 def tauOrderInit : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod, .cimcic, .dimcid]
+   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent]
 
 theorem tauOrder_eq : tauOrder = tauOrderInit ++ [.mirror] := rfl
 
@@ -65,12 +66,13 @@ def mirrorRow : Tmpl → Action
   | .cupod      => .D
   | .cimcic     => .C
   | .dimcid     => .D
+  | .prudent    => .C
   | .mirror     => .D
 
 /-- The display form of the prefix mass. -/
 def mirrorMass (w : Tmpl → Nat) : Nat :=
   w .coop + w .tftSim + w .tftPf + w .dupoc + w .ebot + w .just + w .guardian + w .dbot
-    + w .cupodTroll + w .cimcic
+    + w .cupodTroll + w .cimcic + w .prudent
 
 /-- Every prefix slot's witness, past one threshold. -/
 theorem mirrorRow_plays :
@@ -85,7 +87,9 @@ theorem mirrorRow_plays :
   obtain ⟨k2, h2⟩ := mirror_cupod_plays_D
   obtain ⟨k3, h3⟩ := mirror_cimcic_plays_C
   obtain ⟨k4, h4⟩ := mirror_dimcid_plays_D
-  refine ⟨max (max kA kQ) (max (max kM kX) (max (max k1 k2) (max k3 k4))),
+  obtain ⟨k5, h5⟩ := mirror_prudent_plays_C
+  obtain ⟨kP, hP⟩ := prudent_mirror_plays_C
+  refine ⟨max (max (max kA kQ) (max (max kM kX) (max (max k1 k2) (max k3 k4)))) (max k5 kP),
     fun k hk T hT => ?_⟩
   have hL : 100 * Nat.log2 k + 1000 ≤ k := hkA k (by omega)
   have hlog := Nat.log2_le_self k
@@ -99,14 +103,15 @@ theorem mirrorRow_plays :
   have hquine := hkQ k (by omega)
   have hcim := hkM k (by omega)
   have hmir := hkX k (by omega)
+  have hpm := hP k (by omega)
   simp only [tauOrderInit, List.mem_cons, List.mem_nil_iff, or_false] at hT
-  rcases hT with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hT with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact mirror_coop_plays_C
   · exact mirror_defect_plays_D
   · exact mirror_copies (T := .tftSim) rfl (tftSimRow_plays hk2 hkk h6 h10 hL hcg .mirror)
   · exact mirror_copies (T := .tftPf) rfl (tftPfRow_plays hk2 hkk h6 h10 hL hcg .mirror)
   · exact h1 k (by omega)
-  · exact mirror_copies (T := .ebot) rfl (eRow_plays hk2 hkk h6 h10 hL hcg .mirror)
+  · exact mirror_copies (T := .ebot) rfl (eRow_plays hk2 hkk h6 h10 hL hcg hpm .mirror)
   · exact mirror_copies (T := .just) rfl (justRow_plays hk2 hkk hk7 hquine hcim hmir .mirror)
   · exact mirror_copies (T := .obot) rfl (obotRow_plays hk2 hkk h6 h10 hL hcg .mirror)
   · exact mirror_copies (T := .guardian) rfl
@@ -116,16 +121,17 @@ theorem mirrorRow_plays :
   · exact h2 k (by omega)
   · exact h3 k (by omega)
   · exact h4 k (by omega)
+  · exact h5 k (by omega)
 
 /-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): the 14-slot PREFIX over `tauOrderInit`; the diagonal is not an
+    literal list): the 15-slot PREFIX over `tauOrderInit`; the diagonal is not an
     entry (it diverges), which the scanner records as `N`. -/
 theorem mirrorBits :
     ∃ k₂, ∀ k, k₂ < k → ∀ (w : Tmpl → Nat),
       VoteBits (vecOf (tauZoo k) .mirror w tauOrderInit)
         [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
          (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .D),
-         (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D)] := by
+         (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .prudent, .C)] := by
   obtain ⟨k₂, hrow⟩ := mirrorRow_plays
   exact ⟨k₂, fun k hk w => vecOf_bits (tauZoo k) .mirror w mirrorRow tauOrderInit (hrow k hk)⟩
 

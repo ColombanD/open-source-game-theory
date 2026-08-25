@@ -30,10 +30,10 @@ from pd_runner.tau.matrix import load_tau_matrix
 FULL_BOTS: tuple[str, ...] = (
     "DupocBot", "CooperateBot", "DefectBot", "TitForTatBot", "EBot",
     "JustBot", "OBot", "GuardianBot", "DBot", "CupodTrollBot", "CIMCIC",
-    "CupodBot", "DIMCID", "MirrorBot",
+    "CupodBot", "DIMCID", "PrudentBot", "MirrorBot",
 )
 """The base bots the full certification runs over (TitForTatBot carries both TFT
-lift variants, so 14 base bots cover 15 templates).
+lift variants, so 15 base bots cover 16 templates).
 
 MirrorBot joined on 2026-08-24 evening, once τ(Mirror) had a stated row: its
 proven-`none` self-play loads as the fifth state "N", and the kernel reports
@@ -74,22 +74,24 @@ def test_kernel_agrees_with_base_directly() -> None:
     `VoteBits` theorems and the cells out of the certified base matrix, so a pass
     depends on no Python model at all.
 
-    225 comparable cells — the FULL 15×15 matrix — 219 agree, and the 6
+    256 comparable cells — the FULL 16×16 matrix — 246 agree, and the 10
     divergences are exactly the recorded whitelist — properties of the LIFT,
     not of any implementation. (182/176/6 → 210/204/6 on 2026-08-24 when
     MirrorBot joined `FULL_BOTS`; 225/219/6 on 2026-08-25 when τ(DIMCID)'s row
     landed: all 15 of its cells agree with base, including the three the tail
-    and valuation censuses could not reach.)
+    and valuation censuses could not reach; 256/246/10 later on 2026-08-25 when
+    PrudentBot was ported at a SINGLE budget — its four new divergences are the
+    budget-staggered base cells against DupocBot/JustBot, both orientations.)
 
     Was 144/139/5 until 2026-08-24, when CupodBot and DIMCID were added to
     `FULL_BOTS`: their base cells had landed on 08-21 but the list was never
     updated, so 38 comparable cells went unchecked and four divergences sat
     unexamined behind a green result."""
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
-    assert len(d.cells) == 225
+    assert len(d.cells) == 256
     assert d.passed, d.unexpected
-    assert d.agreements == 219
-    assert len(d.whitelisted_divergences) == 6
+    assert d.agreements == 246
+    assert len(d.whitelisted_divergences) == 10
     assert d.missing_rows == ()
 
 
@@ -131,6 +133,12 @@ def test_whitelist_is_exactly_the_recorded_cells() -> None:
         # budget staggering
         ("TauDupoc", "TauCupodTroll"),
         ("TauJust", "TauCupodTroll"),
+        # budget staggering, PrudentBot at ONE budget (2026-08-25): base proves
+        # these at PrudentBot (2*k+64)
+        ("TauPrudent", "TauDupoc"),
+        ("TauDupoc", "TauPrudent"),
+        ("TauPrudent", "TauJust"),
+        ("TauJust", "TauPrudent"),
     }
 
 
@@ -158,7 +166,9 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
     m = load_tau_matrix(FULL_BOTS)
     dagger = set(m.dagger_cells)
 
-    staggering = {("TauDupoc", "TauCupodTroll"), ("TauJust", "TauCupodTroll")}
+    staggering = {("TauDupoc", "TauCupodTroll"), ("TauJust", "TauCupodTroll"),
+                  ("TauPrudent", "TauDupoc"), ("TauDupoc", "TauPrudent"),
+                  ("TauPrudent", "TauJust"), ("TauJust", "TauPrudent")}
     for A, T in staggering:
         assert (BASE_OF[A], BASE_OF[T]) in dagger, (A, T)
 
