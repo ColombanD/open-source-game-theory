@@ -70,18 +70,19 @@ def test_write_matchup_lean_file_uses_reversed_parameterized_universal_theorem(t
 
 
 def test_write_matchup_lean_file_uses_existential_theorem(tmp_path: Path) -> None:
-    # Uses TitForTatBot rather than DefectBot: `outcome_CupodBot_vs_DefectBot` migrated
-    # to the `.eventual` regime (a STRONGER claim -- it holds at every large budget, not
-    # merely at one), so it is no longer citable as a bare `∃ k`. This asserts the
-    # existential citation path, which needs a theorem still stated that way.
-    generated = write_matchup_lean_file(tmp_path, "CupodBot:?", "TitForTatBot")
+    # Uses DupocBot: the `∃ k` theorems keep migrating to stronger regimes as their
+    # witnesses turn out to generalize, which invalidates any fixture pinned to one.
+    # `outcome_DupocBot_vs_TitForTatBot` is a STABLE choice -- it provably cannot be
+    # generalized, because its certificate's cost `c_guard k` grows with `k`, so a
+    # larger budget does not afford it.
+    generated = write_matchup_lean_file(tmp_path, "DupocBot:?", "TitForTatBot")
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PD.Theorems.outcome_CupodBot_vs_TitForTatBot"
+    assert generated.proof_theorem_used == "PD.Theorems.outcome_DupocBot_vs_TitForTatBot"
     assert generated.result_kind == "exists_parameter"
     assert "theorem claimed_exists_outcome" in content
-    assert "∃ k, outcome (0 + 4) (CupodBot k) TitForTatBot" in content
-    assert "exact PD.Theorems.outcome_CupodBot_vs_TitForTatBot 0" in content
+    assert "∃ k, outcome (0 + 4) (DupocBot k) TitForTatBot" in content
+    assert "exact PD.Theorems.outcome_DupocBot_vs_TitForTatBot 0" in content
 
 
 def test_write_matchup_lean_file_prefers_universal_theorem_for_wildcard(tmp_path: Path) -> None:

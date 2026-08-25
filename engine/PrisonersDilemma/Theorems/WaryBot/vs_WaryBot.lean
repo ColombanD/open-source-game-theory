@@ -4,6 +4,7 @@ import PrisonersDilemma.Bots.LlmGenerations.WaryBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.WaryBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -34,8 +35,12 @@ theorem outcome_WaryBot_vs_WaryBot_floor2 (fuel : Nat) :
     trusting else-branches. Subsumes `outcome_WaryBot_vs_WaryBot_floor`; the
     `TailTo` route is falsified for `.neg` tails (see
     `outcome_WaryBot_vs_MirrorBot`). -/
-theorem outcome_WaryBot_vs_WaryBot (k fuel : Nat) :
-    outcome (fuel + 2) (WaryBot k) (WaryBot k) = some (.C, .C) :=
+@[outcome]
+theorem outcome_WaryBot_vs_WaryBot :
+    OutcomeSpec .universal 2
+      WaryBot WaryBot (some (.C, .C)) := by
+  intro k fuel
+  exact
   outcome_of_plays _ _ _ _ _
     (WaryBot_cooperates_vs_WaryBot k fuel) (WaryBot_cooperates_vs_WaryBot k fuel)
 

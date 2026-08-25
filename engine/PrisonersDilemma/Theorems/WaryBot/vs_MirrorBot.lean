@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.WaryBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -40,8 +41,11 @@ theorem outcome_WaryBot_vs_MirrorBot_floor2 (fuel : Nat) :
     sound and the refutation is false — NOT by a `TailTo` census, which is
     provably unusable for `.neg` tails (`contrapose ∘ implK` puts a provable
     member in any singleton `.neg`-tail class; do not retry that route). -/
-theorem outcome_WaryBot_vs_MirrorBot (k fuel : Nat) :
-    outcome (fuel + 3) (WaryBot k) MirrorBot = some (.C, .C) := by
+@[outcome]
+theorem outcome_WaryBot_vs_MirrorBot :
+    OutcomeSpec .universal 3
+      WaryBot (fun _ => MirrorBot) (some (.C, .C)) := by
+  intro k fuel
   have hA : play (fuel + 3) (WaryBot k) MirrorBot = some .C := by
     simpa [Nat.add_assoc] using WaryBot_cooperates_vs_MirrorBot k (fuel + 1)
   exact outcome_of_plays _ _ _ _ _ hA (MirrorBot_plays_C_against_WaryBot k fuel)

@@ -6,6 +6,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.WaryBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -17,12 +18,15 @@ namespace PD.Theorems
     passes its niceness test (second probe), so EBot cooperates, irrefutably.
     This settles structurally the cell the deterministic pre-pass could only
     certify at `k = 32`. Compare `_floor`. -/
-theorem outcome_WaryBot_vs_EBot (fuel : Nat) :
-    ∃ k₂, ∀ k, k₂ ≤ k →
-      outcome (fuel + 5) (WaryBot k) EBot = some (.C, .C) := by
+-- `k₂ ≤ k` normalizes to the template's `k₂ < k`: a sound weakening the matrix
+-- never uses (it only needs SOME threshold to exist).
+@[outcome]
+theorem outcome_WaryBot_vs_EBot :
+    OutcomeSpec .eventual 5
+      WaryBot (fun _ => EBot) (some (.C, .C)) := by
   obtain ⟨K, hK⟩ := linear_log2_add_le 1 14
-  refine ⟨K, fun k hk => ?_⟩
-  have hlog : Nat.log2 k + 14 ≤ k := by have := hK k hk; omega
+  refine ⟨K, fun k hk fuel => ?_⟩
+  have hlog : Nat.log2 k + 14 ≤ k := by have := hK k (Nat.le_of_lt hk); omega
   have hA : play (fuel + 5) (WaryBot k) EBot = some .C := by
     simpa [Nat.add_assoc] using WaryBot_cooperates_vs_EBot_large k (fuel + 3) hlog
   exact outcome_of_plays _ _ _ _ _ hA (EBot_plays_C_against_WaryBot_large k fuel hlog)

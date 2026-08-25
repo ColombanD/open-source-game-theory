@@ -7,6 +7,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.WaryBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -16,12 +17,15 @@ namespace PD.Theorems
 /-- **WaryBot vs DefectBot, the large-`k` theorem**: for every sufficiently large
     budget the refutation of DefectBot's cooperation is affordable (transcript
     `log₂ k + 12`) and WaryBot defends itself. -/
-theorem outcome_WaryBot_vs_DefectBot (fuel : Nat) :
-    ∃ k₂, ∀ k, k₂ ≤ k →
-      outcome (fuel + 2) (WaryBot k) DefectBot = some (.D, .D) := by
+-- `k₂ ≤ k` normalizes to the template's `k₂ < k`: a sound weakening the matrix
+-- never uses (it only needs SOME threshold to exist).
+@[outcome]
+theorem outcome_WaryBot_vs_DefectBot :
+    OutcomeSpec .eventual 2
+      WaryBot (fun _ => DefectBot) (some (.D, .D)) := by
   obtain ⟨K, hK⟩ := linear_log2_add_le 1 12
-  refine ⟨K, fun k hk => ?_⟩
-  have hlog : Nat.log2 k + 12 ≤ k := by have := hK k hk; omega
+  refine ⟨K, fun k hk fuel => ?_⟩
+  have hlog : Nat.log2 k + 12 ≤ k := by have := hK k (Nat.le_of_lt hk); omega
   exact outcome_of_plays _ _ _ _ _
     (WaryBot_defects_vs_DefectBot_large k fuel hlog)
     (play_DefectBot (fuel + 1) _)
