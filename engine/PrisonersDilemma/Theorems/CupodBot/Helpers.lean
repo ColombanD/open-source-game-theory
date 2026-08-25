@@ -39,6 +39,14 @@ theorem proofSearch_true_for_DefectBot :
   let k := atom_cost 1
   ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
 
+/-- Threshold form of `proofSearch_true_for_DefectBot`: the certificate is a fixed
+    `Pf.atom` whose only side condition is a COST INEQUALITY, so it holds at every
+    budget above `atom_cost 1` -- not merely at that one witness. This is what lets the
+    outcome theorem be stated in the `.eventual` regime. -/
+theorem proofSearch_true_for_DefectBot_ge (k : Nat) (hk : atom_cost 1 ≤ k) :
+    proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
+  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
+
 
 -- CupodBot --
 
@@ -138,6 +146,13 @@ theorem proofSearch_true_for_bot_DefectBot :
     ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
   let k := atom_cost 2
   ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
+
+/-- Threshold form of `proofSearch_true_for_bot_DefectBot`: the certificate's only side
+    condition is a COST INEQUALITY, so it holds at every budget above `atom_cost 2`. -/
+theorem proofSearch_true_for_bot_DefectBot_ge (k : Nat) (hk : atom_cost 2 ≤ k) :
+    proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
+  (proofSearch_spec _ _).2
+    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
 
 /-- CUPOD defects against `.bot DefectBot` once its search guard succeeds. -/
 theorem CupodBot_plays_D_against_bot_DefectBot (k fuel : Nat)

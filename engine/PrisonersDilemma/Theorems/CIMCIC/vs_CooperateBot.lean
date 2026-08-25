@@ -64,15 +64,16 @@ theorem CIMCIC_plays_C_against_CooperateBot (k fuel : Nat)
   rw [hk]; simp [eval]
 
 /-- CIMCIC vs CooperateBot: mutual cooperation. -/
+@[outcome]
 theorem outcome_CIMCIC_vs_CooperateBot :
-    ∃ k, ∀ fuel, outcome (fuel + 2) (CIMCIC k) CooperateBot = some (.C, .C) := by
+    OutcomeSpec .eventual 2 CIMCIC (fun _ => CooperateBot) (some (.C, .C)) := by
   obtain ⟨K, hK⟩ := proofSearch_true_for_CIMCIC_vs_CooperateBot
-  refine ⟨K + 1, fun fuel => ?_⟩
-  have hk := hK (K + 1) (Nat.le_succ K)
-  have hA : play (fuel + 2) (CIMCIC (K + 1)) CooperateBot = some .C :=
-    CIMCIC_plays_C_against_CooperateBot (K + 1) fuel hk
-  have hB : play (fuel + 2) CooperateBot (CIMCIC (K + 1)) = some .C := by
-    simpa [Nat.add_comm] using play_CooperateBot (fuel + 1) (CIMCIC (K + 1))
+  refine ⟨K, fun k hlt fuel => ?_⟩
+  have hk := hK k (Nat.le_of_lt hlt)
+  have hA : play (fuel + 2) (CIMCIC k) CooperateBot = some .C :=
+    CIMCIC_plays_C_against_CooperateBot k fuel hk
+  have hB : play (fuel + 2) CooperateBot (CIMCIC k) = some .C := by
+    simpa [Nat.add_comm] using play_CooperateBot (fuel + 1) (CIMCIC k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems

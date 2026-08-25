@@ -7,16 +7,19 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.CupodBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.Bots
 open PD.BaseTheorems
 namespace PD.Theorems
 /-- CupodBot vs DefectBot: uses proof search being true -/
-theorem outcome_CupodBot_vs_DefectBot (fuel : Nat):
-    ∃ k, outcome (fuel + 2) (CupodBot k) DefectBot = some (.D, .D) := by
-  obtain ⟨k, hk⟩ := proofSearch_true_for_DefectBot
-  refine ⟨k, ?_⟩
+@[outcome]
+theorem outcome_CupodBot_vs_DefectBot :
+    OutcomeSpec .eventual 2
+      CupodBot (fun _ => DefectBot) (some (.D, .D)) := by
+  refine ⟨atom_cost 1, fun k hlt fuel => ?_⟩
+  have hk := proofSearch_true_for_DefectBot_ge k (Nat.le_of_lt hlt)
 
   have hA : play (fuel + 2) (CupodBot k) DefectBot = some .D := by
     show eval (fuel + 2) (CupodBot k) DefectBot (CupodBot k) = some .D

@@ -70,14 +70,18 @@ def test_write_matchup_lean_file_uses_reversed_parameterized_universal_theorem(t
 
 
 def test_write_matchup_lean_file_uses_existential_theorem(tmp_path: Path) -> None:
-    generated = write_matchup_lean_file(tmp_path, "CupodBot:?", "DefectBot")
+    # Uses TitForTatBot rather than DefectBot: `outcome_CupodBot_vs_DefectBot` migrated
+    # to the `.eventual` regime (a STRONGER claim -- it holds at every large budget, not
+    # merely at one), so it is no longer citable as a bare `∃ k`. This asserts the
+    # existential citation path, which needs a theorem still stated that way.
+    generated = write_matchup_lean_file(tmp_path, "CupodBot:?", "TitForTatBot")
     content = generated.path.read_text(encoding="utf-8")
 
-    assert generated.proof_theorem_used == "PD.Theorems.outcome_CupodBot_vs_DefectBot"
+    assert generated.proof_theorem_used == "PD.Theorems.outcome_CupodBot_vs_TitForTatBot"
     assert generated.result_kind == "exists_parameter"
     assert "theorem claimed_exists_outcome" in content
-    assert "∃ k, outcome (0 + 2) (CupodBot k) DefectBot" in content
-    assert "exact PD.Theorems.outcome_CupodBot_vs_DefectBot 0" in content
+    assert "∃ k, outcome (0 + 4) (CupodBot k) TitForTatBot" in content
+    assert "exact PD.Theorems.outcome_CupodBot_vs_TitForTatBot 0" in content
 
 
 def test_write_matchup_lean_file_prefers_universal_theorem_for_wildcard(tmp_path: Path) -> None:

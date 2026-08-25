@@ -34,6 +34,14 @@ theorem proofSearch_true_for_CooperateBot :
   let k := atom_cost 1
   ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
 
+/-- Threshold form of `proofSearch_true_for_CooperateBot`: the certificate is a fixed
+    `Pf.atom` whose only side condition is a COST INEQUALITY, so it holds at every
+    budget above `atom_cost 1` -- not merely at that one witness. This is what lets the
+    outcome theorem be stated in the `.eventual` regime. -/
+theorem proofSearch_true_for_CooperateBot_ge (k : Nat) (hk : atom_cost 1 ≤ k) :
+    proofSearch k (.plays CooperateBot (DupocBot k) .C) = true :=
+  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
+
 
 -- DBot --
 
@@ -233,6 +241,14 @@ theorem proofSearch_true_for_bot_CooperateBot :
     ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
   let k := atom_cost 2
   ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
+
+/-- Threshold form of `proofSearch_true_for_bot_CooperateBot`: the certificate is a fixed
+    `Pf.atom` whose only side condition is a COST INEQUALITY, so it holds at every
+    budget above `atom_cost 2` -- not merely at that one witness. This is what lets the
+    outcome theorem be stated in the `.eventual` regime. -/
+theorem proofSearch_true_for_bot_CooperateBot_ge (k : Nat) (hk : atom_cost 2 ≤ k) :
+    proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
+  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
 
 
 -- TitForTatBot --
