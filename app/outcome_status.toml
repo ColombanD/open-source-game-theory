@@ -23,9 +23,9 @@
 # here until 2026-08-20, when `outcome_DupocBot_vs_CupodBot = (D, C)` landed
 # (the τ-transposition route, Theorems/DupocBot/vs_CupodBot.lean).
 
-[[open]]
-pair = ["PrudentBot", "CupodBot"]
-reason = "CupodBot-family search×search matchup — no forcing rule known."
+# (PrudentBot, CupodBot) was listed here until 2026-08-25, when
+# `outcome_PrudentBot_vs_CupodBot = (D, C)` landed at every same budget — two
+# else-play floors facing each other (Theorems/PrudentBot/vs_CupodBot.lean).
 
 # ---- Floor regime proven (see the _floor theorems), large-k OPEN -----------
 # These pairs have `_floor`/`_floor2` theorems in the library, which the strict

@@ -131,10 +131,12 @@ def test_sweep_honours_stage_selection(client):
     assert set(stages) == {"ess", "invasion"}
 
 
-def test_sweep_records_conditional_results(client):
-    """Stipulated cells must stay visible — they make results conditional."""
+def test_sweep_reports_provenance(client):
+    """The provenance flag is always reported. The default zoo has been fully
+    proven since 2026-08-25 (its last stipulation, (PrudentBot, CupodBot), became
+    a theorem), so it reads True; a stipulated zoo would read False."""
     job = _sweep(client)
-    assert job["egt_result"]["runs"][0]["is_fully_proven"] is False
+    assert job["egt_result"]["runs"][0]["is_fully_proven"] is True
 
 
 # --------------------------------------------------------------------------

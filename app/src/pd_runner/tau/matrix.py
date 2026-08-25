@@ -85,28 +85,23 @@ FULL_CERTIFIED_SUB_ZOO: tuple[str, ...] = (
 # (`outcome_CupodTrollBot_vs_CupodBot`), so the third removal is unnecessary.
 _TWIN_EXCLUSIONS: tuple[str, ...] = ("LegibleBot", "JustBot")
 
-# CupodBot is admitted to break the remaining twin group, at the cost of a
-# STIPULATED cell (its only remaining hole against this zoo). It is the bot
-# whose column separates {CooperateBot, CupodTrollBot}.
+# CupodBot is admitted to break the remaining twin group: it is the bot whose
+# column separates {CooperateBot, CupodTrollBot}. It USED to cost a stipulated
+# cell; since 2026-08-25 this dict is EMPTY and the default zoo is fully proven.
 #
-# The stipulation buys MEMBERSHIP, not the result: every assignment of the
-# cell gives a twin-free zoo at ceiling 1.0, so twin-freeness is invariant
-# under the choice. Any result that is NOT invariant must be reported as
-# conditional — `TauMatrix.is_fully_proven` is False for this zoo.
-#
-# HISTORY (2026-08-20): the red cell ("CupodBot", "DupocBot") — Critch's open
-# problem — left this dict when `outcome_DupocBot_vs_CupodBot = (D, C)` was
-# PROVEN via the τ-transposition (`engine .../Base/Transpose.lean`,
-# `Theorems/DupocBot/vs_CupodBot.lean`); the proven value matches what had
-# been stipulated. The loader raises on a stipulation shadowing a proven
-# cell, which is exactly how this removal was forced.
-CUPOD_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {
-    ("PrudentBot", "CupodBot"): ("D", "C"),
-}
+# HISTORY. The red cell ("CupodBot", "DupocBot") — Critch's open problem — left
+# on 2026-08-20 when `outcome_DupocBot_vs_CupodBot = (D, C)` was proven via the
+# τ-transposition (`Base/Transpose.lean`). ("PrudentBot", "CupodBot") = (D, C)
+# left on 2026-08-25 when `outcome_PrudentBot_vs_CupodBot` landed at every same
+# budget — two else-play floors facing each other, the tau layer's argument
+# (`cupod_prudent_plays_C`/`prudent_cupod_plays_D`) transplanted to the base
+# shape. Both times the proven value matched the stipulation, and both times the
+# loader's guard against a stipulation shadowing a proven cell forced the removal.
+CUPOD_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {}
 
 # The default tau zoo: 11 bots, NO behavioral twins, transparency ceiling
-# exactly 1.0 — every bot is identifiable from behavior alone. Load it with
-# `load_tau_matrix()`, which applies `CUPOD_STIPULATIONS` by default.
+# exactly 1.0 — every bot is identifiable from behavior alone, and every cell is
+# a kernel theorem. Load it with `load_tau_matrix()`.
 CERTIFIED_SUB_ZOO: tuple[str, ...] = tuple(
     sorted(
         [b for b in FULL_CERTIFIED_SUB_ZOO if b not in _TWIN_EXCLUSIONS]

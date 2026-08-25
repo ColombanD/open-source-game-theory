@@ -83,18 +83,21 @@ def test_default_zoo_composition() -> None:
     assert load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO).is_fully_proven
 
 
-def test_default_zoo_is_conditional_on_stipulations() -> None:
-    """CupodBot enters via a STIPULATED cell; that must stay visible."""
+def test_default_zoo_is_fully_proven() -> None:
+    """CupodBot used to enter via a STIPULATED cell; since 2026-08-25 every cell
+    of the default zoo is a kernel theorem and `CUPOD_STIPULATIONS` is empty."""
     m = load_tau_matrix()
-    assert not m.is_fully_proven
-    # Each stipulated pair contributes its cell and its transpose.
-    assert len(m.hypothetical_cells) == 2 * len(CUPOD_STIPULATIONS)
-    # The red cell is PROVEN since 2026-08-20 (`outcome_DupocBot_vs_CupodBot`,
-    # the τ-transposition route) — no longer hypothetical.
+    assert m.is_fully_proven
+    assert len(m.hypothetical_cells) == 0
+    assert CUPOD_STIPULATIONS == {}
+    # The red cell, proven 2026-08-20 (`outcome_DupocBot_vs_CupodBot`).
     assert not m.cell("CupodBot", "DupocBot").hypothetical
     assert m.action("CupodBot", "DupocBot") == "C"
-    assert m.cell("PrudentBot", "CupodBot").hypothetical
-    # Everything else is kernel-backed.
+    # The last stipulation, proven 2026-08-25 (`outcome_PrudentBot_vs_CupodBot`):
+    # the value the stipulation had guessed, both orientations.
+    assert not m.cell("PrudentBot", "CupodBot").hypothetical
+    assert m.action("PrudentBot", "CupodBot") == "D"
+    assert m.action("CupodBot", "PrudentBot") == "C"
     assert not m.cell("CupodTrollBot", "CupodBot").hypothetical
 
 
@@ -105,10 +108,12 @@ def test_proven_only_zoo_needs_no_stipulations() -> None:
     assert "CupodBot" not in m.bots
 
 
-def test_default_zoo_requires_its_stipulations() -> None:
-    """Opting out (`{}`) must fail loudly, never silently pick a convention."""
-    with pytest.raises(ValueError, match="not total"):
-        load_tau_matrix(hypothetical_cells={})
+def test_default_zoo_needs_no_stipulations() -> None:
+    """Opting out of stipulations (`{}`) loads the same, fully proven matrix —
+    until 2026-08-25 this raised `not total` on the (PrudentBot, CupodBot) hole."""
+    m = load_tau_matrix(hypothetical_cells={})
+    assert m.is_fully_proven
+    assert m.action("PrudentBot", "CupodBot") == "D"
 
 
 def test_orientation_is_respected(matrix) -> None:
@@ -158,13 +163,14 @@ def test_stipulation_cannot_shadow_a_proven_none() -> None:
         )
 
 
-def test_enlarged_zoo_loads_and_is_conditional() -> None:
-    """The 16-bot zoo is total under its stipulations, and says so."""
+def test_enlarged_zoo_loads_fully_proven() -> None:
+    """The 16-bot zoo is total with NO stipulations since 2026-08-25 (the last
+    one, (PrudentBot, CupodBot), became a theorem), and says so."""
     m = load_tau_matrix(ENLARGED_SUB_ZOO, hypothetical_cells=ENLARGED_STIPULATIONS)
     assert len(m) == 16
-    assert not m.is_fully_proven
-    # Each stipulated pair contributes its cell and its transpose.
-    assert len(m.hypothetical_cells) == 2 * len(ENLARGED_STIPULATIONS)
+    assert m.is_fully_proven
+    assert ENLARGED_STIPULATIONS == {}
+    assert len(m.hypothetical_cells) == 0
     # The only "N" cell is MirrorBot self-play, read from the kernel.
     n_cells = [
         (r, c)
@@ -198,7 +204,7 @@ def test_named_zoo_provenance_claims_hold() -> None:
     """The zoos advertised as kernel-clean really carry no stipulations."""
     assert ZOOS["full-certified"].load().is_fully_proven
     assert ZOOS["proven-only"].load().is_fully_proven
-    assert not ZOOS["enlarged"].load().is_fully_proven
+    assert ZOOS["enlarged"].load().is_fully_proven   # no stipulations left (2026-08-25)
     assert DEFAULT_ZOO in ZOOS
 
 
@@ -219,18 +225,20 @@ def test_enlarged_zoo_twin_structure() -> None:
 # ------------------------------------------------- hypothetical (what-if) ----
 
 def test_hypothetical_cells_fill_holes_and_are_flagged() -> None:
-    """What-if cells complete a submatrix but never masquerade as proven."""
+    """What-if cells complete a submatrix but never masquerade as proven. The
+    default zoo has no holes left (2026-08-25), so this uses a genuinely open
+    pair: WaryBot vs CupodBot (the `.neg`-guard wall)."""
     m = load_tau_matrix(
-        hypothetical_cells=dict.fromkeys(CUPOD_STIPULATIONS, ("C", "D"))
+        bots=("CupodBot", "WaryBot"),
+        hypothetical_cells={("WaryBot", "CupodBot"): ("C", "D")},
     )
     assert not m.is_fully_proven
-    assert m.cell("PrudentBot", "CupodBot").shape == "HYPOTHETICAL"
+    assert m.cell("WaryBot", "CupodBot").shape == "HYPOTHETICAL"
     # The transpose is derived, so the two orientations cannot disagree.
-    assert m.action("PrudentBot", "CupodBot") == "C"
-    assert m.action("CupodBot", "PrudentBot") == "D"
+    assert m.action("WaryBot", "CupodBot") == "C"
+    assert m.action("CupodBot", "WaryBot") == "D"
     # Proven cells in the same matrix stay proven.
-    assert not m.cell("CooperateBot", "DefectBot").hypothetical
-
+    assert not m.cell("CupodBot", "CupodBot").hypothetical
 
 def test_hypothetical_cannot_override_a_proven_cell() -> None:
     """Stipulating a proven pair would silently contradict the Lean kernel."""
@@ -267,26 +275,18 @@ def test_cupodtrollbot_split_is_earned_not_stipulated() -> None:
 def test_justbot_dupoc_twins_survive_cupod() -> None:
     """HISTORY: the DupocBot/JustBot split used to be an ARTIFACT of the JustBot
     stipulation (half the assignments of the then-open JustBot-vs-CupodBot cell
-    split the pair, half did not — the previous version of this test measured
-    exactly that coin flip). `outcome_JustBot_vs_CupodBot` (2026-08-21, the value
-    PREDICTED by the tau layer's entangled closure) resolved it: JustBot defects
-    against CupodBot exactly as DupocBot does, so admitting CupodBot never
-    separates the pair — under every assignment of the one remaining hole
-    (PrudentBot vs CupodBot)."""
+    split the pair). `outcome_JustBot_vs_CupodBot` (2026-08-21) resolved it:
+    JustBot defects against CupodBot exactly as DupocBot does, so admitting
+    CupodBot never separates the pair. Until 2026-08-25 this was checked under
+    every assignment of the one remaining hole (PrudentBot vs CupodBot); that
+    cell is now a theorem, so the zoo loads with no hypotheticals at all."""
     bots = tuple(sorted(FULL_CERTIFIED_SUB_ZOO + ("CupodBot",)))
-    values = [("C", "C"), ("C", "D"), ("D", "C"), ("D", "D")]
-
-    for combo in values:
-        m = load_tau_matrix(
-            bots=bots, hypothetical_cells={("CupodBot", "PrudentBot"): combo}
-        )
-        groups = behavioral_twins(m)
-        assert any({"DupocBot", "JustBot"} <= set(g) for g in groups)
-        # CooperateBot/LegibleBot survive every assignment — irreducibly twinned.
-        assert any({"CooperateBot", "LegibleBot"} <= set(g) for g in groups)
-
-
-# ---------------------------------------------------------------- signal ----
+    m = load_tau_matrix(bots=bots, hypothetical_cells={})
+    assert m.is_fully_proven
+    groups = behavioral_twins(m)
+    assert any({"DupocBot", "JustBot"} <= set(g) for g in groups)
+    # CooperateBot/LegibleBot survive — irreducibly twinned.
+    assert any({"CooperateBot", "LegibleBot"} <= set(g) for g in groups)
 
 def test_point_mass_and_uniform_are_distributions() -> None:
     assert Signal.point_mass("DefectBot").weights == {"DefectBot": 1.0}
@@ -545,8 +545,11 @@ def test_report_renders_valid_svg(matrix) -> None:
 
     # No non-finite value may reach a coordinate.
     assert not re.search(r'[="\s,\-](nan|inf(inity)?)["\s,;)]', page, re.I)
-    # Stipulated cells must be visually marked, not silently blended in.
-    assert ("hyp" in page) == bool(matrix.hypothetical_cells)
+    # Stipulated cells must be visually marked, not silently blended in: the
+    # `hyp` class appears on a cell iff the matrix has hypothetical cells (the
+    # CSS rule for it is always emitted, so test the cells, not the page).
+    marked = bool(re.search(r'<td[^>]*class="[^"]*\bhyp\b', page))
+    assert marked == bool(matrix.hypothetical_cells)
 
 
 def test_composition_partitions_every_cell(matrix) -> None:

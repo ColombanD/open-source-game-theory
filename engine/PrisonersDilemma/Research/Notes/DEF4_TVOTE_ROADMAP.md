@@ -1354,6 +1354,16 @@ budget-staggering divergences, never a second budget in the lift.
   D-tail census it is a constructor CLASH (`c0 = C`), in the C-tail census it is
   THE reading rule and is killed by the inner guard's unprovability
   (`no_provable_sysNested_C_tail` takes that as `hinner`).
+* **The last stipulation fell (2026-08-25 evening).** `outcome_PrudentBot_vs_CupodBot
+  = (D, C)` at every same `k` (`Theorems/PrudentBot/vs_CupodBot.lean`, transpose in
+  `Theorems/CupodBot/vs_PrudentBot.lean`): Cupod's C is its else-play
+  (`no_provable_CupodBot_C_tail`, generic in the opponent) and Prudent's D is an
+  else-play of the nested shape (`no_provable_PrudentBot_D_tail`, the singleton floor
+  kernel with `no_provable_prudence_self_tail`'s telescope bullets — same searcher,
+  same target action). No Löb engine. The tau layer had proven the same value one
+  level up (`cupod_prudent_plays_C`/`prudent_cupod_plays_D`), and the base proof is
+  that argument with the `.sys` binder removed. `app`'s `CUPOD_STIPULATIONS` is
+  empty; the default and enlarged tau zoos are fully proven.
 * **TauTFTPf dropped from the certification (Colomban, 2026-08-25 evening).** It
   is the PROVER reading of TitForTatBot's question, a tau-only variant with no
   base bot, so `BASE_OF` has no entry for it and `direct_kernel_vs_base` compares

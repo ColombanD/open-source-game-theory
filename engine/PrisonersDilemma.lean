@@ -16,6 +16,7 @@ import PrisonersDilemma.Theorems.CupodBot.vs_DBot
 import PrisonersDilemma.Theorems.CupodBot.vs_OBot
 import PrisonersDilemma.Theorems.CupodBot.vs_EBot
 import PrisonersDilemma.Theorems.CupodBot.vs_MirrorBot
+import PrisonersDilemma.Theorems.CupodBot.vs_PrudentBot
 
 import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_CupodBot
@@ -115,6 +116,7 @@ import PrisonersDilemma.Theorems.PrudentBot.vs_MirrorBot
 import PrisonersDilemma.Theorems.PrudentBot.vs_OBot
 import PrisonersDilemma.Theorems.PrudentBot.vs_PrudentBot
 import PrisonersDilemma.Theorems.PrudentBot.vs_TitForTatBot
+import PrisonersDilemma.Theorems.PrudentBot.vs_CupodBot
 
 import PrisonersDilemma.Theorems.LlmGenerations.LlmLemmas
 import PrisonersDilemma.Theorems.DIMCID.vs_DIMCID
