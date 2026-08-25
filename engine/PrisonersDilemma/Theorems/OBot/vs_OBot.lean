@@ -4,12 +4,16 @@ import PrisonersDilemma.Bots.OBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.OBot.Helpers
+import PrisonersDilemma.Outcome
 
 
 open PD.Bots
 namespace PD.Theorems
-theorem outcome_OBot_vs_OBot (fuel : Nat):
-    outcome (fuel + 7) OBot OBot = some (.D, .D) := by
+@[outcome]
+theorem outcome_OBot_vs_OBot :
+    OutcomeSpec .nobudget 7
+      (fun _ => OBot) (fun _ => OBot) (some (.D, .D)) := by
+    intro fuel
     -- After substitution, OBot's outer guard simulates OBot vs (.bot CooperateBot).
     -- Trace OBot's outer ite (guard = C, take then-branch = inner ite, inner
     -- guard = C, take const C) → some C.

@@ -7,13 +7,17 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.Bots
 open PD.BaseTheorems
 namespace PD.Theorems
-theorem outcome_CupodTrollBot_vs_EBot (k fuel : Nat) :
-    outcome (fuel + 4) (CupodTrollBot k) EBot = some (.C, .D) := by
+@[outcome]
+theorem outcome_CupodTrollBot_vs_EBot :
+    OutcomeSpec .universal 4
+      CupodTrollBot (fun _ => EBot) (some (.C, .D)) := by
+  intro k fuel
   -- CupodTrollBot cooperates against `EBot` (direction A).
   have hA : play (fuel + 4) (CupodTrollBot k) EBot = some .C :=
     CupodTrollBot_cooperates_if_opp_not_CupodBot k (fuel + 2) EBot

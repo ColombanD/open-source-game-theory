@@ -2,12 +2,16 @@ import PrisonersDilemma.Bots.EBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.MirrorBot.Helpers
 import PrisonersDilemma.Theorems.EBot.Helpers
+import PrisonersDilemma.Outcome
 
 
 open PD.Bots
 namespace PD.Theorems
-theorem outcome_EBot_vs_MirrorBot (fuel : Nat):
-    outcome (fuel + 8) EBot MirrorBot = some (.C, .C) := by
+@[outcome]
+theorem outcome_EBot_vs_MirrorBot :
+    OutcomeSpec .nobudget 8
+      (fun _ => EBot) (fun _ => MirrorBot) (some (.C, .C)) := by
+    intro fuel
     have hA : play (fuel + 8) EBot MirrorBot = some .C := EBot_plays_C_against_MirrorBot (fuel + 1)
     have hB : play (fuel + 8) MirrorBot EBot = some .C := by
         have hEBotPlays : play (fuel + 7) EBot MirrorBot = some .C :=

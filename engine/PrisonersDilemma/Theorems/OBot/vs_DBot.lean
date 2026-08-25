@@ -5,12 +5,16 @@ import PrisonersDilemma.Theorems.DBot.Helpers
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.OBot.Helpers
+import PrisonersDilemma.Outcome
 
 
 open PD.Bots
 namespace PD.Theorems
-theorem outcome_OBot_vs_DBot (fuel : Nat):
-    outcome (fuel + 6) OBot DBot = some (.D, .C) := by
+@[outcome]
+theorem outcome_OBot_vs_DBot :
+    OutcomeSpec .nobudget 6
+      (fun _ => OBot) (fun _ => DBot) (some (.D, .C)) := by
+    intro fuel
     -- hGuard1: simulates DBot vs (.bot CooperateBot). DBot's inner guard
     -- returns C, so DBot takes its const-D branch.
     have hGuard1 : eval (fuel + 5) OBot DBot (.sim .opp (.bot CooperateBot)) = some .D := by

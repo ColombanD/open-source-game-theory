@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.LlmGenerations.GuardianBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.GuardianBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -16,8 +17,11 @@ namespace PD.Theorems
     which MirrorBot provably-never bullies (soundness refutation), and MirrorBot's
     simulation reaches GuardianBot's trusting else-branch. Cooperation through
     norms rather than mutual proof of cooperation. -/
-theorem outcome_GuardianBot_vs_MirrorBot (k fuel : Nat) :
-    outcome (fuel + 3) (GuardianBot k) MirrorBot = some (.C, .C) := by
+@[outcome]
+theorem outcome_GuardianBot_vs_MirrorBot :
+    OutcomeSpec .universal 3
+      GuardianBot (fun _ => MirrorBot) (some (.C, .C)) := by
+  intro k fuel
   have hA : play (fuel + 3) (GuardianBot k) MirrorBot = some .C := by
     simpa [Nat.add_assoc] using GuardianBot_cooperates_vs_MirrorBot k (fuel + 1)
   have hB : play (fuel + 3) MirrorBot (GuardianBot k) = some .C :=

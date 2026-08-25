@@ -8,6 +8,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -135,8 +136,11 @@ theorem PrudentBot_plays_D_against_self (k fuel : Nat) :
     provers, each needing to certify its own failed search to trust the other: neither
     can, both defect. The cooperative fixed point exists only one tier up
     (`outcome_PrudentBot2_vs_PrudentBot2`, below). -/
-theorem outcome_PrudentBot_vs_PrudentBot (k fuel : Nat) :
-    outcome (fuel + 3) (PrudentBot k) (PrudentBot k) = some (.D, .D) := by
+@[outcome]
+theorem outcome_PrudentBot_vs_PrudentBot :
+    OutcomeSpec .universal 3
+      PrudentBot PrudentBot (some (.D, .D)) := by
+  intro k fuel
   have hA := PrudentBot_plays_D_against_self k fuel
   simp [outcome, hA]
 

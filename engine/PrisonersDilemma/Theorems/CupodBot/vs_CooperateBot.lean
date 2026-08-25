@@ -7,14 +7,18 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.CupodBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.Bots
 open PD.BaseTheorems
 namespace PD.Theorems
 /-- CupodBot vs CooperateBot: uses proof search being false -/
-theorem outcome_CupodBot_vs_CooperateBot (k fuel : Nat):
-    outcome (fuel + 2) (CupodBot k) CooperateBot = some (.C, .C) := by
+@[outcome]
+theorem outcome_CupodBot_vs_CooperateBot :
+    OutcomeSpec .universal 2
+      CupodBot (fun _ => CooperateBot) (some (.C, .C)) := by
+  intro k fuel
   -- Left side: CUPOD executes its `.search` guard. The guard is false by the
   -- lemma above, so the `search` falls through to the final `.const .C` branch.
   have hA : play (fuel + 2) (CupodBot k) CooperateBot = some .C := by

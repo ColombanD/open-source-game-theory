@@ -8,6 +8,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.DupocBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -16,8 +17,11 @@ namespace PD.Theorems
 /-- **The honest DupocBot×DBot outcome — `(D, C)` at every budget.** The simulator
     cooperates (it watched Dupoc defect on the DefectBot probe), the searcher defects
     (it can never afford to certify a play that crosses its own failed search). -/
-theorem outcome_DupocBot_vs_DBot (k fuel : Nat) :
-    outcome (fuel + 4) (DupocBot k) DBot = some (.D, .C) := by
+@[outcome]
+theorem outcome_DupocBot_vs_DBot :
+    OutcomeSpec .universal 4
+      DupocBot (fun _ => DBot) (some (.D, .C)) := by
+  intro k fuel
   have hA : play (fuel + 4) (DupocBot k) DBot = some .D := by
     simpa [Nat.add_assoc] using DupocBot_plays_D_against_DBot k (fuel + 2)
   have hB : play (fuel + 4) DBot (DupocBot k) = some .C :=

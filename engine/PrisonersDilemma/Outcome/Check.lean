@@ -16,4 +16,4 @@ commands, so a command there would break the first LLM-written theorem that land
 -- the COUNT is pinned, so nothing new slips in untagged.
 #check_outcome_theorems "PrisonersDilemma/Theorems"
   excluding "PrisonersDilemma/Outcome/exclusions.txt"
-  expecting 2 pending 153
+  expecting 48 pending 107

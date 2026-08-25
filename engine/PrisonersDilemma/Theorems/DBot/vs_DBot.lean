@@ -4,11 +4,15 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Theorems.DefectBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.DBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD.Bots
 namespace PD.Theorems
-theorem outcome_DBot_vs_DBot (fuel : Nat):
-    outcome (fuel + 6) DBot DBot = some (.D, .D) := by
+@[outcome]
+theorem outcome_DBot_vs_DBot :
+    OutcomeSpec .nobudget 6
+      (fun _ => DBot) (fun _ => DBot) (some (.D, .D)) := by
+    intro fuel
     -- After substitution, the outer guard reduces to running DBot with
     -- opponent (.bot DefectBot) — not DefectBot — because `.bot` blocks
     -- subst. So we directly trace DBot vs (.bot DefectBot).

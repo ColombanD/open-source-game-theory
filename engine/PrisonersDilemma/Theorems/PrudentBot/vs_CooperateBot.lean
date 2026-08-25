@@ -10,6 +10,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -59,8 +60,11 @@ theorem PrudentBot_plays_D_against_CooperateBot (k fuel : Nat) :
   · rw [if_neg hc]; rfl
 
 /-- PrudentBot vs CooperateBot: PrudentBot exploits the sucker, (D, C). -/
-theorem outcome_PrudentBot_vs_CooperateBot (k fuel : Nat) :
-    outcome (fuel + 3) (PrudentBot k) CooperateBot = some (.D, .C) := by
+@[outcome]
+theorem outcome_PrudentBot_vs_CooperateBot :
+    OutcomeSpec .universal 3
+      PrudentBot (fun _ => CooperateBot) (some (.D, .C)) := by
+  intro k fuel
   have hA : play (fuel + 3) (PrudentBot k) CooperateBot = some .D :=
     PrudentBot_plays_D_against_CooperateBot k fuel
   have hB : play (fuel + 3) CooperateBot (PrudentBot k) = some .C := by

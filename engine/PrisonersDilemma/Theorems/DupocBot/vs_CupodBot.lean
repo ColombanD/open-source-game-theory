@@ -7,6 +7,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.DupocBot.Helpers
 import PrisonersDilemma.Theorems.CupodBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -31,8 +32,11 @@ uses only soundness + τ-closure, never the constructor list. -/
     `k` (same on both sides) and every sufficient fuel: the searcher defects,
     the cooperator cooperates — the symmetric guard pair annihilates itself
     (paper Thm 1.14; the `(C, D)` orientation is derived by the matrix loader). -/
-theorem outcome_DupocBot_vs_CupodBot (k fuel : Nat) :
-    outcome (fuel + 2) (DupocBot k) (CupodBot k) = some (.D, .C) := by
+@[outcome]
+theorem outcome_DupocBot_vs_CupodBot :
+    OutcomeSpec .universal 2
+      DupocBot CupodBot (some (.D, .C)) := by
+  intro k fuel
   have hA := DupocBot_plays_D_vs_CupodBot k fuel
   have hB := CupodBot_plays_C_vs_DupocBot k fuel
   simp [outcome, hA, hB]

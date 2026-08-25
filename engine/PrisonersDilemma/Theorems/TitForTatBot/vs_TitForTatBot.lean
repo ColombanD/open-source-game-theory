@@ -3,12 +3,16 @@ import PrisonersDilemma.Bots.TitForTatBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.TitForTatBot.Helpers
+import PrisonersDilemma.Outcome
 
 
 open PD.Bots
 namespace PD.Theorems
-theorem outcome_TitForTatBot_vs_TitForTatBot (fuel : Nat):
-    outcome (fuel + 6) TitForTatBot TitForTatBot = some (.C, .C) := by
+@[outcome]
+theorem outcome_TitForTatBot_vs_TitForTatBot :
+    OutcomeSpec .nobudget 6
+      (fun _ => TitForTatBot) (fun _ => TitForTatBot) (some (.C, .C)) := by
+    intro fuel
     have hGuard : eval (fuel + 5) TitForTatBot TitForTatBot (.sim .opp (.bot CooperateBot)) = some .C := by
       simp [eval, Prog.subst, TitForTatBot, CooperateBot]; decide
     have hA : play (fuel + 6) TitForTatBot TitForTatBot = some .C := by

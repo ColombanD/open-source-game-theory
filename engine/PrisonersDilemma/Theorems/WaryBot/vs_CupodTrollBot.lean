@@ -6,6 +6,7 @@ import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.WaryBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -33,8 +34,11 @@ theorem proofSearch_false_wary_CupodTrollBot (k : Nat) :
 /-- WaryBot vs CupodTrollBot: mutual cooperation at EVERY budget — the troll's
     identity guard fails structurally, and its cooperation is irrefutable.
     A soundness-only cell, fully general in `k`. -/
-theorem outcome_WaryBot_vs_CupodTrollBot (k fuel : Nat) :
-    outcome (fuel + 2) (WaryBot k) (CupodTrollBot k) = some (.C, .C) := by
+@[outcome]
+theorem outcome_WaryBot_vs_CupodTrollBot :
+    OutcomeSpec .universal 2
+      WaryBot CupodTrollBot (some (.C, .C)) := by
+  intro k fuel
   have hg := proofSearch_false_wary_CupodTrollBot k
   have hA : play (fuel + 2) (WaryBot k) (CupodTrollBot k) = some .C := by
     show eval (fuel + 2) (WaryBot k) (CupodTrollBot k) (WaryBot k) = some .C

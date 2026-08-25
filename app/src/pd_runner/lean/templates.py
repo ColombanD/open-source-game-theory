@@ -455,6 +455,13 @@ def _actions_match(
 
 _BOT_DEFS = _discover_bot_defs(_BOTS_DIR)
 _BOT_ALIASES = _legacy_bot_aliases(set(_BOT_DEFS))
+# Bots with no budget argument — they appear as `fun _ => Bot` in an `OutcomeSpec`
+# statement and must NOT be given a budget parameter in the citation catalog.
+_CLOSED_BOTS = frozenset({
+    "CooperateBot", "DefectBot", "MirrorBot", "OBot", "DBot", "EBot", "TitForTatBot",
+})
+
+
 def _universals_from_export() -> list[UniversalOutcomeTheorem]:
     """Catalog entries for theorems that have MIGRATED to the `OutcomeSpec` template.
 
@@ -476,16 +483,27 @@ def _universals_from_export() -> list[UniversalOutcomeTheorem]:
         # `OutcomeSpec .nobudget/.universal` unfolds to `∀ k fuel` (budgeted) or
         # `∀ fuel` (closed), so a citation supplies those positionally.
         params = ("k", "fuel") if t.budget_regime == "universal" else ("fuel",)
+        # The budget parameter attaches PER BOT, not per regime: in
+        # `OutcomeSpec .universal … CupodBot (fun _ => CooperateBot)` the left bot takes
+        # `k` and the right one is closed. Giving both `k` makes the lookup miss.
+        budgeted = t.budget_regime == "universal"
+
+        def _pattern(bot: str) -> BotPattern:
+            return BotPattern(bot, "k" if budgeted and bot not in _CLOSED_BOTS else None)
+
         out.append(UniversalOutcomeTheorem(
             name=t.name,
             module=t.module,
             params=params,
-            left_bot=BotPattern(t.left_bot, "k" if t.budget_regime == "universal" else None),
-            right_bot=BotPattern(t.right_bot, "k" if t.budget_regime == "universal" else None),
+            left_bot=_pattern(t.left_bot),
+            right_bot=_pattern(t.right_bot),
             left_action=t.pair[0],
             right_action=t.pair[1],
             fuel_param="fuel",
-            fuel_expr=f"fuel + {t.fuel_pad}" if t.fuel_pad else "fuel",
+            # PARENTHESIZED, like the legacy parser's raw source term: the generated
+            # call site interpolates this bare, so `fuel + 2` would emit
+            # `outcome fuel + 2 L R` and parse as `(outcome fuel) + 2`.
+            fuel_expr=f"(fuel + {t.fuel_pad})" if t.fuel_pad else "fuel",
         ))
     return out
 

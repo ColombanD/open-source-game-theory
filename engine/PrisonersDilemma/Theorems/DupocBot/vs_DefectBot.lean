@@ -7,14 +7,18 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.DupocBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 /-- DupocBot vs DefectBot: uses proof search being false -/
-theorem outcome_DupocBot_vs_DefectBot (k fuel : Nat):
-    outcome (fuel + 2) (DupocBot k) DefectBot = some (.D, .D) := by
+@[outcome]
+theorem outcome_DupocBot_vs_DefectBot :
+    OutcomeSpec .universal 2
+      DupocBot (fun _ => DefectBot) (some (.D, .D)) := by
+  intro k fuel
   -- Left side: Dupoc executes its `.search` guard. The guard is false by the
   -- lemma above, so the `search` falls through to the final `.const .D` branch.
   have hA : play (fuel + 2) (DupocBot k) DefectBot = some .D := by

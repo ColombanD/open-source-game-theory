@@ -4,6 +4,7 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.MirrorBot.Helpers
 import PrisonersDilemma.Theorems.EBot.Helpers
+import PrisonersDilemma.Outcome
 
 
 open PD.Bots
@@ -16,8 +17,11 @@ time rather than being captured by the outer EBot/EBot frame. In self-play this
 makes the third guard cleanly evaluate to `C` (EBot mirrors itself against
 MirrorBot, MirrorBot cooperates), so EBot cooperates with itself.
 -/
-theorem outcome_EBot_vs_EBot (fuel : Nat):
-    outcome (fuel + 11) EBot EBot = some (.C, .C) := by
+@[outcome]
+theorem outcome_EBot_vs_EBot :
+    OutcomeSpec .nobudget 11
+      (fun _ => EBot) (fun _ => EBot) (some (.C, .C)) := by
+  intro fuel
   -- Helpers: EBot's behaviour against `.bot`-wrapped probes.
   have hEBotBotD : ∀ k, eval (k + 6) EBot (.bot DefectBot) EBot = some .D := by
     intro k

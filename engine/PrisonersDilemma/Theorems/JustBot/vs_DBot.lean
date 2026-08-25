@@ -9,6 +9,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -99,8 +100,11 @@ theorem JustBot_plays_D_against_DBot (k fuel : Nat) :
   simp [eval, Prog.subst, Formula.subst, hg]
 
 /-- **The honest JustBot×DBot outcome — `(D, C)` at every budget.** -/
-theorem outcome_JustBot_vs_DBot (k fuel : Nat) :
-    outcome (fuel + 4) (JustBot k) DBot = some (.D, .C) := by
+@[outcome]
+theorem outcome_JustBot_vs_DBot :
+    OutcomeSpec .universal 4
+      JustBot (fun _ => DBot) (some (.D, .C)) := by
+  intro k fuel
   have hA : play (fuel + 4) (JustBot k) DBot = some .D := by
     simpa [Nat.add_assoc] using JustBot_plays_D_against_DBot k (fuel + 2)
   have hB : play (fuel + 4) DBot (JustBot k) = some .C :=

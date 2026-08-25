@@ -8,6 +8,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -31,8 +32,11 @@ theorem PrudentBot_plays_D_against_DefectBot (k fuel : Nat) :
     (proofSearch_false_DefectBot_vs_PrudentBot k)
 
 /-- PrudentBot vs DefectBot: mutual defection, (D, D). -/
-theorem outcome_PrudentBot_vs_DefectBot (k fuel : Nat) :
-    outcome (fuel + 2) (PrudentBot k) DefectBot = some (.D, .D) := by
+@[outcome]
+theorem outcome_PrudentBot_vs_DefectBot :
+    OutcomeSpec .universal 2
+      PrudentBot (fun _ => DefectBot) (some (.D, .D)) := by
+  intro k fuel
   have hA : play (fuel + 2) (PrudentBot k) DefectBot = some .D :=
     PrudentBot_plays_D_against_DefectBot k fuel
   have hB : play (fuel + 2) DefectBot (PrudentBot k) = some .D := by

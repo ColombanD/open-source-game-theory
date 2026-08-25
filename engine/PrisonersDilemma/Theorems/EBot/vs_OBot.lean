@@ -6,6 +6,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.OBot.Helpers
 import PrisonersDilemma.Theorems.MirrorBot.Helpers
 import PrisonersDilemma.Theorems.EBot.Helpers
+import PrisonersDilemma.Outcome
 
 
 open PD.Bots
@@ -17,8 +18,11 @@ namespace PD.Theorems
 -- shallow, the search is just wide.
 set_option maxHeartbeats 1000000
 
-theorem outcome_EBot_vs_OBot (fuel : Nat):
-    outcome (fuel + 8) EBot OBot = some (.C, .D) := by
+@[outcome]
+theorem outcome_EBot_vs_OBot :
+    OutcomeSpec .nobudget 8
+      (fun _ => EBot) (fun _ => OBot) (some (.C, .D)) := by
+    intro fuel
     -- For hGuard1 we directly trace OBot vs (.bot DefectBot): OBot's outer
     -- guard returns D (since (.bot DefectBot) defects against CooperateBot),
     -- so OBot defects.

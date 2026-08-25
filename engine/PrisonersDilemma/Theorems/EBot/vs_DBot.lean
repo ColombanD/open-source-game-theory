@@ -6,6 +6,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.DBot.Helpers
 import PrisonersDilemma.Theorems.MirrorBot.Helpers
 import PrisonersDilemma.Theorems.EBot.Helpers
+import PrisonersDilemma.Outcome
 
 
 open PD.Bots
@@ -17,8 +18,11 @@ namespace PD.Theorems
 -- shallow, the search is just wide.
 set_option maxHeartbeats 1000000
 
-theorem outcome_EBot_vs_DBot (fuel : Nat):
-    outcome (fuel + 8) EBot DBot = some (.D, .C) := by
+@[outcome]
+theorem outcome_EBot_vs_DBot :
+    OutcomeSpec .nobudget 8
+      (fun _ => EBot) (fun _ => DBot) (some (.D, .C)) := by
+    intro fuel
     have hGuard1 : eval (fuel + 7) EBot DBot (.sim .opp (.bot DefectBot)) = some .C := by
       simp [eval, Prog.subst, DBot, DefectBot]; decide
     have hA : play (fuel + 8) EBot DBot = some .D := by
