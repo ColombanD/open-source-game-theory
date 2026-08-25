@@ -5,7 +5,7 @@ version = "0.1.0"
 # until its arms are written — that migration is Milestone 2 (see the Def-4
 # section of TAUBOT_TRANSPARENCY_DESIGN.md). Still explicitly buildable via
 # `lake build Metatheory`; restore it to defaultTargets when M2 lands.
-defaultTargets = ["PrisonersDilemma"]
+defaultTargets = ["PrisonersDilemma", "OutcomeCheck"]
 
 [[require]]
 name = "mathlib"
@@ -22,3 +22,16 @@ name = "PrisonersDilemma"
 [[lean_lib]]
 name = "Metatheory"
 roots = ["PrisonersDilemma.Decidability"]
+
+# The outcome-theorem template gate. Separate root (not the `PrisonersDilemma.lean`
+# index) because the app's library_writer appends `import` lines to that index, and Lean
+# requires imports to precede commands. Building this target runs the validator + census.
+[[lean_lib]]
+name = "OutcomeCheck"
+roots = ["PrisonersDilemma.Outcome.Check"]
+
+# Serializes the @[outcome] cells to app/generated/outcome_theorems.json, which the
+# Python matrix reads instead of regex-scraping the sources.
+[[lean_exe]]
+name = "export_outcomes"
+root = "PrisonersDilemma.Outcome.Export"

@@ -1,5 +1,7 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
+import PrisonersDilemma.Base.ValuationSoundness
+import PrisonersDilemma.Outcome
 
 open PD
 
@@ -79,6 +81,28 @@ theorem eval_sim_opp_bot_of_play
     eval (fuel + 1) me opponent (.sim .opp (.bot z)) = some a := by
   show eval fuel opponent (.bot z) opponent = some a
   exact h
+
+/-- **Fuel monotonicity at the `outcome` level.** The `eval`-level lemmas
+    (`eval_mono`/`eval_mono_le`, `Base/ValuationSoundness`) lift to whole matches:
+    a determined outcome survives any larger fuel.
+
+    This is what makes the `∃ fuel` and `∀ fuel, … (fuel + pad)` statement forms
+    interchangeable, so outcome theorems can be stated in ONE canonical cofinite
+    shape (see `Outcome/Spec.lean`). Before this lemma every theorem re-derived
+    the lift inline. -/
+theorem outcome_mono_le {p q : Prog} {r : Outcome} {N : Nat}
+    (h : outcome N p q = some r) : ∀ M, N ≤ M → outcome M p q = some r := by
+  intro M hM
+  unfold outcome play at h ⊢
+  cases hA : eval N p q p with
+  | none => rw [hA] at h; simp at h
+  | some a =>
+    cases hB : eval N q p q with
+    | none => rw [hA, hB] at h; simp at h
+    | some b =>
+      rw [PD.BaseTheorems.eval_mono_le hA M hM, PD.BaseTheorems.eval_mono_le hB M hM]
+      rw [hA, hB] at h
+      exact h
 
 /-- Package two `play` results into an `outcome`. -/
 theorem outcome_of_plays

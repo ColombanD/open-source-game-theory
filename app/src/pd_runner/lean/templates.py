@@ -455,7 +455,50 @@ def _actions_match(
 
 _BOT_DEFS = _discover_bot_defs(_BOTS_DIR)
 _BOT_ALIASES = _legacy_bot_aliases(set(_BOT_DEFS))
+def _universals_from_export() -> list[UniversalOutcomeTheorem]:
+    """Catalog entries for theorems that have MIGRATED to the `OutcomeSpec` template.
+
+    The regex discovery above cannot see them: their statement is now an `OutcomeSpec`
+    application rather than a literal `outcome … = some …` equation, so `fullmatch`
+    skips them and they silently vanish from the LLM's citable-theorem catalog. This
+    reads the same Lean-side export the outcome matrix uses.
+
+    Only `nobudget`/`universal` regimes become universal entries — an `eventual` theorem
+    is not citable at an arbitrary budget, which is exactly what the old classifier's
+    `∃` check encoded.
+    """
+    from pd_runner.eval.outcome_matrix import _theorems_from_export
+
+    out: list[UniversalOutcomeTheorem] = []
+    for t in _theorems_from_export():
+        if t.pair is None or t.shape != "universal":
+            continue
+        # `OutcomeSpec .nobudget/.universal` unfolds to `∀ k fuel` (budgeted) or
+        # `∀ fuel` (closed), so a citation supplies those positionally.
+        params = ("k", "fuel") if t.budget_regime == "universal" else ("fuel",)
+        out.append(UniversalOutcomeTheorem(
+            name=t.name,
+            module=t.module,
+            params=params,
+            left_bot=BotPattern(t.left_bot, "k" if t.budget_regime == "universal" else None),
+            right_bot=BotPattern(t.right_bot, "k" if t.budget_regime == "universal" else None),
+            left_action=t.pair[0],
+            right_action=t.pair[1],
+            fuel_param="fuel",
+            fuel_expr=f"fuel + {t.fuel_pad}" if t.fuel_pad else "fuel",
+        ))
+    return out
+
+
 _UNIVERSAL_OUTCOME_THEOREMS, _EXISTENTIAL_OUTCOME_THEOREMS = _discover_outcome_theorems(_THEOREMS_DIR)
+
+# MIGRATION SEAM (mirrors `outcome_matrix.scan_outcome_theorems`): the export is
+# authoritative for migrated theorems, the regex scan covers the rest. Once every
+# theorem carries `@[outcome]`, `_discover_outcome_theorems` is deleted.
+_seen_universal = {t.name for t in _UNIVERSAL_OUTCOME_THEOREMS}
+_UNIVERSAL_OUTCOME_THEOREMS = _UNIVERSAL_OUTCOME_THEOREMS + [
+    t for t in _universals_from_export() if t.name not in _seen_universal
+]
 
 
 def select_outcome_theorem(

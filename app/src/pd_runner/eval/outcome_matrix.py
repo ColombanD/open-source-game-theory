@@ -32,6 +32,7 @@ import argparse
 import csv
 import io
 import logging
+import json
 import re
 import tomllib
 from dataclasses import dataclass
@@ -113,6 +114,14 @@ class OutcomeTheorem:
     # Proved under extra side hypotheses (floor/size/budget guards).
     has_hypotheses: bool
     file: str
+    # --- Lean-export-only fields (additive; empty for legacy regex-scanned rows) ---
+    # The `BudgetRegime` the theorem was stated in: nobudget | universal | eventual.
+    # Richer than `shape`, which is kept lossy for backward compatibility.
+    budget_regime: str = ""
+    # `outcome (fuel + pad)` — the cofinite fuel offset.
+    fuel_pad: int = 0
+    # The defining module, e.g. `PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot`.
+    module: str = ""
 
 
 def library_bots(theorems_dir: Path = _THEOREMS_DIR) -> set[str]:
@@ -127,8 +136,107 @@ def library_bots(theorems_dir: Path = _THEOREMS_DIR) -> set[str]:
     }
 
 
+# The Lean-side export (`lake exe export_outcomes`) — structured data recovered from
+# ELABORATED TYPES, so the regime and the side conditions are read rather than guessed.
+# Committed so the Python side works without a Lean toolchain; `source_digest` lets the
+# Lean linter reject a stale or hand-edited file.
+_EXPORT_FILE = Path(__file__).resolve().parents[3] / "generated" / "outcome_theorems.json"
+
+# `BudgetRegime` -> the legacy `shape` vocabulary. Deliberately lossy in exactly the way
+# the regex classifier was, so `tau/matrix.py` and the tau tests are unaffected.
+# NOTE: "existential" is now unreachable (the `witness` regime collapsed into `eventual`);
+# it stays in the vocabulary only for `outcome_status.toml` history.
+_SHAPE_MAP = {
+    "nobudget": "universal",
+    "universal": "universal",
+    "eventual": "threshold",
+}
+
+
+def _fnv1a64(text: str) -> int:
+    """FNV-1a, mirroring `PD.Outcome.digestOf` in `Outcome/Export.lean`."""
+    h = 1469598103934665603
+    for ch in text:
+        h = ((h ^ ord(ch)) * 1099511628211) & 0xFFFFFFFFFFFFFFFF
+    return h
+
+
+def _verify_digest(data: dict, export_file: Path) -> None:
+    """Reject a hand-edited export.
+
+    The cells are machine-checked THEOREMS; a JSON someone edited by hand is not. Without
+    this check, flipping a `pair` in the file silently rewrites a proven matrix cell and
+    every downstream consumer believes it.
+    """
+    claimed = data.get("source_digest")
+    if claimed is None:
+        raise ValueError(f"{export_file}: missing `source_digest`")
+    rows = [
+        json.dumps(t, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        for t in data["theorems"]
+    ]
+    actual = str(_fnv1a64("".join(rows)))
+    if actual != claimed:
+        raise ValueError(
+            f"{export_file}: source_digest mismatch — the file was edited by hand or is "
+            f"stale (claimed {claimed}, recomputed {actual}). Regenerate it with "
+            f"`lake exe export_outcomes`; never hand-edit proven cells."
+        )
+
+
+def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheorem]:
+    """Read the `@[outcome]` cells exported from Lean.
+
+    Returns [] when the file is absent, so a partially-migrated tree still works: during
+    the migration `scan_outcome_theorems` unions this with the legacy regex scan.
+    """
+    if not export_file.exists():
+        return []
+    data = json.loads(export_file.read_text(encoding="utf-8"))
+    version = data.get("schema_version")
+    if version != 1:
+        raise ValueError(
+            f"{export_file}: unsupported schema_version {version!r} (expected 1)"
+        )
+    _verify_digest(data, export_file)
+    out: list[OutcomeTheorem] = []
+    for t in data["theorems"]:
+        pair = tuple(t["pair"]) if t["pair"] else None
+        shape = "no_outcome" if pair is None else _SHAPE_MAP[t["budget_regime"]]
+        out.append(OutcomeTheorem(
+            name=t["name"],
+            left_bot=t["left_bot"],
+            right_bot=t["right_bot"],
+            pair=pair,
+            shape=shape,
+            # One flag, two honest causes: a real `Prop` binder, or a staggered budget.
+            has_hypotheses=bool(t["side_conditions"]) or bool(t["staggered"]),
+            file=t.get("file", ""),
+            budget_regime=t["budget_regime"],
+            fuel_pad=t["fuel_pad"],
+            module=t.get("module", ""),
+        ))
+    return out
+
+
 def scan_outcome_theorems(theorems_dir: Path = _THEOREMS_DIR) -> list[OutcomeTheorem]:
-    """Collect every accepted `(llm_)outcome_X_vs_Y` theorem with its result."""
+    """Every accepted `(llm_)outcome_X_vs_Y` theorem with its result.
+
+    MIGRATION SEAM: the Lean export is authoritative for the theorems it covers; the
+    legacy regex scan fills in the not-yet-migrated ones. Once every theorem carries
+    `@[outcome]`, the regex half (and every `_*_RE` above) is deleted.
+    """
+    exported = _theorems_from_export()
+    by_name = {t.name: t for t in exported}
+    for t in _scan_outcome_theorems_legacy(theorems_dir):
+        by_name.setdefault(t.name, t)  # export wins on conflict
+    return sorted(by_name.values(), key=lambda t: t.name)
+
+
+def _scan_outcome_theorems_legacy(
+    theorems_dir: Path = _THEOREMS_DIR,
+) -> list[OutcomeTheorem]:
+    """LEGACY regex scan — deleted once the migration completes."""
     bots = library_bots(theorems_dir)
     theorems: list[OutcomeTheorem] = []
     for lean_file in sorted(theorems_dir.rglob("*.lean")):
