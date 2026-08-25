@@ -67,39 +67,8 @@ _CANONICAL_ORDER = [
     "DIMCID",
 ]
 
-# Strict name match: bot names are alphanumeric (no underscores), so suffixed
-# variants like `outcome_WaryBot_vs_DefectBot_floor` fail the `[({\[:]` boundary
-# right after `<B>` and are skipped. Membership of <A>/<B> in the bot-directory
-# set is enforced separately in `scan_outcome_theorems`.
-_THEOREM_RE = re.compile(
-    r"theorem\s+((llm_)?outcome_([A-Za-z0-9]+)_vs_([A-Za-z0-9]+))\s*[({\[:].*?:=",
-    re.DOTALL,
-)
-_PAIR_RE = re.compile(r"=\s*some\s*\(\s*\.([CD])\s*,\s*\.([CD])\s*\)")
-_NONE_RE = re.compile(r"=\s*none\b")
-# Side-hypothesis binders follow the codebase convention of `h`-prefixed names
-# ((hsz : …), (hjk : …), (hk : 2 ≤ k)); plain budget/fuel binders never do.
-_HYP_RE = re.compile(r"\(\s*h\w*\s*:")
-# A STAGGERED budget: a bot applied to an ARITHMETIC expression rather than a
-# bare variable — `PrudentBot (2*k+64)`, `JustBot (4*j+100)`,
-# `OptimBot k (65536 * k)`. Such a theorem is only about the budget regime it
-# names, exactly like one carrying an explicit side hypothesis, so it must be
-# flagged the same way (2026-08-21: `outcome_JustBot_vs_CupodTrollBot` bakes its
-# stagger into the STATEMENT and so escaped `_HYP_RE`, which silently understated
-# the dagger set).
-#
-# Scoped to the `outcome …` application so the `(fuel + 2)` FUEL argument — which
-# every theorem carries and which says nothing about budgets — is not matched.
-_OUTCOME_CALL_RE = re.compile(r"outcome\s+(?:\(?[^()]*?\)?)\s*(\(.*?)=\s*some", re.S)
-_STAGGER_RE = re.compile(r"[A-Z][A-Za-z0-9]*\s+(?:[a-z]\w*\s+)*\([^()]*[+*][^()]*\)")
 
 
-def _has_staggered_budget(statement: str) -> bool:
-    """Does the `outcome` call apply a bot to a compound budget expression?"""
-    call = _OUTCOME_CALL_RE.search(statement)
-    if call is None:
-        return False
-    return bool(_STAGGER_RE.search(call.group(1)))
 
 
 @dataclass(frozen=True)
@@ -222,52 +191,12 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
 def scan_outcome_theorems(theorems_dir: Path = _THEOREMS_DIR) -> list[OutcomeTheorem]:
     """Every accepted `(llm_)outcome_X_vs_Y` theorem with its result.
 
-    MIGRATION SEAM: the Lean export is authoritative for the theorems it covers; the
-    legacy regex scan fills in the not-yet-migrated ones. Once every theorem carries
-    `@[outcome]`, the regex half (and every `_*_RE` above) is deleted.
+    Read entirely from the Lean-side `@[outcome]` export: the shape, the fuel mode, the
+    side conditions and the staggering are recovered from ELABORATED TYPES, not guessed
+    from source text. The regex extractor this replaced inferred the dagger from
+    "does a binder name start with `h`", which silently mis-classified at least one cell.
     """
-    exported = _theorems_from_export()
-    by_name = {t.name: t for t in exported}
-    for t in _scan_outcome_theorems_legacy(theorems_dir):
-        by_name.setdefault(t.name, t)  # export wins on conflict
-    return sorted(by_name.values(), key=lambda t: t.name)
-
-
-def _scan_outcome_theorems_legacy(
-    theorems_dir: Path = _THEOREMS_DIR,
-) -> list[OutcomeTheorem]:
-    """LEGACY regex scan — deleted once the migration completes."""
-    bots = library_bots(theorems_dir)
-    theorems: list[OutcomeTheorem] = []
-    for lean_file in sorted(theorems_dir.rglob("*.lean")):
-        content = lean_file.read_text(encoding="utf-8")
-        for match in _THEOREM_RE.finditer(content):
-            name, left, right = match.group(1), match.group(3), match.group(4)
-            if left not in bots or right not in bots:
-                continue  # tier variants (JustBot2, …) or non-library opponents
-            statement = match.group(0)
-
-            pair_match = _PAIR_RE.search(statement)
-            if pair_match:
-                pair: tuple[str, str] | None = (pair_match.group(1), pair_match.group(2))
-                if "∀" in statement and "∃" in statement:
-                    shape = "threshold"
-                elif "∃" in statement:
-                    shape = "existential"
-                else:
-                    shape = "universal"
-            elif _NONE_RE.search(statement):
-                pair, shape = None, "no_outcome"
-            else:
-                continue  # not an outcome statement (e.g. helper with a lookalike name)
-
-            theorems.append(OutcomeTheorem(
-                name, left, right, pair, shape,
-                has_hypotheses=(bool(_HYP_RE.search(statement))
-                                or _has_staggered_budget(statement)),
-                file=lean_file.name,
-            ))
-    return theorems
+    return sorted(_theorems_from_export(), key=lambda t: t.name)
 
 
 def load_status(

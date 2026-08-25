@@ -510,9 +510,9 @@ def _universals_from_export() -> list[UniversalOutcomeTheorem]:
 
 _UNIVERSAL_OUTCOME_THEOREMS, _EXISTENTIAL_OUTCOME_THEOREMS = _discover_outcome_theorems(_THEOREMS_DIR)
 
-# MIGRATION SEAM (mirrors `outcome_matrix.scan_outcome_theorems`): the export is
-# authoritative for migrated theorems, the regex scan covers the rest. Once every
-# theorem carries `@[outcome]`, `_discover_outcome_theorems` is deleted.
+# The catalog now comes ENTIRELY from the Lean `@[outcome]` export; the regex discovery
+# above is retained only for `ExistentialOutcomeTheorem`, whose form no longer occurs in
+# the library (see `test_existential_citation_path_has_no_inputs_left`).
 _seen_universal = {t.name for t in _UNIVERSAL_OUTCOME_THEOREMS}
 _UNIVERSAL_OUTCOME_THEOREMS = _UNIVERSAL_OUTCOME_THEOREMS + [
     t for t in _universals_from_export() if t.name not in _seen_universal
