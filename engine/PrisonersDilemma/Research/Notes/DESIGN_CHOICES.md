@@ -89,6 +89,103 @@ the transport theorem was built for.
 
 ---
 
+## The red cell has TWO proofs — transpose vs floor, and why the general one is the paper's (2026-08-25)
+
+*Provenance: a review question, 2026-08-25. The tau image of the red cell
+(`cupod_dupoc_plays_C` / `dupoc_cupod_plays_D`, `Tau/Theorems/TauCupod/Helpers.lean`)
+closes by the `search_f` floor with no transposition at all. Two discomforts followed:
+(a) if the tau layer needs no transpose, are the base and tau proofs of "the same" cell
+fundamentally different ideas? (b) the transpose proof was hard-won on paper, the floor
+was never even considered there — is the floor a way to "cheat" through obscure
+mechanics of `S`, and if it works just as well, how is the transpose proof justified?*
+
+**The fact, kernel-checked.** The base red cell closes by the floor too. In
+`Theorems/DupocBot/Helpers.lean`:
+
+```lean
+theorem not_Pf_dupoc_guard_floor (k : Nat) :
+    ¬ Pf k (.plays (CupodBot k) (DupocBot k) .C) := fun hp =>
+  no_provable_searcherElse_tail k (.plays .opp .self .D) .D .C (by decide)
+    (DupocBot k) k _ hp le_rfl (by simp [CupodBot])
+
+theorem not_Pf_cupod_guard_floor (k : Nat) :
+    ¬ Pf k (.plays (DupocBot k) (CupodBot k) .D) := fun hp =>
+  no_provable_searcherElse_tail k (.plays .opp .self .C) .C .D (by decide)
+    (CupodBot k) k _ hp le_rfl (by simp [DupocBot])
+```
+
+Byte-identical statements to the transpose route's `not_Pf_dupoc_guard` /
+`not_Pf_cupod_guard`; no `Base/Transpose` import; the three standard axioms. It is the
+tau argument transplanted verbatim: Dupoc's guard asks for "Cupod plays C" and `C` is
+Cupod's ELSE-action, so `search_t` mismatches on shape alone (`by decide` on two
+`Action` constructors — the `Pf` premise is discarded unexamined) and `search_f`
+carries the literal summand `k`, unpayable at budget `≤ k`. Nothing about the guard's
+truth is ever needed; the anti-alignment of the pair (each guard names the partner's
+else-action) is the whole mechanism.
+
+**Why the asymmetry existed — chronology, not structure.** The base cell was closed on
+2026-08-20 by transposition; the BARE-searcher else-floor census
+`no_provable_searcherElse_tail` landed on 2026-08-25 (with Prudent×Cupod). Tau had its
+`.bot`/`.sys` editions earlier (08-12, 08-21) because it HAD to: transposition is
+structurally unavailable there — the `.sys` binder makes the pair ONE object, and τ̂
+maps `cdSys k` to `dcSys k`, the OTHER orientation's system (`cdSys_transpose`), so the
+"same program, two actions" collision that `eval_det` needs never forms. Neither
+choice reflects a difference in the mathematics. And there was never a Base-vs-Tau
+mismatch in the PROOF SYSTEM: `Pf` is one constructor list, `sound_upto` and the
+census kernel `no_provable_tailToS_floor` quantify over all of its arms. The mismatch
+was in the census LIBRARY — which subject shapes (bare / `.bot` / `.sys`) had an
+edition — and is closed by the same-day census unification (`Base/Exclusion.lean`
+header table).
+
+**The floor is not a cheat.** It is a two-line pen-and-paper argument — *a certificate
+that a k-character search failed must at least account for the k-character space, so
+it is longer than k; an else-play is never citable at the searcher's own budget* — the
+very mechanism of `outcome_DupocBot_vs_EBot` and the whole honest-outcomes family. It
+is Critch-faithful (the literal transcript reading), it is NOT optional (dropping it is
+machine-checked inconsistent, T32), and it is externally calibrated (Pudlák,
+2026-08-12 section). The reason it never appeared on paper for this cell is that
+Critch's paper never prices else-certificates at all; pricing them is the genuine
+novelty of the transcript-cost model, and "once you price them — and consistency
+forces you to — the red cell closes" is a FINDING about the model, not a trick inside
+it.
+
+**The two proofs have different epistemic scope — and that is the justification.**
+
+| | floor route | transpose route |
+|---|---|---|
+| what it consumes | the literal constructor list (the census) + `S`'s cost stipulation for `search_f` | soundness + τ-closure + `eval` determinism |
+| a theorem about | `S` | any sound, deterministic formalization closed under C↔D renaming |
+| after a rule extension | must re-run the census (the canary) | unchanged if the extension is τ-symmetric |
+| transfers to Critch's PA agents | no — nobody knows the shortest PA proof of "this bounded search fails"; there the floor is a modeling commitment | yes — renaming C↔D is a symbol-for-symbol, length-preserving substitution on PA proofs; PA is sound; evaluation is deterministic |
+| available in tau | yes (the workhorse) | no (structural, above) |
+
+So the transposition is the result about the open problem AS CRITCH POSED IT: it never
+looks inside the proof system, only at three interface properties every reasonable
+formalization has. The floor is its `S`-internal shadow. Not redundant — strictly more
+general. Two honest caveats to carry into the paper: (i) the transfer to PA is prose,
+not machine-checked — `S` is what is mechanized; (ii) inside `S`, the transpose proof
+invokes `Pf_sound`, whose PROOF needs the floor (the `search_f` arm of the budget
+induction), so within the mechanization both routes rest on the floor — the difference
+is that transpose uses soundness as an INTERFACE property while the floor uses the cost
+stipulation DIRECTLY. This is exactly the "interface formalization" flagged in the
+08-20 table below: the transpose proof would go through verbatim against the abstract
+S-interface; the floor proof would not.
+
+**Agreement is corroboration, not embarrassment.** The model-specific route predicts
+exactly what the model-independent route proves — the strongest faithfulness check `S`
+has produced on a single cell, by the same logic as the `dupoc_loeb_premise` ↔
+`cupod_loeb_premise` differential test in `Theorems/DupocBot/vs_CupodBot.lean`. The
+two are complementary in practice as well: where transposition is unavailable (tau)
+the floor is the workhorse; where the census is fragile (rule extensions) transposition
+is robust.
+
+**How to present it.** Transposition is THE theorem, stated with its generality. The
+floor is "moreover, `S` derives the same cell internally by cost accounting (Prop.),
+the mechanism the tau layer uses throughout." One result, two proofs, one sentence on
+why their reach differs.
+
+---
+
 ## Why `S` is a RULE SET, not an arithmetized theory (2026-08-20)
 
 *Provenance: the question was posed sharply by the transposition spike

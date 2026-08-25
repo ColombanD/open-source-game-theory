@@ -567,6 +567,27 @@ theorem proofSearch_false_cupod_guard (k : Nat) :
   | true => exact absurd ((proofSearch_spec _ _).1 h) (not_Pf_cupod_guard k)
   | false => rfl
 
+/-! ### The SECOND proof — the floor route (2026-08-25)
+
+The same two refutations by the `search_f` floor, with no transposition: the tau
+layer's argument (`TauCupod/Helpers.lean`) transplanted verbatim. Dupoc's guard asks
+for "Cupod plays C" and `C` is Cupod's ELSE-action, so `search_t` mismatches on shape
+alone and `search_f` pays the literal `k` — nothing about the guard's truth is needed.
+Kept beside the transpose route as a differential test: the model-specific census
+predicts exactly what the model-independent τ-argument proves. Why both exist, and
+why the transpose one is the paper's: `Research/Notes/DESIGN_CHOICES.md`
+(2026-08-25 entry). -/
+
+theorem not_Pf_dupoc_guard_floor (k : Nat) :
+    ¬ Pf k (.plays (CupodBot k) (DupocBot k) .C) := fun hp =>
+  no_provable_searcherElse_tail k (.plays .opp .self .D) .D .C (by decide)
+    (DupocBot k) k _ hp le_rfl (by simp [CupodBot])
+
+theorem not_Pf_cupod_guard_floor (k : Nat) :
+    ¬ Pf k (.plays (DupocBot k) (CupodBot k) .D) := fun hp =>
+  no_provable_searcherElse_tail k (.plays .opp .self .C) .C .D (by decide)
+    (CupodBot k) k _ hp le_rfl (by simp [DupocBot])
+
 /-- Dupoc defaults: `D` against Cupod. -/
 theorem DupocBot_plays_D_vs_CupodBot (k fuel : Nat) :
     play (fuel + 2) (DupocBot k) (CupodBot k) = some .D := by
