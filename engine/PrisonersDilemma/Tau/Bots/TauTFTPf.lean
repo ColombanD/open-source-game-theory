@@ -1,21 +1,17 @@
 import PrisonersDilemma.Tau.Roster
 
 /-!
-# TauTFTPf — tit-for-tat, the PROVER lift
+# τ(TitForTatBot), the PROVER lift
 
-One `prove` stage: search (within the budget) for a PROOF that the hypothesis
-cooperates with the cooperator. One word away from `TauTFTSim` — `run` became
-`prove` — which is the entire prover/behavioral distinction, visible as a one-field
-diff in the spec. The prover read is floor-aware: a hypothesis whose cooperation is
-true but priced above the budget reads 0 here while the behavioral twin reads 1
-(no such cell exists on the δ_C column this bot consults, which is why the two TFTs
-share their bit row at large k).
+Same question as `TauTFTSim` — does the hypothesis cooperate with the cooperator?
+— asked by proof search instead of simulation. A true but floor-priced cooperation
+reads C behaviorally and D here; those cells are the prover-modality divergences
+recorded in `app`'s whitelist.
 -/
 
 namespace PD.Tau
 
-/-- τ(TitForTatBot), prover: "prove they'd cooperate with a cooperator; then C;
-    else D." -/
+/-- τ(TitForTatBot), prover: provably cooperates with the cooperator? then C, else D. -/
 def tauTFTPfSpec : Spec Tmpl :=
   .search .prove (.name .coop) .C (.const .C) (.const .D)
 

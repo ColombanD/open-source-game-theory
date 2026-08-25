@@ -1,21 +1,17 @@
 import PrisonersDilemma.Tau.Roster
 
 /-!
-# TauJust — the third-party prover, lifted
+# τ(JustBot), the third-party prover
 
-Base JustBot: "search for a proof that the opponent cooperates with DUPOC; then C,
-else D" — norm-based reciprocity, judged against a fixed third party rather than
-against me. One `prove` stage with a NAME target (the frozen `.bot DupocBot` of the
-base code becomes `.name .dupoc`), so JustBot lifts with no quine and no new column:
-it consults exactly the δ_L column TauDupoc already reads ("does T, seeing Dupoc,
-cooperate?"). Two cells inherited from that column are the interesting ones: its
-DUPOC bit is the Löb quine's (so its phase theorem is Löb-GATED like TauDupoc's),
-and its EBot/Guardian bits are floors.
+Base `JustBot k = .search k (.plays .opp (.bot (DupocBot k)) C) (const C) (const D)`:
+cooperate iff the opponent provably cooperates with Dupoc. The frozen third party
+becomes the named target `.dupoc`, so it reads the same δ_L column τ(Dupoc) does,
+including Dupoc's Löb-gated diagonal bit.
 -/
 
 namespace PD.Tau
 
-/-- τ(JustBot): "prove they'd cooperate with Dupoc; then C; else D." -/
+/-- τ(JustBot): provably cooperates with Dupoc? then C, else D. -/
 def tauJustSpec : Spec Tmpl :=
   .search .prove (.name .dupoc) .C (.const .C) (.const .D)
 

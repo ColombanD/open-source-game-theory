@@ -1,17 +1,15 @@
 import PrisonersDilemma.Tau.Roster
 
 /-!
-# TauCooperate — the unconditional cooperator, lifted
+# τ(CooperateBot)
 
-No probe stages: the signal is ignored and every instance plays C. The lift of a
-constant is constant — in particular it is α-INDEPENDENT (it cooperates even where a
-mass-0 voting bot would not), which is the recorded α = 0 divergence from Def 3's
-uniform lift.
+Base `CooperateBot = .const C`. The lift of a constant is the constant: the
+signal is ignored and every instance plays C.
 -/
 
 namespace PD.Tau
 
-/-- τ(CooperateBot): empty cascade, default C. -/
+/-- τ(CooperateBot): always C. -/
 def tauCoopSpec : Spec Tmpl := .const .C
 
 end PD.Tau
