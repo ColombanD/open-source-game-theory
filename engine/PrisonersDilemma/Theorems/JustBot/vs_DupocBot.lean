@@ -7,6 +7,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -15,9 +16,10 @@ namespace PD.Theorems
 
 -- DupocBot --
 
+@[outcome]
 theorem outcome_JustBot_vs_DupocBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (JustBot k) (DupocBot k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      JustBot DupocBot (some (.C, .C)) := by
   let φ : Nat → Formula :=
     fun k => Formula.plays (DupocBot k) (.bot (DupocBot k)) .C
 -- The two transparency legs, transcript-tight; `mutual_pblt_engine_id` lowers the premise

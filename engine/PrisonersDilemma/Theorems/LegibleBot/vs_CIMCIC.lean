@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -37,9 +38,10 @@ theorem outcome_LegibleBot_vs_CIMCIC_floor2 (fuel : Nat) :
     budget. `weakenImpl` then proves CIMCIC's implication within its own budget
     `k`, the guard fires, and CIMCIC cooperates. Staggered complement of
     `outcome_LegibleBot_vs_CIMCIC_floor`. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_CIMCIC :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) (CIMCIC k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) CIMCIC (some (.C, .C)) := by
   obtain ⟨kA, hA⟩ := LegibleBot_cooperates_large (fun k => CIMCIC k) 100
     (fun k => by simp only [CIMCIC, Prog.size, Formula.size, numCost]; omega)
   obtain ⟨K, hK⟩ := linear_log2_add_le 20 500

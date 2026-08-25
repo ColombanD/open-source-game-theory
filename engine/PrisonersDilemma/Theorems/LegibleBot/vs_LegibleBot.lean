@@ -4,6 +4,7 @@ import PrisonersDilemma.Bots.LlmGenerations.LegibleBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -33,10 +34,10 @@ theorem outcome_LegibleBot_vs_LegibleBot_floor2 (fuel : Nat) :
     `X k := LegibleBot (2k+64) k`, size `O(log k)` within the `B + 20·log2 k`
     budget) supplies both plays. Staggered complement of
     `outcome_LegibleBot_vs_LegibleBot_floor`. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_LegibleBot :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) (LegibleBot (2*k+64) k)
-        = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun k => LegibleBot (2*k+64) k) (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun k => LegibleBot (2*k+64) k) 100
     (fun k => by
       have hst := log2_stagger_le k

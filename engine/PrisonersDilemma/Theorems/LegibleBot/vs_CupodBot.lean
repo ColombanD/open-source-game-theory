@@ -5,15 +5,17 @@ import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 
+@[outcome]
 theorem llm_outcome_LegibleBot_vs_CupodBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) (CupodBot k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) CupodBot (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun k => CupodBot k) 100
     (fun k => by
       show (CupodBot k).size ≤ 100 + 20 * Nat.log2 k

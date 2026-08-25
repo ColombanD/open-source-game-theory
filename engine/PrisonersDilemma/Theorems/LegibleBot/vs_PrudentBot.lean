@@ -7,15 +7,17 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 
+@[outcome]
 theorem llm_outcome_LegibleBot_vs_PrudentBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) (PrudentBot k) = some (.C, .D) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) PrudentBot (some (.C, .D)) := by
   -- LegibleBot cooperates with PrudentBot family
   obtain ⟨kA, hA⟩ := LegibleBot_cooperates_large (fun k => PrudentBot k) 100
     (fun k => by

@@ -8,6 +8,7 @@ import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -43,9 +44,10 @@ theorem outcome_LegibleBot_vs_EBot_floor2 (fuel : Nat) :
     cooperation and EBot defects immediately — the nested CooperateBot/MirrorBot
     probes are never consulted. Same exploitation pattern as DBot. Staggered
     complement of `outcome_LegibleBot_vs_EBot_floor`. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_EBot :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) EBot = some (.C, .D) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun _ => EBot) (some (.C, .D)) := by
   obtain ⟨kA, hA⟩ := LegibleBot_cooperates_large (fun _ => EBot) 100
     (fun k => by
       show (EBot).size ≤ 100 + 20 * Nat.log2 k

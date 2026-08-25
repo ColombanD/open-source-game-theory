@@ -6,6 +6,7 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -37,9 +38,10 @@ theorem outcome_LegibleBot_vs_TitForTatBot_floor2 (fuel : Nat) :
     cooperation and TFT reciprocates. Two core instantiations (the live opponent
     and the probe), joined at a common fuel. Staggered complement of
     `outcome_LegibleBot_vs_TitForTatBot_floor`. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_TitForTatBot :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) TitForTatBot = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun _ => TitForTatBot) (some (.C, .C)) := by
   obtain ⟨kA, hA⟩ := LegibleBot_cooperates_large (fun _ => TitForTatBot) 100
     (fun k => by
       show (TitForTatBot).size ≤ 100 + 20 * Nat.log2 k

@@ -6,6 +6,7 @@ import PrisonersDilemma.Theorems.DefectBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -31,9 +32,10 @@ theorem outcome_LegibleBot_vs_DefectBot_floor2 (fuel : Nat) :
     behaviour — bounded Löb fires it against anyone, so the legible cooperator
     is exploited by the unconditional defector. The price of opponent-blind
     legibility; staggered complement of `outcome_LegibleBot_vs_DefectBot_floor`. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_DefectBot :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) DefectBot = some (.C, .D) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun _ => DefectBot) (some (.C, .D)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun _ => DefectBot) 100
     (fun k => by
       show (DefectBot).size ≤ 100 + 20 * Nat.log2 k

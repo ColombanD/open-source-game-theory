@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -33,9 +34,10 @@ theorem outcome_LegibleBot_vs_MirrorBot_floor2 (fuel : Nat) :
     `.sim .opp .self` runs LegibleBot against MirrorBot, which is exactly the
     play the engine certified. Staggered complement of
     `outcome_LegibleBot_vs_MirrorBot_floor` (where the mirror replays defection). -/
+@[outcome]
 theorem outcome_LegibleBot_vs_MirrorBot :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) MirrorBot = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun _ => MirrorBot) (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun _ => MirrorBot) 100
     (fun k => by
       show (MirrorBot).size ≤ 100 + 20 * Nat.log2 k

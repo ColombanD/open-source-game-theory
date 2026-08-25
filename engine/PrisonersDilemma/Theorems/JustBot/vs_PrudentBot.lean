@@ -12,6 +12,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
 import PrisonersDilemma.Base.Exclusion
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -137,9 +138,10 @@ theorem ps_k_of_play_botdupoc_any (k n : Nat) (q : Prog)
 
 /-- **JustBot k vs PrudentBot (2k+64) → (C, C)** for all large enough `k` — the
     staggered-budget recovery of the retired same-`k` theorem. -/
+@[outcome]
 theorem outcome_JustBot_vs_PrudentBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (JustBot k) (PrudentBot (2*k+64)) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      JustBot (fun k => PrudentBot (2*k+64)) (some (.C, .C)) := by
   obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
   have hsD : ∀ k, (Formula.plays (.bot (DupocBot k)) (PrudentBot (2*k+64)) .C).size
       ≤ 100 * Nat.log2 k + 1000 := by

@@ -37,6 +37,19 @@ inductive BudgetRegime
 abbrev OutcomeAt (pad : Nat) (L R : Prog) (r : Option Outcome) : Prop :=
   ∀ fuel, outcome (fuel + pad) L R = r
 
+/-- Fuel supplied EXISTENTIALLY, per budget.
+
+    Needed because `Formula.interp` reads `.plays p q a` as `∃ n, play n p q = some a`:
+    a theorem that gets its play witness out of `Pf_sound` inherits that existential, and
+    the witness genuinely depends on the budget, so no fixed `pad` exists. This is the
+    original shape of the Löbian self-play and mutual-cooperation results — expressing it
+    directly is honest, where forcing a `pad` would require bounding `Pf_sound`'s witness.
+
+    Weaker than `OutcomeAt`: prefer the cofinite form whenever a literal pad is available
+    (`Theorems.outcome_mono_le` lifts a single fuel to it). -/
+abbrev OutcomeAtEx (L R : Prog) (r : Option Outcome) : Prop :=
+  ∃ fuel, outcome fuel L R = r
+
 /-- As `OutcomeAt`, but each fuel is guarded by `side`.
 
     `side` takes BOTH the budget and the fuel because some genuine side conditions couple
@@ -60,6 +73,17 @@ abbrev OutcomeSpec (b : BudgetRegime) (pad : Nat)
   | .nobudget  => OutcomeAt pad (L 0) (R 0) r
   | .universal => ∀ k, OutcomeAt pad (L k) (R k) r
   | .eventual  => ∃ k₂, ∀ k, k₂ < k → OutcomeAt pad (L k) (R k) r
+
+/-- **The EXISTENTIAL-FUEL template** — as `OutcomeSpec`, but each budget supplies its own
+    fuel rather than sharing one `pad`. See `OutcomeAtEx` for why this is not merely a
+    stylistic variant. The export records `fuel_mode`, so a consumer can tell the two
+    apart; nothing else about the cell changes. -/
+abbrev OutcomeSpecEx (b : BudgetRegime)
+    (L R : Nat → Prog) (r : Option Outcome) : Prop :=
+  match b with
+  | .nobudget  => OutcomeAtEx (L 0) (R 0) r
+  | .universal => ∀ k, OutcomeAtEx (L k) (R k) r
+  | .eventual  => ∃ k₂, ∀ k, k₂ < k → OutcomeAtEx (L k) (R k) r
 
 /-- **The GUARDED template** — an outcome that holds only under a side condition on the
     budget and the fuel. `side k fuel` is where a genuine caveat lives, and it is what the

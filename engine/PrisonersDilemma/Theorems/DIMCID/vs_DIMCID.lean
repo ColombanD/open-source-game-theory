@@ -1,6 +1,7 @@
 import PrisonersDilemma.Bots.LlmGenerations.DIMCID
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -56,9 +57,10 @@ theorem dimcid_loeb_premise (k b : Nat)
     In self-play the guard "if I cooperate, opponent defects" is the Löb fixpoint on
     defection; PBLT (with box subscript `f k = k − O(log k)`) makes "DIMCID plays D"
     provable, so both bots take the defect branch. -/
+@[outcome]
 theorem llm_outcome_DIMCID_vs_DIMCID :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DIMCID k) (DIMCID k) = some (.D, .D) := by
+    OutcomeSpecEx .eventual
+      DIMCID DIMCID (some (.D, .D)) := by
   let φ : Nat → Formula := fun k => .plays (DIMCID k) (DIMCID k) .D
   let f : Nat → Nat := fun k => k - (10 * Nat.log2 k + 118)
   let pm : Nat → Nat := fun k => 100 * Nat.log2 k + 100000

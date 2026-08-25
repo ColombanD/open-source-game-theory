@@ -7,6 +7,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -66,9 +67,10 @@ theorem botDupoc_self_coop :
   exact ps_k_of_play_botDupoc_self k n hn
 
 /-- JustBot vs JustBot: mutual cooperation for sufficiently large `k`. -/
+@[outcome]
 theorem outcome_JustBot_vs_JustBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (JustBot k) (JustBot k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      JustBot JustBot (some (.C, .C)) := by
   obtain ⟨k₂, hk₂⟩ := botDupoc_self_coop
   obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
   refine ⟨max k₂ KL, fun k hk => ?_⟩

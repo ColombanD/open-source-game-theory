@@ -6,6 +6,7 @@ import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -34,9 +35,10 @@ theorem outcome_LegibleBot_vs_CooperateBot_floor2 (fuel : Nat) :
     `box4` via `pblt_engine`) makes the cooperation legible and the guard fires;
     CooperateBot cooperates unconditionally. Staggered complement of
     `outcome_LegibleBot_vs_CooperateBot_floor`. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_CooperateBot :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) CooperateBot = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun _ => CooperateBot) (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun _ => CooperateBot) 100
     (fun k => by
       show (CooperateBot).size ≤ 100 + 20 * Nat.log2 k

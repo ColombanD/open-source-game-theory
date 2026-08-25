@@ -6,6 +6,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD PD.Bots PD.BaseTheorems
 namespace PD.Theorems
@@ -66,9 +67,10 @@ theorem jm_guard_true :
   obtain ⟨n, hplay⟩ := hInterp
   exact proofSearch_of_play_MirrorBot_botDupoc k n hplay
 
+@[outcome]
 theorem llm_outcome_JustBot_vs_MirrorBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (JustBot k) MirrorBot = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      JustBot (fun _ => MirrorBot) (some (.C, .C)) := by
   obtain ⟨k₂, hg⟩ := jm_guard_true
   refine ⟨k₂, fun k hk => ?_⟩
   have hgk := hg k hk

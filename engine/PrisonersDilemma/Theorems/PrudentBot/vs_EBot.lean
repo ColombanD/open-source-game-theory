@@ -11,6 +11,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Bots.EBot
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -326,9 +327,10 @@ theorem EBot_plays_C_against_PrudentBot :
     simulator cooperates (its third probe watched the PrudentBot↔MirrorBot Löb
     cooperation), the searcher defects (the floor: EBot's cooperation certificate
     crosses PrudentBot's own failed probe search). -/
+@[outcome]
 theorem outcome_PrudentBot_vs_EBot :
-    ∃ k₂, ∀ k, k₂ < k → ∀ fuel,
-      outcome (fuel + 7) (PrudentBot k) EBot = some (.D, .C) := by
+    OutcomeSpec .eventual 7
+      PrudentBot (fun _ => EBot) (some (.D, .C)) := by
   obtain ⟨k₂, hE⟩ := EBot_plays_C_against_PrudentBot
   refine ⟨k₂, fun k hk fuel => ?_⟩
   have hA : play (fuel + 7) (PrudentBot k) EBot = some .D := by

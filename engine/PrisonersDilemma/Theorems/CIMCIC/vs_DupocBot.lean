@@ -3,6 +3,7 @@ import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -66,9 +67,9 @@ theorem cd_dupoc_plays_C (k fuel : Nat)
     `(I play C → opp plays C)` and DupocBot's guard `(opp plays C)` close a mutual
     Löb fixpoint (via `mutual_pblt_engine_id` with `Bf` = CIMCIC's implication guard),
     so both cooperate. -/
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_DupocBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) (DupocBot k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual CIMCIC DupocBot (some (.C, .C)) := by
   let Af : Nat → Formula := fun k => .plays (CIMCIC k) (DupocBot k) .C
   let Bf : Nat → Formula := fun k =>
     .impl (.plays (CIMCIC k) (DupocBot k) .C) (.plays (DupocBot k) (CIMCIC k) .C)

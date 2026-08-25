@@ -4,6 +4,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Base.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -154,9 +155,10 @@ theorem dm_mirror_copies (k fuel : Nat) (a : Action)
   simpa [play, eval, Prog.subst, MirrorBot] using h
 
 /-- **DIMCID vs MirrorBot: mutual defection (D, D)** for all sufficiently large `k`. -/
+@[outcome]
 theorem llm_outcome_DIMCID_vs_MirrorBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DIMCID k) MirrorBot = some (.D, .D) := by
+    OutcomeSpecEx .eventual
+      DIMCID (fun _ => MirrorBot) (some (.D, .D)) := by
   let φ : Nat → Formula := fun k => .plays (DIMCID k) MirrorBot .D
   let f : Nat → Nat := fun k => k - (200 * Nat.log2 k + 20000)
   let pm : Nat → Nat := fun k => 300 * Nat.log2 k + 500000

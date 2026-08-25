@@ -6,6 +6,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.DupocBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -15,9 +16,10 @@ namespace PD.Theorems
     of PBLT with `φ k = .plays MirrorBot (DupocBot k) .C`, `f = id`, `k₁ = 0`.
     Mirrors `outcome_DupocBot_vs_DupocBot`; the play witness lives on the MirrorBot leg
     and is lifted to the DupocBot leg via the `.sim` swap. -/
+@[outcome]
 theorem outcome_DupocBot_vs_MirrorBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DupocBot k) MirrorBot = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      DupocBot (fun _ => MirrorBot) (some (.C, .C)) := by
   let φ : Nat → Formula := fun k => .plays MirrorBot (DupocBot k) .C
   have hLoeb :
       ∀ k, k > 0 →

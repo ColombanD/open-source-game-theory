@@ -6,6 +6,7 @@ import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -81,12 +82,16 @@ theorem DIMCID_plays_C_against_CooperateBot (k fuel : Nat) :
 
 /-- **DIMCID vs CooperateBot: mutual cooperation (C, C)** — formerly deliberately-omitted, now
     PROVED with NO `atom_complete_false_guard` axiom. -/
+-- The helpers take an ARBITRARY budget, so this is `.universal` -- strictly
+-- stronger than the `∃ k` (at k = 0) it was stated as.
+@[outcome]
 theorem outcome_DIMCID_vs_CooperateBot :
-    ∃ k, ∀ fuel, outcome (fuel + 2) (DIMCID k) CooperateBot = some (.C, .C) := by
-  refine ⟨0, fun fuel => ?_⟩
-  have hA : play (fuel + 2) (DIMCID 0) CooperateBot = some .C := DIMCID_plays_C_against_CooperateBot 0 fuel
-  have hB : play (fuel + 2) CooperateBot (DIMCID 0) = some .C := by
-    simpa using play_CooperateBot (fuel + 1) (DIMCID 0)
+    OutcomeSpec .universal 2
+      DIMCID (fun _ => CooperateBot) (some (.C, .C)) := by
+  intro k fuel
+  have hA : play (fuel + 2) (DIMCID k) CooperateBot = some .C := DIMCID_plays_C_against_CooperateBot k fuel
+  have hB : play (fuel + 2) CooperateBot (DIMCID k) = some .C := by
+    simpa using play_CooperateBot (fuel + 1) (DIMCID k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems

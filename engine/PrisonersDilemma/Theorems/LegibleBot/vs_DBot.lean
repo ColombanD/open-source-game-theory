@@ -6,6 +6,7 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -38,9 +39,10 @@ theorem outcome_LegibleBot_vs_DBot_floor2 (fuel : Nat) :
     probe, so the defection-detector defects. Inverse of the floor regime
     (`outcome_LegibleBot_vs_DBot_floor = (D, C)`), where the floor-defector was
     spared. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_DBot :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) DBot = some (.C, .D) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun _ => DBot) (some (.C, .D)) := by
   obtain ⟨kA, hA⟩ := LegibleBot_cooperates_large (fun _ => DBot) 100
     (fun k => by
       show (DBot).size ≤ 100 + 20 * Nat.log2 k

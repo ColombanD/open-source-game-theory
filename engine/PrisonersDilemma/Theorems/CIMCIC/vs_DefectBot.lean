@@ -8,6 +8,7 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Theorems.DefectBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -85,12 +86,16 @@ theorem CIMCIC_plays_D_against_DefectBot (k fuel : Nat) :
 
 /-- **CIMCIC vs DefectBot: mutual defection (D, D)** — formerly the deliberately-omitted theorem,
     now PROVED with NO `atom_complete_false_guard` axiom. -/
+-- The helpers take an ARBITRARY budget, so this is `.universal` -- strictly
+-- stronger than the `∃ k` (at k = 0) it was stated as.
+@[outcome]
 theorem outcome_CIMCIC_vs_DefectBot :
-    ∃ k, ∀ fuel, outcome (fuel + 2) (CIMCIC k) DefectBot = some (.D, .D) := by
-  refine ⟨0, fun fuel => ?_⟩
-  have hA : play (fuel + 2) (CIMCIC 0) DefectBot = some .D := CIMCIC_plays_D_against_DefectBot 0 fuel
-  have hB : play (fuel + 2) DefectBot (CIMCIC 0) = some .D := by
-    simpa using play_DefectBot (fuel + 1) (CIMCIC 0)
+    OutcomeSpec .universal 2
+      CIMCIC (fun _ => DefectBot) (some (.D, .D)) := by
+  intro k fuel
+  have hA : play (fuel + 2) (CIMCIC k) DefectBot = some .D := CIMCIC_plays_D_against_DefectBot k fuel
+  have hB : play (fuel + 2) DefectBot (CIMCIC k) = some .D := by
+    simpa using play_DefectBot (fuel + 1) (CIMCIC k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems

@@ -3,6 +3,7 @@ import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 /-!
 # DIMCID vs CupodBot — `(D, D)` past the Löb threshold, by MUTUAL bounded Löb
@@ -155,9 +156,10 @@ theorem dc_CupodBot_plays_D (k fuel : Nat)
 
 /-- **DIMCID vs CupodBot → (D, D)** for all sufficiently large `k`: the ALIGNED
     pair, closed by mutual bounded Löb on defection. -/
+@[outcome]
 theorem outcome_DIMCID_vs_CupodBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DIMCID k) (CupodBot k) = some (.D, .D) := by
+    OutcomeSpecEx .eventual
+      DIMCID CupodBot (some (.D, .D)) := by
   obtain ⟨ke, hke⟩ := dc_mutual
   obtain ⟨kt, hkt⟩ := linear_log2_add_le 1 3
   refine ⟨max ke kt, fun k hk => ?_⟩

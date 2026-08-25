@@ -6,6 +6,7 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -37,9 +38,10 @@ theorem outcome_LegibleBot_vs_OBot_floor2 (fuel : Nat) :
     cooperation-with-defectors and cooperates. Three core instantiations (live
     opponent + two probes), the inner `ite` peeled by `eval_ite_from_guard`.
     Staggered complement of `outcome_LegibleBot_vs_OBot_floor`. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_OBot :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) OBot = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun _ => OBot) (some (.C, .C)) := by
   obtain ⟨kA, hA⟩ := LegibleBot_cooperates_large (fun _ => OBot) 100
     (fun k => by
       show (OBot).size ≤ 100 + 20 * Nat.log2 k

@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.LlmGenerations.DIMCID
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -36,9 +37,10 @@ theorem outcome_LegibleBot_vs_DIMCID_floor2 (fuel : Nat) :
     falls through to cooperation (every `k`); LegibleBot's Löb cooperation is
     opponent-blind. Staggered complement of
     `outcome_LegibleBot_vs_DIMCID_floor`. -/
+@[outcome]
 theorem outcome_LegibleBot_vs_DIMCID :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) (DIMCID k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) DIMCID (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun k => DIMCID k) 100
     (fun k => by simp only [DIMCID, Prog.size, Formula.size, numCost]; omega)
   refine ⟨k₂, fun k hk => ?_⟩

@@ -5,6 +5,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.DupocBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -15,9 +16,10 @@ namespace PD.Theorems
     `f = id`, `k₁ = 0`. The Löb premise comes from `dupoc_loeb_premise`,
     soundness collapses bounded provability to a `play` witness, and self-play
     symmetry makes the same `play` discharge both legs of `outcome`. -/
+@[outcome]
 theorem outcome_DupocBot_vs_DupocBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DupocBot k) (DupocBot k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      DupocBot DupocBot (some (.C, .C)) := by
   let φ : Nat → Formula := fun k => .plays (DupocBot k) (DupocBot k) .C
   -- `dupoc_loeb_premise` proves the premise at its HONEST transcript `5·log2 k + 33` —
   -- exactly `pblt_engine_id`'s premise shape (the Löb chain needs `pm ≪ k`).

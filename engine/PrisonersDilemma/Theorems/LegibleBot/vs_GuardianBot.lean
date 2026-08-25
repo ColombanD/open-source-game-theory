@@ -7,6 +7,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
 import PrisonersDilemma.Theorems.GuardianBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -61,9 +62,10 @@ theorem lg_legible_C_vs_guardian :
     LegibleBot's cooperation becomes legible (bounded Löb through two boxes) so it
     trusts GuardianBot; and GuardianBot, unable to prove that LegibleBot bullies
     CooperateBot (it doesn't — it cooperates with everyone), trusts back. -/
+@[outcome]
 theorem llm_outcome_LegibleBot_vs_GuardianBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) (GuardianBot k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) GuardianBot (some (.C, .C)) := by
   obtain ⟨k₁, hguard⟩ := lg_guardian_guard_false
   obtain ⟨k₂, hleg⟩ := lg_legible_C_vs_guardian
   refine ⟨max k₁ k₂, fun k hk => ?_⟩
