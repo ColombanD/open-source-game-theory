@@ -4,6 +4,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.DIMCID.Helpers
 import PrisonersDilemma.Theorems.DupocBot.Helpers
+import PrisonersDilemma.Outcome
 
 /-!
 # DIMCID vs DupocBot — `(C, D)` at EVERY same budget, by the floor alone
@@ -91,8 +92,11 @@ theorem dd_DupocBot_plays_D (k fuel : Nat) :
   rw [hg]; simp [eval]
 
 /-- **DIMCID vs DupocBot → (C, D)**, at every budget and fuel ≥ 2. -/
-theorem outcome_DIMCID_vs_DupocBot (k fuel : Nat) :
-    outcome (fuel + 2) (DIMCID k) (DupocBot k) = some (.C, .D) :=
+@[outcome]
+theorem outcome_DIMCID_vs_DupocBot :
+    OutcomeSpec .universal 2
+      DIMCID DupocBot (some (.C, .D)) :=
+  fun k fuel =>
   outcome_of_plays _ _ _ _ _ (dd_DIMCID_plays_C k fuel) (dd_DupocBot_plays_D k fuel)
 
 end PD.Theorems

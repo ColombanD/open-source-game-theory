@@ -6,6 +6,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Base.ValuationSoundness
 import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.Bots
@@ -262,10 +263,11 @@ theorem DIMCID_plays_C_against_CupodTrollBot (k fuel : Nat) :
           else eval (fuel + 1) (DIMCID k) (CupodTrollBot k) (.const Action.C)) = some .C
   rw [proofSearch_false_dimcid_vs_ctb k]; simp [eval]
 
+@[outcome]
 theorem llm_outcome_DIMCID_vs_CupodTrollBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DIMCID k) (CupodTrollBot k) = some (.C, .C) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      DIMCID CupodTrollBot (some (.C, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (DIMCID k) (CupodTrollBot k) = some .C :=
     DIMCID_plays_C_against_CupodTrollBot k 0
   have hB : play 2 (CupodTrollBot k) (DIMCID k) = some .C :=

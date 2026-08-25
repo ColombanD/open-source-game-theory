@@ -6,6 +6,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -278,10 +279,11 @@ theorem PrudentBot_plays_D_against_DIMCID (k fuel : Nat) :
     (dp_proofSearch_false_pb_outer k)
 
 -- === Final theorem ===
+@[outcome]
 theorem llm_outcome_DIMCID_vs_PrudentBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DIMCID k) (PrudentBot k) = some (.C, .D) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      DIMCID PrudentBot (some (.C, .D)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (DIMCID k) (PrudentBot k) = some .C :=
     DIMCID_plays_C_against_PrudentBot k 0
   have hB : play 2 (PrudentBot k) (DIMCID k) = some .D :=

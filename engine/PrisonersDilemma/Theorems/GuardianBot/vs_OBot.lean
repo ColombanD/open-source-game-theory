@@ -6,6 +6,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD PD.Bots PD.BaseTheorems
 namespace PD.Theorems
@@ -90,12 +91,13 @@ theorem obot_plays_D_vs_guardian (k fuel : Nat) :
 
 -- === Final outcome theorem ===
 
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_OBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) OBot = some (.C, .D) := by
-  refine ⟨1, fun k hk => ?_⟩
+    OutcomeSpec .eventual 7
+      GuardianBot (fun _ => OBot) (some (.C, .D)) := by
+  refine ⟨1, fun k hk fuel => ?_⟩
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
-  refine ⟨7, ?_⟩
+  refine outcome_mono_le (N := 7) ?_ (fuel + 7) (by omega)
   have hA : play 7 (GuardianBot (j+2)) OBot = some .C := by
     simpa using guardian_plays_C_vs_OBot (j+2) 5
   have hB : play 7 OBot (GuardianBot (j+2)) = some .D := by

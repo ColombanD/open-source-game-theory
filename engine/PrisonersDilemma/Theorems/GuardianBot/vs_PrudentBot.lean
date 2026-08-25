@@ -8,6 +8,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Base.Exclusion
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
 import PrisonersDilemma.Theorems.GuardianBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -277,10 +278,11 @@ theorem gvp_prudent_plays_D (k fuel : Nat) :
     play (fuel + 2) (PrudentBot k) (GuardianBot k) = some .D :=
   PrudentBot_plays_D_of_search_false k fuel (GuardianBot k) (pvg_prudent_guard_false k)
 
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_PrudentBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) (PrudentBot k) = some (.C, .D) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      GuardianBot PrudentBot (some (.C, .D)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (GuardianBot k) (PrudentBot k) = some .C := gvp_guardian_plays_C k 0
   have hB : play 2 (PrudentBot k) (GuardianBot k) = some .D := gvp_prudent_plays_D k 0
   exact outcome_of_plays _ _ _ _ _ hA hB

@@ -4,6 +4,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -235,10 +236,11 @@ theorem DIMCID_plays_C_against_CIMCIC (k fuel : Nat) :
           else eval (fuel + 1) (DIMCID k) (CIMCIC k) (.const Action.C)) = some .C
   rw [proofSearch_false_dimcid k]; simp [eval]
 
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_DIMCID :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) (DIMCID k) = some (.D, .C) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      CIMCIC DIMCID (some (.D, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (CIMCIC k) (DIMCID k) = some .D :=
     CIMCIC_plays_D_against_DIMCID k 0
   have hB : play 2 (DIMCID k) (CIMCIC k) = some .C :=

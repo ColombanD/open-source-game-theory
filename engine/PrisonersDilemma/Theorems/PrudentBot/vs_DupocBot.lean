@@ -10,6 +10,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
 import PrisonersDilemma.Base.Exclusion
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -207,9 +208,10 @@ theorem ps_k_of_play_dupoc_any (k n : Nat) (q : Prog)
 
 /-- **PrudentBot (2k+64) vs DupocBot k → (C, C)** for all large enough `k` — the
     staggered-budget recovery of the retired same-`k` theorem. -/
+@[outcome]
 theorem outcome_PrudentBot_vs_DupocBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (PrudentBot (2*k+64)) (DupocBot k) = some (.C, .C) := by
+    OutcomeSpec .eventual 4
+      (fun k => PrudentBot (2*k+64)) DupocBot (some (.C, .C)) := by
   obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
   have hsD : ∀ k, (Formula.plays (DupocBot k) (PrudentBot (2*k+64)) .C).size
       ≤ 100 * Nat.log2 k + 1000 := by
@@ -232,7 +234,7 @@ theorem outcome_PrudentBot_vs_DupocBot :
     (fun k => by show k ≤ 2*k+64; omega) log2_stagger_le hsD hsP hpb hpb
     (fun k _ => prudent_dupoc_legPD k)
     (fun k _ => prudent_dupoc_legDP k)
-  refine ⟨max k₂ KL, fun k hk => ?_⟩
+  refine ⟨max k₂ KL, fun k hk fuel => ?_⟩
   have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
   have hKLk : Nat.log2 k + 3 ≤ k := by
     have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
@@ -257,7 +259,7 @@ theorem outcome_PrudentBot_vs_DupocBot :
     refine (proofSearch_spec _ _).2 (Pf_mono (prudence_dupoc k) ?_)
     have hlk := log2_le_self k
     omega
-  refine ⟨4, ?_⟩
+  refine outcome_mono_le (N := 4) ?_ (fuel + 4) (by omega)
   have hA : play 4 (PrudentBot (2*k+64)) (DupocBot k) = some .C := by
     simpa using prudent_eval_both_true (2*k+64) 1 (DupocBot k) hpsD hprud
   have hB : play 4 (DupocBot k) (PrudentBot (2*k+64)) = some .C := by

@@ -5,6 +5,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.WaryBot.Helpers
 import PrisonersDilemma.Theorems.LlmGenerations.LlmLemmas
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -205,10 +206,11 @@ theorem DupocBot_plays_D_vs_WaryBot (k fuel : Nat) :
   simp [eval, Prog.subst, Formula.subst, hg]
 
 /-- **WaryBot vs DupocBot = (C, D)** at every sufficiently large budget (indeed every `k`). -/
+@[outcome]
 theorem llm_outcome_WaryBot_vs_DupocBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (WaryBot k) (DupocBot k) = some (.C, .D) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      WaryBot DupocBot (some (.C, .D)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   exact outcome_of_plays 2 _ _ _ _
     (WaryBot_plays_C_vs_DupocBot k 0) (DupocBot_plays_D_vs_WaryBot k 0)
 

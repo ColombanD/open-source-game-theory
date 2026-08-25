@@ -6,6 +6,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Bots.LlmGenerations.GuardianBot
 import PrisonersDilemma.Bots.LlmGenerations.DIMCID
 import PrisonersDilemma.Bots.CooperateBot
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -333,10 +334,11 @@ theorem gd_DIMCID_plays_C_vs_GuardianBot (k fuel : Nat) :
   rw [gd_proofSearch_false_dimcid_guard k]; simp [eval]
 
 /-- **GuardianBot vs DIMCID → (C, C)** for all sufficiently large `k`. -/
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_DIMCID :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) (DIMCID k) = some (.C, .C) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      GuardianBot DIMCID (some (.C, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (GuardianBot k) (DIMCID k) = some .C :=
     gd_GuardianBot_cooperates_vs_DIMCID k 0
   have hB : play 2 (DIMCID k) (GuardianBot k) = some .C :=

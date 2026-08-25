@@ -6,6 +6,7 @@ import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.WaryBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -55,10 +56,11 @@ theorem wg_WaryBot_cooperates_vs_GuardianBot (k fuel : Nat) :
   unfold WaryBot at hg ⊢
   simp [eval, Prog.subst, Formula.subst, hg]
 
+@[outcome]
 theorem llm_outcome_WaryBot_vs_GuardianBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (WaryBot k) (GuardianBot k) = some (.C, .C) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      WaryBot GuardianBot (some (.C, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (WaryBot k) (GuardianBot k) = some .C :=
     wg_WaryBot_cooperates_vs_GuardianBot k 0
   have hB : play 2 (GuardianBot k) (WaryBot k) = some .C :=

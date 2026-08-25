@@ -5,6 +5,7 @@ import PrisonersDilemma.Theorems.DefectBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -189,11 +190,12 @@ theorem OptimBot_plays_D_against_DefectBot (k K fuel : Nat) (h1 : 1 ≤ k)
 
 /-- **OptimBot vs DefectBot → (D, D) at the stagger `kSelf = 65536·kOpp`** — the
     flip predicted in `outcome_status.toml`, delivered by `searchElseChain`. -/
+@[outcome]
 theorem llm_outcome_OptimBot_vs_DefectBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (OptimBot k (65536 * k)) DefectBot = some (.D, .D) := by
+    OutcomeSpec .eventual 6
+      (fun k => OptimBot k (65536 * k)) (fun _ => DefectBot) (some (.D, .D)) := by
   obtain ⟨k₂, hk₂⟩ := od_D_provable_at_stagger
-  refine ⟨k₂, fun k hk => ⟨6, ?_⟩⟩
+  refine ⟨k₂, fun k hk fuel => outcome_mono_le (N := 6) ?_ (fuel + 6) (by omega)⟩
   have h1 : 1 ≤ k := by
     rcases Nat.eq_zero_or_pos k with rfl | h
     · omega

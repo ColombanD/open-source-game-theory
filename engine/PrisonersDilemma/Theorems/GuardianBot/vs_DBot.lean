@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -50,10 +51,11 @@ theorem gd_DBot_plays_C_vs_GuardianBot (k fuel : Nat) (hk : 5 ≤ k) :
     (by rfl) hGuard
   simpa [eval] using hPlay
 
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_DBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) DBot = some (.D, .C) := by
-  refine ⟨5, fun k hk => ⟨4, ?_⟩⟩
+    OutcomeSpec .eventual 4
+      GuardianBot (fun _ => DBot) (some (.D, .C)) := by
+  refine ⟨5, fun k hk fuel => outcome_mono_le (N := 4) ?_ (fuel + 4) (by omega)⟩
   have hk5 : 5 ≤ k := by omega
   have hA : play 4 (GuardianBot k) DBot = some .D := by
     simpa using gd_GuardianBot_plays_D_vs_DBot k 2 hk5

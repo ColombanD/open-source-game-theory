@@ -8,6 +8,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -198,10 +199,11 @@ theorem gjb_GuardianBot_plays_C_vs_JustBot (k fuel : Nat) (hk : 2 ≤ k) :
 
 /-! ## The outcome. -/
 
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_JustBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) (JustBot k) = some (.C, .D) := by
-  refine ⟨2, fun k hk => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      GuardianBot JustBot (some (.C, .D)) := by
+  refine ⟨2, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hk2 : 2 ≤ k := by omega
   have hA : play 2 (GuardianBot k) (JustBot k) = some .C :=
     gjb_GuardianBot_plays_C_vs_JustBot k 0 hk2

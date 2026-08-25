@@ -5,6 +5,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -127,15 +128,16 @@ theorem CIMCIC_plays_C_against_TitForTatBot (k fuel : Nat)
   simp [eval, Prog.subst, Formula.subst, hk]
 
 /-- **CIMCIC vs TitForTatBot: mutual cooperation (C, C)** for all sufficiently large `k`. -/
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_TitForTatBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) TitForTatBot = some (.C, .C) := by
+    OutcomeSpec .eventual 6
+      CIMCIC (fun _ => TitForTatBot) (some (.C, .C)) := by
   obtain ⟨Ka, hKa⟩ := proofSearch_true_CIMCIC_vs_TitForTatBot
   obtain ⟨Kb, hKb⟩ := proofSearch_true_CIMCIC_vs_bot_CooperateBot
-  refine ⟨max Ka Kb, fun k hk => ?_⟩
+  refine ⟨max Ka Kb, fun k hk fuel => ?_⟩
   have hka : k ≥ Ka := le_of_lt (lt_of_le_of_lt (le_max_left _ _) hk)
   have hkb : k ≥ Kb := le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
-  refine ⟨6, ?_⟩
+  refine outcome_mono_le (N := 6) ?_ (fuel + 6) (by omega)
   have hA : play 6 (CIMCIC k) TitForTatBot = some .C := by
     simpa using CIMCIC_plays_C_against_TitForTatBot k 4 (hKa k hka)
   have hB : play 6 TitForTatBot (CIMCIC k) = some .C := by

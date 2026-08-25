@@ -7,6 +7,7 @@ lambda), not from a binder-name convention.
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -121,3 +122,28 @@ def test_missing_digest_is_rejected(tmp_path) -> None:
 def test_genuine_export_verifies() -> None:
     """The committed file's digest must match — else it is stale."""
     assert _theorems_from_export(_EXPORT_FILE)
+
+
+def test_export_is_not_behind_the_lean_census() -> None:
+    """The committed export must match the census counter in `Outcome/Check.lean`.
+
+    The digest catches a TAMPERED export and the Lean census catches an untagged
+    theorem, but neither notices an export that is merely STALE -- migrate a batch,
+    forget to re-run `lake exe export_outcomes`, and the matrix silently keeps serving
+    the previous set. That surfaced as `tau matrix is not total` in the EGT tests, which
+    is a confusing way to learn you forgot a command.
+    """
+    check = (
+        _EXPORT_FILE.parents[2] / "engine" / "PrisonersDilemma" / "Outcome" / "Check.lean"
+    )
+    if not check.exists():  # engine not present (e.g. app-only checkout)
+        pytest.skip("Outcome/Check.lean not found")
+
+    m = re.search(r"expecting\s+(\d+)", check.read_text(encoding="utf-8"))
+    assert m, "Check.lean has no `expecting <n>` counter"
+    expected = int(m.group(1))
+    actual = len(_doc()["theorems"])
+    assert actual == expected, (
+        f"outcome_theorems.json has {actual} cells but Check.lean expects {expected} — "
+        f"re-run `lake exe export_outcomes` (the export is stale)."
+    )

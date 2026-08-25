@@ -5,6 +5,7 @@ import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Base.Helpers
 
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -60,11 +61,12 @@ theorem CIMCIC_plays_C_against_CIMCIC (k fuel : Nat)
 
 /-- **CIMCIC vs CIMCIC: mutual cooperation past the size threshold** — the
     `identImpl`-proposal outcome, unblocked by `Pf.implRefl`. -/
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_CIMCIC :
-    ∃ k₂, ∀ k, k₂ < k → ∃ fuel,
-      outcome fuel (CIMCIC k) (CIMCIC k) = some (.C, .C) := by
+    OutcomeSpec .eventual 2
+      CIMCIC CIMCIC (some (.C, .C)) := by
   obtain ⟨K, hK⟩ := proofSearch_true_for_CIMCIC_vs_CIMCIC
-  refine ⟨K, fun k hk => ⟨2, ?_⟩⟩
+  refine ⟨K, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hg := hK k (Nat.le_of_lt hk)
   have hA : play (0 + 2) (CIMCIC k) (CIMCIC k) = some .C :=
     CIMCIC_plays_C_against_CIMCIC k 0 hg

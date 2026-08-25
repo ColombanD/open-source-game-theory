@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.Bots
@@ -53,11 +54,12 @@ theorem MirrorBot_plays_C_against_CIMCIC (k fuel : Nat)
     CIMCIC_plays_C_against_MirrorBot k fuel hk
   simpa [play, eval, Prog.subst, MirrorBot] using hCimcic
 
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_MirrorBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) MirrorBot = some (.C, .C) := by
+    OutcomeSpec .eventual 3
+      CIMCIC (fun _ => MirrorBot) (some (.C, .C)) := by
   obtain ⟨K, hK⟩ := cimcic_mirror_guard_provable
-  refine ⟨K, fun k hk => ⟨3, ?_⟩⟩
+  refine ⟨K, fun k hk fuel => outcome_mono_le (N := 3) ?_ (fuel + 3) (by omega)⟩
   have hg := hK k (Nat.le_of_lt hk)
   have hA : play 3 (CIMCIC k) MirrorBot = some .C := by
     simpa using CIMCIC_plays_C_against_MirrorBot k 1 hg

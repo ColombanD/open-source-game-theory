@@ -5,6 +5,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -148,10 +149,11 @@ theorem DIMCID_plays_C_against_TitForTatBot (k fuel : Nat) :
           else eval (fuel + 1) (DIMCID k) TitForTatBot (.const Action.C)) = some .C
   rw [dimcidTFT_proofSearch_false k]; simp [eval]
 
+@[outcome]
 theorem llm_outcome_DIMCID_vs_TitForTatBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DIMCID k) TitForTatBot = some (.C, .C) := by
-  refine ⟨0, fun k _ => ⟨4, ?_⟩⟩
+    OutcomeSpec .eventual 4
+      DIMCID (fun _ => TitForTatBot) (some (.C, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 4) ?_ (fuel + 4) (by omega)⟩
   have hA : play 4 (DIMCID k) TitForTatBot = some .C := by
     simpa using DIMCID_plays_C_against_TitForTatBot k 2
   have hB : play 4 TitForTatBot (DIMCID k) = some .C := by

@@ -6,6 +6,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -40,10 +41,11 @@ theorem GuardianBot_cooperates_vs_CupodTrollBot (k fuel : Nat) :
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
 
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_CupodTrollBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) (CupodTrollBot k) = some (.C, .C) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      GuardianBot CupodTrollBot (some (.C, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (GuardianBot k) (CupodTrollBot k) = some .C :=
     GuardianBot_cooperates_vs_CupodTrollBot k 0
   have hB : play 2 (CupodTrollBot k) (GuardianBot k) = some .C :=

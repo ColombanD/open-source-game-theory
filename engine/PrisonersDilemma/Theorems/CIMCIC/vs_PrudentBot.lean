@@ -9,6 +9,7 @@ import PrisonersDilemma.Bots.LlmGenerations.PrudentBot
 import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Theorems.DefectBot.Helpers
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -218,10 +219,11 @@ theorem CIMCIC_plays_D_against_PrudentBot (k fuel : Nat) :
 /-- **CIMCIC vs PrudentBot → (D, D)** at every sufficiently large budget. Same-`k`
     prudence about a same-strength searcher is self-defeating; mutual defection is the
     honest fixed point. -/
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_PrudentBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) (PrudentBot k) = some (.D, .D) := by
-  refine ⟨0, fun k _ => ⟨3, ?_⟩⟩
+    OutcomeSpec .eventual 3
+      CIMCIC PrudentBot (some (.D, .D)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 3) ?_ (fuel + 3) (by omega)⟩
   have hA : play 3 (CIMCIC k) (PrudentBot k) = some .D :=
     CIMCIC_plays_D_against_PrudentBot k 1
   have hB : play 3 (PrudentBot k) (CIMCIC k) = some .D :=

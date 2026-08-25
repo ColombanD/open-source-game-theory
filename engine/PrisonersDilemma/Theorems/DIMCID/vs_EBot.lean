@@ -7,6 +7,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -284,11 +285,12 @@ theorem DIMCID_E_plays_C_against_EBot (k fuel : Nat) (hk : dimcidEThresh k) :
   rw [hg]; simp [eval]
 
 /-! ### Final theorem -/
+@[outcome]
 theorem llm_outcome_DIMCID_vs_EBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DIMCID k) EBot = some (.C, .C) := by
+    OutcomeSpec .eventual 7
+      DIMCID (fun _ => EBot) (some (.C, .C)) := by
   obtain ⟨K, hK⟩ := linear_log2_add_le 4 100
-  refine ⟨K, fun k hk => ⟨7, ?_⟩⟩
+  refine ⟨K, fun k hk fuel => outcome_mono_le (N := 7) ?_ (fuel + 7) (by omega)⟩
   have hthresh : dimcidEThresh k := by
     have hsz : 2 + (Formula.impl (.plays (DIMCID k) (.bot DefectBot) Action.C)
                 (.plays (.bot DefectBot) (DIMCID k) Action.D)).size

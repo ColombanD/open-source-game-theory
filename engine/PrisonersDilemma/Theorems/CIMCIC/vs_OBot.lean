@@ -4,6 +4,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.CIMCIC.vs_EBot
+import PrisonersDilemma.Outcome
 
 /-!
 # CIMCIC vs OBot — `(D, D)` past the weakenImpl threshold
@@ -127,13 +128,14 @@ theorem co_CIMCIC_plays_D (k fuel : Nat)
 /-- **CIMCIC vs OBot → (D, D)** past the weakenImpl threshold: the tester
     convicts the conditional cooperator, and the conditional cooperator — unable
     to certify a cooperation that does not exist — returns the favor. -/
+@[outcome]
 theorem outcome_CIMCIC_vs_OBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) OBot = some (.D, .D) := by
+    OutcomeSpec .eventual 5
+      CIMCIC (fun _ => OBot) (some (.D, .D)) := by
   obtain ⟨K, hK⟩ := proofSearch_true_CIMCIC_vs_botCoop
-  refine ⟨K, fun k hk => ?_⟩
+  refine ⟨K, fun k hk fuel => ?_⟩
   have hbc := hK k (Nat.le_of_lt hk)
-  refine ⟨5, ?_⟩
+  refine outcome_mono_le (N := 5) ?_ (fuel + 5) (by omega)
   have hB : play 5 OBot (CIMCIC k) = some .D := by
     simpa using co_OBot_plays_D k 0 hbc
   have hA : play 5 (CIMCIC k) OBot = some .D := by

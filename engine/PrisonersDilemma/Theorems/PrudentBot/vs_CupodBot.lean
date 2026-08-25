@@ -6,6 +6,7 @@ import PrisonersDilemma.Bots.LlmGenerations.PrudentBot
 import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
 import PrisonersDilemma.Theorems.CupodBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -75,8 +76,11 @@ theorem PrudentBot_plays_D_against_CupodBot (k fuel : Nat) :
 /-- **PrudentBot vs CupodBot = (D, C)** at every same budget: the suspicious
     cooperator trusts a floor-priced defector, and the prudent bot exploits a
     floor-priced trust. -/
-theorem outcome_PrudentBot_vs_CupodBot (k fuel : Nat) :
-    outcome (fuel + 2) (PrudentBot k) (CupodBot k) = some (.D, .C) :=
+@[outcome]
+theorem outcome_PrudentBot_vs_CupodBot :
+    OutcomeSpec .universal 2
+      PrudentBot CupodBot (some (.D, .C)) :=
+  fun k fuel =>
   outcome_of_plays _ _ _ _ _ (PrudentBot_plays_D_against_CupodBot k fuel)
     (CupodBot_plays_C_against_PrudentBot k fuel)
 

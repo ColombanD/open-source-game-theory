@@ -11,6 +11,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -60,10 +61,11 @@ theorem PrudentBot_plays_D_against_OBot (k fuel : Nat) :
     (proofSearch_false_OBot_vs_PrudentBot k)
 
 /-- PrudentBot vs OBot: mutual defection, (D, D). -/
+@[outcome]
 theorem outcome_PrudentBot_vs_OBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (PrudentBot k) OBot = some (.D, .D) := by
-  refine ⟨0, fun k _ => ⟨6, ?_⟩⟩
+    OutcomeSpec .eventual 6
+      PrudentBot (fun _ => OBot) (some (.D, .D)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 6) ?_ (fuel + 6) (by omega)⟩
   have hA : play 6 (PrudentBot k) OBot = some .D := by
     simpa using PrudentBot_plays_D_against_OBot k 4
   have hB : play 6 OBot (PrudentBot k) = some .D := by

@@ -4,6 +4,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Base.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.Bots
@@ -88,11 +89,12 @@ theorem OptimBot_plays_D_against_CooperateBot (k fuel : Nat)
   unfold OptimBot at hOuter hD ⊢
   simp [eval, Prog.subst, Formula.subst, hOuter, hD]
 
+@[outcome]
 theorem llm_outcome_OptimBot_vs_CooperateBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (OptimBot k k) CooperateBot = some (.D, .C) := by
+    OutcomeSpec .eventual 6
+      (fun k => OptimBot k k) (fun _ => CooperateBot) (some (.D, .C)) := by
   obtain ⟨k₂, hk₂⟩ := optim_D_provable_at_k
-  refine ⟨k₂, fun k hk => ?_⟩
+  refine ⟨k₂, fun k hk fuel => ?_⟩
   have h1 : 1 ≤ k := by omega
   have hD : proofSearch k (Formula.plays (OptimBot k k) CooperateBot Action.D) = true :=
     hk₂ k hk
@@ -103,7 +105,7 @@ theorem llm_outcome_OptimBot_vs_CooperateBot :
     have hpf : Pf k (.plays CooperateBot (OptimBot k k) Action.C) :=
       Pf_mono (Pf.atom hcert) h1
     exact (proofSearch_spec k _).2 hpf
-  refine ⟨6, ?_⟩
+  refine outcome_mono_le (N := 6) ?_ (fuel + 6) (by omega)
   have hA : play 6 (OptimBot k k) CooperateBot = some .D := by
     have := OptimBot_plays_D_against_CooperateBot k 0 hOuter hD
     simpa using this

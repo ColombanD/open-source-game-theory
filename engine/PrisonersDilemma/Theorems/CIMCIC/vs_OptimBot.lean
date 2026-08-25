@@ -6,6 +6,7 @@ import PrisonersDilemma.Base.Helpers
 
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.LlmGenerations.OptimBot
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -303,10 +304,11 @@ theorem OptimBot_plays_C_against_CIMCIC (k fuel : Nat) :
 
 /-- **CIMCIC vs OptimBot: `(D, C)`** — CIMCIC defects (guard floor-unprovable),
     OptimBot cooperates (falls through to fallback). -/
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_OptimBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) (OptimBot k k) = some (.D, .C) := by
-  refine ⟨0, fun k _ => ⟨5, ?_⟩⟩
+    OutcomeSpec .eventual 5
+      CIMCIC (fun k => OptimBot k k) (some (.D, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 5) ?_ (fuel + 5) (by omega)⟩
   have hA : play 5 (CIMCIC k) (OptimBot k k) = some .D := by
     simpa using CIMCIC_plays_D_against_OptimBot k 3
   have hB : play 5 (OptimBot k k) (CIMCIC k) = some .C := by

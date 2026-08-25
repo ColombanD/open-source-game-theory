@@ -4,6 +4,7 @@ import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -169,12 +170,13 @@ theorem cj_CIMCIC_C_vs_JustBot (k fuel : Nat)
   rw [hps]; simp [eval]
 
 /-- **CIMCIC vs JustBot → (C, C)** for all sufficiently large `k`. -/
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_JustBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) (JustBot k) = some (.C, .C) := by
+    OutcomeSpec .eventual 2
+      CIMCIC JustBot (some (.C, .C)) := by
   obtain ⟨ke, hke⟩ := cj_CIMCIC_C_vs_botDupoc
   obtain ⟨kt, hkt⟩ := linear_log2_add_le 10 100
-  refine ⟨max ke kt, fun k hk => ⟨2, ?_⟩⟩
+  refine ⟨max ke kt, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hkke : ke < k := lt_of_le_of_lt (Nat.le_max_left _ _) hk
   have hkkt : 10 * Nat.log2 k + 100 ≤ k :=
     hkt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))

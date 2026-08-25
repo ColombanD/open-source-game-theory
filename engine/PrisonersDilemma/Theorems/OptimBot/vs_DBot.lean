@@ -6,6 +6,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.DefectBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.Bots
@@ -208,11 +209,12 @@ theorem optim_plays_C_vs_dbot (k S fuel : Nat)
   unfold OptimBot at hC hD ⊢
   simp [eval, Prog.subst, Formula.subst, hC, hD]
 
+@[outcome]
 theorem llm_outcome_OptimBot_vs_DBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (OptimBot k (100000000 * k)) DBot = some (.C, .C) := by
+    OutcomeSpec .eventual 12
+      (fun k => OptimBot k (100000000 * k)) (fun _ => DBot) (some (.C, .C)) := by
   obtain ⟨k₂, hk₂⟩ := optim_dbot_selfD_provable
-  refine ⟨max k₂ 2, fun k hk => ?_⟩
+  refine ⟨max k₂ 2, fun k hk fuel => ?_⟩
   have hkk₂ : k > k₂ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
   have h2k : 2 ≤ k := le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
   set S := 100000000 * k with hS
@@ -226,7 +228,7 @@ theorem llm_outcome_OptimBot_vs_DBot :
     optim_ps_DBotC_false k S
   have hD : proofSearch k (.plays DBot (OptimBot k S) Action.D) = false :=
     optim_ps_DBotD_false k S hselfD hoppC hoppD
-  refine ⟨12, ?_⟩
+  refine outcome_mono_le (N := 12) ?_ (fuel + 12) (by omega)
   have hA : play 12 (OptimBot k S) DBot = some .C := by
     have := optim_plays_C_vs_dbot k S 0 hC hD
     simpa using this

@@ -6,6 +6,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Theorems.GuardianBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -81,10 +82,11 @@ theorem gtft_GuardianBot_C_vs_TFT (k fuel : Nat) :
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
 
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_TitForTatBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) TitForTatBot = some (.C, .C) := by
-  refine ⟨0, fun k _ => ⟨4, ?_⟩⟩
+    OutcomeSpec .eventual 4
+      GuardianBot (fun _ => TitForTatBot) (some (.C, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 4) ?_ (fuel + 4) (by omega)⟩
   have hA : play 4 (GuardianBot k) TitForTatBot = some .C := by
     simpa using gtft_GuardianBot_C_vs_TFT k 2
   have hB : play 4 TitForTatBot (GuardianBot k) = some .C := by

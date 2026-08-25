@@ -6,6 +6,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LlmGenerations.LlmLemmas
 import PrisonersDilemma.Theorems.WaryBot.Helpers
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -199,10 +200,11 @@ theorem PrudentBot_defects_vs_WaryBot (k fuel : Nat) :
 
 /-! ## The outcome -/
 
+@[outcome]
 theorem llm_outcome_WaryBot_vs_PrudentBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (WaryBot k) (PrudentBot k) = some (.C, .D) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      WaryBot PrudentBot (some (.C, .D)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (WaryBot k) (PrudentBot k) = some .C :=
     WaryBot_cooperates_vs_PrudentBot k 0
   have hB : play 2 (PrudentBot k) (WaryBot k) = some .D :=

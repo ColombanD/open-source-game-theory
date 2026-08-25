@@ -6,6 +6,7 @@ import PrisonersDilemma.Bots.LlmGenerations.OptimBot
 import PrisonersDilemma.Theorems.WaryBot.Helpers
 import PrisonersDilemma.Theorems.LlmGenerations.LlmLemmas
 import PrisonersDilemma.Base.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -267,10 +268,11 @@ theorem wo_optim_plays_C (k fuel : Nat) :
 
 /-- **WaryBot vs OptimBot: `(C, C)`** for all `k`. WaryBot trusts (cannot refute
     OptimBot's cooperation); OptimBot cooperates (rung guards unprovable). -/
+@[outcome]
 theorem llm_outcome_WaryBot_vs_OptimBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (WaryBot k) (OptimBot k k) = some (.C, .C) := by
-  refine ⟨0, fun k _ => ⟨5, ?_⟩⟩
+    OutcomeSpec .eventual 5
+      WaryBot (fun k => OptimBot k k) (some (.C, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 5) ?_ (fuel + 5) (by omega)⟩
   have hA : play 5 (WaryBot k) (OptimBot k k) = some .C := by
     simpa using wo_wary_plays_C k 3
   have hB : play 5 (OptimBot k k) (WaryBot k) = some .C := by

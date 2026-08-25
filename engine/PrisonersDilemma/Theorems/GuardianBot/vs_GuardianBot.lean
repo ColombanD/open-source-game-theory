@@ -5,6 +5,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Theorems.GuardianBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD PD.Bots PD.BaseTheorems
 namespace PD.Theorems
@@ -54,10 +55,11 @@ theorem gg_guardian_C_vs_guardian (k fuel : Nat) :
   rw [hg]
   rfl
 
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_GuardianBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) (GuardianBot k) = some (.C, .C) := by
-  refine ⟨0, fun k hk => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      GuardianBot GuardianBot (some (.C, .C)) := by
+  refine ⟨0, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (GuardianBot k) (GuardianBot k) = some .C := by
     simpa using gg_guardian_C_vs_guardian k 0
   exact outcome_of_plays _ _ _ _ _ hA hA

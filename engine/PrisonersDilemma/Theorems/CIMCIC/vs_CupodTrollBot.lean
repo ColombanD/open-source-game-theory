@@ -7,6 +7,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.CupodTrollBot
 import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -165,10 +166,11 @@ theorem CIMCIC_plays_D_against_CupodTrollBot (k fuel : Nat) :
           else eval (fuel + 1) (CIMCIC k) (CupodTrollBot k) (.const Action.D)) = some .D
   rw [hg]; simp [eval]
 
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_CupodTrollBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) (CupodTrollBot k) = some (.D, .C) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      CIMCIC CupodTrollBot (some (.D, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (CIMCIC k) (CupodTrollBot k) = some .D :=
     CIMCIC_plays_D_against_CupodTrollBot k 0
   have hB : play 2 (CupodTrollBot k) (CIMCIC k) = some .C :=

@@ -3,6 +3,7 @@ import PrisonersDilemma.Bots.CupodBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.CupodBot.Helpers
+import PrisonersDilemma.Outcome
 
 /-!
 # CIMCIC vs CupodBot — `(D, C)` at EVERY same budget, by the floor alone
@@ -170,8 +171,11 @@ theorem cb_CupodBot_plays_C (k fuel : Nat) :
 
 /-- **CIMCIC vs CupodBot → (D, C)**, at every budget and fuel ≥ 2 — the red-cell
     shape, one tier up: trust extended exactly where it cannot be verified. -/
-theorem outcome_CIMCIC_vs_CupodBot (k fuel : Nat) :
-    outcome (fuel + 2) (CIMCIC k) (CupodBot k) = some (.D, .C) :=
+@[outcome]
+theorem outcome_CIMCIC_vs_CupodBot :
+    OutcomeSpec .universal 2
+      CIMCIC CupodBot (some (.D, .C)) :=
+  fun k fuel =>
   outcome_of_plays _ _ _ _ _ (cb_CIMCIC_plays_D k fuel) (cb_CupodBot_plays_C k fuel)
 
 end PD.Theorems

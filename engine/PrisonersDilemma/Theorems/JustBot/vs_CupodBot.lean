@@ -5,6 +5,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.JustBot.Helpers
 import PrisonersDilemma.Theorems.CupodBot.Helpers
+import PrisonersDilemma.Outcome
 
 /-!
 # JustBot vs CupodBot — `(D, C)` at EVERY same budget, by the floor alone
@@ -79,8 +80,11 @@ theorem jc_CupodBot_plays_C (k fuel : Nat) :
   rw [hg]; simp [eval]
 
 /-- **JustBot vs CupodBot → (D, C)**, at every budget and fuel ≥ 2. -/
-theorem outcome_JustBot_vs_CupodBot (k fuel : Nat) :
-    outcome (fuel + 2) (JustBot k) (CupodBot k) = some (.D, .C) :=
+@[outcome]
+theorem outcome_JustBot_vs_CupodBot :
+    OutcomeSpec .universal 2
+      JustBot CupodBot (some (.D, .C)) :=
+  fun k fuel =>
   outcome_of_plays _ _ _ _ _ (jc_JustBot_plays_D k fuel) (jc_CupodBot_plays_C k fuel)
 
 end PD.Theorems

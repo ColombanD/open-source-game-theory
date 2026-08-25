@@ -5,6 +5,7 @@ import PrisonersDilemma.Bots.DefectBot
 import PrisonersDilemma.Bots.MirrorBot
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
+import PrisonersDilemma.Outcome
 
 open PD PD.BaseTheorems PD.Bots
 namespace PD.Theorems
@@ -77,10 +78,11 @@ theorem gebot_guardian_D (k fuel : Nat)
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
 
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_EBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) EBot = some (.D, .C) := by
-  refine ⟨3 ^ 5, fun k hk => ⟨6, ?_⟩⟩
+    OutcomeSpec .eventual 6
+      GuardianBot (fun _ => EBot) (some (.D, .C)) := by
+  refine ⟨3 ^ 5, fun k hk fuel => outcome_mono_le (N := 6) ?_ (fuel + 6) (by omega)⟩
   have hk2 : 2 ≤ k := by omega
   have hkcert : 3 ^ 5 ≤ k := by omega
   have hA : play 6 (GuardianBot k) EBot = some .D := by

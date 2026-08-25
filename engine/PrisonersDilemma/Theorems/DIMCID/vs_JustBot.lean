@@ -4,6 +4,7 @@ import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -247,10 +248,11 @@ theorem JustBot_plays_D_against_DIMCID (k fuel : Nat) :
   simp [eval, Prog.subst, Formula.subst, hg]
 
 -- === Final theorem ===
+@[outcome]
 theorem llm_outcome_DIMCID_vs_JustBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DIMCID k) (JustBot k) = some (.C, .D) := by
-  refine ⟨0, fun k _ => ⟨2, ?_⟩⟩
+    OutcomeSpec .eventual 2
+      DIMCID JustBot (some (.C, .D)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (DIMCID k) (JustBot k) = some .C :=
     DIMCID_plays_C_against_JustBot k 0
   have hB : play 2 (JustBot k) (DIMCID k) = some .D :=

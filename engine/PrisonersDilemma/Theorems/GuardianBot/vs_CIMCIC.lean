@@ -7,6 +7,7 @@ import PrisonersDilemma.Bots.LlmGenerations.GuardianBot
 import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -196,11 +197,12 @@ theorem gc_CIMCIC_plays_D_vs_GuardianBot (k fuel : Nat) :
 /-- **GuardianBot vs CIMCIC → (C, D)** for all sufficiently large `k`: GuardianBot
     trusts CIMCIC (it doesn't bully CooperateBot), but CIMCIC cannot prove
     GuardianBot's (floor-priced else-play) cooperation and defects. -/
+@[outcome]
 theorem llm_outcome_GuardianBot_vs_CIMCIC :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (GuardianBot k) (CIMCIC k) = some (.C, .D) := by
+    OutcomeSpec .eventual 2
+      GuardianBot CIMCIC (some (.C, .D)) := by
   obtain ⟨K, hK⟩ := gc_proofSearch_true_CIMCIC_vs_botCB
-  refine ⟨K, fun k hk => ⟨2, ?_⟩⟩
+  refine ⟨K, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hgf := gc_guardian_guard_false K hK k (Nat.le_of_lt hk)
   have hA : play (0 + 2) (GuardianBot k) (CIMCIC k) = some .C :=
     gc_GuardianBot_cooperates_vs_CIMCIC k 0 hgf

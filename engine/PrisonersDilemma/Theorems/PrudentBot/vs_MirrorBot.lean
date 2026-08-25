@@ -9,6 +9,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -131,9 +132,10 @@ theorem proofSearch_k_of_play_MirrorBot_prudent
     Contrast the *old* PrudentBot (prudence `.ite` over the search), whose Löb
     premise was unprovable: the fix was the `searchThenSearch_t` transparency rule,
     which lets S read PrudentBot's stacked-`.search` body. -/
+@[outcome]
 theorem outcome_PrudentBot_vs_MirrorBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (PrudentBot k) MirrorBot = some (.C, .C) := by
+    OutcomeSpec .eventual 4
+      PrudentBot (fun _ => MirrorBot) (some (.C, .C)) := by
   let φ : Nat → Formula := fun k => Formula.plays MirrorBot (PrudentBot k) Action.C
   have hLoeb : ∀ k, k > 27 →
       Pf (50 * Nat.log2 k + 500) (.impl (.box k (φ k)) (φ k)) := by
@@ -146,7 +148,7 @@ theorem outcome_PrudentBot_vs_MirrorBot :
     omega
   have hpm : ∀ k, 50 * Nat.log2 k + 500 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 27 hφsz hpm hLoeb
-  refine ⟨max k₂ 27, fun k hk => ?_⟩
+  refine ⟨max k₂ 27, fun k hk fuel => ?_⟩
   have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
   have hkP : (27 : Nat) ≤ k :=
     le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
@@ -158,7 +160,7 @@ theorem outcome_PrudentBot_vs_MirrorBot :
     proofSearch_k_of_play_MirrorBot_prudent k n hMir
   have hPrudPS : proofSearch k (Formula.plays MirrorBot (.bot DefectBot) Action.D) = true :=
     (proofSearch_spec _ _).2 (Pf_mono prudence_provable hkP)
-  refine ⟨4, ?_⟩
+  refine outcome_mono_le (N := 4) ?_ (fuel + 4) (by omega)
   have hA : play 4 (PrudentBot k) MirrorBot = some .C := by
     simpa using PrudentBot_plays_C_against_MirrorBot k 1 hCoopPS hPrudPS
   have hB : play 4 MirrorBot (PrudentBot k) = some .C := by

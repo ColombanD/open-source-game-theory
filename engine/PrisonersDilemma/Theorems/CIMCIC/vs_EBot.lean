@@ -8,6 +8,7 @@ import PrisonersDilemma.Theorems.DefectBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -283,14 +284,15 @@ theorem CIMCIC_plays_D_against_EBot (k fuel : Nat) :
 
 /-! ## The outcome -/
 
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_EBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) EBot = some (.D, .C) := by
+    OutcomeSpec .eventual 7
+      CIMCIC (fun _ => EBot) (some (.D, .C)) := by
   obtain ⟨K, hK⟩ := proofSearch_true_CIMCIC_vs_botCoop
-  refine ⟨K, fun k hk => ?_⟩
+  refine ⟨K, fun k hk fuel => ?_⟩
   have hk' : k ≥ K := Nat.le_of_lt hk
   have hbc := hK k hk'
-  refine ⟨7, ?_⟩
+  refine outcome_mono_le (N := 7) ?_ (fuel + 7) (by omega)
   have hA : play 7 (CIMCIC k) EBot = some .D := by
     simpa using CIMCIC_plays_D_against_EBot k 5
   have hB : play 7 EBot (CIMCIC k) = some .C := by

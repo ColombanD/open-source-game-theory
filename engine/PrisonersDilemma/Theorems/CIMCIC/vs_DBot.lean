@@ -6,6 +6,7 @@ import PrisonersDilemma.Theorems.DefectBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -197,10 +198,11 @@ theorem CIMCIC_plays_D_against_DBot (k fuel : Nat) :
 
 /-! ## Part 5: the outcome -/
 
+@[outcome]
 theorem llm_outcome_CIMCIC_vs_DBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (CIMCIC k) DBot = some (.D, .C) := by
-  refine ⟨0, fun k _ => ⟨4, ?_⟩⟩
+    OutcomeSpec .eventual 4
+      CIMCIC (fun _ => DBot) (some (.D, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 4) ?_ (fuel + 4) (by omega)⟩
   have hA : play 4 (CIMCIC k) DBot = some .D := by
     simpa using CIMCIC_plays_D_against_DBot k 2
   have hB : play 4 DBot (CIMCIC k) = some .C := by

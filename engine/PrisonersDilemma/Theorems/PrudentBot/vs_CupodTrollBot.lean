@@ -10,6 +10,7 @@ import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Bots.CupodTrollBot
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -39,10 +40,11 @@ theorem PrudentBot_defects_vs_CupodTrollBot (k fuel : Nat) :
   unfold PrudentBot
   simp [eval, Prog.subst, Formula.subst, hφ2]
 
+@[outcome]
 theorem outcome_PrudentBot_vs_CupodTrollBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (PrudentBot k) (CupodTrollBot k) = some (.D, .C) := by
-  refine ⟨0, fun k _ => ⟨3, ?_⟩⟩
+    OutcomeSpec .eventual 3
+      PrudentBot CupodTrollBot (some (.D, .C)) := by
+  refine ⟨0, fun k _ fuel => outcome_mono_le (N := 3) ?_ (fuel + 3) (by omega)⟩
   have hA : play 3 (PrudentBot k) (CupodTrollBot k) = some .D :=
     PrudentBot_defects_vs_CupodTrollBot k 0
   have hB : play 3 (CupodTrollBot k) (PrudentBot k) = some .C :=

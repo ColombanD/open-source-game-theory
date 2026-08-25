@@ -5,6 +5,7 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Base.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -344,12 +345,13 @@ theorem ot_optim_plays_D_vs_tft (k K fuel : Nat) (hk : 2 ≤ k)
 
 /-! ## Final outcome -/
 
+@[outcome]
 theorem llm_outcome_OptimBot_vs_TitForTatBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (OptimBot k (65536 * k)) TitForTatBot = some (.D, .D) := by
+    OutcomeSpec .eventual 8
+      (fun k => OptimBot k (65536 * k)) (fun _ => TitForTatBot) (some (.D, .D)) := by
   obtain ⟨k₁, hbundle⟩ := ot_inner_D_at_stagger_bundled
   obtain ⟨k₂, hDtft⟩ := ot_D_provable_at_stagger
-  refine ⟨max k₁ k₂, fun k hk => ⟨8, ?_⟩⟩
+  refine ⟨max k₁ k₂, fun k hk fuel => outcome_mono_le (N := 8) ?_ (fuel + 8) (by omega)⟩
   obtain ⟨h2, hcnk, hInnerPf⟩ := hbundle k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
   have hDtftk := hDtft k (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
   set KS := 65536 * k with hKS

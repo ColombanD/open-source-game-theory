@@ -12,6 +12,7 @@ import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
 import PrisonersDilemma.Base.Exclusion
 import PrisonersDilemma.Theorems.DupocBot.vs_CupodTrollBot
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -35,8 +36,11 @@ floor — JustBot's guard at the same `k` can never afford it. Staggered-budget 
 FAILS against `.bot (DupocBot (4j+100))`, refuted by `Pf.eqNeg`). Holds for EVERY
 `j` — no eventuality. -/
 
-theorem outcome_JustBot_vs_CupodTrollBot (j fuel : Nat) :
-    outcome (fuel + 2) (JustBot (4*j+100)) (CupodTrollBot j) = some (.C, .C) := by
+@[outcome]
+theorem outcome_JustBot_vs_CupodTrollBot :
+    OutcomeSpec .universal 2
+      (fun j => JustBot (4*j+100)) CupodTrollBot (some (.C, .C)) := by
+  intro j fuel
   have hlj := log2_le_self j
   have hlgj := log2_stagger4_le j
   have hne : Prog.bot (DupocBot (4*j+100)) ≠ CupodBot j := by simp [CupodBot]
