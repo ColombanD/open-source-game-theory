@@ -1354,9 +1354,25 @@ budget-staggering divergences, never a second budget in the lift.
   D-tail census it is a constructor CLASH (`c0 = C`), in the C-tail census it is
   THE reading rule and is killed by the inner guard's unprovability
   (`no_provable_sysNested_C_tail` takes that as `hinner`).
-* **Next:** WaryBot (`Mode.proveNeg`, the `.neg`-spine census — time-boxed),
-  LegibleBot (`Mode.proveBox`, single budget, staggered cells whitelisted);
-  OptimBot only on request (6 base cells).
+* **THE PORTING PHASE IS CLOSED AT 16 TEMPLATES (Colomban's decision,
+  2026-08-25).** WaryBot, LegibleBot and OptimBot are EXCLUDED, not deferred,
+  and the reason is a property of the BASE library, not of the lift:
+  - *WaryBot* (`search k (¬(opp plays C vs me)) D C`): five base cells are OPEN
+    at large k (OBot, CIMCIC, DIMCID, CupodBot, LegibleBot) — one wall, refuting a
+    FLOOR-priced cooperation: the WV valuation census dies on `h_ite`, the
+    TailTo-neg census is FALSE (`implK` + `contrapose` manufacture
+    `¬(ψ → CA) → ¬CA`), and the cost-floor lever was never built. τ(Wary) meets
+    the identical wall against obot/cimcic/dimcid/cupod and its `.sys` partners,
+    so an unconditional row is a census research project, and there is no base
+    value to certify those cells against.
+  - *LegibleBot* (`search kOut (□kIn (me plays C vs opp)) C D`): inherently
+    TWO-budget. Base has large-k values for 5 cells only, all at the stagger
+    `LegibleBot (2k+64) k`; the other 10 are `_floor` theorems valid only while
+    `kOut < |□kIn …|` (small k). At one budget the row is open in base too.
+  - *OptimBot*: 6 base cells, three open.
+  A future `Mode.proveNeg` / `Mode.proveBox` is a new `Mode` on `search`, not a
+  new node (the DSL extension point is unchanged); the precondition is a proven
+  single-budget base row, which none of the three has.
 
 ## 9. Open questions (decide during implementation, none blocking)
 
