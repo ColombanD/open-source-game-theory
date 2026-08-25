@@ -12,6 +12,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -99,8 +100,12 @@ theorem EBot_plays_C_against_JustBot (k fuel : Nat) (hk : 2 ≤ k) :
   exact hInner
 
 /-- **The honest JustBot×EBot outcome — `(D, C)` for every `k ≥ 2`.** -/
-theorem outcome_JustBot_vs_EBot (k fuel : Nat) (hk : 2 ≤ k) :
-    outcome (fuel + 5) (JustBot k) EBot = some (.D, .C) := by
+@[outcome]
+theorem outcome_JustBot_vs_EBot :
+    OutcomeSpec .eventual 5
+      JustBot (fun _ => EBot) (some (.D, .C)) := by
+  refine ⟨1, fun k hlt fuel => ?_⟩
+  have hk : 2 ≤ k := hlt
   have hA : play (fuel + 5) (JustBot k) EBot = some .D := by
     simpa [Nat.add_assoc] using JustBot_plays_D_against_EBot k (fuel + 3)
   have hB := EBot_plays_C_against_JustBot k fuel hk

@@ -53,3 +53,10 @@ outcome_DupocBot_vs_CupodTrollBot_samek  -- regime variant: the same-budget comp
 outcome_JustBot_vs_CupodTrollBot_samek  -- regime variant: the same-budget companion to the staggered cell
 outcome_JustBot_vs_PrudentBot_samek  -- regime variant: the same-budget companion to the staggered cell
 outcome_PrudentBot_vs_DupocBot_samek  -- regime variant: the same-budget companion to the staggered cell
+
+# TEMPLATE LIMIT (not a regime variant). `OutcomeSpec` gives the two bots ONE shared
+# budget lambda, which is what makes staggering structurally detectable. This theorem
+# quantifies over two INDEPENDENT budgets (`j` for CupodTrollBot, `k` for DupocBot) with
+# a side condition coupling them, so it cannot be stated on-template without adding a
+# second budget parameter for a single cell. It keeps its dagger via the legacy path.
+outcome_CupodTrollBot_vs_DupocBot  -- two independent budgets j, k
