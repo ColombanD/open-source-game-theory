@@ -74,25 +74,37 @@ def test_kernel_agrees_with_base_directly() -> None:
     `VoteBits` theorems and the cells out of the certified base matrix, so a pass
     depends on no Python model at all.
 
-    256 comparable cells — the FULL 16×16 matrix — 246 agree, and the 10
+    225 comparable cells — the 15×15 matrix without TauTFTPf — 219 agree, and the 6
     divergences are exactly the recorded whitelist — properties of the LIFT,
     not of any implementation. (182/176/6 → 210/204/6 on 2026-08-24 when
     MirrorBot joined `FULL_BOTS`; 225/219/6 on 2026-08-25 when τ(DIMCID)'s row
     landed: all 15 of its cells agree with base, including the three the tail
     and valuation censuses could not reach; 256/246/10 later on 2026-08-25 when
     PrudentBot was ported at a SINGLE budget — its four new divergences are the
-    budget-staggered base cells against DupocBot/JustBot, both orientations.)
+    budget-staggered base cells against DupocBot/JustBot, both orientations;
+    225/219/6 again later that day once TauTFTPf, which has no base bot, was
+    dropped from the comparison together with its four prover-floor entries.)
 
     Was 144/139/5 until 2026-08-24, when CupodBot and DIMCID were added to
     `FULL_BOTS`: their base cells had landed on 08-21 but the list was never
     updated, so 38 comparable cells went unchecked and four divergences sat
     unexamined behind a green result."""
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
-    assert len(d.cells) == 256
+    assert len(d.cells) == 225
     assert d.passed, d.unexpected
-    assert d.agreements == 246
-    assert len(d.whitelisted_divergences) == 10
+    assert d.agreements == 219
+    assert len(d.whitelisted_divergences) == 6
     assert d.missing_rows == ()
+
+
+def test_tftpf_is_not_certified_against_base() -> None:
+    """TauTFTPf is the prover reading of TitForTatBot's question — a tau-only
+    variant with no base bot. It has a kernel row (the α-gap tests read it) but
+    must appear in no base comparison, as row or as hypothesis."""
+    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
+    assert all(c.template != "TauTFTPf" and c.hypothesis != "TauTFTPf" for c in d.cells)
+    assert "TauTFTPf" not in d.missing_rows
+    assert "TauTFTPf" not in BASE_OF
 
 
 def test_certification_end_to_end() -> None:
@@ -125,11 +137,6 @@ def test_missing_rows_are_reported_not_guessed(monkeypatch) -> None:
 
 def test_whitelist_is_exactly_the_recorded_cells() -> None:
     assert set(WHITELIST) == {
-        # prover-modality floors (the α-gap), one per floor bot
-        ("TauTFTPf", "TauGuardian"),
-        ("TauTFTPf", "TauCupodTroll"),
-        ("TauTFTPf", "TauCupod"),
-        ("TauTFTPf", "TauDIMCID"),
         # budget staggering
         ("TauDupoc", "TauCupodTroll"),
         ("TauJust", "TauCupodTroll"),
@@ -154,8 +161,8 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
       budget regime.
     * **prover-modality floors** — the α-gap proper: a PROVER lift of a
       BEHAVIORAL base bot, facing a partner whose cooperation is true but
-      floor-priced. One entry per floor bot (Guardian, CupodTroll, Cupod,
-      DIMCID).
+      floor-priced. Empty since 2026-08-25: TauTFTPf has no base bot, so it is
+      compared nowhere (`test_tftpf_is_not_certified_against_base`).
     * **coverage / guard-target truncation** — the lift cannot express the base
       bot's guard at all: EBot's dropped Mirror branch, and CupodTroll's identity
       guard, which names a BARE bot in base but an INSTANCE in the lift and so
@@ -172,8 +179,9 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
     for A, T in staggering:
         assert (BASE_OF[A], BASE_OF[T]) in dagger, (A, T)
 
-    modality = {("TauTFTPf", "TauGuardian"), ("TauTFTPf", "TauCupodTroll"),
-                ("TauTFTPf", "TauCupod"), ("TauTFTPf", "TauDIMCID")}
+    # prover-modality floors: EMPTY since 2026-08-25 — TauTFTPf, the only prover
+    # variant of a behavioral base bot, has no base row and is compared nowhere
+    modality: set[tuple[str, str]] = set()
     coverage: set[tuple[str, str]] = set()   # empty since 2026-08-24
     # the prover-floor cells are never budget artifacts
     for A, T in modality:

@@ -29,8 +29,10 @@ Consequences of that removal, stated plainly:
   anyway — phases are a function of the bits.
 
 The recorded divergences (`WHITELIST`) are properties of the LIFT, not of any
-implementation: the Mirror-branch truncation, the prover-modality floors, and the
-budget-staggered dagger cells.
+implementation: all six are budget-staggered dagger cells. `TauTFTPf` — the prover
+reading of TitForTatBot's question — has no base bot and is compared nowhere
+(2026-08-25); its divergence from `TauTFTSim` on floor-priced cooperation is the
+prover/behavioral α-gap, reported by the kernel-row tests, not by this certification.
 """
 
 from __future__ import annotations
@@ -49,20 +51,6 @@ from pd_runner.tau.def4_theorems import (
 from pd_runner.tau.matrix import TauMatrix
 
 WHITELIST: dict[tuple[str, str], str] = {
-    # ("TauEBot", "TauEBot") — REMOVED 2026-08-24. The entry read "Mirror-branch
-    # truncation: base EBot's third branch sims MirrorBot (not .opp-free-liftable);
-    # the lift drops it, flipping E's self-bit". It was a COVERAGE gap, not a
-    # property of the lift: MirrorBot IS liftable — `.sim .opp .self` becomes a
-    # `run` stage on the SELF target, copying in the frozen self frame. With
-    # `.mirror` in the roster EBot's third stage is expressible again, its self
-    # watch fires, and the cell AGREES with base `outcome_EBot_vs_EBot = (C, C)`.
-    ("TauTFTPf", "TauCupodTroll"): (
-        "Floor over true cooperation: τ(CupodTroll)'s C is reached through a "
-        "FAILED .eq search, so its transcript pays search_f and no prover can "
-        "cite it at the SAME budget. Base TitForTatBot is the BEHAVIORAL bot "
-        "(it sims, so it sees the C); its prover lift cannot. A genuine "
-        "modality difference — the α-gap."
-    ),
     ("TauDupoc", "TauCupodTroll"): (
         "**BUDGET STAGGERING, not a modality gap.** Base "
         "`outcome_CupodTrollBot_vs_DupocBot` really is (C, C) — but it is a "
@@ -111,37 +99,6 @@ WHITELIST: dict[tuple[str, str], str] = {
         "`outcome_JustBot_vs_CupodTrollBot` is stated at JustBot (4*j+100) vs "
         "CupodTrollBot j: the 4x+100 stagger is what affords Troll's floor. "
         "Same-k tau cannot reproduce it."
-    ),
-    # ── prover-modality floors, 3rd and 4th floor bots (2026-08-24) ──────────
-    # The whitelist was written when the zoo had TWO floor bots (Guardian,
-    # CupodTroll). Cupod and DIMCID are the third and fourth, added later, and
-    # produce the identical divergence against the PROVER TFT.
-    ("TauTFTPf", "TauCupod"): (
-        "Prover-modality floor, same shape as (TauTFTPf, TauGuardian): "
-        "τ(Cupod)'s C is the ELSE-play of a failed punish-search, so its "
-        "transcript pays search_f and no prover can cite it at the same budget "
-        "(`ps_probe_inst_cupod_coop_false`). Base TitForTatBot is the "
-        "BEHAVIORAL bot — it sims and sees the C; its prover lift cannot."
-    ),
-    ("TauTFTPf", "TauDIMCID"): (
-        "Prover-modality floor — τ(DIMCID) is the zoo's FOURTH floor bot. Its C "
-        "is the else-play of a failed impl-guard search "
-        "(`ps_probe_inst_dimcid_coop_false`; the base twin is "
-        "`no_provable_DIMCID_C_tail`), so the prover TFT reads 0 where the "
-        "behavioral base TFT sims a C."
-    ),
-    # The two (TauCupodTroll, TauCupod) entries recorded here on 2026-08-24 were
-    # REMOVED the same day: the divergence was a COMPILER BUG, not a property of
-    # the lift. `proveEq` emitted `.eq .opp (.bot (inst T B))` — a free pronoun
-    # against a counterfactual probe — so the guard could never fire. Restating it
-    # as "is the signal I am treating the lift of B?" made both cells AGREE with
-    # base. A whitelist entry describing a fixable defect is a rug; the fix is in
-    # `Tau/Spec.lean`.
-    ("TauTFTPf", "TauGuardian"): (
-        "Prover-modality floor: TauTFTPf is the PROVER variant of behavioral base "
-        "TFT, and Guardian's cooperation is floor-priced — true (base TFT sims it: "
-        "C) but unprovable at every budget (the prover twin reads D). The α-gap "
-        "headline as a bit-level divergence."
     ),
 }
 """The recorded bit divergences. Anything else is a bug by definition."""
@@ -215,7 +172,10 @@ def direct_kernel_vs_base(
             lean_bit = row.get(LEAN_SLOT[T])
             if lean_bit is None:
                 continue
-            base_a, base_t = BASE_OF[A], BASE_OF[T]
+            base_a, base_t = BASE_OF.get(A), BASE_OF.get(T)
+            # a template with no base bot (TauTFTPf) is compared nowhere
+            if base_a is None or base_t is None:
+                continue
             if base_a not in matrix.bots or base_t not in matrix.bots:
                 continue
             # A proven-`none` base outcome is the fifth state "N", and the kernel
@@ -239,6 +199,7 @@ def direct_kernel_vs_base(
         template_of_slot[s]
         for s in TAU_ORDER
         if s not in tables and template_of_slot[s] in templates
+        and template_of_slot[s] in BASE_OF
     )
     return DirectCoincidence(cells=tuple(cells), missing_rows=missing)
 

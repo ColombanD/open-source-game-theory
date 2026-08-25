@@ -1354,6 +1354,14 @@ budget-staggering divergences, never a second budget in the lift.
   D-tail census it is a constructor CLASH (`c0 = C`), in the C-tail census it is
   THE reading rule and is killed by the inner guard's unprovability
   (`no_provable_sysNested_C_tail` takes that as `hinner`).
+* **TauTFTPf dropped from the certification (Colomban, 2026-08-25 evening).** It
+  is the PROVER reading of TitForTatBot's question, a tau-only variant with no
+  base bot, so `BASE_OF` has no entry for it and `direct_kernel_vs_base` compares
+  it nowhere (row or hypothesis). Its four "prover-modality floor" whitelist
+  entries went with it; the whitelist is now exactly the six budget-staggered
+  dagger cells, and the certification is 225/219/6 over 15 templates. The
+  prover/behavioral α-gap is still visible — in the kernel-row tests comparing
+  `tftPf` and `tftSim` bits — it just is not a base-vs-tau claim.
 * **THE PORTING PHASE IS CLOSED AT 16 TEMPLATES (Colomban's decision,
   2026-08-25).** WaryBot, LegibleBot and OptimBot are EXCLUDED, not deferred,
   and the reason is a property of the BASE library, not of the lift:

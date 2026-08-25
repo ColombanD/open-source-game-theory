@@ -131,7 +131,6 @@ BASE_OF: dict[str, str] = {
     "TauCooperate": "CooperateBot",
     "TauDefect": "DefectBot",
     "TauTFTSim": "TitForTatBot",
-    "TauTFTPf": "TitForTatBot",
     "TauDupoc": "DupocBot",
     "TauEBot": "EBot",
     "TauJust": "JustBot",
@@ -145,10 +144,10 @@ BASE_OF: dict[str, str] = {
     "TauPrudent": "PrudentBot",
     "TauMirror": "MirrorBot",
 }
-"""Which base bot each template lifts. The two TFT variants are two lift
-MODALITIES of the same base strategy (behavioral vs prover); their bits coincide
-on FLOOR-FREE columns only, which is why the prover twin carries whitelisted
-divergences."""
+"""Which base bot each template lifts. `TauTFTPf` has NO entry: it is the PROVER
+reading of TitForTatBot's question, a tau-only variant with no base bot, so the
+certification compares it nowhere (2026-08-25). `TauTFTSim` is the lift of
+TitForTatBot."""
 
 LEAN_SLOT: dict[str, str] = {
     "TauCooperate": "coop",
