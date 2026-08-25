@@ -51,19 +51,32 @@ Every family below is the same argument three times; a family that exists in one
 column and not another is a LIBRARY hole, never a mathematical one — the 2026-08-25
 review found base and tau closing the SAME cell (Dupoc × Cupod) by different-looking
 routes only because the bare else-floor edition was written last (history and the
-epistemic point in `Research/Notes/DESIGN_CHOICES.md`, 2026-08-25 entry). Fill a hole
-by copying the neighbouring edition when a consumer appears; `—` = no instance yet.
+epistemic point in `Research/Notes/DESIGN_CHOICES.md`, 2026-08-25 entry).
+
+The columns are NOT symmetric across layers, and that is structural, not a gap: the
+bare column is base-only (tau's probe atoms are `.bot`-framed by definition —
+`Tau/Vote.lean`'s `probe`/`probeD`), the `.sys` column is tau-only (no base bot uses
+the binder), and each family is native to one layer's compile idiom (probe-first
+`.ite (.sim .opp (.bot z)) …` is how BASE simulators are written; run-stage
+`.ite (.sim (.bot S) (.bot S)) …` is how TAU compiles one, `.opp`-free). Only the
+`.bot` column is genuinely shared. Legend: **n/a** = the shape cannot arise in that
+column for any bot the layer can express (nothing will ever consume it); **✗** = the
+`TailTo` census is FALSE for that shape (reason given); `—` = possible, no consumer
+(copy the neighbouring edition when one appears).
 
 | family (what the atom killer kills) | bare subject | `.bot`-frozen subject | `.sys` component |
 |---|---|---|---|
 | else-play of a const-branch searcher: `search_t` mismatches the action, `search_f` pays `k` — no guard-truth needed | `no_provable_searcherElse_tail` | `no_provable_botSearcherElse_tail` | `no_provable_botSysSearcherElse_tail` |
-| the searcher's OWN play, non-const then-branch, guard known FALSE | `no_provable_searcherPlay_tail` | — | — |
-| nested searcher `search k g₁ (search k g₂ C D) D`: its D (two else-plays) / its C (carries the inner guard) | `no_provable_nestedSearcher_D_tail` (D case; `no_provable_PrudentBot_D_tail` is its instance) / — (C case: no consumer) | — | `no_provable_sysNested_D_tail`, `no_provable_sysNested_C_tail` |
-| probe-first simulator `.ite (.sim .opp (.bot z)) aT p q` vs a searcher whose guard at the probe is false | `no_provable_probeFirst_tail` | `no_provable_probeFirst_tail_botOpp` (the SEARCHER is the frozen one) | — |
-| constant player, wrong action | trivial (`eval_det`) | `no_provable_botConst_tail` | — |
-| run-stage / run-cascade `.ite (.sim (.bot S) (.bot S)) C D …` watching a frozen const-branch searcher `S`: its C hides `S`'s else-play | — | `no_provable_botRunStage_C`, `no_provable_botRunCascade_C` | — |
-| two-watch testers (OBot at Cupod; CIMCIC's defect-cell shape) | — | `no_provable_botTwoWatchD`, `no_provable_twoTestD_cimcic_C` | — |
+| the searcher's OWN play, non-const then-branch, guard known FALSE | `no_provable_searcherPlay_tail` | (subsumed by the nested row: the only non-const then-branch in the zoo is the nested searcher) | (same) |
+| nested searcher `search k g₁ (search k g₂ C D) D`, its **D** (two else-plays) | `no_provable_nestedSearcher_D_tail` (`no_provable_PrudentBot_D_tail` is its instance) | `no_provable_botNested_D_tail` | `no_provable_sysNested_D_tail` |
+| nested searcher, its **C** (carries the inner guard — census conditional on `hinner`) | **✗** — `searchChain` reads a bare then-chain premise-free, `□g₁' → □g₂' → P plays C`, and that is a `TailTo` formula; this is why `no_provable_searcherPlay_tail` takes `hplug` as a hypothesis. The atom-only statement would need the guard BOXES excluded, outside the plays-atom kernel. | `no_provable_botNested_C_tail` (freezing removes the telescope reading) | `no_provable_sysNested_C_tail` |
+| probe-first simulator `.ite (.sim .opp (.bot z)) aT p q` vs a searcher whose guard at the probe is false | `no_provable_probeFirst_tail` | `no_provable_probeFirst_tail_botOpp` (the SEARCHER is the frozen one) | n/a |
+| constant player, wrong action | trivial (`eval_det`) | `no_provable_botConst_tail` | n/a (constants compile bare; the binder wraps only entangled pairs) |
+| run-stage / run-cascade `.ite (.sim (.bot S) (.bot S)) C D …` watching a frozen const-branch searcher `S`: its C hides `S`'s else-play | n/a | `no_provable_botRunStage_C`, `no_provable_botRunCascade_C` | n/a |
+| two-watch testers (OBot at Cupod; CIMCIC's defect-cell shape) | n/a | `no_provable_botTwoWatchD`, `no_provable_twoTestD_cimcic_C` | n/a |
 | fully unreadable player, budget-free | `no_provable_tailTo_unreadable` | (same theorem — shape-agnostic) | (same) |
+
+Every cell is therefore filled, impossible, or false-with-reason; no `—` remains.
 
 Base-layer per-bot censuses are INSTANCES of the bare column, never re-derivations:
 `no_provable_DupocBot_D_tail`, `no_provable_DIMCID_C_tail`, `no_provable_CupodBot_C_tail`,
@@ -1808,6 +1821,96 @@ theorem no_provable_nestedSearcher_D_tail (k : Nat) (g₁ g₂ : Formula) (O : P
         obtain ⟨rfl, -, -, -⟩ := hme
         simp only [layersCost, layerCost, c_node]
         omega
+
+/-- **The nested-searcher D floor, `.bot`-frozen edition** (2026-08-25): a frozen
+    nested searcher `.bot (search k g₁ (search k g₂ (const C) (const D)) (const D))`
+    plays D only through an else-slot, so no proof of ≤ k characters tails at its
+    D-play. The frozen shape is neither a telescope nor bridge-readable (no
+    `.bot`-nested reading rule exists), so the atom killer is the whole argument:
+    `bot` unwraps, the transcript pays the floor. No zoo member freezes a nested
+    searcher today; the edition completes the row. -/
+theorem no_provable_botNested_D_tail (k : Nat) (g₁ g₂ : Formula) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.bot (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D)))
+        O .D) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.bot (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D))) O .D)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · -- the atom killer: unwrap, then both D-transcripts pay the floor
+    rintro K' hK' φ' rfl ⟨hpp, hn⟩
+    cases hpp with
+    | bot hin =>
+      have := nested_D_transcript_ge hin
+      simp only [c_node] at hn; omega
+  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · -- the frozen const-branch reader: our then-branch is a search, not a constant
+    intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro z a' g ψ c0 c1 q oppo hS; injection hS with h1 h2 h3; simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS L hme; injection hS with h1 h2 h3; subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
+    cases hd <;> simp [plug2] at hme
+  · intro me oppo c hS defs i _ _ _ hme _; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS defs i _ hme _; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
+    injection hS with h1 h2 h3; subst h1; simp at hme
+
+/-- **The nested-searcher C census, `.bot`-frozen edition** (2026-08-25): the frozen
+    nested searcher plays C only through BOTH guards firing, so its C-transcript
+    carries a proof of the inner guard at budget `k`; if that is unprovable
+    (`hinner`), no proof of ≤ k characters tails at the C-play. Sound for the FROZEN
+    shape only: the bare twin is FALSE as a census — `searchChain` reads a bare
+    searcher's then-chain premise-free, `□g₁' → □g₂' → P plays C`, which is a
+    `TailTo` formula (the reason `no_provable_searcherPlay_tail` carries `hplug`
+    as a hypothesis). Freezing removes the telescope reading; the atom is all
+    that is left. The frozen program sees itself as `.self`, hence the
+    `.bot`-substituted inner instance. -/
+theorem no_provable_botNested_C_tail (k : Nat) (g₁ g₂ : Formula) (O : Prog)
+    (hinner : ¬ Pf k (g₂.subst
+      (.bot (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D))) O)) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.bot (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D)))
+        O .C) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.bot (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D))) O .C)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · -- the atom killer: unwrap, the C-transcript hands over the inner guard's proof
+    rintro K' hK' φ' rfl ⟨hpp, hn⟩
+    cases hpp with
+    | bot hin => exact hinner (nested_C_transcript_inner hin)
+  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro z a' g ψ c0 c1 q oppo hS; injection hS with h1 h2 h3; simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS L hme; injection hS with h1 h2 h3; subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
+    cases hd <;> simp [plug2] at hme
+  · intro me oppo c hS defs i _ _ _ hme _; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS defs i _ hme _; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
+    injection hS with h1 h2 h3; subst h1; simp at hme
 
 /-- A nested member's DEFECTION has no certificate at budget ≤ k (both D's are
     else-plays), so no proof ≤ k tails at it — the set kernel, with the nested
