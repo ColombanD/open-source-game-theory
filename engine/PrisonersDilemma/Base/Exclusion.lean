@@ -41,6 +41,38 @@ Contents:
 * `no_provable_tailTo_unreadable` — the budget-FREE census for fully-unreadable
   target players (the CIMCIC/DIMCID Gödelian-guard pattern): certificates impossible
   at every budget + player unreadable ⇒ no `Pf` at any budget.
+
+**THE EDITION TABLE (2026-08-25) — one census library for base AND tau.** There is
+ONE proof system (`Pf`, one constructor list; `sound_upto` and `no_provable_tailToS_floor`
+quantify over all of its arms), so a census can only differ by the SUBJECT SHAPE its
+atom killer reads: a bare program (base bots), a `.bot`-frozen program (tau's
+`.bot`-framed probes, `JustBot`'s snapshot), or a `.sys` component (tau's binder).
+Every family below is the same argument three times; a family that exists in one
+column and not another is a LIBRARY hole, never a mathematical one — the 2026-08-25
+review found base and tau closing the SAME cell (Dupoc × Cupod) by different-looking
+routes only because the bare else-floor edition was written last (history and the
+epistemic point in `Research/Notes/DESIGN_CHOICES.md`, 2026-08-25 entry). Fill a hole
+by copying the neighbouring edition when a consumer appears; `—` = no instance yet.
+
+| family (what the atom killer kills) | bare subject | `.bot`-frozen subject | `.sys` component |
+|---|---|---|---|
+| else-play of a const-branch searcher: `search_t` mismatches the action, `search_f` pays `k` — no guard-truth needed | `no_provable_searcherElse_tail` | `no_provable_botSearcherElse_tail` | `no_provable_botSysSearcherElse_tail` |
+| the searcher's OWN play, non-const then-branch, guard known FALSE | `no_provable_searcherPlay_tail` | — | — |
+| nested searcher `search k g₁ (search k g₂ C D) D`: its D (two else-plays) / its C (carries the inner guard) | — (`no_provable_PrudentBot_D_tail`, `Theorems/PrudentBot/vs_CupodBot.lean`, is a hand-rolled bare instance of the D case) | — | `no_provable_sysNested_D_tail`, `no_provable_sysNested_C_tail` |
+| probe-first simulator `.ite (.sim .opp (.bot z)) aT p q` vs a searcher whose guard at the probe is false | `no_provable_probeFirst_tail` | `no_provable_probeFirst_tail_botOpp` (the SEARCHER is the frozen one) | — |
+| constant player, wrong action | trivial (`eval_det`) | `no_provable_botConst_tail` | — |
+| run-stage / run-cascade `.ite (.sim (.bot S) (.bot S)) C D …` watching a frozen const-branch searcher `S`: its C hides `S`'s else-play | — | `no_provable_botRunStage_C`, `no_provable_botRunCascade_C` | — |
+| two-watch testers (OBot at Cupod; CIMCIC's defect-cell shape) | — | `no_provable_botTwoWatchD`, `no_provable_twoTestD_cimcic_C` | — |
+| fully unreadable player, budget-free | `no_provable_tailTo_unreadable` | (same theorem — shape-agnostic) | (same) |
+
+Base-layer per-bot censuses are INSTANCES of the bare column, never re-derivations:
+`no_provable_DupocBot_D_tail`, `no_provable_DIMCID_C_tail`, `no_provable_CupodBot_C_tail`,
+`no_provable_JustBot_D_tail` (one-liners over `no_provable_searcherElse_tail` since
+2026-08-25; formerly ~95-line copies of the kernel instantiation each) and the
+probe-first family (`no_provable_DBot_C_tail`, `…_EBot_C_tail`, `…_OBot_D_tail`, the
+`_botDupoc` pair, `…_EBot_C_vs_Prudent_tail`, `…_DBot_C_vs_optim`). Tau's
+`ps_*_false` lemmas are the `proofSearch`-boolean reflections of the `.bot`/`.sys`
+columns, instantiated per cell (`Tau/Theorems/*/Helpers.lean`).
 -/
 
 open Classical
@@ -1288,5 +1320,517 @@ theorem proofSearch_false_eq_undersized {k : Nat} {p q : Prog}
       rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
       · omega
       · cases hatom
+
+
+/-! ## Wrapped-subject editions, relocated from the tau layer (2026-08-25)
+
+Seven censuses that grew inside `Tau/Theorems/*/Helpers.lean` but are stated over
+generic `Prog`/`ProgList` with no tau content — the `.bot`- and `.sys`-wrapped editions
+of the base families (constant subject; run-stage / run-cascade / two-watch simulators
+over a frozen searcher; nested-searcher `.sys` components). Relocated so that base and
+tau cite ONE census library: the review of 2026-08-25 found the two layers closing the
+same cell (Dupoc × Cupod) by different-looking routes only because the bare else-floor
+edition did not exist yet — see `DESIGN_CHOICES.md`, the 2026-08-25 entry, and the
+edition table in this file's header. -/
+
+/-- No proof, at ANY budget, tails at "the frozen constant `a` plays `b ≠ a`":
+    `.bot (.const a)` is bridge-unreadable and the atom itself is impossible. -/
+theorem no_provable_botConst_tail {a b : Action} (hne : a ≠ b) (O : Prog) :
+    ∀ {m : Nat} {φ : Formula}, Pf m φ → ¬ TailTo (.plays (.bot (.const a)) O b) φ := by
+  intro m φ h
+  refine no_provable_tailTo_unreadable (.bot (.const a)) O b ?_ ?_ ?_ ?_ ?_ h
+  · rintro n ⟨hpp, -⟩
+    cases hpp with
+    | bot hin => cases hin; exact hne rfl
+  · rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
+      ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, h⟩) <;> simp at h
+  · intro L
+    cases L with
+    | nil => simp [searchPlug]
+    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug]
+  · intro hd L; cases hd <;> simp [ctxPlug]
+  · intro hd L; cases hd <;> simp [plug2]
+
+/-- **The single-stage embedded-floor census.** No proof of ≤ k characters
+    concludes any formula whose spine tail says a `.bot`-frozen RUN STAGE (watch a
+    frozen budget-`kb` searcher with then-action `.C`, test `.C`, fire `.D`,
+    trusting tail `.const .C`) plays `.C`:
+
+    * the fire route (`ite_t`) concludes `.D` — action mismatch;
+    * the fall route (`ite_f`) needs the watched searcher to play something other
+      than `.C`, impossible through `search_t` (its then-branch is `.const .C`)
+      and floor-priced through `search_f` (the summand `kb ≥ k`).
+
+    No hypothesis on the inner guard `g` is needed. -/
+theorem no_provable_botRunStage_C (k kb : Nat) (hk : k ≤ kb) (g : Formula)
+    (pE : Prog) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.bot (.ite
+        (.sim (.bot (.search kb g (.const .C) pE)) (.bot (.search kb g (.const .C) pE)))
+        .C (.const .D) (.const .C))) O .C) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.bot (.ite
+      (.sim (.bot (.search kb g (.const .C) pE)) (.bot (.search kb g (.const .C) pE)))
+      .C (.const .D) (.const .C))) O .C)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · rintro K' hK' φ' rfl hA
+    cases hA with
+    | mk hpp hn =>
+      cases hpp with
+      | bot hin =>
+        cases hin with
+        | ite_t hg hbeq hbr => cases hbr
+        | ite_f hg hbeq hbr =>
+            cases hg with
+            | sim hin2 =>
+                cases hin2 with
+                | bot hin3 =>
+                    cases hin3 with
+                    | search_t hProv hbr2 =>
+                        cases hbr2
+                        exact absurd hbeq (by decide)
+                    | search_f hneg hbr2 =>
+                        simp only [c_node] at hn
+                        omega
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp only [Prog.bot.injEq] at hme
+    simp at hme
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp only [Prog.bot.injEq] at hme
+    simp at hme
+  · intro z a' g' ψ c0 c1 q' oppo hS
+    injection hS with h1 h2 h3
+    simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g', ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd <;> simp [plug2] at hme
+  · -- hbotsys: the target is not a `.bot`-wrapped system reference
+    intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    intro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+
+/-- **The embedded-floor census.** No proof of ≤ k characters concludes any formula
+    whose spine tail says a `.bot`-frozen RUN CASCADE (first stage: watch a frozen
+    budget-`kb` searcher with then-action `.C`, test `.C`, fire `.D`) plays `.C`:
+
+    * cooperation cannot come from stage 1 firing (`ite_t` concludes the fire
+      constant `.D` — action mismatch);
+    * so it comes from stage 1 FALLING (`ite_f`), whose guard premise says the
+      watched searcher plays something other than `.C` — impossible through
+      `search_t` (the then-branch is `.const .C`) and floor-priced through
+      `search_f` (the summand `kb ≥ k` blows the budget).
+
+    No hypothesis about the inner guard `g` is needed: true, false, or undecided,
+    its firing route cannot produce the target action. -/
+theorem no_provable_botRunCascade_C (k kb : Nat) (hk : k ≤ kb) (g : Formula)
+    (pE cont : Prog) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.bot (.ite
+        (.sim (.bot (.search kb g (.const .C) pE)) (.bot (.search kb g (.const .C) pE)))
+        .C (.const .D) cont)) O .C) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.bot (.ite
+      (.sim (.bot (.search kb g (.const .C) pE)) (.bot (.search kb g (.const .C) pE)))
+      .C (.const .D) cont)) O .C)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · -- the atom killer: bot → ite_t (fire-action mismatch) / ite_f → sim → bot →
+    -- search_t (then-const mismatch with the fall) / search_f (the floor `kb`)
+    rintro K' hK' φ' rfl hA
+    cases hA with
+    | mk hpp hn =>
+      cases hpp with
+      | bot hin =>
+        cases hin with
+        | ite_t hg hbeq hbr => cases hbr
+        | ite_f hg hbeq hbr =>
+            cases hg with
+            | sim hin2 =>
+                cases hin2 with
+                | bot hin3 =>
+                    cases hin3 with
+                    | search_t hProv hbr2 =>
+                        cases hbr2
+                        exact absurd hbeq (by decide)
+                    | search_f hneg hbr2 =>
+                        simp only [c_node] at hn
+                        omega
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp only [Prog.bot.injEq] at hme
+    simp at hme
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp only [Prog.bot.injEq] at hme
+    simp at hme
+  · intro z a' g' ψ c0 c1 q' oppo hS
+    injection hS with h1 h2 h3
+    simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g', ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd <;> simp [plug2] at hme
+  · -- hbotsys: the target is not a `.bot`-wrapped system reference
+    intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsyssim: the `.sys` RUN twin, killed by the same shape argument
+    intro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+
+/-- The census: no proof of ≤ k characters says a `.bot`-frozen two-watch cascade
+    DEFECTS, when its first watch tests a frozen budget-`kb` searcher whose
+    then-action is the fire-action. Firing watch 1 gives `.D` directly (`ite_t`) —
+    but only by certifying the watched searcher plays `.D`, i.e. its THEN-branch,
+    which needs the guard PROVED; falling through (`ite_f`) needs it to play
+    something else, and the searcher's else-play is `search_f`-floored at `kb ≥ k`.
+    Either way the budget is blown. -/
+theorem no_provable_botTwoWatchD (k kb : Nat) (hk : k ≤ kb) (g : Formula)
+    (hgfalse : ¬ (g.subst (.bot (.search kb g (.const .D) (.const .C)))
+                          (.bot (.search kb g (.const .D) (.const .C)))).interp)
+    (cont : Prog) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.bot (.ite
+        (.sim (.bot (.search kb g (.const .D) (.const .C)))
+              (.bot (.search kb g (.const .D) (.const .C))))
+        Action.D (.const .D) cont)) O .D) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.bot (.ite
+      (.sim (.bot (.search kb g (.const .D) (.const .C)))
+            (.bot (.search kb g (.const .D) (.const .C))))
+      Action.D (.const .D) cont)) O .D)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · rintro K' hK' φ' rfl hA
+    cases hA with
+    | mk hpp hn =>
+      cases hpp with
+      | bot hin =>
+        cases hin with
+        | ite_t hg hbeq hbr =>
+            -- watch 1 FIRED: its guard says the searcher plays `.D` = its THEN
+            -- branch, so `search_t` must have proved `g`… but `search_f` is the
+            -- only other route and it pays the floor.
+            cases hg with
+            | sim hin2 =>
+                cases hin2 with
+                | bot hin3 =>
+                    cases hin3 with
+                    | search_t hProv hbr2 =>
+                        -- watch 1 fires only if the searcher plays its THEN action,
+                        -- which `search_t` gets by PROVING the guard — but the guard
+                        -- is false, and `S` is sound
+                        exact hgfalse (Pf_sound _ _ hProv)
+                    | search_f hneg hbr2 => simp only [c_node] at hn; omega
+        | ite_f hg hbeq hbr =>
+            cases hg with
+            | sim hin2 =>
+                cases hin2 with
+                | bot hin3 =>
+                    cases hin3 with
+                    | search_t hProv hbr2 => cases hbr2; exact absurd hbeq (by decide)
+                    | search_f hneg hbr2 => simp only [c_node] at hn; omega
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp only [Prog.bot.injEq] at hme
+    simp at hme
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1
+    simp only [Prog.bot.injEq] at hme
+    simp at hme
+  · intro z a' g' ψ c0 c1 q' oppo hS
+    injection hS with h1 h2 h3
+    simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g', ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1
+    cases hd <;> simp [plug2] at hme
+  · intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsyssim: the `.sys` RUN twin, same shape kill
+    intro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- hbotsyssts: the `.sys` NESTED twin, same shape kill
+    intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+
+/-- The two-watch DEFECTION tester over an arbitrary first watch and the CIMCIC
+    defect-cell second watch cannot be certified to COOPERATE, at any budget. -/
+theorem no_provable_twoTestD_cimcic_C (kb : Nat) (W1 : Prog) (O : Prog) :
+    ∀ {m : Nat} {φ : Formula}, Pf m φ →
+      ¬ TailTo (.plays (.bot (.ite (.sim (.bot W1) (.bot W1)) Action.D (.const .D)
+        (.ite (.sim (.bot (.search kb
+            (.impl (.plays .self (.bot (.const .D)) Action.C)
+                   (.plays (.bot (.const .D)) .self Action.C))
+            (.const .C) (.const .D)))
+          (.bot (.search kb
+            (.impl (.plays .self (.bot (.const .D)) Action.C)
+                   (.plays (.bot (.const .D)) .self Action.C))
+            (.const .C) (.const .D))))
+          Action.D (.const .D) (.const .C)))) O .C) φ := by
+  intro m φ h
+  refine no_provable_tailTo_unreadable _ O .C ?_ ?_ ?_ ?_ ?_ h
+  · rintro n ⟨hpp, -⟩
+    cases hpp with
+    | bot hin =>
+      cases hin with
+      | ite_t hg hbeq hbr => cases hbr
+      | ite_f hg hbeq hbr =>
+        cases hbr with
+        | ite_t hg2 hbeq2 hbr2 => cases hbr2
+        | ite_f hg2 hbeq2 hbr2 =>
+          cases hg2 with
+          | sim hin2 =>
+            cases hin2 with
+            | bot hin3 =>
+              cases hin3 with
+              | search_t hProv hbr3 =>
+                  refine no_provable_botConst_tail (by decide) _ hProv ⟨rfl, ?_⟩
+                  intro hA
+                  simp only [Formula.subst, Prog.subst, TailTo] at hA
+                  simp at hA
+              | search_f hneg hbr3 =>
+                  cases hbr3
+                  exact absurd hbeq2 (by decide)
+  · rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
+      ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, h⟩) <;> simp at h
+  · intro L
+    cases L with
+    | nil => simp [searchPlug]
+    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug]
+  · intro hd L; cases hd <;> simp [ctxPlug]
+  · intro hd L; cases hd <;> simp [plug2]
+
+/-! ### The nested-searcher shape — two transcript facts (relocated from `TauPrudent`, 2026-08-25) -/
+
+/-- Any DEFECTION transcript of the nested shape pays a `search_f` floor: it costs
+    at least `k`. (The C-branch is the only then-constant; both D's are else-plays.) -/
+theorem nested_D_transcript_ge {me opp : Prog} {k : Nat} {g₁ g₂ : Formula} {n : Nat}
+    (h : PlaysProof me opp (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D))
+      Action.D n) : k ≤ n := by
+  cases h with
+  | search_t _ hin =>
+    cases hin with
+    | search_t _ hc => cases hc
+    | search_f _ _ => omega
+  | search_f _ _ => omega
+
+/-- Any COOPERATION transcript of the nested shape carries a proof of the INNER
+    guard at its own budget. -/
+theorem nested_C_transcript_inner {me opp : Prog} {k : Nat} {g₁ g₂ : Formula} {n : Nat}
+    (h : PlaysProof me opp (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D))
+      Action.C n) : Pf k (g₂.subst me opp) := by
+  cases h with
+  | search_t _ hin =>
+    cases hin with
+    | search_t hpre _ => exact hpre
+    | search_f _ hc => cases hc
+  | search_f _ hc => cases hc
+
+
+/-- A nested member's DEFECTION has no certificate at budget ≤ k (both D's are
+    else-plays), so no proof ≤ k tails at it — the set kernel, with the nested
+    bridge killed by ACTION (its then-action is C). -/
+theorem no_provable_sysNested_D_tail (k : Nat) (defs : ProgList) (i : Nat) (g₁ g₂ : Formula)
+    (hget : defs.get? i = some (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D)))
+    (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays (.bot (.sys defs i)) O Action.D) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k (· = .plays (.bot (.sys defs i)) O Action.D)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · -- the atom killer: unwrap, look the member up, both D-paths pay the floor
+    rintro K' hK' φ' rfl ⟨hpp, hn⟩
+    cases hpp with
+    | bot hin =>
+      cases hin with
+      | sysStep hget2 hin2 =>
+        rw [hget] at hget2
+        injection hget2 with he
+        subst he
+        simp only [Prog.sysClose] at hin2
+        have := nested_D_transcript_ge hin2
+        have hcn : c_node = 1 := rfl; omega
+  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro z a' g ψ c0 c1 q oppo hS; injection hS with h1 h2 h3; simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS L hme; injection hS with h1 h2 h3; subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
+    cases hd <;> simp [plug2] at hme
+  · -- hbotsys: the member is NOT a constant-branch searcher
+    intro me oppo c hS defs' i' g ψ b hme hget'
+    injection hS with h1 h2 h3; subst h1
+    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
+    rw [hget] at hget'; injection hget' with he; injection he with _ _ hbr _; exact absurd hbr (by simp)
+  · -- hbotsyssim: not a forwarder
+    intro me oppo c hS defs' i' j hme hget'
+    injection hS with h1 h2 h3; subst h1
+    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
+    rw [hget] at hget'; injection hget' with he; exact absurd he (by simp)
+  · -- hbotsyssts: the nested bridge concludes the THEN-action C, never D
+    intro me oppo c hS defs' i' k₁ ψ₁ k₂ ψ₂ c1 q hme hget' m hm hpre
+    injection hS with h1 h2 h3; subst h1; subst h3
+    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
+    rw [hget] at hget'; injection hget' with he
+    injection he with _ _ hbr _; injection hbr with _ _ hc _; exact absurd hc (by simp)
+
+/-- A nested member's COOPERATION is uncitable at ≤ k when its INNER guard is:
+    the nested bridge's held premise IS the inner guard, and no other route reads
+    a `.bot`-wrapped nested searcher. -/
+theorem no_provable_sysNested_C_tail (k : Nat) (defs : ProgList) (i : Nat) (g₁ g₂ : Formula)
+    (hget : defs.get? i = some (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D)))
+    (O : Prog)
+    (hinner : ∀ m, m ≤ k → ∀ me oppo,
+      ¬ Pf m ((g₂.sysClose defs).subst me oppo)) :
+    ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays (.bot (.sys defs i)) O Action.C) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k (· = .plays (.bot (.sys defs i)) O Action.C)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · rintro K' hK' φ' rfl ⟨hpp, hn⟩
+    cases hpp with
+    | bot hin =>
+      cases hin with
+      | sysStep hget2 hin2 =>
+        rw [hget] at hget2
+        injection hget2 with he
+        subst he
+        simp only [Prog.sysClose] at hin2
+        exact hinner k le_rfl _ _ (nested_C_transcript_inner hin2)
+  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro z a' g ψ c0 c1 q oppo hS; injection hS with h1 h2 h3; simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q hme; injection hS with h1 h2 h3; subst h1; simp at hme
+  · intro me oppo c hS L hme; injection hS with h1 h2 h3; subst h1
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug] at hme
+  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
+    cases hd with
+    | searchL g' ψ' e' => simp [ctxPlug] at hme
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
+    cases hd <;> simp [plug2] at hme
+  · intro me oppo c hS defs' i' g ψ b hme hget'
+    injection hS with h1 h2 h3; subst h1
+    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
+    rw [hget] at hget'; injection hget' with he; injection he with _ _ hbr _; exact absurd hbr (by simp)
+  · intro me oppo c hS defs' i' j hme hget'
+    injection hS with h1 h2 h3; subst h1
+    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
+    rw [hget] at hget'; injection hget' with he; exact absurd he (by simp)
+  · -- hbotsyssts: THE reading rule for this shape — its held inner premise is unprovable
+    intro me oppo c hS defs' i' k₁ ψ₁ k₂ ψ₂ c1 q hme hget' m hm hpre
+    injection hS with h1 h2 h3; subst h1; subst h3
+    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
+    rw [hget] at hget'; injection hget' with he
+    injection he with hk₁ hψ₁ hbr _
+    injection hbr with hk₂ hψ₂ _ _
+    subst hk₁; subst hψ₁; subst hk₂; subst hψ₂
+    exact hinner m hm _ _ hpre
 
 end PD.BaseTheorems

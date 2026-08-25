@@ -64,30 +64,8 @@ theorem nested_plays_C_of_both {k : Nat} {g₁ g₂ : Formula} (me opp : Prog)
   refine ⟨3, ?_⟩
   rw [eval, h₁]; simp only [if_true]; rw [eval, h₂]; simp only [if_true]; rfl
 
-/-- Any DEFECTION transcript of the nested shape pays a `search_f` floor: it costs
-    at least `k`. (The C-branch is the only then-constant; both D's are else-plays.) -/
-theorem nested_D_transcript_ge {me opp : Prog} {k : Nat} {g₁ g₂ : Formula} {n : Nat}
-    (h : PlaysProof me opp (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D))
-      Action.D n) : k ≤ n := by
-  cases h with
-  | search_t _ hin =>
-    cases hin with
-    | search_t _ hc => cases hc
-    | search_f _ _ => omega
-  | search_f _ _ => omega
-
-/-- Any COOPERATION transcript of the nested shape carries a proof of the INNER
-    guard at its own budget. -/
-theorem nested_C_transcript_inner {me opp : Prog} {k : Nat} {g₁ g₂ : Formula} {n : Nat}
-    (h : PlaysProof me opp (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D))
-      Action.C n) : Pf k (g₂.subst me opp) := by
-  cases h with
-  | search_t _ hin =>
-    cases hin with
-    | search_t hpre _ => exact hpre
-    | search_f _ hc => cases hc
-  | search_f _ hc => cases hc
-
+-- `nested_D_transcript_ge` / `nested_C_transcript_inner` moved to `Base/Exclusion.lean`
+-- (2026-08-25) with the `no_provable_sysNested_*_tail` censuses they serve.
 /-- The else-play of a `.bot`-wrapped constant-branch searcher is uncitable at ≤ k,
     in ANY frame — the singleton floor kernel, packaged as a bit. -/
 theorem ps_botSearcherElse_false {k K : Nat} (hK : K ≤ k) (g : Formula) (aT aE : Action)
@@ -426,118 +404,11 @@ theorem sysNested_plays_D_of_outer {defs : ProgList} {i k : Nat} {g₁ g₂ : Fo
   simp only [Prog.sysClose]
   exact hN
 
-/-- A nested member's DEFECTION has no certificate at budget ≤ k (both D's are
-    else-plays), so no proof ≤ k tails at it — the set kernel, with the nested
-    bridge killed by ACTION (its then-action is C). -/
-theorem no_provable_sysNested_D_tail (k : Nat) (defs : ProgList) (i : Nat) (g₁ g₂ : Formula)
-    (hget : defs.get? i = some (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D)))
-    (O : Prog) :
-    ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays (.bot (.sys defs i)) O Action.D) φ → False := by
-  intro K φ hp hK htail
-  refine no_provable_tailToS_floor k (· = .plays (.bot (.sys defs i)) O Action.D)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
-  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
-  · -- the atom killer: unwrap, look the member up, both D-paths pay the floor
-    rintro K' hK' φ' rfl ⟨hpp, hn⟩
-    cases hpp with
-    | bot hin =>
-      cases hin with
-      | sysStep hget2 hin2 =>
-        rw [hget] at hget2
-        injection hget2 with he
-        subst he
-        simp only [Prog.sysClose] at hin2
-        have := nested_D_transcript_ge hin2
-        have := hcn; omega
-  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro z a' g ψ c0 c1 q oppo hS; injection hS with h1 h2 h3; simp at h1
-  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro me oppo c hS L hme; injection hS with h1 h2 h3; subst h1
-    cases L with
-    | nil => simp [searchPlug] at hme
-    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug] at hme
-  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
-    cases hd with
-    | searchL g' ψ' e' => simp [ctxPlug] at hme
-    | iteL z' aT' other' => simp [ctxPlug] at hme
-  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
-    cases hd <;> simp [plug2] at hme
-  · -- hbotsys: the member is NOT a constant-branch searcher
-    intro me oppo c hS defs' i' g ψ b hme hget'
-    injection hS with h1 h2 h3; subst h1
-    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
-    rw [hget] at hget'; injection hget' with he; injection he with _ _ hbr _; exact absurd hbr (by simp)
-  · -- hbotsyssim: not a forwarder
-    intro me oppo c hS defs' i' j hme hget'
-    injection hS with h1 h2 h3; subst h1
-    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
-    rw [hget] at hget'; injection hget' with he; exact absurd he (by simp)
-  · -- hbotsyssts: the nested bridge concludes the THEN-action C, never D
-    intro me oppo c hS defs' i' k₁ ψ₁ k₂ ψ₂ c1 q hme hget' m hm hpre
-    injection hS with h1 h2 h3; subst h1; subst h3
-    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
-    rw [hget] at hget'; injection hget' with he
-    injection he with _ _ hbr _; injection hbr with _ _ hc _; exact absurd hc (by simp)
+-- `no_provable_sysNested_D_tail` moved to `Base/Exclusion.lean` (2026-08-25): a shape-general census
+-- with no tau content — one census library for base and tau.
 
-/-- A nested member's COOPERATION is uncitable at ≤ k when its INNER guard is:
-    the nested bridge's held premise IS the inner guard, and no other route reads
-    a `.bot`-wrapped nested searcher. -/
-theorem no_provable_sysNested_C_tail (k : Nat) (defs : ProgList) (i : Nat) (g₁ g₂ : Formula)
-    (hget : defs.get? i = some (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D)))
-    (O : Prog)
-    (hinner : ∀ m, m ≤ k → ∀ me oppo,
-      ¬ Pf m ((g₂.sysClose defs).subst me oppo)) :
-    ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays (.bot (.sys defs i)) O Action.C) φ → False := by
-  intro K φ hp hK htail
-  refine no_provable_tailToS_floor k (· = .plays (.bot (.sys defs i)) O Action.C)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
-  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
-  · rintro K' hK' φ' rfl ⟨hpp, hn⟩
-    cases hpp with
-    | bot hin =>
-      cases hin with
-      | sysStep hget2 hin2 =>
-        rw [hget] at hget2
-        injection hget2 with he
-        subst he
-        simp only [Prog.sysClose] at hin2
-        exact hinner k le_rfl _ _ (nested_C_transcript_inner hin2)
-  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro me oppo c hS p q hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro me oppo c hS g ψ b hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro z a' g ψ c0 c1 q oppo hS; injection hS with h1 h2 h3; simp at h1
-  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q hme; injection hS with h1 h2 h3; subst h1; simp at hme
-  · intro me oppo c hS L hme; injection hS with h1 h2 h3; subst h1
-    cases L with
-    | nil => simp [searchPlug] at hme
-    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug] at hme
-  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
-    cases hd with
-    | searchL g' ψ' e' => simp [ctxPlug] at hme
-    | iteL z' aT' other' => simp [ctxPlug] at hme
-  · intro me oppo c hS hd L hme; injection hS with h1 h2 h3; subst h1
-    cases hd <;> simp [plug2] at hme
-  · intro me oppo c hS defs' i' g ψ b hme hget'
-    injection hS with h1 h2 h3; subst h1
-    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
-    rw [hget] at hget'; injection hget' with he; injection he with _ _ hbr _; exact absurd hbr (by simp)
-  · intro me oppo c hS defs' i' j hme hget'
-    injection hS with h1 h2 h3; subst h1
-    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
-    rw [hget] at hget'; injection hget' with he; exact absurd he (by simp)
-  · -- hbotsyssts: THE reading rule for this shape — its held inner premise is unprovable
-    intro me oppo c hS defs' i' k₁ ψ₁ k₂ ψ₂ c1 q hme hget' m hm hpre
-    injection hS with h1 h2 h3; subst h1; subst h3
-    injection hme with hsys; injection hsys with hdefs hi; subst hdefs; subst hi
-    rw [hget] at hget'; injection hget' with he
-    injection he with hk₁ hψ₁ hbr _
-    injection hbr with hk₂ hψ₂ _ _
-    subst hk₁; subst hψ₁; subst hk₂; subst hψ₂
-    exact hinner m hm _ _ hpre
+-- `no_provable_sysNested_C_tail` moved to `Base/Exclusion.lean` (2026-08-25): a shape-general census
+-- with no tau content — one census library for base and tau.
 
 /-! ### prudent × dupoc — the inner check on Dupoc's else-play D fails: `(D, D)` -/
 

@@ -855,7 +855,7 @@ whitelist now has exactly TWO entries, and the full-zoo certification passes
 
 **DBot LIFTED (2026-08-19) — the 10th template, and the last non-`.sys` bot.**
 Unblocked by the embedded-floor census the run-mode EBot fix had just forced: the
-single-stage twin `no_provable_botRunStage_C` (`Theorems/TauDBot/Helpers.lean`)
+single-stage twin `no_provable_botRunStage_C` (`Base/Exclusion.lean` since 2026-08-25; born in `Tau/Theorems/TauDBot/Helpers.lean`)
 prices out `inst .dbot .dupoc`'s cooperation, which is REAL (its watch sees
 Dupoc-seeing-Defect defect and falls to the trusting default) but sits behind a
 watched budget-`k` searcher whose D-play certificate pays `search_f`. Spec:

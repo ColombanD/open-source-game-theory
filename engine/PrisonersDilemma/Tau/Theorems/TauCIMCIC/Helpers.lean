@@ -214,23 +214,8 @@ run cascade (ebot, dbot — `no_provable_botRunCascade_C`), the searcher's else-
 (guardian, cupodTroll — `no_provable_botSearcherElse_tail`), and OBot's two-watch
 tester (the one new census, budget-free). -/
 
-/-- No proof, at ANY budget, tails at "the frozen constant `a` plays `b ≠ a`":
-    `.bot (.const a)` is bridge-unreadable and the atom itself is impossible. -/
-theorem no_provable_botConst_tail {a b : Action} (hne : a ≠ b) (O : Prog) :
-    ∀ {m : Nat} {φ : Formula}, Pf m φ → ¬ TailTo (.plays (.bot (.const a)) O b) φ := by
-  intro m φ h
-  refine no_provable_tailTo_unreadable (.bot (.const a)) O b ?_ ?_ ?_ ?_ ?_ h
-  · rintro n ⟨hpp, -⟩
-    cases hpp with
-    | bot hin => cases hin; exact hne rfl
-  · rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-      ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, h⟩) <;> simp at h
-  · intro L
-    cases L with
-    | nil => simp [searchPlug]
-    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug]
-  · intro hd L; cases hd <;> simp [ctxPlug]
-  · intro hd L; cases hd <;> simp [plug2]
+-- `no_provable_botConst_tail` moved to `Base/Exclusion.lean` (2026-08-25): a shape-general census
+-- with no tau content — one census library for base and tau.
 
 /-- τ(CIMCIC)'s defect-cell guard is FALSE at every budget: the consequent claims
     the constant defector cooperates. -/
@@ -430,52 +415,8 @@ route dies STRUCTURALLY — no floor needed:
 
 Generic in watch 1 and in the frame; watch 2 is pinned to the defect-cell shape. -/
 
-/-- The two-watch DEFECTION tester over an arbitrary first watch and the CIMCIC
-    defect-cell second watch cannot be certified to COOPERATE, at any budget. -/
-theorem no_provable_twoTestD_cimcic_C (kb : Nat) (W1 : Prog) (O : Prog) :
-    ∀ {m : Nat} {φ : Formula}, Pf m φ →
-      ¬ TailTo (.plays (.bot (.ite (.sim (.bot W1) (.bot W1)) Action.D (.const .D)
-        (.ite (.sim (.bot (.search kb
-            (.impl (.plays .self (.bot (.const .D)) Action.C)
-                   (.plays (.bot (.const .D)) .self Action.C))
-            (.const .C) (.const .D)))
-          (.bot (.search kb
-            (.impl (.plays .self (.bot (.const .D)) Action.C)
-                   (.plays (.bot (.const .D)) .self Action.C))
-            (.const .C) (.const .D))))
-          Action.D (.const .D) (.const .C)))) O .C) φ := by
-  intro m φ h
-  refine no_provable_tailTo_unreadable _ O .C ?_ ?_ ?_ ?_ ?_ h
-  · rintro n ⟨hpp, -⟩
-    cases hpp with
-    | bot hin =>
-      cases hin with
-      | ite_t hg hbeq hbr => cases hbr
-      | ite_f hg hbeq hbr =>
-        cases hbr with
-        | ite_t hg2 hbeq2 hbr2 => cases hbr2
-        | ite_f hg2 hbeq2 hbr2 =>
-          cases hg2 with
-          | sim hin2 =>
-            cases hin2 with
-            | bot hin3 =>
-              cases hin3 with
-              | search_t hProv hbr3 =>
-                  refine no_provable_botConst_tail (by decide) _ hProv ⟨rfl, ?_⟩
-                  intro hA
-                  simp only [Formula.subst, Prog.subst, TailTo] at hA
-                  simp at hA
-              | search_f hneg hbr3 =>
-                  cases hbr3
-                  exact absurd hbeq2 (by decide)
-  · rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-      ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, _, _, _, _, _, h⟩ | ⟨_, _, h⟩) <;> simp at h
-  · intro L
-    cases L with
-    | nil => simp [searchPlug]
-    | cons hd tl => obtain ⟨g, ψ, e⟩ := hd; simp [searchPlug]
-  · intro hd L; cases hd <;> simp [ctxPlug]
-  · intro hd L; cases hd <;> simp [plug2]
+-- `no_provable_twoTestD_cimcic_C` moved to `Base/Exclusion.lean` (2026-08-25): a shape-general census
+-- with no tau content — one census library for base and tau.
 
 /-- τ(CIMCIC)'s obot-cell guard is FALSE at every budget. -/
 theorem ps_cimGuard_obot_false {k K : Nat} :
