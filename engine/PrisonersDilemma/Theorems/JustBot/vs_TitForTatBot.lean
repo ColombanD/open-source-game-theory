@@ -10,6 +10,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -87,11 +88,21 @@ theorem JustBot_plays_C_against_TitForTatBot (k fuel : Nat)
 
 /-- JustBot vs TitForTatBot: mutual cooperation. Both legs ride the shared guard at
     budget `atom_cost 5`. -/
+-- Generalized from the single witness `k = atom_cost 5`. The hand certificate's cost is
+-- `c_leaf + c_guard k + 4*c_node + c_leaf`, and `c_guard k = numCost k = log2 k + 1` is
+-- LOGARITHMIC, so the bound `log2 k + 7 ≤ k` holds for all large `k` by
+-- `linear_log2_add_le` — the `decide` at the old fixed budget was not the only route.
+@[outcome]
 theorem outcome_JustBot_vs_TitForTatBot :
-    ∃ k, ∀ fuel, outcome (fuel + 5) (JustBot k) TitForTatBot = some (.C, .C) := by
-  let k := atom_cost 5
+    OutcomeSpec .eventual 5
+      JustBot (fun _ => TitForTatBot) (some (.C, .C)) := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 7
+  refine ⟨max K (atom_cost 2), fun k hlt fuel => ?_⟩
+  have hKk : K ≤ k := le_of_lt (lt_of_le_of_lt (le_max_left _ _) hlt)
+  have hcost : Nat.log2 k + 7 ≤ k := by have := hK k hKk; omega
   have hk : proofSearch k (Formula.plays (.bot CooperateBot) (.bot (DupocBot k)) Action.C) = true :=
-    proofSearch_botCB_vs_botDupoc k (atom_cost_mono (by omega))
+    proofSearch_botCB_vs_botDupoc k
+      (le_of_lt (lt_of_le_of_lt (le_max_right K _) hlt))
   have hGuardTFT : proofSearch k (Formula.plays TitForTatBot (.bot (DupocBot k)) Action.C) = true := by
     -- hand certificate: TFT's probe runs `.bot (DupocBot k)`'s FIRED search (hk), so
     -- ite_t ∘ sim ∘ bot ∘ search_t ∘ const; cost = log2 k + 7 ≤ k (k = atom_cost 5 = 21).
@@ -101,8 +112,8 @@ theorem outcome_JustBot_vs_TitForTatBot :
         rfl PlaysProof.const, ?_⟩ :
         AtomProvable k (.plays TitForTatBot (.bot (DupocBot k)) .C)))
     show c_leaf + c_guard k + c_node + c_node + c_node + c_leaf + c_node ≤ k
-    decide
-  refine ⟨k, fun fuel => ?_⟩
+    simp [c_leaf, c_node, c_guard, numCost] at hcost ⊢
+    omega
   have hA : play (fuel + 5) (JustBot k) TitForTatBot = some .C := by
     simpa [Nat.add_assoc] using JustBot_plays_C_against_TitForTatBot k (fuel + 3) hGuardTFT
   have hB : play (fuel + 5) TitForTatBot (JustBot k) = some .C := by

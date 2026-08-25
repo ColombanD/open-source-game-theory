@@ -11,21 +11,25 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 
+-- Generalized from the single witness `k = atom_cost 5`: the only certificate here is a
+-- `Pf.atom` with a CONSTANT cost (`.bot .const`, no `c_guard k` term), so it is afforded
+-- at every budget above that floor, and the rest of the proof treats `k` abstractly.
+@[outcome]
 theorem outcome_JustBot_vs_OBot :
-    ∃ k, ∀ n, outcome (n + 6) (JustBot k) OBot = some (.D, .D) := by
-  let k := atom_cost 5
-  refine ⟨k, fun n => ?_⟩
+    OutcomeSpec .eventual 6
+      JustBot (fun _ => OBot) (some (.D, .D)) := by
+  refine ⟨atom_cost 5, fun k hlt n => ?_⟩
 
-  have hPSCB : proofSearch k (.plays (.bot CooperateBot) (.bot (DupocBot k)) .C) = true := by
-    have hPlay : play 2 (.bot CooperateBot) (.bot (DupocBot k)) = some .C :=
-      play_bot_CooperateBot 0 (.bot (DupocBot k))
-    exact (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)
+  have hPSCB : proofSearch k (.plays (.bot CooperateBot) (.bot (DupocBot k)) .C) = true :=
+    (proofSearch_spec _ _).2
+      (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp [atom_cost] at hlt ⊢; omega⟩)
 
   have hPSDB : proofSearch k (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) = false := by
     cases h : proofSearch k (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) with

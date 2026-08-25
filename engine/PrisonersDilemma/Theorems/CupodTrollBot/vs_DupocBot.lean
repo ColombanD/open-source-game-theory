@@ -7,14 +7,22 @@ import PrisonersDilemma.Dynamics
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.Bots
 open PD.BaseTheorems
 namespace PD.Theorems
-theorem outcome_CupodTrollBot_vs_DupocBot (j k fuel : Nat)
-    (hjk : (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + 2 ≤ k) :
-    outcome (fuel + 2) (CupodTrollBot j) (DupocBot k) = some (.C, .C) := by
+-- `j` is CupodTrollBot's own budget and stays a free binder; `k` is the migrated one.
+-- The size condition couples them, so it rides in the guarded template's `side`.
+-- (An earlier pass excluded this cell as a "two independent budgets" template limit —
+-- that was wrong: only ONE of the two needs to be the template's budget.)
+@[outcome]
+theorem outcome_CupodTrollBot_vs_DupocBot (j : Nat) :
+    OutcomeSpecIf .universal 2
+      (fun k _ => (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + 2 ≤ k)
+      (fun _ => CupodTrollBot j) DupocBot (some (.C, .C)) := by
+  intro k fuel hjk
   -- CupodTrollBot cooperates against `DupocBot` (direction A).
   have hA : play (fuel + 2) (CupodTrollBot j) (DupocBot k) = some .C :=
     CupodTrollBot_cooperates_if_opp_not_CupodBot j fuel (DupocBot k)

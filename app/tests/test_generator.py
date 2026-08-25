@@ -69,21 +69,26 @@ def test_write_matchup_lean_file_uses_reversed_parameterized_universal_theorem(t
     assert "outcome (0 + 2) (CupodBot 3) CooperateBot" in content
 
 
-def test_write_matchup_lean_file_uses_existential_theorem(tmp_path: Path) -> None:
-    # Uses DupocBot: the `∃ k` theorems keep migrating to stronger regimes as their
-    # witnesses turn out to generalize, which invalidates any fixture pinned to one.
-    # `outcome_DupocBot_vs_TitForTatBot` is a STABLE choice -- it provably cannot be
-    # generalized, because its certificate's cost `c_guard k` grows with `k`, so a
-    # larger budget does not afford it.
-    generated = write_matchup_lean_file(tmp_path, "DupocBot:?", "TitForTatBot")
-    content = generated.path.read_text(encoding="utf-8")
+def test_existential_citation_path_has_no_inputs_left() -> None:
+    """Every `∃ k` outcome theorem has been strengthened past the existential form.
 
-    assert generated.proof_theorem_used == "PD.Theorems.outcome_DupocBot_vs_TitForTatBot"
-    assert generated.result_kind == "exists_parameter"
-    assert "theorem claimed_exists_outcome" in content
-    assert "∃ k, outcome (0 + 4) (DupocBot k) TitForTatBot" in content
-    assert "exact PD.Theorems.outcome_DupocBot_vs_TitForTatBot 0" in content
+    This test used to pin a specific `∃ k` theorem and assert the existential citation
+    path. It broke twice as the migration strengthened first `CupodBot_vs_DefectBot`,
+    then `CupodBot_vs_TitForTatBot`; the third anchor was chosen because its certificate
+    was believed un-generalizable, and that turned out to be wrong too (`c_guard k` is
+    LOGARITHMIC, so `linear_log2_add_le` closes the bound).
 
+    Pinning any theorem is therefore the wrong design. What is stable — and worth
+    asserting — is the INVARIANT: the catalog is empty, so `select_outcome_theorem` can
+    never return an existential selection. If a future theorem is added in `∃ k` form
+    this fails, which is the signal to either strengthen it or restore a citation test.
+    """
+    from pd_runner.lean.templates import _EXISTENTIAL_OUTCOME_THEOREMS
+
+    assert _EXISTENTIAL_OUTCOME_THEOREMS == [], (
+        "an `∃ k` outcome theorem reappeared: "
+        f"{[t.name for t in _EXISTENTIAL_OUTCOME_THEOREMS]}"
+    )
 
 def test_write_matchup_lean_file_prefers_universal_theorem_for_wildcard(tmp_path: Path) -> None:
     generated = write_matchup_lean_file(tmp_path, "CooperateBot", "CupodBot:?")

@@ -6,6 +6,7 @@ import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
 import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Theorems.LegibleBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -35,9 +36,13 @@ theorem outcome_LegibleBot_vs_CupodTrollBot_floor2 (fuel : Nat) :
     structurally false (LegibleBot is not literally `CupodBot j`), so it
     cooperates by default; LegibleBot's Löb cooperation is opponent-blind.
     Staggered complement of `outcome_LegibleBot_vs_CupodTrollBot_floor`. -/
+-- `j` is a FREE parameter of the theorem, not the migrated budget: the cell holds for
+-- CupodTrollBot at any budget, while `k` staggers LegibleBot's two budgets. It stays a
+-- plain `∀` binder to the left of the template.
+@[outcome]
 theorem outcome_LegibleBot_vs_CupodTrollBot (j : Nat) :
-    ∃ k₂, ∀ k, k > k₂ →
-      ∃ fuel, outcome fuel (LegibleBot (2*k+64) k) (CupodTrollBot j) = some (.C, .C) := by
+    OutcomeSpecEx .eventual
+      (fun k => LegibleBot (2*k+64) k) (fun _ => CupodTrollBot j) (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun _ => CupodTrollBot j)
     ((CupodTrollBot j).size) (fun k => Nat.le_add_right _ _)
   refine ⟨k₂, fun k hk => ?_⟩
