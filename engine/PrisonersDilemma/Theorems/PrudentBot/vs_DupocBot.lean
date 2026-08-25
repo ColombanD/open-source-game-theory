@@ -9,6 +9,7 @@ import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.PrudentBot.Helpers
+import PrisonersDilemma.Base.Exclusion
 
 open PD
 open PD.BaseTheorems
@@ -262,4 +263,63 @@ theorem outcome_PrudentBot_vs_DupocBot :
   have hB : play 4 (DupocBot k) (PrudentBot (2*k+64)) = some .C := by
     simpa using dupoc_C_vs_any k 2 (PrudentBot (2*k+64)) hpsP
   exact outcome_of_plays _ _ _ _ _ hA hB
+
+/-! ### The SAME-budget regime — the tau layer's value, proven in base (2026-08-25)
+
+The strict `outcome_{L}_vs_{R}` theorem above is stated at a budget STAGGER: that is
+what buys the cooperative cell, by paying a partner's `search_f` floor. At one shared
+budget the floor is unpayable and the honest outcome is what the tau lift (`tauZoo k`,
+one `k` for everyone) reads. These `_samek` theorems certify that value in base, so the
+tau/base divergence on this pair is a matter of budget regime alone — both regimes are
+theorems. (The `_samek` suffix keeps them out of the strict matrix scan.) -/
+
+/-- DupocBot's D on the defector is its else-play — floor-priced at its own budget. -/
+theorem proofSearch_false_DupocBot_D_vs_bot_DefectBot (k : Nat) :
+    proofSearch k (.plays (DupocBot k) (.bot DefectBot) .D) = false := by
+  cases h : proofSearch k (.plays (DupocBot k) (.bot DefectBot) .D) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_searcherElse_tail k (.plays .opp .self .C) .C .D (by decide)
+          (.bot DefectBot) k _ hp le_rfl (by simp [DupocBot]))
+  | false => rfl
+
+/-- PrudentBot's prudence check on DupocBot fails at the same budget, so it defects
+    whichever way its outer probe resolves. -/
+theorem PrudentBot_plays_D_against_DupocBot_samek (k fuel : Nat) :
+    play (fuel + 3) (PrudentBot k) (DupocBot k) = some .D := by
+  cases h1 : proofSearch k (.plays (DupocBot k) (PrudentBot k) .C) with
+  | false =>
+      simpa [Nat.add_assoc] using
+        PrudentBot_plays_D_of_search_false k (fuel + 1) (DupocBot k) h1
+  | true =>
+      exact prudent_eval_inner_false k fuel (DupocBot k) h1
+        (proofSearch_false_DupocBot_D_vs_bot_DefectBot k)
+
+/-- …so DupocBot's probe of it fails by soundness. -/
+theorem proofSearch_false_PrudentBot_C_vs_DupocBot (k : Nat) :
+    proofSearch k (.plays (PrudentBot k) (DupocBot k) .C) = false := by
+  cases h : proofSearch k (.plays (PrudentBot k) (DupocBot k) .C) with
+  | false => rfl
+  | true =>
+      exfalso
+      obtain ⟨n, hn⟩ := proofSearch_sound _ _ h
+      have hD := PrudentBot_plays_D_against_DupocBot_samek k n
+      have hC : play (n + 3) (PrudentBot k) (DupocBot k) = some .C := by
+        unfold play at hn ⊢; exact eval_mono_le hn (n + 3) (by omega)
+      rw [hC] at hD; cases hD
+
+theorem DupocBot_plays_D_against_PrudentBot_samek (k fuel : Nat) :
+    play (fuel + 2) (DupocBot k) (PrudentBot k) = some .D := by
+  have h := proofSearch_false_PrudentBot_C_vs_DupocBot k
+  show eval (fuel + 2) (DupocBot k) (PrudentBot k) (DupocBot k) = some .D
+  unfold DupocBot at h ⊢
+  simp [eval, Prog.subst, Formula.subst, h]
+
+/-- **PrudentBot vs DupocBot at ONE budget = (D, D)**: the cooperative cell
+    `outcome_PrudentBot_vs_DupocBot` needs `PrudentBot (2k+64)`. -/
+theorem outcome_PrudentBot_vs_DupocBot_samek (k fuel : Nat) :
+    outcome (fuel + 3) (PrudentBot k) (DupocBot k) = some (.D, .D) :=
+  outcome_of_plays _ _ _ _ _ (PrudentBot_plays_D_against_DupocBot_samek k fuel)
+    (by simpa [Nat.add_assoc] using DupocBot_plays_D_against_PrudentBot_samek k (fuel + 1))
+
 end PD.Theorems

@@ -48,6 +48,7 @@ import PrisonersDilemma.Theorems.DupocBot.vs_EBot
 import PrisonersDilemma.Theorems.DupocBot.vs_DupocBot
 import PrisonersDilemma.Theorems.DupocBot.vs_MirrorBot
 import PrisonersDilemma.Theorems.DupocBot.vs_CupodBot
+import PrisonersDilemma.Theorems.DupocBot.vs_CupodTrollBot
 
 import PrisonersDilemma.Theorems.EBot.Helpers
 import PrisonersDilemma.Theorems.EBot.vs_CooperateBot

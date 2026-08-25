@@ -97,6 +97,27 @@ def test_kernel_agrees_with_base_directly() -> None:
     assert d.missing_rows == ()
 
 
+def test_every_whitelisted_cell_has_a_samek_base_theorem() -> None:
+    """Since 2026-08-25 each whitelisted divergence is certified on BOTH sides in
+    base: the strict theorem at the stagger, and a `_samek` theorem proving the
+    tau value at one shared budget. The `_samek` names are outside the strict
+    matrix scan, so check the sources directly: the reason text must name the
+    theorem, and the theorem must exist in the library."""
+    import re
+    from pathlib import Path
+
+    theorems = Path(__file__).resolve().parents[2] / "engine" / "PrisonersDilemma" / "Theorems"
+    declared = set()
+    for f in theorems.rglob("*.lean"):
+        declared |= set(re.findall(r"^theorem (outcome_\w+_samek)\b", f.read_text(), re.M))
+    assert declared, "no _samek theorems found under engine/.../Theorems"
+    for (A, T), reason in WHITELIST.items():
+        cited = re.findall(r"`(outcome_\w+_samek)", reason)
+        assert cited, (A, T)
+        for name in cited:
+            assert name in declared, (A, T, name)
+
+
 def test_tftpf_is_not_certified_against_base() -> None:
     """TauTFTPf is the prover reading of TitForTatBot's question — a tau-only
     variant with no base bot. It has a kernel row (the α-gap tests read it) but

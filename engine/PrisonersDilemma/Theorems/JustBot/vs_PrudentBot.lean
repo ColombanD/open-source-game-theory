@@ -11,6 +11,7 @@ import PrisonersDilemma.Theorems.PrudentBot.Helpers
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Base.Exclusion
 
 open PD
 open PD.BaseTheorems
@@ -193,4 +194,76 @@ theorem outcome_JustBot_vs_PrudentBot :
   have hB : play 4 (PrudentBot (2*k+64)) (JustBot k) = some .C := by
     simpa using prudent_eval_both_true (2*k+64) 1 (JustBot k) houter hprud
   exact ⟨4, outcome_of_plays _ _ _ _ _ hA hB⟩
+
+/-! ### The SAME-budget regime — the tau layer's value, proven in base (2026-08-25)
+
+The strict `outcome_{L}_vs_{R}` theorem above is stated at a budget STAGGER: that is
+what buys the cooperative cell, by paying a partner's `search_f` floor. At one shared
+budget the floor is unpayable and the honest outcome is what the tau lift (`tauZoo k`,
+one `k` for everyone) reads. These `_samek` theorems certify that value in base, so the
+tau/base divergence on this pair is a matter of budget regime alone — both regimes are
+theorems. (The `_samek` suffix keeps them out of the strict matrix scan.) -/
+
+/-- The frozen `.bot (DupocBot k)`'s D on the defector is its else-play — floor-priced. -/
+theorem proofSearch_false_botDupoc_D_vs_bot_DefectBot (k : Nat) :
+    proofSearch k (.plays (.bot (DupocBot k)) (.bot DefectBot) .D) = false := by
+  cases h : proofSearch k (.plays (.bot (DupocBot k)) (.bot DefectBot) .D) with
+  | true =>
+      exact absurd ((proofSearch_spec k _).mp h)
+        (fun hp => no_provable_botSearcherElse_tail k k (.plays .opp .self .C) .C .D (.const .D)
+          (by decide) le_rfl (.bot DefectBot) k _ hp le_rfl (by simp [DupocBot]))
+  | false => rfl
+
+/-- PrudentBot defects on JustBot's frozen third party at the same budget. -/
+theorem PrudentBot_plays_D_against_bot_DupocBot (k fuel : Nat) :
+    play (fuel + 3) (PrudentBot k) (.bot (DupocBot k)) = some .D := by
+  cases h1 : proofSearch k (.plays (.bot (DupocBot k)) (PrudentBot k) .C) with
+  | false =>
+      simpa [Nat.add_assoc] using
+        PrudentBot_plays_D_of_search_false k (fuel + 1) (.bot (DupocBot k)) h1
+  | true =>
+      exact prudent_eval_inner_false k fuel (.bot (DupocBot k)) h1
+        (proofSearch_false_botDupoc_D_vs_bot_DefectBot k)
+
+theorem proofSearch_false_PrudentBot_C_vs_bot_DupocBot (k : Nat) :
+    proofSearch k (.plays (PrudentBot k) (.bot (DupocBot k)) .C) = false := by
+  cases h : proofSearch k (.plays (PrudentBot k) (.bot (DupocBot k)) .C) with
+  | false => rfl
+  | true =>
+      exfalso
+      obtain ⟨n, hn⟩ := proofSearch_sound _ _ h
+      have hD := PrudentBot_plays_D_against_bot_DupocBot k n
+      have hC : play (n + 3) (PrudentBot k) (.bot (DupocBot k)) = some .C := by
+        unfold play at hn ⊢; exact eval_mono_le hn (n + 3) (by omega)
+      rw [hC] at hD; cases hD
+
+theorem JustBot_plays_D_against_PrudentBot_samek (k fuel : Nat) :
+    play (fuel + 2) (JustBot k) (PrudentBot k) = some .D :=
+  JustBot_eval_step k fuel (PrudentBot k) .D
+    (by rw [proofSearch_false_PrudentBot_C_vs_bot_DupocBot]; rfl)
+
+theorem proofSearch_false_JustBot_C_vs_PrudentBot (k : Nat) :
+    proofSearch k (.plays (JustBot k) (PrudentBot k) .C) = false := by
+  cases h : proofSearch k (.plays (JustBot k) (PrudentBot k) .C) with
+  | false => rfl
+  | true =>
+      exfalso
+      obtain ⟨n, hn⟩ := proofSearch_sound _ _ h
+      have hD := JustBot_plays_D_against_PrudentBot_samek k n
+      have hC : play (n + 2) (JustBot k) (PrudentBot k) = some .C := by
+        unfold play at hn ⊢; exact eval_mono_le hn (n + 2) (by omega)
+      rw [hC] at hD; cases hD
+
+theorem PrudentBot_plays_D_against_JustBot_samek (k fuel : Nat) :
+    play (fuel + 2) (PrudentBot k) (JustBot k) = some .D :=
+  PrudentBot_plays_D_of_search_false k fuel (JustBot k)
+    (proofSearch_false_JustBot_C_vs_PrudentBot k)
+
+/-- **JustBot vs PrudentBot at ONE budget = (D, D)**: the cooperative cell
+    `outcome_JustBot_vs_PrudentBot` needs `PrudentBot (2k+64)`. -/
+theorem outcome_JustBot_vs_PrudentBot_samek (k fuel : Nat) :
+    outcome (fuel + 2) (JustBot k) (PrudentBot k) = some (.D, .D) :=
+  outcome_of_plays _ _ _ _ _ (JustBot_plays_D_against_PrudentBot_samek k fuel)
+    (PrudentBot_plays_D_against_JustBot_samek k fuel)
+
 end PD.Theorems

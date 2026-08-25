@@ -10,6 +10,8 @@ import PrisonersDilemma.Theorems.CupodTrollBot.vs_DupocBot
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
 import PrisonersDilemma.Theorems.JustBot.Helpers
+import PrisonersDilemma.Base.Exclusion
+import PrisonersDilemma.Theorems.DupocBot.vs_CupodTrollBot
 
 open PD
 open PD.BaseTheorems
@@ -60,4 +62,30 @@ theorem outcome_JustBot_vs_CupodTrollBot (j fuel : Nat) :
     CupodTrollBot_cooperates_if_opp_not_CupodBot j fuel (JustBot (4*j+100))
       (by simp [JustBot, CupodBot])
   exact outcome_of_plays _ _ _ _ _ hA hB
+
+/-! ### The SAME-budget regime — the tau layer's value, proven in base (2026-08-25)
+
+The strict `outcome_{L}_vs_{R}` theorem above is stated at a budget STAGGER: that is
+what buys the cooperative cell, by paying a partner's `search_f` floor. At one shared
+budget the floor is unpayable and the honest outcome is what the tau lift (`tauZoo k`,
+one `k` for everyone) reads. These `_samek` theorems certify that value in base, so the
+tau/base divergence on this pair is a matter of budget regime alone — both regimes are
+theorems. (The `_samek` suffix keeps them out of the strict matrix scan.) -/
+
+theorem JustBot_plays_D_against_CupodTrollBot_samek (k fuel : Nat) :
+    play (fuel + 2) (JustBot k) (CupodTrollBot k) = some .D :=
+  JustBot_eval_step k fuel (CupodTrollBot k) .D
+    (by rw [proofSearch_false_CupodTrollBot_C]; rfl)
+
+theorem CupodTrollBot_plays_C_against_JustBot_samek (k fuel : Nat) :
+    play (fuel + 2) (CupodTrollBot k) (JustBot k) = some .C :=
+  CupodTrollBot_cooperates_if_opp_not_CupodBot k fuel (JustBot k) (by simp [JustBot, CupodBot])
+
+/-- **JustBot vs CupodTrollBot at ONE budget = (D, C)**: the cooperative cell
+    `outcome_JustBot_vs_CupodTrollBot` needs `JustBot (4j+100)`. -/
+theorem outcome_JustBot_vs_CupodTrollBot_samek (k fuel : Nat) :
+    outcome (fuel + 2) (JustBot k) (CupodTrollBot k) = some (.D, .C) :=
+  outcome_of_plays _ _ _ _ _ (JustBot_plays_D_against_CupodTrollBot_samek k fuel)
+    (CupodTrollBot_plays_C_against_JustBot_samek k fuel)
+
 end PD.Theorems

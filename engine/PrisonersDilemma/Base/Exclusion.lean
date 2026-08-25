@@ -965,6 +965,100 @@ theorem no_provable_botSearcherElse_tail (k kb : Nat) (g : Formula) (aT aTgt : A
     injection hS with h1 h2 h3
     subst h1; simp at hme
 
+/-- **The `search_f` floor, bare edition** (2026-08-25): the else-play of a
+    constant-branch searcher `search k g (const aT) (const aE)` is unprovable at every
+    budget up to its own, against ANY opponent — the bare twin of
+    `no_provable_botSearcherElse_tail`. `search_t` concludes the then-action (≠ target),
+    `search_f` pays the floor `k`; every source-reading shape is killed by the searcher's
+    own shape, and the polarity plug's `elseL` decomposition pays the same floor.
+    Instantiated by CupodBot's C, DupocBot's D and CupodTrollBot's C. -/
+theorem no_provable_searcherElse_tail (k : Nat) (g : Formula) (aT aE : Action)
+    (hne : aT ≠ aE) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.search k g (.const aT) (.const aE)) O aE) φ → False := by
+  intro K φ hp hK htail
+  refine no_provable_tailToS_floor k
+    (· = .plays (.search k g (.const aT) (.const aE)) O aE)
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ K φ hp hK ((TailToS_singleton _ φ).2 htail)
+  · rintro φ' rfl; exact ⟨_, _, _, rfl⟩
+  · -- the atom killer: `search_t` mismatches the action, `search_f` pays the floor
+    rintro K' hK' φ' rfl hA
+    cases hA with
+    | mk hpp hn =>
+      cases hpp with
+      | search_t hProv hbr => cases hbr; exact hne rfl
+      | search_f hneg hbr => simp only [c_node] at hn; omega
+  · -- a constant-branch searcher's then-action is `aT ≠ aE`
+    intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    simp only [Prog.search.injEq, Prog.const.injEq] at hme
+    exact hne hme.2.2.1
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS p' q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS g' ψ b hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro z a' g' ψ c0 c1 q' oppo hS
+    injection hS with h1 h2 h3
+    simp at h1
+  · intro me oppo c hS k₁ ψ₁ k₂ ψ₂ c1 q' hme
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · -- a telescope plugging `aE` would need the then-slot `const aT = … const aE`
+    intro me oppo c hS L hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    cases L with
+    | nil => simp [searchPlug] at hme
+    | cons hd tl =>
+        obtain ⟨g', ψ, e⟩ := hd
+        simp only [searchPlug, Prog.search.injEq] at hme
+        obtain ⟨-, -, h, -⟩ := hme
+        cases tl with
+        | nil => simp only [searchPlug, Prog.const.injEq] at h; exact hne h
+        | cons hd' tl' => obtain ⟨g'', ψ', e'⟩ := hd'; simp [searchPlug] at h
+  · -- the mixed telescope's escape clause is never needed: no such decomposition exists
+    intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    exfalso
+    cases hd with
+    | searchL g' ψ' e' =>
+        simp only [ctxPlug, Prog.search.injEq] at hme
+        exact const_ne_ctxPlug hne L hme.2.2.1
+    | iteL z' aT' other' => simp [ctxPlug] at hme
+  · -- polarity plug: the matching `elseL` decomposition pays the searcher's own `k`
+    intro me oppo c hS hd L hme
+    injection hS with h1 h2 h3
+    subst h1; subst h3
+    cases hd with
+    | thenL g' ψ e =>
+        simp only [plug2, Prog.search.injEq] at hme
+        obtain ⟨-, -, hplug, -⟩ := hme
+        exfalso
+        cases L with
+        | nil => simp only [plug2, Prog.const.injEq] at hplug; exact hne hplug
+        | cons hd2 tl2 => cases hd2 <;> simp [plug2] at hplug
+    | elseL g' P' Q' c' q' =>
+        simp only [plug2, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
+  · intro me oppo c hS defs i _ _ _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS defs i _ hme _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+  · intro me oppo c hS defs i _ _ _ _ _ _ hme _ _ _ _
+    injection hS with h1 h2 h3
+    subst h1; simp at hme
+
 /-- **The `search_f` floor, `.sys` edition** (2026-08-21): the else-play of a
     `.bot`-wrapped SYSTEM REFERENCE whose component is a searcher with a mismatching
     then-action is unprovable at every budget up to the component's own. The kill is

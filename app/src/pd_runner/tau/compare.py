@@ -51,54 +51,42 @@ from pd_runner.tau.def4_theorems import (
 from pd_runner.tau.matrix import TauMatrix
 
 WHITELIST: dict[tuple[str, str], str] = {
+    # Every entry is BUDGET STAGGERING, and since 2026-08-25 every one is certified
+    # on BOTH sides in base: the strict `outcome_{L}_vs_{R}` theorem proves the
+    # cooperative cell at a budget stagger (the extra budget pays a partner's
+    # `search_f` floor), and the `_samek` theorem proves the tau value at ONE shared
+    # budget — exactly what `tauZoo k` gives every bot. Base and tau agree on the
+    # mathematics; the certification compares against the strict (staggered) cell.
     ("TauDupoc", "TauCupodTroll"): (
-        "**BUDGET STAGGERING, not a modality gap.** Base "
-        "`outcome_CupodTrollBot_vs_DupocBot` really is (C, C) — but it is a "
-        "DAGGER cell, proven only under the side hypothesis `hjk`, which gives "
-        "DupocBot a budget strictly larger than Troll's failed search "
-        "(`|¬(Dupoc = Cupod)| + j + 2 ≤ k`). Paying Troll's search_f floor is "
-        "exactly what that buys. The tau layer gives EVERY bot the same budget "
-        "`k` (`tauZoo k`), so the staggering is unavailable by construction and "
-        "the prove-stage honestly reads 0. Base and tau agree on the "
-        "mathematics and differ on the budget regime."
+        "Budget staggering. `outcome_CupodTrollBot_vs_DupocBot` is (C, C) under "
+        "`hjk` (DupocBot's budget above Troll's failed identity search); at one "
+        "budget Troll's C is its else-play and Dupoc defects — "
+        "`outcome_DupocBot_vs_CupodTrollBot_samek = (D, C)`."
     ),
-    # ── PrudentBot at a SINGLE budget (2026-08-25) ───────────────────────────
-    # τ(Prudent) = search (probe P) (search (probeD (inst T defect)) C D) D, every
-    # hypothesis at the SAME `k`. Base PrudentBot cooperates with DupocBot/JustBot
-    # only at the STAGGERED budget `PrudentBot (2k+64)` — the extra budget pays
-    # the partner's floor-priced "defects on the defector" else-play. At one `k`
-    # the inner check simply fails (`ps_probeD_inst_dupoc_defect_false`), Prudent
-    # defects, and the partner's probe of it fails by soundness. Four cells, one
-    # cause; the base mathematics agrees, the budget regime differs.
+    ("TauJust", "TauCupodTroll"): (
+        "Budget staggering. `outcome_JustBot_vs_CupodTrollBot` is (C, C) at "
+        "JustBot (4j+100); at one budget Just's probe of Troll's floor-priced C "
+        "fails — `outcome_JustBot_vs_CupodTrollBot_samek = (D, C)`."
+    ),
     ("TauPrudent", "TauDupoc"): (
-        "Budget staggering: base `outcome_PrudentBot_vs_DupocBot` is stated at "
-        "PrudentBot (2*k+64) vs DupocBot k. Prudent's INNER check — Dupoc "
-        "provably defects on the defector — is an else-play floor at budget k "
-        "(`ps_probeD_inst_dupoc_defect_false`); 2k+64 is what pays it. Same-k "
-        "tau cannot, so τ(Prudent) reads D."
+        "Budget staggering. `outcome_PrudentBot_vs_DupocBot` is (C, C) at "
+        "PrudentBot (2k+64); at one budget Prudent's inner check on Dupoc's "
+        "else-play D fails — `outcome_PrudentBot_vs_DupocBot_samek = (D, D)`."
     ),
     ("TauDupoc", "TauPrudent"): (
         "Budget staggering, the other orientation of (TauPrudent, TauDupoc): "
-        "Dupoc's probe of Prudent's member fails by SOUNDNESS once Prudent "
-        "defects (`ps_probe_inst_prudent_dupoc_false`), so the (C, C) cycle of "
-        "the staggered base theorem has no same-k fixpoint."
+        "Dupoc's probe of Prudent fails by soundness once Prudent defects — "
+        "`outcome_PrudentBot_vs_DupocBot_samek = (D, D)`."
     ),
     ("TauPrudent", "TauJust"): (
-        "Budget staggering: base `outcome_JustBot_vs_PrudentBot` is stated at "
-        "JustBot k vs PrudentBot (2*k+64). Just's D on the defector is the same "
-        "floor-priced else-play as Dupoc's (`ps_probeD_inst_just_defect_false`), "
-        "so Prudent's inner check fails at one k."
+        "Budget staggering. `outcome_JustBot_vs_PrudentBot` is (C, C) at "
+        "PrudentBot (2k+64); at one budget Prudent's inner check on the frozen "
+        "Dupoc's else-play D fails — `outcome_JustBot_vs_PrudentBot_samek = (D, D)`."
     ),
     ("TauJust", "TauPrudent"): (
         "Budget staggering, the other orientation of (TauPrudent, TauJust): "
-        "Just's guard is Dupoc's probe (`dupocColBit .prudent = false`), which "
-        "fails by soundness once Prudent defects."
-    ),
-    ("TauJust", "TauCupodTroll"): (
-        "Budget staggering — same as (TauDupoc, TauCupodTroll). Base "
-        "`outcome_JustBot_vs_CupodTrollBot` is stated at JustBot (4*j+100) vs "
-        "CupodTrollBot j: the 4x+100 stagger is what affords Troll's floor. "
-        "Same-k tau cannot reproduce it."
+        "Just's probe of Prudent's cooperation with the frozen Dupoc fails by "
+        "soundness — `outcome_JustBot_vs_PrudentBot_samek = (D, D)`."
     ),
 }
 """The recorded bit divergences. Anything else is a bug by definition."""

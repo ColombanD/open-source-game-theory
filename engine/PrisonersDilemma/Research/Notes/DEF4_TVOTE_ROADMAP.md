@@ -1354,6 +1354,21 @@ budget-staggering divergences, never a second budget in the lift.
   D-tail census it is a constructor CLASH (`c0 = C`), in the C-tail census it is
   THE reading rule and is killed by the inner guard's unprovability
   (`no_provable_sysNested_C_tail` takes that as `hinner`).
+* **The tau→base diff, and the `_samek` theorems (2026-08-25 evening).** A
+  systematic comparison of tau's kernel rows with the base library over the 15
+  lifted bots found NO missing base cell: all 225 exist. The only gaps were the
+  four budget-staggered pairs, whose same-`k` value base did not state. Now it
+  does: `outcome_PrudentBot_vs_DupocBot_samek = (D, D)`,
+  `outcome_JustBot_vs_PrudentBot_samek = (D, D)`,
+  `outcome_DupocBot_vs_CupodTrollBot_samek = (D, C)`,
+  `outcome_JustBot_vs_CupodTrollBot_samek = (D, C)` — each at every `k`, via the
+  new generic kernel `no_provable_searcherElse_tail` (Base/Exclusion: the else-play
+  of a bare constant-branch searcher is uncitable at its own budget, any opponent —
+  the bare twin of `no_provable_botSearcherElse_tail`; it subsumes
+  `no_provable_CupodBot_C_tail`). The `_samek` suffix keeps them out of the strict
+  matrix scan, so the matrix still reports the staggered (C, C); which regime is
+  "the" cell is the still-open canonical-budget convention. Every whitelist entry
+  now cites its `_samek` theorem (test: `test_every_whitelisted_cell_has_a_samek_base_theorem`).
 * **The last stipulation fell (2026-08-25 evening).** `outcome_PrudentBot_vs_CupodBot
   = (D, C)` at every same `k` (`Theorems/PrudentBot/vs_CupodBot.lean`, transpose in
   `Theorems/CupodBot/vs_PrudentBot.lean`): Cupod's C is its else-play
