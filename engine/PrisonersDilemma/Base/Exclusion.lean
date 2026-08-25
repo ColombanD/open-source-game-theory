@@ -58,7 +58,7 @@ by copying the neighbouring edition when a consumer appears; `—` = no instance
 |---|---|---|---|
 | else-play of a const-branch searcher: `search_t` mismatches the action, `search_f` pays `k` — no guard-truth needed | `no_provable_searcherElse_tail` | `no_provable_botSearcherElse_tail` | `no_provable_botSysSearcherElse_tail` |
 | the searcher's OWN play, non-const then-branch, guard known FALSE | `no_provable_searcherPlay_tail` | — | — |
-| nested searcher `search k g₁ (search k g₂ C D) D`: its D (two else-plays) / its C (carries the inner guard) | — (`no_provable_PrudentBot_D_tail`, `Theorems/PrudentBot/vs_CupodBot.lean`, is a hand-rolled bare instance of the D case) | — | `no_provable_sysNested_D_tail`, `no_provable_sysNested_C_tail` |
+| nested searcher `search k g₁ (search k g₂ C D) D`: its D (two else-plays) / its C (carries the inner guard) | `no_provable_nestedSearcher_D_tail` (D case; `no_provable_PrudentBot_D_tail` is its instance) / — (C case: no consumer) | — | `no_provable_sysNested_D_tail`, `no_provable_sysNested_C_tail` |
 | probe-first simulator `.ite (.sim .opp (.bot z)) aT p q` vs a searcher whose guard at the probe is false | `no_provable_probeFirst_tail` | `no_provable_probeFirst_tail_botOpp` (the SEARCHER is the frozen one) | — |
 | constant player, wrong action | trivial (`eval_det`) | `no_provable_botConst_tail` | — |
 | run-stage / run-cascade `.ite (.sim (.bot S) (.bot S)) C D …` watching a frozen const-branch searcher `S`: its C hides `S`'s else-play | — | `no_provable_botRunStage_C`, `no_provable_botRunCascade_C` | — |
@@ -1719,6 +1719,95 @@ theorem nested_C_transcript_inner {me opp : Prog} {k : Nat} {g₁ g₂ : Formula
     | search_f _ hc => cases hc
   | search_f _ hc => cases hc
 
+
+/-- **The nested-searcher D floor, bare edition** (2026-08-25): no proof of ≤ k
+    characters concludes any formula whose guarded spine tail is "the nested searcher
+    `search k g₁ (search k g₂ (const C) (const D)) (const D)` plays D against O". Both
+    of its defections are else-plays (outer `search_f`, or inner `search_f` behind a
+    fired outer guard) and pay the floor; the only then-constant is `C`. Generic in
+    both guards and in the opponent — the bare twin of `no_provable_sysNested_D_tail`;
+    PrudentBot's `no_provable_PrudentBot_D_tail` is its instance. -/
+theorem no_provable_nestedSearcher_D_tail (k : Nat) (g₁ g₂ : Formula) (O : Prog) :
+    ∀ K φ, Pf K φ → K ≤ k →
+      TailTo (.plays (.search k g₁ (.search k g₂ (.const .C) (.const .D)) (.const .D)) O .D) φ
+        → False := by
+  refine no_provable_tailTo_floor k _ O .D ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · -- the atom killer: every D-transcript crosses a failed search
+    intro K hK hA
+    cases hA with
+    | mk hpp hn =>
+      cases hpp with
+      | search_t _ hbr =>
+          cases hbr with
+          | search_t _ hc => cases hc
+          | search_f _ _ => simp only [c_node] at hn; omega
+      | search_f _ _ => simp only [c_node] at hn; omega
+  · rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
+      ⟨_, _, _, _, _, _, _, h⟩) <;> simp at h
+  · intro defs i h; simp at h
+  · -- the nested-searcher reading rule concludes the then-constant `C`, not `D`
+    intro k₁ ψ₁ k₂ ψ₂ c1 q h; simp at h
+  · -- not a search telescope plugging `D`: the inner then-branch is `.const .C`
+    intro L h
+    cases L with
+    | nil => simp [searchPlug] at h
+    | cons hd tl =>
+        obtain ⟨g₁', ψ₁, e₁⟩ := hd
+        simp only [searchPlug, Prog.search.injEq] at h
+        obtain ⟨-, -, h, -⟩ := h
+        cases tl with
+        | nil => simp [searchPlug] at h
+        | cons hd' tl' =>
+            obtain ⟨g₂', ψ₂', e₂⟩ := hd'
+            simp only [searchPlug, Prog.search.injEq] at h
+            obtain ⟨-, -, h, -⟩ := h
+            cases tl' with
+            | nil => simp [searchPlug] at h
+            | cons hd'' tl'' =>
+                obtain ⟨g₃, ψ₃, e₃⟩ := hd''
+                simp [searchPlug] at h
+  · -- nor a mixed telescope plugging `D`
+    intro hd L h
+    cases hd with
+    | searchL g ψ e =>
+        simp only [ctxPlug, Prog.search.injEq] at h
+        obtain ⟨-, -, h, -⟩ := h
+        cases L with
+        | nil => simp [ctxPlug] at h
+        | cons hd' tl' =>
+            cases hd' with
+            | searchL g' ψ' e' =>
+                simp only [ctxPlug, Prog.search.injEq] at h
+                exact const_ne_ctxPlug (by decide) tl' h.2.2.1
+            | iteL z' aT' other' => simp [ctxPlug] at h
+    | iteL z aT other => simp [ctxPlug] at h
+  · -- an `elseL` layer captures one of the searcher's own else-slots: it pays ≥ k + 1
+    intro hd L hme
+    cases hd with
+    | thenL g ψ e =>
+        simp only [plug2, Prog.search.injEq] at hme
+        obtain ⟨rfl, rfl, hplug, rfl⟩ := hme
+        cases L with
+        | nil => simp [plug2] at hplug
+        | cons hd2 tl2 =>
+            cases hd2 with
+            | thenL g2 ψ2 e2 =>
+                exfalso
+                simp only [plug2, Prog.search.injEq] at hplug
+                obtain ⟨-, -, hplug2, -⟩ := hplug
+                cases tl2 with
+                | nil => simp [plug2] at hplug2
+                | cons hd3 tl3 => cases hd3 <;> simp [plug2] at hplug2
+            | elseL g2 P2 Q2 c2 q2 =>
+                simp only [plug2, Prog.search.injEq] at hplug
+                obtain ⟨rfl, -, -, -⟩ := hplug
+                simp only [layersCost, layerCost, c_node]
+                omega
+    | elseL g P' Q' c' q =>
+        simp only [plug2, Prog.search.injEq] at hme
+        obtain ⟨rfl, -, -, -⟩ := hme
+        simp only [layersCost, layerCost, c_node]
+        omega
 
 /-- A nested member's DEFECTION has no certificate at budget ≤ k (both D's are
     else-plays), so no proof ≤ k tails at it — the set kernel, with the nested

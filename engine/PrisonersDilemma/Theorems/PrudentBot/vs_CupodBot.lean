@@ -34,87 +34,11 @@ argument transplanted to the base shape. -/
     floor; the only then-constant is `C`. Generic in the opponent. -/
 theorem no_provable_PrudentBot_D_tail (k : Nat) (O : Prog) :
     ∀ K φ, Pf K φ → K ≤ k → TailTo (.plays (PrudentBot k) O .D) φ → False := by
-  refine no_provable_tailTo_floor k (PrudentBot k) O .D ?_ ?_ ?_ ?_ ?_ ?_ ?_
-  · -- the atom killer: every D-transcript crosses a failed search
-    intro K hK hA
-    cases hA with
-    | mk hpp hn =>
-      unfold PrudentBot at hpp
-      cases hpp with
-      | search_t _ hbr =>
-          cases hbr with
-          | search_t _ hc => cases hc
-          | search_f _ _ => simp only [c_node] at hn; omega
-      | search_f _ _ => simp only [c_node] at hn; omega
-  · rintro (⟨_, _, _, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, h⟩ | ⟨_, _, _, _, h⟩ |
-      ⟨_, _, _, _, _, _, _, h⟩) <;> simp [PrudentBot] at h
-  · intro defs i h; simp [PrudentBot] at h
-  · -- the nested-searcher reading rule concludes the then-constant `C`, not `D`
-    intro k₁ ψ₁ k₂ ψ₂ c1 q h; simp [PrudentBot] at h
-  · -- not a search telescope plugging `D`: the inner then-branch is `.const .C`
-    intro L h
-    unfold PrudentBot at h
-    cases L with
-    | nil => simp [searchPlug] at h
-    | cons hd tl =>
-        obtain ⟨g₁, ψ₁, e₁⟩ := hd
-        simp only [searchPlug, Prog.search.injEq] at h
-        obtain ⟨-, -, h, -⟩ := h
-        cases tl with
-        | nil => simp [searchPlug] at h
-        | cons hd' tl' =>
-            obtain ⟨g₂, ψ₂', e₂⟩ := hd'
-            simp only [searchPlug, Prog.search.injEq] at h
-            obtain ⟨-, -, h, -⟩ := h
-            cases tl' with
-            | nil => simp [searchPlug] at h
-            | cons hd'' tl'' =>
-                obtain ⟨g₃, ψ₃, e₃⟩ := hd''
-                simp [searchPlug] at h
-  · -- nor a mixed telescope plugging `D`
-    intro hd L h
-    unfold PrudentBot at h
-    cases hd with
-    | searchL g ψ e =>
-        simp only [ctxPlug, Prog.search.injEq] at h
-        obtain ⟨-, -, h, -⟩ := h
-        cases L with
-        | nil => simp [ctxPlug] at h
-        | cons hd' tl' =>
-            cases hd' with
-            | searchL g' ψ' e' =>
-                simp only [ctxPlug, Prog.search.injEq] at h
-                exact const_ne_ctxPlug (by decide) tl' h.2.2.1
-            | iteL z' aT' other' => simp [ctxPlug] at h
-    | iteL z aT other => simp [ctxPlug] at h
-  · -- an `elseL` layer captures one of PrudentBot's own else-slots: it pays ≥ k + 1
-    intro hd L hme
-    unfold PrudentBot at hme
-    cases hd with
-    | thenL g ψ e =>
-        simp only [plug2, Prog.search.injEq] at hme
-        obtain ⟨rfl, rfl, hplug, rfl⟩ := hme
-        cases L with
-        | nil => simp [plug2] at hplug
-        | cons hd2 tl2 =>
-            cases hd2 with
-            | thenL g2 ψ2 e2 =>
-                exfalso
-                simp only [plug2, Prog.search.injEq] at hplug
-                obtain ⟨-, -, hplug2, -⟩ := hplug
-                cases tl2 with
-                | nil => simp [plug2] at hplug2
-                | cons hd3 tl3 => cases hd3 <;> simp [plug2] at hplug2
-            | elseL g2 P2 Q2 c2 q2 =>
-                simp only [plug2, Prog.search.injEq] at hplug
-                obtain ⟨rfl, -, -, -⟩ := hplug
-                simp only [layersCost, layerCost, c_node]
-                omega
-    | elseL g P' Q' c' q =>
-        simp only [plug2, Prog.search.injEq] at hme
-        obtain ⟨rfl, -, -, -⟩ := hme
-        simp only [layersCost, layerCost, c_node]
-        omega
+  -- An instance of the bare nested-searcher edition `no_provable_nestedSearcher_D_tail`
+  -- (2026-08-25; formerly a 83-line hand-rolled kernel instantiation — the twin of the
+  -- tau layer's `no_provable_sysNested_D_tail`, one census library for both).
+  intro K φ hp hK ht
+  exact no_provable_nestedSearcher_D_tail k _ _ O K φ hp hK (by simpa only [PrudentBot] using ht)
 
 /-- CupodBot's punish-probe on PrudentBot fails: PrudentBot's D is floor-priced. -/
 theorem proofSearch_false_PrudentBot_D_vs_CupodBot (k : Nat) :
