@@ -1187,17 +1187,20 @@
       const [header, ...rows] = data.rows;
       let html = '<div class="matrix-wrap"><table class="matrix"><tr>'
         + header.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
+      const details = data.details || {};
       rows.forEach((row, i) => {
         html += '<tr>' + row.map((cell, j) => {
           if (j === 0) return `<td class="mx-name">${esc(cell)}</td>`;
           if (j <= i) return '<td class="mx-lower"></td>';
+          const d = details[`${row[0]}|${header[j]}`];
+          const title = d ? ` title="${esc(d.note)}"` : '';
           let cls = '';
           if (cell === 'Open Problem') cls = 'mx-open';
           else if (cell === 'Tried') cls = 'mx-tried';
           else if (cell === 'Need rework') cls = 'mx-rework';
           else if (cell === 'None') cls = 'mx-none';
           else if (cell.includes('⇄')) cls = 'mx-sensitive';
-          return `<td class="${cls}">${esc(cell)}</td>`;
+          return `<td class="${cls}"${title}>${esc(cell)}</td>`;
         }).join('') + '</tr>';
       });
       el.innerHTML = html + '</table></div>';

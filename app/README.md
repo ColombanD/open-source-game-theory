@@ -212,6 +212,12 @@ Cell semantics (upper triangle only; a cell reads from the row bot's perspective
   result visible.
 - ` †` — STAGGERED ONLY: no shared-budget theorem exists; the cell is proven with
   one bot at a bigger budget (the LegibleBot/OptimBot two-tier cells).
+
+Every proven cell carries an explanation naming its theorem, the regime, and any
+staggered companion with the exact budgets (`PrudentBot (2 * k + 64) vs DupocBot k`):
+a hover tooltip in the web UI (`GET /matrix` → `details`) and a cell note in the
+Google Sheet. The legend under the matrix is shared by the UI, the sheet and this
+file (`MATRIX_LEGEND`).
 - `None` — provably no outcome (`= none`, e.g. MirrorBot self-play).
 - `Open Problem` / `Tried` / `Need rework` — curated in `app/outcome_status.toml`
   (`Need rework` = a proof exists but not in the accepted large-k form, e.g. only

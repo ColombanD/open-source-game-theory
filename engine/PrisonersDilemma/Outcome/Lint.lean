@@ -60,7 +60,9 @@ private def stripBinders (n : Name) (ty : Expr) : MetaM Expr := do
       throwError "@[outcome] {n}: hypothesis `{← ppExpr d}` in the telescope — an outcome \
         theorem takes no side conditions; a budget floor is the `.eventual` regime, a \
         second budget is a `(j : Nat)` binder or a staggered lambda"
-    body := body.bindingBody!.instantiate1 (mkFVar ⟨`_dummy⟩)
+    -- Instantiate with a free variable NAMED after the binder, so a budget binder
+    -- `(j : Nat)` prints as `j` in a companion's stagger text.
+    body := body.bindingBody!.instantiate1 (mkFVar ⟨body.bindingName!⟩)
   return body
 
 /-- Head constant of a bot argument, plus whether it is staggered.
@@ -92,6 +94,41 @@ private def botOf (e : Expr) : MetaM (Option Name × Bool) := do
 def shortName : Name → Name
   | .str _ s => Name.mkSimple s
   | n        => n
+
+/-- Print a budget expression: binders by name, literals, `+`/`*` with the usual
+    precedence. Deterministic and independent of pretty-printer options — the
+    delaborator in the standalone exporter shows `instHAdd.hAdd (instHMul.hMul 2 k) 64`
+    for what the elaborator shows as `2 * k + 64`. Anything else falls back to `ppExpr`. -/
+private partial def natText (binder : Name) (e : Expr) (prec : Nat := 0) : MetaM String := do
+  match e with
+  | .bvar _ => return binder.toString
+  | .fvar id => return id.name.toString
+  | _ =>
+    if let some n := e.rawNatLit? then return toString n
+    match e.getAppFnArgs with
+    | (``OfNat.ofNat, #[_, lit, _]) => natText binder lit prec
+    | (``HAdd.hAdd, #[_, _, _, _, a, b]) =>
+      let t := s!"{← natText binder a 1} + {← natText binder b 1}"
+      return if prec > 1 then s!"({t})" else t
+    | (``HMul.hMul, #[_, _, _, _, a, b]) =>
+      let t := s!"{← natText binder a 2} * {← natText binder b 2}"
+      return if prec > 2 then s!"({t})" else t
+    | _ => return toString (← ppExpr e)
+
+/-- Print a bot argument of the template as a reader would write it:
+    `fun _ => DefectBot` ↦ `DefectBot`; bare `DupocBot` / `fun k => DupocBot k` ↦
+    `DupocBot k`; `fun k => PrudentBot (2*k+64)` ↦ `PrudentBot (2 * k + 64)`. -/
+private def botArgText (e : Expr) : MetaM String := do
+  let (binder, body) := match e with
+    | .lam n _ b _ => (n, b)
+    | _ => (`k, mkApp e (mkBVar 0))
+  let head ← match body.getAppFn.constName? with
+    | some c => pure (shortName c).toString
+    | none => do return toString (← ppExpr body.getAppFn)
+  let mut out := head
+  for a in body.getAppArgs do
+    out := out ++ " " ++ (← natText binder a 3)
+  return out
 
 private def natLit? (e : Expr) : MetaM (Option Nat) := do
   match (← whnf e).rawNatLit? with
@@ -166,7 +203,7 @@ def inspectCell (env : Environment) (n : Name) (suffix : String := "") : MetaM C
   return { name := n, module := module, leftBot := shortName lB, rightBot := shortName rB
            regime := shortName regime, pad := pad, pair := pair
            staggered := lStag || rStag
-           leftText := toString (← ppExpr args[2]!), rightText := toString (← ppExpr args[3]!) }
+           leftText := (← botArgText args[2]!), rightText := (← botArgText args[3]!) }
 
 /-- Validate one `@[outcome_companion]` declaration: on the template, named
     `…_staggered`, and ACTUALLY staggered — a companion that runs both bots at the shared

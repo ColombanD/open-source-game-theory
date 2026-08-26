@@ -89,6 +89,26 @@ def _apply_formatting(sheet, worksheet, bots: list[str], cells: dict[tuple[str, 
     worksheet.batch_format(formats)
 
 
+def _apply_notes(worksheet, bots: list[str]) -> None:
+    """Attach each proven cell's explanation as a Sheet note (hover), so the `⇄` and
+    `†` marks are self-explaining in the sheet as in the web UI."""
+    from gspread.utils import rowcol_to_a1
+
+    from pd_runner.eval.outcome_matrix import build_outcome_details
+
+    notes = {
+        rowcol_to_a1(bots.index(row) + 2, bots.index(col) + 2): d["note"]
+        for (row, col), d in build_outcome_details().items()
+    }
+    if not notes:
+        return
+    if hasattr(worksheet, "insert_notes"):
+        worksheet.insert_notes(notes)
+    else:  # older gspread
+        for a1, note in notes.items():
+            worksheet.insert_note(a1, note)
+
+
 def push_matrix(
     spreadsheet_id: str | None = None,
     worksheet_name: str | None = None,
@@ -145,6 +165,7 @@ def push_matrix(
         worksheet.clear()
         worksheet.update(rows, "A1")
         _apply_formatting(sheet, worksheet, bots, cells)
+        _apply_notes(worksheet, bots)
     except gspread.exceptions.APIError as exc:
         raise SheetsPushError(f"Google Sheets API error: {exc}") from exc
 

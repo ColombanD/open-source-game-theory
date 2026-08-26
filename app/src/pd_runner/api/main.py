@@ -80,15 +80,20 @@ async def get_matrix() -> dict:
     `POST /matrix/export` regenerates it.
     """
     from pd_runner.eval.outcome_matrix import (
-        MATRIX_LEGEND, build_outcome_matrix, export_staleness, matrix_rows,
+        MATRIX_LEGEND, build_outcome_details, build_outcome_matrix, export_staleness,
+        matrix_rows,
     )
 
     bots, cells = build_outcome_matrix()
+    details = build_outcome_details()
     return {
         "bots": bots,
         "rows": matrix_rows(bots, cells),
         "stale": export_staleness(),
         "legend": [{"mark": m, "meaning": d} for m, d in MATRIX_LEGEND],
+        # Per proven cell, keyed "Row|Col": theorem, flags, companions, and the note the
+        # UI shows as a tooltip.
+        "details": {f"{r}|{c}": d for (r, c), d in details.items()},
     }
 
 

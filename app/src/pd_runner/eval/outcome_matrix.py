@@ -132,6 +132,9 @@ class OutcomeTheorem:
     module: str = ""
     # Staggered companions of this pair (either orientation), from the export.
     companions: tuple[Companion, ...] = ()
+    # The two bot arguments as text (`PrudentBot (2 * k + 64)`, `DupocBot k`, `DefectBot`).
+    left_text: str = ""
+    right_text: str = ""
 
     @property
     def budget_sensitive(self) -> bool:
@@ -245,6 +248,8 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
             fuel_pad=t["fuel_pad"],
             module=t.get("module", ""),
             companions=tuple(companions.get(frozenset((t["left_bot"], t["right_bot"])), ())),
+            left_text=t.get("left", ""),
+            right_text=t.get("right", ""),
         ))
     return out
 
@@ -581,6 +586,65 @@ MATRIX_LEGEND: tuple[tuple[str, str], ...] = (
                                           "theorem"),
     ("k≫", "(--annotate only) holds at every sufficiently large budget"),
 )
+
+
+def cell_note(t: OutcomeTheorem, row_bot: str) -> str:
+    """A human-readable explanation of one cell, read from `row_bot`'s side — the
+    tooltip in the web UI and the cell note in the Google Sheet."""
+    swapped = t.left_bot != row_bot
+    col_bot = t.left_bot if swapped else t.right_bot
+    lines: list[str] = []
+    if t.pair is None:
+        lines.append(f"{t.name}: provably no outcome ({row_bot} vs {col_bot} diverges).")
+    else:
+        a, b = (t.pair[1], t.pair[0]) if swapped else t.pair
+        left_text, right_text = (t.right_text, t.left_text) if swapped else (t.left_text, t.right_text)
+        regime = {"nobudget": "no budget parameter", "universal": "every budget k",
+                  "eventual": "every sufficiently large budget k"}.get(t.budget_regime, t.budget_regime)
+        where = (f"{left_text} vs {right_text}" if t.staggered
+                 else f"{row_bot} vs {col_bot} at one shared budget")
+        lines.append(f"{t.name}: ({a}, {b}) — {where}; holds at {regime}.")
+        if t.staggered:
+            lines.append("† staggered only: no shared-budget theorem exists for this pair.")
+    for c in t.companions:
+        cp = c.oriented_pair(row_bot)
+        if cp is None:
+            continue
+        c_swapped = c.left_bot != row_bot
+        cl, cr = (c.right, c.left) if c_swapped else (c.left, c.right)
+        verdict = "DIFFERENT outcome" if cp != ((t.pair[1], t.pair[0]) if swapped else t.pair) else "same outcome"
+        lines.append(
+            f"⇄ {c.name}: ({cp[0]}, {cp[1]}) with a budget stagger — {cl} vs {cr} ({verdict})."
+        )
+    return "\n".join(lines)
+
+
+def build_outcome_details(
+    theorems_dir: Path = _THEOREMS_DIR,
+) -> dict[tuple[str, str], dict]:
+    """Per proven cell (upper triangle, keyed like `build_outcome_matrix`'s cells):
+    the theorem, its flags, its companions oriented to the row bot, and the note."""
+    theorems = scan_outcome_theorems(theorems_dir)
+    bots = library_bots(theorems_dir)
+    by_pair = index_by_ordered_pair(theorems)
+    order = _bot_order(bots)
+    out: dict[tuple[str, str], dict] = {}
+    for i, row in enumerate(order):
+        for col in order[i:]:
+            t = by_pair.get((row, col)) or by_pair.get((col, row))
+            if t is None:
+                continue
+            out[(row, col)] = {
+                "theorem": t.name,
+                "staggered": t.staggered,
+                "budget_sensitive": t.budget_sensitive,
+                "companions": [
+                    {"name": c.name, "pair": c.oriented_pair(row), "left": c.left, "right": c.right}
+                    for c in t.companions
+                ],
+                "note": cell_note(t, row),
+            }
+    return out
 
 
 def matrix_rows(bots: list[str], cells: dict[tuple[str, str], str]) -> list[list[str]]:

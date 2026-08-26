@@ -186,3 +186,23 @@ def test_format_tsv_is_upper_triangular() -> None:
     assert third_row[0] == bots[2]
     assert third_row[1] == "" and third_row[2] == ""
     assert third_row[3] != ""
+
+
+def test_cell_details_explain_budget_sensitive_cells() -> None:
+    """The tooltip/note names both theorems and the stagger, from the row bot's side."""
+    from pd_runner.eval.outcome_matrix import build_outcome_details
+
+    details = build_outcome_details()
+    d = details[("DupocBot", "PrudentBot")]
+    assert d["theorem"] == "outcome_PrudentBot_vs_DupocBot"
+    assert d["budget_sensitive"] and not d["staggered"]
+    assert [c["name"] for c in d["companions"]] == ["outcome_PrudentBot_vs_DupocBot_staggered"]
+    assert d["companions"][0]["pair"] == ("C", "C")
+    note = d["note"]
+    assert "outcome_PrudentBot_vs_DupocBot: (D, D)" in note
+    assert "shared budget" in note
+    assert "outcome_PrudentBot_vs_DupocBot_staggered: (C, C)" in note
+    assert "DIFFERENT outcome" in note
+    # A plain cell has no companion line; a † cell says so.
+    assert "⇄" not in details[("CooperateBot", "DefectBot")]["note"]
+    assert "staggered only" in details[("CIMCIC", "LegibleBot")]["note"]
