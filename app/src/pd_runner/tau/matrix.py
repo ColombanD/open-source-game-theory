@@ -363,7 +363,8 @@ class Cell:
     # sides at once: it is a property of the match, not of one player.
     row_action: str
     col_action: str
-    # "universal" | "existential" (∃k) | "threshold" (∃k₂, ∀k>k₂)
+    # "universal" | "threshold" (∃k₂, ∀k>k₂) | "no_outcome"
+    # | "HYPOTHETICAL" | "CONTRADICTED"
     # | "no_outcome" (proven `= none` — the "N" cells)
     # | "HYPOTHETICAL" (stipulated, NOT proven — see `hypothetical`)
     shape: str

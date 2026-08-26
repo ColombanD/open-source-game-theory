@@ -78,7 +78,9 @@ class OutcomeTheorem:
     right_bot: str
     # ("C", "D") for a proven action pair, None for a proven no-outcome.
     pair: tuple[str, str] | None
-    # "universal" | "existential" (∃k) | "threshold" (∃k₂, ∀k>k₂) | "no_outcome"
+    # "universal" | "threshold" (∃k₂, ∀k>k₂) | "no_outcome".
+    # ("existential" (∃k) is retained in the vocabulary but no longer produced: every
+    # `∃ k` theorem was strengthened during the OutcomeSpec migration.)
     shape: str
     # Proved under extra side hypotheses (floor/size/budget guards).
     has_hypotheses: bool
@@ -188,15 +190,24 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
     return out
 
 
-def scan_outcome_theorems(theorems_dir: Path = _THEOREMS_DIR) -> list[OutcomeTheorem]:
+def scan_outcome_theorems(
+    theorems_dir: Path | None = None,
+    export_file: Path = _EXPORT_FILE,
+) -> list[OutcomeTheorem]:
     """Every accepted `(llm_)outcome_X_vs_Y` theorem with its result.
 
     Read entirely from the Lean-side `@[outcome]` export: the shape, the fuel mode, the
     side conditions and the staggering are recovered from ELABORATED TYPES, not guessed
     from source text. The regex extractor this replaced inferred the dagger from
     "does a binder name start with `h`", which silently mis-classified at least one cell.
+
+    `theorems_dir` is accepted and IGNORED. It survives because callers pair this with
+    `library_bots(theorems_dir)`, which genuinely does read the directory listing; taking
+    the argument keeps those call sites symmetric. Point `export_file` at a different
+    JSON to scan an alternative library.
     """
-    return sorted(_theorems_from_export(), key=lambda t: t.name)
+    del theorems_dir  # the export, not the source tree, is the authority
+    return sorted(_theorems_from_export(export_file), key=lambda t: t.name)
 
 
 def load_status(
@@ -365,9 +376,7 @@ def build_outcome_matrix(
         cell = f"({a}, {b})"
         if t.has_hypotheses:
             cell += " †"
-        if annotate and t.shape == "existential":
-            cell += " ∃k"
-        elif annotate and t.shape == "threshold":
+        if annotate and t.shape == "threshold":
             cell += " k≫"
         return cell
 
@@ -430,7 +439,7 @@ def main() -> None:
     parser.add_argument(
         "--annotate",
         action="store_true",
-        help="mark ∃k (existential budget) and k≫ (large-k threshold) theorem shapes",
+        help="mark k≫ (large-k threshold) theorem shapes",
     )
     parser.add_argument("--output", type=Path, default=None, help="write to file instead of stdout")
     parser.add_argument("--push", action="store_true", help="push the matrix to the Google Sheet")
