@@ -37,10 +37,22 @@ builds on the engine, the engine never imports it). Namespace `PD`. Layered bott
 | **Decidability** | `Decidability/` | The T3.2c/T4 chain (modules keep milestone names `T31`…`T54`; umbrella `Decidability.lean` re-exports the API): `decFull` (verified enumerator, `Pf_iff_decFull`), `evalG` (computable evaluation of search bots, sound both guard polarities, `#eval` demos), `PfG` strata (gate-parametric mirror of the unified `Pf`; uniform gating incl. ex-`Derivation` cuts — D2), the modest universe, `decideProvableG` (modest stratum decidable). Then the cut-relevance arc `T48`–`T54`: literal bounds + antecedent census (T48), the tree substrate / extraction machine / normalization theorem / excisor (T49), **the instance gate + transport theorem** (T50), **the falsification theorem** — the original CutRelevance is FALSE (T51), the gate-parametric decider (T52), **decidability at the instance gate** (T53), and **the certified zoo** (T54). |
 | **Research notes** | `Research/Notes/`, `Research/Readings/`, `Research/Data/` | Theory write-ups (esp. `COMPUTABLE_EVAL_NOTES.md`, `UnderstandingTheLayers.md`), extracted source papers, tournament data. |
 
-**The strict outcome-theorem template** is the linchpin the whole pipeline relies on:
-`outcome_X_Y = some (.Action_X, .Action_Y)`. Because the statement is fully concrete,
+**The strict outcome-theorem template** is the linchpin the whole pipeline relies on.
+Since 2026-08-26 it is a TYPED object (`Outcome/Spec.lean`): every matrix theorem is
+`@[outcome] theorem (llm_)outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`
+(`OutcomeSpecEx` for existential fuel, `OutcomeSpecIf` for a genuine side condition;
+regimes `nobudget | universal | eventual`; `L R : Nat → Prog` so staggering is a
+structural property of the lambda). `Outcome/Lint.lean` validates every tagged theorem
+against its own name and `Outcome/Check.lean` (lake target `OutcomeCheck`, in the
+default build) runs the census: every `outcome_X_vs_Y` declaration on disk is tagged or
+listed in `Outcome/exclusions.txt`. `lake exe export_outcomes` writes the cells to the
+committed `app/generated/outcome_theorems.json`, which is the ONLY source the app's
+matrix reads (no regex over Lean source). Because the statement is fully concrete,
 **compilation == correctness** — an LLM-written proof that type-checks is, modulo the
-NL→Lean *bot* translation, a verified result.
+NL→Lean *bot* translation, a verified result. **Known gap:** the proof agent's prompt
+and verdict gate still target the raw `outcome … = some …` shape and do not emit
+`@[outcome]`, so an LLM proof landed through `library_writer` is invisible to the
+matrix and fails the next `lake build` census until migrated by hand.
 
 ## Foundational status — zero axioms, transcript costs; `eval` computability reduced to ONE conjecture
 

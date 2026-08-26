@@ -74,11 +74,32 @@ async def list_bots() -> dict:
 
 @app.get("/matrix")
 async def get_matrix() -> dict:
-    """The current outcome matrix, rebuilt from the theorem library on each call."""
-    from pd_runner.eval.outcome_matrix import build_outcome_matrix, matrix_rows
+    """The current outcome matrix, read from the Lean `@[outcome]` export on each call.
+
+    `stale` is a human-readable reason the export may lag the Lean sources (or null);
+    `POST /matrix/export` regenerates it.
+    """
+    from pd_runner.eval.outcome_matrix import build_outcome_matrix, export_staleness, matrix_rows
 
     bots, cells = build_outcome_matrix()
-    return {"bots": bots, "rows": matrix_rows(bots, cells)}
+    return {"bots": bots, "rows": matrix_rows(bots, cells), "stale": export_staleness()}
+
+
+@app.post("/matrix/export")
+async def matrix_export() -> dict:
+    """Regenerate `outcome_theorems.json` from Lean (`lake build` + `lake exe export_outcomes`).
+
+    Runs the validator + census as a side effect, so an off-template or untagged
+    outcome theorem surfaces here as a 500 with the Lean error, never as a missing cell.
+    """
+    from pd_runner.eval.outcome_matrix import export_staleness, refresh_export
+
+    loop = asyncio.get_running_loop()
+    try:
+        output = await loop.run_in_executor(None, refresh_export)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return {"output": output.strip(), "stale": export_staleness()}
 
 
 @app.get("/tau/zoos")

@@ -85,12 +85,14 @@ def test_matrix_cells() -> None:
 
 def test_status_file_tried_and_validation(tmp_path: Path) -> None:
     status = tmp_path / "status.toml"
+    # CupodBot vs OptimBot has no theorem (see the empty-cell test above); a status
+    # entry on a PROVEN pair would be overridden by the proof and never render.
     status.write_text(
-        '[[tried]]\npair = ["CupodBot", "PrudentBot"]\nreason = "no luck"\n',
+        '[[tried]]\npair = ["CupodBot", "OptimBot"]\nreason = "no luck"\n',
         encoding="utf-8",
     )
     _, cells = build_outcome_matrix(status_file=status)
-    assert cells[("CupodBot", "PrudentBot")] == "Tried"
+    assert cells[("CupodBot", "OptimBot")] == "Tried"
 
     status.write_text('[[open]]\npair = ["NoSuchBot", "DBot"]\n', encoding="utf-8")
     with pytest.raises(ValueError, match="NoSuchBot"):
@@ -122,7 +124,7 @@ def test_prune_stale_statuses(tmp_path: Path) -> None:
         "# ---- banner comment that must survive ----\n"
         "\n"
         "[[open]]\n"
-        'pair = ["PrudentBot", "CupodBot"]\n'
+        'pair = ["OptimBot", "CupodBot"]\n'
         'reason = "genuinely open — must survive"\n'
         "\n"
         "[[tried]]\n"

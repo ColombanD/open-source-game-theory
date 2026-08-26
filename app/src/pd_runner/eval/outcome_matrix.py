@@ -1,27 +1,36 @@
 """Outcome matrix from the proven theorem library.
 
-Scans `engine/PrisonersDilemma/Theorems/**/*.lean` for the unified
-`outcome_Bot1_vs_Bot2` / `llm_outcome_Bot1_vs_Bot2` theorems and renders an
-upper-triangular matrix of proven outcomes. Purely static — no LLM, no Lean
-invocation; the Lean kernel already checked every cell.
+The cells come from the Lean-side `@[outcome]` export: `lake exe export_outcomes`
+inspects the ELABORATED TYPE of every tagged theorem (`Outcome/Lint.lean`) and writes
+`app/generated/outcome_theorems.json`; this module reads that file and renders an
+upper-triangular matrix. No LLM, no regex over Lean source; the kernel checked every
+cell and the linter checked that each statement is on the `OutcomeSpec` template and
+agrees with its own name.
 
 Acceptance rules (matching the tracking sheet's conventions):
 - The matrix rows/columns are exactly the bot directories under `Theorems/`
   (so no `PrudentBot2`/`JustBot2` tier variants).
-- Only theorems named exactly `outcome_<A>_vs_<B>` or `llm_outcome_<A>_vs_<B>`
-  with both `<A>` and `<B>` in that bot set are accepted — suffixed regime
-  variants (`_floor`, `_floor2`, `_defended`, `_k<N>`) are ignored: the cell
-  must be the large-`k` / unconditional statement.
-- A theorem proved under extra side hypotheses (floor/size/budget guards,
-  binders named `h…`) still fills the cell but is flagged with `†`.
+- A cell is filled only by an `@[outcome]`-tagged theorem. Tagging is opt-in; the
+  build-time census (`Outcome/Check.lean`) is what turns a forgotten tag into a
+  build failure rather than a silently open-looking cell.
+- A theorem is flagged `†` when the export says it is STAGGERED (a bot applied to a
+  budget expression other than the shared `k`, e.g. `PrudentBot (2*k+64)`) or carries
+  a SIDE CONDITION (a `Prop` binder / an `OutcomeSpecIf` guard). Budget floors are
+  not caveats: they are the `.eventual` regime and carry no dagger.
 - `= none` theorems render as `None` (provably no outcome).
 - Cells with no accepted theorem come from `app/outcome_status.toml`
   (`Open Problem` / `Tried`) and are otherwise left empty.
+
+FRESHNESS. The export is a committed artifact, so the matrix is only as current as
+the last `lake exe export_outcomes`. `export_staleness()` detects a lagging file and
+`refresh_export()` regenerates it (build + export); the library writer refreshes it
+after every accepted proof and the web UI exposes the check and the button.
 
 Run with:
     uv run python -m pd_runner.eval.outcome_matrix
     uv run python -m pd_runner.eval.outcome_matrix --format md
     uv run python -m pd_runner.eval.outcome_matrix --format csv --output matrix.csv
+    uv run python -m pd_runner.eval.outcome_matrix --refresh        # rebuild the export first
     uv run python -m pd_runner.eval.outcome_matrix --push
     uv run python -m pd_runner.eval.outcome_matrix --prune-stale --push
 """
@@ -34,6 +43,7 @@ import io
 import logging
 import json
 import re
+import subprocess
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -188,6 +198,69 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
             module=t.get("module", ""),
         ))
     return out
+
+
+def export_staleness(
+    export_file: Path = _EXPORT_FILE,
+    theorems_dir: Path = _THEOREMS_DIR,
+) -> str | None:
+    """Why the committed export may be BEHIND the Lean sources, or None if it is not.
+
+    The digest catches a tampered file and the Lean census catches an untagged theorem;
+    neither notices an export that is merely stale (tag a theorem, skip the export, and
+    the matrix keeps serving the previous cell set). Anchored on the source tree rather
+    than a counter: `@[outcome]` occurrences under `Theorems/` are exactly what the
+    export enumerates, so the two counts must agree. A count match is not proof of
+    freshness (a statement edited in place keeps the count), which is why the hard
+    check is paired with a modification-time hint.
+    """
+    if not export_file.exists():
+        return "outcome_theorems.json is missing — run `lake exe export_outcomes`"
+    if not theorems_dir.is_dir():
+        return None  # app-only checkout: nothing to compare against
+    tagged_on_disk = 0
+    newest_source = 0.0
+    for f in theorems_dir.rglob("vs_*.lean"):
+        tagged_on_disk += f.read_text(encoding="utf-8").count("@[outcome]")
+        newest_source = max(newest_source, f.stat().st_mtime)
+    exported = len(json.loads(export_file.read_text(encoding="utf-8"))["theorems"])
+    if exported != tagged_on_disk:
+        return (
+            f"export has {exported} cells but {tagged_on_disk} theorems are tagged "
+            f"`@[outcome]` on disk — regenerate it"
+        )
+    if newest_source > export_file.stat().st_mtime:
+        return "a theorem file is newer than the export — regenerate it to be sure"
+    return None
+
+
+def refresh_export(
+    engine_dir: Path | None = None,
+    export_file: Path = _EXPORT_FILE,
+) -> str:
+    """Regenerate the export from the Lean sources. Returns the exporter's stdout.
+
+    Two steps, both required: `lake exe export_outcomes` reads the BUILT `.olean`s
+    (it imports `PrisonersDilemma` at runtime rather than depending on it), so running
+    it against stale oleans would silently export the previous library. Building
+    `OutcomeCheck` alongside the engine also runs the validator + census, so an
+    off-template or untagged theorem fails here instead of vanishing from the matrix.
+    Raises `RuntimeError` with the tool output on failure.
+    """
+    if engine_dir is None:
+        engine_dir = _workspace_root() / "engine"
+    for cmd in (
+        ["lake", "build", "PrisonersDilemma", "OutcomeCheck"],
+        ["lake", "exe", "export_outcomes", str(export_file.resolve())],
+    ):
+        proc = subprocess.run(cmd, cwd=engine_dir, capture_output=True, text=True, check=False)
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"`{' '.join(cmd)}` failed (exit {proc.returncode}):\n"
+                f"{proc.stdout[-4000:]}\n{proc.stderr[-4000:]}"
+            )
+    logger.info("outcome export refreshed: %s", proc.stdout.strip())
+    return proc.stdout
 
 
 def scan_outcome_theorems(
@@ -442,6 +515,11 @@ def main() -> None:
         help="mark k≫ (large-k threshold) theorem shapes",
     )
     parser.add_argument("--output", type=Path, default=None, help="write to file instead of stdout")
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="rebuild the Lean export (lake build + lake exe export_outcomes) before rendering",
+    )
     parser.add_argument("--push", action="store_true", help="push the matrix to the Google Sheet")
     parser.add_argument(
         "--prune-stale",
@@ -449,6 +527,14 @@ def main() -> None:
         help="delete outcome_status.toml entries whose pair now has an accepted theorem",
     )
     args = parser.parse_args()
+
+    if args.refresh:
+        try:
+            print(refresh_export().strip())
+        except RuntimeError as exc:
+            raise SystemExit(f"error: {exc}")
+    elif (stale := export_staleness()) is not None:
+        logger.warning("outcome export may be stale: %s (use --refresh)", stale)
 
     if args.prune_stale:
         removed = prune_stale_statuses()

@@ -181,15 +181,24 @@ The bot-vs-bot outcome matrix in the tracking Google Sheet (link in
 `engine/README.md`) is generated from the proven theorem library by
 `pd_runner/eval/outcome_matrix.py` and pushed by `pd_runner/services/sheets.py`.
 
+The cells are NOT scraped from Lean source. Every matrix theorem is tagged
+`@[outcome]` and stated on the `OutcomeSpec` template (`engine/PrisonersDilemma/Outcome/`);
+`lake exe export_outcomes` reads their elaborated types and writes the committed
+`app/generated/outcome_theorems.json` (digest-protected — never hand-edit it), which
+is what the Python side reads. The export only changes when you regenerate it:
+
 ```bash
-uv run python -m pd_runner.eval.outcome_matrix               # print TSV
+uv run python -m pd_runner.eval.outcome_matrix               # print TSV (warns if the export lags)
+uv run python -m pd_runner.eval.outcome_matrix --refresh     # lake build + export, then print
 uv run python -m pd_runner.eval.outcome_matrix --format md   # markdown
 uv run python -m pd_runner.eval.outcome_matrix --push        # write to the Sheet
 ```
 
-The web UI (`uv run pd-serve`) has a "Sync to Google Sheet" button
-(`POST /matrix/sync`), and the pipeline syncs automatically after each accepted
-proof when credentials are present.
+The web UI (`uv run pd-serve`) shows a staleness note when the export lags the
+sources, a "Regenerate from Lean" button (`POST /matrix/export`) and a "Sync to
+Google Sheet" button (`POST /matrix/sync`). The library writer regenerates the
+export after each accepted proof, and the pipeline syncs the sheet when
+credentials are present.
 
 Cell semantics (upper triangle only; a cell reads from the row bot's perspective):
 

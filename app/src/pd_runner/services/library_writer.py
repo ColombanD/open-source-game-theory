@@ -8,6 +8,8 @@ Safety rules:
 
 from __future__ import annotations
 
+import logging
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +17,8 @@ from pd_runner.config import load_paths
 from pd_runner.lean.executor import LeanExecResult, build_lean_project
 from pd_runner.services.bot_service import BotResult
 from pd_runner.services.proof_service import ProofResult
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -153,6 +157,22 @@ def write_proof_to_library(
         raise LibraryWriteError(
             f"lake build failed after writing {target} — file removed.\n"
             f"stdout:\n{build_result.stdout}\nstderr:\n{build_result.stderr}"
+        )
+
+    # Keep the committed `@[outcome]` export current so the matrix (UI, sheet, tau,
+    # EGT) sees the new cell. Best-effort: the theorem is already kernel-checked and
+    # landed; a failed refresh is a loud warning, not a rollback. NOTE: a theorem the
+    # agent wrote in the raw `outcome … = some …` shape without `@[outcome]` will make
+    # this step fail the `OutcomeCheck` census — that is the signal that the proof
+    # agent's template and the engine's template have diverged.
+    from pd_runner.eval.outcome_matrix import refresh_export
+
+    try:
+        refresh_export(paths.lean_engine_dir)
+    except RuntimeError as exc:
+        logger.warning(
+            "wrote %s but could not refresh the outcome export — the matrix will not "
+            "show this cell until `lake exe export_outcomes` succeeds:\n%s", target, exc,
         )
 
     return WriteResult(

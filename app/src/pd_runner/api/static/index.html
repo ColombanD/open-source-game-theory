@@ -285,16 +285,19 @@
   <div class="card" id="matrix-card">
     <h2>Outcome matrix</h2>
     <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
-      Rebuilds the bot-vs-bot outcome matrix from the proven theorem library and writes it to
-      its own worksheet in the tracking Google Sheet. Runs automatically after each accepted
-      proof; use the button to sync manually (e.g. after editing
-      <code>app/outcome_status.toml</code>).
+      The bot-vs-bot outcome matrix, read from the <code>@[outcome]</code> cells the Lean
+      linter exported (<code>app/generated/outcome_theorems.json</code>). "Regenerate from
+      Lean" rebuilds the engine, runs the outcome census, and rewrites that export; it runs
+      automatically after each accepted proof. "Sync to Google Sheet" pushes the matrix to
+      its worksheet (e.g. after editing <code>app/outcome_status.toml</code>).
     </p>
-    <div style="display:flex; gap:0.5rem; align-items:center;">
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
       <button class="btn" onclick="loadMatrix()">Refresh</button>
+      <button class="btn" id="matrix-export-btn" onclick="exportMatrix()">Regenerate from Lean</button>
       <button class="btn btn-primary" id="matrix-sync-btn" onclick="syncMatrix()">Sync to Google Sheet</button>
       <span id="matrix-sync-status" style="color:#9ca3af; font-size:0.85rem;"></span>
     </div>
+    <p id="matrix-stale" style="color:#fcd34d; font-size:0.85rem; display:none;"></p>
     <div id="matrix-table"></div>
   </div>
 
@@ -1169,6 +1172,13 @@
         el.innerHTML = `<p style="color:#fca5a5; font-size:0.85rem;">Failed to load matrix: ${esc(e)}</p>`;
         return;
       }
+      const staleEl = document.getElementById('matrix-stale');
+      if (data.stale) {
+        staleEl.textContent = `Export may be stale: ${data.stale}.`;
+        staleEl.style.display = '';
+      } else {
+        staleEl.style.display = 'none';
+      }
       const [header, ...rows] = data.rows;
       let html = '<div class="matrix-wrap"><table class="matrix"><tr>'
         + header.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
@@ -1185,6 +1195,27 @@
         }).join('') + '</tr>';
       });
       el.innerHTML = html + '</table></div>';
+    }
+
+    async function exportMatrix() {
+      const btn = document.getElementById('matrix-export-btn');
+      const status = document.getElementById('matrix-sync-status');
+      btn.disabled = true;
+      status.textContent = 'Building the engine and exporting @[outcome] cells… (can take a while)';
+      try {
+        const resp = await fetch('/matrix/export', { method: 'POST' });
+        const body = await resp.json();
+        if (!resp.ok) {
+          status.textContent = `Export failed: ${body.detail || resp.statusText}`;
+        } else {
+          status.textContent = body.output || 'Export regenerated.';
+          loadMatrix();
+        }
+      } catch (e) {
+        status.textContent = `Export failed: ${e}`;
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     async function syncMatrix() {

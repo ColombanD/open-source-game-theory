@@ -152,3 +152,47 @@ def test_export_covers_every_tagged_theorem_on_disk() -> None:
         f"tagged `@[outcome]` on disk — re-run `lake exe export_outcomes` "
         f"(the export is stale)."
     )
+
+
+def test_export_staleness_detects_a_lagging_file(tmp_path) -> None:
+    """A count mismatch between `@[outcome]` on disk and the export is reported."""
+    from pd_runner.eval.outcome_matrix import export_staleness
+
+    theorems = tmp_path / "Theorems"
+    (theorems / "A").mkdir(parents=True)
+    (theorems / "A" / "vs_B.lean").write_text(
+        "@[outcome]\ntheorem outcome_A_vs_B : True := trivial\n"
+        "@[outcome]\ntheorem outcome_A_vs_C : True := trivial\n",
+        encoding="utf-8",
+    )
+    export = tmp_path / "outcome_theorems.json"
+
+    assert "missing" in export_staleness(export, theorems)
+
+    export.write_text(json.dumps({"theorems": [{}]}), encoding="utf-8")
+    reason = export_staleness(export, theorems)
+    assert reason is not None and "1 cells" in reason and "2 theorems" in reason
+
+
+def test_export_staleness_is_quiet_when_current(tmp_path) -> None:
+    from pd_runner.eval.outcome_matrix import export_staleness
+
+    theorems = tmp_path / "Theorems"
+    (theorems / "A").mkdir(parents=True)
+    (theorems / "A" / "vs_B.lean").write_text("@[outcome]\ntheorem x : True := trivial\n")
+    export = tmp_path / "outcome_theorems.json"
+    export.write_text(json.dumps({"theorems": [{}]}), encoding="utf-8")
+    # The export was written AFTER the source, so no mtime hint fires either.
+    assert export_staleness(export, theorems) is None
+
+
+def test_committed_export_is_not_stale() -> None:
+    """The committed export passes the same check the UI shows (count + mtime)."""
+    from pd_runner.eval.outcome_matrix import export_staleness
+
+    theorems = _EXPORT_FILE.parents[2] / "engine" / "PrisonersDilemma" / "Theorems"
+    if not theorems.is_dir():
+        pytest.skip("engine sources not present")
+    reason = export_staleness(_EXPORT_FILE, theorems)
+    # The mtime hint is advisory (a checkout can touch files); the COUNT must agree.
+    assert reason is None or "newer than the export" in reason, reason
