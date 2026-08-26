@@ -194,9 +194,10 @@ uv run python -m pd_runner.eval.outcome_matrix --format md   # markdown
 uv run python -m pd_runner.eval.outcome_matrix --push        # write to the Sheet
 ```
 
-The web UI (`uv run pd-serve`) shows a staleness note when the export lags the
-sources, a "Regenerate from Lean" button (`POST /matrix/export`) and a "Sync to
-Google Sheet" button (`POST /matrix/sync`). The library writer regenerates the
+The web UI (`uv run pd-serve`) loads the matrix on open and after every action,
+shows a staleness note when the export lags the sources, and has a "Regenerate
+from Lean" button (`POST /matrix/export`) and a "Sync to Google Sheet" button
+(`POST /matrix/sync`). The library writer regenerates the
 export after each accepted proof, and the pipeline syncs the sheet when
 credentials are present.
 
