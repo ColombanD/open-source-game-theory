@@ -562,14 +562,16 @@ Two things worth knowing about them:
   converged interior samples only, with monoculture starts tracked separately
   (they are measure-zero).
 
-**The headline result (2026-08-10 — computed on the OLD default zoo; since 2026-08-27
-the matrix cells are shared-budget values and the default tau zoo is 9 bots
-(PrudentBot and GuardianBot excluded as twins), so RE-RUN before citing).** On the default zoo, `DupocBot` — the
+**The headline result (2026-08-10, RE-RUN 2026-08-27 on the shared-budget cells and
+the 9-bot default zoo — it survives).** On the default zoo, `DupocBot` — the
 Löbian cooperator — is uniquely stochastically stable at full transparency, and
-its share of the long run RISES with selection intensity: 20% → 55% → 82% → 89%
-across the (M, β) sweep. At `t = 0` that collapses into a four-way tie including
-`DefectBot`. Cooperation under transparency is not merely an available
-equilibrium; it is where the population spends its time.
+its share of the long run RISES with selection intensity: 27% → 56% → 82% → 88%
+across the (M, β) sweep (M = 10/50/100, β = 0.01/0.1/1; was 20/55/82/89 on the
+old 11-bot zoo). At `t = 0` that collapses into a tie — {DefectBot, DupocBot, OBot}
+at α = 0.45, {DefectBot, DupocBot, EBot, OBot} at α = 0.62 (was a four-way tie
+including DefectBot). Cooperation under transparency is not merely an available
+equilibrium; it is where the population spends its time. Sweep: 36 grid points →
+15 distinct matrices, 112 s.
 
 **`ingest.py` is the seam** — it REPLACED the old `src/ingest/` package wholesale.
 The original parsed a hand-transcribed CSV and imputed two special cells from a
