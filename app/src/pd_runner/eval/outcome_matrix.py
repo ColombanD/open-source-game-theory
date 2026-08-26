@@ -123,6 +123,10 @@ def library_bots(theorems_dir: Path = _THEOREMS_DIR) -> set[str]:
 # Committed so the Python side works without a Lean toolchain; `source_digest` lets the
 # Lean linter reject a stale or hand-edited file.
 _EXPORT_FILE = Path(__file__).resolve().parents[3] / "generated" / "outcome_theorems.json"
+# The tau twin (`Tau/RowSpec.lean` rows), written by the same exporter; read by
+# `tau/def4_theorems.py`.
+_TAU_EXPORT_FILE = Path(__file__).resolve().parents[3] / "generated" / "tau_rows.json"
+_TAU_PHASE_DIR = _workspace_root() / "engine" / "PrisonersDilemma" / "Tau" / "Theorems"
 
 # `BudgetRegime` -> the legacy `shape` vocabulary. Deliberately lossy in exactly the way
 # the regex classifier was, so `tau/matrix.py` and the tau tests are unaffected.
@@ -143,7 +147,7 @@ def _fnv1a64(text: str) -> int:
     return h
 
 
-def _verify_digest(data: dict, export_file: Path) -> None:
+def _verify_digest(data: dict, export_file: Path, key: str = "theorems") -> None:
     """Reject a hand-edited export.
 
     The cells are machine-checked THEOREMS; a JSON someone edited by hand is not. Without
@@ -155,7 +159,7 @@ def _verify_digest(data: dict, export_file: Path) -> None:
         raise ValueError(f"{export_file}: missing `source_digest`")
     rows = [
         json.dumps(t, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-        for t in data["theorems"]
+        for t in data[key]
     ]
     actual = str(_fnv1a64("".join(rows)))
     if actual != claimed:
@@ -200,9 +204,16 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
     return out
 
 
+# An attribute on its own line — a docstring MENTIONING `@[outcome]` must not count.
+_OUTCOME_TAG_RE = re.compile(r"^@\[outcome\]\s*$", re.MULTILINE)
+_TAU_TAG_RE = re.compile(r"^@\[tau_row\]\s*$", re.MULTILINE)
+
+
 def export_staleness(
     export_file: Path = _EXPORT_FILE,
     theorems_dir: Path = _THEOREMS_DIR,
+    tau_export_file: Path = _TAU_EXPORT_FILE,
+    tau_phase_dir: Path = _TAU_PHASE_DIR,
 ) -> str | None:
     """Why the committed export may be BEHIND the Lean sources, or None if it is not.
 
@@ -221,7 +232,7 @@ def export_staleness(
     tagged_on_disk = 0
     newest_source = 0.0
     for f in theorems_dir.rglob("vs_*.lean"):
-        tagged_on_disk += f.read_text(encoding="utf-8").count("@[outcome]")
+        tagged_on_disk += len(_OUTCOME_TAG_RE.findall(f.read_text(encoding="utf-8")))
         newest_source = max(newest_source, f.stat().st_mtime)
     exported = len(json.loads(export_file.read_text(encoding="utf-8"))["theorems"])
     if exported != tagged_on_disk:
@@ -231,6 +242,20 @@ def export_staleness(
         )
     if newest_source > export_file.stat().st_mtime:
         return "a theorem file is newer than the export — regenerate it to be sure"
+    # The tau rows travel with the same exporter, so they are checked here too.
+    if tau_phase_dir.is_dir():
+        if not tau_export_file.exists():
+            return "tau_rows.json is missing — run `lake exe export_outcomes`"
+        tagged_rows = sum(
+            len(_TAU_TAG_RE.findall(f.read_text(encoding="utf-8")))
+            for f in tau_phase_dir.rglob("Phase.lean")
+        )
+        exported_rows = len(json.loads(tau_export_file.read_text(encoding="utf-8"))["rows"])
+        if exported_rows != tagged_rows:
+            return (
+                f"tau export has {exported_rows} rows but {tagged_rows} theorems are tagged "
+                f"`@[tau_row]` on disk — regenerate it"
+            )
     return None
 
 
@@ -251,7 +276,8 @@ def refresh_export(
         engine_dir = _workspace_root() / "engine"
     for cmd in (
         ["lake", "build", "PrisonersDilemma", "OutcomeCheck"],
-        ["lake", "exe", "export_outcomes", str(export_file.resolve())],
+        ["lake", "exe", "export_outcomes", str(export_file.resolve()),
+         str(_TAU_EXPORT_FILE.resolve())],
     ):
         proc = subprocess.run(cmd, cwd=engine_dir, capture_output=True, text=True, check=False)
         if proc.returncode != 0:

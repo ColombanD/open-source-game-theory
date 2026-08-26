@@ -32,16 +32,25 @@ initialize outcomeAttr : TagAttribute ←
   registerTagAttribute `outcome
     "outcome-matrix cell; validated by #check_outcome_theorems"
 
+/-- Mark a theorem as a tau BIT ROW (`Tau/RowSpec.lean`); validated by `#check_tau_rows`
+    (`Tau/Lint.lean`), exported to `app/generated/tau_rows.json`. -/
+initialize tauRowAttr : TagAttribute ←
+  registerTagAttribute `tau_row
+    "tau bit row; validated by #check_tau_rows"
+
 /-- Every tagged declaration, sorted for a deterministic export.
 
     `getState` alone returns ONLY the module currently being elaborated — imported tags
     live per-module and must be read with `getModuleEntries`. Reading just the state
     silently yields 0 tags everywhere except the defining module, which looks exactly
     like "nobody tagged anything" rather than like a bug. -/
-def taggedOutcomes (env : Environment) : Array Name := Id.run do
-  let mut out := (outcomeAttr.ext.getState env).toArray
+def taggedBy (attr : TagAttribute) (env : Environment) : Array Name := Id.run do
+  let mut out := (attr.ext.getState env).toArray
   for i in [0 : env.header.moduleNames.size] do
-    out := out ++ outcomeAttr.ext.getModuleEntries env i
+    out := out ++ attr.ext.getModuleEntries env i
   return out.qsort (·.toString < ·.toString)
+
+def taggedOutcomes (env : Environment) : Array Name := taggedBy outcomeAttr env
+def taggedTauRows (env : Environment) : Array Name := taggedBy tauRowAttr env
 
 end PD.Outcome

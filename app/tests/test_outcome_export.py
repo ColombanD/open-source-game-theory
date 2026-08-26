@@ -182,8 +182,9 @@ def test_export_staleness_is_quiet_when_current(tmp_path) -> None:
     (theorems / "A" / "vs_B.lean").write_text("@[outcome]\ntheorem x : True := trivial\n")
     export = tmp_path / "outcome_theorems.json"
     export.write_text(json.dumps({"theorems": [{}]}), encoding="utf-8")
-    # The export was written AFTER the source, so no mtime hint fires either.
-    assert export_staleness(export, theorems) is None
+    # The export was written AFTER the source, so no mtime hint fires either. (The tau
+    # check is pointed at a non-directory so this stays about the base export.)
+    assert export_staleness(export, theorems, tau_phase_dir=tmp_path / "no-tau") is None
 
 
 def test_committed_export_is_not_stale() -> None:
@@ -196,3 +197,40 @@ def test_committed_export_is_not_stale() -> None:
     reason = export_staleness(_EXPORT_FILE, theorems)
     # The mtime hint is advisory (a checkout can touch files); the COUNT must agree.
     assert reason is None or "newer than the export" in reason, reason
+
+
+# ── the tau rows export ────────────────────────────────────────────────────────
+
+_TAU_EXPORT = _EXPORT_FILE.parent / "tau_rows.json"
+
+
+@pytest.mark.skipif(not _TAU_EXPORT.exists(), reason="tau_rows.json not generated yet")
+def test_tau_export_has_one_row_per_template() -> None:
+    """The Lean census guarantees one `@[tau_row]` per `Tmpl`; the export carries it."""
+    from pd_runner.tau.def4_theorems import TAU_ORDER, kernel_bits
+
+    data = json.loads(_TAU_EXPORT.read_text(encoding="utf-8"))
+    assert tuple(data["order"]) == TAU_ORDER
+    assert sorted(r["template"] for r in data["rows"]) == sorted(TAU_ORDER)
+    for r in data["rows"]:
+        assert r["order"] in ("tauOrder", "tauOrderInit"), r
+        assert set(r["bits"].values()) <= {"C", "D"}, r
+    # The prefix row (τ(Mirror)) is the only one short of the full order, and the
+    # reader fills its diagonal with "N".
+    prefix = [r["template"] for r in data["rows"] if r["order"] == "tauOrderInit"]
+    assert prefix == ["mirror"]
+    assert kernel_bits()["mirror"]["mirror"] == "N"
+
+
+@pytest.mark.skipif(not _TAU_EXPORT.exists(), reason="tau_rows.json not generated yet")
+def test_hand_edited_tau_export_is_rejected(tmp_path) -> None:
+    from pd_runner.tau.def4_theorems import kernel_bits
+
+    data = json.loads(_TAU_EXPORT.read_text(encoding="utf-8"))
+    row = data["rows"][0]
+    slot = next(iter(row["bits"]))
+    row["bits"][slot] = "D" if row["bits"][slot] == "C" else "C"
+    forged = tmp_path / "tau_rows.json"
+    forged.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(ValueError, match="source_digest"):
+        kernel_bits(forged)

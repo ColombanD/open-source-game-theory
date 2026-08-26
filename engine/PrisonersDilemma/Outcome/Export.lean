@@ -1,11 +1,12 @@
 import PrisonersDilemma.Outcome.Lint
+import PrisonersDilemma.Tau.Lint
 import Lean
 
 /-!
 # JSON export of the outcome matrix
 
-`lake exe export_outcomes [out.json]` writes the `@[outcome]`-tagged cells as structured
-data, replacing the regex scraping in `app/src/pd_runner/eval/outcome_matrix.py`. The
+`lake exe export_outcomes [out.json] [tau_rows.json]` writes the `@[outcome]`-tagged cells
+(and the `@[tau_row]` bit rows, `Tau/RowSpec.lean`) as structured data, replacing the regex scraping in `app/src/pd_runner/eval/outcome_matrix.py`. The
 artifact is COMMITTED so the Python side (tests, the FastAPI service) works without a Lean
 toolchain; `source_digest` lets the linter detect a stale or hand-edited file.
 
@@ -51,6 +52,26 @@ def buildJson (cells : Array CellInfo) : Json :=
     ("theorems",       Json.arr rows)
   ]
 
+/-- One tau row: the template, its order, and its bits keyed by slot. -/
+def rowJson (r : PD.Tau.RowInfo) : Json :=
+  Json.mkObj [
+    ("name",     Json.str (shortName r.name).toString),
+    ("module",   Json.str r.module.toString),
+    ("template", Json.str r.template.toString),
+    ("order",    Json.str r.order.toString),
+    ("bits",     Json.mkObj (r.bits.toList.map fun (s, a) => (s.toString, Json.str a.toString)))
+  ]
+
+def buildTauJson (rows : Array PD.Tau.RowInfo) (order : Array Name) : Json :=
+  let sorted := rows.qsort fun a b => a.template.toString < b.template.toString
+  let rs := sorted.map rowJson
+  Json.mkObj [
+    ("schema_version", Json.num 1),
+    ("source_digest",  Json.str (toString (digestOf (rs.map fun r => r.compress)))),
+    ("order",          Json.arr (order.map fun n => Json.str (shortName n).toString)),
+    ("rows",           Json.arr rs)
+  ]
+
 end PD.Outcome
 
 open Lean PD.Outcome in
@@ -59,6 +80,9 @@ open Lean PD.Outcome in
 def main (args : List String) : IO UInt32 := do
   let out : System.FilePath :=
     args.head?.getD "../app/generated/outcome_theorems.json"
+  let tauOut : System.FilePath := match args with
+    | _ :: t :: _ => t
+    | _           => "../app/generated/tau_rows.json"
   initSearchPath (← findSysroot)
   let env ← importModules #[{ module := `PrisonersDilemma }] {}
   let tagged := taggedOutcomes env
@@ -72,4 +96,12 @@ def main (args : List String) : IO UInt32 := do
   let doc := buildJson cells
   IO.FS.writeFile out (doc.pretty ++ "\n")
   IO.println s!"wrote {cells.size} outcome cells to {out}"
+  let tauAct : MetaM (Array PD.Tau.RowInfo × Array Name) := do
+    let rows ← PD.Tau.inspectAllRows env
+    let order ← PD.Tau.listCtors (mkConst ``PD.Tau.tauOrder)
+    return (rows, order)
+  let ((rows, order), _) ← (tauAct.run').toIO
+    { fileName := "<export>", fileMap := default } { env }
+  IO.FS.writeFile tauOut ((buildTauJson rows order).pretty ++ "\n")
+  IO.println s!"wrote {rows.size} tau rows to {tauOut}"
   return 0

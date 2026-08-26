@@ -1,4 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(CupodTrollBot)'s phase — the full-mass cooperator (on THIS zoo).
@@ -32,15 +34,11 @@ theorem cupodTrollRow_plays {k : Nat} (hk : 3 ≤ k) :
   | .guardian | .dbot | .cupodTroll | .cimcic | .dimcid | .prudent | .mirror =>
       cupodTroll_plays_C _ (by decide)
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
-theorem cupodTrollBits {k : Nat} (hk : 3 ≤ k) (w : Tmpl → Nat) :
-    VoteBits (vecOf (tauZoo k) .cupodTroll w tauOrder)
-      [(w .coop, .C), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
-       (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .C), (w .prudent, .C), (w .mirror, .C)] :=
-  vecOf_bits (tauZoo k) .cupodTroll w cupodTrollRow tauOrder
-    fun T _ => cupodTrollRow_plays hk T
+/-- **τ(CupodTroll)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem cupodTrollRowSpec : RowSpec .cupodTroll tauOrder cupodTrollRow := ⟨2, fun k hk T _ => cupodTrollRow_plays (by omega) T⟩
 
 /-- **τ(CupodTrollBot)**: cooperates up to `trollMass` — everything but the
     weight of the one hypothesis it convicts. -/

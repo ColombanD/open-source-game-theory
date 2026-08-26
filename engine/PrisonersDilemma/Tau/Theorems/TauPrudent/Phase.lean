@@ -1,4 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(Prudent)'s phase (2026-08-25)
@@ -51,16 +53,13 @@ theorem prudentRow_plays :
   | prudent => exact prudent_quine_plays_D
   | mirror => exact h1 k (by omega)
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list). -/
-theorem prudentBits :
-    ∃ k₂, ∀ k, k₂ < k → ∀ (w : Tmpl → Nat),
-      VoteBits (vecOf (tauZoo k) .prudent w tauOrder)
-        [(w .coop, .D), (w .defect, .D), (w .tftSim, .D), (w .tftPf, .D),
-         (w .dupoc, .D), (w .ebot, .D), (w .just, .D), (w .obot, .D),
-         (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .D), (w .dimcid, .D), (w .prudent, .D), (w .mirror, .C)] := by
-  obtain ⟨k₂, hrow⟩ := prudentRow_plays
-  exact ⟨k₂, fun k hk w => vecOf_bits (tauZoo k) .prudent w prudentRow tauOrder (fun T _ => hrow k hk T)⟩
+/-- **τ(Prudent)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem prudentRowSpec : RowSpec .prudent tauOrder prudentRow := by
+  obtain ⟨k₂, h⟩ := prudentRow_plays
+  exact ⟨k₂, fun k hk T _ => h k hk T⟩
 
 /-- **τ(Prudent)'s phase** — boundary `θ ≤ prudentMass`. Unconditional. -/
 theorem tauPrudent_phase :

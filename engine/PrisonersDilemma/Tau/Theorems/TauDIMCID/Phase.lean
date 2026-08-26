@@ -1,6 +1,8 @@
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(DIMCID)'s phase — the last row (2026-08-25)
@@ -68,16 +70,13 @@ theorem dimcidRow_plays :
   | prudent => exact dimcid_prudent_plays_C
   | mirror => exact h2 k (by omega)
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list). -/
-theorem dimcidBits :
-    ∃ k₂, ∀ k, k₂ < k → ∀ (w : Tmpl → Nat),
-      VoteBits (vecOf (tauZoo k) .dimcid w tauOrder)
-        [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
-         (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-         (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .prudent, .C), (w .mirror, .D)] := by
-  obtain ⟨k₂, hrow⟩ := dimcidRow_plays
-  exact ⟨k₂, fun k hk w => vecOf_bits (tauZoo k) .dimcid w dimcidRow tauOrder (fun T _ => hrow k hk T)⟩
+/-- **τ(DIMCID)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem dimcidRowSpec : RowSpec .dimcid tauOrder dimcidRow := by
+  obtain ⟨k₂, h⟩ := dimcidRow_plays
+  exact ⟨k₂, fun k hk T _ => h k hk T⟩
 
 /-- **τ(DIMCID)'s phase** — boundary `θ ≤ dimcidMass`. Unconditional. -/
 theorem tauDIMCID_phase :

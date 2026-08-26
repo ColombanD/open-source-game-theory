@@ -1,4 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(TitForTatBot), behavioral variant — the δ_C column read by SIMULATION.
@@ -58,16 +60,17 @@ theorem tftSimRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6
   | .prudent    => simCopy_plays _ _ (pC .prudent)
   | .mirror     => simCopy_plays _ _ (pC .mirror)
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
-theorem tftSimBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (w : Tmpl → Nat) :
-    VoteBits (vecOf (tauZoo k) .tftSim w tauOrder)
-      [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
-       (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .prudent, .D), (w .mirror, .C)] :=
-  vecOf_bits (tauZoo k) .tftSim w tftSimRow tauOrder
-    fun T _ => tftSimRow_plays hk hkk h6 h10 hL hcg T
+/-- **τ(TFTSim)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem tftSimRowSpec : RowSpec .tftSim tauOrder tftSimRow := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 100 1000
+  refine ⟨K + 10, fun k hk T _ => ?_⟩
+  have hL : 100 * Nat.log2 k + 1000 ≤ k := hK k (by omega)
+  have := Nat.log2_le_self k
+  exact tftSimRow_plays (by omega) (by simp only [c_guard, numCost]; omega) (by omega) (by omega) hL
+    (by simp only [c_guard, numCost]; omega) T
 
 /-- **τ(TitForTatBot), behavioral** — boundary `θ ≤ simMass` (incl. Guardian). -/
 theorem tauTFTSim_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)

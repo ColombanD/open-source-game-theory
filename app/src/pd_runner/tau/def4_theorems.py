@@ -1,29 +1,32 @@
 """Fetch the Def-4 KERNEL bit tables from the Lean library.
 
-Under the refined Def 4 (the source lift, `DEF4_TVOTE_ROADMAP.md`), each tau bot's
+Under the refined Def 4 (the source lift, `Research/Notes/TAUBOTS.md`), each tau bot's
 entire per-hypothesis content is its BIT TABLE — what each compiled instance plays —
-certified in `Tau/Theorems/<Bot>/Phase.lean` as a `VoteBits` theorem per template:
+certified in `Tau/Theorems/<Bot>/Phase.lean` as an UNCONDITIONAL `RowSpec` theorem
+(`Tau/RowSpec.lean`, tagged `@[tau_row]`):
 
-    theorem eBits ... :
-        VoteBits (vecOf (tauZoo k) .ebot w tauOrder)
-          [(w .coop, .D), (w .defect, .D), (w .tftSim, .C),
-           (w .tftPf, .C), (w .dupoc, .C), (w .ebot, .D)] := ...
+    @[tau_row] theorem dupocRowSpec : RowSpec .dupoc tauOrder dupocRow
 
-This module scans those theorems (purely static — no Lean invocation; the kernel
-already checked every statement) and exposes them as per-template action rows, so
-`compare.py` can verify the Python spec-mirror (`def4.decide`) against the KERNEL
-rather than trusting its own arithmetic. That check is load-bearing history: the
-kernel-vs-model discipline caught five real Python bugs during milestone 1 and the
-inverted stipulation that triggered the 2026-08-12 audit.
+The Lean linter (`Tau/Lint.lean`) validates every tagged row against the roster and
+EVALUATES the row function to literal bits; `lake exe export_outcomes` writes them to
+`app/generated/tau_rows.json` (digest-protected). This module reads that file, so
+`compare.py` verifies the Python side against the KERNEL rather than trusting its own
+arithmetic. That check is load-bearing history: the kernel-vs-model discipline caught
+five real Python bugs during milestone 1 and the inverted stipulation that triggered the
+2026-08-12 audit.
 
-**Scope.** Only the six-template `tauZoo` has bit theorems. A template modelled in
-Python but absent here has NO certified row, and `kernel_bits` omits it — absence is
-the honest signal that a row is predicted rather than proven.
+Until 2026-08-27 this module regex-scanned a literal `VoteBits` list out of the source —
+and could not see that the scanned theorem was CONDITIONAL on Löb-gated hypotheses
+discharged only in the phase theorem. The exported rows are unconditional at large `k`.
+
+**Scope.** A template with no tagged row has no certified bits and `kernel_bits` omits
+it — absence is the honest signal that a row is predicted rather than proven (the Lean
+census makes that a build failure, so in practice every `Tmpl` has a row).
 """
 
 from __future__ import annotations
 
-import re
+import json
 from pathlib import Path
 
 
@@ -35,69 +38,67 @@ def _workspace_root() -> Path:
             return parent
     raise FileNotFoundError(
         "cannot locate the workspace root (no engine/PrisonersDilemma above "
-        f"{p}) — pass an explicit path to scan_bit_theorems"
+        f"{p}) — pass an explicit path to kernel_bits"
     )
 
 
-PHASE_GLOB = "engine/PrisonersDilemma/Tau/Theorems/*/Phase.lean"
+TAU_EXPORT = "app/generated/tau_rows.json"
 
 TAU_ORDER: tuple[str, ...] = (
     "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian",
     "dbot", "cupodTroll", "cupod", "cimcic", "dimcid", "prudent", "mirror")
-"""The Lean `tauOrder` slot order — every bit list is stated in this order."""
+"""The Lean `tauOrder` slot order. The export carries the kernel's own copy and
+`kernel_bits` refuses to run if the two disagree."""
 
-_BITS_RE = re.compile(
-    r"theorem\s+(\w+)\s.*?VoteBits\s*\(vecOf\s*\(tauZoo\s+k\)\s*\.(\w+)\s+w\s+(tauOrder|tauOrderInit)\)\s*"
-    r"\[(.*?)\]",
-    re.S,
-)
-# A row stated over `tauOrderInit` (all slots but the last) is a PREFIX row: the
-# bot's own diagonal entry diverges, so it has no play and the vote never reaches
-# it in the C-regime. The scanner records that slot as "N" — the same fifth state
-# the base matrix uses for a proven-`none` outcome (MirrorBot's self-play), so the
-# comparison can say "agrees" there rather than inventing a D.
-_PREFIX_ORDER: tuple[str, ...] = TAU_ORDER[:-1]
-_DIVERGENT_SLOT = TAU_ORDER[-1]
-_ENTRY_RE = re.compile(r"\(w\s*\.(\w+)\s*,\s*\.([CD])\)")
+# A slot the row's order does not cover (τ(Mirror)'s divergent diagonal, stated over
+# `tauOrderInit`) is recorded as "N" — the same fifth state the base matrix uses for a
+# proven-`none` outcome, so the comparison can say "agrees" there rather than inventing a D.
+_DIVERGENT = "N"
+
+
+def _load_export(path: Path | None = None) -> dict:
+    export = path if path is not None else _workspace_root() / TAU_EXPORT
+    if not export.exists():
+        raise FileNotFoundError(
+            f"{export} not found — run `lake exe export_outcomes` (or "
+            "`uv run python -m pd_runner.eval.outcome_matrix --refresh`)"
+        )
+    data = json.loads(export.read_text(encoding="utf-8"))
+    if data.get("schema_version") != 1:
+        raise ValueError(f"{export}: unsupported schema_version {data.get('schema_version')!r}")
+    from pd_runner.eval.outcome_matrix import _verify_digest
+
+    _verify_digest(data, export, key="rows")
+    order = tuple(data["order"])
+    if order != TAU_ORDER:
+        raise ValueError(
+            f"{export}: the kernel's tauOrder {order} differs from TAU_ORDER — update the "
+            "constant"
+        )
+    return data
 
 
 def scan_bit_theorems(path: Path | None = None) -> dict[str, dict[str, str]]:
-    """Parse the per-bot `Phase.lean` files → `{lean_tmpl: {slot_tmpl: "C"|"D"}}`.
+    """The kernel rows → `{lean_tmpl: {slot_tmpl: "C"|"D"|"N"}}`.
 
-    Raises on structural surprises (wrong slot order, missing slots): a drifted
-    source must fail loudly, never silently return a wrong table.
+    Kept under its historical name; it reads the export, not the sources.
     """
-    if path is not None:
-        src = path.read_text()
-    else:
-        files = sorted(_workspace_root().glob(PHASE_GLOB))
-        if not files:
-            raise FileNotFoundError(f"no Phase.lean files match {PHASE_GLOB}")
-        src = "\n".join(f.read_text() for f in files)
+    data = _load_export(path)
     tables: dict[str, dict[str, str]] = {}
-    for m in _BITS_RE.finditer(src):
-        _name, tmpl, order, entries_src = m.group(1), m.group(2), m.group(3), m.group(4)
-        entries = _ENTRY_RE.findall(entries_src)
-        slots = tuple(slot for slot, _ in entries)
-        expected = TAU_ORDER if order == "tauOrder" else _PREFIX_ORDER
-        if slots != expected:
-            raise ValueError(
-                f"bit theorem for .{tmpl}: slots {slots} do not match {order} "
-                f"{expected} — the Phase files drifted; update the scanner"
-            )
-        table = {slot: action for slot, action in entries}
-        if order == "tauOrderInit":
-            table[_DIVERGENT_SLOT] = "N"
-        tables[tmpl] = table
+    for row in data["rows"]:
+        bits = dict(row["bits"])
+        unknown = set(bits) - set(TAU_ORDER)
+        if unknown:
+            raise ValueError(f"row {row['template']}: unknown slots {sorted(unknown)}")
+        tables[row["template"]] = {s: bits.get(s, _DIVERGENT) for s in TAU_ORDER}
     if not tables:
-        raise ValueError("no VoteBits theorems found — the Phase files drifted")
+        raise ValueError("tau_rows.json holds no rows — the export is empty")
     return tables
 
 
 def kernel_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
     """The kernel-certified bit tables, keyed by Lean `Tmpl` constructor names."""
     return scan_bit_theorems(path)
-
 
 
 # ── The template name tables ───────────────────────────────────────────────────
@@ -197,7 +198,7 @@ SEPARATING_BOTS: tuple[str, ...] = CONTROL_BOTS + ("EBot",)
 
 def main() -> None:
     tables = kernel_bits()
-    print("kernel bit tables (Tau/Theorems/*/Phase.lean, slot order = tauOrder):")
+    print("kernel bit tables (app/generated/tau_rows.json, slot order = tauOrder):")
     for tmpl in TAU_ORDER:
         row = tables.get(tmpl)
         if row is None:

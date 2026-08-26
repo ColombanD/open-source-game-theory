@@ -1,6 +1,6 @@
 """Def 3 ≡ Def 4 — the KERNEL-vs-BASE coincidence certification.
 
-Under the corrected Def 4 (the uniform source lift, `DEF4_TVOTE_ROADMAP.md`), the
+Under the corrected Def 4 (the uniform source lift, `Research/Notes/TAUBOTS.md`), the
 two definitions threshold the SAME per-hypothesis bit at large k on terminating
 cells — Def 3 reads it off the certified base matrix ("A's own action in
 `outcome(A, Bᵢ)`"), Def 4 reads it off the compiled instance. So this module's job

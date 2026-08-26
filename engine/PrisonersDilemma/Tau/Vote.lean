@@ -10,7 +10,7 @@ compiled shapes (play-lemmas, false-bit lemmas, bridges, glue) lives in
 `Tau/Theorems/Helpers.lean`, per the Tau-layout doctrine; `eval_det` was promoted to
 `Base/ValuationSoundness.lean`.
 
-The **refined Def 4** (`Research/Notes/DEF4_TVOTE_ROADMAP.md`) is the uniform structural
+The **refined Def 4** (`Research/Notes/TAUBOTS.md`) is the uniform structural
 SOURCE LIFT τ: lift base bot `A`'s code constructor-by-constructor, and let the player
 take ONE weighted vote over the COMPOUND per-hypothesis decisions
 

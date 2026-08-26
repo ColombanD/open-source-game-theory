@@ -1,6 +1,8 @@
 import PrisonersDilemma.Tau.Theorems.Columns
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(CIMCIC)'s phase — the conditional cooperator: the first `.impl`-guard row.
@@ -66,25 +68,24 @@ theorem cimcicRow_plays {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
   | .cimcic     => cimcic_quine_plays_C hL
   | .dimcid     => cimcic_dimcid_plays_D
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
-theorem cimcicBits {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hcg : c_guard k + 20 ≤ k)
-    (hcq : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = true)
-    (hmdP : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .dupoc))
-      (.bot (inst (tauZoo k) .cimcic .dupoc)) (inst (tauZoo k) .cimcic .dupoc)
-      = some (cimcicRow .dupoc))
-    (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .mirror))
-      (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
-      = some (cimcicRow .mirror))
-    (w : Tmpl → Nat) :
-    VoteBits (vecOf (tauZoo k) .cimcic w tauOrder)
-      [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
-       (w .dupoc, .C), (w .ebot, .D), (w .just, .C), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .D),
-       (w .cimcic, .C), (w .dimcid, .D), (w .prudent, .D), (w .mirror, .C)] :=
-  vecOf_bits (tauZoo k) .cimcic w cimcicRow tauOrder
-    fun T _ => cimcicRow_plays hL hcg hcq hmdP hmirP T
+/-- **τ(CIMCIC)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem cimcicRowSpec : RowSpec .cimcic tauOrder cimcicRow := by
+  obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
+  obtain ⟨kP, hkP⟩ := cimcic_dupoc_plays_C
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 100 1000
+  obtain ⟨kX, hkX⟩ := cimcic_mirror_plays_C
+  refine ⟨max (max kM kP) (max kA kX), fun k hk T _ => ?_⟩
+  have hcq := hkM k (by omega)
+  have hmdP := hkP k (by omega)
+  have hL : 100 * Nat.log2 k + 1000 ≤ k := hkA k (by omega)
+  have hmirP := hkX k (by omega)
+  have hcg : c_guard k + 20 ≤ k := by
+    have := Nat.log2_le_self k
+    simp only [c_guard, numCost]; omega
+  exact cimcicRow_plays hL hcg hcq hmdP hmirP T
 
 /-- **τ(CIMCIC)** — boundary `θ ≤ cimcicMass`. UNCONDITIONAL since 2026-08-24:
     both entangled slots (dupoc, mirror) are closed by bounded Löb. -/

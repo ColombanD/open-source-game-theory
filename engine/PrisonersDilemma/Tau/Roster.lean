@@ -65,4 +65,13 @@ def tauOrder : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
    .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .mirror]
 
+/-- `tauOrder` without its last slot — the PREFIX row order for a template whose own
+    diagonal diverges (τ(Mirror)): the vote never reaches the last entry in the C-regime,
+    so its row is stated over the prefix and the app records the missing slot as `N`. -/
+def tauOrderInit : List Tmpl :=
+  [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
+   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent]
+
+theorem tauOrder_eq : tauOrder = tauOrderInit ++ [.mirror] := rfl
+
 end PD.Tau

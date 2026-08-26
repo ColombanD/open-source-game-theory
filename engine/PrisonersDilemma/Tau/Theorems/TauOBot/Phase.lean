@@ -1,4 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(OBot)'s phase — the zoo's NARROWEST boundary, `θ ≤ obotMass`.
@@ -61,16 +63,17 @@ theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
   | .prudent    => simTestD_fires _ _ (pC .prudent)
   | .mirror     => simTestD_falls _ _ (pC .mirror) (simTestD_fires _ _ (pD .mirror))
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
-theorem obotBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (w : Tmpl → Nat) :
-    VoteBits (vecOf (tauZoo k) .obot w tauOrder)
-      [(w .coop, .C), (w .defect, .D), (w .tftSim, .D), (w .tftPf, .D),
-       (w .dupoc, .D), (w .ebot, .D), (w .just, .D), (w .obot, .D),
-       (w .guardian, .D), (w .dbot, .D), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .D), (w .dimcid, .D), (w .prudent, .D), (w .mirror, .D)] :=
-  vecOf_bits (tauZoo k) .obot w obotRow tauOrder
-    fun T _ => obotRow_plays hk hkk h6 h10 hL hcg T
+/-- **τ(OBot)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem obotRowSpec : RowSpec .obot tauOrder obotRow := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 100 1000
+  refine ⟨K + 10, fun k hk T _ => ?_⟩
+  have hL : 100 * Nat.log2 k + 1000 ≤ k := hK k (by omega)
+  have := Nat.log2_le_self k
+  exact obotRow_plays (by omega) (by simp only [c_guard, numCost]; omega) (by omega) (by omega) hL
+    (by simp only [c_guard, numCost]; omega) T
 
 /-- **τ(OBot)** — boundary `θ ≤ obotMass`. -/
 theorem tauOBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)

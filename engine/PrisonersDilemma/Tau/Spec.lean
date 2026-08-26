@@ -1,7 +1,7 @@
 import PrisonersDilemma.Tau.Vote
 
 /-!
-# Tau/Spec — the bot-spec DSL and its compiler (Phase 5, `DEF4_TVOTE_ROADMAP.md` §6)
+# Tau/Spec — the bot-spec DSL and its compiler (`Research/Notes/TAUBOTS.md`)
 
 **Machinery only** (since the 2026-08-18 per-bot-file reorganization): the spec
 TYPES, the compiler, and the vector builder — all generic in the zoo index `ι`.
@@ -280,6 +280,12 @@ def inst (Z : Zoo ι) [DecidableEq ι] (A T : ι) : Prog :=
 def vecOf (Z : Zoo ι) [DecidableEq ι] (A : ι) (w : ι → Nat) : List ι → VoteList
   | [] => .nil
   | T :: rest => .cons (w T) (inst Z A T) (vecOf Z A w rest)
+
+theorem vecOf_append (Z : Zoo ι) [DecidableEq ι] (A : ι) (w : ι → Nat) :
+    ∀ (l₁ l₂ : List ι), vecOf Z A w (l₁ ++ l₂) = (vecOf Z A w l₁).app (vecOf Z A w l₂)
+  | [], _ => rfl
+  | T :: rest, l₂ => by
+      simp only [List.cons_append, vecOf, VoteList.app, vecOf_append Z A w rest l₂]
 
 /-- **The generic bits lemma** — ONE list induction replacing every per-bot
     `.cons`-chain: supply, per hypothesis, what A's instance plays, and the whole

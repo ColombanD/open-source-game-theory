@@ -1,6 +1,6 @@
 """TauBots — graded transparency over the zoo.
 
-Design note: `engine/PrisonersDilemma/Research/Notes/TAUBOT_TRANSPARENCY_DESIGN.md`.
+Design note: `engine/PrisonersDilemma/Research/Notes/TAUBOTS.md`.
 
 v1a is the Python explorer: the tau layer under Def 3 is pure matrix
 arithmetic, so the whole σ/α sweep runs here over the Lean-verified outcome

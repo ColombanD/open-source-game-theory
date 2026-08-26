@@ -1,5 +1,6 @@
 import PrisonersDilemma
 import PrisonersDilemma.Outcome.Lint
+import PrisonersDilemma.Tau.Lint
 
 /-!
 # The build-time outcome check
@@ -15,3 +16,7 @@ commands, so a command there would break the first LLM-written theorem that land
 -- (`(llm_)outcome_<Left>_vs_<Right>`, both bot directories) is `@[outcome]`-tagged. A
 -- forgotten tag is a build failure rather than a silently missing matrix cell.
 #check_outcome_theorems "PrisonersDilemma/Theorems"
+
+-- The tau twin: every `Tmpl` constructor has exactly one `@[tau_row]` row on the
+-- `RowSpec` template (`Tau/RowSpec.lean`).
+#check_tau_rows

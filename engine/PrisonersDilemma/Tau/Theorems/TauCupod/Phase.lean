@@ -1,6 +1,8 @@
 import PrisonersDilemma.Tau.Theorems.Columns
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(CupodBot)'s phase — the suspicious cooperator, Löb-gated TWICE over.
@@ -75,32 +77,29 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
   | .mirror     => hmirP
   | .dimcid     => hdcP
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. The
-    `.dupoc` literal is the CANONICAL value of the open cell, conditional on
-    `hcdP`. -/
-theorem cupodBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k)
-    (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
-    -- the mirror×cupod entangled cell (mutual simulation), Löb-gated
-    (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
-      = cupodColBit .mirror)
-    (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .mirror))
-      (.bot (inst (tauZoo k) .cupod .mirror)) (inst (tauZoo k) .cupod .mirror)
-      = some (cupodRow .mirror))
-    -- the ALIGNED dimcid pair: mutual Löb on defection, gated like the diagonal
-    (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
-      = cupodColBit .dimcid)
-    (hdcP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
-      (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
-      = some Action.D)
-    (w : Tmpl → Nat) :
-    VoteBits (vecOf (tauZoo k) .cupod w tauOrder)
-      [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
-       (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .D), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .prudent, .C), (w .mirror, .D)] :=
-  vecOf_bits (tauZoo k) .cupod w cupodRow tauOrder
-    fun T _ => cupodRow_plays hk hkk h6 h10 hquine hmirCu hmirP hdc hdcP T
+/-- **τ(Cupod)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem cupodRowSpec : RowSpec .cupod tauOrder cupodRow := by
+  obtain ⟨kL, hkL⟩ := ps_probeD_inst_cupod_quine
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  obtain ⟨kX, hkX⟩ := ps_probeD_mirror_cupod
+  obtain ⟨kY, hkY⟩ := cupod_mirror_plays_D
+  obtain ⟨kD, hkD⟩ := ps_probeD_inst_dimcid_cupod
+  obtain ⟨kE, hkE⟩ := cupod_dimcid_plays_D
+  refine ⟨max (max kL kA) (max (max kX kY) (max kD kE)), fun k hk T _ => ?_⟩
+  have hdc := hkD k (by omega)
+  have hdcP := hkE k (by omega)
+  have hquine := hkL k (by omega)
+  have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
+  have hmirCu := hkX k (by omega)
+  have hmirP := hkY k (by omega)
+  have hk2 : 2 ≤ k := by omega
+  have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
+  have h6 : 6 ≤ k := by omega
+  have h10 : 10 ≤ k := by omega
+  exact cupodRow_plays hk2 hkk h6 h10 hquine hmirCu hmirP hdc hdcP T
 
 /-- **τ(CupodBot)** — boundary `θ ≤ cupodMass`. UNCONDITIONAL since 2026-08-24:
     its diagonal is the punish-polarity quine, its mirror slot a Löb fixpoint on

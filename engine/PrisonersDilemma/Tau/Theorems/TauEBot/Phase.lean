@@ -1,5 +1,8 @@
 import PrisonersDilemma.Tau.Theorems.Columns
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
+import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
 
 /-!
 # τ(EBot)'s phase — the ONE-SIDED boundary `θ ≤ eMass`.
@@ -76,18 +79,18 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
   | .mirror     => simWatchC_falls _ _ mirror_defect_plays_D
       (simWatchC_fires _ _ mirror_coop_plays_C)
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
-theorem eBits {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k)
-    (hpm : ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror))
-      (.bot (inst (tauZoo k) .prudent .mirror)) (inst (tauZoo k) .prudent .mirror)
-      = some Action.C) (w : Tmpl → Nat) :
-    VoteBits (vecOf (tauZoo k) .ebot w tauOrder)
-      [(w .coop, .D), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
-       (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .prudent, .C), (w .mirror, .C)] :=
-  vecOf_bits (tauZoo k) .ebot w eRow tauOrder fun T _ => eRow_plays hk hkk h6 h10 hL hcg hpm T
+/-- **τ(EBot)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem ebotRowSpec : RowSpec .ebot tauOrder eRow := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 100 1000
+  obtain ⟨kP, hP⟩ := prudent_mirror_plays_C
+  refine ⟨max (K + 10) kP, fun k hk T _ => ?_⟩
+  have hL : 100 * Nat.log2 k + 1000 ≤ k := hK k (by omega)
+  have := Nat.log2_le_self k
+  exact eRow_plays (by omega) (by simp only [c_guard, numCost]; omega) (by omega) (by omega) hL
+    (by simp only [c_guard, numCost]; omega) (hP k (by omega)) T
 
 /-- **τ(EBot)** — one-sided boundary `θ ≤ eMass`, no window. -/
 theorem tauEBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)

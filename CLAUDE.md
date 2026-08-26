@@ -461,15 +461,27 @@ Workshop paper target: ICML math workshop, 8 pages, framing "first mechanized OS
 
 ## Phase 5 — TauBots: graded transparency (upcoming, design fixed 2026-07-31)
 
-**Authoritative design notes: `engine/PrisonersDilemma/Research/Notes/TAUBOT_TRANSPARENCY_DESIGN.md`**
-(Defs 1–3, the σ families, and the Def-4 history) **and
-`DEF4_TVOTE_ROADMAP.md`** (the REFINED Def 4 — the uniform source lift, fully
+**Authoritative design note: `engine/PrisonersDilemma/Research/Notes/TAUBOTS.md`**
+(condensed 2026-08-26 from the former design note + the Def-4/Def-5 roadmaps, all
+deleted: the definition, what landed by date, dead ends, and remaining debt) — covering
+Defs 1–3, the σ families, and the REFINED Def 4 (the uniform source lift, fully
 executed 2026-08-18: the `tvote` action-vote constructor replaced `tsearch`, bots
 are Spec-DSL rows compiled by `Tau/Spec.lean` — a TREE DSL since 2026-08-24,
 `Spec = const | sim | ite | search`, i.e. `Prog` with a `Target` hole where the base
 says "`.opp` facing Q", so every τ-bot is written as its base source (τ(Mirror) =
 `sim self`; classifiers' compiled terms byte-identical to the former stage rows) —
-and the Python comparison now CERTIFIES Def 3 ≡ Def 4 at large k; 2026-08-24 evening: `Matrix.lean` removed — the per-bot `Phase.lean` theorems ARE the tau matrix (tau players are `.opp`-free, so a match is two independent plays) — 2026-08-25: ALL 15 phases stated and unconditional — τ(Mirror)'s with an honest `none` regime above its prefix mass, τ(DIMCID)'s via the new provability-tracking TOWER CENSUS `Base/TowerCensus.lean` for its two then-D searcher partners; certification 225/219/6, no missing rows; 2026-08-25 evening: PrudentBot ported at a SINGLE budget (`.prudent` before `.mirror`; row `D` everywhere but the mirror, closed by the new core rule `Pf.botSysSearchThenSearch` + Löb; 16 templates; certification 225/219/6 over the 15 templates with a base bot — `TauTFTPf` (the prover reading of TFT, no base bot) is compared nowhere since 2026-08-25, so all six whitelist cells are budget-staggered dagger cells: CupodTroll vs Dupoc/Just, and the base `PrudentBot (2k+64)` theorems vs DupocBot/JustBot both ways — and each is now certified on BOTH sides in base: the `_samek` theorems (`outcome_PrudentBot_vs_DupocBot_samek = (D, D)`, `outcome_JustBot_vs_PrudentBot_samek = (D, D)`, `outcome_DupocBot_vs_CupodTrollBot_samek = (D, C)`, `outcome_JustBot_vs_CupodTrollBot_samek = (D, C)`, via the bare else-play kernel `no_provable_searcherElse_tail`) prove the tau value at ONE budget, outside the strict matrix scan). **The porting phase is CLOSED at 16**: WaryBot/LegibleBot/OptimBot are excluded because their base rows are floor-only or open at a single budget (the `.neg` refutation-floor wall; the two-budget box guard) — see the roadmap's 08-25 addenda) — read them before touching anything tau. Summary of the FIXED decisions:
+and the Python comparison now CERTIFIES Def 3 ≡ Def 4 at large k; 2026-08-24 evening: `Matrix.lean` removed — the per-bot `Phase.lean` theorems ARE the tau matrix (tau players are `.opp`-free, so a match is two independent plays) — 2026-08-25: ALL 15 phases stated and unconditional — τ(Mirror)'s with an honest `none` regime above its prefix mass, τ(DIMCID)'s via the new provability-tracking TOWER CENSUS `Base/TowerCensus.lean` for its two then-D searcher partners; certification 225/219/6, no missing rows; 2026-08-25 evening: PrudentBot ported at a SINGLE budget (`.prudent` before `.mirror`; row `D` everywhere but the mirror, closed by the new core rule `Pf.botSysSearchThenSearch` + Löb; 16 templates; certification 225/219/6 over the 15 templates with a base bot — `TauTFTPf` (the prover reading of TFT, no base bot) is compared nowhere since 2026-08-25, so all six whitelist cells are budget-staggered dagger cells: CupodTroll vs Dupoc/Just, and the base `PrudentBot (2k+64)` theorems vs DupocBot/JustBot both ways — and each is now certified on BOTH sides in base: the `_samek` theorems (`outcome_PrudentBot_vs_DupocBot_samek = (D, D)`, `outcome_JustBot_vs_PrudentBot_samek = (D, D)`, `outcome_DupocBot_vs_CupodTrollBot_samek = (D, C)`, `outcome_JustBot_vs_CupodTrollBot_samek = (D, C)`, via the bare else-play kernel `no_provable_searcherElse_tail`) prove the tau value at ONE budget, outside the strict matrix scan). **The porting phase is CLOSED at 16**: WaryBot/LegibleBot/OptimBot are excluded because their base rows are floor-only or open at a single budget (the `.neg` refutation-floor wall; the two-budget box guard) — see `TAUBOTS.md` §4) — read it before touching anything tau. Summary of the FIXED decisions:
+
+**Tau rows are linted and exported like the base matrix (2026-08-27).** Each
+`Tau/Theorems/<Bot>/Phase.lean` states its bit row as `@[tau_row] theorem <t>RowSpec :
+RowSpec .<t> tauOrder <t>Row` (`Tau/RowSpec.lean` — unconditional at large `k`, the floors
+and Löb gates discharged inside; `RowSpec.bits` recovers the old `VoteBits` list;
+τ(Mirror)'s row is over `tauOrderInit`). `Tau/Lint.lean` validates every tagged row (literal
+template, order, row evaluated to bits by `whnf`, name = `<template>RowSpec`) and runs a
+ROSTER census (every `Tmpl` constructor has exactly one row) inside `lake build`;
+`lake exe export_outcomes` also writes `app/generated/tau_rows.json`, which is the ONLY
+thing `tau/def4_theorems.kernel_bits` reads (the source regex is gone). Before this the
+app scanned the CONDITIONAL `*Bits` theorems and could not see their Löb-gated hypotheses.
 
 - **What it is.** Partial transparency as a Harsanyi type space over the zoo: a bot
   receives a **signal** — candidates `B₁…Bₙ` with weights `pᵢ` (blur in the weights,

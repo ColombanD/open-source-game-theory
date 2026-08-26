@@ -1,4 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(DBot)'s phase — the punisher's boundary, `θ ≤ dbotMass`.
@@ -59,15 +61,13 @@ theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k)
   | .prudent    => dbot_plays_C_of_defect .prudent (pD .prudent)
   | .mirror     => dbot_plays_C_of_defect .mirror (pD .mirror)
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
-theorem dbotBits {k : Nat} (hk : 2 ≤ k)
-    (hL : 100 * Nat.log2 k + 1000 ≤ k) (w : Tmpl → Nat) :
-    VoteBits (vecOf (tauZoo k) .dbot w tauOrder)
-      [(w .coop, .D), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
-       (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .D), (w .cupodTroll, .D), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .prudent, .C), (w .mirror, .C)] :=
-  vecOf_bits (tauZoo k) .dbot w dbotRow tauOrder fun T _ => dbotRow_plays hk hL T
+/-- **τ(DBot)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem dbotRowSpec : RowSpec .dbot tauOrder dbotRow := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 100 1000
+  exact ⟨K + 1, fun k hk T _ => dbotRow_plays (by omega) (hK k (by omega)) T⟩
 
 /-- **τ(DBot)** — boundary `θ ≤ dbotMass` (everything but `w .coop`). -/
 theorem tauDBot_phase {k : Nat} (hk : 2 ≤ k)

@@ -1,4 +1,6 @@
 import PrisonersDilemma.Tau.Theorems.Columns
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(CooperateBot)'s phase — signal-blind: its whole mass cooperates.
@@ -18,14 +20,11 @@ theorem coopRow_plays (k : Nat) :
               (inst (tauZoo k) .coop T) = some (coopRow T) := by
   intro T; cases T <;> exact ⟨1, rfl⟩
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): `vecOf_bits`' mapped row, by defeq on the concrete zoo. -/
-theorem coopBits (k : Nat) (w : Tmpl → Nat) :
-    VoteBits (vecOf (tauZoo k) .coop w tauOrder)
-      [(w .coop, .C), (w .defect, .C), (w .tftSim, .C), (w .tftPf, .C),
-       (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .C),
-       (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .C), (w .cimcic, .C), (w .dimcid, .C), (w .prudent, .C), (w .mirror, .C)] :=
-  vecOf_bits (tauZoo k) .coop w coopRow tauOrder fun T _ => coopRow_plays k T
+/-- **τ(Cooperate)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem coopRowSpec : RowSpec .coop tauOrder coopRow := ⟨0, fun k _ T _ => coopRow_plays k T⟩
 
 /-- **τ(CooperateBot)**: cooperates at every θ within the total mass. -/
 theorem tauCooperate_phase (k : Nat) (w : Tmpl → Nat) (θ : Nat) (opponent : Prog) :

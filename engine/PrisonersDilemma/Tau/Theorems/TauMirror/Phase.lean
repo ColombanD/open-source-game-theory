@@ -8,6 +8,8 @@ import PrisonersDilemma.Tau.Theorems.TauOBot.Phase
 import PrisonersDilemma.Tau.Theorems.TauGuardian.Phase
 import PrisonersDilemma.Tau.Theorems.TauDBot.Phase
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Phase
+import PrisonersDilemma.Tau.RowSpec
+import PrisonersDilemma.Outcome.Attr
 
 /-!
 # τ(Mirror)'s phase — `C` below its prefix mass, honestly `none` above it
@@ -34,19 +36,6 @@ and the four entangled self-probers' cells from `TauMirror/Helpers`.
 open PD PD.BaseTheorems
 
 namespace PD.Tau
-
-/-- `tauOrder` without its last slot. -/
-def tauOrderInit : List Tmpl :=
-  [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent]
-
-theorem tauOrder_eq : tauOrder = tauOrderInit ++ [.mirror] := rfl
-
-theorem vecOf_append {ι : Type} (Z : Zoo ι) [DecidableEq ι] (A : ι) (w : ι → Nat) :
-    ∀ (l₁ l₂ : List ι), vecOf Z A w (l₁ ++ l₂) = (vecOf Z A w l₁).app (vecOf Z A w l₂)
-  | [], _ => rfl
-  | T :: rest, l₂ => by
-      simp only [List.cons_append, vecOf, VoteList.app, vecOf_append Z A w rest l₂]
 
 /-- What τ(Mirror) plays at each hypothesis: the hypothesis's own play against
     the mirror. The `.mirror` slot is never consulted below (the diagonal
@@ -123,17 +112,11 @@ theorem mirrorRow_plays :
   · exact h4 k (by omega)
   · exact h5 k (by omega)
 
-/-- The scanner-facing bit row (read by `app`'s `def4_theorems.py` — keep the
-    literal list): the 15-slot PREFIX over `tauOrderInit`; the diagonal is not an
-    entry (it diverges), which the scanner records as `N`. -/
-theorem mirrorBits :
-    ∃ k₂, ∀ k, k₂ < k → ∀ (w : Tmpl → Nat),
-      VoteBits (vecOf (tauZoo k) .mirror w tauOrderInit)
-        [(w .coop, .C), (w .defect, .D), (w .tftSim, .C), (w .tftPf, .C),
-         (w .dupoc, .C), (w .ebot, .C), (w .just, .C), (w .obot, .D),
-         (w .guardian, .C), (w .dbot, .C), (w .cupodTroll, .C), (w .cupod, .D), (w .cimcic, .C), (w .dimcid, .D), (w .prudent, .C)] := by
-  obtain ⟨k₂, hrow⟩ := mirrorRow_plays
-  exact ⟨k₂, fun k hk w => vecOf_bits (tauZoo k) .mirror w mirrorRow tauOrderInit (hrow k hk)⟩
+/-- **τ(Mirror)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
+    `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
+    Löb gates discharged inside. The former literal `VoteBits` list is `RowSpec.bits`. -/
+@[tau_row]
+theorem mirrorRowSpec : RowSpec .mirror tauOrderInit mirrorRow := mirrorRow_plays
 
 /-- **τ(Mirror)'s phase.** Boundary `θ ≤ mirrorMass`; above it the play is `none`. -/
 theorem tauMirror_phase :
