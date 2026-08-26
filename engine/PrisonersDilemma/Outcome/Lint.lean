@@ -200,8 +200,17 @@ open Lean Elab Command
     plain `lake build` — and therefore CI and the app's library writer — reject any
     off-template, mis-named, or untagged outcome theorem. -/
 elab "#check_outcome_theorems " dir:str " excluding " exc:str
-    " expecting " n:num " pending " p:num : command => do
-  let expected := n.getNat
+    n:(&" expecting " num)? " pending " p:num : command => do
+  -- `expecting <n>` is OPTIONAL. It was the migration counter: while theorems were
+  -- being moved onto the template it pinned the tagged count so the number could drop
+  -- deliberately but never drift. Once `pending` reaches 0 it inverts into a
+  -- maintenance tax — proving a NEW outcome theorem and tagging it correctly would
+  -- turn the build red until someone edited the literal, punishing the right action.
+  -- `pending 0` is the durable invariant ("no untagged outcome theorem exists"); the
+  -- count is not.
+  let expected? : Option Nat := match n with
+    | some stx => stx.raw[1].isNatLit?
+    | none     => none
   let pendingExpected := p.getNat
   let env ← getEnv
   let tagged := taggedOutcomes env
@@ -233,9 +242,10 @@ elab "#check_outcome_theorems " dir:str " excluding " exc:str
   unless stale.isEmpty do
     throwError "OUTCOME CENSUS: {stale.size} stale exclusion(s) — these no longer exist \
       on disk, so the allowlist is rotting:\n  {stale.toList}"
-  unless tagged.size == expected do
-    throwError "OUTCOME CENSUS: expected {expected} tagged outcome theorems, found \
-      {tagged.size}. If this change is intended, update the `expecting` literal."
+  if let some expected := expected? then
+    unless tagged.size == expected do
+      throwError "OUTCOME CENSUS: expected {expected} tagged outcome theorems, found \
+        {tagged.size}. If this change is intended, update the `expecting` literal."
   logInfo s!"outcome census OK — {tagged.size} tagged, {excluded.size} excluded, \
     {missing.size} pending migration, {onDisk.size} on disk"
 

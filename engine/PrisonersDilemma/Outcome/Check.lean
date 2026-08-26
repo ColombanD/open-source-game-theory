@@ -11,9 +11,14 @@ commands, so a command there would break the first LLM-written theorem that land
 `lake build` builds this target, so the census and validator run on every build and in CI.
 -/
 
--- `pending` is the migration counter: it may only ever go DOWN, and reaching 0 means
--- every outcome theorem is on-template. Until then an untagged theorem is tolerated but
--- the COUNT is pinned, so nothing new slips in untagged.
+-- `pending 0` is the durable invariant: EVERY `outcome_X_vs_Y` declaration on disk is
+-- either `@[outcome]`-tagged or listed in the exclusions file. A forgotten tag is a
+-- build failure rather than a silently missing matrix cell.
+--
+-- The optional `expecting <n>` clause is deliberately omitted. It was the migration
+-- counter, and pinning the tagged count is now a maintenance tax: proving a new outcome
+-- theorem and tagging it CORRECTLY would turn the build red until someone edited a
+-- literal. Re-add it only to freeze the matrix size on purpose.
 #check_outcome_theorems "PrisonersDilemma/Theorems"
   excluding "PrisonersDilemma/Outcome/exclusions.txt"
-  expecting 155 pending 0
+  pending 0
