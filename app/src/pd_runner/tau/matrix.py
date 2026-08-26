@@ -35,7 +35,7 @@ Conventions fixed 2026-08-03 (see the design note's "open design decisions"):
 2. **Budgets** — the exported matrix has already collapsed the budget
    dimension (`∃k` and large-`k` cells carry their action pair), so the tau
    layer reads the stable asymptotic outcome and `k` is not a dial in v1a.
-   Cell `shape` and `has_hypotheses` are retained for sensitivity analysis.
+   Cell `shape` and `staggered` are retained for sensitivity analysis.
 """
 
 from __future__ import annotations
@@ -371,7 +371,7 @@ class Cell:
     # Proved under extra side hypotheses (floor/size/budget guards) — the `†`
     # cells. Tracked so a sweep can report how much probability mass rests on
     # them and be re-run without them.
-    has_hypotheses: bool
+    staggered: bool
     # True when this cell was read off the REVERSED theorem (outcome_col_vs_row)
     # and swapped. Not a defect — the game is symmetric in the sense that
     # `outcome A B = (a, b)` iff `outcome B A = (b, a)` — but worth auditing.
@@ -418,7 +418,7 @@ class TauMatrix:
 
     @property
     def dagger_cells(self) -> tuple[tuple[str, str], ...]:
-        return tuple(k for k, c in self._cells.items() if c.has_hypotheses)
+        return tuple(k for k, c in self._cells.items() if c.staggered)
 
     @property
     def hypothetical_cells(self) -> tuple[tuple[str, str], ...]:
@@ -508,7 +508,7 @@ def load_tau_matrix(
                     row_action=pair[0],
                     col_action=pair[1],
                     shape="HYPOTHETICAL",
-                    has_hypotheses=False,
+                    staggered=False,
                     swapped=False,
                     theorem=f"(stipulated {row} vs {col})",
                     hypothetical=True,
@@ -525,7 +525,7 @@ def load_tau_matrix(
                 row_action=a,
                 col_action=b,
                 shape=chosen.shape,
-                has_hypotheses=chosen.has_hypotheses,
+                staggered=chosen.staggered,
                 swapped=swapped,
                 theorem=chosen.name,
             )
@@ -580,7 +580,7 @@ def apply_contradictions(
             row_action=pair[0],
             col_action=pair[1],
             shape="CONTRADICTED",
-            has_hypotheses=False,
+            staggered=False,
             swapped=False,
             theorem=f"(contradicts the library: {row} vs {col})",
             hypothetical=True,
@@ -590,7 +590,7 @@ def apply_contradictions(
                 row_action=pair[1],
                 col_action=pair[0],
                 shape="CONTRADICTED",
-                has_hypotheses=False,
+                staggered=False,
                 swapped=True,
                 theorem=f"(contradicts the library: {row} vs {col})",
                 hypothetical=True,

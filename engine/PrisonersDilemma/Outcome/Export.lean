@@ -36,7 +36,6 @@ def cellJson (c : CellInfo) : Json :=
     ("pair", match c.pair with
       | none => Json.null
       | some (a, b) => Json.arr #[Json.str a.toString, Json.str b.toString]),
-    ("side_conditions", Json.arr (c.sideConds.map Json.str)),
     ("staggered",     Json.bool c.staggered)
   ]
 

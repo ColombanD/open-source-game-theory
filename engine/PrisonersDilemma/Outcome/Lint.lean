@@ -40,23 +40,25 @@ structure CellInfo where
   pad      : Nat
   /-- `none` for a proven `= none` (no-outcome) theorem. -/
   pair     : Option (Name × Name)
-  /-- Pretty-printed `Prop` binders of the telescope — a machine-read side condition
-      (the honest replacement for the `h`-prefix guess). Empty for every current cell. -/
-  sideConds : Array String
   /-- `L`/`R` is not a bare pass-through, e.g. `fun k => PrudentBot (2*k+64)`. -/
   staggered : Bool
   deriving Repr
 
-/-- Strip the `∀`-telescope, collecting `Prop` binders as side conditions. -/
-private def stripBinders (ty : Expr) : MetaM (Expr × Array String) := do
+/-- Strip the `∀`-telescope. A `Prop` binder is REJECTED: a condition on the budget is
+    what the `.eventual` regime expresses, and a condition on anything else is not a
+    matrix cell — so the dagger has exactly ONE machine-read cause, a staggered budget.
+    (Until 2026-08-27 such binders were collected and exported as `side_conditions`; no
+    cell ever had one once the floors were restated as regimes.) -/
+private def stripBinders (n : Name) (ty : Expr) : MetaM Expr := do
   let mut body := ty
-  let mut conds := #[]
   while body.isForall do
     let d := body.bindingDomain!
     if (← isProp d) then
-      conds := conds.push (toString (← ppExpr d))
+      throwError "@[outcome] {n}: hypothesis `{← ppExpr d}` in the telescope — an outcome \
+        theorem takes no side conditions; a budget floor is the `.eventual` regime, a \
+        second budget is a `(j : Nat)` binder or a staggered lambda"
     body := body.bindingBody!.instantiate1 (mkFVar ⟨`_dummy⟩)
-  return (body, conds)
+  return body
 
 /-- Head constant of a bot argument, plus whether it is staggered.
 
@@ -112,7 +114,7 @@ private def resultOf (e : Expr) : MetaM (Option (Option (Name × Name))) := do
 def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
   let some ci := env.find? n
     | throwError "@[outcome] {n}: not found in the environment"
-  let (body, sideConds) ← stripBinders ci.type
+  let body ← stripBinders n ci.type
   -- Match the head SYNTACTICALLY. `OutcomeSpec` is a reducible `abbrev`, so `whnf`
   -- would happily unfold straight past it to the underlying `outcome … = some …`
   -- equation and then report every on-template theorem as off-template.
@@ -154,7 +156,7 @@ def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
     | none     => Name.anonymous
   return { name := n, module := module, leftBot := shortName lB, rightBot := shortName rB
            regime := shortName regime, pad := pad, pair := pair
-           sideConds := sideConds, staggered := lStag || rStag }
+           staggered := lStag || rStag }
 
 /-- The bot set: the per-bot theorem directories under `dir` (the app's `library_bots`). -/
 def botDirsOnDisk (dir : System.FilePath) : IO (Array String) := do
@@ -233,7 +235,6 @@ elab "#validate_outcome " id:ident : command => do
     | none => "none"
     | some (a, b) => s!"({a}, {b})"
   logInfo s!"outcome cell OK — {c.leftBot} vs {c.rightBot}: {pair}, regime {c.regime}, \
-    pad {c.pad}, staggered {c.staggered}, \
-    side conditions {c.sideConds.size}"
+    pad {c.pad}, staggered {c.staggered}"
 
 end PD.Outcome

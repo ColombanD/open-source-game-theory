@@ -72,11 +72,11 @@ def test_fuel_pad_is_a_nat() -> None:
         assert isinstance(t["fuel_pad"], int) and t["fuel_pad"] >= 0, t
 
 
-def test_dagger_has_two_distinguishable_causes() -> None:
-    """`has_hypotheses` is one flag, but the export keeps its two causes separate."""
+def test_dagger_has_exactly_one_cause() -> None:
+    """The dagger is `staggered` and nothing else — the linter rejects side hypotheses."""
     for t in _doc()["theorems"]:
-        assert isinstance(t["side_conditions"], list), t
         assert isinstance(t["staggered"], bool), t
+        assert "side_conditions" not in t, t
 
 
 def test_export_feeds_the_scan() -> None:
@@ -89,7 +89,7 @@ def test_export_feeds_the_scan() -> None:
         # The export is authoritative where it and the legacy regex overlap.
         assert scanned[name].pair == t.pair
         assert scanned[name].shape == t.shape
-        assert scanned[name].has_hypotheses == t.has_hypotheses
+        assert scanned[name].staggered == t.staggered
 
 
 def test_hand_edited_export_is_rejected(tmp_path) -> None:

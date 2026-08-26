@@ -41,8 +41,8 @@ def test_scan_accepts_only_strict_names() -> None:
 
 def test_side_hypotheses_are_flagged() -> None:
     by_name = {t.name: t for t in scan_outcome_theorems()}
-    assert by_name["outcome_CupodTrollBot_vs_DupocBot"].has_hypotheses
-    assert not by_name["outcome_CooperateBot_vs_DefectBot"].has_hypotheses
+    assert by_name["outcome_CupodTrollBot_vs_DupocBot"].staggered
+    assert not by_name["outcome_CooperateBot_vs_DefectBot"].staggered
 
 
 def test_matrix_cells() -> None:

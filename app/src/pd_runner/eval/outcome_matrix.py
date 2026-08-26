@@ -13,10 +13,11 @@ Acceptance rules (matching the tracking sheet's conventions):
 - A cell is filled only by an `@[outcome]`-tagged theorem. Tagging is opt-in; the
   build-time census (`Outcome/Check.lean`) is what turns a forgotten tag into a
   build failure rather than a silently open-looking cell.
-- A theorem is flagged `†` when the export says it is STAGGERED (a bot applied to a
-  budget expression other than the shared `k`, e.g. `PrudentBot (2*k+64)`) or carries
-  a SIDE CONDITION (a `Prop` binder in the telescope). Budget floors are
-  not caveats: they are the `.eventual` regime and carry no dagger.
+- A theorem is flagged `†` iff the export says it is STAGGERED: a bot applied to a
+  budget other than the shared `k` (`PrudentBot (2*k+64)`, a free `(j : Nat)`, a
+  literal), i.e. the cell is NOT the same-budget cell. That is the dagger's only cause —
+  the linter rejects side hypotheses outright, and budget floors are the `.eventual`
+  regime, not caveats.
 - `= none` theorems render as `None` (provably no outcome).
 - Cells with no accepted theorem come from `app/outcome_status.toml`
   (`Open Problem` / `Tried`) and are otherwise left empty.
@@ -92,8 +93,8 @@ class OutcomeTheorem:
     # ("existential" (∃k) is retained in the vocabulary but no longer produced: every
     # `∃ k` theorem was strengthened during the OutcomeSpec migration.)
     shape: str
-    # Proved under extra side hypotheses (floor/size/budget guards).
-    has_hypotheses: bool
+    # The dagger: a bot runs at a budget other than the shared `k` (see module doc).
+    staggered: bool
     file: str
     # --- Lean-export-only fields (additive; empty for legacy regex-scanned rows) ---
     # The `BudgetRegime` the theorem was stated in: nobudget | universal | eventual.
@@ -190,8 +191,7 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
             right_bot=t["right_bot"],
             pair=pair,
             shape=shape,
-            # One flag, two honest causes: a real `Prop` binder, or a staggered budget.
-            has_hypotheses=bool(t["side_conditions"]) or bool(t["staggered"]),
+            staggered=bool(t["staggered"]),
             file=t.get("file", ""),
             budget_regime=t["budget_regime"],
             fuel_pad=t["fuel_pad"],
@@ -447,7 +447,7 @@ def build_outcome_matrix(
             return "None"
         a, b = (t.pair[1], t.pair[0]) if swapped else t.pair
         cell = f"({a}, {b})"
-        if t.has_hypotheses:
+        if t.staggered:
             cell += " †"
         if annotate and t.shape == "threshold":
             cell += " k≫"
