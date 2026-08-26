@@ -40,7 +40,7 @@ mutual
         -- > 0 → run `q`.
         --
         -- The vote reads TRUE PLAYS, not provability: that is the whole point of the
-        -- refined Def 4 (`DEF4_TVOTE_ROADMAP.md` §0). A tau player votes once over the
+        -- refined Def 4 (`Research/Notes/TAUBOTS.md` §1). A tau player votes once over the
         -- compound decisions of its own δ-instances; every `proofSearch` lives INSIDE
         -- an entry, exactly where the lifted base bot's own code puts it. NO budget
         -- argument: the vote itself never consults the oracle.
@@ -51,7 +51,7 @@ mutual
         -- frame.
     | sys     : ProgList → Nat → Prog
         -- the MUTUAL-FIXPOINT BINDER (revived 2026-08-20 for the Def-4 self-probers;
-        -- originally Def-5, `DEF5_SYS_BINDER_ROADMAP.md` Phase 2, archived at tag
+        -- originally Def-5, see `Research/Notes/TAUBOTS.md`; archived at tag
         -- `taubot-def5-research`). `sys defs i` is the i-th component of the
         -- mutually-recursive system `defs`, whose members refer to each other via
         -- `.selfIdx`. LAZY unfold: `eval` closes one level per fuel tick via
@@ -268,7 +268,7 @@ def Prog.hasSearch : Prog → Bool
   -- be search-free would otherwise enter the search-free fragment and add a `.tvote`
   -- case to `atom_complete_searchfree` — for no benefit, since tau players are never
   -- census subjects and need no atom certificates. Conservative over-approximation
-  -- (DEF4_TVOTE_ROADMAP.md §2).
+  -- (Research/Notes/TAUBOTS.md).
   | .tvote _ _ _ _     => true
   | .sys _ _        => true      -- CONSERVATIVE: unfolding may consult the oracle through
                                  -- members; kept out of the searchfree fragment without a

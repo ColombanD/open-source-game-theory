@@ -274,7 +274,7 @@ faithfulness prose.
 *Companion to the 2026-07-02 floor section below, which records the engine-internal
 forcings (anti-diagonal, soundness induction, decidability). This entry records the
 LOGICAL analysis that resolves the "floor-coarseness question" raised by the Def-4
-comparison (TAUBOT_TRANSPARENCY_DESIGN.md, Part III): is charging `k` for an
+comparison (now condensed into TAUBOTS.md): is charging `k` for an
 else-certificate too crude when the refuted guard is about a mere constant?*
 
 **Provenance.** The Def-4 floor cell `outcome_DupocBot_vs_EBot = (D, C)` (called

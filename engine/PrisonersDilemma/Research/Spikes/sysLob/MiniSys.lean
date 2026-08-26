@@ -2,7 +2,7 @@
 # Spike B findings (2026-08-13)
 
 **Purpose.** This is "Spike B" of the Def-5 Route-A go/no-go (see
-`PrisonersDilemma/Research/Notes/DEF5_SYS_BINDER_ROADMAP.md`). The real engine has a
+`PrisonersDilemma/Research/Notes/TAUBOTS.md`; Def 5 shelved, tag `taubot-def5-research`). The real engine has a
 mutually-inductive `Prog` language and plans to add a mutual-fixpoint binder `.sys`
 with system-reference `.selfIdx`. This spike tests, at toy scale, whether that design
 survives Lean's equation compiler. The engine's prior extension (`.tsearch`) hit these

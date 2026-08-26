@@ -1,10 +1,9 @@
 name = "PrisonersDilemma"
 version = "0.1.0"
-# Metatheory UNPINNED from the default build 2026-08-11 (tau Milestone 1): the
-# `tsearch` Prog constructor breaks every exhaustive match in the T31–T54 chain
-# until its arms are written — that migration is Milestone 2 (see the Def-4
-# section of TAUBOT_TRANSPARENCY_DESIGN.md). Still explicitly buildable via
-# `lake build Metatheory`; restore it to defaultTargets when M2 lands.
+# Metatheory UNPINNED from the default build 2026-08-11: the tau constructors
+# (`tvote`, `sys`, `selfIdx`) have no arms in the T31–T54 chain yet — that
+# migration is debt M2 (see Research/Notes/TAUBOTS.md §4). Still explicitly
+# buildable via `lake build Metatheory`; restore it to defaultTargets when M2 lands.
 defaultTargets = ["PrisonersDilemma", "OutcomeCheck"]
 
 [[require]]

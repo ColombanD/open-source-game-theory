@@ -364,7 +364,7 @@ theorem mutual_pblt_engine_staggered (Af Bf : Nat → Formula) (kP : Nat → Nat
 /-! ## The VECTOR engines — full-dependency mutual Löb (Def-5, Phase 4, 2026-08-13)
 
 Promoted from `Research/Spikes/sysLob/VectorPblt.lean` (Spike A, the Route-A
-go/no-go — see `DEF5_SYS_BINDER_ROADMAP.md`). Def-5 σ-instances produce
+go/no-go — Def 5 is shelved, see `Research/Notes/TAUBOTS.md`; tag `taubot-def5-research`). Def-5 σ-instances produce
 FULL-DEPENDENCY premises — each sentence implied by boxes of ALL entangled
 sentences, its own included (`□_k A → (□_k B → A)`), a shape the cycle engines
 above cannot consume. The iterated-unary reduction closes them with ZERO new

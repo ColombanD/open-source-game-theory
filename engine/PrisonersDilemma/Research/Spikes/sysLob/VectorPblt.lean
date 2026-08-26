@@ -8,7 +8,7 @@ the stage lemma and a SIZE-PARAMETRIC `vector2_full_pblt_engine` now live in
 `Base/Loeb.lean` (`PD.BaseTheorems`). This file remains the historical spike
 (hardcoded `100/1000` envelope); consume the engine versions.
 
-`DEF5_SYS_BINDER_ROADMAP.md` Phase 1a. Def-5 σ-probing produces FULL-DEPENDENCY mutual
+`Research/Notes/TAUBOTS.md` (Def 5, shelved; tag `taubot-def5-research`). Def-5 σ-probing produces FULL-DEPENDENCY mutual
 Löb premises — each sentence implied by boxes of ALL entangled sentences (its own
 included), the curried shape `□_k φ₁ → (□_k φ₂ → … → φᵢ)` — where the existing engines
 (`mutual_pblt_engine_id`/`_staggered`) consume only 2-CYCLES (`□A → B`, `□B → A`).
