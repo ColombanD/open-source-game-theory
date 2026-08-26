@@ -203,10 +203,15 @@ credentials are present.
 
 Cell semantics (upper triangle only; a cell reads from the row bot's perspective):
 
-- `(C, D)` — proven outcome from an accepted `outcome_A_vs_B` / `llm_outcome_A_vs_B`
-  theorem (for-all-k or large-k threshold statements; suffixed regime variants
-  like `_floor`/`_defended` are excluded). ` †` marks proofs under side
-  hypotheses (floor/size/budget guards).
+- `(C, D)` — proven outcome from an accepted `@[outcome]` `outcome_A_vs_B` /
+  `llm_outcome_A_vs_B` theorem at ONE shared budget (for-all-k or large-k
+  threshold statements; suffixed variants like `_floor` are not cells).
+- `(D, D) ⇄ (C, C)` — BUDGET-SENSITIVE: the shared-budget outcome, then what the
+  pair does once one bot is granted a bigger budget (a `…_staggered`
+  `@[outcome_companion]` theorem). Both are proven; the mark keeps the staggered
+  result visible.
+- ` †` — STAGGERED ONLY: no shared-budget theorem exists; the cell is proven with
+  one bot at a bigger budget (the LegibleBot/OptimBot two-tier cells).
 - `None` — provably no outcome (`= none`, e.g. MirrorBot self-play).
 - `Open Problem` / `Tried` / `Need rework` — curated in `app/outcome_status.toml`
   (`Need rework` = a proof exists but not in the accepted large-k form, e.g. only

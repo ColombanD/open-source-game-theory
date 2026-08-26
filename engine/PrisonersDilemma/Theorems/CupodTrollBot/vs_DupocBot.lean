@@ -36,6 +36,7 @@ theorem CupodTrollBot_vs_DupocBot_above_floor (j k fuel : Nat)
     (`Theorems/DupocBot/vs_CupodTrollBot.lean`). The floor `size + k + 2 ≤ 2k+64` is
     logarithmic-plus-`k` against `2k`, hence `.eventual`. (Until 2026-08-27 this was the
     sole user of a guarded `OutcomeSpecIf` template, and filled the cell.) -/
+@[outcome_companion]
 theorem outcome_CupodTrollBot_vs_DupocBot_staggered :
     OutcomeSpec .eventual 2 CupodTrollBot (fun k => DupocBot (2*k+64)) (some (.C, .C)) := by
   have hsz : ∀ k, (Formula.neg (.eq (DupocBot (2*k+64)) (CupodBot k))).size

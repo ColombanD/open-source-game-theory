@@ -139,6 +139,7 @@ theorem ps_k_of_play_botdupoc_any (k n : Nat) (q : Prog)
 /-- **JustBot k vs PrudentBot (2k+64) → (C, C)** for all large enough `k` — cooperation
     at a budget STAGGER. Not the matrix cell (`outcome_JustBot_vs_PrudentBot = (D, D)`
     below is the shared-budget value); the `_staggered` companion. -/
+@[outcome_companion]
 theorem outcome_JustBot_vs_PrudentBot_staggered :
     OutcomeSpec .eventual 3
       JustBot (fun k => PrudentBot (2*k+64)) (some (.C, .C)) := by

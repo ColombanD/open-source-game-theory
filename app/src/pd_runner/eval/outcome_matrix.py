@@ -13,11 +13,17 @@ Acceptance rules (matching the tracking sheet's conventions):
 - A cell is filled only by an `@[outcome]`-tagged theorem. Tagging is opt-in; the
   build-time census (`Outcome/Check.lean`) is what turns a forgotten tag into a
   build failure rather than a silently open-looking cell.
-- A theorem is flagged `†` iff the export says it is STAGGERED: a bot applied to a
-  budget other than the shared `k` (`PrudentBot (2*k+64)`, a free `(j : Nat)`, a
-  literal), i.e. the cell is NOT the same-budget cell. That is the dagger's only cause —
-  the linter rejects side hypotheses outright, and budget floors are the `.eventual`
-  regime, not caveats.
+- A cell is flagged `†` iff the export says it is STAGGERED: a bot applied to a
+  budget other than the shared `k` (`LegibleBot (2*k+64) k`, a free `(j : Nat)`, a
+  literal), i.e. no shared-budget theorem exists for the pair. That is the dagger's
+  only cause — the linter rejects side hypotheses outright, and budget floors are the
+  `.eventual` regime, not caveats.
+- A cell is BUDGET-SENSITIVE, rendered `(D, D) ⇄ (C, C)`, when a `@[outcome_companion]`
+  theorem (`…_staggered`, the same pair with one bot at a bigger budget) proves a
+  DIFFERENT outcome: the first pair is the shared-budget cell, the second what the
+  pair does once a budget stagger is allowed. Both are theorems; the mark keeps the
+  staggered result visible instead of losing it when the cell moved to the shared
+  budget (2026-08-27). A companion agreeing with its cell adds no mark.
 - `= none` theorems render as `None` (provably no outcome).
 - Cells with no accepted theorem come from `app/outcome_status.toml`
   (`Open Problem` / `Tried`) and are otherwise left empty.
@@ -83,6 +89,26 @@ _CANONICAL_ORDER = [
 
 
 @dataclass(frozen=True)
+class Companion:
+    """A `@[outcome_companion]` theorem: the cell's pair under a budget stagger."""
+    name: str
+    left_bot: str
+    right_bot: str
+    pair: tuple[str, str] | None
+    # The staggered bot arguments as Lean text, e.g. `fun k => PrudentBot (2 * k + 64)`.
+    left: str
+    right: str
+    budget_regime: str = ""
+    fuel_pad: int = 0
+
+    def oriented_pair(self, left_bot: str) -> tuple[str, str] | None:
+        """The companion's pair read from `left_bot`'s side."""
+        if self.pair is None:
+            return None
+        return self.pair if self.left_bot == left_bot else (self.pair[1], self.pair[0])
+
+
+@dataclass(frozen=True)
 class OutcomeTheorem:
     name: str
     left_bot: str
@@ -104,6 +130,15 @@ class OutcomeTheorem:
     fuel_pad: int = 0
     # The defining module, e.g. `PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot`.
     module: str = ""
+    # Staggered companions of this pair (either orientation), from the export.
+    companions: tuple[Companion, ...] = ()
+
+    @property
+    def budget_sensitive(self) -> bool:
+        """Some staggered companion proves a DIFFERENT outcome than the cell."""
+        return any(
+            c.oriented_pair(self.left_bot) != self.pair for c in self.companions
+        )
 
 
 def library_bots(theorems_dir: Path = _THEOREMS_DIR) -> set[str]:
@@ -159,7 +194,7 @@ def _verify_digest(data: dict, export_file: Path, key: str = "theorems") -> None
         raise ValueError(f"{export_file}: missing `source_digest`")
     rows = [
         json.dumps(t, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-        for t in data[key]
+        for t in data[key] + data.get("companions", [])
     ]
     actual = str(_fnv1a64("".join(rows)))
     if actual != claimed:
@@ -185,6 +220,15 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
             f"{export_file}: unsupported schema_version {version!r} (expected 1)"
         )
     _verify_digest(data, export_file)
+    companions: dict[frozenset[str], list[Companion]] = {}
+    for c in data.get("companions", []):
+        comp = Companion(
+            name=c["name"], left_bot=c["left_bot"], right_bot=c["right_bot"],
+            pair=tuple(c["pair"]) if c["pair"] else None,
+            left=c.get("left", ""), right=c.get("right", ""),
+            budget_regime=c["budget_regime"], fuel_pad=c["fuel_pad"],
+        )
+        companions.setdefault(frozenset((c["left_bot"], c["right_bot"])), []).append(comp)
     out: list[OutcomeTheorem] = []
     for t in data["theorems"]:
         pair = tuple(t["pair"]) if t["pair"] else None
@@ -200,6 +244,7 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
             budget_regime=t["budget_regime"],
             fuel_pad=t["fuel_pad"],
             module=t.get("module", ""),
+            companions=tuple(companions.get(frozenset((t["left_bot"], t["right_bot"])), ())),
         ))
     return out
 
@@ -207,6 +252,7 @@ def _theorems_from_export(export_file: Path = _EXPORT_FILE) -> list[OutcomeTheor
 # An attribute on its own line — a docstring MENTIONING `@[outcome]` must not count.
 _OUTCOME_TAG_RE = re.compile(r"^@\[outcome\]\s*$", re.MULTILINE)
 _TAU_TAG_RE = re.compile(r"^@\[tau_row\]\s*$", re.MULTILINE)
+_COMPANION_TAG_RE = re.compile(r"^@\[outcome_companion\]\s*$", re.MULTILINE)
 
 
 def export_staleness(
@@ -239,6 +285,19 @@ def export_staleness(
         return (
             f"export has {exported} cells but {tagged_on_disk} theorems are tagged "
             f"`@[outcome]` on disk — regenerate it"
+        )
+    companions_on_disk = sum(
+        len(_COMPANION_TAG_RE.findall(f.read_text(encoding="utf-8")))
+        for f in theorems_dir.rglob("vs_*.lean")
+    )
+    exported_companions = len(
+        json.loads(export_file.read_text(encoding="utf-8")).get("companions", [])
+    )
+    if exported_companions != companions_on_disk:
+        return (
+            f"export has {exported_companions} staggered companions but "
+            f"{companions_on_disk} theorems are tagged `@[outcome_companion]` on disk — "
+            "regenerate it"
         )
     if newest_source > export_file.stat().st_mtime:
         return "a theorem file is newer than the export — regenerate it to be sure"
@@ -471,10 +530,18 @@ def build_outcome_matrix(
     def render(t: OutcomeTheorem, swapped: bool) -> str:
         if t.pair is None:
             return "None"
+        row_bot = t.right_bot if swapped else t.left_bot
         a, b = (t.pair[1], t.pair[0]) if swapped else t.pair
         cell = f"({a}, {b})"
         if t.staggered:
             cell += " †"
+        if t.budget_sensitive:
+            # Show the (first) companion that disagrees, read from the row bot's side.
+            for c in t.companions:
+                cp = c.oriented_pair(row_bot)
+                if cp != (a, b) and cp is not None:
+                    cell += f" ⇄ ({cp[0]}, {cp[1]})"
+                    break
         if annotate and t.shape == "threshold":
             cell += " k≫"
         return cell
@@ -497,6 +564,23 @@ def build_outcome_matrix(
                     "the proof wins; drop the stale status entry.", row, col, status,
                 )
     return order, cells
+
+
+# The legend, shared by the CLI, the web UI (`GET /matrix` returns it) and the Google
+# Sheet push, so the three never drift.
+MATRIX_LEGEND: tuple[tuple[str, str], ...] = (
+    ("(C, D)", "proven outcome (row bot's action, column bot's action) at ONE shared "
+               "budget, a kernel-checked `@[outcome]` theorem"),
+    ("(D, D) ⇄ (C, C)", "BUDGET-SENSITIVE: the shared-budget outcome, then what the pair "
+                        "does once one bot is granted a bigger budget (a `…_staggered` "
+                        "`@[outcome_companion]` theorem) — both proven"),
+    ("†", "STAGGERED ONLY: no shared-budget theorem exists; the cell is proven with one "
+          "bot at a bigger budget (LegibleBot/OptimBot two-tier cells)"),
+    ("None", "provably no outcome (the match diverges, e.g. MirrorBot self-play)"),
+    ("Open Problem / Tried / Need rework", "curated in app/outcome_status.toml, not a "
+                                          "theorem"),
+    ("k≫", "(--annotate only) holds at every sufficiently large budget"),
+)
 
 
 def matrix_rows(bots: list[str], cells: dict[tuple[str, str], str]) -> list[list[str]]:

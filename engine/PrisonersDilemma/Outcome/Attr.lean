@@ -32,6 +32,16 @@ initialize outcomeAttr : TagAttribute ←
   registerTagAttribute `outcome
     "outcome-matrix cell; validated by #check_outcome_theorems"
 
+/-- Mark a theorem as a STAGGERED COMPANION of a matrix cell: the same pair under a
+    budget stagger (`PrudentBot (2*k+64)` vs `DupocBot k`), proving a possibly DIFFERENT
+    outcome. Named `(llm_)outcome_<L>_vs_<R>_staggered`, validated by
+    `#check_outcome_theorems` (must be on the template, must actually be staggered, must
+    have a cell), exported beside the cell so the matrix can show that the pair is
+    BUDGET-SENSITIVE rather than losing the result. -/
+initialize outcomeCompanionAttr : TagAttribute ←
+  registerTagAttribute `outcome_companion
+    "staggered companion of an outcome-matrix cell; validated by #check_outcome_theorems"
+
 /-- Mark a theorem as a tau BIT ROW (`Tau/RowSpec.lean`); validated by `#check_tau_rows`
     (`Tau/Lint.lean`), exported to `app/generated/tau_rows.json`. -/
 initialize tauRowAttr : TagAttribute ←
@@ -52,5 +62,6 @@ def taggedBy (attr : TagAttribute) (env : Environment) : Array Name := Id.run do
 
 def taggedOutcomes (env : Environment) : Array Name := taggedBy outcomeAttr env
 def taggedTauRows (env : Environment) : Array Name := taggedBy tauRowAttr env
+def taggedCompanions (env : Environment) : Array Name := taggedBy outcomeCompanionAttr env
 
 end PD.Outcome

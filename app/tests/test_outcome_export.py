@@ -234,3 +234,38 @@ def test_hand_edited_tau_export_is_rejected(tmp_path) -> None:
     forged.write_text(json.dumps(data), encoding="utf-8")
     with pytest.raises(ValueError, match="source_digest"):
         kernel_bits(forged)
+
+
+# ── staggered companions ───────────────────────────────────────────────────────
+
+
+def test_companions_are_exported_and_attached() -> None:
+    """Every `@[outcome_companion]` theorem is exported, staggered, and attached to a
+    cell for its pair; the four 2026-08-27 companions all DISAGREE with their cell."""
+    from pd_runner.eval.outcome_matrix import scan_outcome_theorems
+
+    companions = _doc().get("companions", [])
+    assert len(companions) >= 4
+    for c in companions:
+        assert c["name"].endswith("_staggered"), c
+        assert c["staggered"] is True, c
+    by_pair = {frozenset((t.left_bot, t.right_bot)): t for t in scan_outcome_theorems()}
+    for c in companions:
+        cell = by_pair[frozenset((c["left_bot"], c["right_bot"]))]
+        assert any(x.name == c["name"] for x in cell.companions), c["name"]
+    sensitive = {t.name for t in by_pair.values() if t.budget_sensitive}
+    assert {
+        "outcome_PrudentBot_vs_DupocBot", "outcome_JustBot_vs_PrudentBot",
+        "outcome_JustBot_vs_CupodTrollBot", "outcome_DupocBot_vs_CupodTrollBot",
+    } <= sensitive
+
+
+def test_hand_edited_companion_is_rejected(tmp_path) -> None:
+    """The digest covers the companions too."""
+    data = json.loads(_EXPORT_FILE.read_text(encoding="utf-8"))
+    c = data["companions"][0]
+    c["pair"] = ["D", "D"] if c["pair"] != ["D", "D"] else ["C", "C"]
+    forged = tmp_path / "outcome_theorems.json"
+    forged.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(ValueError, match="source_digest"):
+        _theorems_from_export(forged)

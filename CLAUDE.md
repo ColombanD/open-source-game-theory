@@ -48,7 +48,12 @@ default build) runs the census: every declaration named like a cell
 (`(llm_)outcome_<L>_vs_<R>`, both bot directories) is tagged — no allowlist; regime
 variants take a suffix (`_floor`, `_samek`) and are not cells. `lake exe export_outcomes` writes the cells to the
 committed `app/generated/outcome_theorems.json`, which is the ONLY source the app's
-matrix reads (no regex over Lean source). Because the statement is fully concrete,
+matrix reads (no regex over Lean source). A pair's result under a budget STAGGER is kept
+as a `@[outcome_companion]` theorem named `…_staggered` (on the same template, must
+actually be staggered, must have a cell; the census refuses an untagged `…_staggered`);
+the export lists them beside the cells and the matrix renders a disagreeing companion as
+BUDGET-SENSITIVE, `(D, D) ⇄ (C, C)` — the staggered result is never lost. `†` now means
+only "no shared-budget theorem exists" (the LegibleBot/OptimBot two-tier cells). Because the statement is fully concrete,
 **compilation == correctness** — an LLM-written proof that type-checks is, modulo the
 NL→Lean *bot* translation, a verified result. The proof agent is ALIGNED with it (2026-08-26): `Outcome/Spec.lean` is embedded in the
 system prompt, the request templates are `OutcomeSpec` statements, the verdict gate

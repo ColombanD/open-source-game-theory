@@ -79,10 +79,17 @@ async def get_matrix() -> dict:
     `stale` is a human-readable reason the export may lag the Lean sources (or null);
     `POST /matrix/export` regenerates it.
     """
-    from pd_runner.eval.outcome_matrix import build_outcome_matrix, export_staleness, matrix_rows
+    from pd_runner.eval.outcome_matrix import (
+        MATRIX_LEGEND, build_outcome_matrix, export_staleness, matrix_rows,
+    )
 
     bots, cells = build_outcome_matrix()
-    return {"bots": bots, "rows": matrix_rows(bots, cells), "stale": export_staleness()}
+    return {
+        "bots": bots,
+        "rows": matrix_rows(bots, cells),
+        "stale": export_staleness(),
+        "legend": [{"mark": m, "meaning": d} for m, d in MATRIX_LEGEND],
+    }
 
 
 @app.post("/matrix/export")

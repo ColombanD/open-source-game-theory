@@ -55,8 +55,10 @@ def test_matrix_cells() -> None:
     # Proven no-outcome renders as None.
     assert cells[("MirrorBot", "MirrorBot")] == "None"
     # Side hypotheses get the dagger flag.
-    # Shared-budget cell since 2026-08-27 (was the staggered "(C, C) †").
-    assert cells[("DupocBot", "CupodTrollBot")] == "(D, C)"
+    # Shared-budget cell since 2026-08-27 (was the staggered "(C, C) †"); the staggered
+    # result is kept visible as the BUDGET-SENSITIVE mark, read from the row bot's side.
+    assert cells[("DupocBot", "CupodTrollBot")] == "(D, C) ⇄ (C, C)"
+    assert cells[("DupocBot", "PrudentBot")] == "(D, D) ⇄ (C, C)"
     # WaryBot vs DefectBot: the unsuffixed large-k theorem wins, not the floor.
     assert cells[("DefectBot", "WaryBot")] == "(D, D)"
     # The red cell, proven 2026-08-20 (outcome_DupocBot_vs_CupodBot = (D, C),

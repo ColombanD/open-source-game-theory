@@ -211,6 +211,7 @@ theorem ps_k_of_play_dupoc_any (k n : Nat) (q : Prog)
     Not the matrix cell (the cell is the shared-budget value, `outcome_PrudentBot_vs_DupocBot
     = (D, D)` below); kept as the staggered companion, `_staggered` keeps it out of the
     census. -/
+@[outcome_companion]
 theorem outcome_PrudentBot_vs_DupocBot_staggered :
     OutcomeSpec .eventual 4
       (fun k => PrudentBot (2*k+64)) DupocBot (some (.C, .C)) := by

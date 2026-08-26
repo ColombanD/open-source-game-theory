@@ -37,6 +37,7 @@ FAILS against `.bot (DupocBot (4j+100))`, refuted by `Pf.eqNeg`). Holds for EVER
 `j` — no eventuality. -/
 
 -- The staggered companion (not the cell — see `outcome_JustBot_vs_CupodTrollBot` below).
+@[outcome_companion]
 theorem outcome_JustBot_vs_CupodTrollBot_staggered :
     OutcomeSpec .universal 2
       (fun j => JustBot (4*j+100)) CupodTrollBot (some (.C, .C)) := by

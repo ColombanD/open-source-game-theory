@@ -103,6 +103,7 @@
     table.matrix td.mx-tried { background: #92400e; color: #fcd34d; }
     table.matrix td.mx-rework { background: #1d4ed8; color: #bfdbfe; }
     table.matrix td.mx-none  { background: #065f46; color: #6ee7b7; }
+    table.matrix td.mx-sensitive { background: #3b2f5c; color: #d8b4fe; }
 
     .section-label {
       font-size: 0.75rem; color: #94a3b8; font-weight: 600;
@@ -298,6 +299,7 @@
     </div>
     <p id="matrix-stale" style="color:#fcd34d; font-size:0.85rem; display:none;"></p>
     <div id="matrix-table"></div>
+    <dl id="matrix-legend" style="color:#9ca3af; font-size:0.8rem; margin-top:0.6rem; display:grid; grid-template-columns:max-content 1fr; gap:0.15rem 0.8rem;"></dl>
   </div>
 
   <div class="card" id="tau-card">
@@ -1178,6 +1180,10 @@
       } else {
         staleEl.style.display = 'none';
       }
+      const legendEl = document.getElementById('matrix-legend');
+      legendEl.innerHTML = (data.legend || []).map(e =>
+        `<dt style="color:#e5e7eb; font-family:monospace;">${esc(e.mark)}</dt><dd style="margin:0;">${esc(e.meaning)}</dd>`
+      ).join('');
       const [header, ...rows] = data.rows;
       let html = '<div class="matrix-wrap"><table class="matrix"><tr>'
         + header.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
@@ -1190,6 +1196,7 @@
           else if (cell === 'Tried') cls = 'mx-tried';
           else if (cell === 'Need rework') cls = 'mx-rework';
           else if (cell === 'None') cls = 'mx-none';
+          else if (cell.includes('⇄')) cls = 'mx-sensitive';
           return `<td class="${cls}">${esc(cell)}</td>`;
         }).join('') + '</tr>';
       });

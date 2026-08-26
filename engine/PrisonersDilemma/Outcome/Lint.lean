@@ -42,6 +42,9 @@ structure CellInfo where
   pair     : Option (Name × Name)
   /-- `L`/`R` is not a bare pass-through, e.g. `fun k => PrudentBot (2*k+64)`. -/
   staggered : Bool
+  /-- The two bot arguments, pretty-printed — how a companion states its stagger. -/
+  leftText  : String
+  rightText : String
   deriving Repr
 
 /-- Strip the `∀`-telescope. A `Prop` binder is REJECTED: a condition on the budget is
@@ -110,8 +113,11 @@ private def resultOf (e : Expr) : MetaM (Option (Option (Name × Name))) := do
     | _ => return none
   | _ => return none
 
-/-- Validate one tagged declaration, returning its exported metadata. -/
-def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
+/-- Validate one tagged declaration, returning its exported metadata.
+
+    `suffix` is the name suffix the declaration is allowed (and required) to carry:
+    `""` for a cell, `"_staggered"` for a companion (`inspectCompanion`). -/
+def inspectCell (env : Environment) (n : Name) (suffix : String := "") : MetaM CellInfo := do
   let some ci := env.find? n
     | throwError "@[outcome] {n}: not found in the environment"
   let body ← stripBinders n ci.type
@@ -141,7 +147,10 @@ def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
   let base := (shortName n).toString
   let base := if base.startsWith "llm_" then (base.drop 4).toString else base
   unless base.startsWith "outcome_" do
-    throwError "@[outcome] {n}: name must be `(llm_)outcome_<Left>_vs_<Right>`"
+    throwError "@[outcome] {n}: name must be `(llm_)outcome_<Left>_vs_<Right>{suffix}`"
+  unless base.endsWith suffix do
+    throwError "@[outcome] {n}: name must end with `{suffix}`"
+  let base := base.dropRight suffix.length
   let core := (base.drop "outcome_".length).toString
   let parts := core.splitOn "_vs_"
   unless parts.length == 2 do
@@ -156,7 +165,19 @@ def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
     | none     => Name.anonymous
   return { name := n, module := module, leftBot := shortName lB, rightBot := shortName rB
            regime := shortName regime, pad := pad, pair := pair
-           staggered := lStag || rStag }
+           staggered := lStag || rStag
+           leftText := toString (← ppExpr args[2]!), rightText := toString (← ppExpr args[3]!) }
+
+/-- Validate one `@[outcome_companion]` declaration: on the template, named
+    `…_staggered`, and ACTUALLY staggered — a companion that runs both bots at the shared
+    `k` is a rival cell, not a companion. -/
+def inspectCompanion (env : Environment) (n : Name) : MetaM CellInfo := do
+  let c ← inspectCell env n (suffix := "_staggered")
+  unless c.staggered do
+    throwError "@[outcome_companion] {n}: not staggered — both bots run at the shared \
+      budget, so this is a cell, not a companion (drop the `_staggered` suffix and tag it \
+      `@[outcome]`, or stagger it)"
+  return c
 
 /-- The bot set: the per-bot theorem directories under `dir` (the app's `library_bots`). -/
 def botDirsOnDisk (dir : System.FilePath) : IO (Array String) := do
@@ -167,10 +188,12 @@ def botDirsOnDisk (dir : System.FilePath) : IO (Array String) := do
   return out
 
 /-- Every declaration NAME under `dir` with the exact matrix-cell shape
-    `(llm_)outcome_<Left>_vs_<Right>`, both bots alphanumeric members of `bots`.
-    Text-level on purpose: an UNTAGGED declaration is invisible to the environment's
-    attribute state, and finding those is the whole point. -/
-def declNamesOnDisk (dir : System.FilePath) (bots : Array String) : IO (Array String) := do
+    `(llm_)outcome_<Left>_vs_<Right><suffix>`, both bots alphanumeric members of `bots`.
+    `suffix = ""` finds cells, `"_staggered"` finds companions. Text-level on purpose:
+    an UNTAGGED declaration is invisible to the environment's attribute state, and
+    finding those is the whole point. -/
+def declNamesOnDisk (dir : System.FilePath) (bots : Array String) (suffix : String := "") :
+    IO (Array String) := do
   let mut found : Array String := #[]
   for entry in (← dir.walkDir) do
     if entry.extension == some "lean" then
@@ -178,7 +201,8 @@ def declNamesOnDisk (dir : System.FilePath) (bots : Array String) : IO (Array St
       for chunk in txt.splitOn "theorem " do
         let nm := (chunk.takeWhile fun c => c.isAlphanum || c == '_').toString
         let core := if nm.startsWith "llm_" then (nm.drop 4).toString else nm
-        if core.startsWith "outcome_" then
+        if core.startsWith "outcome_" && core.endsWith suffix then
+          let core := core.dropRight suffix.length
           match (core.drop "outcome_".length).toString.splitOn "_vs_" with
           | [l, r] =>
             if l.all Char.isAlphanum && r.all Char.isAlphanum
@@ -217,8 +241,29 @@ elab "#check_outcome_theorems " dir:str : command => do
       `@[outcome]`-tagged and would be silently missing from the matrix:\n  \
       {missing.toList}\nTag them (and state them on the `OutcomeSpec` template), or \
       rename them if they are not cells (a regime variant takes a suffix, e.g. `_floor`)."
+  -- 3. the companions: validated, every `…_staggered` declaration on disk is tagged
+  --    (a staggered result must not quietly become invisible), and every companion has
+  --    a cell for its pair (either orientation).
+  let companions := taggedCompanions env
+  let cinfos ← liftTermElabM <| companions.mapM fun nm => inspectCompanion env nm
+  let cells ← liftTermElabM <| tagged.mapM fun nm => inspectCell env nm
+  let cOnDisk ← liftM <| declNamesOnDisk dir.getString bots (suffix := "_staggered")
+  let cShort := companions.map fun nm => (shortName nm).toString
+  let cMissing := cOnDisk.filter fun d => !cShort.contains d
+  unless cMissing.isEmpty do
+    throwError "OUTCOME CENSUS: {cMissing.size} `…_staggered` declaration(s) are not \
+      `@[outcome_companion]`-tagged, so the matrix would not know the pair is \
+      budget-sensitive:\n  {cMissing.toList}"
+  for c in cinfos do
+    let hasCell := cells.any fun x =>
+      (x.leftBot == c.leftBot && x.rightBot == c.rightBot)
+      || (x.leftBot == c.rightBot && x.rightBot == c.leftBot)
+    unless hasCell do
+      throwError "OUTCOME CENSUS: companion {c.name} has no `@[outcome]` cell for \
+        {c.leftBot} vs {c.rightBot} (either orientation) — a companion annotates a cell"
   logInfo s!"outcome census OK — {tagged.size} tagged, {onDisk.size} cell-shaped \
-    declarations on disk, {bots.size} bot directories"
+    declarations on disk, {bots.size} bot directories, {companions.size} staggered \
+    companions"
 
 /-- `#validate_outcome <ident>` — run the validator on ONE declaration and report its
     cell metadata. The app's verdict gate appends this to a submitted (not yet landed)

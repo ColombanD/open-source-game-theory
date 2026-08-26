@@ -123,9 +123,12 @@ def push_matrix(
     bots, cells = build_outcome_matrix(annotate=annotate)
     rows = matrix_rows(bots, cells)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    from pd_runner.eval.outcome_matrix import MATRIX_LEGEND
+
+    rows += [[], ["Legend"]]
+    rows += [[mark, meaning] for mark, meaning in MATRIX_LEGEND]
     rows += [
         [],
-        ["† proved under side hypotheses (floor/size/budget guards)"],
         [f"Auto-generated {stamp} by pd_runner.eval.outcome_matrix — do not edit; "
          "curate Open Problem/Tried in app/outcome_status.toml"],
     ]
