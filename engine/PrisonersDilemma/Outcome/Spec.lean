@@ -33,22 +33,19 @@ inductive BudgetRegime
 
 /-- The fuel side of a statement. Fuel is ALWAYS cofinite (`∀ fuel, … (fuel + pad)`);
     `Theorems.outcome_mono_le` makes the `∃ fuel` form equivalent, so unlike the budget
-    there is no fuel *axis* — just a `pad`. -/
+    there is no fuel *axis* — just a `pad`.
+
+    There is deliberately no existential-fuel template either (one existed until
+    2026-08-27). `Formula.interp` reads `.plays p q a` as `∃ n, play n p q = some a`, so a
+    play obtained from `Pf_sound` comes with an unbounded fuel — but that witness never
+    needs bounding: fuel is consumed per program node while the budget `k` is a numeral
+    inside `.search`, so every zoo match is DETERMINED at a structural pad independent of
+    `k`, and fuel determinism pins the value there (`Base/Helpers.outcome_at_of_ex`,
+    `play_at_of_ex`, with the totality lemmas `play_search_const_total`,
+    `play_ite_total`, `play_sim_opp_self_total`). The Löbian cells carry pads 2–6 like
+    every other cell. -/
 abbrev OutcomeAt (pad : Nat) (L R : Prog) (r : Option Outcome) : Prop :=
   ∀ fuel, outcome (fuel + pad) L R = r
-
-/-- Fuel supplied EXISTENTIALLY, per budget.
-
-    Needed because `Formula.interp` reads `.plays p q a` as `∃ n, play n p q = some a`:
-    a theorem that gets its play witness out of `Pf_sound` inherits that existential, and
-    the witness genuinely depends on the budget, so no fixed `pad` exists. This is the
-    original shape of the Löbian self-play and mutual-cooperation results — expressing it
-    directly is honest, where forcing a `pad` would require bounding `Pf_sound`'s witness.
-
-    Weaker than `OutcomeAt`: prefer the cofinite form whenever a literal pad is available
-    (`Theorems.outcome_mono_le` lifts a single fuel to it). -/
-abbrev OutcomeAtEx (L R : Prog) (r : Option Outcome) : Prop :=
-  ∃ fuel, outcome fuel L R = r
 
 /-- As `OutcomeAt`, but each fuel is guarded by `side`.
 
@@ -73,17 +70,6 @@ abbrev OutcomeSpec (b : BudgetRegime) (pad : Nat)
   | .nobudget  => OutcomeAt pad (L 0) (R 0) r
   | .universal => ∀ k, OutcomeAt pad (L k) (R k) r
   | .eventual  => ∃ k₂, ∀ k, k₂ < k → OutcomeAt pad (L k) (R k) r
-
-/-- **The EXISTENTIAL-FUEL template** — as `OutcomeSpec`, but each budget supplies its own
-    fuel rather than sharing one `pad`. See `OutcomeAtEx` for why this is not merely a
-    stylistic variant. The export records `fuel_mode`, so a consumer can tell the two
-    apart; nothing else about the cell changes. -/
-abbrev OutcomeSpecEx (b : BudgetRegime)
-    (L R : Nat → Prog) (r : Option Outcome) : Prop :=
-  match b with
-  | .nobudget  => OutcomeAtEx (L 0) (R 0) r
-  | .universal => ∀ k, OutcomeAtEx (L k) (R k) r
-  | .eventual  => ∃ k₂, ∀ k, k₂ < k → OutcomeAtEx (L k) (R k) r
 
 /-- **The GUARDED template** — an outcome that holds only under a side condition on the
     budget and the fuel. `side k fuel` is where a genuine caveat lives, and it is what the

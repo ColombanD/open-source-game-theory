@@ -170,7 +170,7 @@ namespace PD.Theorems
 
 @[outcome]
 theorem llm_outcome_DupocBot_vs_DupocBot :
-    OutcomeSpecEx .eventual DupocBot DupocBot (some (.C, .C)) := by
+    OutcomeSpec .eventual 2 DupocBot DupocBot (some (.C, .C)) := by
   exact proof
 
 end PD.Theorems
@@ -321,7 +321,7 @@ def test_extract_actions_from_template_statement() -> None:
         "OutcomeSpec .universal 2 CupodBot (fun _ => OBot) (some (.C, .D))"
     ) == ("C", "D")
     assert verdicts.extract_actions_from_source(
-        "OutcomeSpecEx .eventual DupocBot DupocBot none"
+        "OutcomeSpec .eventual 2 DupocBot DupocBot none"
     ) == (None, None)
     assert verdicts.extract_actions_from_source("theorem x : True") is None
 

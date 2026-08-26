@@ -40,7 +40,7 @@ theorem outcome_LegibleBot_vs_TitForTatBot_floor2 (fuel : Nat) :
     `outcome_LegibleBot_vs_TitForTatBot_floor`. -/
 @[outcome]
 theorem outcome_LegibleBot_vs_TitForTatBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 4
       (fun k => LegibleBot (2*k+64) k) (fun _ => TitForTatBot) (some (.C, .C)) := by
   obtain ⟨kA, hA⟩ := LegibleBot_cooperates_large (fun _ => TitForTatBot) 100
     (fun k => by
@@ -50,25 +50,29 @@ theorem outcome_LegibleBot_vs_TitForTatBot :
     (fun k => by
       show (Prog.bot CooperateBot).size ≤ 100 + 20 * Nat.log2 k
       simp only [CooperateBot, Prog.size]; omega)
-  refine ⟨max kA kB, fun k hk => ?_⟩
-  obtain ⟨n₁, hn₁⟩ := hA k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
-  obtain ⟨n₂, hn₂⟩ := hB k (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
-  have hn₁' : eval n₁ (LegibleBot (2*k+64) k) TitForTatBot (LegibleBot (2*k+64) k)
-      = some .C := hn₁
-  have hL : play (max n₁ n₂ + 2) (LegibleBot (2*k+64) k) TitForTatBot = some .C :=
-    eval_mono_le hn₁' _ (Nat.le_trans (Nat.le_max_left _ _) (Nat.le_add_right _ 2))
-  have hprobe : play (max n₁ n₂) (LegibleBot (2*k+64) k) (.bot CooperateBot) = some .C := by
-    have hn₂' : eval n₂ (LegibleBot (2*k+64) k) (.bot CooperateBot) (LegibleBot (2*k+64) k)
-        = some .C := hn₂
-    exact eval_mono_le hn₂' _ (Nat.le_max_right _ _)
-  have hGuard : eval (max n₁ n₂ + 1) TitForTatBot (LegibleBot (2*k+64) k)
-      (.sim .opp (.bot CooperateBot)) = some .C :=
-    eval_sim_opp_bot_of_play (max n₁ n₂) TitForTatBot (LegibleBot (2*k+64) k)
-      CooperateBot .C hprobe
-  have hT := play_ite_from_guard (max n₁ n₂) 1 TitForTatBot (LegibleBot (2*k+64) k)
-    (.sim .opp (.bot CooperateBot)) (.const .C) (.const .D) .C .C rfl hGuard
-  have hT' : play (max n₁ n₂ + 2) TitForTatBot (LegibleBot (2*k+64) k) = some .C := by
-    simpa [eval] using hT
-  exact ⟨max n₁ n₂ + 2, outcome_of_plays _ _ _ _ _ hL hT'⟩
-
+  refine ⟨max kA kB, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · obtain ⟨n₁, hn₁⟩ := hA k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
+    obtain ⟨n₂, hn₂⟩ := hB k (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
+    have hn₁' : eval n₁ (LegibleBot (2*k+64) k) TitForTatBot (LegibleBot (2*k+64) k)
+        = some .C := hn₁
+    have hL : play (max n₁ n₂ + 2) (LegibleBot (2*k+64) k) TitForTatBot = some .C :=
+      eval_mono_le hn₁' _ (Nat.le_trans (Nat.le_max_left _ _) (Nat.le_add_right _ 2))
+    have hprobe : play (max n₁ n₂) (LegibleBot (2*k+64) k) (.bot CooperateBot) = some .C := by
+      have hn₂' : eval n₂ (LegibleBot (2*k+64) k) (.bot CooperateBot) (LegibleBot (2*k+64) k)
+          = some .C := hn₂
+      exact eval_mono_le hn₂' _ (Nat.le_max_right _ _)
+    have hGuard : eval (max n₁ n₂ + 1) TitForTatBot (LegibleBot (2*k+64) k)
+        (.sim .opp (.bot CooperateBot)) = some .C :=
+      eval_sim_opp_bot_of_play (max n₁ n₂) TitForTatBot (LegibleBot (2*k+64) k)
+        CooperateBot .C hprobe
+    have hT := play_ite_from_guard (max n₁ n₂) 1 TitForTatBot (LegibleBot (2*k+64) k)
+      (.sim .opp (.bot CooperateBot)) (.const .C) (.const .D) .C .C rfl hGuard
+    have hT' : play (max n₁ n₂ + 2) TitForTatBot (LegibleBot (2*k+64) k) = some .C := by
+      simpa [eval] using hT
+    exact ⟨max n₁ n₂ + 2, outcome_of_plays _ _ _ _ _ hL hT'⟩
+  -- …and the match is determined at fuel 4 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · refine outcome_total_of_plays (play_search_const_total _ _ _ _ _ 2) ?_
+    exact play_ite_total (fuel := 3) rfl (eval_sim_opp_bot_total (play_search_const_total _ _ _ _ _ 0)) (eval_const_total _ _ _ _) (eval_const_total _ _ _ _)
 end PD.Theorems

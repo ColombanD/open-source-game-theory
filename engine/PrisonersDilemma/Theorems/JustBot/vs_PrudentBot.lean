@@ -140,7 +140,7 @@ theorem ps_k_of_play_botdupoc_any (k n : Nat) (q : Prog)
     staggered-budget recovery of the retired same-`k` theorem. -/
 @[outcome]
 theorem outcome_JustBot_vs_PrudentBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 3
       JustBot (fun k => PrudentBot (2*k+64)) (some (.C, .C)) := by
   obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
   have hsD : ∀ k, (Formula.plays (.bot (DupocBot k)) (PrudentBot (2*k+64)) .C).size
@@ -164,39 +164,45 @@ theorem outcome_JustBot_vs_PrudentBot :
     (fun k => by show k ≤ 2*k+64; omega) log2_stagger_le hsD hsP hpb hpb
     (fun k _ => prudent_botdupoc_legPD k)
     (fun k _ => prudent_botdupoc_legDP k)
-  refine ⟨max k₂ KL, fun k hk => ?_⟩
-  have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
-  have hKLk : Nat.log2 k + 3 ≤ k := by
-    have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
-    omega
-  have hlk := log2_le_self k
-  obtain ⟨m, hm⟩ := hk₂ k hk2
-  obtain ⟨n, hplayD⟩ := Pf_sound m _ hm
-  -- botDupoc's guard fired: JustBot's own guard about PrudentBot holds at k
-  have hA_ps : proofSearch k
-      (.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C) = true :=
-    ps_k_of_play_botdupoc_any k n (PrudentBot (2*k+64)) hplayD
-  -- JustBot cooperates (its guard is exactly hA_ps)
-  have hA : play 4 (JustBot k) (PrudentBot (2*k+64)) = some .C := by
-    refine JustBot_eval_step k 2 (PrudentBot (2*k+64)) .C ?_
-    simpa using hA_ps
-  -- PrudentBot's outer guard: JustBot's cooperative play, certified through its fired search
-  have houter : proofSearch (2*k+64)
-      (.plays (JustBot k) (PrudentBot (2*k+64)) .C) = true := by
-    refine (proofSearch_spec _ _).2 (Pf.atom
-      (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hA_ps) PlaysProof.const, ?_⟩ :
-        AtomProvable (2*k+64) (.plays (JustBot k) (PrudentBot (2*k+64)) .C)))
-    show c_leaf + c_guard k + c_node ≤ 2*k+64
-    simp only [numCost, c_leaf, c_guard, c_node]
-    omega
-  -- PrudentBot's prudence about JustBot: the floored certificate fits its bigger budget
-  have hprud : proofSearch (2*k+64) (.plays (JustBot k) (.bot DefectBot) .D) = true := by
-    refine (proofSearch_spec _ _).2 (Pf_mono (justbot_prudence k) ?_)
-    omega
-  have hB : play 4 (PrudentBot (2*k+64)) (JustBot k) = some .C := by
-    simpa using prudent_eval_both_true (2*k+64) 1 (JustBot k) houter hprud
-  exact ⟨4, outcome_of_plays _ _ _ _ _ hA hB⟩
-
+  refine ⟨max k₂ KL, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
+    have hKLk : Nat.log2 k + 3 ≤ k := by
+      have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
+      omega
+    have hlk := log2_le_self k
+    obtain ⟨m, hm⟩ := hk₂ k hk2
+    obtain ⟨n, hplayD⟩ := Pf_sound m _ hm
+    -- botDupoc's guard fired: JustBot's own guard about PrudentBot holds at k
+    have hA_ps : proofSearch k
+        (.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C) = true :=
+      ps_k_of_play_botdupoc_any k n (PrudentBot (2*k+64)) hplayD
+    -- JustBot cooperates (its guard is exactly hA_ps)
+    have hA : play 4 (JustBot k) (PrudentBot (2*k+64)) = some .C := by
+      refine JustBot_eval_step k 2 (PrudentBot (2*k+64)) .C ?_
+      simpa using hA_ps
+    -- PrudentBot's outer guard: JustBot's cooperative play, certified through its fired search
+    have houter : proofSearch (2*k+64)
+        (.plays (JustBot k) (PrudentBot (2*k+64)) .C) = true := by
+      refine (proofSearch_spec _ _).2 (Pf.atom
+        (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hA_ps) PlaysProof.const, ?_⟩ :
+          AtomProvable (2*k+64) (.plays (JustBot k) (PrudentBot (2*k+64)) .C)))
+      show c_leaf + c_guard k + c_node ≤ 2*k+64
+      simp only [numCost, c_leaf, c_guard, c_node]
+      omega
+    -- PrudentBot's prudence about JustBot: the floored certificate fits its bigger budget
+    have hprud : proofSearch (2*k+64) (.plays (JustBot k) (.bot DefectBot) .D) = true := by
+      refine (proofSearch_spec _ _).2 (Pf_mono (justbot_prudence k) ?_)
+      omega
+    have hB : play 4 (PrudentBot (2*k+64)) (JustBot k) = some .C := by
+      simpa using prudent_eval_both_true (2*k+64) 1 (JustBot k) houter hprud
+    exact ⟨4, outcome_of_plays _ _ _ _ _ hA hB⟩
+  -- …and the match is determined at fuel 3 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · refine outcome_total_of_plays (play_search_const_total _ _ _ _ _ 1) ?_
+    unfold play PrudentBot
+    simp only [eval]
+    split <;> (try split) <;> exact ⟨_, rfl⟩
 /-! ### The SAME-budget regime — the tau layer's value, proven in base (2026-08-25)
 
 The strict `outcome_{L}_vs_{R}` theorem above is stated at a budget STAGGER: that is

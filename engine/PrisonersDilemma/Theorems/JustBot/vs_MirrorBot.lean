@@ -69,21 +69,24 @@ theorem jm_guard_true :
 
 @[outcome]
 theorem llm_outcome_JustBot_vs_MirrorBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 3
       JustBot (fun _ => MirrorBot) (some (.C, .C)) := by
   obtain ⟨k₂, hg⟩ := jm_guard_true
-  refine ⟨k₂, fun k hk => ?_⟩
-  have hgk := hg k hk
-  have hA : play 4 (JustBot k) MirrorBot = some .C := by
-    have := JustBot_eval_step k 2 MirrorBot .C (by simpa using hgk)
-    simpa using this
-  have hB : play 5 MirrorBot (JustBot k) = some .C := by
-    show eval 5 MirrorBot (JustBot k) MirrorBot = some .C
-    simp only [MirrorBot, eval, Prog.subst]
-    exact hA
-  have hA' : play 5 (JustBot k) MirrorBot = some .C := by
-    have := JustBot_eval_step k 3 MirrorBot .C (by simpa using hgk)
-    simpa using this
-  exact ⟨5, outcome_of_plays 5 (JustBot k) MirrorBot .C .C hA' hB⟩
-
+  refine ⟨k₂, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · have hgk := hg k hk
+    have hA : play 4 (JustBot k) MirrorBot = some .C := by
+      have := JustBot_eval_step k 2 MirrorBot .C (by simpa using hgk)
+      simpa using this
+    have hB : play 5 MirrorBot (JustBot k) = some .C := by
+      show eval 5 MirrorBot (JustBot k) MirrorBot = some .C
+      simp only [MirrorBot, eval, Prog.subst]
+      exact hA
+    have hA' : play 5 (JustBot k) MirrorBot = some .C := by
+      have := JustBot_eval_step k 3 MirrorBot .C (by simpa using hgk)
+      simpa using this
+    exact ⟨5, outcome_of_plays 5 (JustBot k) MirrorBot .C .C hA' hB⟩
+  -- …and the match is determined at fuel 3 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 1) (play_sim_opp_self_total (play_search_const_total _ _ _ _ _ 0))
 end PD.Theorems

@@ -1,6 +1,7 @@
 import PrisonersDilemma.Bots.LlmGenerations.DIMCID
 import PrisonersDilemma.BaseTheorems
 import PrisonersDilemma.Base.Asymptotics
+import PrisonersDilemma.Base.Helpers
 import PrisonersDilemma.Outcome
 
 open PD
@@ -59,7 +60,7 @@ theorem dimcid_loeb_premise (k b : Nat)
     provable, so both bots take the defect branch. -/
 @[outcome]
 theorem llm_outcome_DIMCID_vs_DIMCID :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 2
       DIMCID DIMCID (some (.D, .D)) := by
   let φ : Nat → Formula := fun k => .plays (DIMCID k) (DIMCID k) .D
   let f : Nat → Nat := fun k => k - (10 * Nat.log2 k + 118)
@@ -88,11 +89,14 @@ theorem llm_outcome_DIMCID_vs_DIMCID :
     rw [hφsz, hpmval]
     omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine φ f pm (max Kc Ksz) hLoeb hsz
-  refine ⟨k₂, ?_⟩
-  intro k hk
-  obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
-  obtain ⟨n, hn⟩ := hInterp
-  refine ⟨n, ?_⟩
-  have hn' : play n (DIMCID k) (DIMCID k) = some Action.D := hn
-  simp [outcome, hn']
+  refine ⟨k₂, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · obtain ⟨m, hm⟩ := hk₂ k hk
+    have hInterp : (φ k).interp := Pf_sound m (φ k) hm
+    obtain ⟨n, hn⟩ := hInterp
+    refine ⟨n, ?_⟩
+    have hn' : play n (DIMCID k) (DIMCID k) = some Action.D := hn
+    simp [outcome, hn']
+  -- …and the match is determined at fuel 2 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 0) (play_search_const_total _ _ _ _ _ 0)

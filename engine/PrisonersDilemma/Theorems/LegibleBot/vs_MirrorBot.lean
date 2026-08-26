@@ -36,21 +36,24 @@ theorem outcome_LegibleBot_vs_MirrorBot_floor2 (fuel : Nat) :
     `outcome_LegibleBot_vs_MirrorBot_floor` (where the mirror replays defection). -/
 @[outcome]
 theorem outcome_LegibleBot_vs_MirrorBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 3
       (fun k => LegibleBot (2*k+64) k) (fun _ => MirrorBot) (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun _ => MirrorBot) 100
     (fun k => by
       show (MirrorBot).size ≤ 100 + 20 * Nat.log2 k
       simp only [MirrorBot, Prog.size]; omega)
-  refine ⟨k₂, fun k hk => ?_⟩
-  obtain ⟨n, hn⟩ := h k hk
-  have hn' : eval n (LegibleBot (2*k+64) k) MirrorBot (LegibleBot (2*k+64) k)
-      = some .C := hn
-  have hL : play (n+1) (LegibleBot (2*k+64) k) MirrorBot = some .C :=
-    eval_mono_le hn' (n+1) (Nat.le_succ n)
-  have hM : play (n+1) MirrorBot (LegibleBot (2*k+64) k) = some .C := by
-    show eval (n+1) MirrorBot (LegibleBot (2*k+64) k) MirrorBot = some .C
-    simpa [eval, MirrorBot, Prog.subst] using hn
-  exact ⟨n+1, outcome_of_plays _ _ _ _ _ hL hM⟩
-
+  refine ⟨k₂, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · obtain ⟨n, hn⟩ := h k hk
+    have hn' : eval n (LegibleBot (2*k+64) k) MirrorBot (LegibleBot (2*k+64) k)
+        = some .C := hn
+    have hL : play (n+1) (LegibleBot (2*k+64) k) MirrorBot = some .C :=
+      eval_mono_le hn' (n+1) (Nat.le_succ n)
+    have hM : play (n+1) MirrorBot (LegibleBot (2*k+64) k) = some .C := by
+      show eval (n+1) MirrorBot (LegibleBot (2*k+64) k) MirrorBot = some .C
+      simpa [eval, MirrorBot, Prog.subst] using hn
+    exact ⟨n+1, outcome_of_plays _ _ _ _ _ hL hM⟩
+  -- …and the match is determined at fuel 3 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 1) (play_sim_opp_self_total (play_search_const_total _ _ _ _ _ 0))
 end PD.Theorems

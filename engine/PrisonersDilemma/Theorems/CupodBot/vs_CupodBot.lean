@@ -18,7 +18,7 @@ namespace PD.Theorems
     symmetry makes the same `play` discharge both legs of `outcome`. -/
 @[outcome]
 theorem outcome_CupodBot_vs_CupodBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 2
       CupodBot CupodBot (some (.D, .D)) := by
   let φ : Nat → Formula := fun k => .plays (CupodBot k) (CupodBot k) .D
   -- `cupod_loeb_premise` proves the premise at its HONEST transcript `5·log2 k + 33` —
@@ -35,12 +35,14 @@ theorem outcome_CupodBot_vs_CupodBot :
     omega
   have hpm : ∀ k, 5 * Nat.log2 k + 33 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 5 * Nat.log2 k + 33) 0 hφsz hpm hLoeb
-  refine ⟨k₂, ?_⟩
-  intro k hk
-  obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
-  obtain ⟨n, hn⟩ := hInterp
-  refine ⟨n, ?_⟩
-  simp [outcome, hn]
-
+  refine ⟨k₂, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · obtain ⟨m, hm⟩ := hk₂ k hk
+    have hInterp : (φ k).interp := Pf_sound m (φ k) hm
+    obtain ⟨n, hn⟩ := hInterp
+    refine ⟨n, ?_⟩
+    simp [outcome, hn]
+  -- …and the match is determined at fuel 2 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 0) (play_search_const_total _ _ _ _ _ 0)
 end PD.Theorems

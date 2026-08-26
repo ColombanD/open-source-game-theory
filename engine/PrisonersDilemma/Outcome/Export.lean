@@ -33,7 +33,6 @@ def cellJson (c : CellInfo) : Json :=
     ("right_bot",     Json.str c.rightBot.toString),
     ("budget_regime", Json.str c.regime.toString),
     ("fuel_pad",      Json.num c.pad),
-    ("fuel_mode",     Json.str c.fuelMode),
     ("pair", match c.pair with
       | none => Json.null
       | some (a, b) => Json.arr #[Json.str a.toString, Json.str b.toString]),

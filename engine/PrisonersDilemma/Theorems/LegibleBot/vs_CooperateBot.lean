@@ -37,18 +37,21 @@ theorem outcome_LegibleBot_vs_CooperateBot_floor2 (fuel : Nat) :
     `outcome_LegibleBot_vs_CooperateBot_floor`. -/
 @[outcome]
 theorem outcome_LegibleBot_vs_CooperateBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 2
       (fun k => LegibleBot (2*k+64) k) (fun _ => CooperateBot) (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun _ => CooperateBot) 100
     (fun k => by
       show (CooperateBot).size ≤ 100 + 20 * Nat.log2 k
       simp only [CooperateBot, Prog.size]; omega)
-  refine ⟨k₂, fun k hk => ?_⟩
-  obtain ⟨n, hn⟩ := h k hk
-  have hn' : eval n (LegibleBot (2*k+64) k) CooperateBot (LegibleBot (2*k+64) k)
-      = some .C := hn
-  have hL : play (n+1) (LegibleBot (2*k+64) k) CooperateBot = some .C :=
-    eval_mono_le hn' (n+1) (Nat.le_succ n)
-  exact ⟨n+1, outcome_of_plays _ _ _ _ _ hL (play_CooperateBot n _)⟩
-
+  refine ⟨k₂, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · obtain ⟨n, hn⟩ := h k hk
+    have hn' : eval n (LegibleBot (2*k+64) k) CooperateBot (LegibleBot (2*k+64) k)
+        = some .C := hn
+    have hL : play (n+1) (LegibleBot (2*k+64) k) CooperateBot = some .C :=
+      eval_mono_le hn' (n+1) (Nat.le_succ n)
+    exact ⟨n+1, outcome_of_plays _ _ _ _ _ hL (play_CooperateBot n _)⟩
+  -- …and the match is determined at fuel 2 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 0) ⟨_, play_CooperateBot 1 _⟩
 end PD.Theorems

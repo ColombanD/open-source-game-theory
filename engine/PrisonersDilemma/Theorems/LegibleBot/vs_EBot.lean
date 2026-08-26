@@ -46,7 +46,7 @@ theorem outcome_LegibleBot_vs_EBot_floor2 (fuel : Nat) :
     complement of `outcome_LegibleBot_vs_EBot_floor`. -/
 @[outcome]
 theorem outcome_LegibleBot_vs_EBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 6
       (fun k => LegibleBot (2*k+64) k) (fun _ => EBot) (some (.C, .D)) := by
   obtain ⟨kA, hA⟩ := LegibleBot_cooperates_large (fun _ => EBot) 100
     (fun k => by
@@ -56,28 +56,34 @@ theorem outcome_LegibleBot_vs_EBot :
     (fun k => by
       show (Prog.bot DefectBot).size ≤ 100 + 20 * Nat.log2 k
       simp only [DefectBot, Prog.size]; omega)
-  refine ⟨max kA kB, fun k hk => ?_⟩
-  obtain ⟨n₁, hn₁⟩ := hA k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
-  obtain ⟨n₂, hn₂⟩ := hB k (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
-  have hn₁' : eval n₁ (LegibleBot (2*k+64) k) EBot (LegibleBot (2*k+64) k)
-      = some .C := hn₁
-  have hL : play (max n₁ n₂ + 2) (LegibleBot (2*k+64) k) EBot = some .C :=
-    eval_mono_le hn₁' _ (Nat.le_trans (Nat.le_max_left _ _) (Nat.le_add_right _ 2))
-  have hprobe : play (max n₁ n₂) (LegibleBot (2*k+64) k) (.bot DefectBot) = some .C := by
-    have hn₂' : eval n₂ (LegibleBot (2*k+64) k) (.bot DefectBot) (LegibleBot (2*k+64) k)
-        = some .C := hn₂
-    exact eval_mono_le hn₂' _ (Nat.le_max_right _ _)
-  have hGuard : eval (max n₁ n₂ + 1) EBot (LegibleBot (2*k+64) k)
-      (.sim .opp (.bot DefectBot)) = some .C :=
-    eval_sim_opp_bot_of_play (max n₁ n₂) EBot (LegibleBot (2*k+64) k)
-      DefectBot .C hprobe
-  have hE := play_ite_from_guard (max n₁ n₂) 1 EBot (LegibleBot (2*k+64) k)
-    (.sim .opp (.bot DefectBot)) (.const .D)
-    (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
-      (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
-    .C .C rfl hGuard
-  have hE' : play (max n₁ n₂ + 2) EBot (LegibleBot (2*k+64) k) = some .D := by
-    simpa [eval] using hE
-  exact ⟨max n₁ n₂ + 2, outcome_of_plays _ _ _ _ _ hL hE'⟩
-
+  refine ⟨max kA kB, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · obtain ⟨n₁, hn₁⟩ := hA k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
+    obtain ⟨n₂, hn₂⟩ := hB k (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
+    have hn₁' : eval n₁ (LegibleBot (2*k+64) k) EBot (LegibleBot (2*k+64) k)
+        = some .C := hn₁
+    have hL : play (max n₁ n₂ + 2) (LegibleBot (2*k+64) k) EBot = some .C :=
+      eval_mono_le hn₁' _ (Nat.le_trans (Nat.le_max_left _ _) (Nat.le_add_right _ 2))
+    have hprobe : play (max n₁ n₂) (LegibleBot (2*k+64) k) (.bot DefectBot) = some .C := by
+      have hn₂' : eval n₂ (LegibleBot (2*k+64) k) (.bot DefectBot) (LegibleBot (2*k+64) k)
+          = some .C := hn₂
+      exact eval_mono_le hn₂' _ (Nat.le_max_right _ _)
+    have hGuard : eval (max n₁ n₂ + 1) EBot (LegibleBot (2*k+64) k)
+        (.sim .opp (.bot DefectBot)) = some .C :=
+      eval_sim_opp_bot_of_play (max n₁ n₂) EBot (LegibleBot (2*k+64) k)
+        DefectBot .C hprobe
+    have hE := play_ite_from_guard (max n₁ n₂) 1 EBot (LegibleBot (2*k+64) k)
+      (.sim .opp (.bot DefectBot)) (.const .D)
+      (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
+        (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
+      .C .C rfl hGuard
+    have hE' : play (max n₁ n₂ + 2) EBot (LegibleBot (2*k+64) k) = some .D := by
+      simpa [eval] using hE
+    exact ⟨max n₁ n₂ + 2, outcome_of_plays _ _ _ _ _ hL hE'⟩
+  -- …and the match is determined at fuel 6 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · refine outcome_total_of_plays (play_search_const_total _ _ _ _ _ 4) ?_
+    exact play_ite_total (fuel := 5) rfl (eval_sim_opp_bot_total (play_total_mono (play_search_const_total _ _ _ _ _ 0) 4 (by omega))) (eval_const_total _ _ _ _)
+      (eval_ite_total (fuel := 4) (eval_sim_opp_bot_total (play_total_mono (play_search_const_total _ _ _ _ _ 0) 3 (by omega))) (eval_const_total _ _ _ _)
+        (eval_ite_total (fuel := 3) (eval_sim_opp_bot_total (play_search_const_total _ _ _ _ _ 0)) (eval_const_total _ _ _ _) (eval_const_total _ _ _ _)))
 end PD.Theorems

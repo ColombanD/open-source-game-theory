@@ -69,27 +69,31 @@ theorem botDupoc_self_coop :
 /-- JustBot vs JustBot: mutual cooperation for sufficiently large `k`. -/
 @[outcome]
 theorem outcome_JustBot_vs_JustBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 2
       JustBot JustBot (some (.C, .C)) := by
   obtain ⟨k₂, hk₂⟩ := botDupoc_self_coop
   obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
-  refine ⟨max k₂ KL, fun k hk => ?_⟩
-  have hk2 : k₂ < k := lt_of_le_of_lt (le_max_left _ _) hk
-  have hKLk : Nat.log2 k + 3 ≤ k := by
-    have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
-    omega
-  have hdd : proofSearch k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C) = true := hk₂ k hk2
-  have hd' : proofSearch k (.plays (JustBot k) (.bot (DupocBot k)) .C) = true := by
-    -- hand certificate: JustBot's own search FIRED (hdd) — search_t ∘ const, log2 k + 3 chars
-    refine (proofSearch_spec _ _).2 (Pf.atom
-      (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hdd) PlaysProof.const, ?_⟩ :
-        AtomProvable k (.plays (JustBot k) (.bot (DupocBot k)) .C)))
-    show c_leaf + c_guard k + c_node ≤ k
-    simp only [numCost, c_leaf, c_guard, c_node]
-    omega
-  have hJJ : ∀ f, play (f + 2) (JustBot k) (JustBot k) = some .C := by
-    intro f
-    refine JustBot_eval_step k f (JustBot k) .C ?_
-    simpa using hd'
-  exact ⟨2, outcome_of_plays _ _ _ _ _ (by simpa using hJJ 0) (by simpa using hJJ 0)⟩
+  refine ⟨max k₂ KL, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · have hk2 : k₂ < k := lt_of_le_of_lt (le_max_left _ _) hk
+    have hKLk : Nat.log2 k + 3 ≤ k := by
+      have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
+      omega
+    have hdd : proofSearch k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C) = true := hk₂ k hk2
+    have hd' : proofSearch k (.plays (JustBot k) (.bot (DupocBot k)) .C) = true := by
+      -- hand certificate: JustBot's own search FIRED (hdd) — search_t ∘ const, log2 k + 3 chars
+      refine (proofSearch_spec _ _).2 (Pf.atom
+        (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hdd) PlaysProof.const, ?_⟩ :
+          AtomProvable k (.plays (JustBot k) (.bot (DupocBot k)) .C)))
+      show c_leaf + c_guard k + c_node ≤ k
+      simp only [numCost, c_leaf, c_guard, c_node]
+      omega
+    have hJJ : ∀ f, play (f + 2) (JustBot k) (JustBot k) = some .C := by
+      intro f
+      refine JustBot_eval_step k f (JustBot k) .C ?_
+      simpa using hd'
+    exact ⟨2, outcome_of_plays _ _ _ _ _ (by simpa using hJJ 0) (by simpa using hJJ 0)⟩
+  -- …and the match is determined at fuel 2 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 0) (play_search_const_total _ _ _ _ _ 0)
 end PD.Theorems

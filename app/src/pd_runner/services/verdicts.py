@@ -356,8 +356,7 @@ def check_proved_source(
     if head is None:
         problems.append(
             f"the statement of `{name}` is not on the outcome template — it must be "
-            "`OutcomeSpec <regime> <pad> L R (some (.X, .Y))` (or `OutcomeSpecEx <regime> "
-            "L R …` for a `k`-dependent fuel witness); a raw `outcome … = …` equation, an "
+            "`OutcomeSpec <regime> <pad> L R (some (.X, .Y))`; a raw `outcome … = …` equation, an "
             "`∃ k` witness or a hand-written `∀ k ≥ K` telescope is rejected — see "
             "`Outcome/Spec.lean` in your prompt"
         )
@@ -366,6 +365,11 @@ def check_proved_source(
             f"the statement of `{name}` uses the guarded `OutcomeSpecIf` — side conditions "
             "are not allowed for LLM-written cells (a budget floor is the `.eventual` "
             "regime, not a premise)"
+        )
+    elif head.group(1) == "Ex":
+        problems.append(
+            f"the statement of `{name}` uses `OutcomeSpecEx`, which no longer exists — every "
+            "cell has a literal pad; lift a `Pf_sound` witness with `outcome_at_of_ex`"
         )
     else:
         for bot in (left_bot, right_bot):

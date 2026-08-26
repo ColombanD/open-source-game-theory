@@ -69,7 +69,7 @@ theorem cd_dupoc_plays_C (k fuel : Nat)
     so both cooperate. -/
 @[outcome]
 theorem llm_outcome_CIMCIC_vs_DupocBot :
-    OutcomeSpecEx .eventual CIMCIC DupocBot (some (.C, .C)) := by
+    OutcomeSpec .eventual 2 CIMCIC DupocBot (some (.C, .C)) := by
   let Af : Nat → Formula := fun k => .plays (CIMCIC k) (DupocBot k) .C
   let Bf : Nat → Formula := fun k =>
     .impl (.plays (CIMCIC k) (DupocBot k) .C) (.plays (DupocBot k) (CIMCIC k) .C)
@@ -114,20 +114,23 @@ theorem llm_outcome_CIMCIC_vs_DupocBot :
     simp only [numCost, Formula.size, Prog.size, CIMCIC, DupocBot, Af, Bf]; omega
   obtain ⟨ke, hke⟩ := mutual_pblt_engine_id Af Bf p p 0 hsA hsB hp hp hL1 hL2
   obtain ⟨kt, hkt⟩ := linear_log2_add_le 1 3
-  refine ⟨max ke kt, fun k hk => ?_⟩
-  have hkke : k > ke := lt_of_le_of_lt (Nat.le_max_left _ _) hk
-  have hkkt : Nat.log2 k + 3 ≤ k := by
-    have := hkt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk)); omega
-  obtain ⟨m, hm⟩ := hke k hkke
-  have hAint : (Af k).interp := Pf_sound m (Af k) hm
-  obtain ⟨n, hnA⟩ := hAint
-  have hBf : Pf k (Bf k) := cd_dupoc_guard_fired k n hnA
-  have hAf : Pf k (Af k) := cd_af_provable_at_k k hkkt hBf
-  have hB : play (n + 2) (DupocBot k) (CIMCIC k) = some .C := cd_dupoc_plays_C k n hAf
-  have hnA' : eval n (CIMCIC k) (DupocBot k) (CIMCIC k) = some .C := hnA
-  have hA : play (n + 2) (CIMCIC k) (DupocBot k) = some .C :=
-    eval_mono_le hnA' (n + 2) (Nat.le_add_right _ 2)
-  exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hA hB⟩
-
+  refine ⟨max ke kt, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · have hkke : k > ke := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+    have hkkt : Nat.log2 k + 3 ≤ k := by
+      have := hkt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk)); omega
+    obtain ⟨m, hm⟩ := hke k hkke
+    have hAint : (Af k).interp := Pf_sound m (Af k) hm
+    obtain ⟨n, hnA⟩ := hAint
+    have hBf : Pf k (Bf k) := cd_dupoc_guard_fired k n hnA
+    have hAf : Pf k (Af k) := cd_af_provable_at_k k hkkt hBf
+    have hB : play (n + 2) (DupocBot k) (CIMCIC k) = some .C := cd_dupoc_plays_C k n hAf
+    have hnA' : eval n (CIMCIC k) (DupocBot k) (CIMCIC k) = some .C := hnA
+    have hA : play (n + 2) (CIMCIC k) (DupocBot k) = some .C :=
+      eval_mono_le hnA' (n + 2) (Nat.le_add_right _ 2)
+    exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hA hB⟩
+  -- …and the match is determined at fuel 2 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 0) (play_search_const_total _ _ _ _ _ 0)
 end PD.Theorems
 

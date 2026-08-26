@@ -18,8 +18,7 @@ namespace PD.Theorems
     symmetry makes the same `play` discharge both legs of `outcome`. -/
 @[outcome]
 theorem outcome_DupocBot_vs_DupocBot :
-    OutcomeSpecEx .eventual
-      DupocBot DupocBot (some (.C, .C)) := by
+    OutcomeSpec .eventual 2 DupocBot DupocBot (some (.C, .C)) := by
   let φ : Nat → Formula := fun k => .plays (DupocBot k) (DupocBot k) .C
   -- `dupoc_loeb_premise` proves the premise at its HONEST transcript `5·log2 k + 33` —
   -- exactly `pblt_engine_id`'s premise shape (the Löb chain needs `pm ≪ k`).
@@ -35,12 +34,14 @@ theorem outcome_DupocBot_vs_DupocBot :
     omega
   have hpm : ∀ k, 5 * Nat.log2 k + 33 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 5 * Nat.log2 k + 33) 0 hφsz hpm hLoeb
-  refine ⟨k₂, ?_⟩
-  intro k hk
+  refine ⟨k₂, fun k hk fuel => ?_⟩
   obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
-  obtain ⟨n, hn⟩ := hInterp
-  refine ⟨n, ?_⟩
-  simp [outcome, hn]
+  -- Soundness yields the play at SOME fuel; the match is determined at fuel 2 whatever
+  -- the oracle says, so determinism pins the value there and monotonicity does the rest.
+  have hex : ∃ n, play n (DupocBot k) (DupocBot k) = some .C := Pf_sound m (φ k) hm
+  have htot : ∃ b, play 2 (DupocBot k) (DupocBot k) = some b :=
+    play_search_const_total k _ _ _ _ 0
+  have hC : play (fuel + 2) (DupocBot k) (DupocBot k) = some .C := play_at_of_ex hex htot fuel
+  exact outcome_of_plays _ _ _ _ _ hC hC
 
 end PD.Theorems

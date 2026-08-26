@@ -40,7 +40,7 @@ builds on the engine, the engine never imports it). Namespace `PD`. Layered bott
 **The strict outcome-theorem template** is the linchpin the whole pipeline relies on.
 Since 2026-08-26 it is a TYPED object (`Outcome/Spec.lean`): every matrix theorem is
 `@[outcome] theorem (llm_)outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`
-(`OutcomeSpecEx` for existential fuel, `OutcomeSpecIf` for a genuine side condition;
+(`OutcomeSpecIf` for a genuine side condition; there is NO existential-fuel template since 2026-08-27 — `Base/Helpers.outcome_at_of_ex` lifts a `Pf_sound` witness to a literal pad via fuel determinism + structural totality;
 regimes `nobudget | universal | eventual`; `L R : Nat → Prog` so staggering is a
 structural property of the lambda). `Outcome/Lint.lean` validates every tagged theorem
 against its own name and `Outcome/Check.lean` (lake target `OutcomeCheck`, in the

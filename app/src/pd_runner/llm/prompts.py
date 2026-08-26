@@ -180,7 +180,7 @@ def build_system_prompt_blocks(
         ("Base/Helpers.lean", "Base/Helpers.lean (outcome assembly: `outcome_of_plays`, "
          "`play_ite_from_guard`, `eval_sim_opp_bot_of_play`, `outcome_mono_le`)"),
         ("Outcome/Spec.lean", "Outcome/Spec.lean (THE outcome-theorem template: `OutcomeSpec`, "
-         "`OutcomeSpecEx`, `BudgetRegime` — your final theorem MUST be stated with it)"),
+         "`BudgetRegime` — your final theorem MUST be stated with it)"),
     ):
         proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
@@ -305,14 +305,17 @@ your best compiling source, and the last compiler feedback. You finish by callin
   `(fun _ => DefectBot)`. `<pad>` is a `Nat` literal, the fuel offset — the statement
   unfolds to `outcome (fuel + pad) (L k) (R k) = some (.X, .Y)`. `<regime>` is
   `.nobudget` (both bots closed), `.universal` (holds at EVERY budget `k`) or `.eventual`
-  (holds at every sufficiently large `k`: `∃ k₂, ∀ k, k₂ < k → …`). `OutcomeSpecEx
-  <regime> L R r` (no pad; `∃ fuel` per budget) is for results whose fuel witness comes
-  out of `Pf_sound` and genuinely depends on `k` — the Löbian cooperation theorems; prefer
-  the padded form whenever a literal pad works. A provably-no-outcome pair states `none`
-  as the result. Proof openers: `.nobudget` → `intro fuel`; `.universal` → `intro k fuel`;
-  `.eventual` → `refine ⟨K, fun k hk fuel => ?_⟩` (`OutcomeSpecEx .eventual` →
-  `refine ⟨K, fun k hk => ⟨fuel, ?_⟩⟩`); after that the goal is the familiar
-  `outcome (fuel + pad) … = some (…)` and every existing proof technique applies.
+  (holds at every sufficiently large `k`: `∃ k₂, ∀ k, k₂ < k → …`). A provably-no-outcome
+  pair states `none` as the result. Proof openers: `.nobudget` → `intro fuel`;
+  `.universal` → `intro k fuel`; `.eventual` → `refine ⟨K, fun k hk fuel => ?_⟩`; after
+  that the goal is the familiar `outcome (fuel + pad) … = some (…)` and every existing
+  proof technique applies. When your play witness comes out of `Pf_sound` with an
+  UNBOUNDED fuel (`interp (.plays p q a)` is `∃ n, play n p q = some a` — the Löbian
+  results), do not try to bound it: use `Base/Helpers.outcome_at_of_ex` /
+  `play_at_of_ex` — an existential witness plus TOTALITY of the match at the pad
+  (`play_search_const_total`, `play_ite_total`, `play_sim_opp_self_total`, …: structural,
+  budget-independent) gives the cofinite form by fuel determinism. See
+  `outcome_DupocBot_vs_DupocBot` for the pattern.
   The verdict gate runs the library's OWN linter (`#validate_outcome`) on your file: a raw
   `outcome … = …` equation, an `∃ k` witness, a hand-written `∀ k ≥ K` telescope, a
   missing `@[outcome]`, or bots in the statement that differ from the ones the NAME
@@ -325,9 +328,8 @@ your best compiling source, and the last compiler feedback. You finish by callin
   both bots take a budget parameter `k`, the outcome typically flips with `k`: small `k` gives
   defection (the oracle proves nothing), large `k` gives the Löb/Critch cooperation fixed
   point. The unquantified statement with `k` left free is unprovable, but the **large-`k`
-  threshold** statement `OutcomeSpec .eventual pad BotA BotB (some (…))` (or
-  `OutcomeSpecEx .eventual BotA BotB (some (…))` when the fuel witness comes from
-  `Pf_sound`) is provable and is the expected answer. Existing `.search`-bot self-play theorems in the
+  threshold** statement `OutcomeSpec .eventual pad BotA BotB (some (…))` is provable and
+  is the expected answer. Existing `.search`-bot self-play theorems in the
   few-shot files show the canonical `PBLT` application for this shape — follow it. Prove the
   threshold theorem; do NOT declare OUTCOME OPEN merely because the result varies with `k`.
   Not every self-play matchup cooperates, though: when the Löb premise is NOT derivable at
@@ -511,10 +513,10 @@ def proof_request_message(
             f"  refine ⟨K, fun k hk fuel => ?_⟩  -- pick the threshold K\n"
             f"  sorry  -- replace with a real proof of `outcome (fuel + {pad_expr}) … = {outcome_clause}`\n"
             f"```\n\n"
-            f"Use `OutcomeSpecEx .eventual {left_app} {right_app} ({outcome_clause})` (no pad, opener "
-            f"`refine ⟨K, fun k hk => ⟨fuel, ?_⟩⟩`) only if the fuel witness comes out of "
-            f"`Pf_sound` and depends on `k`; use `.universal` (opener `intro k fuel`) if the "
-            f"result holds at EVERY budget. {template_hint} Do NOT emit a raw `outcome … = "
+            f"Use `.universal` (opener `intro k fuel`) if the result holds at EVERY budget. If "
+            f"your play witness comes from `Pf_sound` (unbounded fuel), close with "
+            f"`outcome_at_of_ex ⟨witness⟩ ⟨totality at the pad⟩ fuel` — see "
+            f"`outcome_DupocBot_vs_DupocBot`. {template_hint} Do NOT emit a raw `outcome … = "
             f"some (…)` equation or leave `k` free; that statement is off-template and, with "
             f"`k` free, unprovable because the outcome flips with `k`.\n\n"
             f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}`, "

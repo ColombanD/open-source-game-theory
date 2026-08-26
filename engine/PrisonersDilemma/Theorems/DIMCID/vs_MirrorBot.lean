@@ -157,7 +157,7 @@ theorem dm_mirror_copies (k fuel : Nat) (a : Action)
 /-- **DIMCID vs MirrorBot: mutual defection (D, D)** for all sufficiently large `k`. -/
 @[outcome]
 theorem llm_outcome_DIMCID_vs_MirrorBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 3
       DIMCID (fun _ => MirrorBot) (some (.D, .D)) := by
   let φ : Nat → Formula := fun k => .plays (DIMCID k) MirrorBot .D
   let f : Nat → Nat := fun k => k - (200 * Nat.log2 k + 20000)
@@ -179,18 +179,20 @@ theorem llm_outcome_DIMCID_vs_MirrorBot :
     rw [hφsz]
     exact dm_hsz_bound Kc Ksz hKc hKsz k hk
   obtain ⟨k₂, hk₂⟩ := pblt_engine φ f pm (max Kc Ksz) hLoeb hsz
-  refine ⟨k₂, ?_⟩
-  intro k hk
-  obtain ⟨m, hm⟩ := hk₂ k hk
-  have hInterp : (φ k).interp := Pf_sound m (φ k) hm
-  obtain ⟨n, hn⟩ := hInterp
-  have hn' : play n (DIMCID k) MirrorBot = some Action.D := hn
-  have hA : play (n + 2) (DIMCID k) MirrorBot = some Action.D := by
-    unfold play at hn' ⊢; exact eval_mono_le hn' (n + 2) (by omega)
-  have hA1 : play (n + 1) (DIMCID k) MirrorBot = some Action.D := by
-    unfold play at hn' ⊢; exact eval_mono_le hn' (n + 1) (by omega)
-  have hB : play (n + 2) MirrorBot (DIMCID k) = some Action.D :=
-    dm_mirror_copies k n Action.D hA1
-  exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hA hB⟩
-
+  refine ⟨k₂, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · obtain ⟨m, hm⟩ := hk₂ k hk
+    have hInterp : (φ k).interp := Pf_sound m (φ k) hm
+    obtain ⟨n, hn⟩ := hInterp
+    have hn' : play n (DIMCID k) MirrorBot = some Action.D := hn
+    have hA : play (n + 2) (DIMCID k) MirrorBot = some Action.D := by
+      unfold play at hn' ⊢; exact eval_mono_le hn' (n + 2) (by omega)
+    have hA1 : play (n + 1) (DIMCID k) MirrorBot = some Action.D := by
+      unfold play at hn' ⊢; exact eval_mono_le hn' (n + 1) (by omega)
+    have hB : play (n + 2) MirrorBot (DIMCID k) = some Action.D :=
+      dm_mirror_copies k n Action.D hA1
+    exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hA hB⟩
+  -- …and the match is determined at fuel 3 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 1) (play_sim_opp_self_total (play_search_const_total _ _ _ _ _ 0))
 end PD.Theorems

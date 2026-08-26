@@ -41,19 +41,22 @@ theorem outcome_LegibleBot_vs_CupodTrollBot_floor2 (fuel : Nat) :
 -- plain `∀` binder to the left of the template.
 @[outcome]
 theorem outcome_LegibleBot_vs_CupodTrollBot (j : Nat) :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 2
       (fun k => LegibleBot (2*k+64) k) (fun _ => CupodTrollBot j) (some (.C, .C)) := by
   obtain ⟨k₂, h⟩ := LegibleBot_cooperates_large (fun _ => CupodTrollBot j)
     ((CupodTrollBot j).size) (fun k => Nat.le_add_right _ _)
-  refine ⟨k₂, fun k hk => ?_⟩
-  obtain ⟨n, hn⟩ := h k hk
-  have hn' : eval n (LegibleBot (2*k+64) k) (CupodTrollBot j) (LegibleBot (2*k+64) k)
-      = some .C := hn
-  have hL : play (n + 2) (LegibleBot (2*k+64) k) (CupodTrollBot j) = some .C :=
-    eval_mono_le hn' _ (Nat.le_add_right _ 2)
-  have hT : play (n + 2) (CupodTrollBot j) (LegibleBot (2*k+64) k) = some .C :=
-    CupodTrollBot_cooperates_if_opp_not_CupodBot j n (LegibleBot (2*k+64) k)
-      (by simp [LegibleBot, CupodBot])
-  exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hL hT⟩
-
+  refine ⟨k₂, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · obtain ⟨n, hn⟩ := h k hk
+    have hn' : eval n (LegibleBot (2*k+64) k) (CupodTrollBot j) (LegibleBot (2*k+64) k)
+        = some .C := hn
+    have hL : play (n + 2) (LegibleBot (2*k+64) k) (CupodTrollBot j) = some .C :=
+      eval_mono_le hn' _ (Nat.le_add_right _ 2)
+    have hT : play (n + 2) (CupodTrollBot j) (LegibleBot (2*k+64) k) = some .C :=
+      CupodTrollBot_cooperates_if_opp_not_CupodBot j n (LegibleBot (2*k+64) k)
+        (by simp [LegibleBot, CupodBot])
+    exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hL hT⟩
+  -- …and the match is determined at fuel 2 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 0) (play_search_const_total _ _ _ _ _ 0)
 end PD.Theorems

@@ -64,19 +64,22 @@ theorem lg_legible_C_vs_guardian :
     CooperateBot (it doesn't — it cooperates with everyone), trusts back. -/
 @[outcome]
 theorem llm_outcome_LegibleBot_vs_GuardianBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 2
       (fun k => LegibleBot (2*k+64) k) GuardianBot (some (.C, .C)) := by
   obtain ⟨k₁, hguard⟩ := lg_guardian_guard_false
   obtain ⟨k₂, hleg⟩ := lg_legible_C_vs_guardian
-  refine ⟨max k₁ k₂, fun k hk => ?_⟩
-  have hk1 : k > k₁ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
-  have hk2 : k > k₂ := lt_of_le_of_lt (Nat.le_max_right _ _) hk
-  obtain ⟨n, hn⟩ := hleg k hk2
-  have hgf := hguard k hk1
-  have hL : play (n + 2) (LegibleBot (2*k+64) k) (GuardianBot k) = some .C :=
-    eval_mono_le hn (n + 2) (by omega)
-  have hG : play (n + 2) (GuardianBot k) (LegibleBot (2*k+64) k) = some .C :=
-    lg_guardian_C_vs_legible k n hgf
-  exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hL hG⟩
-
+  refine ⟨max k₁ k₂, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · have hk1 : k > k₁ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+    have hk2 : k > k₂ := lt_of_le_of_lt (Nat.le_max_right _ _) hk
+    obtain ⟨n, hn⟩ := hleg k hk2
+    have hgf := hguard k hk1
+    have hL : play (n + 2) (LegibleBot (2*k+64) k) (GuardianBot k) = some .C :=
+      eval_mono_le hn (n + 2) (by omega)
+    have hG : play (n + 2) (GuardianBot k) (LegibleBot (2*k+64) k) = some .C :=
+      lg_guardian_C_vs_legible k n hgf
+    exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hL hG⟩
+  -- …and the match is determined at fuel 2 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 0) (play_search_const_total _ _ _ _ _ 0)
 end PD.Theorems

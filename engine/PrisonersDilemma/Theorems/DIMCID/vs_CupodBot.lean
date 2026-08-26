@@ -158,22 +158,25 @@ theorem dc_CupodBot_plays_D (k fuel : Nat)
     pair, closed by mutual bounded Löb on defection. -/
 @[outcome]
 theorem outcome_DIMCID_vs_CupodBot :
-    OutcomeSpecEx .eventual
+    OutcomeSpec .eventual 2
       DIMCID CupodBot (some (.D, .D)) := by
   obtain ⟨ke, hke⟩ := dc_mutual
   obtain ⟨kt, hkt⟩ := linear_log2_add_le 1 3
-  refine ⟨max ke kt, fun k hk => ?_⟩
-  have hkke : ke < k := lt_of_le_of_lt (Nat.le_max_left _ _) hk
-  have hkkt : Nat.log2 k + 3 ≤ k := by
-    have := hkt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk)); omega
-  obtain ⟨m, hm⟩ := hke k hkke
-  obtain ⟨n, hnA⟩ := Pf_sound m _ hm
-  have hBf := dc_guard_fired k n hnA
-  have hAf := dc_af_at_k k hkkt hBf
-  have hB : play (n + 2) (CupodBot k) (DIMCID k) = some .D := dc_CupodBot_plays_D k n hAf
-  have hnA' : eval n (DIMCID k) (CupodBot k) (DIMCID k) = some .D := hnA
-  have hA : play (n + 2) (DIMCID k) (CupodBot k) = some .D :=
-    eval_mono_le hnA' (n + 2) (Nat.le_add_right _ 2)
-  exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hA hB⟩
-
+  refine ⟨max ke kt, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
+  · have hkke : ke < k := lt_of_le_of_lt (Nat.le_max_left _ _) hk
+    have hkkt : Nat.log2 k + 3 ≤ k := by
+      have := hkt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk)); omega
+    obtain ⟨m, hm⟩ := hke k hkke
+    obtain ⟨n, hnA⟩ := Pf_sound m _ hm
+    have hBf := dc_guard_fired k n hnA
+    have hAf := dc_af_at_k k hkkt hBf
+    have hB : play (n + 2) (CupodBot k) (DIMCID k) = some .D := dc_CupodBot_plays_D k n hAf
+    have hnA' : eval n (DIMCID k) (CupodBot k) (DIMCID k) = some .D := hnA
+    have hA : play (n + 2) (DIMCID k) (CupodBot k) = some .D :=
+      eval_mono_le hnA' (n + 2) (Nat.le_add_right _ 2)
+    exact ⟨n + 2, outcome_of_plays _ _ _ _ _ hA hB⟩
+  -- …and the match is determined at fuel 2 whatever the oracle says, so
+  -- determinism (`play_unique`) pins the value there and monotonicity does the rest.
+  · exact outcome_total_of_plays (play_search_const_total _ _ _ _ _ 0) (play_search_const_total _ _ _ _ _ 0)
 end PD.Theorems

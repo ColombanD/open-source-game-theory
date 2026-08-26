@@ -44,8 +44,6 @@ structure CellInfo where
   sideConds : Array String
   /-- `L`/`R` is not a bare pass-through, e.g. `fun k => PrudentBot (2*k+64)`. -/
   staggered : Bool
-  /-- `"cofinite"` (∀ fuel, at `pad`) or `"exists"` (∃ fuel, per budget). -/
-  fuelMode : String
   deriving Repr
 
 /-- Strip the `∀`-telescope, collecting `Prop` binders as side conditions. -/
@@ -123,19 +121,17 @@ def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
   -- the validator treat both uniformly; `guarded` is what the exporter reports, and it
   -- is a machine-read reason for the dagger rather than a guess from a binder name.
   let guarded := fn.isConstOf ``PD.OutcomeSpecIf
-  let existsFuel := fn.isConstOf ``PD.OutcomeSpecEx
-  unless fn.isConstOf ``PD.OutcomeSpec || guarded || existsFuel do
-    throwError "@[outcome] {n} is OFF-TEMPLATE: its statement must be `PD.OutcomeSpec …`, \
-      `PD.OutcomeSpecIf …` or `PD.OutcomeSpecEx …`, got\n  {← ppExpr body}"
-  let expected := if guarded then 6 else if existsFuel then 4 else 5
+  unless fn.isConstOf ``PD.OutcomeSpec || guarded do
+    throwError "@[outcome] {n} is OFF-TEMPLATE: its statement must be `PD.OutcomeSpec …` \
+      or `PD.OutcomeSpecIf …`, got\n  {← ppExpr body}"
+  let expected := if guarded then 6 else 5
   unless rawArgs.size == expected do
     throwError "@[outcome] {n}: expects {expected} arguments, got {rawArgs.size}"
-  -- Normalize every head to the vector `b, pad, L, R, r`; `OutcomeSpecEx` has no `pad`,
-  -- so a literal 0 stands in and `fuelMode` records the difference.
+  -- Normalize both heads to the vector `b, pad, L, R, r` (the guard is dropped here and
+  -- reported separately).
   let sideExpr? := if guarded then some rawArgs[2]! else none
   let args :=
     if guarded then #[rawArgs[0]!, rawArgs[1]!] ++ rawArgs[3:].toArray
-    else if existsFuel then #[rawArgs[0]!, mkNatLit 0] ++ rawArgs[1:].toArray
     else rawArgs
   let some regime := (← whnf args[0]!).constName?
     | throwError "@[outcome] {n}: the BudgetRegime must be a literal constructor"
@@ -169,8 +165,7 @@ def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
     sideConds := sideConds.push (toString (← ppExpr e))
   return { name := n, module := module, leftBot := shortName lB, rightBot := shortName rB
            regime := shortName regime, pad := pad, pair := pair
-           sideConds := sideConds, staggered := lStag || rStag
-           fuelMode := if existsFuel then "exists" else "cofinite" }
+           sideConds := sideConds, staggered := lStag || rStag }
 
 /-- The bot set: the per-bot theorem directories under `dir` (the app's `library_bots`). -/
 def botDirsOnDisk (dir : System.FilePath) : IO (Array String) := do
@@ -249,7 +244,7 @@ elab "#validate_outcome " id:ident : command => do
     | none => "none"
     | some (a, b) => s!"({a}, {b})"
   logInfo s!"outcome cell OK — {c.leftBot} vs {c.rightBot}: {pair}, regime {c.regime}, \
-    pad {c.pad}, fuel {c.fuelMode}, staggered {c.staggered}, \
+    pad {c.pad}, staggered {c.staggered}, \
     side conditions {c.sideConds.size}"
 
 end PD.Outcome

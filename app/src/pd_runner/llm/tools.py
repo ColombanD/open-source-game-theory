@@ -203,7 +203,7 @@ def make_submit_verdict_tool(allow_constructor_proposed: bool) -> dict[str, Any]
             "Submit your FINAL verdict for this matchup. This is the ONLY way to finish — "
             "prose alone does not end the search. For `proved`, include the complete Lean "
             "source: it will be RE-COMPILED and checked against the strict theorem template "
-            "(exact theorem name, `@[outcome]` tag, an `OutcomeSpec`/`OutcomeSpecEx` "
+            "(exact theorem name, `@[outcome]` tag, an `OutcomeSpec` "
             "statement validated by the library's own linter, no hypotheses or "
             "oracle-conditioning premises, no census inductions, no library name "
             "collisions) before "
