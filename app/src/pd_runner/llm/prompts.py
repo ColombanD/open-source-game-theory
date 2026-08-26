@@ -321,9 +321,8 @@ your best compiling source, and the last compiler feedback. You finish by callin
   missing `@[outcome]`, or bots in the statement that differ from the ones the NAME
   claims are all rejected. **No extra premises**: no `(h : …)` Prop binders, never
   `proofSearch _ _ = true/false` (a hypothesis conditioning the outcome on the proof
-  oracle turns the theorem into a conditional claim), and no `OutcomeSpecIf` (its guarded
-  cells are hand-written and daggered) — a budget FLOOR is not a premise, it is the
-  `.eventual` regime.
+  oracle turns the theorem into a conditional claim) — a budget FLOOR is not a premise,
+  it is the `.eventual` regime.
 - **`.search`-bot matchups depend on the budget `k` — bind it, do not give up.** When one or
   both bots take a budget parameter `k`, the outcome typically flips with `k`: small `k` gives
   defection (the oracle proves nothing), large `k` gives the Löb/Critch cooperation fixed

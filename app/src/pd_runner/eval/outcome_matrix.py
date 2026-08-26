@@ -15,7 +15,7 @@ Acceptance rules (matching the tracking sheet's conventions):
   build failure rather than a silently open-looking cell.
 - A theorem is flagged `†` when the export says it is STAGGERED (a bot applied to a
   budget expression other than the shared `k`, e.g. `PrudentBot (2*k+64)`) or carries
-  a SIDE CONDITION (a `Prop` binder / an `OutcomeSpecIf` guard). Budget floors are
+  a SIDE CONDITION (a `Prop` binder in the telescope). Budget floors are
   not caveats: they are the `.eventual` regime and carry no dagger.
 - `= none` theorems render as `None` (provably no outcome).
 - Cells with no accepted theorem come from `app/outcome_status.toml`

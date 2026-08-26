@@ -670,8 +670,7 @@
    "file": "vs_DefectBot.lean",
    "budget_regime": "universal"},
   {"staggered": true,
-   "side_conditions":
-   ["fun k x =>\n  instLENat.le\n    (instHAdd.hAdd (instHAdd.hAdd (PD.Formula.eq (PD.Bots.DupocBot k) (PD.Bots.CupodBot _dummy)).neg.size _dummy) 2) k"],
+   "side_conditions": [],
    "right_bot": "DupocBot",
    "pair": ["C", "C"],
    "name": "outcome_CupodTrollBot_vs_DupocBot",
@@ -679,7 +678,7 @@
    "left_bot": "CupodTrollBot",
    "fuel_pad": 2,
    "file": "vs_DupocBot.lean",
-   "budget_regime": "universal"},
+   "budget_regime": "eventual"},
   {"staggered": false,
    "side_conditions": [],
    "right_bot": "EBot",
@@ -1550,5 +1549,5 @@
    "fuel_pad": 2,
    "file": "vs_WaryBot.lean",
    "budget_regime": "universal"}],
- "source_digest": "6138427367634174014",
+ "source_digest": "18413767416550596549",
  "schema_version": 1}

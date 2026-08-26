@@ -40,7 +40,7 @@ builds on the engine, the engine never imports it). Namespace `PD`. Layered bott
 **The strict outcome-theorem template** is the linchpin the whole pipeline relies on.
 Since 2026-08-26 it is a TYPED object (`Outcome/Spec.lean`): every matrix theorem is
 `@[outcome] theorem (llm_)outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`
-(`OutcomeSpecIf` for a genuine side condition; there is NO existential-fuel template since 2026-08-27 — `Base/Helpers.outcome_at_of_ex` lifts a `Pf_sound` witness to a literal pad via fuel determinism + structural totality;
+(there is NO guarded and NO existential-fuel template since 2026-08-27 — the one guarded cell was a floor in disguise, now the staggered `CupodTrollBot k` vs `DupocBot (2k+64)` — `Base/Helpers.outcome_at_of_ex` lifts a `Pf_sound` witness to a literal pad via fuel determinism + structural totality;
 regimes `nobudget | universal | eventual`; `L R : Nat → Prog` so staggering is a
 structural property of the lambda). `Outcome/Lint.lean` validates every tagged theorem
 against its own name and `Outcome/Check.lean` (lake target `OutcomeCheck`, in the
@@ -53,7 +53,7 @@ matrix reads (no regex over Lean source). Because the statement is fully concret
 NL→Lean *bot* translation, a verified result. The proof agent is ALIGNED with it (2026-08-26): `Outcome/Spec.lean` is embedded in the
 system prompt, the request templates are `OutcomeSpec` statements, the verdict gate
 compiles the submission with `#validate_outcome` appended (the library's own linter) plus
-textual checks (`@[outcome]`, template head, no Prop binders / `OutcomeSpecIf`), and
+textual checks (`@[outcome]`, template head, no Prop binders, retired heads rejected), and
 `library_writer` builds `PrisonersDilemma` + `OutcomeCheck` in its transaction and then
 refreshes the export.
 

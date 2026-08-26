@@ -362,9 +362,8 @@ def check_proved_source(
         )
     elif head.group(1) == "If":
         problems.append(
-            f"the statement of `{name}` uses the guarded `OutcomeSpecIf` — side conditions "
-            "are not allowed for LLM-written cells (a budget floor is the `.eventual` "
-            "regime, not a premise)"
+            f"the statement of `{name}` uses `OutcomeSpecIf`, which no longer exists — a "
+            "budget floor is the `.eventual` regime, not a side condition"
         )
     elif head.group(1) == "Ex":
         problems.append(

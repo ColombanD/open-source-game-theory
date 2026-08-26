@@ -40,7 +40,8 @@ structure CellInfo where
   pad      : Nat
   /-- `none` for a proven `= none` (no-outcome) theorem. -/
   pair     : Option (Name × Name)
-  /-- Pretty-printed `Prop` binders — the honest replacement for the `h`-prefix guess. -/
+  /-- Pretty-printed `Prop` binders of the telescope — a machine-read side condition
+      (the honest replacement for the `h`-prefix guess). Empty for every current cell. -/
   sideConds : Array String
   /-- `L`/`R` is not a bare pass-through, e.g. `fun k => PrudentBot (2*k+64)`. -/
   staggered : Bool
@@ -116,23 +117,14 @@ def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
   -- would happily unfold straight past it to the underlying `outcome … = some …`
   -- equation and then report every on-template theorem as off-template.
   let (fn, rawArgs) := (body.getAppFn, body.getAppArgs)
-  -- Two accepted heads: the plain template, and the GUARDED one that carries a
-  -- `(k fuel : Nat) → Prop` side condition. Dropping that argument here lets the rest of
-  -- the validator treat both uniformly; `guarded` is what the exporter reports, and it
-  -- is a machine-read reason for the dagger rather than a guess from a binder name.
-  let guarded := fn.isConstOf ``PD.OutcomeSpecIf
-  unless fn.isConstOf ``PD.OutcomeSpec || guarded do
-    throwError "@[outcome] {n} is OFF-TEMPLATE: its statement must be `PD.OutcomeSpec …` \
-      or `PD.OutcomeSpecIf …`, got\n  {← ppExpr body}"
-  let expected := if guarded then 6 else 5
-  unless rawArgs.size == expected do
-    throwError "@[outcome] {n}: expects {expected} arguments, got {rawArgs.size}"
-  -- Normalize both heads to the vector `b, pad, L, R, r` (the guard is dropped here and
-  -- reported separately).
-  let sideExpr? := if guarded then some rawArgs[2]! else none
-  let args :=
-    if guarded then #[rawArgs[0]!, rawArgs[1]!] ++ rawArgs[3:].toArray
-    else rawArgs
+  -- ONE accepted head. (A guarded `OutcomeSpecIf` variant existed until 2026-08-27; its
+  -- sole user was a budget floor in disguise, now an ordinary staggered `.eventual` cell.)
+  unless fn.isConstOf ``PD.OutcomeSpec do
+    throwError "@[outcome] {n} is OFF-TEMPLATE: its statement must be `PD.OutcomeSpec …`, \
+      got\n  {← ppExpr body}"
+  unless rawArgs.size == 5 do
+    throwError "@[outcome] {n}: expects 5 arguments, got {rawArgs.size}"
+  let args := rawArgs
   let some regime := (← whnf args[0]!).constName?
     | throwError "@[outcome] {n}: the BudgetRegime must be a literal constructor"
   let some pad ← natLit? args[1]!
@@ -160,9 +152,6 @@ def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
   let module := match env.getModuleIdxFor? n with
     | some idx => env.header.moduleNames[idx.toNat]!
     | none     => Name.anonymous
-  let mut sideConds := sideConds
-  if let some e := sideExpr? then
-    sideConds := sideConds.push (toString (← ppExpr e))
   return { name := n, module := module, leftBot := shortName lB, rightBot := shortName rB
            regime := shortName regime, pad := pad, pair := pair
            sideConds := sideConds, staggered := lStag || rStag }

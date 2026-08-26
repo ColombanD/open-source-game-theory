@@ -43,19 +43,14 @@ inductive BudgetRegime
     `k`, and fuel determinism pins the value there (`Base/Helpers.outcome_at_of_ex`,
     `play_at_of_ex`, with the totality lemmas `play_search_const_total`,
     `play_ite_total`, `play_sim_opp_self_total`). The Löbian cells carry pads 2–6 like
-    every other cell. -/
+    every other cell.
+
+    Nor is there a GUARDED template (`OutcomeSpecIf`, retired 2026-08-27): a condition on
+    the budget is a floor — that is what `.eventual` means — and the one cell that carried
+    a guard coupling `k` and `fuel` turned out not to use it. A genuine `k`/`fuel`-coupled
+    side condition would need such a template back; none exists in the zoo. -/
 abbrev OutcomeAt (pad : Nat) (L R : Prog) (r : Option Outcome) : Prop :=
   ∀ fuel, outcome (fuel + pad) L R = r
-
-/-- As `OutcomeAt`, but each fuel is guarded by `side`.
-
-    `side` takes BOTH the budget and the fuel because some genuine side conditions couple
-    them — `atom_cost (fuel + 2) ≤ k` is satisfiable for each `k` at small fuel but false
-    for large fuel, so it can be neither hoisted out of the statement (that would make it
-    universally quantified and FALSE, silently rendering the theorem vacuous) nor folded
-    into a `BudgetRegime`. -/
-abbrev OutcomeAtIf (pad : Nat) (side : Nat → Prop) (L R : Prog) (r : Option Outcome) : Prop :=
-  ∀ fuel, side fuel → outcome (fuel + pad) L R = r
 
 /-- **THE canonical outcome-theorem statement.**
 
@@ -70,20 +65,5 @@ abbrev OutcomeSpec (b : BudgetRegime) (pad : Nat)
   | .nobudget  => OutcomeAt pad (L 0) (R 0) r
   | .universal => ∀ k, OutcomeAt pad (L k) (R k) r
   | .eventual  => ∃ k₂, ∀ k, k₂ < k → OutcomeAt pad (L k) (R k) r
-
-/-- **The GUARDED template** — an outcome that holds only under a side condition on the
-    budget and the fuel. `side k fuel` is where a genuine caveat lives, and it is what the
-    linter reads to flag the cell as daggered: a real, machine-checked reason, not the
-    `h`-prefixed binder name the old extractor guessed from.
-
-    Prefer plain `OutcomeSpec` wherever the condition is really a budget FLOOR — that is
-    what `.eventual` means, and expressing it as the regime removes the dagger honestly
-    (see `outcome_CupodBot_vs_OBot`). -/
-abbrev OutcomeSpecIf (b : BudgetRegime) (pad : Nat) (side : Nat → Nat → Prop)
-    (L R : Nat → Prog) (r : Option Outcome) : Prop :=
-  match b with
-  | .nobudget  => OutcomeAtIf pad (side 0) (L 0) (R 0) r
-  | .universal => ∀ k, OutcomeAtIf pad (side k) (L k) (R k) r
-  | .eventual  => ∃ k₂, ∀ k, k₂ < k → OutcomeAtIf pad (side k) (L k) (R k) r
 
 end PD
