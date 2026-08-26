@@ -29,14 +29,14 @@ theorem CupodTrollBot_vs_DupocBot_above_floor (j k fuel : Nat)
     DupocBot_plays_C_against_CupodTrollBot j k fuel hjk
   exact outcome_of_plays _ _ _ _ _ hA hB
 
-/-- **The cell**: CupodTrollBot `k` vs DupocBot `(2k+64)` = (C, C) at every large `k` — the
-    zoo's conventional budget stagger (cf. `outcome_PrudentBot_vs_DupocBot`). The floor
-    `size + k + 2 ≤ 2k+64` is logarithmic-plus-`k` against `2k`, so it is a `.eventual`
-    regime, not a side condition; the dagger comes from the stagger. The same-budget value
-    is `outcome_DupocBot_vs_CupodTrollBot_samek = (D, C)`. (Until 2026-08-27 this cell was
-    the sole user of a guarded `OutcomeSpecIf` template, carrying the floor as a guard.) -/
-@[outcome]
-theorem outcome_CupodTrollBot_vs_DupocBot :
+/-- **The staggered companion**: CupodTrollBot `k` vs DupocBot `(2k+64)` = (C, C) at every
+    large `k` — the zoo's conventional budget stagger (cf.
+    `outcome_PrudentBot_vs_DupocBot_staggered`). Not the matrix cell: that is the
+    shared-budget `outcome_DupocBot_vs_CupodTrollBot = (D, C)`
+    (`Theorems/DupocBot/vs_CupodTrollBot.lean`). The floor `size + k + 2 ≤ 2k+64` is
+    logarithmic-plus-`k` against `2k`, hence `.eventual`. (Until 2026-08-27 this was the
+    sole user of a guarded `OutcomeSpecIf` template, and filled the cell.) -/
+theorem outcome_CupodTrollBot_vs_DupocBot_staggered :
     OutcomeSpec .eventual 2 CupodTrollBot (fun k => DupocBot (2*k+64)) (some (.C, .C)) := by
   have hsz : ∀ k, (Formula.neg (.eq (DupocBot (2*k+64)) (CupodBot k))).size
       ≤ 100 * Nat.log2 k + 1000 := by

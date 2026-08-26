@@ -83,7 +83,20 @@ FULL_CERTIFIED_SUB_ZOO: tuple[str, ...] = (
 # LegibleBot and JustBot are the two removals; CupodTrollBot is KEPT because
 # admitting CupodBot (below) separates it on PROVEN data
 # (`outcome_CupodTrollBot_vs_CupodBot`), so the third removal is unnecessary.
-_TWIN_EXCLUSIONS: tuple[str, ...] = ("LegibleBot", "JustBot")
+#
+# PrudentBot joined the exclusions on 2026-08-27, when the matrix cells became
+# the SHARED-budget values: its only same-budget cooperation is with MirrorBot
+# (excluded here), so on this zoo single-tier PrudentBot is behaviorally
+# DefectBot — the two staggered (C, C) cells (vs DupocBot, vs JustBot) had been
+# the only thing separating them, and those are now `*_staggered` non-cell
+# theorems. It stays in FULL_CERTIFIED_SUB_ZOO and the enlarged zoo.
+#
+# GuardianBot followed the same day, a CASCADE of that removal: GuardianBot and
+# TitForTatBot differed only at the PrudentBot column (Guardian trusts Prudent,
+# TFT does not), so without PrudentBot they are twins. TitForTatBot is kept (a
+# canonical opponent, Critch's classical bot); GuardianBot, an LLM-generated
+# norm enforcer, stays in the full/enlarged zoos.
+_TWIN_EXCLUSIONS: tuple[str, ...] = ("LegibleBot", "JustBot", "PrudentBot", "GuardianBot")
 
 # CupodBot is admitted to break the remaining twin group: it is the bot whose
 # column separates {CooperateBot, CupodTrollBot}. It USED to cost a stipulated
@@ -99,8 +112,8 @@ _TWIN_EXCLUSIONS: tuple[str, ...] = ("LegibleBot", "JustBot")
 # loader's guard against a stipulation shadowing a proven cell forced the removal.
 CUPOD_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {}
 
-# The default tau zoo: 11 bots, NO behavioral twins, transparency ceiling
-# exactly 1.0 — every bot is identifiable from behavior alone, and every cell is
+# The default tau zoo: 9 bots (11 until 2026-08-27), NO behavioral twins,
+# transparency ceiling exactly 1.0 — every bot is identifiable from behavior alone, and every cell is
 # a kernel theorem. Load it with `load_tau_matrix()`.
 CERTIFIED_SUB_ZOO: tuple[str, ...] = tuple(
     sorted(
@@ -109,9 +122,9 @@ CERTIFIED_SUB_ZOO: tuple[str, ...] = tuple(
     )
 )
 
-# The fully-proven fallback: no stipulated cells, but 10 bots and a residual
-# {CooperateBot, CupodTrollBot} twin pair holding the ceiling at ≈0.940. Use
-# when a result must rest on the Lean kernel alone.
+# The fully-proven fallback: no stipulated cells, but 8 bots (10 until
+# 2026-08-27) and a residual {CooperateBot, CupodTrollBot} twin pair holding the
+# ceiling below 1.0. Use when a result must rest on the Lean kernel alone.
 PROVEN_ONLY_SUB_ZOO: tuple[str, ...] = tuple(
     b for b in FULL_CERTIFIED_SUB_ZOO if b not in _TWIN_EXCLUSIONS
 )
@@ -250,7 +263,7 @@ class NamedZoo:
 ZOOS: dict[str, NamedZoo] = {
     "default": NamedZoo(
         key="default",
-        label="default (11 bots, twin-free)",
+        label="default (9 bots, twin-free)",
         description=(
             "The twin-free working zoo: transparency ceiling exactly 1.0, so "
             "every bot is identifiable from behavior alone. Conditional on the "
@@ -330,7 +343,7 @@ ZOOS: dict[str, NamedZoo] = {
     ),
     "proven-only": NamedZoo(
         key="proven-only",
-        label="proven only (10 bots, kernel-clean)",
+        label="proven only (8 bots, kernel-clean)",
         description=(
             "Kernel-clean and twin-reduced: no stipulated cells at all, with a "
             "residual {CooperateBot, CupodTrollBot} twin pair (ceiling ≈0.940). "

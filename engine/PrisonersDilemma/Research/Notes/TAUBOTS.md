@@ -53,12 +53,14 @@ budgets and referenced bot bodies). The two structured channels correlate at onl
   contain `N`.
 - Threshold `≥ α`; sweeps step BETWEEN `alpha_breakpoints`. In Lean, `θ = ⌈α·W⌉`
   over integer weights.
-- **One shared budget `k` for the whole tau zoo.** Base cells that exist only at a
-  stagger (`PrudentBot (2k+64)`, `JustBot (4j+100)`, `CupodTrollBot k` vs
-  `DupocBot (2k+64)` — since 08-27 an ordinary staggered `.eventual` cell, no longer a
-  guarded one) are whitelisted divergences, each certified on both sides by a `_samek`
-  base theorem. In the base export the dagger has exactly ONE cause: a staggered
-  budget.
+- **One shared budget `k` for the whole tau zoo — and, since 08-27, for the base cells
+  too.** The four pairs whose cooperation exists only at a stagger (`PrudentBot (2k+64)`
+  vs Dupoc, `PrudentBot (2k+64)` vs Just, `JustBot (4j+100)` vs Troll, `DupocBot (2k+64)`
+  vs Troll) now have their shared-budget value AS the cell (`(D,D)`, `(D,D)`, `(D,C)`,
+  `(D,C)`); the staggered results are `*_staggered` non-cell theorems. The tau
+  `WHITELIST` is therefore EMPTY and the certification is 225/225/0. In the base export
+  the dagger has exactly ONE cause, a staggered budget — now only the two-tier
+  LegibleBot/OptimBot cells, which have no shared-budget theorem.
 - **Every row is a `RowSpec` theorem** (`Tau/RowSpec.lean`, 08-27):
   `@[tau_row] theorem <t>RowSpec : RowSpec .<t> tauOrder <t>Row` =
   `∃ k₂, ∀ k > k₂, ∀ T ∈ order, ∃ N, eval N (.bot I) (.bot I) I = some (row T)` with
@@ -88,7 +90,7 @@ budgets and referenced bot bodies). The two structured channels correlate at onl
 | 08-20 | `Mode.proveImpl`, `Mode.proveEq`; CupodTroll lifted. Gate D1 corrected the plan: **pronouns decide `.sys`, the connective decides the fragment** — a guard mentioning `.opp`'s view of `.self` is a self-prober whatever its connective, so 8 of 9 remaining bots needed the binder. **`.sys` revived for Def 4** (`ProgList`/`.sys`/`.selfIdx`, `sysClose`, lazy-unfold eval, `PlaysProof.sysStep`, τ-closure with `ProgList.transpose`; compiler `sysGo`; `Pf.botSysSearchStep` — readable player shape, ~25 census call sites). CupodBot lifted. |
 | 08-21 | **Entangled cells fall**: wrapped emission `.bot (.selfIdx j)`; `no_provable_botSysSearcherElse_tail` — anti-aligned 2-cycles are decided by the FLOOR (both defaults, no bistability); aligned pairs by mutual Löb through the binder. **Alignment rule**: an entangled pair cooperates-by-Löb iff each guard target equals the other's fire action. CIMCIC lifted; layer total, hypothesis-free. Three base cells transplanted from tau closures. |
 | 08-22/24 | DIMCID (`Mode.proveImplD`; a Löb fixpoint on DEFECTION), Mirror (honest `none` regime above its prefix mass). **Spec DSL became a TREE** (`Spec = const | sim | ite | search`, `Prog` with a `Target` hole) — τ-bots are written as their base source. `Matrix.lean` removed: the per-bot `Tau/Theorems/<Bot>/Phase.lean` theorems ARE the matrix (players `.opp`-free ⇒ a match is two independent plays). |
-| 08-27 | **Tau rows linted and exported.** `Tau/RowSpec.lean` + `@[tau_row]` (registry in `Outcome/Attr.lean`) + `Tau/Lint.lean` + `tau_rows.json`; the 16 literal `VoteBits` `*Bits` theorems deleted (`RowSpec.bits` derives them); `tauOrderInit`/`tauOrder_eq` to `Roster`, `vecOf_append` to `Tau/Spec`. **Finding that forced it**: the rows the app regex-scanned were CONDITIONAL on Löb-gated hypotheses (`hquine`, the entangled cells) discharged only in the phase theorems — invisible to a source scanner. Certification reproduced byte-for-byte (225/219/6). Same day in base: `OutcomeSpecEx` and `OutcomeSpecIf` retired (fuel determinism + structural totality, `Base/Helpers.outcome_at_of_ex`), so the base template is ONE head. |
+| 08-27 | **Tau rows linted and exported.** `Tau/RowSpec.lean` + `@[tau_row]` (registry in `Outcome/Attr.lean`) + `Tau/Lint.lean` + `tau_rows.json`; the 16 literal `VoteBits` `*Bits` theorems deleted (`RowSpec.bits` derives them); `tauOrderInit`/`tauOrder_eq` to `Roster`, `vecOf_append` to `Tau/Spec`. **Finding that forced it**: the rows the app regex-scanned were CONDITIONAL on Löb-gated hypotheses (`hquine`, the entangled cells) discharged only in the phase theorems — invisible to a source scanner. Certification reproduced byte-for-byte (225/219/6), then **225/225/0** once the four staggered base cells became their shared-budget values (`*_staggered` companions keep the cooperative results; the whitelist is EMPTY). Consequence in Python: single-tier PrudentBot is behaviorally DefectBot at one budget (its only same-`k` cooperation is with Mirror), and without its column GuardianBot ≡ TitForTatBot — both left the DEFAULT zoo by the twin policy (9 bots: Coop, Cupod, CupodTroll, DBot, Defect, Dupoc, EBot, OBot, TFT; ceiling 1.0). The EGT headline (Dupoc stochastically stable) predates this and must be re-run. Same day in base: `OutcomeSpecEx` and `OutcomeSpecIf` retired (fuel determinism + structural totality, `Base/Helpers.outcome_at_of_ex`), so the base template is ONE head. |
 | 08-25 | Tower census `Base/TowerCensus.lean` closes DIMCID's row. **PrudentBot at ONE budget** (`Pf.botSysSearchThenSearch`, the nested-searcher `.sys` reader; row D everywhere but the mirror). The four `_samek` base theorems; the last stipulation (`outcome_PrudentBot_vs_CupodBot`) falls; TauTFTPf (no base bot) compared nowhere; census library unified into `Base/Exclusion.lean`. **Porting CLOSED at 16.** |
 
 **Live layout.** `Program.lean` (`.tvote`, `.sys`, `.selfIdx`); `Tau/Roster.lean`
@@ -150,8 +152,9 @@ CupodTroll, Cupod) are where TFT's prover and behavioral readings separate.
 4. **Sub-Löb regimes** for the vote entries (need `¬Pf` cost floors).
 
 **Open conventions.**
-5. **Canonical budget per pair** — the strict matrix reports the staggered `(C,C)`
-   cells; the tau zoo uses same-`k` via `_samek`. Which is "the" cell is undecided.
+5. ~~Canonical budget per pair~~ — **decided 08-27: the cell is the shared-budget
+   value.** Staggered cooperation is a `*_staggered` companion theorem, not the cell;
+   `_samek` is gone.
 6. ~~Tau phase theorems sit outside the export~~ — **decided 08-27: a separate
    template on the same machinery.** Rows are `RowSpec`/`@[tau_row]`/`tau_rows.json`,
    not `OutcomeSpec` cells (a row is 16 plays under one budget, not a pair). The

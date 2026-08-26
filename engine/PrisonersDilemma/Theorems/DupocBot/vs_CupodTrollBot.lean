@@ -3,6 +3,7 @@ import PrisonersDilemma.Bots.DupocBot
 import PrisonersDilemma.Bots.CupodTrollBot
 import PrisonersDilemma.Theorems.DupocBot.Helpers
 import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
+import PrisonersDilemma.Outcome
 
 open PD
 open PD.BaseTheorems
@@ -38,9 +39,14 @@ theorem CupodTrollBot_plays_C_against_DupocBot_samek (k fuel : Nat) :
     play (fuel + 2) (CupodTrollBot k) (DupocBot k) = some .C :=
   CupodTrollBot_cooperates_if_opp_not_CupodBot k fuel (DupocBot k) (by simp [DupocBot, CupodBot])
 
-/-- **DupocBot vs CupodTrollBot at ONE budget = (D, C)**. -/
-theorem outcome_DupocBot_vs_CupodTrollBot_samek (k fuel : Nat) :
-    outcome (fuel + 2) (DupocBot k) (CupodTrollBot k) = some (.D, .C) :=
+/-- **THE CELL — DupocBot vs CupodTrollBot at ONE shared budget = (D, C)**: Troll's C is
+    its floor-priced else-play (its `.eq` recognition fails), which Dupoc cannot certify at
+    the same `k`. Cooperation needs Dupoc's budget above Troll's —
+    `outcome_CupodTrollBot_vs_DupocBot_staggered` (`Theorems/CupodTrollBot/vs_DupocBot.lean`).
+    (Until 2026-08-27 the staggered result filled the cell and this was `_samek`.) -/
+@[outcome]
+theorem outcome_DupocBot_vs_CupodTrollBot :
+    OutcomeSpec .universal 2 DupocBot CupodTrollBot (some (.D, .C)) := fun k fuel =>
   outcome_of_plays _ _ _ _ _ (DupocBot_plays_D_against_CupodTrollBot_samek k fuel)
     (CupodTrollBot_plays_C_against_DupocBot_samek k fuel)
 

@@ -71,51 +71,42 @@ def test_every_stated_row_is_complete() -> None:
 
 def test_kernel_agrees_with_base_directly() -> None:
     """**The end-to-end check, model-free.** The bits come straight out of Lean's
-    `VoteBits` theorems and the cells out of the certified base matrix, so a pass
+    `RowSpec` rows and the cells out of the certified base matrix, so a pass
     depends on no Python model at all.
 
-    225 comparable cells — the 15×15 matrix without TauTFTPf — 219 agree, and the 6
-    divergences are exactly the recorded whitelist — properties of the LIFT,
-    not of any implementation. (182/176/6 → 210/204/6 on 2026-08-24 when
-    MirrorBot joined `FULL_BOTS`; 225/219/6 on 2026-08-25 when τ(DIMCID)'s row
-    landed: all 15 of its cells agree with base, including the three the tail
-    and valuation censuses could not reach; 256/246/10 later on 2026-08-25 when
-    PrudentBot was ported at a SINGLE budget — its four new divergences are the
-    budget-staggered base cells against DupocBot/JustBot, both orientations;
-    225/219/6 again later that day once TauTFTPf, which has no base bot, was
-    dropped from the comparison together with its four prover-floor entries.)
-
-    Was 144/139/5 until 2026-08-24, when CupodBot and DIMCID were added to
-    `FULL_BOTS`: their base cells had landed on 08-21 but the list was never
-    updated, so 38 comparable cells went unchecked and four divergences sat
-    unexamined behind a green result."""
+    225 comparable cells — the 15×15 matrix without TauTFTPf — ALL agree; the
+    whitelist is empty. (History: 144/139/5 until 2026-08-24 when CupodBot and
+    DIMCID joined `FULL_BOTS` — 38 cells had gone unchecked behind a green result;
+    210/204/6, then 225/219/6 on 08-25 with τ(DIMCID)'s row and TauTFTPf dropped;
+    225/225/0 on 08-27 when the four staggered base cells were replaced by their
+    shared-budget values and the staggered results became `*_staggered` non-cell
+    theorems.)"""
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
     assert len(d.cells) == 225
     assert d.passed, d.unexpected
-    assert d.agreements == 219
-    assert len(d.whitelisted_divergences) == 6
+    assert d.agreements == 225
+    assert len(d.whitelisted_divergences) == 0
     assert d.missing_rows == ()
 
 
-def test_every_whitelisted_cell_has_a_samek_base_theorem() -> None:
-    """Since 2026-08-25 each whitelisted divergence is certified on BOTH sides in
-    base: the strict theorem at the stagger, and a `_samek` theorem proving the
-    tau value at one shared budget. The `_samek` names are outside the strict
-    matrix scan, so check the sources directly: the reason text must name the
-    theorem, and the theorem must exist in the library."""
+def test_staggered_results_survive_as_non_cell_theorems() -> None:
+    """The four cooperative results at a budget stagger are still theorems in the
+    library — renamed `*_staggered`, untagged, outside the census — while their
+    shared-budget values fill the cells. Nothing named `_samek` remains."""
     import re
     from pathlib import Path
 
     theorems = Path(__file__).resolve().parents[2] / "engine" / "PrisonersDilemma" / "Theorems"
-    declared = set()
+    declared: set[str] = set()
     for f in theorems.rglob("*.lean"):
-        declared |= set(re.findall(r"^theorem (outcome_\w+_samek)\b", f.read_text(), re.M))
-    assert declared, "no _samek theorems found under engine/.../Theorems"
-    for (A, T), reason in WHITELIST.items():
-        cited = re.findall(r"`(outcome_\w+_samek)", reason)
-        assert cited, (A, T)
-        for name in cited:
-            assert name in declared, (A, T, name)
+        declared |= set(re.findall(r"^theorem (outcome_\w+)\b", f.read_text(), re.M))
+    assert {
+        "outcome_PrudentBot_vs_DupocBot_staggered",
+        "outcome_JustBot_vs_PrudentBot_staggered",
+        "outcome_JustBot_vs_CupodTrollBot_staggered",
+        "outcome_CupodTrollBot_vs_DupocBot_staggered",
+    } <= declared
+    assert not [n for n in declared if n.endswith("_samek")]
 
 
 def test_tftpf_is_not_certified_against_base() -> None:
@@ -156,18 +147,9 @@ def test_missing_rows_are_reported_not_guessed(monkeypatch) -> None:
 # ── the whitelist ──────────────────────────────────────────────────────────────
 
 
-def test_whitelist_is_exactly_the_recorded_cells() -> None:
-    assert set(WHITELIST) == {
-        # budget staggering
-        ("TauDupoc", "TauCupodTroll"),
-        ("TauJust", "TauCupodTroll"),
-        # budget staggering, PrudentBot at ONE budget (2026-08-25): base proves
-        # these at PrudentBot (2*k+64)
-        ("TauPrudent", "TauDupoc"),
-        ("TauDupoc", "TauPrudent"),
-        ("TauPrudent", "TauJust"),
-        ("TauJust", "TauPrudent"),
-    }
+def test_whitelist_is_empty() -> None:
+    """No recorded divergence remains: base cells are shared-budget values (08-27)."""
+    assert WHITELIST == {}
 
 
 def test_whitelist_splits_into_three_distinct_causes() -> None:
@@ -194,11 +176,14 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
     m = load_tau_matrix(FULL_BOTS)
     dagger = set(m.dagger_cells)
 
-    staggering = {("TauDupoc", "TauCupodTroll"), ("TauJust", "TauCupodTroll"),
-                  ("TauPrudent", "TauDupoc"), ("TauDupoc", "TauPrudent"),
-                  ("TauPrudent", "TauJust"), ("TauJust", "TauPrudent")}
-    for A, T in staggering:
-        assert (BASE_OF[A], BASE_OF[T]) in dagger, (A, T)
+    # budget staggering: EMPTY since 2026-08-27 — the six former entries are now
+    # shared-budget base cells (`*_staggered` companions hold the cooperative
+    # results), so they are neither daggers nor divergences any more
+    former_staggering = {("TauDupoc", "TauCupodTroll"), ("TauJust", "TauCupodTroll"),
+                         ("TauPrudent", "TauDupoc"), ("TauDupoc", "TauPrudent"),
+                         ("TauPrudent", "TauJust"), ("TauJust", "TauPrudent")}
+    for A, T in former_staggering:
+        assert (BASE_OF[A], BASE_OF[T]) not in dagger, (A, T)
 
     # prover-modality floors: EMPTY since 2026-08-25 — TauTFTPf, the only prover
     # variant of a behavioral base bot, has no base row and is compared nowhere
@@ -212,7 +197,7 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
     # every prover-floor entry is the PROVER TFT — that is what makes it the α-gap
     assert all(A == "TauTFTPf" for A, _ in modality)
 
-    assert staggering | modality | coverage == set(WHITELIST)
+    assert modality | coverage == set(WHITELIST) == set()
 
 
 def test_every_whitelisted_cell_actually_diverges() -> None:

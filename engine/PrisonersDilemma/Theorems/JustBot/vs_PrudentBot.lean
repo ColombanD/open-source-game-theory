@@ -136,10 +136,10 @@ theorem ps_k_of_play_botdupoc_any (k n : Nat) (q : Prog)
       unfold play at h ⊢; exact eval_mono_le h (n + 3) (by omega)
     rw [hC] at hD; cases hD
 
-/-- **JustBot k vs PrudentBot (2k+64) → (C, C)** for all large enough `k` — the
-    staggered-budget recovery of the retired same-`k` theorem. -/
-@[outcome]
-theorem outcome_JustBot_vs_PrudentBot :
+/-- **JustBot k vs PrudentBot (2k+64) → (C, C)** for all large enough `k` — cooperation
+    at a budget STAGGER. Not the matrix cell (`outcome_JustBot_vs_PrudentBot = (D, D)`
+    below is the shared-budget value); the `_staggered` companion. -/
+theorem outcome_JustBot_vs_PrudentBot_staggered :
     OutcomeSpec .eventual 3
       JustBot (fun k => PrudentBot (2*k+64)) (some (.C, .C)) := by
   obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
@@ -267,10 +267,12 @@ theorem PrudentBot_plays_D_against_JustBot_samek (k fuel : Nat) :
   PrudentBot_plays_D_of_search_false k fuel (JustBot k)
     (proofSearch_false_JustBot_C_vs_PrudentBot k)
 
-/-- **JustBot vs PrudentBot at ONE budget = (D, D)**: the cooperative cell
-    `outcome_JustBot_vs_PrudentBot` needs `PrudentBot (2k+64)`. -/
-theorem outcome_JustBot_vs_PrudentBot_samek (k fuel : Nat) :
-    outcome (fuel + 2) (JustBot k) (PrudentBot k) = some (.D, .D) :=
+/-- **THE CELL — JustBot vs PrudentBot at ONE shared budget = (D, D)**. Cooperation needs
+    `PrudentBot (2k+64)` — `outcome_JustBot_vs_PrudentBot_staggered`. (Until 2026-08-27 the
+    staggered result filled the cell and this was `_samek`.) -/
+@[outcome]
+theorem outcome_JustBot_vs_PrudentBot :
+    OutcomeSpec .universal 2 JustBot PrudentBot (some (.D, .D)) := fun k fuel =>
   outcome_of_plays _ _ _ _ _ (JustBot_plays_D_against_PrudentBot_samek k fuel)
     (PrudentBot_plays_D_against_JustBot_samek k fuel)
 

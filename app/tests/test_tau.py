@@ -74,9 +74,11 @@ def test_certified_sub_zoo_is_still_maximal() -> None:
 
 
 def test_default_zoo_composition() -> None:
-    """LegibleBot/JustBot out (twins), CupodBot in (twin-breaker)."""
+    """LegibleBot/JustBot out (twins), CupodBot in (twin-breaker); since 2026-08-27
+    PrudentBot out (a twin of DefectBot at a shared budget) and GuardianBot out
+    (a twin of TitForTatBot once the PrudentBot column is gone)."""
     assert set(CERTIFIED_SUB_ZOO) == (
-        set(FULL_CERTIFIED_SUB_ZOO) - {"LegibleBot", "JustBot"}
+        set(FULL_CERTIFIED_SUB_ZOO) - {"LegibleBot", "JustBot", "PrudentBot", "GuardianBot"}
     ) | {"CupodBot"}
     assert "CupodTrollBot" in CERTIFIED_SUB_ZOO
     # The full zoo is still totally proven — the exclusions are about twins.
@@ -93,12 +95,15 @@ def test_default_zoo_is_fully_proven() -> None:
     # The red cell, proven 2026-08-20 (`outcome_DupocBot_vs_CupodBot`).
     assert not m.cell("CupodBot", "DupocBot").hypothetical
     assert m.action("CupodBot", "DupocBot") == "C"
-    # The last stipulation, proven 2026-08-25 (`outcome_PrudentBot_vs_CupodBot`):
-    # the value the stipulation had guessed, both orientations.
-    assert not m.cell("PrudentBot", "CupodBot").hypothetical
-    assert m.action("PrudentBot", "CupodBot") == "D"
-    assert m.action("CupodBot", "PrudentBot") == "C"
     assert not m.cell("CupodTrollBot", "CupodBot").hypothetical
+    # The last stipulation, proven 2026-08-25 (`outcome_PrudentBot_vs_CupodBot`):
+    # the value the stipulation had guessed, both orientations. PrudentBot left the
+    # DEFAULT zoo on 2026-08-27 (a behavioral twin of DefectBot at a shared budget),
+    # so this is checked on the full certified zoo plus CupodBot.
+    full = load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO + ("CupodBot",))
+    assert not full.cell("PrudentBot", "CupodBot").hypothetical
+    assert full.action("PrudentBot", "CupodBot") == "D"
+    assert full.action("CupodBot", "PrudentBot") == "C"
 
 
 def test_proven_only_zoo_needs_no_stipulations() -> None:
@@ -113,7 +118,7 @@ def test_default_zoo_needs_no_stipulations() -> None:
     until 2026-08-25 this raised `not total` on the (PrudentBot, CupodBot) hole."""
     m = load_tau_matrix(hypothetical_cells={})
     assert m.is_fully_proven
-    assert m.action("PrudentBot", "CupodBot") == "D"
+    assert m.action("CupodTrollBot", "CupodBot") == "D"
 
 
 def test_orientation_is_respected(matrix) -> None:
@@ -214,11 +219,15 @@ def test_unknown_zoo_lists_the_valid_keys() -> None:
 
 
 def test_enlarged_zoo_twin_structure() -> None:
-    """The documented twin census for the 16-bot zoo (conditional on stipulations)."""
+    """The documented twin census for the 16-bot zoo (conditional on stipulations).
+
+    CIMCIC joined the {DupocBot, JustBot} group on 2026-08-27, when the matrix cells
+    became the SHARED-budget values: the staggered (C, C) cells against PrudentBot
+    and CupodTrollBot had been the only thing separating Dupoc/Just from CIMCIC."""
     m = load_tau_matrix(ENLARGED_SUB_ZOO, hypothetical_cells=ENLARGED_STIPULATIONS)
     assert sorted(behavioral_twins(m)) == [
+        ("CIMCIC", "DupocBot", "JustBot"),
         ("CooperateBot", "LegibleBot"),
-        ("DupocBot", "JustBot"),
     ]
 
 
@@ -823,7 +832,10 @@ def test_returning_rows_are_marked_in_the_chart(matrix) -> None:
     )
 
     grid = [round(1.0 - 0.05 * i, 3) for i in range(21)]
-    alpha = 0.25  # OBot returns to base at t = 0.05 under this α.
+    # CupodTrollBot returns to its base row at low transparency under this α on the
+    # 9-bot zoo (until 2026-08-27 the fixture was α = 0.25, where OBot returned on the
+    # 11-bot zoo; OBot no longer returns once PrudentBot and GuardianBot are out).
+    alpha = 0.85
     thresholds = robustness_thresholds(matrix, alpha, grid)
     deviation = row_deviation(matrix, alpha, grid)
 
@@ -1162,9 +1174,11 @@ def test_confusion_structure_inversion(matrix) -> None:
     syn = syntactic_distance_matrix(matrix)
     beh = behavioral_distance_matrix(matrix)
 
-    # Syntactically close, behaviorally far…
+    # Syntactically close, behaviorally far… (5 differing columns on the 11-bot
+    # zoo; 3 of 9 on the twin-free 9-bot zoo of 2026-08-27 — still three times the
+    # Coop/CupodTroll distance below)
     assert syn[("DupocBot", "CupodBot")] < syn[("CooperateBot", "CupodTrollBot")]
-    assert beh[("DupocBot", "CupodBot")] >= 5
+    assert beh[("DupocBot", "CupodBot")] >= 3
     # …and the reverse: behavioral near-twins that are syntactic opposites.
     assert beh[("CooperateBot", "CupodTrollBot")] <= 1
 

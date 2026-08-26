@@ -51,43 +51,14 @@ from pd_runner.tau.def4_theorems import (
 from pd_runner.tau.matrix import TauMatrix
 
 WHITELIST: dict[tuple[str, str], str] = {
-    # Every entry is BUDGET STAGGERING, and since 2026-08-25 every one is certified
-    # on BOTH sides in base: the strict `outcome_{L}_vs_{R}` theorem proves the
-    # cooperative cell at a budget stagger (the extra budget pays a partner's
-    # `search_f` floor), and the `_samek` theorem proves the tau value at ONE shared
-    # budget — exactly what `tauZoo k` gives every bot. Base and tau agree on the
-    # mathematics; the certification compares against the strict (staggered) cell.
-    ("TauDupoc", "TauCupodTroll"): (
-        "Budget staggering. `outcome_CupodTrollBot_vs_DupocBot` is (C, C) under "
-        "`hjk` (DupocBot's budget above Troll's failed identity search); at one "
-        "budget Troll's C is its else-play and Dupoc defects — "
-        "`outcome_DupocBot_vs_CupodTrollBot_samek = (D, C)`."
-    ),
-    ("TauJust", "TauCupodTroll"): (
-        "Budget staggering. `outcome_JustBot_vs_CupodTrollBot` is (C, C) at "
-        "JustBot (4j+100); at one budget Just's probe of Troll's floor-priced C "
-        "fails — `outcome_JustBot_vs_CupodTrollBot_samek = (D, C)`."
-    ),
-    ("TauPrudent", "TauDupoc"): (
-        "Budget staggering. `outcome_PrudentBot_vs_DupocBot` is (C, C) at "
-        "PrudentBot (2k+64); at one budget Prudent's inner check on Dupoc's "
-        "else-play D fails — `outcome_PrudentBot_vs_DupocBot_samek = (D, D)`."
-    ),
-    ("TauDupoc", "TauPrudent"): (
-        "Budget staggering, the other orientation of (TauPrudent, TauDupoc): "
-        "Dupoc's probe of Prudent fails by soundness once Prudent defects — "
-        "`outcome_PrudentBot_vs_DupocBot_samek = (D, D)`."
-    ),
-    ("TauPrudent", "TauJust"): (
-        "Budget staggering. `outcome_JustBot_vs_PrudentBot` is (C, C) at "
-        "PrudentBot (2k+64); at one budget Prudent's inner check on the frozen "
-        "Dupoc's else-play D fails — `outcome_JustBot_vs_PrudentBot_samek = (D, D)`."
-    ),
-    ("TauJust", "TauPrudent"): (
-        "Budget staggering, the other orientation of (TauPrudent, TauJust): "
-        "Just's probe of Prudent's cooperation with the frozen Dupoc fails by "
-        "soundness — `outcome_JustBot_vs_PrudentBot_samek = (D, D)`."
-    ),
+    # EMPTY since 2026-08-27. Until then it held six budget-staggering cells — the base
+    # matrix reported cooperation proved at a budget STAGGER (`PrudentBot (2k+64)` vs
+    # `DupocBot k`, `JustBot (4j+100)` vs `CupodTrollBot j`, …) while the tau zoo runs
+    # everyone at ONE shared budget. The base cells are now the shared-budget values
+    # (`outcome_PrudentBot_vs_DupocBot = (D, D)`, `outcome_JustBot_vs_PrudentBot = (D, D)`,
+    # `outcome_JustBot_vs_CupodTrollBot = (D, C)`, `outcome_DupocBot_vs_CupodTrollBot =
+    # (D, C)`), the staggered results survive as `*_staggered` non-cell theorems, and
+    # base and tau agree on every comparable cell (225/225/0).
 }
 """The recorded bit divergences. Anything else is a bug by definition."""
 

@@ -67,9 +67,12 @@ EVAL_CASES: list[dict] = [
     # Tier 4: `.search` bots — the proof-system / Löb / exclusion path.
     # Löb self-play, ∃k₂ threshold shape (library: outcome_DupocBot_vs_DupocBot).
     {"left": "DupocBot",     "right": "DupocBot",     "la": "C", "ra": "C", "fuel": None},
-    # Staggered cross-bot Löb: PrudentBot (2k+64) vs DupocBot k (library:
-    # outcome_PrudentBot_vs_DupocBot). The agent must find the staggering.
-    {"left": "PrudentBot",   "right": "DupocBot",     "la": "C", "ra": "C", "fuel": None},
+    # Cross-bot prudence at ONE shared budget: single-tier PrudentBot cannot certify
+    # DupocBot's else-play, so the cell is (D, D) (library: outcome_PrudentBot_vs_DupocBot;
+    # cooperation exists only at the stagger outcome_PrudentBot_vs_DupocBot_staggered,
+    # which is not the cell since 2026-08-27). The agent must find the census, not the
+    # stagger.
+    {"left": "PrudentBot",   "right": "DupocBot",     "la": "D", "ra": "D", "fuel": None},
     # Exclusion-census negative side: same-k prudence is self-defeating
     # (library: outcome_PrudentBot_vs_PrudentBot = (D,D)).
     {"left": "PrudentBot",   "right": "PrudentBot",   "la": "D", "ra": "D", "fuel": None},

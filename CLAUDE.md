@@ -80,8 +80,11 @@ Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMA
   all Critch-faithful: same-budget results whose proofs consumed a partner's else-play are
   honestly FALSE and retired (tombstones in the theorem files); the survivors are re-certified
   constructively; cross-bot cooperation returns at STAGGERED budgets
-  (`outcome_PrudentBot_vs_DupocBot`: `PrudentBot (2k+64)` vs `DupocBot k`;
-  `outcome_JustBot_vs_PrudentBot`; `outcome_JustBot_vs_CupodTrollBot`), and self-play needs the
+  (`outcome_PrudentBot_vs_DupocBot_staggered`: `PrudentBot (2k+64)` vs `DupocBot k`;
+  `outcome_JustBot_vs_PrudentBot_staggered`; `outcome_JustBot_vs_CupodTrollBot_staggered`;
+  `outcome_CupodTrollBot_vs_DupocBot_staggered` — since 2026-08-27 these are NON-CELL
+  companions: the matrix cell is the SHARED-budget value, `(D,D)`/`(D,D)`/`(D,C)`/`(D,C)`,
+  the convention the tau zoo uses, so the tau whitelist is empty), and self-play needs the
   two-tier `PrudentBot2` (prudence budget above the cooperation literal — the bounded analogue
   of MIRI PrudentBot's PA+1 prudence, rediscovered here from consistency alone).
 - **2026-07-03 (later) — `Provable` is ABSOLUTELY SEMIDECIDABLE**: `decFull`, a verified
@@ -559,7 +562,9 @@ Two things worth knowing about them:
   converged interior samples only, with monoculture starts tracked separately
   (they are measure-zero).
 
-**The headline result (2026-08-10).** On the default zoo, `DupocBot` — the
+**The headline result (2026-08-10 — computed on the OLD default zoo; since 2026-08-27
+the matrix cells are shared-budget values and the default tau zoo is 9 bots
+(PrudentBot and GuardianBot excluded as twins), so RE-RUN before citing).** On the default zoo, `DupocBot` — the
 Löbian cooperator — is uniquely stochastically stable at full transparency, and
 its share of the long run RISES with selection intensity: 20% → 55% → 82% → 89%
 across the (M, β) sweep. At `t = 0` that collapses into a four-way tie including

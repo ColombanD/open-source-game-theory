@@ -37,8 +37,8 @@ open PD PD.Theorems PD.Bots
 #print axioms PD.Theorems.outcome_CupodTrollBot_vs_DBot
 #check @PD.Theorems.outcome_CupodTrollBot_vs_DefectBot
 #print axioms PD.Theorems.outcome_CupodTrollBot_vs_DefectBot
-#check @PD.Theorems.outcome_CupodTrollBot_vs_DupocBot
-#print axioms PD.Theorems.outcome_CupodTrollBot_vs_DupocBot
+#check @PD.Theorems.outcome_CupodTrollBot_vs_DupocBot_staggered
+#print axioms PD.Theorems.outcome_CupodTrollBot_vs_DupocBot_staggered
 #check @PD.Theorems.outcome_CupodTrollBot_vs_EBot
 #print axioms PD.Theorems.outcome_CupodTrollBot_vs_EBot
 #check @PD.Theorems.outcome_CupodTrollBot_vs_MirrorBot
@@ -93,8 +93,8 @@ open PD PD.Theorems PD.Bots
 #print axioms PD.Theorems.outcome_JustBot2_vs_DBot
 #check @PD.Theorems.outcome_JustBot_vs_CooperateBot
 #print axioms PD.Theorems.outcome_JustBot_vs_CooperateBot
-#check @PD.Theorems.outcome_JustBot_vs_CupodTrollBot
-#print axioms PD.Theorems.outcome_JustBot_vs_CupodTrollBot
+#check @PD.Theorems.outcome_JustBot_vs_CupodTrollBot_staggered
+#print axioms PD.Theorems.outcome_JustBot_vs_CupodTrollBot_staggered
 #check @PD.Theorems.outcome_JustBot_vs_DBot
 #print axioms PD.Theorems.outcome_JustBot_vs_DBot
 #check @PD.Theorems.outcome_JustBot_vs_DefectBot
@@ -107,8 +107,8 @@ open PD PD.Theorems PD.Bots
 #print axioms PD.Theorems.outcome_JustBot_vs_JustBot
 #check @PD.Theorems.outcome_JustBot_vs_OBot
 #print axioms PD.Theorems.outcome_JustBot_vs_OBot
-#check @PD.Theorems.outcome_JustBot_vs_PrudentBot
-#print axioms PD.Theorems.outcome_JustBot_vs_PrudentBot
+#check @PD.Theorems.outcome_JustBot_vs_PrudentBot_staggered
+#print axioms PD.Theorems.outcome_JustBot_vs_PrudentBot_staggered
 #check @PD.Theorems.outcome_JustBot_vs_TitForTatBot
 #print axioms PD.Theorems.outcome_JustBot_vs_TitForTatBot
 #check @PD.Theorems.outcome_MirrorBot_vs_CooperateBot
@@ -143,8 +143,8 @@ open PD PD.Theorems PD.Bots
 #print axioms PD.Theorems.outcome_PrudentBot_vs_DBot
 #check @PD.Theorems.outcome_PrudentBot_vs_DefectBot
 #print axioms PD.Theorems.outcome_PrudentBot_vs_DefectBot
-#check @PD.Theorems.outcome_PrudentBot_vs_DupocBot
-#print axioms PD.Theorems.outcome_PrudentBot_vs_DupocBot
+#check @PD.Theorems.outcome_PrudentBot_vs_DupocBot_staggered
+#print axioms PD.Theorems.outcome_PrudentBot_vs_DupocBot_staggered
 #check @PD.Theorems.outcome_PrudentBot_vs_EBot
 #print axioms PD.Theorems.outcome_PrudentBot_vs_EBot
 #check @PD.Theorems.outcome_PrudentBot_vs_MirrorBot

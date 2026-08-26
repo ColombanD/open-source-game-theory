@@ -36,8 +36,8 @@ floor — JustBot's guard at the same `k` can never afford it. Staggered-budget 
 FAILS against `.bot (DupocBot (4j+100))`, refuted by `Pf.eqNeg`). Holds for EVERY
 `j` — no eventuality. -/
 
-@[outcome]
-theorem outcome_JustBot_vs_CupodTrollBot :
+-- The staggered companion (not the cell — see `outcome_JustBot_vs_CupodTrollBot` below).
+theorem outcome_JustBot_vs_CupodTrollBot_staggered :
     OutcomeSpec .universal 2
       (fun j => JustBot (4*j+100)) CupodTrollBot (some (.C, .C)) := by
   intro j fuel
@@ -85,10 +85,13 @@ theorem CupodTrollBot_plays_C_against_JustBot_samek (k fuel : Nat) :
     play (fuel + 2) (CupodTrollBot k) (JustBot k) = some .C :=
   CupodTrollBot_cooperates_if_opp_not_CupodBot k fuel (JustBot k) (by simp [JustBot, CupodBot])
 
-/-- **JustBot vs CupodTrollBot at ONE budget = (D, C)**: the cooperative cell
-    `outcome_JustBot_vs_CupodTrollBot` needs `JustBot (4j+100)`. -/
-theorem outcome_JustBot_vs_CupodTrollBot_samek (k fuel : Nat) :
-    outcome (fuel + 2) (JustBot k) (CupodTrollBot k) = some (.D, .C) :=
+/-- **THE CELL — JustBot vs CupodTrollBot at ONE shared budget = (D, C)**: Troll's C is
+    its floor-priced else-play, which JustBot's probe cannot afford at the same `k`.
+    Cooperation needs `JustBot (4j+100)` — `outcome_JustBot_vs_CupodTrollBot_staggered`.
+    (Until 2026-08-27 the staggered result filled the cell and this was `_samek`.) -/
+@[outcome]
+theorem outcome_JustBot_vs_CupodTrollBot :
+    OutcomeSpec .universal 2 JustBot CupodTrollBot (some (.D, .C)) := fun k fuel =>
   outcome_of_plays _ _ _ _ _ (JustBot_plays_D_against_CupodTrollBot_samek k fuel)
     (CupodTrollBot_plays_C_against_JustBot_samek k fuel)
 

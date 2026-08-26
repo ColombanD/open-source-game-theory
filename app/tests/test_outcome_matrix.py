@@ -41,7 +41,9 @@ def test_scan_accepts_only_strict_names() -> None:
 
 def test_side_hypotheses_are_flagged() -> None:
     by_name = {t.name: t for t in scan_outcome_theorems()}
-    assert by_name["outcome_CupodTrollBot_vs_DupocBot"].staggered
+    assert by_name["outcome_LegibleBot_vs_CIMCIC"].staggered
+    # The shared-budget cells that replaced the staggered ones (2026-08-27) carry no dagger.
+    assert not by_name["outcome_PrudentBot_vs_DupocBot"].staggered
     assert not by_name["outcome_CooperateBot_vs_DefectBot"].staggered
 
 
@@ -53,7 +55,8 @@ def test_matrix_cells() -> None:
     # Proven no-outcome renders as None.
     assert cells[("MirrorBot", "MirrorBot")] == "None"
     # Side hypotheses get the dagger flag.
-    assert cells[("DupocBot", "CupodTrollBot")] == "(C, C) †"
+    # Shared-budget cell since 2026-08-27 (was the staggered "(C, C) †").
+    assert cells[("DupocBot", "CupodTrollBot")] == "(D, C)"
     # WaryBot vs DefectBot: the unsuffixed large-k theorem wins, not the floor.
     assert cells[("DefectBot", "WaryBot")] == "(D, D)"
     # The red cell, proven 2026-08-20 (outcome_DupocBot_vs_CupodBot = (D, C),

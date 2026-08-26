@@ -206,10 +206,12 @@ theorem ps_k_of_play_dupoc_any (k n : Nat) (q : Prog)
       unfold play at h ⊢; exact eval_mono_le h (n + 2) (by omega)
     rw [hC] at hD; cases hD
 
-/-- **PrudentBot (2k+64) vs DupocBot k → (C, C)** for all large enough `k` — the
-    staggered-budget recovery of the retired same-`k` theorem. -/
-@[outcome]
-theorem outcome_PrudentBot_vs_DupocBot :
+/-- **PrudentBot (2k+64) vs DupocBot k → (C, C)** for all large enough `k` — cooperation
+    returns at a budget STAGGER (Prudent's extra budget pays Dupoc's `search_f` floor).
+    Not the matrix cell (the cell is the shared-budget value, `outcome_PrudentBot_vs_DupocBot
+    = (D, D)` below); kept as the staggered companion, `_staggered` keeps it out of the
+    census. -/
+theorem outcome_PrudentBot_vs_DupocBot_staggered :
     OutcomeSpec .eventual 4
       (fun k => PrudentBot (2*k+64)) DupocBot (some (.C, .C)) := by
   obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
@@ -317,10 +319,14 @@ theorem DupocBot_plays_D_against_PrudentBot_samek (k fuel : Nat) :
   unfold DupocBot at h ⊢
   simp [eval, Prog.subst, Formula.subst, h]
 
-/-- **PrudentBot vs DupocBot at ONE budget = (D, D)**: the cooperative cell
-    `outcome_PrudentBot_vs_DupocBot` needs `PrudentBot (2k+64)`. -/
-theorem outcome_PrudentBot_vs_DupocBot_samek (k fuel : Nat) :
-    outcome (fuel + 3) (PrudentBot k) (DupocBot k) = some (.D, .D) :=
+/-- **THE CELL — PrudentBot vs DupocBot at ONE shared budget = (D, D)**: single-tier
+    prudence cannot certify Dupoc's else-play D at the same `k`. Cooperation needs the
+    stagger `outcome_PrudentBot_vs_DupocBot_staggered` (`PrudentBot (2k+64)`). Until
+    2026-08-27 this was the `_samek` side theorem and the staggered result filled the
+    cell; the matrix now reports the shared-budget value, as the tau zoo does. -/
+@[outcome]
+theorem outcome_PrudentBot_vs_DupocBot :
+    OutcomeSpec .universal 3 PrudentBot DupocBot (some (.D, .D)) := fun k fuel =>
   outcome_of_plays _ _ _ _ _ (PrudentBot_plays_D_against_DupocBot_samek k fuel)
     (by simpa [Nat.add_assoc] using DupocBot_plays_D_against_PrudentBot_samek k (fuel + 1))
 
