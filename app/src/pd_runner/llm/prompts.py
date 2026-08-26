@@ -178,7 +178,9 @@ def build_system_prompt_blocks(
         ("Base/Soundness.lean", "Base/Soundness.lean (`proofSearch_spec`, `Pf_sound`, eval monotonicity)"),
         ("Base/AtomCerts.lean", "Base/AtomCerts.lean (constructive atom certificates)"),
         ("Base/Helpers.lean", "Base/Helpers.lean (outcome assembly: `outcome_of_plays`, "
-         "`play_ite_from_guard`, `eval_sim_opp_bot_of_play`)"),
+         "`play_ite_from_guard`, `eval_sim_opp_bot_of_play`, `outcome_mono_le`)"),
+        ("Outcome/Spec.lean", "Outcome/Spec.lean (THE outcome-theorem template: `OutcomeSpec`, "
+         "`OutcomeSpecEx`, `BudgetRegime` — your final theorem MUST be stated with it)"),
     ):
         proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
@@ -294,21 +296,38 @@ your best compiling source, and the last compiler feedback. You finish by callin
   helper-lemma decomposition) before filling the holes. The verdict gate rejects any
   submission still containing `sorry`.
 - Prefer `unfold`, `simp`, `rfl`, `exact`, `rw`, `cases`, `omega` tactics.
-- **Strict theorem shape — no extra premises.** The theorem's conclusion must be of the form
-  `outcome <fuel-expr> <bot_a> <bot_b> = some (.X, .Y)`, optionally wrapped in `∃` / `∀`
-  quantifiers over fuel/search-budget naturals (e.g. `∃ k, ∀ n, outcome (n+f) ...` or
-  `∃ k₂, ∀ k, k₂ < k → ∃ fuel, ...`). You may NOT add hypotheses of the form
-  `proofSearch _ _ = false`, `proofSearch _ _ = true`, or any other premise that conditions
-  the outcome on the behavior of the proof oracle. Such hypotheses turn an outcome theorem
-  into a conditional claim and defeat the purpose of mechanizing the outcome. Binding the
-  search budget `k` with a `∃ k₂, ∀ k, k₂ < k → …` *threshold quantifier* is NOT an extra
-  premise — it is the correct way to state the outcome of a `.search`-bot matchup.
+- **Strict theorem shape — the `OutcomeSpec` template, tagged `@[outcome]`.** Your final
+  theorem MUST be stated with the template from `Outcome/Spec.lean` (embedded above) and
+  carry the `@[outcome]` attribute on the line directly above it
+  (`import PrisonersDilemma.Outcome` provides both):
+    `@[outcome] theorem llm_outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`
+  `L R : Nat → Prog`: pass a budgeted bot BARE (`CupodBot`) and a closed bot as
+  `(fun _ => DefectBot)`. `<pad>` is a `Nat` literal, the fuel offset — the statement
+  unfolds to `outcome (fuel + pad) (L k) (R k) = some (.X, .Y)`. `<regime>` is
+  `.nobudget` (both bots closed), `.universal` (holds at EVERY budget `k`) or `.eventual`
+  (holds at every sufficiently large `k`: `∃ k₂, ∀ k, k₂ < k → …`). `OutcomeSpecEx
+  <regime> L R r` (no pad; `∃ fuel` per budget) is for results whose fuel witness comes
+  out of `Pf_sound` and genuinely depends on `k` — the Löbian cooperation theorems; prefer
+  the padded form whenever a literal pad works. A provably-no-outcome pair states `none`
+  as the result. Proof openers: `.nobudget` → `intro fuel`; `.universal` → `intro k fuel`;
+  `.eventual` → `refine ⟨K, fun k hk fuel => ?_⟩` (`OutcomeSpecEx .eventual` →
+  `refine ⟨K, fun k hk => ⟨fuel, ?_⟩⟩`); after that the goal is the familiar
+  `outcome (fuel + pad) … = some (…)` and every existing proof technique applies.
+  The verdict gate runs the library's OWN linter (`#validate_outcome`) on your file: a raw
+  `outcome … = …` equation, an `∃ k` witness, a hand-written `∀ k ≥ K` telescope, a
+  missing `@[outcome]`, or bots in the statement that differ from the ones the NAME
+  claims are all rejected. **No extra premises**: no `(h : …)` Prop binders, never
+  `proofSearch _ _ = true/false` (a hypothesis conditioning the outcome on the proof
+  oracle turns the theorem into a conditional claim), and no `OutcomeSpecIf` (its guarded
+  cells are hand-written and daggered) — a budget FLOOR is not a premise, it is the
+  `.eventual` regime.
 - **`.search`-bot matchups depend on the budget `k` — bind it, do not give up.** When one or
   both bots take a budget parameter `k`, the outcome typically flips with `k`: small `k` gives
   defection (the oracle proves nothing), large `k` gives the Löb/Critch cooperation fixed
   point. The unquantified statement with `k` left free is unprovable, but the **large-`k`
-  threshold** statement `∃ k₂, ∀ k, k₂ < k → ∃ fuel, outcome fuel (BotA k) (BotB k) = some (…)`
-  is provable and is the expected answer. Existing `.search`-bot self-play theorems in the
+  threshold** statement `OutcomeSpec .eventual pad BotA BotB (some (…))` (or
+  `OutcomeSpecEx .eventual BotA BotB (some (…))` when the fuel witness comes from
+  `Pf_sound`) is provable and is the expected answer. Existing `.search`-bot self-play theorems in the
   few-shot files show the canonical `PBLT` application for this shape — follow it. Prove the
   threshold theorem; do NOT declare OUTCOME OPEN merely because the result varies with `k`.
   Not every self-play matchup cooperates, though: when the Löb premise is NOT derivable at
@@ -443,8 +462,10 @@ def proof_request_message(
     )
 
     if parameterized:
-        left_app = f"({left_bot} k)" if _bot_uses_search(left_bot) else left_bot
-        right_app = f"({right_bot} k)" if _bot_uses_search(right_bot) else right_bot
+        # Template arguments are `Nat → Prog`: a budgeted bot goes in BARE, a closed
+        # bot as a constant lambda.
+        left_app = left_bot if _bot_uses_search(left_bot) else f"(fun _ => {left_bot})"
+        right_app = right_bot if _bot_uses_search(right_bot) else f"(fun _ => {right_bot})"
 
         if left_action is not None and right_action is not None:
             intro = (
@@ -478,29 +499,38 @@ def proof_request_message(
                 "that theorem (and the `PBLT` application it uses) as your template."
             )
 
+        pad_expr = str(fuel) if fuel is not None else "<PAD>"
         parts.append(
             f"{intro}\n\n"
             f"```lean\n"
+            f"import PrisonersDilemma.Outcome\n"
+            f"-- …plus the bot modules and the Base/ modules you use\n\n"
+            f"@[outcome]\n"
             f"theorem llm_outcome_{left_bot}_vs_{right_bot} :\n"
-            f"    ∃ k₂, ∀ k, k₂ < k →\n"
-            f"      ∃ fuel, outcome fuel {left_app} {right_app} = {outcome_clause} := by\n"
-            f"  sorry  -- replace with a real proof\n"
+            f"    OutcomeSpec .eventual {pad_expr} {left_app} {right_app} ({outcome_clause}) := by\n"
+            f"  refine ⟨K, fun k hk fuel => ?_⟩  -- pick the threshold K\n"
+            f"  sorry  -- replace with a real proof of `outcome (fuel + {pad_expr}) … = {outcome_clause}`\n"
             f"```\n\n"
-            f"{template_hint} Do NOT emit an unquantified `outcome … = some (…)` with `k` "
-            f"left free; that statement is unprovable because the outcome flips with `k`.\n\n"
-            f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
-            f"to avoid clashing with existing library theorems."
+            f"Use `OutcomeSpecEx .eventual {left_app} {right_app} ({outcome_clause})` (no pad, opener "
+            f"`refine ⟨K, fun k hk => ⟨fuel, ?_⟩⟩`) only if the fuel witness comes out of "
+            f"`Pf_sound` and depends on `k`; use `.universal` (opener `intro k fuel`) if the "
+            f"result holds at EVERY budget. {template_hint} Do NOT emit a raw `outcome … = "
+            f"some (…)` equation or leave `k` free; that statement is off-template and, with "
+            f"`k` free, unprovable because the outcome flips with `k`.\n\n"
+            f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}`, "
+            f"tag it `@[outcome]`, and pass a budgeted bot BARE and a closed bot as "
+            f"`(fun _ => Bot)` — the linter checks the bots against the name."
         )
     else:
-        fuel_expr = f"n+{fuel}" if fuel is not None else "n+<FUEL>"
+        pad_expr = str(fuel) if fuel is not None else "<PAD>"
         fuel_note = (
-            f"Use fuel offset `+{fuel}` exactly."
+            f"Use pad `{fuel}` exactly (the statement unfolds to `outcome (fuel + {fuel}) …`)."
             if fuel is not None
             else (
-                "Pick `<FUEL>` yourself: it must be a concrete `Nat` literal large enough that "
-                "`outcome (n+<FUEL>) ...` settles to a single action pair for all `n`. Try a small "
-                "value first (1 or 3), increase if Lean rejects the proof because evaluation needs "
-                "more fuel."
+                "Pick `<PAD>` yourself: it must be a concrete `Nat` literal large enough that "
+                "`outcome (fuel + <PAD>) …` settles to a single action pair for all `fuel`. Try a "
+                "small value first (1 or 3), increase if Lean rejects the proof because "
+                "evaluation needs more fuel."
             )
         )
 
@@ -517,13 +547,19 @@ def proof_request_message(
         parts.append(
             f"{intro}\n\n"
             f"```lean\n"
-            f"theorem llm_outcome_{left_bot}_vs_{right_bot} (n : Nat) :\n"
-            f"    outcome ({fuel_expr}) {left_bot} {right_bot} = {outcome_clause} := by\n"
-            f"  sorry  -- replace with a real proof\n"
+            f"import PrisonersDilemma.Outcome\n"
+            f"-- …plus the bot modules and the Base/ modules you use\n\n"
+            f"@[outcome]\n"
+            f"theorem llm_outcome_{left_bot}_vs_{right_bot} :\n"
+            f"    OutcomeSpec .nobudget {pad_expr} (fun _ => {left_bot}) (fun _ => {right_bot}) "
+            f"({outcome_clause}) := by\n"
+            f"  intro fuel\n"
+            f"  sorry  -- replace with a real proof of `outcome (fuel + {pad_expr}) {left_bot} {right_bot} = {outcome_clause}`\n"
             f"```\n\n"
             f"{fuel_note}\n\n"
             f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
-            f"to avoid clashing with existing library theorems."
+            f"and tag it `@[outcome]` — an untagged or off-template theorem is rejected by "
+            f"the verdict gate."
         )
 
     # Always inject the bot definitions so the agent doesn't need to fetch them manually.

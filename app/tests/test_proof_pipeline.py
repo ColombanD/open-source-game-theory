@@ -86,6 +86,9 @@ def _write_fake_engine(pd_dir: Path) -> None:
     (base_dir / "Loeb.lean").write_text("-- loeb", encoding="utf-8")
     (base_dir / "Exclusion.lean").write_text("-- exclusion", encoding="utf-8")
     (base_dir / "Closure.lean").write_text("-- closure", encoding="utf-8")
+    outcome_dir = pd_dir / "Outcome"
+    outcome_dir.mkdir(exist_ok=True)
+    (outcome_dir / "Spec.lean").write_text("-- outcome-spec", encoding="utf-8")
 
     # Bot sources are how `_bot_uses_search` decides whether to inject the
     # search-only proof-system modules: CooperateBot has no `.search`, CupodBot does.
@@ -109,6 +112,7 @@ def test_build_system_prompt_includes_program_and_dynamics(tmp_path: Path, monke
     prompt = build_system_prompt("CooperateBot", "DefectBot")
     assert "-- program" in prompt
     assert "-- dynamics" in prompt
+    assert "-- outcome-spec" in prompt  # the template every final theorem must use
     assert "-- base-theorems" in prompt
     assert "-- soundness" in prompt
     assert "-- atom-certs" in prompt
@@ -148,11 +152,14 @@ def test_build_system_prompt_includes_proof_system_for_search_bots(
 _GOOD_SOURCE = """\
 import PrisonersDilemma.Bots.CooperateBot
 import PrisonersDilemma.Bots.DefectBot
+import PrisonersDilemma.Outcome
 
 namespace PD.Theorems
 
-theorem llm_outcome_CooperateBot_vs_DefectBot (n : Nat) :
-    outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by
+@[outcome]
+theorem llm_outcome_CooperateBot_vs_DefectBot :
+    OutcomeSpec .nobudget 1 (fun _ => CooperateBot) (fun _ => DefectBot) (some (.C, .D)) := by
+  intro fuel
   rfl
 
 end PD.Theorems
@@ -161,10 +168,21 @@ end PD.Theorems
 _THRESHOLD_SOURCE = """\
 namespace PD.Theorems
 
+@[outcome]
 theorem llm_outcome_DupocBot_vs_DupocBot :
-    ∃ k₂, ∀ k, k₂ < k →
-      ∃ fuel, outcome fuel (DupocBot k) (DupocBot k) = some (.C, .C) := by
+    OutcomeSpecEx .eventual DupocBot DupocBot (some (.C, .C)) := by
   exact proof
+
+end PD.Theorems
+"""
+
+# The pre-2026-08-26 shape: a raw `outcome … = …` equation, no `@[outcome]`.
+_LEGACY_SOURCE = """\
+namespace PD.Theorems
+
+theorem llm_outcome_CooperateBot_vs_DefectBot (n : Nat) :
+    outcome (n+1) CooperateBot DefectBot = some (.C, .D) := by
+  rfl
 
 end PD.Theorems
 """
@@ -202,7 +220,8 @@ def test_check_proved_source_rejects_action_mismatch() -> None:
 
 def test_check_proved_source_rejects_oracle_premise() -> None:
     source = _GOOD_SOURCE.replace(
-        "(n : Nat) :", "(n : Nat) (h : proofSearch k φ = false) :"
+        "llm_outcome_CooperateBot_vs_DefectBot :",
+        "llm_outcome_CooperateBot_vs_DefectBot (h : proofSearch k φ = false) :",
     )
     problems = verdicts.check_proved_source(
         source, left_bot="CooperateBot", right_bot="DefectBot",
@@ -229,11 +248,92 @@ def test_check_proved_source_ignores_tokens_in_comments() -> None:
 
 
 def test_check_proved_source_accepts_none_outcome() -> None:
-    source = _GOOD_SOURCE.replace("= some (.C, .D)", "= none")
+    source = _GOOD_SOURCE.replace("(some (.C, .D))", "none")
     assert verdicts.check_proved_source(
         source, left_bot="CooperateBot", right_bot="DefectBot",
         submitted_left="none", submitted_right="none",
     ) == []
+
+
+def test_check_proved_source_rejects_legacy_raw_shape() -> None:
+    """The raw `outcome … = some …` equation is off-template AND untagged."""
+    problems = verdicts.check_proved_source(
+        _LEGACY_SOURCE, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    )
+    assert any("@[outcome]" in p for p in problems)
+    assert any("not on the outcome template" in p for p in problems)
+
+
+def test_check_proved_source_rejects_missing_tag() -> None:
+    source = _GOOD_SOURCE.replace("@[outcome]\n", "")
+    problems = verdicts.check_proved_source(
+        source, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    )
+    assert [p for p in problems if "@[outcome]" in p]
+    assert not [p for p in problems if "not on the outcome template" in p]
+
+
+def test_check_proved_source_rejects_guarded_template() -> None:
+    source = _GOOD_SOURCE.replace(
+        "OutcomeSpec .nobudget 1", "OutcomeSpecIf .nobudget 1 (fun _ _ => True)"
+    )
+    problems = verdicts.check_proved_source(
+        source, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    )
+    assert any("OutcomeSpecIf" in p for p in problems)
+
+
+def test_check_proved_source_rejects_prop_binder_but_allows_nat_binder() -> None:
+    hyp = _GOOD_SOURCE.replace(
+        "llm_outcome_CooperateBot_vs_DefectBot :",
+        "llm_outcome_CooperateBot_vs_DefectBot (hk : 2 ≤ k) :",
+    )
+    problems = verdicts.check_proved_source(
+        hyp, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    )
+    assert any("extra binder" in p for p in problems)
+
+    budget = _GOOD_SOURCE.replace(
+        "llm_outcome_CooperateBot_vs_DefectBot :",
+        "llm_outcome_CooperateBot_vs_DefectBot (j : Nat) :",
+    )
+    assert verdicts.check_proved_source(
+        budget, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    ) == []
+
+
+def test_check_proved_source_rejects_bot_absent_from_statement() -> None:
+    source = _GOOD_SOURCE.replace("(fun _ => DefectBot)", "(fun _ => DBot)")
+    problems = verdicts.check_proved_source(
+        source, left_bot="CooperateBot", right_bot="DefectBot",
+        submitted_left="C", submitted_right="D",
+    )
+    assert any("never mentions `DefectBot`" in p for p in problems)
+
+
+def test_extract_actions_from_template_statement() -> None:
+    assert verdicts.extract_actions_from_source(
+        "OutcomeSpec .universal 2 CupodBot (fun _ => OBot) (some (.C, .D))"
+    ) == ("C", "D")
+    assert verdicts.extract_actions_from_source(
+        "OutcomeSpecEx .eventual DupocBot DupocBot none"
+    ) == (None, None)
+    assert verdicts.extract_actions_from_source("theorem x : True") is None
+
+
+def test_with_outcome_validation_inserts_import_after_import_block() -> None:
+    from pd_runner.services.proof_episodes import with_outcome_validation
+
+    out = with_outcome_validation(_GOOD_SOURCE, "llm_outcome_CooperateBot_vs_DefectBot")
+    lines = out.splitlines()
+    assert lines[3] == "import PrisonersDilemma.Outcome.Lint"
+    assert lines[4] == ""
+    assert out.rstrip().endswith("#validate_outcome PD.Theorems.llm_outcome_CooperateBot_vs_DefectBot")
 
 
 # ---------------------------------------------------------------------------
@@ -432,7 +532,7 @@ def test_write_proof_rolls_back_on_build_failure(tmp_path: Path, monkeypatch) ->
     monkeypatch.setattr(
         library_writer,
         "build_lean_project",
-        lambda _: LeanExecResult("lake build", 1, "", "build error"),
+        lambda _dir, target=None: LeanExecResult("lake build", 1, "", "build error"),
     )
 
     with pytest.raises(library_writer.LibraryWriteError, match="lake build failed"):
@@ -455,11 +555,15 @@ def test_write_proof_writes_and_builds_successfully(tmp_path: Path, monkeypatch)
         "load_paths",
         lambda: SimpleNamespace(lean_engine_dir=tmp_path),
     )
-    monkeypatch.setattr(
-        library_writer,
-        "build_lean_project",
-        lambda _: LeanExecResult("lake build", 0, "Build OK", ""),
-    )
+    seen_targets: list = []
+
+    def fake_build(_dir, target=None):
+        seen_targets.append(target)
+        return LeanExecResult("lake build", 0, "Build OK", "")
+
+    monkeypatch.setattr(library_writer, "build_lean_project", fake_build)
+    refreshed: list = []
+    monkeypatch.setattr(library_writer, "refresh_export", lambda *_: refreshed.append(1) or "")
 
     write_result = library_writer.write_proof_to_library(
         _cooperate_vs_defect_result(), human_accept=False
@@ -469,6 +573,9 @@ def test_write_proof_writes_and_builds_successfully(tmp_path: Path, monkeypatch)
     assert expected.exists()
     assert "theorem foo" in expected.read_text()
     assert write_result.build_ok is True
+    # The transaction builds the engine AND the outcome gate, then refreshes the export.
+    assert seen_targets == [("PrisonersDilemma", "OutcomeCheck")]
+    assert refreshed == [1]
     # The import line was appended to the root index.
     assert (
         "import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot"

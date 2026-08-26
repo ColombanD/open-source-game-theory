@@ -44,15 +44,18 @@ Since 2026-08-26 it is a TYPED object (`Outcome/Spec.lean`): every matrix theore
 regimes `nobudget | universal | eventual`; `L R : Nat → Prog` so staggering is a
 structural property of the lambda). `Outcome/Lint.lean` validates every tagged theorem
 against its own name and `Outcome/Check.lean` (lake target `OutcomeCheck`, in the
-default build) runs the census: every `outcome_X_vs_Y` declaration on disk is tagged or
-listed in `Outcome/exclusions.txt`. `lake exe export_outcomes` writes the cells to the
+default build) runs the census: every declaration named like a cell
+(`(llm_)outcome_<L>_vs_<R>`, both bot directories) is tagged — no allowlist; regime
+variants take a suffix (`_floor`, `_samek`) and are not cells. `lake exe export_outcomes` writes the cells to the
 committed `app/generated/outcome_theorems.json`, which is the ONLY source the app's
 matrix reads (no regex over Lean source). Because the statement is fully concrete,
 **compilation == correctness** — an LLM-written proof that type-checks is, modulo the
-NL→Lean *bot* translation, a verified result. **Known gap:** the proof agent's prompt
-and verdict gate still target the raw `outcome … = some …` shape and do not emit
-`@[outcome]`, so an LLM proof landed through `library_writer` is invisible to the
-matrix and fails the next `lake build` census until migrated by hand.
+NL→Lean *bot* translation, a verified result. The proof agent is ALIGNED with it (2026-08-26): `Outcome/Spec.lean` is embedded in the
+system prompt, the request templates are `OutcomeSpec` statements, the verdict gate
+compiles the submission with `#validate_outcome` appended (the library's own linter) plus
+textual checks (`@[outcome]`, template head, no Prop binders / `OutcomeSpecIf`), and
+`library_writer` builds `PrisonersDilemma` + `OutcomeCheck` in its transaction and then
+refreshes the export.
 
 ## Foundational status — zero axioms, transcript costs; `eval` computability reduced to ONE conjecture
 

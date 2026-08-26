@@ -44,11 +44,11 @@ theorem CupodTrollBot_defects_vs_CupodBot (k fuel : Nat)
 /-- CupodBot defects against CupodTrollBot. Its `.search` guard is
     `□(CupodTrollBot plays D vs me)`; since CupodTrollBot *does* defect (`hA`), the
     guard's atom is provable, so once the budget `k` covers it the guard fires and
-    CupodBot takes its `.const .D` branch. The atom budget `atom_cost (fuel + 2)`
-    must fit in `k` (`hbudget`). -/
+    CupodBot takes its `.const .D` branch. (An `atom_cost (fuel + 2) ≤ k` hypothesis
+    used to ride along; it was never used — the certificate is a `search_t` over the
+    `eqRefl` leaf, whose cost is `log2 k + 3`, not an atom census.) -/
 theorem CupodBot_defects_vs_CupodTrollBot (k fuel : Nat)
-    (hk : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k)
-    (_ : atom_cost (fuel + 2) ≤ k) :
+    (hk : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k) :
     play (fuel + 2) (CupodBot k) (CupodTrollBot k) = some .D := by
   -- CupodTrollBot defects against `CupodBot k` (direction A).
   have hA : play (fuel + 2) (CupodTrollBot k) (CupodBot k) = some .D :=

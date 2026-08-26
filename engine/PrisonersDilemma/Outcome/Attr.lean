@@ -20,8 +20,8 @@ namespace PD.Outcome
 
     Tagging is OPT-IN, which inverts the previous name-regex policy: an untagged
     `outcome_X_vs_Y` theorem is invisible to the matrix. `Outcome/Lint.lean`'s census is
-    what stops that from failing silently — it errors on any declaration that is neither
-    tagged nor explicitly excluded.
+    what stops that from failing silently — it errors on any cell-shaped declaration
+    that is not tagged.
 
     Implemented with `registerTagAttribute` rather than a hand-rolled environment
     extension: the tag attribute's `PersistentEnvExtension` is already wired to write its

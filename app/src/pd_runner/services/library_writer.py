@@ -17,6 +17,7 @@ from pd_runner.config import load_paths
 from pd_runner.lean.executor import LeanExecResult, build_lean_project
 from pd_runner.services.bot_service import BotResult
 from pd_runner.services.proof_service import ProofResult
+from pd_runner.eval.outcome_matrix import refresh_export
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +148,14 @@ def write_proof_to_library(
         with index.open("a", encoding="utf-8") as f:
             f.write(import_line)
 
-    build_result: LeanExecResult = build_lean_project(paths.lean_engine_dir)
+    # The engine AND the outcome gate, in one transaction: `OutcomeCheck` runs the
+    # template validator (statement on `OutcomeSpec`, bots agree with the name) and the
+    # census (every cell-shaped theorem is `@[outcome]`-tagged). A theorem that would be
+    # invisible to the matrix, or would break the next default `lake build`, is rolled
+    # back here instead.
+    build_result: LeanExecResult = build_lean_project(
+        paths.lean_engine_dir, target=("PrisonersDilemma", "OutcomeCheck")
+    )
 
     if build_result.returncode != 0:
         # Roll back both the proof file and the index line.
@@ -155,18 +163,13 @@ def write_proof_to_library(
         index_text = index.read_text(encoding="utf-8")
         index.write_text(index_text.replace(import_line, ""), encoding="utf-8")
         raise LibraryWriteError(
-            f"lake build failed after writing {target} — file removed.\n"
-            f"stdout:\n{build_result.stdout}\nstderr:\n{build_result.stderr}"
+            f"lake build failed (targets PrisonersDilemma + OutcomeCheck) after writing "
+            f"{target} — file removed.\nstdout:\n{build_result.stdout}\nstderr:\n{build_result.stderr}"
         )
 
     # Keep the committed `@[outcome]` export current so the matrix (UI, sheet, tau,
-    # EGT) sees the new cell. Best-effort: the theorem is already kernel-checked and
-    # landed; a failed refresh is a loud warning, not a rollback. NOTE: a theorem the
-    # agent wrote in the raw `outcome … = some …` shape without `@[outcome]` will make
-    # this step fail the `OutcomeCheck` census — that is the signal that the proof
-    # agent's template and the engine's template have diverged.
-    from pd_runner.eval.outcome_matrix import refresh_export
-
+    # EGT) sees the new cell. Best-effort: the theorem is already kernel-checked,
+    # linted and landed; a failed export is a loud warning, not a rollback.
     try:
         refresh_export(paths.lean_engine_dir)
     except RuntimeError as exc:

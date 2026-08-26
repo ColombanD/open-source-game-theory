@@ -64,6 +64,7 @@ from pd_runner.services.verdicts import (
     ProofOutcome,
     ProofRequest,
     check_proved_source,
+    expected_theorem_name,
     find_census_inductions,
     find_library_name_collisions,
 )
@@ -130,6 +131,20 @@ class ProofState:
 # ---------------------------------------------------------------------------
 
 
+def with_outcome_validation(lean_source: str, theorem_name: str) -> str:
+    """The submitted source plus a `#validate_outcome` of its outcome theorem.
+
+    Imports `Outcome/Lint.lean` after the file's own import block (Lean requires imports
+    first) and appends the command after everything else, fully qualified so it resolves
+    whether or not the agent closed its `namespace PD.Theorems`.
+    """
+    lines = lean_source.splitlines()
+    last_import = max((i for i, l in enumerate(lines) if l.startswith("import ")), default=-1)
+    if "import PrisonersDilemma.Outcome.Lint" not in lines:
+        lines.insert(last_import + 1, "import PrisonersDilemma.Outcome.Lint")
+    return "\n".join(lines) + f"\n\n#validate_outcome PD.Theorems.{theorem_name}\n"
+
+
 def verify_proved_submission(
     request: ProofRequest,
     lean_source: str,
@@ -145,8 +160,14 @@ def verify_proved_submission(
     """
     hint = f"{request.left_bot}_vs_{request.right_bot}_verify"
 
-    # 1. Re-compile the SUBMITTED source — never trust the last in-loop compile.
-    report = compile_svc.check(lean_source, filename_hint=hint)
+    # 1. Re-compile the SUBMITTED source — never trust the last in-loop compile — with
+    #    the library's outcome validator appended: `#validate_outcome` runs the SAME
+    #    `inspectCell` the build-time linter runs (template head, literal regime/pad/
+    #    result, bots agree with the name, `@[outcome]` present), so an off-template
+    #    theorem is rejected here rather than at write time. The landed file is the
+    #    un-augmented source.
+    name = expected_theorem_name(request.left_bot, request.right_bot)
+    report = compile_svc.check(with_outcome_validation(lean_source, name), filename_hint=hint)
     if report.exit_code != 0:
         return [
             "the submitted source does not compile (exit code "

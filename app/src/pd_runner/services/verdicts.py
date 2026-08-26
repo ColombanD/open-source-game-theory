@@ -138,15 +138,31 @@ class ProofSearchError(RuntimeError):
 
 _NONE_OUTCOME_RE = re.compile(r"outcome\s+\S.*?=\s*none\b", re.DOTALL)
 
+# The `OutcomeSpec` template (engine `Outcome/Spec.lean`): the result is the LAST
+# argument, `(some (.X, .Y))` or `none`, with no `=` in sight.
+_TEMPLATE_HEAD_RE = re.compile(r"\bOutcomeSpec(Ex|If)?\b")
+_TEMPLATE_PAIR_RE = re.compile(r"\(\s*some\s*\(\s*\.([CD])\s*,\s*\.([CD])\s*\)\s*\)")
+_TEMPLATE_NONE_RE = re.compile(r"\bnone\s*(?::=|\Z)")
+
 
 def extract_actions_from_source(lean_source: str) -> tuple[str | None, str | None] | None:
     """Parse the action pair from a proven theorem statement.
 
+    Accepts the `OutcomeSpec … (some (.X, .Y))` / `OutcomeSpec … none` template (the
+    library's canonical shape) and, for legacy sources, the raw `= some (.X, .Y)` /
+    `= none` equation.
+
     Returns:
-        (action_left, action_right) for `= some (.X, .Y)` theorems.
-        (None, None) for `= none` theorems (provably non-terminating pairs).
+        (action_left, action_right) for a proven action pair.
+        (None, None) for a proven no-outcome (`none`).
         None if no recognizable outcome pattern is found.
     """
+    if _TEMPLATE_HEAD_RE.search(lean_source):
+        match = _TEMPLATE_PAIR_RE.search(lean_source)
+        if match:
+            return match.group(1), match.group(2)
+        if _TEMPLATE_NONE_RE.search(lean_source.rstrip()):
+            return None, None
     match = re.search(r"=\s*some\s*\(\.([CD]),\s*\.([CD])\)", lean_source)
     if match:
         return match.group(1), match.group(2)
@@ -267,6 +283,27 @@ def extract_theorem_statement(lean_source: str, theorem_name: str) -> str | None
     return rest[:end] if end != -1 else rest
 
 
+def _split_telescope(statement: str) -> tuple[str, str, str]:
+    """Split `<binders> : <body>` at the first top-level `:` (outside any brackets)."""
+    depth = 0
+    for i, ch in enumerate(statement):
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth -= 1
+        elif ch == ":" and depth == 0 and statement[i : i + 2] != ":=":
+            return statement[:i], ":", statement[i + 1 :]
+    return "", "", statement
+
+
+_BINDER_RE = re.compile(r"([(\[{])\s*([^:()\[\]{}]*?)\s*:\s*([^()\[\]{}]*)[)\]}]")
+
+
+def _binder_types(binders: str) -> list[tuple[str, str]]:
+    """`(kind, type-text)` for each explicit/implicit/instance binder in a telescope."""
+    return [(m.group(1), m.group(3)) for m in _BINDER_RE.finditer(binders)]
+
+
 def check_proved_source(
     lean_source: str,
     *,
@@ -282,8 +319,9 @@ def check_proved_source(
     compilation alone cannot enforce.
     """
     problems: list[str] = []
+    stripped_source = _strip_comments(lean_source)
 
-    forbidden = sorted(set(_FORBIDDEN_TOKEN_RE.findall(_strip_comments(lean_source))))
+    forbidden = sorted(set(_FORBIDDEN_TOKEN_RE.findall(stripped_source)))
     if forbidden:
         problems.append(
             f"the source contains forbidden token(s): {', '.join(forbidden)} — "
@@ -306,11 +344,45 @@ def check_proved_source(
         )
         return problems
 
-    if "outcome" not in statement:
+    if not re.search(rf"@\[outcome\]\s*theorem\s+{re.escape(name)}\b", stripped_source):
         problems.append(
-            f"the statement of `{name}` does not mention `outcome` — the "
-            "conclusion must be an `outcome … = …` equation"
+            f"`{name}` is not tagged `@[outcome]` — put the attribute on the line directly "
+            "above `theorem` (and `import PrisonersDilemma.Outcome`); untagged theorems are "
+            "invisible to the outcome matrix and fail the library's build-time census"
         )
+
+    binders, _, body = _split_telescope(statement)
+    head = _TEMPLATE_HEAD_RE.search(body)
+    if head is None:
+        problems.append(
+            f"the statement of `{name}` is not on the outcome template — it must be "
+            "`OutcomeSpec <regime> <pad> L R (some (.X, .Y))` (or `OutcomeSpecEx <regime> "
+            "L R …` for a `k`-dependent fuel witness); a raw `outcome … = …` equation, an "
+            "`∃ k` witness or a hand-written `∀ k ≥ K` telescope is rejected — see "
+            "`Outcome/Spec.lean` in your prompt"
+        )
+    elif head.group(1) == "If":
+        problems.append(
+            f"the statement of `{name}` uses the guarded `OutcomeSpecIf` — side conditions "
+            "are not allowed for LLM-written cells (a budget floor is the `.eventual` "
+            "regime, not a premise)"
+        )
+    else:
+        for bot in (left_bot, right_bot):
+            if not re.search(rf"\b{re.escape(bot)}\b", body):
+                problems.append(
+                    f"the statement of `{name}` never mentions `{bot}` — the bots in the "
+                    "statement must be the ones the theorem name claims"
+                )
+
+    for kind, binder_type in _binder_types(binders):
+        if kind != "(" or binder_type.strip() not in ("Nat", "ℕ"):
+            problems.append(
+                f"the theorem `{name}` has an extra binder `{kind}… : {binder_type.strip()}…` — "
+                "the strict template allows no hypotheses (only `(j : Nat)` budget binders); "
+                "state a budget floor as the `.eventual` regime instead"
+            )
+            break
 
     if "proofSearch" in statement:
         problems.append(

@@ -110,11 +110,14 @@ def record_from_outcome(
     )
 
 
+# The template's `pad` (`OutcomeSpec .regime <pad> …`) — the fuel offset the statement
+# unfolds to (`outcome (fuel + pad) …`); the legacy raw-shape `outcome (n + f)` as fallback.
+_PAD_RE = re.compile(r"OutcomeSpec(?:If)?\s+\.\w+\s+(\d+)")
 _FUEL_RE = re.compile(r"outcome\s*\(\s*n\s*\+\s*(\d+)\s*\)")
 
 
 def extract_chosen_fuel(lean_source: str) -> int | None:
-    m = _FUEL_RE.search(lean_source)
+    m = _PAD_RE.search(lean_source) or _FUEL_RE.search(lean_source)
     return int(m.group(1)) if m else None
 
 

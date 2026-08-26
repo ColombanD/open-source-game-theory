@@ -12,13 +12,17 @@ theorems for free:
 * **the validator** — every `@[outcome]`-tagged theorem really is an `OutcomeSpec`
   application with literal regime/pad/result, and its `L`/`R` bots agree with its NAME
   (nothing previously stopped `outcome_A_vs_B` from being a statement about `C`);
-* **the census** — every `outcome_X_vs_Y` declaration on disk is either tagged or listed
-  in `Outcome/exclusions.txt`, and the tagged count is exactly the expected number.
+* **the census** — every declaration on disk whose name has the EXACT matrix-cell shape
+  `(llm_)outcome_<Left>_vs_<Right>` with `<Left>`/`<Right>` both bot directories under the
+  theorems root is `@[outcome]`-tagged.
 
 The census is the guard against the opt-in polarity inversion: forgetting a tag would
-otherwise silently shrink the matrix. Its regex deliberately OVER-approximates — an
-over-approximation produces a loud build failure, never a silent omission. Do not
-"simplify" it into agreement with the validator.
+otherwise silently shrink the matrix (the cell renders as open). It matches the SAME
+acceptance rule as the app's matrix (bot names are alphanumeric, rows are the bot
+directories), so regime variants like `outcome_WaryBot_vs_DBot_floor` or tier variants
+like `outcome_JustBot2_vs_DBot` are simply not cells and need no allowlist. (An earlier
+version over-approximated on purpose and carried a 46-line `exclusions.txt`; the
+allowlist was pure maintenance, so the census now agrees with the matrix instead.)
 -/
 
 open Lean Elab Command Meta
@@ -59,17 +63,26 @@ private def stripBinders (ty : Expr) : MetaM (Expr × Array String) := do
 
     `CupodBot` / `fun k => CupodBot k` are pass-throughs; `fun _ => OBot` is a closed bot;
     anything else (`fun k => PrudentBot (2*k+64)`, `fun k => LegibleBot (2*k+64) k`) is
-    staggered. -/
+    staggered.
+
+    A bot argument mentioning a FREE VARIABLE of the theorem (`(j : Nat) : … (fun _ =>
+    CupodTrollBot j) DupocBot …`) is staggered too: `j` is a second, independent budget
+    that the shared `k` lambda does not see, so the cell is not the same-budget cell.
+    Without this, restating such a theorem as `.eventual` in `k` would silently drop
+    its dagger. Literal budgets (`fun _ => CupodBot 5`) are also not the same-budget
+    cell and count as staggered. -/
 private def botOf (e : Expr) : MetaM (Option Name × Bool) := do
   match e with
   | .lam _ _ b _ =>
     let f := b.getAppFn
     let args := b.getAppArgs
-    -- `fun _ => Bot` (closed) or `fun k => Bot k` (pass-through) are unstaggered.
-    let passthrough := args.all fun a => a.isBVar || !a.hasLooseBVars
-    let plain := args.all fun a => !a.hasLooseBVars
-    return (f.constName?, !(plain || passthrough))
-  | _ => return (e.getAppFn.constName?, false)
+    -- `fun _ => Bot` (closed) or `fun k => Bot k` (pass-through) are unstaggered; a
+    -- closed NON-variable argument (a literal, a free budget) is a hidden budget.
+    let ok := args.all fun a => a.isBVar
+    return (f.constName?, !ok)
+  | _ =>
+    let args := e.getAppArgs
+    return (e.getAppFn.constName?, !args.isEmpty)
 
 /-- The bot's bare name, e.g. `PD.Bots.CupodBot` ↦ `CupodBot`. -/
 def shortName : Name → Name
@@ -159,10 +172,19 @@ def inspectCell (env : Environment) (n : Name) : MetaM CellInfo := do
            sideConds := sideConds, staggered := lStag || rStag
            fuelMode := if existsFuel then "exists" else "cofinite" }
 
-/-- Every `outcome_*_vs_*` declaration NAME appearing in the sources under `dir`.
+/-- The bot set: the per-bot theorem directories under `dir` (the app's `library_bots`). -/
+def botDirsOnDisk (dir : System.FilePath) : IO (Array String) := do
+  let mut out := #[]
+  for entry in (← dir.readDir) do
+    if (← entry.path.isDir) && entry.fileName != "LlmGenerations" then
+      out := out.push entry.fileName
+  return out
 
-    Deliberately crude and over-approximating (see the module docstring). -/
-def declNamesOnDisk (dir : System.FilePath) : IO (Array String) := do
+/-- Every declaration NAME under `dir` with the exact matrix-cell shape
+    `(llm_)outcome_<Left>_vs_<Right>`, both bots alphanumeric members of `bots`.
+    Text-level on purpose: an UNTAGGED declaration is invisible to the environment's
+    attribute state, and finding those is the whole point. -/
+def declNamesOnDisk (dir : System.FilePath) (bots : Array String) : IO (Array String) := do
   let mut found : Array String := #[]
   for entry in (← dir.walkDir) do
     if entry.extension == some "lean" then
@@ -170,21 +192,14 @@ def declNamesOnDisk (dir : System.FilePath) : IO (Array String) := do
       for chunk in txt.splitOn "theorem " do
         let nm := (chunk.takeWhile fun c => c.isAlphanum || c == '_').toString
         let core := if nm.startsWith "llm_" then (nm.drop 4).toString else nm
-        if core.startsWith "outcome_" && (core.splitOn "_vs_").length == 2 then
-          found := found.push nm
+        if core.startsWith "outcome_" then
+          match (core.drop "outcome_".length).toString.splitOn "_vs_" with
+          | [l, r] =>
+            if l.all Char.isAlphanum && r.all Char.isAlphanum
+                && bots.contains l && bots.contains r then
+              found := found.push nm
+          | _ => pure ()
   return found
-
-/-- Read the exclusion allowlist: one declaration name per line, `--` comments and blanks
-    ignored. -/
-def readExclusions (path : System.FilePath) : IO (Array String) := do
-  if !(← path.pathExists) then return #[]
-  let txt ← IO.FS.readFile path
-  let mut out := #[]
-  for line in txt.splitOn "\n" do
-    let line := (line.splitOn "--")[0]!.trimAscii.toString
-    -- `--` is the inline-reason marker; `#` starts a banner line.
-    if !line.isEmpty && !line.startsWith "#" then out := out.push line
-  return out
 
 end PD.Outcome
 
@@ -194,59 +209,47 @@ open Lean Elab Command
 
 /-- **The build-time gate.**
 
-    `#check_outcome_theorems "<theorems dir>" "<exclusions file>" expecting <n>`
+    `#check_outcome_theorems "<theorems dir>"`
 
     Validates every tagged theorem, then runs the census. Errors (not warnings) so that a
     plain `lake build` — and therefore CI and the app's library writer — reject any
     off-template, mis-named, or untagged outcome theorem. -/
-elab "#check_outcome_theorems " dir:str " excluding " exc:str
-    n:(&" expecting " num)? " pending " p:num : command => do
-  -- `expecting <n>` is OPTIONAL. It was the migration counter: while theorems were
-  -- being moved onto the template it pinned the tagged count so the number could drop
-  -- deliberately but never drift. Once `pending` reaches 0 it inverts into a
-  -- maintenance tax — proving a NEW outcome theorem and tagging it correctly would
-  -- turn the build red until someone edited the literal, punishing the right action.
-  -- `pending 0` is the durable invariant ("no untagged outcome theorem exists"); the
-  -- count is not.
-  let expected? : Option Nat := match n with
-    | some stx => stx.raw[1].isNatLit?
-    | none     => none
-  let pendingExpected := p.getNat
+elab "#check_outcome_theorems " dir:str : command => do
   let env ← getEnv
   let tagged := taggedOutcomes env
   -- 1. the validator (throws on the first bad cell)
   liftTermElabM do
     for nm in tagged do
       discard <| inspectCell env nm
-  -- 2. the census
-  let onDisk ← liftM <| declNamesOnDisk dir.getString
-  let excluded ← liftM <| readExclusions exc.getString
+  -- 2. the census: every cell-shaped declaration on disk is tagged.
+  let bots ← liftM <| botDirsOnDisk dir.getString
+  let onDisk ← liftM <| declNamesOnDisk dir.getString bots
   let taggedShort := tagged.map fun nm => (shortName nm).toString
-  let known := (taggedShort ++ excluded).toList
-  -- MIGRATION MODE. Untagged declarations are tolerated only while the count matches
-  -- `pending` exactly, so the number can go DOWN (a directory gets migrated, and the
-  -- literal is lowered in the same commit) but never silently UP: a newly added
-  -- untagged theorem, or a forgotten tag, still turns the build red. `pending 0` is the
-  -- end state, at which point this is the strict census the design calls for.
-  let missing := onDisk.filter fun d => !known.contains d
-  unless missing.size == pendingExpected do
-    if missing.size > pendingExpected then
-      throwError "OUTCOME CENSUS: {missing.size} un-migrated declaration(s), expected \
-        {pendingExpected}. Something NEW is untagged (or a tag was dropped):\n  \
-        {missing.toList}\nTag it, exclude it, or raise `pending` deliberately."
-    else
-      throwError "OUTCOME CENSUS: only {missing.size} un-migrated declaration(s) remain \
-        but `pending` still says {pendingExpected} — lower the literal to \
-        {missing.size} (0 once the migration is done)."
-  let stale := excluded.filter fun e => !onDisk.contains e
-  unless stale.isEmpty do
-    throwError "OUTCOME CENSUS: {stale.size} stale exclusion(s) — these no longer exist \
-      on disk, so the allowlist is rotting:\n  {stale.toList}"
-  if let some expected := expected? then
-    unless tagged.size == expected do
-      throwError "OUTCOME CENSUS: expected {expected} tagged outcome theorems, found \
-        {tagged.size}. If this change is intended, update the `expecting` literal."
-  logInfo s!"outcome census OK — {tagged.size} tagged, {excluded.size} excluded, \
-    {missing.size} pending migration, {onDisk.size} on disk"
+  let missing := onDisk.filter fun d => !taggedShort.contains d
+  unless missing.isEmpty do
+    throwError "OUTCOME CENSUS: {missing.size} matrix-cell declaration(s) are not \
+      `@[outcome]`-tagged and would be silently missing from the matrix:\n  \
+      {missing.toList}\nTag them (and state them on the `OutcomeSpec` template), or \
+      rename them if they are not cells (a regime variant takes a suffix, e.g. `_floor`)."
+  logInfo s!"outcome census OK — {tagged.size} tagged, {onDisk.size} cell-shaped \
+    declarations on disk, {bots.size} bot directories"
+
+/-- `#validate_outcome <ident>` — run the validator on ONE declaration and report its
+    cell metadata. The app's verdict gate appends this to a submitted (not yet landed)
+    proof file, so an off-template, mis-named or untagged LLM theorem is rejected by the
+    SAME code that guards the library build — before a human ever sees it. -/
+elab "#validate_outcome " id:ident : command => do
+  let n ← liftTermElabM <| realizeGlobalConstNoOverloadWithInfo id
+  let env ← getEnv
+  unless outcomeAttr.hasTag env n do
+    throwError "#validate_outcome {n}: not tagged `@[outcome]` — put the attribute on the \
+      line directly above `theorem` (and `import PrisonersDilemma.Outcome`)"
+  let c ← liftTermElabM <| inspectCell env n
+  let pair := match c.pair with
+    | none => "none"
+    | some (a, b) => s!"({a}, {b})"
+  logInfo s!"outcome cell OK — {c.leftBot} vs {c.rightBot}: {pair}, regime {c.regime}, \
+    pad {c.pad}, fuel {c.fuelMode}, staggered {c.staggered}, \
+    side conditions {c.sideConds.size}"
 
 end PD.Outcome
