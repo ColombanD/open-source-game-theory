@@ -134,9 +134,26 @@ $S$ consists of:
   Definition~\ref{def:actions}
 \item a theory over $\Lang_S$ extending $\mathrm{PA}$;
 \item the Hilbert calculus of Definition~\ref{def:hilbert}
-\item {\color{red} Other technical assumptions, see \cite{critch2019, osgt2022}.}
+\item the bounded derivability conditions of \cite{critch2019}: budget-indexed necessitation,
+  K-distribution, 4, upward subscript monotonicity, and a L\"ob-premise-relative fixpoint,
+  each with an explicit transcript cost. In the mechanization these are the fields of the
+  Lean structure \texttt{BoundedGL} (\texttt{engine/PrisonersDilemma/Base/BoundedGL.lean});
+  bounded L\"ob and PBLT are proved once against it, and the engine's rule set is one model.
 \end{enumerate}
 \end{definition}
+
+
+\begin{remark}\label{rem:boundedgl}
+  The modal core of $S$ is thus GL with proof-length-bounded modalities $\bx{k}$: a family of
+  connectives indexed by the budget, with the derivability conditions of (S4) as cost-annotated
+  axiom schemes. Arithmetizing $S$ over PA would amount to exhibiting a second model of
+  \texttt{BoundedGL}; that is the open obligation. No costed derivability conditions are
+  formalized in any proof assistant---the closest object is the \texttt{RestrictedProvability}
+  predicate of the Foundation library (Lean~4), $\exists d<2^e.\ \mathrm{Proof}_T(d,\varphi)$,
+  which carries the classical no-short-proof bound for its G\"odel sentence but none of the
+  schemes. Whether \texttt{BoundedGL} is the \emph{complete} logic of bounded provability, in
+  the sense of Solovay's theorem for GL, is left open.
+\end{remark}
 
 
 To talk about agents and their two possible actions in the prisoner dilemma we add two dedicated constants.
