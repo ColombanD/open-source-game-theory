@@ -220,6 +220,60 @@ ENLARGED_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {
 
 
 @dataclass(frozen=True)
+class NativePlayer:
+    """A tau player that is NOT the lift of a base bot (2026-08-27).
+
+    A tau player is a (per-hypothesis TEST, AGGREGATOR) pair. Every lift's test is
+    its base bot's decision procedure and its aggregator is `sum ≥ α` (the C-mass
+    of the signal). A NATIVE player borrows a base bot's test and aggregates
+    differently — ConfidenceBot thresholds the MAX weight any single cooperating
+    hypothesis carries (`play.max_mass`, Lean `Tau/Vote.lean::maxPlayer`).
+
+    Two consequences the zoo registry relies on:
+
+    * **As a HYPOTHESIS it IS its base bot.** What an opponent sees at point mass is
+      the test alone (the aggregator is invisible there — the anchor), and the
+      kernel certifies it: `Tau/Roster.lean` carries a `.confidence` slot whose row
+      equals `dupocRow` and whose column equals every row's `.dupoc` bit
+      (`confidenceRow_eq_dupocRow`, the `rfl` bridges in `Zoo.lean`; checked against
+      the base matrix by `compare.direct_kernel_vs_base` via `BASE_OF`). So its
+      matrix cells are a CLONE of its base's — `load_tau_matrix` builds them so and
+      marks them `clone_of`.
+    * **It is therefore a behavioral (and syntactic) twin of its base**, which caps
+      the transparency ceiling of the distance-based σ families on any zoo holding
+      both; the `epsilon` family is identity-based and unaffected. That is not a
+      defect to prune away: for t < 1 the blur splits mass between the twins, and
+      what that costs a MAX aggregator is exactly the phenomenon ConfidenceBot
+      exists to measure.
+    """
+
+    name: str
+    base: str
+    """The base bot whose test it uses — and whose instance it is as a hypothesis."""
+    aggregator: str
+    """`"max"` — see `play.decision_mass`. Lifts are `"sum"`."""
+    description: str
+
+
+NATIVE_PLAYERS: dict[str, NativePlayer] = {
+    "ConfidenceBot": NativePlayer(
+        name="ConfidenceBot",
+        base="DupocBot",
+        aggregator="max",
+        description=(
+            "The ambiguity-averse Löbian cooperator: cooperate iff some SINGLE "
+            "hypothesis carrying at least α of the signal on its own provably "
+            "cooperates with me (Dupoc's test under the MAX aggregator). Lean: "
+            "`Tau/Bots/TauConfidence.lean`, `ConfidenceBotZ`, `tauConfidence_phase`, "
+            "`confidence_not_linear`."
+        ),
+    ),
+}
+"""The native players the zoo registry may admit, by name. Any zoo bot named here
+is loaded as a clone of its base's cells and played with its own aggregator."""
+
+
+@dataclass(frozen=True)
 class NamedZoo:
     """A selectable sub-zoo: its bot list, its stipulations, and why it exists.
 
@@ -248,6 +302,11 @@ class NamedZoo:
         """True for replay zoos whose cells are knowingly wrong."""
         return bool(self.contradictions)
 
+    @property
+    def natives(self) -> tuple[str, ...]:
+        """The members that are NATIVE players (`NATIVE_PLAYERS`), not lifts."""
+        return tuple(b for b in self.bots if b in NATIVE_PLAYERS)
+
     def load(self, theorems_dir: Path | None = None) -> TauMatrix:
         matrix = load_tau_matrix(
             self.bots,
@@ -270,6 +329,23 @@ ZOOS: dict[str, NamedZoo] = {
             "two CupodBot stipulations."
         ),
         bots=CERTIFIED_SUB_ZOO,
+        stipulations=CUPOD_STIPULATIONS,
+    ),
+    "default+confidence": NamedZoo(
+        key="default+confidence",
+        label="default + ConfidenceBot (10 members, 1 native)",
+        description=(
+            "The twin-free default zoo plus ConfidenceBot, the first NATIVE tau "
+            "player: Dupoc's Löbian test under the MAX aggregator — cooperate iff "
+            "some single hypothesis carrying at least α of the signal on its own "
+            "provably cooperates with me. As a HYPOTHESIS it is Dupoc's instance "
+            "(a kernel-certified clone), hence a behavioral twin of DupocBot: the "
+            "behavioral and syntactic σ families have a transparency ceiling below "
+            "1 on this zoo and split mass between the twins for t < 1 — the cost of "
+            "ambiguity aversion to a Löbian cooperator, which is the point. The "
+            "epsilon family is identity-based and has no ceiling."
+        ),
+        bots=CERTIFIED_SUB_ZOO + ("ConfidenceBot",),
         stipulations=CUPOD_STIPULATIONS,
     ),
     "enlarged": NamedZoo(
@@ -394,14 +470,37 @@ class Cell:
     # by the Lean kernel. Any result computed over a matrix containing these is
     # conditional on the stipulation and must be reported as such.
     hypothetical: bool = False
+    # Set when this cell belongs to a NATIVE player and was CLONED from its base's
+    # cell: the `(base_row, base_col)` it copies (`NativePlayer`). The proof is the
+    # base cell's; the kernel certifies the clone through the tau roster.
+    clone_of: tuple[str, str] | None = None
 
 
 class TauMatrix:
     """A totally-proven ordered outcome table over a fixed bot list."""
 
-    def __init__(self, bots: tuple[str, ...], cells: dict[tuple[str, str], Cell]):
+    def __init__(
+        self,
+        bots: tuple[str, ...],
+        cells: dict[tuple[str, str], Cell],
+        natives: dict[str, NativePlayer] | None = None,
+    ):
         self.bots = bots
         self._cells = cells
+        # The native players among `bots`, by name (empty for a pure base zoo).
+        self.natives: dict[str, NativePlayer] = dict(natives or {})
+
+    def aggregator(self, actor: str) -> str:
+        """How `actor` thresholds its signal: `"sum"` (a lift — the C-mass) or a
+        native player's own aggregator (`"max"`). See `play.decision_mass`."""
+        native = self.natives.get(actor)
+        return native.aggregator if native is not None else "sum"
+
+    def source_bot(self, bot: str) -> str:
+        """The base bot whose SOURCE `bot` presents in the hypothesis role — itself,
+        or a native player's base (`NativePlayer.base`)."""
+        native = self.natives.get(bot)
+        return native.base if native is not None else bot
 
     def __len__(self) -> int:
         return len(self.bots)
@@ -485,15 +584,24 @@ def load_tau_matrix(
     conflicts: list[tuple[str, str]] = []
     overridden: list[tuple[str, str]] = []
 
+    # NATIVE players (`NATIVE_PLAYERS`) have no theorems of their own: in the
+    # hypothesis role each IS its base bot's instance, so its cells are CLONED from
+    # the base's — looked up by base names, stored under the native's name, marked
+    # `clone_of`. A native's base need not itself be in the zoo.
+    natives = {b: NATIVE_PLAYERS[b] for b in bots if b in NATIVE_PLAYERS}
+    base_of = {b: (natives[b].base if b in natives else b) for b in bots}
+
     for row in bots:
         for col in bots:
-            forward = by_pair.get((row, col))
-            reverse = by_pair.get((col, row))
+            brow, bcol = base_of[row], base_of[col]
+            clone = (brow, bcol) if (brow, bcol) != (row, col) else None
+            forward = by_pair.get((brow, bcol))
+            reverse = by_pair.get((bcol, brow))
 
             # Cross-check both orientations when both exist. A proven `none`
             # (pair is None) transposes to itself, so the orientations must
             # agree on none-ness as well as on the actions.
-            if forward is not None and reverse is not None and row != col:
+            if forward is not None and reverse is not None and brow != bcol:
                 fp, rp = forward.pair, reverse.pair
                 if (fp is None) != (rp is None) or (
                     fp is not None and rp is not None and fp != (rp[1], rp[0])
@@ -505,14 +613,14 @@ def load_tau_matrix(
             if chosen is not None:
                 # A stipulation must never contradict the kernel — including a
                 # proven `none`, which is a real value ("N"), not a hole.
-                if (row, col) in stipulated or (col, row) in stipulated:
-                    overridden.append((row, col))
+                if (brow, bcol) in stipulated or (bcol, brow) in stipulated:
+                    overridden.append((brow, bcol))
             else:
                 # No proof: fall back to a stipulation if one was supplied,
                 # accepting it in either orientation and transposing as needed.
-                pair = stipulated.get((row, col))
+                pair = stipulated.get((brow, bcol))
                 if pair is None:
-                    flipped = stipulated.get((col, row))
+                    flipped = stipulated.get((bcol, brow))
                     pair = (flipped[1], flipped[0]) if flipped else None
                 if pair is None:
                     missing.append((row, col))
@@ -523,8 +631,9 @@ def load_tau_matrix(
                     shape="HYPOTHETICAL",
                     staggered=False,
                     swapped=False,
-                    theorem=f"(stipulated {row} vs {col})",
+                    theorem=f"(stipulated {brow} vs {bcol})",
                     hypothetical=True,
+                    clone_of=clone,
                 )
                 continue
 
@@ -541,6 +650,7 @@ def load_tau_matrix(
                 staggered=chosen.staggered,
                 swapped=swapped,
                 theorem=chosen.name,
+                clone_of=clone,
             )
 
     if overridden:
@@ -558,7 +668,7 @@ def load_tau_matrix(
             f"tau matrix is not total: {len(missing)} unproven ordered cell(s), "
             f"e.g. {missing[:5]}. Restrict the bot list or prove the cells."
         )
-    return TauMatrix(bots, cells)
+    return TauMatrix(bots, cells, natives)
 
 
 def apply_contradictions(
@@ -614,7 +724,7 @@ def apply_contradictions(
             "contradictions name cells outside this zoo: "
             f"{sorted(unknown)}. The bot list and the override set must agree."
         )
-    return TauMatrix(matrix.bots, cells)
+    return TauMatrix(matrix.bots, cells, matrix.natives)
 
 
 def maximum_certified_sub_zoo(theorems_dir: Path | None = None) -> list[str]:

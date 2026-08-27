@@ -32,6 +32,7 @@ def tftPfRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
+  | .confidence => .C
   | .mirror     => .C
 
 /-- The row's witness: every entry is a prove-stage on the δ_C prover column. -/
@@ -57,6 +58,7 @@ theorem tftPfRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
   | .dimcid     => searchProbe_plays_D _ _ (bC .dimcid)
   | .prudent    => searchProbe_plays_D _ _ (bC .prudent)
   | .mirror     => searchProbe_plays_C _ _ (bC .mirror)
+  | .confidence => searchProbe_plays_C _ _ (bC .confidence)
 
 /-- **τ(TFTPf)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and

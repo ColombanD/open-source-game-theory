@@ -53,6 +53,35 @@ def coop_mass(matrix: TauMatrix, actor: str, signal: Signal) -> float:
     )
 
 
+def max_mass(matrix: TauMatrix, actor: str, signal: Signal) -> float:
+    """max pᵢ over hypotheses against which `actor` itself plays C — the MAX
+    aggregator of a NATIVE player (ConfidenceBot, 2026-08-27): the largest
+    weight any SINGLE cooperating hypothesis carries on its own.
+
+    Thresholding this at α is `Tau/Vote.lean`'s `maxPlayer`: "cooperate iff some
+    hypothesis carrying ≥ α of the signal by itself passes my test". Unlike the
+    C-mass it is NOT linear in the signal — which is what makes such a player the
+    lift of no base bot (`confidence_not_linear`). At point mass it is 0 or 1,
+    exactly like the C-mass, so the t = 1 anchor holds for it too.
+    """
+    return max(
+        (p for hypothesis, p in signal.weights.items()
+         if p > 0 and matrix.cooperates(actor, hypothesis)),
+        default=0.0,
+    )
+
+
+def decision_mass(matrix: TauMatrix, actor: str, signal: Signal) -> float:
+    """The quantity `actor` thresholds at α: its C-mass for a lift, its max-mass
+    for a native `max` player (`TauMatrix.aggregator`)."""
+    aggregator = matrix.aggregator(actor)
+    if aggregator == "sum":
+        return coop_mass(matrix, actor, signal)
+    if aggregator == "max":
+        return max_mass(matrix, actor, signal)
+    raise ValueError(f"unknown aggregator {aggregator!r} for {actor}")
+
+
 def tau_play(
     matrix: TauMatrix,
     actor: str,
@@ -64,8 +93,11 @@ def tau_play(
     The comparison is `≥ α − ε` so that a mass which is exactly α mathematically
     still cooperates after floating-point summation. For exact reasoning about
     the threshold, use `exact_alpha_breakpoints` over a rational signal.
+
+    A native `max` player thresholds its max-mass instead of its C-mass; the
+    dispatch is `decision_mass`, so every caller gets the right aggregator.
     """
-    return "C" if coop_mass(matrix, actor, signal) >= alpha - _MASS_TOL else "D"
+    return "C" if decision_mass(matrix, actor, signal) >= alpha - _MASS_TOL else "D"
 
 
 @dataclass(frozen=True)
@@ -92,8 +124,8 @@ def tau_match(
     and no bistable fixpoint to break. This is precisely why Def 1 was
     rejected — it recursed with no Löb machinery to ground it.
     """
-    row_mass = coop_mass(matrix, row, channel[col])
-    col_mass = coop_mass(matrix, col, channel[row])
+    row_mass = decision_mass(matrix, row, channel[col])
+    col_mass = decision_mass(matrix, col, channel[row])
     return TauOutcome(
         row_action="C" if row_mass >= alpha - _MASS_TOL else "D",
         col_action="C" if col_mass >= alpha - _MASS_TOL else "D",
@@ -120,7 +152,7 @@ def alpha_breakpoints(
     masses = {0.0}
     for actor in matrix.bots:
         for signal in channel.values():
-            m = coop_mass(matrix, actor, signal)
+            m = decision_mass(matrix, actor, signal)
             masses.add(round(m, quantize) if quantize is not None else m)
     return sorted(masses)
 
@@ -135,10 +167,9 @@ def exact_alpha_breakpoints(matrix: TauMatrix, signal: Signal) -> list[Fraction]
     weights = {b: Fraction(p).limit_denominator(10**6) for b, p in signal.weights.items()}
     masses = {Fraction(0)}
     for actor in matrix.bots:
-        masses.add(
-            sum(
-                (p for b, p in weights.items() if matrix.cooperates(actor, b)),
-                Fraction(0),
-            )
-        )
+        coop = [p for b, p in weights.items() if matrix.cooperates(actor, b)]
+        if matrix.aggregator(actor) == "max":
+            masses.add(max(coop, default=Fraction(0)))
+        else:
+            masses.add(sum(coop, Fraction(0)))
     return sorted(masses)

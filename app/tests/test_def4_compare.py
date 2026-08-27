@@ -33,7 +33,8 @@ FULL_BOTS: tuple[str, ...] = (
     "CupodBot", "DIMCID", "PrudentBot", "MirrorBot",
 )
 """The base bots the full certification runs over (TitForTatBot carries both TFT
-lift variants, so 15 base bots cover 16 templates).
+lift variants and DupocBot also carries the NATIVE TauConfidence — whose
+hypothesis-role instance IS Dupoc's — so 15 base bots cover 17 templates).
 
 MirrorBot joined on 2026-08-24 evening, once τ(Mirror) had a stated row: its
 proven-`none` self-play loads as the fifth state "N", and the kernel reports
@@ -50,7 +51,8 @@ its own coverage."""
 
 
 def test_kernel_scanner_finds_all_rows() -> None:
-    """ALL 15 rows are stated (2026-08-25). τ(Mirror)'s is a 14-slot PREFIX row
+    """ALL rows are stated (15 on 2026-08-25; 17 since 08-27 with the native
+    ConfidenceBot's slot). τ(Mirror)'s is a PREFIX row
     over `tauOrderInit` (its diagonal diverges; the scanner records that slot as
     "N"). τ(DIMCID)'s — the last to land — needed the provability-tracking tower
     census (`Base/TowerCensus.lean`) for its two then-D searcher partners."""
@@ -74,17 +76,20 @@ def test_kernel_agrees_with_base_directly() -> None:
     `RowSpec` rows and the cells out of the certified base matrix, so a pass
     depends on no Python model at all.
 
-    225 comparable cells — the 15×15 matrix without TauTFTPf — ALL agree; the
-    whitelist is empty. (History: 144/139/5 until 2026-08-24 when CupodBot and
-    DIMCID joined `FULL_BOTS` — 38 cells had gone unchecked behind a green result;
-    210/204/6, then 225/219/6 on 08-25 with τ(DIMCID)'s row and TauTFTPf dropped;
-    225/225/0 on 08-27 when the four staggered base cells were replaced by their
+    256 comparable cells — the 16×16 matrix without TauTFTPf — ALL agree; the
+    whitelist is empty. The 16th template is the NATIVE TauConfidence, compared
+    against DupocBot: its whole row AND column must equal Dupoc's base cells, which
+    is the kernel-certified form of the matrix CLONE the `default+confidence` zoo
+    uses. (History: 144/139/5 until 2026-08-24 when CupodBot and DIMCID joined
+    `FULL_BOTS` — 38 cells had gone unchecked behind a green result; 210/204/6,
+    then 225/219/6 on 08-25 with τ(DIMCID)'s row and TauTFTPf dropped; 225/225/0
+    on 08-27 when the four staggered base cells were replaced by their
     shared-budget values and the staggered results became `*_staggered` non-cell
-    theorems.)"""
+    theorems; 256/256/0 later that day with ConfidenceBot's slot.)"""
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
-    assert len(d.cells) == 225
+    assert len(d.cells) == 256
     assert d.passed, d.unexpected
-    assert d.agreements == 225
+    assert d.agreements == 256
     assert len(d.whitelisted_divergences) == 0
     assert d.missing_rows == ()
 

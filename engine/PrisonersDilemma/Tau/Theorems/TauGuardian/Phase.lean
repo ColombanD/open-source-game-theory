@@ -34,6 +34,7 @@ def guardianRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .C
+  | .confidence => .C
   | .mirror     => .C
 
 /-- The row's witness: every entry is the punish-probe (`test = .D` prove-stage)
@@ -61,6 +62,7 @@ theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (
   | .dimcid     => searchProbeD_plays_C _ _ (gB .dimcid)
   | .prudent    => searchProbeD_plays_C _ _ (gB .prudent)
   | .mirror     => searchProbeD_plays_C _ _ (gB .mirror)
+  | .confidence => searchProbeD_plays_C _ _ (gB .confidence)
 
 /-- **τ(Guardian)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and

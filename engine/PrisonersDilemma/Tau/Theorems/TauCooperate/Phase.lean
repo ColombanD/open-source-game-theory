@@ -29,10 +29,10 @@ theorem coopRowSpec : RowSpec .coop tauOrder coopRow := ⟨0, fun k _ T _ => coo
 /-- **τ(CooperateBot)**: cooperates at every θ within the total mass. -/
 theorem tauCooperate_phase (k : Nat) (w : Tmpl → Nat) (θ : Nat) (opponent : Prog) :
     (θ ≤ w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot +
-        (w .just + (w .obot + (w .guardian + (w .dbot + (w .cupodTroll + (w .cupod + (w .cimcic + (w .dimcid + (w .prudent + w .mirror)))))))))))))) →
+        (w .just + (w .obot + (w .guardian + (w .dbot + (w .cupodTroll + (w .cupod + (w .cimcic + (w .dimcid + (w .prudent + (w .confidence + w .mirror))))))))))))))) →
       ∃ N, play N (TauBotZ k .coop w θ) opponent = some .C)
     ∧ (¬ θ ≤ w .coop + (w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot +
-        (w .just + (w .obot + (w .guardian + (w .dbot + (w .cupodTroll + (w .cupod + (w .cimcic + (w .dimcid + (w .prudent + w .mirror)))))))))))))) →
+        (w .just + (w .obot + (w .guardian + (w .dbot + (w .cupodTroll + (w .cupod + (w .cimcic + (w .dimcid + (w .prudent + (w .confidence + w .mirror))))))))))))))) →
       ∃ N, play N (TauBotZ k .coop w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .coop w coopRow tauOrder θ opponent
     (fun T _ => coopRow_plays k T)

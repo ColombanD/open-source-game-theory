@@ -31,7 +31,7 @@ theorem cupodTrollRow_plays {k : Nat} (hk : 3 ≤ k) :
               (inst (tauZoo k) .cupodTroll T) = some (cupodTrollRow T)
   | .cupod => cupodTroll_plays_D_at_cupod hk
   | .coop | .defect | .tftSim | .tftPf | .dupoc | .ebot | .just | .obot
-  | .guardian | .dbot | .cupodTroll | .cimcic | .dimcid | .prudent | .mirror =>
+  | .guardian | .dbot | .cupodTroll | .cimcic | .dimcid | .prudent | .confidence | .mirror =>
       cupodTroll_plays_C _ (by decide)
 
 /-- **τ(CupodTroll)'s row** — the matrix-facing statement (`@[tau_row]`: validated by

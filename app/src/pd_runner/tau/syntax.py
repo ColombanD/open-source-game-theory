@@ -396,7 +396,11 @@ def syntactic_distance_matrix(
     It cancels out of the calibrated dial — `raw_for` inverts the MI scale per
     family — and only affects where the bisection starts.
     """
-    asts = bot_asts(matrix.bots, bots_dir)
+    # A NATIVE player (ConfidenceBot) has no `Bots/*.lean` source of its own: what an
+    # observer partially READS is the hypothesis-role instance, which is its base
+    # bot's program (`TauMatrix.source_bot`). So it is a syntactic twin of its base
+    # here, exactly as it is a behavioral one.
+    asts = {b: bot_ast(matrix.source_bot(b), bots_dir) for b in matrix.bots}
     out: dict[tuple[str, str], float] = {}
     for a in matrix.bots:
         for b in matrix.bots:
@@ -418,7 +422,8 @@ def syntactic_twins(
     distinct pairs (DBot/TitForTatBot), which is the defect it fixes.
     """
     groups: dict[tuple, list[str]] = {}
-    for bot, ast in bot_asts(matrix.bots, bots_dir).items():
+    for bot in matrix.bots:
+        ast = bot_ast(matrix.source_bot(bot), bots_dir)
         groups.setdefault(_canonical(ast), []).append(bot)
     return [tuple(sorted(g)) for g in groups.values() if len(g) > 1]
 

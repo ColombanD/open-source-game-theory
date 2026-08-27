@@ -60,6 +60,7 @@ theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k)
   | .dimcid     => dbot_plays_C_of_defect .dimcid (pD .dimcid)
   | .prudent    => dbot_plays_C_of_defect .prudent (pD .prudent)
   | .mirror     => dbot_plays_C_of_defect .mirror (pD .mirror)
+  | .confidence => dbot_plays_C_of_defect .confidence (pD .confidence)
 
 /-- **τ(DBot)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and

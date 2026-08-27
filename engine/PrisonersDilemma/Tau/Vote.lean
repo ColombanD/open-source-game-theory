@@ -164,6 +164,94 @@ theorem tauPlayer_phase_bits {v : VoteList} {bs : List (Nat × Action)} (θ : Na
   · obtain ⟨N, hN⟩ := eval_tvote_of_bits (tauPlayer v θ) opponent v bs θ hbits
     exact ⟨N, by rw [play, hN, if_neg hθ]⟩
 
+/-! ## The MAX aggregator — native players (2026-08-27)
+
+A tau player is a (bit row, aggregator) pair. Every LIFT aggregates by `sum ≥ θ`
+(`tauPlayer`: the signal's C-mass reaches the threshold). A NATIVE player may
+aggregate differently; the first is ConfidenceBot's **`max ≥ θ`** — "some SINGLE
+hypothesis carrying at least θ of the signal on its own plays C" — realized as a
+chain of ONE-entry votes: a one-entry `.tvote` fires iff its entry plays C AND
+`θ ≤ w` (the residual must hit zero), otherwise the chain falls to the next link.
+No new language primitive; entries are frozen exactly as in `tauPlayer`. The max is
+NOT a threshold of any C-mass (`confidence_not_linear`, `TauConfidence/Phase.lean`)
+— which is what makes ConfidenceBot the lift of no base bot. -/
+
+/-- The max-aggregated player over a decision vector. -/
+def maxPlayer (θ : Nat) : VoteList → Prog
+  | .nil           => .const .D
+  | .cons w I rest => .tvote (.cons w I .nil) θ (.const .C) (maxPlayer θ rest)
+
+/-- The max aggregator over positional bits: some entry carries `≥ θ` and plays C —
+    or `θ = 0` on a non-empty list (a zero threshold fires the first vote before
+    any entry is read, exactly as `tauPlayer` at `θ = 0`). -/
+def maxHit (θ : Nat) : List (Nat × Action) → Bool
+  | [] => false
+  | (w, a) :: rest =>
+      (decide (θ = 0) || (decide (θ ≤ w) && decide (a = Action.C))) || maxHit θ rest
+
+theorem maxHit_true_iff (θ : Nat) : ∀ bs : List (Nat × Action),
+    maxHit θ bs = true ↔ (θ = 0 ∧ bs ≠ []) ∨ ∃ p ∈ bs, θ ≤ p.1 ∧ p.2 = Action.C
+  | [] => by simp [maxHit]
+  | (w, a) :: rest => by
+      rw [maxHit, Bool.or_eq_true, Bool.or_eq_true, maxHit_true_iff θ rest]
+      simp only [Bool.and_eq_true, decide_eq_true_eq, List.mem_cons, ne_eq,
+        reduceCtorEq, not_false_eq_true, and_true]
+      constructor
+      · rintro ((h0 | ⟨hw, ha⟩) | (⟨h0, _⟩ | ⟨p, hp, hpw, hpa⟩))
+        · exact Or.inl h0
+        · exact Or.inr ⟨(w, a), Or.inl rfl, hw, ha⟩
+        · exact Or.inl h0
+        · exact Or.inr ⟨p, Or.inr hp, hpw, hpa⟩
+      · rintro (h0 | ⟨p, (rfl | hp), hpw, hpa⟩)
+        · exact Or.inl (Or.inl h0)
+        · exact Or.inl (Or.inr ⟨hpw, hpa⟩)
+        · exact Or.inr (Or.inr ⟨p, hp, hpw, hpa⟩)
+
+/-- The peel workhorse for the max chain — the twin of `eval_tvote_of_bits`. -/
+theorem eval_maxPlayer_of_bits (me opponent : Prog) :
+    ∀ (v : VoteList) (bs : List (Nat × Action)) (θ : Nat), VoteBits v bs →
+      ∃ N, eval N me opponent (maxPlayer θ v)
+        = some (if maxHit θ bs then Action.C else Action.D)
+  | .nil, _, _, .nil => ⟨1, rfl⟩
+  | .cons w I rest, _, θ, .cons (a := a) (bs := bs) hI hrest => by
+      obtain ⟨NI, hNI⟩ := hI
+      obtain ⟨Nr, hNr⟩ := eval_maxPlayer_of_bits me opponent rest bs θ hrest
+      refine ⟨max NI Nr + 3, ?_⟩
+      have hI' : eval (max NI Nr + 2) (.bot I) (.bot I) I = some a :=
+        eval_mono_le hNI _ (by omega)
+      have hr' : eval (max NI Nr + 1) me opponent (maxPlayer θ rest)
+          = some (if maxHit θ bs then Action.C else Action.D) :=
+        eval_mono_le hNr _ (by omega)
+      cases θ with
+      | zero =>
+          rw [maxPlayer, eval_tvote_zero (max NI Nr + 2)]
+          simp [maxHit, eval]
+      | succ m =>
+          cases a with
+          | C =>
+              rw [maxPlayer, eval_tvote_cons_c (max NI Nr + 2) (by omega) hI']
+              by_cases hw : m + 1 ≤ w
+              · have h0 : m + 1 - w = 0 := by omega
+                rw [h0, eval_tvote_zero (max NI Nr + 1)]
+                simp [maxHit, hw, eval]
+              · rw [eval_tvote_nil (max NI Nr + 1) (by omega), hr']
+                simp [maxHit, hw]
+          | D =>
+              rw [maxPlayer, eval_tvote_cons_d (max NI Nr + 2) (by omega) hI',
+                  eval_tvote_nil (max NI Nr + 1) (by omega), hr']
+              simp [maxHit]
+
+/-- **The phase theorem of the max chain** over positional bits. -/
+theorem maxPlayer_phase_bits {v : VoteList} {bs : List (Nat × Action)} (θ : Nat)
+    (hbits : VoteBits v bs) (opponent : Prog) :
+    (maxHit θ bs = true → ∃ N, play N (maxPlayer θ v) opponent = some .C)
+    ∧ (maxHit θ bs = false → ∃ N, play N (maxPlayer θ v) opponent = some .D) := by
+  refine ⟨fun hθ => ?_, fun hθ => ?_⟩
+  · obtain ⟨N, hN⟩ := eval_maxPlayer_of_bits (maxPlayer θ v) opponent v bs θ hbits
+    exact ⟨N, by rw [play, hN, if_pos hθ]⟩
+  · obtain ⟨N, hN⟩ := eval_maxPlayer_of_bits (maxPlayer θ v) opponent v bs θ hbits
+    exact ⟨N, by rw [play, hN, if_neg (by simp [hθ])]⟩
+
 /-! ## Prefix commitment and divergent tails (τ(Mirror), 2026-08-24)
 
 A vote COMMITS as soon as its residual threshold hits zero, without consulting

@@ -34,6 +34,7 @@ def justRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
+  | .confidence => .C
   | .mirror     => .C
 
 /-- The row's witness: prove-stages on the δ_L column — including at the `.dupoc`
@@ -44,10 +45,13 @@ theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = dupocColBit .cimcic)
     -- the mirror×dupoc entangled bit, read through the same δ_L column
     (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
-      = dupocColBit .mirror) :
+      = dupocColBit .mirror)
+    -- the confidence×dupoc system's Löb bit, read through the same column
+    (hconf : proofSearch k (probe (inst (tauZoo k) .confidence .dupoc))
+      = dupocColBit .confidence) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .just T)) (.bot (inst (tauZoo k) .just T))
               (inst (tauZoo k) .just T) = some (justRow T) :=
-  let bL := ps_probe_inst_dupoc hk hkk hk7 hquine hcim hmir
+  let bL := ps_probe_inst_dupoc hk hkk hk7 hquine hcim hmir hconf
   fun T => match T with
   | .coop     => searchProbe_plays_C _ _ (bL .coop)
   | .defect   => searchProbe_plays_D _ _ (bL .defect)
@@ -65,6 +69,7 @@ theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dimcid     => searchProbe_plays_D _ _ (bL .dimcid)
   | .prudent    => searchProbe_plays_D _ _ (bL .prudent)
   | .mirror     => searchProbe_plays_C _ _ (bL .mirror)
+  | .confidence => searchProbe_plays_C _ _ (bL .confidence)
 
 /-- **τ(Just)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
@@ -75,15 +80,17 @@ theorem justRowSpec : RowSpec .just tauOrder justRow := by
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
-  refine ⟨max (max kL kA) (max kM kX), fun k hk T _ => ?_⟩
+  obtain ⟨kC, hkC⟩ := ps_probe_inst_confidence_dupoc
+  refine ⟨kL + kA + kM + kX + kC, fun k hk T _ => ?_⟩
   have hquine := hkL k (by omega)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
   have hcim := hkM k (by omega)
   have hmir := hkX k (by omega)
+  have hconf := hkC k (by omega)
   have hk2 : 2 ≤ k := by omega
   have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
   have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
-  exact justRow_plays hk2 hkk hk7 hquine hcim hmir T
+  exact justRow_plays hk2 hkk hk7 hquine hcim hmir hconf T
 
 /-- **τ(JustBot)** — boundary `θ ≤ dupMass`, same as TauDupoc's. UNCONDITIONAL
     since 2026-08-24: the mirror×dupoc bit it reads is a theorem. -/
@@ -96,16 +103,18 @@ theorem tauJust_phase :
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
-  refine ⟨max (max kL kA) (max kM kX), fun k hk θ w opponent => ?_⟩
+  obtain ⟨kC, hkC⟩ := ps_probe_inst_confidence_dupoc
+  refine ⟨kL + kA + kM + kX + kC, fun k hk θ w opponent => ?_⟩
   have hquine := hkL k (by omega)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
   have hcim := hkM k (by omega)
   have hmir := hkX k (by omega)
+  have hconf := hkC k (by omega)
   have hk2 : 2 ≤ k := by omega
   have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
   have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
   have h := phase_of_bits (tauZoo k) .just w justRow tauOrder θ opponent
-    (fun T _ => justRow_plays hk2 hkk hk7 hquine hcim hmir T)
+    (fun T _ => justRow_plays hk2 hkk hk7 hquine hcim hmir hconf T)
   simp only [bitMass, tauOrder, List.map, justRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [dupMass] using h

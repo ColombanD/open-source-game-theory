@@ -8,6 +8,7 @@ import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
+import PrisonersDilemma.Tau.Theorems.TauConfidence.Helpers
 
 /-!
 # Tau/Theorems/Columns — the consulted columns of the 9-template zoo
@@ -191,6 +192,7 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dimcid     => ps_probe_inst_dimcid_coop_false (le_refl k)
   | .prudent    => ps_probe_false_of_plays_D k prudent_coop_plays_D
   | .mirror     => ps_probe_mirror_coop (by omega)
+  | .confidence => by rw [inst_confidence_eq_dupoc k .coop (by decide) (by decide) (by decide)]; exact ps_searchProbe_constC hk hkk
 
 /-! ## The δ_D column (prover bits) -/
 
@@ -227,6 +229,7 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k)
   | .dimcid     => ps_probe_inst_dimcid_defect_false hL
   | .prudent    => ps_probe_false_of_plays_D k prudent_defect_plays_D
   | .mirror     => ps_probe_false_of_plays_D k mirror_defect_plays_D
+  | .confidence => by rw [inst_confidence_eq_dupoc k .defect (by decide) (by decide) (by decide)]; exact ps_searchProbe_constD k k
 
 /-! ## The δ_L column (prover bits) — TauDupoc's AND TauJust's question -/
 
@@ -259,7 +262,11 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
       = dupocColBit .cimcic)
     -- the mirror×dupoc entangled bit (mutual simulation), Löb-gated
     (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
-      = dupocColBit .mirror) :
+      = dupocColBit .mirror)
+    -- the confidence×dupoc entangled bit (two Dupoc-spec self-probers, symmetric
+    -- mutual Löb — `ps_probe_inst_confidence_dupoc`), Löb-gated (2026-08-27)
+    (hconf : proofSearch k (probe (inst (tauZoo k) .confidence .dupoc))
+      = dupocColBit .confidence) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .dupoc)) = dupocColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
@@ -277,6 +284,7 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dimcid     => ps_probe_inst_dimcid_dupoc_false (le_refl k)
   | .prudent    => ps_probe_inst_prudent_dupoc_false
   | .mirror     => hmir
+  | .confidence => hconf
 
 /-! ## The GUARD column (probeD bits) — TauGuardian's question -/
 
@@ -318,6 +326,9 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dimcid     => ps_probeD_inst_dimcid_coop_false
   | .prudent    => ps_probeD_inst_prudent_coop_false (le_refl k)
   | .mirror     => ps_probeD_false_of_plays_C k mirror_coop_plays_C
+  | .confidence => by
+      rw [inst_confidence_eq_dupoc k .coop (by decide) (by decide) (by decide)]
+      exact ps_probeD_false_of_plays_C k (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
 
 /-! ## The δ_Cu GUARD column (probeD bits) — τ(Cupod)'s question
 
@@ -395,6 +406,7 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k
   | .dimcid     => hdc
   | .prudent    => ps_probeD_inst_prudent_cupod_false (le_refl k)
   | .mirror     => hmirCu
+  | .confidence => by rw [inst_confidence_eq_dupoc k .cupod (by decide) (by decide) (by decide)]; exact ps_probeD_inst_dupoc_cupod_false (le_refl k)
 
 /-! ## The behavioral δ_C column (true plays) — TauTFTSim's and TauOBot's read -/
 
@@ -432,6 +444,7 @@ theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dimcid     => dimcid_coop_plays_C
   | .prudent    => prudent_coop_plays_D
   | .mirror     => mirror_coop_plays_C
+  | .confidence => by rw [inst_confidence_eq_dupoc k .coop (by decide) (by decide) (by decide)]; exact entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk))
 
 /-! ## The behavioral δ_D column (true plays) — TauOBot's second watch -/
 
@@ -467,5 +480,6 @@ theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k)
   | .dimcid     => dimcid_defect_plays_D hL
   | .prudent    => prudent_defect_plays_D
   | .mirror     => mirror_defect_plays_D
+  | .confidence => by rw [inst_confidence_eq_dupoc k .defect (by decide) (by decide) (by decide)]; exact searchProbe_plays_D _ _ (ps_probe_constD k)
 
 end PD.Tau

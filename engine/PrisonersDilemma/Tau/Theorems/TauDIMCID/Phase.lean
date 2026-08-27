@@ -35,12 +35,13 @@ def dimcidRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .C
+  | .confidence => .C
   | .mirror     => .D
 
 /-- The display form of the C-mass. -/
 def dimcidMass (w : Tmpl → Nat) : Nat :=
   w .coop + w .tftSim + w .tftPf + w .dupoc + w .ebot + w .just + w .obot + w .guardian
-    + w .dbot + w .cupodTroll + w .cimcic + w .prudent
+    + w .dbot + w .cupodTroll + w .cimcic + w .prudent + w .confidence
 
 theorem dimcidRow_plays :
     ∃ k₂, ∀ k, k₂ < k → ∀ T,
@@ -68,6 +69,9 @@ theorem dimcidRow_plays :
   | cimcic => exact dimcid_cimcic_plays_C
   | dimcid => exact h3 k (by omega)
   | prudent => exact dimcid_prudent_plays_C
+  | confidence =>
+      rw [inst_at_confidence_eq_dupoc k .dimcid (by decide) (by decide) (by decide)]
+      exact dimcid_dupoc_plays_C
   | mirror => exact h2 k (by omega)
 
 /-- **τ(DIMCID)'s row** — the matrix-facing statement (`@[tau_row]`: validated by

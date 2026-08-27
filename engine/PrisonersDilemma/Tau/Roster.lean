@@ -54,23 +54,36 @@ namespace PD.Tau
     run-stage watching δ_D, trusting by default) was ADDED 2026-08-19 once its
     blocker cleared: its δ_L cell needs a frozen run-stage player sim-embedding a
     floor-priced searcher, which is exactly `no_provable_botRunStage_C`, the
-    single-stage twin of the embedded-floor census the run-mode EBot fix forced. -/
+    single-stage twin of the embedded-floor census the run-mode EBot fix forced.
+
+    **`confidence` (ConfidenceBot) ADDED 2026-08-27 — the first NATIVE player, and
+    the first roster member that is NOT the lift of a base bot.** A tau player is a
+    (bit row, aggregator) pair; every lift aggregates by `sum ≥ θ`, ConfidenceBot
+    aggregates by `max ≥ θ` ("cooperate iff some SINGLE hypothesis carrying at least
+    θ of the signal provably cooperates with me" — `Tau/Bots/TauConfidence.lean`).
+    Its per-hypothesis TEST is Dupoc's (`tauConfidenceSpec = tauDupocSpec`), so in the
+    HYPOTHESIS role — what others see at point mass — it IS Dupoc: `inst` depends only
+    on specs, so its instances are Dupoc's by `rfl` except at the `confidence × dupoc`
+    pair, where two Dupoc-spec self-probers meet in a symmetric `.sys` system
+    (mutual Löb, C). Its row is Dupoc's row; the aggregator is the novelty, and it is
+    invisible at point mass (the anchor). The roster slot exists so the app's EGT zoo
+    can contain it as a hypothesis with kernel-certified bits. -/
 inductive Tmpl
   | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian | dbot
-  | cupodTroll | cupod | cimcic | dimcid | prudent | mirror
+  | cupodTroll | cupod | cimcic | dimcid | prudent | confidence | mirror
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
 def tauOrder : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .mirror]
+   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .confidence, .mirror]
 
 /-- `tauOrder` without its last slot — the PREFIX row order for a template whose own
     diagonal diverges (τ(Mirror)): the vote never reaches the last entry in the C-regime,
     so its row is stated over the prefix and the app records the missing slot as `N`. -/
 def tauOrderInit : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent]
+   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .confidence]
 
 theorem tauOrder_eq : tauOrder = tauOrderInit ++ [.mirror] := rfl
 

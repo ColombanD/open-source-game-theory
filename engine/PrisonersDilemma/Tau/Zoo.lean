@@ -14,6 +14,7 @@ import PrisonersDilemma.Tau.Bots.TauCIMCIC
 import PrisonersDilemma.Tau.Bots.TauDIMCID
 import PrisonersDilemma.Tau.Bots.TauMirror
 import PrisonersDilemma.Tau.Bots.TauPrudent
+import PrisonersDilemma.Tau.Bots.TauConfidence
 
 /-!
 # Tau/Zoo — the assembled six-template zoo, its players, and Gate D1
@@ -47,6 +48,7 @@ def tmplSpec : Tmpl → Spec Tmpl
   | .cimcic   => tauCIMCICSpec
   | .dimcid   => tauDIMCIDSpec
   | .prudent  => tauPrudentSpec
+  | .confidence => tauConfidenceSpec
   | .mirror   => tauMirrorSpec
 
 def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
@@ -55,6 +57,12 @@ def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
     weights `w`, caution threshold θ. -/
 def TauBotZ (k : Nat) (A : Tmpl) (w : Tmpl → Nat) (θ : Nat) : Prog :=
   tauPlayer (vecOf (tauZoo k) A w tauOrder) θ
+
+/-- **ConfidenceBot** (native, 2026-08-27): the MAX aggregator over the SAME decision
+    vector `TauBotZ k .confidence` would sum — cooperate iff some single hypothesis
+    carrying at least θ of the signal on its own provably cooperates with me. -/
+def ConfidenceBotZ (k : Nat) (w : Tmpl → Nat) (θ : Nat) : Prog :=
+  maxPlayer θ (vecOf (tauZoo k) .confidence w tauOrder)
 
 /-! ## Gate D1 — the compiler pinned, one peel at a time
 
@@ -462,5 +470,61 @@ theorem inst_prudent_quine (k : Nat) : inst (tauZoo k) .prudent .prudent
     = .search k (.plays .self .self Action.C)
         (.search k (probeD (inst (tauZoo k) .prudent .defect)) (.const .C) (.const .D))
         (.const .D) := rfl
+
+/-! ### ConfidenceBot's slot — Dupoc's instances by `rfl` (2026-08-27)
+
+`inst` depends only on the specs and on `selfProbes`, never on the template's name,
+and `tauConfidenceSpec = tauDupocSpec`. So ConfidenceBot's instances ARE Dupoc's,
+definitionally, everywhere except where the two Dupoc-spec self-probers meet each
+other: there the compiler emits a symmetric 2-member `.sys` system (the same term in
+both orientations) instead of Dupoc's `.self` quine. Every other bot's instance at the
+`.confidence` slot is its instance at `.dupoc` — except τ(Just)'s, which targets
+`.name .dupoc` and so probes that very system. These bridges are what make the
+17th slot a one-line copy of the `.dupoc` arm in every row and column. -/
+
+/-- ConfidenceBot's OWN row is Dupoc's, off the `confidence × dupoc` pair, the
+    diagonal, and the `.just` slot (Just-facing-Confidence probes the new system
+    where Just-facing-Dupoc probes the quine — same value, different term). -/
+theorem inst_confidence_eq_dupoc (k : Nat) : ∀ T, T ≠ .dupoc → T ≠ .confidence →
+    T ≠ .just → inst (tauZoo k) .confidence T = inst (tauZoo k) .dupoc T := by
+  intro T h1 h2 h3
+  cases T <;> first | rfl | exact (h1 rfl).elim | exact (h2 rfl).elim | exact (h3 rfl).elim
+
+/-- The `.just` slot of ConfidenceBot's row: a prove-stage on Just-facing-Confidence,
+    which itself probes the `confidence × dupoc` system. -/
+theorem inst_confidence_peel_just (k : Nat) : inst (tauZoo k) .confidence .just
+    = .search k (probe (inst (tauZoo k) .just .confidence)) (.const .C) (.const .D) := rfl
+
+/-- …and Just-facing-Confidence: Just's third-party probe aimed at the system. -/
+theorem inst_just_confidence_peel (k : Nat) : inst (tauZoo k) .just .confidence
+    = .search k (probe (inst (tauZoo k) .confidence .dupoc)) (.const .C) (.const .D) := rfl
+
+/-- Everyone's instance AT the `.confidence` slot is their instance at `.dupoc` —
+    except τ(Just)'s (its `.name .dupoc` probe reaches the new system), Dupoc's own
+    (the system instead of the quine) and ConfidenceBot's (the diagonal). -/
+theorem inst_at_confidence_eq_dupoc (k : Nat) : ∀ A, A ≠ .just → A ≠ .dupoc →
+    A ≠ .confidence → inst (tauZoo k) A .confidence = inst (tauZoo k) A .dupoc := by
+  intro A h1 h2 h3
+  cases A <;> first | rfl | exact (h1 rfl).elim | exact (h2 rfl).elim | exact (h3 rfl).elim
+
+/-- The diagonal is the SAME quine term as Dupoc's. -/
+theorem inst_confidence_quine (k : Nat) :
+    inst (tauZoo k) .confidence .confidence = inst (tauZoo k) .dupoc .dupoc := rfl
+
+/-- The one new cell: two Dupoc-spec self-probers in one symmetric system — each
+    member probes the other by index, both with Dupoc's guard. -/
+def cfdSys (k : Nat) : ProgList :=
+  .cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
+           (.const .C) (.const .D))
+  (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
+           (.const .C) (.const .D)) .nil)
+
+theorem inst_confidence_dupoc_eq (k : Nat) :
+    inst (tauZoo k) .confidence .dupoc = .sys (cfdSys k) 0 := rfl
+
+/-- …and it is the same term seen from Dupoc's side: the members are identical up to
+    which index they point at, and the compiler lists them in the same order. -/
+theorem inst_dupoc_confidence_eq (k : Nat) :
+    inst (tauZoo k) .dupoc .confidence = .sys (cfdSys k) 0 := rfl
 
 end PD.Tau

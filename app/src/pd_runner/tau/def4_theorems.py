@@ -46,7 +46,7 @@ TAU_EXPORT = "app/generated/tau_rows.json"
 
 TAU_ORDER: tuple[str, ...] = (
     "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian",
-    "dbot", "cupodTroll", "cupod", "cimcic", "dimcid", "prudent", "mirror")
+    "dbot", "cupodTroll", "cupod", "cimcic", "dimcid", "prudent", "confidence", "mirror")
 """The Lean `tauOrder` slot order. The export carries the kernel's own copy and
 `kernel_bits` refuses to run if the two disagree."""
 
@@ -124,6 +124,7 @@ TEMPLATES: tuple[str, ...] = (
     "TauCIMCIC",
     "TauDIMCID",
     "TauPrudent",
+    "TauConfidence",
     "TauMirror",
 )
 """Canonical template order."""
@@ -143,12 +144,23 @@ BASE_OF: dict[str, str] = {
     "TauCIMCIC": "CIMCIC",
     "TauDIMCID": "DIMCID",
     "TauPrudent": "PrudentBot",
+    "TauConfidence": "DupocBot",
     "TauMirror": "MirrorBot",
 }
 """Which base bot each template lifts. `TauTFTPf` has NO entry: it is the PROVER
 reading of TitForTatBot's question, a tau-only variant with no base bot, so the
 certification compares it nowhere (2026-08-25). `TauTFTSim` is the lift of
-TitForTatBot."""
+TitForTatBot.
+
+`TauConfidence` (2026-08-27) is NOT a lift — it is the first NATIVE player, the
+MAX aggregator over Dupoc's test (`Tau/Bots/TauConfidence.lean`) — but in the
+HYPOTHESIS role it IS Dupoc: `inst` depends only on specs and its spec is Dupoc's,
+so its kernel row equals `dupocRow` and every other row's `.confidence` bit equals
+its `.dupoc` bit (`confidenceRow_eq_dupocRow`, the `rfl` bridges in `Zoo.lean`).
+Mapping it to `DupocBot` makes the certification check exactly that against the
+base matrix — the kernel-backed form of the matrix CLONE the Python zoo uses
+(`matrix.NATIVE_PLAYERS`). The aggregator is a player fact, not a row fact, and
+lives in `play.py`."""
 
 LEAN_SLOT: dict[str, str] = {
     "TauCooperate": "coop",
@@ -166,6 +178,7 @@ LEAN_SLOT: dict[str, str] = {
     "TauCIMCIC": "cimcic",
     "TauDIMCID": "dimcid",
     "TauPrudent": "prudent",
+    "TauConfidence": "confidence",
     "TauMirror": "mirror",
 }
 """Template name → the Lean `Tmpl` constructor, for reading the bit tables."""
