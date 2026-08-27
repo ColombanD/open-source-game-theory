@@ -89,6 +89,104 @@ the transport theorem was built for.
 
 ---
 
+## The S-interface lands: `BoundedGL` — bounded Löb and PBLT proved generically (2026-08-27)
+
+*Provenance: the "interface formalization (middle path)" row of the 2026-08-20 entry below,
+and a Zulip exchange with Foundation's maintainers the same day (see the end of this entry).*
+
+**The decision.** `S`'s modal core is now a named object: `Base/BoundedGL.lean` defines
+`structure BoundedGL (Sent : Type)` — data `imp`, `box : Nat → Sent → Sent`, `diag`,
+`size`, `Proves : Nat → Sent → Prop`, and ten fields that are the bounded modal and glue
+schemes at their EXACT transcript costs (`mono`, `mp`, `implTrans`, `impS2`, `boxIntro`,
+`axKf`, `box4`, `boxMono`, `diagF`, `diagB`), plus a `Prop` mixin `SizeExact` holding the
+three `Formula.size` equations. Then:
+
+* `pfBoundedGL : BoundedGL Formula` — **the engine is a model**, every field discharged by
+  the constructor of the same name, verbatim (no wrappers, no slack);
+* `BoundedGL.mutual_loeb`, `.bloeb`, `.pblt`, `.pblt_bounded` — `mutual_loeb`,
+  `bloeb_engine`, `pblt_engine`, `pblt_engine_bounded` re-proved AGAINST THE STRUCTURE.
+  `bloeb`/`mutual_loeb` need no size law at all; only the PBLT wrappers consult `SizeExact`;
+* four `example : @bloeb_engine = pfBoundedGL.bloeb := rfl` (etc.) — the engine's theorems
+  ARE the instances, checked at the statement level (the `Eq` typechecks only if the field
+  binders match the constructors; proof irrelevance does the rest). Axiom footprint
+  unchanged: `bloeb`/`mutual_loeb`/`pfBoundedGL` depend on no axiom, `pblt` on Lean's three.
+
+`Pf` itself is untouched, and so is every downstream theorem: the structure is a LENS on
+the rule set, not a refactor of it. NO new `axiom`: fields are hypotheses discharged at
+instantiation.
+
+**Why "GL with bounded modalities" and not "a variant of `ProvabilityAbstraction.Provability`".**
+Foundation's `Provability T₀ T` is a first-order FORMULA `prov` in a theory with a Gödel
+numbering (`𝔅 σ := prov(⌜σ⌝)`; `HBL2`/`HBL3`/`Diagonalization` are classes over it). Our
+`Formula` is not a first-order language with a coding — `.box k φ` is a primitive
+connective — so `Pf` could never instantiate that structure without first being embedded
+in arithmetic, which is exactly the arithmetization we do not have. In the modal
+presentation `box` is a connective with axioms and "provable in a theory" is one
+INTERPRETATION; `Pf` is a model directly (`□_k ↦ Pf k`), an arithmetized PA-provability is
+another (unbuilt), and the faithfulness boundary of the 2026-08-20 entry becomes one
+statement.
+
+**Three design calls, each recorded in the module docstring:**
+
+1. *The Löb-premise gate on `diagF`/`diagB` is kept* (a held `Proves pm (□_fb tgt → tgt)`,
+   its transcript charged). Weaker than the textbook unconditional fixpoint, so any ungated
+   model discharges it a fortiori; free in the derivation (the proof always holds `hLoeb`);
+   and load-bearing in the engine's exclusion censuses (`Base/Exclusion` reaches the tail
+   invariant through the IH on the gate premise).
+2. *Size laws as a separate mixin, exact equations.* Inequality laws with additive slack
+   fail: `omega` cannot see through nested `size (imp (diag g φ) …)` atoms (tested). A
+   Gödel-coded model (size linear in `|φ|` with a constant) would not meet even those — it
+   gets `bloeb`/`mutual_loeb` for free and owes its own asymptotic wrapper. v2 item.
+3. *`→/□/diag` fragment only.* `neg`, the propositional `contrapose`/`negElim`/`implK`/
+   `implS`/`implRefl`/`weakenImpl`, and the rule-form `axK` are unused by the three theorems
+   and excluded; every source-reading rule is excluded on principle — the atom theory is the
+   model-specific half of `S`.
+
+**What it does NOT cover, on purpose.** Soundness, the τ-involution and the transparency
+family — the three items the 2026-08-20 row also listed. The 2026-08-25 entry predicted the
+split correctly: the transpose proof would factor through a soundness field; the
+floor/census proofs use the cost stipulations DIRECTLY and never will. A soundness field
+buys nothing until a second model exists.
+
+**The obligation, stated once.** *An arithmetized model of `BoundedGL` over PA* — a
+budget-indexed provability predicate validating these ten schemes at these costs — is what
+"the rule set is the real `S`" would mean, made finite. No costed derivability conditions
+are formalized in any prover: Foundation's `RestrictedProvability` (`∃ d < 2^e, Proof T d φ`,
+2026-01, with the classical no-short-proof lower bound for its Gödel sentence) is the
+closest object and has none of the schemes. The Solovay-style converse — is `BoundedGL`
+the COMPLETE logic of bounded provability? — is the precise form of the faithfulness
+question and is left open, deliberately.
+
+**External check (2026-08-27).** The design choice was put to the maintainers of
+Foundation (FormalizedFormalLogic) on the Lean Zulip, channel *Formalized Formal Logic*
+(web-public), topic "bounded provability with costs: rule-set presentation vs
+RestrictedProvability". Palalansoukî: bounded provability machinery is "too niche" for
+Foundation at present and arithmetized instances "would probably be technically
+difficult"; packaging the abstract theory as a structure is "reasonable"; "these abstract
+formalizations seem legitimate"; and it "may even be better to treat the abstract
+framework not as a variant of `ProvabilityAbstraction.Provability`, but instead as a
+variant of modal logic such as GL with proof-length-bounded modalities" — the framing
+adopted here. SnO₂WMaN: agreed an abstract system of this sort is worth setting up,
+suggested a separate repository (possible later: `Base/BoundedGL.lean` depends only on
+`numCost`, `log2_mono` and the constructors it names). Neither knew of prior work on
+proof-length-bounded modalities; leads to check before claiming novelty: Verbrugge's
+feasible/efficient provability logic (early 1990s), Parikh 1971, Artemov's Logic of Proofs.
+
+**Rejected / deferred:**
+
+| Alternative | Fate |
+|---|---|
+| Refactor `Pf` to CONSUME the structure (modal core + atom theory as separate inductives) | Not now — no result gets easier; the lens gives the name and the obligation without touching 80+ theorem files. |
+| A soundness / τ-closure field | Deferred until a second model exists; the transpose proof is the first client. |
+| Second model from the Metatheory's `ProvT` (`Nonempty (ProvT k φ)`) | Cheap follow-up spike; not here because `Metatheory` is a separate target the engine never imports. |
+| Size laws as inequalities (encoding-robust) | Fails `omega` on the PBLT wrapper as-is; needs a free-term size measure lemma. v2. |
+
+**One-line summary.** `S` = a bounded GL (ten costed schemes, `Base/BoundedGL`) + an
+atom theory; the engine's rule set is one model, bounded Löb and PBLT are theorems about
+every model, and "is PA a model?" is the whole faithfulness question in one line.
+
+---
+
 ## The red cell has TWO proofs — transpose vs floor, and why the general one is the paper's (2026-08-25)
 
 *Provenance: a review question, 2026-08-25. The tau image of the red cell
@@ -258,7 +356,7 @@ rather than emerging from an axiom set and a proof-string predicate.
 |---|---|
 | Full arithmetization on mathlib `ModelTheory` | Wrong niche — no syntactic calculus with derivations as data; items (1)–(3) of the needed stack would be built from bare ground. Do not retry. |
 | Full arithmetization on Foundation | The right base IF ever attempted (derivations are measurable data; qualitative Gödel/Löb stack done), but the quantitative layer is virgin territory and the token-encoding equivariance becomes a real design obligation. Multi-person-year program; future work, not thesis scope. |
-| Interface formalization (middle path) | NOT rejected — flagged as cheap future work: state the abstract "S-interface" (budget-indexed `□` + monotonicity + soundness + size-compatible costs + τ-involution) as a Lean structure, prove outcome theorems generically, instantiate with `Pf`. Turns the faithfulness boundary from prose into a named, finite obligation list a future arithmetized instance would have to discharge. |
+| Interface formalization (middle path) | **LANDED 2026-08-27 for the modal core** — `Base/BoundedGL.lean` (`structure BoundedGL`, `Pf` a model by `rfl`, bounded Löb + PBLT generic); see the 2026-08-27 entry above. Soundness, the τ-involution and the transparency family remain per-rule prose; the arithmetized instance is the stated obligation. |
 
 **One-line summary.** The rule set is not a stand-in for the "real" `S` we failed to
 build; it is the Critch-faithful abstraction level, chosen so that the trust surface
