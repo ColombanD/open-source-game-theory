@@ -4,7 +4,7 @@ import PrisonersDilemma.ProofSystem
 # Base/Closure — THE FAMILY CLOSURE CERTIFICATES (step 5 of the completion program)
 
 `Research/Notes/FAMILY_COMPLETION_DESIGN.md`, 2026-07-28. The proof system `S`
-(`Pf`, 27 constructors in three families) is CLOSED in the following senses, each
+(`Pf`, 33 constructors in three families) is CLOSED in the following senses, each
 certified here by a kernel-checked theorem rather than a claim:
 
 * **Family B (logical glue)**: identity is a leaf (`identity_provable` —

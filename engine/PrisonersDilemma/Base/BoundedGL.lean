@@ -1,35 +1,90 @@
 import PrisonersDilemma.Base.Loeb
 
 /-!
-# Bounded-GL spike — the abstract S-interface, with `Pf` as its first model (2026-08-27)
+# Base/BoundedGL — the abstract bounded-GL interface: `S`'s modal core as a structure (2026-08-27)
 
-**✅ PROMOTED 2026-08-27 → `Base/BoundedGL.lean`** (the maintained copy; this file keeps the
-`#print axioms` audit and the kill criterion as written).
+Promoted 2026-08-27 from `Research/Spikes/bounded_gl/BoundedGLSpike.lean` (the spike keeps
+the `#print axioms` audit). Design record: `Research/Notes/DESIGN_CHOICES.md`, the
+2026-08-27 entry — it closes the "interface formalization (middle path)" row of the
+2026-08-20 entry "Why `S` is a RULE SET, not an arithmetized theory".
 
-**Purpose.** The "interface formalization (middle path)" row of
-`Research/Notes/DESIGN_CHOICES.md` (2026-08-20): state the bounded modal schemes `S`
-relies on as ONE Lean structure, generic over the sentence type, and show (a) the engine's
-`Pf` is a model — every field discharged by the constructor of the same name, no wrapper —
-and (b) bounded Löb (`bloeb_engine`) and Critch's PBLT (`pblt_engine`) are theorems ABOUT
-THE STRUCTURE, of which the engine's versions are the `Pf` instances (checked by `rfl`).
+**What it is.** `BoundedGL Sent` packages the bounded modal schemes the engine's proofs of
+Löbian cooperation rely on — budget-indexed necessitation, K-distribution, 4, upward
+subscript monotonicity, and the Löb-premise-relative fixpoint legs — as the FIELDS of one
+structure over an abstract sentence type, each with the EXACT transcript cost of the
+same-named `Pf` constructor. It is "GL with proof-length-bounded modalities" (the framing
+suggested by Foundation's maintainers on Zulip, #Formalized Formal Logic, 2026-08-27), not
+a provability PREDICATE inside a first-order theory (Foundation's
+`ProvabilityAbstraction.Provability`): `box` is a connective, and "provable in a theory" is
+one interpretation of it.
 
-Framing suggested by Foundation's maintainers (Zulip, #Formalized Formal Logic,
-2026-08-27): "a variant of GL with proof-length-bounded modalities" rather than a variant
-of `ProvabilityAbstraction.Provability` (a formula inside a first-order theory).
+**Contents.**
+* `BoundedGL` — the structure (10 fields: `mono`, `mp`, `implTrans`, `impS2`, `boxIntro`,
+  `axKf`, `box4`, `boxMono`, `diagF`, `diagB`) and the `Prop` mixin `BoundedGL.SizeExact`
+  (the three `Formula.size` equations).
+* `pfBoundedGL : BoundedGL Formula` — THE ENGINE IS A MODEL: every field is the constructor
+  of the same name, verbatim (no eta wrappers, no cost slack); `pfBoundedGL_sizeExact`.
+* `BoundedGL.mutual_loeb`, `BoundedGL.bloeb`, `BoundedGL.pblt`, `BoundedGL.pblt_bounded` —
+  `Base/Loeb`'s `mutual_loeb` / `bloeb_engine` / `pblt_engine` / `pblt_engine_bounded`
+  proved AGAINST THE STRUCTURE. `bloeb`/`mutual_loeb` use no size law at all.
+* Four `example : @<engine theorem> = pfBoundedGL.<generic> := rfl` — statement-level
+  identity: the engine's theorems ARE the `Pf` instances (proof irrelevance closes the
+  `Eq`; the `Eq` only TYPECHECKS if the field binders match the constructors exactly —
+  this is the drift canary).
 
-**Design calls** (all documented in the promoted module):
-* `→/□/diag` fragment only — `neg` and the rule-form `axK` are unused by the three theorems.
-* The Löb-premise GATE on `diagF`/`diagB` is KEPT: weaker than the textbook unconditional
-  fixpoint (any ungated model discharges it a fortiori), free in the derivation (the proof
-  always holds `hLoeb`), and load-bearing in the engine's exclusion censuses.
-* Size laws live in a separate `Prop` mixin `SizeExact`; only the asymptotic wrappers
-  (`pblt`) consult them. Inequality laws with slack do NOT suffice: `omega` needs the
-  equations to see through nested `size (imp (diag g φ) …)` terms.
+**Field ↔ constructor** (`ProofSystem.lean`, family B glue and family C Löb machinery):
+`mono` = `Pf_mono`; `mp`/`implTrans`/`impS2` = `Pf.mp`/`Pf.implTrans`/`Pf.impS2`;
+`boxIntro` (HBL D1) / `axKf` (HBL D2, object form) / `box4` (HBL D3) / `boxMono` /
+`diagF` / `diagB` = the same-named `Pf` constructors. Deliberately EXCLUDED: `neg` and the
+propositional `contrapose`/`negElim`/`implK`/`implS`/`implRefl`/`weakenImpl` (unused by the
+three theorems), the rule-form `axK` (unused; `axKf` + `mp` up to slack), and EVERY
+source-reading rule (`atom`, `searchBranch`, `simStep`, …, `atomBoxImpl`) — the atom theory
+is the model-specific half of `S` and stays per-rule.
 
-KILL CRITERION: any field not dischargeable by the same-named `Pf` constructor, or any
-identity `example` below failing `rfl`.
+**The gate is kept.** `diagF`/`diagB` demand a HELD Löb premise `Proves pm (imp (box fb tgt)
+tgt)` and charge its transcript `pm`, unlike the textbook unconditional diagonal lemma.
+Three reasons: it is strictly WEAKER as a scheme, so any ungated model discharges it a
+fortiori (nothing is lost for a future arithmetized instance — state the ungated law, derive
+the gated one by monotonicity); the generic derivation always holds `hLoeb` when it takes a
+leg; and in the engine the gate is load-bearing for the exclusion censuses (`Base/Exclusion`
+reaches the tail invariant on a leg's conclusion through the induction hypothesis ON THE
+GATE PREMISE — an ungated leg would have no IH there).
 
-NOT root-imported. `lake env lean PrisonersDilemma/Research/Spikes/bounded_gl/BoundedGLSpike.lean`
+**`SizeExact` is the ONE engine-specific commitment.** `Formula.size`-shaped costs
+(`size (imp φ ψ) = |φ| + |ψ| + 1`, `size (box k φ) = numCost k + |φ| + 1`, same for
+`diag`). Only the asymptotic wrappers `pblt`/`pblt_bounded` consult it — their 21
+side-conditions are discharged by rewriting with these equations and `omega`. Inequality
+laws with additive slack do NOT suffice (`omega` cannot see through the nested
+`size (imp (diag g φ) …)` atoms; tested in the spike's design pass), and a Gödel-coded
+model (`box k φ := Bew_k(⌜φ⌝)`, size LINEAR in `|φ|` with a constant) would not satisfy
+even those — such a model gets `bloeb`/`mutual_loeb` for free and owes its own asymptotic
+wrapper. That is a v2 item, recorded in the design note.
+
+**NOT covered — deliberately.** SOUNDNESS (`Pf_sound` — an interp-level property, not a
+scheme), the τ-INVOLUTION (`Base/Transpose`), and the TRANSPARENCY family (the reading
+rules) are NOT fields: the 2026-08-20 row listed them, and the 2026-08-25 entry already
+predicted the split (the transpose proof factors through soundness as an interface
+property; the floor/census proofs use the cost stipulations DIRECTLY and never will).
+Extending the interface with a soundness field is possible (`Proves k φ → interp φ` for a
+`interp : Sent → Prop` datum) but buys nothing until a second model exists.
+
+**Models and non-models.** `pfBoundedGL` is the one model. Candidate second model: the
+Metatheory's `Type`-valued `ProvT` (`Decidability/T49TreeSubstrate.lean`) via
+`Nonempty (ProvT k φ)` — same seven modal constructors; NOT here because `Metatheory` is a
+separate lake target the engine never imports. NOT a model: the gated strata `PfG`
+(`Decidability/T42PfB.lean`) — cuts are gated on the cut formula, so `mp` is not
+dischargeable unconditionally. THE OPEN OBLIGATION: an arithmetized model over PA (a
+budget-indexed provability predicate validating these ten schemes at these costs) — no
+costed derivability conditions are formalized in any prover; Foundation's
+`RestrictedProvability` (`∃ d < 2^e, Proof T d φ`, with the classical no-short-proof
+lower bound for its Gödel sentence) is the closest object and has none of the schemes.
+Its Solovay-style converse ("is this the complete logic of bounded provability?") is the
+precise form of the faithfulness question of the 2026-08-20 entry.
+
+**Provenance.** The pre-`Pf` attempt `Research/Spikes/pblt/PbltInterfaceSpike.lean`
+(`structure BPS`, 2026-06) recorded `nec`/`boxMono`/`impI`/`diag` as undischargeable by the
+then `Derivation`/`Provable` split; the transcript cost model (2026-07-02) and
+`Formula.diag` (2026-07-01) dissolved every blocker — today each field is a constructor.
 -/
 
 open PD
@@ -284,11 +339,5 @@ example : @mutual_loeb = pfBoundedGL.mutual_loeb := rfl
 example : @bloeb_engine = pfBoundedGL.bloeb := rfl
 example : @pblt_engine = pfBoundedGL.pblt pfBoundedGL_sizeExact := rfl
 example : @pblt_engine_bounded = pfBoundedGL.pblt_bounded pfBoundedGL_sizeExact := rfl
-
-#print axioms BoundedGL.mutual_loeb
-#print axioms BoundedGL.bloeb
-#print axioms BoundedGL.pblt
-#print axioms BoundedGL.pblt_bounded
-#print axioms pfBoundedGL
 
 end PD.BaseTheorems
