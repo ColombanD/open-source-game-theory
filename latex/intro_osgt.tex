@@ -1,0 +1,148 @@
+\documentclass{article}
+
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+\usepackage{minted}
+
+\input{theoremsetup}
+
+\title{Introduction to (Proof-based) Open-source Game Theory}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex}
+\addbibresource{references.bib}
+
+\begin{document}
+
+\maketitle
+
+These notes serve as an introduction to open-source game theory, a field that explores the interactions of agents that can read each other's source code. The focus is on proof-based approaches to cooperation, which are less explored and more theoretical than simulation-based approaches.
+
+\section{Motivation}
+Take any game with a finite number of players, each with a finite set of actions. In classical game theory, players choose actions from their action sets, and the outcome is determined by the combination of actions chosen by all players. The goal of each player is to maximize their own payoff, given the actions of the other players. For simplicity, we focus on two-player games, namely the Prisoner's Dilemma, but the ideas can be extended to more players.
+
+We want to study a variant of this setting, where players can see their opponents' source code before choosing their actions. Why? One reason is that in practical settings, players often have access to some level of information about their opponents' strategies, either through observation or communication. By allowing players to read each other's source code (which is the extreme case where they have complete access to each other's code), we can model this kind of information sharing and explore how it affects the outcomes of games: are players more likely to cooperate if they can see that their opponents are programmed to cooperate? Are they more likely to defect if they can see that their opponents are programmed to defect? These are the kinds of questions that open-source game theory seeks to answer.
+
+\section{Program Equilibria}
+In Open Source Game Theory, players have access to their opponents' source code, allowing them to make decisions based on this information. In order to make this setting more formal, we insert one level of abstraction: Players don't directly choose actions, but instead submit programs. These programs can read each other's source code and then output an action. We do this for two reasons: first, to allow for a more structured analysis of the players' strategies; and second, to allow for both players to play simultaneously, without one player having to wait for the other to choose an action. This is important because in many real-world scenarios, players may not have the luxury of waiting for their opponents to make a move before making their own decision.
+
+The equivalent of a Nash equilibrium in this setting is called a program equilibrium. A program equilibrium is a set of programs, one for each player, such that no player can unilaterally change their program to achieve a better outcome.
+
+\section{Simulation vs Formal Verification}
+In the literature on open source game theory, there are two paradigms: simulation-based and proof-based.
+\begin{itemize}
+    \item Simulation-based approaches involve agents simulating each other's behavior to determine whether to cooperate or defect~\parencite{robust_program_equilibrium,caspar_oesterheld_program_equilibrium,cooper2025characterisingsimulationbasedprogramequilibria}.
+    \item Proof-based approaches involve agents using formal verification to determine whether to cooperate or defect. This is based on Löb's theorem and is mainly explored by~\textcite{critch2022cooperativeuncooperativeinstitutiondesigns}.
+\end{itemize}
+
+\section{Formal Verifier Agents}
+The goal of this introduction is to focus on the proof-based approaches in the literature, which is less explored and more theoretical. We work with formal verifier agents, which are agents that make decisions based on formal verification of certain properties of their opponents' programs.
+
+\paragraph{Setting, following \textcite{critch2022cooperativeuncooperativeinstitutiondesigns}}
+
+An agent (or a program) is a function that takes as input the source code of its opponent and outputs an action. The action can be either to cooperate (C) or to defect (D). We denote the source code of an agent as \texttt{agent.source}.
+\begin{minted}{python}
+def agent(opp_source):
+    # some code that reads opp_source and decides whether to cooperate or defect
+    return action
+\end{minted}
+
+We are interested in the outcome of the game when two agents interact with each other. The outcome is defined as follows:
+
+\begin{minted}{python}
+# Game outcomes:
+def outcome(agent1, agent2):
+    return (agent1(agent2.source),agent2(agent1.source))
+\end{minted}
+
+Now the interesting part: the agents make decisions based on formal verification of certain properties of their opponents' programs. For example, an agent might check if the opponent's program has a proof that it will cooperate with it, and then decide to cooperate if such a proof exists.
+To express this, we need a function that checks if a given proof string is a valid proof of a given hypothesis string, using the opponent's source code as an oracle. We call this function \texttt{proof\_checker}.
+
+\begin{minted}{python}
+def proof_checker(opp_source, proof_string, hypothesis_string):
+# Check if proof_string is a valid proof of
+# hypothesis_string using opp_source as an oracle
+    pass
+\end{minted}
+
+\begin{minted}{python}
+def proof_search(length_bound, opp_source, hypothesis):
+# proof_search checks each generated proof string to see
+# if it encodes a valid proof of a given hypothesis:
+  for proof in string_generator(length_bound):
+    if proof_checker(opp_source, proof, hypothesis):
+      return True
+  # otherwise, if no valid proof of hypothesis is found:
+  return False
+\end{minted}
+
+\section{Toy examples}
+Here, we present some basic examples of agents that are used in the literature, taken from~\textcite{critch2022cooperativeuncooperativeinstitutiondesigns}.
+\begin{minted}{python}
+# "CooperateBot":
+def CB(opp_source):
+    return C
+\end{minted}
+
+\begin{minted}{python}
+# "DefectBot":
+def DB(opp_source):
+    return D
+\end{minted}
+
+\begin{minted}{python}
+# "SourceCooperate": cooperate if opponent source contains "return C"
+def SC(opp_source):
+  if "return C" in opp_source:
+    return C
+  return D
+\end{minted}
+
+\begin{minted}{python}
+# "ShortSourceBot": cooperate only with short programs
+def SSB(opp_source):
+  if len(opp_source) < 200:
+    return C
+  return D
+\end{minted}
+
+\begin{minted}{python}
+# "CooperateIfNiceToDB": cooperate only if opponent cooperates with DefectBot
+def CINTDB(k):
+  def CINTB_k(opp_source):
+    if proof_search(k, opp_source, "opp(DB.source) == C"):
+      return C
+    else:
+      return D
+  return CINTB_k
+\end{minted}
+
+\newcommand{\cupod}{\Verb{CUPOD(k)}\xspace}
+\begin{minted}{python}
+# "Cooperate Unless Proof Of Defection" (CUPOD):
+def CUPOD(k):
+  def CUPOD_k(opp_source):
+    if proof_search(k, opp_source, "opp(CUPOD_k.source) == D"):
+      return D
+    else:
+      return C
+  return CUPOD_k
+\end{minted}
+
+\begin{minted}{python}
+# "Cooperate If My Cooperation Implies Cooperation from
+# the opponent" (CIMCIC):
+def CIMCIC(k):
+  def CIMCIC_k(opp_source):
+    if proof_search(k, opp_source,
+    "(CIMCIC_k(opp.source)==C) => (opp(CIMCIC_k.source)==C)"):
+      return C
+    else:
+      return D
+  return CIMCIC_k
+\end{minted} 
+
+\printbibliography
+
+\end{document}
