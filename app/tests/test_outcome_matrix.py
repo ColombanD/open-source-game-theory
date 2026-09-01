@@ -199,10 +199,21 @@ def test_cell_details_explain_budget_sensitive_cells() -> None:
     assert [c["name"] for c in d["companions"]] == ["outcome_PrudentBot_vs_DupocBot_staggered"]
     assert d["companions"][0]["pair"] == ("C", "C")
     note = d["note"]
-    assert "outcome_PrudentBot_vs_DupocBot: (D, D)" in note
+    # The row (DupocBot) is the theorem's RIGHT bot, so the note leads with the
+    # row-side reading and names the theorem with its OWN stated pair.
+    assert note.startswith("(D, D) read from DupocBot's side")
+    assert "Theorem: outcome_PrudentBot_vs_DupocBot, stated from PrudentBot's side as (D, D)." in note
     assert "shared budget" in note
     assert "outcome_PrudentBot_vs_DupocBot_staggered: (C, C)" in note
     assert "DIFFERENT outcome" in note
+    # Un-swapped cells keep the name inline: name orientation == row orientation.
+    assert details[("DupocBot", "CupodTrollBot")]["note"].startswith(
+        "outcome_DupocBot_vs_CupodTrollBot: (D, C)")
+    # The genuinely confusing case that motivated this: the theorem proves (D, C)
+    # from JustBot's side; the (CupodTrollBot, JustBot) cell reads (C, D).
+    n = details[("CupodTrollBot", "JustBot")]["note"]
+    assert n.startswith("(C, D) read from CupodTrollBot's side")
+    assert "stated from JustBot's side as (D, C)" in n
     # A plain cell has no companion line; a † cell says so.
     assert "⇄" not in details[("CooperateBot", "DefectBot")]["note"]
     assert "staggered only" in details[("CIMCIC", "LegibleBot")]["note"]

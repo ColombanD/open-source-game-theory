@@ -590,7 +590,13 @@ MATRIX_LEGEND: tuple[tuple[str, str], ...] = (
 
 def cell_note(t: OutcomeTheorem, row_bot: str) -> str:
     """A human-readable explanation of one cell, read from `row_bot`'s side — the
-    tooltip in the web UI and the cell note in the Google Sheet."""
+    tooltip in the web UI and the cell note in the Google Sheet.
+
+    Everything leads with the ROW-side reading (matching the visible cell text). When
+    the library's theorem is stated from the OTHER side, its name goes on its own line
+    with its OWN pair — attributing the re-oriented pair to the theorem's name read as
+    a contradiction against the Lean statement (`outcome_JustBot_vs_CupodTrollBot`
+    proves (D, C); the (CupodTrollBot, JustBot) cell displays it as (C, D))."""
     swapped = t.left_bot != row_bot
     col_bot = t.left_bot if swapped else t.right_bot
     lines: list[str] = []
@@ -603,7 +609,14 @@ def cell_note(t: OutcomeTheorem, row_bot: str) -> str:
                   "eventual": "every sufficiently large budget k"}.get(t.budget_regime, t.budget_regime)
         where = (f"{left_text} vs {right_text}" if t.staggered
                  else f"{row_bot} vs {col_bot} at one shared budget")
-        lines.append(f"{t.name}: ({a}, {b}) — {where}; holds at {regime}.")
+        if swapped:
+            lines.append(f"({a}, {b}) read from {row_bot}'s side — {where}; holds at {regime}.")
+            lines.append(
+                f"Theorem: {t.name}, stated from {t.left_bot}'s side as "
+                f"({t.pair[0]}, {t.pair[1]})."
+            )
+        else:
+            lines.append(f"{t.name}: ({a}, {b}) — {where}; holds at {regime}.")
         if t.staggered:
             lines.append("† staggered only: no shared-budget theorem exists for this pair.")
     for c in t.companions:
@@ -613,8 +626,10 @@ def cell_note(t: OutcomeTheorem, row_bot: str) -> str:
         c_swapped = c.left_bot != row_bot
         cl, cr = (c.right, c.left) if c_swapped else (c.left, c.right)
         verdict = "DIFFERENT outcome" if cp != ((t.pair[1], t.pair[0]) if swapped else t.pair) else "same outcome"
+        stated = (f"; the theorem states ({c.pair[0]}, {c.pair[1]}) from {c.left_bot}'s side"
+                  if c_swapped and cp != c.pair else "")
         lines.append(
-            f"⇄ {c.name}: ({cp[0]}, {cp[1]}) with a budget stagger — {cl} vs {cr} ({verdict})."
+            f"⇄ {c.name}: ({cp[0]}, {cp[1]}) with a budget stagger — {cl} vs {cr} ({verdict}){stated}."
         )
     return "\n".join(lines)
 
