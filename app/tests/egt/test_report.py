@@ -28,7 +28,7 @@ def swept(tmp_path_factory):
     """
     root = tmp_path_factory.mktemp("egt_report")
     sweep(
-        zoo="default", ts=[1.0, 0.6, 0.2], alphas=[0.3, 0.8],
+        zoo="body", ts=[1.0, 0.6, 0.2], alphas=[0.3, 0.8],
         out_root=root, stages=CHEAP, render=False,
         replicator_samples=8,
     )
@@ -49,7 +49,7 @@ def _dial_views(page: str, kind: str) -> list[tuple[str, str]]:
 def test_load_sweep_reads_every_run(swept):
     root, _ = swept
     summary, cells = load_sweep(root)
-    assert summary["zoo"] == "default"
+    assert summary["zoo"] == "body"
     assert len(cells) == summary["n_distinct_matrices"]
 
 
@@ -121,10 +121,40 @@ def test_absent_stage_is_not_reported_as_zero(swept):
     assert "<th>component</th>" not in section
 
 
-def test_conditional_results_are_flagged(swept):
-    _, page = swept
+def test_conditional_results_are_flagged(tmp_path):
+    """A matrix resting on stipulated cells must carry the page-level banner.
+
+    Every registered zoo has been fully proven since 2026-08-25, so a real
+    sweep can no longer produce a conditional matrix; the banner is exercised
+    on a hand-built run whose summary declares `is_fully_proven: false` — the
+    flag `load_sweep` reads.
+    """
+    import json
+
+    from pd_runner.egt.report import build_report
+
+    run = tmp_path / "runs" / "body_t050_a050_c0ffee00"
+    (run / "ess").mkdir(parents=True)
+    (run / "ess" / "ess_summary.csv").write_text("type,is_ESS\nDefectBot,False\n")
+    (run / "summary.json").write_text(json.dumps({
+        "run": "body_t050_a050_c0ffee00", "zoo": "body",
+        "t": 0.5, "alpha": 0.5, "fingerprint": "c0ffee00",
+        "n_types": 1, "bots": ["DefectBot"], "excluded_bots": [],
+        "is_fully_proven": False, "grid_points": [[0.5, 0.5]], "ok": True,
+        "stages": {
+            "ess": {"ok": True, "seconds": 0.0, "error": None, "n_pure_ess": 0},
+        },
+    }))
+
+    page = build_report(tmp_path)
     assert "stipulated (unproven) cells" in page
     assert "conditional" in page
+
+
+def test_fully_proven_sweep_carries_no_conditional_banner(swept):
+    """The real zoos are kernel-clean, and the page must say so, not warn."""
+    _, page = swept
+    assert "stipulated (unproven) cells" not in page
 
 
 def test_conditional_banner_is_stated_once(swept):
@@ -268,7 +298,7 @@ def test_nash_section_says_the_stage_is_absent(swept):
 def swept_with_nash(tmp_path_factory):
     """A single cell through ALL FOUR stages — Nash costs ~50s, so just one."""
     root = tmp_path_factory.mktemp("egt_report_nash")
-    sweep(zoo="default", ts=[1.0], alphas=[0.5], out_root=root, render=False)
+    sweep(zoo="body", ts=[1.0], alphas=[0.5], out_root=root, render=False)
     return root, build_report(root)
 
 
@@ -352,11 +382,11 @@ def test_nash_failure_is_named_and_never_reads_as_no_equilibria(tmp_path):
 
     # Hand-build a run whose nash stage failed, which is what the reader sees
     # when e.g. the solver crashes on a degenerate matrix.
-    run = tmp_path / "runs" / "default_t000_a030_deadbeef"
+    run = tmp_path / "runs" / "body_t000_a030_deadbeef"
     (run / "ess").mkdir(parents=True)
     (run / "ess" / "ess_summary.csv").write_text("type,is_ESS\nDefectBot,False\n")
     (run / "summary.json").write_text(json.dumps({
-        "run": "default_t000_a030_deadbeef", "zoo": "default",
+        "run": "body_t000_a030_deadbeef", "zoo": "body",
         "t": 0.0, "alpha": 0.3, "fingerprint": "deadbeef",
         "n_types": 1, "bots": ["DefectBot"], "excluded_bots": [],
         "is_fully_proven": True, "grid_points": [[0.0, 0.3]], "ok": False,

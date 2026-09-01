@@ -27,11 +27,18 @@ Conventions fixed 2026-08-03 (see the design note's "open design decisions"):
    convention. Downstream, `"N"` counts as not-cooperating (the pessimistic
    reading: `cooperates` tests `== "C"`), rows carry it as a third symbol for
    twin/distance purposes, and the sweep's mutual-C/mutual-D split treats an
-   (N, N) base cell as neither. `FULL_CERTIFIED_SUB_ZOO` predates this state
-   and still excludes MirrorBot; `ENLARGED_SUB_ZOO` includes it.
-1b. **Behavioral twins** — `CERTIFIED_SUB_ZOO` (the default) further drops
-   LegibleBot and JustBot, which are behaviorally identical to other members
-   and so cap the transparency scale. See `_TWIN_EXCLUSIONS`.
+   (N, N) base cell as neither. No registered zoo carries MirrorBot; pass an
+   explicit roster to `load_tau_matrix` to get the "N" state.
+1b. **Behavioral twins** — the default roster (`PAPER_BODY_SUB_ZOO`) excludes
+   every bot behaviorally identical to another member, since twins cap the
+   transparency scale; see the paper-zoo design record below.
+1c. **The Def-4 substrate (2026-09-01).** The tau lift PLAYS from the kernel
+   rows: `TauMatrix.test_bit` reads each member's `@[tau_row]` RowSpec bits
+   (`tau_rows.json`, via `def4_theorems.kernel_row_bits`), verified against the
+   base cells at load time, with base cells as the fallback for template-less
+   bots (`is_kernel_backed` reports which). Values never change — Def 3 ≡ Def 4
+   is certified — only the provenance does; `action()` stays the base-cell
+   reading for payoffs, display, and the replay zoos.
 2. **Budgets** — the exported matrix has already collapsed the budget
    dimension (`∃k` and large-`k` cells carry their action pair), so the tau
    layer reads the stable asymptotic outcome and `k` is not a dial in v1a.
@@ -49,19 +56,23 @@ from pd_runner.eval.outcome_matrix import (
     scan_outcome_theorems,
 )
 
-# The maximum sub-zoo whose induced ORDERED submatrix is totally proven, as of
-# 2026-08-03: 12 bots, 144/144 cells, zero orientation conflicts. Recompute
-# with `python -m pd_runner.tau.matrix --recompute` after proving new cells.
+# The maximum sub-zoo whose induced ORDERED submatrix is totally proven,
+# recomputed 2026-09-01: 15 bots, 225/225 cells, zero orientation conflicts,
+# zero stipulations. Recompute with `python -m pd_runner.tau.matrix
+# --recompute` after proving new cells.
 #
-# Excluded and why: MirrorBot (self-play proven `none`), OptimBot (self-play
-# unproven), CupodBot / CIMCIC / DIMCID / WaryBot (search×search and .neg-guard
-# frontier cells still open). Note the exclusions are not random — they are
-# exactly the hard fragment, so this sub-zoo is biased toward the easier half
-# of the zoo. Say so when reporting results.
+# Excluded and why: MirrorBot (self-play is a proven `none` — the "N" state,
+# not an action pair), and the still-open frontier — WaryBot (the .neg-guard
+# refutation-floor census wall) and OptimBot (self-play unproven, two-budget
+# box guard). The 2026-08 frontier closures (CupodBot, CIMCIC, DIMCID) all
+# landed, so this roster is no longer biased toward the easy half of the zoo.
 FULL_CERTIFIED_SUB_ZOO: tuple[str, ...] = (
+    "CIMCIC",
     "CooperateBot",
+    "CupodBot",
     "CupodTrollBot",
     "DBot",
+    "DIMCID",
     "DefectBot",
     "DupocBot",
     "EBot",
@@ -73,60 +84,83 @@ FULL_CERTIFIED_SUB_ZOO: tuple[str, ...] = (
     "TitForTatBot",
 )
 
-# Bots dropped to reduce BEHAVIORAL TWINNING (2026-08-03).
+# ---------------------------------------------------------------------------
+# The three PAPER zoos (frozen 2026-09-01) — the rosters the paper's
+# experiments run on, enumerated explicitly so the frozen roster is the
+# literal text of this file, not the output of a derivation. Design record:
 #
-# Twins are bots with identical action rows: σ cannot separate them at any
-# temperature, so they cap the transparency scale below 1.0. The full 12-bot
-# zoo has two twin groups — {CooperateBot, CupodTrollBot, LegibleBot} and
-# {DupocBot, JustBot} — holding the ceiling at 0.843.
+# * BODY (10) — twin-free, fully proven, zero daggers, zero stipulations
+#   (checked 2026-09-01: 100/100 ordered cells). Twin-free ⇒ the behavioral
+#   transparency scale spans [0, 1], which the headline dial, the anchor and
+#   the degradation curves all require. Membership notes:
+#   - DIMCID is in: the one hard-fragment (search×search) bot that is both
+#     fully proven and twin-free (nearest neighbour CupodBot at behavioral
+#     distance 1 — the CupodTrollBot column separates them).
+#   - CupodBot is in to SEPARATE {CooperateBot, CupodTrollBot} (its column
+#     splits them, `outcome_CupodTrollBot_vs_CupodBot`). Its once-stipulated
+#     cells are theorems since 2026-08-25 (the red cell fell 2026-08-20 via
+#     the τ-transposition).
+#   - Out as behavioral twins: LegibleBot & JustBot (≡ CooperateBot / DupocBot,
+#     2026-08-03), PrudentBot (≡ DefectBot under the shared-budget cell
+#     convention, 2026-08-27), GuardianBot (≡ TitForTatBot once PrudentBot
+#     left — they differed only at his column), CIMCIC (≡ DupocBot by
+#     theorem). Out for open/none cells: MirrorBot, WaryBot, OptimBot.
 #
-# LegibleBot and JustBot are the two removals; CupodTrollBot is KEPT because
-# admitting CupodBot (below) separates it on PROVEN data
-# (`outcome_CupodTrollBot_vs_CupodBot`), so the third removal is unnecessary.
+# * BODY+TWINS (12) adds CIMCIC and PrudentBot — twins ON PURPOSE. The
+#   behavioral σ ceiling < 1 here is the MEASUREMENT, not a defect: both
+#   pairs are syntactically far apart (normalized AST distance 3.57 / 8.82),
+#   so this zoo serves the cross-family confusion-structure analysis
+#   (behavioral vs syntactic at matched MI), never headline curves. Checked
+#   2026-09-01: 144/144 proven, twin groups exactly {CIMCIC, DupocBot} and
+#   {DefectBot, PrudentBot}.
 #
-# PrudentBot joined the exclusions on 2026-08-27, when the matrix cells became
-# the SHARED-budget values: its only same-budget cooperation is with MirrorBot
-# (excluded here), so on this zoo single-tier PrudentBot is behaviorally
-# DefectBot — the two staggered (C, C) cells (vs DupocBot, vs JustBot) had been
-# the only thing separating them, and those are now `*_staggered` non-cell
-# theorems. It stays in FULL_CERTIFIED_SUB_ZOO and the enlarged zoo.
-#
-# GuardianBot followed the same day, a CASCADE of that removal: GuardianBot and
-# TitForTatBot differed only at the PrudentBot column (Guardian trusts Prudent,
-# TFT does not), so without PrudentBot they are twins. TitForTatBot is kept (a
-# canonical opponent, Critch's classical bot); GuardianBot, an LLM-generated
-# norm enforcer, stays in the full/enlarged zoos.
-_TWIN_EXCLUSIONS: tuple[str, ...] = ("LegibleBot", "JustBot", "PrudentBot", "GuardianBot")
-
-# CupodBot is admitted to break the remaining twin group: it is the bot whose
-# column separates {CooperateBot, CupodTrollBot}. It USED to cost a stipulated
-# cell; since 2026-08-25 this dict is EMPTY and the default zoo is fully proven.
-#
-# HISTORY. The red cell ("CupodBot", "DupocBot") — Critch's open problem — left
-# on 2026-08-20 when `outcome_DupocBot_vs_CupodBot = (D, C)` was proven via the
-# τ-transposition (`Base/Transpose.lean`). ("PrudentBot", "CupodBot") = (D, C)
-# left on 2026-08-25 when `outcome_PrudentBot_vs_CupodBot` landed at every same
-# budget — two else-play floors facing each other, the tau layer's argument
-# (`cupod_prudent_plays_C`/`prudent_cupod_plays_D`) transplanted to the base
-# shape. Both times the proven value matched the stipulation, and both times the
-# loader's guard against a stipulation shadowing a proven cell forced the removal.
-CUPOD_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {}
-
-# The default tau zoo: 9 bots (11 until 2026-08-27), NO behavioral twins,
-# transparency ceiling exactly 1.0 — every bot is identifiable from behavior alone, and every cell is
-# a kernel theorem. Load it with `load_tau_matrix()`.
-CERTIFIED_SUB_ZOO: tuple[str, ...] = tuple(
-    sorted(
-        [b for b in FULL_CERTIFIED_SUB_ZOO if b not in _TWIN_EXCLUSIONS]
-        + ["CupodBot"]
-    )
+# * BODY+NATIVES (14) adds the two native aggregator players over Dupoc's
+#   test — MaxConfidenceBot (max) and MinConfidenceBot (min) — for the
+#   aggregator ablation {sum, max, min} = {expectation, best case, worst
+#   case}. Natives are Dupoc twins in the hypothesis role (clones), so run
+#   this zoo on the EPSILON family, which is identity-based and has no twin
+#   ceiling.
+PAPER_BODY_SUB_ZOO: tuple[str, ...] = (
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "TitForTatBot",
 )
-
-# The fully-proven fallback: no stipulated cells, but 8 bots (10 until
-# 2026-08-27) and a residual {CooperateBot, CupodTrollBot} twin pair holding the
-# ceiling below 1.0. Use when a result must rest on the Lean kernel alone.
-PROVEN_ONLY_SUB_ZOO: tuple[str, ...] = tuple(
-    b for b in FULL_CERTIFIED_SUB_ZOO if b not in _TWIN_EXCLUSIONS
+PAPER_TWINS_SUB_ZOO: tuple[str, ...] = (
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot",
+)
+PAPER_NATIVES_SUB_ZOO: tuple[str, ...] = (
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot",
 )
 
 # The eight types the standalone `egt-osgt` repo analysed, kept so its
@@ -173,52 +207,6 @@ CRITCH8_TRANSCRIPTION_DIFFS: dict[tuple[str, str], dict[str, tuple[str, str]]] =
     ("EBot", "DupocBot"): {"standalone": ("C", "C"), "certified": ("C", "D")},
 }
 
-# The 16-bot enlarged zoo (2026-08-04): everything above plus the twins back
-# in (LegibleBot, JustBot), the search×search frontier bots (CIMCIC, DIMCID),
-# and MirrorBot, whose proven-`none` self-play loads as the "N" fifth state.
-# Load with
-#     load_tau_matrix(ENLARGED_SUB_ZOO, hypothetical_cells=ENLARGED_STIPULATIONS)
-#
-# Twin structure (invariant under the stipulations' proven-cell constraints,
-# computed 2026-08-04): behavioral {CooperateBot, LegibleBot} (all-C rows) and
-# {DupocBot, JustBot} (identical rows); syntactic {DBot, TitForTatBot};
-# ε-uniform none. CupodTrollBot is separated from the all-C group by its
-# proven D against CupodBot.
-ENLARGED_SUB_ZOO: tuple[str, ...] = tuple(
-    sorted(
-        FULL_CERTIFIED_SUB_ZOO
-        + ("CupodBot", "CIMCIC", "DIMCID", "MirrorBot")
-    )
-)
-
-# Stipulated (unproven) cells completing the enlarged zoo's ordered submatrix.
-# All are frontier search×search cells; every result over this zoo is
-# conditional on them (`TauMatrix.is_fully_proven` is False). Drop an entry as
-# soon as its theorem lands — the loader raises on a stipulation that shadows
-# a proven cell, so a stale entry fails loudly, not silently.
-ENLARGED_STIPULATIONS: dict[tuple[str, str], tuple[str, str]] = {
-    **CUPOD_STIPULATIONS,
-    # 2026-08-21: the last two DIMCID entries fell to theorems, again predicted
-    # by the tau layer's ALIGNMENT RULE. `outcome_DIMCID_vs_CupodBot = (D, D)`
-    # (ALIGNED — mutual bounded Löb on defection) confirmed its stipulation;
-    # `outcome_DIMCID_vs_DupocBot = (C, D)` (ANTI-aligned — the floor forces both
-    # defaults) FALSIFIED its `(D, D)`, the second wrong guess this method has
-    # caught after `("CIMCIC", "CupodBot")`.
-    # DIMCID vs CupodTrollBot was stipulated (C, C) here until 2026-08-04, when
-    # `llm_outcome_DIMCID_vs_CupodTrollBot` landed proving exactly that. The
-    # entry is gone rather than kept-and-ignored: the loader raises on a
-    # stipulation shadowing a proven cell, which is how this was caught.
-    # 2026-08-21: THREE more entries fell to theorems, all predicted by the tau
-    # layer's entangled closures — `outcome_JustBot_vs_CupodBot = (D, C)` (as
-    # stipulated), `outcome_CIMCIC_vs_OBot = (D, D)` (as stipulated), and
-    # `outcome_CIMCIC_vs_CupodBot = (D, C)` — which FALSIFIED the (C, C) this
-    # table had guessed: the (C, C) fixpoint is provability-inconsistent (Cupod's
-    # trust is an else-play at every budget, so CIMCIC's search can never cite
-    # it). Enlarged-zoo analyses run before this date were conditional on a
-    # wrong cell.
-}
-
-
 @dataclass(frozen=True)
 class NativePlayer:
     """A tau player that is NOT the lift of a base bot (2026-08-27).
@@ -226,16 +214,16 @@ class NativePlayer:
     A tau player is a (per-hypothesis TEST, AGGREGATOR) pair. Every lift's test is
     its base bot's decision procedure and its aggregator is `sum ≥ α` (the C-mass
     of the signal). A NATIVE player borrows a base bot's test and aggregates
-    differently — ConfidenceBot thresholds the MAX weight any single cooperating
+    differently — MaxConfidenceBot thresholds the MAX weight any single cooperating
     hypothesis carries (`play.max_mass`, Lean `Tau/Vote.lean::maxPlayer`).
 
     Two consequences the zoo registry relies on:
 
     * **As a HYPOTHESIS it IS its base bot.** What an opponent sees at point mass is
       the test alone (the aggregator is invisible there — the anchor), and the
-      kernel certifies it: `Tau/Roster.lean` carries a `.confidence` slot whose row
+      kernel certifies it: `Tau/Roster.lean` carries a `.maxconfidence` slot whose row
       equals `dupocRow` and whose column equals every row's `.dupoc` bit
-      (`confidenceRow_eq_dupocRow`, the `rfl` bridges in `Zoo.lean`; checked against
+      (`maxconfidenceRow_eq_dupocRow`, the `rfl` bridges in `Zoo.lean`; checked against
       the base matrix by `compare.direct_kernel_vs_base` via `BASE_OF`). So its
       matrix cells are a CLONE of its base's — `load_tau_matrix` builds them so and
       marks them `clone_of`.
@@ -243,7 +231,7 @@ class NativePlayer:
       the transparency ceiling of the distance-based σ families on any zoo holding
       both; the `epsilon` family is identity-based and unaffected. That is not a
       defect to prune away: for t < 1 the blur splits mass between the twins, and
-      what that costs a MAX aggregator is exactly the phenomenon ConfidenceBot
+      what that costs a MAX aggregator is exactly the phenomenon MaxConfidenceBot
       exists to measure.
     """
 
@@ -251,21 +239,37 @@ class NativePlayer:
     base: str
     """The base bot whose test it uses — and whose instance it is as a hypothesis."""
     aggregator: str
-    """`"max"` — see `play.decision_mass`. Lifts are `"sum"`."""
+    """`"max"` or `"min"` — see `play.decision_mass`. Lifts are `"sum"`."""
     description: str
 
 
 NATIVE_PLAYERS: dict[str, NativePlayer] = {
-    "ConfidenceBot": NativePlayer(
-        name="ConfidenceBot",
+    "MaxConfidenceBot": NativePlayer(
+        name="MaxConfidenceBot",
         base="DupocBot",
         aggregator="max",
         description=(
             "The ambiguity-averse Löbian cooperator: cooperate iff some SINGLE "
             "hypothesis carrying at least α of the signal on its own provably "
             "cooperates with me (Dupoc's test under the MAX aggregator). Lean: "
-            "`Tau/Bots/TauConfidence.lean`, `ConfidenceBotZ`, `tauConfidence_phase`, "
-            "`confidence_not_linear`."
+            "`Tau/Bots/TauMaxConfidence.lean`, `MaxConfidenceBotZ`, `tauMaxConfidence_phase`, "
+            "`maxconfidence_not_linear`."
+        ),
+    ),
+    "MinConfidenceBot": NativePlayer(
+        name="MinConfidenceBot",
+        base="DupocBot",
+        aggregator="min",
+        description=(
+            "MaxConfidenceBot's C/D-transposition dual, the Gilboa–Schmeidler "
+            "pessimist: cooperate iff NO single hypothesis carrying more than "
+            "1−α of the signal on its own provably defects against me — every "
+            "hypothesis above that credibility must pass Dupoc's test (the MIN "
+            "/ worst-case aggregator, `play.min_mass`). Lean: "
+            "`Tau/Bots/TauMinConfidence.lean`, `MinConfidenceBotZ`, "
+            "`tauMinConfidence_phase`, `minconfidence_not_linear`; roster slot "
+            "`.minconfidence`, kernel row `minconfidenceRowSpec` (= dupocRow, "
+            "certified via BASE_OF like MaxConfidenceBot's)."
         ),
     ),
 }
@@ -318,56 +322,49 @@ class NamedZoo:
         return matrix
 
 
-# Selectable zoos, in presentation order (default first).
+# Selectable zoos, in presentation order: the three paper zoos first (body is
+# the default), then the two replay zoos kept for reproduction/validation of
+# the standalone egt-osgt repo. Retired 2026-09-01 (superseded by the paper
+# zoos; rosters recoverable from git): default, default+maxconfidence, enlarged,
+# full-certified, proven-only.
 ZOOS: dict[str, NamedZoo] = {
-    "default": NamedZoo(
-        key="default",
-        label="default (9 bots, twin-free)",
+    "body": NamedZoo(
+        key="body",
+        label="body (10 bots, the paper zoo)",
         description=(
-            "The twin-free working zoo: transparency ceiling exactly 1.0, so "
-            "every bot is identifiable from behavior alone. Conditional on the "
-            "two CupodBot stipulations."
+            "The paper's body zoo. Twin-free (behavioral transparency scale "
+            "spans [0, 1]), fully proven, zero daggers — and DIMCID brings "
+            "one hard-fragment search×search bot in against the easier-half "
+            "bias. All headline experiments run here."
         ),
-        bots=CERTIFIED_SUB_ZOO,
-        stipulations=CUPOD_STIPULATIONS,
+        bots=PAPER_BODY_SUB_ZOO,
+        stipulations={},
     ),
-    "default+confidence": NamedZoo(
-        key="default+confidence",
-        label="default + ConfidenceBot (10 members, 1 native)",
+    "body+twins": NamedZoo(
+        key="body+twins",
+        label="body + twins (12 bots, cross-family analysis)",
         description=(
-            "The twin-free default zoo plus ConfidenceBot, the first NATIVE tau "
-            "player: Dupoc's Löbian test under the MAX aggregator — cooperate iff "
-            "some single hypothesis carrying at least α of the signal on its own "
-            "provably cooperates with me. As a HYPOTHESIS it is Dupoc's instance "
-            "(a kernel-certified clone), hence a behavioral twin of DupocBot: the "
-            "behavioral and syntactic σ families have a transparency ceiling below "
-            "1 on this zoo and split mass between the twins for t < 1 — the cost of "
-            "ambiguity aversion to a Löbian cooperator, which is the point. The "
-            "epsilon family is identity-based and has no ceiling."
+            "Body + CIMCIC + PrudentBot, the two behavioral twins (of "
+            "DupocBot and DefectBot respectively) that are syntactically far "
+            "apart. The behavioral σ ceiling < 1 here is the MEASUREMENT, not "
+            "a defect: this zoo exists for the behavioral-vs-syntactic "
+            "confusion-structure comparison at matched MI, never for "
+            "headline curves."
         ),
-        bots=CERTIFIED_SUB_ZOO + ("ConfidenceBot",),
-        stipulations=CUPOD_STIPULATIONS,
+        bots=PAPER_TWINS_SUB_ZOO,
+        stipulations={},
     ),
-    "enlarged": NamedZoo(
-        key="enlarged",
-        label="enlarged (16 bots, stipulated)",
+    "body+natives": NamedZoo(
+        key="body+natives",
+        label="body + twins + natives (14 bots, aggregator ablation)",
         description=(
-            "The widest zoo: adds the behavioral twins (LegibleBot, JustBot), "
-            "the search×search frontier bots (CIMCIC, DIMCID) and MirrorBot, "
-            "whose proven-`none` self-play is the 'N' state. Most conditional "
-            "— 7 stipulated pairs."
+            "Body+twins plus the two native aggregator players over Dupoc's "
+            "test: MaxConfidenceBot (max) and MinConfidenceBot (min) — the "
+            "{sum, max, min} ablation. Natives are Dupoc twins as "
+            "hypotheses, so run this zoo on the epsilon family (identity-"
+            "based, no twin ceiling)."
         ),
-        bots=ENLARGED_SUB_ZOO,
-        stipulations=ENLARGED_STIPULATIONS,
-    ),
-    "full-certified": NamedZoo(
-        key="full-certified",
-        label="full certified (12 bots, proven)",
-        description=(
-            "The maximum totally-proven sub-zoo: zero stipulations, but two "
-            "behavioral twin groups hold the transparency ceiling at ≈0.843."
-        ),
-        bots=FULL_CERTIFIED_SUB_ZOO,
+        bots=PAPER_NATIVES_SUB_ZOO,
         stipulations={},
     ),
     "critch8": NamedZoo(
@@ -385,10 +382,7 @@ ZOOS: dict[str, NamedZoo] = {
             "CRITCH8_TRANSCRIPTION_DIFFS."
         ),
         bots=CRITCH8_SUB_ZOO,
-        stipulations={
-            k: v for k, v in CUPOD_STIPULATIONS.items()
-            if k[0] in CRITCH8_SUB_ZOO and k[1] in CRITCH8_SUB_ZOO
-        },
+        stipulations={},
     ),
     "superficial-standalone": NamedZoo(
         key="superficial-standalone",
@@ -403,10 +397,7 @@ ZOOS: dict[str, NamedZoo] = {
             "number from this zoo as a finding."
         ),
         bots=CRITCH8_SUB_ZOO,
-        stipulations={
-            k: v for k, v in CUPOD_STIPULATIONS.items()
-            if k[0] in CRITCH8_SUB_ZOO and k[1] in CRITCH8_SUB_ZOO
-        },
+        stipulations={},
         # The standalone side of every disagreement. One key per unordered
         # pair — `apply_contradictions` derives the transpose, so the replay
         # cannot become internally inconsistent.
@@ -417,20 +408,9 @@ ZOOS: dict[str, NamedZoo] = {
                         ("DupocBot", "EBot"))
         },
     ),
-    "proven-only": NamedZoo(
-        key="proven-only",
-        label="proven only (8 bots, kernel-clean)",
-        description=(
-            "Kernel-clean and twin-reduced: no stipulated cells at all, with a "
-            "residual {CooperateBot, CupodTrollBot} twin pair (ceiling ≈0.940). "
-            "Use when a result must rest on the Lean kernel alone."
-        ),
-        bots=PROVEN_ONLY_SUB_ZOO,
-        stipulations={},
-    ),
 }
 
-DEFAULT_ZOO = "default"
+DEFAULT_ZOO = "body"
 
 
 def get_zoo(key: str) -> NamedZoo:
@@ -484,11 +464,21 @@ class TauMatrix:
         bots: tuple[str, ...],
         cells: dict[tuple[str, str], Cell],
         natives: dict[str, NativePlayer] | None = None,
+        kernel_rows: dict[str, dict[str, str]] | None = None,
     ):
         self.bots = bots
         self._cells = cells
         # The native players among `bots`, by name (empty for a pure base zoo).
         self.natives: dict[str, NativePlayer] = dict(natives or {})
+        # The Def-4 substrate (2026-09-01): per-actor kernel test bits, from the
+        # `@[tau_row]` RowSpec theorems (`def4_theorems.kernel_row_bits`), restricted
+        # to this zoo. `test_bit`/`cooperates` read these when present; the base
+        # cells are the fallback for bots without a kernel row. `load_tau_matrix`
+        # verifies every kernel bit against the base cell at load time, so the two
+        # sources can never silently disagree. A matrix built by
+        # `apply_contradictions` carries NO kernel rows — a replay matrix is
+        # knowingly wrong and must play from its contradicted cells.
+        self.kernel_rows: dict[str, dict[str, str]] = dict(kernel_rows or {})
 
     def aggregator(self, actor: str) -> str:
         """How `actor` thresholds its signal: `"sum"` (a lift — the C-mass) or a
@@ -515,11 +505,45 @@ class TauMatrix:
             ) from None
 
     def action(self, actor: str, opponent: str) -> str:
-        """What `actor` plays in `outcome(actor, opponent)` — the Def 3 probe."""
+        """What `actor` plays in `outcome(actor, opponent)` — the Def 3 probe.
+
+        This is the BASE-CELL reading (used for anchor payoffs, the matrix
+        display, and the replay zoos); the tau lift's play thresholds `test_bit`
+        instead, which prefers the kernel row.
+        """
         return self.cell(actor, opponent).row_action
 
+    def test_bit(self, actor: str, opponent: str) -> str:
+        """`actor`'s per-hypothesis TEST bit at `opponent` — the quantity every
+        aggregator (`sum`/`max`/`min`) is computed over.
+
+        Def-4 substrate (2026-09-01): read from `actor`'s kernel-proven RowSpec
+        row when the matrix carries one (load-time-verified equal to the base
+        cell), else from the base cell — so the value never depends on the
+        source, only the PROVENANCE does (`is_kernel_backed`)."""
+        row = self.kernel_rows.get(actor)
+        if row is not None and opponent in row:
+            return row[opponent]
+        return self.action(actor, opponent)
+
     def cooperates(self, actor: str, opponent: str) -> bool:
-        return self.action(actor, opponent) == "C"
+        return self.test_bit(actor, opponent) == "C"
+
+    @property
+    def kernel_backed_bots(self) -> tuple[str, ...]:
+        """The members whose whole test row comes from the kernel export."""
+        return tuple(
+            b for b in self.bots
+            if b in self.kernel_rows
+            and all(h in self.kernel_rows[b] for h in self.bots)
+        )
+
+    @property
+    def is_kernel_backed(self) -> bool:
+        """True when EVERY member's test row is kernel-backed — the state of all
+        three paper zoos. False for ad-hoc rosters holding a template-less bot
+        and for replay matrices (`apply_contradictions` drops the rows)."""
+        return len(self.kernel_backed_bots) == len(self.bots)
 
     def row(self, actor: str) -> tuple[str, ...]:
         """`actor`'s own actions across the whole sub-zoo, in `bots` order.
@@ -542,8 +566,62 @@ class TauMatrix:
         return not self.hypothetical_cells
 
 
+def _kernel_rows_for(
+    bots: tuple[str, ...], cells: dict[tuple[str, str], Cell]
+) -> dict[str, dict[str, str]]:
+    """The Def-4 substrate for one roster: each member's kernel RowSpec bits,
+    restricted to the roster and VERIFIED against the base cells (2026-09-01).
+
+    Three deliberate behaviors:
+
+    * A missing export file degrades to `{}` (Def-3 fallback) rather than failing
+      the load — but a PRESENT export that disagrees with the theorems on any
+      proven cell raises, because that can only mean a stale `tau_rows.json`
+      (run `lake exe export_outcomes`) or a genuine Def 3 ≢ Def 4 break, and
+      either must be loud. (An out-of-order export already raises inside
+      `kernel_bits`.)
+    * A bot with no template gets no row — `is_kernel_backed` goes False, the
+      bits fall back to base cells, numbers unchanged.
+    * A STIPULATED cell keeps its stipulation: the kernel bit is dropped for that
+      pair, so what-if analyses answer the question they were asked.
+    """
+    from pd_runner.tau.def4_theorems import kernel_row_bits
+
+    try:
+        all_rows = kernel_row_bits()
+    except FileNotFoundError:
+        return {}
+    rows: dict[str, dict[str, str]] = {}
+    mismatches: list[str] = []
+    for b in bots:
+        full = all_rows.get(b)
+        if full is None:
+            continue
+        row: dict[str, str] = {}
+        for h in bots:
+            if h not in full:
+                continue
+            cell = cells.get((b, h))
+            if cell is None or cell.hypothetical:
+                continue
+            if full[h] != cell.row_action:
+                mismatches.append(
+                    f"{b} vs {h}: kernel row says {full[h]!r}, "
+                    f"base cell ({cell.theorem}) says {cell.row_action!r}"
+                )
+            row[h] = full[h]
+        rows[b] = row
+    if mismatches:
+        raise ValueError(
+            "kernel tau rows disagree with the proven base cells — stale "
+            "tau_rows.json (run `lake exe export_outcomes`) or a real "
+            "Def 3 ≢ Def 4 break:\n  " + "\n  ".join(mismatches)
+        )
+    return rows
+
+
 def load_tau_matrix(
-    bots: tuple[str, ...] = CERTIFIED_SUB_ZOO,
+    bots: tuple[str, ...] = PAPER_BODY_SUB_ZOO,
     theorems_dir: Path | None = None,
     hypothetical_cells: dict[tuple[str, str], tuple[str, str]] | None = None,
 ) -> TauMatrix:
@@ -551,12 +629,8 @@ def load_tau_matrix(
 
     Totality is enforced, not assumed: if a bot list is passed whose submatrix
     has a hole, this fails loudly rather than silently producing a tau layer
-    with an implicit convention nobody chose.
-
-    The DEFAULT zoo includes CupodBot, whose two cells against it are unproven,
-    so `CUPOD_STIPULATIONS` is applied when `hypothetical_cells` is not given
-    (pass `{}` to opt out and get the totality error instead, or use
-    `PROVEN_ONLY_SUB_ZOO` for a kernel-only matrix).
+    with an implicit convention nobody chose. The default roster is the paper
+    body zoo, which is fully proven — no stipulations needed or applied.
 
     `hypothetical_cells` maps an ordered pair to a STIPULATED `(row_action,
     col_action)`, filling holes for what-if analysis — e.g. "if CupodBot vs
@@ -573,11 +647,7 @@ def load_tau_matrix(
     """
     kwargs = {"theorems_dir": theorems_dir} if theorems_dir is not None else {}
     by_pair = index_by_ordered_pair(scan_outcome_theorems(**kwargs))
-    stipulated = (
-        dict(CUPOD_STIPULATIONS) if hypothetical_cells is None else dict(hypothetical_cells)
-    )
-    # Stipulations are keyed by pair, so carrying the defaults into a non-default
-    # zoo is harmless: entries for absent bots are simply never consulted.
+    stipulated = dict(hypothetical_cells) if hypothetical_cells is not None else {}
 
     cells: dict[tuple[str, str], Cell] = {}
     missing: list[tuple[str, str]] = []
@@ -668,7 +738,7 @@ def load_tau_matrix(
             f"tau matrix is not total: {len(missing)} unproven ordered cell(s), "
             f"e.g. {missing[:5]}. Restrict the bot list or prove the cells."
         )
-    return TauMatrix(bots, cells, natives)
+    return TauMatrix(bots, cells, natives, _kernel_rows_for(bots, cells))
 
 
 def apply_contradictions(
@@ -730,8 +800,8 @@ def apply_contradictions(
 def maximum_certified_sub_zoo(theorems_dir: Path | None = None) -> list[str]:
     """Recompute the largest totally-proven sub-zoo (exact max clique).
 
-    Used to refresh `CERTIFIED_SUB_ZOO` as new cells get proven. Excludes bots
-    whose self-play cell is unproven or proven `none`.
+    Used to refresh `FULL_CERTIFIED_SUB_ZOO` as new cells get proven. Excludes
+    bots whose self-play cell is unproven or proven `none`.
     """
     kwargs = {"theorems_dir": theorems_dir} if theorems_dir is not None else {}
     by_pair = index_by_ordered_pair(scan_outcome_theorems(**kwargs))

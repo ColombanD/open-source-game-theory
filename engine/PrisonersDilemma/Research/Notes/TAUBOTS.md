@@ -4,7 +4,8 @@
 `DEF4_TVOTE_ROADMAP.md`, `DEF5_SYS_BINDER_ROADMAP.md`, all deleted; git has them).
 Status: **the porting phase is CLOSED at 16 lifted templates, every phase theorem
 unconditional, no stipulations; since 08-27 every row is a linted, exported `RowSpec`
-theorem, and the roster holds a 17th, NATIVE member — ConfidenceBot, the first tau
+theorem, and the roster holds a 17th and an 18th, NATIVE member — MaxConfidenceBot and
+MinConfidenceBot, the first tau
 player that is the lift of no base bot (§1, "Native players"); certification
 256/256/0.** What is left is debt, not design.*
 
@@ -91,36 +92,65 @@ cooperate with" is NOT a definition — at point mass the weight condition is va
 and "I'd cooperate" is an ungrounded fixpoint; the test must be a concrete probe of
 the hypothesis, and choosing it fixes the point-mass collapse.
 
-*ConfidenceBot* = (Dupoc's test, **`max ≥ θ`**): "cooperate iff some SINGLE
+*MaxConfidenceBot* = (Dupoc's test, **`max ≥ θ`**): "cooperate iff some SINGLE
 hypothesis carrying at least θ of the signal on its own provably cooperates with me"
 — the ambiguity-averse Löbian cooperator, which makes the headline question literal:
 its cooperation with τ(Dupoc) switches off exactly when the channel's confidence on a
 Löb-cooperating hypothesis drops below θ, however high the expected cooperation.
 Machinery: `Tau/Vote.lean::maxPlayer` — a chain of ONE-entry `.tvote`s (a one-entry
 vote fires iff its entry plays C and `θ ≤ w`; no new primitive), `maxHit`,
-`eval_maxPlayer_of_bits`, `maxPlayer_phase_bits`; `Zoo.lean::ConfidenceBotZ`;
-`Tau/Theorems/TauConfidence/Phase.lean::tauConfidence_phase` (+ the readable `'`
-form) and **`confidence_not_linear`** (the three-signal witness, for every row and
-threshold). Rows: it IS a roster slot (`.confidence`, before `.mirror`), because
-`inst` depends only on specs and `tauConfidenceSpec = tauDupocSpec`: in the
-HYPOTHESIS role ConfidenceBot is Dupoc, by `rfl` (`inst_confidence_eq_dupoc`,
-`inst_at_confidence_eq_dupoc`, `inst_confidence_quine`) everywhere except the
-`confidence × dupoc` pair — two Dupoc-spec self-probers in the symmetric system
+`eval_maxPlayer_of_bits`, `maxPlayer_phase_bits`; `Zoo.lean::MaxConfidenceBotZ`;
+`Tau/Theorems/TauMaxConfidence/Phase.lean::tauMaxConfidence_phase` (+ the readable `'`
+form) and **`maxconfidence_not_linear`** (the three-signal witness, for every row and
+threshold). Rows: it IS a roster slot (`.maxconfidence`, before `.mirror`), because
+`inst` depends only on specs and `tauMaxConfidenceSpec = tauDupocSpec`: in the
+HYPOTHESIS role MaxConfidenceBot is Dupoc, by `rfl` (`inst_maxconfidence_eq_dupoc`,
+`inst_at_maxconfidence_eq_dupoc`, `inst_maxconfidence_quine`) everywhere except the
+`maxconfidence × dupoc` pair — two Dupoc-spec self-probers in the symmetric system
 `cfdSys`, the same term in both orientations, closed by the simplest mutual Löb in
-the zoo (`TauConfidence/Helpers.lean`: both cross-readings are `sys_cross_C_at`) — and
-the `.just` slot, which probes that system. So `confidenceRow = dupocRow`
-(`confidenceRow_eq_dupocRow`), every other row's 17th bit is its `.dupoc` bit, and the
+the zoo (`TauMaxConfidence/Helpers.lean`: both cross-readings are `sys_cross_C_at`) — and
+the `.just` slot, which probes that system. So `maxconfidenceRow = dupocRow`
+(`maxconfidenceRow_eq_dupocRow`), every other row's 17th bit is its `.dupoc` bit, and the
 port cost one new Löb lemma plus one-line arms (the `.dupoc` arm through the bridge).
 Python: `NATIVE_PLAYERS` (`tau/matrix.py`) — a zoo member named there is loaded as a
 CLONE of its base's cells (`Cell.clone_of`) and played with its own aggregator
-(`play.decision_mass` → `max_mass`); `BASE_OF["TauConfidence"] = "DupocBot"` makes
+(`play.decision_mass` → `max_mass`); `BASE_OF["TauMaxConfidence"] = "DupocBot"` makes
 the certification check the clone against the base matrix (256/256/0). Zoo
-`default+confidence`. Consequence to report, not prune: as a hypothesis it is a
+`default+confidence` (since retired; the ablation zoo is `body+natives`). Consequence to report, not prune: as a hypothesis it is a
 behavioral AND syntactic twin of DupocBot (its source, to a partial reader, is its
 instance's), so the distance-based σ families have a ceiling below 1 on that zoo and
 split mass between the twins for `t < 1` — which is precisely what ambiguity aversion
 costs a Löbian cooperator (with `θ > ½` it cannot cooperate with Dupoc or itself
 under behavior-blur); the `epsilon` family is identity-based and unaffected.
+
+*MinConfidenceBot* (2026-09-01) = (Dupoc's test, **`min` / worst case**):
+MaxConfidenceBot's C/D-transposition dual, the Gilboa–Schmeidler PESSIMIST —
+"cooperate iff NO single hypothesis carrying at least θ of the signal on its own
+provably defects against me", equivalently every θ-credible hypothesis passes the
+test. With the lifts' `sum` these are the {expectation, best case, worst case}
+aggregator family over one test — the paper's aggregator ablation. Machinery
+mirrors the max: `Tau/Vote.lean::minPlayer` (the same one-entry `.tvote` chain with
+the polarity flipped — fall through on C, commit D on a credible defector; the
+credibility gate `1 ≤ w ∧ θ ≤ w` is compile-time, so a weightless entry never
+blocks, and θ = 0 behaves as θ = 1, the dual of `maxHit`'s vacuous-fire corner),
+`minMiss`, `eval_minPlayer_of_bits`, `minPlayer_phase_bits`;
+`Zoo.lean::MinConfidenceBotZ`; `tauMinConfidence_phase` (+ `'`) and
+**`minconfidence_not_linear`** — the dual witness: on `2·δ_defect`,
+`δ_defect + δ_dbot`, `2·δ_dbot` at θ = 2 the min plays D, C, D (a lone credible
+defector vetoes, two incredible ones do not), impossible for any threshold of a
+linear mass. **The port cost ZERO new Löb work**: `sysGo`/`instGo` never consult the
+template name for Dupoc's spec, so every entangled pair among the THREE Dupoc-spec
+self-probers ({`.dupoc`, `.maxconfidence`, `.minconfidence`}) compiles to the ONE
+symmetric system `cfdSys`, byte-identical in all six orientations — the existing
+mutual-Löb closure covers them by `rfl`, `minconfidenceRow = dupocRow`, and every
+other row's 18th arm is a defeq copy of its `.maxconfidence`/`.dupoc` arm. Python:
+second `NATIVE_PLAYERS` entry (`play.min_mass`; the α dial maps by
+`θ_credible ↔ 1 − α`, `≥` at the boundary exactly as every player);
+`BASE_OF["TauMinConfidence"] = "DupocBot"`; certification **289/289/0** (17×17
+without TauTFTPf, both natives checked as Dupoc row AND column). The twin
+consequence compounds: the Dupoc behavioral-twin class on `body+natives` is
+{Dupoc, CIMCIC, MaxConfidence, MinConfidence} — run that zoo on the `epsilon`
+family.
 
 ---
 
@@ -141,10 +171,11 @@ under behavior-blur); the `epsilon` family is identity-based and unaffected.
 | 08-25 | Tower census `Base/TowerCensus.lean` closes DIMCID's row. **PrudentBot at ONE budget** (`Pf.botSysSearchThenSearch`, the nested-searcher `.sys` reader; row D everywhere but the mirror). The four `_samek` base theorems; the last stipulation (`outcome_PrudentBot_vs_CupodBot`) falls; TauTFTPf (no base bot) compared nowhere; census library unified into `Base/Exclusion.lean`. **Porting CLOSED at 16.** |
 | 08-27 | **Tau rows linted and exported.** `Tau/RowSpec.lean` + `@[tau_row]` (registry in `Outcome/Attr.lean`) + `Tau/Lint.lean` + `tau_rows.json`; the 16 literal `VoteBits` `*Bits` theorems deleted (`RowSpec.bits` derives them); `tauOrderInit`/`tauOrder_eq` to `Roster`, `vecOf_append` to `Tau/Spec`. **Finding that forced it**: the rows the app regex-scanned were CONDITIONAL on Löb-gated hypotheses (`hquine`, the entangled cells) discharged only in the phase theorems — invisible to a source scanner. Certification reproduced byte-for-byte (225/219/6), then **225/225/0** once the four staggered base cells became their shared-budget values (`*_staggered` companions keep the cooperative results; the whitelist is EMPTY). Consequence in Python: single-tier PrudentBot is behaviorally DefectBot at one budget (its only same-`k` cooperation is with Mirror), and without its column GuardianBot ≡ TitForTatBot — both left the DEFAULT zoo by the twin policy (9 bots: Coop, Cupod, CupodTroll, DBot, Defect, Dupoc, EBot, OBot, TFT; ceiling 1.0). The EGT headline was re-run the same day on the 9-bot zoo and SURVIVES (Dupoc uniquely stochastically stable at t = 1, 27→56→82→88% with selection). The four staggered results stay visible: `@[outcome_companion]` theorems, exported beside the cells and rendered `(D, D) ⇄ (C, C)` (BUDGET-SENSITIVE) in the matrix, with a hover note naming both theorems and the exact budgets. Same day in base: `OutcomeSpecEx` and `OutcomeSpecIf` retired (fuel determinism + structural totality, `Base/Helpers.outcome_at_of_ex`), so the base template is ONE head. |
 
-| 08-27 (later) | **ConfidenceBot — the first NATIVE player** (§1 "Native players"): roster slot `.confidence` with Dupoc's spec; `maxPlayer` in `Tau/Vote.lean`; `cfdSys` mutual Löb (`TauConfidence/Helpers`); `confidenceRow = dupocRow`; `tauConfidence_phase`, `confidence_not_linear`; every other row's 17th arm is its `.dupoc` arm through the `rfl` bridges. Trap met: the threshold `max`-towers in the phase theorems are case-split by `omega` (2ⁿ) — eleven of them timed out; they are SUMS now (Mirror, Dupoc, Just, Confidence). Python: `NATIVE_PLAYERS`, cell clones, `decision_mass`, zoo `default+confidence`; certification 256/256/0. |
+| 08-27 (later) | **MaxConfidenceBot — the first NATIVE player** (§1 "Native players"): roster slot `.maxconfidence` with Dupoc's spec; `maxPlayer` in `Tau/Vote.lean`; `cfdSys` mutual Löb (`TauMaxConfidence/Helpers`); `maxconfidenceRow = dupocRow`; `tauMaxConfidence_phase`, `maxconfidence_not_linear`; every other row's 17th arm is its `.dupoc` arm through the `rfl` bridges. Trap met: the threshold `max`-towers in the phase theorems are case-split by `omega` (2ⁿ) — eleven of them timed out; they are SUMS now (Mirror, Dupoc, Just, MaxConfidence). Python: `NATIVE_PLAYERS`, cell clones, `decision_mass`, zoo `default+confidence` (since retired; the ablation zoo is `body+natives`); certification 256/256/0. |
+| 09-01 | **MinConfidenceBot — the second NATIVE player** (the MIN/worst-case dual; §1) — zero new Löb obligations (the three Dupoc-spec self-probers share the ONE system `cfdSys`; all bridges `rfl`); census 18/18; certification **289/289/0**. **ConfidenceBot RENAMED MaxConfidenceBot** for coherence (slot `.maxconfidence`, `TauMaxConfidence`, `maxconfidenceRow…` — mechanical, protected rename; the Tier-A1 `expected_confidence` field in the app is unrelated and untouched). **The PAPER zoos froze** (`tau/matrix.py`): `body` (10 = default+DIMCID, twin-free, fully proven — the new DEFAULT), `body+twins` (12, +CIMCIC+Prudent — the behavioral-vs-syntactic confusion-structure zoo; ceiling < 1 is the measurement), `body+natives` (14, +both natives — the {sum,max,min} ablation, epsilon family). Registry cleaned: `default`, `default+confidence`, `enlarged`, `full-certified`, `proven-only` retired (rosters in git); `FULL_CERTIFIED_SUB_ZOO` re-enumerated to the true 15-bot maximum. **Def-4 became the ANALYSIS SUBSTRATE**: `TauMatrix.test_bit` plays from the kernel RowSpec bits (`kernel_row_bits`, verified against the base cells at load — a stale export raises), base cells the fallback for template-less bots; `is_kernel_backed` carries the provenance; `apply_contradictions` drops the rows so replay zoos play their contradicted cells. All three paper zoos + critch8 are fully kernel-backed. |
 
 **Live layout.** `Program.lean` (`.tvote`, `.sys`, `.selfIdx`); `Tau/Roster.lean`
-(17 slots incl. the native `.confidence`, `tauOrder`/`tauOrderInit`), `Tau/Spec.lean` (DSL + compiler, `instFuel = 16`),
+(17 slots incl. the native `.maxconfidence`, `tauOrder`/`tauOrderInit`), `Tau/Spec.lean` (DSL + compiler, `instFuel = 16`),
 `Tau/Vote.lean`, `Tau/Zoo.lean`, `Tau/RowSpec.lean` (the row template), `Tau/Lint.lean`
 (validator + roster census), `Tau/Bots/Tau<Bot>.lean`,
 `Tau/Theorems/<Bot>/{Helpers,Phase}.lean` (`Phase` = `<t>Row`, `<t>Row_plays`, the
@@ -157,7 +188,7 @@ signal/channels/syntax/play`. EGT (`egt/`) consumes tau tournaments at fixed `(t
 
 **Headline findings.** Def 4 ≡ Def 3 at large k (certified, not assumed). A tau
 player is (test, aggregator); lifts are exactly the linear-threshold aggregators, and
-ConfidenceBot (max) is provably outside that class while being Dupoc as a hypothesis. The
+MaxConfidenceBot (max) is provably outside that class while being Dupoc as a hypothesis. The
 prover/behavioral split is a budget gap. Floors, not fixpoints, decide anti-aligned
 Löb pairs. τ(CIMCIC)'s row equals τ(Dupoc)'s: conditional and Löbian cooperation
 coincide on this zoo by different mechanisms. Three floor bots (Guardian,
@@ -206,26 +237,26 @@ CupodTroll, Cupod) are where TFT's prover and behavioral readings separate.
    `maxPlayer` chain) is not readable by the syntactic family; it currently presents
    its base's source (its hypothesis-role instance), which is the semantically right
    reading for the channel but should be a documented choice, not a parser gap.
-6. **The ConfidenceBot experiments.** First EGT sweep of `default+confidence`
+6. **The MaxConfidenceBot experiments.** First EGT sweep of `default+confidence` (the zoo since retired for `body+natives`)
    (08-27, behavioral family, 6×6 grid → 17 matrices, 186 s), Moran small-mutation
    limit, (M, β) ∈ {10,50,100}×{0.01,0.1,1}:
-   * `t = 1`: ConfidenceBot and Dupoc TIE (the anchor — identical at point mass),
+   * `t = 1`: MaxConfidenceBot and Dupoc TIE (the anchor — identical at point mass),
      the pair holding 42→70→88→92% of the long run with selection, DefectBot ≤ 4%.
    * Under blur, `t ∈ [0.2, 0.6]`, α ∈ {0.45, 0.62, 0.8} (and α = 0.3 at `t = 0.4`):
-     **ConfidenceBot is UNIQUELY stochastically stable** — 85–93% of the long run at
+     **MaxConfidenceBot is UNIQUELY stochastically stable** — 85–93% of the long run at
      strong selection while Dupoc collapses to 1–4%. The ambiguity-averse Löbian
      cooperator beats the risk-neutral one once identities blur: the sum player is
      fooled into cooperating with blurred exploiters, the max player is not.
    * The exception band — `(t = 0.4, α = 0.45)` and `t ≥ 0.6, α = 0.62` (one matrix,
-     `65dc50f5aba3`) — flips to {Dupoc, TitForTat} stable with ConfidenceBot at
+     `65dc50f5aba3`) — flips to {Dupoc, TitForTat} stable with MaxConfidenceBot at
      9–13%: at moderate blur and moderate caution the single-hypothesis requirement
      costs more cooperation than it saves. Non-monotone in both dials; map it.
-   * `t = 0`: ConfidenceBot is an unconditional defector for α > 1/|zoo| (no
+   * `t = 0`: MaxConfidenceBot is an unconditional defector for α > 1/|zoo| (no
      hypothesis carries α alone), so it ties with {DefectBot, OBot} (α = 0.3) or joins
      the 4/5-way ties with Dupoc/EBot (α = 0.45/0.62).
-   Caveat: behavioral family ⇒ Dupoc/Confidence are twins with mass split for
+   Caveat: behavioral family ⇒ Dupoc/MaxConfidence are twins with mass split for
    `t < 1`; re-run under `epsilon` before citing the exception band. The isolating
-   `(t, α)` curve (ConfidenceBot vs τ(Dupoc), same bits) is still to be plotted.
+   `(t, α)` curve (MaxConfidenceBot vs τ(Dupoc), same bits) is still to be plotted.
 
 **Open conventions.**
 5. ~~Canonical budget per pair~~ — **decided 08-27: the cell is the shared-budget

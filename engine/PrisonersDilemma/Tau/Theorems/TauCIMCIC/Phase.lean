@@ -35,7 +35,8 @@ def cimcicRow : Tmpl → Action
   -- the cimcic×mirror entangled cell, Löb-gated below
   | .prudent  => .D
   | .mirror   => .C
-  | .confidence => .C
+  | .maxconfidence => .C
+  | .minconfidence => .C
   | _         => .D
 
 /-- The row's witness: one `weakenImpl`/census verdict per hypothesis; the
@@ -68,8 +69,11 @@ theorem cimcicRow_plays {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
   | .cupod      => cimcic_cupod_plays_D
   | .cimcic     => cimcic_quine_plays_C hL
   | .dimcid     => cimcic_dimcid_plays_D
-  | .confidence => by
-      rw [inst_at_confidence_eq_dupoc k .cimcic (by decide) (by decide) (by decide)]
+  | .maxconfidence => by
+      rw [inst_at_maxconfidence_eq_dupoc k .cimcic (by decide) (by decide) (by decide)]
+      exact hmdP
+  | .minconfidence => by
+      rw [inst_at_minconfidence_eq_dupoc k .cimcic (by decide) (by decide) (by decide)]
       exact hmdP
 
 /-- **τ(CIMCIC)'s row** — the matrix-facing statement (`@[tau_row]`: validated by

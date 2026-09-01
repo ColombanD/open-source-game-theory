@@ -168,13 +168,13 @@ theorem tauPlayer_phase_bits {v : VoteList} {bs : List (Nat × Action)} (θ : Na
 
 A tau player is a (bit row, aggregator) pair. Every LIFT aggregates by `sum ≥ θ`
 (`tauPlayer`: the signal's C-mass reaches the threshold). A NATIVE player may
-aggregate differently; the first is ConfidenceBot's **`max ≥ θ`** — "some SINGLE
+aggregate differently; the first is MaxConfidenceBot's **`max ≥ θ`** — "some SINGLE
 hypothesis carrying at least θ of the signal on its own plays C" — realized as a
 chain of ONE-entry votes: a one-entry `.tvote` fires iff its entry plays C AND
 `θ ≤ w` (the residual must hit zero), otherwise the chain falls to the next link.
 No new language primitive; entries are frozen exactly as in `tauPlayer`. The max is
-NOT a threshold of any C-mass (`confidence_not_linear`, `TauConfidence/Phase.lean`)
-— which is what makes ConfidenceBot the lift of no base bot. -/
+NOT a threshold of any C-mass (`maxconfidence_not_linear`, `TauMaxConfidence/Phase.lean`)
+— which is what makes MaxConfidenceBot the lift of no base bot. -/
 
 /-- The max-aggregated player over a decision vector. -/
 def maxPlayer (θ : Nat) : VoteList → Prog
@@ -251,6 +251,95 @@ theorem maxPlayer_phase_bits {v : VoteList} {bs : List (Nat × Action)} (θ : Na
     exact ⟨N, by rw [play, hN, if_pos hθ]⟩
   · obtain ⟨N, hN⟩ := eval_maxPlayer_of_bits (maxPlayer θ v) opponent v bs θ hbits
     exact ⟨N, by rw [play, hN, if_neg (by simp [hθ])]⟩
+
+/-! ## The MIN aggregator — the worst-case dual (2026-09-01)
+
+MinConfidenceBot is MaxConfidenceBot's C/D-transposition dual, the Gilboa–Schmeidler
+pessimist: **cooperate iff NO single hypothesis carrying at least θ of the signal on
+its own FAILS my test** — equivalently, every θ-credible hypothesis passes it. Where
+the max player cooperates on one credible cooperator, the min player defects on one
+credible defector. Realized as the same chain of one-entry `.tvote`s, with the
+polarity flipped: each vote FALLS THROUGH when its entry plays C and commits `D` when
+it plays D. An entry is CREDIBLE when its weight is positive and at least θ (a
+weightless entry carries nothing and can block nothing); non-credible entries emit no
+node at all — the gate is compile-time, exactly as the chain structure itself is,
+because weights are data. θ = 0 therefore behaves as θ = 1 ("any positive-weight
+defector blocks"), the dual of `maxHit`'s vacuous-fire corner. Like the max, the min
+is NOT a threshold of any C-mass (`minconfidence_not_linear`,
+`TauMinConfidence/Phase.lean`) — the app-side dial maps by `θ_credible ↔ 1 − α`. -/
+
+/-- The min-aggregated (worst-case) player over a decision vector: defect on the
+    first credible entry that plays D, cooperate when none does. -/
+def minPlayer (θ : Nat) : VoteList → Prog
+  | .nil           => .const .C
+  | .cons w I rest =>
+      if 1 ≤ w ∧ θ ≤ w
+      then .tvote (.cons w I .nil) 1 (minPlayer θ rest) (.const .D)
+      else minPlayer θ rest
+
+/-- The min aggregator over positional bits: some credible entry plays D. -/
+def minMiss (θ : Nat) : List (Nat × Action) → Bool
+  | [] => false
+  | (w, a) :: rest =>
+      (decide (1 ≤ w) && decide (θ ≤ w) && decide (a = Action.D)) || minMiss θ rest
+
+theorem minMiss_true_iff (θ : Nat) : ∀ bs : List (Nat × Action),
+    minMiss θ bs = true ↔ ∃ p ∈ bs, 1 ≤ p.1 ∧ θ ≤ p.1 ∧ p.2 = Action.D
+  | [] => by simp [minMiss]
+  | (w, a) :: rest => by
+      rw [minMiss, Bool.or_eq_true, minMiss_true_iff θ rest]
+      simp only [Bool.and_eq_true, decide_eq_true_eq, List.mem_cons]
+      constructor
+      · rintro (⟨⟨h1, hθ⟩, ha⟩ | ⟨p, hp, h1, hθ, ha⟩)
+        · exact ⟨(w, a), Or.inl rfl, h1, hθ, ha⟩
+        · exact ⟨p, Or.inr hp, h1, hθ, ha⟩
+      · rintro ⟨p, (rfl | hp), h1, hθ, ha⟩
+        · exact Or.inl ⟨⟨h1, hθ⟩, ha⟩
+        · exact Or.inr ⟨p, hp, h1, hθ, ha⟩
+
+/-- The peel workhorse for the min chain — the polarity-flipped twin of
+    `eval_maxPlayer_of_bits`. -/
+theorem eval_minPlayer_of_bits (me opponent : Prog) :
+    ∀ (v : VoteList) (bs : List (Nat × Action)) (θ : Nat), VoteBits v bs →
+      ∃ N, eval N me opponent (minPlayer θ v)
+        = some (if minMiss θ bs then Action.D else Action.C)
+  | .nil, _, _, .nil => ⟨1, rfl⟩
+  | .cons w I rest, _, θ, .cons (a := a) (bs := bs) hI hrest => by
+      obtain ⟨NI, hNI⟩ := hI
+      obtain ⟨Nr, hNr⟩ := eval_minPlayer_of_bits me opponent rest bs θ hrest
+      by_cases hc : 1 ≤ w ∧ θ ≤ w
+      · refine ⟨max NI Nr + 3, ?_⟩
+        have hI' : eval (max NI Nr + 2) (.bot I) (.bot I) I = some a :=
+          eval_mono_le hNI _ (by omega)
+        have hr' : eval (max NI Nr + 1) me opponent (minPlayer θ rest)
+            = some (if minMiss θ bs then Action.D else Action.C) :=
+          eval_mono_le hNr _ (by omega)
+        cases a with
+        | C =>
+            rw [minPlayer, if_pos hc, eval_tvote_cons_c (max NI Nr + 2) (by omega) hI']
+            have h0 : 1 - w = 0 := by omega
+            rw [h0, eval_tvote_zero (max NI Nr + 1), hr']
+            simp [minMiss]
+        | D =>
+            rw [minPlayer, if_pos hc, eval_tvote_cons_d (max NI Nr + 2) (by omega) hI',
+                eval_tvote_nil (max NI Nr + 1) (by omega)]
+            simp [minMiss, hc.1, hc.2, eval]
+      · refine ⟨Nr, ?_⟩
+        rw [minPlayer, if_neg hc, hNr]
+        have hb : (decide (1 ≤ w) && decide (θ ≤ w) && decide (a = Action.D)) = false := by
+          rcases Decidable.not_and_iff_or_not.mp hc with h | h <;> simp [h]
+        simp [minMiss, hb]
+
+/-- **The phase theorem of the min chain** over positional bits. -/
+theorem minPlayer_phase_bits {v : VoteList} {bs : List (Nat × Action)} (θ : Nat)
+    (hbits : VoteBits v bs) (opponent : Prog) :
+    (minMiss θ bs = false → ∃ N, play N (minPlayer θ v) opponent = some .C)
+    ∧ (minMiss θ bs = true → ∃ N, play N (minPlayer θ v) opponent = some .D) := by
+  refine ⟨fun hθ => ?_, fun hθ => ?_⟩
+  · obtain ⟨N, hN⟩ := eval_minPlayer_of_bits (minPlayer θ v) opponent v bs θ hbits
+    exact ⟨N, by rw [play, hN, if_neg (by simp [hθ])]⟩
+  · obtain ⟨N, hN⟩ := eval_minPlayer_of_bits (minPlayer θ v) opponent v bs θ hbits
+    exact ⟨N, by rw [play, hN, if_pos hθ]⟩
 
 /-! ## Prefix commitment and divergent tails (τ(Mirror), 2026-08-24)
 

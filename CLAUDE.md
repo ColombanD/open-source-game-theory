@@ -480,28 +480,36 @@ says "`.opp` facing Q", so every τ-bot is written as its base source (τ(Mirror
 `sim self`; classifiers' compiled terms byte-identical to the former stage rows) —
 and the Python comparison now CERTIFIES Def 3 ≡ Def 4 at large k; 2026-08-24 evening: `Matrix.lean` removed — the per-bot `Phase.lean` theorems ARE the tau matrix (tau players are `.opp`-free, so a match is two independent plays) — 2026-08-25: ALL 15 phases stated and unconditional — τ(Mirror)'s with an honest `none` regime above its prefix mass, τ(DIMCID)'s via the new provability-tracking TOWER CENSUS `Base/TowerCensus.lean` for its two then-D searcher partners; certification 225/219/6, no missing rows; 2026-08-25 evening: PrudentBot ported at a SINGLE budget (`.prudent` before `.mirror`; row `D` everywhere but the mirror, closed by the new core rule `Pf.botSysSearchThenSearch` + Löb; 16 templates; certification 225/219/6 over the 15 templates with a base bot — `TauTFTPf` (the prover reading of TFT, no base bot) is compared nowhere since 2026-08-25, so all six whitelist cells are budget-staggered dagger cells: CupodTroll vs Dupoc/Just, and the base `PrudentBot (2k+64)` theorems vs DupocBot/JustBot both ways — and each is now certified on BOTH sides in base: the `_samek` theorems (`outcome_PrudentBot_vs_DupocBot_samek = (D, D)`, `outcome_JustBot_vs_PrudentBot_samek = (D, D)`, `outcome_DupocBot_vs_CupodTrollBot_samek = (D, C)`, `outcome_JustBot_vs_CupodTrollBot_samek = (D, C)`, via the bare else-play kernel `no_provable_searcherElse_tail`) prove the tau value at ONE budget, outside the strict matrix scan). **The porting phase is CLOSED at 16**: WaryBot/LegibleBot/OptimBot are excluded because their base rows are floor-only or open at a single budget (the `.neg` refutation-floor wall; the two-budget box guard) — see `TAUBOTS.md` §4) — read it before touching anything tau. Summary of the FIXED decisions:
 
-**ConfidenceBot — the first NATIVE tau player (2026-08-27).** A tau player is a
+**MaxConfidenceBot — the first NATIVE tau player (2026-08-27).** A tau player is a
 (per-hypothesis TEST, AGGREGATOR) pair; every lift aggregates by `sum ≥ θ` (the
 signal's C-mass), and a lift's play is therefore a threshold of a quantity LINEAR in
-the signal. ConfidenceBot is (Dupoc's test, **`max ≥ θ`**): cooperate iff some SINGLE
+the signal. MaxConfidenceBot is (Dupoc's test, **`max ≥ θ`**): cooperate iff some SINGLE
 hypothesis carrying at least θ of the signal on its own provably cooperates with me —
 the ambiguity-averse Löbian cooperator. `Tau/Vote.lean::maxPlayer` (a chain of
-one-entry `.tvote`s, no new primitive), `Zoo.lean::ConfidenceBotZ`,
-`Tau/Theorems/TauConfidence/Phase.lean` (`tauConfidence_phase`; **`confidence_not_linear`**
+one-entry `.tvote`s, no new primitive), `Zoo.lean::MaxConfidenceBotZ`,
+`Tau/Theorems/TauMaxConfidence/Phase.lean` (`tauMaxConfidence_phase`; **`maxconfidence_not_linear`**
 — three signals on which the max plays C, D, C and no `θ' ≤ bitMass w r` can, for any
-row). It IS a roster slot (`.confidence`, 17 templates): `inst` depends only on
-specs and `tauConfidenceSpec = tauDupocSpec`, so in the HYPOTHESIS role it is Dupoc by
-`rfl` (the bridges in `Zoo.lean`) except at the `confidence × dupoc` pair — a symmetric
-`.sys` of two Dupoc-spec self-probers, mutual Löb, C (`TauConfidence/Helpers.lean`) —
-and the `.just` slot that probes it; `confidenceRow = dupocRow`, and every other row's
+row). It IS a roster slot (`.maxconfidence`, 17 templates): `inst` depends only on
+specs and `tauMaxConfidenceSpec = tauDupocSpec`, so in the HYPOTHESIS role it is Dupoc by
+`rfl` (the bridges in `Zoo.lean`) except at the `maxconfidence × dupoc` pair — a symmetric
+`.sys` of two Dupoc-spec self-probers, mutual Löb, C (`TauMaxConfidence/Helpers.lean`) —
+and the `.just` slot that probes it; `maxconfidenceRow = dupocRow`, and every other row's
 17th arm is its `.dupoc` arm through the bridge. Python: `tau/matrix.py::NATIVE_PLAYERS`
 (a zoo member named there loads as a CLONE of its base's cells, `Cell.clone_of`, and is
-played by `play.decision_mass` → `max_mass`), zoo `default+confidence`,
-`BASE_OF["TauConfidence"] = "DupocBot"` so the certification checks the clone (256/256/0).
+played by `play.decision_mass` → `max_mass`), zoo `default+confidence` (retired 2026-09-01 for `body+natives`),
+`BASE_OF["TauMaxConfidence"] = "DupocBot"` so the certification checks the clone (256/256/0).
 As a hypothesis it is a behavioral/syntactic twin of DupocBot — a ceiling below 1 for the
 distance-based σ families on that zoo, by design (the cost of ambiguity aversion; the
 `epsilon` family is unaffected). Trap: `omega` case-splits every `max` in a threshold
 tower (2ⁿ) — the phase theorems' thresholds are SUMS now. See `TAUBOTS.md` §1.
+
+**Def 4 is the analysis substrate (2026-09-01).** `TauMatrix.test_bit` plays from
+the kernel `RowSpec` bits (`def4_theorems.kernel_row_bits` over `tau_rows.json`,
+verified against the base cells at load; `is_kernel_backed` is the provenance flag;
+replay zoos drop the rows). Paper zoos (frozen 2026-09-01): `body` (10, the default),
+`body+twins` (12), `body+natives` (14 — MaxConfidenceBot (max, né ConfidenceBot) +
+MinConfidenceBot (min), certification 289/289/0); retired: default, default+confidence,
+enlarged, full-certified, proven-only.
 
 **Tau rows are linted and exported like the base matrix (2026-08-27).** Each
 `Tau/Theorems/<Bot>/Phase.lean` states its bit row as `@[tau_row] theorem <t>RowSpec :

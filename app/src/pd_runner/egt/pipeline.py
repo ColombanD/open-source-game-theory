@@ -114,6 +114,12 @@ class RunPaths:
     t: float | None
     alpha: float | None
     fingerprint: str
+    # The σ family the sweep ran on (`tau.channels`). "behavioral" — the
+    # historical default — keeps the original directory naming, so every
+    # pre-2026-09-01 artefact path stays valid; other families carry their key
+    # in the name so two families can never share (and silently clobber) a
+    # run directory.
+    family: str = "behavioral"
 
     @property
     def run_dir(self) -> Path:
@@ -121,7 +127,8 @@ class RunPaths:
 
     @property
     def name(self) -> str:
-        return f"{self.zoo}_t{_fmt_dial(self.t)}_a{_fmt_dial(self.alpha)}_{self.fingerprint}"
+        fam = "" if self.family == "behavioral" else f"{self.family}_"
+        return f"{self.zoo}_{fam}t{_fmt_dial(self.t)}_a{_fmt_dial(self.alpha)}_{self.fingerprint}"
 
     def stage_dir(self, stage: str) -> Path:
         return self.run_dir / stage
@@ -140,13 +147,15 @@ class RunPaths:
         return self.stage_dir("ess") / "ess_summary.csv"
 
     @classmethod
-    def for_matrix(cls, payoff: PayoffMatrix, root: Path = DEFAULT_OUT_ROOT) -> "RunPaths":
+    def for_matrix(cls, payoff: PayoffMatrix, root: Path = DEFAULT_OUT_ROOT,
+                   family: str = "behavioral") -> "RunPaths":
         return cls(
             root=Path(root),
             zoo=payoff.zoo or "unknown",
             t=payoff.t,
             alpha=payoff.alpha,
             fingerprint=cells_fingerprint(payoff),
+            family=family,
         )
 
 
@@ -194,6 +203,7 @@ class RunResult:
         return {
             "run": self.paths.name,
             "zoo": self.paths.zoo,
+            "family": self.paths.family,
             "t": self.paths.t,
             "alpha": self.paths.alpha,
             "fingerprint": self.paths.fingerprint,
@@ -385,10 +395,11 @@ def analyse_matrix(
     payoff: PayoffMatrix,
     out_root: Path = DEFAULT_OUT_ROOT,
     grid_points: Sequence[tuple[float, float]] = (),
+    family: str = "behavioral",
     **kwargs,
 ) -> RunResult:
     """Run the stages over one payoff matrix and write its `summary.json`."""
-    paths = RunPaths.for_matrix(payoff, out_root)
+    paths = RunPaths.for_matrix(payoff, out_root, family=family)
     stage_outcomes = run_stages(payoff, paths, **kwargs)
     result = RunResult(
         paths=paths,
@@ -410,6 +421,7 @@ def alpha_phase_representatives(
     t: float,
     distances: dict[tuple[str, str], int] | None = None,
     quantize: int = 9,
+    channel: dict | None = None,
 ) -> list[float]:
     """One α per PHASE at this transparency, sampled at the phase midpoint.
 
@@ -431,9 +443,10 @@ def alpha_phase_representatives(
     the sweep dedups by matrix anyway, so extra α points buy little and each
     distinct matrix costs a full Nash enumeration.
     """
-    dist = distances if distances is not None else behavioral_distance_matrix(matrix)
-    temperature = temperature_for_transparency(matrix, t, distances=dist)
-    channel = signal_family_at_temperature(matrix, temperature, dist)
+    if channel is None:
+        dist = distances if distances is not None else behavioral_distance_matrix(matrix)
+        temperature = temperature_for_transparency(matrix, t, distances=dist)
+        channel = signal_family_at_temperature(matrix, temperature, dist)
 
     breaks = alpha_breakpoints(matrix, channel, quantize=quantize)
     # Breakpoints are the achievable masses; phases are the gaps between them,
@@ -469,6 +482,16 @@ class SweepResult:
     n_grid_points: int
     seconds: float
     out_root: Path
+    family: str = "behavioral"
+
+    @property
+    def summary_path(self) -> Path:
+        """`sweep_summary.json` for the behavioral family (the historical name
+        the report reads); `sweep_summary_<family>.json` otherwise, so two
+        families swept into one root never clobber each other."""
+        name = ("sweep_summary.json" if self.family == "behavioral"
+                else f"sweep_summary_{self.family}.json")
+        return Path(self.out_root) / name
 
     @property
     def n_distinct(self) -> int:
@@ -482,6 +505,7 @@ class SweepResult:
     def summary(self) -> dict:
         return {
             "zoo": self.zoo,
+            "family": self.family,
             "n_grid_points": self.n_grid_points,
             "n_distinct_matrices": self.n_distinct,
             "dedup_saved": self.n_grid_points - self.n_distinct,
@@ -497,6 +521,7 @@ def sweep(
     alphas: Sequence[float] | str | None = None,
     out_root: Path = DEFAULT_OUT_ROOT,
     stages: Sequence[str] = STAGES,
+    family: str = "behavioral",
     b: float = DEFAULT_B,
     c: float = DEFAULT_C,
     non_termination: NonTerminationPolicy = "exclude",
@@ -513,9 +538,19 @@ def sweep(
     `(t, α)` phase diagram is piecewise constant.
 
     `alphas=None` uses `DEFAULT_ALPHAS`. Pass `alphas="phases"` to enumerate
-    one α per behavioral phase at each t — exact, but ~|zoo|² points per t
+    one α per phase at each t — exact, but ~|zoo|² points per t
     (see `alpha_phase_representatives`), so reserve it for a single t or for
     stages far cheaper than Nash.
+
+    `family` selects the σ channel (`tau.channels.all_families`): "behavioral"
+    (the historical default — softmax over own-action rows), "syntactic" (AST
+    distance) or "epsilon" (identity-based null control; the family the
+    `body+natives` aggregator ablation runs on). All families expose the same
+    normalized-MI transparency dial, so `t` means the same thing across them
+    and cross-family results at matched t are comparable. Non-behavioral runs
+    carry the family in their run-directory names and write
+    `sweep_summary_<family>.json`, so families never clobber each other in one
+    out_root. (The HTML report still reads the behavioral summary only.)
     """
     t0 = time.perf_counter()
 
@@ -526,6 +561,16 @@ def sweep(
     named = get_zoo(zoo)
     matrix = named.load()
     distances = behavioral_distance_matrix(matrix)
+    if family == "behavioral":
+        fam = None   # the legacy path — byte-identical artefacts and naming
+    else:
+        from pd_runner.tau.channels import all_families
+
+        families = all_families(matrix)
+        if family not in families:
+            raise ValueError(
+                f"unknown σ family {family!r}; choose one of {sorted(families)}")
+        fam = families[family]
     t_values = list(ts) if ts is not None else linear_ts(t_steps)
 
     by_fingerprint: dict[str, RunResult] = {}
@@ -540,12 +585,15 @@ def sweep(
                 raise ValueError(
                     f"alphas must be a sequence or the literal 'phases', got {alphas!r}"
                 )
-            a_values = alpha_phase_representatives(matrix, t, distances)
+            a_values = alpha_phase_representatives(
+                matrix, t, distances,
+                channel=fam.channel(t) if fam is not None else None)
         else:
             a_values = list(alphas)
         for alpha in a_values:
             n_points += 1
-            result: TournamentResult = run_tournament(matrix, t, alpha, distances)
+            result: TournamentResult = run_tournament(
+                matrix, t, alpha, distances, family=fam)
             payoff = payoff_matrix_from_tournament(
                 result,
                 bots=matrix.bots,
@@ -567,7 +615,7 @@ def sweep(
             emit(f"(t={t}, α={alpha}) -> matrix {fp} — analysing")
             run = analyse_matrix(
                 payoff, out_root, grid_points=[(t, alpha)],
-                stages=stages, on_event=on_event, **stage_kwargs,
+                family=family, stages=stages, on_event=on_event, **stage_kwargs,
             )
             by_fingerprint[fp] = run
             order.append(fp)
@@ -578,11 +626,12 @@ def sweep(
         n_grid_points=n_points,
         seconds=time.perf_counter() - t0,
         out_root=Path(out_root),
+        family=family,
     )
 
     out_root = Path(out_root)
     out_root.mkdir(parents=True, exist_ok=True)
-    (out_root / "sweep_summary.json").write_text(
+    sweep_result.summary_path.write_text(
         json.dumps(sweep_result.summary(), indent=2)
     )
     emit(
@@ -611,6 +660,11 @@ def main() -> None:
                        "but ~|zoo|^2 points per t, so pair it with a single t "
                        "or with --stages ess,invasion,faces"
                    ))
+    p.add_argument("--family", type=str, default="behavioral",
+                   choices=("behavioral", "epsilon", "syntactic"),
+                   help=("the sigma channel family (tau.channels); all three share "
+                         "the normalized-MI t dial, so results at matched t are "
+                         "cross-family comparable"))
     p.add_argument("--stages", type=str, default=",".join(STAGES),
                    help=f"comma-separated subset of {STAGES}")
     p.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT)
@@ -631,6 +685,7 @@ def main() -> None:
         ts=[float(x) for x in args.ts.split(",")] if args.ts else None,
         alphas=alphas,
         out_root=args.out_root,
+        family=args.family,
         stages=tuple(s.strip() for s in args.stages.split(",") if s.strip()),
         t_steps=args.t_steps,
         max_support_size=args.max_support_size,
@@ -639,7 +694,7 @@ def main() -> None:
     )
 
     print()
-    print(f"zoo: {result.zoo}")
+    print(f"zoo: {result.zoo}   family: {result.family}")
     print(f"grid points     : {result.n_grid_points}")
     print(f"distinct matrices: {result.n_distinct} "
           f"(dedup saved {result.n_grid_points - result.n_distinct} analyses)")

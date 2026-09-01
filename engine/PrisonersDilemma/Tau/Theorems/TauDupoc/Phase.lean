@@ -33,7 +33,8 @@ def dupocRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
-  | .confidence => .C
+  | .maxconfidence => .C
+  | .minconfidence => .C
   | .mirror     => .C
 
 /-- The row's witness: prove-stages on the δ_L column; the diagonal is the Löb
@@ -43,11 +44,11 @@ theorem dupocRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
     (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = dupocColBit .cimcic)
     (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc)) = dupocColBit .mirror)
-    (hconf : proofSearch k (probe (inst (tauZoo k) .confidence .dupoc))
-      = dupocColBit .confidence)
-    (hcfP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .confidence))
-      (.bot (inst (tauZoo k) .dupoc .confidence)) (inst (tauZoo k) .dupoc .confidence)
-      = some (dupocRow .confidence))
+    (hconf : proofSearch k (probe (inst (tauZoo k) .maxconfidence .dupoc))
+      = dupocColBit .maxconfidence)
+    (hcfP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .maxconfidence))
+      (.bot (inst (tauZoo k) .dupoc .maxconfidence)) (inst (tauZoo k) .dupoc .maxconfidence)
+      = some (dupocRow .maxconfidence))
     (hmirP : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .mirror))
       (.bot (inst (tauZoo k) .dupoc .mirror)) (inst (tauZoo k) .dupoc .mirror)
       = some (dupocRow .mirror))
@@ -76,7 +77,8 @@ theorem dupocRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .mirror     => hmirP   -- the mirror×dupoc entangled cell (gated)
   | .dimcid     => -- the anti-aligned entangled pair, closed by the floor
       dupoc_dimcid_plays_D
-  | .confidence => hcfP   -- the symmetric Dupoc-spec system (mutual Löb, TauConfidence/Helpers)
+  | .maxconfidence => hcfP   -- the symmetric Dupoc-spec system (mutual Löb, TauMaxConfidence/Helpers)
+  | .minconfidence => hcfP   -- the SAME system term from the .minconfidence slot, by `rfl`
 
 /-- **τ(Dupoc)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
@@ -89,8 +91,8 @@ theorem dupocRowSpec : RowSpec .dupoc tauOrder dupocRow := by
   obtain ⟨kP, hkP⟩ := dupoc_cimcic_plays_C
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
   obtain ⟨kY, hkY⟩ := dupoc_mirror_plays_C
-  obtain ⟨kC, hkC⟩ := ps_probe_inst_confidence_dupoc
-  obtain ⟨kD, hkD⟩ := dupoc_confidence_plays_C
+  obtain ⟨kC, hkC⟩ := ps_probe_inst_maxconfidence_dupoc
+  obtain ⟨kD, hkD⟩ := dupoc_maxconfidence_plays_C
   refine ⟨kL + kA + kM + kP + kX + kY + kC + kD, fun k hk T _ => ?_⟩
   have hquine := hkL k (by omega)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
@@ -121,8 +123,8 @@ theorem tauDupoc_phase :
   obtain ⟨kP, hkP⟩ := dupoc_cimcic_plays_C
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
   obtain ⟨kY, hkY⟩ := dupoc_mirror_plays_C
-  obtain ⟨kC, hkC⟩ := ps_probe_inst_confidence_dupoc
-  obtain ⟨kD, hkD⟩ := dupoc_confidence_plays_C
+  obtain ⟨kC, hkC⟩ := ps_probe_inst_maxconfidence_dupoc
+  obtain ⟨kD, hkD⟩ := dupoc_maxconfidence_plays_C
   refine ⟨kL + kA + kM + kP + kX + kY + kC + kD, fun k hk θ w opponent => ?_⟩
   have hquine := hkL k (by omega)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)

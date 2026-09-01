@@ -33,7 +33,8 @@ def tftSimRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .D
-  | .confidence => .C
+  | .maxconfidence => .C
+  | .minconfidence => .C
   | .mirror     => .C
 
 /-- The row's witness: every entry is a run-stage copy of the δ_C behavioral
@@ -60,7 +61,8 @@ theorem tftSimRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6
   | .dimcid     => simCopy_plays _ _ (pC .dimcid)
   | .prudent    => simCopy_plays _ _ (pC .prudent)
   | .mirror     => simCopy_plays _ _ (pC .mirror)
-  | .confidence => simCopy_plays _ _ (pC .confidence)
+  | .maxconfidence => simCopy_plays _ _ (pC .maxconfidence)
+  | .minconfidence => simCopy_plays _ _ (pC .minconfidence)
 
 /-- **τ(TFTSim)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and

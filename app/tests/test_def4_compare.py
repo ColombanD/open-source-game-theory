@@ -33,7 +33,7 @@ FULL_BOTS: tuple[str, ...] = (
     "CupodBot", "DIMCID", "PrudentBot", "MirrorBot",
 )
 """The base bots the full certification runs over (TitForTatBot carries both TFT
-lift variants and DupocBot also carries the NATIVE TauConfidence — whose
+lift variants and DupocBot also carries the NATIVE TauMaxConfidence — whose
 hypothesis-role instance IS Dupoc's — so 15 base bots cover 17 templates).
 
 MirrorBot joined on 2026-08-24 evening, once τ(Mirror) had a stated row: its
@@ -52,7 +52,7 @@ its own coverage."""
 
 def test_kernel_scanner_finds_all_rows() -> None:
     """ALL rows are stated (15 on 2026-08-25; 17 since 08-27 with the native
-    ConfidenceBot's slot). τ(Mirror)'s is a PREFIX row
+    MaxConfidenceBot's slot). τ(Mirror)'s is a PREFIX row
     over `tauOrderInit` (its diagonal diverges; the scanner records that slot as
     "N"). τ(DIMCID)'s — the last to land — needed the provability-tracking tower
     census (`Base/TowerCensus.lean`) for its two then-D searcher partners."""
@@ -76,20 +76,21 @@ def test_kernel_agrees_with_base_directly() -> None:
     `RowSpec` rows and the cells out of the certified base matrix, so a pass
     depends on no Python model at all.
 
-    256 comparable cells — the 16×16 matrix without TauTFTPf — ALL agree; the
-    whitelist is empty. The 16th template is the NATIVE TauConfidence, compared
-    against DupocBot: its whole row AND column must equal Dupoc's base cells, which
-    is the kernel-certified form of the matrix CLONE the `default+confidence` zoo
-    uses. (History: 144/139/5 until 2026-08-24 when CupodBot and DIMCID joined
-    `FULL_BOTS` — 38 cells had gone unchecked behind a green result; 210/204/6,
-    then 225/219/6 on 08-25 with τ(DIMCID)'s row and TauTFTPf dropped; 225/225/0
-    on 08-27 when the four staggered base cells were replaced by their
+    289 comparable cells — the 17×17 matrix without TauTFTPf — ALL agree; the
+    whitelist is empty. The two NATIVE templates (TauMaxConfidence, TauMinConfidence)
+    are both compared against DupocBot: each one's whole row AND column must equal
+    Dupoc's base cells, which is the kernel-certified form of the matrix CLONE the
+    `body+natives` zoo uses. (History: 144/139/5 until 2026-08-24 when CupodBot and
+    DIMCID joined `FULL_BOTS` — 38 cells had gone unchecked behind a green result;
+    210/204/6, then 225/219/6 on 08-25 with τ(DIMCID)'s row and TauTFTPf dropped;
+    225/225/0 on 08-27 when the four staggered base cells were replaced by their
     shared-budget values and the staggered results became `*_staggered` non-cell
-    theorems; 256/256/0 later that day with ConfidenceBot's slot.)"""
+    theorems; 256/256/0 later that day with MaxConfidenceBot's slot; 289/289/0 on
+    2026-09-01 with MinConfidenceBot's.)"""
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
-    assert len(d.cells) == 256
+    assert len(d.cells) == 289
     assert d.passed, d.unexpected
-    assert d.agreements == 256
+    assert d.agreements == 289
     assert len(d.whitelisted_divergences) == 0
     assert d.missing_rows == ()
 
@@ -261,3 +262,61 @@ def test_constant_rows_are_constant() -> None:
     tables = kernel_bits()
     assert set(_row(tables, "TauCooperate").values()) == {"C"}
     assert set(_row(tables, "TauDefect").values()) == {"D"}
+
+
+# ── The Def-4 substrate (2026-09-01): the matrix PLAYS from the kernel rows ────
+
+
+def test_paper_zoos_are_kernel_backed() -> None:
+    """Every member of the three paper zoos (and critch8) plays from its own
+    kernel-proven RowSpec row — `test_bit`/`cooperates` read `kernel_rows`, not
+    the base cells, and the load verified the two agree."""
+    from pd_runner.tau.matrix import ZOOS
+
+    for key in ("body", "body+twins", "body+natives", "critch8"):
+        m = ZOOS[key].load()
+        assert m.is_kernel_backed, key
+        assert set(m.kernel_backed_bots) == set(m.bots), key
+
+
+def test_replay_zoo_is_not_kernel_backed() -> None:
+    """`apply_contradictions` drops the kernel rows: a knowingly-wrong replay
+    matrix must play from its contradicted cells, and its provenance must say
+    so. Its test bits follow the contradictions, not the kernel."""
+    from pd_runner.tau.matrix import ZOOS
+
+    m = ZOOS["superficial-standalone"].load()
+    assert not m.is_kernel_backed
+    assert m.kernel_backed_bots == ()
+    # the DBot/DupocBot cell is one the CSV got wrong: (C, C) there, (C, D) proven
+    assert m.test_bit("DupocBot", "DBot") == "C"      # the contradicted value…
+    certified = ZOOS["critch8"].load()
+    assert certified.test_bit("DupocBot", "DBot") == "D"  # …not the kernel's
+
+
+def test_templateless_bot_degrades_without_lying() -> None:
+    """A roster holding a bot with no tau template still loads (base-cell
+    fallback) but reports itself not kernel-backed."""
+    from pd_runner.tau.matrix import load_tau_matrix
+
+    m = load_tau_matrix(bots=("CooperateBot", "DefectBot", "WaryBot"),
+                        hypothetical_cells={})
+    assert not m.is_kernel_backed
+    assert m.cooperates("CooperateBot", "WaryBot")  # base cell still answers
+
+
+def test_kernel_base_mismatch_raises() -> None:
+    """A present-but-stale export must fail the load loudly, never silently pick
+    a side: flip one proven base cell and the guard names the pair."""
+    import dataclasses
+
+    import pytest
+
+    from pd_runner.tau.matrix import PAPER_BODY_SUB_ZOO, _kernel_rows_for, load_tau_matrix
+
+    m = load_tau_matrix(PAPER_BODY_SUB_ZOO, hypothetical_cells={})
+    doctored = dict(m._cells)
+    key = ("DupocBot", "DefectBot")   # proven (D, C); pretend the theorem said C
+    doctored[key] = dataclasses.replace(doctored[key], row_action="C")
+    with pytest.raises(ValueError, match="DupocBot vs DefectBot"):
+        _kernel_rows_for(PAPER_BODY_SUB_ZOO, doctored)

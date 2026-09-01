@@ -78,6 +78,7 @@ async def run_egt_sweep(job: Job, req: EgtSweepRequest) -> None:
 
         result = await loop.run_in_executor(None, lambda: sweep(
             zoo=req.zoo,
+            family=req.family,
             ts=ts,
             alphas=alphas,
             out_root=DEFAULT_OUT_ROOT,

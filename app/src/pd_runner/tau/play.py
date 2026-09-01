@@ -55,13 +55,13 @@ def coop_mass(matrix: TauMatrix, actor: str, signal: Signal) -> float:
 
 def max_mass(matrix: TauMatrix, actor: str, signal: Signal) -> float:
     """max pᵢ over hypotheses against which `actor` itself plays C — the MAX
-    aggregator of a NATIVE player (ConfidenceBot, 2026-08-27): the largest
+    aggregator of a NATIVE player (MaxConfidenceBot, 2026-08-27): the largest
     weight any SINGLE cooperating hypothesis carries on its own.
 
     Thresholding this at α is `Tau/Vote.lean`'s `maxPlayer`: "cooperate iff some
     hypothesis carrying ≥ α of the signal by itself passes my test". Unlike the
     C-mass it is NOT linear in the signal — which is what makes such a player the
-    lift of no base bot (`confidence_not_linear`). At point mass it is 0 or 1,
+    lift of no base bot (`maxconfidence_not_linear`). At point mass it is 0 or 1,
     exactly like the C-mass, so the t = 1 anchor holds for it too.
     """
     return max(
@@ -71,14 +71,36 @@ def max_mass(matrix: TauMatrix, actor: str, signal: Signal) -> float:
     )
 
 
+def min_mass(matrix: TauMatrix, actor: str, signal: Signal) -> float:
+    """1 − max pᵢ over hypotheses against which `actor` does NOT play C — the MIN
+    (worst-case) aggregator of a NATIVE player (MinConfidenceBot, 2026-09-01),
+    the C/D-transposition dual of `max_mass` and the Gilboa–Schmeidler pessimist.
+
+    Thresholding this at α reads "cooperate iff NO single hypothesis carrying
+    more than 1−α of the signal on its own fails my test" — equivalently, every
+    hypothesis above that credibility passes it. Where the max player cooperates
+    on one credible cooperator, the min player defects on one credible defector.
+    Like the max-mass it is not linear in the signal, and at point mass it is 0
+    or 1, so the t = 1 anchor holds. A proven-`none` hypothesis counts as
+    not-cooperating, exactly as in `coop_mass` (`cooperates()` tests == "C").
+    """
+    return 1.0 - max(
+        (p for hypothesis, p in signal.weights.items()
+         if p > 0 and not matrix.cooperates(actor, hypothesis)),
+        default=0.0,
+    )
+
+
 def decision_mass(matrix: TauMatrix, actor: str, signal: Signal) -> float:
     """The quantity `actor` thresholds at α: its C-mass for a lift, its max-mass
-    for a native `max` player (`TauMatrix.aggregator`)."""
+    or min-mass for a native player (`TauMatrix.aggregator`)."""
     aggregator = matrix.aggregator(actor)
     if aggregator == "sum":
         return coop_mass(matrix, actor, signal)
     if aggregator == "max":
         return max_mass(matrix, actor, signal)
+    if aggregator == "min":
+        return min_mass(matrix, actor, signal)
     raise ValueError(f"unknown aggregator {aggregator!r} for {actor}")
 
 
@@ -168,8 +190,12 @@ def exact_alpha_breakpoints(matrix: TauMatrix, signal: Signal) -> list[Fraction]
     masses = {Fraction(0)}
     for actor in matrix.bots:
         coop = [p for b, p in weights.items() if matrix.cooperates(actor, b)]
-        if matrix.aggregator(actor) == "max":
+        aggregator = matrix.aggregator(actor)
+        if aggregator == "max":
             masses.add(max(coop, default=Fraction(0)))
+        elif aggregator == "min":
+            noncoop = [p for b, p in weights.items() if not matrix.cooperates(actor, b)]
+            masses.add(1 - max(noncoop, default=Fraction(0)))
         else:
             masses.add(sum(coop, Fraction(0)))
     return sorted(masses)

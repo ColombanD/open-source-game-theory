@@ -9,5 +9,10 @@
 #
 # Keep a result set by copying it out, or point `--out-root` elsewhere.
 runs/
-sweep_summary.json
+sweep_summary*.json
 report.html
+
+# Frozen pre-paper artefact archives (2026-09-01): kept out of git, backed by
+# OneDrive. The tarball is the machine-readable record behind TAUBOTS.md §4's
+# pre-freeze EGT observations (retired zoos, pre-rename bot names).
+archive/

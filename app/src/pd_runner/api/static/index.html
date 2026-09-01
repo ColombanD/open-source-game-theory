@@ -349,6 +349,17 @@
           <option value="default">default</option>
         </select>
       </label>
+      <label style="color:#9ca3af; font-size:0.85rem;"
+             title="σ channel: behavioral (watch it play), syntactic (read blurred source), epsilon (identity-based null control — the aggregator-ablation family). All share the normalized-MI t dial.">σ family
+        <select id="egt-family"
+                style="margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                       border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                       font-size:0.85rem;">
+          <option value="behavioral">behavioral</option>
+          <option value="syntactic">syntactic</option>
+          <option value="epsilon">epsilon</option>
+        </select>
+      </label>
       <label style="color:#9ca3af; font-size:0.85rem;">t steps
         <input id="egt-t-steps" type="number" min="2" max="21" value="6"
                oninput="onEgtCostChange()"
@@ -1396,6 +1407,7 @@
 
       const body = {
         zoo: document.getElementById('egt-zoo').value,
+        family: document.getElementById('egt-family').value,
         t_steps: parseInt(document.getElementById('egt-t-steps').value, 10) || 6,
         stages: egtSelectedStages().join(','),
         render: document.getElementById('egt-render').checked,

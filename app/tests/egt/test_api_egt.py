@@ -37,7 +37,7 @@ def client():
 def _sweep(client, **overrides) -> dict:
     """POST a sweep and return the finished job payload."""
     body = {
-        "zoo": "default",
+        "zoo": "body",
         "ts": "1.0",
         "alphas": "0.5",
         "stages": "ess",
@@ -86,7 +86,7 @@ def test_zoo_dropdown_source_is_shared_with_tau(client):
     """The UI fills both cards from /tau/zoos, so a new zoo appears in both."""
     data = client.get("/tau/zoos").json()
     keys = {z["key"] for z in data["zoos"]}
-    assert {"default", "enlarged"} <= keys
+    assert {"body", "body+twins"} <= keys
     assert data["default"] in keys
 
 
@@ -101,7 +101,7 @@ def test_sweep_runs_and_reports_results(client):
     assert job["error"] is None
 
     result = job["egt_result"]
-    assert result["zoo"] == "default"
+    assert result["zoo"] == "body"
     assert result["n_grid_points"] == 1
     assert result["n_distinct_matrices"] == 1
     assert result["ok"] is True
@@ -119,7 +119,7 @@ def test_sweep_reports_dedup(client):
 
 
 def test_sweep_accepts_both_zoos(client):
-    for zoo in ("default", "enlarged"):
+    for zoo in ("body", "body+twins"):
         job = _sweep(client, zoo=zoo)
         assert job["status"] == "done"
         assert job["egt_result"]["zoo"] == zoo
@@ -148,7 +148,7 @@ def test_unknown_zoo_fails_with_the_valid_keys(client):
     job = _sweep(client, zoo="nope")
     assert job["status"] == "failed"
     assert "unknown zoo" in job["error"]
-    assert "default" in job["error"]
+    assert "body" in job["error"]
 
 
 def test_unparseable_alphas_fails(client):

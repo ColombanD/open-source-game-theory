@@ -37,7 +37,8 @@ def eRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .C
-  | .confidence => .C
+  | .maxconfidence => .C
+  | .minconfidence => .C
   | .mirror     => .C
 
 /-- The row's witness: each entry is the two-stage run cascade fed the δ_D
@@ -79,7 +80,8 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
       simWatchC_falls _ _ (pD .prudent) (simWatchC_falls _ _ (pC .prudent) (simWatchC_fires _ _ hpm))
   | .mirror     => simWatchC_falls _ _ mirror_defect_plays_D
       (simWatchC_fires _ _ mirror_coop_plays_C)
-  | .confidence => simWatchC_falls _ _ (pD .confidence) (simWatchC_fires _ _ (pC .confidence))
+  | .maxconfidence => simWatchC_falls _ _ (pD .maxconfidence) (simWatchC_fires _ _ (pC .maxconfidence))
+  | .minconfidence => simWatchC_falls _ _ (pD .minconfidence) (simWatchC_fires _ _ (pC .minconfidence))
 
 /-- **τ(EBot)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and

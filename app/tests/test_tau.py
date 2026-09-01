@@ -12,13 +12,10 @@ import math
 import pytest
 
 from pd_runner.tau.matrix import (
-    CERTIFIED_SUB_ZOO,
-    CUPOD_STIPULATIONS,
     DEFAULT_ZOO,
-    ENLARGED_STIPULATIONS,
-    ENLARGED_SUB_ZOO,
     FULL_CERTIFIED_SUB_ZOO,
-    PROVEN_ONLY_SUB_ZOO,
+    PAPER_BODY_SUB_ZOO,
+    PAPER_TWINS_SUB_ZOO,
     ZOOS,
     get_zoo,
     load_tau_matrix,
@@ -56,7 +53,7 @@ def matrix():
 
 def test_sub_zoo_is_totally_proven(matrix) -> None:
     """Every ordered cell resolves — the tau layer is a total function."""
-    assert len(matrix) == len(CERTIFIED_SUB_ZOO)
+    assert len(matrix) == len(PAPER_BODY_SUB_ZOO)
     for row in matrix.bots:
         for col in matrix.bots:
             cell = matrix.cell(row, col)
@@ -74,43 +71,44 @@ def test_certified_sub_zoo_is_still_maximal() -> None:
 
 
 def test_default_zoo_composition() -> None:
-    """LegibleBot/JustBot out (twins), CupodBot in (twin-breaker); since 2026-08-27
-    PrudentBot out (a twin of DefectBot at a shared budget) and GuardianBot out
-    (a twin of TitForTatBot once the PrudentBot column is gone)."""
-    assert set(CERTIFIED_SUB_ZOO) == (
-        set(FULL_CERTIFIED_SUB_ZOO) - {"LegibleBot", "JustBot", "PrudentBot", "GuardianBot"}
-    ) | {"CupodBot"}
-    assert "CupodTrollBot" in CERTIFIED_SUB_ZOO
+    """The body zoo is a strict, twin-free, fully proven subset of the maximum
+    certified zoo: LegibleBot/JustBot out (twins), PrudentBot out (a twin of
+    DefectBot at a shared budget), GuardianBot out (a twin of TitForTatBot once
+    the PrudentBot column is gone), CIMCIC out (a twin of DupocBot)."""
+    assert set(PAPER_BODY_SUB_ZOO) < set(FULL_CERTIFIED_SUB_ZOO)
+    assert "CupodTrollBot" in PAPER_BODY_SUB_ZOO
+    assert "DIMCID" in PAPER_BODY_SUB_ZOO
+    for twin in ("LegibleBot", "JustBot", "PrudentBot", "GuardianBot", "CIMCIC"):
+        assert twin not in PAPER_BODY_SUB_ZOO, twin
     # The full zoo is still totally proven — the exclusions are about twins.
     assert load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO).is_fully_proven
 
 
 def test_default_zoo_is_fully_proven() -> None:
     """CupodBot used to enter via a STIPULATED cell; since 2026-08-25 every cell
-    of the default zoo is a kernel theorem and `CUPOD_STIPULATIONS` is empty."""
+    of the default zoo is a kernel theorem and no zoo carries stipulations."""
     m = load_tau_matrix()
     assert m.is_fully_proven
     assert len(m.hypothetical_cells) == 0
-    assert CUPOD_STIPULATIONS == {}
     # The red cell, proven 2026-08-20 (`outcome_DupocBot_vs_CupodBot`).
     assert not m.cell("CupodBot", "DupocBot").hypothetical
     assert m.action("CupodBot", "DupocBot") == "C"
     assert not m.cell("CupodTrollBot", "CupodBot").hypothetical
     # The last stipulation, proven 2026-08-25 (`outcome_PrudentBot_vs_CupodBot`):
     # the value the stipulation had guessed, both orientations. PrudentBot left the
-    # DEFAULT zoo on 2026-08-27 (a behavioral twin of DefectBot at a shared budget),
-    # so this is checked on the full certified zoo plus CupodBot.
-    full = load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO + ("CupodBot",))
+    # default zoo on 2026-08-27 (a behavioral twin of DefectBot at a shared budget),
+    # so this is checked on the full certified zoo (which holds both bots).
+    full = load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO)
     assert not full.cell("PrudentBot", "CupodBot").hypothetical
     assert full.action("PrudentBot", "CupodBot") == "D"
     assert full.action("CupodBot", "PrudentBot") == "C"
 
 
-def test_proven_only_zoo_needs_no_stipulations() -> None:
-    """The kernel-only fallback, for results that must not rest on a what-if."""
-    m = load_tau_matrix(bots=PROVEN_ONLY_SUB_ZOO)
+def test_twins_zoo_needs_no_stipulations() -> None:
+    """The 12-bot cross-family zoo is kernel-clean: twins on purpose, no what-ifs."""
+    m = load_tau_matrix(bots=PAPER_TWINS_SUB_ZOO)
     assert m.is_fully_proven
-    assert "CupodBot" not in m.bots
+    assert {"CIMCIC", "PrudentBot"} <= set(m.bots)
 
 
 def test_default_zoo_needs_no_stipulations() -> None:
@@ -143,12 +141,12 @@ def test_reversed_cells_agree(matrix) -> None:
 def test_unproven_bot_is_rejected(matrix) -> None:
     """A hole must fail loudly, not fall back to an unchosen convention."""
     with pytest.raises(ValueError, match="not total"):
-        load_tau_matrix(bots=CERTIFIED_SUB_ZOO + ("OptimBot",))
+        load_tau_matrix(bots=PAPER_BODY_SUB_ZOO + ("OptimBot",))
 
 
 def test_proven_none_loads_as_fifth_state() -> None:
     """MirrorBot self-play is proven `none` and loads as the "N" cell."""
-    assert "MirrorBot" not in CERTIFIED_SUB_ZOO  # predates the fifth state
+    assert "MirrorBot" not in PAPER_BODY_SUB_ZOO  # predates the fifth state
     m = load_tau_matrix(bots=("CooperateBot", "MirrorBot"), hypothetical_cells={})
     cell = m.cell("MirrorBot", "MirrorBot")
     assert (cell.row_action, cell.col_action) == ("N", "N")
@@ -168,13 +166,17 @@ def test_stipulation_cannot_shadow_a_proven_none() -> None:
         )
 
 
-def test_enlarged_zoo_loads_fully_proven() -> None:
-    """The 16-bot zoo is total with NO stipulations since 2026-08-25 (the last
-    one, (PrudentBot, CupodBot), became a theorem), and says so."""
-    m = load_tau_matrix(ENLARGED_SUB_ZOO, hypothetical_cells=ENLARGED_STIPULATIONS)
-    assert len(m) == 16
+def test_mirrorbot_roster_loads_fully_proven() -> None:
+    """A MirrorBot-containing roster is total with NO stipulations: the "N"
+    state is a kernel theorem, not a hole (the 16-bot enlarged zoo that used
+    to pin this was retired 2026-09-01; the subject — the fifth state loading
+    alongside ordinary cells — survives on an explicit roster)."""
+    m = load_tau_matrix(
+        bots=("MirrorBot", "DupocBot", "CooperateBot", "DefectBot"),
+        hypothetical_cells={},
+    )
+    assert len(m) == 4
     assert m.is_fully_proven
-    assert ENLARGED_STIPULATIONS == {}
     assert len(m.hypothetical_cells) == 0
     # The only "N" cell is MirrorBot self-play, read from the kernel.
     n_cells = [
@@ -207,9 +209,9 @@ def test_every_named_zoo_loads() -> None:
 
 def test_named_zoo_provenance_claims_hold() -> None:
     """The zoos advertised as kernel-clean really carry no stipulations."""
-    assert ZOOS["full-certified"].load().is_fully_proven
-    assert ZOOS["proven-only"].load().is_fully_proven
-    assert ZOOS["enlarged"].load().is_fully_proven   # no stipulations left (2026-08-25)
+    assert ZOOS["body"].load().is_fully_proven
+    assert ZOOS["body+twins"].load().is_fully_proven
+    assert ZOOS["body+natives"].load().is_fully_proven
     assert DEFAULT_ZOO in ZOOS
 
 
@@ -218,16 +220,15 @@ def test_unknown_zoo_lists_the_valid_keys() -> None:
         get_zoo("no-such-zoo")
 
 
-def test_enlarged_zoo_twin_structure() -> None:
-    """The documented twin census for the 16-bot zoo (conditional on stipulations).
-
-    CIMCIC joined the {DupocBot, JustBot} group on 2026-08-27, when the matrix cells
-    became the SHARED-budget values: the staggered (C, C) cells against PrudentBot
-    and CupodTrollBot had been the only thing separating Dupoc/Just from CIMCIC."""
-    m = load_tau_matrix(ENLARGED_SUB_ZOO, hypothetical_cells=ENLARGED_STIPULATIONS)
+def test_twins_zoo_twin_structure() -> None:
+    """The documented twin census for the 12-bot body+twins zoo: exactly the two
+    groups the zoo exists to carry — {CIMCIC, DupocBot} (twins by theorem since
+    2026-08-27, when the matrix cells became the SHARED-budget values) and
+    {DefectBot, PrudentBot} (twins at a shared budget)."""
+    m = load_tau_matrix(PAPER_TWINS_SUB_ZOO, hypothetical_cells={})
     assert sorted(behavioral_twins(m)) == [
-        ("CIMCIC", "DupocBot", "JustBot"),
-        ("CooperateBot", "LegibleBot"),
+        ("CIMCIC", "DupocBot"),
+        ("DefectBot", "PrudentBot"),
     ]
 
 
@@ -258,27 +259,20 @@ def test_hypothetical_cannot_override_a_proven_cell() -> None:
 
 
 def test_full_zoo_has_no_hypothetical_cells() -> None:
-    """The 12-bot maximal zoo is kernel-backed end to end."""
+    """The 15-bot maximal zoo is kernel-backed end to end."""
     assert load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO).is_fully_proven
 
 
 def test_cupodtrollbot_split_is_earned_not_stipulated() -> None:
     """CupodBot's column separates CupodTrollBot on PROVEN data alone.
 
-    `outcome_CupodTrollBot_vs_CupodBot` already exists, so this split holds
-    under EVERY assignment of the unproven CupodBot cells — it was hidden only
-    because CupodBot sits outside the certified sub-zoo for unrelated reasons.
-    Contrast `DupocBot`/`JustBot` in the full zoo, which split only when a
-    stipulation happens to disagree: a what-if result is trustworthy exactly
-    when it is invariant across the stipulations.
+    `outcome_CupodTrollBot_vs_CupodBot` already exists, and since 2026-08-25
+    every CupodBot cell is a theorem, so the split rests on kernel data with
+    no what-if left anywhere in the default zoo.
     """
-    import itertools
-
-    holes = tuple(CUPOD_STIPULATIONS)
-    values = [("C", "C"), ("C", "D"), ("D", "C"), ("D", "D")]
-    for combo in itertools.product(values, repeat=len(holes)):
-        m = load_tau_matrix(hypothetical_cells=dict(zip(holes, combo)))
-        assert all("CupodTrollBot" not in g for g in behavioral_twins(m))
+    m = load_tau_matrix()
+    assert m.is_fully_proven
+    assert all("CupodTrollBot" not in g for g in behavioral_twins(m))
 
 
 def test_justbot_dupoc_twins_survive_cupod() -> None:
@@ -288,9 +282,9 @@ def test_justbot_dupoc_twins_survive_cupod() -> None:
     JustBot defects against CupodBot exactly as DupocBot does, so admitting
     CupodBot never separates the pair. Until 2026-08-25 this was checked under
     every assignment of the one remaining hole (PrudentBot vs CupodBot); that
-    cell is now a theorem, so the zoo loads with no hypotheticals at all."""
-    bots = tuple(sorted(FULL_CERTIFIED_SUB_ZOO + ("CupodBot",)))
-    m = load_tau_matrix(bots=bots, hypothetical_cells={})
+    cell is now a theorem, so the zoo loads with no hypotheticals at all.
+    (CupodBot is a member of `FULL_CERTIFIED_SUB_ZOO` itself since 2026-09-01.)"""
+    m = load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO, hypothetical_cells={})
     assert m.is_fully_proven
     groups = behavioral_twins(m)
     assert any({"DupocBot", "JustBot"} <= set(g) for g in groups)
@@ -299,9 +293,9 @@ def test_justbot_dupoc_twins_survive_cupod() -> None:
 
 def test_point_mass_and_uniform_are_distributions() -> None:
     assert Signal.point_mass("DefectBot").weights == {"DefectBot": 1.0}
-    u = Signal.uniform(CERTIFIED_SUB_ZOO)
+    u = Signal.uniform(PAPER_BODY_SUB_ZOO)
     assert math.isclose(sum(u.weights.values()), 1.0)
-    assert math.isclose(u.entropy(), math.log2(len(CERTIFIED_SUB_ZOO)))
+    assert math.isclose(u.entropy(), math.log2(len(PAPER_BODY_SUB_ZOO)))
 
 
 def test_signal_rejects_non_normalized() -> None:
@@ -378,35 +372,20 @@ def test_twins_cap_transparency_below_one() -> None:
     The residual is exactly the syntactic information only a term-reading
     (Löbian) agent can exploit — the behavioral/prover split, visible in v1a.
     """
-    for bots in (FULL_CERTIFIED_SUB_ZOO, PROVEN_ONLY_SUB_ZOO):
+    for bots in (FULL_CERTIFIED_SUB_ZOO, PAPER_TWINS_SUB_ZOO):
         m = load_tau_matrix(bots=bots)
         assert behavioral_twins(m)
         assert transparency(m, 0.0) < 1.0
 
 
-def test_admitting_cupodbot_raises_the_ceiling() -> None:
-    """Each step must buy transparency, or it costs bots for nothing."""
+def test_removing_twins_raises_the_ceiling() -> None:
+    """Each pruning step must buy transparency, or it costs bots for nothing:
+    the 15-bot maximum (three twin groups) sits below the 12-bot body+twins
+    zoo (two groups), and the twin-free body zoo reaches exactly 1.0."""
     full = transparency(load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO), 0.0)
-    proven_only = transparency(load_tau_matrix(bots=PROVEN_ONLY_SUB_ZOO), 0.0)
-    default = transparency(load_tau_matrix(), 0.0)
-    assert full < proven_only < default == pytest.approx(1.0)
-
-
-def test_twin_freeness_is_invariant_under_the_stipulations() -> None:
-    """The what-if buys MEMBERSHIP, not the result.
-
-    All assignments of CupodBot's remaining unproven cell(s) give a twin-free
-    zoo at ceiling 1.0, so twin-freeness does not depend on the values chosen.
-    A what-if result is trustworthy exactly when it is invariant like this.
-    """
-    import itertools
-
-    holes = tuple(CUPOD_STIPULATIONS)
-    values = [("C", "C"), ("C", "D"), ("D", "C"), ("D", "D")]
-    for combo in itertools.product(values, repeat=len(holes)):
-        m = load_tau_matrix(hypothetical_cells=dict(zip(holes, combo)))
-        assert behavioral_twins(m) == []
-        assert transparency(m, 0.0) == pytest.approx(1.0)
+    twins = transparency(load_tau_matrix(bots=PAPER_TWINS_SUB_ZOO), 0.0)
+    body = transparency(load_tau_matrix(), 0.0)
+    assert full < twins < body == pytest.approx(1.0)
 
 
 def test_temperature_for_transparency_inverts(matrix) -> None:
@@ -804,9 +783,12 @@ def test_deviation_is_not_monotone_in_transparency(matrix) -> None:
     from pd_runner.tau.report import row_deviation
 
     grid = [round(1.0 - 0.025 * i, 3) for i in range(41)]
+    # The α values are zoo-sensitive: on the 10-bot body zoo (default since
+    # 2026-09-01) the dips live at high caution (0.25/0.7 exhibited them on
+    # the earlier 9-bot zoo).
     dips = [
         (alpha, bot, points[i][0], points[i][1], points[i + 1][1])
-        for alpha in (0.25, 0.7)
+        for alpha in (0.8, 0.85)
         for bot, points in row_deviation(matrix, alpha, grid).items()
         for i in range(len(points) - 1)
         if points[i + 1][1] < points[i][1] - 1e-12
@@ -833,9 +815,10 @@ def test_returning_rows_are_marked_in_the_chart(matrix) -> None:
 
     grid = [round(1.0 - 0.05 * i, 3) for i in range(21)]
     # CupodTrollBot returns to its base row at low transparency under this α on the
-    # 9-bot zoo (until 2026-08-27 the fixture was α = 0.25, where OBot returned on the
-    # 11-bot zoo; OBot no longer returns once PrudentBot and GuardianBot are out).
-    alpha = 0.85
+    # 10-bot body zoo (α = 0.85 played that role on the 9-bot zoo of 2026-08-27,
+    # and α = 0.25 with OBot on the 11-bot zoo before that; the fixture α is
+    # zoo-sensitive by nature).
+    alpha = 0.8
     thresholds = robustness_thresholds(matrix, alpha, grid)
     deviation = row_deviation(matrix, alpha, grid)
 

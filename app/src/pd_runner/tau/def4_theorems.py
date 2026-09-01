@@ -46,7 +46,8 @@ TAU_EXPORT = "app/generated/tau_rows.json"
 
 TAU_ORDER: tuple[str, ...] = (
     "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian",
-    "dbot", "cupodTroll", "cupod", "cimcic", "dimcid", "prudent", "confidence", "mirror")
+    "dbot", "cupodTroll", "cupod", "cimcic", "dimcid", "prudent", "maxconfidence",
+    "minconfidence", "mirror")
 """The Lean `tauOrder` slot order. The export carries the kernel's own copy and
 `kernel_bits` refuses to run if the two disagree."""
 
@@ -124,7 +125,8 @@ TEMPLATES: tuple[str, ...] = (
     "TauCIMCIC",
     "TauDIMCID",
     "TauPrudent",
-    "TauConfidence",
+    "TauMaxConfidence",
+    "TauMinConfidence",
     "TauMirror",
 )
 """Canonical template order."""
@@ -144,7 +146,8 @@ BASE_OF: dict[str, str] = {
     "TauCIMCIC": "CIMCIC",
     "TauDIMCID": "DIMCID",
     "TauPrudent": "PrudentBot",
-    "TauConfidence": "DupocBot",
+    "TauMaxConfidence": "DupocBot",
+    "TauMinConfidence": "DupocBot",
     "TauMirror": "MirrorBot",
 }
 """Which base bot each template lifts. `TauTFTPf` has NO entry: it is the PROVER
@@ -152,15 +155,21 @@ reading of TitForTatBot's question, a tau-only variant with no base bot, so the
 certification compares it nowhere (2026-08-25). `TauTFTSim` is the lift of
 TitForTatBot.
 
-`TauConfidence` (2026-08-27) is NOT a lift — it is the first NATIVE player, the
-MAX aggregator over Dupoc's test (`Tau/Bots/TauConfidence.lean`) — but in the
+`TauMaxConfidence` (2026-08-27) is NOT a lift — it is the first NATIVE player, the
+MAX aggregator over Dupoc's test (`Tau/Bots/TauMaxConfidence.lean`) — but in the
 HYPOTHESIS role it IS Dupoc: `inst` depends only on specs and its spec is Dupoc's,
-so its kernel row equals `dupocRow` and every other row's `.confidence` bit equals
-its `.dupoc` bit (`confidenceRow_eq_dupocRow`, the `rfl` bridges in `Zoo.lean`).
+so its kernel row equals `dupocRow` and every other row's `.maxconfidence` bit equals
+its `.dupoc` bit (`maxconfidenceRow_eq_dupocRow`, the `rfl` bridges in `Zoo.lean`).
 Mapping it to `DupocBot` makes the certification check exactly that against the
 base matrix — the kernel-backed form of the matrix CLONE the Python zoo uses
 (`matrix.NATIVE_PLAYERS`). The aggregator is a player fact, not a row fact, and
-lives in `play.py`."""
+lives in `play.py`.
+
+`TauMinConfidence` (2026-09-01) is the second native player — the MIN / worst-case
+aggregator over the same test — and maps to `DupocBot` for exactly the same
+reason: its kernel row equals `dupocRow` (`minconfidenceRow_eq_dupocRow`, the
+`inst_minconfidence_*` bridges), and its entangled pairs compile to the very same
+`.sys` system as MaxConfidenceBot's, so no new Löb content exists at the row level."""
 
 LEAN_SLOT: dict[str, str] = {
     "TauCooperate": "coop",
@@ -178,10 +187,58 @@ LEAN_SLOT: dict[str, str] = {
     "TauCIMCIC": "cimcic",
     "TauDIMCID": "dimcid",
     "TauPrudent": "prudent",
-    "TauConfidence": "confidence",
+    "TauMaxConfidence": "maxconfidence",
+    "TauMinConfidence": "minconfidence",
     "TauMirror": "mirror",
 }
 """Template name → the Lean `Tmpl` constructor, for reading the bit tables."""
+
+TEMPLATE_OF_BOT: dict[str, str] = {
+    "CooperateBot": "TauCooperate",
+    "DefectBot": "TauDefect",
+    "TitForTatBot": "TauTFTSim",
+    "DupocBot": "TauDupoc",
+    "EBot": "TauEBot",
+    "JustBot": "TauJust",
+    "OBot": "TauOBot",
+    "GuardianBot": "TauGuardian",
+    "DBot": "TauDBot",
+    "CupodTrollBot": "TauCupodTroll",
+    "CupodBot": "TauCupod",
+    "CIMCIC": "TauCIMCIC",
+    "DIMCID": "TauDIMCID",
+    "PrudentBot": "TauPrudent",
+    "MirrorBot": "TauMirror",
+    "MaxConfidenceBot": "TauMaxConfidence",
+    "MinConfidenceBot": "TauMinConfidence",
+}
+"""Zoo bot → the template that carries ITS OWN kernel row (2026-09-01, the Def-4
+substrate). NOT the inverse of `BASE_OF`: the natives map to their own templates
+here (their rows are theirs, even though the VALUES are Dupoc's), whereas `BASE_OF`
+maps their templates to `DupocBot` because that is what the certification compares
+them against. `TauTFTPf` appears in neither: it is the prover reading of TFT's
+question, no bot's own row."""
+
+
+def kernel_row_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
+    """Per-BOT kernel test bits: actor bot → hypothesis bot → `"C"`/`"D"`/`"N"`.
+
+    The Def-4 substrate the tau matrix plays from (2026-09-01): each covered bot's
+    per-hypothesis test bits come from its own kernel-proven `RowSpec` row
+    (`tau_rows.json`), keyed by bot names on both axes via `TEMPLATE_OF_BOT` +
+    `LEAN_SLOT`. A bot with no template (WaryBot, LegibleBot, …) simply has no
+    entry — `load_tau_matrix` falls back to the base cells for it and records the
+    matrix as not fully kernel-backed.
+    """
+    tables = kernel_bits(path)
+    slot_of_bot = {b: LEAN_SLOT[t] for b, t in TEMPLATE_OF_BOT.items()}
+    out: dict[str, dict[str, str]] = {}
+    for bot, tmpl in TEMPLATE_OF_BOT.items():
+        row = tables.get(LEAN_SLOT[tmpl])
+        if row is None:
+            continue
+        out[bot] = {hb: row[slot] for hb, slot in slot_of_bot.items() if slot in row}
+    return out
 
 
 # ── The comparison zoos (base-bot keyed, as the σ channels are) ────────────────

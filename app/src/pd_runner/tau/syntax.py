@@ -396,7 +396,7 @@ def syntactic_distance_matrix(
     It cancels out of the calibrated dial — `raw_for` inverts the MI scale per
     family — and only affects where the bisection starts.
     """
-    # A NATIVE player (ConfidenceBot) has no `Bots/*.lean` source of its own: what an
+    # A NATIVE player (MaxConfidenceBot) has no `Bots/*.lean` source of its own: what an
     # observer partially READS is the hypothesis-role instance, which is its base
     # bot's program (`TauMatrix.source_bot`). So it is a syntactic twin of its base
     # here, exactly as it is a behavioral one.

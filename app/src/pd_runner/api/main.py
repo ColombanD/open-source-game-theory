@@ -138,7 +138,7 @@ async def tau_zoos() -> dict:
 @app.get("/tau/report", response_class=HTMLResponse)
 async def tau_report(
     alphas: str = "0.3,0.45,0.62,0.8",
-    zoo: str = "default",
+    zoo: str = "body",
 ) -> HTMLResponse:
     """The TauBot graded-transparency analysis, rendered fresh on each request.
 

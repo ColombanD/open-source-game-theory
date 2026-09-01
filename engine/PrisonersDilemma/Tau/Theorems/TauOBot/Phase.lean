@@ -34,7 +34,8 @@ def obotRow : Tmpl → Action
   | .cimcic     => .D
   | .dimcid     => .D
   | .prudent    => .D
-  | .confidence => .D
+  | .maxconfidence => .D
+  | .minconfidence => .D
   | .mirror     => .D
 
 /-- The row's witness: two chained run-stage defection watches over the δ_C and
@@ -63,7 +64,8 @@ theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
   | .dimcid     => simTestD_falls _ _ (pC .dimcid) (simTestD_fires _ _ (pD .dimcid))
   | .prudent    => simTestD_fires _ _ (pC .prudent)
   | .mirror     => simTestD_falls _ _ (pC .mirror) (simTestD_fires _ _ (pD .mirror))
-  | .confidence => simTestD_falls _ _ (pC .confidence) (simTestD_fires _ _ (pD .confidence))
+  | .maxconfidence => simTestD_falls _ _ (pC .maxconfidence) (simTestD_fires _ _ (pD .maxconfidence))
+  | .minconfidence => simTestD_falls _ _ (pC .minconfidence) (simTestD_fires _ _ (pD .minconfidence))
 
 /-- **τ(OBot)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and

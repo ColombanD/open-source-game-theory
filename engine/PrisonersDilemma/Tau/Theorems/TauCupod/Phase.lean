@@ -76,8 +76,11 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
   | .prudent    => cupod_prudent_plays_C   -- it cannot convict Prudent: the D is an else-play
   | .mirror     => hmirP
   | .dimcid     => hdcP
-  | .confidence => by
-      rw [inst_at_confidence_eq_dupoc k .cupod (by decide) (by decide) (by decide)]
+  | .maxconfidence => by
+      rw [inst_at_maxconfidence_eq_dupoc k .cupod (by decide) (by decide) (by decide)]
+      exact cupod_dupoc_plays_C
+  | .minconfidence => by
+      rw [inst_at_minconfidence_eq_dupoc k .cupod (by decide) (by decide) (by decide)]
       exact cupod_dupoc_plays_C
 
 /-- **τ(Cupod)'s row** — the matrix-facing statement (`@[tau_row]`: validated by

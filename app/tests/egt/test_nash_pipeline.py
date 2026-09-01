@@ -27,7 +27,7 @@ import pytest
 
 from pd_runner.egt.nash.cli import run_pipeline
 
-ZOO = "default"
+ZOO = "body"
 
 
 @pytest.fixture(scope="module")

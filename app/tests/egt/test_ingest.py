@@ -175,7 +175,7 @@ def test_stipulations_for_excluded_bots_are_dropped():
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("zoo_key", ["default", "enlarged"])
+@pytest.mark.parametrize("zoo_key", ["body", "body+twins"])
 def test_real_zoo_builds_a_total_payoff_matrix(zoo_key):
     from pd_runner.tau.matrix import get_zoo
 
@@ -188,13 +188,30 @@ def test_real_zoo_builds_a_total_payoff_matrix(zoo_key):
     assert set(np.unique(pm.A)) <= {B - C, -C, 0.0, B}
 
 
-def test_enlarged_zoo_excludes_mirrorbot_for_non_termination():
-    """MirrorBot self-play is a proven `none`; the default policy drops it."""
-    from pd_runner.tau.matrix import get_zoo
+def test_mirrorbot_zoo_excludes_mirrorbot_for_non_termination():
+    """MirrorBot self-play is a proven `none`; the default policy drops it.
 
-    pm = payoff_matrix_from_tau_matrix(get_zoo("enlarged").load(), zoo="enlarged")
+    No registered zoo carries MirrorBot anymore (2026-09-01), so the base-path
+    asymmetry is exercised on an explicit MirrorBot-containing roster: the
+    BASE path drops MirrorBot for its "N" self-play, while a tau tournament
+    over the same matrix keeps it (a TauBot always terminates)."""
+    from pd_runner.egt.ingest import payoff_matrix_from_tournament
+    from pd_runner.tau.matrix import load_tau_matrix
+    from pd_runner.tau.sweep import run_tournament
+
+    m = load_tau_matrix(
+        bots=("MirrorBot", "DupocBot", "CooperateBot", "DefectBot"),
+        hypothetical_cells={},
+    )
+    pm = payoff_matrix_from_tau_matrix(m, zoo="mirror-roster")
     assert "MirrorBot" in pm.excluded_bots
     assert "MirrorBot" not in pm.bots
+
+    lifted = payoff_matrix_from_tournament(
+        run_tournament(m, t=1.0, alpha=0.5), bots=m.bots, zoo="mirror-roster"
+    )
+    assert lifted.excluded_bots == ()
+    assert "MirrorBot" in lifted.bots
 
 
 def test_tau_anchor_theorem_at_full_transparency():
@@ -206,12 +223,12 @@ def test_tau_anchor_theorem_at_full_transparency():
     from pd_runner.tau.matrix import get_zoo
     from pd_runner.tau.sweep import run_tournament
 
-    m = get_zoo("default").load()
-    base = payoff_matrix_from_tau_matrix(m, zoo="default")
+    m = get_zoo("body").load()
+    base = payoff_matrix_from_tau_matrix(m, zoo="body")
 
     for alpha in (0.3, 0.8):
         result = run_tournament(m, t=1.0, alpha=alpha)
-        lifted = payoff_matrix_from_tournament(result, bots=m.bots, zoo="default")
+        lifted = payoff_matrix_from_tournament(result, bots=m.bots, zoo="body")
         np.testing.assert_array_equal(lifted.A, base.A)
 
 
@@ -219,9 +236,9 @@ def test_tournament_matrix_carries_its_t_and_alpha():
     from pd_runner.tau.matrix import get_zoo
     from pd_runner.tau.sweep import run_tournament
 
-    m = get_zoo("default").load()
+    m = get_zoo("body").load()
     result = run_tournament(m, t=0.5, alpha=0.62)
-    pm = payoff_matrix_from_tournament(result, bots=m.bots, zoo="default")
+    pm = payoff_matrix_from_tournament(result, bots=m.bots, zoo="body")
 
     assert pm.t == 0.5 and pm.alpha == 0.62
     assert pm.assumptions()["tau"] == {"t": 0.5, "alpha": 0.62}
@@ -231,6 +248,6 @@ def test_bot_order_is_recovered_when_not_given():
     from pd_runner.tau.matrix import get_zoo
     from pd_runner.tau.sweep import run_tournament
 
-    m = get_zoo("default").load()
+    m = get_zoo("body").load()
     result = run_tournament(m, t=0.5, alpha=0.5)
     assert payoff_matrix_from_tournament(result).bots == tuple(m.bots)

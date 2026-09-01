@@ -51,8 +51,11 @@ theorem prudentRow_plays :
   | cimcic => exact prudent_cimcic_plays_D
   | dimcid => exact prudent_dimcid_plays_D
   | prudent => exact prudent_quine_plays_D
-  | confidence =>
-      rw [inst_at_confidence_eq_dupoc k .prudent (by decide) (by decide) (by decide)]
+  | maxconfidence =>
+      rw [inst_at_maxconfidence_eq_dupoc k .prudent (by decide) (by decide) (by decide)]
+      exact prudent_dupoc_plays_D
+  | minconfidence =>
+      rw [inst_at_minconfidence_eq_dupoc k .prudent (by decide) (by decide) (by decide)]
       exact prudent_dupoc_plays_D
   | mirror => exact h1 k (by omega)
 

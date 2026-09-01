@@ -56,13 +56,14 @@ def mirrorRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .C
-  | .confidence => .C
+  | .maxconfidence => .C
+  | .minconfidence => .C
   | .mirror     => .D
 
 /-- The display form of the prefix mass. -/
 def mirrorMass (w : Tmpl → Nat) : Nat :=
   w .coop + w .tftSim + w .tftPf + w .dupoc + w .ebot + w .just + w .guardian + w .dbot
-    + w .cupodTroll + w .cimcic + w .prudent + w .confidence
+    + w .cupodTroll + w .cimcic + w .prudent + w .maxconfidence + w .minconfidence
 
 /-- Every prefix slot's witness, past one threshold. -/
 theorem mirrorRow_plays :
@@ -79,9 +80,9 @@ theorem mirrorRow_plays :
   obtain ⟨k4, h4⟩ := mirror_dimcid_plays_D
   obtain ⟨k5, h5⟩ := mirror_prudent_plays_C
   obtain ⟨kP, hP⟩ := prudent_mirror_plays_C
-  obtain ⟨kC, hkC⟩ := ps_probe_inst_confidence_dupoc
+  obtain ⟨kC, hkC⟩ := ps_probe_inst_maxconfidence_dupoc
   -- a SUM, not a max tower: `omega` case-splits every `max`, and eleven of them
-  -- (2026-08-27, the `.confidence` slot) blew the heartbeat budget
+  -- (2026-08-27, the `.maxconfidence` slot) blew the heartbeat budget
   refine ⟨kA + kQ + kM + kX + k1 + k2 + k3 + k4 + k5 + kP + kC, fun k hk T hT => ?_⟩
   have hL : 100 * Nat.log2 k + 1000 ≤ k := hkA k (by omega)
   have hlog := Nat.log2_le_self k
@@ -98,7 +99,7 @@ theorem mirrorRow_plays :
   have hpm := hP k (by omega)
   have hconf := hkC k (by omega)
   simp only [tauOrderInit, List.mem_cons, List.mem_nil_iff, or_false] at hT
-  rcases hT with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hT with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact mirror_coop_plays_C
   · exact mirror_defect_plays_D
   · exact mirror_copies (T := .tftSim) rfl (tftSimRow_plays hk2 hkk h6 h10 hL hcg .mirror)
@@ -115,7 +116,9 @@ theorem mirrorRow_plays :
   · exact h3 k (by omega)
   · exact h4 k (by omega)
   · exact h5 k (by omega)
-  · rw [inst_at_confidence_eq_dupoc k .mirror (by decide) (by decide) (by decide)]
+  · rw [inst_at_maxconfidence_eq_dupoc k .mirror (by decide) (by decide) (by decide)]
+    exact h1 k (by omega)
+  · rw [inst_at_minconfidence_eq_dupoc k .mirror (by decide) (by decide) (by decide)]
     exact h1 k (by omega)
 
 /-- **τ(Mirror)'s row** — the matrix-facing statement (`@[tau_row]`: validated by

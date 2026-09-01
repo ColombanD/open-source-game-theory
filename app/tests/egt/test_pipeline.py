@@ -31,12 +31,12 @@ CHEAP = ("ess", "invasion", "faces")
 def tau_matrix():
     from pd_runner.tau.matrix import get_zoo
 
-    return get_zoo("default").load()
+    return get_zoo("body").load()
 
 
 @pytest.fixture(scope="module")
 def base_payoff(tau_matrix):
-    return payoff_matrix_from_tau_matrix(tau_matrix, zoo="default")
+    return payoff_matrix_from_tau_matrix(tau_matrix, zoo="body")
 
 
 # --------------------------------------------------------------------------
@@ -59,7 +59,7 @@ def test_t_extremes_do_not_collide():
 
 def test_run_dir_encodes_zoo_dials_and_fingerprint(base_payoff, tmp_path):
     paths = RunPaths.for_matrix(base_payoff, tmp_path)
-    assert paths.name.startswith("default_t100_ana_")
+    assert paths.name.startswith("body_t100_ana_")
     assert paths.numeric_csv == paths.run_dir / "ess" / "payoff_matrix_numeric.csv"
     assert paths.stage_dir("nash").parent == paths.run_dir
 
@@ -71,12 +71,12 @@ def test_fingerprint_tracks_cells_not_identity(tau_matrix, base_payoff):
 
     # t=1 reproduces the base matrix (anchor theorem).
     anchored = payoff_matrix_from_tournament(
-        run_tournament(tau_matrix, t=1.0, alpha=0.5), bots=tau_matrix.bots, zoo="default"
+        run_tournament(tau_matrix, t=1.0, alpha=0.5), bots=tau_matrix.bots, zoo="body"
     )
     assert cells_fingerprint(anchored) == cells_fingerprint(base_payoff)
 
     opaque = payoff_matrix_from_tournament(
-        run_tournament(tau_matrix, t=0.0, alpha=0.8), bots=tau_matrix.bots, zoo="default"
+        run_tournament(tau_matrix, t=0.0, alpha=0.8), bots=tau_matrix.bots, zoo="body"
     )
     assert cells_fingerprint(opaque) != cells_fingerprint(base_payoff)
 
@@ -115,7 +115,7 @@ def test_analyse_matrix_writes_summary(base_payoff, tmp_path):
     assert result.ok
 
     payload = json.loads((result.paths.run_dir / "summary.json").read_text())
-    assert payload["zoo"] == "default"
+    assert payload["zoo"] == "body"
     assert payload["grid_points"] == [[1.0, 0.5]]
     assert payload["n_types"] == len(base_payoff.bots)
     assert set(payload["stages"]) == set(CHEAP)
@@ -137,7 +137,7 @@ def test_unknown_stage_is_recorded_as_failure(base_payoff, tmp_path):
 def test_sweep_dedups_identical_matrices(tmp_path):
     """At t=1 the matrix is α-independent, so both α points share one run."""
     result = sweep(
-        zoo="default", ts=[1.0], alphas=[0.3, 0.8],
+        zoo="body", ts=[1.0], alphas=[0.3, 0.8],
         out_root=tmp_path, stages=CHEAP, render=False,
     )
     assert result.n_grid_points == 2
@@ -148,7 +148,7 @@ def test_sweep_dedups_identical_matrices(tmp_path):
 def test_dedup_is_recorded_in_the_run_summary(tmp_path):
     """The reused run's summary.json lists every grid point it covers."""
     result = sweep(
-        zoo="default", ts=[1.0], alphas=[0.3, 0.8],
+        zoo="body", ts=[1.0], alphas=[0.3, 0.8],
         out_root=tmp_path, stages=("ess",), render=False,
     )
     payload = json.loads((result.runs[0].paths.run_dir / "summary.json").read_text())
@@ -158,7 +158,7 @@ def test_dedup_is_recorded_in_the_run_summary(tmp_path):
 
 def test_sweep_separates_distinct_matrices(tmp_path):
     result = sweep(
-        zoo="default", ts=[1.0, 0.0], alphas=[0.3, 0.8],
+        zoo="body", ts=[1.0, 0.0], alphas=[0.3, 0.8],
         out_root=tmp_path, stages=("ess",), render=False,
     )
     assert result.n_grid_points == 4
@@ -169,18 +169,18 @@ def test_sweep_separates_distinct_matrices(tmp_path):
 
 def test_sweep_writes_top_level_summary(tmp_path):
     result = sweep(
-        zoo="default", ts=[1.0], alphas=[0.5],
+        zoo="body", ts=[1.0], alphas=[0.5],
         out_root=tmp_path, stages=("ess",), render=False,
     )
     payload = json.loads((tmp_path / "sweep_summary.json").read_text())
-    assert payload["zoo"] == "default"
+    assert payload["zoo"] == "body"
     assert payload["n_distinct_matrices"] == result.n_distinct
     assert payload["dedup_saved"] == result.n_grid_points - result.n_distinct
     assert payload["ok"] is True
 
 
 def test_sweep_accepts_both_zoos(tmp_path):
-    for zoo in ("default", "enlarged"):
+    for zoo in ("body", "body+twins"):
         result = sweep(
             zoo=zoo, ts=[1.0], alphas=[0.5],
             out_root=tmp_path / zoo, stages=("ess",), render=False,
@@ -189,7 +189,7 @@ def test_sweep_accepts_both_zoos(tmp_path):
         assert result.runs[0].paths.zoo == zoo
 
 
-def test_tau_lift_terminates_even_over_a_nonterminating_bot(tmp_path):
+def test_tau_lift_terminates_even_over_a_nonterminating_bot():
     """A swept matrix has no "N" cells, so MirrorBot is NOT excluded.
 
     This is a real asymmetry between the two ingest paths, not an oversight:
@@ -201,14 +201,25 @@ def test_tau_lift_terminates_even_over_a_nonterminating_bot(tmp_path):
         cell counts as not-cooperating and the lift emits a real D. A TauBot
         always terminates, even when the bot it lifts does not.
 
-    Consequence: the enlarged zoo analyses 15 types at t=1 via the base path
-    but 16 types anywhere in a sweep. Compare the two only with that in mind.
+    Consequence: a MirrorBot-holding matrix analyses one type fewer via the
+    base path than anywhere in a sweep. Compare the two only with that in
+    mind. (No registered zoo carries MirrorBot since 2026-09-01, so this runs
+    on an explicit roster through the same tournament ingest the sweep uses.)
     """
-    result = sweep(
-        zoo="enlarged", ts=[1.0], alphas=[0.5],
-        out_root=tmp_path, stages=("ess",), render=False,
+    from pd_runner.egt.ingest import payoff_matrix_from_tournament
+    from pd_runner.tau.matrix import load_tau_matrix
+    from pd_runner.tau.sweep import run_tournament
+
+    m = load_tau_matrix(
+        bots=("MirrorBot", "DupocBot", "CooperateBot", "DefectBot"),
+        hypothetical_cells={},
     )
-    payoff = result.runs[0].payoff
+    base = payoff_matrix_from_tau_matrix(m, zoo="mirror-roster")
+    assert "MirrorBot" in base.excluded_bots
+
+    payoff = payoff_matrix_from_tournament(
+        run_tournament(m, t=1.0, alpha=0.5), bots=m.bots, zoo="mirror-roster"
+    )
     assert payoff.excluded_bots == ()
     assert "MirrorBot" in payoff.bots
     assert not any("N" in pair for pair in payoff.cells.values())
@@ -254,7 +265,7 @@ def test_alpha_phases_collapse_at_full_transparency(tau_matrix):
 
 def test_sweep_rejects_a_bad_alpha_keyword(tmp_path):
     with pytest.raises(ValueError, match="'phases'"):
-        sweep(zoo="default", ts=[1.0], alphas="every", out_root=tmp_path, stages=("ess",))
+        sweep(zoo="body", ts=[1.0], alphas="every", out_root=tmp_path, stages=("ess",))
 
 
 def test_default_out_root_is_anchored_to_the_package_not_cwd(tmp_path, monkeypatch):
@@ -277,3 +288,34 @@ def test_api_serves_runs_from_the_same_anchored_root():
     from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
 
     assert _EGT_RUNS_DIR == DEFAULT_OUT_ROOT / "runs"
+
+
+def test_family_sweep_is_isolated_and_named(tmp_path):
+    """The σ-family extension (2026-09-01): a non-behavioral sweep carries its
+    family in every run-directory name and writes `sweep_summary_<family>.json`,
+    so two families in one out_root never clobber each other; the behavioral
+    path keeps the legacy naming byte-for-byte."""
+    eps = sweep(zoo="body", ts=[1.0], alphas=[0.5], family="epsilon",
+                out_root=tmp_path, stages=("ess",), render=False)
+    assert eps.family == "epsilon"
+    assert eps.summary_path.name == "sweep_summary_epsilon.json"
+    assert eps.summary_path.exists()
+    assert all("_epsilon_" in r.paths.name for r in eps.runs)
+    assert all(r.summary()["family"] == "epsilon" for r in eps.runs)
+
+    beh = sweep(zoo="body", ts=[1.0], alphas=[0.5], family="behavioral",
+                out_root=tmp_path, stages=("ess",), render=False)
+    assert beh.summary_path.name == "sweep_summary.json"
+    assert beh.summary_path.exists()          # both summaries coexist
+    assert eps.summary_path.exists()
+    name = beh.runs[0].paths.name
+    assert "behavioral" not in name and name.startswith("body_t100_a050_")
+
+    # at t = 1 every family is the point-mass channel: same cells, same fingerprint
+    assert eps.runs[0].paths.fingerprint == beh.runs[0].paths.fingerprint
+
+
+def test_family_sweep_rejects_unknown_family(tmp_path):
+    with pytest.raises(ValueError, match="unknown σ family"):
+        sweep(zoo="body", ts=[1.0], alphas=[0.5], family="telepathic",
+              out_root=tmp_path, stages=("ess",), render=False)

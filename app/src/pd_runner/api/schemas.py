@@ -203,7 +203,10 @@ class EgtSweepRequest(BaseModel):
     there is no human acceptance gate.
     """
 
-    zoo: str = "default"
+    zoo: str = "body"
+    # The sigma channel family: "behavioral" (default), "epsilon" or "syntactic"
+    # (`tau.channels.all_families`; shared normalized-MI t dial).
+    family: str = "behavioral"
     # Transparency dials. `ts` overrides `t_steps` when given.
     t_steps: int = 6
     ts: Optional[str] = None          # comma-separated, e.g. "1.0,0.5,0.0"

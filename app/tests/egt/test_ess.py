@@ -210,7 +210,7 @@ def test_writers_roundtrip(tmp_path):
 
 # --- 9. Real-data smoke test --------------------------------------------
 
-@pytest.mark.parametrize("zoo_key", ["default", "enlarged"])
+@pytest.mark.parametrize("zoo_key", ["body", "body+twins"])
 def test_real_data_smoke(zoo_key):
     """The ESS stage over a real, Lean-certified zoo.
 

@@ -34,7 +34,8 @@ def justRow : Tmpl → Action
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
-  | .confidence => .C
+  | .maxconfidence => .C
+  | .minconfidence => .C
   | .mirror     => .C
 
 /-- The row's witness: prove-stages on the δ_L column — including at the `.dupoc`
@@ -46,9 +47,9 @@ theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     -- the mirror×dupoc entangled bit, read through the same δ_L column
     (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc))
       = dupocColBit .mirror)
-    -- the confidence×dupoc system's Löb bit, read through the same column
-    (hconf : proofSearch k (probe (inst (tauZoo k) .confidence .dupoc))
-      = dupocColBit .confidence) :
+    -- the maxconfidence×dupoc system's Löb bit, read through the same column
+    (hconf : proofSearch k (probe (inst (tauZoo k) .maxconfidence .dupoc))
+      = dupocColBit .maxconfidence) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .just T)) (.bot (inst (tauZoo k) .just T))
               (inst (tauZoo k) .just T) = some (justRow T) :=
   let bL := ps_probe_inst_dupoc hk hkk hk7 hquine hcim hmir hconf
@@ -69,7 +70,8 @@ theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dimcid     => searchProbe_plays_D _ _ (bL .dimcid)
   | .prudent    => searchProbe_plays_D _ _ (bL .prudent)
   | .mirror     => searchProbe_plays_C _ _ (bL .mirror)
-  | .confidence => searchProbe_plays_C _ _ (bL .confidence)
+  | .maxconfidence => searchProbe_plays_C _ _ (bL .maxconfidence)
+  | .minconfidence => searchProbe_plays_C _ _ (bL .minconfidence)
 
 /-- **τ(Just)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
@@ -80,7 +82,7 @@ theorem justRowSpec : RowSpec .just tauOrder justRow := by
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
-  obtain ⟨kC, hkC⟩ := ps_probe_inst_confidence_dupoc
+  obtain ⟨kC, hkC⟩ := ps_probe_inst_maxconfidence_dupoc
   refine ⟨kL + kA + kM + kX + kC, fun k hk T _ => ?_⟩
   have hquine := hkL k (by omega)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
@@ -103,7 +105,7 @@ theorem tauJust_phase :
   obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
-  obtain ⟨kC, hkC⟩ := ps_probe_inst_confidence_dupoc
+  obtain ⟨kC, hkC⟩ := ps_probe_inst_maxconfidence_dupoc
   refine ⟨kL + kA + kM + kX + kC, fun k hk θ w opponent => ?_⟩
   have hquine := hkL k (by omega)
   have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
