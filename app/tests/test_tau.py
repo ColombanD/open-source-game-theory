@@ -211,7 +211,7 @@ def test_named_zoo_provenance_claims_hold() -> None:
     """The zoos advertised as kernel-clean really carry no stipulations."""
     assert ZOOS["body"].load().is_fully_proven
     assert ZOOS["body+twins"].load().is_fully_proven
-    assert ZOOS["body+natives"].load().is_fully_proven
+    assert ZOOS["body+twins+natives"].load().is_fully_proven
     assert DEFAULT_ZOO in ZOOS
 
 

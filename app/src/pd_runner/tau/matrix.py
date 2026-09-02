@@ -354,8 +354,8 @@ ZOOS: dict[str, NamedZoo] = {
         bots=PAPER_TWINS_SUB_ZOO,
         stipulations={},
     ),
-    "body+natives": NamedZoo(
-        key="body+natives",
+    "body+twins+natives": NamedZoo(
+        key="body+twins+natives",
         label="body + twins + natives (14 bots, aggregator ablation)",
         description=(
             "Body+twins plus the two native aggregator players over Dupoc's "

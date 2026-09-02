@@ -496,7 +496,7 @@ specs and `tauMaxConfidenceSpec = tauDupocSpec`, so in the HYPOTHESIS role it is
 and the `.just` slot that probes it; `maxconfidenceRow = dupocRow`, and every other row's
 17th arm is its `.dupoc` arm through the bridge. Python: `tau/matrix.py::NATIVE_PLAYERS`
 (a zoo member named there loads as a CLONE of its base's cells, `Cell.clone_of`, and is
-played by `play.decision_mass` → `max_mass`), zoo `default+confidence` (retired 2026-09-01 for `body+natives`),
+played by `play.decision_mass` → `max_mass`), zoo `default+confidence` (retired 2026-09-01 for `body+twins+natives`),
 `BASE_OF["TauMaxConfidence"] = "DupocBot"` so the certification checks the clone (256/256/0).
 As a hypothesis it is a behavioral/syntactic twin of DupocBot — a ceiling below 1 for the
 distance-based σ families on that zoo, by design (the cost of ambiguity aversion; the
@@ -507,7 +507,7 @@ tower (2ⁿ) — the phase theorems' thresholds are SUMS now. See `TAUBOTS.md` �
 the kernel `RowSpec` bits (`def4_theorems.kernel_row_bits` over `tau_rows.json`,
 verified against the base cells at load; `is_kernel_backed` is the provenance flag;
 replay zoos drop the rows). Paper zoos (frozen 2026-09-01): `body` (10, the default),
-`body+twins` (12), `body+natives` (14 — MaxConfidenceBot (max, né ConfidenceBot) +
+`body+twins` (12), `body+twins+natives` (14 — MaxConfidenceBot (max, né ConfidenceBot) +
 MinConfidenceBot (min), certification 289/289/0); retired: default, default+confidence,
 enlarged, full-certified, proven-only.
 

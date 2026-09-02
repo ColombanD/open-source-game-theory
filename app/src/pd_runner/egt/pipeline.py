@@ -545,12 +545,13 @@ def sweep(
     `family` selects the σ channel (`tau.channels.all_families`): "behavioral"
     (the historical default — softmax over own-action rows), "syntactic" (AST
     distance) or "epsilon" (identity-based null control; the family the
-    `body+natives` aggregator ablation runs on). All families expose the same
+    `body+twins+natives` aggregator ablation runs on). All families expose the same
     normalized-MI transparency dial, so `t` means the same thing across them
     and cross-family results at matched t are comparable. Non-behavioral runs
     carry the family in their run-directory names and write
     `sweep_summary_<family>.json`, so families never clobber each other in one
-    out_root. (The HTML report still reads the behavioral summary only.)
+    out_root. (The HTML report renders one (zoo, family) sweep at a time —
+    `build_report(zoo=..., family=...)` / `/egt/report?zoo=&family=`.)
     """
     t0 = time.perf_counter()
 

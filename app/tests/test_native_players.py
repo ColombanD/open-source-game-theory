@@ -30,11 +30,11 @@ from pd_runner.tau.sweep import anchor_holds, base_tournament_cells, run_tournam
 
 @pytest.fixture(scope="module")
 def matrix():
-    return ZOOS["body+natives"].load()
+    return ZOOS["body+twins+natives"].load()
 
 
 def test_zoo_registers_the_native(matrix) -> None:
-    zoo = ZOOS["body+natives"]
+    zoo = ZOOS["body+twins+natives"]
     assert zoo.natives == ("MaxConfidenceBot", "MinConfidenceBot")
     assert "MaxConfidenceBot" in matrix.bots and "DupocBot" in matrix.bots
     assert matrix.aggregator("MaxConfidenceBot") == "max"

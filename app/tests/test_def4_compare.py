@@ -80,7 +80,7 @@ def test_kernel_agrees_with_base_directly() -> None:
     whitelist is empty. The two NATIVE templates (TauMaxConfidence, TauMinConfidence)
     are both compared against DupocBot: each one's whole row AND column must equal
     Dupoc's base cells, which is the kernel-certified form of the matrix CLONE the
-    `body+natives` zoo uses. (History: 144/139/5 until 2026-08-24 when CupodBot and
+    `body+twins+natives` zoo uses. (History: 144/139/5 until 2026-08-24 when CupodBot and
     DIMCID joined `FULL_BOTS` — 38 cells had gone unchecked behind a green result;
     210/204/6, then 225/219/6 on 08-25 with τ(DIMCID)'s row and TauTFTPf dropped;
     225/225/0 on 08-27 when the four staggered base cells were replaced by their
@@ -273,7 +273,7 @@ def test_paper_zoos_are_kernel_backed() -> None:
     the base cells, and the load verified the two agree."""
     from pd_runner.tau.matrix import ZOOS
 
-    for key in ("body", "body+twins", "body+natives", "critch8"):
+    for key in ("body", "body+twins", "body+twins+natives", "critch8"):
         m = ZOOS[key].load()
         assert m.is_kernel_backed, key
         assert set(m.kernel_backed_bots) == set(m.bots), key
