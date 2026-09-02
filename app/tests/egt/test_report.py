@@ -105,6 +105,149 @@ def test_removed_slider_picker_leaves_nothing_behind(swept):
 
 
 # --------------------------------------------------------------------------
+# One page = one (zoo, σ family) sweep
+#
+# The shared out_root accumulates runs from every sweep ever launched; the
+# report must commit to exactly one sweep and link to the rest, never mix
+# them (the pre-filter bug: header from one sweep, deep dives from whichever
+# run directory sorted last).
+# --------------------------------------------------------------------------
+
+
+def _mk_run(root, zoo, family="behavioral", n_pure_ess=0, fingerprint="aa11"):
+    """A minimal hand-built run: one (t=0.5, α=0.5) cell with an ess stage."""
+    import json
+
+    fam = "" if family == "behavioral" else f"{family}_"
+    name = f"{zoo}_{fam}t050_a050_{fingerprint}"
+    run = root / "runs" / name
+    (run / "ess").mkdir(parents=True)
+    (run / "ess" / "ess_summary.csv").write_text("type,is_ESS\nDefectBot,False\n")
+    payload = {
+        "run": name, "zoo": zoo, "family": family,
+        "t": 0.5, "alpha": 0.5, "fingerprint": fingerprint,
+        "n_types": 2, "bots": ["DefectBot", "DupocBot"], "excluded_bots": [],
+        "is_fully_proven": True, "grid_points": [[0.5, 0.5]], "ok": True,
+        "stages": {"ess": {"ok": True, "seconds": 0.0, "error": None,
+                           "n_pure_ess": n_pure_ess}},
+    }
+    if family == "behavioral":
+        # Pre-2026-09-01 summaries carry no family key; exercise the default.
+        del payload["family"]
+    (run / "summary.json").write_text(json.dumps(payload))
+    return name
+
+
+@pytest.fixture()
+def shared_root(tmp_path):
+    """Three sweeps sharing one out_root: two zoos, two families."""
+    runs = {
+        ("body", "behavioral"): _mk_run(tmp_path, "body", fingerprint="aa11"),
+        ("body", "epsilon"): _mk_run(
+            tmp_path, "body", family="epsilon", fingerprint="bb22"),
+        ("body+twins", "behavioral"): _mk_run(
+            tmp_path, "body+twins", fingerprint="cc33"),
+    }
+    return tmp_path, runs
+
+
+def test_filter_selects_exactly_one_sweep(shared_root):
+    root, runs = shared_root
+    page = build_report(root, zoo="body+twins", family="behavioral")
+    assert "zoo <b>body+twins</b>" in page
+    assert "σ family <b>behavioral</b>" in page
+    assert runs[("body+twins", "behavioral")] in page
+    for combo, name in runs.items():
+        if combo != ("body+twins", "behavioral"):
+            assert name not in page, f"foreign run leaked into the page: {name}"
+
+
+def test_family_filter_separates_sweeps_of_one_zoo(shared_root):
+    root, runs = shared_root
+    page = build_report(root, zoo="body", family="epsilon")
+    assert runs[("body", "epsilon")] in page
+    assert runs[("body", "behavioral")] not in page
+
+
+def test_default_prefers_the_top_level_summary(shared_root):
+    import json
+
+    root, _ = shared_root
+    (root / "sweep_summary.json").write_text(json.dumps({
+        "zoo": "body+twins", "family": "behavioral",
+        "n_grid_points": 1, "dedup_saved": 0, "seconds": 1.0,
+    }))
+    page = build_report(root)
+    assert "zoo <b>body+twins</b>" in page
+
+
+def test_default_without_a_summary_is_the_first_combo(shared_root):
+    root, runs = shared_root
+    page = build_report(root)
+    assert "zoo <b>body</b>" in page
+    assert "σ family <b>behavioral</b>" in page
+    assert runs[("body", "behavioral")] in page
+
+
+def test_zoo_only_defaults_to_the_behavioral_family(shared_root):
+    root, runs = shared_root
+    page = build_report(root, zoo="body")
+    assert runs[("body", "behavioral")] in page
+    assert runs[("body", "epsilon")] not in page
+
+
+def test_unknown_sweep_lists_what_is_available(shared_root):
+    root, _ = shared_root
+    with pytest.raises(ValueError, match="available"):
+        build_report(root, zoo="enlarged")
+    with pytest.raises(ValueError, match="available"):
+        build_report(root, zoo="body+twins", family="epsilon")
+
+
+def test_a_foreign_zoos_summary_stats_are_not_trusted(shared_root):
+    """`sweep_summary.json` is clobbered across zoos — a mismatched one must
+    be ignored, not have its grid-point/seconds stats pasted onto this page."""
+    import json
+
+    root, _ = shared_root
+    (root / "sweep_summary.json").write_text(json.dumps({
+        "zoo": "body+twins+natives", "family": "behavioral",
+        "n_grid_points": 999, "dedup_saved": 998, "seconds": 7011.0,
+    }))
+    page = build_report(root, zoo="body", family="behavioral")
+    stats = page[page.find('<ul class="stats">'):page.find("</ul>")]
+    assert "999" not in stats and "7011" not in stats
+    # The stats fall back to what the cells themselves say: 1 grid point,
+    # 0 saved by dedup, and an honest dash for the unknown duration.
+    assert "<b>1</b><span>grid points</span>" in stats
+    assert "<b>—</b><span>seconds</span>" in stats
+
+
+def test_served_page_links_the_other_sweeps(shared_root):
+    root, _ = shared_root
+    page = build_report(root, artefact_base="/egt/runs",
+                        zoo="body", family="behavioral")
+    assert "sweeps share this directory" in page
+    # '+' must be %-encoded — a literal '+' in a query decodes to a space.
+    assert 'href="/egt/report?zoo=body%2Btwins&amp;family=behavioral"' in page
+    assert 'href="/egt/report?zoo=body&amp;family=epsilon"' in page
+    assert "<b>body / behavioral</b> (this page)" in page
+
+
+def test_file_page_names_the_cli_flags_instead_of_links(shared_root):
+    root, _ = shared_root
+    page = build_report(root, zoo="body", family="behavioral")
+    assert "sweeps share this directory" in page
+    assert "--zoo" in page
+    assert 'href="/egt/report' not in page
+
+
+def test_single_sweep_has_no_switcher(swept):
+    _, page = swept
+    assert "sweeps share this directory" not in page
+
+
+# --------------------------------------------------------------------------
 # Honesty: missing is missing, conditional is flagged
 # --------------------------------------------------------------------------
 

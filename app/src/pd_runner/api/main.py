@@ -204,12 +204,15 @@ async def egt_stages() -> dict:
 
 
 @app.get("/egt/report", response_class=HTMLResponse)
-async def egt_report() -> HTMLResponse:
-    """The HTML report over the most recent sweep's artefacts.
+async def egt_report(zoo: str | None = None, family: str | None = None) -> HTMLResponse:
+    """The HTML report over one sweep's artefacts.
 
     Unlike `/tau/report`, which recomputes on every request, this READS the
     run directories a sweep already wrote — the four stages cost minutes and
-    their artefacts are the record.
+    their artefacts are the record. The shared artefact directory holds every
+    sweep ever launched, so `zoo`/`family` pick which one to render; left
+    unset, the report resolves a deterministic default and the page links to
+    the other sweeps present.
     """
     from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
     from pd_runner.egt.report import build_report
@@ -219,9 +222,14 @@ async def egt_report() -> HTMLResponse:
         # Absolute base: the page is served at /egt/report but the artefacts
         # are mounted at /egt/runs, so a relative "runs" would 404.
         page = await loop.run_in_executor(
-            None, lambda: build_report(DEFAULT_OUT_ROOT, artefact_base="/egt/runs")
+            None, lambda: build_report(
+                DEFAULT_OUT_ROOT, artefact_base="/egt/runs",
+                zoo=zoo, family=family)
         )
     except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        # Unknown zoo/family — the message lists what IS available.
         raise HTTPException(status_code=404, detail=str(exc))
     return HTMLResponse(page)
 

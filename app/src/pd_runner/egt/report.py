@@ -6,6 +6,12 @@ CSS-variable palette. What differs is the input — the tau report computes its
 own tournaments, whereas this one READS a sweep that already ran, because the
 four analysis stages cost minutes and their artefacts are the record.
 
+One page = ONE (zoo, σ-family) sweep. The shared out_root accumulates runs
+from every sweep ever launched, so `build_report` filters to the requested
+combo (or a deterministic default) and links to the others — it must never
+mix sweeps, which used to happen silently: header from one sweep, deep dives
+from whichever run directory sorted last.
+
 Layout: §1 the sweep as one table, then ONE SECTION PER ANALYSIS — §2 ESS,
 §3 invasion, §4 faces, §5 Nash — then provenance and artefacts. Each analysis
 section holds its own cross-cell trend AND its per-cell view, rather than
@@ -43,6 +49,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
+from urllib.parse import quote
 
 # Okabe-Ito, the same order `tau/report.py` uses so a bot keeps its colour
 # across the two reports. Assigned in fixed order, never cycled.
@@ -104,6 +111,7 @@ class Cell:
 
     run: str
     zoo: str
+    family: str
     t: float
     alpha: float
     fingerprint: str
@@ -282,6 +290,9 @@ def load_sweep(out_root: Path) -> tuple[dict, list[Cell]]:
         cells.append(Cell(
             run=d["run"],
             zoo=d.get("zoo") or "unknown",
+            # Pre-2026-09-01 artefacts predate the σ-family dial and carry no
+            # `family` key; they were all behavioral sweeps.
+            family=d.get("family") or "behavioral",
             t=float(d["t"]) if d.get("t") is not None else 1.0,
             alpha=float(d["alpha"]) if d.get("alpha") is not None else 0.0,
             fingerprint=d.get("fingerprint", ""),
@@ -1187,9 +1198,98 @@ table.mini td.num { text-align:right; font-variant-numeric:tabular-nums; }
 """
 
 
-def build_report(out_root: Path, artefact_base: str = "runs") -> str:
-    """Render the whole page for the sweep under `out_root`."""
-    sweep, cells = load_sweep(out_root)
+def _no_such_sweep(zoo: str | None, family: str | None,
+                   combos: Sequence[tuple[str, str]], out_root: Path) -> str:
+    available = ", ".join(f"{z}/{f}" for z, f in combos)
+    return (f"no sweep for zoo={zoo or 'any'!r}, family={family or 'any'!r} "
+            f"under {out_root} — available (zoo/family): {available}")
+
+
+def _resolve_sweep(
+    out_root: Path, zoo: str | None, family: str | None,
+) -> tuple[str, str, list[tuple[str, str]], list[Cell], dict]:
+    """Pick ONE (zoo, σ-family) sweep out of a shared artefact directory.
+
+    A shared out_root accumulates runs from every sweep ever launched, and the
+    page must commit to one of them: before this filter existed, the header
+    came from one sweep, §1 tabulated all of them unlabelled, and the deep
+    dives showed whichever run directory happened to sort last. Left unset,
+    the combo the top-level `sweep_summary.json` describes wins (the most
+    recent behavioral sweep), falling back to the alphabetically first one.
+
+    Returns the resolved (zoo, family), every combo present, the sweep's
+    cells, and its own summary stats — `{}` when no trustworthy summary file
+    exists, because the top-level `sweep_summary*.json` files are per-family
+    but CLOBBERED across zoos and must not describe another zoo's sweep.
+    """
+    top, all_cells = load_sweep(out_root)
+    combos = sorted({(c.zoo, c.family) for c in all_cells})
+
+    if zoo is None and family is None:
+        preferred = (top.get("zoo"), top.get("family") or "behavioral")
+        zoo, family = preferred if preferred in combos else combos[0]
+    elif zoo is None:
+        zoos = [z for z, f in combos if f == family]
+        if not zoos:
+            raise ValueError(_no_such_sweep(zoo, family, combos, out_root))
+        zoo = zoos[0]
+    elif family is None:
+        families = [f for z, f in combos if z == zoo]
+        if not families:
+            raise ValueError(_no_such_sweep(zoo, family, combos, out_root))
+        family = "behavioral" if "behavioral" in families else families[0]
+    if (zoo, family) not in combos:
+        raise ValueError(_no_such_sweep(zoo, family, combos, out_root))
+
+    cells = [c for c in all_cells if c.zoo == zoo and c.family == family]
+
+    summary_name = ("sweep_summary.json" if family == "behavioral"
+                    else f"sweep_summary_{family}.json")
+    summary_path = Path(out_root) / summary_name
+    sweep: dict = {}
+    if summary_path.exists():
+        candidate = json.loads(summary_path.read_text())
+        if (candidate.get("zoo") == zoo
+                and (candidate.get("family") or "behavioral") == family):
+            sweep = candidate
+    return zoo, family, combos, cells, sweep
+
+
+def _sweep_nav(zoo: str, family: str, combos: Sequence[tuple[str, str]],
+               artefact_base: str) -> str:
+    """The switcher between the sweeps sharing this directory.
+
+    Served pages (absolute artefact base) get real links to `/egt/report`;
+    a page written to disk gets the CLI flags instead — query links do
+    nothing useful on `file://`.
+    """
+    if len(combos) < 2:
+        return ""
+    if artefact_base.startswith("/"):
+        entries = []
+        for z, f in combos:
+            label = f"{html.escape(z)} / {html.escape(f)}"
+            if (z, f) == (zoo, family):
+                entries.append(f"<b>{label}</b> (this page)")
+            else:
+                href = (f"/egt/report?zoo={quote(z, safe='')}"
+                        f"&amp;family={quote(f, safe='')}")
+                entries.append(f'<a href="{href}">{label}</a>')
+        return (f'<p class="note"><b>{len(combos)} sweeps share this '
+                "directory</b> (zoo / σ family) — this page shows exactly "
+                "one: " + " · ".join(entries) + ".</p>")
+    others = ", ".join(
+        f"{z}/{f}" for z, f in combos if (z, f) != (zoo, family))
+    return (f'<p class="note"><b>{len(combos)} sweeps share this directory</b> '
+            f"— this page shows <b>{html.escape(zoo)} / {html.escape(family)}"
+            "</b> only. Rebuild with <code>--zoo</code>/<code>--family</code> "
+            f"for: {html.escape(others)}.</p>")
+
+
+def build_report(out_root: Path, artefact_base: str = "runs",
+                 zoo: str | None = None, family: str | None = None) -> str:
+    """Render the page for ONE (zoo, σ-family) sweep under `out_root`."""
+    zoo, family, combos, cells, sweep = _resolve_sweep(out_root, zoo, family)
     index = _cell_index(cells)
 
     ts = sorted({t for (t, _) in (p for c in cells for p in
@@ -1197,10 +1297,10 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
     alphas = sorted({a for (_, a) in (p for c in cells for p in
                                       (c.grid_points or ((c.t, c.alpha),)))})
 
-    zoo = cells[0].zoo
     n_points = sweep.get("n_grid_points", sum(
         len(c.grid_points) or 1 for c in cells))
     saved = sweep.get("dedup_saved", n_points - len(cells))
+    sweep_nav = _sweep_nav(zoo, family, combos, artefact_base)
 
     # --- cross-cell trend charts (one line per α, x = t) ------------------
     def trend(metric) -> list[tuple[str, list[tuple[float, float]], str]]:
@@ -1327,13 +1427,15 @@ def build_report(out_root: Path, artefact_base: str = "runs") -> str:
     moran_section = _moran_section(ts, alphas, index)
     artefacts_section = _artefacts_section(cells, artefact_base)
 
-    return f"""<title>EGT — evolutionary analysis ({html.escape(zoo)})</title>
+    return f"""<title>EGT — evolutionary analysis ({html.escape(zoo)} · {html.escape(family)})</title>
 <style>{_CSS}</style>
 <main>
 <h1>Evolutionary analysis over the (t, α) plane</h1>
 <p class="sub">Which bots survive in a <em>population</em> of bots ·
-zoo <b>{html.escape(zoo)}</b> · {cells[0].n_types} types ·
+zoo <b>{html.escape(zoo)}</b> · σ family <b>{html.escape(family)}</b> ·
+{cells[0].n_types} types ·
 {len(cells)} distinct matrices from {n_points} grid points</p>
+{sweep_nav}
 
 <ul class="stats">
   <li><b>{len(cells)}</b><span>matrices analysed</span></li>
@@ -1420,14 +1522,24 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Build the EGT HTML report.")
     p.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT,
                    help="sweep directory to read (must contain runs/)")
+    p.add_argument("--zoo", type=str, default=None,
+                   help="zoo to render — a shared out-root holds every sweep "
+                        "ever launched, and the page shows exactly one")
+    p.add_argument("--family", type=str, default=None,
+                   help="σ family to render (default: behavioral if present)")
     p.add_argument("--output", type=Path, default=None,
-                   help="where to write the page (default: <out-root>/report.html)")
+                   help="where to write the page (default: <out-root>/report.html, "
+                        "or report_<zoo>_<family>.html when either is given)")
     p.add_argument("--open", action="store_true", help="open in the browser")
     args = p.parse_args()
 
-    output = args.output or (args.out_root / "report.html")
+    # A per-sweep default filename, so rendering two zoos does not clobber.
+    tag = "".join(f"_{v}" for v in (args.zoo, args.family) if v)
+    output = args.output or (args.out_root / f"report{tag}.html")
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(build_report(args.out_root), encoding="utf-8")
+    output.write_text(
+        build_report(args.out_root, zoo=args.zoo, family=args.family),
+        encoding="utf-8")
     print(f"wrote {output}")
     if args.open:
         subprocess.run(["open", str(output)], check=False)
