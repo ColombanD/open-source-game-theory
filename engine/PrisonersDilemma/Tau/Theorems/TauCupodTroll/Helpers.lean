@@ -23,9 +23,9 @@ plays C at every hypothesis, INCLUDING itself.
 2. **The identity guard is the only one in the zoo that is decidable in BOTH
    directions** (`Pf.eqRefl` / `Pf.eqNeg`), so its bits are never floor-priced.
    Nonetheless the FALL is via `search_f` and therefore pays the failed-search floor
-   like any else-branch — which is why the C-play below is a play theorem, not a
-   provability theorem, and why `probe (inst .cupodTroll T)` is 0 at every budget
-   (`ps_probe_inst_cupodTroll_false`): true-but-unprovable cooperation, the same
+   like any else-branch — which is why the C-play below is a play theorem (`⊨`), not a
+   provability theorem (`⊢_k`), and why `probe (inst .cupodTroll T)` is 0 at every budget
+   (`ps_probe_inst_cupodTroll_false`): true-but-unprovable (`⊨`, `¬ ⊢_k`) cooperation, the same
    Gödelian shape as Guardian's whole row.
 -/
 

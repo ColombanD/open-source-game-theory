@@ -17,9 +17,10 @@ oracle into an algorithm. Five phases; everything lives in `Decidability/`.
 `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true` — keep a table of "provable so far",
 each round try to fire every rule against the table, iterate. On top, `evalG`: the
 computable evaluator; programs run directly, `.search` guards consult the oracle,
-which answers `some true` (proof found), `some false` (refutation found), or `none`
-(undetermined). A `none` can mask either polarity at fixed fuel; in the limit it masks
-exactly the false-but-IRREFUTABLE guards (the anti-diagonal's own — the honest
+which answers `some true` (an `S`-derivation found, `⊢_k φ`), `some false` (a refutation
+found, `⊢_m ¬φ`), or `none` (undetermined). A `none` can mask either polarity at fixed
+fuel; in the limit it masks exactly the false-but-IRREFUTABLE guards (`¬ ⊨ φ` yet
+`¬ ⊢ ¬φ` — the anti-diagonal's own — the honest
 Gödelian residue). The asterisk: semidecidable — yes-answers eventually, but no
 STOPPING BOUND after which "not found" means "no".
 
@@ -38,7 +39,7 @@ invent new material — every reachable question lives in one computable finite 
 
 **C — Proofs as data (T48–T49).** To reason about ALL proofs of a fact: `ProvT`, the
 `Type`-valued mirror (`Provable k φ ↔ Nonempty (ProvT k φ)`) — proof TREES you can
-measure and walk; the census (T48: every implication a `Derivation` proves has a
+measure and walk; the census (T48: every implication a `Derivation` concludes has a
 catalogued antecedent; literals `< 2^budget`); and the rewriting machine (T49): a
 cut-eliminator (β-reduce stepping-stones away) with a Tait-style normalization theorem
 proving it always halts, packaged as the excisor + kernel-decidable certificate
@@ -47,8 +48,9 @@ stratum.
 
 **D — The falsification (T50 witness, T51 theorem).** Test the hardest fact: Dupoc's
 self-cooperation (the Löb fixpoint), written as a concrete tree — it FAILS the modest
-gate. And unfixably so: `cutRelevance_modestGate_false` — the fact is `Provable` but
-`¬ProvableG (modestGate N)` at EVERY `N` and budget. Simply put: a Löb proof must at
+gate. And unfixably so: `cutRelevance_modestGate_false` — the fact is `Provable` (`⊢ φ`) but
+`¬ProvableG (modestGate N)` (`¬ ⊢^{G}_k φ` — the gated stratum is a sub-system of `S`, so
+this too is object provability) at EVERY `N` and budget. Simply put: a Löb proof must at
 some point hold the exact self-referential sentence ("Dupoc plays C vs Dupoc" — full
 of concrete bot code) in the very positions the gate restricts to generic shapes, and
 must apply `diag` to it; block that and every proof attempt is circular (the guard's
@@ -68,7 +70,7 @@ finite-space stabilization survives (T53: instance cuts' arguments re-enter `SL`
 `decideProvableG_inst`, decidable with the same `|SL|` bound. T54 then certifies every
 guard fact the zoo consults (kernel-evaluated checks, incl. Prudent×Dupoc at
 `k = 2²⁹`). NET: the zoo's oracle is an algorithm with a computable stopping bound.
-OPEN: the universal closure — arbitrary provable facts transport (excise + certify
+OPEN: the universal closure — arbitrary `⊢`-derivable facts transport (excise + certify
 composed for arbitrary trees) — on which certificate-free uniform computability rests.
 
 **The algorithm, and why saturation.** All deciders are bottom-up Kleene saturation
@@ -294,7 +296,7 @@ difficulty depends entirely on HOW S is presented.*
 **The decision.** `S` is presented as a constructor-closed, budget-indexed inductive
 rule set (`Pf`, ProofSystem.lean) — NOT as an arithmetized theory (PA + Gödel encoding
 + Hilbert calculus + representability formula `Γ_Eval`, the literal Def 1.5 of the
-paper notes). "Provable" is stipulated by 30 rules with explicit transcript costs,
+paper notes). "Provable" (`⊢_k φ`) is stipulated by 30 rules with explicit transcript costs,
 rather than emerging from an axiom set and a proof-string predicate.
 
 **What justifies it — five points, in decreasing order of force:**
@@ -388,44 +390,50 @@ are Löb's theorem and Gödel II respectively, and the bounded price tag is Pudl
 
 ### The two statements, and where each sits in the rule
 
-The guard of `.search k φ p q` branches on `proofSearch k φ`, i.e. on
+The guard of `.search k φ p q` branches on `proofSearch k φ`, i.e. (else branch) on
 
 ```
-¬□ₖφ   —   "S has NO proof of φ of length ≤ k"
+¬ ⊢_k φ   —   "S has NO derivation of φ of length ≤ k"      (a META fact; S's own sentence for it is ¬□ₖφ)
 ```
 
-NOT on `¬φ`. The objection's cheap proof — DefectBot plays D, `D ≠ C`, hence `¬φ` via
-`atomNeg` — is real, and the rule ALREADY admits it: it is the `Pf m (.neg φ)` premise,
-the `m` summand. The `+ k` is the price of the remaining bridge
+NOT on `¬ ⊨ φ`. The objection's cheap refutation — DefectBot plays D, `D ≠ C`, hence
+`⊢_m ¬φ` via `atomNeg` — is real, and the rule ALREADY admits it: it is the
+`Pf m (.neg φ)` premise, the `m` summand. The `+ k` is the price of the remaining
+bridge, which would have to be an OBJECT schema
 
 ```
-□(¬φ)  ⟹  ¬□ₖφ        "we proved ¬φ, therefore no proof of φ exists"
+⊢ □(¬φ) → ¬□ₖφ        "we proved ¬φ, therefore no proof of φ exists"
 ```
 
-which is semantically trivial and syntactically Gödel-hard. Two candidate shortcuts,
+which is semantically trivial (at the `⊨` level soundness + consistency give it in one
+line) and syntactically Gödel-hard (as an `S`-derivation). Two candidate shortcuts,
 both locked:
 
 ### Route 1 — reflection, blocked by Löb
 
-"If S proved φ it would be true; φ is false; hence unprovable" uses `□φ → φ` inside S.
-Löb: `S ⊢ □φ → φ` **iff** `S ⊢ φ`. Our φ is false, hence unprovable, hence the
-reflection instance is underivable — not expensive, *unavailable*.
+"If S proved φ it would be true; φ is false; hence unprovable" is soundness
+(`⊢_k φ ⟹ ⊨ φ`, a Lean theorem ABOUT S) used *inside* S, as the object schema `□φ → φ`.
+Löb: `S ⊢ □φ → φ` **iff** `S ⊢ φ`. Our φ is false (`¬ ⊨ φ`), hence — by soundness, at
+the meta level — `¬ ⊢ φ`, hence the reflection instance is underivable — not expensive,
+*unavailable*.
 
 ### Route 2 — consistency, blocked by G2 (the seven-line derivation)
 
 The objection's form (ii) is the schema `□¬φ → ¬□φ` ("S doesn't prove both").
-Suppose S had it:
+Suppose S had it (levels per `PROVABILITY_NOTATION.md`: (H)–(6) are OBJECT claims, each
+an `S`-derivation; only (7) is a META step, made about S from outside):
 
 ```
-(H)  S ⊢ □¬φ → ¬□φ                    the proposed principle, internalized
-(1)  S ⊢ ¬φ                            the cheap refutation (atomNeg)
-(2)  S ⊢ □¬φ                           D1 on (1): S checks its own receipt
-(3)  S ⊢ ¬□φ                           MP of (H),(2) — certified UNPROVABILITY
-(4)  S ⊢ □⊥ → □φ                       ⊥→φ tautology; D1+D2 (flooding: a proof
+(H)  S ⊢ □¬φ → ¬□φ                    the proposed principle, internalized      [object]
+(1)  S ⊢ ¬φ                            the cheap refutation (atomNeg)            [object]
+(2)  S ⊢ □¬φ                           D1 on (1): S checks its own receipt       [object]
+(3)  S ⊢ ¬□φ                           MP of (H),(2) — certified UNPROVABILITY   [object: the SENTENCE ¬□φ,
+                                                                                  not the meta fact ¬ ⊢ φ]
+(4)  S ⊢ □⊥ → □φ                       ⊥→φ tautology; D1+D2 (flooding: a proof   [object]
                                         of ⊥ extends to a proof of anything)
-(5)  S ⊢ ¬□φ → ¬□⊥                     contrapose (4)
-(6)  S ⊢ ¬□⊥  =  Con(S)                from (3),(5)
-(7)  S inconsistent                     Gödel II (meta)
+(5)  S ⊢ ¬□φ → ¬□⊥                     contrapose (4)                            [object]
+(6)  S ⊢ ¬□⊥  =  Con(S)                from (3),(5)                               [object]
+(7)  S inconsistent                     Gödel II                                  [META: we/Lean, about S]
 ```
 
 Steps 1, 2, 4, 5 are receipts and gluing; ALL the force is in (3). The slogan that
@@ -439,14 +447,14 @@ With budgets, everything survives with a ledger. Bounded flooding: a `j`-proof o
 extends to a `(j + |φ| + c)`-proof of φ, so with `j := k − |φ| − c`:
 
 ```
-S ⊢ □_{k−|φ|−c}⊥ → □ₖφ,   contraposed:   S ⊢ ¬□ₖφ → ¬□_{k−|φ|−c}⊥
+S ⊢ □_{k−|φ|−c}⊥ → □ₖφ,   contraposed:   S ⊢ ¬□ₖφ → ¬□_{k−|φ|−c}⊥      (both object schemas)
 ```
 
 Hence the bounded principle `□ₘ¬φ → ¬□ₖφ` is (up to small shifts) the **finite
 consistency statement** `Con_{≤ ≈k}(S) = ¬□_{≤ ≈k}⊥`. The crucial asymmetry with the
 unbounded case: **G2 does NOT forbid finite consistency** — `Con_{≤n}` is a true Δ₀
-sentence for each fixed n (finitely many candidate proofs), so S proves it. *This is
-why `search_f` can exist as a sound rule at all.* What replaces impossibility is a
+sentence for each fixed n (`⊨ Con_{≤n}`: finitely many candidate proofs), so S derives
+it at SOME budget (`⊢ Con_{≤n}`). *This is why `search_f` can exist as a sound rule at all.* What replaces impossibility is a
 price:
 
 * **Theorem (finitized G2 — Pudlák 1986/87, cf. Friedman; survey: Pudlák, "The
@@ -477,8 +485,9 @@ The certificate of EBot's cooperation must replay EBot's FIRST probe
 `.bot DefectBot` — a `search_f` step at Dupoc's OWN node: cost `n + m + k + c_node`
 with `n, m` small and `k` = Dupoc's budget. So Dupoc's guard, capacity exactly `k`,
 must contain a finite-consistency instance billed at `≥ k` — from inside. Raising k
-raises both sides in lockstep; hence unprovable at EVERY budget
-(`no_provable_EBot_C_tail`), not a small-budget artifact.
+raises both sides in lockstep; hence `¬ ⊢_k` — no `S`-derivation of EBot's cooperation
+exists — at EVERY budget (`no_provable_EBot_C_tail`), not a small-budget artifact. The
+cooperation itself is TRUE (`⊨`); "unprovable" here never means "false".
 
 Two readings worth recording:
 
@@ -550,8 +559,8 @@ faithfulness argument against or around the conjecture.
 
 **The decision.** A `PlaysProof` for a search bot's *else*-play (the branch taken when
 the guard search fails) is only constructible by `PlaysProof.search_f`, whose premises
-are (i) a Σ₁ **refutation** of the guard instance, `Provable m (.neg (φ.subst me opp))`,
-and (ii) a certificate for the else branch (`n`); and whose **cost is
+are (i) a Σ₁ **refutation** of the guard instance, `Provable m (.neg (φ.subst me opp))`
+(`⊢_m ¬φ'` — an `S`-refutation, not the meta fact `¬ ⊢_k φ'`), and (ii) a certificate for the else branch (`n`); and whose **cost is
 `n + m + k + c_node`** — the bare `k` summand is the *full failed search budget*,
 charged unconditionally. We call that summand **the floor**.
 
@@ -572,12 +581,12 @@ A := .search k (.plays .self .self D) (then: .const C) (else: .const D)
 
 — "if I can prove I defect against myself, cooperate; else defect."
 
-1. The guard cannot be provable: if `Provable k (A plays D vs A)`, soundness makes it
-   true, but a provable guard makes `A` play **C** — contradicting the very play the
+1. The guard cannot be derivable: if `⊢_k (A plays D vs A)`, soundness makes it
+   true (`⊨`), but a fired guard makes `A` play **C** — contradicting the very play the
    guard asserts.
 2. So the search fails and `A` really plays D — the else branch.
-3. A cheap else-certificate would now place "`A` plays D vs `A`" inside `Provable k`.
-   But that atom **is the guard**. The guard just became provable at k, so `A` plays C
+3. A cheap else-certificate would now place "`A` plays D vs `A`" inside `⊢_k`.
+   But that atom **is the guard**. The guard just became derivable at k, so `A` plays C
    — and eval determinism yields machine-checked `False`.
 
 So *any* consistent accounting must charge **> k** for an else-certificate: the
@@ -591,7 +600,8 @@ node). There is no slack.
 - **Consistency** — the anti-diagonal argument above.
 - **Provable soundness** — `sound_upto` (Base/Soundness.lean) is a strong induction on
   the budget; the `search_f` case needs the inductive hypothesis *at budget k* to turn
-  the refutation into genuine search failure (`¬Provable k (guard)`), which requires
+  the refutation into genuine search failure (`¬Provable k (guard)` — the META fact
+  `¬ ⊢_k`, obtained from the object refutation `⊢_m ¬guard`), which requires
   `k <` the conclusion's cost. The floor is exactly what makes the induction go through.
 - **Decidability** — transcript-cumulative costs with the floor make every premise
   budget strictly smaller than the conclusion's, which is what makes bounded proof
@@ -600,7 +610,7 @@ node). There is no slack.
 **The Σ₁/Π₁ asymmetry (why `search_t` is cheap and `search_f` is not).** A *successful*
 search has a witness — the found proof — and citing a witness costs `c_guard k =
 numCost k = log₂ k + 1` (the numeral). A *failed* search has no witness: "no proof of
-length ≤ k exists" is Π₁ over the search space. A short certificate of one's own failed
+length ≤ k exists" (`¬ ⊢_k g`) is Π₁ over the search space. A short certificate of one's own failed
 k-search would be a bounded proof of one's own consistency-at-k — the floor is bounded
 Gödel II wearing a cost annotation.
 
@@ -638,8 +648,9 @@ where the partner's play crosses the searching bot's **own** failed search at th
 searcher's own budget (DupocBot×DBot, DupocBot×EBot, PrudentBot×EBot). The floor chases
 the budget (the failed search and the asking guard are the same `.search k` of the same
 bot, glued by `.self` substitution), so no stagger fixes them. Their honest outcomes
-are defection on the searcher's side; formalizing those needs a `¬Provable k` cost
-lower bound — nontrivial because the guard formula is TRUE (soundness gives nothing).
+are defection on the searcher's side; formalizing those needs a `¬Provable k` (`¬ ⊢_k`) cost
+lower bound — nontrivial because the guard formula is TRUE (`⊨`, so soundness gives
+nothing: the census must show no derivation exists, not that the formula fails).
 
 **The lower bound, delivered for ALL SIX floor pairs (2026-07-09).** `Base/Exclusion.lean`
 proves the reusable **Derivation census** (`tail_plays_readable`: only the five
@@ -649,8 +660,8 @@ and the **generalized floor bound** `no_provable_probeFirst_tail` (+ the
 `.ite (.sim .opp (.bot z)) aT p q` — test action and BOTH branches fully general, since
 the kill happens at the guard certificate that both `ite` polarities must carry —
 against any budget-`k` searcher (`.search k g pT pE`, bare or `.bot`-wrapped) whose
-guard instance vs the probe is false, no ≤ k certificate concludes the simulator's
-play. Strong induction on the budget: `struct` dies by the census, `atom` dies inside
+guard instance vs the probe is false (`¬ ⊨`), no ≤ k certificate concludes the simulator's
+play (`¬ ⊢_k`). Strong induction on the budget: `struct` dies by the census, `atom` dies inside
 the `PlaysProof` replay (`search_t` by soundness of the false probe guard, `search_f`
 by the literal floor summand), and the `app`/`weakenImpl`/`implTrans`/`diagF`/`impS2`
 regress descends by transcript cumulativity. Every floor tombstone falls as an
@@ -663,8 +674,8 @@ instance (the floor fires at the FIRST probe, before the simulators' branches di
   PrudentBot↔`.bot MirrorBot` Löb cooperation, so EBot's C-play itself rides
   `prudent_botmirror_coop` — a negative-outcome theorem whose positive half is PBLT);
 * `outcome_CupodBot_vs_OBot = (C, D)` for every `k ≥ 2` (`Theorems/CupodBot.lean`; the
-  defection-DETECTOR gets exploited — OBot's real defection is uncertifiable within
-  Cupod's own budget, so Cupod cooperates into the sucker payoff; target action D and
+  defection-DETECTOR gets exploited — OBot's real defection (`⊨`) is uncertifiable within
+  Cupod's own budget (`¬ ⊢_k`), so Cupod cooperates into the sucker payoff; target action D and
   a then-branch `ite`, exercising the lemma's full generality);
 * `outcome_JustBot_vs_DBot = (D, C)` at every budget and
   `outcome_JustBot_vs_EBot = (D, C)` for `k ≥ 2`
@@ -703,7 +714,7 @@ rules.** At same-`k` the bot REALLY defects against itself; the outcome theorem 
 what the evaluator does. Any rule change that let `S` conclude "I play C vs me" while
 `eval` plays D would certify a false play — exactly the unsoundness that killed
 `atom_complete_false_guard`. Rule design is only ever to blame when a TRUE play is
-uncertifiable; here the cooperation is genuinely absent at runtime.
+uncertifiable (`⊨` but `¬ ⊢_k`); here the cooperation is genuinely absent at runtime (`¬ ⊨`).
 
 **Where the classical Löb route dies.** Bounded Löb (`pblt_engine`) consumes
 `□_k("I play C vs me") → ("I play C vs me")` as its HYPOTHESIS. For a plain search bot
@@ -719,9 +730,9 @@ prudence cert (≤ k) → searchThenSearch_t → □φ→φ → pblt_engine → 
       ✗ floor            never assembled     no hyp    never runs     false
 ```
 
-Löb is never handed its hypothesis; cooperation is then FALSE (the bot plays D), so
-soundness settles the outer guard. (The Lean proof case-splits on the outer guard
-instead of running this analysis — proving the guard false directly would circularly
+Löb is never handed its hypothesis; cooperation is then FALSE (`¬ ⊨`: the bot plays D), so
+soundness settles the outer guard (`¬ ⊢_k`). (The Lean proof case-splits on the outer guard
+instead of running this analysis — establishing `¬ ⊢_k` directly would circularly
 need the play first; the true-branch is vacuous-but-handled via the floored prudence.)
 
 **Syntax shuffles don't help — the floor follows the single budget:**
@@ -734,7 +745,7 @@ need the play first; the true-branch is vacuous-but-handled via the floored prud
 
 The invariant: self-prudence is a fact about MY OWN play against DefectBot, and any
 single-budget bot's play against DefectBot crosses a failed `k`-search somewhere (a
-sound system can never prove "DefectBot cooperates", so whichever search asks, fails).
+sound system can never derive "DefectBot cooperates", so whichever search asks, fails).
 The certificate carries that search's floor — always `k`, because there is one dial.
 
 **`searchThenSearch_t` is already at its generosity limit.** Its inner premise is
@@ -742,7 +753,7 @@ CITED, not charged: the size condition pays only `c_guard k₂ = log₂ k₂ + 1
 non-cumulatively (charging it fully sinks the staggered Löb chains — see the dead-ends
 list). The one unremovable condition is `m ≤ k₂`, and it is not an accounting choice
 but the bot's own source: `eval` produces the then-play only if the inner guard is
-provable AT `k₂`. Drop the bound and the rule asserts plays the evaluator doesn't make.
+derivable AT `k₂` (`⊢_{k₂}`). Drop the bound and the rule asserts plays the evaluator doesn't make.
 
 **The deep reason (bounded Gödel II, and the MIRI parallel).** Bounded self-prudence
 IS bounded self-consistency: "I defect vs DefectBot" holds because my own search

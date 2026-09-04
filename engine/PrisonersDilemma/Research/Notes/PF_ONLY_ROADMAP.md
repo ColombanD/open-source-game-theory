@@ -38,7 +38,7 @@ app follows the migration automatically.
   compilation-==-correctness regression check for the whole migration.
 * **Semantic anchor**: until Phase 4 deletes the old system, the coexistence iff
   (re-proved against the frozen legacy copy, see Phase 1) certifies the new oracle decides
-  THE SAME relation — `proofSearch` behaviour provably unchanged, not just re-tested.
+  THE SAME relation — `proofSearch` behaviour unchanged by a Lean theorem, not just re-tested.
 
 ## 1. Design decisions — **SETTLED 2026-07-14 (Phase 0)**; recommendations adopted as-is
 
@@ -312,7 +312,7 @@ pre-migration; axiom audit clean.
 
 **FINAL SCORECARD vs the §0 invariants**: 81/81 outcome theorems byte-identical
 (kernel-elaborated types + axiom footprints); 3 standard axioms, 0 project axioms
-throughout; the oracle provably unchanged (`legacy_iff_live`); D2 acceptance passed
+throughout; the oracle unchanged by a Lean theorem (`legacy_iff_live`); D2 acceptance passed
 (all five zoo trees instance-gated, `[propext]`); `#eval` demos identical; eval harness
 10/10. Planned ~10–17 sessions; actual ≈ 2.
 
@@ -335,7 +335,8 @@ Original plan:
 1. ✅ `Derivation.lean → ProofSystem.lean` (module `PrisonersDilemma.ProofSystem`; 20 import
    lines, the app's prompt embedding, and all live-file references updated; both targets
    green; app dry-run passes with the renamed embed).
-2. ⏸ Notation `⊢[k] φ` — deliberately deferred to paper-writing time.
+2. ⏸ Notation `⊢[k] φ` — deliberately deferred to paper-writing time. *(Fixed
+   2026-09-04 as `⊢_k φ`; see `PROVABILITY_NOTATION.md`.)*
 3. ✅ Naming debris swept: `T42ProvableB.lean → T42PfB.lean`; identifiers referencing the
    RETIRED TYPE NAMES renamed (`decideProvableG(_inst) → decidePfG(_inst)`,
    `ProvableG_*_iff_* → PfG_*_iff_*`, `Provable_iff_nonempty_ProvT → Pf_iff_nonempty_ProvT`,
@@ -344,7 +345,8 @@ Original plan:
    passages still mention `Derivation`/`Provable` — including the `Pf.struct-GONE` regex
    debris and the silently-missed `GoodL` docstring, both found and fixed). Policy line:
    identifiers using "provable" as ENGLISH (`cimcic_guard_not_provable`, `no_provable_*` —
-   they state `¬ Pf …`) keep their names; the concept is still provability.
+   they state `¬ Pf …`, i.e. `¬ ⊢_k φ` — no S-derivation exists, a meta fact, not S
+   refuting φ) keep their names; the concept is still provability.
 
 ## 3. Risk register
 

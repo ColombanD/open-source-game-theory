@@ -77,8 +77,8 @@ mutual
 
   /-- τ̂ on a system's member list. Unlike `.tvote` entries (frozen — their FIRING
       is C-asymmetric, see the header), a system member is an ordinary program whose
-      action constants must flip; freezing them would make `Pf.transpose`'s
-      `sysStep` arm unprovable (the premise transposes the closed component, so the
+      action constants must flip; freezing them would leave `Pf.transpose`'s
+      `sysStep` arm without a Lean proof (the premise transposes the closed component, so the
       member list must transpose with it). -/
   def ProgList.transpose : ProgList → ProgList
     | .nil         => .nil
@@ -245,8 +245,8 @@ DIFFERS from `.tvote`: τ̂ descends into system MEMBERS (a member is an ordinar
 program whose actions flip) while it freezes vote ENTRIES (whose firing is
 C-asymmetric — see the header). Consequently the equivariance carries the
 transposed system: closing with `defs` then transposing equals transposing then
-closing with `defs.transpose`. Freezing members instead was tried and makes
-`Pf.transpose`'s `sysStep` arm unprovable — the premise transposes the closed
+closing with `defs.transpose`. Freezing members instead was tried and leaves
+`Pf.transpose`'s `sysStep` arm without a Lean proof — the premise transposes the closed
 component, so the member list must transpose with it. -/
 
 /-- τ̂ preserves member lookup: transposing a system transposes the member found at
@@ -409,7 +409,7 @@ def SearchLayer2.transpose : SearchLayer2 → SearchLayer2
 
 
 /-!
-# Theorem 1.10 — transposition invariance of provability, at the SAME budget
+# Theorem 1.10 — transposition invariance of `S`-provability (`⊢_k`), at the SAME budget
 
 `Pf k φ → Pf k φ^τ`, by ONE joint induction over the whole mutual proof-term
 block (`PlaysProof`/`VoteAllPlay`/`AtomProvable`/`Pf`). This is the paper's
@@ -438,8 +438,8 @@ whose `mk` needs the `PlaysProof` motive, whose `search_t/search_f` need the
 -/
 
 
-/-- **Theorem 1.10 (bounded transposition invariance)**: a ≤`k`-character proof
-    of `φ` transposes to a ≤`k`-character proof of `φ^τ`. Same budget — the
+/-- **Theorem 1.10 (bounded transposition invariance)**: a ≤`k`-character `S`-derivation
+    of `φ` transposes to a ≤`k`-character `S`-derivation of `φ^τ`. Same budget — the
     equal-encoding-length hypothesis holds exactly in this syntax. -/
 theorem Pf.transpose {k : Nat} {φ : Formula} (h : Pf k φ) : Pf k φ.transpose :=
   Pf.rec

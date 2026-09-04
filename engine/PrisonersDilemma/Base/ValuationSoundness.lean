@@ -7,7 +7,7 @@ ONE budget-strong induction + raw mutual recursion (`wv_sound_upto`) that yields
 every instantiation of its interface:
 
 * **plain soundness** (`S = S' = ∅`): `sound_upto` in `Base/Soundness` — every
-  bounded proof is true, every certificate is a real play;
+  bounded `S`-derivation is true (`⊢_k φ ⟹ ⊨ φ`), every certificate is a real play;
 * **modified-valuation soundness** (the WaryBot censuses, `Theorems/WaryBot/Helpers`):
   `Pf K φ → WV S φ` for a valuation `WV S` that makes the fixpoint-entangled C-atoms
   `S` unconditionally true — the engine behind the `.neg`-guard Löb-fixpoint outcome
@@ -17,13 +17,13 @@ every instantiation of its interface:
 **Why ONE lemma with paired motives.** The two results need OPPOSITE induction
 disciplines and each fails alone:
 * soundness needs the budget-strong induction — `search_f`'s arm must refute a
-  HYPOTHETICAL guard proof `Pf k guard` that is not a sub-derivation; the `search_f`
+  HYPOTHETICAL guard derivation `Pf k guard` that is not a sub-derivation; the `search_f`
   cost floor puts `k` strictly below the certificate's own cost, so the outer IH at
   `k < B` supplies its truth;
 * the censuses need the STRUCTURAL cross-IH through `search_t`'s guard back-edge —
-  the guard proof sits at the searcher's OWN literal budget `k`, of which the node's
+  the guard derivation sits at the searcher's OWN literal budget `k`, of which the node's
   transcript contains only `numCost k`, so no budget measure descends; only the
-  (finite) proof TREE does.
+  (finite) derivation TREE does.
 The master carries both: each `Pf` motive is a pair — a budget-GATED soundness half
 (`k ≤ B → interp`) and an UNGATED census half. The census half is conditional on
 full soundness (`(∀ K χ, Pf K χ → χ.interp) → WV S φ`), because its transparency-leaf
@@ -234,7 +234,7 @@ theorem searchPlug_eval (me opponent : Prog) (a : Action) :
       exact hn
 
 /-- The MIXED-telescope eval induction (the ite frontier, 2026-07-28): if every guard
-    fact of a `CtxLayer` stack holds — provable boxes for search layers, real probe
+    fact of a `CtxLayer` stack holds — `S`-derived boxes (`⊢`) for search layers, real probe
     plays for ite layers — evaluation reaches the plugged constant. -/
 theorem ctxPlug_eval (me opponent : Prog) (a : Action) :
     ∀ (L : List CtxLayer),
@@ -312,8 +312,8 @@ theorem layerCost_le_of_mem :
         omega
 
 /-- The mixed-POLARITY telescope eval induction (`searchElseChain`'s soundness
-    core): if every then-layer's guard is provable (the `.box` facts) and every
-    else-layer's guard is UNPROVABLE at its own budget, evaluation reaches the
+    core): if `S` derives every then-layer's guard (the `.box` facts) and no
+    else-layer's guard is `S`-derivable at its own budget (`¬ ⊢`), evaluation reaches the
     plugged constant. The unprovability is supplied as data — the master arm derives
     it from the strong IH via the floor (`layersCost` puts each else-budget strictly
     below the rule's transcript), and post-extraction users derive it from
@@ -359,7 +359,7 @@ theorem plug2_eval_noPf (me oppo : Prog) (a : Action) :
 
 /-! ## The modified valuation `WV`, parametric over the entangled-atom relation
 
-`WV S` is `Formula.interp` with ONE change: a plays-atom is additionally true when
+`WV S` is `Formula.interp` (`⊨`) with ONE change: a plays-atom is additionally true when
 its action is `.C` and its player pair is in `S`. Boxes stay RAW `Pf` — that is what
 keeps the modal tier and the transparency leaves sound without touching the Löb
 machinery. `WV (fun _ _ => False)` is pointwise equivalent to `interp` (not needed
@@ -848,7 +848,7 @@ theorem wv_sound_upto (S S' : Prog → Prog → Prop)
               ((ψ.sysClose defs).subst (.bot (.sys defs i)) opponent) = true :=
             (proofSearch_spec _ _).2 hguard
           -- eval: unwrap the `.bot`, look the component up, close one level, and the
-          -- (now provable) guard fires into the then-constant
+          -- (now `S`-derived) guard fires into the then-constant
           refine ⟨4, ?_⟩
           show eval 4 (.bot (.sys defs i)) opponent (.bot (.sys defs i)) = some a
           rw [eval]

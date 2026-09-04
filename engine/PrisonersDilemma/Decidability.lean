@@ -45,7 +45,7 @@ table at its top maps every result to its file). The modules keep their mileston
    `none` only at the Löb boundary. Supersedes `ComputableEval/evalC`.
 3. **The gate-parametric strata** (`T42PfB`): `PfG G` gates the six
    conclusion-absent premise formulas (uniform gating, incl. the merged `mp`/`implTrans` —
-   D2); `Pf ↔ ∃ N, PfB N` (every proof is
+   D2); `Pf ↔ ∃ N, PfB N` (every `S`-derivation is
    finitely-cut); `CutRelevance` states THE remaining open conjecture (T4.1b).
 4. **The modest universe** (`T43ModestUniverse`): bots whose substitution positions are
    `.self`/`.opp`/frozen — the WHOLE zoo, each by `rfl` — have finite query universes

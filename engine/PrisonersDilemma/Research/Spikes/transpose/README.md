@@ -70,7 +70,7 @@ The library's existing same-`k` negative results (e.g.
 `outcome_PrudentBot_vs_PrudentBot = (D, D)`) go through the transparency census
 + cost-floor machinery of `Base/Exclusion` — hundreds of lines of telescope
 case analysis per matchup. The transposition argument replaces ALL of that for
-symmetric pairs: `¬□_k ρ₁` falls out of `□_k ρ₁ ↔ □_k ρ₂` + soundness +
+symmetric pairs: `¬ ⊢_k ρ₁` falls out of `⊢_k ρ₁ ⟺ ⊢_k ρ₂` (τ-closure) + soundness +
 determinism of `eval`, never mentioning costs.
 
 Scope, stated precisely (audit 2026-08-19): the mechanized lemma is

@@ -5,8 +5,9 @@ import PrisonersDilemma.Decidability.T50InstanceLob
 
 `cutRelevance_modestGate_false`:
 `(∃ m, Pf m tgtD) ∧ ∀ N m, ¬ PfG (modestGate N) m tgtD` —
-the DupocBot self-cooperation fact is provable (bounded Löb) yet lies outside
-the modest stratum at EVERY literal bound and budget. So the original
+the DupocBot self-cooperation fact is `S`-derivable — `⊢_m tgtD`, by bounded Löb —
+yet `¬ ⊢^G_m tgtD` at the modest gate `G = modestGate N`, for EVERY literal bound `N`
+and budget `m`. So the original
 cut-relevance conjecture (`Pf → PfG (modestGate N₀)`) is FALSE, and
 the instance gate (T50) is a genuine repair, not a convenience.
 
@@ -467,8 +468,9 @@ theorem regress {N : Nat} {m : Nat} {C : Formula}
       intro k p q b aN mm _ hne hle ih hm
       exact nomatch hm
 
-/-- **THE FALSIFICATION THEOREM**: the DupocBot self-cooperation fact is provable,
-    and lies outside the modest stratum at EVERY literal bound and budget. -/
+/-- **THE FALSIFICATION THEOREM**: the DupocBot self-cooperation fact is `S`-derivable
+    (`∃ m, ⊢_m tgtD`), and `¬ ⊢^G_m tgtD` at the modest gate for EVERY literal bound and
+    budget. -/
 theorem cutRelevance_modestGate_false :
     (∃ m, Pf m tgtD) ∧
     ∀ (N m : Nat), ¬ T42.PfG (T44.modestGate N) m tgtD :=

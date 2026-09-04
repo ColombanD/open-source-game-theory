@@ -61,7 +61,7 @@ class ProofRequest:
 class ProofResult:
     left_bot: str
     right_bot: str
-    left_action: str | None   # None when outcome is provably none (non-terminating)
+    left_action: str | None   # None when the outcome theorem states `none` (non-terminating)
     right_action: str | None
     lean_source: str
     iterations_used: int

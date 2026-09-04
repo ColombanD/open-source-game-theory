@@ -19,15 +19,15 @@ extractions provably fail — a useful negative characterization of the *computa
 This is the SOLE remaining hypothesis of `engine_pblt_plays`; discharging it deletes the `PBLT` axiom.
 
 **Why normalization (not a model).** This session PROVED every self-contained model/realizability
-interpretation of the object system is unsound (validates `repr`/`ctx` definitionally ⇒ proves false
-atoms; see `ConstructiveLobToy.lean §8`). Prior session closed the classical case-split and the naive
+interpretation of the object system is unsound (validates `repr`/`ctx` definitionally ⇒ validates
+atoms that are false, `¬ ⊨`; see `ConstructiveLobToy.lean §8`). Prior session closed the classical case-split and the naive
 back-translation. So the witness MUST be produced by a PROOF-THEORETIC argument that CONSUMES the
 engine's `Provable_sound` at the play-atom — i.e. by turning the object proof into engine DATA.
 
 **The engine hooks (verified).**
 - `Formula.interp (.plays p q a) = ∃ n, play n p q = some a`  — the play witness we want.
-- `Formula.interp (.box n φ)     = Provable n φ`               — engine box = engine provability.
-- `Provable_sound : ∀ k φ, Provable k φ → φ.interp`            — engine soundness (a THEOREM).
+- `Formula.interp (.box n φ)     = Provable n φ`               — engine box = engine provability (`⊨ □_n φ ≡ ⊢_n φ`).
+- `Provable_sound : ∀ k φ, Provable k φ → φ.interp`            — engine soundness (`⊢_k φ ⟹ ⊨ φ`, a Lean THEOREM about `S`).
 - `ProvesN.engineLeaf : Provable m φ → ProvesN p Γ (encodeF φ)`— the ONLY way engine facts enter ProvesN.
 - Object box `interpN (□a) = ProvesN p [] a`; HBL rules `necN/kN/fourN` mirror engine `boxIntro/axK/box4`.
 
@@ -35,7 +35,7 @@ engine's `Provable_sound` at the play-atom — i.e. by turning the object proof 
 
 ## The core idea: DECIDABLE object box ⇒ RUN `bloeb` to an engine `Provable` witness
 
-The object `bloeb` term proves `p` SYNTACTICALLY. The block on extraction is that `ProvesN`'s `box`
+The object `bloeb` term derives `p` SYNTACTICALLY (in `ProvesN`, the Reflection layer's calculus). The block on extraction is that `ProvesN`'s `box`
 is a bare `Prop` with no computational content. If we make the object box DECIDABLE — `box a` ⇔
 "∃ proof term of `a` of size ≤ k", a FINITE search — then the `bloeb` proof term can be EVALUATED:
 its `necN` steps become actual bounded-proof witnesses, and the chain computes a `Provable n φ` for
@@ -52,7 +52,8 @@ decidable predicate, and `bloeb` must thread WITNESSES (size-bounded proof terms
 ## Milestones (staged, each independently checkable; kill-criteria stated)
 
 ### M-N1. Decidable bounded provability for the CONSTRUCTIVE toy proof system.
-Over `ConstructiveLobToy.Pf p` (the axiom-free HBL+diagonal term system), define
+Over `ConstructiveLobToy.Pf p` (the axiom-free HBL+diagonal term system — the TOY's `Pf`, unrelated
+to the engine's later unified `Pf`, which is `⊢_k`), define
 `Boxable p k φ := ∃ t : Pf p φ, size t ≤ k` and prove `Decidable (Boxable p k φ)` for a FIXED `φ`
 (conclusion pins the atoms; recurse on `(k, φ)`). Needs: character-faithful `size` (leaf pays the
 embedded formula's size — refactor), + a formula-size bound from proof-size, + the cut-formula search
@@ -135,8 +136,8 @@ So the first half of the decidability obstruction (unbounded `mp` cut) is REMOVE
 and N1's enumeration route is DEAD.** Two facts in the spike:
   1. `{repr (atom m) | m : Nat}` are ∞-many size-4 proofs with DISTINCT conclusions ⇒ atom-closure
      FALSE (`repr (atom m)` introduces fresh code `m` at bounded size).
-  2. At FIXED φ, the `mp` cut ranges over ∞-many PROVABLE cut formulas: `ax_k : φ→(a→φ)` + mp gives
-     `a→φ` for EVERY `a` once φ is provable, and `{repr (atom m)}` supplies ∞-many provable `a`.
+  2. At FIXED φ, the `mp` cut ranges over ∞-many toy-DERIVABLE cut formulas: `ax_k : φ→(a→φ)` + mp gives
+     `a→φ` for EVERY `a` once φ is derivable, and `{repr (atom m)}` supplies ∞-many provable `a`.
 So `Decidable (Boxable p k φ)` is NOT obtainable by enumeration.
 
 **Honest scope (no overclaim):** this kills the ENUMERATION method, not decidability-in-principle

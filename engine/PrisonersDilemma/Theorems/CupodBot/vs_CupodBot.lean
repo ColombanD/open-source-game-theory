@@ -21,7 +21,8 @@ theorem outcome_CupodBot_vs_CupodBot :
     OutcomeSpec .eventual 2
       CupodBot CupodBot (some (.D, .D)) := by
   let φ : Nat → Formula := fun k => .plays (CupodBot k) (CupodBot k) .D
-  -- `cupod_loeb_premise` proves the premise at its HONEST transcript `5·log2 k + 33` —
+  -- `cupod_loeb_premise` supplies the S-derivation of the premise at its HONEST transcript,
+  -- `⊢_{5·log2 k + 33} (□_k φ → φ)` —
   -- exactly `pblt_engine_id`'s premise shape (the Löb chain needs `pm ≪ k`).
   have hLoeb :
       ∀ k, k > 0 →

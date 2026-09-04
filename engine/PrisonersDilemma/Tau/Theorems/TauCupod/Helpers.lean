@@ -13,7 +13,7 @@ proves DEFECTION and punishes; it trusts by default. Three shapes to handle:
   `searchProbeD_plays_*` shape lemmas apply verbatim;
 * **the diagonal** — the quine, with `.D` in the guard: "if I can prove I defect
   against myself, defect". Unlike Dupoc's, this fixpoint is NOT closed by bounded
-  Löb — Löb gives you `□φ → φ ⊢ φ` for the sentence the searcher FIRES on, and
+  Löb — Löb gives you `⊢ φ` from `⊢ □φ → φ` for the sentence the searcher FIRES on, and
   here firing means defecting, so the Löbian route would prove self-defection.
   What actually holds is the opposite and it is cheap: the guard is REFUTABLE
   (a cost floor), so the search fails and Cupod trusts itself;
@@ -34,7 +34,7 @@ changes what the fixpoint MEANS. Dupoc's guard fires on cooperation, so bounded 
 delivers self-cooperation. Cupod's guard fires on DEFECTION with a trusting default,
 so the very same machinery (`botSearchStep` is polarity-generic: it takes the
 then/else actions as parameters) delivers **self-DEFECTION**: past the threshold
-τ(Cupod) proves it defects against itself, so it does.
+`S` derives that τ(Cupod) defects against itself (`⊢_k probeD …`), so by soundness it does.
 
 *A first attempt to refute the guard by the `search_f` floor was WRONG and the
 kernel caught it: `no_provable_botSearcherElse_tail` excludes the ELSE-play (here
@@ -156,7 +156,7 @@ partner exactly as off-cycle guards freeze instances — `.bot (.selfIdx j)`, cl
 to `.bot (.sys defs j)` — so component 0's closed guard is `probeD` of the wrapped
 Dupoc component and component 1's is `probe` of the wrapped Cupod component.
 
-**Neither guard is provable — a THEOREM, not a hypothesis**
+**Neither guard is `S`-derivable (`¬ ⊢_K`, every `K ≤ k`) — a Lean THEOREM, not a hypothesis**
 (`ps_botSys_mismatch_false`, riding `no_provable_botSysSearcherElse_tail`): each
 guard's target action MISMATCHES its subject component's then-action (Cupod wants
 the trusting Dupoc component to defect; Dupoc wants the punishing Cupod component
@@ -421,8 +421,8 @@ Three routes were tried, in order:
 3. **The `search_f` floor** — SUCCEEDS, and is this file's closure: precisely
    BECAUSE route 1's actions mismatch, neither guard can be concluded by
    `search_t` (then-action ≠ target), and every remaining route prices in the
-   partner's failed search at full budget. Both bits are provably FALSE
-   (`ps_botSys_mismatch_false`), both components play their defaults, and the tau
+   partner's failed search at full budget. Both bits are FALSE — `¬ ⊢_K`, a Lean theorem
+   (`ps_botSys_mismatch_false`) — both components play their defaults, and the tau
    cell equals the base red cell `(D, C)` — Def 3 ≡ Def 4 holds on the entangled
    pair as a THEOREM.
 

@@ -21,12 +21,12 @@ namespace PD.Theorems
 EBot cooperates with CIMCIC (its probes see CIMCIC defect vs `.bot DefectBot`,
 then cooperate vs `.bot CooperateBot`, so EBot's second guard fires → C). But
 CIMCIC DEFECTS against EBot: its guard `(CIMCIC plays C vs EBot) → (EBot plays C
-vs CIMCIC)` is structurally unprovable — the consequent `EBot plays C vs CIMCIC`
-is TRUE but UNCERTIFIABLE, because EBot's play crosses CIMCIC's failed search vs
+vs CIMCIC)` is structurally unprovable (`¬ ⊢_k`) — the consequent `EBot plays C vs CIMCIC`
+is TRUE (`⊨`) but UNCERTIFIABLE, because EBot's play crosses CIMCIC's failed search vs
 `.bot DefectBot`, whose failure is IRREFUTABLE (the guard's interp is vacuously
-true, so its negation cannot be proven). Hence no `search_f` certificate exists,
+true, so `S` cannot refute it: `¬ ⊢ ¬guard`, by soundness). Hence no `search_f` certificate exists,
 no play certificate for EBot exists, and the consequent — and therefore the
-whole guard — is unprovable. CIMCIC falls through to `.const .D`.
+whole guard — has no `S`-derivation at `k`. CIMCIC falls through to `.const .D`.
 -/
 
 /-! ## CIMCIC vs `.bot DefectBot` : defects (guard consequent false, unprovable) -/

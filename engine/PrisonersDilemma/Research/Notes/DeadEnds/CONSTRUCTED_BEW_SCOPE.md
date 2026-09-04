@@ -7,6 +7,10 @@
 
 # Scope — constructed `Bew`/context predicate: making `ContextRepr` DERIVED (route A)
 
+*Notation in this note: `⊢` is the Reflection layer's own object calculus (`Proves`/`ProvesC`/
+`ProvesU` — an arithmetized twin of `S`, since retired), never Lean; the engine's `Provable k φ`
+is today's `⊢_k φ` (`PROVABILITY_NOTATION.md`). "PROVEN"/"sorry-free" are Lean, meta.*
+
 **Goal.** Discharge the one real gap in PBLT-removal: `ContextRepr p ψ : ⊢ gApp(⌜ψ⌝) ↔ (□ψ → p)`,
 currently asserted via the outcome-relative `Gctx` valuation trick (`ProvesC`/`ProvesN`). Replace it
 with a DERIVATION from a representability rule — exactly the pattern the layer already uses for
@@ -160,7 +164,8 @@ mirroring `gammaAx`/`betaGamma`.
   (engineLeaf soundness at a PLAY-ATOM leaf, via Provable_sound + engineVal_atomCode). But the `□φ→φ`
   Löb-premise leaf is NOT: `hEL` there needs `interpU(□p→p) = (ProvesU p p → interpU p)`; the engine
   premise gives `Provable(f)φ → φ.interp`, so the gap is exactly `ProvesU p (encodeF φ) → ∃m, Provable m
-  φ` for play-atom φ = **`BWD_faithful_plays`** — reflecting an OBJECT proof back to an ENGINE proof.
+  φ` for play-atom φ = **`BWD_faithful_plays`** — reflecting an OBJECT proof (a `ProvesU`-derivation) back to an ENGINE
+  proof (an `S`-derivation, `⊢_m φ`; both object-level, two calculi).
   **HONEST CORRECTION:** the B4-wire-core note called this "FWD-faithfulness"; it is BWD, and it is the
   SAME direction `provesN_play_extract` ultimately WAS. The B-series moved the outcome-dependence OFF the
   diagonal (real, machine-checked — that WAS believed the crux), but the play-extraction ALSO rests on

@@ -43,7 +43,7 @@ transparency rules cannot do.
 constructor (ProofSystem.lean; the witness-free axiom form `atom_box_provable_impl`
 was removed as unsound — its sound conditional content is `atom_box_provable_impl_sound`
 in Base/Soundness).
-A `.plays` atom is Σ₁, so "true ⟹ provable" is sound reflection (NOT the GL-excluded
+A `.plays` atom is Σ₁, so "true ⟹ provable" — `φ → □_k φ` inside `S` — is sound reflection (NOT the GL-excluded
 general `φ → □φ`, which fails on Π₁ truths). Applied to the play-atom `φ_P`:
 `atomBoxImpl ⊳ leg2` yields the *unboxed-antecedent* implication
 `φ_P → φ_D` (stripping the box `searchBranch` needs), which composes with `leg1`
@@ -57,12 +57,13 @@ intended Critch fixed point — is sound: the cooperative equilibrium is consist
 and GL-4 is what lets `S` *prove* it rather than merely admit its consistency.
 -/
 
-/-! ## The cooperative Löb premise is true (no axioms) -/
+/-! ## The cooperative Löb premise is true — `⊨`, not `⊢` (no axioms) -/
 
-/-- **The cooperative Löb premise is true, for any Dupoc-shaped cooperator.**
+/-- **The cooperative Löb premise is true (`⊨`), for any Dupoc-shaped cooperator.**
     `A = .search k (.plays .opp .self c) (.const c) (.const d)` cooperates `c` iff it
     proves the opponent plays `c` with it; for any opponent `B`, the implication
-    `□_k (A plays c vs B) → (A plays c vs B)` holds. Proved with no new axioms via
+    `□_k (A plays c vs B) → (A plays c vs B)` holds — `⊨`, a Lean fact about `eval`,
+    not an `S`-derivation. Proved with no new axioms via
     `A`'s own `.search` inversion. (The `(C,C)` outcome below does not use this; it
     is recorded as the semantic justification that the cooperative equilibrium is
     consistent.) -/

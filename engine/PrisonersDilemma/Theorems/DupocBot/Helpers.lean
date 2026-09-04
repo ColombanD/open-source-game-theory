@@ -35,7 +35,7 @@ theorem proofSearch_true_for_CooperateBot :
   ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
 
 /-- Threshold form of `proofSearch_true_for_CooperateBot`: the certificate is a fixed
-    `Pf.atom` whose only side condition is a COST INEQUALITY, so it holds at every
+    `Pf.atom` whose only side condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every
     budget above `atom_cost 1` -- not merely at that one witness. This is what lets the
     outcome theorem be stated in the `.eventual` regime. -/
 theorem proofSearch_true_for_CooperateBot_ge (k : Nat) (hk : atom_cost 1 ≤ k) :
@@ -88,7 +88,7 @@ axiom, retired 2026-07-02 with the false-guard repair. Honestly: DBot's C-play a
 certificate pays the `search_f` floor — cost > k for EVERY k — and `DupocBot k` can
 never prove "DBot plays C vs me" within its own budget (Critch-faithful: certifying
 one's own failed bounded search costs more than the search budget itself; the guard
-formula is TRUE, so soundness gives nothing — only cost accounting closes it).
+formula is TRUE (`⊨`), so soundness gives nothing — only cost accounting closes it: `¬ ⊢_k`).
 
 RESOLVED (2026-07-09): the floor is now a THEOREM — `no_provable_DBot_C_tail` is the
 cost lower bound (no ≤ k certificate exists), by strong induction on the budget:
@@ -106,7 +106,7 @@ afford to watch the searcher fail, the searcher can never afford to watch itself
 /-- **The `search_f` floor, formalized as a cost lower bound**: no proof of ≤ k
     characters concludes any formula whose implication-spine tail is
     "DBot plays C against `DupocBot k`" — in particular (spine of length zero) the
-    guard instance itself is unprovable at Dupoc's own budget. Instance of the
+    guard instance itself has no `S`-derivation at Dupoc's own budget (`¬ ⊢_k`). Instance of the
     generalized `no_provable_probeFirst_C_tail` (Base/Exclusion.lean): DBot is the
     probe-first simulator with `q = .const .C`, DupocBot the budget-`k` searcher. -/
 theorem no_provable_DBot_C_tail (k : Nat) :
@@ -122,7 +122,7 @@ theorem no_provable_DBot_C_tail (k : Nat) :
   · simpa [DBot, DupocBot] using ht
 
 /-- Dupoc's guard search fails against DBot AT EVERY budget — the floor's bite: the
-    guard formula is true, but every certificate costs more than `k`. -/
+    guard formula is true (`⊨`), but every certificate costs more than `k` (`¬ ⊢_k`). -/
 theorem proofSearch_false_for_DBot_vs_Dupoc (k : Nat) :
     proofSearch k (.plays DBot (DupocBot k) .C) = false := by
   cases h : proofSearch k (.plays DBot (DupocBot k) .C) with
@@ -243,7 +243,7 @@ theorem proofSearch_true_for_bot_CooperateBot :
   ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
 
 /-- Threshold form of `proofSearch_true_for_bot_CooperateBot`: the certificate is a fixed
-    `Pf.atom` whose only side condition is a COST INEQUALITY, so it holds at every
+    `Pf.atom` whose only side condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every
     budget above `atom_cost 2` -- not merely at that one witness. This is what lets the
     outcome theorem be stated in the `.eventual` regime. -/
 theorem proofSearch_true_for_bot_CooperateBot_ge (k : Nat) (hk : atom_cost 2 ≤ k) :
@@ -539,13 +539,13 @@ theorem rho2_transpose (k : Nat) :
       = .plays (CupodBot k) (DupocBot k) Action.C := by
   simp [Formula.transpose, transpose_CupodBot, transpose_DupocBot, Action.swap]
 
-/-- Dupoc's guard `ρ₁ = "Cupod plays C vs Dupoc"` is unprovable at Dupoc's own
-    budget: `□_k ρ₁` would fire Dupoc's search (→ Dupoc plays `C`) while its
+/-- Dupoc's guard `ρ₁ = "Cupod plays C vs Dupoc"` has no `S`-derivation at Dupoc's own
+    budget (`¬ ⊢_k ρ₁`): `□_k ρ₁` would fire Dupoc's search (→ Dupoc plays `C`) while its
     τ-image `□_k ρ₂` is sound (→ Dupoc plays `D`) — `eval` can't do both. -/
 theorem not_Pf_dupoc_guard (k : Nat) :
     ¬ Pf k (.plays (CupodBot k) (DupocBot k) .C) := by
   intro h1
-  -- Thm 1.10: transport the proof across τ, so `□_k ρ₂` holds too
+  -- Thm 1.10: transport the S-derivation across τ: from `⊢_k ρ₁` get `⊢_k ρ₂`
   have h2 : Pf k (.plays (DupocBot k) (CupodBot k) .D) := by
     have := Pf.transpose h1
     rwa [rho1_transpose] at this
@@ -560,7 +560,7 @@ theorem not_Pf_dupoc_guard (k : Nat) :
   have hD' : eval N (DupocBot k) (CupodBot k) (DupocBot k) = some .D := hD
   exact absurd (eval_det hC hD') (by decide)
 
-/-- Cupod's guard `ρ₂` is unprovable too: its τ-image is `ρ₁`. -/
+/-- Cupod's guard `ρ₂` has no `S`-derivation either (`¬ ⊢_k ρ₂`): its τ-image is `ρ₁`. -/
 theorem not_Pf_cupod_guard (k : Nat) :
     ¬ Pf k (.plays (DupocBot k) (CupodBot k) .D) := by
   intro h

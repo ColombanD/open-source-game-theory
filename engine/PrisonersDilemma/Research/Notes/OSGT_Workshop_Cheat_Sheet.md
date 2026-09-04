@@ -38,7 +38,7 @@ One line if someone's rushing past: *"We turned open-source game theory from pen
 - The pass/fail split tracks formal difficulty almost exactly:
   - **32 / 32** on every pair *without* a `.search` bot on both sides — these close nearly by Lean's evaluator alone (median 1–2 iterations, under 90 s).
   - **6 / 10** on simulation × `.search` pairs — these must chain the oracle axioms, and cost roughly an order of magnitude more in both iterations and wall-clock.
-- **Five pairs go unproved, but only one is a genuine failure:** `CupodBot` vs `DupocBot` — the `.search`-vs-`.search` cell that is Critch's known open problem, expected to be unprovable in the library as it stands. (In the equilibrium analysis, that single cell is fixed by configuration to its conjectured value `(C, D)`.) The other four are hard simulation × `.search` proofs where the agent hit the per-call output-token ceiling *mid-proof*, not a dead end — in the first pass all seven misses were token-truncation, and raising the per-call budget from 16k to 32k recovered two, giving the final 40/45. Say this confidently if asked.
+- **Five pairs go unproved, but only one is a genuine failure:** `CupodBot` vs `DupocBot` — the `.search`-vs-`.search` cell that is Critch's known open problem, expected to have no Lean proof in the library as it stands. (In the equilibrium analysis, that single cell is fixed by configuration to its conjectured value `(C, D)`.) The other four are hard simulation × `.search` proofs where the agent hit the per-call output-token ceiling *mid-proof*, not a dead end — in the first pass all seven misses were token-truncation, and raising the per-call budget from 16k to 32k recovered two, giving the final 40/45. Say this confidently if asked.
 
 ---
 
@@ -72,7 +72,7 @@ This is the part of the ambient logic that agents query through the oracle. It i
 | `.neg φ` | `¬ φ`. |
 | `.box k φ` | `□ₖ φ`: "`φ` is provable by the oracle with budget `k`". The modal operator. |
 
-The point to be able to make under questioning: **`.box` is syntax for provability, not truth.** A formula can be *true* without being *provable within budget k*, and that gap is exactly where Löb's theorem lives.
+The point to be able to make under questioning: **`.box` is syntax for provability, not truth.** A formula can be *true* (`⊨ φ`) without being *provable within budget k* (`¬ ⊢_k φ`), and that gap is exactly where Löb's theorem lives.
 
 ### `eval` — fuel-bounded interpreter (`Dynamics.lean`)
 
@@ -88,7 +88,7 @@ There are **two** ways the system talks about a formula being "true", and keepin
 - **Operational / syntactic:** `proofSearch k φ` — an **axiomatized oracle** meaning "there's a proof of `φ` of size ≤ k". This is what `eval` actually calls at a `.search` node. It's an axiom because we reason *about* a bounded prover without implementing one — it stands in for the ambient proof system `S`.
 - **Denotational / model:** `Formula.interp` maps a `Formula` to a real Lean `Prop` — e.g. `.plays p q a` interprets as `∃ n, play n p q = some a` (it genuinely plays `a`), and `.impl`/`.neg` map to honest Lean `→`/`¬`. This is *truth in the model*, independent of any prover.
 
-The oracle and the model are bridged by the axioms below: **soundness** says provable ⇒ true, **completeness** (for the decidable fragment) says true ⇒ provable. Once you have that bridge, every outcome theorem is an ordinary Lean derivation.
+The oracle and the model are bridged by the axioms below: **soundness** says provable ⇒ true (`⊢_k φ ⟹ ⊨ φ` — a statement ABOUT `S` at the Lean level; an axiom in this poster's engine, the theorem `sound_upto` since 2026-07-03), **completeness** (for the decidable fragment) says true ⇒ provable (`⊨ φ ⟹ ⊢_k φ`, for `.plays` atoms only). Once you have that bridge, every outcome theorem is an ordinary Lean derivation.
 
 ### The bot library, by tier
 
@@ -174,7 +174,7 @@ Run the proof agent on **every ordered pair** in the 9-bot matrix (45 theorems) 
 |---|---|---|---|
 | No `.search` bot on both sides (tiers 0×0, 0×1, 0×2, 1×1) | **32/32** | median 1–2 iterations, < 90 s | These close by Lean's evaluator alone, modulo small rewriting — the agent just has to find the right unfolding lemmas. |
 | Simulation × search (1×2) | **6/10** | ~10× more iterations and wall-clock | These must *chain the oracle axioms* — soundness, completeness, witness transport, PBLT, the code-reading axioms. Hard. |
-| Search × search (2×2) | the one true failure | — | `CupodBot` vs `DupocBot` — Critch's open problem, expected to be unprovable in the library as it stands. |
+| Search × search (2×2) | the one true failure | — | `CupodBot` vs `DupocBot` — Critch's open problem, expected to have no Lean proof in the library as it stands. |
 
 A detail worth stating confidently: of the 7 misses in the first pass, **all 7 failed with `stop_reason = max_tokens`** — the agent was *truncated mid-proof*, not stuck. Re-running those pairs with the per-call output budget raised from 16k to 32k tokens recovered 2 of them, giving 40/45. So the empirical bottleneck on the failures is output budget, not the agent running out of ideas — *except* for the genuine `(CupodBot, DupocBot)` open problem, which no budget would fix.
 

@@ -21,6 +21,7 @@ namespace PD.Bots
       4. fallback:             play C
 
     `Formula` has no conjunction, so each rung "outcome (a, b) is provable"
+    (`⊢_kOpp` the opponent's play and `⊢_kSelf` my own — both in `S`)
     is two nested `.search`es (the PrudentBot idiom): the opponent's play is
     the outer guard at `kOpp`, my own play the inner one at `kSelf`. A rung
     falls through to the next rung whenever EITHER conjunct is unprovable, so

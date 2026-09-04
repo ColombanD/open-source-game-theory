@@ -312,7 +312,7 @@ mutual
     | .implS φ ψ χ hle => ⟨.implS φ ψ χ hle⟩
 end
 
-/-- The substrate is exact: provability = tree existence. -/
+/-- The substrate is exact: `⊢_k φ` iff a `ProvT k φ` tree exists. -/
 theorem Pf_iff_nonempty_ProvT {k : Nat} {φ : Formula} :
     Pf k φ ↔ Nonempty (ProvT k φ) :=
   ⟨ProvT.complete, fun ⟨t⟩ => t.sound⟩
@@ -422,7 +422,7 @@ end
 
 /-! ## 6. The official reduction: CutRelevance is now a statement about trees. -/
 
-/-- **Tree-level cut relevance**: every provable root has SOME tree whose cut diet is
+/-- **Tree-level cut relevance**: every `S`-derivable root (`⊢_k φ`) has SOME tree whose cut diet is
     `N₀`-literal-bounded. This is what excision (milestone D2) must produce — and unlike
     every judgment-local formulation, it is not refuted by dead implications: excision is
     free to REPLACE the tree, not just describe it. -/

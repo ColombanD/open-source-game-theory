@@ -8,7 +8,7 @@ open Classical
 # The proof system `S` — the unified proof-term type `Pf`
 
 The agents' internal logic. One mutual `inductive` block defines execution
-certificates and proofs together:
+certificates and `S`-derivations together:
 
 ```
         ┌──────────────────────────────────────────────────────────┐
@@ -50,14 +50,14 @@ certificates and proofs together:
   `.plays` atoms, which the reasoning rules cannot read.
 * **`proofSearch k φ`** — the oracle agents query, defined as decidable `Pf`.
 
-`Formula.interp` (Dynamics.lean) gives the semantics; `sound_upto` (Base/) bridges
-provability to truth.
+`Formula.interp` (Dynamics.lean) gives the semantics (`⊨ φ`); `sound_upto` (Base/) is the
+Lean theorem `⊢_k φ ⟹ ⊨ φ`, bridging `S`-provability to truth.
 
 **Zero axioms.** Every rule is a sound constructor. False guards are handled by
 `PlaysProof.search_f` (an else-certificate from a Σ₁ REFUTATION of the guard, paying the
 full failed budget — the floor) with `Pf.atomNeg`/`Pf.eqNeg` as the refutation suppliers.
-Guards that are false but irrefutable leave their else-plays true but uncertifiable: the
-honest Gödelian boundary. Costs are transcript-cumulative throughout.
+Guards that are false (`¬ ⊨ guard`) but irrefutable (no `⊢ ¬guard`) leave their else-plays
+true (`⊨`) but uncertifiable (no `⊢`): the honest Gödelian boundary. Costs are transcript-cumulative throughout.
 
 **Eliminators.** `Pf` is mutual, so use the named `Pf.induct`/`PlaysProof.induct` (§4);
 the raw recursors are used only there and in `Base/ValuationSoundness.lean`.
@@ -185,7 +185,7 @@ mutual
         PlaysProof me opponent b r m → (r == a') = false →
         PlaysProof me opponent q a n →
         PlaysProof me opponent (.ite b a' p q) a (m + n + c_node)
-    /-- `.search k φ p q` runs the TRUE-guard branch (`p`) when the guard is provable, so
+    /-- `.search k φ p q` runs the TRUE-guard branch (`p`) when `S` derives the guard (`⊢_k guard`), so
         `search_t` carries `Pf k (guard)` as its premise. **This is the back-edge that makes the
         block mutual**: execution consults the proof system. -/
     | search_t :
@@ -195,7 +195,7 @@ mutual
     /-- FALSE-guard branch: `.search k φ p q` runs the else branch when the guard search
         fails. Two design points, both forced:
         * the premise is a Σ₁ REFUTATION `Pf m (.neg guard)`, certifiable from the guard
-          subject's actual play (`Pf.atomNeg`) — never mere unprovability (premising on
+          subject's actual play (`Pf.atomNeg`) — never mere unprovability `¬ ⊢_k guard` (premising on
           unprovability is a non-monotone fixpoint; the anti-diagonal bot is its paradox);
         * the cost pays the FULL failed budget `k`, the floor: an else-certificate must
           never fit within the budget whose failure it certifies, or `atom_monotone`
@@ -253,7 +253,7 @@ mutual
     /-- `.sys` unfolding: component `i`, closed one level via `sysClose`, exactly as
         `eval`'s lazy-unfold arm. A syntactic rewrap, so it pays `c_node`. There is
         deliberately no rule for `.selfIdx`: a dangling reference evaluates to `none`,
-        and nothing about it should be provable. -/
+        and nothing about it should be `S`-derivable. -/
     | sysStep {me opponent : Prog} {defs : ProgList} {i : Nat} {p : Prog} {a : Action}
         {n : Nat} :
         defs.get? i = some p →
@@ -274,9 +274,10 @@ mutual
     | mk : PlaysProof me opponent me a n → n ≤ k → AtomProvable k (.plays me opponent a)
 
 /-- **`Pf k φ` — "φ has a proof transcript of ≤ k characters"**: the proof system `S`, as ONE type.
+Written `⊢_k φ` (`Research/Notes/PROVABILITY_NOTATION.md`); `⊢` never means Lean.
 
-Each rule is (i) SOUND — its conclusion's `interp` follows from its premises'
-(`BaseTheorems.sound_upto`) — and (ii) FAITHFUL to a PA-like `S` (critch22 Appendix B): a genuine
+Each rule is (i) SOUND — `⊨` of its conclusion follows from `⊨` of its premises
+(the Lean theorem `BaseTheorems.sound_upto`) — and (ii) FAITHFUL to a PA-like `S` (critch22 Appendix B): a genuine
 capability of `S`, with no semantic completeness / general reflection smuggled in.
 
 **Cost model**: every rule's side-condition bounds the CUMULATIVE transcript — leaves pay their
@@ -289,7 +290,7 @@ search finite). -/
     --     plus its Σ₁ refutation twin).
     | atom : AtomProvable k φ → Pf k φ
     /-- **Refutation of a play-atom from a certificate of the actual play** (eval determinism): if
-        `p` provably plays `b` (a real certificate) and `b ≠ aN`, then `¬(p plays aN)` — sound by
+        `p` plays `b` with an `S`-certificate (`AtomProvable`) and `b ≠ aN`, then `¬(p plays aN)` — sound by
         `eval` fuel-monotonicity. This is the Σ₁ refutation that `search_f` consumes. -/
     | atomNeg (p q : Prog) (b aN : Action) (m : Nat) :
         AtomProvable m (.plays p q b) → b ≠ aN →
@@ -425,21 +426,21 @@ search finite). -/
     | implTrans (φ ψ χ : Formula) (a b : Nat) :
         Pf a (.impl φ ψ) → Pf b (.impl ψ χ) →
         a + b + (Formula.impl φ χ).size ≤ k → Pf k (.impl φ χ)
-    /-- True-consequent implication, `ψ ⊢ φ → ψ`. Derivable from `implK` + `mp`; kept
-        primitive for transcript tightness. This is what makes implication-guarded bots
-        (CIMCIC, DIMCID) provable. -/
+    /-- True-consequent implication: from `⊢_m ψ` infer `⊢_k φ → ψ`. Derivable from `implK` + `mp`; kept
+        primitive for transcript tightness. This is what lets `S` derive the implication guards
+        of CIMCIC and DIMCID. -/
     | weakenImpl (φ ψ : Formula) (m : Nat) :
         Pf m ψ → m + (Formula.impl φ ψ).size ≤ k → Pf k (.impl φ ψ)
-    /-- Closed composition: from `⊢ φ → (ψ → χ)` and `⊢ φ → ψ`, infer `⊢ φ → χ`. The
+    /-- Closed composition: from `⊢_{m₁} φ → (ψ → χ)` and `⊢_{m₂} φ → ψ`, infer `⊢_K φ → χ`. The
         rule form suffices because both premises are closed. -/
     | impS2 (φ ψ χ : Formula) (m₁ m₂ K : Nat) :
         Pf m₁ (.impl φ (.impl ψ χ)) → Pf m₂ (.impl φ ψ) →
         m₁ + m₂ + (Formula.impl φ χ).size ≤ K → Pf K (.impl φ χ)
-    /-- `⊢ φ → φ`. Without it `S` could not prove this tautology (no deduction theorem,
+    /-- `⊢_k φ → φ`. Without it `S` could not prove this tautology (no deduction theorem,
         no premise-free implication leaf), and a bot guarding on `.impl A A` fell through. -/
     | implRefl (φ : Formula) :
         (Formula.impl φ φ).size ≤ k → Pf k (.impl φ φ)
-    /-- Hilbert K as an object formula, `⊢ φ → (ψ → φ)`. -/
+    /-- Hilbert K as an object formula, `⊢_k φ → (ψ → φ)`. -/
     | implK (φ ψ : Formula) :
         (Formula.impl φ (.impl ψ φ)).size ≤ k → Pf k (.impl φ (.impl ψ φ))
     /-- Hilbert S as an object formula. With `implK` and `mp` this completes the positive
@@ -449,7 +450,7 @@ search finite). -/
         (Formula.impl (.impl φ (.impl ψ χ))
           (.impl (.impl φ ψ) (.impl φ χ))).size ≤ k →
         Pf k (.impl (.impl φ (.impl ψ χ)) (.impl (.impl φ ψ) (.impl φ χ)))
-    /-- Contraposition, `⊢ φ → ψ ⟹ ⊢ ¬ψ → ¬φ` — the logical core's `.neg` consumer. -/
+    /-- Contraposition, `⊢_m φ → ψ ⟹ ⊢_k ¬ψ → ¬φ` — the logical core's `.neg` consumer. -/
     | contrapose (φ ψ : Formula) (m : Nat) :
         Pf m (.impl φ ψ) →
         m + (Formula.impl (.neg ψ) (.neg φ)).size ≤ k →
@@ -463,8 +464,8 @@ search finite). -/
         Pf k ψ
 
     -- ═══ Family C. LÖB MACHINERY — modal / HBL tier (bounded derivability conditions) ═══
-    /-- Bounded necessitation (HBL D2): a proof within `kIn` makes `□_{kIn} φ` provable.
-        Sound with no axiom — `(□_{kIn} φ).interp` IS `Pf kIn φ`. -/
+    /-- Bounded necessitation (HBL D2): from `⊢_{kIn} φ`, `S` derives `□_{kIn} φ` (at `K`).
+        Sound with no axiom — `⊨ □_{kIn} φ` IS `⊢_{kIn} φ` (`Pf kIn φ`). -/
     | boxIntro (kIn K : Nat) (φ : Formula) :
         Pf kIn φ →
         kIn + (Formula.box kIn φ).size ≤ K →
@@ -476,7 +477,7 @@ search finite). -/
         AtomProvable kBox (.plays p q a) →
         kBox + (Formula.impl (.plays p q a) (.box kBox (.plays p q a))).size ≤ k →
         Pf k (.impl (.plays p q a) (.box kBox (.plays p q a)))
-    /-- GL axiom K, rule form: from a held proof of `□_a (φ → α)`, `□_b φ → □_c α`. -/
+    /-- GL axiom K, rule form: from `⊢_m □_a (φ → α)`, infer `⊢_K □_b φ → □_c α`. -/
     | axK (a b c m K : Nat) (φ α : Formula) :
         Pf m (.box a (.impl φ α)) →
         a + b + α.size ≤ c →
@@ -955,7 +956,7 @@ theorem Pf_mono : ∀ {k₁ : Nat} {φ : Formula}, Pf k₁ φ →
   | atomNeg p q b aN m hatom hne hle =>
       exact .atomNeg p q b aN m hatom hne (Nat.le_trans hle hk)
 
--- 6. The proof-search oracle: bounded provability reflected into `Bool` for the
+-- 6. The proof-search oracle: bounded `S`-provability (`⊢_k φ`) reflected into `Bool` for the
 -- evaluator's guard. Classical (hence noncomputable), correct for an oracle.
 noncomputable def proofSearch (k : Nat) (φ : Formula) : Bool := decide (Pf k φ)
 

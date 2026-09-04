@@ -3,8 +3,9 @@ import PrisonersDilemma.Program
 open PD
 namespace PD.Bots
 
-/-- LegibleBot: cooperate iff my own cooperation is LEGIBLE — i.e. iff I can
-    prove (within `kOut`) that "I cooperate with you" is provable within `kIn`.
+/-- LegibleBot: cooperate iff my own cooperation is LEGIBLE — i.e. iff `S` derives
+    within `kOut` that "I cooperate with you" is `S`-derivable within `kIn`:
+    `⊢_kOut □_kIn (I play C)`.
 
     The guard is `□_kIn (I play C)`: the first bot in the zoo whose guard
     mentions provability itself (`.box`). Where DupocBot conditions on the

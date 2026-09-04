@@ -38,8 +38,8 @@ open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 
-/-- DIMCID's guard against DupocBot is FALSE at budget k: its consequent asks
-    for DupocBot's floor-priced else-play. -/
+/-- DIMCID's guard against DupocBot does not fire at budget k (`¬ ⊢_k`): its consequent
+    asks for DupocBot's floor-priced else-play. -/
 theorem dd_dimcid_guard_false (k : Nat) :
     proofSearch k
       ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.D)).subst
@@ -69,8 +69,8 @@ theorem dd_DIMCID_plays_C (k fuel : Nat) :
           else eval (fuel + 1) (DIMCID k) (DupocBot k) (.const Action.C)) = some .C
   rw [hg]; simp [eval]
 
-/-- DupocBot's guard against DIMCID is FALSE at budget k: DIMCID's cooperation is
-    its own else-play — floored. -/
+/-- DupocBot's guard against DIMCID does not fire at budget k (`¬ ⊢_k`, the cooperation
+    is real): DIMCID's cooperation is its own else-play — floored. -/
 theorem dd_dupoc_guard_false (k : Nat) :
     proofSearch k
       ((Formula.plays .opp .self Action.C).subst (DupocBot k) (DIMCID k)) = false := by

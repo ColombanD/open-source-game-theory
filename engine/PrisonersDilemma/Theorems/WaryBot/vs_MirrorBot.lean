@@ -39,8 +39,8 @@ theorem outcome_WaryBot_vs_MirrorBot_floor2 (fuel : Nat) :
     (`WaryCensus.pf_WV_mirror`): a valuation making the fixpoint-entangled
     C-atoms (`WaryCensus.SPMirror`) true, under which every rule of `S` is
     sound and the refutation is false — NOT by a `TailTo` census, which is
-    provably unusable for `.neg` tails (`contrapose ∘ implK` puts a provable
-    member in any singleton `.neg`-tail class; do not retry that route). -/
+    unusable for `.neg` tails (a Lean fact: `contrapose ∘ implK` puts an
+    `S`-derivable member in any singleton `.neg`-tail class; do not retry that route). -/
 @[outcome]
 theorem outcome_WaryBot_vs_MirrorBot :
     OutcomeSpec .universal 3

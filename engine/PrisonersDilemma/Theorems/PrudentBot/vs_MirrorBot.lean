@@ -25,8 +25,8 @@ theorem MirrorBot_plays_D_vs_bot_DefectBot (fuel : Nat) :
   show eval (fuel + 3) MirrorBot (.bot DefectBot) MirrorBot = some .D
   simp [eval, Prog.subst, MirrorBot, DefectBot]
 
-/-- Hence the prudence atom `MirrorBot plays D vs DefectBot` is provable (for `k`
-    large enough to fit the certificate). -/
+/-- Hence the prudence atom `MirrorBot plays D vs DefectBot` is `S`-derivable, `⊢_27`
+    (the certificate's size; any budget `k ≥ 27` fits it). -/
 theorem prudence_provable :
     Pf 27 (Formula.plays MirrorBot (.bot DefectBot) Action.D) := by
   have hPlay : play 3 MirrorBot (.bot DefectBot) = some .D := by
@@ -126,12 +126,14 @@ theorem proofSearch_k_of_play_MirrorBot_prudent
 
 /-- **PrudentBot vs MirrorBot → (C, C)** for all large enough `k`. Application of
     `PBLT` to the Löb premise: the cooperation atom `φ = MirrorBot plays C vs
-    PrudentBot` is provable, so PrudentBot's outer search fires; the prudence atom
-    is independently provable, so the inner search fires too — both bots cooperate.
+    PrudentBot` is `S`-derivable (`⊢_k φ`), so PrudentBot's outer search fires; the
+    prudence atom is independently derivable (`⊢_27`), so the inner search fires too —
+    both bots cooperate.
 
     Contrast the *old* PrudentBot (prudence `.ite` over the search), whose Löb
-    premise was unprovable: the fix was the `searchThenSearch_t` transparency rule,
-    which lets S read PrudentBot's stacked-`.search` body. -/
+    premise had no `S`-derivation (`¬ ⊢` — a missing RULE, not a false premise): the
+    fix was the `searchThenSearch_t` transparency rule, which lets S read PrudentBot's
+    stacked-`.search` body. -/
 @[outcome]
 theorem outcome_PrudentBot_vs_MirrorBot :
     OutcomeSpec .eventual 4

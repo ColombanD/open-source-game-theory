@@ -37,7 +37,7 @@ There are **two different theorems** people conflate under "prove PBLT", and the
 
 | | Theorem | Goal it serves | Constructive? | Makes `eval` computable? |
 |---|---|---|---|---|
-| **(A)** | **Critch's PBLT** (`PBLT_proof.tex`, Thm 3.6) | "explicit S" — honest axiom surface | **No** — classical diagonal lemma, proves `∃m, Provable m φ` with no extractable witness | **No** |
+| **(A)** | **Critch's PBLT** (`PBLT_proof.tex`, Thm 3.6) | "explicit S" — honest axiom surface | **No** — classical diagonal lemma; its conclusion `∃m, Provable m φ` (a Lean existential over `⊢_m φ`) carries no extractable witness | **No** |
 | **(B)** | **Constructive bounded Löb** (this note) | THE crux — computable `eval` | **Yes** — builds a size-≤-k proof *term* | **Yes** |
 
 **(A) is not (B).** Transcribing Critch faithfully — abstract-interface *or* full
@@ -172,7 +172,7 @@ concrete fixed-`(k,fuel)` outcome theorems become `by decide` (much scaffolding 
 
 This is the analog of `Provable_sound`/`proofSearch_spec` (`BaseTheorems.lean`) for the new
 combinator. The danger: a productive combinator that builds a term **not** matched by any
-real `eval` run would be **unsound** (it would prove false cooperations). Soundness pins
+real `eval` run would be **unsound** (it would derive false cooperations: `⊢_k φ` with `¬ ⊨ φ`). Soundness pins
 `step` to the actual `eval` step semantics. This proof — that budget-bounded unfolding
 tracks fuelled evaluation at the fixpoint — is the genuine mathematical content and the
 research risk. It is plausible (the bounded box was *designed* to be the fuelled search)
@@ -331,10 +331,10 @@ If `boundedLob` can't close CUPOD self-play, it can't close anything — fail fa
   against the REAL engine (`Provable`/`interp`/`Derivation`/`cupod_loeb_premise`), not the toy.
   **Verdict: the §2.2 `boundedLob` `step` signature does NOT match the CUPOD discharge.** Two
   concrete mismatches, both machine-confirmed:
-  1. **Predicate mismatch.** `interp (□_k φ) = Provable k φ` (Dynamics.lean:55), so
+  1. **Predicate mismatch.** `interp (□_k φ) = Provable k φ` (Dynamics.lean:55; `⊨ □_k φ ≡ ⊢_k φ`), so
      `cupod_loeb_premise` + `Provable_sound` yields the meta-step `Provable k φ → φ.interp`
-     (proven, no sorry: `cupod_step`). But the *premise* is a **proof** `Provable k φ` and the
-     *conclusion* is a **play** `φ.interp` (`∃n, play n … = some .D`). They are different
+     (`⊢_k φ ⟹ ⊨ φ`; proven in Lean, no sorry: `cupod_step`). But the *premise* is an
+     **`S`-derivation** `⊢_k φ` and the *conclusion* is a **play** `⊨ φ` (`∃n, play n … = some .D`). They are different
      predicates, so the output cannot be fed back as the next input — there is no `P k` such
      that `step : (∀j<k, P j) → P k`. The toy `boundedLob` re-enters with the same `P`; the
      real discharge cannot.
@@ -359,7 +359,7 @@ If `boundedLob` can't close CUPOD self-play, it can't close anything — fail fa
   the antecedent box be `□_{k'} φ` with `k' < k`? **Answer, read straight off `eval`
   (Dynamics.lean:34–37) and machine-checked:** `CupodBot k = .search k …`, and `eval`'s
   `.search` rule consults `proofSearch k` — at the bot's **own** parameter `k`, nothing
-  smaller. The guard fires iff `Provable k (guard)`, so the *sound* box premise is `□_k`,
+  smaller. The guard fires iff `Provable k (guard)` (`⊢_k`), so the *sound* box premise is `□_k`,
   budget = the bot's `k`. **`k' = k` is FORCED by the semantics.** The `c_guard k` the
   certificate spends is internal proof-length bookkeeping paid *on top of* the atom — it is
   never subtracted from the antecedent's box budget. So there is **no** strictly-smaller

@@ -141,8 +141,8 @@ theorem atom_complete_searchfree (p q : Prog) (a : Action) (fuel : Nat)
   obtain ⟨n, cert, hn⟩ := cert_searchfree fuel p q p a hp hq hp h
   exact ⟨cert, hn⟩
 
-/-- FIRED top-level search (the Dupoc/Cupod shape): the guard's provability at its own
-    literal certifies the then-play at `log2 k + 3` characters. -/
+/-- FIRED top-level search (the Dupoc/Cupod shape): the guard's `S`-derivability at its own
+    literal (`⊢_k guard`) certifies the then-play at `log2 k + 3` characters. -/
 theorem atom_search_t_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
     (hg : Pf k (g.subst (.search k g (.const aT) (.const aE)) oppo)) :
     AtomProvable (Nat.log2 k + 3)

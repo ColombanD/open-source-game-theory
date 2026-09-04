@@ -33,7 +33,11 @@ source lift τ: (1) lift A's code constructor by constructor, every severed `.op
 reference becoming the hypothesis's tau instance; (2) `inst(A, δ_B)` = A's ENTIRE
 lifted decision procedure at point mass on B; (3) ONE weighted vote over the true
 PLAYS of the instances (`Prog.tvote`). `proofSearch` appears only where A's own
-code has it. At large k on terminating cells Def 4's bit equals Def 3's, so the
+code has it. (Levels: Def 3 is matrix arithmetic over META-level outcomes —
+`outcome(A, Bᵢ)` is a Lean value, no turnstile; inside a compiled Def-4 bot a
+`.search` inherited from A's code is still an S-level `⊢_k` question, and the vote
+is over the instances' actual plays, `⊨`, never over their provability.) At large k
+on terminating cells Def 4's bit equals Def 3's, so the
 `(t, α)` phase diagrams coincide; Def 4 adds what Def 3 stipulates — Löb
 thresholds, floor cells, sub-Löb regimes, cost intensionality — as theorems.
 
@@ -93,8 +97,9 @@ and "I'd cooperate" is an ungrounded fixpoint; the test must be a concrete probe
 the hypothesis, and choosing it fixes the point-mass collapse.
 
 *MaxConfidenceBot* = (Dupoc's test, **`max ≥ θ`**): "cooperate iff some SINGLE
-hypothesis carrying at least θ of the signal on its own provably cooperates with me"
-— the ambiguity-averse Löbian cooperator, which makes the headline question literal:
+hypothesis carrying at least θ of the signal on its own provably (`⊢_k`, Dupoc's
+`.search` test) cooperates with me" — the ambiguity-averse Löbian cooperator, which
+makes the headline question literal:
 its cooperation with τ(Dupoc) switches off exactly when the channel's confidence on a
 Löb-cooperating hypothesis drops below θ, however high the expected cooperation.
 Machinery: `Tau/Vote.lean::maxPlayer` — a chain of ONE-entry `.tvote`s (a one-entry
@@ -126,8 +131,8 @@ under behavior-blur); the `epsilon` family is identity-based and unaffected.
 *MinConfidenceBot* (2026-09-01) = (Dupoc's test, **`min` / worst case**):
 MaxConfidenceBot's C/D-transposition dual, the Gilboa–Schmeidler PESSIMIST —
 "cooperate iff NO single hypothesis carrying at least θ of the signal on its own
-provably defects against me", equivalently every θ-credible hypothesis passes the
-test. With the lifts' `sum` these are the {expectation, best case, worst case}
+provably (`⊢_k`) defects against me", equivalently every θ-credible hypothesis passes
+the test. With the lifts' `sum` these are the {expectation, best case, worst case}
 aggregator family over one test — the paper's aggregator ablation. Machinery
 mirrors the max: `Tau/Vote.lean::minPlayer` (the same one-entry `.tvote` chain with
 the polarity flipped — fall through on C, commit D on a credible defector; the
@@ -188,7 +193,8 @@ signal/channels/syntax/play`. EGT (`egt/`) consumes tau tournaments at fixed `(t
 
 **Headline findings.** Def 4 ≡ Def 3 at large k (certified, not assumed). A tau
 player is (test, aggregator); lifts are exactly the linear-threshold aggregators, and
-MaxConfidenceBot (max) is provably outside that class while being Dupoc as a hypothesis. The
+MaxConfidenceBot (max) is outside that class by a Lean theorem (`maxconfidence_not_linear`)
+while being Dupoc as a hypothesis. The
 prover/behavioral split is a budget gap. Floors, not fixpoints, decide anti-aligned
 Löb pairs. τ(CIMCIC)'s row equals τ(Dupoc)'s: conditional and Löbian cooperation
 coincide on this zoo by different mechanisms. Three floor bots (Guardian,
@@ -203,7 +209,8 @@ CupodTroll, Cupod) are where TFT's prover and behavioral readings separate.
 - **The σ-player TauEBot** (θ inside the cascade). Its window / `(D,D)` self-play /
   "45/56 diverging cells" describe the crowd-exploiter — never cite as Def-4 results.
 - **`.tsearch` provability-votes** — wrong modality (misreads true-but-unprovable
-  else-plays); `tvote` subsumes it. **`iteTree` compilation** — 2ⁿ blow-up.
+  — `⊨` yet `¬ ⊢_k` — else-plays); `tvote` subsumes it. **`iteTree` compilation** —
+  2ⁿ blow-up.
 - **Constructor-profile syntactic distance** — the "DBot/TFT are syntactic twins"
   claim was a metric artifact.
 - **Fragment-first ordering** (the 08-20 scoping note) — built on miscounting

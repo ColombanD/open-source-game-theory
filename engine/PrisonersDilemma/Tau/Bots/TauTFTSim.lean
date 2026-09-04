@@ -5,7 +5,8 @@ import PrisonersDilemma.Tau.Roster
 
 Base `TitForTatBot = .ite (.sim .opp (.bot CooperateBot)) C (const C) (const D)`:
 simulate the opponent against the cooperator and copy what it does. The lift keeps
-the `.sim` modality: it sees TRUE plays and is blind to provability floors. Its
+the `.sim` modality: it sees TRUE plays (`⊨`) and is blind to provability floors
+(`¬ ⊢_k`). Its
 prover twin is `TauTFTPf` — the two differ by one node, `ite (sim …)` vs
 `search .prove …`.
 -/

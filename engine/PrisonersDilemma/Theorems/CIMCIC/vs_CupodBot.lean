@@ -146,8 +146,8 @@ theorem cb_CIMCIC_plays_D (k fuel : Nat) :
           else eval (fuel + 1) (CIMCIC k) (CupodBot k) (.const Action.D)) = some .D
   rw [hg]; simp [eval]
 
-/-- CupodBot's guard against CIMCIC is FALSE at budget k: CIMCIC's defection is
-    its own else-play — floored. -/
+/-- CupodBot's guard against CIMCIC does not fire at budget k (`¬ ⊢_k`, the defection
+    is real): CIMCIC's defection is its own else-play — floored. -/
 theorem cb_cupod_guard_false (k : Nat) :
     proofSearch k
       ((Formula.plays .opp .self Action.D).subst (CupodBot k) (CIMCIC k)) = false := by

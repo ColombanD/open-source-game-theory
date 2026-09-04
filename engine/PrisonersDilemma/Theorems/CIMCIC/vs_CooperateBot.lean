@@ -54,7 +54,7 @@ theorem CIMCIC_plays_C_against_CooperateBot (k fuel : Nat)
           (CIMCIC k) CooperateBot) = true) :
     play (fuel + 2) (CIMCIC k) CooperateBot = some .C := by
   -- One eval step: the guard `proofSearch` argument is definitionally the
-  -- substituted implication that `hk` proves true, so the search takes the
+  -- substituted implication whose search `hk` records as fired, so the search takes the
   -- `.const .C` branch.
   show (if proofSearch k
             ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst

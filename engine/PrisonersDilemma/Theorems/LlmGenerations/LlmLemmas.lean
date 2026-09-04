@@ -14,7 +14,7 @@ open PD PD.BaseTheorems
 
 namespace PD.LlmLemmas
 
-/-- Seed example (the expected format): reflect a fired oracle back into provability. -/
+/-- Seed example (the expected format): reflect a fired oracle back into `⊢_k φ`. -/
 theorem pf_of_proofSearch {k : Nat} {φ : Formula} (h : proofSearch k φ = true) : Pf k φ :=
   (proofSearch_spec k φ).1 h
 
@@ -36,7 +36,7 @@ theorem loeb_premise_boxMono {a b m K : Nat} {φ : Formula}
 
 /-- Parametric budget-gated WV census: for a play-C-forced relation `S` closed under sim,
     whose members never actually-play `.D` within budget `≤ k` (`h_noD`, the FLOOR), every
-    `≤ k`-provable formula is `WV S`-true. This is the budget-aware variant of the master
+    formula `S` derives at budget `≤ k` is `WV S`-true. This is the budget-aware variant of the master
     `wv_sound_upto` for SEARCHER bases with a DEFECTING else-branch (where the master's
     UNCONDITIONAL `h_search_f` obligation `a = .C` is unsatisfiable — the else literally plays
     `.D` — but the `search_f` cost FLOOR keeps that `.D`-certificate strictly above every budget

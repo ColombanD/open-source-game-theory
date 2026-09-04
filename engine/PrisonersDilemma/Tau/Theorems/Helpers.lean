@@ -51,7 +51,7 @@ every bit lemma the tau layer already proves about `probe I` is a fact about the
 entry `I`, one `.bot` unfolding apart. This is what lets the whole `Certs` layer be
 reused verbatim under the refined definition. -/
 
-/-- A true probe atom gives a cooperating entry. -/
+/-- A true probe atom (`⊨ probe I`) gives a cooperating entry. -/
 theorem entry_C_of_interp {I : Prog} (h : (probe I).interp) :
     ∃ N, eval N (.bot I) (.bot I) I = some Action.C := by
   simp only [probe, Formula.interp] at h
@@ -107,8 +107,8 @@ theorem simCopy_plays {I : Prog} {a : Action} (me opp : Prog)
 /-! ## The generic false-bit lemmas
 
 `eval` is a function (`eval_det`, in `Base/ValuationSoundness`), so a program has ONE
-play — which makes "the probe atom is false" derivable from ANY witness of the
-opposite play, killing the per-shape match-on-fuel proofs for every negative bit. -/
+play — which makes "the probe atom is false" (`¬ ⊨ probe I`) a Lean consequence of ANY
+witness of the opposite play, killing the per-shape match-on-fuel proofs for every negative bit. -/
 
 /-- A D-playing instance's COOPERATION probe is false… -/
 theorem interp_probe_false_of_plays_D {I : Prog}
@@ -124,7 +124,7 @@ theorem interp_probe_false_of_plays_D {I : Prog}
     rw [eval]; exact hN
   exact absurd (eval_det hplay hN') (by decide)
 
-/-- …and unprovable at every budget (soundness). -/
+/-- …and `S` derives it at no budget: `¬ ⊢_m`, by soundness. -/
 theorem ps_probe_false_of_plays_D {I : Prog} (m : Nat)
     (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.D) :
     proofSearch m (probe I) = false := by
@@ -147,7 +147,7 @@ theorem interp_probeD_false_of_plays_C {I : Prog}
     rw [eval]; exact hN
   exact absurd (eval_det hplay hN') (by decide)
 
-/-- …and unprovable at every budget (soundness). -/
+/-- …and `S` derives it at no budget: `¬ ⊢_m`, by soundness. -/
 theorem ps_probeD_false_of_plays_C {I : Prog} (m : Nat)
     (h : ∃ N, eval N (.bot I) (.bot I) I = some Action.C) :
     proofSearch m (probeD I) = false := by
@@ -434,7 +434,8 @@ theorem pf_probeD_obotSecondFires {K m n : Nat} {P Q : Prog}
       (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot hQ)) rfl PlaysProof.const)),
     by have := hcl; have := hcn; omega⟩
 
-/-- The constant cooperator provably does NOT defect — the refutation that Cupod's
+/-- `S` REFUTES the constant cooperator's defection — `⊢_K ¬(probeD (.const .C))`, an
+    object refutation, not merely `¬ ⊢_K probeD …` — the refutation that Cupod's
     trust-transcript cites (`search_f` needs a `.neg` of its guard). -/
 theorem pf_neg_probeD_constC {K : Nat} (hK : 10 ≤ K) :
     Pf K (.neg (probeD (.const .C))) := by
@@ -499,8 +500,8 @@ component. Three generic lemmas then settle a whole class of cells:
 * `ps_botSys_mismatch_false` — **the floor decides**: a probe aimed at a component
   whose then-action mismatches the target is FALSE at every budget up to the
   component's own (`no_provable_botSysSearcherElse_tail`). A 2-cycle whose actions
-  do not align therefore has BOTH bits provably false — no bistability survives
-  the `search_f` floor. -/
+  do not align therefore has BOTH bits false (`¬ ⊢_K` either guard — a Lean theorem,
+  not an `S`-refutation) — no bistability survives the `search_f` floor. -/
 
 /-- `sysClose` sends a wrapped self-reference to the wrapped system, and `subst`
     cannot touch the `.bot` freeze. -/

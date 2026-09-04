@@ -199,9 +199,9 @@ RESOLVED (2026-07-09): the floor is a THEOREM — `no_provable_EBot_C_vs_Prudent
 an instance of `no_provable_probeFirst_C_tail` (Base/Exclusion.lean; PrudentBot matches
 the budget-`k` searcher shape with its prudence search as the then-branch). PrudentBot
 defects at every budget. EBot's own play is pure run-priced simulation: its probes
-watch PrudentBot defect vs `.bot DefectBot` (outer guard refuted by soundness) and vs
-`.bot CooperateBot` (outer guard may or may not fire, but the prudence guard is refuted
-— CooperateBot never defects — so both branches defect), then watch PrudentBot
+watch PrudentBot defect vs `.bot DefectBot` (outer guard `¬ ⊢_k` by soundness) and vs
+`.bot CooperateBot` (outer guard may or may not fire, but the prudence guard is `¬ ⊢_k`
+by soundness — CooperateBot never defects — so both branches defect), then watch PrudentBot
 COOPERATE vs `.bot MirrorBot` (the Löb fixpoint, `prudent_botmirror_coop`) — so EBot
 cooperates for k past the Löb threshold: `outcome_PrudentBot_vs_EBot = (D, C)`. -/
 
@@ -238,8 +238,8 @@ theorem PrudentBot_plays_D_against_EBot (k fuel : Nat) :
     play (fuel + 2) (PrudentBot k) EBot = some .D :=
   PrudentBot_plays_D_of_search_false k fuel EBot (proofSearch_false_for_EBot_vs_Prudent k)
 
-/-- Probe 1: `.bot DefectBot` never cooperates, so PrudentBot's outer guard is refuted
-    by soundness and PrudentBot defects on EBot's first probe. -/
+/-- Probe 1: `.bot DefectBot` never cooperates, so PrudentBot's outer guard is dead
+    by soundness (`¬ ⊢_k`, the formula is false) and PrudentBot defects on EBot's first probe. -/
 theorem proofSearch_false_bot_DefectBot_vs_Prudent (k : Nat) :
     proofSearch k (.plays (.bot DefectBot) (PrudentBot k) .C) = false := by
   cases h : proofSearch k (.plays (.bot DefectBot) (PrudentBot k) .C) with
@@ -251,7 +251,7 @@ theorem PrudentBot_plays_D_vs_bot_DefectBot (k fuel : Nat) :
   PrudentBot_plays_D_of_search_false k fuel _ (proofSearch_false_bot_DefectBot_vs_Prudent k)
 
 /-- Probe 2, prudence side: `.bot CooperateBot` never defects, so PrudentBot's inner
-    (prudence) guard is refuted by soundness. -/
+    (prudence) guard is `¬ ⊢_k` by soundness. -/
 theorem proofSearch_false_prudence_bot_CooperateBot (k : Nat) :
     proofSearch k (.plays (.bot CooperateBot) (.bot DefectBot) .D) = false := by
   cases h : proofSearch k (.plays (.bot CooperateBot) (.bot DefectBot) .D) with
@@ -260,7 +260,7 @@ theorem proofSearch_false_prudence_bot_CooperateBot (k : Nat) :
 
 /-- Probe 2: PrudentBot defects against `.bot CooperateBot` REGARDLESS of whether its
     outer guard fires — if it fails, the else-branch defects; if it fires, the prudence
-    guard is refuted (CooperateBot is a sucker) and the inner else defects. -/
+    guard is `¬ ⊢_k` (CooperateBot is a sucker) and the inner else defects. -/
 theorem PrudentBot_plays_D_vs_bot_CooperateBot (k fuel : Nat) :
     play (fuel + 3) (PrudentBot k) (.bot CooperateBot) = some .D := by
   cases h1 : proofSearch k (.plays (.bot CooperateBot) (PrudentBot k) .C) with

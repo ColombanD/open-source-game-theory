@@ -108,7 +108,7 @@ deriving DecidableEq, Repr
     * `ite g test p q`         — base `.ite`: run `g`; if it yields `test`, `p`, else `q`
     * `search m t test p q`    — base `.search`: bounded proof search over the
                                  `m`-guard about the hypothesis facing `t`; `p` if
-                                 provable, else `q`
+                                 `S` derives it within `Z.budget`, else `q`
 
     The old stage rows read off directly: `⟨.run, t, test, fire⟩ :: rest` is
     `ite (sim t) test (const fire) rest`, and `⟨.prove, t, test, fire⟩ :: rest` is

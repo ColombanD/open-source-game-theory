@@ -27,7 +27,7 @@ theorem outcome_WaryBot_vs_WaryBot_floor2 (fuel : Nat) :
   outcome_WaryBot_vs_WaryBot_floor 2 fuel (by decide)
 
 /-- **WaryBot self-play at ALL budgets: mutual cooperation** — trust is the
-    provable fixpoint. The refutation-guard analogue of Löbian self-cooperation
+    fixpoint (a Lean theorem; no guard fires, nothing is `S`-derived). The refutation-guard analogue of Löbian self-cooperation
     resolves POSITIVELY: "¬(WaryBot k plays C vs itself)" is underivable at
     every budget (`no_Pf_neg_wary_self`, via `WaryCensus.pf_WV_self` — the
     self-play census whose base kill sits in the `search_t` arm, where the

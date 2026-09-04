@@ -9,7 +9,7 @@ namespace PD.Bots
     not a sucker), otherwise defect.
 
     The cooperation `.search` is kept at the *root* — the same shape DupocBot
-    uses — so the Löb cooperation fixed point `□φ → φ` stays clean and provable
+    uses — so the Löb cooperation fixed point `□φ → φ` stays clean and `S`-derivable
     (a prudence `.ite` wrapping the search would block it). The prudence check is
     folded into the THEN branch as an inner `.search`. -/
 def PrudentBot (k : Nat) : Prog :=

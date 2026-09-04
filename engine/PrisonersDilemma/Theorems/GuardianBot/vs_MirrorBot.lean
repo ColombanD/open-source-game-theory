@@ -14,7 +14,8 @@ namespace PD.Theorems
 
 /-- GuardianBot vs MirrorBot: mutual cooperation at EVERY budget, with NO Löbian
     fixpoint between the players — the guard is about the frozen third-party probe,
-    which MirrorBot provably-never bullies (soundness refutation), and MirrorBot's
+    which MirrorBot never bullies — so the guard has no `S`-derivation at any budget
+    (`¬ ⊢_k`, by soundness; a meta kill, not an `S`-refutation) — and MirrorBot's
     simulation reaches GuardianBot's trusting else-branch. Cooperation through
     norms rather than mutual proof of cooperation. -/
 @[outcome]

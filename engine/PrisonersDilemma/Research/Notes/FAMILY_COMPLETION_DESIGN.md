@@ -26,7 +26,8 @@ lemmas (`LlmLemmas`), never by constructors.
 | `negElim` | `⊢ ¬φ, ⊢ φ ⟹ ⊢ ψ` | 2-premise | `negElim_sound` |
 
 Notes:
-- `implRefl` was **provably absent** from the pre-integration `S` (spike §3, now the
+- `implRefl` was **absent** from the pre-integration `S` — a Lean theorem,
+  `¬ ⊢_k (A → A)` (spike §3, now the
   positive demo `implRefl_now_in_S`): a bot guarding on the tautology `.impl A A`
   fell through — the concrete gap, closed 2026-07-28.
 - `implK` + `mp` derives `weakenImpl` (spike `weakenImpl_derivable`); keep
@@ -43,9 +44,9 @@ Notes:
 `implRefl`/`implK` FALSIFY the tail-recursing census invariant used by every
 structural exclusion proof (`Forbidden (.impl _ ψ) := Forbidden ψ`): they are
 premise-free with an arbitrary tail, so `⊢ A → A` is derivable and tail-forbidden
-(spike §2 `old_invariant_falsified`). The underlying unprovability facts are NOT
-false — extracting the tail of `φ → φ` via `mp` needs `φ` itself — but every census
-THEOREM as stated breaks. This is the canary doing its job.
+(spike §2 `old_invariant_falsified`). The underlying unprovability facts (`¬ ⊢_k`,
+meta) are NOT false — extracting the tail of `φ → φ` via `mp` needs `φ` itself — but
+every census THEOREM as stated breaks. This is the canary doing its job.
 
 **The repair** (validated, spike §2 `guarded_census`):
 
@@ -171,7 +172,7 @@ an `implChain` induction per invariant).
    discharges totality/fundamental), and T51's regress via `ModChain_chain_plays` +
    the first-guard-not-modest contradiction.
    **THE OPEN FRONTIER — ite-layer telescopes**: an unrestricted `ctxBranch` with
-   `iteT` layers makes probe-implication chains provable (`(opp plays a' vs .bot z) →
+   `iteT` layers makes probe-implication chains S-derivable (`(opp plays a' vs .bot z) →
    me plays c`), whose antecedents are CHEAP plays-atoms — the Guarded/TailTo census
    cannot price them; blocking mp-extraction then genuinely requires the budget-aware
    "antecedent-provenance" analysis (T48 §10's corrected foundation). That redesign is
@@ -211,8 +212,9 @@ TWO PRINCIPLED BOUNDARIES, both discovered and pinned during integration:
   TERMS). Landing Peirce requires a continuation-passing substrate — research.
 * **The classical NEGATION axiom-forms are CENSUS-blocked** (`(¬ψ→¬φ)→(φ→ψ)`,
   `¬¬φ→φ`): their `.neg`-buried antecedents never self-annihilate against a
-  plays-census, and with `weakenImpl`+`atomNeg` they make `.impl φ T` provable for
-  refutable `φ` — the SAME false-antecedent wall as the ite-ELSE frontier. One
+  plays-census, and with `weakenImpl`+`atomNeg` they make `.impl φ T` S-derivable for
+  S-refutable `φ` (`⊢_k ¬φ`) — the SAME false-antecedent wall as the ite-ELSE
+  frontier. One
   unified open problem now blocks both remaining expressiveness cells.
 
 So the certified claim: Family B is COMPLETE for the intuitionistic positive
@@ -224,7 +226,7 @@ the classical extensions blocked by two named, pinned walls — one substrate
 (D1 `boxIntro`, D2 `axK`/`axKf`, D3 `box4`) + `atomBoxImpl` + `boxMono` + the diag
 legs suffice to derive bounded Löb IN-ENGINE (`bloeb_engine`), and T54 certifies
 every zoo Löb pattern. NOT certified: an absolute criterion such as bounded
-GL-completeness ("every GL-provable schema holds under the bounded translation") —
+GL-completeness ("every GL-provable schema is S-derivable under the bounded translation") —
 research-grade, unformulated. Known concrete gap that has never been needed:
 Σ₁-completeness beyond play-atoms (boxed `eqRefl`/`atomNeg` conclusions).
 
@@ -254,7 +256,8 @@ an integration task at all but a MODELING CHOICE:
 **RETRACTION of the earlier flip-claim.** The previous draft asserted ite-reading
 would flip `llm_outcome_CIMCIC_vs_DBot` to `(C, C)` because the probe antecedent
 "CIMCIC plays D vs `.bot DefectBot`" is "cheaply certifiable". That conflated
-EVAL-truth with CERTIFIABILITY: the probe is CIMCIC's own Gödelian fall-through —
+EVAL-truth (`⊨`) with CERTIFIABILITY (`⊢_k`): the probe is CIMCIC's own Gödelian
+fall-through —
 `search_t` dies on the guard census, `search_f` dies on soundness (the guard instance
 is vacuously TRUE), so the probe atom has **no certificate at any budget** —
 kernel-checked: `Research/Spikes/family_completion/ProvenanceSpike.lean`
@@ -262,7 +265,7 @@ kernel-checked: `Research/Spikes/family_completion/ProvenanceSpike.lean`
 antecedent is Gödelian-uncertifiable, floor-priced above the consuming budget, or
 semantically false. **Full ite-reading flips NO current outcome** — it is pure added
 expressiveness. What it breaks is the census ARCHITECTURE only: probe chains become
-provable with priced-out antecedents, invisible to the Guarded `TailTo` invariant.
+S-derivable with priced-out antecedents, invisible to the Guarded `TailTo` invariant.
 
 The spike also certifies the provenance CORE: `SpineW` (witnessed extraction spines
 with exact transcript bookkeeping) + `SpineW.extract` (iterated `mp` at the recorded
@@ -298,7 +301,7 @@ widening.** Discovered mid-integration, working the OBot instance: with an else 
 `implTrans` composes Cupod's own `searchBranch` self-read
 `□_k(gC-inst-vs-botCoop) → (Cupod plays D vs .bot CooperateBot)` with OBot's
 else-probe chain `(Cupod plays D vs .bot CooperateBot) → (OBot plays D vs Cupod)`
-into a PROVABLE, Guarded-classed, box-headed chain to the floor target — so
+into an S-DERIVABLE (`⊢_k`), Guarded-classed, box-headed chain to the floor target — so
 `no_provable_OBot_D_tail` (and its ∀-chain siblings) would be FALSE as stated. The
 probe here is semantically FALSE (Cupod really plays C), so extraction still dies and
 the OUTCOME stays true — but every census repair needs the avoid-set closed over
@@ -345,7 +348,8 @@ semantically DETERMINED `(D, D)` — OBot's play is pure eval (probe1: CIMCIC
 cooperates with `.bot CooperateBot`, weakenImpl-provable guard; probe2: CIMCIC
 defects vs `.bot DefectBot`, the Gödelian fall-through → OBot's inner else fires D),
 and CIMCIC's guard `(CIMCIC plays C vs OBot) → (OBot plays C vs CIMCIC)` is
-vacuously-true-but-unprovable. The proof agent PROVED this on 2026-07-27 against the
+vacuously-true-but-unprovable (`⊨` yet `¬ ⊢_k`). The proof agent PROVED this on
+2026-07-27 against the
 22-constructor engine (git `621d183`, `CIMCIC_vs_OBot_pass.*`, never landed in the
 library) using two hand-rolled right-tail censuses. Post-completion, that proof is
 DOUBLY dead: the unguarded right-tail class is falsified by `implRefl` (`⊢ B → B` is

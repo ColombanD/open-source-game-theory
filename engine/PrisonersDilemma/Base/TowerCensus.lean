@@ -3,11 +3,11 @@ import PrisonersDilemma.Base.Exclusion
 /-!
 # Base/TowerCensus — the provability-tracking floor census (2026-08-25)
 
-**What it is for.** `no_provable_tailToS_floor` claims "no proof tails at the
+**What it is for.** `no_provable_tailToS_floor` claims "no `S`-derivation tails at the
 target atom T" and kills every reading rule by SHAPE. That claim is FALSE when
-T's player is a then-`D` searcher: `botSearchStep` proves `□(its guard) → T`
-outright — a genuine theorem that tails at T. The census must therefore admit
-that theorem and show it is HARMLESS: its box antecedent is unprovable, because
+T's player is a then-`D` searcher: `botSearchStep` derives `□(its guard) → T`
+outright — a genuine `S`-theorem that tails at T. The census must therefore admit
+that derivation and show it is HARMLESS: its box antecedent has no `S`-derivation (`¬ ⊢`), because
 the guard itself is a formula of the same kind one level down. So the class
 tracks boxes explicitly.
 
@@ -339,7 +339,7 @@ theorem TowerAt_not_DeadAll_box {Z : Formula} {rest : List Formula} (hc : GoodCh
 /-! ## THE KERNEL -/
 
 set_option maxHeartbeats 1000000 in
-/-- **The tower census.** No proof, at ANY budget, concludes a formula in the
+/-- **The tower census.** No `S`-derivation, at ANY budget, concludes a formula in the
     tower of target `Z`, given: the deeper levels' towers are already unprovable
     (`hdead`); `Z` has no certificate; every reading rule that could conclude `Z`
     is either shape-impossible or — for the one that is not, the `.bot`-wrapped

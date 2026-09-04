@@ -17,7 +17,7 @@ namespace PD.Theorems
 
 /-! # GuardianBot vs PrudentBot — the mutual FLOOR case.
 
-Both guards are TRUE but unprovable at budget k (certificates pay the `search_f`
+Both guards are TRUE (`⊨`) but unprovable at budget k (`¬ ⊢_k`: certificates pay the `search_f`
 floor `≥ k`), so each bot falls to its else-branch:
 * GuardianBot's guard "PrudentBot bullies CooperateBot" is true (PrudentBot plays D
   vs `.bot CooperateBot`) but the certificate costs ≥ k → GuardianBot COOPERATES.

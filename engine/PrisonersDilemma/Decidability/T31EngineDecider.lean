@@ -1637,8 +1637,8 @@ theorem decProv_mono2 (O₁ O₂ : Nat → Formula → Bool)
 
 The `∀ fuel ≥ K` form died with the CITE model: `searchThenSearch_t`'s inner premise lives at
 a SOURCE literal `k₂` unbounded by the conclusion's budget, so no budget-tied fuel covers it.
-The honest statement — and exactly T3.2c's target — is the enumerator form: every provable
-formula is FOUND at some fuel. -/
+The honest statement — and exactly T3.2c's target — is the enumerator form: every `S`-derivable
+formula (`⊢_k φ`) is FOUND at some fuel — a Lean theorem about the Bool `decProv`. -/
 
 set_option linter.unusedSimpArgs false in
 theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) :
@@ -2694,9 +2694,9 @@ theorem decFull_complete : ∀ {m φ}, Pf m φ →
 
 /-! ## 8. THE PAYOFF — **the engine's `Pf` is SEMIDECIDABLE, absolutely.**
 
-`decFull` is a single computable, total function; every hit is a real derivation
+`decFull` is a single computable, total function; every hit is a real `S`-derivation
 (`decFull_sound`), and every derivation is found (`decFull_complete`). No oracle, no
-hypothesis: bounded provability — Löb fixpoints, floored else-certificates and all — is
+hypothesis: bounded provability `⊢_k φ` — Löb fixpoints, floored else-certificates and all — is
 recursively enumerable with a verified enumerator. The residual gap to full DECIDABILITY is
 exactly a computable fuel bound (the cited-premise/query-universe question, T4). -/
 
@@ -2731,7 +2731,8 @@ def GuardSound (G : Nat → Formula → Option Bool) : Prop :=
   ∀ k φ b, G k φ = some b → proofSearch k φ = b
 
 /-- The enumerator-backed guard. Note the else side consults the negation at ANY budget
-    `m ≤ fuelD`: a derivable refutation refutes provability at every budget. -/
+    `m ≤ fuelD`: a derivable refutation `⊢_m ¬φ` rules out `⊢_k φ` at every budget `k`
+    (soundness + consistency). -/
 def guardFull (fuelD : Nat) : Nat → Formula → Option Bool := fun k φ =>
   if decFull fuelD k φ then some true
   else if (List.range (fuelD + 1)).any (fun m => decFull fuelD m (.neg φ)) then some false
@@ -2992,7 +2993,7 @@ theorem outcomeG_sound (G : Nat → Formula → Option Bool) (hG : GuardSound G)
 
 /-! ### Convergence — `guardFull`'s `none` is escapable on the whole r.e. fragment. -/
 
-/-- Σ₁ side: a provable guard is eventually committed `true`. -/
+/-- Σ₁ side: a guard with `⊢_k φ` is eventually committed `true`. -/
 theorem guardFull_converges_pos {k : Nat} {φ : Formula} (h : Pf k φ) :
     ∃ fuelD, guardFull fuelD k φ = some true := by
   obtain ⟨F, hF⟩ := decFull_complete h k le_rfl

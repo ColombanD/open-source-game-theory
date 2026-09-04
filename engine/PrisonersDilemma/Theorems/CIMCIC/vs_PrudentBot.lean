@@ -23,7 +23,7 @@ Same-`k` self-referential deadlock. PrudentBot's prudence check about CIMCIC
 certificate pays the `search_f` floor `k`, unaffordable at the same budget. So
 PrudentBot cannot prove prudence and defects. With PrudentBot defecting, CIMCIC's
 guard `(CIMCIC plays C vs PB) → (PB plays C vs CIMCIC)` has a FALSE consequent, and
-by soundness it is unprovable (proving it would fire CIMCIC's search into
+by soundness it is unprovable (`¬ ⊢_k`: an `S`-derivation would fire CIMCIC's search into
 cooperation, which would make the consequent true — a contradiction). So CIMCIC
 defects too. Mutual defection is the honest fixed point, exactly as with same-`k`
 PrudentBot self-play. -/

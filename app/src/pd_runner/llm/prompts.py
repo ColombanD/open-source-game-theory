@@ -305,8 +305,8 @@ your best compiling source, and the last compiler feedback. You finish by callin
   `(fun _ => DefectBot)`. `<pad>` is a `Nat` literal, the fuel offset — the statement
   unfolds to `outcome (fuel + pad) (L k) (R k) = some (.X, .Y)`. `<regime>` is
   `.nobudget` (both bots closed), `.universal` (holds at EVERY budget `k`) or `.eventual`
-  (holds at every sufficiently large `k`: `∃ k₂, ∀ k, k₂ < k → …`). A provably-no-outcome
-  pair states `none` as the result. Proof openers: `.nobudget` → `intro fuel`;
+  (holds at every sufficiently large `k`: `∃ k₂, ∀ k, k₂ < k → …`). A pair proved (in Lean)
+  to have NO outcome (non-termination, e.g. MirrorBot self-play) states `none` as the result. Proof openers: `.nobudget` → `intro fuel`;
   `.universal` → `intro k fuel`; `.eventual` → `refine ⟨K, fun k hk fuel => ?_⟩`; after
   that the goal is the familiar `outcome (fuel + pad) … = some (…)` and every existing
   proof technique applies. When your play witness comes out of `Pf_sound` with an
@@ -323,12 +323,18 @@ your best compiling source, and the last compiler feedback. You finish by callin
   `proofSearch _ _ = true/false` (a hypothesis conditioning the outcome on the proof
   oracle turns the theorem into a conditional claim) — a budget FLOOR is not a premise,
   it is the `.eventual` regime.
+- **Three levels of "proving" — keep them apart in your notebook and comments.**
+  `⊢_k φ` = `Pf k φ`: the object system `S` derives `φ` within budget `k` (the guard fires;
+  `□_k φ` is `S`'s own syntax for it). `⊨ φ` = `φ.interp`: `φ` is TRUE of the evaluator
+  (`Pf_sound : ⊢_k φ → ⊨ φ`). META = your Lean `theorem` / "we show": no symbol, a turnstile
+  never means Lean. `¬ Pf k φ` (no `S`-derivation exists — a Lean fact, what a census proves)
+  ≠ `Pf k (.neg φ)` (`S` refutes `φ`) ≠ `Pf k' (.neg (.box k φ))` (internal unprovability).
 - **`.search`-bot matchups depend on the budget `k` — bind it, do not give up.** When one or
   both bots take a budget parameter `k`, the outcome typically flips with `k`: small `k` gives
-  defection (the oracle proves nothing), large `k` gives the Löb/Critch cooperation fixed
-  point. The unquantified statement with `k` left free is unprovable, but the **large-`k`
-  threshold** statement `OutcomeSpec .eventual pad BotA BotB (some (…))` is provable and
-  is the expected answer. Existing `.search`-bot self-play theorems in the
+  defection (no guard fires: `¬ Pf k φ`, no `S`-derivation fits the budget), large `k` gives
+  the Löb/Critch cooperation fixed point. The unquantified statement with `k` left free has
+  NO Lean proof (the outcome flips with `k`), but the **large-`k` threshold** statement
+  `OutcomeSpec .eventual pad BotA BotB (some (…))` is a theorem and is the expected answer. Existing `.search`-bot self-play theorems in the
   few-shot files show the canonical `PBLT` application for this shape — follow it. Prove the
   threshold theorem; do NOT declare OUTCOME OPEN merely because the result varies with `k`.
   Not every self-play matchup cooperates, though: when the Löb premise is NOT derivable at
@@ -336,9 +342,10 @@ your best compiling source, and the last compiler feedback. You finish by callin
   `outcome_PrudentBot_vs_PrudentBot = (D, D)` (same-`k` single-tier prudence is
   self-defeating), proved via the exclusion census, not declared OPEN.
 - **Before ever declaring OUTCOME OPEN, climb the escalation ladder.** Historically, most
-  "unprovable" outcomes were provable — the missing piece was a DERIVED rule nobody had
-  stated yet (`boxInternalize` and `box_provable` were both once believed to need new
-  axioms; both turned out derivable). The ladder:
+  outcomes declared "unprovable" turned out to be Lean theorems — the missing piece was a
+  DERIVED rule of `S` nobody had stated yet (`boxInternalize` and `box_provable` were both
+  once believed to need new axioms; both turned out derivable from the existing `Pf` rules).
+  The ladder:
     1. **Search harder with existing rules** — re-read the Base/ modules in your prompt and
        the few-shot proofs. The rule inventory is COMPLETE for broad fragments since the
        family-completion program: the positive implicational fragment has its
@@ -353,8 +360,9 @@ your best compiling source, and the last compiler feedback. You finish by callin
     2. **Derive the missing principle as a lemma** (`add_base_lemma`, when available): state
        the reusable rule you wish existed and PROVE it from existing rules. This is always
        safe (kernel-checked, auto-rollback) and the lemma persists for future proofs.
-       This rung includes the NEGATIVE direction: "the guard is unprovable" is itself a
-       lemma obligation, not a prose claim. Do NOT hand-roll a `Pf.induct` census (the
+       This rung includes the NEGATIVE direction: "the guard is not `S`-derivable" — the
+       META fact `¬ Pf k guard`, NOT the object refutation `Pf k (.neg guard)` — is itself
+       a lemma obligation, not a prose claim. Do NOT hand-roll a `Pf.induct` census (the
        proof system has ~30 constructors — a hand-rolled induction is a many-iteration
        trap): instantiate the SHARED kernels in `Base/Exclusion.lean` —
        `no_provable_tailTo_unreadable` (Gödelian targets: certificates impossible at
@@ -402,17 +410,17 @@ your best compiling source, and the last compiler feedback. You finish by callin
   fixed points and neither is forced for all sufficiently large `k` — a BISTABLE matchup,
   like a guard naming a frozen `.bot` literal; no sound rule can force those, so do NOT
   propose a constructor for them). Before you may declare bare OUTCOME OPEN you must have
-  BOTH (a) attempted the unprovability lemma of rung 2 and be able to point at which
+  BOTH (a) attempted the `¬ Pf k guard` lemma of rung 2 and be able to point at which
   induction arm genuinely fails, AND (b) explained why no sound-and-faithful rule could
   force either outcome — if such a rule exists, rung 3 (a constructor proposal) is the
   required exit, not OPEN. Beware the false-bistability trap: "both action pairs are
   consistent with `Pf`" is true of EVERY search matchup before you determine which side
   `S` picks — it is not bistability. In particular a guard whose `interp` is TRUE is NEVER
-  bistable: either its unprovability is provable by structural exclusion (→ determined
+  bistable: either `¬ Pf k guard` is a Lean theorem by structural exclusion (→ determined
   defection theorem), or the missing capability is a faithful rule a PA-like `S` would
   have (→ constructor proposal). Historical precedent: the tautology guard `A → A` was
   exactly such a case — filed as the `identImpl` proposal, integrated as `Pf.implRefl`,
-  and its blocked outcome became provable. Check the live
+  and its blocked outcome became a theorem. Check the live
   `ProofSystem.lean` in your prompt before assuming a rule is missing.
   When OUTCOME OPEN genuinely applies, DISTINGUISH the two very different situations
   in your `submit_verdict` call:
@@ -422,8 +430,8 @@ your best compiling source, and the last compiler feedback. You finish by callin
     (e.g. "the target player is a `ctxChain` plug whose decomposition carries a FALSE
     probe over a then-readable searcher — the recursively-closed avoid-set frontier
     in FAMILY_COMPLETION_DESIGN.md"). This is NOT bistability, and a constructor
-    proposal is NOT the exit (no new provable-formula rule can force a negative
-    metatheorem) — the exit is census research, recorded by this verdict.
+    proposal is NOT the exit (a new `Pf` constructor only ADDS `S`-derivations; it can
+    never force the negative metatheorem `¬ Pf k guard`) — the exit is census research, recorded by this verdict.
   * `verdict="open_bistable"`: genuinely no single action pair is forced even in
     the large-`k` limit.
   Either way, the `explanation` field must contain one paragraph on which action pairs
@@ -449,9 +457,9 @@ def proof_request_message(
 
     # A bot that uses `.search` takes a budget parameter `k` (project convention).
     # When either side is such a bot, the outcome can *flip with `k`* (small `k`:
-    # the proof oracle proves nothing, bots defect; large `k`: the Löb/Critch
+    # no guard fires (`¬ Pf k φ`), bots defect; large `k`: the Löb/Critch
     # fixed point makes them cooperate). An unquantified `outcome … BotA BotB`
-    # statement then leaves `k` free and is genuinely unprovable. The right shape
+    # statement then leaves `k` free and has no Lean proof. The right shape
     # is a **large-`k` threshold theorem** binding `k` — exactly the form used by
     # `outcome_DupocBot_vs_DupocBot`. Detect that case and render the threshold template.
     parameterized = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
@@ -478,7 +486,7 @@ def proof_request_message(
             intro = (
                 f"Determine the outcome of `{left_bot}` vs `{right_bot}` and prove it.\n\n"
                 f"At least one side is a `.search` bot, so the outcome may depend on the "
-                f"search budget `k` (small `k`: the proof oracle proves nothing and the "
+                f"search budget `k` (small `k`: no guard is `S`-derivable and the "
                 f"bots tend to defect; large `k`: the Löb/Critch fixed point can make them "
                 f"cooperate). Prove the **large-`k`** outcome as a threshold theorem of the "
                 f"form below, picking the action pair that holds for all sufficiently large "
@@ -517,7 +525,7 @@ def proof_request_message(
             f"`outcome_at_of_ex ⟨witness⟩ ⟨totality at the pad⟩ fuel` — see "
             f"`outcome_DupocBot_vs_DupocBot`. {template_hint} Do NOT emit a raw `outcome … = "
             f"some (…)` equation or leave `k` free; that statement is off-template and, with "
-            f"`k` free, unprovable because the outcome flips with `k`.\n\n"
+            f"`k` free, it has no Lean proof because the outcome flips with `k`.\n\n"
             f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}`, "
             f"tag it `@[outcome]`, and pass a budgeted bot BARE and a closed bot as "
             f"`(fun _ => Bot)` — the linter checks the bots against the name."
@@ -669,8 +677,8 @@ Each bot is a Lean definition `def BotName : Prog := ...`.
 | `.search k φ p q` | If the proof oracle can verify formula `φ` within a budget of `k` characters, run `p`, else `q` |
 
 `φ` above is a `Formula` (see Program.lean). The relevant `Formula` constructors are
-`.plays p q a` ("`p(q.source) == a`"), `.impl`, `.neg`, `.box n φ` ("`φ` is provable
-within budget `n`"), and `.eq p q` — a **structural-identity** guard meaning "probe `p`
+`.plays p q a` ("`p(q.source) == a`"), `.impl`, `.neg`, `.box n φ` ("the proof system `S` derives `φ`
+within budget `n`" — `S`'s own name for `Pf n φ`), and `.eq p q` — a **structural-identity** guard meaning "probe `p`
 (typically `.opp`) is literally the same program as the frozen literal target `q`".
 `subst` resolves the probe `p` but does not descend into the literal `q`. Use `.eq` for
 strategies that test whether the opponent is a specific named bot.

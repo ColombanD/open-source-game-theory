@@ -31,8 +31,9 @@ open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 
-/-- JustBot's guard against CupodBot is FALSE at budget k: "CupodBot plays C vs
-    frozen DupocBot" is true only through CupodBot's floor. -/
+/-- JustBot's guard against CupodBot does not fire at budget k (`¬ ⊢_k`; the formula
+    itself is `⊨`-true): "CupodBot plays C vs frozen DupocBot" is true only through
+    CupodBot's floor. -/
 theorem jc_just_guard_false (k : Nat) :
     proofSearch k
       ((Formula.plays .opp (.bot (DupocBot k)) Action.C).subst
@@ -56,8 +57,8 @@ theorem jc_JustBot_plays_D (k fuel : Nat) :
           else eval (fuel + 1) (JustBot k) (CupodBot k) (.const Action.D)) = some .D
   rw [hg]; simp [eval]
 
-/-- CupodBot's guard against JustBot is FALSE at budget k: JustBot's defection is
-    its own else-play — floored. -/
+/-- CupodBot's guard against JustBot does not fire at budget k (`¬ ⊢_k`, the defection
+    is real): JustBot's defection is its own else-play — floored. -/
 theorem jc_cupod_guard_false (k : Nat) :
     proofSearch k
       ((Formula.plays .opp .self Action.D).subst (CupodBot k) (JustBot k)) = false := by

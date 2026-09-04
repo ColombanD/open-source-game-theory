@@ -53,8 +53,8 @@ def probe (I : Prog) : Formula := .plays (.bot I) (.bot I) Action.C
 theorem probe_subst (I me o : Prog) : (probe I).subst me o = probe I := rfl
 
 /-- The DEFECTION probe atom — "`I`, frozen, plays D against itself". Added with the
-    `test` field (2026-08-18): GuardianBot's stage proves defection rather than
-    cooperation. -/
+    `test` field (2026-08-18): GuardianBot's stage asks `S` for defection (`⊢_k probeD`)
+    rather than cooperation. -/
 def probeD (I : Prog) : Formula := .plays (.bot I) (.bot I) Action.D
 
 theorem probeD_subst (I me o : Prog) : (probeD I).subst me o = probeD I := rfl

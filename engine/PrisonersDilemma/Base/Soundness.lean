@@ -1,7 +1,7 @@
 import PrisonersDilemma.Base.ValuationSoundness
 
 /-!
-# Base/Soundness — every provable formula is true
+# Base/Soundness — every `S`-derivable formula is true (`⊢_k φ ⟹ ⊨ φ`, a Lean theorem about `S`)
 
 The soundness spine's consumer face: `sound_upto` (the 2026-07-02 `search_f` repair) and
 its corollaries `Pf_sound`, `proofSearch_sound`, `box_provable`.
@@ -82,7 +82,7 @@ export PD (atom_monotone Pf_mono)
 With the sound false-guard rule `search_f`, soundness cannot be a plain structural induction:
 its arm must rule out a HYPOTHETICAL guard proof `Pf k guard` that is not a sub-derivation. The
 budget floor in `search_f`'s cost (it pays the full failed budget `k`) is exactly what repairs
-this: the hypothetical proof has transcript ≤ k, STRICTLY below the certificate's own cost, so a
+this: the hypothetical `S`-derivation has transcript ≤ k, STRICTLY below the certificate's own cost, so a
 strong induction on the budget/cost supplies its soundness. Within one budget `B`, certificates
 come first (their `atomNeg`-style premises are smaller-cost certificates), then `Pf` (its `atom`
 entry consumes the certificate half at the same `B`). The public `playsProof_sound` /
@@ -136,7 +136,8 @@ theorem AtomProvable_sound (k : Nat) (φ : Formula) : AtomProvable k φ → φ.i
   obtain ⟨N, hN⟩ := playsProof_sound cert
   exact ⟨N, hN⟩
 
-/-- **Soundness of bounded provability: anything provable within a budget is true.**
+/-- **Soundness of bounded provability: anything `S` derives within a budget is true,
+    `⊢_k φ ⟹ ⊨ φ`** (a Lean theorem about `S`, not a rule of `S`).
     Corollary of `sound_upto` at `B := k` (which see for the budget-strong-induction
     structure the `search_f` repair requires). -/
 theorem Pf_sound : ∀ k φ, Pf k φ → φ.interp :=
@@ -154,18 +155,18 @@ fundamental (Σ₁ vs Π₁), not a stylistic choice:
     bots only), then flip with
     `(proofSearch_spec _ _).2 (Pf.atom …)`. `proofSearch_complete_plays`
     below packages exactly this. For a structural `φ` (e.g. `.eq p p`), use the
-    transparency leaf directly (`Pf.eqRefl`). You are *constructing* a proof object.
+    transparency leaf directly (`Pf.eqRefl`). You are *constructing* an `S`-derivation (a `Pf` term).
 
 • `proofSearch k φ = false` — SOUNDNESS side, by refutation. You CANNOT exhibit
-    "a proof that no proof exists" (that is Π₁); instead rule out `true` via its
+    "a proof that no `S`-derivation exists" (`¬ ⊢_k φ` is Π₁); instead rule out `true` via its
     semantic consequence. Canonical pattern:
       cases h : proofSearch k φ with
       | true  => exact absurd (proofSearch_sound _ _ h) (interp_…_false …)
       | false => rfl
-    i.e. if it were `true`, `proofSearch_sound` would force `φ.interp` (the bot
+    i.e. if it were `true`, `proofSearch_sound` would force `⊨ φ` (`φ.interp`) (the bot
     would actually play that), which a computed fact (`interp_…_false`) refutes.
 
-Mnemonic: `= true` builds a proof (atom_complete_searchfree / a transparency leaf);
+Mnemonic: `= true` builds an `S`-derivation (atom_complete_searchfree / a transparency leaf);
 `= false` destroys a hypothetical one (proofSearch_sound + contradiction). The single
 place these collided was the false-guard branch: the old `atom_complete_false_guard`
 axiom lived there until it was machine-checked INCONSISTENT and deleted (2026-07-03).
@@ -181,7 +182,7 @@ theorem proofSearch_sound :
 
 /-- Completeness of bounded proof search for SEARCH-FREE plays-atoms (the constructive
     fragment; the unrestricted form fell with the inconsistent axiom — a failed-search
-    else-play is provable only above its floor, an anti-diagonal one not at all). -/
+    else-play is `S`-derivable only above its floor, an anti-diagonal one not at all). -/
 theorem proofSearch_complete_plays :
     ∀ p q a, p.hasSearch = false → q.hasSearch = false →
       (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
@@ -198,8 +199,8 @@ theorem proofSearch_monotone :
 
 
 /-- **Bounded GL axiom 4 / necessitation** (`□_k φ → □_K □_k φ`), HBL D2 — NOW A THEOREM
-    (was the axiom `box_provable`). If `φ` is provable within budget `k`, then that fact
-    `□_k φ` is itself provable, at the output budget `K = (.box k φ).size` (≤ that bound).
+    (was the axiom `box_provable`). If `⊢_k φ`, then that fact
+    `□_k φ` is itself `S`-derivable (`⊢_K □_k φ`), at the output budget `K = (.box k φ).size` (≤ that bound).
     Discharged constructively by the `Pf.boxIntro` constructor (ProofSystem.lean): the
     conclusion `□_k φ` is built directly from the premise `Pf k φ`, with the size bound
     `(.box k φ).size ≤ K` met by `Nat.le_refl`. Sound + safe — see the `boxIntro` doc. -/
@@ -210,7 +211,7 @@ theorem box_provable (k : Nat) (φ : Formula) (h : Pf k φ) :
 /-- **Object-level bounded Σ₁-completeness for play-atoms** (the conditional, kernel-checked
     THEOREM). When the play actually happens within `fuel` steps AND the budget `k` fits a
     certificate (`atom_cost fuel ≤ k`), the object implication `(p plays a vs q) → □_k (p plays a vs q)`
-    is provable at `K`. Built from the certificate (→ `Pf k atom`),
+    is `S`-derivable at `K`. Built from the certificate (→ `Pf k atom`),
     `boxIntro` (→ the box), and `weakenImpl` (→ the implication). The CERTIFICATE premise
     keeps it on the sound Σ₁ side: bounded Σ₁-completeness, NOT the GL-excluded
     converse-necessitation `φ → □φ`. (Historical note: the witness-free form was once the
@@ -222,7 +223,7 @@ theorem atom_box_provable_impl_sound (k K : Nat) (p q : Prog) (a : Action)
           + (Formula.impl (.plays p q a) (.box k (.plays p q a))).size ≤ K) :
     Pf K (.impl (.plays p q a) (.box k (.plays p q a))) := by
   -- Under transcript cost the conclusion can no longer live at the box's own budget `k`
-  -- (the implication's proof CONTAINS the box proof, which contains the `k`-certificate);
+  -- (the implication's derivation CONTAINS the box derivation, which contains the `k`-certificate);
   -- the output budget `K` pays certificate + box + conclusion.
   have hbox : Pf (k + (Formula.box k (.plays p q a)).size) (.box k (.plays p q a)) :=
     Pf.boxIntro k _ _ (Pf.atom hatom) (Nat.le_refl _)

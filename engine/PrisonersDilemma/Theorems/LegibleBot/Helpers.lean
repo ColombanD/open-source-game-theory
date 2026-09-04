@@ -263,7 +263,7 @@ theorem LegibleBot_cooperates_large (X : Nat → Prog) (B : Nat)
   exact Pf_sound m _ hm
 
 /-- **Guard-fire extraction**: a C-play means the search guard actually fired
-    (the else-branch plays D), so `□_k ψ` is provable at the OUTER budget —
+    (the else-branch plays D), so `⊢_{2k+64} □_k ψ` — the box derived at the OUTER budget —
     recovering a BOUNDED certificate that the engine's unbounded `∃ m` hides.
     (`interp (.box k ψ) = Pf k ψ` then yields `Pf k ψ` on demand.) -/
 theorem LegibleBot_playC_gives_box (k n : Nat) (X : Prog)

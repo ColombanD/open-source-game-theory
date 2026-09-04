@@ -85,7 +85,7 @@ theorem mutual_loeb (A B : Formula) (kP kD fb n m c pA pB : Nat)
 `Pf pm (□_fb φ → φ)` — `pm` is the premise's honest transcript (O(log k) for the
 consumers' single-leaf `searchBranch` / `mutual_loeb` premises; do NOT weaken it up to `k`,
 the chain needs `pm ≪ fb`). The fixpoint sentence `ψ := .diag g φ` lives at the FREE subscript
-`g ≺ fb`: under transcript cost ψ's proof CONTAINS the premise's proof, so `□`-ing ψ needs
+`g ≺ fb`: under transcript cost ψ's derivation CONTAINS the premise's derivation, so `□`-ing ψ needs
 `g` to absorb ψ's whole transcript (`H19 : c₁₃ ≤ g`) — Critch's `g ≺ f` dance, validated in
 `Research/Spikes/transcript/T0Transcript.lean` (`bloeb_transcript`, axiom-free). The step
 transcripts `c₁…c₁₄` and the box stages `n₁ n₃ n₄ n₅` are explicit; `pblt_engine` instantiates
@@ -215,7 +215,7 @@ theorem pblt_engine_bounded (φ : Nat → Formula) (f pm : Nat → Nat) (k₁ : 
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_⟩ <;>
   · (try simp only [numCost, Formula.size]); omega
 
-/-- `pblt_engine_bounded` at `f = id`: the fixpoint holds at a budget ≤ k/2. -/
+/-- `pblt_engine_bounded` at `f = id`: `S` derives the fixpoint at a budget ≤ k/2. -/
 theorem pblt_engine_id_bounded (φ : Nat → Formula) (pm : Nat → Nat) (k₁ : Nat)
     (hφ : ∀ k, (φ k).size ≤ 100 * Nat.log2 k + 1000)
     (hpm : ∀ k, pm k ≤ 100 * Nat.log2 k + 1000)
@@ -381,8 +381,8 @@ number of elimination stages (master `2⁵²·V ≤ k` here, vs `2¹⁷·V` for 
 engines): fine for a fixed zoo; an n-ary `Formula.diag` is the poly(n)
 refinement if ever needed. -/
 
-/-- Pre-composition under a fixed antecedent: from `⊢ D → (M → N)` and `⊢ X → M`,
-    conclude `⊢ D → (X → N)`. (The B-combinator, via `implK`/`implS`/`impS2`.) -/
+/-- Pre-composition under a fixed antecedent: from `⊢_a D → (M → N)` and `⊢_b X → M`,
+    conclude `⊢_K D → (X → N)`. (The B-combinator, via `implK`/`implS`/`impS2`.) -/
 theorem compUnder {D X M N : Formula} {a b : Nat} (K : Nat)
     (h₁ : Pf a (.impl D (.impl M N)))
     (h₂ : Pf b (.impl X M))
@@ -405,8 +405,8 @@ theorem compUnder {D X M N : Formula} {a b : Nat} (K : Nat)
     .weakenImpl _ _ _ h₂ (by simp only [Formula.size]; omega)
   exact .impS2 _ _ _ _ _ K v w (by simp only [Formula.size]; omega)
 
-/-- Post-composition under two antecedents: from `⊢ D → (X → M)` and `⊢ M → N`,
-    conclude `⊢ D → (X → N)`. -/
+/-- Post-composition under two antecedents: from `⊢_a D → (X → M)` and `⊢_b M → N`,
+    conclude `⊢_K D → (X → N)`. -/
 theorem postUnder {D X M N : Formula} {a b : Nat} (K : Nat)
     (h₁ : Pf a (.impl D (.impl X M)))
     (h₂ : Pf b (.impl M N))
@@ -422,8 +422,8 @@ theorem postUnder {D X M N : Formula} {a b : Nat} (K : Nat)
     .mp _ _ _ _ u wk (by simp only [Formula.size]; omega)
   exact .implTrans _ _ _ _ _ h₁ m3 (by simp only [Formula.size]; omega)
 
-/-- Antecedent swap (the C-combinator): from `⊢ φ → (ψ → χ)`, conclude
-    `⊢ ψ → (φ → χ)`. -/
+/-- Antecedent swap (the C-combinator): from `⊢_a φ → (ψ → χ)`, conclude
+    `⊢_K ψ → (φ → χ)`. -/
 theorem swapAnte {φ ψ χ : Formula} {a : Nat} (K : Nat)
     (h : Pf a (.impl φ (.impl ψ χ)))
     (H : a + 32 * (φ.size + ψ.size + χ.size) + 128 ≤ K) :
@@ -439,7 +439,7 @@ theorem swapAnte {φ ψ χ : Formula} {a : Nat} (K : Nat)
   exact .implTrans _ _ _ _ _ a₁ b₂ (by simp only [Formula.size]; omega)
 
 /-- **Löb under a boxed side-antecedent** — the Def-5 stage step. From the
-    full-dependency premise `⊢ □_u S → (□_w T → T)` (side box at the FREE
+    full-dependency premise `⊢_p □_u S → (□_w T → T)` (side box at the FREE
     subscript `u`, self-box at the source subscript `w`), build the compound Löb
     premise `□_fb C → C` for `C := □_u S → T`, ready for `bloeb_engine`.
     Subscript discipline (the `mutual_loeb` lesson, one level up): `box4` applies

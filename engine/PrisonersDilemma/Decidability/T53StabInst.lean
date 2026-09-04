@@ -773,8 +773,9 @@ theorem PfG_inst_iff_decG_bound (h₁ : modestP r₁ = true) (h₂ : modestP r�
   · intro h
     exact T52.decB_sound (instOKb (PP r₁ r₂) N) (fun _ => instOKb_iff) _ k₀ φ₀ h
 
-/-- The `Decidable` instance — bounded provability over the modest stratum is decided by
-    a terminating computation. -/
+/-- The `Decidable` instance — bounded provability over the instance stratum, `⊢^G_k φ` at
+    `G = instGate (PP r₁ r₂) N`, is decided by a terminating computation (a Lean theorem
+    about the Bool `T52.decG`). -/
 def decidePfG_inst (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
     Decidable (PfG (instGate (PP r₁ r₂) N) k₀ φ₀) :=

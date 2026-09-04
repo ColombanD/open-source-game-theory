@@ -161,7 +161,7 @@ _PROPOSE_PF_CONSTRUCTOR_TOOL: dict[str, Any] = {
             },
             "unblocks": {
                 "type": "string",
-                "description": "The outcome theorem(s) this rule would make provable, and why.",
+                "description": "The outcome theorem(s) this rule would let you prove in Lean, and why.",
             },
             "unblocked_proof_lean": {
                 "type": "string",

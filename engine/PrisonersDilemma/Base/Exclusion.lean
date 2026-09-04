@@ -143,9 +143,9 @@ theorem TailTo_self (T : Formula) : TailTo T T ∨ True := Or.inr trivial
 
 /-! ### The SET-valued census invariant (the ite frontier, 2026-07-28)
 
-`ctxChain` makes probe-implication chains provable premise-free: for an
+`ctxChain` makes probe-implication chains `S`-derivable premise-free: for an
 `.ite`-simulator target `P` (DBot's shape), `.impl (.plays O (.bot z) r) (P plays
-aTgt)` is a `ctxChain` conclusion — IN the singleton `TailTo` class and PROVABLE, so
+aTgt)` is a `ctxChain` conclusion — IN the singleton `TailTo` class and `S`-DERIVABLE, so
 the singleton census statement is FALSE for such targets. The repair prices the probe:
 widen the forbidden tail-SET from `{T}` to `{T} ∪ {the decomposition's probe atoms}`
 and supply atom-killers for every member (the probes are Gödelian-uncertifiable or
@@ -728,10 +728,10 @@ theorem no_provable_tailTo_floor (k : Nat) (P O : Prog) (aTgt : Action)
     subst h1
     exact hbotsysP defs i hme
 
-/-- **The `search_f` floor as a cost lower bound** (probe-first instance): no proof of
+/-- **The `search_f` floor as a cost lower bound** (probe-first instance): no `S`-derivation of
     ≤ k characters concludes any formula whose guarded spine tail is "the probe-first
     simulator plays `aTgt` against the budget-`k` searcher" — in particular (spine of
-    length zero) the searcher's own guard instance is unprovable at its own budget.
+    length zero) the searcher's own guard instance is unprovable (`¬ ⊢_k`) at its own budget.
 
     FULLY GENERAL in the simulator's `.ite` (test action, both branches): the kill
     happens at the GUARD certificate, which both `ite` polarities must carry — the
@@ -1113,7 +1113,7 @@ theorem no_provable_searcherElse_tail (k : Nat) (g : Formula) (aT aE : Action)
     conclusion action is the component's then-action).
 
     This is what CLOSES the entangled Def-4 cells: each member of a 2-cycle whose
-    target action mismatches the partner's then-action has a provably-FALSE bit, so
+    target action mismatches the partner's then-action has a bit Lean proves FALSE (no `S`-derivation up to the component's own budget), so
     both members play their else actions — no bistability survives the floor. -/
 theorem no_provable_botSysSearcherElse_tail (k : Nat) (defs : ProgList) (i kb : Nat)
     (g : Formula) (aT aTgt : Action) (pE : Prog)
@@ -1217,7 +1217,7 @@ theorem no_provable_botSysSearcherElse_tail (k : Nat) (defs : ProgList) (i kb : 
 The floor lemmas above price certificates OUT of a bounded budget. The CIMCIC/DIMCID
 pattern is stronger: the target atom has NO certificate at ANY budget (a Gödelian
 fall-through or a semantically false consequent), and the player is fully
-bridge-unreadable — so nothing `TailTo`-tailed at it is provable at any budget. -/
+bridge-unreadable — so nothing `TailTo`-tailed at it is `S`-derivable at any budget. -/
 
 theorem no_provable_tailTo_unreadable (P O : Prog) (A : Action)
     (hcert : ∀ n, ¬ AtomProvable n (.plays P O A))
@@ -1868,8 +1868,8 @@ theorem no_provable_botNested_D_tail (k : Nat) (g₁ g₂ : Formula) (O : Prog) 
 
 /-- **The nested-searcher C census, `.bot`-frozen edition** (2026-08-25): the frozen
     nested searcher plays C only through BOTH guards firing, so its C-transcript
-    carries a proof of the inner guard at budget `k`; if that is unprovable
-    (`hinner`), no proof of ≤ k characters tails at the C-play. Sound for the FROZEN
+    carries an `S`-derivation of the inner guard at budget `k`; if none exists
+    (`hinner`, a `¬ ⊢_k`), no `S`-derivation of ≤ k characters tails at the C-play. Sound for the FROZEN
     shape only: the bare twin is FALSE as a census — `searchChain` reads a bare
     searcher's then-chain premise-free, `□g₁' → □g₂' → P plays C`, which is a
     `TailTo` formula (the reason `no_provable_searcherPlay_tail` carries `hplug`

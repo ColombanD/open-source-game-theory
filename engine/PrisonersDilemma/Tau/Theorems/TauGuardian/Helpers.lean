@@ -5,7 +5,7 @@ import PrisonersDilemma.Base.Exclusion
 # Tau/Theorems/TauGuardian/Helpers — the guardian floor
 
 TauGuardian's own mathematics, and the zoo's third Gödelian phenomenon: **Guardian's
-cooperation is NEVER provable within its budget.** Its instance at ANY hypothesis
+cooperation is TRUE (`⊨`) but NEVER `S`-derivable within its budget (`¬ ⊢_K`, `K ≤ k`).** Its instance at ANY hypothesis
 plays C only through a FAILED punish-search (the probeD that found no defection), so
 every C-certificate must cross that failed search and pay the `search_f` floor.
 Parametric in the probed instance `P` — one kernel application covers Guardian's

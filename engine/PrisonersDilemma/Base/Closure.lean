@@ -37,7 +37,7 @@ RETRACTED — every probe antecedent is Gödelian-uncertifiable, floor-priced, o
 DBot's cooperation outright):** sound (the soundness lemma was validated for both
 polarities) and it flips nothing — but it genuinely FALSIFIES the floor censuses: with
 an else rule, `implTrans` composes a searcher's own `searchBranch` self-read with the
-else-probe chain into a provable box-headed chain to the floor target — concretely
+else-probe chain into an `S`-derivable box-headed chain to the floor target — concretely
 `□_k(gC-inst) → (OBot plays D vs CupodBot k)` via Cupod's then-read
 `□_k(gC-inst) → (Cupod plays D vs .bot CooperateBot)` ∘ OBot's else-chain — and
 excluding such chains needs an avoid-set recursively closed over the modal tier
@@ -53,7 +53,7 @@ open PD
 namespace PD.BaseTheorems
 
 /-- **Family-A closure, search dimension**: every `.search`-telescope of every depth
-    is readable — its full in-frame guard chain is provable at its own size. -/
+    is readable — `S` derives its full in-frame guard chain at its own size. -/
 theorem searchChain_reads_all_depths (g₁ : Nat) (ψ₁ : Formula) (e₁ : Prog)
     (L : List (Nat × Formula × Prog)) (a : Action) (me opponent : Prog)
     (hme : me = .search g₁ ψ₁ (searchPlug L (.const a)) e₁) :
@@ -73,7 +73,7 @@ theorem searchBranch_from_searchChain (g : Nat) (ψ : Formula) (a : Action)
 
 /-- **The stacked-search primitive is redundant**: `searchThenSearch_t`'s exact
     conclusion — the single-box Löb-premise collapse `□_{k₁} ψ₁' → me plays c0` from a
-    held proof of the inner guard — is DERIVABLE from the telescope reading plus the
+    held `S`-derivation of the inner guard — is DERIVABLE from the telescope reading plus the
     modal tier (`boxIntro` to enter the box at the proof's own budget, `boxMono` up to
     the source literal `k₂`, `weakenImpl` + `impS2` to discharge the middle guard).
     The primitive stays as a transcript-cheaper convenience; expressiveness-wise,
@@ -231,7 +231,7 @@ inductive Deriv (hyp : Formula) : Formula → Prop
   | thm {φ : Formula} {k : Nat} : Pf k φ → Deriv hyp φ
   | mp {φ ψ : Formula} : Deriv hyp (.impl φ ψ) → Deriv hyp φ → Deriv hyp ψ
 
-/-- **THE DEDUCTION THEOREM, admissible**: `hyp ⊢ ψ` yields `⊢ hyp → ψ`. The three
+/-- **THE DEDUCTION THEOREM, admissible**: `hyp ⊢ ψ` (a `Deriv`: an `S`-derivation from one hypothesis) yields `⊢ hyp → ψ`. The three
     cases are exactly `implRefl` / `weakenImpl` / `impS2` — the S-combinator rule IS
     the deduction theorem's `mp`-case, which is why Family B never needed the
     constructor form. -/

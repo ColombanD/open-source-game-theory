@@ -18,7 +18,8 @@ Add one section per comparison; keep the raw-artifact pointers — the
 play D vs me" → then D, else C) vs `CupodBot k` (plays-guard searcher: "you play
 D vs me" → then D, else C). Both-searcher, mutually entangled guards — the hard
 regime. Semantically the outcome is **(C, C)** (both guards consistently false,
-both fall to else), but no current proof-system route certifies it.
+both fall to else), but no current route — an `S`-derivation for the guards, or a
+`¬ ⊢_k` census against them — yields the Lean outcome theorem.
 
 **Setup.** Identical harness and budgets both runs: `max_episodes=3`,
 `max_turns_per_episode=10` (+1 reminder turn each episode → 20–21 turns at cap),
@@ -78,7 +79,7 @@ it from scratch):
   fires + Pf_sound) but NOT conversely — DIMCID playing D makes `P` false, so its
   guard is vacuously true and yields no `interp A`. The loop breaks at DIMCID
   (asymmetric), so there is no contradiction to mine, hence genuinely
-  `open_blocked` rather than a provable census. Not bistable: eval is
+  `open_blocked` rather than a census Lean can prove. Not bistable: eval is
   deterministic and both guards are semantically false.
 
 **The sharpest single detail.** Leanstral's final plan was mutual strong

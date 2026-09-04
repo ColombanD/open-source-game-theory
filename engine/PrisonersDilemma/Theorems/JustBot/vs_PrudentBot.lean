@@ -174,7 +174,7 @@ theorem outcome_JustBot_vs_PrudentBot_staggered :
     have hlk := log2_le_self k
     obtain ⟨m, hm⟩ := hk₂ k hk2
     obtain ⟨n, hplayD⟩ := Pf_sound m _ hm
-    -- botDupoc's guard fired: JustBot's own guard about PrudentBot holds at k
+    -- botDupoc's guard fired: JustBot's own guard about PrudentBot fires at k (`⊢_k`)
     have hA_ps : proofSearch k
         (.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C) = true :=
       ps_k_of_play_botdupoc_any k n (PrudentBot (2*k+64)) hplayD

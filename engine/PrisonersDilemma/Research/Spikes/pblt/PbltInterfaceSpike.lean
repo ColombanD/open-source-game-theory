@@ -36,7 +36,7 @@ structure BPS where
   Sent : Type
   imp  : Sent → Sent → Sent                      -- object implication
   box  : Nat → Sent → Sent                       -- □_k
-  Proves : Nat → Sent → Prop                     -- ⊢_k  (bounded provability of the META theory)
+  Proves : Nat → Sent → Prop                     -- ⊢_k  (bounded provability in the agents' theory S — object level, never Lean)
   -- Implication Distribution: □_a(p→q) → (□_b p → □_{a+b+c} q), some constant c.
   impDist : ∃ c, ∀ a b p q,
     Proves 0 (imp (box a (imp p q)) (imp (box b p) (box (a + b + c) q)))

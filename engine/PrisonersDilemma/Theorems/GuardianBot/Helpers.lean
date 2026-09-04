@@ -18,10 +18,11 @@ namespace PD.Theorems
 GuardianBot's guard `.plays .opp (.bot CooperateBot) .D` ("the opponent bullies
 CooperateBot") substitutes to a formula mentioning ONLY the opponent and the frozen
 probe — never GuardianBot itself. So its guard verdicts are self-reference-free:
-positive certificates for constant bullies, soundness refutations for everyone the
-probe clears. Statements verified against the deterministic pre-pass (2026-07-29). -/
+positive certificates (`⊢_k`) for constant bullies, soundness kills for everyone the
+probe clears — "the guard is refuted" in this directory always means `¬ ⊢_k φ` (no
+`S`-derivation exists because `φ` is false), never an `S`-refutation `⊢_k ¬φ`. Statements verified against the deterministic pre-pass (2026-07-29). -/
 
-/-- DefectBot provably bullies the probe: a bare `.const` certificate at cost
+/-- DefectBot provably (`⊢_k`) bullies the probe: a bare `.const` certificate at cost
     `c_leaf`, so the guard fires at every budget `k ≥ 1`. -/
 theorem proofSearch_true_guardian_DefectBot (k : Nat) :
     proofSearch (k + 1) (.plays DefectBot (.bot CooperateBot) .D) = true :=
@@ -60,7 +61,7 @@ theorem interp_MirrorBot_vs_botCB_D_false :
               rw [play_MirrorBot_vs_botCB] at hn
               cases hn
 
-/-- MirrorBot never provably bullies the probe. -/
+/-- MirrorBot never bullies the probe, so `¬ ⊢_k` at every budget. -/
 theorem proofSearch_false_guardian_MirrorBot (k : Nat) :
     proofSearch k (.plays MirrorBot (.bot CooperateBot) .D) = false := by
   cases h : proofSearch k (.plays MirrorBot (.bot CooperateBot) .D) with

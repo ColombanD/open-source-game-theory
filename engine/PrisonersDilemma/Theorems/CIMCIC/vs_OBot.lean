@@ -17,8 +17,8 @@ The last base pair the Def-3 comparison consulted without a theorem (stipulated
   cheap constant certificate, `proofSearch_true_CIMCIC_vs_botCoop`) but DEFECTS
   against `.bot DefectBot` (`CIMCIC_plays_D_against_botDef`), so OBot's second
   watch falls to its defection branch: OBot plays D.
-* CIMCIC's guard "I cooperate with OBot → OBot cooperates with me" is refuted by
-  SOUNDNESS alone: were it provable, CIMCIC's search would fire (antecedent
+* CIMCIC's guard "I cooperate with OBot → OBot cooperates with me" is killed by
+  SOUNDNESS alone (`¬ ⊢_k`, no `S`-refutation): were it `S`-derivable at `k`, CIMCIC's search would fire (antecedent
   true), so the consequent — OBot cooperating with CIMCIC — would be true; but
   OBot REALLY defects against CIMCIC, and `eval` is deterministic. No census
   needed: the consequent is false in every world where the guard fires.
@@ -67,8 +67,8 @@ theorem co_OBot_plays_D (k fuel : Nat)
     (by rfl) hGuard1
   simpa [Nat.add_assoc, hInner] using hPlay
 
-/-- CIMCIC's guard against OBot is unprovable — by soundness and determinism:
-    a provable guard fires CIMCIC's own search, making the antecedent true, so
+/-- CIMCIC's guard against OBot has no `S`-derivation (`¬ ⊢_k`) — by soundness and determinism:
+    a derivable guard fires CIMCIC's own search, making the antecedent true, so
     the consequent would make OBot cooperate; but OBot defects. -/
 theorem co_cimcic_guard_not_provable (k : Nat)
     (hOD : ∃ n, play n OBot (CIMCIC k) = some .D) :

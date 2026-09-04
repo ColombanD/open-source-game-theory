@@ -21,7 +21,7 @@ Integration itself (the constructor + its `sound_upto` arm + `Pf_mono`/`Pf.induc
 the metatheory mirror — see `PF_ONLY_ROADMAP.md` Phase 4 for the full blast radius) is a
 separate, human-initiated job. At that point the engine's own theorems form a canary
 field: the floor/exclusion censuses quantify over ALL constructors, so an over-powered
-rule makes them unprovable and the build fails loudly.
+rule falsifies them (their Lean proofs break) and the build fails loudly.
 """
 
 from __future__ import annotations

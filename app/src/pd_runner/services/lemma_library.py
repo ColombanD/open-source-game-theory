@@ -50,7 +50,7 @@ open PD PD.BaseTheorems
 
 namespace PD.LlmLemmas
 
-/-- Seed example (the expected format): reflect a fired oracle back into provability. -/
+/-- Seed example (the expected format): reflect a fired oracle back into an `S`-derivation (`⊢_k φ`). -/
 theorem pf_of_proofSearch {k : Nat} {φ : Formula} (h : proofSearch k φ = true) : Pf k φ :=
   (proofSearch_spec k φ).1 h
 

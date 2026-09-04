@@ -218,7 +218,7 @@ staggered companion with the exact budgets (`PrudentBot (2 * k + 64) vs DupocBot
 a hover tooltip in the web UI (`GET /matrix` → `details`) and a cell note in the
 Google Sheet. The legend under the matrix is shared by the UI, the sheet and this
 file (`MATRIX_LEGEND`).
-- `None` — provably no outcome (`= none`, e.g. MirrorBot self-play).
+- `None` — a Lean theorem proves there is NO outcome (`= none`, e.g. MirrorBot self-play).
 - `Open Problem` / `Tried` / `Need rework` — curated in `app/outcome_status.toml`
   (`Need rework` = a proof exists but not in the accepted large-k form, e.g. only
   `_floor` regime theorems).

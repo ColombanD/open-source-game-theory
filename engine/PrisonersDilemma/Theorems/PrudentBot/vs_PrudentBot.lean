@@ -35,7 +35,7 @@ prudence is self-defeating — mutual defection is the honest fixed point, and
 
 /-- The floor at PrudentBot's own doorstep: no ≤ k certificate concludes any formula
     whose spine tail is PrudentBot's self-prudence fact "I play D vs `.bot DefectBot`"
-    — the fact is TRUE (`PrudentBot_plays_D_vs_bot_DefectBot`), but it is the else-play
+    — the fact is TRUE (`⊨`: `PrudentBot_plays_D_vs_bot_DefectBot`), but it is the else-play
     of PrudentBot's own budget-`k` search. -/
 theorem no_provable_prudence_self_tail (k : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →

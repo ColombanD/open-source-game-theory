@@ -146,9 +146,9 @@ noncomputable def outcome (fuel : Nat) (p q : Prog) : Option Outcome := do
   some (a, b)
 
 -- Denotational semantics: maps a syntactic `Formula` to a Lean proposition
--- (truth). `.plays` is fuel-existential so theorems need not commit to a budget;
--- the box clause is `Pf n φ` (the proof system's provability predicate, not a
--- separate oracle).
+-- (truth, written `⊨ φ`). `.plays` is fuel-existential so theorems need not commit to a
+-- budget; the box clause is `Pf n φ` (`⊨ □_n φ` IS `⊢_n φ` — the proof system's own
+-- provability, not a separate oracle).
 def Formula.interp : Formula → Prop
   | .plays p q a => ∃ n, play n p q = some a
   | .impl φ ψ    => φ.interp → ψ.interp

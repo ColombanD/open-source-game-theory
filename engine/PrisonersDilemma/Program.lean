@@ -85,7 +85,7 @@ mutual
     | plays : Prog → Prog → Action → Formula      -- atomic: "p(q.source) == a"
     | impl  : Formula → Formula → Formula         -- φ → ψ (needed for Löb-style hypotheses like □C → C)
     | neg   : Formula → Formula                   -- ¬ φ
-    | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
+    | box   : Nat → Formula → Formula             -- □_n φ: "S derives φ at budget n" (⊢_n φ; its interp is `Pf n φ`)
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
     | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Pf`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (Research/Notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
 end
@@ -204,8 +204,8 @@ def ProgList.get? : ProgList → Nat → Option Prog
   | .cons _ rest, n + 1 => rest.get? n
 
 -- Syntactic size = character count of source. This is the unit the proof system
--- measures budgets in: `□_k φ` means "φ has a proof of ≤ k characters", and a
--- proof's length is bounded in terms of the sizes of the formulas it manipulates.
+-- measures budgets in: `□_k φ` means "φ has an `S`-derivation of ≤ k characters", and a
+-- derivation's length is bounded in terms of the sizes of the formulas it manipulates.
 -- A numeral `k` costs `Nat.log2 k + 1` characters (critch22 Appendix B(b):
 -- numbers are written in `O(lg k)` characters), so e.g. `.search`/`.box` pay that
 -- for their index. Everything else is `(sum of children) + 1` for the node.

@@ -16,6 +16,11 @@
 Provable k φ  →  ProvableG (modestGate (N₀ k φ)) k φ
 ```
 
+(Notation, per `PROVABILITY_NOTATION.md`: `⊢_k φ ⟹ ⊢^{G}_k φ` with `G = modestGate (N₀ k φ)` —
+BOTH sides are object provability, `ProvableG G` being a gated sub-system of `S`; `decB`/
+`decideProvableG` are Lean-computable META deciders of the right-hand side. "Provable"
+throughout is the pre-`Pf` name of `⊢_k`.)
+
 i.e. minimal derivations never need cut material (the `implTrans`/`app`/`impS2` cut formulas
 and the enumerated `axK`/`diagF`/`diagB` premises) that is exotic — literals beyond `N₀`, or
 non-modest program syntax. Given it, `T47Stabilization`'s decision procedure decides full
@@ -52,7 +57,7 @@ Census of every rule that can conclude an implication `.impl B C`:
 
 | producer | antecedent `B` | provenance |
 |---|---|---|
-| `weakenImpl` | arbitrary | **degenerate**: `C` provable outright at `< m₁` |
+| `weakenImpl` | arbitrary | **degenerate**: `C` derivable outright (`⊢_{<m₁} C`) |
 | `implTrans` | from premise `.impl B D` | **chain**: recurse (same `B`, smaller budget) |
 | `impS2` | from premise `.impl B (.impl E C)` | **chain**: recurse |
 | `app` (α an impl) | from premise `.impl D (.impl B C)` | **nested**: recurse into positive positions |
@@ -310,11 +315,11 @@ Running §5c step 1 on paper settled the arms before the induction was worth wri
 linked forms are not hard — at two precisely-located position classes they are **FALSE**,
 and both counterexamples are kernel-checked (`ppair_linked_false`,
 `spine_boxlinked_false`, via the soundness-based unprovability helpers
-`eq_const_unprovable`/`box_eq_unprovable`).
+`eq_const_unprovable`/`box_eq_unprovable` — `¬ ⊢_k` from `¬ ⊨`, through `⊢_k φ ⟹ ⊨ φ`).
 
 1. **Box-content pairs are unfixable** (`ppair_linked_false`). `axKf` is a PREMISE-FREE
    axiom schema, so its consequent-box content `α` is arbitrary: `α := .impl wildF eqCD`
-   plants a wild-antecedent/unprovable-consequent pair inside a positive box of a
+   plants a wild-antecedent/underivable-consequent (`¬ ⊢`) pair inside a positive box of a
    derivable judgment, defeating `D1 ∨ Dbox ∨ D2` outright. So `PPair`'s boxT descent
    must GO from any judgment-local lemma; box contents are sourced only at consumption
    (box judgments via `box_inversion`) — the §5 consumer-side design, now FORCED rather
@@ -366,29 +371,29 @@ induction. If IT fails, §4.4's undecidability encoding starts there.
 Probing §5d's kernel before building on it (the lesson of §5c, applied) produced a third
 kernel-checked counterexample, and this one closes the whole program. `deadJ` is a
 **dead implication**: `Provable 10000 (.impl (.box 300 ψ₀) (.box 1000 eqCD))` with `ψ₀`
-wild, the consequent tame and unprovable — refuting `HBoxHead` (`hboxhead_false`) and the
+wild, the consequent tame and underivable (`¬ ⊢`, at every budget) — refuting `HBoxHead` (`hboxhead_false`) and the
 head-level linked dichotomy itself (`head_dichotomy_false`) at an UNGUARDED HEAD pair.
 The recipe combines four engine facts, each individually innocent:
 provable formulas carry arbitrary search literals (`eqRefl` on any program);
 `weakenImpl` admits arbitrary antecedents; `boxIntro`+`axK` box and distribute the
 degenerate implication, planting the wild content in antecedent position; `impS2`
-against a free `axKf` composes away the middle. Both sides of `deadJ` are unprovable
+against a free `axKf` composes away the middle. Both sides of `deadJ` are underivable, `¬ ⊢`
 (`box_psi0_unprovable`, `box_eq_unprovable`) — it can never fire via `app`.
 
 **Why no pairwise repair exists.** Conditioning on liveness doesn't save it: with a
 budget-BOUNDED degeneracy disjunct (`∃ m' ≤ m, Provable m' C`) the live variant still
 fails — box subscripts are BUDGET COMPRESSORS (`.box c χ` has size `~log c` but asserts
 budget-`c` provability, so a judgment can cheaply mention provability far above its own
-budget; replace `eqCD` by a tame `χ` provable only at `N ≫ m` and choose the `axKf`
+budget; replace `eqCD` by a tame `χ` with `⊢_N χ` only at `N ≫ m` and choose the `axKf`
 subscript `c ≥ N`). With budget-UNBOUNDED degeneracy the live variant is trivially true
 (apply `app`) and carries no information. Every informative judgment-local statement is
 false; every true one is empty. With §9 (vacuity), §10 (content pairs, guarded tails),
 and §11 (unguarded heads), the program is closed, not paused.
 
-**What survives.** The conjecture. All three counterexamples have unprovable right
-sides — dead weight that no derivation of a provable goal consumes through `app`, and
+**What survives.** The conjecture. All three counterexamples have underivable (`¬ ⊢`) right
+sides — dead weight that no derivation of a derivable goal consumes through `app`, and
 that minimality should excise. The information CutRelevance needs lives in minimal
-derivation TREES of provable roots, not in judgments.
+derivation TREES of `⊢`-derivable roots, not in judgments.
 
 **The fork (pick one next session):**
 
@@ -401,11 +406,11 @@ derivation TREES of provable roots, not in judgments.
 - **(B) Specialize to the actual consumer.** `decB`/T47 need CutRelevance only for
   zoo-universe roots (modest, plays-shaped goals in `SL`). Run (A)'s tree analysis
   specialized to those roots: their derivations are census-dominated (the whole theorem
-  library's cut diet is modest), and the wild-injection machinery may be provably
-  excisable there even if the general statement stays open.
+  library's cut diet is modest), and the wild-injection machinery may be excisable
+  there — as a Lean theorem — even if the general statement stays open.
 - **(C) The undecidability route, now with a weapon.** Budget compression is encoding
   material: `maxLitF` counts box subscripts, so □-compressed cuts are exotic by
-  definition; if some tame provable family can be FORCED to route through
+  definition; if some tame `⊢`-derivable family can be FORCED to route through
   `.box c`-cuts whose minimal `c` grows non-computably in `k`, CutRelevance FAILS and
   `Provable` is undecidable. The §11 injection recipe (weaken-plant + `axK`-distribute)
   is the tool for building such forcings — the open question is making the wild route
@@ -761,7 +766,8 @@ check → `certify`) delivers zoo-scale certificates without the SN theorem.
      `struct`-nodes require the DERIVATION-LEVEL crossing — walk `modusPonens`/`hypSyll`
      chains with the stack, and at census leaves (`searchBranch` etc.) RECONSTRUCT the
      atom certificate: extract the discharged guard box (via `boxInvT` — total now!),
-     lift to `Provable` by soundness + budget-mono, and build the `PlaysT.search_t`
+     lift to `Provable` by `ProvT.sound` (the mirror's tree→`Prop` direction, NOT
+     `S`-soundness `⊢_k φ ⟹ ⊨ φ`) + budget-mono, and build the `PlaysT.search_t`
      cert (trivial for `.const` branches — the zoo shape; recursive for nested
      branches — bounded by the same `Good` machinery). THIS is the remaining
      sub-problem with content: atom-cert reconstruction at census leaves.
@@ -1030,7 +1036,7 @@ crossing fell back (O2/O3).
     breaks the regress, and `modestGate` blocks diag on instances (instance
     formulas are never `modestF`). Hence NO `ProvableG (modestGate N)` derivation
     of a self-referential search fact exists, at any N, any budget — while
-    `Provable` proves it (bloeb). FALSIFICATION, pending only the formal regress
+    `⊢ tgtD` holds (bloeb builds the `S`-derivation). FALSIFICATION, pending only the formal regress
     lemma ("the gated-modest system proves no self-referential search fact" — a
     clean induction: every plays-derivation ends in atoms whose cites re-query the
     guard instance at the guard budget; without diag the regress has no base).
@@ -1061,8 +1067,9 @@ crossing fell back (O2/O3).
     pigeonhole transfers; (iii) revised CutRelevance
     `Provable k φ → ProvableG (instGate P N₀) k φ` — for zoo trees plausibly by
     DIRECT gate-transport (T50's evidence), with excision reserved for genuinely
-    fresh cuts in arbitrary minimal trees; (iv) the regress lemma (modestGate
-    proves no self-referential fact) as the falsification half — thesis content.
+    fresh cuts in arbitrary minimal trees; (iv) the regress lemma (the modest stratum
+    derives no self-referential fact: `¬ ⊢^{modestGate N}_m tgtD`) as the falsification
+    half — thesis content.
 
 - **🎯 THE FALSIFICATION EXPERIMENT (original plan, superseded by the verdict above).**
   Decide the pivot empirically before more theory. Build the ProvT tree of a REAL
@@ -1208,7 +1215,9 @@ crossing fell back (O2/O3).
 
 - **THE REGRESS LEMMA — design (2026-07-08, evening; the falsification THEOREM).**
   Statement: `(∃ m, Provable m tgtD) ∧ ∀ N m, ¬ ProvableG (modestGate N) m tgtD`
-  (tgtD = the Dupoc self-coop instance; left conjunct = `treeD.sound`). Proof of the
+  — `⊢ tgtD` yet `¬ ⊢^{G}_m tgtD` for every modest gate `G`, both object-level; the
+  conjunction is a Lean theorem (tgtD = the Dupoc self-coop instance; left conjunct =
+  `treeD.sound`, the mirror's tree→`Prop` direction). Proof of the
   right conjunct by STRONG INDUCTION on m; route analysis for gated plays-conclusions:
   (a) `.atom`: the gated `search_t` cite is `ProvableG` at budget kD, and the atom's
       cost `n + c_guard kD + c_node > kD` forces kD < m — DESCENT, IH kills it

@@ -995,8 +995,9 @@ theorem PfG_iff_decB_bound (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = t
   · intro h
     exact decB_sound N _ k₀ φ₀ h
 
-/-- The `Decidable` instance — bounded provability over the modest stratum is decided by
-    a terminating computation. -/
+/-- The `Decidable` instance — bounded provability over the modest stratum, `⊢^G_k φ` at
+    `G = modestGate N`, is decided by a terminating computation (a Lean theorem about
+    the Bool `decB`). -/
 def decidePfG (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
     Decidable (PfG (modestGate N) k₀ φ₀) :=

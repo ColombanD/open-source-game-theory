@@ -19,8 +19,8 @@ theorem outcome_DupocBot_vs_DefectBot :
     OutcomeSpec .universal 2
       DupocBot (fun _ => DefectBot) (some (.D, .D)) := by
   intro k fuel
-  -- Left side: Dupoc executes its `.search` guard. The guard is false by the
-  -- lemma above, so the `search` falls through to the final `.const .D` branch.
+  -- Left side: Dupoc executes its `.search` guard. The guard's search fails (`¬ ⊢_k`,
+  -- the formula is false) by the lemma above, so the `search` falls through to the final `.const .D` branch.
   have hA : play (fuel + 2) (DupocBot k) DefectBot = some .D := by
     show eval (fuel + 2) (DupocBot k) DefectBot (DupocBot k) = some .D
     -- `guard_false` tells us the proof search for “DefectBot plays C” fails.
