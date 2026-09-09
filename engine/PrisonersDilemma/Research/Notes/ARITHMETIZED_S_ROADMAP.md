@@ -303,6 +303,16 @@ mirrored as `(DupocBot, CupodBot) = (D, C)`, for every `k` with enough fuel, `#p
    unary-numeral degeneracy; an agent is replacing it by `Bnum.lean` (binary numeral term
    codes, Σ₁ fixpoint) + binary `descVec`/`dnumT` + `Fit.lean` (`guard_fits`). If that work
    is not on `colomban-arith-s` when you read this, redo it from the plan in `Notes/M3_TRANSFER/BRIEF.md` §2.
+3b. `pSim` SEMANTICS IN FLIGHT (worktree, branch `colomban-arith-m3`, files Prog/Eval/EvalN +
+   new `Subst.lean`): `psubst me opp p` one-shot as in the engine (`pBot` frozen; a `pSearch`
+   node's TEMPLATE is instantiated with the outer `me`/`opp` descriptions, keeping the action
+   slot `#6` free, so `guardCode (gsubst me opp g) me' opp' a = guardCode g me opp a` — the
+   engine's "guards inside a simulated program refer to the outer players"), the evaluator
+   clause `EvalGraph n me opp (pSim p q) a ↔ EvalGraph n' p' q' p' a`, and τ generalised to act
+   on templates (`relabelTemplate u w`: symbol code `2+a ↦ 2+relabelAct a u w`), so that
+   `swapcode (psubst me opp p) = psubst (swapcode me) (swapcode opp) (swapcode p)`. If this is
+   not on the branch when you read this, redo it from this paragraph.
+
 4. THE TRANSFER THEOREM — DESIGN, NOT YET DECIDED. The reading (`M3_TRANSFER/READ_*.md`) and
    the brief (`M3_TRANSFER/BRIEF.md`, §3 and §5) establish: the engine's `.box` is interpreted
    by `Pf` ITSELF, so `boxIntro` is sound by fiat and no length bookkeeping exists; a
