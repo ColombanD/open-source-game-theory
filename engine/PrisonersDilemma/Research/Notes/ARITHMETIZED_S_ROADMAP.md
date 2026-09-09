@@ -144,7 +144,12 @@ transfer as they use no size law; `pblt` gets a new asymptotic wrapper.
 ## 3. Milestones
 
 **M0 — package and toolchain.** `ArithS` lakefile requiring Foundation at a pinned commit;
-CI builds it. Decide HFS vs ℕ coding for `Prog` (follow Foundation's `Bootstrapping`
+CI builds it. **Build recipe (learned the hard way, 2026-09-09):** `arith/.lake` is a
+SYMLINK to `~/wt/arith-lake` (a Foundation build under OneDrive stalls in disk wait), and
+Foundation is NEVER compiled locally — `lake build --try-cache ArithS` downloads its
+prebuilt artifacts (Reservoir cache) in ~90 s; a local compile of `Term/Basic.lean` alone
+took 22 min and 11 GB. A Lean check of one `ArithS` file needs ~5 GB of resident imports;
+on the 16 GB laptop with swap full it thrashes (10 min per file) — reboot first. Decide HFS vs ℕ coding for `Prog` (follow Foundation's `Bootstrapping`
 conventions so `Proof` and `Eval` live in the same coding). Engine bump to Foundation's
 toolchain is scheduled before M3, not before.
 

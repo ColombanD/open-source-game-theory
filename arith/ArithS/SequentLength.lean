@@ -9,9 +9,12 @@ rule introduces arbitrary formulas, so a proper length measure must charge the t
 sequent there (roadmap §2.1, PROPER).
 -/
 
+set_option maxHeartbeats 400000
+
 namespace ArithS
 
 open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open Classical
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 variable {L : Language} [L.Encodable] [L.LORDefinable]
@@ -23,15 +26,20 @@ variable (L)
 /-- `zero s = 0`; `succ s i ih = ih + formulaLen i` if `i ∈ s`, else `ih`. -/
 noncomputable def blueprint : PR.Blueprint 1 where
   zero := .mkSigma “y s. y = 0”
-  succ := .mkSigma “y ih i s. (i ∈ s ∧ ∃ l, !(formulaLenGraph L) l i ∧ y = ih + l) ∨ (¬i ∈ s ∧ y = ih)”
+  succ := .mkSigma “y ih i s. (i ∈ s → ∃ l, !(formulaLenGraph L) l i ∧ y = ih + l) ∧ (¬i ∈ s → y = ih)”
 
 noncomputable def construction : PR.Construction V (blueprint L) where
   zero := fun _ ↦ 0
   succ := fun v i ih ↦ if i ∈ v 0 then ih + formulaLen L i else ih
   zero_defined := .mk fun v ↦ by simp [blueprint]
   succ_defined := .mk fun v ↦ by
-    simp only [blueprint, HierarchySymbol.Semiformula.val_sigma]
-    by_cases h : v 2 ∈ v 3 <;> simp [h]
+    suffices
+      (v 2 ∈ v 3 → v 0 = v 1 + formulaLen L (v 2)) ∧ (v 2 ∉ v 3 → v 0 = v 1) ↔
+      (v 0 = if v 2 ∈ v 3 then v 1 + formulaLen L (v 2) else v 1) by
+      simpa [blueprint, formulaLen.defined.iff]
+    by_cases h : v 2 ∈ v 3
+    · simp [h]
+    · simp [h]
 
 end SetLen
 
@@ -60,8 +68,12 @@ lemma setLenAux_succ (s i : V) :
 
 section
 
+variable (L)
+
 noncomputable def setLenAuxDef : 𝚺₁.Semisentence 3 :=
   (SetLen.blueprint L).resultDef |>.rew (Rew.subst ![#0, #2, #1])
+
+variable {L}
 
 instance setLenAux_defined : 𝚺₁-Function₂[V] setLenAux L via setLenAuxDef L := .mk fun v ↦ by
   simp [(SetLen.construction L).result_defined_iff, setLenAuxDef]; rfl
@@ -71,7 +83,11 @@ instance setLenAux_definable : 𝚺₁-Function₂[V] setLenAux L := setLenAux_d
 instance setLenAux_definable' (Γ m) : Γ-[m + 1]-Function₂ (setLenAux (V := V) L) :=
   setLenAux_definable.of_sigmaOne
 
+variable (L)
+
 noncomputable def setLenDef : 𝚺₁.Semisentence 2 := .mkSigma “y s. !(setLenAuxDef L) y s s”
+
+variable {L}
 
 instance setLen_defined : 𝚺₁-Function₁[V] setLen L via setLenDef L := .mk fun v ↦ by
   simp [setLenDef, setLen]

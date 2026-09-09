@@ -72,8 +72,6 @@ def blueprint : Language.TermRec.Blueprint 0 where
   fvar := .mkSigma “y x. y = x + 1”
   func := .mkSigma “y k f v v'. ∃ s, !listSumDef s v' ∧ y = s + 1”
 
-variable (L)
-
 noncomputable def construction : Language.TermRec.Construction V blueprint where
   bvar (_ z)        := z + 1
   fvar (_ x)        := x + 1
@@ -89,9 +87,9 @@ open TermLen
 variable (L)
 
 /-- Symbol count of a term code: a symbol counts `1`, a variable index `i` counts `i + 1`. -/
-noncomputable def termLen (t : V) : V := (construction L).result L ![] t
+noncomputable def termLen (t : V) : V := construction.result L ![] t
 
-noncomputable def termLenVec (k v : V) : V := (construction L).resultVec L ![] k v
+noncomputable def termLenVec (k v : V) : V := construction.resultVec L ![] k v
 
 noncomputable def termLenGraph : 𝚺₁.Semisentence 2 := blueprint.result L
 
@@ -108,19 +106,19 @@ variable {L}
   simp [termLen, construction, hkf, hv]; rfl
 
 @[simp] lemma len_termLenVec {k v : V} (hv : IsUTermVec L k v) :
-    len (termLenVec L k v) = k := (construction L).resultVec_lh L _ hv
+    len (termLenVec L k v) = k := construction.resultVec_lh L _ hv
 
 @[simp] lemma nth_termLenVec {k v : V} (hv : IsUTermVec L k v) {i} (hi : i < k) :
-    (termLenVec L k v).[i] = termLen L v.[i] := (construction L).nth_resultVec L _ hv hi
+    (termLenVec L k v).[i] = termLen L v.[i] := construction.nth_resultVec L _ hv hi
 
-@[simp] lemma termLenVec_nil : termLenVec L 0 0 = 0 := (construction L).resultVec_nil L _
+@[simp] lemma termLenVec_nil : termLenVec L 0 0 = 0 := construction.resultVec_nil L _
 
 lemma termLenVec_cons {k t ts : V} (ht : IsUTerm L t) (hts : IsUTermVec L k ts) :
     termLenVec L (k + 1) (t ∷ ts) = termLen L t ∷ termLenVec L k ts :=
-  (construction L).resultVec_cons L ![] hts ht
+  construction.resultVec_cons L ![] hts ht
 
 instance termLen.defined : 𝚺₁-Function₁ (termLen (V := V) L) via (termLenGraph L) :=
-  (construction L).result_defined
+  construction.result_defined
 
 instance termLen.definable : 𝚺₁-Function₁ (termLen (V := V) L) := termLen.defined.to_definable
 
@@ -128,7 +126,7 @@ instance termLen.definable' : Γ-[k + 1]-Function₁ (termLen (V := V) L) :=
   termLen.definable.of_sigmaOne
 
 instance termLenVec.defined : 𝚺₁-Function₂ (termLenVec (V := V) L) via (termLenVecGraph L) :=
-  (construction L).resultVec_defined
+  construction.resultVec_defined
 
 instance termLenVec.definable : 𝚺₁-Function₂ (termLenVec (V := V) L) :=
   termLenVec.defined.to_definable
