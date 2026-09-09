@@ -19,6 +19,7 @@ The graph is defined on ALL codes of the right shape (no derivation-validity che
 namespace ArithS
 
 open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open PeanoMinus ISigma0 ISigma1
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 variable {L : Language} [L.Encodable] [L.LORDefinable]
@@ -67,28 +68,33 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
       (∃ s < d, ∃ p < d, !axmGraph d s p ∧ ∃ l, !(setLenDef L) l s ∧ n = l + 1) )”)
   (.mkPi “pr C.
     ∃ d <⁺ pr, ∃ n <⁺ pr, !pairDef pr d n ∧
-    ( (∃ s < d, ∃ p < d, !axLGraph d s p ∧ ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + 1) ∨
-      (∃ s < d, !verumIntroGraph d s ∧ ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + 1) ∨
+    ( (∃ s < d, ∃ p < d, !axLGraph d s p ∧ ∀ l, !(setLenDef L) l s → n = l + 1) ∨
+      (∃ s < d, !verumIntroGraph d s ∧ ∀ l, !(setLenDef L) l s → n = l + 1) ∨
       (∃ s < d, ∃ p < d, ∃ q < d, ∃ dp < d, ∃ dq < d, !andIntroGraph d s p q dp dq ∧
         ∃ np <⁺ n, ∃ nq <⁺ n, :⟪dp, np⟫:∈ C ∧ :⟪dq, nq⟫:∈ C ∧
-        ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + np + nq + 1) ∨
+        ∀ l, !(setLenDef L) l s → n = l + np + nq + 1) ∨
       (∃ s < d, ∃ p < d, ∃ q < d, ∃ d' < d, !orIntroGraph d s p q d' ∧
-        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + n' + 1) ∨
+        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L) l s → n = l + n' + 1) ∨
       (∃ s < d, ∃ p < d, ∃ d' < d, !allIntroGraph d s p d' ∧
-        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + n' + 1) ∨
+        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L) l s → n = l + n' + 1) ∨
       (∃ s < d, ∃ p < d, ∃ t < d, ∃ d' < d, !exsIntroGraph d s p t d' ∧
-        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L).graphDelta.pi l s →
-        ∀ lt, !(termLenGraph L).graphDelta.pi lt t → n = l + lt + n' + 1) ∨
+        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L) l s →
+        ∀ lt, !(termLenGraph L) lt t → n = l + lt + n' + 1) ∨
       (∃ s < d, ∃ d' < d, !wkRuleGraph d s d' ∧
-        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + n' + 1) ∨
+        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L) l s → n = l + n' + 1) ∨
       (∃ s < d, ∃ d' < d, !shiftRuleGraph d s d' ∧
-        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + n' + 1) ∨
+        ∃ n' <⁺ n, :⟪d', n'⟫:∈ C ∧ ∀ l, !(setLenDef L) l s → n = l + n' + 1) ∨
       (∃ s < d, ∃ p < d, ∃ d₁ < d, ∃ d₂ < d, !cutRuleGraph d s p d₁ d₂ ∧
         ∃ n₁ <⁺ n, ∃ n₂ <⁺ n, :⟪d₁, n₁⟫:∈ C ∧ :⟪d₂, n₂⟫:∈ C ∧
-        ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + n₁ + n₂ + 1) ∨
-      (∃ s < d, ∃ p < d, !axmGraph d s p ∧ ∀ l, !(setLenDef L).graphDelta.pi l s → n = l + 1) )”)⟩
+        ∀ l, !(setLenDef L) l s → n = l + n₁ + n₂ + 1) ∨
+      (∃ s < d, ∃ p < d, !axmGraph d s p ∧ ∀ l, !(setLenDef L) l s → n = l + 1) )”)⟩
 
 variable {L}
+
+private lemma le_sum₀ (a b : V) : b ≤ a + b + 1 := le_trans le_add_self le_self_add
+private lemma le_sum₁ (a b c : V) : b ≤ a + b + c + 1 :=
+  le_trans le_add_self (le_trans le_self_add le_self_add)
+private lemma le_sum₂ (a b c : V) : c ≤ a + b + c + 1 := le_trans le_add_self le_self_add
 
 /-- `Phi` with the bounds the blueprint carries, in the shape the `defined` proof needs. -/
 private lemma phi_iff (C pr : V) :
@@ -119,19 +125,19 @@ private lemma phi_iff (C pr : V) :
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inl ⟨s, by simp, rfl, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inr <| Or.inl
         ⟨s, by simp, p, by simp, q, by simp, dp, by simp, dq, by simp, rfl,
-          np, by omega, nq, by omega, hp, hq, rfl⟩⟩
+          np, le_sum₁ _ _ _, nq, le_sum₂ _ _ _, hp, hq, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inr <| Or.inr <| Or.inl
-        ⟨s, by simp, p, by simp, q, by simp, d', by simp, rfl, n', by omega, h, rfl⟩⟩
+        ⟨s, by simp, p, by simp, q, by simp, d', by simp, rfl, n', le_sum₀ _ _, h, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl
-        ⟨s, by simp, p, by simp, d', by simp, rfl, n', by omega, h, rfl⟩⟩
+        ⟨s, by simp, p, by simp, d', by simp, rfl, n', le_sum₀ _ _, h, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl
-        ⟨s, by simp, p, by simp, t, by simp, d', by simp, rfl, n', by omega, h, rfl⟩⟩
+        ⟨s, by simp, p, by simp, t, by simp, d', by simp, rfl, n', le_sum₀ _ _, h, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl
-        ⟨s, by simp, d', by simp, rfl, n', by omega, h, rfl⟩⟩
+        ⟨s, by simp, d', by simp, rfl, n', le_sum₀ _ _, h, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl
-        ⟨s, by simp, d', by simp, rfl, n', by omega, h, rfl⟩⟩
+        ⟨s, by simp, d', by simp, rfl, n', le_sum₀ _ _, h, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl
-        ⟨s, by simp, p, by simp, d₁, by simp, d₂, by simp, rfl, n₁, by omega, n₂, by omega, h₁, h₂, rfl⟩⟩
+        ⟨s, by simp, p, by simp, d₁, by simp, d₂, by simp, rfl, n₁, le_sum₁ _ _ _, n₂, le_sum₂ _ _ _, h₁, h₂, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr
         ⟨s, by simp, p, by simp, rfl, rfl⟩⟩
   · rintro ⟨d, _, n, _, rfl, (⟨s, _, p, _, rfl, rfl⟩ | ⟨s, _, rfl, rfl⟩ |
@@ -159,8 +165,7 @@ noncomputable def construction : Fixpoint.Construction V (blueprint L) where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, setLen_defined.iff, setLen_defined.graph_delta.iff_delta_pi,
-        termLen.defined.iff, termLen.defined.graph_delta.iff_delta_pi]
+      simp [blueprint, setLen_defined.iff, termLen.defined.iff]
     · intro v
       symm
       simpa [blueprint, setLen_defined.iff, termLen.defined.iff] using phi_iff _ _
@@ -189,20 +194,21 @@ instance : (construction L).StrongFinite V where
     · exact Or.inl ⟨s, p, rfl⟩
     · exact Or.inr <| Or.inl ⟨s, rfl⟩
     · exact Or.inr <| Or.inr <| Or.inl ⟨s, p, q, dp, dq, np, nq,
-        ⟨hp, pair_lt_pair (by simp) (by omega)⟩, ⟨hq, pair_lt_pair (by simp) (by omega)⟩, rfl⟩
+        ⟨hp, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₁ _ _ _))⟩,
+        ⟨hq, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₂ _ _ _))⟩, rfl⟩
     · exact Or.inr <| Or.inr <| Or.inr <| Or.inl ⟨s, p, q, d', n',
-        ⟨h, pair_lt_pair (by simp) (by omega)⟩, rfl⟩
+        ⟨h, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₀ _ _))⟩, rfl⟩
     · exact Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl ⟨s, p, d', n',
-        ⟨h, pair_lt_pair (by simp) (by omega)⟩, rfl⟩
+        ⟨h, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₀ _ _))⟩, rfl⟩
     · exact Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl ⟨s, p, t, d', n',
-        ⟨h, pair_lt_pair (by simp) (by omega)⟩, rfl⟩
+        ⟨h, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₀ _ _))⟩, rfl⟩
     · exact Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl ⟨s, d', n',
-        ⟨h, pair_lt_pair (by simp) (by omega)⟩, rfl⟩
+        ⟨h, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₀ _ _))⟩, rfl⟩
     · exact Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl ⟨s, d', n',
-        ⟨h, pair_lt_pair (by simp) (by omega)⟩, rfl⟩
+        ⟨h, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₀ _ _))⟩, rfl⟩
     · exact Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inl
-        ⟨s, p, d₁, d₂, n₁, n₂, ⟨h₁, pair_lt_pair (by simp) (by omega)⟩,
-          ⟨h₂, pair_lt_pair (by simp) (by omega)⟩, rfl⟩
+        ⟨s, p, d₁, d₂, n₁, n₂, ⟨h₁, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₁ _ _ _))⟩,
+          ⟨h₂, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ (le_sum₂ _ _ _))⟩, rfl⟩
     · exact Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr <| Or.inr ⟨s, p, rfl⟩
 
 end DLen

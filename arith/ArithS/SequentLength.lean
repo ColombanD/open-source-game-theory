@@ -9,8 +9,6 @@ rule introduces arbitrary formulas, so a proper length measure must charge the t
 sequent there (roadmap §2.1, PROPER).
 -/
 
-set_option maxHeartbeats 400000
-
 namespace ArithS
 
 open FFL FFL.FirstOrder Arithmetic Bootstrapping
@@ -85,12 +83,15 @@ instance setLenAux_definable' (Γ m) : Γ-[m + 1]-Function₂ (setLenAux (V := V
 
 variable (L)
 
-noncomputable def setLenDef : 𝚺₁.Semisentence 2 := .mkSigma “y s. !(setLenAuxDef L) y s s”
+/-- `setLen` as a substitution instance of `setLenAuxDef` (NOT a `“ ”`-DSL wrapper: simp on
+the wrapper form normalizes the substitution through the whole PR `resultDef` and runs
+away — 17 GB, never terminates). -/
+noncomputable def setLenDef : 𝚺₁.Semisentence 2 := (setLenAuxDef L).rew (Rew.subst ![#0, #1, #1])
 
 variable {L}
 
 instance setLen_defined : 𝚺₁-Function₁[V] setLen L via setLenDef L := .mk fun v ↦ by
-  simp [setLenDef, setLen]
+  simp [setLenDef, setLenAuxDef, (SetLen.construction L).result_defined_iff, setLen]; rfl
 
 instance setLen_definable : 𝚺₁-Function₁[V] setLen L := setLen_defined.to_definable
 
