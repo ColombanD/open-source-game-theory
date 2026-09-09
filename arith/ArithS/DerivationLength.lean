@@ -218,4 +218,203 @@ variable (L)
 /-- `DlenGraph d n`: the derivation code `d` has length `n`. -/
 def DlenGraph (d n : V) : Prop := (DLen.construction L).Fixpoint ![] ⟪d, n⟫
 
+noncomputable def dlenGraphDef : 𝚫₁.Semisentence 2 := .mkDelta
+  (.mkSigma “d n. ∃ pr <⁺ (d + n + 1)², !pairDef pr d n ∧ !(DLen.blueprint L).fixpointDefΔ₁.sigma pr”)
+  (.mkPi “d n. ∀ pr <⁺ (d + n + 1)², !pairDef pr d n → !(DLen.blueprint L).fixpointDefΔ₁.pi pr”)
+
+variable {L}
+
+section
+
+private lemma fixpoint_param_eq (p : Fin 0 → V) (x : V) :
+    (DLen.construction L).Fixpoint p x = (DLen.construction L).Fixpoint ![] x := by
+  rw [Subsingleton.elim p ![]]
+
+instance dlenGraph_defined : 𝚫₁-Relation[V] DlenGraph L via dlenGraphDef L := .mk
+  ⟨by intro v
+      simp [dlenGraphDef, HierarchySymbol.Semiformula.val_sigma,
+        (DLen.construction L).fixpoint_definedΔ₁.proper.iff', (DLen.construction L).fixpoint_definedΔ₁.df]
+      constructor
+      · rintro h x _ rfl; rwa [fixpoint_param_eq] at h ⊢
+      · intro h; have := h ⟪v 0, v 1⟫ (by simp) rfl; rwa [fixpoint_param_eq] at this ⊢,
+   by intro v
+      simp [dlenGraphDef, HierarchySymbol.Semiformula.val_sigma,
+        (DLen.construction L).fixpoint_definedΔ₁.df, DlenGraph]
+      rw [fixpoint_param_eq]⟩
+
+instance dlenGraph_definable : 𝚫₁-Relation[V] DlenGraph L := dlenGraph_defined.to_definable
+
+instance dlenGraph_definable' : Γ-[m + 1]-Relation[V] DlenGraph L := dlenGraph_definable.of_deltaOne
+
+end
+
+/-! ### Case analysis and inversion -/
+
+lemma DlenGraph.case_iff {d n : V} :
+    DlenGraph L d n ↔
+    (∃ s p, d = axL s p ∧ n = setLen L s + 1) ∨
+    (∃ s, d = verumIntro s ∧ n = setLen L s + 1) ∨
+    (∃ s p q dp dq np nq, DlenGraph L dp np ∧ DlenGraph L dq nq ∧
+      d = andIntro s p q dp dq ∧ n = setLen L s + np + nq + 1) ∨
+    (∃ s p q d' n', DlenGraph L d' n' ∧ d = orIntro s p q d' ∧ n = setLen L s + n' + 1) ∨
+    (∃ s p d' n', DlenGraph L d' n' ∧ d = allIntro s p d' ∧ n = setLen L s + n' + 1) ∨
+    (∃ s p t d' n', DlenGraph L d' n' ∧ d = exsIntro s p t d' ∧
+      n = setLen L s + termLen L t + n' + 1) ∨
+    (∃ s d' n', DlenGraph L d' n' ∧ d = wkRule s d' ∧ n = setLen L s + n' + 1) ∨
+    (∃ s d' n', DlenGraph L d' n' ∧ d = shiftRule s d' ∧ n = setLen L s + n' + 1) ∨
+    (∃ s p d₁ d₂ n₁ n₂, DlenGraph L d₁ n₁ ∧ DlenGraph L d₂ n₂ ∧
+      d = cutRule s p d₁ d₂ ∧ n = setLen L s + n₁ + n₂ + 1) ∨
+    (∃ s p, d = axm s p ∧ n = setLen L s + 1) :=
+  Iff.trans (DLen.construction L).case (by simp [DLen.construction, DLen.Phi, DlenGraph])
+
+section inversion
+
+attribute [local simp] axL verumIntro andIntro orIntro allIntro exsIntro wkRule shiftRule cutRule axm
+
+lemma DlenGraph.axL_iff {s p n : V} : DlenGraph L (axL s p) n ↔ n = setLen L s + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.verumIntro_iff {s n : V} : DlenGraph L (verumIntro s) n ↔ n = setLen L s + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.axm_iff {s p n : V} : DlenGraph L (axm s p) n ↔ n = setLen L s + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.andIntro_iff {s p q dp dq n : V} :
+    DlenGraph L (andIntro s p q dp dq) n ↔
+    ∃ np nq, DlenGraph L dp np ∧ DlenGraph L dq nq ∧ n = setLen L s + np + nq + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.orIntro_iff {s p q d' n : V} :
+    DlenGraph L (orIntro s p q d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + n' + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.allIntro_iff {s p d' n : V} :
+    DlenGraph L (allIntro s p d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + n' + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.exsIntro_iff {s p t d' n : V} :
+    DlenGraph L (exsIntro s p t d') n ↔
+    ∃ n', DlenGraph L d' n' ∧ n = setLen L s + termLen L t + n' + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.wkRule_iff {s d' n : V} :
+    DlenGraph L (wkRule s d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + n' + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.shiftRule_iff {s d' n : V} :
+    DlenGraph L (shiftRule s d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + n' + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+lemma DlenGraph.cutRule_iff {s p d₁ d₂ n : V} :
+    DlenGraph L (cutRule s p d₁ d₂) n ↔
+    ∃ n₁ n₂, DlenGraph L d₁ n₁ ∧ DlenGraph L d₂ n₂ ∧ n = setLen L s + n₁ + n₂ + 1 := by
+  rw [DlenGraph.case_iff]; simp
+
+end inversion
+
+/-! ### Existence and uniqueness on internal derivations -/
+
+section
+
+variable {T : Theory L} [T.Δ₁]
+
+lemma dlenGraph_exists {d : V} (hd : Derivation T d) : ∃ n, DlenGraph L d n := by
+  apply Derivation.induction1 𝚺 (T := T) (P := fun d ↦ ∃ n, DlenGraph L d n) (by definability) hd
+  · intro s _ p _ _; exact ⟨_, DlenGraph.axL_iff.mpr rfl⟩
+  · intro s _ _; exact ⟨_, DlenGraph.verumIntro_iff.mpr rfl⟩
+  · rintro s _ p q dp dq _ _ _ ⟨np, hp⟩ ⟨nq, hq⟩
+    exact ⟨_, DlenGraph.andIntro_iff.mpr ⟨np, nq, hp, hq, rfl⟩⟩
+  · rintro s _ p q d' _ _ ⟨n', h⟩; exact ⟨_, DlenGraph.orIntro_iff.mpr ⟨n', h, rfl⟩⟩
+  · rintro s _ p d' _ _ ⟨n', h⟩; exact ⟨_, DlenGraph.allIntro_iff.mpr ⟨n', h, rfl⟩⟩
+  · rintro s _ p t d' _ _ _ ⟨n', h⟩; exact ⟨_, DlenGraph.exsIntro_iff.mpr ⟨n', h, rfl⟩⟩
+  · rintro s _ d' _ _ ⟨n', h⟩; exact ⟨_, DlenGraph.wkRule_iff.mpr ⟨n', h, rfl⟩⟩
+  · rintro s _ d' _ _ ⟨n', h⟩; exact ⟨_, DlenGraph.shiftRule_iff.mpr ⟨n', h, rfl⟩⟩
+  · rintro s _ p d₁ d₂ _ _ ⟨n₁, h₁⟩ ⟨n₂, h₂⟩
+    exact ⟨_, DlenGraph.cutRule_iff.mpr ⟨n₁, n₂, h₁, h₂, rfl⟩⟩
+  · intro s _ p _ _; exact ⟨_, DlenGraph.axm_iff.mpr rfl⟩
+
+lemma dlenGraph_unique {d : V} (hd : Derivation T d) :
+    ∀ n₁ n₂, DlenGraph L d n₁ → DlenGraph L d n₂ → n₁ = n₂ := by
+  apply Derivation.induction1 𝚷 (T := T)
+    (P := fun d ↦ ∀ n₁ n₂, DlenGraph L d n₁ → DlenGraph L d n₂ → n₁ = n₂) (by definability) hd
+  · intro s _ p _ _ n₁ n₂ h₁ h₂
+    rw [DlenGraph.axL_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro s _ _ n₁ n₂ h₁ h₂
+    rw [DlenGraph.verumIntro_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro s _ p q dp dq _ _ _ ihp ihq n₁ n₂ h₁ h₂
+    rcases DlenGraph.andIntro_iff.mp h₁ with ⟨np, nq, hp, hq, rfl⟩
+    rcases DlenGraph.andIntro_iff.mp h₂ with ⟨np', nq', hp', hq', rfl⟩
+    rw [ihp np np' hp hp', ihq nq nq' hq hq']
+  · intro s _ p q d' _ _ ih n₁ n₂ h₁ h₂
+    rcases DlenGraph.orIntro_iff.mp h₁ with ⟨n', h, rfl⟩
+    rcases DlenGraph.orIntro_iff.mp h₂ with ⟨n'', h', rfl⟩
+    rw [ih n' n'' h h']
+  · intro s _ p d' _ _ ih n₁ n₂ h₁ h₂
+    rcases DlenGraph.allIntro_iff.mp h₁ with ⟨n', h, rfl⟩
+    rcases DlenGraph.allIntro_iff.mp h₂ with ⟨n'', h', rfl⟩
+    rw [ih n' n'' h h']
+  · intro s _ p t d' _ _ _ ih n₁ n₂ h₁ h₂
+    rcases DlenGraph.exsIntro_iff.mp h₁ with ⟨n', h, rfl⟩
+    rcases DlenGraph.exsIntro_iff.mp h₂ with ⟨n'', h', rfl⟩
+    rw [ih n' n'' h h']
+  · intro s _ d' _ _ ih n₁ n₂ h₁ h₂
+    rcases DlenGraph.wkRule_iff.mp h₁ with ⟨n', h, rfl⟩
+    rcases DlenGraph.wkRule_iff.mp h₂ with ⟨n'', h', rfl⟩
+    rw [ih n' n'' h h']
+  · intro s _ d' _ _ ih n₁ n₂ h₁ h₂
+    rcases DlenGraph.shiftRule_iff.mp h₁ with ⟨n', h, rfl⟩
+    rcases DlenGraph.shiftRule_iff.mp h₂ with ⟨n'', h', rfl⟩
+    rw [ih n' n'' h h']
+  · intro s _ p d₁ d₂ _ _ ih₁ ih₂ n₁ n₂ h₁ h₂
+    rcases DlenGraph.cutRule_iff.mp h₁ with ⟨m₁, m₂, g₁, g₂, rfl⟩
+    rcases DlenGraph.cutRule_iff.mp h₂ with ⟨m₁', m₂', g₁', g₂', rfl⟩
+    rw [ih₁ m₁ m₁' g₁ g₁', ih₂ m₂ m₂' g₂ g₂']
+  · intro s _ p _ _ n₁ n₂ h₁ h₂
+    rw [DlenGraph.axm_iff] at h₁ h₂; rw [h₁, h₂]
+
+lemma dlenGraph_existsUnique {d : V} (hd : Derivation T d) : ∃! n, DlenGraph L d n := by
+  rcases dlenGraph_exists hd with ⟨n, hn⟩
+  exact ExistsUnique.intro n hn (fun n' h' ↦ dlenGraph_unique hd n' n h' hn)
+
+variable (T)
+
+lemma dlenGraph_existsUnique_total (d : V) :
+    ∃! n, (Derivation T d → DlenGraph L d n) ∧ (¬Derivation T d → n = 0) := by
+  by_cases hd : Derivation T d
+  · simpa [hd] using dlenGraph_existsUnique hd
+  · simp [hd]
+
+/-- The length of an internal derivation of `T` (`0` on non-derivations). -/
+noncomputable def dlen (d : V) : V := Classical.choose! (dlenGraph_existsUnique_total (L := L) T d)
+
+variable {T}
+
+theorem dlen_graph {d : V} (hd : Derivation T d) : DlenGraph L d (dlen T d) :=
+  Classical.choose!_spec (dlenGraph_existsUnique_total (L := L) T d) |>.1 hd
+
+theorem dlen_of_not {d : V} (hd : ¬Derivation T d) : dlen T d = 0 :=
+  Classical.choose!_spec (dlenGraph_existsUnique_total (L := L) T d) |>.2 hd
+
+lemma dlen_eq_of_graph {d n : V} (hd : Derivation T d) (h : DlenGraph L d n) : dlen T d = n :=
+  dlenGraph_unique hd _ _ (dlen_graph hd) h
+
+variable (T)
+
+noncomputable def dlenDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “n d. (!(derivation T).pi d → !(dlenGraphDef L).sigma d n) ∧ (¬!(derivation T).sigma d → n = 0)”
+
+variable {T}
+
+instance dlen_defined : 𝚺₁-Function₁[V] dlen (L := L) T via dlenDef T := .mk fun v ↦ by
+  simp [dlenDef, HierarchySymbol.Semiformula.val_sigma, dlenGraph_defined.df,
+    (Derivation.defined (T := T)).proper.iff', (Derivation.defined (T := T)).df,
+    dlen, Classical.choose!_eq_iff_right]
+
+instance dlen_definable : 𝚺₁-Function₁[V] dlen (L := L) T := dlen_defined.to_definable
+
+instance dlen_definable' : Γ-[m + 1]-Function₁[V] dlen (L := L) T := dlen_definable.of_sigmaOne
+
+end
+
 end ArithS
