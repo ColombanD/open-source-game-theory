@@ -44,6 +44,8 @@ theorem proofSearch_of_play_MirrorBot_botDupoc (k n : Nat)
     · simp [play, eval, MirrorBot] at h
     · simp [play, eval, MirrorBot, Prog.subst] at h
     · simp [play, eval, MirrorBot, Prog.subst, DupocBot, Formula.subst] at h
+      dsimp +instances only [Formula.subst, Prog.subst, MirrorBot, DupocBot] at h
+      simp at h
     · have hev : play (n + 4) MirrorBot (.bot (DupocBot k)) = some .D :=
         MirrorBot_plays_D_against_botDupoc_JM k n hps
       rw [hev] at h; cases h
@@ -76,14 +78,14 @@ theorem llm_outcome_JustBot_vs_MirrorBot :
   -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
   · have hgk := hg k hk
     have hA : play 4 (JustBot k) MirrorBot = some .C := by
-      have := JustBot_eval_step k 2 MirrorBot .C (by simpa using hgk)
+      have := JustBot_eval_step k 2 MirrorBot .C (by simpa using! hgk)
       simpa using this
     have hB : play 5 MirrorBot (JustBot k) = some .C := by
       show eval 5 MirrorBot (JustBot k) MirrorBot = some .C
       simp only [MirrorBot, eval, Prog.subst]
       exact hA
     have hA' : play 5 (JustBot k) MirrorBot = some .C := by
-      have := JustBot_eval_step k 3 MirrorBot .C (by simpa using hgk)
+      have := JustBot_eval_step k 3 MirrorBot .C (by simpa using! hgk)
       simpa using this
     exact ⟨5, outcome_of_plays 5 (JustBot k) MirrorBot .C .C hA' hB⟩
   -- …and the match is determined at fuel 3 whatever the oracle says, so

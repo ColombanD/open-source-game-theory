@@ -59,7 +59,7 @@ theorem gebot_ebot_C (k fuel : Nat) (hk : 2 ≤ k) :
         (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
           (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))) = some .C
   rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG1]
-  simpa using hIte2
+  simpa using! hIte2
 
 -- guard certificate for GuardianBot: EBot plays D vs .bot CooperateBot
 theorem gebot_guard_cert (k : Nat) (hk : 3 ^ 5 ≤ k) :

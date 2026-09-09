@@ -52,6 +52,7 @@ theorem gg_guardian_C_vs_guardian (k fuel : Nat) :
   show eval (fuel + 2) (GuardianBot k) (GuardianBot k) (GuardianBot k) = some .C
   conv_lhs => unfold GuardianBot
   simp only [eval, Prog.subst, Formula.subst]
+  dsimp +instances only [Formula.subst, Prog.subst]
   rw [hg]
   rfl
 

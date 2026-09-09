@@ -9,7 +9,7 @@ defaultTargets = ["PrisonersDilemma", "OutcomeCheck"]
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.28.0"
+rev = "v4.33.1"
 
 # The engine: agent language, proof system S, bot zoo, outcome theorems.
 [[lean_lib]]

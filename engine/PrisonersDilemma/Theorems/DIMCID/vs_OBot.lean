@@ -136,11 +136,11 @@ theorem dimcidOb_OBot_plays_D (k fuel : Nat) (hk : dimcidObThresh k) :
       eval (fuel + 4) OBot (DIMCID k)
         (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
           some .D := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) OBot (DIMCID k)
         (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
         Action.C Action.D hGuard2)
-  simpa [hInner] using hPlay
+  simpa [hInner] using! hPlay
 
 /-! ## DIMCID's guard vs OBot is FALSE-interp; floor kills it -/
 

@@ -64,7 +64,7 @@ theorem DBot_plays_C_against_DIMCID (k fuel : Nat) (hk : dimcidThresh k) :
     (.const Action.D) (.const Action.C)
     Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 theorem interp_DBot_D_vs_DIMCID_false (k : Nat) (hk : dimcidThresh k) :
     ¬ (Formula.plays DBot (DIMCID k) Action.D).interp := by

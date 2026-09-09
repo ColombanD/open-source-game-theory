@@ -68,11 +68,11 @@ theorem outcome_JustBot_vs_OBot :
         eval (N + 5) OBot (.bot (DupocBot k))
           (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
             some .D := by
-      simpa [Nat.add_assoc] using
+      simpa [Nat.add_assoc] using!
         (eval_ite_from_guard (N + 4) OBot (.bot (DupocBot k))
           (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
           Action.C Action.D hInner)
-    simpa [Nat.add_assoc, hInnerIte] using hPlay
+    simpa [Nat.add_assoc, hInnerIte] using! hPlay
 
   have hPSObot : proofSearch k (.plays OBot (.bot (DupocBot k)) .C) = false := by
     cases h : proofSearch k (.plays OBot (.bot (DupocBot k)) .C) with
@@ -124,11 +124,11 @@ theorem outcome_JustBot_vs_OBot :
         eval (n + 5) OBot (JustBot k)
           (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
             some .D := by
-      simpa [Nat.add_assoc] using
+      simpa [Nat.add_assoc] using!
         (eval_ite_from_guard (n + 4) OBot (JustBot k)
           (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
           Action.C Action.D hInner)
-    simpa [Nat.add_assoc, hInnerIte] using hPlay
+    simpa [Nat.add_assoc, hInnerIte] using! hPlay
 
   exact outcome_of_plays _ _ _ _ _ hA hB
 end PD.Theorems

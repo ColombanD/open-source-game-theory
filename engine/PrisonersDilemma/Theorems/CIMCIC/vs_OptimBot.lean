@@ -254,7 +254,7 @@ theorem cimcic_optim_proofSearch_false_guard (k : Nat) :
       have hpf : Pf k (.impl (.plays (CIMCIC k) (OptimBot k k) Action.C)
                              (.plays (OptimBot k k) (CIMCIC k) Action.C)) := by
         have := (proofSearch_spec _ _).1 hps
-        simpa [Formula.subst] using this
+        simpa [Formula.subst] using! this
       exact absurd hpf (cimcic_optim_guard_unprov k)
 
 /-- CIMCIC defects against OptimBot: its guard is unprovable, so it takes the

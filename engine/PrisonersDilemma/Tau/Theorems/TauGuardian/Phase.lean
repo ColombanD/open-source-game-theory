@@ -87,6 +87,6 @@ theorem tauGuardian_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (
     (fun T _ => guardianRow_plays hk hkk h6 h10 hL hcg T)
   simp only [bitMass, tauOrder, List.map, guardianRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
-  simpa [guardMass, simMass] using h
+  simpa [-forall_const, guardMass, simMass] using h
 
 end PD.Tau

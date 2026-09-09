@@ -78,7 +78,7 @@ theorem tauPrudent_phase :
   have h := phase_of_bits (tauZoo k) .prudent w prudentRow tauOrder θ opponent
     (fun T _ => hrow k hk T)
   simp only [bitMass, tauOrder, List.map, prudentRow, massOf, massOf_ifC, massOf_ifD] at h
-  exact ⟨fun hθ => h.1 (by unfold prudentMass at hθ; omega),
-         fun hθ => h.2 (by unfold prudentMass at hθ; omega)⟩
+  exact ⟨fun hθ => h.1 (by simpa [prudentMass] using hθ),
+         fun hθ => h.2 (by simpa [prudentMass] using hθ)⟩
 
 end PD.Tau

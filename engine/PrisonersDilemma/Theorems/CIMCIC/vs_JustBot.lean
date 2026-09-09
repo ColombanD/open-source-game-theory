@@ -85,6 +85,8 @@ theorem cj_cimcic_guard_fired (k n : Nat)
       rcases n with _ | _ | n
       · simp [play, eval] at h
       · simp [play, eval, CIMCIC] at h
+        dsimp +instances only [CIMCIC] at h
+        simp at h
       · have hev : play (n + 2) (CIMCIC k) (.bot (DupocBot k)) = some .D := by
           show (if proofSearch k
                   ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst

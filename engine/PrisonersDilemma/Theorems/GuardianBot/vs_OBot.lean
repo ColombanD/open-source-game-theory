@@ -83,11 +83,11 @@ theorem obot_plays_D_vs_guardian (k fuel : Nat) :
     (by rfl) hGuard1
   have hInner : eval (fuel + 4) OBot (GuardianBot (k+2))
       (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) = some .D := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) OBot (GuardianBot (k+2))
         (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
         Action.C Action.D hGuard2)
-  simpa [hInner] using hPlay
+  simpa [hInner] using! hPlay
 
 -- === Final outcome theorem ===
 

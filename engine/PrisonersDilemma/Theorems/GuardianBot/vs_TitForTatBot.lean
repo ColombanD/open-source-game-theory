@@ -37,7 +37,7 @@ theorem gtft_TFT_C_vs_GuardianBot (k fuel : Nat) :
   have hPlay := play_ite_from_guard
     fuel 3 TitForTatBot (GuardianBot k) (.sim .opp (.bot CooperateBot))
     (.const Action.C) (.const Action.D) Action.C Action.C (by rfl) hG
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 -- GuardianBot plays C vs TitForTatBot: guard "TFT plays D vs bot CB" refuted
 -- TFT plays C vs bot CB (cooperates against cooperator)
@@ -50,7 +50,7 @@ theorem gtft_TFT_C_vs_botCB (fuel : Nat) :
   have hPlay := play_ite_from_guard
     fuel 3 TitForTatBot (.bot CooperateBot) (.sim .opp (.bot CooperateBot))
     (.const Action.C) (.const Action.D) Action.C Action.C (by rfl) hG
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 theorem gtft_interp_TFT_D_vs_botCB_false :
     ¬ (Formula.plays TitForTatBot (.bot CooperateBot) .D).interp := by

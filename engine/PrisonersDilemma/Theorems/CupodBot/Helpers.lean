@@ -106,7 +106,7 @@ theorem TitForTatBot_plays_C_against_CupodBot (k fuel : Nat) :
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- Semantically, TitForTat never plays D against CUPOD. -/
 theorem interp_TitForTatBot_plays_D_false (k : Nat) :
@@ -125,6 +125,8 @@ theorem interp_TitForTatBot_plays_D_false (k : Nat) :
               cases fuel with
               | zero =>
                   simp [play, eval, TitForTatBot, CupodBot, Prog.subst, Formula.subst, CooperateBot] at hn
+                  dsimp +instances only [Formula.subst, Prog.subst, TitForTatBot, CupodBot, CooperateBot] at hn
+                  simp at hn
               | succ fuel =>
                   have hC : play (fuel + 1 + 1 + 1 + 1) TitForTatBot (CupodBot k) = some .C := by
                     simpa [Nat.add_assoc] using TitForTatBot_plays_C_against_CupodBot k fuel
@@ -178,7 +180,7 @@ theorem DBot_plays_C_against_CupodBot (k fuel : Nat)
     (.const Action.D) (.const Action.C)
     Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- Semantically, DBot never plays D against CUPOD (given the DefectBot probe
     succeeds). -/
@@ -199,6 +201,8 @@ theorem interp_DBot_plays_D_false (k : Nat)
               cases fuel with
               | zero =>
                   simp [play, eval, DBot, CupodBot, Prog.subst, Formula.subst, DefectBot] at hn
+                  dsimp +instances only [Formula.subst, Prog.subst, DBot, CupodBot, DefectBot] at hn
+                  simp at hn
               | succ fuel =>
                   have hC : play (fuel + 1 + 1 + 1 + 1) DBot (CupodBot k) = some .C := by
                     simpa [Nat.add_assoc] using DBot_plays_C_against_CupodBot k fuel hk
@@ -244,11 +248,11 @@ theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
       eval (fuel + 4) OBot (CupodBot k)
         (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
           some .D := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) OBot (CupodBot k)
         (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
         Action.C Action.D hGuard2)
-  simpa [hInner] using hPlay
+  simpa [hInner] using! hPlay
 
 /-! ### CupodBot vs OBot — the honest `(C, D)` outcome (floor formalized 2026-07-09).
 
@@ -352,7 +356,7 @@ theorem EBot_plays_C_against_CupodBot (k fuel : Nat)
         (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
           (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) =
         some .C := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) EBot (CupodBot k)
         (.sim .opp (.bot CooperateBot)) (.const Action.C)
         (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))
@@ -364,7 +368,7 @@ theorem EBot_plays_C_against_CupodBot (k fuel : Nat)
       (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
     Action.C Action.D
     (by rfl) hGuard1
-  simpa [Nat.add_assoc, hInner] using hPlay
+  simpa [Nat.add_assoc, hInner] using! hPlay
 
 /-- Semantically, EBot never plays D against CUPOD (given the DefectBot probe
     succeeds). -/
@@ -384,15 +388,18 @@ theorem interp_EBot_plays_D_false (k : Nat)
               cases fuel with
               | zero =>
                   simp [play, eval, EBot, CupodBot, Prog.subst, Formula.subst] at hn
+                  dsimp +instances only [Formula.subst, Prog.subst, EBot, CupodBot] at hn
+                  simp at hn
               | succ fuel =>
                   cases fuel with
                   | zero =>
                       have hk' := hk
                       unfold CupodBot at hk'
                       simp [play, eval, EBot, CupodBot, Prog.subst, Formula.subst, hk'] at hn
-                      have hDC : (Action.D == Action.C) = false := by decide
-                      rw [hDC] at hn
-                      cases hn
+                      dsimp +instances only [Formula.subst, Prog.subst, EBot, CupodBot, CooperateBot,
+                        DefectBot] at hn
+                      simp [hk'] at hn
+                      exact absurd hn (by decide)
                   | succ fuel =>
                       have hC :
                           play (fuel + 1 + 1 + 1 + 1 + 1) EBot (CupodBot k) = some .C := by
@@ -455,7 +462,7 @@ theorem MirrorBot_plays_D_against_CupodBot (k fuel : Nat)
     play (fuel + 3) MirrorBot (CupodBot k) = some .D := by
   have hCupod : play (fuel + 2) (CupodBot k) MirrorBot = some .D :=
     CupodBot_plays_D_against_MirrorBot k fuel hk
-  simpa [play, eval, Prog.subst, MirrorBot] using hCupod
+  simpa [play, eval, Prog.subst, MirrorBot] using! hCupod
 
 /-- Dual of `CupodBot_plays_D_against_MirrorBot`: when proofSearch fails,
     CupodBot falls through to its `.const .C` cooperate branch. -/
@@ -473,7 +480,7 @@ theorem MirrorBot_plays_C_against_CupodBot (k fuel : Nat)
     play (fuel + 3) MirrorBot (CupodBot k) = some .C := by
   have hCupod : play (fuel + 2) (CupodBot k) MirrorBot = some .C :=
     CupodBot_plays_C_against_MirrorBot k fuel hk
-  simpa [play, eval, Prog.subst, MirrorBot] using hCupod
+  simpa [play, eval, Prog.subst, MirrorBot] using! hCupod
 
 /-- Inversion: from a `play` witness on MirrorBot's leg, recover that
     CupodBot's proof-search guard at parameter `k` must have fired. The play
@@ -494,6 +501,8 @@ theorem proofSearch_k_of_play_MirrorBot
     · have hev : play 2 MirrorBot (CupodBot k) = none := by
         unfold CupodBot
         simp [play, eval, Prog.subst, MirrorBot, Formula.subst]
+        dsimp +instances only [Formula.subst, Prog.subst, MirrorBot, CupodBot]
+        simp
       rw [hev] at h
       cases h
     · have hev : play (n + 3) MirrorBot (CupodBot k) = some .C := by

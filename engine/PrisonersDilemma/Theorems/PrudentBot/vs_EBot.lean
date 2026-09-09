@@ -91,7 +91,7 @@ theorem proofSearch_k_of_play_bot_MirrorBot_prudent
     have hMirD : play (n + 4) (.bot MirrorBot) (PrudentBot k) = some .D := by
       have hP : play (n + 2) (PrudentBot k) (.bot MirrorBot) = some .D := hPrudD n
       show eval (n + 4) (.bot MirrorBot) (PrudentBot k) (.bot MirrorBot) = some .D
-      simpa [play, eval, Prog.subst, MirrorBot] using hP
+      simpa [play, eval, Prog.subst, MirrorBot] using! hP
     have hMonoC : play (n + 4) (.bot MirrorBot) (PrudentBot k) = some .C := by
       unfold play at h ⊢
       exact eval_mono_le h (n + 4) (by omega)

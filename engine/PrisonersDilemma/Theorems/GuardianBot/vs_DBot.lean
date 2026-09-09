@@ -49,7 +49,7 @@ theorem gd_DBot_plays_C_vs_GuardianBot (k fuel : Nat) (hk : 5 ≤ k) :
     fuel 3 DBot (GuardianBot k) (.sim .opp (.bot DefectBot))
     (.const Action.D) (.const Action.C) Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 @[outcome]
 theorem llm_outcome_GuardianBot_vs_DBot :

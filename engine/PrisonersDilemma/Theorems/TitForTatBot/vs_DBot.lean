@@ -25,14 +25,14 @@ theorem outcome_TitForTatBot_vs_DBot :
             (.const Action.C) (.const Action.D)
             Action.C Action.D
             (by rfl) hGuard1
-        simpa [eval] using hPlay
+        simpa [eval] using! hPlay
     have hB : play (fuel + 6) DBot TitForTatBot = some .C := by
         have hPlay := play_ite_from_guard
             fuel 5 DBot TitForTatBot (.sim .opp (.bot DefectBot))
             (.const Action.D) (.const Action.C)
             Action.C Action.D
             (by rfl) hGuard2
-        simpa [eval] using hPlay
+        simpa [eval] using! hPlay
     simp [outcome, hA, hB]
 
 end PD.Theorems

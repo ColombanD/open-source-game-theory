@@ -69,7 +69,7 @@ theorem TitForTatBot_plays_C_against_CIMCIC (k fuel : Nat)
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- The consequent atom "TFT plays C vs CIMCIC k" is provable at an `O(log k)`-budget
     certificate: `ite_t` over the `.sim` probe (`search_t` on the guard proof, then

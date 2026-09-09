@@ -30,7 +30,7 @@ theorem proofSearch_false_for_JustBot_vs_DefectBot (k : Nat) :
 theorem JustBot_plays_D_against_DefectBot (k fuel : Nat) :
     play (fuel + 2) (JustBot k) DefectBot = some .D := by
   refine JustBot_eval_step k fuel DefectBot .D ?_
-  simpa using proofSearch_false_for_JustBot_vs_DefectBot k
+  simpa using! proofSearch_false_for_JustBot_vs_DefectBot k
 
 /-- JustBot vs DefectBot: mutual defection. -/
 @[outcome]
@@ -41,6 +41,6 @@ theorem outcome_JustBot_vs_DefectBot :
   have hA : play (fuel + 2) (JustBot k) DefectBot = some .D :=
     JustBot_plays_D_against_DefectBot k fuel
   have hB : play (fuel + 2) DefectBot (JustBot k) = some .D := by
-    simpa [Nat.add_comm] using play_DefectBot (fuel + 1) (JustBot k)
+    simpa [Nat.add_comm] using! play_DefectBot (fuel + 1) (JustBot k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 end PD.Theorems

@@ -91,7 +91,7 @@ theorem MirrorBot_plays_C_against_PrudentBot (k fuel : Nat)
     play (fuel + 4) MirrorBot (PrudentBot k) = some .C := by
   have hPrudent : play (fuel + 3) (PrudentBot k) MirrorBot = some .C :=
     PrudentBot_plays_C_against_MirrorBot k fuel hCoop hPrud
-  simpa [play, eval, Prog.subst, MirrorBot] using hPrudent
+  simpa [play, eval, Prog.subst, MirrorBot] using! hPrudent
 
 /-- When PrudentBot's cooperation search fails, it lands in its root else-branch
     and defects against MirrorBot. -/
@@ -117,7 +117,7 @@ theorem proofSearch_k_of_play_MirrorBot_prudent
       fun f => PrudentBot_plays_D_against_MirrorBot k f hps
     have hMirD : play (n + 3) MirrorBot (PrudentBot k) = some .D := by
       have hP : play (n + 2) (PrudentBot k) MirrorBot = some .D := hPrudD n
-      simpa [play, eval, Prog.subst, MirrorBot] using hP
+      simpa [play, eval, Prog.subst, MirrorBot] using! hP
     have hMonoC : play (n + 3) MirrorBot (PrudentBot k) = some .C := by
       unfold play at h ⊢
       exact eval_mono_le h (n + 3) (by omega)

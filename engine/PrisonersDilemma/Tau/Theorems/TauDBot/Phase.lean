@@ -81,6 +81,6 @@ theorem tauDBot_phase {k : Nat} (hk : 2 ≤ k)
     (fun T _ => dbotRow_plays hk hL T)
   simp only [bitMass, tauOrder, List.map, dbotRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
-  simpa [dbotMass] using h
+  simpa [dbotMass, -forall_const] using h
 
 end PD.Tau

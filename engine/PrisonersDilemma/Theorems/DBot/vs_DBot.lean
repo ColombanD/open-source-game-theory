@@ -25,7 +25,7 @@ theorem outcome_DBot_vs_DBot :
         (.const Action.D) (.const Action.C)
         Action.C Action.D
         (by unfold DBot; rfl) hInnerGuard
-      simpa [play, eval] using hPlay
+      simpa [play, eval] using! hPlay
     have hOuterGuard :
         eval (fuel + 5) DBot DBot (.sim .opp (.bot DefectBot)) = some .C := by
       rw [show eval (fuel + 5) DBot DBot (.sim .opp (.bot DefectBot)) =
@@ -37,7 +37,7 @@ theorem outcome_DBot_vs_DBot :
         (.const Action.D) (.const Action.C)
         Action.C Action.C
         (by rfl) hOuterGuard
-      simpa [eval] using hPlay
+      simpa [eval] using! hPlay
     simp [outcome, hA]
 
 end PD.Theorems

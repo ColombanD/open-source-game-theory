@@ -94,7 +94,10 @@ theorem cimcic_antecedent_false (k : Nat) :
   | zero => simp [play, eval] at hn
   | succ m =>
     cases m with
-    | zero => simp [play, eval, CIMCIC] at hn
+    | zero =>
+      simp [play, eval, CIMCIC] at hn
+      dsimp +instances only [CIMCIC] at hn
+      simp at hn
     | succ fuel =>
       have hD : play (fuel + 2) (CIMCIC k) (.bot DefectBot) = some .D :=
         CIMCIC_plays_D_against_botDefect k fuel
@@ -123,7 +126,7 @@ theorem DBot_plays_C_against_CIMCIC (k fuel : Nat) :
     (.const Action.D) (.const Action.C)
     Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- No certificate exists for DBot playing C vs CIMCIC: it would route through
     CIMCIC's search-false play vs `.bot DefectBot`, a refutation of the TRUE guard. -/

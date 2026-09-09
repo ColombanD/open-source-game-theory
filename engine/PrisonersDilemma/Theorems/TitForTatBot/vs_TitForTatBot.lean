@@ -21,7 +21,7 @@ theorem outcome_TitForTatBot_vs_TitForTatBot :
             (.const Action.C) (.const Action.D)
             Action.C Action.C
             (by rfl) hGuard
-        simpa [eval] using hPlay
+        simpa [eval] using! hPlay
     simp [outcome, hA]
 
 end PD.Theorems

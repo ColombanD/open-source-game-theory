@@ -36,7 +36,7 @@ theorem JustBot_plays_C_against_CooperateBot (k fuel : Nat)
     (hk : proofSearch k (Formula.plays CooperateBot (.bot (DupocBot k)) Action.C) = true) :
     play (fuel + 2) (JustBot k) CooperateBot = some .C := by
   refine JustBot_eval_step k fuel CooperateBot .C ?_
-  simpa using hk
+  simpa using! hk
 
 /-- JustBot vs CooperateBot: mutual cooperation. -/
 @[outcome]
@@ -48,6 +48,6 @@ theorem outcome_JustBot_vs_CooperateBot :
   have hA : play (fuel + 2) (JustBot k) CooperateBot = some .C :=
     JustBot_plays_C_against_CooperateBot k fuel hk
   have hB : play (fuel + 2) CooperateBot (JustBot k) = some .C := by
-    simpa [Nat.add_comm] using play_CooperateBot (fuel + 1) (JustBot k)
+    simpa [Nat.add_comm] using! play_CooperateBot (fuel + 1) (JustBot k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 end PD.Theorems

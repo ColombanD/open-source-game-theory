@@ -62,7 +62,7 @@ theorem outcome_JustBot_vs_CupodTrollBot_staggered :
     omega
   have hA : play (fuel + 2) (JustBot (4*j+100)) (CupodTrollBot j) = some .C := by
     refine JustBot_eval_step (4*j+100) fuel (CupodTrollBot j) .C ?_
-    simpa using hguard
+    simpa using! hguard
   have hB : play (fuel + 2) (CupodTrollBot j) (JustBot (4*j+100)) = some .C :=
     CupodTrollBot_cooperates_if_opp_not_CupodBot j fuel (JustBot (4*j+100))
       (by simp [JustBot, CupodBot])

@@ -141,7 +141,7 @@ theorem EBot_E_plays_C_against_DIMCID (k fuel : Nat) (hk : dimcidEThresh k) :
         (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
           (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) =
         some .C := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) EBot (DIMCID k)
         (.sim .opp (.bot CooperateBot)) (.const Action.C)
         (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))
@@ -153,7 +153,7 @@ theorem EBot_E_plays_C_against_DIMCID (k fuel : Nat) (hk : dimcidEThresh k) :
       (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
     Action.C Action.D
     (by rfl) hGuard1
-  simpa [Nat.add_assoc, hInner] using hPlay
+  simpa [Nat.add_assoc, hInner] using! hPlay
 
 theorem interp_EBot_D_vs_DIMCID_false (k : Nat) (hk : dimcidEThresh k) :
     ¬ (Formula.plays EBot (DIMCID k) Action.D).interp := by

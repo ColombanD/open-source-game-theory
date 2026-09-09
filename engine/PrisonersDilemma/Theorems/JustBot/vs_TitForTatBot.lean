@@ -60,7 +60,7 @@ theorem TitForTatBot_plays_C_against_bot_DupocBot (k fuel : Nat)
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 /-- TitForTatBot cooperates against JustBot: its probe sees JustBot cooperate
     against `.bot CooperateBot` (same shared guard), so the `ite` cooperates. -/
 theorem TitForTatBot_plays_C_against_JustBot (k fuel : Nat)
@@ -77,14 +77,14 @@ theorem TitForTatBot_plays_C_against_JustBot (k fuel : Nat)
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- JustBot cooperates against TitForTatBot: its guard fires. -/
 theorem JustBot_plays_C_against_TitForTatBot (k fuel : Nat)
     (hk : proofSearch k (Formula.plays TitForTatBot (.bot (DupocBot k)) Action.C) = true) :
     play (fuel + 2) (JustBot k) TitForTatBot = some .C := by
   refine JustBot_eval_step k fuel TitForTatBot .C ?_
-  simpa using hk
+  simpa using! hk
 
 /-- JustBot vs TitForTatBot: mutual cooperation. Both legs ride the shared guard at
     budget `atom_cost 5`. -/

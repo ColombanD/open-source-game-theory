@@ -102,7 +102,7 @@ theorem MirrorBot_plays_C_against_WaryBot_floor (k fuel : Nat)
     play (fuel + 3) MirrorBot (WaryBot k) = some .C := by
   have h := WaryBot_cooperates_floor k fuel MirrorBot hsz
   show eval (fuel + 3) MirrorBot (WaryBot k) MirrorBot = some .C
-  simpa [eval, MirrorBot, Prog.subst] using h
+  simpa [eval, MirrorBot, Prog.subst] using! h
 
 /-- DBot's DefectBot probe sees WaryBot cooperate at every FLOOR budget (it
     cannot afford the refutation even of a pure defector), so DBot EXPLOITS it. -/
@@ -117,7 +117,7 @@ theorem DBot_plays_D_against_WaryBot_floor (k fuel : Nat)
       (eval_sim_opp_bot_of_play (fuel + 2) DBot (WaryBot k) DefectBot .C hW)
   have hPlay := play_ite_from_guard fuel 3 DBot (WaryBot k)
     (.sim .opp (.bot DefectBot)) (.const .D) (.const .C) .C .C (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- EBot's first probe (vs DefectBot) sees WaryBot's floor-trust, so EBot defects
     immediately. -/
@@ -135,7 +135,7 @@ theorem EBot_plays_D_against_WaryBot_floor (k fuel : Nat)
     (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
       (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
     .C .C (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- OBot clears WaryBot on both probes at every FLOOR budget (the CooperateBot
     probe clears at EVERY budget by soundness; the DefectBot probe needs the
@@ -159,12 +159,12 @@ theorem OBot_plays_C_against_WaryBot_floor (k fuel : Nat)
       (.ite (.sim .opp (.bot DefectBot)) .C (.const .C) (.const .D)) = some .C := by
     have h := eval_ite_from_guard (fuel + 3) OBot (WaryBot k)
       (.sim .opp (.bot DefectBot)) (.const .C) (.const .D) .C .C hG2
-    simpa [Nat.add_assoc, eval] using h
+    simpa [Nat.add_assoc, eval] using! h
   have hPlay := play_ite_from_guard fuel 4 OBot (WaryBot k)
     (.sim .opp (.bot CooperateBot))
     (.ite (.sim .opp (.bot DefectBot)) .C (.const .C) (.const .D)) (.const .D)
     .C .C (by rfl) hG1
-  simpa [hInner] using hPlay
+  simpa [hInner] using! hPlay
 
 /-- CIMCIC's implication guard outgrows its budget at every FLOOR budget (the
     size floor for `.impl`), so it falls to its defecting else-branch. -/
@@ -254,7 +254,7 @@ theorem TitForTatBot_plays_C_against_WaryBot (k fuel : Nat) :
       (eval_sim_opp_bot_of_play (fuel + 2) TitForTatBot (WaryBot k) CooperateBot .C hW)
   have hPlay := play_ite_from_guard fuel 3 TitForTatBot (WaryBot k)
     (.sim .opp (.bot CooperateBot)) (.const .C) (.const .D) .C .C (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- WaryBot cannot refute TitForTatBot's cooperation (it is semantically true at
     every budget), so it trusts back. -/
@@ -289,7 +289,7 @@ theorem DBot_plays_C_against_WaryBot_large (k fuel : Nat)
       (eval_sim_opp_bot_of_play (fuel + 2) DBot (WaryBot k) DefectBot .D hW)
   have hPlay := play_ite_from_guard fuel 3 DBot (WaryBot k)
     (.sim .opp (.bot DefectBot)) (.const .D) (.const .C) .C .D (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- At large `k` WaryBot cannot refute DBot's (true) cooperation, so it trusts. -/
 theorem proofSearch_false_wary_DBot_large (k : Nat)
@@ -336,13 +336,13 @@ theorem EBot_plays_C_against_WaryBot_large (k fuel : Nat)
     have h := eval_ite_from_guard (fuel + 3) EBot (WaryBot k)
       (.sim .opp (.bot CooperateBot)) (.const .C)
       (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)) .C .C hG2
-    simpa [Nat.add_assoc, eval] using h
+    simpa [Nat.add_assoc, eval] using! h
   have hPlay := play_ite_from_guard fuel 4 EBot (WaryBot k)
     (.sim .opp (.bot DefectBot)) (.const .D)
     (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
       (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
     .C .D (by rfl) hG1
-  simpa [hInner] using hPlay
+  simpa [hInner] using! hPlay
 
 /-- At large `k` WaryBot cannot refute EBot's (true) cooperation, so it trusts. -/
 theorem proofSearch_false_wary_EBot_large (k : Nat)
@@ -743,7 +743,7 @@ theorem MirrorBot_plays_C_against_WaryBot (k fuel : Nat) :
     play (fuel + 3) MirrorBot (WaryBot k) = some .C := by
   have h := WaryBot_cooperates_vs_MirrorBot k fuel
   show eval (fuel + 3) MirrorBot (WaryBot k) MirrorBot = some .C
-  simpa [eval, MirrorBot, Prog.subst] using h
+  simpa [eval, MirrorBot, Prog.subst] using! h
 
 /-- WaryBot k's self-refutation guard is underivable at EVERY budget. -/
 theorem no_Pf_neg_wary_self (k K : Nat) :

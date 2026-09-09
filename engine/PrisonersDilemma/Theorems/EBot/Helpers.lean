@@ -36,6 +36,6 @@ theorem EBot_plays_C_against_MirrorBot (fuel : Nat) :
         (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
         Action.C Action.D
         (by rfl) hGuard1
-    simpa [eval, hGuard2] using hPlay
+    simpa [eval, hGuard2] using! hPlay
 
 end PD.Theorems

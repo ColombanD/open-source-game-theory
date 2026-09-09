@@ -144,7 +144,7 @@ theorem ot_inner_D_at_stagger :
       (16 * W) (16 * W) (64 * W) (32 * W) (128 * W) (32 * W) (16 * W)
       (256 * W) (512 * W) (16 * W) (640 * W) (704 * W) (768 * W) (2048 * W) (4096 * W)
       hLoeb ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · (try simp only [numCost, Formula.size]); omega
+    · (try simp only [numCost, Formula.size]); clear_value W; omega
   exact Pf_mono hpf (by omega)
 /-! ## Outer Löb premise (searchElseChain) & bootstrap: OptimBot defects against TFT -/
 
@@ -268,7 +268,7 @@ theorem ot_D_provable_at_stagger :
       (16 * W) (16 * W) (64 * W) (32 * W) (128 * W) (32 * W) (16 * W)
       (256 * W) (512 * W) (16 * W) (640 * W) (704 * W) (768 * W) (2048 * W) (4096 * W)
       hLoeb ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · (try simp only [numCost, Formula.size]); omega
+    · (try simp only [numCost, Formula.size]); clear_value W; omega
   have hpfk : Pf KS φ := Pf_mono hpf (by omega)
   exact (proofSearch_spec KS φ).2 hpfk
 /-! ## Eval side -/

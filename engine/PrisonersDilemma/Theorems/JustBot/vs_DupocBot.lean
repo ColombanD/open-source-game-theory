@@ -78,7 +78,10 @@ theorem outcome_JustBot_vs_DupocBot :
           | zero => simp [play, eval] at hN
           | succ N0 =>
             cases N0 with
-            | zero => simp [play, eval, DupocBot, Prog.subst, Formula.subst] at hN
+            | zero =>
+              simp [play, eval, DupocBot, Prog.subst, Formula.subst] at hN
+              dsimp +instances only [Formula.subst, Prog.subst, DupocBot] at hN
+              simp at hN
             | succ N1 =>
               have hd : play (N1 + 2) (DupocBot k) (.bot (DupocBot k)) = some .D := by
                 show eval (N1 + 2) (DupocBot k) (.bot (DupocBot k)) (DupocBot k) = some .D

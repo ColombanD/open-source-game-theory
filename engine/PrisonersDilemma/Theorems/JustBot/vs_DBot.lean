@@ -37,7 +37,7 @@ theorem DBot_plays_C_against_bot_DupocBot_JB (k fuel : Nat) :
     fuel 4 DBot (.bot (DupocBot k)) (.sim .opp (.bot DefectBot))
     (.const Action.D) (.const Action.C) Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 -- DBot cooperates against JustBot k: sim probe sees JustBot defects → DBot cooperates
 theorem DBot_plays_C_against_JustBot_JB (k fuel : Nat) :
     play (fuel + 4) DBot (JustBot k) = some .C := by
@@ -50,7 +50,7 @@ theorem DBot_plays_C_against_JustBot_JB (k fuel : Nat) :
     fuel 3 DBot (JustBot k) (.sim .opp (.bot DefectBot))
     (.const Action.D) (.const Action.C) Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-! ### JustBot vs DBot — the honest `(D, C)` outcome (floor formalized 2026-07-09).
 
@@ -187,7 +187,7 @@ theorem DBot_plays_C_against_JustBot2 (k K fuel : Nat) :
     fuel 3 DBot (JustBot2 K k) (.sim .opp (.bot DefectBot))
     (.const Action.D) (.const Action.C) Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- **The recovered handshake — `(C, C)` at staggered internal budgets, every `k`.**
     The freeze trick in action: `JustBot2 (2k+64) k` affords the certificate of DBot's

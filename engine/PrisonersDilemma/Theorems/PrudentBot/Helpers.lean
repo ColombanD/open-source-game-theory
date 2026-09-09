@@ -135,6 +135,8 @@ theorem prudent_outer_true_of_play_C (k n : Nat) (q : Prog)
     rcases n with _ | _ | n
     · simp [play, eval] at h
     · simp [play, eval, PrudentBot, Prog.subst, Formula.subst] at h
+      dsimp +instances only [Formula.subst, Prog.subst, PrudentBot] at h
+      simp at h
     · have hD : play (n + 2) (PrudentBot k) q = some .D :=
         prudent_eval_outer_false k n q hps
       rw [hD] at h; cases h

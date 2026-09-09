@@ -77,7 +77,7 @@ theorem DBot_plays_C_against_DupocBot (k fuel : Nat) :
     (.const Action.D) (.const Action.C)
     Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-! ### DupocBot vs DBot — the honest `(D, C)` outcome (floor formalized 2026-07-09).
 
@@ -179,11 +179,11 @@ theorem OBot_plays_D_against_DupocBot (k fuel : Nat)
       eval (fuel + 4) OBot (DupocBot k)
         (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
           some .D := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) OBot (DupocBot k)
         (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
         Action.C Action.D hInnerGuard)
-  simpa [hInner] using hPlay
+  simpa [hInner] using! hPlay
 
 /-- Semantically, OBot never plays C against DupocBot (given the `.bot CB`
     proof-search succeeds). -/
@@ -205,6 +205,8 @@ theorem interp_OBot_plays_C_false (k : Nat)
               cases m with
               | zero =>
                   simp [play, eval, OBot, DupocBot, Prog.subst, Formula.subst] at hn
+                  dsimp +instances only [Formula.subst, Prog.subst, OBot, DupocBot] at hn
+                  split at hn <;> simp_all
               | succ fuel =>
                   cases fuel with
                   | zero =>
@@ -270,7 +272,7 @@ theorem TitForTatBot_plays_C_against_DupocBot (k fuel : Nat)
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- Proof search k is true for TFT vs DupocBot k. The `.bot CooperateBot` guard
     fires at fuel 2 (budget `atom_cost 2`); that is
@@ -325,7 +327,7 @@ theorem EBot_plays_C_against_DupocBot (k fuel : Nat)
         (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
           (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) =
         some .C := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) EBot (DupocBot k)
         (.sim .opp (.bot CooperateBot)) (.const Action.C)
         (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))
@@ -337,7 +339,7 @@ theorem EBot_plays_C_against_DupocBot (k fuel : Nat)
       (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
     Action.C Action.D
     (by rfl) hGuard1
-  simpa [Nat.add_assoc, hInner] using hPlay
+  simpa [Nat.add_assoc, hInner] using! hPlay
 
 /-! ### DupocBot vs EBot — the honest `(D, C)` outcome (floor formalized 2026-07-09).
 
@@ -464,7 +466,7 @@ theorem MirrorBot_plays_C_against_DupocBot (k fuel : Nat)
     play (fuel + 3) MirrorBot (DupocBot k) = some .C := by
   have hDupoc : play (fuel + 2) (DupocBot k) MirrorBot = some .C :=
     DupocBot_plays_C_against_MirrorBot k fuel hk
-  simpa [play, eval, Prog.subst, MirrorBot] using hDupoc
+  simpa [play, eval, Prog.subst, MirrorBot] using! hDupoc
 
 /-- Dual of `DupocBot_plays_C_against_MirrorBot`: when proofSearch fails,
     DupocBot falls through to its `.const .D` defect branch. -/
@@ -482,7 +484,7 @@ theorem MirrorBot_plays_D_against_DupocBot (k fuel : Nat)
     play (fuel + 3) MirrorBot (DupocBot k) = some .D := by
   have hDupoc : play (fuel + 2) (DupocBot k) MirrorBot = some .D :=
     DupocBot_plays_D_against_MirrorBot k fuel hk
-  simpa [play, eval, Prog.subst, MirrorBot] using hDupoc
+  simpa [play, eval, Prog.subst, MirrorBot] using! hDupoc
 
 /-- Inversion: from a `play` witness on MirrorBot's leg, recover that DupocBot's
     proof-search guard at parameter `k` must have fired. The play can only be
@@ -501,6 +503,8 @@ theorem proofSearch_k_of_play_MirrorBot_dupoc
     · have hev : play 2 MirrorBot (DupocBot k) = none := by
         unfold DupocBot
         simp [play, eval, Prog.subst, MirrorBot, Formula.subst]
+        dsimp +instances only [Formula.subst, Prog.subst, MirrorBot, DupocBot]
+        simp
       rw [hev] at h
       cases h
     · have hev : play (n + 3) MirrorBot (DupocBot k) = some .D := by

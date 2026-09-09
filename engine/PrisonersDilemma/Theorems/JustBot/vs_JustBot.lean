@@ -91,7 +91,7 @@ theorem outcome_JustBot_vs_JustBot :
     have hJJ : ∀ f, play (f + 2) (JustBot k) (JustBot k) = some .C := by
       intro f
       refine JustBot_eval_step k f (JustBot k) .C ?_
-      simpa using hd'
+      simpa using! hd'
     exact ⟨2, outcome_of_plays _ _ _ _ _ (by simpa using hJJ 0) (by simpa using hJJ 0)⟩
   -- …and the match is determined at fuel 2 whatever the oracle says, so
   -- determinism (`play_unique`) pins the value there and monotonicity does the rest.

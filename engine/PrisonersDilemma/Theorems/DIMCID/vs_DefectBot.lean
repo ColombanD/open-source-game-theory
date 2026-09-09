@@ -64,7 +64,7 @@ theorem outcome_DIMCID_vs_DefectBot :
   have hA : play (fuel + 2) (DIMCID k) DefectBot = some .D :=
     DIMCID_plays_D_against_DefectBot k fuel hk
   have hB : play (fuel + 2) DefectBot (DIMCID k) = some .D := by
-    simpa [Nat.add_comm] using play_DefectBot (fuel + 1) (DIMCID k)
+    simpa [Nat.add_comm] using! play_DefectBot (fuel + 1) (DIMCID k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems

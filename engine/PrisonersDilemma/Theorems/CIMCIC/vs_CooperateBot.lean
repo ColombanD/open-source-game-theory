@@ -73,7 +73,7 @@ theorem outcome_CIMCIC_vs_CooperateBot :
   have hA : play (fuel + 2) (CIMCIC k) CooperateBot = some .C :=
     CIMCIC_plays_C_against_CooperateBot k fuel hk
   have hB : play (fuel + 2) CooperateBot (CIMCIC k) = some .C := by
-    simpa [Nat.add_comm] using play_CooperateBot (fuel + 1) (CIMCIC k)
+    simpa [Nat.add_comm] using! play_CooperateBot (fuel + 1) (CIMCIC k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems

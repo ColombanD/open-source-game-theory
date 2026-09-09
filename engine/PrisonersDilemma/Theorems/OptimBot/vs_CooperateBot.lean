@@ -78,7 +78,7 @@ theorem optim_D_provable_at_k :
       (16 * W) (16 * W) (64 * W) (32 * W) (128 * W) (32 * W) (16 * W)
       (256 * W) (512 * W) (16 * W) (640 * W) (704 * W) (768 * W) (2048 * W) (4096 * W)
       hLoeb ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · (try simp only [numCost, Formula.size]); omega
+    · (try simp only [numCost, Formula.size]); clear_value W; omega
   have hpfk : Pf k φ := Pf_mono hpf (by omega)
   exact (proofSearch_spec k φ).2 hpfk
 theorem OptimBot_plays_D_against_CooperateBot (k fuel : Nat)

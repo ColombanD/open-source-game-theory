@@ -183,6 +183,6 @@ lake build PrisonersDilemma
 lake build PrisonersDilemma.Theorems.OBot
 ```
 
-**Toolchain:** Lean `v4.28.0` (see `lean-toolchain`).
+**Toolchain:** Lean `v4.33.1` (see `lean-toolchain`).
 
 **Note:** The deprecated `PrisonersDilemma` folder is kept for historical reference but is not actively maintained. Use `PrisonersDilemma` for all new work.

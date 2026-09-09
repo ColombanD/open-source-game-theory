@@ -30,7 +30,7 @@ theorem outcome_OBot_vs_DBot :
         (.const Action.D)
         Action.C Action.D
         (by unfold OBot; rfl) hG2Outer
-      simpa [eval] using hPlay
+      simpa [eval] using! hPlay
     have hGuard2 : eval (fuel + 5) DBot OBot (.sim .opp (.bot DefectBot)) = some .D := by
       rw [show eval (fuel + 5) DBot OBot (.sim .opp (.bot DefectBot)) =
               eval (fuel + 4) OBot (.bot DefectBot) OBot by rfl]
@@ -43,7 +43,7 @@ theorem outcome_OBot_vs_DBot :
             (.const Action.D)
             Action.C Action.D
             (by rfl) hGuard1
-        simpa [eval] using hPlay
+        simpa [eval] using! hPlay
 
     have hB : play (fuel + 6) DBot OBot = some .C := by
         have hPlay := play_ite_from_guard
@@ -51,7 +51,7 @@ theorem outcome_OBot_vs_DBot :
             (.const Action.D) (.const Action.C)
             Action.C Action.D
             (by rfl) hGuard2
-        simpa [eval] using hPlay
+        simpa [eval] using! hPlay
 
     simp [outcome, hA, hB]
 

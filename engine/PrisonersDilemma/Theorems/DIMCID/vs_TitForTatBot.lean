@@ -81,7 +81,7 @@ theorem TitForTatBot_plays_C_against_DIMCID (k fuel : Nat) :
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- TFT never plays D against DIMCID. -/
 theorem interp_TitForTatBot_D_vs_DIMCID_false (k : Nat) :

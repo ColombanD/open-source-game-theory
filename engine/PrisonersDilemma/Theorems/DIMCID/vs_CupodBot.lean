@@ -118,6 +118,8 @@ theorem dc_guard_fired (k n : Nat)
         rcases n with _ | _ | n
         · simp [play, eval] at h
         · simp [play, eval, DIMCID] at h
+          dsimp +instances only [DIMCID] at h
+          simp at h
         · have hev : play (n + 2) (DIMCID k) (CupodBot k) = some .C := by
             show (if proofSearch k
                     ((Formula.impl (.plays .self .opp Action.C)

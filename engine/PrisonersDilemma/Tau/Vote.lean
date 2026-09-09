@@ -114,14 +114,13 @@ theorem eval_tvote_of_bits (me opponent : Prog) :
       ∃ N, eval N me opponent (tauPlayer v θ)
         = some (if θ ≤ massOf bs then Action.C else Action.D)
   | .nil, _, θ, .nil => by
-      simp only [massOf]
       cases θ with
       | zero =>
           refine ⟨2, ?_⟩
-          rw [if_pos (Nat.le_refl 0), tauPlayer, eval_tvote_zero 1]; rfl
+          rw [if_pos (Nat.zero_le _), tauPlayer, eval_tvote_zero 1]; rfl
       | succ m =>
           refine ⟨2, ?_⟩
-          rw [if_neg (by simp), tauPlayer, eval_tvote_nil 1 (by omega)]; rfl
+          rw [if_neg (by simp [massOf]), tauPlayer, eval_tvote_nil 1 (by omega)]; rfl
   | .cons w I rest, _, θ, .cons (a := a) (bs := bs) hI hrest => by
       cases θ with
       | zero =>

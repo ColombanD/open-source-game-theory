@@ -38,6 +38,6 @@ theorem tauCooperate_phase (k : Nat) (w : Tmpl → Nat) (θ : Nat) (opponent : P
     (fun T _ => coopRow_plays k T)
   simp only [bitMass, tauOrder, List.map, coopRow, massOf, massOf_ifC, TauBotZ]
     at h ⊢
-  simpa using h
+  simpa [-forall_const] using h
 
 end PD.Tau

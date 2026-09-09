@@ -27,7 +27,7 @@ theorem outcome_OBot_vs_TitForTatBot :
             (.const Action.D)
             Action.C Action.C
             (by rfl) hGuard1
-        simpa [eval, hGuard2] using hPlay
+        simpa [eval, hGuard2] using! hPlay
     have hB : play (fuel + 7) TitForTatBot OBot = some .C := by
         -- TitForTatBot's guard reduces to OBot vs (.bot CooperateBot). We trace
         -- OBot's outer ite (guard = C → take then-branch which is inner ite,
@@ -43,7 +43,7 @@ theorem outcome_OBot_vs_TitForTatBot :
             (.const Action.D)
             Action.C Action.C
             (by unfold OBot; rfl) hOuter
-          simpa [eval, hInner] using hPlay
+          simpa [eval, hInner] using! hPlay
         have hGuard : eval (fuel + 6) TitForTatBot OBot (.sim .opp (.bot CooperateBot)) = some .C := by
           rw [show eval (fuel + 6) TitForTatBot OBot (.sim .opp (.bot CooperateBot)) =
                   eval (fuel + 5) OBot (.bot CooperateBot) OBot by rfl]

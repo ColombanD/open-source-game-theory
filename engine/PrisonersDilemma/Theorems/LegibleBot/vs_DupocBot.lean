@@ -40,6 +40,7 @@ theorem llm_outcome_LegibleBot_vs_DupocBot :
       show eval (n + 2) (DupocBot k) (LegibleBot (2*k+64) k) (DupocBot k) = some .C
       conv_lhs => unfold DupocBot
       simp only [eval, Prog.subst, Formula.subst]
+      dsimp +instances only [Formula.subst, Prog.subst]
       rw [show (Prog.search k (Formula.plays Prog.opp Prog.self Action.C)
                 (Prog.const Action.C) (Prog.const Action.D)) = DupocBot k from rfl]
       rw [hps]; rfl

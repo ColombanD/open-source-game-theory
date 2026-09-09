@@ -181,7 +181,7 @@ theorem outcome_JustBot_vs_PrudentBot_staggered :
     -- JustBot cooperates (its guard is exactly hA_ps)
     have hA : play 4 (JustBot k) (PrudentBot (2*k+64)) = some .C := by
       refine JustBot_eval_step k 2 (PrudentBot (2*k+64)) .C ?_
-      simpa using hA_ps
+      simpa using! hA_ps
     -- PrudentBot's outer guard: JustBot's cooperative play, certified through its fired search
     have houter : proofSearch (2*k+64)
         (.plays (JustBot k) (PrudentBot (2*k+64)) .C) = true := by

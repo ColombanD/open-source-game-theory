@@ -101,7 +101,7 @@ theorem optim_dbot_selfD_provable :
       (16 * W) (16 * W) (64 * W) (32 * W) (128 * W) (32 * W) (16 * W)
       (256 * W) (512 * W) (16 * W) (640 * W) (704 * W) (768 * W) (2048 * W) (4096 * W)
       hpm ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · (try simp only [numCost, Formula.size]); omega
+    · (try simp only [numCost, Formula.size]); clear_value W; omega
   have hpfS : Pf (100000000 * k) φ := Pf_mono hpf (by omega)
   exact (proofSearch_spec (100000000 * k) φ).2 hpfS
 theorem optim_ps_oppC_false (k S : Nat) :
@@ -138,7 +138,7 @@ theorem dbot_plays_C_vs_optim (k S fuel : Nat)
     fuel 11 DBot (OptimBot k S) (.sim .opp (.bot DefectBot))
     (.const Action.D) (.const Action.C) Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 theorem no_provable_DBot_C_vs_optim (k S : Nat) :
     ∀ K φ, Pf K φ → K ≤ k →

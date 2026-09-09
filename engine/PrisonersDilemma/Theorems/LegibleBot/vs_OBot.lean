@@ -90,7 +90,7 @@ theorem outcome_LegibleBot_vs_OBot :
         (.ite (.sim .opp (.bot DefectBot)) .C (.const .C) (.const .D)) = some .C := by
       have h := eval_ite_from_guard (N + 1) OBot (LegibleBot (2*k+64) k)
         (.sim .opp (.bot DefectBot)) (.const .C) (.const .D) .C .C hG2
-      simpa [eval] using h
+      simpa [eval] using! h
     have hO := play_ite_from_guard N 2 OBot (LegibleBot (2*k+64) k)
       (.sim .opp (.bot CooperateBot))
       (.ite (.sim .opp (.bot DefectBot)) .C (.const .C) (.const .D)) (.const .D)
@@ -98,7 +98,7 @@ theorem outcome_LegibleBot_vs_OBot :
     have hO' : play (N + 3) OBot (LegibleBot (2*k+64) k) = some .C := by
       rw [show N + 2 + 1 = N + 3 by omega] at hO
       rw [hO]
-      simpa using hInner
+      simpa using! hInner
     exact ⟨N + 3, outcome_of_plays _ _ _ _ _ hL hO'⟩
   -- …and the match is determined at fuel 5 whatever the oracle says, so
   -- determinism (`play_unique`) pins the value there and monotonicity does the rest.

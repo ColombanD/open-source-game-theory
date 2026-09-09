@@ -98,6 +98,6 @@ theorem MirrorBot_plays_C_against_GuardianBot (k fuel : Nat) :
     play (fuel + 3) MirrorBot (GuardianBot k) = some .C := by
   have h := GuardianBot_cooperates_vs_MirrorBot k fuel
   show eval (fuel + 3) MirrorBot (GuardianBot k) MirrorBot = some .C
-  simpa [eval, MirrorBot, Prog.subst] using h
+  simpa [eval, MirrorBot, Prog.subst] using! h
 
 end PD.Theorems

@@ -121,7 +121,7 @@ theorem TitForTatBot_plays_C_against_CupodTrollBot (k fuel : Nat) :
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 
 --- DBot ---
@@ -141,7 +141,7 @@ theorem DBot_plays_D_against_CupodTrollBot (k fuel : Nat) :
     (.const Action.D) (.const Action.C)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 
 --- OBot ---
@@ -174,11 +174,11 @@ theorem OBot_plays_C_against_CupodTrollBot (k fuel : Nat) :
       eval (fuel + 4) OBot (CupodTrollBot k)
         (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
           some .C := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) OBot (CupodTrollBot k)
         (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
         Action.C Action.C hGuard2)
-  simpa [hInner] using hPlay
+  simpa [hInner] using! hPlay
 
 
 --- MirrorBot ---
@@ -190,7 +190,7 @@ theorem MirrorBot_plays_C_against_CupodTrollBot (k fuel : Nat) :
     play (fuel + 3) MirrorBot (CupodTrollBot k) = some .C := by
   have hCTB : play (fuel + 2) (CupodTrollBot k) MirrorBot = some .C :=
     CupodTrollBot_cooperates_if_opp_not_CupodBot k fuel MirrorBot (by simp [MirrorBot, CupodBot])
-  simpa [play, eval, Prog.subst, MirrorBot] using hCTB
+  simpa [play, eval, Prog.subst, MirrorBot] using! hCTB
 
 
 --- EBot ---
@@ -213,7 +213,7 @@ theorem EBot_plays_D_against_CupodTrollBot (k fuel : Nat) :
       (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 
 --- DupocBot ---
