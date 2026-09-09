@@ -153,6 +153,21 @@ on the 16 GB laptop with swap full it thrashes (10 min per file) — reboot firs
 conventions so `Proof` and `Eval` live in the same coding). Engine bump to Foundation's
 toolchain is scheduled before M3, not before.
 
+**M1 status (2026-09-09 evening, branch `colomban-arith-s`, all compiling):**
+`ArithS/Length.lean` (listSum, termLen, formulaLen — Σ₁ functions by Foundation's
+`VecRec`/`TermRec`/`UformulaRec1` schemes), `SequentLength.lean` (`setLen` by PR over the
+bit-set), `DerivationLength.lean` (`DlenGraph` as a Δ₁ fixpoint on pairs `⟪d, n⟫`, the ten
+inversion lemmas, existence/uniqueness by `Derivation.induction1`, `dlen T` a Σ₁ function),
+`Bew.lean` (`LenProvable f k T φ := ∃ d < f k, Proof T d φ ∧ dlen T d ≤ k`, Π₁-defined;
+`lenGödel`, `true_lenGödel`, `provable_lenGödel`, `lower_bound_dlen_proof_lenGödel` under
+the `Proper` hypothesis). REMAINING for the gate: `Proper` for a concrete `f` (meta-level
+code estimate) and the meta bridge `dlen T ⌜d⌝ = d.len` (`MetaLength.lean`, next).
+Proof-craft traps hit: `omega` is useless on `V` (use `le_self_add`/`le_add_self` under
+`open PeanoMinus`); a `“ ”`-DSL wrapper around a PR `resultDef` makes `simp` run away
+(17 GB) — define such wrappers as `.rew (Rew.subst …)` instances; Δ₁ blueprints put the Σ
+formula in antecedent position of the Π form; `Fin 0 → V` parameter vectors need a
+`Subsingleton.elim` step; `≤` on `V = ℕ` is `le_def` (`x = y ∨ x < y`), NOT `Nat.le`.
+
 **M1 — `Bew_k` by length (Foundation only).** `len`, properness with the `superexp` bound,
 `Bew_k` as a Δ₁ predicate (mirror `RestrictedProvable.defined`), monotonicity in `k`,
 standard-model characterisation (`models_iff`), `Bew_k σ → PA ⊢ σ` (soundness, from
