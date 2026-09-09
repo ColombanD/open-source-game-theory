@@ -16,3 +16,4 @@ import ArithS.Guard
 import ArithS.Eval
 import ArithS.EvalN
 import ArithS.Template
+import ArithS.RedCell
