@@ -8,3 +8,5 @@ import ArithS.Proper
 import ArithS.LangAct
 import ArithS.TheoryAct
 import ArithS.Transpose
+import ArithS.Sound
+import ArithS.Symmetry
