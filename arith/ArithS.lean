@@ -13,3 +13,4 @@ import ArithS.Symmetry
 import ArithS.Prog
 import ArithS.BewV
 import ArithS.Guard
+import ArithS.Eval
