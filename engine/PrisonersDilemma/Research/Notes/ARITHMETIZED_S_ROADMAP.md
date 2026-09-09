@@ -294,11 +294,11 @@ mirrored as `(DupocBot, CupodBot) = (D, C)`, for every `k` with enough fuel, `#p
    `Metatheory` was already broken before the bump (docstring above imports; the T31 chain
    lacks tvote/sys arms — TAUBOTS.md §4 debt). App caveat: LeanInteract's REPL fork has no
    v4.33.1 tag yet — the proof agent's fast checker will fall back to `lake env lean`.
-2. WORKSPACE WIRING IN FLIGHT (same worktree, uncommitted at wrap-up): `arith/lakefile.toml`
+2. WORKSPACE WIRING DONE (same worktree, commit aededc4, arith builds against the engine in
+   3.5 s with zero engine rebuild; only `Formula` needs the `PD.` prefix): `arith/lakefile.toml`
    gains `[[require]] name = "PrisonersDilemma" path = "../engine"`, `arith/.lake ->
    ~/wt/arith-lake-m3` (packages shared with `~/wt/arith-lake`, own `build/`), smoke module
-   `arith/ArithS/EngineBridge.lean` (`#check @PD.Pf`, `@ArithS.red_cell`). Finish: build,
-   commit, then MERGE `colomban-arith-s` (Vacuity/Fit commits) into `colomban-arith-m3`.
+   `arith/ArithS/EngineBridge.lean` (`#check @PD.Pf`, `@ArithS.red_cell`). Next: MERGE `colomban-arith-s` (Vacuity/Fit commits) into `colomban-arith-m3`.
 3. VACUITY FIXED / IN FLIGHT: `Vacuity.lean` (470ee43, see the paragraph above) proves the
    unary-numeral degeneracy; an agent is replacing it by `Bnum.lean` (binary numeral term
    codes, Σ₁ fixpoint) + binary `descVec`/`dnumT` + `Fit.lean` (`guard_fits`). If that work
