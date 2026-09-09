@@ -244,6 +244,26 @@ helpers instead of rewriting; `.val` of a closed term is `t.val (s := stdAct) ![
 `Semiformula.coe_subst_eq_subst_coe` + `typed_quote_substs` + `val_substs` is the code equation
 route; `decide` fails on `Structure.rel` (classical instance) — `change ¬((0:ℕ) = 1)` first.
 
+**2026-09-10, later — the unary-numeral VACUITY (theorem, then fixed).** `Vacuity.lean`
+(commit 470ee43) proved: under Foundation's unary numerals a guard sentence mentions the
+searcher's own code as `numeral (dnum me)` with `dnum me ≥ k`, so `flen guard ≥ 2k > k`,
+every proof of it is longer than the budget, and `search_never_found : ¬LenProvableV TAct k
+(guardCode ⌜Gtmpl⌝ (pSearch k ⌜Gtmpl⌝ a p q) opp a')` for EVERY top-level search node —
+`Dupoc_always_defects`, `Cupod_always_cooperates`. `red_cell` was true, but for a reason
+unrelated to symmetry: the model was degenerate (no bounded search can ever succeed). This
+is Critch's assumption (b) — a number `k` must be written in `O(lg k)` characters, so that
+an agent's own source, which contains `k`, fits inside budget `k` — and `Length.lean`'s
+claim that (b) is "irrelevant to T1/T2" was wrong. FIX (M3 prerequisite, in progress):
+describe programs by BINARY numeral TERMS `bnum n` (`𝟎`, `𝟏`, `𝟐·t`, `𝟐·t+𝟏` along the bits
+of `n`, length `O(‖n‖)`), a Σ₁ StrongFinite fixpoint like `relabel`, with a meta twin
+`bnumT`, code equation `⌜bnumT n⌝ = bnum n`, truth `val (bnumT n) = n`; only `descVec`
+(Guard.lean) and `dnumT` (Template.lean) change — the length measure, properness and the
+symmetry layer are untouched, and the honest symbol count stays a character count.
+`Vacuity.lean` is retired for `Fit.lean`: `guard_fits : ∃ K, ∀ k ≥ K, flen (guardSentence
+(Dupoc k) (Cupod k) a) ≤ k` — for all large budgets the guard fits (its constant is the bit
+length of `⌜Gtmpl⌝` under Cantor pairing: large, but a constant). Non-vacuity of T1 is then
+a theorem; whether a guard is actually PROVABLE within `k` is T3's question.
+
 **Left open by design (generalise next):** `pSim` semantics (program substitution); general
 guard templates (any Σ₁ formula in the seven description variables, swap-invariant); an
 `Option`-valued meta evaluator `evalN` and its agreement with the engine's `Dynamics.eval`
