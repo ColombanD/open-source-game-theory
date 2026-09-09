@@ -160,8 +160,12 @@ bit-set), `DerivationLength.lean` (`DlenGraph` as a Δ₁ fixpoint on pairs `⟪
 inversion lemmas, existence/uniqueness by `Derivation.induction1`, `dlen T` a Σ₁ function),
 `Bew.lean` (`LenProvable f k T φ := ∃ d < f k, Proof T d φ ∧ dlen T d ≤ k`, Π₁-defined;
 `lenGödel`, `true_lenGödel`, `provable_lenGödel`, `lower_bound_dlen_proof_lenGödel` under
-the `Proper` hypothesis). REMAINING for the gate: `Proper` for a concrete `f` (meta-level
-code estimate) and the meta bridge `dlen T ⌜d⌝ = d.len` (`MetaLength.lean`, next).
+the `Proper` hypothesis). DONE 2026-09-10: the meta bridge (`MetaLength.lean`: `termLen/formulaLen/setLen/dlen` =
+`tlen/flen/sqlen/mlen` under quotation) and PROPERNESS (`Proper.lean`: towers
+`E s = 2^2^s`, `F s = 2^2^2^s`; `⌜t⌝ ≤ E (8 tlen t)`, `⌜φ⌝ ≤ E (8 flen φ)`,
+`⌜Γ⌝ ≤ F (8 sqlen Γ + 1)`, `⌜d⌝ ≤ F (12 mlen d)`; `fbound k = exp³(12k) + 1`, Σ₁-definable;
+`proper_of_small` for any language with symbol codes ≤ 8). **The M1 gate
+`lower_bound_dlen_proof_lenGödel_fbound` is unconditional.** M1 is COMPLETE.
 Proof-craft traps hit: `omega` is useless on `V` (use `le_self_add`/`le_add_self` under
 `open PeanoMinus`); a `“ ”`-DSL wrapper around a PR `resultDef` makes `simp` run away
 (17 GB) — define such wrappers as `.rew (Rew.subst …)` instances; Δ₁ blueprints put the Σ
