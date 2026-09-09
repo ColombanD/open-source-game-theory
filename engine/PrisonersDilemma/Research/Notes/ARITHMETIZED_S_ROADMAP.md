@@ -214,7 +214,42 @@ the engine's `.self`/`.opp`. Files: `Prog.lean` (codes, Δ₀ graphs, `swapcode`
 internal `guardCode` via `substs`), `Eval.lean` (Δ₁ fixpoint with fuel, meta `evalN`,
 correctness, determinism), `RedCell.lean`.
 
-**M2 — agents, evaluator, the red cell (Foundation only).** Coded `Prog`, Δ₁ `Eval`,
+**M2 COMPLETE (2026-09-10) — T1 IS A THEOREM.** `arith/ArithS/RedCell.lean`:
+
+```
+theorem red_cell (k : ℕ) :
+    EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph 2 (Cupod k) (Dupoc k) (Cupod k) 0
+theorem red_cell_unique : any result at any fuel is (1, 0)      -- determinism
+#print axioms red_cell  = [propext, Classical.choice, Quot.sound]
+```
+
+with `Dupoc k := pSearch k ⌜Gtmpl⌝ 0 (pConst 0) (pConst 1)` and `Cupod k := swapcode (Dupoc k)`
+(= `pSearch k ⌜Gtmpl⌝ 1 (pConst 1) (pConst 0)`, `swapcode_Dupoc`). Proof, exactly the engine's
+`outcome_DupocBot_vs_CupodBot`: (i) `guard_Dupoc_iff_guard_Cupod` — the two runtime guard
+codes are `⌜σ⌝` and `⌜swap σ⌝` (code equation + swap equation), so
+`lenProvable_fbound_swap_iff` makes them provable together; (ii) `evalGraph_of_guard` — a found
+guard is TRUE in `ℕ` (`LenProvable.provable` → `provable_iff_provable` → `models_of_provable`
+with `ℕ ⊧* TAct` → the truth equation); (iii) both found ⇒ Dupoc plays `1` (truth of Cupod's
+guard) and `0` (its own search clause) ⇒ `EvalGraph.unique'`. Files landed for M2 stage 2:
+`Prog.lean` (codes, `relabel` fixpoint, `swapcode` involution), `BewV.lean` (`□_k` with `k` a
+variable, Δ₁), `Guard.lean` (canonical descriptions `dnum/dU/dW`, `guardCode` via internal
+`subst`), `Eval.lean` (`EvalGraph` as a `Finite` Σ₁ fixpoint on `⟪n,me,opp,p,a⟫`; `sim` has NO
+clause yet), `EvalN.lean` (inversion per shape, determinism, fuel monotonicity at ℕ),
+`Template.lean` (`gtmpl : 𝚺₁.Semisentence 7` from `relabelDef`/`evalGraphDef`; `Gtmpl` its
+`emb`; `guardSentence`; `quote_guardSentence`, `lMap_swap_guardSentence`,
+`models_guardSentence_iff`). Proof-craft traps added: at `V = ℕ`, `<` is `Nat.lt` but `≤` is
+PeanoMinus's `x = y ∨ x < y` — `if_pos` on a `≤` needs `le_def`, so prove `dnum_of_lt/eq/gt`
+helpers instead of rewriting; `.val` of a closed term is `t.val (s := stdAct) ![] Empty.elim`
+(`s` is instance-implicit); `Semisentence` quotes use `Sentence.quote_def`;
+`Semiformula.coe_subst_eq_subst_coe` + `typed_quote_substs` + `val_substs` is the code equation
+route; `decide` fails on `Structure.rel` (classical instance) — `change ¬((0:ℕ) = 1)` first.
+
+**Left open by design (generalise next):** `pSim` semantics (program substitution); general
+guard templates (any Σ₁ formula in the seven description variables, swap-invariant); an
+`Option`-valued meta evaluator `evalN` and its agreement with the engine's `Dynamics.eval`
+(that is M3's bridge, on the bumped toolchain).
+
+**M2 — the original plan (kept for the record).** Coded `Prog`, Δ₁ `Eval`,
 `plays` sentences, `tr`/`TR` agreement, τ as the constant-swap automorphism of `T'` (2.4: renaming, axiom closure, `len ∘ τ = len`, `Eval` invariance),
 Σ₁-soundness for `plays` sentences. Then, verbatim from `Theorems/DupocBot/vs_CupodBot.lean`:
 
