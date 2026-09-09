@@ -10,3 +10,4 @@ import ArithS.TheoryAct
 import ArithS.Transpose
 import ArithS.Sound
 import ArithS.Symmetry
+import ArithS.Prog
