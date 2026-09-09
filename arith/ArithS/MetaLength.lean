@@ -169,4 +169,85 @@ theorem setLen_quote (Γ : Finset (Proposition L)) : setLen L (⌜Γ⌝ : ℕ) =
 
 end sequent
 
+/-! ### Derivations (at `V = ℕ`) -/
+
+section derivation
+
+variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]
+variable {T : Theory L} [T.Δ₁]
+
+/-- Symbol count of a sequent. -/
+abbrev sqlen (Γ : Finset (Proposition L)) : ℕ := ∑ φ ∈ Γ, flen φ
+
+/-- Symbol count of a meta-level derivation: the sum over its nodes of `1 + ` the node's
+sequent, plus the witness term of each `∃`-introduction — the meta twin of `dlen`. -/
+def mlen : {Γ : Finset (Proposition L)} → T ⟹₂ Γ → ℕ
+  | Γ, .closed _ _ _ _ => sqlen Γ + 1
+  | Γ, .axm _ _ _ => sqlen Γ + 1
+  | Γ, .verum _ => sqlen Γ + 1
+  | Γ, .and _ d₁ d₂ => sqlen Γ + mlen d₁ + mlen d₂ + 1
+  | Γ, .or _ d => sqlen Γ + mlen d + 1
+  | Γ, .all _ d => sqlen Γ + mlen d + 1
+  | Γ, .exs _ t d => sqlen Γ + tlen t + mlen d + 1
+  | Γ, .wk d _ => sqlen Γ + mlen d + 1
+  | _, .shift (Γ := Γ) d => sqlen (Γ.image Rewriting.shift) + mlen d + 1
+  | Γ, .cut d₁ d₂ => sqlen Γ + mlen d₁ + mlen d₂ + 1
+
+/-- The code of a meta derivation is an internal derivation. -/
+lemma derivation_quote {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : Derivation T (⌜d⌝ : ℕ) :=
+  (Derivation2.typedQuote ℕ d).derivationOf.2
+
+/-- **The bridge**: the Σ₁ length function computes the meta symbol count on codes. -/
+theorem dlen_quote {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : dlen T (⌜d⌝ : ℕ) = mlen d := by
+  induction d with
+  | closed Γ φ h hn =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_closed]
+    exact DlenGraph.axL_iff.mpr (by simp [mlen, setLen_quote])
+  | axm σ hT hΓ =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_axm]
+    exact DlenGraph.axm_iff.mpr (by simp [mlen, setLen_quote])
+  | verum h =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_verum]
+    exact DlenGraph.verumIntro_iff.mpr (by simp [mlen, setLen_quote])
+  | and h d₁ d₂ ih₁ ih₂ =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_and]
+    exact DlenGraph.andIntro_iff.mpr ⟨_, _, ih₁ ▸ dlen_graph (derivation_quote d₁),
+      ih₂ ▸ dlen_graph (derivation_quote d₂), by simp [mlen, setLen_quote]⟩
+  | or h d ih =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_or]
+    exact DlenGraph.orIntro_iff.mpr ⟨_, ih ▸ dlen_graph (derivation_quote d),
+      by simp [mlen, setLen_quote]⟩
+  | all h d ih =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_all]
+    exact DlenGraph.allIntro_iff.mpr ⟨_, ih ▸ dlen_graph (derivation_quote d),
+      by simp [mlen, setLen_quote]⟩
+  | exs h t d ih =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_exs]
+    exact DlenGraph.exsIntro_iff.mpr ⟨_, ih ▸ dlen_graph (derivation_quote d),
+      by simp [mlen, setLen_quote, termLen_quote]⟩
+  | wk d ss ih =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_wk]
+    exact DlenGraph.wkRule_iff.mpr ⟨_, ih ▸ dlen_graph (derivation_quote d),
+      by simp [mlen, setLen_quote]⟩
+  | shift d ih =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_shift]
+    exact DlenGraph.shiftRule_iff.mpr ⟨_, ih ▸ dlen_graph (derivation_quote d),
+      by simp [mlen, setLen_quote]⟩
+  | cut d₁ d₂ ih₁ ih₂ =>
+    apply dlen_eq_of_graph (derivation_quote _)
+    rw [Derivation2.quote_cut]
+    exact DlenGraph.cutRule_iff.mpr ⟨_, _, ih₁ ▸ dlen_graph (derivation_quote d₁),
+      ih₂ ▸ dlen_graph (derivation_quote d₂), by simp [mlen, setLen_quote]⟩
+
+end derivation
+
 end ArithS
