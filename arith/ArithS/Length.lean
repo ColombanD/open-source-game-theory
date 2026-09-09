@@ -111,7 +111,7 @@ variable {L}
 @[simp] lemma nth_termLenVec {k v : V} (hv : IsUTermVec L k v) {i} (hi : i < k) :
     (termLenVec L k v).[i] = termLen L v.[i] := construction.nth_resultVec L _ hv hi
 
-@[simp] lemma termLenVec_nil : termLenVec L 0 0 = 0 := construction.resultVec_nil L _
+@[simp] lemma termLenVec_nil : termLenVec L (0 : V) 0 = 0 := construction.resultVec_nil L _
 
 lemma termLenVec_cons {k t ts : V} (ht : IsUTerm L t) (hts : IsUTermVec L k ts) :
     termLenVec L (k + 1) (t ∷ ts) = termLen L t ∷ termLenVec L k ts :=
