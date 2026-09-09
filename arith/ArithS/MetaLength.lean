@@ -109,4 +109,64 @@ theorem formulaLen_quote {n : ℕ} (φ : Semiproposition L n) :
     change formulaLen L ⌜∃¹ φ⌝ = ((flen φ + 1 : ℕ) : V)
     rw [Semiformula.quote_ex, formulaLen_exs (Semiformula.quote_isSemiformula _).isUFormula, ih]; push_cast; rfl
 
+/-! ### Sequents (at `V = ℕ`) -/
+
+section sequent
+
+variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]
+
+open Classical
+
+/-- The partial sums stabilise once the index passes the set (all members are below it). -/
+lemma setLenAux_eq_of_le {s i : ℕ} (h : s ≤ i) : setLenAux L s i = setLen L s := by
+  induction i with
+  | zero =>
+    have : s = 0 := Nat.le_zero.mp h
+    subst this; rfl
+  | succ i ih =>
+    rcases Nat.lt_or_ge i s with hi | hi
+    · have : s = i + 1 := le_antisymm h hi
+      subst this; rfl
+    · have hnot : i ∉ s := fun hm ↦ absurd (lt_of_mem hm) (not_lt.mpr hi)
+      rw [setLenAux_succ_of_not_mem hnot, ih hi]
+
+lemma setLenAux_insert_of_not_mem {x s : ℕ} (hx : x ∉ s) (i : ℕ) :
+    setLenAux L (insert x s) i = setLenAux L s i + (if x < i then formulaLen L x else 0) := by
+  induction i with
+  | zero => simp
+  | succ i ih =>
+    by_cases hix : i = x
+    · subst hix
+      rw [setLenAux_succ_of_mem (by simp), setLenAux_succ_of_not_mem hx, ih]
+      simp
+    · have e : (i ∈ insert x s) ↔ i ∈ s := by simp [hix]
+      by_cases his : i ∈ s
+      · rw [setLenAux_succ_of_mem (e.mpr his), setLenAux_succ_of_mem his, ih]
+        have : (x < i + 1) ↔ x < i := by omega
+        simp only [this]; split_ifs <;> omega
+      · rw [setLenAux_succ_of_not_mem (fun h ↦ his (e.mp h)), setLenAux_succ_of_not_mem his, ih]
+        have : (x < i + 1) ↔ x < i := by omega
+        simp only [this]
+
+lemma setLen_insert_of_not_mem {x s : ℕ} (hx : x ∉ s) :
+    setLen L (insert x s) = setLen L s + formulaLen L x := by
+  have h1 : setLen L (insert x s) = setLenAux L (insert x s) (insert x s + s + x + 1) :=
+    (setLenAux_eq_of_le (by omega)).symm
+  have h2 : setLen L s = setLenAux L s (insert x s + s + x + 1) :=
+    (setLenAux_eq_of_le (by omega)).symm
+  rw [h1, h2, setLenAux_insert_of_not_mem hx]
+  simp [show x < insert x s + s + x + 1 by omega]
+
+/-- The code-level sequent length is the sum of the meta symbol counts. -/
+theorem setLen_quote (Γ : Finset (Proposition L)) : setLen L (⌜Γ⌝ : ℕ) = ∑ φ ∈ Γ, flen φ := by
+  induction Γ using Finset.induction with
+  | empty => simp [Derivation2.Sequent.quote_empty, emptyset_def, setLen]
+  | insert a Γ ha ih =>
+    rw [Derivation2.Sequent.quote_insert,
+      setLen_insert_of_not_mem (by simpa [Derivation2.Sequent.mem_quote_iff] using ha),
+      ih, Finset.sum_insert ha, formulaLen_quote]
+    simp; omega
+
+end sequent
+
 end ArithS
