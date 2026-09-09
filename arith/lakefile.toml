@@ -1,0 +1,17 @@
+name = "ArithS"
+version = "0.1.0"
+defaultTargets = ["ArithS"]
+
+# The arithmetized instance of S: PA (Foundation) + abstract action constants, a
+# structural proof-length measure `len`, and the length-bounded provability predicate
+# `Bew_k`. Standalone by design (Research/Notes/ARITHMETIZED_S_ROADMAP.md): it requires
+# Foundation at a pinned commit; the engine never imports it. The engine is required only
+# from milestone M3 (the transfer theorem), after its toolchain is bumped to match.
+
+[[require]]
+name = "Foundation"
+git = "https://github.com/FormalizedFormalLogic/Foundation"
+rev = "58c76ac8b26cfda45d0d5430511750489d39b25a"
+
+[[lean_lib]]
+name = "ArithS"
