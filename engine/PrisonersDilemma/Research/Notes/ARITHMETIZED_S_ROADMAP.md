@@ -285,6 +285,44 @@ No Löb, no cost constants, no floor. Gate: `outcome_arith (CupodBot k) (DupocBo
 mirrored as `(DupocBot, CupodBot) = (D, C)`, for every `k` with enough fuel, `#print axioms`
 = Lean's three. **This is T1 and the paper's headline for the arithmetized layer.**
 
+**M3 status (2026-09-10 night, session wrap-up).** Started on the user's go-ahead. State:
+1. ENGINE BUMP DONE: worktree `~/wt/osgt-arith-m3`, branch `colomban-arith-m3` (off
+   `colomban-arith-s` @2a16615), commit 5b0dc7b: `engine/` on Lean v4.33.1, mathlib
+   0df444a360ea (= arith's), `PrisonersDilemma` + `OutcomeCheck` green, proof-only repairs
+   (127 `simpa … using!`, `dsimp +instances` for stale `Decidable` instances, `clear_value`
+   for an omega recursion-depth regression, `simpa [-forall_const]` for typeclass timeouts).
+   `Metatheory` was already broken before the bump (docstring above imports; the T31 chain
+   lacks tvote/sys arms — TAUBOTS.md §4 debt). App caveat: LeanInteract's REPL fork has no
+   v4.33.1 tag yet — the proof agent's fast checker will fall back to `lake env lean`.
+2. WORKSPACE WIRING IN FLIGHT (same worktree, uncommitted at wrap-up): `arith/lakefile.toml`
+   gains `[[require]] name = "PrisonersDilemma" path = "../engine"`, `arith/.lake ->
+   ~/wt/arith-lake-m3` (packages shared with `~/wt/arith-lake`, own `build/`), smoke module
+   `arith/ArithS/EngineBridge.lean` (`#check @PD.Pf`, `@ArithS.red_cell`). Finish: build,
+   commit, then MERGE `colomban-arith-s` (Vacuity/Fit commits) into `colomban-arith-m3`.
+3. VACUITY FIXED / IN FLIGHT: `Vacuity.lean` (470ee43, see the paragraph above) proves the
+   unary-numeral degeneracy; an agent is replacing it by `Bnum.lean` (binary numeral term
+   codes, Σ₁ fixpoint) + binary `descVec`/`dnumT` + `Fit.lean` (`guard_fits`). If that work
+   is not on `colomban-arith-s` when you read this, redo it from the plan in `Notes/M3_TRANSFER/BRIEF.md` §2.
+4. THE TRANSFER THEOREM — DESIGN, NOT YET DECIDED. The reading (`M3_TRANSFER/READ_*.md`) and
+   the brief (`M3_TRANSFER/BRIEF.md`, §3 and §5) establish: the engine's `.box` is interpreted
+   by `Pf` ITSELF, so `boxIntro` is sound by fiat and no length bookkeeping exists; a
+   same-budget "Pf k φ → PA ⊢ tr φ" over all 33 rules is equivalent to bounded HBL (M4):
+   the budget-erased reading breaks `search_f` (Gödel II), the budget-keeping reading breaks
+   `boxIntro` (danger 2), and a hybrid breaks `searchBranch`. Foundation at the pinned commit
+   has NO modal realization package but keeps `ProvabilityAbstraction` (D1/D2/D3,
+   formalized Löb, Diagonalization) and full r.e./computable representability
+   (`rePred_weak_representation`, `codeOfComputablePred_provable(_neg)`). Honest M3
+   candidates (to be settled by the judge panel whose first proposal is saved as
+   `M3_TRANSFER/PROPOSAL_faithful.md`): (i) budget-erased soundness of the modal-
+   propositional core with atoms as hypotheses ("S's Löbian core is a fragment of GL over
+   PA"); (ii) same-budget PA-soundness of the agent layer for the arith evaluator, relative
+   to the consulted bounded box facts (Δ₁/Σ₁-completeness per arm); (iii) the engine's
+   `BoundedGL` interface instantiated for PA-S with the bounded-HBL fields as NAMED
+   hypotheses; (iv) `Pf k φ ↔ PA ⊢ ρ(k,⌜φ⌝)` by representability (cheap, but it says "PA
+   verifies S", not "S ⊆ PA"). Recommended combination: (i) + (ii) + (iii), stated
+   with explicit boundaries; T2's paper sentence becomes "S is sound relative to PA up to
+   Critch's assumption (d), which is stated as the one open hypothesis".
+
 **M3 — unbounded soundness of `Pf` relative to PA.** Engine bumped; `ArithS` requires
 `PrisonersDilemma`. Theorem `Pf k φ → PA ⊢ tr φ` by `Pf.induct`: modal arms from
 `provable_D1/D2/D3` + `diagonal` + Löb; atom arms from Σ₁-completeness of true computation
