@@ -1,5 +1,6 @@
 import ArithS.Transpose
 import ArithS.Sound
+import ArithS.Proper
 
 /-!
 # ArithS.Symmetry — τ-closure of `TAct` on internal proof codes, at every length
@@ -17,6 +18,7 @@ the same magnitude.
 namespace ArithS
 
 open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open PeanoMinus
 open LAct
 
 /-- Length-bounded provability on codes, without the code bound. -/
@@ -36,5 +38,37 @@ theorem provableLen_swap {k : ℕ} {φ : Proposition LAct} (h : ProvableLen TAct
 theorem provableLen_swap_iff (k : ℕ) (φ : Proposition LAct) :
     ProvableLen TAct k φ ↔ ProvableLen TAct k (Semiformula.lMap swap φ) :=
   ⟨provableLen_swap, fun h ↦ by simpa [lMap_swap_swap] using provableLen_swap h⟩
+
+/-! ### The bounded predicate is symmetric too, by properness -/
+
+/-- `swap` preserves `LenProvable fbound k TAct`: the transposed proof has the same length,
+and properness puts its code below `fbound k`. -/
+theorem lenProvable_fbound_swap {k : ℕ} {φ : Sentence LAct}
+    (h : LenProvable (fbound : ℕ → ℕ) k TAct (⌜φ⌝ : ℕ)) :
+    LenProvable (fbound : ℕ → ℕ) k TAct (⌜Semiformula.lMap swap φ⌝ : ℕ) := by
+  rcases h with ⟨d, hdk, hd, hk⟩
+  have e : (ORingStructure.numeral k : ℕ) = k := by simp
+  rw [Sentence.quote_def] at hd
+  obtain ⟨b, rfl⟩ := Proof.sound' hd
+  obtain ⟨b', hb'⟩ := transpose_exists _ b
+  rw [dlen_quote, e] at hk
+  have hk' : mlen b ≤ k := by
+    rcases le_def.mp hk with h | h
+    · exact Nat.le_of_eq h
+    · exact Nat.le_of_lt h
+  refine ⟨⌜b'⌝, ?_, ⟨?_, derivation_quote b'⟩, ?_⟩
+  · rw [e, fbound_nat]
+    refine Nat.lt_succ_of_le (le_trans (quote_derivation_le smallCodes_LAct smallRelCodes_LAct b')
+      (F_mono ?_))
+    rw [hb']
+    exact Nat.mul_le_mul_left 12 hk'
+  · rw [fstIdx_quote b', Sentence.quote_def, ← Semiformula.lMap_emb]
+    exact Derivation2.Sequent.quote_singleton _
+  · rw [dlen_quote, hb', e]; exact hk
+
+theorem lenProvable_fbound_swap_iff (k : ℕ) (φ : Sentence LAct) :
+    LenProvable (fbound : ℕ → ℕ) k TAct (⌜φ⌝ : ℕ) ↔
+    LenProvable (fbound : ℕ → ℕ) k TAct (⌜Semiformula.lMap swap φ⌝ : ℕ) :=
+  ⟨lenProvable_fbound_swap, fun h ↦ by simpa [lMap_swap_swap] using lenProvable_fbound_swap h⟩
 
 end ArithS
