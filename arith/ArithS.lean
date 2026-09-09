@@ -6,3 +6,4 @@ import ArithS.Bew
 import ArithS.MetaLength
 import ArithS.Proper
 import ArithS.LangAct
+import ArithS.TheoryAct
