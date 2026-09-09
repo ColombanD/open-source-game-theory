@@ -197,6 +197,23 @@ folded `Sum` form; simp lemmas about `encode` must fix `(α := LAct.Func k)`; Fo
 notation forms (`⊤`, `⋏`, `∀¹`) differ syntactically from the constructors `induction`
 produces — bridge with `change`; the hom lemmas are `LogicalConnective.HomClass.map_*`.
 
+**M2 evaluator design (decided 2026-09-10, restricted template first).** Programs are
+pair-codes in ℕ with action VALUES `0/1` (as in the engine): `const a`, `self`, `opp`,
+`bot p`, `sim p q`, `ite b a p q`, `search k a p q` — a search node carries only the budget
+and the action `a` of the ONE template "opp plays `a` against me" (generalisation to arbitrary
+guard templates later). Numerals are rigid under τ, so a program never enters a sentence as a
+bare numeral: the runtime guard sentence of `search k a p q` at `(me, opp)` is
+`∃ m o, m = relabel(⌜x_me⌝, c_?, c_?) ∧ o = relabel(⌜x_opp⌝, c_?, c_?) ∧ ∃ n, Eval(n, o, m, o, c_a)`,
+where `relabel(x, u, v)` re-values the actions `0 ↦ u, 1 ↦ v` and each program is described
+CANONICALLY: `x₀ := min(x, swapcode x)` as the numeral, constants in the matching order,
+and `(0, 1)` (no constants) in the tie case `x = swapcode x`. Then
+`guard(swapcode me, swapcode opp, swap a) = swap (guard me opp a)` SYNTACTICALLY, for every
+program. No diagonal lemma, no circular theory: self-reference happens at runtime, as with
+the engine's `.self`/`.opp`. Files: `Prog.lean` (codes, Δ₀ graphs, `swapcode`),
+`BewV.lean` (`□_k` with `k` a variable, Δ₁), `Guard.lean` (template, canonical description,
+internal `guardCode` via `substs`), `Eval.lean` (Δ₁ fixpoint with fuel, meta `evalN`,
+correctness, determinism), `RedCell.lean`.
+
 **M2 — agents, evaluator, the red cell (Foundation only).** Coded `Prog`, Δ₁ `Eval`,
 `plays` sentences, `tr`/`TR` agreement, τ as the constant-swap automorphism of `T'` (2.4: renaming, axiom closure, `len ∘ τ = len`, `Eval` invariance),
 Σ₁-soundness for `plays` sentences. Then, verbatim from `Theorems/DupocBot/vs_CupodBot.lean`:
