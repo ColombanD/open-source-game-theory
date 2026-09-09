@@ -174,6 +174,25 @@ standard-model characterisation (`models_iff`), `Bew_k σ → PA ⊢ σ` (soundn
 `SoundOn ℕ`). Gate: the restricted Gödel sentence and its lower bound re-proved for the
 length measure — a like-for-like check against `RestrictedProvability.lean`.
 
+**M2 status (2026-09-09 night, all compiling):** `LangAct.lean` (`LAct := ℒₒᵣ + constant Act`,
+hand-written encoding keeping the `ℒₒᵣ` codes, Δ₀ symbol sets, `emb`, `swap`, `tlen`/`flen`
+invariant under any hom), `TheoryAct.lean` (`TAct := insert axNe (insert axNe' (lMap emb 𝗣𝗔))`,
+standard model `c_C ↦ 0, c_D ↦ 1`, `quote_lMap_emb` code agreement, Δ₁ via PA's own class ∧
+"is an ℒₒᵣ-formula", `lMap_swap_mem_TAct`), `Transpose.lean` (`lMapT`: derivations transport
+along a hom mapping axioms to axioms; `mlen_lMapT` for injective homs; `lMap_swap_swap`;
+`transpose_exists`), `Sound.lean` (`Derivation.sound'`: a code IS the code of a meta
+derivation), `Symmetry.lean` (`provableLen_swap_iff : TAct ⊢_k φ ↔ TAct ⊢_k swap φ`, Σ₁ form).
+DESIGN CONCLUSION: the evaluator must be a Δ₁ FORMULA inside `TAct` (Critch's own setup —
+"PA represents the evaluator"), not a new relation symbol with clause axioms: the latter's
+axioms would mention the proof predicate of the theory they axiomatize, a circularity
+Foundation's `Theory.Δ₁` (a `ch` given upfront) cannot express. A Δ₁ evaluator needs the
+Δ₁ (code-bounded) `□_k`, whose swap-symmetry needs PROPERNESS (same length, different
+code) — so properness precedes the evaluator. Proof-craft traps: `axm`/`func`/`verum` are
+ambiguous patterns (qualify or dot-pattern); instances on `LAct.Func k` must be keyed on the
+folded `Sum` form; simp lemmas about `encode` must fix `(α := LAct.Func k)`; Foundation's
+notation forms (`⊤`, `⋏`, `∀¹`) differ syntactically from the constructors `induction`
+produces — bridge with `change`; the hom lemmas are `LogicalConnective.HomClass.map_*`.
+
 **M2 — agents, evaluator, the red cell (Foundation only).** Coded `Prog`, Δ₁ `Eval`,
 `plays` sentences, `tr`/`TR` agreement, τ as the constant-swap automorphism of `T'` (2.4: renaming, axiom closure, `len ∘ τ = len`, `Eval` invariance),
 Σ₁-soundness for `plays` sentences. Then, verbatim from `Theorems/DupocBot/vs_CupodBot.lean`:
