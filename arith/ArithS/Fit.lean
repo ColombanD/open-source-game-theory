@@ -1,4 +1,5 @@
 import ArithS.RedCell
+import ArithS.ProofLength
 
 /-!
 # ArithS.Fit — the guard sentence FITS inside its own budget (Critch's assumption (b))
@@ -50,24 +51,6 @@ open FFL FFL.FirstOrder Arithmetic Bootstrapping
 open PeanoMinus ISigma0 ISigma1
 open LAct
 
-/-! ### `flen` on the connectives (definitional equations, for `rw`) -/
-
-section flenEqns
-
-variable {L : Language} [L.Encodable] [L.LORDefinable] {n : ℕ}
-
-@[simp] lemma flen_rel {k : ℕ} (R : L.Rel k) (v : Fin k → SyntacticSemiterm L n) :
-    flen (Semiformula.rel R v) = (∑ i, tlen (v i)) + 1 := rfl
-@[simp] lemma flen_nrel {k : ℕ} (R : L.Rel k) (v : Fin k → SyntacticSemiterm L n) :
-    flen (Semiformula.nrel R v) = (∑ i, tlen (v i)) + 1 := rfl
-@[simp] lemma flen_verum : flen (⊤ : Semiproposition L n) = 1 := rfl
-@[simp] lemma flen_falsum : flen (⊥ : Semiproposition L n) = 1 := rfl
-@[simp] lemma flen_and (φ ψ : Semiproposition L n) : flen (φ ⋏ ψ) = flen φ + flen ψ + 1 := rfl
-@[simp] lemma flen_or (φ ψ : Semiproposition L n) : flen (φ ⋎ ψ) = flen φ + flen ψ + 1 := rfl
-@[simp] lemma flen_all (φ : Semiproposition L (n + 1)) : flen (∀¹ φ) = flen φ + 1 := rfl
-@[simp] lemma flen_exs (φ : Semiproposition L (n + 1)) : flen (∃¹ φ) = flen φ + 1 := rfl
-
-end flenEqns
 
 /-! ### 1. Length of a substitution instance -/
 
