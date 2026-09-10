@@ -37,10 +37,10 @@ Three tiers of claim, each a milestone gate:
 | Tier | Claim | Needs |
 |---|---|---|
 | T1 | The red cell `(Cupod, Dupoc) = (D, C)` holds for PA with `□_k` | M1 + M2 (Foundation only, no Löb, no costs) |
-| T2 | Every `Pf`-derivation is a PA proof (`S` is sound relative to PA) | M3 (unbounded transfer) |
+| T2 | `S` relative to PA, as PROVED (2026-09-10): T2-CORE (modal core sound over PA, budget erased), T2-AGENT (evaluation certificates = arith evaluator runs, same budgets, relative to the consulted `□_k` facts), T2-NEG (no budget-keeping transfer at any inflation) — see `ARITHMETIZED_S_RESULTS.md` | M3 DONE |
 | T3 | The Löbian cells (`Dupoc` self-cooperation, mutual Löb) hold in PA at large `k` | M4 + M5 (bounded HBL, parametric PBLT) |
 
-T1 and T2 together are the thesis-scoped finish line. T3 is a second program.
+T1 and T2 together are the thesis-scoped finish line (BOTH DONE 2026-09-10; results record: `ARITHMETIZED_S_RESULTS.md`). T3 is a second program.
 
 ---
 
