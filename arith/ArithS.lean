@@ -10,6 +10,7 @@ import ArithS.TheoryAct
 import ArithS.Transpose
 import ArithS.Sound
 import ArithS.Symmetry
+import ArithS.ProofLength
 import ArithS.Prog
 import ArithS.Bnum
 import ArithS.BewV
@@ -18,4 +19,3 @@ import ArithS.Eval
 import ArithS.EvalN
 import ArithS.Template
 import ArithS.RedCell
-import ArithS.Vacuity

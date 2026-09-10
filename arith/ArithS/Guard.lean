@@ -1,5 +1,6 @@
 import ArithS.Prog
 import ArithS.BewV
+import ArithS.Bnum
 
 /-!
 # ArithS.Guard — the runtime guard sentence, on codes
@@ -8,10 +9,13 @@ import ArithS.BewV
 filling the stored template `g` (a formula code with 7 free variables) with the CANONICAL
 DESCRIPTIONS of `me` and `opp` and the action term of `a` (roadmap M2 design):
 
-* a program `x` is described by the triple `(numeral (dnum x), dU x, dW x)`, meaning
-  `relabel (dU x) (dW x) (dnum x)`: `dnum x = min x (swapcode x)` as a NUMERAL, and the two
-  term codes `dU x, dW x` are the constant symbols `c_C, c_D` in the order that reconstructs
-  `x`, or the numerals `0, 1` in the tie case `x = swapcode x`;
+* a program `x` is described by the triple `(bnum (dnum x), dU x, dW x)`, meaning
+  `relabel (dU x) (dW x) (dnum x)`: `dnum x = min x (swapcode x)` as a BINARY numeral term
+  (`ArithS.Bnum`, length `O(log x)` — Critch's assumption (b); with unary numerals the
+  description of a searcher of budget `k` is longer than `k` and no search can ever succeed,
+  the retired `Vacuity.lean`, commit 470ee43), and the two term codes `dU x, dW x` are the
+  constant symbols `c_C, c_D` in the order that reconstructs `x`, or the numerals `0, 1` in
+  the tie case `x = swapcode x`;
 * the action `a ∈ {0, 1}` is the constant term `c_a`, other values their numeral.
 
 So the swap of the two constants turns the description of `x` into that of `swapcode x`
@@ -139,16 +143,16 @@ end definability
 
 /-! ### The guard code -/
 
-/-- The description vector `?[numeral (dnum me), dU me, dW me, numeral (dnum opp), dU opp, dW opp, actTermCode a]`. -/
+/-- The description vector `?[bnum (dnum me), dU me, dW me, bnum (dnum opp), dU opp, dW opp, actTermCode a]`. -/
 noncomputable def descVec (me opp a : V) : V :=
-  numeral (dnum me) ∷ dU me ∷ dW me ∷ numeral (dnum opp) ∷ dU opp ∷ dW opp ∷ actTermCode a ∷ 0
+  bnum (dnum me) ∷ dU me ∷ dW me ∷ bnum (dnum opp) ∷ dU opp ∷ dW opp ∷ actTermCode a ∷ 0
 
 /-- Fill the template `g` with the descriptions of `me`, `opp` and the action `a`. -/
 noncomputable def guardCode (g me opp a : V) : V := subst LAct (descVec me opp a) g
 
 noncomputable def descVecGraph : 𝚺₁.Semisentence 4 := .mkSigma
-  “y me opp a. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !numeralGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧
-    ∃ n₂, !dnumGraph n₂ opp ∧ ∃ t₂, !numeralGraph t₂ n₂ ∧ ∃ u₂, !dUGraph u₂ opp ∧ ∃ w₂, !dWGraph w₂ opp ∧
+  “y me opp a. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !bnumGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧
+    ∃ n₂, !dnumGraph n₂ opp ∧ ∃ t₂, !bnumGraph t₂ n₂ ∧ ∃ u₂, !dUGraph u₂ opp ∧ ∃ w₂, !dWGraph w₂ opp ∧
     ∃ t, !actTermCodeGraph t a ∧
     ∃ v₆, !adjoinDef v₆ t 0 ∧ ∃ v₅, !adjoinDef v₅ w₂ v₆ ∧ ∃ v₄, !adjoinDef v₄ u₂ v₅ ∧
     ∃ v₃, !adjoinDef v₃ t₂ v₄ ∧ ∃ v₂, !adjoinDef v₂ w₁ v₃ ∧ ∃ v₁, !adjoinDef v₁ u₁ v₂ ∧ !adjoinDef y t₁ v₁”
