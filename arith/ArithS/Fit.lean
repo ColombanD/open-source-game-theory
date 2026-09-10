@@ -8,7 +8,7 @@ Critch fixes his proof system `S` only up to four assumptions (Appendix B of `cr
 assumption **(b)** is that `S` "writes `k` in `O(lg k)` characters". Under Foundation's
 UNARY numerals this failed so badly that the bounded proof search of every agent was
 vacuous — the retired `Vacuity.lean` (commit 470ee43) PROVED it: a search node
-`pSearch k g a p q` stores its budget `k` in its own pair-code, so the canonical numeral by
+`pSearch k g p q` stores its budget `k` in its own pair-code, so the canonical numeral by
 which the guard sentence names the searcher is `≥ k`; unary numerals cost `~ 2n` symbols;
 every instance of the template is longer than that numeral; a derivation is at least as
 long as its conclusion; hence `search_never_found`: the guard is never found at ANY budget,
@@ -22,14 +22,14 @@ proves the POSITIVE result that (b) demands, with explicit (ugly, but explicit) 
   the total length of the substituted closed terms (plus one) — via `flen_rew_le`, a bound
   for every rewriter whose bound-variable images are variable-free or bare bound variables
   (the invariant that survives `Rew.q` under a quantifier);
-* `exists_guard_const`: `∃ c, flen (guardSentence me opp a) ≤ 10c + 6c · (size (dnum me) +
-  size (dnum opp))` for the actions `a ≤ 1`, with `c = cG₀ = flen Gtmpl` packaged
-  existentially (`flen_guardSentence_le'` is the unrestricted form, with a `2a` term:
-  the action term of an `a ≥ 2` is a unary numeral, irrelevant to the searchers);
+* `exists_guard_const`: `∃ c, flen (guardSentenceA a me opp) ≤ 10c + 6c · (size (dnum me) +
+  size (dnum opp))` for the actions `a ≤ 1`, with `c = cG 0 + cG 1`, `cG a = flen (GtmplA a)`
+  the symbol counts of the two closed template instances, packaged existentially
+  (`flen_guardSentence_le'` is the per-instance form);
 * `size_dnum_Dupoc_le`: `size (dnum (Dupoc k)) ≤ 4 · size k + (4 · size cP + 26)`, by the
-  Cantor-pairing bound `⟪a, b⟫ ≤ (a + b + 1)²` (`cP = ⟪⌜Gtmpl⌝, 0, pConst 0, pConst 1⟫` is
+  Cantor-pairing bound `⟪a, b⟫ ≤ (a + b + 1)²` (`cP = ⟪⌜GtmplA 0⌝, pConst 0, pConst 1⟫` is
   the constant part of the searcher's code);
-* **`guard_fits`**: `∃ K, ∀ k ≥ K, ∀ a ≤ 1, flen (guardSentence (Dupoc k) (Cupod k) a) ≤ k`
+* **`guard_fits`**: `∃ K, ∀ k ≥ K, ∀ a ≤ 1, flen (guardSentenceA a (Dupoc k) (Cupod k)) ≤ k`
   (and `guard_fits'` with the roles swapped) — for all large budgets the searcher's own
   guard sentence fits inside its budget: the model is no longer degenerate, and whether the
   guard is actually PROVABLE within `k` becomes a genuine question (T3's).
@@ -38,7 +38,7 @@ proves the POSITIVE result that (b) demands, with explicit (ugly, but explicit) 
 /-!
 ## Proof-craft note (2026-09-10)
 The first version of this file hung for hours: a theorem stated with closed constants
-(`cG := 10 * cG₀`, `Nat.size cP`) forced Lean's `Nat` defeq machinery to try to EVALUATE
+(`10 * cG₀`, `Nat.size cP`) forced Lean's `Nat` defeq machinery to try to EVALUATE
 `cG₀ = flen Gtmpl` and `cP = ⟪⌜Gtmpl⌝, …⟫` on the giant template term. The cure is
 structural: the constants are packaged EXISTENTIALLY (`exists_guard_const`,
 `exists_size_const`) and every arithmetic step is over variables. `Vacuity.lean`
@@ -275,17 +275,16 @@ lemma tlen_emb_actT (a : ℕ) : tlen (Rew.emb (actT a) : SyntacticSemiterm LAct 
   · rw [tlen_emb_cterm]; omega
   · exact tlen_emb_numT_le a
 
-/-- The total length of the seven description terms. -/
-theorem sum_tlen_descTerms_le (me opp a : ℕ) :
-    ∑ i, tlen (Rew.emb (descTerms me opp a i) : SyntacticSemiterm LAct 0) ≤
-    6 * (Nat.size (dnum me) + Nat.size (dnum opp)) + 2 * a + 7 := by
+/-- The total length of the six description terms. -/
+theorem sum_tlen_descTerms_le (me opp : ℕ) :
+    ∑ i, tlen (Rew.emb (descTerms me opp i) : SyntacticSemiterm LAct 0) ≤
+    6 * (Nat.size (dnum me) + Nat.size (dnum opp)) + 6 := by
   have h0 := tlen_emb_dnumT me
   have h1 := tlen_emb_dUT me
   have h2 := tlen_emb_dWT me
   have h3 := tlen_emb_dnumT opp
   have h4 := tlen_emb_dUT opp
   have h5 := tlen_emb_dWT opp
-  have h6 := tlen_emb_actT a
   simp only [descTerms, Fin.sum_univ_succ, Fin.sum_univ_zero, Matrix.cons_val_zero,
     Matrix.cons_val_succ, add_zero]
   omega
@@ -294,40 +293,43 @@ end descriptions
 
 /-! ### 3. The guard sentence is `O(size (dnum me) + size (dnum opp))` -/
 
-/-- `cG₀`: the symbol count of the guard template itself. -/
-noncomputable def cG₀ : ℕ := flen (Rewriting.emb Gtmpl : Semiproposition LAct 7)
+/-- `cG a`: the symbol count of the closed template instance `GtmplA a`. -/
+noncomputable def cG (a : ℕ) : ℕ := flen (Rewriting.emb (GtmplA a) : Semiproposition LAct 6)
 
-/-- The unrestricted bound: the action term of an `a ≥ 2` is a unary numeral. -/
+/-- The per-instance bound. -/
 theorem flen_guardSentence_le' (me opp a : ℕ) :
-    flen (Rewriting.emb (guardSentence me opp a) : Proposition LAct) ≤
-    cG₀ * (6 * (Nat.size (dnum me) + Nat.size (dnum opp)) + 2 * a + 8) :=
-  le_trans (flen_subst_le Gtmpl (descTerms me opp a))
-    (Nat.mul_le_mul_left _ (by have := sum_tlen_descTerms_le me opp a; omega))
+    flen (Rewriting.emb (guardSentenceA a me opp) : Proposition LAct) ≤
+    cG a * (6 * (Nat.size (dnum me) + Nat.size (dnum opp)) + 7) :=
+  le_trans (flen_subst_le (GtmplA a) (descTerms me opp))
+    (Nat.mul_le_mul_left _ (by have := sum_tlen_descTerms_le me opp; omega))
 
-/- `cG₀` is a closed natural number built from the giant template; Lean's `Nat`-literal
+/- `cG a` is a closed natural number built from the giant template; Lean's `Nat`-literal
 defeq machinery would otherwise try to EVALUATE it (whnf of `flen` on the template) during
 unification. From here on it is an atom. -/
-attribute [irreducible] cG₀
+attribute [irreducible] cG
 
 /-- Abstract arithmetic behind `exists_guard_const`, over variables only. -/
-lemma guard_bound_arith (c s a : ℕ) (ha : a ≤ 1) :
-    c * (6 * s + 2 * a + 8) ≤ 10 * c + 6 * c * s := by
-  have h : 6 * s + 2 * a + 8 ≤ 6 * s + 10 := by omega
-  calc c * (6 * s + 2 * a + 8) ≤ c * (6 * s + 10) := Nat.mul_le_mul_left _ h
+lemma guard_bound_arith (c₀ c s : ℕ) (hc : c₀ ≤ c) :
+    c₀ * (6 * s + 7) ≤ 10 * c + 6 * c * s := by
+  calc c₀ * (6 * s + 7) ≤ c * (6 * s + 7) := Nat.mul_le_mul_right _ hc
+    _ ≤ c * (6 * s + 10) := Nat.mul_le_mul_left _ (by omega)
     _ = 10 * c + 6 * c * s := by ring
 
 /-- **The guard bound, with its constant packaged existentially**: for the actions `a ∈ {0, 1}`
 the guard sentence of `me` against `opp` has at most `10c + 6c · (size (dnum me) + size (dnum opp))`
-symbols, for the constant `c = cG₀` (the template's symbol count). The constant is never written
-into a closed arithmetic expression: Lean's `Nat` defeq machinery would try to evaluate it
-(that is what `flen Gtmpl` on the giant template does), so every later argument takes `c` as
-a variable from this statement. -/
+symbols, for the constant `c = cG 0 + cG 1` (the symbol counts of the two template instances).
+The constant is never written into a closed arithmetic expression: Lean's `Nat` defeq machinery
+would try to evaluate it (that is what `flen (GtmplA a)` on the giant template does), so every
+later argument takes `c` as a variable from this statement. -/
 theorem exists_guard_const : ∃ c : ℕ, ∀ me opp a : ℕ, a ≤ 1 →
-    flen (Rewriting.emb (guardSentence me opp a) : Proposition LAct) ≤
+    flen (Rewriting.emb (guardSentenceA a me opp) : Proposition LAct) ≤
     10 * c + 6 * c * (Nat.size (dnum me) + Nat.size (dnum opp)) :=
-  ⟨cG₀, fun me opp a ha ↦
-    le_trans (flen_guardSentence_le' me opp a)
-      (guard_bound_arith cG₀ (Nat.size (dnum me) + Nat.size (dnum opp)) a ha)⟩
+  ⟨cG 0 + cG 1, fun me opp a ha ↦ by
+    rcases (show a = 0 ∨ a = 1 by omega) with rfl | rfl
+    · exact le_trans (flen_guardSentence_le' me opp 0)
+        (guard_bound_arith (cG 0) (cG 0 + cG 1) _ (Nat.le_add_right _ _))
+    · exact le_trans (flen_guardSentence_le' me opp 1)
+        (guard_bound_arith (cG 1) (cG 0 + cG 1) _ (Nat.le_add_left _ _))⟩
 
 /-! ### 4. The bit length of a searcher's code is `O(size k)` -/
 
@@ -369,8 +371,8 @@ lemma size_pair_le (a b : ℕ) : Nat.size ⟪a, b⟫ ≤ 2 * (Nat.size a + Nat.s
   rw [Nat.size_one] at h2
   omega
 
-/-- The constant part of a searcher's code: `⟪⌜Gtmpl⌝, 0, pConst 0, pConst 1⟫`. -/
-noncomputable def cP : ℕ := ⟪(⌜Gtmpl⌝ : ℕ), 0, pConst 0, pConst 1⟫
+/-- The constant part of a searcher's code: `⟪⌜GtmplA 0⌝, pConst 0, pConst 1⟫`. -/
+noncomputable def cP : ℕ := ⟪(⌜GtmplA 0⌝ : ℕ), pConst 0, pConst 1⟫
 
 lemma Dupoc_eq (k : ℕ) : Dupoc k = ⟪6, k, cP⟫ + 1 := rfl
 
@@ -447,7 +449,7 @@ Critch's assumption (b) holds for the binary descriptions. The threshold `K` dep
 the fixed template. -/
 theorem guard_fits :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
-      flen (Rewriting.emb (guardSentence (Dupoc k) (Cupod k) a) : Proposition LAct) ≤ k := by
+      flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct) ≤ k := by
   obtain ⟨c, hc⟩ := exists_guard_const
   obtain ⟨P, hP⟩ := exists_size_const
   obtain ⟨K, hK⟩ := exists_linear_size_le (10 * c + 12 * c * P) (48 * c)
@@ -455,7 +457,7 @@ theorem guard_fits :
   obtain ⟨h1, h2⟩ := hP k
   have h5 : 6 * c * (Nat.size (dnum (Dupoc k)) + Nat.size (dnum (Cupod k))) ≤
       6 * c * (8 * Nat.size k + 2 * P) := Nat.mul_le_mul_left _ (by omega)
-  calc flen (Rewriting.emb (guardSentence (Dupoc k) (Cupod k) a) : Proposition LAct)
+  calc flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct)
       ≤ 10 * c + 6 * c * (Nat.size (dnum (Dupoc k)) + Nat.size (dnum (Cupod k))) := hc _ _ a ha
     _ ≤ 10 * c + 6 * c * (8 * Nat.size k + 2 * P) := Nat.add_le_add_left h5 _
     _ = 10 * c + 12 * c * P + 48 * c * Nat.size k := by ring
@@ -464,7 +466,7 @@ theorem guard_fits :
 /-- The same with the roles swapped: `Cupod k`'s guard against `Dupoc k` fits. -/
 theorem guard_fits' :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
-      flen (Rewriting.emb (guardSentence (Cupod k) (Dupoc k) a) : Proposition LAct) ≤ k := by
+      flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct) ≤ k := by
   obtain ⟨c, hc⟩ := exists_guard_const
   obtain ⟨P, hP⟩ := exists_size_const
   obtain ⟨K, hK⟩ := exists_linear_size_le (10 * c + 12 * c * P) (48 * c)
@@ -472,7 +474,7 @@ theorem guard_fits' :
   obtain ⟨h1, h2⟩ := hP k
   have h5 : 6 * c * (Nat.size (dnum (Cupod k)) + Nat.size (dnum (Dupoc k))) ≤
       6 * c * (8 * Nat.size k + 2 * P) := Nat.mul_le_mul_left _ (by omega)
-  calc flen (Rewriting.emb (guardSentence (Cupod k) (Dupoc k) a) : Proposition LAct)
+  calc flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct)
       ≤ 10 * c + 6 * c * (Nat.size (dnum (Cupod k)) + Nat.size (dnum (Dupoc k))) := hc _ _ a ha
     _ ≤ 10 * c + 6 * c * (8 * Nat.size k + 2 * P) := Nat.add_le_add_left h5 _
     _ = 10 * c + 12 * c * P + 48 * c * Nat.size k := by ring

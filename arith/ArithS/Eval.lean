@@ -9,8 +9,9 @@ clause for clause:
 
 * `const a` plays `a`; `self` runs `me` in the same frame; `opp` runs `opp` in the same frame;
   `bot p` runs `p`; `ite b a' p q` runs `b`, then `p` if it played `a'`, else `q`;
-* `search k g a' p q` runs `p` if `TAct ⊢_k guardCode g me opp a'` (the runtime guard
-  sentence of `ArithS.Guard`, provability by a proof of length `≤ k`), else `q`;
+* `search k g p q` runs `p` if `TAct ⊢_k guardCode g me opp` (the runtime guard sentence of
+  `ArithS.Guard`: the six-variable template `g` filled with the descriptions of the frame,
+  provability by a proof of length `≤ k`), else `q`;
 * fuel `0` plays nothing; `sim p q` has NO clause yet (the engine substitutes the frame into
   `p`, `q` first, which needs a program-substitution function — deferred generalisation).
 
@@ -38,10 +39,10 @@ def Phi (C : Set V) (pr : V) : Prop :=
   (∃ n me opp b a' p q a r, ⟪n, me, opp, b, r⟫ ∈ C ∧
     ((r = a' ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pIte b a' p q, a⟫) ∨
-  (∃ n me opp k g a' p q a,
-    ((LenProvableV TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
-      (¬LenProvableV TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
-    pr = ⟪n + 1, me, opp, pSearch k g a' p q, a⟫)
+  (∃ n me opp k g p q a,
+    ((LenProvableV TAct k (guardCode g me opp) ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
+      (¬LenProvableV TAct k (guardCode g me opp) ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
+    pr = ⟪n + 1, me, opp, pSearch k g p q, a⟫)
 
 noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
   (.mkSigma “pr C.
@@ -54,8 +55,8 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
         ∃ r < pr + C + 1, (∃ t, !pair₅Def t n me opp b r ∧ t ∈ C) ∧
           ((r = a' ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
            (r ≠ a' ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) ∨
-      (∃ k < p, ∃ g < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g a' p' q ∧
-        ∃ gc, !guardCodeGraph gc g me opp a' ∧
+      (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g p' q ∧
+        ∃ gc, !guardCodeGraph gc g me opp ∧
           ((!(lenProvableV TAct).sigma k gc ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
            (¬!(lenProvableV TAct).pi k gc ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) )”)
   (.mkPi “pr C.
@@ -68,8 +69,8 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
         ∃ r < pr + C + 1, (∀ t, !pair₅Def t n me opp b r → t ∈ C) ∧
           ((r = a' ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
            (r ≠ a' ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) ∨
-      (∃ k < p, ∃ g < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g a' p' q ∧
-        ∀ gc, !guardCodeGraph gc g me opp a' →
+      (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g p' q ∧
+        ∀ gc, !guardCodeGraph gc g me opp →
           ((!(lenProvableV TAct).pi k gc ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
            (¬!(lenProvableV TAct).sigma k gc ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) )”)⟩
 
@@ -99,13 +100,13 @@ private lemma phi_iff (C pr : V) :
       (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, p = pIte b a' p' q ∧
         ∃ r < pr + C + 1, ⟪n, me, opp, b, r⟫ ∈ C ∧
           ((r = a' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ∨
-      (∃ k < p, ∃ g < p, ∃ a' < p, ∃ p' < p, ∃ q < p, p = pSearch k g a' p' q ∧
-        ((LenProvableV TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
-         (¬LenProvableV TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ) := by
+      (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, p = pSearch k g p' q ∧
+        ((LenProvableV TAct k (guardCode g me opp) ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
+         (¬LenProvableV TAct k (guardCode g me opp) ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ) := by
   constructor
   · rintro (⟨n, me, opp, a, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ |
       ⟨n, me, opp, p, a, h, rfl⟩ | ⟨n, me, opp, b, a', p, q, a, r, hb, hpq, rfl⟩ |
-      ⟨n, me, opp, k, g, a', p, q, a, hpq, rfl⟩)
+      ⟨n, me, opp, k, g, p, q, a, hpq, rfl⟩)
     · obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := tuple_bounds n me opp (pConst a) a
       exact ⟨n, h₁, me, h₂, opp, h₃, _, h₄, a, h₅, rfl, Or.inl rfl⟩
     · obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := tuple_bounds n me opp pSelf a
@@ -119,17 +120,17 @@ private lemma phi_iff (C pr : V) :
       exact ⟨n, h₁, me, h₂, opp, h₃, _, h₄, a, h₅, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
         ⟨b, by simp, a', by simp, p, by simp, q, by simp, rfl, r,
           lt_of_lt_of_le (lt_of_tuple_mem hb) (le_trans le_add_self le_self_add), hb, hpq⟩))))⟩
-    · obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := tuple_bounds n me opp (pSearch k g a' p q) a
+    · obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := tuple_bounds n me opp (pSearch k g p q) a
       exact ⟨n, h₁, me, h₂, opp, h₃, _, h₄, a, h₅, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        ⟨k, by simp, g, by simp, a', by simp, p, by simp, q, by simp, rfl, hpq⟩))))⟩
+        ⟨k, by simp, g, by simp, p, by simp, q, by simp, rfl, hpq⟩))))⟩
   · rintro ⟨n, _, me, _, opp, _, p, _, a, _, rfl, (rfl | ⟨rfl, h⟩ | ⟨rfl, h⟩ | ⟨p', _, rfl, h⟩ |
-      ⟨b, _, a', _, p', _, q, _, rfl, r, _, hb, hpq⟩ | ⟨k, _, g, _, a', _, p', _, q, _, rfl, hpq⟩)⟩
+      ⟨b, _, a', _, p', _, q, _, rfl, r, _, hb, hpq⟩ | ⟨k, _, g, _, p', _, q, _, rfl, hpq⟩)⟩
     · exact Or.inl ⟨n, me, opp, a, rfl⟩
     · exact Or.inr (Or.inl ⟨n, me, opp, a, h, rfl⟩)
     · exact Or.inr (Or.inr (Or.inl ⟨n, me, opp, a, h, rfl⟩))
     · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨n, me, opp, p', a, h, rfl⟩)))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨n, me, opp, b, a', p', q, a, r, hb, hpq, rfl⟩))))
-    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n, me, opp, k, g, a', p', q, a, hpq, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n, me, opp, k, g, p', q, a, hpq, rfl⟩))))
 
 noncomputable def construction : Fixpoint.Construction V blueprint where
   Φ := fun _ ↦ Phi
@@ -145,7 +146,7 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   monotone := by
     rintro C C' hC _ pr (⟨n, me, opp, a, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ |
       ⟨n, me, opp, p, a, h, rfl⟩ | ⟨n, me, opp, b, a', p, q, a, r, hb, hpq, rfl⟩ |
-      ⟨n, me, opp, k, g, a', p, q, a, hpq, rfl⟩)
+      ⟨n, me, opp, k, g, p, q, a, hpq, rfl⟩)
     · exact Or.inl ⟨n, me, opp, a, rfl⟩
     · exact Or.inr (Or.inl ⟨n, me, opp, a, hC h, rfl⟩)
     · exact Or.inr (Or.inr (Or.inl ⟨n, me, opp, a, hC h, rfl⟩))
@@ -154,7 +155,7 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
       rcases hpq with ⟨h1, h2⟩ | ⟨h1, h2⟩
       · exact Or.inl ⟨h1, hC h2⟩
       · exact Or.inr ⟨h1, hC h2⟩
-    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n, me, opp, k, g, a', p, q, a, ?_, rfl⟩))))
+    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n, me, opp, k, g, p, q, a, ?_, rfl⟩))))
       rcases hpq with ⟨h1, h2⟩ | ⟨h1, h2⟩
       · exact Or.inl ⟨h1, hC h2⟩
       · exact Or.inr ⟨h1, hC h2⟩
@@ -163,7 +164,7 @@ instance : construction.Finite V where
   finite := by
     rintro C _ pr (⟨n, me, opp, a, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ |
       ⟨n, me, opp, p, a, h, rfl⟩ | ⟨n, me, opp, b, a', p, q, a, r, hb, hpq, rfl⟩ |
-      ⟨n, me, opp, k, g, a', p, q, a, hpq, rfl⟩)
+      ⟨n, me, opp, k, g, p, q, a, hpq, rfl⟩)
     · exact ⟨0, Or.inl ⟨n, me, opp, a, rfl⟩⟩
     · exact ⟨_ + 1, Or.inr (Or.inl ⟨n, me, opp, a, ⟨h, lt_add_one _⟩, rfl⟩)⟩
     · exact ⟨_ + 1, Or.inr (Or.inr (Or.inl ⟨n, me, opp, a, ⟨h, lt_add_one _⟩, rfl⟩))⟩
@@ -180,7 +181,7 @@ instance : construction.Finite V where
           exact lt_of_le_of_lt (le_trans (by assumption) (by assumption)) (lt_add_one _)⟩
       · exact Or.inr ⟨h1, h2, lt_of_le_of_lt le_add_self (lt_add_one _)⟩
     · refine ⟨⟪n, me, opp, p, a⟫ + ⟪n, me, opp, q, a⟫ + 1,
-        Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n, me, opp, k, g, a', p, q, a, ?_, rfl⟩))))⟩
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n, me, opp, k, g, p, q, a, ?_, rfl⟩))))⟩
       rcases hpq with ⟨h1, h2⟩ | ⟨h1, h2⟩
       · exact Or.inl ⟨h1, h2, lt_of_le_of_lt le_self_add (lt_add_one _)⟩
       · exact Or.inr ⟨h1, h2, lt_of_le_of_lt le_add_self (lt_add_one _)⟩
@@ -213,29 +214,29 @@ lemma EvalGraph.case_iff {n me opp p a : V} :
       (∃ p', p = pBot p' ∧ EvalGraph n' me opp p' a) ∨
       (∃ b a' p' q r, p = pIte b a' p' q ∧ EvalGraph n' me opp b r ∧
         ((r = a' ∧ EvalGraph n' me opp p' a) ∨ (r ≠ a' ∧ EvalGraph n' me opp q a))) ∨
-      (∃ k g a' p' q, p = pSearch k g a' p' q ∧
-        ((LenProvableV TAct k (guardCode g me opp a') ∧ EvalGraph n' me opp p' a) ∨
-         (¬LenProvableV TAct k (guardCode g me opp a') ∧ EvalGraph n' me opp q a))) ) := by
+      (∃ k g p' q, p = pSearch k g p' q ∧
+        ((LenProvableV TAct k (guardCode g me opp) ∧ EvalGraph n' me opp p' a) ∨
+         (¬LenProvableV TAct k (guardCode g me opp) ∧ EvalGraph n' me opp q a))) ) := by
   rw [EvalGraph, EvalFix.construction.case]
   simp only [EvalFix.construction, EvalFix.Phi, Set.mem_setOf_eq, pair_ext_iff]
   constructor
   · rintro (⟨n₀, me₀, opp₀, a₀, h⟩ | ⟨n₀, me₀, opp₀, a₀, hc, h⟩ | ⟨n₀, me₀, opp₀, a₀, hc, h⟩ |
       ⟨n₀, me₀, opp₀, p₀, a₀, hc, h⟩ | ⟨n₀, me₀, opp₀, b, a', p', q, a₀, r, hb, hpq, h⟩ |
-      ⟨n₀, me₀, opp₀, k, g, a', p', q, a₀, hpq, h⟩) <;>
+      ⟨n₀, me₀, opp₀, k, g, p', q, a₀, hpq, h⟩) <;>
       obtain ⟨rfl, rfl, rfl, rfl, rfl⟩ := h
     · exact ⟨n₀, rfl, Or.inl rfl⟩
     · exact ⟨n₀, rfl, Or.inr (Or.inl ⟨rfl, hc⟩)⟩
     · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inl ⟨rfl, hc⟩))⟩
     · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inl ⟨p₀, rfl, hc⟩)))⟩
     · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨b, a', p', q, r, rfl, hb, hpq⟩))))⟩
-    · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, a', p', q, rfl, hpq⟩))))⟩
+    · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, p', q, rfl, hpq⟩))))⟩
   · rintro ⟨n', rfl, (rfl | ⟨rfl, hc⟩ | ⟨rfl, hc⟩ | ⟨p', rfl, hc⟩ | ⟨b, a', p', q, r, rfl, hb, hpq⟩ |
-      ⟨k, g, a', p', q, rfl, hpq⟩)⟩
+      ⟨k, g, p', q, rfl, hpq⟩)⟩
     · exact Or.inl ⟨n', me, opp, a, by simp⟩
     · exact Or.inr (Or.inl ⟨n', me, opp, a, hc, by simp⟩)
     · exact Or.inr (Or.inr (Or.inl ⟨n', me, opp, a, hc, by simp⟩))
     · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨n', me, opp, p', a, hc, by simp⟩)))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨n', me, opp, b, a', p', q, a, r, hb, hpq, by simp⟩))))
-    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n', me, opp, k, g, a', p', q, a, hpq, by simp⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n', me, opp, k, g, p', q, a, hpq, by simp⟩))))
 
 end ArithS

@@ -5,9 +5,10 @@ import ArithS.Bnum
 /-!
 # ArithS.Guard — the runtime guard sentence, on codes
 
-`search k g a p q` evaluated at `(me, opp)` searches for a proof of the sentence obtained by
-filling the stored template `g` (a formula code with 7 free variables) with the CANONICAL
-DESCRIPTIONS of `me` and `opp` and the action term of `a` (roadmap M2 design):
+`search k g p q` evaluated at `(me, opp)` searches for a proof of the sentence obtained by
+filling the stored template `g` (a formula code with SIX free variables — the me-triple
+`x₁ u₁ w₁` in `#0 #1 #2`, the opp-triple `x₂ u₂ w₂` in `#3 #4 #5`; roadmap M3 step (a)) with
+the CANONICAL DESCRIPTIONS of `me` and `opp`:
 
 * a program `x` is described by the triple `(bnum (dnum x), dU x, dW x)`, meaning
   `relabel (dU x) (dW x) (dnum x)`: `dnum x = min x (swapcode x)` as a BINARY numeral term
@@ -15,12 +16,13 @@ DESCRIPTIONS of `me` and `opp` and the action term of `a` (roadmap M2 design):
   description of a searcher of budget `k` is longer than `k` and no search can ever succeed,
   the retired `Vacuity.lean`, commit 470ee43), and the two term codes `dU x, dW x` are the
   constant symbols `c_C, c_D` in the order that reconstructs `x`, or the numerals `0, 1` in
-  the tie case `x = swapcode x`;
-* the action `a ∈ {0, 1}` is the constant term `c_a`, other values their numeral.
+  the tie case `x = swapcode x`.
 
 So the swap of the two constants turns the description of `x` into that of `swapcode x`
-SYNTACTICALLY, in every case. `guardCode g me opp a` is Σ₁-definable; the corresponding
-meta sentence and the code equation are in `ArithS.Template`.
+SYNTACTICALLY, in every case. `guardCode g me opp` is Σ₁-definable; the corresponding
+meta sentence and the code equation are in `ArithS.Template`. The action term
+`actTermCode a` (`c_a` for `a ∈ {0, 1}`) is kept for the closed template instances
+`GtmplA a` of `ArithS.Template`; it no longer enters `descVec`.
 -/
 
 namespace ArithS
@@ -143,35 +145,34 @@ end definability
 
 /-! ### The guard code -/
 
-/-- The description vector `?[bnum (dnum me), dU me, dW me, bnum (dnum opp), dU opp, dW opp, actTermCode a]`. -/
-noncomputable def descVec (me opp a : V) : V :=
-  bnum (dnum me) ∷ dU me ∷ dW me ∷ bnum (dnum opp) ∷ dU opp ∷ dW opp ∷ actTermCode a ∷ 0
+/-- The description vector `?[bnum (dnum me), dU me, dW me, bnum (dnum opp), dU opp, dW opp]`. -/
+noncomputable def descVec (me opp : V) : V :=
+  bnum (dnum me) ∷ dU me ∷ dW me ∷ bnum (dnum opp) ∷ dU opp ∷ dW opp ∷ 0
 
-/-- Fill the template `g` with the descriptions of `me`, `opp` and the action `a`. -/
-noncomputable def guardCode (g me opp a : V) : V := subst LAct (descVec me opp a) g
+/-- Fill the six-variable template `g` with the descriptions of `me` and `opp`. -/
+noncomputable def guardCode (g me opp : V) : V := subst LAct (descVec me opp) g
 
-noncomputable def descVecGraph : 𝚺₁.Semisentence 4 := .mkSigma
-  “y me opp a. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !bnumGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧
+noncomputable def descVecGraph : 𝚺₁.Semisentence 3 := .mkSigma
+  “y me opp. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !bnumGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧
     ∃ n₂, !dnumGraph n₂ opp ∧ ∃ t₂, !bnumGraph t₂ n₂ ∧ ∃ u₂, !dUGraph u₂ opp ∧ ∃ w₂, !dWGraph w₂ opp ∧
-    ∃ t, !actTermCodeGraph t a ∧
-    ∃ v₆, !adjoinDef v₆ t 0 ∧ ∃ v₅, !adjoinDef v₅ w₂ v₆ ∧ ∃ v₄, !adjoinDef v₄ u₂ v₅ ∧
+    ∃ v₅, !adjoinDef v₅ w₂ 0 ∧ ∃ v₄, !adjoinDef v₄ u₂ v₅ ∧
     ∃ v₃, !adjoinDef v₃ t₂ v₄ ∧ ∃ v₂, !adjoinDef v₂ w₁ v₃ ∧ ∃ v₁, !adjoinDef v₁ u₁ v₂ ∧ !adjoinDef y t₁ v₁”
 
-instance descVec.defined : 𝚺₁-Function₃ (descVec : V → V → V → V) via descVecGraph := .mk fun v ↦ by
+instance descVec.defined : 𝚺₁-Function₂ (descVec : V → V → V) via descVecGraph := .mk fun v ↦ by
   simp [descVecGraph, descVec]
 
-instance descVec.definable : 𝚺₁-Function₃ (descVec : V → V → V → V) := descVec.defined.to_definable
+instance descVec.definable : 𝚺₁-Function₂ (descVec : V → V → V) := descVec.defined.to_definable
 
-noncomputable def guardCodeGraph : 𝚺₁.Semisentence 5 := .mkSigma
-  “y g me opp a. ∃ w, !descVecGraph w me opp a ∧ !(substsGraph LAct) y w g”
+noncomputable def guardCodeGraph : 𝚺₁.Semisentence 4 := .mkSigma
+  “y g me opp. ∃ w, !descVecGraph w me opp ∧ !(substsGraph LAct) y w g”
 
-instance guardCode.defined : 𝚺₁-Function₄ (guardCode : V → V → V → V → V) via guardCodeGraph :=
+instance guardCode.defined : 𝚺₁-Function₃ (guardCode : V → V → V → V) via guardCodeGraph :=
   .mk fun v ↦ by simp [guardCodeGraph, guardCode]
 
-instance guardCode.definable : 𝚺₁-Function₄ (guardCode : V → V → V → V → V) :=
+instance guardCode.definable : 𝚺₁-Function₃ (guardCode : V → V → V → V) :=
   guardCode.defined.to_definable
 
-instance guardCode.definable' : Γ-[m + 1]-Function₄ (guardCode : V → V → V → V → V) :=
+instance guardCode.definable' : Γ-[m + 1]-Function₃ (guardCode : V → V → V → V) :=
   guardCode.definable.of_sigmaOne
 
 end ArithS

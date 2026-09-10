@@ -11,11 +11,17 @@ with seven free variables
   `x₁ u₁ w₁ x₂ u₂ w₂ t ↦ ∃ n, EvalGraph n (relabel u₂ w₂ x₂) (relabel u₁ w₁ x₁) (relabel u₂ w₂ x₂) t`
 
 ("the program described by `(x₂, u₂, w₂)`, playing against the one described by `(x₁, u₁, w₁)`,
-plays `t`"). Filling it with the canonical descriptions of `me`, `opp` and the action `a`
-(`ArithS.Guard`; the numerals are the binary `bnumT` of `ArithS.Bnum`) gives the meta sentence `guardSentence me opp a : Sentence LAct`, whose code
-is `guardCode ⌜Gtmpl⌝ me opp a` (the code equation), which the transposition `swap` sends to
-`guardSentence (swapcode me) (swapcode opp) (swapAct a)` (the swap equation), and which is
-true in `ℕ` iff `∃ n, EvalGraph n opp me opp a` (the truth equation).
+plays `t`"). Since roadmap M3 step (a) a search node stores a SIX-variable template: the two
+CLOSED INSTANCES `GtmplA a := Gtmpl ⇜ ![#0, …, #5, c_a]` (the action term substituted, the
+six description variables kept) are the templates of the two searchers. Filling `GtmplA a`
+with the canonical descriptions of `me` and `opp` (`ArithS.Guard`; the numerals are the binary
+`bnumT` of `ArithS.Bnum`) gives the meta sentence `guardSentenceA a me opp : Sentence LAct`,
+whose code is `guardCode ⌜GtmplA a⌝ me opp` (the code equation), which the transposition
+`swap` sends to `guardSentenceA (swapAct a) (swapcode me) (swapcode opp)` (the swap equation;
+on the templates `lMap swap (GtmplA a) = GtmplA (swapAct a)`, hence on codes
+`relabelTemplate 1 0 ⌜GtmplA a⌝ = ⌜GtmplA (swapAct a)⌝` by the meta link of
+`ArithS.RelabelTemplate`), and which is true in `ℕ` iff `∃ n, EvalGraph n opp me opp a`
+(the truth equation).
 -/
 
 namespace ArithS
@@ -68,11 +74,20 @@ noncomputable def dWT (x : ℕ) : ClosedSemiterm LAct 0 :=
 noncomputable def actT (a : ℕ) : ClosedSemiterm LAct 0 :=
   if a = 0 then cterm Act.C else if a = 1 then cterm Act.D else numT a
 
-noncomputable def descTerms (me opp a : ℕ) : Fin 7 → ClosedSemiterm LAct 0 :=
-  ![dnumT me, dUT me, dWT me, dnumT opp, dUT opp, dWT opp, actT a]
+/-- The action term lifted to six bound variables (the slot of `GtmplA`). -/
+noncomputable def actT6 (a : ℕ) : Semiterm LAct Empty 6 := Rew.castLE (Nat.zero_le 6) (actT a)
 
-/-- The guard sentence: the template filled with the descriptions. -/
-noncomputable def guardSentence (me opp a : ℕ) : Sentence LAct := Gtmpl ⇜ descTerms me opp a
+/-- The closed template instance: the action term `c_a` substituted for the seventh variable,
+the six description variables kept. -/
+noncomputable def GtmplA (a : ℕ) : Semisentence LAct 6 :=
+  Gtmpl ⇜ ![#0, #1, #2, #3, #4, #5, actT6 a]
+
+/-- The six description terms of `me` and `opp`. -/
+noncomputable def descTerms (me opp : ℕ) : Fin 6 → ClosedSemiterm LAct 0 :=
+  ![dnumT me, dUT me, dWT me, dnumT opp, dUT opp, dWT opp]
+
+/-- The guard sentence of the action `a`: the template instance filled with the descriptions. -/
+noncomputable def guardSentenceA (a me opp : ℕ) : Sentence LAct := GtmplA a ⇜ descTerms me opp
 
 /-! ### The swap equation -/
 
@@ -133,15 +148,36 @@ lemma lMap_swap_actT (a : ℕ) : Semiterm.lMap swap (actT a) = actT (swapAct a) 
 lemma lMap_swap_dnumT (x : ℕ) : Semiterm.lMap swap (dnumT x) = dnumT (swapcode x) := by
   unfold dnumT; rw [term_lMap_swap_emb, dnum_swapcode]
 
-/-- **The swap equation**: the transposition of the guard sentence is the guard sentence of the
-transposed data. -/
-theorem lMap_swap_guardSentence (me opp a : ℕ) :
-    Semiformula.lMap swap (guardSentence me opp a) = guardSentence (swapcode me) (swapcode opp) (swapAct a) := by
-  unfold guardSentence
+lemma lMap_swap_actT6 (a : ℕ) : Semiterm.lMap swap (actT6 a) = actT6 (swapAct a) := by
+  unfold actT6
+  change Semiterm.lMap swap (Rew.map (Fin.castLE (Nat.zero_le 6)) id (actT a)) =
+    Rew.map (Fin.castLE (Nat.zero_le 6)) id (actT (swapAct a))
+  rw [Semiterm.lMap_map, lMap_swap_actT]
+
+/-- **The template swap**: the transposition of the instance of `a` is the instance of `swapAct a`. -/
+theorem lMap_swap_GtmplA (a : ℕ) : Semiformula.lMap swap (GtmplA a) = GtmplA (swapAct a) := by
+  unfold GtmplA
   rw [Semiformula.lMap_subst, lMap_swap_Gtmpl]
   congr 1
   funext i
-  fin_cases i <;> simp [descTerms, lMap_swap_dnumT, lMap_swap_dUT, lMap_swap_dWT, lMap_swap_actT]
+  fin_cases i <;> simp [lMap_swap_actT6]
+
+/-- **The swap equation**: the transposition of the guard sentence is the guard sentence of the
+transposed data. -/
+theorem lMap_swap_guardSentenceA (a me opp : ℕ) :
+    Semiformula.lMap swap (guardSentenceA a me opp) =
+    guardSentenceA (swapAct a) (swapcode me) (swapcode opp) := by
+  unfold guardSentenceA
+  rw [Semiformula.lMap_subst, lMap_swap_GtmplA]
+  congr 1
+  funext i
+  fin_cases i <;> simp [descTerms, lMap_swap_dnumT, lMap_swap_dUT, lMap_swap_dWT]
+
+/-- **The template swap on codes**: the code-level τ sends the code of `GtmplA a` to the code of
+`GtmplA (swapAct a)`. -/
+theorem relabelTemplate_quote_GtmplA (a : ℕ) :
+    relabelTemplate 1 0 (⌜GtmplA a⌝ : ℕ) = ⌜GtmplA (swapAct a)⌝ := by
+  rw [relabelTemplate_quote_sentence, lMap_swap_GtmplA]
 
 /-! ### The code equation -/
 
@@ -219,30 +255,29 @@ lemma typed_val_emb (t : ClosedSemiterm LAct 0) :
     ((⌜(Rew.emb t : SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm ℕ LAct 0)).val = (⌜t⌝ : ℕ) := rfl
 
 /-- The codes of the description terms form the description vector. -/
-lemma semitermVec_val_descTerms (me opp a : ℕ) :
-    SemitermVec.val (fun i ↦ (⌜(Rew.emb (descTerms me opp a i) : SyntacticSemiterm LAct 0)⌝ :
-      Bootstrapping.Semiterm ℕ LAct 0)) = descVec me opp a := by
-  have hv : (fun i ↦ (⌜(Rew.emb (descTerms me opp a i) : SyntacticSemiterm LAct 0)⌝ :
+lemma semitermVec_val_descTerms (me opp : ℕ) :
+    SemitermVec.val (fun i ↦ (⌜(Rew.emb (descTerms me opp i) : SyntacticSemiterm LAct 0)⌝ :
+      Bootstrapping.Semiterm ℕ LAct 0)) = descVec me opp := by
+  have hv : (fun i ↦ (⌜(Rew.emb (descTerms me opp i) : SyntacticSemiterm LAct 0)⌝ :
       Bootstrapping.Semiterm ℕ LAct 0)) =
       ![⌜(Rew.emb (dnumT me) : SyntacticSemiterm LAct 0)⌝, ⌜(Rew.emb (dUT me) : SyntacticSemiterm LAct 0)⌝,
         ⌜(Rew.emb (dWT me) : SyntacticSemiterm LAct 0)⌝, ⌜(Rew.emb (dnumT opp) : SyntacticSemiterm LAct 0)⌝,
-        ⌜(Rew.emb (dUT opp) : SyntacticSemiterm LAct 0)⌝, ⌜(Rew.emb (dWT opp) : SyntacticSemiterm LAct 0)⌝,
-        ⌜(Rew.emb (actT a) : SyntacticSemiterm LAct 0)⌝] := by
+        ⌜(Rew.emb (dUT opp) : SyntacticSemiterm LAct 0)⌝, ⌜(Rew.emb (dWT opp) : SyntacticSemiterm LAct 0)⌝] := by
     funext i; fin_cases i <;> rfl
   rw [hv]
-  simp only [SemitermVec.val_cons, SemitermVec.val_nil, typed_val_emb, quote_dnumT, quote_dUT, quote_dWT,
-    quote_actT]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil, typed_val_emb, quote_dnumT, quote_dUT, quote_dWT]
   rfl
 
-/-- **The code equation**: the code of the guard sentence is the guard code of the template's code. -/
-theorem quote_guardSentence (me opp a : ℕ) :
-    (⌜guardSentence me opp a⌝ : ℕ) = guardCode (⌜Gtmpl⌝ : ℕ) me opp a := by
-  unfold guardSentence guardCode
+/-- **The code equation**: the code of the guard sentence is the guard code of the template
+instance's code. -/
+theorem quote_guardSentenceA (a me opp : ℕ) :
+    (⌜guardSentenceA a me opp⌝ : ℕ) = guardCode (⌜GtmplA a⌝ : ℕ) me opp := by
+  unfold guardSentenceA guardCode
   rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
     Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
     ← Sentence.quote_def]
   congr 1
-  exact semitermVec_val_descTerms me opp a
+  exact semitermVec_val_descTerms me opp
 
 /-! ### The truth equation -/
 
@@ -283,17 +318,30 @@ lemma val_actT (a : ℕ) : (actT a).val (s := stdAct) ![] Empty.elim = a := by
     · subst h1; simp [val_cterm_D]
     · simp [h0, h1, val_numT]
 
+lemma val_actT6 (a : ℕ) (b : Fin 6 → ℕ) : (actT6 a).val (s := stdAct) b Empty.elim = a := by
+  unfold actT6
+  rw [Semiterm.val_castLE, Subsingleton.elim (fun x : Fin 0 ↦ b (x.castLE (Nat.zero_le 6))) ![]]
+  exact val_actT a
+
 /-- **The truth equation**: the guard sentence holds in `ℕ` iff `opp` plays `a` against `me`. -/
-theorem models_guardSentence_iff (me opp a : ℕ) :
-    ℕ↓[LAct] ⊧ guardSentence me opp a ↔ ∃ n, EvalGraph n opp me opp a := by
+theorem models_guardSentenceA_iff (a me opp : ℕ) :
+    ℕ↓[LAct] ⊧ guardSentenceA a me opp ↔ ∃ n, EvalGraph n opp me opp a := by
   rw [models_iff]
-  unfold guardSentence Gtmpl Semiformula.Realize
-  rw [Semiformula.eval_substs, Semiformula.eval_lMap, stdAct_lMap_emb]
-  have h0 : (Semiterm.val (s := stdAct) ![] Empty.elim ∘ descTerms me opp a) =
+  unfold guardSentenceA GtmplA Gtmpl Semiformula.Realize
+  rw [Semiformula.eval_substs, Semiformula.eval_substs, Semiformula.eval_lMap, stdAct_lMap_emb]
+  have h0 : (Semiterm.val (s := stdAct) ![] Empty.elim ∘ descTerms me opp) =
+      ![dnum me, (dUT me).val (s := stdAct) ![] Empty.elim, (dWT me).val (s := stdAct) ![] Empty.elim,
+        dnum opp, (dUT opp).val (s := stdAct) ![] Empty.elim, (dWT opp).val (s := stdAct) ![] Empty.elim] := by
+    funext i; fin_cases i <;> simp [descTerms, val_dnumT]
+  rw [h0]
+  have h1 : (Semiterm.val (s := stdAct)
+      ![dnum me, (dUT me).val (s := stdAct) ![] Empty.elim, (dWT me).val (s := stdAct) ![] Empty.elim,
+        dnum opp, (dUT opp).val (s := stdAct) ![] Empty.elim, (dWT opp).val (s := stdAct) ![] Empty.elim]
+      Empty.elim ∘ ![#0, #1, #2, #3, #4, #5, actT6 a]) =
       ![dnum me, (dUT me).val (s := stdAct) ![] Empty.elim, (dWT me).val (s := stdAct) ![] Empty.elim,
         dnum opp, (dUT opp).val (s := stdAct) ![] Empty.elim, (dWT opp).val (s := stdAct) ![] Empty.elim, a] := by
-    funext i; fin_cases i <;> simp [descTerms, val_dnumT, val_actT]
-  rw [h0]
+    funext i; fin_cases i <;> simp [val_actT6]
+  rw [h1]
   refine (eval_gtmpl (V := ℕ) _).trans ?_
   simp [relabel_val_desc]
 

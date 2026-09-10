@@ -36,6 +36,6 @@ the working spelling. -/
 example (φ : PD.Formula) : PD.Formula.size φ = φ.size := rfl
 
 /-- the Foundation side still elaborates with `PD` open -/
-example (k : ℕ) : Dupoc k = pSearch k (⌜Gtmpl⌝ : ℕ) 0 (pConst 0) (pConst 1) := rfl
+example (k : ℕ) : Dupoc k = pSearch k (⌜GtmplA 0⌝ : ℕ) (pConst 0) (pConst 1) := rfl
 
 end ArithS

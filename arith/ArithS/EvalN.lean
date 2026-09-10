@@ -48,10 +48,10 @@ lemma EvalGraph.ite_iff {n me opp b a' p q a : V} :
       ((r = a' ∧ EvalGraph n me opp p a) ∨ (r ≠ a' ∧ EvalGraph n me opp q a)) := by
   rw [EvalGraph.case_iff]; simp
 
-lemma EvalGraph.search_iff {n me opp k g a' p q a : V} :
-    EvalGraph (n + 1) me opp (pSearch k g a' p q) a ↔
-    ((LenProvableV TAct k (guardCode g me opp a') ∧ EvalGraph n me opp p a) ∨
-     (¬LenProvableV TAct k (guardCode g me opp a') ∧ EvalGraph n me opp q a)) := by
+lemma EvalGraph.search_iff {n me opp k g p q a : V} :
+    EvalGraph (n + 1) me opp (pSearch k g p q) a ↔
+    ((LenProvableV TAct k (guardCode g me opp) ∧ EvalGraph n me opp p a) ∨
+     (¬LenProvableV TAct k (guardCode g me opp) ∧ EvalGraph n me opp q a)) := by
   rw [EvalGraph.case_iff]; simp
 
 end inversion
@@ -68,7 +68,7 @@ theorem EvalGraph.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ,
   | succ n ih =>
     intro me opp p a₁ a₂ h₁ h₂
     by_cases hp : IsShape p
-    · rcases hp with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a', p, q, rfl⟩ | ⟨k, g, a', p, q, rfl⟩
+    · rcases hp with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a', p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
       · rw [EvalGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
       · rw [EvalGraph.self_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
       · rw [EvalGraph.opp_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
@@ -91,13 +91,13 @@ theorem EvalGraph.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ,
         · exact ih _ _ _ _ _ h₁' h₂'
     · exfalso
       rcases EvalGraph.case_iff.mp h₁ with ⟨n', _, (h | ⟨h, _⟩ | ⟨h, _⟩ | ⟨p', h, _⟩ |
-        ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, a', p', q, h, _⟩)⟩
+        ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, p', q, h, _⟩)⟩
       · exact hp (Or.inl ⟨_, h⟩)
       · exact hp (Or.inr (Or.inl h))
       · exact hp (Or.inr (Or.inr (Or.inl h)))
       · exact hp (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, h⟩))))
       · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, _, _, h⟩))))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨_, _, _, _, _, h⟩))))))
+      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨_, _, _, _, h⟩))))))
 
 /-- More fuel never changes a result. -/
 theorem EvalGraph.mono (n : ℕ) : ∀ me opp p a : ℕ, EvalGraph n me opp p a → EvalGraph (n + 1) me opp p a := by
@@ -111,7 +111,7 @@ theorem EvalGraph.mono (n : ℕ) : ∀ me opp p a : ℕ, EvalGraph n me opp p a 
     rw [EvalGraph.case_iff]
     refine ⟨n + 1, rfl, ?_⟩
     rcases H with h | ⟨h, hc⟩ | ⟨h, hc⟩ | ⟨p', h, hc⟩ | ⟨b, a', p', q, r, h, hb, hpq⟩ |
-      ⟨k, g, a', p', q, h, hpq⟩
+      ⟨k, g, p', q, h, hpq⟩
     · exact Or.inl h
     · exact Or.inr (Or.inl ⟨h, ih _ _ _ _ hc⟩)
     · exact Or.inr (Or.inr (Or.inl ⟨h, ih _ _ _ _ hc⟩))
@@ -120,7 +120,7 @@ theorem EvalGraph.mono (n : ℕ) : ∀ me opp p a : ℕ, EvalGraph n me opp p a 
       rcases hpq with ⟨e, hc⟩ | ⟨e, hc⟩
       · exact Or.inl ⟨e, ih _ _ _ _ hc⟩
       · exact Or.inr ⟨e, ih _ _ _ _ hc⟩
-    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, a', p', q, h, ?_⟩))))
+    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, p', q, h, ?_⟩))))
       rcases hpq with ⟨e, hc⟩ | ⟨e, hc⟩
       · exact Or.inl ⟨e, ih _ _ _ _ hc⟩
       · exact Or.inr ⟨e, ih _ _ _ _ hc⟩
