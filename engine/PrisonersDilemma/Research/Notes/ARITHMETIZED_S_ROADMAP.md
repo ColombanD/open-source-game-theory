@@ -398,6 +398,20 @@ CANONICAL BRANCH (2026-09-10): `colomban-arith-m3` in the worktree `~/wt/osgt-ar
 stays on `colomban-arith-s` (arith-only, engine still v4.28 there) so the app/IDE keep working;
 do NOT develop on `-s` any more — cherry-pick or merge INTO `-m3`.
 
+**T2-CORE LANDED (2026-09-10, `colomban-arith-m3` commits 2cb55aa, f8382f4; files
+`arith/ArithS/Core/Tr.lean`, `Core/Sound.lean`; not yet in `ArithS.lean`'s import list —
+add `import ArithS.Core.Sound` after the template re-shaping lands).**
+`tr A : PD.Formula → ArithmeticSentence` (budget-erased: `.box _ ψ ↦ provabilityPred 𝗣𝗔 (tr ψ)`,
+`.diag _ tgt ↦ fixedpoint “x. prov x → tr tgt”` = Foundation's `kreisel`, `.eq ↦ ⊤/⊥`,
+atoms by a parameter `A`), `inductive Leaf` (17 constructors = the non-core rules' conclusion
+shapes, budgets dropped), and
+`Pf_core_sound (A) (hleaf : ∀ ψ, Leaf ψ → 𝗣𝗔 ⊢ tr A ψ) : PD.Pf k φ → 𝗣𝗔 ⊢ tr A φ`
+by `Pf.induct` (34 arms; core arms via `Entailment` lemmas `C_trans/C_of_conseq/mdp₁/implyK/
+implyS/contra/neg_mdp`, `provable_D1/D2/D3`, `kreisel_spec`), three standard axioms. Reading:
+"the engine's Löbian core is a fragment of GL over PA". Remaining for T2-CORE's paper use: an
+instance `A` (the arith evaluator's `∃ n, EvalGraph …` sentence, after step (c)) and the leaf
+discharge for that `A` — which is exactly T2-AGENT's content.
+
 IMPLEMENTATION SEQUENCE (decided 2026-09-10; each step is one agent-sized task, committed and
 recorded here before the next starts):
  (a) TEMPLATE RE-SHAPING: `pSearch k g p q` with `g` a SIX-variable template code
