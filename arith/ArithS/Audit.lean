@@ -1,6 +1,7 @@
 import ArithS.Agent
 import ArithS.AgentConverse
 import ArithS.Core.Sound
+import ArithS.Inst
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -48,6 +49,18 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms playsProof_evalGraph_of_guardAgree
 #print axioms plays_interp_iff
 #print axioms GuardAgree.toF
+
+-- Instantiation `c_C ↦ 0, c_D ↦ 1`: PA proves the atom sentences of modest plays
+-- (Σ₁-completeness); the `atom`/`atomBoxImpl` leaves of T2-CORE discharged at `Aι`.
+#print axioms LAct.models_inst
+#print axioms hierarchy_lMap_inst_trAt_plays
+#print axioms pa_proves_trAt_inst
+#print axioms pa_proves_trAt_inst_of_atomProvable
+#print axioms pa_proves_trAt_inst_searchFree
+#print axioms leaf_atom_sound
+#print axioms leaf_atom_sound_searchFree
+#print axioms leaf_atomBoxImpl_sound
+#print axioms transfer_of_leaves
 
 -- Code translation: substitution code equations and τ on the search-bot fragment.
 #print axioms pcode_subst

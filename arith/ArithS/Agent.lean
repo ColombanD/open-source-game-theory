@@ -40,9 +40,10 @@ which on the fragment IS the template code of the closed instantiation
 * `playsProof_evalGraph_searchFree` — the UNCONDITIONAL version for search-free players
   and body (`Prog.hasSearch = false`): no guard is ever consulted, so no oracle hypothesis.
 * `atomProvable_evalGraph` — the atom form (`AtomProvable k (.plays me opp a)`).
-* `models_trAt_plays` — the TRUTH equation for the realized play-atom on closed programs:
+* `models_trAt_plays` — the TRUTH equation for the realized play-atom on PROPER programs
+  (players that are not bare pronouns; searchers included):
   `ℕ ⊧ trAt me' opp' (.plays me opp a) ↔ ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ a` (the frame
-  `me'`, `opp'` is irrelevant for closed programs).
+  `me'`, `opp'` is irrelevant for proper programs).
 
 ## Remaining gap (recorded, not forced)
 
@@ -435,18 +436,19 @@ lemma eval_closedDesc (c : ℕ) (b : Fin 7 → ℕ) :
   · intro h
     exact ⟨dnum c, rfl, by rw [relabel_val_desc]; exact h⟩
 
-/-- **The truth equation**: for closed programs the realized play-atom holds in `ℕ` iff the
-arithmetized `play` yields `a`; the frame `(me', opp')` is irrelevant. -/
+/-- **The truth equation**: for PROPER programs (not the bare pronouns `.self`/`.opp` — every
+zoo bot, searchers included; `closedP` is NOT required, see `proper_of_closedP`) the realized
+play-atom holds in `ℕ` iff the arithmetized `play` yields `a`; the frame `(me', opp')` is
+irrelevant. -/
 theorem models_trAt_plays (me' opp' me opp : PD.Prog) (a : PD.Action)
-    (hme : closedP me = true) (hopp : closedP opp = true) :
+    (hme : Proper me) (hopp : Proper opp) :
     ℕ↓[LAct] ⊧ trAt me' opp' (.plays me opp a) ↔
       ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode me) (actCode a) := by
   rw [models_iff]
   unfold trAt Semiformula.Realize
   rw [tmpl_plays]
   unfold progGraph
-  rw [progAux_of_ne (closedP_ne_self hme) (closedP_ne_opp hme),
-    progAux_of_ne (closedP_ne_self hopp) (closedP_ne_opp hopp)]
+  rw [progAux_of_ne hme.1 hme.2, progAux_of_ne hopp.1 hopp.2]
   simp only [Semiformula.eval_substs, Semiformula.eval_ex, LogicalConnective.HomClass.map_and,
     LogicalConnective.Prop.and_eq, eval_closedDesc, eval_evalG, Function.comp_def,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,

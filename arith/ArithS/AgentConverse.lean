@@ -34,7 +34,7 @@ two-sided oracle, and proves both directions:
 * `eval_iff_evalGraph`, `play_iff_evalGraph`, `outcome_iff_evalGraph` — THE EQUIVALENCE, for
   bodies, plays and outcomes; `playsProof_evalGraph_of_guardAgree` re-derives T2-AGENT from the
   single `Iff` oracle (through `PD.BaseTheorems.playsProof_sound`).
-* `plays_interp_iff` — for closed modest players the engine's truth of the atom
+* `plays_interp_iff` — for proper modest players the engine's truth of the atom
   `(.plays me opp a).interp` IS the truth in `ℕ` of its arithmetical translation
   `trAt me' opp' (.plays me opp a)` (via `models_trAt_plays`).
 
@@ -353,15 +353,15 @@ theorem playsProof_evalGraph_of_guardAgree (hga : GuardAgree)
 
 /-! ### The truth equation, engine side -/
 
-/-- **Truth of an engine atom = truth in `ℕ` of its translation.** For closed modest players,
-`⊨ (.plays me opp a)` (the engine's `Formula.interp`) holds iff the arithmetical translation
-`trAt me' opp' (.plays me opp a)` is true in `ℕ`, given `GuardAgree`; the frame `(me', opp')`
-is irrelevant for closed programs. -/
+/-- **Truth of an engine atom = truth in `ℕ` of its translation.** For proper modest players
+(every zoo bot), `⊨ (.plays me opp a)` (the engine's `Formula.interp`) holds iff the
+arithmetical translation `trAt me' opp' (.plays me opp a)` is true in `ℕ`, given `GuardAgree`;
+the frame `(me', opp')` is irrelevant for proper programs. -/
 theorem plays_interp_iff (hga : GuardAgree) (me' opp' me opp : PD.Prog) (a : PD.Action)
-    (hme : closedP me = true) (hopp : closedP opp = true)
+    (hme : Proper me) (hopp : Proper opp)
     (hm : modestP me = true) (hm' : modestP opp = true) :
     (PD.Formula.plays me opp a).interp ↔ ℕ↓[LAct] ⊧ trAt me' opp' (.plays me opp a) := by
   rw [models_trAt_plays me' opp' me opp a hme hopp]
-  exact play_iff_evalGraph hga (proper_of_closedP hme) (proper_of_closedP hopp) hm hm' a
+  exact play_iff_evalGraph hga hme hopp hm hm' a
 
 end ArithS
