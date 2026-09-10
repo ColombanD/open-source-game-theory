@@ -39,7 +39,9 @@ lemma EvalGraph.bot_iff {n me opp p a : V} :
     EvalGraph (n + 1) me opp (pBot p) a ↔ EvalGraph n me opp p a := by
   rw [EvalGraph.case_iff]; simp
 
-lemma EvalGraph.sim_iff {n me opp p q a : V} : ¬EvalGraph (n + 1) me opp (pSim p q) a := by
+lemma EvalGraph.sim_iff {n me opp p q a : V} :
+    EvalGraph (n + 1) me opp (pSim p q) a ↔
+    EvalGraph n (psubst me opp p) (psubst me opp q) (psubst me opp p) a := by
   rw [EvalGraph.case_iff]; simp
 
 lemma EvalGraph.ite_iff {n me opp b a' p q a : V} :
@@ -73,7 +75,7 @@ theorem EvalGraph.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ,
       · rw [EvalGraph.self_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
       · rw [EvalGraph.opp_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
       · rw [EvalGraph.bot_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
-      · exact absurd h₁ EvalGraph.sim_iff
+      · rw [EvalGraph.sim_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
       · rcases EvalGraph.ite_iff.mp h₁ with ⟨r₁, hb₁, hc₁⟩
         rcases EvalGraph.ite_iff.mp h₂ with ⟨r₂, hb₂, hc₂⟩
         have hr : r₁ = r₂ := ih _ _ _ _ _ hb₁ hb₂
@@ -91,11 +93,12 @@ theorem EvalGraph.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ,
         · exact ih _ _ _ _ _ h₁' h₂'
     · exfalso
       rcases EvalGraph.case_iff.mp h₁ with ⟨n', _, (h | ⟨h, _⟩ | ⟨h, _⟩ | ⟨p', h, _⟩ |
-        ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, p', q, h, _⟩)⟩
+        ⟨p', q, h, _⟩ | ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, p', q, h, _⟩)⟩
       · exact hp (Or.inl ⟨_, h⟩)
       · exact hp (Or.inr (Or.inl h))
       · exact hp (Or.inr (Or.inr (Or.inl h)))
       · exact hp (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, h⟩))))
+      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, h⟩)))))
       · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, _, _, h⟩))))))
       · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨_, _, _, _, h⟩))))))
 
@@ -110,17 +113,18 @@ theorem EvalGraph.mono (n : ℕ) : ∀ me opp p a : ℕ, EvalGraph n me opp p a 
     rw [hn'] at H
     rw [EvalGraph.case_iff]
     refine ⟨n + 1, rfl, ?_⟩
-    rcases H with h | ⟨h, hc⟩ | ⟨h, hc⟩ | ⟨p', h, hc⟩ | ⟨b, a', p', q, r, h, hb, hpq⟩ |
-      ⟨k, g, p', q, h, hpq⟩
+    rcases H with h | ⟨h, hc⟩ | ⟨h, hc⟩ | ⟨p', h, hc⟩ | ⟨p', q, h, hc⟩ |
+      ⟨b, a', p', q, r, h, hb, hpq⟩ | ⟨k, g, p', q, h, hpq⟩
     · exact Or.inl h
     · exact Or.inr (Or.inl ⟨h, ih _ _ _ _ hc⟩)
     · exact Or.inr (Or.inr (Or.inl ⟨h, ih _ _ _ _ hc⟩))
     · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨p', h, ih _ _ _ _ hc⟩)))
-    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨b, a', p', q, r, h, ih _ _ _ _ hb, ?_⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p', q, h, ih _ _ _ _ hc⟩))))
+    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨b, a', p', q, r, h, ih _ _ _ _ hb, ?_⟩)))))
       rcases hpq with ⟨e, hc⟩ | ⟨e, hc⟩
       · exact Or.inl ⟨e, ih _ _ _ _ hc⟩
       · exact Or.inr ⟨e, ih _ _ _ _ hc⟩
-    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, p', q, h, ?_⟩))))
+    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, p', q, h, ?_⟩)))))
       rcases hpq with ⟨e, hc⟩ | ⟨e, hc⟩
       · exact Or.inl ⟨e, ih _ _ _ _ hc⟩
       · exact Or.inr ⟨e, ih _ _ _ _ hc⟩

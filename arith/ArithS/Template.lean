@@ -93,32 +93,6 @@ noncomputable def guardSentenceA (a me opp : ℕ) : Sentence LAct := GtmplA a �
 
 lemma lMap_swap_numT (k : ℕ) : Semiterm.lMap swap (numT k) = numT k := term_lMap_swap_emb _
 
-section dnum
-
-variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
-
-lemma dnum_of_lt {x : V} (h : x < swapcode x) : dnum x = x := by
-  unfold dnum; rw [if_pos (le_def.mpr (Or.inr h))]
-
-lemma dnum_of_eq {x : V} (h : x = swapcode x) : dnum x = x := by
-  unfold dnum; rw [if_pos (le_def.mpr (Or.inl h))]
-
-lemma dnum_of_gt {x : V} (h : swapcode x < x) : dnum x = swapcode x := by
-  unfold dnum
-  rw [if_neg]
-  intro h'
-  rcases le_def.mp h' with e | l
-  · rw [← e] at h; exact _root_.lt_irrefl _ h
-  · exact lt_asymm h l
-
-lemma dnum_swapcode (x : V) : dnum (swapcode x) = dnum x := by
-  rcases lt_trichotomy x (swapcode x) with h | h | h
-  · rw [dnum_of_lt h, dnum_of_gt (by rw [swapcode_swapcode]; exact h), swapcode_swapcode]
-  · rw [← h]
-  · rw [dnum_of_gt h, dnum_of_lt (by rw [swapcode_swapcode]; exact h)]
-
-end dnum
-
 lemma lMap_swap_dUT (x : ℕ) : Semiterm.lMap swap (dUT x) = dUT (swapcode x) := by
   unfold dUT
   rw [swapcode_swapcode]

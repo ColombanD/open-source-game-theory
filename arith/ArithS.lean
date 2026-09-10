@@ -16,8 +16,10 @@ import ArithS.Prog
 import ArithS.Bnum
 import ArithS.BewV
 import ArithS.Guard
+import ArithS.Subst
 import ArithS.Eval
 import ArithS.EvalN
+import ArithS.SimTest
 import ArithS.Template
 import ArithS.RedCell
 import ArithS.Fit
