@@ -244,6 +244,26 @@ helpers instead of rewriting; `.val` of a closed term is `t.val (s := stdAct) ![
 `Semiformula.coe_subst_eq_subst_coe` + `typed_quote_substs` + `val_substs` is the code equation
 route; `decide` fails on `Structure.rel` (classical instance) — `change ¬((0:ℕ) = 1)` first.
 
+**2026-09-10, later — the unary-numeral VACUITY (theorem, then fixed).** `Vacuity.lean`
+(commit 470ee43) proved: under Foundation's unary numerals a guard sentence mentions the
+searcher's own code as `numeral (dnum me)` with `dnum me ≥ k`, so `flen guard ≥ 2k > k`,
+every proof of it is longer than the budget, and `search_never_found : ¬LenProvableV TAct k
+(guardCode ⌜Gtmpl⌝ (pSearch k ⌜Gtmpl⌝ a p q) opp a')` for EVERY top-level search node —
+`Dupoc_always_defects`, `Cupod_always_cooperates`. `red_cell` was true, but for a reason
+unrelated to symmetry: the model was degenerate (no bounded search can ever succeed). This
+is Critch's assumption (b) — a number `k` must be written in `O(lg k)` characters, so that
+an agent's own source, which contains `k`, fits inside budget `k` — and `Length.lean`'s
+claim that (b) is "irrelevant to T1/T2" was wrong. FIX (M3 prerequisite, in progress):
+describe programs by BINARY numeral TERMS `bnum n` (`𝟎`, `𝟏`, `𝟐·t`, `𝟐·t+𝟏` along the bits
+of `n`, length `O(‖n‖)`), a Σ₁ StrongFinite fixpoint like `relabel`, with a meta twin
+`bnumT`, code equation `⌜bnumT n⌝ = bnum n`, truth `val (bnumT n) = n`; only `descVec`
+(Guard.lean) and `dnumT` (Template.lean) change — the length measure, properness and the
+symmetry layer are untouched, and the honest symbol count stays a character count.
+`Vacuity.lean` is retired for `Fit.lean`: `guard_fits : ∃ K, ∀ k ≥ K, flen (guardSentence
+(Dupoc k) (Cupod k) a) ≤ k` — for all large budgets the guard fits (its constant is the bit
+length of `⌜Gtmpl⌝` under Cantor pairing: large, but a constant). Non-vacuity of T1 is then
+a theorem; whether a guard is actually PROVABLE within `k` is T3's question.
+
 **Left open by design (generalise next):** `pSim` semantics (program substitution); general
 guard templates (any Σ₁ formula in the seven description variables, swap-invariant); an
 `Option`-valued meta evaluator `evalN` and its agreement with the engine's `Dynamics.eval`
@@ -264,6 +284,141 @@ so Dupoc plays C — contradiction. Both fail ⇒ (D, C).
 No Löb, no cost constants, no floor. Gate: `outcome_arith (CupodBot k) (DupocBot k) = some (.C, .D)`
 mirrored as `(DupocBot, CupodBot) = (D, C)`, for every `k` with enough fuel, `#print axioms`
 = Lean's three. **This is T1 and the paper's headline for the arithmetized layer.**
+
+**M3 status (2026-09-10 night, session wrap-up).** Started on the user's go-ahead. State:
+1. ENGINE BUMP DONE: worktree `~/wt/osgt-arith-m3`, branch `colomban-arith-m3` (off
+   `colomban-arith-s` @2a16615), commit 5b0dc7b: `engine/` on Lean v4.33.1, mathlib
+   0df444a360ea (= arith's), `PrisonersDilemma` + `OutcomeCheck` green, proof-only repairs
+   (127 `simpa … using!`, `dsimp +instances` for stale `Decidable` instances, `clear_value`
+   for an omega recursion-depth regression, `simpa [-forall_const]` for typeclass timeouts).
+   `Metatheory` was already broken before the bump (docstring above imports; the T31 chain
+   lacks tvote/sys arms — TAUBOTS.md §4 debt). App caveat: LeanInteract's REPL fork has no
+   v4.33.1 tag yet — the proof agent's fast checker will fall back to `lake env lean`.
+2. WORKSPACE WIRING DONE (same worktree, commit aededc4, arith builds against the engine in
+   3.5 s with zero engine rebuild; only `Formula` needs the `PD.` prefix): `arith/lakefile.toml`
+   gains `[[require]] name = "PrisonersDilemma" path = "../engine"`, `arith/.lake ->
+   ~/wt/arith-lake-m3` (packages shared with `~/wt/arith-lake`, own `build/`), smoke module
+   `arith/ArithS/EngineBridge.lean` (`#check @PD.Pf`, `@ArithS.red_cell`). Next: MERGE `colomban-arith-s` (Vacuity/Fit commits) into `colomban-arith-m3`.
+3. VACUITY FIXED (binary descriptions LANDED on `colomban-arith-s`: `Bnum.lean` 9a66980,
+   `Guard.lean`/`Template.lean` binary `descVec`/`dnumT`, `ProofLength.lean`; package green
+   through `Fit`). `Fit.lean` LANDED: `guard_fits : ∃ K, ∀ k ≥ K, ∀ a ≤ 1, flen (guardSentence
+   (Dupoc k) (Cupod k) a) ≤ k` (and the swapped `guard_fits'`) — T1 is non-vacuous. TRAP
+   (cost a day): a theorem stated with CLOSED constants built from the template (`10 * cG₀`,
+   `Nat.size cP`) makes Lean's `Nat` defeq machinery try to EVALUATE `flen Gtmpl`/`encode
+   Gtmpl` on the giant DSL term — hours, then a kernel "deterministic timeout";
+   `@[irreducible]` does not stop the kernel. Cure: package such constants EXISTENTIALLY
+   (`exists_guard_const`, `exists_size_const`) and do all arithmetic over variables. Also:
+   `lake env lean` output is block-buffered when redirected, so a partial log shows nothing;
+   bisect slow files by truncation with `timeout`. Original note: `Vacuity.lean` (470ee43, see the paragraph above) proves the
+   unary-numeral degeneracy; an agent is replacing it by `Bnum.lean` (binary numeral term
+   codes, Σ₁ fixpoint) + binary `descVec`/`dnumT` + `Fit.lean` (`guard_fits`). If that work
+   is not on `colomban-arith-s` when you read this, redo it from the plan in `Notes/M3_TRANSFER/BRIEF.md` §2.
+3b. `pSim` SEMANTICS IN FLIGHT (worktree, branch `colomban-arith-m3`, files Prog/Eval/EvalN +
+   new `Subst.lean`): `psubst me opp p` one-shot as in the engine (`pBot` frozen; a `pSearch`
+   node's TEMPLATE is instantiated with the outer `me`/`opp` descriptions, keeping the action
+   slot `#6` free, so `guardCode (gsubst me opp g) me' opp' a = guardCode g me opp a` — the
+   engine's "guards inside a simulated program refer to the outer players"), the evaluator
+   clause `EvalGraph n me opp (pSim p q) a ↔ EvalGraph n' p' q' p' a`, and τ generalised to act
+   on templates (`relabelTemplate u w`: symbol code `2+a ↦ 2+relabelAct a u w`), so that
+   `swapcode (psubst me opp p) = psubst (swapcode me) (swapcode opp) (swapcode p)`. If this is
+   not on the branch when you read this, redo it from this paragraph.
+
+4. THE TRANSFER THEOREM — DESIGN, NOT YET DECIDED. The reading (`M3_TRANSFER/READ_*.md`) and
+   the brief (`M3_TRANSFER/BRIEF.md`, §3 and §5) establish: the engine's `.box` is interpreted
+   by `Pf` ITSELF, so `boxIntro` is sound by fiat and no length bookkeeping exists; a
+   same-budget "Pf k φ → PA ⊢ tr φ" over all 33 rules is equivalent to bounded HBL (M4):
+   the budget-erased reading breaks `search_f` (Gödel II), the budget-keeping reading breaks
+   `boxIntro` (danger 2), and a hybrid breaks `searchBranch`. Foundation at the pinned commit
+   has NO modal realization package but keeps `ProvabilityAbstraction` (D1/D2/D3,
+   formalized Löb, Diagonalization) and full r.e./computable representability
+   (`rePred_weak_representation`, `codeOfComputablePred_provable(_neg)`). Honest M3
+   candidates (to be settled by the judge panel whose first proposal is saved as
+   `M3_TRANSFER/PROPOSAL_faithful.md`): (i) budget-erased soundness of the modal-
+   propositional core with atoms as hypotheses ("S's Löbian core is a fragment of GL over
+   PA"); (ii) same-budget PA-soundness of the agent layer for the arith evaluator, relative
+   to the consulted bounded box facts (Δ₁/Σ₁-completeness per arm); (iii) the engine's
+   `BoundedGL` interface instantiated for PA-S with the bounded-HBL fields as NAMED
+   hypotheses; (iv) `Pf k φ ↔ PA ⊢ ρ(k,⌜φ⌝)` by representability (cheap, but it says "PA
+   verifies S", not "S ⊆ PA"). Recommended combination: (i) + (ii) + (iii), stated
+   with explicit boundaries; T2's paper sentence becomes "S is sound relative to PA up to
+   Critch's assumption (d), which is stated as the one open hypothesis".
+
+**M3 DESIGN DECISION (2026-09-10, after the panel's surviving proposal
+`M3_TRANSFER/PROPOSAL_faithful.md`; the judge/synthesis stages were killed by a rate limit
+and are NOT needed — the decision below is the orchestrator's, on the evidence in
+`M3_TRANSFER/BRIEF.md` §3/§5 and the proposal's §0/§3).** T2 is REFORMULATED as three
+theorems that locate exactly where the engine's `Pf` and PA-`S` agree and where they cannot:
+
+* **T2-NEG (impossibility, unconditional).** No budget-keeping transfer exists at ANY
+  inflation `e`: `Pf 1 (.plays (.const C) q C)` holds for every program `q`
+  (`AtomProvable.mk` charges evaluation STEPS `n ≤ k`, never the conclusion's size —
+  `pf_size_or_atom`'s exception), while any arithmetical realization of that atom writes
+  `⌜TR q⌝` and a PA proof is at least as long as its conclusion (`flen_le_mlen`), so its
+  length is unbounded in `q`. Second departure: `search_t` cites a budget-`k` proof at cost
+  `numCost k = log₂ k + 1` (a budget DROP; `atom_search_t_top`). These are the two places
+  where the engine's transcript-cost model presupposes Critch's (b)/(d) instead of
+  counting characters. Deliverable: `theorem no_budget_keeping_transfer (e : ℕ → ℕ) :
+  ∃ k φ, PD.Pf k φ ∧ ¬LenProvable fbound (e k) 𝗣𝗔 ⌜tr φ⌝` (witness `k = 1`,
+  `q = botIter (e 1 + 8) (.const C)`), stated parametrically in the realization
+  (hypothesis: `flen (tr (.plays p q a)) ≥ ‖⌜TR q⌝‖`).
+* **T2-AGENT (same budgets, relative to the consulted box facts).** Every engine evaluation
+  certificate is a run of the arithmetized evaluator: `PlaysProof me opp body a n → GuardAgree
+  → ∃ N, EvalGraph N ⌜TR me⌝ ⌜TR opp⌝ ⌜TR body⌝ a`, where `GuardAgree` says that at every
+  `.search k ψ` node the engine's `Pf k` verdict and `LenProvableV 𝗣𝗔 k ⌜tr (ψ.subst me opp)⌝`
+  agree; unconditional for search-free programs. Needs the full-Prog evaluator (`pSim` via
+  `psubst`, then `tvote`/`sys`/`selfIdx` or a `noTau` side condition closed under subst),
+  the code translation `TR : Prog → ℕ`, and the substitution code equation
+  `psubst ⌜me⌝ ⌜opp⌝ ⌜p⌝ = ⌜p.subst me opp⌝`. The box agreement IS bounded D1 — it is a
+  hypothesis, named, never an axiom.
+* **T2-CORE (budget-erased soundness of the modal-propositional core).** A `PfCore Γ φ`
+  mirror of the 16 modal/propositional rules (`boxIntro axK axKf box4 boxMono diagF diagB
+  atomBoxImpl implRefl implK implS mp implTrans weakenImpl impS2 contrapose negElim`) with
+  atom hypotheses `Γ`, and `PfCore Γ φ → 𝗣𝗔 + tr⁰ Γ ⊢ tr⁰ φ` for `tr⁰` sending `.box k ψ` to
+  Foundation's `provabilityPred 𝗣𝗔` and `.diag` to `fixedpoint`, discharged by
+  `ProvabilityAbstraction` (D1/D2/D3, `formalized_löb_theorem`, `Diagonalization`) — "S's
+  Löbian core is a fragment of GL over PA". (`atomBoxImpl` needs the atom realization to be
+  Σ₁: `provable_sigma_one_complete`.)
+* **T2-COND (the precise M4 obligation, optional).** `PALength e` with fields bounded
+  D1/D2/D3/diag/cut/mono and `transfer_bounded` on the size-gated fragment; only `cut` and
+  `mono` are provable now. State it as the `BoundedGL` instance's missing fields; do not
+  put it in the paper as a result.
+
+Paper sentence: "`S` is sound relative to PA wherever a character count exists (T2-CORE for
+the logic, T2-AGENT for the agents); where the engine charges evaluation steps and cheap
+citations instead of characters, no PA proof length can match, and we prove it (T2-NEG);
+budget-keeping soundness is therefore exactly Critch's assumption (d), left as M4." The
+budget-erased world is Barász/Berns' unbounded modal agents — T2-CORE reuses it, our
+novelty stays the BOUNDED `S`. Engine-side cost-model finding for the user: charging
+`AtomProvable.mk` by `n + |φ| ≤ k` and `search_t` by `n + k` would make a budget-keeping
+transfer plausible but breaks every cheap-citation cell (`(2k+64)` staggers,
+`outcome_DupocBot_vs_CooperateBot` at pad `atom_cost 1`) — a design decision, not M3.
+IMPLEMENTATION SEQUENCE (decided 2026-09-10; each step is one agent-sized task, committed and
+recorded here before the next starts):
+ (a) TEMPLATE RE-SHAPING: `pSearch k g p q` with `g` a SIX-variable template code
+     (me-triple `x₁ u₁ w₁`, opp-triple `x₂ u₂ w₂`; no action slot), `guardCode g me opp :=
+     subst LAct (descVec6 me opp) g`; τ acts on templates: `relabelTemplate u w` maps function
+     symbol code `2+a ↦ 2+relabelAct a u w` (identity for `(0,1)`, the `swap` code image for
+     `(1,0)`), and `relabel u w (pSearch k g p q) = pSearch k (relabelTemplate u w g) …`. The
+     restricted templates become the two closed instances `GtmplA a := gtmpl ⇜ [#0..#5, c_a]`
+     (so `relabelTemplate 1 0 (GtmplA 0) = GtmplA 1`), `Dupoc k = pSearch k (GtmplA 0) (pConst 0)
+     (pConst 1)`, `Cupod k = swapcode (Dupoc k) = pSearch k (GtmplA 1) (pConst 1) (pConst 0)`;
+     `red_cell` re-proved (same argument). Guard/Template/RedCell/Fit change; Eval's search
+     clause loses the action argument.
+ (b) `psubst`/`pSim` (3b above, now with `gsubst me opp g := subst (descVec6 me opp) g` closed —
+     no free slot to keep), evaluator clause, determinism/mono, τ-equivariance.
+ (c) `TR : PD.Prog → ℕ` and `tcode : PD.Formula → template code` (the general template
+     builder: `.plays p q a ↦ ∃ n, EvalGraph n (pc p) (pc q) (pc p) a` with the program terms
+     built by Σ₁ graphs from the description triples, `.box k ψ ↦ ∃ g', substsGraph g'
+     (descVec6 me opp) ⌜tcode ψ⌝ ∧ lenProvableV k g'`, `.eq`, `.diag` via fixedpoint codes),
+     the code equations `TR (p.subst me opp) = psubst (TR me) (TR opp) (TR p)` and
+     `⌜tr (ψ.subst me opp)⌝ = guardCode (tcode ψ) (TR me) (TR opp)`.
+ (d) T2-NEG (`ProofLength.lean` has `flen_le_of_lenProvable`; add `TR`'s code lower bound
+     for `.bot`-iterates and the engine example `Pf 1 (.plays (.const C) q C)`).
+ (e) T2-AGENT for the const/self/opp/bot/sim/ite/search fragment (`noTau` side condition),
+     then tvote/sys if time permits.  (f) T2-CORE via `ProvabilityAbstraction`.
+Order of work: (1) merge `colomban-arith-s` (binary descriptions, `Fit.lean`) into
+`colomban-arith-m3`; (2) `pSim`/`psubst`/`relabelTemplate` (3b); (3) T2-NEG (small);
+(4) `TR` + substitution code equation + T2-AGENT for the sim/search fragment; (5) T2-CORE.
 
 **M3 — unbounded soundness of `Pf` relative to PA.** Engine bumped; `ArithS` requires
 `PrisonersDilemma`. Theorem `Pf k φ → PA ⊢ tr φ` by `Pf.induct`: modal arms from
