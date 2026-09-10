@@ -631,7 +631,8 @@ recorded here before the next starts):
      descriptions re-value programs through the same constants, so the sentence is
      action-symmetric and NOT an `emb`-image) — a proof would reason generically in the two
      constants; (ii) `GuardAgreeF` from engine soundness would need the CONVERSE of T2-AGENT
-     (`EvalGraph → eval`), not attempted; (iii) tvote/sys stay outside (code `0`). Proof-craft
+     (`EvalGraph → eval`) — DONE, the CONVERSE paragraph below; (iii) tvote/sys stay outside
+     (code `0`). Proof-craft
      traps: `simp` never rewrites inside the INSTANCE-IMPLICIT structure argument of
      `Semiformula.Eval`, so `stdAct_lMap_emb` must be applied by `rw` in standalone
      evaluation lemmas (`eval_relDesc`/`eval_evalG`, using `relabel_defined.df v` /
@@ -641,6 +642,38 @@ recorded here before the next starts):
      `Pf_sound` lives in `PD.BaseTheorems` (import `PrisonersDilemma.Base.Soundness`;
      `hasSearch_subst` in `Base.AtomCerts`); a `variable {me opp}` clashes with a lemma named
      `opp` in the same namespace; `Bool.true_ne_false` does not exist (`Bool.noConfusion`).
+     **THE CONVERSE — DONE 2026-09-10 (`ArithS/AgentConverse.lean`, imported after `Agent`;
+     `lake build ArithS` green, 3203 jobs; eight new census lines in `Audit.lean`, all three
+     standard axioms).** ONE two-sided oracle `GuardAgree := ∀ φ me opp k, fragF φ → Proper me →
+     Proper opp → modestP me → modestP opp → (PD.Pf k (φ.subst me opp) ↔ LenProvableV TAct k
+     (guardOf φ me opp))` — restricted to exactly the guards a modest match consults, the WEAKEST
+     hypothesis both directions need (`GuardAgree.of_forall` from the unrestricted `Iff`,
+     `GuardAgree.of_T` from `GuardAgreeT` + its converse). `GuardAgree.toT`/`.toF`: the `Iff`
+     subsumes the modest instances of BOTH T2-AGENT hypotheses, `F` by engine soundness
+     (`not_interp_of_pf_neg` + `Pf_sound` on the guard the `Iff` hands back). THEOREMS:
+     `evalGraph_of_eval` (`PD.eval n me opp body = some a → ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜body⌝ a`,
+     induction on the ENGINE fuel unfolding `PD.eval` clause by clause, mirroring
+     `eval_mono`'s case skeleton), `eval_of_evalGraph` (the converse, induction on the ARITH fuel
+     through `EvalN`'s inversion lemmas), `eval_iff_evalGraph` / `play_iff_evalGraph` /
+     `outcome_iff_evalGraph` (the `outcome` form via `outcome_eq_some_iff` + `eval_mono_le` at
+     `max`), `playsProof_evalGraph_of_guardAgree` (T2-AGENT re-derived through
+     `playsProof_sound`), `plays_interp_iff` (`(.plays me opp a).interp ↔ ℕ↓[LAct] ⊧ trAt me' opp'
+     (.plays me opp a)` for closed modest players, via `models_trAt_plays`). PROOF-CRAFT: (1) the
+     converse's core is stated for an ARBITRARY result code `r` (`∃ a, r = actCode a ∧ ∃ n, eval n
+     … = some a`, `eval_of_evalGraph_core`) — the arithmetized `.ite` clause returns the guard's
+     result as a bare natural, and the IH must first learn it is an action code; with an
+     `actCode a`-shaped statement the `.ite` case is stuck. (2) NO `pcode` injectivity: induct on
+     the fuel with the engine program in the frame, rewrite `pcode body` by its `@[simp]` equations
+     and apply the inversion lemma of that shape; the `.sim` case is `← pcode_subst` on both
+     players (the frame stays inside `{me, opp, p, q}` by `Inv.sim`). (3) `guardCode (tcode φ)
+     (pcode me) (pcode opp) = guardOf φ me opp` is `rfl` — state it as a lemma so `rw` after
+     `search_iff` lands on the oracle's spelling. (4) The engine's `.ite` `do` block: `rw [PD.eval,
+     h₁]; simp only [bind, Option.bind]; rw [if_pos (beq_of_actCode_eq e)]` — `BEq` on `Action`
+     is bridged by `cases <;> first | rfl | exact absurd …` (`beq_of_actCode_eq`,
+     `beq_false_of_actCode_ne`; `if_neg` wants `¬ (r == c) = true`, take
+     `Bool.eq_false_iff.mp`). (5) The `.search` `if` on a `Bool` is `if proofSearch … = true`;
+     `proofSearch_spec` + the `Iff` in either direction; the else-branch needs only the
+     contrapositive of `mp`, never a refutation.
  (f) T2-CORE via `ProvabilityAbstraction`.
 Order of work: (1) merge `colomban-arith-s` (binary descriptions, `Fit.lean`) into
 `colomban-arith-m3`; (2) `pSim`/`psubst`/`relabelTemplate` (3b); (3) T2-NEG (small);
