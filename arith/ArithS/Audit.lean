@@ -1,6 +1,7 @@
 import ArithS.Agent
 import ArithS.AgentConverse
 import ArithS.Core.Sound
+import ArithS.Det
 import ArithS.Inst
 
 /-!
@@ -66,5 +67,12 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms pcode_subst
 #print axioms tcode_subst
 #print axioms swapcode_pcode
+
+-- Det: determinism in every model of IΣ₁; the negative atom; the atomNeg leaf of T2-CORE.
+#print axioms EvalGraph.unique_V'
+#print axioms models_trAt_plays_V
+#print axioms pa_proves_neg_trAt_inst
+#print axioms leaf_atomNeg_sound
+#print axioms leaf_atomNeg_sound_searchFree
 
 end ArithS
