@@ -382,6 +382,30 @@ novelty stays the BOUNDED `S`. Engine-side cost-model finding for the user: char
 `AtomProvable.mk` by `n + |φ| ≤ k` and `search_t` by `n + k` would make a budget-keeping
 transfer plausible but breaks every cheap-citation cell (`(2k+64)` staggers,
 `outcome_DupocBot_vs_CooperateBot` at pad `atom_cost 1`) — a design decision, not M3.
+IMPLEMENTATION SEQUENCE (decided 2026-09-10; each step is one agent-sized task, committed and
+recorded here before the next starts):
+ (a) TEMPLATE RE-SHAPING: `pSearch k g p q` with `g` a SIX-variable template code
+     (me-triple `x₁ u₁ w₁`, opp-triple `x₂ u₂ w₂`; no action slot), `guardCode g me opp :=
+     subst LAct (descVec6 me opp) g`; τ acts on templates: `relabelTemplate u w` maps function
+     symbol code `2+a ↦ 2+relabelAct a u w` (identity for `(0,1)`, the `swap` code image for
+     `(1,0)`), and `relabel u w (pSearch k g p q) = pSearch k (relabelTemplate u w g) …`. The
+     restricted templates become the two closed instances `GtmplA a := gtmpl ⇜ [#0..#5, c_a]`
+     (so `relabelTemplate 1 0 (GtmplA 0) = GtmplA 1`), `Dupoc k = pSearch k (GtmplA 0) (pConst 0)
+     (pConst 1)`, `Cupod k = swapcode (Dupoc k) = pSearch k (GtmplA 1) (pConst 1) (pConst 0)`;
+     `red_cell` re-proved (same argument). Guard/Template/RedCell/Fit change; Eval's search
+     clause loses the action argument.
+ (b) `psubst`/`pSim` (3b above, now with `gsubst me opp g := subst (descVec6 me opp) g` closed —
+     no free slot to keep), evaluator clause, determinism/mono, τ-equivariance.
+ (c) `TR : PD.Prog → ℕ` and `tcode : PD.Formula → template code` (the general template
+     builder: `.plays p q a ↦ ∃ n, EvalGraph n (pc p) (pc q) (pc p) a` with the program terms
+     built by Σ₁ graphs from the description triples, `.box k ψ ↦ ∃ g', substsGraph g'
+     (descVec6 me opp) ⌜tcode ψ⌝ ∧ lenProvableV k g'`, `.eq`, `.diag` via fixedpoint codes),
+     the code equations `TR (p.subst me opp) = psubst (TR me) (TR opp) (TR p)` and
+     `⌜tr (ψ.subst me opp)⌝ = guardCode (tcode ψ) (TR me) (TR opp)`.
+ (d) T2-NEG (`ProofLength.lean` has `flen_le_of_lenProvable`; add `TR`'s code lower bound
+     for `.bot`-iterates and the engine example `Pf 1 (.plays (.const C) q C)`).
+ (e) T2-AGENT for the const/self/opp/bot/sim/ite/search fragment (`noTau` side condition),
+     then tvote/sys if time permits.  (f) T2-CORE via `ProvabilityAbstraction`.
 Order of work: (1) merge `colomban-arith-s` (binary descriptions, `Fit.lean`) into
 `colomban-arith-m3`; (2) `pSim`/`psubst`/`relabelTemplate` (3b); (3) T2-NEG (small);
 (4) `TR` + substitution code equation + T2-AGENT for the sim/search fragment; (5) T2-CORE.
