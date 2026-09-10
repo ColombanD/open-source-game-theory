@@ -313,8 +313,7 @@ mirrored as `(DupocBot, CupodBot) = (D, C)`, for every `k` with enough fuel, `#p
    unary-numeral degeneracy; an agent is replacing it by `Bnum.lean` (binary numeral term
    codes, Σ₁ fixpoint) + binary `descVec`/`dnumT` + `Fit.lean` (`guard_fits`). If that work
    is not on `colomban-arith-s` when you read this, redo it from the plan in `Notes/M3_TRANSFER/BRIEF.md` §2.
-3b. `pSim` SEMANTICS IN FLIGHT (worktree, branch `colomban-arith-m3`, files Prog/Eval/EvalN +
-   new `Subst.lean`): `psubst me opp p` one-shot as in the engine (`pBot` frozen; a `pSearch`
+3b. `pSim` SEMANTICS — LANDED 2026-09-10 (see step (b) below; the paragraph is the original brief): `psubst me opp p` one-shot as in the engine (`pBot` frozen; a `pSearch`
    node's TEMPLATE is instantiated with the outer `me`/`opp` descriptions, keeping the action
    slot `#6` free, so `guardCode (gsubst me opp g) me' opp' a = guardCode g me opp a` — the
    engine's "guards inside a simulated program refer to the outer players"), the evaluator
@@ -455,6 +454,50 @@ recorded here before the next starts):
      fails — call the lemmas explicitly.
  (b) `psubst`/`pSim` (3b above, now with `gsubst me opp g := subst (descVec6 me opp) g` closed —
      no free slot to keep), evaluator clause, determinism/mono, τ-equivariance.
+     **DONE 2026-09-10 (branch `colomban-arith-m3`, commits fd45457 + 40eae59; `lake build
+     ArithS` green, `#print axioms red_cell`/`guard_fits`/`swapcode_psubst`/`guardCode_gsubst` =
+     Lean's three).** New module `ArithS/Subst.lean` (between `Guard` and `Eval`): `gsubst me
+     opp g` = `guardCode g me opp` on templates (`IsSemiformula LAct 6 g`, `gsubst_of_template`)
+     and the IDENTITY on every other code — ONE deliberate deviation from the brief, forced by
+     τ-equivariance (trap (i) below); `guardCode_gsubst : IsSemiformula LAct 6 g → guardCode
+     (gsubst me opp g) me' opp' = gsubst me opp g` (the instantiated template is a SENTENCE:
+     `descVec_semitermVec`, `isSemiformula_guardCode`, and the new `subst_eq_self_of_le` — a
+     formula with `n` free variables is fixed by any LONGER vector whose first `n` entries are
+     the variables; Foundation's `subst_eq_self` needs exactly `n`); Σ₁ graph `gsubstGraph`.
+     `psubst me opp p`: Δ₁ fixpoint with parameters `me opp`, **StrongFinite** (the referenced
+     pairs `⟪p, p'⟫` are sub-pairs, as for `Relabel` — the brief's "Finite if gsubst grows codes"
+     was too cautious), `psubstDef : 𝚺₁.Semisentence 4`, `𝚺₁-Function₃`, equations
+     `psubst_const/self/opp/bot/sim/ite/search`, `psubst_of_not_shape`. τ-equivariance on EVERY
+     code: `swapcode_psubst : swapcode (psubst me opp p) = psubst (swapcode me) (swapcode opp)
+     (swapcode p)`, from `relabelTemplate_subst` (`relabelTemplate u w (subst v p) = subst
+     (termRelabelVec u w n v) (relabelTemplate u w p)` for `u, w ∈ {0,1}`, `IsSemiformula n p`,
+     `IsSemitermVec n m v` — term/formula recursions as `substs_substs`, plus
+     `termRelabelVec_qVec`), the code-level description swap `termRelabelVec_descVec :
+     termRelabelVec 1 0 6 (descVec me opp) = descVec (swapcode me) (swapcode opp)`
+     (`termRelabel_dU/dW`, `termRelabel_bnum` via `termRelabel_of_LOR`, `dnum_swapcode` — the
+     `dnum_*` helpers moved here from `Template.lean`) and `relabelTemplate_gsubst`. `Eval.lean`:
+     the sim clause `⟪n, psubst me opp p, psubst me opp q, psubst me opp p, a⟫ ∈ C` in `Phi` and
+     both blueprint polarities (`∃ sp, !psubstDef sp me opp p' ∧ …` / `∀ sp, … →`), `Finite`
+     kept, `case_iff` extended; `EvalN.lean`: real `sim_iff`, `unique`/`mono` extended.
+     `SimTest.lean`: `Mirror := pSim pOpp pSelf`, `mirror_vs_const : EvalGraph 2 Mirror (pConst a)
+     Mirror a`, `mirror_vs_mirror : ∀ n a, ¬EvalGraph n Mirror Mirror Mirror a` (the engine's
+     `none`), `swapcode_psubst_Mirror`, `sim_search_outer_guard` (a search node under `sim`
+     consults `guardCode g me opp` of the OUTER frame). Proof-craft traps: (i) with `gsubst :=
+     guardCode` on ALL codes the τ-equivariance is FALSE — `subst` truncates out-of-range
+     variables to `0` and `relabelTemplate` fixes the resulting non-formula, so on `g = ^rel 2 R
+     ?[c_C, #7]` (seven free variables) `relabelTemplate 1 0 (subst v g) = ^rel 2 R ?[c_C, 0]`
+     but `subst v' (relabelTemplate 1 0 g) = ^rel 2 R ?[c_D, 0]`; the `IsSemiformula LAct 6`
+     guard is what makes the statement unconditional (`isSemiformula_relabelTemplate_swap_iff`);
+     (ii) `bnum_semiterm`/`numeral_semiterm` are stated over `ℒₒᵣ` — transport with
+     `IsSemiterm.LAct_of_LOR` (`isFunc_LOR` from `func_def_LOR`; `LAct` keeps the `ℒₒᵣ` symbol
+     codes); (iii) inside a `have … (x ∷ 0)` the `0` elaborates at `ℕ` (`Adjoin V ℕ` failure) —
+     write `(0 : V)`, and never leave `bnum _` with a hole inside a `.isUTerm` chain; (iv)
+     numerals: `(6 : V) = 0+1+1+1+1+1+1`, `(2:V)+1 = 3`, `(0:V) ≠ 2` etc. are all `norm_num` —
+     rewrite `six_eq` before `IsSemitermVec.adjoin`/`termRelabelVec_cons` chains; (v)
+     `add_le_add_right` on `V` yields `1 + n ≤ 1 + m` — use `add_le_add h (le_refl 1)`; (vi)
+     names of the form `IsSemiformula.foo` declared in `ArithS` are not reachable by dot
+     notation on Foundation's `IsSemiformula` (trap (vi) of step (a)) — call them, or name them
+     `isSemiformula_foo`.
  (c) `TR : PD.Prog → ℕ` and `tcode : PD.Formula → template code` (the general template
      builder: `.plays p q a ↦ ∃ n, EvalGraph n (pc p) (pc q) (pc p) a` with the program terms
      built by Σ₁ graphs from the description triples, `.box k ψ ↦ ∃ g', substsGraph g'
