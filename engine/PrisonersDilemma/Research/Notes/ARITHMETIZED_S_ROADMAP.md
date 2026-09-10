@@ -586,7 +586,62 @@ recorded here before the next starts):
      bound `hB` stated with the goal's exact `Rewriting.app Rew.emb` spelling (`Rewriting.emb`
      is an abbrev but a different atom to omega) — ascribe the type and `exact` the lemma.
  (e) T2-AGENT for the const/self/opp/bot/sim/ite/search fragment (`noTau` side condition),
-     then tvote/sys if time permits.  (f) T2-CORE via `ProvabilityAbstraction`.
+     then tvote/sys if time permits.
+     **DONE 2026-09-10 (branch `colomban-arith-m3`; `lake build ArithS` green, 3201 jobs;
+     `#print axioms` of every headline theorem = Lean's three).** New module `ArithS/Agent.lean`
+     (imported after `Neg` in `ArithS.lean`). THE CONSULTED GUARD: `guardOf φ me opp :=
+     guardCode (tcode φ) (pcode me) (pcode opp)` (= `⌜trAt me opp φ⌝`, `guardOf_eq_quote_trAt`;
+     on the fragment = `tcode (φ.subst me opp)`, the template code of the CLOSED instantiation,
+     `guardOf_eq_tcode_subst` from `tcode_subst` + `gsubst_of_template`). THE ORACLE HYPOTHESES
+     (bounded D1 on the consulted guards — named, never an axiom; T2-NEG says no budget-keeping
+     transfer exists in general, so this is exactly where Critch's (d) enters):
+     `GuardAgreeT := ∀ φ me opp k, PD.Pf k (φ.subst me opp) → LenProvableV TAct k (guardOf φ me opp)`
+     and `GuardAgreeF := ∀ φ me opp k m, PD.Pf m (.neg (φ.subst me opp)) → ¬LenProvableV TAct k
+     (guardOf φ me opp)`. One-sided facts proved: `models_trAt_of_lenProvableV` (a found
+     arithmetized guard is TRUE in ℕ — `lenProvableV_nat`, `provable_iff_provable`,
+     `models_of_provable models_TAct`) and `not_interp_of_pf_neg` (an engine refutation
+     falsifies the ENGINE reading `Formula.interp`, via `PD.BaseTheorems.Pf_sound`) — two
+     different sentences (`play` vs `EvalGraph`), so `GuardAgreeF` is NOT derived.
+     THE THEOREM: `playsProof_evalGraph (hag : GuardAgreeT) (hneg : GuardAgreeF) (h : PD.PlaysProof
+     me opp body a n) (hme : Proper me) (hopp : Proper opp) (modestP me) (modestP opp) (modestP body) :
+     ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode body) (actCode a)`, by `PD.PlaysProof.induct`
+     with the invariant IN THE MOTIVE (`Inv sf me opp body := Proper me ∧ Proper opp ∧ modestP
+     me ∧ modestP opp ∧ modestP body ∧ (sf = true → all three `hasSearch = false`)`; the core
+     `playsProof_evalGraph_core sf (hag : sf = false → …) (hneg : sf = false → …)` runs ONE
+     induction for both headline versions). Arms: `const` at fuel 1; `self/opp/bot` at `N+1`
+     through the inversion lemmas; `sim` through `pcode_subst` (both players) and `sim_iff`;
+     `ite_t/ite_f` at `max N₁ N₂ + 1` via `mono_le` (`actCode_eq_of_beq`/`actCode_ne_of_beq_false`
+     bridge the engine's derived `BEq` — `cases <;> decide`); `search_t/search_f` cite the oracle on
+     the closed guard; the five vote arms and `sysStep` are `False` from modesty.
+     `playsProof_evalGraph_searchFree` (same, `me/opp/body.hasSearch = false`, NO oracle),
+     `atomProvable_evalGraph`/`_searchFree` (the `AtomProvable k (.plays me opp a)` forms —
+     `cases` on the mutual-block inductive works), and THE TRUTH EQUATION `models_trAt_plays
+     (me' opp' me opp a) : closedP me → closedP opp → (ℕ↓[LAct] ⊧ trAt me' opp' (.plays me opp a)
+     ↔ ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode me) (actCode a))` (`eval_relDesc`,
+     `eval_evalG`, `eval_closedDesc : Eval b (closedDesc c) ↔ b 0 = c` via `relabel_val_desc`).
+     THE FRAGMENT IS MODEST, NOT `fragP`: the brief's `fragP_subst : fragP p → fragP me → fragP opp
+     → fragP (p.subst me opp)` is FALSE — `.self.subst me opp = me` must be `atomicP`, i.e.
+     `closedP me`, and NO searcher is `closedP` (its template names `.self`/`.opp`; `closedP
+     (DupocBot k) = false`). `modestP` = `fragP` with every `.sim` argument `atomicP` (placeholder
+     or closed) — the engine's own T43 modesty, `modestP (DupocBot k) = true` by `rfl` — and then
+     the `.sim` step's new frame is drawn from `{me, opp, p, q}` (`Inv.sim`), so no substitution
+     closure lemma is needed at all. GAPS: (i) TRUTH → `TAct ⊢ trAt …` (Σ₁-completeness) is NOT
+     derived: Foundation's `sigma_one_completeness` is over `ℒₒᵣ`, `TAct` is over `LAct`, and the
+     realized sentence names `c_C`/`c_D`, which `TAct` leaves uninterpreted (only `c_C ≠ c_D`; the
+     descriptions re-value programs through the same constants, so the sentence is
+     action-symmetric and NOT an `emb`-image) — a proof would reason generically in the two
+     constants; (ii) `GuardAgreeF` from engine soundness would need the CONVERSE of T2-AGENT
+     (`EvalGraph → eval`), not attempted; (iii) tvote/sys stay outside (code `0`). Proof-craft
+     traps: `simp` never rewrites inside the INSTANCE-IMPLICIT structure argument of
+     `Semiformula.Eval`, so `stdAct_lMap_emb` must be applied by `rw` in standalone
+     evaluation lemmas (`eval_relDesc`/`eval_evalG`, using `relabel_defined.df v` /
+     `evalGraph_defined.df v`) and those used under binders; `⋏` on `Prop` is
+     `LogicalConnective.Prop.and_eq`; `stdAct.rel op(=) v ↔ v 0 = v 1` is `Iff.rfl`; literal
+     `![…] i` indices need `Matrix.cons_val_two/three` AND `Matrix.cons_val_succ` together;
+     `Pf_sound` lives in `PD.BaseTheorems` (import `PrisonersDilemma.Base.Soundness`;
+     `hasSearch_subst` in `Base.AtomCerts`); a `variable {me opp}` clashes with a lemma named
+     `opp` in the same namespace; `Bool.true_ne_false` does not exist (`Bool.noConfusion`).
+ (f) T2-CORE via `ProvabilityAbstraction`.
 Order of work: (1) merge `colomban-arith-s` (binary descriptions, `Fit.lean`) into
 `colomban-arith-m3`; (2) `pSim`/`psubst`/`relabelTemplate` (3b); (3) T2-NEG (small);
 (4) `TR` + substitution code equation + T2-AGENT for the sim/search fragment; (5) T2-CORE.
