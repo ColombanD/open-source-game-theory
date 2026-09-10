@@ -26,6 +26,7 @@ import ArithS.Fit
 import ArithS.Code
 import ArithS.Neg
 import ArithS.Agent
+import ArithS.AgentConverse
 import ArithS.EngineBridge
 import ArithS.Core.Tr
 import ArithS.Core.Sound

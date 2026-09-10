@@ -1,4 +1,5 @@
 import ArithS.Agent
+import ArithS.AgentConverse
 import ArithS.Core.Sound
 
 /-!
@@ -37,6 +38,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms playsProof_evalGraph_searchFree
 #print axioms atomProvable_evalGraph
 #print axioms models_trAt_plays
+
+-- T2-AGENT converse: eval ↔ EvalGraph on modest programs under the two-sided oracle.
+#print axioms eval_of_evalGraph
+#print axioms evalGraph_of_eval
+#print axioms eval_iff_evalGraph
+#print axioms play_iff_evalGraph
+#print axioms outcome_iff_evalGraph
+#print axioms playsProof_evalGraph_of_guardAgree
+#print axioms plays_interp_iff
+#print axioms GuardAgree.toF
 
 -- Code translation: substitution code equations and τ on the search-bot fragment.
 #print axioms pcode_subst
