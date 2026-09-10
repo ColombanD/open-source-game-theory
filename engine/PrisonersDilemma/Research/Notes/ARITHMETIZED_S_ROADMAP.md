@@ -333,6 +333,59 @@ mirrored as `(DupocBot, CupodBot) = (D, C)`, for every `k` with enough fuel, `#p
    with explicit boundaries; T2's paper sentence becomes "S is sound relative to PA up to
    Critch's assumption (d), which is stated as the one open hypothesis".
 
+**M3 DESIGN DECISION (2026-09-10, after the panel's surviving proposal
+`M3_TRANSFER/PROPOSAL_faithful.md`; the judge/synthesis stages were killed by a rate limit
+and are NOT needed — the decision below is the orchestrator's, on the evidence in
+`M3_TRANSFER/BRIEF.md` §3/§5 and the proposal's §0/§3).** T2 is REFORMULATED as three
+theorems that locate exactly where the engine's `Pf` and PA-`S` agree and where they cannot:
+
+* **T2-NEG (impossibility, unconditional).** No budget-keeping transfer exists at ANY
+  inflation `e`: `Pf 1 (.plays (.const C) q C)` holds for every program `q`
+  (`AtomProvable.mk` charges evaluation STEPS `n ≤ k`, never the conclusion's size —
+  `pf_size_or_atom`'s exception), while any arithmetical realization of that atom writes
+  `⌜TR q⌝` and a PA proof is at least as long as its conclusion (`flen_le_mlen`), so its
+  length is unbounded in `q`. Second departure: `search_t` cites a budget-`k` proof at cost
+  `numCost k = log₂ k + 1` (a budget DROP; `atom_search_t_top`). These are the two places
+  where the engine's transcript-cost model presupposes Critch's (b)/(d) instead of
+  counting characters. Deliverable: `theorem no_budget_keeping_transfer (e : ℕ → ℕ) :
+  ∃ k φ, PD.Pf k φ ∧ ¬LenProvable fbound (e k) 𝗣𝗔 ⌜tr φ⌝` (witness `k = 1`,
+  `q = botIter (e 1 + 8) (.const C)`), stated parametrically in the realization
+  (hypothesis: `flen (tr (.plays p q a)) ≥ ‖⌜TR q⌝‖`).
+* **T2-AGENT (same budgets, relative to the consulted box facts).** Every engine evaluation
+  certificate is a run of the arithmetized evaluator: `PlaysProof me opp body a n → GuardAgree
+  → ∃ N, EvalGraph N ⌜TR me⌝ ⌜TR opp⌝ ⌜TR body⌝ a`, where `GuardAgree` says that at every
+  `.search k ψ` node the engine's `Pf k` verdict and `LenProvableV 𝗣𝗔 k ⌜tr (ψ.subst me opp)⌝`
+  agree; unconditional for search-free programs. Needs the full-Prog evaluator (`pSim` via
+  `psubst`, then `tvote`/`sys`/`selfIdx` or a `noTau` side condition closed under subst),
+  the code translation `TR : Prog → ℕ`, and the substitution code equation
+  `psubst ⌜me⌝ ⌜opp⌝ ⌜p⌝ = ⌜p.subst me opp⌝`. The box agreement IS bounded D1 — it is a
+  hypothesis, named, never an axiom.
+* **T2-CORE (budget-erased soundness of the modal-propositional core).** A `PfCore Γ φ`
+  mirror of the 16 modal/propositional rules (`boxIntro axK axKf box4 boxMono diagF diagB
+  atomBoxImpl implRefl implK implS mp implTrans weakenImpl impS2 contrapose negElim`) with
+  atom hypotheses `Γ`, and `PfCore Γ φ → 𝗣𝗔 + tr⁰ Γ ⊢ tr⁰ φ` for `tr⁰` sending `.box k ψ` to
+  Foundation's `provabilityPred 𝗣𝗔` and `.diag` to `fixedpoint`, discharged by
+  `ProvabilityAbstraction` (D1/D2/D3, `formalized_löb_theorem`, `Diagonalization`) — "S's
+  Löbian core is a fragment of GL over PA". (`atomBoxImpl` needs the atom realization to be
+  Σ₁: `provable_sigma_one_complete`.)
+* **T2-COND (the precise M4 obligation, optional).** `PALength e` with fields bounded
+  D1/D2/D3/diag/cut/mono and `transfer_bounded` on the size-gated fragment; only `cut` and
+  `mono` are provable now. State it as the `BoundedGL` instance's missing fields; do not
+  put it in the paper as a result.
+
+Paper sentence: "`S` is sound relative to PA wherever a character count exists (T2-CORE for
+the logic, T2-AGENT for the agents); where the engine charges evaluation steps and cheap
+citations instead of characters, no PA proof length can match, and we prove it (T2-NEG);
+budget-keeping soundness is therefore exactly Critch's assumption (d), left as M4." The
+budget-erased world is Barász/Berns' unbounded modal agents — T2-CORE reuses it, our
+novelty stays the BOUNDED `S`. Engine-side cost-model finding for the user: charging
+`AtomProvable.mk` by `n + |φ| ≤ k` and `search_t` by `n + k` would make a budget-keeping
+transfer plausible but breaks every cheap-citation cell (`(2k+64)` staggers,
+`outcome_DupocBot_vs_CooperateBot` at pad `atom_cost 1`) — a design decision, not M3.
+Order of work: (1) merge `colomban-arith-s` (binary descriptions, `Fit.lean`) into
+`colomban-arith-m3`; (2) `pSim`/`psubst`/`relabelTemplate` (3b); (3) T2-NEG (small);
+(4) `TR` + substitution code equation + T2-AGENT for the sim/search fragment; (5) T2-CORE.
+
 **M3 — unbounded soundness of `Pf` relative to PA.** Engine bumped; `ArithS` requires
 `PrisonersDilemma`. Theorem `Pf k φ → PA ⊢ tr φ` by `Pf.induct`: modal arms from
 `provable_D1/D2/D3` + `diagonal` + Löb; atom arms from Σ₁-completeness of true computation
