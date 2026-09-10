@@ -504,8 +504,87 @@ recorded here before the next starts):
      (descVec6 me opp) ⌜tcode ψ⌝ ∧ lenProvableV k g'`, `.eq`, `.diag` via fixedpoint codes),
      the code equations `TR (p.subst me opp) = psubst (TR me) (TR opp) (TR p)` and
      `⌜tr (ψ.subst me opp)⌝ = guardCode (tcode ψ) (TR me) (TR opp)`.
+ **DONE 2026-09-10 (branch `colomban-arith-m3`, commit 21a31aa; `lake build ArithS` green,
+     `#print axioms` of every headline theorem = Lean's three).** New module `ArithS/Code.lean`
+     (imported after `Fit` in `ArithS.lean`). NAMES: `pcode : PD.Prog → ℕ` (the brief's `TR`),
+     `tmpl : PD.Formula → Semisentence LAct 6`, `tcode φ := ⌜tmpl φ⌝` — one `mutual` block by
+     STRUCTURAL recursion on the engine's mutual inductive (works with only the `Prog`/`Formula`
+     functions declared; equation lemmas `pcode_*`/`tmpl_*` by `rw [pcode]`/`rw [tmpl]`, never
+     `rfl`). `actCode : Action → ℕ` (`C ↦ 0`, `D ↦ 1`), tau constructors `↦ 0` (non-shape).
+     THE DESIGN THAT MAKES THE META EQUATION LITERAL: every program inside an atom is described
+     by ONE shape `descF X T U W := ∃ d, d = T ∧ X = relabel U W d` (`relDesc := lMap emb
+     relabelDef.val`), with `(T, U, W)` = the frame variables for `.self`/`.opp` and the closed
+     terms `cl (dnumT c), cl (dUT c), cl (dWT c)` of the program's own code `c` otherwise
+     (`progAux`/`progGraph`/`closedDesc`; `cl t := Rew.castLE _ t` casts a closed term into any
+     context and is fixed by EVERY rewriter, `rew_cl`). `.plays p q a ↦ ∃ x y n, D_p(x) ∧ D_q(y)
+     ∧ evalG n x y x c_a` (`evalG := lMap emb evalGraphDef.val`; the engine's `play = eval me opp
+     me`); `.eq p q ↦ ∃ x y, D_p(x) ∧ closedDesc (pcode q) y ∧ x = y` (frozen RHS by its code);
+     `.box k ψ ↦ ∃ me opp, D_self(me) ∧ D_opp(opp) ∧ ∃ g, guardCodeG g (numTB ⌜tmpl ψ⌝) me opp ∧
+     lenProvG (numTB k) g` (binary numerals `numTB c := lMap emb (bnumT c)` everywhere — no
+     unary numeral of a code); `.diag ↦ ⊥` (side condition `noDiag`). Side conditions: `noTauP`
+     (+ `noTauP_subst`), `closedP`/`closedF` (`subst_of_closedP/F`: `subst` fixes a closed
+     program/formula), `atomicP p := p = .self ∨ p = .opp ∨ closedP p`, and THE FRAGMENT
+     `fragP`/`fragF` (no tau, no `.box`, atoms over `atomicP ∧ fragP` programs).
+     THEOREMS (all under `hme : me ≠ .self ∧ me ≠ .opp`, `hopp` likewise — players are programs,
+     not pronouns; needed because `progAux .self` is the frame description):
+     `tmpl_subst : fragF ψ → tmpl (ψ.subst me opp) = tmpl ψ ⇜ descTerms6 me opp` (the meta
+     equation, `descTerms6 := cl ∘ descTerms (pcode me) (pcode opp)` at SIX variables — the two
+     sides must have the same type; the LHS simply does not use its frame variables);
+     `quote_subst_cl : ⌜σ ⇜ (cl ∘ w)⌝ = ⌜σ ⇜ w⌝` (codes do not see the context);
+     `quote_trAt : ⌜trAt me opp φ⌝ = guardCode (tcode φ) (pcode me) (pcode opp)` for
+     `trAt me opp φ := tmpl φ ⇜ descTerms (pcode me) (pcode opp)` (EVERY φ — this is the
+     T2-AGENT atom realization); `tcode_subst : fragF ψ → tcode (ψ.subst me opp) = gsubst
+     (pcode me) (pcode opp) (tcode ψ)`; `pcode_subst : fragP p → pcode (p.subst me opp) = psubst
+     (pcode me) (pcode opp) (pcode p)`. τ: `lMap_swap_tmpl : fragF φ → lMap swap (tmpl φ) = tmpl
+     φ.transpose` and `swapcode_pcode : fragP p → swapcode (pcode p) = pcode p.transpose`
+     (mutual), `relabelTemplate_tcode : fragF φ → relabelTemplate 1 0 (tcode φ) = tcode
+     φ.transpose`. Sanity: `pcode_DupocBot`, `fragP_DupocBot`, `swapcode_pcode_DupocBot`.
+     SCOPE, HONESTLY: the code equations and τ hold on the BOX-FREE fragment, and cannot hold
+     for `.box` under ANY compositional `tmpl`: the translated box carries the CODE of its body
+     as a numeral, and `⌜tmpl (ψ.subst me opp)⌝ ≠ ⌜tmpl ψ⌝` — `tmpl (.box k (ψ.subst me opp))`
+     and `tmpl (.box k ψ) ⇜ desc` are PA-provably equivalent sentences, not identical ones,
+     and length-bounded provability is not invariant under provable equivalence (`□A(x)` vs
+     `Prov(sub(⌜A⌝, x))`). The same numeral blocks τ on boxes (`swap` does not re-value a
+     code constant; a `relabelTemplate`-based canonical description of TEMPLATE codes, like
+     `dnum`/`dU`/`dW` for programs, would fix τ but not substitution). The zoo is box-free in
+     its templates except LegibleBot/OptimBot. `.tvote/.sys/.selfIdx` satisfy both code
+     equations trivially (`0 = 0`) but are excluded from `frag` since `EvalGraph` knows nothing
+     about code `0`. The stored template of `pcode (DupocBot k)` is NOT `⌜GtmplA 0⌝` (different
+     quantifier order/shape; equivalent guards, two different searchers) — `Dupoc k` of
+     `RedCell.lean` stays the red cell's object. Proof-craft traps: (i) a `/-! … -/` docstring
+     containing `me-/opp` ENDS at that `-/` (cost a cascade of 30 phantom errors); (ii) `∃¹ ∃¹ φ`
+     does not parse — write `∃¹ (∃¹ (…))`, and parenthesize `⋏ (∃¹ …)`; (iii) `Rew.q`-chains on
+     literal bound variables compute by `rfl` (`ω.q.q.q #3 = bShift³ (ω #0)`), so state the
+     needed instance with `show … = _` and finish with `rw [rew_cl]; try rfl` — `simp
+     [Rew.q_bvar_succ]` never fires on a literal `#3`; (iv) `refine (lemma _ _ ?_ …)` with a
+     `rfl` argument for `w 0 = w' 0` UNIFIES `w := w'` — give the equation as a `?_` goal;
+     (v) `congr n` counts `∃¹` AND `⋏` layers (`∃¹∃¹∃¹ (A ⋏ (B ⋏ C))` needs `congr 4` then `congr
+     1`); (vi) `Semiformula.rel` is ambiguous under the opens (`Bootstrapping.` vs
+     `FirstOrder.`) inside `show` — qualify; (vii) `induction` on the engine's mutual `Formula`
+     is unavailable — write recursive `theorem`s with pattern matching (Lean accepts the
+     structural recursion), `mutual theorem … end` for the τ pair.
  (d) T2-NEG (`ProofLength.lean` has `flen_le_of_lenProvable`; add `TR`'s code lower bound
      for `.bot`-iterates and the engine example `Pf 1 (.plays (.const C) q C)`).
+     **DONE 2026-09-10 (commit 2882d49; `lake build ArithS` green, three axioms).** New module
+     `ArithS/Neg.lean` (after `Code`). `botIter n p := .bot^n p`, `pBotIter`, `pcode_botIter`,
+     `two_mul_lt_pBot : 2x < pBot x` (`unfold pBot pair; split_ifs; nlinarith/omega` after `show`
+     at ℕ), `size_lt_size_pBot`, `le_size_dnum_pBotIter : n ≤ size (dnum (pBot^n x))` (`dnum` is
+     the code or its `swapcode`, and `swapcode (pBot^n x) = pBot^n (swapcode x)`),
+     `size_le_tlen_bnumT : size n ≤ tlen (bnumT n)` (the lower bound twin of `tlen_bnumT`),
+     `flen_emb_descF_ge : tlen T + 1 ≤ flen (emb (descF X T U W))` (the `∃ d, d = T` shape puts
+     the numeral at a SHALLOW position — no occurrence argument through the Σ₁ graphs needed),
+     `size_dnum_le_flen_trAt : closedP q → size (dnum (pcode q)) ≤ flen (trAt me opp (.plays p
+     q a))`. HEADLINE: `no_budget_keeping_transfer (e : ℕ → ℕ) (tr : PD.Formula → Sentence LAct)
+     (htr : ∀ p q a, closedP q = true → Nat.size (dnum (pcode q)) ≤ flen (tr (.plays p q a))) :
+     ∃ k φ, PD.Pf k φ ∧ ¬LenProvable fbound (e k) TAct ⌜tr φ⌝` — witness `k = 1`, `φ = .plays
+     (.const C) (botIter (e 1 + 1) (.const C)) C`, `Pf.atom (AtomProvable.mk PlaysProof.const
+     (le_refl _))`; instances `no_budget_keeping_transfer_tmpl` (for `trAt me opp`) and
+     `no_budget_keeping_transfer_guardCode` (on `guardCode (tcode φ) (pcode me) (pcode opp)`,
+     the code the arithmetized evaluator consults). Trap: after `simp only [app_exs, map_and,
+     flen_exs, flen_and]` the conjunct's context is `3`, not `9` (the outer `⇜ descTerms` closes
+     the six frame variables) — read the goal before writing the `have`; `omega` needs the
+     bound `hB` stated with the goal's exact `Rewriting.app Rew.emb` spelling (`Rewriting.emb`
+     is an abbrev but a different atom to omega) — ascribe the type and `exact` the lemma.
  (e) T2-AGENT for the const/self/opp/bot/sim/ite/search fragment (`noTau` side condition),
      then tvote/sys if time permits.  (f) T2-CORE via `ProvabilityAbstraction`.
 Order of work: (1) merge `colomban-arith-s` (binary descriptions, `Fit.lean`) into
