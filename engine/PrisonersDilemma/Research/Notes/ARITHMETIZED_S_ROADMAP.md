@@ -392,6 +392,12 @@ novelty stays the BOUNDED `S`. Engine-side cost-model finding for the user: char
 `AtomProvable.mk` by `n + |φ| ≤ k` and `search_t` by `n + k` would make a budget-keeping
 transfer plausible but breaks every cheap-citation cell (`(2k+64)` staggers,
 `outcome_DupocBot_vs_CooperateBot` at pad `atom_cost 1`) — a design decision, not M3.
+CANONICAL BRANCH (2026-09-10): `colomban-arith-m3` in the worktree `~/wt/osgt-arith-m3`
+(merge commit 2584ed4 = engine bump + workspace wiring + every arith result incl. `Fit`;
+`lake build ArithS` there builds engine + arith in ~20 s incremental). The OneDrive checkout
+stays on `colomban-arith-s` (arith-only, engine still v4.28 there) so the app/IDE keep working;
+do NOT develop on `-s` any more — cherry-pick or merge INTO `-m3`.
+
 IMPLEMENTATION SEQUENCE (decided 2026-09-10; each step is one agent-sized task, committed and
 recorded here before the next starts):
  (a) TEMPLATE RE-SHAPING: `pSearch k g p q` with `g` a SIX-variable template code
