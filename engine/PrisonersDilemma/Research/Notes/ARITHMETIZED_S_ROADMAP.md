@@ -625,7 +625,7 @@ recorded here before the next starts):
      (DupocBot k) = false`). `modestP` = `fragP` with every `.sim` argument `atomicP` (placeholder
      or closed) — the engine's own T43 modesty, `modestP (DupocBot k) = true` by `rfl` — and then
      the `.sim` step's new frame is drawn from `{me, opp, p, q}` (`Inv.sim`), so no substitution
-     closure lemma is needed at all. GAPS: (i) TRUTH → `TAct ⊢ trAt …` (Σ₁-completeness) is NOT
+     closure lemma is needed at all. GAPS: (i) [CLOSED in instantiated form — the INSTANTIATION paragraph below] TRUTH → `TAct ⊢ trAt …` (Σ₁-completeness) is NOT
      derived: Foundation's `sigma_one_completeness` is over `ℒₒᵣ`, `TAct` is over `LAct`, and the
      realized sentence names `c_C`/`c_D`, which `TAct` leaves uninterpreted (only `c_C ≠ c_D`; the
      descriptions re-value programs through the same constants, so the sentence is
@@ -674,6 +674,47 @@ recorded here before the next starts):
      `Bool.eq_false_iff.mp`). (5) The `.search` `if` on a `Bool` is `if proofSearch … = true`;
      `proofSearch_spec` + the `Iff` in either direction; the else-branch needs only the
      contrapositive of `mp`, never a refutation.
+     **THE INSTANTIATION — DONE 2026-09-10 (`ArithS/Inst.lean`, imported after `AgentConverse`;
+     `lake build ArithS` green, 3204 jobs; nine new census lines in `Audit.lean`, all three
+     standard axioms).** Closes gap (i) in its honest form: PA proves the atom sentences with
+     the action constants INSTANTIATED. `inst : LAct →ᵥ ℒₒᵣ` (`Sum.inl f ↦ f`, `c_C ↦
+     Language.Zero.zero`, `c_D ↦ Language.One.one`; match on `k, f` as `swap` does);
+     `inst_emb_func`/`lMap_inst_emb` (the retraction `inst ∘ emb = id`, the same induction as
+     `lMap_swap_emb`); `lMap_inst_std : Structure.lMap inst (standardModel ℕ) = stdAct`;
+     `models_inst : ℕ↓[ℒₒᵣ] ⊧ lMap inst σ ↔ ℕ↓[LAct] ⊧ σ` (`Semiformula.models_lMap` with `(s₂ :=
+     standardModel ℕ)`, then `rw` the structure equation). Σ₁-NESS WITHOUT A GENERIC
+     `Hierarchy.lMap`: `Hierarchy` is defined over any `[L.LT]` language, but nothing beyond
+     `∃¹/⋏/rel/⇜` closure is needed (`sigma_iff`, `and_iff`, `rel`, `rew_iff` — `⇜` is an abbrev
+     for `Rew.subst w ▹`, so `rew_iff` fires under `simp`) once `lMap inst relDesc =
+     relabelDef.val` and `lMap inst evalG = evalGraphDef.val` (instances of `lMap_inst_emb`)
+     and `hierarchy_sigma` for the `𝚺₁.Semisentence`s; `progAux` by `split_ifs` (all three
+     branches are `descF`), so `hierarchy_lMap_inst_trAt_plays` holds for EVERY frame and pair.
+     THEOREMS: `pa_proves_trAt_inst (hga : GuardAgree) (me' opp' me opp a) (Proper me) (Proper
+     opp) (modestP me) (modestP opp) : (∃ n, PD.play n me opp = some a) → 𝗣𝗔 ⊢ lMap inst (trAt
+     me' opp' (.plays me opp a))` (`play_iff_evalGraph` → `models_trAt_plays` → `models_inst` →
+     `sigma_one_completeness`); `pa_proves_trAt_inst_of_atomProvable` (through
+     `playsProof_sound`); `pa_proves_trAt_inst_searchFree` (NO oracle, through
+     `atomProvable_evalGraph_searchFree`); `Aι : Core.AtomRealization := fun p q a ↦ lMap inst
+     (trAt p q (.plays p q a))`; `leaf_atom_sound`/`_searchFree` (the `Leaf.atom` shape),
+     `leaf_atomBoxImpl_sound (kBox p q a)` (ALL programs, formalized Σ₁-completeness
+     `provable_sigma_one_complete (T := 𝗣𝗔)` lifted by `Entailment.WeakerThan.pbl`),
+     `transfer_of_leaves = Core.Pf_core_sound Aι`. PROOF-CRAFT: `Structure.ext` takes equalities
+     of the WHOLE `func`/`rel` fields — `refine Structure.ext ?_ ?_` then `funext k f v` and
+     `rcases f with f | ⟨(_ | _)⟩ <;> rfl` (a bare `ext k f v` misparses the second goal);
+     `sigma_one_completeness (T := 𝗣𝗔)` finds `𝗥₀ ⪯ 𝗣𝗔` through `[𝗣𝗔⁻ ⪯ T] : 𝗥₀ ⪯ T`
+     (Schemata.lean), no extra import; `Core.tr_plays` is `rfl`, so the leaf lemmas are the
+     PA theorems verbatim; `Inst` must import `ArithS.Core.Sound` itself (`AgentConverse` does
+     not). `closedP` → `Proper`: `models_trAt_plays` and `plays_interp_iff` now take `Proper`
+     (their proofs used closedness only through `closedP_ne_self/opp`); every searcher is
+     `Proper` and NONE is `closedP` (`closedP (DupocBot k) = false`), so the `closedP`-stated
+     versions would have excluded every Löbian cell. NOT BUILT (recorded, results §4 boundary
+     2): the NEGATIVE atom `𝗣𝗔 ⊢ ∼ lMap inst (trAt …)` from a play of `b ≠ a` — Π₁, needs
+     PA-internal determinism (`EvalGraph.unique'` holds in every model of IΣ₁; the route is the
+     completeness theorem + Σ₁ upward transfer of the positive run + internal uniqueness, but
+     `val_bnumT`/`relabel_val_desc` are ℕ-only, ~150 lines of general-model evaluation lemmas
+     first) — this is exactly T2-CORE's `atomNeg` leaf; and the generic `TAct ⊢ trAt …` with
+     the constants uninterpreted (not an instance of Σ₁-completeness, not known true, needed
+     by nothing).
  (f) T2-CORE via `ProvabilityAbstraction`.
 Order of work: (1) merge `colomban-arith-s` (binary descriptions, `Fit.lean`) into
 `colomban-arith-m3`; (2) `pSim`/`psubst`/`relabelTemplate` (3b); (3) T2-NEG (small);

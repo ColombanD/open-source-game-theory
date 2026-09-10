@@ -120,7 +120,7 @@ GuardAgree := ∀ φ me opp k, fragF φ → Proper me → Proper opp → modestP
 eval_iff_evalGraph    : (∃ n, eval n me opp body = some a) ↔ ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜body⌝ a
 play_iff_evalGraph    : (∃ n, play n me opp = some a)     ↔ ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ a
 outcome_iff_evalGraph : (∃ n, outcome n me opp = some (a, b)) ↔ (∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ a) ∧ (∃ N, EvalGraph N ⌜opp⌝ ⌜me⌝ ⌜opp⌝ b)
-plays_interp_iff      : (.plays me opp a).interp ↔ ℕ ⊨ trAt me' opp' (.plays me opp a)    (closed modest me, opp)
+plays_interp_iff      : (.plays me opp a).interp ↔ ℕ ⊨ trAt me' opp' (.plays me opp a)    (proper modest me, opp)
 ```
 on proper modest players and a modest body. Both directions are inductions on the FUEL with
 the engine program in the frame (`evalGraph_of_eval`: the engine's `eval` unfolded clause by
@@ -134,6 +134,36 @@ re-derives T2-AGENT from it through `playsProof_sound`. Reading: **given agreeme
 consulted `□_k` facts, the arithmetized evaluator and the engine's evaluator compute the same
 plays on modest programs — an equivalence, and the engine's truth of a play-atom is the truth
 in ℕ of its arithmetical translation.**
+
+**Provability of the atom sentences (`pa_proves_trAt_inst`, `ArithS/Inst.lean`).** The
+realized atom sentence is over `LAct`; Σ₁-completeness is over `ℒₒᵣ`. The INSTANTIATION hom
+`inst : LAct →ᵥ ℒₒᵣ` (`c_C ↦ 0`, `c_D ↦ 1`, `ℒₒᵣ`-symbols fixed; `inst ∘ emb = id`,
+`Structure.lMap inst (standardModel ℕ) = stdAct`) transfers truth (`models_inst : ℕ ⊨ lMap inst σ
+↔ ℕ↓[LAct] ⊨ σ`), and the instantiated atom sentence is Σ₁ for EVERY frame and pair
+(`hierarchy_lMap_inst_trAt_plays`: `tmpl (.plays …)` is `∃∃∃ (D ∧ D ∧ EvalGraph)` over
+`emb`-images of Σ₁ semisentences, which `lMap inst` sends back to themselves). Hence
+```
+pa_proves_trAt_inst : GuardAgree → Proper me → Proper opp → modestP me → modestP opp →
+    (∃ n, play n me opp = some a) → 𝗣𝗔 ⊢ lMap inst (trAt me' opp' (.plays me opp a))
+pa_proves_trAt_inst_of_atomProvable : (same players) AtomProvable k (.plays me opp a) → 𝗣𝗔 ⊢ …
+pa_proves_trAt_inst_searchFree      : (search-free players, NO oracle) AtomProvable k (.plays me opp a) → 𝗣𝗔 ⊢ …
+```
+by `sigma_one_completeness` (`𝗥₀ ⪯ 𝗣𝗔`). The players are PROPER (not a bare pronoun), not
+`closedP`: no searcher is `closedP`, and `models_trAt_plays`/`plays_interp_iff` were generalized
+accordingly (their proofs used closedness only through `≠ .self/.opp`). Composition with
+T2-CORE: `Aι p q a := lMap inst (trAt p q (.plays p q a))`; `leaf_atom_sound` discharges the
+`Leaf.atom` shape on proper modest players, `leaf_atomBoxImpl_sound` discharges
+`Leaf.atomBoxImpl` for ALL programs and budgets, certificate or not (formalized
+Σ₁-completeness, `provable_sigma_one_complete` — the remark closing `Core/Sound.lean` made good),
+`Core.leaf_eqRefl_sound`/`leaf_eqNeg_sound` the identity leaves; `transfer_of_leaves =
+Pf_core_sound Aι`. What `hleaf` still has to supply: the twelve SOURCE-READING leaves (`□_g guard
+→ plays`: PA's unbounded box of the erased guard against the evaluator's length-bounded `□_k` of
+the realized guard — bounded D1 in both directions, `GuardAgree` inside PA; boundary 1) and
+`atomNeg` (Π₁: PA-internal determinism of `EvalGraph` — `EvalGraph.unique'` holds in every model
+of IΣ₁, but the description-evaluation lemmas `val_bnumT`/`relabel_val_desc` are stated for ℕ
+only, so the completeness-theorem route is not built). Reading: **every positive engine cell,
+read as a PA sentence with the action constants instantiated, is a PA theorem — given agreement
+on the consulted `□_k` facts, and unconditionally for search-free players.**
 
 **The sentence for the paper.** "`S` is sound relative to PA wherever a character count
 exists: its modal core for PA's provability predicate (T2-CORE) and its evaluation
@@ -151,9 +181,18 @@ mechanization); the contribution stays the BOUNDED `S` of T1/T2-AGENT.
    are PA-provably equivalent but not identical, and `□_k` is not invariant under provable
    equivalence. The code equations and τ are therefore proved on the box-free search-bot
    fragment; boxes are what T2-AGENT's hypotheses are about.
-2. Truth → `TAct ⊢` for the atom sentences (Σ₁-completeness over `LAct`): Foundation's
-   completeness is over ℒₒᵣ, and the sentences name `c_C, c_D`, which `TAct` leaves
-   uninterpreted; a proof would reason uniformly in two distinct constants. Open.
+2. ~~Truth → `TAct ⊢` for the atom sentences (Σ₁-completeness over `LAct`).~~ CLOSED in its
+   honest form by `Inst`: PA proves the atom sentences with the constants INSTANTIATED
+   (`pa_proves_trAt_inst`: `𝗣𝗔 ⊢ lMap inst (trAt …)` with `c_C ↦ 0, c_D ↦ 1`; unconditional
+   on search-free players). What stays open is the GENERIC form `TAct ⊢ trAt …` over `LAct`
+   with `c_C, c_D` uninterpreted (only `c_C ≠ c_D`): not an instance of Σ₁-completeness (a
+   model of `TAct` may read the constants as any distinct pair, and the evaluator's clauses
+   compare action codes), not known to be true, and needed by nothing downstream — τ-symmetry
+   (`Symmetry`) lives over `TAct`, atom provability over PA. Also open: the NEGATIVE atom
+   `𝗣𝗔 ⊢ ∼ lMap inst (trAt … (.plays me opp a))` from a play of `b ≠ a` — Π₁, so outside
+   Σ₁-completeness; it needs PA-internal determinism of `EvalGraph` (the route: completeness
+   theorem + upward transfer of the positive run + `EvalGraph.unique'` in the model), and the
+   description-evaluation lemmas are ℕ-only. This is the `atomNeg` leaf of T2-CORE.
 3. The tau constructors `tvote/sys/selfIdx` are outside the translation (code 0).
 4. ~~`GuardAgreeF` from engine soundness would need the converse of T2-AGENT.~~ CLOSED by
    `AgentConverse`: under the two-sided `GuardAgree` the refutation form is a theorem
@@ -179,5 +218,5 @@ A design decision, not part of M3.
 * Files: `Length, SequentLength, DerivationLength, Bew, MetaLength, Proper` (M1);
   `LangAct, TheoryAct, Transpose, Sound, Symmetry, ProofLength` (τ, lengths of proofs);
   `Prog, RelabelTemplate, Bnum, BewV, Guard, Subst, Eval, EvalN, SimTest, Template, RedCell,
-  Fit` (agents, T1); `Core/Tr, Core/Sound` (T2-CORE); `Code, Neg, Agent, AgentConverse` (T2-NEG, T2-AGENT and its converse);
+  Fit` (agents, T1); `Core/Tr, Core/Sound` (T2-CORE); `Code, Neg, Agent, AgentConverse, Inst` (T2-NEG, T2-AGENT, its converse, the instantiation);
   `EngineBridge, Audit`.
