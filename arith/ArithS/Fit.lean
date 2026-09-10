@@ -21,9 +21,9 @@ proves the POSITIVE result that (b) demands, with explicit (ugly, but explicit) 
   the total length of the substituted closed terms (plus one) — via `flen_rew_le`, a bound
   for every rewriter whose bound-variable images are variable-free or bare bound variables
   (the invariant that survives `Rew.q` under a quantifier);
-* `flen_guardSentence_le`: `flen (guardSentence me opp a) ≤ cG + cD · (size (dnum me) +
-  size (dnum opp))` for the actions `a ≤ 1`, with `cG = 10 · cG₀`, `cD = 6 · cG₀`,
-  `cG₀ = flen Gtmpl` (`flen_guardSentence_le'` is the unrestricted form, with a `2a` term:
+* `exists_guard_const`: `∃ c, flen (guardSentence me opp a) ≤ 10c + 6c · (size (dnum me) +
+  size (dnum opp))` for the actions `a ≤ 1`, with `c = cG₀ = flen Gtmpl` packaged
+  existentially (`flen_guardSentence_le'` is the unrestricted form, with a `2a` term:
   the action term of an `a ≥ 2` is a unary numeral, irrelevant to the searchers);
 * `size_dnum_Dupoc_le`: `size (dnum (Dupoc k)) ≤ 4 · size k + (4 · size cP + 26)`, by the
   Cantor-pairing bound `⟪a, b⟫ ≤ (a + b + 1)²` (`cP = ⟪⌜Gtmpl⌝, 0, pConst 0, pConst 1⟫` is
@@ -35,17 +35,13 @@ proves the POSITIVE result that (b) demands, with explicit (ugly, but explicit) 
 -/
 
 /-!
-## STATUS (2026-09-10, wrap-up): WORK IN PROGRESS, NOT IMPORTED FROM `ArithS.lean`.
-Everything up to `flen_guardSentence_le'` checks in seconds. `flen_guardSentence_le`,
-`guard_fits`, `guard_fits'` HANG: unifying a statement in `cG`/`cD` against
-`guard_bound_arith cG₀ …` makes Lean unfold `cG₀ := flen (emb Gtmpl)` and try to EVALUATE
-`flen` on the giant template term (the DSL expansion of `relabelDef`/`evalGraphDef`) — a
-whnf that never finishes (the kernel reports "deterministic timeout" when it does give up).
-FIX (mechanical): declare the template constants opaquely — `irreducible_def cG₀ / cG / cD / cP`
-(Mathlib), use `cP_def`/`Dupoc_eq` by `rw` instead of `rfl`, keep every arithmetic step in
-abstract lemmas over variables (`guard_bound_arith` is the pattern), then re-add
-`import ArithS.Fit` to `ArithS.lean`. `Vacuity.lean` (commit 470ee43) is retired because its
-theorems are FALSE for the binary descriptions.
+## Proof-craft note (2026-09-10)
+The first version of this file hung for hours: a theorem stated with closed constants
+(`cG := 10 * cG₀`, `Nat.size cP`) forced Lean's `Nat` defeq machinery to try to EVALUATE
+`cG₀ = flen Gtmpl` and `cP = ⟪⌜Gtmpl⌝, …⟫` on the giant template term. The cure is
+structural: the constants are packaged EXISTENTIALLY (`exists_guard_const`,
+`exists_size_const`) and every arithmetic step is over variables. `Vacuity.lean`
+(commit 470ee43) is retired because its theorems are false for the binary descriptions.
 -/
 
 namespace ArithS
@@ -325,27 +321,30 @@ theorem flen_guardSentence_le' (me opp a : ℕ) :
   le_trans (flen_subst_le Gtmpl (descTerms me opp a))
     (Nat.mul_le_mul_left _ (by have := sum_tlen_descTerms_le me opp a; omega))
 
-/-- The additive constant of the guard bound. -/
-noncomputable def cG : ℕ := 10 * cG₀
+/- `cG₀` is a closed natural number built from the giant template; Lean's `Nat`-literal
+defeq machinery would otherwise try to EVALUATE it (whnf of `flen` on the template) during
+unification. From here on it is an atom. -/
+attribute [irreducible] cG₀
 
-/-- The coefficient of the bit lengths in the guard bound. -/
-noncomputable def cD : ℕ := 6 * cG₀
-
-/-- **The guard bound**: for the actions `a ∈ {0, 1}`, the guard sentence of `me` against
-`opp` has at most `cG + cD · (size (dnum me) + size (dnum opp))` symbols. -/
-/-- Abstract arithmetic behind `flen_guardSentence_le` (no constant of the template appears,
-so nothing heavy can be unfolded while checking it). -/
+/-- Abstract arithmetic behind `exists_guard_const`, over variables only. -/
 lemma guard_bound_arith (c s a : ℕ) (ha : a ≤ 1) :
     c * (6 * s + 2 * a + 8) ≤ 10 * c + 6 * c * s := by
   have h : 6 * s + 2 * a + 8 ≤ 6 * s + 10 := by omega
   calc c * (6 * s + 2 * a + 8) ≤ c * (6 * s + 10) := Nat.mul_le_mul_left _ h
     _ = 10 * c + 6 * c * s := by ring
 
-theorem flen_guardSentence_le (me opp a : ℕ) (ha : a ≤ 1) :
+/-- **The guard bound, with its constant packaged existentially**: for the actions `a ∈ {0, 1}`
+the guard sentence of `me` against `opp` has at most `10c + 6c · (size (dnum me) + size (dnum opp))`
+symbols, for the constant `c = cG₀` (the template's symbol count). The constant is never written
+into a closed arithmetic expression: Lean's `Nat` defeq machinery would try to evaluate it
+(that is what `flen Gtmpl` on the giant template does), so every later argument takes `c` as
+a variable from this statement. -/
+theorem exists_guard_const : ∃ c : ℕ, ∀ me opp a : ℕ, a ≤ 1 →
     flen (Rewriting.emb (guardSentence me opp a) : Proposition LAct) ≤
-    cG + cD * (Nat.size (dnum me) + Nat.size (dnum opp)) :=
-  le_trans (flen_guardSentence_le' me opp a)
-    (guard_bound_arith cG₀ (Nat.size (dnum me) + Nat.size (dnum opp)) a ha)
+    10 * c + 6 * c * (Nat.size (dnum me) + Nat.size (dnum opp)) :=
+  ⟨cG₀, fun me opp a ha ↦
+    le_trans (flen_guardSentence_le' me opp a)
+      (guard_bound_arith cG₀ (Nat.size (dnum me) + Nat.size (dnum opp)) a ha)⟩
 
 /-! ### 4. The bit length of a searcher's code is `O(size k)` -/
 
@@ -392,6 +391,9 @@ noncomputable def cP : ℕ := ⟪(⌜Gtmpl⌝ : ℕ), 0, pConst 0, pConst 1⟫
 
 lemma Dupoc_eq (k : ℕ) : Dupoc k = ⟪6, k, cP⟫ + 1 := rfl
 
+/- Same reason as for `cG₀`: never let `Nat.size cP` be evaluated. -/
+attribute [irreducible] cP
+
 /-- The canonical numeral of the orbit is at most the code. -/
 lemma dnum_le_self (x : ℕ) : dnum x ≤ x := by
   rcases lt_trichotomy x (swapcode x) with h | h | h
@@ -416,6 +418,12 @@ theorem size_dnum_Cupod_le (k : ℕ) :
     Nat.size (dnum (Cupod k)) ≤ 4 * Nat.size k + (4 * Nat.size cP + 26) := by
   rw [← swapcode_Dupoc, dnum_swapcode]
   exact size_dnum_Dupoc_le k
+
+/-- The pairing constant of the searchers' codes, packaged existentially (same reason as
+`exists_guard_const`: `Nat.size cP` must never sit inside a closed arithmetic term). -/
+theorem exists_size_const : ∃ P : ℕ, ∀ k : ℕ,
+    Nat.size (dnum (Dupoc k)) ≤ 4 * Nat.size k + P ∧ Nat.size (dnum (Cupod k)) ≤ 4 * Nat.size k + P :=
+  ⟨4 * Nat.size cP + 26, fun k ↦ ⟨size_dnum_Dupoc_le k, size_dnum_Cupod_le k⟩⟩
 
 end size
 
@@ -453,38 +461,38 @@ lemma exists_linear_size_le (C₀ C₁ : ℕ) : ∃ K, ∀ k ≥ K, C₀ + C₁ 
 /-- **The guard fits inside the budget**: for all large `k`, the guard sentence that `Dupoc k`
 searches for against `Cupod k` ("`Cupod k` plays `a` against me") has at most `k` symbols —
 Critch's assumption (b) holds for the binary descriptions. The threshold `K` depends only on
-the fixed template (`cG₀`, `cP`). -/
+the fixed template. -/
 theorem guard_fits :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
       flen (Rewriting.emb (guardSentence (Dupoc k) (Cupod k) a) : Proposition LAct) ≤ k := by
-  obtain ⟨K, hK⟩ := exists_linear_size_le (cG + 2 * cD * (4 * Nat.size cP + 26)) (8 * cD)
+  obtain ⟨c, hc⟩ := exists_guard_const
+  obtain ⟨P, hP⟩ := exists_size_const
+  obtain ⟨K, hK⟩ := exists_linear_size_le (10 * c + 12 * c * P) (48 * c)
   refine ⟨K, fun k hk a ha ↦ ?_⟩
-  have h2 := size_dnum_Dupoc_le k
-  have h3 := size_dnum_Cupod_le k
-  have h5 : cD * (Nat.size (dnum (Dupoc k)) + Nat.size (dnum (Cupod k))) ≤
-      cD * (8 * Nat.size k + 2 * (4 * Nat.size cP + 26)) := Nat.mul_le_mul_left _ (by omega)
+  obtain ⟨h1, h2⟩ := hP k
+  have h5 : 6 * c * (Nat.size (dnum (Dupoc k)) + Nat.size (dnum (Cupod k))) ≤
+      6 * c * (8 * Nat.size k + 2 * P) := Nat.mul_le_mul_left _ (by omega)
   calc flen (Rewriting.emb (guardSentence (Dupoc k) (Cupod k) a) : Proposition LAct)
-      ≤ cG + cD * (Nat.size (dnum (Dupoc k)) + Nat.size (dnum (Cupod k))) :=
-        flen_guardSentence_le (Dupoc k) (Cupod k) a ha
-    _ ≤ cG + cD * (8 * Nat.size k + 2 * (4 * Nat.size cP + 26)) := Nat.add_le_add_left h5 _
-    _ = cG + 2 * cD * (4 * Nat.size cP + 26) + 8 * cD * Nat.size k := by ring
+      ≤ 10 * c + 6 * c * (Nat.size (dnum (Dupoc k)) + Nat.size (dnum (Cupod k))) := hc _ _ a ha
+    _ ≤ 10 * c + 6 * c * (8 * Nat.size k + 2 * P) := Nat.add_le_add_left h5 _
+    _ = 10 * c + 12 * c * P + 48 * c * Nat.size k := by ring
     _ ≤ k := hK k hk
 
 /-- The same with the roles swapped: `Cupod k`'s guard against `Dupoc k` fits. -/
 theorem guard_fits' :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
       flen (Rewriting.emb (guardSentence (Cupod k) (Dupoc k) a) : Proposition LAct) ≤ k := by
-  obtain ⟨K, hK⟩ := exists_linear_size_le (cG + 2 * cD * (4 * Nat.size cP + 26)) (8 * cD)
+  obtain ⟨c, hc⟩ := exists_guard_const
+  obtain ⟨P, hP⟩ := exists_size_const
+  obtain ⟨K, hK⟩ := exists_linear_size_le (10 * c + 12 * c * P) (48 * c)
   refine ⟨K, fun k hk a ha ↦ ?_⟩
-  have h2 := size_dnum_Dupoc_le k
-  have h3 := size_dnum_Cupod_le k
-  have h5 : cD * (Nat.size (dnum (Cupod k)) + Nat.size (dnum (Dupoc k))) ≤
-      cD * (8 * Nat.size k + 2 * (4 * Nat.size cP + 26)) := Nat.mul_le_mul_left _ (by omega)
+  obtain ⟨h1, h2⟩ := hP k
+  have h5 : 6 * c * (Nat.size (dnum (Cupod k)) + Nat.size (dnum (Dupoc k))) ≤
+      6 * c * (8 * Nat.size k + 2 * P) := Nat.mul_le_mul_left _ (by omega)
   calc flen (Rewriting.emb (guardSentence (Cupod k) (Dupoc k) a) : Proposition LAct)
-      ≤ cG + cD * (Nat.size (dnum (Cupod k)) + Nat.size (dnum (Dupoc k))) :=
-        flen_guardSentence_le (Cupod k) (Dupoc k) a ha
-    _ ≤ cG + cD * (8 * Nat.size k + 2 * (4 * Nat.size cP + 26)) := Nat.add_le_add_left h5 _
-    _ = cG + 2 * cD * (4 * Nat.size cP + 26) + 8 * cD * Nat.size k := by ring
+      ≤ 10 * c + 6 * c * (Nat.size (dnum (Cupod k)) + Nat.size (dnum (Dupoc k))) := hc _ _ a ha
+    _ ≤ 10 * c + 6 * c * (8 * Nat.size k + 2 * P) := Nat.add_le_add_left h5 _
+    _ = 10 * c + 12 * c * P + 48 * c * Nat.size k := by ring
     _ ≤ k := hK k hk
 
 end fits
