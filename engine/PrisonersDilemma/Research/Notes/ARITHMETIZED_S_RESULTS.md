@@ -112,6 +112,29 @@ Reading: **every evaluation certificate of `S` is a run of the arithmetized eval
 same budgets, given agreement on the consulted `□_k` facts** — and that agreement IS bounded
 D1, named as a hypothesis, never an axiom.
 
+**T2-AGENT, the converse (`eval_iff_evalGraph`, `ArithS/AgentConverse.lean`).** With ONE
+two-sided oracle, restricted to exactly the guards a modest match can consult,
+```
+GuardAgree := ∀ φ me opp k, fragF φ → Proper me → Proper opp → modestP me → modestP opp →
+                (S ⊢_k (φ.subst me opp) ↔ LenProvableV TAct k (guardOf φ me opp))
+eval_iff_evalGraph    : (∃ n, eval n me opp body = some a) ↔ ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜body⌝ a
+play_iff_evalGraph    : (∃ n, play n me opp = some a)     ↔ ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ a
+outcome_iff_evalGraph : (∃ n, outcome n me opp = some (a, b)) ↔ (∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ a) ∧ (∃ N, EvalGraph N ⌜opp⌝ ⌜me⌝ ⌜opp⌝ b)
+plays_interp_iff      : (.plays me opp a).interp ↔ ℕ ⊨ trAt me' opp' (.plays me opp a)    (closed modest me, opp)
+```
+on proper modest players and a modest body. Both directions are inductions on the FUEL with
+the engine program in the frame (`evalGraph_of_eval`: the engine's `eval` unfolded clause by
+clause; `eval_of_evalGraph`: the arithmetized inversion lemmas, the result generalized to an
+arbitrary code — on a coded modest frame the arithmetized evaluator only returns action codes,
+`evalGraph_actCode`). Neither goes through `PlaysProof`, so no refutation-form hypothesis
+enters: `GuardAgree.toT`/`GuardAgree.toF` show the `Iff` SUBSUMES both of T2-AGENT's
+hypotheses on modest frames, the negative one by engine soundness (`Pf_sound`: a refuted guard
+is not derivable, hence, by the `Iff`, not found), and `playsProof_evalGraph_of_guardAgree`
+re-derives T2-AGENT from it through `playsProof_sound`. Reading: **given agreement on the
+consulted `□_k` facts, the arithmetized evaluator and the engine's evaluator compute the same
+plays on modest programs — an equivalence, and the engine's truth of a play-atom is the truth
+in ℕ of its arithmetical translation.**
+
 **The sentence for the paper.** "`S` is sound relative to PA wherever a character count
 exists: its modal core for PA's provability predicate (T2-CORE) and its evaluation
 certificates for the arithmetized evaluator at the same budgets (T2-AGENT). Where the engine
@@ -132,7 +155,10 @@ mechanization); the contribution stays the BOUNDED `S` of T1/T2-AGENT.
    completeness is over ℒₒᵣ, and the sentences name `c_C, c_D`, which `TAct` leaves
    uninterpreted; a proof would reason uniformly in two distinct constants. Open.
 3. The tau constructors `tvote/sys/selfIdx` are outside the translation (code 0).
-4. `GuardAgreeF` from engine soundness would need the converse of T2-AGENT.
+4. ~~`GuardAgreeF` from engine soundness would need the converse of T2-AGENT.~~ CLOSED by
+   `AgentConverse`: under the two-sided `GuardAgree` the refutation form is a theorem
+   (`GuardAgree.toF`), and `eval ↔ EvalGraph` is an equivalence. What remains open is
+   `GuardAgree` itself — bounded D1 AND its converse on the consulted guards.
 5. Encoding sensitivity: Cantor pairing makes `‖⌜φ⌝‖` exponential in syntax depth; every
    quantitative statement is "for all large k".
 
@@ -153,5 +179,5 @@ A design decision, not part of M3.
 * Files: `Length, SequentLength, DerivationLength, Bew, MetaLength, Proper` (M1);
   `LangAct, TheoryAct, Transpose, Sound, Symmetry, ProofLength` (τ, lengths of proofs);
   `Prog, RelabelTemplate, Bnum, BewV, Guard, Subst, Eval, EvalN, SimTest, Template, RedCell,
-  Fit` (agents, T1); `Core/Tr, Core/Sound` (T2-CORE); `Code, Neg, Agent` (T2-NEG, T2-AGENT);
+  Fit` (agents, T1); `Core/Tr, Core/Sound` (T2-CORE); `Code, Neg, Agent, AgentConverse` (T2-NEG, T2-AGENT and its converse);
   `EngineBridge, Audit`.
