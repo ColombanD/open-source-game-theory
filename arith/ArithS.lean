@@ -22,3 +22,5 @@ import ArithS.Template
 import ArithS.RedCell
 import ArithS.Fit
 import ArithS.EngineBridge
+import ArithS.Core.Tr
+import ArithS.Core.Sound
