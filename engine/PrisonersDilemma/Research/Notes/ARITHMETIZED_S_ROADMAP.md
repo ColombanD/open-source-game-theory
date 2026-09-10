@@ -299,7 +299,12 @@ mirrored as `(DupocBot, CupodBot) = (D, C)`, for every `k` with enough fuel, `#p
    gains `[[require]] name = "PrisonersDilemma" path = "../engine"`, `arith/.lake ->
    ~/wt/arith-lake-m3` (packages shared with `~/wt/arith-lake`, own `build/`), smoke module
    `arith/ArithS/EngineBridge.lean` (`#check @PD.Pf`, `@ArithS.red_cell`). Next: MERGE `colomban-arith-s` (Vacuity/Fit commits) into `colomban-arith-m3`.
-3. VACUITY FIXED / IN FLIGHT: `Vacuity.lean` (470ee43, see the paragraph above) proves the
+3. VACUITY FIXED (binary descriptions LANDED on `colomban-arith-s`: `Bnum.lean` 9a66980,
+   `Guard.lean`/`Template.lean` binary `descVec`/`dnumT`, `ProofLength.lean`; package green
+   through `RedCell`). `Fit.lean` (`guard_fits`) is in the tree but NOT imported: its last
+   three theorems hang because unification unfolds `cG₀ := flen (emb Gtmpl)` and evaluates
+   `flen` on the giant template — fix = `irreducible_def` for `cG₀/cG/cD/cP` (see the STATUS
+   block at the top of `Fit.lean`), then re-import. Original note: `Vacuity.lean` (470ee43, see the paragraph above) proves the
    unary-numeral degeneracy; an agent is replacing it by `Bnum.lean` (binary numeral term
    codes, Σ₁ fixpoint) + binary `descVec`/`dnumT` + `Fit.lean` (`guard_fits`). If that work
    is not on `colomban-arith-s` when you read this, redo it from the plan in `Notes/M3_TRANSFER/BRIEF.md` §2.
