@@ -410,6 +410,35 @@ recorded here before the next starts):
      (pConst 1)`, `Cupod k = swapcode (Dupoc k) = pSearch k (GtmplA 1) (pConst 1) (pConst 0)`;
      `red_cell` re-proved (same argument). Guard/Template/RedCell/Fit change; Eval's search
      clause loses the action argument.
+     **DONE 2026-09-10 (branch `colomban-arith-m3`, commits 7b96eda + 6dcb1b8, `lake build
+     ArithS` green, `#print axioms red_cell`/`guard_fits` = Lean's three).** New module
+     `ArithS/RelabelTemplate.lean`: `relabelSym` (Δ₀, `2 ↦ 2+u`, `3 ↦ 2+w`), `termRelabel`/
+     `termRelabelVec` (`TermRec`, arity 2) and `relabelTemplate u w g` (`UformulaRec1` with
+     param `⟪u, w⟫`, identity on non-formula codes) — Σ₁ functions; `relabelTemplate_zero_one`
+     and `relabelTemplate_swap_swap` on EVERY code (formula codes by `sigma1_succ_induction`
+     with the `IsUFormula` preservation lemma for `u, w ∈ {0,1}`); the meta link at ℕ,
+     `relabelTemplate_quote : relabelTemplate 1 0 ⌜φ⌝ = ⌜lMap swap φ⌝` (propositions, then
+     `_sentence`). `Prog.lean`: `pSearch k g p q`, the `Relabel` core is now a Δ₁ blueprint
+     (`.mkDelta`, both polarities cite `relabelTemplateGraph` like `Eval` cites
+     `guardCodeGraph`; still StrongFinite — the bound on `relabelTemplate` is never needed,
+     the referenced pairs are `⟪p, p'⟫` with `p < x`, `p' < y`). `Template.lean`: `actT6`,
+     `GtmplA a := Gtmpl ⇜ ![#0..#5, actT6 a]`, `guardSentenceA a me opp`, `lMap_swap_GtmplA`,
+     `relabelTemplate_quote_GtmplA`, and the code/swap/truth equations under the new names.
+     `Fit.lean`: constants `cG a := flen (GtmplA a)` (irreducible, packaged as `cG 0 + cG 1`
+     in `exists_guard_const`) and `cP := ⟪⌜GtmplA 0⌝, pConst 0, pConst 1⟫`. Proof-craft traps
+     added: (i) at `V = ℕ` the coercion `(↑k : ℕ)` inside quoted codes is Foundation's
+     `Nat.cast` (from `instCommSemiring_foundation`), NOT definitionally `k` — `show`/`change`
+     to plain `k` fails; the simp lemma is `natCast_nat` (`Nat.numeral_eq` is for
+     `ORingStructure.numeral`); (ii) for the same reason numeral literals inside a generic-`V`
+     definition (`if f = 2`) do not match ℕ-literals after `change` — prove the equations
+     generically (`relabelSym_two : relabelSym 2 u w = 2 + u`) and instantiate with `exact
+     (… (V := ℕ) …).trans rfl`; (iii) a `TermRec` graph `.rew (Rew.subst ![…])` of arity ≥ 5
+     needs the evaluation spelled out (`val_rew`, `Semiformula.eval_substs`, a `funext`
+     lemma for `val ∘ ![#0, #3, …]`) — `simpa [Matrix.comp_vecCons']` alone stalls; (iv)
+     `section meta` is a syntax error on v4.33.1 (`meta` is a keyword); (v) `fin_cases` is
+     not in scope in modules importing only `LangAct` — use `match i with | 0 => rfl | …`;
+     (vi) `IsUTermVec`/`IsUTerm`/`IsUFormula` are defs, so dot-notation (`hv.termRelabelVec`)
+     fails — call the lemmas explicitly.
  (b) `psubst`/`pSim` (3b above, now with `gsubst me opp g := subst (descVec6 me opp) g` closed —
      no free slot to keep), evaluator clause, determinism/mono, τ-equivariance.
  (c) `TR : PD.Prog → ℕ` and `tcode : PD.Formula → template code` (the general template
