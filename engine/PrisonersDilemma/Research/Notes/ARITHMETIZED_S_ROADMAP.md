@@ -904,6 +904,28 @@ touched: `RedCell.models_TAct`, `Diag`, the `hPA` extractions of `CutV/InstV/Tra
 Not changed: `Neg.lean` (`¬LenProvable` is a length argument, theory-independent); `Symmetry`/
 `Transpose` (through `lMap_swap_mem_TAct`, statement unchanged).
 
+**U7 DONE 2026-09-12 (`ArithS/Transparency.lean`, 54aee07, census +11).** Critch's step 0 for
+Dupoc in every model: `eval_qDupoc_iff_V` (truth equation of `qDupoc` in `stdActV V`, `k : V`
+arbitrary), `dupoc_search_V` (`LenProvableV TAct k (guard) → EvalGraph 2 (DupocV k) … 0`),
+`dupoc_search_instB_V` (unconditional), `dupoc_loeb_premise_V` (via `ProperV`), the ℕ forms, and the
+uniform ℒₒᵣ-sentence `dupocPremise` proved by IΣ₁/PA/TAct. FINDING that led to U0b: the truth
+equations hold only in the standard readings of the constants — `Det.lean` already had the V-generic
+evaluation lemmas (`val_bnumT_V`, `stdActV`, …; the reader's "ℕ-only" note was stale).
+**ProperV DONE 2026-09-12 (`ArithS/ProperV.lean`, 5d9fc0a, census 115, UNCONDITIONAL).**
+Properness of derivation codes inside every model of IΣ₁: internal towers `EV/FV` (Σ₁), sharp
+`⟪a,b⟫ + 1 ≤ (max+1)²` (Foundation's `pair_polybound` is too weak for two tower levels),
+`isUTerm_le_EV`, `isSemiformula_le_EV`, `isFormulaSet_le_FV`, `derivation_le_FV_dlen` (by
+`IsUTerm.induction`/`sigma1_structural_induction`/`Derivation.induction1`), hence `properV_TAct`,
+`properV_LOR`, `lenProvableV_cut_V'` (no hypothesis) and **`lenDerivable_iff_lenProvableV`** — the
+Σ₁ box of the Löb argument and the Δ₁ box of the evaluator coincide in every model. Small-code
+hypotheses are the INTERNAL `SmallCodesV`/`SmallRelCodesV` (a nonstandard model can carry
+nonstandard symbol codes; for `LAct`/`ℒₒᵣ` they are explicit Δ₀ disjunctions). Traps: unification
+whnf-timeouts on `V` from mismatched `+` shapes (state helper lemmas with the exact shape);
+`1 ≤ dlen`/`1 ≤ formulaLen` are load-bearing for the `wk/shift` and `∀/∃` nodes.
+IN FLIGHT: `NumeralFacts.lean` (short proofs of `numeral c ≤ bnumT k`), `Assembly/Prep.lean`
+(Cupod's instance + truth equations, the conjunction `qDupoc ⋏ qCupod`, ∧-elimination on codes,
+`Box_g`/`θ`, Σ₁ upward transfer, `BoundedInnerNec`); then U8/U9.
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
