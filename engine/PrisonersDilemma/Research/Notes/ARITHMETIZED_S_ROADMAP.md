@@ -861,6 +861,19 @@ term notation's `1` is the numeral operator, not `func one ![]` (`succTT` is cha
 through `oneTT`); the meta inductive graph needs explicit `hx : x = pBot p` arguments.
 NEXT: U7 (Dupoc transparency in `V`, on `DupocV`), then U8/U9 with U5 as the named hypothesis.
 
+**U6 DONE 2026-09-12 (`ArithS/Diag.lean`, commit 669704c, census +8, three axioms).** The
+parametric diagonal lemma over `TAct` for `LAct` formulas: `tact_parametric_diagonal θ : ∃ ψ,
+TAct ⊢ ∀¹ (ψ 🡘 θ ⇜ ![lMap emb ⌜ψ⌝, #0])` (Foundation's `parameterizedFixedpoint` is ℒₒᵣ-only —
+`subst ℒₒᵣ` is the `L`-indexed recursion and ignores `c_C/c_D`; re-done with
+`substNumeralParamsA := subst LAct (numeral x ∷ ^#0 ∷ 0)`), the `bnumT k` instances
+(`tact_parametric_diagonal_inst`, `models_…`, `provable_code_…`; the two sides are DIFFERENT codes
+`instB ⌜ψ⌝ k` / `instB ⌜θ/[⌜ψ⌝,#0]⌝ k` that TAct proves equivalent). REUSABLE: `tact_complete`
+(completeness for `TAct` restricted to models with REAL equality — `Theory.Proof.complete` alone
+admits congruence models; Foundation's `complete_on_eq_models` needs `𝗘𝗤 LAct ⪯ TAct`, proved here
+axiom by axiom via PA's equality axioms along `emb`). TRAP: any `simp` touching the closed quote
+`⌜tactDiag θ⌝` makes the kernel build a numeral over `LEAN_NAT_MAX_SIZE` — prove quote equations
+for a VARIABLE sentence and instantiate; unfold `tactFixedpoint` only by its `rfl` lemma.
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
