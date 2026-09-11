@@ -926,6 +926,20 @@ IN FLIGHT: `NumeralFacts.lean` (short proofs of `numeral c ≤ bnumT k`), `Assem
 (Cupod's instance + truth equations, the conjunction `qDupoc ⋏ qCupod`, ∧-elimination on codes,
 `Box_g`/`θ`, Σ₁ upward transfer, `BoundedInnerNec`); then U8/U9.
 
+**U8-prep DONE 2026-09-12 (`ArithS/Assembly/Prep.lean`, ec5a8b6, census 138, no hypotheses).**
+Cupod's instance (`qCupod := lMap swap qDupoc`, `guardCode_CupodV_eq_instB`, `cupod_search_V`), the
+truth equations in BOTH readings (`eval_qCupod_iff_V`; `eval_swapActS : Eval (swapActS) φ ↔ Eval
+(stdActS) (lMap swap φ)` — `swapActS` is literally the pull-back), the conjunction family
+`pConj := qDupoc ⋏ qCupod` with `instB_quote_pConj`, ∧-elimination on codes (`lenDerivable_andL_V`:
+`+ 8(|x|+|y|) + 7`), `pconj_both_V` (a bounded proof of the conjunction ⇒ BOTH searchers find their
+guards ⇒ `EvalGraph 2 Dupoc … 0 ∧ EvalGraph 2 Cupod … 1`), `gBudget k := ‖k‖²`, the box formula
+`Box_g χ` with `eval_Box_g_iff` in both readings, `theta` (`#0` = code slot, `#1` = budget),
+`psi := tactFixedpoint theta` with **`psi_fixed_point : TAct ⊢ ∀¹ (psi 🡘 (Box_g psi 🡒 pConj))`**,
+Σ₁ upward transfer `lenDerivable_of_nat`, `exists_lenDerivable_V_of_proof`, and the ONE hypothesis
+`structure BoundedInnerNec (d c c₁ c₀ : ℕ)` (Critch's Property 4 / assumption (d), polynomial `E`).
+IN FLIGHT: `Assembly/Uniform.lean` (U8: `poly_size_le_eventually`, `chain_V`, `psi_true_V`,
+`pblt_uniform`), `Assembly/Cell.lean` (U9: `dupoc_self_coop`), `NumeralFacts.lean`.
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
