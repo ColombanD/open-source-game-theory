@@ -940,6 +940,14 @@ guards ⇒ `EvalGraph 2 Dupoc … 0 ∧ EvalGraph 2 Cupod … 1`), `gBudget k :=
 IN FLIGHT: `Assembly/Uniform.lean` (U8: `poly_size_le_eventually`, `chain_V`, `psi_true_V`,
 `pblt_uniform`), `Assembly/Cell.lean` (U9: `dupoc_self_coop`), `NumeralFacts.lean`.
 
+**NumeralFacts DONE 2026-09-12 (`ArithS/NumeralFacts.lean`, 7ab172f, census +8).**
+`lenProvable_le_bnumT (c) : ∃ C₀ C₁, ∀ k ≥ c, LenProvable fbound (C₀ + C₁·size k²) TAct
+⌜leF ↑c (lMap emb (bnumT k))⌝` (+ strict twin): bit recursion cutting two uniform PA lemmas
+(`c ≤ x → c ≤ 2x`, `c ≤ x → c ≤ 2x+1`, lengths existential) into the chain, finite base cases by
+completeness; QUADRATIC in `size k` (each bit step pays the instantiation cost `5|χ[t]|`), so the
+Löb budget becomes `gBudget k := ‖k‖³` (Prep). `leF t u := rel Eq ⋎ rel LT` = Foundation's `“t ≤ u”`;
+bridge `substs_leF_imp` gives the exact instance shape for the meta closure.
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
