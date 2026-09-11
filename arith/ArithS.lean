@@ -13,6 +13,7 @@ import ArithS.Symmetry
 import ArithS.ProofLength
 import ArithS.Cut
 import ArithS.CutV
+import ArithS.ProperV
 import ArithS.InstV
 import ArithS.Diag
 import ArithS.RelabelTemplate

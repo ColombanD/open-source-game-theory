@@ -3,6 +3,7 @@ import ArithS.AgentConverse
 import ArithS.Core.Sound
 import ArithS.Cut
 import ArithS.CutV
+import ArithS.ProperV
 import ArithS.InstV
 import ArithS.Diag
 import ArithS.Det
@@ -55,6 +56,15 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms properV_nat_TAct
 #print axioms pa_proves_cutSentence
 #print axioms tact_proves_cutSentence
+
+-- M4, properness INSIDE every model of IΣ₁ (ProperV): the code/length chain of `Proper.lean`
+-- redone on internal codes by the internal induction principles (no quotes) — `ProperV V TAct`
+-- is a THEOREM, so bounded D2 for `LenProvableV` is unconditional and the Σ₁ box
+-- `LenDerivable` (the Löb argument's) coincides with the Δ₁ box `LenProvableV` (the evaluator's).
+#print axioms properV_of_small
+#print axioms properV_TAct
+#print axioms lenProvableV_cut_V'
+#print axioms lenDerivable_iff_lenProvableV
 
 -- M4, U1 + U3 (InstV): the bnum-instance operator `instB` (Σ₁ graph, code equation, length
 -- `|instB n k| ≤ |n|·|bnum k|`), the parametric box `bewB` (Σ₁), and Quantifier Distribution
