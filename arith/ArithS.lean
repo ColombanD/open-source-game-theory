@@ -17,6 +17,7 @@ import ArithS.InstV
 import ArithS.RelabelTemplate
 import ArithS.Prog
 import ArithS.Bnum
+import ArithS.ProgT
 import ArithS.BewV
 import ArithS.Guard
 import ArithS.Subst
