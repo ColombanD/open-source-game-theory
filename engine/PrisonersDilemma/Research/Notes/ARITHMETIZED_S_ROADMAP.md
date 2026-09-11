@@ -799,6 +799,21 @@ LESSON for the parametric box (U1): use `LenDerivable` (Σ₁, no `fbound`) insi
 argument; `fbound`/`LenProvableV` is only needed where the EVALUATOR's guard is consulted
 (Δ₁-ness of the search clause), so `ProperV V` enters exactly once, at the final step.
 
+**U1 + U3 DONE 2026-09-11 (`ArithS/InstV.lean`, commit 47fa241, census 79 lines, three axioms,
+NO named hypotheses).** `instB n k := subst LAct (bnum k ∷ 0) n` (the `bnum`-instance of a
+one-variable formula code; Σ₁ graph; `quote_instB : instB ⌜φ⌝ k = ⌜φ ⇜ ![lMap emb (bnumT k)]⌝`;
+`formulaLen_instB_le : |instB n k| ≤ |n| · |bnum k|` via a general `formulaLen_subst_le` with the
+Δ₁ invariant `SubstInv`), the PARAMETRIC BOX `bewB a n k := LenDerivable TAct a (instB n k)` with
+`bewBDef : 𝚺₁.Semisentence 3` — every later Löb sentence is written with it. Property 2 on codes:
+`instCode` (cut of the `∀`-proof against `exsIntro` from an `axL` leaf), `dlen_instCode_le ≤
+dlen d + 5|χ[t]| + 3|χ| + |t| + 7`, `lenDerivable_inst_V`/`lenDerivable_instB_V`/`bewB_of_all`
+(V-generic, unconditional), meta twin `lenProvable_inst`/`lenProvable_inst_size`
+(`+ 6·size k + 8` for the term) — the FINAL meta step of PBLT — and `pa_proves_instSentence`/
+`tact_proves_instSentence`. Trap: state instantiation costs in `|χ[t]|, |χ|, |t|` separately
+(`|χ| ≤ |χ[t]|` needs `#0` to occur). NEXT: U6 `Diag.lean` (parametric diagonal lemma over TAct
+for LAct formulas — agent launched), then `ProperV V TAct` for general V, U7 (after the term
+descriptions land), U8/U9.
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
