@@ -12,6 +12,7 @@ import ArithS.Inst
 import ArithS.Instance
 import ArithS.InstanceV
 import ArithS.Transparency
+import ArithS.Assembly.Prep
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -135,6 +136,38 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms isigma1_proves_dupocPremise
 #print axioms pa_proves_dupocPremise
 #print axioms tact_proves_dupocPremise
+
+-- M4 assembly prep (Assembly/Prep, 2026-09-12): Cupod's instance equation on codes and search
+-- clause in every model; the truth equations in BOTH readings (`swapActS` pulled back to
+-- `stdActS`); the conjunction family `pConj = qDupoc ⋏ qCupod` with `instB` distributing over
+-- the code connectives and ∧-elimination on codes with dlen accounting (`a + 8(|x|+|y|) + 7`),
+-- so a box of the `k`-instance of `pConj` makes BOTH searchers find their guards; the box
+-- formula `Box_g` (`g k = ‖k‖²`) with its semantics, `θ` (`#0` = code slot, `#1` = budget) and
+-- the fixed point `psi` with `TAct ⊢ ∀¹ (psi 🡘 (Box_g psi 🡒 pConj))`; Σ₁ upward transfer of a
+-- bounded proof code from ℕ to every model, and a length for every `TAct`-theorem.
+#print axioms guardCode_CupodV_eq_instB
+#print axioms cupod_search_V
+#print axioms eval_qCupod_iff_V
+#print axioms eval_swapActS
+#print axioms eval_qDupoc_swap_iff_V
+#print axioms eval_qCupod_swap_iff_V
+#print axioms instB_quote_pConj
+#print axioms instB_imp
+#print axioms lenDerivable_andL_V_sharp
+#print axioms lenDerivable_andR_V_sharp
+#print axioms lenDerivable_andL_V
+#print axioms lenDerivable_andR_V
+#print axioms pconj_both_V
+#print axioms eval_pConj_iff_std
+#print axioms eval_pConj_iff_swap
+#print axioms gBudget.defined
+#print axioms eval_Box_g_iff
+#print axioms theta_subst_code
+#print axioms psi_fixed_point
+#print axioms models_psi_fixed_point
+#print axioms lenDerivable_of_nat
+#print axioms lenDerivable_of_proof
+#print axioms exists_lenDerivable_V_of_proof
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound

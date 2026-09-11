@@ -33,6 +33,7 @@ import ArithS.Code
 import ArithS.Instance
 import ArithS.InstanceV
 import ArithS.Transparency
+import ArithS.Assembly.Prep
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse
