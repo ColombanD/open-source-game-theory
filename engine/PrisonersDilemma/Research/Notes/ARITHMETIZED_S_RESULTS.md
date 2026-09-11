@@ -174,6 +174,18 @@ therefore exactly Critch's assumption (d), stated as the one open hypothesis." T
 budget-erased world of T2-CORE is that of Barász et al.'s unbounded modal agents (cf. Berns'
 mechanization); the contribution stays the BOUNDED `S` of T1/T2-AGENT.
 
+**Addendum (2026-09-11) — the first M4 field: bounded D2 in rule form
+(`ArithS/Cut.lean`, `lenProvable_mp`).** PA-`S` closes under modus ponens at additive cost:
+`□_{k₁}(φ ➝ ψ) → □_{k₂} φ → □_{k₁ + k₂ + 10(|φ| + |ψ|) + 9} ψ` for sentences of `LAct` over
+`TAct` (sharp: `k₁ + k₂ + 5|φ| + 10|ψ| + 9`), via one `cut` in Foundation's one-sided calculus
+whose five sequents are charged exactly by `mlen`; with budget monotonicity
+(`lenProvable_fbound_mono`) and the `verum` leaf (`lenProvable_verum`, length 2) it is the
+character-count analogue of the engine's `mp` at cost `m₁ + m₂ + |ψ|`. The engine charges
+only `|ψ|`; PA-`S` also pays `|φ|` because the cut formula is copied into the side sequents —
+a constant-factor departure that any budget-keeping transfer must absorb, and not the
+obstruction: T2-NEG locates that in the atoms. D1 (`e(k) + |□_k σ|`), D3 and the bounded
+diagonal lemma remain open (M4).
+
 ## 4. Boundaries (recorded, not gaps in proofs)
 
 1. `.box` cannot be translated compositionally under LENGTH-bounded provability: a box carries
