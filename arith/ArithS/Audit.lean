@@ -3,6 +3,7 @@ import ArithS.AgentConverse
 import ArithS.Core.Sound
 import ArithS.Cut
 import ArithS.CutV
+import ArithS.InstV
 import ArithS.Det
 import ArithS.FitBox
 import ArithS.Inst
@@ -50,6 +51,22 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms properV_nat_TAct
 #print axioms pa_proves_cutSentence
 #print axioms tact_proves_cutSentence
+
+-- M4, U1 + U3 (InstV): the bnum-instance operator `instB` (Σ₁ graph, code equation, length
+-- `|instB n k| ≤ |n|·|bnum k|`), the parametric box `bewB` (Σ₁), and Quantifier Distribution
+-- on codes with dlen accounting (`N + 5|χ[bnum k]| + 3|χ| + |bnum k| + 7`) — V-generic, its
+-- meta twin at ℕ (the final PBLT step), and as ONE ℒₒᵣ-sentence proved by IΣ₁/PA/TAct.
+#print axioms instB.defined
+#print axioms quote_instB
+#print axioms formulaLen_instB_le
+#print axioms bewB.defined
+#print axioms lenDerivable_inst_V
+#print axioms lenDerivable_instB_V
+#print axioms lenDerivable_instB_V'
+#print axioms lenProvable_inst
+#print axioms lenProvable_inst_size
+#print axioms pa_proves_instSentence
+#print axioms tact_proves_instSentence
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound
