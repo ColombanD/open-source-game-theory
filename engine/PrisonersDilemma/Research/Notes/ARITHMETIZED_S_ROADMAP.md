@@ -814,6 +814,53 @@ dlen d + 5|χ[t]| + 3|χ| + |t| + 7`, `lenDerivable_inst_V`/`lenDerivable_instB_
 for LAct formulas — agent launched), then `ProperV V TAct` for general V, U7 (after the term
 descriptions land), U8/U9.
 
+**U0 DONE 2026-09-12 (`ArithS/ProgT.lean`, `ArithS/Instance.lean`, `ArithS/InstanceV.lean`;
+descriptions switched in `Guard`/`Template`, consumers `Subst`/`Code`/`Neg`/`FitBox`/`Det`/`Fit`
+repaired; full build green, every census line three axioms).** Programs are described by the
+STRUCTURAL TERM of their code over `ppair`: `ppairT s t := ((s ^+ t) ^* (s ^+ t)) ^+ t` on term
+codes and `progT : V → V` (Σ₁, a StrongFinite fixpoint on pairs exactly like `relabel`; budget
+`k` and template code `g` as `bnum` leaves; `bnum x` on non-shapes), `IsSemiterm ℒₒᵣ`, Δ₁ graph
+`progTGraphDef`, `progT.defined`; meta twin `progTT : ℕ → ClosedSemiterm ℒₒᵣ 0` (an inductive
+graph with EXPLICIT equations — `cases` on a family indexed by `pBot p` fails — plus choice),
+`quote_progTT : ⌜progTT x⌝ = progT ↑x` in EVERY model (proved in `V` with cast lemmas
+`cast_pConst … cast_pSearch` for the shapes and Σ₁-absoluteness `cast_progT` +
+`Semiterm.coe_quote_eq_quote` for the non-shape leaf — the ℕ-only route drowns in `OfNat`
+instance mismatches, `instOfNatNat 3` vs `instOfNat` at `V = ℕ`), `val_progTT : val (progTT x) = x`
+(`ppair` being a term is exactly what makes the description DENOTE the code), exact lengths
+`|ppairTT s t| = 2|s| + 3|t| + 4`, `|succTT t| = |t| + 2` (searcher: `2|6̂| + 6|k̂| + 18|ĝ| +
+54|p| + 81|q| + 162`), and the lower bound `size x ≤ |progTT x|` for free from
+`val_lt_two_pow_tlen` (every closed ℒₒᵣ-term denotes `< 2^length`) — no size arithmetic on the
+tower at all. `descVec me opp := progT (dnum me) ∷ dU me ∷ dW me ∷ …`, `dnumT x := lMap emb
+(progTT (dnum x))`; `dnumT_eq_numTB` is gone. `Fit`: `exists_guard_const` now
+`flen ≤ c · (|dnumT me| + |dnumT opp| + 5)`, `exists_desc_const : |dnumT (Dupoc k)| ≤ 36 · size k
++ D` (the constant carries `|bnumT ⌜GtmplA a⌝|`, packaged existentially), `guard_fits`/`guard_fits'`
+byte-identical. THE HEADLINE: `dnum (Dupoc k) = pSearch k gD pD qD` with a `k`-INDEPENDENT inner
+triple decided by the fixed inequality `innerD ≤ innerC` between two closed constants (never
+evaluated; `ppair` reflects the order in its second argument, `pSearchInner_lt_iff`), `dUT/dWT
+(Dupoc k)` `k`-independent, `progTT (pSearch k g p q) = searchT1 g p q ⇜ ![bnumT k]`, hence
+`exists_dupoc_instance : ∃ q : Semisentence LAct 1, ∀ k, guardSentenceA 0 (Dupoc k) (Dupoc k) =
+q ⇜ ![lMap emb (bnumT k)]` (witness `qDupoc := GtmplA 0 ⇜ ![TD, cl uD, cl wD, TD, cl uD, cl wD]`)
+and `exists_dupoc_instance_code : ∃ cq, IsSemiformula LAct 1 cq ∧ ∀ k, guardCode ⌜GtmplA 0⌝
+(Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) cq`; and V-GENERIC, for possibly NONSTANDARD
+budgets: `exists_dupoc_instance_code_V : ∃ cq : ℕ, IsSemiformula LAct 1 cq ∧ ∀ (V) [𝗜𝚺₁] (k : V),
+guardCode ⌜GtmplA 0⌝ (DupocV k) (DupocV k) = subst LAct (bnum k ∷ 0) ↑cq` — i.e. the guard code
+is `instB cq k` (`InstV`), the input the parametric box `bewB` expects. Its proof re-runs the
+analysis inside `V` (`swapcode_DupocV` by Σ₁-absoluteness of `relabelTemplate`; `Nat.cast_lt` for
+the deciding inequality — PA⁻ models are `IsStrictOrderedRing`) and then composes internal
+substitutions: `substs_substs` on the code of `qDupoc`, the code of the one-variable term `TD`
+being the `ppairT`-tower with `^#0` in the budget slot (`quote_emb_searchT1`) which
+`termSubst (bnum k ∷ 0)` fills (`termSubst_tower`, via `termSubst_func` + `termSubstVec_cons₂`
+and `termSubst_eq_self` for the closed leaves). Traps: `≤` at `V = ℕ` is `instLE_foundation`
+(`x = y ∨ x < y`), NOT `instLENat` — state comparisons with `<` (which IS `Nat.lt`) or with
+V-generic lemmas instantiated at ℕ; `Phi`/equations over `V` must annotate `(𝟏 : V)` and the
+existentials `: V`, or the whole pair elaborates at ℕ and casts; `(bnum k ∷ 0)` in a STATEMENT
+needs `(0 : V)`; `rw [quote_bnumT]` at ℕ leaves `bnum ↑3` whose cast is not `rfl`-removable —
+use `quote_bnumT_nat` or stay in `V`; `omega` mis-atomizes `2^a * 2^b` written twice through
+different instance paths — factor the arithmetic into a helper over variables; the `‘…’`
+term notation's `1` is the numeral operator, not `func one ![]` (`succTT` is characterized
+through `oneTT`); the meta inductive graph needs explicit `hx : x = pBot p` arguments.
+NEXT: U7 (Dupoc transparency in `V`, on `DupocV`), then U8/U9 with U5 as the named hypothesis.
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);

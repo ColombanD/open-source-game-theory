@@ -57,8 +57,8 @@ instantiation at `k̄` of cost `O(lg k)`. Therefore:
 ## 2. The guard mismatch, and the coding decision
 
 FACT. Dupoc's runtime guard is `guardCode ⌜GtmplA 0⌝ (Dupoc k) (Dupoc k) = subst (descVec …) ⌜GtmplA 0⌝`
-with `descVec` built from `bnum (dnum (Dupoc k))` — the binary numeral of the WHOLE program code
-(`Guard.lean:149-153`). PBLT's fixed point and Property 1 produce boxes of `k`-INSTANCES of
+with `descVec` built (before 2026-09-12) from `bnum (dnum (Dupoc k))` — the binary numeral of the WHOLE program code
+(`Guard.lean`, now `progT (dnum (Dupoc k))`). PBLT's fixed point and Property 1 produce boxes of `k`-INSTANCES of
 formulas, `subst (numeral k) ⌜p⌝`. The numeral of `⟪6, k, cP⟫ + 1` is not the numeral of `k`
 inside any fixed term, because Foundation's `pair` is `if a < b then b*b + a else a*a + a + b`
 (`IOpen/Basic.lean:511`) — no ℒₒᵣ term denotes it. So the guard is the `k`-instance of NO formula,
@@ -95,7 +95,7 @@ axioms); `L a x := LenProvableV TAct a x` on codes.
 
 | # | object / lemma | kind | status |
 |---|---|---|---|
-| U0 | `ppair`, program codes on it, `progT` (Σ₁ term-code function), `descVec` via `progT ∘ dnum`, `guard_fits` re-proved, code equation `guardCode ⌜GtmplA 0⌝ (Dupoc k) (Dupoc k) = subst (bnum k ∷ 0) ⌜q_D⌝` (existentially packaged `q_D`) | refactor | agent launched 2026-09-11 (pairing); `progT`/descriptions next |
+| U0 | `ppair`, program codes on it, `progT` (Σ₁ term-code function), `descVec` via `progT ∘ dnum`, `guard_fits` re-proved, code equation `guardCode ⌜GtmplA 0⌝ (Dupoc k) (Dupoc k) = subst (bnum k ∷ 0) ⌜q_D⌝` (existentially packaged `q_D`) | refactor | **DONE 2026-09-12** (`ProgT`, `Instance`, `InstanceV`): `exists_dupoc_instance` (meta), `exists_dupoc_instance_code` (ℕ) and `exists_dupoc_instance_code_V` (every `V`, every `k : V` — the guard code is `instB cq k`) |
 | U1 | `bewB a n k := ∃ g, g = subst (bnum k ∷ 0) n ∧ L a g` — the parametric box on codes; its Δ₁ graph | def | — |
 | U2 | Property 1 in `V`: `L a (imp φ ψ) → L b φ → L (a + b + c₁(‖φ‖+‖ψ‖) + c₀) ψ` (`CutV.lean`) | V-generic lemma | agent launched 2026-09-11 |
 | U3 | Property 2 in `V`: from a code of `∀k χ(k)` with `dlen ≤ N`, a code of `subst (bnum k ∷ 0) ⌜χ⌝` with `dlen ≤ N + c·len(bnum k) + c'` (internal `∀`-elimination = one cut) | V-generic lemma | — |
