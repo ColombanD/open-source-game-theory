@@ -31,7 +31,8 @@ possibly nonstandard) unless a statement says `ℕ`.
    budget `a` with `a + 8(…) + 7 ≤ k` makes BOTH searchers find their guards:
    `EvalGraph 2 (DupocV k) … 0 ∧ EvalGraph 2 (CupodV k) … 1`. And `pConj` is true in BOTH
    readings with the same content (`eval_pConj_iff_std`, `eval_pConj_iff_swap`).
-4. **The box of the argument.** `gBudget k := ‖k‖ * ‖k‖` (Critch's `g`, `lg k ≺ g(k)`; Σ₁ graph
+4. **The box of the argument.** `gBudget k := ‖k‖ * ‖k‖ * ‖k‖` (Critch's `g`, `lg k ≺ g(k)`; the CUBE
+   because the meta closure of U9 is quadratic in the bit length, `NumeralFacts`; Σ₁ graph
    `gGraph`), the ℒₒᵣ-core `boxCore : Semisentence ℒₒᵣ 2` — `#0` the CODE slot `n`, `#1` the
    budget `k` — `Box_g χ := boxCoreA ⇜ ![lMap emb ⌜χ⌝, #0]` with the unary Gödel numeral of `χ`
    (a constant; never evaluated), and its semantics `eval_Box_g_iff` in every `LAct`-structure
@@ -549,12 +550,14 @@ end conj
 
 section box
 
-/-- Critch's budget function `g`: the square of the bit length, `‖k‖ * ‖k‖` — so that
-`C + c·‖k‖ ≤ gBudget k` for all large `k`, whatever the constants. -/
-noncomputable def gBudget (k : V) : V := ‖k‖ * ‖k‖
+/-- Critch's budget function `g`: the CUBE of the bit length, `‖k‖ * ‖k‖ * ‖k‖` — so that
+`C + c₁·‖k‖ + c₂·‖k‖² ≤ gBudget k` for all large `k`, whatever the constants (the meta closure
+of U9, `Assembly/Cell.lean`, is quadratic in `‖k‖`: `NumeralFacts.lenProvable_le_bnumT`). Nothing
+downstream depends on the shape beyond `PLE_gBudget` (`Assembly/Uniform.lean`) and U9. -/
+noncomputable def gBudget (k : V) : V := ‖k‖ * ‖k‖ * ‖k‖
 
 /-- The Σ₁ graph of `gBudget` (`y k`). -/
-noncomputable def gGraph : 𝚺₁.Semisentence 2 := .mkSigma “y k. ∃ l, !lengthDef l k ∧ y = l * l”
+noncomputable def gGraph : 𝚺₁.Semisentence 2 := .mkSigma “y k. ∃ l, !lengthDef l k ∧ y = l * l * l”
 
 instance gBudget.defined : 𝚺₁-Function₁[V] gBudget via gGraph := .mk fun v ↦ by
   simp [gGraph, gBudget]

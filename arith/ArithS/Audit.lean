@@ -14,6 +14,7 @@ import ArithS.Instance
 import ArithS.InstanceV
 import ArithS.Transparency
 import ArithS.Assembly.Prep
+import ArithS.Assembly.Uniform
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -156,7 +157,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `stdActS`); the conjunction family `pConj = qDupoc ⋏ qCupod` with `instB` distributing over
 -- the code connectives and ∧-elimination on codes with dlen accounting (`a + 8(|x|+|y|) + 7`),
 -- so a box of the `k`-instance of `pConj` makes BOTH searchers find their guards; the box
--- formula `Box_g` (`g k = ‖k‖²`) with its semantics, `θ` (`#0` = code slot, `#1` = budget) and
+-- formula `Box_g` (`g k = ‖k‖³`) with its semantics, `θ` (`#0` = code slot, `#1` = budget) and
 -- the fixed point `psi` with `TAct ⊢ ∀¹ (psi 🡘 (Box_g psi 🡒 pConj))`; Σ₁ upward transfer of a
 -- bounded proof code from ℕ to every model, and a length for every `TAct`-theorem.
 #print axioms guardCode_CupodV_eq_instB
@@ -182,6 +183,26 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lenDerivable_of_nat
 #print axioms lenDerivable_of_proof
 #print axioms exists_lenDerivable_V_of_proof
+
+-- M4 U8 — the uniform PBLT chain (Assembly/Uniform, 2026-09-12), conditional on
+-- `BoundedInnerNec`: `|bnum k| ≤ 6‖k‖ + 1` in every model; polynomials in the bit length are
+-- eventually below `k` in EVERY model (standard threshold, nonstandard `k` included); the two
+-- standard readings are models of `TAct`; the forward direction of the fixed point with a
+-- length, instantiated; the chain (cut, necessitation, cut, ∧-elimination) with its budget
+-- `chainBound ≤ C·‖k‖^{3d+3}`; `psi(k)` true in both readings for all large `k`; and
+-- `TAct ⊢ ∀ k, (k̂ ≤ k → psi(k))`.
+#print axioms termLen_bnum_le_V
+#print axioms poly_size_le_eventually
+#print axioms stdActS_models_TAct
+#print axioms swapActS_models_TAct
+#print axioms psi_forward
+#print axioms forward_inst_V
+#print axioms chain_core_V
+#print axioms chain_V
+#print axioms chain_guard_V
+#print axioms chainBound_poly
+#print axioms psi_true_V
+#print axioms pblt_uniform
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound
