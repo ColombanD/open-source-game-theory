@@ -102,7 +102,7 @@ axioms); `L a x := LenProvableV TAct a x` on codes.
 | U4 | Property 3′: `LenProvable n σ → TAct ⊢ □_n σ` (Σ₁-completeness of a true Δ₁ sentence; the `lenProvableV_nat` reading) | free | check name |
 | U5 | Property 4 in `V`: `L a x → L (E a) ⌜lenProvableV a x⌝` with `E` polynomial | V-generic lemma | **THE CRUX**; state first as a named hypothesis `BoundedInnerNec E` |
 | U6 | parametric diagonal lemma for the `bnum`-instance operator (Foundation's `parameterized_diagonal₁` uses unary `numeral`; either reuse it — the numeral of `k` inside the fixed point may be unary, its length is `O(k)`… NO: that breaks `g ≥ lg k`; so re-do the construction with `bnum`, or prove `TAct ⊢ ∀k, ψ(k) ↔ …` where instances are `bnum`-instances) | theorem | **DONE 2026-09-12** (`Diag.lean`, 669704c): `tact_parametric_diagonal (θ : Semisentence LAct 2) : ∃ ψ, TAct ⊢ ∀¹ (ψ 🡘 θ ⇜ ![lMap emb ⌜ψ⌝, #0])` (Foundation's construction re-done over `LAct`: `substNumeralParamsA`, `tactFixedpoint`), instances at `bnumT k` (`tact_parametric_diagonal_inst`, model and `Provable`-code forms); reusable `tact_complete` (completeness for `TAct` on REAL-equality models) + `𝗘𝗤 LAct ⪯ TAct` |
-| U7 | Dupoc transparency: `∀ V, ∀ k, L k (guard k) → EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` and the truth equation in `V` (`READ_arith_for_m4.md` §4(iv) lists the ℕ-only lemmas needing `V` twins) | V-generic | — |
+| U7 | Dupoc transparency: `∀ V, ∀ k, L k (guard k) → EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` and the truth equation in `V` (`READ_arith_for_m4.md` §4(iv) lists the ℕ-only lemmas needing `V` twins) | V-generic | **DONE 2026-09-12** (`Transparency.lean`, 54aee07): `eval_qDupoc_iff_V` (truth equation in `stdActV V`), `dupoc_search_V`, `dupoc_search_instB_V` (unconditional), `dupoc_loeb_premise_V` (under `ProperV`), ℕ forms unconditional, `pa_proves_dupocPremise`/`tact_proves_dupocPremise`. FINDING: truth equations hold only in the STANDARD readings `c_C ↦ 0, c_D ↦ 1` (and the swap) — `TAct` with only `c_C ≠ c_D` admits models where the guard is FALSE ⇒ `TAct ⊬ guard(k)` for all `k`: a VACUITY, fixed by the action axiom (U0b, agent launched) |
 | U8 | `pblt_uniform`: assembling U1–U7 in `V`, then `complete`: `TAct ⊢ ∀k > k̂, q_D(k)` — and its meta instantiation: `∀ k > k̂, LenProvable (N + c·size k) (guard k)` | theorem, conditional on U5 | — |
 | U9 | `dupoc_self_coop : ∃ k̂, ∀ k > k̂, EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` (and the `(C, C)` outcome), conditional on U5 | theorem | — |
 | U10 | discharge U5 (bounded inner necessitation with polynomial `E`) | research | months; Zulip question to Foundation |
@@ -184,3 +184,18 @@ so `TAct ⊢ ∀¹ (ψ 🡘 θ ⇜ ![⌜ψ⌝, #0])`. Take META proofs of the tw
 Traps to expect: never `simp` a goal containing `⌜ψ⌝` (Diag's kernel-numeral trap); state every
 length in `‖k‖`, `flen ψ`, `flen p` separately (InstV's trap); the fixed point's numeral `⌜ψ⌝` is
 Foundation's UNARY numeral — an astronomical CONSTANT, harmless; `k̂`, `N₁…N₄` are all existential.
+
+## 7. Correction to §6 (2026-09-12, after U7): the model class and the action axiom
+
+`TAct = PA ∪ {c_C ≠ c_D, c_D ≠ c_C}` admits models reading the constants as ANY distinct pair; there
+`relabel c_C c_D (dnum (Dupoc k))` is not a program (the relabelled template has a non-existent
+symbol code), its search fails, and Dupoc's guard sentence is FALSE. So `TAct ⊬ guard(k)` for every
+`k` and Dupoc never cooperates — the abstract-constant τ design (roadmap §2.4) was vacuous for the
+Löbian cells (the M3 record's boundary 2 called the generic `TAct ⊢ trAt …` "needed by nothing
+downstream"; it is needed by exactly these cells). FIX (U0b): add the τ-symmetric axiom
+`axAct : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)` (and its swap image). Then every real-equality
+model of `TAct` is `stdActV V` or its swap twin, `tact_complete` quantifies over exactly those two
+readings, and §6's chain must be run in BOTH: in the swapped reading `qDupoc(k)` says "Cupod k plays
+D vs Cupod k", obtained from `EvalGraph 2 (DupocV k) … 0` by the τ-equivariance of `EvalGraph`
+(`swapcode`, `swapAct`) — a V-generic lemma to add to U8. Red cell, τ-closure and every `TAct ⊢`
+result survive (a stronger theory); `no_budget_keeping_transfer` is a length argument.
