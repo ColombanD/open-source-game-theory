@@ -88,6 +88,9 @@ lemma numeral_semiterm_LAct (n x : V) : IsSemiterm LAct n (numeral x) :=
 lemma bnum_semiterm_LAct (n x : V) : IsSemiterm LAct n (bnum x) :=
   IsSemiterm.LAct_of_LOR (bnum_semiterm n x)
 
+lemma progT_semiterm_LAct (n x : V) : IsSemiterm LAct n (progT x) :=
+  IsSemiterm.LAct_of_LOR (progT_semiterm n x)
+
 lemma dU_semiterm (n x : V) : IsSemiterm LAct n (dU x) := by
   unfold dU
   split_ifs
@@ -108,8 +111,8 @@ lemma six_eq : (6 : V) = 0 + 1 + 1 + 1 + 1 + 1 + 1 := by norm_num
 lemma descVec_semitermVec (me opp : V) : IsSemitermVec LAct 6 0 (descVec me opp) := by
   rw [six_eq, descVec]
   exact ((((((IsSemitermVec.nil 0).adjoin (dW_semiterm 0 opp)).adjoin (dU_semiterm 0 opp)).adjoin
-    (bnum_semiterm_LAct 0 _)).adjoin (dW_semiterm 0 me)).adjoin (dU_semiterm 0 me)).adjoin
-    (bnum_semiterm_LAct 0 _)
+    (progT_semiterm_LAct 0 _)).adjoin (dW_semiterm 0 me)).adjoin (dU_semiterm 0 me)).adjoin
+    (progT_semiterm_LAct 0 _)
 
 lemma len_descVec (me opp : V) : len (descVec me opp) = 6 := (descVec_semitermVec me opp).lh
 
@@ -440,6 +443,9 @@ lemma termRelabel_of_LOR {u w t : V} (ht : IsUTerm ℒₒᵣ t) : termRelabel u 
 lemma termRelabel_bnum (u w n : V) : termRelabel u w (bnum n) = bnum n :=
   termRelabel_of_LOR (bnum_uterm n)
 
+lemma termRelabel_progT (u w x : V) : termRelabel u w (progT x) = progT x :=
+  termRelabel_of_LOR (progT_uterm x)
+
 lemma termRelabel_numeral (u w n : V) : termRelabel u w (numeral n) = numeral n :=
   termRelabel_of_LOR (numeral_uterm n)
 
@@ -478,19 +484,19 @@ theorem termRelabelVec_descVec (me opp : V) :
   have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
   have h1 : IsUTermVec LAct (0 + 1) (dW opp ∷ (0 : V)) := e0.adjoin (dW_semiterm 0 opp).isUTerm
   have h2 : IsUTermVec LAct (0 + 1 + 1) (dU opp ∷ dW opp ∷ (0 : V)) := h1.adjoin (dU_semiterm 0 opp).isUTerm
-  have h3 : IsUTermVec LAct (0 + 1 + 1 + 1) (bnum (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
-    h2.adjoin (bnum_semiterm_LAct 0 (dnum opp)).isUTerm
-  have h4 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1) (dW me ∷ bnum (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
+  have h3 : IsUTermVec LAct (0 + 1 + 1 + 1) (progT (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
+    h2.adjoin (progT_semiterm_LAct 0 (dnum opp)).isUTerm
+  have h4 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1) (dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
     h3.adjoin (dW_semiterm 0 me).isUTerm
-  have h5 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1 + 1) (dU me ∷ dW me ∷ bnum (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
+  have h5 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1 + 1) (dU me ∷ dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
     h4.adjoin (dU_semiterm 0 me).isUTerm
   unfold descVec
-  rw [six_eq, termRelabelVec_cons (bnum_semiterm_LAct 0 (dnum me)).isUTerm h5,
+  rw [six_eq, termRelabelVec_cons (progT_semiterm_LAct 0 (dnum me)).isUTerm h5,
     termRelabelVec_cons (dU_semiterm 0 me).isUTerm h4, termRelabelVec_cons (dW_semiterm 0 me).isUTerm h3,
-    termRelabelVec_cons (bnum_semiterm_LAct 0 (dnum opp)).isUTerm h2,
+    termRelabelVec_cons (progT_semiterm_LAct 0 (dnum opp)).isUTerm h2,
     termRelabelVec_cons (dU_semiterm 0 opp).isUTerm h1,
     termRelabelVec_cons (dW_semiterm 0 opp).isUTerm e0, termRelabelVec_nil,
-    termRelabel_bnum, termRelabel_bnum, termRelabel_dU, termRelabel_dU, termRelabel_dW, termRelabel_dW,
+    termRelabel_progT, termRelabel_progT, termRelabel_dU, termRelabel_dU, termRelabel_dW, termRelabel_dW,
     dnum_swapcode, dnum_swapcode]
 
 /-- **The swap equation for `gsubst`**, on every code. -/

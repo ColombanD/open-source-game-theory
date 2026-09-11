@@ -1,6 +1,7 @@
 import ArithS.Prog
 import ArithS.BewV
 import ArithS.Bnum
+import ArithS.ProgT
 
 /-!
 # ArithS.Guard — the runtime guard sentence, on codes
@@ -10,9 +11,12 @@ filling the stored template `g` (a formula code with SIX free variables — the 
 `x₁ u₁ w₁` in `#0 #1 #2`, the opp-triple `x₂ u₂ w₂` in `#3 #4 #5`; roadmap M3 step (a)) with
 the CANONICAL DESCRIPTIONS of `me` and `opp`:
 
-* a program `x` is described by the triple `(bnum (dnum x), dU x, dW x)`, meaning
-  `relabel (dU x) (dW x) (dnum x)`: `dnum x = min x (swapcode x)` as a BINARY numeral term
-  (`ArithS.Bnum`, length `O(log x)` — Critch's assumption (b); with unary numerals the
+* a program `x` is described by the triple `(progT (dnum x), dU x, dW x)`, meaning
+  `relabel (dU x) (dW x) (dnum x)`: `dnum x = min x (swapcode x)` as the STRUCTURAL TERM of
+  its code over the polynomial pairing, with binary-numeral leaves (`ArithS.ProgT`, since
+  2026-09-11 — roadmap M4 item U0: a searcher's description is then the `k`-instance of a
+  fixed term, `ArithS.Instance`; before that the binary numeral `bnum (dnum x)` of the whole
+  code, `ArithS.Bnum`, length `O(log x)` — Critch's assumption (b); with unary numerals the
   description of a searcher of budget `k` is longer than `k` and no search can ever succeed,
   the retired `Vacuity.lean`, commit 470ee43), and the two term codes `dU x, dW x` are the
   constant symbols `c_C, c_D` in the order that reconstructs `x`, or the numerals `0, 1` in
@@ -145,16 +149,16 @@ end definability
 
 /-! ### The guard code -/
 
-/-- The description vector `?[bnum (dnum me), dU me, dW me, bnum (dnum opp), dU opp, dW opp]`. -/
+/-- The description vector `?[progT (dnum me), dU me, dW me, progT (dnum opp), dU opp, dW opp]`. -/
 noncomputable def descVec (me opp : V) : V :=
-  bnum (dnum me) ∷ dU me ∷ dW me ∷ bnum (dnum opp) ∷ dU opp ∷ dW opp ∷ 0
+  progT (dnum me) ∷ dU me ∷ dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ 0
 
 /-- Fill the six-variable template `g` with the descriptions of `me` and `opp`. -/
 noncomputable def guardCode (g me opp : V) : V := subst LAct (descVec me opp) g
 
 noncomputable def descVecGraph : 𝚺₁.Semisentence 3 := .mkSigma
-  “y me opp. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !bnumGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧
-    ∃ n₂, !dnumGraph n₂ opp ∧ ∃ t₂, !bnumGraph t₂ n₂ ∧ ∃ u₂, !dUGraph u₂ opp ∧ ∃ w₂, !dWGraph w₂ opp ∧
+  “y me opp. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !progTGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧
+    ∃ n₂, !dnumGraph n₂ opp ∧ ∃ t₂, !progTGraph t₂ n₂ ∧ ∃ u₂, !dUGraph u₂ opp ∧ ∃ w₂, !dWGraph w₂ opp ∧
     ∃ v₅, !adjoinDef v₅ w₂ 0 ∧ ∃ v₄, !adjoinDef v₄ u₂ v₅ ∧
     ∃ v₃, !adjoinDef v₃ t₂ v₄ ∧ ∃ v₂, !adjoinDef v₂ w₁ v₃ ∧ ∃ v₁, !adjoinDef v₁ u₁ v₂ ∧ !adjoinDef y t₁ v₁”
 

@@ -149,7 +149,7 @@ theorem size_dnum_le_flen_trAt (me opp p q : PD.Prog) (a : PD.Action) (hq : clos
     rw [tlen_emb_cl]
     unfold dnumT
     rw [tlen_emb_lMap_emb]
-    exact size_le_tlen_bnumT _
+    exact size_le_tlen_progTT _
   omega
 
 /-! ### T2-NEG -/

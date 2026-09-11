@@ -15,20 +15,28 @@ long as its conclusion; hence `search_never_found`: the guard is never found at 
 `Dupoc k` always defects and `Cupod k` always cooperates, against EVERY opponent, and the
 red cell held for a reason unrelated to symmetry.
 
-Since the descriptions are BINARY numeral terms (`ArithS.Bnum`, `ArithS.Guard`), this file
-proves the POSITIVE result that (b) demands, with explicit (ugly, but explicit) constants:
+Since the descriptions are STRUCTURAL TERMS of the codes with binary-numeral leaves
+(`ArithS.ProgT`, `ArithS.Guard`; before 2026-09-11 the binary numeral of the whole code,
+`ArithS.Bnum`), this file proves the POSITIVE result that (b) demands, with explicit (ugly,
+but explicit) constants:
 
 * `flen_subst_le`: a substitution instance `φ ⇜ w` of a template is at most `flen φ` times
   the total length of the substituted closed terms (plus one) — via `flen_rew_le`, a bound
   for every rewriter whose bound-variable images are variable-free or bare bound variables
   (the invariant that survives `Rew.q` under a quantifier);
-* `exists_guard_const`: `∃ c, flen (guardSentenceA a me opp) ≤ 10c + 6c · (size (dnum me) +
-  size (dnum opp))` for the actions `a ≤ 1`, with `c = cG 0 + cG 1`, `cG a = flen (GtmplA a)`
-  the symbol counts of the two closed template instances, packaged existentially
-  (`flen_guardSentence_le'` is the per-instance form);
+* `exists_guard_const`: `∃ c, flen (guardSentenceA a me opp) ≤ c · (|dnumT me| + |dnumT opp| + 5)`
+  for the actions `a ≤ 1`, with `c = cG 0 + cG 1`, `cG a = flen (GtmplA a)` the symbol counts
+  of the two closed template instances, packaged existentially (`flen_guardSentence_le'` is
+  the per-instance form; `|dnumT x|` is the length of the description term of `x`);
+* `exists_desc_const`: `∃ D, ∀ k, |dnumT (Dupoc k)| ≤ 36 · size k + D ∧ |dnumT (Cupod k)| ≤
+  36 · size k + D` — the description of a searcher is `progTT (pSearch k G P Q)` for a
+  `k`-INDEPENDENT inner triple, whose length is `6 · |bnumT k|` plus a constant
+  (`tlen_emb_progTT_search`, `tlen_bnumT`); the constant carries `|bnumT ⌜GtmplA a⌝|` and is
+  never written into a closed arithmetic expression;
 * `size_dnum_Dupoc_le`: `size (dnum (Dupoc k)) ≤ 4 · size k + (4 · size cP + 26)`, by the
   polynomial-pairing bound `ppair a b ≤ (a + b + 1)²` (`ArithS.Prog`, 2026-09-11; `cP =
-  ppair ⌜GtmplA 0⌝ (ppair (pConst 0) (pConst 1))` is the constant part of the searcher's code);
+  ppair ⌜GtmplA 0⌝ (ppair (pConst 0) (pConst 1))` is the constant part of the searcher's code)
+  — the bit length of the CODE, kept for reference;
 * **`guard_fits`**: `∃ K, ∀ k ≥ K, ∀ a ≤ 1, flen (guardSentenceA a (Dupoc k) (Cupod k)) ≤ k`
   (and `guard_fits'` with the roles swapped) — for all large budgets the searcher's own
   guard sentence fits inside its budget: the model is no longer degenerate, and whether the
@@ -207,13 +215,6 @@ lemma tlen_emb_lMap_emb (t : ClosedSemiterm ℒₒᵣ 0) :
     tlen (Rew.emb t : SyntacticSemiterm ℒₒᵣ 0) := by
   rw [term_emb_lMap_emb, tlen_lMap]
 
-/-- The binary canonical numeral of `x` costs `O(size (dnum x))` symbols. -/
-lemma tlen_emb_dnumT (x : ℕ) :
-    tlen (Rew.emb (dnumT x) : SyntacticSemiterm LAct 0) ≤ 6 * Nat.size (dnum x) + 1 := by
-  unfold dnumT
-  rw [tlen_emb_lMap_emb]
-  exact tlen_bnumT _
-
 lemma tlen_emb_cterm (a : Act) :
     tlen (Rew.emb (cterm a : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) = 1 := by
   simp [cterm, Rew.func]
@@ -275,14 +276,13 @@ lemma tlen_emb_actT (a : ℕ) : tlen (Rew.emb (actT a) : SyntacticSemiterm LAct 
   · rw [tlen_emb_cterm]; omega
   · exact tlen_emb_numT_le a
 
-/-- The total length of the six description terms. -/
+/-- The total length of the six description terms: the two program terms plus four one-symbol
+constants. -/
 theorem sum_tlen_descTerms_le (me opp : ℕ) :
     ∑ i, tlen (Rew.emb (descTerms me opp i) : SyntacticSemiterm LAct 0) ≤
-    6 * (Nat.size (dnum me) + Nat.size (dnum opp)) + 6 := by
-  have h0 := tlen_emb_dnumT me
+    tlen (Rew.emb (dnumT me) : SyntacticSemiterm LAct 0) + tlen (Rew.emb (dnumT opp) : SyntacticSemiterm LAct 0) + 4 := by
   have h1 := tlen_emb_dUT me
   have h2 := tlen_emb_dWT me
-  have h3 := tlen_emb_dnumT opp
   have h4 := tlen_emb_dUT opp
   have h5 := tlen_emb_dWT opp
   simp only [descTerms, Fin.sum_univ_succ, Fin.sum_univ_zero, Matrix.cons_val_zero,
@@ -291,7 +291,7 @@ theorem sum_tlen_descTerms_le (me opp : ℕ) :
 
 end descriptions
 
-/-! ### 3. The guard sentence is `O(size (dnum me) + size (dnum opp))` -/
+/-! ### 3. The guard sentence is `O(|dnumT me| + |dnumT opp|)` -/
 
 /-- `cG a`: the symbol count of the closed template instance `GtmplA a`. -/
 noncomputable def cG (a : ℕ) : ℕ := flen (Rewriting.emb (GtmplA a) : Semiproposition LAct 6)
@@ -299,7 +299,8 @@ noncomputable def cG (a : ℕ) : ℕ := flen (Rewriting.emb (GtmplA a) : Semipro
 /-- The per-instance bound. -/
 theorem flen_guardSentence_le' (me opp a : ℕ) :
     flen (Rewriting.emb (guardSentenceA a me opp) : Proposition LAct) ≤
-    cG a * (6 * (Nat.size (dnum me) + Nat.size (dnum opp)) + 7) :=
+    cG a * (tlen (Rew.emb (dnumT me) : SyntacticSemiterm LAct 0) +
+      tlen (Rew.emb (dnumT opp) : SyntacticSemiterm LAct 0) + 5) :=
   le_trans (flen_subst_le (GtmplA a) (descTerms me opp))
     (Nat.mul_le_mul_left _ (by have := sum_tlen_descTerms_le me opp; omega))
 
@@ -308,28 +309,80 @@ defeq machinery would otherwise try to EVALUATE it (whnf of `flen` on the templa
 unification. From here on it is an atom. -/
 attribute [irreducible] cG
 
-/-- Abstract arithmetic behind `exists_guard_const`, over variables only. -/
-lemma guard_bound_arith (c₀ c s : ℕ) (hc : c₀ ≤ c) :
-    c₀ * (6 * s + 7) ≤ 10 * c + 6 * c * s := by
-  calc c₀ * (6 * s + 7) ≤ c * (6 * s + 7) := Nat.mul_le_mul_right _ hc
-    _ ≤ c * (6 * s + 10) := Nat.mul_le_mul_left _ (by omega)
-    _ = 10 * c + 6 * c * s := by ring
-
 /-- **The guard bound, with its constant packaged existentially**: for the actions `a ∈ {0, 1}`
-the guard sentence of `me` against `opp` has at most `10c + 6c · (size (dnum me) + size (dnum opp))`
+the guard sentence of `me` against `opp` has at most `c · (|dnumT me| + |dnumT opp| + 5)`
 symbols, for the constant `c = cG 0 + cG 1` (the symbol counts of the two template instances).
 The constant is never written into a closed arithmetic expression: Lean's `Nat` defeq machinery
 would try to evaluate it (that is what `flen (GtmplA a)` on the giant template does), so every
 later argument takes `c` as a variable from this statement. -/
 theorem exists_guard_const : ∃ c : ℕ, ∀ me opp a : ℕ, a ≤ 1 →
     flen (Rewriting.emb (guardSentenceA a me opp) : Proposition LAct) ≤
-    10 * c + 6 * c * (Nat.size (dnum me) + Nat.size (dnum opp)) :=
+    c * (tlen (Rew.emb (dnumT me) : SyntacticSemiterm LAct 0) +
+      tlen (Rew.emb (dnumT opp) : SyntacticSemiterm LAct 0) + 5) :=
   ⟨cG 0 + cG 1, fun me opp a ha ↦ by
     rcases (show a = 0 ∨ a = 1 by omega) with rfl | rfl
-    · exact le_trans (flen_guardSentence_le' me opp 0)
-        (guard_bound_arith (cG 0) (cG 0 + cG 1) _ (Nat.le_add_right _ _))
-    · exact le_trans (flen_guardSentence_le' me opp 1)
-        (guard_bound_arith (cG 1) (cG 0 + cG 1) _ (Nat.le_add_left _ _))⟩
+    · exact le_trans (flen_guardSentence_le' me opp 0) (Nat.mul_le_mul_right _ (Nat.le_add_right _ _))
+    · exact le_trans (flen_guardSentence_le' me opp 1) (Nat.mul_le_mul_right _ (Nat.le_add_left _ _))⟩
+
+/-! ### 3'. The description of a searcher is `O(size k)` symbols -/
+
+section descLength
+
+/-- The length of the structural term of a searcher, in terms of the budget's bit length and
+the (budget-independent) lengths of the other leaves. -/
+lemma tlen_emb_progTT_search_le (k g p q : ℕ) :
+    tlen (Rew.emb (progTT (pSearch k g p q)) : SyntacticSemiterm ℒₒᵣ 0) ≤
+    36 * Nat.size k +
+      (2 * tlen (Rew.emb (bnumT 6) : SyntacticSemiterm ℒₒᵣ 0) + 18 * tlen (Rew.emb (bnumT g) : SyntacticSemiterm ℒₒᵣ 0) +
+        54 * tlen (Rew.emb (progTT p) : SyntacticSemiterm ℒₒᵣ 0) + 81 * tlen (Rew.emb (progTT q) : SyntacticSemiterm ℒₒᵣ 0) + 168) := by
+  rw [tlen_emb_progTT_search]
+  have := tlen_bnumT k
+  omega
+
+/-- The canonical code of `Dupoc k` is `Dupoc k` or `Cupod k`; likewise for `Cupod k`. -/
+lemma dnum_Dupoc_or (k : ℕ) : dnum (Dupoc k) = Dupoc k ∨ dnum (Dupoc k) = Cupod k := by
+  unfold dnum; rw [swapcode_Dupoc]; split_ifs <;> simp
+
+lemma dnum_Cupod_or (k : ℕ) : dnum (Cupod k) = Dupoc k ∨ dnum (Cupod k) = Cupod k := by
+  unfold dnum; rw [swapcode_Cupod]; split_ifs <;> simp
+
+/-- The budget-independent part of the description length of the searcher of action `a`
+(`Dupoc` for `a = 0`, `Cupod` for `a = 1`): it carries `|bnumT ⌜GtmplA a⌝|`, a closed number
+built from the giant template — never to be evaluated. -/
+noncomputable def cD (a : ℕ) : ℕ :=
+  2 * tlen (Rew.emb (bnumT 6) : SyntacticSemiterm ℒₒᵣ 0) +
+    18 * tlen (Rew.emb (bnumT (⌜GtmplA a⌝ : ℕ)) : SyntacticSemiterm ℒₒᵣ 0) +
+    54 * tlen (Rew.emb (progTT (pConst a)) : SyntacticSemiterm ℒₒᵣ 0) +
+    81 * tlen (Rew.emb (progTT (pConst (swapAct a))) : SyntacticSemiterm ℒₒᵣ 0) + 168
+
+lemma tlen_emb_progTT_Dupoc_le (k : ℕ) :
+    tlen (Rew.emb (progTT (Dupoc k)) : SyntacticSemiterm ℒₒᵣ 0) ≤ 36 * Nat.size k + cD 0 := by
+  unfold cD
+  rw [swapAct_zero]
+  exact tlen_emb_progTT_search_le k _ _ _
+
+lemma tlen_emb_progTT_Cupod_le (k : ℕ) :
+    tlen (Rew.emb (progTT (Cupod k)) : SyntacticSemiterm ℒₒᵣ 0) ≤ 36 * Nat.size k + cD 1 := by
+  unfold cD
+  rw [swapAct_one]
+  exact tlen_emb_progTT_search_le k _ _ _
+
+attribute [irreducible] cD
+
+/-- **The description of a searcher has `O(size k)` symbols, constant packaged existentially.** -/
+theorem exists_desc_const : ∃ D : ℕ, ∀ k : ℕ,
+    tlen (Rew.emb (dnumT (Dupoc k)) : SyntacticSemiterm LAct 0) ≤ 36 * Nat.size k + D ∧
+    tlen (Rew.emb (dnumT (Cupod k)) : SyntacticSemiterm LAct 0) ≤ 36 * Nat.size k + D := by
+  refine ⟨cD 0 + cD 1, fun k ↦ ?_⟩
+  have h0 := tlen_emb_progTT_Dupoc_le k
+  have h1 := tlen_emb_progTT_Cupod_le k
+  constructor
+  · unfold dnumT; rw [tlen_emb_lMap_emb]
+    rcases dnum_Dupoc_or k with h | h <;> rw [h] <;> omega
+  · unfold dnumT; rw [tlen_emb_lMap_emb]
+    rcases dnum_Cupod_or k with h | h <;> rw [h] <;> omega
+
+end descLength
 
 /-! ### 4. The bit length of a searcher's code is `O(size k)` -/
 
@@ -441,22 +494,21 @@ lemma exists_linear_size_le (C₀ C₁ : ℕ) : ∃ K, ∀ k ≥ K, C₀ + C₁ 
 
 /-- **The guard fits inside the budget**: for all large `k`, the guard sentence that `Dupoc k`
 searches for against `Cupod k` ("`Cupod k` plays `a` against me") has at most `k` symbols —
-Critch's assumption (b) holds for the binary descriptions. The threshold `K` depends only on
-the fixed template. -/
+Critch's assumption (b) holds for the structural descriptions. The threshold `K` depends only
+on the fixed template. -/
 theorem guard_fits :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
       flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct) ≤ k := by
   obtain ⟨c, hc⟩ := exists_guard_const
-  obtain ⟨P, hP⟩ := exists_size_const
-  obtain ⟨K, hK⟩ := exists_linear_size_le (10 * c + 12 * c * P) (48 * c)
+  obtain ⟨D, hD⟩ := exists_desc_const
+  obtain ⟨K, hK⟩ := exists_linear_size_le (c * (2 * D + 5)) (72 * c)
   refine ⟨K, fun k hk a ha ↦ ?_⟩
-  obtain ⟨h1, h2⟩ := hP k
-  have h5 : 6 * c * (Nat.size (dnum (Dupoc k)) + Nat.size (dnum (Cupod k))) ≤
-      6 * c * (8 * Nat.size k + 2 * P) := Nat.mul_le_mul_left _ (by omega)
+  obtain ⟨h1, h2⟩ := hD k
   calc flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct)
-      ≤ 10 * c + 6 * c * (Nat.size (dnum (Dupoc k)) + Nat.size (dnum (Cupod k))) := hc _ _ a ha
-    _ ≤ 10 * c + 6 * c * (8 * Nat.size k + 2 * P) := Nat.add_le_add_left h5 _
-    _ = 10 * c + 12 * c * P + 48 * c * Nat.size k := by ring
+      ≤ c * (tlen (Rew.emb (dnumT (Dupoc k)) : SyntacticSemiterm LAct 0) +
+          tlen (Rew.emb (dnumT (Cupod k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
+    _ ≤ c * (72 * Nat.size k + 2 * D + 5) := Nat.mul_le_mul_left _ (by omega)
+    _ = c * (2 * D + 5) + 72 * c * Nat.size k := by ring
     _ ≤ k := hK k hk
 
 /-- The same with the roles swapped: `Cupod k`'s guard against `Dupoc k` fits. -/
@@ -464,16 +516,15 @@ theorem guard_fits' :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
       flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct) ≤ k := by
   obtain ⟨c, hc⟩ := exists_guard_const
-  obtain ⟨P, hP⟩ := exists_size_const
-  obtain ⟨K, hK⟩ := exists_linear_size_le (10 * c + 12 * c * P) (48 * c)
+  obtain ⟨D, hD⟩ := exists_desc_const
+  obtain ⟨K, hK⟩ := exists_linear_size_le (c * (2 * D + 5)) (72 * c)
   refine ⟨K, fun k hk a ha ↦ ?_⟩
-  obtain ⟨h1, h2⟩ := hP k
-  have h5 : 6 * c * (Nat.size (dnum (Cupod k)) + Nat.size (dnum (Dupoc k))) ≤
-      6 * c * (8 * Nat.size k + 2 * P) := Nat.mul_le_mul_left _ (by omega)
+  obtain ⟨h1, h2⟩ := hD k
   calc flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct)
-      ≤ 10 * c + 6 * c * (Nat.size (dnum (Cupod k)) + Nat.size (dnum (Dupoc k))) := hc _ _ a ha
-    _ ≤ 10 * c + 6 * c * (8 * Nat.size k + 2 * P) := Nat.add_le_add_left h5 _
-    _ = 10 * c + 12 * c * P + 48 * c * Nat.size k := by ring
+      ≤ c * (tlen (Rew.emb (dnumT (Cupod k)) : SyntacticSemiterm LAct 0) +
+          tlen (Rew.emb (dnumT (Dupoc k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
+    _ ≤ c * (72 * Nat.size k + 2 * D + 5) := Nat.mul_le_mul_left _ (by omega)
+    _ = c * (2 * D + 5) + 72 * c * Nat.size k := by ring
     _ ≤ k := hK k hk
 
 end fits

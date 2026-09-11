@@ -125,8 +125,6 @@ lemma comp_subst_eq {n m k : ℕ} (ω : Rew LAct Empty m Empty k) (v : Fin n →
 /-- The binary numeral of a code, as an `LAct`-term. -/
 noncomputable def numTB (c : ℕ) : ClosedSemiterm LAct 0 := Semiterm.lMap emb (bnumT c)
 
-lemma dnumT_eq_numTB (x : ℕ) : dnumT x = numTB (dnum x) := rfl
-
 /-! ### The Σ₁ graphs over `LAct` -/
 
 /-- `#0 = relabel #1 #2 #3` (`relabelDef`, argument order `y u w x`). -/

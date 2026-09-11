@@ -14,7 +14,7 @@ atom. Its conclusion `∼ lMap inst (trAt me' opp' (.plays me opp aN))` is `Π�
 2. both atom sentences unfold in `V` to `∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ (actCode _)` about
    `V`-elements — `models_trAt_plays_V`, the truth equation of `ArithS.Agent` re-proved over
    EVERY model of `𝗜𝚺₁`: the description terms evaluate to the CASTS of their standard values
-   (`val_bnumT_V`, `relabel_val_desc_V` — the latter through Foundation's Σ₁-absoluteness of
+   (`val_bnumT_V`/`val_progTT_V`, `relabel_val_desc_V` — the latter through Foundation's Σ₁-absoluteness of
    the `relabel` function, `DefinedFunction.shigmaOne_absolute_func`);
 3. the evaluator is deterministic INSIDE the model — `EvalGraph.unique_V'`, at every pair of
    fuels at once, by `ISigma1.pi1_order_induction` on the fuel (the statement
@@ -174,10 +174,44 @@ theorem val_bnumT_V (n : ℕ) : (bnumT n).val (s := standardModel V) ![] Empty.e
         push_cast
         rfl
 
+lemma val_ppairTT_V (s t : ClosedSemiterm ℒₒᵣ 0) :
+    (ppairTT s t).val (s := standardModel V) ![] Empty.elim =
+    ppair (s.val (s := standardModel V) ![] Empty.elim) (t.val (s := standardModel V) ![] Empty.elim) := by
+  simp [ppairTT, ppair]
+
+lemma val_succTT_V (t : ClosedSemiterm ℒₒᵣ 0) :
+    (succTT t).val (s := standardModel V) ![] Empty.elim = t.val (s := standardModel V) ![] Empty.elim + 1 := by
+  simp [succTT]
+
+/-- The structural term of `x` denotes the cast of `x` in every model. -/
+theorem val_progTT_V (x : ℕ) : (progTT x).val (s := standardModel V) ![] Empty.elim = (x : V) := by
+  induction x using Nat.strong_induction_on with
+  | _ x ih =>
+    by_cases hx : IsShape x
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+      · rw [progTT_const, val_succTT_V, val_ppairTT_V, val_bnumT_V, val_bnumT_V, cast_pConst]
+        unfold pConst; push_cast; rfl
+      · rw [progTT_self, val_succTT_V, val_ppairTT_V, val_bnumT_V, val_bnumT_V, cast_pSelf]
+        unfold pSelf; push_cast; rfl
+      · rw [progTT_opp, val_succTT_V, val_ppairTT_V, val_bnumT_V, val_bnumT_V, cast_pOpp]
+        unfold pOpp; push_cast; rfl
+      · rw [progTT_bot, val_succTT_V, val_ppairTT_V, val_bnumT_V, ih p (by simp), cast_pBot]
+        unfold pBot; push_cast; rfl
+      · rw [progTT_sim, val_succTT_V, val_ppairTT_V, val_ppairTT_V, val_bnumT_V, ih p (by simp),
+          ih q (by simp), cast_pSim]
+        unfold pSim; push_cast; rfl
+      · rw [progTT_ite, val_succTT_V, val_ppairTT_V, val_ppairTT_V, val_ppairTT_V, val_ppairTT_V,
+          val_bnumT_V, val_bnumT_V, ih b (by simp), ih p (by simp), ih q (by simp), cast_pIte]
+        unfold pIte; push_cast; rfl
+      · rw [progTT_search, val_succTT_V, val_ppairTT_V, val_ppairTT_V, val_ppairTT_V, val_ppairTT_V,
+          val_bnumT_V, val_bnumT_V, val_bnumT_V, ih p (by simp), ih q (by simp), cast_pSearch]
+        unfold pSearch; push_cast; rfl
+    · rw [progTT_of_not_shape hx, val_bnumT_V]
+
 lemma val_dnumT_V (x : ℕ) : (dnumT x).val (s := stdActV V) ![] Empty.elim = ((dnum x : ℕ) : V) := by
   unfold dnumT
   rw [Semiterm.val_lMap, stdActV_lMap_emb]
-  exact val_bnumT_V _
+  exact val_progTT_V _
 
 /-- `relabel` is absolute: its value on casts is the cast of its value (Σ₁-definable function). -/
 lemma cast_relabel (u w x : ℕ) : ((relabel u w x : ℕ) : V) = relabel (u : V) (w : V) (x : V) := by

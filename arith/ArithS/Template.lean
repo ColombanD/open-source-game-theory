@@ -14,8 +14,8 @@ with seven free variables
 plays `t`"). Since roadmap M3 step (a) a search node stores a SIX-variable template: the two
 CLOSED INSTANCES `GtmplA a := Gtmpl ⇜ ![#0, …, #5, c_a]` (the action term substituted, the
 six description variables kept) are the templates of the two searchers. Filling `GtmplA a`
-with the canonical descriptions of `me` and `opp` (`ArithS.Guard`; the numerals are the binary
-`bnumT` of `ArithS.Bnum`) gives the meta sentence `guardSentenceA a me opp : Sentence LAct`,
+with the canonical descriptions of `me` and `opp` (`ArithS.Guard`; the program terms are the
+structural `progTT` of `ArithS.ProgT`) gives the meta sentence `guardSentenceA a me opp : Sentence LAct`,
 whose code is `guardCode ⌜GtmplA a⌝ me opp` (the code equation), which the transposition
 `swap` sends to `guardSentenceA (swapAct a) (swapcode me) (swapcode opp)` (the swap equation;
 on the templates `lMap swap (GtmplA a) = GtmplA (swapAct a)`, hence on codes
@@ -59,8 +59,9 @@ lemma lMap_swap_Gtmpl : Semiformula.lMap swap Gtmpl = Gtmpl := lMap_swap_emb _
 /-- The numeral `k`, as an `LAct`-term. -/
 noncomputable def numT (k : ℕ) : ClosedSemiterm LAct 0 := Semiterm.lMap emb (↑k : ClosedSemiterm ℒₒᵣ 0)
 
-/-- The canonical numeral of the orbit of `x`, as a BINARY numeral term (`ArithS.Bnum`). -/
-noncomputable def dnumT (x : ℕ) : ClosedSemiterm LAct 0 := Semiterm.lMap emb (bnumT (dnum x))
+/-- The canonical code of the orbit of `x`, as the STRUCTURAL TERM of the code (`ArithS.ProgT`:
+`ppair`-nested binary numerals of the leaves). -/
+noncomputable def dnumT (x : ℕ) : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT (dnum x))
 
 /-- First re-valuation term: `c_C` if `x` is canonical, `c_D` if `swapcode x` is, `0` on a tie. -/
 noncomputable def dUT (x : ℕ) : ClosedSemiterm LAct 0 :=
@@ -195,11 +196,10 @@ lemma quote_cterm_D : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = csym 1
 
 end codes
 
-lemma quote_dnumT (x : ℕ) : (⌜dnumT x⌝ : ℕ) = bnum (dnum x) := by
+lemma quote_dnumT (x : ℕ) : (⌜dnumT x⌝ : ℕ) = progT (dnum x) := by
   unfold dnumT
   rw [Semiterm.empty_quote_def, term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def,
-    quote_bnumT]
-  simp
+    quote_progTT_nat]
 
 lemma quote_dUT (x : ℕ) : (⌜dUT x⌝ : ℕ) = dU x := by
   unfold dUT dU
@@ -268,7 +268,7 @@ lemma val_cterm_D : (cterm Act.D : ClosedSemiterm LAct 0).val (s := stdAct) ![] 
 lemma val_dnumT (x : ℕ) : (dnumT x).val (s := stdAct) ![] Empty.elim = dnum x := by
   unfold dnumT
   rw [Semiterm.val_lMap, stdAct_lMap_emb]
-  exact val_bnumT _
+  exact val_progTT _
 
 /-- The descriptions reconstruct the program. -/
 lemma relabel_val_desc (x : ℕ) :

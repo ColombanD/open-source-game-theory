@@ -30,8 +30,8 @@ three conjuncts do not depend on `k`. Hence (§6):
 
 Assumption (b) is about the symbols the proof system writes, and the guard sentence of a
 searcher `me` names `me` by the canonical numeral of ITS OWN CODE: `trAt me opp φ` contains
-`dnumT (pcode me) = numTB (dnum (pcode me))`, whose length is at least the bit length of
-`pcode me` (`size_le_tlen_bnumT`, `ArithS.Neg`). For the box-free `Dupoc k` this is harmless:
+`dnumT (pcode me) = lMap emb (progTT (dnum (pcode me)))`, whose length is at least the bit length of
+`pcode me` (`size_le_tlen_progTT`, `ArithS.ProgT`). For the box-free `Dupoc k` this is harmless:
 `pSearch k g p q` stores `k` as a DATA field (a number of `size k` bits), so
 `size (pcode (Dupoc k)) = O(size k)` (`size_dnum_Dupoc_le`). A box-carrying searcher stores
 `tcode (.box k ψ) = ⌜tmpl (.box k ψ)⌝`, and that template contains the numeral TERM `numTB k`,
@@ -741,7 +741,7 @@ theorem size_dnum_le_flen_trAt_box (me opp : PD.Prog) (k : ℕ) (ψ : PD.Formula
   rw [tlen_emb_bShift3_dnumT]
   unfold dnumT
   rw [tlen_emb_lMap_emb]
-  exact Nat.succ_le_succ (size_le_tlen_bnumT _)
+  exact Nat.succ_le_succ (size_le_tlen_progTT _)
 
 lemma flen_emb_trAt_impl (me opp : PD.Prog) (φ ψ : PD.Formula) :
     flen (Rewriting.emb (trAt me opp (.impl φ ψ)) : Proposition LAct) =
