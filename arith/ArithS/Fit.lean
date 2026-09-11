@@ -8,7 +8,7 @@ Critch fixes his proof system `S` only up to four assumptions (Appendix B of `cr
 assumption **(b)** is that `S` "writes `k` in `O(lg k)` characters". Under Foundation's
 UNARY numerals this failed so badly that the bounded proof search of every agent was
 vacuous — the retired `Vacuity.lean` (commit 470ee43) PROVED it: a search node
-`pSearch k g p q` stores its budget `k` in its own pair-code, so the canonical numeral by
+`pSearch k g p q` stores its budget `k` in its own code, so the canonical numeral by
 which the guard sentence names the searcher is `≥ k`; unary numerals cost `~ 2n` symbols;
 every instance of the template is longer than that numeral; a derivation is at least as
 long as its conclusion; hence `search_never_found`: the guard is never found at ANY budget,
@@ -27,8 +27,8 @@ proves the POSITIVE result that (b) demands, with explicit (ugly, but explicit) 
   the symbol counts of the two closed template instances, packaged existentially
   (`flen_guardSentence_le'` is the per-instance form);
 * `size_dnum_Dupoc_le`: `size (dnum (Dupoc k)) ≤ 4 · size k + (4 · size cP + 26)`, by the
-  Cantor-pairing bound `⟪a, b⟫ ≤ (a + b + 1)²` (`cP = ⟪⌜GtmplA 0⌝, pConst 0, pConst 1⟫` is
-  the constant part of the searcher's code);
+  polynomial-pairing bound `ppair a b ≤ (a + b + 1)²` (`ArithS.Prog`, 2026-09-11; `cP =
+  ppair ⌜GtmplA 0⌝ (ppair (pConst 0) (pConst 1))` is the constant part of the searcher's code);
 * **`guard_fits`**: `∃ K, ∀ k ≥ K, ∀ a ≤ 1, flen (guardSentenceA a (Dupoc k) (Cupod k)) ≤ k`
   (and `guard_fits'` with the roles swapped) — for all large budgets the searcher's own
   guard sentence fits inside its budget: the model is no longer degenerate, and whether the
@@ -39,7 +39,7 @@ proves the POSITIVE result that (b) demands, with explicit (ugly, but explicit) 
 ## Proof-craft note (2026-09-10)
 The first version of this file hung for hours: a theorem stated with closed constants
 (`10 * cG₀`, `Nat.size cP`) forced Lean's `Nat` defeq machinery to try to EVALUATE
-`cG₀ = flen Gtmpl` and `cP = ⟪⌜Gtmpl⌝, …⟫` on the giant template term. The cure is
+`cG₀ = flen Gtmpl` and `cP = ppair ⌜Gtmpl⌝ …` on the giant template term. The cure is
 structural: the constants are packaged EXISTENTIALLY (`exists_guard_const`,
 `exists_size_const`) and every arithmetic step is over variables. `Vacuity.lean`
 (commit 470ee43) is retired because its theorems are false for the binary descriptions.
@@ -335,13 +335,9 @@ theorem exists_guard_const : ∃ c : ℕ, ∀ me opp a : ℕ, a ≤ 1 →
 
 section size
 
-lemma pair_le_sq (a b : ℕ) : ⟪a, b⟫ ≤ (a + b + 1) * (a + b + 1) := by
-  unfold pair
-  split_ifs with h
-  · show b * b + a ≤ (a + b + 1) * (a + b + 1)
-    nlinarith
-  · show a * a + a + b ≤ (a + b + 1) * (a + b + 1)
-    nlinarith
+lemma ppair_le_sq (a b : ℕ) : ppair a b ≤ (a + b + 1) * (a + b + 1) := by
+  show (a + b) * (a + b) + b ≤ (a + b + 1) * (a + b + 1)
+  nlinarith
 
 lemma size_mul_le (a b : ℕ) : Nat.size (a * b) ≤ Nat.size a + Nat.size b := by
   rw [Nat.size_le, Nat.pow_add]
@@ -362,19 +358,19 @@ lemma size_succ_le (a : ℕ) : Nat.size (a + 1) ≤ Nat.size a + 2 := by
   rw [Nat.size_one] at this
   omega
 
-/-- Cantor pairing at most doubles the bit length (plus a constant). -/
-lemma size_pair_le (a b : ℕ) : Nat.size ⟪a, b⟫ ≤ 2 * (Nat.size a + Nat.size b) + 6 := by
-  have h := Nat.size_le_size (pair_le_sq a b)
+/-- The polynomial pairing at most doubles the bit length (plus a constant). -/
+lemma size_ppair_le (a b : ℕ) : Nat.size (ppair a b) ≤ 2 * (Nat.size a + Nat.size b) + 6 := by
+  have h := Nat.size_le_size (ppair_le_sq a b)
   have h1 := size_mul_le (a + b + 1) (a + b + 1)
   have h2 := size_add_le (a + b) 1
   have h3 := size_add_le a b
   rw [Nat.size_one] at h2
   omega
 
-/-- The constant part of a searcher's code: `⟪⌜GtmplA 0⌝, pConst 0, pConst 1⟫`. -/
-noncomputable def cP : ℕ := ⟪(⌜GtmplA 0⌝ : ℕ), pConst 0, pConst 1⟫
+/-- The constant part of a searcher's code: `ppair ⌜GtmplA 0⌝ (ppair (pConst 0) (pConst 1))`. -/
+noncomputable def cP : ℕ := ppair (⌜GtmplA 0⌝ : ℕ) (ppair (pConst 0) (pConst 1))
 
-lemma Dupoc_eq (k : ℕ) : Dupoc k = ⟪6, k, cP⟫ + 1 := rfl
+lemma Dupoc_eq (k : ℕ) : Dupoc k = ppair 6 (ppair k cP) + 1 := rfl
 
 /- Same reason as for `cG₀`: never let `Nat.size cP` be evaluated. -/
 attribute [irreducible] cP
@@ -388,9 +384,9 @@ lemma dnum_le_self (x : ℕ) : dnum x ≤ x := by
 
 theorem size_Dupoc_le (k : ℕ) : Nat.size (Dupoc k) ≤ 4 * Nat.size k + (4 * Nat.size cP + 26) := by
   rw [Dupoc_eq]
-  have h1 := size_succ_le ⟪6, k, cP⟫
-  have h2 := size_pair_le 6 ⟪k, cP⟫
-  have h3 := size_pair_le k cP
+  have h1 := size_succ_le (ppair 6 (ppair k cP))
+  have h2 := size_ppair_le 6 (ppair k cP)
+  have h3 := size_ppair_le k cP
   have h6 : Nat.size 6 ≤ 3 := Nat.size_le.mpr (by norm_num)
   omega
 

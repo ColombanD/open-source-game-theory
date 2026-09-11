@@ -129,6 +129,14 @@ lemma npair_le_right (a b : ℕ) : b ≤ ⟪a, b⟫ := nle_of_fle (le_def.mp (le
 lemma npair_le_pair {a₁ a₂ b₁ b₂ : ℕ} (ha : a₁ ≤ a₂) (hb : b₁ ≤ b₂) : ⟪a₁, b₁⟫ ≤ ⟪a₂, b₂⟫ :=
   nle_of_fle (le_def.mp (pair_le_pair (le_def.mpr (fle_of_nle ha)) (le_def.mpr (fle_of_nle hb))))
 
+/-- The polynomial pairing of PROGRAM codes (`ArithS.Prog`), read with `Nat.le`. -/
+lemma nppair_le_left (a b : ℕ) : a ≤ ppair a b := by
+  show a ≤ (a + b) * (a + b) + b
+  exact Nat.le_trans (Nat.le_add_right a b) (Nat.le_trans (Nat.le_mul_self _) (Nat.le_add_right _ _))
+lemma nppair_le_right (a b : ℕ) : b ≤ ppair a b := by
+  show b ≤ (a + b) * (a + b) + b
+  exact Nat.le_add_left b _
+
 lemma le_matrixToVec : ∀ {k : ℕ} (v : Fin k → ℕ) (j : Fin k), v j ≤ matrixToVec v
   | 0, _, j => j.elim0
   | k + 1, v, j => by
@@ -663,8 +671,8 @@ theorem bnum_le_relabelTemplate_tcode {k : ℕ} {φ : PD.Formula} (h : HasBox k 
 
 lemma le_pSearch (k g p q : ℕ) : g ≤ pSearch k g p q := by
   unfold pSearch
-  exact le_trans (npair_le_left _ _) (le_trans (npair_le_right _ _)
-    (le_trans (npair_le_right _ _) (Nat.le_succ _)))
+  exact le_trans (nppair_le_left _ _) (le_trans (nppair_le_right _ _)
+    (le_trans (nppair_le_right _ _) (Nat.le_succ _)))
 
 /-- A searcher on a box-carrying guard has code `≥ bnum k`. -/
 theorem bnum_le_pcode_search {k : ℕ} {φ : PD.Formula} (h : HasBox k φ) (k' : ℕ) (p q : PD.Prog) :

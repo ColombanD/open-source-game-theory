@@ -62,14 +62,11 @@ lemma swapcode_pBotIter (n x : ℕ) : swapcode (pBotIter n x) = pBotIter n (swap
   | zero => rfl
   | succ n ih => simp [pBotIter, swapcode, ih]
 
-/-- `pBot` more than doubles: `⟪3, x⟫ + 1 > 2x`. -/
+/-- `pBot` more than doubles: `ppair 3 x + 1 = (3 + x)² + x + 1 > 2x`. -/
 lemma two_mul_lt_pBot (x : ℕ) : 2 * x < pBot x := by
-  unfold pBot pair
-  split_ifs with h
-  · show 2 * x < x * x + 3 + 1
-    nlinarith
-  · show 2 * x < 3 * 3 + 3 + x + 1
-    omega
+  unfold pBot ppair
+  show 2 * x < (3 + x) * (3 + x) + x + 1
+  nlinarith
 
 /-- The bit length grows by at least one per `pBot`. -/
 lemma size_lt_size_pBot (x : ℕ) : Nat.size x < Nat.size (pBot x) := by

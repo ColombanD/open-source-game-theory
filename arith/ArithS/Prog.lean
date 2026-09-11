@@ -4,19 +4,27 @@ import ArithS.RelabelTemplate
 /-!
 # ArithS.Prog — program codes and the action swap on codes
 
-Programs are HFS pair-codes with a tag, exactly like Foundation's derivation codes
-(`Bootstrapping.axL`, …), mirroring the engine's `Prog` (`Program.lean`); since roadmap M3
-step (a) (2026-09-10) a search node carries a budget `k` and a SIX-VARIABLE guard template
-`g` (a formula code over `LAct` in the description triples `x₁ u₁ w₁` of `me` and `x₂ u₂ w₂`
-of `opp`, see `ArithS.Guard`/`ArithS.Template`); there is no action slot.
+Programs are tagged codes built with the POLYNOMIAL pairing `ppair x y = (x + y)² + y`
+(since 2026-09-11; before that Foundation's Cantor pair `⟪x, y⟫`, an `if` no ℒₒᵣ-term
+denotes — the parametric bounded Löb milestone needs a program to be describable by a TERM
+built from the binary numeral of its budget). They mirror the engine's `Prog`
+(`Program.lean`); since roadmap M3 step (a) (2026-09-10) a search node carries a budget `k`
+and a SIX-VARIABLE guard template `g` (a formula code over `LAct` in the description triples
+`x₁ u₁ w₁` of `me` and `x₂ u₂ w₂` of `opp`, see `ArithS.Guard`/`ArithS.Template`); there is
+no action slot.
 
-* `pConst a = ⟪0, a⟫ + 1`, `pSelf = ⟪1, 0⟫ + 1`, `pOpp = ⟪2, 0⟫ + 1`, `pBot p = ⟪3, p⟫ + 1`,
-  `pSim p q = ⟪4, p, q⟫ + 1`, `pIte b a p q = ⟪5, b, a, p, q⟫ + 1`,
-  `pSearch k g p q = ⟪6, k, g, p, q⟫ + 1`; action values: `0 = C`, `1 = D`.
+* `pConst a = ppair 0 a + 1`, `pSelf = ppair 1 0 + 1`, `pOpp = ppair 2 0 + 1`,
+  `pBot p = ppair 3 p + 1`, `pSim p q = ppair 4 (ppair p q) + 1`,
+  `pIte b a p q = ppair 5 (ppair b (ppair a (ppair p q))) + 1`,
+  `pSearch k g p q = ppair 6 (ppair k (ppair g (ppair p q))) + 1` (right-nested, exactly the
+  nesting of the former `⟪6, k, g, p, q⟫`); action values: `0 = C`, `1 = D`. Sub-programs are
+  STRICTLY below their parent (`le_ppair_left/right` + the outer `+ 1`), constructors are
+  injective and pairwise disjoint (`ppair_ext_iff` + the tag).
 * `swapAct` exchanges the two action values; `swapcode` applies it to every action
   occurrence of a program code — the action VALUES of `pConst`/`pIte` and, through
   `relabelTemplate` (`ArithS.RelabelTemplate`), the action CONSTANTS of every stored
-  template (a Δ₁ function defined by a fixpoint on pairs `⟪x, y⟫`, with a catch-all clause
+  template (a Δ₁ function defined by a fixpoint on Foundation pairs `⟪x, y⟫` of
+  input/output — the fixpoint machinery keeps the Cantor pair — with a catch-all clause
   `y = x` on non-program codes so that it is total). It is the code-level τ of
   `Base/Transpose`: `swapcode (swapcode x) = x`.
 -/
@@ -28,40 +36,139 @@ open PeanoMinus ISigma0 ISigma1
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
+/-! ### The polynomial pairing `ppair x y = (x + y)² + y` -/
+
+section ppair
+
+/-- The polynomial pairing `(x + y) * (x + y) + y`: injective, monotone in each argument,
+above both arguments, and — unlike Foundation's Cantor pair, defined by an `if` — denoted by
+an ℒₒᵣ-TERM. -/
+noncomputable def ppair (x y : V) : V := (x + y) * (x + y) + y
+
+/-- The Δ₀ graph of `ppair`: a plain polynomial equation, no quantifier. -/
+def ppairDef : 𝚺₀.Semisentence 3 := .mkSigma “z x y. z = (x + y) * (x + y) + y”
+
+instance ppair.defined : 𝚺₀-Function₂[V] ppair via ppairDef := .mk fun v ↦ by
+  simp [ppairDef, ppair]
+
+instance ppair.definable : 𝚺₀-Function₂[V] ppair := ppair.defined.to_definable
+
+instance ppair.definable' (Γ m) : Γ-[m]-Function₂[V] ppair :=
+  HierarchySymbol.Definable.of_zero ppair.definable
+
+@[simp] lemma le_ppair_left (x y : V) : x ≤ ppair x y :=
+  le_trans le_self_add (le_trans (le_mul_self _) le_self_add)
+
+@[simp] lemma le_ppair_right (x y : V) : y ≤ ppair x y := le_add_self
+
+/-- `s² + y < s'² + y'` whenever `s < s'` and `y ≤ s`: `s² + y ≤ s² + s < (s + 1)² ≤ s'²`. -/
+lemma sq_add_lt_sq_add {s y s' : V} (hy : y ≤ s) (h : s < s') (y' : V) :
+    s * s + y < s' * s' + y' := by
+  have h1 : s * s + y < (s + 1) * (s + 1) := by
+    have e : (s + 1) * (s + 1) = s * s + s + (s + 1) := by ring
+    rw [e]
+    exact lt_of_le_of_lt (_root_.add_le_add_right hy _)
+      (lt_add_of_pos_right _ (lt_of_le_of_lt (by simp) (lt_add_one s)))
+  have h2 : (s + 1) * (s + 1) ≤ s' * s' :=
+    mul_le_mul (lt_iff_succ_le.mp h) (lt_iff_succ_le.mp h) (by simp) (by simp)
+  exact lt_of_lt_of_le h1 (le_trans h2 le_self_add)
+
+/-- `s² + y` with `y ≤ s` determines `s`. -/
+lemma sq_add_inj {s y s' y' : V} (hy : y ≤ s) (hy' : y' ≤ s')
+    (h : s * s + y = s' * s' + y') : s = s' := by
+  rcases lt_trichotomy s s' with hlt | heq | hgt
+  · exact absurd h (ne_of_lt (sq_add_lt_sq_add hy hlt y'))
+  · exact heq
+  · exact absurd h.symm (ne_of_lt (sq_add_lt_sq_add hy' hgt y))
+
+/-- `ppair` is injective. -/
+lemma ppair_inj {x y x' y' : V} (h : ppair x y = ppair x' y') : x = x' ∧ y = y' := by
+  have hs : x + y = x' + y' := sq_add_inj le_add_self le_add_self h
+  have hy : y = y' := by
+    unfold ppair at h
+    rw [hs] at h
+    exact add_left_cancel h
+  refine ⟨?_, hy⟩
+  rw [hy] at hs
+  exact add_right_cancel hs
+
+@[simp] lemma ppair_ext_iff {x y x' y' : V} : ppair x y = ppair x' y' ↔ x = x' ∧ y = y' :=
+  ⟨ppair_inj, by rintro ⟨rfl, rfl⟩; rfl⟩
+
+lemma ppair_lt_ppair_left {x₁ x₂ : V} (h : x₁ < x₂) (y : V) : ppair x₁ y < ppair x₂ y := by
+  unfold ppair
+  have h' : x₁ + y < x₂ + y := _root_.add_lt_add_left h y
+  exact _root_.add_lt_add_left (mul_lt_mul'' h' h' (by simp) (by simp)) y
+
+lemma ppair_lt_ppair_right (x : V) {y₁ y₂ : V} (h : y₁ < y₂) : ppair x y₁ < ppair x y₂ := by
+  unfold ppair
+  have h' : x + y₁ ≤ x + y₂ := _root_.add_le_add_right (le_of_lt h) x
+  exact add_lt_add_of_le_of_lt (mul_le_mul h' h' (by simp) (by simp)) h
+
+lemma ppair_le_ppair_left {x₁ x₂ : V} (h : x₁ ≤ x₂) (y : V) : ppair x₁ y ≤ ppair x₂ y := by
+  rcases h with (rfl | lt)
+  · exact le_refl _
+  · exact le_of_lt (ppair_lt_ppair_left lt y)
+
+lemma ppair_le_ppair_right (x : V) {y₁ y₂ : V} (h : y₁ ≤ y₂) : ppair x y₁ ≤ ppair x y₂ := by
+  rcases h with (rfl | lt)
+  · exact le_refl _
+  · exact le_of_lt (ppair_lt_ppair_right x lt)
+
+lemma ppair_le_ppair {x₁ x₂ y₁ y₂ : V} (hx : x₁ ≤ x₂) (hy : y₁ ≤ y₂) :
+    ppair x₁ y₁ ≤ ppair x₂ y₂ :=
+  le_trans (ppair_le_ppair_left hx y₁) (ppair_le_ppair_right x₂ hy)
+
+lemma ppair_lt_ppair {x₁ x₂ y₁ y₂ : V} (hx : x₁ < x₂) (hy : y₁ < y₂) :
+    ppair x₁ y₁ < ppair x₂ y₂ :=
+  lt_trans (ppair_lt_ppair_left hx y₁) (ppair_lt_ppair_right x₂ hy)
+
+/-- The polynomial bound `ppair x y ≤ (x + y + 1)²` (bit length at most doubles). -/
+lemma ppair_le_sq_succ (x y : V) : ppair x y ≤ (x + y + 1) * (x + y + 1) := by
+  have e : (x + y + 1) * (x + y + 1) = ppair x y + (x + (x + y) + 1) := by
+    unfold ppair; ring
+  rw [e]
+  exact le_self_add
+
+end ppair
+
 /-! ### Constructors -/
 
-noncomputable def pConst (a : V) : V := ⟪0, a⟫ + 1
-noncomputable def pSelf : V := ⟪1, 0⟫ + 1
-noncomputable def pOpp : V := ⟪2, 0⟫ + 1
-noncomputable def pBot (p : V) : V := ⟪3, p⟫ + 1
-noncomputable def pSim (p q : V) : V := ⟪4, p, q⟫ + 1
-noncomputable def pIte (b a p q : V) : V := ⟪5, b, a, p, q⟫ + 1
-noncomputable def pSearch (k g p q : V) : V := ⟪6, k, g, p, q⟫ + 1
+noncomputable def pConst (a : V) : V := ppair 0 a + 1
+noncomputable def pSelf : V := ppair 1 0 + 1
+noncomputable def pOpp : V := ppair 2 0 + 1
+noncomputable def pBot (p : V) : V := ppair 3 p + 1
+noncomputable def pSim (p q : V) : V := ppair 4 (ppair p q) + 1
+noncomputable def pIte (b a p q : V) : V := ppair 5 (ppair b (ppair a (ppair p q))) + 1
+noncomputable def pSearch (k g p q : V) : V := ppair 6 (ppair k (ppair g (ppair p q))) + 1
 
 section graphs
 
-def pConstGraph : 𝚺₀.Semisentence 2 := .mkSigma “y a. ∃ y' < y, !pairDef y' 0 a ∧ y = y' + 1”
+def pConstGraph : 𝚺₀.Semisentence 2 := .mkSigma “y a. ∃ y' < y, !ppairDef y' 0 a ∧ y = y' + 1”
 instance pConst.defined : 𝚺₀-Function₁[V] pConst via pConstGraph := .mk fun v ↦ by
   simp_all [pConstGraph, pConst]
 
-def pSelfGraph : 𝚺₀.Semisentence 1 := .mkSigma “y. ∃ y' < y, !pairDef y' 1 0 ∧ y = y' + 1”
-def pOppGraph : 𝚺₀.Semisentence 1 := .mkSigma “y. ∃ y' < y, !pairDef y' 2 0 ∧ y = y' + 1”
+def pSelfGraph : 𝚺₀.Semisentence 1 := .mkSigma “y. ∃ y' < y, !ppairDef y' 1 0 ∧ y = y' + 1”
+def pOppGraph : 𝚺₀.Semisentence 1 := .mkSigma “y. ∃ y' < y, !ppairDef y' 2 0 ∧ y = y' + 1”
 
-def pBotGraph : 𝚺₀.Semisentence 2 := .mkSigma “y p. ∃ y' < y, !pairDef y' 3 p ∧ y = y' + 1”
+def pBotGraph : 𝚺₀.Semisentence 2 := .mkSigma “y p. ∃ y' < y, !ppairDef y' 3 p ∧ y = y' + 1”
 instance pBot.defined : 𝚺₀-Function₁[V] pBot via pBotGraph := .mk fun v ↦ by
   simp_all [pBotGraph, pBot]
 
-def pSimGraph : 𝚺₀.Semisentence 3 := .mkSigma “y p q. ∃ y' < y, !pair₃Def y' 4 p q ∧ y = y' + 1”
+def pSimGraph : 𝚺₀.Semisentence 3 :=
+  .mkSigma “y p q. ∃ y' < y, ∃ pq <⁺ y', !ppairDef pq p q ∧ !ppairDef y' 4 pq ∧ y = y' + 1”
 instance pSim.defined : 𝚺₀-Function₂[V] pSim via pSimGraph := .mk fun v ↦ by
   simp_all [pSimGraph, pSim]
 
 def pIteGraph : 𝚺₀.Semisentence 5 :=
-  .mkSigma “y b a p q. ∃ y' < y, !pair₅Def y' 5 b a p q ∧ y = y' + 1”
+  .mkSigma “y b a p q. ∃ y' < y, ∃ bapq <⁺ y', ∃ apq <⁺ bapq, ∃ pq <⁺ apq,
+    !ppairDef pq p q ∧ !ppairDef apq a pq ∧ !ppairDef bapq b apq ∧ !ppairDef y' 5 bapq ∧ y = y' + 1”
 instance pIte.defined : 𝚺₀-Function₄ (pIte : V → V → V → V → V) via pIteGraph := .mk fun v ↦ by
   simp_all [pIteGraph, numeral_eq_natCast, pIte]
 
 def pSearchGraph : 𝚺₀.Semisentence 5 :=
-  .mkSigma “y k g p q. ∃ y' < y, !pair₅Def y' 6 k g p q ∧ y = y' + 1”
+  .mkSigma “y k g p q. ∃ y' < y, ∃ kgpq <⁺ y', ∃ gpq <⁺ kgpq, ∃ pq <⁺ gpq,
+    !ppairDef pq p q ∧ !ppairDef gpq g pq ∧ !ppairDef kgpq k gpq ∧ !ppairDef y' 6 kgpq ∧ y = y' + 1”
 instance pSearch.defined : 𝚺₀-Function₄ (pSearch : V → V → V → V → V) via pSearchGraph :=
   .mk fun v ↦ by simp_all [pSearchGraph, numeral_eq_natCast, pSearch]
 
@@ -70,25 +177,41 @@ end graphs
 /-! ### Size facts (sub-programs are smaller than their parent) -/
 
 @[simp] lemma p_lt_pBot (p : V) : p < pBot p :=
-  le_iff_lt_succ.mp <| le_trans (le_pair_right _ _) (le_refl _)
+  le_iff_lt_succ.mp (le_ppair_right _ _)
 @[simp] lemma p_lt_pSim (p q : V) : p < pSim p q :=
-  le_iff_lt_succ.mp <| le_trans (le_pair_left _ _) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_ppair_left _ _) (le_ppair_right _ _)
 @[simp] lemma q_lt_pSim (p q : V) : q < pSim p q :=
-  le_iff_lt_succ.mp <| le_trans (le_pair_right _ _) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_ppair_right _ _) (le_ppair_right _ _)
 @[simp] lemma b_lt_pIte (b a p q : V) : b < pIte b a p q :=
-  le_iff_lt_succ.mp <| le_trans (le_pair_left _ _) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_ppair_left _ _) (le_ppair_right _ _)
 @[simp] lemma p_lt_pIte (b a p q : V) : p < pIte b a p q :=
-  le_iff_lt_succ.mp <| le_trans (le_trans (le_trans (le_pair_left _ _) (le_pair_right _ _))
-    (le_pair_right _ _)) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_trans (le_trans (le_ppair_left _ _) (le_ppair_right _ _))
+    (le_ppair_right _ _)) (le_ppair_right _ _)
 @[simp] lemma q_lt_pIte (b a p q : V) : q < pIte b a p q :=
-  le_iff_lt_succ.mp <| le_trans (le_trans (le_trans (le_pair_right _ _) (le_pair_right _ _))
-    (le_pair_right _ _)) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_trans (le_trans (le_ppair_right _ _) (le_ppair_right _ _))
+    (le_ppair_right _ _)) (le_ppair_right _ _)
 @[simp] lemma p_lt_pSearch (k g p q : V) : p < pSearch k g p q :=
-  le_iff_lt_succ.mp <| le_trans (le_trans (le_trans (le_pair_left _ _) (le_pair_right _ _))
-    (le_pair_right _ _)) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_trans (le_trans (le_ppair_left _ _) (le_ppair_right _ _))
+    (le_ppair_right _ _)) (le_ppair_right _ _)
 @[simp] lemma q_lt_pSearch (k g p q : V) : q < pSearch k g p q :=
-  le_iff_lt_succ.mp <| le_trans (le_trans (le_trans (le_pair_right _ _) (le_pair_right _ _))
-    (le_pair_right _ _)) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_trans (le_trans (le_ppair_right _ _) (le_ppair_right _ _))
+    (le_ppair_right _ _)) (le_ppair_right _ _)
+
+/-! ### Injectivity and disjointness of the constructors (the tag decides the shape) -/
+
+section inj
+
+attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch
+
+lemma pConst_inj {a a' : V} (h : pConst a = pConst a') : a = a' := by simpa using h
+lemma pBot_inj {p p' : V} (h : pBot p = pBot p') : p = p' := by simpa using h
+lemma pSim_inj {p q p' q' : V} (h : pSim p q = pSim p' q') : p = p' ∧ q = q' := by simpa using h
+lemma pIte_inj {b a p q b' a' p' q' : V} (h : pIte b a p q = pIte b' a' p' q') :
+    b = b' ∧ a = a' ∧ p = p' ∧ q = q' := by simpa [and_assoc] using h
+lemma pSearch_inj {k g p q k' g' p' q' : V} (h : pSearch k g p q = pSearch k' g' p' q') :
+    k = k' ∧ g = g' ∧ p = p' ∧ q = q' := by simpa [and_assoc] using h
+
+end inj
 
 /-! ### Re-valuing actions -/
 
@@ -148,13 +271,13 @@ def isShape : 𝚺₀.Semisentence 1 := .mkSigma
     (∃ p < x, ∃ q < x, !pSimGraph x p q) ∨ (∃ b < x, ∃ a < x, ∃ p < x, ∃ q < x, !pIteGraph x b a p q) ∨
     (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, !pSearchGraph x k g p q)”
 
-@[simp] lemma a_lt_pConst (a : V) : a < pConst a := le_iff_lt_succ.mp (le_pair_right _ _)
+@[simp] lemma a_lt_pConst (a : V) : a < pConst a := le_iff_lt_succ.mp (le_ppair_right _ _)
 @[simp] lemma a_lt_pIte (b a p q : V) : a < pIte b a p q :=
-  le_iff_lt_succ.mp <| le_trans (le_trans (le_pair_left _ _) (le_pair_right _ _)) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_trans (le_ppair_left _ _) (le_ppair_right _ _)) (le_ppair_right _ _)
 @[simp] lemma k_lt_pSearch (k g p q : V) : k < pSearch k g p q :=
-  le_iff_lt_succ.mp <| le_trans (le_pair_left _ _) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_ppair_left _ _) (le_ppair_right _ _)
 @[simp] lemma g_lt_pSearch (k g p q : V) : g < pSearch k g p q :=
-  le_iff_lt_succ.mp <| le_trans (le_trans (le_pair_left _ _) (le_pair_right _ _)) (le_pair_right _ _)
+  le_iff_lt_succ.mp <| le_trans (le_trans (le_ppair_left _ _) (le_ppair_right _ _)) (le_ppair_right _ _)
 
 lemma isShape_iff (x : V) :
     IsShape x ↔
