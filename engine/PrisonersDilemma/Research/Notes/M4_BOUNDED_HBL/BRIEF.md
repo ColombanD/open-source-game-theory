@@ -249,3 +249,11 @@ multiplicative constant; `simp` on quoted lemma sentences overflows the kernel n
 `Length.lean` (one factor of `a` off `E`; touches the M1 constants). Alternatives (§6 of the
 report): an abbreviation calculus (linear `E`, but re-does the M1–M3 length layers); accepting an
 exponential `E` (kills `f(k) = k` — only a polynomial-budget agent language survives).
+
+**Risk (1) checked (2026-09-12):** Foundation's `𝗣𝗔.Δ₁` instance is `Theory.Δ₁.add PeanoMinus.delta1
+InductionScheme.delta1_univ` (`Incompleteness/Definability.lean:1070`) and the induction-instance
+recognizer `indBodyVal` is "a chain of the `subst`/`imp`/`qqAll` graphs" (`:723-727`:
+`substsGraph ℒₒᵣ … indSubstConst0/1 …`, then `imp`, then `qqAll`) — i.e. written through the code-level
+graphs, so an `axm` leaf whose formula is an eigenvariable-described induction instance costs `O(|p|)`
+lemma instantiations, as the eigenvariable construction requires. `PeanoMinus` is finite (a fixed
+disjunction of numerals — constant). Risk (1) is not a blocker.
