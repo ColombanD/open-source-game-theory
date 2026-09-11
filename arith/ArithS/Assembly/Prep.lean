@@ -45,8 +45,9 @@ possibly nonstandard) unless a statement says `ℕ`.
    LenDerivable TAct (N : V) ⌜σ⌝` (`lenDerivableDef` is Σ₁, `sigmaOne_upward_absolute`), and
    `lenDerivable_of_proof : TAct ⊢ σ → ∃ N, LenDerivable TAct N ⌜σ⌝` at ℕ (quote the proof,
    `dlen_quote`).
-6. **The hypothesis** `BoundedInnerNec d c c₁ c₀` — Critch's Property 4 / assumption (d),
-   bounded inner necessitation with a polynomial expansion — definition only.
+6. **The hypothesis** `BoundedInnerNec d` — Critch's Property 4 / assumption (d), bounded
+   inner necessitation with a polynomial expansion `C_χ · (g(k)^d + 1)` (the constant depends on
+   `χ`: the target carries the unary numeral of `⌜χ⌝`) — definition only.
 
 Trap (`HANDOVER_ARITHMETIZED_S.md` §6): every quote equation below is proved for a VARIABLE
 sentence and instantiated; `simp` never sees `⌜qDupoc⌝`, `⌜pConj⌝` or `⌜tactDiag θ⌝` as a closed
@@ -705,18 +706,20 @@ end transfer
 /-! ### 6. The hypothesis: bounded inner necessitation -/
 
 /-- **Bounded inner necessitation with a polynomial expansion — Critch's Property 4 /
-assumption (d)** (Critch 2019 §5; `M4_BOUNDED_HBL/BRIEF.md` §6, U5), the ONE named hypothesis
-of the PBLT assembly: in every model `V` of `𝗜𝚺₁`, for every one-variable `χ` and every budget
-`k : V`, if the `k`-instance of `χ` has a `TAct`-proof code of length `≤ gBudget k` then the
-`k`-instance of `Box_g χ` (the sentence "the `k`-instance of `χ` has a proof of length
-`≤ g(k)`") has a proof code of length `≤ (gBudget k)^d + c + c₁·(|χ| + ‖k‖) + c₀` — the
-expansion `E a = a^d + c` is POLYNOMIAL (`d c : ℕ`), the additive part accounts for the sizes
-of the two sentences (`c₁ c₀ : ℕ`). Everything downstream is a theorem GIVEN it; discharging it
-for Foundation's calculus with explicit constants is the open research item U10. -/
-structure BoundedInnerNec (d c c₁ c₀ : ℕ) : Prop where
-  nec : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (χ : Semisentence LAct 1) (k : V),
+assumption (d)** (Critch 2019 §5; `M4_BOUNDED_HBL/BRIEF.md` §6, U5; the design report
+`M4_BOUNDED_HBL/DESIGN_inner_necessitation.md` §10), the ONE named hypothesis of the PBLT
+assembly: for every one-variable `χ` there is a constant `C` (depending on `χ` — the target
+`instB ⌜Box_g χ⌝ k` carries the UNARY Gödel numeral of `⌜χ⌝`, so every proof of it is at least
+`encode χ` long, exponential in `flen χ`; a bound linear in `flen χ` would be UNSATISFIABLE)
+such that in every model `V` of `𝗜𝚺₁` and at every budget `k : V`, if the `k`-instance of `χ`
+has a `TAct`-proof code of length `≤ gBudget k` then the `k`-instance of `Box_g χ` (the sentence
+"the `k`-instance of `χ` has a proof of length `≤ g(k)`") has a proof code of length
+`≤ C · ((gBudget k)^d + 1)` — the expansion is POLYNOMIAL in the budget (`d : ℕ`, expected
+`d = 3`). Everything downstream is a theorem GIVEN it; discharging it for Foundation's calculus
+is the open research item U10. -/
+structure BoundedInnerNec (d : ℕ) : Prop where
+  nec : ∀ χ : Semisentence LAct 1, ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V),
     LenDerivable TAct (gBudget k) (instB (⌜χ⌝ : V) k) →
-    ∃ e : V, e ≤ (gBudget k) ^ d + (c : V) + (c₁ : V) * ((flen (χ : Semiproposition LAct 1) : V) + ‖k‖) + (c₀ : V) ∧
-      LenDerivable TAct e (instB (⌜Box_g χ⌝ : V) k)
+    ∃ e : V, e ≤ (C : V) * ((gBudget k) ^ d + 1) ∧ LenDerivable TAct e (instB (⌜Box_g χ⌝ : V) k)
 
 end ArithS

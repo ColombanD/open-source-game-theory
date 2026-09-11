@@ -15,6 +15,7 @@ import ArithS.InstanceV
 import ArithS.Transparency
 import ArithS.Assembly.Prep
 import ArithS.Assembly.Uniform
+import ArithS.Assembly.Cell
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -185,7 +186,8 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms exists_lenDerivable_V_of_proof
 
 -- M4 U8 — the uniform PBLT chain (Assembly/Uniform, 2026-09-12), conditional on
--- `BoundedInnerNec`: `|bnum k| ≤ 6‖k‖ + 1` in every model; polynomials in the bit length are
+-- `BoundedInnerNec d` (a per-χ constant, polynomial expansion `C_χ·(g(k)^d + 1)`):
+-- `|bnum k| ≤ 6‖k‖ + 1` in every model; polynomials in the bit length are
 -- eventually below `k` in EVERY model (standard threshold, nonstandard `k` included); the two
 -- standard readings are models of `TAct`; the forward direction of the fixed point with a
 -- length, instantiated; the chain (cut, necessitation, cut, ∧-elimination) with its budget
@@ -203,6 +205,18 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms chainBound_poly
 #print axioms psi_true_V
 #print axioms pblt_uniform
+
+-- M4 U9 — the Löbian cell at ℕ (Assembly/Cell, 2026-09-12), conditional on `BoundedInnerNec d`:
+-- `‖·‖ = Nat.size` at ℕ; the meta closure `LenProvable fbound (K₀ + K₁·size k + K₂·size k²) TAct
+-- ⌜psi ⇜ ![bnumT k]⌝` (the uniform theorem instantiated, its antecedent cut away by
+-- NumeralFacts); below the cube budget; and the cell: for all large `k`, `Dupoc k` cooperates
+-- with itself and `Cupod k` defects against itself (fuel 2), and both FIND their guards
+-- (`LenProvableV TAct k (guard)`) — Critch's Theorem 3.7 in PA-S.
+#print axioms size_eq_length
+#print axioms exists_psi_instance_length
+#print axioms cell_core
+#print axioms dupoc_self_coop
+#print axioms dupoc_finds_guard
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound

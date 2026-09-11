@@ -7,7 +7,8 @@ import ArithS.NumeralFacts
 `Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §6 (U8, steps 1–8) with the §7 addendum (the Löb
 family is the conjunction `pConj := qDupoc ⋏ qCupod`, the models are the two standard readings
 `stdActS`/`swapActS`). Everything is a theorem GIVEN the one named hypothesis
-`BoundedInnerNec d c c₁ c₀` (`Assembly/Prep.lean` §6, Critch's assumption (d)).
+`BoundedInnerNec d` (`Assembly/Prep.lean` §6, Critch's assumption (d): a per-`χ` constant `C_χ`
+and a polynomial expansion `C_χ · (g(k)^d + 1)`).
 
 0. **Lengths of the binary numeral in every model.** `termLen_bnum_le_V : |bnum k| ≤ 6‖k‖ + 1`
    (the V-generic twin of `Bnum.tlen_bnumT`, by `pi1_order_induction` on the bit recursion).
@@ -346,16 +347,22 @@ section chain
 /-- Short names for the lengths the chain pays. -/
 local notation "‖" χ "‖ᵢ" k => formulaLen LAct (instB (⌜χ⌝ : V) k)
 
+/-- **Bounded inner necessitation at `psi`, in one model, with its constant `Cψ`** — the
+instance of `BoundedInnerNec.nec psi` the chain consumes. -/
+def NecAt (d Cψ : ℕ) (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] : Prop :=
+  ∀ k : V, LenDerivable TAct (gBudget k) (instB (⌜psi⌝ : V) k) →
+    ∃ e : V, e ≤ (Cψ : V) * ((gBudget k) ^ d + 1) ∧ LenDerivable TAct e (instB (⌜Box_g psi⌝ : V) k)
+
 /-- **The total budget consumed by the chain** at `k`, for the length `N₁` of the forward direction
-and the constants `d c c₁ c₀` of bounded inner necessitation: the instantiation (U3), the cut with
-the assumed box (U2), the necessitation expansion (U5), the second cut (U2) and the
+and the constants `d`, `Cψ` of bounded inner necessitation at `psi`: the instantiation (U3), the
+cut with the assumed box (U2), the necessitation expansion (U5), the second cut (U2) and the
 ∧-elimination (`pconj_both_V`). -/
-noncomputable def chainBound (N₁ d c c₁ c₀ : ℕ) (k : V) : V :=
+noncomputable def chainBound (N₁ d Cψ : ℕ) (k : V) : V :=
   ((N₁ : V) + 5 * formulaLen LAct (instB (⌜chi₁⌝ : V) k) + 3 * formulaLen LAct (⌜chi₁⌝ : V)
       + termLen LAct (bnum k) + 7)
     + gBudget k + 5 * formulaLen LAct (instB (⌜psi⌝ : V) k)
       + 10 * (formulaLen LAct (instB (⌜Box_g psi⌝ : V) k) + formulaLen LAct (instB (⌜pConj⌝ : V) k) + 1) + 9
-    + (gBudget k ^ d + (c : V) + (c₁ : V) * ((flen (psi : Semiproposition LAct 1) : V) + ‖k‖) + (c₀ : V))
+    + (Cψ : V) * (gBudget k ^ d + 1)
       + 5 * formulaLen LAct (instB (⌜Box_g psi⌝ : V) k) + 10 * formulaLen LAct (instB (⌜pConj⌝ : V) k) + 9
     + 8 * (formulaLen LAct (instB (⌜qDupoc⌝ : V) k) + formulaLen LAct (instB (⌜qCupod⌝ : V) k)) + 7
 
@@ -367,9 +374,9 @@ lemma isFormula_imp_instB (φ ψ : Semisentence LAct 1) (k : V) :
 /-- **The chain, core form** (U8 steps 1–5): given the forward direction at length `N₁`, the
 assumed box `□_{g k} psi(k)` and `chainBound ≤ k`, a proof code of `pConj(k)` of some length `a`
 below the ∧-elimination threshold of `pconj_both_V`. -/
-theorem chain_core_V {d c c₁ c₀ : ℕ} (hE : BoundedInnerNec d c c₁ c₀)
+theorem chain_core_V {d Cψ : ℕ} (hnec : NecAt d Cψ V)
     {N₁ : ℕ} (hN₁ : LenDerivable TAct (N₁ : V) (⌜(∀¹ chi₁ : Sentence LAct)⌝ : V)) (k : V)
-    (hk : chainBound N₁ d c c₁ c₀ k ≤ k)
+    (hk : chainBound N₁ d Cψ k ≤ k)
     (hbox : LenDerivable TAct (gBudget k) (instB (⌜psi⌝ : V) k)) :
     ∃ a : V,
       a + 8 * (formulaLen LAct (instB (⌜qDupoc⌝ : V) k) + formulaLen LAct (instB (⌜qCupod⌝ : V) k)) + 7 ≤ k ∧
@@ -382,7 +389,7 @@ theorem chain_core_V {d c c₁ c₀ : ℕ} (hE : BoundedInnerNec d c c₁ c₀)
   -- step 3: cut with the assumed box
   have h3 := lenDerivable_cut_V hψ (isFormula_imp_instB (Box_g psi) pConj k) h2 hbox
   -- step 4: bounded inner necessitation
-  obtain ⟨e, he, hBx⟩ := hE.nec V psi k hbox
+  obtain ⟨e, he, hBx⟩ := hnec k hbox
   -- step 5: cut again
   have h5 := lenDerivable_cut_V hB hP h3 hBx
   refine ⟨_, ?_, h5⟩
@@ -392,22 +399,22 @@ theorem chain_core_V {d c c₁ c₀ : ℕ} (hE : BoundedInnerNec d c c₁ c₀)
   gcongr
 
 /-- **The chain** (U8 steps 1–6): both searchers find their guards. -/
-theorem chain_V {d c c₁ c₀ : ℕ} (hE : BoundedInnerNec d c c₁ c₀)
+theorem chain_V {d Cψ : ℕ} (hnec : NecAt d Cψ V)
     {N₁ : ℕ} (hN₁ : LenDerivable TAct (N₁ : V) (⌜(∀¹ chi₁ : Sentence LAct)⌝ : V)) (k : V)
-    (hk : chainBound N₁ d c c₁ c₀ k ≤ k)
+    (hk : chainBound N₁ d Cψ k ≤ k)
     (hbox : LenDerivable TAct (gBudget k) (instB (⌜psi⌝ : V) k)) :
     EvalGraph 2 (DupocV k) (DupocV k) (DupocV k) 0 ∧ EvalGraph 2 (CupodV k) (CupodV k) (CupodV k) 1 := by
-  obtain ⟨a, ha, hpc⟩ := chain_core_V hE hN₁ k hk hbox
+  obtain ⟨a, ha, hpc⟩ := chain_core_V hnec hN₁ k hk hbox
   exact pconj_both_V k a ha hpc
 
 /-- **The chain, box form**: Dupoc actually FINDS a proof of its guard within its budget. -/
-theorem chain_guard_V {d c c₁ c₀ : ℕ} (hE : BoundedInnerNec d c c₁ c₀)
+theorem chain_guard_V {d Cψ : ℕ} (hnec : NecAt d Cψ V)
     {N₁ : ℕ} (hN₁ : LenDerivable TAct (N₁ : V) (⌜(∀¹ chi₁ : Sentence LAct)⌝ : V)) (k : V)
-    (hk : chainBound N₁ d c c₁ c₀ k ≤ k)
+    (hk : chainBound N₁ d Cψ k ≤ k)
     (hbox : LenDerivable TAct (gBudget k) (instB (⌜psi⌝ : V) k)) :
     LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (DupocV k)) ∧
     LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (CupodV k)) := by
-  obtain ⟨a, ha, hpc⟩ := chain_core_V hE hN₁ k hk hbox
+  obtain ⟨a, ha, hpc⟩ := chain_core_V hnec hN₁ k hk hbox
   rw [instB_quote_pConj] at hpc
   have hx := isFormula_instB_quote qDupoc k
   have hy := isFormula_instB_quote qCupod k
@@ -496,9 +503,9 @@ lemma PLE_gBudget {k : V} (hs : 1 ≤ ‖k‖) : PLE ‖k‖ (gBudget k) 1 3 := 
 /-- **The chain's budget is polynomial in the bit length, uniformly in `V`**: for every choice of
 the constants there is `C : ℕ` with `chainBound ≤ C·‖k‖^{3d+3}` in every model, once `1 ≤ ‖k‖`
 (a pure term, so that the coefficient is read off the bookkeeping combinators). -/
-theorem chainBound_PLE (N₁ d c c₁ c₀ : ℕ) :
+theorem chainBound_PLE (N₁ d Cψ : ℕ) :
     ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), 1 ≤ ‖k‖ →
-      PLE ‖k‖ (chainBound N₁ d c c₁ c₀ k) C (3 * d + 3) :=
+      PLE ‖k‖ (chainBound N₁ d Cψ k) C (3 * d + 3) :=
   ⟨_, fun V _ _ k hs ↦
     have hm3 : 3 ≤ 3 * d + 3 := by omega
     have hm1 : 1 ≤ 3 * d + 3 := by omega
@@ -536,7 +543,7 @@ theorem chainBound_PLE (N₁ d c c₁ c₀ : ℕ) :
     have t₆ := t₅.add (smul 5 hψ)
     have t₇ := t₆.add (smul 10 ((hB.add hP).add hone))
     have t₈ := t₇.add (hlit 9)
-    have t₉ := t₈.add (((hgd.add (hcst c)).add (cmul c₁ ((hcst _).add hlen))).add (hcst c₀))
+    have t₉ := t₈.add (cmul Cψ (hgd.add hone))
     have t₁₀ := t₉.add (smul 5 hB)
     have t₁₁ := t₁₀.add (smul 10 hP)
     have t₁₂ := t₁₁.add (hlit 9)
@@ -544,10 +551,10 @@ theorem chainBound_PLE (N₁ d c c₁ c₀ : ℕ) :
     t₁₃.add (hlit 7)⟩
 
 /-- **The chain's budget is polynomial in the bit length, uniformly in `V`.** -/
-theorem chainBound_poly (N₁ d c c₁ c₀ : ℕ) :
+theorem chainBound_poly (N₁ d Cψ : ℕ) :
     ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), 1 ≤ ‖k‖ →
-      chainBound N₁ d c c₁ c₀ k ≤ (C : V) * ‖k‖ ^ (3 * d + 3) := by
-  obtain ⟨C, hC⟩ := chainBound_PLE N₁ d c c₁ c₀
+      chainBound N₁ d Cψ k ≤ (C : V) * ‖k‖ ^ (3 * d + 3) := by
+  obtain ⟨C, hC⟩ := chainBound_PLE N₁ d Cψ
   exact ⟨C, fun V _ _ k hs ↦ hC V k hs⟩
 
 end polyBound
@@ -559,12 +566,13 @@ section uniform
 /-- **`psi(k)` is true in both readings for every large `k`, in every model of `𝗜𝚺₁`**, given
 bounded inner necessitation: for `k` above a standard threshold `kHat`, the box `Box_g psi (k)`
 implies `pConj(k)` (the chain), so `psi(k)` holds by the fixed point. -/
-theorem psi_true_V {d c c₁ c₀ : ℕ} (hE : BoundedInnerNec d c c₁ c₀) :
+theorem psi_true_V {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗣𝗔] (k : V), (kHat : V) ≤ k →
       Semiformula.Eval (s := stdActS V) ![k] Empty.elim psi ∧
       Semiformula.Eval (s := swapActS V) ![k] Empty.elim psi := by
   obtain ⟨N₁, hN₁⟩ := exists_forward_length
-  obtain ⟨C, hC⟩ := chainBound_poly N₁ d c c₁ c₀
+  obtain ⟨Cψ, hCψ⟩ := hE.nec psi
+  obtain ⟨C, hC⟩ := chainBound_poly N₁ d Cψ
   obtain ⟨kHat₀, hkHat₀⟩ := poly_size_le_eventually C (3 * d + 3)
   refine ⟨kHat₀ + 1, fun V _ _ k hk ↦ ?_⟩
   have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
@@ -573,15 +581,16 @@ theorem psi_true_V {d c c₁ c₀ : ℕ} (hE : BoundedInnerNec d c c₁ c₀) :
     have h1 : (1 : V) ≤ k := le_trans (by push_cast; exact le_add_self) hk
     have := length_monotone h1
     rwa [length_one] at this
-  have hbound : chainBound N₁ d c c₁ c₀ k ≤ k := le_trans (hC V k hs) (hkHat₀ V k hk₀)
+  have hbound : chainBound N₁ d Cψ k ≤ k := le_trans (hC V k hs) (hkHat₀ V k hk₀)
+  have hnec : NecAt d Cψ V := fun k ↦ hCψ V k
   constructor
   · refine (eval_psi_fixed_point_std V k).mpr fun hbox ↦ ?_
     rw [eval_Box_g_iff_std] at hbox
-    obtain ⟨h1, h2⟩ := chain_V hE (hN₁ V) k hbound hbox
+    obtain ⟨h1, h2⟩ := chain_V hnec (hN₁ V) k hbound hbox
     exact (eval_pConj_iff_stdActS k).mpr ⟨⟨2, h1⟩, ⟨2, h2⟩⟩
   · refine (eval_psi_fixed_point_swap V k).mpr fun hbox ↦ ?_
     rw [eval_Box_g_iff_swap] at hbox
-    obtain ⟨h1, h2⟩ := chain_V hE (hN₁ V) k hbound hbox
+    obtain ⟨h1, h2⟩ := chain_V hnec (hN₁ V) k hbound hbox
     exact (eval_pConj_iff_swap k).mpr ⟨⟨2, h1⟩, ⟨2, h2⟩⟩
 
 /-- The antecedent `leF ↑c #0` evaluated at `x` in a structure with standard reduct is `c ≤ x`. -/
@@ -597,7 +606,7 @@ lemma eval_leF_numeral_bvar {M : Type*} [ORingStructure M] [M↓[ℒₒᵣ] ⊧*
 /-- **The uniform theorem (U8 step 8)**: given bounded inner necessitation, there is a standard
 `kHat` with `TAct ⊢ ∀ k, (kHat ≤ k → psi(k))` — the antecedent in the shape `leF ↑kHat #0` that
 `NumeralFacts.lenProvable_le_bnumT` discharges at ℕ. -/
-theorem pblt_uniform {d c c₁ c₀ : ℕ} (hE : BoundedInnerNec d c c₁ c₀) :
+theorem pblt_uniform {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psi) := by
   obtain ⟨kHat, hkHat⟩ := psi_true_V hE
   refine ⟨kHat, tact_complete' _ fun M _ _ ↦ ?_⟩
