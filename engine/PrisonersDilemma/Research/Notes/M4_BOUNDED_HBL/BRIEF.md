@@ -199,3 +199,19 @@ readings, and §6's chain must be run in BOTH: in the swapped reading `qDupoc(k)
 D vs Cupod k", obtained from `EvalGraph 2 (DupocV k) … 0` by the τ-equivariance of `EvalGraph`
 (`swapcode`, `swapAct`) — a V-generic lemma to add to U8. Red cell, τ-closure and every `TAct ⊢`
 result survive (a stronger theory); `no_budget_keeping_transfer` is a length argument.
+
+**§7 addendum (after U0b landed, 7908336): the family is the CONJUNCTION.** `tact_complete'`
+quantifies over `stdActS M` and `swapActS M`. In the swapped reading `qDupoc(k)` means "Cupod k plays
+D vs Cupod k", and turning `EvalGraph 2 (DupocV k) … 0` into that needs τ-equivariance of `EvalGraph`
+inside `V`, i.e. τ-closure of `LenProvableV` INTERNALLY — not available (`Symmetry.lean` is meta).
+Critch's own move (2019 p. 21, PBLT on the conjunction) avoids it: take
+`p := qDupoc ⋏ qCupod` with `qCupod := lMap swap qDupoc` (the one-variable formula whose `k`-instance
+is CUPOD's guard: `guardCode ⌜GtmplA 1⌝ (CupodV k) (CupodV k) = instB ⌜qCupod⌝ k`, from
+`swapcode_DupocV` + the template swap equations). Then from `L a (instB ⌜p⌝ k)` two cheap
+∧-elimination cuts give `L (a + …) (instB ⌜qDupoc⌝ k)` AND `L (a + …) (instB ⌜qCupod⌝ k)`; each
+searcher finds its own guard: `EvalGraph 2 (DupocV k) … 0` and `EvalGraph 2 (CupodV k) … 1`
+(`search_iff` for `pSearch k _ (pConst 1) (pConst 0)`); and `p(k)` is TRUE in BOTH readings: in
+`stdActS`, `qDupoc ↔ EvalGraph … Dupoc … 0` (U7) and `qCupod ↔ EvalGraph … Cupod … 1` (mirror);
+in `swapActS`, `Eval (swapActS) φ = Eval (stdActS) (lMap swap φ)` swaps the two roles. So the ONLY new
+truth equation is `eval_qCupod_iff_V` in `stdActS`, and U8's step 6 produces both `EvalGraph` facts.
+The conclusion `dupoc_self_coop` is unchanged (and `cupod_self_defect` comes for free).
