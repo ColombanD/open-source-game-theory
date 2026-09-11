@@ -2,6 +2,7 @@ import ArithS.Agent
 import ArithS.AgentConverse
 import ArithS.Core.Sound
 import ArithS.Cut
+import ArithS.CutV
 import ArithS.Det
 import ArithS.FitBox
 import ArithS.Inst
@@ -39,6 +40,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lenProvable_fbound_mono
 #print axioms lenProvable_verum
 #print axioms mlen_cutMP
+
+-- M4, bounded D2 INSIDE every model of IΣ₁ (CutV): the cut on codes with dlen accounting —
+-- unconditional for `LenDerivable` (no code bound), under `ProperV` for `LenProvableV`
+-- (a theorem at ℕ), and as ONE ℒₒᵣ-sentence proved by IΣ₁/PA/TAct via the completeness theorem.
+#print axioms lenDerivable_cut_V
+#print axioms lenProvableV_cut_V
+#print axioms lenProvableV_mono_V
+#print axioms properV_nat_TAct
+#print axioms pa_proves_cutSentence
+#print axioms tact_proves_cutSentence
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound

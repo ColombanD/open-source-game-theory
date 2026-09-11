@@ -782,6 +782,23 @@ Foundation's `pair` has an `if`) is fixed by re-coding PROGRAMS on the term-expr
 (Dupoc's guard is box-free); it stays deferred with the bridge. Agents launched: `ppair`
 re-pairing of `Prog.lean` + downstream; `CutV.lean` (bounded D2 on codes inside every model).
 
+**U2 DONE 2026-09-11 — bounded D2 on CODES inside every model of IΣ₁ (`ArithS/CutV.lean`,
+census +6, three axioms).** `cutCode φ ψ d₁ d₂` (the five-sequent cut of `Cut.lean`, now on
+derivation CODES via Foundation's internal constructors), `cutCode_proof`, `dlen_cutCode_le`
+(`≤ dlen d₁ + dlen d₂ + 5|φ| + 10|ψ| + 9` by the `DlenGraph` inversion clauses);
+`LenDerivable T k φ := ∃ d, Proof T d φ ∧ dlen T d ≤ k` (Σ₁, NO code bound) with
+`lenDerivable_cut_V` UNCONDITIONAL for any Δ₁ theory; the `LenProvableV`-shaped
+`lenProvableV_cut_V` (uniform `c₁ = 10, c₀ = 9`) under the named hypothesis `ProperV V T`
+("a `T`-proof code of length `≤ k` is `< fbound k`") — a THEOREM at `V = ℕ` (`properV_nat_TAct`,
+through `Proof.sound'` + `quote_derivation_le`), OPEN for general `V` (needs a V-internal
+induction on derivation codes — brief §5 danger 4; wanted for the uniform argument);
+`lenProvableV_mono_V`; and the whole thing as ONE ℒₒᵣ-sentence `cutSentence` with
+`isigma1_proves_cutSentence`/`pa_proves_cutSentence`/`tact_proves_cutSentence` by the
+completeness theorem (`Det.lean`'s pattern) — Critch's Property 1 as a PA theorem.
+LESSON for the parametric box (U1): use `LenDerivable` (Σ₁, no `fbound`) inside the Löb
+argument; `fbound`/`LenProvableV` is only needed where the EVALUATOR's guard is consulted
+(Δ₁-ness of the search clause), so `ProperV V` enters exactly once, at the final step.
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);

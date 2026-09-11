@@ -12,6 +12,7 @@ import ArithS.Sound
 import ArithS.Symmetry
 import ArithS.ProofLength
 import ArithS.Cut
+import ArithS.CutV
 import ArithS.RelabelTemplate
 import ArithS.Prog
 import ArithS.Bnum
