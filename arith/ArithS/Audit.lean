@@ -2,6 +2,7 @@ import ArithS.Agent
 import ArithS.AgentConverse
 import ArithS.Core.Sound
 import ArithS.Det
+import ArithS.FitBox
 import ArithS.Inst
 
 /-!
@@ -74,5 +75,12 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms pa_proves_neg_trAt_inst
 #print axioms leaf_atomNeg_sound
 #print axioms leaf_atomNeg_sound_searchFree
+
+-- FitBox: Critch's (b) for box-carrying guards — the positive budget-linear bound and the
+-- obstruction: under Cantor pairing a searcher whose guard names its own budget cannot fit.
+#print axioms size_bnum_ge
+#print axioms exists_flen_tmpl_const
+#print axioms box_guard_never_fits
+#print axioms legibleBot_guard_never_fits
 
 end ArithS

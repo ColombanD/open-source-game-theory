@@ -29,6 +29,7 @@ import ArithS.Agent
 import ArithS.AgentConverse
 import ArithS.Inst
 import ArithS.Det
+import ArithS.FitBox
 import ArithS.EngineBridge
 import ArithS.Core.Tr
 import ArithS.Core.Sound

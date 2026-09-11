@@ -417,21 +417,23 @@ EvalGraph under one two-sided `GuardAgree`; `GuardAgreeF` derived from engine so
 `Det` (determinism in every model of IΣ₁ by `pi1_order_induction`; negative atoms PA-provable
 via the completeness theorem; `atomNeg` leaf discharged — only the twelve source-reading
 leaves remain hypotheses = bounded D1), `Audit.lean` census (43 theorems, 3 axioms).
-IN FLIGHT / PARTIAL: `arith/ArithS/FitBox.lean` (UNTRACKED in the worktree unless the agent
-committed it — check `git status`): Critch's (b) for box-carrying guards. FINDING (the key
-lemma `size_bnum_ge : n + 2 ≤ Nat.size (bnum n)` is in the file and checks): under Cantor
-pairing the CODE of a binary numeral term of value `n` has bit length ≥ n + 2 — as long as a
-unary numeral — so a searcher whose stored template names ITS OWN budget `k` inside a box
-(`numTB k` in `tmpl_box`) has a description of length ≥ k and its guard CANNOT fit its budget.
-T1/T2 are unaffected (their guards are box-free); this blocks the T3 (Löbian) program until
-the coding is fixed. Design fix (not implemented): store box budgets as node DATA referenced
-by a template variable, or use BALANCED numeral terms (`n = a·b + c`, `a, b ≈ √n`, depth
-O(log log n), Cantor code polylogarithmic; Foundation has `sqrt`). The file's remaining
-lemma is occurrence of `#0` in `lenProvG`: proving it SYNTACTICALLY unfolds the giant DSL
-formula and hangs (>10 h) — the agent was redirected to the SEMANTIC route (`FInert`, as in
-the retired `Vacuity.lean`: `LenProvableV TAct 0 φ` is false, `LenProvableV TAct K ⌜⊤⌝` true).
-If the file is not green when you read this, finish it that way or record the finding as
-analysis; do not unfold `lenProvableV`.
+FitBox DONE (commit 7fd38cc, wired; census 47 theorems): Critch's (b) for box-carrying guards
+SPLITS. Positive: `exists_flen_tmpl_const : BudgetLinear F → ∃ c₀ c₁, ∀ k, flen (tmpl (F k)) ≤
+c₀ + c₁ · size k` (the TEMPLATE of a box is short). Negative, at EVERY budget:
+`size_bnum_ge : n + 2 ≤ Nat.size (bnum n)` (under Cantor pairing the CODE of a binary numeral
+term squares at every bit, so it is as long as a unary numeral), hence
+`box_guard_never_fits : HasBox k φ → k < flen (trAt (.search k' φ p q) opp φ)` and the zoo
+instances `legibleBot_guard_never_fits` — a searcher whose guard names its own budget inside a
+box cannot fit its budget. T1/T2 unaffected (box-free guards); this blocks T3 until the
+coding changes. Design fix (not implemented): store box budgets as node DATA referenced by a
+seventh template variable (`lenProvG ⇜ ![#6, #0]`, filled by `descVec` from the node's `k`),
+so the stored template's code is constant in `k`; or balanced numeral terms (depth
+O(log log n), polylog codes). Occurrence of `#0` in `lenProvG` turned out provable
+SYNTACTICALLY in 10 s (`simp only [sigma_mkDelta, val_mkSigma]` exposes only the connective
+skeleton; the `!p` substitutions stay opaque) — the hangs were three other mechanisms, all
+recorded in the file's proof-craft note (unification unfolding `qqAnd/qqExs` to `pair`; an
+index mismatch `9` vs `6+1+1+1` making `isDefEq` unfold a giant quote; `whnf` of closed
+`Nat` arithmetic on symbol counts).
 
 IMPLEMENTATION SEQUENCE (decided 2026-09-10; each step is one agent-sized task, committed and
 recorded here before the next starts):
