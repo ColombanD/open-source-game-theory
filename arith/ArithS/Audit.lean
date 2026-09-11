@@ -8,6 +8,7 @@ import ArithS.Det
 import ArithS.FitBox
 import ArithS.Inst
 import ArithS.Instance
+import ArithS.InstanceV
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -75,6 +76,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- of a program denotes its code (`val_progTT`) and codes are what the guard names (`quote_progTT`).
 #print axioms exists_dupoc_instance
 #print axioms exists_dupoc_instance_code
+#print axioms exists_dupoc_instance_code_V
 #print axioms quote_progTT
 #print axioms val_progTT
 #print axioms size_le_tlen_progTT

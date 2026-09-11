@@ -23,8 +23,9 @@ now an equation:
   (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) cq` (through the code equation
   `quote_guardSentenceA` and the quote of a substitution instance).
 
-Everything here is at `ℕ` (the meta level, where `Dupoc` lives); the `V`-generic instance
-equation on codes is left for the next step.
+Everything here is at `ℕ` (the meta level, where `Dupoc` lives); `ArithS.InstanceV` re-runs
+the analysis inside every model of `𝗜𝚺₁` (`exists_dupoc_instance_code_V`, for possibly
+nonstandard budgets `k : V`).
 -/
 
 namespace ArithS
@@ -73,6 +74,8 @@ noncomputable def innerD : ℕ := ppair (⌜GtmplA 0⌝ : ℕ) (ppair (pConst 0)
 /-- The budget-independent inner part of Cupod's code. -/
 noncomputable def innerC : ℕ := ppair (⌜GtmplA 1⌝ : ℕ) (ppair (pConst 1) (pConst 0))
 
+lemma innerD_def : innerD = ppair (⌜GtmplA 0⌝ : ℕ) (ppair (pConst 0) (pConst 1)) := rfl
+lemma innerC_def : innerC = ppair (⌜GtmplA 1⌝ : ℕ) (ppair (pConst 1) (pConst 0)) := rfl
 lemma Dupoc_eq_inner (k : ℕ) : Dupoc k = ppair 6 (ppair k innerD) + 1 := rfl
 lemma Cupod_eq_inner (k : ℕ) : Cupod k = ppair 6 (ppair k innerC) + 1 := rfl
 
