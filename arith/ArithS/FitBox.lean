@@ -699,28 +699,6 @@ section guardLength
 
 variable {L : Language}
 
-/-- Negation preserves the symbol count. -/
-lemma flen_neg : ∀ {n : ℕ} (φ : Semiproposition L n), flen (∼φ) = flen φ
-  | _, .rel _ _ => rfl
-  | _, .nrel _ _ => rfl
-  | _, .verum => rfl
-  | _, .falsum => rfl
-  | _, .and φ ψ => by
-    show flen (∼φ ⋎ ∼ψ) = flen (φ ⋏ ψ)
-    rw [flen_or, flen_and, flen_neg φ, flen_neg ψ]
-  | _, .or φ ψ => by
-    show flen (∼φ ⋏ ∼ψ) = flen (φ ⋎ ψ)
-    rw [flen_and, flen_or, flen_neg φ, flen_neg ψ]
-  | _, .all φ => by
-    show flen (∃¹ ∼φ) = flen (∀¹ φ)
-    rw [flen_exs, flen_all, flen_neg φ]
-  | _, .exs φ => by
-    show flen (∀¹ ∼φ) = flen (∃¹ φ)
-    rw [flen_all, flen_exs, flen_neg φ]
-
-lemma flen_imply {n : ℕ} (φ ψ : Semiproposition L n) : flen (φ 🡒 ψ) = flen φ + flen ψ + 1 := by
-  rw [Semiformula.imp_eq, flen_or, flen_neg]
-
 lemma emb_bShift {n : ℕ} : ∀ t : Semiterm LAct Empty n,
     (Rew.emb (Rew.bShift t) : SyntacticSemiterm LAct (n + 1)) = Rew.bShift (Rew.emb t)
   | #x => rfl

@@ -411,6 +411,23 @@ implyS/contra/neg_mdp`, `provable_D1/D2/D3`, `kreisel_spec`), three standard axi
 instance `A` (the arith evaluator's `∃ n, EvalGraph …` sentence, after step (c)) and the leaf
 discharge for that `A` — which is exactly T2-AGENT's content.
 
+**M4 first field — bounded D2 in rule form (DONE 2026-09-11, `colomban-arith-m3`,
+`ArithS/Cut.lean`, imported after `ProofLength`; census +6, three axioms).** The meta cut
+`cutMP : T ⟹₂ {φ ➝ ψ} → T ⟹₂ {φ} → T ⟹₂ {ψ}` (one `cut` on `φ ➝ ψ = ∼φ ⋎ ψ`; right premise
+`and` from a weakening of the proof of `φ` and the closed leaf `{ψ, ∼ψ}`; no cast needed —
+`∼(∼φ ⋎ ψ) = φ ⋏ ∼ψ` is a `simp` fact) with EXACT accounting `mlen (cutMP d₁ d₂) ≤ mlen d₁ +
+mlen d₂ + 5|φ| + 10|ψ| + 9` (every node charges its whole conclusion sequent: five sequents
+of the cut tree, each bounded by `sqlen_insert_le`/`flen_neg`/`flen_imply`). Code level by
+the `lenProvable_fbound_swap` pattern, factored into two reusable bridges:
+`derivation_of_lenProvable` (code → meta derivation of `mlen ≤ k`) and
+`lenProvable_of_derivation` (meta derivation of `mlen ≤ k` → `LenProvable fbound k`, code
+bound by properness) — every further rule of the bounded-GL interface is "meta construction +
+these two". Traps met: the arrow token in Foundation is `🡒` (`➝` does not parse); `have b := d.cast _`
+forgets the definition so `mlen_cast` cannot fire — `obtain ⟨b, hb⟩ : ∃ b, mlen b ≤ k`;
+`Monotone fbound` under Mathlib's `Preorder ℕ` does NOT unify with `LenProvable.mono`'s
+`ORingStructure` preorder — prove monotonicity inline through `le_def`; `flen_neg`/`flen_imply`
+were already in `FitBox.lean` (deleted there, `Cut` is upstream).
+
 **Post-M3 increments (2026-09-10/11, `colomban-arith-m3`).** DONE: `AgentConverse` (eval ↔
 EvalGraph under one two-sided `GuardAgree`; `GuardAgreeF` derived from engine soundness),
 `Inst` (hom `c_C ↦ 0, c_D ↦ 1`; `pa_proves_trAt_inst`; atom leaves of T2-CORE discharged),
@@ -754,7 +771,14 @@ theorem. **This is T2.** Corollary worth stating: `Pf_sound` factors through PA-
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
-* bounded D2: additive (concatenation), cheap;
+* bounded D2: additive (concatenation), cheap — **DONE 2026-09-11 in RULE form with
+  constants (`ArithS/Cut.lean`, first M4 field): `lenProvable_mp : □_{k₁}(φ ➝ ψ) → □_{k₂} φ →
+  □_{k₁ + k₂ + c₁(|φ| + |ψ|) + c₀} ψ` with `(c₁, c₀) = (10, 9)`, sharp form
+  `k₁ + k₂ + 5|φ| + 10|ψ| + 9` (`lenProvable_mp_sharp`), plus `lenProvableV_mp`,
+  `lenProvable_fbound_mono`, `lenProvable_verum`; three axioms. The engine's `mp` charges
+  `|ψ|` only, PA-S also pays `|φ|` (the cut formula is copied into the side sequents) — a
+  constant-factor departure. Still open here: D2 as an INTERNAL sentence (`IΣ₁ ⊢ □_a(φ➝ψ) ⋏
+  □_b φ ➝ □_{…} ψ`), which needs the cut construction formalized inside IΣ₁;**
 * bounded D3: `IΣ₁ ⊢ □_a σ → □_{q(a,|σ|)} □_a σ` — formalized FEASIBLE Σ₁-completeness with
   its length tracked inside IΣ₁; the hardest single item;
 * bounded diagonal lemma (fixed shape: constant + linear terms);

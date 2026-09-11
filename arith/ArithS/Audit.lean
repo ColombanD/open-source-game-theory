@@ -1,6 +1,7 @@
 import ArithS.Agent
 import ArithS.AgentConverse
 import ArithS.Core.Sound
+import ArithS.Cut
 import ArithS.Det
 import ArithS.FitBox
 import ArithS.Inst
@@ -29,6 +30,15 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lenProvable_fbound_swap_iff
 #print axioms swapcode_swapcode
 #print axioms swapcode_psubst
+
+-- M4, first field — bounded D2 in rule form: PA-S closes under modus ponens at additive
+-- cost `k₁ + k₂ + 10(|φ| + |ψ|) + 9` (sharp: `5|φ| + 10|ψ| + 9`); budget monotonicity; verum.
+#print axioms lenProvable_mp
+#print axioms lenProvable_mp_sharp
+#print axioms lenProvableV_mp
+#print axioms lenProvable_fbound_mono
+#print axioms lenProvable_verum
+#print axioms mlen_cutMP
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound

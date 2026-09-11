@@ -1,4 +1,5 @@
 import ArithS.Template
+import ArithS.Cut
 
 /-!
 # ArithS.RedCell — `(Dupoc, Cupod) = (D, C)` in the arithmetized `S`
@@ -78,6 +79,15 @@ lemma lenProvableV_nat (k φ : ℕ) :
     LenProvableV TAct k φ ↔ LenProvable (fbound : ℕ → ℕ) k TAct φ := by
   have := lenProvableV_numeral (V := ℕ) TAct k φ
   rwa [Nat.numeral_eq] at this
+
+/-- Bounded D2 in rule form for the object-variable predicate `LenProvableV` at `ℕ`
+(`ArithS.Cut.lenProvable_mp` through `lenProvableV_nat`). -/
+theorem lenProvableV_mp {k₁ k₂ : ℕ} {φ ψ : Sentence LAct}
+    (h₁ : LenProvableV TAct k₁ (⌜φ 🡒 ψ⌝ : ℕ)) (h₂ : LenProvableV TAct k₂ (⌜φ⌝ : ℕ)) :
+    LenProvableV TAct (k₁ + k₂ + 10 * (flen (φ : Proposition LAct) + flen (ψ : Proposition LAct)) + 9)
+      (⌜ψ⌝ : ℕ) := by
+  rw [lenProvableV_nat] at h₁ h₂ ⊢
+  exact lenProvable_mp h₁ h₂
 
 /-- **Soundness of the guard**: if the guard is found, it is true. -/
 theorem evalGraph_of_guard {k me opp a : ℕ}

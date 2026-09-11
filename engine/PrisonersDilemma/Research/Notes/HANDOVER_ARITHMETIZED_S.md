@@ -49,7 +49,7 @@ Build (worktree): `cd ~/wt/osgt-arith-m3/arith && LEAN_NUM_THREADS=4 lake build 
 `pgrep -f 'lake build'`; the IDE's `lake serve` does not count). Single-file check:
 `timeout 600 lake env lean ArithS/<File>.lean 2>&1 | grep -E "error|sorry" -A 12`.
 
-The axiom census: building `ArithS` prints `#print axioms` for the 47 headline theorems from
+The axiom census: building `ArithS` prints `#print axioms` for the 48 headline theorems from
 `arith/ArithS/Audit.lean`; every line must be `[propext, Classical.choice, Quot.sound]`.
 
 ## 2. Read next, in this order
@@ -187,7 +187,16 @@ Agents die at rate limits or watchdogs: their partial files stay on disk — che
 `git status` in the worktree before assuming work was lost, and commit partial-but-green
 files as `wip`.
 
-## 8. Last session (2026-09-11, cut short by compute): bounded D2 in rule form — PARTIAL
+## 8. Last session (2026-09-11): bounded D2 in rule form — DONE (finished the same day)
+
+**Status: COMPLETE.** `Cut.lean` type-checks, is imported after `ProofLength`, its six
+theorems are in the `Audit.lean` census (three axioms), `lake build ArithS` is green. Landed
+statements: `lenProvable_mp` with `(c₁, c₀) = (10, 9)`, `lenProvable_mp_sharp`
+(`5|φ| + 10|ψ| + 9`), `lenProvableV_mp` (in `RedCell.lean`), `lenProvable_fbound_mono`,
+`lenProvable_verum`, `mlen_cutMP`; reusable bridges `derivation_of_lenProvable` /
+`lenProvable_of_derivation`. Recorded in the roadmap's M4 paragraph and the results §3
+addendum. The paragraph below is the pre-completion plan, kept for the record.
+
 
 `arith/ArithS/Cut.lean` (246 lines, no `sorry`, NOT yet type-checked end to end, NOT imported
 from `ArithS.lean`, committed as `wip`) is the first M4 field: modus ponens for `LenProvable`
