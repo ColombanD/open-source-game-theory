@@ -2,7 +2,111 @@ import ArithS.Neg
 import PrisonersDilemma.Bots.LlmGenerations.LegibleBot
 
 /-!
-# ArithS.FitBox — experiment
+# ArithS.FitBox — Critch's assumption (b) for guards that contain BOXES
+
+`ArithS.Fit` proved assumption (b) (Appendix B of `critch22`: "`S` writes `k` in `O(lg k)`
+characters") for the box-free searchers: their guard sentences have `O(size k)` symbols and fit
+inside the budget `k` for all large `k`. This file settles the box-carrying guards — the
+first zoo member is `LegibleBot kOut kIn = .search kOut (.box kIn (I play C)) C D`
+(`Bots/LlmGenerations/LegibleBot.lean`) — and the answer splits in two.
+
+## The positive half: the TEMPLATE of a box is short
+
+`tmpl (.box k ψ)` (`ArithS.Code`) writes the budget as the binary numeral TERM `numTB k`
+(`tlen ≤ 6 · size k + 1`, `ArithS.Bnum`) inside `lenProvG ⇜ ![cl (numTB k), #0]`; the other
+three conjuncts do not depend on `k`. Hence (§6):
+
+* `flen_emb_tmpl_box_le : flen (emb (tmpl (.box k ψ))) ≤ cBox ψ + 6 · cL · size k`, with
+  `cL = flen (emb lenProvG)` and `cBox ψ` the symbol counts of the fixed conjuncts, packaged as
+  irreducible constants (never evaluated: see the proof-craft note);
+* `exists_flen_tmpl_box_const ψ : ∃ c₀ c₁, ∀ k, flen (emb (tmpl (.box k ψ))) ≤ c₀ + c₁ · size k`;
+* `BudgetLinear F` (constants, `fun k ↦ .box k ψ`, `.impl`, `.neg`) and
+  `exists_flen_tmpl_const : BudgetLinear F → ∃ c₀ c₁, ∀ k, flen (emb (tmpl (F k))) ≤ c₀ + c₁ · size k`.
+  A box NESTED inside a box is not budget-linear: the inner formula's budget sits inside the
+  code constant `numTB (tcode ψ)` of the outer template, and codes are what the negative half is
+  about.
+
+## The negative half (the finding): the CODE of a binary numeral is exponential
+
+Assumption (b) is about the symbols the proof system writes, and the guard sentence of a
+searcher `me` names `me` by the canonical numeral of ITS OWN CODE: `trAt me opp φ` contains
+`dnumT (pcode me) = numTB (dnum (pcode me))`, whose length is at least the bit length of
+`pcode me` (`size_le_tlen_bnumT`, `ArithS.Neg`). For the box-free `Dupoc k` this is harmless:
+`pSearch k g p q` stores `k` as a DATA field (a number of `size k` bits), so
+`size (pcode (Dupoc k)) = O(size k)` (`size_dnum_Dupoc_le`). A box-carrying searcher stores
+`tcode (.box k ψ) = ⌜tmpl (.box k ψ)⌝`, and that template contains the numeral TERM `numTB k`,
+whose code `bnum k` is built by Cantor pairing along the bits of `k`:
+`bnum (2m) = 𝟐 ^* bnum m = ^func 2 mulIndex ?[𝟐, bnum m]`, and the innermost pair
+`⟪bnum m, 0⟫ = (bnum m)² + bnum m` SQUARES the code at every level. So
+
+* `two_pow_succ_le_bnum : 2 ^ (n + 1) ≤ bnum n` and `size_bnum_ge : n + 2 ≤ Nat.size (bnum n)`:
+  **the Cantor-pair code of the binary numeral of `n` has more than `n` bits — as many as a
+  unary numeral has symbols.** (The true growth is much faster, `≳ n⁵`, since three more pairs
+  wrap the vector; the square alone is what the induction needs.)
+
+The rest of the file threads this through the translation, with `HasBox k φ` ("`□_k` occurs
+at a Boolean position of `φ`", `.impl`/`.neg` closed) as the hypothesis:
+
+* `fOcc_lenProvableV`: the budget variable `#0` OCCURS in `lenProvableV`'s Σ₁ definition — in
+  the atom `n ≤ k` bounding the proof length. This is a SYNTACTIC proof: `simp only
+  [sigma_mkDelta, val_mkSigma]` exposes the connective skeleton of the DSL formula while every
+  `!p …` substitution stays opaque, and `FOcc` (§2) descends `∃¹`/`⋏`/`bexsLT` to the `≤` atom;
+  no giant formula is ever unfolded (13 s, measured);
+* `le_quote_rew_formula` (§2): if `#i` occurs in `φ` then `⌜ω #i⌝ ≤ ⌜ω ▹ φ⌝` (codes are
+  monotone along the syntax tree: `le_qqFunc`, `le_qqRel`, …, `quote_le_quote_bShift`);
+* `bnum_le_tcode : HasBox k φ → bnum k ≤ tcode φ` and `bnum_le_relabelTemplate_tcode` (the
+  code-level transposition `swapcode` relabels the action constants only, the numeral survives —
+  `lMap_swap_numTB`); then `bnum_le_dnum_pcode_search : bnum k ≤ dnum (pcode (.search k' φ p q))`
+  (both the code and its transposition are `≥ bnum k`, so is their `min`) and
+  `size_dnum_pcode_search_ge : k + 2 ≤ size (dnum (pcode (.search k' φ p q)))`;
+* `size_dnum_le_flen_trAt_hasBox : HasBox k φ → size (dnum (pcode me)) + 1 ≤ flen (emb (trAt me opp φ))`
+  (every box translation writes the `me`-description, §5);
+* **`box_guard_never_fits : HasBox k φ → ∀ k' p q opp, k < flen (emb (trAt (.search k' φ p q) opp φ))`**,
+  `not_box_guard_fits`, and the zoo instances `legibleBot_guard_never_fits` /
+  `legibleBot_staggered_guard_never_fits` (`kIn < flen (guard of LegibleBot kOut kIn)` for EVERY
+  `kOut`): under the present coding, a searcher whose guard mentions `□_k` can never find its
+  guard within `k` — not because of Löb, but because the sentence it searches for is longer
+  than `k`. This is the exact analogue of the retired `Vacuity.lean` obstruction (unary
+  numerals, commit 470ee43), one level up: binary numeral TERMS are short, their CODES are not.
+
+## The design fix (described, deliberately NOT implemented here)
+
+The budget must not be written as a numeral term inside a stored template; two repairs:
+
+1. **Box budgets as node DATA.** Make the box template a SEVEN-variable formula with the box
+   budget as the extra variable (`lenProvG ⇜ ![#6, #0]` instead of `![cl (numTB k), #0]`), and
+   let the search node's own `k` (already a data field of `pSearch`) be substituted by
+   `descVec` at evaluation time, exactly as the players' descriptions are. The stored template
+   then does not mention `k` at all, its code is a constant, `size (pcode (me k)) = O(size k)`
+   as for `Dupoc`, and `guard_fits` goes through verbatim. Nested boxes need the same treatment
+   recursively (a per-node budget vector).
+2. **Balanced numeral terms.** Write `n = a·b + c` with `a, b ≈ √n` and recurse: depth
+   `O(log log n)`, so the Cantor code is polylogarithmic in `n` (Foundation has `sqrt` in
+   `ISigma0`). This keeps `numTB` inside the template but changes `bnum`/`bnumT` and every
+   length lemma of `ArithS.Bnum`.
+
+Route 1 is the faithful one (Critch's search node is "a proof of `φ` at budget `k`", with `k`
+a parameter of the node, not a character of `φ`); route 2 is a coding trick.
+
+## Proof-craft note (2026-09-11) — three ways this file hung for hours
+
+1. A `le_trans ?_ (…)` chain with placeholders against a goal of the form `⌜…⌝ ≤ ^∃ (^∃ (… ^⋏ …))`
+   made unification unfold `qqAnd`/`qqExs` down to `pair` and its `if` while trying to match
+   mismatched shapes. Cure: the helpers `le_boxShapeCode`/`le_boxShapeCode_neg` state the exact
+   syntactic shape, and every closed `⟪…⟫` bound is a named lemma over variables (`npair_le_*`).
+2. `exact h` where `h : bnum k ≤ ⌜Rew.emb ▹ (lenProvG ⇜ w)⌝` was elaborated separately and the
+   goal came out of `simp`: the two quotes differ only in the representation of the bound-variable
+   index (`9` vs `6 + 1 + 1 + 1` from the quantifier nesting) and `isDefEq` fell back to unfolding
+   the QUOTE of the giant `lenProvG`. Cure: every shape lemma finishes by replaying the tactic
+   script on ITS OWN goal (`bnum_le_quote_emb_subst`'s script), lemma arguments are left to
+   unification (`refine … _ ?_`), and cross-lemma `exact`s only ever meet two source-elaborated
+   statements.
+3. `unfold cBox`/`show`/`delta` on the constant `cBox ψ = … + 6`: any `whnf` of a closed `Nat`
+   expression makes Lean EVALUATE the symbol counts of the giant conjuncts (Fit.lean's note,
+   now with the tactic list). Cure: `rw [cBox, cL]` and an arithmetic lemma over variables
+   applied by unification (`arith_le`).
+Bisection by truncation (`#exit`) with `timeout` located each of the three within minutes;
+the file checks in ~3 s once every step is goal-directed.
 -/
 
 set_option linter.constructorNameAsVariable false
@@ -792,19 +896,21 @@ noncomputable def cBox (ψ : PD.Formula) : ℕ :=
   flen (Rewriting.emb boxA : Semiproposition LAct 8) + flen (Rewriting.emb boxB : Semiproposition LAct 8) +
     flen (Rewriting.emb (boxC ψ) : Semiproposition LAct 9) + 2 * cL + 6
 
-/-- **The template of `□_k ψ` is `O(size k)` symbols**: `cBox ψ + 6 · cL · size k`. -/
+lemma arith_le (a b c L s : ℕ) : a + b + c + L * (6 * s + 1 + 1) + 6 ≤ a + b + c + 2 * L + 6 + 6 * L * s := by
+  have e : L * (6 * s + 1 + 1) = 6 * L * s + 2 * L := by ring
+  omega
+
+/-- **The template of `□_k ψ` is `O(size k)` symbols**: `cBox ψ + 6 · cL · size k`. (Proof craft:
+`cBox` is opened with `rw`, never with `unfold`/`show`/`delta` — any `whnf` of a closed `Nat`
+expression `… + 6` makes Lean evaluate the symbol counts of the giant conjuncts.) -/
 theorem flen_emb_tmpl_box_le (k : ℕ) (ψ : PD.Formula) :
     flen (Rewriting.emb (tmpl (.box k ψ)) : Semiproposition LAct 6) ≤ cBox ψ + 6 * cL * Nat.size k := by
   rw [tmpl_box_eq]
   refine le_trans (flen_emb_boxShape_le _ _ _ _ (6 * Nat.size k + 1) ⟨bvFree_emb_cl _, ?_⟩ ⟨0, rfl, by omega⟩) ?_
-  · rw [tlen_emb_cl]; exact tlen_emb_numTB k
-  · unfold cBox cL
-    generalize flen (Rewriting.emb boxA : Semiproposition LAct 8) = a
-    generalize flen (Rewriting.emb boxB : Semiproposition LAct 8) = b
-    generalize flen (Rewriting.emb (boxC ψ) : Semiproposition LAct 9) = c
-    generalize flen (Rewriting.emb lenProvG : Semiproposition LAct 2) = L
-    have e : L * (6 * Nat.size k + 1 + 1) = 6 * L * Nat.size k + 2 * L := by ring
-    omega
+  · show tlen (Rew.emb (cl (numTB k)) : SyntacticSemiterm LAct 9) ≤ 6 * Nat.size k + 1
+    rw [tlen_emb_cl]; exact tlen_emb_numTB k
+  · rw [cBox, cL]
+    exact arith_le _ _ _ _ _
 
 attribute [irreducible] cL cBox
 
@@ -839,7 +945,9 @@ lemma flen_emb_tmpl_neg (φ : PD.Formula) :
 theorem exists_flen_tmpl_const {F : ℕ → PD.Formula} (h : BudgetLinear F) :
     ∃ c₀ c₁ : ℕ, ∀ k, flen (Rewriting.emb (tmpl (F k)) : Semiproposition LAct 6) ≤ c₀ + c₁ * Nat.size k := by
   induction h with
-  | const φ => exact ⟨flen (Rewriting.emb (tmpl φ) : Semiproposition LAct 6), 0, fun k ↦ by omega⟩
+  | const φ =>
+    exact ⟨flen (Rewriting.emb (tmpl φ) : Semiproposition LAct 6), 0, fun k ↦ by
+      rw [Nat.zero_mul, Nat.add_zero]⟩
   | box ψ => exact exists_flen_tmpl_box_const ψ
   | impl _ _ ihF ihG =>
     obtain ⟨a₀, a₁, ha⟩ := ihF
