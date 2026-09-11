@@ -4,6 +4,7 @@ import ArithS.Core.Sound
 import ArithS.Cut
 import ArithS.CutV
 import ArithS.InstV
+import ArithS.Diag
 import ArithS.Det
 import ArithS.FitBox
 import ArithS.Inst
@@ -69,6 +70,20 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lenProvable_inst_size
 #print axioms pa_proves_instSentence
 #print axioms tact_proves_instSentence
+
+-- M4, U6 (Diag): the parametric diagonal lemma over TAct for LAct formulas — Foundation's
+-- construction transported along the reduct (`substNumeralParamsA` twin of `substNumeralParams`,
+-- `tactFixedpoint`), through completeness with equality (`𝗘𝗤 LAct ⪯ TAct`, `tact_complete`);
+-- the instances at `bnum k` (∀-elimination), their truth in every model and their internal
+-- provability (D1).
+#print axioms eqAxiom_weakerThan_TAct
+#print axioms tact_complete
+#print axioms substNumeralParamsA_app_quote
+#print axioms tact_parametric_diagonal₁
+#print axioms tact_parametric_diagonal
+#print axioms tact_parametric_diagonal_inst
+#print axioms models_tact_parametric_diagonal_inst
+#print axioms provable_code_parametric_diagonal_inst
 
 -- M4 U0 — programs described by TERMS over the polynomial pairing: Dupoc's guard sentence
 -- against itself is the `k`-instance `q ⇜ ![k̂]` of ONE fixed one-variable formula (meta), and on

@@ -14,6 +14,7 @@ import ArithS.ProofLength
 import ArithS.Cut
 import ArithS.CutV
 import ArithS.InstV
+import ArithS.Diag
 import ArithS.RelabelTemplate
 import ArithS.Prog
 import ArithS.Bnum
