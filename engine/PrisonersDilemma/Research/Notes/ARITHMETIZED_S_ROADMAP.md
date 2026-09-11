@@ -411,6 +411,28 @@ implyS/contra/neg_mdp`, `provable_D1/D2/D3`, `kreisel_spec`), three standard axi
 instance `A` (the arith evaluator's `∃ n, EvalGraph …` sentence, after step (c)) and the leaf
 discharge for that `A` — which is exactly T2-AGENT's content.
 
+**Post-M3 increments (2026-09-10/11, `colomban-arith-m3`).** DONE: `AgentConverse` (eval ↔
+EvalGraph under one two-sided `GuardAgree`; `GuardAgreeF` derived from engine soundness),
+`Inst` (hom `c_C ↦ 0, c_D ↦ 1`; `pa_proves_trAt_inst`; atom leaves of T2-CORE discharged),
+`Det` (determinism in every model of IΣ₁ by `pi1_order_induction`; negative atoms PA-provable
+via the completeness theorem; `atomNeg` leaf discharged — only the twelve source-reading
+leaves remain hypotheses = bounded D1), `Audit.lean` census (43 theorems, 3 axioms).
+IN FLIGHT / PARTIAL: `arith/ArithS/FitBox.lean` (UNTRACKED in the worktree unless the agent
+committed it — check `git status`): Critch's (b) for box-carrying guards. FINDING (the key
+lemma `size_bnum_ge : n + 2 ≤ Nat.size (bnum n)` is in the file and checks): under Cantor
+pairing the CODE of a binary numeral term of value `n` has bit length ≥ n + 2 — as long as a
+unary numeral — so a searcher whose stored template names ITS OWN budget `k` inside a box
+(`numTB k` in `tmpl_box`) has a description of length ≥ k and its guard CANNOT fit its budget.
+T1/T2 are unaffected (their guards are box-free); this blocks the T3 (Löbian) program until
+the coding is fixed. Design fix (not implemented): store box budgets as node DATA referenced
+by a template variable, or use BALANCED numeral terms (`n = a·b + c`, `a, b ≈ √n`, depth
+O(log log n), Cantor code polylogarithmic; Foundation has `sqrt`). The file's remaining
+lemma is occurrence of `#0` in `lenProvG`: proving it SYNTACTICALLY unfolds the giant DSL
+formula and hangs (>10 h) — the agent was redirected to the SEMANTIC route (`FInert`, as in
+the retired `Vacuity.lean`: `LenProvableV TAct 0 φ` is false, `LenProvableV TAct K ⌜⊤⌝` true).
+If the file is not green when you read this, finish it that way or record the finding as
+analysis; do not unfold `lenProvableV`.
+
 IMPLEMENTATION SEQUENCE (decided 2026-09-10; each step is one agent-sized task, committed and
 recorded here before the next starts):
  (a) TEMPLATE RE-SHAPING: `pSearch k g p q` with `g` a SIX-variable template code
