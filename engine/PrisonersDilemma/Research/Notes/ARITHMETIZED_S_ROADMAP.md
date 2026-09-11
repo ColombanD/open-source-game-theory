@@ -768,6 +768,20 @@ steps (`provable_sigma_one_complete`); `search_f`/`atomNeg`/`eqNeg` arms from th
 refutation + soundness of PA. Gate: every positive engine cell (a `Pf` witness) is a PA
 theorem. **This is T2.** Corollary worth stating: `Pf_sound` factors through PA-soundness.
 
+**M4 STARTED 2026-09-11 (new session; design brief `M4_BOUNDED_HBL/BRIEF.md`, reader reports
+`M4_BOUNDED_HBL/READ_*.md`).** Goal restated by Colomban: a working `S'` with PBLT as a theorem;
+the T2 bridge is DEFERRED (do not extend). Decisions: (1) follow Critch 2019's UNIFORM proof of
+PBLT (one PA proof with `k` free, one meta instantiation at `O(lg k)`) — this needs NO
+proof-producing bounded D1; the only hard item is bounded INNER necessitation
+(`□_a ψ → □_{E a} □_a ψ`, `E` subexponential), stated first as a named hypothesis; bounded D2 and
+instantiation are V-GENERIC lemmas on codes + `complete`. (2) The guard mismatch (a searcher's
+guard names the numeral of its whole code, which is the `k`-instance of no formula because
+Foundation's `pair` has an `if`) is fixed by re-coding PROGRAMS on the term-expressible pairing
+`ppair x y = (x+y)²+y` and describing programs by TERMS — then Dupoc's guard is literally
+`subst (bnum k) ⌜q_D⌝`. The earlier "box budgets as node data" fix is NOT a PBLT prerequisite
+(Dupoc's guard is box-free); it stays deferred with the bridge. Agents launched: `ppair`
+re-pairing of `Prog.lean` + downstream; `CutV.lean` (bounded D2 on codes inside every model).
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
