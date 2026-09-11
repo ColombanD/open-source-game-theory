@@ -66,7 +66,9 @@ lemma models_axNe' : ℕ↓[LAct] ⊧ axNe' := by
 instance models_TAct : ℕ↓[LAct] ⊧* TAct := by
   rw [models_theory_iff]
   intro φ hφ
-  rcases hφ with rfl | rfl | ⟨σ, hσ, rfl⟩
+  rcases hφ with rfl | rfl | rfl | rfl | ⟨σ, hσ, rfl⟩
+  · exact models_axAct
+  · exact models_axAct'
   · exact models_axNe
   · exact models_axNe'
   · rw [models_lMap_emb]

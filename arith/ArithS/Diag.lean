@@ -67,7 +67,7 @@ section eq
 lemma eval_reduct_of_mem_PA (s : Struc.{0} LAct) (hs : s ⊧* TAct) {σ : Sentence ℒₒᵣ} (h : σ ∈ 𝗣𝗔) :
     Semiformula.Eval (s := Structure.lMap emb s.struc) ![] Empty.elim σ :=
   (Semiformula.models_lMap (s₂ := s.struc) (Φ := emb) (σ := σ)).mp
-    (hs.models_set (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ ⟨σ, h, rfl⟩)))
+    (hs.models_set (lMap_emb_mem_TAct h))
 
 lemma eqAxiom_mem_PA {σ : Sentence ℒₒᵣ} (h : σ ∈ 𝗘𝗤 ℒₒᵣ) : σ ∈ 𝗣𝗔 :=
   Or.inl (PeanoMinus.equal _ h)
@@ -169,11 +169,14 @@ end model
 /-- **Completeness over `TAct`, model-side.** To prove `TAct ⊢ σ` it suffices to prove `σ` in
 every `LAct`-structure `S` on a type `M` whose `ℒₒᵣ`-reduct is the standard structure of an
 `ORingStructure` modelling `PA` (so every V-generic lemma of the package applies to `M`) and which
-satisfies the two action axioms. Through `Theory.Proof.complete_on_eq_models` (equality
-interpreted as equality) and `eqAxiom_weakerThan_TAct`. -/
+satisfies the four action axioms (`axAct`, `axAct'`, `axNe`, `axNe'`). Through
+`Theory.Proof.complete_on_eq_models` (equality interpreted as equality) and
+`eqAxiom_weakerThan_TAct`. `tact_complete'` below is the same with the model class resolved:
+by `structure_eq_of_axAct` such an `S` is `stdActS M` or `swapActS M`. -/
 theorem tact_complete (σ : Sentence LAct)
     (H : ∀ (M : Type) [ORingStructure M] (S : Structure LAct M),
       Structure.lMap emb S = standardModel M → [M↓[ℒₒᵣ] ⊧* 𝗣𝗔] →
+      Semiformula.Eval (s := S) ![] Empty.elim axAct → Semiformula.Eval (s := S) ![] Empty.elim axAct' →
       Semiformula.Eval (s := S) ![] Empty.elim axNe → Semiformula.Eval (s := S) ![] Empty.elim axNe' →
       Semiformula.Eval (s := S) ![] Empty.elim σ) :
     TAct ⊢ σ := by
@@ -182,16 +185,30 @@ theorem tact_complete (σ : Sentence LAct)
   have hS : Structure.lMap emb S = standardModel M := lMap_emb_eq_standardModel (M := M)
   have hPA : M↓[ℒₒᵣ] ⊧* 𝗣𝗔 := by
     refine ⟨fun σ₀ hσ₀ ↦ ?_⟩
-    have h : M↓[LAct] ⊧ Semiformula.lMap emb σ₀ :=
-      hT.models_set (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ ⟨σ₀, hσ₀, rfl⟩))
+    have h : M↓[LAct] ⊧ Semiformula.lMap emb σ₀ := hT.models_set (lMap_emb_mem_TAct hσ₀)
     have h' : (Structure.lMap emb S).toStruc ⊧ σ₀ :=
       (Semiformula.models_lMap (s₂ := S) (Φ := emb) (σ := σ₀)).mp h
     rw [hS] at h'
     exact h'
-  have hNe : Semiformula.Eval (s := S) ![] Empty.elim axNe := hT.models_set (Set.mem_insert _ _)
-  have hNe' : Semiformula.Eval (s := S) ![] Empty.elim axNe' :=
-    hT.models_set (Set.mem_insert_of_mem _ (Set.mem_insert _ _))
-  exact H M S hS hNe hNe'
+  have hAct : Semiformula.Eval (s := S) ![] Empty.elim axAct := hT.models_set axAct_mem_TAct
+  have hAct' : Semiformula.Eval (s := S) ![] Empty.elim axAct' := hT.models_set axAct'_mem_TAct
+  have hNe : Semiformula.Eval (s := S) ![] Empty.elim axNe := hT.models_set axNe_mem_TAct
+  have hNe' : Semiformula.Eval (s := S) ![] Empty.elim axNe' := hT.models_set axNe'_mem_TAct
+  exact H M S hS hAct hAct' hNe hNe'
+
+/-- **Completeness over `TAct`, the two standard readings.** The real-equality models of `TAct`
+on `M` are exactly `stdActS M` (`c_C ↦ 0, c_D ↦ 1`) and `swapActS M` (`c_C ↦ 1, c_D ↦ 0`) with
+`M ⊧ PA` (`structure_eq_of_axAct`, from the action axiom `axAct`): a sentence true in both, for
+every such `M`, is a `TAct`-theorem. -/
+theorem tact_complete' (σ : Sentence LAct)
+    (H : ∀ (M : Type) [ORingStructure M] [M↓[ℒₒᵣ] ⊧* 𝗣𝗔],
+      Semiformula.Eval (s := stdActS M) ![] Empty.elim σ ∧
+      Semiformula.Eval (s := swapActS M) ![] Empty.elim σ) :
+    TAct ⊢ σ :=
+  tact_complete σ fun M _ S hS _ hAct _ _ _ ↦ by
+    rcases structure_eq_of_axAct S hS hAct with rfl | rfl
+    · exact (H M).1
+    · exact (H M).2
 
 /-! ### Numeral substitution on `LAct` codes -/
 
@@ -325,7 +342,7 @@ and the code equation identifies the last argument with `⌜ψ⌝`. -/
 theorem tact_parametric_diagonal₁ (θ : Semisentence LAct 2) :
     TAct ⊢ ∀¹ (tactFixedpoint θ 🡘
       θ ⇜ ![Semiterm.lMap emb (⌜tactFixedpoint θ⌝ : ArithmeticSemiterm Empty 1), #0]) := by
-  refine tact_complete _ fun M _ S hS _ _ _ ↦ ?_
+  refine tact_complete _ fun M _ S hS _ _ _ _ _ ↦ ?_
   have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
   have ht : substNumeralParamsA (⌜tactDiag θ⌝ : M) ⌜tactDiag θ⌝ = ⌜tactFixedpoint θ⌝ := by
     rw [tactFixedpoint_def]

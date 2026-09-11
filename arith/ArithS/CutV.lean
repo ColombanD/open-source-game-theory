@@ -429,7 +429,7 @@ theorem for `LAct`-theories (`TAct ⊇ Theory.lMap emb 𝗣𝗔`). -/
 theorem tact_proves_cutSentence : TAct ⊢ Semiformula.lMap LAct.emb cutSentence := by
   refine Theory.Proof.complete fun (s : Struc.{0} LAct) hs ↦ ?_
   have hPA : s ⊧* Theory.lMap LAct.emb 𝗣𝗔 :=
-    Semantics.ModelsSet.of_subset hs (fun x hx ↦ Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ hx))
+    Semantics.ModelsSet.of_subset hs lMap_emb_PA_subset_TAct
   exact lMap_models_lMap (Theory.Proof.sound pa_proves_cutSentence) hPA
 
 end sentence

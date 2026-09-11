@@ -79,12 +79,23 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- provability (D1).
 #print axioms eqAxiom_weakerThan_TAct
 #print axioms tact_complete
+#print axioms tact_complete'
 #print axioms substNumeralParamsA_app_quote
 #print axioms tact_parametric_diagonal₁
 #print axioms tact_parametric_diagonal
 #print axioms tact_parametric_diagonal_inst
 #print axioms models_tact_parametric_diagonal_inst
 #print axioms provable_code_parametric_diagonal_inst
+
+-- U0b (TheoryAct, 2026-09-12): the action axiom `axAct : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)`
+-- — TAct proves it, its model class is exactly the two standard readings (`stdActS`/`swapActS`),
+-- and ℕ satisfies it. Without it no guard sentence was TAct-provable (a vacuity).
+#print axioms tact_proves_axAct
+#print axioms models_axAct_iff
+#print axioms eval_axAct_iff
+#print axioms structure_eq_of_axAct
+#print axioms models_axAct
+#print axioms lMap_swap_axAct
 
 -- M4 U0 — programs described by TERMS over the polynomial pairing: Dupoc's guard sentence
 -- against itself is the `k`-instance `q ⇜ ![k̂]` of ONE fixed one-variable formula (meta), and on

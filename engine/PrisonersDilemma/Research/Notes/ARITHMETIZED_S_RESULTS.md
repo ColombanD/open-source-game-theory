@@ -197,10 +197,18 @@ diagonal lemma remain open (M4).
    honest form by `Inst`: PA proves the atom sentences with the constants INSTANTIATED
    (`pa_proves_trAt_inst`: `𝗣𝗔 ⊢ lMap inst (trAt …)` with `c_C ↦ 0, c_D ↦ 1`; unconditional
    on search-free players). What stays open is the GENERIC form `TAct ⊢ trAt …` over `LAct`
-   with `c_C, c_D` uninterpreted (only `c_C ≠ c_D`): not an instance of Σ₁-completeness (a
-   model of `TAct` may read the constants as any distinct pair, and the evaluator's clauses
-   compare action codes), not known to be true, and needed by nothing downstream — τ-symmetry
-   (`Symmetry`) lives over `TAct`, atom provability over PA. Also open: the NEGATIVE atom
+   with `c_C, c_D` as constants. Before U0b (2026-09-12) `TAct` said only `c_C ≠ c_D`, a model
+   could read the constants as any distinct pair, the evaluator's clauses compare action codes,
+   and the generic form was not even true — and it IS needed downstream: the Löbian cells
+   (Dupoc's self-cooperation, the whole M4 ladder) are `TAct ⊢ guard` statements over `LAct`,
+   and with `c_C ↦ 5, c_D ↦ 7` every guard sentence is false, so nothing Löbian was ever
+   `TAct`-provable (a vacuity). `TAct` now carries the action axiom
+   `axAct : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)` (`TheoryAct.lean`; τ-symmetric, the axiom
+   set stays literally swap-closed), its real-equality models are exactly the two standard readings
+   `stdActS M`/`swapActS M` (`structure_eq_of_axAct`), and `tact_complete'` reduces `TAct ⊢ σ` to
+   truth in both readings over every model of PA — the generic form is now an instance of
+   completeness plus the `stdActV V` truth equations and their τ-twins. τ-symmetry (`Symmetry`)
+   lives over `TAct`, atom provability over PA. Also open: the NEGATIVE atom
    `𝗣𝗔 ⊢ ∼ lMap inst (trAt … (.plays me opp a))` from a play of `b ≠ a` — Π₁, so outside
    Σ₁-completeness; it needs PA-internal determinism of `EvalGraph` (the route: completeness
    theorem + upward transfer of the positive run + `EvalGraph.unique'` in the model), and the

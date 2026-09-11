@@ -118,6 +118,16 @@ standard `ℒₒᵣ`-structure along the instantiation `inst`. (At `V = ℕ` thi
 lemma stdActV_lMap_emb : Structure.lMap emb (stdActV V) = standardModel V := by
   ext <;> rfl
 
+/-- `stdActV V` is `stdActS V` (`ArithS.TheoryAct`): both read `c_C ↦ 0`, `c_D ↦ 1`. -/
+lemma stdActV_eq_stdActS : stdActV V = stdActS V := by
+  refine Structure.ext ?_ ?_
+  · funext k f v
+    rcases f with f | ⟨(_ | _)⟩ <;> rfl
+  · funext k r v
+    rcases r with r | e
+    · rfl
+    · exact e.elim
+
 variable {V}
 
 /-- Truth of an instantiated `LAct`-sentence in `V` is its truth in `stdActV V`. -/

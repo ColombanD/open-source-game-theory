@@ -874,6 +874,36 @@ axiom by axiom via PA's equality axioms along `emb`). TRAP: any `simp` touching 
 `⌜tactDiag θ⌝` makes the kernel build a numeral over `LEAN_NAT_MAX_SIZE` — prove quote equations
 for a VARIABLE sentence and instantiate; unfold `tactFixedpoint` only by its `rfl` lemma.
 
+**U0b 2026-09-12 — the action axiom (a vacuity fixed).** `TAct` had only `axNe : c_C ≠ c_D`
+(both orientations): the action constants were merely DISTINCT. But the guard sentences of the
+search bots (`Template`/`Guard`) feed the constants as action VALUES into `relabel U W d`
+(`Prog.lean`), which is only meaningful on `{0, 1}`: in a model of `TAct` reading `c_C ↦ 5, c_D ↦ 7`
+the described program `relabel 5 7 (dnum (Dupoc k))` has a garbage template (`relabelTemplate 5 7`
+produces the non-existent symbol code `2 + 5`), its search finds nothing, it plays `7`, and Dupoc's
+guard sentence `guardSentenceA 0 (Dupoc k) (Dupoc k)` is FALSE there. Hence `TAct ⊬ guard` for every
+`k`, and Dupoc could never cooperate in the arithmetized `S'` — a vacuity of the same kind as the
+retired unary-numeral one (the model-class finding of `Transparency.lean`, 54aee07: the truth
+equations hold only in `stdActV V`). THE FIX (`TheoryAct.lean`): the closed `LAct`-sentences
+`axAct : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)` and its transposition
+`axAct' : (c_D = 0 ∧ c_C = 1) ∨ (c_D = 1 ∧ c_C = 0)` (`lMap swap axAct = axAct'` and back, so the
+axiom set stays LITERALLY swap-closed — `lMap_swap_mem_TAct`, the red cell's exact iff survives);
+`TAct := insert axAct (insert axAct' (insert axNe (insert axNe' (lMap emb PA))))` — `axNe/axNe'`
+KEPT (implied, but every membership chain expected them; now the chains go through the named
+lemmas `axAct_mem_TAct … lMap_emb_PA_subset_TAct`, never re-derived downstream). `0`/`1` are
+`zeroT/oneT := func (emb.func zero/one) ![]`, `eqF t u := rel eq ![t, u]`; Δ₁ by Foundation's
+`Theory.Δ₁.insert` (two short closed codes). NEW: `stdActS M`/`swapActS M` (the two readings,
+generic over `ORingStructure M`; `stdActV_eq_stdActS`, `stdActS_nat`), `eval_axAct_iff`/
+`models_axAct_iff` (a structure with standard reduct — hence real equality — satisfies `axAct` iff
+its constants read `(0,1)` or `(1,0)`), **`structure_eq_of_axAct : S = stdActS M ∨ S = swapActS M`**
+(the model class of `TAct` on `M` is EXACTLY the two standard readings), `tact_proves_axAct`,
+`models_axAct` (ℕ), and in `Diag.lean` `tact_complete` now hands `H` the four action axioms and
+**`tact_complete' : (∀ M ⊧ PA, σ true in stdActS M ∧ in swapActS M) → TAct ⊢ σ`** — the form the
+Löbian cells need (the guard truth equations are proved in `stdActV V`, i.e. `stdActS V`; the swapped
+reading is its τ-twin). Every Audit statement unchanged, census three-axiom, +8 lines. Consumers
+touched: `RedCell.models_TAct`, `Diag`, the `hPA` extractions of `CutV/InstV/Transparency`, `Det`.
+Not changed: `Neg.lean` (`¬LenProvable` is a length argument, theory-independent); `Symmetry`/
+`Transpose` (through `lMap_swap_mem_TAct`, statement unchanged).
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
