@@ -948,6 +948,31 @@ completeness; QUADRATIC in `size k` (each bit step pays the instantiation cost `
 Löb budget becomes `gBudget k := ‖k‖³` (Prep). `leF t u := rel Eq ⋎ rel LT` = Foundation's `“t ≤ u”`;
 bridge `substs_leF_imp` gives the exact instance shape for the meta closure.
 
+**U8 + U9 DONE 2026-09-12 — PBLT IN PA-`S` AND THE DUPOC CELL, CONDITIONAL ON ONE NAMED HYPOTHESIS
+(`ArithS/Assembly/Uniform.lean` 91df6b9, `ArithS/Assembly/Cell.lean` 4c8ecc9; census 162, three
+axioms).** With `psi := tactFixedpoint theta` (`TAct ⊢ ∀¹ (psi 🡘 (Box_g psi 🡒 pConj))`,
+`pConj = qDupoc ⋏ qCupod`, `gBudget k = ‖k‖³`) and the ONE hypothesis
+`BoundedInnerNec d : ∀ χ, ∃ C, ∀ V k, L (g k) (instB ⌜χ⌝ k) → ∃ e ≤ C·((g k)^d + 1), L e (instB ⌜Box_g χ⌝ k)`
+(Critch's Property 4 / assumption (d), polynomial expansion; the FIRST formulation with a uniform
+`c₁·flen χ` term was UNSATISFIABLE — the target names `χ` by a unary numeral — and was restated;
+`M4_BOUNDED_HBL/DESIGN_inner_necessitation.md` §10):
+* `chain_V` — the uniform chain in every model (`chainBound … ≤ k` + a box of `psi(k)` at `g k` ⇒
+  both searchers find their guards ⇒ `EvalGraph 2 (DupocV k) … 0 ∧ EvalGraph 2 (CupodV k) … 1`),
+  `chainBound_poly` (`≤ C·‖k‖^(3d+3)`), `poly_size_le_eventually` (no induction inside `V`),
+  `psi_true_V` (in both standard readings), **`pblt_uniform : ∃ k̂, TAct ⊢ ∀¹ (leF ↑k̂ #0 🡒 psi)`**;
+* `exists_psi_instance_length` (the meta closure: `LenProvable (K₀ + K₁·size k + K₂·size k²)
+  TAct ⌜psi[bnumT k]⌝`, via `lenProvable_inst_size` + `NumeralFacts` + `Cut`),
+  **`dupoc_self_coop (hE : BoundedInnerNec d) : ∃ k₀, ∀ k > k₀, EvalGraph 2 (Dupoc k) (Dupoc k)
+  (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1`** and `dupoc_finds_guard` (both
+  searchers actually FIND their guards within `k`) — Critch's Theorem 3.7 in PA-`S`.
+Thresholds are strict at ℕ (`k₀ < k`: `<` is `Nat.lt`, `≤` is `le_def`). Traps: `k̂`/`lit` are not
+identifiers; uniform existential constants must be built as pure terms (mvar depth); `set` does not
+fold into later facts; pin `(k := 0)` on `qqTwo_semiterm.isUTerm`; two `Nat.cast` instances at ℕ.
+**REMAINING for the unconditional cell: U10 = prove `BoundedInnerNec 3`** (design + estimate in
+`M4_BOUNDED_HBL/DESIGN_inner_necessitation.md`: eigenvariable construction, ~40 lemma-sentences by
+`complete`, a `Derivation.induction1` recursion; 2.5–4 months; risk (1) checked OK). Notes NOT yet
+synced to the OneDrive branch (do by copy, as before).
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);

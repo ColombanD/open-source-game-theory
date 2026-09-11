@@ -108,6 +108,17 @@ roadmap status log.
 
 ## 4. What is left (with estimates from the previous assistant)
 
+**UPDATE 2026-09-12 (session of Fable 5.1 on the new account):** items 1–3 below are SUPERSEDED.
+M4 was executed along Critch 2019's uniform proof (brief `Research/Notes/M4_BOUNDED_HBL/BRIEF.md`,
+status log in the roadmap): `dupoc_self_coop`/`pblt_uniform` are theorems conditional on ONE
+hypothesis `BoundedInnerNec d` (bounded inner necessitation, polynomial expansion — Critch (d)).
+What is left is U10 (discharge it; design + 2.5–4-month estimate in
+`M4_BOUNDED_HBL/DESIGN_inner_necessitation.md`), then the mutual-Löb cells (PrudentBot/JustBot vs
+Dupoc, same machinery on the conjunction), the tau constructors, and the merge onto the rule-based
+`Pf` (deferred; T2-NEG says it cannot be budget-preserving). The "box budgets as node data" fix is
+NOT a PBLT prerequisite (deferred with the bridge). Build: `lake build ArithS` ~3220 jobs, census 162.
+
+
 1. **Coding fix for boxed guards** (blocks all Löbian work): store box budgets as node DATA
    referenced by a seventh template variable (`lenProvG ⇜ ![#6, #0]` filled by `descVec` from
    the node's `k`) — or balanced numeral terms (`n = a·b + c`, `a, b ≈ √n`, depth O(log log n),

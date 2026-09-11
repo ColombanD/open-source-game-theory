@@ -186,6 +186,30 @@ a constant-factor departure that any budget-keeping transfer must absorb, and no
 obstruction: T2-NEG locates that in the atoms. D1 (`e(k) + |□_k σ|`), D3 and the bounded
 diagonal lemma remain open (M4).
 
+**Addendum (2026-09-12) — M4: the parametric bounded Löb theorem and the Dupoc cell, conditional
+on one hypothesis (`ArithS/Assembly/*`, `CutV`, `InstV`, `Diag`, `ProperV`, `NumeralFacts`,
+`Transparency`, `ProgT`/`Instance*`; census 162).** Following Critch 2019's UNIFORM proof of PBLT:
+programs are described by TERMS over the pairing `ppair x y = (x+y)²+y` (so a searcher's guard is
+the `bnum k`-instance of a fixed formula: `guardCode_DupocV_eq_instB`), the Σ₁ box on codes
+`LenDerivable` coincides in every model with the evaluator's Δ₁ `LenProvableV` (`ProperV`), bounded
+D2 and ∀-instantiation hold on codes with `dlen` accounting in every model (`CutV`, `InstV`), the
+parametric diagonal lemma holds over `TAct` (`Diag`), `TAct` carries the action axiom
+`(c_C, c_D) ∈ {(0,1), (1,0)}` (without it NO guard sentence is `TAct`-provable — a vacuity found and
+fixed), and then, for the fixed point `psi ↔ (□_{‖k‖³} psi(k) → (Dupoc k plays C vs Dupoc k ∧
+Cupod k plays D vs Cupod k))`:
+```
+pblt_uniform     (hE : BoundedInnerNec d) : ∃ k̂, TAct ⊢ ∀k (k̂ ≤ k → psi(k))
+dupoc_self_coop  (hE : BoundedInnerNec d) : ∃ k₀, ∀ k > k₀, EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0
+                                                        ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1
+dupoc_finds_guard (hE) : ∃ k₀, ∀ k > k₀, TAct ⊢_k guard(Dupoc k) ∧ TAct ⊢_k guard(Cupod k)
+BoundedInnerNec d := ∀ χ, ∃ C, ∀ V k, □_{‖k‖³} χ(k) → ∃ e ≤ C·(‖k‖^{3d} + 1), □_e (□_{‖k‖³} χ(k))   (inside every model)
+```
+Every other ingredient is a theorem; the hypothesis is exactly Critch's assumption (d) (bounded
+inner necessitation with a polynomial expansion). **Sentence for the paper:** "In PA-`S`, Dupoc
+cooperates with itself for all large budgets, given bounded inner necessitation with polynomial
+expansion — Critch's assumption (d) — and every other step of the parametric bounded Löb argument
+is a theorem about Peano arithmetic." Discharging (d) is `DESIGN_inner_necessitation.md`.
+
 ## 4. Boundaries (recorded, not gaps in proofs)
 
 1. `.box` cannot be translated compositionally under LENGTH-bounded provability: a box carries
