@@ -186,3 +186,20 @@ account's rate limit: three concurrent Lean agents once exhausted it mid-task; p
 Agents die at rate limits or watchdogs: their partial files stay on disk — check
 `git status` in the worktree before assuming work was lost, and commit partial-but-green
 files as `wip`.
+
+## 8. Last session (2026-09-11, cut short by compute): bounded D2 in rule form — PARTIAL
+
+`arith/ArithS/Cut.lean` (246 lines, no `sorry`, NOT yet type-checked end to end, NOT imported
+from `ArithS.lean`, committed as `wip`) is the first M4 field: modus ponens for `LenProvable`
+with exact additive length accounting. Intended statement:
+`lenProvable_mp : LenProvable fbound k₁ TAct ⌜φ ➝ ψ⌝ → LenProvable fbound k₂ TAct ⌜φ⌝ →
+LenProvable fbound (k₁ + k₂ + c₁·(flen φ + flen ψ) + c₀) TAct ⌜ψ⌝`, built at the meta level
+(`Proof.sound'` twice, a `Derivation2` cut on `φ ➝ ψ = ∼φ ⋎ ψ` — weaken `d₂` to `{ψ, φ}`,
+`closed` leaf `{ψ, ∼ψ}`, `and` to `{ψ, φ ⋏ ∼ψ}`, weaken `d₁`, `cut` — then `derivation_quote`,
+properness for the code bound, `dlen_quote` for the length; the pattern is
+`lenProvable_fbound_swap` in `Symmetry.lean`), plus `flen_neg`, `fbound_mono`, `lenProvable_verum`.
+To finish: `timeout 600 lake env lean ArithS/Cut.lean`, fix, add `import ArithS.Cut` after
+`ProofLength` in `ArithS.lean`, add the theorems to `Audit.lean`, build, record in the
+roadmap's M4 paragraph and in the results record ("first M4 field"). Note for the paper:
+PA-S pays `|φ| + |ψ|` at a cut where the engine's `mp` charges only `|ψ|` — a constant-factor
+departure; T2-NEG shows the real obstruction is the atoms, not this.
