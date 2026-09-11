@@ -130,3 +130,57 @@ Ordering: U0 ∥ U2 now; then U1/U3/U6/U7; then U8/U9 with U5 as a hypothesis (t
    through `bnum` (U6).
 4. Properness inside `V` (`d < fbound k` from `dlen d ≤ k`) is proved at ℕ only (`Proper.lean`);
    U2/U3/U5 need it V-generically or must carry it as a hypothesis.
+
+## 6. The assembly (U5 + U8 + U9), stated exactly (2026-09-12, after U0–U3, U6 landed)
+
+Notation: `L a x := LenDerivable TAct a x` (Σ₁ box on codes, `CutV`); `instB n k`, `bewB`
+(`InstV`); `qDupoc`, `DupocV k`, `guardCode_DupocV_eq_instB` (`InstanceV`); `tact_parametric_diagonal`,
+`tact_complete` (`Diag`); `ProperV` (`CutV`/`ProperV`); transparency and the truth equation (U7).
+Models `V`: `LAct`-structures with REAL equality whose reduct is a model of PA, satisfying the two
+action axioms — exactly the class `tact_complete` quantifies over.
+
+**The budget function.** `g k := ‖k‖ * ‖k‖` (`‖·‖` = bit length, Σ₁-definable in Foundation),
+so that `C + c·‖k‖ ≤ g k` for all large `k` whatever the constants `C, c` (this breaks the
+circularity between the fixed point's constants and the threshold: Critch's `lg k ≺ g(k)`).
+`f k := k` (Dupoc's own budget). `h` is not needed separately: the master inequality is
+`g k + N₁ + E (g k) + c·(|ψ| + |p| + ‖k‖) ≤ k`, true for all large `k` when `E` is polynomial.
+
+**U5 — the ONE named hypothesis (bounded inner necessitation, family form).** For a one-variable
+`χ : Semisentence LAct 1` let `Box_g χ : Semisentence LAct 1 := “∃ a, gGraph a #0 ∧ bewBDef a ⌜χ⌝ #0”`
+(embedded along `emb`; `⌜χ⌝` a numeral constant, `#0` the free `k`). Then
+```
+structure BoundedInnerNec (E : ℕ → ℕ) : Prop where
+  poly : ∃ d c, ∀ a, E a ≤ a ^ d + c
+  nec  : ∀ (V) [real-eq model of TAct] (χ : Semisentence LAct 1) (k : V),
+           L (g k) (instB ⌜χ⌝ k) → L (E (g k) + c₁ * (flen χ + ‖k‖) + c₀) (instB ⌜Box_g χ⌝ k)
+```
+(`E` applied inside `V` through its Σ₁ graph, or state `nec` with an explicit polynomial). This is
+Critch's Property 4 = assumption (d); everything below is a theorem GIVEN it (U10 discharges it).
+
+**U8 — the uniform argument, in `V`.** Fix `p := qDupoc`, `θ (n, k) := Box_g-with-code-n(k) 🡒 p(k)`
+(a `Semisentence LAct 2`: `n` the code variable, `k` the budget variable), `ψ := tactFixedpoint θ`,
+so `TAct ⊢ ∀¹ (ψ 🡘 θ ⇜ ![⌜ψ⌝, #0])`. Take META proofs of the two directions
+`∀¹ (ψ 🡒 θ[⌜ψ⌝])` and `∀¹ (θ[⌜ψ⌝] 🡒 ψ)` with lengths `N₁, N₂ : ℕ` (constants; from `TAct ⊢` via
+`Theory.Proof` + `mlen`), and transfer `L N₁ ⌜∀¹ (ψ 🡒 …)⌝` into every `V` by Σ₁-upward absoluteness
+(`lenDerivableDef` is Σ₁). In `V`, for `k` with the master inequality:
+1. (U3) `L (N₁ + …) (instB ⌜ψ 🡒 θ[⌜ψ⌝]⌝ k)`, i.e. of `imp (instB ⌜ψ⌝ k) (imp (instB ⌜Box_g ψ⌝ k) (instB ⌜p⌝ k))` (`instB` distributes over `🡒` — a code lemma).
+2. Assume `A : L (g k) (instB ⌜ψ⌝ k)` (= `bewB (g k) ⌜ψ⌝ k`).
+3. (U2 cut of 1 with 2) `L (…) (imp (instB ⌜Box_g ψ⌝ k) (instB ⌜p⌝ k))`.
+4. (U5 on 2) `L (E (g k) + …) (instB ⌜Box_g ψ⌝ k)`.
+5. (U2 cut of 3 with 4) `L (…) (instB ⌜p⌝ k)` = `L (…) (guardCode ⌜GtmplA 0⌝ (DupocV k) (DupocV k))`.
+6. (master inequality + `lenDerivable_mono_V`) `L k (guard)`; (`properV_TAct`) `LenProvableV TAct k (guard)`;
+   (U7 `dupoc_search_V`) `EvalGraph 2 (DupocV k) (DupocV k) (DupocV k) 0`; (U7 truth equation) `V ⊧ p[k]`.
+7. Discharging 2: `V ⊧ (Box_g ψ)[k] ↔ L (g k) (instB ⌜ψ⌝ k)` (semantics of `bewBDef`/`gGraph`), so `V ⊧ θ[⌜ψ⌝][k]`, and by the fixed point (soundness of `TAct ⊢ ∀¹ (θ[⌜ψ⌝] 🡒 ψ)` in `V`) `V ⊧ ψ[k]`.
+8. Hence, with `k̂ : ℕ` the threshold of the master inequality: every real-eq model of `TAct` satisfies `∀¹ (numeral k̂ ≤ #0 🡒 ψ)`; by `tact_complete`, `TAct ⊢ ∀¹ (numeral k̂ ≤ #0 🡒 ψ)`; let `N₃` be the length of one such proof.
+   `pblt_uniform (hE : BoundedInnerNec E) : ∃ k̂ N₃, LenProvable fbound N₃ TAct ⌜∀¹ (numeral k̂ ≤ #0 🡒 ψ)⌝ ∧ (the chain 1–7 at every V, k ≥ k̂)`.
+
+**U9 — the cell, at ℕ.** For `k ≥ k̂` (and a second threshold `k̂'` below):
+1. (U3 meta, `lenProvable_inst_size`) `LenProvable (N₃ + c·‖k‖ + C) TAct ⌜numeral k̂ ≤ bnumT k 🡒 ψ ⇜ ![bnumT k]⌝`.
+2. A SHORT proof of the antecedent: `LenProvable (c'·‖k‖ + C') TAct ⌜numeral k̂ ≤ bnumT k⌝` for `k ≥ k̂` — by bit recursion on `bnumT` (`x ≤ y → x ≤ 2y`, `x ≤ y → x ≤ 2y + 1` as PA lemmas cut in once per bit; base cases `k ∈ [k̂, 2k̂+1]` finitely many constant proofs by Σ₁-completeness, constants existential). NEW small library `NumeralFacts.lean`.
+3. (`Cut.lean` meta cut) `LenProvable (N₄ k) TAct ⌜ψ ⇜ ![bnumT k]⌝` with `N₄ k = C'' + c''·‖k‖ ≤ g k` for `k ≥ k̂'`; by `quote_instB` + `properV_nat_TAct`: `L (g k) (instB ⌜ψ⌝ k)` at `V = ℕ` = step 2 of U8.
+4. Run U8's chain at `V = ℕ`: `LenProvableV TAct k (guard)` and `EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0`.
+   `dupoc_self_coop (hE : BoundedInnerNec E) : ∃ k₀, ∀ k ≥ k₀, EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` — Critch's Theorem 3.7 in PA-`S`, conditional on (d).
+
+Traps to expect: never `simp` a goal containing `⌜ψ⌝` (Diag's kernel-numeral trap); state every
+length in `‖k‖`, `flen ψ`, `flen p` separately (InstV's trap); the fixed point's numeral `⌜ψ⌝` is
+Foundation's UNARY numeral — an astronomical CONSTANT, harmless; `k̂`, `N₁…N₄` are all existential.
