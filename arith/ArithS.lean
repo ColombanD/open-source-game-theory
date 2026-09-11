@@ -28,6 +28,7 @@ import ArithS.Template
 import ArithS.RedCell
 import ArithS.Fit
 import ArithS.Code
+import ArithS.Instance
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse

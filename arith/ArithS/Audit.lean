@@ -7,6 +7,7 @@ import ArithS.InstV
 import ArithS.Det
 import ArithS.FitBox
 import ArithS.Inst
+import ArithS.Instance
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -67,6 +68,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lenProvable_inst_size
 #print axioms pa_proves_instSentence
 #print axioms tact_proves_instSentence
+
+-- M4 U0 — programs described by TERMS over the polynomial pairing: Dupoc's guard sentence
+-- against itself is the `k`-instance `q ⇜ ![k̂]` of ONE fixed one-variable formula (meta), and on
+-- codes `subst (bnum k ∷ 0) cq` (Critch's "source with `k` written in binary"); the description
+-- of a program denotes its code (`val_progTT`) and codes are what the guard names (`quote_progTT`).
+#print axioms exists_dupoc_instance
+#print axioms exists_dupoc_instance_code
+#print axioms quote_progTT
+#print axioms val_progTT
+#print axioms size_le_tlen_progTT
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound
