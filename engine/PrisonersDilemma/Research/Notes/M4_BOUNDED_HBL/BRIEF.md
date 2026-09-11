@@ -215,3 +215,37 @@ searcher finds its own guard: `EvalGraph 2 (DupocV k) … 0` and `EvalGraph 2 (C
 in `swapActS`, `Eval (swapActS) φ = Eval (stdActS) (lMap swap φ)` swaps the two roles. So the ONLY new
 truth equation is `eval_qCupod_iff_V` in `stdActS`, and U8's step 6 produces both `EvalGraph` facts.
 The conclusion `dupoc_self_coop` is unchanged (and `cupod_self_defect` comes for free).
+
+## 8. U10 design (2026-09-12, `DESIGN_inner_necessitation.md`) and a correction to §6
+
+**Correction.** `BoundedInnerNec d c c₁ c₀` as first stated (§6, `Prep.lean` ec5a8b6) is
+UNSATISFIABLE: the target `instB ⌜Box_g χ⌝ k` contains the UNARY numeral `⌜χ⌝`, so every proof of
+it has `dlen ≥ encode χ` (exponential in `flen χ`) while the bound allowed `c₁ · flen χ` — a
+theorem conditional on it would be vacuous. RESTATED (assembly agent instructed): the constant may
+depend on `χ`: `∀ χ, ∃ C, ∀ V k, L (g k) (instB ⌜χ⌝ k) → ∃ e ≤ C·((g k)^d + 1), L e (instB ⌜Box_g χ⌝ k)`.
+The argument uses one `χ` (= `psi`), so nothing is lost. General lesson: any sentence naming a
+formula by a numeral costs at least that code's magnitude — bound constants per family, never
+uniformly in `flen`.
+
+**The construction (ANALYSIS, report §3).** `verifyCode ρ` follows `ρ`'s tree; every code
+(sequent, formula, term, sub-derivation, length) enters the proof as an EIGENVARIABLE obtained by
+∃-elimination from a constant-size universal lemma (pairing/insert/subst totality, the ten per-tag
+intro clauses of the `derivation` fixpoint, the `DlenGraph` clauses — a finite library of ~40
+`TAct`-sentences with existential lengths, each proved by `complete`); the fixpoint is never
+unfolded; membership/subset/`IsFormulaSet` facts are constant consequences of the `insert`
+construction; lengths flow as binary numerals. Foundation's own internal Σ₁-completeness is NOT
+reusable (unary witnesses, bounded-∀ case analysis: `E ≥ 2^{2^a}`). Expected `E(a) = O(a³)`
+(two extra factors: live-fact contexts per node, and UNARY free-variable indices in `Length.lean`
+under `setShift`; `O(a²)` with binary indices) — polynomial suffices (`‖k‖⁹ ≺ k`); take `d = 3`.
+
+**Risks.** (1) `axm` leaves: a PA proof that an eigenvariable-described formula is an induction
+instance costs `O(|p|)` only if Foundation's `𝗣𝗔.Δ₁` recognizer (`Definability.lean:1070`) goes
+through the code-level `subst`/`qqAll` graphs — CHECK FIRST. (2) `|derivation TAct|` as a
+multiplicative constant; `simp` on quoted lemma sentences overflows the kernel numeral.
+
+**Effort (report §5).** Lemma library 1000–1500 lines (5–8 days); the context-carrying recursion by
+`Derivation.induction1` (existential form, `cutCode`-style fragment codes) 6000–7000 lines
+(2.5–4 months); assembly ~400 lines. Cheap independent win: charge variable indices in BINARY in
+`Length.lean` (one factor of `a` off `E`; touches the M1 constants). Alternatives (§6 of the
+report): an abbreviation calculus (linear `E`, but re-does the M1–M3 length layers); accepting an
+exponential `E` (kills `f(k) = k` — only a polynomial-budget agent language survives).
