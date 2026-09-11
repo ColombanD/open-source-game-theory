@@ -16,6 +16,7 @@ import ArithS.CutV
 import ArithS.ProperV
 import ArithS.InstV
 import ArithS.Diag
+import ArithS.NumeralFacts
 import ArithS.RelabelTemplate
 import ArithS.Prog
 import ArithS.Bnum

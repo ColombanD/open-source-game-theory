@@ -5,6 +5,7 @@ import ArithS.Cut
 import ArithS.CutV
 import ArithS.ProperV
 import ArithS.InstV
+import ArithS.NumeralFacts
 import ArithS.Diag
 import ArithS.Det
 import ArithS.FitBox
@@ -82,6 +83,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lenProvable_inst_size
 #print axioms pa_proves_instSentence
 #print axioms tact_proves_instSentence
+
+-- M4, U9 step 2 (NumeralFacts): short TAct proofs of the antecedent `numeral c ≤ bnumT k` —
+-- bit recursion on the binary numeral (two uniform PA lemmas cut in once per bit, base range
+-- by completeness), length `C₀ + C₁·size k·size k`; the strict twin; the instance shape
+-- (`(leF ↑c #0 🡒 ψ) ⇜ ![t] = leF ↑c t 🡒 ψ ⇜ ![t]`) and `lMap emb ↑c = ↑c`.
+#print axioms lenProvable_of_provable
+#print axioms lMap_emb_numeral
+#print axioms substs_leF_imp
+#print axioms tact_proves_leEvenA
+#print axioms tact_proves_le_bnumT
+#print axioms step_le
+#print axioms lenProvable_le_bnumT
+#print axioms lenProvable_lt_bnumT
 
 -- M4, U6 (Diag): the parametric diagonal lemma over TAct for LAct formulas — Foundation's
 -- construction transported along the reduct (`substNumeralParamsA` twin of `substNumeralParams`,
