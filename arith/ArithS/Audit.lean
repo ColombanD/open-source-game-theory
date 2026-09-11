@@ -10,6 +10,7 @@ import ArithS.FitBox
 import ArithS.Inst
 import ArithS.Instance
 import ArithS.InstanceV
+import ArithS.Transparency
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -95,6 +96,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms quote_progTT
 #print axioms val_progTT
 #print axioms size_le_tlen_progTT
+
+-- M4 U7 — Dupoc transparency (Critch's step 0) in EVERY model of IΣ₁, at every (possibly
+-- nonstandard) budget `k : V`, in the `LAct`-structure `stdActV V` (`c_C ↦ 0`, `c_D ↦ 1`): the
+-- description term denotes the canonical code, the truth equation of `qDupoc` ("Dupoc plays C
+-- against itself"), the search clause at fuel 2, the Löb premise `bewB k ⌜qDupoc⌝ k → qDupoc(k)`
+-- under `ProperV V TAct` (unconditional at ℕ), and the uniform ℒₒᵣ-sentence with the Δ₁ box,
+-- provable in IΣ₁/PA (completeness) and in TAct along `emb`.
+#print axioms val_TD_V
+#print axioms eval_qDupoc_iff_V
+#print axioms dupoc_search_V
+#print axioms dupoc_search_instB_V
+#print axioms dupoc_loeb_premise_V
+#print axioms dupoc_loeb_premise_nat
+#print axioms dupoc_loeb_premise_guardSentence
+#print axioms dupoc_loeb_premise_evalGraph
+#print axioms isigma1_proves_dupocPremise
+#print axioms pa_proves_dupocPremise
+#print axioms tact_proves_dupocPremise
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound
