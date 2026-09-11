@@ -257,3 +257,20 @@ recognizer `indBodyVal` is "a chain of the `subst`/`imp`/`qqAll` graphs" (`:723-
 graphs, so an `axm` leaf whose formula is an eigenvariable-described induction instance costs `O(|p|)`
 lemma instantiations, as the eigenvariable construction requires. `PeanoMinus` is finite (a fixed
 disjunction of numerals — constant). Risk (1) is not a blocker.
+
+## 9. U10 execution (started 2026-09-12, branch `colomban-arith-u10` off `colomban-arith-m3` @ 15b015a)
+
+Colomban's decision: push for the one obligation. Plan = `DESIGN_inner_necessitation.md` §5, cut into
+agent-sized tasks under `arith/ArithS/Necessitation/`:
+* `Primitives.lean` — the two moves of §3.1 as derivation-code constructors with `dlen` bounds:
+  `useLemmaCode` (cut a stored `∀x̄ B` in at witnesses `ē`: `wk` + `m` `exsIntro`s + `cut`) and
+  `elimExistsCode` (cut on `∃x P` against `allIntro` with the fresh `&0`); `wkDropCode`.
+* `Lib/Basic.lean` — `Lib σ := ∃ N, ∀ V, LenDerivable TAct N ⌜lMap emb σ⌝`, `Lib.of_pa`;
+  `Lib/Sets.lean`, `Lib/Formulas.lean`, `Lib/Lengths.lean` — the table rows totality/sets/formulas/lengths.
+* NEXT: `Lib/Nodes.lean` — the ten `Intro_tag` + ten `Dlen_tag` sentences (with `(derivation TAct).sigma`
+  and `dlenGraphDef`) and the `axm` recognizer items (§3.6); then `describeFormula` (the bottom-up
+  syntax walk, a `UformulaRec`-style Σ₁ construction), `transportFacts`, the ten per-tag fragments
+  (§3.3), the existential recursion by `Derivation.induction1` (§5(b), recommended over a
+  `verifyCode` function), and the top (§4.3) closing `BoundedInnerNec 3`.
+Conventions: two concurrent Lean agents, short tool calls, `wip` commits per green file, never
+`simp` on quoted sentences, all constants existential; `-m3` stays frozen at the milestone.
