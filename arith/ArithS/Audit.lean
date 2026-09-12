@@ -20,6 +20,7 @@ import ArithS.Necessitation.Primitives
 import ArithS.Necessitation.Lib.Sets
 import ArithS.Necessitation.Lib.Formulas
 import ArithS.Necessitation.Lib.Lengths
+import ArithS.Necessitation.Lib.Nodes
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -324,5 +325,38 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lib_bnumEven
 #print axioms lib_twoMulOneAddOne
 #print axioms lib_addLeAdd
+
+
+-- U10 (Necessitation/Lib/Nodes, 2026-09-12): the node rows of the library — the ten
+-- `Intro_tag` clauses of the derivation fixpoint (`Derivation.axL … axm` on codes, over
+-- `!(derivation TAct).sigma`), the ten `Dlen_tag` clauses (`DlenGraph.*_iff` over
+-- `!(dlenGraphDef LAct).sigma`), the ten node-graph totalities, the polarity bridges, and the
+-- axiom recognizer: `axiomRec σ` for every `σ ∈ TAct` (i) and the induction scheme as ONE
+-- universal sentence `indRec` (ii, the shape Foundation's `InductionR`/`chUniv` forces).
+#print axioms lib_introAxL
+#print axioms lib_introVerum
+#print axioms lib_introAnd
+#print axioms lib_introOr
+#print axioms lib_introAll
+#print axioms lib_introExs
+#print axioms lib_introWk
+#print axioms lib_introShift
+#print axioms lib_introCut
+#print axioms lib_introAxm
+#print axioms lib_dlenAxL
+#print axioms lib_dlenVerum
+#print axioms lib_dlenAnd
+#print axioms lib_dlenOr
+#print axioms lib_dlenAll
+#print axioms lib_dlenExs
+#print axioms lib_dlenWk
+#print axioms lib_dlenShift
+#print axioms lib_dlenCut
+#print axioms lib_dlenAxm
+#print axioms lib_totAndIntro
+#print axioms lib_derivationPiSigma
+#print axioms lib_axiomRec_axAct
+#print axioms lib_axiomRec_pa
+#print axioms lib_indRec
 
 end ArithS
