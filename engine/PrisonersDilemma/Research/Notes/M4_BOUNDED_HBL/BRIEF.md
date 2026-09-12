@@ -302,3 +302,30 @@ recognizer: `lib_axiomRec σ (h : σ ∈ TAct)` (any axiom, at the price of its 
 `Lib/Bridge` task, agent launched). `derivation` is used ONLY as `!(derivation TAct).sigma`,
 never unfolded. IN FLIGHT: `Steps.lean` (useHorn/introFact + the fragment protocol), `Lib/Bridge`.
 NEXT: `describeFormula` (bottom-up walk), `transportFacts`, per-tag fragments, the recursion, the top.
+
+## 10. U10 architecture refinement (2026-09-12): the STEP LIST, not CPS
+
+`DESIGN` §5(b) leaves the recursion shape open ("a `Fixpoint` on `⟪d, ctx, e⟫`, or the existential
+form by `induction1`"). Both hit the same wall: the natural construction is continuation-passing
+(`describe (p ⋏ q) Γ d = describe p Γ (describe q Γ_p (step d))`) — the continuation CHANGES in
+the recursive call, so it is neither a `PR`/`Fixpoint` construction with fixed parameters nor a
+Π₁/Σ₁ statement (`∀ d, … → ∃ e, …` is Π₂; IΣ₁ has no Π₂ induction, and `ρ` may be nonstandard).
+RESOLUTION: separate WHAT is done from HOW it is assembled.
+* A **step** is a code `⟪tag, args⟫`: `introFact row ē`, `useHorn row ē`, `useHornAnd row ē`,
+  `wkDrop Γ'`, `axLFact φ` (the `Steps.lean` constructors), rows referenced by their INDEX in a
+  fixed table of library codes, witnesses as free-variable indices `&i`.
+* `applyStep Γ s e` (Σ₁ function: the constructor of `Steps.lean` for the tag, applied to the
+  continuation `e`), `ctxAfter Γ s` (the context after the step: the shifted `Γ` plus the negated
+  new fact), `ctxVec Γ₀ steps` (PR over the list — the vector of contexts), and
+  **`chainCode Γ₀ steps d`** (PR over the list length FROM THE END, with `(ctxVec, steps, d)` as
+  FIXED parameters: `g 0 = d`, `g (j+1) = applyStep (ctxVec[n−j−1]) (steps[n−j−1]) (g j)`).
+* `StepOK Γ s` (Δ₁: the row's antecedents are in `Γ` at the stated indices, the witnesses are
+  terms, …); `chainCode_proof : (∀ i < n, StepOK (ctxVec[i]) (steps[i])) → DerivationOf d (ctxVec[n])
+  → DerivationOf (chainCode Γ₀ steps d) Γ₀` and `dlen_chainCode_le` (sum of the per-step costs) —
+  both by IΣ₁ induction on `j` with Π₁ predicates.
+* Every producer is then a LIST-valued Σ₁ function: `describeSteps r` (by `UformulaRec`-style
+  recursion, children's lists concatenated, with the index bookkeeping `descCount`), the per-tag
+  fragments, and `verifySteps ρ` (a `DlenGraph`-style fixpoint on `⟪ρ, list⟫`); their theorems are
+  `StepsOK` (Δ₁, bounded ∀ over the list) + the final-context facts + the length sum, all Π₁ in the
+  input, provable by `IsUFormula`/`Derivation.induction1`.
+* `verifyCode ρ := chainCode Γ₀ (verifySteps ρ) (top-closing code)`.
