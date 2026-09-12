@@ -302,7 +302,7 @@ noncomputable def qqRelTotal : ArithmeticSentence := ∀¹* qqRelTotalB
 
 lemma models_qqRelTotal :
     V↓[ℒₒᵣ] ⊧ qqRelTotal ↔ ∀ v R k : V, ∃ p, p = ^rel k R v := by
-  simp [qqRelTotal, qqRelTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqRelTotal, qqRelTotalB, models_iff]
 
 theorem pa_proves_qqRelTotal : 𝗣𝗔 ⊢ qqRelTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqRelTotal.mpr fun _ _ _ ↦ ⟨_, rfl⟩
@@ -316,7 +316,7 @@ noncomputable def qqNRelTotal : ArithmeticSentence := ∀¹* qqNRelTotalB
 
 lemma models_qqNRelTotal :
     V↓[ℒₒᵣ] ⊧ qqNRelTotal ↔ ∀ v R k : V, ∃ p, p = ^nrel k R v := by
-  simp [qqNRelTotal, qqNRelTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqNRelTotal, qqNRelTotalB, models_iff]
 
 theorem pa_proves_qqNRelTotal : 𝗣𝗔 ⊢ qqNRelTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqNRelTotal.mpr fun _ _ _ ↦ ⟨_, rfl⟩
@@ -330,7 +330,7 @@ noncomputable def qqVerumTotal : ArithmeticSentence := ∀¹* qqVerumTotalB
 
 lemma models_qqVerumTotal :
     V↓[ℒₒᵣ] ⊧ qqVerumTotal ↔ ∃ p : V, p = ^⊤ := by
-  simp [qqVerumTotal, qqVerumTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqVerumTotal, qqVerumTotalB, models_iff]
 
 theorem pa_proves_qqVerumTotal : 𝗣𝗔 ⊢ qqVerumTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqVerumTotal.mpr ⟨_, rfl⟩
@@ -344,7 +344,7 @@ noncomputable def qqFalsumTotal : ArithmeticSentence := ∀¹* qqFalsumTotalB
 
 lemma models_qqFalsumTotal :
     V↓[ℒₒᵣ] ⊧ qqFalsumTotal ↔ ∃ p : V, p = ^⊥ := by
-  simp [qqFalsumTotal, qqFalsumTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqFalsumTotal, qqFalsumTotalB, models_iff]
 
 theorem pa_proves_qqFalsumTotal : 𝗣𝗔 ⊢ qqFalsumTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqFalsumTotal.mpr ⟨_, rfl⟩
@@ -358,7 +358,7 @@ noncomputable def qqAndTotal : ArithmeticSentence := ∀¹* qqAndTotalB
 
 lemma models_qqAndTotal :
     V↓[ℒₒᵣ] ⊧ qqAndTotal ↔ ∀ q p : V, ∃ r, r = p ^⋏ q := by
-  simp [qqAndTotal, qqAndTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqAndTotal, qqAndTotalB, models_iff]
 
 theorem pa_proves_qqAndTotal : 𝗣𝗔 ⊢ qqAndTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqAndTotal.mpr fun _ _ ↦ ⟨_, rfl⟩
@@ -372,7 +372,7 @@ noncomputable def qqOrTotal : ArithmeticSentence := ∀¹* qqOrTotalB
 
 lemma models_qqOrTotal :
     V↓[ℒₒᵣ] ⊧ qqOrTotal ↔ ∀ q p : V, ∃ r, r = p ^⋎ q := by
-  simp [qqOrTotal, qqOrTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqOrTotal, qqOrTotalB, models_iff]
 
 theorem pa_proves_qqOrTotal : 𝗣𝗔 ⊢ qqOrTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqOrTotal.mpr fun _ _ ↦ ⟨_, rfl⟩
@@ -386,7 +386,7 @@ noncomputable def qqAllTotal : ArithmeticSentence := ∀¹* qqAllTotalB
 
 lemma models_qqAllTotal :
     V↓[ℒₒᵣ] ⊧ qqAllTotal ↔ ∀ p : V, ∃ q, q = ^∀ p := by
-  simp [qqAllTotal, qqAllTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqAllTotal, qqAllTotalB, models_iff]
 
 theorem pa_proves_qqAllTotal : 𝗣𝗔 ⊢ qqAllTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqAllTotal.mpr fun _ ↦ ⟨_, rfl⟩
@@ -400,7 +400,7 @@ noncomputable def qqExsTotal : ArithmeticSentence := ∀¹* qqExsTotalB
 
 lemma models_qqExsTotal :
     V↓[ℒₒᵣ] ⊧ qqExsTotal ↔ ∀ p : V, ∃ q, q = ^∃ p := by
-  simp [qqExsTotal, qqExsTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqExsTotal, qqExsTotalB, models_iff]
 
 theorem pa_proves_qqExsTotal : 𝗣𝗔 ⊢ qqExsTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqExsTotal.mpr fun _ ↦ ⟨_, rfl⟩
@@ -414,7 +414,7 @@ noncomputable def qqFuncTotal : ArithmeticSentence := ∀¹* qqFuncTotalB
 
 lemma models_qqFuncTotal :
     V↓[ℒₒᵣ] ⊧ qqFuncTotal ↔ ∀ v f k : V, ∃ t, t = qqFunc k f v := by
-  simp [qqFuncTotal, qqFuncTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqFuncTotal, qqFuncTotalB, models_iff]
 
 theorem pa_proves_qqFuncTotal : 𝗣𝗔 ⊢ qqFuncTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqFuncTotal.mpr fun _ _ _ ↦ ⟨_, rfl⟩
@@ -428,7 +428,7 @@ noncomputable def qqBvarTotal : ArithmeticSentence := ∀¹* qqBvarTotalB
 
 lemma models_qqBvarTotal :
     V↓[ℒₒᵣ] ⊧ qqBvarTotal ↔ ∀ z : V, ∃ t, t = qqBvar z := by
-  simp [qqBvarTotal, qqBvarTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqBvarTotal, qqBvarTotalB, models_iff]
 
 theorem pa_proves_qqBvarTotal : 𝗣𝗔 ⊢ qqBvarTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqBvarTotal.mpr fun _ ↦ ⟨_, rfl⟩
@@ -442,7 +442,7 @@ noncomputable def qqFvarTotal : ArithmeticSentence := ∀¹* qqFvarTotalB
 
 lemma models_qqFvarTotal :
     V↓[ℒₒᵣ] ⊧ qqFvarTotal ↔ ∀ x : V, ∃ t, t = qqFvar x := by
-  simp [qqFvarTotal, qqFvarTotalB, models_iff, Matrix.vecForall_iff]
+  simp [qqFvarTotal, qqFvarTotalB, models_iff]
 
 theorem pa_proves_qqFvarTotal : 𝗣𝗔 ⊢ qqFvarTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqFvarTotal.mpr fun _ ↦ ⟨_, rfl⟩
@@ -456,7 +456,7 @@ noncomputable def adjoinTotal : ArithmeticSentence := ∀¹* adjoinTotalB
 
 lemma models_adjoinTotal :
     V↓[ℒₒᵣ] ⊧ adjoinTotal ↔ ∀ v t : V, ∃ w, w = t ∷ v := by
-  simp [adjoinTotal, adjoinTotalB, models_iff, Matrix.vecForall_iff]
+  simp [adjoinTotal, adjoinTotalB, models_iff]
 
 theorem pa_proves_adjoinTotal : 𝗣𝗔 ⊢ adjoinTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_adjoinTotal.mpr fun _ _ ↦ ⟨_, rfl⟩
@@ -470,7 +470,7 @@ noncomputable def negTotal : ArithmeticSentence := ∀¹* negTotalB
 
 lemma models_negTotal :
     V↓[ℒₒᵣ] ⊧ negTotal ↔ ∀ p : V, ∃ y, y = neg LAct p := by
-  simp [negTotal, negTotalB, models_iff, Matrix.vecForall_iff, neg.defined.iff]
+  simp [negTotal, negTotalB, models_iff, neg.defined.iff]
 
 theorem pa_proves_negTotal : 𝗣𝗔 ⊢ negTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_negTotal.mpr fun _ ↦ ⟨_, rfl⟩
@@ -484,7 +484,7 @@ noncomputable def substsTotal : ArithmeticSentence := ∀¹* substsTotalB
 
 lemma models_substsTotal :
     V↓[ℒₒᵣ] ⊧ substsTotal ↔ ∀ p w : V, ∃ y, y = subst LAct w p := by
-  simp [substsTotal, substsTotalB, models_iff, Matrix.vecForall_iff, subst.defined.iff]
+  simp [substsTotal, substsTotalB, models_iff, subst.defined.iff]
 
 theorem pa_proves_substsTotal : 𝗣𝗔 ⊢ substsTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_substsTotal.mpr fun _ _ ↦ ⟨_, rfl⟩
@@ -498,7 +498,7 @@ noncomputable def substs1Total : ArithmeticSentence := ∀¹* substs1TotalB
 
 lemma models_substs1Total :
     V↓[ℒₒᵣ] ⊧ substs1Total ↔ ∀ p t : V, ∃ y, y = substs1 LAct t p := by
-  simp [substs1Total, substs1TotalB, models_iff, Matrix.vecForall_iff, substs1.defined.iff]
+  simp [substs1Total, substs1TotalB, models_iff, substs1.defined.iff]
 
 theorem pa_proves_substs1Total : 𝗣𝗔 ⊢ substs1Total :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_substs1Total.mpr fun _ _ ↦ ⟨_, rfl⟩
@@ -512,7 +512,7 @@ noncomputable def qVecTotal : ArithmeticSentence := ∀¹* qVecTotalB
 
 lemma models_qVecTotal :
     V↓[ℒₒᵣ] ⊧ qVecTotal ↔ ∀ w : V, ∃ u, u = qVec LAct w := by
-  simp [qVecTotal, qVecTotalB, models_iff, Matrix.vecForall_iff, qVec.defined.iff]
+  simp [qVecTotal, qVecTotalB, models_iff, qVec.defined.iff]
 
 theorem pa_proves_qVecTotal : 𝗣𝗔 ⊢ qVecTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qVecTotal.mpr fun _ ↦ ⟨_, rfl⟩
@@ -526,7 +526,7 @@ noncomputable def termSubstVecTotal : ArithmeticSentence := ∀¹* termSubstVecT
 
 lemma models_termSubstVecTotal :
     V↓[ℒₒᵣ] ⊧ termSubstVecTotal ↔ ∀ v w k : V, ∃ u, u = termSubstVec LAct k w v := by
-  simp [termSubstVecTotal, termSubstVecTotalB, models_iff, Matrix.vecForall_iff, termSubstVec.defined.iff]
+  simp [termSubstVecTotal, termSubstVecTotalB, models_iff, termSubstVec.defined.iff]
 
 theorem pa_proves_termSubstVecTotal : 𝗣𝗔 ⊢ termSubstVecTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_termSubstVecTotal.mpr fun _ _ _ ↦ ⟨_, rfl⟩
@@ -540,7 +540,7 @@ noncomputable def termShiftVecTotal : ArithmeticSentence := ∀¹* termShiftVecT
 
 lemma models_termShiftVecTotal :
     V↓[ℒₒᵣ] ⊧ termShiftVecTotal ↔ ∀ v k : V, ∃ u, u = termShiftVec LAct k v := by
-  simp [termShiftVecTotal, termShiftVecTotalB, models_iff, Matrix.vecForall_iff, termShiftVec.defined.iff]
+  simp [termShiftVecTotal, termShiftVecTotalB, models_iff, termShiftVec.defined.iff]
 
 theorem pa_proves_termShiftVecTotal : 𝗣𝗔 ⊢ termShiftVecTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_termShiftVecTotal.mpr fun _ _ ↦ ⟨_, rfl⟩
@@ -780,7 +780,7 @@ noncomputable def isSemitermVecNil : ArithmeticSentence := ∀¹* isSemitermVecN
 
 lemma models_isSemitermVecNil :
     V↓[ℒₒᵣ] ⊧ isSemitermVecNil ↔ ∀ n : V, IsSemitermVec LAct 0 n 0 := by
-  simp [isSemitermVecNil, isSemitermVecNilB, models_iff, Matrix.vecForall_iff]
+  simp [isSemitermVecNil, isSemitermVecNilB, models_iff]
 
 theorem pa_proves_isSemitermVecNil : 𝗣𝗔 ⊢ isSemitermVecNil :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_isSemitermVecNil.mpr fun n ↦ IsSemitermVec.nil n

@@ -17,6 +17,9 @@ import ArithS.Assembly.Prep
 import ArithS.Assembly.Uniform
 import ArithS.Assembly.Cell
 import ArithS.Necessitation.Primitives
+import ArithS.Necessitation.Lib.Sets
+import ArithS.Necessitation.Lib.Formulas
+import ArithS.Necessitation.Lib.Lengths
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -295,5 +298,31 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dlen_elimExistsCode_le'
 #print axioms wkDropCode_proof
 #print axioms dlen_wkDropCode_le
+
+
+-- U10 (Necessitation/Lib, 2026-09-12): the library rows A of the verification proof — the
+-- `totality`, `sets`, `formulas`, `lengths` lemma-sentences of DESIGN §3.1, each an ℒₒᵣ-sentence
+-- in prenex universal form over the target's own Σ₁/Δ₁ graphs, true in every model of IΣ₁,
+-- hence a PA-theorem (`complete`) and a `Lib` sentence: a TAct-proof code of ONE standard
+-- length in every model (`Lib.of_pa` = `tact_proves_lMap_emb` + `lenDerivable_of_proof` +
+-- `lenDerivable_of_nat`); `quote_alls`/`Lib.univ_code` give the code `qqAlls ⌜B⌝ m` a
+-- fragment instantiates. Sets 26 rows, Formulas 84, Lengths 35 (a representative dozen here).
+#print axioms Lib.of_pa
+#print axioms quote_alls
+#print axioms Lib.univ_code
+#print axioms lib_insertSubset
+#print axioms lib_isFormulaSetInsert
+#print axioms lib_memSetShiftInv
+#print axioms lib_qqAndTotal
+#print axioms lib_isSemiformulaSubst
+#print axioms lib_negAnd
+#print axioms lib_substsAll
+#print axioms lib_shiftInvAnd
+#print axioms lib_substsInvAll
+#print axioms lib_setLenInsertLe
+#print axioms lib_formulaLenAnd
+#print axioms lib_bnumEven
+#print axioms lib_twoMulOneAddOne
+#print axioms lib_addLeAdd
 
 end ArithS

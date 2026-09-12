@@ -161,17 +161,33 @@ theorem lib_subsetTrans : Lib subsetTrans := Lib.of_pa pa_proves_subsetTrans
 
 /-! ### `IsFormulaSet` -/
 
-/-- `IsFormulaSet ∅`. -/
-noncomputable def isFormulaSetEmptyB : ArithmeticSemisentence 0 := “!(isFormulaSet LAct).sigma 0”
-noncomputable def isFormulaSetEmpty : ArithmeticSentence := ∀¹* isFormulaSetEmptyB
+/-- `(∀ x, x ∉ s) → IsFormulaSet s` — emptiness EXTENSIONALLY: a closed numeral `0` inside the
+Δ₁ object `isFormulaSet` makes elaboration blow up (the numeral-in-blueprint trap), so the
+fragment instantiates this row at `0` and discharges the premise by `notMemEmpty`. -/
+noncomputable def isFormulaSetOfNoMemB : ArithmeticSemisentence 1 :=
+  “s. (∀ x, x ∉ s) → !(isFormulaSet LAct).sigma s”
+noncomputable def isFormulaSetOfNoMem : ArithmeticSentence := ∀¹* isFormulaSetOfNoMemB
 
-lemma models_isFormulaSetEmpty : V↓[ℒₒᵣ] ⊧ isFormulaSetEmpty ↔ IsFormulaSet LAct (0 : V) := by
-  simp [isFormulaSetEmpty, isFormulaSetEmptyB, models_iff]
+lemma models_isFormulaSetOfNoMem :
+    V↓[ℒₒᵣ] ⊧ isFormulaSetOfNoMem ↔ ∀ s : V, (∀ x, x ∉ s) → IsFormulaSet LAct s := by
+  simp [isFormulaSetOfNoMem, isFormulaSetOfNoMemB, models_iff, Matrix.vecForall_iff]
 
-theorem pa_proves_isFormulaSetEmpty : 𝗣𝗔 ⊢ isFormulaSetEmpty :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_isFormulaSetEmpty.mpr IsFormulaSet.empty
+theorem pa_proves_isFormulaSetOfNoMem : 𝗣𝗔 ⊢ isFormulaSetOfNoMem :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_isFormulaSetOfNoMem.mpr fun _ h p hp ↦ absurd hp (h p)
 
-theorem lib_isFormulaSetEmpty : Lib isFormulaSetEmpty := Lib.of_pa pa_proves_isFormulaSetEmpty
+theorem lib_isFormulaSetOfNoMem : Lib isFormulaSetOfNoMem := Lib.of_pa pa_proves_isFormulaSetOfNoMem
+
+/-- `x ∉ ∅` (`∅ = 0`). -/
+noncomputable def notMemEmptyB : ArithmeticSemisentence 1 := “x. x ∉ 0”
+noncomputable def notMemEmpty : ArithmeticSentence := ∀¹* notMemEmptyB
+
+lemma models_notMemEmpty : V↓[ℒₒᵣ] ⊧ notMemEmpty ↔ ∀ x : V, x ∉ (0 : V) := by
+  simp [notMemEmpty, notMemEmptyB, models_iff, Matrix.vecForall_iff]
+
+theorem pa_proves_notMemEmpty : 𝗣𝗔 ⊢ notMemEmpty :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_notMemEmpty.mpr fun x ↦ by simp
+
+theorem lib_notMemEmpty : Lib notMemEmpty := Lib.of_pa pa_proves_notMemEmpty
 
 /-- `IsFormulaSet s → IsFormula p → IsFormulaSet (insert p s)`. -/
 noncomputable def isFormulaSetInsertB : ArithmeticSemisentence 3 :=
@@ -403,11 +419,5 @@ theorem pa_proves_freeTotal : 𝗣𝗔 ⊢ freeTotal :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_freeTotal.mpr fun _ ↦ ⟨_, rfl⟩
 
 theorem lib_freeTotal : Lib freeTotal := Lib.of_pa pa_proves_freeTotal
-
-/-- The prenex reading is available for every row (sanity check of the convention). -/
-example : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
-    ∃ d, Proof TAct d (qqAlls (⌜Semiformula.lMap emb insertSubsetB⌝ : V) (4 : V)) ∧
-      dlen TAct d ≤ (N : V) :=
-  Lib.univ_code lib_insertSubset
 
 end ArithS
