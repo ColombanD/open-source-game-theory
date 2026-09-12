@@ -21,6 +21,7 @@ import ArithS.Necessitation.Lib.Sets
 import ArithS.Necessitation.Lib.Formulas
 import ArithS.Necessitation.Lib.Lengths
 import ArithS.Necessitation.Lib.Nodes
+import ArithS.Necessitation.Lib.Bridge
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -358,5 +359,22 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lib_axiomRec_axAct
 #print axioms lib_axiomRec_pa
 #print axioms lib_indRec
+
+
+-- U10 (Necessitation/Lib/Bridge, 2026-09-12): the ℒₒᵣ/LAct code bridges for the axiom
+-- recognizer — language invariance of the code operations on ℒₒᵣ-codes (`subst_LAct_eq`,
+-- `bv_LAct_eq`), the ℒₒᵣ → LAct lifts, the ℒₒᵣ formation rows, the graph bridges LAct → ℒₒᵣ,
+-- `indBodyIntro` (the induction body from its constituents), and `axIsFormula`.
+#print axioms subst_LAct_eq
+#print axioms bv_LAct_eq
+#print axioms lib_isSemiformulaLActOfLOR
+#print axioms lib_isSemiformulaRelOR
+#print axioms lib_fvarVecSemitermVecOR
+#print axioms lib_indSubstConst0VecOR
+#print axioms lib_substsGraphOROfLAct
+#print axioms lib_bvGraphOROfLAct
+#print axioms lib_indBodyIntro
+#print axioms lib_isSemiformulaSigmaPiOR
+#print axioms lib_axIsFormula
 
 end ArithS
