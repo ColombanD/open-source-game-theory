@@ -286,3 +286,19 @@ the LINEAR bound `|instOuter es B| ≤ |B|·E`. PROCESS TRAP: `pgrep -f 'lake bu
 agent's own polling shell — use `pgrep -f 'bin/lake build'`. Mathlib: `add_le_add_left/right` have
 swapped sides in this toolchain — use `add_le_add`/`gcongr`. IN FLIGHT: `Lib/{Basic,Sets,Formulas,
 Lengths}` (rows A), `Lib/Nodes` (Intro/Dlen/axm).
+
+**§9 status — Library rows A DONE (f6536fc): `Lib/Basic` (`Lib σ`, `Lib.of_pa`, `quote_alls`,
+`Lib.univ_code`), `Lib/Sets` 26 rows, `Lib/Formulas` 84 rows (totality 18, formation 18,
+commutation 32, shape inversion 16), `Lib/Lengths` 35 rows; ROW CONVENTION: body in index order,
+Δ₁ hypotheses `.pi`, conclusions `.sigma`, bridges for both polarities. TRAP: a closed NUMERAL
+inside a Δ₁ fixpoint blueprint (`!(isFormulaSet LAct).sigma 0`) explodes elaboration to 26 GB —
+state rows over variables (`IsFormulaSet ∅` is the pair `isFormulaSetOfNoMem` + `notMemEmpty`);
+a `timeout` upstream of `grep` exits 0 — check the exit code of `lake env lean` itself.
+Library rows B DONE (d95ba66): `Lib/Nodes` — ten `Intro_tag`, ten node-code totality, ten
+`Dlen_tag` rows (the length as a TERM in the conclusion), six polarity bridges, the axiom
+recognizer: `lib_axiomRec σ (h : σ ∈ TAct)` (any axiom, at the price of its unary numeral) and
+`lib_indRec` (induction instances through Foundation's `InductionR`: `qqAlls`, `IsUFormula ℒₒᵣ`,
+`shift b = b`, `bv`, `fvarVec`, `substs`, `indBodyValGraph` — ℒₒᵣ-indexed graphs, hence the
+`Lib/Bridge` task, agent launched). `derivation` is used ONLY as `!(derivation TAct).sigma`,
+never unfolded. IN FLIGHT: `Steps.lean` (useHorn/introFact + the fragment protocol), `Lib/Bridge`.
+NEXT: `describeFormula` (bottom-up walk), `transportFacts`, per-tag fragments, the recursion, the top.
