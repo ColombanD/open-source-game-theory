@@ -17,6 +17,7 @@ import ArithS.Assembly.Prep
 import ArithS.Assembly.Uniform
 import ArithS.Assembly.Cell
 import ArithS.Necessitation.Primitives
+import ArithS.Necessitation.ShiftLen
 import ArithS.Necessitation.Lib.Sets
 import ArithS.Necessitation.Lib.Formulas
 import ArithS.Necessitation.Lib.Lengths
@@ -404,5 +405,25 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms describeAndCode_proof
 #print axioms dlen_describeAndCode_le
 #print axioms describeAndCode_exists
+
+-- U10 (Necessitation/ShiftLen, 2026-09-12): free-variable occurrence counts `fvOcc/fvOccF/fvOccS`
+-- (Σ₁, the recursion schemes of the lengths) and the ADDITIVE shift laws — `termLen (termShift t) =
+-- termLen t + fvOcc t`, `formulaLen (shift p) = formulaLen p + fvOccF p`, `setLen (setShift s) ≤
+-- setLen s + fvOccS s`, the counts invariant under shift — so `n` shifts cost `n·fvOccS s`
+-- (`setLen_setShiftIter_le`), not `2ⁿ·setLen s`; `dlen_elimExistsCode_le_occ` restates the
+-- elimExists bound with `4|Γ| + fvOccS Γ` in place of `5|Γ|`.
+#print axioms termLen_termShift_eq
+#print axioms fvOcc_termShift
+#print axioms formulaLen_shift_eq
+#print axioms fvOccF_shift
+#print axioms fvOccF_neg
+#print axioms fvOccF_free_le
+#print axioms fvOcc_le_termLen
+#print axioms fvOccF_le_formulaLen
+#print axioms fvOccS_le_setLen
+#print axioms setLen_setShift_le_occ
+#print axioms fvOccS_setShift_le
+#print axioms setLen_setShiftIter_le
+#print axioms dlen_elimExistsCode_le_occ
 
 end ArithS

@@ -38,6 +38,7 @@ import ArithS.Assembly.Prep
 import ArithS.Assembly.Uniform
 import ArithS.Assembly.Cell
 import ArithS.Necessitation.Primitives
+import ArithS.Necessitation.ShiftLen
 import ArithS.Necessitation.Lib.Basic
 import ArithS.Necessitation.Lib.Sets
 import ArithS.Necessitation.Lib.Formulas
