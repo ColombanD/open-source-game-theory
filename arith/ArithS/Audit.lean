@@ -22,6 +22,7 @@ import ArithS.Necessitation.Lib.Formulas
 import ArithS.Necessitation.Lib.Lengths
 import ArithS.Necessitation.Lib.Nodes
 import ArithS.Necessitation.Lib.Bridge
+import ArithS.Necessitation.Steps
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -376,5 +377,32 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lib_indBodyIntro
 #print axioms lib_isSemiformulaSigmaPiOR
 #print axioms lib_axIsFormula
+
+-- U10 (Necessitation/Steps, 2026-09-12): the three STEPS of the fragment protocol on derivation
+-- codes — `useHornCode` (a Horn row whose antecedents are in context), `useHornAndCode` (a
+-- conjunctive conclusion, both conjuncts delivered), `introFactCode` (a totality row, the witness
+-- as the fresh eigenvariable `&0`), the leaves `axLFactCode`/`wkToCode`, each with its exact
+-- `dlen` bound; the instantiation theorem `instOuterAt_subst` (a row instance is ONE simultaneous
+-- substitution, so row pieces match canonical fact codes syntactically); and the smoke test
+-- `describeAndCode` (rows `qqAndTotal`, `isSemiformulaAnd`, `isSemiformulaSigmaPi`).
+#print axioms hornClose_proof
+#print axioms dlen_hornClose_le
+#print axioms useHornCode_proof
+#print axioms dlen_useHornCode_le
+#print axioms splitAndCode_proof
+#print axioms dlen_splitAndCode_le
+#print axioms useHornAndCode_proof
+#print axioms dlen_useHornAndCode_le
+#print axioms introFactCode_proof
+#print axioms dlen_introFactCode_le
+#print axioms axLFactCode_proof
+#print axioms dlen_axLFactCode
+#print axioms wkToCode_proof
+#print axioms dlen_wkToCode
+#print axioms instOuterAt_subst
+#print axioms quote_lMap_emb_subst
+#print axioms describeAndCode_proof
+#print axioms dlen_describeAndCode_le
+#print axioms describeAndCode_exists
 
 end ArithS

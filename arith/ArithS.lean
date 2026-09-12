@@ -44,6 +44,7 @@ import ArithS.Necessitation.Lib.Formulas
 import ArithS.Necessitation.Lib.Lengths
 import ArithS.Necessitation.Lib.Nodes
 import ArithS.Necessitation.Lib.Bridge
+import ArithS.Necessitation.Steps
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse
