@@ -16,6 +16,7 @@ import ArithS.Transparency
 import ArithS.Assembly.Prep
 import ArithS.Assembly.Uniform
 import ArithS.Assembly.Cell
+import ArithS.Necessitation.Primitives
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -270,5 +271,29 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms exists_flen_tmpl_const
 #print axioms box_guard_never_fits
 #print axioms legibleBot_guard_never_fits
+
+-- U10 (Necessitation/Primitives, 2026-09-12): the two moves of the verification proof on
+-- derivation codes with dlen accounting, V-generic, any Δ₁ theory. `useLemmaCode` (cut on a
+-- stored `∀^m B`, the `exsIntro` chain at the witnesses; `dlen ≤ dlen dΛ + dlen d + (m+3)|Γ| + |Λ|
+-- + (m+1)²·F + m·E + m + 3`, `F ≥ |B|·E + m`, every witness `≤ E`; `instOuter` is ONE simultaneous
+-- substitution so `|B[ē]| ≤ |B|·E`), `elimExistsCode` (cut on `∃P` against `allIntro` with the fresh
+-- eigenvariable; `dlen ≤ dlen D + dlen d + 3|Γ| + |setShift Γ| + 6|P| + 8`, and `≤ … + 5|Γ| + …`
+-- via `setLen (setShift Γ) ≤ 2|Γ|` — the unary free-variable cost), `wkDropCode`.
+#print axioms qqAlls_natCast
+#print axioms formulaLen_instOuter_le
+#print axioms exsChainCode_proof
+#print axioms dlen_exsChainCode_le
+#print axioms useLemmaCode_proof
+#print axioms dlen_useLemmaCode
+#print axioms dlen_useLemmaCode_le
+#print axioms dlen_useLemmaCode_le'
+#print axioms formulaLen_shift_le
+#print axioms setLen_setShift_le
+#print axioms elimExistsCode_proof
+#print axioms dlen_elimExistsCode
+#print axioms dlen_elimExistsCode_le
+#print axioms dlen_elimExistsCode_le'
+#print axioms wkDropCode_proof
+#print axioms dlen_wkDropCode_le
 
 end ArithS
