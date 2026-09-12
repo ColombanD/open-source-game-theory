@@ -686,4 +686,254 @@ theorem fvOccF_free_le' {p : V} (hp : IsSemiformula L 1 p) :
 
 end bvOccF
 
+/-! ## 3. Row instantiation at closed witnesses, any width -/
+
+section instBv
+
+/-- **The general reading**: `instOuterAt k es` on `subst ?[#i₁, …, #i_N] P` is
+`subst ?[slot i₁, …, slot i_N] P` with `slot i = (bvarList k ++ es.reverse).getD i 0` — the
+`k` innermost bound variables stay, the row's variables are read off `es` RIGHT-TO-LEFT. -/
+theorem instOuterAt_subst_bvList (k : ℕ) {P : V} (is : List ℕ)
+    (hP : IsSemiformula LAct ((is.length : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) (his : ∀ i ∈ is, i < es.length + k) :
+    instOuterAt LAct k es (subst LAct (listToVec (is.map bv)) P) =
+      subst LAct (listToVec (is.map fun i ↦ (bvarList k ++ es.reverse).getD i 0)) P := by
+  have hW : IsSemitermVec LAct ((is.length : ℕ) : V) ((es.length + k : ℕ) : V) (listToVec (is.map bv)) := by
+    have := isSemitermVec_listToVec (L := LAct) (n := ((es.length + k : ℕ) : V)) (is.map bv) (by
+      intro x hx
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+      exact isSemiterm_bv (his i hi))
+    rwa [List.length_map] at this
+  rw [instOuterAt_subst k es hP hW hes]
+  have h := termSubstVec_listToVec (L := LAct) (listToVec (bvarList k ++ es.reverse)) (is.map bv) (by
+    intro x hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    simp)
+  rw [List.length_map] at h
+  rw [h, List.map_map]
+  congr 2
+  apply List.map_congr_left
+  intro i _
+  simp only [Function.comp, bv]
+  rw [termSubst_bvar, nth_listToVec]
+
+theorem instOuter_subst_bvList {P : V} (is : List ℕ)
+    (hP : IsSemiformula LAct ((is.length : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) (his : ∀ i ∈ is, i < es.length) :
+    instOuter LAct es (subst LAct (listToVec (is.map bv)) P) =
+      subst LAct (listToVec (is.map fun i ↦ es.reverse.getD i 0)) P := by
+  rw [← instOuterAt_zero, instOuterAt_subst_bvList 0 is hP es hes (by simpa using his)]
+  simp [bvarList]
+
+/-- The literal-width readings (`Steps.lean` has `N = 2, 3`). -/
+lemma instOuterAt_subst_bv1 (k : ℕ) {P : V} (hP : IsSemiformula LAct ((1 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 : ℕ} (h1 : i1 < es.length + k) :
+    instOuterAt LAct k es (subst LAct (listToVec [bv i1]) P) =
+      subst LAct (listToVec [(bvarList k ++ es.reverse).getD i1 0]) P := by
+  have := instOuterAt_subst_bvList k [i1] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i rfl; assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuter_subst_bv1 {P : V} (hP : IsSemiformula LAct ((1 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 : ℕ} (h1 : i1 < es.length) :
+    instOuter LAct es (subst LAct (listToVec [bv i1]) P) =
+      subst LAct (listToVec [es.reverse.getD i1 0]) P := by
+  have := instOuter_subst_bvList [i1] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i rfl; assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuterAt_subst_bv4 (k : ℕ) {P : V} (hP : IsSemiformula LAct ((4 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 i2 i3 i4 : ℕ} (h1 : i1 < es.length + k) (h2 : i2 < es.length + k) (h3 : i3 < es.length + k) (h4 : i4 < es.length + k) :
+    instOuterAt LAct k es (subst LAct (listToVec [bv i1, bv i2, bv i3, bv i4]) P) =
+      subst LAct (listToVec [(bvarList k ++ es.reverse).getD i1 0, (bvarList k ++ es.reverse).getD i2 0, (bvarList k ++ es.reverse).getD i3 0, (bvarList k ++ es.reverse).getD i4 0]) P := by
+  have := instOuterAt_subst_bvList k [i1, i2, i3, i4] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i (rfl|rfl|rfl|rfl) <;> assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuter_subst_bv4 {P : V} (hP : IsSemiformula LAct ((4 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 i2 i3 i4 : ℕ} (h1 : i1 < es.length) (h2 : i2 < es.length) (h3 : i3 < es.length) (h4 : i4 < es.length) :
+    instOuter LAct es (subst LAct (listToVec [bv i1, bv i2, bv i3, bv i4]) P) =
+      subst LAct (listToVec [es.reverse.getD i1 0, es.reverse.getD i2 0, es.reverse.getD i3 0, es.reverse.getD i4 0]) P := by
+  have := instOuter_subst_bvList [i1, i2, i3, i4] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i (rfl|rfl|rfl|rfl) <;> assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuterAt_subst_bv5 (k : ℕ) {P : V} (hP : IsSemiformula LAct ((5 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 i2 i3 i4 i5 : ℕ} (h1 : i1 < es.length + k) (h2 : i2 < es.length + k) (h3 : i3 < es.length + k) (h4 : i4 < es.length + k) (h5 : i5 < es.length + k) :
+    instOuterAt LAct k es (subst LAct (listToVec [bv i1, bv i2, bv i3, bv i4, bv i5]) P) =
+      subst LAct (listToVec [(bvarList k ++ es.reverse).getD i1 0, (bvarList k ++ es.reverse).getD i2 0, (bvarList k ++ es.reverse).getD i3 0, (bvarList k ++ es.reverse).getD i4 0, (bvarList k ++ es.reverse).getD i5 0]) P := by
+  have := instOuterAt_subst_bvList k [i1, i2, i3, i4, i5] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i (rfl|rfl|rfl|rfl|rfl) <;> assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuter_subst_bv5 {P : V} (hP : IsSemiformula LAct ((5 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 i2 i3 i4 i5 : ℕ} (h1 : i1 < es.length) (h2 : i2 < es.length) (h3 : i3 < es.length) (h4 : i4 < es.length) (h5 : i5 < es.length) :
+    instOuter LAct es (subst LAct (listToVec [bv i1, bv i2, bv i3, bv i4, bv i5]) P) =
+      subst LAct (listToVec [es.reverse.getD i1 0, es.reverse.getD i2 0, es.reverse.getD i3 0, es.reverse.getD i4 0, es.reverse.getD i5 0]) P := by
+  have := instOuter_subst_bvList [i1, i2, i3, i4, i5] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i (rfl|rfl|rfl|rfl|rfl) <;> assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuterAt_subst_bv6 (k : ℕ) {P : V} (hP : IsSemiformula LAct ((6 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 i2 i3 i4 i5 i6 : ℕ} (h1 : i1 < es.length + k) (h2 : i2 < es.length + k) (h3 : i3 < es.length + k) (h4 : i4 < es.length + k) (h5 : i5 < es.length + k) (h6 : i6 < es.length + k) :
+    instOuterAt LAct k es (subst LAct (listToVec [bv i1, bv i2, bv i3, bv i4, bv i5, bv i6]) P) =
+      subst LAct (listToVec [(bvarList k ++ es.reverse).getD i1 0, (bvarList k ++ es.reverse).getD i2 0, (bvarList k ++ es.reverse).getD i3 0, (bvarList k ++ es.reverse).getD i4 0, (bvarList k ++ es.reverse).getD i5 0, (bvarList k ++ es.reverse).getD i6 0]) P := by
+  have := instOuterAt_subst_bvList k [i1, i2, i3, i4, i5, i6] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i (rfl|rfl|rfl|rfl|rfl|rfl) <;> assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuter_subst_bv6 {P : V} (hP : IsSemiformula LAct ((6 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 i2 i3 i4 i5 i6 : ℕ} (h1 : i1 < es.length) (h2 : i2 < es.length) (h3 : i3 < es.length) (h4 : i4 < es.length) (h5 : i5 < es.length) (h6 : i6 < es.length) :
+    instOuter LAct es (subst LAct (listToVec [bv i1, bv i2, bv i3, bv i4, bv i5, bv i6]) P) =
+      subst LAct (listToVec [es.reverse.getD i1 0, es.reverse.getD i2 0, es.reverse.getD i3 0, es.reverse.getD i4 0, es.reverse.getD i5 0, es.reverse.getD i6 0]) P := by
+  have := instOuter_subst_bvList [i1, i2, i3, i4, i5, i6] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i (rfl|rfl|rfl|rfl|rfl|rfl) <;> assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuterAt_subst_bv7 (k : ℕ) {P : V} (hP : IsSemiformula LAct ((7 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 i2 i3 i4 i5 i6 i7 : ℕ} (h1 : i1 < es.length + k) (h2 : i2 < es.length + k) (h3 : i3 < es.length + k) (h4 : i4 < es.length + k) (h5 : i5 < es.length + k) (h6 : i6 < es.length + k) (h7 : i7 < es.length + k) :
+    instOuterAt LAct k es (subst LAct (listToVec [bv i1, bv i2, bv i3, bv i4, bv i5, bv i6, bv i7]) P) =
+      subst LAct (listToVec [(bvarList k ++ es.reverse).getD i1 0, (bvarList k ++ es.reverse).getD i2 0, (bvarList k ++ es.reverse).getD i3 0, (bvarList k ++ es.reverse).getD i4 0, (bvarList k ++ es.reverse).getD i5 0, (bvarList k ++ es.reverse).getD i6 0, (bvarList k ++ es.reverse).getD i7 0]) P := by
+  have := instOuterAt_subst_bvList k [i1, i2, i3, i4, i5, i6, i7] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i (rfl|rfl|rfl|rfl|rfl|rfl|rfl) <;> assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+lemma instOuter_subst_bv7 {P : V} (hP : IsSemiformula LAct ((7 : ℕ) : V) P) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {i1 i2 i3 i4 i5 i6 i7 : ℕ} (h1 : i1 < es.length) (h2 : i2 < es.length) (h3 : i3 < es.length) (h4 : i4 < es.length) (h5 : i5 < es.length) (h6 : i6 < es.length) (h7 : i7 < es.length) :
+    instOuter LAct es (subst LAct (listToVec [bv i1, bv i2, bv i3, bv i4, bv i5, bv i6, bv i7]) P) =
+      subst LAct (listToVec [es.reverse.getD i1 0, es.reverse.getD i2 0, es.reverse.getD i3 0, es.reverse.getD i4 0, es.reverse.getD i5 0, es.reverse.getD i6 0, es.reverse.getD i7 0]) P := by
+  have := instOuter_subst_bvList [i1, i2, i3, i4, i5, i6, i7] hP es hes (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; rintro i (rfl|rfl|rfl|rfl|rfl|rfl|rfl) <;> assumption)
+  simpa only [List.map_cons, List.map_nil] using this
+
+end instBv
+
+/-! ## 4. Iterated `free` — the existentials of a row conclusion, innermost last -/
+
+section freeIter
+
+variable {L : Language} [L.Encodable] [L.LORDefinable]
+
+variable (L) in
+/-- `freeIter k q`: `k` eigenvariable introductions on a `k`-semiformula `q`, from the OUTERMOST
+quantifier inwards — each step frees the current outermost bound variable `#j` under the `j`
+remaining ones (`subOuter j (&0) ∘ shift`, which is what `free` does to the body of `∃^j`,
+`free_exsIter`). -/
+noncomputable def freeIter : ℕ → V → V
+  | 0, q => q
+  | j + 1, q => freeIter j (subOuter L j (^&0) (shift L q))
+
+@[simp] lemma freeIter_zero (q : V) : freeIter L 0 q = q := rfl
+@[simp] lemma freeIter_succ (j : ℕ) (q : V) :
+    freeIter L (j + 1) q = freeIter L j (subOuter L j (^&0) (shift L q)) := rfl
+
+/-- One step is `free`. -/
+lemma freeIter_one (q : V) : freeIter L 1 q = free L q := rfl
+
+lemma subOuter_exsIter {n : ℕ} {e q : V} (hq : IsUFormula L q) : ∀ j : ℕ,
+    subOuter L n e (exsIter j q) = exsIter j (subOuter L (n + j) e q)
+  | 0 => rfl
+  | j + 1 => by
+    rw [exsIter_succ, subOuter_exs (isUFormula_exsIter.mpr hq), subOuter_exsIter hq j, exsIter_succ,
+      show n + 1 + j = n + (j + 1) by omega]
+
+lemma shift_exsIter {q : V} (hq : IsUFormula L q) : ∀ j : ℕ,
+    shift L (exsIter j q) = exsIter j (shift L q)
+  | 0 => rfl
+  | j + 1 => by rw [exsIter_succ, shift_exs (isUFormula_exsIter.mpr hq), shift_exsIter hq j, exsIter_succ]
+
+/-- **`free` under `j` existentials** is the `freeIter` step at depth `j`: `free (∃^j q) =
+∃^j (subOuter j (&0) (shift q))`. -/
+theorem free_exsIter {q : V} (hq : IsUFormula L q) : ∀ j : ℕ,
+    free L (exsIter j q) = exsIter j (subOuter L j (^&0) (shift L q))
+  | 0 => rfl
+  | j + 1 => by
+    rw [exsIter_succ, free_exs (isUFormula_exsIter.mpr hq), shift_exsIter hq j,
+      show subst L (qVec L ?[^&0]) (exsIter j (shift L q)) =
+        subOuter L 1 (^&0) (exsIter j (shift L q)) from rfl,
+      subOuter_exsIter hq.shift j, exsIter_succ, Nat.add_comm]
+
+/-- `[&0, …, &(k-1)]`. -/
+noncomputable def fvarList (k : ℕ) : List V := (List.range k).map fun i ↦ ^&((i : ℕ) : V)
+
+@[simp] lemma fvarList_zero : fvarList (V := V) 0 = [] := rfl
+@[simp] lemma length_fvarList (k : ℕ) : (fvarList (V := V) k).length = k := by simp [fvarList]
+
+lemma fvarList_succ (k : ℕ) : fvarList (V := V) (k + 1) = fvarList k ++ [^&((k : ℕ) : V)] := by
+  simp [fvarList, List.range_succ]
+
+lemma bvarList_succ (k : ℕ) : bvarList (V := V) (k + 1) = bvarList k ++ [^#((k : ℕ) : V)] := by
+  simp [bvarList, List.range_succ]
+
+lemma mem_bvarList {x : V} {k : ℕ} (hx : x ∈ bvarList (V := V) k) : ∃ i : ℕ, i < k ∧ x = ^#((i : ℕ) : V) := by
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+  exact ⟨i, List.mem_range.mp hi, rfl⟩
+
+lemma map_termShift_bvarList (k : ℕ) : (bvarList (V := V) k).map (termShift L) = bvarList k := by
+  simp [bvarList, List.map_map, Function.comp_def]
+
+/-- `subOuter k (&0)` sends `#i ↦ #i` (`i < k`) and `#k ↦ &0`. -/
+lemma map_termSubst_qVecIter_bvarList (k : ℕ) :
+    (bvarList (V := V) (k + 1)).map (termSubst L (qVecIter L k (^&0 ∷ (0 : V)))) = bvarList k ++ [^&0] := by
+  rw [bvarList_succ, List.map_append, List.map_singleton, termSubst_qVecIter_bvar_eq (by simp)]
+  congr 1
+  refine Eq.trans (List.map_congr_left (g := id) ?_) (List.map_id _)
+  intro x hx
+  obtain ⟨i, hi, rfl⟩ := mem_bvarList hx
+  exact termSubst_qVecIter_bvar_lt (by simp) hi
+
+lemma termShift_iterate_fvar (x : V) : ∀ j : ℕ, (termShift L)^[j] (^&x) = ^&(x + (j : V))
+  | 0 => by simp
+  | j + 1 => by
+    rw [Function.iterate_succ_apply, termShift_fvar, termShift_iterate_fvar (x + 1) j, Nat.cast_succ]
+    ring_nf
+
+/-- **Iterated `free` on a substituted closed code**: `freeIter k (subst ?[#0, …, #(k-1), l] P) =
+subst ?[&0, …, &(k-1), termShift^k l] P` for closed `l` and `shift P = P` (a quoted sentence
+code): the LAST-listed existential (`#0`, the innermost) becomes `&0`, the outermost `&(k-1)`,
+and every closed witness is shifted once per introduction. -/
+theorem freeIter_subst_listToVec {P : V} (hP0 : shift L P = P) : ∀ (k : ℕ) (l : List V),
+    IsSemiformula L ((k + l.length : ℕ) : V) P → (∀ x ∈ l, IsSemiterm L 0 x) →
+    freeIter L k (subst L (listToVec (bvarList k ++ l)) P) =
+      subst L (listToVec (fvarList k ++ l.map (termShift L)^[k])) P
+  | 0, l, _, _ => by simp [bvarList]
+  | j + 1, l, hP, hl => by
+    -- the current vector `[#0, …, #j] ++ l`, at level `j + 1`
+    have hl1 : ∀ x ∈ bvarList (V := V) (j + 1) ++ l, IsSemiterm L ((j + 1 : ℕ) : V) x := by
+      intro x hx
+      rcases List.mem_append.mp hx with hx | hx
+      · obtain ⟨i, hi, rfl⟩ := mem_bvarList hx
+        exact IsSemiterm.bvar.mpr (Nat.cast_lt.mpr hi)
+      · exact isSemiterm_of_le (hl x hx) zero_le
+    have hlen1 : ((bvarList (V := V) (j + 1) ++ l).length : ℕ) = j + 1 + l.length := by simp
+    have hP1 : IsSemiformula L (((bvarList (V := V) (j + 1) ++ l).length : ℕ) : V) P := by
+      rw [hlen1]; exact hP
+    rw [freeIter_succ, shift_subst_listToVec _ hP1 hP0 hl1, List.map_append, map_termShift_bvarList]
+    -- the shifted vector `[#0, …, #j] ++ shift l`, still at level `j + 1`
+    set l' := l.map (termShift L) with hl'
+    have hl'c : ∀ x ∈ l', IsSemiterm L 0 x := by
+      intro x hx
+      obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hx
+      exact (hl y hy).termShift
+    have hl1' : ∀ x ∈ bvarList (V := V) (j + 1) ++ l', IsSemiterm L ((j : V) + 1) x := by
+      intro x hx
+      rcases List.mem_append.mp hx with hx | hx
+      · obtain ⟨i, hi, rfl⟩ := mem_bvarList hx
+        exact IsSemiterm.bvar.mpr (by exact_mod_cast hi)
+      · exact isSemiterm_of_le (hl'c x hx) zero_le
+    have hlen' : ((bvarList (V := V) (j + 1) ++ l').length : ℕ) = j + 1 + l.length := by simp [hl']
+    have hP' : IsSemiformula L (((bvarList (V := V) (j + 1) ++ l').length : ℕ) : V) P := by
+      rw [hlen']; exact hP
+    have hW : IsSemitermVec L (((bvarList (V := V) (j + 1) ++ l').length : ℕ) : V) ((j : V) + 1)
+        (listToVec (bvarList (j + 1) ++ l')) := isSemitermVec_listToVec _ hl1'
+    rw [subOuter_subst hP' hW (by simp), termSubstVec_listToVec _ _ (fun x hx ↦ (hl1' x hx).isUTerm),
+      List.map_append, map_termSubst_qVecIter_bvarList,
+      List.map_congr_left (fun x hx ↦ termSubst_eq_self_of_closed (hl'c x hx)), List.map_id',
+      List.append_assoc, List.singleton_append]
+    -- the induction hypothesis at `l := &0 :: shift l`
+    have hP'' : IsSemiformula L ((j + (^&0 :: l').length : ℕ) : V) P := by
+      rw [show j + (^&0 :: l').length = j + 1 + l.length by
+        rw [List.length_cons, hl', List.length_map]; omega]
+      exact hP
+    have hl'' : ∀ x ∈ (^&0 :: l'), IsSemiterm L 0 x := by
+      intro x hx
+      rcases List.mem_cons.mp hx with rfl | hx
+      · simp
+      · exact hl'c x hx
+    rw [freeIter_subst_listToVec hP0 j (^&0 :: l') hP'' hl'', List.map_cons, termShift_iterate_fvar,
+      zero_add, hl', List.map_map, ← Function.iterate_succ, fvarList_succ, List.append_assoc,
+      List.singleton_append]
+
+end freeIter
+
 end ArithS
