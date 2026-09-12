@@ -337,3 +337,18 @@ IsSemiformula.LAct_of_LOR`, `bv` invariance), invariance of every `L`-indexed co
 `.sigma → .pi` bridges at both languages, `axIsFormula`; the `axm`-leaf chain is written in the
 file's closing docstring. NOT `rfl`: every operation is an `L`-indexed fixpoint recursion.
 IN FLIGHT: `Steps.lean` (final), `Chain.lean` (§10). NEXT: `describeSteps`, fragments, `verifySteps`, top.
+
+**§9 status — `Steps` DONE (511e5f1, census 251):** `useHornCode`/`useHornAndCode`/`introFactCode`/
+`axLFactCode`/`wkToCode` with proofs and `dlen` bounds, `instOuterAt_subst` (one simultaneous
+substitution makes fact matching SYNTACTIC), the canonical fact codes `subst ?[w] ⌜lMap emb P⌝`,
+the shift bookkeeping (`subst ?[w] P` reappears as `subst ?[shift w] P`), and the worked
+`describeAndCode` (introFact ∘ useHorn ∘ useHorn, cost `≤ dlen d + ΣNᵢ + 56|Γ| + O(|B|E)`); the
+fragment protocol is the module docstring §1–10.
+**RISK found 2026-09-12 (cost accounting):** `Primitives`' `setLen_setShift_le : |setShift Γ| ≤ 2|Γ|`
+is the unary-index doubling bound; composed over `n` eigenvariable introductions it gives
+`2ⁿ|Γ|` — EXPONENTIAL, unusable. The honest bound is additive: `|setShift Γ| ≤ |Γ| + occ(Γ)` with
+`occ` the number of free-variable occurrences (each index grows by exactly 1), so `n` introductions
+cost `≤ n · occ` extra — the factor-`g` index cost of DESIGN §3.7, not `2ⁿ`. The walk/fragment
+implementations must use the additive lemma (to be proved in `Length.lean`/`SequentLength.lean`
+terms: `termLen (termShift t) ≤ termLen t + fvarOcc t`, etc.) or the binary-index variant of
+`Length.lean`. `DESIGN_describe.md` (agent launched) is asked to pin this down.
