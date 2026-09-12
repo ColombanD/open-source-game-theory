@@ -385,3 +385,14 @@ iteration bound `setLen (setShiftIter n s) ≤ setLen s + n · fvOccS s`; sanity
 graph `!listSumDef y v'` makes the `_defined` obligation loop forever — ∃-wrap it
 (`∃ s, !listSumDef s v' ∧ y = s`, the `TermLen` shape). `Audit.lean` has its OWN import list.
 IN FLIGHT: `Chain` (with `sElimExs`/`sSplit`), `Lib/Walk` + `WalkLemmas` (gaps, `cT`, `bvOcc`).
+
+**§9 status — `Lib/Walk` + `WalkLemmas` DONE (45c8844, census 292):** the two `lt` rows, eight closed
+symbol rows written with CHAIN numerals (`“!LAct.isRel (0+1+1) 0”`, verified `= isRel ⇜ ![cTT k, cTT R]`),
+`isUTermVecOfSemitermVecLAct`, `isSemitermVecQVec`, `substs1Substs`; `cTV`/`cT`/`cTT` with
+`quote_cTT`, `termLen (cT n) = 2n+1`, shift/subst/bshift invariance, `fvOcc = 0`; `bvOcc` family;
+`fvOccF_subst_le : ≤ fvOccF p + bvOccF p · M` (entry bound `M`), `fvOccF_free_le' : ≤ fvOccF p +
+bvOccF p`; `instOuterAt_subst_bvList` (+ `_bvN`, N ≤ 7), `freeIter`, `free_exsIter`,
+`freeIter_subst_listToVec` (last-listed existential is `&0`, witnesses shifted `k` times).
+Pending on `Chain` landing: the `Steps.lean` `dlen_introFactCode_le_occ` swap. IN FLIGHT: `Chain`
+(resumed), `RowInst` (row-shape/instantiation lemmas + canonical context-fact codes).
+NEXT: `describeSteps` (the walk itself, a `Fixpoint` on `⟪n, r⟫`) once `Chain` fixes the step codes.
