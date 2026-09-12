@@ -24,6 +24,8 @@ import ArithS.Necessitation.Lib.Lengths
 import ArithS.Necessitation.Lib.Nodes
 import ArithS.Necessitation.Lib.Bridge
 import ArithS.Necessitation.Steps
+import ArithS.Necessitation.Lib.Walk
+import ArithS.Necessitation.WalkLemmas
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -425,5 +427,43 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms fvOccS_setShift_le
 #print axioms setLen_setShiftIter_le
 #print axioms dlen_elimExistsCode_le_occ
+
+-- U10 (Necessitation/Lib/Walk + WalkLemmas, 2026-09-12): the formula walk's library gaps
+-- (`DESIGN_describe.md` §10) — the `<` chain rows `zeroLtSucc`/`succLtSucc` on chain numerals, one
+-- CLOSED row per `LAct` symbol (`isRelConst_eq/lt`, `isFuncConst_zero/one/add/mul/cC/cD`, arity and
+-- code as `0 + 1 + ⋯ + 1`), the vector rows `isUTermVecOfSemitermVecLAct`/`isSemitermVecQVec`, the
+-- bridge `substs1Substs`; the chain numeral `cTV` (Σ₁ by primitive recursion, `termLen = 2n + 1`,
+-- fixed by shift/subst, no free variables) with `quote_cTT : ⌜0 + 1 + ⋯ + 1⌝ = cT n`; `bvOcc`/`bvOccF`
+-- and the substitution occurrence bound `fvOccF (subst w p) ≤ fvOccF p + bvOccF p · M`, hence
+-- `fvOccF (free p) ≤ fvOccF p + bvOccF p`; row instantiation at any width
+-- (`instOuterAt_subst_bvList`); iterated `free` (`free_exsIter`, `freeIter_subst_listToVec`).
+#print axioms lib_zeroLtSucc
+#print axioms lib_succLtSucc
+#print axioms lib_isRelConst_eq
+#print axioms lib_isRelConst_lt
+#print axioms lib_isFuncConst_zero
+#print axioms lib_isFuncConst_one
+#print axioms lib_isFuncConst_add
+#print axioms lib_isFuncConst_mul
+#print axioms lib_isFuncConst_cC
+#print axioms lib_isFuncConst_cD
+#print axioms lib_isUTermVecOfSemitermVecLAct
+#print axioms lib_isSemitermVecQVec
+#print axioms lib_substs1Substs
+#print axioms quote_cTT
+#print axioms cTV_semiterm
+#print axioms termLen_cTV
+#print axioms termShift_cTV
+#print axioms termSubst_cTV
+#print axioms fvOcc_cTV
+#print axioms bvOcc_le_termLen
+#print axioms bvOccF_le_formulaLen
+#print axioms bvOccF_shift
+#print axioms fvOcc_termBShift
+#print axioms fvOccF_subst_le
+#print axioms fvOccF_free_le'
+#print axioms instOuterAt_subst_bvList
+#print axioms free_exsIter
+#print axioms freeIter_subst_listToVec
 
 end ArithS
