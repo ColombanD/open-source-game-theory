@@ -272,4 +272,418 @@ example : isFuncConst_cDB = (↑LAct.isFunc : ArithmeticSemisentence 2) ⇜ ![cT
 
 end cT
 
+/-! ## 2. `bvOcc` — bound-variable occurrence counts — and the substitution occurrence bound -/
+
+section bvOcc
+
+variable {L : Language} [L.Encodable] [L.LORDefinable]
+
+namespace BvOcc
+
+def blueprint : Language.TermRec.Blueprint 0 where
+  bvar := .mkSigma “y z. y = 1”
+  fvar := .mkSigma “y x. y = 0”
+  func := .mkSigma “y k f v v'. ∃ s, !listSumDef s v' ∧ y = s”
+
+noncomputable def construction : Language.TermRec.Construction V blueprint where
+  bvar (_ _)        := 1
+  fvar (_ _)        := 0
+  func (_ _ _ _ v') := listSum v'
+  bvar_defined := .mk fun v ↦ by simp [blueprint]
+  fvar_defined := .mk fun v ↦ by simp [blueprint]
+  func_defined := .mk fun v ↦ by simp [blueprint]
+
+end BvOcc
+
+variable (L)
+
+/-- Number of bound-variable occurrences (`qqBvar` nodes) in a term code. -/
+noncomputable def bvOcc (t : V) : V := BvOcc.construction.result L ![] t
+
+noncomputable def bvOccVec (k v : V) : V := BvOcc.construction.resultVec L ![] k v
+
+noncomputable def bvOccGraph : 𝚺₁.Semisentence 2 := BvOcc.blueprint.result L
+
+noncomputable def bvOccVecGraph : 𝚺₁.Semisentence 3 := BvOcc.blueprint.resultVec L
+
+variable {L}
+
+@[simp] lemma bvOcc_bvar (z : V) : bvOcc L ^#z = 1 := by simp [bvOcc, BvOcc.construction]
+
+@[simp] lemma bvOcc_fvar (x : V) : bvOcc L ^&x = 0 := by simp [bvOcc, BvOcc.construction]
+
+@[simp] lemma bvOcc_func {k f v : V} (hkf : L.IsFunc k f) (hv : IsUTermVec L k v) :
+    bvOcc L (^func k f v) = listSum (bvOccVec L k v) := by
+  simp [bvOcc, BvOcc.construction, hkf, hv]; rfl
+
+@[simp] lemma len_bvOccVec {k v : V} (hv : IsUTermVec L k v) :
+    len (bvOccVec L k v) = k := BvOcc.construction.resultVec_lh L _ hv
+
+@[simp] lemma nth_bvOccVec {k v : V} (hv : IsUTermVec L k v) {i} (hi : i < k) :
+    (bvOccVec L k v).[i] = bvOcc L v.[i] := BvOcc.construction.nth_resultVec L _ hv hi
+
+@[simp] lemma bvOccVec_nil : bvOccVec L (0 : V) 0 = 0 := BvOcc.construction.resultVec_nil L _
+
+lemma bvOccVec_cons {k t ts : V} (ht : IsUTerm L t) (hts : IsUTermVec L k ts) :
+    bvOccVec L (k + 1) (t ∷ ts) = bvOcc L t ∷ bvOccVec L k ts :=
+  BvOcc.construction.resultVec_cons L ![] hts ht
+
+instance bvOcc.defined : 𝚺₁-Function₁ (bvOcc (V := V) L) via (bvOccGraph L) :=
+  BvOcc.construction.result_defined
+
+instance bvOcc.definable : 𝚺₁-Function₁ (bvOcc (V := V) L) := bvOcc.defined.to_definable
+
+instance bvOcc.definable' : Γ-[k + 1]-Function₁ (bvOcc (V := V) L) :=
+  bvOcc.definable.of_sigmaOne
+
+instance bvOccVec.defined : 𝚺₁-Function₂ (bvOccVec (V := V) L) via (bvOccVecGraph L) :=
+  BvOcc.construction.resultVec_defined
+
+instance bvOccVec.definable : 𝚺₁-Function₂ (bvOccVec (V := V) L) :=
+  bvOccVec.defined.to_definable
+
+instance bvOccVec.definable' : Γ-[i + 1]-Function₂ (bvOccVec (V := V) L) :=
+  bvOccVec.definable.of_sigmaOne
+
+/-- Every bound-variable occurrence is a symbol: `bvOcc t ≤ termLen t`. -/
+lemma bvOcc_le_termLen {t : V} (ht : IsUTerm L t) : bvOcc L t ≤ termLen L t := by
+  apply IsUTerm.induction 𝚷 ?_ ?_ ?_ ?_ t ht
+  · definability
+  · intro z; rw [bvOcc_bvar, termLen_bvar]; exact le_add_self
+  · intro x; rw [bvOcc_fvar, termLen_fvar]; exact zero_le
+  · intro k f v hf hv ih
+    rw [bvOcc_func hf hv, termLen_func hf hv]
+    refine le_trans (listSum_le_of_nth (by rw [len_bvOccVec hv, len_termLenVec hv]) fun i hi ↦ ?_)
+      le_self_add
+    rw [len_bvOccVec hv] at hi
+    rw [nth_bvOccVec hv hi, nth_termLenVec hv hi]
+    exact ih i hi
+
+/-- `termShift` preserves the number of bound-variable occurrences. -/
+lemma bvOcc_termShift {t : V} (ht : IsUTerm L t) : bvOcc L (termShift L t) = bvOcc L t := by
+  apply IsUTerm.induction 𝚷 ?_ ?_ ?_ ?_ t ht
+  · definability
+  · intro z; rw [termShift_bvar]
+  · intro x; rw [termShift_fvar, bvOcc_fvar, bvOcc_fvar]
+  · intro k f v hf hv ih
+    have hv' : IsUTermVec L k (termShiftVec L k v) := hv.termShiftVec
+    rw [termShift_func hf hv, bvOcc_func hf hv', bvOcc_func hf hv]
+    refine listSum_eq_of_nth (by rw [len_bvOccVec hv', len_bvOccVec hv]) fun i hi ↦ ?_
+    rw [len_bvOccVec hv'] at hi
+    rw [nth_bvOccVec hv' hi, nth_bvOccVec hv hi, nth_termShiftVec hv hi]
+    exact ih i hi
+
+/-- `termBShift` (bump every bound variable) preserves the number of FREE-variable occurrences. -/
+lemma fvOcc_termBShift {t : V} (ht : IsUTerm L t) : fvOcc L (termBShift L t) = fvOcc L t := by
+  apply IsUTerm.induction 𝚷 ?_ ?_ ?_ ?_ t ht
+  · definability
+  · intro z; rw [termBShift_bvar, fvOcc_bvar, fvOcc_bvar]
+  · intro x; rw [termBShift_fvar]
+  · intro k f v hf hv ih
+    have hv' : IsUTermVec L k (termBShiftVec L k v) := hv.termBShiftVec
+    rw [termBShift_func hf hv, fvOcc_func hf hv', fvOcc_func hf hv]
+    refine listSum_eq_of_nth (by rw [len_fvOccVec hv', len_fvOccVec hv]) fun i hi ↦ ?_
+    rw [len_fvOccVec hv'] at hi
+    rw [nth_fvOccVec hv' hi, nth_fvOccVec hv hi, nth_termBShiftVec hv hi]
+    exact ih i hi
+
+/-- Entry-wise `a.[i] ≤ b.[i] + c.[i]·M` gives `Σ a ≤ Σ b + (Σ c)·M`. -/
+lemma listSum_le_add_mul {M : V} {a : V} :
+    ∀ b c : V, len a = len b → len a = len c → (∀ i < len a, a.[i] ≤ b.[i] + c.[i] * M) →
+      listSum a ≤ listSum b + listSum c * M := by
+  induction a using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil =>
+    intro b c hb hc _
+    rcases nil_or_adjoin b with rfl | ⟨y, b', rfl⟩
+    · rcases nil_or_adjoin c with rfl | ⟨z, c', rfl⟩
+      · simp
+      · simp at hc
+    · simp at hb
+  | adjoin x a ih =>
+    intro b c hb hc h
+    rcases nil_or_adjoin b with rfl | ⟨y, b', rfl⟩
+    · simp at hb
+    rcases nil_or_adjoin c with rfl | ⟨z, c', rfl⟩
+    · simp at hc
+    rw [len_adjoin, len_adjoin] at hb hc
+    have hb' : len a = len b' := by simpa using hb
+    have hc' : len a = len c' := by simpa using hc
+    have h0 : x ≤ y + z * M := by simpa using h 0 (by simp)
+    have hrest : ∀ i < len a, a.[i] ≤ b'.[i] + c'.[i] * M := fun i hi ↦ by
+      simpa using h (i + 1) (by rw [len_adjoin]; simpa using hi)
+    rw [listSum_adjoin, listSum_adjoin, listSum_adjoin]
+    refine le_of_le_of_eq (add_le_add h0 (ih b' c' hb' hc' hrest)) ?_
+    ring
+
+/-- **The substitution occurrence bound for terms**: when every entry of `w` has at most `M`
+free-variable occurrences, `termSubst w t` has at most `fvOcc t + bvOcc t · M` of them. -/
+lemma fvOcc_termSubst_le {n m w M t : V} (ht : IsSemiterm L n t) (hw : IsSemitermVec L n m w)
+    (hM : ∀ i < n, fvOcc L w.[i] ≤ M) :
+    fvOcc L (termSubst L w t) ≤ fvOcc L t + bvOcc L t * M := by
+  apply IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_ t ht
+  · definability
+  · intro z hz
+    rw [termSubst_bvar, fvOcc_bvar, bvOcc_bvar, zero_add, one_mul]
+    exact hM z hz
+  · intro x
+    rw [termSubst_fvar, fvOcc_fvar, bvOcc_fvar, zero_mul, add_zero]
+  · intro k f v hf hv ih
+    have hv' : IsUTermVec L k (termSubstVec L k w v) := (hw.termSubstVec hv).isUTerm
+    rw [termSubst_func hf hv.isUTerm, fvOcc_func hf hv', fvOcc_func hf hv.isUTerm,
+      bvOcc_func hf hv.isUTerm]
+    refine listSum_le_add_mul _ _ (by rw [len_fvOccVec hv', len_fvOccVec hv.isUTerm])
+      (by rw [len_fvOccVec hv', len_bvOccVec hv.isUTerm]) fun i hi ↦ ?_
+    rw [len_fvOccVec hv'] at hi
+    rw [nth_fvOccVec hv' hi, nth_fvOccVec hv.isUTerm hi, nth_bvOccVec hv.isUTerm hi,
+      nth_termSubstVec hv.isUTerm hi]
+    exact ih i hi
+
+/-- The entries of `qVec w` (`#0`, then `termBShift w.[i]`) inherit the occurrence bound. -/
+lemma fvOcc_nth_qVec_le {n m w M : V} (hw : IsSemitermVec L n m w) (hM : ∀ i < n, fvOcc L w.[i] ≤ M) :
+    ∀ i < n + 1, fvOcc L (qVec L w).[i] ≤ M := by
+  intro i hi
+  have hlen : len w = n := hw.lh
+  rcases zero_or_succ i with rfl | ⟨j, rfl⟩
+  · rw [qVec, nth_adjoin_zero, fvOcc_bvar]; exact zero_le
+  · have hj : j < n := lt_of_add_lt_add_right hi
+    rw [qVec, hlen, nth_adjoin_succ, nth_termBShiftVec hw.isUTerm hj, fvOcc_termBShift (hw.isUTerm.nth hj)]
+    exact hM j hj
+
+end bvOcc
+
+/-! ### `bvOccF` — the formula count -/
+
+section bvOccF
+
+variable {L : Language} [L.Encodable] [L.LORDefinable]
+
+namespace BvOccF
+
+variable (L)
+
+noncomputable def blueprint : UformulaRec1.Blueprint where
+  rel := .mkSigma “y param k R v. ∃ M, !(bvOccVecGraph L) M k v ∧ ∃ s, !listSumDef s M ∧ y = s”
+  nrel := .mkSigma “y param k R v. ∃ M, !(bvOccVecGraph L) M k v ∧ ∃ s, !listSumDef s M ∧ y = s”
+  verum := .mkSigma “y param. y = 0”
+  falsum := .mkSigma “y param. y = 0”
+  and := .mkSigma “y param p₁ p₂ y₁ y₂. y = y₁ + y₂”
+  or := .mkSigma “y param p₁ p₂ y₁ y₂. y = y₁ + y₂”
+  all := .mkSigma “y param p₁ y₁. y = y₁”
+  exs := .mkSigma “y param p₁ y₁. y = y₁”
+  allChanges := .mkSigma “param' param. param' = 0”
+  exsChanges := .mkSigma “param' param. param' = 0”
+
+noncomputable def construction : UformulaRec1.Construction V (blueprint L) where
+  rel {_} := fun k _ v ↦ listSum (bvOccVec L k v)
+  nrel {_} := fun k _ v ↦ listSum (bvOccVec L k v)
+  verum {_} := 0
+  falsum {_} := 0
+  and {_} := fun _ _ y₁ y₂ ↦ y₁ + y₂
+  or {_} := fun _ _ y₁ y₂ ↦ y₁ + y₂
+  all {_} := fun _ y₁ ↦ y₁
+  exs {_} := fun _ y₁ ↦ y₁
+  allChanges := fun _ ↦ 0
+  exsChanges := fun _ ↦ 0
+  rel_defined := .mk fun v ↦ by simp [blueprint]
+  nrel_defined := .mk fun v ↦ by simp [blueprint]
+  verum_defined := .mk fun v ↦ by simp [blueprint]
+  falsum_defined := .mk fun v ↦ by simp [blueprint]
+  and_defined := .mk fun v ↦ by simp [blueprint]
+  or_defined := .mk fun v ↦ by simp [blueprint]
+  all_defined := .mk fun v ↦ by simp [blueprint]
+  exs_defined := .mk fun v ↦ by simp [blueprint]
+  allChanges_defined := .mk fun v ↦ by simp [blueprint]
+  exChanges_defined := .mk fun v ↦ by simp [blueprint]
+
+end BvOccF
+
+variable (L)
+
+/-- Number of bound-variable occurrences in a formula code (ALL of them, whichever quantifier
+binds them: atoms sum over the argument vector, connectives add, quantifiers pass through). -/
+noncomputable def bvOccF (p : V) : V := (BvOccF.construction L).result L 0 p
+
+noncomputable def bvOccFGraph : 𝚺₁.Semisentence 2 :=
+  ((BvOccF.blueprint L).result L).rew (Rew.subst ![#0, ‘0’, #1])
+
+variable {L}
+
+instance bvOccF.defined : 𝚺₁-Function₁ bvOccF (V := V) L via bvOccFGraph L := .mk fun v ↦ by
+  simpa [bvOccFGraph, Matrix.comp_vecCons', Matrix.constant_eq_singleton]
+    using! (BvOccF.construction L).result_defined.defined ![v 0, 0, v 1]
+
+instance bvOccF.definable : 𝚺₁-Function₁ bvOccF (V := V) L := bvOccF.defined.to_definable
+
+instance bvOccF.definable' : Γ-[m + 1]-Function₁ bvOccF (V := V) L :=
+  bvOccF.definable.of_sigmaOne
+
+@[simp] lemma bvOccF_rel {k R v : V} (hR : L.IsRel k R) (hv : IsUTermVec L k v) :
+    bvOccF L (^rel k R v) = listSum (bvOccVec L k v) := by
+  simp [bvOccF, hR, hv, BvOccF.construction]
+
+@[simp] lemma bvOccF_nrel {k R v : V} (hR : L.IsRel k R) (hv : IsUTermVec L k v) :
+    bvOccF L (^nrel k R v) = listSum (bvOccVec L k v) := by
+  simp [bvOccF, hR, hv, BvOccF.construction]
+
+@[simp] lemma bvOccF_verum : bvOccF L (^⊤ : V) = 0 := by
+  simp [bvOccF, BvOccF.construction]
+
+@[simp] lemma bvOccF_falsum : bvOccF L (^⊥ : V) = 0 := by
+  simp [bvOccF, BvOccF.construction]
+
+@[simp] lemma bvOccF_and {p q : V} (hp : IsUFormula L p) (hq : IsUFormula L q) :
+    bvOccF L (p ^⋏ q) = bvOccF L p + bvOccF L q := by
+  simp [bvOccF, hp, hq, BvOccF.construction]
+
+@[simp] lemma bvOccF_or {p q : V} (hp : IsUFormula L p) (hq : IsUFormula L q) :
+    bvOccF L (p ^⋎ q) = bvOccF L p + bvOccF L q := by
+  simp [bvOccF, hp, hq, BvOccF.construction]
+
+@[simp] lemma bvOccF_all {p : V} (hp : IsUFormula L p) :
+    bvOccF L (^∀ p) = bvOccF L p := by
+  simp [bvOccF, hp, BvOccF.construction]
+
+@[simp] lemma bvOccF_exs {p : V} (hp : IsUFormula L p) :
+    bvOccF L (^∃ p) = bvOccF L p := by
+  simp [bvOccF, hp, BvOccF.construction]
+
+lemma listSum_bvOccVec_le {k v : V} (hv : IsUTermVec L k v) :
+    listSum (bvOccVec L k v) ≤ listSum (termLenVec L k v) := by
+  refine listSum_le_of_nth (by rw [len_bvOccVec hv, len_termLenVec hv]) fun i hi ↦ ?_
+  rw [len_bvOccVec hv] at hi
+  rw [nth_bvOccVec hv hi, nth_termLenVec hv hi]
+  exact bvOcc_le_termLen (hv.nth hi)
+
+lemma listSum_bvOccVec_termShiftVec {k v : V} (hv : IsUTermVec L k v) :
+    listSum (bvOccVec L k (termShiftVec L k v)) = listSum (bvOccVec L k v) := by
+  have hv' : IsUTermVec L k (termShiftVec L k v) := hv.termShiftVec
+  refine listSum_eq_of_nth (by rw [len_bvOccVec hv', len_bvOccVec hv]) fun i hi ↦ ?_
+  rw [len_bvOccVec hv'] at hi
+  rw [nth_bvOccVec hv' hi, nth_bvOccVec hv hi, nth_termShiftVec hv hi]
+  exact bvOcc_termShift (hv.nth hi)
+
+/-- `bvOccF p ≤ formulaLen p`. -/
+lemma bvOccF_le_formulaLen {p : V} (hp : IsUFormula L p) : bvOccF L p ≤ formulaLen L p := by
+  apply IsUFormula.ISigma1.pi1_succ_induction ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ p hp
+  · definability
+  · intro k R v hR hv
+    rw [bvOccF_rel hR hv, formulaLen_rel hR hv]
+    exact le_trans (listSum_bvOccVec_le hv) le_self_add
+  · intro k R v hR hv
+    rw [bvOccF_nrel hR hv, formulaLen_nrel hR hv]
+    exact le_trans (listSum_bvOccVec_le hv) le_self_add
+  · rw [bvOccF_verum]; exact zero_le
+  · rw [bvOccF_falsum]; exact zero_le
+  · intro p q hp hq ihp ihq
+    rw [bvOccF_and hp hq, formulaLen_and hp hq]
+    exact le_trans (add_le_add ihp ihq) le_self_add
+  · intro p q hp hq ihp ihq
+    rw [bvOccF_or hp hq, formulaLen_or hp hq]
+    exact le_trans (add_le_add ihp ihq) le_self_add
+  · intro p hp ih
+    rw [bvOccF_all hp, formulaLen_all hp]
+    exact le_trans ih le_self_add
+  · intro p hp ih
+    rw [bvOccF_exs hp, formulaLen_exs hp]
+    exact le_trans ih le_self_add
+
+/-- `shift` preserves the number of bound-variable occurrences. -/
+lemma bvOccF_shift {p : V} (hp : IsUFormula L p) : bvOccF L (shift L p) = bvOccF L p := by
+  apply IsUFormula.ISigma1.pi1_succ_induction ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ p hp
+  · definability
+  · intro k R v hR hv
+    rw [shift_rel hR hv, bvOccF_rel hR hv.termShiftVec, bvOccF_rel hR hv,
+      listSum_bvOccVec_termShiftVec hv]
+  · intro k R v hR hv
+    rw [shift_nrel hR hv, bvOccF_nrel hR hv.termShiftVec, bvOccF_nrel hR hv,
+      listSum_bvOccVec_termShiftVec hv]
+  · rw [shift_verum]
+  · rw [shift_falsum]
+  · intro p q hp hq ihp ihq
+    rw [shift_and hp hq, bvOccF_and hp.shift hq.shift, bvOccF_and hp hq, ihp, ihq]
+  · intro p q hp hq ihp ihq
+    rw [shift_or hp hq, bvOccF_or hp.shift hq.shift, bvOccF_or hp hq, ihp, ihq]
+  · intro p hp ih
+    rw [shift_all hp, bvOccF_all hp.shift, bvOccF_all hp, ih]
+  · intro p hp ih
+    rw [shift_exs hp, bvOccF_exs hp.shift, bvOccF_exs hp, ih]
+
+/-- The induction: every bound-variable occurrence of `p` — including those under inner
+quantifiers, whose substitutes `#0`/`termBShift w.[i]` obey the same bound — is replaced by an
+entry of `w`, free variables stay. -/
+private lemma fvOccF_subst_le_aux {n p : V} (hp : IsSemiformula L n p) :
+    ∀ m w M : V, IsSemitermVec L n m w → (∀ i < n, fvOcc L w.[i] ≤ M) →
+      fvOccF L (subst L w p) ≤ fvOccF L p + bvOccF L p * M := by
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n p ↦ ∀ m w M : V, IsSemitermVec L n m w → (∀ i < n, fvOcc L w.[i] ≤ M) →
+      fvOccF L (subst L w p) ≤ fvOccF L p + bvOccF L p * M) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hp
+  · definability
+  · intro n k R v hR hv m w M hw hM
+    have hv' : IsUTermVec L k (termSubstVec L k w v) := (hw.termSubstVec hv).isUTerm
+    rw [substs_rel hR hv.isUTerm, fvOccF_rel hR hv', fvOccF_rel hR hv.isUTerm, bvOccF_rel hR hv.isUTerm]
+    refine listSum_le_add_mul _ _ (by rw [len_fvOccVec hv', len_fvOccVec hv.isUTerm])
+      (by rw [len_fvOccVec hv', len_bvOccVec hv.isUTerm]) fun i hi ↦ ?_
+    rw [len_fvOccVec hv'] at hi
+    rw [nth_fvOccVec hv' hi, nth_fvOccVec hv.isUTerm hi, nth_bvOccVec hv.isUTerm hi,
+      nth_termSubstVec hv.isUTerm hi]
+    exact fvOcc_termSubst_le (hv.nth hi) hw hM
+  · intro n k R v hR hv m w M hw hM
+    have hv' : IsUTermVec L k (termSubstVec L k w v) := (hw.termSubstVec hv).isUTerm
+    rw [substs_nrel hR hv.isUTerm, fvOccF_nrel hR hv', fvOccF_nrel hR hv.isUTerm, bvOccF_nrel hR hv.isUTerm]
+    refine listSum_le_add_mul _ _ (by rw [len_fvOccVec hv', len_fvOccVec hv.isUTerm])
+      (by rw [len_fvOccVec hv', len_bvOccVec hv.isUTerm]) fun i hi ↦ ?_
+    rw [len_fvOccVec hv'] at hi
+    rw [nth_fvOccVec hv' hi, nth_fvOccVec hv.isUTerm hi, nth_bvOccVec hv.isUTerm hi,
+      nth_termSubstVec hv.isUTerm hi]
+    exact fvOcc_termSubst_le (hv.nth hi) hw hM
+  · intro n m w M _ _
+    rw [substs_verum, fvOccF_verum, bvOccF_verum, zero_mul, add_zero]
+  · intro n m w M _ _
+    rw [substs_falsum, fvOccF_falsum, bvOccF_falsum, zero_mul, add_zero]
+  · intro n p q hp hq ihp ihq m w M hw hM
+    rw [substs_and hp.isUFormula hq.isUFormula,
+      fvOccF_and (hp.subst hw).isUFormula (hq.subst hw).isUFormula,
+      fvOccF_and hp.isUFormula hq.isUFormula, bvOccF_and hp.isUFormula hq.isUFormula]
+    refine le_of_le_of_eq (add_le_add (ihp m w M hw hM) (ihq m w M hw hM)) ?_
+    ring
+  · intro n p q hp hq ihp ihq m w M hw hM
+    rw [substs_or hp.isUFormula hq.isUFormula,
+      fvOccF_or (hp.subst hw).isUFormula (hq.subst hw).isUFormula,
+      fvOccF_or hp.isUFormula hq.isUFormula, bvOccF_or hp.isUFormula hq.isUFormula]
+    refine le_of_le_of_eq (add_le_add (ihp m w M hw hM) (ihq m w M hw hM)) ?_
+    ring
+  · intro n p hp ih m w M hw hM
+    rw [substs_all hp.isUFormula, fvOccF_all (hp.subst hw.qVec).isUFormula,
+      fvOccF_all hp.isUFormula, bvOccF_all hp.isUFormula]
+    exact ih _ _ _ hw.qVec (fvOcc_nth_qVec_le hw hM)
+  · intro n p hp ih m w M hw hM
+    rw [substs_ex hp.isUFormula, fvOccF_exs (hp.subst hw.qVec).isUFormula,
+      fvOccF_exs hp.isUFormula, bvOccF_exs hp.isUFormula]
+    exact ih _ _ _ hw.qVec (fvOcc_nth_qVec_le hw hM)
+
+/-- **The substitution occurrence bound**: when every entry of `w` has at most `M` free-variable
+occurrences, `subst w p` has at most `fvOccF p + bvOccF p · M` of them. -/
+theorem fvOccF_subst_le {n p m w M : V} (hp : IsSemiformula L n p) (hw : IsSemitermVec L n m w)
+    (hM : ∀ i < n, fvOcc L w.[i] ≤ M) :
+    fvOccF L (subst L w p) ≤ fvOccF L p + bvOccF L p * M :=
+  fvOccF_subst_le_aux hp m w M hw hM
+
+/-- **The sharpened `free` bound**: `fvOccF (free p) ≤ fvOccF p + bvOccF p` (`ShiftLen.lean`'s
+`fvOccF_free_le` charged `formulaLen p`) — `free p = (shift p)[#0 := &0]` with `?[&0]` a
+vector whose single entry has ONE free-variable occurrence. -/
+theorem fvOccF_free_le' {p : V} (hp : IsSemiformula L 1 p) :
+    fvOccF L (free L p) ≤ fvOccF L p + bvOccF L p := by
+  have hw : IsSemitermVec L 1 0 (^&0 ∷ (0 : V)) := by simp
+  have hM : ∀ i < (1 : V), fvOcc L (^&0 ∷ (0 : V)).[i] ≤ 1 := fun i hi ↦ by
+    rw [lt_one_iff_eq_zero] at hi
+    subst hi
+    rw [nth_adjoin_zero, fvOcc_fvar]
+  have h := fvOccF_subst_le hp.shift hw hM
+  rw [fvOccF_shift hp.isUFormula, bvOccF_shift hp.isUFormula, mul_one] at h
+  unfold free substs1
+  exact h
+
+end bvOccF
+
 end ArithS
