@@ -973,6 +973,24 @@ fold into later facts; pin `(k := 0)` on `qqTwo_semiterm.isUTerm`; two `Nat.cast
 `complete`, a `Derivation.induction1` recursion; 2.5–4 months; risk (1) checked OK). Notes NOT yet
 synced to the OneDrive branch (do by copy, as before).
 
+**U10 IN PROGRESS (2026-09-12/13, branch `colomban-arith-u10` off `-m3` @ 15b015a; full plan and
+status in `M4_BOUNDED_HBL/BRIEF.md` §9–§10, design in `DESIGN_inner_necessitation.md` and
+`DESIGN_describe.md`).** Goal: prove `BoundedInnerNec 3` (the one hypothesis of `dupoc_self_coop`)
+by a verification-proof construction on derivation CODES inside every model. LANDED, all green, census
+292, three axioms: `Necessitation/Primitives` (useLemma/elimExists, 204c012), `Lib/{Basic,Sets,
+Formulas,Lengths}` (145 rows, f6536fc), `Lib/Nodes` (Intro/Dlen/axiom recognizer, d95ba66),
+`Lib/Bridge` (ℒₒᵣ/LAct, 637df06), `Steps` (useHorn/introFact + the fragment protocol, 511e5f1),
+`ShiftLen` (additive shift bounds, 1eb099b), `Lib/Walk` + `WalkLemmas` (gaps, `cT`, `bvOcc`,
+45c8844). ARCHITECTURE (brief §10): a flat STEP LIST + a PR chain builder (`chainCode`) instead of
+CPS recursion (which is Π₂ and not a fixpoint). UNCOMMITTED/PARTIAL: `Necessitation/Chain.lean`
+(832 lines — Part A "vector twins" of the Steps machinery: `revV`, `tailIter`, `qVecIterV`,
+`impChainV`, `mapSubst`, `exsChainV`, `ctxChain`…; NO `applyStep`/`StepOK`/`chainCode` yet; type-check status at handover time: a `lake env lean` run had not finished within 15 minutes
+when the branch was committed — treat it as UNVERIFIED; check it first). NOT STARTED: `RowInst` (row-shape/instantiation lemmas),
+`describeSteps` (the walk, a `Fixpoint` on `⟪n, r⟫`), `negSteps/shiftSteps/substSteps/freeSteps`,
+the ten per-tag fragments, `verifySteps`, the top (DESIGN §4.3), the `Steps.lean` `_occ` lemma
+swap. Estimate remaining: 2–3 months. Agents die at the account's session rate limit (twice on
+2026-09-12: 04:10 and 16:20 resets); their files stay on disk.
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);

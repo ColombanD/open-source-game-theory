@@ -210,6 +210,12 @@ cooperates with itself for all large budgets, given bounded inner necessitation 
 expansion — Critch's assumption (d) — and every other step of the parametric bounded Löb argument
 is a theorem about Peano arithmetic." Discharging (d) is `DESIGN_inner_necessitation.md`.
 
+**Status of the hypothesis (2026-09-13).** Discharging `BoundedInnerNec 3` is under way on branch
+`colomban-arith-u10` (`arith/ArithS/Necessitation/*`, ~10 modules, census 292): the library of
+universal lemma-sentences, the two primitive proof-code moves, the composite steps, and the additive
+length accounting are theorems; the chain builder, the formula walk, the per-tag fragments and the
+top assembly remain (roadmap status log, brief §9–§10). Until then every M4 result is CONDITIONAL.
+
 ## 4. Boundaries (recorded, not gaps in proofs)
 
 1. `.box` cannot be translated compositionally under LENGTH-bounded provability: a box carries
