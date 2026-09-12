@@ -559,4 +559,85 @@ theorem lib_axiomRec_paMinus {σ : Sentence ℒₒᵣ} (h : σ ∈ 𝗣𝗔⁻) 
     Lib (axiomRec (Semiformula.lMap emb σ)) :=
   lib_axiomRec_pa (Set.mem_union_left _ h)
 
+/-! ### The axiom recognizer (ii): the induction scheme
+
+`TAct.Δ₁ch` is, by construction (`Theory.Δ₁.insert` four times over `embPA_delta1`, whose
+`ch` is `isFormulaOR ⋏ 𝗣𝗔.Δ₁ch`, with `𝗣𝗔.Δ₁ch = 𝗣𝗔⁻.ch ⋎ chUniv`), the disjunction pinned
+by `tact_ch_eq`/`pa_ch_eq` — `rfl`, never `simp` (unfolding the chain by `simp` loops). The
+induction recognizer `chUniv = chInd ⊤` (`Incompleteness/Definability.lean`) accepts `p` iff
+`InductionR (fun _ ↦ True) p`: `p = qqAlls b m` (the universal closure over the `m`
+parameters), `IsUFormula b`, `shift b = b` (no free variables), `bv b = m`, and
+`subst (fvarVec m) b = indBodyVal K` for a `1`-semiformula `K` — `indBodyVal K` the
+`succInd` body `K(0) → (∀ (K → K(#0+1))) → ∀ K` through the graphs `substsGraph`, `impGraph`,
+`qqAllDef` (`indBodyValGraph`). The row `indRec` is that clause read as a universal
+sentence over the SAME ℒₒᵣ-indexed graph objects the recognizer uses (`qqAllsDef`,
+`(isUFormula ℒₒᵣ).pi`, `(shiftGraph ℒₒᵣ)`, `(bvGraph ℒₒᵣ)`, `fvarVecDef`,
+`(substsGraph ℒₒᵣ)`, `(isSemiformula ℒₒᵣ).pi 1`, `indBodyValGraph`) — the shape the
+recognizer forces. NOTE: these are `ℒₒᵣ`-graphs, not `LAct`-graphs; a fragment holding
+`LAct`-shape facts about an `ℒₒᵣ`-code needs the (not yet written) language-restriction
+bridge rows. -/
+
+section indRec
+
+lemma tact_ch_eq : Theory.Δ₁ch TAct =
+    (((((isFormulaOR ⋏ Theory.Δ₁ch 𝗣𝗔) ⋎ (Theory.Δ₁.singleton axNe').ch) ⋎ (Theory.Δ₁.singleton axNe).ch)
+      ⋎ (Theory.Δ₁.singleton axAct').ch) ⋎ (Theory.Δ₁.singleton axAct).ch) := rfl
+
+lemma pa_ch_eq : Theory.Δ₁ch (𝗣𝗔 : ArithmeticTheory) = PeanoMinus.delta1.ch ⋎ chUniv := rfl
+
+omit [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
+lemma mem_TAct_class_iff (p : V) : p ∈ TAct.Δ₁Class ↔ V ⊧/![p] (Theory.Δ₁ch TAct).val := Iff.rfl
+
+/-- `eval_isFormulaOR` (`TheoryAct`) for a universe-polymorphic `V`. -/
+lemma eval_isFormulaOR' (p : V) : V ⊧/![p] isFormulaOR.val ↔ IsSemiformula ℒₒᵣ 0 p := by
+  simp [isFormulaOR, HierarchySymbol.Semiformula.val_sigma,
+    HierarchySymbol.Semiformula.val_mkDelta]
+
+/-- An `ℒₒᵣ`-formula code accepted by the induction recognizer is a `TAct`-axiom code. -/
+lemma mem_TAct_Δ₁Class_of_inductionR {p : V} (hF : IsSemiformula ℒₒᵣ 0 p)
+    (h : InductionR (fun _ ↦ True) p) : p ∈ TAct.Δ₁Class := by
+  rw [mem_TAct_class_iff, tact_ch_eq, pa_ch_eq]
+  simp only [HierarchySymbol.Semiformula.val_or, HierarchySymbol.Semiformula.val_and,
+    LogicalConnective.HomClass.map_or, LogicalConnective.HomClass.map_and,
+    LogicalConnective.Prop.or_eq, LogicalConnective.Prop.and_eq, HierarchySymbol.Defined.iff,
+    Matrix.cons_val_fin_one]
+  exact Or.inl (Or.inl (Or.inl (Or.inl ⟨(eval_isFormulaOR' p).mpr hF, Or.inr h⟩)))
+
+/-- `Ind_rec`: the induction-scheme recognizer as ONE universal sentence — every code of the
+shape `∀^m (indBodyVal K)[parameters]` is a `TAct`-axiom code. -/
+noncomputable def indRecB : ArithmeticSemisentence 6 :=
+  “K s fv b m p. !qqAllsDef p b m → !(isUFormula ℒₒᵣ).pi b → !(shiftGraph ℒₒᵣ) b b →
+    !(bvGraph ℒₒᵣ) m b → !fvarVecDef fv m → !(substsGraph ℒₒᵣ) s fv b →
+    !(isSemiformula ℒₒᵣ).pi 1 K → !indBodyValGraph s K → !(Theory.Δ₁ch TAct).sigma p”
+noncomputable def indRec : ArithmeticSentence := ∀¹* indRecB
+
+lemma models_indRec :
+    V↓[ℒₒᵣ] ⊧ indRec ↔ ∀ K s fv b m p : V,
+      p = qqAlls b m → IsUFormula ℒₒᵣ b → b = shift ℒₒᵣ b → m = bv ℒₒᵣ b →
+      fv = fvarVec m → s = subst ℒₒᵣ fv b → IsSemiformula ℒₒᵣ 1 K → s = indBodyVal K →
+      p ∈ TAct.Δ₁Class := by
+  simp [indRec, indRecB, models_iff, Matrix.vecForall_iff]
+
+theorem pa_proves_indRec : 𝗣𝗔 ⊢ indRec :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_indRec.mpr
+    fun K s fv b m p hp hb hsh hm hfv hs hK hind ↦ by
+      subst hp hfv hs
+      have hbm : IsSemiformula ℒₒᵣ (0 + m) b := isSemiformula_iff.mpr ⟨hb, by rw [hm, zero_add]⟩
+      refine mem_TAct_Δ₁Class_of_inductionR hbm.qqAlls
+        ⟨m, index_le_qqAlls _ _, b, le_qqAlls _ _, rfl, hb, hsh.symm, hm.symm, K, ?_, hK, trivial, hind⟩
+      rw [hind]; exact le_indBodyVal K
+
+theorem lib_indRec : Lib indRec := Lib.of_pa pa_proves_indRec
+
+/-- Totality of the induction-body graph: `∀ K, ∃ p, indBodyValGraph p K`. -/
+noncomputable def totIndBodyB : ArithmeticSemisentence 1 := “K. ∃ p, !indBodyValGraph p K”
+noncomputable def totIndBody : ArithmeticSentence := ∀¹* totIndBodyB
+lemma models_totIndBody : V↓[ℒₒᵣ] ⊧ totIndBody ↔ ∀ K : V, ∃ p, p = indBodyVal K := by
+  simp [totIndBody, totIndBodyB, models_iff]
+theorem pa_proves_totIndBody : 𝗣𝗔 ⊢ totIndBody :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_totIndBody.mpr fun _ ↦ ⟨_, rfl⟩
+theorem lib_totIndBody : Lib totIndBody := Lib.of_pa pa_proves_totIndBody
+
+end indRec
+
 end ArithS
