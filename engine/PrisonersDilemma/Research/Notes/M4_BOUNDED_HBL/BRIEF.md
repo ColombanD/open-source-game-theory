@@ -352,3 +352,24 @@ cost `≤ n · occ` extra — the factor-`g` index cost of DESIGN §3.7, not `2�
 implementations must use the additive lemma (to be proved in `Length.lean`/`SequentLength.lean`
 terms: `termLen (termShift t) ≤ termLen t + fvarOcc t`, etc.) or the binary-index variant of
 `Length.lean`. `DESIGN_describe.md` (agent launched) is asked to pin this down.
+
+**§10 addendum — `DESIGN_describe.md` (2026-09-12, 720 lines): the formula walk, specified.**
+Decisions it fixes: (1) `describeSteps` is a `Fixpoint` on `⟪n, r⟫` (arity changes under
+quantifiers; `UformulaRec1` keeps the parameter fixed — `Formula/Basic.lean:507-514`); (2) leaf
+values (symbol codes, bvar indices, ARITIES) are chain numerals `cT n` (`cT 0 = ⌜0⌝`,
+`cT (n+1) = cT n ^+ ⌜1⌝`) because the rows write the body arity as the TERM `n + 1`, so the
+child's fact matches syntactically; a bvar index `z` is a numeral witness (paid by `ρ`'s unary
+`termLen ^#z = z + 1`), and `z < n` is DERIVED by `z + 1` Horn steps from two new `lt` rows;
+(3) two extra step tags, `sElimExs` and `sSplit`, for rows concluding `∃x̄ (C₁ ∧ … ∧ C_j)`
+(`negAndB`, `freeAllB`); (4) NO `sWkDrop` inside the walk (the steps are `Γ`-independent so the
+theorem can quantify over `Γ`); (5) witness lists = the row's DSL variable list read right-to-left;
+after `a` eliminations the last-listed variable is `&0`; the index rule for siblings:
+`&0 ↦ &(c + 1)`; (6) `descCount ≤ |r|`, `stepCount ≤ 8|r|`, cost `dlen d + C₁|r|(N + |Γ|) +
+C₂|r|²·fvOccS Γ + C₃|r|³`, witness bound `E ≤ 2(n₀ + |r|) + 18` independent of `Γ`; (7) all
+hypotheses are memberships of codes built from witness TERMS — the values the eigenvariables
+denote never appear (the derivation is valid under every valuation). LIBRARY GAPS (§10 of the
+report): two `lt` rows (`0 < y+1`, `x < y → x+1 < y+1`), per-symbol closed rows `isRelConst`/
+`isFuncConst` (8), `isUTermVecOfSemitermVecLAct`, `isSemitermVecQVec`, `substs1Substs`;
+`instOuter_subst_bvN` (N ≤ 7), `freeIter_subst_listToVec`, `cT` lemmas; and for the fragments:
+`formulaLenShift` + `fvOcc` rows (a SHIFTED atom's length cannot be bounded with the term vector
+opaque). The `neg`/`shift`/`subst`/`free` shape facts are produced by separate `negSteps`/… (§9).
