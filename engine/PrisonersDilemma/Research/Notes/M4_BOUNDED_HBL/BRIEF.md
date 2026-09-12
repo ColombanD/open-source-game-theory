@@ -329,3 +329,11 @@ RESOLUTION: separate WHAT is done from HOW it is assembled.
   `StepsOK` (Δ₁, bounded ∀ over the list) + the final-context facts + the length sum, all Π₁ in the
   input, provable by `IsUFormula`/`Derivation.induction1`.
 * `verifyCode ρ := chainCode Γ₀ (verifySteps ρ) (top-closing code)`.
+
+**§9 status — `Lib/Bridge` DONE (637df06, 49 rows, 31 V-lemmas):** ℒₒᵣ/LAct lifts (`IsUFormula/
+IsSemiformula.LAct_of_LOR`, `bv` invariance), invariance of every `L`-indexed code operation on
+ℒₒᵣ-codes (`neg/shift/subst/free/substs1/imp`, term ops; `subst` needs `IsUTermVec ℒₒᵣ` for the
+`qVec` bump), the ℒₒᵣ formation rows, the `LAct → ℒₒᵣ` graph bridges, `indBodyIntro` (11 vars),
+`.sigma → .pi` bridges at both languages, `axIsFormula`; the `axm`-leaf chain is written in the
+file's closing docstring. NOT `rfl`: every operation is an `L`-indexed fixpoint recursion.
+IN FLIGHT: `Steps.lean` (final), `Chain.lean` (§10). NEXT: `describeSteps`, fragments, `verifySteps`, top.
