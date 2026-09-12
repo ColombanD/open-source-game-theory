@@ -373,3 +373,15 @@ report): two `lt` rows (`0 < y+1`, `x < y → x+1 < y+1`), per-symbol closed row
 `instOuter_subst_bvN` (N ≤ 7), `freeIter_subst_listToVec`, `cT` lemmas; and for the fragments:
 `formulaLenShift` + `fvOcc` rows (a SHIFTED atom's length cannot be bounded with the term vector
 opaque). The `neg`/`shift`/`subst`/`free` shape facts are produced by separate `negSteps`/… (§9).
+
+**§9 status — `ShiftLen` DONE (1eb099b, census +13):** occurrence counts `fvOcc`/`fvOccVec`/
+`fvOccF`/`fvOccS` (Σ₁, by the `termLen`/`formulaLen`/`setLen` schemes), EXACT shift laws
+`termLen (termShift t) = termLen t + fvOcc t`, `formulaLen (shift p) = formulaLen p + fvOccF p`,
+`setLen (setShift s) ≤ setLen s + fvOccS s`, invariance of the counts under shift, and the LINEAR
+iteration bound `setLen (setShiftIter n s) ≤ setLen s + n · fvOccS s`; sanity `fvOcc ≤ termLen` etc.;
+`dlen_elimExistsCode_le_occ` (`… + 4|Γ| + fvOccS Γ + …`). The `free` bound `+ 1` was FALSE
+(`free` frees every `#0` occurrence) — delivered `≤ fvOccF p + formulaLen p`; the sharp form needs
+`bvOcc` (in the Walk task). TRAP: a `TermRec`/`UformulaRec1` blueprint clause written as the direct
+graph `!listSumDef y v'` makes the `_defined` obligation loop forever — ∃-wrap it
+(`∃ s, !listSumDef s v' ∧ y = s`, the `TermLen` shape). `Audit.lean` has its OWN import list.
+IN FLIGHT: `Chain` (with `sElimExs`/`sSplit`), `Lib/Walk` + `WalkLemmas` (gaps, `cT`, `bvOcc`).
