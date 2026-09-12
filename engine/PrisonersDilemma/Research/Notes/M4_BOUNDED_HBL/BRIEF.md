@@ -274,3 +274,15 @@ agent-sized tasks under `arith/ArithS/Necessitation/`:
   `verifyCode` function), and the top (§4.3) closing `BoundedInnerNec 3`.
 Conventions: two concurrent Lean agents, short tool calls, `wip` commits per green file, never
 `simp` on quoted sentences, all constants existential; `-m3` stays frozen at the milestone.
+
+**§9 status — Primitives DONE (204c012, census 179, general `L`/`T`, general arity `m`).**
+`useLemmaCode Γ es B dΛ d` (cut a stored `∀^m B` in at the witness list `es`; `exsChainCode` =
+`m` `exsIntro`s; `dlen ≤ dlen dΛ + dlen d + (m+3)|Γ| + (m+1)²(|B|·E + m) + |B| + mE + 2m + 3` with
+`E` a bound on the witness term lengths — the `(m+1)²` is real: Foundation's `exsIntro` keeps the
+principal formula, so the chain sequents accumulate), `elimExistsCode Γ P D d` (`dlen ≤ dlen D +
+dlen d + 5|Γ| + 6|P| + 8`; the factor 2 on `setShift` is the unary free-variable charge),
+`wkDropCode`; infrastructure `allsIter/exsIter`, `instOuter` (outermost-first instantiation) with
+the LINEAR bound `|instOuter es B| ≤ |B|·E`. PROCESS TRAP: `pgrep -f 'lake build'` matches the
+agent's own polling shell — use `pgrep -f 'bin/lake build'`. Mathlib: `add_le_add_left/right` have
+swapped sides in this toolchain — use `add_le_add`/`gcongr`. IN FLIGHT: `Lib/{Basic,Sets,Formulas,
+Lengths}` (rows A), `Lib/Nodes` (Intro/Dlen/axm).
