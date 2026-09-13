@@ -577,5 +577,15 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms termOK_of_isSemiterm
 #print axioms describeT_ok
 #print axioms describeT_chain
+-- … and the FORMULA walk (a `Fixpoint` on `⟪n, r, y⟫`, the arity changing under quantifiers):
+-- `describeF_ok` (D3 for formulas), `describeF_chain`, the root's shape fact in the final context
+-- (`describeF_shape_and`, D4), and the step counts `len (describeT/F) + 4 ≤ 12·|t|/|r|` (D5, sizes).
+#print axioms formOK_of_isSemiformula
+#print axioms describeF_ok
+#print axioms describeF_chain
+#print axioms describeF_shape_and
+#print axioms describeF_shape_rel
+#print axioms len_describeT_le
+#print axioms len_describeF_le
 
 end ArithS
