@@ -518,3 +518,17 @@ laws, `ListOK`, `NoDrop` transport); Part 1 the walk's row table (40 rows, `rIdx
 Part 3 step applicability (`stepOK_useHorn/introFact`, 21 per-row `ok_<row>` lemmas, the `z < n`
 chain, leaf/nil node lemmas). Rate-limit kills on 2026-09-13 at 15:10 (Zurich); both agents
 resumed at 16:00. IN FLIGHT: the formula-walk fixpoint (D2–D5), `Chain` Part C (tags 6/7).
+
+**§11 status — `Chain` Part C DONE (6d4ebab):** `goalFact s ū := ^∃ ^∃ goalBody` (`d = #1`, `n = #0`;
+conjuncts `derFact/fstIdxFact/dlenFact/leFact` as canonical codes over `Pderiv/PfstIdx/Pdlen/Ple`),
+`goalInst`, `instOuter_goalBody`; the leaf `goalLeafCode` (2 `exsIntro` + `conj4Code` (3 `andIntro`
++ 4 `axL`) + 1 `wk`), `goalLeafCode_proof`, `dlen_goalLeafCode_le ≤ 10|Γ| + 27·|goalBody|·E + 2E + 41`
+(MULTIPLICATIVE in `|G|·E` — the additive form is false when a variable repeats); tags `sGoal e n s ū`
+(6; `ctxAfter = insert (neg goalFact) Γ`; `goalCost G Q E = 11G + 27QE + 2E + 42`) and `sLemma A dA`
+(7; `StepOK = LemmaOK := IsFormula A ∧ DerivationOf dA {A}`, Δ₁ via `DerivationOf.definable'` — `derivation`
+never unfolded; cost `dlen dA + 2|Γ| + 2|A| + 2`); `GoalOK` (12 conjuncts; one `definability` over
+13 inline conjuncts hits aesop's 200-rule limit — split); `applyStep_proof`/`dlen_applyStep_le`/
+`isFormulaSet_ctxAfter`/`ChainOcc` extended, all pre-existing names/statements byte-identical;
+`mem_ctxAfter_of_noShift'` (tags 0/1/4/6/7). `Chain` now imports `RowInst`. Definability without
+touching closed quotes: generic `fact1Def τ`/`fact2Def τ` blueprints proved for a VARIABLE `τ`.
+NEXT (design order): `numSteps`, then `copySteps/chainSteps/eqSteps`, `certX/lenSteps`, `frag<Tag>`.
