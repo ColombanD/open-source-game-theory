@@ -2442,4 +2442,313 @@ instance addCode_definable : 𝚺₁-Function₃ (addCode : V → V → V → V)
 
 end addInv
 
+
+/-! ## 8. Soundness and length of `addCode`; its `sLemma` packaging -/
+
+section addSound
+
+/-- The length bound of addition: `(‖a‖ + 1)(‖a + b‖ + 2)` nodes, each `≤ nodeCost N B (12‖a + b‖ + 3)`. -/
+noncomputable def addBound (N B a b : V) : V := (‖a‖ + 1) * (‖a + b‖ + 2) * nodeCost N B (12 * ‖a + b‖ + 3)
+
+lemma cast_rZeroAdd : ((rZeroAdd : ℕ) : V) = 0 := by simp [rZeroAdd]
+lemma cast_rAddZero : ((rAddZero : ℕ) : V) = 1 := by simp [rAddZero]
+lemma cast_rOneAdd : ((rOneAdd : ℕ) : V) = 4 := by simp [rOneAdd]
+lemma cast_rBit00 : ((rBit00 : ℕ) : V) = 7 := by simp [rBit00]
+lemma cast_rBit01 : ((rBit01 : ℕ) : V) = 8 := by simp [rBit01]
+lemma cast_rBit10 : ((rBit10 : ℕ) : V) = 9 := by simp [rBit10]
+lemma cast_rBit11 : ((rBit11 : ℕ) : V) = 10 := by simp [rBit11]
+
+/-- `succBound N B x ≤ (‖x‖ + 1) · nodeCost N B (12‖s‖ + 3)` once `x + 1 ≤ s`. -/
+lemma succBound_le {N B x s : V} (hx : x + 1 ≤ s) :
+    succBound N B x ≤ (‖x‖ + 1) * nodeCost N B (12 * ‖s‖ + 3) := by
+  unfold succBound
+  exact mul_le_mul_of_nonneg_left (nodeCost_mono (succE_le_addE hx)) zero_le
+
+lemma length_le_of_le {x s : V} (h : x ≤ s) : ‖x‖ ≤ ‖s‖ := length_monotone h
+
+lemma one_le_count (x y : V) : 1 ≤ (x + 1) * (y + 2) := by
+  calc (1 : V) ≤ 1 * 2 := by norm_num
+    _ ≤ (x + 1) * (y + 2) := mul_le_mul le_add_self le_add_self (by norm_num) zero_le
+
+lemma le_two_mul' {m : V} (hm : 1 ≤ m) : m ≤ 2 * m := le_of_lt (Bnum.lt_two_mul hm)
+lemma le_two_mul_add_one' {m : V} (hm : 1 ≤ m) : m ≤ 2 * m + 1 := le_of_lt (Bnum.lt_two_mul_add_one hm)
+
+/-- The `a = 1` node: `oneAdd` from the successor chain of `b`. -/
+lemma addGraph_sound_one {tbl N B : V} (htbl : NumTableOK tbl N B) (b : V) (hb1 : 1 ≤ b) (d : V)
+    (hd : AddGraph tbl 1 b d) : DerivationOf TAct d (sing (addFact 1 b)) ∧ dlen TAct d ≤ addBound N B 1 b := by
+  obtain ⟨-, -, -, -, hr4, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hPeq, -, -, hB⟩ := id htbl
+  have hE1 : 1 ≤ 12 * ‖1 + b‖ + 3 := one_le_addE
+  have hAP : formulaLen LAct (addFact 1 b) ≤ B * (12 * ‖1 + b‖ + 3) := formulaLen_addFact_le hPeq le_rfl
+  set nc := nodeCost N B (12 * ‖1 + b‖ + 3) with hnc
+  rw [AddGraph.one_left_iff hb1] at hd
+  subst hd
+  have hx : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hw : IsSemiterm LAct 0 (bnum (b + 1)) := isSemiterm_bnum_LAct 0 _
+  have hmap : nOneAdd_as.map (instOuter LAct [bnum (b + 1), bnum b]) = [succFact b] := (inst_nOneAdd hx hw).1
+  have hc : instOuter LAct [bnum (b + 1), bnum b] nOneAdd_c = addFact 1 b := by
+    rw [(inst_nOneAdd hx hw).2, addFact_one_left]
+  have hb1s : b + 1 ≤ 1 + b := by rw [add_comm]
+  have hes : ∀ e ∈ [bnum (b + 1), bnum b], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖1 + b‖ + 3 := by
+    intro e he
+    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl
+    · exact ⟨hw, termLen_bnum_le_E' hb1s le_rfl⟩
+    · exact ⟨hx, termLen_bnum_le_E' le_add_self le_rfl⟩
+  have hsucc := succCode_proof htbl b
+  have hFP : formulaLen LAct (succFact b) ≤ B * (12 * ‖1 + b‖ + 3) :=
+    formulaLen_succFact_le hPeq (succE_le_addE hb1s)
+  have hpf := step1_proof hr4 [bnum (b + 1), bnum b] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _)
+    (isFormula_succFact b) hsucc hmap hc
+  have hlen := dlen_step1_le hr4 [bnum (b + 1), bnum b] rfl hes hE1 hB (isFormula_addFact _ _)
+    (isFormula_succFact b) hsucc hmap hc (by norm_num) (by simp [nOneAdd_as]) hAP hFP
+  rw [cast_rOneAdd] at hpf hlen
+  refine ⟨hpf, ?_⟩
+  have hs := succBound_le (N := N) (B := B) hb1s
+  unfold addBound
+  rw [length_one]
+  calc dlen TAct (step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b))
+      ≤ dlen TAct (succCode tbl b) + nc := hlen
+    _ ≤ (‖b‖ + 1) * nc + nc := by gcongr; exact le_trans (dlen_succCode_le htbl b) hs
+    _ = (‖b‖ + 2) * nc := by ring
+    _ ≤ (1 + 1) * (‖1 + b‖ + 2) * nc := by
+        gcongr
+        calc ‖b‖ + 2 ≤ ‖1 + b‖ + 2 := by gcongr; exact length_le_of_le le_add_self
+          _ ≤ (1 + 1) * (‖1 + b‖ + 2) := le_mul_of_one_le_left zero_le (by norm_num)
+
+/-- The `b = 0` node (`a ≥ 1`): `addZero`. -/
+lemma addGraph_sound_zero_right {tbl N B : V} (htbl : NumTableOK tbl N B) (a : V) (ha1 : 1 ≤ a) (d : V)
+    (hd : AddGraph tbl a 0 d) : DerivationOf TAct d (sing (addFact a 0)) ∧ dlen TAct d ≤ addBound N B a 0 := by
+  obtain ⟨-, hr1, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hPeq, -, -, hB⟩ := id htbl
+  have hE1 : 1 ≤ 12 * ‖a + 0‖ + 3 := one_le_addE
+  have hAP : formulaLen LAct (addFact a 0) ≤ B * (12 * ‖a + 0‖ + 3) := formulaLen_addFact_le hPeq le_rfl
+  rw [AddGraph.zero_right_iff ha1] at hd
+  subst hd
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hc : instOuter LAct [bnum a] nAddZero_c = addFact a 0 := by
+    rw [(inst_nAddZero hx).2, addFact_zero_right]
+  have hes : ∀ e ∈ [bnum a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a + 0‖ + 3 := by
+    simp only [List.mem_singleton, forall_eq]
+    exact ⟨hx, termLen_bnum_le_E' le_self_add le_rfl⟩
+  have hpf := step0_proof hr1 [bnum a] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _) (inst_nAddZero hx).1 hc
+  have hlen := dlen_step0_le hr1 [bnum a] rfl hes hE1 hB (isFormula_addFact _ _) (inst_nAddZero hx).1 hc
+    (by norm_num) (by simp [nAddZero_as]) hAP
+  rw [cast_rAddZero] at hpf hlen
+  refine ⟨hpf, ?_⟩
+  unfold addBound
+  exact le_trans hlen (le_mul_of_one_le_left zero_le (one_le_count _ _))
+
+/-- **Soundness and length of addition**, by Π₁ order induction on `a + b`. -/
+theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
+    ∀ s : V, ∀ a ≤ s, ∀ b ≤ s, a + b = s →
+      ∀ d, AddGraph tbl a b d → DerivationOf TAct d (sing (addFact a b)) ∧ dlen TAct d ≤ addBound N B a b := by
+  intro s
+  induction s using ISigma1.pi1_order_induction with
+  | hP => simp only [addBound]; definability
+  | ind s ih =>
+    intro a _ b _ hs d hd
+    obtain ⟨hr0, -, -, -, -, -, -, hr7, hr8, hr9, hr10, -, -, -, -, -, -, -, -, hPeq, -, -, hB⟩ := id htbl
+    have hE1 : 1 ≤ 12 * ‖a + b‖ + 3 := one_le_addE
+    have hAP : formulaLen LAct (addFact a b) ≤ B * (12 * ‖a + b‖ + 3) := formulaLen_addFact_le hPeq le_rfl
+    set nc := nodeCost N B (12 * ‖a + b‖ + 3) with hnc
+    rcases zero_one_or_two_le a with rfl | rfl | ha2
+    · -- a = 0
+      rw [AddGraph.zero_left_iff] at hd
+      subst hd
+      have hx : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+      have hc : instOuter LAct [bnum b] nZeroAdd_c = addFact 0 b := by
+        rw [(inst_nZeroAdd hx).2, addFact_zero_left]
+      have hes : ∀ e ∈ [bnum b], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖0 + b‖ + 3 := by
+        simp only [List.mem_singleton, forall_eq]
+        exact ⟨hx, termLen_bnum_le_E' le_add_self le_rfl⟩
+      have hpf := step0_proof hr0 [bnum b] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _) (inst_nZeroAdd hx).1 hc
+      have hlen := dlen_step0_le hr0 [bnum b] rfl hes hE1 hB (isFormula_addFact _ _) (inst_nZeroAdd hx).1 hc
+        (by norm_num) (by simp [nZeroAdd_as]) hAP
+      rw [cast_rZeroAdd] at hpf hlen
+      refine ⟨hpf, ?_⟩
+      unfold addBound
+      exact le_trans hlen (le_mul_of_one_le_left zero_le (one_le_count _ _))
+    · -- a = 1
+      rcases zero_one_or_two_le b with rfl | rfl | hb2
+      · exact addGraph_sound_zero_right htbl 1 le_rfl d hd
+      · exact addGraph_sound_one htbl 1 le_rfl d hd
+      · exact addGraph_sound_one htbl b (le_trans one_le_two hb2) d hd
+    · -- a ≥ 2
+      rcases zero_one_or_two_le b with rfl | rfl | hb2
+      · exact addGraph_sound_zero_right htbl a (le_trans one_le_two ha2) d hd
+      · -- b = 1: the successor chain itself
+        rw [AddGraph.one_right_iff ha2] at hd
+        subst hd
+        have hpf := succCode_proof htbl a
+        rw [← addFact_one_right] at hpf
+        refine ⟨hpf, ?_⟩
+        unfold addBound
+        calc dlen TAct (succCode tbl a) ≤ succBound N B a := dlen_succCode_le htbl a
+          _ ≤ (‖a‖ + 1) * nc := succBound_le le_rfl
+          _ ≤ (‖a‖ + 1) * (‖a + 1‖ + 2) * nc := by
+              rw [mul_assoc]
+              exact mul_le_mul_of_nonneg_left (le_mul_of_one_le_left zero_le (le_trans (by norm_num) le_add_self)) zero_le
+      · -- a, b ≥ 2: the bit rows
+        obtain ⟨ha1, hb1, hlt, h⟩ := two_le_cases₂ ha2 hb2
+        set a' := a / 2 with ha'
+        set b' := b / 2 with hb'
+        obtain ⟨d', hd', hpf', hlen'⟩ :
+            ∃ d', AddGraph tbl a' b' d' ∧ DerivationOf TAct d' (sing (addFact a' b')) ∧ dlen TAct d' ≤ addBound N B a' b' := by
+          obtain ⟨d', hd'⟩ := addGraph_exists tbl (a' + b') a' le_self_add b' le_add_self rfl
+          exact ⟨d', hd', ih (a' + b') (hs ▸ hlt) a' le_self_add b' le_add_self rfl d' hd'⟩
+        have hx : IsSemiterm LAct 0 (bnum a') := isSemiterm_bnum_LAct 0 _
+        have hy : IsSemiterm LAct 0 (bnum b') := isSemiterm_bnum_LAct 0 _
+        have hz : IsSemiterm LAct 0 (bnum (a' + b')) := isSemiterm_bnum_LAct 0 _
+        have hw : IsSemiterm LAct 0 (bnum (a' + b' + 1)) := isSemiterm_bnum_LAct 0 _
+        have ha'le : a' ≤ a := by
+          rcases h with ⟨h1, _⟩ | ⟨h1, _⟩ | ⟨h1, _⟩ | ⟨h1, _⟩ <;> rw [h1]
+          · exact le_two_mul' ha1
+          · exact le_two_mul' ha1
+          · exact le_two_mul_add_one' ha1
+          · exact le_two_mul_add_one' ha1
+        have hb'le : b' ≤ b := by
+          rcases h with ⟨_, h2⟩ | ⟨_, h2⟩ | ⟨_, h2⟩ | ⟨_, h2⟩ <;> rw [h2]
+          · exact le_two_mul' hb1
+          · exact le_two_mul_add_one' hb1
+          · exact le_two_mul' hb1
+          · exact le_two_mul_add_one' hb1
+        have hsub : a' + b' ≤ a + b := add_le_add ha'le hb'le
+        have hlA' : ‖a' + b'‖ ≤ ‖a + b‖ := length_le_of_le hsub
+        have hAP' : formulaLen LAct (addFact a' b') ≤ B * (12 * ‖a + b‖ + 3) :=
+          formulaLen_addFact_le hPeq (by gcongr)
+        have hes3 : ∀ e ∈ [bnum (a' + b'), bnum b', bnum a'], IsSemiterm LAct 0 e ∧
+            termLen LAct e ≤ 12 * ‖a + b‖ + 3 := by
+          intro e he
+          simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+          rcases he with rfl | rfl | rfl
+          · exact ⟨hz, termLen_bnum_le_E' hsub le_rfl⟩
+          · exact ⟨hy, termLen_bnum_le_E' (le_trans le_add_self hsub) le_rfl⟩
+          · exact ⟨hx, termLen_bnum_le_E' (le_trans le_self_add hsub) le_rfl⟩
+        have hcount : ∀ k : V, ‖a‖ = k + 1 → (1 + (k + 1) * (‖a' + b'‖ + 2) + (‖a' + b'‖ + 1)) * nc ≤ addBound N B a b := by
+          intro k hk
+          unfold addBound
+          rw [hk]
+          refine mul_le_mul_of_nonneg_right ?_ zero_le
+          calc 1 + (k + 1) * (‖a' + b'‖ + 2) + (‖a' + b'‖ + 1) ≤ 1 + (k + 1) * (‖a + b‖ + 2) + (‖a + b‖ + 1) := by gcongr
+            _ = (k + 1 + 1) * (‖a + b‖ + 2) := by ring
+        have hcount1 : ∀ k : V, ‖a‖ = k + 1 → (1 + (k + 1) * (‖a' + b'‖ + 2)) * nc ≤ addBound N B a b :=
+          fun k hk ↦ le_trans (mul_le_mul_of_nonneg_right le_self_add zero_le) (hcount k hk)
+        have hlen'' : dlen TAct d' ≤ (‖a'‖ + 1) * (‖a' + b'‖ + 2) * nc := by
+          refine le_trans hlen' ?_
+          unfold addBound
+          exact mul_le_mul_of_nonneg_left (nodeCost_mono (by gcongr)) zero_le
+        have hstep1 : ∀ e, dlen TAct e ≤ dlen TAct d' + nc → ‖a‖ = ‖a'‖ + 1 → dlen TAct e ≤ addBound N B a b := by
+          intro e he hka
+          refine le_trans he (le_trans ?_ (hcount1 ‖a'‖ hka))
+          calc dlen TAct d' + nc ≤ (‖a'‖ + 1) * (‖a' + b'‖ + 2) * nc + nc := by gcongr
+            _ = (1 + (‖a'‖ + 1) * (‖a' + b'‖ + 2)) * nc := by ring
+        rcases h with ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩
+        · -- 00
+          have hinv := AddGraph.bit00_iff (tbl := tbl) (d := d) ha1 hb1
+          rw [← h1, ← h2] at hinv
+          obtain ⟨e, he, rfl⟩ := hinv.mp hd
+          obtain rfl := addGraph_unique tbl (a' + b') a' le_self_add b' le_add_self rfl _ _ hd' he
+          have hmap := (inst_nBit00 hx hy hz).1
+          have hc : instOuter LAct [bnum (a' + b'), bnum b', bnum a'] nBit00_c = addFact a b := by
+            rw [(inst_nBit00 hx hy hz).2, h1, h2, addFact_bit00 ha1 hb1]
+          have hpf := step1_proof hr7 _ rfl (fun e he ↦ (hes3 e he).1) (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+          have hlen := dlen_step1_le hr7 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+            (by norm_num) (by simp [nBit00_as]) hAP hAP'
+          rw [cast_rBit00] at hpf hlen
+          refine ⟨hpf, hstep1 _ hlen ?_⟩
+          rw [h1]; exact length_two_mul_of_pos (lt_of_lt_of_le Arithmetic.zero_lt_one ha1)
+        · -- 01
+          have hinv := AddGraph.bit01_iff (tbl := tbl) (d := d) ha1 hb1
+          rw [← h1, ← h2] at hinv
+          obtain ⟨e, he, rfl⟩ := hinv.mp hd
+          obtain rfl := addGraph_unique tbl (a' + b') a' le_self_add b' le_add_self rfl _ _ hd' he
+          have hmap := (inst_nBit01 hx hy hz).1
+          have hc : instOuter LAct [bnum (a' + b'), bnum b', bnum a'] nBit01_c = addFact a b := by
+            rw [(inst_nBit01 hx hy hz).2, h1, h2, addFact_bit01 ha1 hb1]
+          have hpf := step1_proof hr8 _ rfl (fun e he ↦ (hes3 e he).1) (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+          have hlen := dlen_step1_le hr8 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+            (by norm_num) (by simp [nBit01_as]) hAP hAP'
+          rw [cast_rBit01] at hpf hlen
+          refine ⟨hpf, hstep1 _ hlen ?_⟩
+          rw [h1]; exact length_two_mul_of_pos (lt_of_lt_of_le Arithmetic.zero_lt_one ha1)
+        · -- 10
+          have hinv := AddGraph.bit10_iff (tbl := tbl) (d := d) ha1 hb1
+          rw [← h1, ← h2] at hinv
+          obtain ⟨e, he, rfl⟩ := hinv.mp hd
+          obtain rfl := addGraph_unique tbl (a' + b') a' le_self_add b' le_add_self rfl _ _ hd' he
+          have hmap := (inst_nBit10 hx hy hz).1
+          have hc : instOuter LAct [bnum (a' + b'), bnum b', bnum a'] nBit10_c = addFact a b := by
+            rw [(inst_nBit10 hx hy hz).2, h1, h2, addFact_bit10 ha1 hb1]
+          have hpf := step1_proof hr9 _ rfl (fun e he ↦ (hes3 e he).1) (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+          have hlen := dlen_step1_le hr9 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+            (by norm_num) (by simp [nBit10_as]) hAP hAP'
+          rw [cast_rBit10] at hpf hlen
+          refine ⟨hpf, hstep1 _ hlen ?_⟩
+          rw [h1]; exact length_two_mul_add_one a'
+        · -- 11: with the carry
+          have hsub1 : a' + b' + 1 ≤ a + b := by
+            rw [h1, h2]
+            exact le_trans (le_self_add : a' + b' + 1 ≤ a' + b' + 1 + (a' + b' + 1)) (le_of_eq (by ring))
+          have hinv := AddGraph.bit11_iff (tbl := tbl) (d := d) ha1 hb1
+          rw [← h1, ← h2] at hinv
+          obtain ⟨e, he, rfl⟩ := hinv.mp hd
+          obtain rfl := addGraph_unique tbl (a' + b') a' le_self_add b' le_add_self rfl _ _ hd' he
+          have hmap := (inst_nBit11 hx hy hz hw).1
+          have hc : instOuter LAct [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a'] nBit11_c = addFact a b := by
+            rw [(inst_nBit11 hx hy hz hw).2, h1, h2, addFact_bit11 ha1 hb1]
+          have hes4 : ∀ e ∈ [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a'], IsSemiterm LAct 0 e ∧
+              termLen LAct e ≤ 12 * ‖a + b‖ + 3 := by
+            intro e he
+            simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+            rcases he with rfl | rfl | rfl | rfl
+            · exact ⟨hw, termLen_bnum_le_E' hsub1 le_rfl⟩
+            · exact ⟨hz, termLen_bnum_le_E' hsub le_rfl⟩
+            · exact ⟨hy, termLen_bnum_le_E' (le_trans le_add_self hsub) le_rfl⟩
+            · exact ⟨hx, termLen_bnum_le_E' (le_trans le_self_add hsub) le_rfl⟩
+          have hsucc := succCode_proof htbl (a' + b')
+          have hGP : formulaLen LAct (succFact (a' + b')) ≤ B * (12 * ‖a + b‖ + 3) :=
+            formulaLen_succFact_le hPeq (succE_le_addE hsub1)
+          have hpf := step2_proof hr10 _ rfl (fun e he ↦ (hes4 e he).1) (isFormula_addFact _ _) (isFormula_addFact _ _)
+            (isFormula_succFact _) hpf' hsucc hmap hc
+          have hlen := dlen_step2_le hr10 _ rfl hes4 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _)
+            (isFormula_succFact _) hpf' hsucc hmap hc (by norm_num) (by simp [nBit11_as]) hAP hAP' hGP
+          rw [cast_rBit11] at hpf hlen
+          refine ⟨hpf, ?_⟩
+          have hka : ‖a‖ = ‖a'‖ + 1 := by rw [h1]; exact length_two_mul_add_one a'
+          have hsB : dlen TAct (succCode tbl (a' + b')) ≤ (‖a' + b'‖ + 1) * nc :=
+            le_trans (dlen_succCode_le htbl _) (succBound_le hsub1)
+          refine le_trans hlen (le_trans ?_ (hcount ‖a'‖ hka))
+          calc dlen TAct d' + dlen TAct (succCode tbl (a' + b')) + nc
+              ≤ (‖a'‖ + 1) * (‖a' + b'‖ + 2) * nc + (‖a' + b'‖ + 1) * nc + nc := by gcongr
+            _ = (1 + (‖a'‖ + 1) * (‖a' + b'‖ + 2) + (‖a' + b'‖ + 1)) * nc := by ring
+
+/-- **`addCode` is a derivation of `{bnum a + bnum b = bnum (a + b)}`**, in every model, over any sound table. -/
+theorem addCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (a b : V) :
+    DerivationOf TAct (addCode tbl a b) (sing (addFact a b)) :=
+  (addGraph_sound htbl (a + b) a le_self_add b le_add_self rfl _ (addCode_graph tbl a b)).1
+
+/-- **`dlen (addCode tbl a b) ≤ (‖a‖ + 1)(‖a + b‖ + 2)·(N + 700·B·(12‖a + b‖ + 3))`** — cubic in the bit length. -/
+theorem dlen_addCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (a b : V) :
+    dlen TAct (addCode tbl a b) ≤ (‖a‖ + 1) * (‖a + b‖ + 2) * nodeCost N B (12 * ‖a + b‖ + 3) :=
+  (addGraph_sound htbl (a + b) a le_self_add b le_add_self rfl _ (addCode_graph tbl a b)).2
+
+theorem lemmaOK_add {tbl N B : V} (htbl : NumTableOK tbl N B) (a b : V) :
+    LemmaOK (sLemma (addFact a b) (addCode tbl a b)) := by
+  refine ⟨?_, ?_⟩
+  · show IsFormula LAct (π₁ (π₂ (sLemma (addFact a b) (addCode tbl a b))))
+    simp only [sLemma, pi₂_pair, pi₁_pair]
+    exact isFormula_addFact a b
+  · show DerivationOf TAct (π₂ (π₂ (sLemma (addFact a b) (addCode tbl a b)))) (insert (π₁ (π₂ (sLemma (addFact a b) (addCode tbl a b)))) 0)
+    simp only [sLemma, pi₂_pair, pi₁_pair]
+    exact addCode_proof htbl a b
+
+theorem stepCost_lemma_add {tbl N B N' E Γ : V} (htbl : NumTableOK tbl N B) (a b : V) :
+    stepCost N' E Γ (sLemma (addFact a b) (addCode tbl a b)) ≤
+      addBound N B a b + 2 * setLen LAct Γ + 2 * formulaLen LAct (addFact a b) + 2 := by
+  rw [stepCost_tag7 (by simp [sTag, sLemma])]
+  simp only [sLemA, sLemD, sLemma, pi₂_pair, pi₁_pair]
+  gcongr
+  exact dlen_addCode_le htbl a b
+
+end addSound
+
 end ArithS
