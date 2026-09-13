@@ -65,6 +65,8 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 set_option linter.unusedTactic false
 set_option linter.unreachableTactic false
 set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+-- (`linter.unusedVariables`: the closed rows carry a dummy binder `x`, never referenced)
 
 /-- `setShift (insert x s) = insert (shift x) (setShift s)` (`mem_ext` + `mem_setShift_iff`). -/
 lemma setShift_insert (x s : V) : setShift LAct (insert x s) = insert (shift LAct x) (setShift LAct s) := by

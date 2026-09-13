@@ -26,8 +26,10 @@ import ArithS.Necessitation.Lib.Bridge
 import ArithS.Necessitation.Steps
 import ArithS.Necessitation.Lib.Walk
 import ArithS.Necessitation.Lib.Occ
+import ArithS.Necessitation.Lib.Frag
 import ArithS.Necessitation.WalkLemmas
 import ArithS.Necessitation.RowInst
+import ArithS.Necessitation.RowInstB
 import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
 import ArithS.Necessitation.Describe
@@ -594,5 +596,35 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms hornOnly_describeF
 #print axioms costSum_describeF_le
 #print axioms dlen_describeF_chain_le
+
+-- U10 (Necessitation/Lib/Frag + RowInstB, 2026-09-13): the FRAGMENT rows of DESIGN_fragments §8.1 —
+-- 196 library rows generated from one table (copy-in/congruence, identification, functionality, sets,
+-- the ten fstIdx<Tag>, the top's node rows, exact lengths, bottom-up certification of neg/shift/subst/
+-- free and the term level, the numerals N4/N5, the axm(ii) shape rows) — each a PA-theorem read off the
+-- DSL (`quote_row_`) and instantiated at closed witnesses (`inst_`); two per group.
+#print axioms lib_eqTotal
+#print axioms inst_congAnd
+#print axioms lib_eqOfAnd
+#print axioms inst_eqOfRel
+#print axioms lib_qqAndFun
+#print axioms inst_setLenFun
+#print axioms lib_subsetAntisymm
+#print axioms inst_setShiftInsert
+#print axioms lib_fstIdxAnd
+#print axioms inst_fstIdxShift
+#print axioms lib_proofIntro
+#print axioms inst_bnumEvenCert
+#print axioms lib_formulaLenRelCert
+#print axioms inst_termLenVecAdj
+#print axioms lib_negAndCert
+#print axioms inst_substsAllCert
+#print axioms lib_freeCert
+#print axioms inst_qVecNthSucc
+#print axioms lib_twoMulMul
+#print axioms inst_lengthTwoMul
+#print axioms lib_bvAnd
+#print axioms inst_fvarVecNth
+#print axioms quote_row_bnumOddCert
+#print axioms quote_row_eqTotal
 
 end ArithS

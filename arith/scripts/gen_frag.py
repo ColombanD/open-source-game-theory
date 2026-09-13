@@ -809,6 +809,8 @@ def gen_frag():
     F('set_option linter.unusedTactic false')
     F('set_option linter.unreachableTactic false')
     F('set_option linter.unusedSimpArgs false')
+    F('set_option linter.unusedVariables false')
+    F('-- (`linter.unusedVariables`: the closed rows carry a dummy binder `x`, never referenced)')
     F()
     F('/-- `setShift (insert x s) = insert (shift x) (setShift s)` (`mem_ext` + `mem_setShift_iff`). -/')
     F('lemma setShift_insert (x s : V) : setShift LAct (insert x s) = insert (shift LAct x) (setShift LAct s) := by')
