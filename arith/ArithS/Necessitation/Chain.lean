@@ -1,4 +1,5 @@
 import ArithS.Necessitation.Steps
+import ArithS.Necessitation.RowInst
 
 /-!
 # ArithS.Necessitation.Chain — the step language, contexts, and the primitive-recursive chain
@@ -930,6 +931,411 @@ instance introFactV_defined :
     simp [introFactVDef, revV_defined.iff, qVec.defined.iff, subst.defined.iff, neg.defined.iff,
       useHornV_defined.iff, elimExistsCode_defined.iff, introFactV]
 
+/-! ## Part C — tags 6 and 7: the goal-closing leaf `sGoal` and the lemma cut `sLemma`
+
+`DESIGN_fragments.md` §2: a child's fragment is spliced FLAT into its parent's list, so when the
+parent needs the child's goal `G_child = ∃ d n, derivation d ∧ fstIdx s d ∧ dlenGraph d n ∧ n ≤ ū`
+all four conjuncts are already facts in context, and the only missing move is to package them
+and make `G_child` a hypothesis — a `cutRule` whose LEFT premise is a LEAF of constant shape
+(`goalLeafCode`: two `exsIntro`s + three `andIntro`s + four `axL`s + one `wkRule`, ten nodes).
+Closed numeral facts enter by `sLemma A dA` — a `cutRule` on `A` whose left premise is the
+supplied Γ-independent derivation `dA` of `{A}`, weakened; `StepOK` checks `DerivationOf dA {A}`
+(Δ₁ through `derivationOf`'s instance — `derivation` is never unfolded).
+
+### C.1 The four predicate codes and the canonical fact codes
+
+`Pderiv = ⌜derivation TAct⌝` (`.sigma`), `PfstIdx = ⌜fstIdxDef⌝`, `Pdlen = ⌜(dlenGraphDef LAct).sigma⌝`,
+`Ple = ⌜≤⌝` (the operator's sentence, as `RowInst.Plt`), each embedded along `emb`; the facts are
+`subst ?[witnesses] P` in the predicate's own variable order (`RowInst` §2). The goal fact is
+`goalFact s ū = ^∃ ^∃ goalBody s ū` with `d = #1` (the outer quantifier) and `n = #0`:
+`goalBody s ū = derFact #1 ⋏ (fstIdxFact s #1 ⋏ (dlenFact #1 #0 ⋏ leFact #0 ū))`, and
+`instOuter [e, n] (goalBody s ū) = goalInst e n s ū` (`instOuter_goalBody`).
+Every Σ₁ graph embeds its predicate as a Gödel numeral `!!(⌜τ⌝)` through the GENERIC
+`fact1Def τ`/`fact2Def τ` (proved for a VARIABLE `τ`, never unfolding a closed quote). -/
+
+section partC
+
+open LAct
+open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
+
+noncomputable def derivS : Semisentence LAct 1 := Semiformula.lMap emb (↑(derivation TAct).sigma : ArithmeticSemisentence 1)
+noncomputable def fstIdxS : Semisentence LAct 2 := Semiformula.lMap emb (↑fstIdxDef : ArithmeticSemisentence 2)
+noncomputable def dlenS : Semisentence LAct 2 := Semiformula.lMap emb (↑(dlenGraphDef LAct).sigma : ArithmeticSemisentence 2)
+noncomputable def leS : Semisentence LAct 2 :=
+  Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.LE.le : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2)
+noncomputable def Pderiv : V := ⌜derivS⌝
+noncomputable def PfstIdx : V := ⌜fstIdxS⌝
+noncomputable def Pdlen : V := ⌜dlenS⌝
+noncomputable def Ple : V := ⌜leS⌝
+lemma isSemiformula_Pderiv : IsSemiformula LAct ((1 : ℕ) : V) Pderiv := Sentence.quote_isSemiformula _
+lemma isSemiformula_PfstIdx : IsSemiformula LAct ((2 : ℕ) : V) PfstIdx := Sentence.quote_isSemiformula _
+lemma isSemiformula_Pdlen : IsSemiformula LAct ((2 : ℕ) : V) Pdlen := Sentence.quote_isSemiformula _
+lemma isSemiformula_Ple : IsSemiformula LAct ((2 : ℕ) : V) Ple := Sentence.quote_isSemiformula _
+noncomputable def derFact (e : V) : V := subst LAct (listToVec [e]) Pderiv
+noncomputable def fstIdxFact (s e : V) : V := subst LAct (listToVec [s, e]) PfstIdx
+noncomputable def dlenFact (e n : V) : V := subst LAct (listToVec [e, n]) Pdlen
+noncomputable def leFact (n u : V) : V := subst LAct (listToVec [n, u]) Ple
+noncomputable def fact1Def (τ : Semisentence LAct 1) : 𝚺₁.Semisentence 2 := .mkSigma
+  “y a. ∃ w, !adjoinDef w a 0 ∧ !(substsGraph LAct) y w !!(⌜τ⌝)”
+noncomputable def fact2Def (τ : Semisentence LAct 2) : 𝚺₁.Semisentence 3 := .mkSigma
+  “y a b. ∃ v, !adjoinDef v b 0 ∧ ∃ w, !adjoinDef w a v ∧ !(substsGraph LAct) y w !!(⌜τ⌝)”
+
+lemma fact1_defined (τ : Semisentence LAct 1) :
+    𝚺₁-Function₁ (fun a : V ↦ subst LAct (listToVec [a]) (⌜τ⌝ : V)) via fact1Def τ := .mk
+  fun v ↦ by simp [fact1Def, subst.defined.iff]
+lemma fact2_defined (τ : Semisentence LAct 2) :
+    𝚺₁-Function₂ (fun a b : V ↦ subst LAct (listToVec [a, b]) (⌜τ⌝ : V)) via fact2Def τ := .mk
+  fun v ↦ by simp [fact2Def, subst.defined.iff]
+
+noncomputable def derFactDef : 𝚺₁.Semisentence 2 := fact1Def derivS
+noncomputable def fstIdxFactDef : 𝚺₁.Semisentence 3 := fact2Def fstIdxS
+noncomputable def dlenFactDef : 𝚺₁.Semisentence 3 := fact2Def dlenS
+noncomputable def leFactDef : 𝚺₁.Semisentence 3 := fact2Def leS
+
+instance derFact_defined : 𝚺₁-Function₁ (derFact : V → V) via derFactDef := fact1_defined derivS
+instance fstIdxFact_defined : 𝚺₁-Function₂ (fstIdxFact : V → V → V) via fstIdxFactDef := fact2_defined fstIdxS
+instance dlenFact_defined : 𝚺₁-Function₂ (dlenFact : V → V → V) via dlenFactDef := fact2_defined dlenS
+instance leFact_defined : 𝚺₁-Function₂ (leFact : V → V → V) via leFactDef := fact2_defined leS
+instance derFact_definable : 𝚺₁-Function₁ (derFact : V → V) := derFact_defined.to_definable
+instance fstIdxFact_definable : 𝚺₁-Function₂ (fstIdxFact : V → V → V) := fstIdxFact_defined.to_definable
+instance dlenFact_definable : 𝚺₁-Function₂ (dlenFact : V → V → V) := dlenFact_defined.to_definable
+instance leFact_definable : 𝚺₁-Function₂ (leFact : V → V → V) := leFact_defined.to_definable
+
+/-! ### C.2 The goal fact, its instance, and the leaf `goalLeafCode` -/
+
+noncomputable def goalBody (s u : V) : V :=
+  derFact (bv 1) ^⋏ (fstIdxFact s (bv 1) ^⋏ (dlenFact (bv 1) (bv 0) ^⋏ leFact (bv 0) u))
+noncomputable def goalFact (s u : V) : V := ^∃ ^∃ goalBody s u
+noncomputable def goalInst (e n s u : V) : V :=
+  derFact e ^⋏ (fstIdxFact s e ^⋏ (dlenFact e n ^⋏ leFact n u))
+noncomputable def goalBodyDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y s u. ∃ b1, !qqBvarDef b1 1 ∧ ∃ b0, !qqBvarDef b0 0 ∧ ∃ f1, !derFactDef f1 b1 ∧ ∃ f2, !fstIdxFactDef f2 s b1 ∧
+    ∃ f3, !dlenFactDef f3 b1 b0 ∧ ∃ f4, !leFactDef f4 b0 u ∧ ∃ c3, !qqAndDef c3 f3 f4 ∧ ∃ c2, !qqAndDef c2 f2 c3 ∧
+    !qqAndDef y f1 c2”
+instance goalBody_defined : 𝚺₁-Function₂ (goalBody : V → V → V) via goalBodyDef := .mk
+  fun v ↦ by
+    simp [goalBodyDef, derFact_defined.iff, fstIdxFact_defined.iff, dlenFact_defined.iff, leFact_defined.iff, goalBody, bv]
+instance goalBody_definable : 𝚺₁-Function₂ (goalBody : V → V → V) := goalBody_defined.to_definable
+
+noncomputable def goalFactDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y s u. ∃ b, !goalBodyDef b s u ∧ ∃ e1, !qqExsDef e1 b ∧ !qqExsDef y e1”
+instance goalFact_defined : 𝚺₁-Function₂ (goalFact : V → V → V) via goalFactDef := .mk
+  fun v ↦ by simp [goalFactDef, goalBody_defined.iff, goalFact]
+instance goalFact_definable : 𝚺₁-Function₂ (goalFact : V → V → V) := goalFact_defined.to_definable
+
+noncomputable def goalInstDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y e n s u. ∃ f1, !derFactDef f1 e ∧ ∃ f2, !fstIdxFactDef f2 s e ∧ ∃ f3, !dlenFactDef f3 e n ∧
+    ∃ f4, !leFactDef f4 n u ∧ ∃ c3, !qqAndDef c3 f3 f4 ∧ ∃ c2, !qqAndDef c2 f2 c3 ∧ !qqAndDef y f1 c2”
+instance goalInst_defined : 𝚺₁-Function₄ (goalInst : V → V → V → V → V) via goalInstDef := .mk
+  fun v ↦ by
+    simp [goalInstDef, derFact_defined.iff, fstIdxFact_defined.iff, dlenFact_defined.iff, leFact_defined.iff, goalInst]
+
+noncomputable def conj4Code (S A₁ A₂ A₃ A₄ : V) : V :=
+  andIntro S A₁ (A₂ ^⋏ (A₃ ^⋏ A₄)) (axLFactCode S A₁)
+    (andIntro (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S) A₂ (A₃ ^⋏ A₄) (axLFactCode (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S) A₂)
+      (andIntro (insert (A₃ ^⋏ A₄) (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S)) A₃ A₄
+        (axLFactCode (insert (A₃ ^⋏ A₄) (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S)) A₃)
+        (axLFactCode (insert (A₃ ^⋏ A₄) (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S)) A₄)))
+noncomputable def conj4CodeDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y S A₁ A₂ A₃ A₄. ∃ r₃, !qqAndDef r₃ A₃ A₄ ∧ ∃ r₂, !qqAndDef r₂ A₂ r₃ ∧ ∃ S₂, !insertDef S₂ r₂ S ∧
+    ∃ S₃, !insertDef S₃ r₃ S₂ ∧ ∃ i₁, !insertDef i₁ A₁ S ∧ ∃ x₁, !axLGraph x₁ i₁ A₁ ∧
+    ∃ i₂, !insertDef i₂ A₂ S₂ ∧ ∃ x₂, !axLGraph x₂ i₂ A₂ ∧ ∃ i₃, !insertDef i₃ A₃ S₃ ∧ ∃ x₃, !axLGraph x₃ i₃ A₃ ∧
+    ∃ i₄, !insertDef i₄ A₄ S₃ ∧ ∃ x₄, !axLGraph x₄ i₄ A₄ ∧ ∃ d₃, !andIntroGraph d₃ S₃ A₃ A₄ x₃ x₄ ∧
+    ∃ d₂, !andIntroGraph d₂ S₂ A₂ r₃ x₂ d₃ ∧ !andIntroGraph y S A₁ r₂ x₁ d₂”
+instance conj4Code_defined : 𝚺₁-Function₅ (conj4Code : V → V → V → V → V → V) via conj4CodeDef := .mk
+  fun v ↦ by simp [conj4CodeDef, conj4Code, axLFactCode]
+
+noncomputable def goalLeafCode (Γ e n s u : V) : V :=
+  exsChainV LAct (e ∷ n ∷ 0) (goalBody s u) Γ
+    (conj4Code (insert (goalInst e n s u) Γ) (derFact e) (fstIdxFact s e) (dlenFact e n) (leFact n u))
+
+noncomputable def goalLeafCodeDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y Γ e n s u. ∃ B, !goalBodyDef B s u ∧ ∃ M, !goalInstDef M e n s u ∧ ∃ S, !insertDef S M Γ ∧
+    ∃ f₁, !derFactDef f₁ e ∧ ∃ f₂, !fstIdxFactDef f₂ s e ∧ ∃ f₃, !dlenFactDef f₃ e n ∧ ∃ f₄, !leFactDef f₄ n u ∧
+    ∃ d, !conj4CodeDef d S f₁ f₂ f₃ f₄ ∧ ∃ v, !adjoinDef v n 0 ∧ ∃ ev, !adjoinDef ev e v ∧
+    !(exsChainVDef LAct) y ev B Γ d”
+instance goalLeafCode_defined : 𝚺₁-Function₅ (goalLeafCode : V → V → V → V → V → V) via goalLeafCodeDef := .mk
+  fun v ↦ by
+    simp [goalLeafCodeDef, goalBody_defined.iff, goalInst_defined.iff, derFact_defined.iff, fstIdxFact_defined.iff,
+      dlenFact_defined.iff, leFact_defined.iff, conj4Code_defined.iff, exsChainV_defined.iff, goalLeafCode]
+
+/-- The cost of a `sGoal` step (`dlen_goalLeafCode_le` + the cut): `11G + 27·|goalFact|·E + 2E + 42`. -/
+noncomputable def goalCost (G Q E : V) : V := 11 * G + 27 * (Q * E) + 2 * E + 42
+def goalCostDef : 𝚺₀.Semisentence 4 := .mkSigma “y G Q E. y = 11 * G + 27 * (Q * E) + 2 * E + 42”
+instance goalCost_defined : 𝚺₀-Function₃ (goalCost : V → V → V → V) via goalCostDef := .mk
+  fun v ↦ by simp [goalCostDef, goalCost, numeral_eq_natCast]
+
+/-! ### C.3 The leaf theorems: `goalLeafCode` derives `insert (goalFact s ū) Γ`, its length; the lemma cut -/
+
+lemma isSemiterm_bv_two (i : ℕ) (h : i < 2) : IsSemiterm LAct (2 : V) (bv i) :=
+  IsSemiterm.bvar.mpr (by exact_mod_cast h)
+
+lemma isFormula_derFact {e : V} (he : IsSemiterm LAct 0 e) : IsFormula LAct (derFact e) :=
+  isFormula_fact isSemiformula_Pderiv [e] rfl (by simp [he])
+lemma isFormula_fstIdxFact {s e : V} (hs : IsSemiterm LAct 0 s) (he : IsSemiterm LAct 0 e) :
+    IsFormula LAct (fstIdxFact s e) :=
+  isFormula_fact isSemiformula_PfstIdx [s, e] rfl (by simp [hs, he])
+lemma isFormula_dlenFact {e n : V} (he : IsSemiterm LAct 0 e) (hn : IsSemiterm LAct 0 n) :
+    IsFormula LAct (dlenFact e n) :=
+  isFormula_fact isSemiformula_Pdlen [e, n] rfl (by simp [he, hn])
+lemma isFormula_leFact {n u : V} (hn : IsSemiterm LAct 0 n) (hu : IsSemiterm LAct 0 u) :
+    IsFormula LAct (leFact n u) :=
+  isFormula_fact isSemiformula_Ple [n, u] rfl (by simp [hn, hu])
+
+lemma isSemiformula_goalBody {s u : V} (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) :
+    IsSemiformula LAct ((2 : ℕ) : V) (goalBody s u) := by
+  have hs2 : IsSemiterm LAct (2 : V) s := isSemiterm_of_le hs zero_le
+  have hu2 : IsSemiterm LAct (2 : V) u := isSemiterm_of_le hu zero_le
+  have hb : ∀ i : ℕ, i < 2 → IsSemiterm LAct (2 : V) (bv i) := isSemiterm_bv_two
+  unfold goalBody derFact fstIdxFact dlenFact leFact
+  simp only [IsSemiformula.and]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · exact isSemiformula_substRow isSemiformula_Pderiv [bv 1] rfl (by simp [hb 1 (by norm_num)])
+  · exact isSemiformula_substRow isSemiformula_PfstIdx [s, bv 1] rfl (by simp [hs2, hb 1 (by norm_num)])
+  · exact isSemiformula_substRow isSemiformula_Pdlen [bv 1, bv 0] rfl
+      (by simp [hb 1 (by norm_num), hb 0 (by norm_num)])
+  · exact isSemiformula_substRow isSemiformula_Ple [bv 0, u] rfl (by simp [hu2, hb 0 (by norm_num)])
+
+lemma isFormula_goalFact {s u : V} (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) :
+    IsFormula LAct (goalFact s u) :=
+  isFormula_exsIter (k := 2) (isSemiformula_goalBody hs hu)
+
+lemma isFormula_goalInst {e n s u : V} (he : IsSemiterm LAct 0 e) (hn : IsSemiterm LAct 0 n)
+    (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) : IsFormula LAct (goalInst e n s u) := by
+  unfold goalInst
+  simp [isFormula_derFact he, isFormula_fstIdxFact hs he, isFormula_dlenFact he hn, isFormula_leFact hn hu]
+
+lemma formulaLen_goalFact {s u : V} (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) :
+    formulaLen LAct (goalFact s u) = formulaLen LAct (goalBody s u) + 2 := by
+  have := formulaLen_exsIter (n := 2) (isSemiformula_goalBody hs hu).isUFormula
+  rw [show goalFact s u = exsIter 2 (goalBody s u) from rfl, this]
+  simp
+
+lemma instOuter_goalBody {e n s u : V} (he : IsSemiterm LAct 0 e) (hn : IsSemiterm LAct 0 n)
+    (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) :
+    instOuter LAct [e, n] (goalBody s u) = goalInst e n s u := by
+  have hs2 : IsSemiterm LAct ((2 : ℕ) : V) s := isSemiterm_of_le hs zero_le
+  have hu2 : IsSemiterm LAct ((2 : ℕ) : V) u := isSemiterm_of_le hu zero_le
+  have hb1 : IsSemiterm LAct ((2 : ℕ) : V) (bv 1) := isSemiterm_bv (by norm_num)
+  have hb0 : IsSemiterm LAct ((2 : ℕ) : V) (bv 0) := isSemiterm_bv (by norm_num)
+  have hes : ∀ x ∈ [e, n], IsSemiterm LAct 0 x := List.forall_mem_cons.mpr ⟨he, List.forall_mem_singleton.mpr hn⟩
+  have t1 : ∀ t ∈ [bv 1], IsSemiterm LAct ((2 : ℕ) : V) t := List.forall_mem_singleton.mpr hb1
+  have t2 : ∀ t ∈ [s, bv 1], IsSemiterm LAct ((2 : ℕ) : V) t :=
+    List.forall_mem_cons.mpr ⟨hs2, List.forall_mem_singleton.mpr hb1⟩
+  have t3 : ∀ t ∈ [bv 1, bv 0], IsSemiterm LAct ((2 : ℕ) : V) t :=
+    List.forall_mem_cons.mpr ⟨hb1, List.forall_mem_singleton.mpr hb0⟩
+  have t4 : ∀ t ∈ [bv 0, u], IsSemiterm LAct ((2 : ℕ) : V) t :=
+    List.forall_mem_cons.mpr ⟨hb0, List.forall_mem_singleton.mpr hu2⟩
+  have h1 := isSemiformula_substRow (n := 2) isSemiformula_Pderiv [bv 1] rfl t1
+  have h2 := isSemiformula_substRow (n := 2) isSemiformula_PfstIdx [s, bv 1] rfl t2
+  have h3 := isSemiformula_substRow (n := 2) isSemiformula_Pdlen [bv 1, bv 0] rfl t3
+  have h4 := isSemiformula_substRow (n := 2) isSemiformula_Ple [bv 0, u] rfl t4
+  have hes2 : ((([e, n] : List V).length + 0 : ℕ) : V) = ((2 : ℕ) : V) := by simp
+  unfold goalBody goalInst derFact fstIdxFact dlenFact leFact
+  rw [← instOuterAt_zero,
+    instOuterAt_and 0 [e, n] (by rw [hes2]; exact h1)
+      (by rw [hes2]; exact IsSemiformula.and.mpr ⟨h2, IsSemiformula.and.mpr ⟨h3, h4⟩⟩) hes,
+    instOuterAt_and 0 [e, n] (by rw [hes2]; exact h2) (by rw [hes2]; exact IsSemiformula.and.mpr ⟨h3, h4⟩) hes,
+    instOuterAt_and 0 [e, n] (by rw [hes2]; exact h3) (by rw [hes2]; exact h4) hes,
+    instOuterAt_subst_listToVec 0 [bv 1] isSemiformula_Pderiv rfl [e, n] hes (by rw [hes2]; exact t1),
+    instOuterAt_subst_listToVec 0 [s, bv 1] isSemiformula_PfstIdx rfl [e, n] hes (by rw [hes2]; exact t2),
+    instOuterAt_subst_listToVec 0 [bv 1, bv 0] isSemiformula_Pdlen rfl [e, n] hes (by rw [hes2]; exact t3),
+    instOuterAt_subst_listToVec 0 [bv 0, u] isSemiformula_Ple rfl [e, n] hes (by rw [hes2]; exact t4)]
+  row_entries_simp
+  rw [termSubst_eq_self_of_closed hs, termSubst_eq_self_of_closed hu]
+
+theorem conj4Code_proof {S A₁ A₂ A₃ A₄ : V} (hS : IsFormulaSet LAct S)
+    (h₁ : IsFormula LAct A₁) (h₂ : IsFormula LAct A₂) (h₃ : IsFormula LAct A₃) (h₄ : IsFormula LAct A₄)
+    (hmem : A₁ ^⋏ (A₂ ^⋏ (A₃ ^⋏ A₄)) ∈ S)
+    (hn₁ : neg LAct A₁ ∈ S) (hn₂ : neg LAct A₂ ∈ S) (hn₃ : neg LAct A₃ ∈ S) (hn₄ : neg LAct A₄ ∈ S) :
+    DerivationOf TAct (conj4Code S A₁ A₂ A₃ A₄) S := by
+  have hS₂ : IsFormulaSet LAct (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S) := by simp [hS, h₂, h₃, h₄]
+  have hS₃ : IsFormulaSet LAct (insert (A₃ ^⋏ A₄) (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S)) := by simp [hS, h₂, h₃, h₄]
+  refine ⟨by simp [conj4Code], Derivation.andIntro hmem (axLFactCode_proof h₁ hS hn₁) ?_⟩
+  refine ⟨by simp, Derivation.andIntro (by simp) (axLFactCode_proof h₂ hS₂ (by simp [hn₂])) ?_⟩
+  refine ⟨by simp, Derivation.andIntro (by simp) (axLFactCode_proof h₃ hS₃ (by simp [hn₃]))
+    (axLFactCode_proof h₄ hS₃ (by simp [hn₄]))⟩
+
+theorem dlen_conj4Code_le {S A₁ A₂ A₃ A₄ : V} (hS : IsFormulaSet LAct S)
+    (h₁ : IsFormula LAct A₁) (h₂ : IsFormula LAct A₂) (h₃ : IsFormula LAct A₃) (h₄ : IsFormula LAct A₄)
+    (hmem : A₁ ^⋏ (A₂ ^⋏ (A₃ ^⋏ A₄)) ∈ S)
+    (hn₁ : neg LAct A₁ ∈ S) (hn₂ : neg LAct A₂ ∈ S) (hn₃ : neg LAct A₃ ∈ S) (hn₄ : neg LAct A₄ ∈ S) :
+    dlen TAct (conj4Code S A₁ A₂ A₃ A₄) ≤
+      7 * setLen LAct S + 11 * (formulaLen LAct A₁ + formulaLen LAct A₂ + formulaLen LAct A₃ + formulaLen LAct A₄) + 20 := by
+  have hS₂ : IsFormulaSet LAct (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S) := by simp [hS, h₂, h₃, h₄]
+  have hS₃ : IsFormulaSet LAct (insert (A₃ ^⋏ A₄) (insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S)) := by simp [hS, h₂, h₃, h₄]
+  set S₂ := insert (A₂ ^⋏ (A₃ ^⋏ A₄)) S with hS₂def
+  set S₃ := insert (A₃ ^⋏ A₄) S₂ with hS₃def
+  have hx₁ := axLFactCode_proof (T := TAct) h₁ hS hn₁
+  have hx₂ := axLFactCode_proof (T := TAct) h₂ hS₂ (by simp [S₂, hn₂])
+  have hx₃ := axLFactCode_proof (T := TAct) h₃ hS₃ (by simp [S₃, S₂, hn₃])
+  have hx₄ := axLFactCode_proof (T := TAct) h₄ hS₃ (by simp [S₃, S₂, hn₄])
+  have hd₃ : DerivationOf TAct (andIntro S₃ A₃ A₄ (axLFactCode S₃ A₃) (axLFactCode S₃ A₄)) S₃ :=
+    ⟨by simp, Derivation.andIntro (by simp [S₃]) hx₃ hx₄⟩
+  have hd₂ : DerivationOf TAct (andIntro S₂ A₂ (A₃ ^⋏ A₄) (axLFactCode S₂ A₂)
+      (andIntro S₃ A₃ A₄ (axLFactCode S₃ A₃) (axLFactCode S₃ A₄))) S₂ :=
+    ⟨by simp, Derivation.andIntro (by simp [S₂]) hx₂ hd₃⟩
+  have l₁ := dlen_axLFactCode (T := TAct) h₁ hS hn₁
+  have l₂ := dlen_axLFactCode (T := TAct) h₂ hS₂ (by simp [S₂, hn₂])
+  have l₃ := dlen_axLFactCode (T := TAct) h₃ hS₃ (by simp [S₃, S₂, hn₃])
+  have l₄ := dlen_axLFactCode (T := TAct) h₄ hS₃ (by simp [S₃, S₂, hn₄])
+  have e₃ : dlen TAct (andIntro S₃ A₃ A₄ (axLFactCode S₃ A₃) (axLFactCode S₃ A₄)) =
+      setLen LAct S₃ + dlen TAct (axLFactCode S₃ A₃) + dlen TAct (axLFactCode S₃ A₄) + 1 :=
+    dlen_eq_of_graph hd₃.2 (DlenGraph.andIntro_iff.mpr ⟨_, _, dlen_graph hx₃.2, dlen_graph hx₄.2, rfl⟩)
+  have e₂ : dlen TAct (andIntro S₂ A₂ (A₃ ^⋏ A₄) (axLFactCode S₂ A₂)
+      (andIntro S₃ A₃ A₄ (axLFactCode S₃ A₃) (axLFactCode S₃ A₄))) =
+      setLen LAct S₂ + dlen TAct (axLFactCode S₂ A₂)
+        + dlen TAct (andIntro S₃ A₃ A₄ (axLFactCode S₃ A₃) (axLFactCode S₃ A₄)) + 1 :=
+    dlen_eq_of_graph hd₂.2 (DlenGraph.andIntro_iff.mpr ⟨_, _, dlen_graph hx₂.2, dlen_graph hd₃.2, rfl⟩)
+  have hpf := conj4Code_proof hS h₁ h₂ h₃ h₄ hmem hn₁ hn₂ hn₃ hn₄
+  have e₁ : dlen TAct (conj4Code S A₁ A₂ A₃ A₄) =
+      setLen LAct S + dlen TAct (axLFactCode S A₁) + dlen TAct (andIntro S₂ A₂ (A₃ ^⋏ A₄) (axLFactCode S₂ A₂)
+      (andIntro S₃ A₃ A₄ (axLFactCode S₃ A₃) (axLFactCode S₃ A₄))) + 1 :=
+    dlen_eq_of_graph hpf.2 (DlenGraph.andIntro_iff.mpr ⟨_, _, dlen_graph hx₁.2, dlen_graph hd₂.2, rfl⟩)
+  have i₁ : setLen LAct (insert A₁ S) ≤ setLen LAct S + formulaLen LAct A₁ := setLen_insert_le _ _
+  have i₂ : setLen LAct (insert A₂ S₂) ≤ setLen LAct S₂ + formulaLen LAct A₂ := setLen_insert_le _ _
+  have i₃ : setLen LAct (insert A₃ S₃) ≤ setLen LAct S₃ + formulaLen LAct A₃ := setLen_insert_le _ _
+  have i₄ : setLen LAct (insert A₄ S₃) ≤ setLen LAct S₃ + formulaLen LAct A₄ := setLen_insert_le _ _
+  have j₂ : setLen LAct S₂ ≤
+      setLen LAct S + (formulaLen LAct A₂ + (formulaLen LAct A₃ + formulaLen LAct A₄ + 1) + 1) := by
+    have := setLen_insert_le (L := LAct) (A₂ ^⋏ (A₃ ^⋏ A₄)) S
+    rwa [formulaLen_and h₂.isUFormula (IsUFormula.and.mpr ⟨h₃.isUFormula, h₄.isUFormula⟩),
+      formulaLen_and h₃.isUFormula h₄.isUFormula] at this
+  have j₃ : setLen LAct S₃ ≤ setLen LAct S₂ + (formulaLen LAct A₃ + formulaLen LAct A₄ + 1) := by
+    have := setLen_insert_le (L := LAct) (A₃ ^⋏ A₄) S₂
+    rwa [formulaLen_and h₃.isUFormula h₄.isUFormula] at this
+  rw [e₁, e₂, e₃, l₁, l₂, l₃, l₄]
+  calc setLen LAct S + (setLen LAct (insert A₁ S) + 1) + (setLen LAct S₂ + (setLen LAct (insert A₂ S₂) + 1)
+        + (setLen LAct S₃ + (setLen LAct (insert A₃ S₃) + 1) + (setLen LAct (insert A₄ S₃) + 1) + 1) + 1) + 1
+      ≤ setLen LAct S + (setLen LAct S + formulaLen LAct A₁ + 1) + (setLen LAct S₂ + (setLen LAct S₂ + formulaLen LAct A₂ + 1)
+        + (setLen LAct S₃ + (setLen LAct S₃ + formulaLen LAct A₃ + 1) + (setLen LAct S₃ + formulaLen LAct A₄ + 1) + 1) + 1) + 1 := by
+        gcongr
+    _ = 2 * setLen LAct S + 2 * setLen LAct S₂ + 3 * setLen LAct S₃
+        + (formulaLen LAct A₁ + formulaLen LAct A₂ + formulaLen LAct A₃ + formulaLen LAct A₄) + 7 := by ring
+    _ ≤ 2 * setLen LAct S + 2 * (setLen LAct S + (formulaLen LAct A₂ + (formulaLen LAct A₃ + formulaLen LAct A₄ + 1) + 1))
+        + 3 * (setLen LAct S + (formulaLen LAct A₂ + (formulaLen LAct A₃ + formulaLen LAct A₄ + 1) + 1)
+          + (formulaLen LAct A₃ + formulaLen LAct A₄ + 1))
+        + (formulaLen LAct A₁ + formulaLen LAct A₂ + formulaLen LAct A₃ + formulaLen LAct A₄) + 7 := by
+        gcongr
+        exact le_trans j₃ (add_le_add j₂ le_rfl)
+    _ = 7 * setLen LAct S + (formulaLen LAct A₁ + 6 * formulaLen LAct A₂ + 9 * formulaLen LAct A₃
+          + 9 * formulaLen LAct A₄) + 20 := by ring
+    _ ≤ 7 * setLen LAct S
+        + 11 * (formulaLen LAct A₁ + formulaLen LAct A₂ + formulaLen LAct A₃ + formulaLen LAct A₄) + 20 := by
+        gcongr
+        have : 11 * (formulaLen LAct A₁ + formulaLen LAct A₂ + formulaLen LAct A₃ + formulaLen LAct A₄) =
+            (formulaLen LAct A₁ + 6 * formulaLen LAct A₂ + 9 * formulaLen LAct A₃ + 9 * formulaLen LAct A₄)
+            + (10 * formulaLen LAct A₁ + 5 * formulaLen LAct A₂ + 2 * formulaLen LAct A₃ + 2 * formulaLen LAct A₄) := by
+          ring
+        rw [this]; exact le_self_add
+
+theorem goalLeafCode_proof {Γ e n s u : V} (he : IsSemiterm LAct 0 e) (hn : IsSemiterm LAct 0 n)
+    (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) (hΓ : IsFormulaSet LAct Γ)
+    (h₁ : neg LAct (derFact e) ∈ Γ) (h₂ : neg LAct (fstIdxFact s e) ∈ Γ) (h₃ : neg LAct (dlenFact e n) ∈ Γ)
+    (h₄ : neg LAct (leFact n u) ∈ Γ) :
+    DerivationOf TAct (goalLeafCode Γ e n s u) (insert (goalFact s u) Γ) := by
+  have hB : IsSemiformula LAct ((([e, n] : List V).length : ℕ) : V) (goalBody s u) := isSemiformula_goalBody hs hu
+  have hes : ∀ x ∈ [e, n], IsTerm LAct x := by simp [he, hn]
+  have hM : IsFormula LAct (goalInst e n s u) := isFormula_goalInst he hn hs hu
+  have hd := conj4Code_proof (S := insert (goalInst e n s u) Γ) (by simp [hM, hΓ]) (isFormula_derFact he)
+    (isFormula_fstIdxFact hs he) (isFormula_dlenFact he hn) (isFormula_leFact hn hu) (by simp [goalInst])
+    (by simp [h₁]) (by simp [h₂]) (by simp [h₃]) (by simp [h₄])
+  unfold goalLeafCode
+  rw [show (e ∷ n ∷ 0 : V) = vecOf [e, n] from rfl, exsChainV_vecOf [e, n] hB hes]
+  have := exsChainCode_proof (T := TAct) [e, n] hB hes hΓ (subset_refl Γ)
+    (by rw [instOuter_goalBody he hn hs hu]; exact hd)
+  exact this
+
+theorem dlen_goalLeafCode_le {E Γ e n s u : V} (hE : 1 ≤ E)
+    (he : IsSemiterm LAct 0 e) (hel : termLen LAct e ≤ E) (hn : IsSemiterm LAct 0 n) (hnl : termLen LAct n ≤ E)
+    (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) (hΓ : IsFormulaSet LAct Γ)
+    (h₁ : neg LAct (derFact e) ∈ Γ) (h₂ : neg LAct (fstIdxFact s e) ∈ Γ) (h₃ : neg LAct (dlenFact e n) ∈ Γ)
+    (h₄ : neg LAct (leFact n u) ∈ Γ) :
+    dlen TAct (goalLeafCode Γ e n s u) ≤
+      10 * setLen LAct Γ + 27 * (formulaLen LAct (goalBody s u) * E) + 2 * E + 41 := by
+  have hB : IsSemiformula LAct ((([e, n] : List V).length : ℕ) : V) (goalBody s u) := isSemiformula_goalBody hs hu
+  have hB2 : IsSemiformula LAct ((2 : ℕ) : V) (goalBody s u) := isSemiformula_goalBody hs hu
+  have hes : ∀ x ∈ [e, n], IsTerm LAct x := by simp [he, hn]
+  have hes' : ∀ x ∈ [e, n], IsTerm LAct x ∧ termLen LAct x ≤ E := by simp [he, hn, hel, hnl]
+  have hM : IsFormula LAct (goalInst e n s u) := isFormula_goalInst he hn hs hu
+  have hS : IsFormulaSet LAct (insert (goalInst e n s u) Γ) := by simp [hM, hΓ]
+  have hd := conj4Code_proof (S := insert (goalInst e n s u) Γ) hS (isFormula_derFact he)
+    (isFormula_fstIdxFact hs he) (isFormula_dlenFact he hn) (isFormula_leFact hn hu) (by simp [goalInst])
+    (by simp [h₁]) (by simp [h₂]) (by simp [h₃]) (by simp [h₄])
+  have hd' : DerivationOf TAct (conj4Code (insert (goalInst e n s u) Γ) (derFact e) (fstIdxFact s e) (dlenFact e n)
+      (leFact n u)) (insert (instOuter LAct [e, n] (goalBody s u)) Γ) := by
+    rw [instOuter_goalBody he hn hs hu]; exact hd
+  have hcost := dlen_conj4Code_le (S := insert (goalInst e n s u) Γ) hS (isFormula_derFact he)
+    (isFormula_fstIdxFact hs he) (isFormula_dlenFact he hn) (isFormula_leFact hn hu) (by simp [goalInst])
+    (by simp [h₁]) (by simp [h₂]) (by simp [h₃]) (by simp [h₄])
+  have hinst : formulaLen LAct (goalInst e n s u) ≤ formulaLen LAct (goalBody s u) * E := by
+    rw [← instOuter_goalBody he hn hs hu]
+    exact formulaLen_instOuter_le hE [e, n] hB hes'
+  have hF₄ : formulaLen LAct (derFact e) + formulaLen LAct (fstIdxFact s e) + formulaLen LAct (dlenFact e n)
+      + formulaLen LAct (leFact n u) ≤ formulaLen LAct (goalBody s u) * E := by
+    refine le_trans ?_ hinst
+    unfold goalInst
+    rw [formulaLen_and (isFormula_derFact he).isUFormula (by simp [(isFormula_fstIdxFact hs he).isUFormula,
+        (isFormula_dlenFact he hn).isUFormula, (isFormula_leFact hn hu).isUFormula]),
+      formulaLen_and (isFormula_fstIdxFact hs he).isUFormula (by simp [(isFormula_dlenFact he hn).isUFormula,
+        (isFormula_leFact hn hu).isUFormula]),
+      formulaLen_and (isFormula_dlenFact he hn).isUFormula (isFormula_leFact hn hu).isUFormula]
+    have hh : formulaLen LAct (derFact e) + formulaLen LAct (fstIdxFact s e) + formulaLen LAct (dlenFact e n)
+        + formulaLen LAct (leFact n u) + 3 =
+        formulaLen LAct (derFact e) + (formulaLen LAct (fstIdxFact s e)
+          + (formulaLen LAct (dlenFact e n) + formulaLen LAct (leFact n u) + 1) + 1) + 1 := by ring
+    rw [← hh]; exact le_self_add
+  have hSlen : setLen LAct (insert (goalInst e n s u) Γ) ≤ setLen LAct Γ + formulaLen LAct (goalBody s u) * E :=
+    le_trans (setLen_insert_le _ _) (add_le_add le_rfl hinst)
+  have hchain := dlen_exsChainCode_le (T := TAct) (E := E) (F := formulaLen LAct (goalBody s u) * E + 2) hE hB2 [e, n]
+    hB hes' hΓ (subset_refl Γ) hd' (isInstOf_self E 2 (goalBody s u)) (by simp) le_rfl
+  simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.cast_ofNat] at hchain
+  unfold goalLeafCode
+  rw [show (e ∷ n ∷ 0 : V) = vecOf [e, n] from rfl, exsChainV_vecOf [e, n] hB hes]
+  refine le_trans hchain ?_
+  calc dlen TAct (conj4Code (insert (goalInst e n s u) Γ) (derFact e) (fstIdxFact s e) (dlenFact e n) (leFact n u))
+        + (2 + 1) * (setLen LAct Γ + 1) + (2 + 1) * (2 + 1) * (formulaLen LAct (goalBody s u) * E + 2) + 2 * E
+      ≤ (7 * (setLen LAct Γ + formulaLen LAct (goalBody s u) * E) + 11 * (formulaLen LAct (goalBody s u) * E) + 20)
+        + (2 + 1) * (setLen LAct Γ + 1) + (2 + 1) * (2 + 1) * (formulaLen LAct (goalBody s u) * E + 2) + 2 * E := by
+        gcongr
+        exact le_trans hcost (by gcongr)
+    _ = _ := by ring
+
+
+/-- `{A} ⊆ insert A Γ`. -/
+lemma singleton_subset_insert (A Γ : V) : insert A (0 : V) ⊆ insert A Γ := by
+  intro x hx
+  rcases mem_bitInsert_iff.mp hx with rfl | h
+  · simp
+  · simp at h
+
+theorem lemmaCut_proof {Γ A dA e : V} (hΓ : IsFormulaSet LAct Γ) (hA : IsFormula LAct A)
+    (hdA : DerivationOf TAct dA (insert A 0)) (he : DerivationOf TAct e (insert (neg LAct A) Γ)) :
+    DerivationOf TAct (cutRule Γ A (wkToCode (insert A Γ) dA) e) Γ :=
+  ⟨by simp, Derivation.cutRule (wkToCode_proof (by simp [hA, hΓ]) (singleton_subset_insert A Γ) hdA) he⟩
+
+theorem dlen_lemmaCut_le {Γ A dA e : V} (hΓ : IsFormulaSet LAct Γ) (hA : IsFormula LAct A)
+    (hdA : DerivationOf TAct dA (insert A 0)) (he : DerivationOf TAct e (insert (neg LAct A) Γ)) :
+    dlen TAct (cutRule Γ A (wkToCode (insert A Γ) dA) e) ≤
+      dlen TAct e + (dlen TAct dA + 2 * setLen LAct Γ + 2 * formulaLen LAct A + 2) := by
+  have hw := wkToCode_proof (T := TAct) (Γ := insert A Γ) (by simp [hA, hΓ]) (singleton_subset_insert A Γ) hdA
+  have hl := dlen_wkToCode (T := TAct) (Γ := insert A Γ) (by simp [hA, hΓ]) (singleton_subset_insert A Γ) hdA
+  have hpf := lemmaCut_proof hΓ hA hdA he
+  have hc : dlen TAct (cutRule Γ A (wkToCode (insert A Γ) dA) e) =
+      setLen LAct Γ + dlen TAct (wkToCode (insert A Γ) dA) + dlen TAct e + 1 :=
+    dlen_eq_of_graph hpf.2 (DlenGraph.cutRule_iff.mpr ⟨_, _, dlen_graph hw.2, dlen_graph he.2, rfl⟩)
+  rw [hc, hl]
+  have hi : setLen LAct (insert A Γ) ≤ setLen LAct Γ + formulaLen LAct A := setLen_insert_le _ _
+  calc setLen LAct Γ + (setLen LAct (insert A Γ) + dlen TAct dA + 1) + dlen TAct e + 1
+      ≤ setLen LAct Γ + (setLen LAct Γ + formulaLen LAct A + dlen TAct dA + 1) + dlen TAct e + 1 := by gcongr
+    _ ≤ dlen TAct e + (dlen TAct dA + 2 * setLen LAct Γ + 2 * formulaLen LAct A + 2) := by
+        have : dlen TAct e + (dlen TAct dA + 2 * setLen LAct Γ + 2 * formulaLen LAct A + 2) =
+          (setLen LAct Γ + (setLen LAct Γ + formulaLen LAct A + dlen TAct dA + 1) + dlen TAct e + 1) + formulaLen LAct A := by ring
+        rw [this]; exact le_self_add
+
+
+end partC
+
 /-! ### B.2 Rows, steps, `applyStep`, `ctxAfter`, `stepCost`, `StepOK`
 
 A ROW of the table is `⟪dΛ, m, B⟫`: the stored proof code of `qqAlls B m`, the arity, the matrix.
@@ -945,6 +1351,8 @@ antecedent vector `as` and the conclusion piece), which `StepOK` checks syntacti
 | 3 | `sElimExs P` | `elimExistsCode Γ P (axLFactCode Γ (^∃ P)) e` | `insert (neg (free P)) (setShift Γ)` |
 | 4 | `sSplit p q` | `splitAndCode Γ p q e` | `insert (neg p) (insert (neg q) Γ)` |
 | 5 | `sWkDrop Γ'` | `wkDropCode Γ e` | `Γ'` |
+| 6 | `sGoal e n s ū` | `cutRule Γ (goalFact s ū) (goalLeafCode Γ e n s ū) e` | `insert (neg (goalFact s ū)) Γ` |
+| 7 | `sLemma A dA` | `cutRule Γ A (wkToCode (insert A Γ) dA) e` | `insert (neg A) Γ` |
 
 with `c' = subst (revV ev) c` and `R' = subst (qVec (revV ev)) R` (the `instOuter`/`instOuterAt 1`
 instances, `subst_revV_vecOf`/`subst_qVec_revV_vecOf`). `axLFactCode` is a LEAF: it never
@@ -978,6 +1386,9 @@ noncomputable def sIntroFact (i ev as R : V) : V := ⟪2, i, ev, as, R⟫
 noncomputable def sElimExs (P : V) : V := ⟪3, P⟫
 noncomputable def sSplit (p q : V) : V := ⟪4, p, q⟫
 noncomputable def sWkDrop (Γ' : V) : V := ⟪5, Γ'⟫
+/-- Part C: the goal-closing cut `⟪6, e, n, s, ū⟫` and the lemma cut `⟪7, A, dA⟫`. -/
+noncomputable def sGoal (e n s u : V) : V := ⟪6, e, n, s, u⟫
+noncomputable def sLemma (A dA : V) : V := ⟪7, A, dA⟫
 
 /-- The fields of a step: `sTag`; for the Horn tags `sRow`, `sEv`, `sAs`, `sC` (for tag 1 `sC s =
 ⟪c₁, c₂⟫`, for tag 2 `sC s = R`); for tag 3 `π₂ s = P`; tag 4 `π₁ (π₂ s) = p`, `π₂ (π₂ s) = q`;
@@ -987,6 +1398,14 @@ noncomputable def sRow (s : V) : V := π₁ (π₂ s)
 noncomputable def sEv (s : V) : V := π₁ (π₂ (π₂ s))
 noncomputable def sAs (s : V) : V := π₁ (π₂ (π₂ (π₂ s)))
 noncomputable def sC (s : V) : V := π₂ (π₂ (π₂ (π₂ s)))
+/-- The fields of the Part-C steps: tag 6 `sGoalE/sGoalN/sGoalS/sGoalU` (= `sRow/sEv/sAs/sC`),
+tag 7 `sLemA = π₁ (π₂ s)`, `sLemD = π₂ (π₂ s)`. -/
+noncomputable def sGoalE (s : V) : V := π₁ (π₂ s)
+noncomputable def sGoalN (s : V) : V := π₁ (π₂ (π₂ s))
+noncomputable def sGoalS (s : V) : V := π₁ (π₂ (π₂ (π₂ s)))
+noncomputable def sGoalU (s : V) : V := π₂ (π₂ (π₂ (π₂ s)))
+noncomputable def sLemA (s : V) : V := π₁ (π₂ s)
+noncomputable def sLemD (s : V) : V := π₂ (π₂ s)
 
 @[simp] lemma sTag_sUseHorn (i ev as c : V) : sTag (sUseHorn i ev as c) = 0 := by simp [sTag, sUseHorn]
 @[simp] lemma sRow_sUseHorn (i ev as c : V) : sRow (sUseHorn i ev as c) = i := by simp [sRow, sUseHorn]
@@ -1014,6 +1433,14 @@ noncomputable def sC (s : V) : V := π₂ (π₂ (π₂ (π₂ s)))
 @[simp] lemma pi₂_sSplit (p q : V) : π₂ (sSplit p q) = ⟪p, q⟫ := by simp [sSplit]
 @[simp] lemma sTag_sWkDrop (Γ' : V) : sTag (sWkDrop Γ') = 5 := by simp [sTag, sWkDrop]
 @[simp] lemma pi₂_sWkDrop (Γ' : V) : π₂ (sWkDrop Γ') = Γ' := by simp [sWkDrop]
+@[simp] lemma sTag_sGoal (e n s u : V) : sTag (sGoal e n s u) = 6 := by simp [sTag, sGoal]
+@[simp] lemma sGoalE_sGoal (e n s u : V) : sGoalE (sGoal e n s u) = e := by simp [sGoalE, sGoal]
+@[simp] lemma sGoalN_sGoal (e n s u : V) : sGoalN (sGoal e n s u) = n := by simp [sGoalN, sGoal]
+@[simp] lemma sGoalS_sGoal (e n s u : V) : sGoalS (sGoal e n s u) = s := by simp [sGoalS, sGoal]
+@[simp] lemma sGoalU_sGoal (e n s u : V) : sGoalU (sGoal e n s u) = u := by simp [sGoalU, sGoal]
+@[simp] lemma sTag_sLemma (A dA : V) : sTag (sLemma A dA) = 7 := by simp [sTag, sLemma]
+@[simp] lemma sLemA_sLemma (A dA : V) : sLemA (sLemma A dA) = A := by simp [sLemA, sLemma]
+@[simp] lemma sLemD_sLemma (A dA : V) : sLemD (sLemma A dA) = dA := by simp [sLemD, sLemma]
 
 /-- **Apply one step** at the context `Γ` to the continuation `e` (the derivation code of
 `ctxAfter Γ s`): the Part-A vector constructor of the tag. Unknown tags act as `wkDrop`. -/
@@ -1024,6 +1451,9 @@ noncomputable def applyStep (tbl Γ s e : V) : V :=
   else if sTag s = 2 then introFactV LAct Γ (sEv s) (sAs s) (sC s) (rowD tbl.[sRow s]) e
   else if sTag s = 3 then elimExistsCode LAct Γ (π₂ s) (axLFactCode Γ (^∃ (π₂ s))) e
   else if sTag s = 4 then splitAndCode LAct Γ (π₁ (π₂ s)) (π₂ (π₂ s)) e
+  else if sTag s = 6 then
+    cutRule Γ (goalFact (sGoalS s) (sGoalU s)) (goalLeafCode Γ (sGoalE s) (sGoalN s) (sGoalS s) (sGoalU s)) e
+  else if sTag s = 7 then cutRule Γ (sLemA s) (wkToCode (insert (sLemA s) Γ) (sLemD s)) e
   else wkDropCode Γ e
 
 noncomputable def applyStepDef : 𝚺₁.Semisentence 5 := .mkSigma
@@ -1036,13 +1466,16 @@ noncomputable def applyStepDef : 𝚺₁.Semisentence 5 := .mkSigma
     (t = 3 → ∃ eP, !qqExsDef eP p ∧ ∃ j, !insertDef j eP Γ ∧ ∃ ax, !axLGraph ax j eP ∧
       !(elimExistsCodeDef LAct) y Γ p ax e) ∧
     (t = 4 → !(splitAndCodeDef LAct) y Γ i p₂ e) ∧
-    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → !wkRuleGraph y Γ e)”
+    (t = 6 → ∃ g, !goalFactDef g as c ∧ ∃ l, !goalLeafCodeDef l Γ i ev as c ∧ !cutRuleGraph y Γ g l e) ∧
+    (t = 7 → ∃ j, !insertDef j i Γ ∧ ∃ w, !wkRuleGraph w j p₂ ∧ !cutRuleGraph y Γ i w e) ∧
+    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → t ≠ 6 → t ≠ 7 → !wkRuleGraph y Γ e)”
 
 instance applyStep_defined : 𝚺₁-Function₄ (applyStep : V → V → V → V → V) via applyStepDef := .mk
   fun v ↦ by
     simp [applyStepDef, useHornV_defined.iff, useHornAndV_defined.iff, introFactV_defined.iff,
-      elimExistsCode_defined.iff, splitAndCode_defined.iff]
-    unfold applyStep sTag sRow sEv sAs sC rowD axLFactCode wkDropCode
+      elimExistsCode_defined.iff, splitAndCode_defined.iff, goalFact_defined.iff, goalLeafCode_defined.iff,
+      numeral_eq_natCast]
+    unfold applyStep sTag sRow sEv sAs sC rowD axLFactCode wkDropCode sGoalE sGoalN sGoalS sGoalU sLemA sLemD wkToCode
     by_cases h0 : π₁ (v 3) = 0
     · simp [h0]
     by_cases h1 : π₁ (v 3) = 1
@@ -1053,7 +1486,11 @@ instance applyStep_defined : 𝚺₁-Function₄ (applyStep : V → V → V → 
     · simp [h3]
     by_cases h4 : π₁ (v 3) = 4
     · simp [h4]
-    · simp [h0, h1, h2, h3, h4]
+    by_cases h6 : π₁ (v 3) = 6
+    · simp [h6]
+    by_cases h7 : π₁ (v 3) = 7
+    · simp [h7]
+    · simp [h0, h1, h2, h3, h4, h6, h7]
 
 instance applyStep_definable : 𝚺₁-Function₄ (applyStep : V → V → V → V → V) := applyStep_defined.to_definable
 
@@ -1068,11 +1505,13 @@ noncomputable def ctxAfter (Γ s : V) : V :=
     insert (neg LAct (free LAct (subst LAct (qVec LAct (revV (sEv s))) (sC s)))) (setShift LAct Γ)
   else if sTag s = 3 then insert (neg LAct (free LAct (π₂ s))) (setShift LAct Γ)
   else if sTag s = 4 then insert (neg LAct (π₁ (π₂ s))) (insert (neg LAct (π₂ (π₂ s))) Γ)
+  else if sTag s = 6 then insert (neg LAct (goalFact (sGoalS s) (sGoalU s))) Γ
+  else if sTag s = 7 then insert (neg LAct (sLemA s)) Γ
   else π₂ s
 
 noncomputable def ctxAfterDef : 𝚺₁.Semisentence 3 := .mkSigma
   “y Γ s. ∃ t, !pi₁Def t s ∧ ∃ p, !pi₂Def p s ∧ ∃ i, !pi₁Def i p ∧ ∃ p₂, !pi₂Def p₂ p ∧
-    ∃ ev, !pi₁Def ev p₂ ∧ ∃ p₃, !pi₂Def p₃ p₂ ∧ ∃ c, !pi₂Def c p₃ ∧
+    ∃ ev, !pi₁Def ev p₂ ∧ ∃ p₃, !pi₂Def p₃ p₂ ∧ ∃ as, !pi₁Def as p₃ ∧ ∃ c, !pi₂Def c p₃ ∧
     ∃ c₁, !pi₁Def c₁ c ∧ ∃ c₂, !pi₂Def c₂ c ∧ ∃ r, !revVDef r ev ∧
     (t = 0 → ∃ z, !(substsGraph LAct) z r c ∧ ∃ nz, !(negGraph LAct) nz z ∧ !insertDef y nz Γ) ∧
     (t = 1 → ∃ z₁, !(substsGraph LAct) z₁ r c₁ ∧ ∃ n₁, !(negGraph LAct) n₁ z₁ ∧
@@ -1084,13 +1523,15 @@ noncomputable def ctxAfterDef : 𝚺₁.Semisentence 3 := .mkSigma
       !insertDef y nf sh) ∧
     (t = 4 → ∃ n₁, !(negGraph LAct) n₁ i ∧ ∃ n₂, !(negGraph LAct) n₂ p₂ ∧ ∃ g, !insertDef g n₂ Γ ∧
       !insertDef y n₁ g) ∧
-    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → y = p)”
+    (t = 6 → ∃ g, !goalFactDef g as c ∧ ∃ ng, !(negGraph LAct) ng g ∧ !insertDef y ng Γ) ∧
+    (t = 7 → ∃ na, !(negGraph LAct) na i ∧ !insertDef y na Γ) ∧
+    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → t ≠ 6 → t ≠ 7 → y = p)”
 
 instance ctxAfter_defined : 𝚺₁-Function₂ (ctxAfter : V → V → V) via ctxAfterDef := .mk
   fun v ↦ by
     simp [ctxAfterDef, revV_defined.iff, subst.defined.iff, neg.defined.iff, qVec.defined.iff,
-      free.defined.iff, setShift.defined.iff]
-    unfold ctxAfter sTag sEv sC
+      free.defined.iff, setShift.defined.iff, goalFact_defined.iff, numeral_eq_natCast]
+    unfold ctxAfter sTag sEv sC sGoalS sGoalU sLemA
     by_cases h0 : π₁ (v 2) = 0
     · simp [h0]
     by_cases h1 : π₁ (v 2) = 1
@@ -1101,7 +1542,11 @@ instance ctxAfter_defined : 𝚺₁-Function₂ (ctxAfter : V → V → V) via c
     · simp [h3]
     by_cases h4 : π₁ (v 2) = 4
     · simp [h4]
-    · simp [h0, h1, h2, h3, h4]
+    by_cases h6 : π₁ (v 2) = 6
+    · simp [h6]
+    by_cases h7 : π₁ (v 2) = 7
+    · simp [h7]
+    · simp [h0, h1, h2, h3, h4, h6, h7]
 
 instance ctxAfter_definable : 𝚺₁-Function₂ (ctxAfter : V → V → V) := ctxAfter_defined.to_definable
 
@@ -1137,7 +1582,9 @@ instance introCost_defined :
 the witness bound, `N ≥ dlen dΛ`), read off the `dlen_…_le` theorems:
 tag 0 `hornCost`; tag 1 `hornCost + 2G + 6BE + 4`; tag 2 `introCost`;
 tag 3 `4G + |setShift Γ| + 7|P| + 10` (`elimExistsCode` on an `axLFactCode` leaf);
-tag 4 `2G + 3|p| + 3|q| + 4`; tag 5 `G + 1`. -/
+tag 4 `2G + 3|p| + 3|q| + 4`; tag 5 `G + 1`;
+tag 6 `goalCost G |goalFact s ū| E = 11G + 27·|goalFact s ū|·E + 2E + 42`;
+tag 7 `dlen dA + 2G + 2|A| + 2`. -/
 noncomputable def stepCost (N E Γ s : V) : V :=
   if sTag s = 0 then
     hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (sC s)))
@@ -1151,6 +1598,8 @@ noncomputable def stepCost (N E Γ s : V) : V :=
     4 * setLen LAct Γ + setLen LAct (setShift LAct Γ) + 7 * formulaLen LAct (π₂ s) + 10
   else if sTag s = 4 then
     2 * setLen LAct Γ + 3 * formulaLen LAct (π₁ (π₂ s)) + 3 * formulaLen LAct (π₂ (π₂ s)) + 4
+  else if sTag s = 6 then goalCost (setLen LAct Γ) (formulaLen LAct (goalFact (sGoalS s) (sGoalU s))) E
+  else if sTag s = 7 then dlen TAct (sLemD s) + 2 * setLen LAct Γ + 2 * formulaLen LAct (sLemA s) + 2
   else setLen LAct Γ + 1
 
 noncomputable def stepCostDef : 𝚺₁.Semisentence 5 := .mkSigma
@@ -1165,13 +1614,16 @@ noncomputable def stepCostDef : 𝚺₁.Semisentence 5 := .mkSigma
     (t = 3 → ∃ sh, !(setShiftGraph LAct) sh Γ ∧ ∃ Gs, !(setLenDef LAct) Gs sh ∧ ∃ P, !(formulaLenGraph LAct) P p ∧
       y = 4 * G + Gs + 7 * P + 10) ∧
     (t = 4 → ∃ P, !(formulaLenGraph LAct) P i ∧ ∃ Q, !(formulaLenGraph LAct) Q p₂ ∧ y = 2 * G + 3 * P + 3 * Q + 4) ∧
-    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → y = G + 1)”
+    (t = 6 → ∃ g, !goalFactDef g as c ∧ ∃ Q, !(formulaLenGraph LAct) Q g ∧ !goalCostDef y G Q E) ∧
+    (t = 7 → ∃ dl, !(dlenDef TAct) dl p₂ ∧ ∃ A, !(formulaLenGraph LAct) A i ∧ y = dl + 2 * G + 2 * A + 2) ∧
+    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → t ≠ 6 → t ≠ 7 → y = G + 1)”
 
 instance stepCost_defined : 𝚺₁-Function₄ (stepCost : V → V → V → V → V) via stepCostDef := .mk
   fun v ↦ by
     simp [stepCostDef, setLen_defined.iff, impChainV_defined.iff, formulaLen.defined.iff, hornCost_defined.iff,
-      introCost_defined.iff, setShift.defined.iff, numeral_eq_natCast]
-    unfold stepCost sTag sEv sAs sC
+      introCost_defined.iff, setShift.defined.iff, goalFact_defined.iff, goalCost_defined.iff,
+      (dlen_defined (T := TAct)).iff, numeral_eq_natCast]
+    unfold stepCost sTag sEv sAs sC sGoalS sGoalU sLemA sLemD
     by_cases h0 : π₁ (v 4) = 0
     · simp [h0]
     by_cases h1 : π₁ (v 4) = 1
@@ -1182,7 +1634,11 @@ instance stepCost_defined : 𝚺₁-Function₄ (stepCost : V → V → V → V 
     · simp [h3]
     by_cases h4 : π₁ (v 4) = 4
     · simp [h4]
-    · simp [h0, h1, h2, h3, h4]
+    by_cases h6 : π₁ (v 4) = 6
+    · simp [h6]
+    by_cases h7 : π₁ (v 4) = 7
+    · simp [h7]
+    · simp [h0, h1, h2, h3, h4, h6, h7]
 
 instance stepCost_definable : 𝚺₁-Function₄ (stepCost : V → V → V → V → V) := stepCost_defined.to_definable
 
@@ -1195,6 +1651,27 @@ def HornOK (tbl E M Γ s : V) : Prop :=
   (∀ k < len (sEv s), IsSemiterm LAct 0 (sEv s).[k] ∧ termLen LAct (sEv s).[k] ≤ E) ∧
   (∀ k < len (sAs s), neg LAct (subst LAct (revV (sEv s)) (sAs s).[k]) ∈ Γ)
 
+/-- The hypotheses of a `sGoal` step (Part C): closed witnesses of length `≤ E` and the four
+negated facts in context. -/
+def GoalOK (E Γ s : V) : Prop :=
+  IsSemiterm LAct 0 (sGoalE s) ∧ termLen LAct (sGoalE s) ≤ E ∧
+  IsSemiterm LAct 0 (sGoalN s) ∧ termLen LAct (sGoalN s) ≤ E ∧
+  IsSemiterm LAct 0 (sGoalS s) ∧ termLen LAct (sGoalS s) ≤ E ∧
+  IsSemiterm LAct 0 (sGoalU s) ∧ termLen LAct (sGoalU s) ≤ E ∧
+  neg LAct (derFact (sGoalE s)) ∈ Γ ∧ neg LAct (fstIdxFact (sGoalS s) (sGoalE s)) ∈ Γ ∧
+  neg LAct (dlenFact (sGoalE s) (sGoalN s)) ∈ Γ ∧ neg LAct (leFact (sGoalN s) (sGoalU s)) ∈ Γ
+
+/-- The hypotheses of a `sLemma` step (Part C): a closed formula `A` with a supplied derivation
+of `{A}` (`DerivationOf` is Δ₁ through `derivationOf`'s instance — `derivation` is never unfolded). -/
+def LemmaOK (s : V) : Prop :=
+  IsFormula LAct (sLemA s) ∧ DerivationOf TAct (sLemD s) (insert (sLemA s) 0)
+
+instance goalOK_definable : 𝚫₁-Relation₃ (GoalOK : V → V → V → Prop) := by
+  unfold GoalOK sGoalE sGoalN sGoalS sGoalU; definability
+
+instance lemmaOK_definable : 𝚫₁-Predicate (LemmaOK : V → Prop) := by
+  unfold LemmaOK sLemA sLemD; definability
+
 /-- **A step is applicable** at `Γ` — exactly the hypotheses of the `_proof` theorems, per tag. -/
 def StepOK (tbl E M Γ s : V) : Prop :=
   IsFormulaSet LAct Γ ∧
@@ -1204,7 +1681,9 @@ def StepOK (tbl E M Γ s : V) : Prop :=
    (sTag s = 3 ∧ IsSemiformula LAct 1 (π₂ s) ∧ neg LAct (^∃ (π₂ s)) ∈ Γ) ∨
    (sTag s = 4 ∧ IsFormula LAct (π₁ (π₂ s)) ∧ IsFormula LAct (π₂ (π₂ s)) ∧
       neg LAct ((π₁ (π₂ s)) ^⋏ (π₂ (π₂ s))) ∈ Γ) ∨
-   (sTag s = 5 ∧ π₂ s ⊆ Γ))
+   (sTag s = 5 ∧ π₂ s ⊆ Γ) ∨
+   (sTag s = 6 ∧ GoalOK E Γ s) ∨
+   (sTag s = 7 ∧ LemmaOK s))
 
 instance hornOK_definable : 𝚫₁-Relation₅ (HornOK : V → V → V → V → V → Prop) := by
   unfold HornOK sRow sEv sAs rowM; definability
@@ -1426,6 +1905,13 @@ lemma applyStep_tag4 {tbl Γ s e : V} (h : sTag s = 4) :
     applyStep tbl Γ s e = splitAndCode LAct Γ (π₁ (π₂ s)) (π₂ (π₂ s)) e := by simp [applyStep, h]
 lemma applyStep_tag5 {tbl Γ s e : V} (h : sTag s = 5) : applyStep tbl Γ s e = wkDropCode Γ e := by
   simp [applyStep, h]
+lemma applyStep_tag6 {tbl Γ s e : V} (h : sTag s = 6) :
+    applyStep tbl Γ s e =
+      cutRule Γ (goalFact (sGoalS s) (sGoalU s)) (goalLeafCode Γ (sGoalE s) (sGoalN s) (sGoalS s) (sGoalU s)) e := by
+  simp [applyStep, h]
+lemma applyStep_tag7 {tbl Γ s e : V} (h : sTag s = 7) :
+    applyStep tbl Γ s e = cutRule Γ (sLemA s) (wkToCode (insert (sLemA s) Γ) (sLemD s)) e := by
+  simp [applyStep, h]
 
 lemma ctxAfter_tag0 {Γ s : V} (h : sTag s = 0) :
     ctxAfter Γ s = insert (neg LAct (subst LAct (revV (sEv s)) (sC s))) Γ := by simp [ctxAfter, h]
@@ -1440,6 +1926,10 @@ lemma ctxAfter_tag3 {Γ s : V} (h : sTag s = 3) :
 lemma ctxAfter_tag4 {Γ s : V} (h : sTag s = 4) :
     ctxAfter Γ s = insert (neg LAct (π₁ (π₂ s))) (insert (neg LAct (π₂ (π₂ s))) Γ) := by simp [ctxAfter, h]
 lemma ctxAfter_tag5 {Γ s : V} (h : sTag s = 5) : ctxAfter Γ s = π₂ s := by simp [ctxAfter, h]
+lemma ctxAfter_tag6 {Γ s : V} (h : sTag s = 6) :
+    ctxAfter Γ s = insert (neg LAct (goalFact (sGoalS s) (sGoalU s))) Γ := by simp [ctxAfter, h]
+lemma ctxAfter_tag7 {Γ s : V} (h : sTag s = 7) : ctxAfter Γ s = insert (neg LAct (sLemA s)) Γ := by
+  simp [ctxAfter, h]
 
 lemma stepCost_tag0 {N E Γ s : V} (h : sTag s = 0) :
     stepCost N E Γ s = hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s))
@@ -1459,6 +1949,12 @@ lemma stepCost_tag4 {N E Γ s : V} (h : sTag s = 4) :
     stepCost N E Γ s = 2 * setLen LAct Γ + 3 * formulaLen LAct (π₁ (π₂ s)) + 3 * formulaLen LAct (π₂ (π₂ s)) + 4 := by
   simp [stepCost, h]
 lemma stepCost_tag5 {N E Γ s : V} (h : sTag s = 5) : stepCost N E Γ s = setLen LAct Γ + 1 := by simp [stepCost, h]
+lemma stepCost_tag6 {N E Γ s : V} (h : sTag s = 6) :
+    stepCost N E Γ s = goalCost (setLen LAct Γ) (formulaLen LAct (goalFact (sGoalS s) (sGoalU s))) E := by
+  simp [stepCost, h]
+lemma stepCost_tag7 {N E Γ s : V} (h : sTag s = 7) :
+    stepCost N E Γ s = dlen TAct (sLemD s) + 2 * setLen LAct Γ + 2 * formulaLen LAct (sLemA s) + 2 := by
+  simp [stepCost, h]
 
 /-- The Horn hypotheses in list form (through the standardness bridge). -/
 lemma HornOK.lists (M : ℕ) {tbl E Γ s : V} (h : HornOK tbl E (M : V) Γ s) :
@@ -1480,7 +1976,8 @@ lemma HornOK.lists (M : ℕ) {tbl E Γ s : V} (h : HornOK tbl E (M : V) Γ s) :
 theorem applyStep_proof (M : ℕ) {tbl N E Γ s e : V} (htbl : TableOK tbl N) (hok : StepOK tbl E (M : V) Γ s)
     (he : DerivationOf TAct e (ctxAfter Γ s)) : DerivationOf TAct (applyStep tbl Γ s e) Γ := by
   obtain ⟨hΓ, h⟩ := hok
-  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩
+  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩ |
+    ⟨ht, he₁, hel₁, hn₁, hnl₁, hs₁, hsl₁, hu₁, hul₁, hm₁, hm₂, hm₃, hm₄⟩ | ⟨ht, hA, hdA⟩
   · -- sUseHorn
     obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
     have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
@@ -1539,12 +2036,21 @@ theorem applyStep_proof (M : ℕ) {tbl N E Γ s e : V} (htbl : TableOK tbl N) (h
     rw [ctxAfter_tag5 ht] at he
     rw [applyStep_tag5 ht]
     exact wkDropCode_proof hΓ hsub he
+  · -- sGoal
+    rw [ctxAfter_tag6 ht] at he
+    rw [applyStep_tag6 ht]
+    exact ⟨by simp, Derivation.cutRule (goalLeafCode_proof he₁ hn₁ hs₁ hu₁ hΓ hm₁ hm₂ hm₃ hm₄) he⟩
+  · -- sLemma
+    rw [ctxAfter_tag7 ht] at he
+    rw [applyStep_tag7 ht]
+    exact lemmaCut_proof hΓ hA hdA he
 
 /-- The context after an applicable step is a formula set. -/
 lemma isFormulaSet_ctxAfter (M : ℕ) {tbl N E Γ s : V} (htbl : TableOK tbl N) (hok : StepOK tbl E (M : V) Γ s) :
     IsFormulaSet LAct (ctxAfter Γ s) := by
   obtain ⟨hΓ, h⟩ := hok
-  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩
+  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩ |
+    ⟨ht, he₁, hel₁, hn₁, hnl₁, hs₁, hsl₁, hu₁, hul₁, hm₁, hm₂, hm₃, hm₄⟩ | ⟨ht, hA, hdA⟩
   · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
     have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
     have hrow := htbl _ hh.1
@@ -1572,6 +2078,8 @@ lemma isFormulaSet_ctxAfter (M : ℕ) {tbl N E Γ s : V} (htbl : TableOK tbl N) 
   · rw [ctxAfter_tag4 ht]; simp [hΓ, hp, hq]
   · rw [ctxAfter_tag5 ht]
     exact fun p hp ↦ hΓ p (subset_iff.mp hsub p hp)
+  · rw [ctxAfter_tag6 ht]; simp [hΓ, isFormula_goalFact hs₁ hu₁]
+  · rw [ctxAfter_tag7 ht]; simp [hΓ, hA]
 
 /-- **Persistence** (DESIGN §3.4): a fact in `Γ` survives a non-shifting step … -/
 lemma mem_ctxAfter_of_noShift {Γ s x : V} (h : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 4) (hx : x ∈ Γ) :
@@ -1580,6 +2088,22 @@ lemma mem_ctxAfter_of_noShift {Γ s x : V} (h : sTag s = 0 ∨ sTag s = 1 ∨ sT
   · rw [ctxAfter_tag0 h]; simp [hx]
   · rw [ctxAfter_tag1 h]; simp [hx]
   · rw [ctxAfter_tag4 h]; simp [hx]
+
+/-- Part C: the two cuts do not shift either. -/
+lemma mem_ctxAfter_tag6 {Γ s x : V} (h : sTag s = 6) (hx : x ∈ Γ) : x ∈ ctxAfter Γ s := by
+  rw [ctxAfter_tag6 h]; simp [hx]
+lemma mem_ctxAfter_tag7 {Γ s x : V} (h : sTag s = 7) (hx : x ∈ Γ) : x ∈ ctxAfter Γ s := by
+  rw [ctxAfter_tag7 h]; simp [hx]
+/-- `mem_ctxAfter_of_noShift` over all five non-shifting tags (0, 1, 4, 6, 7). -/
+lemma mem_ctxAfter_of_noShift' {Γ s x : V}
+    (h : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 4 ∨ sTag s = 6 ∨ sTag s = 7) (hx : x ∈ Γ) :
+    x ∈ ctxAfter Γ s := by
+  rcases h with h | h | h | h | h
+  · exact mem_ctxAfter_of_noShift (Or.inl h) hx
+  · exact mem_ctxAfter_of_noShift (Or.inr (Or.inl h)) hx
+  · exact mem_ctxAfter_of_noShift (Or.inr (Or.inr h)) hx
+  · exact mem_ctxAfter_tag6 h hx
+  · exact mem_ctxAfter_tag7 h hx
 
 /-- … and reappears SHIFTED after an eigenvariable step. -/
 lemma mem_ctxAfter_of_shift {Γ s x : V} (h : sTag s = 2 ∨ sTag s = 3) (hx : x ∈ Γ) :
@@ -1632,7 +2156,8 @@ theorem dlen_applyStep_le (M : ℕ) {tbl N E Γ s e : V} (hE : 1 ≤ E) (htbl : 
     (hok : StepOK tbl E (M : V) Γ s) (he : DerivationOf TAct e (ctxAfter Γ s)) :
     dlen TAct (applyStep tbl Γ s e) ≤ dlen TAct e + stepCost N E Γ s := by
   obtain ⟨hΓ, h⟩ := hok
-  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩
+  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩ |
+    ⟨ht, he₁, hel₁, hn₁, hnl₁, hs₁, hsl₁, hu₁, hul₁, hm₁, hm₂, hm₃, hm₄⟩ | ⟨ht, hA, hdA⟩
   · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
     have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
     have hrow := htbl _ hh.1
@@ -1697,6 +2222,30 @@ theorem dlen_applyStep_le (M : ℕ) {tbl N E Γ s e : V} (hE : 1 ≤ E) (htbl : 
   · rw [ctxAfter_tag5 ht] at he
     rw [applyStep_tag5 ht, stepCost_tag5 ht, ← add_assoc]
     exact dlen_wkDropCode_le hΓ hsub he
+  · rw [ctxAfter_tag6 ht] at he
+    rw [applyStep_tag6 ht, stepCost_tag6 ht]
+    have hleaf := goalLeafCode_proof he₁ hn₁ hs₁ hu₁ hΓ hm₁ hm₂ hm₃ hm₄
+    have hpf : DerivationOf TAct (cutRule Γ (goalFact (sGoalS s) (sGoalU s))
+        (goalLeafCode Γ (sGoalE s) (sGoalN s) (sGoalS s) (sGoalU s)) e) Γ :=
+      ⟨by simp, Derivation.cutRule hleaf he⟩
+    have hc : dlen TAct (cutRule Γ (goalFact (sGoalS s) (sGoalU s))
+        (goalLeafCode Γ (sGoalE s) (sGoalN s) (sGoalS s) (sGoalU s)) e) =
+        setLen LAct Γ + dlen TAct (goalLeafCode Γ (sGoalE s) (sGoalN s) (sGoalS s) (sGoalU s)) + dlen TAct e + 1 :=
+      dlen_eq_of_graph hpf.2 (DlenGraph.cutRule_iff.mpr ⟨_, _, dlen_graph hleaf.2, dlen_graph he.2, rfl⟩)
+    have hl := dlen_goalLeafCode_le hE he₁ hel₁ hn₁ hnl₁ hs₁ hu₁ hΓ hm₁ hm₂ hm₃ hm₄
+    have hQ : formulaLen LAct (goalBody (sGoalS s) (sGoalU s)) ≤ formulaLen LAct (goalFact (sGoalS s) (sGoalU s)) := by
+      rw [formulaLen_goalFact hs₁ hu₁]; exact le_self_add
+    rw [hc]
+    unfold goalCost
+    calc setLen LAct Γ + dlen TAct (goalLeafCode Γ (sGoalE s) (sGoalN s) (sGoalS s) (sGoalU s)) + dlen TAct e + 1
+        ≤ setLen LAct Γ + (10 * setLen LAct Γ + 27 * (formulaLen LAct (goalFact (sGoalS s) (sGoalU s)) * E)
+            + 2 * E + 41) + dlen TAct e + 1 := by
+          gcongr
+          exact le_trans hl (by gcongr)
+      _ = _ := by ring
+  · rw [ctxAfter_tag7 ht] at he
+    rw [applyStep_tag7 ht, stepCost_tag7 ht]
+    exact dlen_lemmaCut_le hΓ hA hdA he
 
 end perStep
 
@@ -1798,6 +2347,17 @@ theorem chainCode_two (tbl Γ₀ s₁ s₂ d : V) :
   rw [zero_add, chainAux_zero] at h1
   unfold chainCode ctxVec
   rw [hlen, chainAux_succ, h1, hC2, hC1, hS1, hS0]
+
+/-- **Smoke test** (Part C): a lemma cut followed by the goal-closing cut is the two cuts, the
+second at the context `insert (neg A) Γ₀`. -/
+theorem chainCode_lemma_goal (tbl Γ₀ A dA e n s u d : V) :
+    chainCode tbl Γ₀ (vecOf [sLemma A dA, sGoal e n s u]) d =
+      cutRule Γ₀ A (wkToCode (insert A Γ₀) dA)
+        (cutRule (insert (neg LAct A) Γ₀) (goalFact s u) (goalLeafCode (insert (neg LAct A) Γ₀) e n s u) d) := by
+  have h7 : sTag (sLemma A dA) = 7 := by simp
+  have h6 : sTag (sGoal e n s u) = 6 := by simp
+  rw [chainCode_two, applyStep_tag7 h7, ctxAfter_tag7 h7, applyStep_tag6 h6]
+  simp
 
 end chainTheorems
 
