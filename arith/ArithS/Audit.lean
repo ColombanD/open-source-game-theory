@@ -492,6 +492,10 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dlen_chainCode_le
 #print axioms ctxVec_isFormulaSet
 #print axioms chainCode_two
+-- U10 (Necessitation/Chain Part C, 2026-09-13): the goal-closing leaf `goalLeafCode` (tags 6/7)
+#print axioms goalLeafCode_proof
+#print axioms dlen_goalLeafCode_le
+#print axioms chainCode_lemma_goal
 
 -- U10 (Necessitation/RowInst, 2026-09-13): every row of the formula walk read off the DSL and
 -- instantiated — the row-shape lemmas `quote_row_<row>` (`⌜lMap emb <row>B⌝ = impChain as c` with

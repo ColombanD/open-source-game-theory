@@ -17,6 +17,11 @@ a Σ₁ `applyStep` needs them on HFS vectors. Part A builds the vector-level tw
 the list constructors on `vecOf es` (`useHornV_vecOf`, …), so every `_proof`/`dlen_…_le` theorem
 of `Steps.lean` transfers verbatim. The one substitution fact behind this: `instOuter es B`
 is ONE simultaneous substitution, `subst (vecOf es.reverse) B` (`subst_revV_vecOf`).
+
+Part C (2026-09-13, `DESIGN_fragments.md` §2) adds the two flat tags of the fragment design: `sGoal e n s ū`
+(tag 6, the goal-closing cut on `goalFact s ū` whose left premise is the constant ten-node leaf
+`goalLeafCode`) and `sLemma A dA` (tag 7, a closed lemma cut in with its own derivation `dA`); both
+are non-shifting and every chain theorem covers them without a change of statement.
 -/
 
 namespace ArithS

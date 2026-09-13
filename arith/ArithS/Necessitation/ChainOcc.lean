@@ -32,7 +32,7 @@ noncomputable def introCostOcc (N E G O m j B : V) : V :=
     + (2 * j + 1) * ((j + 2) * (B * E) + 1) + 12
 
 /-- `stepCost` with the additive shift term on the two shifting tags:
-tag 2 `introCostOcc`; tag 3 `5G + fvOccS Γ + 7|P| + 10`; every other tag `stepCost`. -/
+tag 2 `introCostOcc`; tag 3 `5G + fvOccS Γ + 7|P| + 10`; every other tag (incl. the Part-C tags 6 and 7) `stepCost`. -/
 noncomputable def stepCostOcc (N E Γ s : V) : V :=
   if sTag s = 2 then
     introCostOcc N E (setLen LAct Γ) (fvOccS LAct Γ) (len (sEv s)) (len (sAs s))
@@ -54,6 +54,10 @@ lemma stepCostOcc_tag3 {N E Γ s : V} (h : sTag s = 3) :
 lemma stepCostOcc_tag4 {N E Γ s : V} (h : sTag s = 4) : stepCostOcc N E Γ s = stepCost N E Γ s := by
   simp [stepCostOcc, h]
 lemma stepCostOcc_tag5 {N E Γ s : V} (h : sTag s = 5) : stepCostOcc N E Γ s = stepCost N E Γ s := by
+  simp [stepCostOcc, h]
+lemma stepCostOcc_tag6 {N E Γ s : V} (h : sTag s = 6) : stepCostOcc N E Γ s = stepCost N E Γ s := by
+  simp [stepCostOcc, h]
+lemma stepCostOcc_tag7 {N E Γ s : V} (h : sTag s = 7) : stepCostOcc N E Γ s = stepCost N E Γ s := by
   simp [stepCostOcc, h]
 
 lemma introCostOcc_bound {a N d G O m j B E : V} (h : a ≤ N) :
@@ -86,7 +90,8 @@ theorem dlen_applyStep_le_occ (M : ℕ) {tbl N E Γ s e : V} (hE : 1 ≤ E) (htb
     (hok : StepOK tbl E (M : V) Γ s) (he : DerivationOf TAct e (ctxAfter Γ s)) :
     dlen TAct (applyStep tbl Γ s e) ≤ dlen TAct e + stepCostOcc N E Γ s := by
   have hΓ := hok.1
-  rcases hok.2 with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩
+  rcases hok.2 with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩ |
+    ⟨ht, -⟩ | ⟨ht, -⟩
   · rw [stepCostOcc_tag0 ht]; exact dlen_applyStep_le M hE htbl hok he
   · rw [stepCostOcc_tag1 ht]; exact dlen_applyStep_le M hE htbl hok he
   · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
@@ -115,6 +120,8 @@ theorem dlen_applyStep_le_occ (M : ℕ) {tbl N E Γ s e : V} (hE : 1 ≤ E) (htb
       _ = _ := by ring
   · rw [stepCostOcc_tag4 ht]; exact dlen_applyStep_le M hE htbl hok he
   · rw [stepCostOcc_tag5 ht]; exact dlen_applyStep_le M hE htbl hok he
+  · rw [stepCostOcc_tag6 ht]; exact dlen_applyStep_le M hE htbl hok he
+  · rw [stepCostOcc_tag7 ht]; exact dlen_applyStep_le M hE htbl hok he
 
 end perStepOcc
 
