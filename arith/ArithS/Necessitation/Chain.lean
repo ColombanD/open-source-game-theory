@@ -1214,4 +1214,172 @@ instance stepOK_definable : 𝚫₁-Relation₅ (StepOK : V → V → V → V �
 
 end stepLanguage
 
+/-! ### B.3 The context vector and the chain builder (primitive recursion) -/
+
+section chain
+
+open LAct
+
+namespace CtxVec
+
+noncomputable def blueprint : PR.Blueprint 2 where
+  zero := .mkSigma “y Γ₀ S. !mkVec₁Def y Γ₀”
+  succ := .mkSigma “y ih i Γ₀ S. ∃ l, !nthDef l ih i ∧ ∃ s, !nthDef s S i ∧ ∃ g, !ctxAfterDef g l s ∧ !concatDef y ih g”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun v ↦ ?[v 0]
+  succ := fun v i ih ↦ concat ih (ctxAfter ih.[i] (v 1).[i])
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, ctxAfter_defined.iff]
+
+end CtxVec
+
+/-- `ctxVecAux Γ₀ S n = [Γ₀, ctxAfter Γ₀ S.[0], ctxAfter (…) S.[1], …]` (`n + 1` entries). -/
+noncomputable def ctxVecAux (Γ₀ S n : V) : V := CtxVec.construction.result ![Γ₀, S] n
+
+/-- **The context vector** of a step list: `ctxVec Γ₀ S = ctxVecAux Γ₀ S (len S)`, `len = len S + 1`,
+entry `i` the context BEFORE step `i`, entry `len S` the final context. -/
+noncomputable def ctxVec (Γ₀ S : V) : V := ctxVecAux Γ₀ S (len S)
+
+@[simp] lemma ctxVecAux_zero (Γ₀ S : V) : ctxVecAux Γ₀ S 0 = ?[Γ₀] := by simp [ctxVecAux, CtxVec.construction]
+@[simp] lemma ctxVecAux_succ (Γ₀ S n : V) :
+    ctxVecAux Γ₀ S (n + 1) = concat (ctxVecAux Γ₀ S n) (ctxAfter (ctxVecAux Γ₀ S n).[n] S.[n]) := by
+  simp [ctxVecAux, CtxVec.construction]
+
+noncomputable def ctxVecAuxDef : 𝚺₁.Semisentence 4 := CtxVec.blueprint.resultDef |>.rew (Rew.subst ![#0, #3, #1, #2])
+
+instance ctxVecAux_defined : 𝚺₁-Function₃ (ctxVecAux : V → V → V → V) via ctxVecAuxDef := .mk
+  fun v ↦ by simp [CtxVec.construction.result_defined_iff, ctxVecAuxDef]; rfl
+instance ctxVecAux_definable : 𝚺₁-Function₃ (ctxVecAux : V → V → V → V) := ctxVecAux_defined.to_definable
+
+noncomputable def ctxVecDef : 𝚺₁.Semisentence 3 := .mkSigma “y Γ₀ S. ∃ n, !lenDef n S ∧ !ctxVecAuxDef y Γ₀ S n”
+
+instance ctxVec_defined : 𝚺₁-Function₂ (ctxVec : V → V → V) via ctxVecDef := .mk
+  fun v ↦ by simp [ctxVecDef, ctxVecAux_defined.iff, ctxVec]
+instance ctxVec_definable : 𝚺₁-Function₂ (ctxVec : V → V → V) := ctxVec_defined.to_definable
+
+lemma len_ctxVecAux (Γ₀ S : V) : ∀ n : V, len (ctxVecAux Γ₀ S n) = n + 1 := by
+  intro n
+  induction n using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ n ih => rw [ctxVecAux_succ, len_concat, ih]
+
+@[simp] lemma len_ctxVec (Γ₀ S : V) : len (ctxVec Γ₀ S) = len S + 1 := len_ctxVecAux Γ₀ S (len S)
+
+/-- Entries are stable under extension: `(ctxVecAux (n + k)).[i] = (ctxVecAux n).[i]` for `i ≤ n`. -/
+lemma nth_ctxVecAux_add (Γ₀ S : V) : ∀ k : V, ∀ n i : V, i ≤ n →
+    (ctxVecAux Γ₀ S (n + k)).[i] = (ctxVecAux Γ₀ S n).[i] := by
+  intro k
+  induction k using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => intro n i _; simp
+  | succ k ih =>
+    intro n i hi
+    rw [← add_assoc, ctxVecAux_succ,
+      concat_nth_lt _ _ (by rw [len_ctxVecAux]; exact lt_of_le_of_lt hi (lt_of_le_of_lt le_self_add (lt_add_one _))),
+      ih n i hi]
+
+@[simp] lemma nth_ctxVecAux_zero (Γ₀ S n : V) : (ctxVecAux Γ₀ S n).[0] = Γ₀ := by
+  have := nth_ctxVecAux_add Γ₀ S n 0 0 le_rfl
+  rw [zero_add] at this
+  rw [this]; simp
+
+/-- **The successor law**: the context after step `i` is `ctxAfter` of the context before it. -/
+lemma nth_ctxVecAux_succ (Γ₀ S : V) {n i : V} (hi : i < n) :
+    (ctxVecAux Γ₀ S n).[i + 1] = ctxAfter (ctxVecAux Γ₀ S n).[i] S.[i] := by
+  obtain ⟨k, rfl⟩ : ∃ k, n = (i + 1) + k := ⟨n - (i + 1), by rw [add_tsub_cancel_of_le (lt_iff_succ_le.mp hi)]⟩
+  rw [nth_ctxVecAux_add Γ₀ S k (i + 1) (i + 1) le_rfl, nth_ctxVecAux_add Γ₀ S k (i + 1) i le_self_add,
+    ctxVecAux_succ, concat_nth_len' _ _ (len_ctxVecAux Γ₀ S i), concat_nth_lt _ _ (by rw [len_ctxVecAux]; simp)]
+
+@[simp] lemma nth_ctxVec_zero (Γ₀ S : V) : (ctxVec Γ₀ S).[0] = Γ₀ := nth_ctxVecAux_zero Γ₀ S _
+
+lemma nth_ctxVec_succ (Γ₀ S : V) {i : V} (hi : i < len S) :
+    (ctxVec Γ₀ S).[i + 1] = ctxAfter (ctxVec Γ₀ S).[i] S.[i] := nth_ctxVecAux_succ Γ₀ S hi
+
+namespace ChainCode
+
+noncomputable def blueprint : PR.Blueprint 4 where
+  zero := .mkSigma “y tbl C S d. y = d”
+  succ := .mkSigma “y ih j tbl C S d. ∃ Γ, !nthFromEndDef Γ C (j + 1) ∧ ∃ s, !nthFromEndDef s S j ∧
+    ∃ r, !applyStepDef r tbl Γ s ih ∧ y = r”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun v ↦ v 3
+  succ := fun v j ih ↦ applyStep (v 0) (nthFromEnd (v 1) (j + 1)) (nthFromEnd (v 2) j) ih
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, nthFromEnd_defined.iff, applyStep_defined.iff]
+
+end ChainCode
+
+/-- `chainAux tbl C S d j`: the last `j` steps applied (from the end) to `d`, with `C` the context
+vector: `g 0 = d`, `g (j + 1) = applyStep tbl C.[n − j − 1] S.[n − j − 1] (g j)`. -/
+noncomputable def chainAux (tbl C S d j : V) : V := ChainCode.construction.result ![tbl, C, S, d] j
+
+/-- **The chain builder**: `chainCode tbl Γ₀ S d = chainAux tbl (ctxVec Γ₀ S) S d (len S)`. -/
+noncomputable def chainCode (tbl Γ₀ S d : V) : V := chainAux tbl (ctxVec Γ₀ S) S d (len S)
+
+@[simp] lemma chainAux_zero (tbl C S d : V) : chainAux tbl C S d 0 = d := by simp [chainAux, ChainCode.construction]
+@[simp] lemma chainAux_succ (tbl C S d j : V) :
+    chainAux tbl C S d (j + 1) = applyStep tbl (nthFromEnd C (j + 1)) (nthFromEnd S j) (chainAux tbl C S d j) := by
+  simp [chainAux, ChainCode.construction]
+
+noncomputable def chainAuxDef : 𝚺₁.Semisentence 6 :=
+  ChainCode.blueprint.resultDef |>.rew (Rew.subst ![#0, #5, #1, #2, #3, #4])
+
+instance chainAux_defined : 𝚺₁-Function₅ (chainAux : V → V → V → V → V → V) via chainAuxDef := .mk
+  fun v ↦ by simp [ChainCode.construction.result_defined_iff, chainAuxDef]; rfl
+instance chainAux_definable : 𝚺₁.DefinableFunction₅ (chainAux : V → V → V → V → V → V) :=
+  chainAux_defined.to_definable
+
+noncomputable def chainCodeDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y tbl Γ₀ S d. ∃ C, !ctxVecDef C Γ₀ S ∧ ∃ n, !lenDef n S ∧ !chainAuxDef y tbl C S d n”
+
+instance chainCode_defined : 𝚺₁-Function₄ (chainCode : V → V → V → V → V) via chainCodeDef := .mk
+  fun v ↦ by simp [chainCodeDef, ctxVec_defined.iff, chainAux_defined.iff, chainCode]
+instance chainCode_definable : 𝚺₁-Function₄ (chainCode : V → V → V → V → V) := chainCode_defined.to_definable
+
+namespace CostSum
+
+noncomputable def blueprint : PR.Blueprint 4 where
+  zero := .mkSigma “y N E C S. y = 0”
+  succ := .mkSigma “y ih j N E C S. ∃ Γ, !nthFromEndDef Γ C (j + 1) ∧ ∃ s, !nthFromEndDef s S j ∧
+    ∃ c, !stepCostDef c N E Γ s ∧ y = ih + c”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v j ih ↦ ih + stepCost (v 0) (v 1) (nthFromEnd (v 2) (j + 1)) (nthFromEnd (v 3) j)
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, nthFromEnd_defined.iff, stepCost_defined.iff]
+
+end CostSum
+
+/-- `costAux N E C S j`: the summed `stepCost` of the last `j` steps (from the end, like `chainAux`). -/
+noncomputable def costAux (N E C S j : V) : V := CostSum.construction.result ![N, E, C, S] j
+
+/-- **The total cost** of a step list: `costSum N E Γ₀ S = costAux N E (ctxVec Γ₀ S) S (len S)`. -/
+noncomputable def costSum (N E Γ₀ S : V) : V := costAux N E (ctxVec Γ₀ S) S (len S)
+
+@[simp] lemma costAux_zero (N E C S : V) : costAux N E C S 0 = 0 := by simp [costAux, CostSum.construction]
+@[simp] lemma costAux_succ (N E C S j : V) :
+    costAux N E C S (j + 1) = costAux N E C S j + stepCost N E (nthFromEnd C (j + 1)) (nthFromEnd S j) := by
+  simp [costAux, CostSum.construction]
+
+noncomputable def costAuxDef : 𝚺₁.Semisentence 6 :=
+  CostSum.blueprint.resultDef |>.rew (Rew.subst ![#0, #5, #1, #2, #3, #4])
+
+instance costAux_defined : 𝚺₁-Function₅ (costAux : V → V → V → V → V → V) via costAuxDef := .mk
+  fun v ↦ by simp [CostSum.construction.result_defined_iff, costAuxDef]; rfl
+instance costAux_definable : 𝚺₁.DefinableFunction₅ (costAux : V → V → V → V → V → V) :=
+  costAux_defined.to_definable
+
+noncomputable def costSumDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y N E Γ₀ S. ∃ C, !ctxVecDef C Γ₀ S ∧ ∃ n, !lenDef n S ∧ !costAuxDef y N E C S n”
+
+instance costSum_defined : 𝚺₁-Function₄ (costSum : V → V → V → V → V) via costSumDef := .mk
+  fun v ↦ by simp [costSumDef, ctxVec_defined.iff, costAux_defined.iff, costSum]
+instance costSum_definable : 𝚺₁-Function₄ (costSum : V → V → V → V → V) := costSum_defined.to_definable
+
+end chain
+
 end ArithS
