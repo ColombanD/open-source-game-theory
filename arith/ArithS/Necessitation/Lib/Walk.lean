@@ -25,6 +25,17 @@ companions use that no earlier `Lib/*` file provides. Same convention as `Sets.l
    (`substSteps` under `∀/∃`, §9.3).
 5. `substs1Substs “y w t p.”` — `substs1 t p = subst (t ∷ 0) p` (Foundation's definition, `rfl`),
    so an `exsIntro` instance `substs1Graph` is decomposed by the `substsGraph` rows (§9.3).
+6. **Chain-numeral arity variants** (2026-09-13): `isSemiformulaSubsts1C`/`isFormulaFreeC` are
+   `Formulas.lean`'s `isSemiformulaSubsts1`/`isFormulaFree` with the arity of the `1`-semiformula
+   written `0 + 1` (the chain literal, code `cT 1 = 𝟎 ^+ 𝟏`) instead of the numeral `1` (code
+   `𝟏 = numeral 1`; `RowInst.lean`'s header flagged the mismatch — a walk instance at `cT 1` matches
+   the numeral rows only semantically, never syntactically). The two old rows stay (any consumer
+   of the numeral form, e.g. an `axm`/`indRec` chain, keeps them); the walk standardizes on `cT`
+   for EVERY arity (`DESIGN_describe.md` §1.4, decision 1). The bridge rows `piArityOneToC`
+   (`“p. pi 1 p → sigma (0 + 1) p”`) and `piArityCToOne` (back) let a fragment convert a fact
+   code between the two spellings (`piFact 𝟏 p ↔ piFact (cT 1) p`, both directions; semantically
+   `IsSemiformula 1 p → IsSemiformula 1 p`). Code-level shapes and instantiations:
+   `RowInst.lean` §3.C (`cTTm`, `quote_row_isSemiformulaSubsts1C`, …).
 -/
 
 namespace ArithS
@@ -218,5 +229,67 @@ theorem pa_proves_substs1Substs : 𝗣𝗔 ⊢ substs1Substs :=
     subst hw hy; rfl
 
 theorem lib_substs1Substs : Lib substs1Substs := Lib.of_pa pa_proves_substs1Substs
+
+/-! ### 6. Chain-numeral arity variants and the arity-1 bridge rows -/
+
+/-- `IsSemiterm n t → IsSemiformula (0 + 1) p → IsSemiformula n (substs1 t p)` — `isSemiformulaSubsts1`
+with the arity `1` as the chain literal `0 + 1` (code `cT 1`). -/
+noncomputable def isSemiformulaSubsts1CB : ArithmeticSemisentence 4 :=
+  “y p t n. !(isSemiterm LAct).pi n t → !(isSemiformula LAct).pi (0 + 1) p → !(substs1Graph LAct) y t p → !(isSemiformula LAct).sigma n y”
+noncomputable def isSemiformulaSubsts1C : ArithmeticSentence := ∀¹* isSemiformulaSubsts1CB
+
+lemma models_isSemiformulaSubsts1C :
+    V↓[ℒₒᵣ] ⊧ isSemiformulaSubsts1C ↔ ∀ y p t n : V, IsSemiterm LAct n t → IsSemiformula LAct 1 p → y = substs1 LAct t p → IsSemiformula LAct n y := by
+  simp [isSemiformulaSubsts1C, isSemiformulaSubsts1CB, models_iff, Matrix.vecForall_iff, substs1.defined.iff]
+
+theorem pa_proves_isSemiformulaSubsts1C : 𝗣𝗔 ⊢ isSemiformulaSubsts1C :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_isSemiformulaSubsts1C.mpr fun _ _ _ _ ht hp h ↦ by subst h; exact IsSemiformula.substs1 ht hp
+
+theorem lib_isSemiformulaSubsts1C : Lib isSemiformulaSubsts1C := Lib.of_pa pa_proves_isSemiformulaSubsts1C
+
+/-- `IsSemiformula (0 + 1) p → IsFormula (free p)` — `isFormulaFree` with the arity `1` as the chain
+literal `0 + 1` (code `cT 1`). -/
+noncomputable def isFormulaFreeCB : ArithmeticSemisentence 2 :=
+  “y p. !(isSemiformula LAct).pi (0 + 1) p → !(freeGraph LAct) y p → !(isSemiformula LAct).sigma 0 y”
+noncomputable def isFormulaFreeC : ArithmeticSentence := ∀¹* isFormulaFreeCB
+
+lemma models_isFormulaFreeC :
+    V↓[ℒₒᵣ] ⊧ isFormulaFreeC ↔ ∀ y p : V, IsSemiformula LAct 1 p → y = free LAct p → IsFormula LAct y := by
+  simp [isFormulaFreeC, isFormulaFreeCB, models_iff, Matrix.vecForall_iff, free.defined.iff]
+
+theorem pa_proves_isFormulaFreeC : 𝗣𝗔 ⊢ isFormulaFreeC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_isFormulaFreeC.mpr fun _ _ hp h ↦ by subst h; exact hp.free
+
+theorem lib_isFormulaFreeC : Lib isFormulaFreeC := Lib.of_pa pa_proves_isFormulaFreeC
+
+/-- The arity-1 bridge, numeral to chain: `IsSemiformula 1 p → IsSemiformula (0 + 1) p`
+(`piFact 𝟏 p` to `sigmaFact (cT 1) p` at the code level). -/
+noncomputable def piArityOneToCB : ArithmeticSemisentence 1 :=
+  “p. !(isSemiformula LAct).pi 1 p → !(isSemiformula LAct).sigma (0 + 1) p”
+noncomputable def piArityOneToC : ArithmeticSentence := ∀¹* piArityOneToCB
+
+lemma models_piArityOneToC :
+    V↓[ℒₒᵣ] ⊧ piArityOneToC ↔ ∀ p : V, IsSemiformula LAct 1 p → IsSemiformula LAct 1 p := by
+  simp [piArityOneToC, piArityOneToCB, models_iff]
+
+theorem pa_proves_piArityOneToC : 𝗣𝗔 ⊢ piArityOneToC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_piArityOneToC.mpr fun _ h ↦ h
+
+theorem lib_piArityOneToC : Lib piArityOneToC := Lib.of_pa pa_proves_piArityOneToC
+
+/-- The arity-1 bridge, chain to numeral: `IsSemiformula (0 + 1) p → IsSemiformula 1 p`
+(`piFact (cT 1) p` to `sigmaFact 𝟏 p`). -/
+noncomputable def piArityCToOneB : ArithmeticSemisentence 1 :=
+  “p. !(isSemiformula LAct).pi (0 + 1) p → !(isSemiformula LAct).sigma 1 p”
+noncomputable def piArityCToOne : ArithmeticSentence := ∀¹* piArityCToOneB
+
+lemma models_piArityCToOne :
+    V↓[ℒₒᵣ] ⊧ piArityCToOne ↔ ∀ p : V, IsSemiformula LAct 1 p → IsSemiformula LAct 1 p := by
+  simp [piArityCToOne, piArityCToOneB, models_iff]
+
+theorem pa_proves_piArityCToOne : 𝗣𝗔 ⊢ piArityCToOne :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_piArityCToOne.mpr fun _ h ↦ h
+
+theorem lib_piArityCToOne : Lib piArityCToOne := Lib.of_pa pa_proves_piArityCToOne
 
 end ArithS

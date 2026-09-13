@@ -550,5 +550,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lib_fvOccFSubstLe
 #print axioms lib_dlenBinaryLe
 #print axioms lib_dslSuccEqSuccO
+-- U10 (Necessitation/Lib/Walk §6 + RowInst §3.C, 2026-09-13): chain-numeral arity variants of
+-- `isSemiformulaSubsts1`/`isFormulaFree` (`… (0 + 1) …`, arity code `cT 1`, so a walk instance at a
+-- chain arity matches SYNTACTICALLY; `cTTm`/`quote_cTTm` read the level-`m` chain literal) and the
+-- arity-1 bridge rows `piArityOneToC`/`piArityCToOne` (`piFact 𝟏 p ↔ piFact (cT 1) p`).
+#print axioms lib_isSemiformulaSubsts1C
+#print axioms lib_isFormulaFreeC
+#print axioms lib_piArityOneToC
+#print axioms lib_piArityCToOne
+#print axioms quote_cTTm
+#print axioms inst_isSemiformulaSubsts1C
+#print axioms inst_isFormulaFreeC
 
 end ArithS
