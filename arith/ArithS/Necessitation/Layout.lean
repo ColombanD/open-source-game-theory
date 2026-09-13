@@ -2314,4 +2314,1020 @@ lemma lok_setLenTotalC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hL : 
       show row_setLenTotalC_R = row_setLenTotalC_body from rfl, ← freeIter_one, hinst.2]
 
 end layoutSteps
+/-! ## Part 2 — copy-in (`copySteps`, §3.3) -/
+
+section copyIn
+
+/-! ### 2.1 Σ₁ graphs of the fact codes (the generic `factKDef τ` of `Chain.lean`, extended to
+arities 3 and 4 — a closed quote never enters a blueprint; the sentence is spliced as `!!(⌜τ⌝)`) -/
+
+noncomputable def fact3Def (τ : Semisentence LAct 3) : 𝚺₁.Semisentence 4 := .mkSigma
+  “y a b c. ∃ v₁, !adjoinDef v₁ c 0 ∧ ∃ v₂, !adjoinDef v₂ b v₁ ∧ ∃ w, !adjoinDef w a v₂ ∧ !(substsGraph LAct) y w !!(⌜τ⌝)”
+noncomputable def fact4Def (τ : Semisentence LAct 4) : 𝚺₁.Semisentence 5 := .mkSigma
+  “y a b c d. ∃ v₁, !adjoinDef v₁ d 0 ∧ ∃ v₂, !adjoinDef v₂ c v₁ ∧ ∃ v₃, !adjoinDef v₃ b v₂ ∧ ∃ w, !adjoinDef w a v₃ ∧ !(substsGraph LAct) y w !!(⌜τ⌝)”
+
+lemma fact3_defined (τ : Semisentence LAct 3) :
+    𝚺₁-Function₃ (fun a b c : V ↦ subst LAct (listToVec [a, b, c]) (⌜τ⌝ : V)) via fact3Def τ := .mk
+  fun v ↦ by simp [fact3Def, subst.defined.iff]
+lemma fact4_defined (τ : Semisentence LAct 4) :
+    𝚺₁-Function₄ (fun a b c d : V ↦ subst LAct (listToVec [a, b, c, d]) (⌜τ⌝ : V)) via fact4Def τ := .mk
+  fun v ↦ by simp [fact4Def, subst.defined.iff]
+
+noncomputable def piFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isSemiformula LAct).pi : ArithmeticSemisentence 2))
+instance piFact_defined : 𝚺₁-Function₂ (piFact : V → V → V) via piFactDef := fact2_defined _
+
+noncomputable def andFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑qqAndDef : ArithmeticSemisentence 3))
+instance andFact_defined : 𝚺₁-Function₃ (andFact : V → V → V → V) via andFactDef := fact3_defined _
+
+noncomputable def orFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑qqOrDef : ArithmeticSemisentence 3))
+instance orFact_defined : 𝚺₁-Function₃ (orFact : V → V → V → V) via orFactDef := fact3_defined _
+
+noncomputable def allFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqAllDef : ArithmeticSemisentence 2))
+instance allFact_defined : 𝚺₁-Function₂ (allFact : V → V → V) via allFactDef := fact2_defined _
+
+noncomputable def exsFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqExsDef : ArithmeticSemisentence 2))
+instance exsFact_defined : 𝚺₁-Function₂ (exsFact : V → V → V) via exsFactDef := fact2_defined _
+
+noncomputable def relFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqRelDef : ArithmeticSemisentence 4))
+instance relFact_defined : 𝚺₁-Function₄ (relFact : V → V → V → V → V) via relFactDef := fact4_defined _
+
+noncomputable def nrelFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqNRelDef : ArithmeticSemisentence 4))
+instance nrelFact_defined : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) via nrelFactDef := fact4_defined _
+
+noncomputable def verumFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑qqVerumDef : ArithmeticSemisentence 1))
+instance verumFact_defined : 𝚺₁-Function₁ (verumFact : V → V) via verumFactDef := fact1_defined _
+
+noncomputable def falsumFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑qqFalsumDef : ArithmeticSemisentence 1))
+instance falsumFact_defined : 𝚺₁-Function₁ (falsumFact : V → V) via falsumFactDef := fact1_defined _
+
+noncomputable def funcFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqFuncDef : ArithmeticSemisentence 4))
+instance funcFact_defined : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) via funcFactDef := fact4_defined _
+
+noncomputable def bvarFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqBvarDef : ArithmeticSemisentence 2))
+instance bvarFact_defined : 𝚺₁-Function₂ (bvarFact : V → V → V) via bvarFactDef := fact2_defined _
+
+noncomputable def fvarFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqFvarDef : ArithmeticSemisentence 2))
+instance fvarFact_defined : 𝚺₁-Function₂ (fvarFact : V → V → V) via fvarFactDef := fact2_defined _
+
+noncomputable def adjFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑adjoinDef : ArithmeticSemisentence 3))
+instance adjFact_defined : 𝚺₁-Function₃ (adjFact : V → V → V → V) via adjFactDef := fact3_defined _
+
+noncomputable def tPiFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isSemiterm LAct).pi : ArithmeticSemisentence 2))
+instance tPiFact_defined : 𝚺₁-Function₂ (tPiFact : V → V → V) via tPiFactDef := fact2_defined _
+
+noncomputable def tvPiFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑(isSemitermVec LAct).pi : ArithmeticSemisentence 3))
+instance tvPiFact_defined : 𝚺₁-Function₃ (tvPiFact : V → V → V → V) via tvPiFactDef := fact3_defined _
+
+noncomputable def utvPiFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isUTermVec LAct).pi : ArithmeticSemisentence 2))
+instance utvPiFact_defined : 𝚺₁-Function₂ (utvPiFact : V → V → V) via utvPiFactDef := fact2_defined _
+
+noncomputable def eqFactBDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Eq.eq : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
+instance eqFactB_defined : 𝚺₁-Function₂ (eqFactB : V → V → V) via eqFactBDef := fact2_defined _
+
+noncomputable def lenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(formulaLenGraph LAct) : ArithmeticSemisentence 2))
+instance lenFact_defined : 𝚺₁-Function₂ (lenFact : V → V → V) via lenFactDef := fact2_defined _
+
+noncomputable def tlenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(termLenGraph LAct) : ArithmeticSemisentence 2))
+instance tlenFact_defined : 𝚺₁-Function₂ (tlenFact : V → V → V) via tlenFactDef := fact2_defined _
+
+noncomputable def memFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Mem.mem : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
+instance memFact_defined : 𝚺₁-Function₂ (memFact : V → V → V) via memFactDef := fact2_defined _
+
+noncomputable def insFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑insertDef : ArithmeticSemisentence 3))
+instance insFact_defined : 𝚺₁-Function₃ (insFact : V → V → V → V) via insFactDef := fact3_defined _
+
+noncomputable def subsetFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑bitSubsetDef : ArithmeticSemisentence 2))
+instance subsetFact_defined : 𝚺₁-Function₂ (subsetFact : V → V → V) via subsetFactDef := fact2_defined _
+
+noncomputable def fsetPiFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑(isFormulaSet LAct).pi : ArithmeticSemisentence 1))
+instance fsetPiFact_defined : 𝚺₁-Function₁ (fsetPiFact : V → V) via fsetPiFactDef := fact1_defined _
+
+noncomputable def fsetSigmaFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑(isFormulaSet LAct).sigma : ArithmeticSemisentence 1))
+instance fsetSigmaFact_defined : 𝚺₁-Function₁ (fsetSigmaFact : V → V) via fsetSigmaFactDef := fact1_defined _
+
+noncomputable def setLenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(setLenDef LAct) : ArithmeticSemisentence 2))
+instance setLenFact_defined : 𝚺₁-Function₂ (setLenFact : V → V → V) via setLenFactDef := fact2_defined _
+
+/-! ### 2.2 Fact tags, their arity, steps, antecedents and conclusion (if-chains on the kind, with
+explicit blueprints — `definability` does not go through an `ite`) -/
+
+/-- The number of witnesses a fact tag of kind `k` carries. -/
+noncomputable def tagAr (k : V) : V :=
+  if k = 0 then 1 else if k = 1 then 4 else if k = 2 then 4 else if k = 3 then 2 else if k = 4 then 2 else if k = 5 then 4 else if k = 6 then 4 else if k = 7 then 0 else if k = 8 then 0 else if k = 9 then 1 else if k = 10 then 1 else if k = 11 then 1 else if k = 12 then 4 else if k = 13 then 1 else if k = 14 then 1 else if k = 15 then 1 else if k = 16 then 4 else if k = 17 then 2 else if k = 18 then 1 else 0
+
+noncomputable def tagArDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y k. (k = 0 → y = 1) ∧ (k = 1 → y = 4) ∧ (k = 2 → y = 4) ∧ (k = 3 → y = 2) ∧ (k = 4 → y = 2) ∧ (k = 5 → y = 4) ∧ (k = 6 → y = 4) ∧ (k = 7 → y = 0) ∧ (k = 8 → y = 0) ∧ (k = 9 → y = 1) ∧ (k = 10 → y = 1) ∧ (k = 11 → y = 1) ∧ (k = 12 → y = 4) ∧ (k = 13 → y = 1) ∧ (k = 14 → y = 1) ∧ (k = 15 → y = 1) ∧ (k = 16 → y = 4) ∧ (k = 17 → y = 2) ∧ (k = 18 → y = 1) ∧ (k ≠ 0 → k ≠ 1 → k ≠ 2 → k ≠ 3 → k ≠ 4 → k ≠ 5 → k ≠ 6 → k ≠ 7 → k ≠ 8 → k ≠ 9 → k ≠ 10 → k ≠ 11 → k ≠ 12 → k ≠ 13 → k ≠ 14 → k ≠ 15 → k ≠ 16 → k ≠ 17 → k ≠ 18 → y = 0)”
+
+instance tagAr_defined : 𝚺₁-Function₁ (tagAr : V → V) via tagArDef := .mk fun v ↦ by
+  simp [tagArDef, numeral_eq_natCast]
+  unfold tagAr
+  by_cases h0 : v 1 = 0
+  · simp [h0]
+  by_cases h1 : v 1 = 1
+  · simp [h1]
+  by_cases h2 : v 1 = 2
+  · simp [h2]
+  by_cases h3 : v 1 = 3
+  · simp [h3]
+  by_cases h4 : v 1 = 4
+  · simp [h4]
+  by_cases h5 : v 1 = 5
+  · simp [h5]
+  by_cases h6 : v 1 = 6
+  · simp [h6]
+  by_cases h7 : v 1 = 7
+  · simp [h7]
+  by_cases h8 : v 1 = 8
+  · simp [h8]
+  by_cases h9 : v 1 = 9
+  · simp [h9]
+  by_cases h10 : v 1 = 10
+  · simp [h10]
+  by_cases h11 : v 1 = 11
+  · simp [h11]
+  by_cases h12 : v 1 = 12
+  · simp [h12]
+  by_cases h13 : v 1 = 13
+  · simp [h13]
+  by_cases h14 : v 1 = 14
+  · simp [h14]
+  by_cases h15 : v 1 = 15
+  · simp [h15]
+  by_cases h16 : v 1 = 16
+  · simp [h16]
+  by_cases h17 : v 1 = 17
+  · simp [h17]
+  by_cases h18 : v 1 = 18
+  · simp [h18]
+  · simp [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18]
+instance tagAr_definable : 𝚺₁-Function₁ (tagAr : V → V) := tagAr_defined.to_definable
+
+/-- The congruence step(s) copying the fact named by the tag `t` from the object `&i` (BEFORE the
+`eqTotal` shift: `&(i+1)` after it) onto the fresh `&0`; the tag's witnesses are shifted once. -/
+noncomputable def tagSteps (W i t : V) : V :=
+  if π₁ t = 0 then ?[mkStep W 44 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)], mkStep W 21 ?[(termShift LAct (π₂ t).[0]), (^&0)]]
+  else if π₁ t = 1 then ?[mkStep W 48 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&0), (termShift LAct (π₂ t).[2]), (termShift LAct (π₂ t).[3])]]
+  else if π₁ t = 2 then ?[mkStep W 49 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&0), (termShift LAct (π₂ t).[2]), (termShift LAct (π₂ t).[3])]]
+  else if π₁ t = 3 then ?[mkStep W 50 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (^&0), (termShift LAct (π₂ t).[1])]]
+  else if π₁ t = 4 then ?[mkStep W 51 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (^&0), (termShift LAct (π₂ t).[1])]]
+  else if π₁ t = 5 then ?[mkStep W 52 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (termShift LAct (π₂ t).[2]), (^&0), (termShift LAct (π₂ t).[3])]]
+  else if π₁ t = 6 then ?[mkStep W 53 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (termShift LAct (π₂ t).[2]), (^&0), (termShift LAct (π₂ t).[3])]]
+  else if π₁ t = 7 then ?[mkStep W 54 ?[(^&(i + 1)), (^&0)]]
+  else if π₁ t = 8 then ?[mkStep W 55 ?[(^&(i + 1)), (^&0)]]
+  else if π₁ t = 9 then ?[mkStep W 60 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]]
+  else if π₁ t = 10 then ?[mkStep W 62 ?[(^&(i + 1)), (^&0), (termShift LAct (π₂ t).[0])]]
+  else if π₁ t = 11 then ?[mkStep W 45 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)], mkStep W 4 ?[(termShift LAct (π₂ t).[0]), (^&0)]]
+  else if π₁ t = 12 then ?[mkStep W 56 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (termShift LAct (π₂ t).[2]), (^&0), (termShift LAct (π₂ t).[3])]]
+  else if π₁ t = 13 then ?[mkStep W 57 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]]
+  else if π₁ t = 14 then ?[mkStep W 58 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]]
+  else if π₁ t = 15 then ?[mkStep W 61 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]]
+  else if π₁ t = 16 then ?[mkStep W 59 ?[(termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&(i + 1)), (termShift LAct (π₂ t).[2]), (termShift LAct (π₂ t).[3]), (^&0)]]
+  else if π₁ t = 17 then ?[mkStep W 46 ?[(termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&(i + 1)), (^&0)], mkStep W 16 ?[(termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&0)]]
+  else if π₁ t = 18 then ?[mkStep W 47 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)], mkStep W 39 ?[(termShift LAct (π₂ t).[0]), (^&0)]]
+  else 0
+
+noncomputable def tagStepsDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W i t. ∃ k, !pi₁Def k t ∧ ∃ v, !pi₂Def v t ∧ ∃ a0, !nthDef a0 v 0 ∧ ∃ a1, !nthDef a1 v 1 ∧ ∃ a2, !nthDef a2 v 2 ∧ ∃ a3, !nthDef a3 v 3 ∧ ∃ s0, !(termShiftGraph LAct) s0 a0 ∧ ∃ s1, !(termShiftGraph LAct) s1 a1 ∧ ∃ s2, !(termShiftGraph LAct) s2 a2 ∧ ∃ s3, !(termShiftGraph LAct) s3 a3 ∧ ∃ i1, i1 = i + 1 ∧ ∃ x, !qqFvarDef x i1 ∧ ∃ z, !qqFvarDef z 0 ∧
+    (k = 0 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ st0, !mkStepDef st0 W 44 e0_2 ∧ ∃ e1_0, !adjoinDef e1_0 z 0 ∧ ∃ e1_1, !adjoinDef e1_1 s0 e1_0 ∧ ∃ st1, !mkStepDef st1 W 21 e1_1 ∧ ∃ l0, !adjoinDef l0 st1 0 ∧ !adjoinDef y st0 l0) ∧
+    (k = 1 → ∃ e0_0, !adjoinDef e0_0 s3 0 ∧ ∃ e0_1, !adjoinDef e0_1 s2 e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 z e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 s1 e0_2 ∧ ∃ e0_4, !adjoinDef e0_4 s0 e0_3 ∧ ∃ e0_5, !adjoinDef e0_5 x e0_4 ∧ ∃ st0, !mkStepDef st0 W 48 e0_5 ∧ !adjoinDef y st0 0) ∧
+    (k = 2 → ∃ e0_0, !adjoinDef e0_0 s3 0 ∧ ∃ e0_1, !adjoinDef e0_1 s2 e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 z e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 s1 e0_2 ∧ ∃ e0_4, !adjoinDef e0_4 s0 e0_3 ∧ ∃ e0_5, !adjoinDef e0_5 x e0_4 ∧ ∃ st0, !mkStepDef st0 W 49 e0_5 ∧ !adjoinDef y st0 0) ∧
+    (k = 3 → ∃ e0_0, !adjoinDef e0_0 s1 0 ∧ ∃ e0_1, !adjoinDef e0_1 z e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 x e0_2 ∧ ∃ st0, !mkStepDef st0 W 50 e0_3 ∧ !adjoinDef y st0 0) ∧
+    (k = 4 → ∃ e0_0, !adjoinDef e0_0 s1 0 ∧ ∃ e0_1, !adjoinDef e0_1 z e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 x e0_2 ∧ ∃ st0, !mkStepDef st0 W 51 e0_3 ∧ !adjoinDef y st0 0) ∧
+    (k = 5 → ∃ e0_0, !adjoinDef e0_0 s3 0 ∧ ∃ e0_1, !adjoinDef e0_1 z e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s2 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 s1 e0_2 ∧ ∃ e0_4, !adjoinDef e0_4 s0 e0_3 ∧ ∃ e0_5, !adjoinDef e0_5 x e0_4 ∧ ∃ st0, !mkStepDef st0 W 52 e0_5 ∧ !adjoinDef y st0 0) ∧
+    (k = 6 → ∃ e0_0, !adjoinDef e0_0 s3 0 ∧ ∃ e0_1, !adjoinDef e0_1 z e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s2 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 s1 e0_2 ∧ ∃ e0_4, !adjoinDef e0_4 s0 e0_3 ∧ ∃ e0_5, !adjoinDef e0_5 x e0_4 ∧ ∃ st0, !mkStepDef st0 W 53 e0_5 ∧ !adjoinDef y st0 0) ∧
+    (k = 7 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ st0, !mkStepDef st0 W 54 e0_1 ∧ !adjoinDef y st0 0) ∧
+    (k = 8 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ st0, !mkStepDef st0 W 55 e0_1 ∧ !adjoinDef y st0 0) ∧
+    (k = 9 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ st0, !mkStepDef st0 W 60 e0_2 ∧ !adjoinDef y st0 0) ∧
+    (k = 10 → ∃ e0_0, !adjoinDef e0_0 s0 0 ∧ ∃ e0_1, !adjoinDef e0_1 z e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 x e0_1 ∧ ∃ st0, !mkStepDef st0 W 62 e0_2 ∧ !adjoinDef y st0 0) ∧
+    (k = 11 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ st0, !mkStepDef st0 W 45 e0_2 ∧ ∃ e1_0, !adjoinDef e1_0 z 0 ∧ ∃ e1_1, !adjoinDef e1_1 s0 e1_0 ∧ ∃ st1, !mkStepDef st1 W 4 e1_1 ∧ ∃ l0, !adjoinDef l0 st1 0 ∧ !adjoinDef y st0 l0) ∧
+    (k = 12 → ∃ e0_0, !adjoinDef e0_0 s3 0 ∧ ∃ e0_1, !adjoinDef e0_1 z e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s2 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 s1 e0_2 ∧ ∃ e0_4, !adjoinDef e0_4 s0 e0_3 ∧ ∃ e0_5, !adjoinDef e0_5 x e0_4 ∧ ∃ st0, !mkStepDef st0 W 56 e0_5 ∧ !adjoinDef y st0 0) ∧
+    (k = 13 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ st0, !mkStepDef st0 W 57 e0_2 ∧ !adjoinDef y st0 0) ∧
+    (k = 14 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ st0, !mkStepDef st0 W 58 e0_2 ∧ !adjoinDef y st0 0) ∧
+    (k = 15 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ st0, !mkStepDef st0 W 61 e0_2 ∧ !adjoinDef y st0 0) ∧
+    (k = 16 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 s3 e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s2 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 x e0_2 ∧ ∃ e0_4, !adjoinDef e0_4 s1 e0_3 ∧ ∃ e0_5, !adjoinDef e0_5 s0 e0_4 ∧ ∃ st0, !mkStepDef st0 W 59 e0_5 ∧ !adjoinDef y st0 0) ∧
+    (k = 17 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s1 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 s0 e0_2 ∧ ∃ st0, !mkStepDef st0 W 46 e0_3 ∧ ∃ e1_0, !adjoinDef e1_0 z 0 ∧ ∃ e1_1, !adjoinDef e1_1 s1 e1_0 ∧ ∃ e1_2, !adjoinDef e1_2 s0 e1_1 ∧ ∃ st1, !mkStepDef st1 W 16 e1_2 ∧ ∃ l0, !adjoinDef l0 st1 0 ∧ !adjoinDef y st0 l0) ∧
+    (k = 18 → ∃ e0_0, !adjoinDef e0_0 z 0 ∧ ∃ e0_1, !adjoinDef e0_1 x e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 s0 e0_1 ∧ ∃ st0, !mkStepDef st0 W 47 e0_2 ∧ ∃ e1_0, !adjoinDef e1_0 z 0 ∧ ∃ e1_1, !adjoinDef e1_1 s0 e1_0 ∧ ∃ st1, !mkStepDef st1 W 39 e1_1 ∧ ∃ l0, !adjoinDef l0 st1 0 ∧ !adjoinDef y st0 l0) ∧
+    (k ≠ 0 → k ≠ 1 → k ≠ 2 → k ≠ 3 → k ≠ 4 → k ≠ 5 → k ≠ 6 → k ≠ 7 → k ≠ 8 → k ≠ 9 → k ≠ 10 → k ≠ 11 → k ≠ 12 → k ≠ 13 → k ≠ 14 → k ≠ 15 → k ≠ 16 → k ≠ 17 → k ≠ 18 → y = 0)”
+
+instance tagSteps_defined : 𝚺₁-Function₃ (tagSteps : V → V → V → V) via tagStepsDef := .mk fun v ↦ by
+  simp [tagStepsDef, numeral_eq_natCast, termShift.defined.iff, mkStep_defined.iff]
+  unfold tagSteps
+  by_cases h0 : π₁ (v 3) = 0
+  · simp [h0]
+  by_cases h1 : π₁ (v 3) = 1
+  · simp [h1]
+  by_cases h2 : π₁ (v 3) = 2
+  · simp [h2]
+  by_cases h3 : π₁ (v 3) = 3
+  · simp [h3]
+  by_cases h4 : π₁ (v 3) = 4
+  · simp [h4]
+  by_cases h5 : π₁ (v 3) = 5
+  · simp [h5]
+  by_cases h6 : π₁ (v 3) = 6
+  · simp [h6]
+  by_cases h7 : π₁ (v 3) = 7
+  · simp [h7]
+  by_cases h8 : π₁ (v 3) = 8
+  · simp [h8]
+  by_cases h9 : π₁ (v 3) = 9
+  · simp [h9]
+  by_cases h10 : π₁ (v 3) = 10
+  · simp [h10]
+  by_cases h11 : π₁ (v 3) = 11
+  · simp [h11]
+  by_cases h12 : π₁ (v 3) = 12
+  · simp [h12]
+  by_cases h13 : π₁ (v 3) = 13
+  · simp [h13]
+  by_cases h14 : π₁ (v 3) = 14
+  · simp [h14]
+  by_cases h15 : π₁ (v 3) = 15
+  · simp [h15]
+  by_cases h16 : π₁ (v 3) = 16
+  · simp [h16]
+  by_cases h17 : π₁ (v 3) = 17
+  · simp [h17]
+  by_cases h18 : π₁ (v 3) = 18
+  · simp [h18]
+  · simp [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18]
+instance tagSteps_definable : 𝚺₁-Function₃ (tagSteps : V → V → V → V) := tagSteps_defined.to_definable
+
+/-- The antecedent facts of a tag (about the source object `x`, in the frame BEFORE the copy). -/
+noncomputable def tagAnts (x t : V) : V :=
+  if π₁ t = 0 then ?[piFact (π₂ t).[0] x]
+  else if π₁ t = 1 then ?[eqFactB (π₂ t).[2] (π₂ t).[0], eqFactB (π₂ t).[3] (π₂ t).[1], andFact x (π₂ t).[0] (π₂ t).[1]]
+  else if π₁ t = 2 then ?[eqFactB (π₂ t).[2] (π₂ t).[0], eqFactB (π₂ t).[3] (π₂ t).[1], orFact x (π₂ t).[0] (π₂ t).[1]]
+  else if π₁ t = 3 then ?[eqFactB (π₂ t).[1] (π₂ t).[0], allFact x (π₂ t).[0]]
+  else if π₁ t = 4 then ?[eqFactB (π₂ t).[1] (π₂ t).[0], exsFact x (π₂ t).[0]]
+  else if π₁ t = 5 then ?[eqFactB (π₂ t).[3] (π₂ t).[2], relFact x (π₂ t).[0] (π₂ t).[1] (π₂ t).[2]]
+  else if π₁ t = 6 then ?[eqFactB (π₂ t).[3] (π₂ t).[2], nrelFact x (π₂ t).[0] (π₂ t).[1] (π₂ t).[2]]
+  else if π₁ t = 7 then ?[verumFact x]
+  else if π₁ t = 8 then ?[falsumFact x]
+  else if π₁ t = 9 then ?[lenFact (π₂ t).[0] x]
+  else if π₁ t = 10 then ?[memFact x (π₂ t).[0]]
+  else if π₁ t = 11 then ?[tPiFact (π₂ t).[0] x]
+  else if π₁ t = 12 then ?[eqFactB (π₂ t).[3] (π₂ t).[2], funcFact x (π₂ t).[0] (π₂ t).[1] (π₂ t).[2]]
+  else if π₁ t = 13 then ?[bvarFact x (π₂ t).[0]]
+  else if π₁ t = 14 then ?[fvarFact x (π₂ t).[0]]
+  else if π₁ t = 15 then ?[tlenFact (π₂ t).[0] x]
+  else if π₁ t = 16 then ?[eqFactB (π₂ t).[2] (π₂ t).[0], eqFactB (π₂ t).[3] (π₂ t).[1], adjFact x (π₂ t).[0] (π₂ t).[1]]
+  else if π₁ t = 17 then ?[tvPiFact (π₂ t).[0] (π₂ t).[1] x]
+  else if π₁ t = 18 then ?[utvPiFact (π₂ t).[0] x]
+  else 0
+
+noncomputable def tagAntsDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y x t. ∃ k, !pi₁Def k t ∧ ∃ v, !pi₂Def v t ∧ ∃ a0, !nthDef a0 v 0 ∧ ∃ a1, !nthDef a1 v 1 ∧ ∃ a2, !nthDef a2 v 2 ∧ ∃ a3, !nthDef a3 v 3 ∧
+    (k = 0 → ∃ f0, !piFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
+    (k = 1 → ∃ f0, !eqFactBDef f0 a2 a0 ∧ ∃ f1, !eqFactBDef f1 a3 a1 ∧ ∃ f2, !andFactDef f2 x a0 a1 ∧ ∃ l0, !adjoinDef l0 f2 0 ∧ ∃ l1, !adjoinDef l1 f1 l0 ∧ !adjoinDef y f0 l1) ∧
+    (k = 2 → ∃ f0, !eqFactBDef f0 a2 a0 ∧ ∃ f1, !eqFactBDef f1 a3 a1 ∧ ∃ f2, !orFactDef f2 x a0 a1 ∧ ∃ l0, !adjoinDef l0 f2 0 ∧ ∃ l1, !adjoinDef l1 f1 l0 ∧ !adjoinDef y f0 l1) ∧
+    (k = 3 → ∃ f0, !eqFactBDef f0 a1 a0 ∧ ∃ f1, !allFactDef f1 x a0 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
+    (k = 4 → ∃ f0, !eqFactBDef f0 a1 a0 ∧ ∃ f1, !exsFactDef f1 x a0 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
+    (k = 5 → ∃ f0, !eqFactBDef f0 a3 a2 ∧ ∃ f1, !relFactDef f1 x a0 a1 a2 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
+    (k = 6 → ∃ f0, !eqFactBDef f0 a3 a2 ∧ ∃ f1, !nrelFactDef f1 x a0 a1 a2 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
+    (k = 7 → ∃ f0, !verumFactDef f0 x ∧ !adjoinDef y f0 0) ∧
+    (k = 8 → ∃ f0, !falsumFactDef f0 x ∧ !adjoinDef y f0 0) ∧
+    (k = 9 → ∃ f0, !lenFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
+    (k = 10 → ∃ f0, !memFactDef f0 x a0 ∧ !adjoinDef y f0 0) ∧
+    (k = 11 → ∃ f0, !tPiFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
+    (k = 12 → ∃ f0, !eqFactBDef f0 a3 a2 ∧ ∃ f1, !funcFactDef f1 x a0 a1 a2 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
+    (k = 13 → ∃ f0, !bvarFactDef f0 x a0 ∧ !adjoinDef y f0 0) ∧
+    (k = 14 → ∃ f0, !fvarFactDef f0 x a0 ∧ !adjoinDef y f0 0) ∧
+    (k = 15 → ∃ f0, !tlenFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
+    (k = 16 → ∃ f0, !eqFactBDef f0 a2 a0 ∧ ∃ f1, !eqFactBDef f1 a3 a1 ∧ ∃ f2, !adjFactDef f2 x a0 a1 ∧ ∃ l0, !adjoinDef l0 f2 0 ∧ ∃ l1, !adjoinDef l1 f1 l0 ∧ !adjoinDef y f0 l1) ∧
+    (k = 17 → ∃ f0, !tvPiFactDef f0 a0 a1 x ∧ !adjoinDef y f0 0) ∧
+    (k = 18 → ∃ f0, !utvPiFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
+    (k ≠ 0 → k ≠ 1 → k ≠ 2 → k ≠ 3 → k ≠ 4 → k ≠ 5 → k ≠ 6 → k ≠ 7 → k ≠ 8 → k ≠ 9 → k ≠ 10 → k ≠ 11 → k ≠ 12 → k ≠ 13 → k ≠ 14 → k ≠ 15 → k ≠ 16 → k ≠ 17 → k ≠ 18 → y = 0)”
+
+instance tagAnts_defined : 𝚺₁-Function₂ (tagAnts : V → V → V) via tagAntsDef := .mk fun v ↦ by
+  simp [tagAntsDef, numeral_eq_natCast, adjFact_defined.iff, allFact_defined.iff, andFact_defined.iff, bvarFact_defined.iff, eqFactB_defined.iff, exsFact_defined.iff, falsumFact_defined.iff, funcFact_defined.iff, fvarFact_defined.iff, lenFact_defined.iff, memFact_defined.iff, nrelFact_defined.iff, orFact_defined.iff, piFact_defined.iff, relFact_defined.iff, tPiFact_defined.iff, tlenFact_defined.iff, tvPiFact_defined.iff, utvPiFact_defined.iff, verumFact_defined.iff]
+  unfold tagAnts
+  by_cases h0 : π₁ (v 2) = 0
+  · simp [h0]
+  by_cases h1 : π₁ (v 2) = 1
+  · simp [h1]
+  by_cases h2 : π₁ (v 2) = 2
+  · simp [h2]
+  by_cases h3 : π₁ (v 2) = 3
+  · simp [h3]
+  by_cases h4 : π₁ (v 2) = 4
+  · simp [h4]
+  by_cases h5 : π₁ (v 2) = 5
+  · simp [h5]
+  by_cases h6 : π₁ (v 2) = 6
+  · simp [h6]
+  by_cases h7 : π₁ (v 2) = 7
+  · simp [h7]
+  by_cases h8 : π₁ (v 2) = 8
+  · simp [h8]
+  by_cases h9 : π₁ (v 2) = 9
+  · simp [h9]
+  by_cases h10 : π₁ (v 2) = 10
+  · simp [h10]
+  by_cases h11 : π₁ (v 2) = 11
+  · simp [h11]
+  by_cases h12 : π₁ (v 2) = 12
+  · simp [h12]
+  by_cases h13 : π₁ (v 2) = 13
+  · simp [h13]
+  by_cases h14 : π₁ (v 2) = 14
+  · simp [h14]
+  by_cases h15 : π₁ (v 2) = 15
+  · simp [h15]
+  by_cases h16 : π₁ (v 2) = 16
+  · simp [h16]
+  by_cases h17 : π₁ (v 2) = 17
+  · simp [h17]
+  by_cases h18 : π₁ (v 2) = 18
+  · simp [h18]
+  · simp [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18]
+instance tagAnts_definable : 𝚺₁-Function₂ (tagAnts : V → V → V) := tagAnts_defined.to_definable
+
+/-- The copied fact: about the fresh `&0`, with the tag's witnesses shifted once. -/
+noncomputable def tagFact (t : V) : V :=
+  if π₁ t = 0 then piFact (termShift LAct (π₂ t).[0]) (^&0)
+  else if π₁ t = 1 then andFact (^&0) (termShift LAct (π₂ t).[2]) (termShift LAct (π₂ t).[3])
+  else if π₁ t = 2 then orFact (^&0) (termShift LAct (π₂ t).[2]) (termShift LAct (π₂ t).[3])
+  else if π₁ t = 3 then allFact (^&0) (termShift LAct (π₂ t).[1])
+  else if π₁ t = 4 then exsFact (^&0) (termShift LAct (π₂ t).[1])
+  else if π₁ t = 5 then relFact (^&0) (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (termShift LAct (π₂ t).[3])
+  else if π₁ t = 6 then nrelFact (^&0) (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (termShift LAct (π₂ t).[3])
+  else if π₁ t = 7 then verumFact (^&0)
+  else if π₁ t = 8 then falsumFact (^&0)
+  else if π₁ t = 9 then lenFact (termShift LAct (π₂ t).[0]) (^&0)
+  else if π₁ t = 10 then memFact (^&0) (termShift LAct (π₂ t).[0])
+  else if π₁ t = 11 then tPiFact (termShift LAct (π₂ t).[0]) (^&0)
+  else if π₁ t = 12 then funcFact (^&0) (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (termShift LAct (π₂ t).[3])
+  else if π₁ t = 13 then bvarFact (^&0) (termShift LAct (π₂ t).[0])
+  else if π₁ t = 14 then fvarFact (^&0) (termShift LAct (π₂ t).[0])
+  else if π₁ t = 15 then tlenFact (termShift LAct (π₂ t).[0]) (^&0)
+  else if π₁ t = 16 then adjFact (^&0) (termShift LAct (π₂ t).[2]) (termShift LAct (π₂ t).[3])
+  else if π₁ t = 17 then tvPiFact (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (^&0)
+  else if π₁ t = 18 then utvPiFact (termShift LAct (π₂ t).[0]) (^&0)
+  else 0
+
+noncomputable def tagFactDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y t. ∃ k, !pi₁Def k t ∧ ∃ v, !pi₂Def v t ∧ ∃ a0, !nthDef a0 v 0 ∧ ∃ a1, !nthDef a1 v 1 ∧ ∃ a2, !nthDef a2 v 2 ∧ ∃ a3, !nthDef a3 v 3 ∧
+    ∃ s0, !(termShiftGraph LAct) s0 a0 ∧ ∃ s1, !(termShiftGraph LAct) s1 a1 ∧ ∃ s2, !(termShiftGraph LAct) s2 a2 ∧ ∃ s3, !(termShiftGraph LAct) s3 a3 ∧ ∃ z, !qqFvarDef z 0 ∧
+    (k = 0 → !piFactDef y s0 z) ∧
+    (k = 1 → !andFactDef y z s2 s3) ∧
+    (k = 2 → !orFactDef y z s2 s3) ∧
+    (k = 3 → !allFactDef y z s1) ∧
+    (k = 4 → !exsFactDef y z s1) ∧
+    (k = 5 → !relFactDef y z s0 s1 s3) ∧
+    (k = 6 → !nrelFactDef y z s0 s1 s3) ∧
+    (k = 7 → !verumFactDef y z) ∧
+    (k = 8 → !falsumFactDef y z) ∧
+    (k = 9 → !lenFactDef y s0 z) ∧
+    (k = 10 → !memFactDef y z s0) ∧
+    (k = 11 → !tPiFactDef y s0 z) ∧
+    (k = 12 → !funcFactDef y z s0 s1 s3) ∧
+    (k = 13 → !bvarFactDef y z s0) ∧
+    (k = 14 → !fvarFactDef y z s0) ∧
+    (k = 15 → !tlenFactDef y s0 z) ∧
+    (k = 16 → !adjFactDef y z s2 s3) ∧
+    (k = 17 → !tvPiFactDef y s0 s1 z) ∧
+    (k = 18 → !utvPiFactDef y s0 z) ∧
+    (k ≠ 0 → k ≠ 1 → k ≠ 2 → k ≠ 3 → k ≠ 4 → k ≠ 5 → k ≠ 6 → k ≠ 7 → k ≠ 8 → k ≠ 9 → k ≠ 10 → k ≠ 11 → k ≠ 12 → k ≠ 13 → k ≠ 14 → k ≠ 15 → k ≠ 16 → k ≠ 17 → k ≠ 18 → y = 0)”
+
+instance tagFact_defined : 𝚺₁-Function₁ (tagFact : V → V) via tagFactDef := .mk fun v ↦ by
+  simp [tagFactDef, numeral_eq_natCast, termShift.defined.iff, adjFact_defined.iff, allFact_defined.iff, andFact_defined.iff, bvarFact_defined.iff, exsFact_defined.iff, falsumFact_defined.iff, funcFact_defined.iff, fvarFact_defined.iff, lenFact_defined.iff, memFact_defined.iff, nrelFact_defined.iff, orFact_defined.iff, piFact_defined.iff, relFact_defined.iff, tPiFact_defined.iff, tlenFact_defined.iff, tvPiFact_defined.iff, utvPiFact_defined.iff, verumFact_defined.iff]
+  unfold tagFact
+  by_cases h0 : π₁ (v 1) = 0
+  · simp [h0]
+  by_cases h1 : π₁ (v 1) = 1
+  · simp [h1]
+  by_cases h2 : π₁ (v 1) = 2
+  · simp [h2]
+  by_cases h3 : π₁ (v 1) = 3
+  · simp [h3]
+  by_cases h4 : π₁ (v 1) = 4
+  · simp [h4]
+  by_cases h5 : π₁ (v 1) = 5
+  · simp [h5]
+  by_cases h6 : π₁ (v 1) = 6
+  · simp [h6]
+  by_cases h7 : π₁ (v 1) = 7
+  · simp [h7]
+  by_cases h8 : π₁ (v 1) = 8
+  · simp [h8]
+  by_cases h9 : π₁ (v 1) = 9
+  · simp [h9]
+  by_cases h10 : π₁ (v 1) = 10
+  · simp [h10]
+  by_cases h11 : π₁ (v 1) = 11
+  · simp [h11]
+  by_cases h12 : π₁ (v 1) = 12
+  · simp [h12]
+  by_cases h13 : π₁ (v 1) = 13
+  · simp [h13]
+  by_cases h14 : π₁ (v 1) = 14
+  · simp [h14]
+  by_cases h15 : π₁ (v 1) = 15
+  · simp [h15]
+  by_cases h16 : π₁ (v 1) = 16
+  · simp [h16]
+  by_cases h17 : π₁ (v 1) = 17
+  · simp [h17]
+  by_cases h18 : π₁ (v 1) = 18
+  · simp [h18]
+  · simp [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18]
+instance tagFact_definable : 𝚺₁-Function₁ (tagFact : V → V) := tagFact_defined.to_definable
+
+/-! ### 2.3 The per-kind equations -/
+
+lemma tagAr_0 : tagAr (0 : V) = 1 := by simp [tagAr]
+lemma tagSteps_0 {W i t : V} (h : π₁ t = 0) : tagSteps W i t = ?[mkStep W 44 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)], mkStep W 21 ?[(termShift LAct (π₂ t).[0]), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_0 {x t : V} (h : π₁ t = 0) : tagAnts x t = ?[piFact (π₂ t).[0] x] := by simp [tagAnts, h]
+lemma tagFact_0 {t : V} (h : π₁ t = 0) : tagFact t = piFact (termShift LAct (π₂ t).[0]) (^&0) := by simp [tagFact, h]
+
+lemma tagAr_1 : tagAr (1 : V) = 4 := by simp [tagAr]
+lemma tagSteps_1 {W i t : V} (h : π₁ t = 1) : tagSteps W i t = ?[mkStep W 48 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&0), (termShift LAct (π₂ t).[2]), (termShift LAct (π₂ t).[3])]] := by simp [tagSteps, h]
+lemma tagAnts_1 {x t : V} (h : π₁ t = 1) : tagAnts x t = ?[eqFactB (π₂ t).[2] (π₂ t).[0], eqFactB (π₂ t).[3] (π₂ t).[1], andFact x (π₂ t).[0] (π₂ t).[1]] := by simp [tagAnts, h]
+lemma tagFact_1 {t : V} (h : π₁ t = 1) : tagFact t = andFact (^&0) (termShift LAct (π₂ t).[2]) (termShift LAct (π₂ t).[3]) := by simp [tagFact, h]
+
+lemma tagAr_2 : tagAr (2 : V) = 4 := by simp [tagAr]
+lemma tagSteps_2 {W i t : V} (h : π₁ t = 2) : tagSteps W i t = ?[mkStep W 49 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&0), (termShift LAct (π₂ t).[2]), (termShift LAct (π₂ t).[3])]] := by simp [tagSteps, h]
+lemma tagAnts_2 {x t : V} (h : π₁ t = 2) : tagAnts x t = ?[eqFactB (π₂ t).[2] (π₂ t).[0], eqFactB (π₂ t).[3] (π₂ t).[1], orFact x (π₂ t).[0] (π₂ t).[1]] := by simp [tagAnts, h]
+lemma tagFact_2 {t : V} (h : π₁ t = 2) : tagFact t = orFact (^&0) (termShift LAct (π₂ t).[2]) (termShift LAct (π₂ t).[3]) := by simp [tagFact, h]
+
+lemma tagAr_3 : tagAr (3 : V) = 2 := by simp [tagAr]
+lemma tagSteps_3 {W i t : V} (h : π₁ t = 3) : tagSteps W i t = ?[mkStep W 50 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (^&0), (termShift LAct (π₂ t).[1])]] := by simp [tagSteps, h]
+lemma tagAnts_3 {x t : V} (h : π₁ t = 3) : tagAnts x t = ?[eqFactB (π₂ t).[1] (π₂ t).[0], allFact x (π₂ t).[0]] := by simp [tagAnts, h]
+lemma tagFact_3 {t : V} (h : π₁ t = 3) : tagFact t = allFact (^&0) (termShift LAct (π₂ t).[1]) := by simp [tagFact, h]
+
+lemma tagAr_4 : tagAr (4 : V) = 2 := by simp [tagAr]
+lemma tagSteps_4 {W i t : V} (h : π₁ t = 4) : tagSteps W i t = ?[mkStep W 51 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (^&0), (termShift LAct (π₂ t).[1])]] := by simp [tagSteps, h]
+lemma tagAnts_4 {x t : V} (h : π₁ t = 4) : tagAnts x t = ?[eqFactB (π₂ t).[1] (π₂ t).[0], exsFact x (π₂ t).[0]] := by simp [tagAnts, h]
+lemma tagFact_4 {t : V} (h : π₁ t = 4) : tagFact t = exsFact (^&0) (termShift LAct (π₂ t).[1]) := by simp [tagFact, h]
+
+lemma tagAr_5 : tagAr (5 : V) = 4 := by simp [tagAr]
+lemma tagSteps_5 {W i t : V} (h : π₁ t = 5) : tagSteps W i t = ?[mkStep W 52 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (termShift LAct (π₂ t).[2]), (^&0), (termShift LAct (π₂ t).[3])]] := by simp [tagSteps, h]
+lemma tagAnts_5 {x t : V} (h : π₁ t = 5) : tagAnts x t = ?[eqFactB (π₂ t).[3] (π₂ t).[2], relFact x (π₂ t).[0] (π₂ t).[1] (π₂ t).[2]] := by simp [tagAnts, h]
+lemma tagFact_5 {t : V} (h : π₁ t = 5) : tagFact t = relFact (^&0) (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (termShift LAct (π₂ t).[3]) := by simp [tagFact, h]
+
+lemma tagAr_6 : tagAr (6 : V) = 4 := by simp [tagAr]
+lemma tagSteps_6 {W i t : V} (h : π₁ t = 6) : tagSteps W i t = ?[mkStep W 53 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (termShift LAct (π₂ t).[2]), (^&0), (termShift LAct (π₂ t).[3])]] := by simp [tagSteps, h]
+lemma tagAnts_6 {x t : V} (h : π₁ t = 6) : tagAnts x t = ?[eqFactB (π₂ t).[3] (π₂ t).[2], nrelFact x (π₂ t).[0] (π₂ t).[1] (π₂ t).[2]] := by simp [tagAnts, h]
+lemma tagFact_6 {t : V} (h : π₁ t = 6) : tagFact t = nrelFact (^&0) (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (termShift LAct (π₂ t).[3]) := by simp [tagFact, h]
+
+lemma tagAr_7 : tagAr (7 : V) = 0 := by simp [tagAr]
+lemma tagSteps_7 {W i t : V} (h : π₁ t = 7) : tagSteps W i t = ?[mkStep W 54 ?[(^&(i + 1)), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_7 {x t : V} (h : π₁ t = 7) : tagAnts x t = ?[verumFact x] := by simp [tagAnts, h]
+lemma tagFact_7 {t : V} (h : π₁ t = 7) : tagFact t = verumFact (^&0) := by simp [tagFact, h]
+
+lemma tagAr_8 : tagAr (8 : V) = 0 := by simp [tagAr]
+lemma tagSteps_8 {W i t : V} (h : π₁ t = 8) : tagSteps W i t = ?[mkStep W 55 ?[(^&(i + 1)), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_8 {x t : V} (h : π₁ t = 8) : tagAnts x t = ?[falsumFact x] := by simp [tagAnts, h]
+lemma tagFact_8 {t : V} (h : π₁ t = 8) : tagFact t = falsumFact (^&0) := by simp [tagFact, h]
+
+lemma tagAr_9 : tagAr (9 : V) = 1 := by simp [tagAr]
+lemma tagSteps_9 {W i t : V} (h : π₁ t = 9) : tagSteps W i t = ?[mkStep W 60 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_9 {x t : V} (h : π₁ t = 9) : tagAnts x t = ?[lenFact (π₂ t).[0] x] := by simp [tagAnts, h]
+lemma tagFact_9 {t : V} (h : π₁ t = 9) : tagFact t = lenFact (termShift LAct (π₂ t).[0]) (^&0) := by simp [tagFact, h]
+
+lemma tagAr_10 : tagAr (10 : V) = 1 := by simp [tagAr]
+lemma tagSteps_10 {W i t : V} (h : π₁ t = 10) : tagSteps W i t = ?[mkStep W 62 ?[(^&(i + 1)), (^&0), (termShift LAct (π₂ t).[0])]] := by simp [tagSteps, h]
+lemma tagAnts_10 {x t : V} (h : π₁ t = 10) : tagAnts x t = ?[memFact x (π₂ t).[0]] := by simp [tagAnts, h]
+lemma tagFact_10 {t : V} (h : π₁ t = 10) : tagFact t = memFact (^&0) (termShift LAct (π₂ t).[0]) := by simp [tagFact, h]
+
+lemma tagAr_11 : tagAr (11 : V) = 1 := by simp [tagAr]
+lemma tagSteps_11 {W i t : V} (h : π₁ t = 11) : tagSteps W i t = ?[mkStep W 45 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)], mkStep W 4 ?[(termShift LAct (π₂ t).[0]), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_11 {x t : V} (h : π₁ t = 11) : tagAnts x t = ?[tPiFact (π₂ t).[0] x] := by simp [tagAnts, h]
+lemma tagFact_11 {t : V} (h : π₁ t = 11) : tagFact t = tPiFact (termShift LAct (π₂ t).[0]) (^&0) := by simp [tagFact, h]
+
+lemma tagAr_12 : tagAr (12 : V) = 4 := by simp [tagAr]
+lemma tagSteps_12 {W i t : V} (h : π₁ t = 12) : tagSteps W i t = ?[mkStep W 56 ?[(^&(i + 1)), (termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (termShift LAct (π₂ t).[2]), (^&0), (termShift LAct (π₂ t).[3])]] := by simp [tagSteps, h]
+lemma tagAnts_12 {x t : V} (h : π₁ t = 12) : tagAnts x t = ?[eqFactB (π₂ t).[3] (π₂ t).[2], funcFact x (π₂ t).[0] (π₂ t).[1] (π₂ t).[2]] := by simp [tagAnts, h]
+lemma tagFact_12 {t : V} (h : π₁ t = 12) : tagFact t = funcFact (^&0) (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (termShift LAct (π₂ t).[3]) := by simp [tagFact, h]
+
+lemma tagAr_13 : tagAr (13 : V) = 1 := by simp [tagAr]
+lemma tagSteps_13 {W i t : V} (h : π₁ t = 13) : tagSteps W i t = ?[mkStep W 57 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_13 {x t : V} (h : π₁ t = 13) : tagAnts x t = ?[bvarFact x (π₂ t).[0]] := by simp [tagAnts, h]
+lemma tagFact_13 {t : V} (h : π₁ t = 13) : tagFact t = bvarFact (^&0) (termShift LAct (π₂ t).[0]) := by simp [tagFact, h]
+
+lemma tagAr_14 : tagAr (14 : V) = 1 := by simp [tagAr]
+lemma tagSteps_14 {W i t : V} (h : π₁ t = 14) : tagSteps W i t = ?[mkStep W 58 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_14 {x t : V} (h : π₁ t = 14) : tagAnts x t = ?[fvarFact x (π₂ t).[0]] := by simp [tagAnts, h]
+lemma tagFact_14 {t : V} (h : π₁ t = 14) : tagFact t = fvarFact (^&0) (termShift LAct (π₂ t).[0]) := by simp [tagFact, h]
+
+lemma tagAr_15 : tagAr (15 : V) = 1 := by simp [tagAr]
+lemma tagSteps_15 {W i t : V} (h : π₁ t = 15) : tagSteps W i t = ?[mkStep W 61 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_15 {x t : V} (h : π₁ t = 15) : tagAnts x t = ?[tlenFact (π₂ t).[0] x] := by simp [tagAnts, h]
+lemma tagFact_15 {t : V} (h : π₁ t = 15) : tagFact t = tlenFact (termShift LAct (π₂ t).[0]) (^&0) := by simp [tagFact, h]
+
+lemma tagAr_16 : tagAr (16 : V) = 4 := by simp [tagAr]
+lemma tagSteps_16 {W i t : V} (h : π₁ t = 16) : tagSteps W i t = ?[mkStep W 59 ?[(termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&(i + 1)), (termShift LAct (π₂ t).[2]), (termShift LAct (π₂ t).[3]), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_16 {x t : V} (h : π₁ t = 16) : tagAnts x t = ?[eqFactB (π₂ t).[2] (π₂ t).[0], eqFactB (π₂ t).[3] (π₂ t).[1], adjFact x (π₂ t).[0] (π₂ t).[1]] := by simp [tagAnts, h]
+lemma tagFact_16 {t : V} (h : π₁ t = 16) : tagFact t = adjFact (^&0) (termShift LAct (π₂ t).[2]) (termShift LAct (π₂ t).[3]) := by simp [tagFact, h]
+
+lemma tagAr_17 : tagAr (17 : V) = 2 := by simp [tagAr]
+lemma tagSteps_17 {W i t : V} (h : π₁ t = 17) : tagSteps W i t = ?[mkStep W 46 ?[(termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&(i + 1)), (^&0)], mkStep W 16 ?[(termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_17 {x t : V} (h : π₁ t = 17) : tagAnts x t = ?[tvPiFact (π₂ t).[0] (π₂ t).[1] x] := by simp [tagAnts, h]
+lemma tagFact_17 {t : V} (h : π₁ t = 17) : tagFact t = tvPiFact (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (^&0) := by simp [tagFact, h]
+
+lemma tagAr_18 : tagAr (18 : V) = 1 := by simp [tagAr]
+lemma tagSteps_18 {W i t : V} (h : π₁ t = 18) : tagSteps W i t = ?[mkStep W 47 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)], mkStep W 39 ?[(termShift LAct (π₂ t).[0]), (^&0)]] := by simp [tagSteps, h]
+lemma tagAnts_18 {x t : V} (h : π₁ t = 18) : tagAnts x t = ?[utvPiFact (π₂ t).[0] x] := by simp [tagAnts, h]
+lemma tagFact_18 {t : V} (h : π₁ t = 18) : tagFact t = utvPiFact (termShift LAct (π₂ t).[0]) (^&0) := by simp [tagFact, h]
+
+/-! ### 2.4 Segments of one or two Horn steps, the walk's bridge rows through the layout pieces -/
+
+lemma len_vec1 (a : V) : len (?[a] : V) = 1 := by rw [len_adjoin, len_nil, zero_add]
+lemma len_vec2 (a b : V) : len (?[a, b] : V) = 2 := by
+  rw [len_adjoin, len_adjoin, len_nil, zero_add, one_add_one_eq_two]
+lemma len_vec3 (a b c : V) : len (?[a, b, c] : V) = 3 := by
+  rw [len_adjoin, len_adjoin, len_adjoin, len_nil]; norm_num
+lemma nth_vec_one (a b v : V) : (a ∷ b ∷ v).[1] = b := by
+  rw [show (1 : V) = 0 + 1 from (zero_add 1).symm, nth_adjoin_succ, nth_adjoin_zero]
+lemma nth_vec_two (a b c v : V) : (a ∷ b ∷ c ∷ v).[2] = c := by
+  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, nth_adjoin_succ, nth_vec_one]
+
+/-- A single Horn step (tag `0`) inserting `neg c`: the six-fold invariant of a segment. -/
+lemma seg1_ok {tbl N E Γ s c : V} (htbl : TableOK tbl N)
+    (h : StepOK tbl E ((8 : ℕ) : V) Γ s ∧ sTag s = 0 ∧ ctxAfter Γ s = insert (neg LAct c) Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ ?[s] ∧ NoDrop (?[s] : V) ∧ HornOnly (?[s] : V) ∧ shiftsV (?[s] : V) = 0 ∧
+    len (?[s] : V) ≤ 2 ∧ neg LAct c ∈ finalCtx Γ ?[s] := by
+  obtain ⟨hok, ht, hc⟩ := h
+  refine ⟨listOK_single hok, noDrop_single (Or.inl ht), hornOnly_single (Or.inl ht), ?_, ?_, ?_⟩
+  · rw [shiftsV_single]; simp [ht]
+  · rw [len_vec1]; exact_mod_cast (by decide : (1 : ℕ) ≤ 2)
+  · rw [finalCtx_single, hc]; simp
+
+/-- Two Horn steps, the second reading the first's fact. -/
+lemma seg2_ok {tbl N E Γ s₁ c₁ s₂ c₂ : V} (htbl : TableOK tbl N)
+    (h₁ : StepOK tbl E ((8 : ℕ) : V) Γ s₁ ∧ sTag s₁ = 0 ∧ ctxAfter Γ s₁ = insert (neg LAct c₁) Γ)
+    (h₂ : IsFormulaSet LAct (insert (neg LAct c₁) Γ) → neg LAct c₁ ∈ insert (neg LAct c₁) Γ →
+      StepOK tbl E ((8 : ℕ) : V) (insert (neg LAct c₁) Γ) s₂ ∧ sTag s₂ = 0 ∧
+      ctxAfter (insert (neg LAct c₁) Γ) s₂ = insert (neg LAct c₂) (insert (neg LAct c₁) Γ)) :
+    ListOK tbl E ((8 : ℕ) : V) Γ ?[s₁, s₂] ∧ NoDrop (?[s₁, s₂] : V) ∧ HornOnly (?[s₁, s₂] : V) ∧
+    shiftsV (?[s₁, s₂] : V) = 0 ∧ len (?[s₁, s₂] : V) ≤ 2 ∧ neg LAct c₂ ∈ finalCtx Γ ?[s₁, s₂] := by
+  obtain ⟨hok₁, ht₁, hc₁⟩ := h₁
+  have hΓ' : IsFormulaSet LAct (insert (neg LAct c₁) Γ) := hc₁ ▸ isFormulaSet_ctxAfter 8 htbl hok₁
+  obtain ⟨hok₂, ht₂, hc₂⟩ := h₂ hΓ' (by simp)
+  refine ⟨listOK_cons hok₁ (by rw [hc₁]; exact listOK_single hok₂),
+    noDrop_cons (Or.inl ht₁) (noDrop_single (Or.inl ht₂)),
+    hornOnly_cons (Or.inl ht₁) (hornOnly_single (Or.inl ht₂)), ?_, ?_, ?_⟩
+  · rw [shiftsV_cons, shiftsV_single]; simp [ht₁, ht₂]
+  · exact le_of_eq (len_vec2 _ _)
+  · rw [finalCtx_cons, hc₁, finalCtx_single, hc₂]; simp
+
+/-- The walk's `.sigma → .pi` bridge rows, read through the layout pieces. -/
+lemma lok_sigmaPi {tbl N E Γ W : V} {wn wp : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E)
+    (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hmem0 : neg LAct (sigmaFact wn wp) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 21 ?[wn, wp]) ∧ sTag (mkStep W 21 ?[wn, wp]) = 0 ∧
+    ctxAfter Γ (mkStep W 21 ?[wn, wp]) = insert (neg LAct (piFact wn wp)) Γ := by
+  subst hWp
+  have h := mkStep_layoutPieces_lt (V := V) 21 (by decide) ?[wn, wp]
+  simp only [Nat.cast_ofNat] at h
+  rw [h]
+  exact ok_isSemiformulaSigmaPi htbl hL.walkTable rfl hΓ hwn hEwn hwp hEwp hmem0
+
+lemma lok_tSigmaPi {tbl N E Γ W : V} {wn wt : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E)
+    (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (tSigmaFact wn wt) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 4 ?[wn, wt]) ∧ sTag (mkStep W 4 ?[wn, wt]) = 0 ∧
+    ctxAfter Γ (mkStep W 4 ?[wn, wt]) = insert (neg LAct (tPiFact wn wt)) Γ := by
+  subst hWp
+  have h := mkStep_layoutPieces_lt (V := V) 4 (by decide) ?[wn, wt]
+  simp only [Nat.cast_ofNat] at h
+  rw [h]
+  exact ok_isSemitermSigmaPiLAct htbl hL.walkTable rfl hΓ hwn hEwn hwt hEwt hmem0
+
+lemma lok_tvSigmaPi {tbl N E Γ W : V} {wk wn wv : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E)
+    (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E)
+    (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hmem0 : neg LAct (tvSigmaFact wk wn wv) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 16 ?[wk, wn, wv]) ∧ sTag (mkStep W 16 ?[wk, wn, wv]) = 0 ∧
+    ctxAfter Γ (mkStep W 16 ?[wk, wn, wv]) = insert (neg LAct (tvPiFact wk wn wv)) Γ := by
+  subst hWp
+  have h := mkStep_layoutPieces_lt (V := V) 16 (by decide) ?[wk, wn, wv]
+  simp only [Nat.cast_ofNat] at h
+  rw [h]
+  exact ok_isSemitermVecSigmaPiLAct htbl hL.walkTable rfl hΓ hwk hEwk hwn hEwn hwv hEwv hmem0
+
+lemma lok_utvSigmaPi {tbl N E Γ W : V} {wk wv : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E)
+    (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hmem0 : neg LAct (utvSigmaFact wk wv) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 39 ?[wk, wv]) ∧ sTag (mkStep W 39 ?[wk, wv]) = 0 ∧
+    ctxAfter Γ (mkStep W 39 ?[wk, wv]) = insert (neg LAct (utvPiFact wk wv)) Γ := by
+  subst hWp
+  have h := mkStep_layoutPieces_lt (V := V) 39 (by decide) ?[wk, wv]
+  simp only [Nat.cast_ofNat] at h
+  rw [h]
+  exact ok_isUTermVecSigmaPiLAct htbl hL.walkTable rfl hΓ hwk hEwk hwv hEwv hmem0
+
+/-- The nineteen kinds, as a disjunction (for the case analysis of `tagSteps_ok`). -/
+lemma kind_cases {k : V} (hk : k < 19) :
+    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 ∨
+    k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15 ∨ k = 16 ∨ k = 17 ∨ k = 18 := by
+  have hk' : k < ((19 : ℕ) : V) := by exact_mod_cast hk
+  obtain ⟨n, rfl⟩ := eq_nat_of_lt_nat hk'
+  have hn : n < 19 := by exact_mod_cast hk'
+  interval_cases n <;> simp
+
+/-! ### 2.5 One tag is applicable after the `eqTotal` shift -/
+
+/-- **A tag's congruence steps are applicable** in a context holding `eqFactB &0 &(i+1)` and the shifted
+antecedents, and leave the copied fact. -/
+theorem tagSteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    {i t E Γ₁ : V} (hΓ₁ : IsFormulaSet LAct Γ₁) (hiE : i + 2 ≤ E)
+    (hk : π₁ t < 19) (hlen : len (π₂ t) = tagAr (π₁ t))
+    (hargs : ∀ m < len (π₂ t), IsSemiterm LAct 0 (π₂ t).[m] ∧ termLen LAct (termShift LAct (π₂ t).[m]) ≤ E)
+    (heq : neg LAct (eqFactB (^&0) (^&(i + 1))) ∈ Γ₁)
+    (hants : ∀ m < len (tagAnts (^&i) t), shift LAct (neg LAct (tagAnts (^&i) t).[m]) ∈ Γ₁) :
+    ListOK tbl E ((8 : ℕ) : V) Γ₁ (tagSteps W i t) ∧ NoDrop (tagSteps W i t) ∧ HornOnly (tagSteps W i t) ∧
+    shiftsV (tagSteps W i t) = 0 ∧ len (tagSteps W i t) ≤ 2 ∧ neg LAct (tagFact t) ∈ finalCtx Γ₁ (tagSteps W i t) := by
+  have hi1 : i + 1 + 1 ≤ E := by rw [add_assoc, one_add_one_eq_two]; exact hiE
+  have hE1 : 1 ≤ E := le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hiE)
+  have hx : IsSemiterm LAct 0 (^&(i + 1) : V) := by simp
+  have hEx : termLen LAct (^&(i + 1) : V) ≤ E := termLen_fvar_le hi1
+  have hy : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hEy : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
+  have hsrc : IsSemiterm LAct 0 (^&i : V) := by simp
+  rcases kind_cases hk with hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn | hn
+  · -- kind 0: pi
+    rw [tagSteps_0 hn, tagFact_0 hn]
+    rw [tagAnts_0 hn] at hants
+    rw [hn, tagAr_0] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_piFact ha0.1 hsrc), shift_piFact ha0.1 hsrc] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg2_ok htbl (lok_congPi htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
+      (fun hΓ' hc ↦ lok_sigmaPi htbl hL hWp hΓ' ha0.1.termShift ha0.2 hy hEy hc)
+  · -- kind 1: and
+    rw [tagSteps_1 hn, tagFact_1 hn]
+    rw [tagAnts_1 hn] at hants
+    rw [hn, tagAr_1] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 4))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 4))
+    have ha2 := hargs 2 (by rw [hlen]; exact_mod_cast (by decide : (2 : ℕ) < 4))
+    have ha3 := hargs 3 (by rw [hlen]; exact_mod_cast (by decide : (3 : ℕ) < 4))
+    have hm0 := hants 0 (by rw [len_vec3]; exact_mod_cast (by decide : (0 : ℕ) < 3))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_eqFactB ha2.1 ha0.1), shift_eqFactB ha2.1 ha0.1] at hm0
+    have hm1 := hants 1 (by rw [len_vec3]; exact_mod_cast (by decide : (1 : ℕ) < 3))
+    rw [nth_vec_one] at hm1
+    rw [shift_neg (isFormula_eqFactB ha3.1 ha1.1), shift_eqFactB ha3.1 ha1.1] at hm1
+    have hm2 := hants 2 (by rw [len_vec3]; exact_mod_cast (by decide : (2 : ℕ) < 3))
+    rw [nth_vec_two] at hm2
+    rw [shift_neg (isFormula_andFact hsrc ha0.1 ha1.1), shift_andFact hsrc ha0.1 ha1.1] at hm2
+    rw [termShift_fvar] at hm2
+    exact seg1_ok htbl (lok_congAnd htbl hL hWp hΓ₁ hx hEx ha0.1.termShift ha0.2 ha1.1.termShift ha1.2 hy hEy ha2.1.termShift ha2.2 ha3.1.termShift ha3.2 heq hm0 hm1 hm2)
+  · -- kind 2: or
+    rw [tagSteps_2 hn, tagFact_2 hn]
+    rw [tagAnts_2 hn] at hants
+    rw [hn, tagAr_2] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 4))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 4))
+    have ha2 := hargs 2 (by rw [hlen]; exact_mod_cast (by decide : (2 : ℕ) < 4))
+    have ha3 := hargs 3 (by rw [hlen]; exact_mod_cast (by decide : (3 : ℕ) < 4))
+    have hm0 := hants 0 (by rw [len_vec3]; exact_mod_cast (by decide : (0 : ℕ) < 3))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_eqFactB ha2.1 ha0.1), shift_eqFactB ha2.1 ha0.1] at hm0
+    have hm1 := hants 1 (by rw [len_vec3]; exact_mod_cast (by decide : (1 : ℕ) < 3))
+    rw [nth_vec_one] at hm1
+    rw [shift_neg (isFormula_eqFactB ha3.1 ha1.1), shift_eqFactB ha3.1 ha1.1] at hm1
+    have hm2 := hants 2 (by rw [len_vec3]; exact_mod_cast (by decide : (2 : ℕ) < 3))
+    rw [nth_vec_two] at hm2
+    rw [shift_neg (isFormula_orFact hsrc ha0.1 ha1.1), shift_orFact hsrc ha0.1 ha1.1] at hm2
+    rw [termShift_fvar] at hm2
+    exact seg1_ok htbl (lok_congOr htbl hL hWp hΓ₁ hx hEx ha0.1.termShift ha0.2 ha1.1.termShift ha1.2 hy hEy ha2.1.termShift ha2.2 ha3.1.termShift ha3.2 heq hm0 hm1 hm2)
+  · -- kind 3: all
+    rw [tagSteps_3 hn, tagFact_3 hn]
+    rw [tagAnts_3 hn] at hants
+    rw [hn, tagAr_3] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 2))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 2))
+    have hm0 := hants 0 (by rw [len_vec2]; exact_mod_cast (by decide : (0 : ℕ) < 2))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_eqFactB ha1.1 ha0.1), shift_eqFactB ha1.1 ha0.1] at hm0
+    have hm1 := hants 1 (by rw [len_vec2]; exact_mod_cast (by decide : (1 : ℕ) < 2))
+    rw [nth_vec_one] at hm1
+    rw [shift_neg (isFormula_allFact hsrc ha0.1), shift_allFact hsrc ha0.1] at hm1
+    rw [termShift_fvar] at hm1
+    exact seg1_ok htbl (lok_congAll htbl hL hWp hΓ₁ hx hEx ha0.1.termShift ha0.2 hy hEy ha1.1.termShift ha1.2 heq hm0 hm1)
+  · -- kind 4: exs
+    rw [tagSteps_4 hn, tagFact_4 hn]
+    rw [tagAnts_4 hn] at hants
+    rw [hn, tagAr_4] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 2))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 2))
+    have hm0 := hants 0 (by rw [len_vec2]; exact_mod_cast (by decide : (0 : ℕ) < 2))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_eqFactB ha1.1 ha0.1), shift_eqFactB ha1.1 ha0.1] at hm0
+    have hm1 := hants 1 (by rw [len_vec2]; exact_mod_cast (by decide : (1 : ℕ) < 2))
+    rw [nth_vec_one] at hm1
+    rw [shift_neg (isFormula_exsFact hsrc ha0.1), shift_exsFact hsrc ha0.1] at hm1
+    rw [termShift_fvar] at hm1
+    exact seg1_ok htbl (lok_congExs htbl hL hWp hΓ₁ hx hEx ha0.1.termShift ha0.2 hy hEy ha1.1.termShift ha1.2 heq hm0 hm1)
+  · -- kind 5: rel
+    rw [tagSteps_5 hn, tagFact_5 hn]
+    rw [tagAnts_5 hn] at hants
+    rw [hn, tagAr_5] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 4))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 4))
+    have ha2 := hargs 2 (by rw [hlen]; exact_mod_cast (by decide : (2 : ℕ) < 4))
+    have ha3 := hargs 3 (by rw [hlen]; exact_mod_cast (by decide : (3 : ℕ) < 4))
+    have hm0 := hants 0 (by rw [len_vec2]; exact_mod_cast (by decide : (0 : ℕ) < 2))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_eqFactB ha3.1 ha2.1), shift_eqFactB ha3.1 ha2.1] at hm0
+    have hm1 := hants 1 (by rw [len_vec2]; exact_mod_cast (by decide : (1 : ℕ) < 2))
+    rw [nth_vec_one] at hm1
+    rw [shift_neg (isFormula_relFact hsrc ha0.1 ha1.1 ha2.1), shift_relFact hsrc ha0.1 ha1.1 ha2.1] at hm1
+    rw [termShift_fvar] at hm1
+    exact seg1_ok htbl (lok_congRel htbl hL hWp hΓ₁ hx hEx ha0.1.termShift ha0.2 ha1.1.termShift ha1.2 ha2.1.termShift ha2.2 hy hEy ha3.1.termShift ha3.2 heq hm0 hm1)
+  · -- kind 6: nrel
+    rw [tagSteps_6 hn, tagFact_6 hn]
+    rw [tagAnts_6 hn] at hants
+    rw [hn, tagAr_6] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 4))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 4))
+    have ha2 := hargs 2 (by rw [hlen]; exact_mod_cast (by decide : (2 : ℕ) < 4))
+    have ha3 := hargs 3 (by rw [hlen]; exact_mod_cast (by decide : (3 : ℕ) < 4))
+    have hm0 := hants 0 (by rw [len_vec2]; exact_mod_cast (by decide : (0 : ℕ) < 2))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_eqFactB ha3.1 ha2.1), shift_eqFactB ha3.1 ha2.1] at hm0
+    have hm1 := hants 1 (by rw [len_vec2]; exact_mod_cast (by decide : (1 : ℕ) < 2))
+    rw [nth_vec_one] at hm1
+    rw [shift_neg (isFormula_nrelFact hsrc ha0.1 ha1.1 ha2.1), shift_nrelFact hsrc ha0.1 ha1.1 ha2.1] at hm1
+    rw [termShift_fvar] at hm1
+    exact seg1_ok htbl (lok_congNRel htbl hL hWp hΓ₁ hx hEx ha0.1.termShift ha0.2 ha1.1.termShift ha1.2 ha2.1.termShift ha2.2 hy hEy ha3.1.termShift ha3.2 heq hm0 hm1)
+  · -- kind 7: verum
+    rw [tagSteps_7 hn, tagFact_7 hn]
+    rw [tagAnts_7 hn] at hants
+    rw [hn, tagAr_7] at hlen
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_verumFact hsrc), shift_verumFact hsrc] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg1_ok htbl (lok_congVerum htbl hL hWp hΓ₁ hx hEx hy hEy heq hm0)
+  · -- kind 8: falsum
+    rw [tagSteps_8 hn, tagFact_8 hn]
+    rw [tagAnts_8 hn] at hants
+    rw [hn, tagAr_8] at hlen
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_falsumFact hsrc), shift_falsumFact hsrc] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg1_ok htbl (lok_congFalsum htbl hL hWp hΓ₁ hx hEx hy hEy heq hm0)
+  · -- kind 9: len
+    rw [tagSteps_9 hn, tagFact_9 hn]
+    rw [tagAnts_9 hn] at hants
+    rw [hn, tagAr_9] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_lenFact ha0.1 hsrc), shift_lenFact ha0.1 hsrc] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg1_ok htbl (lok_congLen htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
+  · -- kind 10: mem
+    rw [tagSteps_10 hn, tagFact_10 hn]
+    rw [tagAnts_10 hn] at hants
+    rw [hn, tagAr_10] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_memFact hsrc ha0.1), shift_memFact hsrc ha0.1] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg1_ok htbl (lok_congMem htbl hL hWp hΓ₁ hx hEx hy hEy ha0.1.termShift ha0.2 heq hm0)
+  · -- kind 11: tpi
+    rw [tagSteps_11 hn, tagFact_11 hn]
+    rw [tagAnts_11 hn] at hants
+    rw [hn, tagAr_11] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_tPiFact ha0.1 hsrc), shift_tPiFact ha0.1 hsrc] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg2_ok htbl (lok_congTPi htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
+      (fun hΓ' hc ↦ lok_tSigmaPi htbl hL hWp hΓ' ha0.1.termShift ha0.2 hy hEy hc)
+  · -- kind 12: func
+    rw [tagSteps_12 hn, tagFact_12 hn]
+    rw [tagAnts_12 hn] at hants
+    rw [hn, tagAr_12] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 4))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 4))
+    have ha2 := hargs 2 (by rw [hlen]; exact_mod_cast (by decide : (2 : ℕ) < 4))
+    have ha3 := hargs 3 (by rw [hlen]; exact_mod_cast (by decide : (3 : ℕ) < 4))
+    have hm0 := hants 0 (by rw [len_vec2]; exact_mod_cast (by decide : (0 : ℕ) < 2))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_eqFactB ha3.1 ha2.1), shift_eqFactB ha3.1 ha2.1] at hm0
+    have hm1 := hants 1 (by rw [len_vec2]; exact_mod_cast (by decide : (1 : ℕ) < 2))
+    rw [nth_vec_one] at hm1
+    rw [shift_neg (isFormula_funcFact hsrc ha0.1 ha1.1 ha2.1), shift_funcFact hsrc ha0.1 ha1.1 ha2.1] at hm1
+    rw [termShift_fvar] at hm1
+    exact seg1_ok htbl (lok_congFunc htbl hL hWp hΓ₁ hx hEx ha0.1.termShift ha0.2 ha1.1.termShift ha1.2 ha2.1.termShift ha2.2 hy hEy ha3.1.termShift ha3.2 heq hm0 hm1)
+  · -- kind 13: bvar
+    rw [tagSteps_13 hn, tagFact_13 hn]
+    rw [tagAnts_13 hn] at hants
+    rw [hn, tagAr_13] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_bvarFact hsrc ha0.1), shift_bvarFact hsrc ha0.1] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg1_ok htbl (lok_congBvar htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
+  · -- kind 14: fvar
+    rw [tagSteps_14 hn, tagFact_14 hn]
+    rw [tagAnts_14 hn] at hants
+    rw [hn, tagAr_14] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_fvarFact hsrc ha0.1), shift_fvarFact hsrc ha0.1] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg1_ok htbl (lok_congFvar htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
+  · -- kind 15: tlen
+    rw [tagSteps_15 hn, tagFact_15 hn]
+    rw [tagAnts_15 hn] at hants
+    rw [hn, tagAr_15] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_tlenFact ha0.1 hsrc), shift_tlenFact ha0.1 hsrc] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg1_ok htbl (lok_congTLen htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
+  · -- kind 16: adj
+    rw [tagSteps_16 hn, tagFact_16 hn]
+    rw [tagAnts_16 hn] at hants
+    rw [hn, tagAr_16] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 4))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 4))
+    have ha2 := hargs 2 (by rw [hlen]; exact_mod_cast (by decide : (2 : ℕ) < 4))
+    have ha3 := hargs 3 (by rw [hlen]; exact_mod_cast (by decide : (3 : ℕ) < 4))
+    have hm0 := hants 0 (by rw [len_vec3]; exact_mod_cast (by decide : (0 : ℕ) < 3))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_eqFactB ha2.1 ha0.1), shift_eqFactB ha2.1 ha0.1] at hm0
+    have hm1 := hants 1 (by rw [len_vec3]; exact_mod_cast (by decide : (1 : ℕ) < 3))
+    rw [nth_vec_one] at hm1
+    rw [shift_neg (isFormula_eqFactB ha3.1 ha1.1), shift_eqFactB ha3.1 ha1.1] at hm1
+    have hm2 := hants 2 (by rw [len_vec3]; exact_mod_cast (by decide : (2 : ℕ) < 3))
+    rw [nth_vec_two] at hm2
+    rw [shift_neg (isFormula_adjFact hsrc ha0.1 ha1.1), shift_adjFact hsrc ha0.1 ha1.1] at hm2
+    rw [termShift_fvar] at hm2
+    exact seg1_ok htbl (lok_congAdj htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 ha1.1.termShift ha1.2 hx hEx ha2.1.termShift ha2.2 ha3.1.termShift ha3.2 hy hEy heq hm0 hm1 hm2)
+  · -- kind 17: tvpi
+    rw [tagSteps_17 hn, tagFact_17 hn]
+    rw [tagAnts_17 hn] at hants
+    rw [hn, tagAr_17] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 2))
+    have ha1 := hargs 1 (by rw [hlen]; exact_mod_cast (by decide : (1 : ℕ) < 2))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_tvPiFact ha0.1 ha1.1 hsrc), shift_tvPiFact ha0.1 ha1.1 hsrc] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg2_ok htbl (lok_congTvPi htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 ha1.1.termShift ha1.2 hx hEx hy hEy heq hm0)
+      (fun hΓ' hc ↦ lok_tvSigmaPi htbl hL hWp hΓ' ha0.1.termShift ha0.2 ha1.1.termShift ha1.2 hy hEy hc)
+  · -- kind 18: utvpi
+    rw [tagSteps_18 hn, tagFact_18 hn]
+    rw [tagAnts_18 hn] at hants
+    rw [hn, tagAr_18] at hlen
+    have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
+    rw [nth_adjoin_zero] at hm0
+    rw [shift_neg (isFormula_utvPiFact ha0.1 hsrc), shift_utvPiFact ha0.1 hsrc] at hm0
+    rw [termShift_fvar] at hm0
+    exact seg2_ok htbl (lok_congUtvPi htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
+      (fun hΓ' hc ↦ lok_utvSigmaPi htbl hL hWp hΓ' ha0.1.termShift ha0.2 hy hEy hc)
+
+/-! ### 2.6 `copySteps` and its theorem -/
+
+/-- **A fact tag is well-formed** for the source object `x` in `Γ`: a known kind, the right number of
+closed witnesses of shifted length `≤ E`, and its antecedents in `Γ`. -/
+def TagOK (E Γ x t : V) : Prop :=
+  π₁ t < 19 ∧ len (π₂ t) = tagAr (π₁ t) ∧
+  (∀ m < len (π₂ t), IsSemiterm LAct 0 (π₂ t).[m] ∧ termLen LAct (termShift LAct (π₂ t).[m]) ≤ E) ∧
+  ∀ m < len (tagAnts x t), neg LAct (tagAnts x t).[m] ∈ Γ
+
+instance tagOK_definable : 𝚫₁-Relation₄ (TagOK : V → V → V → V → Prop) := by
+  unfold TagOK; definability
+
+namespace CopyAux
+
+noncomputable def blueprint : PR.Blueprint 3 where
+  zero := .mkSigma “y W i T. y = 0”
+  succ := .mkSigma “y ih j W i T. ∃ t, !nthDef t T j ∧ ∃ s, !tagStepsDef s W i t ∧ !appendVDef y ih s”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v j ih ↦ appendV ih (tagSteps (v 0) (v 1) (v 2).[j])
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, tagSteps_defined.iff, appendV_defined.iff]
+
+end CopyAux
+
+/-- The congruence steps of the first `j` tags of `T`, concatenated. -/
+noncomputable def copyAux (W i T j : V) : V := CopyAux.construction.result ![W, i, T] j
+
+@[simp] lemma copyAux_zero (W i T : V) : copyAux W i T 0 = 0 := by simp [copyAux, CopyAux.construction]
+lemma copyAux_succ (W i T j : V) : copyAux W i T (j + 1) = appendV (copyAux W i T j) (tagSteps W i T.[j]) := by
+  simp [copyAux, CopyAux.construction]
+
+noncomputable def copyAuxDef : 𝚺₁.Semisentence 5 :=
+  CopyAux.blueprint.resultDef |>.rew (Rew.subst ![#0, #4, #1, #2, #3])
+
+instance copyAux_defined : 𝚺₁-Function₄ (copyAux : V → V → V → V → V) via copyAuxDef := .mk
+  fun v ↦ by simp [CopyAux.construction.result_defined_iff, copyAuxDef]; rfl
+instance copyAux_definable : 𝚺₁-Function₄ (copyAux : V → V → V → V → V) := copyAux_defined.to_definable
+
+/-- **Copy-in**: `eqTotal [^&i]` (the fresh `&0`, one shift) followed by the congruence steps of every tag. -/
+noncomputable def copySteps (W i T : V) : V := appendV ?[mkStep W 40 ?[^&i]] (copyAux W i T (len T))
+
+noncomputable def copyStepsDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W i T. ∃ x, !qqFvarDef x i ∧ ∃ e, !adjoinDef e x 0 ∧ ∃ s, !mkStepDef s W 40 e ∧ ∃ l, !adjoinDef l s 0 ∧
+    ∃ n, !lenDef n T ∧ ∃ c, !copyAuxDef c W i T n ∧ !appendVDef y l c”
+
+instance copySteps_defined : 𝚺₁-Function₃ (copySteps : V → V → V → V) via copyStepsDef := .mk
+  fun v ↦ by simp [copyStepsDef, copySteps, numeral_eq_natCast, mkStep_defined.iff, copyAux_defined.iff, appendV_defined.iff]
+instance copySteps_definable : 𝚺₁-Function₃ (copySteps : V → V → V → V) := copySteps_defined.to_definable
+
+/-- The tag lists are applicable one after the other (Π₁ induction on the number of tags folded). -/
+theorem copyAux_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    {i T E Γ Γ₁ : V} (hΓ₁ : IsFormulaSet LAct Γ₁) (hiE : i + 2 ≤ E)
+    (hT : ∀ j < len T, TagOK E Γ (^&i) T.[j])
+    (heq : neg LAct (eqFactB (^&0) (^&(i + 1))) ∈ Γ₁) (hsh : ∀ x ∈ Γ, shift LAct x ∈ Γ₁) :
+    ∀ j ≤ len T,
+      ListOK tbl E ((8 : ℕ) : V) Γ₁ (copyAux W i T j) ∧ NoDrop (copyAux W i T j) ∧
+      HornOnly (copyAux W i T j) ∧ shiftsV (copyAux W i T j) = 0 ∧ len (copyAux W i T j) ≤ 2 * j ∧
+      ∀ m < j, neg LAct (tagFact T.[m]) ∈ finalCtx Γ₁ (copyAux W i T j) := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _
+    refine ⟨by rw [copyAux_zero]; exact listOK_nil _ _ _ _, by rw [copyAux_zero]; exact noDrop_nil,
+      by rw [copyAux_zero]; exact hornOnly_nil, by rw [copyAux_zero, shiftsV_nil], by rw [copyAux_zero]; simp,
+      fun m hm ↦ absurd hm (by simp)⟩
+  | succ j ih =>
+    intro hj
+    obtain ⟨hok, hnd, hho, hsv, hlen, hfacts⟩ := ih (le_trans le_self_add hj)
+    have hjT : j < len T := lt_of_lt_of_le (lt_add_one j) hj
+    obtain ⟨hk, hlen', hargs, hants⟩ := hT j hjT
+    have hΓ₂f : IsFormulaSet LAct (finalCtx Γ₁ (copyAux W i T j)) := finalCtx_isFormulaSet 8 htbl hΓ₁ hok
+    have hsub : ∀ x ∈ Γ₁, x ∈ finalCtx Γ₁ (copyAux W i T j) := fun x hx ↦ by
+      have := mem_finalCtx_of_mem hnd hx; rwa [hsv, shiftIterV_zero] at this
+    obtain ⟨tok, tnd, tho, tsv, tlen, tfact⟩ := tagSteps_ok htbl hL hWp hΓ₂f hiE hk hlen' hargs (hsub _ heq)
+      (fun m hm ↦ hsub _ (hsh _ (hants m hm)))
+    rw [copyAux_succ]
+    refine ⟨listOK_appendV hok tok, noDrop_appendV hnd tnd, hornOnly_appendV hho tho, ?_, ?_, ?_⟩
+    · rw [shiftsV_appendV, hsv, tsv, add_zero]
+    · rw [len_appendV, mul_add, mul_one]; exact add_le_add hlen tlen
+    · intro m hm
+      rw [finalCtx_appendV]
+      rcases lt_or_eq_of_le (lt_succ_iff_le.mp hm) with hmj | rfl
+      · have := mem_finalCtx_of_mem tnd (hfacts m hmj)
+        rwa [tsv, shiftIterV_zero] at this
+      · exact tfact
+
+/-- **`copySteps` is applicable**: Horn-only, exactly one shift, at most `2·|T| + 1` steps, and its final
+context holds `eqFactB &0 &(i+1)` and the copied fact of every tag. -/
+theorem copySteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    {i T E Γ : V} (hΓ : IsFormulaSet LAct Γ) (hiE : i + 2 ≤ E) (hT : ∀ j < len T, TagOK E Γ (^&i) T.[j]) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (copySteps W i T) ∧ NoDrop (copySteps W i T) ∧ HornOnly (copySteps W i T) ∧
+    shiftsV (copySteps W i T) = 1 ∧ len (copySteps W i T) ≤ 2 * len T + 1 ∧
+    neg LAct (eqFactB (^&0) (^&(i + 1))) ∈ finalCtx Γ (copySteps W i T) ∧
+    ∀ m < len T, neg LAct (tagFact T.[m]) ∈ finalCtx Γ (copySteps W i T) := by
+  have hi1 : i + 1 ≤ E := le_trans (add_le_add le_rfl (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2))) hiE
+  obtain ⟨sok, stag, sctx⟩ := lok_eqTotal htbl hL hWp hΓ (by simp : IsSemiterm LAct 0 (^&i : V)) (termLen_fvar_le hi1)
+  rw [termShift_fvar, Nat.cast_zero] at sctx
+  have hΓ₁f : IsFormulaSet LAct (insert (neg LAct (eqFactB (^&0) (^&(i + 1)))) (setShift LAct Γ)) :=
+    sctx ▸ isFormulaSet_ctxAfter 8 htbl sok
+  have heq : neg LAct (eqFactB (^&0) (^&(i + 1))) ∈ insert (neg LAct (eqFactB (^&0) (^&(i + 1)))) (setShift LAct Γ) := by
+    simp
+  have hsh : ∀ x ∈ Γ, shift LAct x ∈ insert (neg LAct (eqFactB (^&0) (^&(i + 1)))) (setShift LAct Γ) := fun x hx ↦ by
+    simp [mem_setShift_iff]; exact Or.inr ⟨x, hx, rfl⟩
+  obtain ⟨aok, and, aho, asv, alen, afacts⟩ := copyAux_ok htbl hL hWp hΓ₁f hiE hT heq hsh (len T) le_rfl
+  have hfin : finalCtx Γ ?[mkStep W 40 ?[^&i]] = insert (neg LAct (eqFactB (^&0) (^&(i + 1)))) (setShift LAct Γ) := by
+    rw [finalCtx_single, sctx]
+  unfold copySteps
+  refine ⟨listOK_appendV (listOK_single sok) (by rw [hfin]; exact aok),
+    noDrop_appendV (noDrop_single (Or.inr (Or.inr (Or.inl stag)))) and,
+    hornOnly_appendV (hornOnly_single (Or.inr (Or.inr stag))) aho, ?_, ?_, ?_, ?_⟩
+  · rw [shiftsV_appendV, shiftsV_single, asv]; simp [stag]
+  · rw [len_appendV, len_vec1, add_comm]; exact add_le_add alen le_rfl
+  · rw [finalCtx_appendV, hfin]
+    have := mem_finalCtx_of_mem and heq
+    rwa [asv, shiftIterV_zero] at this
+  · intro m hm
+    rw [finalCtx_appendV, hfin]
+    exact afacts m hm
+
+/-- The cost of a copy-in (`costSum_le_of_hornOnly`): at most `(2|T| + 1)` Horn steps. -/
+theorem costSum_copySteps_le {tbl N E B : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    (hB : ∀ i < len tbl, formulaLen LAct (rowB tbl.[i]) ≤ B)
+    {i T Γ : V} (hΓ : IsFormulaSet LAct Γ) (hiE : i + 2 ≤ E) (hT : ∀ j < len T, TagOK E Γ (^&i) T.[j]) :
+    costSum N E Γ (copySteps W i T) ≤ (2 * len T + 1) * (stepK N E B + 36 * ctxBound E B Γ (2 * len T + 1)) := by
+  have hE1 : 1 ≤ E := le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hiE)
+  obtain ⟨hok, _, ht, _, hlen, _⟩ := copySteps_ok htbl hL hWp hΓ hiE hT
+  have hB' : ∀ k < len (copySteps W i T), formulaLen LAct (rowB tbl.[sRow (copySteps W i T).[k]]) ≤ B :=
+    fun k hk ↦ hB _ (sRow_lt_of_stepOK (hok k hk) (ht k hk))
+  refine le_trans (costSum_le_of_hornOnly hE1 htbl hok ht hB') ?_
+  unfold ctxBound
+  gcongr
+
+end copyIn
 end ArithS
