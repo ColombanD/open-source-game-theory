@@ -1700,4 +1700,105 @@ theorem dlen_applyStep_le (M : ℕ) {tbl N E Γ s e : V} (hE : 1 ≤ E) (htbl : 
 
 end perStep
 
+/-! ### B.5 The chain theorems: `chainCode` derives `Γ₀` and costs `costSum` -/
+
+section chainTheorems
+
+open LAct
+
+/-- **The invariant from the end**: the last `j` steps applied to `d` derive the context `C.[n − j]`. -/
+theorem chainAux_proof (M : ℕ) {tbl N E C S d n : V} (htbl : TableOK tbl N) (hC : len C = n + 1) (hS : len S = n)
+    (hok : ∀ i < n, StepOK tbl E (M : V) C.[i] S.[i]) (hsucc : ∀ i < n, C.[i + 1] = ctxAfter C.[i] S.[i])
+    (hd : DerivationOf TAct d C.[n]) : ∀ j ≤ n, DerivationOf TAct (chainAux tbl C S d j) C.[n - j] := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => intro _; simpa using hd
+  | succ j ih =>
+    intro hj
+    have hj' : j ≤ n := le_trans le_self_add hj
+    have ih' := ih hj'
+    obtain ⟨i, rfl⟩ : ∃ i, n = i + (j + 1) := ⟨n - (j + 1), (tsub_add_cancel_of_le hj).symm⟩
+    have hi : i < i + (j + 1) := lt_add_of_pos_right _ (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have h1 : i + (j + 1) - j = i + 1 := by
+      rw [show i + (j + 1) = (i + 1) + j by ring, add_tsub_cancel_right]
+    rw [h1, hsucc i hi] at ih'
+    rw [chainAux_succ, add_tsub_cancel_right, nthFromEnd_eq (a := i) (by rw [hC, add_assoc]),
+      nthFromEnd_eq (a := i) hS]
+    exact applyStep_proof M htbl (hok i hi) ih'
+
+/-- **`chainCode` derives `Γ₀`** when every step is applicable at its context and the
+continuation derives the final context. -/
+theorem chainCode_proof (M : ℕ) {tbl N E Γ₀ S d : V} (htbl : TableOK tbl N)
+    (hok : ∀ i < len S, StepOK tbl E (M : V) (ctxVec Γ₀ S).[i] S.[i])
+    (hd : DerivationOf TAct d (ctxVec Γ₀ S).[len S]) : DerivationOf TAct (chainCode tbl Γ₀ S d) Γ₀ := by
+  have := chainAux_proof M htbl (len_ctxVec Γ₀ S) rfl hok (fun _ hi ↦ nth_ctxVec_succ Γ₀ S hi) hd (len S) le_rfl
+  rwa [tsub_self, nth_ctxVec_zero] at this
+
+/-- The length invariant from the end. -/
+theorem dlen_chainAux_le (M : ℕ) {tbl N E C S d n : V} (hE : 1 ≤ E) (htbl : TableOK tbl N) (hC : len C = n + 1)
+    (hS : len S = n) (hok : ∀ i < n, StepOK tbl E (M : V) C.[i] S.[i])
+    (hsucc : ∀ i < n, C.[i + 1] = ctxAfter C.[i] S.[i]) (hd : DerivationOf TAct d C.[n]) :
+    ∀ j ≤ n, dlen TAct (chainAux tbl C S d j) ≤ dlen TAct d + costAux N E C S j := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => intro _; simp
+  | succ j ih =>
+    intro hj
+    have hj' : j ≤ n := le_trans le_self_add hj
+    have hder := chainAux_proof M htbl hC hS hok hsucc hd j hj'
+    have ih' := ih hj'
+    obtain ⟨i, rfl⟩ : ∃ i, n = i + (j + 1) := ⟨n - (j + 1), (tsub_add_cancel_of_le hj).symm⟩
+    have hi : i < i + (j + 1) := lt_add_of_pos_right _ (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have h1 : i + (j + 1) - j = i + 1 := by
+      rw [show i + (j + 1) = (i + 1) + j by ring, add_tsub_cancel_right]
+    rw [h1, hsucc i hi] at hder
+    rw [chainAux_succ, costAux_succ, nthFromEnd_eq (a := i) (by rw [hC, add_assoc]), nthFromEnd_eq (a := i) hS,
+      ← add_assoc]
+    exact le_trans (dlen_applyStep_le M hE htbl (hok i hi) hder) (add_le_add ih' le_rfl)
+
+/-- **The length of a chain**: `dlen (chainCode tbl Γ₀ S d) ≤ dlen d + costSum N E Γ₀ S`. -/
+theorem dlen_chainCode_le (M : ℕ) {tbl N E Γ₀ S d : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hok : ∀ i < len S, StepOK tbl E (M : V) (ctxVec Γ₀ S).[i] S.[i])
+    (hd : DerivationOf TAct d (ctxVec Γ₀ S).[len S]) :
+    dlen TAct (chainCode tbl Γ₀ S d) ≤ dlen TAct d + costSum N E Γ₀ S :=
+  dlen_chainAux_le M hE htbl (len_ctxVec Γ₀ S) rfl hok (fun _ hi ↦ nth_ctxVec_succ Γ₀ S hi) hd (len S) le_rfl
+
+/-- Every context of an applicable chain is a formula set. -/
+theorem ctxVec_isFormulaSet (M : ℕ) {tbl N E Γ₀ S : V} (htbl : TableOK tbl N) (hΓ₀ : IsFormulaSet LAct Γ₀)
+    (hok : ∀ i < len S, StepOK tbl E (M : V) (ctxVec Γ₀ S).[i] S.[i]) :
+    ∀ i ≤ len S, IsFormulaSet LAct (ctxVec Γ₀ S).[i] := by
+  intro i hi
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · rw [nth_ctxVec_zero]; exact hΓ₀
+  · have hi' : i < len S := lt_of_lt_of_le (lt_add_one i) hi
+    rw [nth_ctxVec_succ Γ₀ S hi']
+    exact isFormulaSet_ctxAfter M htbl (hok i hi')
+
+/-- **Smoke test**: a two-step chain unfolds to the two applications, inner step at `ctxAfter Γ₀ s₁`. -/
+theorem chainCode_two (tbl Γ₀ s₁ s₂ d : V) :
+    chainCode tbl Γ₀ (vecOf [s₁, s₂]) d = applyStep tbl Γ₀ s₁ (applyStep tbl (ctxAfter Γ₀ s₁) s₂ d) := by
+  have hlen : len (vecOf [s₁, s₂]) = 1 + 1 := by rw [len_vecOf]; norm_num
+  have hS1 : nthFromEnd (vecOf [s₁, s₂]) 1 = s₁ := by
+    rw [nthFromEnd_eq (a := 0) (by rw [hlen, zero_add])]; simp
+  have hS0 : nthFromEnd (vecOf [s₁, s₂]) 0 = s₂ := by
+    rw [nthFromEnd_eq (a := 1) (by rw [hlen, zero_add])]
+    simp
+  have hC2 : nthFromEnd (ctxVecAux Γ₀ (vecOf [s₁, s₂]) (1 + 1)) (1 + 1) = Γ₀ := by
+    rw [nthFromEnd_eq (a := 0) (by rw [len_ctxVecAux, zero_add]), nth_ctxVecAux_zero]
+  have hC1 : nthFromEnd (ctxVecAux Γ₀ (vecOf [s₁, s₂]) (1 + 1)) 1 = ctxAfter Γ₀ s₁ := by
+    rw [nthFromEnd_eq (a := 1) (by rw [len_ctxVecAux, add_assoc])]
+    have h := nth_ctxVecAux_succ Γ₀ (vecOf [s₁, s₂]) (n := 1 + 1) (i := 0)
+      (lt_of_lt_of_le _root_.zero_lt_one le_self_add)
+    rw [zero_add] at h
+    rw [h, nth_ctxVecAux_zero]
+    simp
+  have h1 := chainAux_succ tbl (ctxVecAux Γ₀ (vecOf [s₁, s₂]) (1 + 1)) (vecOf [s₁, s₂]) d 0
+  rw [zero_add, chainAux_zero] at h1
+  unfold chainCode ctxVec
+  rw [hlen, chainAux_succ, h1, hC2, hC1, hS1, hS0]
+
+end chainTheorems
+
 end ArithS
