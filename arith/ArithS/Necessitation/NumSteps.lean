@@ -3433,4 +3433,214 @@ theorem oneLe_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a : V} (ha : 1 �
 
 end bookkeeping
 
+
+/-! ## 11. N6: the chain numeral `cT z` — `cTEqCode z : cT z = bnum z` (a `PR` on `z`) and `cTLeCode` -/
+
+section chainNumeral
+
+/-- `cTEqFact z := cTV z = bnum z`. -/
+noncomputable def cTEqFact (z : V) : V := eqFact (cTV z) (bnum z)
+noncomputable def cTEqFactDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y z. ∃ c, !cTVGraph c z ∧ ∃ t, !bnumGraph t z ∧ !eqFactDef y c t”
+instance cTEqFact_defined : 𝚺₁-Function₁ (cTEqFact : V → V) via cTEqFactDef := .mk fun v ↦ by
+  simp [cTEqFactDef, cTV.defined.iff, bnum.defined.iff, eqFact_defined.iff, cTEqFact]
+instance cTEqFact_definable : 𝚺₁-Function₁ (cTEqFact : V → V) := cTEqFact_defined.to_definable
+
+lemma isFormula_cTEqFact (z : V) : IsFormula LAct (cTEqFact z) :=
+  isFormula_eqFact (cTV_semiterm_LAct 0 z) (isSemiterm_bnum_LAct 0 z)
+
+namespace CTEq
+
+/-- Base: `eqRefl` at `𝟎` (`cTV 0 = 𝟎 = bnum 0`); step: `succCong` at `(cTV z, bnum z, bnum (z + 1))` from the
+previous fact and `succCode z`. -/
+noncomputable def blueprint : PR.Blueprint 1 where
+  zero := .mkSigma “y tbl. ∃ t, !bnumGraph t 0 ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !cTEqFactDef A 0 ∧ !step0Def y tbl 5 ev A”
+  succ := .mkSigma “y ih z tbl. ∃ F, !cTEqFactDef F z ∧ ∃ G, !succFactDef G z ∧ ∃ dG, !succCodeDef dG tbl z ∧
+    ∃ c, !cTVGraph c z ∧ ∃ t0, !bnumGraph t0 z ∧ ∃ t1, !bnumGraph t1 (z + 1) ∧
+    ∃ v0, !adjoinDef v0 c 0 ∧ ∃ v1, !adjoinDef v1 t0 v0 ∧ ∃ ev, !adjoinDef ev t1 v1 ∧
+    ∃ A, !cTEqFactDef A (z + 1) ∧ !step2Def y tbl 17 F ih G dG ev A”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun v ↦ step0 (v 0) 5 (vecOf [bnum 0]) (cTEqFact 0)
+  succ := fun v z ih ↦ step2 (v 0) 17 (cTEqFact z) ih (succFact z) (succCode (v 0) z)
+    (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1))
+  zero_defined := .mk fun v ↦ by
+    simp [blueprint, bnum.defined.iff, cTEqFact_defined.iff, step0_defined.iff, numeral_eq_natCast]
+  succ_defined := .mk fun v ↦ by
+    simp [blueprint, cTEqFact_defined.iff, succFact_defined.iff, succCode_defined.iff, cTV.defined.iff,
+      bnum.defined.iff, step2_defined.iff, numeral_eq_natCast]
+
+end CTEq
+
+/-- **The chain-numeral prover**: the derivation code of `{cT z = bnum z}`. -/
+noncomputable def cTEqCode (tbl z : V) : V := CTEq.construction.result ![tbl] z
+
+@[simp] lemma cTEqCode_zero (tbl : V) : cTEqCode tbl 0 = step0 tbl 5 (vecOf [bnum 0]) (cTEqFact 0) := by
+  simp [cTEqCode, CTEq.construction]
+@[simp] lemma cTEqCode_succ (tbl z : V) :
+    cTEqCode tbl (z + 1) = step2 tbl 17 (cTEqFact z) (cTEqCode tbl z) (succFact z) (succCode tbl z)
+      (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1)) := by
+  simp [cTEqCode, CTEq.construction]
+
+noncomputable def cTEqCodeDef : 𝚺₁.Semisentence 3 := CTEq.blueprint.resultDef |>.rew (Rew.subst ![#0, #2, #1])
+
+instance cTEqCode_defined : 𝚺₁-Function₂ (cTEqCode : V → V → V) via cTEqCodeDef := .mk
+  fun v ↦ by simp [CTEq.construction.result_defined_iff, cTEqCodeDef]; rfl
+instance cTEqCode_definable : 𝚺₁-Function₂ (cTEqCode : V → V → V) := cTEqCode_defined.to_definable
+
+/-- The node size of the chain: `E := 2z + 12‖z + 1‖ + 5` dominates `|cT z|`, `|bnum z|`, `|bnum (z + 1)|`. -/
+noncomputable def cTE (z : V) : V := 2 * z + 12 * ‖z + 1‖ + 5
+
+lemma one_le_cTE (z : V) : 1 ≤ cTE z := le_trans (by norm_num) le_add_self
+lemma cTE_mono {z z' : V} (h : z ≤ z') : cTE z ≤ cTE z' := by
+  unfold cTE; have := length_le_of_le (by gcongr : z + 1 ≤ z' + 1); gcongr
+lemma addE_le_cTE (z : V) : 12 * ‖z + 1‖ + 3 ≤ cTE z := by
+  unfold cTE
+  calc 12 * ‖z + 1‖ + 3 ≤ 2 * z + 12 * ‖z + 1‖ + 3 := by rw [add_assoc]; exact le_add_self
+    _ ≤ 2 * z + 12 * ‖z + 1‖ + 5 := by gcongr; norm_num
+lemma termLen_cTV_le_cTE (z : V) : termLen LAct (cTV z) ≤ cTE z := by
+  rw [termLen_cTV]; unfold cTE
+  calc 2 * z + 1 ≤ 2 * z + 1 + (12 * ‖z + 1‖ + 4) := le_self_add
+    _ = 2 * z + 12 * ‖z + 1‖ + 5 := by ring
+
+lemma formulaLen_cTEqFact_le {B z : V} (hPeq : formulaLen LAct (Peq : V) ≤ B) :
+    formulaLen LAct (cTEqFact z) ≤ B * cTE z :=
+  le_trans (formulaLen_eqFact_le (one_le_cTE z) (cTV_semiterm_LAct 0 z) (isSemiterm_bnum_LAct 0 z)
+    (termLen_cTV_le_cTE z) (termLen_bnum_le_E' le_self_add (addE_le_cTE z)))
+    (mul_le_mul_of_nonneg_right hPeq zero_le)
+
+/-- The bound of the chain: `(z + 1)(‖z‖ + 2)` nodes, each `≤ nodeCost N B (cTE z)`. -/
+noncomputable def cTBound (N B z : V) : V := (z + 1) * (‖z‖ + 2) * nodeCost N B (cTE z)
+
+/-- **Soundness and length of the chain-numeral prover**, by Π₁ successor induction on `z`. -/
+theorem cTEqCode_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    DerivationOf TAct (cTEqCode tbl z) (sing (cTEqFact z)) ∧ dlen TAct (cTEqCode tbl z) ≤ cTBound N B z := by
+  induction z using ISigma1.pi1_succ_induction with
+  | hP => simp only [cTBound, cTE]; definability
+  | zero =>
+    obtain ⟨-, -, -, -, -, hr5, -, -, -, -, -, -, -, -, -, -, -, -, -, hPeq, -, -, hB⟩ := id htbl
+    rw [cTEqCode_zero]
+    have hx : IsSemiterm LAct 0 (bnum (0 : V)) := isSemiterm_bnum_LAct 0 _
+    have hc : instOuter LAct [bnum (0 : V)] nEqRefl_c = cTEqFact 0 := by
+      rw [(inst_nEqRefl hx).2]; unfold cTEqFact; rw [cTV_zero, bnum_zero]
+    have hes : ∀ e ∈ [bnum (0 : V)], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ cTE 0 := by
+      simp only [List.mem_singleton, forall_eq]
+      exact ⟨hx, termLen_bnum_le_E' le_self_add (addE_le_cTE 0)⟩
+    have hpf := step0_proof hr5 [bnum (0 : V)] rfl (fun e he ↦ (hes e he).1) (isFormula_cTEqFact 0) (inst_nEqRefl hx).1 hc
+    have hlen := dlen_step0_le hr5 [bnum (0 : V)] rfl hes (one_le_cTE 0) hB (isFormula_cTEqFact 0) (inst_nEqRefl hx).1 hc
+      (by norm_num) (by simp [nEqRefl_as]) (formulaLen_cTEqFact_le hPeq)
+    rw [cast_rEqRefl] at hpf hlen
+    refine ⟨hpf, ?_⟩
+    unfold cTBound
+    exact le_trans hlen (le_mul_of_one_le_left zero_le (one_le_count _ _))
+  | succ z ih =>
+    obtain ⟨hpf', hlen'⟩ := ih
+    obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr17, -, hPeq, -, -, hB⟩ := id htbl
+    rw [cTEqCode_succ]
+    have hc0 : IsSemiterm LAct 0 (cTV z) := cTV_semiterm_LAct 0 z
+    have ht0 : IsSemiterm LAct 0 (bnum z) := isSemiterm_bnum_LAct 0 _
+    have ht1 : IsSemiterm LAct 0 (bnum (z + 1)) := isSemiterm_bnum_LAct 0 _
+    have hmap : nSuccCong_as.map (instOuter LAct [bnum (z + 1), bnum z, cTV z]) =
+        [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)].map Prod.fst := by
+      rw [(inst_nSuccCong hc0 ht0 ht1).1]; rfl
+    have hc : instOuter LAct [bnum (z + 1), bnum z, cTV z] nSuccCong_c = cTEqFact (z + 1) := by
+      rw [(inst_nSuccCong hc0 ht0 ht1).2]; unfold cTEqFact; rw [cTV_succ]
+    have hE' : cTE z ≤ cTE (z + 1) := cTE_mono le_self_add
+    have hes : ∀ e ∈ [bnum (z + 1), bnum z, cTV z], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ cTE (z + 1) := by
+      intro e he
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl
+      · exact ⟨ht1, termLen_bnum_le_E' le_self_add (addE_le_cTE (z + 1))⟩
+      · exact ⟨ht0, termLen_bnum_le_E' (le_trans le_self_add le_self_add) (addE_le_cTE (z + 1))⟩
+      · exact ⟨hc0, le_trans (termLen_cTV_le_cTE z) hE'⟩
+    have hps : ∀ p ∈ [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)],
+        IsFormula LAct p.1 ∧ DerivationOf TAct p.2 (sing p.1) := by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl
+      · exact ⟨isFormula_cTEqFact z, hpf'⟩
+      · exact ⟨isFormula_succFact z, succCode_proof htbl z⟩
+    have hpf := stepL_proof hr17 [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)] [bnum (z + 1), bnum z, cTV z]
+      rfl (fun e he ↦ (hes e he).1) (isFormula_cTEqFact _) hps hmap hc
+    have hlen := dlen_stepL_le hr17 [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)] [bnum (z + 1), bnum z, cTV z]
+      rfl hes (one_le_cTE _) hB (isFormula_cTEqFact _) hps hmap hc (by norm_num) (by simp [nSuccCong_as])
+      (formulaLen_cTEqFact_le hPeq)
+      (by
+        intro p hp
+        simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+        rcases hp with rfl | rfl
+        · exact le_trans (formulaLen_cTEqFact_le hPeq) (mul_le_mul_of_nonneg_left hE' zero_le)
+        · exact formulaLen_succFact_le hPeq (le_trans (by gcongr <;> norm_num : 6 * ‖z + 1‖ + 3 ≤ 12 * ‖z + 1‖ + 3)
+            (le_trans (addE_le_cTE z) hE')))
+    rw [cast_rSuccCong] at hpf hlen
+    have hstep : stepL tbl 17 [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)]
+        (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1)) =
+      step2 tbl 17 (cTEqFact z) (cTEqCode tbl z) (succFact z) (succCode tbl z)
+        (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1)) := rfl
+    rw [hstep] at hpf hlen
+    refine ⟨hpf, ?_⟩
+    set nc := nodeCost N B (cTE (z + 1)) with hnc
+    have hsB : dlen TAct (succCode tbl z) ≤ (‖z‖ + 1) * nc := by
+      refine le_trans (dlen_succCode_le htbl z) ?_
+      exact mul_le_mul_of_nonneg_left (nodeCost_mono (le_trans (by gcongr <;> norm_num : 6 * ‖z + 1‖ + 3 ≤ 12 * ‖z + 1‖ + 3)
+        (le_trans (addE_le_cTE z) hE'))) zero_le
+    have hlz : ‖z‖ ≤ ‖z + 1‖ := length_le_of_le le_self_add
+    unfold cTBound at hlen' ⊢
+    calc dlen TAct (step2 tbl 17 (cTEqFact z) (cTEqCode tbl z) (succFact z) (succCode tbl z)
+            (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1)))
+        ≤ factsDlen [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)] + nc := hlen
+      _ = dlen TAct (cTEqCode tbl z) + dlen TAct (succCode tbl z) + nc := by simp [factsDlen, add_assoc]
+      _ ≤ (z + 1) * (‖z‖ + 2) * nc + (‖z‖ + 1) * nc + nc := by
+          gcongr
+          exact le_trans hlen' (mul_le_mul_of_nonneg_left (nodeCost_mono hE') zero_le)
+      _ = (z + 1 + 1) * (‖z‖ + 2) * nc := by ring
+      _ ≤ (z + 1 + 1) * (‖z + 1‖ + 2) * nc := by gcongr
+
+theorem cTEqCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    DerivationOf TAct (cTEqCode tbl z) (sing (cTEqFact z)) := (cTEqCode_sound htbl z).1
+
+theorem dlen_cTEqCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    dlen TAct (cTEqCode tbl z) ≤ (z + 1) * (‖z‖ + 2) * nodeCost N B (cTE z) := (cTEqCode_sound htbl z).2
+
+/-- `cTLeFact z := cT z ≤ bnum z`; `cTLeCode`: `leOfEq` from `cTEqCode`. -/
+noncomputable def cTLeFact (z : V) : V := leFact (cTV z) (bnum z)
+noncomputable def cTLeCode (tbl z : V) : V :=
+  stepL tbl 18 [(cTEqFact z, cTEqCode tbl z)] (vecOf [bnum z, cTV z]) (cTLeFact z)
+
+lemma isFormula_cTLeFact (z : V) : IsFormula LAct (cTLeFact z) :=
+  isFormula_leFact (cTV_semiterm_LAct 0 z) (isSemiterm_bnum_LAct 0 z)
+
+theorem cTLeCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    DerivationOf TAct (cTLeCode tbl z) (sing (cTLeFact z)) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr18, -, -, -, -⟩ := id htbl
+  have hc0 : IsSemiterm LAct 0 (cTV z) := cTV_semiterm_LAct 0 z
+  have ht0 : IsSemiterm LAct 0 (bnum z) := isSemiterm_bnum_LAct 0 _
+  have hpf := stepL_proof hr18 [(cTEqFact z, cTEqCode tbl z)] [bnum z, cTV z] rfl (by simp [hc0, ht0])
+    (isFormula_cTLeFact z) (by simp only [List.mem_singleton, forall_eq]; exact ⟨isFormula_cTEqFact z, cTEqCode_proof htbl z⟩)
+    (by rw [(inst_nLeOfEq hc0 ht0).1]; rfl) (inst_nLeOfEq hc0 ht0).2
+  rwa [cast_rLeOfEq] at hpf
+
+theorem dlen_cTLeCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    dlen TAct (cTLeCode tbl z) ≤ dlen TAct (cTEqCode tbl z) + nodeCost N B (cTE z) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr18, hPeq, hPle, -, hB⟩ := id htbl
+  have hc0 : IsSemiterm LAct 0 (cTV z) := cTV_semiterm_LAct 0 z
+  have ht0 : IsSemiterm LAct 0 (bnum z) := isSemiterm_bnum_LAct 0 _
+  have hes : ∀ e ∈ [bnum z, cTV z], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ cTE z := by
+    intro e he
+    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl
+    · exact ⟨ht0, termLen_bnum_le_E' le_self_add (addE_le_cTE z)⟩
+    · exact ⟨hc0, termLen_cTV_le_cTE z⟩
+  have hh := dlen_stepL_le hr18 [(cTEqFact z, cTEqCode tbl z)] [bnum z, cTV z] rfl hes (one_le_cTE z) hB
+    (isFormula_cTLeFact z) (by simp only [List.mem_singleton, forall_eq]; exact ⟨isFormula_cTEqFact z, cTEqCode_proof htbl z⟩)
+    (by rw [(inst_nLeOfEq hc0 ht0).1]; rfl) (inst_nLeOfEq hc0 ht0).2 (by norm_num) (by simp [nLeOfEq_as])
+    (le_trans (formulaLen_leFact_le (one_le_cTE z) hc0 ht0 (termLen_cTV_le_cTE z)
+      (termLen_bnum_le_E' le_self_add (addE_le_cTE z))) (mul_le_mul_of_nonneg_right hPle zero_le))
+    (by simp only [List.mem_singleton, forall_eq]; exact formulaLen_cTEqFact_le hPeq)
+  rw [cast_rLeOfEq] at hh
+  unfold cTLeCode
+  simpa using hh
+
+end chainNumeral
+
 end ArithS
