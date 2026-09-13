@@ -1,0 +1,43 @@
+import ArithS.Necessitation.Lib.Occ
+
+/-!
+# ArithS.Necessitation.Lib.Frag — the FRAGMENT rows of the library `Λ` (GENERATED)
+
+`M4_BOUNDED_HBL/DESIGN_fragments.md` §8.1: the rows the ten per-tag fragments `verifySteps` need
+that no earlier `Lib/*` file provides — copy-in (equality and the congruence rows, §3.3), the
+identification walk (injectivity, §3.5), functionality (`pinSteps`, §4.10(i)), the chain/set
+rows (§3.4, §4.5), the ten `fstIdx<Tag>` rows (§4.0), the top's node rows (§7.1), the exact
+lengths (§3.6), the certification rows (bottom-up `neg`/`shift`/`subst`/`free` and the term
+level, §3.6), the numeral rows N4/N5 (§2.4) and the `axm`(ii) shape rows (§4.10(ii)).
+
+**This file is generated** by `arith/scripts/gen_frag.py` from ONE row table (the same table
+generates `RowInstB.lean`, the row-shape and instantiation lemmas); edit the table, not this file.
+Same convention as `Sets.lean`: body `xB : ArithmeticSemisentence m` written `“x₀ … x_{m-1}. B”`
+(index order, `x₀ = #0` the innermost quantifier of `∀¹*`), `x := ∀¹* xB`, `models_x` (one `simp`
+on the sentence structure), `pa_proves_x` (truth in every model of `𝗜𝚺₁` + completeness),
+`lib_x`. Δ₁ hypotheses are taken `.pi`, conclusions `.sigma`; every auxiliary object is a
+universal variable with its graph as a hypothesis; arities and indices are variables (the walk
+instantiates them at chain numerals `cT`); the DSL literals `0`/`1`/`2` are the codes `𝟎`/`𝟏`/
+`𝟏 ^+ 𝟏`; `bnumZeroCert`/`bnumOneCert` write `𝟎`/`𝟏` as the walk does (`func 0 0 0`,
+`func 0 (0 + 1) 0`).
+
+## Design row → delivered name
+
+<<TABLE>>
+
+Skipped / renamed, with the reason:
+* `congTvPi`/`congUtvPi` conclude `.sigma` (the polarity convention; `isSemitermVecSigmaPiLAct`
+  bridges), `congPi`/`congTPi` likewise; `congUfPi` keeps `.pi` on both sides (`indRec` consumes `.pi`).
+* `dlenDefIntro` takes only `derivation.sigma d` (the `.pi` premise of §7.1 is redundant:
+  `dlen_eq_of_graph`).
+* `bnumEvenCert`/`bnumOddCert` are stated on the walk's `func`/`∷` facts for `𝟏`, `𝟐`, `𝟐 ^* t`,
+  `(𝟐 ^* t) ^+ 𝟏` (no `qqAddGraph`/`qqMulGraph` objects — the walk never emits those).
+* `twoMulMul`/`twoMulOneMul` and the `length*` rows are written in the DSL (`2 * x`), not in
+  `Lengths.lean`'s `eqO/addO/twoMul` term syntax; a `numSteps` producer that mixes both crosses
+  the same one-time syntax bridge as `dslSuccEqSuccO`.
+* The per-`σ`/per-`χ` closed shape rows of `axm`(i) and the top are a FAMILY generated from a
+  Lean term (`pinSteps`), not rows of this file. The `inst_` lemmas of the EXISTING `Nodes`/`Sets`/
+  `Lengths`/`Occ` rows are the second table of `RowInstB.lean`.
+* `qVecCert` (new): `qVec w` bottom-up from `termBShiftVec` and `#0 ∷ ·` (the `qVec` entries
+  `qVecNth0`/`qVecNthSucc` are also delivered).
+-/

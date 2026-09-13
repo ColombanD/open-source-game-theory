@@ -1,0 +1,102 @@
+import ArithS.Necessitation.Chain
+import ArithS.Necessitation.Lib.Frag
+
+/-!
+# ArithS.Necessitation.RowInstB — the fragment rows, read off the DSL and instantiated (GENERATED)
+
+`RowInst.lean`'s three deliverables (the row-shape lemma `quote_row_x`, formula-ness of the pieces,
+the instantiation lemma `inst_x` at arbitrary closed witnesses — the DSL variable list read
+RIGHT-TO-LEFT) for every row of `Lib/Frag.lean` (`DESIGN_fragments.md` §8.1), plus the predicate
+codes and canonical fact codes those rows need beyond `RowInst.lean`/`Chain.lean`: `Peq`/`eqFact`,
+`Pmem`/`memFact`, `Pinsert`/`insFact`, `Psubset`/`subsetFact`, `PfsetPi`/`fsetPiFact`,
+`PsetShiftG`/`setShiftFact`, `PsetLen`/`setLenFact`, `PflenG`/`lenFact`, the term-level graphs,
+`Pnth`/`nthFact`, the `axm`(ii) graphs, the node graphs `PaxL`/`axLFact` … `Paxm`/`axmFact`, and
+the top's `PdlenDef`/`Pproof`/`PinstB`/`Pg` — each with `IsFormula`-ness, the shift law, the
+multiplicative length bound and the occurrence bound. `Chain.lean`'s `Pderiv`/`PfstIdx`/`Pdlen`/
+`Ple` (`derFact`/`fstIdxFact`/`dlenFact`/`leFact`) get the lemmas `Chain` does not state.
+
+**Generated** by `arith/scripts/gen_frag.py` (the row table is shared with `Lib/Frag.lean`); the
+header below (§1) is hand-written (`scripts/RowInstB.lean.head`). New over `RowInst.lean`'s §1:
+the entries `a + b`/`a * b`/`2` (`quote_closed_mul_m`, `quote_closed_two_m`, `termSubst_qqMul'`,
+`isSemiterm_qqAdd/Mul_LAct`) and the three tactics `row_entriesB`/`row_entries_simpB`/`row_shapeB`
+extended to them.
+-/
+
+namespace ArithS
+
+open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open PeanoMinus ISigma0 ISigma1
+open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
+open LAct
+
+variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+set_option linter.unusedSimpArgs false
+set_option linter.unusedTactic false
+
+/-! ## 1. Infrastructure: `*`, `2`, and the extended tactics -/
+
+lemma quote_closed_mul_m {m : ℕ} (t u : ClosedSemiterm ℒₒᵣ m) :
+    (⌜(‘!!t * !!u’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (⌜t⌝ : V) ^* (⌜u⌝ : V) := by
+  rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_mul]; rfl
+
+/-- The DSL literal `2` is the code `𝟏 ^+ 𝟏` (`numeral 2 = numeral 1 ^+ 𝟏`). -/
+lemma quote_closed_two_m {m : ℕ} : (⌜(‘2’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (𝟏 : V) ^+ (𝟏 : V) := by
+  rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_numeral_eq_numeral]
+  simp only [Nat.cast_ofNat]
+  rw [show (2 : V) = 0 + 1 + 1 by norm_num, numeral_add_two, zero_add, numeral_one]
+
+lemma isUTerm_bv (i : ℕ) : IsUTerm LAct (bv i : V) := (isSemiterm_bv (n := i + 1) (by omega)).isUTerm
+lemma isUTerm_qqOne_LAct : IsUTerm LAct (𝟏 : V) := (isSemiterm_qqOne_LAct 0).isUTerm
+lemma isUTerm_qqZero_LAct : IsUTerm LAct (𝟎 : V) := (isSemiterm_qqZero_LAct 0).isUTerm
+lemma isUTerm_cT (n : ℕ) : IsUTerm LAct (cT n : V) := (cT_semiterm_LAct 0 n).isUTerm
+lemma isUTerm_qqAdd_LAct {x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) : IsUTerm LAct (x ^+ y) := by
+  unfold qqAdd; exact IsUTerm.func.mpr ⟨isFunc_LAct_addIndex, by simp [hx, hy]⟩
+lemma isUTerm_qqMul_LAct {x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) : IsUTerm LAct (x ^* y) := by
+  unfold qqMul; exact IsUTerm.func.mpr ⟨isFunc_LAct_mulIndex, by simp [hx, hy]⟩
+lemma isSemiterm_qqAdd_LAct {n x y : V} (hx : IsSemiterm LAct n x) (hy : IsSemiterm LAct n y) :
+    IsSemiterm LAct n (x ^+ y) := by
+  unfold qqAdd; exact IsSemiterm.func.mpr ⟨isFunc_LAct_addIndex, by simp [hx, hy]⟩
+lemma isSemiterm_qqMul_LAct {n x y : V} (hx : IsSemiterm LAct n x) (hy : IsSemiterm LAct n y) :
+    IsSemiterm LAct n (x ^* y) := by
+  unfold qqMul; exact IsSemiterm.func.mpr ⟨isFunc_LAct_mulIndex, by simp [hx, hy]⟩
+lemma termSubst_qqMul' {w x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) :
+    termSubst LAct w (x ^* y) = termSubst LAct w x ^* termSubst LAct w y := by
+  unfold qqMul
+  rw [termSubst_func isFunc_LAct_mulIndex (by simp [hx, hy]), termSubstVec_cons₂ hx hy]
+
+/-- Level-`n` term-ness of every entry of a row piece, now with `+`/`*` entries. -/
+macro "row_entriesB" : tactic => `(tactic| (
+  repeat' first
+    | refine List.forall_mem_cons.mpr ⟨?_, ?_⟩
+    | refine isSemiterm_qqAdd_LAct ?_ ?_
+    | refine isSemiterm_qqMul_LAct ?_ ?_
+  all_goals first
+    | exact List.forall_mem_nil _
+    | exact isSemiterm_bv (by norm_num)
+    | exact isSemiterm_qqZero_LAct _
+    | exact isSemiterm_qqOne_LAct _
+    | exact cT_semiterm_LAct _ _
+    | exact isSemiterm_of_le (by assumption) zero_le
+    | exact isSemiterm_of_le (isSemiterm_iterate_termShift (by assumption) _) zero_le
+    | simp))
+
+/-- Evaluate the entrywise substitution of an instantiated piece, now with `+`/`*` entries. -/
+macro "row_entries_simpB" : tactic => `(tactic| simp only [List.map_cons, List.map_nil,
+  termSubst_qqAdd', termSubst_qqMul', isUTerm_bv, isUTerm_qqOne_LAct, isUTerm_qqZero_LAct, isUTerm_cT,
+  isUTerm_qqAdd_LAct, isUTerm_qqMul_LAct, termSubst_bv,
+  termSubst_bv_add_one, termSubst_qqZero', termSubst_qqOne', termSubst_cT, bvarList_zero, bvarList_one,
+  bvarList_two, bvarList_three, bvarList_four, bvarList_five, List.reverse_cons, List.reverse_nil,
+  List.nil_append, List.append_nil, List.cons_append, List.singleton_append, List.getD_cons_zero,
+  List.getD_cons_succ])
+
+/-- Read a row body off the DSL, now with `*` and `2`. -/
+macro "row_shapeB" : tactic => `(tactic| (
+  simp only [Semiformula.Operator.operator, quote_lMap_emb_imp, quote_lMap_emb_ex, quote_lMap_emb_and,
+    quote_lMap_emb_subst', impChain_cons, impChain_nil, matrixToVec_fin0, matrixToVec_fin1, matrixToVec_fin2,
+    matrixToVec_fin3, matrixToVec_fin4, matrixToVec_fin5, matrixToVec_fin6, matrixToVec_fin7,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons,
+    quote_closed_add_m, quote_closed_mul_m, quote_closed_two_m, quote_closed_one_m, quote_closed_zero_m,
+    quote_closed_bvar_m, quote_cTT]
+  all_goals rfl))
+
