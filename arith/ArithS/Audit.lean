@@ -25,6 +25,7 @@ import ArithS.Necessitation.Lib.Nodes
 import ArithS.Necessitation.Lib.Bridge
 import ArithS.Necessitation.Steps
 import ArithS.Necessitation.Lib.Walk
+import ArithS.Necessitation.Lib.Occ
 import ArithS.Necessitation.WalkLemmas
 import ArithS.Necessitation.RowInst
 import ArithS.Necessitation.Chain
@@ -528,5 +529,26 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms shift_relFact
 #print axioms formulaLen_tvPiFact_le
 #print axioms fvOccF_negFact_le
+
+-- U10 (Necessitation/Lib/Occ, 2026-09-13): the occurrence-count and shift-length rows for the
+-- verification proof's `dlen` bookkeeping (`DESIGN_inner_necessitation.md` §4.1–4.2,
+-- `DESIGN_describe.md` §9.2 item 15) — totality of `fvOcc`/`fvOccVec`/`fvOccF`/`fvOccS`/`bvOccF`,
+-- the per-constructor equations, the exact shift laws `termLenShift`/`formulaLenShift` and the
+-- additive `setLenSetShiftLe`, the `free`/`subst` occurrence bounds, and the §4.1 node rows
+-- `dlenLeafLe`/`dlenUnaryLe`/`dlenBinaryLe` in DSL syntax with the bridge `dslSuccEqSuccO`
+-- (DSL `1` vs `oneO`). 38 rows (a representative dozen here).
+#print axioms lib_fvOccTotal
+#print axioms lib_fvOccSTotal
+#print axioms lib_bvOccFTotal
+#print axioms lib_fvOccFunc
+#print axioms lib_fvOccFAnd
+#print axioms lib_fvOccSInsertLe
+#print axioms lib_termLenShift
+#print axioms lib_formulaLenShift
+#print axioms lib_setLenSetShiftLe
+#print axioms lib_fvOccFFreeLe'
+#print axioms lib_fvOccFSubstLe
+#print axioms lib_dlenBinaryLe
+#print axioms lib_dslSuccEqSuccO
 
 end ArithS

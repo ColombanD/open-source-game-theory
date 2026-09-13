@@ -46,6 +46,7 @@ import ArithS.Necessitation.Lib.Lengths
 import ArithS.Necessitation.Lib.Nodes
 import ArithS.Necessitation.Lib.Bridge
 import ArithS.Necessitation.Lib.Walk
+import ArithS.Necessitation.Lib.Occ
 import ArithS.Necessitation.Steps
 import ArithS.Necessitation.WalkLemmas
 import ArithS.Necessitation.RowInst
