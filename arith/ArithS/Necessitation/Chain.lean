@@ -1382,4 +1382,322 @@ instance costSum_definable : 𝚺₁-Function₄ (costSum : V → V → V → V 
 
 end chain
 
+/-! ### B.4 The per-step theorems: `applyStep` derives `Γ` and costs `stepCost` -/
+
+/-- Inversion of `isSemiformula_impChain`. -/
+lemma isSemiformula_of_impChain {n : V} : ∀ {as : List V} {c : V}, IsSemiformula L n (impChain L as c) →
+    (∀ a ∈ as, IsSemiformula L n a) ∧ IsSemiformula L n c
+  | [], _, h => ⟨by simp, h⟩
+  | a :: as, c, h => by
+    rw [impChain_cons, IsSemiformula.imp] at h
+    obtain ⟨ih₁, ih₂⟩ := isSemiformula_of_impChain h.2
+    refine ⟨fun a' ha' ↦ ?_, ih₂⟩
+    rcases List.mem_cons.mp ha' with rfl | ha'
+    · exact h.1
+    · exact ih₁ a' ha'
+
+/-- **The standardness bridge**: a vector of length `≤ M` (`M` a standard numeral) is `vecOf` of
+a Lean list — so the list theorems of `Steps.lean` apply to it. -/
+lemma exists_list_of_len_le : ∀ (M : ℕ) (v : V), len v ≤ (M : V) → ∃ l : List V, v = vecOf l
+  | 0, v, h => ⟨[], by
+      rw [vecOf_nil]
+      exact len_zero_iff_eq_nil.mp (le_antisymm (by simpa using h) zero_le)⟩
+  | M + 1, v, h => by
+    rcases nil_or_adjoin v with rfl | ⟨x, v', rfl⟩
+    · exact ⟨[], rfl⟩
+    · obtain ⟨l, rfl⟩ := exists_list_of_len_le M v'
+        (by rw [len_adjoin, Nat.cast_succ] at h; exact le_of_add_le_add_right h)
+      exact ⟨x :: l, rfl⟩
+
+section perStep
+
+open LAct
+
+lemma applyStep_tag0 {tbl Γ s e : V} (h : sTag s = 0) :
+    applyStep tbl Γ s e = useHornV LAct Γ (sEv s) (sAs s) (sC s) (rowD tbl.[sRow s]) e := by simp [applyStep, h]
+lemma applyStep_tag1 {tbl Γ s e : V} (h : sTag s = 1) :
+    applyStep tbl Γ s e = useHornAndV LAct Γ (sEv s) (sAs s) (π₁ (sC s)) (π₂ (sC s)) (rowD tbl.[sRow s]) e := by
+  simp [applyStep, h]
+lemma applyStep_tag2 {tbl Γ s e : V} (h : sTag s = 2) :
+    applyStep tbl Γ s e = introFactV LAct Γ (sEv s) (sAs s) (sC s) (rowD tbl.[sRow s]) e := by simp [applyStep, h]
+lemma applyStep_tag3 {tbl Γ s e : V} (h : sTag s = 3) :
+    applyStep tbl Γ s e = elimExistsCode LAct Γ (π₂ s) (axLFactCode Γ (^∃ (π₂ s))) e := by simp [applyStep, h]
+lemma applyStep_tag4 {tbl Γ s e : V} (h : sTag s = 4) :
+    applyStep tbl Γ s e = splitAndCode LAct Γ (π₁ (π₂ s)) (π₂ (π₂ s)) e := by simp [applyStep, h]
+lemma applyStep_tag5 {tbl Γ s e : V} (h : sTag s = 5) : applyStep tbl Γ s e = wkDropCode Γ e := by
+  simp [applyStep, h]
+
+lemma ctxAfter_tag0 {Γ s : V} (h : sTag s = 0) :
+    ctxAfter Γ s = insert (neg LAct (subst LAct (revV (sEv s)) (sC s))) Γ := by simp [ctxAfter, h]
+lemma ctxAfter_tag1 {Γ s : V} (h : sTag s = 1) :
+    ctxAfter Γ s = insert (neg LAct (subst LAct (revV (sEv s)) (π₁ (sC s))))
+      (insert (neg LAct (subst LAct (revV (sEv s)) (π₂ (sC s)))) Γ) := by simp [ctxAfter, h]
+lemma ctxAfter_tag2 {Γ s : V} (h : sTag s = 2) :
+    ctxAfter Γ s = insert (neg LAct (free LAct (subst LAct (qVec LAct (revV (sEv s))) (sC s)))) (setShift LAct Γ) := by
+  simp [ctxAfter, h]
+lemma ctxAfter_tag3 {Γ s : V} (h : sTag s = 3) :
+    ctxAfter Γ s = insert (neg LAct (free LAct (π₂ s))) (setShift LAct Γ) := by simp [ctxAfter, h]
+lemma ctxAfter_tag4 {Γ s : V} (h : sTag s = 4) :
+    ctxAfter Γ s = insert (neg LAct (π₁ (π₂ s))) (insert (neg LAct (π₂ (π₂ s))) Γ) := by simp [ctxAfter, h]
+lemma ctxAfter_tag5 {Γ s : V} (h : sTag s = 5) : ctxAfter Γ s = π₂ s := by simp [ctxAfter, h]
+
+lemma stepCost_tag0 {N E Γ s : V} (h : sTag s = 0) :
+    stepCost N E Γ s = hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s))
+      (formulaLen LAct (impChainV LAct (sAs s) (sC s))) := by simp [stepCost, h]
+lemma stepCost_tag1 {N E Γ s : V} (h : sTag s = 1) :
+    stepCost N E Γ s = hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s))
+        (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))))
+      + 2 * setLen LAct Γ + 6 * (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))) * E) + 4 := by
+  simp [stepCost, h]
+lemma stepCost_tag2 {N E Γ s : V} (h : sTag s = 2) :
+    stepCost N E Γ s = introCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s))
+      (formulaLen LAct (impChainV LAct (sAs s) (^∃ (sC s)))) := by simp [stepCost, h]
+lemma stepCost_tag3 {N E Γ s : V} (h : sTag s = 3) :
+    stepCost N E Γ s = 4 * setLen LAct Γ + setLen LAct (setShift LAct Γ) + 7 * formulaLen LAct (π₂ s) + 10 := by
+  simp [stepCost, h]
+lemma stepCost_tag4 {N E Γ s : V} (h : sTag s = 4) :
+    stepCost N E Γ s = 2 * setLen LAct Γ + 3 * formulaLen LAct (π₁ (π₂ s)) + 3 * formulaLen LAct (π₂ (π₂ s)) + 4 := by
+  simp [stepCost, h]
+lemma stepCost_tag5 {N E Γ s : V} (h : sTag s = 5) : stepCost N E Γ s = setLen LAct Γ + 1 := by simp [stepCost, h]
+
+/-- The Horn hypotheses in list form (through the standardness bridge). -/
+lemma HornOK.lists (M : ℕ) {tbl E Γ s : V} (h : HornOK tbl E (M : V) Γ s) :
+    ∃ (es l : List V), sEv s = vecOf es ∧ sAs s = vecOf l ∧ rowM tbl.[sRow s] = (es.length : V) ∧
+      (∀ e ∈ es, IsTerm LAct e ∧ termLen LAct e ≤ E) ∧
+      (∀ a ∈ l, neg LAct (subst LAct (revV (vecOf es)) a) ∈ Γ) := by
+  obtain ⟨hi, hm, hM₁, hM₂, hes, hneg⟩ := h
+  obtain ⟨es, hes_eq⟩ := exists_list_of_len_le M (sEv s) hM₁
+  obtain ⟨l, hl_eq⟩ := exists_list_of_len_le M (sAs s) hM₂
+  refine ⟨es, l, hes_eq, hl_eq, by rw [hm, hes_eq, len_vecOf], fun e he ↦ ?_, fun a ha ↦ ?_⟩
+  · obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.mp he
+    have := hes (k : V) (by rw [hes_eq, len_vecOf]; exact_mod_cast hk)
+    rwa [hes_eq, nth_vecOf es k hk] at this
+  · obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.mp ha
+    have := hneg (k : V) (by rw [hl_eq, len_vecOf]; exact_mod_cast hk)
+    rwa [hl_eq, hes_eq, nth_vecOf l k hk] at this
+
+/-- **One step derives its context** from a derivation of `ctxAfter`. -/
+theorem applyStep_proof (M : ℕ) {tbl N E Γ s e : V} (htbl : TableOK tbl N) (hok : StepOK tbl E (M : V) Γ s)
+    (he : DerivationOf TAct e (ctxAfter Γ s)) : DerivationOf TAct (applyStep tbl Γ s e) Γ := by
+  obtain ⟨hΓ, h⟩ := hok
+  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩
+  · -- sUseHorn
+    obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    have hΛ := hrow.2.1
+    rw [qqAlls_natCast] at hΛ
+    have hneg : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ := fun a ha ↦ by
+      have := hneg' a ha
+      rwa [subst_revV_vecOf es (has a ha) hes] at this
+    rw [ctxAfter_tag0 ht, hes_eq, subst_revV_vecOf es hc hes] at he
+    rw [applyStep_tag0 ht, hes_eq, hl_eq, useHornV_vecOf Γ es l has hc hes]
+    exact useHornCode_proof has hc hes hΓ (subset_refl Γ) hneg hΛ he
+  · -- sUseHornAnd
+    obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    obtain ⟨hc₁, hc₂⟩ := IsSemiformula.and.mp hc
+    have hΛ := hrow.2.1
+    rw [qqAlls_natCast] at hΛ
+    have hneg : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ := fun a ha ↦ by
+      have := hneg' a ha
+      rwa [subst_revV_vecOf es (has a ha) hes] at this
+    rw [ctxAfter_tag1 ht, hes_eq, subst_revV_vecOf es hc₁ hes, subst_revV_vecOf es hc₂ hes] at he
+    rw [applyStep_tag1 ht, hes_eq, hl_eq, useHornAndV_vecOf Γ es l has hc₁ hc₂ hes]
+    exact useHornAndCode_proof has hc₁ hc₂ hes hΓ (subset_refl Γ) hneg hΛ he
+  · -- sIntroFact
+    obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    have hR : IsSemiformula LAct ((es.length : V) + 1) (sC s) := IsSemiformula.exs.mp hc
+    have hΛ := hrow.2.1
+    rw [qqAlls_natCast] at hΛ
+    have hneg : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ := fun a ha ↦ by
+      have := hneg' a ha
+      rwa [subst_revV_vecOf es (has a ha) hes] at this
+    rw [ctxAfter_tag2 ht, hes_eq, subst_qVec_revV_vecOf es hR hes] at he
+    rw [applyStep_tag2 ht, hes_eq, hl_eq, introFactV_vecOf Γ es l has hR hes]
+    exact introFactCode_proof has hR hes hΓ hneg hΛ he
+  · -- sElimExs
+    rw [ctxAfter_tag3 ht] at he
+    rw [applyStep_tag3 ht]
+    have hE : IsFormula LAct (^∃ (π₂ s)) := by simp [hP]
+    exact elimExistsCode_proof hP hΓ (subset_refl Γ) (axLFactCode_proof hE hΓ hmem) he
+  · -- sSplit
+    rw [ctxAfter_tag4 ht] at he
+    rw [applyStep_tag4 ht]
+    have := splitAndCode_proof hp hq hΓ (subset_refl Γ) he
+    rwa [insert_eq_self_of_mem hmem] at this
+  · -- sWkDrop
+    rw [ctxAfter_tag5 ht] at he
+    rw [applyStep_tag5 ht]
+    exact wkDropCode_proof hΓ hsub he
+
+/-- The context after an applicable step is a formula set. -/
+lemma isFormulaSet_ctxAfter (M : ℕ) {tbl N E Γ s : V} (htbl : TableOK tbl N) (hok : StepOK tbl E (M : V) Γ s) :
+    IsFormulaSet LAct (ctxAfter Γ s) := by
+  obtain ⟨hΓ, h⟩ := hok
+  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    rw [ctxAfter_tag0 ht, hes_eq, subst_revV_vecOf es hc hes]
+    simp [hΓ, isFormula_instOuter es hc hes]
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    obtain ⟨hc₁, hc₂⟩ := IsSemiformula.and.mp hc
+    rw [ctxAfter_tag1 ht, hes_eq, subst_revV_vecOf es hc₁ hes, subst_revV_vecOf es hc₂ hes]
+    simp [hΓ, isFormula_instOuter es hc₁ hes, isFormula_instOuter es hc₂ hes]
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    have hR : IsSemiformula LAct ((es.length : V) + 1) (sC s) := IsSemiformula.exs.mp hc
+    rw [ctxAfter_tag2 ht, hes_eq, subst_qVec_revV_vecOf es hR hes]
+    simp [hΓ, isSemiformula_one_instOuterAt es hR hes]
+  · rw [ctxAfter_tag3 ht]; simp [hΓ, hP]
+  · rw [ctxAfter_tag4 ht]; simp [hΓ, hp, hq]
+  · rw [ctxAfter_tag5 ht]
+    exact fun p hp ↦ hΓ p (subset_iff.mp hsub p hp)
+
+/-- **Persistence** (DESIGN §3.4): a fact in `Γ` survives a non-shifting step … -/
+lemma mem_ctxAfter_of_noShift {Γ s x : V} (h : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 4) (hx : x ∈ Γ) :
+    x ∈ ctxAfter Γ s := by
+  rcases h with h | h | h
+  · rw [ctxAfter_tag0 h]; simp [hx]
+  · rw [ctxAfter_tag1 h]; simp [hx]
+  · rw [ctxAfter_tag4 h]; simp [hx]
+
+/-- … and reappears SHIFTED after an eigenvariable step. -/
+lemma mem_ctxAfter_of_shift {Γ s x : V} (h : sTag s = 2 ∨ sTag s = 3) (hx : x ∈ Γ) :
+    shift LAct x ∈ ctxAfter Γ s := by
+  rcases h with h | h
+  · rw [ctxAfter_tag2 h]; simp [mem_setShift_iff]; exact Or.inr ⟨x, hx, rfl⟩
+  · rw [ctxAfter_tag3 h]; simp [mem_setShift_iff]; exact Or.inr ⟨x, hx, rfl⟩
+
+lemma hornCost_bound {a N d G m j B E : V} (h : a ≤ N) :
+    a + d + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+        + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)
+      ≤ d + hornCost N E G m j B := by
+  unfold hornCost
+  calc a + d + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+          + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)
+      = a + (d + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+          + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)) := by ring
+    _ ≤ N + (d + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+          + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)) := add_le_add h le_rfl
+    _ = _ := by ring
+
+lemma hornAndCost_bound {a N d G m j B E : V} (h : a ≤ N) :
+    a + (d + 2 * G + 6 * (B * E) + 4) + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+        + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)
+      ≤ d + (hornCost N E G m j B + 2 * G + 6 * (B * E) + 4) := by
+  unfold hornCost
+  calc a + (d + 2 * G + 6 * (B * E) + 4) + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+          + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)
+      = a + (d + 2 * G + 6 * (B * E) + 4 + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+          + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)) := by ring
+    _ ≤ N + (d + 2 * G + 6 * (B * E) + 4 + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+          + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)) := add_le_add h le_rfl
+    _ = _ := by ring
+
+lemma introCost_bound {a N d G m j B E : V} (h : a ≤ N) :
+    a + d + (m + 2 * j + 10) * G + (m + 11) * (B * E) + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m
+        + (2 * j + 1) * ((j + 2) * (B * E) + 1) + 12
+      ≤ d + introCost N E G m j B := by
+  unfold introCost
+  calc a + d + (m + 2 * j + 10) * G + (m + 11) * (B * E) + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m
+          + (2 * j + 1) * ((j + 2) * (B * E) + 1) + 12
+      = a + (d + (m + 2 * j + 10) * G + (m + 11) * (B * E) + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m
+          + (2 * j + 1) * ((j + 2) * (B * E) + 1) + 12) := by ring
+    _ ≤ N + (d + (m + 2 * j + 10) * G + (m + 11) * (B * E) + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m
+          + (2 * j + 1) * ((j + 2) * (B * E) + 1) + 12) := add_le_add h le_rfl
+    _ = _ := by ring
+
+/-- **One step costs at most `stepCost`.** -/
+theorem dlen_applyStep_le (M : ℕ) {tbl N E Γ s e : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hok : StepOK tbl E (M : V) Γ s) (he : DerivationOf TAct e (ctxAfter Γ s)) :
+    dlen TAct (applyStep tbl Γ s e) ≤ dlen TAct e + stepCost N E Γ s := by
+  obtain ⟨hΓ, h⟩ := hok
+  rcases h with ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hh, hB⟩ | ⟨ht, hP, hmem⟩ | ⟨ht, hp, hq, hmem⟩ | ⟨ht, hsub⟩
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    have hΛ := hrow.2.1
+    rw [qqAlls_natCast] at hΛ
+    have hneg : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ := fun a ha ↦ by
+      have := hneg' a ha
+      rwa [subst_revV_vecOf es (has a ha) hes] at this
+    rw [ctxAfter_tag0 ht, hes_eq, subst_revV_vecOf es hc hes] at he
+    rw [applyStep_tag0 ht, stepCost_tag0 ht, hes_eq, hl_eq, len_vecOf, len_vecOf, impChainV_vecOf,
+      useHornV_vecOf Γ es l has hc hes]
+    exact le_trans (dlen_useHornCode_le hE has hc hes' hΓ (subset_refl Γ) hneg hΛ he le_rfl)
+      (hornCost_bound hrow.2.2)
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    obtain ⟨hc₁, hc₂⟩ := IsSemiformula.and.mp hc
+    have hΛ := hrow.2.1
+    rw [qqAlls_natCast] at hΛ
+    have hneg : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ := fun a ha ↦ by
+      have := hneg' a ha
+      rwa [subst_revV_vecOf es (has a ha) hes] at this
+    rw [ctxAfter_tag1 ht, hes_eq, subst_revV_vecOf es hc₁ hes, subst_revV_vecOf es hc₂ hes] at he
+    rw [applyStep_tag1 ht, stepCost_tag1 ht, hes_eq, hl_eq, len_vecOf, len_vecOf, impChainV_vecOf,
+      useHornAndV_vecOf Γ es l has hc₁ hc₂ hes]
+    exact le_trans (dlen_useHornAndCode_le hE has hc₁ hc₂ hes' hΓ (subset_refl Γ) hneg hΛ he le_rfl)
+      (hornAndCost_bound hrow.2.2)
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrow := htbl _ hh.1
+    rw [hm, hB, hl_eq, impChainV_vecOf] at hrow
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrow.1
+    have hR : IsSemiformula LAct ((es.length : V) + 1) (sC s) := IsSemiformula.exs.mp hc
+    have hΛ := hrow.2.1
+    rw [qqAlls_natCast] at hΛ
+    have hneg : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ := fun a ha ↦ by
+      have := hneg' a ha
+      rwa [subst_revV_vecOf es (has a ha) hes] at this
+    rw [ctxAfter_tag2 ht, hes_eq, subst_qVec_revV_vecOf es hR hes] at he
+    rw [applyStep_tag2 ht, stepCost_tag2 ht, hes_eq, hl_eq, len_vecOf, len_vecOf, impChainV_vecOf,
+      introFactV_vecOf Γ es l has hR hes]
+    exact le_trans (dlen_introFactCode_le hE has hR hes' hΓ hneg hΛ he le_rfl) (introCost_bound hrow.2.2)
+  · rw [ctxAfter_tag3 ht] at he
+    rw [applyStep_tag3 ht, stepCost_tag3 ht]
+    have hE' : IsFormula LAct (^∃ (π₂ s)) := by simp [hP]
+    have hD := axLFactCode_proof (T := TAct) hE' hΓ hmem
+    have hDl := dlen_axLFactCode_le (T := TAct) hE' hΓ hmem
+    rw [formulaLen_exs hP.isUFormula] at hDl
+    calc dlen TAct (elimExistsCode LAct Γ (π₂ s) (axLFactCode Γ (^∃ (π₂ s))) e)
+        ≤ dlen TAct (axLFactCode Γ (^∃ (π₂ s))) + dlen TAct e + 3 * setLen LAct Γ + setLen LAct (setShift LAct Γ)
+            + 6 * formulaLen LAct (π₂ s) + 8 := dlen_elimExistsCode_le hP hΓ (subset_refl Γ) hD he
+      _ ≤ (setLen LAct Γ + (formulaLen LAct (π₂ s) + 1) + 1) + dlen TAct e + 3 * setLen LAct Γ
+            + setLen LAct (setShift LAct Γ) + 6 * formulaLen LAct (π₂ s) + 8 := by gcongr
+      _ = _ := by ring
+  · rw [ctxAfter_tag4 ht] at he
+    rw [applyStep_tag4 ht, stepCost_tag4 ht]
+    exact le_trans (dlen_splitAndCode_le hp hq hΓ (subset_refl Γ) he) (le_of_eq (by ring))
+  · rw [ctxAfter_tag5 ht] at he
+    rw [applyStep_tag5 ht, stepCost_tag5 ht, ← add_assoc]
+    exact dlen_wkDropCode_le hΓ hsub he
+
+end perStep
+
 end ArithS
