@@ -26,6 +26,7 @@ import ArithS.Necessitation.Lib.Bridge
 import ArithS.Necessitation.Steps
 import ArithS.Necessitation.Lib.Walk
 import ArithS.Necessitation.WalkLemmas
+import ArithS.Necessitation.RowInst
 import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
 
@@ -489,5 +490,43 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dlen_chainCode_le
 #print axioms ctxVec_isFormulaSet
 #print axioms chainCode_two
+
+-- U10 (Necessitation/RowInst, 2026-09-13): every row of the formula walk read off the DSL and
+-- instantiated — the row-shape lemmas `quote_row_<row>` (`⌜lMap emb <row>B⌝ = impChain as c` with
+-- explicit `subst ?[#i, …] P` pieces), the instantiation lemmas `inst_<row>` at arbitrary closed
+-- witnesses (antecedents = canonical fact codes; existential conclusions after their eliminations
+-- = conjunctions of facts about `&(a-1) … &0`, `freeIter`/`freeIterAt`), the canonical fact codes
+-- with formula-ness, shift, length and occurrence bounds; the general instantiation and
+-- introduction laws (`instOuter_subst_listToVec`, `instOuterAt_and`, `freeIter_exsIter`,
+-- `freeIterAt_subst_listToVec`, `freeIterT_bv_ge`). 87 rows (a representative dozen here).
+#print axioms quote_lMap_emb_subst'
+#print axioms instOuter_subst_listToVec
+#print axioms instOuterAt_and
+#print axioms freeIter_exsIter
+#print axioms freeIterAt_subst_listToVec
+#print axioms freeIterT_bv_ge
+#print axioms fvOccF_quote_sentence
+#print axioms formulaLen_fact_le
+#print axioms fvOccF_fact_le
+#print axioms quote_row_qqAndTotal
+#print axioms inst_qqAndTotal
+#print axioms quote_row_isSemiformulaRel
+#print axioms inst_isSemiformulaRel
+#print axioms quote_row_isSemitermBvar
+#print axioms inst_isSemitermBvar
+#print axioms quote_row_zeroLtSucc
+#print axioms inst_succLtSucc
+#print axioms quote_row_isRelConst_lt
+#print axioms inst_isFuncConst_add
+#print axioms quote_row_negAnd
+#print axioms inst_negAnd
+#print axioms quote_row_substsAll
+#print axioms inst_substsAll
+#print axioms quote_row_freeAll
+#print axioms inst_freeAll
+#print axioms inst_isSemitermVecAdjoin
+#print axioms shift_relFact
+#print axioms formulaLen_tvPiFact_le
+#print axioms fvOccF_negFact_le
 
 end ArithS
