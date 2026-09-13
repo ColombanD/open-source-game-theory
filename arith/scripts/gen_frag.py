@@ -654,6 +654,32 @@ row('axm', 'subAddCancel', ['m', 'c', 'b', 'a'], [A('eq', 'a', P('b', 'c')), A('
 row('axm', 'subOfLe', ['m', 'b', 'a'], [A('le', 'a', 'b'), A('subG', 'm', 'a', 'b')], A('eq', 'm', 'Z'),
     by('subst_vars; exact sub_spec_of_le h₁'), "`a ≤ b → a - b = 0`.")
 
+# ===== K. chains (§3.4): the `Sets`/`Lengths` rows `Layout.chainSteps` uses, re-issued here so that
+# they get `quote_row_`/`inst_` lemmas (the originals in `Lib/Sets.lean`/`Lib/Lengths.lean` have none);
+# `IsFormulaSet 0` is reached WITHOUT a closed `0` inside `isFormulaSet` (the numeral-in-Δ₁ trap of
+# `Sets.lean`): `emptySubsetC` gives `0 ⊆ 0`, `fsetOfSubsetZeroC` turns `s ⊆ 0` into `IsFormulaSet s`.
+row('chain', 'insertTotalC', ['s', 'x'], [], EX(['t'], [A('insert', 't', 'x', 's')]), 'fun _ _ ↦ ⟨_, rfl⟩',
+    "`∀ s x, ∃ t, t = insert x s` (`Sets.insertTotal`).")
+row('chain', 'memInsertSelfC', ['t', 's', 'x'], [A('insert', 't', 'x', 's')], A('mem', 'x', 't'), by('subst_vars; simp'),
+    "`t = insert x s → x ∈ t` (`Sets.memInsertSelf`).")
+row('chain', 'subsetInsertC', ['t', 's', 'x'], [A('insert', 't', 'x', 's')], A('subset', 's', 't'),
+    by('subst_vars; exact susbset_insert _ _'), "`t = insert x s → s ⊆ t` (`Sets.subsetInsert`).")
+row('chain', 'subsetTransC', ['u', 't', 's'], [A('subset', 's', 't'), A('subset', 't', 'u')], A('subset', 's', 'u'),
+    'fun _ _ _ h₁ h₂ ↦ subset_trans h₁ h₂', "`s ⊆ t → t ⊆ u → s ⊆ u` (`Sets.subsetTrans`).")
+row('chain', 'subsetMemC', ['x', 't', 's'], [A('subset', 's', 't'), A('mem', 'x', 's')], A('mem', 'x', 't'),
+    'fun _ _ _ h₁ h₂ ↦ h₁ h₂', "`s ⊆ t → x ∈ s → x ∈ t` (`Sets.subsetMem`).")
+row('chain', 'emptySubsetC', ['s'], [], A('subset', 'Z', 's'), 'fun s ↦ empty_subset s',
+    "`0 ⊆ s` (`Sets.emptySubset`).")
+row('chain', 'fsetOfSubsetZeroC', ['s'], [A('subset', 's', 'Z')], A('fsetSigma', 's'),
+    'fun _ h p hp ↦ absurd (h hp) (by simp)', "`s ⊆ 0 → IsFormulaSet s` (vacuous: `s = 0`).")
+row('chain', 'isFormulaSetInsertC', ['t', 'p', 's'], [A('fsetPi', 's'), A('pi', 'Z', 'p'), A('insert', 't', 'p', 's')],
+    A('fsetSigma', 't'), 'fun _ _ _ hs hp h ↦ by subst h; exact IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩',
+    "`IsFormulaSet s → IsFormula p → t = insert p s → IsFormulaSet t` (`Sets.isFormulaSetInsert`).")
+row('chain', 'fsetSigmaPiC', ['s'], [A('fsetSigma', 's')], A('fsetPi', 's'), 'fun _ h ↦ h',
+    "`IsFormulaSet s → IsFormulaSet s` (the `.sigma → .pi` bridge, `Sets.isFormulaSetSigmaPi`).")
+row('chain', 'setLenTotalC', ['s'], [], EX(['l'], [A('setLen', 'l', 's')]), 'fun _ ↦ ⟨_, rfl⟩',
+    "`∀ s, ∃ l, l = setLen s` (`Lengths.setLenTotal`).")
+
 GROUPS = None   # {group: (start, end) | None}
 if len(sys.argv) > 3:
     GROUPS = {}
@@ -793,6 +819,7 @@ GROUP_TITLES = {
   'cert': 'H. Certification: `neg`/`shift`/`subst`/`free` bottom-up, the term level, `qVec` (§3.6)',
   'num': 'I. Numerals N4/N5 (§2.4), in the DSL',
   'axm': 'J. `axm`(ii): `qqAlls`, `bv`, `termBV`, `listMax`, `fvarVec`, the `max`/`−` glue (§4.10(ii))',
+  'chain': 'K. Chains: the `Sets`/`Lengths` rows of §3.4 re-issued with `inst_` lemmas (`Layout.chainSteps`)',
 }
 
 def gen_frag():

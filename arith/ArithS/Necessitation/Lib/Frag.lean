@@ -35,6 +35,7 @@ instantiates them at chain numerals `cT`); the DSL literals `0`/`1`/`2` are the 
 | cert | `negRelCert`, `negNRelCert`, `negVerumCert`, `negFalsumCert`, `negAndCert`, `negOrCert`, `negAllCert`, `negExsCert`, `shiftRelCert`, `shiftNRelCert`, `shiftVerumCert`, `shiftFalsumCert`, `shiftAndCert`, `shiftOrCert`, `shiftAllCert`, `shiftExsCert`, `substsRelCert`, `substsNRelCert`, `substsVerumCert`, `substsFalsumCert`, `substsAndCert`, `substsOrCert`, `substsAllCert`, `substsExsCert`, `freeCert`, `substsSubsts1`, `tshvNilCert`, `tshvAdjCert`, `termShiftBvarCert`, `termShiftFvarCert`, `termShiftFuncCert`, `tsvNilCert`, `tsvAdjCert`, `termSubstBvarCert`, `termSubstFvarCert`, `termSubstFuncCert`, `tbshvNilCert`, `tbshvAdjCert`, `termBShiftBvarCert`, `termBShiftFvarCert`, `termBShiftFuncCert`, `qVecCert`, `qVecNth0`, `qVecNthSucc`, `nthAdjoinZero`, `nthAdjoinSucc` |
 | num | `twoMulMul`, `twoMulOneMul`, `lengthZero`, `lengthOne`, `lengthTwoMul`, `lengthTwoMulOne` |
 | axm | `qqAllsZero`, `qqAllsSucc`, `bvRel`, `bvNRel`, `bvVerum`, `bvFalsum`, `bvAnd`, `bvOr`, `bvAll`, `bvExs`, `termBVBvar`, `termBVFvar`, `termBVFunc`, `termBVVecNil`, `termBVVecAdj`, `listMaxNil`, `listMaxAdj`, `bvTotal`, `fvarVecTotal`, `fvarVecNth`, `maxTotal`, `subTotal`, `maxEqLeft`, `maxEqRight`, `subAddCancel`, `subOfLe` |
+| chain | `insertTotalC`, `memInsertSelfC`, `subsetInsertC`, `subsetTransC`, `subsetMemC`, `emptySubsetC`, `fsetOfSubsetZeroC`, `isFormulaSetInsertC`, `fsetSigmaPiC`, `setLenTotalC` |
 
 Skipped / renamed, with the reason:
 * `congTvPi`/`congUtvPi` conclude `.sigma` (the polarity convention; `isSemitermVecSigmaPiLAct`
@@ -2062,5 +2063,107 @@ lemma models_subOfLe : V↓[ℒₒᵣ] ⊧ subOfLe ↔ ∀ m b a : V, a ≤ b �
 theorem pa_proves_subOfLe : 𝗣𝗔 ⊢ subOfLe :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_subOfLe.mpr fun _ _ _ h₁ h₂ ↦ by subst_vars; exact sub_spec_of_le h₁
 theorem lib_subOfLe : Lib subOfLe := Lib.of_pa pa_proves_subOfLe
+
+/-! ### K. Chains: the `Sets`/`Lengths` rows of §3.4 re-issued with `inst_` lemmas (`Layout.chainSteps`) -/
+
+/-- `∀ s x, ∃ t, t = insert x s` (`Sets.insertTotal`). -/
+noncomputable def insertTotalCB : ArithmeticSemisentence 2 :=
+  “s x. ∃ t, !insertDef t x s”
+noncomputable def insertTotalC : ArithmeticSentence := ∀¹* insertTotalCB
+lemma models_insertTotalC : V↓[ℒₒᵣ] ⊧ insertTotalC ↔ ∀ s x : V, ∃ t, t = insert x s := by
+  simp [insertTotalC, insertTotalCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_insertTotalC : 𝗣𝗔 ⊢ insertTotalC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_insertTotalC.mpr fun _ _ ↦ ⟨_, rfl⟩
+theorem lib_insertTotalC : Lib insertTotalC := Lib.of_pa pa_proves_insertTotalC
+
+/-- `t = insert x s → x ∈ t` (`Sets.memInsertSelf`). -/
+noncomputable def memInsertSelfCB : ArithmeticSemisentence 3 :=
+  “t s x. !insertDef t x s → x ∈ t”
+noncomputable def memInsertSelfC : ArithmeticSentence := ∀¹* memInsertSelfCB
+lemma models_memInsertSelfC : V↓[ℒₒᵣ] ⊧ memInsertSelfC ↔ ∀ t s x : V, t = insert x s → x ∈ t := by
+  simp [memInsertSelfC, memInsertSelfCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_memInsertSelfC : 𝗣𝗔 ⊢ memInsertSelfC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_memInsertSelfC.mpr fun _ _ _ h₁ ↦ by subst_vars; simp
+theorem lib_memInsertSelfC : Lib memInsertSelfC := Lib.of_pa pa_proves_memInsertSelfC
+
+/-- `t = insert x s → s ⊆ t` (`Sets.subsetInsert`). -/
+noncomputable def subsetInsertCB : ArithmeticSemisentence 3 :=
+  “t s x. !insertDef t x s → !bitSubsetDef s t”
+noncomputable def subsetInsertC : ArithmeticSentence := ∀¹* subsetInsertCB
+lemma models_subsetInsertC : V↓[ℒₒᵣ] ⊧ subsetInsertC ↔ ∀ t s x : V, t = insert x s → s ⊆ t := by
+  simp [subsetInsertC, subsetInsertCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_subsetInsertC : 𝗣𝗔 ⊢ subsetInsertC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_subsetInsertC.mpr fun _ _ _ h₁ ↦ by subst_vars; exact susbset_insert _ _
+theorem lib_subsetInsertC : Lib subsetInsertC := Lib.of_pa pa_proves_subsetInsertC
+
+/-- `s ⊆ t → t ⊆ u → s ⊆ u` (`Sets.subsetTrans`). -/
+noncomputable def subsetTransCB : ArithmeticSemisentence 3 :=
+  “u t s. !bitSubsetDef s t → !bitSubsetDef t u → !bitSubsetDef s u”
+noncomputable def subsetTransC : ArithmeticSentence := ∀¹* subsetTransCB
+lemma models_subsetTransC : V↓[ℒₒᵣ] ⊧ subsetTransC ↔ ∀ u t s : V, s ⊆ t → t ⊆ u → s ⊆ u := by
+  simp [subsetTransC, subsetTransCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_subsetTransC : 𝗣𝗔 ⊢ subsetTransC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_subsetTransC.mpr fun _ _ _ h₁ h₂ ↦ subset_trans h₁ h₂
+theorem lib_subsetTransC : Lib subsetTransC := Lib.of_pa pa_proves_subsetTransC
+
+/-- `s ⊆ t → x ∈ s → x ∈ t` (`Sets.subsetMem`). -/
+noncomputable def subsetMemCB : ArithmeticSemisentence 3 :=
+  “x t s. !bitSubsetDef s t → x ∈ s → x ∈ t”
+noncomputable def subsetMemC : ArithmeticSentence := ∀¹* subsetMemCB
+lemma models_subsetMemC : V↓[ℒₒᵣ] ⊧ subsetMemC ↔ ∀ x t s : V, s ⊆ t → x ∈ s → x ∈ t := by
+  simp [subsetMemC, subsetMemCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_subsetMemC : 𝗣𝗔 ⊢ subsetMemC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_subsetMemC.mpr fun _ _ _ h₁ h₂ ↦ h₁ h₂
+theorem lib_subsetMemC : Lib subsetMemC := Lib.of_pa pa_proves_subsetMemC
+
+/-- `0 ⊆ s` (`Sets.emptySubset`). -/
+noncomputable def emptySubsetCB : ArithmeticSemisentence 1 :=
+  “s. !bitSubsetDef 0 s”
+noncomputable def emptySubsetC : ArithmeticSentence := ∀¹* emptySubsetCB
+lemma models_emptySubsetC : V↓[ℒₒᵣ] ⊧ emptySubsetC ↔ ∀ s : V, (0 : V) ⊆ s := by
+  simp [emptySubsetC, emptySubsetCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_emptySubsetC : 𝗣𝗔 ⊢ emptySubsetC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_emptySubsetC.mpr fun s ↦ empty_subset s
+theorem lib_emptySubsetC : Lib emptySubsetC := Lib.of_pa pa_proves_emptySubsetC
+
+/-- `s ⊆ 0 → IsFormulaSet s` (vacuous: `s = 0`). -/
+noncomputable def fsetOfSubsetZeroCB : ArithmeticSemisentence 1 :=
+  “s. !bitSubsetDef s 0 → !(isFormulaSet LAct).sigma s”
+noncomputable def fsetOfSubsetZeroC : ArithmeticSentence := ∀¹* fsetOfSubsetZeroCB
+lemma models_fsetOfSubsetZeroC : V↓[ℒₒᵣ] ⊧ fsetOfSubsetZeroC ↔ ∀ s : V, s ⊆ (0 : V) → IsFormulaSet LAct s := by
+  simp [fsetOfSubsetZeroC, fsetOfSubsetZeroCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_fsetOfSubsetZeroC : 𝗣𝗔 ⊢ fsetOfSubsetZeroC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_fsetOfSubsetZeroC.mpr fun _ h p hp ↦ absurd (h hp) (by simp)
+theorem lib_fsetOfSubsetZeroC : Lib fsetOfSubsetZeroC := Lib.of_pa pa_proves_fsetOfSubsetZeroC
+
+/-- `IsFormulaSet s → IsFormula p → t = insert p s → IsFormulaSet t` (`Sets.isFormulaSetInsert`). -/
+noncomputable def isFormulaSetInsertCB : ArithmeticSemisentence 3 :=
+  “t p s. !(isFormulaSet LAct).pi s → !(isSemiformula LAct).pi 0 p → !insertDef t p s → !(isFormulaSet LAct).sigma t”
+noncomputable def isFormulaSetInsertC : ArithmeticSentence := ∀¹* isFormulaSetInsertCB
+lemma models_isFormulaSetInsertC : V↓[ℒₒᵣ] ⊧ isFormulaSetInsertC ↔ ∀ t p s : V, IsFormulaSet LAct s → IsSemiformula LAct (0 : V) p → t = insert p s → IsFormulaSet LAct t := by
+  simp [isFormulaSetInsertC, isFormulaSetInsertCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_isFormulaSetInsertC : 𝗣𝗔 ⊢ isFormulaSetInsertC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_isFormulaSetInsertC.mpr fun _ _ _ hs hp h ↦ by subst h; exact IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
+theorem lib_isFormulaSetInsertC : Lib isFormulaSetInsertC := Lib.of_pa pa_proves_isFormulaSetInsertC
+
+/-- `IsFormulaSet s → IsFormulaSet s` (the `.sigma → .pi` bridge, `Sets.isFormulaSetSigmaPi`). -/
+noncomputable def fsetSigmaPiCB : ArithmeticSemisentence 1 :=
+  “s. !(isFormulaSet LAct).sigma s → !(isFormulaSet LAct).pi s”
+noncomputable def fsetSigmaPiC : ArithmeticSentence := ∀¹* fsetSigmaPiCB
+lemma models_fsetSigmaPiC : V↓[ℒₒᵣ] ⊧ fsetSigmaPiC ↔ ∀ s : V, IsFormulaSet LAct s → IsFormulaSet LAct s := by
+  simp [fsetSigmaPiC, fsetSigmaPiCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_fsetSigmaPiC : 𝗣𝗔 ⊢ fsetSigmaPiC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_fsetSigmaPiC.mpr fun _ h ↦ h
+theorem lib_fsetSigmaPiC : Lib fsetSigmaPiC := Lib.of_pa pa_proves_fsetSigmaPiC
+
+/-- `∀ s, ∃ l, l = setLen s` (`Lengths.setLenTotal`). -/
+noncomputable def setLenTotalCB : ArithmeticSemisentence 1 :=
+  “s. ∃ l, !(setLenDef LAct) l s”
+noncomputable def setLenTotalC : ArithmeticSentence := ∀¹* setLenTotalCB
+lemma models_setLenTotalC : V↓[ℒₒᵣ] ⊧ setLenTotalC ↔ ∀ s : V, ∃ l, l = setLen LAct s := by
+  simp [setLenTotalC, setLenTotalCB, models_iff, Matrix.vecForall_iff, setLen_defined.iff]
+theorem pa_proves_setLenTotalC : 𝗣𝗔 ⊢ setLenTotalC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenTotalC.mpr fun _ ↦ ⟨_, rfl⟩
+theorem lib_setLenTotalC : Lib setLenTotalC := Lib.of_pa pa_proves_setLenTotalC
 
 end ArithS
