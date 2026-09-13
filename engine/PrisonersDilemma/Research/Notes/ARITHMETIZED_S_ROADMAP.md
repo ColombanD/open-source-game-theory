@@ -1008,6 +1008,16 @@ params), `costSum`; THEOREMS `applyStep_proof`, `dlen_applyStep_le`, **`chainCod
 `mem_ctxAfter_of_noShift/_of_shift`, `chainCode_two`. IN FLIGHT: `RowInst`, the `Steps`
 `dlen_introFactCode_le_occ` swap. NEXT: `describeSteps` (DESIGN_describe).
 
+**U10 — `RowInst.lean` DONE 2026-09-13 (a40e816, census 334, three axioms).** Every row of the
+formula walk (87: totality, formation, LAct bridges, `<`, closed symbols, vector rows,
+`substs1Substs`, the neg/substs/shift/free commutation rows) with its row-shape lemma
+`quote_row_<row>`, the formula-ness of its pieces, and `inst_<row>` at arbitrary closed witnesses;
+the canonical fact codes (`piFact`, …, `ltFact`, `negFact`, …) with `IsFormula`, shift, length and
+`fvOccF` bounds; the instantiation laws `instOuter_subst_listToVec`/`instOuterAt_and` and the
+introduction laws `freeIterAt`/`freeIter_exsIter`/`freeIterAt_subst_listToVec` (entrywise
+`freeIterT`). Two DSL literals to know: the `1` of `isSemiformulaSubsts1B`/`isFormulaFreeB` is `𝟏`,
+not `cT 1`. IN FLIGHT: `Lib/Occ`. NEXT: `describeSteps` (DESIGN_describe §4).
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);

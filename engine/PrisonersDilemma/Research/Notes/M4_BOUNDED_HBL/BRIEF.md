@@ -441,3 +441,16 @@ then `describeSteps` producing step lists against this `StepOK`.
 Limits: `stepCostOcc` has no Σ₁ blueprint (the PR `costSum` stays on `stepCost`); no
 `stepCostOcc ≤ stepCost` on tag 3 (needs injectivity of `shift`, absent). IN FLIGHT: `RowInst`,
 `Lib/Occ` (occurrence/shift-length rows). NEXT: `describeSteps`.
+
+**§9 status — `RowInst` DONE (a40e816, census 334):** all 87 rows the walk and its companions use
+(`quote_row_<row>` read off the DSL by one `simp only` + `rfl`; `inst_<row>` at arbitrary closed
+witnesses, existential conclusions delivered as `freeIter a (instOuterAt a es body)` = the
+conjunction of canonical facts about `&(a-1) … &0`, witnesses `termShift^[a]`; a third clause for
+the nested existentials of `freeRel/NRel/All/Exs` via `freeIterAt`); 31 predicate codes, 28 new
+fact codes with formula-ness/shift/length/`fvOccF` bounds. Generated from a row table (the
+generator is in the session scratchpad, not the repo). Traps: `𝟎`/`𝟏` are `ℕ` codes — an unascribed
+`bv i ^+ 𝟏` elaborates the WHOLE expression at `V := ℕ` and casts it (`↑(impChain …)`); a simp lemma
+whose LHS contains `↑𝟎` is never used by `simp only` (use `rw`); `Fin`-literal casts `bv ↑2` close by
+`rfl` only; `rw`'s trailing `rfl` and `simp only` can close a row goal early (guard with
+`all_goals`). Flags: `isSemiformulaSubsts1B`/`isFormulaFreeB` write the arity `1` as `𝟏 ≠ cT 1`;
+the length bound is multiplicative (`formulaLen P · B`), an additive one is false.
