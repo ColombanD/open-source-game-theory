@@ -219,11 +219,10 @@ noncomputable def impChainV (as c : V) : V := (ImpChainV.construction L).result 
   simp [impChainV, ImpChainV.construction]
 
 variable (L) in
-noncomputable def impChainVDef : 𝚺₁.Semisentence 3 :=
-  (ImpChainV.blueprint L).resultDef |>.rew (Rew.subst ![#0, #2, #1])
+noncomputable def impChainVDef : 𝚺₁.Semisentence 3 := (ImpChainV.blueprint L).resultDef
 
 instance impChainV_defined : 𝚺₁-Function₂[V] impChainV L via impChainVDef L := .mk
-  fun v ↦ by simp [(ImpChainV.construction L).result_defined_iff, impChainVDef]; rfl
+  fun v ↦ by simp [(ImpChainV.construction L).eval_resultDef, impChainVDef]; rfl
 instance impChainV_definable : 𝚺₁-Function₂[V] impChainV L := impChainV_defined.to_definable
 
 lemma impChainV_vecOf : ∀ (as : List V) (c : V), impChainV L (vecOf as) c = impChain L as c
@@ -259,7 +258,7 @@ noncomputable def mapSubstDef : 𝚺₁.Semisentence 3 :=
   (MapSubst.blueprint L).resultDef |>.rew (Rew.subst ![#0, #2, #1])
 
 instance mapSubst_defined : 𝚺₁-Function₂[V] mapSubst L via mapSubstDef L := .mk
-  fun v ↦ by simp [(MapSubst.construction L).result_defined_iff, mapSubstDef]; rfl
+  fun v ↦ by simp [(MapSubst.construction L).eval_resultDef, mapSubstDef]; rfl
 instance mapSubst_definable : 𝚺₁-Function₂[V] mapSubst L := mapSubst_defined.to_definable
 
 lemma mapSubst_vecOf (w : V) : ∀ (as : List V), mapSubst L w (vecOf as) = vecOf (as.map (subst L w))
@@ -327,20 +326,18 @@ noncomputable def sufChains (as c : V) : V := (SufChains.construction L).result 
   simp [sufChains, SufChains.construction]
 
 variable (L) in
-noncomputable def sufChainsDef : 𝚺₁.Semisentence 3 :=
-  (SufChains.blueprint L).resultDef |>.rew (Rew.subst ![#0, #2, #1])
+noncomputable def sufChainsDef : 𝚺₁.Semisentence 3 := (SufChains.blueprint L).resultDef
 
 instance sufChains_defined : 𝚺₁-Function₂[V] sufChains L via sufChainsDef L := .mk
-  fun v ↦ by simp [(SufChains.construction L).result_defined_iff, sufChainsDef]; rfl
+  fun v ↦ by simp [(SufChains.construction L).eval_resultDef, sufChainsDef]; rfl
 instance sufChains_definable : 𝚺₁-Function₂[V] sufChains L := sufChains_defined.to_definable
 
 lemma sufChains_vecOf : ∀ (as : List V) (c : V),
     sufChains L (vecOf as) c = vecOf ((List.range (as.length + 1)).map fun i ↦ impChain L (as.drop i) c)
   | [], c => by simp
   | a :: as, c => by
-    rw [vecOf_cons, sufChains_adjoin, sufChains_vecOf as c, List.range_succ_eq_map, List.map_cons,
-      List.map_map, vecOf_cons, nth_adjoin_zero]
-    simp [impChain_cons, Function.comp_def]
+    rw [vecOf_cons, sufChains_adjoin, sufChains_vecOf as c]
+    simp [List.range_succ_eq_map, Function.comp_def]
 
 lemma nth_sufChains_vecOf (as : List V) (c : V) (i : ℕ) (hi : i ≤ as.length) :
     (sufChains L (vecOf as) c).[(i : V)] = impChain L (as.drop i) c := by
@@ -490,9 +487,9 @@ lemma nth_qVecIter_single {e : V} (he : IsTerm L e) : ∀ (n : ℕ) (i : V), i <
         rw [Nat.cast_succ] at hi; exact lt_of_add_lt_add_right hi
       rw [Nat.cast_succ]
       simp only [qVec, nth_adjoin_succ]
-      rw [nth_termBShiftVec hv.isUTerm (by rw [hv.lh]; exact hj), nth_qVecIter_single he n j hj]
+      rw [hv.lh, nth_termBShiftVec hv.isUTerm hj, nth_qVecIter_single he n j hj]
       by_cases h : j < (n : V)
-      · simp [h, lt_of_lt_of_le h le_self_add]
+      · simp [h]
       · have : j = (n : V) := by
           rcases lt_or_eq_of_le (lt_succ_iff_le.mp hj) with h' | h'
           · exact absurd h' h
@@ -513,30 +510,31 @@ lemma nth_qVecIter_nil : ∀ (k : ℕ) (i : V), i < (k : V) → (qVecIter L k (0
       have hj : j < (k : V) := by
         rw [Nat.cast_succ] at hi; exact lt_of_add_lt_add_right hi
       simp only [qVec, nth_adjoin_succ]
-      rw [nth_termBShiftVec hv.isUTerm (by rw [hv.lh]; simpa using hj), nth_qVecIter_nil k j hj,
+      rw [hv.lh, nth_termBShiftVec hv.isUTerm (by simpa using hj), nth_qVecIter_nil k j hj,
         termBShift_bvar]
 
 /-- The identity substitution: `subst ?[#0, …, #(k-1)] q = q` for a `k`-semiformula. -/
 lemma subst_qVecIter_nil {k : ℕ} {q : V} (hq : IsSemiformula L (k : V) q) :
-    subst L (qVecIter L k (0 : V)) q = q :=
-  subst_eq_self hq (by simpa using isSemitermVec_qVecIter (L := L) (n := k) (IsSemitermVec.nil 0))
-    (nth_qVecIter_nil k)
+    subst L (qVecIter L k (0 : V)) q = q := by
+  have hv : IsSemitermVec L (k : V) (k : V) (qVecIter L k (0 : V)) := by
+    have := isSemitermVec_qVecIter (L := L) (n := k) (IsSemitermVec.nil (L := L) (V := V) 0)
+    simpa using this
+  exact subst_eq_self hq hv (nth_qVecIter_nil k)
 
 /-- **The composition law**: substituting the outermost variable into a `k`-deep vector
 instantiation appends the witness: `qVecIter k W ∘ qVecIter (n + k) (e ∷ 0) = qVecIter k (concat W e)`. -/
 lemma termSubstVec_qVecIter_single {W e : V} {n : ℕ} (hW : IsSemitermVec L (n : V) 0 W) (he : IsTerm L e) :
-    ∀ k : ℕ, termSubstVec L ((n + k : ℕ) + 1 : ℕ) (qVecIter L k W) (qVecIter L (n + k) (e ∷ (0 : V)))
+    ∀ k : ℕ, termSubstVec L (((n + k : ℕ) : V) + 1) (qVecIter L k W) (qVecIter L (n + k) (e ∷ (0 : V)))
       = qVecIter L k (concat W e)
   | 0 => by
     have hv : IsSemitermVec L ((n : V) + 1) (n : V) (qVecIter L n (e ∷ (0 : V))) :=
       isSemitermVec_qVecIter_single he
     simp only [Nat.add_zero, qVecIter_zero]
     apply nth_ext' ((n : V) + 1)
-    · rw [len_termSubstVec (by simpa [Nat.cast_succ] using hv.isUTerm)]; push_cast; rfl
+    · rw [len_termSubstVec hv.isUTerm]
     · rw [len_concat, hW.lh]
     intro i hi
-    rw [nth_termSubstVec (by simpa [Nat.cast_succ] using hv.isUTerm) (by push_cast; exact hi),
-      nth_qVecIter_single he n i hi]
+    rw [nth_termSubstVec hv.isUTerm hi, nth_qVecIter_single he n i hi]
     by_cases h : i < (n : V)
     · rw [if_pos h, termSubst_bvar, concat_nth_lt _ _ (by rw [hW.lh]; exact h)]
     · have : i = (n : V) := by
@@ -548,12 +546,13 @@ lemma termSubstVec_qVecIter_single {W e : V} {n : ℕ} (hW : IsSemitermVec L (n 
   | k + 1 => by
     have hv : IsSemitermVec L (((n + k : ℕ) : V) + 1) ((n + k : ℕ) : V) (qVecIter L (n + k) (e ∷ (0 : V))) :=
       isSemitermVec_qVecIter_single he
-    have hw : IsSemitermVec L ((n : V) + (k : V)) (0 + (k : V)) (qVecIter L k W) := isSemitermVec_qVecIter hW
-    rw [show n + (k + 1) = (n + k) + 1 by ring, qVecIter_succ, qVecIter_qVec, qVecIter_succ, qVecIter_qVec,
-      qVecIter_succ, qVecIter_qVec]
-    have := termSubstVec_qVec_qVec (L := L) hv (by simpa [Nat.cast_add] using hw)
-    rw [show (((n + k + 1 : ℕ) + 1 : ℕ) : V) = (((n + k : ℕ) : V) + 1) + 1 by push_cast; ring, this,
-      termSubstVec_qVecIter_single hW he k]
+    have hw : IsSemitermVec L ((n + k : ℕ) : V) (0 + (k : V)) (qVecIter L k W) := by
+      have := isSemitermVec_qVecIter (L := L) (n := k) hW
+      rwa [← Nat.cast_add] at this
+    rw [show n + (k + 1) = (n + k) + 1 by ring, qVecIter_succ, qVecIter_qVec, qVecIter_succ, qVecIter_qVec]
+    have := termSubstVec_qVec_qVec (L := L) hv hw
+    rw [show (((n + k + 1 : ℕ) : V) + 1) = (((n + k : ℕ) : V) + 1) + 1 by push_cast; ring, this,
+      termSubstVec_qVecIter_single hW he k, qVecIter_succ, qVecIter_qVec]
 
 lemma isSemitermVec_vecOf_closed : ∀ (es : List V), (∀ e ∈ es, IsTerm L e) →
     IsSemitermVec L (es.length : V) 0 (vecOf es)
@@ -570,7 +569,8 @@ theorem instOuterAt_eq_subst (k : ℕ) : ∀ (es : List V) {q : V},
   | [], q, hq, _ => by
     rw [instOuterAt_nil, List.reverse_nil, vecOf_nil]
     -- `subst (qVecIter k 0) q = q`: the identity substitution on a `k`-semiformula
-    exact (subst_qVecIter_nil hq).symm
+    have hq0 : IsSemiformula L (k : V) q := by simpa using hq
+    exact (subst_qVecIter_nil hq0).symm
   | e :: es, q, hq, hes => by
     have he : IsTerm L e := hes e (by simp)
     have hes' : ∀ e' ∈ es, IsTerm L e' := fun e' h ↦ hes e' (by simp [h])
@@ -690,6 +690,7 @@ lemma instOuterAt_append (k : ℕ) : ∀ (pre : List V) (e q : V),
     rw [List.cons_append, instOuterAt_cons, instOuterAt_append k pre e, instOuterAt_cons,
       List.length_append, List.length_singleton, show pre.length + 1 + k = pre.length + (k + 1) by omega]
 
+omit [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
 lemma drop_reverse_append (pre rest : List V) :
     (pre ++ rest).reverse.drop rest.length = pre.reverse := by
   rw [List.reverse_append, List.drop_left' (by simp)]
@@ -707,11 +708,10 @@ lemma exsBuild_vecOf (es : List V) {q : V} (hq : IsSemiformula L (es.length : V)
     rw [List.append_nil] at hpre
     subst hpre
     rw [vecOf_nil, VecRec.Construction.result_nil, exsChainCode_nil]
-    simp only [ExsBuild.construction, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-      Matrix.cons_val_three, List.length_nil]
-    rw [instOuterAt_eq_subst 0 pre (by simpa using hq) hes, qVecIter_zero,
-      nthFromEnd_eq (a := (pre.length : V)) (by rw [len_ctxChain_natCast]; simp),
-      nth_ctxChain_natCast _ _ pre.length pre.length le_rfl]
+    simp only [ExsBuild.construction, Matrix.cons_val, List.length_nil]
+    rw [instOuterAt_eq_subst 0 es (by simpa using hq) hes, qVecIter_zero,
+      nthFromEnd_eq (a := (es.length : V)) (by rw [len_ctxChain_natCast]; simp),
+      nth_ctxChain_natCast _ _ es.length es.length le_rfl]
   | e :: rest, pre, hpre => by
     have hes' : ∀ e' ∈ pre, IsTerm L e' := fun e' h ↦ hes e' (by simp [hpre, h])
     have hlen : es.length = pre.length + (rest.length + 1) := by simp [hpre]
@@ -719,13 +719,14 @@ lemma exsBuild_vecOf (es : List V) {q : V} (hq : IsSemiformula L (es.length : V)
     have ih := exsBuild_vecOf es hq hes Γ d rest (pre ++ [e]) (by simp [hpre])
     rw [vecOf_cons, VecRec.Construction.result_adjoin, ih, exsChainCode_cons, List.length_append,
       List.length_singleton, instOuterAt_append]
-    simp only [ExsBuild.construction, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-      Matrix.cons_val_three, len_vecOf, levelBody]
+    simp only [ExsBuild.construction, Matrix.cons_val, len_vecOf, levelBody, List.length_cons]
     -- the partial instance at depth `pre.length`
     have hz : subst L (qVecIterV L (tailIter (vecOf es.reverse) ((rest.length : V) + 1)) ((rest.length : V) + 1)) q
         = instOuterAt L (rest.length + 1) pre q := by
-      rw [instOuterAt_eq_subst (rest.length + 1) pre hq' hes', ← Nat.cast_succ, tailIter_vecOf,
-        qVecIterV_natCast, hpre, show (e :: rest).length = rest.length + 1 from rfl, drop_reverse_append]
+      have hd : (pre ++ e :: rest).reverse.drop (rest.length + 1) = pre.reverse := by
+        simpa using drop_reverse_append pre (e :: rest)
+      rw [instOuterAt_eq_subst (rest.length + 1) pre hq' hes', ← Nat.cast_add_one, tailIter_vecOf,
+        qVecIterV_natCast, hpre, hd]
     -- the level formula at index `pre.length`
     have hF : (levelF L (vecOf es.reverse) q (es.length : V)).[(pre.length : V)]
         = ^∃ (qqExss (instOuterAt L (rest.length + 1) pre q) (rest.length : V)) := by
@@ -737,7 +738,7 @@ lemma exsBuild_vecOf (es : List V) {q : V} (hq : IsSemiformula L (es.length : V)
         ((rest.length : V) + 1) = ctxL (levelF L (vecOf es.reverse) q (es.length : V)) Γ pre.length := by
       rw [nthFromEnd_eq (a := (pre.length : V)) (by rw [len_ctxChain_natCast, hlen]; push_cast; ring),
         nth_ctxChain_natCast _ _ es.length pre.length (by omega)]
-    rw [hz, hC, ctxL_succ, hF, qqExss_natCast, ← exsIter_succ, ← qqExss_natCast, ← Nat.cast_succ, qqExss_natCast]
+    rw [hz, hC, ctxL_succ, hF, qqExss_natCast, ← exsIter_succ]
 
 /-- **The `exsIntro` chain on vectors is the list chain.** -/
 theorem exsChainV_vecOf (es : List V) {q : V} (hq : IsSemiformula L (es.length : V) q)
@@ -758,19 +759,18 @@ lemma hornBuild_vecOf (as : List V) (c S d : V) : ∀ (rest pre : List V), as = 
     rw [List.append_nil] at hpre
     subst hpre
     rw [vecOf_nil, VecRec.Construction.result_nil, hornClose_nil]
-    simp only [HornBuild.construction, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two]
-    rw [nthFromEnd_eq (a := (pre.length : V)) (by rw [len_ctxChain_natCast]; simp),
-      nth_ctxChain_natCast _ _ pre.length pre.length le_rfl]
+    simp only [HornBuild.construction, Matrix.cons_val]
+    rw [nthFromEnd_eq (a := (as.length : V)) (by rw [len_ctxChain_natCast]; simp),
+      nth_ctxChain_natCast _ _ as.length as.length le_rfl]
   | a :: rest, pre, hpre => by
     have hlen : as.length = pre.length + (rest.length + 1) := by simp [hpre]
     have ih := hornBuild_vecOf as c S d rest (pre ++ [a]) (by simp [hpre])
     rw [vecOf_cons, VecRec.Construction.result_adjoin, ih, hornClose_cons, List.length_append,
       List.length_singleton]
-    simp only [HornBuild.construction, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-      len_vecOf, impChainV_vecOf]
+    simp only [HornBuild.construction, Matrix.cons_val, len_vecOf, impChainV_vecOf]
     have hN : (mapNeg L (sufChains L (vecOf as) c)).[(pre.length : V)] = neg L (impChain L (a :: rest) c) := by
-      rw [mapNeg_vecOf, sufChains_vecOf, List.map_map, nth_vecOf _ pre.length (by simp; omega)]
-      simp [hpre, List.drop_left']
+      rw [sufChains_vecOf, mapNeg_vecOf, List.map_map, nth_vecOf _ pre.length (by simp; omega)]
+      simp [hpre]
     have hC : nthFromEnd (ctxChain (mapNeg L (sufChains L (vecOf as) c)) S (as.length : V)) (rest.length : V)
         = ctxL (mapNeg L (sufChains L (vecOf as) c)) S (pre.length + 1) := by
       rw [nthFromEnd_eq (a := ((pre.length + 1 : ℕ) : V)) (by rw [len_ctxChain_natCast, hlen]; push_cast; ring),
@@ -782,7 +782,7 @@ theorem hornCloseV_vecOf (as : List V) (c S d : V) :
     hornCloseV L (vecOf as) c S d = hornClose L as c S d := by
   unfold hornCloseV
   rw [len_vecOf]
-  have := hornBuild_vecOf as c S d as [] rfl
+  have := hornBuild_vecOf (L := L) as c S d as [] rfl
   rw [List.length_nil, ctxL_zero] at this
   exact this
 
@@ -810,8 +810,9 @@ theorem useHornV_vecOf (Γ : V) (es as : List V) {c : V}
   unfold useHornV useHornCode
   rw [impChainV_vecOf, mapSubst_vecOf, subst_revV_vecOf es hc hes, hornCloseV_vecOf,
     useLemmaV_vecOf Γ es (isSemiformula_impChain has hc) hes]
-  congr 3
-  exact List.map_congr_left fun a ha ↦ subst_revV_vecOf es (has a ha) hes
+  have hmap : as.map (subst L (revV (vecOf es))) = as.map (instOuter L es) :=
+    List.map_congr_left fun a ha ↦ subst_revV_vecOf es (has a ha) hes
+  rw [hmap]
 
 theorem useHornAndV_vecOf (Γ : V) (es as : List V) {c₁ c₂ : V}
     (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
