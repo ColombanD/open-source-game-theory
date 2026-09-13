@@ -454,3 +454,15 @@ whose LHS contains `↑𝟎` is never used by `simp only` (use `rw`); `Fin`-lite
 `rfl` only; `rw`'s trailing `rfl` and `simp only` can close a row goal early (guard with
 `all_goals`). Flags: `isSemiformulaSubsts1B`/`isFormulaFreeB` write the arity `1` as `𝟏 ≠ cT 1`;
 the length bound is multiplicative (`formulaLen P · B`), an additive one is false.
+
+**§9 status — `Lib/Occ` DONE (18b6a91, 38 rows, census 347):** totality of `fvOcc/fvOccVec/fvOccF/
+fvOccS/bvOccF`, per-constructor `fvOcc` rows, `termLenShift`/`formulaLenShift` (exact),
+`setLenSetShiftLe`, `fvOccFShift`, sanity rows, `fvOccFFreeLe'` (Foundation has NO `free` graph:
+`free p = substs1 &0 (shift p)` spelled out), `fvOccFSubstLe` (entry bound in the bounded `.pi`
+shape `∀ i < n, ∀ e, nthDef e w i → ∀ x, fvOccGraph x e → x ≤ M`), and the §4.1 node
+bookkeeping rows `dlenLeafLe/dlenUnaryLe/dlenBinaryLe` (one row use per node), `addLeAdd₃`,
+`leOfEqLe`, `leAddLeAdd`, `leAddLeft`, `leRefl`. TRAP/FINDING: DSL `+`, `=`, `≤` are `rfl`-equal to
+`Lengths.lean`'s `addO/eqO/leF`, but the DSL numeral `1` is NOT `rfl`-equal to `oneO`; `Nodes`'
+`dlen` rows conclude in the DSL, the `bnum` bit laws use `oneO` — bridge row `dslSuccEqSuccO :
+x + 1 = x + oneO` (+ `leOfLeEq`). `RowInst` generator checked in (`arith/scripts/`).
+IN FLIGHT: `Describe` (the walk), a read-only design of the ten per-tag fragments (`DESIGN_fragments.md`).
