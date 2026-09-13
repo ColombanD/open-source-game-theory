@@ -991,6 +991,23 @@ the ten per-tag fragments, `verifySteps`, the top (DESIGN §4.3), the `Steps.lea
 swap. Estimate remaining: 2–3 months. Agents die at the account's session rate limit (twice on
 2026-09-12: 04:10 and 16:20 resets); their files stay on disk.
 
+**U10 — `Chain.lean` DONE 2026-09-13 (9bf20ba, census 301, three axioms; new account).** The
+30-min stall was the BLUEPRINT TRAP (direct Σ₁-graph clauses `!(qVecGraph L) y ih`, `!(impGraph L)
+y x ih` → ∃-wrap; bisection by truncation found it in minutes); then 25 real errors (the guessed
+`VecRec.Construction.result_defined_iff` — the real lemma is `VecRec.Construction.eval_resultDef`
+(`HFS/Vec.lean:504`), `PR` keeps `result_defined_iff`; `rw [hv.lh]` before `nth_termBShiftVec`; a
+`: ℕ` ascription that unified `V := ℕ`). Part A: vector twins `useHornV/useHornAndV/introFactV`
+EQUAL to the list constructors on `vecOf` (`instOuterAt_eq_subst`: one simultaneous substitution).
+Part B: rows `⟪dΛ, m, B⟫`, `TableOK`; steps `sUseHorn/sUseHornAnd/sIntroFact` (CARRY their Horn
+decomposition `(as, c)` — no `hornSplit`), `sElimExs P`, `sSplit p q`, `sWkDrop Γ'` (`axLFactCode` is
+the chain's leaf `d`); `applyStep`, `ctxAfter` (no table), `stepCost N E Γ s` (explicit polynomials
+per tag), `StepOK tbl E M Γ s` (Δ₁; `M` = arity cap, needed for the standardness bridge
+`exists_list_of_len_le` to the list theorems); PR `ctxVec`, `chainCode` (from the end, fixed
+params), `costSum`; THEOREMS `applyStep_proof`, `dlen_applyStep_le`, **`chainCode_proof`**,
+**`dlen_chainCode_le`** (by `pi1_succ_induction` on the index), `ctxVec_isFormulaSet`,
+`mem_ctxAfter_of_noShift/_of_shift`, `chainCode_two`. IN FLIGHT: `RowInst`, the `Steps`
+`dlen_introFactCode_le_occ` swap. NEXT: `describeSteps` (DESIGN_describe).
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);
