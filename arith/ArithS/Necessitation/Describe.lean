@@ -2617,4 +2617,391 @@ theorem nilNode_ok {tbl N E W n : V} (htbl : TableOK tbl N) (hW : WalkTable tbl)
 
 end nodes
 
+
+/-! ### 3.5 The vector and function nodes are applicable -/
+
+section vecNodes
+
+lemma termShift_vRef (c j : V) : termShift LAct (vRef c j) = vRef (c + 1) j := by
+  have h := termShiftIterV_succ (vRef c j) 0
+  rw [zero_add, termShiftIterV_zero] at h
+  rw [← h]; exact termShiftIterV_vRef c j 1
+
+lemma succ_ne_zero' (j : V) : j + 1 ≠ 0 := ne_of_gt (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+
+/-- The closed symbol row of `LAct.IsFunc k f`, by the six cases. -/
+theorem funcConst_ok {tbl N E W k f Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hkf : LAct.IsFunc k f) (hE : 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W (funcRow k f) 0) ∧ sTag (mkStep W (funcRow k f) 0) = 0 ∧
+    ctxAfter Γ (mkStep W (funcRow k f) 0) = insert (neg LAct (isFuncFact (cTV k) (cTV f))) Γ ∧
+    termLen LAct (cTV k) ≤ E ∧ termLen LAct (cTV f) ≤ E := by
+  have h8 : ∀ m : V, m ≤ 3 → termLen LAct (cTV m) ≤ E := fun m hm ↦ by
+    rw [termLen_cTV]
+    exact le_trans (add_le_add (mul_le_mul_of_nonneg_left hm zero_le) le_rfl) (le_trans (by norm_num) hE)
+  rcases isFunc_LAct_iff_V.mp hkf with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · rw [show funcRow (0 : V) 0 = 9 by simp [funcRow]]
+    obtain ⟨a, b, c⟩ := ok_isFuncConst_zero htbl hW hWp hΓ
+    simp only [cT, Nat.cast_zero] at c
+    exact ⟨a, b, c, h8 0 (by norm_num), h8 0 (by norm_num)⟩
+  · rw [show funcRow (0 : V) 1 = 10 by simp [funcRow]]
+    obtain ⟨a, b, c⟩ := ok_isFuncConst_one htbl hW hWp hΓ
+    simp only [cT, Nat.cast_zero, Nat.cast_one] at c
+    exact ⟨a, b, c, h8 0 (by norm_num), h8 1 (by norm_num)⟩
+  · rw [show funcRow (0 : V) 2 = 13 by simp [funcRow]]
+    obtain ⟨a, b, c⟩ := ok_isFuncConst_cC htbl hW hWp hΓ
+    simp only [cT, Nat.cast_zero, Nat.cast_ofNat] at c
+    exact ⟨a, b, c, h8 0 (by norm_num), h8 2 (by norm_num)⟩
+  · rw [show funcRow (0 : V) 3 = 14 by simp [funcRow]]
+    obtain ⟨a, b, c⟩ := ok_isFuncConst_cD htbl hW hWp hΓ
+    simp only [cT, Nat.cast_zero, Nat.cast_ofNat] at c
+    exact ⟨a, b, c, h8 0 (by norm_num), h8 3 le_rfl⟩
+  · rw [show funcRow (2 : V) 0 = 11 by simp [funcRow]]
+    obtain ⟨a, b, c⟩ := ok_isFuncConst_add htbl hW hWp hΓ
+    simp only [cT, Nat.cast_zero, Nat.cast_ofNat] at c
+    exact ⟨a, b, c, h8 2 (by norm_num), h8 0 (by norm_num)⟩
+  · rw [show funcRow (2 : V) 1 = 12 by simp [funcRow]]
+    obtain ⟨a, b, c⟩ := ok_isFuncConst_mul htbl hW hWp hΓ
+    simp only [cT, Nat.cast_one, Nat.cast_ofNat] at c
+    exact ⟨a, b, c, h8 2 (by norm_num), h8 1 (by norm_num)⟩
+
+/-- What the walk of one term delivers (the induction hypothesis shape). -/
+def TermFacts (tbl E W n p : V) : Prop :=
+  ∀ Γ, IsFormulaSet LAct Γ →
+    ListOK tbl E ((8 : ℕ) : V) Γ (π₂ p) ∧ NoDrop (π₂ p) ∧ shiftsV (π₂ p) = π₁ p ∧
+    neg LAct (tPiFact (cTV n) (^&0)) ∈ finalCtx Γ (π₂ p)
+
+/-- What the walk of a vector of length `j` delivers at `Γ`. -/
+def VecFacts (tbl E W n j Γ q : V) : Prop :=
+  ListOK tbl E ((8 : ℕ) : V) Γ (π₂ q) ∧ NoDrop (π₂ q) ∧ shiftsV (π₂ q) = π₁ q ∧
+  neg LAct (tvPiFact (cTV j) (cTV n) (vRef 0 j)) ∈ finalCtx Γ (π₂ q)
+
+/-- **(V∷)** one more entry: from the entry's facts (at every context) and the tail's facts at `Γ`. -/
+theorem adjNode_ok {tbl N E W n j p ih Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hE : 2 * n + 2 * j + π₁ p + 4 ≤ E) (hp : TermFacts tbl E W n p) (hΓ : IsFormulaSet LAct Γ)
+    (hih : VecFacts tbl E W n j Γ ih) : VecFacts tbl E W n (j + 1) Γ (adjNode W n j p ih) := by
+  obtain ⟨hok₀, hnd₀, hsh₀, hA₀⟩ := hih
+  have hΓ₁ : IsFormulaSet LAct (finalCtx Γ (π₂ ih)) := finalCtx_isFormulaSet 8 htbl hΓ hok₀
+  obtain ⟨hokT, hndT, hshT, hT⟩ := hp _ hΓ₁
+  have hΓ₂ : IsFormulaSet LAct (finalCtx (finalCtx Γ (π₂ ih)) (π₂ p)) := finalCtx_isFormulaSet 8 htbl hΓ₁ hokT
+  -- the tail's fact after the entry's `ct` shifts
+  have hA₂ : neg LAct (tvPiFact (cTV j) (cTV n) (vRef (π₁ p) j)) ∈ finalCtx (finalCtx Γ (π₂ ih)) (π₂ p) := by
+    have := mem_finalCtx_of_mem hndT hA₀
+    rwa [hshT, shiftIterV_neg (isFormula_tvPiFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (isSemiterm_vRef 0 j)),
+      shiftIterV_tvPiFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (isSemiterm_vRef 0 j),
+      termShiftIterV_cTV, termShiftIterV_cTV, termShiftIterV_vRef, zero_add] at this
+  -- witness bounds
+  have hE' : (2 * n + 2 * j) + (π₁ p + 4) ≤ E := by rw [← add_assoc]; exact hE
+  have hE4 : 4 ≤ E := le_trans (le_trans le_add_self le_add_self) hE'
+  have hEn : termLen LAct (cTV n) ≤ E := termLen_cTV_le
+    (le_trans (add_le_add le_self_add (le_trans (by norm_num) le_add_self)) hE')
+  have hEj : termLen LAct (cTV j) ≤ E := termLen_cTV_le
+    (le_trans (add_le_add le_add_self (le_trans (by norm_num) le_add_self)) hE')
+  have hEj' : termLen LAct (cTV (j + 1)) ≤ E := termLen_cTV_le (by
+    calc 2 * (j + 1) + 1 = 2 * j + 3 := by ring
+      _ ≤ (2 * n + 2 * j) + (π₁ p + 4) := add_le_add le_add_self (le_trans (by norm_num) le_add_self)
+      _ ≤ E := hE')
+  have hEr : termLen LAct (vRef (π₁ p) j) ≤ E := termLen_vRef_le
+    (le_trans (le_trans (add_le_add le_rfl (by norm_num)) le_add_self) hE')
+  have hEr' : termLen LAct (vRef (π₁ p + 1) j) ≤ E := termLen_vRef_le (by
+    calc π₁ p + 1 + 1 = π₁ p + 2 := by ring
+      _ ≤ (2 * n + 2 * j) + (π₁ p + 4) := le_trans (add_le_add le_rfl (by norm_num)) le_add_self
+      _ ≤ E := hE')
+  have hE0 : termLen LAct (^&0 : V) ≤ E := termLen_fvar_le (by rw [zero_add]; exact le_trans (by norm_num) hE4)
+  have hE1 : termLen LAct (^&1 : V) ≤ E := termLen_fvar_le (le_trans (by norm_num) hE4)
+  -- step 1: adjoinTotal [&0, ⟨v'⟩]
+  obtain ⟨hok₁, htag₁, hctx₁⟩ := ok_adjoinTotal (wt := ^&0) (wv := vRef (π₁ p) j) htbl hW hWp hΓ₂ (by simp) hE0
+    (isSemiterm_vRef _ _) hEr
+  rw [Nat.cast_zero, termShift_fvar, zero_add, termShift_vRef] at hctx₁
+  set Γ₂ := finalCtx (finalCtx Γ (π₂ ih)) (π₂ p) with hΓ₂def
+  set s₁ := mkStep W 17 ?[^&0, vRef (π₁ p) j] with hs₁
+  have hΓ₃ : IsFormulaSet LAct (ctxAfter Γ₂ s₁) := isFormulaSet_ctxAfter 8 htbl hok₁
+  have hT₃ : neg LAct (tPiFact (cTV n) (^&1)) ∈ ctxAfter Γ₂ s₁ := by
+    rw [hctx₁]
+    have := neg_mem_setShift (isFormula_tPiFact (cTV_semiterm_LAct 0 _) (by simp)) hT
+    rw [shift_tPiFact (cTV_semiterm_LAct 0 _) (by simp), termShift_cTV, termShift_fvar, zero_add] at this
+    simp [this]
+  have hA₃ : neg LAct (tvPiFact (cTV j) (cTV n) (vRef (π₁ p + 1) j)) ∈ ctxAfter Γ₂ s₁ := by
+    rw [hctx₁]
+    have := neg_mem_setShift (isFormula_tvPiFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (isSemiterm_vRef _ _)) hA₂
+    rw [shift_tvPiFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (isSemiterm_vRef _ _), termShift_cTV, termShift_cTV,
+      termShift_vRef] at this
+    simp [this]
+  have hJ₃ : neg LAct (adjFact (^&0) (^&1) (vRef (π₁ p + 1) j)) ∈ ctxAfter Γ₂ s₁ := by rw [hctx₁]; simp
+  -- step 2: isSemitermVecAdjoin [cTV j, cTV n, ⟨v'⟩', &1, &0]
+  obtain ⟨hok₂, htag₂, hctx₂⟩ := ok_isSemitermVecAdjoin (wk := cTV j) (wn := cTV n) (ww := vRef (π₁ p + 1) j)
+    (wt := ^&1) (wu := ^&0) htbl hW hWp hΓ₃ (cTV_semiterm_LAct 0 _) hEj (cTV_semiterm_LAct 0 _) hEn
+    (isSemiterm_vRef _ _) hEr' (by simp) hE1 (by simp) hE0 hA₃ hT₃ hJ₃
+  set s₂ := mkStep W 18 ?[cTV j, cTV n, vRef (π₁ p + 1) j, ^&1, ^&0] with hs₂
+  have hΓ₄ : IsFormulaSet LAct (ctxAfter (ctxAfter Γ₂ s₁) s₂) := isFormulaSet_ctxAfter 8 htbl hok₂
+  have hS₄ : neg LAct (tvSigmaFact (cTV (j + 1)) (cTV n) (^&0)) ∈ ctxAfter (ctxAfter Γ₂ s₁) s₂ := by
+    rw [hctx₂, cTV_succ]; simp
+  -- step 3: the bridge [cTV (j+1), cTV n, &0]
+  obtain ⟨hok₃, htag₃, hctx₃⟩ := ok_isSemitermVecSigmaPiLAct (wk := cTV (j + 1)) (wn := cTV n) (wv := ^&0) htbl hW hWp hΓ₄
+    (cTV_semiterm_LAct 0 _) hEj' (cTV_semiterm_LAct 0 _) hEn (by simp) hE0 hS₄
+  set s₃ := mkStep W 16 ?[cTV (j + 1), cTV n, ^&0] with hs₃
+  have hS : π₂ (adjNode W n j p ih) = appendV (π₂ ih) (appendV (π₂ p) ?[s₁, s₂, s₃]) := by
+    rw [adjNode, pi₂_pair]
+  have hC : π₁ (adjNode W n j p ih) = π₁ ih + π₁ p + 1 := by rw [adjNode, pi₁_pair]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [hS]
+    exact listOK_appendV hok₀ (listOK_appendV hokT (listOK_cons hok₁ (listOK_cons hok₂ (listOK_single hok₃))))
+  · rw [hS]
+    exact noDrop_appendV hnd₀ (noDrop_appendV hndT (noDrop_cons (Or.inr (Or.inr (Or.inl htag₁)))
+      (noDrop_cons (Or.inl htag₂) (noDrop_single (Or.inl htag₃)))))
+  · rw [hS, hC, shiftsV_appendV, shiftsV_appendV, hsh₀, hshT, shiftsV_cons, shiftsV_cons, shiftsV_single,
+      if_pos (Or.inl htag₁), if_neg (by rw [htag₂]; norm_num), if_neg (by rw [htag₃]; norm_num)]
+    ring
+  · rw [hS, finalCtx_appendV, finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃,
+      vRef_of_ne (succ_ne_zero' j)]
+    simp
+
+/-- **(Tf)** the function node after its vector: witness bound `2n + 8 ≤ E`. -/
+theorem funcNode_ok {tbl N E W n k f d Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hkf : LAct.IsFunc k f) (hE : 2 * n + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) (hd : VecFacts tbl E W n k Γ d) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (π₂ (funcNode W n k f d)) ∧ NoDrop (π₂ (funcNode W n k f d)) ∧
+    shiftsV (π₂ (funcNode W n k f d)) = π₁ d + 1 ∧
+    neg LAct (tPiFact (cTV n) (^&0)) ∈ finalCtx Γ (π₂ (funcNode W n k f d)) := by
+  obtain ⟨hok₀, hnd₀, hsh₀, hA₀⟩ := hd
+  have hE8 : 8 ≤ E := le_trans le_add_self hE
+  have hEn : termLen LAct (cTV n) ≤ E := termLen_cTV_le (le_trans (add_le_add le_rfl (by norm_num)) hE)
+  have hE0 : termLen LAct (^&0 : V) ≤ E := termLen_fvar_le (by rw [zero_add]; exact le_trans (by norm_num) hE8)
+  have hEr0 : termLen LAct (vRef 0 k) ≤ E := termLen_vRef_le (by rw [zero_add]; exact le_trans (by norm_num) hE8)
+  have hEr1 : termLen LAct (vRef 1 k) ≤ E := termLen_vRef_le (le_trans (by norm_num) hE8)
+  set Γ₀ := finalCtx Γ (π₂ d) with hΓ₀def
+  have hΓ₀ : IsFormulaSet LAct Γ₀ := finalCtx_isFormulaSet 8 htbl hΓ hok₀
+  -- step 1: the closed symbol row
+  obtain ⟨hok₁, htag₁, hctx₁, hEk, hEf⟩ := funcConst_ok htbl hW hWp hkf hE8 hΓ₀
+  set s₁ := mkStep W (funcRow k f) 0 with hs₁
+  have hΓ₁ : IsFormulaSet LAct (ctxAfter Γ₀ s₁) := isFormulaSet_ctxAfter 8 htbl hok₁
+  have hF₁ : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ ctxAfter Γ₀ s₁ := by rw [hctx₁]; simp
+  have hA₁ : neg LAct (tvPiFact (cTV k) (cTV n) (vRef 0 k)) ∈ ctxAfter Γ₀ s₁ := by rw [hctx₁]; simp [hA₀]
+  -- step 2: qqFuncTotal [cTV k, cTV f, ⟨v⟩]
+  obtain ⟨hok₂, htag₂, hctx₂⟩ := ok_qqFuncTotal (wk := cTV k) (wf := cTV f) (wv := vRef 0 k) htbl hW hWp hΓ₁
+    (cTV_semiterm_LAct 0 _) hEk (cTV_semiterm_LAct 0 _) hEf (isSemiterm_vRef _ _) hEr0
+  rw [Nat.cast_zero, termShift_cTV, termShift_cTV, termShift_vRef, zero_add] at hctx₂
+  set s₂ := mkStep W 7 ?[cTV k, cTV f, vRef 0 k] with hs₂
+  have hΓ₂ : IsFormulaSet LAct (ctxAfter (ctxAfter Γ₀ s₁) s₂) := isFormulaSet_ctxAfter 8 htbl hok₂
+  have hF₂ : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ ctxAfter (ctxAfter Γ₀ s₁) s₂ := by
+    rw [hctx₂]
+    have := neg_mem_setShift (isFormula_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)) hF₁
+    rw [shift_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _), termShift_cTV, termShift_cTV] at this
+    simp [this]
+  have hA₂ : neg LAct (tvPiFact (cTV k) (cTV n) (vRef 1 k)) ∈ ctxAfter (ctxAfter Γ₀ s₁) s₂ := by
+    rw [hctx₂]
+    have := neg_mem_setShift (isFormula_tvPiFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (isSemiterm_vRef _ _)) hA₁
+    rw [shift_tvPiFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (isSemiterm_vRef _ _), termShift_cTV, termShift_cTV,
+      termShift_vRef, zero_add] at this
+    simp [this]
+  have hG₂ : neg LAct (funcFact (^&0) (cTV k) (cTV f) (vRef 1 k)) ∈ ctxAfter (ctxAfter Γ₀ s₁) s₂ := by
+    rw [hctx₂]; simp
+  -- step 3: isSemitermFunc [cTV n, cTV k, cTV f, ⟨v⟩', &0]
+  obtain ⟨hok₃, htag₃, hctx₃⟩ := ok_isSemitermFunc (wn := cTV n) (wk := cTV k) (wf := cTV f) (wv := vRef 1 k) (wt := ^&0)
+    htbl hW hWp hΓ₂ (cTV_semiterm_LAct 0 _) hEn (cTV_semiterm_LAct 0 _) hEk (cTV_semiterm_LAct 0 _) hEf
+    (isSemiterm_vRef _ _) hEr1 (by simp) hE0 hF₂ hA₂ hG₂
+  set s₃ := mkStep W 8 ?[cTV n, cTV k, cTV f, vRef 1 k, ^&0] with hs₃
+  have hΓ₃ : IsFormulaSet LAct (ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃) := isFormulaSet_ctxAfter 8 htbl hok₃
+  have hS₃ : neg LAct (tSigmaFact (cTV n) (^&0)) ∈ ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃ := by rw [hctx₃]; simp
+  have hA₃ : neg LAct (tvPiFact (cTV k) (cTV n) (vRef 1 k)) ∈ ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃ := by
+    rw [hctx₃]; simp [hA₂]
+  -- step 4: the bridge
+  obtain ⟨hok₄, htag₄, hctx₄⟩ := ok_isSemitermSigmaPiLAct (wn := cTV n) (wt := ^&0) htbl hW hWp hΓ₃
+    (cTV_semiterm_LAct 0 _) hEn (by simp) hE0 hS₃
+  set s₄ := mkStep W 4 ?[cTV n, ^&0] with hs₄
+  have hΓ₄ : IsFormulaSet LAct (ctxAfter (ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃) s₄) :=
+    isFormulaSet_ctxAfter 8 htbl hok₄
+  have hP₄ : neg LAct (tPiFact (cTV n) (^&0)) ∈ ctxAfter (ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃) s₄ := by
+    rw [hctx₄]; simp
+  have hA₄ : neg LAct (tvPiFact (cTV k) (cTV n) (vRef 1 k)) ∈ ctxAfter (ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃) s₄ := by
+    rw [hctx₄]; simp [hA₃]
+  -- step 5: isUTermVecOfSemitermVecLAct [cTV k, cTV n, ⟨v⟩']
+  obtain ⟨hok₅, htag₅, hctx₅⟩ := ok_isUTermVecOfSemitermVecLAct (wk := cTV k) (wn := cTV n) (wv := vRef 1 k) htbl hW hWp hΓ₄
+    (cTV_semiterm_LAct 0 _) hEk (cTV_semiterm_LAct 0 _) hEn (isSemiterm_vRef _ _) hEr1 hA₄
+  set s₅ := mkStep W 38 ?[cTV k, cTV n, vRef 1 k] with hs₅
+  have hΓ₅ : IsFormulaSet LAct (ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃) s₄) s₅) :=
+    isFormulaSet_ctxAfter 8 htbl hok₅
+  have hU₅ : neg LAct (utvSigmaFact (cTV k) (vRef 1 k)) ∈
+      ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃) s₄) s₅ := by rw [hctx₅]; simp
+  have hP₅ : neg LAct (tPiFact (cTV n) (^&0)) ∈
+      ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter Γ₀ s₁) s₂) s₃) s₄) s₅ := by rw [hctx₅]; simp [hP₄]
+  -- step 6: its bridge
+  obtain ⟨hok₆, htag₆, hctx₆⟩ := ok_isUTermVecSigmaPiLAct (wk := cTV k) (wv := vRef 1 k) htbl hW hWp hΓ₅
+    (cTV_semiterm_LAct 0 _) hEk (isSemiterm_vRef _ _) hEr1 hU₅
+  set s₆ := mkStep W 39 ?[cTV k, vRef 1 k] with hs₆
+  have hS : π₂ (funcNode W n k f d) = appendV (π₂ d) ?[s₁, s₂, s₃, s₄, s₅, s₆] := by rw [funcNode, pi₂_pair]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [hS]
+    exact listOK_appendV hok₀ (listOK_cons hok₁ (listOK_cons hok₂ (listOK_cons hok₃ (listOK_cons hok₄
+      (listOK_cons hok₅ (listOK_single hok₆))))))
+  · rw [hS]
+    exact noDrop_appendV hnd₀ (noDrop_cons (Or.inl htag₁) (noDrop_cons (Or.inr (Or.inr (Or.inl htag₂)))
+      (noDrop_cons (Or.inl htag₃) (noDrop_cons (Or.inl htag₄) (noDrop_cons (Or.inl htag₅)
+      (noDrop_single (Or.inl htag₆)))))))
+  · rw [hS, shiftsV_appendV, hsh₀, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single,
+      if_neg (by rw [htag₁]; norm_num), if_pos (Or.inl htag₂), if_neg (by rw [htag₃]; norm_num),
+      if_neg (by rw [htag₄]; norm_num), if_neg (by rw [htag₅]; norm_num), if_neg (by rw [htag₆]; norm_num)]
+    ring
+  · rw [hS, finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_cons, finalCtx_cons, finalCtx_cons,
+      finalCtx_single, hctx₆]
+    simp [hP₅]
+
+end vecNodes
+
+/-! ### 3.6 The vector walk and the term walk (D3 for terms) -/
+
+section termWalkOK
+
+lemma nth_le_listSum : ∀ (a : V) (i : V), i < len a → a.[i] ≤ listSum a := by
+  intro a
+  induction a using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil => intro i hi; simp at hi
+  | adjoin x a ih =>
+    intro i hi
+    rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+    · rw [nth_adjoin_zero, listSum_adjoin]; exact le_self_add
+    · rw [nth_adjoin_succ, listSum_adjoin]
+      exact le_trans (ih i (by rw [len_adjoin] at hi; exact lt_of_add_lt_add_right hi)) le_add_self
+
+lemma arity_le_two {k f : V} (hkf : LAct.IsFunc k f) : k ≤ 2 := by
+  rcases isFunc_LAct_iff_V.mp hkf with ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> norm_num
+
+/-- **The invariant of the term walk** at `(n, t)`: for every witness bound `E ≥ 2n + 2|t| + 8`,
+the walk's facts at every context, and the count bound `descCountT + 1 ≤ 2|t|`. -/
+def TermOK (tbl W n t : V) : Prop :=
+  ∀ E, 2 * n + 2 * termLen LAct t + 8 ≤ E →
+    TermFacts tbl E W n (descT W n t) ∧ descCountT W n t + 1 ≤ 2 * termLen LAct t
+
+instance termFacts_definable : 𝚷₁-Relation₅ (TermFacts : V → V → V → V → V → Prop) := by
+  unfold TermFacts; definability
+
+instance termOK_definable : 𝚷₁-Relation₄ (TermOK : V → V → V → V → Prop) := by
+  unfold TermOK TermFacts descCountT; definability
+
+/-- **The vector walk is applicable**, tail first: after the last `j` entries of a vector of length
+`k ≤ 2` whose entries satisfy the invariant. -/
+theorem descVecAux_ok {tbl N W n k v : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hk : k ≤ 2) (hv : IsSemitermVec LAct k n v) (ih : ∀ i < k, TermOK tbl W n v.[i])
+    {E : V} (hE : 2 * n + 2 * listSum (termLenVec LAct k v) + 8 ≤ E) :
+    ∀ j ≤ k, IsUTermVec LAct j (takeLast v j) ∧
+      π₁ (descVecAux W n (descTVec W n k v) j) ≤ 2 * listSum (termLenVec LAct j (takeLast v j)) ∧
+      ∀ Γ, IsFormulaSet LAct Γ → VecFacts tbl E W n j Γ (descVecAux W n (descTVec W n k v) j) := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => unfold VecFacts; definability
+  | zero =>
+    intro _
+    refine ⟨by simp, by simp [nilNode], fun Γ hΓ ↦ ?_⟩
+    rw [descVecAux_zero]
+    obtain ⟨a, b, c, d⟩ := nilNode_ok htbl hW hWp (E := E)
+      (le_trans (add_le_add le_self_add (by norm_num)) hE) Γ hΓ
+    exact ⟨a, b, by rw [c]; simp [nilNode], d⟩
+  | succ j ihj =>
+    intro hj
+    obtain ⟨hU, hcv, hF⟩ := ihj (le_trans le_self_add hj)
+    have hvlen : len v = k := hv.lh
+    have hjk : j < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one j) hj
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj
+    have hi : k - (j + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have ht : IsSemiterm LAct n v.[k - (j + 1)] := hv.nth hi
+    have hnth : nthFromEnd (descTVec W n k v) j = descT W n v.[k - (j + 1)] := by
+      rw [nthFromEnd_eq (a := k - (j + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hj]),
+        nth_descTVec W n hv.isUTerm hi]
+    have hl : termLen LAct v.[k - (j + 1)] ≤ listSum (termLenVec LAct k v) := by
+      rw [← nth_termLenVec hv.isUTerm hi]
+      exact nth_le_listSum _ _ (by rw [len_termLenVec hv.isUTerm]; exact hi)
+    have hE' : 2 * n + 2 * termLen LAct v.[k - (j + 1)] + 8 ≤ E :=
+      le_trans (add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hl zero_le)) le_rfl) hE
+    obtain ⟨hTF, hcnt⟩ := ih _ hi E hE'
+    have hj1 : j ≤ 1 := by
+      have := le_trans hj hk
+      rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm] at this
+      exact (add_le_add_iff_right 1).mp this
+    have hEadj : 2 * n + 2 * j + π₁ (descT W n v.[k - (j + 1)]) + 4 ≤ E := by
+      have hct : π₁ (descT W n v.[k - (j + 1)]) + 1 ≤ 2 * termLen LAct v.[k - (j + 1)] := hcnt
+      calc 2 * n + 2 * j + π₁ (descT W n v.[k - (j + 1)]) + 4
+          ≤ 2 * n + 2 * 1 + π₁ (descT W n v.[k - (j + 1)]) + 4 :=
+            add_le_add (add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hj1 zero_le)) le_rfl) le_rfl
+        _ = 2 * n + (π₁ (descT W n v.[k - (j + 1)]) + 1) + 5 := by ring
+        _ ≤ 2 * n + 2 * termLen LAct v.[k - (j + 1)] + 5 := add_le_add (add_le_add le_rfl hct) le_rfl
+        _ ≤ 2 * n + 2 * termLen LAct v.[k - (j + 1)] + 8 := add_le_add le_rfl (by norm_num)
+        _ ≤ E := hE'
+    have htake : takeLast v (j + 1) = v.[k - (j + 1)] ∷ takeLast v j := by
+      rw [takeLast_succ_of_lt hjk, hvlen]
+    refine ⟨?_, ?_, fun Γ hΓ ↦ ?_⟩
+    · rw [htake]; exact hU.adjoin ht.isUTerm
+    · rw [descVecAux_succ, hnth, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+      have hC : π₁ (adjNode W n j (descT W n v.[k - (j + 1)]) (descVecAux W n (descTVec W n k v) j)) =
+          π₁ (descVecAux W n (descTVec W n k v) j) + π₁ (descT W n v.[k - (j + 1)]) + 1 := by simp [adjNode]
+      rw [hC, add_assoc, add_comm (2 * termLen LAct v.[k - (j + 1)])]
+      exact add_le_add hcv hcnt
+    · rw [descVecAux_succ, hnth]
+      exact adjNode_ok htbl hW hWp hEadj hTF hΓ (hF Γ hΓ)
+
+/-- **D3 for terms — the invariant holds for every semiterm.** -/
+theorem termOK_of_isSemiterm {tbl N W : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (n : V) : ∀ t, IsSemiterm LAct n t → TermOK tbl W n t := by
+  intro t ht
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_ t ht
+  · definability
+  · intro z hz E hE
+    have hE' : 2 * n + 8 ≤ E := le_trans (add_le_add le_self_add le_rfl) hE
+    refine ⟨?_, ?_⟩
+    · intro Γ hΓ
+      rw [descT_bvar]
+      obtain ⟨a, b, c, d⟩ := bvarNode_ok htbl hW hWp hz hE' Γ hΓ
+      exact ⟨a, b, by rw [c]; simp [bvarNode], d⟩
+    · rw [descCountT_bvar, termLen_bvar, mul_add, mul_one, one_add_one_eq_two]; exact le_add_self
+  · intro x E hE
+    have hE' : 2 * n + 2 * x + 8 ≤ E := by
+      refine le_trans ?_ hE
+      rw [termLen_fvar]
+      exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left le_self_add zero_le)) le_rfl
+    refine ⟨?_, ?_⟩
+    · intro Γ hΓ
+      rw [descT_fvar]
+      obtain ⟨a, b, c, d⟩ := fvarNode_ok htbl hW hWp hE' Γ hΓ
+      exact ⟨a, b, by rw [c]; simp [fvarNode], d⟩
+    · rw [descCountT_fvar, termLen_fvar, mul_add, mul_one, one_add_one_eq_two]; exact le_add_self
+  · intro k f v hkf hv ih E hE
+    have hk := arity_le_two hkf
+    have hlen : termLen LAct (^func k f v) = listSum (termLenVec LAct k v) + 1 := termLen_func hkf hv.isUTerm
+    have hES : 2 * n + 2 * listSum (termLenVec LAct k v) + 8 ≤ E := by
+      refine le_trans ?_ hE
+      rw [hlen]
+      exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left le_self_add zero_le)) le_rfl
+    have hE' : 2 * n + 8 ≤ E := le_trans (add_le_add le_self_add le_rfl) hES
+    obtain ⟨_, hcnt, hF⟩ := descVecAux_ok htbl hW hWp hk hv ih hES k le_rfl
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    rw [htl] at hcnt
+    refine ⟨?_, ?_⟩
+    · intro Γ hΓ
+      rw [descT_func W n hkf hv.isUTerm]
+      obtain ⟨a, b, c, d⟩ := funcNode_ok htbl hW hWp hkf hE' hΓ (hF Γ hΓ)
+      exact ⟨a, b, by rw [c]; simp [funcNode], d⟩
+    · rw [descCountT_func W n hkf hv.isUTerm, hlen, mul_add, mul_one, add_assoc, one_add_one_eq_two]
+      exact add_le_add hcnt le_rfl
+
+/-- **D3 for terms, unpacked**: the term walk from any formula-set context is applicable step by
+step, drops nothing, introduces `descCountT` eigenvariables (`≤ 2|t| − 1`), and leaves
+`(isSemiterm LAct).pi n &0` in the final context. -/
+theorem describeT_ok {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {n t : V} (ht : IsSemiterm LAct n t)
+    {E : V} (hE : 2 * n + 2 * termLen LAct t + 8 ≤ E) {Γ : V} (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (describeT walkPieces n t) ∧ NoDrop (describeT walkPieces n t) ∧
+    shiftsV (describeT walkPieces n t) = descCountT walkPieces n t ∧
+    descCountT walkPieces n t + 1 ≤ 2 * termLen LAct t ∧
+    neg LAct (tPiFact (cTV n) (^&0)) ∈ finalCtx Γ (describeT walkPieces n t) := by
+  obtain ⟨hTF, hcnt⟩ := termOK_of_isSemiterm htbl hW rfl n t ht E hE
+  obtain ⟨a, b, c, d⟩ := hTF Γ hΓ
+  exact ⟨a, b, c, hcnt, d⟩
+
+/-- **The term walk as a derivation**: with a continuation `d` deriving the final context, the
+chain derives `Γ`. -/
+theorem describeT_chain {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {n t : V} (ht : IsSemiterm LAct n t)
+    {E : V} (hE : 2 * n + 2 * termLen LAct t + 8 ≤ E) {Γ : V} (hΓ : IsFormulaSet LAct Γ) {d : V}
+    (hd : DerivationOf TAct d (finalCtx Γ (describeT walkPieces n t))) :
+    DerivationOf TAct (chainCode tbl Γ (describeT walkPieces n t) d) Γ :=
+  chainCode_proof 8 htbl (describeT_ok htbl hW ht hE hΓ).1 hd
+
+end termWalkOK
+
 end ArithS
