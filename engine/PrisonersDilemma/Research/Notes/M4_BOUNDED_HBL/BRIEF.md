@@ -578,3 +578,15 @@ covers them — add as rows). TRAPS: a CLOSED row over a PR-blueprint graph at n
 later. PROCESS: watcher shells whose own command line contains the polled pattern loop forever —
 poll with `pgrep -f 'bin/lake build ArithS'`, never a pattern that matches the watcher.
 IN FLIGHT: `NumSteps` (resumed), `Layout` (copySteps/chainSteps/eqSteps).
+
+**§11 status — `NumSteps` DONE (ded402f; ≈3950 lines, census +14):** Σ₁ provers producing DERIVATION
+CODES of closed binary-numeral facts, each with `DerivationOf`, a cubic `dlen` bound (`nodeCost N B E
+= N + 800·B·E`) and `LemmaOK (sLemma A dA)` packaging: `succCode`, `addCode` (Fixpoint on `⟪a,b,d⟫`),
+`leCode`/`ltCode`, `oneLe`, the node-bookkeeping facts `leafFact/bin2Fact/bin3Fact/sum2Fact`
+(`bin3Fact : bnum a + bnum b + bnum c + 1 ≤ bnum n`, the `dlenBinaryLe` companion), `cTEqFact/cTLeFact`
+(`cT z = bnum z`); a 19-row library, `exists_numTable`, combinators `goalLeaf/cut1/hornGoal/stepL`.
+NOT delivered: N4 `mulEq`, N5 `lengthEq` (top only), the general-list N3. TRAPS: a full `simp` on the
+instance proof of a Fixpoint-defined function explodes to 17 GB — rewrite explicitly, never unfold the
+graph wrapper; `definability` dies on nested combinators — explicit blueprints; `zsh` `pipestatus` is
+lowercase. NAME CLASH with Frag resolved by Frag's `B` suffixes (unify later).
+IN FLIGHT: `Layout` (copy/chain/eq), `Cert` (certX + lenSteps).
