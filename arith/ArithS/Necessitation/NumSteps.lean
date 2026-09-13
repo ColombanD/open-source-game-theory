@@ -2185,4 +2185,261 @@ lemma AddGraph.case_iff {tbl a b d : V} :
 
 end add
 
+
+section addInv
+
+/-! ### Inversion, existence, uniqueness, `addCode` -/
+
+lemma not_one_le_zero : ¬ (1 : V) ≤ 0 := not_le.mpr Arithmetic.zero_lt_one
+lemma not_two_le_one : ¬ (2 : V) ≤ 1 := not_le.mpr one_lt_two
+lemma not_two_le_zero : ¬ (2 : V) ≤ 0 := not_le.mpr (lt_of_lt_of_le Arithmetic.zero_lt_one one_le_two)
+lemma two_mul_ne_one' (m : V) : 2 * m ≠ 1 := two_mul_ne_one m
+lemma one_ne_two_mul {m : V} (hm : 1 ≤ m) : (1 : V) ≠ 2 * m := fun h ↦ two_mul_ne_one m h.symm
+lemma one_ne_two_mul_add_one {m : V} (hm : 1 ≤ m) : (1 : V) ≠ 2 * m + 1 := fun h ↦ two_mul_add_one_ne_one hm h.symm
+lemma zero_ne_two_mul {m : V} (hm : 1 ≤ m) : (0 : V) ≠ 2 * m := fun h ↦ two_mul_ne_zero hm h.symm
+lemma zero_ne_two_mul_add_one (m : V) : (0 : V) ≠ 2 * m + 1 := fun h ↦ two_mul_add_one_ne_zero m h.symm
+lemma two_le_two_mul {m : V} (hm : 1 ≤ m) : 2 ≤ 2 * m := by
+  rw [two_mul, ← one_add_one_eq_two]; exact add_le_add hm hm
+lemma two_le_two_mul_add_one {m : V} (hm : 1 ≤ m) : 2 ≤ 2 * m + 1 := le_trans (two_le_two_mul hm) le_self_add
+
+/-- The pieces of the eight-way case analysis that a situation `(a, b)` excludes, in one place. -/
+lemma AddGraph.zero_left_iff {tbl b d : V} :
+    AddGraph tbl 0 b d ↔ d = step0 tbl 0 (vecOf [bnum b]) (addFact 0 b) := by
+  rw [AddGraph.case_iff]
+  constructor
+  · rintro (⟨_, rfl⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨a', b', d', ha, hb, h, _⟩ | ⟨a', b', d', ha, hb, h, _⟩ |
+      ⟨a', b', d', ha, hb, h, _⟩ | ⟨a', b', d', ha, hb, h, _⟩)
+    · rfl
+    · exact absurd h not_one_le_zero
+    · exact absurd h.symm Arithmetic.one_ne_zero
+    · exact absurd h not_two_le_zero
+    · exact absurd h (zero_ne_two_mul ha)
+    · exact absurd h (zero_ne_two_mul ha)
+    · exact absurd h (zero_ne_two_mul_add_one a')
+    · exact absurd h (zero_ne_two_mul_add_one a')
+  · rintro rfl; exact Or.inl ⟨rfl, rfl⟩
+
+lemma AddGraph.zero_right_iff {tbl a d : V} (ha : 1 ≤ a) :
+    AddGraph tbl a 0 d ↔ d = step0 tbl 1 (vecOf [bnum a]) (addFact a 0) := by
+  rw [AddGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨_, _, rfl⟩ | ⟨_, h, _⟩ | ⟨_, h, _⟩ | ⟨a', b', d', _, hb, _, h, _⟩ | ⟨a', b', d', _, hb, _, h, _⟩ |
+      ⟨a', b', d', _, hb, _, h, _⟩ | ⟨a', b', d', _, hb, _, h, _⟩)
+    · exact absurd (h ▸ ha) not_one_le_zero
+    · rfl
+    · exact absurd h not_one_le_zero
+    · exact absurd h.symm Arithmetic.one_ne_zero
+    · exact absurd h (zero_ne_two_mul hb)
+    · exact absurd h (zero_ne_two_mul_add_one b')
+    · exact absurd h (zero_ne_two_mul hb)
+    · exact absurd h (zero_ne_two_mul_add_one b')
+  · rintro rfl; exact Or.inr (Or.inl ⟨ha, rfl, rfl⟩)
+
+lemma AddGraph.one_left_iff {tbl b d : V} (hb : 1 ≤ b) :
+    AddGraph tbl 1 b d ↔
+      d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b) := by
+  rw [AddGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨_, _, rfl⟩ | ⟨h, _⟩ | ⟨a', b', d', ha, _, h, _⟩ | ⟨a', b', d', ha, _, h, _⟩ |
+      ⟨a', b', d', ha, _, h, _⟩ | ⟨a', b', d', ha, _, h, _⟩)
+    · exact absurd h Arithmetic.one_ne_zero
+    · exact absurd (h ▸ hb) not_one_le_zero
+    · rfl
+    · exact absurd h not_two_le_one
+    · exact absurd h (one_ne_two_mul ha)
+    · exact absurd h (one_ne_two_mul ha)
+    · exact absurd h (one_ne_two_mul_add_one ha)
+    · exact absurd h (one_ne_two_mul_add_one ha)
+  · rintro rfl; exact Or.inr (Or.inr (Or.inl ⟨rfl, hb, rfl⟩))
+
+lemma AddGraph.one_right_iff {tbl a d : V} (ha : 2 ≤ a) : AddGraph tbl a 1 d ↔ d = succCode tbl a := by
+  rw [AddGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, _, rfl⟩ | ⟨a', b', d', _, hb, _, h, _⟩ | ⟨a', b', d', _, hb, _, h, _⟩ |
+      ⟨a', b', d', _, hb, _, h, _⟩ | ⟨a', b', d', _, hb, _, h, _⟩)
+    · exact absurd (h ▸ ha) not_two_le_zero
+    · exact absurd h Arithmetic.one_ne_zero
+    · exact absurd (h ▸ ha) not_two_le_one
+    · rfl
+    · exact absurd h (one_ne_two_mul hb)
+    · exact absurd h (one_ne_two_mul_add_one hb)
+    · exact absurd h (one_ne_two_mul hb)
+    · exact absurd h (one_ne_two_mul_add_one hb)
+  · rintro rfl; exact Or.inr (Or.inr (Or.inr (Or.inl ⟨ha, rfl, rfl⟩)))
+
+lemma AddGraph.bit00_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
+    AddGraph tbl (2 * a') (2 * b') d ↔ ∃ d', AddGraph tbl a' b' d' ∧
+      d = step1 tbl 7 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact (2 * a') (2 * b')) := by
+  rw [AddGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨a'', b'', d', _, _, h1, h2, hd', rfl⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ |
+      ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩)
+    · exact absurd h (two_mul_ne_zero ha)
+    · exact absurd h (two_mul_ne_zero hb)
+    · exact absurd h (two_mul_ne_one a')
+    · exact absurd h (two_mul_ne_one b')
+    · obtain rfl := two_mul_inj h1; obtain rfl := two_mul_inj h2; exact ⟨d', hd', rfl⟩
+    · exact absurd h2 (two_mul_ne_two_mul_add_one b' b'')
+    · exact absurd h1 (two_mul_ne_two_mul_add_one a' a'')
+    · exact absurd h1 (two_mul_ne_two_mul_add_one a' a'')
+  · rintro ⟨d', hd', rfl⟩
+    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hd', rfl⟩))))
+
+lemma AddGraph.bit01_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
+    AddGraph tbl (2 * a') (2 * b' + 1) d ↔ ∃ d', AddGraph tbl a' b' d' ∧
+      d = step1 tbl 8 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact (2 * a') (2 * b' + 1)) := by
+  rw [AddGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, hd', rfl⟩ |
+      ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩)
+    · exact absurd h (two_mul_ne_zero ha)
+    · exact absurd h (two_mul_add_one_ne_zero b')
+    · exact absurd h (two_mul_ne_one a')
+    · exact absurd h (two_mul_add_one_ne_one hb)
+    · exact absurd h2.symm (two_mul_ne_two_mul_add_one b'' b')
+    · obtain rfl := two_mul_inj h1; obtain rfl := two_mul_add_one_inj h2; exact ⟨d', hd', rfl⟩
+    · exact absurd h1 (two_mul_ne_two_mul_add_one a' a'')
+    · exact absurd h1 (two_mul_ne_two_mul_add_one a' a'')
+  · rintro ⟨d', hd', rfl⟩
+    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hd', rfl⟩)))))
+
+lemma AddGraph.bit10_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
+    AddGraph tbl (2 * a' + 1) (2 * b') d ↔ ∃ d', AddGraph tbl a' b' d' ∧
+      d = step1 tbl 9 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact (2 * a' + 1) (2 * b')) := by
+  rw [AddGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ |
+      ⟨a'', b'', d', _, _, h1, h2, hd', rfl⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩)
+    · exact absurd h (two_mul_add_one_ne_zero a')
+    · exact absurd h (two_mul_ne_zero hb)
+    · exact absurd h (two_mul_add_one_ne_one ha)
+    · exact absurd h (two_mul_ne_one b')
+    · exact absurd h1.symm (two_mul_ne_two_mul_add_one a'' a')
+    · exact absurd h1.symm (two_mul_ne_two_mul_add_one a'' a')
+    · obtain rfl := two_mul_add_one_inj h1; obtain rfl := two_mul_inj h2; exact ⟨d', hd', rfl⟩
+    · exact absurd h2 (two_mul_ne_two_mul_add_one b' b'')
+  · rintro ⟨d', hd', rfl⟩
+    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hd', rfl⟩))))))
+
+lemma AddGraph.bit11_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
+    AddGraph tbl (2 * a' + 1) (2 * b' + 1) d ↔ ∃ d', AddGraph tbl a' b' d' ∧
+      d = step2 tbl 10 (addFact a' b') d' (succFact (a' + b')) (succCode tbl (a' + b'))
+        (vecOf [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a']) (addFact (2 * a' + 1) (2 * b' + 1)) := by
+  rw [AddGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ |
+      ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, hd', rfl⟩)
+    · exact absurd h (two_mul_add_one_ne_zero a')
+    · exact absurd h (two_mul_add_one_ne_zero b')
+    · exact absurd h (two_mul_add_one_ne_one ha)
+    · exact absurd h (two_mul_add_one_ne_one hb)
+    · exact absurd h1.symm (two_mul_ne_two_mul_add_one a'' a')
+    · exact absurd h1.symm (two_mul_ne_two_mul_add_one a'' a')
+    · exact absurd h2.symm (two_mul_ne_two_mul_add_one b'' b')
+    · obtain rfl := two_mul_add_one_inj h1; obtain rfl := two_mul_add_one_inj h2; exact ⟨d', hd', rfl⟩
+  · rintro ⟨d', hd', rfl⟩
+    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨a', b', d', ha, hb, rfl, rfl, hd', rfl⟩))))))
+
+/-- The four situations of `a, b ≥ 2` with `a' := a / 2`, `b' := b / 2`. -/
+lemma two_le_cases₂ {a b : V} (ha : 2 ≤ a) (hb : 2 ≤ b) :
+    1 ≤ a / 2 ∧ 1 ≤ b / 2 ∧ a / 2 + b / 2 < a + b ∧
+    ((a = 2 * (a / 2) ∧ b = 2 * (b / 2)) ∨ (a = 2 * (a / 2) ∧ b = 2 * (b / 2) + 1) ∨
+     (a = 2 * (a / 2) + 1 ∧ b = 2 * (b / 2)) ∨ (a = 2 * (a / 2) + 1 ∧ b = 2 * (b / 2) + 1)) := by
+  obtain ⟨ha1, halt, hae⟩ := two_le_cases ha
+  obtain ⟨hb1, hblt, hbe⟩ := two_le_cases hb
+  refine ⟨ha1, hb1, add_lt_add halt hblt, ?_⟩
+  rcases hae with h1 | h1 <;> rcases hbe with h2 | h2
+  · exact Or.inl ⟨h1, h2⟩
+  · exact Or.inr (Or.inl ⟨h1, h2⟩)
+  · exact Or.inr (Or.inr (Or.inl ⟨h1, h2⟩))
+  · exact Or.inr (Or.inr (Or.inr ⟨h1, h2⟩))
+
+lemma addGraph_exists (tbl : V) : ∀ s : V, ∀ a ≤ s, ∀ b ≤ s, a + b = s → ∃ d, AddGraph tbl a b d := by
+  intro s
+  induction s using ISigma1.sigma1_order_induction with
+  | hP => definability
+  | ind s ih =>
+    intro a _ b _ hs
+    rcases zero_one_or_two_le a with rfl | rfl | ha2
+    · exact ⟨_, AddGraph.zero_left_iff.mpr rfl⟩
+    · rcases zero_one_or_two_le b with rfl | rfl | hb2
+      · exact ⟨_, (AddGraph.zero_right_iff le_rfl).mpr rfl⟩
+      · exact ⟨_, (AddGraph.one_left_iff le_rfl).mpr rfl⟩
+      · exact ⟨_, (AddGraph.one_left_iff (le_trans one_le_two hb2)).mpr rfl⟩
+    · rcases zero_one_or_two_le b with rfl | rfl | hb2
+      · exact ⟨_, (AddGraph.zero_right_iff (le_trans one_le_two ha2)).mpr rfl⟩
+      · exact ⟨_, (AddGraph.one_right_iff ha2).mpr rfl⟩
+      · obtain ⟨ha1, hb1, hlt, h⟩ := two_le_cases₂ ha2 hb2
+        obtain ⟨d', hd'⟩ := ih (a / 2 + b / 2) (hs ▸ hlt) (a / 2) le_self_add (b / 2) le_add_self rfl
+        rcases h with ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩
+        · rw [h1, h2]; exact ⟨_, (AddGraph.bit00_iff ha1 hb1).mpr ⟨d', hd', rfl⟩⟩
+        · rw [h1, h2]; exact ⟨_, (AddGraph.bit01_iff ha1 hb1).mpr ⟨d', hd', rfl⟩⟩
+        · rw [h1, h2]; exact ⟨_, (AddGraph.bit10_iff ha1 hb1).mpr ⟨d', hd', rfl⟩⟩
+        · rw [h1, h2]; exact ⟨_, (AddGraph.bit11_iff ha1 hb1).mpr ⟨d', hd', rfl⟩⟩
+
+lemma addGraph_unique (tbl : V) : ∀ s : V, ∀ a ≤ s, ∀ b ≤ s, a + b = s →
+    ∀ d₁ d₂, AddGraph tbl a b d₁ → AddGraph tbl a b d₂ → d₁ = d₂ := by
+  intro s
+  induction s using ISigma1.pi1_order_induction with
+  | hP => definability
+  | ind s ih =>
+    intro a _ b _ hs d₁ d₂ h₁ h₂
+    rcases zero_one_or_two_le a with rfl | rfl | ha2
+    · rw [AddGraph.zero_left_iff] at h₁ h₂; rw [h₁, h₂]
+    · rcases zero_one_or_two_le b with rfl | rfl | hb2
+      · rw [AddGraph.zero_right_iff le_rfl] at h₁ h₂; rw [h₁, h₂]
+      · rw [AddGraph.one_left_iff le_rfl] at h₁ h₂; rw [h₁, h₂]
+      · rw [AddGraph.one_left_iff (le_trans one_le_two hb2)] at h₁ h₂; rw [h₁, h₂]
+    · rcases zero_one_or_two_le b with rfl | rfl | hb2
+      · rw [AddGraph.zero_right_iff (le_trans one_le_two ha2)] at h₁ h₂; rw [h₁, h₂]
+      · rw [AddGraph.one_right_iff ha2] at h₁ h₂; rw [h₁, h₂]
+      · obtain ⟨ha1, hb1, hlt, h⟩ := two_le_cases₂ ha2 hb2
+        have ih' := ih (a / 2 + b / 2) (hs ▸ hlt) (a / 2) le_self_add (b / 2) le_add_self rfl
+        rcases h with ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩
+        · rw [h1, h2] at h₁ h₂
+          obtain ⟨e₁, he₁, rfl⟩ := (AddGraph.bit00_iff ha1 hb1).mp h₁
+          obtain ⟨e₂, he₂, rfl⟩ := (AddGraph.bit00_iff ha1 hb1).mp h₂
+          rw [ih' e₁ e₂ he₁ he₂]
+        · rw [h1, h2] at h₁ h₂
+          obtain ⟨e₁, he₁, rfl⟩ := (AddGraph.bit01_iff ha1 hb1).mp h₁
+          obtain ⟨e₂, he₂, rfl⟩ := (AddGraph.bit01_iff ha1 hb1).mp h₂
+          rw [ih' e₁ e₂ he₁ he₂]
+        · rw [h1, h2] at h₁ h₂
+          obtain ⟨e₁, he₁, rfl⟩ := (AddGraph.bit10_iff ha1 hb1).mp h₁
+          obtain ⟨e₂, he₂, rfl⟩ := (AddGraph.bit10_iff ha1 hb1).mp h₂
+          rw [ih' e₁ e₂ he₁ he₂]
+        · rw [h1, h2] at h₁ h₂
+          obtain ⟨e₁, he₁, rfl⟩ := (AddGraph.bit11_iff ha1 hb1).mp h₁
+          obtain ⟨e₂, he₂, rfl⟩ := (AddGraph.bit11_iff ha1 hb1).mp h₂
+          rw [ih' e₁ e₂ he₁ he₂]
+
+lemma addGraph_existsUnique (tbl a b : V) : ∃! d, AddGraph tbl a b d := by
+  obtain ⟨d, hd⟩ := addGraph_exists tbl (a + b) a le_self_add b le_add_self rfl
+  exact ExistsUnique.intro d hd (fun d' h' ↦ addGraph_unique tbl (a + b) a le_self_add b le_add_self rfl d' d h' hd)
+
+/-- **The addition-fact prover**: the derivation code of `{bnum a + bnum b = bnum (a + b)}`. -/
+noncomputable def addCode (tbl a b : V) : V := Classical.choose! (addGraph_existsUnique tbl a b)
+
+lemma addCode_graph (tbl a b : V) : AddGraph tbl a b (addCode tbl a b) :=
+  Classical.choose!_spec (addGraph_existsUnique tbl a b)
+
+lemma addCode_eq_of_graph {tbl a b d : V} (h : AddGraph tbl a b d) : addCode tbl a b = d :=
+  addGraph_unique tbl (a + b) a le_self_add b le_add_self rfl _ _ (addCode_graph tbl a b) h
+
+noncomputable def addCodeDef : 𝚺₁.Semisentence 4 := .mkSigma “y tbl a b. !addGraphDef tbl a b y”
+
+/-- TRAP (as `succCode_defined`): never a full `simp` here; rewrite with the substitution explicit. -/
+instance addCode_defined : 𝚺₁-Function₃ (addCode : V → V → V → V) via addCodeDef := .mk fun v ↦ by
+  simp only [addCodeDef]
+  rw [HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs ![#1, #2, #3, #0] addGraphDef.val,
+    addGraph_defined.iff]
+  simp only [Function.comp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
+    Matrix.tail_cons, Matrix.cons_val_three, Semiterm.val_bvar, Fin.succ_zero_eq_one, Fin.succ_one_eq_two]
+  constructor
+  · intro h; exact (addCode_eq_of_graph h).symm
+  · intro h; rw [h]; exact addCode_graph _ _ _
+instance addCode_definable : 𝚺₁-Function₃ (addCode : V → V → V → V) := addCode_defined.to_definable
+
+end addInv
+
 end ArithS
