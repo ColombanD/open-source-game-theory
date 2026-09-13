@@ -1831,4 +1831,790 @@ lemma descCountT_func (W n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTer
 
 end termWalk
 
+/-! ## Part 3 — applicability of the term walk (D3 for terms) -/
+
+section stepLemmas
+
+/-- **A Horn step assembled from lists is applicable.** -/
+lemma stepOK_useHorn {tbl N E M Γ : V} (htbl : TableOK tbl N) {i : V} (es l : List V) {c : V}
+    (hΓ : IsFormulaSet LAct Γ) (hi : i < len tbl) (hm : rowM tbl.[i] = (es.length : V))
+    (hB : rowB tbl.[i] = impChainV LAct (vecOf l) c)
+    (hM : (es.length : V) ≤ M) (hM' : (l.length : V) ≤ M)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E)
+    (hneg : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ) :
+    StepOK tbl E M Γ (sUseHorn i (vecOf es) (vecOf l) c) := by
+  have hrow := (htbl i hi).1
+  rw [hm, hB, impChainV_vecOf] at hrow
+  have hl : ∀ a ∈ l, IsSemiformula LAct (es.length : V) a := (isSemiformula_of_impChain hrow).1
+  refine ⟨hΓ, Or.inl ⟨by simp, ⟨by simpa using hi, by simpa using hm, by simpa using hM, by simpa using hM', ?_, ?_⟩,
+    by simpa using hB⟩⟩
+  · intro k hk
+    rw [sEv_sUseHorn, len_vecOf] at hk
+    obtain ⟨k', rfl⟩ := eq_nat_of_lt_nat hk
+    have hk' : k' < es.length := by exact_mod_cast hk
+    rw [sEv_sUseHorn, nth_vecOf es k' hk']
+    exact hes _ (List.getElem_mem hk')
+  · intro k hk
+    rw [sAs_sUseHorn, len_vecOf] at hk
+    obtain ⟨k', rfl⟩ := eq_nat_of_lt_nat hk
+    have hk' : k' < l.length := by exact_mod_cast hk
+    rw [sAs_sUseHorn, sEv_sUseHorn, nth_vecOf l k' hk',
+      subst_revV_vecOf es (hl _ (List.getElem_mem hk')) (fun e he ↦ (hes e he).1)]
+    exact hneg _ (List.getElem_mem hk')
+
+lemma ctxAfter_useHorn {Γ i : V} (es l : List V) {c : V} (hc : IsSemiformula LAct (es.length : V) c)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) :
+    ctxAfter Γ (sUseHorn i (vecOf es) (vecOf l) c) = insert (neg LAct (instOuter LAct es c)) Γ := by
+  rw [ctxAfter_tag0 (by simp), sEv_sUseHorn, sC_sUseHorn, subst_revV_vecOf es hc hes]
+
+/-- **A totality step assembled from lists is applicable.** -/
+lemma stepOK_introFact {tbl N E M Γ : V} (htbl : TableOK tbl N) {i : V} (es l : List V) {R : V}
+    (hΓ : IsFormulaSet LAct Γ) (hi : i < len tbl) (hm : rowM tbl.[i] = (es.length : V))
+    (hB : rowB tbl.[i] = impChainV LAct (vecOf l) (^∃ R))
+    (hM : (es.length : V) ≤ M) (hM' : (l.length : V) ≤ M)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E)
+    (hneg : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ) :
+    StepOK tbl E M Γ (sIntroFact i (vecOf es) (vecOf l) R) := by
+  have hrow := (htbl i hi).1
+  rw [hm, hB, impChainV_vecOf] at hrow
+  have hl : ∀ a ∈ l, IsSemiformula LAct (es.length : V) a := (isSemiformula_of_impChain hrow).1
+  refine ⟨hΓ, Or.inr (Or.inr (Or.inl ⟨by simp, ⟨by simpa using hi, by simpa using hm, by simpa using hM,
+    by simpa using hM', ?_, ?_⟩, by simpa using hB⟩))⟩
+  · intro k hk
+    rw [sEv_sIntroFact, len_vecOf] at hk
+    obtain ⟨k', rfl⟩ := eq_nat_of_lt_nat hk
+    have hk' : k' < es.length := by exact_mod_cast hk
+    rw [sEv_sIntroFact, nth_vecOf es k' hk']
+    exact hes _ (List.getElem_mem hk')
+  · intro k hk
+    rw [sAs_sIntroFact, len_vecOf] at hk
+    obtain ⟨k', rfl⟩ := eq_nat_of_lt_nat hk
+    have hk' : k' < l.length := by exact_mod_cast hk
+    rw [sAs_sIntroFact, sEv_sIntroFact, nth_vecOf l k' hk',
+      subst_revV_vecOf es (hl _ (List.getElem_mem hk')) (fun e he ↦ (hes e he).1)]
+    exact hneg _ (List.getElem_mem hk')
+
+lemma ctxAfter_introFact {Γ i : V} (es l : List V) {R : V} (hR : IsSemiformula LAct ((es.length : V) + 1) R)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) :
+    ctxAfter Γ (sIntroFact i (vecOf es) (vecOf l) R) =
+      insert (neg LAct (free LAct (instOuterAt LAct 1 es R))) (setShift LAct Γ) := by
+  rw [ctxAfter_tag2 (by simp), sEv_sIntroFact, sC_sIntroFact, subst_qVec_revV_vecOf es hR hes]
+
+lemma vecOf_two (a b : V) : vecOf [a, b] = ?[a, b] := rfl
+lemma vecOf_three (a b c : V) : vecOf [a, b, c] = ?[a, b, c] := rfl
+
+/-- The antecedent memberships from an `inst_<row>` map equation. -/
+lemma neg_mem_of_map {es l fs : List V} {Γ : V} (h : l.map (instOuter LAct es) = fs)
+    (hfs : ∀ b ∈ fs, neg LAct b ∈ Γ) : ∀ a ∈ l, neg LAct (instOuter LAct es a) ∈ Γ :=
+  fun a ha ↦ hfs _ (h ▸ List.mem_map_of_mem ha)
+
+/-- Row `zeroLtSucc` as a step. -/
+lemma ok_zeroLtSucc {tbl N E Γ W : V} {wy : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E)  :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 0 ?[wy]) ∧ sTag (mkStep W 0 ?[wy]) = 0 ∧
+    ctxAfter Γ (mkStep W 0 ?[wy]) = insert (neg LAct (ltFact (𝟎 : V) (wy ^+ (𝟏 : V)))) Γ := by
+  subst hWp
+  have hk : ((rIdx_zeroLtSucc : ℕ) : V) = (0 : V) := by simp [rIdx_zeroLtSucc]
+  have hstep := mkStep_zeroLtSucc (V := V) ?[wy]
+  have hlen := walkTable_len hW rIdx_zeroLtSucc (by decide)
+  have hrow := walkTable_zeroLtSucc hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩
+  have hinst := inst_zeroLtSucc hwy
+  rw [hstep]
+  rw [show (?[wy] : V) = vecOf [wy] from rfl]
+  refine ⟨stepOK_useHorn htbl [wy] row_zeroLtSucc_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
+    (by rw [show row_zeroLtSucc_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · rw [ctxAfter_useHorn [wy] row_zeroLtSucc_as isSemiformula_zeroLtSucc_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `succLtSucc` as a step. -/
+lemma ok_succLtSucc {tbl N E Γ W : V} {wx : V} {wy : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (ltFact wx wy) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 1 ?[wx, wy]) ∧ sTag (mkStep W 1 ?[wx, wy]) = 0 ∧
+    ctxAfter Γ (mkStep W 1 ?[wx, wy]) = insert (neg LAct (ltFact (wx ^+ (𝟏 : V)) (wy ^+ (𝟏 : V)))) Γ := by
+  subst hWp
+  have hk : ((rIdx_succLtSucc : ℕ) : V) = (1 : V) := by simp [rIdx_succLtSucc]
+  have hstep := mkStep_succLtSucc (V := V) ?[wx, wy]
+  have hlen := walkTable_len hW rIdx_succLtSucc (by decide)
+  have hrow := walkTable_succLtSucc hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wx, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩
+  have hinst := inst_succLtSucc hwx hwy
+  rw [hstep]
+  rw [show (?[wx, wy] : V) = vecOf [wx, wy] from rfl]
+  refine ⟨stepOK_useHorn htbl [wx, wy] row_succLtSucc_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
+    (by rw [show row_succLtSucc_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [wx, wy] row_succLtSucc_as isSemiformula_succLtSucc_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isSemitermBvar` as a step. -/
+lemma ok_isSemitermBvar {tbl N E Γ W : V} {wn : V} {wz : V} {wt : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwz : IsSemiterm LAct 0 wz) (hEwz : termLen LAct wz ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (ltFact wz wn) ∈ Γ) (hmem1 : neg LAct (bvarFact wt wz) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 3 ?[wn, wz, wt]) ∧ sTag (mkStep W 3 ?[wn, wz, wt]) = 0 ∧
+    ctxAfter Γ (mkStep W 3 ?[wn, wz, wt]) = insert (neg LAct (tSigmaFact wn wt)) Γ := by
+  subst hWp
+  have hk : ((rIdx_isSemitermBvar : ℕ) : V) = (3 : V) := by simp [rIdx_isSemitermBvar]
+  have hstep := mkStep_isSemitermBvar (V := V) ?[wn, wz, wt]
+  have hlen := walkTable_len hW rIdx_isSemitermBvar (by decide)
+  have hrow := walkTable_isSemitermBvar hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wn, wz, wt], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwz, hEwz⟩, List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_nil _⟩⟩⟩
+  have hinst := inst_isSemitermBvar hwn hwz hwt
+  rw [hstep]
+  rw [show (?[wn, wz, wt] : V) = vecOf [wn, wz, wt] from rfl]
+  refine ⟨stepOK_useHorn htbl [wn, wz, wt] row_isSemitermBvar_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 3 ≤ 8))
+    (by rw [show row_isSemitermBvar_as.length = 2 from rfl]; exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
+  · rw [ctxAfter_useHorn [wn, wz, wt] row_isSemitermBvar_as isSemiformula_isSemitermBvar_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isSemitermSigmaPiLAct` as a step. -/
+lemma ok_isSemitermSigmaPiLAct {tbl N E Γ W : V} {wn : V} {wt : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (tSigmaFact wn wt) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 4 ?[wn, wt]) ∧ sTag (mkStep W 4 ?[wn, wt]) = 0 ∧
+    ctxAfter Γ (mkStep W 4 ?[wn, wt]) = insert (neg LAct (tPiFact wn wt)) Γ := by
+  subst hWp
+  have hk : ((rIdx_isSemitermSigmaPiLAct : ℕ) : V) = (4 : V) := by simp [rIdx_isSemitermSigmaPiLAct]
+  have hstep := mkStep_isSemitermSigmaPiLAct (V := V) ?[wn, wt]
+  have hlen := walkTable_len hW rIdx_isSemitermSigmaPiLAct (by decide)
+  have hrow := walkTable_isSemitermSigmaPiLAct hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wn, wt], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_nil _⟩⟩
+  have hinst := inst_isSemitermSigmaPiLAct hwn hwt
+  rw [hstep]
+  rw [show (?[wn, wt] : V) = vecOf [wn, wt] from rfl]
+  refine ⟨stepOK_useHorn htbl [wn, wt] row_isSemitermSigmaPiLAct_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
+    (by rw [show row_isSemitermSigmaPiLAct_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [wn, wt] row_isSemitermSigmaPiLAct_as isSemiformula_isSemitermSigmaPiLAct_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isSemitermFvar` as a step. -/
+lemma ok_isSemitermFvar {tbl N E Γ W : V} {wn : V} {wx : V} {wt : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (fvarFact wt wx) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 6 ?[wn, wx, wt]) ∧ sTag (mkStep W 6 ?[wn, wx, wt]) = 0 ∧
+    ctxAfter Γ (mkStep W 6 ?[wn, wx, wt]) = insert (neg LAct (tSigmaFact wn wt)) Γ := by
+  subst hWp
+  have hk : ((rIdx_isSemitermFvar : ℕ) : V) = (6 : V) := by simp [rIdx_isSemitermFvar]
+  have hstep := mkStep_isSemitermFvar (V := V) ?[wn, wx, wt]
+  have hlen := walkTable_len hW rIdx_isSemitermFvar (by decide)
+  have hrow := walkTable_isSemitermFvar hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wn, wx, wt], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_nil _⟩⟩⟩
+  have hinst := inst_isSemitermFvar hwn hwx hwt
+  rw [hstep]
+  rw [show (?[wn, wx, wt] : V) = vecOf [wn, wx, wt] from rfl]
+  refine ⟨stepOK_useHorn htbl [wn, wx, wt] row_isSemitermFvar_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 3 ≤ 8))
+    (by rw [show row_isSemitermFvar_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [wn, wx, wt] row_isSemitermFvar_as isSemiformula_isSemitermFvar_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isSemitermFunc` as a step. -/
+lemma ok_isSemitermFunc {tbl N E Γ W : V} {wn : V} {wk : V} {wf : V} {wv : V} {wt : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwf : IsSemiterm LAct 0 wf) (hEwf : termLen LAct wf ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (isFuncFact wk wf) ∈ Γ) (hmem1 : neg LAct (tvPiFact wk wn wv) ∈ Γ) (hmem2 : neg LAct (funcFact wt wk wf wv) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 8 ?[wn, wk, wf, wv, wt]) ∧ sTag (mkStep W 8 ?[wn, wk, wf, wv, wt]) = 0 ∧
+    ctxAfter Γ (mkStep W 8 ?[wn, wk, wf, wv, wt]) = insert (neg LAct (tSigmaFact wn wt)) Γ := by
+  subst hWp
+  have hk : ((rIdx_isSemitermFunc : ℕ) : V) = (8 : V) := by simp [rIdx_isSemitermFunc]
+  have hstep := mkStep_isSemitermFunc (V := V) ?[wn, wk, wf, wv, wt]
+  have hlen := walkTable_len hW rIdx_isSemitermFunc (by decide)
+  have hrow := walkTable_isSemitermFunc hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wn, wk, wf, wv, wt], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwf, hEwf⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩
+  have hinst := inst_isSemitermFunc hwn hwk hwf hwv hwt
+  rw [hstep]
+  rw [show (?[wn, wk, wf, wv, wt] : V) = vecOf [wn, wk, wf, wv, wt] from rfl]
+  refine ⟨stepOK_useHorn htbl [wn, wk, wf, wv, wt] row_isSemitermFunc_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 5 ≤ 8))
+    (by rw [show row_isSemitermFunc_as.length = 3 from rfl]; exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
+  · rw [ctxAfter_useHorn [wn, wk, wf, wv, wt] row_isSemitermFunc_as isSemiformula_isSemitermFunc_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isFuncConst_zero` as a step. -/
+lemma ok_isFuncConst_zero {tbl N E Γ W : V}  (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ)   :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 9 0) ∧ sTag (mkStep W 9 0) = 0 ∧
+    ctxAfter Γ (mkStep W 9 0) = insert (neg LAct (isFuncFact (cT 0) (cT 0))) Γ := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_zero : ℕ) : V) = (9 : V) := by simp [rIdx_isFuncConst_zero]
+  have hstep := mkStep_isFuncConst_zero (V := V) 0
+  have hlen := walkTable_len hW rIdx_isFuncConst_zero (by decide)
+  have hrow := walkTable_isFuncConst_zero hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ ([] : List V), IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_nil _
+  have hinst := inst_isFuncConst_zero (V := V)
+  rw [hstep]
+  refine ⟨stepOK_useHorn htbl ([] : List V) row_isFuncConst_zero_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 0 ≤ 8))
+    (by rw [show row_isFuncConst_zero_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · show ctxAfter Γ (sUseHorn 9 (vecOf ([] : List V)) (vecOf row_isFuncConst_zero_as) row_isFuncConst_zero_c) = _
+    rw [ctxAfter_useHorn ([] : List V) row_isFuncConst_zero_as isSemiformula_isFuncConst_zero_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isFuncConst_one` as a step. -/
+lemma ok_isFuncConst_one {tbl N E Γ W : V}  (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ)   :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 10 0) ∧ sTag (mkStep W 10 0) = 0 ∧
+    ctxAfter Γ (mkStep W 10 0) = insert (neg LAct (isFuncFact (cT 0) (cT 1))) Γ := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_one : ℕ) : V) = (10 : V) := by simp [rIdx_isFuncConst_one]
+  have hstep := mkStep_isFuncConst_one (V := V) 0
+  have hlen := walkTable_len hW rIdx_isFuncConst_one (by decide)
+  have hrow := walkTable_isFuncConst_one hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ ([] : List V), IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_nil _
+  have hinst := inst_isFuncConst_one (V := V)
+  rw [hstep]
+  refine ⟨stepOK_useHorn htbl ([] : List V) row_isFuncConst_one_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 0 ≤ 8))
+    (by rw [show row_isFuncConst_one_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · show ctxAfter Γ (sUseHorn 10 (vecOf ([] : List V)) (vecOf row_isFuncConst_one_as) row_isFuncConst_one_c) = _
+    rw [ctxAfter_useHorn ([] : List V) row_isFuncConst_one_as isSemiformula_isFuncConst_one_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isFuncConst_add` as a step. -/
+lemma ok_isFuncConst_add {tbl N E Γ W : V}  (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ)   :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 11 0) ∧ sTag (mkStep W 11 0) = 0 ∧
+    ctxAfter Γ (mkStep W 11 0) = insert (neg LAct (isFuncFact (cT 2) (cT 0))) Γ := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_add : ℕ) : V) = (11 : V) := by simp [rIdx_isFuncConst_add]
+  have hstep := mkStep_isFuncConst_add (V := V) 0
+  have hlen := walkTable_len hW rIdx_isFuncConst_add (by decide)
+  have hrow := walkTable_isFuncConst_add hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ ([] : List V), IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_nil _
+  have hinst := inst_isFuncConst_add (V := V)
+  rw [hstep]
+  refine ⟨stepOK_useHorn htbl ([] : List V) row_isFuncConst_add_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 0 ≤ 8))
+    (by rw [show row_isFuncConst_add_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · show ctxAfter Γ (sUseHorn 11 (vecOf ([] : List V)) (vecOf row_isFuncConst_add_as) row_isFuncConst_add_c) = _
+    rw [ctxAfter_useHorn ([] : List V) row_isFuncConst_add_as isSemiformula_isFuncConst_add_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isFuncConst_mul` as a step. -/
+lemma ok_isFuncConst_mul {tbl N E Γ W : V}  (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ)   :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 12 0) ∧ sTag (mkStep W 12 0) = 0 ∧
+    ctxAfter Γ (mkStep W 12 0) = insert (neg LAct (isFuncFact (cT 2) (cT 1))) Γ := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_mul : ℕ) : V) = (12 : V) := by simp [rIdx_isFuncConst_mul]
+  have hstep := mkStep_isFuncConst_mul (V := V) 0
+  have hlen := walkTable_len hW rIdx_isFuncConst_mul (by decide)
+  have hrow := walkTable_isFuncConst_mul hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ ([] : List V), IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_nil _
+  have hinst := inst_isFuncConst_mul (V := V)
+  rw [hstep]
+  refine ⟨stepOK_useHorn htbl ([] : List V) row_isFuncConst_mul_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 0 ≤ 8))
+    (by rw [show row_isFuncConst_mul_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · show ctxAfter Γ (sUseHorn 12 (vecOf ([] : List V)) (vecOf row_isFuncConst_mul_as) row_isFuncConst_mul_c) = _
+    rw [ctxAfter_useHorn ([] : List V) row_isFuncConst_mul_as isSemiformula_isFuncConst_mul_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isFuncConst_cC` as a step. -/
+lemma ok_isFuncConst_cC {tbl N E Γ W : V}  (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ)   :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 13 0) ∧ sTag (mkStep W 13 0) = 0 ∧
+    ctxAfter Γ (mkStep W 13 0) = insert (neg LAct (isFuncFact (cT 0) (cT 2))) Γ := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_cC : ℕ) : V) = (13 : V) := by simp [rIdx_isFuncConst_cC]
+  have hstep := mkStep_isFuncConst_cC (V := V) 0
+  have hlen := walkTable_len hW rIdx_isFuncConst_cC (by decide)
+  have hrow := walkTable_isFuncConst_cC hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ ([] : List V), IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_nil _
+  have hinst := inst_isFuncConst_cC (V := V)
+  rw [hstep]
+  refine ⟨stepOK_useHorn htbl ([] : List V) row_isFuncConst_cC_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 0 ≤ 8))
+    (by rw [show row_isFuncConst_cC_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · show ctxAfter Γ (sUseHorn 13 (vecOf ([] : List V)) (vecOf row_isFuncConst_cC_as) row_isFuncConst_cC_c) = _
+    rw [ctxAfter_useHorn ([] : List V) row_isFuncConst_cC_as isSemiformula_isFuncConst_cC_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isFuncConst_cD` as a step. -/
+lemma ok_isFuncConst_cD {tbl N E Γ W : V}  (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ)   :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 14 0) ∧ sTag (mkStep W 14 0) = 0 ∧
+    ctxAfter Γ (mkStep W 14 0) = insert (neg LAct (isFuncFact (cT 0) (cT 3))) Γ := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_cD : ℕ) : V) = (14 : V) := by simp [rIdx_isFuncConst_cD]
+  have hstep := mkStep_isFuncConst_cD (V := V) 0
+  have hlen := walkTable_len hW rIdx_isFuncConst_cD (by decide)
+  have hrow := walkTable_isFuncConst_cD hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ ([] : List V), IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_nil _
+  have hinst := inst_isFuncConst_cD (V := V)
+  rw [hstep]
+  refine ⟨stepOK_useHorn htbl ([] : List V) row_isFuncConst_cD_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 0 ≤ 8))
+    (by rw [show row_isFuncConst_cD_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · show ctxAfter Γ (sUseHorn 14 (vecOf ([] : List V)) (vecOf row_isFuncConst_cD_as) row_isFuncConst_cD_c) = _
+    rw [ctxAfter_useHorn ([] : List V) row_isFuncConst_cD_as isSemiformula_isFuncConst_cD_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isSemitermVecNil` as a step. -/
+lemma ok_isSemitermVecNil {tbl N E Γ W : V} {wn : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E)  :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 15 ?[wn]) ∧ sTag (mkStep W 15 ?[wn]) = 0 ∧
+    ctxAfter Γ (mkStep W 15 ?[wn]) = insert (neg LAct (tvSigmaFact (𝟎 : V) wn (𝟎 : V))) Γ := by
+  subst hWp
+  have hk : ((rIdx_isSemitermVecNil : ℕ) : V) = (15 : V) := by simp [rIdx_isSemitermVecNil]
+  have hstep := mkStep_isSemitermVecNil (V := V) ?[wn]
+  have hlen := walkTable_len hW rIdx_isSemitermVecNil (by decide)
+  have hrow := walkTable_isSemitermVecNil hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wn], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_nil _⟩
+  have hinst := inst_isSemitermVecNil hwn
+  rw [hstep]
+  rw [show (?[wn] : V) = vecOf [wn] from rfl]
+  refine ⟨stepOK_useHorn htbl [wn] row_isSemitermVecNil_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
+    (by rw [show row_isSemitermVecNil_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · rw [ctxAfter_useHorn [wn] row_isSemitermVecNil_as isSemiformula_isSemitermVecNil_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isSemitermVecSigmaPiLAct` as a step. -/
+lemma ok_isSemitermVecSigmaPiLAct {tbl N E Γ W : V} {wk : V} {wn : V} {wv : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hmem0 : neg LAct (tvSigmaFact wk wn wv) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 16 ?[wk, wn, wv]) ∧ sTag (mkStep W 16 ?[wk, wn, wv]) = 0 ∧
+    ctxAfter Γ (mkStep W 16 ?[wk, wn, wv]) = insert (neg LAct (tvPiFact wk wn wv)) Γ := by
+  subst hWp
+  have hk : ((rIdx_isSemitermVecSigmaPiLAct : ℕ) : V) = (16 : V) := by simp [rIdx_isSemitermVecSigmaPiLAct]
+  have hstep := mkStep_isSemitermVecSigmaPiLAct (V := V) ?[wk, wn, wv]
+  have hlen := walkTable_len hW rIdx_isSemitermVecSigmaPiLAct (by decide)
+  have hrow := walkTable_isSemitermVecSigmaPiLAct hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wk, wn, wv], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_nil _⟩⟩⟩
+  have hinst := inst_isSemitermVecSigmaPiLAct hwk hwn hwv
+  rw [hstep]
+  rw [show (?[wk, wn, wv] : V) = vecOf [wk, wn, wv] from rfl]
+  refine ⟨stepOK_useHorn htbl [wk, wn, wv] row_isSemitermVecSigmaPiLAct_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 3 ≤ 8))
+    (by rw [show row_isSemitermVecSigmaPiLAct_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [wk, wn, wv] row_isSemitermVecSigmaPiLAct_as isSemiformula_isSemitermVecSigmaPiLAct_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isSemitermVecAdjoin` as a step. -/
+lemma ok_isSemitermVecAdjoin {tbl N E Γ W : V} {wk : V} {wn : V} {ww : V} {wt : V} {wu : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hww : IsSemiterm LAct 0 ww) (hEww : termLen LAct ww ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwu : IsSemiterm LAct 0 wu) (hEwu : termLen LAct wu ≤ E) (hmem0 : neg LAct (tvPiFact wk wn ww) ∈ Γ) (hmem1 : neg LAct (tPiFact wn wt) ∈ Γ) (hmem2 : neg LAct (adjFact wu wt ww) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 18 ?[wk, wn, ww, wt, wu]) ∧ sTag (mkStep W 18 ?[wk, wn, ww, wt, wu]) = 0 ∧
+    ctxAfter Γ (mkStep W 18 ?[wk, wn, ww, wt, wu]) = insert (neg LAct (tvSigmaFact (wk ^+ (𝟏 : V)) wn wu)) Γ := by
+  subst hWp
+  have hk : ((rIdx_isSemitermVecAdjoin : ℕ) : V) = (18 : V) := by simp [rIdx_isSemitermVecAdjoin]
+  have hstep := mkStep_isSemitermVecAdjoin (V := V) ?[wk, wn, ww, wt, wu]
+  have hlen := walkTable_len hW rIdx_isSemitermVecAdjoin (by decide)
+  have hrow := walkTable_isSemitermVecAdjoin hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wk, wn, ww, wt, wu], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hww, hEww⟩, List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_cons.mpr ⟨⟨hwu, hEwu⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩
+  have hinst := inst_isSemitermVecAdjoin hwk hwn hww hwt hwu
+  rw [hstep]
+  rw [show (?[wk, wn, ww, wt, wu] : V) = vecOf [wk, wn, ww, wt, wu] from rfl]
+  refine ⟨stepOK_useHorn htbl [wk, wn, ww, wt, wu] row_isSemitermVecAdjoin_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 5 ≤ 8))
+    (by rw [show row_isSemitermVecAdjoin_as.length = 3 from rfl]; exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
+  · rw [ctxAfter_useHorn [wk, wn, ww, wt, wu] row_isSemitermVecAdjoin_as isSemiformula_isSemitermVecAdjoin_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isUTermVecOfSemitermVecLAct` as a step. -/
+lemma ok_isUTermVecOfSemitermVecLAct {tbl N E Γ W : V} {wk : V} {wn : V} {wv : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hmem0 : neg LAct (tvPiFact wk wn wv) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 38 ?[wk, wn, wv]) ∧ sTag (mkStep W 38 ?[wk, wn, wv]) = 0 ∧
+    ctxAfter Γ (mkStep W 38 ?[wk, wn, wv]) = insert (neg LAct (utvSigmaFact wk wv)) Γ := by
+  subst hWp
+  have hk : ((rIdx_isUTermVecOfSemitermVecLAct : ℕ) : V) = (38 : V) := by simp [rIdx_isUTermVecOfSemitermVecLAct]
+  have hstep := mkStep_isUTermVecOfSemitermVecLAct (V := V) ?[wk, wn, wv]
+  have hlen := walkTable_len hW rIdx_isUTermVecOfSemitermVecLAct (by decide)
+  have hrow := walkTable_isUTermVecOfSemitermVecLAct hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wk, wn, wv], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_nil _⟩⟩⟩
+  have hinst := inst_isUTermVecOfSemitermVecLAct hwk hwn hwv
+  rw [hstep]
+  rw [show (?[wk, wn, wv] : V) = vecOf [wk, wn, wv] from rfl]
+  refine ⟨stepOK_useHorn htbl [wk, wn, wv] row_isUTermVecOfSemitermVecLAct_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 3 ≤ 8))
+    (by rw [show row_isUTermVecOfSemitermVecLAct_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [wk, wn, wv] row_isUTermVecOfSemitermVecLAct_as isSemiformula_isUTermVecOfSemitermVecLAct_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `isUTermVecSigmaPiLAct` as a step. -/
+lemma ok_isUTermVecSigmaPiLAct {tbl N E Γ W : V} {wk : V} {wv : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hmem0 : neg LAct (utvSigmaFact wk wv) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 39 ?[wk, wv]) ∧ sTag (mkStep W 39 ?[wk, wv]) = 0 ∧
+    ctxAfter Γ (mkStep W 39 ?[wk, wv]) = insert (neg LAct (utvPiFact wk wv)) Γ := by
+  subst hWp
+  have hk : ((rIdx_isUTermVecSigmaPiLAct : ℕ) : V) = (39 : V) := by simp [rIdx_isUTermVecSigmaPiLAct]
+  have hstep := mkStep_isUTermVecSigmaPiLAct (V := V) ?[wk, wv]
+  have hlen := walkTable_len hW rIdx_isUTermVecSigmaPiLAct (by decide)
+  have hrow := walkTable_isUTermVecSigmaPiLAct hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wk, wv], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_nil _⟩⟩
+  have hinst := inst_isUTermVecSigmaPiLAct hwk hwv
+  rw [hstep]
+  rw [show (?[wk, wv] : V) = vecOf [wk, wv] from rfl]
+  refine ⟨stepOK_useHorn htbl [wk, wv] row_isUTermVecSigmaPiLAct_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
+    (by rw [show row_isUTermVecSigmaPiLAct_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [wk, wv] row_isUTermVecSigmaPiLAct_as isSemiformula_isUTermVecSigmaPiLAct_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Totality row `qqBvarTotal` as a step: the new eigenvariable `&0`, the context shifted. -/
+lemma ok_qqBvarTotal {tbl N E Γ W : V} {wz : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwz : IsSemiterm LAct 0 wz) (hEwz : termLen LAct wz ≤ E) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 2 ?[wz]) ∧ sTag (mkStep W 2 ?[wz]) = 2 ∧
+    ctxAfter Γ (mkStep W 2 ?[wz]) = insert (neg LAct (bvarFact (^&((0 : ℕ) : V)) (termShift LAct wz))) (setShift LAct Γ) := by
+  subst hWp
+  have hk : ((rIdx_qqBvarTotal : ℕ) : V) = (2 : V) := by simp [rIdx_qqBvarTotal]
+  have hstep := mkStep_qqBvarTotal (V := V) ?[wz]
+  have hlen := walkTable_len hW rIdx_qqBvarTotal (by decide)
+  have hrow := walkTable_qqBvarTotal hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wz], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwz, hEwz⟩, List.forall_mem_nil _⟩
+  have hinst := inst_qqBvarTotal hwz
+  rw [hstep, show (?[wz] : V) = vecOf [wz] from rfl]
+  refine ⟨stepOK_introFact htbl [wz] row_qqBvarTotal_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
+    (by rw [show row_qqBvarTotal_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · rw [ctxAfter_introFact [wz] row_qqBvarTotal_as (by rw [← Nat.cast_succ]; exact isSemiformula_qqBvarTotal_R) (fun e he ↦ (hes e he).1),
+      show row_qqBvarTotal_R = row_qqBvarTotal_body from rfl, ← freeIter_one, hinst.2]
+
+/-- Totality row `qqFvarTotal` as a step: the new eigenvariable `&0`, the context shifted. -/
+lemma ok_qqFvarTotal {tbl N E Γ W : V} {wx : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 5 ?[wx]) ∧ sTag (mkStep W 5 ?[wx]) = 2 ∧
+    ctxAfter Γ (mkStep W 5 ?[wx]) = insert (neg LAct (fvarFact (^&((0 : ℕ) : V)) (termShift LAct wx))) (setShift LAct Γ) := by
+  subst hWp
+  have hk : ((rIdx_qqFvarTotal : ℕ) : V) = (5 : V) := by simp [rIdx_qqFvarTotal]
+  have hstep := mkStep_qqFvarTotal (V := V) ?[wx]
+  have hlen := walkTable_len hW rIdx_qqFvarTotal (by decide)
+  have hrow := walkTable_qqFvarTotal hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wx], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_nil _⟩
+  have hinst := inst_qqFvarTotal hwx
+  rw [hstep, show (?[wx] : V) = vecOf [wx] from rfl]
+  refine ⟨stepOK_introFact htbl [wx] row_qqFvarTotal_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
+    (by rw [show row_qqFvarTotal_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · rw [ctxAfter_introFact [wx] row_qqFvarTotal_as (by rw [← Nat.cast_succ]; exact isSemiformula_qqFvarTotal_R) (fun e he ↦ (hes e he).1),
+      show row_qqFvarTotal_R = row_qqFvarTotal_body from rfl, ← freeIter_one, hinst.2]
+
+/-- Totality row `qqFuncTotal` as a step: the new eigenvariable `&0`, the context shifted. -/
+lemma ok_qqFuncTotal {tbl N E Γ W : V} {wk : V} {wf : V} {wv : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwf : IsSemiterm LAct 0 wf) (hEwf : termLen LAct wf ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 7 ?[wk, wf, wv]) ∧ sTag (mkStep W 7 ?[wk, wf, wv]) = 2 ∧
+    ctxAfter Γ (mkStep W 7 ?[wk, wf, wv]) = insert (neg LAct (funcFact (^&((0 : ℕ) : V)) (termShift LAct wk) (termShift LAct wf) (termShift LAct wv))) (setShift LAct Γ) := by
+  subst hWp
+  have hk : ((rIdx_qqFuncTotal : ℕ) : V) = (7 : V) := by simp [rIdx_qqFuncTotal]
+  have hstep := mkStep_qqFuncTotal (V := V) ?[wk, wf, wv]
+  have hlen := walkTable_len hW rIdx_qqFuncTotal (by decide)
+  have hrow := walkTable_qqFuncTotal hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wk, wf, wv], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwf, hEwf⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_nil _⟩⟩⟩
+  have hinst := inst_qqFuncTotal hwk hwf hwv
+  rw [hstep, show (?[wk, wf, wv] : V) = vecOf [wk, wf, wv] from rfl]
+  refine ⟨stepOK_introFact htbl [wk, wf, wv] row_qqFuncTotal_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 3 ≤ 8))
+    (by rw [show row_qqFuncTotal_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · rw [ctxAfter_introFact [wk, wf, wv] row_qqFuncTotal_as (by rw [← Nat.cast_succ]; exact isSemiformula_qqFuncTotal_R) (fun e he ↦ (hes e he).1),
+      show row_qqFuncTotal_R = row_qqFuncTotal_body from rfl, ← freeIter_one, hinst.2]
+
+/-- Totality row `adjoinTotal` as a step: the new eigenvariable `&0`, the context shifted. -/
+lemma ok_adjoinTotal {tbl N E Γ W : V} {wt : V} {wv : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 17 ?[wt, wv]) ∧ sTag (mkStep W 17 ?[wt, wv]) = 2 ∧
+    ctxAfter Γ (mkStep W 17 ?[wt, wv]) = insert (neg LAct (adjFact (^&((0 : ℕ) : V)) (termShift LAct wt) (termShift LAct wv))) (setShift LAct Γ) := by
+  subst hWp
+  have hk : ((rIdx_adjoinTotal : ℕ) : V) = (17 : V) := by simp [rIdx_adjoinTotal]
+  have hstep := mkStep_adjoinTotal (V := V) ?[wt, wv]
+  have hlen := walkTable_len hW rIdx_adjoinTotal (by decide)
+  have hrow := walkTable_adjoinTotal hW
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wt, wv], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_nil _⟩⟩
+  have hinst := inst_adjoinTotal hwt hwv
+  rw [hstep, show (?[wt, wv] : V) = vecOf [wt, wv] from rfl]
+  refine ⟨stepOK_introFact htbl [wt, wv] row_adjoinTotal_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
+    (by rw [show row_adjoinTotal_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · rw [ctxAfter_introFact [wt, wv] row_adjoinTotal_as (by rw [← Nat.cast_succ]; exact isSemiformula_adjoinTotal_R) (fun e he ↦ (hes e he).1),
+      show row_adjoinTotal_R = row_adjoinTotal_body from rfl, ← freeIter_one, hinst.2]
+
+
+end stepLemmas
+
+/-! ### 3.2 Generic list lemmas, fact-code definability, iterated shifts of facts -/
+
+section factLemmas
+
+lemma concat_eq_appendV (S s : V) : concat S s = appendV S ?[s] := by
+  induction S using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x S ih => rw [concat_adjoin, appendV_adjoin, ih]
+
+lemma shiftsV_single (s : V) : shiftsV (?[s] : V) = if sTag s = 2 ∨ sTag s = 3 then 1 else 0 := by
+  unfold shiftsV
+  rw [len_adjoin, len_nil, zero_add]
+  have h := shiftsAux_succ (s ∷ (0 : V)) 0
+  rw [zero_add] at h
+  rw [h, shiftsAux_zero, nth_adjoin_zero]
+  split_ifs <;> simp
+
+lemma finalCtx_appendV_single (Γ S s : V) : finalCtx Γ (appendV S ?[s]) = ctxAfter (finalCtx Γ S) s := by
+  rw [finalCtx_appendV, finalCtx_single]
+
+lemma cons_eq_appendV_single (s S : V) : s ∷ S = appendV ?[s] S := by simp
+
+lemma listOK_cons {tbl E M Γ s S : V} (h : StepOK tbl E M Γ s) (hS : ListOK tbl E M (ctxAfter Γ s) S) :
+    ListOK tbl E M Γ (s ∷ S) := by
+  rw [cons_eq_appendV_single]; exact listOK_appendV (listOK_single h) (by rwa [finalCtx_single])
+
+lemma finalCtx_cons (Γ s S : V) : finalCtx Γ (s ∷ S) = finalCtx (ctxAfter Γ s) S := by
+  rw [cons_eq_appendV_single, finalCtx_appendV, finalCtx_single]
+
+lemma noDrop_cons {s S : V} (h : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2 ∨ sTag s = 3 ∨ sTag s = 4) (hS : NoDrop S) :
+    NoDrop (s ∷ S) := by
+  rw [cons_eq_appendV_single]; exact noDrop_appendV (noDrop_single h) hS
+
+lemma shiftsV_cons (s S : V) : shiftsV (s ∷ S) = (if sTag s = 2 ∨ sTag s = 3 then 1 else 0) + shiftsV S := by
+  rw [cons_eq_appendV_single, shiftsV_appendV, shiftsV_single]
+
+lemma shiftsV_nil : shiftsV (0 : V) = 0 := by simp [shiftsV]
+
+instance tPiFact_definable : 𝚺₁-Function₂ (tPiFact : V → V → V) := by
+  have : (tPiFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) PtPi := rfl
+  rw [this]; definability
+instance tSigmaFact_definable : 𝚺₁-Function₂ (tSigmaFact : V → V → V) := by
+  have : (tSigmaFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) PtSigma := rfl
+  rw [this]; definability
+instance tvPiFact_definable : 𝚺₁-Function₃ (tvPiFact : V → V → V → V) := by
+  have : (tvPiFact : V → V → V → V) = fun a b c ↦ subst LAct (a ∷ b ∷ c ∷ 0) PtvPi := rfl
+  rw [this]; definability
+instance tvSigmaFact_definable : 𝚺₁-Function₃ (tvSigmaFact : V → V → V → V) := by
+  have : (tvSigmaFact : V → V → V → V) = fun a b c ↦ subst LAct (a ∷ b ∷ c ∷ 0) PtvSigma := rfl
+  rw [this]; definability
+instance ltFact_definable : 𝚺₁-Function₂ (ltFact : V → V → V) := by
+  have : (ltFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) Plt := rfl
+  rw [this]; definability
+instance bvarFact_definable : 𝚺₁-Function₂ (bvarFact : V → V → V) := by
+  have : (bvarFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) Pbvar := rfl
+  rw [this]; definability
+instance fvarFact_definable : 𝚺₁-Function₂ (fvarFact : V → V → V) := by
+  have : (fvarFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) Pfvar := rfl
+  rw [this]; definability
+
+lemma termLen_cTV_le {m E : V} (h : 2 * m + 1 ≤ E) : termLen LAct (cTV m) ≤ E := by
+  rw [termLen_cTV]; exact h
+
+lemma shiftIterV_tPiFact {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) :
+    ∀ k, shiftIterV (tPiFact a b) k = tPiFact (termShiftIterV a k) (termShiftIterV b k) := by
+  intro k
+  induction k using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ k ih =>
+    rw [shiftIterV_succ, ih, shift_tPiFact (isSemiterm_termShiftIterV ha k) (isSemiterm_termShiftIterV hb k),
+      termShiftIterV_succ, termShiftIterV_succ]
+
+lemma shiftIterV_tvPiFact {a b c : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) (hc : IsSemiterm LAct 0 c) :
+    ∀ k, shiftIterV (tvPiFact a b c) k = tvPiFact (termShiftIterV a k) (termShiftIterV b k) (termShiftIterV c k) := by
+  intro k
+  induction k using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ k ih =>
+    rw [shiftIterV_succ, ih, shift_tvPiFact (isSemiterm_termShiftIterV ha k) (isSemiterm_termShiftIterV hb k)
+      (isSemiterm_termShiftIterV hc k), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
+
+lemma shiftIterV_neg {p : V} (hp : IsFormula LAct p) : ∀ k, shiftIterV (neg LAct p) k = neg LAct (shiftIterV p k) := by
+  intro k
+  induction k using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ k ih => rw [shiftIterV_succ, ih, shift_neg (isFormula_shiftIterV hp k), shiftIterV_succ]
+
+lemma termShiftIterV_vRef (c j : V) : ∀ k, termShiftIterV (vRef c j) k = vRef (c + k) j := by
+  intro k
+  by_cases hj : j = 0
+  · subst hj; rw [vRef_zero, vRef_zero, ← cTV_zero, termShiftIterV_cTV]
+  · rw [vRef_of_ne hj, vRef_of_ne hj, termShiftIterV_fvar]
+
+lemma isSemiterm_vRef (c j : V) : IsSemiterm LAct 0 (vRef c j) := by
+  by_cases hj : j = 0
+  · subst hj; rw [vRef_zero, ← cTV_zero]; exact cTV_semiterm_LAct 0 0
+  · rw [vRef_of_ne hj]; simp
+
+lemma termLen_vRef_le {c j E : V} (h : c + 1 ≤ E) : termLen LAct (vRef c j) ≤ E := by
+  by_cases hj : j = 0
+  · subst hj; rw [vRef_zero, ← cTV_zero, termLen_cTV, mul_zero, zero_add]; exact le_trans le_add_self h
+  · rw [vRef_of_ne hj, termLen_fvar]; exact h
+
+end factLemmas
+
+/-! ### 3.3 The `z < n` chain -/
+
+section ltChain
+
+/-- **The `z < n` chain is applicable**: `ltAux W n z j` (`j ≤ z < n`) leaves `j < n - z + j` in
+context, shifts nothing, drops nothing. -/
+theorem ltAux_ok {tbl N E W n z : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hzn : z < n) (hE : 2 * n + 1 ≤ E) :
+    ∀ j ≤ z, ∀ Γ, IsFormulaSet LAct Γ →
+      ListOK tbl E ((8 : ℕ) : V) Γ (ltAux W n z j) ∧ NoDrop (ltAux W n z j) ∧ shiftsV (ltAux W n z j) = 0 ∧
+      Γ ⊆ finalCtx Γ (ltAux W n z j) ∧
+      neg LAct (ltFact (cTV j) (cTV (n - z + j))) ∈ finalCtx Γ (ltAux W n z j) := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _ Γ hΓ
+    have hm : n - (z + 1) ≤ n := tsub_le_self
+    obtain ⟨hok, htag, hctx⟩ := ok_zeroLtSucc (wy := cTV (n - (z + 1))) htbl hW hWp hΓ (cTV_semiterm_LAct 0 _)
+      (termLen_cTV_le (le_trans (add_le_add (mul_le_mul_of_nonneg_left hm zero_le) le_rfl) hE))
+    have h1 : n - (z + 1) + 1 = n - z := by
+      rw [← tsub_tsub, tsub_add_cancel_of_le (le_tsub_of_add_le_left (lt_iff_succ_le.mp hzn))]
+    have hfin : finalCtx Γ (ltAux W n z 0) = insert (neg LAct (ltFact (cTV 0) (cTV (n - z + 0)))) Γ := by
+      rw [ltAux_zero, finalCtx_single, hctx, add_zero, cTV_zero, ← cTV_succ, h1]
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩
+    · rw [ltAux_zero]; exact listOK_single hok
+    · rw [ltAux_zero]; exact noDrop_single (Or.inl htag)
+    · rw [ltAux_zero, shiftsV_single, if_neg (by rw [htag]; norm_num)]
+    · rw [hfin]; exact subset_iff.mpr fun x hx ↦ by simp [hx]
+    · rw [hfin]; simp
+  | succ j ih =>
+    intro hj Γ hΓ
+    have hj' : j ≤ z := le_trans le_self_add hj
+    obtain ⟨hok, hnd, hsh, hsub, hmem⟩ := ih hj' Γ hΓ
+    have hΓ' : IsFormulaSet LAct (finalCtx Γ (ltAux W n z j)) := finalCtx_isFormulaSet 8 htbl hΓ hok
+    have hjn : j ≤ n := le_trans hj' (le_of_lt hzn)
+    have hjn' : n - z + j ≤ n := by
+      calc n - z + j ≤ n - z + z := add_le_add le_rfl hj'
+        _ = n := tsub_add_cancel_of_le (le_of_lt hzn)
+    obtain ⟨hok₁, htag₁, hctx₁⟩ := ok_succLtSucc (wx := cTV j) (wy := cTV (n - z + j)) htbl hW hWp hΓ'
+      (cTV_semiterm_LAct 0 _) (termLen_cTV_le (le_trans (add_le_add (mul_le_mul_of_nonneg_left hjn zero_le) le_rfl) hE))
+      (cTV_semiterm_LAct 0 _) (termLen_cTV_le (le_trans (add_le_add (mul_le_mul_of_nonneg_left hjn' zero_le) le_rfl) hE))
+      hmem
+    have hfin : finalCtx Γ (ltAux W n z (j + 1)) =
+        insert (neg LAct (ltFact (cTV (j + 1)) (cTV (n - z + (j + 1))))) (finalCtx Γ (ltAux W n z j)) := by
+      rw [ltAux_succ, concat_eq_appendV, finalCtx_appendV_single, hctx₁, ← add_assoc, cTV_succ, cTV_succ]
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩
+    · rw [ltAux_succ, concat_eq_appendV]; exact listOK_appendV hok (listOK_single hok₁)
+    · rw [ltAux_succ, concat_eq_appendV]; exact noDrop_appendV hnd (noDrop_single (Or.inl htag₁))
+    · rw [ltAux_succ, concat_eq_appendV, shiftsV_appendV, hsh, shiftsV_single, if_neg (by rw [htag₁]; norm_num)]; simp
+    · rw [hfin]; exact subset_iff.mpr fun x hx ↦ by simp [subset_iff.mp hsub x hx]
+    · rw [hfin]; simp
+
+theorem ltSteps_ok {tbl N E W n z : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hzn : z < n) (hE : 2 * n + 1 ≤ E) (Γ : V) (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (ltSteps W n z) ∧ NoDrop (ltSteps W n z) ∧ shiftsV (ltSteps W n z) = 0 ∧
+      Γ ⊆ finalCtx Γ (ltSteps W n z) ∧ neg LAct (ltFact (cTV z) (cTV n)) ∈ finalCtx Γ (ltSteps W n z) := by
+  have := ltAux_ok htbl hW hWp hzn hE z le_rfl Γ hΓ
+  rwa [tsub_add_cancel_of_le (le_of_lt hzn)] at this
+
+end ltChain
+
+/-! ### 3.4 The leaf and nil nodes are applicable -/
+
+section nodes
+
+lemma neg_mem_setShift {Γ p : V} (hp : IsFormula LAct p) (h : neg LAct p ∈ Γ) :
+    neg LAct (shift LAct p) ∈ setShift LAct Γ := by
+  rw [← shift_neg hp]; exact shift_mem_setShift h
+
+lemma one_le_of_E {n E : V} (hE : 2 * n + 8 ≤ E) : (1 : V) ≤ E :=
+  le_trans (le_trans (by norm_num) (le_add_self : (8 : V) ≤ 2 * n + 8)) hE
+
+lemma termLen_fvar_le {i E : V} (h : i + 1 ≤ E) : termLen LAct (^&i : V) ≤ E := by
+  rw [termLen_fvar]; exact h
+
+/-- **(T#)** the bound-variable node: `z < n`, witness bound `2n + 8 ≤ E`. -/
+theorem bvarNode_ok {tbl N E W n z : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hzn : z < n) (hE : 2 * n + 8 ≤ E) (Γ : V) (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (π₂ (bvarNode W n z)) ∧ NoDrop (π₂ (bvarNode W n z)) ∧
+    shiftsV (π₂ (bvarNode W n z)) = 1 ∧
+    neg LAct (tPiFact (cTV n) (^&0)) ∈ finalCtx Γ (π₂ (bvarNode W n z)) := by
+  have hE1 : 2 * n + 1 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
+  have hEn : termLen LAct (cTV n) ≤ E := termLen_cTV_le hE1
+  have hEz : termLen LAct (cTV z) ≤ E :=
+    termLen_cTV_le (le_trans (add_le_add (mul_le_mul_of_nonneg_left (le_of_lt hzn) zero_le) le_rfl) hE1)
+  have hE0 : termLen LAct (^&0 : V) ≤ E := termLen_fvar_le (by rw [zero_add]; exact one_le_of_E hE)
+  obtain ⟨hok₀, hnd₀, hsh₀, hsub₀, hmem₀⟩ := ltSteps_ok htbl hW hWp hzn hE1 Γ hΓ
+  have hΓ₁ : IsFormulaSet LAct (finalCtx Γ (ltSteps W n z)) := finalCtx_isFormulaSet 8 htbl hΓ hok₀
+  obtain ⟨hok₁, htag₁, hctx₁⟩ := ok_qqBvarTotal (wz := cTV z) htbl hW hWp hΓ₁ (cTV_semiterm_LAct 0 _) hEz
+  rw [Nat.cast_zero, termShift_cTV] at hctx₁
+  have hΓ₂ : IsFormulaSet LAct (ctxAfter (finalCtx Γ (ltSteps W n z)) (mkStep W 2 ?[cTV z])) :=
+    isFormulaSet_ctxAfter 8 htbl hok₁
+  have hlt₂ : neg LAct (ltFact (cTV z) (cTV n)) ∈ ctxAfter (finalCtx Γ (ltSteps W n z)) (mkStep W 2 ?[cTV z]) := by
+    rw [hctx₁]
+    have := neg_mem_setShift (isFormula_ltFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)) hmem₀
+    rw [shift_ltFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _), termShift_cTV, termShift_cTV] at this
+    simp [this]
+  have hbv₂ : neg LAct (bvarFact (^&0) (cTV z)) ∈ ctxAfter (finalCtx Γ (ltSteps W n z)) (mkStep W 2 ?[cTV z]) := by
+    rw [hctx₁]; simp
+  obtain ⟨hok₂, htag₂, hctx₂⟩ := ok_isSemitermBvar (wn := cTV n) (wz := cTV z) (wt := ^&0) htbl hW hWp hΓ₂
+    (cTV_semiterm_LAct 0 _) hEn (cTV_semiterm_LAct 0 _) hEz (by simp) hE0 hlt₂ hbv₂
+  have hΓ₃ : IsFormulaSet LAct (ctxAfter (ctxAfter (finalCtx Γ (ltSteps W n z)) (mkStep W 2 ?[cTV z]))
+      (mkStep W 3 ?[cTV n, cTV z, ^&0])) := isFormulaSet_ctxAfter 8 htbl hok₂
+  have hsg₃ : neg LAct (tSigmaFact (cTV n) (^&0)) ∈ ctxAfter (ctxAfter (finalCtx Γ (ltSteps W n z)) (mkStep W 2 ?[cTV z]))
+      (mkStep W 3 ?[cTV n, cTV z, ^&0]) := by
+    rw [hctx₂]; simp
+  obtain ⟨hok₃, htag₃, hctx₃⟩ := ok_isSemitermSigmaPiLAct (wn := cTV n) (wt := ^&0) htbl hW hWp hΓ₃
+    (cTV_semiterm_LAct 0 _) hEn (by simp) hE0 hsg₃
+  have hS : π₂ (bvarNode W n z) = appendV (ltSteps W n z)
+      ?[mkStep W 2 ?[cTV z], mkStep W 3 ?[cTV n, cTV z, ^&0], mkStep W 4 ?[cTV n, ^&0]] := by simp [bvarNode]
+  rw [hS]
+  refine ⟨listOK_appendV hok₀ (listOK_cons hok₁ (listOK_cons hok₂ (listOK_single hok₃))), ?_, ?_, ?_⟩
+  · exact noDrop_appendV hnd₀ (noDrop_cons (Or.inr (Or.inr (Or.inl htag₁)))
+      (noDrop_cons (Or.inl htag₂) (noDrop_single (Or.inl htag₃))))
+  · rw [shiftsV_appendV, hsh₀, shiftsV_cons, shiftsV_cons, shiftsV_single, if_pos (Or.inl htag₁),
+      if_neg (by rw [htag₂]; norm_num), if_neg (by rw [htag₃]; norm_num)]
+    simp
+  · rw [finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp
+
+/-- **(T&)** the free-variable node: witness bound `2n + 2x + 8 ≤ E`. -/
+theorem fvarNode_ok {tbl N E W n x : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hE : 2 * n + 2 * x + 8 ≤ E) (Γ : V) (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (π₂ (fvarNode W n x)) ∧ NoDrop (π₂ (fvarNode W n x)) ∧
+    shiftsV (π₂ (fvarNode W n x)) = 1 ∧
+    neg LAct (tPiFact (cTV n) (^&0)) ∈ finalCtx Γ (π₂ (fvarNode W n x)) := by
+  have hE' : 2 * n + 8 ≤ E :=
+    le_trans (show 2 * n + 8 ≤ 2 * n + 2 * x + 8 by rw [add_right_comm]; exact le_self_add) hE
+  have hEn : termLen LAct (cTV n) ≤ E := termLen_cTV_le (le_trans (add_le_add le_rfl (by norm_num)) hE')
+  have hEx : termLen LAct (cTV x) ≤ E :=
+    termLen_cTV_le (le_trans (add_le_add (le_add_self : 2 * x ≤ 2 * n + 2 * x) (by norm_num)) hE)
+  have hE0 : termLen LAct (^&0 : V) ≤ E := termLen_fvar_le (by rw [zero_add]; exact one_le_of_E hE')
+  obtain ⟨hok₁, htag₁, hctx₁⟩ := ok_qqFvarTotal (wx := cTV x) htbl hW hWp hΓ (cTV_semiterm_LAct 0 _) hEx
+  rw [Nat.cast_zero, termShift_cTV] at hctx₁
+  have hΓ₂ : IsFormulaSet LAct (ctxAfter Γ (mkStep W 5 ?[cTV x])) := isFormulaSet_ctxAfter 8 htbl hok₁
+  have hfv₂ : neg LAct (fvarFact (^&0) (cTV x)) ∈ ctxAfter Γ (mkStep W 5 ?[cTV x]) := by rw [hctx₁]; simp
+  obtain ⟨hok₂, htag₂, hctx₂⟩ := ok_isSemitermFvar (wn := cTV n) (wx := cTV x) (wt := ^&0) htbl hW hWp hΓ₂
+    (cTV_semiterm_LAct 0 _) hEn (cTV_semiterm_LAct 0 _) hEx (by simp) hE0 hfv₂
+  have hΓ₃ : IsFormulaSet LAct (ctxAfter (ctxAfter Γ (mkStep W 5 ?[cTV x])) (mkStep W 6 ?[cTV n, cTV x, ^&0])) :=
+    isFormulaSet_ctxAfter 8 htbl hok₂
+  have hsg₃ : neg LAct (tSigmaFact (cTV n) (^&0)) ∈ ctxAfter (ctxAfter Γ (mkStep W 5 ?[cTV x])) (mkStep W 6 ?[cTV n, cTV x, ^&0]) := by
+    rw [hctx₂]; simp
+  obtain ⟨hok₃, htag₃, hctx₃⟩ := ok_isSemitermSigmaPiLAct (wn := cTV n) (wt := ^&0) htbl hW hWp hΓ₃
+    (cTV_semiterm_LAct 0 _) hEn (by simp) hE0 hsg₃
+  have hS : π₂ (fvarNode W n x) =
+      ?[mkStep W 5 ?[cTV x], mkStep W 6 ?[cTV n, cTV x, ^&0], mkStep W 4 ?[cTV n, ^&0]] := by simp [fvarNode]
+  rw [hS]
+  refine ⟨listOK_cons hok₁ (listOK_cons hok₂ (listOK_single hok₃)), ?_, ?_, ?_⟩
+  · exact noDrop_cons (Or.inr (Or.inr (Or.inl htag₁))) (noDrop_cons (Or.inl htag₂) (noDrop_single (Or.inl htag₃)))
+  · rw [shiftsV_cons, shiftsV_cons, shiftsV_single, if_pos (Or.inl htag₁),
+      if_neg (by rw [htag₂]; norm_num), if_neg (by rw [htag₃]; norm_num)]
+    simp
+  · rw [finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp
+
+/-- **(V0)** the empty vector: witness bound `2n + 1 ≤ E`. -/
+theorem nilNode_ok {tbl N E W n : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+    (hE : 2 * n + 1 ≤ E) (Γ : V) (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (π₂ (nilNode W n)) ∧ NoDrop (π₂ (nilNode W n)) ∧
+    shiftsV (π₂ (nilNode W n)) = 0 ∧
+    neg LAct (tvPiFact (cTV 0) (cTV n) (vRef 0 0)) ∈ finalCtx Γ (π₂ (nilNode W n)) := by
+  have hEn : termLen LAct (cTV n) ≤ E := termLen_cTV_le hE
+  have hE0 : termLen LAct (cTV 0 : V) ≤ E := termLen_cTV_le (le_trans (add_le_add (by simp) le_rfl) hE)
+  obtain ⟨hok₁, htag₁, hctx₁⟩ := ok_isSemitermVecNil (wn := cTV n) htbl hW hWp hΓ (cTV_semiterm_LAct 0 _) hEn
+  have hΓ₂ : IsFormulaSet LAct (ctxAfter Γ (mkStep W 15 ?[cTV n])) := isFormulaSet_ctxAfter 8 htbl hok₁
+  have hsg₂ : neg LAct (tvSigmaFact (cTV 0) (cTV n) (cTV 0)) ∈ ctxAfter Γ (mkStep W 15 ?[cTV n]) := by
+    rw [hctx₁, cTV_zero]; simp
+  obtain ⟨hok₂, htag₂, hctx₂⟩ := ok_isSemitermVecSigmaPiLAct (wk := cTV 0) (wn := cTV n) (wv := cTV 0) htbl hW hWp hΓ₂
+    (cTV_semiterm_LAct 0 _) hE0 (cTV_semiterm_LAct 0 _) hEn (cTV_semiterm_LAct 0 _) hE0 hsg₂
+  have hS : π₂ (nilNode W n) = ?[mkStep W 15 ?[cTV n], mkStep W 16 ?[cTV 0, cTV n, cTV 0]] := by simp [nilNode]
+  rw [hS]
+  refine ⟨listOK_cons hok₁ (listOK_single hok₂), ?_, ?_, ?_⟩
+  · exact noDrop_cons (Or.inl htag₁) (noDrop_single (Or.inl htag₂))
+  · rw [shiftsV_cons, shiftsV_single, if_neg (by rw [htag₁]; norm_num), if_neg (by rw [htag₂]; norm_num)]; simp
+  · rw [finalCtx_cons, finalCtx_single, hctx₂, vRef_zero, ← cTV_zero]; simp
+
+end nodes
+
 end ArithS
