@@ -43,27 +43,34 @@ lemma quote_closed_mul_m {m : ℕ} (t u : ClosedSemiterm ℒₒᵣ m) :
 /-- The DSL literal `2` is the code `𝟏 ^+ 𝟏` (`numeral 2 = numeral 1 ^+ 𝟏`). -/
 lemma quote_closed_two_m {m : ℕ} : (⌜(‘2’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (𝟏 : V) ^+ (𝟏 : V) := by
   rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_numeral_eq_numeral]
-  simp only [Nat.cast_ofNat]
-  rw [show (2 : V) = 0 + 1 + 1 by norm_num, numeral_add_two, zero_add, numeral_one]
+  have h2 : ((2 : ℕ) : V) = 0 + 1 + 1 := by norm_num
+  first
+  | (rw [h2, numeral_add_two, zero_add, numeral_one])
+  | (simp; rw [show (2 : V) = 0 + 1 + 1 by norm_num, numeral_add_two, zero_add, numeral_one])
+  | (simp [h2, numeral_add_two, numeral_one])
 
 lemma isUTerm_bv (i : ℕ) : IsUTerm LAct (bv i : V) := (isSemiterm_bv (n := i + 1) (by omega)).isUTerm
 lemma isUTerm_qqOne_LAct : IsUTerm LAct (𝟏 : V) := (isSemiterm_qqOne_LAct 0).isUTerm
 lemma isUTerm_qqZero_LAct : IsUTerm LAct (𝟎 : V) := (isSemiterm_qqZero_LAct 0).isUTerm
 lemma isUTerm_cT (n : ℕ) : IsUTerm LAct (cT n : V) := (cT_semiterm_LAct 0 n).isUTerm
 lemma isUTerm_qqAdd_LAct {x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) : IsUTerm LAct (x ^+ y) := by
-  unfold qqAdd; exact IsUTerm.func.mpr ⟨isFunc_LAct_addIndex, by simp [hx, hy]⟩
+  unfold qqAdd; exact IsUTerm.func_iff.mpr ⟨isFunc_LAct_addIndex, by simp [hx, hy]⟩
 lemma isUTerm_qqMul_LAct {x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) : IsUTerm LAct (x ^* y) := by
-  unfold qqMul; exact IsUTerm.func.mpr ⟨isFunc_LAct_mulIndex, by simp [hx, hy]⟩
+  unfold qqMul; exact IsUTerm.func_iff.mpr ⟨isFunc_LAct_mul, by simp [hx, hy]⟩
 lemma isSemiterm_qqAdd_LAct {n x y : V} (hx : IsSemiterm LAct n x) (hy : IsSemiterm LAct n y) :
     IsSemiterm LAct n (x ^+ y) := by
   unfold qqAdd; exact IsSemiterm.func.mpr ⟨isFunc_LAct_addIndex, by simp [hx, hy]⟩
 lemma isSemiterm_qqMul_LAct {n x y : V} (hx : IsSemiterm LAct n x) (hy : IsSemiterm LAct n y) :
     IsSemiterm LAct n (x ^* y) := by
-  unfold qqMul; exact IsSemiterm.func.mpr ⟨isFunc_LAct_mulIndex, by simp [hx, hy]⟩
+  unfold qqMul; exact IsSemiterm.func.mpr ⟨isFunc_LAct_mul, by simp [hx, hy]⟩
+lemma isUTerm_qqAdd_iff {x y : V} : IsUTerm LAct (x ^+ y) ↔ IsUTerm LAct x ∧ IsUTerm LAct y := by
+  unfold qqAdd; simp [IsUTerm.func_iff, isFunc_LAct_addIndex]
+lemma isUTerm_qqMul_iff {x y : V} : IsUTerm LAct (x ^* y) ↔ IsUTerm LAct x ∧ IsUTerm LAct y := by
+  unfold qqMul; simp [IsUTerm.func_iff, isFunc_LAct_mul]
 lemma termSubst_qqMul' {w x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) :
     termSubst LAct w (x ^* y) = termSubst LAct w x ^* termSubst LAct w y := by
   unfold qqMul
-  rw [termSubst_func isFunc_LAct_mulIndex (by simp [hx, hy]), termSubstVec_cons₂ hx hy]
+  rw [termSubst_func isFunc_LAct_mul (by simp [hx, hy]), termSubstVec_cons₂ hx hy]
 
 /-- Level-`n` term-ness of every entry of a row piece, now with `+`/`*` entries. -/
 macro "row_entriesB" : tactic => `(tactic| (
@@ -82,9 +89,9 @@ macro "row_entriesB" : tactic => `(tactic| (
     | simp))
 
 /-- Evaluate the entrywise substitution of an instantiated piece, now with `+`/`*` entries. -/
-macro "row_entries_simpB" : tactic => `(tactic| simp only [List.map_cons, List.map_nil,
+macro "row_entries_simpB" : tactic => `(tactic| simp (maxDischargeDepth := 8) only [List.map_cons, List.map_nil,
   termSubst_qqAdd', termSubst_qqMul', isUTerm_bv, isUTerm_qqOne_LAct, isUTerm_qqZero_LAct, isUTerm_cT,
-  isUTerm_qqAdd_LAct, isUTerm_qqMul_LAct, termSubst_bv,
+  isUTerm_qqAdd_iff, isUTerm_qqMul_iff, and_self, and_true, true_and, termSubst_bv,
   termSubst_bv_add_one, termSubst_qqZero', termSubst_qqOne', termSubst_cT, bvarList_zero, bvarList_one,
   bvarList_two, bvarList_three, bvarList_four, bvarList_five, List.reverse_cons, List.reverse_nil,
   List.nil_append, List.append_nil, List.cons_append, List.singleton_append, List.getD_cons_zero,
@@ -95,8 +102,9 @@ macro "row_shapeB" : tactic => `(tactic| (
   simp only [Semiformula.Operator.operator, quote_lMap_emb_imp, quote_lMap_emb_ex, quote_lMap_emb_and,
     quote_lMap_emb_subst', impChain_cons, impChain_nil, matrixToVec_fin0, matrixToVec_fin1, matrixToVec_fin2,
     matrixToVec_fin3, matrixToVec_fin4, matrixToVec_fin5, matrixToVec_fin6, matrixToVec_fin7,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.cons_val_four,
+    Matrix.head_cons, Matrix.tail_cons,
     quote_closed_add_m, quote_closed_mul_m, quote_closed_two_m, quote_closed_one_m, quote_closed_zero_m,
-    quote_closed_bvar_m, quote_cTT]
+    quote_closed_bvar_m, quote_cTT, cT_succ, cT_zero]
   all_goals rfl))
 
