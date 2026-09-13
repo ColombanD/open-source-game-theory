@@ -1146,4 +1146,310 @@ theorem exists_numTable : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓
 
 end table
 
+
+/-! ## 4. The combinators: the goal leaf, the lemma cut, a table-driven Horn use, the step shapes
+
+A closed fact `A` is derived in the singleton context `sing A = {A}` (the goal, positive; a known
+sub-fact `F` enters NEGATED by a lemma cut on its own derivation `dF`), by ONE row of the table
+instantiated at witnesses `ev` whose antecedent instances are the cut-in facts and whose conclusion
+instance IS `A`, closed by the leaf `goalLeaf` (`axL` on `A`/`neg A`). Three shapes: `step0` (no
+sub-fact), `step1` (one), `step2` (two). Each is a Σ₁ function of its data (the row's proof code is
+READ FROM the table), with a `DerivationOf` theorem and the uniform bound `nodeCost N B E`. -/
+
+section combinators
+
+/-- `axL (insert (neg A) Γ) A`: closes `insert (neg A) Γ` when `A ∈ Γ`. -/
+noncomputable def goalLeaf (Γ A : V) : V := axL (insert (neg LAct A) Γ) A
+noncomputable def goalLeafDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y Γ A. ∃ n, !(negGraph LAct) n A ∧ ∃ S, !insertDef S n Γ ∧ !axLGraph y S A”
+instance goalLeaf_defined : 𝚺₁-Function₂ (goalLeaf : V → V → V) via goalLeafDef := .mk
+  fun v ↦ by simp [goalLeafDef, neg.defined.iff, goalLeaf]
+
+theorem goalLeaf_proof {Γ A : V} (hΓ : IsFormulaSet LAct Γ) (hA : IsFormula LAct A) (h : A ∈ Γ) :
+    DerivationOf TAct (goalLeaf Γ A) (insert (neg LAct A) Γ) :=
+  ⟨by simp [goalLeaf], Derivation.axL (by simp [hΓ, hA]) (by simp [h]) (by simp)⟩
+
+theorem dlen_goalLeaf_le {Γ A : V} (hΓ : IsFormulaSet LAct Γ) (hA : IsFormula LAct A) (h : A ∈ Γ) :
+    dlen TAct (goalLeaf Γ A) ≤ setLen LAct Γ + formulaLen LAct A + 1 := by
+  have hpf := goalLeaf_proof hΓ hA h
+  rw [dlen_eq_of_graph hpf.2 (DlenGraph.axL_iff.mpr rfl)]
+  have := setLen_insert_le (L := LAct) (neg LAct A) Γ
+  rw [formulaLen_neg hA.isUFormula] at this
+  gcongr
+
+/-- The lemma cut (Chain's `lemmaCut`): `cutRule Γ F (wkRule (insert F Γ) dF) e`. -/
+noncomputable def cut1 (Γ F dF e : V) : V := cutRule Γ F (wkToCode (insert F Γ) dF) e
+noncomputable def cut1Def : 𝚺₁.Semisentence 5 := .mkSigma
+  “y Γ F dF e. ∃ S, !insertDef S F Γ ∧ ∃ w, !wkRuleGraph w S dF ∧ !cutRuleGraph y Γ F w e”
+instance cut1_defined : 𝚺₁-Function₄ (cut1 : V → V → V → V → V) via cut1Def := .mk
+  fun v ↦ by simp [cut1Def, cut1, wkToCode]
+
+theorem cut1_proof {Γ F dF e : V} (hΓ : IsFormulaSet LAct Γ) (hF : IsFormula LAct F)
+    (hdF : DerivationOf TAct dF (insert F 0)) (he : DerivationOf TAct e (insert (neg LAct F) Γ)) :
+    DerivationOf TAct (cut1 Γ F dF e) Γ := lemmaCut_proof hΓ hF hdF he
+
+theorem dlen_cut1_le {Γ F dF e : V} (hΓ : IsFormulaSet LAct Γ) (hF : IsFormula LAct F)
+    (hdF : DerivationOf TAct dF (insert F 0)) (he : DerivationOf TAct e (insert (neg LAct F) Γ)) :
+    dlen TAct (cut1 Γ F dF e) ≤ dlen TAct e + (dlen TAct dF + 2 * setLen LAct Γ + 2 * formulaLen LAct F + 2) :=
+  dlen_lemmaCut_le hΓ hF hdF he
+
+/-- Use row `i` of the table at witnesses `ev` to close the goal `A ∈ Γ`. -/
+noncomputable def hornGoal (tbl i Γ ev A : V) : V :=
+  useHornV LAct Γ ev (π₁ (π₂ tbl.[i])) (π₂ (π₂ tbl.[i])) (π₁ tbl.[i]) (goalLeaf Γ A)
+noncomputable def hornGoalDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y tbl i Γ ev A. ∃ r, !nthDef r tbl i ∧ ∃ dΛ, !pi₁Def dΛ r ∧ ∃ p, !pi₂Def p r ∧ ∃ as, !pi₁Def as p ∧
+    ∃ c, !pi₂Def c p ∧ ∃ g, !goalLeafDef g Γ A ∧ !(useHornVDef LAct) y Γ ev as c dΛ g”
+instance hornGoal_defined : 𝚺₁-Function₅ (hornGoal : V → V → V → V → V → V) via hornGoalDef := .mk
+  fun v ↦ by simp [hornGoalDef, goalLeaf_defined.iff, useHornV_defined.iff, hornGoal]
+
+/-- Antecedent instances read off an `inst_` lemma. -/
+lemma neg_mem_of_map {es as fs : List V} {Γ : V} (hmap : as.map (instOuter LAct es) = fs)
+    (h : ∀ f ∈ fs, neg LAct f ∈ Γ) : ∀ a ∈ as, neg LAct (instOuter LAct es a) ∈ Γ :=
+  fun _ ha ↦ h _ (hmap ▸ List.mem_map_of_mem ha)
+
+theorem hornGoal_proof {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+    (hrow : NumRowOK tbl i N B m as c) {Γ A : V} (es : List V) (hm : es.length = m)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) (hΓ : IsFormulaSet LAct Γ)
+    (hneg : ∀ a ∈ as, neg LAct (instOuter LAct es a) ∈ Γ) (hc : instOuter LAct es c = A) (hA : A ∈ Γ) :
+    DerivationOf TAct (hornGoal tbl (i : V) Γ (vecOf es) A) Γ := by
+  obtain ⟨h1, h2, has, hcf, hΛ, -, -⟩ := hrow
+  unfold hornGoal
+  rw [h1, h2]
+  have has' : ∀ a ∈ as, IsSemiformula LAct (es.length : V) a := by rw [hm]; exact has
+  have hcf' : IsSemiformula LAct (es.length : V) c := by rw [hm]; exact hcf
+  rw [useHornV_vecOf Γ es as has' hcf' hes]
+  have hA' : IsFormula LAct A := hc ▸ isFormula_instOuter es hcf' hes
+  refine useHornCode_proof has' hcf' hes hΓ (subset_refl Γ) hneg (by rw [hm]; exact hΛ) ?_
+  rw [hc]; exact goalLeaf_proof hΓ hA' hA
+
+/-- **The bound for a table-driven Horn use** (rows of arity `≤ 7` with `≤ 4` antecedents, witnesses
+of length `≤ E`): `≤ N + 20|Γ| + 120·B·E + |A| + 480`. -/
+theorem dlen_hornGoal_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+    (hrow : NumRowOK tbl i N B m as c) {Γ A E : V} (es : List V) (hm : es.length = m)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B)
+    (hΓ : IsFormulaSet LAct Γ)
+    (hneg : ∀ a ∈ as, neg LAct (instOuter LAct es a) ∈ Γ) (hc : instOuter LAct es c = A) (hA : A ∈ Γ)
+    (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) :
+    dlen TAct (hornGoal tbl (i : V) Γ (vecOf es) A) ≤
+      N + 20 * setLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by
+  obtain ⟨h1, h2, has, hcf, hΛ, hN, hlen⟩ := hrow
+  unfold hornGoal
+  rw [h1, h2]
+  have hes₁ : ∀ e ∈ es, IsSemiterm LAct 0 e := fun e he ↦ (hes e he).1
+  have has' : ∀ a ∈ as, IsSemiformula LAct (es.length : V) a := by rw [hm]; exact has
+  have hcf' : IsSemiformula LAct (es.length : V) c := by rw [hm]; exact hcf
+  rw [useHornV_vecOf Γ es as has' hcf' hes₁]
+  have hA' : IsFormula LAct A := hc ▸ isFormula_instOuter es hcf' hes₁
+  have hleaf : DerivationOf TAct (goalLeaf Γ A) (insert (neg LAct (instOuter LAct es c)) Γ) := by
+    rw [hc]; exact goalLeaf_proof hΓ hA' hA
+  have hleafLen := dlen_goalLeaf_le hΓ hA' hA
+  have hF : formulaLen LAct (impChain LAct as c) * E ≤ B * E :=
+    mul_le_mul_of_nonneg_right hlen zero_le
+  have hbound := dlen_useHornCode_le (T := TAct) (E := E) (F := B * E) hE has' hcf' hes hΓ (subset_refl Γ)
+    hneg (by rw [hm]; exact hΛ) hleaf hF
+  refine le_trans hbound ?_
+  have hm' : (es.length : V) ≤ 7 := by rw [hm]; exact_mod_cast hm7
+  have hj' : (as.length : V) ≤ 4 := by exact_mod_cast hj4
+  have hchain : formulaLen LAct (impChain LAct as c) ≤ B * E := le_trans hlen (le_mul_of_one_le_right zero_le hE)
+  have hEF : E ≤ B * E := le_mul_of_one_le_left zero_le hB
+  have hN' : dlen TAct (π₁ tbl.[(i : V)]) ≤ N := hN
+  calc dlen TAct (π₁ tbl.[(i : V)]) + dlen TAct (goalLeaf Γ A) + ((es.length : V) + 3) * setLen LAct Γ
+        + ((es.length : V) + 1) * ((es.length : V) + 1) * (B * E + (es.length : V))
+        + formulaLen LAct (impChain LAct as c) + (es.length : V) * E + 2 * (es.length : V) + 3
+        + (2 * (as.length : V) + 1) * (setLen LAct Γ + ((as.length : V) + 1) * (B * E) + 1)
+      ≤ N + (setLen LAct Γ + formulaLen LAct A + 1) + (7 + 3) * setLen LAct Γ
+        + (7 + 1) * (7 + 1) * (B * E + 7) + B * E + 7 * (B * E) + 2 * 7 + 3
+        + (2 * 4 + 1) * (setLen LAct Γ + (4 + 1) * (B * E) + 1) := by
+        gcongr
+    _ = N + 20 * setLen LAct Γ + 117 * (B * E) + formulaLen LAct A + 475 := by ring
+    _ ≤ N + 20 * setLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by
+        have h1 : (117 : V) * (B * E) ≤ 120 * (B * E) := mul_le_mul_of_nonneg_right (by norm_num) zero_le
+        have h2 : (475 : V) ≤ 480 := by norm_num
+        calc N + 20 * setLen LAct Γ + 117 * (B * E) + formulaLen LAct A + 475
+            ≤ N + 20 * setLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by gcongr
+
+/-! ### The step shapes -/
+
+/-- The singleton context `{A}`. -/
+noncomputable def sing (A : V) : V := insert A 0
+
+lemma isFormulaSet_sing {A : V} (hA : IsFormula LAct A) : IsFormulaSet LAct (sing A) := by
+  simp only [sing, IsFormulaSet.insert_iff, hA, true_and]
+  exact IsFormulaSet.empty
+
+lemma setLen_sing_le (A : V) : setLen LAct (sing A) ≤ formulaLen LAct A := by
+  unfold sing
+  refine le_trans (setLen_insert_le _ _) ?_
+  rw [show (0 : V) = ∅ from rfl, setLen_empty, zero_add]
+
+lemma mem_sing (A : V) : A ∈ sing A := by simp [sing]
+
+/-- No sub-fact: `hornGoal tbl i {A} ev A`. -/
+noncomputable def step0 (tbl i ev A : V) : V := hornGoal tbl i (sing A) ev A
+/-- One sub-fact `F` (derivation `dF`), cut in first. -/
+noncomputable def step1 (tbl i F dF ev A : V) : V :=
+  cut1 (sing A) F dF (hornGoal tbl i (insert (neg LAct F) (sing A)) ev A)
+/-- Two sub-facts `F₁, F₂`. -/
+noncomputable def step2 (tbl i F₁ d₁ F₂ d₂ ev A : V) : V :=
+  cut1 (sing A) F₁ d₁ (cut1 (insert (neg LAct F₁) (sing A)) F₂ d₂
+    (hornGoal tbl i (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) ev A))
+
+noncomputable def step0Def : 𝚺₁.Semisentence 5 := .mkSigma
+  “y tbl i ev A. ∃ S, !insertDef S A 0 ∧ !hornGoalDef y tbl i S ev A”
+instance step0_defined : 𝚺₁-Function₄ (step0 : V → V → V → V → V) via step0Def := .mk
+  fun v ↦ by simp [step0Def, hornGoal_defined.iff, step0, sing]
+
+noncomputable def step1Def : 𝚺₁.Semisentence 7 := .mkSigma
+  “y tbl i F dF ev A. ∃ S, !insertDef S A 0 ∧ ∃ nF, !(negGraph LAct) nF F ∧ ∃ S', !insertDef S' nF S ∧
+    ∃ h, !hornGoalDef h tbl i S' ev A ∧ !cut1Def y S F dF h”
+instance step1_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ step1 (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) step1Def := .mk
+  fun v ↦ by simp [step1Def, neg.defined.iff, hornGoal_defined.iff, cut1_defined.iff, step1, sing]
+
+noncomputable def step2Def : 𝚺₁.Semisentence 9 := .mkSigma
+  “y tbl i F₁ d₁ F₂ d₂ ev A. ∃ S, !insertDef S A 0 ∧ ∃ n₁, !(negGraph LAct) n₁ F₁ ∧ ∃ S₁, !insertDef S₁ n₁ S ∧
+    ∃ n₂, !(negGraph LAct) n₂ F₂ ∧ ∃ S₂, !insertDef S₂ n₂ S₁ ∧ ∃ h, !hornGoalDef h tbl i S₂ ev A ∧
+    ∃ c₂, !cut1Def c₂ S₁ F₂ d₂ h ∧ !cut1Def y S F₁ d₁ c₂”
+instance step2_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ step2 (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) step2Def := .mk
+  fun v ↦ by simp [step2Def, neg.defined.iff, hornGoal_defined.iff, cut1_defined.iff, step2, sing]
+
+/-- The uniform per-node cost: `N + 700·B·E` (`E` bounds every term length of the node, `B` every
+row body and the predicate codes). -/
+noncomputable def nodeCost (N B E : V) : V := N + 700 * (B * E)
+
+theorem step0_proof {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+    (hrow : NumRowOK tbl i N B m as c) {A : V} (es : List V) (hm : es.length = m)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) (hA : IsFormula LAct A)
+    (hmap : as.map (instOuter LAct es) = []) (hc : instOuter LAct es c = A) :
+    DerivationOf TAct (step0 tbl (i : V) (vecOf es) A) (sing A) :=
+  hornGoal_proof hrow es hm hes (isFormulaSet_sing hA)
+    (neg_mem_of_map hmap (fun _ h ↦ absurd h List.not_mem_nil)) hc (mem_sing A)
+
+theorem step1_proof {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+    (hrow : NumRowOK tbl i N B m as c) {A F dF : V} (es : List V) (hm : es.length = m)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) (hA : IsFormula LAct A) (hF : IsFormula LAct F)
+    (hdF : DerivationOf TAct dF (sing F))
+    (hmap : as.map (instOuter LAct es) = [F]) (hc : instOuter LAct es c = A) :
+    DerivationOf TAct (step1 tbl (i : V) F dF (vecOf es) A) (sing A) :=
+  cut1_proof (isFormulaSet_sing hA) hF hdF
+    (hornGoal_proof hrow es hm hes (by simp [isFormulaSet_sing hA, hF])
+      (neg_mem_of_map hmap (fun f hf ↦ by simp at hf; subst hf; simp)) hc (by simp [mem_sing]))
+
+theorem step2_proof {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+    (hrow : NumRowOK tbl i N B m as c) {A F₁ d₁ F₂ d₂ : V} (es : List V) (hm : es.length = m)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) (hA : IsFormula LAct A) (hF₁ : IsFormula LAct F₁)
+    (hF₂ : IsFormula LAct F₂) (hd₁ : DerivationOf TAct d₁ (sing F₁)) (hd₂ : DerivationOf TAct d₂ (sing F₂))
+    (hmap : as.map (instOuter LAct es) = [F₁, F₂]) (hc : instOuter LAct es c = A) :
+    DerivationOf TAct (step2 tbl (i : V) F₁ d₁ F₂ d₂ (vecOf es) A) (sing A) :=
+  cut1_proof (isFormulaSet_sing hA) hF₁ hd₁
+    (cut1_proof (by simp [isFormulaSet_sing hA, hF₁]) hF₂ hd₂
+      (hornGoal_proof hrow es hm hes (by simp [isFormulaSet_sing hA, hF₁, hF₂])
+        (neg_mem_of_map hmap (fun f hf ↦ by simp at hf; rcases hf with rfl | rfl <;> simp)) hc
+        (by simp [mem_sing])))
+
+/-! ### The step bounds: each shape costs the sub-derivations plus ONE `nodeCost` -/
+
+lemma one_le_BE {B E : V} (hB : 1 ≤ B) (hE : 1 ≤ E) : 1 ≤ B * E :=
+  le_trans hB (le_mul_of_one_le_right zero_le hE)
+
+theorem dlen_step0_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+    (hrow : NumRowOK tbl i N B m as c) {A E : V} (es : List V) (hm : es.length = m)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B)
+    (hA : IsFormula LAct A) (hmap : as.map (instOuter LAct es) = []) (hc : instOuter LAct es c = A)
+    (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) (hAP : formulaLen LAct A ≤ B * E) :
+    dlen TAct (step0 tbl (i : V) (vecOf es) A) ≤ nodeCost N B E := by
+  have h1 : 1 ≤ B * E := one_le_BE hB hE
+  have hsA : setLen LAct (sing A) ≤ B * E := le_trans (setLen_sing_le A) hAP
+  have hh := dlen_hornGoal_le hrow es hm hes hE hB (isFormulaSet_sing hA)
+    (neg_mem_of_map hmap (fun _ h ↦ absurd h List.not_mem_nil)) hc (mem_sing A) hm7 hj4
+  have e480 : (480 : V) ≤ 480 * (B * E) := le_mul_of_one_le_right zero_le h1
+  unfold step0 nodeCost
+  refine le_trans hh ?_
+  calc N + 20 * setLen LAct (sing A) + 120 * (B * E) + formulaLen LAct A + 480
+      ≤ N + 20 * (B * E) + 120 * (B * E) + B * E + 480 * (B * E) := by gcongr
+    _ = N + 621 * (B * E) := by ring
+    _ ≤ N + 700 * (B * E) := by gcongr; norm_num
+
+theorem dlen_step1_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+    (hrow : NumRowOK tbl i N B m as c) {A F dF E : V} (es : List V) (hm : es.length = m)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B)
+    (hA : IsFormula LAct A) (hF : IsFormula LAct F) (hdF : DerivationOf TAct dF (sing F))
+    (hmap : as.map (instOuter LAct es) = [F]) (hc : instOuter LAct es c = A)
+    (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) (hAP : formulaLen LAct A ≤ B * E) (hFP : formulaLen LAct F ≤ B * E) :
+    dlen TAct (step1 tbl (i : V) F dF (vecOf es) A) ≤ dlen TAct dF + nodeCost N B E := by
+  have h1 : 1 ≤ B * E := one_le_BE hB hE
+  have hes₁ : ∀ e ∈ es, IsSemiterm LAct 0 e := fun e he ↦ (hes e he).1
+  have hΓ' : IsFormulaSet LAct (insert (neg LAct F) (sing A)) := by simp [isFormulaSet_sing hA, hF]
+  have hΓ'len : setLen LAct (insert (neg LAct F) (sing A)) ≤ B * E + B * E := by
+    refine le_trans (setLen_insert_le _ _) ?_
+    rw [formulaLen_neg hF.isUFormula]
+    exact add_le_add (le_trans (setLen_sing_le A) hAP) hFP
+  have hsA : setLen LAct (sing A) ≤ B * E := le_trans (setLen_sing_le A) hAP
+  have hneg := neg_mem_of_map (Γ := insert (neg LAct F) (sing A)) hmap (fun f hf ↦ by simp at hf; subst hf; simp)
+  have hh := dlen_hornGoal_le hrow es hm hes hE hB hΓ' hneg hc (by simp [mem_sing]) hm7 hj4
+  have hhorn := hornGoal_proof hrow es hm hes₁ hΓ' hneg hc (by simp [mem_sing])
+  have hcut := dlen_cut1_le (isFormulaSet_sing hA) hF hdF hhorn
+  have e480 : (480 : V) ≤ 480 * (B * E) := le_mul_of_one_le_right zero_le h1
+  have e2 : (2 : V) ≤ 2 * (B * E) := le_mul_of_one_le_right zero_le h1
+  unfold step1 nodeCost
+  refine le_trans hcut ?_
+  calc dlen TAct (hornGoal tbl (i : V) (insert (neg LAct F) (sing A)) (vecOf es) A)
+        + (dlen TAct dF + 2 * setLen LAct (sing A) + 2 * formulaLen LAct F + 2)
+      ≤ (N + 20 * (B * E + B * E) + 120 * (B * E) + B * E + 480 * (B * E))
+        + (dlen TAct dF + 2 * (B * E) + 2 * (B * E) + 2 * (B * E)) := by
+        gcongr
+        exact le_trans hh (by gcongr)
+    _ = dlen TAct dF + (N + 647 * (B * E)) := by ring
+    _ ≤ dlen TAct dF + (N + 700 * (B * E)) := by gcongr; norm_num
+
+theorem dlen_step2_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+    (hrow : NumRowOK tbl i N B m as c) {A F₁ d₁ F₂ d₂ E : V} (es : List V) (hm : es.length = m)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B)
+    (hA : IsFormula LAct A) (hF₁ : IsFormula LAct F₁) (hF₂ : IsFormula LAct F₂)
+    (hd₁ : DerivationOf TAct d₁ (sing F₁)) (hd₂ : DerivationOf TAct d₂ (sing F₂))
+    (hmap : as.map (instOuter LAct es) = [F₁, F₂]) (hc : instOuter LAct es c = A)
+    (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) (hAP : formulaLen LAct A ≤ B * E)
+    (hF₁P : formulaLen LAct F₁ ≤ B * E) (hF₂P : formulaLen LAct F₂ ≤ B * E) :
+    dlen TAct (step2 tbl (i : V) F₁ d₁ F₂ d₂ (vecOf es) A) ≤ dlen TAct d₁ + dlen TAct d₂ + nodeCost N B E := by
+  have h1 : 1 ≤ B * E := one_le_BE hB hE
+  have hes₁ : ∀ e ∈ es, IsSemiterm LAct 0 e := fun e he ↦ (hes e he).1
+  have hΓ₁ : IsFormulaSet LAct (insert (neg LAct F₁) (sing A)) := by simp [isFormulaSet_sing hA, hF₁]
+  have hΓ₂ : IsFormulaSet LAct (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) := by
+    simp [isFormulaSet_sing hA, hF₁, hF₂]
+  have hsA : setLen LAct (sing A) ≤ B * E := le_trans (setLen_sing_le A) hAP
+  have hΓ₁len : setLen LAct (insert (neg LAct F₁) (sing A)) ≤ B * E + B * E := by
+    refine le_trans (setLen_insert_le _ _) ?_
+    rw [formulaLen_neg hF₁.isUFormula]
+    exact add_le_add hsA hF₁P
+  have hΓ₂len : setLen LAct (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) ≤ B * E + B * E + B * E := by
+    refine le_trans (setLen_insert_le _ _) ?_
+    rw [formulaLen_neg hF₂.isUFormula]
+    exact add_le_add hΓ₁len hF₂P
+  have hneg := neg_mem_of_map (Γ := insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) hmap
+    (fun f hf ↦ by simp at hf; rcases hf with rfl | rfl <;> simp)
+  have hh := dlen_hornGoal_le hrow es hm hes hE hB hΓ₂ hneg hc (by simp [mem_sing]) hm7 hj4
+  have hhorn := hornGoal_proof hrow es hm hes₁ hΓ₂ hneg hc (by simp [mem_sing])
+  have hcut₂ := dlen_cut1_le hΓ₁ hF₂ hd₂ hhorn
+  have hinner := cut1_proof hΓ₁ hF₂ hd₂ hhorn
+  have hcut₁ := dlen_cut1_le (isFormulaSet_sing hA) hF₁ hd₁ hinner
+  have e480 : (480 : V) ≤ 480 * (B * E) := le_mul_of_one_le_right zero_le h1
+  have e2 : (2 : V) ≤ 2 * (B * E) := le_mul_of_one_le_right zero_le h1
+  unfold step2 nodeCost
+  refine le_trans hcut₁ ?_
+  calc dlen TAct (cut1 (insert (neg LAct F₁) (sing A)) F₂ d₂
+          (hornGoal tbl (i : V) (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) (vecOf es) A))
+        + (dlen TAct d₁ + 2 * setLen LAct (sing A) + 2 * formulaLen LAct F₁ + 2)
+      ≤ ((N + 20 * (B * E + B * E + B * E) + 120 * (B * E) + B * E + 480 * (B * E))
+          + (dlen TAct d₂ + 2 * (B * E + B * E) + 2 * (B * E) + 2 * (B * E)))
+        + (dlen TAct d₁ + 2 * (B * E) + 2 * (B * E) + 2 * (B * E)) := by
+        gcongr
+        refine le_trans hcut₂ ?_
+        gcongr
+        exact le_trans hh (by gcongr)
+    _ = dlen TAct d₁ + dlen TAct d₂ + (N + 675 * (B * E)) := by ring
+    _ ≤ dlen TAct d₁ + dlen TAct d₂ + (N + 700 * (B * E)) := by gcongr; norm_num
+
+end combinators
+
 end ArithS
