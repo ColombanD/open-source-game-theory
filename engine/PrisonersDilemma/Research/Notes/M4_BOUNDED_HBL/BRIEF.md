@@ -466,3 +466,12 @@ bookkeeping rows `dlenLeafLe/dlenUnaryLe/dlenBinaryLe` (one row use per node), `
 `dlen` rows conclude in the DSL, the `bnum` bit laws use `oneO` — bridge row `dslSuccEqSuccO :
 x + 1 = x + oneO` (+ `leOfLeEq`). `RowInst` generator checked in (`arith/scripts/`).
 IN FLIGHT: `Describe` (the walk), a read-only design of the ten per-tag fragments (`DESIGN_fragments.md`).
+
+**§9 status — chain-numeral arity rows DONE (6185743):** `isSemiformulaSubsts1C`, `isFormulaFreeC`
+(arity written `0 + 1` in the DSL — `rfl`-equal to `cTTm m 1`, hence `cT 1` in the quote) and the
+bridges `piArityOneToC`/`piArityCToOne`; `RowInst` §3.C hand-written (`cTTm`, `quote_cTTm`,
+`cT_one : cT 1 = 𝟎 ^+ 𝟏`). DECISION: the walk uses `cT` for EVERY arity; the numeral-`1` rows stay
+for the `axm`/`indRec` chain, converted by the bridges. TRAP: `cT 1` is not syntactically `cT (0+1)`
+(`cT_succ` does not fire — use `cT_one`); the `“…”` DSL cannot splice a typed term (`!!(cTTm m k)`)
+inside a variable-bearing row — write the literal and rewrite. IN FLIGHT: `Describe` (first wip
+df3ffe3), `DESIGN_fragments.md`.
