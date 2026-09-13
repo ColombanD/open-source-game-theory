@@ -288,7 +288,7 @@ lemma instOuter_ltFact (es : List V) (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) {
 @[simp] lemma isUTerm_qqZero_LAct' : IsUTerm LAct (𝟎 : V) := (isSemiterm_qqZero_LAct 0).isUTerm
 @[simp] lemma isUTerm_bv (i : ℕ) : IsUTerm LAct (bv i : V) := by simp [bv]
 
-/-- `∀ x : V, 0 + x = x`. -/
+/-- Row 0: `∀ x : V, 0 + x = x`. -/
 noncomputable def nZeroAddB : ArithmeticSemisentence 1 := eqO (addO zeroO #0) #0
 noncomputable def nZeroAdd : ArithmeticSentence := ∀¹* nZeroAddB
 
@@ -323,7 +323,7 @@ lemma inst_nZeroAdd {x : V} (hx : IsSemiterm LAct 0 x) :
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x : V, x + 0 = x`. -/
+/-- Row 1: `∀ x : V, x + 0 = x`. -/
 noncomputable def nAddZeroB : ArithmeticSemisentence 1 := eqO (addO #0 zeroO) #0
 noncomputable def nAddZero : ArithmeticSentence := ∀¹* nAddZeroB
 
@@ -358,7 +358,7 @@ lemma inst_nAddZero {x : V} (hx : IsSemiterm LAct 0 x) :
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `(1 : V) + 1 = 2 * 1`. -/
+/-- Row 2: `(1 : V) + 1 = 2 * 1`. -/
 noncomputable def nOneOneB : ArithmeticSemisentence 0 := eqO (addO oneO oneO) (twoMul oneO)
 noncomputable def nOneOne : ArithmeticSentence := ∀¹* nOneOneB
 
@@ -384,69 +384,60 @@ lemma quote_nOneOneB : (⌜Semiformula.lMap emb nOneOneB⌝ : V) = impChain LAct
 lemma inst_nOneOne :
     nOneOne_as.map (instOuter LAct []) = ([] : List V) ∧ instOuter LAct [] nOneOne_c = eqFact ((𝟏 : V) ^+ (𝟏 : V)) ((𝟐 : V) ^* (𝟏 : V)) := ⟨rfl, rfl⟩
 
-/-- `∀ x : V, 1 + 2 * x = 2 * x + 1`. -/
-noncomputable def nOneAddEvenB : ArithmeticSemisentence 1 := eqO (addO oneO (twoMul #0)) (twoMulOne #0)
-noncomputable def nOneAddEven : ArithmeticSentence := ∀¹* nOneAddEvenB
+/-- Row 3: `(0 : V) + 1 = 1`. -/
+noncomputable def nZeroOneB : ArithmeticSemisentence 0 := eqO (addO zeroO oneO) oneO
+noncomputable def nZeroOne : ArithmeticSentence := ∀¹* nZeroOneB
 
-lemma models_nOneAddEven : V↓[ℒₒᵣ] ⊧ nOneAddEven ↔ (∀ x : V, 1 + 2 * x = 2 * x + 1) := by
-  simp [nOneAddEven, nOneAddEvenB, eqO, addO, leF, ltF, twoMul, twoMulOne, oneO, zeroO, models_iff,
+lemma models_nZeroOne : V↓[ℒₒᵣ] ⊧ nZeroOne ↔ ((0 : V) + 1 = 1) := by
+  simp [nZeroOne, nZeroOneB, eqO, addO, leF, ltF, twoMul, twoMulOne, oneO, zeroO, models_iff,
     Matrix.vecForall_iff, one_add_one_eq_two, le_def]
 
-theorem pa_proves_nOneAddEven : 𝗣𝗔 ⊢ nOneAddEven :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_nOneAddEven.mpr (fun x ↦ add_comm 1 (2 * x))
+theorem pa_proves_nZeroOne : 𝗣𝗔 ⊢ nZeroOne :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_nZeroOne.mpr (zero_add 1)
 
-theorem lib_nOneAddEven : Lib nOneAddEven := Lib.of_pa pa_proves_nOneAddEven
+theorem lib_nZeroOne : Lib nZeroOne := Lib.of_pa pa_proves_nZeroOne
 
-noncomputable def nOneAddEven_as : List V := []
-noncomputable def nOneAddEven_c : V := eqFact (𝟏 ^+ (𝟐 ^* bv 0)) ((𝟐 ^* bv 0) ^+ 𝟏)
+noncomputable def nZeroOne_as : List V := []
+noncomputable def nZeroOne_c : V := eqFact (𝟎 ^+ 𝟏) 𝟏
 
-lemma quote_nOneAddEvenB : (⌜Semiformula.lMap emb nOneAddEvenB⌝ : V) = impChain LAct nOneAddEven_as nOneAddEven_c := by
-  unfold nOneAddEvenB nOneAddEven_as nOneAddEven_c
+lemma quote_nZeroOneB : (⌜Semiformula.lMap emb nZeroOneB⌝ : V) = impChain LAct nZeroOne_as nZeroOne_c := by
+  unfold nZeroOneB nZeroOne_as nZeroOne_c
   simp only [quote_lMap_emb_imp, quote_eqO_closed, quote_leF_closed, quote_ltF_closed, quote_addO_closed,
     quote_twoMul_closed, quote_twoMulOne_closed, quote_oneO_closed, quote_zeroO_closed, quote_closed_bvar_m,
     impChain_cons, impChain_nil]
   try rfl
 
-lemma inst_nOneAddEven {x : V} (hx : IsSemiterm LAct 0 x) :
-    nOneAddEven_as.map (instOuter LAct [x]) = ([] : List V) ∧
-    instOuter LAct [x] nOneAddEven_c = eqFact ((𝟏 : V) ^+ ((𝟐 : V) ^* x)) (((𝟐 : V) ^* x) ^+ (𝟏 : V)) := by
-  have hes : ∀ e ∈ ([x] : List V), IsSemiterm LAct 0 e := by simp [hx]
-  unfold nOneAddEven_as nOneAddEven_c
-  simp only [List.map, List.length_cons, List.length_nil]
-  simp (disch := (simp [bv]; try norm_num)) only [instOuter_eqFact _ hes, instOuter_leFact _ hes, instOuter_ltFact _ hes]
-  simp (disch := (simp [bv]; try norm_num)) only [List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append,
-    termSubst_qqAdd', termSubst_qqMul', termSubst_bv, termSubst_qqTwo', termSubst_qqOne', termSubst_qqZero',
-    List.getD_cons_zero, List.getD_cons_succ]
-  all_goals (constructor <;> first | rfl | trivial)
+lemma inst_nZeroOne :
+    nZeroOne_as.map (instOuter LAct []) = ([] : List V) ∧ instOuter LAct [] nZeroOne_c = eqFact ((𝟎 : V) ^+ (𝟏 : V)) (𝟏 : V) := ⟨rfl, rfl⟩
 
-/-- `∀ x w : V, x + 1 = w → 1 + (2 * x + 1) = 2 * w`. -/
-noncomputable def nOneAddOddB : ArithmeticSemisentence 2 := eqO (addO #0 oneO) #1 🡒 eqO (addO oneO (twoMulOne #0)) (twoMul #1)
-noncomputable def nOneAddOdd : ArithmeticSentence := ∀¹* nOneAddOddB
+/-- Row 4: `∀ x w : V, x + 1 = w → 1 + x = w`. -/
+noncomputable def nOneAddB : ArithmeticSemisentence 2 := eqO (addO #0 oneO) #1 🡒 eqO (addO oneO #0) #1
+noncomputable def nOneAdd : ArithmeticSentence := ∀¹* nOneAddB
 
-lemma models_nOneAddOdd : V↓[ℒₒᵣ] ⊧ nOneAddOdd ↔ (∀ x w : V, x + 1 = w → 1 + (2 * x + 1) = 2 * w) := by
-  simp [nOneAddOdd, nOneAddOddB, eqO, addO, leF, ltF, twoMul, twoMulOne, oneO, zeroO, models_iff,
+lemma models_nOneAdd : V↓[ℒₒᵣ] ⊧ nOneAdd ↔ (∀ x w : V, x + 1 = w → 1 + x = w) := by
+  simp [nOneAdd, nOneAddB, eqO, addO, leF, ltF, twoMul, twoMulOne, oneO, zeroO, models_iff,
     Matrix.vecForall_iff, one_add_one_eq_two, le_def]
 
-theorem pa_proves_nOneAddOdd : 𝗣𝗔 ⊢ nOneAddOdd :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_nOneAddOdd.mpr (fun x w h ↦ by subst h; ring)
+theorem pa_proves_nOneAdd : 𝗣𝗔 ⊢ nOneAdd :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_nOneAdd.mpr (fun x w h ↦ by subst h; exact add_comm 1 x)
 
-theorem lib_nOneAddOdd : Lib nOneAddOdd := Lib.of_pa pa_proves_nOneAddOdd
+theorem lib_nOneAdd : Lib nOneAdd := Lib.of_pa pa_proves_nOneAdd
 
-noncomputable def nOneAddOdd_as : List V := [eqFact (bv 0 ^+ 𝟏) (bv 1)]
-noncomputable def nOneAddOdd_c : V := eqFact (𝟏 ^+ ((𝟐 ^* bv 0) ^+ 𝟏)) (𝟐 ^* bv 1)
+noncomputable def nOneAdd_as : List V := [eqFact (bv 0 ^+ 𝟏) (bv 1)]
+noncomputable def nOneAdd_c : V := eqFact (𝟏 ^+ bv 0) (bv 1)
 
-lemma quote_nOneAddOddB : (⌜Semiformula.lMap emb nOneAddOddB⌝ : V) = impChain LAct nOneAddOdd_as nOneAddOdd_c := by
-  unfold nOneAddOddB nOneAddOdd_as nOneAddOdd_c
+lemma quote_nOneAddB : (⌜Semiformula.lMap emb nOneAddB⌝ : V) = impChain LAct nOneAdd_as nOneAdd_c := by
+  unfold nOneAddB nOneAdd_as nOneAdd_c
   simp only [quote_lMap_emb_imp, quote_eqO_closed, quote_leF_closed, quote_ltF_closed, quote_addO_closed,
     quote_twoMul_closed, quote_twoMulOne_closed, quote_oneO_closed, quote_zeroO_closed, quote_closed_bvar_m,
     impChain_cons, impChain_nil]
   try rfl
 
-lemma inst_nOneAddOdd {x w : V} (hx : IsSemiterm LAct 0 x) (hw : IsSemiterm LAct 0 w) :
-    nOneAddOdd_as.map (instOuter LAct [w, x]) = ([eqFact (x ^+ (𝟏 : V)) w] : List V) ∧
-    instOuter LAct [w, x] nOneAddOdd_c = eqFact ((𝟏 : V) ^+ (((𝟐 : V) ^* x) ^+ (𝟏 : V))) ((𝟐 : V) ^* w) := by
+lemma inst_nOneAdd {x w : V} (hx : IsSemiterm LAct 0 x) (hw : IsSemiterm LAct 0 w) :
+    nOneAdd_as.map (instOuter LAct [w, x]) = ([eqFact (x ^+ (𝟏 : V)) w] : List V) ∧
+    instOuter LAct [w, x] nOneAdd_c = eqFact ((𝟏 : V) ^+ x) w := by
   have hes : ∀ e ∈ ([w, x] : List V), IsSemiterm LAct 0 e := by simp [hx, hw]
-  unfold nOneAddOdd_as nOneAddOdd_c
+  unfold nOneAdd_as nOneAdd_c
   simp only [List.map, List.length_cons, List.length_nil]
   simp (disch := (simp [bv]; try norm_num)) only [instOuter_eqFact _ hes, instOuter_leFact _ hes, instOuter_ltFact _ hes]
   simp (disch := (simp [bv]; try norm_num)) only [List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append,
@@ -454,7 +445,7 @@ lemma inst_nOneAddOdd {x w : V} (hx : IsSemiterm LAct 0 x) (hw : IsSemiterm LAct
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x : V, x = x`. -/
+/-- Row 5: `∀ x : V, x = x`. -/
 noncomputable def nEqReflB : ArithmeticSemisentence 1 := eqO #0 #0
 noncomputable def nEqRefl : ArithmeticSentence := ∀¹* nEqReflB
 
@@ -489,7 +480,7 @@ lemma inst_nEqRefl {x : V} (hx : IsSemiterm LAct 0 x) :
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x w : V, x + 1 = w → 2 * x + 1 + 1 = 2 * w`. -/
+/-- Row 6: `∀ x w : V, x + 1 = w → 2 * x + 1 + 1 = 2 * w`. -/
 noncomputable def nCarryB : ArithmeticSemisentence 2 := eqO (addO #0 oneO) #1 🡒 eqO (addO (twoMulOne #0) oneO) (twoMul #1)
 noncomputable def nCarry : ArithmeticSentence := ∀¹* nCarryB
 
@@ -524,7 +515,7 @@ lemma inst_nCarry {x w : V} (hx : IsSemiterm LAct 0 x) (hw : IsSemiterm LAct 0 w
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x y z : V, x + y = z → 2 * x + 2 * y = 2 * z`. -/
+/-- Row 7: `∀ x y z : V, x + y = z → 2 * x + 2 * y = 2 * z`. -/
 noncomputable def nBit00B : ArithmeticSemisentence 3 := eqO (addO #0 #1) #2 🡒 eqO (addO (twoMul #0) (twoMul #1)) (twoMul #2)
 noncomputable def nBit00 : ArithmeticSentence := ∀¹* nBit00B
 
@@ -559,7 +550,7 @@ lemma inst_nBit00 {x y z : V} (hx : IsSemiterm LAct 0 x) (hy : IsSemiterm LAct 0
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x y z : V, x + y = z → 2 * x + (2 * y + 1) = 2 * z + 1`. -/
+/-- Row 8: `∀ x y z : V, x + y = z → 2 * x + (2 * y + 1) = 2 * z + 1`. -/
 noncomputable def nBit01B : ArithmeticSemisentence 3 := eqO (addO #0 #1) #2 🡒 eqO (addO (twoMul #0) (twoMulOne #1)) (twoMulOne #2)
 noncomputable def nBit01 : ArithmeticSentence := ∀¹* nBit01B
 
@@ -594,7 +585,7 @@ lemma inst_nBit01 {x y z : V} (hx : IsSemiterm LAct 0 x) (hy : IsSemiterm LAct 0
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x y z : V, x + y = z → 2 * x + 1 + 2 * y = 2 * z + 1`. -/
+/-- Row 9: `∀ x y z : V, x + y = z → 2 * x + 1 + 2 * y = 2 * z + 1`. -/
 noncomputable def nBit10B : ArithmeticSemisentence 3 := eqO (addO #0 #1) #2 🡒 eqO (addO (twoMulOne #0) (twoMul #1)) (twoMulOne #2)
 noncomputable def nBit10 : ArithmeticSentence := ∀¹* nBit10B
 
@@ -629,7 +620,7 @@ lemma inst_nBit10 {x y z : V} (hx : IsSemiterm LAct 0 x) (hy : IsSemiterm LAct 0
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x y z w : V, x + y = z → z + 1 = w → 2 * x + 1 + (2 * y + 1) = 2 * w`. -/
+/-- Row 10: `∀ x y z w : V, x + y = z → z + 1 = w → 2 * x + 1 + (2 * y + 1) = 2 * w`. -/
 noncomputable def nBit11B : ArithmeticSemisentence 4 := eqO (addO #0 #1) #2 🡒 eqO (addO #2 oneO) #3 🡒 eqO (addO (twoMulOne #0) (twoMulOne #1)) (twoMul #3)
 noncomputable def nBit11 : ArithmeticSentence := ∀¹* nBit11B
 
@@ -664,7 +655,7 @@ lemma inst_nBit11 {x y z w : V} (hx : IsSemiterm LAct 0 x) (hy : IsSemiterm LAct
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x y z : V, x + y = z → x ≤ z`. -/
+/-- Row 11: `∀ x y z : V, x + y = z → x ≤ z`. -/
 noncomputable def nLeOfAddB : ArithmeticSemisentence 3 := eqO (addO #0 #1) #2 🡒 leF #0 #2
 noncomputable def nLeOfAdd : ArithmeticSentence := ∀¹* nLeOfAddB
 
@@ -699,7 +690,7 @@ lemma inst_nLeOfAdd {x y z : V} (hx : IsSemiterm LAct 0 x) (hy : IsSemiterm LAct
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x w z : V, x + 1 = w → w ≤ z → x < z`. -/
+/-- Row 12: `∀ x w z : V, x + 1 = w → w ≤ z → x < z`. -/
 noncomputable def nLtOfSuccLeB : ArithmeticSemisentence 3 := eqO (addO #0 oneO) #1 🡒 leF #1 #2 🡒 ltF #0 #2
 noncomputable def nLtOfSuccLe : ArithmeticSentence := ∀¹* nLtOfSuccLeB
 
@@ -734,7 +725,7 @@ lemma inst_nLtOfSuccLe {x w z : V} (hx : IsSemiterm LAct 0 x) (hw : IsSemiterm L
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ a b c s t u n : V, a + b = s → s + c = t → t + 1 = u → u ≤ n → a + b + c + 1 ≤ n`. -/
+/-- Row 13: `∀ a b c s t u n : V, a + b = s → s + c = t → t + 1 = u → u ≤ n → a + b + c + 1 ≤ n`. -/
 noncomputable def nSum3SuccLeB : ArithmeticSemisentence 7 := eqO (addO #0 #1) #3 🡒 eqO (addO #3 #2) #4 🡒 eqO (addO #4 oneO) #5 🡒 leF #5 #6 🡒 leF (addO (addO (addO #0 #1) #2) oneO) #6
 noncomputable def nSum3SuccLe : ArithmeticSentence := ∀¹* nSum3SuccLeB
 
@@ -769,7 +760,7 @@ lemma inst_nSum3SuccLe {a b c s t u n : V} (ha : IsSemiterm LAct 0 a) (hb : IsSe
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ a b s u n : V, a + b = s → s + 1 = u → u ≤ n → a + b + 1 ≤ n`. -/
+/-- Row 14: `∀ a b s u n : V, a + b = s → s + 1 = u → u ≤ n → a + b + 1 ≤ n`. -/
 noncomputable def nSum2SuccLeB : ArithmeticSemisentence 5 := eqO (addO #0 #1) #2 🡒 eqO (addO #2 oneO) #3 🡒 leF #3 #4 🡒 leF (addO (addO #0 #1) oneO) #4
 noncomputable def nSum2SuccLe : ArithmeticSentence := ∀¹* nSum2SuccLeB
 
@@ -804,7 +795,7 @@ lemma inst_nSum2SuccLe {a b s u n : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemite
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ a u n : V, a + 1 = u → u ≤ n → a + 1 ≤ n`. -/
+/-- Row 15: `∀ a u n : V, a + 1 = u → u ≤ n → a + 1 ≤ n`. -/
 noncomputable def nSuccLeB : ArithmeticSemisentence 3 := eqO (addO #0 oneO) #1 🡒 leF #1 #2 🡒 leF (addO #0 oneO) #2
 noncomputable def nSuccLe : ArithmeticSentence := ∀¹* nSuccLeB
 
@@ -839,7 +830,7 @@ lemma inst_nSuccLe {a u n : V} (ha : IsSemiterm LAct 0 a) (hu : IsSemiterm LAct 
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ a b s n : V, a + b = s → s ≤ n → a + b ≤ n`. -/
+/-- Row 16: `∀ a b s n : V, a + b = s → s ≤ n → a + b ≤ n`. -/
 noncomputable def nSum2LeB : ArithmeticSemisentence 4 := eqO (addO #0 #1) #2 🡒 leF #2 #3 🡒 leF (addO #0 #1) #3
 noncomputable def nSum2Le : ArithmeticSentence := ∀¹* nSum2LeB
 
@@ -874,7 +865,7 @@ lemma inst_nSum2Le {a b s n : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAc
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x y w : V, x = y → y + 1 = w → x + 1 = w`. -/
+/-- Row 17: `∀ x y w : V, x = y → y + 1 = w → x + 1 = w`. -/
 noncomputable def nSuccCongB : ArithmeticSemisentence 3 := eqO #0 #1 🡒 eqO (addO #1 oneO) #2 🡒 eqO (addO #0 oneO) #2
 noncomputable def nSuccCong : ArithmeticSentence := ∀¹* nSuccCongB
 
@@ -909,7 +900,7 @@ lemma inst_nSuccCong {x y w : V} (hx : IsSemiterm LAct 0 x) (hy : IsSemiterm LAc
     List.getD_cons_zero, List.getD_cons_succ]
   all_goals (constructor <;> first | rfl | trivial)
 
-/-- `∀ x y : V, x = y → x ≤ y`. -/
+/-- Row 18: `∀ x y : V, x = y → x ≤ y`. -/
 noncomputable def nLeOfEqB : ArithmeticSemisentence 2 := eqO #0 #1 🡒 leF #0 #1
 noncomputable def nLeOfEq : ArithmeticSentence := ∀¹* nLeOfEqB
 
@@ -945,5 +936,214 @@ lemma inst_nLeOfEq {x y : V} (hx : IsSemiterm LAct 0 x) (hy : IsSemiterm LAct 0 
   all_goals (constructor <;> first | rfl | trivial)
 
 end rows
+
+/-! ## 3. The table: the rows' proof codes and pieces, in every model
+
+`NumTableOK tbl N B`: row `i` of `tbl` is `⟪dΛ, vecOf as, c⟫` — the row's `TAct`-proof code
+(`Proof TAct dΛ (∀^m (impChain as c))`, `dlen dΛ ≤ N`) with its pieces; `B` bounds every row body
+and the three predicate codes `Peq/Ple/Plt`. `exists_numTable`: ONE standard `(N, B)` serves every
+model (`Lib.univ_code` row by row). -/
+
+section table
+
+/-- The pieces of a row are semiformulas when its `impChain` is. -/
+lemma pieces_of_impChain {n : V} : ∀ {as : List V} {c : V}, IsSemiformula LAct n (impChain LAct as c) →
+    (∀ a ∈ as, IsSemiformula LAct n a) ∧ IsSemiformula LAct n c
+  | [], _, h => ⟨fun _ h' ↦ absurd h' List.not_mem_nil, h⟩
+  | a :: as, c, h => by
+    rw [impChain_cons, IsSemiformula.imp] at h
+    obtain ⟨has, hc⟩ := pieces_of_impChain h.2
+    refine ⟨fun a' ha' ↦ ?_, hc⟩
+    rcases List.mem_cons.mp ha' with rfl | ha'
+    · exact h.1
+    · exact has a' ha'
+
+/-- The code length of a quoted semisentence is its meta length, in every model (any arity). -/
+lemma formulaLen_quote_semisentence_V' {m : ℕ} (χ : Semisentence LAct m) :
+    formulaLen LAct (⌜χ⌝ : V) = ((flen (Rewriting.emb χ : Semiproposition LAct m) : ℕ) : V) := by
+  rw [Sentence.quote_def, formulaLen_quote]
+
+/-- The standard length of a row body (its embedded meta length). -/
+def rowLen {m : ℕ} (Bd : ArithmeticSemisentence m) : ℕ :=
+  flen (Rewriting.emb (Semiformula.lMap emb Bd) : Semiproposition LAct m)
+
+/-- The `<` operator sentence over `LAct` (`RowInst.Plt = ⌜ltS⌝`). -/
+noncomputable def ltS : Semisentence LAct 2 :=
+  Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.LT.lt : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2)
+lemma Plt_eq_quote : (Plt : V) = ⌜ltS⌝ := rfl
+
+/-- Row `i` of `tbl` is `⟪dΛ, vecOf as, c⟫`, sound for `∀^m (impChain as c)` at length `≤ N`, body `≤ B`. -/
+def NumRowOK (tbl : V) (i : ℕ) (N B : V) (m : ℕ) (as : List V) (c : V) : Prop :=
+  π₁ (π₂ tbl.[(i : V)]) = vecOf as ∧ π₂ (π₂ tbl.[(i : V)]) = c ∧
+  (∀ a ∈ as, IsSemiformula LAct (m : V) a) ∧ IsSemiformula LAct (m : V) c ∧
+  Proof TAct (π₁ tbl.[(i : V)]) (allsIter m (impChain LAct as c)) ∧
+  dlen TAct (π₁ tbl.[(i : V)]) ≤ N ∧ formulaLen LAct (impChain LAct as c) ≤ B
+
+lemma numRowOK_of {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c d : V}
+    (Bd : ArithmeticSemisentence m)
+    (hrow : tbl.[(i : V)] = ⟪d, vecOf as, c⟫)
+    (hq : (⌜Semiformula.lMap emb Bd⌝ : V) = impChain LAct as c)
+    (hd : Proof TAct d (qqAlls (⌜Semiformula.lMap emb Bd⌝ : V) (m : V))) (hN : dlen TAct d ≤ N)
+    (hB : ((rowLen Bd : ℕ) : V) ≤ B) : NumRowOK tbl i N B m as c := by
+  have hsf : IsSemiformula LAct (m : V) (impChain LAct as c) := hq ▸ Sentence.quote_isSemiformula _
+  obtain ⟨has, hc⟩ := pieces_of_impChain hsf
+  refine ⟨by rw [hrow]; simp, by rw [hrow]; simp, has, hc, ?_, by rw [hrow]; simpa using hN, ?_⟩
+  · rw [hrow, pi₁_pair, ← hq, ← qqAlls_natCast]; exact hd
+  · rw [← hq, formulaLen_quote_semisentence_V']; exact hB
+
+def rZeroAdd : ℕ := 0
+def rAddZero : ℕ := 1
+def rOneOne : ℕ := 2
+def rZeroOne : ℕ := 3
+def rOneAdd : ℕ := 4
+def rEqRefl : ℕ := 5
+def rCarry : ℕ := 6
+def rBit00 : ℕ := 7
+def rBit01 : ℕ := 8
+def rBit10 : ℕ := 9
+def rBit11 : ℕ := 10
+def rLeOfAdd : ℕ := 11
+def rLtOfSuccLe : ℕ := 12
+def rSum3SuccLe : ℕ := 13
+def rSum2SuccLe : ℕ := 14
+def rSuccLe : ℕ := 15
+def rSum2Le : ℕ := 16
+def rSuccCong : ℕ := 17
+def rLeOfEq : ℕ := 18
+
+/-- **The table is sound**: every row, plus the bounds on the predicate codes. -/
+def NumTableOK (tbl N B : V) : Prop :=
+  NumRowOK tbl rZeroAdd N B 1 nZeroAdd_as nZeroAdd_c ∧
+  NumRowOK tbl rAddZero N B 1 nAddZero_as nAddZero_c ∧
+  NumRowOK tbl rOneOne N B 0 nOneOne_as nOneOne_c ∧
+  NumRowOK tbl rZeroOne N B 0 nZeroOne_as nZeroOne_c ∧
+  NumRowOK tbl rOneAdd N B 2 nOneAdd_as nOneAdd_c ∧
+  NumRowOK tbl rEqRefl N B 1 nEqRefl_as nEqRefl_c ∧
+  NumRowOK tbl rCarry N B 2 nCarry_as nCarry_c ∧
+  NumRowOK tbl rBit00 N B 3 nBit00_as nBit00_c ∧
+  NumRowOK tbl rBit01 N B 3 nBit01_as nBit01_c ∧
+  NumRowOK tbl rBit10 N B 3 nBit10_as nBit10_c ∧
+  NumRowOK tbl rBit11 N B 4 nBit11_as nBit11_c ∧
+  NumRowOK tbl rLeOfAdd N B 3 nLeOfAdd_as nLeOfAdd_c ∧
+  NumRowOK tbl rLtOfSuccLe N B 3 nLtOfSuccLe_as nLtOfSuccLe_c ∧
+  NumRowOK tbl rSum3SuccLe N B 7 nSum3SuccLe_as nSum3SuccLe_c ∧
+  NumRowOK tbl rSum2SuccLe N B 5 nSum2SuccLe_as nSum2SuccLe_c ∧
+  NumRowOK tbl rSuccLe N B 3 nSuccLe_as nSuccLe_c ∧
+  NumRowOK tbl rSum2Le N B 4 nSum2Le_as nSum2Le_c ∧
+  NumRowOK tbl rSuccCong N B 3 nSuccCong_as nSuccCong_c ∧
+  NumRowOK tbl rLeOfEq N B 2 nLeOfEq_as nLeOfEq_c ∧
+  formulaLen LAct (Peq : V) ≤ B ∧
+  formulaLen LAct (Ple : V) ≤ B ∧
+  formulaLen LAct (Plt : V) ≤ B ∧
+  1 ≤ B
+
+/-- **A proof table for the closed binary-arithmetic library exists in every model**, with ONE
+standard pair of bounds `(N, B)` (`Lib.univ_code` per row). -/
+theorem exists_numTable : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
+    ∃ tbl : V, NumTableOK tbl (N : V) (B : V) := by
+  obtain ⟨N0, h0⟩ := (lib_nZeroAdd).univ_code
+  obtain ⟨N1, h1⟩ := (lib_nAddZero).univ_code
+  obtain ⟨N2, h2⟩ := (lib_nOneOne).univ_code
+  obtain ⟨N3, h3⟩ := (lib_nZeroOne).univ_code
+  obtain ⟨N4, h4⟩ := (lib_nOneAdd).univ_code
+  obtain ⟨N5, h5⟩ := (lib_nEqRefl).univ_code
+  obtain ⟨N6, h6⟩ := (lib_nCarry).univ_code
+  obtain ⟨N7, h7⟩ := (lib_nBit00).univ_code
+  obtain ⟨N8, h8⟩ := (lib_nBit01).univ_code
+  obtain ⟨N9, h9⟩ := (lib_nBit10).univ_code
+  obtain ⟨N10, h10⟩ := (lib_nBit11).univ_code
+  obtain ⟨N11, h11⟩ := (lib_nLeOfAdd).univ_code
+  obtain ⟨N12, h12⟩ := (lib_nLtOfSuccLe).univ_code
+  obtain ⟨N13, h13⟩ := (lib_nSum3SuccLe).univ_code
+  obtain ⟨N14, h14⟩ := (lib_nSum2SuccLe).univ_code
+  obtain ⟨N15, h15⟩ := (lib_nSuccLe).univ_code
+  obtain ⟨N16, h16⟩ := (lib_nSum2Le).univ_code
+  obtain ⟨N17, h17⟩ := (lib_nSuccCong).univ_code
+  obtain ⟨N18, h18⟩ := (lib_nLeOfEq).univ_code
+  refine ⟨N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18, rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1, fun V _ _ ↦ ?_⟩
+  obtain ⟨d0, hd0, hl0⟩ := h0 V
+  obtain ⟨d1, hd1, hl1⟩ := h1 V
+  obtain ⟨d2, hd2, hl2⟩ := h2 V
+  obtain ⟨d3, hd3, hl3⟩ := h3 V
+  obtain ⟨d4, hd4, hl4⟩ := h4 V
+  obtain ⟨d5, hd5, hl5⟩ := h5 V
+  obtain ⟨d6, hd6, hl6⟩ := h6 V
+  obtain ⟨d7, hd7, hl7⟩ := h7 V
+  obtain ⟨d8, hd8, hl8⟩ := h8 V
+  obtain ⟨d9, hd9, hl9⟩ := h9 V
+  obtain ⟨d10, hd10, hl10⟩ := h10 V
+  obtain ⟨d11, hd11, hl11⟩ := h11 V
+  obtain ⟨d12, hd12, hl12⟩ := h12 V
+  obtain ⟨d13, hd13, hl13⟩ := h13 V
+  obtain ⟨d14, hd14, hl14⟩ := h14 V
+  obtain ⟨d15, hd15, hl15⟩ := h15 V
+  obtain ⟨d16, hd16, hl16⟩ := h16 V
+  obtain ⟨d17, hd17, hl17⟩ := h17 V
+  obtain ⟨d18, hd18, hl18⟩ := h18 V
+  refine ⟨vecOf [⟪d0, vecOf nZeroAdd_as, nZeroAdd_c⟫, ⟪d1, vecOf nAddZero_as, nAddZero_c⟫, ⟪d2, vecOf nOneOne_as, nOneOne_c⟫, ⟪d3, vecOf nZeroOne_as, nZeroOne_c⟫, ⟪d4, vecOf nOneAdd_as, nOneAdd_c⟫, ⟪d5, vecOf nEqRefl_as, nEqRefl_c⟫, ⟪d6, vecOf nCarry_as, nCarry_c⟫, ⟪d7, vecOf nBit00_as, nBit00_c⟫, ⟪d8, vecOf nBit01_as, nBit01_c⟫, ⟪d9, vecOf nBit10_as, nBit10_c⟫, ⟪d10, vecOf nBit11_as, nBit11_c⟫, ⟪d11, vecOf nLeOfAdd_as, nLeOfAdd_c⟫, ⟪d12, vecOf nLtOfSuccLe_as, nLtOfSuccLe_c⟫, ⟪d13, vecOf nSum3SuccLe_as, nSum3SuccLe_c⟫, ⟪d14, vecOf nSum2SuccLe_as, nSum2SuccLe_c⟫, ⟪d15, vecOf nSuccLe_as, nSuccLe_c⟫, ⟪d16, vecOf nSum2Le_as, nSum2Le_c⟫, ⟪d17, vecOf nSuccCong_as, nSuccCong_c⟫, ⟪d18, vecOf nLeOfEq_as, nLeOfEq_c⟫], ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact numRowOK_of nZeroAddB (by unfold rZeroAdd; rw [nth_vecOf _ 0 (by simp)]; rfl) quote_nZeroAddB hd0
+      (le_trans hl0 (by exact_mod_cast (by omega : N0 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nZeroAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nAddZeroB (by unfold rAddZero; rw [nth_vecOf _ 1 (by simp)]; rfl) quote_nAddZeroB hd1
+      (le_trans hl1 (by exact_mod_cast (by omega : N1 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nAddZeroB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nOneOneB (by unfold rOneOne; rw [nth_vecOf _ 2 (by simp)]; rfl) quote_nOneOneB hd2
+      (le_trans hl2 (by exact_mod_cast (by omega : N2 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nOneOneB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nZeroOneB (by unfold rZeroOne; rw [nth_vecOf _ 3 (by simp)]; rfl) quote_nZeroOneB hd3
+      (le_trans hl3 (by exact_mod_cast (by omega : N3 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nZeroOneB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nOneAddB (by unfold rOneAdd; rw [nth_vecOf _ 4 (by simp)]; rfl) quote_nOneAddB hd4
+      (le_trans hl4 (by exact_mod_cast (by omega : N4 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nOneAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nEqReflB (by unfold rEqRefl; rw [nth_vecOf _ 5 (by simp)]; rfl) quote_nEqReflB hd5
+      (le_trans hl5 (by exact_mod_cast (by omega : N5 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nEqReflB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nCarryB (by unfold rCarry; rw [nth_vecOf _ 6 (by simp)]; rfl) quote_nCarryB hd6
+      (le_trans hl6 (by exact_mod_cast (by omega : N6 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nCarryB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nBit00B (by unfold rBit00; rw [nth_vecOf _ 7 (by simp)]; rfl) quote_nBit00B hd7
+      (le_trans hl7 (by exact_mod_cast (by omega : N7 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nBit00B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nBit01B (by unfold rBit01; rw [nth_vecOf _ 8 (by simp)]; rfl) quote_nBit01B hd8
+      (le_trans hl8 (by exact_mod_cast (by omega : N8 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nBit01B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nBit10B (by unfold rBit10; rw [nth_vecOf _ 9 (by simp)]; rfl) quote_nBit10B hd9
+      (le_trans hl9 (by exact_mod_cast (by omega : N9 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nBit10B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nBit11B (by unfold rBit11; rw [nth_vecOf _ 10 (by simp)]; rfl) quote_nBit11B hd10
+      (le_trans hl10 (by exact_mod_cast (by omega : N10 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nBit11B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nLeOfAddB (by unfold rLeOfAdd; rw [nth_vecOf _ 11 (by simp)]; rfl) quote_nLeOfAddB hd11
+      (le_trans hl11 (by exact_mod_cast (by omega : N11 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nLeOfAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nLtOfSuccLeB (by unfold rLtOfSuccLe; rw [nth_vecOf _ 12 (by simp)]; rfl) quote_nLtOfSuccLeB hd12
+      (le_trans hl12 (by exact_mod_cast (by omega : N12 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nLtOfSuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nSum3SuccLeB (by unfold rSum3SuccLe; rw [nth_vecOf _ 13 (by simp)]; rfl) quote_nSum3SuccLeB hd13
+      (le_trans hl13 (by exact_mod_cast (by omega : N13 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nSum3SuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nSum2SuccLeB (by unfold rSum2SuccLe; rw [nth_vecOf _ 14 (by simp)]; rfl) quote_nSum2SuccLeB hd14
+      (le_trans hl14 (by exact_mod_cast (by omega : N14 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nSum2SuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nSuccLeB (by unfold rSuccLe; rw [nth_vecOf _ 15 (by simp)]; rfl) quote_nSuccLeB hd15
+      (le_trans hl15 (by exact_mod_cast (by omega : N15 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nSuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nSum2LeB (by unfold rSum2Le; rw [nth_vecOf _ 16 (by simp)]; rfl) quote_nSum2LeB hd16
+      (le_trans hl16 (by exact_mod_cast (by omega : N16 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nSum2LeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nSuccCongB (by unfold rSuccCong; rw [nth_vecOf _ 17 (by simp)]; rfl) quote_nSuccCongB hd17
+      (le_trans hl17 (by exact_mod_cast (by omega : N17 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nSuccCongB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · exact numRowOK_of nLeOfEqB (by unfold rLeOfEq; rw [nth_vecOf _ 18 (by simp)]; rfl) quote_nLeOfEqB hd18
+      (le_trans hl18 (by exact_mod_cast (by omega : N18 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
+      (by exact_mod_cast (by omega : rowLen nLeOfEqB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · rw [Peq, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : flen (Rewriting.emb eqS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
+  · rw [Ple, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : flen (Rewriting.emb leS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
+  · rw [Plt_eq_quote, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : flen (Rewriting.emb ltS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
+  · exact_mod_cast (by omega : 1 ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
+
+end table
 
 end ArithS
