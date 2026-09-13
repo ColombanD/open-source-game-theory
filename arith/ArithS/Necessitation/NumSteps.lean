@@ -3062,4 +3062,375 @@ theorem dlen_ltCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab 
 
 end leLt
 
+
+/-! ## 10. N3 (fixed arities): the node bookkeeping facts; N7; N6 the chain numeral; the `sLemma` packaging -/
+
+section bookkeeping
+
+lemma cast_rSum3SuccLe : ((rSum3SuccLe : ℕ) : V) = 13 := by simp [rSum3SuccLe]
+lemma cast_rSum2SuccLe : ((rSum2SuccLe : ℕ) : V) = 14 := by simp [rSum2SuccLe]
+lemma cast_rSuccLe : ((rSuccLe : ℕ) : V) = 15 := by simp [rSuccLe]
+lemma cast_rSum2Le : ((rSum2Le : ℕ) : V) = 16 := by simp [rSum2Le]
+lemma cast_rSuccCong : ((rSuccCong : ℕ) : V) = 17 := by simp [rSuccCong]
+lemma cast_rLeOfEq : ((rLeOfEq : ℕ) : V) = 18 := by simp [rLeOfEq]
+
+/-- `leafFact a n := bnum a + 1 ≤ bnum n` (the leaf node's `dlenLeafLe` companion). -/
+noncomputable def leafFact (a n : V) : V := leFact (bnum a ^+ 𝟏) (bnum n)
+/-- `sum2Fact a b n := bnum a + bnum b ≤ bnum n` (the `setLen` chains). -/
+noncomputable def sum2Fact (a b n : V) : V := leFact (bnum a ^+ bnum b) (bnum n)
+/-- `bin2Fact a b n := bnum a + bnum b + 1 ≤ bnum n` (the unary node's `dlenUnaryLe` companion). -/
+noncomputable def bin2Fact (a b n : V) : V := leFact ((bnum a ^+ bnum b) ^+ 𝟏) (bnum n)
+/-- `bin3Fact a b c n := bnum a + bnum b + bnum c + 1 ≤ bnum n` (the binary node's `dlenBinaryLe` companion). -/
+noncomputable def bin3Fact (a b c n : V) : V := leFact (((bnum a ^+ bnum b) ^+ bnum c) ^+ 𝟏) (bnum n)
+
+/-- `leafCode`: `succLe` at `(bnum a, bnum (a + 1), bnum n)` from `succCode a`, `leCode (a + 1) n`. -/
+noncomputable def leafCode (tbl a n : V) : V :=
+  stepL tbl 15 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum n), leCode tbl (a + 1) n)]
+    (vecOf [bnum n, bnum (a + 1), bnum a]) (leafFact a n)
+/-- `sum2Code`: `sum2Le` from `addCode a b`, `leCode (a + b) n`. -/
+noncomputable def sum2Code (tbl a b n : V) : V :=
+  stepL tbl 16 [(addFact a b, addCode tbl a b), (leFact (bnum (a + b)) (bnum n), leCode tbl (a + b) n)]
+    (vecOf [bnum n, bnum (a + b), bnum b, bnum a]) (sum2Fact a b n)
+/-- `bin2Code`: `sum2SuccLe` from `addCode a b`, `succCode (a + b)`, `leCode (a + b + 1) n`. -/
+noncomputable def bin2Code (tbl a b n : V) : V :=
+  stepL tbl 14 [(addFact a b, addCode tbl a b), (succFact (a + b), succCode tbl (a + b)),
+    (leFact (bnum (a + b + 1)) (bnum n), leCode tbl (a + b + 1) n)]
+    (vecOf [bnum n, bnum (a + b + 1), bnum (a + b), bnum b, bnum a]) (bin2Fact a b n)
+/-- `bin3Code`: `sum3SuccLe` from `addCode a b`, `addCode (a + b) c`, `succCode (a + b + c)`, `leCode (a + b + c + 1) n`. -/
+noncomputable def bin3Code (tbl a b c n : V) : V :=
+  stepL tbl 13 [(addFact a b, addCode tbl a b), (addFact (a + b) c, addCode tbl (a + b) c),
+    (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (bnum (a + b + c + 1)) (bnum n), leCode tbl (a + b + c + 1) n)]
+    (vecOf [bnum n, bnum (a + b + c + 1), bnum (a + b + c), bnum (a + b), bnum c, bnum b, bnum a]) (bin3Fact a b c n)
+
+lemma isFormula_leafFact (a n : V) : IsFormula LAct (leafFact a n) :=
+  isFormula_leFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 n)
+lemma isFormula_sum2Fact (a b n : V) : IsFormula LAct (sum2Fact a b n) :=
+  isFormula_leFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 n)
+lemma isFormula_bin2Fact (a b n : V) : IsFormula LAct (bin2Fact a b n) :=
+  isFormula_leFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 n)
+lemma isFormula_bin3Fact (a b c n : V) : IsFormula LAct (bin3Fact a b c n) :=
+  isFormula_leFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 n)
+
+@[simp] lemma isUTerm_bnum_LAct (a : V) : IsUTerm LAct (bnum a) := (isSemiterm_bnum_LAct 0 a).isUTerm
+@[simp] lemma isSemiterm_bnum_LAct' (n a : V) : IsSemiterm LAct n (bnum a) := isSemiterm_bnum_LAct n a
+
+lemma termLen_qqAdd_le {x y X Y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y)
+    (hX : termLen LAct x ≤ X) (hY : termLen LAct y ≤ Y) : termLen LAct (x ^+ y) ≤ X + Y + 1 := by
+  rw [termLen_qqAdd isFunc_LAct_addIndex hx hy]; gcongr
+
+lemma termLen_qqOne_le : termLen LAct (𝟏 : V) ≤ 1 := by rw [termLen_qqOne isFunc_LAct_oneIndex]
+
+/-- The node facts use `E := 18‖n‖ + 7` (every summand `≤ n`), which dominates `12‖n‖ + 3`. -/
+lemma addE_le_bkE (n : V) : 12 * ‖n‖ + 3 ≤ 18 * ‖n‖ + 7 := by gcongr <;> norm_num
+lemma one_le_bkE (n : V) : 1 ≤ 18 * ‖n‖ + 7 := le_trans (by norm_num) le_add_self
+
+lemma termLen_bnum_le_bk {x n : V} (hx : x ≤ n) : termLen LAct (bnum x) ≤ 6 * ‖n‖ + 1 :=
+  le_trans (termLen_bnum_le x) (by gcongr; exact length_le_of_le hx)
+
+lemma termLen_leafT_le {a n : V} (ha : a ≤ n) : termLen LAct (bnum a ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
+  le_trans (termLen_qqAdd_le (by simp) (by simp) (termLen_bnum_le_bk ha) termLen_qqOne_le)
+    (by calc 6 * ‖n‖ + 1 + 1 + 1 ≤ 18 * ‖n‖ + 1 + 1 + 1 := by gcongr; norm_num
+          _ ≤ 18 * ‖n‖ + 7 := by rw [add_assoc, add_assoc]; gcongr; norm_num)
+
+lemma termLen_sum2T_le {a b n : V} (ha : a ≤ n) (hb : b ≤ n) : termLen LAct (bnum a ^+ bnum b) ≤ 18 * ‖n‖ + 7 :=
+  le_trans (termLen_qqAdd_le (by simp) (by simp) (termLen_bnum_le_bk ha) (termLen_bnum_le_bk hb))
+    (by calc 6 * ‖n‖ + 1 + (6 * ‖n‖ + 1) + 1 = 12 * ‖n‖ + 3 := by ring
+          _ ≤ 18 * ‖n‖ + 7 := addE_le_bkE n)
+
+lemma termLen_bin2T_le {a b n : V} (ha : a ≤ n) (hb : b ≤ n) : termLen LAct ((bnum a ^+ bnum b) ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
+  le_trans (termLen_qqAdd_le (by simp) (by simp)
+      (termLen_qqAdd_le (by simp) (by simp) (termLen_bnum_le_bk ha) (termLen_bnum_le_bk hb)) termLen_qqOne_le)
+    (by calc 6 * ‖n‖ + 1 + (6 * ‖n‖ + 1) + 1 + 1 + 1 = 12 * ‖n‖ + 5 := by ring
+          _ ≤ 18 * ‖n‖ + 7 := by gcongr <;> norm_num)
+
+lemma termLen_bin3T_le {a b c n : V} (ha : a ≤ n) (hb : b ≤ n) (hc : c ≤ n) :
+    termLen LAct (((bnum a ^+ bnum b) ^+ bnum c) ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
+  le_trans (termLen_qqAdd_le (by simp) (by simp)
+      (termLen_qqAdd_le (by simp) (by simp)
+        (termLen_qqAdd_le (by simp) (by simp) (termLen_bnum_le_bk ha) (termLen_bnum_le_bk hb)) (termLen_bnum_le_bk hc))
+      termLen_qqOne_le)
+    (by calc 6 * ‖n‖ + 1 + (6 * ‖n‖ + 1) + 1 + (6 * ‖n‖ + 1) + 1 + 1 + 1 = 18 * ‖n‖ + 7 := by ring
+          _ ≤ 18 * ‖n‖ + 7 := le_rfl)
+
+/-! ### The four node facts: proofs and bounds (all instances of `stepL`) -/
+
+lemma formulaLen_leFact_bk {B a t n : V} (hPle : formulaLen LAct (Ple : V) ≤ B) (ht : IsSemiterm LAct 0 t)
+    (hlt : termLen LAct t ≤ 18 * ‖n‖ + 7) (ha : a ≤ n) :
+    formulaLen LAct (leFact t (bnum a)) ≤ B * (18 * ‖n‖ + 7) :=
+  le_trans (formulaLen_leFact_le (one_le_bkE n) ht (isSemiterm_bnum_LAct 0 a) hlt
+    (termLen_bnum_le_E' ha (addE_le_bkE n))) (mul_le_mul_of_nonneg_right hPle zero_le)
+
+lemma hes_of_le {es : List V} {n : V} (h : ∀ e ∈ es, ∃ x, e = bnum x ∧ x ≤ n) :
+    ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 18 * ‖n‖ + 7 := by
+  intro e he
+  obtain ⟨x, rfl, hx⟩ := h e he
+  exact ⟨isSemiterm_bnum_LAct 0 x, termLen_bnum_le_E' hx (addE_le_bkE n)⟩
+
+/-- **`leafCode`**: `{bnum a + 1 ≤ bnum n}` for `a + 1 ≤ n`. -/
+theorem leafCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a n : V} (h : a + 1 ≤ n) :
+    DerivationOf TAct (leafCode tbl a n) (sing (leafFact a n)) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr15, -, -, -, -, -, -, -⟩ := id htbl
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hu : IsSemiterm LAct 0 (bnum (a + 1)) := isSemiterm_bnum_LAct 0 _
+  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hpf := stepL_proof hr15 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum n), leCode tbl (a + 1) n)]
+    [bnum n, bnum (a + 1), bnum a] rfl (by simp [hx, hu, hn]) (isFormula_leafFact a n)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl
+      · exact ⟨isFormula_succFact a, succCode_proof htbl a⟩
+      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+    (by rw [(inst_nSuccLe hx hu hn).1]; rfl) (inst_nSuccLe hx hu hn).2
+  rwa [cast_rSuccLe] at hpf
+
+theorem dlen_leafCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a n : V} (h : a + 1 ≤ n) :
+    dlen TAct (leafCode tbl a n) ≤
+      dlen TAct (succCode tbl a) + dlen TAct (leCode tbl (a + 1) n) + nodeCost N B (18 * ‖n‖ + 7) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr15, -, -, -, hPeq, hPle, -, hB⟩ := id htbl
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hu : IsSemiterm LAct 0 (bnum (a + 1)) := isSemiterm_bnum_LAct 0 _
+  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have ha : a ≤ n := le_trans le_self_add h
+  have hes := hes_of_le (es := [bnum n, bnum (a + 1), bnum a]) (n := n) (by
+    intro e he
+    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl | rfl
+    · exact ⟨n, rfl, le_rfl⟩
+    · exact ⟨a + 1, rfl, h⟩
+    · exact ⟨a, rfl, ha⟩)
+  have hh := dlen_stepL_le hr15 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum n), leCode tbl (a + 1) n)]
+    [bnum n, bnum (a + 1), bnum a] rfl hes (one_le_bkE n) hB (isFormula_leafFact a n)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl
+      · exact ⟨isFormula_succFact a, succCode_proof htbl a⟩
+      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+    (by rw [(inst_nSuccLe hx hu hn).1]; rfl) (inst_nSuccLe hx hu hn).2 (by norm_num) (by simp [nSuccLe_as])
+    (formulaLen_leFact_bk hPle (by simp) (termLen_leafT_le ha) le_rfl)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl
+      · exact formulaLen_succFact_le hPeq (le_trans (succE_le_addE h) (addE_le_bkE n))
+      · exact formulaLen_leFact_bk hPle hu (termLen_bnum_le_E' h (addE_le_bkE n)) le_rfl)
+  rw [cast_rSuccLe] at hh
+  unfold leafCode
+  simpa [add_assoc] using hh
+
+/-- **`sum2Code`**: `{bnum a + bnum b ≤ bnum n}` for `a + b ≤ n`. -/
+theorem sum2Code_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b ≤ n) :
+    DerivationOf TAct (sum2Code tbl a b n) (sing (sum2Fact a b n)) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr16, -, -, -, -, -, -⟩ := id htbl
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
+  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hpf := stepL_proof hr16 [(addFact a b, addCode tbl a b), (leFact (bnum (a + b)) (bnum n), leCode tbl (a + b) n)]
+    [bnum n, bnum (a + b), bnum b, bnum a] rfl (by simp [hx, hy, hs, hn]) (isFormula_sum2Fact a b n)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl
+      · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
+      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+    (by rw [(inst_nSum2Le hx hy hs hn).1]; rfl) (inst_nSum2Le hx hy hs hn).2
+  rwa [cast_rSum2Le] at hpf
+
+theorem dlen_sum2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b ≤ n) :
+    dlen TAct (sum2Code tbl a b n) ≤
+      dlen TAct (addCode tbl a b) + dlen TAct (leCode tbl (a + b) n) + nodeCost N B (18 * ‖n‖ + 7) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr16, -, -, hPeq, hPle, -, hB⟩ := id htbl
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
+  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have ha : a ≤ n := le_trans le_self_add h
+  have hb : b ≤ n := le_trans le_add_self h
+  have hes := hes_of_le (es := [bnum n, bnum (a + b), bnum b, bnum a]) (n := n) (by
+    intro e he
+    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl | rfl | rfl
+    · exact ⟨n, rfl, le_rfl⟩
+    · exact ⟨a + b, rfl, h⟩
+    · exact ⟨b, rfl, hb⟩
+    · exact ⟨a, rfl, ha⟩)
+  have hh := dlen_stepL_le hr16 [(addFact a b, addCode tbl a b), (leFact (bnum (a + b)) (bnum n), leCode tbl (a + b) n)]
+    [bnum n, bnum (a + b), bnum b, bnum a] rfl hes (one_le_bkE n) hB (isFormula_sum2Fact a b n)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl
+      · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
+      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+    (by rw [(inst_nSum2Le hx hy hs hn).1]; rfl) (inst_nSum2Le hx hy hs hn).2 (by norm_num) (by simp [nSum2Le_as])
+    (formulaLen_leFact_bk hPle (by simp) (termLen_sum2T_le ha hb) le_rfl)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl
+      · exact formulaLen_addFact_le hPeq (le_trans (by gcongr; exact length_le_of_le h) (addE_le_bkE n))
+      · exact formulaLen_leFact_bk hPle hs (termLen_bnum_le_E' h (addE_le_bkE n)) le_rfl)
+  rw [cast_rSum2Le] at hh
+  unfold sum2Code
+  simpa [add_assoc] using hh
+
+/-- **`bin2Code`**: `{bnum a + bnum b + 1 ≤ bnum n}` for `a + b + 1 ≤ n`. -/
+theorem bin2Code_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b + 1 ≤ n) :
+    DerivationOf TAct (bin2Code tbl a b n) (sing (bin2Fact a b n)) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hr14, -, -, -, -, -, -, -, -⟩ := id htbl
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
+  have hu : IsSemiterm LAct 0 (bnum (a + b + 1)) := isSemiterm_bnum_LAct 0 _
+  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hpf := stepL_proof hr14 [(addFact a b, addCode tbl a b), (succFact (a + b), succCode tbl (a + b)),
+      (leFact (bnum (a + b + 1)) (bnum n), leCode tbl (a + b + 1) n)]
+    [bnum n, bnum (a + b + 1), bnum (a + b), bnum b, bnum a] rfl (by simp [hx, hy, hs, hu, hn]) (isFormula_bin2Fact a b n)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl
+      · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
+      · exact ⟨isFormula_succFact _, succCode_proof htbl _⟩
+      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+    (by rw [(inst_nSum2SuccLe hx hy hs hu hn).1]; rfl) (inst_nSum2SuccLe hx hy hs hu hn).2
+  rwa [cast_rSum2SuccLe] at hpf
+
+theorem dlen_bin2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b + 1 ≤ n) :
+    dlen TAct (bin2Code tbl a b n) ≤
+      dlen TAct (addCode tbl a b) + dlen TAct (succCode tbl (a + b)) + dlen TAct (leCode tbl (a + b + 1) n)
+        + nodeCost N B (18 * ‖n‖ + 7) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hr14, -, -, -, -, hPeq, hPle, -, hB⟩ := id htbl
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
+  have hu : IsSemiterm LAct 0 (bnum (a + b + 1)) := isSemiterm_bnum_LAct 0 _
+  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hab : a + b ≤ n := le_trans le_self_add h
+  have ha : a ≤ n := le_trans le_self_add hab
+  have hb : b ≤ n := le_trans le_add_self hab
+  have hes := hes_of_le (es := [bnum n, bnum (a + b + 1), bnum (a + b), bnum b, bnum a]) (n := n) (by
+    intro e he
+    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl | rfl | rfl | rfl
+    · exact ⟨n, rfl, le_rfl⟩
+    · exact ⟨a + b + 1, rfl, h⟩
+    · exact ⟨a + b, rfl, hab⟩
+    · exact ⟨b, rfl, hb⟩
+    · exact ⟨a, rfl, ha⟩)
+  have hh := dlen_stepL_le hr14 [(addFact a b, addCode tbl a b), (succFact (a + b), succCode tbl (a + b)),
+      (leFact (bnum (a + b + 1)) (bnum n), leCode tbl (a + b + 1) n)]
+    [bnum n, bnum (a + b + 1), bnum (a + b), bnum b, bnum a] rfl hes (one_le_bkE n) hB (isFormula_bin2Fact a b n)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl
+      · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
+      · exact ⟨isFormula_succFact _, succCode_proof htbl _⟩
+      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+    (by rw [(inst_nSum2SuccLe hx hy hs hu hn).1]; rfl) (inst_nSum2SuccLe hx hy hs hu hn).2 (by norm_num)
+    (by simp [nSum2SuccLe_as]) (formulaLen_leFact_bk hPle (by simp) (termLen_bin2T_le ha hb) le_rfl)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl
+      · exact formulaLen_addFact_le hPeq (le_trans (by gcongr; exact length_le_of_le hab) (addE_le_bkE n))
+      · exact formulaLen_succFact_le hPeq (le_trans (succE_le_addE h) (addE_le_bkE n))
+      · exact formulaLen_leFact_bk hPle hu (termLen_bnum_le_E' h (addE_le_bkE n)) le_rfl)
+  rw [cast_rSum2SuccLe] at hh
+  unfold bin2Code
+  simpa [add_assoc] using hh
+
+/-- **`bin3Code`**: `{bnum a + bnum b + bnum c + 1 ≤ bnum n}` for `a + b + c + 1 ≤ n` — the binary node's
+`dlenBinaryLe` companion (DESIGN_fragments §0 (2)). -/
+theorem bin3Code_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
+    DerivationOf TAct (bin3Code tbl a b c n) (sing (bin3Fact a b c n)) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hr13, -, -, -, -, -, -, -, -, -⟩ := id htbl
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hz : IsSemiterm LAct 0 (bnum c) := isSemiterm_bnum_LAct 0 _
+  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
+  have ht : IsSemiterm LAct 0 (bnum (a + b + c)) := isSemiterm_bnum_LAct 0 _
+  have hu : IsSemiterm LAct 0 (bnum (a + b + c + 1)) := isSemiterm_bnum_LAct 0 _
+  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hpf := stepL_proof hr13 [(addFact a b, addCode tbl a b), (addFact (a + b) c, addCode tbl (a + b) c),
+      (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (bnum (a + b + c + 1)) (bnum n), leCode tbl (a + b + c + 1) n)]
+    [bnum n, bnum (a + b + c + 1), bnum (a + b + c), bnum (a + b), bnum c, bnum b, bnum a] rfl
+    (by simp [hx, hy, hz, hs, ht, hu, hn]) (isFormula_bin3Fact a b c n)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl
+      · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
+      · exact ⟨isFormula_addFact _ _, addCode_proof htbl _ _⟩
+      · exact ⟨isFormula_succFact _, succCode_proof htbl _⟩
+      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+    (by rw [(inst_nSum3SuccLe hx hy hz hs ht hu hn).1]; rfl) (inst_nSum3SuccLe hx hy hz hs ht hu hn).2
+  rwa [cast_rSum3SuccLe] at hpf
+
+theorem dlen_bin3Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
+    dlen TAct (bin3Code tbl a b c n) ≤
+      dlen TAct (addCode tbl a b) + dlen TAct (addCode tbl (a + b) c) + dlen TAct (succCode tbl (a + b + c))
+        + dlen TAct (leCode tbl (a + b + c + 1) n) + nodeCost N B (18 * ‖n‖ + 7) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hr13, -, -, -, -, -, hPeq, hPle, -, hB⟩ := id htbl
+  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hz : IsSemiterm LAct 0 (bnum c) := isSemiterm_bnum_LAct 0 _
+  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
+  have ht : IsSemiterm LAct 0 (bnum (a + b + c)) := isSemiterm_bnum_LAct 0 _
+  have hu : IsSemiterm LAct 0 (bnum (a + b + c + 1)) := isSemiterm_bnum_LAct 0 _
+  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have habc : a + b + c ≤ n := le_trans le_self_add h
+  have hab : a + b ≤ n := le_trans le_self_add habc
+  have ha : a ≤ n := le_trans le_self_add hab
+  have hb : b ≤ n := le_trans le_add_self hab
+  have hc : c ≤ n := le_trans le_add_self habc
+  have hes := hes_of_le (es := [bnum n, bnum (a + b + c + 1), bnum (a + b + c), bnum (a + b), bnum c, bnum b, bnum a])
+    (n := n) (by
+    intro e he
+    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact ⟨n, rfl, le_rfl⟩
+    · exact ⟨a + b + c + 1, rfl, h⟩
+    · exact ⟨a + b + c, rfl, habc⟩
+    · exact ⟨a + b, rfl, hab⟩
+    · exact ⟨c, rfl, hc⟩
+    · exact ⟨b, rfl, hb⟩
+    · exact ⟨a, rfl, ha⟩)
+  have hh := dlen_stepL_le hr13 [(addFact a b, addCode tbl a b), (addFact (a + b) c, addCode tbl (a + b) c),
+      (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (bnum (a + b + c + 1)) (bnum n), leCode tbl (a + b + c + 1) n)]
+    [bnum n, bnum (a + b + c + 1), bnum (a + b + c), bnum (a + b), bnum c, bnum b, bnum a] rfl hes (one_le_bkE n) hB
+    (isFormula_bin3Fact a b c n)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl
+      · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
+      · exact ⟨isFormula_addFact _ _, addCode_proof htbl _ _⟩
+      · exact ⟨isFormula_succFact _, succCode_proof htbl _⟩
+      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+    (by rw [(inst_nSum3SuccLe hx hy hz hs ht hu hn).1]; rfl) (inst_nSum3SuccLe hx hy hz hs ht hu hn).2 (by norm_num)
+    (by simp [nSum3SuccLe_as]) (formulaLen_leFact_bk hPle (by simp) (termLen_bin3T_le ha hb hc) le_rfl)
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl
+      · exact formulaLen_addFact_le hPeq (le_trans (by gcongr; exact length_le_of_le hab) (addE_le_bkE n))
+      · exact formulaLen_addFact_le hPeq (le_trans (by gcongr; exact length_le_of_le habc) (addE_le_bkE n))
+      · exact formulaLen_succFact_le hPeq (le_trans (succE_le_addE h) (addE_le_bkE n))
+      · exact formulaLen_leFact_bk hPle hu (termLen_bnum_le_E' h (addE_le_bkE n)) le_rfl)
+  rw [cast_rSum3SuccLe] at hh
+  unfold bin3Code
+  simpa [add_assoc] using hh
+
+/-- N7: `1 ≤ bnum a` for `1 ≤ a` is `leCode tbl 1 a` (`bnum 1 = 𝟏`). -/
+theorem oneLe_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a : V} (ha : 1 ≤ a) :
+    DerivationOf TAct (leCode tbl 1 a) (sing (leFact 𝟏 (bnum a))) := by
+  have := leCode_proof htbl ha
+  rwa [bnum_one] at this
+
+end bookkeeping
+
 end ArithS
