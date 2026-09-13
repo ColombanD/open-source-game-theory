@@ -1889,4 +1889,300 @@ theorem stepCost_lemma_succ {tbl N B N' E Γ : V} (htbl : NumTableOK tbl N B) (z
 
 end succSound
 
+
+/-! ## 7. Addition: `addFact a b := bnum a + bnum b = bnum (a + b)`
+
+`addCode tbl a b` — a `Fixpoint` on `⟪a, b, d⟫`: `a = 0`/`b = 0` by `zeroAdd`/`addZero`; `a = 1` by
+`oneAdd` from `succCode b`; `b = 1` IS `succCode a` (`bnum 1 = 𝟏`); `a, b ≥ 2` by the four bit rows
+from the fact for `(a / 2, b / 2)` — and, for `11`, the carry `succCode (a/2 + b/2)`. A chain of
+`‖a‖ + 1` add-nodes, each with at most one successor chain: `(‖a‖ + 1)(‖a + b‖ + 2)` nodes. -/
+
+section add
+
+/-- `addFact a b := bnum a + bnum b = bnum (a + b)`. -/
+noncomputable def addFact (a b : V) : V := eqFact (bnum a ^+ bnum b) (bnum (a + b))
+noncomputable def addFactDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y a b. ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧ ∃ s, !qqAddGraph s ta tb ∧ ∃ t, !bnumGraph t (a + b) ∧
+    !eqFactDef y s t”
+instance addFact_defined : 𝚺₁-Function₂ (addFact : V → V → V) via addFactDef := .mk fun v ↦ by
+  simp [addFactDef, bnum.defined.iff, qqAdd_defined.iff, eqFact_defined.iff, addFact]
+instance addFact_definable : 𝚺₁-Function₂ (addFact : V → V → V) := addFact_defined.to_definable
+
+lemma isFormula_addFact (a b : V) : IsFormula LAct (addFact a b) :=
+  isFormula_eqFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 _)
+
+lemma addFact_zero_left (b : V) : addFact 0 b = eqFact ((𝟎 : V) ^+ bnum b) (bnum b) := by
+  unfold addFact; rw [bnum_zero, zero_add]
+lemma addFact_zero_right (a : V) : addFact a 0 = eqFact (bnum a ^+ (𝟎 : V)) (bnum a) := by
+  unfold addFact; rw [bnum_zero, add_zero]
+lemma addFact_one_left (b : V) : addFact 1 b = eqFact ((𝟏 : V) ^+ bnum b) (bnum (b + 1)) := by
+  unfold addFact; rw [bnum_one, add_comm]
+lemma addFact_one_right (a : V) : addFact a 1 = succFact a := by
+  unfold addFact succFact; rw [bnum_one]
+lemma addFact_bit00 {a' b' : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
+    addFact (2 * a') (2 * b') = eqFact (((𝟐 : V) ^* bnum a') ^+ (𝟐 ^* bnum b')) (𝟐 ^* bnum (a' + b')) := by
+  unfold addFact
+  rw [bnum_two_mul ha, bnum_two_mul hb, show 2 * a' + 2 * b' = 2 * (a' + b') by ring, bnum_two_mul (le_trans ha le_self_add)]
+lemma addFact_bit01 {a' b' : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
+    addFact (2 * a') (2 * b' + 1) = eqFact (((𝟐 : V) ^* bnum a') ^+ ((𝟐 ^* bnum b') ^+ 𝟏)) ((𝟐 ^* bnum (a' + b')) ^+ 𝟏) := by
+  unfold addFact
+  rw [bnum_two_mul ha, bnum_two_mul_add_one hb, show 2 * a' + (2 * b' + 1) = 2 * (a' + b') + 1 by ring,
+    bnum_two_mul_add_one (le_trans ha le_self_add)]
+lemma addFact_bit10 {a' b' : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
+    addFact (2 * a' + 1) (2 * b') = eqFact ((((𝟐 : V) ^* bnum a') ^+ 𝟏) ^+ (𝟐 ^* bnum b')) ((𝟐 ^* bnum (a' + b')) ^+ 𝟏) := by
+  unfold addFact
+  rw [bnum_two_mul_add_one ha, bnum_two_mul hb, show 2 * a' + 1 + 2 * b' = 2 * (a' + b') + 1 by ring,
+    bnum_two_mul_add_one (le_trans ha le_self_add)]
+lemma addFact_bit11 {a' b' : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
+    addFact (2 * a' + 1) (2 * b' + 1) =
+      eqFact ((((𝟐 : V) ^* bnum a') ^+ 𝟏) ^+ ((𝟐 ^* bnum b') ^+ 𝟏)) (𝟐 ^* bnum (a' + b' + 1)) := by
+  unfold addFact
+  rw [bnum_two_mul_add_one ha, bnum_two_mul_add_one hb, show 2 * a' + 1 + (2 * b' + 1) = 2 * (a' + b' + 1) by ring,
+    bnum_two_mul (le_trans ha (le_trans le_self_add le_self_add))]
+
+/-- `|addFact a b| ≤ B·E` once `B ≥ |Peq|` and `E ≥ 12‖a + b‖ + 3`. -/
+lemma formulaLen_addFact_le {B E a b : V} (hPeq : formulaLen LAct (Peq : V) ≤ B) (hE : 12 * ‖a + b‖ + 3 ≤ E) :
+    formulaLen LAct (addFact a b) ≤ B * E := by
+  have hE1 : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
+  have ha := length_monotone (le_self_add : a ≤ a + b)
+  have hb := length_monotone (le_add_self : b ≤ a + b)
+  have h1 : termLen LAct (bnum a ^+ bnum b) ≤ E := by
+    rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_bnum_LAct 0 a).isUTerm (isSemiterm_bnum_LAct 0 b).isUTerm]
+    calc termLen LAct (bnum a) + termLen LAct (bnum b) + 1 ≤ (6 * ‖a‖ + 1) + (6 * ‖b‖ + 1) + 1 := by
+          gcongr <;> exact termLen_bnum_le _
+      _ ≤ (6 * ‖a + b‖ + 1) + (6 * ‖a + b‖ + 1) + 1 := by gcongr
+      _ = 12 * ‖a + b‖ + 3 := by ring
+      _ ≤ E := hE
+  have h2 : termLen LAct (bnum (a + b)) ≤ E :=
+    le_trans (termLen_bnum_le _) (le_trans (by
+      calc 6 * ‖a + b‖ + 1 ≤ 12 * ‖a + b‖ + 1 := by gcongr; norm_num
+        _ ≤ 12 * ‖a + b‖ + 3 := by gcongr; norm_num) hE)
+  exact le_trans (formulaLen_eqFact_le hE1 (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 _) h1 h2)
+    (mul_le_mul_of_nonneg_right hPeq zero_le)
+
+lemma termLen_bnum_le_E' {x s E : V} (hx : x ≤ s) (hE : 12 * ‖s‖ + 3 ≤ E) : termLen LAct (bnum x) ≤ E :=
+  le_trans (termLen_bnum_le x) (le_trans (by
+    have := length_monotone hx
+    calc 6 * ‖x‖ + 1 ≤ 6 * ‖s‖ + 1 := by gcongr
+      _ ≤ 12 * ‖s‖ + 3 := by gcongr <;> norm_num) hE)
+
+lemma succE_le_addE {x s : V} (hx : x + 1 ≤ s) : 6 * ‖x + 1‖ + 3 ≤ 12 * ‖s‖ + 3 := by
+  have := length_monotone hx
+  calc 6 * ‖x + 1‖ + 3 ≤ 6 * ‖s‖ + 3 := by gcongr
+    _ ≤ 12 * ‖s‖ + 3 := by gcongr; norm_num
+
+lemma one_le_addE {s : V} : 1 ≤ 12 * ‖s‖ + 3 := le_trans (by norm_num) le_add_self
+
+lemma d_lt_step2 (tbl i F₁ d₁ F₂ d₂ ev A : V) : d₁ < step2 tbl i F₁ d₁ F₂ d₂ ev A :=
+  lt_trans (d_lt_wkRule _ _) (d₁_lt_cutRule _ _ _ _)
+
+namespace AddG
+
+/-- The graph: `⟪a, b, d⟫` where `d` is the addition-fact derivation of `(a, b)`. -/
+def Phi (tbl : V) (C : Set V) (pr : V) : Prop :=
+  ∃ a b d, pr = ⟪a, b, d⟫ ∧
+  ( (a = 0 ∧ d = step0 tbl 0 (vecOf [bnum b]) (addFact 0 b)) ∨
+    (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [bnum a]) (addFact a 0)) ∨
+    (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b)) ∨
+    (2 ≤ a ∧ b = 1 ∧ d = succCode tbl a) ∨
+    (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧ ⟪a', b', d'⟫ ∈ C ∧
+      d = step1 tbl 7 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+    (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧ ⟪a', b', d'⟫ ∈ C ∧
+      d = step1 tbl 8 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+    (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧ ⟪a', b', d'⟫ ∈ C ∧
+      d = step1 tbl 9 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+    (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧ ⟪a', b', d'⟫ ∈ C ∧
+      d = step2 tbl 10 (addFact a' b') d' (succFact (a' + b')) (succCode tbl (a' + b'))
+        (vecOf [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a']) (addFact a b)) )
+
+noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
+  (.mkSigma “pr C tbl.
+    ∃ a <⁺ pr, ∃ q <⁺ pr, !pairDef pr a q ∧ ∃ b <⁺ q, ∃ d <⁺ q, !pairDef q b d ∧
+    ( (a = 0 ∧ ∃ t, !bnumGraph t b ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !addFactDef A 0 b ∧
+        ∃ x, !step0Def x tbl 0 ev A ∧ d = x) ∨
+      (1 ≤ a ∧ b = 0 ∧ ∃ t, !bnumGraph t a ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !addFactDef A a 0 ∧
+        ∃ x, !step0Def x tbl 1 ev A ∧ d = x) ∨
+      (a = 1 ∧ 1 ≤ b ∧ ∃ F, !succFactDef F b ∧ ∃ dF, !succCodeDef dF tbl b ∧ ∃ t1, !bnumGraph t1 (b + 1) ∧
+        ∃ t0, !bnumGraph t0 b ∧ ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ ev, !adjoinDef ev t1 v0 ∧ ∃ A, !addFactDef A 1 b ∧
+        ∃ x, !step1Def x tbl 4 F dF ev A ∧ d = x) ∨
+      (2 ≤ a ∧ b = 1 ∧ ∃ x, !succCodeDef x tbl a ∧ d = x) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧
+        (∃ q', !pairDef q' b' d' ∧ :⟪a', q'⟫:∈ C) ∧ ∃ F, !addFactDef F a' b' ∧
+        ∃ t2, !bnumGraph t2 (a' + b') ∧ ∃ t1, !bnumGraph t1 b' ∧ ∃ t0, !bnumGraph t0 a' ∧
+        ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧ ∃ ev, !adjoinDef ev t2 v1 ∧
+        ∃ A, !addFactDef A a b ∧ ∃ x, !step1Def x tbl 7 F d' ev A ∧ d = x) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧
+        (∃ q', !pairDef q' b' d' ∧ :⟪a', q'⟫:∈ C) ∧ ∃ F, !addFactDef F a' b' ∧
+        ∃ t2, !bnumGraph t2 (a' + b') ∧ ∃ t1, !bnumGraph t1 b' ∧ ∃ t0, !bnumGraph t0 a' ∧
+        ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧ ∃ ev, !adjoinDef ev t2 v1 ∧
+        ∃ A, !addFactDef A a b ∧ ∃ x, !step1Def x tbl 8 F d' ev A ∧ d = x) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧
+        (∃ q', !pairDef q' b' d' ∧ :⟪a', q'⟫:∈ C) ∧ ∃ F, !addFactDef F a' b' ∧
+        ∃ t2, !bnumGraph t2 (a' + b') ∧ ∃ t1, !bnumGraph t1 b' ∧ ∃ t0, !bnumGraph t0 a' ∧
+        ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧ ∃ ev, !adjoinDef ev t2 v1 ∧
+        ∃ A, !addFactDef A a b ∧ ∃ x, !step1Def x tbl 9 F d' ev A ∧ d = x) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧
+        (∃ q', !pairDef q' b' d' ∧ :⟪a', q'⟫:∈ C) ∧ ∃ F, !addFactDef F a' b' ∧
+        ∃ G, !succFactDef G (a' + b') ∧ ∃ dG, !succCodeDef dG tbl (a' + b') ∧
+        ∃ t3, !bnumGraph t3 (a' + b' + 1) ∧ ∃ t2, !bnumGraph t2 (a' + b') ∧ ∃ t1, !bnumGraph t1 b' ∧
+        ∃ t0, !bnumGraph t0 a' ∧ ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧
+        ∃ v2, !adjoinDef v2 t2 v1 ∧ ∃ ev, !adjoinDef ev t3 v2 ∧
+        ∃ A, !addFactDef A a b ∧ ∃ x, !step2Def x tbl 10 F d' G dG ev A ∧ d = x) )”)
+  (.mkPi “pr C tbl.
+    ∃ a <⁺ pr, ∃ q <⁺ pr, !pairDef pr a q ∧ ∃ b <⁺ q, ∃ d <⁺ q, !pairDef q b d ∧
+    ( (a = 0 ∧ ∀ t, !bnumGraph t b → ∀ ev, !adjoinDef ev t 0 → ∀ A, !addFactDef A 0 b →
+        ∀ x, !step0Def x tbl 0 ev A → d = x) ∨
+      (1 ≤ a ∧ b = 0 ∧ ∀ t, !bnumGraph t a → ∀ ev, !adjoinDef ev t 0 → ∀ A, !addFactDef A a 0 →
+        ∀ x, !step0Def x tbl 1 ev A → d = x) ∨
+      (a = 1 ∧ 1 ≤ b ∧ ∀ F, !succFactDef F b → ∀ dF, !succCodeDef dF tbl b → ∀ t1, !bnumGraph t1 (b + 1) →
+        ∀ t0, !bnumGraph t0 b → ∀ v0, !adjoinDef v0 t0 0 → ∀ ev, !adjoinDef ev t1 v0 → ∀ A, !addFactDef A 1 b →
+        ∀ x, !step1Def x tbl 4 F dF ev A → d = x) ∨
+      (2 ≤ a ∧ b = 1 ∧ ∀ x, !succCodeDef x tbl a → d = x) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧
+        (∀ q', !pairDef q' b' d' → :⟪a', q'⟫:∈ C) ∧ ∀ F, !addFactDef F a' b' →
+        ∀ t2, !bnumGraph t2 (a' + b') → ∀ t1, !bnumGraph t1 b' → ∀ t0, !bnumGraph t0 a' →
+        ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 → ∀ ev, !adjoinDef ev t2 v1 →
+        ∀ A, !addFactDef A a b → ∀ x, !step1Def x tbl 7 F d' ev A → d = x) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧
+        (∀ q', !pairDef q' b' d' → :⟪a', q'⟫:∈ C) ∧ ∀ F, !addFactDef F a' b' →
+        ∀ t2, !bnumGraph t2 (a' + b') → ∀ t1, !bnumGraph t1 b' → ∀ t0, !bnumGraph t0 a' →
+        ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 → ∀ ev, !adjoinDef ev t2 v1 →
+        ∀ A, !addFactDef A a b → ∀ x, !step1Def x tbl 8 F d' ev A → d = x) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧
+        (∀ q', !pairDef q' b' d' → :⟪a', q'⟫:∈ C) ∧ ∀ F, !addFactDef F a' b' →
+        ∀ t2, !bnumGraph t2 (a' + b') → ∀ t1, !bnumGraph t1 b' → ∀ t0, !bnumGraph t0 a' →
+        ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 → ∀ ev, !adjoinDef ev t2 v1 →
+        ∀ A, !addFactDef A a b → ∀ x, !step1Def x tbl 9 F d' ev A → d = x) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧
+        (∀ q', !pairDef q' b' d' → :⟪a', q'⟫:∈ C) ∧ ∀ F, !addFactDef F a' b' →
+        ∀ G, !succFactDef G (a' + b') → ∀ dG, !succCodeDef dG tbl (a' + b') →
+        ∀ t3, !bnumGraph t3 (a' + b' + 1) → ∀ t2, !bnumGraph t2 (a' + b') → ∀ t1, !bnumGraph t1 b' →
+        ∀ t0, !bnumGraph t0 a' → ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 →
+        ∀ v2, !adjoinDef v2 t2 v1 → ∀ ev, !adjoinDef ev t3 v2 →
+        ∀ A, !addFactDef A a b → ∀ x, !step2Def x tbl 10 F d' G dG ev A → d = x) )”)⟩
+
+/-- `Phi` with the bounds the blueprint carries. -/
+private lemma phi_iff (tbl C pr : V) :
+    Phi tbl {x | x ∈ C} pr ↔
+    ∃ a ≤ pr, ∃ q ≤ pr, pr = ⟪a, q⟫ ∧ ∃ b ≤ q, ∃ d ≤ q, q = ⟪b, d⟫ ∧
+    ( (a = 0 ∧ d = step0 tbl 0 (vecOf [bnum b]) (addFact 0 b)) ∨
+      (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [bnum a]) (addFact a 0)) ∨
+      (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b)) ∨
+      (2 ≤ a ∧ b = 1 ∧ d = succCode tbl a) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧ ⟪a', b', d'⟫ ∈ C ∧
+        d = step1 tbl 7 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧ ⟪a', b', d'⟫ ∈ C ∧
+        d = step1 tbl 8 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧ ⟪a', b', d'⟫ ∈ C ∧
+        d = step1 tbl 9 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧ ⟪a', b', d'⟫ ∈ C ∧
+        d = step2 tbl 10 (addFact a' b') d' (succFact (a' + b')) (succCode tbl (a' + b'))
+          (vecOf [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ) := by
+  constructor
+  · rintro ⟨a, b, d, rfl, h⟩
+    refine ⟨a, le_pair_left _ _, ⟪b, d⟫, le_pair_right _ _, rfl, b, le_pair_left _ _, d, le_pair_right _ _, rfl, ?_⟩
+    rcases h with h | h | h | h | ⟨a', b', d', ha, hb, rfl, rfl, hC, rfl⟩ | ⟨a', b', d', ha, hb, rfl, rfl, hC, rfl⟩ |
+      ⟨a', b', d', ha, hb, rfl, rfl, hC, rfl⟩ | ⟨a', b', d', ha, hb, rfl, rfl, hC, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨a', Bnum.lt_two_mul ha, b', Bnum.lt_two_mul hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨a', Bnum.lt_two_mul ha, b', Bnum.lt_two_mul_add_one hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨a', Bnum.lt_two_mul_add_one ha, b', Bnum.lt_two_mul hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨a', Bnum.lt_two_mul_add_one ha, b', Bnum.lt_two_mul_add_one hb, d', d_lt_step2 _ _ _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))))
+  · rintro ⟨a, _, q, _, rfl, b, _, d, _, rfl, h⟩
+    refine ⟨a, b, d, rfl, ?_⟩
+    rcases h with h | h | h | h | ⟨a', _, b', _, d', _, ha, hb, rfl, rfl, hC, rfl⟩ | ⟨a', _, b', _, d', _, ha, hb, rfl, rfl, hC, rfl⟩ |
+      ⟨a', _, b', _, d', _, ha, hb, rfl, rfl, hC, rfl⟩ | ⟨a', _, b', _, d', _, ha, hb, rfl, rfl, hC, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hC, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hC, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hC, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨a', b', d', ha, hb, rfl, rfl, hC, rfl⟩))))))
+
+set_option maxHeartbeats 3000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, addFact_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
+        step0_defined.iff, step1_defined.iff, step2_defined.iff, numeral_eq_natCast]
+    · intro v
+      symm
+      simpa [blueprint, addFact_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
+        step0_defined.iff, step1_defined.iff, step2_defined.iff, numeral_eq_natCast] using phi_iff (v 2) (v 1) (v 0)
+  monotone := by
+    rintro C C' hC _ pr ⟨a, b, d, rfl, h⟩
+    refine ⟨a, b, d, rfl, ?_⟩
+    rcases h with h | h | h | h | ⟨a', b', d', ha, hb, rfl, rfl, hC', rfl⟩ | ⟨a', b', d', ha, hb, rfl, rfl, hC', rfl⟩ |
+      ⟨a', b', d', ha, hb, rfl, rfl, hC', rfl⟩ | ⟨a', b', d', ha, hb, rfl, rfl, hC', rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hC hC', rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hC hC', rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨a', b', d', ha, hb, rfl, rfl, hC hC', rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨a', b', d', ha, hb, rfl, rfl, hC hC', rfl⟩))))))
+
+instance : construction.Finite V where
+  finite := by
+    rintro C _ pr ⟨a, b, d, rfl, h⟩
+    rcases h with h | h | h | h | ⟨a', b', d', ha, hb, rfl, rfl, hC', rfl⟩ | ⟨a', b', d', ha, hb, rfl, rfl, hC', rfl⟩ |
+      ⟨a', b', d', ha, hb, rfl, rfl, hC', rfl⟩ | ⟨a', b', d', ha, hb, rfl, rfl, hC', rfl⟩
+    · exact ⟨0, a, b, d, rfl, Or.inl h⟩
+    · exact ⟨0, a, b, d, rfl, Or.inr (Or.inl h)⟩
+    · exact ⟨0, a, b, d, rfl, Or.inr (Or.inr (Or.inl h))⟩
+    · exact ⟨0, a, b, d, rfl, Or.inr (Or.inr (Or.inr (Or.inl h)))⟩
+    · exact ⟨⟪a', b', d'⟫ + 1, _, _, _, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨a', b', d', ha, hb, rfl, rfl, ⟨hC', lt_add_one _⟩, rfl⟩))))⟩
+    · exact ⟨⟪a', b', d'⟫ + 1, _, _, _, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨a', b', d', ha, hb, rfl, rfl, ⟨hC', lt_add_one _⟩, rfl⟩)))))⟩
+    · exact ⟨⟪a', b', d'⟫ + 1, _, _, _, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨a', b', d', ha, hb, rfl, rfl, ⟨hC', lt_add_one _⟩, rfl⟩))))))⟩
+    · exact ⟨⟪a', b', d'⟫ + 1, _, _, _, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨a', b', d', ha, hb, rfl, rfl, ⟨hC', lt_add_one _⟩, rfl⟩))))))⟩
+
+end AddG
+
+/-- `AddGraph tbl a b d`: `d` is the addition-fact derivation of `(a, b)` over the table `tbl`. -/
+def AddGraph (tbl a b d : V) : Prop := AddG.construction.Fixpoint ![tbl] ⟪a, b, d⟫
+
+noncomputable def addGraphDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “tbl a b d. ∃ q, !pairDef q b d ∧ ∃ p, !pairDef p a q ∧ !AddG.blueprint.fixpointDef p tbl”
+
+instance addGraph_defined : 𝚺₁-Relation₄ (AddGraph : V → V → V → V → Prop) via addGraphDef := .mk fun v ↦ by
+  simp [addGraphDef, AddG.construction.eval_fixpointDef, AddGraph]
+  have e : (fun _ : Fin 1 ↦ v 0) = ![v 0] := by funext i; fin_cases i; rfl
+  rw [e]
+instance addGraph_definable : 𝚺₁-Relation₄ (AddGraph : V → V → V → V → Prop) := addGraph_defined.to_definable
+
+lemma AddGraph.case_iff {tbl a b d : V} :
+    AddGraph tbl a b d ↔
+    (a = 0 ∧ d = step0 tbl 0 (vecOf [bnum b]) (addFact 0 b)) ∨
+    (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [bnum a]) (addFact a 0)) ∨
+    (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b)) ∨
+    (2 ≤ a ∧ b = 1 ∧ d = succCode tbl a) ∨
+    (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧ AddGraph tbl a' b' d' ∧
+      d = step1 tbl 7 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+    (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧ AddGraph tbl a' b' d' ∧
+      d = step1 tbl 8 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+    (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧ AddGraph tbl a' b' d' ∧
+      d = step1 tbl 9 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+    (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧ AddGraph tbl a' b' d' ∧
+      d = step2 tbl 10 (addFact a' b') d' (succFact (a' + b')) (succCode tbl (a' + b'))
+        (vecOf [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a']) (addFact a b)) :=
+  Iff.trans AddG.construction.case (by simp [AddG.construction, AddG.Phi, AddGraph])
+
+end add
+
 end ArithS
