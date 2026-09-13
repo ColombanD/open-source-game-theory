@@ -1,0 +1,447 @@
+import ArithS.Necessitation.WalkLemmas
+
+/-!
+# ArithS.Necessitation.RowInst — every row of the formula walk, read off the DSL and instantiated
+
+`M4_BOUNDED_HBL/DESIGN_describe.md` §4.2, §5, §9, §10 ("per-row `inst_row_ρ`"): for EVERY library
+row the walk `describeSteps` and its top-down companions `negSteps`/`shiftSteps`/`substSteps`/
+`freeSteps` use — the totality rows, the formation rows, the polarity bridges, the `<` rows, the
+closed symbol rows, the vector rows, and the commutation rows — three things, all V-generic
+(every model of `𝗜𝚺₁`, three standard axioms):
+
+1. **The row-shape lemma** `quote_<row>B : ⌜lMap emb <row>B⌝ = impChain LAct row_<row>_as row_<row>_c`
+   with every piece an explicit code `subst (listToVec [#i, …]) P` (`P` the code of the row's
+   predicate, `#i` written `bv i`, the DSL's `n + 1` as `bv i ^+ 𝟏`, its literals `0`/`1` as
+   `𝟎`/`𝟏`, the chain literals of the closed symbol rows as `cT k`) and an existential conclusion
+   `row_<row>_c = ^∃ row_<row>_R`, `row_<row>_R = ^∃ … row_<row>_body` — read off the DSL by
+   `rfl` after `quote_lMap_emb_imp/_ex/_and` and the vector form `quote_lMap_emb_subst'` of
+   `Steps.lean`'s `quote_lMap_emb_subst` (§1 below: the typed `LAct`-quote of an embedded closed
+   `ℒₒᵣ`-term is its `ℒₒᵣ` code, `entry_val`, so `‘#2 + 1’` reads `bv 2 ^+ 𝟏`, `quote_closed_add_m`).
+   The `<` rows are `Operator.operator` applications: `Plt` is the code of the operator's
+   sentence, and `zeroLtSuccB = Plt-sentence ⇜ ![‘0’, ‘#0 + 1’]` definitionally.
+2. **The instantiation lemma** `inst_<row>` at ARBITRARY closed witnesses (one hypothesis
+   `IsSemiterm LAct 0 w` per DSL variable; the witness list is the DSL variable list read
+   RIGHT-TO-LEFT, `[w_{m-1}, …, w_0]`): every antecedent instance `instOuter es aᵢ` IS a canonical
+   fact code (`piFact n p`, `andFact z a b`, …, `ltFact a b`, `negFact y p`, …), the Horn
+   conclusion likewise, and an existential conclusion after its `a` eliminations —
+   `freeIter a (instOuterAt a es body)` — is the conjunction of canonical facts about the
+   eigenvariables `&(a-1) … &0` (the LAST-listed existential is `&0`) with every witness shifted
+   `a` times (`termShift^[a] w`); the four rows with a NESTED existential (`freeRel/NRel/All/Exs`)
+   get a third clause for the inner eliminations (`freeIterAt`, §1.4 below). So the hypotheses
+   `neg (instOuter es aᵢ) ∈ Γ` of `useHornCode_proof`/`introFactCode_proof` are memberships of
+   EXACTLY the codes of DESIGN §5. Chain numerals are the special case `w := cT k`
+   (`cT_semiterm_LAct`; the row's `n + 1` at `cT k` is `cT k ^+ 𝟏 = cT (k + 1)`, `cT_succ`).
+3. **The canonical fact codes** (§2 below; DESIGN §1.2's names in parentheses):
+   `piFact/sigmaFact` (`piF/sigmaF`), `tPiFact/tSigmaFact`, `tvPiFact/tvSigmaFact`,
+   `utvPiFact/utvSigmaFact`, the shape facts `relFact/nrelFact/verumFact/falsumFact/andFact/orFact/
+   allFact/exsFact` (`relF …`, DESIGN's `shapeRel …`), `funcFact/bvarFact/fvarFact/adjFact`,
+   `isRelFact/isFuncFact`, `ltFact`, the graph facts `negFact/shiftFact/substFact/substs1Fact/
+   freeFact/qVecFact/tsvFact/tshvFact` — each `subst (listToVec [witnesses]) P` in the predicate's
+   own variable order, with `IsFormula`-ness, the shift law `shift (xFact w…) = xFact (termShift w)…`,
+   the length bound `formulaLen (xFact w…) ≤ formulaLen P · B` for any `B ≥ 1, termLen wᵢ`
+   (`formulaLen P` an opaque row constant; the bound is MULTIPLICATIVE because a variable may
+   occur several times in `P` — an additive `c + Σ termLen wᵢ` is false in general), and the
+   occurrence bound `fvOccF (xFact w…) ≤ bvOccF P · M` for `M ≥ fvOcc wᵢ` (a quoted sentence has
+   no free variables, `fvOccF_quote_sentence`), so a fact about eigenvariables has
+   `fvOccF ≤ bvOccF P`, a constant.
+
+§1 also supplies the walk's general instantiation laws: `instOuter_subst_listToVec` (any term
+entries, `termSubst` entrywise), `instOuterAt_and` (distribution under `k` binders),
+`freeIterAt m j` (`j` eigenvariable introductions under `m` extra binders; `freeIter = freeIterAt 0`),
+`freeIter_exsIter` (introductions pass under an `exsIter`), `freeIterAt_and`, and the entrywise law
+`freeIterAt_subst_listToVec : freeIterAt m j (subst ?[ws] P) = subst ?[ws.map (freeIterT m j)] P`
+with `freeIterT m j` computed on `#i` (`i < m`: fixed; `m ≤ i < m + j`: `&(i - m)`) and on closed
+terms (`termShift^[j]`).
+
+Two DSL literals to know about: `isSemiformulaSubsts1B`/`isFormulaFreeB` write the arity of a
+`1`-semiformula as the numeral `1`, whose code is `𝟏` (Foundation's `numeral 1`), NOT the chain
+numeral `cT 1 = 𝟎 ^+ 𝟏` the walk writes for arities — an instance at `cT 1` does not match these
+two rows syntactically (an equality row `0 + 1 = 1` or a rewrite of the two rows is needed if the
+walk ever consumes them at a chain arity); `0` is `𝟎 = cT 0` (`cT_zero`) and matches.
+-/
+
+namespace ArithS
+
+open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open PeanoMinus ISigma0 ISigma1
+open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
+open LAct
+
+variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+-- the row lemmas share one simp set and one finishing tactic; not every call uses every entry
+set_option linter.unusedSimpArgs false
+set_option linter.unusedTactic false
+
+/-! ## 1. Infrastructure -/
+
+/-! ### 1.1 Term-entry codes: the typed `LAct`-quote of an embedded closed `ℒₒᵣ`-term -/
+
+/-- The entry of `quote_lMap_emb_subst`'s vector is the `ℒₒᵣ` code of the closed term. -/
+lemma entry_val {m : ℕ} (t : ClosedSemiterm ℒₒᵣ m) :
+    ((⌜(↑(Semiterm.lMap emb t) : SyntacticSemiterm LAct m)⌝ : Bootstrapping.Semiterm V LAct m)).val =
+      (⌜t⌝ : V) := by
+  rw [← Semiterm.quote_def]
+  show (⌜(Rew.emb (Semiterm.lMap emb t) : SyntacticSemiterm LAct m)⌝ : V) = _
+  rw [Diag.term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def]
+
+/-- `quote_lMap_emb_subst` with the entries as `ℒₒᵣ` closed codes. -/
+lemma quote_lMap_emb_subst' {k m : ℕ} (φ : ArithmeticSemisentence k) (v : Fin k → ClosedSemiterm ℒₒᵣ m) :
+    (⌜Semiformula.lMap emb (φ ⇜ v)⌝ : V) =
+      subst LAct (matrixToVec fun i ↦ (⌜v i⌝ : V)) ⌜Semiformula.lMap emb φ⌝ := by
+  rw [quote_lMap_emb_subst]
+  congr 1
+  unfold SemitermVec.val
+  exact matrixToVec_congr (fun i ↦ entry_val (v i))
+
+lemma quote_lMap_emb_and {n : ℕ} (φ ψ : ArithmeticSemisentence n) :
+    (⌜Semiformula.lMap emb (φ ⋏ ψ)⌝ : V) = ⌜Semiformula.lMap emb φ⌝ ^⋏ ⌜Semiformula.lMap emb ψ⌝ := by
+  rw [LogicalConnective.HomClass.map_and]; simp [Sentence.quote_def]
+
+lemma matrixToVec_fin0 (f : Fin 0 → V) : matrixToVec f = listToVec [] := rfl
+lemma matrixToVec_fin1 (f : Fin 1 → V) : matrixToVec f = listToVec [f 0] := rfl
+lemma matrixToVec_fin2 (f : Fin 2 → V) : matrixToVec f = listToVec [f 0, f 1] := rfl
+lemma matrixToVec_fin3 (f : Fin 3 → V) : matrixToVec f = listToVec [f 0, f 1, f 2] := rfl
+lemma matrixToVec_fin4 (f : Fin 4 → V) : matrixToVec f = listToVec [f 0, f 1, f 2, f 3] := rfl
+lemma matrixToVec_fin5 (f : Fin 5 → V) : matrixToVec f = listToVec [f 0, f 1, f 2, f 3, f 4] := rfl
+lemma matrixToVec_fin6 (f : Fin 6 → V) : matrixToVec f = listToVec [f 0, f 1, f 2, f 3, f 4, f 5] := rfl
+lemma matrixToVec_fin7 (f : Fin 7 → V) : matrixToVec f = listToVec [f 0, f 1, f 2, f 3, f 4, f 5, f 6] := rfl
+
+/-- The closed-term codes at any bound-variable count (`Bnum.lean` has the `m = 0` forms). -/
+lemma quote_closed_add_m {m : ℕ} (t u : ClosedSemiterm ℒₒᵣ m) :
+    (⌜(‘!!t + !!u’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (⌜t⌝ : V) ^+ (⌜u⌝ : V) := by
+  rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_add]; rfl
+lemma quote_closed_zero_m {m : ℕ} : (⌜(‘0’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (𝟎 : V) := by
+  rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_numeral_eq_numeral]; simp
+lemma quote_closed_one_m {m : ℕ} : (⌜(‘1’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (𝟏 : V) := by
+  rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_numeral_eq_numeral]; simp
+lemma quote_closed_bvar_m {m : ℕ} (i : Fin m) : (⌜(#i : ClosedSemiterm ℒₒᵣ m)⌝ : V) = bv (i : ℕ) := rfl
+
+/-! ### 1.2 Entrywise `termSubst`; numerals and bound variables as row entries -/
+
+lemma isSemiterm_qqOne_LAct (n : V) : IsSemiterm LAct n (𝟏 : V) := IsSemiterm.LAct_of_LOR one_semiterm
+lemma isSemiterm_qqZero_LAct (n : V) : IsSemiterm LAct n (𝟎 : V) := IsSemiterm.LAct_of_LOR zero_semiterm
+
+lemma termSubst_bv (l : List V) (i : ℕ) : termSubst LAct (listToVec l) (bv i) = l.getD i 0 := by
+  rw [bv, termSubst_bvar, nth_listToVec]
+
+lemma termSubst_qqAdd' {w x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) :
+    termSubst LAct w (x ^+ y) = termSubst LAct w x ^+ termSubst LAct w y := by
+  unfold qqAdd
+  rw [termSubst_func isFunc_LAct_addIndex (by simp [hx, hy]), termSubstVec_cons₂ hx hy]
+
+lemma termSubst_qqOne' (w : V) : termSubst LAct w (𝟏 : V) = 𝟏 :=
+  termSubst_eq_self_of_closed (isSemiterm_qqOne_LAct 0)
+lemma termSubst_qqZero' (w : V) : termSubst LAct w (𝟎 : V) = 𝟎 :=
+  termSubst_eq_self_of_closed (isSemiterm_qqZero_LAct 0)
+
+/-- The DSL's `n + 1` at a witness. -/
+lemma termSubst_bv_add_one (l : List V) (i : ℕ) :
+    termSubst LAct (listToVec l) (bv i ^+ (𝟏 : V)) = l.getD i 0 ^+ 𝟏 := by
+  rw [termSubst_qqAdd' (by simp) (isSemiterm_qqOne_LAct 0).isUTerm, termSubst_bv, termSubst_qqOne']
+
+lemma isSemiterm_bv_add_one {i n : ℕ} (h : i < n) : IsSemiterm LAct (n : V) (bv i ^+ (𝟏 : V)) := by
+  unfold qqAdd
+  exact IsSemiterm.func.mpr ⟨isFunc_LAct_addIndex, by simp [isSemiterm_bv h, isSemiterm_qqOne_LAct]⟩
+
+lemma isSemiterm_iterate_termShift {t : V} (ht : IsSemiterm LAct 0 t) :
+    ∀ j : ℕ, IsSemiterm LAct 0 ((termShift LAct)^[j] t)
+  | 0 => ht
+  | j + 1 => by rw [Function.iterate_succ_apply]; exact isSemiterm_iterate_termShift ht.termShift j
+
+lemma iterate_termShift_qqZero : ∀ j : ℕ, (termShift LAct)^[j] (𝟎 : V) = 𝟎
+  | 0 => rfl
+  | j + 1 => by
+    rw [Function.iterate_succ_apply, termShift_qqZero isFunc_LAct_zeroIndex, iterate_termShift_qqZero j]
+
+lemma bvarList_zero : bvarList (V := V) 0 = [] := rfl
+lemma bvarList_one : bvarList (V := V) 1 = [bv 0] := rfl
+lemma bvarList_two : bvarList (V := V) 2 = [bv 0, bv 1] := rfl
+lemma bvarList_three : bvarList (V := V) 3 = [bv 0, bv 1, bv 2] := rfl
+lemma bvarList_four : bvarList (V := V) 4 = [bv 0, bv 1, bv 2, bv 3] := rfl
+lemma bvarList_five : bvarList (V := V) 5 = [bv 0, bv 1, bv 2, bv 3, bv 4] := rfl
+
+/-! ### 1.3 General instantiation: any term entries -/
+
+/-- `instOuterAt k es` on `subst ?[t₁, …, t_N] P` substitutes `?[#0, …, #(k-1), e_m, …, e₁]` into
+every entry (`instOuterAt_subst` + `termSubstVec_listToVec`). -/
+theorem instOuterAt_subst_listToVec (k : ℕ) {P : V} (ts : List V) {n : ℕ}
+    (hP : IsSemiformula LAct (n : V) P) (hn : ts.length = n) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) (hts : ∀ t ∈ ts, IsSemiterm LAct ((es.length + k : ℕ) : V) t) :
+    instOuterAt LAct k es (subst LAct (listToVec ts) P) =
+      subst LAct (listToVec (ts.map (termSubst LAct (listToVec (bvarList k ++ es.reverse))))) P := by
+  subst hn
+  have hW : IsSemitermVec LAct ((ts.length : ℕ) : V) ((es.length + k : ℕ) : V) (listToVec ts) :=
+    isSemitermVec_listToVec ts hts
+  rw [instOuterAt_subst k es hP hW hes, termSubstVec_listToVec _ _ (fun x hx ↦ (hts x hx).isUTerm)]
+
+theorem instOuter_subst_listToVec {P : V} (ts : List V) {n : ℕ}
+    (hP : IsSemiformula LAct (n : V) P) (hn : ts.length = n) (es : List V)
+    (hes : ∀ e ∈ es, IsSemiterm LAct 0 e) (hts : ∀ t ∈ ts, IsSemiterm LAct ((es.length : ℕ) : V) t) :
+    instOuter LAct es (subst LAct (listToVec ts) P) =
+      subst LAct (listToVec (ts.map (termSubst LAct (listToVec es.reverse)))) P := by
+  rw [← instOuterAt_zero, instOuterAt_subst_listToVec 0 ts hP hn es hes (by simpa using hts)]
+  simp [bvarList]
+
+/-- `instOuterAt` distributes over `⋏`. -/
+lemma instOuterAt_and (k : ℕ) : ∀ (es : List V) {a b : V},
+    IsSemiformula LAct ((es.length + k : ℕ) : V) a → IsSemiformula LAct ((es.length + k : ℕ) : V) b →
+    (∀ e ∈ es, IsTerm LAct e) →
+    instOuterAt LAct k es (a ^⋏ b) = instOuterAt LAct k es a ^⋏ instOuterAt LAct k es b
+  | [], _, _, _, _, _ => rfl
+  | e :: es, a, b, ha, hb, hes => by
+    have cast : (((es.length + k : ℕ) : V) + 1) = (((e :: es).length + k : ℕ) : V) := by
+      simp only [List.length_cons]; push_cast; ring
+    have ha' : IsSemiformula LAct (((es.length + k : ℕ) : V) + 1) a := by rw [cast]; exact ha
+    have hb' : IsSemiformula LAct (((es.length + k : ℕ) : V) + 1) b := by rw [cast]; exact hb
+    rw [instOuterAt_cons, instOuterAt_cons, instOuterAt_cons, subOuter_and ha.isUFormula hb.isUFormula]
+    exact instOuterAt_and k es (isSemiformula_subOuter ha' (hes e (by simp)))
+      (isSemiformula_subOuter hb' (hes e (by simp))) (fun e' he' ↦ hes e' (by simp [he']))
+
+/-- Formula-ness of a row piece / a fact code at any level. -/
+lemma isSemiformula_substRow {n k : ℕ} {P : V} (hP : IsSemiformula LAct (k : V) P) (ts : List V)
+    (hk : ts.length = k) (hts : ∀ t ∈ ts, IsSemiterm LAct (n : V) t) :
+    IsSemiformula LAct (n : V) (subst LAct (listToVec ts) P) := by
+  subst hk
+  exact IsSemiformula.subst hP (isSemitermVec_listToVec ts hts)
+
+lemma isSemiformula_exs_cast {m : ℕ} {p : V} (h : IsSemiformula LAct ((m + 1 : ℕ) : V) p) :
+    IsSemiformula LAct ((m : ℕ) : V) (^∃ p) := by
+  rw [Nat.cast_succ] at h
+  exact IsSemiformula.exs.mpr h
+
+/-! ### 1.4 `freeIterAt`: eigenvariable introductions under extra binders, entrywise -/
+
+/-- `freeIterAt m j q`: `j` eigenvariable introductions on a `(j + m)`-semiformula `q`, from the
+outermost quantifier inwards, leaving the `m` innermost bound variables in place
+(`freeIter j = freeIterAt 0 j`; the introductions of the `j` outer existentials of `∃^m … ∃^j q`,
+`freeIter_exsIter`). -/
+noncomputable def freeIterAt (m : ℕ) : ℕ → V → V
+  | 0, q => q
+  | j + 1, q => freeIterAt m j (subOuter LAct (j + m) (^&0) (shift LAct q))
+
+@[simp] lemma freeIterAt_zero (m : ℕ) (q : V) : freeIterAt m 0 q = q := rfl
+@[simp] lemma freeIterAt_succ (m j : ℕ) (q : V) :
+    freeIterAt m (j + 1) q = freeIterAt m j (subOuter LAct (j + m) (^&0) (shift LAct q)) := rfl
+
+lemma freeIterAt_zero_eq (j : ℕ) (q : V) : freeIterAt 0 j q = freeIter LAct j q := by
+  induction j generalizing q with
+  | zero => rfl
+  | succ j ih => rw [freeIterAt_succ, freeIter_succ, Nat.add_zero, ih]
+
+lemma cast_succ_add (j m : ℕ) : ((j + 1 + m : ℕ) : V) = ((j + m : ℕ) : V) + 1 := by push_cast; ring
+
+/-- Introductions pass under `m` existentials: `freeIter j (∃^m q) = ∃^m (freeIterAt m j q)`. -/
+lemma freeIter_exsIter (m : ℕ) : ∀ (j : ℕ) {q : V}, IsSemiformula LAct ((j + m : ℕ) : V) q →
+    freeIter LAct j (exsIter m q) = exsIter m (freeIterAt m j q)
+  | 0, _, _ => rfl
+  | j + 1, q, hq => by
+    have hq' : IsSemiformula LAct (((j + m : ℕ) : V) + 1) (shift LAct q) := by
+      rw [← cast_succ_add]; exact hq.shift
+    rw [freeIter_succ, shift_exsIter hq.isUFormula, subOuter_exsIter hq.isUFormula.shift,
+      freeIter_exsIter m j (isSemiformula_subOuter hq' (by simp)), freeIterAt_succ]
+
+lemma freeIter_exs2 (j : ℕ) {q : V} (hq : IsSemiformula LAct ((j + 2 : ℕ) : V) q) :
+    freeIter LAct j (^∃ (^∃ q)) = ^∃ (^∃ (freeIterAt 2 j q)) := freeIter_exsIter 2 j hq
+
+lemma freeIter_exs3 (j : ℕ) {q : V} (hq : IsSemiformula LAct ((j + 3 : ℕ) : V) q) :
+    freeIter LAct j (^∃ (^∃ (^∃ q))) = ^∃ (^∃ (^∃ (freeIterAt 3 j q))) := freeIter_exsIter 3 j hq
+
+/-- The inner-first reading: `freeIterAt m (j + 1) q = subOuter m (&0) (shift (freeIterAt (m + 1) j q))`
+— what `sElimExs` on the outermost remaining existential does to a body already freed `j` times. -/
+lemma freeIterAt_succ' (m : ℕ) : ∀ (j : ℕ) (q : V),
+    freeIterAt m (j + 1) q = subOuter LAct m (^&0) (shift LAct (freeIterAt (m + 1) j q))
+  | 0, q => by rw [freeIterAt_succ, freeIterAt_zero, freeIterAt_zero, Nat.zero_add]
+  | j + 1, q => by
+    rw [freeIterAt_succ, freeIterAt_succ' m j, freeIterAt_succ,
+      show j + 1 + m = j + (m + 1) by omega]
+
+/-- The entrywise action of `freeIterAt m j`. -/
+noncomputable def freeIterT (m : ℕ) : ℕ → V → V
+  | 0, t => t
+  | j + 1, t => freeIterT m j (termSubst LAct (qVecIter LAct (j + m) (^&0 ∷ (0 : V))) (termShift LAct t))
+
+@[simp] lemma freeIterT_zero (m : ℕ) (t : V) : freeIterT m 0 t = t := rfl
+@[simp] lemma freeIterT_succ (m j : ℕ) (t : V) :
+    freeIterT m (j + 1) t =
+      freeIterT m j (termSubst LAct (qVecIter LAct (j + m) (^&0 ∷ (0 : V))) (termShift LAct t)) := rfl
+
+lemma freeIterAt_and (m : ℕ) : ∀ (j : ℕ) {a b : V},
+    IsSemiformula LAct ((j + m : ℕ) : V) a → IsSemiformula LAct ((j + m : ℕ) : V) b →
+    freeIterAt m j (a ^⋏ b) = freeIterAt m j a ^⋏ freeIterAt m j b
+  | 0, _, _, _, _ => rfl
+  | j + 1, a, b, ha, hb => by
+    have ha' : IsSemiformula LAct (((j + m : ℕ) : V) + 1) (shift LAct a) := by
+      rw [← cast_succ_add]; exact ha.shift
+    have hb' : IsSemiformula LAct (((j + m : ℕ) : V) + 1) (shift LAct b) := by
+      rw [← cast_succ_add]; exact hb.shift
+    rw [freeIterAt_succ, shift_and ha.isUFormula hb.isUFormula, subOuter_and ha'.isUFormula hb'.isUFormula]
+    exact freeIterAt_and m j (isSemiformula_subOuter ha' (by simp)) (isSemiformula_subOuter hb' (by simp))
+
+lemma freeIter_and (j : ℕ) {a b : V} (ha : IsSemiformula LAct (j : V) a) (hb : IsSemiformula LAct (j : V) b) :
+    freeIter LAct j (a ^⋏ b) = freeIter LAct j a ^⋏ freeIter LAct j b := by
+  rw [← freeIterAt_zero_eq, ← freeIterAt_zero_eq, ← freeIterAt_zero_eq]
+  exact freeIterAt_and 0 j (by simpa using ha) (by simpa using hb)
+
+/-- **The entrywise law**: `freeIterAt m j (subst ?[ws] P) = subst ?[ws.map (freeIterT m j)] P` for a
+quoted sentence code `P` (`shift P = P`) and entries of level `j + m`. -/
+theorem freeIterAt_subst_listToVec (m j : ℕ) (ws : List V) {P : V} {n : ℕ}
+    (hP : IsSemiformula LAct (n : V) P) (hP0 : shift LAct P = P) (hn : ws.length = n)
+    (hws : ∀ w ∈ ws, IsSemiterm LAct ((j + m : ℕ) : V) w) :
+    freeIterAt m j (subst LAct (listToVec ws) P) = subst LAct (listToVec (ws.map (freeIterT m j))) P := by
+  induction j generalizing ws with
+  | zero =>
+    rw [freeIterAt_zero, List.map_congr_left (fun t _ ↦ freeIterT_zero m t), List.map_id']
+  | succ j ih =>
+    subst hn
+    have hsh : ∀ x ∈ ws, IsSemiterm LAct (((j + m : ℕ) : V) + 1) (termShift LAct x) := by
+      intro x hx
+      rw [← cast_succ_add]; exact (hws x hx).termShift
+    have hws' : ∀ w ∈ ws.map (termShift LAct), IsSemiterm LAct (((j + m : ℕ) : V) + 1) w := by
+      intro w hw
+      obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw
+      exact hsh x hx
+    have hW : IsSemitermVec LAct (((ws.map (termShift LAct)).length : ℕ) : V) (((j + m : ℕ) : V) + 1)
+        (listToVec (ws.map (termShift LAct))) := isSemitermVec_listToVec _ hws'
+    have hP' : IsSemiformula LAct (((ws.map (termShift LAct)).length : ℕ) : V) P := by simpa using hP
+    have hq : IsSemitermVec LAct (((j + m : ℕ) : V) + 1) ((j + m : ℕ) : V)
+        (qVecIter LAct (j + m) (^&0 ∷ (0 : V))) := isSemitermVec_qVecIter_single (by simp)
+    rw [freeIterAt_succ, shift_subst_listToVec ws hP hP0 hws, subOuter_subst hP' hW (by simp),
+      termSubstVec_listToVec _ _ (fun x hx ↦ (hws' x hx).isUTerm),
+      ih _ (by simp) (by
+        intro w hw
+        obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw
+        exact hq.termSubst (hws' x hx)),
+      List.map_map, List.map_map]
+    exact congrArg (fun l ↦ subst LAct (listToVec l) P)
+      (List.map_congr_left (fun t _ ↦ (freeIterT_succ m j t).symm))
+
+theorem freeIter_subst_listToVec' (j : ℕ) (ws : List V) {P : V} {n : ℕ}
+    (hP : IsSemiformula LAct (n : V) P) (hP0 : shift LAct P = P) (hn : ws.length = n)
+    (hws : ∀ w ∈ ws, IsSemiterm LAct (j : V) w) :
+    freeIter LAct j (subst LAct (listToVec ws) P) = subst LAct (listToVec (ws.map (freeIterT 0 j))) P := by
+  rw [← freeIterAt_zero_eq]
+  exact freeIterAt_subst_listToVec 0 j ws hP hP0 hn (by simpa using hws)
+
+/-- Closed entries are shifted `j` times. -/
+lemma freeIterT_closed (m : ℕ) {t : V} (ht : IsSemiterm LAct 0 t) :
+    ∀ j : ℕ, freeIterT m j t = (termShift LAct)^[j] t
+  | 0 => rfl
+  | j + 1 => by
+    rw [freeIterT_succ, termSubst_eq_self_of_closed ht.termShift, freeIterT_closed m ht.termShift j,
+      Function.iterate_succ_apply]
+
+/-- The `m` innermost bound variables stay. -/
+lemma freeIterT_bv_lt (m : ℕ) : ∀ (j i : ℕ), i < m → freeIterT m j (bv i : V) = bv i
+  | 0, _, _ => rfl
+  | j + 1, i, hi => by
+    rw [freeIterT_succ, bv, termShift_bvar, termSubst_qVecIter_bvar_lt (by simp) (by omega)]
+    exact freeIterT_bv_lt m j i hi
+
+/-- The `j` outer bound variables become `&(i - m)`: the innermost of them is `&0`. -/
+lemma freeIterT_bv_ge (m : ℕ) : ∀ (j i : ℕ), m ≤ i → i < m + j →
+    freeIterT m j (bv i : V) = ^&(((i - m : ℕ) : ℕ) : V)
+  | 0, i, h1, h2 => by omega
+  | j + 1, i, h1, h2 => by
+    rw [freeIterT_succ, bv, termShift_bvar]
+    rcases Nat.lt_or_ge i (j + m) with h | h
+    · rw [termSubst_qVecIter_bvar_lt (by simp) h]
+      exact freeIterT_bv_ge m j i h1 (by omega)
+    · have : i = j + m := by omega
+      subst this
+      rw [termSubst_qVecIter_bvar_eq (by simp), freeIterT_closed m (by simp) j,
+        termShift_iterate_fvar (V := V) (L := LAct)]
+      simp
+
+lemma freeIterT_bv0 (j i : ℕ) (hi : i < j) : freeIterT 0 j (bv i : V) = ^&((i : ℕ) : V) := by
+  rw [freeIterT_bv_ge 0 j i (Nat.zero_le _) (by omega), Nat.sub_zero]
+
+/-! ### 1.5 Generic fact-code lemmas -/
+
+lemma forall_nth_listToVec {Q : V → Prop} (ws : List V) (h : ∀ w ∈ ws, Q w) :
+    ∀ i < ((ws.length : ℕ) : V), Q (listToVec ws).[i] := by
+  intro i hi
+  obtain ⟨i', rfl, hi'⟩ := exists_natCast_of_lt_natCast _ i hi
+  rw [nth_listToVec, List.getD_eq_getElem _ _ hi']
+  exact h _ (List.getElem_mem hi')
+
+lemma substInv_listToVec {B : V} (ws : List V) (h : ∀ w ∈ ws, IsSemiterm LAct 0 w ∧ termLen LAct w ≤ B) :
+    SubstInv LAct B (listToVec ws) := by
+  intro i hi
+  rw [len_listToVec] at hi
+  exact Or.inr (forall_nth_listToVec ws h i hi)
+
+/-- A quoted sentence has no free-variable occurrence (`shift` fixes it, `formulaLen_shift_eq`). -/
+lemma fvOccF_quote_sentence {n : ℕ} (σ : Semisentence LAct n) : fvOccF LAct (⌜σ⌝ : V) = 0 := by
+  have h := formulaLen_shift_eq (L := LAct) (Sentence.quote_isSemiformula (V := V) σ).isUFormula
+  rw [shift_quote_sentence] at h
+  have : formulaLen LAct (⌜σ⌝ : V) + 0 = formulaLen LAct (⌜σ⌝ : V) + fvOccF LAct ⌜σ⌝ := by
+    rw [add_zero]; exact h
+  exact (add_left_cancel this).symm
+
+section fact
+variable {P : V} {n : ℕ}
+
+lemma isFormula_fact (hP : IsSemiformula LAct (n : V) P) (ws : List V) (hn : ws.length = n)
+    (hws : ∀ w ∈ ws, IsSemiterm LAct 0 w) : IsFormula LAct (subst LAct (listToVec ws) P) := by
+  subst hn
+  exact IsSemiformula.subst hP (isSemitermVec_listToVec ws hws)
+
+/-- `|subst ?[ws] P| ≤ |P| · B` for `B ≥ 1` bounding every witness (`formulaLen_subst_le`). -/
+lemma formulaLen_fact_le {B : V} (hB : 1 ≤ B) (hP : IsSemiformula LAct (n : V) P) (ws : List V)
+    (hn : ws.length = n) (hws : ∀ w ∈ ws, IsSemiterm LAct 0 w ∧ termLen LAct w ≤ B) :
+    formulaLen LAct (subst LAct (listToVec ws) P) ≤ formulaLen LAct P * B := by
+  subst hn
+  exact formulaLen_subst_le hB hP _ _ (isSemitermVec_listToVec ws (fun w hw ↦ (hws w hw).1))
+    (substInv_listToVec ws hws)
+
+/-- `fvOccF (subst ?[ws] P) ≤ bvOccF P · M` for `M` bounding every witness's occurrences. -/
+lemma fvOccF_fact_le {M : V} (hP : IsSemiformula LAct (n : V) P) (hP0 : fvOccF LAct P = 0) (ws : List V)
+    (hn : ws.length = n) (hws : ∀ w ∈ ws, IsSemiterm LAct 0 w ∧ fvOcc LAct w ≤ M) :
+    fvOccF LAct (subst LAct (listToVec ws) P) ≤ bvOccF LAct P * M := by
+  subst hn
+  have := fvOccF_subst_le hP (isSemitermVec_listToVec ws (fun w hw ↦ (hws w hw).1))
+    (forall_nth_listToVec ws (fun w hw ↦ (hws w hw).2))
+  rwa [hP0, zero_add] at this
+
+end fact
+
+/-! ### 1.6 The three uniform tactics of the row lemmas -/
+
+/-- Level-`n` term-ness of every entry of a row piece (`#i`, `#i + 1`, `𝟎`, `𝟏`, `cT k`, a closed
+witness in context, its iterated shift, an eigenvariable `&i`). -/
+macro "row_entries" : tactic => `(tactic| (
+  repeat' refine List.forall_mem_cons.mpr ⟨?_, ?_⟩
+  all_goals first
+    | exact List.forall_mem_nil _
+    | exact isSemiterm_bv (by norm_num)
+    | exact isSemiterm_bv_add_one (by norm_num)
+    | exact isSemiterm_qqZero_LAct _
+    | exact isSemiterm_qqOne_LAct _
+    | exact cT_semiterm_LAct _ _
+    | exact isSemiterm_of_le (by assumption) zero_le
+    | exact isSemiterm_of_le (isSemiterm_iterate_termShift (by assumption) _) zero_le
+    | simp))
+
+/-- Evaluate the entrywise substitution of an instantiated piece. -/
+macro "row_entries_simp" : tactic => `(tactic| simp only [List.map_cons, List.map_nil, termSubst_bv,
+  termSubst_bv_add_one, termSubst_qqZero', termSubst_qqOne', termSubst_cT, bvarList_zero, bvarList_one,
+  bvarList_two, bvarList_three, bvarList_four, bvarList_five, List.reverse_cons, List.reverse_nil,
+  List.nil_append, List.append_nil, List.cons_append, List.singleton_append, List.getD_cons_zero,
+  List.getD_cons_succ])
+
+/-- Close `[..] = [..] ∧ code = fact` (or what is left of it) by unfolding the fact codes. -/
+macro "row_finish" : tactic => `(tactic| all_goals first
+  | rfl
+  | (refine ⟨?_, ?_⟩ <;> first | rfl | trivial)
+  | trivial)
+
+/-- Read a row body off the DSL. -/
+macro "row_shape" : tactic => `(tactic| (
+  simp only [Semiformula.Operator.operator, quote_lMap_emb_imp, quote_lMap_emb_ex, quote_lMap_emb_and,
+    quote_lMap_emb_subst', impChain_cons, impChain_nil, matrixToVec_fin0, matrixToVec_fin1, matrixToVec_fin2,
+    matrixToVec_fin3, matrixToVec_fin4, matrixToVec_fin5, matrixToVec_fin6, matrixToVec_fin7,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons,
+    quote_closed_add_m, quote_closed_one_m, quote_closed_zero_m, quote_closed_bvar_m, quote_cTT]
+  all_goals rfl))
+
