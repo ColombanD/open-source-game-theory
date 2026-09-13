@@ -3643,4 +3643,233 @@ theorem dlen_cTLeCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
 
 end chainNumeral
 
+
+/-! ## 12. The `sLemma` packaging of every fact, and the Σ₁ instances of the composites -/
+
+section packaging
+
+/-- A fact with its derivation is an applicable `sLemma` step. -/
+lemma lemmaOK_of {A dA : V} (hA : IsFormula LAct A) (hd : DerivationOf TAct dA (sing A)) : LemmaOK (sLemma A dA) := by
+  refine ⟨?_, ?_⟩
+  · show IsFormula LAct (π₁ (π₂ (sLemma A dA)))
+    simp only [sLemma, pi₂_pair, pi₁_pair]; exact hA
+  · show DerivationOf TAct (π₂ (π₂ (sLemma A dA))) (insert (π₁ (π₂ (sLemma A dA))) 0)
+    simp only [sLemma, pi₂_pair, pi₁_pair]; exact hd
+
+/-- The cost of an `sLemma` step is its derivation's length plus `2|Γ| + 2|A| + 2`. -/
+lemma stepCost_sLemma (N' E Γ A dA : V) :
+    stepCost N' E Γ (sLemma A dA) = dlen TAct dA + 2 * setLen LAct Γ + 2 * formulaLen LAct A + 2 := by
+  rw [stepCost_tag7 (by simp [sTag, sLemma])]
+  simp only [sLemA, sLemD, sLemma, pi₂_pair, pi₁_pair]
+
+theorem lemmaOK_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (h : a ≤ b) :
+    LemmaOK (sLemma (leFact (bnum a) (bnum b)) (leCode tbl a b)) :=
+  lemmaOK_of (isFormula_leFact_bnum a b) (leCode_proof htbl h)
+theorem lemmaOK_lt {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (h : a < b) :
+    LemmaOK (sLemma (ltFact (bnum a) (bnum b)) (ltCode tbl a b)) :=
+  lemmaOK_of (isFormula_ltFact_bnum a b) (ltCode_proof htbl h)
+theorem lemmaOK_leaf {tbl N B : V} (htbl : NumTableOK tbl N B) {a n : V} (h : a + 1 ≤ n) :
+    LemmaOK (sLemma (leafFact a n) (leafCode tbl a n)) :=
+  lemmaOK_of (isFormula_leafFact a n) (leafCode_proof htbl h)
+theorem lemmaOK_sum2 {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b ≤ n) :
+    LemmaOK (sLemma (sum2Fact a b n) (sum2Code tbl a b n)) :=
+  lemmaOK_of (isFormula_sum2Fact a b n) (sum2Code_proof htbl h)
+theorem lemmaOK_bin2 {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b + 1 ≤ n) :
+    LemmaOK (sLemma (bin2Fact a b n) (bin2Code tbl a b n)) :=
+  lemmaOK_of (isFormula_bin2Fact a b n) (bin2Code_proof htbl h)
+theorem lemmaOK_bin3 {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
+    LemmaOK (sLemma (bin3Fact a b c n) (bin3Code tbl a b c n)) :=
+  lemmaOK_of (isFormula_bin3Fact a b c n) (bin3Code_proof htbl h)
+theorem lemmaOK_cTEq {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    LemmaOK (sLemma (cTEqFact z) (cTEqCode tbl z)) :=
+  lemmaOK_of (isFormula_cTEqFact z) (cTEqCode_proof htbl z)
+theorem lemmaOK_cTLe {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    LemmaOK (sLemma (cTLeFact z) (cTLeCode tbl z)) :=
+  lemmaOK_of (isFormula_cTLeFact z) (cTLeCode_proof htbl z)
+
+/-- **The closed-form cost of the binary node's bookkeeping lemma** (the headline the fragments consume):
+`stepCost N' E Γ (sLemma (bin3Fact a b c n) (bin3Code tbl a b c n)) ≤ 2|Γ| + 2|bin3Fact| + 2 + …`, the `…`
+being the derivation length — every summand cubic in `‖n‖`. -/
+theorem stepCost_lemma_bin3 {tbl N B N' E Γ : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
+    stepCost N' E Γ (sLemma (bin3Fact a b c n) (bin3Code tbl a b c n)) ≤
+      (dlen TAct (addCode tbl a b) + dlen TAct (addCode tbl (a + b) c) + dlen TAct (succCode tbl (a + b + c))
+        + dlen TAct (leCode tbl (a + b + c + 1) n) + nodeCost N B (18 * ‖n‖ + 7))
+        + 2 * setLen LAct Γ + 2 * formulaLen LAct (bin3Fact a b c n) + 2 := by
+  rw [stepCost_sLemma]
+  gcongr
+  exact dlen_bin3Code_le htbl h
+
+/-- **Every derivation length in the closed-fact provers is polynomial in the bit lengths**: the fully
+expanded bound of `bin3Code`, with `M := ‖n‖` (all arguments `≤ n`):
+`≤ (7M + 21)·(M + 2)·nodeCost N B (18M + 7) + 2·(M + 2)·nodeCost N B (12M + 3)`-like terms — stated here in
+the compact form `≤ 3·(M + 1)·(M + 2)·C + (M + 1)·C + 3·C` with `C := nodeCost N B (18 * M + 7)`. -/
+theorem dlen_bin3Code_poly {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
+    dlen TAct (bin3Code tbl a b c n) ≤
+      3 * ((‖n‖ + 1) * (‖n‖ + 2)) * nodeCost N B (18 * ‖n‖ + 7)
+        + (‖n‖ + 1) * nodeCost N B (18 * ‖n‖ + 7) + 3 * nodeCost N B (18 * ‖n‖ + 7) := by
+  have habc : a + b + c ≤ n := le_trans le_self_add h
+  have hab : a + b ≤ n := le_trans le_self_add habc
+  have ha : a ≤ n := le_trans le_self_add hab
+  have hE1 : 12 * ‖a + b‖ + 3 ≤ 18 * ‖n‖ + 7 := le_trans (by gcongr; exact length_le_of_le hab) (addE_le_bkE n)
+  have hE2 : 12 * ‖a + b + c‖ + 3 ≤ 18 * ‖n‖ + 7 := le_trans (by gcongr; exact length_le_of_le habc) (addE_le_bkE n)
+  have hE3 : 6 * ‖a + b + c + 1‖ + 3 ≤ 18 * ‖n‖ + 7 := le_trans (succE_le_addE h) (addE_le_bkE n)
+  have hE4 : 12 * ‖n‖ + 3 ≤ 18 * ‖n‖ + 7 := addE_le_bkE n
+  set C := nodeCost N B (18 * ‖n‖ + 7) with hC
+  have hl1 : ‖a‖ ≤ ‖n‖ := length_le_of_le ha
+  have hl2 : ‖a + b‖ ≤ ‖n‖ := length_le_of_le hab
+  have hl3 : ‖a + b + c‖ ≤ ‖n‖ := length_le_of_le habc
+  have hl4 : ‖a + b + c + 1‖ ≤ ‖n‖ := length_le_of_le h
+  have b1 : dlen TAct (addCode tbl a b) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C :=
+    le_trans (dlen_addCode_le htbl a b) (by gcongr; exact nodeCost_mono hE1)
+  have b2 : dlen TAct (addCode tbl (a + b) c) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C :=
+    le_trans (dlen_addCode_le htbl (a + b) c) (by gcongr; exact nodeCost_mono hE2)
+  have b3 : dlen TAct (succCode tbl (a + b + c)) ≤ (‖n‖ + 1) * C :=
+    le_trans (dlen_succCode_le htbl _) (by gcongr; exact nodeCost_mono hE3)
+  have b4 : dlen TAct (leCode tbl (a + b + c + 1) n) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C + C := by
+    refine le_trans (dlen_leCode_le htbl h) ?_
+    gcongr
+    · refine le_trans (dlen_addCode_le htbl _ _) ?_
+      rw [add_tsub_cancel_of_le h]
+      gcongr
+      exact nodeCost_mono hE4
+    · exact nodeCost_mono hE4
+  calc dlen TAct (bin3Code tbl a b c n)
+      ≤ dlen TAct (addCode tbl a b) + dlen TAct (addCode tbl (a + b) c) + dlen TAct (succCode tbl (a + b + c))
+        + dlen TAct (leCode tbl (a + b + c + 1) n) + C := dlen_bin3Code_le htbl h
+    _ ≤ (‖n‖ + 1) * (‖n‖ + 2) * C + (‖n‖ + 1) * (‖n‖ + 2) * C + (‖n‖ + 1) * C
+        + ((‖n‖ + 1) * (‖n‖ + 2) * C + C) + C := by gcongr
+    _ = 3 * ((‖n‖ + 1) * (‖n‖ + 2)) * C + (‖n‖ + 1) * C + 2 * C := by ring
+    _ ≤ 3 * ((‖n‖ + 1) * (‖n‖ + 2)) * C + (‖n‖ + 1) * C + 3 * C := by gcongr; norm_num
+
+end packaging
+
+/-! ### Σ₁-definability of the composites — explicit blueprints (the graph wrappers are never unfolded) -/
+
+section composites
+
+/-- The `<` fact code has the same shape as `leFact`. -/
+noncomputable def ltFactDef : 𝚺₁.Semisentence 3 := fact2Def ltS
+instance ltFact_defined' : 𝚺₁-Function₂ (ltFact : V → V → V) via ltFactDef := fact2_defined ltS
+
+/-- The three- and four-cut shapes (`stepL` on lists of length 3 and 4), with Σ₁ graphs. -/
+noncomputable def step3 (tbl i F₁ d₁ F₂ d₂ F₃ d₃ ev A : V) : V :=
+  cut1 (sing A) F₁ d₁ (cut1 (insert (neg LAct F₁) (sing A)) F₂ d₂
+    (cut1 (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) F₃ d₃
+      (hornGoal tbl i (insert (neg LAct F₃) (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A)))) ev A)))
+noncomputable def step4 (tbl i F₁ d₁ F₂ d₂ F₃ d₃ F₄ d₄ ev A : V) : V :=
+  cut1 (sing A) F₁ d₁ (cut1 (insert (neg LAct F₁) (sing A)) F₂ d₂
+    (cut1 (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) F₃ d₃
+      (cut1 (insert (neg LAct F₃) (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A)))) F₄ d₄
+        (hornGoal tbl i (insert (neg LAct F₄) (insert (neg LAct F₃) (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A)))))
+          ev A))))
+
+lemma stepL_one (tbl i F₁ d₁ ev A : V) : stepL tbl i [(F₁, d₁)] ev A = step1 tbl i F₁ d₁ ev A := rfl
+lemma stepL_two (tbl i F₁ d₁ F₂ d₂ ev A : V) : stepL tbl i [(F₁, d₁), (F₂, d₂)] ev A = step2 tbl i F₁ d₁ F₂ d₂ ev A := rfl
+lemma stepL_three (tbl i F₁ d₁ F₂ d₂ F₃ d₃ ev A : V) :
+    stepL tbl i [(F₁, d₁), (F₂, d₂), (F₃, d₃)] ev A = step3 tbl i F₁ d₁ F₂ d₂ F₃ d₃ ev A := rfl
+lemma stepL_four (tbl i F₁ d₁ F₂ d₂ F₃ d₃ F₄ d₄ ev A : V) :
+    stepL tbl i [(F₁, d₁), (F₂, d₂), (F₃, d₃), (F₄, d₄)] ev A = step4 tbl i F₁ d₁ F₂ d₂ F₃ d₃ F₄ d₄ ev A := rfl
+
+noncomputable def step3Def : 𝚺₁.Semisentence 11 := .mkSigma
+  “y tbl i F₁ d₁ F₂ d₂ F₃ d₃ ev A. ∃ S, !insertDef S A 0 ∧ ∃ n₁, !(negGraph LAct) n₁ F₁ ∧ ∃ S₁, !insertDef S₁ n₁ S ∧
+    ∃ n₂, !(negGraph LAct) n₂ F₂ ∧ ∃ S₂, !insertDef S₂ n₂ S₁ ∧ ∃ n₃, !(negGraph LAct) n₃ F₃ ∧ ∃ S₃, !insertDef S₃ n₃ S₂ ∧
+    ∃ h, !hornGoalDef h tbl i S₃ ev A ∧ ∃ c₃, !cut1Def c₃ S₂ F₃ d₃ h ∧ ∃ c₂, !cut1Def c₂ S₁ F₂ d₂ c₃ ∧ !cut1Def y S F₁ d₁ c₂”
+instance step3_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ step3 (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) step3Def := .mk
+  fun v ↦ by simp [step3Def, neg.defined.iff, hornGoal_defined.iff, cut1_defined.iff, step3, sing]
+
+noncomputable def step4Def : 𝚺₁.Semisentence 13 := .mkSigma
+  “y tbl i F₁ d₁ F₂ d₂ F₃ d₃ F₄ d₄ ev A. ∃ S, !insertDef S A 0 ∧ ∃ n₁, !(negGraph LAct) n₁ F₁ ∧ ∃ S₁, !insertDef S₁ n₁ S ∧
+    ∃ n₂, !(negGraph LAct) n₂ F₂ ∧ ∃ S₂, !insertDef S₂ n₂ S₁ ∧ ∃ n₃, !(negGraph LAct) n₃ F₃ ∧ ∃ S₃, !insertDef S₃ n₃ S₂ ∧
+    ∃ n₄, !(negGraph LAct) n₄ F₄ ∧ ∃ S₄, !insertDef S₄ n₄ S₃ ∧
+    ∃ h, !hornGoalDef h tbl i S₄ ev A ∧ ∃ c₄, !cut1Def c₄ S₃ F₄ d₄ h ∧ ∃ c₃, !cut1Def c₃ S₂ F₃ d₃ c₄ ∧
+    ∃ c₂, !cut1Def c₂ S₁ F₂ d₂ c₃ ∧ !cut1Def y S F₁ d₁ c₂”
+instance step4_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 12 → V ↦ step4 (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11))
+      step4Def := .mk
+  fun v ↦ by simp [step4Def, neg.defined.iff, hornGoal_defined.iff, cut1_defined.iff, step4, sing]
+
+/-- `leCode tbl a b` (`s := b − a` through `subDef`). -/
+noncomputable def leCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y tbl a b. ∃ s, !subDef s b a ∧ ∃ F, !addFactDef F a s ∧ ∃ dF, !addCodeDef dF tbl a s ∧
+    ∃ tb, !bnumGraph tb b ∧ ∃ ts, !bnumGraph ts s ∧ ∃ ta, !bnumGraph ta a ∧
+    ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 ts v0 ∧ ∃ ev, !adjoinDef ev tb v1 ∧
+    ∃ A, !leFactDef A ta tb ∧ !step1Def y tbl 11 F dF ev A”
+instance leCode_defined : 𝚺₁-Function₃ (leCode : V → V → V → V) via leCodeDef := .mk fun v ↦ by
+  simp [leCodeDef, sub_defined.iff, addFact_defined.iff, addCode_defined.iff, bnum.defined.iff, leFact_defined.iff,
+    step1_defined.iff, leCode, stepL_one, numeral_eq_natCast]
+instance leCode_definable : 𝚺₁-Function₃ (leCode : V → V → V → V) := leCode_defined.to_definable
+
+noncomputable def ltCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y tbl a b. ∃ F, !succFactDef F a ∧ ∃ dF, !succCodeDef dF tbl a ∧ ∃ ta1, !bnumGraph ta1 (a + 1) ∧ ∃ tb, !bnumGraph tb b ∧
+    ∃ G, !leFactDef G ta1 tb ∧ ∃ dG, !leCodeDef dG tbl (a + 1) b ∧ ∃ ta, !bnumGraph ta a ∧
+    ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 ta1 v0 ∧ ∃ ev, !adjoinDef ev tb v1 ∧
+    ∃ A, !ltFactDef A ta tb ∧ !step2Def y tbl 12 F dF G dG ev A”
+instance ltCode_defined : 𝚺₁-Function₃ (ltCode : V → V → V → V) via ltCodeDef := .mk fun v ↦ by
+  simp [ltCodeDef, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
+    ltFact_defined'.iff, step2_defined.iff, ltCode, stepL_two, numeral_eq_natCast]
+instance ltCode_definable : 𝚺₁-Function₃ (ltCode : V → V → V → V) := ltCode_defined.to_definable
+
+noncomputable def leafCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y tbl a n. ∃ F, !succFactDef F a ∧ ∃ dF, !succCodeDef dF tbl a ∧ ∃ ta1, !bnumGraph ta1 (a + 1) ∧ ∃ tn, !bnumGraph tn n ∧
+    ∃ G, !leFactDef G ta1 tn ∧ ∃ dG, !leCodeDef dG tbl (a + 1) n ∧ ∃ ta, !bnumGraph ta a ∧
+    ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 ta1 v0 ∧ ∃ ev, !adjoinDef ev tn v1 ∧
+    ∃ s, !qqAddGraph s ta ↑Arithmetic.one ∧ ∃ A, !leFactDef A s tn ∧ !step2Def y tbl 15 F dF G dG ev A”
+instance leafCode_defined : 𝚺₁-Function₃ (leafCode : V → V → V → V) via leafCodeDef := .mk fun v ↦ by
+  simp [leafCodeDef, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
+    qqAdd_defined.iff, step2_defined.iff, leafCode, leafFact, stepL_two, numeral_eq_natCast]
+instance leafCode_definable : 𝚺₁-Function₃ (leafCode : V → V → V → V) := leafCode_defined.to_definable
+
+noncomputable def sum2CodeDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y tbl a b n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ ts, !bnumGraph ts (a + b) ∧ ∃ tn, !bnumGraph tn n ∧
+    ∃ G, !leFactDef G ts tn ∧ ∃ dG, !leCodeDef dG tbl (a + b) n ∧ ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧
+    ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 tb v0 ∧ ∃ v2, !adjoinDef v2 ts v1 ∧ ∃ ev, !adjoinDef ev tn v2 ∧
+    ∃ u, !qqAddGraph u ta tb ∧ ∃ A, !leFactDef A u tn ∧ !step2Def y tbl 16 F dF G dG ev A”
+instance sum2Code_defined : 𝚺₁-Function₄ (sum2Code : V → V → V → V → V) via sum2CodeDef := .mk fun v ↦ by
+  simp [sum2CodeDef, addFact_defined.iff, addCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
+    qqAdd_defined.iff, step2_defined.iff, sum2Code, sum2Fact, stepL_two, numeral_eq_natCast]
+instance sum2Code_definable : 𝚺₁-Function₄ (sum2Code : V → V → V → V → V) := sum2Code_defined.to_definable
+
+noncomputable def bin2CodeDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y tbl a b n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ G, !succFactDef G (a + b) ∧
+    ∃ dG, !succCodeDef dG tbl (a + b) ∧ ∃ tu, !bnumGraph tu (a + b + 1) ∧ ∃ tn, !bnumGraph tn n ∧
+    ∃ H, !leFactDef H tu tn ∧ ∃ dH, !leCodeDef dH tbl (a + b + 1) n ∧
+    ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧ ∃ ts, !bnumGraph ts (a + b) ∧
+    ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 tb v0 ∧ ∃ v2, !adjoinDef v2 ts v1 ∧ ∃ v3, !adjoinDef v3 tu v2 ∧
+    ∃ ev, !adjoinDef ev tn v3 ∧ ∃ u, !qqAddGraph u ta tb ∧ ∃ u1, !qqAddGraph u1 u ↑Arithmetic.one ∧
+    ∃ A, !leFactDef A u1 tn ∧ !step3Def y tbl 14 F dF G dG H dH ev A”
+instance bin2Code_defined : 𝚺₁-Function₄ (bin2Code : V → V → V → V → V) via bin2CodeDef := .mk fun v ↦ by
+  simp [bin2CodeDef, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
+    leFact_defined.iff, leCode_defined.iff, qqAdd_defined.iff, step3_defined.iff, bin2Code, bin2Fact, stepL_three,
+    numeral_eq_natCast]
+instance bin2Code_definable : 𝚺₁-Function₄ (bin2Code : V → V → V → V → V) := bin2Code_defined.to_definable
+
+noncomputable def bin3CodeDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y tbl a b c n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ G, !addFactDef G (a + b) c ∧
+    ∃ dG, !addCodeDef dG tbl (a + b) c ∧ ∃ H, !succFactDef H (a + b + c) ∧ ∃ dH, !succCodeDef dH tbl (a + b + c) ∧
+    ∃ tu, !bnumGraph tu (a + b + c + 1) ∧ ∃ tn, !bnumGraph tn n ∧ ∃ K, !leFactDef K tu tn ∧
+    ∃ dK, !leCodeDef dK tbl (a + b + c + 1) n ∧
+    ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧ ∃ tc, !bnumGraph tc c ∧ ∃ ts, !bnumGraph ts (a + b) ∧
+    ∃ tt, !bnumGraph tt (a + b + c) ∧
+    ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 tb v0 ∧ ∃ v2, !adjoinDef v2 tc v1 ∧ ∃ v3, !adjoinDef v3 ts v2 ∧
+    ∃ v4, !adjoinDef v4 tt v3 ∧ ∃ v5, !adjoinDef v5 tu v4 ∧ ∃ ev, !adjoinDef ev tn v5 ∧
+    ∃ u, !qqAddGraph u ta tb ∧ ∃ u2, !qqAddGraph u2 u tc ∧ ∃ u3, !qqAddGraph u3 u2 ↑Arithmetic.one ∧
+    ∃ A, !leFactDef A u3 tn ∧ !step4Def y tbl 13 F dF G dG H dH K dK ev A”
+instance bin3Code_defined : 𝚺₁-Function₅ (bin3Code : V → V → V → V → V → V) via bin3CodeDef := .mk fun v ↦ by
+  simp [bin3CodeDef, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
+    leFact_defined.iff, leCode_defined.iff, qqAdd_defined.iff, step4_defined.iff, bin3Code, bin3Fact, stepL_four,
+    numeral_eq_natCast]
+instance bin3Code_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ bin3Code (v 0) (v 1) (v 2) (v 3) (v 4)) := bin3Code_defined.to_definable
+
+noncomputable def cTLeCodeDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y tbl z. ∃ F, !cTEqFactDef F z ∧ ∃ dF, !cTEqCodeDef dF tbl z ∧ ∃ c, !cTVGraph c z ∧ ∃ t, !bnumGraph t z ∧
+    ∃ v0, !adjoinDef v0 c 0 ∧ ∃ ev, !adjoinDef ev t v0 ∧ ∃ A, !leFactDef A c t ∧ !step1Def y tbl 18 F dF ev A”
+instance cTLeCode_defined : 𝚺₁-Function₂ (cTLeCode : V → V → V) via cTLeCodeDef := .mk fun v ↦ by
+  simp [cTLeCodeDef, cTEqFact_defined.iff, cTEqCode_defined.iff, cTV.defined.iff, bnum.defined.iff, leFact_defined.iff,
+    step1_defined.iff, cTLeCode, cTLeFact, stepL_one, numeral_eq_natCast]
+instance cTLeCode_definable : 𝚺₁-Function₂ (cTLeCode : V → V → V) := cTLeCode_defined.to_definable
+
+end composites
+
 end ArithS
