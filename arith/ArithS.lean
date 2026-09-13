@@ -52,6 +52,7 @@ import ArithS.Necessitation.WalkLemmas
 import ArithS.Necessitation.RowInst
 import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
+import ArithS.Necessitation.Describe
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse

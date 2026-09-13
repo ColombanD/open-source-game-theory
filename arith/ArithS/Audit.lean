@@ -30,6 +30,7 @@ import ArithS.Necessitation.WalkLemmas
 import ArithS.Necessitation.RowInst
 import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
+import ArithS.Necessitation.Describe
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -561,5 +562,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms quote_cTTm
 #print axioms inst_isSemiformulaSubsts1C
 #print axioms inst_isFormulaFreeC
+
+-- U10 (Necessitation/Describe, 2026-09-13): the bottom-up syntax walk as a Σ₁ step-list producer —
+-- the walk's row table (`exists_walkTable`: 40 rows, one standard bound, every model), the TERM walk
+-- `describeT` (a `TermRec` construction over the piece table) with its applicability theorem
+-- (`describeT_ok`: every step applicable at its context from any formula-set context, no drops,
+-- `descCountT` eigenvariables `≤ 2|t| − 1`, `(isSemiterm LAct).pi n &0` in the final context) and
+-- the derivation it yields (`describeT_chain`).
+#print axioms exists_walkTable
+#print axioms termOK_of_isSemiterm
+#print axioms describeT_ok
+#print axioms describeT_chain
 
 end ArithS
