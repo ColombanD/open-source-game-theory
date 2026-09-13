@@ -27,6 +27,7 @@ import ArithS.Necessitation.Steps
 import ArithS.Necessitation.Lib.Walk
 import ArithS.Necessitation.WalkLemmas
 import ArithS.Necessitation.Chain
+import ArithS.Necessitation.ChainOcc
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -428,6 +429,15 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms fvOccS_setShift_le
 #print axioms setLen_setShiftIter_le
 #print axioms dlen_elimExistsCode_le_occ
+
+-- U10 (Necessitation/Steps + ChainOcc, 2026-09-13): the Horn-closing sub-bound of `introFactCode`
+-- extracted, `dlen_introFactCode_le_occ` (the `(m + 2j + 10)|Γ|` of `dlen_introFactCode_le` becomes
+-- `(m + 2j + 9)|Γ| + fvOccS Γ`, via `dlen_elimExistsCode_le_occ`), and the per-step bound
+-- `dlen_applyStep_le_occ` with `stepCostOcc` (tags 2 and 3 charged additively; `introCostOcc ≤ introCost`).
+#print axioms dlen_introFactCode_horn_le
+#print axioms dlen_introFactCode_le_occ
+#print axioms introCostOcc_le_introCost
+#print axioms dlen_applyStep_le_occ
 
 -- U10 (Necessitation/Lib/Walk + WalkLemmas, 2026-09-12): the formula walk's library gaps
 -- (`DESIGN_describe.md` §10) — the `<` chain rows `zeroLtSucc`/`succLtSucc` on chain numerals, one

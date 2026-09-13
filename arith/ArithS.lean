@@ -49,6 +49,7 @@ import ArithS.Necessitation.Lib.Walk
 import ArithS.Necessitation.Steps
 import ArithS.Necessitation.WalkLemmas
 import ArithS.Necessitation.Chain
+import ArithS.Necessitation.ChainOcc
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse

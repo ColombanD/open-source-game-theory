@@ -1,4 +1,5 @@
 import ArithS.Necessitation.Primitives
+import ArithS.Necessitation.ShiftLen
 import ArithS.Necessitation.Lib.Sets
 import ArithS.Necessitation.Lib.Formulas
 import ArithS.Necessitation.Lib.Lengths
@@ -596,38 +597,43 @@ theorem introFactCode_proof {Γ : V} {es as : List V} {R dΛ d : V}
   elimExistsCode_proof (isSemiformula_one_instOuterAt es hR hes) hΓ (subset_refl Γ)
     (introFactCode_horn_proof has hR hes hΓ hneg hΛ) hd
 
-/-- **The bound for `introFactCode`** (`m = es.length`, `j = as.length`, `E ≥ 1`,
-`F ≥ |A₁ → … → ∃ R|·E`, so `|∃ R[ē]| ≤ F`):
-`dlen ≤ dlen dΛ + dlen d + (m + 2j + 10)·|Γ| + (m + 11)·F + (m + 1)²·(F + m) + |B| + m·E + 2m
-  + (2j + 1)·((j + 2)·F + 1) + 12`. -/
-theorem dlen_introFactCode_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ d : V}
+/-- `|∃ R[ē]| ≤ F` when `F ≥ |A₁ → … → ∃ R|·E` (the conclusion of the row is a subformula of
+its body, and instantiation multiplies the length by at most `E`). -/
+lemma formulaLen_exs_instOuterAt_le {E F : V} (hE : 1 ≤ E) {es as : List V} {R : V}
+    (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
+    (hR : IsSemiformula L ((es.length : V) + 1) R)
+    (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E)
+    (hF : formulaLen L (impChain L as (^∃ R)) * E ≤ F) :
+    formulaLen L (^∃ (instOuterAt L 1 es R)) ≤ F := by
+  have hes₁ : ∀ e ∈ es, IsTerm L e := fun e he ↦ (hes e he).1
+  have hc : IsSemiformula L (es.length : V) (^∃ R) := by simp [hR]
+  rw [← instOuter_exs es hR hes₁]
+  refine le_trans (formulaLen_instOuter_le hE es hc hes) (le_trans ?_ hF)
+  exact mul_le_mul_of_nonneg_right (formulaLen_concl_le_impChain has hc) zero_le
+
+/-- **The Horn-closing sub-bound of `introFactCode`**: the `useHornCode` on the context extended
+by `∃ R[ē]` with the one-node `axL` continuation (`dlen_useHornCode_le` at `|Γ'| ≤ |Γ| + F`,
+`|∃ R[ē]| ≤ F`). Shared by `dlen_introFactCode_le` and `dlen_introFactCode_le_occ`. -/
+theorem dlen_introFactCode_horn_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ : V}
     (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
     (hR : IsSemiformula L ((es.length : V) + 1) R)
     (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E) (hΓ : IsFormulaSet L Γ)
     (hneg : ∀ a ∈ as, neg L (instOuter L es a) ∈ Γ)
     (hΛ : Proof T dΛ (allsIter es.length (impChain L as (^∃ R))))
-    (hd : DerivationOf T d (insert (neg L (free L (instOuterAt L 1 es R))) (setShift L Γ)))
     (hF : formulaLen L (impChain L as (^∃ R)) * E ≤ F) :
-    dlen T (introFactCode L Γ es as R dΛ d) ≤
-      dlen T dΛ + dlen T d + ((es.length : V) + 2 * (as.length : V) + 10) * setLen L Γ
-        + ((es.length : V) + 11) * F
+    dlen T (useHornCode L (insert (^∃ (instOuterAt L 1 es R)) Γ) es as (^∃ R) dΛ
+        (axL (insert (neg L (^∃ (instOuterAt L 1 es R))) (insert (^∃ (instOuterAt L 1 es R)) Γ))
+          (^∃ (instOuterAt L 1 es R)))) ≤
+      dlen T dΛ + (setLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (setLen L Γ + F)
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
-        + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V)
-        + (2 * (as.length : V) + 1) * (((as.length : V) + 2) * F + 1) + 12 := by
+        + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V) + 3
+        + (2 * (as.length : V) + 1) * ((setLen L Γ + F) + ((as.length : V) + 1) * F + 1) := by
   have hes₁ : ∀ e ∈ es, IsTerm L e := fun e he ↦ (hes e he).1
   have hP : IsSemiformula L 1 (instOuterAt L 1 es R) := isSemiformula_one_instOuterAt es hR hes₁
   have hEx : IsFormula L (^∃ (instOuterAt L 1 es R)) := by simp [hP]
   have hΓ₁ : IsFormulaSet L (insert (^∃ (instOuterAt L 1 es R)) Γ) := by simp [hEx, hΓ]
   have hc : IsSemiformula L (es.length : V) (^∃ R) := by simp [hR]
-  have hB : IsSemiformula L (es.length : V) (impChain L as (^∃ R)) := isSemiformula_impChain has hc
-  -- `|∃ R[ē]| ≤ F`, hence `|R[ē]| ≤ F`
-  have hExF : formulaLen L (^∃ (instOuterAt L 1 es R)) ≤ F := by
-    rw [← instOuter_exs es hR hes₁]
-    refine le_trans (formulaLen_instOuter_le hE es hc hes) (le_trans ?_ hF)
-    exact mul_le_mul_of_nonneg_right (formulaLen_concl_le_impChain has hc) zero_le
-  have hRF : formulaLen L (instOuterAt L 1 es R) ≤ F := by
-    rw [formulaLen_exs hP.isUFormula] at hExF
-    exact le_trans le_self_add hExF
+  have hExF : formulaLen L (^∃ (instOuterAt L 1 es R)) ≤ F := formulaLen_exs_instOuterAt_le hE has hR hes hF
   have hΓ₁F : setLen L (insert (^∃ (instOuterAt L 1 es R)) Γ) ≤ setLen L Γ + F :=
     le_trans (setLen_insert_le _ _) (add_le_add (le_refl _) hExF)
   -- the one-node continuation
@@ -648,16 +654,35 @@ theorem dlen_introFactCode_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V}
       _ = setLen L Γ + 2 * F + 1 := by ring
   have hhorn := dlen_useHornCode_le (T := T) hE has hc hes hΓ₁ (subset_refl _)
     (fun a ha ↦ by simp [hneg a ha]) hΛ hax hF
-  have hD := introFactCode_horn_proof (T := T) has hR hes₁ hΓ hneg hΛ
-  have hhorn' : dlen T (useHornCode L (insert (^∃ (instOuterAt L 1 es R)) Γ) es as (^∃ R) dΛ
-        (axL (insert (neg L (^∃ (instOuterAt L 1 es R))) (insert (^∃ (instOuterAt L 1 es R)) Γ))
-          (^∃ (instOuterAt L 1 es R)))) ≤
-      dlen T dΛ + (setLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (setLen L Γ + F)
+  refine le_trans hhorn ?_
+  gcongr
+
+/-- **The bound for `introFactCode`** (`m = es.length`, `j = as.length`, `E ≥ 1`,
+`F ≥ |A₁ → … → ∃ R|·E`, so `|∃ R[ē]| ≤ F`):
+`dlen ≤ dlen dΛ + dlen d + (m + 2j + 10)·|Γ| + (m + 11)·F + (m + 1)²·(F + m) + |B| + m·E + 2m
+  + (2j + 1)·((j + 2)·F + 1) + 12`. -/
+theorem dlen_introFactCode_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ d : V}
+    (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
+    (hR : IsSemiformula L ((es.length : V) + 1) R)
+    (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E) (hΓ : IsFormulaSet L Γ)
+    (hneg : ∀ a ∈ as, neg L (instOuter L es a) ∈ Γ)
+    (hΛ : Proof T dΛ (allsIter es.length (impChain L as (^∃ R))))
+    (hd : DerivationOf T d (insert (neg L (free L (instOuterAt L 1 es R))) (setShift L Γ)))
+    (hF : formulaLen L (impChain L as (^∃ R)) * E ≤ F) :
+    dlen T (introFactCode L Γ es as R dΛ d) ≤
+      dlen T dΛ + dlen T d + ((es.length : V) + 2 * (as.length : V) + 10) * setLen L Γ
+        + ((es.length : V) + 11) * F
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
-        + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V) + 3
-        + (2 * (as.length : V) + 1) * ((setLen L Γ + F) + ((as.length : V) + 1) * F + 1) := by
-    refine le_trans hhorn ?_
-    gcongr
+        + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V)
+        + (2 * (as.length : V) + 1) * (((as.length : V) + 2) * F + 1) + 12 := by
+  have hes₁ : ∀ e ∈ es, IsTerm L e := fun e he ↦ (hes e he).1
+  have hP : IsSemiformula L 1 (instOuterAt L 1 es R) := isSemiformula_one_instOuterAt es hR hes₁
+  have hRF : formulaLen L (instOuterAt L 1 es R) ≤ F := by
+    have h := formulaLen_exs_instOuterAt_le hE has hR hes hF
+    rw [formulaLen_exs hP.isUFormula] at h
+    exact le_trans le_self_add h
+  have hhorn := dlen_introFactCode_horn_le (T := T) hE has hR hes hΓ hneg hΛ hF
+  have hD := introFactCode_horn_proof (T := T) has hR hes₁ hΓ hneg hΛ
   unfold introFactCode
   refine le_trans (dlen_elimExistsCode_le' hP hΓ (subset_refl Γ) hD hd) ?_
   calc _ ≤ (dlen T dΛ + (setLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (setLen L Γ + F)
@@ -665,6 +690,43 @@ theorem dlen_introFactCode_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V}
         + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V) + 3
         + (2 * (as.length : V) + 1) * ((setLen L Γ + F) + ((as.length : V) + 1) * F + 1))
         + dlen T d + 5 * setLen L Γ + 6 * F + 8 := by gcongr
+    _ = _ := by ring
+
+/-- **The bound for `introFactCode` with the additive shift term** (`dlen_elimExistsCode_le_occ`
+in place of `dlen_elimExistsCode_le'`): one `|Γ|` of the `(m + 2j + 10)·|Γ|` becomes `fvOccS Γ`,
+the number of free-variable occurrences in the context — the doubled `|setShift Γ| ≤ 2|Γ|` is
+gone:
+`dlen ≤ dlen dΛ + dlen d + (m + 2j + 9)·|Γ| + fvOccS Γ + (m + 11)·F + (m + 1)²·(F + m) + |B| + m·E
+  + 2m + (2j + 1)·((j + 2)·F + 1) + 12`. -/
+theorem dlen_introFactCode_le_occ {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ d : V}
+    (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
+    (hR : IsSemiformula L ((es.length : V) + 1) R)
+    (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E) (hΓ : IsFormulaSet L Γ)
+    (hneg : ∀ a ∈ as, neg L (instOuter L es a) ∈ Γ)
+    (hΛ : Proof T dΛ (allsIter es.length (impChain L as (^∃ R))))
+    (hd : DerivationOf T d (insert (neg L (free L (instOuterAt L 1 es R))) (setShift L Γ)))
+    (hF : formulaLen L (impChain L as (^∃ R)) * E ≤ F) :
+    dlen T (introFactCode L Γ es as R dΛ d) ≤
+      dlen T dΛ + dlen T d + ((es.length : V) + 2 * (as.length : V) + 9) * setLen L Γ + fvOccS L Γ
+        + ((es.length : V) + 11) * F
+        + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
+        + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V)
+        + (2 * (as.length : V) + 1) * (((as.length : V) + 2) * F + 1) + 12 := by
+  have hes₁ : ∀ e ∈ es, IsTerm L e := fun e he ↦ (hes e he).1
+  have hP : IsSemiformula L 1 (instOuterAt L 1 es R) := isSemiformula_one_instOuterAt es hR hes₁
+  have hRF : formulaLen L (instOuterAt L 1 es R) ≤ F := by
+    have h := formulaLen_exs_instOuterAt_le hE has hR hes hF
+    rw [formulaLen_exs hP.isUFormula] at h
+    exact le_trans le_self_add h
+  have hhorn := dlen_introFactCode_horn_le (T := T) hE has hR hes hΓ hneg hΛ hF
+  have hD := introFactCode_horn_proof (T := T) has hR hes₁ hΓ hneg hΛ
+  unfold introFactCode
+  refine le_trans (dlen_elimExistsCode_le_occ hP hΓ (subset_refl Γ) hD hd) ?_
+  calc _ ≤ (dlen T dΛ + (setLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (setLen L Γ + F)
+        + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
+        + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V) + 3
+        + (2 * (as.length : V) + 1) * ((setLen L Γ + F) + ((as.length : V) + 1) * F + 1))
+        + dlen T d + 4 * setLen L Γ + fvOccS L Γ + 6 * F + 8 := by gcongr
     _ = _ := by ring
 
 /-! ### Leaves — `axLFactCode`, `wkToCode` -/
