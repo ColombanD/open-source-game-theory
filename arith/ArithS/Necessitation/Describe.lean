@@ -3004,4 +3004,472 @@ theorem describeT_chain {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) 
 
 end termWalkOK
 
+
+/-! ## Part 4 — the formula walk (D2 for formulas)
+
+DESIGN §4.1–4.2: a `Fixpoint` on triples `⟪n, r, y⟫` (`y = ⟪count, steps⟫`) — the arity changes
+under quantifiers, so no `UformulaRec1`. The node emitters take their two row indices as
+arguments (`constNode W n 19 20` = ⊤, `22 23` = ⊥; `binNode … 24 25` = ∧, `26 27` = ∨;
+`quantNode … 28 29` = ∀, `30 31` = ∃; `atomNode … 32 33` = rel, `34 35` = nrel) so that four
+Σ₁ definitions serve the eight constructors. -/
+
+section formulaWalk
+
+open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
+
+/-- The row of the closed symbol fact `isRel 2 R` (`0` = `=`, `1` = `<`). -/
+noncomputable def relRow (R : V) : V := if R = 0 then 36 else 37
+
+def relRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y R. (R = 0 → y = 36) ∧ (R ≠ 0 → y = 37)”
+
+instance relRow_defined : 𝚺₀-Function₁ (relRow : V → V) via relRowDef := .mk fun v ↦ by
+  simp [relRowDef, relRow, numeral_eq_natCast]
+  by_cases h : v 1 = 0 <;> simp [h]
+instance relRow_definable : 𝚺₀-Function₁ (relRow : V → V) := relRow_defined.to_definable
+
+/-- (F⊤)/(F⊥): the totality row `i₁` (closed), the formation row `i₂` at `[cTV n, &0]`, the bridge. -/
+noncomputable def constNode (W n i₁ i₂ : V) : V :=
+  ⟪1, ?[mkStep W i₁ 0, mkStep W i₂ ?[cTV n, ^&0], mkStep W 21 ?[cTV n, ^&0]]⟫
+
+noncomputable def constNodeDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W n i₁ i₂. ∃ cn, !cTVGraph cn n ∧ ∃ f0, !qqFvarDef f0 0 ∧
+    ∃ s₁, !mkStepDef s₁ W i₁ 0 ∧ ∃ e₂, !mkVec₂Def e₂ cn f0 ∧ ∃ s₂, !mkStepDef s₂ W i₂ e₂ ∧
+    ∃ s₃, !mkStepDef s₃ W 21 e₂ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !pairDef y 1 l₁”
+
+instance constNode_defined : 𝚺₁-Function₄ (constNode : V → V → V → V → V) via constNodeDef := .mk
+  fun v ↦ by simp [constNodeDef, constNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff]
+instance constNode_definable : 𝚺₁-Function₄ (constNode : V → V → V → V → V) := constNode_defined.to_definable
+
+/-- (F∧)/(F∨): after `Sp ++ Sq` (`x_p = &cq`, `x_q = &0`): the totality row `i₁` at `[&cq, &0]`, the
+formation row `i₂` at `[cTV n, &(cq+1), &1, &0]`, the bridge. Count `cp + cq + 1`. -/
+noncomputable def binNode (W n i₁ i₂ yp yq : V) : V :=
+  ⟪π₁ yp + π₁ yq + 1, appendV (π₂ yp) (appendV (π₂ yq)
+    ?[mkStep W i₁ ?[^&(π₁ yq), ^&0], mkStep W i₂ ?[cTV n, ^&(π₁ yq + 1), ^&1, ^&0], mkStep W 21 ?[cTV n, ^&0]])⟫
+
+noncomputable def binNodeDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W n i₁ i₂ yp yq. ∃ cp, !pi₁Def cp yp ∧ ∃ Sp, !pi₂Def Sp yp ∧ ∃ cq, !pi₁Def cq yq ∧ ∃ Sq, !pi₂Def Sq yq ∧
+    ∃ cn, !cTVGraph cn n ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ f1, !qqFvarDef f1 1 ∧
+    ∃ fq, !qqFvarDef fq cq ∧ ∃ fq', !qqFvarDef fq' (cq + 1) ∧
+    ∃ e₁, !mkVec₂Def e₁ fq f0 ∧ ∃ s₁, !mkStepDef s₁ W i₁ e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ f1 f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ fq' e₂₀ ∧ ∃ e₂, !adjoinDef e₂ cn e₂₁ ∧
+    ∃ s₂, !mkStepDef s₂ W i₂ e₂ ∧
+    ∃ e₃, !mkVec₂Def e₃ cn f0 ∧ ∃ s₃, !mkStepDef s₃ W 21 e₃ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧
+    ∃ S₂, !appendVDef S₂ Sq l₁ ∧ ∃ S, !appendVDef S Sp S₂ ∧ !pairDef y (cp + cq + 1) S”
+
+instance binNode_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ binNode (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) binNodeDef := .mk
+  fun v ↦ by simp [binNodeDef, binNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff]
+instance binNode_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ binNode (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
+  binNode_defined.to_definable
+
+/-- (F∀)/(F∃): after `Sp` (`x_p = &0`, at arity `n + 1`): the totality row `i₁` at `[&0]`, the
+formation row `i₂` at `[cTV n, &1, &0]`, the bridge. Count `cp + 1`. -/
+noncomputable def quantNode (W n i₁ i₂ yp : V) : V :=
+  ⟪π₁ yp + 1, appendV (π₂ yp)
+    ?[mkStep W i₁ ?[^&0], mkStep W i₂ ?[cTV n, ^&1, ^&0], mkStep W 21 ?[cTV n, ^&0]]⟫
+
+noncomputable def quantNodeDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W n i₁ i₂ yp. ∃ cp, !pi₁Def cp yp ∧ ∃ Sp, !pi₂Def Sp yp ∧
+    ∃ cn, !cTVGraph cn n ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ f1, !qqFvarDef f1 1 ∧
+    ∃ e₁, !mkVec₁Def e₁ f0 ∧ ∃ s₁, !mkStepDef s₁ W i₁ e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ f1 f0 ∧ ∃ e₂, !adjoinDef e₂ cn e₂₀ ∧ ∃ s₂, !mkStepDef s₂ W i₂ e₂ ∧
+    ∃ e₃, !mkVec₂Def e₃ cn f0 ∧ ∃ s₃, !mkStepDef s₃ W 21 e₃ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧
+    ∃ S, !appendVDef S Sp l₁ ∧ !pairDef y (cp + 1) S”
+
+instance quantNode_defined : 𝚺₁-Function₅ (quantNode : V → V → V → V → V → V) via quantNodeDef := .mk
+  fun v ↦ by simp [quantNodeDef, quantNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff]
+instance quantNode_definable : 𝚺₁.DefinableFunction₅ (quantNode : V → V → V → V → V → V) :=
+  quantNode_defined.to_definable
+
+/-- (Frel)/(Fnrel): after the vector (`d = ⟪cv, Sv⟫`): the closed relation row, the totality row `i₁`
+at `[cTV k, cTV R, ⟨v⟩]`, the formation row `i₂` at `[cTV n, cTV k, cTV R, ⟨v⟩', &0]`, the bridge,
+`isUTermVecOfSemitermVecLAct [cTV k, cTV n, ⟨v⟩']` and its bridge. Count `cv + 1`. -/
+noncomputable def atomNode (W n i₁ i₂ k R d : V) : V :=
+  ⟪π₁ d + 1, appendV (π₂ d)
+    ?[mkStep W (relRow R) 0,
+      mkStep W i₁ ?[cTV k, cTV R, vRef 0 k],
+      mkStep W i₂ ?[cTV n, cTV k, cTV R, vRef 1 k, ^&0],
+      mkStep W 21 ?[cTV n, ^&0],
+      mkStep W 38 ?[cTV k, cTV n, vRef 1 k],
+      mkStep W 39 ?[cTV k, vRef 1 k]]⟫
+
+noncomputable def atomNodeDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W n i₁ i₂ k R d. ∃ cv, !pi₁Def cv d ∧ ∃ Sv, !pi₂Def Sv d ∧
+    ∃ f0, !qqFvarDef f0 0 ∧ ∃ r0, !vRefDef r0 0 k ∧ ∃ r1, !vRefDef r1 1 k ∧
+    ∃ ck, !cTVGraph ck k ∧ ∃ cR, !cTVGraph cR R ∧ ∃ cn, !cTVGraph cn n ∧
+    ∃ j₁, !relRowDef j₁ R ∧ ∃ s₁, !mkStepDef s₁ W j₁ 0 ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ cR r0 ∧ ∃ e₂, !adjoinDef e₂ ck e₂₀ ∧ ∃ s₂, !mkStepDef s₂ W i₁ e₂ ∧
+    ∃ e₃₀, !mkVec₂Def e₃₀ r1 f0 ∧ ∃ e₃₁, !adjoinDef e₃₁ cR e₃₀ ∧ ∃ e₃₂, !adjoinDef e₃₂ ck e₃₁ ∧
+    ∃ e₃, !adjoinDef e₃ cn e₃₂ ∧ ∃ s₃, !mkStepDef s₃ W i₂ e₃ ∧
+    ∃ e₄, !mkVec₂Def e₄ cn f0 ∧ ∃ s₄, !mkStepDef s₄ W 21 e₄ ∧
+    ∃ e₅₀, !mkVec₂Def e₅₀ cn r1 ∧ ∃ e₅, !adjoinDef e₅ ck e₅₀ ∧ ∃ s₅, !mkStepDef s₅ W 38 e₅ ∧
+    ∃ e₆, !mkVec₂Def e₆ ck r1 ∧ ∃ s₆, !mkStepDef s₆ W 39 e₆ ∧
+    ∃ l₆, !mkVec₁Def l₆ s₆ ∧ ∃ l₅, !adjoinDef l₅ s₅ l₆ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧
+    ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧
+    ∃ S, !appendVDef S Sv l₁ ∧ !pairDef y (cv + 1) S”
+
+instance atomNode_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ atomNode (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) atomNodeDef := .mk
+  fun v ↦ by
+    simp [atomNodeDef, atomNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff,
+      vRef_defined.iff, relRow_defined.iff]
+instance atomNode_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ atomNode (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  atomNode_defined.to_definable
+
+/-! ### 4.1 The fixpoint on `⟪n, r, y⟫` -/
+
+namespace DescF
+
+/-- The walk operator on triples `⟪n, r, y⟫`, with the bounds the blueprint carries. -/
+def Phi (W : V) (C : Set V) (pr : V) : Prop :=
+  ∃ n ≤ pr, ∃ q ≤ pr, pr = ⟪n, q⟫ ∧ ∃ r ≤ q, ∃ y ≤ q, q = ⟪r, y⟫ ∧
+  ( (∃ k < r, ∃ R < r, ∃ v < r, r = ^rel k R v ∧
+      y = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k)) ∨
+    (∃ k < r, ∃ R < r, ∃ v < r, r = ^nrel k R v ∧
+      y = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k)) ∨
+    (r = ^⊤ ∧ y = constNode W n 19 20) ∨
+    (r = ^⊥ ∧ y = constNode W n 22 23) ∨
+    (∃ p < r, ∃ p' < r, r = p ^⋏ p' ∧ ∃ yp ≤ y, ∃ yq ≤ y, ⟪n, p, yp⟫ ∈ C ∧ ⟪n, p', yq⟫ ∈ C ∧
+      y = binNode W n 24 25 yp yq) ∨
+    (∃ p < r, ∃ p' < r, r = p ^⋎ p' ∧ ∃ yp ≤ y, ∃ yq ≤ y, ⟪n, p, yp⟫ ∈ C ∧ ⟪n, p', yq⟫ ∈ C ∧
+      y = binNode W n 26 27 yp yq) ∨
+    (∃ p < r, r = ^∀ p ∧ ∃ yp ≤ y, ⟪n + 1, p, yp⟫ ∈ C ∧ y = quantNode W n 28 29 yp) ∨
+    (∃ p < r, r = ^∃ p ∧ ∃ yp ≤ y, ⟪n + 1, p, yp⟫ ∈ C ∧ y = quantNode W n 30 31 yp) )
+
+noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
+  (.mkSigma “pr C W.
+    ∃ n <⁺ pr, ∃ q <⁺ pr, !pairDef pr n q ∧ ∃ r <⁺ q, ∃ y <⁺ q, !pairDef q r y ∧
+    ( (∃ k < r, ∃ R < r, ∃ v < r, !qqRelDef r k R v ∧
+        ∃ w, !descTVecDef w W n k v ∧ ∃ d, !descVecAuxDef d W n w k ∧ ∃ s, !atomNodeDef s W n 32 33 k R d ∧ y = s) ∨
+      (∃ k < r, ∃ R < r, ∃ v < r, !qqNRelDef r k R v ∧
+        ∃ w, !descTVecDef w W n k v ∧ ∃ d, !descVecAuxDef d W n w k ∧ ∃ s, !atomNodeDef s W n 34 35 k R d ∧ y = s) ∨
+      (!qqVerumDef r ∧ ∃ s, !constNodeDef s W n 19 20 ∧ y = s) ∨
+      (!qqFalsumDef r ∧ ∃ s, !constNodeDef s W n 22 23 ∧ y = s) ∨
+      (∃ p < r, ∃ p' < r, !qqAndDef r p p' ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, :⟪n, p, yp⟫:∈ C ∧ :⟪n, p', yq⟫:∈ C ∧
+        ∃ s, !binNodeDef s W n 24 25 yp yq ∧ y = s) ∨
+      (∃ p < r, ∃ p' < r, !qqOrDef r p p' ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, :⟪n, p, yp⟫:∈ C ∧ :⟪n, p', yq⟫:∈ C ∧
+        ∃ s, !binNodeDef s W n 26 27 yp yq ∧ y = s) ∨
+      (∃ p < r, !qqAllDef r p ∧ ∃ yp <⁺ y, :⟪n + 1, p, yp⟫:∈ C ∧ ∃ s, !quantNodeDef s W n 28 29 yp ∧ y = s) ∨
+      (∃ p < r, !qqExsDef r p ∧ ∃ yp <⁺ y, :⟪n + 1, p, yp⟫:∈ C ∧ ∃ s, !quantNodeDef s W n 30 31 yp ∧ y = s) )”)
+  (.mkPi “pr C W.
+    ∃ n <⁺ pr, ∃ q <⁺ pr, !pairDef pr n q ∧ ∃ r <⁺ q, ∃ y <⁺ q, !pairDef q r y ∧
+    ( (∃ k < r, ∃ R < r, ∃ v < r, !qqRelDef r k R v ∧
+        ∀ w, !descTVecDef w W n k v → ∀ d, !descVecAuxDef d W n w k → ∀ s, !atomNodeDef s W n 32 33 k R d → y = s) ∨
+      (∃ k < r, ∃ R < r, ∃ v < r, !qqNRelDef r k R v ∧
+        ∀ w, !descTVecDef w W n k v → ∀ d, !descVecAuxDef d W n w k → ∀ s, !atomNodeDef s W n 34 35 k R d → y = s) ∨
+      (!qqVerumDef r ∧ ∀ s, !constNodeDef s W n 19 20 → y = s) ∨
+      (!qqFalsumDef r ∧ ∀ s, !constNodeDef s W n 22 23 → y = s) ∨
+      (∃ p < r, ∃ p' < r, !qqAndDef r p p' ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, :⟪n, p, yp⟫:∈ C ∧ :⟪n, p', yq⟫:∈ C ∧
+        ∀ s, !binNodeDef s W n 24 25 yp yq → y = s) ∨
+      (∃ p < r, ∃ p' < r, !qqOrDef r p p' ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, :⟪n, p, yp⟫:∈ C ∧ :⟪n, p', yq⟫:∈ C ∧
+        ∀ s, !binNodeDef s W n 26 27 yp yq → y = s) ∨
+      (∃ p < r, !qqAllDef r p ∧ ∃ yp <⁺ y, :⟪n + 1, p, yp⟫:∈ C ∧ ∀ s, !quantNodeDef s W n 28 29 yp → y = s) ∨
+      (∃ p < r, !qqExsDef r p ∧ ∃ yp <⁺ y, :⟪n + 1, p, yp⟫:∈ C ∧ ∀ s, !quantNodeDef s W n 30 31 yp → y = s) )”)⟩
+
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, descTVec_defined.iff, descVecAux_defined.iff, atomNode_defined.iff, constNode_defined.iff,
+        binNode_defined.iff, quantNode_defined.iff, numeral_eq_natCast]
+    · intro v
+      simp [blueprint, Phi, descTVec_defined.iff, descVecAux_defined.iff, atomNode_defined.iff,
+        constNode_defined.iff, binNode_defined.iff, quantNode_defined.iff, numeral_eq_natCast]
+  monotone := by
+    rintro C C' hC v pr ⟨n, hn, q, hq, rfl, r, hr, y, hy, rfl, h⟩
+    refine ⟨n, hn, _, hq, rfl, r, hr, y, hy, rfl, ?_⟩
+    rcases h with h | h | h | h | ⟨p, hp, p', hp', rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩ |
+      ⟨p, hp, p', hp', rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩ | ⟨p, hp, rfl, yp, hyp, h₁, rfl⟩ | ⟨p, hp, rfl, yp, hyp, h₁, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, p', hp', rfl, yp, hyp, yq, hyq, hC h₁, hC h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, p', hp', rfl, yp, hyp, yq, hyq, hC h₁, hC h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, rfl, yp, hyp, hC h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, hp, rfl, yp, hyp, hC h₁, rfl⟩))))))
+
+/-- Every referenced triple `⟪n', p, yp⟫` (`p < r`, `yp ≤ y`) is below `⟪n', r, y⟫`. -/
+instance : construction.Finite V where
+  finite := by
+    rintro C v pr ⟨n, hn, q, hq, rfl, r, hr, y, hy, rfl, h⟩
+    have key : ∀ {p yp : V}, p < r → yp ≤ y → ⟪p, yp⟫ < ⟪r, y⟫ := fun hp hyp ↦
+      lt_of_lt_of_le (pair_lt_pair_left hp _) (pair_le_pair_right _ hyp)
+    rcases h with h | h | h | h | ⟨p, hp, p', hp', hr', yp, hyp, yq, hyq, h₁, h₂, hy'⟩ |
+      ⟨p, hp, p', hp', hr', yp, hyp, yq, hyq, h₁, h₂, hy'⟩ | ⟨p, hp, hr', yp, hyp, h₁, hy'⟩ | ⟨p, hp, hr', yp, hyp, h₁, hy'⟩
+    · exact ⟨0, n, hn, _, hq, rfl, r, hr, y, hy, rfl, Or.inl h⟩
+    · exact ⟨0, n, hn, _, hq, rfl, r, hr, y, hy, rfl, Or.inr (Or.inl h)⟩
+    · exact ⟨0, n, hn, _, hq, rfl, r, hr, y, hy, rfl, Or.inr (Or.inr (Or.inl h))⟩
+    · exact ⟨0, n, hn, _, hq, rfl, r, hr, y, hy, rfl, Or.inr (Or.inr (Or.inr (Or.inl h)))⟩
+    · exact ⟨⟪n, ⟪r, y⟫⟫, n, hn, _, hq, rfl, r, hr, y, hy, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨p, hp, p', hp', hr', yp, hyp, yq, hyq, ⟨h₁, pair_lt_pair_right _ (key hp hyp)⟩,
+          ⟨h₂, pair_lt_pair_right _ (key hp' hyq)⟩, hy'⟩))))⟩
+    · exact ⟨⟪n, ⟪r, y⟫⟫, n, hn, _, hq, rfl, r, hr, y, hy, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨p, hp, p', hp', hr', yp, hyp, yq, hyq, ⟨h₁, pair_lt_pair_right _ (key hp hyp)⟩,
+          ⟨h₂, pair_lt_pair_right _ (key hp' hyq)⟩, hy'⟩)))))⟩
+    · exact ⟨⟪n + 1, ⟪r, y⟫⟫, n, hn, _, hq, rfl, r, hr, y, hy, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨p, hp, hr', yp, hyp, ⟨h₁, pair_lt_pair_right _ (key hp hyp)⟩, hy'⟩))))))⟩
+    · exact ⟨⟪n + 1, ⟪r, y⟫⟫, n, hn, _, hq, rfl, r, hr, y, hy, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨p, hp, hr', yp, hyp, ⟨h₁, pair_lt_pair_right _ (key hp hyp)⟩, hy'⟩))))))⟩
+
+/-- `Phi` at a triple, the bounds discharged. -/
+lemma phi_iff (W : V) (C : Set V) (n r y : V) :
+    Phi W C ⟪n, r, y⟫ ↔
+    ( (∃ k R v, r = ^rel k R v ∧ y = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k)) ∨
+      (∃ k R v, r = ^nrel k R v ∧ y = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k)) ∨
+      (r = ^⊤ ∧ y = constNode W n 19 20) ∨
+      (r = ^⊥ ∧ y = constNode W n 22 23) ∨
+      (∃ p p' yp yq, r = p ^⋏ p' ∧ yp ≤ y ∧ yq ≤ y ∧ ⟪n, p, yp⟫ ∈ C ∧ ⟪n, p', yq⟫ ∈ C ∧ y = binNode W n 24 25 yp yq) ∨
+      (∃ p p' yp yq, r = p ^⋎ p' ∧ yp ≤ y ∧ yq ≤ y ∧ ⟪n, p, yp⟫ ∈ C ∧ ⟪n, p', yq⟫ ∈ C ∧ y = binNode W n 26 27 yp yq) ∨
+      (∃ p yp, r = ^∀ p ∧ yp ≤ y ∧ ⟪n + 1, p, yp⟫ ∈ C ∧ y = quantNode W n 28 29 yp) ∨
+      (∃ p yp, r = ^∃ p ∧ yp ≤ y ∧ ⟪n + 1, p, yp⟫ ∈ C ∧ y = quantNode W n 30 31 yp) ) := by
+  constructor
+  · rintro ⟨n', _, q, _, hpr, r', _, y', _, hq, h⟩
+    obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hpr
+    obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hq
+    rcases h with ⟨k, _, R, _, v, _, rfl, rfl⟩ | ⟨k, _, R, _, v, _, rfl, rfl⟩ | h | h |
+      ⟨p, _, p', _, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩ | ⟨p, _, p', _, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩ |
+      ⟨p, _, rfl, yp, hyp, h₁, rfl⟩ | ⟨p, _, rfl, yp, hyp, h₁, rfl⟩
+    · exact Or.inl ⟨k, R, v, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨k, R, v, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, p', yp, yq, rfl, hyp, hyq, h₁, h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, p', yp, yq, rfl, hyp, hyq, h₁, h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, yp, rfl, hyp, h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, yp, rfl, hyp, h₁, rfl⟩))))))
+  · intro h
+    refine ⟨n, by simp, _, by simp, rfl, r, by simp, y, by simp, rfl, ?_⟩
+    rcases h with ⟨k, R, v, rfl, rfl⟩ | ⟨k, R, v, rfl, rfl⟩ | h | h |
+      ⟨p, p', yp, yq, rfl, hyp, hyq, h₁, h₂, rfl⟩ | ⟨p, p', yp, yq, rfl, hyp, hyq, h₁, h₂, rfl⟩ |
+      ⟨p, yp, rfl, hyp, h₁, rfl⟩ | ⟨p, yp, rfl, hyp, h₁, rfl⟩
+    · exact Or.inl ⟨k, by simp, R, by simp, v, by simp, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨k, by simp, R, by simp, v, by simp, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, p', by simp, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, p', by simp, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, rfl, yp, hyp, h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, by simp, rfl, yp, hyp, h₁, rfl⟩))))))
+
+end DescF
+
+/-- **The graph of the formula walk**: `DescFGraph W n r y` — the walk of `r` at arity `n` (over
+the piece table `W`) is `y = ⟪count, steps⟫`. -/
+def DescFGraph (W n r y : V) : Prop := DescF.construction.Fixpoint ![W] ⟪n, r, y⟫
+
+noncomputable def descFGraphDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “W n r y. ∃ q, !pairDef q r y ∧ ∃ pr, !pairDef pr n q ∧ !DescF.blueprint.fixpointDef pr W”
+
+instance descFGraph_defined : 𝚺₁-Relation₄ (DescFGraph : V → V → V → V → Prop) via descFGraphDef := .mk
+  fun v ↦ by simp [descFGraphDef, DescF.construction.eval_fixpointDef, DescFGraph]; rfl
+instance descFGraph_definable : 𝚺₁-Relation₄ (DescFGraph : V → V → V → V → Prop) := descFGraph_defined.to_definable
+
+/-! ### 4.2 Case analysis, inversion, existence and uniqueness -/
+
+lemma DescFGraph.case_iff {W n r y : V} :
+    DescFGraph W n r y ↔
+    ( (∃ k R v, r = ^rel k R v ∧ y = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k)) ∨
+      (∃ k R v, r = ^nrel k R v ∧ y = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k)) ∨
+      (r = ^⊤ ∧ y = constNode W n 19 20) ∨
+      (r = ^⊥ ∧ y = constNode W n 22 23) ∨
+      (∃ p p' yp yq, r = p ^⋏ p' ∧ yp ≤ y ∧ yq ≤ y ∧ DescFGraph W n p yp ∧ DescFGraph W n p' yq ∧
+        y = binNode W n 24 25 yp yq) ∨
+      (∃ p p' yp yq, r = p ^⋎ p' ∧ yp ≤ y ∧ yq ≤ y ∧ DescFGraph W n p yp ∧ DescFGraph W n p' yq ∧
+        y = binNode W n 26 27 yp yq) ∨
+      (∃ p yp, r = ^∀ p ∧ yp ≤ y ∧ DescFGraph W (n + 1) p yp ∧ y = quantNode W n 28 29 yp) ∨
+      (∃ p yp, r = ^∃ p ∧ yp ≤ y ∧ DescFGraph W (n + 1) p yp ∧ y = quantNode W n 30 31 yp) ) := by
+  unfold DescFGraph
+  rw [DescF.construction.case]
+  exact DescF.phi_iff W _ n r y
+
+section inversion
+
+attribute [local simp] qqRel qqNRel qqVerum qqFalsum qqAnd qqOr qqAll qqExs
+
+lemma DescFGraph.verum_iff {W n y : V} : DescFGraph W n ^⊤ y ↔ y = constNode W n 19 20 := by
+  rw [DescFGraph.case_iff]; simp
+lemma DescFGraph.falsum_iff {W n y : V} : DescFGraph W n ^⊥ y ↔ y = constNode W n 22 23 := by
+  rw [DescFGraph.case_iff]; simp
+lemma DescFGraph.rel_iff {W n k R v y : V} :
+    DescFGraph W n (^rel k R v) y ↔ y = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k) := by
+  rw [DescFGraph.case_iff]; simp
+lemma DescFGraph.nrel_iff {W n k R v y : V} :
+    DescFGraph W n (^nrel k R v) y ↔ y = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k) := by
+  rw [DescFGraph.case_iff]; simp
+lemma DescFGraph.and_iff {W n p q y : V} :
+    DescFGraph W n (p ^⋏ q) y ↔
+    ∃ yp yq, yp ≤ y ∧ yq ≤ y ∧ DescFGraph W n p yp ∧ DescFGraph W n q yq ∧ y = binNode W n 24 25 yp yq := by
+  rw [DescFGraph.case_iff]; simp
+lemma DescFGraph.or_iff {W n p q y : V} :
+    DescFGraph W n (p ^⋎ q) y ↔
+    ∃ yp yq, yp ≤ y ∧ yq ≤ y ∧ DescFGraph W n p yp ∧ DescFGraph W n q yq ∧ y = binNode W n 26 27 yp yq := by
+  rw [DescFGraph.case_iff]; simp
+lemma DescFGraph.all_iff {W n p y : V} :
+    DescFGraph W n (^∀ p) y ↔ ∃ yp, yp ≤ y ∧ DescFGraph W (n + 1) p yp ∧ y = quantNode W n 28 29 yp := by
+  rw [DescFGraph.case_iff]; simp
+lemma DescFGraph.exs_iff {W n p y : V} :
+    DescFGraph W n (^∃ p) y ↔ ∃ yp, yp ≤ y ∧ DescFGraph W (n + 1) p yp ∧ y = quantNode W n 30 31 yp := by
+  rw [DescFGraph.case_iff]; simp
+
+end inversion
+
+/-- The step list of a node dominates the child's list (as codes): `u ≤ appendV u w`. -/
+lemma le_appendV_left (u w : V) : u ≤ appendV u w := by
+  induction u using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil => exact zero_le
+  | adjoin x u ih => rw [appendV_adjoin]; exact adjoin_le_adjoin le_rfl ih
+
+lemma le_adjoin_self (x v : V) : v ≤ x ∷ v := by
+  rw [adjoin_def]; exact le_trans (le_pair_right x v) le_self_add
+
+lemma le_appendV_right (u w : V) : w ≤ appendV u w := by
+  induction u using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil => rw [appendV_nil]
+  | adjoin x u ih => rw [appendV_adjoin]; exact le_trans ih (le_adjoin_self _ _)
+
+lemma le_binNode_left (W n i₁ i₂ yp yq : V) : yp ≤ binNode W n i₁ i₂ yp yq := by
+  unfold binNode
+  calc yp = ⟪π₁ yp, π₂ yp⟫ := (pair_unpair yp).symm
+    _ ≤ _ := pair_le_pair (le_trans le_self_add le_self_add) (le_appendV_left _ _)
+lemma le_binNode_right (W n i₁ i₂ yp yq : V) : yq ≤ binNode W n i₁ i₂ yp yq := by
+  unfold binNode
+  calc yq = ⟪π₁ yq, π₂ yq⟫ := (pair_unpair yq).symm
+    _ ≤ _ := pair_le_pair (le_trans le_add_self le_self_add) (le_trans (le_appendV_left _ _) (le_appendV_right _ _))
+lemma le_quantNode (W n i₁ i₂ yp : V) : yp ≤ quantNode W n i₁ i₂ yp := by
+  unfold quantNode
+  calc yp = ⟪π₁ yp, π₂ yp⟫ := (pair_unpair yp).symm
+    _ ≤ _ := pair_le_pair le_self_add (le_appendV_left _ _)
+
+lemma descFGraph_exists (W : V) : ∀ {n r : V}, IsSemiformula LAct n r → ∃ y, DescFGraph W n r y := by
+  intro n r
+  apply IsSemiformula.sigma1_structural_induction (P := fun n r ↦ ∃ y, DescFGraph W n r y)
+  · definability
+  · intro n k R v _ _; exact ⟨_, DescFGraph.rel_iff.mpr rfl⟩
+  · intro n k R v _ _; exact ⟨_, DescFGraph.nrel_iff.mpr rfl⟩
+  · intro n; exact ⟨_, DescFGraph.verum_iff.mpr rfl⟩
+  · intro n; exact ⟨_, DescFGraph.falsum_iff.mpr rfl⟩
+  · rintro n p q _ _ ⟨yp, hp⟩ ⟨yq, hq⟩
+    exact ⟨_, DescFGraph.and_iff.mpr ⟨yp, yq, le_binNode_left _ _ _ _ _ _, le_binNode_right _ _ _ _ _ _, hp, hq, rfl⟩⟩
+  · rintro n p q _ _ ⟨yp, hp⟩ ⟨yq, hq⟩
+    exact ⟨_, DescFGraph.or_iff.mpr ⟨yp, yq, le_binNode_left _ _ _ _ _ _, le_binNode_right _ _ _ _ _ _, hp, hq, rfl⟩⟩
+  · rintro n p _ ⟨yp, hp⟩; exact ⟨_, DescFGraph.all_iff.mpr ⟨yp, le_quantNode _ _ _ _ _, hp, rfl⟩⟩
+  · rintro n p _ ⟨yp, hp⟩; exact ⟨_, DescFGraph.exs_iff.mpr ⟨yp, le_quantNode _ _ _ _ _, hp, rfl⟩⟩
+
+lemma descFGraph_unique (W : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    ∀ y₁ y₂, DescFGraph W n r y₁ → DescFGraph W n r y₂ → y₁ = y₂ := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ ∀ y₁ y₂, DescFGraph W n r y₁ → DescFGraph W n r y₂ → y₁ = y₂)
+  · definability
+  · intro n k R v _ _ y₁ y₂ h₁ h₂; rw [DescFGraph.rel_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n k R v _ _ y₁ y₂ h₁ h₂; rw [DescFGraph.nrel_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n y₁ y₂ h₁ h₂; rw [DescFGraph.verum_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n y₁ y₂ h₁ h₂; rw [DescFGraph.falsum_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n p q _ _ ihp ihq y₁ y₂ h₁ h₂
+    obtain ⟨yp, yq, _, _, hp, hq, rfl⟩ := DescFGraph.and_iff.mp h₁
+    obtain ⟨yp', yq', _, _, hp', hq', rfl⟩ := DescFGraph.and_iff.mp h₂
+    rw [ihp yp yp' hp hp', ihq yq yq' hq hq']
+  · intro n p q _ _ ihp ihq y₁ y₂ h₁ h₂
+    obtain ⟨yp, yq, _, _, hp, hq, rfl⟩ := DescFGraph.or_iff.mp h₁
+    obtain ⟨yp', yq', _, _, hp', hq', rfl⟩ := DescFGraph.or_iff.mp h₂
+    rw [ihp yp yp' hp hp', ihq yq yq' hq hq']
+  · intro n p _ ih y₁ y₂ h₁ h₂
+    obtain ⟨yp, _, hp, rfl⟩ := DescFGraph.all_iff.mp h₁
+    obtain ⟨yp', _, hp', rfl⟩ := DescFGraph.all_iff.mp h₂
+    rw [ih yp yp' hp hp']
+  · intro n p _ ih y₁ y₂ h₁ h₂
+    obtain ⟨yp, _, hp, rfl⟩ := DescFGraph.exs_iff.mp h₁
+    obtain ⟨yp', _, hp', rfl⟩ := DescFGraph.exs_iff.mp h₂
+    rw [ih yp yp' hp hp']
+
+lemma descFGraph_existsUnique_total (W n r : V) :
+    ∃! y, (IsSemiformula LAct n r → DescFGraph W n r y) ∧ (¬IsSemiformula LAct n r → y = 0) := by
+  by_cases h : IsSemiformula LAct n r
+  · obtain ⟨y, hy⟩ := descFGraph_exists W h
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ descFGraph_unique W h y' y hy' hy)
+  · simp [h]
+
+/-- **The formula walk**: `descFw W n r = ⟪count, steps⟫` (`0` off semiformulas). -/
+noncomputable def descFw (W n r : V) : V := Classical.choose! (descFGraph_existsUnique_total W n r)
+
+theorem descF_graph {W n r : V} (h : IsSemiformula LAct n r) : DescFGraph W n r (descFw W n r) :=
+  (Classical.choose!_spec (descFGraph_existsUnique_total W n r)).1 h
+
+theorem descF_of_not {W n r : V} (h : ¬IsSemiformula LAct n r) : descFw W n r = 0 :=
+  (Classical.choose!_spec (descFGraph_existsUnique_total W n r)).2 h
+
+lemma descF_eq_of_graph {W n r y : V} (h : IsSemiformula LAct n r) (hy : DescFGraph W n r y) : descFw W n r = y :=
+  descFGraph_unique W h _ _ (descF_graph h) hy
+
+/-- The step list of the formula walk. -/
+noncomputable def describeF (W n r : V) : V := π₂ (descFw W n r)
+/-- The number of eigenvariables the formula walk introduces. -/
+noncomputable def descCountF (W n r : V) : V := π₁ (descFw W n r)
+
+noncomputable def descFwDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W n r. (!(isSemiformula LAct).pi n r → !descFGraphDef W n r y) ∧ (¬!(isSemiformula LAct).sigma n r → y = 0)”
+
+instance descFw_defined : 𝚺₁-Function₃ (descFw : V → V → V → V) via descFwDef := .mk fun v ↦ by
+  simp [descFwDef, HierarchySymbol.Semiformula.val_sigma, descFGraph_defined.iff,
+    (IsSemiformula.defined (L := LAct)).proper.iff', (IsSemiformula.defined (L := LAct)).df, descFw,
+    Classical.choose!_eq_iff_right]
+instance descFw_definable : 𝚺₁-Function₃ (descFw : V → V → V → V) := descFw_defined.to_definable
+
+noncomputable def describeFDef : 𝚺₁.Semisentence 4 := .mkSigma “y W n r. ∃ d, !descFwDef d W n r ∧ !pi₂Def y d”
+noncomputable def descCountFDef : 𝚺₁.Semisentence 4 := .mkSigma “y W n r. ∃ d, !descFwDef d W n r ∧ !pi₁Def y d”
+
+instance describeF_defined : 𝚺₁-Function₃ (describeF : V → V → V → V) via describeFDef := .mk
+  fun v ↦ by simp [describeFDef, descFw_defined.iff, describeF]
+instance describeF_definable : 𝚺₁-Function₃ (describeF : V → V → V → V) := describeF_defined.to_definable
+instance descCountF_defined : 𝚺₁-Function₃ (descCountF : V → V → V → V) via descCountFDef := .mk
+  fun v ↦ by simp [descCountFDef, descFw_defined.iff, descCountF]
+instance descCountF_definable : 𝚺₁-Function₃ (descCountF : V → V → V → V) := descCountF_defined.to_definable
+
+/-! ### 4.3 The per-constructor equations (D2 for formulas) -/
+
+lemma descF_verum (W n : V) : descFw W n ^⊤ = constNode W n 19 20 :=
+  descF_eq_of_graph (by simp) (DescFGraph.verum_iff.mpr rfl)
+lemma descF_falsum (W n : V) : descFw W n ^⊥ = constNode W n 22 23 :=
+  descF_eq_of_graph (by simp) (DescFGraph.falsum_iff.mpr rfl)
+lemma descF_rel (W n : V) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) :
+    descFw W n (^rel k R v) = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k) :=
+  descF_eq_of_graph (by simp [hR, hv]) (DescFGraph.rel_iff.mpr rfl)
+lemma descF_nrel (W n : V) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) :
+    descFw W n (^nrel k R v) = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k) :=
+  descF_eq_of_graph (by simp [hR, hv]) (DescFGraph.nrel_iff.mpr rfl)
+lemma descF_and (W n : V) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) :
+    descFw W n (p ^⋏ q) = binNode W n 24 25 (descFw W n p) (descFw W n q) :=
+  descF_eq_of_graph (by simp [hp, hq]) (DescFGraph.and_iff.mpr
+    ⟨_, _, le_binNode_left _ _ _ _ _ _, le_binNode_right _ _ _ _ _ _, descF_graph hp, descF_graph hq, rfl⟩)
+lemma descF_or (W n : V) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) :
+    descFw W n (p ^⋎ q) = binNode W n 26 27 (descFw W n p) (descFw W n q) :=
+  descF_eq_of_graph (by simp [hp, hq]) (DescFGraph.or_iff.mpr
+    ⟨_, _, le_binNode_left _ _ _ _ _ _, le_binNode_right _ _ _ _ _ _, descF_graph hp, descF_graph hq, rfl⟩)
+lemma descF_all (W n : V) {p : V} (hp : IsSemiformula LAct (n + 1) p) :
+    descFw W n (^∀ p) = quantNode W n 28 29 (descFw W (n + 1) p) :=
+  descF_eq_of_graph (by simp [hp]) (DescFGraph.all_iff.mpr ⟨_, le_quantNode _ _ _ _ _, descF_graph hp, rfl⟩)
+lemma descF_exs (W n : V) {p : V} (hp : IsSemiformula LAct (n + 1) p) :
+    descFw W n (^∃ p) = quantNode W n 30 31 (descFw W (n + 1) p) :=
+  descF_eq_of_graph (by simp [hp]) (DescFGraph.exs_iff.mpr ⟨_, le_quantNode _ _ _ _ _, descF_graph hp, rfl⟩)
+
+lemma descCountF_and (W n : V) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) :
+    descCountF W n (p ^⋏ q) = descCountF W n p + descCountF W n q + 1 := by
+  rw [descCountF, descF_and W n hp hq, binNode, pi₁_pair]; rfl
+lemma descCountF_all (W n : V) {p : V} (hp : IsSemiformula LAct (n + 1) p) :
+    descCountF W n (^∀ p) = descCountF W (n + 1) p + 1 := by
+  rw [descCountF, descF_all W n hp, quantNode, pi₁_pair]; rfl
+lemma descCountF_verum (W n : V) : descCountF W n ^⊤ = 1 := by
+  rw [descCountF, descF_verum, constNode, pi₁_pair]
+
+end formulaWalk
+
 end ArithS
