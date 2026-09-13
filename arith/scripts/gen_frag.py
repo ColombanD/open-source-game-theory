@@ -679,6 +679,8 @@ row('chain', 'fsetSigmaPiC', ['s'], [A('fsetSigma', 's')], A('fsetPi', 's'), 'fu
     "`IsFormulaSet s → IsFormulaSet s` (the `.sigma → .pi` bridge, `Sets.isFormulaSetSigmaPi`).")
 row('chain', 'setLenTotalC', ['s'], [], EX(['l'], [A('setLen', 'l', 's')]), 'fun _ ↦ ⟨_, rfl⟩',
     "`∀ s, ∃ l, l = setLen s` (`Lengths.setLenTotal`).")
+row('chain', 'subsetReflC', ['s'], [], A('subset', 's', 's'), 'fun s ↦ subset_refl s',
+    "`s ⊆ s` (`Sets.subsetRefl`).")
 
 GROUPS = None   # {group: (start, end) | None}
 if len(sys.argv) > 3:

@@ -35,7 +35,7 @@ instantiates them at chain numerals `cT`); the DSL literals `0`/`1`/`2` are the 
 | cert | `negRelCert`, `negNRelCert`, `negVerumCert`, `negFalsumCert`, `negAndCert`, `negOrCert`, `negAllCert`, `negExsCert`, `shiftRelCert`, `shiftNRelCert`, `shiftVerumCert`, `shiftFalsumCert`, `shiftAndCert`, `shiftOrCert`, `shiftAllCert`, `shiftExsCert`, `substsRelCert`, `substsNRelCert`, `substsVerumCert`, `substsFalsumCert`, `substsAndCert`, `substsOrCert`, `substsAllCert`, `substsExsCert`, `freeCert`, `substsSubsts1`, `tshvNilCert`, `tshvAdjCert`, `termShiftBvarCert`, `termShiftFvarCert`, `termShiftFuncCert`, `tsvNilCert`, `tsvAdjCert`, `termSubstBvarCert`, `termSubstFvarCert`, `termSubstFuncCert`, `tbshvNilCert`, `tbshvAdjCert`, `termBShiftBvarCert`, `termBShiftFvarCert`, `termBShiftFuncCert`, `qVecCert`, `qVecNth0`, `qVecNthSucc`, `nthAdjoinZero`, `nthAdjoinSucc` |
 | num | `twoMulMul`, `twoMulOneMul`, `lengthZero`, `lengthOne`, `lengthTwoMul`, `lengthTwoMulOne` |
 | axm | `qqAllsZero`, `qqAllsSucc`, `bvRel`, `bvNRel`, `bvVerum`, `bvFalsum`, `bvAnd`, `bvOr`, `bvAll`, `bvExs`, `termBVBvar`, `termBVFvar`, `termBVFunc`, `termBVVecNil`, `termBVVecAdj`, `listMaxNil`, `listMaxAdj`, `bvTotal`, `fvarVecTotal`, `fvarVecNth`, `maxTotal`, `subTotal`, `maxEqLeft`, `maxEqRight`, `subAddCancel`, `subOfLe` |
-| chain | `insertTotalC`, `memInsertSelfC`, `subsetInsertC`, `subsetTransC`, `subsetMemC`, `emptySubsetC`, `fsetOfSubsetZeroC`, `isFormulaSetInsertC`, `fsetSigmaPiC`, `setLenTotalC` |
+| chain | `insertTotalC`, `memInsertSelfC`, `subsetInsertC`, `subsetTransC`, `subsetMemC`, `emptySubsetC`, `fsetOfSubsetZeroC`, `isFormulaSetInsertC`, `fsetSigmaPiC`, `setLenTotalC`, `subsetReflC` |
 
 Skipped / renamed, with the reason:
 * `congTvPi`/`congUtvPi` conclude `.sigma` (the polarity convention; `isSemitermVecSigmaPiLAct`
@@ -2165,5 +2165,15 @@ lemma models_setLenTotalC : V↓[ℒₒᵣ] ⊧ setLenTotalC ↔ ∀ s : V, ∃ 
 theorem pa_proves_setLenTotalC : 𝗣𝗔 ⊢ setLenTotalC :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenTotalC.mpr fun _ ↦ ⟨_, rfl⟩
 theorem lib_setLenTotalC : Lib setLenTotalC := Lib.of_pa pa_proves_setLenTotalC
+
+/-- `s ⊆ s` (`Sets.subsetRefl`). -/
+noncomputable def subsetReflCB : ArithmeticSemisentence 1 :=
+  “s. !bitSubsetDef s s”
+noncomputable def subsetReflC : ArithmeticSentence := ∀¹* subsetReflCB
+lemma models_subsetReflC : V↓[ℒₒᵣ] ⊧ subsetReflC ↔ ∀ s : V, s ⊆ s := by
+  simp [subsetReflC, subsetReflCB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_subsetReflC : 𝗣𝗔 ⊢ subsetReflC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_subsetReflC.mpr fun s ↦ subset_refl s
+theorem lib_subsetReflC : Lib subsetReflC := Lib.of_pa pa_proves_subsetReflC
 
 end ArithS

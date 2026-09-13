@@ -115,7 +115,8 @@ def lIdx_fsetOfSubsetZeroC : ℕ := 82
 def lIdx_isFormulaSetInsertC : ℕ := 83
 def lIdx_fsetSigmaPiC : ℕ := 84
 def lIdx_setLenTotalC : ℕ := 85
-def layoutRowCount : ℕ := 86
+def lIdx_subsetReflC : ℕ := 86
+def layoutRowCount : ℕ := 87
 
 /-- The rows beyond the walk's 40, in index order. -/
 noncomputable def layoutExtraRows : List WRow := [
@@ -164,7 +165,8 @@ noncomputable def layoutExtraRows : List WRow := [
   ⟨1, fsetOfSubsetZeroCB, lib_fsetOfSubsetZeroC⟩,
   ⟨3, isFormulaSetInsertCB, lib_isFormulaSetInsertC⟩,
   ⟨1, fsetSigmaPiCB, lib_fsetSigmaPiC⟩,
-  ⟨1, setLenTotalCB, lib_setLenTotalC⟩
+  ⟨1, setLenTotalCB, lib_setLenTotalC⟩,
+  ⟨1, subsetReflCB, lib_subsetReflC⟩
 ]
 
 /-- The layout table's rows: the walk's followed by the extra rows. -/
@@ -623,6 +625,15 @@ lemma layoutTable_setLenTotalC {tbl : V} (h : LayoutTable tbl) :
   rw [impChainV_vecOf, this.2, quote_row_setLenTotalC]
   rfl
 
+lemma layoutTable_subsetReflC {tbl : V} (h : LayoutTable tbl) :
+    rowM tbl.[((lIdx_subsetReflC : ℕ) : V)] = ((1 : ℕ) : V) ∧
+    rowB tbl.[((lIdx_subsetReflC : ℕ) : V)] = impChainV LAct (vecOf row_subsetReflC_as) row_subsetReflC_c := by
+  have this : rowM tbl.[((lIdx_subsetReflC : ℕ) : V)] = ((1 : ℕ) : V) ∧
+      rowB tbl.[((lIdx_subsetReflC : ℕ) : V)] = ⌜Semiformula.lMap emb subsetReflCB⌝ :=
+    h.2 lIdx_subsetReflC (Nat.lt_of_sub_eq_succ rfl)
+  refine ⟨this.1, ?_⟩
+  rw [impChainV_vecOf, this.2, quote_row_subsetReflC]
+
 /-! ### The piece table -/
 
 noncomputable def lpiece_eqTotal : V := ⟪(2 : V), vecOf row_eqTotal_as, row_eqTotal_R⟫
@@ -671,6 +682,7 @@ noncomputable def lpiece_fsetOfSubsetZeroC : V := ⟪(0 : V), vecOf row_fsetOfSu
 noncomputable def lpiece_isFormulaSetInsertC : V := ⟪(0 : V), vecOf row_isFormulaSetInsertC_as, row_isFormulaSetInsertC_c⟫
 noncomputable def lpiece_fsetSigmaPiC : V := ⟪(0 : V), vecOf row_fsetSigmaPiC_as, row_fsetSigmaPiC_c⟫
 noncomputable def lpiece_setLenTotalC : V := ⟪(2 : V), vecOf row_setLenTotalC_as, row_setLenTotalC_R⟫
+noncomputable def lpiece_subsetReflC : V := ⟪(0 : V), vecOf row_subsetReflC_as, row_subsetReflC_c⟫
 
 /-- The extra pieces in index order. -/
 noncomputable def layoutExtraPieceList : List V := [
@@ -719,7 +731,8 @@ noncomputable def layoutExtraPieceList : List V := [
   lpiece_fsetOfSubsetZeroC,
   lpiece_isFormulaSetInsertC,
   lpiece_fsetSigmaPiC,
-  lpiece_setLenTotalC
+  lpiece_setLenTotalC,
+  lpiece_subsetReflC
 ]
 
 /-- **The piece table of the layout producers** (a closed V-generic term extending `walkPieces`). -/
@@ -1429,6 +1442,21 @@ lemma ltag_setLenTotalC {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep
   subst hWp
   have hk : ((lIdx_setLenTotalC : ℕ) : V) = (85 : V) := by simp [lIdx_setLenTotalC]
   rw [← hk, lmk_setLenTotalC]; simp
+
+lemma layoutPieces_subsetReflC : (layoutPieces : V).[((lIdx_subsetReflC : ℕ) : V)] = lpiece_subsetReflC := by
+  unfold layoutPieces
+  rw [nth_vecOf _ lIdx_subsetReflC (Nat.lt_of_sub_eq_succ rfl)]
+  rfl
+
+lemma lmk_subsetReflC (ev : V) :
+    mkStep layoutPieces ((lIdx_subsetReflC : ℕ) : V) ev = sUseHorn ((lIdx_subsetReflC : ℕ) : V) ev (vecOf row_subsetReflC_as) row_subsetReflC_c := by
+  rw [mkStep, layoutPieces_subsetReflC]
+  simp [lpiece_subsetReflC, sUseHorn]
+
+lemma ltag_subsetReflC {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (86 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((lIdx_subsetReflC : ℕ) : V) = (86 : V) := by simp [lIdx_subsetReflC]
+  rw [← hk, lmk_subsetReflC]; simp
 
 end layoutTable
 
@@ -2313,6 +2341,25 @@ lemma lok_setLenTotalC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hL : 
   · rw [ctxAfter_introFact [ws] row_setLenTotalC_as (by rw [← Nat.cast_succ]; exact isSemiformula_setLenTotalC_R) (fun e he ↦ (hes e he).1),
       show row_setLenTotalC_R = row_setLenTotalC_body from rfl, ← freeIter_one, hinst.2]
 
+/-- Row `subsetReflC` as a step. -/
+lemma lok_subsetReflC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E)  :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 86 ?[ws]) ∧ sTag (mkStep W 86 ?[ws]) = 0 ∧
+    ctxAfter Γ (mkStep W 86 ?[ws]) = insert (neg LAct (subsetFact ws ws)) Γ := by
+  subst hWp
+  have hk : ((lIdx_subsetReflC : ℕ) : V) = (86 : V) := by simp [lIdx_subsetReflC]
+  have hstep := lmk_subsetReflC (V := V) ?[ws]
+  have hlen := layoutTable_len hL lIdx_subsetReflC (by decide)
+  have hrow := layoutTable_subsetReflC hL
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [ws], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_nil _⟩
+  have hinst := inst_subsetReflC hws
+  rw [hstep, show (?[ws] : V) = vecOf [ws] from rfl]
+  refine ⟨stepOK_useHorn htbl [ws] row_subsetReflC_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
+    (by rw [show row_subsetReflC_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
+  · rw [ctxAfter_useHorn [ws] row_subsetReflC_as isSemiformula_subsetReflC_c (fun e he ↦ (hes e he).1), hinst.2]
+
 end layoutSteps
 /-! ## Part 2 — copy-in (`copySteps`, §3.3) -/
 
@@ -2338,30 +2385,39 @@ instance piFact_defined : 𝚺₁-Function₂ (piFact : V → V → V) via piFac
 
 noncomputable def andFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑qqAndDef : ArithmeticSemisentence 3))
 instance andFact_defined : 𝚺₁-Function₃ (andFact : V → V → V → V) via andFactDef := fact3_defined _
+instance andFact_definable : 𝚺₁-Function₃ (andFact : V → V → V → V) := andFact_defined.to_definable
 
 noncomputable def orFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑qqOrDef : ArithmeticSemisentence 3))
 instance orFact_defined : 𝚺₁-Function₃ (orFact : V → V → V → V) via orFactDef := fact3_defined _
+instance orFact_definable : 𝚺₁-Function₃ (orFact : V → V → V → V) := orFact_defined.to_definable
 
 noncomputable def allFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqAllDef : ArithmeticSemisentence 2))
 instance allFact_defined : 𝚺₁-Function₂ (allFact : V → V → V) via allFactDef := fact2_defined _
+instance allFact_definable : 𝚺₁-Function₂ (allFact : V → V → V) := allFact_defined.to_definable
 
 noncomputable def exsFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqExsDef : ArithmeticSemisentence 2))
 instance exsFact_defined : 𝚺₁-Function₂ (exsFact : V → V → V) via exsFactDef := fact2_defined _
+instance exsFact_definable : 𝚺₁-Function₂ (exsFact : V → V → V) := exsFact_defined.to_definable
 
 noncomputable def relFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqRelDef : ArithmeticSemisentence 4))
 instance relFact_defined : 𝚺₁-Function₄ (relFact : V → V → V → V → V) via relFactDef := fact4_defined _
+instance relFact_definable : 𝚺₁-Function₄ (relFact : V → V → V → V → V) := relFact_defined.to_definable
 
 noncomputable def nrelFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqNRelDef : ArithmeticSemisentence 4))
 instance nrelFact_defined : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) via nrelFactDef := fact4_defined _
+instance nrelFact_definable : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) := nrelFact_defined.to_definable
 
 noncomputable def verumFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑qqVerumDef : ArithmeticSemisentence 1))
 instance verumFact_defined : 𝚺₁-Function₁ (verumFact : V → V) via verumFactDef := fact1_defined _
+instance verumFact_definable : 𝚺₁-Function₁ (verumFact : V → V) := verumFact_defined.to_definable
 
 noncomputable def falsumFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑qqFalsumDef : ArithmeticSemisentence 1))
 instance falsumFact_defined : 𝚺₁-Function₁ (falsumFact : V → V) via falsumFactDef := fact1_defined _
+instance falsumFact_definable : 𝚺₁-Function₁ (falsumFact : V → V) := falsumFact_defined.to_definable
 
 noncomputable def funcFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqFuncDef : ArithmeticSemisentence 4))
 instance funcFact_defined : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) via funcFactDef := fact4_defined _
+instance funcFact_definable : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) := funcFact_defined.to_definable
 
 noncomputable def bvarFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqBvarDef : ArithmeticSemisentence 2))
 instance bvarFact_defined : 𝚺₁-Function₂ (bvarFact : V → V → V) via bvarFactDef := fact2_defined _
@@ -2371,6 +2427,7 @@ instance fvarFact_defined : 𝚺₁-Function₂ (fvarFact : V → V → V) via f
 
 noncomputable def adjFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑adjoinDef : ArithmeticSemisentence 3))
 instance adjFact_defined : 𝚺₁-Function₃ (adjFact : V → V → V → V) via adjFactDef := fact3_defined _
+instance adjFact_definable : 𝚺₁-Function₃ (adjFact : V → V → V → V) := adjFact_defined.to_definable
 
 noncomputable def tPiFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isSemiterm LAct).pi : ArithmeticSemisentence 2))
 instance tPiFact_defined : 𝚺₁-Function₂ (tPiFact : V → V → V) via tPiFactDef := fact2_defined _
@@ -2380,33 +2437,43 @@ instance tvPiFact_defined : 𝚺₁-Function₃ (tvPiFact : V → V → V → V)
 
 noncomputable def utvPiFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isUTermVec LAct).pi : ArithmeticSemisentence 2))
 instance utvPiFact_defined : 𝚺₁-Function₂ (utvPiFact : V → V → V) via utvPiFactDef := fact2_defined _
+instance utvPiFact_definable : 𝚺₁-Function₂ (utvPiFact : V → V → V) := utvPiFact_defined.to_definable
 
 noncomputable def eqFactBDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Eq.eq : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
 instance eqFactB_defined : 𝚺₁-Function₂ (eqFactB : V → V → V) via eqFactBDef := fact2_defined _
+instance eqFactB_definable : 𝚺₁-Function₂ (eqFactB : V → V → V) := eqFactB_defined.to_definable
 
 noncomputable def lenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(formulaLenGraph LAct) : ArithmeticSemisentence 2))
 instance lenFact_defined : 𝚺₁-Function₂ (lenFact : V → V → V) via lenFactDef := fact2_defined _
+instance lenFact_definable : 𝚺₁-Function₂ (lenFact : V → V → V) := lenFact_defined.to_definable
 
 noncomputable def tlenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(termLenGraph LAct) : ArithmeticSemisentence 2))
 instance tlenFact_defined : 𝚺₁-Function₂ (tlenFact : V → V → V) via tlenFactDef := fact2_defined _
+instance tlenFact_definable : 𝚺₁-Function₂ (tlenFact : V → V → V) := tlenFact_defined.to_definable
 
 noncomputable def memFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Mem.mem : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
 instance memFact_defined : 𝚺₁-Function₂ (memFact : V → V → V) via memFactDef := fact2_defined _
+instance memFact_definable : 𝚺₁-Function₂ (memFact : V → V → V) := memFact_defined.to_definable
 
 noncomputable def insFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑insertDef : ArithmeticSemisentence 3))
 instance insFact_defined : 𝚺₁-Function₃ (insFact : V → V → V → V) via insFactDef := fact3_defined _
+instance insFact_definable : 𝚺₁-Function₃ (insFact : V → V → V → V) := insFact_defined.to_definable
 
 noncomputable def subsetFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑bitSubsetDef : ArithmeticSemisentence 2))
 instance subsetFact_defined : 𝚺₁-Function₂ (subsetFact : V → V → V) via subsetFactDef := fact2_defined _
+instance subsetFact_definable : 𝚺₁-Function₂ (subsetFact : V → V → V) := subsetFact_defined.to_definable
 
 noncomputable def fsetPiFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑(isFormulaSet LAct).pi : ArithmeticSemisentence 1))
 instance fsetPiFact_defined : 𝚺₁-Function₁ (fsetPiFact : V → V) via fsetPiFactDef := fact1_defined _
+instance fsetPiFact_definable : 𝚺₁-Function₁ (fsetPiFact : V → V) := fsetPiFact_defined.to_definable
 
 noncomputable def fsetSigmaFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑(isFormulaSet LAct).sigma : ArithmeticSemisentence 1))
 instance fsetSigmaFact_defined : 𝚺₁-Function₁ (fsetSigmaFact : V → V) via fsetSigmaFactDef := fact1_defined _
+instance fsetSigmaFact_definable : 𝚺₁-Function₁ (fsetSigmaFact : V → V) := fsetSigmaFact_defined.to_definable
 
 noncomputable def setLenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(setLenDef LAct) : ArithmeticSemisentence 2))
 instance setLenFact_defined : 𝚺₁-Function₂ (setLenFact : V → V → V) via setLenFactDef := fact2_defined _
+instance setLenFact_definable : 𝚺₁-Function₂ (setLenFact : V → V → V) := setLenFact_defined.to_definable
 
 /-! ### 2.2 Fact tags, their arity, steps, antecedents and conclusion (if-chains on the kind, with
 explicit blueprints — `definability` does not go through an `ite`) -/
@@ -3330,4 +3397,684 @@ theorem costSum_copySteps_le {tbl N E B : V} (htbl : TableOK tbl N) (hL : Layout
   gcongr
 
 end copyIn
+
+/-! ## Part 3 — chains (`chainSteps`, §3.4)
+
+Members `xs = ?[x₀, …, x_{k−1}]` (closed terms in the frame before the chain). The chain is built
+INNERMOST FIRST — `s_{k−1} = insert x_{k−1} 𝟎`, …, `s_i = insert x_i s_{i+1}`, `s = s₀` — so that after
+the `k` intro steps the prefix `s_i` sits at `&i` and its member is `x_i` (no index arithmetic in the
+membership phase). Phases: (pre) `IsFormulaSet 𝟎` in three Horn steps; (A) per member, innermost
+first, `insertTotalC` + `isFormulaSetInsertC` + `fsetSigmaPiC` (`chainNodeA`, one shift each);
+(B) `subsetReflC`, `memInsertSelfC` for `x₀`, then per `i + 1 < k` the four Horn steps
+`subsetInsertC`/`subsetTransC`/`memInsertSelfC`/`subsetMemC` (`chainNodeB`); (D) `setLenTotalC` for
+the length object (one more shift). FINAL LAYOUT (`k + 1` shifts, `X'ᵢ := termShiftIterV xᵢ (k+1)`):
+`l_s = &0`, `s = &1`, `s_i = &(i+1)`, with `insFact &(i+1) X'ᵢ (prevAt (k+1) (i+1))`, `fsetPiFact &(i+1)`,
+`memFact X'ᵢ &1` for every `i < k`, and `setLenFact &0 &1` (`chainSteps_ok`). -/
+
+section chains
+
+/-- The set an insertion extends: `𝟎` for the innermost member, else the previous chain object `&0`. -/
+noncomputable def prevObj (c : V) : V := if c = 0 then (𝟎 : V) else ^&0
+
+noncomputable def prevObjDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y c. (c = 0 → ∃ z, !cTVGraph z 0 ∧ y = z) ∧ (c ≠ 0 → !qqFvarDef y 0)”
+
+instance prevObj_defined : 𝚺₁-Function₁ (prevObj : V → V) via prevObjDef := .mk fun v ↦ by
+  simp [prevObjDef, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
+  unfold prevObj
+  by_cases h0 : v 1 = 0
+  · simp [h0]
+  · simp [h0]
+instance prevObj_definable : 𝚺₁-Function₁ (prevObj : V → V) := prevObj_defined.to_definable
+
+/-- In a chain of `k` prefixes `s_i = insert x_i s_{i+1}` at `&i`: the set below `&i` — `𝟎` for the
+innermost (`i + 1 = k`), else `&(i+1)`. -/
+noncomputable def prevAt (k i : V) : V := if i + 1 = k then (𝟎 : V) else ^&(i + 1)
+
+noncomputable def prevAtDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y k i. (i + 1 = k → ∃ z, !cTVGraph z 0 ∧ y = z) ∧ (i + 1 ≠ k → ∃ j, j = i + 1 ∧ !qqFvarDef y j)”
+
+instance prevAt_defined : 𝚺₁-Function₂ (prevAt : V → V → V) via prevAtDef := .mk fun v ↦ by
+  simp [prevAtDef, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
+  unfold prevAt
+  by_cases h : v 2 + 1 = v 1
+  · simp [h]
+  · simp [h]
+instance prevAt_definable : 𝚺₁-Function₂ (prevAt : V → V → V) := prevAt_defined.to_definable
+
+lemma isSemiterm_zeroV : IsSemiterm LAct 0 (𝟎 : V) := isSemiterm_qqZero_LAct 0
+lemma termShift_zeroV : termShift LAct (𝟎 : V) = 𝟎 := by rw [← cTV_zero, termShift_cTV]
+lemma termShiftIterV_zeroV (c : V) : termShiftIterV (𝟎 : V) c = 𝟎 := by rw [← cTV_zero, termShiftIterV_cTV]
+lemma termLen_zeroV_le {E : V} (hE : 1 ≤ E) : termLen LAct (𝟎 : V) ≤ E := by
+  rw [← cTV_zero, termLen_cTV, mul_zero, zero_add]; exact hE
+
+lemma termShift_prevObj (c : V) : termShift LAct (prevObj c) = prevAt (c + 1) 0 := by
+  unfold prevObj prevAt
+  by_cases h : c = 0
+  · subst h; simp [termShift_zeroV]
+  · have h' : ¬ ((0 : V) + 1 = c + 1) := fun e ↦ h (add_right_cancel e).symm
+    simp [h, h']
+
+lemma termShift_prevAt (k i : V) : termShift LAct (prevAt k i) = prevAt (k + 1) (i + 1) := by
+  unfold prevAt
+  by_cases h : i + 1 = k
+  · have h' : i + 1 + 1 = k + 1 := by rw [h]
+    simp [h, h', termShift_zeroV]
+  · have h' : ¬ (i + 1 + 1 = k + 1) := fun e ↦ h (add_right_cancel e)
+    simp [h, h']
+
+lemma prevAt_of_lt {k i : V} (h : i + 1 < k) : prevAt k i = ^&(i + 1) := by
+  unfold prevAt; simp [ne_of_lt h]
+
+lemma isSemiterm_prevObj (c : V) : IsSemiterm LAct 0 (prevObj c) := by
+  unfold prevObj; split_ifs
+  · exact isSemiterm_zeroV
+  · simp
+lemma isSemiterm_prevAt (k i : V) : IsSemiterm LAct 0 (prevAt k i) := by
+  unfold prevAt; split_ifs
+  · exact isSemiterm_zeroV
+  · simp
+lemma termLen_prevObj_le {c E : V} (hE : 1 ≤ E) : termLen LAct (prevObj c) ≤ E := by
+  unfold prevObj; split_ifs
+  · exact termLen_zeroV_le hE
+  · exact termLen_fvar0_le hE
+lemma termLen_prevAt_le {k i E : V} (hE : i + 2 ≤ E) : termLen LAct (prevAt k i) ≤ E := by
+  unfold prevAt; split_ifs
+  · exact termLen_zeroV_le (le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hE))
+  · exact termLen_fvar_le (by rw [add_assoc, one_add_one_eq_two]; exact hE)
+
+/-- Length monotonicity along iterated shifts (`termLen (termShift t) = termLen t + fvOcc t`). -/
+lemma termLen_termShiftIterV_le_add {u : V} (hu : IsSemiterm LAct 0 u) :
+    ∀ d : V, termLen LAct u ≤ termLen LAct (termShiftIterV u d) := by
+  intro d
+  induction d using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ d ih =>
+    rw [termShiftIterV_succ]
+    refine le_trans ih ?_
+    rw [termLen_termShift_eq (isSemiterm_termShiftIterV hu d).isUTerm]
+    exact le_self_add
+
+lemma termLen_termShiftIterV_mono {t : V} (ht : IsSemiterm LAct 0 t) (c j : V) (hcj : c ≤ j) :
+    termLen LAct (termShiftIterV t c) ≤ termLen LAct (termShiftIterV t j) := by
+  obtain ⟨d, rfl⟩ := exists_add_of_le hcj
+  rw [termShiftIterV_add]
+  exact termLen_termShiftIterV_le_add (isSemiterm_termShiftIterV ht c) d
+
+lemma shiftIterV_fsetPiFact {a : V} (ha : IsSemiterm LAct 0 a) :
+    ∀ k, shiftIterV (fsetPiFact a) k = fsetPiFact (termShiftIterV a k) := by
+  intro k
+  induction k using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ k ih =>
+    rw [shiftIterV_succ, ih, shift_fsetPiFact (isSemiterm_termShiftIterV ha k), termShiftIterV_succ]
+
+/-! ### 3.1 The three step blocks -/
+
+/-- `IsFormulaSet 𝟎` in three Horn steps (`emptySubsetC`, `fsetOfSubsetZeroC`, `fsetSigmaPiC`). -/
+noncomputable def chainPre (W : V) : V :=
+  ?[mkStep W 81 ?[(𝟎 : V)], mkStep W 82 ?[(𝟎 : V)], mkStep W 84 ?[(𝟎 : V)]]
+
+noncomputable def chainPreDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y W. ∃ z, !cTVGraph z 0 ∧ ∃ e, !adjoinDef e z 0 ∧ ∃ s1, !mkStepDef s1 W 81 e ∧ ∃ s2, !mkStepDef s2 W 82 e ∧
+    ∃ s3, !mkStepDef s3 W 84 e ∧ ∃ l2, !adjoinDef l2 s3 0 ∧ ∃ l1, !adjoinDef l1 s2 l2 ∧ !adjoinDef y s1 l1”
+
+instance chainPre_defined : 𝚺₁-Function₁ (chainPre : V → V) via chainPreDef := .mk
+  fun v ↦ by simp [chainPreDef, chainPre, numeral_eq_natCast, cTV.defined.iff, cTV_zero, mkStep_defined.iff]
+instance chainPre_definable : 𝚺₁-Function₁ (chainPre : V → V) := chainPre_defined.to_definable
+
+/-- Phase A, member `c` from the end (`nthFromEnd xs c = x_{k−1−c}`): insert it onto `prevObj c`, then
+its formula-set facts. -/
+noncomputable def chainNodeA (W xs c : V) : V :=
+  ?[mkStep W 76 ?[termShiftIterV (nthFromEnd xs c) c, prevObj c],
+    mkStep W 83 ?[prevAt (c + 1) 0, termShiftIterV (nthFromEnd xs c) (c + 1), ^&0],
+    mkStep W 84 ?[^&0]]
+
+noncomputable def chainNodeADef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W xs c. ∃ t, !nthFromEndDef t xs c ∧ ∃ ts, !termShiftIterVDef ts t c ∧ ∃ p, !prevObjDef p c ∧
+    ∃ c1, c1 = c + 1 ∧ ∃ ts1, !termShiftIterVDef ts1 t c1 ∧ ∃ p1, !prevAtDef p1 c1 0 ∧ ∃ z, !qqFvarDef z 0 ∧
+    ∃ e11, !adjoinDef e11 p 0 ∧ ∃ e1, !adjoinDef e1 ts e11 ∧ ∃ s1, !mkStepDef s1 W 76 e1 ∧
+    ∃ e22, !adjoinDef e22 z 0 ∧ ∃ e21, !adjoinDef e21 ts1 e22 ∧ ∃ e2, !adjoinDef e2 p1 e21 ∧ ∃ s2, !mkStepDef s2 W 83 e2 ∧
+    ∃ e3, !adjoinDef e3 z 0 ∧ ∃ s3, !mkStepDef s3 W 84 e3 ∧
+    ∃ l2, !adjoinDef l2 s3 0 ∧ ∃ l1, !adjoinDef l1 s2 l2 ∧ !adjoinDef y s1 l1”
+
+instance chainNodeA_defined : 𝚺₁-Function₃ (chainNodeA : V → V → V → V) via chainNodeADef := .mk
+  fun v ↦ by simp [chainNodeADef, chainNodeA, numeral_eq_natCast, nthFromEnd_defined.iff, termShiftIterV_defined.iff,
+    prevObj_defined.iff, prevAt_defined.iff, mkStep_defined.iff]
+instance chainNodeA_definable : 𝚺₁-Function₃ (chainNodeA : V → V → V → V) := chainNodeA_defined.to_definable
+
+namespace ChainA
+
+noncomputable def blueprint : PR.Blueprint 2 where
+  zero := .mkSigma “y W xs. y = 0”
+  succ := .mkSigma “y ih c W xs. ∃ s, !chainNodeADef s W xs c ∧ !appendVDef y ih s”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v c ih ↦ appendV ih (chainNodeA (v 0) (v 1) c)
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, chainNodeA_defined.iff, appendV_defined.iff]
+
+end ChainA
+
+/-- The first `c` intro blocks of the chain (innermost members first). -/
+noncomputable def chainA (W xs c : V) : V := ChainA.construction.result ![W, xs] c
+
+@[simp] lemma chainA_zero (W xs : V) : chainA W xs 0 = 0 := by simp [chainA, ChainA.construction]
+lemma chainA_succ (W xs c : V) : chainA W xs (c + 1) = appendV (chainA W xs c) (chainNodeA W xs c) := by
+  simp [chainA, ChainA.construction]
+
+noncomputable def chainADef : 𝚺₁.Semisentence 4 := ChainA.blueprint.resultDef |>.rew (Rew.subst ![#0, #3, #1, #2])
+
+instance chainA_defined : 𝚺₁-Function₃ (chainA : V → V → V → V) via chainADef := .mk
+  fun v ↦ by simp [ChainA.construction.result_defined_iff, chainADef]; rfl
+instance chainA_definable : 𝚺₁-Function₃ (chainA : V → V → V → V) := chainA_defined.to_definable
+
+/-- Phase B, before the loop: `s ⊆ s` and `x₀ ∈ s` (`s = &0`, frame after phase A). -/
+noncomputable def chainBpre (W xs k : V) : V :=
+  ?[mkStep W 86 ?[^&0], mkStep W 77 ?[termShiftIterV xs.[0] k, prevAt k 0, ^&0]]
+
+noncomputable def chainBpreDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W xs k. ∃ z, !qqFvarDef z 0 ∧ ∃ e1, !adjoinDef e1 z 0 ∧ ∃ s1, !mkStepDef s1 W 86 e1 ∧
+    ∃ x0, !nthDef x0 xs 0 ∧ ∃ t0, !termShiftIterVDef t0 x0 k ∧ ∃ p, !prevAtDef p k 0 ∧
+    ∃ e22, !adjoinDef e22 p e1 ∧ ∃ e2, !adjoinDef e2 t0 e22 ∧ ∃ s2, !mkStepDef s2 W 77 e2 ∧
+    ∃ l1, !adjoinDef l1 s2 0 ∧ !adjoinDef y s1 l1”
+
+instance chainBpre_defined : 𝚺₁-Function₃ (chainBpre : V → V → V → V) via chainBpreDef := .mk
+  fun v ↦ by simp [chainBpreDef, chainBpre, numeral_eq_natCast, termShiftIterV_defined.iff, prevAt_defined.iff, mkStep_defined.iff]
+instance chainBpre_definable : 𝚺₁-Function₃ (chainBpre : V → V → V → V) := chainBpre_defined.to_definable
+
+/-- Phase B, member `c + 1` (when `c + 1 < k`): `s_{c+1} ⊆ s_c`, `s_{c+1} ⊆ s`, `x_{c+1} ∈ s_{c+1}`,
+`x_{c+1} ∈ s`. -/
+noncomputable def chainNodeB (W xs k c : V) : V :=
+  if c + 1 < k then
+    ?[mkStep W 78 ?[termShiftIterV xs.[c] k, ^&(c + 1), ^&c],
+      mkStep W 79 ?[^&(c + 1), ^&c, ^&0],
+      mkStep W 77 ?[termShiftIterV xs.[c + 1] k, prevAt k (c + 1), ^&(c + 1)],
+      mkStep W 80 ?[^&(c + 1), ^&0, termShiftIterV xs.[c + 1] k]]
+  else 0
+
+noncomputable def chainNodeBDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W xs k c. ∃ c1, c1 = c + 1 ∧
+    (c1 < k → ∃ xc, !nthDef xc xs c ∧ ∃ tc, !termShiftIterVDef tc xc k ∧ ∃ xc1, !nthDef xc1 xs c1 ∧
+      ∃ tc1, !termShiftIterVDef tc1 xc1 k ∧ ∃ p, !prevAtDef p k c1 ∧
+      ∃ z, !qqFvarDef z 0 ∧ ∃ fc, !qqFvarDef fc c ∧ ∃ fc1, !qqFvarDef fc1 c1 ∧
+      ∃ e12, !adjoinDef e12 fc 0 ∧ ∃ e11, !adjoinDef e11 fc1 e12 ∧ ∃ e1, !adjoinDef e1 tc e11 ∧ ∃ s1, !mkStepDef s1 W 78 e1 ∧
+      ∃ e22, !adjoinDef e22 z 0 ∧ ∃ e21, !adjoinDef e21 fc e22 ∧ ∃ e2, !adjoinDef e2 fc1 e21 ∧ ∃ s2, !mkStepDef s2 W 79 e2 ∧
+      ∃ e32, !adjoinDef e32 fc1 0 ∧ ∃ e31, !adjoinDef e31 p e32 ∧ ∃ e3, !adjoinDef e3 tc1 e31 ∧ ∃ s3, !mkStepDef s3 W 77 e3 ∧
+      ∃ e42, !adjoinDef e42 tc1 0 ∧ ∃ e41, !adjoinDef e41 z e42 ∧ ∃ e4, !adjoinDef e4 fc1 e41 ∧ ∃ s4, !mkStepDef s4 W 80 e4 ∧
+      ∃ l3, !adjoinDef l3 s4 0 ∧ ∃ l2, !adjoinDef l2 s3 l3 ∧ ∃ l1, !adjoinDef l1 s2 l2 ∧ !adjoinDef y s1 l1) ∧
+    (¬ c1 < k → y = 0)”
+
+instance chainNodeB_defined : 𝚺₁-Function₄ (chainNodeB : V → V → V → V → V) via chainNodeBDef := .mk
+  fun v ↦ by
+    simp [chainNodeBDef, numeral_eq_natCast, termShiftIterV_defined.iff, prevAt_defined.iff, mkStep_defined.iff]
+    unfold chainNodeB
+    by_cases h : v 4 + 1 < v 3
+    · simp [h]
+    · have h' := not_lt.mp h
+      simp [h, h']
+instance chainNodeB_definable : 𝚺₁-Function₄ (chainNodeB : V → V → V → V → V) := chainNodeB_defined.to_definable
+
+namespace ChainB
+
+noncomputable def blueprint : PR.Blueprint 3 where
+  zero := .mkSigma “y W xs k. y = 0”
+  succ := .mkSigma “y ih c W xs k. ∃ s, !chainNodeBDef s W xs k c ∧ !appendVDef y ih s”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v c ih ↦ appendV ih (chainNodeB (v 0) (v 1) (v 2) c)
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, chainNodeB_defined.iff, appendV_defined.iff]
+
+end ChainB
+
+/-- The first `c` membership blocks. -/
+noncomputable def chainB (W xs k c : V) : V := ChainB.construction.result ![W, xs, k] c
+
+@[simp] lemma chainB_zero (W xs k : V) : chainB W xs k 0 = 0 := by simp [chainB, ChainB.construction]
+lemma chainB_succ (W xs k c : V) : chainB W xs k (c + 1) = appendV (chainB W xs k c) (chainNodeB W xs k c) := by
+  simp [chainB, ChainB.construction]
+
+noncomputable def chainBDef : 𝚺₁.Semisentence 5 :=
+  ChainB.blueprint.resultDef |>.rew (Rew.subst ![#0, #4, #1, #2, #3])
+
+instance chainB_defined : 𝚺₁-Function₄ (chainB : V → V → V → V → V) via chainBDef := .mk
+  fun v ↦ by simp [ChainB.construction.result_defined_iff, chainBDef]; rfl
+instance chainB_definable : 𝚺₁-Function₄ (chainB : V → V → V → V → V) := chainB_defined.to_definable
+
+/-- **The chain**: pre-block, `k` intro blocks, the membership blocks, the length object. -/
+noncomputable def chainSteps (W xs : V) : V :=
+  appendV (chainPre W) (appendV (chainA W xs (len xs))
+    (appendV (chainBpre W xs (len xs)) (appendV (chainB W xs (len xs) (len xs)) ?[mkStep W 85 ?[^&0]])))
+
+noncomputable def chainStepsDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y W xs. ∃ k, !lenDef k xs ∧ ∃ P, !chainPreDef P W ∧ ∃ A, !chainADef A W xs k ∧ ∃ Q, !chainBpreDef Q W xs k ∧
+    ∃ B, !chainBDef B W xs k k ∧ ∃ z, !qqFvarDef z 0 ∧ ∃ e, !adjoinDef e z 0 ∧ ∃ s, !mkStepDef s W 85 e ∧
+    ∃ l, !adjoinDef l s 0 ∧ ∃ r3, !appendVDef r3 B l ∧ ∃ r2, !appendVDef r2 Q r3 ∧ ∃ r1, !appendVDef r1 A r2 ∧
+    !appendVDef y P r1”
+
+instance chainSteps_defined : 𝚺₁-Function₂ (chainSteps : V → V → V) via chainStepsDef := .mk
+  fun v ↦ by simp [chainStepsDef, chainSteps, numeral_eq_natCast, chainPre_defined.iff, chainA_defined.iff,
+    chainBpre_defined.iff, chainB_defined.iff, mkStep_defined.iff, appendV_defined.iff]
+instance chainSteps_definable : 𝚺₁-Function₂ (chainSteps : V → V → V) := chainSteps_defined.to_definable
+
+end chains
+
+/-! ### 3.2 The chain is applicable -/
+
+section chainsOK
+
+lemma mem_shift_insert {Γ f x : V} (hx : x ∈ Γ) : shift LAct x ∈ insert f (setShift LAct Γ) := by
+  simp [mem_setShift_iff]; exact Or.inr ⟨x, hx, rfl⟩
+
+lemma sub_succ_add_succ {k c : V} (hc : c + 1 ≤ k) (d : V) : k - (c + 1) + (d + 1) = k - c + d := by
+  have h1 : k - (c + 1) + (c + 1) = k := tsub_add_cancel_of_le hc
+  have h2 : k - c + c = k := tsub_add_cancel_of_le (le_trans le_self_add hc)
+  have h3 : k - (c + 1) + 1 = k - c := by
+    have e : k - (c + 1) + 1 + c = k - c + c := by
+      rw [h2]
+      calc k - (c + 1) + 1 + c = k - (c + 1) + (c + 1) := by ring
+        _ = k := h1
+    exact add_right_cancel e
+  calc k - (c + 1) + (d + 1) = k - (c + 1) + 1 + d := by ring
+    _ = k - c + d := by rw [h3]
+
+/-- The pre-block: `IsFormulaSet 𝟎`. -/
+lemma chainPre_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    {E Γ : V} (hΓ : IsFormulaSet LAct Γ) (hE : 1 ≤ E) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (chainPre W) ∧ NoDrop (chainPre W) ∧ HornOnly (chainPre W) ∧
+    shiftsV (chainPre W) = 0 ∧ len (chainPre W) = 3 ∧ neg LAct (fsetPiFact (𝟎 : V)) ∈ finalCtx Γ (chainPre W) := by
+  have h0 := isSemiterm_zeroV (V := V)
+  have hE0 := termLen_zeroV_le (V := V) hE
+  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_emptySubsetC htbl hL hWp hΓ h0 hE0
+  have hΓ₁ : IsFormulaSet LAct (insert (neg LAct (subsetFact (𝟎 : V) 𝟎)) Γ) := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
+  obtain ⟨ok₂, tg₂, cx₂⟩ := lok_fsetOfSubsetZeroC htbl hL hWp hΓ₁ h0 hE0 (by simp)
+  have hΓ₂ : IsFormulaSet LAct (insert (neg LAct (fsetSigmaFact (𝟎 : V))) (insert (neg LAct (subsetFact (𝟎 : V) 𝟎)) Γ)) :=
+    cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
+  obtain ⟨ok₃, tg₃, cx₃⟩ := lok_fsetSigmaPiC htbl hL hWp hΓ₂ h0 hE0 (by simp)
+  unfold chainPre
+  refine ⟨listOK_cons ok₁ (by rw [cx₁]; exact listOK_cons ok₂ (by rw [cx₂]; exact listOK_single ok₃)),
+    noDrop_cons (Or.inl tg₁) (noDrop_cons (Or.inl tg₂) (noDrop_single (Or.inl tg₃))),
+    hornOnly_cons (Or.inl tg₁) (hornOnly_cons (Or.inl tg₂) (hornOnly_single (Or.inl tg₃))), ?_, len_vec3 _ _ _, ?_⟩
+  · rw [shiftsV_cons, shiftsV_cons, shiftsV_single]; simp [tg₁, tg₂, tg₃]
+  · rw [finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_single, cx₃]; simp
+
+/-- **Phase A**: after `c ≤ k` intro blocks the prefixes `s_{k−c}, …, s_{k−1}` sit at `&0, …, &(c−1)` (the
+member at `&d` is `x_{k−c+d}`), each with its insertion fact and `IsFormulaSet`. -/
+theorem chainA_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    {xs k E Γ₀ : V} (hΓ₀ : IsFormulaSet LAct Γ₀) (hk : len xs = k) (hE : k + 2 ≤ E)
+    (hxs : ∀ i < k, IsSemiterm LAct 0 xs.[i] ∧ termLen LAct (termShiftIterV xs.[i] (k + 1)) ≤ E ∧
+      neg LAct (piFact (𝟎 : V) xs.[i]) ∈ Γ₀)
+    (hfs : neg LAct (fsetPiFact (𝟎 : V)) ∈ Γ₀) :
+    ∀ c ≤ k, ListOK tbl E ((8 : ℕ) : V) Γ₀ (chainA W xs c) ∧ NoDrop (chainA W xs c) ∧ HornOnly (chainA W xs c) ∧
+      shiftsV (chainA W xs c) = c ∧ len (chainA W xs c) = 3 * c ∧
+      ∀ d < c, neg LAct (insFact (^&d) (termShiftIterV xs.[k - c + d] c) (prevAt c d)) ∈ finalCtx Γ₀ (chainA W xs c) ∧
+        neg LAct (fsetPiFact (^&d)) ∈ finalCtx Γ₀ (chainA W xs c) := by
+  have hE1 : 1 ≤ E := le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hE)
+  have hy : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hEy : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
+  intro c
+  induction c using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _
+    refine ⟨by rw [chainA_zero]; exact listOK_nil _ _ _ _, by rw [chainA_zero]; exact noDrop_nil,
+      by rw [chainA_zero]; exact hornOnly_nil, by rw [chainA_zero, shiftsV_nil], by rw [chainA_zero]; simp,
+      fun d hd ↦ absurd hd (by simp)⟩
+  | succ c ih =>
+    intro hc
+    obtain ⟨hok, hnd, hho, hsv, hlen, hfacts⟩ := ih (le_trans le_self_add hc)
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hc
+    have hidx : k - (c + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have ht : nthFromEnd xs c = xs.[k - (c + 1)] :=
+      nthFromEnd_eq (by rw [hk, tsub_add_cancel_of_le hc])
+    obtain ⟨hti, htE, htp⟩ := hxs _ hidx
+    have hΓc : IsFormulaSet LAct (finalCtx Γ₀ (chainA W xs c)) := finalCtx_isFormulaSet 8 htbl hΓ₀ hok
+    have htr : ∀ x ∈ Γ₀, shiftIterV x c ∈ finalCtx Γ₀ (chainA W xs c) := fun x hx ↦ by
+      have := mem_finalCtx_of_mem hnd hx; rwa [hsv] at this
+    have hcE : c ≤ k + 1 := le_trans (le_trans le_self_add hc) le_self_add
+    have hc1E : c + 1 ≤ k + 1 := le_trans hc le_self_add
+    -- step 1: the insertion
+    obtain ⟨ok₁, tg₁, cx₁⟩ := lok_insertTotalC htbl hL hWp hΓc (isSemiterm_termShiftIterV hti c)
+      (le_trans (termLen_termShiftIterV_mono hti c (k + 1) hcE) htE) (isSemiterm_prevObj c) (termLen_prevObj_le hE1)
+    rw [Nat.cast_zero, ← termShiftIterV_succ, termShift_prevObj] at cx₁
+    have hΓ₁ := isFormulaSet_ctxAfter 8 htbl ok₁
+    rw [cx₁] at hΓ₁
+    -- the formula-set fact of the set below
+    have hm0 : neg LAct (fsetPiFact (prevAt (c + 1) 0)) ∈
+        insert (neg LAct (insFact (^&0) (termShiftIterV xs.[k - (c + 1)] (c + 1)) (prevAt (c + 1) 0)))
+          (setShift LAct (finalCtx Γ₀ (chainA W xs c))) := by
+      rcases zero_or_succ c with rfl | ⟨c', rfl⟩
+      · have hp : prevAt (0 + 1) 0 = (𝟎 : V) := by unfold prevAt; simp
+        have h1 := htr _ hfs
+        rw [shiftIterV_neg (isFormula_fsetPiFact isSemiterm_zeroV), shiftIterV_fsetPiFact isSemiterm_zeroV,
+          termShiftIterV_zeroV] at h1
+        have h2 := mem_shift_insert (f := neg LAct (insFact (^&0) (termShiftIterV xs.[k - (0 + 1)] (0 + 1)) (prevAt (0 + 1) 0))) h1
+        rw [shift_neg (isFormula_fsetPiFact isSemiterm_zeroV), shift_fsetPiFact isSemiterm_zeroV, termShift_zeroV, ← hp] at h2
+        exact h2
+      · have hp : prevAt (c' + 1 + 1) 0 = ^&(0 + 1) := prevAt_of_lt (by rw [zero_add]; exact lt_add_of_pos_left _ (lt_of_lt_of_le _root_.zero_lt_one le_add_self))
+        have h1 := (hfacts 0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)).2
+        have h2 := mem_shift_insert (f := neg LAct (insFact (^&0) (termShiftIterV xs.[k - (c' + 1 + 1)] (c' + 1 + 1)) (prevAt (c' + 1 + 1) 0))) h1
+        rw [shift_neg (isFormula_fsetPiFact hy), shift_fsetPiFact hy, termShift_fvar, ← hp] at h2
+        exact h2
+    have hm1 : neg LAct (piFact (𝟎 : V) (termShiftIterV xs.[k - (c + 1)] (c + 1))) ∈
+        insert (neg LAct (insFact (^&0) (termShiftIterV xs.[k - (c + 1)] (c + 1)) (prevAt (c + 1) 0)))
+          (setShift LAct (finalCtx Γ₀ (chainA W xs c))) := by
+      have h1 := htr _ htp
+      rw [shiftIterV_neg (isFormula_piFact isSemiterm_zeroV hti), shiftIterV_piFact isSemiterm_zeroV hti,
+        termShiftIterV_zeroV] at h1
+      have h2 := mem_shift_insert (f := neg LAct (insFact (^&0) (termShiftIterV xs.[k - (c + 1)] (c + 1)) (prevAt (c + 1) 0))) h1
+      rwa [shift_neg (isFormula_piFact isSemiterm_zeroV (isSemiterm_termShiftIterV hti c)),
+        shift_piFact isSemiterm_zeroV (isSemiterm_termShiftIterV hti c), termShift_zeroV, ← termShiftIterV_succ] at h2
+    -- step 2: the formula-set fact
+    obtain ⟨ok₂, tg₂, cx₂⟩ := lok_isFormulaSetInsertC htbl hL hWp hΓ₁ (isSemiterm_prevAt _ _)
+      (termLen_prevAt_le (by rw [zero_add]; exact le_trans le_add_self hE))
+      (isSemiterm_termShiftIterV hti (c + 1)) (le_trans (termLen_termShiftIterV_mono hti (c + 1) (k + 1) hc1E) htE)
+      hy hEy hm0 hm1 (by simp)
+    have hΓ₂ := isFormulaSet_ctxAfter 8 htbl ok₂
+    rw [cx₂] at hΓ₂
+    -- step 3: the bridge
+    obtain ⟨ok₃, tg₃, cx₃⟩ := lok_fsetSigmaPiC htbl hL hWp hΓ₂ hy hEy (by simp)
+    -- assembly
+    have hnode : chainNodeA W xs c = ?[mkStep W 76 ?[termShiftIterV xs.[k - (c + 1)] c, prevObj c],
+        mkStep W 83 ?[prevAt (c + 1) 0, termShiftIterV xs.[k - (c + 1)] (c + 1), ^&0], mkStep W 84 ?[^&0]] := by
+      unfold chainNodeA; rw [ht]
+    rw [chainA_succ, hnode]
+    have hfin : finalCtx Γ₀ (appendV (chainA W xs c) ?[mkStep W 76 ?[termShiftIterV xs.[k - (c + 1)] c, prevObj c],
+        mkStep W 83 ?[prevAt (c + 1) 0, termShiftIterV xs.[k - (c + 1)] (c + 1), ^&0], mkStep W 84 ?[^&0]]) =
+        insert (neg LAct (fsetPiFact (^&0)))
+          (insert (neg LAct (fsetSigmaFact (^&0)))
+            (insert (neg LAct (insFact (^&0) (termShiftIterV xs.[k - (c + 1)] (c + 1)) (prevAt (c + 1) 0)))
+              (setShift LAct (finalCtx Γ₀ (chainA W xs c))))) := by
+      rw [finalCtx_appendV, finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_single, cx₃]
+    have hok₂ : ListOK tbl E ((8 : ℕ) : V) (ctxAfter (finalCtx Γ₀ (chainA W xs c)) (mkStep W 76 ?[termShiftIterV xs.[k - (c + 1)] c, prevObj c]))
+        ?[mkStep W 83 ?[prevAt (c + 1) 0, termShiftIterV xs.[k - (c + 1)] (c + 1), ^&0], mkStep W 84 ?[^&0]] := by
+      rw [cx₁]
+      refine listOK_cons ok₂ ?_
+      rw [cx₂]
+      exact listOK_single ok₃
+    refine ⟨listOK_appendV hok (listOK_cons ok₁ hok₂), noDrop_appendV hnd ?_, hornOnly_appendV hho ?_, ?_, ?_, ?_⟩
+    · exact noDrop_cons (Or.inr (Or.inr (Or.inl tg₁))) (noDrop_cons (Or.inl tg₂) (noDrop_single (Or.inl tg₃)))
+    · exact hornOnly_cons (Or.inr (Or.inr tg₁)) (hornOnly_cons (Or.inl tg₂) (hornOnly_single (Or.inl tg₃)))
+    · rw [shiftsV_appendV, hsv, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃]; simp
+    · rw [len_appendV, hlen, len_vec3]; ring
+    · intro d hd
+      rw [hfin]
+      rcases zero_or_succ d with rfl | ⟨d', rfl⟩
+      · rw [add_zero]; simp
+      · have hd' : d' < c := lt_of_add_lt_add_right hd
+        obtain ⟨hi, hf⟩ := hfacts d' hd'
+        have hlt : k - c + d' < k := by
+          calc k - c + d' < k - c + c := add_lt_add_right hd' _
+            _ = k := tsub_add_cancel_of_le (le_trans le_self_add hc)
+        have hxi : IsSemiterm LAct 0 xs.[k - c + d'] := (hxs _ hlt).1
+        have hy' : IsSemiterm LAct 0 (^&d' : V) := by simp
+        rw [sub_succ_add_succ hc]
+        constructor
+        · have h2 := mem_shift_insert (f := neg LAct (insFact (^&0) (termShiftIterV xs.[k - (c + 1)] (c + 1)) (prevAt (c + 1) 0))) hi
+          rw [shift_neg (isFormula_insFact hy' (isSemiterm_termShiftIterV hxi c) (isSemiterm_prevAt c d')),
+            shift_insFact hy' (isSemiterm_termShiftIterV hxi c) (isSemiterm_prevAt c d'), termShift_fvar,
+            ← termShiftIterV_succ, termShift_prevAt] at h2
+          exact mem_bitInsert_iff.mpr (Or.inr (mem_bitInsert_iff.mpr (Or.inr h2)))
+        · have h2 := mem_shift_insert (f := neg LAct (insFact (^&0) (termShiftIterV xs.[k - (c + 1)] (c + 1)) (prevAt (c + 1) 0))) hf
+          rw [shift_neg (isFormula_fsetPiFact hy'), shift_fsetPiFact hy', termShift_fvar] at h2
+          exact mem_bitInsert_iff.mpr (Or.inr (mem_bitInsert_iff.mpr (Or.inr h2)))
+
+/-- **Phase B, pre-block**: `s ⊆ s` and `x₀ ∈ s` (`s = &0`, the frame after phase A). -/
+lemma chainBpre_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    {xs k E Γ : V} (hΓ : IsFormulaSet LAct Γ) (hE : k + 2 ≤ E)
+    (hx0 : IsSemiterm LAct 0 xs.[0]) (hx0E : termLen LAct (termShiftIterV xs.[0] k) ≤ E)
+    (hins0 : neg LAct (insFact (^&0) (termShiftIterV xs.[0] k) (prevAt k 0)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (chainBpre W xs k) ∧ NoDrop (chainBpre W xs k) ∧ HornOnly (chainBpre W xs k) ∧
+    shiftsV (chainBpre W xs k) = 0 ∧ len (chainBpre W xs k) = 2 ∧
+    neg LAct (subsetFact (^&0) (^&0)) ∈ finalCtx Γ (chainBpre W xs k) ∧
+    neg LAct (memFact (termShiftIterV xs.[0] k) (^&0)) ∈ finalCtx Γ (chainBpre W xs k) := by
+  have hE1 : 1 ≤ E := le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hE)
+  have hy : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hEy : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
+  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_subsetReflC htbl hL hWp hΓ hy hEy
+  have hΓ₁ := isFormulaSet_ctxAfter 8 htbl ok₁
+  rw [cx₁] at hΓ₁
+  obtain ⟨ok₂, tg₂, cx₂⟩ := lok_memInsertSelfC htbl hL hWp hΓ₁ (isSemiterm_termShiftIterV hx0 k) hx0E
+    (isSemiterm_prevAt k 0) (termLen_prevAt_le (by rw [zero_add]; exact le_trans le_add_self hE)) hy hEy (by simp [hins0])
+  unfold chainBpre
+  refine ⟨listOK_cons ok₁ (by rw [cx₁]; exact listOK_single ok₂), noDrop_cons (Or.inl tg₁) (noDrop_single (Or.inl tg₂)),
+    hornOnly_cons (Or.inl tg₁) (hornOnly_single (Or.inl tg₂)), ?_, len_vec2 _ _, ?_, ?_⟩
+  · rw [shiftsV_cons, shiftsV_single]; simp [tg₁, tg₂]
+  · rw [finalCtx_cons, cx₁, finalCtx_single, cx₂]; simp
+  · rw [finalCtx_cons, cx₁, finalCtx_single, cx₂]; simp
+
+/-- The facts phase B leaves after `c` blocks (frame after phase A): `s_e ⊆ s` and `x_e ∈ s` for `e ≤ c`. -/
+def ChainBFacts (Γ S xs k c : V) : Prop :=
+  ∀ e < c, neg LAct (subsetFact (^&e) (^&0)) ∈ finalCtx Γ S ∧
+    neg LAct (memFact (termShiftIterV xs.[e] k) (^&0)) ∈ finalCtx Γ S
+
+/-- **Phase B**: after `c` blocks (`c + 1 ≤ k`), `s_e ⊆ s` and `x_e ∈ s` for every `e ≤ c`. -/
+theorem chainB_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    {xs k E Γ : V} (hΓ : IsFormulaSet LAct Γ) (hE : k + 2 ≤ E)
+    (hxs : ∀ i < k, IsSemiterm LAct 0 xs.[i] ∧ termLen LAct (termShiftIterV xs.[i] k) ≤ E)
+    (hins : ∀ i < k, neg LAct (insFact (^&i) (termShiftIterV xs.[i] k) (prevAt k i)) ∈ Γ)
+    (hsub0 : neg LAct (subsetFact (^&0) (^&0)) ∈ Γ)
+    (hmem0 : neg LAct (memFact (termShiftIterV xs.[0] k) (^&0)) ∈ Γ) :
+    ∀ c, c + 1 ≤ k → ListOK tbl E ((8 : ℕ) : V) Γ (chainB W xs k c) ∧ NoDrop (chainB W xs k c) ∧ HornOnly (chainB W xs k c) ∧
+      shiftsV (chainB W xs k c) = 0 ∧ len (chainB W xs k c) ≤ 4 * c ∧ ChainBFacts Γ (chainB W xs k c) xs k (c + 1) := by
+  have hE1 : 1 ≤ E := le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hE)
+  have hy : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hEy : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
+  intro c
+  induction c using ISigma1.pi1_succ_induction with
+  | hP => unfold ChainBFacts; definability
+  | zero =>
+    intro _
+    refine ⟨by rw [chainB_zero]; exact listOK_nil _ _ _ _, by rw [chainB_zero]; exact noDrop_nil,
+      by rw [chainB_zero]; exact hornOnly_nil, by rw [chainB_zero, shiftsV_nil], by rw [chainB_zero]; simp, ?_⟩
+    unfold ChainBFacts
+    intro e he
+    rw [chainB_zero, finalCtx_nil]
+    have he0 : e = 0 := le_antisymm (lt_succ_iff_le.mp he) zero_le
+    subst he0
+    exact ⟨hsub0, hmem0⟩
+  | succ c ih =>
+    intro hc
+    have hck : c + 1 < k := lt_of_lt_of_le (lt_add_one _) hc
+    obtain ⟨hok, hnd, hho, hsv, hlen, hfacts⟩ := ih (le_of_lt hck)
+    unfold ChainBFacts at hfacts
+    have hΓc : IsFormulaSet LAct (finalCtx Γ (chainB W xs k c)) := finalCtx_isFormulaSet 8 htbl hΓ hok
+    have htr : ∀ x ∈ Γ, x ∈ finalCtx Γ (chainB W xs k c) := fun x hx ↦ by
+      have := mem_finalCtx_of_mem hnd hx; rwa [hsv, shiftIterV_zero] at this
+    rw [chainB_succ]
+    · -- the four Horn steps
+      have hcc : c < k := lt_trans (lt_add_one c) hck
+      obtain ⟨hxc, hxcE⟩ := hxs c hcc
+      obtain ⟨hxc1, hxc1E⟩ := hxs (c + 1) hck
+      have hfc : IsSemiterm LAct 0 (^&c : V) := by simp
+      have hfc1 : IsSemiterm LAct 0 (^&(c + 1) : V) := by simp
+      have hc2 : c + 1 + 1 ≤ k := lt_iff_succ_le.mp hck
+      have hEc1 : termLen LAct (^&(c + 1) : V) ≤ E := termLen_fvar_le (le_trans hc2 (le_trans le_self_add hE))
+      have hEc : termLen LAct (^&c : V) ≤ E := termLen_fvar_le (le_trans (le_of_lt hck) (le_trans le_self_add hE))
+      have hpc : prevAt k c = ^&(c + 1) := prevAt_of_lt hck
+      have hinsc := htr _ (hins c hcc)
+      rw [hpc] at hinsc
+      obtain ⟨ok₁, tg₁, cx₁⟩ := lok_subsetInsertC htbl hL hWp hΓc (isSemiterm_termShiftIterV hxc k) hxcE hfc1 hEc1 hfc hEc hinsc
+      have hΓ₁ := isFormulaSet_ctxAfter 8 htbl ok₁
+      rw [cx₁] at hΓ₁
+      have hsubc := (hfacts c (lt_add_one c)).1
+      obtain ⟨ok₂, tg₂, cx₂⟩ := lok_subsetTransC htbl hL hWp hΓ₁ hfc1 hEc1 hfc hEc hy hEy (by simp) (by simp [hsubc])
+      have hΓ₂ := isFormulaSet_ctxAfter 8 htbl ok₂
+      rw [cx₂] at hΓ₂
+      have hinsc1 := htr _ (hins (c + 1) hck)
+      obtain ⟨ok₃, tg₃, cx₃⟩ := lok_memInsertSelfC htbl hL hWp hΓ₂ (isSemiterm_termShiftIterV hxc1 k) hxc1E
+        (isSemiterm_prevAt k (c + 1)) (termLen_prevAt_le (le_trans (by
+          calc c + 1 + 2 = c + 1 + 1 + 1 := by ring
+            _ ≤ k + 1 := add_le_add hc2 le_rfl
+            _ ≤ k + 2 := add_le_add le_rfl (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2))) hE))
+        hfc1 hEc1 (by simp [hinsc1])
+      have hΓ₃ := isFormulaSet_ctxAfter 8 htbl ok₃
+      rw [cx₃] at hΓ₃
+      obtain ⟨ok₄, tg₄, cx₄⟩ := lok_subsetMemC htbl hL hWp hΓ₃ hfc1 hEc1 hy hEy (isSemiterm_termShiftIterV hxc1 k) hxc1E
+        (by simp) (by simp)
+      have hnode : chainNodeB W xs k c = ?[mkStep W 78 ?[termShiftIterV xs.[c] k, ^&(c + 1), ^&c],
+          mkStep W 79 ?[^&(c + 1), ^&c, ^&0], mkStep W 77 ?[termShiftIterV xs.[c + 1] k, prevAt k (c + 1), ^&(c + 1)],
+          mkStep W 80 ?[^&(c + 1), ^&0, termShiftIterV xs.[c + 1] k]] := by
+        unfold chainNodeB; simp [hck]
+      rw [hnode]
+      have hfin : finalCtx Γ (appendV (chainB W xs k c) ?[mkStep W 78 ?[termShiftIterV xs.[c] k, ^&(c + 1), ^&c],
+          mkStep W 79 ?[^&(c + 1), ^&c, ^&0], mkStep W 77 ?[termShiftIterV xs.[c + 1] k, prevAt k (c + 1), ^&(c + 1)],
+          mkStep W 80 ?[^&(c + 1), ^&0, termShiftIterV xs.[c + 1] k]]) =
+          insert (neg LAct (memFact (termShiftIterV xs.[c + 1] k) (^&0)))
+            (insert (neg LAct (memFact (termShiftIterV xs.[c + 1] k) (^&(c + 1))))
+              (insert (neg LAct (subsetFact (^&(c + 1)) (^&0)))
+                (insert (neg LAct (subsetFact (^&(c + 1)) (^&c))) (finalCtx Γ (chainB W xs k c))))) := by
+        rw [finalCtx_appendV, finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_single, cx₄]
+      have hok₄ : ListOK tbl E ((8 : ℕ) : V) (ctxAfter (finalCtx Γ (chainB W xs k c)) (mkStep W 78 ?[termShiftIterV xs.[c] k, ^&(c + 1), ^&c]))
+          ?[mkStep W 79 ?[^&(c + 1), ^&c, ^&0], mkStep W 77 ?[termShiftIterV xs.[c + 1] k, prevAt k (c + 1), ^&(c + 1)],
+            mkStep W 80 ?[^&(c + 1), ^&0, termShiftIterV xs.[c + 1] k]] := by
+        rw [cx₁]
+        refine listOK_cons ok₂ ?_
+        rw [cx₂]
+        refine listOK_cons ok₃ ?_
+        rw [cx₃]
+        exact listOK_single ok₄
+      refine ⟨listOK_appendV hok (listOK_cons ok₁ hok₄),
+        noDrop_appendV hnd (noDrop_cons (Or.inl tg₁) (noDrop_cons (Or.inl tg₂) (noDrop_cons (Or.inl tg₃) (noDrop_single (Or.inl tg₄))))),
+        hornOnly_appendV hho (hornOnly_cons (Or.inl tg₁) (hornOnly_cons (Or.inl tg₂) (hornOnly_cons (Or.inl tg₃) (hornOnly_single (Or.inl tg₄))))),
+        ?_, ?_, ?_⟩
+      · rw [shiftsV_appendV, hsv, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄]; simp
+      · rw [len_appendV, len_adjoin, len_vec3, mul_add, mul_one]
+        exact add_le_add hlen (by rw [add_comm]; exact le_of_eq (by norm_num))
+      · unfold ChainBFacts
+        intro e he
+        rw [hfin]
+        rcases lt_or_eq_of_le (lt_succ_iff_le.mp he) with he' | rfl
+        · obtain ⟨h1, h2⟩ := hfacts e he'
+          exact ⟨by simp [h1], by simp [h2]⟩
+        · exact ⟨by simp, by simp⟩
+
+/-- The last block of a `k`-member chain is empty (`c + 1 < k` fails at `c = k − 1`). -/
+lemma chainB_last (W xs k' : V) : chainB W xs (k' + 1) (k' + 1) = chainB W xs (k' + 1) k' := by
+  rw [chainB_succ]
+  have hnode : chainNodeB W xs (k' + 1) k' = 0 := by unfold chainNodeB; simp
+  rw [hnode, appendV_nil_right]
+
+/-- **`chainSteps` is applicable.** Final layout (`k := len xs`, `k + 1` shifts, `X'ᵢ := termShiftIterV xᵢ (k+1)`):
+`l_s = &0`, `s = &1`, `s_i = &(i+1)`; the facts `insFact &(i+1) X'ᵢ (prevAt (k+1) (i+1))`, `fsetPiFact &(i+1)`,
+`memFact X'ᵢ &1` for every `i < k`, and `setLenFact &0 &1`. -/
+theorem chainSteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    {xs E Γ : V} (hΓ : IsFormulaSet LAct Γ) (hk1 : 1 ≤ len xs) (hE : len xs + 2 ≤ E)
+    (hxs : ∀ i < len xs, IsSemiterm LAct 0 xs.[i] ∧ termLen LAct (termShiftIterV xs.[i] (len xs + 1)) ≤ E ∧
+      neg LAct (piFact (𝟎 : V) xs.[i]) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (chainSteps W xs) ∧ NoDrop (chainSteps W xs) ∧ HornOnly (chainSteps W xs) ∧
+    shiftsV (chainSteps W xs) = len xs + 1 ∧ len (chainSteps W xs) ≤ 7 * len xs + 6 ∧
+    (∀ i < len xs,
+      neg LAct (insFact (^&(i + 1)) (termShiftIterV xs.[i] (len xs + 1)) (prevAt (len xs + 1) (i + 1))) ∈ finalCtx Γ (chainSteps W xs) ∧
+      neg LAct (fsetPiFact (^&(i + 1))) ∈ finalCtx Γ (chainSteps W xs) ∧
+      neg LAct (memFact (termShiftIterV xs.[i] (len xs + 1)) (^&1)) ∈ finalCtx Γ (chainSteps W xs)) ∧
+    neg LAct (setLenFact (^&0) (^&1)) ∈ finalCtx Γ (chainSteps W xs) := by
+  set k := len xs with hk
+  have hE1 : 1 ≤ E := le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hE)
+  have hy : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hEy : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
+  -- pre-block
+  obtain ⟨pok, pnd, pho, psv, plen, pfs⟩ := chainPre_ok htbl hL hWp (E := E) hΓ hE1
+  have hΓ₀ : IsFormulaSet LAct (finalCtx Γ (chainPre W)) := finalCtx_isFormulaSet 8 htbl hΓ pok
+  have htr₀ : ∀ x ∈ Γ, x ∈ finalCtx Γ (chainPre W) := fun x hx ↦ by
+    have := mem_finalCtx_of_mem pnd hx; rwa [psv, shiftIterV_zero] at this
+  -- phase A
+  obtain ⟨aok, and, aho, asv, alen, afacts⟩ := chainA_ok htbl hL hWp hΓ₀ hk.symm hE
+    (fun i hi ↦ ⟨(hxs i hi).1, (hxs i hi).2.1, htr₀ _ (hxs i hi).2.2⟩) pfs k le_rfl
+  have hΓA : IsFormulaSet LAct (finalCtx (finalCtx Γ (chainPre W)) (chainA W xs k)) := finalCtx_isFormulaSet 8 htbl hΓ₀ aok
+  have hins : ∀ i < k, neg LAct (insFact (^&i) (termShiftIterV xs.[i] k) (prevAt k i)) ∈
+      finalCtx (finalCtx Γ (chainPre W)) (chainA W xs k) := fun i hi ↦ by
+    have := (afacts i hi).1; rwa [tsub_self, zero_add] at this
+  have hfsA : ∀ i < k, neg LAct (fsetPiFact (^&i)) ∈ finalCtx (finalCtx Γ (chainPre W)) (chainA W xs k) :=
+    fun i hi ↦ (afacts i hi).2
+  have hxsk : ∀ i < k, IsSemiterm LAct 0 xs.[i] ∧ termLen LAct (termShiftIterV xs.[i] k) ≤ E := fun i hi ↦
+    ⟨(hxs i hi).1, le_trans (termLen_termShiftIterV_mono (hxs i hi).1 k (k + 1) le_self_add) (hxs i hi).2.1⟩
+  -- phase B
+  have h0k : (0 : V) < k := lt_of_lt_of_le _root_.zero_lt_one hk1
+  obtain ⟨bpok, bpnd, bpho, bpsv, bplen, bpsub, bpmem⟩ := chainBpre_ok htbl hL hWp hΓA hE (hxsk 0 h0k).1 (hxsk 0 h0k).2 (hins 0 h0k)
+  set ΓB := finalCtx (finalCtx (finalCtx Γ (chainPre W)) (chainA W xs k)) (chainBpre W xs k) with hΓB
+  have hΓBf : IsFormulaSet LAct ΓB := finalCtx_isFormulaSet 8 htbl hΓA bpok
+  have htrB : ∀ x ∈ finalCtx (finalCtx Γ (chainPre W)) (chainA W xs k), x ∈ ΓB := fun x hx ↦ by
+    have := mem_finalCtx_of_mem bpnd hx; rwa [bpsv, shiftIterV_zero] at this
+  obtain ⟨k', hk'⟩ : ∃ k', k = k' + 1 := by
+    rcases zero_or_succ k with h0 | ⟨k', hk'⟩
+    · exact absurd (h0 ▸ hk1) (by simp)
+    · exact ⟨k', hk'⟩
+  have hBlast : chainB W xs k k = chainB W xs k k' := by rw [hk']; exact chainB_last W xs k'
+  obtain ⟨bok, bnd, bho, bsv, blen, bfacts⟩ := chainB_ok htbl hL hWp hΓBf hE hxsk (fun i hi ↦ htrB _ (hins i hi)) bpsub bpmem k'
+    (le_of_eq hk'.symm)
+  rw [← hBlast] at bok bnd bho bsv blen bfacts
+  unfold ChainBFacts at bfacts
+  set ΓC := finalCtx ΓB (chainB W xs k k) with hΓC
+  have hΓCf : IsFormulaSet LAct ΓC := finalCtx_isFormulaSet 8 htbl hΓBf bok
+  have htrC : ∀ x ∈ ΓB, x ∈ ΓC := fun x hx ↦ by
+    have := mem_finalCtx_of_mem bnd hx; rwa [bsv, shiftIterV_zero] at this
+  -- phase D
+  obtain ⟨dok, dtg, dcx⟩ := lok_setLenTotalC htbl hL hWp hΓCf hy hEy
+  rw [Nat.cast_zero, termShift_fvar, zero_add] at dcx
+  -- assembly
+  have hfin : finalCtx Γ (chainSteps W xs) = insert (neg LAct (setLenFact (^&0) (^&1))) (setShift LAct ΓC) := by
+    unfold chainSteps
+    rw [← hk, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓB, finalCtx_appendV, ← hΓC, finalCtx_single, dcx]
+  have hokAll : ListOK tbl E ((8 : ℕ) : V) Γ (chainSteps W xs) := by
+    unfold chainSteps
+    rw [← hk]
+    refine listOK_appendV pok (listOK_appendV aok (listOK_appendV bpok (listOK_appendV ?_ ?_)))
+    · rw [← hΓB]; exact bok
+    · rw [← hΓB, ← hΓC]; exact listOK_single dok
+  refine ⟨hokAll, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · unfold chainSteps
+    exact noDrop_appendV pnd (noDrop_appendV (hk ▸ and) (noDrop_appendV (hk ▸ bpnd)
+      (noDrop_appendV (hk ▸ bnd) (noDrop_single (Or.inr (Or.inr (Or.inl dtg)))))))
+  · unfold chainSteps
+    exact hornOnly_appendV pho (hornOnly_appendV (hk ▸ aho) (hornOnly_appendV (hk ▸ bpho)
+      (hornOnly_appendV (hk ▸ bho) (hornOnly_single (Or.inr (Or.inr dtg))))))
+  · unfold chainSteps
+    rw [← hk, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, shiftsV_single, psv, asv, bpsv, bsv]
+    simp [dtg]
+  · unfold chainSteps
+    rw [← hk, len_appendV, len_appendV, len_appendV, len_appendV, len_vec1, plen, alen, bplen]
+    calc 3 + (3 * k + (2 + (len (chainB W xs k k) + 1))) ≤ 3 + (3 * k + (2 + (4 * k' + 1))) :=
+          add_le_add le_rfl (add_le_add le_rfl (add_le_add le_rfl (add_le_add blen le_rfl)))
+      _ ≤ 3 + (3 * k + (2 + (4 * k + 1))) := by
+          refine add_le_add le_rfl (add_le_add le_rfl (add_le_add le_rfl (add_le_add ?_ le_rfl)))
+          exact mul_le_mul_of_nonneg_left (hk' ▸ le_self_add) zero_le
+      _ = 7 * k + 6 := by ring
+  · intro i hi
+    rw [hfin]
+    have hfi : IsSemiterm LAct 0 (^&i : V) := by simp
+    have hxi := (hxs i hi).1
+    refine ⟨?_, ?_, ?_⟩
+    · have h2 := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&1))) (htrC _ (htrB _ (hins i hi)))
+      rwa [shift_neg (isFormula_insFact hfi (isSemiterm_termShiftIterV hxi k) (isSemiterm_prevAt k i)),
+        shift_insFact hfi (isSemiterm_termShiftIterV hxi k) (isSemiterm_prevAt k i), termShift_fvar,
+        ← termShiftIterV_succ, termShift_prevAt] at h2
+    · have h2 := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&1))) (htrC _ (htrB _ (hfsA i hi)))
+      rwa [shift_neg (isFormula_fsetPiFact hfi), shift_fsetPiFact hfi, termShift_fvar] at h2
+    · have h2 := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&1))) (bfacts i (hk' ▸ hi)).2
+      rwa [shift_neg (isFormula_memFact (isSemiterm_termShiftIterV hxi k) hy), shift_memFact (isSemiterm_termShiftIterV hxi k) hy,
+        termShift_fvar, ← termShiftIterV_succ, zero_add] at h2
+  · rw [hfin]; simp
+
+/-- The cost of a chain (`costSum_le_of_hornOnly`): at most `7|xs| + 6` Horn steps. -/
+theorem costSum_chainSteps_le {tbl N E B : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
+    (hB : ∀ i < len tbl, formulaLen LAct (rowB tbl.[i]) ≤ B)
+    {xs Γ : V} (hΓ : IsFormulaSet LAct Γ) (hk1 : 1 ≤ len xs) (hE : len xs + 2 ≤ E)
+    (hxs : ∀ i < len xs, IsSemiterm LAct 0 xs.[i] ∧ termLen LAct (termShiftIterV xs.[i] (len xs + 1)) ≤ E ∧
+      neg LAct (piFact (𝟎 : V) xs.[i]) ∈ Γ) :
+    costSum N E Γ (chainSteps W xs) ≤ (7 * len xs + 6) * (stepK N E B + 36 * ctxBound E B Γ (7 * len xs + 6)) := by
+  have hE1 : 1 ≤ E := le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hE)
+  obtain ⟨hok, _, ht, _, hlen, _⟩ := chainSteps_ok htbl hL hWp hΓ hk1 hE hxs
+  have hB' : ∀ k < len (chainSteps W xs), formulaLen LAct (rowB tbl.[sRow (chainSteps W xs).[k]]) ≤ B :=
+    fun k hk ↦ hB _ (sRow_lt_of_stepOK (hok k hk) (ht k hk))
+  refine le_trans (costSum_le_of_hornOnly hE1 htbl hok ht hB') ?_
+  unfold ctxBound
+  gcongr
+
+end chainsOK
 end ArithS

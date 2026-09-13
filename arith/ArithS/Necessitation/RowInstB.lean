@@ -6763,6 +6763,33 @@ lemma inst_setLenTotalC {ws : V} (hws : IsSemiterm LAct 0 ws) :
     rw [freeIterT_bv0 1 0 (by norm_num), freeIterT_closed 0 hws 1]
     try rfl
 
+/-! ### `subsetReflC` — `“s. …”`, `m = 1` -/
+
+noncomputable def row_subsetReflC_as : List V := []
+noncomputable def row_subsetReflC_c : V := subst LAct (listToVec [bv 0, bv 0]) Psubset
+
+theorem quote_row_subsetReflC : (⌜Semiformula.lMap emb subsetReflCB⌝ : V) = impChain LAct row_subsetReflC_as row_subsetReflC_c := by
+  unfold subsetReflCB row_subsetReflC_as row_subsetReflC_c Psubset
+  all_goals row_shapeB
+
+lemma isSemiformula_subsetReflC_as : ∀ A ∈ row_subsetReflC_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
+  unfold row_subsetReflC_as
+  exact (List.forall_mem_nil _)
+lemma isSemiformula_subsetReflC_c : IsSemiformula LAct ((1 : ℕ) : V) row_subsetReflC_c := by
+  unfold row_subsetReflC_c
+  exact isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB)
+
+/-- `subsetReflC` at the witnesses `[ws]` (the DSL variables right-to-left). -/
+lemma inst_subsetReflC {ws : V} (hws : IsSemiterm LAct 0 ws) :
+    row_subsetReflC_as.map (instOuter LAct [ws]) = [] ∧
+    instOuter LAct [ws] row_subsetReflC_c = subsetFact ws ws := by
+  have hes : ∀ e ∈ ([ws] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hws, List.forall_mem_nil _⟩)
+  unfold row_subsetReflC_as row_subsetReflC_c
+  simp only [List.map_cons, List.map_nil]
+  rw [instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB)]
+  all_goals try row_entries_simpB
+  row_finish
+
 end rows
 
 end ArithS
