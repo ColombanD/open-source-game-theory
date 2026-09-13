@@ -433,3 +433,11 @@ the shifted length explicit). TRAPS: arity > 5 functions have no `Function₆` n
 write the Def; `add_le_add_right` is swapped (use `add_le_add h le_rfl`); `zero_lt_one` is
 ambiguous (`_root_.`); `tsub_add_cancel_of_le` for `n = (n - k) + k`. NEXT: `RowInst` (in flight),
 then `describeSteps` producing step lists against this `StepOK`.
+
+**§9 status — `Steps` `_occ` swap + `ChainOcc` DONE (c2cfd17, census 305):**
+`dlen_introFactCode_horn_le` extracted, `dlen_introFactCode_le` byte-identical, new
+`dlen_introFactCode_le_occ` (`(m + 2j + 9)·|Γ| + fvOccS Γ` instead of `(m + 2j + 10)·|Γ|`);
+`ChainOcc.lean`: `introCostOcc`, `stepCostOcc` (tags 2/3 sharpened), `dlen_applyStep_le_occ`.
+Limits: `stepCostOcc` has no Σ₁ blueprint (the PR `costSum` stays on `stepCost`); no
+`stepCostOcc ≤ stepCost` on tag 3 (needs injectivity of `shift`, absent). IN FLIGHT: `RowInst`,
+`Lib/Occ` (occurrence/shift-length rows). NEXT: `describeSteps`.
