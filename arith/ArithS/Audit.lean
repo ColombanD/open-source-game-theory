@@ -33,6 +33,7 @@ import ArithS.Necessitation.RowInstB
 import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
 import ArithS.Necessitation.Describe
+import ArithS.Necessitation.NumSteps
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -626,5 +627,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms inst_fvarVecNth
 #print axioms quote_row_bnumOddCert
 #print axioms quote_row_eqTotal
+
+-- U10 (Necessitation/NumSteps, 2026-09-13): Σ₁ provers producing DERIVATION CODES of closed binary-numeral
+-- facts, consumed by `sLemma` — the row table (`exists_numTable`), the successor chain and addition as
+-- Fixpoints (`succCode_proof`/`addCode_proof`, cubic `dlen` bounds), `≤`/`<`, the node bookkeeping facts
+-- (`bin3Code`: `bnum a + bnum b + bnum c + 1 ≤ bnum n`), the chain numeral `cT z = bnum z`, packaging.
+#print axioms exists_numTable
+#print axioms succCode_proof
+#print axioms dlen_succCode_le
+#print axioms addCode_proof
+#print axioms dlen_addCode_le
+#print axioms leCode_proof
+#print axioms ltCode_proof
+#print axioms bin3Code_proof
+#print axioms dlen_bin3Code_poly
+#print axioms cTEqCode_proof
+#print axioms cTLeCode_proof
+#print axioms lemmaOK_add
+#print axioms lemmaOK_bin3
+#print axioms stepCost_lemma_bin3
 
 end ArithS
