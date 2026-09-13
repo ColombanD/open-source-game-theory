@@ -406,3 +406,30 @@ end before the rate-limit kill): a guessed API name `VecRec.Construction.result_
 (lines 226, 262, 334 — find the real `VecRec` definability lemma), unsolved goals at 340, failed
 rewrites in A.5 (`nth_qVecIter_single` at 493 and after). Part B (step language, `ctxVec`,
 `chainCode`, `StepOK`, theorems) not started. Agent launched to repair Part A and write Part B.
+
+**§9 status — `Chain` DONE (2026-09-13, census +9): Part A repaired, Part B landed.** Part A
+(vector twins): the `VecRec` definability lemma is `eval_resultDef` (xs-first constructions use the
+bare `resultDef`, parameter-first ones the `.rew` swap); `qVecIter` entry lemmas need the `len`
+rewrite (`hv.lh`) BEFORE `nth_termBShiftVec`; the composition law
+`termSubstVec_qVecIter_single` (`termSubstVec (n+k+1) (qVecIter k W) (qVecIter (n+k) (e∷0)) =
+qVecIter k (concat W e)`, a `V`-cast on the length, never a `ℕ` ascription — it unifies `V := ℕ`);
+`instOuterAt_eq_subst` (one simultaneous substitution) and the agreement theorems
+`exsChainV/hornCloseV/useLemmaV/useHornV/useHornAndV/introFactV_vecOf`. Part B (§10): rows
+`⟪dΛ, m, B⟫` with `TableOK tbl N`; six step codes — the Horn steps CARRY their decomposition
+(`sUseHorn i ev as c`, `sUseHornAnd i ev as c₁ c₂`, `sIntroFact i ev as R`) and `StepOK` checks it
+syntactically (`rowB = impChainV as c`), so no Σ₁ Horn-decomposition of a code exists;
+`sElimExs P`, `sSplit p q` (via `splitAndCode`, the context already holds `neg (p ⋏ q)`,
+`insert_eq_self_of_mem`), `sWkDrop Γ'`; `axLFactCode` is a LEAF, never a step (the chain's `d`).
+`applyStep/ctxAfter/stepCost` are tag `if`-chains with explicit graph Defs (the `relabelSym`
+pattern; `π₁` is a LOW-precedence prefix — parenthesize `(π₁ x) ^⋏ (π₂ x)`), `ctxAfter` needs no
+table. `StepOK tbl E M Γ s` has an arity cap `M` (the STANDARDNESS bridge
+`exists_list_of_len_le`: a vector of length `≤ (M : ℕ)` is `vecOf` of a Lean list, so the list
+theorems apply — the theorems take `(M : ℕ)`); `ctxVec` (PR forward, stability + successor law),
+`chainAux/chainCode` and `costAux/costSum` (PR from the end, fixed parameters);
+`chainCode_proof`/`dlen_chainCode_le` by `pi1_succ_induction` on the position from the end;
+`stepCost` reproduces the `dlen_…_le` bounds exactly (tag 3: `4G + |setShift Γ| + 7|P| + 10`,
+the shifted length explicit). TRAPS: arity > 5 functions have no `Function₆` notation — state
+`𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ …)`; `definability` does not compose 5-ary functions —
+write the Def; `add_le_add_right` is swapped (use `add_le_add h le_rfl`); `zero_lt_one` is
+ambiguous (`_root_.`); `tsub_add_cancel_of_le` for `n = (n - k) + k`. NEXT: `RowInst` (in flight),
+then `describeSteps` producing step lists against this `StepOK`.

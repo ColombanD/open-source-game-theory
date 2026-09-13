@@ -26,6 +26,7 @@ import ArithS.Necessitation.Lib.Bridge
 import ArithS.Necessitation.Steps
 import ArithS.Necessitation.Lib.Walk
 import ArithS.Necessitation.WalkLemmas
+import ArithS.Necessitation.Chain
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -465,5 +466,18 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms instOuterAt_subst_bvList
 #print axioms free_exsIter
 #print axioms freeIter_subst_listToVec
+
+-- U10 (Necessitation/Chain, 2026-09-13): the vector twins of the step constructors, the step
+-- language, the context vector and the primitive-recursive chain builder with its DerivationOf
+-- and dlen theorems
+#print axioms useHornV_vecOf
+#print axioms useHornAndV_vecOf
+#print axioms introFactV_vecOf
+#print axioms applyStep_proof
+#print axioms dlen_applyStep_le
+#print axioms chainCode_proof
+#print axioms dlen_chainCode_le
+#print axioms ctxVec_isFormulaSet
+#print axioms chainCode_two
 
 end ArithS
