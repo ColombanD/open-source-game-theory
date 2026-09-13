@@ -112,11 +112,11 @@ PREDS = {
                    '(dlenGraphDef LAct).sigma', lambda a: f'DlenGraph LAct {a[0]} {a[1]}', have=CHAIN, unfold=['dlenS']),
   'le':      dict(dsl=lambda a: f'{a[0]} ≤ {a[1]}',
                   sem='(Rewriting.emb (Semiformula.Operator.LE.le : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2)',
-                  ar=2, P='Ple', F='leFact', args=['n', 'u'], V=lambda a: f'{a[0]} ≤ {a[1]}', simps=[], have=set(CHAIN), unfold=['leS']),
+                  ar=2, P='Ple', F='leFact', args=['n', 'u'], V=lambda a: f'{a[0]} ≤ {a[1]}', simps=[], have=set(CHAIN) | {'len'}, unfold=['leS']),  # `formulaLen_leFact_le` is in NumSteps.lean
   # ---- new
   'eq':      dict(dsl=lambda a: f'{a[0]} = {a[1]}',
                   sem='(Rewriting.emb (Semiformula.Operator.Eq.eq : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2)',
-                  ar=2, P='Peq', F='eqFact', args=['a', 'b'], V=lambda a: f'{a[0]} = {a[1]}', simps=[], have=set(), unfold=[]),
+                  ar=2, P='PeqB', F='eqFactB', args=['a', 'b'], V=lambda a: f'{a[0]} = {a[1]}', simps=[], have=set(), unfold=[]),  # `PeqB`/`eqFactB`: NumSteps.lean defines `Peq`/`eqFact` (the same code, `rfl` after unfolding `eqS`)
   'mem':     dict(dsl=lambda a: f'{a[0]} ∈ {a[1]}',
                   sem='(Rewriting.emb (Semiformula.Operator.Mem.mem : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2)',
                   ar=2, P='Pmem', F='memFact', args=['x', 's'], V=lambda a: f'{a[0]} ∈ {a[1]}', simps=[], have=set(), unfold=[]),

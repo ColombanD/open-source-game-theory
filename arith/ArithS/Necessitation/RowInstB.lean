@@ -7,7 +7,9 @@ import ArithS.Necessitation.Lib.Frag
 `RowInst.lean`'s three deliverables (the row-shape lemma `quote_row_x`, formula-ness of the pieces,
 the instantiation lemma `inst_x` at arbitrary closed witnesses — the DSL variable list read
 RIGHT-TO-LEFT) for every row of `Lib/Frag.lean` (`DESIGN_fragments.md` §8.1), plus the predicate
-codes and canonical fact codes those rows need beyond `RowInst.lean`/`Chain.lean`: `Peq`/`eqFact`,
+codes and canonical fact codes those rows need beyond `RowInst.lean`/`Chain.lean`: `PeqB`/`eqFactB`
+(NumSteps.lean's `Peq`/`eqFact` are the SAME code — `PeqB = Peq` by `rfl` after `unfold eqS`; the names
+differ only so that both modules build side by side; unify when both have landed),
 `Pmem`/`memFact`, `Pinsert`/`insFact`, `Psubset`/`subsetFact`, `PfsetPi`/`fsetPiFact`,
 `PsetShiftG`/`setShiftFact`, `PsetLen`/`setLenFact`, `PflenG`/`lenFact`, the term-level graphs,
 `Pnth`/`nthFact`, the `axm`(ii) graphs, the node graphs `PaxL`/`axLFact` … `Paxm`/`axmFact`, and
@@ -17,7 +19,7 @@ multiplicative length bound and the occurrence bound. `Chain.lean`'s `Pderiv`/`P
 
 **Generated** by `arith/scripts/gen_frag.py` (the row table is shared with `Lib/Frag.lean`); the
 header below (§1) is hand-written (`scripts/RowInstB.lean.head`). New over `RowInst.lean`'s §1:
-the entries `a + b`/`a * b`/`2` (`quote_closed_mul_m`, `quote_closed_two_m`, `termSubst_qqMul'`,
+the entries `a + b`/`a * b`/`2` (`quote_closed_mul_mB`, `quote_closed_two_m`, `termSubst_qqMulB`,
 `isSemiterm_qqAdd/Mul_LAct`) and the three tactics `row_entriesB`/`row_entries_simpB`/`row_shapeB`
 extended to them.
 -/
@@ -36,7 +38,7 @@ set_option linter.unusedTactic false
 
 /-! ## 1. Infrastructure: `*`, `2`, and the extended tactics -/
 
-lemma quote_closed_mul_m {m : ℕ} (t u : ClosedSemiterm ℒₒᵣ m) :
+lemma quote_closed_mul_mB {m : ℕ} (t u : ClosedSemiterm ℒₒᵣ m) :
     (⌜(‘!!t * !!u’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (⌜t⌝ : V) ^* (⌜u⌝ : V) := by
   rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_mul]; rfl
 
@@ -67,7 +69,7 @@ lemma isUTerm_qqAdd_iff {x y : V} : IsUTerm LAct (x ^+ y) ↔ IsUTerm LAct x ∧
   unfold qqAdd; simp [IsUTerm.func_iff, isFunc_LAct_addIndex]
 lemma isUTerm_qqMul_iff {x y : V} : IsUTerm LAct (x ^* y) ↔ IsUTerm LAct x ∧ IsUTerm LAct y := by
   unfold qqMul; simp [IsUTerm.func_iff, isFunc_LAct_mul]
-lemma termSubst_qqMul' {w x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) :
+lemma termSubst_qqMulB {w x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) :
     termSubst LAct w (x ^* y) = termSubst LAct w x ^* termSubst LAct w y := by
   unfold qqMul
   rw [termSubst_func isFunc_LAct_mul (by simp [hx, hy]), termSubstVec_cons₂ hx hy]
@@ -90,7 +92,7 @@ macro "row_entriesB" : tactic => `(tactic| (
 
 /-- Evaluate the entrywise substitution of an instantiated piece, now with `+`/`*` entries. -/
 macro "row_entries_simpB" : tactic => `(tactic| simp (maxDischargeDepth := 8) only [List.map_cons, List.map_nil,
-  termSubst_qqAdd', termSubst_qqMul', isUTerm_bv, isUTerm_qqOne_LAct, isUTerm_qqZero_LAct, isUTerm_cT,
+  termSubst_qqAdd', termSubst_qqMulB, isUTerm_bv, isUTerm_qqOne_LAct, isUTerm_qqZero_LAct, isUTerm_cT,
   isUTerm_qqAdd_iff, isUTerm_qqMul_iff, and_self, and_true, true_and, termSubst_bv,
   termSubst_bv_add_one, termSubst_qqZero', termSubst_qqOne', termSubst_cT, bvarList_zero, bvarList_one,
   bvarList_two, bvarList_three, bvarList_four, bvarList_five, List.reverse_cons, List.reverse_nil,
@@ -104,7 +106,7 @@ macro "row_shapeB" : tactic => `(tactic| (
     matrixToVec_fin3, matrixToVec_fin4, matrixToVec_fin5, matrixToVec_fin6, matrixToVec_fin7,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.cons_val_four,
     Matrix.head_cons, Matrix.tail_cons,
-    quote_closed_add_m, quote_closed_mul_m, quote_closed_two_m, quote_closed_one_m, quote_closed_zero_m,
+    quote_closed_add_m, quote_closed_mul_mB, quote_closed_two_m, quote_closed_one_m, quote_closed_zero_m,
     quote_closed_bvar_m, quote_cTT, cT_succ, cT_zero]
   all_goals rfl))
 
@@ -113,10 +115,10 @@ macro "row_shapeB" : tactic => `(tactic| (
 section facts
 
 /-- The code of `eq` (arity 2). -/
-noncomputable def Peq : V := ⌜Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Eq.eq : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2)⌝
-lemma isSemiformula_Peq : IsSemiformula LAct ((2 : ℕ) : V) Peq := Sentence.quote_isSemiformula _
-lemma shift_Peq : shift LAct (Peq : V) = Peq := shift_quote_sentence _
-lemma fvOccF_Peq : fvOccF LAct (Peq : V) = 0 := fvOccF_quote_sentence _
+noncomputable def PeqB : V := ⌜Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Eq.eq : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2)⌝
+lemma isSemiformula_PeqB : IsSemiformula LAct ((2 : ℕ) : V) PeqB := Sentence.quote_isSemiformula _
+lemma shift_PeqB : shift LAct (PeqB : V) = PeqB := shift_quote_sentence _
+lemma fvOccF_PeqB : fvOccF LAct (PeqB : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `ufPi` (arity 1). -/
 noncomputable def PufPi : V := ⌜Semiformula.lMap emb (↑(isUFormula LAct).pi : ArithmeticSemisentence 1)⌝
@@ -378,20 +380,20 @@ lemma fvOccF_PtermBVG : fvOccF LAct (PtermBVG : V) = 0 := fvOccF_quote_sentence 
 
 /-! ### The facts: `subst (listToVec [witnesses]) P` in the predicate's own variable order -/
 
-noncomputable def eqFact (a b : V) : V := subst LAct (listToVec [a, b]) Peq
-lemma isFormula_eqFact {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) : IsFormula LAct (eqFact a b) :=
-  isFormula_fact isSemiformula_Peq _ rfl (List.forall_mem_cons.mpr ⟨ha, List.forall_mem_cons.mpr ⟨hb, List.forall_mem_nil _⟩⟩)
-lemma shift_eqFact {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) :
-    shift LAct (eqFact a b) = eqFact (termShift LAct a) (termShift LAct b) := by
-  unfold eqFact
-  rw [shift_subst_listToVec [a, b] isSemiformula_Peq shift_Peq (n := 0) (List.forall_mem_cons.mpr ⟨ha, List.forall_mem_cons.mpr ⟨hb, List.forall_mem_nil _⟩⟩)]
+noncomputable def eqFactB (a b : V) : V := subst LAct (listToVec [a, b]) PeqB
+lemma isFormula_eqFactB {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) : IsFormula LAct (eqFactB a b) :=
+  isFormula_fact isSemiformula_PeqB _ rfl (List.forall_mem_cons.mpr ⟨ha, List.forall_mem_cons.mpr ⟨hb, List.forall_mem_nil _⟩⟩)
+lemma shift_eqFactB {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) :
+    shift LAct (eqFactB a b) = eqFactB (termShift LAct a) (termShift LAct b) := by
+  unfold eqFactB
+  rw [shift_subst_listToVec [a, b] isSemiformula_PeqB shift_PeqB (n := 0) (List.forall_mem_cons.mpr ⟨ha, List.forall_mem_cons.mpr ⟨hb, List.forall_mem_nil _⟩⟩)]
   rfl
-lemma formulaLen_eqFact_le {B : V} (hB : 1 ≤ B) {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) (hla : termLen LAct a ≤ B) (hlb : termLen LAct b ≤ B) :
-    formulaLen LAct (eqFact a b) ≤ formulaLen LAct (Peq : V) * B :=
-  formulaLen_fact_le hB isSemiformula_Peq _ rfl (List.forall_mem_cons.mpr ⟨⟨ha, hla⟩, List.forall_mem_cons.mpr ⟨⟨hb, hlb⟩, List.forall_mem_nil _⟩⟩)
-lemma fvOccF_eqFact_le {M : V} {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) (hoa : fvOcc LAct a ≤ M) (hob : fvOcc LAct b ≤ M) :
-    fvOccF LAct (eqFact a b) ≤ bvOccF LAct (Peq : V) * M :=
-  fvOccF_fact_le isSemiformula_Peq fvOccF_Peq _ rfl (List.forall_mem_cons.mpr ⟨⟨ha, hoa⟩, List.forall_mem_cons.mpr ⟨⟨hb, hob⟩, List.forall_mem_nil _⟩⟩)
+lemma formulaLen_eqFactB_le {B : V} (hB : 1 ≤ B) {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) (hla : termLen LAct a ≤ B) (hlb : termLen LAct b ≤ B) :
+    formulaLen LAct (eqFactB a b) ≤ formulaLen LAct (PeqB : V) * B :=
+  formulaLen_fact_le hB isSemiformula_PeqB _ rfl (List.forall_mem_cons.mpr ⟨⟨ha, hla⟩, List.forall_mem_cons.mpr ⟨⟨hb, hlb⟩, List.forall_mem_nil _⟩⟩)
+lemma fvOccF_eqFactB_le {M : V} {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) (hoa : fvOcc LAct a ≤ M) (hob : fvOcc LAct b ≤ M) :
+    fvOccF LAct (eqFactB a b) ≤ bvOccF LAct (PeqB : V) * M :=
+  fvOccF_fact_le isSemiformula_PeqB fvOccF_PeqB _ rfl (List.forall_mem_cons.mpr ⟨⟨ha, hoa⟩, List.forall_mem_cons.mpr ⟨⟨hb, hob⟩, List.forall_mem_nil _⟩⟩)
 
 noncomputable def ufPiFact (p : V) : V := subst LAct (listToVec [p]) PufPi
 lemma isFormula_ufPiFact {p : V} (hp : IsSemiterm LAct 0 p) : IsFormula LAct (ufPiFact p) :=
@@ -959,9 +961,6 @@ lemma shift_leFact {n u : V} (hn : IsSemiterm LAct 0 n) (hu : IsSemiterm LAct 0 
   unfold leFact
   rw [shift_subst_listToVec [n, u] isSemiformula_Ple shift_Ple (n := 0) (List.forall_mem_cons.mpr ⟨hn, List.forall_mem_cons.mpr ⟨hu, List.forall_mem_nil _⟩⟩)]
   rfl
-lemma formulaLen_leFact_le {B : V} (hB : 1 ≤ B) {n u : V} (hn : IsSemiterm LAct 0 n) (hu : IsSemiterm LAct 0 u) (hln : termLen LAct n ≤ B) (hlu : termLen LAct u ≤ B) :
-    formulaLen LAct (leFact n u) ≤ formulaLen LAct (Ple : V) * B :=
-  formulaLen_fact_le hB isSemiformula_Ple _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hln⟩, List.forall_mem_cons.mpr ⟨⟨hu, hlu⟩, List.forall_mem_nil _⟩⟩)
 lemma fvOccF_leFact_le {M : V} {n u : V} (hn : IsSemiterm LAct 0 n) (hu : IsSemiterm LAct 0 u) (hon : fvOcc LAct n ≤ M) (hou : fvOcc LAct u ≤ M) :
     fvOccF LAct (leFact n u) ≤ bvOccF LAct (Ple : V) * M :=
   fvOccF_fact_le isSemiformula_Ple fvOccF_Ple _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hon⟩, List.forall_mem_cons.mpr ⟨⟨hu, hou⟩, List.forall_mem_nil _⟩⟩)
@@ -1067,12 +1066,12 @@ section rows
 /-! ### `eqTotal` — `“x. …”`, `m = 1` -/
 
 noncomputable def row_eqTotal_as : List V := []
-noncomputable def row_eqTotal_body : V := subst LAct (listToVec [bv 0, bv 1]) Peq
+noncomputable def row_eqTotal_body : V := subst LAct (listToVec [bv 0, bv 1]) PeqB
 noncomputable def row_eqTotal_R : V := row_eqTotal_body
 noncomputable def row_eqTotal_c : V := ^∃ row_eqTotal_R
 
 theorem quote_row_eqTotal : (⌜Semiformula.lMap emb eqTotalB⌝ : V) = impChain LAct row_eqTotal_as row_eqTotal_c := by
-  unfold eqTotalB row_eqTotal_as row_eqTotal_c row_eqTotal_R row_eqTotal_body Peq
+  unfold eqTotalB row_eqTotal_as row_eqTotal_c row_eqTotal_R row_eqTotal_body PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_eqTotal_as : ∀ A ∈ row_eqTotal_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
@@ -1080,26 +1079,26 @@ lemma isSemiformula_eqTotal_as : ∀ A ∈ row_eqTotal_as, IsSemiformula LAct ((
   exact (List.forall_mem_nil _)
 lemma isSemiformula_eqTotal_c : IsSemiformula LAct ((1 : ℕ) : V) row_eqTotal_c := by
   unfold row_eqTotal_c row_eqTotal_R row_eqTotal_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB))
+  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB))
 lemma isSemiformula_eqTotal_R : IsSemiformula LAct ((2 : ℕ) : V) row_eqTotal_R := by
   unfold row_eqTotal_R row_eqTotal_body
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 lemma isSemiformula_eqTotal_body : IsSemiformula LAct ((2 : ℕ) : V) row_eqTotal_body := by
   unfold row_eqTotal_body
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 lemma row_eqTotal_R_eq : (row_eqTotal_R : V) = exsIter 0 row_eqTotal_body := rfl
 
 /-- `eqTotal` at the witnesses `[wx]` (the DSL variables right-to-left). -/
 lemma inst_eqTotal {wx : V} (hwx : IsSemiterm LAct 0 wx) :
     row_eqTotal_as.map (instOuter LAct [wx]) = [] ∧
-    freeIter LAct 1 (instOuterAt LAct 1 [wx] row_eqTotal_body) = eqFact (^&((0 : ℕ) : V)) (termShift LAct wx) := by
+    freeIter LAct 1 (instOuterAt LAct 1 [wx] row_eqTotal_body) = eqFactB (^&((0 : ℕ) : V)) (termShift LAct wx) := by
   have hes : ∀ e ∈ ([wx] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_nil _⟩)
   unfold row_eqTotal_as row_eqTotal_body
   simp only [List.map_cons, List.map_nil]
   refine ⟨by ((try row_entries_simpB); row_finish), ?_⟩
-  · rw [instOuterAt_subst_listToVec 1 _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  · rw [instOuterAt_subst_listToVec 1 _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
     row_entries_simpB
-    rw [freeIter_subst_listToVec' 1 _ isSemiformula_Peq shift_Peq (by rfl) (by row_entriesB)]
+    rw [freeIter_subst_listToVec' 1 _ isSemiformula_PeqB shift_PeqB (by rfl) (by row_entriesB)]
     simp only [List.map_cons, List.map_nil]
     rw [freeIterT_bv0 1 0 (by norm_num), freeIterT_closed 0 hwx 1]
     try rfl
@@ -1107,10 +1106,10 @@ lemma inst_eqTotal {wx : V} (hwx : IsSemiterm LAct 0 wx) :
 /-! ### `eqRefl` — `“x. …”`, `m = 1` -/
 
 noncomputable def row_eqRefl_as : List V := []
-noncomputable def row_eqRefl_c : V := subst LAct (listToVec [bv 0, bv 0]) Peq
+noncomputable def row_eqRefl_c : V := subst LAct (listToVec [bv 0, bv 0]) PeqB
 
 theorem quote_row_eqRefl : (⌜Semiformula.lMap emb eqReflB⌝ : V) = impChain LAct row_eqRefl_as row_eqRefl_c := by
-  unfold eqReflB row_eqRefl_as row_eqRefl_c Peq
+  unfold eqReflB row_eqRefl_as row_eqRefl_c PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_eqRefl_as : ∀ A ∈ row_eqRefl_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
@@ -1118,1042 +1117,1042 @@ lemma isSemiformula_eqRefl_as : ∀ A ∈ row_eqRefl_as, IsSemiformula LAct ((1 
   exact (List.forall_mem_nil _)
 lemma isSemiformula_eqRefl_c : IsSemiformula LAct ((1 : ℕ) : V) row_eqRefl_c := by
   unfold row_eqRefl_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqRefl` at the witnesses `[wx]` (the DSL variables right-to-left). -/
 lemma inst_eqRefl {wx : V} (hwx : IsSemiterm LAct 0 wx) :
     row_eqRefl_as.map (instOuter LAct [wx]) = [] ∧
-    instOuter LAct [wx] row_eqRefl_c = eqFact wx wx := by
+    instOuter LAct [wx] row_eqRefl_c = eqFactB wx wx := by
   have hes : ∀ e ∈ ([wx] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_nil _⟩)
   unfold row_eqRefl_as row_eqRefl_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqSymm` — `“y x. …”`, `m = 2` -/
 
-noncomputable def row_eqSymm_as : List V := [subst LAct (listToVec [bv 1, bv 0]) Peq]
-noncomputable def row_eqSymm_c : V := subst LAct (listToVec [bv 0, bv 1]) Peq
+noncomputable def row_eqSymm_as : List V := [subst LAct (listToVec [bv 1, bv 0]) PeqB]
+noncomputable def row_eqSymm_c : V := subst LAct (listToVec [bv 0, bv 1]) PeqB
 
 theorem quote_row_eqSymm : (⌜Semiformula.lMap emb eqSymmB⌝ : V) = impChain LAct row_eqSymm_as row_eqSymm_c := by
-  unfold eqSymmB row_eqSymm_as row_eqSymm_c Peq
+  unfold eqSymmB row_eqSymm_as row_eqSymm_c PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_eqSymm_as : ∀ A ∈ row_eqSymm_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
   unfold row_eqSymm_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_eqSymm_c : IsSemiformula LAct ((2 : ℕ) : V) row_eqSymm_c := by
   unfold row_eqSymm_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqSymm` at the witnesses `[wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqSymm {wx wy : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_eqSymm_as.map (instOuter LAct [wx, wy]) = [eqFact wx wy] ∧
-    instOuter LAct [wx, wy] row_eqSymm_c = eqFact wy wx := by
+    row_eqSymm_as.map (instOuter LAct [wx, wy]) = [eqFactB wx wy] ∧
+    instOuter LAct [wx, wy] row_eqSymm_c = eqFactB wy wx := by
   have hes : ∀ e ∈ ([wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩)
   unfold row_eqSymm_as row_eqSymm_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqTrans` — `“z y x. …”`, `m = 3` -/
 
-noncomputable def row_eqTrans_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Peq, subst LAct (listToVec [bv 1, bv 0]) Peq]
-noncomputable def row_eqTrans_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_eqTrans_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PeqB, subst LAct (listToVec [bv 1, bv 0]) PeqB]
+noncomputable def row_eqTrans_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_eqTrans : (⌜Semiformula.lMap emb eqTransB⌝ : V) = impChain LAct row_eqTrans_as row_eqTrans_c := by
-  unfold eqTransB row_eqTrans_as row_eqTrans_c Peq
+  unfold eqTransB row_eqTrans_as row_eqTrans_c PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_eqTrans_as : ∀ A ∈ row_eqTrans_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_eqTrans_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_eqTrans_c : IsSemiformula LAct ((3 : ℕ) : V) row_eqTrans_c := by
   unfold row_eqTrans_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqTrans` at the witnesses `[wx, wy, wz]` (the DSL variables right-to-left). -/
 lemma inst_eqTrans {wx wy wz : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) (hwz : IsSemiterm LAct 0 wz) :
-    row_eqTrans_as.map (instOuter LAct [wx, wy, wz]) = [eqFact wx wy, eqFact wy wz] ∧
-    instOuter LAct [wx, wy, wz] row_eqTrans_c = eqFact wx wz := by
+    row_eqTrans_as.map (instOuter LAct [wx, wy, wz]) = [eqFactB wx wy, eqFactB wy wz] ∧
+    instOuter LAct [wx, wy, wz] row_eqTrans_c = eqFactB wx wz := by
   have hes : ∀ e ∈ ([wx, wy, wz] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwz, List.forall_mem_nil _⟩⟩⟩)
   unfold row_eqTrans_as row_eqTrans_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congPi` — `“y x n. …”`, `m = 3` -/
 
-noncomputable def row_congPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 2, bv 1]) Ppi]
+noncomputable def row_congPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 2, bv 1]) Ppi]
 noncomputable def row_congPi_c : V := subst LAct (listToVec [bv 2, bv 0]) Psigma
 
 theorem quote_row_congPi : (⌜Semiformula.lMap emb congPiB⌝ : V) = impChain LAct row_congPi_as row_congPi_c := by
-  unfold congPiB row_congPi_as row_congPi_c Peq Ppi Psigma
+  unfold congPiB row_congPi_as row_congPi_c PeqB Ppi Psigma
   all_goals row_shapeB
 
 lemma isSemiformula_congPi_as : ∀ A ∈ row_congPi_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congPi_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congPi_c : IsSemiformula LAct ((3 : ℕ) : V) row_congPi_c := by
   unfold row_congPi_c
   exact isSemiformula_substRow isSemiformula_Psigma _ (by rfl) (by row_entriesB)
 
 /-- `congPi` at the witnesses `[wn, wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_congPi {wn wx wy : V} (hwn : IsSemiterm LAct 0 wn) (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_congPi_as.map (instOuter LAct [wn, wx, wy]) = [eqFact wy wx, piFact wn wx] ∧
+    row_congPi_as.map (instOuter LAct [wn, wx, wy]) = [eqFactB wy wx, piFact wn wx] ∧
     instOuter LAct [wn, wx, wy] row_congPi_c = sigmaFact wn wy := by
   have hes : ∀ e ∈ ([wn, wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congPi_as row_congPi_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Ppi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psigma (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Ppi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psigma (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congTPi` — `“y x n. …”`, `m = 3` -/
 
-noncomputable def row_congTPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 2, bv 1]) PtPi]
+noncomputable def row_congTPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 2, bv 1]) PtPi]
 noncomputable def row_congTPi_c : V := subst LAct (listToVec [bv 2, bv 0]) PtSigma
 
 theorem quote_row_congTPi : (⌜Semiformula.lMap emb congTPiB⌝ : V) = impChain LAct row_congTPi_as row_congTPi_c := by
-  unfold congTPiB row_congTPi_as row_congTPi_c Peq PtPi PtSigma
+  unfold congTPiB row_congTPi_as row_congTPi_c PeqB PtPi PtSigma
   all_goals row_shapeB
 
 lemma isSemiformula_congTPi_as : ∀ A ∈ row_congTPi_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congTPi_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congTPi_c : IsSemiformula LAct ((3 : ℕ) : V) row_congTPi_c := by
   unfold row_congTPi_c
   exact isSemiformula_substRow isSemiformula_PtSigma _ (by rfl) (by row_entriesB)
 
 /-- `congTPi` at the witnesses `[wn, wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_congTPi {wn wx wy : V} (hwn : IsSemiterm LAct 0 wn) (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_congTPi_as.map (instOuter LAct [wn, wx, wy]) = [eqFact wy wx, tPiFact wn wx] ∧
+    row_congTPi_as.map (instOuter LAct [wn, wx, wy]) = [eqFactB wy wx, tPiFact wn wx] ∧
     instOuter LAct [wn, wx, wy] row_congTPi_c = tSigmaFact wn wy := by
   have hes : ∀ e ∈ ([wn, wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congTPi_as row_congTPi_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtSigma (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtSigma (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congTvPi` — `“y x n k. …”`, `m = 4` -/
 
-noncomputable def row_congTvPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 3, bv 2, bv 1]) PtvPi]
+noncomputable def row_congTvPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 3, bv 2, bv 1]) PtvPi]
 noncomputable def row_congTvPi_c : V := subst LAct (listToVec [bv 3, bv 2, bv 0]) PtvSigma
 
 theorem quote_row_congTvPi : (⌜Semiformula.lMap emb congTvPiB⌝ : V) = impChain LAct row_congTvPi_as row_congTvPi_c := by
-  unfold congTvPiB row_congTvPi_as row_congTvPi_c Peq PtvPi PtvSigma
+  unfold congTvPiB row_congTvPi_as row_congTvPi_c PeqB PtvPi PtvSigma
   all_goals row_shapeB
 
 lemma isSemiformula_congTvPi_as : ∀ A ∈ row_congTvPi_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_congTvPi_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtvPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtvPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congTvPi_c : IsSemiformula LAct ((4 : ℕ) : V) row_congTvPi_c := by
   unfold row_congTvPi_c
   exact isSemiformula_substRow isSemiformula_PtvSigma _ (by rfl) (by row_entriesB)
 
 /-- `congTvPi` at the witnesses `[wk, wn, wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_congTvPi {wk wn wx wy : V} (hwk : IsSemiterm LAct 0 wk) (hwn : IsSemiterm LAct 0 wn) (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_congTvPi_as.map (instOuter LAct [wk, wn, wx, wy]) = [eqFact wy wx, tvPiFact wk wn wx] ∧
+    row_congTvPi_as.map (instOuter LAct [wk, wn, wx, wy]) = [eqFactB wy wx, tvPiFact wk wn wx] ∧
     instOuter LAct [wk, wn, wx, wy] row_congTvPi_c = tvSigmaFact wk wn wy := by
   have hes : ∀ e ∈ ([wk, wn, wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_congTvPi_as row_congTvPi_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtvSigma (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtvSigma (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congUtvPi` — `“y x k. …”`, `m = 3` -/
 
-noncomputable def row_congUtvPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 2, bv 1]) PutvPi]
+noncomputable def row_congUtvPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 2, bv 1]) PutvPi]
 noncomputable def row_congUtvPi_c : V := subst LAct (listToVec [bv 2, bv 0]) PutvSigma
 
 theorem quote_row_congUtvPi : (⌜Semiformula.lMap emb congUtvPiB⌝ : V) = impChain LAct row_congUtvPi_as row_congUtvPi_c := by
-  unfold congUtvPiB row_congUtvPi_as row_congUtvPi_c Peq PutvPi PutvSigma
+  unfold congUtvPiB row_congUtvPi_as row_congUtvPi_c PeqB PutvPi PutvSigma
   all_goals row_shapeB
 
 lemma isSemiformula_congUtvPi_as : ∀ A ∈ row_congUtvPi_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congUtvPi_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PutvPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PutvPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congUtvPi_c : IsSemiformula LAct ((3 : ℕ) : V) row_congUtvPi_c := by
   unfold row_congUtvPi_c
   exact isSemiformula_substRow isSemiformula_PutvSigma _ (by rfl) (by row_entriesB)
 
 /-- `congUtvPi` at the witnesses `[wk, wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_congUtvPi {wk wx wy : V} (hwk : IsSemiterm LAct 0 wk) (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_congUtvPi_as.map (instOuter LAct [wk, wx, wy]) = [eqFact wy wx, utvPiFact wk wx] ∧
+    row_congUtvPi_as.map (instOuter LAct [wk, wx, wy]) = [eqFactB wy wx, utvPiFact wk wx] ∧
     instOuter LAct [wk, wx, wy] row_congUtvPi_c = utvSigmaFact wk wy := by
   have hes : ∀ e ∈ ([wk, wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congUtvPi_as row_congUtvPi_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvSigma (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvSigma (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congUfPi` — `“y x. …”`, `m = 2` -/
 
-noncomputable def row_congUfPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 1]) PufPi]
+noncomputable def row_congUfPi_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 1]) PufPi]
 noncomputable def row_congUfPi_c : V := subst LAct (listToVec [bv 0]) PufPi
 
 theorem quote_row_congUfPi : (⌜Semiformula.lMap emb congUfPiB⌝ : V) = impChain LAct row_congUfPi_as row_congUfPi_c := by
-  unfold congUfPiB row_congUfPi_as row_congUfPi_c Peq PufPi
+  unfold congUfPiB row_congUfPi_as row_congUfPi_c PeqB PufPi
   all_goals row_shapeB
 
 lemma isSemiformula_congUfPi_as : ∀ A ∈ row_congUfPi_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
   unfold row_congUfPi_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PufPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PufPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congUfPi_c : IsSemiformula LAct ((2 : ℕ) : V) row_congUfPi_c := by
   unfold row_congUfPi_c
   exact isSemiformula_substRow isSemiformula_PufPi _ (by rfl) (by row_entriesB)
 
 /-- `congUfPi` at the witnesses `[wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_congUfPi {wx wy : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_congUfPi_as.map (instOuter LAct [wx, wy]) = [eqFact wy wx, ufPiFact wx] ∧
+    row_congUfPi_as.map (instOuter LAct [wx, wy]) = [eqFactB wy wx, ufPiFact wx] ∧
     instOuter LAct [wx, wy] row_congUfPi_c = ufPiFact wy := by
   have hes : ∀ e ∈ ([wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩)
   unfold row_congUfPi_as row_congUfPi_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PufPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PufPi (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PufPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PufPi (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congAnd` — `“q' p' r' q p r. …”`, `m = 6` -/
 
-noncomputable def row_congAnd_as : List V := [subst LAct (listToVec [bv 2, bv 5]) Peq, subst LAct (listToVec [bv 1, bv 4]) Peq, subst LAct (listToVec [bv 0, bv 3]) Peq, subst LAct (listToVec [bv 5, bv 4, bv 3]) Pand]
+noncomputable def row_congAnd_as : List V := [subst LAct (listToVec [bv 2, bv 5]) PeqB, subst LAct (listToVec [bv 1, bv 4]) PeqB, subst LAct (listToVec [bv 0, bv 3]) PeqB, subst LAct (listToVec [bv 5, bv 4, bv 3]) Pand]
 noncomputable def row_congAnd_c : V := subst LAct (listToVec [bv 2, bv 1, bv 0]) Pand
 
 theorem quote_row_congAnd : (⌜Semiformula.lMap emb congAndB⌝ : V) = impChain LAct row_congAnd_as row_congAnd_c := by
-  unfold congAndB row_congAnd_as row_congAnd_c Pand Peq
+  unfold congAndB row_congAnd_as row_congAnd_c Pand PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_congAnd_as : ∀ A ∈ row_congAnd_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_congAnd_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_congAnd_c : IsSemiformula LAct ((6 : ℕ) : V) row_congAnd_c := by
   unfold row_congAnd_c
   exact isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB)
 
 /-- `congAnd` at the witnesses `[wr, wp, wq, wrp, wpp, wqp]` (the DSL variables right-to-left). -/
 lemma inst_congAnd {wr wp wq wrp wpp wqp : V} (hwr : IsSemiterm LAct 0 wr) (hwp : IsSemiterm LAct 0 wp) (hwq : IsSemiterm LAct 0 wq) (hwrp : IsSemiterm LAct 0 wrp) (hwpp : IsSemiterm LAct 0 wpp) (hwqp : IsSemiterm LAct 0 wqp) :
-    row_congAnd_as.map (instOuter LAct [wr, wp, wq, wrp, wpp, wqp]) = [eqFact wrp wr, eqFact wpp wp, eqFact wqp wq, andFact wr wp wq] ∧
+    row_congAnd_as.map (instOuter LAct [wr, wp, wq, wrp, wpp, wqp]) = [eqFactB wrp wr, eqFactB wpp wp, eqFactB wqp wq, andFact wr wp wq] ∧
     instOuter LAct [wr, wp, wq, wrp, wpp, wqp] row_congAnd_c = andFact wrp wpp wqp := by
   have hes : ∀ e ∈ ([wr, wp, wq, wrp, wpp, wqp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwr, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwq, List.forall_mem_cons.mpr ⟨hwrp, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_cons.mpr ⟨hwqp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_congAnd_as row_congAnd_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congOr` — `“q' p' r' q p r. …”`, `m = 6` -/
 
-noncomputable def row_congOr_as : List V := [subst LAct (listToVec [bv 2, bv 5]) Peq, subst LAct (listToVec [bv 1, bv 4]) Peq, subst LAct (listToVec [bv 0, bv 3]) Peq, subst LAct (listToVec [bv 5, bv 4, bv 3]) Por]
+noncomputable def row_congOr_as : List V := [subst LAct (listToVec [bv 2, bv 5]) PeqB, subst LAct (listToVec [bv 1, bv 4]) PeqB, subst LAct (listToVec [bv 0, bv 3]) PeqB, subst LAct (listToVec [bv 5, bv 4, bv 3]) Por]
 noncomputable def row_congOr_c : V := subst LAct (listToVec [bv 2, bv 1, bv 0]) Por
 
 theorem quote_row_congOr : (⌜Semiformula.lMap emb congOrB⌝ : V) = impChain LAct row_congOr_as row_congOr_c := by
-  unfold congOrB row_congOr_as row_congOr_c Peq Por
+  unfold congOrB row_congOr_as row_congOr_c PeqB Por
   all_goals row_shapeB
 
 lemma isSemiformula_congOr_as : ∀ A ∈ row_congOr_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_congOr_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_congOr_c : IsSemiformula LAct ((6 : ℕ) : V) row_congOr_c := by
   unfold row_congOr_c
   exact isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB)
 
 /-- `congOr` at the witnesses `[wr, wp, wq, wrp, wpp, wqp]` (the DSL variables right-to-left). -/
 lemma inst_congOr {wr wp wq wrp wpp wqp : V} (hwr : IsSemiterm LAct 0 wr) (hwp : IsSemiterm LAct 0 wp) (hwq : IsSemiterm LAct 0 wq) (hwrp : IsSemiterm LAct 0 wrp) (hwpp : IsSemiterm LAct 0 wpp) (hwqp : IsSemiterm LAct 0 wqp) :
-    row_congOr_as.map (instOuter LAct [wr, wp, wq, wrp, wpp, wqp]) = [eqFact wrp wr, eqFact wpp wp, eqFact wqp wq, orFact wr wp wq] ∧
+    row_congOr_as.map (instOuter LAct [wr, wp, wq, wrp, wpp, wqp]) = [eqFactB wrp wr, eqFactB wpp wp, eqFactB wqp wq, orFact wr wp wq] ∧
     instOuter LAct [wr, wp, wq, wrp, wpp, wqp] row_congOr_c = orFact wrp wpp wqp := by
   have hes : ∀ e ∈ ([wr, wp, wq, wrp, wpp, wqp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwr, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwq, List.forall_mem_cons.mpr ⟨hwrp, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_cons.mpr ⟨hwqp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_congOr_as row_congOr_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congAll` — `“p' q' p q. …”`, `m = 4` -/
 
-noncomputable def row_congAll_as : List V := [subst LAct (listToVec [bv 1, bv 3]) Peq, subst LAct (listToVec [bv 0, bv 2]) Peq, subst LAct (listToVec [bv 3, bv 2]) Pall]
+noncomputable def row_congAll_as : List V := [subst LAct (listToVec [bv 1, bv 3]) PeqB, subst LAct (listToVec [bv 0, bv 2]) PeqB, subst LAct (listToVec [bv 3, bv 2]) Pall]
 noncomputable def row_congAll_c : V := subst LAct (listToVec [bv 1, bv 0]) Pall
 
 theorem quote_row_congAll : (⌜Semiformula.lMap emb congAllB⌝ : V) = impChain LAct row_congAll_as row_congAll_c := by
-  unfold congAllB row_congAll_as row_congAll_c Pall Peq
+  unfold congAllB row_congAll_as row_congAll_c Pall PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_congAll_as : ∀ A ∈ row_congAll_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_congAll_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_congAll_c : IsSemiformula LAct ((4 : ℕ) : V) row_congAll_c := by
   unfold row_congAll_c
   exact isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB)
 
 /-- `congAll` at the witnesses `[wq, wp, wqp, wpp]` (the DSL variables right-to-left). -/
 lemma inst_congAll {wq wp wqp wpp : V} (hwq : IsSemiterm LAct 0 wq) (hwp : IsSemiterm LAct 0 wp) (hwqp : IsSemiterm LAct 0 wqp) (hwpp : IsSemiterm LAct 0 wpp) :
-    row_congAll_as.map (instOuter LAct [wq, wp, wqp, wpp]) = [eqFact wqp wq, eqFact wpp wp, allFact wq wp] ∧
+    row_congAll_as.map (instOuter LAct [wq, wp, wqp, wpp]) = [eqFactB wqp wq, eqFactB wpp wp, allFact wq wp] ∧
     instOuter LAct [wq, wp, wqp, wpp] row_congAll_c = allFact wqp wpp := by
   have hes : ∀ e ∈ ([wq, wp, wqp, wpp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwq, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwqp, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_congAll_as row_congAll_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congExs` — `“p' q' p q. …”`, `m = 4` -/
 
-noncomputable def row_congExs_as : List V := [subst LAct (listToVec [bv 1, bv 3]) Peq, subst LAct (listToVec [bv 0, bv 2]) Peq, subst LAct (listToVec [bv 3, bv 2]) Pexs]
+noncomputable def row_congExs_as : List V := [subst LAct (listToVec [bv 1, bv 3]) PeqB, subst LAct (listToVec [bv 0, bv 2]) PeqB, subst LAct (listToVec [bv 3, bv 2]) Pexs]
 noncomputable def row_congExs_c : V := subst LAct (listToVec [bv 1, bv 0]) Pexs
 
 theorem quote_row_congExs : (⌜Semiformula.lMap emb congExsB⌝ : V) = impChain LAct row_congExs_as row_congExs_c := by
-  unfold congExsB row_congExs_as row_congExs_c Peq Pexs
+  unfold congExsB row_congExs_as row_congExs_c PeqB Pexs
   all_goals row_shapeB
 
 lemma isSemiformula_congExs_as : ∀ A ∈ row_congExs_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_congExs_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_congExs_c : IsSemiformula LAct ((4 : ℕ) : V) row_congExs_c := by
   unfold row_congExs_c
   exact isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB)
 
 /-- `congExs` at the witnesses `[wq, wp, wqp, wpp]` (the DSL variables right-to-left). -/
 lemma inst_congExs {wq wp wqp wpp : V} (hwq : IsSemiterm LAct 0 wq) (hwp : IsSemiterm LAct 0 wp) (hwqp : IsSemiterm LAct 0 wqp) (hwpp : IsSemiterm LAct 0 wpp) :
-    row_congExs_as.map (instOuter LAct [wq, wp, wqp, wpp]) = [eqFact wqp wq, eqFact wpp wp, exsFact wq wp] ∧
+    row_congExs_as.map (instOuter LAct [wq, wp, wqp, wpp]) = [eqFactB wqp wq, eqFactB wpp wp, exsFact wq wp] ∧
     instOuter LAct [wq, wp, wqp, wpp] row_congExs_c = exsFact wqp wpp := by
   have hes : ∀ e ∈ ([wq, wp, wqp, wpp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwq, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwqp, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_congExs_as row_congExs_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congRel` — `“v' r' v R k r. …”`, `m = 6` -/
 
-noncomputable def row_congRel_as : List V := [subst LAct (listToVec [bv 1, bv 5]) Peq, subst LAct (listToVec [bv 0, bv 2]) Peq, subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Prel]
+noncomputable def row_congRel_as : List V := [subst LAct (listToVec [bv 1, bv 5]) PeqB, subst LAct (listToVec [bv 0, bv 2]) PeqB, subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Prel]
 noncomputable def row_congRel_c : V := subst LAct (listToVec [bv 1, bv 4, bv 3, bv 0]) Prel
 
 theorem quote_row_congRel : (⌜Semiformula.lMap emb congRelB⌝ : V) = impChain LAct row_congRel_as row_congRel_c := by
-  unfold congRelB row_congRel_as row_congRel_c Peq Prel
+  unfold congRelB row_congRel_as row_congRel_c PeqB Prel
   all_goals row_shapeB
 
 lemma isSemiformula_congRel_as : ∀ A ∈ row_congRel_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_congRel_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_congRel_c : IsSemiformula LAct ((6 : ℕ) : V) row_congRel_c := by
   unfold row_congRel_c
   exact isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB)
 
 /-- `congRel` at the witnesses `[wr, wk, wR, wv, wrp, wvp]` (the DSL variables right-to-left). -/
 lemma inst_congRel {wr wk wR wv wrp wvp : V} (hwr : IsSemiterm LAct 0 wr) (hwk : IsSemiterm LAct 0 wk) (hwR : IsSemiterm LAct 0 wR) (hwv : IsSemiterm LAct 0 wv) (hwrp : IsSemiterm LAct 0 wrp) (hwvp : IsSemiterm LAct 0 wvp) :
-    row_congRel_as.map (instOuter LAct [wr, wk, wR, wv, wrp, wvp]) = [eqFact wrp wr, eqFact wvp wv, relFact wr wk wR wv] ∧
+    row_congRel_as.map (instOuter LAct [wr, wk, wR, wv, wrp, wvp]) = [eqFactB wrp wr, eqFactB wvp wv, relFact wr wk wR wv] ∧
     instOuter LAct [wr, wk, wR, wv, wrp, wvp] row_congRel_c = relFact wrp wk wR wvp := by
   have hes : ∀ e ∈ ([wr, wk, wR, wv, wrp, wvp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwr, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwR, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwrp, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_congRel_as row_congRel_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congNRel` — `“v' r' v R k r. …”`, `m = 6` -/
 
-noncomputable def row_congNRel_as : List V := [subst LAct (listToVec [bv 1, bv 5]) Peq, subst LAct (listToVec [bv 0, bv 2]) Peq, subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Pnrel]
+noncomputable def row_congNRel_as : List V := [subst LAct (listToVec [bv 1, bv 5]) PeqB, subst LAct (listToVec [bv 0, bv 2]) PeqB, subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Pnrel]
 noncomputable def row_congNRel_c : V := subst LAct (listToVec [bv 1, bv 4, bv 3, bv 0]) Pnrel
 
 theorem quote_row_congNRel : (⌜Semiformula.lMap emb congNRelB⌝ : V) = impChain LAct row_congNRel_as row_congNRel_c := by
-  unfold congNRelB row_congNRel_as row_congNRel_c Peq Pnrel
+  unfold congNRelB row_congNRel_as row_congNRel_c PeqB Pnrel
   all_goals row_shapeB
 
 lemma isSemiformula_congNRel_as : ∀ A ∈ row_congNRel_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_congNRel_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_congNRel_c : IsSemiformula LAct ((6 : ℕ) : V) row_congNRel_c := by
   unfold row_congNRel_c
   exact isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB)
 
 /-- `congNRel` at the witnesses `[wr, wk, wR, wv, wrp, wvp]` (the DSL variables right-to-left). -/
 lemma inst_congNRel {wr wk wR wv wrp wvp : V} (hwr : IsSemiterm LAct 0 wr) (hwk : IsSemiterm LAct 0 wk) (hwR : IsSemiterm LAct 0 wR) (hwv : IsSemiterm LAct 0 wv) (hwrp : IsSemiterm LAct 0 wrp) (hwvp : IsSemiterm LAct 0 wvp) :
-    row_congNRel_as.map (instOuter LAct [wr, wk, wR, wv, wrp, wvp]) = [eqFact wrp wr, eqFact wvp wv, nrelFact wr wk wR wv] ∧
+    row_congNRel_as.map (instOuter LAct [wr, wk, wR, wv, wrp, wvp]) = [eqFactB wrp wr, eqFactB wvp wv, nrelFact wr wk wR wv] ∧
     instOuter LAct [wr, wk, wR, wv, wrp, wvp] row_congNRel_c = nrelFact wrp wk wR wvp := by
   have hes : ∀ e ∈ ([wr, wk, wR, wv, wrp, wvp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwr, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwR, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwrp, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_congNRel_as row_congNRel_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congVerum` — `“p' p. …”`, `m = 2` -/
 
-noncomputable def row_congVerum_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 1]) Pverum]
+noncomputable def row_congVerum_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 1]) Pverum]
 noncomputable def row_congVerum_c : V := subst LAct (listToVec [bv 0]) Pverum
 
 theorem quote_row_congVerum : (⌜Semiformula.lMap emb congVerumB⌝ : V) = impChain LAct row_congVerum_as row_congVerum_c := by
-  unfold congVerumB row_congVerum_as row_congVerum_c Peq Pverum
+  unfold congVerumB row_congVerum_as row_congVerum_c PeqB Pverum
   all_goals row_shapeB
 
 lemma isSemiformula_congVerum_as : ∀ A ∈ row_congVerum_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
   unfold row_congVerum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congVerum_c : IsSemiformula LAct ((2 : ℕ) : V) row_congVerum_c := by
   unfold row_congVerum_c
   exact isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB)
 
 /-- `congVerum` at the witnesses `[wp, wpp]` (the DSL variables right-to-left). -/
 lemma inst_congVerum {wp wpp : V} (hwp : IsSemiterm LAct 0 wp) (hwpp : IsSemiterm LAct 0 wpp) :
-    row_congVerum_as.map (instOuter LAct [wp, wpp]) = [eqFact wpp wp, verumFact wp] ∧
+    row_congVerum_as.map (instOuter LAct [wp, wpp]) = [eqFactB wpp wp, verumFact wp] ∧
     instOuter LAct [wp, wpp] row_congVerum_c = verumFact wpp := by
   have hes : ∀ e ∈ ([wp, wpp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_nil _⟩⟩)
   unfold row_congVerum_as row_congVerum_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congFalsum` — `“p' p. …”`, `m = 2` -/
 
-noncomputable def row_congFalsum_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 1]) Pfalsum]
+noncomputable def row_congFalsum_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 1]) Pfalsum]
 noncomputable def row_congFalsum_c : V := subst LAct (listToVec [bv 0]) Pfalsum
 
 theorem quote_row_congFalsum : (⌜Semiformula.lMap emb congFalsumB⌝ : V) = impChain LAct row_congFalsum_as row_congFalsum_c := by
-  unfold congFalsumB row_congFalsum_as row_congFalsum_c Peq Pfalsum
+  unfold congFalsumB row_congFalsum_as row_congFalsum_c PeqB Pfalsum
   all_goals row_shapeB
 
 lemma isSemiformula_congFalsum_as : ∀ A ∈ row_congFalsum_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
   unfold row_congFalsum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congFalsum_c : IsSemiformula LAct ((2 : ℕ) : V) row_congFalsum_c := by
   unfold row_congFalsum_c
   exact isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB)
 
 /-- `congFalsum` at the witnesses `[wp, wpp]` (the DSL variables right-to-left). -/
 lemma inst_congFalsum {wp wpp : V} (hwp : IsSemiterm LAct 0 wp) (hwpp : IsSemiterm LAct 0 wpp) :
-    row_congFalsum_as.map (instOuter LAct [wp, wpp]) = [eqFact wpp wp, falsumFact wp] ∧
+    row_congFalsum_as.map (instOuter LAct [wp, wpp]) = [eqFactB wpp wp, falsumFact wp] ∧
     instOuter LAct [wp, wpp] row_congFalsum_c = falsumFact wpp := by
   have hes : ∀ e ∈ ([wp, wpp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_nil _⟩⟩)
   unfold row_congFalsum_as row_congFalsum_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congFunc` — `“v' t' v f k t. …”`, `m = 6` -/
 
-noncomputable def row_congFunc_as : List V := [subst LAct (listToVec [bv 1, bv 5]) Peq, subst LAct (listToVec [bv 0, bv 2]) Peq, subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Pfunc]
+noncomputable def row_congFunc_as : List V := [subst LAct (listToVec [bv 1, bv 5]) PeqB, subst LAct (listToVec [bv 0, bv 2]) PeqB, subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Pfunc]
 noncomputable def row_congFunc_c : V := subst LAct (listToVec [bv 1, bv 4, bv 3, bv 0]) Pfunc
 
 theorem quote_row_congFunc : (⌜Semiformula.lMap emb congFuncB⌝ : V) = impChain LAct row_congFunc_as row_congFunc_c := by
-  unfold congFuncB row_congFunc_as row_congFunc_c Peq Pfunc
+  unfold congFuncB row_congFunc_as row_congFunc_c PeqB Pfunc
   all_goals row_shapeB
 
 lemma isSemiformula_congFunc_as : ∀ A ∈ row_congFunc_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_congFunc_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_congFunc_c : IsSemiformula LAct ((6 : ℕ) : V) row_congFunc_c := by
   unfold row_congFunc_c
   exact isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB)
 
 /-- `congFunc` at the witnesses `[wt, wk, wf, wv, wtp, wvp]` (the DSL variables right-to-left). -/
 lemma inst_congFunc {wt wk wf wv wtp wvp : V} (hwt : IsSemiterm LAct 0 wt) (hwk : IsSemiterm LAct 0 wk) (hwf : IsSemiterm LAct 0 wf) (hwv : IsSemiterm LAct 0 wv) (hwtp : IsSemiterm LAct 0 wtp) (hwvp : IsSemiterm LAct 0 wvp) :
-    row_congFunc_as.map (instOuter LAct [wt, wk, wf, wv, wtp, wvp]) = [eqFact wtp wt, eqFact wvp wv, funcFact wt wk wf wv] ∧
+    row_congFunc_as.map (instOuter LAct [wt, wk, wf, wv, wtp, wvp]) = [eqFactB wtp wt, eqFactB wvp wv, funcFact wt wk wf wv] ∧
     instOuter LAct [wt, wk, wf, wv, wtp, wvp] row_congFunc_c = funcFact wtp wk wf wvp := by
   have hes : ∀ e ∈ ([wt, wk, wf, wv, wtp, wvp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwf, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_congFunc_as row_congFunc_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congBvar` — `“t' t z. …”`, `m = 3` -/
 
-noncomputable def row_congBvar_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 1, bv 2]) Pbvar]
+noncomputable def row_congBvar_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 1, bv 2]) Pbvar]
 noncomputable def row_congBvar_c : V := subst LAct (listToVec [bv 0, bv 2]) Pbvar
 
 theorem quote_row_congBvar : (⌜Semiformula.lMap emb congBvarB⌝ : V) = impChain LAct row_congBvar_as row_congBvar_c := by
-  unfold congBvarB row_congBvar_as row_congBvar_c Pbvar Peq
+  unfold congBvarB row_congBvar_as row_congBvar_c Pbvar PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_congBvar_as : ∀ A ∈ row_congBvar_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congBvar_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congBvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_congBvar_c := by
   unfold row_congBvar_c
   exact isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB)
 
 /-- `congBvar` at the witnesses `[wz, wt, wtp]` (the DSL variables right-to-left). -/
 lemma inst_congBvar {wz wt wtp : V} (hwz : IsSemiterm LAct 0 wz) (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) :
-    row_congBvar_as.map (instOuter LAct [wz, wt, wtp]) = [eqFact wtp wt, bvarFact wt wz] ∧
+    row_congBvar_as.map (instOuter LAct [wz, wt, wtp]) = [eqFactB wtp wt, bvarFact wt wz] ∧
     instOuter LAct [wz, wt, wtp] row_congBvar_c = bvarFact wtp wz := by
   have hes : ∀ e ∈ ([wz, wt, wtp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwz, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congBvar_as row_congBvar_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congFvar` — `“t' t x. …”`, `m = 3` -/
 
-noncomputable def row_congFvar_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 1, bv 2]) Pfvar]
+noncomputable def row_congFvar_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 1, bv 2]) Pfvar]
 noncomputable def row_congFvar_c : V := subst LAct (listToVec [bv 0, bv 2]) Pfvar
 
 theorem quote_row_congFvar : (⌜Semiformula.lMap emb congFvarB⌝ : V) = impChain LAct row_congFvar_as row_congFvar_c := by
-  unfold congFvarB row_congFvar_as row_congFvar_c Peq Pfvar
+  unfold congFvarB row_congFvar_as row_congFvar_c PeqB Pfvar
   all_goals row_shapeB
 
 lemma isSemiformula_congFvar_as : ∀ A ∈ row_congFvar_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congFvar_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congFvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_congFvar_c := by
   unfold row_congFvar_c
   exact isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB)
 
 /-- `congFvar` at the witnesses `[wx, wt, wtp]` (the DSL variables right-to-left). -/
 lemma inst_congFvar {wx wt wtp : V} (hwx : IsSemiterm LAct 0 wx) (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) :
-    row_congFvar_as.map (instOuter LAct [wx, wt, wtp]) = [eqFact wtp wt, fvarFact wt wx] ∧
+    row_congFvar_as.map (instOuter LAct [wx, wt, wtp]) = [eqFactB wtp wt, fvarFact wt wx] ∧
     instOuter LAct [wx, wt, wtp] row_congFvar_c = fvarFact wtp wx := by
   have hes : ∀ e ∈ ([wx, wt, wtp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congFvar_as row_congFvar_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congAdj` — `“w' v' t' w v t. …”`, `m = 6` -/
 
-noncomputable def row_congAdj_as : List V := [subst LAct (listToVec [bv 0, bv 3]) Peq, subst LAct (listToVec [bv 2, bv 5]) Peq, subst LAct (listToVec [bv 1, bv 4]) Peq, subst LAct (listToVec [bv 3, bv 5, bv 4]) Padjoin]
+noncomputable def row_congAdj_as : List V := [subst LAct (listToVec [bv 0, bv 3]) PeqB, subst LAct (listToVec [bv 2, bv 5]) PeqB, subst LAct (listToVec [bv 1, bv 4]) PeqB, subst LAct (listToVec [bv 3, bv 5, bv 4]) Padjoin]
 noncomputable def row_congAdj_c : V := subst LAct (listToVec [bv 0, bv 2, bv 1]) Padjoin
 
 theorem quote_row_congAdj : (⌜Semiformula.lMap emb congAdjB⌝ : V) = impChain LAct row_congAdj_as row_congAdj_c := by
-  unfold congAdjB row_congAdj_as row_congAdj_c Padjoin Peq
+  unfold congAdjB row_congAdj_as row_congAdj_c Padjoin PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_congAdj_as : ∀ A ∈ row_congAdj_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_congAdj_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_congAdj_c : IsSemiformula LAct ((6 : ℕ) : V) row_congAdj_c := by
   unfold row_congAdj_c
   exact isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB)
 
 /-- `congAdj` at the witnesses `[wt, wv, ww, wtp, wvp, wwp]` (the DSL variables right-to-left). -/
 lemma inst_congAdj {wt wv ww wtp wvp wwp : V} (hwt : IsSemiterm LAct 0 wt) (hwv : IsSemiterm LAct 0 wv) (hww : IsSemiterm LAct 0 ww) (hwtp : IsSemiterm LAct 0 wtp) (hwvp : IsSemiterm LAct 0 wvp) (hwwp : IsSemiterm LAct 0 wwp) :
-    row_congAdj_as.map (instOuter LAct [wt, wv, ww, wtp, wvp, wwp]) = [eqFact wwp ww, eqFact wtp wt, eqFact wvp wv, adjFact ww wt wv] ∧
+    row_congAdj_as.map (instOuter LAct [wt, wv, ww, wtp, wvp, wwp]) = [eqFactB wwp ww, eqFactB wtp wt, eqFactB wvp wv, adjFact ww wt wv] ∧
     instOuter LAct [wt, wv, ww, wtp, wvp, wwp] row_congAdj_c = adjFact wwp wtp wvp := by
   have hes : ∀ e ∈ ([wt, wv, ww, wtp, wvp, wwp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_cons.mpr ⟨hwwp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_congAdj_as row_congAdj_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congLen` — `“y x l. …”`, `m = 3` -/
 
-noncomputable def row_congLen_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 2, bv 1]) PflenG]
+noncomputable def row_congLen_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 2, bv 1]) PflenG]
 noncomputable def row_congLen_c : V := subst LAct (listToVec [bv 2, bv 0]) PflenG
 
 theorem quote_row_congLen : (⌜Semiformula.lMap emb congLenB⌝ : V) = impChain LAct row_congLen_as row_congLen_c := by
-  unfold congLenB row_congLen_as row_congLen_c Peq PflenG
+  unfold congLenB row_congLen_as row_congLen_c PeqB PflenG
   all_goals row_shapeB
 
 lemma isSemiformula_congLen_as : ∀ A ∈ row_congLen_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congLen_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congLen_c : IsSemiformula LAct ((3 : ℕ) : V) row_congLen_c := by
   unfold row_congLen_c
   exact isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB)
 
 /-- `congLen` at the witnesses `[wl, wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_congLen {wl wx wy : V} (hwl : IsSemiterm LAct 0 wl) (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_congLen_as.map (instOuter LAct [wl, wx, wy]) = [eqFact wy wx, lenFact wl wx] ∧
+    row_congLen_as.map (instOuter LAct [wl, wx, wy]) = [eqFactB wy wx, lenFact wl wx] ∧
     instOuter LAct [wl, wx, wy] row_congLen_c = lenFact wl wy := by
   have hes : ∀ e ∈ ([wl, wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congLen_as row_congLen_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congTLen` — `“y x l. …”`, `m = 3` -/
 
-noncomputable def row_congTLen_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 2, bv 1]) PtlenG]
+noncomputable def row_congTLen_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 2, bv 1]) PtlenG]
 noncomputable def row_congTLen_c : V := subst LAct (listToVec [bv 2, bv 0]) PtlenG
 
 theorem quote_row_congTLen : (⌜Semiformula.lMap emb congTLenB⌝ : V) = impChain LAct row_congTLen_as row_congTLen_c := by
-  unfold congTLenB row_congTLen_as row_congTLen_c Peq PtlenG
+  unfold congTLenB row_congTLen_as row_congTLen_c PeqB PtlenG
   all_goals row_shapeB
 
 lemma isSemiformula_congTLen_as : ∀ A ∈ row_congTLen_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congTLen_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congTLen_c : IsSemiformula LAct ((3 : ℕ) : V) row_congTLen_c := by
   unfold row_congTLen_c
   exact isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB)
 
 /-- `congTLen` at the witnesses `[wl, wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_congTLen {wl wx wy : V} (hwl : IsSemiterm LAct 0 wl) (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_congTLen_as.map (instOuter LAct [wl, wx, wy]) = [eqFact wy wx, tlenFact wl wx] ∧
+    row_congTLen_as.map (instOuter LAct [wl, wx, wy]) = [eqFactB wy wx, tlenFact wl wx] ∧
     instOuter LAct [wl, wx, wy] row_congTLen_c = tlenFact wl wy := by
   have hes : ∀ e ∈ ([wl, wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congTLen_as row_congTLen_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congLenNum` — `“l' l y. …”`, `m = 3` -/
 
-noncomputable def row_congLenNum_as : List V := [subst LAct (listToVec [bv 1, bv 0]) Peq, subst LAct (listToVec [bv 1, bv 2]) PflenG]
+noncomputable def row_congLenNum_as : List V := [subst LAct (listToVec [bv 1, bv 0]) PeqB, subst LAct (listToVec [bv 1, bv 2]) PflenG]
 noncomputable def row_congLenNum_c : V := subst LAct (listToVec [bv 0, bv 2]) PflenG
 
 theorem quote_row_congLenNum : (⌜Semiformula.lMap emb congLenNumB⌝ : V) = impChain LAct row_congLenNum_as row_congLenNum_c := by
-  unfold congLenNumB row_congLenNum_as row_congLenNum_c Peq PflenG
+  unfold congLenNumB row_congLenNum_as row_congLenNum_c PeqB PflenG
   all_goals row_shapeB
 
 lemma isSemiformula_congLenNum_as : ∀ A ∈ row_congLenNum_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congLenNum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congLenNum_c : IsSemiformula LAct ((3 : ℕ) : V) row_congLenNum_c := by
   unfold row_congLenNum_c
   exact isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB)
 
 /-- `congLenNum` at the witnesses `[wy, wl, wlp]` (the DSL variables right-to-left). -/
 lemma inst_congLenNum {wy wl wlp : V} (hwy : IsSemiterm LAct 0 wy) (hwl : IsSemiterm LAct 0 wl) (hwlp : IsSemiterm LAct 0 wlp) :
-    row_congLenNum_as.map (instOuter LAct [wy, wl, wlp]) = [eqFact wl wlp, lenFact wl wy] ∧
+    row_congLenNum_as.map (instOuter LAct [wy, wl, wlp]) = [eqFactB wl wlp, lenFact wl wy] ∧
     instOuter LAct [wy, wl, wlp] row_congLenNum_c = lenFact wlp wy := by
   have hes : ∀ e ∈ ([wy, wl, wlp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwlp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congLenNum_as row_congLenNum_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congTLenNum` — `“l' l t. …”`, `m = 3` -/
 
-noncomputable def row_congTLenNum_as : List V := [subst LAct (listToVec [bv 1, bv 0]) Peq, subst LAct (listToVec [bv 1, bv 2]) PtlenG]
+noncomputable def row_congTLenNum_as : List V := [subst LAct (listToVec [bv 1, bv 0]) PeqB, subst LAct (listToVec [bv 1, bv 2]) PtlenG]
 noncomputable def row_congTLenNum_c : V := subst LAct (listToVec [bv 0, bv 2]) PtlenG
 
 theorem quote_row_congTLenNum : (⌜Semiformula.lMap emb congTLenNumB⌝ : V) = impChain LAct row_congTLenNum_as row_congTLenNum_c := by
-  unfold congTLenNumB row_congTLenNum_as row_congTLenNum_c Peq PtlenG
+  unfold congTLenNumB row_congTLenNum_as row_congTLenNum_c PeqB PtlenG
   all_goals row_shapeB
 
 lemma isSemiformula_congTLenNum_as : ∀ A ∈ row_congTLenNum_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congTLenNum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congTLenNum_c : IsSemiformula LAct ((3 : ℕ) : V) row_congTLenNum_c := by
   unfold row_congTLenNum_c
   exact isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB)
 
 /-- `congTLenNum` at the witnesses `[wt, wl, wlp]` (the DSL variables right-to-left). -/
 lemma inst_congTLenNum {wt wl wlp : V} (hwt : IsSemiterm LAct 0 wt) (hwl : IsSemiterm LAct 0 wl) (hwlp : IsSemiterm LAct 0 wlp) :
-    row_congTLenNum_as.map (instOuter LAct [wt, wl, wlp]) = [eqFact wl wlp, tlenFact wl wt] ∧
+    row_congTLenNum_as.map (instOuter LAct [wt, wl, wlp]) = [eqFactB wl wlp, tlenFact wl wt] ∧
     instOuter LAct [wt, wl, wlp] row_congTLenNum_c = tlenFact wlp wt := by
   have hes : ∀ e ∈ ([wt, wl, wlp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwlp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congTLenNum_as row_congTLenNum_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congMem` — `“s y x. …”`, `m = 3` -/
 
-noncomputable def row_congMem_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Peq, subst LAct (listToVec [bv 2, bv 0]) Pmem]
+noncomputable def row_congMem_as : List V := [subst LAct (listToVec [bv 1, bv 2]) PeqB, subst LAct (listToVec [bv 2, bv 0]) Pmem]
 noncomputable def row_congMem_c : V := subst LAct (listToVec [bv 1, bv 0]) Pmem
 
 theorem quote_row_congMem : (⌜Semiformula.lMap emb congMemB⌝ : V) = impChain LAct row_congMem_as row_congMem_c := by
-  unfold congMemB row_congMem_as row_congMem_c Peq Pmem
+  unfold congMemB row_congMem_as row_congMem_c PeqB Pmem
   all_goals row_shapeB
 
 lemma isSemiformula_congMem_as : ∀ A ∈ row_congMem_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congMem_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congMem_c : IsSemiformula LAct ((3 : ℕ) : V) row_congMem_c := by
   unfold row_congMem_c
   exact isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB)
 
 /-- `congMem` at the witnesses `[wx, wy, ws]` (the DSL variables right-to-left). -/
 lemma inst_congMem {wx wy ws : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) (hws : IsSemiterm LAct 0 ws) :
-    row_congMem_as.map (instOuter LAct [wx, wy, ws]) = [eqFact wy wx, memFact wx ws] ∧
+    row_congMem_as.map (instOuter LAct [wx, wy, ws]) = [eqFactB wy wx, memFact wx ws] ∧
     instOuter LAct [wx, wy, ws] row_congMem_c = memFact wy ws := by
   have hes : ∀ e ∈ ([wx, wy, ws] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congMem_as row_congMem_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congMemSet` — `“s' s x. …”`, `m = 3` -/
 
-noncomputable def row_congMemSet_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 2, bv 1]) Pmem]
+noncomputable def row_congMemSet_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 2, bv 1]) Pmem]
 noncomputable def row_congMemSet_c : V := subst LAct (listToVec [bv 2, bv 0]) Pmem
 
 theorem quote_row_congMemSet : (⌜Semiformula.lMap emb congMemSetB⌝ : V) = impChain LAct row_congMemSet_as row_congMemSet_c := by
-  unfold congMemSetB row_congMemSet_as row_congMemSet_c Peq Pmem
+  unfold congMemSetB row_congMemSet_as row_congMemSet_c PeqB Pmem
   all_goals row_shapeB
 
 lemma isSemiformula_congMemSet_as : ∀ A ∈ row_congMemSet_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congMemSet_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congMemSet_c : IsSemiformula LAct ((3 : ℕ) : V) row_congMemSet_c := by
   unfold row_congMemSet_c
   exact isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB)
 
 /-- `congMemSet` at the witnesses `[wx, ws, wsp]` (the DSL variables right-to-left). -/
 lemma inst_congMemSet {wx ws wsp : V} (hwx : IsSemiterm LAct 0 wx) (hws : IsSemiterm LAct 0 ws) (hwsp : IsSemiterm LAct 0 wsp) :
-    row_congMemSet_as.map (instOuter LAct [wx, ws, wsp]) = [eqFact wsp ws, memFact wx ws] ∧
+    row_congMemSet_as.map (instOuter LAct [wx, ws, wsp]) = [eqFactB wsp ws, memFact wx ws] ∧
     instOuter LAct [wx, ws, wsp] row_congMemSet_c = memFact wx wsp := by
   have hes : ∀ e ∈ ([wx, ws, wsp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwsp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congMemSet_as row_congMemSet_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congFstIdx` — `“t' t d. …”`, `m = 3` -/
 
-noncomputable def row_congFstIdx_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 1, bv 2]) PfstIdx]
+noncomputable def row_congFstIdx_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 1, bv 2]) PfstIdx]
 noncomputable def row_congFstIdx_c : V := subst LAct (listToVec [bv 0, bv 2]) PfstIdx
 
 theorem quote_row_congFstIdx : (⌜Semiformula.lMap emb congFstIdxB⌝ : V) = impChain LAct row_congFstIdx_as row_congFstIdx_c := by
-  unfold congFstIdxB row_congFstIdx_as row_congFstIdx_c Peq PfstIdx fstIdxS
+  unfold congFstIdxB row_congFstIdx_as row_congFstIdx_c PeqB PfstIdx fstIdxS
   all_goals row_shapeB
 
 lemma isSemiformula_congFstIdx_as : ∀ A ∈ row_congFstIdx_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congFstIdx_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congFstIdx_c : IsSemiformula LAct ((3 : ℕ) : V) row_congFstIdx_c := by
   unfold row_congFstIdx_c
   exact isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB)
 
 /-- `congFstIdx` at the witnesses `[wd, wt, wtp]` (the DSL variables right-to-left). -/
 lemma inst_congFstIdx {wd wt wtp : V} (hwd : IsSemiterm LAct 0 wd) (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) :
-    row_congFstIdx_as.map (instOuter LAct [wd, wt, wtp]) = [eqFact wtp wt, fstIdxFact wt wd] ∧
+    row_congFstIdx_as.map (instOuter LAct [wd, wt, wtp]) = [eqFactB wtp wt, fstIdxFact wt wd] ∧
     instOuter LAct [wd, wt, wtp] row_congFstIdx_c = fstIdxFact wtp wd := by
   have hes : ∀ e ∈ ([wd, wt, wtp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwd, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congFstIdx_as row_congFstIdx_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfstIdx (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfstIdx (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfstIdx (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfstIdx (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congSubsetL` — `“u t' t. …”`, `m = 3` -/
 
-noncomputable def row_congSubsetL_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Peq, subst LAct (listToVec [bv 2, bv 0]) Psubset]
+noncomputable def row_congSubsetL_as : List V := [subst LAct (listToVec [bv 1, bv 2]) PeqB, subst LAct (listToVec [bv 2, bv 0]) Psubset]
 noncomputable def row_congSubsetL_c : V := subst LAct (listToVec [bv 1, bv 0]) Psubset
 
 theorem quote_row_congSubsetL : (⌜Semiformula.lMap emb congSubsetLB⌝ : V) = impChain LAct row_congSubsetL_as row_congSubsetL_c := by
-  unfold congSubsetLB row_congSubsetL_as row_congSubsetL_c Peq Psubset
+  unfold congSubsetLB row_congSubsetL_as row_congSubsetL_c PeqB Psubset
   all_goals row_shapeB
 
 lemma isSemiformula_congSubsetL_as : ∀ A ∈ row_congSubsetL_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congSubsetL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congSubsetL_c : IsSemiformula LAct ((3 : ℕ) : V) row_congSubsetL_c := by
   unfold row_congSubsetL_c
   exact isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB)
 
 /-- `congSubsetL` at the witnesses `[wt, wtp, wu]` (the DSL variables right-to-left). -/
 lemma inst_congSubsetL {wt wtp wu : V} (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) (hwu : IsSemiterm LAct 0 wu) :
-    row_congSubsetL_as.map (instOuter LAct [wt, wtp, wu]) = [eqFact wtp wt, subsetFact wt wu] ∧
+    row_congSubsetL_as.map (instOuter LAct [wt, wtp, wu]) = [eqFactB wtp wt, subsetFact wt wu] ∧
     instOuter LAct [wt, wtp, wu] row_congSubsetL_c = subsetFact wtp wu := by
   have hes : ∀ e ∈ ([wt, wtp, wu] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_cons.mpr ⟨hwu, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congSubsetL_as row_congSubsetL_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congSubsetR` — `“t' t s. …”`, `m = 3` -/
 
-noncomputable def row_congSubsetR_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 2, bv 1]) Psubset]
+noncomputable def row_congSubsetR_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 2, bv 1]) Psubset]
 noncomputable def row_congSubsetR_c : V := subst LAct (listToVec [bv 2, bv 0]) Psubset
 
 theorem quote_row_congSubsetR : (⌜Semiformula.lMap emb congSubsetRB⌝ : V) = impChain LAct row_congSubsetR_as row_congSubsetR_c := by
-  unfold congSubsetRB row_congSubsetR_as row_congSubsetR_c Peq Psubset
+  unfold congSubsetRB row_congSubsetR_as row_congSubsetR_c PeqB Psubset
   all_goals row_shapeB
 
 lemma isSemiformula_congSubsetR_as : ∀ A ∈ row_congSubsetR_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congSubsetR_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congSubsetR_c : IsSemiformula LAct ((3 : ℕ) : V) row_congSubsetR_c := by
   unfold row_congSubsetR_c
   exact isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB)
 
 /-- `congSubsetR` at the witnesses `[ws, wt, wtp]` (the DSL variables right-to-left). -/
 lemma inst_congSubsetR {ws wt wtp : V} (hws : IsSemiterm LAct 0 ws) (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) :
-    row_congSubsetR_as.map (instOuter LAct [ws, wt, wtp]) = [eqFact wtp wt, subsetFact ws wt] ∧
+    row_congSubsetR_as.map (instOuter LAct [ws, wt, wtp]) = [eqFactB wtp wt, subsetFact ws wt] ∧
     instOuter LAct [ws, wt, wtp] row_congSubsetR_c = subsetFact ws wtp := by
   have hes : ∀ e ∈ ([ws, wt, wtp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congSubsetR_as row_congSubsetR_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congSetShiftL` — `“s t' t. …”`, `m = 3` -/
 
-noncomputable def row_congSetShiftL_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Peq, subst LAct (listToVec [bv 2, bv 0]) PsetShiftG]
+noncomputable def row_congSetShiftL_as : List V := [subst LAct (listToVec [bv 1, bv 2]) PeqB, subst LAct (listToVec [bv 2, bv 0]) PsetShiftG]
 noncomputable def row_congSetShiftL_c : V := subst LAct (listToVec [bv 1, bv 0]) PsetShiftG
 
 theorem quote_row_congSetShiftL : (⌜Semiformula.lMap emb congSetShiftLB⌝ : V) = impChain LAct row_congSetShiftL_as row_congSetShiftL_c := by
-  unfold congSetShiftLB row_congSetShiftL_as row_congSetShiftL_c Peq PsetShiftG
+  unfold congSetShiftLB row_congSetShiftL_as row_congSetShiftL_c PeqB PsetShiftG
   all_goals row_shapeB
 
 lemma isSemiformula_congSetShiftL_as : ∀ A ∈ row_congSetShiftL_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congSetShiftL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congSetShiftL_c : IsSemiformula LAct ((3 : ℕ) : V) row_congSetShiftL_c := by
   unfold row_congSetShiftL_c
   exact isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB)
 
 /-- `congSetShiftL` at the witnesses `[wt, wtp, ws]` (the DSL variables right-to-left). -/
 lemma inst_congSetShiftL {wt wtp ws : V} (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) (hws : IsSemiterm LAct 0 ws) :
-    row_congSetShiftL_as.map (instOuter LAct [wt, wtp, ws]) = [eqFact wtp wt, setShiftFact wt ws] ∧
+    row_congSetShiftL_as.map (instOuter LAct [wt, wtp, ws]) = [eqFactB wtp wt, setShiftFact wt ws] ∧
     instOuter LAct [wt, wtp, ws] row_congSetShiftL_c = setShiftFact wtp ws := by
   have hes : ∀ e ∈ ([wt, wtp, ws] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congSetShiftL_as row_congSetShiftL_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congSetShiftR` — `“s' s t. …”`, `m = 3` -/
 
-noncomputable def row_congSetShiftR_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 2, bv 1]) PsetShiftG]
+noncomputable def row_congSetShiftR_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 2, bv 1]) PsetShiftG]
 noncomputable def row_congSetShiftR_c : V := subst LAct (listToVec [bv 2, bv 0]) PsetShiftG
 
 theorem quote_row_congSetShiftR : (⌜Semiformula.lMap emb congSetShiftRB⌝ : V) = impChain LAct row_congSetShiftR_as row_congSetShiftR_c := by
-  unfold congSetShiftRB row_congSetShiftR_as row_congSetShiftR_c Peq PsetShiftG
+  unfold congSetShiftRB row_congSetShiftR_as row_congSetShiftR_c PeqB PsetShiftG
   all_goals row_shapeB
 
 lemma isSemiformula_congSetShiftR_as : ∀ A ∈ row_congSetShiftR_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congSetShiftR_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congSetShiftR_c : IsSemiformula LAct ((3 : ℕ) : V) row_congSetShiftR_c := by
   unfold row_congSetShiftR_c
   exact isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB)
 
 /-- `congSetShiftR` at the witnesses `[wt, ws, wsp]` (the DSL variables right-to-left). -/
 lemma inst_congSetShiftR {wt ws wsp : V} (hwt : IsSemiterm LAct 0 wt) (hws : IsSemiterm LAct 0 ws) (hwsp : IsSemiterm LAct 0 wsp) :
-    row_congSetShiftR_as.map (instOuter LAct [wt, ws, wsp]) = [eqFact wsp ws, setShiftFact wt ws] ∧
+    row_congSetShiftR_as.map (instOuter LAct [wt, ws, wsp]) = [eqFactB wsp ws, setShiftFact wt ws] ∧
     instOuter LAct [wt, ws, wsp] row_congSetShiftR_c = setShiftFact wt wsp := by
   have hes : ∀ e ∈ ([wt, ws, wsp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwsp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congSetShiftR_as row_congSetShiftR_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congShiftL` — `“x y' y. …”`, `m = 3` -/
 
-noncomputable def row_congShiftL_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Peq, subst LAct (listToVec [bv 2, bv 0]) PshiftG]
+noncomputable def row_congShiftL_as : List V := [subst LAct (listToVec [bv 1, bv 2]) PeqB, subst LAct (listToVec [bv 2, bv 0]) PshiftG]
 noncomputable def row_congShiftL_c : V := subst LAct (listToVec [bv 1, bv 0]) PshiftG
 
 theorem quote_row_congShiftL : (⌜Semiformula.lMap emb congShiftLB⌝ : V) = impChain LAct row_congShiftL_as row_congShiftL_c := by
-  unfold congShiftLB row_congShiftL_as row_congShiftL_c Peq PshiftG
+  unfold congShiftLB row_congShiftL_as row_congShiftL_c PeqB PshiftG
   all_goals row_shapeB
 
 lemma isSemiformula_congShiftL_as : ∀ A ∈ row_congShiftL_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congShiftL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PshiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PshiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congShiftL_c : IsSemiformula LAct ((3 : ℕ) : V) row_congShiftL_c := by
   unfold row_congShiftL_c
   exact isSemiformula_substRow isSemiformula_PshiftG _ (by rfl) (by row_entriesB)
 
 /-- `congShiftL` at the witnesses `[wy, wyp, wx]` (the DSL variables right-to-left). -/
 lemma inst_congShiftL {wy wyp wx : V} (hwy : IsSemiterm LAct 0 wy) (hwyp : IsSemiterm LAct 0 wyp) (hwx : IsSemiterm LAct 0 wx) :
-    row_congShiftL_as.map (instOuter LAct [wy, wyp, wx]) = [eqFact wyp wy, shiftFact wy wx] ∧
+    row_congShiftL_as.map (instOuter LAct [wy, wyp, wx]) = [eqFactB wyp wy, shiftFact wy wx] ∧
     instOuter LAct [wy, wyp, wx] row_congShiftL_c = shiftFact wyp wx := by
   have hes : ∀ e ∈ ([wy, wyp, wx] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congShiftL_as row_congShiftL_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PshiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PshiftG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PshiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PshiftG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congNegL` — `“x y' y. …”`, `m = 3` -/
 
-noncomputable def row_congNegL_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Peq, subst LAct (listToVec [bv 2, bv 0]) PnegG]
+noncomputable def row_congNegL_as : List V := [subst LAct (listToVec [bv 1, bv 2]) PeqB, subst LAct (listToVec [bv 2, bv 0]) PnegG]
 noncomputable def row_congNegL_c : V := subst LAct (listToVec [bv 1, bv 0]) PnegG
 
 theorem quote_row_congNegL : (⌜Semiformula.lMap emb congNegLB⌝ : V) = impChain LAct row_congNegL_as row_congNegL_c := by
-  unfold congNegLB row_congNegL_as row_congNegL_c Peq PnegG
+  unfold congNegLB row_congNegL_as row_congNegL_c PeqB PnegG
   all_goals row_shapeB
 
 lemma isSemiformula_congNegL_as : ∀ A ∈ row_congNegL_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congNegL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PnegG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PnegG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congNegL_c : IsSemiformula LAct ((3 : ℕ) : V) row_congNegL_c := by
   unfold row_congNegL_c
   exact isSemiformula_substRow isSemiformula_PnegG _ (by rfl) (by row_entriesB)
 
 /-- `congNegL` at the witnesses `[wy, wyp, wx]` (the DSL variables right-to-left). -/
 lemma inst_congNegL {wy wyp wx : V} (hwy : IsSemiterm LAct 0 wy) (hwyp : IsSemiterm LAct 0 wyp) (hwx : IsSemiterm LAct 0 wx) :
-    row_congNegL_as.map (instOuter LAct [wy, wyp, wx]) = [eqFact wyp wy, negFact wy wx] ∧
+    row_congNegL_as.map (instOuter LAct [wy, wyp, wx]) = [eqFactB wyp wy, negFact wy wx] ∧
     instOuter LAct [wy, wyp, wx] row_congNegL_c = negFact wyp wx := by
   have hes : ∀ e ∈ ([wy, wyp, wx] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congNegL_as row_congNegL_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PnegG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PnegG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PnegG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PnegG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congSubstArg` — `“n' n w y. …”`, `m = 4` -/
 
-noncomputable def row_congSubstArg_as : List V := [subst LAct (listToVec [bv 1, bv 0]) Peq, subst LAct (listToVec [bv 3, bv 2, bv 1]) PsubstsG]
+noncomputable def row_congSubstArg_as : List V := [subst LAct (listToVec [bv 1, bv 0]) PeqB, subst LAct (listToVec [bv 3, bv 2, bv 1]) PsubstsG]
 noncomputable def row_congSubstArg_c : V := subst LAct (listToVec [bv 3, bv 2, bv 0]) PsubstsG
 
 theorem quote_row_congSubstArg : (⌜Semiformula.lMap emb congSubstArgB⌝ : V) = impChain LAct row_congSubstArg_as row_congSubstArg_c := by
-  unfold congSubstArgB row_congSubstArg_as row_congSubstArg_c Peq PsubstsG
+  unfold congSubstArgB row_congSubstArg_as row_congSubstArg_c PeqB PsubstsG
   all_goals row_shapeB
 
 lemma isSemiformula_congSubstArg_as : ∀ A ∈ row_congSubstArg_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_congSubstArg_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congSubstArg_c : IsSemiformula LAct ((4 : ℕ) : V) row_congSubstArg_c := by
   unfold row_congSubstArg_c
   exact isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB)
 
 /-- `congSubstArg` at the witnesses `[wy, ww, wn, wnp]` (the DSL variables right-to-left). -/
 lemma inst_congSubstArg {wy ww wn wnp : V} (hwy : IsSemiterm LAct 0 wy) (hww : IsSemiterm LAct 0 ww) (hwn : IsSemiterm LAct 0 wn) (hwnp : IsSemiterm LAct 0 wnp) :
-    row_congSubstArg_as.map (instOuter LAct [wy, ww, wn, wnp]) = [eqFact wn wnp, substFact wy ww wn] ∧
+    row_congSubstArg_as.map (instOuter LAct [wy, ww, wn, wnp]) = [eqFactB wn wnp, substFact wy ww wn] ∧
     instOuter LAct [wy, ww, wn, wnp] row_congSubstArg_c = substFact wy ww wnp := by
   have hes : ∀ e ∈ ([wy, ww, wn, wnp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwnp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_congSubstArg_as row_congSubstArg_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congSubstL` — `“n w y' y. …”`, `m = 4` -/
 
-noncomputable def row_congSubstL_as : List V := [subst LAct (listToVec [bv 2, bv 3]) Peq, subst LAct (listToVec [bv 3, bv 1, bv 0]) PsubstsG]
+noncomputable def row_congSubstL_as : List V := [subst LAct (listToVec [bv 2, bv 3]) PeqB, subst LAct (listToVec [bv 3, bv 1, bv 0]) PsubstsG]
 noncomputable def row_congSubstL_c : V := subst LAct (listToVec [bv 2, bv 1, bv 0]) PsubstsG
 
 theorem quote_row_congSubstL : (⌜Semiformula.lMap emb congSubstLB⌝ : V) = impChain LAct row_congSubstL_as row_congSubstL_c := by
-  unfold congSubstLB row_congSubstL_as row_congSubstL_c Peq PsubstsG
+  unfold congSubstLB row_congSubstL_as row_congSubstL_c PeqB PsubstsG
   all_goals row_shapeB
 
 lemma isSemiformula_congSubstL_as : ∀ A ∈ row_congSubstL_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_congSubstL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congSubstL_c : IsSemiformula LAct ((4 : ℕ) : V) row_congSubstL_c := by
   unfold row_congSubstL_c
   exact isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB)
 
 /-- `congSubstL` at the witnesses `[wy, wyp, ww, wn]` (the DSL variables right-to-left). -/
 lemma inst_congSubstL {wy wyp ww wn : V} (hwy : IsSemiterm LAct 0 wy) (hwyp : IsSemiterm LAct 0 wyp) (hww : IsSemiterm LAct 0 ww) (hwn : IsSemiterm LAct 0 wn) :
-    row_congSubstL_as.map (instOuter LAct [wy, wyp, ww, wn]) = [eqFact wyp wy, substFact wy ww wn] ∧
+    row_congSubstL_as.map (instOuter LAct [wy, wyp, ww, wn]) = [eqFactB wyp wy, substFact wy ww wn] ∧
     instOuter LAct [wy, wyp, ww, wn] row_congSubstL_c = substFact wyp ww wn := by
   have hes : ∀ e ∈ ([wy, wyp, ww, wn] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_congSubstL_as row_congSubstL_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congInsertL` — `“t' t x s. …”`, `m = 4` -/
 
-noncomputable def row_congInsertL_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 1, bv 2, bv 3]) Pinsert]
+noncomputable def row_congInsertL_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 1, bv 2, bv 3]) Pinsert]
 noncomputable def row_congInsertL_c : V := subst LAct (listToVec [bv 0, bv 2, bv 3]) Pinsert
 
 theorem quote_row_congInsertL : (⌜Semiformula.lMap emb congInsertLB⌝ : V) = impChain LAct row_congInsertL_as row_congInsertL_c := by
-  unfold congInsertLB row_congInsertL_as row_congInsertL_c Peq Pinsert
+  unfold congInsertLB row_congInsertL_as row_congInsertL_c PeqB Pinsert
   all_goals row_shapeB
 
 lemma isSemiformula_congInsertL_as : ∀ A ∈ row_congInsertL_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_congInsertL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congInsertL_c : IsSemiformula LAct ((4 : ℕ) : V) row_congInsertL_c := by
   unfold row_congInsertL_c
   exact isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB)
 
 /-- `congInsertL` at the witnesses `[ws, wx, wt, wtp]` (the DSL variables right-to-left). -/
 lemma inst_congInsertL {ws wx wt wtp : V} (hws : IsSemiterm LAct 0 ws) (hwx : IsSemiterm LAct 0 wx) (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) :
-    row_congInsertL_as.map (instOuter LAct [ws, wx, wt, wtp]) = [eqFact wtp wt, insFact wt wx ws] ∧
+    row_congInsertL_as.map (instOuter LAct [ws, wx, wt, wtp]) = [eqFactB wtp wt, insFact wt wx ws] ∧
     instOuter LAct [ws, wx, wt, wtp] row_congInsertL_c = insFact wtp wx ws := by
   have hes : ∀ e ∈ ([ws, wx, wt, wtp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_congInsertL_as row_congInsertL_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congInsertS` — `“s' s x t. …”`, `m = 4` -/
 
-noncomputable def row_congInsertS_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 3, bv 2, bv 1]) Pinsert]
+noncomputable def row_congInsertS_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 3, bv 2, bv 1]) Pinsert]
 noncomputable def row_congInsertS_c : V := subst LAct (listToVec [bv 3, bv 2, bv 0]) Pinsert
 
 theorem quote_row_congInsertS : (⌜Semiformula.lMap emb congInsertSB⌝ : V) = impChain LAct row_congInsertS_as row_congInsertS_c := by
-  unfold congInsertSB row_congInsertS_as row_congInsertS_c Peq Pinsert
+  unfold congInsertSB row_congInsertS_as row_congInsertS_c PeqB Pinsert
   all_goals row_shapeB
 
 lemma isSemiformula_congInsertS_as : ∀ A ∈ row_congInsertS_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_congInsertS_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congInsertS_c : IsSemiformula LAct ((4 : ℕ) : V) row_congInsertS_c := by
   unfold row_congInsertS_c
   exact isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB)
 
 /-- `congInsertS` at the witnesses `[wt, wx, ws, wsp]` (the DSL variables right-to-left). -/
 lemma inst_congInsertS {wt wx ws wsp : V} (hwt : IsSemiterm LAct 0 wt) (hwx : IsSemiterm LAct 0 wx) (hws : IsSemiterm LAct 0 ws) (hwsp : IsSemiterm LAct 0 wsp) :
-    row_congInsertS_as.map (instOuter LAct [wt, wx, ws, wsp]) = [eqFact wsp ws, insFact wt wx ws] ∧
+    row_congInsertS_as.map (instOuter LAct [wt, wx, ws, wsp]) = [eqFactB wsp ws, insFact wt wx ws] ∧
     instOuter LAct [wt, wx, ws, wsp] row_congInsertS_c = insFact wt wx wsp := by
   have hes : ∀ e ∈ ([wt, wx, ws, wsp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwsp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_congInsertS_as row_congInsertS_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congSetLenR` — `“l s' s. …”`, `m = 3` -/
 
-noncomputable def row_congSetLenR_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Peq, subst LAct (listToVec [bv 0, bv 2]) PsetLen]
+noncomputable def row_congSetLenR_as : List V := [subst LAct (listToVec [bv 1, bv 2]) PeqB, subst LAct (listToVec [bv 0, bv 2]) PsetLen]
 noncomputable def row_congSetLenR_c : V := subst LAct (listToVec [bv 0, bv 1]) PsetLen
 
 theorem quote_row_congSetLenR : (⌜Semiformula.lMap emb congSetLenRB⌝ : V) = impChain LAct row_congSetLenR_as row_congSetLenR_c := by
-  unfold congSetLenRB row_congSetLenR_as row_congSetLenR_c Peq PsetLen
+  unfold congSetLenRB row_congSetLenR_as row_congSetLenR_c PeqB PsetLen
   all_goals row_shapeB
 
 lemma isSemiformula_congSetLenR_as : ∀ A ∈ row_congSetLenR_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_congSetLenR_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congSetLenR_c : IsSemiformula LAct ((3 : ℕ) : V) row_congSetLenR_c := by
   unfold row_congSetLenR_c
   exact isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB)
 
 /-- `congSetLenR` at the witnesses `[ws, wsp, wl]` (the DSL variables right-to-left). -/
 lemma inst_congSetLenR {ws wsp wl : V} (hws : IsSemiterm LAct 0 ws) (hwsp : IsSemiterm LAct 0 wsp) (hwl : IsSemiterm LAct 0 wl) :
-    row_congSetLenR_as.map (instOuter LAct [ws, wsp, wl]) = [eqFact wsp ws, setLenFact wl ws] ∧
+    row_congSetLenR_as.map (instOuter LAct [ws, wsp, wl]) = [eqFactB wsp ws, setLenFact wl ws] ∧
     instOuter LAct [ws, wsp, wl] row_congSetLenR_c = setLenFact wl wsp := by
   have hes : ∀ e ∈ ([ws, wsp, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwsp, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congSetLenR_as row_congSetLenR_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `congIsFormulaSet` — `“s' s. …”`, `m = 2` -/
 
-noncomputable def row_congIsFormulaSet_as : List V := [subst LAct (listToVec [bv 0, bv 1]) Peq, subst LAct (listToVec [bv 1]) PfsetPi]
+noncomputable def row_congIsFormulaSet_as : List V := [subst LAct (listToVec [bv 0, bv 1]) PeqB, subst LAct (listToVec [bv 1]) PfsetPi]
 noncomputable def row_congIsFormulaSet_c : V := subst LAct (listToVec [bv 0]) PfsetSigma
 
 theorem quote_row_congIsFormulaSet : (⌜Semiformula.lMap emb congIsFormulaSetB⌝ : V) = impChain LAct row_congIsFormulaSet_as row_congIsFormulaSet_c := by
-  unfold congIsFormulaSetB row_congIsFormulaSet_as row_congIsFormulaSet_c Peq PfsetPi PfsetSigma
+  unfold congIsFormulaSetB row_congIsFormulaSet_as row_congIsFormulaSet_c PeqB PfsetPi PfsetSigma
   all_goals row_shapeB
 
 lemma isSemiformula_congIsFormulaSet_as : ∀ A ∈ row_congIsFormulaSet_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
   unfold row_congIsFormulaSet_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfsetPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfsetPi _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congIsFormulaSet_c : IsSemiformula LAct ((2 : ℕ) : V) row_congIsFormulaSet_c := by
   unfold row_congIsFormulaSet_c
   exact isSemiformula_substRow isSemiformula_PfsetSigma _ (by rfl) (by row_entriesB)
 
 /-- `congIsFormulaSet` at the witnesses `[ws, wsp]` (the DSL variables right-to-left). -/
 lemma inst_congIsFormulaSet {ws wsp : V} (hws : IsSemiterm LAct 0 ws) (hwsp : IsSemiterm LAct 0 wsp) :
-    row_congIsFormulaSet_as.map (instOuter LAct [ws, wsp]) = [eqFact wsp ws, fsetPiFact ws] ∧
+    row_congIsFormulaSet_as.map (instOuter LAct [ws, wsp]) = [eqFactB wsp ws, fsetPiFact ws] ∧
     instOuter LAct [ws, wsp] row_congIsFormulaSet_c = fsetSigmaFact wsp := by
   have hes : ∀ e ∈ ([ws, wsp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwsp, List.forall_mem_nil _⟩⟩)
   unfold row_congIsFormulaSet_as row_congIsFormulaSet_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfsetPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfsetSigma (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfsetPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfsetSigma (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
@@ -2161,173 +2160,173 @@ lemma inst_congIsFormulaSet {ws wsp : V} (hws : IsSemiterm LAct 0 ws) (hwsp : Is
 
 /-! ### `eqOfAnd` — `“y q' p' q p x. …”`, `m = 6` -/
 
-noncomputable def row_eqOfAnd_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3]) Pand, subst LAct (listToVec [bv 0, bv 2, bv 1]) Pand, subst LAct (listToVec [bv 4, bv 2]) Peq, subst LAct (listToVec [bv 3, bv 1]) Peq]
-noncomputable def row_eqOfAnd_c : V := subst LAct (listToVec [bv 5, bv 0]) Peq
+noncomputable def row_eqOfAnd_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3]) Pand, subst LAct (listToVec [bv 0, bv 2, bv 1]) Pand, subst LAct (listToVec [bv 4, bv 2]) PeqB, subst LAct (listToVec [bv 3, bv 1]) PeqB]
+noncomputable def row_eqOfAnd_c : V := subst LAct (listToVec [bv 5, bv 0]) PeqB
 
 theorem quote_row_eqOfAnd : (⌜Semiformula.lMap emb eqOfAndB⌝ : V) = impChain LAct row_eqOfAnd_as row_eqOfAnd_c := by
-  unfold eqOfAndB row_eqOfAnd_as row_eqOfAnd_c Pand Peq
+  unfold eqOfAndB row_eqOfAnd_as row_eqOfAnd_c Pand PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfAnd_as : ∀ A ∈ row_eqOfAnd_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_eqOfAnd_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_eqOfAnd_c : IsSemiformula LAct ((6 : ℕ) : V) row_eqOfAnd_c := by
   unfold row_eqOfAnd_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfAnd` at the witnesses `[wx, wp, wq, wpp, wqp, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqOfAnd {wx wp wq wpp wqp wy : V} (hwx : IsSemiterm LAct 0 wx) (hwp : IsSemiterm LAct 0 wp) (hwq : IsSemiterm LAct 0 wq) (hwpp : IsSemiterm LAct 0 wpp) (hwqp : IsSemiterm LAct 0 wqp) (hwy : IsSemiterm LAct 0 wy) :
-    row_eqOfAnd_as.map (instOuter LAct [wx, wp, wq, wpp, wqp, wy]) = [andFact wx wp wq, andFact wy wpp wqp, eqFact wp wpp, eqFact wq wqp] ∧
-    instOuter LAct [wx, wp, wq, wpp, wqp, wy] row_eqOfAnd_c = eqFact wx wy := by
+    row_eqOfAnd_as.map (instOuter LAct [wx, wp, wq, wpp, wqp, wy]) = [andFact wx wp wq, andFact wy wpp wqp, eqFactB wp wpp, eqFactB wq wqp] ∧
+    instOuter LAct [wx, wp, wq, wpp, wqp, wy] row_eqOfAnd_c = eqFactB wx wy := by
   have hes : ∀ e ∈ ([wx, wp, wq, wpp, wqp, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwq, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_cons.mpr ⟨hwqp, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_eqOfAnd_as row_eqOfAnd_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfOr` — `“y q' p' q p x. …”`, `m = 6` -/
 
-noncomputable def row_eqOfOr_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3]) Por, subst LAct (listToVec [bv 0, bv 2, bv 1]) Por, subst LAct (listToVec [bv 4, bv 2]) Peq, subst LAct (listToVec [bv 3, bv 1]) Peq]
-noncomputable def row_eqOfOr_c : V := subst LAct (listToVec [bv 5, bv 0]) Peq
+noncomputable def row_eqOfOr_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3]) Por, subst LAct (listToVec [bv 0, bv 2, bv 1]) Por, subst LAct (listToVec [bv 4, bv 2]) PeqB, subst LAct (listToVec [bv 3, bv 1]) PeqB]
+noncomputable def row_eqOfOr_c : V := subst LAct (listToVec [bv 5, bv 0]) PeqB
 
 theorem quote_row_eqOfOr : (⌜Semiformula.lMap emb eqOfOrB⌝ : V) = impChain LAct row_eqOfOr_as row_eqOfOr_c := by
-  unfold eqOfOrB row_eqOfOr_as row_eqOfOr_c Peq Por
+  unfold eqOfOrB row_eqOfOr_as row_eqOfOr_c PeqB Por
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfOr_as : ∀ A ∈ row_eqOfOr_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_eqOfOr_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_eqOfOr_c : IsSemiformula LAct ((6 : ℕ) : V) row_eqOfOr_c := by
   unfold row_eqOfOr_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfOr` at the witnesses `[wx, wp, wq, wpp, wqp, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqOfOr {wx wp wq wpp wqp wy : V} (hwx : IsSemiterm LAct 0 wx) (hwp : IsSemiterm LAct 0 wp) (hwq : IsSemiterm LAct 0 wq) (hwpp : IsSemiterm LAct 0 wpp) (hwqp : IsSemiterm LAct 0 wqp) (hwy : IsSemiterm LAct 0 wy) :
-    row_eqOfOr_as.map (instOuter LAct [wx, wp, wq, wpp, wqp, wy]) = [orFact wx wp wq, orFact wy wpp wqp, eqFact wp wpp, eqFact wq wqp] ∧
-    instOuter LAct [wx, wp, wq, wpp, wqp, wy] row_eqOfOr_c = eqFact wx wy := by
+    row_eqOfOr_as.map (instOuter LAct [wx, wp, wq, wpp, wqp, wy]) = [orFact wx wp wq, orFact wy wpp wqp, eqFactB wp wpp, eqFactB wq wqp] ∧
+    instOuter LAct [wx, wp, wq, wpp, wqp, wy] row_eqOfOr_c = eqFactB wx wy := by
   have hes : ∀ e ∈ ([wx, wp, wq, wpp, wqp, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwq, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_cons.mpr ⟨hwqp, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_eqOfOr_as row_eqOfOr_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfAll` — `“y p' p x. …”`, `m = 4` -/
 
-noncomputable def row_eqOfAll_as : List V := [subst LAct (listToVec [bv 3, bv 2]) Pall, subst LAct (listToVec [bv 0, bv 1]) Pall, subst LAct (listToVec [bv 2, bv 1]) Peq]
-noncomputable def row_eqOfAll_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_eqOfAll_as : List V := [subst LAct (listToVec [bv 3, bv 2]) Pall, subst LAct (listToVec [bv 0, bv 1]) Pall, subst LAct (listToVec [bv 2, bv 1]) PeqB]
+noncomputable def row_eqOfAll_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_eqOfAll : (⌜Semiformula.lMap emb eqOfAllB⌝ : V) = impChain LAct row_eqOfAll_as row_eqOfAll_c := by
-  unfold eqOfAllB row_eqOfAll_as row_eqOfAll_c Pall Peq
+  unfold eqOfAllB row_eqOfAll_as row_eqOfAll_c Pall PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfAll_as : ∀ A ∈ row_eqOfAll_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_eqOfAll_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_eqOfAll_c : IsSemiformula LAct ((4 : ℕ) : V) row_eqOfAll_c := by
   unfold row_eqOfAll_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfAll` at the witnesses `[wx, wp, wpp, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqOfAll {wx wp wpp wy : V} (hwx : IsSemiterm LAct 0 wx) (hwp : IsSemiterm LAct 0 wp) (hwpp : IsSemiterm LAct 0 wpp) (hwy : IsSemiterm LAct 0 wy) :
-    row_eqOfAll_as.map (instOuter LAct [wx, wp, wpp, wy]) = [allFact wx wp, allFact wy wpp, eqFact wp wpp] ∧
-    instOuter LAct [wx, wp, wpp, wy] row_eqOfAll_c = eqFact wx wy := by
+    row_eqOfAll_as.map (instOuter LAct [wx, wp, wpp, wy]) = [allFact wx wp, allFact wy wpp, eqFactB wp wpp] ∧
+    instOuter LAct [wx, wp, wpp, wy] row_eqOfAll_c = eqFactB wx wy := by
   have hes : ∀ e ∈ ([wx, wp, wpp, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_eqOfAll_as row_eqOfAll_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfExs` — `“y p' p x. …”`, `m = 4` -/
 
-noncomputable def row_eqOfExs_as : List V := [subst LAct (listToVec [bv 3, bv 2]) Pexs, subst LAct (listToVec [bv 0, bv 1]) Pexs, subst LAct (listToVec [bv 2, bv 1]) Peq]
-noncomputable def row_eqOfExs_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_eqOfExs_as : List V := [subst LAct (listToVec [bv 3, bv 2]) Pexs, subst LAct (listToVec [bv 0, bv 1]) Pexs, subst LAct (listToVec [bv 2, bv 1]) PeqB]
+noncomputable def row_eqOfExs_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_eqOfExs : (⌜Semiformula.lMap emb eqOfExsB⌝ : V) = impChain LAct row_eqOfExs_as row_eqOfExs_c := by
-  unfold eqOfExsB row_eqOfExs_as row_eqOfExs_c Peq Pexs
+  unfold eqOfExsB row_eqOfExs_as row_eqOfExs_c PeqB Pexs
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfExs_as : ∀ A ∈ row_eqOfExs_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_eqOfExs_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_eqOfExs_c : IsSemiformula LAct ((4 : ℕ) : V) row_eqOfExs_c := by
   unfold row_eqOfExs_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfExs` at the witnesses `[wx, wp, wpp, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqOfExs {wx wp wpp wy : V} (hwx : IsSemiterm LAct 0 wx) (hwp : IsSemiterm LAct 0 wp) (hwpp : IsSemiterm LAct 0 wpp) (hwy : IsSemiterm LAct 0 wy) :
-    row_eqOfExs_as.map (instOuter LAct [wx, wp, wpp, wy]) = [exsFact wx wp, exsFact wy wpp, eqFact wp wpp] ∧
-    instOuter LAct [wx, wp, wpp, wy] row_eqOfExs_c = eqFact wx wy := by
+    row_eqOfExs_as.map (instOuter LAct [wx, wp, wpp, wy]) = [exsFact wx wp, exsFact wy wpp, eqFactB wp wpp] ∧
+    instOuter LAct [wx, wp, wpp, wy] row_eqOfExs_c = eqFactB wx wy := by
   have hes : ∀ e ∈ ([wx, wp, wpp, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwpp, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_eqOfExs_as row_eqOfExs_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfRel` — `“y v' v R k x. …”`, `m = 6` -/
 
-noncomputable def row_eqOfRel_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Prel, subst LAct (listToVec [bv 0, bv 4, bv 3, bv 1]) Prel, subst LAct (listToVec [bv 2, bv 1]) Peq]
-noncomputable def row_eqOfRel_c : V := subst LAct (listToVec [bv 5, bv 0]) Peq
+noncomputable def row_eqOfRel_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Prel, subst LAct (listToVec [bv 0, bv 4, bv 3, bv 1]) Prel, subst LAct (listToVec [bv 2, bv 1]) PeqB]
+noncomputable def row_eqOfRel_c : V := subst LAct (listToVec [bv 5, bv 0]) PeqB
 
 theorem quote_row_eqOfRel : (⌜Semiformula.lMap emb eqOfRelB⌝ : V) = impChain LAct row_eqOfRel_as row_eqOfRel_c := by
-  unfold eqOfRelB row_eqOfRel_as row_eqOfRel_c Peq Prel
+  unfold eqOfRelB row_eqOfRel_as row_eqOfRel_c PeqB Prel
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfRel_as : ∀ A ∈ row_eqOfRel_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_eqOfRel_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_eqOfRel_c : IsSemiformula LAct ((6 : ℕ) : V) row_eqOfRel_c := by
   unfold row_eqOfRel_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfRel` at the witnesses `[wx, wk, wR, wv, wvp, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqOfRel {wx wk wR wv wvp wy : V} (hwx : IsSemiterm LAct 0 wx) (hwk : IsSemiterm LAct 0 wk) (hwR : IsSemiterm LAct 0 wR) (hwv : IsSemiterm LAct 0 wv) (hwvp : IsSemiterm LAct 0 wvp) (hwy : IsSemiterm LAct 0 wy) :
-    row_eqOfRel_as.map (instOuter LAct [wx, wk, wR, wv, wvp, wy]) = [relFact wx wk wR wv, relFact wy wk wR wvp, eqFact wv wvp] ∧
-    instOuter LAct [wx, wk, wR, wv, wvp, wy] row_eqOfRel_c = eqFact wx wy := by
+    row_eqOfRel_as.map (instOuter LAct [wx, wk, wR, wv, wvp, wy]) = [relFact wx wk wR wv, relFact wy wk wR wvp, eqFactB wv wvp] ∧
+    instOuter LAct [wx, wk, wR, wv, wvp, wy] row_eqOfRel_c = eqFactB wx wy := by
   have hes : ∀ e ∈ ([wx, wk, wR, wv, wvp, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwR, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_eqOfRel_as row_eqOfRel_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfNRel` — `“y v' v R k x. …”`, `m = 6` -/
 
-noncomputable def row_eqOfNRel_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Pnrel, subst LAct (listToVec [bv 0, bv 4, bv 3, bv 1]) Pnrel, subst LAct (listToVec [bv 2, bv 1]) Peq]
-noncomputable def row_eqOfNRel_c : V := subst LAct (listToVec [bv 5, bv 0]) Peq
+noncomputable def row_eqOfNRel_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Pnrel, subst LAct (listToVec [bv 0, bv 4, bv 3, bv 1]) Pnrel, subst LAct (listToVec [bv 2, bv 1]) PeqB]
+noncomputable def row_eqOfNRel_c : V := subst LAct (listToVec [bv 5, bv 0]) PeqB
 
 theorem quote_row_eqOfNRel : (⌜Semiformula.lMap emb eqOfNRelB⌝ : V) = impChain LAct row_eqOfNRel_as row_eqOfNRel_c := by
-  unfold eqOfNRelB row_eqOfNRel_as row_eqOfNRel_c Peq Pnrel
+  unfold eqOfNRelB row_eqOfNRel_as row_eqOfNRel_c PeqB Pnrel
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfNRel_as : ∀ A ∈ row_eqOfNRel_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_eqOfNRel_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_eqOfNRel_c : IsSemiformula LAct ((6 : ℕ) : V) row_eqOfNRel_c := by
   unfold row_eqOfNRel_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfNRel` at the witnesses `[wx, wk, wR, wv, wvp, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqOfNRel {wx wk wR wv wvp wy : V} (hwx : IsSemiterm LAct 0 wx) (hwk : IsSemiterm LAct 0 wk) (hwR : IsSemiterm LAct 0 wR) (hwv : IsSemiterm LAct 0 wv) (hwvp : IsSemiterm LAct 0 wvp) (hwy : IsSemiterm LAct 0 wy) :
-    row_eqOfNRel_as.map (instOuter LAct [wx, wk, wR, wv, wvp, wy]) = [nrelFact wx wk wR wv, nrelFact wy wk wR wvp, eqFact wv wvp] ∧
-    instOuter LAct [wx, wk, wR, wv, wvp, wy] row_eqOfNRel_c = eqFact wx wy := by
+    row_eqOfNRel_as.map (instOuter LAct [wx, wk, wR, wv, wvp, wy]) = [nrelFact wx wk wR wv, nrelFact wy wk wR wvp, eqFactB wv wvp] ∧
+    instOuter LAct [wx, wk, wR, wv, wvp, wy] row_eqOfNRel_c = eqFactB wx wy := by
   have hes : ∀ e ∈ ([wx, wk, wR, wv, wvp, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwR, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_eqOfNRel_as row_eqOfNRel_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfVerum` — `“y x. …”`, `m = 2` -/
 
 noncomputable def row_eqOfVerum_as : List V := [subst LAct (listToVec [bv 1]) Pverum, subst LAct (listToVec [bv 0]) Pverum]
-noncomputable def row_eqOfVerum_c : V := subst LAct (listToVec [bv 1, bv 0]) Peq
+noncomputable def row_eqOfVerum_c : V := subst LAct (listToVec [bv 1, bv 0]) PeqB
 
 theorem quote_row_eqOfVerum : (⌜Semiformula.lMap emb eqOfVerumB⌝ : V) = impChain LAct row_eqOfVerum_as row_eqOfVerum_c := by
-  unfold eqOfVerumB row_eqOfVerum_as row_eqOfVerum_c Peq Pverum
+  unfold eqOfVerumB row_eqOfVerum_as row_eqOfVerum_c PeqB Pverum
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfVerum_as : ∀ A ∈ row_eqOfVerum_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
@@ -2335,26 +2334,26 @@ lemma isSemiformula_eqOfVerum_as : ∀ A ∈ row_eqOfVerum_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_eqOfVerum_c : IsSemiformula LAct ((2 : ℕ) : V) row_eqOfVerum_c := by
   unfold row_eqOfVerum_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfVerum` at the witnesses `[wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqOfVerum {wx wy : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
     row_eqOfVerum_as.map (instOuter LAct [wx, wy]) = [verumFact wx, verumFact wy] ∧
-    instOuter LAct [wx, wy] row_eqOfVerum_c = eqFact wx wy := by
+    instOuter LAct [wx, wy] row_eqOfVerum_c = eqFactB wx wy := by
   have hes : ∀ e ∈ ([wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩)
   unfold row_eqOfVerum_as row_eqOfVerum_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfFalsum` — `“y x. …”`, `m = 2` -/
 
 noncomputable def row_eqOfFalsum_as : List V := [subst LAct (listToVec [bv 1]) Pfalsum, subst LAct (listToVec [bv 0]) Pfalsum]
-noncomputable def row_eqOfFalsum_c : V := subst LAct (listToVec [bv 1, bv 0]) Peq
+noncomputable def row_eqOfFalsum_c : V := subst LAct (listToVec [bv 1, bv 0]) PeqB
 
 theorem quote_row_eqOfFalsum : (⌜Semiformula.lMap emb eqOfFalsumB⌝ : V) = impChain LAct row_eqOfFalsum_as row_eqOfFalsum_c := by
-  unfold eqOfFalsumB row_eqOfFalsum_as row_eqOfFalsum_c Peq Pfalsum
+  unfold eqOfFalsumB row_eqOfFalsum_as row_eqOfFalsum_c PeqB Pfalsum
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfFalsum_as : ∀ A ∈ row_eqOfFalsum_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
@@ -2362,53 +2361,53 @@ lemma isSemiformula_eqOfFalsum_as : ∀ A ∈ row_eqOfFalsum_as, IsSemiformula L
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_eqOfFalsum_c : IsSemiformula LAct ((2 : ℕ) : V) row_eqOfFalsum_c := by
   unfold row_eqOfFalsum_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfFalsum` at the witnesses `[wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_eqOfFalsum {wx wy : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
     row_eqOfFalsum_as.map (instOuter LAct [wx, wy]) = [falsumFact wx, falsumFact wy] ∧
-    instOuter LAct [wx, wy] row_eqOfFalsum_c = eqFact wx wy := by
+    instOuter LAct [wx, wy] row_eqOfFalsum_c = eqFactB wx wy := by
   have hes : ∀ e ∈ ([wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩)
   unfold row_eqOfFalsum_as row_eqOfFalsum_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfFunc` — `“t' v' v f k t. …”`, `m = 6` -/
 
-noncomputable def row_eqOfFunc_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Pfunc, subst LAct (listToVec [bv 0, bv 4, bv 3, bv 1]) Pfunc, subst LAct (listToVec [bv 2, bv 1]) Peq]
-noncomputable def row_eqOfFunc_c : V := subst LAct (listToVec [bv 5, bv 0]) Peq
+noncomputable def row_eqOfFunc_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) Pfunc, subst LAct (listToVec [bv 0, bv 4, bv 3, bv 1]) Pfunc, subst LAct (listToVec [bv 2, bv 1]) PeqB]
+noncomputable def row_eqOfFunc_c : V := subst LAct (listToVec [bv 5, bv 0]) PeqB
 
 theorem quote_row_eqOfFunc : (⌜Semiformula.lMap emb eqOfFuncB⌝ : V) = impChain LAct row_eqOfFunc_as row_eqOfFunc_c := by
-  unfold eqOfFuncB row_eqOfFunc_as row_eqOfFunc_c Peq Pfunc
+  unfold eqOfFuncB row_eqOfFunc_as row_eqOfFunc_c PeqB Pfunc
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfFunc_as : ∀ A ∈ row_eqOfFunc_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_eqOfFunc_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_eqOfFunc_c : IsSemiformula LAct ((6 : ℕ) : V) row_eqOfFunc_c := by
   unfold row_eqOfFunc_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfFunc` at the witnesses `[wt, wk, wf, wv, wvp, wtp]` (the DSL variables right-to-left). -/
 lemma inst_eqOfFunc {wt wk wf wv wvp wtp : V} (hwt : IsSemiterm LAct 0 wt) (hwk : IsSemiterm LAct 0 wk) (hwf : IsSemiterm LAct 0 wf) (hwv : IsSemiterm LAct 0 wv) (hwvp : IsSemiterm LAct 0 wvp) (hwtp : IsSemiterm LAct 0 wtp) :
-    row_eqOfFunc_as.map (instOuter LAct [wt, wk, wf, wv, wvp, wtp]) = [funcFact wt wk wf wv, funcFact wtp wk wf wvp, eqFact wv wvp] ∧
-    instOuter LAct [wt, wk, wf, wv, wvp, wtp] row_eqOfFunc_c = eqFact wt wtp := by
+    row_eqOfFunc_as.map (instOuter LAct [wt, wk, wf, wv, wvp, wtp]) = [funcFact wt wk wf wv, funcFact wtp wk wf wvp, eqFactB wv wvp] ∧
+    instOuter LAct [wt, wk, wf, wv, wvp, wtp] row_eqOfFunc_c = eqFactB wt wtp := by
   have hes : ∀ e ∈ ([wt, wk, wf, wv, wvp, wtp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwf, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_eqOfFunc_as row_eqOfFunc_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfBvar` — `“t' t z. …”`, `m = 3` -/
 
 noncomputable def row_eqOfBvar_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Pbvar, subst LAct (listToVec [bv 0, bv 2]) Pbvar]
-noncomputable def row_eqOfBvar_c : V := subst LAct (listToVec [bv 1, bv 0]) Peq
+noncomputable def row_eqOfBvar_c : V := subst LAct (listToVec [bv 1, bv 0]) PeqB
 
 theorem quote_row_eqOfBvar : (⌜Semiformula.lMap emb eqOfBvarB⌝ : V) = impChain LAct row_eqOfBvar_as row_eqOfBvar_c := by
-  unfold eqOfBvarB row_eqOfBvar_as row_eqOfBvar_c Pbvar Peq
+  unfold eqOfBvarB row_eqOfBvar_as row_eqOfBvar_c Pbvar PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfBvar_as : ∀ A ∈ row_eqOfBvar_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2416,26 +2415,26 @@ lemma isSemiformula_eqOfBvar_as : ∀ A ∈ row_eqOfBvar_as, IsSemiformula LAct 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_eqOfBvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_eqOfBvar_c := by
   unfold row_eqOfBvar_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfBvar` at the witnesses `[wz, wt, wtp]` (the DSL variables right-to-left). -/
 lemma inst_eqOfBvar {wz wt wtp : V} (hwz : IsSemiterm LAct 0 wz) (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) :
     row_eqOfBvar_as.map (instOuter LAct [wz, wt, wtp]) = [bvarFact wt wz, bvarFact wtp wz] ∧
-    instOuter LAct [wz, wt, wtp] row_eqOfBvar_c = eqFact wt wtp := by
+    instOuter LAct [wz, wt, wtp] row_eqOfBvar_c = eqFactB wt wtp := by
   have hes : ∀ e ∈ ([wz, wt, wtp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwz, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_eqOfBvar_as row_eqOfBvar_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfFvar` — `“t' t x. …”`, `m = 3` -/
 
 noncomputable def row_eqOfFvar_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Pfvar, subst LAct (listToVec [bv 0, bv 2]) Pfvar]
-noncomputable def row_eqOfFvar_c : V := subst LAct (listToVec [bv 1, bv 0]) Peq
+noncomputable def row_eqOfFvar_c : V := subst LAct (listToVec [bv 1, bv 0]) PeqB
 
 theorem quote_row_eqOfFvar : (⌜Semiformula.lMap emb eqOfFvarB⌝ : V) = impChain LAct row_eqOfFvar_as row_eqOfFvar_c := by
-  unfold eqOfFvarB row_eqOfFvar_as row_eqOfFvar_c Peq Pfvar
+  unfold eqOfFvarB row_eqOfFvar_as row_eqOfFvar_c PeqB Pfvar
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfFvar_as : ∀ A ∈ row_eqOfFvar_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2443,43 +2442,43 @@ lemma isSemiformula_eqOfFvar_as : ∀ A ∈ row_eqOfFvar_as, IsSemiformula LAct 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_eqOfFvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_eqOfFvar_c := by
   unfold row_eqOfFvar_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfFvar` at the witnesses `[wx, wt, wtp]` (the DSL variables right-to-left). -/
 lemma inst_eqOfFvar {wx wt wtp : V} (hwx : IsSemiterm LAct 0 wx) (hwt : IsSemiterm LAct 0 wt) (hwtp : IsSemiterm LAct 0 wtp) :
     row_eqOfFvar_as.map (instOuter LAct [wx, wt, wtp]) = [fvarFact wt wx, fvarFact wtp wx] ∧
-    instOuter LAct [wx, wt, wtp] row_eqOfFvar_c = eqFact wt wtp := by
+    instOuter LAct [wx, wt, wtp] row_eqOfFvar_c = eqFactB wt wtp := by
   have hes : ∀ e ∈ ([wx, wt, wtp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_eqOfFvar_as row_eqOfFvar_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `eqOfAdj` — `“w' v' t' w v t. …”`, `m = 6` -/
 
-noncomputable def row_eqOfAdj_as : List V := [subst LAct (listToVec [bv 3, bv 5, bv 4]) Padjoin, subst LAct (listToVec [bv 0, bv 2, bv 1]) Padjoin, subst LAct (listToVec [bv 5, bv 2]) Peq, subst LAct (listToVec [bv 4, bv 1]) Peq]
-noncomputable def row_eqOfAdj_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_eqOfAdj_as : List V := [subst LAct (listToVec [bv 3, bv 5, bv 4]) Padjoin, subst LAct (listToVec [bv 0, bv 2, bv 1]) Padjoin, subst LAct (listToVec [bv 5, bv 2]) PeqB, subst LAct (listToVec [bv 4, bv 1]) PeqB]
+noncomputable def row_eqOfAdj_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_eqOfAdj : (⌜Semiformula.lMap emb eqOfAdjB⌝ : V) = impChain LAct row_eqOfAdj_as row_eqOfAdj_c := by
-  unfold eqOfAdjB row_eqOfAdj_as row_eqOfAdj_c Padjoin Peq
+  unfold eqOfAdjB row_eqOfAdj_as row_eqOfAdj_c Padjoin PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_eqOfAdj_as : ∀ A ∈ row_eqOfAdj_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
   unfold row_eqOfAdj_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_eqOfAdj_c : IsSemiformula LAct ((6 : ℕ) : V) row_eqOfAdj_c := by
   unfold row_eqOfAdj_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `eqOfAdj` at the witnesses `[wt, wv, ww, wtp, wvp, wwp]` (the DSL variables right-to-left). -/
 lemma inst_eqOfAdj {wt wv ww wtp wvp wwp : V} (hwt : IsSemiterm LAct 0 wt) (hwv : IsSemiterm LAct 0 wv) (hww : IsSemiterm LAct 0 ww) (hwtp : IsSemiterm LAct 0 wtp) (hwvp : IsSemiterm LAct 0 wvp) (hwwp : IsSemiterm LAct 0 wwp) :
-    row_eqOfAdj_as.map (instOuter LAct [wt, wv, ww, wtp, wvp, wwp]) = [adjFact ww wt wv, adjFact wwp wtp wvp, eqFact wt wtp, eqFact wv wvp] ∧
-    instOuter LAct [wt, wv, ww, wtp, wvp, wwp] row_eqOfAdj_c = eqFact ww wwp := by
+    row_eqOfAdj_as.map (instOuter LAct [wt, wv, ww, wtp, wvp, wwp]) = [adjFact ww wt wv, adjFact wwp wtp wvp, eqFactB wt wtp, eqFactB wv wvp] ∧
+    instOuter LAct [wt, wv, ww, wtp, wvp, wwp] row_eqOfAdj_c = eqFactB ww wwp := by
   have hes : ∀ e ∈ ([wt, wv, ww, wtp, wvp, wwp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwtp, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_cons.mpr ⟨hwwp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   unfold row_eqOfAdj_as row_eqOfAdj_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
@@ -2488,10 +2487,10 @@ lemma inst_eqOfAdj {wt wv ww wtp wvp wwp : V} (hwt : IsSemiterm LAct 0 wt) (hwv 
 /-! ### `qqAndFun` — `“y' p q y. …”`, `m = 4` -/
 
 noncomputable def row_qqAndFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) Pand, subst LAct (listToVec [bv 0, bv 1, bv 2]) Pand]
-noncomputable def row_qqAndFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_qqAndFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_qqAndFun : (⌜Semiformula.lMap emb qqAndFunB⌝ : V) = impChain LAct row_qqAndFun_as row_qqAndFun_c := by
-  unfold qqAndFunB row_qqAndFun_as row_qqAndFun_c Pand Peq
+  unfold qqAndFunB row_qqAndFun_as row_qqAndFun_c Pand PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_qqAndFun_as : ∀ A ∈ row_qqAndFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -2499,26 +2498,26 @@ lemma isSemiformula_qqAndFun_as : ∀ A ∈ row_qqAndFun_as, IsSemiformula LAct 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqAndFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_qqAndFun_c := by
   unfold row_qqAndFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqAndFun` at the witnesses `[wy, wq, wp, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqAndFun {wy wq wp wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwq : IsSemiterm LAct 0 wq) (hwp : IsSemiterm LAct 0 wp) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqAndFun_as.map (instOuter LAct [wy, wq, wp, wyp]) = [andFact wy wp wq, andFact wyp wp wq] ∧
-    instOuter LAct [wy, wq, wp, wyp] row_qqAndFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wq, wp, wyp] row_qqAndFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wq, wp, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwq, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_qqAndFun_as row_qqAndFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pand (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqOrFun` — `“y' p q y. …”`, `m = 4` -/
 
 noncomputable def row_qqOrFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) Por, subst LAct (listToVec [bv 0, bv 1, bv 2]) Por]
-noncomputable def row_qqOrFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_qqOrFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_qqOrFun : (⌜Semiformula.lMap emb qqOrFunB⌝ : V) = impChain LAct row_qqOrFun_as row_qqOrFun_c := by
-  unfold qqOrFunB row_qqOrFun_as row_qqOrFun_c Peq Por
+  unfold qqOrFunB row_qqOrFun_as row_qqOrFun_c PeqB Por
   all_goals row_shapeB
 
 lemma isSemiformula_qqOrFun_as : ∀ A ∈ row_qqOrFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -2526,26 +2525,26 @@ lemma isSemiformula_qqOrFun_as : ∀ A ∈ row_qqOrFun_as, IsSemiformula LAct ((
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqOrFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_qqOrFun_c := by
   unfold row_qqOrFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqOrFun` at the witnesses `[wy, wq, wp, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqOrFun {wy wq wp wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwq : IsSemiterm LAct 0 wq) (hwp : IsSemiterm LAct 0 wp) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqOrFun_as.map (instOuter LAct [wy, wq, wp, wyp]) = [orFact wy wp wq, orFact wyp wp wq] ∧
-    instOuter LAct [wy, wq, wp, wyp] row_qqOrFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wq, wp, wyp] row_qqOrFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wq, wp, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwq, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_qqOrFun_as row_qqOrFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Por (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqAllFun` — `“y' p y. …”`, `m = 3` -/
 
 noncomputable def row_qqAllFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Pall, subst LAct (listToVec [bv 0, bv 1]) Pall]
-noncomputable def row_qqAllFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_qqAllFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_qqAllFun : (⌜Semiformula.lMap emb qqAllFunB⌝ : V) = impChain LAct row_qqAllFun_as row_qqAllFun_c := by
-  unfold qqAllFunB row_qqAllFun_as row_qqAllFun_c Pall Peq
+  unfold qqAllFunB row_qqAllFun_as row_qqAllFun_c Pall PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_qqAllFun_as : ∀ A ∈ row_qqAllFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2553,26 +2552,26 @@ lemma isSemiformula_qqAllFun_as : ∀ A ∈ row_qqAllFun_as, IsSemiformula LAct 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqAllFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_qqAllFun_c := by
   unfold row_qqAllFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqAllFun` at the witnesses `[wy, wp, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqAllFun {wy wp wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwp : IsSemiterm LAct 0 wp) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqAllFun_as.map (instOuter LAct [wy, wp, wyp]) = [allFact wy wp, allFact wyp wp] ∧
-    instOuter LAct [wy, wp, wyp] row_qqAllFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wp, wyp] row_qqAllFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wp, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_qqAllFun_as row_qqAllFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pall (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqExsFun` — `“y' p y. …”`, `m = 3` -/
 
 noncomputable def row_qqExsFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Pexs, subst LAct (listToVec [bv 0, bv 1]) Pexs]
-noncomputable def row_qqExsFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_qqExsFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_qqExsFun : (⌜Semiformula.lMap emb qqExsFunB⌝ : V) = impChain LAct row_qqExsFun_as row_qqExsFun_c := by
-  unfold qqExsFunB row_qqExsFun_as row_qqExsFun_c Peq Pexs
+  unfold qqExsFunB row_qqExsFun_as row_qqExsFun_c PeqB Pexs
   all_goals row_shapeB
 
 lemma isSemiformula_qqExsFun_as : ∀ A ∈ row_qqExsFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2580,26 +2579,26 @@ lemma isSemiformula_qqExsFun_as : ∀ A ∈ row_qqExsFun_as, IsSemiformula LAct 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqExsFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_qqExsFun_c := by
   unfold row_qqExsFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqExsFun` at the witnesses `[wy, wp, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqExsFun {wy wp wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwp : IsSemiterm LAct 0 wp) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqExsFun_as.map (instOuter LAct [wy, wp, wyp]) = [exsFact wy wp, exsFact wyp wp] ∧
-    instOuter LAct [wy, wp, wyp] row_qqExsFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wp, wyp] row_qqExsFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wp, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_qqExsFun_as row_qqExsFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pexs (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqRelFun` — `“y' k R v y. …”`, `m = 5` -/
 
 noncomputable def row_qqRelFun_as : List V := [subst LAct (listToVec [bv 4, bv 1, bv 2, bv 3]) Prel, subst LAct (listToVec [bv 0, bv 1, bv 2, bv 3]) Prel]
-noncomputable def row_qqRelFun_c : V := subst LAct (listToVec [bv 4, bv 0]) Peq
+noncomputable def row_qqRelFun_c : V := subst LAct (listToVec [bv 4, bv 0]) PeqB
 
 theorem quote_row_qqRelFun : (⌜Semiformula.lMap emb qqRelFunB⌝ : V) = impChain LAct row_qqRelFun_as row_qqRelFun_c := by
-  unfold qqRelFunB row_qqRelFun_as row_qqRelFun_c Peq Prel
+  unfold qqRelFunB row_qqRelFun_as row_qqRelFun_c PeqB Prel
   all_goals row_shapeB
 
 lemma isSemiformula_qqRelFun_as : ∀ A ∈ row_qqRelFun_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
@@ -2607,26 +2606,26 @@ lemma isSemiformula_qqRelFun_as : ∀ A ∈ row_qqRelFun_as, IsSemiformula LAct 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqRelFun_c : IsSemiformula LAct ((5 : ℕ) : V) row_qqRelFun_c := by
   unfold row_qqRelFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqRelFun` at the witnesses `[wy, wv, wR, wk, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqRelFun {wy wv wR wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwv : IsSemiterm LAct 0 wv) (hwR : IsSemiterm LAct 0 wR) (hwk : IsSemiterm LAct 0 wk) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqRelFun_as.map (instOuter LAct [wy, wv, wR, wk, wyp]) = [relFact wy wk wR wv, relFact wyp wk wR wv] ∧
-    instOuter LAct [wy, wv, wR, wk, wyp] row_qqRelFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wv, wR, wk, wyp] row_qqRelFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wv, wR, wk, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwR, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩⟩)
   unfold row_qqRelFun_as row_qqRelFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqNRelFun` — `“y' k R v y. …”`, `m = 5` -/
 
 noncomputable def row_qqNRelFun_as : List V := [subst LAct (listToVec [bv 4, bv 1, bv 2, bv 3]) Pnrel, subst LAct (listToVec [bv 0, bv 1, bv 2, bv 3]) Pnrel]
-noncomputable def row_qqNRelFun_c : V := subst LAct (listToVec [bv 4, bv 0]) Peq
+noncomputable def row_qqNRelFun_c : V := subst LAct (listToVec [bv 4, bv 0]) PeqB
 
 theorem quote_row_qqNRelFun : (⌜Semiformula.lMap emb qqNRelFunB⌝ : V) = impChain LAct row_qqNRelFun_as row_qqNRelFun_c := by
-  unfold qqNRelFunB row_qqNRelFun_as row_qqNRelFun_c Peq Pnrel
+  unfold qqNRelFunB row_qqNRelFun_as row_qqNRelFun_c PeqB Pnrel
   all_goals row_shapeB
 
 lemma isSemiformula_qqNRelFun_as : ∀ A ∈ row_qqNRelFun_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
@@ -2634,26 +2633,26 @@ lemma isSemiformula_qqNRelFun_as : ∀ A ∈ row_qqNRelFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqNRelFun_c : IsSemiformula LAct ((5 : ℕ) : V) row_qqNRelFun_c := by
   unfold row_qqNRelFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqNRelFun` at the witnesses `[wy, wv, wR, wk, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqNRelFun {wy wv wR wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwv : IsSemiterm LAct 0 wv) (hwR : IsSemiterm LAct 0 wR) (hwk : IsSemiterm LAct 0 wk) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqNRelFun_as.map (instOuter LAct [wy, wv, wR, wk, wyp]) = [nrelFact wy wk wR wv, nrelFact wyp wk wR wv] ∧
-    instOuter LAct [wy, wv, wR, wk, wyp] row_qqNRelFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wv, wR, wk, wyp] row_qqNRelFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wv, wR, wk, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwR, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩⟩)
   unfold row_qqNRelFun_as row_qqNRelFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqVerumFun` — `“y' y. …”`, `m = 2` -/
 
 noncomputable def row_qqVerumFun_as : List V := [subst LAct (listToVec [bv 1]) Pverum, subst LAct (listToVec [bv 0]) Pverum]
-noncomputable def row_qqVerumFun_c : V := subst LAct (listToVec [bv 1, bv 0]) Peq
+noncomputable def row_qqVerumFun_c : V := subst LAct (listToVec [bv 1, bv 0]) PeqB
 
 theorem quote_row_qqVerumFun : (⌜Semiformula.lMap emb qqVerumFunB⌝ : V) = impChain LAct row_qqVerumFun_as row_qqVerumFun_c := by
-  unfold qqVerumFunB row_qqVerumFun_as row_qqVerumFun_c Peq Pverum
+  unfold qqVerumFunB row_qqVerumFun_as row_qqVerumFun_c PeqB Pverum
   all_goals row_shapeB
 
 lemma isSemiformula_qqVerumFun_as : ∀ A ∈ row_qqVerumFun_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
@@ -2661,26 +2660,26 @@ lemma isSemiformula_qqVerumFun_as : ∀ A ∈ row_qqVerumFun_as, IsSemiformula L
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqVerumFun_c : IsSemiformula LAct ((2 : ℕ) : V) row_qqVerumFun_c := by
   unfold row_qqVerumFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqVerumFun` at the witnesses `[wy, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqVerumFun {wy wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqVerumFun_as.map (instOuter LAct [wy, wyp]) = [verumFact wy, verumFact wyp] ∧
-    instOuter LAct [wy, wyp] row_qqVerumFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wyp] row_qqVerumFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩)
   unfold row_qqVerumFun_as row_qqVerumFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pverum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqFalsumFun` — `“y' y. …”`, `m = 2` -/
 
 noncomputable def row_qqFalsumFun_as : List V := [subst LAct (listToVec [bv 1]) Pfalsum, subst LAct (listToVec [bv 0]) Pfalsum]
-noncomputable def row_qqFalsumFun_c : V := subst LAct (listToVec [bv 1, bv 0]) Peq
+noncomputable def row_qqFalsumFun_c : V := subst LAct (listToVec [bv 1, bv 0]) PeqB
 
 theorem quote_row_qqFalsumFun : (⌜Semiformula.lMap emb qqFalsumFunB⌝ : V) = impChain LAct row_qqFalsumFun_as row_qqFalsumFun_c := by
-  unfold qqFalsumFunB row_qqFalsumFun_as row_qqFalsumFun_c Peq Pfalsum
+  unfold qqFalsumFunB row_qqFalsumFun_as row_qqFalsumFun_c PeqB Pfalsum
   all_goals row_shapeB
 
 lemma isSemiformula_qqFalsumFun_as : ∀ A ∈ row_qqFalsumFun_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
@@ -2688,26 +2687,26 @@ lemma isSemiformula_qqFalsumFun_as : ∀ A ∈ row_qqFalsumFun_as, IsSemiformula
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqFalsumFun_c : IsSemiformula LAct ((2 : ℕ) : V) row_qqFalsumFun_c := by
   unfold row_qqFalsumFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqFalsumFun` at the witnesses `[wy, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqFalsumFun {wy wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqFalsumFun_as.map (instOuter LAct [wy, wyp]) = [falsumFact wy, falsumFact wyp] ∧
-    instOuter LAct [wy, wyp] row_qqFalsumFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wyp] row_qqFalsumFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩)
   unfold row_qqFalsumFun_as row_qqFalsumFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfalsum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqFuncFun` — `“y' k f v y. …”`, `m = 5` -/
 
 noncomputable def row_qqFuncFun_as : List V := [subst LAct (listToVec [bv 4, bv 1, bv 2, bv 3]) Pfunc, subst LAct (listToVec [bv 0, bv 1, bv 2, bv 3]) Pfunc]
-noncomputable def row_qqFuncFun_c : V := subst LAct (listToVec [bv 4, bv 0]) Peq
+noncomputable def row_qqFuncFun_c : V := subst LAct (listToVec [bv 4, bv 0]) PeqB
 
 theorem quote_row_qqFuncFun : (⌜Semiformula.lMap emb qqFuncFunB⌝ : V) = impChain LAct row_qqFuncFun_as row_qqFuncFun_c := by
-  unfold qqFuncFunB row_qqFuncFun_as row_qqFuncFun_c Peq Pfunc
+  unfold qqFuncFunB row_qqFuncFun_as row_qqFuncFun_c PeqB Pfunc
   all_goals row_shapeB
 
 lemma isSemiformula_qqFuncFun_as : ∀ A ∈ row_qqFuncFun_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
@@ -2715,26 +2714,26 @@ lemma isSemiformula_qqFuncFun_as : ∀ A ∈ row_qqFuncFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqFuncFun_c : IsSemiformula LAct ((5 : ℕ) : V) row_qqFuncFun_c := by
   unfold row_qqFuncFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqFuncFun` at the witnesses `[wy, wv, wf, wk, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqFuncFun {wy wv wf wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwv : IsSemiterm LAct 0 wv) (hwf : IsSemiterm LAct 0 wf) (hwk : IsSemiterm LAct 0 wk) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqFuncFun_as.map (instOuter LAct [wy, wv, wf, wk, wyp]) = [funcFact wy wk wf wv, funcFact wyp wk wf wv] ∧
-    instOuter LAct [wy, wv, wf, wk, wyp] row_qqFuncFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wv, wf, wk, wyp] row_qqFuncFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wv, wf, wk, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwf, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩⟩)
   unfold row_qqFuncFun_as row_qqFuncFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqBvarFun` — `“y' z y. …”`, `m = 3` -/
 
 noncomputable def row_qqBvarFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Pbvar, subst LAct (listToVec [bv 0, bv 1]) Pbvar]
-noncomputable def row_qqBvarFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_qqBvarFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_qqBvarFun : (⌜Semiformula.lMap emb qqBvarFunB⌝ : V) = impChain LAct row_qqBvarFun_as row_qqBvarFun_c := by
-  unfold qqBvarFunB row_qqBvarFun_as row_qqBvarFun_c Pbvar Peq
+  unfold qqBvarFunB row_qqBvarFun_as row_qqBvarFun_c Pbvar PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_qqBvarFun_as : ∀ A ∈ row_qqBvarFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2742,26 +2741,26 @@ lemma isSemiformula_qqBvarFun_as : ∀ A ∈ row_qqBvarFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqBvarFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_qqBvarFun_c := by
   unfold row_qqBvarFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqBvarFun` at the witnesses `[wy, wz, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqBvarFun {wy wz wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwz : IsSemiterm LAct 0 wz) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqBvarFun_as.map (instOuter LAct [wy, wz, wyp]) = [bvarFact wy wz, bvarFact wyp wz] ∧
-    instOuter LAct [wy, wz, wyp] row_qqBvarFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wz, wyp] row_qqBvarFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wz, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwz, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_qqBvarFun_as row_qqBvarFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqFvarFun` — `“y' x y. …”`, `m = 3` -/
 
 noncomputable def row_qqFvarFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Pfvar, subst LAct (listToVec [bv 0, bv 1]) Pfvar]
-noncomputable def row_qqFvarFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_qqFvarFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_qqFvarFun : (⌜Semiformula.lMap emb qqFvarFunB⌝ : V) = impChain LAct row_qqFvarFun_as row_qqFvarFun_c := by
-  unfold qqFvarFunB row_qqFvarFun_as row_qqFvarFun_c Peq Pfvar
+  unfold qqFvarFunB row_qqFvarFun_as row_qqFvarFun_c PeqB Pfvar
   all_goals row_shapeB
 
 lemma isSemiformula_qqFvarFun_as : ∀ A ∈ row_qqFvarFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2769,26 +2768,26 @@ lemma isSemiformula_qqFvarFun_as : ∀ A ∈ row_qqFvarFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqFvarFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_qqFvarFun_c := by
   unfold row_qqFvarFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqFvarFun` at the witnesses `[wy, wx, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqFvarFun {wy wx wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwx : IsSemiterm LAct 0 wx) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqFvarFun_as.map (instOuter LAct [wy, wx, wyp]) = [fvarFact wy wx, fvarFact wyp wx] ∧
-    instOuter LAct [wy, wx, wyp] row_qqFvarFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wx, wyp] row_qqFvarFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wx, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_qqFvarFun_as row_qqFvarFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfvar (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `adjoinFun` — `“y' t v y. …”`, `m = 4` -/
 
 noncomputable def row_adjoinFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) Padjoin, subst LAct (listToVec [bv 0, bv 1, bv 2]) Padjoin]
-noncomputable def row_adjoinFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_adjoinFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_adjoinFun : (⌜Semiformula.lMap emb adjoinFunB⌝ : V) = impChain LAct row_adjoinFun_as row_adjoinFun_c := by
-  unfold adjoinFunB row_adjoinFun_as row_adjoinFun_c Padjoin Peq
+  unfold adjoinFunB row_adjoinFun_as row_adjoinFun_c Padjoin PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_adjoinFun_as : ∀ A ∈ row_adjoinFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -2796,26 +2795,26 @@ lemma isSemiformula_adjoinFun_as : ∀ A ∈ row_adjoinFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_adjoinFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_adjoinFun_c := by
   unfold row_adjoinFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `adjoinFun` at the witnesses `[wy, wv, wt, wyp]` (the DSL variables right-to-left). -/
 lemma inst_adjoinFun {wy wv wt wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwv : IsSemiterm LAct 0 wv) (hwt : IsSemiterm LAct 0 wt) (hwyp : IsSemiterm LAct 0 wyp) :
     row_adjoinFun_as.map (instOuter LAct [wy, wv, wt, wyp]) = [adjFact wy wt wv, adjFact wyp wt wv] ∧
-    instOuter LAct [wy, wv, wt, wyp] row_adjoinFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wv, wt, wyp] row_adjoinFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wv, wt, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_adjoinFun_as row_adjoinFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `setShiftFun` — `“y' s y. …”`, `m = 3` -/
 
 noncomputable def row_setShiftFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PsetShiftG, subst LAct (listToVec [bv 0, bv 1]) PsetShiftG]
-noncomputable def row_setShiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_setShiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_setShiftFun : (⌜Semiformula.lMap emb setShiftFunB⌝ : V) = impChain LAct row_setShiftFun_as row_setShiftFun_c := by
-  unfold setShiftFunB row_setShiftFun_as row_setShiftFun_c Peq PsetShiftG
+  unfold setShiftFunB row_setShiftFun_as row_setShiftFun_c PeqB PsetShiftG
   all_goals row_shapeB
 
 lemma isSemiformula_setShiftFun_as : ∀ A ∈ row_setShiftFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2823,26 +2822,26 @@ lemma isSemiformula_setShiftFun_as : ∀ A ∈ row_setShiftFun_as, IsSemiformula
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_setShiftFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_setShiftFun_c := by
   unfold row_setShiftFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `setShiftFun` at the witnesses `[wy, ws, wyp]` (the DSL variables right-to-left). -/
 lemma inst_setShiftFun {wy ws wyp : V} (hwy : IsSemiterm LAct 0 wy) (hws : IsSemiterm LAct 0 ws) (hwyp : IsSemiterm LAct 0 wyp) :
     row_setShiftFun_as.map (instOuter LAct [wy, ws, wyp]) = [setShiftFact wy ws, setShiftFact wyp ws] ∧
-    instOuter LAct [wy, ws, wyp] row_setShiftFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, ws, wyp] row_setShiftFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, ws, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_setShiftFun_as row_setShiftFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `setLenFun` — `“y' s y. …”`, `m = 3` -/
 
 noncomputable def row_setLenFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PsetLen, subst LAct (listToVec [bv 0, bv 1]) PsetLen]
-noncomputable def row_setLenFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_setLenFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_setLenFun : (⌜Semiformula.lMap emb setLenFunB⌝ : V) = impChain LAct row_setLenFun_as row_setLenFun_c := by
-  unfold setLenFunB row_setLenFun_as row_setLenFun_c Peq PsetLen
+  unfold setLenFunB row_setLenFun_as row_setLenFun_c PeqB PsetLen
   all_goals row_shapeB
 
 lemma isSemiformula_setLenFun_as : ∀ A ∈ row_setLenFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2850,26 +2849,26 @@ lemma isSemiformula_setLenFun_as : ∀ A ∈ row_setLenFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_setLenFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_setLenFun_c := by
   unfold row_setLenFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `setLenFun` at the witnesses `[wy, ws, wyp]` (the DSL variables right-to-left). -/
 lemma inst_setLenFun {wy ws wyp : V} (hwy : IsSemiterm LAct 0 wy) (hws : IsSemiterm LAct 0 ws) (hwyp : IsSemiterm LAct 0 wyp) :
     row_setLenFun_as.map (instOuter LAct [wy, ws, wyp]) = [setLenFact wy ws, setLenFact wyp ws] ∧
-    instOuter LAct [wy, ws, wyp] row_setLenFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, ws, wyp] row_setLenFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, ws, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_setLenFun_as row_setLenFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `lengthFun` — `“y' k y. …”`, `m = 3` -/
 
 noncomputable def row_lengthFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Plength, subst LAct (listToVec [bv 0, bv 1]) Plength]
-noncomputable def row_lengthFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_lengthFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_lengthFun : (⌜Semiformula.lMap emb lengthFunB⌝ : V) = impChain LAct row_lengthFun_as row_lengthFun_c := by
-  unfold lengthFunB row_lengthFun_as row_lengthFun_c Peq Plength
+  unfold lengthFunB row_lengthFun_as row_lengthFun_c PeqB Plength
   all_goals row_shapeB
 
 lemma isSemiformula_lengthFun_as : ∀ A ∈ row_lengthFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2877,26 +2876,26 @@ lemma isSemiformula_lengthFun_as : ∀ A ∈ row_lengthFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Plength _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Plength _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_lengthFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_lengthFun_c := by
   unfold row_lengthFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `lengthFun` at the witnesses `[wy, wk, wyp]` (the DSL variables right-to-left). -/
 lemma inst_lengthFun {wy wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwk : IsSemiterm LAct 0 wk) (hwyp : IsSemiterm LAct 0 wyp) :
     row_lengthFun_as.map (instOuter LAct [wy, wk, wyp]) = [lengthFact wy wk, lengthFact wyp wk] ∧
-    instOuter LAct [wy, wk, wyp] row_lengthFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wk, wyp] row_lengthFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wk, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_lengthFun_as row_lengthFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Plength (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Plength (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Plength (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Plength (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `termLenVecFun` — `“y' k v y. …”`, `m = 4` -/
 
 noncomputable def row_termLenVecFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) PtlvG, subst LAct (listToVec [bv 0, bv 1, bv 2]) PtlvG]
-noncomputable def row_termLenVecFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_termLenVecFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_termLenVecFun : (⌜Semiformula.lMap emb termLenVecFunB⌝ : V) = impChain LAct row_termLenVecFun_as row_termLenVecFun_c := by
-  unfold termLenVecFunB row_termLenVecFun_as row_termLenVecFun_c Peq PtlvG
+  unfold termLenVecFunB row_termLenVecFun_as row_termLenVecFun_c PeqB PtlvG
   all_goals row_shapeB
 
 lemma isSemiformula_termLenVecFun_as : ∀ A ∈ row_termLenVecFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -2904,26 +2903,26 @@ lemma isSemiformula_termLenVecFun_as : ∀ A ∈ row_termLenVecFun_as, IsSemifor
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlvG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlvG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termLenVecFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_termLenVecFun_c := by
   unfold row_termLenVecFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `termLenVecFun` at the witnesses `[wy, wv, wk, wyp]` (the DSL variables right-to-left). -/
 lemma inst_termLenVecFun {wy wv wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwv : IsSemiterm LAct 0 wv) (hwk : IsSemiterm LAct 0 wk) (hwyp : IsSemiterm LAct 0 wyp) :
     row_termLenVecFun_as.map (instOuter LAct [wy, wv, wk, wyp]) = [tlvFact wy wk wv, tlvFact wyp wk wv] ∧
-    instOuter LAct [wy, wv, wk, wyp] row_termLenVecFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wv, wk, wyp] row_termLenVecFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wv, wk, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_termLenVecFun_as row_termLenVecFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `listSumFun` — `“y' M y. …”`, `m = 3` -/
 
 noncomputable def row_listSumFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PlistSum, subst LAct (listToVec [bv 0, bv 1]) PlistSum]
-noncomputable def row_listSumFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_listSumFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_listSumFun : (⌜Semiformula.lMap emb listSumFunB⌝ : V) = impChain LAct row_listSumFun_as row_listSumFun_c := by
-  unfold listSumFunB row_listSumFun_as row_listSumFun_c Peq PlistSum
+  unfold listSumFunB row_listSumFun_as row_listSumFun_c PeqB PlistSum
   all_goals row_shapeB
 
 lemma isSemiformula_listSumFun_as : ∀ A ∈ row_listSumFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2931,26 +2930,26 @@ lemma isSemiformula_listSumFun_as : ∀ A ∈ row_listSumFun_as, IsSemiformula L
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_listSumFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_listSumFun_c := by
   unfold row_listSumFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `listSumFun` at the witnesses `[wy, wM, wyp]` (the DSL variables right-to-left). -/
 lemma inst_listSumFun {wy wM wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwM : IsSemiterm LAct 0 wM) (hwyp : IsSemiterm LAct 0 wyp) :
     row_listSumFun_as.map (instOuter LAct [wy, wM, wyp]) = [listSumFact wy wM, listSumFact wyp wM] ∧
-    instOuter LAct [wy, wM, wyp] row_listSumFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wM, wyp] row_listSumFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wM, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwM, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_listSumFun_as row_listSumFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `formulaLenFun` — `“y' p y. …”`, `m = 3` -/
 
 noncomputable def row_formulaLenFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PflenG, subst LAct (listToVec [bv 0, bv 1]) PflenG]
-noncomputable def row_formulaLenFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_formulaLenFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_formulaLenFun : (⌜Semiformula.lMap emb formulaLenFunB⌝ : V) = impChain LAct row_formulaLenFun_as row_formulaLenFun_c := by
-  unfold formulaLenFunB row_formulaLenFun_as row_formulaLenFun_c Peq PflenG
+  unfold formulaLenFunB row_formulaLenFun_as row_formulaLenFun_c PeqB PflenG
   all_goals row_shapeB
 
 lemma isSemiformula_formulaLenFun_as : ∀ A ∈ row_formulaLenFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2958,26 +2957,26 @@ lemma isSemiformula_formulaLenFun_as : ∀ A ∈ row_formulaLenFun_as, IsSemifor
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_formulaLenFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_formulaLenFun_c := by
   unfold row_formulaLenFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `formulaLenFun` at the witnesses `[wy, wp, wyp]` (the DSL variables right-to-left). -/
 lemma inst_formulaLenFun {wy wp wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwp : IsSemiterm LAct 0 wp) (hwyp : IsSemiterm LAct 0 wyp) :
     row_formulaLenFun_as.map (instOuter LAct [wy, wp, wyp]) = [lenFact wy wp, lenFact wyp wp] ∧
-    instOuter LAct [wy, wp, wyp] row_formulaLenFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wp, wyp] row_formulaLenFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wp, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_formulaLenFun_as row_formulaLenFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `termLenFun` — `“y' t y. …”`, `m = 3` -/
 
 noncomputable def row_termLenFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PtlenG, subst LAct (listToVec [bv 0, bv 1]) PtlenG]
-noncomputable def row_termLenFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_termLenFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_termLenFun : (⌜Semiformula.lMap emb termLenFunB⌝ : V) = impChain LAct row_termLenFun_as row_termLenFun_c := by
-  unfold termLenFunB row_termLenFun_as row_termLenFun_c Peq PtlenG
+  unfold termLenFunB row_termLenFun_as row_termLenFun_c PeqB PtlenG
   all_goals row_shapeB
 
 lemma isSemiformula_termLenFun_as : ∀ A ∈ row_termLenFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -2985,26 +2984,26 @@ lemma isSemiformula_termLenFun_as : ∀ A ∈ row_termLenFun_as, IsSemiformula L
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termLenFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_termLenFun_c := by
   unfold row_termLenFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `termLenFun` at the witnesses `[wy, wt, wyp]` (the DSL variables right-to-left). -/
 lemma inst_termLenFun {wy wt wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwt : IsSemiterm LAct 0 wt) (hwyp : IsSemiterm LAct 0 wyp) :
     row_termLenFun_as.map (instOuter LAct [wy, wt, wyp]) = [tlenFact wy wt, tlenFact wyp wt] ∧
-    instOuter LAct [wy, wt, wyp] row_termLenFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wt, wyp] row_termLenFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wt, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_termLenFun_as row_termLenFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `fstIdxFun` — `“y' d y. …”`, `m = 3` -/
 
 noncomputable def row_fstIdxFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PfstIdx, subst LAct (listToVec [bv 0, bv 1]) PfstIdx]
-noncomputable def row_fstIdxFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_fstIdxFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_fstIdxFun : (⌜Semiformula.lMap emb fstIdxFunB⌝ : V) = impChain LAct row_fstIdxFun_as row_fstIdxFun_c := by
-  unfold fstIdxFunB row_fstIdxFun_as row_fstIdxFun_c Peq PfstIdx fstIdxS
+  unfold fstIdxFunB row_fstIdxFun_as row_fstIdxFun_c PeqB PfstIdx fstIdxS
   all_goals row_shapeB
 
 lemma isSemiformula_fstIdxFun_as : ∀ A ∈ row_fstIdxFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3012,26 +3011,26 @@ lemma isSemiformula_fstIdxFun_as : ∀ A ∈ row_fstIdxFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_fstIdxFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_fstIdxFun_c := by
   unfold row_fstIdxFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `fstIdxFun` at the witnesses `[wy, wd, wyp]` (the DSL variables right-to-left). -/
 lemma inst_fstIdxFun {wy wd wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwd : IsSemiterm LAct 0 wd) (hwyp : IsSemiterm LAct 0 wyp) :
     row_fstIdxFun_as.map (instOuter LAct [wy, wd, wyp]) = [fstIdxFact wy wd, fstIdxFact wyp wd] ∧
-    instOuter LAct [wy, wd, wyp] row_fstIdxFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wd, wyp] row_fstIdxFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wd, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwd, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_fstIdxFun_as row_fstIdxFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PfstIdx (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfstIdx (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PfstIdx (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfstIdx (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `insertFun` — `“y' x s y. …”`, `m = 4` -/
 
 noncomputable def row_insertFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) Pinsert, subst LAct (listToVec [bv 0, bv 1, bv 2]) Pinsert]
-noncomputable def row_insertFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_insertFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_insertFun : (⌜Semiformula.lMap emb insertFunB⌝ : V) = impChain LAct row_insertFun_as row_insertFun_c := by
-  unfold insertFunB row_insertFun_as row_insertFun_c Peq Pinsert
+  unfold insertFunB row_insertFun_as row_insertFun_c PeqB Pinsert
   all_goals row_shapeB
 
 lemma isSemiformula_insertFun_as : ∀ A ∈ row_insertFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -3039,26 +3038,26 @@ lemma isSemiformula_insertFun_as : ∀ A ∈ row_insertFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_insertFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_insertFun_c := by
   unfold row_insertFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `insertFun` at the witnesses `[wy, ws, wx, wyp]` (the DSL variables right-to-left). -/
 lemma inst_insertFun {wy ws wx wyp : V} (hwy : IsSemiterm LAct 0 wy) (hws : IsSemiterm LAct 0 ws) (hwx : IsSemiterm LAct 0 wx) (hwyp : IsSemiterm LAct 0 wyp) :
     row_insertFun_as.map (instOuter LAct [wy, ws, wx, wyp]) = [insFact wy wx ws, insFact wyp wx ws] ∧
-    instOuter LAct [wy, ws, wx, wyp] row_insertFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, ws, wx, wyp] row_insertFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, ws, wx, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_insertFun_as row_insertFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `negFun` — `“y' p y. …”`, `m = 3` -/
 
 noncomputable def row_negFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PnegG, subst LAct (listToVec [bv 0, bv 1]) PnegG]
-noncomputable def row_negFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_negFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_negFun : (⌜Semiformula.lMap emb negFunB⌝ : V) = impChain LAct row_negFun_as row_negFun_c := by
-  unfold negFunB row_negFun_as row_negFun_c Peq PnegG
+  unfold negFunB row_negFun_as row_negFun_c PeqB PnegG
   all_goals row_shapeB
 
 lemma isSemiformula_negFun_as : ∀ A ∈ row_negFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3066,26 +3065,26 @@ lemma isSemiformula_negFun_as : ∀ A ∈ row_negFun_as, IsSemiformula LAct ((3 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PnegG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PnegG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_negFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_negFun_c := by
   unfold row_negFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `negFun` at the witnesses `[wy, wp, wyp]` (the DSL variables right-to-left). -/
 lemma inst_negFun {wy wp wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwp : IsSemiterm LAct 0 wp) (hwyp : IsSemiterm LAct 0 wyp) :
     row_negFun_as.map (instOuter LAct [wy, wp, wyp]) = [negFact wy wp, negFact wyp wp] ∧
-    instOuter LAct [wy, wp, wyp] row_negFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wp, wyp] row_negFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wp, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_negFun_as row_negFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PnegG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PnegG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PnegG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PnegG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `shiftFun` — `“y' p y. …”`, `m = 3` -/
 
 noncomputable def row_shiftFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PshiftG, subst LAct (listToVec [bv 0, bv 1]) PshiftG]
-noncomputable def row_shiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_shiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_shiftFun : (⌜Semiformula.lMap emb shiftFunB⌝ : V) = impChain LAct row_shiftFun_as row_shiftFun_c := by
-  unfold shiftFunB row_shiftFun_as row_shiftFun_c Peq PshiftG
+  unfold shiftFunB row_shiftFun_as row_shiftFun_c PeqB PshiftG
   all_goals row_shapeB
 
 lemma isSemiformula_shiftFun_as : ∀ A ∈ row_shiftFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3093,26 +3092,26 @@ lemma isSemiformula_shiftFun_as : ∀ A ∈ row_shiftFun_as, IsSemiformula LAct 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PshiftG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PshiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_shiftFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_shiftFun_c := by
   unfold row_shiftFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `shiftFun` at the witnesses `[wy, wp, wyp]` (the DSL variables right-to-left). -/
 lemma inst_shiftFun {wy wp wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwp : IsSemiterm LAct 0 wp) (hwyp : IsSemiterm LAct 0 wyp) :
     row_shiftFun_as.map (instOuter LAct [wy, wp, wyp]) = [shiftFact wy wp, shiftFact wyp wp] ∧
-    instOuter LAct [wy, wp, wyp] row_shiftFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wp, wyp] row_shiftFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wp, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_shiftFun_as row_shiftFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PshiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PshiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PshiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PshiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `substsFun` — `“y' w p y. …”`, `m = 4` -/
 
 noncomputable def row_substsFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) PsubstsG, subst LAct (listToVec [bv 0, bv 1, bv 2]) PsubstsG]
-noncomputable def row_substsFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_substsFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_substsFun : (⌜Semiformula.lMap emb substsFunB⌝ : V) = impChain LAct row_substsFun_as row_substsFun_c := by
-  unfold substsFunB row_substsFun_as row_substsFun_c Peq PsubstsG
+  unfold substsFunB row_substsFun_as row_substsFun_c PeqB PsubstsG
   all_goals row_shapeB
 
 lemma isSemiformula_substsFun_as : ∀ A ∈ row_substsFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -3120,26 +3119,26 @@ lemma isSemiformula_substsFun_as : ∀ A ∈ row_substsFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_substsFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_substsFun_c := by
   unfold row_substsFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `substsFun` at the witnesses `[wy, wp, ww, wyp]` (the DSL variables right-to-left). -/
 lemma inst_substsFun {wy wp ww wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwp : IsSemiterm LAct 0 wp) (hww : IsSemiterm LAct 0 ww) (hwyp : IsSemiterm LAct 0 wyp) :
     row_substsFun_as.map (instOuter LAct [wy, wp, ww, wyp]) = [substFact wy ww wp, substFact wyp ww wp] ∧
-    instOuter LAct [wy, wp, ww, wyp] row_substsFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wp, ww, wyp] row_substsFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wp, ww, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_substsFun_as row_substsFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubstsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `substs1Fun` — `“y' t p y. …”`, `m = 4` -/
 
 noncomputable def row_substs1Fun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) Psubsts1G, subst LAct (listToVec [bv 0, bv 1, bv 2]) Psubsts1G]
-noncomputable def row_substs1Fun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_substs1Fun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_substs1Fun : (⌜Semiformula.lMap emb substs1FunB⌝ : V) = impChain LAct row_substs1Fun_as row_substs1Fun_c := by
-  unfold substs1FunB row_substs1Fun_as row_substs1Fun_c Peq Psubsts1G
+  unfold substs1FunB row_substs1Fun_as row_substs1Fun_c PeqB Psubsts1G
   all_goals row_shapeB
 
 lemma isSemiformula_substs1Fun_as : ∀ A ∈ row_substs1Fun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -3147,26 +3146,26 @@ lemma isSemiformula_substs1Fun_as : ∀ A ∈ row_substs1Fun_as, IsSemiformula L
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubsts1G _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubsts1G _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_substs1Fun_c : IsSemiformula LAct ((4 : ℕ) : V) row_substs1Fun_c := by
   unfold row_substs1Fun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `substs1Fun` at the witnesses `[wy, wp, wt, wyp]` (the DSL variables right-to-left). -/
 lemma inst_substs1Fun {wy wp wt wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwp : IsSemiterm LAct 0 wp) (hwt : IsSemiterm LAct 0 wt) (hwyp : IsSemiterm LAct 0 wyp) :
     row_substs1Fun_as.map (instOuter LAct [wy, wp, wt, wyp]) = [substs1Fact wy wt wp, substs1Fact wyp wt wp] ∧
-    instOuter LAct [wy, wp, wt, wyp] row_substs1Fun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wp, wt, wyp] row_substs1Fun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wp, wt, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_substs1Fun_as row_substs1Fun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Psubsts1G (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubsts1G (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Psubsts1G (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubsts1G (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `freeFun` — `“y' p y. …”`, `m = 3` -/
 
 noncomputable def row_freeFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PfreeG, subst LAct (listToVec [bv 0, bv 1]) PfreeG]
-noncomputable def row_freeFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_freeFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_freeFun : (⌜Semiformula.lMap emb freeFunB⌝ : V) = impChain LAct row_freeFun_as row_freeFun_c := by
-  unfold freeFunB row_freeFun_as row_freeFun_c Peq PfreeG
+  unfold freeFunB row_freeFun_as row_freeFun_c PeqB PfreeG
   all_goals row_shapeB
 
 lemma isSemiformula_freeFun_as : ∀ A ∈ row_freeFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3174,26 +3173,26 @@ lemma isSemiformula_freeFun_as : ∀ A ∈ row_freeFun_as, IsSemiformula LAct ((
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfreeG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfreeG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_freeFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_freeFun_c := by
   unfold row_freeFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `freeFun` at the witnesses `[wy, wp, wyp]` (the DSL variables right-to-left). -/
 lemma inst_freeFun {wy wp wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwp : IsSemiterm LAct 0 wp) (hwyp : IsSemiterm LAct 0 wyp) :
     row_freeFun_as.map (instOuter LAct [wy, wp, wyp]) = [freeFact wy wp, freeFact wyp wp] ∧
-    instOuter LAct [wy, wp, wyp] row_freeFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wp, wyp] row_freeFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wp, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_freeFun_as row_freeFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PfreeG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfreeG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PfreeG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfreeG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `bnumFun` — `“y' k y. …”`, `m = 3` -/
 
 noncomputable def row_bnumFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Pbnum, subst LAct (listToVec [bv 0, bv 1]) Pbnum]
-noncomputable def row_bnumFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_bnumFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_bnumFun : (⌜Semiformula.lMap emb bnumFunB⌝ : V) = impChain LAct row_bnumFun_as row_bnumFun_c := by
-  unfold bnumFunB row_bnumFun_as row_bnumFun_c Pbnum Peq
+  unfold bnumFunB row_bnumFun_as row_bnumFun_c Pbnum PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_bnumFun_as : ∀ A ∈ row_bnumFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3201,26 +3200,26 @@ lemma isSemiformula_bnumFun_as : ∀ A ∈ row_bnumFun_as, IsSemiformula LAct ((
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbnum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbnum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_bnumFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_bnumFun_c := by
   unfold row_bnumFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `bnumFun` at the witnesses `[wy, wk, wyp]` (the DSL variables right-to-left). -/
 lemma inst_bnumFun {wy wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwk : IsSemiterm LAct 0 wk) (hwyp : IsSemiterm LAct 0 wyp) :
     row_bnumFun_as.map (instOuter LAct [wy, wk, wyp]) = [bnumFact wy wk, bnumFact wyp wk] ∧
-    instOuter LAct [wy, wk, wyp] row_bnumFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wk, wyp] row_bnumFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wk, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_bnumFun_as row_bnumFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pbnum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbnum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pbnum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbnum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `nthFun` — `“y' w i y. …”`, `m = 4` -/
 
 noncomputable def row_nthFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) Pnth, subst LAct (listToVec [bv 0, bv 1, bv 2]) Pnth]
-noncomputable def row_nthFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_nthFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_nthFun : (⌜Semiformula.lMap emb nthFunB⌝ : V) = impChain LAct row_nthFun_as row_nthFun_c := by
-  unfold nthFunB row_nthFun_as row_nthFun_c Peq Pnth
+  unfold nthFunB row_nthFun_as row_nthFun_c PeqB Pnth
   all_goals row_shapeB
 
 lemma isSemiformula_nthFun_as : ∀ A ∈ row_nthFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -3228,26 +3227,26 @@ lemma isSemiformula_nthFun_as : ∀ A ∈ row_nthFun_as, IsSemiformula LAct ((4 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnth _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnth _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_nthFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_nthFun_c := by
   unfold row_nthFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `nthFun` at the witnesses `[wy, wi, ww, wyp]` (the DSL variables right-to-left). -/
 lemma inst_nthFun {wy wi ww wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwi : IsSemiterm LAct 0 wi) (hww : IsSemiterm LAct 0 ww) (hwyp : IsSemiterm LAct 0 wyp) :
     row_nthFun_as.map (instOuter LAct [wy, wi, ww, wyp]) = [nthFact wy ww wi, nthFact wyp ww wi] ∧
-    instOuter LAct [wy, wi, ww, wyp] row_nthFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wi, ww, wyp] row_nthFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wi, ww, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwi, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_nthFun_as row_nthFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pnth (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnth (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Pnth (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnth (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `fvarVecFun` — `“y' m y. …”`, `m = 3` -/
 
 noncomputable def row_fvarVecFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PfvarVec, subst LAct (listToVec [bv 0, bv 1]) PfvarVec]
-noncomputable def row_fvarVecFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_fvarVecFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_fvarVecFun : (⌜Semiformula.lMap emb fvarVecFunB⌝ : V) = impChain LAct row_fvarVecFun_as row_fvarVecFun_c := by
-  unfold fvarVecFunB row_fvarVecFun_as row_fvarVecFun_c Peq PfvarVec
+  unfold fvarVecFunB row_fvarVecFun_as row_fvarVecFun_c PeqB PfvarVec
   all_goals row_shapeB
 
 lemma isSemiformula_fvarVecFun_as : ∀ A ∈ row_fvarVecFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3255,26 +3254,26 @@ lemma isSemiformula_fvarVecFun_as : ∀ A ∈ row_fvarVecFun_as, IsSemiformula L
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfvarVec _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfvarVec _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_fvarVecFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_fvarVecFun_c := by
   unfold row_fvarVecFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `fvarVecFun` at the witnesses `[wy, wm, wyp]` (the DSL variables right-to-left). -/
 lemma inst_fvarVecFun {wy wm wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwm : IsSemiterm LAct 0 wm) (hwyp : IsSemiterm LAct 0 wyp) :
     row_fvarVecFun_as.map (instOuter LAct [wy, wm, wyp]) = [fvarVecFact wy wm, fvarVecFact wyp wm] ∧
-    instOuter LAct [wy, wm, wyp] row_fvarVecFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wm, wyp] row_fvarVecFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wm, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwm, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_fvarVecFun_as row_fvarVecFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PfvarVec (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfvarVec (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PfvarVec (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PfvarVec (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `termShiftFun` — `“y' t y. …”`, `m = 3` -/
 
 noncomputable def row_termShiftFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PtshG, subst LAct (listToVec [bv 0, bv 1]) PtshG]
-noncomputable def row_termShiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_termShiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_termShiftFun : (⌜Semiformula.lMap emb termShiftFunB⌝ : V) = impChain LAct row_termShiftFun_as row_termShiftFun_c := by
-  unfold termShiftFunB row_termShiftFun_as row_termShiftFun_c Peq PtshG
+  unfold termShiftFunB row_termShiftFun_as row_termShiftFun_c PeqB PtshG
   all_goals row_shapeB
 
 lemma isSemiformula_termShiftFun_as : ∀ A ∈ row_termShiftFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3282,26 +3281,26 @@ lemma isSemiformula_termShiftFun_as : ∀ A ∈ row_termShiftFun_as, IsSemiformu
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtshG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtshG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termShiftFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_termShiftFun_c := by
   unfold row_termShiftFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `termShiftFun` at the witnesses `[wy, wt, wyp]` (the DSL variables right-to-left). -/
 lemma inst_termShiftFun {wy wt wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwt : IsSemiterm LAct 0 wt) (hwyp : IsSemiterm LAct 0 wyp) :
     row_termShiftFun_as.map (instOuter LAct [wy, wt, wyp]) = [tshFact wy wt, tshFact wyp wt] ∧
-    instOuter LAct [wy, wt, wyp] row_termShiftFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wt, wyp] row_termShiftFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wt, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_termShiftFun_as row_termShiftFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PtshG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtshG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PtshG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtshG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `termSubstFun` — `“y' w t y. …”`, `m = 4` -/
 
 noncomputable def row_termSubstFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) PtsG, subst LAct (listToVec [bv 0, bv 1, bv 2]) PtsG]
-noncomputable def row_termSubstFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_termSubstFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_termSubstFun : (⌜Semiformula.lMap emb termSubstFunB⌝ : V) = impChain LAct row_termSubstFun_as row_termSubstFun_c := by
-  unfold termSubstFunB row_termSubstFun_as row_termSubstFun_c Peq PtsG
+  unfold termSubstFunB row_termSubstFun_as row_termSubstFun_c PeqB PtsG
   all_goals row_shapeB
 
 lemma isSemiformula_termSubstFun_as : ∀ A ∈ row_termSubstFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -3309,26 +3308,26 @@ lemma isSemiformula_termSubstFun_as : ∀ A ∈ row_termSubstFun_as, IsSemiformu
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtsG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtsG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termSubstFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_termSubstFun_c := by
   unfold row_termSubstFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `termSubstFun` at the witnesses `[wy, wt, ww, wyp]` (the DSL variables right-to-left). -/
 lemma inst_termSubstFun {wy wt ww wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwt : IsSemiterm LAct 0 wt) (hww : IsSemiterm LAct 0 ww) (hwyp : IsSemiterm LAct 0 wyp) :
     row_termSubstFun_as.map (instOuter LAct [wy, wt, ww, wyp]) = [tsFact wy ww wt, tsFact wyp ww wt] ∧
-    instOuter LAct [wy, wt, ww, wyp] row_termSubstFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wt, ww, wyp] row_termSubstFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wt, ww, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_termSubstFun_as row_termSubstFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PtsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PtsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtsG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `termBShiftFun` — `“y' t y. …”`, `m = 3` -/
 
 noncomputable def row_termBShiftFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PtbshG, subst LAct (listToVec [bv 0, bv 1]) PtbshG]
-noncomputable def row_termBShiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_termBShiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_termBShiftFun : (⌜Semiformula.lMap emb termBShiftFunB⌝ : V) = impChain LAct row_termBShiftFun_as row_termBShiftFun_c := by
-  unfold termBShiftFunB row_termBShiftFun_as row_termBShiftFun_c Peq PtbshG
+  unfold termBShiftFunB row_termBShiftFun_as row_termBShiftFun_c PeqB PtbshG
   all_goals row_shapeB
 
 lemma isSemiformula_termBShiftFun_as : ∀ A ∈ row_termBShiftFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3336,26 +3335,26 @@ lemma isSemiformula_termBShiftFun_as : ∀ A ∈ row_termBShiftFun_as, IsSemifor
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtbshG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtbshG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termBShiftFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_termBShiftFun_c := by
   unfold row_termBShiftFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `termBShiftFun` at the witnesses `[wy, wt, wyp]` (the DSL variables right-to-left). -/
 lemma inst_termBShiftFun {wy wt wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwt : IsSemiterm LAct 0 wt) (hwyp : IsSemiterm LAct 0 wyp) :
     row_termBShiftFun_as.map (instOuter LAct [wy, wt, wyp]) = [tbshFact wy wt, tbshFact wyp wt] ∧
-    instOuter LAct [wy, wt, wyp] row_termBShiftFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wt, wyp] row_termBShiftFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wt, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_termBShiftFun_as row_termBShiftFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PtbshG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtbshG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PtbshG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtbshG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qqAllsFun` — `“y' b m y. …”`, `m = 4` -/
 
 noncomputable def row_qqAllsFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) Palls, subst LAct (listToVec [bv 0, bv 1, bv 2]) Palls]
-noncomputable def row_qqAllsFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_qqAllsFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_qqAllsFun : (⌜Semiformula.lMap emb qqAllsFunB⌝ : V) = impChain LAct row_qqAllsFun_as row_qqAllsFun_c := by
-  unfold qqAllsFunB row_qqAllsFun_as row_qqAllsFun_c Palls Peq
+  unfold qqAllsFunB row_qqAllsFun_as row_qqAllsFun_c Palls PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_qqAllsFun_as : ∀ A ∈ row_qqAllsFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -3363,26 +3362,26 @@ lemma isSemiformula_qqAllsFun_as : ∀ A ∈ row_qqAllsFun_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Palls _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Palls _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qqAllsFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_qqAllsFun_c := by
   unfold row_qqAllsFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qqAllsFun` at the witnesses `[wy, wm, wb, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qqAllsFun {wy wm wb wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwm : IsSemiterm LAct 0 wm) (hwb : IsSemiterm LAct 0 wb) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qqAllsFun_as.map (instOuter LAct [wy, wm, wb, wyp]) = [allsFact wy wb wm, allsFact wyp wb wm] ∧
-    instOuter LAct [wy, wm, wb, wyp] row_qqAllsFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wm, wb, wyp] row_qqAllsFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wm, wb, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwm, List.forall_mem_cons.mpr ⟨hwb, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_qqAllsFun_as row_qqAllsFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Palls (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Palls (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Palls (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Palls (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `bvFun` — `“y' b y. …”`, `m = 3` -/
 
 noncomputable def row_bvFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PbvG, subst LAct (listToVec [bv 0, bv 1]) PbvG]
-noncomputable def row_bvFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_bvFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_bvFun : (⌜Semiformula.lMap emb bvFunB⌝ : V) = impChain LAct row_bvFun_as row_bvFun_c := by
-  unfold bvFunB row_bvFun_as row_bvFun_c PbvG Peq
+  unfold bvFunB row_bvFun_as row_bvFun_c PbvG PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_bvFun_as : ∀ A ∈ row_bvFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3390,26 +3389,26 @@ lemma isSemiformula_bvFun_as : ∀ A ∈ row_bvFun_as, IsSemiformula LAct ((3 : 
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbvG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbvG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_bvFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_bvFun_c := by
   unfold row_bvFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `bvFun` at the witnesses `[wy, wb, wyp]` (the DSL variables right-to-left). -/
 lemma inst_bvFun {wy wb wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwb : IsSemiterm LAct 0 wb) (hwyp : IsSemiterm LAct 0 wyp) :
     row_bvFun_as.map (instOuter LAct [wy, wb, wyp]) = [bvFact wy wb, bvFact wyp wb] ∧
-    instOuter LAct [wy, wb, wyp] row_bvFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wb, wyp] row_bvFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wb, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwb, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_bvFun_as row_bvFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PbvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PbvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PbvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PbvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `qVecFun` — `“y' w y. …”`, `m = 3` -/
 
 noncomputable def row_qVecFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PqVecG, subst LAct (listToVec [bv 0, bv 1]) PqVecG]
-noncomputable def row_qVecFun_c : V := subst LAct (listToVec [bv 2, bv 0]) Peq
+noncomputable def row_qVecFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
 theorem quote_row_qVecFun : (⌜Semiformula.lMap emb qVecFunB⌝ : V) = impChain LAct row_qVecFun_as row_qVecFun_c := by
-  unfold qVecFunB row_qVecFun_as row_qVecFun_c Peq PqVecG
+  unfold qVecFunB row_qVecFun_as row_qVecFun_c PeqB PqVecG
   all_goals row_shapeB
 
 lemma isSemiformula_qVecFun_as : ∀ A ∈ row_qVecFun_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -3417,26 +3416,26 @@ lemma isSemiformula_qVecFun_as : ∀ A ∈ row_qVecFun_as, IsSemiformula LAct ((
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PqVecG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PqVecG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_qVecFun_c : IsSemiformula LAct ((3 : ℕ) : V) row_qVecFun_c := by
   unfold row_qVecFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `qVecFun` at the witnesses `[wy, ww, wyp]` (the DSL variables right-to-left). -/
 lemma inst_qVecFun {wy ww wyp : V} (hwy : IsSemiterm LAct 0 wy) (hww : IsSemiterm LAct 0 ww) (hwyp : IsSemiterm LAct 0 wyp) :
     row_qVecFun_as.map (instOuter LAct [wy, ww, wyp]) = [qVecFact wy ww, qVecFact wyp ww] ∧
-    instOuter LAct [wy, ww, wyp] row_qVecFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, ww, wyp] row_qVecFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, ww, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_qVecFun_as row_qVecFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PqVecG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PqVecG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PqVecG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PqVecG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `termShiftVecFun` — `“y' k v y. …”`, `m = 4` -/
 
 noncomputable def row_termShiftVecFun_as : List V := [subst LAct (listToVec [bv 3, bv 1, bv 2]) PtshvG, subst LAct (listToVec [bv 0, bv 1, bv 2]) PtshvG]
-noncomputable def row_termShiftVecFun_c : V := subst LAct (listToVec [bv 3, bv 0]) Peq
+noncomputable def row_termShiftVecFun_c : V := subst LAct (listToVec [bv 3, bv 0]) PeqB
 
 theorem quote_row_termShiftVecFun : (⌜Semiformula.lMap emb termShiftVecFunB⌝ : V) = impChain LAct row_termShiftVecFun_as row_termShiftVecFun_c := by
-  unfold termShiftVecFunB row_termShiftVecFun_as row_termShiftVecFun_c Peq PtshvG
+  unfold termShiftVecFunB row_termShiftVecFun_as row_termShiftVecFun_c PeqB PtshvG
   all_goals row_shapeB
 
 lemma isSemiformula_termShiftVecFun_as : ∀ A ∈ row_termShiftVecFun_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
@@ -3444,26 +3443,26 @@ lemma isSemiformula_termShiftVecFun_as : ∀ A ∈ row_termShiftVecFun_as, IsSem
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtshvG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtshvG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termShiftVecFun_c : IsSemiformula LAct ((4 : ℕ) : V) row_termShiftVecFun_c := by
   unfold row_termShiftVecFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `termShiftVecFun` at the witnesses `[wy, wv, wk, wyp]` (the DSL variables right-to-left). -/
 lemma inst_termShiftVecFun {wy wv wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwv : IsSemiterm LAct 0 wv) (hwk : IsSemiterm LAct 0 wk) (hwyp : IsSemiterm LAct 0 wyp) :
     row_termShiftVecFun_as.map (instOuter LAct [wy, wv, wk, wyp]) = [tshvFact wy wk wv, tshvFact wyp wk wv] ∧
-    instOuter LAct [wy, wv, wk, wyp] row_termShiftVecFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wv, wk, wyp] row_termShiftVecFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wv, wk, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_termShiftVecFun_as row_termShiftVecFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PtshvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtshvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PtshvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtshvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `termSubstVecFun` — `“y' k w v y. …”`, `m = 5` -/
 
 noncomputable def row_termSubstVecFun_as : List V := [subst LAct (listToVec [bv 4, bv 1, bv 2, bv 3]) PtsvG, subst LAct (listToVec [bv 0, bv 1, bv 2, bv 3]) PtsvG]
-noncomputable def row_termSubstVecFun_c : V := subst LAct (listToVec [bv 4, bv 0]) Peq
+noncomputable def row_termSubstVecFun_c : V := subst LAct (listToVec [bv 4, bv 0]) PeqB
 
 theorem quote_row_termSubstVecFun : (⌜Semiformula.lMap emb termSubstVecFunB⌝ : V) = impChain LAct row_termSubstVecFun_as row_termSubstVecFun_c := by
-  unfold termSubstVecFunB row_termSubstVecFun_as row_termSubstVecFun_c Peq PtsvG
+  unfold termSubstVecFunB row_termSubstVecFun_as row_termSubstVecFun_c PeqB PtsvG
   all_goals row_shapeB
 
 lemma isSemiformula_termSubstVecFun_as : ∀ A ∈ row_termSubstVecFun_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
@@ -3471,16 +3470,16 @@ lemma isSemiformula_termSubstVecFun_as : ∀ A ∈ row_termSubstVecFun_as, IsSem
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtsvG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtsvG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termSubstVecFun_c : IsSemiformula LAct ((5 : ℕ) : V) row_termSubstVecFun_c := by
   unfold row_termSubstVecFun_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `termSubstVecFun` at the witnesses `[wy, wv, ww, wk, wyp]` (the DSL variables right-to-left). -/
 lemma inst_termSubstVecFun {wy wv ww wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (hwv : IsSemiterm LAct 0 wv) (hww : IsSemiterm LAct 0 ww) (hwk : IsSemiterm LAct 0 wk) (hwyp : IsSemiterm LAct 0 wyp) :
     row_termSubstVecFun_as.map (instOuter LAct [wy, wv, ww, wk, wyp]) = [tsvFact wy wk ww wv, tsvFact wyp wk ww wv] ∧
-    instOuter LAct [wy, wv, ww, wk, wyp] row_termSubstVecFun_c = eqFact wy wyp := by
+    instOuter LAct [wy, wv, ww, wk, wyp] row_termSubstVecFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, wv, ww, wk, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩⟩)
   unfold row_termSubstVecFun_as row_termSubstVecFun_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PtsvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtsvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PtsvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtsvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
@@ -3489,10 +3488,10 @@ lemma inst_termSubstVecFun {wy wv ww wk wyp : V} (hwy : IsSemiterm LAct 0 wy) (h
 /-! ### `subsetAntisymm` — `“t s. …”`, `m = 2` -/
 
 noncomputable def row_subsetAntisymm_as : List V := [subst LAct (listToVec [bv 1, bv 0]) Psubset, subst LAct (listToVec [bv 0, bv 1]) Psubset]
-noncomputable def row_subsetAntisymm_c : V := subst LAct (listToVec [bv 1, bv 0]) Peq
+noncomputable def row_subsetAntisymm_c : V := subst LAct (listToVec [bv 1, bv 0]) PeqB
 
 theorem quote_row_subsetAntisymm : (⌜Semiformula.lMap emb subsetAntisymmB⌝ : V) = impChain LAct row_subsetAntisymm_as row_subsetAntisymm_c := by
-  unfold subsetAntisymmB row_subsetAntisymm_as row_subsetAntisymm_c Peq Psubset
+  unfold subsetAntisymmB row_subsetAntisymm_as row_subsetAntisymm_c PeqB Psubset
   all_goals row_shapeB
 
 lemma isSemiformula_subsetAntisymm_as : ∀ A ∈ row_subsetAntisymm_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
@@ -3500,16 +3499,16 @@ lemma isSemiformula_subsetAntisymm_as : ∀ A ∈ row_subsetAntisymm_as, IsSemif
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_subsetAntisymm_c : IsSemiformula LAct ((2 : ℕ) : V) row_subsetAntisymm_c := by
   unfold row_subsetAntisymm_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `subsetAntisymm` at the witnesses `[ws, wt]` (the DSL variables right-to-left). -/
 lemma inst_subsetAntisymm {ws wt : V} (hws : IsSemiterm LAct 0 ws) (hwt : IsSemiterm LAct 0 wt) :
     row_subsetAntisymm_as.map (instOuter LAct [ws, wt]) = [subsetFact ws wt, subsetFact wt ws] ∧
-    instOuter LAct [ws, wt] row_subsetAntisymm_c = eqFact ws wt := by
+    instOuter LAct [ws, wt] row_subsetAntisymm_c = eqFactB ws wt := by
   have hes : ∀ e ∈ ([ws, wt] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_nil _⟩⟩)
   unfold row_subsetAntisymm_as row_subsetAntisymm_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Psubset (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
@@ -3543,10 +3542,10 @@ lemma inst_setShiftInsert {ws wsp wx wy wu wup : V} (hws : IsSemiterm LAct 0 ws)
 /-! ### `setShiftEmpty` — `“u. …”`, `m = 1` -/
 
 noncomputable def row_setShiftEmpty_as : List V := [subst LAct (listToVec [bv 0, (𝟎 : V)]) PsetShiftG]
-noncomputable def row_setShiftEmpty_c : V := subst LAct (listToVec [bv 0, (𝟎 : V)]) Peq
+noncomputable def row_setShiftEmpty_c : V := subst LAct (listToVec [bv 0, (𝟎 : V)]) PeqB
 
 theorem quote_row_setShiftEmpty : (⌜Semiformula.lMap emb setShiftEmptyB⌝ : V) = impChain LAct row_setShiftEmpty_as row_setShiftEmpty_c := by
-  unfold setShiftEmptyB row_setShiftEmpty_as row_setShiftEmpty_c Peq PsetShiftG
+  unfold setShiftEmptyB row_setShiftEmpty_as row_setShiftEmpty_c PeqB PsetShiftG
   all_goals row_shapeB
 
 lemma isSemiformula_setShiftEmpty_as : ∀ A ∈ row_setShiftEmpty_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
@@ -3554,16 +3553,16 @@ lemma isSemiformula_setShiftEmpty_as : ∀ A ∈ row_setShiftEmpty_as, IsSemifor
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetShiftG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_setShiftEmpty_c : IsSemiformula LAct ((1 : ℕ) : V) row_setShiftEmpty_c := by
   unfold row_setShiftEmpty_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `setShiftEmpty` at the witnesses `[wu]` (the DSL variables right-to-left). -/
 lemma inst_setShiftEmpty {wu : V} (hwu : IsSemiterm LAct 0 wu) :
     row_setShiftEmpty_as.map (instOuter LAct [wu]) = [setShiftFact wu (𝟎 : V)] ∧
-    instOuter LAct [wu] row_setShiftEmpty_c = eqFact wu (𝟎 : V) := by
+    instOuter LAct [wu] row_setShiftEmpty_c = eqFactB wu (𝟎 : V) := by
   have hes : ∀ e ∈ ([wu] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwu, List.forall_mem_nil _⟩)
   unfold row_setShiftEmpty_as row_setShiftEmpty_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PsetShiftG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
@@ -3924,28 +3923,28 @@ lemma inst_instBIntro {wn wk wt wv wg : V} (hwn : IsSemiterm LAct 0 wn) (hwk : I
 
 /-! ### `gIntro` — `“a l k. …”`, `m = 3` -/
 
-noncomputable def row_gIntro_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Plength, subst LAct (listToVec [bv 0, ((bv 1 ^* bv 1) ^* bv 1)]) Peq]
+noncomputable def row_gIntro_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Plength, subst LAct (listToVec [bv 0, ((bv 1 ^* bv 1) ^* bv 1)]) PeqB]
 noncomputable def row_gIntro_c : V := subst LAct (listToVec [bv 0, bv 2]) Pg
 
 theorem quote_row_gIntro : (⌜Semiformula.lMap emb gIntroB⌝ : V) = impChain LAct row_gIntro_as row_gIntro_c := by
-  unfold gIntroB row_gIntro_as row_gIntro_c Peq Pg Plength
+  unfold gIntroB row_gIntro_as row_gIntro_c PeqB Pg Plength
   all_goals row_shapeB
 
 lemma isSemiformula_gIntro_as : ∀ A ∈ row_gIntro_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
   unfold row_gIntro_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Plength _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Plength _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_gIntro_c : IsSemiformula LAct ((3 : ℕ) : V) row_gIntro_c := by
   unfold row_gIntro_c
   exact isSemiformula_substRow isSemiformula_Pg _ (by rfl) (by row_entriesB)
 
 /-- `gIntro` at the witnesses `[wk, wl, wa]` (the DSL variables right-to-left). -/
 lemma inst_gIntro {wk wl wa : V} (hwk : IsSemiterm LAct 0 wk) (hwl : IsSemiterm LAct 0 wl) (hwa : IsSemiterm LAct 0 wa) :
-    row_gIntro_as.map (instOuter LAct [wk, wl, wa]) = [lengthFact wl wk, eqFact wa ((wl ^* wl) ^* wl)] ∧
+    row_gIntro_as.map (instOuter LAct [wk, wl, wa]) = [lengthFact wl wk, eqFactB wa ((wl ^* wl) ^* wl)] ∧
     instOuter LAct [wk, wl, wa] row_gIntro_c = gFact wa wk := by
   have hes : ∀ e ∈ ([wk, wl, wa] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwa, List.forall_mem_nil _⟩⟩⟩)
   unfold row_gIntro_as row_gIntro_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Plength (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pg (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Plength (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pg (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
@@ -4183,10 +4182,10 @@ lemma inst_listSumNil {wx : V} (hwx : IsSemiterm LAct 0 wx) :
 /-! ### `listSumAdj` — `“s' s l M M'. …”`, `m = 5` -/
 
 noncomputable def row_listSumAdj_as : List V := [subst LAct (listToVec [bv 1, bv 3]) PlistSum, subst LAct (listToVec [bv 4, bv 2, bv 3]) Padjoin, subst LAct (listToVec [bv 0, bv 4]) PlistSum]
-noncomputable def row_listSumAdj_c : V := subst LAct (listToVec [bv 0, (bv 2 ^+ bv 1)]) Peq
+noncomputable def row_listSumAdj_c : V := subst LAct (listToVec [bv 0, (bv 2 ^+ bv 1)]) PeqB
 
 theorem quote_row_listSumAdj : (⌜Semiformula.lMap emb listSumAdjB⌝ : V) = impChain LAct row_listSumAdj_as row_listSumAdj_c := by
-  unfold listSumAdjB row_listSumAdj_as row_listSumAdj_c Padjoin Peq PlistSum
+  unfold listSumAdjB row_listSumAdj_as row_listSumAdj_c Padjoin PeqB PlistSum
   all_goals row_shapeB
 
 lemma isSemiformula_listSumAdj_as : ∀ A ∈ row_listSumAdj_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
@@ -4194,26 +4193,26 @@ lemma isSemiformula_listSumAdj_as : ∀ A ∈ row_listSumAdj_as, IsSemiformula L
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_listSumAdj_c : IsSemiformula LAct ((5 : ℕ) : V) row_listSumAdj_c := by
   unfold row_listSumAdj_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `listSumAdj` at the witnesses `[wMp, wM, wl, ws, wsp]` (the DSL variables right-to-left). -/
 lemma inst_listSumAdj {wMp wM wl ws wsp : V} (hwMp : IsSemiterm LAct 0 wMp) (hwM : IsSemiterm LAct 0 wM) (hwl : IsSemiterm LAct 0 wl) (hws : IsSemiterm LAct 0 ws) (hwsp : IsSemiterm LAct 0 wsp) :
     row_listSumAdj_as.map (instOuter LAct [wMp, wM, wl, ws, wsp]) = [listSumFact ws wM, adjFact wMp wl wM, listSumFact wsp wMp] ∧
-    instOuter LAct [wMp, wM, wl, ws, wsp] row_listSumAdj_c = eqFact wsp (wl ^+ ws) := by
+    instOuter LAct [wMp, wM, wl, ws, wsp] row_listSumAdj_c = eqFactB wsp (wl ^+ ws) := by
   have hes : ∀ e ∈ ([wMp, wM, wl, ws, wsp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwMp, List.forall_mem_cons.mpr ⟨hwM, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwsp, List.forall_mem_nil _⟩⟩⟩⟩⟩)
   unfold row_listSumAdj_as row_listSumAdj_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `formulaLenRelCert` — `“l s M p v R k. …”`, `m = 7` -/
 
 noncomputable def row_formulaLenRelCert_as : List V := [subst LAct (listToVec [bv 6, bv 5]) PisRel, subst LAct (listToVec [bv 6, bv 4]) PutvPi, subst LAct (listToVec [bv 3, bv 6, bv 5, bv 4]) Prel, subst LAct (listToVec [bv 2, bv 6, bv 4]) PtlvG, subst LAct (listToVec [bv 1, bv 2]) PlistSum, subst LAct (listToVec [bv 0, bv 3]) PflenG]
-noncomputable def row_formulaLenRelCert_c : V := subst LAct (listToVec [bv 0, (bv 1 ^+ (𝟏 : V))]) Peq
+noncomputable def row_formulaLenRelCert_c : V := subst LAct (listToVec [bv 0, (bv 1 ^+ (𝟏 : V))]) PeqB
 
 theorem quote_row_formulaLenRelCert : (⌜Semiformula.lMap emb formulaLenRelCertB⌝ : V) = impChain LAct row_formulaLenRelCert_as row_formulaLenRelCert_c := by
-  unfold formulaLenRelCertB row_formulaLenRelCert_as row_formulaLenRelCert_c Peq PflenG PisRel PlistSum Prel PtlvG PutvPi
+  unfold formulaLenRelCertB row_formulaLenRelCert_as row_formulaLenRelCert_c PeqB PflenG PisRel PlistSum Prel PtlvG PutvPi
   all_goals row_shapeB
 
 lemma isSemiformula_formulaLenRelCert_as : ∀ A ∈ row_formulaLenRelCert_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
@@ -4221,26 +4220,26 @@ lemma isSemiformula_formulaLenRelCert_as : ∀ A ∈ row_formulaLenRelCert_as, I
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PisRel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PutvPi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlvG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_formulaLenRelCert_c : IsSemiformula LAct ((7 : ℕ) : V) row_formulaLenRelCert_c := by
   unfold row_formulaLenRelCert_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `formulaLenRelCert` at the witnesses `[wk, wR, wv, wp, wM, ws, wl]` (the DSL variables right-to-left). -/
 lemma inst_formulaLenRelCert {wk wR wv wp wM ws wl : V} (hwk : IsSemiterm LAct 0 wk) (hwR : IsSemiterm LAct 0 wR) (hwv : IsSemiterm LAct 0 wv) (hwp : IsSemiterm LAct 0 wp) (hwM : IsSemiterm LAct 0 wM) (hws : IsSemiterm LAct 0 ws) (hwl : IsSemiterm LAct 0 wl) :
     row_formulaLenRelCert_as.map (instOuter LAct [wk, wR, wv, wp, wM, ws, wl]) = [isRelFact wk wR, utvPiFact wk wv, relFact wp wk wR wv, tlvFact wM wk wv, listSumFact ws wM, lenFact wl wp] ∧
-    instOuter LAct [wk, wR, wv, wp, wM, ws, wl] row_formulaLenRelCert_c = eqFact wl (ws ^+ (𝟏 : V)) := by
+    instOuter LAct [wk, wR, wv, wp, wM, ws, wl] row_formulaLenRelCert_c = eqFactB wl (ws ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([wk, wR, wv, wp, wM, ws, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwR, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwM, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩)
   unfold row_formulaLenRelCert_as row_formulaLenRelCert_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PisRel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PisRel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Prel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `formulaLenNRelCert` — `“l s M p v R k. …”`, `m = 7` -/
 
 noncomputable def row_formulaLenNRelCert_as : List V := [subst LAct (listToVec [bv 6, bv 5]) PisRel, subst LAct (listToVec [bv 6, bv 4]) PutvPi, subst LAct (listToVec [bv 3, bv 6, bv 5, bv 4]) Pnrel, subst LAct (listToVec [bv 2, bv 6, bv 4]) PtlvG, subst LAct (listToVec [bv 1, bv 2]) PlistSum, subst LAct (listToVec [bv 0, bv 3]) PflenG]
-noncomputable def row_formulaLenNRelCert_c : V := subst LAct (listToVec [bv 0, (bv 1 ^+ (𝟏 : V))]) Peq
+noncomputable def row_formulaLenNRelCert_c : V := subst LAct (listToVec [bv 0, (bv 1 ^+ (𝟏 : V))]) PeqB
 
 theorem quote_row_formulaLenNRelCert : (⌜Semiformula.lMap emb formulaLenNRelCertB⌝ : V) = impChain LAct row_formulaLenNRelCert_as row_formulaLenNRelCert_c := by
-  unfold formulaLenNRelCertB row_formulaLenNRelCert_as row_formulaLenNRelCert_c Peq PflenG PisRel PlistSum Pnrel PtlvG PutvPi
+  unfold formulaLenNRelCertB row_formulaLenNRelCert_as row_formulaLenNRelCert_c PeqB PflenG PisRel PlistSum Pnrel PtlvG PutvPi
   all_goals row_shapeB
 
 lemma isSemiformula_formulaLenNRelCert_as : ∀ A ∈ row_formulaLenNRelCert_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
@@ -4248,26 +4247,26 @@ lemma isSemiformula_formulaLenNRelCert_as : ∀ A ∈ row_formulaLenNRelCert_as,
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PisRel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PutvPi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlvG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_formulaLenNRelCert_c : IsSemiformula LAct ((7 : ℕ) : V) row_formulaLenNRelCert_c := by
   unfold row_formulaLenNRelCert_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `formulaLenNRelCert` at the witnesses `[wk, wR, wv, wp, wM, ws, wl]` (the DSL variables right-to-left). -/
 lemma inst_formulaLenNRelCert {wk wR wv wp wM ws wl : V} (hwk : IsSemiterm LAct 0 wk) (hwR : IsSemiterm LAct 0 wR) (hwv : IsSemiterm LAct 0 wv) (hwp : IsSemiterm LAct 0 wp) (hwM : IsSemiterm LAct 0 wM) (hws : IsSemiterm LAct 0 ws) (hwl : IsSemiterm LAct 0 wl) :
     row_formulaLenNRelCert_as.map (instOuter LAct [wk, wR, wv, wp, wM, ws, wl]) = [isRelFact wk wR, utvPiFact wk wv, nrelFact wp wk wR wv, tlvFact wM wk wv, listSumFact ws wM, lenFact wl wp] ∧
-    instOuter LAct [wk, wR, wv, wp, wM, ws, wl] row_formulaLenNRelCert_c = eqFact wl (ws ^+ (𝟏 : V)) := by
+    instOuter LAct [wk, wR, wv, wp, wM, ws, wl] row_formulaLenNRelCert_c = eqFactB wl (ws ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([wk, wR, wv, wp, wM, ws, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwR, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwM, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩)
   unfold row_formulaLenNRelCert_as row_formulaLenNRelCert_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PisRel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PisRel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pnrel (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `termLenFuncCert` — `“l s M t v f k. …”`, `m = 7` -/
 
 noncomputable def row_termLenFuncCert_as : List V := [subst LAct (listToVec [bv 6, bv 5]) PisFunc, subst LAct (listToVec [bv 6, bv 4]) PutvPi, subst LAct (listToVec [bv 3, bv 6, bv 5, bv 4]) Pfunc, subst LAct (listToVec [bv 2, bv 6, bv 4]) PtlvG, subst LAct (listToVec [bv 1, bv 2]) PlistSum, subst LAct (listToVec [bv 0, bv 3]) PtlenG]
-noncomputable def row_termLenFuncCert_c : V := subst LAct (listToVec [bv 0, (bv 1 ^+ (𝟏 : V))]) Peq
+noncomputable def row_termLenFuncCert_c : V := subst LAct (listToVec [bv 0, (bv 1 ^+ (𝟏 : V))]) PeqB
 
 theorem quote_row_termLenFuncCert : (⌜Semiformula.lMap emb termLenFuncCertB⌝ : V) = impChain LAct row_termLenFuncCert_as row_termLenFuncCert_c := by
-  unfold termLenFuncCertB row_termLenFuncCert_as row_termLenFuncCert_c Peq Pfunc PisFunc PlistSum PtlenG PtlvG PutvPi
+  unfold termLenFuncCertB row_termLenFuncCert_as row_termLenFuncCert_c PeqB Pfunc PisFunc PlistSum PtlenG PtlvG PutvPi
   all_goals row_shapeB
 
 lemma isSemiformula_termLenFuncCert_as : ∀ A ∈ row_termLenFuncCert_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
@@ -4275,16 +4274,16 @@ lemma isSemiformula_termLenFuncCert_as : ∀ A ∈ row_termLenFuncCert_as, IsSem
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PisFunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PutvPi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlvG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_termLenFuncCert_c : IsSemiformula LAct ((7 : ℕ) : V) row_termLenFuncCert_c := by
   unfold row_termLenFuncCert_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `termLenFuncCert` at the witnesses `[wk, wf, wv, wt, wM, ws, wl]` (the DSL variables right-to-left). -/
 lemma inst_termLenFuncCert {wk wf wv wt wM ws wl : V} (hwk : IsSemiterm LAct 0 wk) (hwf : IsSemiterm LAct 0 wf) (hwv : IsSemiterm LAct 0 wv) (hwt : IsSemiterm LAct 0 wt) (hwM : IsSemiterm LAct 0 wM) (hws : IsSemiterm LAct 0 ws) (hwl : IsSemiterm LAct 0 wl) :
     row_termLenFuncCert_as.map (instOuter LAct [wk, wf, wv, wt, wM, ws, wl]) = [isFuncFact wk wf, utvPiFact wk wv, funcFact wt wk wf wv, tlvFact wM wk wv, listSumFact ws wM, tlenFact wl wt] ∧
-    instOuter LAct [wk, wf, wv, wt, wM, ws, wl] row_termLenFuncCert_c = eqFact wl (ws ^+ (𝟏 : V)) := by
+    instOuter LAct [wk, wf, wv, wt, wM, ws, wl] row_termLenFuncCert_c = eqFactB wl (ws ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([wk, wf, wv, wt, wM, ws, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwf, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwM, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩)
   unfold row_termLenFuncCert_as row_termLenFuncCert_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PisFunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PisFunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PutvPi (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlvG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
@@ -5551,10 +5550,10 @@ lemma inst_nthAdjoinSucc {wi wv wt ww we : V} (hwi : IsSemiterm LAct 0 wi) (hwv 
 /-! ### `twoMulMul` — `“y x. …”`, `m = 2` -/
 
 noncomputable def row_twoMulMul_as : List V := []
-noncomputable def row_twoMulMul_c : V := subst LAct (listToVec [(bv 1 ^* (((𝟏 : V) ^+ (𝟏 : V)) ^* bv 0)), (((𝟏 : V) ^+ (𝟏 : V)) ^* (bv 1 ^* bv 0))]) Peq
+noncomputable def row_twoMulMul_c : V := subst LAct (listToVec [(bv 1 ^* (((𝟏 : V) ^+ (𝟏 : V)) ^* bv 0)), (((𝟏 : V) ^+ (𝟏 : V)) ^* (bv 1 ^* bv 0))]) PeqB
 
 theorem quote_row_twoMulMul : (⌜Semiformula.lMap emb twoMulMulB⌝ : V) = impChain LAct row_twoMulMul_as row_twoMulMul_c := by
-  unfold twoMulMulB row_twoMulMul_as row_twoMulMul_c Peq
+  unfold twoMulMulB row_twoMulMul_as row_twoMulMul_c PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_twoMulMul_as : ∀ A ∈ row_twoMulMul_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
@@ -5562,26 +5561,26 @@ lemma isSemiformula_twoMulMul_as : ∀ A ∈ row_twoMulMul_as, IsSemiformula LAc
   exact (List.forall_mem_nil _)
 lemma isSemiformula_twoMulMul_c : IsSemiformula LAct ((2 : ℕ) : V) row_twoMulMul_c := by
   unfold row_twoMulMul_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `twoMulMul` at the witnesses `[wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_twoMulMul {wx wy : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
     row_twoMulMul_as.map (instOuter LAct [wx, wy]) = [] ∧
-    instOuter LAct [wx, wy] row_twoMulMul_c = eqFact (wx ^* (((𝟏 : V) ^+ (𝟏 : V)) ^* wy)) (((𝟏 : V) ^+ (𝟏 : V)) ^* (wx ^* wy)) := by
+    instOuter LAct [wx, wy] row_twoMulMul_c = eqFactB (wx ^* (((𝟏 : V) ^+ (𝟏 : V)) ^* wy)) (((𝟏 : V) ^+ (𝟏 : V)) ^* (wx ^* wy)) := by
   have hes : ∀ e ∈ ([wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩)
   unfold row_twoMulMul_as row_twoMulMul_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `twoMulOneMul` — `“y x. …”`, `m = 2` -/
 
 noncomputable def row_twoMulOneMul_as : List V := []
-noncomputable def row_twoMulOneMul_c : V := subst LAct (listToVec [(bv 1 ^* ((((𝟏 : V) ^+ (𝟏 : V)) ^* bv 0) ^+ (𝟏 : V))), ((((𝟏 : V) ^+ (𝟏 : V)) ^* (bv 1 ^* bv 0)) ^+ bv 1)]) Peq
+noncomputable def row_twoMulOneMul_c : V := subst LAct (listToVec [(bv 1 ^* ((((𝟏 : V) ^+ (𝟏 : V)) ^* bv 0) ^+ (𝟏 : V))), ((((𝟏 : V) ^+ (𝟏 : V)) ^* (bv 1 ^* bv 0)) ^+ bv 1)]) PeqB
 
 theorem quote_row_twoMulOneMul : (⌜Semiformula.lMap emb twoMulOneMulB⌝ : V) = impChain LAct row_twoMulOneMul_as row_twoMulOneMul_c := by
-  unfold twoMulOneMulB row_twoMulOneMul_as row_twoMulOneMul_c Peq
+  unfold twoMulOneMulB row_twoMulOneMul_as row_twoMulOneMul_c PeqB
   all_goals row_shapeB
 
 lemma isSemiformula_twoMulOneMul_as : ∀ A ∈ row_twoMulOneMul_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
@@ -5589,16 +5588,16 @@ lemma isSemiformula_twoMulOneMul_as : ∀ A ∈ row_twoMulOneMul_as, IsSemiformu
   exact (List.forall_mem_nil _)
 lemma isSemiformula_twoMulOneMul_c : IsSemiformula LAct ((2 : ℕ) : V) row_twoMulOneMul_c := by
   unfold row_twoMulOneMul_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `twoMulOneMul` at the witnesses `[wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_twoMulOneMul {wx wy : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
     row_twoMulOneMul_as.map (instOuter LAct [wx, wy]) = [] ∧
-    instOuter LAct [wx, wy] row_twoMulOneMul_c = eqFact (wx ^* ((((𝟏 : V) ^+ (𝟏 : V)) ^* wy) ^+ (𝟏 : V))) ((((𝟏 : V) ^+ (𝟏 : V)) ^* (wx ^* wy)) ^+ wx) := by
+    instOuter LAct [wx, wy] row_twoMulOneMul_c = eqFactB (wx ^* ((((𝟏 : V) ^+ (𝟏 : V)) ^* wy) ^+ (𝟏 : V))) ((((𝟏 : V) ^+ (𝟏 : V)) ^* (wx ^* wy)) ^+ wx) := by
   have hes : ∀ e ∈ ([wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩)
   unfold row_twoMulOneMul_as row_twoMulOneMul_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
@@ -6361,10 +6360,10 @@ lemma inst_subTotal {wa wb : V} (hwa : IsSemiterm LAct 0 wa) (hwb : IsSemiterm L
 /-! ### `maxEqLeft` — `“m b a. …”`, `m = 3` -/
 
 noncomputable def row_maxEqLeft_as : List V := [subst LAct (listToVec [bv 1, bv 2]) Ple, subst LAct (listToVec [bv 0, bv 2, bv 1]) PmaxG]
-noncomputable def row_maxEqLeft_c : V := subst LAct (listToVec [bv 0, bv 2]) Peq
+noncomputable def row_maxEqLeft_c : V := subst LAct (listToVec [bv 0, bv 2]) PeqB
 
 theorem quote_row_maxEqLeft : (⌜Semiformula.lMap emb maxEqLeftB⌝ : V) = impChain LAct row_maxEqLeft_as row_maxEqLeft_c := by
-  unfold maxEqLeftB row_maxEqLeft_as row_maxEqLeft_c Peq Ple PmaxG leS
+  unfold maxEqLeftB row_maxEqLeft_as row_maxEqLeft_c PeqB Ple PmaxG leS
   all_goals row_shapeB
 
 lemma isSemiformula_maxEqLeft_as : ∀ A ∈ row_maxEqLeft_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -6372,26 +6371,26 @@ lemma isSemiformula_maxEqLeft_as : ∀ A ∈ row_maxEqLeft_as, IsSemiformula LAc
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PmaxG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_maxEqLeft_c : IsSemiformula LAct ((3 : ℕ) : V) row_maxEqLeft_c := by
   unfold row_maxEqLeft_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `maxEqLeft` at the witnesses `[wa, wb, wm]` (the DSL variables right-to-left). -/
 lemma inst_maxEqLeft {wa wb wm : V} (hwa : IsSemiterm LAct 0 wa) (hwb : IsSemiterm LAct 0 wb) (hwm : IsSemiterm LAct 0 wm) :
     row_maxEqLeft_as.map (instOuter LAct [wa, wb, wm]) = [leFact wb wa, maxFact wm wa wb] ∧
-    instOuter LAct [wa, wb, wm] row_maxEqLeft_c = eqFact wm wa := by
+    instOuter LAct [wa, wb, wm] row_maxEqLeft_c = eqFactB wm wa := by
   have hes : ∀ e ∈ ([wa, wb, wm] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwa, List.forall_mem_cons.mpr ⟨hwb, List.forall_mem_cons.mpr ⟨hwm, List.forall_mem_nil _⟩⟩⟩)
   unfold row_maxEqLeft_as row_maxEqLeft_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PmaxG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PmaxG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `maxEqRight` — `“m b a. …”`, `m = 3` -/
 
 noncomputable def row_maxEqRight_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Ple, subst LAct (listToVec [bv 0, bv 2, bv 1]) PmaxG]
-noncomputable def row_maxEqRight_c : V := subst LAct (listToVec [bv 0, bv 1]) Peq
+noncomputable def row_maxEqRight_c : V := subst LAct (listToVec [bv 0, bv 1]) PeqB
 
 theorem quote_row_maxEqRight : (⌜Semiformula.lMap emb maxEqRightB⌝ : V) = impChain LAct row_maxEqRight_as row_maxEqRight_c := by
-  unfold maxEqRightB row_maxEqRight_as row_maxEqRight_c Peq Ple PmaxG leS
+  unfold maxEqRightB row_maxEqRight_as row_maxEqRight_c PeqB Ple PmaxG leS
   all_goals row_shapeB
 
 lemma isSemiformula_maxEqRight_as : ∀ A ∈ row_maxEqRight_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -6399,53 +6398,53 @@ lemma isSemiformula_maxEqRight_as : ∀ A ∈ row_maxEqRight_as, IsSemiformula L
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PmaxG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_maxEqRight_c : IsSemiformula LAct ((3 : ℕ) : V) row_maxEqRight_c := by
   unfold row_maxEqRight_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `maxEqRight` at the witnesses `[wa, wb, wm]` (the DSL variables right-to-left). -/
 lemma inst_maxEqRight {wa wb wm : V} (hwa : IsSemiterm LAct 0 wa) (hwb : IsSemiterm LAct 0 wb) (hwm : IsSemiterm LAct 0 wm) :
     row_maxEqRight_as.map (instOuter LAct [wa, wb, wm]) = [leFact wa wb, maxFact wm wa wb] ∧
-    instOuter LAct [wa, wb, wm] row_maxEqRight_c = eqFact wm wb := by
+    instOuter LAct [wa, wb, wm] row_maxEqRight_c = eqFactB wm wb := by
   have hes : ∀ e ∈ ([wa, wb, wm] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwa, List.forall_mem_cons.mpr ⟨hwb, List.forall_mem_cons.mpr ⟨hwm, List.forall_mem_nil _⟩⟩⟩)
   unfold row_maxEqRight_as row_maxEqRight_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PmaxG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PmaxG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `subAddCancel` — `“m c b a. …”`, `m = 4` -/
 
-noncomputable def row_subAddCancel_as : List V := [subst LAct (listToVec [bv 3, (bv 2 ^+ bv 1)]) Peq, subst LAct (listToVec [bv 0, bv 3, bv 2]) PsubG]
-noncomputable def row_subAddCancel_c : V := subst LAct (listToVec [bv 0, bv 1]) Peq
+noncomputable def row_subAddCancel_as : List V := [subst LAct (listToVec [bv 3, (bv 2 ^+ bv 1)]) PeqB, subst LAct (listToVec [bv 0, bv 3, bv 2]) PsubG]
+noncomputable def row_subAddCancel_c : V := subst LAct (listToVec [bv 0, bv 1]) PeqB
 
 theorem quote_row_subAddCancel : (⌜Semiformula.lMap emb subAddCancelB⌝ : V) = impChain LAct row_subAddCancel_as row_subAddCancel_c := by
-  unfold subAddCancelB row_subAddCancel_as row_subAddCancel_c Peq PsubG
+  unfold subAddCancelB row_subAddCancel_as row_subAddCancel_c PeqB PsubG
   all_goals row_shapeB
 
 lemma isSemiformula_subAddCancel_as : ∀ A ∈ row_subAddCancel_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
   unfold row_subAddCancel_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_subAddCancel_c : IsSemiformula LAct ((4 : ℕ) : V) row_subAddCancel_c := by
   unfold row_subAddCancel_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `subAddCancel` at the witnesses `[wa, wb, wc, wm]` (the DSL variables right-to-left). -/
 lemma inst_subAddCancel {wa wb wc wm : V} (hwa : IsSemiterm LAct 0 wa) (hwb : IsSemiterm LAct 0 wb) (hwc : IsSemiterm LAct 0 wc) (hwm : IsSemiterm LAct 0 wm) :
-    row_subAddCancel_as.map (instOuter LAct [wa, wb, wc, wm]) = [eqFact wa (wb ^+ wc), subDFact wm wa wb] ∧
-    instOuter LAct [wa, wb, wc, wm] row_subAddCancel_c = eqFact wm wc := by
+    row_subAddCancel_as.map (instOuter LAct [wa, wb, wc, wm]) = [eqFactB wa (wb ^+ wc), subDFact wm wa wb] ∧
+    instOuter LAct [wa, wb, wc, wm] row_subAddCancel_c = eqFactB wm wc := by
   have hes : ∀ e ∈ ([wa, wb, wc, wm] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwa, List.forall_mem_cons.mpr ⟨hwb, List.forall_mem_cons.mpr ⟨hwc, List.forall_mem_cons.mpr ⟨hwm, List.forall_mem_nil _⟩⟩⟩⟩)
   unfold row_subAddCancel_as row_subAddCancel_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
 /-! ### `subOfLe` — `“m b a. …”`, `m = 3` -/
 
 noncomputable def row_subOfLe_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Ple, subst LAct (listToVec [bv 0, bv 2, bv 1]) PsubG]
-noncomputable def row_subOfLe_c : V := subst LAct (listToVec [bv 0, (𝟎 : V)]) Peq
+noncomputable def row_subOfLe_c : V := subst LAct (listToVec [bv 0, (𝟎 : V)]) PeqB
 
 theorem quote_row_subOfLe : (⌜Semiformula.lMap emb subOfLeB⌝ : V) = impChain LAct row_subOfLe_as row_subOfLe_c := by
-  unfold subOfLeB row_subOfLe_as row_subOfLe_c Peq Ple PsubG leS
+  unfold subOfLeB row_subOfLe_as row_subOfLe_c PeqB Ple PsubG leS
   all_goals row_shapeB
 
 lemma isSemiformula_subOfLe_as : ∀ A ∈ row_subOfLe_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
@@ -6453,16 +6452,16 @@ lemma isSemiformula_subOfLe_as : ∀ A ∈ row_subOfLe_as, IsSemiformula LAct ((
   exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_subOfLe_c : IsSemiformula LAct ((3 : ℕ) : V) row_subOfLe_c := by
   unfold row_subOfLe_c
-  exact isSemiformula_substRow isSemiformula_Peq _ (by rfl) (by row_entriesB)
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
 
 /-- `subOfLe` at the witnesses `[wa, wb, wm]` (the DSL variables right-to-left). -/
 lemma inst_subOfLe {wa wb wm : V} (hwa : IsSemiterm LAct 0 wa) (hwb : IsSemiterm LAct 0 wb) (hwm : IsSemiterm LAct 0 wm) :
     row_subOfLe_as.map (instOuter LAct [wa, wb, wm]) = [leFact wa wb, subDFact wm wa wb] ∧
-    instOuter LAct [wa, wb, wm] row_subOfLe_c = eqFact wm (𝟎 : V) := by
+    instOuter LAct [wa, wb, wm] row_subOfLe_c = eqFactB wm (𝟎 : V) := by
   have hes : ∀ e ∈ ([wa, wb, wm] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwa, List.forall_mem_cons.mpr ⟨hwb, List.forall_mem_cons.mpr ⟨hwm, List.forall_mem_nil _⟩⟩⟩)
   unfold row_subOfLe_as row_subOfLe_c
   simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Peq (by rfl) _ hes (by row_entriesB)]
+  rw [instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsubG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 

@@ -7,7 +7,9 @@ import ArithS.Necessitation.Lib.Frag
 `RowInst.lean`'s three deliverables (the row-shape lemma `quote_row_x`, formula-ness of the pieces,
 the instantiation lemma `inst_x` at arbitrary closed witnesses — the DSL variable list read
 RIGHT-TO-LEFT) for every row of `Lib/Frag.lean` (`DESIGN_fragments.md` §8.1), plus the predicate
-codes and canonical fact codes those rows need beyond `RowInst.lean`/`Chain.lean`: `Peq`/`eqFact`,
+codes and canonical fact codes those rows need beyond `RowInst.lean`/`Chain.lean`: `PeqB`/`eqFactB`
+(NumSteps.lean's `Peq`/`eqFact` are the SAME code — `PeqB = Peq` by `rfl` after `unfold eqS`; the names
+differ only so that both modules build side by side; unify when both have landed),
 `Pmem`/`memFact`, `Pinsert`/`insFact`, `Psubset`/`subsetFact`, `PfsetPi`/`fsetPiFact`,
 `PsetShiftG`/`setShiftFact`, `PsetLen`/`setLenFact`, `PflenG`/`lenFact`, the term-level graphs,
 `Pnth`/`nthFact`, the `axm`(ii) graphs, the node graphs `PaxL`/`axLFact` … `Paxm`/`axmFact`, and
@@ -17,7 +19,7 @@ multiplicative length bound and the occurrence bound. `Chain.lean`'s `Pderiv`/`P
 
 **Generated** by `arith/scripts/gen_frag.py` (the row table is shared with `Lib/Frag.lean`); the
 header below (§1) is hand-written (`scripts/RowInstB.lean.head`). New over `RowInst.lean`'s §1:
-the entries `a + b`/`a * b`/`2` (`quote_closed_mul_m`, `quote_closed_two_m`, `termSubst_qqMul'`,
+the entries `a + b`/`a * b`/`2` (`quote_closed_mul_mB`, `quote_closed_two_m`, `termSubst_qqMulB`,
 `isSemiterm_qqAdd/Mul_LAct`) and the three tactics `row_entriesB`/`row_entries_simpB`/`row_shapeB`
 extended to them.
 -/
@@ -36,7 +38,7 @@ set_option linter.unusedTactic false
 
 /-! ## 1. Infrastructure: `*`, `2`, and the extended tactics -/
 
-lemma quote_closed_mul_m {m : ℕ} (t u : ClosedSemiterm ℒₒᵣ m) :
+lemma quote_closed_mul_mB {m : ℕ} (t u : ClosedSemiterm ℒₒᵣ m) :
     (⌜(‘!!t * !!u’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (⌜t⌝ : V) ^* (⌜u⌝ : V) := by
   rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_mul]; rfl
 
@@ -67,7 +69,7 @@ lemma isUTerm_qqAdd_iff {x y : V} : IsUTerm LAct (x ^+ y) ↔ IsUTerm LAct x ∧
   unfold qqAdd; simp [IsUTerm.func_iff, isFunc_LAct_addIndex]
 lemma isUTerm_qqMul_iff {x y : V} : IsUTerm LAct (x ^* y) ↔ IsUTerm LAct x ∧ IsUTerm LAct y := by
   unfold qqMul; simp [IsUTerm.func_iff, isFunc_LAct_mul]
-lemma termSubst_qqMul' {w x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) :
+lemma termSubst_qqMulB {w x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) :
     termSubst LAct w (x ^* y) = termSubst LAct w x ^* termSubst LAct w y := by
   unfold qqMul
   rw [termSubst_func isFunc_LAct_mul (by simp [hx, hy]), termSubstVec_cons₂ hx hy]
@@ -90,7 +92,7 @@ macro "row_entriesB" : tactic => `(tactic| (
 
 /-- Evaluate the entrywise substitution of an instantiated piece, now with `+`/`*` entries. -/
 macro "row_entries_simpB" : tactic => `(tactic| simp (maxDischargeDepth := 8) only [List.map_cons, List.map_nil,
-  termSubst_qqAdd', termSubst_qqMul', isUTerm_bv, isUTerm_qqOne_LAct, isUTerm_qqZero_LAct, isUTerm_cT,
+  termSubst_qqAdd', termSubst_qqMulB, isUTerm_bv, isUTerm_qqOne_LAct, isUTerm_qqZero_LAct, isUTerm_cT,
   isUTerm_qqAdd_iff, isUTerm_qqMul_iff, and_self, and_true, true_and, termSubst_bv,
   termSubst_bv_add_one, termSubst_qqZero', termSubst_qqOne', termSubst_cT, bvarList_zero, bvarList_one,
   bvarList_two, bvarList_three, bvarList_four, bvarList_five, List.reverse_cons, List.reverse_nil,
@@ -104,7 +106,7 @@ macro "row_shapeB" : tactic => `(tactic| (
     matrixToVec_fin3, matrixToVec_fin4, matrixToVec_fin5, matrixToVec_fin6, matrixToVec_fin7,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.cons_val_four,
     Matrix.head_cons, Matrix.tail_cons,
-    quote_closed_add_m, quote_closed_mul_m, quote_closed_two_m, quote_closed_one_m, quote_closed_zero_m,
+    quote_closed_add_m, quote_closed_mul_mB, quote_closed_two_m, quote_closed_one_m, quote_closed_zero_m,
     quote_closed_bvar_m, quote_cTT, cT_succ, cT_zero]
   all_goals rfl))
 
