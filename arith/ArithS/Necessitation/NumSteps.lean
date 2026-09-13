@@ -1452,4 +1452,441 @@ theorem dlen_step2_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c :
 
 end combinators
 
+
+/-! ## 5. The successor chain: `succFact z := bnum z + 1 = bnum (z + 1)`
+
+`succCode tbl z` — a `Fixpoint` on `⟪z, d⟫` (parameter `tbl`): `z = 0` by row `zeroOne`, `z = 1` by
+`oneOne`, `z = 2m` by `eqRefl` at `bnum (2m + 1)` (the fact is syntactically reflexive), `z = 2m + 1`
+by `carry` at `(bnum m, bnum (m + 1))` from the fact for `m` — a CHAIN of `‖z‖ + 1` nodes. -/
+
+section succ
+
+/-- `|bnum n| ≤ 6‖n‖ + 1` in every model (`Assembly/Uniform.termLen_bnum_le_V` at `Type*`). -/
+theorem termLen_bnum_le (n : V) : termLen LAct (bnum n) ≤ 6 * ‖n‖ + 1 := by
+  induction n using ISigma1.pi1_order_induction with
+  | hP => definability
+  | ind n ih =>
+    rcases zero_one_or_two_le n with rfl | rfl | h2
+    · rw [termLen_bnum_zero, length_zero]; simp
+    · rw [termLen_bnum_one, length_one, mul_one]; exact le_add_self
+    obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
+    · have ih' := ih (n / 2) hlt
+      rw [he, termLen_bnum_two_mul hm, length_two_mul_of_pos (lt_of_lt_of_le zero_lt_one hm)]
+      calc termLen LAct (bnum (n / 2)) + 4 ≤ (6 * ‖n / 2‖ + 1) + 4 := by gcongr
+        _ ≤ (6 * ‖n / 2‖ + 1) + 4 + 2 := le_self_add
+        _ = 6 * (‖n / 2‖ + 1) + 1 := by ring
+    · have ih' := ih (n / 2) hlt
+      rw [ho, termLen_bnum_two_mul_add_one hm, length_two_mul_add_one]
+      calc termLen LAct (bnum (n / 2)) + 6 ≤ (6 * ‖n / 2‖ + 1) + 6 := by gcongr
+        _ = 6 * (‖n / 2‖ + 1) + 1 := by ring
+
+/-- `succFact z := bnum z + 1 = bnum (z + 1)`. -/
+noncomputable def succFact (z : V) : V := eqFact (bnum z ^+ 𝟏) (bnum (z + 1))
+noncomputable def succFactDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y z. ∃ t, !bnumGraph t z ∧ ∃ s, !qqAddGraph s t ↑Arithmetic.one ∧ ∃ t', !bnumGraph t' (z + 1) ∧ !eqFactDef y s t'”
+instance succFact_defined : 𝚺₁-Function₁ (succFact : V → V) via succFactDef := .mk fun v ↦ by
+  simp [succFactDef, bnum.defined.iff, qqAdd_defined.iff, eqFact_defined.iff, succFact, numeral_eq_natCast]
+instance succFact_definable : 𝚺₁-Function₁ (succFact : V → V) := succFact_defined.to_definable
+
+noncomputable def singDef : 𝚺₁.Semisentence 2 := .mkSigma “y A. !insertDef y A 0”
+instance sing_defined : 𝚺₁-Function₁ (sing : V → V) via singDef := .mk fun v ↦ by simp [singDef, sing]
+instance sing_definable : 𝚺₁-Function₁ (sing : V → V) := sing_defined.to_definable
+
+def nodeCostDef : 𝚺₀.Semisentence 4 := .mkSigma “y N B E. y = N + 700 * (B * E)”
+instance nodeCost_defined : 𝚺₀-Function₃ (nodeCost : V → V → V → V) via nodeCostDef := .mk fun v ↦ by
+  simp [nodeCostDef, nodeCost, numeral_eq_natCast]
+instance nodeCost_definable : 𝚺₀-Function₃ (nodeCost : V → V → V → V) := nodeCost_defined.to_definable
+
+lemma nodeCost_mono {N B E E' : V} (h : E ≤ E') : nodeCost N B E ≤ nodeCost N B E' := by
+  unfold nodeCost; gcongr
+
+lemma isFormula_succFact (z : V) : IsFormula LAct (succFact z) :=
+  isFormula_eqFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 _)
+
+lemma termLen_bnum_add_one (z : V) : termLen LAct (bnum z ^+ 𝟏) = termLen LAct (bnum z) + 2 := by
+  rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_bnum_LAct 0 z).isUTerm (isSemiterm_qqOne_LAct 0).isUTerm,
+    termLen_qqOne isFunc_LAct_oneIndex]
+  ring
+
+/-- `|succFact z| ≤ B·E` once `B ≥ |Peq|` and `E ≥ 6‖z + 1‖ + 3`. -/
+lemma formulaLen_succFact_le {B E z : V} (hPeq : formulaLen LAct (Peq : V) ≤ B) (hE : 6 * ‖z + 1‖ + 3 ≤ E) :
+    formulaLen LAct (succFact z) ≤ B * E := by
+  have hE1 : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
+  have h1 : termLen LAct (bnum z ^+ 𝟏) ≤ E := by
+    rw [termLen_bnum_add_one]
+    calc termLen LAct (bnum z) + 2 ≤ (6 * ‖z‖ + 1) + 2 := by gcongr; exact termLen_bnum_le z
+      _ ≤ 6 * ‖z + 1‖ + 3 := by
+          have := length_monotone (le_self_add : z ≤ z + 1)
+          calc 6 * ‖z‖ + 1 + 2 = 6 * ‖z‖ + 3 := by ring
+            _ ≤ 6 * ‖z + 1‖ + 3 := by gcongr
+      _ ≤ E := hE
+  have h2 : termLen LAct (bnum (z + 1)) ≤ E :=
+    le_trans (termLen_bnum_le _) (le_trans (by gcongr; norm_num : 6 * ‖z + 1‖ + 1 ≤ 6 * ‖z + 1‖ + 3) hE)
+  exact le_trans (formulaLen_eqFact_le hE1 (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 _) h1 h2)
+    (mul_le_mul_of_nonneg_right hPeq zero_le)
+
+lemma termLen_bnum_le_E {x z E : V} (hx : x ≤ z + 1) (hE : 6 * ‖z + 1‖ + 3 ≤ E) : termLen LAct (bnum x) ≤ E :=
+  le_trans (termLen_bnum_le x) (le_trans (by have := length_monotone hx; gcongr; norm_num) hE)
+
+namespace SuccG
+
+/-- The graph: `⟪z, d⟫` where `d` is the successor-fact derivation of `z`. -/
+def Phi (tbl : V) (C : Set V) (pr : V) : Prop :=
+  ∃ z d, pr = ⟪z, d⟫ ∧
+  ( (z = 0 ∧ d = step0 tbl 3 (vecOf []) (succFact 0)) ∨
+    (z = 1 ∧ d = step0 tbl 2 (vecOf []) (succFact 1)) ∨
+    (∃ m, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [bnum (2 * m + 1)]) (succFact z)) ∨
+    (∃ m d', 1 ≤ m ∧ z = 2 * m + 1 ∧ ⟪m, d'⟫ ∈ C ∧
+      d = step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact z)) )
+
+noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
+  (.mkSigma “pr C tbl.
+    ∃ z <⁺ pr, ∃ d <⁺ pr, !pairDef pr z d ∧
+    ( (z = 0 ∧ ∃ A, !succFactDef A 0 ∧ ∃ x, !step0Def x tbl 3 0 A ∧ d = x) ∨
+      (z = 1 ∧ ∃ A, !succFactDef A 1 ∧ ∃ x, !step0Def x tbl 2 0 A ∧ d = x) ∨
+      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ ∃ t, !bnumGraph t (2 * m + 1) ∧ ∃ ev, !adjoinDef ev t 0 ∧
+        ∃ A, !succFactDef A z ∧ ∃ x, !step0Def x tbl 5 ev A ∧ d = x) ∨
+      (∃ m < z, ∃ d' < d, 1 ≤ m ∧ z = 2 * m + 1 ∧ :⟪m, d'⟫:∈ C ∧ ∃ F, !succFactDef F m ∧
+        ∃ t1, !bnumGraph t1 (m + 1) ∧ ∃ t0, !bnumGraph t0 m ∧ ∃ v0, !adjoinDef v0 t0 0 ∧
+        ∃ ev, !adjoinDef ev t1 v0 ∧ ∃ A, !succFactDef A z ∧ ∃ x, !step1Def x tbl 6 F d' ev A ∧ d = x) )”)
+  (.mkPi “pr C tbl.
+    ∃ z <⁺ pr, ∃ d <⁺ pr, !pairDef pr z d ∧
+    ( (z = 0 ∧ ∀ A, !succFactDef A 0 → ∀ x, !step0Def x tbl 3 0 A → d = x) ∨
+      (z = 1 ∧ ∀ A, !succFactDef A 1 → ∀ x, !step0Def x tbl 2 0 A → d = x) ∨
+      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ ∀ t, !bnumGraph t (2 * m + 1) → ∀ ev, !adjoinDef ev t 0 →
+        ∀ A, !succFactDef A z → ∀ x, !step0Def x tbl 5 ev A → d = x) ∨
+      (∃ m < z, ∃ d' < d, 1 ≤ m ∧ z = 2 * m + 1 ∧ :⟪m, d'⟫:∈ C ∧ ∀ F, !succFactDef F m →
+        ∀ t1, !bnumGraph t1 (m + 1) → ∀ t0, !bnumGraph t0 m → ∀ v0, !adjoinDef v0 t0 0 →
+        ∀ ev, !adjoinDef ev t1 v0 → ∀ A, !succFactDef A z → ∀ x, !step1Def x tbl 6 F d' ev A → d = x) )”)⟩
+
+lemma d_lt_step1 (tbl i F d' ev A : V) : d' < step1 tbl i F d' ev A :=
+  lt_trans (d_lt_wkRule _ _) (d₁_lt_cutRule _ _ _ _)
+
+/-- `Phi` with the bounds the blueprint carries. -/
+private lemma phi_iff (tbl C pr : V) :
+    Phi tbl {x | x ∈ C} pr ↔
+    ∃ z ≤ pr, ∃ d ≤ pr, pr = ⟪z, d⟫ ∧
+    ( (z = 0 ∧ d = step0 tbl 3 (vecOf []) (succFact 0)) ∨
+      (z = 1 ∧ d = step0 tbl 2 (vecOf []) (succFact 1)) ∨
+      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [bnum (2 * m + 1)]) (succFact z)) ∨
+      (∃ m < z, ∃ d' < d, 1 ≤ m ∧ z = 2 * m + 1 ∧ ⟪m, d'⟫ ∈ C ∧
+        d = step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact z)) ) := by
+  constructor
+  · rintro ⟨z, d, rfl, h⟩
+    refine ⟨z, le_pair_left _ _, d, le_pair_right _ _, rfl, ?_⟩
+    rcases h with h | h | ⟨m, hm, rfl, rfl⟩ | ⟨m, d', hm, rfl, hC, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl ⟨m, Bnum.lt_two_mul hm, hm, rfl, rfl⟩))
+    · exact Or.inr (Or.inr (Or.inr ⟨m, Bnum.lt_two_mul_add_one hm, d', d_lt_step1 _ _ _ _ _ _, hm, rfl, hC, rfl⟩))
+  · rintro ⟨z, _, d, _, rfl, h⟩
+    refine ⟨z, d, rfl, ?_⟩
+    rcases h with h | h | ⟨m, _, hm, rfl, rfl⟩ | ⟨m, _, d', _, hm, rfl, hC, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl ⟨m, hm, rfl, rfl⟩))
+    · exact Or.inr (Or.inr (Or.inr ⟨m, d', hm, rfl, hC, rfl⟩))
+
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, succFact_defined.iff, bnum.defined.iff, step0_defined.iff, step1_defined.iff,
+        numeral_eq_natCast]
+    · intro v
+      symm
+      simpa [blueprint, succFact_defined.iff, bnum.defined.iff, step0_defined.iff, step1_defined.iff,
+        numeral_eq_natCast] using phi_iff (v 2) (v 1) (v 0)
+  monotone := by
+    rintro C C' hC _ pr ⟨z, d, rfl, h⟩
+    refine ⟨z, d, rfl, ?_⟩
+    rcases h with h | h | h | ⟨m, d', hm, rfl, hC', rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr ⟨m, d', hm, rfl, hC hC', rfl⟩))
+
+instance : construction.Finite V where
+  finite := by
+    rintro C _ pr ⟨z, d, rfl, h⟩
+    rcases h with h | h | h | ⟨m, d', hm, rfl, hC', rfl⟩
+    · exact ⟨0, z, _, rfl, Or.inl h⟩
+    · exact ⟨0, z, _, rfl, Or.inr (Or.inl h)⟩
+    · exact ⟨0, z, _, rfl, Or.inr (Or.inr (Or.inl h))⟩
+    · exact ⟨⟪m, d'⟫ + 1, _, _, rfl, Or.inr (Or.inr (Or.inr ⟨m, d', hm, rfl, ⟨hC', lt_add_one _⟩, rfl⟩))⟩
+
+end SuccG
+
+/-- `SuccGraph tbl z d`: `d` is the successor-fact derivation of `z` over the table `tbl`. -/
+def SuccGraph (tbl z d : V) : Prop := SuccG.construction.Fixpoint ![tbl] ⟪z, d⟫
+
+noncomputable def succGraphDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “tbl z d. ∃ p, !pairDef p z d ∧ !SuccG.blueprint.fixpointDef p tbl”
+
+instance succGraph_defined : 𝚺₁-Relation₃ (SuccGraph : V → V → V → Prop) via succGraphDef := .mk fun v ↦ by
+  simp [succGraphDef, SuccG.construction.eval_fixpointDef, SuccGraph]
+  have e : (fun _ : Fin 1 ↦ v 0) = ![v 0] := by funext i; fin_cases i; rfl
+  rw [e]
+instance succGraph_definable : 𝚺₁-Relation₃ (SuccGraph : V → V → V → Prop) := succGraph_defined.to_definable
+
+lemma SuccGraph.case_iff {tbl z d : V} :
+    SuccGraph tbl z d ↔
+    (z = 0 ∧ d = step0 tbl 3 (vecOf []) (succFact 0)) ∨
+    (z = 1 ∧ d = step0 tbl 2 (vecOf []) (succFact 1)) ∨
+    (∃ m, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [bnum (2 * m + 1)]) (succFact z)) ∨
+    (∃ m d', 1 ≤ m ∧ z = 2 * m + 1 ∧ SuccGraph tbl m d' ∧
+      d = step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact z)) :=
+  Iff.trans SuccG.construction.case (by simp [SuccG.construction, SuccG.Phi, SuccGraph])
+
+lemma SuccGraph.zero_iff {tbl d : V} : SuccGraph tbl 0 d ↔ d = step0 tbl 3 (vecOf []) (succFact 0) := by
+  rw [SuccGraph.case_iff]
+  constructor
+  · rintro (⟨_, rfl⟩ | ⟨h, _⟩ | ⟨m, hm, h, _⟩ | ⟨m, _, hm, h, _⟩)
+    · rfl
+    · exact absurd h.symm Arithmetic.one_ne_zero
+    · exact absurd h.symm (two_mul_ne_zero hm)
+    · exact absurd h.symm (two_mul_add_one_ne_zero m)
+  · rintro rfl; exact Or.inl ⟨rfl, rfl⟩
+
+lemma SuccGraph.one_iff {tbl d : V} : SuccGraph tbl 1 d ↔ d = step0 tbl 2 (vecOf []) (succFact 1) := by
+  rw [SuccGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨_, rfl⟩ | ⟨m, hm, h, _⟩ | ⟨m, _, hm, h, _⟩)
+    · exact absurd h Arithmetic.one_ne_zero
+    · rfl
+    · exact absurd h.symm (two_mul_ne_one m)
+    · exact absurd h.symm (two_mul_add_one_ne_one hm)
+  · rintro rfl; exact Or.inr (Or.inl ⟨rfl, rfl⟩)
+
+lemma SuccGraph.two_mul_iff {tbl m d : V} (hm : 1 ≤ m) :
+    SuccGraph tbl (2 * m) d ↔ d = step0 tbl 5 (vecOf [bnum (2 * m + 1)]) (succFact (2 * m)) := by
+  rw [SuccGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨m', _, h, rfl⟩ | ⟨m', _, _, h, _⟩)
+    · exact absurd h (two_mul_ne_zero hm)
+    · exact absurd h (two_mul_ne_one m)
+    · obtain rfl := two_mul_inj h; rfl
+    · exact absurd h (two_mul_ne_two_mul_add_one m m')
+  · rintro rfl; exact Or.inr (Or.inr (Or.inl ⟨m, hm, rfl, rfl⟩))
+
+lemma SuccGraph.two_mul_add_one_iff {tbl m d : V} (hm : 1 ≤ m) :
+    SuccGraph tbl (2 * m + 1) d ↔ ∃ d', SuccGraph tbl m d' ∧
+      d = step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact (2 * m + 1)) := by
+  rw [SuccGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨m', _, h, _⟩ | ⟨m', d', _, h, hd', rfl⟩)
+    · exact absurd h (two_mul_add_one_ne_zero m)
+    · exact absurd h (two_mul_add_one_ne_one hm)
+    · exact absurd h.symm (two_mul_ne_two_mul_add_one m' m)
+    · obtain rfl := two_mul_add_one_inj h; exact ⟨d', hd', rfl⟩
+  · rintro ⟨d', hd', rfl⟩; exact Or.inr (Or.inr (Or.inr ⟨m, d', hm, rfl, hd', rfl⟩))
+
+lemma succGraph_exists (tbl z : V) : ∃ d, SuccGraph tbl z d := by
+  induction z using ISigma1.sigma1_order_induction with
+  | hP => definability
+  | ind z ih =>
+    rcases zero_one_or_two_le z with rfl | rfl | h2
+    · exact ⟨_, SuccGraph.zero_iff.mpr rfl⟩
+    · exact ⟨_, SuccGraph.one_iff.mpr rfl⟩
+    obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
+    · rw [he]; exact ⟨_, (SuccGraph.two_mul_iff hm).mpr rfl⟩
+    · obtain ⟨d', hd'⟩ := ih (z / 2) hlt
+      rw [ho]; exact ⟨_, (SuccGraph.two_mul_add_one_iff hm).mpr ⟨d', hd', rfl⟩⟩
+
+lemma succGraph_unique (tbl z : V) : ∀ d₁ d₂, SuccGraph tbl z d₁ → SuccGraph tbl z d₂ → d₁ = d₂ := by
+  induction z using ISigma1.pi1_order_induction with
+  | hP => definability
+  | ind z ih =>
+    intro d₁ d₂ h₁ h₂
+    rcases zero_one_or_two_le z with rfl | rfl | h2
+    · rw [SuccGraph.zero_iff] at h₁ h₂; rw [h₁, h₂]
+    · rw [SuccGraph.one_iff] at h₁ h₂; rw [h₁, h₂]
+    obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
+    · rw [he] at h₁ h₂
+      rw [(SuccGraph.two_mul_iff hm).mp h₁, (SuccGraph.two_mul_iff hm).mp h₂]
+    · rw [ho] at h₁ h₂
+      obtain ⟨e₁, he₁, rfl⟩ := (SuccGraph.two_mul_add_one_iff hm).mp h₁
+      obtain ⟨e₂, he₂, rfl⟩ := (SuccGraph.two_mul_add_one_iff hm).mp h₂
+      rw [ih (z / 2) hlt e₁ e₂ he₁ he₂]
+
+lemma succGraph_existsUnique (tbl z : V) : ∃! d, SuccGraph tbl z d := by
+  obtain ⟨d, hd⟩ := succGraph_exists tbl z
+  exact ExistsUnique.intro d hd (fun d' h' ↦ succGraph_unique tbl z d' d h' hd)
+
+/-- **The successor-fact prover**: the derivation code of `{bnum z + 1 = bnum (z + 1)}`. -/
+noncomputable def succCode (tbl z : V) : V := Classical.choose! (succGraph_existsUnique tbl z)
+
+lemma succCode_graph (tbl z : V) : SuccGraph tbl z (succCode tbl z) :=
+  Classical.choose!_spec (succGraph_existsUnique tbl z)
+
+lemma succCode_eq_of_graph {tbl z d : V} (h : SuccGraph tbl z d) : succCode tbl z = d :=
+  succGraph_unique tbl z _ _ (succCode_graph tbl z) h
+
+noncomputable def succCodeDef : 𝚺₁.Semisentence 3 := .mkSigma “y tbl z. !succGraphDef tbl z y”
+
+/-- TRAP: a full `simp` on this goal explodes (unification through `succGraphDef`'s fixpoint formula);
+rewrite step by step with the substitution instantiated explicitly. -/
+instance succCode_defined : 𝚺₁-Function₂ (succCode : V → V → V) via succCodeDef := .mk fun v ↦ by
+  simp only [succCodeDef]
+  rw [HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs ![#1, #2, #0] succGraphDef.val,
+    succGraph_defined.iff]
+  simp only [Function.comp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
+    Matrix.tail_cons, Semiterm.val_bvar, Fin.succ_zero_eq_one, Fin.succ_one_eq_two]
+  constructor
+  · intro h; exact (succCode_eq_of_graph h).symm
+  · intro h; rw [h]; exact succCode_graph _ _
+instance succCode_definable : 𝚺₁-Function₂ (succCode : V → V → V) := succCode_defined.to_definable
+
+end succ
+
+
+/-! ## 6. Soundness and length of `succCode`; its `sLemma` packaging -/
+
+section succSound
+
+/-- The length bound of the successor chain: `(‖z‖ + 1)` nodes, each `≤ nodeCost N B (6‖z + 1‖ + 3)`. -/
+noncomputable def succBound (N B z : V) : V := (‖z‖ + 1) * nodeCost N B (6 * ‖z + 1‖ + 3)
+
+lemma cast_rZeroOne : ((rZeroOne : ℕ) : V) = 3 := by simp [rZeroOne]
+lemma cast_rOneOne : ((rOneOne : ℕ) : V) = 2 := by simp [rOneOne]
+lemma cast_rEqRefl : ((rEqRefl : ℕ) : V) = 5 := by simp [rEqRefl]
+lemma cast_rCarry : ((rCarry : ℕ) : V) = 6 := by simp [rCarry]
+
+lemma one_le_E {z : V} : 1 ≤ 6 * ‖z + 1‖ + 3 := le_trans (by norm_num) le_add_self
+
+lemma succFact_two_mul {m : V} (hm : 1 ≤ m) : succFact (2 * m) = eqFact (bnum (2 * m + 1)) (bnum (2 * m + 1)) := by
+  unfold succFact
+  rw [bnum_two_mul hm, bnum_two_mul_add_one hm]
+
+lemma succFact_two_mul_add_one {m : V} (hm : 1 ≤ m) :
+    succFact (2 * m + 1) = eqFact ((((𝟐 : V) ^* bnum m) ^+ 𝟏) ^+ 𝟏) (𝟐 ^* bnum (m + 1)) := by
+  unfold succFact
+  rw [bnum_two_mul_add_one hm, show 2 * m + 1 + 1 = 2 * (m + 1) by ring,
+    bnum_two_mul (le_trans hm le_self_add)]
+
+/-- **Soundness and length of the successor chain**, by Π₁ order induction on `z`. -/
+theorem succGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    ∀ d, SuccGraph tbl z d → DerivationOf TAct d (sing (succFact z)) ∧ dlen TAct d ≤ succBound N B z := by
+  induction z using ISigma1.pi1_order_induction with
+  | hP => simp only [succBound]; definability
+  | ind z ih =>
+    intro d hd
+    obtain ⟨-, -, hr2, hr3, -, hr5, hr6, -, -, -, -, -, -, -, -, -, -, -, -, hPeq, -, -, hB⟩ := htbl
+    rcases zero_one_or_two_le z with rfl | rfl | h2
+    · rw [SuccGraph.zero_iff] at hd
+      subst hd
+      have hc : instOuter LAct [] nZeroOne_c = succFact (0 : V) := by
+        rw [inst_nZeroOne.2]; simp [succFact]
+      have hpf := step0_proof hr3 [] rfl (by simp) (isFormula_succFact 0) inst_nZeroOne.1 hc
+      have hlen := dlen_step0_le hr3 (E := 6 * ‖(1 : V)‖ + 3) [] rfl (by simp) (le_trans (by norm_num) le_add_self) hB
+        (isFormula_succFact 0) inst_nZeroOne.1 hc (by norm_num) (by simp [nZeroOne_as])
+        (formulaLen_succFact_le hPeq (by rw [zero_add]))
+      rw [cast_rZeroOne] at hpf hlen
+      refine ⟨hpf, ?_⟩
+      rw [succBound, length_zero, zero_add, one_mul]
+      exact hlen
+    · rw [SuccGraph.one_iff] at hd
+      subst hd
+      have hc : instOuter LAct [] nOneOne_c = succFact (1 : V) := by
+        rw [inst_nOneOne.2]
+        unfold succFact
+        rw [bnum_one, show (1 : V) + 1 = 2 * 1 by ring, bnum_two_mul le_rfl, bnum_one]
+      have hpf := step0_proof hr2 [] rfl (by simp) (isFormula_succFact 1) inst_nOneOne.1 hc
+      have hlen := dlen_step0_le hr2 (E := 6 * ‖(1 : V) + 1‖ + 3) [] rfl (by simp) one_le_E hB
+        (isFormula_succFact 1) inst_nOneOne.1 hc (by norm_num) (by simp [nOneOne_as])
+        (formulaLen_succFact_le hPeq le_rfl)
+      rw [cast_rOneOne] at hpf hlen
+      refine ⟨hpf, ?_⟩
+      rw [succBound, length_one]
+      exact le_trans hlen (le_mul_of_one_le_left zero_le (by norm_num))
+    obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
+    · rw [he] at hd ⊢
+      rw [SuccGraph.two_mul_iff hm] at hd
+      subst hd
+      have hx : IsSemiterm LAct 0 (bnum (2 * (z / 2) + 1)) := isSemiterm_bnum_LAct 0 _
+      have hc : instOuter LAct [bnum (2 * (z / 2) + 1)] nEqRefl_c = succFact (2 * (z / 2)) := by
+        rw [(inst_nEqRefl hx).2, succFact_two_mul hm]
+      have hes : ∀ e ∈ [bnum (2 * (z / 2) + 1)], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 6 * ‖2 * (z / 2) + 1‖ + 3 := by
+        simp only [List.mem_singleton, forall_eq]
+        exact ⟨hx, termLen_bnum_le_E le_rfl le_rfl⟩
+      have hpf := step0_proof hr5 [bnum (2 * (z / 2) + 1)] rfl (fun e he ↦ (hes e he).1) (isFormula_succFact _)
+        (inst_nEqRefl hx).1 hc
+      have hlen := dlen_step0_le hr5 [bnum (2 * (z / 2) + 1)] rfl hes one_le_E hB (isFormula_succFact _)
+        (inst_nEqRefl hx).1 hc (by norm_num) (by simp [nEqRefl_as]) (formulaLen_succFact_le hPeq le_rfl)
+      rw [cast_rEqRefl] at hpf hlen
+      refine ⟨hpf, le_trans hlen (le_mul_of_one_le_left zero_le ?_)⟩
+      exact le_trans (by norm_num) le_add_self
+    · rw [ho] at hd ⊢
+      rw [SuccGraph.two_mul_add_one_iff hm] at hd
+      obtain ⟨d', hd', rfl⟩ := hd
+      obtain ⟨hpf', hlen'⟩ := ih (z / 2) hlt d' hd'
+      set m := z / 2 with hm_def
+      have hx : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 _
+      have hw : IsSemiterm LAct 0 (bnum (m + 1)) := isSemiterm_bnum_LAct 0 _
+      have hmap : nCarry_as.map (instOuter LAct [bnum (m + 1), bnum m]) = [succFact m] := (inst_nCarry hx hw).1
+      have hc : instOuter LAct [bnum (m + 1), bnum m] nCarry_c = succFact (2 * m + 1) := by
+        rw [(inst_nCarry hx hw).2, succFact_two_mul_add_one hm]
+      have hle1 : m + 1 ≤ 2 * m + 1 + 1 := by
+        rw [two_mul]
+        exact le_trans (by gcongr; exact le_self_add : m + 1 ≤ m + m + 1) le_self_add
+      have hle0 : m ≤ 2 * m + 1 + 1 := le_trans le_self_add hle1
+      have hE : 6 * ‖m + 1‖ + 3 ≤ 6 * ‖2 * m + 1 + 1‖ + 3 := by
+        have := length_monotone hle1
+        gcongr
+      have hes : ∀ e ∈ [bnum (m + 1), bnum m], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 6 * ‖2 * m + 1 + 1‖ + 3 := by
+        intro e he
+        simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
+        rcases he with rfl | rfl
+        · exact ⟨hw, termLen_bnum_le_E (z := 2 * m + 1) hle1 le_rfl⟩
+        · exact ⟨hx, termLen_bnum_le_E (z := 2 * m + 1) hle0 le_rfl⟩
+      have hpf := step1_proof hr6 [bnum (m + 1), bnum m] rfl (fun e he ↦ (hes e he).1) (isFormula_succFact _)
+        (isFormula_succFact m) hpf' hmap hc
+      have hlen := dlen_step1_le hr6 [bnum (m + 1), bnum m] rfl hes one_le_E hB (isFormula_succFact _)
+        (isFormula_succFact m) hpf' hmap hc (by norm_num) (by simp [nCarry_as])
+        (formulaLen_succFact_le hPeq le_rfl)
+        (formulaLen_succFact_le hPeq (le_trans le_rfl hE))
+      rw [cast_rCarry] at hpf hlen
+      refine ⟨hpf, ?_⟩
+      unfold succBound at hlen' ⊢
+      rw [length_two_mul_add_one]
+      calc dlen TAct (step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact (2 * m + 1)))
+          ≤ dlen TAct d' + nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) := hlen
+        _ ≤ (‖m‖ + 1) * nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) + nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) := by
+            gcongr
+            exact le_trans hlen' (mul_le_mul_of_nonneg_left (nodeCost_mono hE) zero_le)
+        _ = (‖m‖ + 1 + 1) * nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) := by ring
+
+/-- **`succCode` is a derivation of `{bnum z + 1 = bnum (z + 1)}`**, in every model, over any sound table. -/
+theorem succCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    DerivationOf TAct (succCode tbl z) (sing (succFact z)) :=
+  (succGraph_sound htbl z _ (succCode_graph tbl z)).1
+
+/-- **`dlen (succCode tbl z) ≤ (‖z‖ + 1) · (N + 700·B·(6‖z + 1‖ + 3))`** — quadratic in the bit length. -/
+theorem dlen_succCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    dlen TAct (succCode tbl z) ≤ (‖z‖ + 1) * nodeCost N B (6 * ‖z + 1‖ + 3) :=
+  (succGraph_sound htbl z _ (succCode_graph tbl z)).2
+
+/-- The `sLemma` step of the successor fact is applicable (`LemmaOK`), … -/
+theorem lemmaOK_succ {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    LemmaOK (sLemma (succFact z) (succCode tbl z)) := by
+  refine ⟨?_, ?_⟩
+  · show IsFormula LAct (π₁ (π₂ (sLemma (succFact z) (succCode tbl z))))
+    simp only [sLemma, pi₂_pair, pi₁_pair]
+    exact isFormula_succFact z
+  · show DerivationOf TAct (π₂ (π₂ (sLemma (succFact z) (succCode tbl z)))) (insert (π₁ (π₂ (sLemma (succFact z) (succCode tbl z)))) 0)
+    simp only [sLemma, pi₂_pair, pi₁_pair]
+    exact succCode_proof htbl z
+
+/-- … and its cost: `stepCost N' E Γ (sLemma A dA) = dlen dA + 2|Γ| + 2|A| + 2` with `dlen dA ≤ succBound`. -/
+theorem stepCost_lemma_succ {tbl N B N' E Γ : V} (htbl : NumTableOK tbl N B) (z : V) :
+    stepCost N' E Γ (sLemma (succFact z) (succCode tbl z)) ≤
+      succBound N B z + 2 * setLen LAct Γ + 2 * formulaLen LAct (succFact z) + 2 := by
+  rw [stepCost_tag7 (by simp [sTag, sLemma])]
+  simp only [sLemA, sLemD, sLemma, pi₂_pair, pi₁_pair]
+  gcongr
+  exact dlen_succCode_le htbl z
+
+end succSound
+
 end ArithS
