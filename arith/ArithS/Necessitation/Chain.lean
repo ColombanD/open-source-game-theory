@@ -406,8 +406,11 @@ lemma nthFromEnd_eq {v k a : V} (h : len v = a + (k + 1)) : nthFromEnd v k = v.[
   have hk : k < len v := by rw [h]; exact lt_of_lt_of_le (by simp) le_add_self
   rw [nthFromEnd, takeLast_succ_of_lt hk, nth_adjoin_zero, h, add_tsub_cancel_right]
 
-instance nthFromEnd_definable : 𝚺₁-Function₂ (nthFromEnd : V → V → V) := by
-  unfold nthFromEnd; definability
+def nthFromEndDef : 𝚺₁.Semisentence 3 := .mkSigma “y v k. ∃ t, !takeLastDef t v (k + 1) ∧ !nthDef y t 0”
+
+instance nthFromEnd_defined : 𝚺₁-Function₂ (nthFromEnd : V → V → V) via nthFromEndDef := .mk
+  fun v ↦ by simp [nthFromEndDef, nthFromEnd]
+instance nthFromEnd_definable : 𝚺₁-Function₂ (nthFromEnd : V → V → V) := nthFromEnd_defined.to_definable
 
 namespace LevelF
 
@@ -829,5 +832,386 @@ theorem introFactV_vecOf (Γ : V) (es as : List V) {R : V}
     introFactV L Γ (vecOf es) (vecOf as) R dΛ d = introFactCode L Γ es as R dΛ d := by
   unfold introFactV introFactCode
   rw [subst_qVec_revV_vecOf es hR hes, useHornV_vecOf _ es as has (by simp [hR]) hes]
+
+/-! ## Part B — the step language, contexts, and the primitive-recursive chain -/
+
+/-! ### B.1 Named Σ₁ graphs of the vector constructors (cited by name in the blueprints below) -/
+
+variable (L) in
+noncomputable def exsChainVDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y ev q Γ d. ∃ r, !revVDef r ev ∧ ∃ n, !lenDef n ev ∧ ∃ f, !(levelFDef L) f r q n ∧
+    ∃ C, !ctxChainDef C f Γ n ∧ !(ExsBuild.blueprint L).resultDef y ev r q C d”
+
+instance exsChainV_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 4 → V ↦ exsChainV L (v 0) (v 1) (v 2) (v 3)) (exsChainVDef L) := .mk
+  fun v ↦ by
+    simp [exsChainVDef, revV_defined.iff, levelF_defined.iff, ctxChain_defined.iff,
+      (ExsBuild.construction L).eval_resultDef]
+    rfl
+
+variable (L) in
+noncomputable def hornCloseVDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y as c S d. ∃ n, !lenDef n as ∧ ∃ sc, !(sufChainsDef L) sc as c ∧ ∃ m, !(mapNegDef L) m sc ∧
+    ∃ C, !ctxChainDef C m S n ∧ !(HornBuild.blueprint L).resultDef y as c C d”
+
+instance hornCloseV_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 4 → V ↦ hornCloseV L (v 0) (v 1) (v 2) (v 3)) (hornCloseVDef L) := .mk
+  fun v ↦ by
+    simp [hornCloseVDef, sufChains_defined.iff, mapNeg_defined.iff, ctxChain_defined.iff,
+      (HornBuild.construction L).eval_resultDef]
+    rfl
+
+variable (L) in
+noncomputable def useLemmaVDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y Γ ev B dΛ d. ∃ n, !lenDef n ev ∧ ∃ A, !qqAllsDef A B n ∧ ∃ i, !insertDef i A Γ ∧
+    ∃ w, !wkRuleGraph w i dΛ ∧ ∃ nb, !(negGraph L) nb B ∧ ∃ e, !(exsChainVDef L) e ev nb Γ d ∧
+    !cutRuleGraph y Γ A w e”
+
+instance useLemmaV_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ useLemmaV L (v 0) (v 1) (v 2) (v 3) (v 4)) (useLemmaVDef L) := .mk
+  fun v ↦ by
+    simp [useLemmaVDef, qqAlls_defined.iff, neg.defined.iff, exsChainV_defined.iff, useLemmaV]
+
+variable (L) in
+noncomputable def useHornVDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y Γ ev as c dΛ d. ∃ r, !revVDef r ev ∧ ∃ B, !(impChainVDef L) B as c ∧ ∃ ms, !(mapSubstDef L) ms r as ∧
+    ∃ sc, !(substsGraph L) sc r c ∧ ∃ h, !(hornCloseVDef L) h ms sc Γ d ∧ !(useLemmaVDef L) y Γ ev B dΛ h”
+
+instance useHornV_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ useHornV L (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) (useHornVDef L) := .mk
+  fun v ↦ by
+    simp [useHornVDef, revV_defined.iff, impChainV_defined.iff, mapSubst_defined.iff, subst.defined.iff,
+      hornCloseV_defined.iff, useLemmaV_defined.iff, useHornV]
+
+variable (L) in
+noncomputable def splitAndCodeDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y Γ p q d. ∃ np, !(negGraph L) np p ∧ ∃ nq, !(negGraph L) nq q ∧ ∃ o, !qqOrDef o np nq ∧
+    ∃ i, !insertDef i o Γ ∧ ∃ i₂, !insertDef i₂ nq i ∧ ∃ i₁, !insertDef i₁ np i₂ ∧
+    ∃ w, !wkRuleGraph w i₁ d ∧ !orIntroGraph y i np nq w”
+
+instance splitAndCode_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 4 → V ↦ splitAndCode L (v 0) (v 1) (v 2) (v 3)) (splitAndCodeDef L) := .mk
+  fun v ↦ by simp [splitAndCodeDef, neg.defined.iff, splitAndCode]
+
+variable (L) in
+noncomputable def useHornAndVDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y Γ ev as c₁ c₂ dΛ d. ∃ r, !revVDef r ev ∧ ∃ s₁, !(substsGraph L) s₁ r c₁ ∧ ∃ s₂, !(substsGraph L) s₂ r c₂ ∧
+    ∃ sp, !(splitAndCodeDef L) sp Γ s₁ s₂ d ∧ ∃ c, !qqAndDef c c₁ c₂ ∧ !(useHornVDef L) y Γ ev as c dΛ sp”
+
+instance useHornAndV_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ useHornAndV L (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6))
+      (useHornAndVDef L) := .mk
+  fun v ↦ by
+    simp [useHornAndVDef, revV_defined.iff, subst.defined.iff, splitAndCode_defined.iff, useHornV_defined.iff,
+      useHornAndV]
+
+variable (L) in
+noncomputable def elimExistsCodeDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y Γ P D d. ∃ eP, !qqExsDef eP P ∧ ∃ i, !insertDef i eP Γ ∧ ∃ w₁, !wkRuleGraph w₁ i D ∧
+    ∃ nP, !(negGraph L) nP P ∧ ∃ aP, !qqAllDef aP nP ∧ ∃ j, !insertDef j aP Γ ∧ ∃ sh, !(setShiftGraph L) sh j ∧
+    ∃ f, !(freeGraph L) f nP ∧ ∃ k, !insertDef k f sh ∧ ∃ w₂, !wkRuleGraph w₂ k d ∧ ∃ a, !allIntroGraph a j nP w₂ ∧
+    !cutRuleGraph y Γ eP w₁ a”
+
+instance elimExistsCode_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 4 → V ↦ elimExistsCode L (v 0) (v 1) (v 2) (v 3)) (elimExistsCodeDef L) := .mk
+  fun v ↦ by
+    simp [elimExistsCodeDef, neg.defined.iff, setShift.defined.iff, free.defined.iff, elimExistsCode]
+
+variable (L) in
+noncomputable def introFactVDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y Γ ev as R dΛ d. ∃ r, !revVDef r ev ∧ ∃ qr, !(qVecGraph L) qr r ∧ ∃ P, !(substsGraph L) P qr R ∧
+    ∃ eP, !qqExsDef eP P ∧ ∃ i, !insertDef i eP Γ ∧ ∃ nP, !(negGraph L) nP eP ∧ ∃ j, !insertDef j nP i ∧
+    ∃ ax, !axLGraph ax j eP ∧ ∃ eR, !qqExsDef eR R ∧ ∃ u, !(useHornVDef L) u i ev as eR dΛ ax ∧
+    !(elimExistsCodeDef L) y Γ P u d”
+
+instance introFactV_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ introFactV L (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) (introFactVDef L) := .mk
+  fun v ↦ by
+    simp [introFactVDef, revV_defined.iff, qVec.defined.iff, subst.defined.iff, neg.defined.iff,
+      useHornV_defined.iff, elimExistsCode_defined.iff, introFactV]
+
+/-! ### B.2 Rows, steps, `applyStep`, `ctxAfter`, `stepCost`, `StepOK`
+
+A ROW of the table is `⟪dΛ, m, B⟫`: the stored proof code of `qqAlls B m`, the arity, the matrix.
+A STEP is `⟪tag, …⟫`; the Horn steps CARRY their own decomposition of the row matrix (the
+antecedent vector `as` and the conclusion piece), which `StepOK` checks syntactically
+(`rowB = impChainV as c`) — so no Σ₁ Horn-decomposition of a code is ever needed:
+
+| tag | code | `applyStep tbl Γ s e` | `ctxAfter Γ s` |
+|---|---|---|---|
+| 0 | `sUseHorn i ev as c` | `useHornV Γ ev as c dΛᵢ e` | `insert (neg c') Γ` |
+| 1 | `sUseHornAnd i ev as c₁ c₂` | `useHornAndV Γ ev as c₁ c₂ dΛᵢ e` | `insert (neg c₁') (insert (neg c₂') Γ)` |
+| 2 | `sIntroFact i ev as R` | `introFactV Γ ev as R dΛᵢ e` | `insert (neg (free R')) (setShift Γ)` |
+| 3 | `sElimExs P` | `elimExistsCode Γ P (axLFactCode Γ (^∃ P)) e` | `insert (neg (free P)) (setShift Γ)` |
+| 4 | `sSplit p q` | `splitAndCode Γ p q e` | `insert (neg p) (insert (neg q) Γ)` |
+| 5 | `sWkDrop Γ'` | `wkDropCode Γ e` | `Γ'` |
+
+with `c' = subst (revV ev) c` and `R' = subst (qVec (revV ev)) R` (the `instOuter`/`instOuterAt 1`
+instances, `subst_revV_vecOf`/`subst_qVec_revV_vecOf`). `axLFactCode` is a LEAF: it never
+appears as a step — a chain ends in an explicit continuation `d`, and a leaf is that `d`. -/
+
+section stepLanguage
+
+open LAct
+
+/-- A row of the table: `⟪dΛ, m, B⟫`. -/
+noncomputable def mkRow (dΛ m B : V) : V := ⟪dΛ, m, B⟫
+noncomputable def rowD (r : V) : V := π₁ r
+noncomputable def rowM (r : V) : V := π₁ (π₂ r)
+noncomputable def rowB (r : V) : V := π₂ (π₂ r)
+
+@[simp] lemma rowD_mkRow (dΛ m B : V) : rowD (mkRow dΛ m B) = dΛ := by simp [rowD, mkRow]
+@[simp] lemma rowM_mkRow (dΛ m B : V) : rowM (mkRow dΛ m B) = m := by simp [rowM, mkRow]
+@[simp] lemma rowB_mkRow (dΛ m B : V) : rowB (mkRow dΛ m B) = B := by simp [rowB, mkRow]
+
+/-- **The row table is sound** with the uniform length bound `N`: every entry `⟪dΛ, m, B⟫` has
+an `m`-semiformula matrix, a `TAct`-proof code `dΛ` of `qqAlls B m`, and `dlen dΛ ≤ N`
+(what `Lib.univ_code` delivers, row by row). -/
+def TableOK (tbl N : V) : Prop :=
+  ∀ i < len tbl, IsSemiformula LAct (rowM tbl.[i]) (rowB tbl.[i]) ∧
+    Proof TAct (rowD tbl.[i]) (qqAlls (rowB tbl.[i]) (rowM tbl.[i])) ∧ dlen TAct (rowD tbl.[i]) ≤ N
+
+/-- The step codes. -/
+noncomputable def sUseHorn (i ev as c : V) : V := ⟪0, i, ev, as, c⟫
+noncomputable def sUseHornAnd (i ev as c₁ c₂ : V) : V := ⟪1, i, ev, as, c₁, c₂⟫
+noncomputable def sIntroFact (i ev as R : V) : V := ⟪2, i, ev, as, R⟫
+noncomputable def sElimExs (P : V) : V := ⟪3, P⟫
+noncomputable def sSplit (p q : V) : V := ⟪4, p, q⟫
+noncomputable def sWkDrop (Γ' : V) : V := ⟪5, Γ'⟫
+
+/-- The fields of a step: `sTag`; for the Horn tags `sRow`, `sEv`, `sAs`, `sC` (for tag 1 `sC s =
+⟪c₁, c₂⟫`, for tag 2 `sC s = R`); for tag 3 `π₂ s = P`; tag 4 `π₁ (π₂ s) = p`, `π₂ (π₂ s) = q`;
+tag 5 `π₂ s = Γ'`. -/
+noncomputable def sTag (s : V) : V := π₁ s
+noncomputable def sRow (s : V) : V := π₁ (π₂ s)
+noncomputable def sEv (s : V) : V := π₁ (π₂ (π₂ s))
+noncomputable def sAs (s : V) : V := π₁ (π₂ (π₂ (π₂ s)))
+noncomputable def sC (s : V) : V := π₂ (π₂ (π₂ (π₂ s)))
+
+@[simp] lemma sTag_sUseHorn (i ev as c : V) : sTag (sUseHorn i ev as c) = 0 := by simp [sTag, sUseHorn]
+@[simp] lemma sRow_sUseHorn (i ev as c : V) : sRow (sUseHorn i ev as c) = i := by simp [sRow, sUseHorn]
+@[simp] lemma sEv_sUseHorn (i ev as c : V) : sEv (sUseHorn i ev as c) = ev := by simp [sEv, sUseHorn]
+@[simp] lemma sAs_sUseHorn (i ev as c : V) : sAs (sUseHorn i ev as c) = as := by simp [sAs, sUseHorn]
+@[simp] lemma sC_sUseHorn (i ev as c : V) : sC (sUseHorn i ev as c) = c := by simp [sC, sUseHorn]
+@[simp] lemma sTag_sUseHornAnd (i ev as c₁ c₂ : V) : sTag (sUseHornAnd i ev as c₁ c₂) = 1 := by
+  simp [sTag, sUseHornAnd]
+@[simp] lemma sRow_sUseHornAnd (i ev as c₁ c₂ : V) : sRow (sUseHornAnd i ev as c₁ c₂) = i := by
+  simp [sRow, sUseHornAnd]
+@[simp] lemma sEv_sUseHornAnd (i ev as c₁ c₂ : V) : sEv (sUseHornAnd i ev as c₁ c₂) = ev := by
+  simp [sEv, sUseHornAnd]
+@[simp] lemma sAs_sUseHornAnd (i ev as c₁ c₂ : V) : sAs (sUseHornAnd i ev as c₁ c₂) = as := by
+  simp [sAs, sUseHornAnd]
+@[simp] lemma sC_sUseHornAnd (i ev as c₁ c₂ : V) : sC (sUseHornAnd i ev as c₁ c₂) = ⟪c₁, c₂⟫ := by
+  simp [sC, sUseHornAnd]
+@[simp] lemma sTag_sIntroFact (i ev as R : V) : sTag (sIntroFact i ev as R) = 2 := by simp [sTag, sIntroFact]
+@[simp] lemma sRow_sIntroFact (i ev as R : V) : sRow (sIntroFact i ev as R) = i := by simp [sRow, sIntroFact]
+@[simp] lemma sEv_sIntroFact (i ev as R : V) : sEv (sIntroFact i ev as R) = ev := by simp [sEv, sIntroFact]
+@[simp] lemma sAs_sIntroFact (i ev as R : V) : sAs (sIntroFact i ev as R) = as := by simp [sAs, sIntroFact]
+@[simp] lemma sC_sIntroFact (i ev as R : V) : sC (sIntroFact i ev as R) = R := by simp [sC, sIntroFact]
+@[simp] lemma sTag_sElimExs (P : V) : sTag (sElimExs P) = 3 := by simp [sTag, sElimExs]
+@[simp] lemma pi₂_sElimExs (P : V) : π₂ (sElimExs P) = P := by simp [sElimExs]
+@[simp] lemma sTag_sSplit (p q : V) : sTag (sSplit p q) = 4 := by simp [sTag, sSplit]
+@[simp] lemma pi₂_sSplit (p q : V) : π₂ (sSplit p q) = ⟪p, q⟫ := by simp [sSplit]
+@[simp] lemma sTag_sWkDrop (Γ' : V) : sTag (sWkDrop Γ') = 5 := by simp [sTag, sWkDrop]
+@[simp] lemma pi₂_sWkDrop (Γ' : V) : π₂ (sWkDrop Γ') = Γ' := by simp [sWkDrop]
+
+/-- **Apply one step** at the context `Γ` to the continuation `e` (the derivation code of
+`ctxAfter Γ s`): the Part-A vector constructor of the tag. Unknown tags act as `wkDrop`. -/
+noncomputable def applyStep (tbl Γ s e : V) : V :=
+  if sTag s = 0 then useHornV LAct Γ (sEv s) (sAs s) (sC s) (rowD tbl.[sRow s]) e
+  else if sTag s = 1 then
+    useHornAndV LAct Γ (sEv s) (sAs s) (π₁ (sC s)) (π₂ (sC s)) (rowD tbl.[sRow s]) e
+  else if sTag s = 2 then introFactV LAct Γ (sEv s) (sAs s) (sC s) (rowD tbl.[sRow s]) e
+  else if sTag s = 3 then elimExistsCode LAct Γ (π₂ s) (axLFactCode Γ (^∃ (π₂ s))) e
+  else if sTag s = 4 then splitAndCode LAct Γ (π₁ (π₂ s)) (π₂ (π₂ s)) e
+  else wkDropCode Γ e
+
+noncomputable def applyStepDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y tbl Γ s e. ∃ t, !pi₁Def t s ∧ ∃ p, !pi₂Def p s ∧ ∃ i, !pi₁Def i p ∧ ∃ p₂, !pi₂Def p₂ p ∧
+    ∃ ev, !pi₁Def ev p₂ ∧ ∃ p₃, !pi₂Def p₃ p₂ ∧ ∃ as, !pi₁Def as p₃ ∧ ∃ c, !pi₂Def c p₃ ∧
+    ∃ r, !nthDef r tbl i ∧ ∃ dΛ, !pi₁Def dΛ r ∧ ∃ c₁, !pi₁Def c₁ c ∧ ∃ c₂, !pi₂Def c₂ c ∧
+    (t = 0 → !(useHornVDef LAct) y Γ ev as c dΛ e) ∧
+    (t = 1 → !(useHornAndVDef LAct) y Γ ev as c₁ c₂ dΛ e) ∧
+    (t = 2 → !(introFactVDef LAct) y Γ ev as c dΛ e) ∧
+    (t = 3 → ∃ eP, !qqExsDef eP p ∧ ∃ j, !insertDef j eP Γ ∧ ∃ ax, !axLGraph ax j eP ∧
+      !(elimExistsCodeDef LAct) y Γ p ax e) ∧
+    (t = 4 → !(splitAndCodeDef LAct) y Γ i p₂ e) ∧
+    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → !wkRuleGraph y Γ e)”
+
+instance applyStep_defined : 𝚺₁-Function₄ (applyStep : V → V → V → V → V) via applyStepDef := .mk
+  fun v ↦ by
+    simp [applyStepDef, useHornV_defined.iff, useHornAndV_defined.iff, introFactV_defined.iff,
+      elimExistsCode_defined.iff, splitAndCode_defined.iff]
+    unfold applyStep sTag sRow sEv sAs sC rowD axLFactCode wkDropCode
+    by_cases h0 : π₁ (v 3) = 0
+    · simp [h0]
+    by_cases h1 : π₁ (v 3) = 1
+    · simp [h1]
+    by_cases h2 : π₁ (v 3) = 2
+    · simp [h2]
+    by_cases h3 : π₁ (v 3) = 3
+    · simp [h3]
+    by_cases h4 : π₁ (v 3) = 4
+    · simp [h4]
+    · simp [h0, h1, h2, h3, h4]
+
+instance applyStep_definable : 𝚺₁-Function₄ (applyStep : V → V → V → V → V) := applyStep_defined.to_definable
+
+/-- **The context after a step** — the sequent the continuation must derive (the `hd` of the
+corresponding `_proof` theorem of `Steps.lean`). -/
+noncomputable def ctxAfter (Γ s : V) : V :=
+  if sTag s = 0 then insert (neg LAct (subst LAct (revV (sEv s)) (sC s))) Γ
+  else if sTag s = 1 then
+    insert (neg LAct (subst LAct (revV (sEv s)) (π₁ (sC s))))
+      (insert (neg LAct (subst LAct (revV (sEv s)) (π₂ (sC s)))) Γ)
+  else if sTag s = 2 then
+    insert (neg LAct (free LAct (subst LAct (qVec LAct (revV (sEv s))) (sC s)))) (setShift LAct Γ)
+  else if sTag s = 3 then insert (neg LAct (free LAct (π₂ s))) (setShift LAct Γ)
+  else if sTag s = 4 then insert (neg LAct (π₁ (π₂ s))) (insert (neg LAct (π₂ (π₂ s))) Γ)
+  else π₂ s
+
+noncomputable def ctxAfterDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y Γ s. ∃ t, !pi₁Def t s ∧ ∃ p, !pi₂Def p s ∧ ∃ i, !pi₁Def i p ∧ ∃ p₂, !pi₂Def p₂ p ∧
+    ∃ ev, !pi₁Def ev p₂ ∧ ∃ p₃, !pi₂Def p₃ p₂ ∧ ∃ c, !pi₂Def c p₃ ∧
+    ∃ c₁, !pi₁Def c₁ c ∧ ∃ c₂, !pi₂Def c₂ c ∧ ∃ r, !revVDef r ev ∧
+    (t = 0 → ∃ z, !(substsGraph LAct) z r c ∧ ∃ nz, !(negGraph LAct) nz z ∧ !insertDef y nz Γ) ∧
+    (t = 1 → ∃ z₁, !(substsGraph LAct) z₁ r c₁ ∧ ∃ n₁, !(negGraph LAct) n₁ z₁ ∧
+      ∃ z₂, !(substsGraph LAct) z₂ r c₂ ∧ ∃ n₂, !(negGraph LAct) n₂ z₂ ∧
+      ∃ g, !insertDef g n₂ Γ ∧ !insertDef y n₁ g) ∧
+    (t = 2 → ∃ qr, !(qVecGraph LAct) qr r ∧ ∃ z, !(substsGraph LAct) z qr c ∧ ∃ f, !(freeGraph LAct) f z ∧
+      ∃ nf, !(negGraph LAct) nf f ∧ ∃ sh, !(setShiftGraph LAct) sh Γ ∧ !insertDef y nf sh) ∧
+    (t = 3 → ∃ f, !(freeGraph LAct) f p ∧ ∃ nf, !(negGraph LAct) nf f ∧ ∃ sh, !(setShiftGraph LAct) sh Γ ∧
+      !insertDef y nf sh) ∧
+    (t = 4 → ∃ n₁, !(negGraph LAct) n₁ i ∧ ∃ n₂, !(negGraph LAct) n₂ p₂ ∧ ∃ g, !insertDef g n₂ Γ ∧
+      !insertDef y n₁ g) ∧
+    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → y = p)”
+
+instance ctxAfter_defined : 𝚺₁-Function₂ (ctxAfter : V → V → V) via ctxAfterDef := .mk
+  fun v ↦ by
+    simp [ctxAfterDef, revV_defined.iff, subst.defined.iff, neg.defined.iff, qVec.defined.iff,
+      free.defined.iff, setShift.defined.iff]
+    unfold ctxAfter sTag sEv sC
+    by_cases h0 : π₁ (v 2) = 0
+    · simp [h0]
+    by_cases h1 : π₁ (v 2) = 1
+    · simp [h1]
+    by_cases h2 : π₁ (v 2) = 2
+    · simp [h2]
+    by_cases h3 : π₁ (v 2) = 3
+    · simp [h3]
+    by_cases h4 : π₁ (v 2) = 4
+    · simp [h4]
+    · simp [h0, h1, h2, h3, h4]
+
+instance ctxAfter_definable : 𝚺₁-Function₂ (ctxAfter : V → V → V) := ctxAfter_defined.to_definable
+
+/-- The cost of a Horn use (`dlen_useHornCode_le` with `F := B·E` and `dlen dΛ ≤ N`):
+`N + (m+3)G + (m+1)²(BE + m) + B + mE + 2m + 3 + (2j+1)(G + (j+1)BE + 1)`. -/
+noncomputable def hornCost (N E G m j B : V) : V :=
+  N + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+    + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)
+
+/-- The cost of a totality-row use (`dlen_introFactCode_le`):
+`N + (m + 2j + 10)G + (m+11)BE + (m+1)²(BE + m) + B + mE + 2m + (2j+1)((j+2)BE + 1) + 12`. -/
+noncomputable def introCost (N E G m j B : V) : V :=
+  N + (m + 2 * j + 10) * G + (m + 11) * (B * E) + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m
+    + (2 * j + 1) * ((j + 2) * (B * E) + 1) + 12
+
+def hornCostDef : 𝚺₀.Semisentence 7 := .mkSigma
+  “y N E G m j B. y = N + (m + 3) * G + (m + 1) * (m + 1) * (B * E + m) + B + m * E + 2 * m + 3
+    + (2 * j + 1) * (G + (j + 1) * (B * E) + 1)”
+
+def introCostDef : 𝚺₀.Semisentence 7 := .mkSigma
+  “y N E G m j B. y = N + (m + 2 * j + 10) * G + (m + 11) * (B * E) + (m + 1) * (m + 1) * (B * E + m)
+    + B + m * E + 2 * m + (2 * j + 1) * ((j + 2) * (B * E) + 1) + 12”
+
+instance hornCost_defined :
+    𝚺₀.DefinedFunction (fun v : Fin 6 → V ↦ hornCost (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) hornCostDef := .mk
+  fun v ↦ by simp [hornCostDef, hornCost]
+
+instance introCost_defined :
+    𝚺₀.DefinedFunction (fun v : Fin 6 → V ↦ introCost (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) introCostDef := .mk
+  fun v ↦ by simp [introCostDef, introCost, numeral_eq_natCast]
+
+/-- **The `dlen` increment of a step** (`G = |Γ|`, `m = len ev`, `j = len as`, `B = |B_ρ|`, `E`
+the witness bound, `N ≥ dlen dΛ`), read off the `dlen_…_le` theorems:
+tag 0 `hornCost`; tag 1 `hornCost + 2G + 6BE + 4`; tag 2 `introCost`;
+tag 3 `4G + |setShift Γ| + 7|P| + 10` (`elimExistsCode` on an `axLFactCode` leaf);
+tag 4 `2G + 3|p| + 3|q| + 4`; tag 5 `G + 1`. -/
+noncomputable def stepCost (N E Γ s : V) : V :=
+  if sTag s = 0 then
+    hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (sC s)))
+  else if sTag s = 1 then
+    hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s))
+        (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))))
+      + 2 * setLen LAct Γ + 6 * (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))) * E) + 4
+  else if sTag s = 2 then
+    introCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (^∃ (sC s))))
+  else if sTag s = 3 then
+    4 * setLen LAct Γ + setLen LAct (setShift LAct Γ) + 7 * formulaLen LAct (π₂ s) + 10
+  else if sTag s = 4 then
+    2 * setLen LAct Γ + 3 * formulaLen LAct (π₁ (π₂ s)) + 3 * formulaLen LAct (π₂ (π₂ s)) + 4
+  else setLen LAct Γ + 1
+
+noncomputable def stepCostDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y N E Γ s. ∃ t, !pi₁Def t s ∧ ∃ p, !pi₂Def p s ∧ ∃ i, !pi₁Def i p ∧ ∃ p₂, !pi₂Def p₂ p ∧
+    ∃ ev, !pi₁Def ev p₂ ∧ ∃ p₃, !pi₂Def p₃ p₂ ∧ ∃ as, !pi₁Def as p₃ ∧ ∃ c, !pi₂Def c p₃ ∧
+    ∃ c₁, !pi₁Def c₁ c ∧ ∃ c₂, !pi₂Def c₂ c ∧ ∃ G, !(setLenDef LAct) G Γ ∧ ∃ m, !lenDef m ev ∧ ∃ j, !lenDef j as ∧
+    (t = 0 → ∃ B₀, !(impChainVDef LAct) B₀ as c ∧ ∃ B, !(formulaLenGraph LAct) B B₀ ∧ !hornCostDef y N E G m j B) ∧
+    (t = 1 → ∃ ca, !qqAndDef ca c₁ c₂ ∧ ∃ B₀, !(impChainVDef LAct) B₀ as ca ∧ ∃ B, !(formulaLenGraph LAct) B B₀ ∧
+      ∃ h, !hornCostDef h N E G m j B ∧ y = h + 2 * G + 6 * (B * E) + 4) ∧
+    (t = 2 → ∃ ce, !qqExsDef ce c ∧ ∃ B₀, !(impChainVDef LAct) B₀ as ce ∧ ∃ B, !(formulaLenGraph LAct) B B₀ ∧
+      !introCostDef y N E G m j B) ∧
+    (t = 3 → ∃ sh, !(setShiftGraph LAct) sh Γ ∧ ∃ Gs, !(setLenDef LAct) Gs sh ∧ ∃ P, !(formulaLenGraph LAct) P p ∧
+      y = 4 * G + Gs + 7 * P + 10) ∧
+    (t = 4 → ∃ P, !(formulaLenGraph LAct) P i ∧ ∃ Q, !(formulaLenGraph LAct) Q p₂ ∧ y = 2 * G + 3 * P + 3 * Q + 4) ∧
+    (t ≠ 0 → t ≠ 1 → t ≠ 2 → t ≠ 3 → t ≠ 4 → y = G + 1)”
+
+instance stepCost_defined : 𝚺₁-Function₄ (stepCost : V → V → V → V → V) via stepCostDef := .mk
+  fun v ↦ by
+    simp [stepCostDef, setLen_defined.iff, impChainV_defined.iff, formulaLen.defined.iff, hornCost_defined.iff,
+      introCost_defined.iff, setShift.defined.iff, numeral_eq_natCast]
+    unfold stepCost sTag sEv sAs sC
+    by_cases h0 : π₁ (v 4) = 0
+    · simp [h0]
+    by_cases h1 : π₁ (v 4) = 1
+    · simp [h1]
+    by_cases h2 : π₁ (v 4) = 2
+    · simp [h2]
+    by_cases h3 : π₁ (v 4) = 3
+    · simp [h3]
+    by_cases h4 : π₁ (v 4) = 4
+    · simp [h4]
+    · simp [h0, h1, h2, h3, h4]
+
+instance stepCost_definable : 𝚺₁-Function₄ (stepCost : V → V → V → V → V) := stepCost_defined.to_definable
+
+/-- The common hypotheses of the three Horn tags: a row index in range whose arity is the
+witness count, both vectors of length `≤ M` (the standardness cap that lets the list theorems
+of `Steps.lean` apply), closed witnesses of length `≤ E`, and every instantiated antecedent in
+context. -/
+def HornOK (tbl E M Γ s : V) : Prop :=
+  sRow s < len tbl ∧ rowM tbl.[sRow s] = len (sEv s) ∧ len (sEv s) ≤ M ∧ len (sAs s) ≤ M ∧
+  (∀ k < len (sEv s), IsSemiterm LAct 0 (sEv s).[k] ∧ termLen LAct (sEv s).[k] ≤ E) ∧
+  (∀ k < len (sAs s), neg LAct (subst LAct (revV (sEv s)) (sAs s).[k]) ∈ Γ)
+
+/-- **A step is applicable** at `Γ` — exactly the hypotheses of the `_proof` theorems, per tag. -/
+def StepOK (tbl E M Γ s : V) : Prop :=
+  IsFormulaSet LAct Γ ∧
+  ((sTag s = 0 ∧ HornOK tbl E M Γ s ∧ rowB tbl.[sRow s] = impChainV LAct (sAs s) (sC s)) ∨
+   (sTag s = 1 ∧ HornOK tbl E M Γ s ∧ rowB tbl.[sRow s] = impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))) ∨
+   (sTag s = 2 ∧ HornOK tbl E M Γ s ∧ rowB tbl.[sRow s] = impChainV LAct (sAs s) (^∃ (sC s))) ∨
+   (sTag s = 3 ∧ IsSemiformula LAct 1 (π₂ s) ∧ neg LAct (^∃ (π₂ s)) ∈ Γ) ∨
+   (sTag s = 4 ∧ IsFormula LAct (π₁ (π₂ s)) ∧ IsFormula LAct (π₂ (π₂ s)) ∧
+      neg LAct ((π₁ (π₂ s)) ^⋏ (π₂ (π₂ s))) ∈ Γ) ∨
+   (sTag s = 5 ∧ π₂ s ⊆ Γ))
+
+instance hornOK_definable : 𝚫₁-Relation₅ (HornOK : V → V → V → V → V → Prop) := by
+  unfold HornOK sRow sEv sAs rowM; definability
+
+instance stepOK_definable : 𝚫₁-Relation₅ (StepOK : V → V → V → V → V → Prop) := by
+  unfold StepOK sTag sRow sAs sC rowB; definability
+
+end stepLanguage
 
 end ArithS
