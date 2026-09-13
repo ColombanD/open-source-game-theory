@@ -130,7 +130,7 @@ variable (L)
 
 noncomputable def blueprint : PR.Blueprint 1 where
   zero := .mkSigma “y w. y = w”
-  succ := .mkSigma “y ih i w. !(qVecGraph L) y ih”
+  succ := .mkSigma “y ih i w. ∃ s, !(qVecGraph L) s ih ∧ y = s”
 
 noncomputable def construction : PR.Construction V (blueprint L) where
   zero := fun v ↦ v 0
@@ -200,7 +200,7 @@ variable (L)
 
 noncomputable def blueprint : VecRec.Blueprint 1 where
   nil := .mkSigma “y c. y = c”
-  adjoin := .mkSigma “y x xs ih c. !(impGraph L) y x ih”
+  adjoin := .mkSigma “y x xs ih c. ∃ s, !(impGraph L) s x ih ∧ y = s”
 
 noncomputable def construction : VecRec.Construction V (blueprint L) where
   nil v := v 0

@@ -396,3 +396,13 @@ bvOccF p`; `instOuterAt_subst_bvList` (+ `_bvN`, N ≤ 7), `freeIter`, `free_exs
 Pending on `Chain` landing: the `Steps.lean` `dlen_introFactCode_le_occ` swap. IN FLIGHT: `Chain`
 (resumed), `RowInst` (row-shape/instantiation lemmas + canonical context-fact codes).
 NEXT: `describeSteps` (the walk itself, a `Fixpoint` on `⟪n, r⟫`) once `Chain` fixes the step codes.
+
+**§9 status — 2026-09-13, takeover on the new account: `Chain.lean` diagnosed.** The wip draft
+(Part A vector twins) did not finish type-checking in 30 min because of the BLUEPRINT TRAP: two
+`PR`/`VecRec` clauses called a Σ₁ graph DIRECTLY (`!(qVecGraph L) y ih`, `!(impGraph L) y x ih`);
+∃-wrapped (`∃ s, !(qVecGraph L) s ih ∧ y = s`) the file elaborates in 9 s (bisection by
+truncation: prefix 130 OK, 150 stalled). It then shows 25 genuine errors (never checked end to
+end before the rate-limit kill): a guessed API name `VecRec.Construction.result_defined_iff`
+(lines 226, 262, 334 — find the real `VecRec` definability lemma), unsolved goals at 340, failed
+rewrites in A.5 (`nth_qVecIter_single` at 493 and after). Part B (step language, `ctxVec`,
+`chainCode`, `StepOK`, theorems) not started. Agent launched to repair Part A and write Part B.
