@@ -475,3 +475,37 @@ for the `axm`/`indRec` chain, converted by the bridges. TRAP: `cT 1` is not synt
 (`cT_succ` does not fire — use `cT_one`); the `“…”` DSL cannot splice a typed term (`!!(cTTm m k)`)
 inside a variable-bearing row — write the literal and rewrite. IN FLIGHT: `Describe` (first wip
 df3ffe3), `DESIGN_fragments.md`.
+
+## 11. `DESIGN_fragments.md` (2026-09-13): the per-tag fragments and `verifySteps`, specified
+
+Decisions: (1) a sub-chain step (`sSub`) is REJECTED — `chainAux` calls `applyStep`, so a chain
+inside a step is a circular PR; instead two new FLAT tags: `sGoal e n s ū` (tag 6: `cutRule` on
+the node's goal fact `∃ d n, derivation d ∧ fstIdx s d ∧ dlenGraph d n ∧ n ≤ ū`, left premise a
+constant 10-node leaf from facts in context; the parent recovers `d, n` by `sElimExs`×2 +
+`sSplit`×3) and `sLemma A dA` (tag 7: cut in a CLOSED numeral fact with its Γ-independent
+derivation `dA` carried as data; `StepOK` = `DerivationOf dA {A}`, Δ₁). (2) `ū_ν = bnum (dlen ν)`
+(a numeral); per node one `dlenBinaryLe` + one `sLemma` (`bnum a + bnum b + bnum c + 1 ≤
+bnum (dlen ν)`, true by `DlenGraph.*_iff`) + `leTrans`; a Σ₁ prover `numSteps` over the
+`Lengths.lean` term-level rows produces the closed facts. (3) No environment, no `sWkDrop`:
+fragments assume a CANONICAL LAYOUT (member dossiers in walk order, insert-chain prefixes, `s =
+&k`, `l_s = &0`); parents COPY inherited objects in (`eqTotal` + ~30 congruence rows); sequents
+are chains over distinct members so `setLen` is exact by `sLemma` on V-truth (no `∉`); the row's
+`insertDef cp p s` object is identified with the chain by `subsetAntisymm`. (4) Derived formulas
+(`neg/shift/substs/free`) are RE-DESCRIBED bottom-up and CERTIFIED by new bottom-up rows (incl.
+term-level `termShiftVec/termSubstVec` intro rows), replacing DESIGN_describe §9's opaque-vector
+companions; an identification walk `eqSteps` (12 injectivity rows) handles duplicate inserts,
+`shiftRule`, `axm`, and the top's `x_χ = ⌜χ⌝` pin. (5) FACT corrected: Foundation's `wk` clause is
+`fstIdx d' ⊆ s` — only `cut` introduces arbitrary formulas. (6) `VerifyGraph W tbl ρ L`: a Δ₁
+`Fixpoint` on `⟪ρ, L⟫` (`DlenGraph` pattern, `StrongFinite` via `ρ' < ρ`, `L' ≤ L` for
+sub-vectors — new `le_appendV_mid`); existence by `Derivation.induction1 𝚺`, `verifySteps_ok`
+(Π₁, `Layout Γ ρ → ListOK ∧ NoDrop ∧ goal fact ∧ shifted layout`) by `induction1 𝚷` +
+`Fixpoint.case`. (7) COST: `O(g)` steps, contexts `O(B·g²)`, per step `O(|Γ|)`: `dlen ≤ dlen d +
+C·(dlen ρ + 1)·(setLen Γ + N + (dlen ρ + 1)²)` — CUBIC; with `setLen Γ_top = C_χ·O(‖k‖)` and
+`dlen ρ ≤ ‖k‖³` this is `BoundedInnerNec 3` exactly. (8) `M = 9`. (9) GAPS: ~150 new rows,
+~100 `inst_` lemmas (generator), tags 6/7 in `Chain.lean` (~500 lines), producers
+`memberList/copySteps/chainSteps/eqSteps/certX/lenSteps/numSteps/pinSteps/frag<Tag>` (~6–7k
+lines), V-lemmas `setShift_insert`, `termLen_bnum_le`, `le_appendV_mid`. ORDER: tags 6/7 +
+leaves → `numSteps` → `copySteps/chainSteps/eqSteps` → `certX/lenSteps` → the ten `frag<Tag>` +
+`VerifyGraph` → `verifySteps_ok` → top. RISK: the ten per-tag LAYOUT theorems (index bookkeeping);
+`axm`(ii)'s `bv`/`fvarVec` V-lemmas (Foundation status unverified). Note: `Occ.lean`'s `fvOcc`
+rows are not needed by this design (shifted members are re-walked with exact lengths).
