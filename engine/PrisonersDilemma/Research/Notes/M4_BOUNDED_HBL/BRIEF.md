@@ -510,14 +510,47 @@ leaves → `numSteps` → `copySteps/chainSteps/eqSteps` → `certX/lenSteps` �
 `axm`(ii)'s `bv`/`fvarVec` V-lemmas (Foundation status unverified). Note: `Occ.lean`'s `fvOcc`
 rows are not needed by this design (shifted members are re-walked with exact lengths).
 
-**§9 status — `Describe` (the walk) IN PROGRESS, wip Parts 0–3 (df3ffe3, 127e2ab, de01930,
-e171333; 2620 lines):** Part 0 vector/shift laws (`appendV`, `shiftsV`, `shiftIterV`, `ctxVec` append
-laws, `ListOK`, `NoDrop` transport); Part 1 the walk's row table (40 rows, `rIdx` constants,
-`exists_walkTable`, `walkPieces`, `mkStep`); Part 2 the TERM walk as a `TermRec` construction
-(`vRef`, `ltSteps`, node emitters, `descVecAux`, `descT`/`describeT`/`descCountT` + equations);
-Part 3 step applicability (`stepOK_useHorn/introFact`, 21 per-row `ok_<row>` lemmas, the `z < n`
-chain, leaf/nil node lemmas). Rate-limit kills on 2026-09-13 at 15:10 (Zurich); both agents
-resumed at 16:00. IN FLIGHT: the formula-walk fixpoint (D2–D5), `Chain` Part C (tags 6/7).
+**§9 status — `Describe` (the walk) DONE, D1–D5 (df3ffe3 … a1f8b2b; 5616 lines, census +19, root
+and `Audit` wired):** Part 0 vector/shift laws (`appendV`, `shiftsV`, `shiftIterV`, `ctxVec` append
+laws, `ListOK`, `NoDrop` transport); Part 1 the walk's row table (D1: 40 rows in a FIXED order,
+`rIdx_<row>` constants, `exists_walkTable : ∃ N, ∀ V, ∃ tbl, TableOK tbl N ∧ WalkTable tbl`, the
+PIECE table `walkPieces` (`⟪tag, as, c⟫` per row, a closed V-generic term passed to every producer as
+a PARAMETER — a closed quote must never enter a blueprint), `mkStep W i ev = ⟪tag, i, ev, as, c⟫`,
+`walkTable_<row>`/`mkStep_<row>`); Part 2 the TERM walk (D2) as a `TermRec` construction with
+parameters `(W, n)` (`vRef`, `ltSteps` = PR on `z`, `bvarNode/fvarNode/nilNode/adjNode/funcNode`,
+`descVecAux` = PR from the END of the vector, `descT/describeT/descCountT/descTVec` + equations);
+Part 3 D3 for terms (`stepOK_useHorn/introFact`, the 21 per-row `ok_<row>` lemmas from
+`mkStep_<row>` + `walkTable_<row>` + `inst_<row>`, `ltAux_ok`, the node lemmas, `descVecAux_ok`
+by PR on the number of entries folded with the entries' facts as a LEAN-level hypothesis, and
+`termOK_of_isSemiterm` by `IsSemiterm.induction 𝚷` on the Π₁ invariant `TermOK tbl W n t := ∀ E,
+2n + 2|t| + 8 ≤ E → TermFacts … ∧ descCountT + 1 ≤ 2|t|`: `describeT_ok`, `describeT_chain`);
+Part 4 the FORMULA walk (D2) as a `Fixpoint` on `⟪n, r, y⟫` (`DescF`, `Finite` — NOT `StrongFinite`:
+the quantifier clause references `⟪n+1, p, yp⟫`, bounded per clause by `⟪n+1, r, y⟫`; `DescFGraph`
+Σ₁ via `fixpointDef`, `case_iff`, eight inversion lemmas, existence by `sigma1_structural_induction`,
+uniqueness by `pi1_structural_induction`, `descFw` by `choose!`, `describeF/descCountF`, equations
+`descFw_<c>`; four node emitters `constNode/binNode/quantNode/atomNode` taking their two row
+indices as arguments); Part 5 D3/D4 for formulas (19 formula-row `ok_<row>`, node lemmas delivering
+the root's SHAPE fact too, `formOK_of_isSemiformula` on `FormOK` (`E ≥ 2n + 2|r| + 8`, count
+`descCountF + 1 ≤ 2|r|`), `describeF_ok`, `describeF_chain`, `describeF_shape_and/all/verum/rel`);
+Part 6 sizes (`len (describeT/F) + 4 ≤ 12·|t|/|r|` — DESIGN's `8|r|` undercounts constants);
+Part 7 D5 the cost: a HORN-ONLY list (tags 0/1/2, row bodies `≤ B`) costs `stepK N E B + 36·|Γᵢ|`
+per step (`gcongr` monotonicity to the cap `m, j ≤ 8`, `hornCost_G/introCost_G` split off the `|Γ|`
+coefficient), the contexts grow ADDITIVELY (`ctxAfter_len_le : |Γ'| ≤ |Γ| + fvOccS Γ + 4BE`,
+`fvOccS Γ' ≤ fvOccS Γ + 4BE`; `ctxVec_len_le`), `costSum_le_of_hornOnly`, the walk is Horn-only
+(`hornOnly_describeT/F` via 40 `tag_<row>` lemmas), and **`dlen_describeF_chain_le`**:
+`dlen (chainCode tbl Γ (describeF n r) d) ≤ dlen d + 12|r|·(stepK N E B + 36·ctxBound E B Γ (12|r|))`,
+`ctxBound E B Γ L = |Γ| + L·fvOccS Γ + (L² + L)·4BE` — DESIGN §6.3's polynomial, `B` a bound on
+the table's row bodies (`∀ i < len tbl, |rowB tbl.[i]| ≤ B`, a table constant).
+TRAPS: a DSL wrapper with a DUPLICATED variable (`“y W n z. !ltAuxDef y W n z z”`) runs away like
+`setLenDef` — use `.rew (Rew.subst …)`; a PR/TermRec clause calling a Σ₁ Def DIRECTLY on `y`
+(`!nilNodeDef y W n`) loops in `_defined` — ∃-wrap (`∃ s, !nilNodeDef s W n ∧ y = s`); `definability`
+on a predicate mentioning `walkPieces` (or any def without an instance, e.g. `HornOnly`) times out
+at `whnf` — keep `W` abstract with `hWp : W = walkPieces` and give every predicate an instance;
+`ArithS.descF` was taken (`Code.lean`) — the walk's function is `descFw`; `rw [← hk]` with
+`hk : ↑rIdx = 0` rewrites every `0` (the tag too) — rewrite the hypothesis instead; the
+`descCount ≤ |r|` of DESIGN §4.3 is FALSE (vector nodes count), the true bound is
+`descCount + 1 ≤ 2|r|`. NOT done: `negSteps/shiftSteps/substSteps/freeSteps` (DESIGN §9), the
+D4 shape facts for `or/exs/falsum/nrel` (same proof as the four given), term-level shape facts.
 
 **§11 status — `Chain` Part C DONE (6d4ebab):** `goalFact s ū := ^∃ ^∃ goalBody` (`d = #1`, `n = #0`;
 conjuncts `derFact/fstIdxFact/dlenFact/leFact` as canonical codes over `Pderiv/PfstIdx/Pdlen/Ple`),
