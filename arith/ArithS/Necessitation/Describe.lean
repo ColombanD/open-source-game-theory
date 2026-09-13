@@ -1498,4 +1498,337 @@ lemma mkStep_isUTermVecSigmaPiLAct (ev : V) :
 
 end rowTable
 
+
+/-! ## Part 2 — the term walk (D2 for terms)
+
+DESIGN §4.2, the term and vector tables. Every producer takes the piece table `W` and the arity
+`n` as parameters; a node's steps are assembled with `mkStep W (rIdx_<row>) ev` and the
+witnesses are chain numerals `cTV _` or eigenvariable references `^&i`. Results are pairs
+`⟪count, steps⟫` (`count` = the number of eigenvariable steps = `shiftsV steps`). -/
+
+section termWalk
+
+open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
+
+/-- The reference to a vector eigenvariable: `&c` when the vector is non-empty (`j ≠ 0`), the
+literal `𝟎 = cT 0` (the empty vector IS the number `0`) when `j = 0`. -/
+noncomputable def vRef (c j : V) : V := if j = 0 then 𝟎 else ^&c
+
+def vRefDef : 𝚺₁.Semisentence 3 := .mkSigma “y c j. (j = 0 → y = ↑Arithmetic.zero) ∧ (j ≠ 0 → !qqFvarDef y c)”
+
+instance vRef_defined : 𝚺₁-Function₂ (vRef : V → V → V) via vRefDef := .mk fun v ↦ by
+  simp [vRefDef, vRef, numeral_eq_natCast]
+  by_cases h : v 2 = 0 <;> simp [h]
+instance vRef_definable : 𝚺₁-Function₂ (vRef : V → V → V) := vRef_defined.to_definable
+
+@[simp] lemma vRef_zero (c : V) : vRef c 0 = 𝟎 := by simp [vRef]
+lemma vRef_of_ne {c j : V} (h : j ≠ 0) : vRef c j = ^&c := by simp [vRef, h]
+
+/-! ### 2.1 The `z < n` chain -/
+
+namespace LtAux
+
+noncomputable def blueprint : PR.Blueprint 3 where
+  zero := .mkSigma “y W n z. ∃ m, !subDef m n (z + 1) ∧ ∃ c, !cTVGraph c m ∧ ∃ ev, !mkVec₁Def ev c ∧
+    ∃ s, !mkStepDef s W 0 ev ∧ !mkVec₁Def y s”
+  succ := .mkSigma “y ih i W n z. ∃ a, !cTVGraph a i ∧ ∃ m, !subDef m n z ∧ ∃ b, !cTVGraph b (m + i) ∧
+    ∃ ev, !mkVec₂Def ev a b ∧ ∃ s, !mkStepDef s W 1 ev ∧ !concatDef y ih s”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun v ↦ ?[mkStep (v 0) 0 ?[cTV (v 1 - (v 2 + 1))]]
+  succ := fun v i ih ↦ concat ih (mkStep (v 0) 1 ?[cTV i, cTV (v 1 - v 2 + i)])
+  zero_defined := .mk fun v ↦ by simp [blueprint, cTV.defined.iff, mkStep_defined.iff]
+  succ_defined := .mk fun v ↦ by simp [blueprint, cTV.defined.iff, mkStep_defined.iff]
+
+end LtAux
+
+/-- `ltAux W n z j` — the first `j + 1` steps of the derivation of `z < n`: `0 < n - z`, then
+`i < n - z + i → i + 1 < n - z + i + 1` for `i < j`. -/
+noncomputable def ltAux (W n z j : V) : V := LtAux.construction.result ![W, n, z] j
+
+/-- `ltSteps W n z = ltAux W n z z` derives `ltFact (cTV z) (cTV n)` (when `z < n`). -/
+noncomputable def ltSteps (W n z : V) : V := ltAux W n z z
+
+@[simp] lemma ltAux_zero (W n z : V) :
+    ltAux W n z 0 = ?[mkStep W 0 ?[cTV (n - (z + 1))]] := by simp [ltAux, LtAux.construction]
+@[simp] lemma ltAux_succ (W n z j : V) :
+    ltAux W n z (j + 1) = concat (ltAux W n z j) (mkStep W 1 ?[cTV j, cTV (n - z + j)]) := by
+  simp [ltAux, LtAux.construction]
+
+noncomputable def ltAuxDef : 𝚺₁.Semisentence 5 :=
+  LtAux.blueprint.resultDef |>.rew (Rew.subst ![#0, #4, #1, #2, #3])
+
+instance ltAux_defined : 𝚺₁-Function₄ (ltAux : V → V → V → V → V) via ltAuxDef := .mk
+  fun v ↦ by simp [LtAux.construction.result_defined_iff, ltAuxDef]; rfl
+instance ltAux_definable : 𝚺₁-Function₄ (ltAux : V → V → V → V → V) := ltAux_defined.to_definable
+
+/-- `ltSteps` as a substitution instance of `ltAuxDef` (NOT a DSL wrapper: `simp` on the wrapper
+form normalizes the duplicated variable through the whole PR `resultDef` and runs away). -/
+noncomputable def ltStepsDef : 𝚺₁.Semisentence 4 := ltAuxDef.rew (Rew.subst ![#0, #1, #2, #3, #3])
+
+instance ltSteps_defined : 𝚺₁-Function₃ (ltSteps : V → V → V → V) via ltStepsDef := .mk
+  fun v ↦ by simp [ltStepsDef, ltAuxDef, LtAux.construction.result_defined_iff, ltSteps]; rfl
+instance ltSteps_definable : 𝚺₁-Function₃ (ltSteps : V → V → V → V) := ltSteps_defined.to_definable
+
+/-! ### 2.2 The node emitters -/
+
+/-- (T#) the bound variable `^#z`: `ltSteps`, then `qqBvarTotal [cTV z]`, `isSemitermBvar
+[cTV n, cTV z, &0]`, the bridge `[cTV n, &0]`. Count `1`. -/
+noncomputable def bvarNode (W n z : V) : V :=
+  ⟪1, appendV (ltSteps W n z)
+    ?[mkStep W 2 ?[cTV z], mkStep W 3 ?[cTV n, cTV z, ^&0], mkStep W 4 ?[cTV n, ^&0]]⟫
+
+noncomputable def bvarNodeDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W n z. ∃ L, !ltStepsDef L W n z ∧ ∃ cz, !cTVGraph cz z ∧ ∃ cn, !cTVGraph cn n ∧ ∃ f0, !qqFvarDef f0 0 ∧
+    ∃ e₁, !mkVec₁Def e₁ cz ∧ ∃ s₁, !mkStepDef s₁ W 2 e₁ ∧
+    ∃ e₂₀, !mkVec₁Def e₂₀ f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ cz e₂₀ ∧ ∃ e₂, !adjoinDef e₂ cn e₂₁ ∧ ∃ s₂, !mkStepDef s₂ W 3 e₂ ∧
+    ∃ e₃, !mkVec₂Def e₃ cn f0 ∧ ∃ s₃, !mkStepDef s₃ W 4 e₃ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧
+    ∃ S, !appendVDef S L l₁ ∧ !pairDef y 1 S”
+
+instance bvarNode_defined : 𝚺₁-Function₃ (bvarNode : V → V → V → V) via bvarNodeDef := .mk
+  fun v ↦ by simp [bvarNodeDef, bvarNode, numeral_eq_natCast, ltSteps_defined.iff, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff]
+instance bvarNode_definable : 𝚺₁-Function₃ (bvarNode : V → V → V → V) := bvarNode_defined.to_definable
+
+/-- (T&) the free variable `^&x`: `qqFvarTotal [cTV x]`, `isSemitermFvar [cTV n, cTV x, &0]`, the
+bridge. Count `1`. -/
+noncomputable def fvarNode (W n x : V) : V :=
+  ⟪1, ?[mkStep W 5 ?[cTV x], mkStep W 6 ?[cTV n, cTV x, ^&0], mkStep W 4 ?[cTV n, ^&0]]⟫
+
+noncomputable def fvarNodeDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W n x. ∃ cx, !cTVGraph cx x ∧ ∃ cn, !cTVGraph cn n ∧ ∃ f0, !qqFvarDef f0 0 ∧
+    ∃ e₁, !mkVec₁Def e₁ cx ∧ ∃ s₁, !mkStepDef s₁ W 5 e₁ ∧
+    ∃ e₂₀, !mkVec₁Def e₂₀ f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ cx e₂₀ ∧ ∃ e₂, !adjoinDef e₂ cn e₂₁ ∧ ∃ s₂, !mkStepDef s₂ W 6 e₂ ∧
+    ∃ e₃, !mkVec₂Def e₃ cn f0 ∧ ∃ s₃, !mkStepDef s₃ W 4 e₃ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !pairDef y 1 l₁”
+
+instance fvarNode_defined : 𝚺₁-Function₃ (fvarNode : V → V → V → V) via fvarNodeDef := .mk
+  fun v ↦ by simp [fvarNodeDef, fvarNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff]
+instance fvarNode_definable : 𝚺₁-Function₃ (fvarNode : V → V → V → V) := fvarNode_defined.to_definable
+
+/-- (V0) the empty vector: `isSemitermVecNil [cTV n]`, the bridge `[cTV 0, cTV n, cTV 0]`. Count `0`. -/
+noncomputable def nilNode (W n : V) : V :=
+  ⟪0, ?[mkStep W 15 ?[cTV n], mkStep W 16 ?[cTV 0, cTV n, cTV 0]]⟫
+
+noncomputable def nilNodeDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y W n. ∃ cn, !cTVGraph cn n ∧ ∃ c0, !cTVGraph c0 0 ∧
+    ∃ e₁, !mkVec₁Def e₁ cn ∧ ∃ s₁, !mkStepDef s₁ W 15 e₁ ∧
+    ∃ e₂₀, !mkVec₁Def e₂₀ c0 ∧ ∃ e₂₁, !adjoinDef e₂₁ cn e₂₀ ∧ ∃ e₂, !adjoinDef e₂ c0 e₂₁ ∧ ∃ s₂, !mkStepDef s₂ W 16 e₂ ∧
+    ∃ l₂, !mkVec₁Def l₂ s₂ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !pairDef y 0 l₁”
+
+instance nilNode_defined : 𝚺₁-Function₂ (nilNode : V → V → V) via nilNodeDef := .mk
+  fun v ↦ by simp [nilNodeDef, nilNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff]
+instance nilNode_definable : 𝚺₁-Function₂ (nilNode : V → V → V) := nilNode_defined.to_definable
+
+/-- (V∷) one more entry in front of a described vector of length `j`: given the entry's result
+`p = ⟪ct, St⟫` and the tail's result `ih = ⟪cv, Sv⟫`, the steps `Sv ++ St ++ [adjoinTotal [&0, ⟨v'⟩],
+isSemitermVecAdjoin [cTV j, cTV n, ⟨v'⟩', &1, &0], the bridge [cTV (j+1), cTV n, &0]]` with
+`⟨v'⟩ = vRef ct j` (the tail's eigenvariable after the entry's `ct` shifts) and `⟨v'⟩' = vRef (ct+1) j`.
+Count `cv + ct + 1`. -/
+noncomputable def adjNode (W n j p ih : V) : V :=
+  ⟪π₁ ih + π₁ p + 1, appendV (π₂ ih) (appendV (π₂ p)
+    ?[mkStep W 17 ?[^&0, vRef (π₁ p) j],
+      mkStep W 18 ?[cTV j, cTV n, vRef (π₁ p + 1) j, ^&1, ^&0],
+      mkStep W 16 ?[cTV (j + 1), cTV n, ^&0]])⟫
+
+noncomputable def adjNodeDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W n j p ih. ∃ cv, !pi₁Def cv ih ∧ ∃ Sv, !pi₂Def Sv ih ∧ ∃ ct, !pi₁Def ct p ∧ ∃ St, !pi₂Def St p ∧
+    ∃ f0, !qqFvarDef f0 0 ∧ ∃ f1, !qqFvarDef f1 1 ∧ ∃ r, !vRefDef r ct j ∧ ∃ r', !vRefDef r' (ct + 1) j ∧
+    ∃ cj, !cTVGraph cj j ∧ ∃ cn, !cTVGraph cn n ∧ ∃ cj', !cTVGraph cj' (j + 1) ∧
+    ∃ e₁, !mkVec₂Def e₁ f0 r ∧ ∃ s₁, !mkStepDef s₁ W 17 e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ f1 f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ r' e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ cn e₂₁ ∧
+    ∃ e₂, !adjoinDef e₂ cj e₂₂ ∧ ∃ s₂, !mkStepDef s₂ W 18 e₂ ∧
+    ∃ e₃₀, !mkVec₁Def e₃₀ f0 ∧ ∃ e₃₁, !adjoinDef e₃₁ cn e₃₀ ∧ ∃ e₃, !adjoinDef e₃ cj' e₃₁ ∧ ∃ s₃, !mkStepDef s₃ W 16 e₃ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧
+    ∃ S₂, !appendVDef S₂ St l₁ ∧ ∃ S, !appendVDef S Sv S₂ ∧ !pairDef y (cv + ct + 1) S”
+
+instance adjNode_defined : 𝚺₁-Function₅ (adjNode : V → V → V → V → V → V) via adjNodeDef := .mk
+  fun v ↦ by
+    simp [adjNodeDef, adjNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff, vRef_defined.iff]
+instance adjNode_definable : 𝚺₁.DefinableFunction₅ (adjNode : V → V → V → V → V → V) :=
+  adjNode_defined.to_definable
+
+namespace DescVecAux
+
+noncomputable def blueprint : PR.Blueprint 3 where
+  zero := .mkSigma “y W n w. ∃ s, !nilNodeDef s W n ∧ y = s”
+  succ := .mkSigma “y ih i W n w. ∃ p, !nthFromEndDef p w i ∧ ∃ s, !adjNodeDef s W n i p ih ∧ y = s”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun v ↦ nilNode (v 0) (v 1)
+  succ := fun v i ih ↦ adjNode (v 0) (v 1) i (nthFromEnd (v 2) i) ih
+  zero_defined := .mk fun v ↦ by simp [blueprint, nilNode_defined.iff]
+  succ_defined := .mk fun v ↦ by simp [blueprint, nthFromEnd_defined.iff, adjNode_defined.iff]
+
+end DescVecAux
+
+/-- `descVecAux W n w j` — the vector walk over the LAST `j` entries of the result vector `w`
+(entry `w.[i] = ⟪count, steps⟫` of the `i`-th term), tail first. -/
+noncomputable def descVecAux (W n w j : V) : V := DescVecAux.construction.result ![W, n, w] j
+
+@[simp] lemma descVecAux_zero (W n w : V) : descVecAux W n w 0 = nilNode W n := by
+  simp [descVecAux, DescVecAux.construction]
+@[simp] lemma descVecAux_succ (W n w j : V) :
+    descVecAux W n w (j + 1) = adjNode W n j (nthFromEnd w j) (descVecAux W n w j) := by
+  simp [descVecAux, DescVecAux.construction]
+
+noncomputable def descVecAuxDef : 𝚺₁.Semisentence 5 :=
+  DescVecAux.blueprint.resultDef |>.rew (Rew.subst ![#0, #4, #1, #2, #3])
+
+instance descVecAux_defined : 𝚺₁-Function₄ (descVecAux : V → V → V → V → V) via descVecAuxDef := .mk
+  fun v ↦ by simp [DescVecAux.construction.result_defined_iff, descVecAuxDef]; rfl
+instance descVecAux_definable : 𝚺₁-Function₄ (descVecAux : V → V → V → V → V) :=
+  descVecAux_defined.to_definable
+
+/-- The row of the closed symbol fact `isFunc k f` (`LAct`: `(0,0)` zero, `(0,1)` one, `(0,2)` c_C,
+`(0,3)` c_D, `(2,0)` add, `(2,1)` mul). -/
+noncomputable def funcRow (k f : V) : V :=
+  if k = 0 then (if f = 0 then 9 else if f = 1 then 10 else if f = 2 then 13 else 14)
+  else (if f = 0 then 11 else 12)
+
+def funcRowDef : 𝚺₀.Semisentence 3 := .mkSigma
+  “y k f. (k = 0 → ((f = 0 → y = 9) ∧ (f = 1 → y = 10) ∧ (f = 2 → y = 13) ∧ (f ≠ 0 → f ≠ 1 → f ≠ 2 → y = 14))) ∧
+    (k ≠ 0 → ((f = 0 → y = 11) ∧ (f ≠ 0 → y = 12)))”
+
+instance funcRow_defined : 𝚺₀-Function₂ (funcRow : V → V → V) via funcRowDef := .mk fun v ↦ by
+  simp [funcRowDef, funcRow, numeral_eq_natCast]
+  by_cases hk : v 1 = 0 <;> simp [hk]
+  · by_cases h0 : v 2 = 0
+    · simp [h0]
+    by_cases h1 : v 2 = 1
+    · simp [h0, h1]
+    by_cases h2 : v 2 = 2
+    · simp [h0, h1, h2]
+    · simp [h0, h1, h2]
+  · by_cases h0 : v 2 = 0 <;> simp [h0]
+instance funcRow_definable : 𝚺₀-Function₂ (funcRow : V → V → V) := funcRow_defined.to_definable
+
+/-- (Tf) the function node `^func k f v` after its vector (result `d = ⟪cv, Sv⟫`): the closed symbol
+row, `qqFuncTotal [cTV k, cTV f, ⟨v⟩]`, `isSemitermFunc [cTV n, cTV k, cTV f, ⟨v⟩', &0]`, the bridge,
+then `isUTermVecOfSemitermVecLAct [cTV k, cTV n, ⟨v⟩']` and its bridge `[cTV k, ⟨v⟩']`, with
+`⟨v⟩ = vRef 0 k`, `⟨v⟩' = vRef 1 k`. Count `cv + 1`. -/
+noncomputable def funcNode (W n k f d : V) : V :=
+  ⟪π₁ d + 1, appendV (π₂ d)
+    ?[mkStep W (funcRow k f) 0,
+      mkStep W 7 ?[cTV k, cTV f, vRef 0 k],
+      mkStep W 8 ?[cTV n, cTV k, cTV f, vRef 1 k, ^&0],
+      mkStep W 4 ?[cTV n, ^&0],
+      mkStep W 38 ?[cTV k, cTV n, vRef 1 k],
+      mkStep W 39 ?[cTV k, vRef 1 k]]⟫
+
+noncomputable def funcNodeDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W n k f d. ∃ cv, !pi₁Def cv d ∧ ∃ Sv, !pi₂Def Sv d ∧
+    ∃ f0, !qqFvarDef f0 0 ∧ ∃ r0, !vRefDef r0 0 k ∧ ∃ r1, !vRefDef r1 1 k ∧
+    ∃ ck, !cTVGraph ck k ∧ ∃ cf, !cTVGraph cf f ∧ ∃ cn, !cTVGraph cn n ∧
+    ∃ i₁, !funcRowDef i₁ k f ∧ ∃ s₁, !mkStepDef s₁ W i₁ 0 ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ cf r0 ∧ ∃ e₂, !adjoinDef e₂ ck e₂₀ ∧ ∃ s₂, !mkStepDef s₂ W 7 e₂ ∧
+    ∃ e₃₀, !mkVec₂Def e₃₀ r1 f0 ∧ ∃ e₃₁, !adjoinDef e₃₁ cf e₃₀ ∧ ∃ e₃₂, !adjoinDef e₃₂ ck e₃₁ ∧
+    ∃ e₃, !adjoinDef e₃ cn e₃₂ ∧ ∃ s₃, !mkStepDef s₃ W 8 e₃ ∧
+    ∃ e₄, !mkVec₂Def e₄ cn f0 ∧ ∃ s₄, !mkStepDef s₄ W 4 e₄ ∧
+    ∃ e₅₀, !mkVec₂Def e₅₀ cn r1 ∧ ∃ e₅, !adjoinDef e₅ ck e₅₀ ∧ ∃ s₅, !mkStepDef s₅ W 38 e₅ ∧
+    ∃ e₆, !mkVec₂Def e₆ ck r1 ∧ ∃ s₆, !mkStepDef s₆ W 39 e₆ ∧
+    ∃ l₆, !mkVec₁Def l₆ s₆ ∧ ∃ l₅, !adjoinDef l₅ s₅ l₆ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧
+    ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧
+    ∃ S, !appendVDef S Sv l₁ ∧ !pairDef y (cv + 1) S”
+
+instance funcNode_defined : 𝚺₁-Function₅ (funcNode : V → V → V → V → V → V) via funcNodeDef := .mk
+  fun v ↦ by
+    simp [funcNodeDef, funcNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff, vRef_defined.iff,
+      funcRow_defined.iff]
+instance funcNode_definable : 𝚺₁.DefinableFunction₅ (funcNode : V → V → V → V → V → V) :=
+  funcNode_defined.to_definable
+
+/-! ### 2.3 The term walk (`TermRec` with the parameters `W`, `n`) -/
+
+namespace DescT
+
+noncomputable def blueprint : Language.TermRec.Blueprint 2 where
+  bvar := .mkSigma “y z W n. ∃ s, !bvarNodeDef s W n z ∧ y = s”
+  fvar := .mkSigma “y x W n. ∃ s, !fvarNodeDef s W n x ∧ y = s”
+  func := .mkSigma “y k f v w W n. ∃ d, !descVecAuxDef d W n w k ∧ ∃ s, !funcNodeDef s W n k f d ∧ y = s”
+
+noncomputable def construction : Language.TermRec.Construction V blueprint where
+  bvar := fun param z ↦ bvarNode (param 0) (param 1) z
+  fvar := fun param x ↦ fvarNode (param 0) (param 1) x
+  func := fun param k f _ w ↦ funcNode (param 0) (param 1) k f (descVecAux (param 0) (param 1) w k)
+  bvar_defined := .mk fun v ↦ by simp [blueprint, bvarNode_defined.iff]
+  fvar_defined := .mk fun v ↦ by simp [blueprint, fvarNode_defined.iff]
+  func_defined := .mk fun v ↦ by simp [blueprint, descVecAux_defined.iff, funcNode_defined.iff]
+
+end DescT
+
+/-- **The term walk**: `descT W n t = ⟪count, steps⟫`. -/
+noncomputable def descT (W n t : V) : V := DescT.construction.result LAct ![W, n] t
+/-- The result vector of the term walk over a vector `v` of length `k`. -/
+noncomputable def descTVec (W n k v : V) : V := DescT.construction.resultVec LAct ![W, n] k v
+
+/-- The step list of the term walk. -/
+noncomputable def describeT (W n t : V) : V := π₂ (descT W n t)
+/-- The number of eigenvariables the term walk introduces. -/
+noncomputable def descCountT (W n t : V) : V := π₁ (descT W n t)
+
+@[simp] lemma descT_bvar (W n z : V) : descT W n (^#z) = bvarNode W n z := by
+  simp [descT, DescT.construction]
+@[simp] lemma descT_fvar (W n x : V) : descT W n (^&x) = fvarNode W n x := by
+  simp [descT, DescT.construction]
+lemma descT_func (W n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
+    descT W n (^func k f v) = funcNode W n k f (descVecAux W n (descTVec W n k v) k) := by
+  simp [descT, descTVec, DescT.construction, hkf, hv]
+
+lemma len_descTVec (W n : V) {k v : V} (hv : IsUTermVec LAct k v) : len (descTVec W n k v) = k :=
+  DescT.construction.resultVec_lh LAct _ hv
+lemma nth_descTVec (W n : V) {k v i : V} (hv : IsUTermVec LAct k v) (hi : i < k) :
+    (descTVec W n k v).[i] = descT W n v.[i] :=
+  DescT.construction.nth_resultVec LAct _ hv hi
+
+noncomputable def descTDef : 𝚺₁.Semisentence 4 :=
+  (DescT.blueprint.result LAct).rew (Rew.subst ![#0, #3, #1, #2])
+
+instance descT_defined : 𝚺₁-Function₃ (descT : V → V → V → V) via descTDef := .mk
+  fun v ↦ by simp [descTDef, DescT.construction.result_graphDef]; rfl
+instance descT_definable : 𝚺₁-Function₃ (descT : V → V → V → V) := descT_defined.to_definable
+
+noncomputable def descTVecDef : 𝚺₁.Semisentence 5 :=
+  (DescT.blueprint.resultVec LAct).rew (Rew.subst ![#0, #3, #4, #1, #2])
+
+instance descTVec_defined : 𝚺₁-Function₄ (descTVec : V → V → V → V → V) via descTVecDef := .mk
+  fun v ↦ by simp [descTVecDef, DescT.construction.resultVec_defined.iff]; rfl
+instance descTVec_definable : 𝚺₁-Function₄ (descTVec : V → V → V → V → V) := descTVec_defined.to_definable
+
+noncomputable def describeTDef : 𝚺₁.Semisentence 4 := .mkSigma “y W n t. ∃ d, !descTDef d W n t ∧ !pi₂Def y d”
+noncomputable def descCountTDef : 𝚺₁.Semisentence 4 := .mkSigma “y W n t. ∃ d, !descTDef d W n t ∧ !pi₁Def y d”
+
+instance describeT_defined : 𝚺₁-Function₃ (describeT : V → V → V → V) via describeTDef := .mk
+  fun v ↦ by simp [describeTDef, descT_defined.iff, describeT]
+instance describeT_definable : 𝚺₁-Function₃ (describeT : V → V → V → V) := describeT_defined.to_definable
+instance descCountT_defined : 𝚺₁-Function₃ (descCountT : V → V → V → V) via descCountTDef := .mk
+  fun v ↦ by simp [descCountTDef, descT_defined.iff, descCountT]
+instance descCountT_definable : 𝚺₁-Function₃ (descCountT : V → V → V → V) := descCountT_defined.to_definable
+
+/-! ### The per-constructor equations -/
+
+lemma describeT_bvar (W n z : V) : describeT W n (^#z) =
+    appendV (ltSteps W n z) ?[mkStep W 2 ?[cTV z], mkStep W 3 ?[cTV n, cTV z, ^&0], mkStep W 4 ?[cTV n, ^&0]] := by
+  simp [describeT, bvarNode]
+lemma descCountT_bvar (W n z : V) : descCountT W n (^#z) = 1 := by simp [descCountT, bvarNode]
+lemma describeT_fvar (W n x : V) : describeT W n (^&x) =
+    ?[mkStep W 5 ?[cTV x], mkStep W 6 ?[cTV n, cTV x, ^&0], mkStep W 4 ?[cTV n, ^&0]] := by
+  simp [describeT, fvarNode]
+lemma descCountT_fvar (W n x : V) : descCountT W n (^&x) = 1 := by simp [descCountT, fvarNode]
+lemma describeT_func (W n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
+    describeT W n (^func k f v) =
+      appendV (π₂ (descVecAux W n (descTVec W n k v) k))
+        ?[mkStep W (funcRow k f) 0,
+          mkStep W 7 ?[cTV k, cTV f, vRef 0 k],
+          mkStep W 8 ?[cTV n, cTV k, cTV f, vRef 1 k, ^&0],
+          mkStep W 4 ?[cTV n, ^&0],
+          mkStep W 38 ?[cTV k, cTV n, vRef 1 k],
+          mkStep W 39 ?[cTV k, vRef 1 k]] := by
+  rw [describeT, descT_func W n hkf hv]; simp [funcNode]
+lemma descCountT_func (W n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
+    descCountT W n (^func k f v) = π₁ (descVecAux W n (descTVec W n k v) k) + 1 := by
+  rw [descCountT, descT_func W n hkf hv]; simp [funcNode]
+
+end termWalk
+
 end ArithS
