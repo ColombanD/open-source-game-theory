@@ -36,7 +36,45 @@ WalkTable tbl` from `Lib.univ_code` row by row.
 terms carry no arity change — with the vector fold `descVecAux` (primitive recursion from the
 END of the vector: tail first) and the node emitters `bvarNode` (the `z < n` chain `ltSteps`
 + 3 steps), `fvarNode`, `funcNode`, `adjNode`, `nilNode`; `describeT`, `descCountT`,
-`describeTV`, `descCountTV` and their per-constructor equations.
+`descTVec` and their per-constructor equations.
+
+## Part 3 — applicability of the term walk (D3 for terms)
+
+`stepOK_useHorn`/`stepOK_introFact` (a step assembled from Lean lists is `StepOK`), the 21
+per-row lemmas `ok_<row>` (`mkStep walkPieces k ev` is applicable and its `ctxAfter` inserts
+the canonical fact — from `mkStep_<row>`, `walkTable_<row>`, `inst_<row>`), the `z < n`
+chain (`ltAux_ok`), the node lemmas (`bvarNode_ok`, `fvarNode_ok`, `nilNode_ok`, `adjNode_ok`,
+`funcNode_ok`), the vector induction `descVecAux_ok` (tail first, PR on the number of entries
+folded, the entries' facts from the Lean-level hypothesis) and **`termOK_of_isSemiterm`**
+(`IsSemiterm.induction 𝚷` on the Π₁ invariant `TermOK`): `describeT_ok`, `describeT_chain`.
+
+## Part 4 — the formula walk (D2 for formulas)
+
+A `Fixpoint` on `⟪n, r, y⟫` (`DescF`, `Finite` — every referenced triple is below the node's
+triple with the arity bumped), `DescFGraph` (Σ₁), `case_iff` and the eight inversion lemmas,
+existence (`sigma1_structural_induction`) and uniqueness (`pi1_structural_induction`), the
+function `descFw`, `describeF`, `descCountF`, the per-constructor equations `descFw_<c>`; the
+node emitters `constNode`, `binNode`, `quantNode`, `atomNode` take their two row indices as
+arguments (four Σ₁ definitions serve the eight constructors).
+
+## Part 5 — applicability of the formula walk (D3/D4 for formulas)
+
+The 19 formula-row `ok_<row>` lemmas, the node lemmas (`constNode_ok_verum/falsum`,
+`binNode_ok_and/or`, `quantNode_ok_all/exs`, `atomNode_ok_rel/nrel`, each also delivering the
+root's SHAPE fact), **`formOK_of_isSemiformula`** (the Π₁ invariant `FormOK`, witness bound
+`E ≥ 2n + 2|r| + 8`, count `descCountF + 1 ≤ 2|r|`), `describeF_ok`, `describeF_chain`, and the
+D4 shape facts `describeF_shape_and/all/verum/rel`.
+
+## Part 6–7 — the size and the cost (D5)
+
+`len (describeT/F) + 4 ≤ 12·|t|/|r|`; a HORN-ONLY list (tags 0/1/2, row bodies `≤ B`) costs
+`stepK N E B + 36·|Γᵢ|` per step with the contexts growing additively
+(`ctxAfter_len_le`, `ctxVec_len_le` — the `ShiftLen` law, never the doubling), hence
+`costSum_le_of_hornOnly`; the walk is Horn-only (`hornOnly_describeT/F`), so
+**`costSum_describeF_le`** and **`dlen_describeF_chain_le`**:
+`dlen (chainCode tbl Γ (describeF n r) d) ≤ dlen d + 12|r|·(stepK N E B + 36·ctxBound E B Γ (12|r|))`
+with `ctxBound E B Γ L = |Γ| + L·fvOccS Γ + (L² + L)·4BE` — DESIGN §6.3's
+`C₁|r|(N + |Γ|) + C₂|r|²·fvOccS Γ + C₃|r|³·B·E`.
 -/
 
 namespace ArithS
@@ -4805,5 +4843,774 @@ theorem len_describeF_le (W : V) : ∀ {n r : V}, IsSemiformula LAct n r →
       _ = 12 * (formulaLen LAct p + 1) := by ring
 
 end stepCount
+
+
+/-! ## Part 7 — the cost of the walk (D5)
+
+A **Horn-only** list (tags 0/1/2) whose rows have bodies of length `≤ B` costs, per step,
+`stepK N E B + 36 · |Γᵢ|`, and its contexts grow additively: `|Γᵢ₊₁| ≤ |Γᵢ| + fvOccS Γᵢ + 4BE`,
+`fvOccS Γᵢ₊₁ ≤ fvOccS Γᵢ + 4BE` (the additive shift law of `ShiftLen`, never the doubling). Hence
+`costSum N E Γ S ≤ len S · (stepK N E B + 36 · Gmax)` with
+`Gmax = |Γ| + len S · fvOccS Γ + (len S² + len S) · 4BE` — DESIGN §6.3's shape
+`C₁|r|(N + |Γ|) + C₂|r|²·fvOccS Γ + C₃|r|³·B·E` once `len S ≤ 12|r|` (Part 6). -/
+
+section cost
+
+open LAct
+
+/-- The `|Γ|`-free part of the per-step bound at the arity cap `8` and row-body bound `B`. -/
+noncomputable def stepK (N E B : V) : V :=
+  hornCost N E 0 8 8 B + (6 * (B * E) + 4) + introCost N E 0 8 8 B
+
+lemma hornCost_G (N E G B : V) : hornCost N E G 8 8 B = hornCost N E 0 8 8 B + 28 * G := by
+  unfold hornCost; ring
+lemma introCost_G (N E G B : V) : introCost N E G 8 8 B = introCost N E 0 8 8 B + 34 * G := by
+  unfold introCost; ring
+
+/-- A Horn-only list: every tag is `0`, `1` or `2`. -/
+def HornOnly (S : V) : Prop := ∀ i < len S, sTag S.[i] = 0 ∨ sTag S.[i] = 1 ∨ sTag S.[i] = 2
+
+instance hornOnly_definable : 𝚫₁-Predicate (HornOnly : V → Prop) := by
+  unfold HornOnly sTag; definability
+
+/-- **The per-step cost of a Horn step** whose row body has length `≤ B`. -/
+theorem stepCost_le_of_stepOK {tbl N E B Γ s : V} (hok : StepOK tbl E ((8 : ℕ) : V) Γ s)
+    (ht : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) (hB : formulaLen LAct (rowB tbl.[sRow s]) ≤ B) :
+    stepCost N E Γ s ≤ stepK N E B + 36 * setLen LAct Γ := by
+  obtain ⟨_, h⟩ := hok
+  rcases h with ⟨ht0, hh, hrow⟩ | ⟨ht1, hh, hrow⟩ | ⟨ht2, hh, hrow⟩ | ⟨ht3, _⟩ | ⟨ht4, _⟩ | ⟨ht5, _⟩ | ⟨ht6, _⟩ | ⟨ht7, _⟩
+  · rw [stepCost_tag0 ht0]
+    rw [hrow] at hB
+    have hm : len (sEv s) ≤ 8 := by have := hh.2.2.1; rwa [Nat.cast_ofNat] at this
+    have hj : len (sAs s) ≤ 8 := by have := hh.2.2.2.1; rwa [Nat.cast_ofNat] at this
+    calc hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (sC s)))
+        ≤ hornCost N E (setLen LAct Γ) 8 8 B := by unfold hornCost; gcongr
+      _ = hornCost N E 0 8 8 B + 28 * setLen LAct Γ := hornCost_G _ _ _ _
+      _ ≤ stepK N E B + 36 * setLen LAct Γ := by
+          unfold stepK
+          exact add_le_add (le_trans le_self_add le_self_add) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
+  · rw [stepCost_tag1 ht1]
+    rw [hrow] at hB
+    have hm : len (sEv s) ≤ 8 := by have := hh.2.2.1; rwa [Nat.cast_ofNat] at this
+    have hj : len (sAs s) ≤ 8 := by have := hh.2.2.2.1; rwa [Nat.cast_ofNat] at this
+    calc hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s))
+            (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))))
+          + 2 * setLen LAct Γ + 6 * (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))) * E) + 4
+        ≤ hornCost N E (setLen LAct Γ) 8 8 B + 2 * setLen LAct Γ + 6 * (B * E) + 4 := by
+          gcongr <;> (unfold hornCost; gcongr)
+      _ = (hornCost N E 0 8 8 B + (6 * (B * E) + 4)) + 30 * setLen LAct Γ := by rw [hornCost_G]; ring
+      _ ≤ stepK N E B + 36 * setLen LAct Γ := by
+          unfold stepK
+          exact add_le_add le_self_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
+  · rw [stepCost_tag2 ht2]
+    rw [hrow] at hB
+    have hm : len (sEv s) ≤ 8 := by have := hh.2.2.1; rwa [Nat.cast_ofNat] at this
+    have hj : len (sAs s) ≤ 8 := by have := hh.2.2.2.1; rwa [Nat.cast_ofNat] at this
+    calc introCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (^∃ (sC s))))
+        ≤ introCost N E (setLen LAct Γ) 8 8 B := by unfold introCost; gcongr
+      _ = introCost N E 0 8 8 B + 34 * setLen LAct Γ := introCost_G _ _ _ _
+      _ ≤ stepK N E B + 36 * setLen LAct Γ := by
+          unfold stepK
+          exact add_le_add le_add_self (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
+  · exfalso; rw [ht3] at ht; norm_num at ht
+  · exfalso; rw [ht4] at ht; norm_num at ht
+  · exfalso; rw [ht5] at ht; norm_num at ht
+  · exfalso; rw [ht6] at ht; norm_num at ht
+  · exfalso; rw [ht7] at ht; norm_num at ht
+
+/-- The conclusion of a Horn matrix is no longer than the matrix. -/
+lemma formulaLen_le_impChain {n : V} : ∀ {as : List V} {c : V}, (∀ a ∈ as, IsSemiformula LAct n a) →
+    IsSemiformula LAct n c → formulaLen LAct c ≤ formulaLen LAct (impChain LAct as c)
+  | [], _, _, _ => le_rfl
+  | a :: as, c, has, hc => by
+    rw [impChain_cons, formulaLen_imp (has a (List.mem_cons_self ..)).isUFormula
+      (isSemiformula_impChain (fun a' ha' ↦ has a' (List.mem_cons_of_mem _ ha')) hc).isUFormula]
+    exact le_trans (formulaLen_le_impChain (fun a' ha' ↦ has a' (List.mem_cons_of_mem _ ha')) hc)
+      (le_trans le_add_self le_self_add)
+
+/-- **One Horn step grows the context additively**: `|Γ'| ≤ |Γ| + fvOccS Γ + 4BE`,
+`fvOccS Γ' ≤ fvOccS Γ + 4BE`. -/
+theorem ctxAfter_len_le {tbl N E B Γ s : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hok : StepOK tbl E ((8 : ℕ) : V) Γ s) (ht : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2)
+    (hB : formulaLen LAct (rowB tbl.[sRow s]) ≤ B) :
+    setLen LAct (ctxAfter Γ s) ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) ∧
+    fvOccS LAct (ctxAfter Γ s) ≤ fvOccS LAct Γ + 4 * (B * E) := by
+  obtain ⟨hΓ, h⟩ := hok
+  rcases h with ⟨ht0, hh, hrow⟩ | ⟨ht1, hh, hrow⟩ | ⟨ht2, hh, hrow⟩ | ⟨ht3, _⟩ | ⟨ht4, _⟩ | ⟨ht5, _⟩ | ⟨ht6, _⟩ | ⟨ht7, _⟩
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists 8
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrowF := (htbl _ hh.1).1
+    rw [hm, hrow, hl_eq, impChainV_vecOf] at hrowF
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrowF
+    rw [hrow, hl_eq, impChainV_vecOf] at hB
+    have hcB : formulaLen LAct (sC s) ≤ B := le_trans (formulaLen_le_impChain has hc) hB
+    have hlen : formulaLen LAct (instOuter LAct es (sC s)) ≤ B * E :=
+      le_trans (formulaLen_instOuter_le hE es hc hes') (mul_le_mul_of_nonneg_right hcB zero_le)
+    have hF : IsFormula LAct (instOuter LAct es (sC s)) := isFormula_instOuter es hc hes
+    rw [ctxAfter_tag0 ht0, hes_eq, subst_revV_vecOf es hc hes]
+    constructor
+    · calc setLen LAct (insert (neg LAct (instOuter LAct es (sC s))) Γ)
+          ≤ setLen LAct Γ + formulaLen LAct (neg LAct (instOuter LAct es (sC s))) := setLen_insert_le _ _
+        _ = setLen LAct Γ + formulaLen LAct (instOuter LAct es (sC s)) := by rw [formulaLen_neg hF.isUFormula]
+        _ ≤ setLen LAct Γ + B * E := add_le_add le_rfl hlen
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := by
+            rw [add_assoc]; exact add_le_add le_rfl (le_trans (le_trans (le_of_eq (one_mul _).symm)
+              (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) le_add_self)
+    · calc fvOccS LAct (insert (neg LAct (instOuter LAct es (sC s))) Γ)
+          ≤ fvOccS LAct Γ + fvOccF LAct (neg LAct (instOuter LAct es (sC s))) := fvOccS_insert_le _ _
+        _ = fvOccS LAct Γ + fvOccF LAct (instOuter LAct es (sC s)) := by rw [fvOccF_neg hF.isUFormula]
+        _ ≤ fvOccS LAct Γ + B * E := add_le_add le_rfl (le_trans (fvOccF_le_formulaLen hF.isUFormula) hlen)
+        _ ≤ fvOccS LAct Γ + 4 * (B * E) := add_le_add le_rfl
+            (le_trans (le_of_eq (one_mul _).symm) (mul_le_mul_of_nonneg_right (by norm_num) zero_le))
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists 8
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrowF := (htbl _ hh.1).1
+    rw [hm, hrow, hl_eq, impChainV_vecOf] at hrowF
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrowF
+    obtain ⟨hc₁, hc₂⟩ := IsSemiformula.and.mp hc
+    rw [hrow, hl_eq, impChainV_vecOf] at hB
+    have hcB : formulaLen LAct ((π₁ (sC s)) ^⋏ (π₂ (sC s))) ≤ B := le_trans (formulaLen_le_impChain has hc) hB
+    rw [formulaLen_and hc₁.isUFormula hc₂.isUFormula] at hcB
+    have hc₁B : formulaLen LAct (π₁ (sC s)) ≤ B := le_trans (le_trans le_self_add le_self_add) hcB
+    have hc₂B : formulaLen LAct (π₂ (sC s)) ≤ B := le_trans (le_trans le_add_self le_self_add) hcB
+    have hlen₁ : formulaLen LAct (instOuter LAct es (π₁ (sC s))) ≤ B * E :=
+      le_trans (formulaLen_instOuter_le hE es hc₁ hes') (mul_le_mul_of_nonneg_right hc₁B zero_le)
+    have hlen₂ : formulaLen LAct (instOuter LAct es (π₂ (sC s))) ≤ B * E :=
+      le_trans (formulaLen_instOuter_le hE es hc₂ hes') (mul_le_mul_of_nonneg_right hc₂B zero_le)
+    have hF₁ : IsFormula LAct (instOuter LAct es (π₁ (sC s))) := isFormula_instOuter es hc₁ hes
+    have hF₂ : IsFormula LAct (instOuter LAct es (π₂ (sC s))) := isFormula_instOuter es hc₂ hes
+    rw [ctxAfter_tag1 ht1, hes_eq, subst_revV_vecOf es hc₁ hes, subst_revV_vecOf es hc₂ hes]
+    have h4 : B * E + B * E ≤ 4 * (B * E) := by
+      rw [show B * E + B * E = 2 * (B * E) by ring]; exact mul_le_mul_of_nonneg_right (by norm_num) zero_le
+    constructor
+    · calc setLen LAct (insert (neg LAct (instOuter LAct es (π₁ (sC s))))
+              (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ))
+          ≤ setLen LAct (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ)
+              + formulaLen LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := setLen_insert_le _ _
+        _ ≤ (setLen LAct Γ + formulaLen LAct (neg LAct (instOuter LAct es (π₂ (sC s)))))
+              + formulaLen LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := add_le_add (setLen_insert_le _ _) le_rfl
+        _ ≤ (setLen LAct Γ + B * E) + B * E := by
+            rw [formulaLen_neg hF₁.isUFormula, formulaLen_neg hF₂.isUFormula]
+            exact add_le_add (add_le_add le_rfl hlen₂) hlen₁
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := by
+            rw [add_assoc, add_assoc]; exact add_le_add le_rfl (le_trans h4 le_add_self)
+    · calc fvOccS LAct (insert (neg LAct (instOuter LAct es (π₁ (sC s))))
+              (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ))
+          ≤ fvOccS LAct (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ)
+              + fvOccF LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := fvOccS_insert_le _ _
+        _ ≤ (fvOccS LAct Γ + fvOccF LAct (neg LAct (instOuter LAct es (π₂ (sC s)))))
+              + fvOccF LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := add_le_add (fvOccS_insert_le _ _) le_rfl
+        _ ≤ (fvOccS LAct Γ + B * E) + B * E := by
+            rw [fvOccF_neg hF₁.isUFormula, fvOccF_neg hF₂.isUFormula]
+            exact add_le_add (add_le_add le_rfl (le_trans (fvOccF_le_formulaLen hF₂.isUFormula) hlen₂))
+              (le_trans (fvOccF_le_formulaLen hF₁.isUFormula) hlen₁)
+        _ ≤ fvOccS LAct Γ + 4 * (B * E) := by rw [add_assoc]; exact add_le_add le_rfl h4
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists 8
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrowF := (htbl _ hh.1).1
+    rw [hm, hrow, hl_eq, impChainV_vecOf] at hrowF
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrowF
+    have hR : IsSemiformula LAct ((es.length : V) + 1) (sC s) := IsSemiformula.exs.mp hc
+    rw [hrow, hl_eq, impChainV_vecOf] at hB
+    have hR' : IsSemiformula LAct 1 (instOuterAt LAct 1 es (sC s)) := isSemiformula_one_instOuterAt es hR hes
+    have hlen : formulaLen LAct (instOuterAt LAct 1 es (sC s)) ≤ B * E := by
+      have h := formulaLen_exs_instOuterAt_le hE has hR hes' (F := B * E)
+        (mul_le_mul_of_nonneg_right hB zero_le)
+      rw [formulaLen_exs hR'.isUFormula] at h
+      exact le_trans le_self_add h
+    have hfree : formulaLen LAct (free LAct (instOuterAt LAct 1 es (sC s))) ≤ 2 * (B * E) :=
+      le_trans (formulaLen_free_le hR') (mul_le_mul_of_nonneg_left hlen zero_le)
+    have hF : IsFormula LAct (free LAct (instOuterAt LAct 1 es (sC s))) := hR'.free
+    have hocc : fvOccF LAct (free LAct (instOuterAt LAct 1 es (sC s))) ≤ 2 * (B * E) := by
+      calc fvOccF LAct (free LAct (instOuterAt LAct 1 es (sC s)))
+          ≤ fvOccF LAct (instOuterAt LAct 1 es (sC s)) + bvOccF LAct (instOuterAt LAct 1 es (sC s)) := fvOccF_free_le' hR'
+        _ ≤ formulaLen LAct (instOuterAt LAct 1 es (sC s)) + formulaLen LAct (instOuterAt LAct 1 es (sC s)) :=
+            add_le_add (fvOccF_le_formulaLen hR'.isUFormula) (bvOccF_le_formulaLen hR'.isUFormula)
+        _ ≤ B * E + B * E := add_le_add hlen hlen
+        _ = 2 * (B * E) := by ring
+    rw [ctxAfter_tag2 ht2, hes_eq, subst_qVec_revV_vecOf es hR hes]
+    have h2 : 2 * (B * E) ≤ 4 * (B * E) := mul_le_mul_of_nonneg_right (by norm_num) zero_le
+    constructor
+    · calc setLen LAct (insert (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) (setShift LAct Γ))
+          ≤ setLen LAct (setShift LAct Γ) + formulaLen LAct (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) :=
+            setLen_insert_le _ _
+        _ ≤ (setLen LAct Γ + fvOccS LAct Γ) + 2 * (B * E) := by
+            rw [formulaLen_neg hF.isUFormula]; exact add_le_add (setLen_setShift_le_occ hΓ) hfree
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := add_le_add le_rfl h2
+    · calc fvOccS LAct (insert (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) (setShift LAct Γ))
+          ≤ fvOccS LAct (setShift LAct Γ) + fvOccF LAct (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) :=
+            fvOccS_insert_le _ _
+        _ ≤ fvOccS LAct Γ + 2 * (B * E) := by
+            rw [fvOccF_neg hF.isUFormula]; exact add_le_add (fvOccS_setShift_le hΓ) hocc
+        _ ≤ fvOccS LAct Γ + 4 * (B * E) := add_le_add le_rfl h2
+  · exfalso; rw [ht3] at ht; norm_num at ht
+  · exfalso; rw [ht4] at ht; norm_num at ht
+  · exfalso; rw [ht5] at ht; norm_num at ht
+  · exfalso; rw [ht6] at ht; norm_num at ht
+  · exfalso; rw [ht7] at ht; norm_num at ht
+
+/-- **The contexts of a Horn-only list grow additively**: after `i` steps,
+`fvOccS ≤ fvOccS Γ + i·4BE` and `|Γᵢ| ≤ |Γ| + i·fvOccS Γ + (i² + i)·4BE`. -/
+theorem ctxVec_len_le {tbl N E B Γ S : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hok : ListOK tbl E ((8 : ℕ) : V) Γ S) (ht : HornOnly S)
+    (hB : ∀ i < len S, formulaLen LAct (rowB tbl.[sRow S.[i]]) ≤ B) :
+    ∀ i ≤ len S, fvOccS LAct (ctxVec Γ S).[i] ≤ fvOccS LAct Γ + i * (4 * (B * E)) ∧
+      setLen LAct (ctxVec Γ S).[i] ≤ setLen LAct Γ + i * fvOccS LAct Γ + (i * i + i) * (4 * (B * E)) := by
+  intro i
+  induction i using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => intro _; simp
+  | succ i ih =>
+    intro hi
+    have hi' : i < len S := lt_of_lt_of_le (lt_add_one i) hi
+    obtain ⟨hO, hG⟩ := ih (le_of_lt hi')
+    obtain ⟨hG', hO'⟩ := ctxAfter_len_le hE htbl (hok i hi') (ht i hi') (hB i hi')
+    rw [nth_ctxVec_succ Γ S hi']
+    constructor
+    · calc fvOccS LAct (ctxAfter (ctxVec Γ S).[i] S.[i])
+          ≤ fvOccS LAct (ctxVec Γ S).[i] + 4 * (B * E) := hO'
+        _ ≤ (fvOccS LAct Γ + i * (4 * (B * E))) + 4 * (B * E) := add_le_add hO le_rfl
+        _ = fvOccS LAct Γ + (i + 1) * (4 * (B * E)) := by ring
+    · calc setLen LAct (ctxAfter (ctxVec Γ S).[i] S.[i])
+          ≤ setLen LAct (ctxVec Γ S).[i] + fvOccS LAct (ctxVec Γ S).[i] + 4 * (B * E) := hG'
+        _ ≤ (setLen LAct Γ + i * fvOccS LAct Γ + (i * i + i) * (4 * (B * E)))
+              + (fvOccS LAct Γ + i * (4 * (B * E))) + 4 * (B * E) := add_le_add (add_le_add hG hO) le_rfl
+        _ = setLen LAct Γ + (i + 1) * fvOccS LAct Γ + ((i + 1) * (i + 1)) * (4 * (B * E)) := by ring
+        _ ≤ setLen LAct Γ + (i + 1) * fvOccS LAct Γ + ((i + 1) * (i + 1) + (i + 1)) * (4 * (B * E)) := by
+            rw [add_mul ((i + 1) * (i + 1))]; exact add_le_add le_rfl le_self_add
+
+/-- The uniform context bound of a Horn-only list of `L` steps. -/
+noncomputable def ctxBound (E B Γ L : V) : V :=
+  setLen LAct Γ + L * fvOccS LAct Γ + (L * L + L) * (4 * (B * E))
+
+lemma ctxVec_len_le' {tbl N E B Γ S : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hok : ListOK tbl E ((8 : ℕ) : V) Γ S) (ht : HornOnly S)
+    (hB : ∀ i < len S, formulaLen LAct (rowB tbl.[sRow S.[i]]) ≤ B) :
+    ∀ i ≤ len S, setLen LAct (ctxVec Γ S).[i] ≤ ctxBound E B Γ (len S) := by
+  intro i hi
+  refine le_trans (ctxVec_len_le hE htbl hok ht hB i hi).2 ?_
+  unfold ctxBound
+  gcongr
+
+/-- **The cost of a Horn-only list**: `costSum N E Γ S ≤ len S · (stepK N E B + 36 · ctxBound E B Γ (len S))`. -/
+theorem costSum_le_of_hornOnly {tbl N E B Γ S : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hok : ListOK tbl E ((8 : ℕ) : V) Γ S) (ht : HornOnly S)
+    (hB : ∀ i < len S, formulaLen LAct (rowB tbl.[sRow S.[i]]) ≤ B) :
+    costSum N E Γ S ≤ len S * (stepK N E B + 36 * ctxBound E B Γ (len S)) := by
+  have hbound := ctxVec_len_le' hE htbl hok ht hB
+  have key : ∀ j ≤ len S, costAux N E (ctxVec Γ S) S j ≤ j * (stepK N E B + 36 * ctxBound E B Γ (len S)) := by
+    intro j
+    induction j using ISigma1.pi1_succ_induction with
+    | hP => definability
+    | zero => intro _; simp
+    | succ j ihj =>
+      intro hj
+      have hj' : j ≤ len S := le_trans le_self_add hj
+      obtain ⟨i, hi⟩ : ∃ i, len S = i + (j + 1) := ⟨len S - (j + 1), (tsub_add_cancel_of_le hj).symm⟩
+      have hi' : i < len S := by rw [hi]; exact lt_add_of_pos_right _ (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+      have hC : nthFromEnd (ctxVec Γ S) (j + 1) = (ctxVec Γ S).[i] :=
+        nthFromEnd_eq (a := i) (by rw [len_ctxVec, hi, add_assoc])
+      have hS : nthFromEnd S j = S.[i] := nthFromEnd_eq (a := i) hi
+      rw [costAux_succ, hC, hS]
+      calc costAux N E (ctxVec Γ S) S j + stepCost N E (ctxVec Γ S).[i] S.[i]
+          ≤ j * (stepK N E B + 36 * ctxBound E B Γ (len S)) + (stepK N E B + 36 * setLen LAct (ctxVec Γ S).[i]) :=
+            add_le_add (ihj hj') (stepCost_le_of_stepOK (hok i hi') (ht i hi') (hB i hi'))
+        _ ≤ j * (stepK N E B + 36 * ctxBound E B Γ (len S)) + (stepK N E B + 36 * ctxBound E B Γ (len S)) :=
+            add_le_add le_rfl (add_le_add le_rfl (mul_le_mul_of_nonneg_left (hbound i (le_of_lt hi')) zero_le))
+        _ = (j + 1) * (stepK N E B + 36 * ctxBound E B Γ (len S)) := by ring
+  exact key (len S) le_rfl
+
+end cost
+
+/-! ### 7.2 The walk is Horn-only (tags `0`/`2`) -/
+
+section hornOnlyWalk
+
+lemma hornOnly_nil : HornOnly (0 : V) := fun i hi ↦ by simp at hi
+
+lemma hornOnly_appendV {S₁ S₂ : V} (h₁ : HornOnly S₁) (h₂ : HornOnly S₂) : HornOnly (appendV S₁ S₂) := by
+  intro i hi
+  rw [len_appendV] at hi
+  rcases lt_or_ge i (len S₁) with h | h
+  · rw [nth_appendV_lt S₁ S₂ i h]; exact h₁ i h
+  · obtain ⟨j, rfl⟩ : ∃ j, i = len S₁ + j := ⟨i - len S₁, (add_tsub_cancel_of_le h).symm⟩
+    rw [nth_appendV_add]; exact h₂ j (lt_of_add_lt_add_left hi)
+
+lemma hornOnly_single {s : V} (h : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) : HornOnly (?[s] : V) := by
+  intro i hi
+  rw [len_adjoin, len_nil, zero_add] at hi
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simpa using h
+  · exact absurd hi (not_lt.mpr le_add_self)
+
+lemma hornOnly_cons {s S : V} (h : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) (hS : HornOnly S) : HornOnly (s ∷ S) := by
+  rw [cons_eq_appendV_single]; exact hornOnly_appendV (hornOnly_single h) hS
+
+lemma hornOnly_concat {S s : V} (hS : HornOnly S) (h : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) : HornOnly (concat S s) := by
+  rw [concat_eq_appendV]; exact hornOnly_appendV hS (hornOnly_single h)
+
+/-- The tag of a step from the piece table. -/
+lemma sTag_mkStep (W i ev : V) : sTag (mkStep W i ev) = π₁ W.[i] := by simp [mkStep, sTag]
+
+lemma tag_zeroLtSucc {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (0 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_zeroLtSucc : ℕ) : V) = (0 : V) := by simp [rIdx_zeroLtSucc]
+  have hp := walkPieces_zeroLtSucc (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_zeroLtSucc]; simp
+
+lemma tag_succLtSucc {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (1 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_succLtSucc : ℕ) : V) = (1 : V) := by simp [rIdx_succLtSucc]
+  have hp := walkPieces_succLtSucc (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_succLtSucc]; simp
+
+lemma tag_qqBvarTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (2 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqBvarTotal : ℕ) : V) = (2 : V) := by simp [rIdx_qqBvarTotal]
+  have hp := walkPieces_qqBvarTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqBvarTotal]; simp
+
+lemma tag_isSemitermBvar {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (3 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemitermBvar : ℕ) : V) = (3 : V) := by simp [rIdx_isSemitermBvar]
+  have hp := walkPieces_isSemitermBvar (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemitermBvar]; simp
+
+lemma tag_isSemitermSigmaPiLAct {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (4 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemitermSigmaPiLAct : ℕ) : V) = (4 : V) := by simp [rIdx_isSemitermSigmaPiLAct]
+  have hp := walkPieces_isSemitermSigmaPiLAct (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemitermSigmaPiLAct]; simp
+
+lemma tag_qqFvarTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (5 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqFvarTotal : ℕ) : V) = (5 : V) := by simp [rIdx_qqFvarTotal]
+  have hp := walkPieces_qqFvarTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqFvarTotal]; simp
+
+lemma tag_isSemitermFvar {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (6 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemitermFvar : ℕ) : V) = (6 : V) := by simp [rIdx_isSemitermFvar]
+  have hp := walkPieces_isSemitermFvar (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemitermFvar]; simp
+
+lemma tag_qqFuncTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (7 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqFuncTotal : ℕ) : V) = (7 : V) := by simp [rIdx_qqFuncTotal]
+  have hp := walkPieces_qqFuncTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqFuncTotal]; simp
+
+lemma tag_isSemitermFunc {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (8 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemitermFunc : ℕ) : V) = (8 : V) := by simp [rIdx_isSemitermFunc]
+  have hp := walkPieces_isSemitermFunc (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemitermFunc]; simp
+
+lemma tag_isFuncConst_zero {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (9 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_zero : ℕ) : V) = (9 : V) := by simp [rIdx_isFuncConst_zero]
+  have hp := walkPieces_isFuncConst_zero (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isFuncConst_zero]; simp
+
+lemma tag_isFuncConst_one {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (10 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_one : ℕ) : V) = (10 : V) := by simp [rIdx_isFuncConst_one]
+  have hp := walkPieces_isFuncConst_one (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isFuncConst_one]; simp
+
+lemma tag_isFuncConst_add {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (11 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_add : ℕ) : V) = (11 : V) := by simp [rIdx_isFuncConst_add]
+  have hp := walkPieces_isFuncConst_add (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isFuncConst_add]; simp
+
+lemma tag_isFuncConst_mul {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (12 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_mul : ℕ) : V) = (12 : V) := by simp [rIdx_isFuncConst_mul]
+  have hp := walkPieces_isFuncConst_mul (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isFuncConst_mul]; simp
+
+lemma tag_isFuncConst_cC {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (13 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_cC : ℕ) : V) = (13 : V) := by simp [rIdx_isFuncConst_cC]
+  have hp := walkPieces_isFuncConst_cC (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isFuncConst_cC]; simp
+
+lemma tag_isFuncConst_cD {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (14 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isFuncConst_cD : ℕ) : V) = (14 : V) := by simp [rIdx_isFuncConst_cD]
+  have hp := walkPieces_isFuncConst_cD (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isFuncConst_cD]; simp
+
+lemma tag_isSemitermVecNil {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (15 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemitermVecNil : ℕ) : V) = (15 : V) := by simp [rIdx_isSemitermVecNil]
+  have hp := walkPieces_isSemitermVecNil (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemitermVecNil]; simp
+
+lemma tag_isSemitermVecSigmaPiLAct {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (16 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemitermVecSigmaPiLAct : ℕ) : V) = (16 : V) := by simp [rIdx_isSemitermVecSigmaPiLAct]
+  have hp := walkPieces_isSemitermVecSigmaPiLAct (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemitermVecSigmaPiLAct]; simp
+
+lemma tag_adjoinTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (17 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_adjoinTotal : ℕ) : V) = (17 : V) := by simp [rIdx_adjoinTotal]
+  have hp := walkPieces_adjoinTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_adjoinTotal]; simp
+
+lemma tag_isSemitermVecAdjoin {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (18 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemitermVecAdjoin : ℕ) : V) = (18 : V) := by simp [rIdx_isSemitermVecAdjoin]
+  have hp := walkPieces_isSemitermVecAdjoin (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemitermVecAdjoin]; simp
+
+lemma tag_qqVerumTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (19 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqVerumTotal : ℕ) : V) = (19 : V) := by simp [rIdx_qqVerumTotal]
+  have hp := walkPieces_qqVerumTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqVerumTotal]; simp
+
+lemma tag_isSemiformulaVerum {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (20 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaVerum : ℕ) : V) = (20 : V) := by simp [rIdx_isSemiformulaVerum]
+  have hp := walkPieces_isSemiformulaVerum (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaVerum]; simp
+
+lemma tag_isSemiformulaSigmaPi {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (21 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaSigmaPi : ℕ) : V) = (21 : V) := by simp [rIdx_isSemiformulaSigmaPi]
+  have hp := walkPieces_isSemiformulaSigmaPi (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaSigmaPi]; simp
+
+lemma tag_qqFalsumTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (22 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqFalsumTotal : ℕ) : V) = (22 : V) := by simp [rIdx_qqFalsumTotal]
+  have hp := walkPieces_qqFalsumTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqFalsumTotal]; simp
+
+lemma tag_isSemiformulaFalsum {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (23 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaFalsum : ℕ) : V) = (23 : V) := by simp [rIdx_isSemiformulaFalsum]
+  have hp := walkPieces_isSemiformulaFalsum (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaFalsum]; simp
+
+lemma tag_qqAndTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (24 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqAndTotal : ℕ) : V) = (24 : V) := by simp [rIdx_qqAndTotal]
+  have hp := walkPieces_qqAndTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqAndTotal]; simp
+
+lemma tag_isSemiformulaAnd {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (25 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaAnd : ℕ) : V) = (25 : V) := by simp [rIdx_isSemiformulaAnd]
+  have hp := walkPieces_isSemiformulaAnd (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaAnd]; simp
+
+lemma tag_qqOrTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (26 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqOrTotal : ℕ) : V) = (26 : V) := by simp [rIdx_qqOrTotal]
+  have hp := walkPieces_qqOrTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqOrTotal]; simp
+
+lemma tag_isSemiformulaOr {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (27 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaOr : ℕ) : V) = (27 : V) := by simp [rIdx_isSemiformulaOr]
+  have hp := walkPieces_isSemiformulaOr (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaOr]; simp
+
+lemma tag_qqAllTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (28 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqAllTotal : ℕ) : V) = (28 : V) := by simp [rIdx_qqAllTotal]
+  have hp := walkPieces_qqAllTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqAllTotal]; simp
+
+lemma tag_isSemiformulaAll {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (29 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaAll : ℕ) : V) = (29 : V) := by simp [rIdx_isSemiformulaAll]
+  have hp := walkPieces_isSemiformulaAll (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaAll]; simp
+
+lemma tag_qqExsTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (30 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqExsTotal : ℕ) : V) = (30 : V) := by simp [rIdx_qqExsTotal]
+  have hp := walkPieces_qqExsTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqExsTotal]; simp
+
+lemma tag_isSemiformulaExs {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (31 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaExs : ℕ) : V) = (31 : V) := by simp [rIdx_isSemiformulaExs]
+  have hp := walkPieces_isSemiformulaExs (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaExs]; simp
+
+lemma tag_qqRelTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (32 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqRelTotal : ℕ) : V) = (32 : V) := by simp [rIdx_qqRelTotal]
+  have hp := walkPieces_qqRelTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqRelTotal]; simp
+
+lemma tag_isSemiformulaRel {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (33 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaRel : ℕ) : V) = (33 : V) := by simp [rIdx_isSemiformulaRel]
+  have hp := walkPieces_isSemiformulaRel (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaRel]; simp
+
+lemma tag_qqNRelTotal {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (34 : V) ev) = 2 := by
+  subst hWp
+  have hk : ((rIdx_qqNRelTotal : ℕ) : V) = (34 : V) := by simp [rIdx_qqNRelTotal]
+  have hp := walkPieces_qqNRelTotal (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_qqNRelTotal]; simp
+
+lemma tag_isSemiformulaNRel {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (35 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isSemiformulaNRel : ℕ) : V) = (35 : V) := by simp [rIdx_isSemiformulaNRel]
+  have hp := walkPieces_isSemiformulaNRel (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isSemiformulaNRel]; simp
+
+lemma tag_isRelConst_eq {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (36 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isRelConst_eq : ℕ) : V) = (36 : V) := by simp [rIdx_isRelConst_eq]
+  have hp := walkPieces_isRelConst_eq (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isRelConst_eq]; simp
+
+lemma tag_isRelConst_lt {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (37 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isRelConst_lt : ℕ) : V) = (37 : V) := by simp [rIdx_isRelConst_lt]
+  have hp := walkPieces_isRelConst_lt (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isRelConst_lt]; simp
+
+lemma tag_isUTermVecOfSemitermVecLAct {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (38 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isUTermVecOfSemitermVecLAct : ℕ) : V) = (38 : V) := by simp [rIdx_isUTermVecOfSemitermVecLAct]
+  have hp := walkPieces_isUTermVecOfSemitermVecLAct (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isUTermVecOfSemitermVecLAct]; simp
+
+lemma tag_isUTermVecSigmaPiLAct {W : V} (hWp : W = walkPieces) (ev : V) : sTag (mkStep W (39 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((rIdx_isUTermVecSigmaPiLAct : ℕ) : V) = (39 : V) := by simp [rIdx_isUTermVecSigmaPiLAct]
+  have hp := walkPieces_isUTermVecSigmaPiLAct (V := V)
+  rw [hk] at hp
+  rw [sTag_mkStep, hp, piece_isUTermVecSigmaPiLAct]; simp
+
+
+/-- Every step the walk emits is a Horn step (tag `0`) or a totality step (tag `2`). -/
+lemma tag_ok_of_02 {s : V} (h : sTag s = 0 ∨ sTag s = 2) : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2 := by
+  rcases h with h | h
+  · exact Or.inl h
+  · exact Or.inr (Or.inr h)
+
+lemma tag_funcRow {W : V} (hWp : W = walkPieces) (k f ev : V) : sTag (mkStep W (funcRow k f) ev) = 0 := by
+  unfold funcRow
+  split_ifs <;> first
+    | exact tag_isFuncConst_zero hWp ev | exact tag_isFuncConst_one hWp ev | exact tag_isFuncConst_cC hWp ev
+    | exact tag_isFuncConst_cD hWp ev | exact tag_isFuncConst_add hWp ev | exact tag_isFuncConst_mul hWp ev
+
+lemma tag_relRow {W : V} (hWp : W = walkPieces) (R ev : V) : sTag (mkStep W (relRow R) ev) = 0 := by
+  unfold relRow
+  split_ifs
+  · exact tag_isRelConst_eq hWp ev
+  · exact tag_isRelConst_lt hWp ev
+
+lemma hornOnly_ltAux {W : V} (hWp : W = walkPieces) (n z : V) : ∀ j, HornOnly (ltAux W n z j) := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => rw [ltAux_zero]; exact hornOnly_single (Or.inl (tag_zeroLtSucc hWp _))
+  | succ j ih => rw [ltAux_succ]; exact hornOnly_concat ih (Or.inl (tag_succLtSucc hWp _))
+
+lemma hornOnly_bvarNode {W : V} (hWp : W = walkPieces) (n z : V) : HornOnly (π₂ (bvarNode W n z)) := by
+  rw [bvarNode, pi₂_pair]
+  exact hornOnly_appendV (hornOnly_ltAux hWp n z z) (hornOnly_cons (Or.inr (Or.inr (tag_qqBvarTotal hWp _)))
+    (hornOnly_cons (Or.inl (tag_isSemitermBvar hWp _)) (hornOnly_single (Or.inl (tag_isSemitermSigmaPiLAct hWp _)))))
+lemma hornOnly_fvarNode {W : V} (hWp : W = walkPieces) (n x : V) : HornOnly (π₂ (fvarNode W n x)) := by
+  rw [fvarNode, pi₂_pair]
+  exact hornOnly_cons (Or.inr (Or.inr (tag_qqFvarTotal hWp _)))
+    (hornOnly_cons (Or.inl (tag_isSemitermFvar hWp _)) (hornOnly_single (Or.inl (tag_isSemitermSigmaPiLAct hWp _))))
+lemma hornOnly_nilNode {W : V} (hWp : W = walkPieces) (n : V) : HornOnly (π₂ (nilNode W n)) := by
+  rw [nilNode, pi₂_pair]
+  exact hornOnly_cons (Or.inl (tag_isSemitermVecNil hWp _)) (hornOnly_single (Or.inl (tag_isSemitermVecSigmaPiLAct hWp _)))
+lemma hornOnly_adjNode {W : V} (hWp : W = walkPieces) {n j p ih : V} (hp : HornOnly (π₂ p)) (hih : HornOnly (π₂ ih)) :
+    HornOnly (π₂ (adjNode W n j p ih)) := by
+  rw [adjNode, pi₂_pair]
+  exact hornOnly_appendV hih (hornOnly_appendV hp (hornOnly_cons (Or.inr (Or.inr (tag_adjoinTotal hWp _)))
+    (hornOnly_cons (Or.inl (tag_isSemitermVecAdjoin hWp _)) (hornOnly_single (Or.inl (tag_isSemitermVecSigmaPiLAct hWp _))))))
+lemma hornOnly_funcNode {W : V} (hWp : W = walkPieces) {n k f d : V} (hd : HornOnly (π₂ d)) : HornOnly (π₂ (funcNode W n k f d)) := by
+  rw [funcNode, pi₂_pair]
+  exact hornOnly_appendV hd (hornOnly_cons (Or.inl (tag_funcRow hWp _ _ _)) (hornOnly_cons (Or.inr (Or.inr (tag_qqFuncTotal hWp _)))
+    (hornOnly_cons (Or.inl (tag_isSemitermFunc hWp _)) (hornOnly_cons (Or.inl (tag_isSemitermSigmaPiLAct hWp _))
+    (hornOnly_cons (Or.inl (tag_isUTermVecOfSemitermVecLAct hWp _)) (hornOnly_single (Or.inl (tag_isUTermVecSigmaPiLAct hWp _))))))))
+
+lemma hornOnly_descVecAux {W : V} (hWp : W = walkPieces) {n k v : V} (hv : IsSemitermVec LAct k n v)
+    (ih : ∀ i < k, HornOnly (π₂ (descT W n v.[i]))) :
+    ∀ j ≤ k, HornOnly (π₂ (descVecAux W n (descTVec W n k v) j)) := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => intro _; rw [descVecAux_zero]; exact hornOnly_nilNode hWp n
+  | succ j ihj =>
+    intro hj
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj
+    have hi : k - (j + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth : nthFromEnd (descTVec W n k v) j = descT W n v.[k - (j + 1)] := by
+      rw [nthFromEnd_eq (a := k - (j + 1)) (by rw [len_descTVec _ n hv.isUTerm, tsub_add_cancel_of_le hj]),
+        nth_descTVec _ n hv.isUTerm hi]
+    rw [descVecAux_succ, hnth]
+    exact hornOnly_adjNode hWp (ih _ hi) (ihj (le_trans le_self_add hj))
+
+/-- **The term walk is Horn-only.** -/
+theorem hornOnly_describeT {W : V} (hWp : W = walkPieces) (n : V) : ∀ t, IsSemiterm LAct n t → HornOnly (describeT W n t) := by
+  intro t ht
+  refine IsSemiterm.induction 𝚷 (P := fun t ↦ HornOnly (describeT W n t)) ?_ ?_ ?_ ?_ t ht
+  · definability
+  · intro z _; show HornOnly (describeT W n (^#z)); rw [describeT, descT_bvar]; exact hornOnly_bvarNode hWp n z
+  · intro x; show HornOnly (describeT W n (^&x)); rw [describeT, descT_fvar]; exact hornOnly_fvarNode hWp n x
+  · intro k f v hkf hv ih
+    show HornOnly (describeT W n (^func k f v))
+    rw [describeT, descT_func _ n hkf hv.isUTerm]
+    exact hornOnly_funcNode hWp (hornOnly_descVecAux hWp hv (fun i hi ↦ by have := ih i hi; rwa [describeT] at this) k le_rfl)
+
+/-- **The formula walk is Horn-only.** -/
+theorem hornOnly_describeF {W : V} (hWp : W = walkPieces) : ∀ {n r : V}, IsSemiformula LAct n r → HornOnly (describeF W n r) := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction (P := fun n r ↦ HornOnly (describeF W n r))
+  · definability
+  · intro n k R v hkR hv
+    rw [describeF, descFw_rel _ n hkR hv, atomNode, pi₂_pair]
+    refine hornOnly_appendV (hornOnly_descVecAux hWp hv (fun i hi ↦ by
+      have := hornOnly_describeT hWp n _ (hv.nth hi); rwa [describeT] at this) k le_rfl) ?_
+    exact hornOnly_cons (Or.inl (tag_relRow hWp _ _)) (hornOnly_cons (Or.inr (Or.inr (tag_qqRelTotal hWp _)))
+      (hornOnly_cons (Or.inl (tag_isSemiformulaRel hWp _)) (hornOnly_cons (Or.inl (tag_isSemiformulaSigmaPi hWp _))
+      (hornOnly_cons (Or.inl (tag_isUTermVecOfSemitermVecLAct hWp _)) (hornOnly_single (Or.inl (tag_isUTermVecSigmaPiLAct hWp _)))))))
+  · intro n k R v hkR hv
+    rw [describeF, descFw_nrel _ n hkR hv, atomNode, pi₂_pair]
+    refine hornOnly_appendV (hornOnly_descVecAux hWp hv (fun i hi ↦ by
+      have := hornOnly_describeT hWp n _ (hv.nth hi); rwa [describeT] at this) k le_rfl) ?_
+    exact hornOnly_cons (Or.inl (tag_relRow hWp _ _)) (hornOnly_cons (Or.inr (Or.inr (tag_qqNRelTotal hWp _)))
+      (hornOnly_cons (Or.inl (tag_isSemiformulaNRel hWp _)) (hornOnly_cons (Or.inl (tag_isSemiformulaSigmaPi hWp _))
+      (hornOnly_cons (Or.inl (tag_isUTermVecOfSemitermVecLAct hWp _)) (hornOnly_single (Or.inl (tag_isUTermVecSigmaPiLAct hWp _)))))))
+  · intro n
+    rw [describeF, descFw_verum, constNode, pi₂_pair]
+    exact hornOnly_cons (Or.inr (Or.inr (tag_qqVerumTotal hWp _))) (hornOnly_cons (Or.inl (tag_isSemiformulaVerum hWp _))
+      (hornOnly_single (Or.inl (tag_isSemiformulaSigmaPi hWp _))))
+  · intro n
+    rw [describeF, descFw_falsum, constNode, pi₂_pair]
+    exact hornOnly_cons (Or.inr (Or.inr (tag_qqFalsumTotal hWp _))) (hornOnly_cons (Or.inl (tag_isSemiformulaFalsum hWp _))
+      (hornOnly_single (Or.inl (tag_isSemiformulaSigmaPi hWp _))))
+  · intro n p q hp hq ihp ihq
+    rw [describeF, descFw_and _ n hp hq, binNode, pi₂_pair]
+    rw [describeF] at ihp ihq
+    exact hornOnly_appendV ihp (hornOnly_appendV ihq (hornOnly_cons (Or.inr (Or.inr (tag_qqAndTotal hWp _)))
+      (hornOnly_cons (Or.inl (tag_isSemiformulaAnd hWp _)) (hornOnly_single (Or.inl (tag_isSemiformulaSigmaPi hWp _))))))
+  · intro n p q hp hq ihp ihq
+    rw [describeF, descFw_or _ n hp hq, binNode, pi₂_pair]
+    rw [describeF] at ihp ihq
+    exact hornOnly_appendV ihp (hornOnly_appendV ihq (hornOnly_cons (Or.inr (Or.inr (tag_qqOrTotal hWp _)))
+      (hornOnly_cons (Or.inl (tag_isSemiformulaOr hWp _)) (hornOnly_single (Or.inl (tag_isSemiformulaSigmaPi hWp _))))))
+  · intro n p hp ih
+    rw [describeF, descFw_all _ n hp, quantNode, pi₂_pair]
+    rw [describeF] at ih
+    exact hornOnly_appendV ih (hornOnly_cons (Or.inr (Or.inr (tag_qqAllTotal hWp _)))
+      (hornOnly_cons (Or.inl (tag_isSemiformulaAll hWp _)) (hornOnly_single (Or.inl (tag_isSemiformulaSigmaPi hWp _)))))
+  · intro n p hp ih
+    rw [describeF, descFw_exs _ n hp, quantNode, pi₂_pair]
+    rw [describeF] at ih
+    exact hornOnly_appendV ih (hornOnly_cons (Or.inr (Or.inr (tag_qqExsTotal hWp _)))
+      (hornOnly_cons (Or.inl (tag_isSemiformulaExs hWp _)) (hornOnly_single (Or.inl (tag_isSemiformulaSigmaPi hWp _)))))
+
+end hornOnlyWalk
+
+/-! ### 7.3 The cost of the walk (D5) -/
+
+section walkCost
+
+/-- A Horn step's row index is in the table. -/
+lemma sRow_lt_of_stepOK {tbl E M Γ s : V} (hok : StepOK tbl E M Γ s) (ht : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) :
+    sRow s < len tbl := by
+  obtain ⟨_, h⟩ := hok
+  rcases h with ⟨_, hh, _⟩ | ⟨_, hh, _⟩ | ⟨_, hh, _⟩ | ⟨ht3, _⟩ | ⟨ht4, _⟩ | ⟨ht5, _⟩ | ⟨ht6, _⟩ | ⟨ht7, _⟩
+  · exact hh.1
+  · exact hh.1
+  · exact hh.1
+  · exfalso; rw [ht3] at ht; norm_num at ht
+  · exfalso; rw [ht4] at ht; norm_num at ht
+  · exfalso; rw [ht5] at ht; norm_num at ht
+  · exfalso; rw [ht6] at ht; norm_num at ht
+  · exfalso; rw [ht7] at ht; norm_num at ht
+
+/-- **D5 — the cost of the formula walk**: with `B` a bound on the row bodies of the table,
+`costSum N E Γ (describeF n r) ≤ 12|r| · (stepK N E B + 36 · ctxBound E B Γ (12|r|))`, i.e.
+`O(|r| · (N + |Γ|) + |r|² · fvOccS Γ + |r|³ · B · E)` — DESIGN §6.3. -/
+theorem costSum_describeF_le {tbl N E B : V} (htbl : TableOK tbl N) (hW : WalkTable tbl)
+    (hB : ∀ i < len tbl, formulaLen LAct (rowB tbl.[i]) ≤ B)
+    {n r : V} (hr : IsSemiformula LAct n r) (hE : 2 * n + 2 * formulaLen LAct r + 8 ≤ E)
+    {Γ : V} (hΓ : IsFormulaSet LAct Γ) :
+    costSum N E Γ (describeF walkPieces n r) ≤
+      12 * formulaLen LAct r * (stepK N E B + 36 * ctxBound E B Γ (12 * formulaLen LAct r)) := by
+  have hE1 : 1 ≤ E := le_trans (le_trans (by norm_num) (le_add_self : 8 ≤ 2 * n + 2 * formulaLen LAct r + 8)) hE
+  have hok := (describeF_ok htbl hW hr hE hΓ).1
+  have ht := hornOnly_describeF rfl hr
+  have hlen : len (describeF walkPieces n r) ≤ 12 * formulaLen LAct r := le_trans le_self_add (len_describeF_le _ hr)
+  have hB' : ∀ i < len (describeF walkPieces n r),
+      formulaLen LAct (rowB tbl.[sRow (describeF walkPieces n r).[i]]) ≤ B :=
+    fun i hi ↦ hB _ (sRow_lt_of_stepOK (hok i hi) (ht i hi))
+  refine le_trans (costSum_le_of_hornOnly hE1 htbl hok ht hB') ?_
+  unfold ctxBound
+  gcongr
+
+/-- **The derivation the formula walk yields, with its length.** -/
+theorem dlen_describeF_chain_le {tbl N E B : V} (htbl : TableOK tbl N) (hW : WalkTable tbl)
+    (hB : ∀ i < len tbl, formulaLen LAct (rowB tbl.[i]) ≤ B)
+    {n r : V} (hr : IsSemiformula LAct n r) (hE : 2 * n + 2 * formulaLen LAct r + 8 ≤ E)
+    {Γ : V} (hΓ : IsFormulaSet LAct Γ) {d : V}
+    (hd : DerivationOf TAct d (finalCtx Γ (describeF walkPieces n r))) :
+    DerivationOf TAct (chainCode tbl Γ (describeF walkPieces n r) d) Γ ∧
+    dlen TAct (chainCode tbl Γ (describeF walkPieces n r) d) ≤
+      dlen TAct d + 12 * formulaLen LAct r * (stepK N E B + 36 * ctxBound E B Γ (12 * formulaLen LAct r)) := by
+  have hE1 : 1 ≤ E := le_trans (le_trans (by norm_num) (le_add_self : 8 ≤ 2 * n + 2 * formulaLen LAct r + 8)) hE
+  have hok := (describeF_ok htbl hW hr hE hΓ).1
+  exact ⟨chainCode_proof 8 htbl hok hd,
+    le_trans (dlen_chainCode_le 8 hE1 htbl hok hd) (add_le_add le_rfl (costSum_describeF_le htbl hW hB hr hE hΓ))⟩
+
+end walkCost
 
 end ArithS

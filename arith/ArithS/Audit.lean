@@ -587,5 +587,12 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms describeF_shape_rel
 #print axioms len_describeT_le
 #print axioms len_describeF_le
+-- … and the cost (D5): a Horn-only list costs `len · (stepK + 36 · ctxBound)` with additive
+-- context growth; the walk is Horn-only; `dlen (chainCode tbl Γ (describeF n r) d) ≤ dlen d +
+-- 12|r| · (stepK N E B + 36 · ctxBound E B Γ (12|r|))` — DESIGN_describe §6.3's polynomial.
+#print axioms costSum_le_of_hornOnly
+#print axioms hornOnly_describeF
+#print axioms costSum_describeF_le
+#print axioms dlen_describeF_chain_le
 
 end ArithS
