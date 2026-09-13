@@ -509,3 +509,12 @@ leaves → `numSteps` → `copySteps/chainSteps/eqSteps` → `certX/lenSteps` �
 `VerifyGraph` → `verifySteps_ok` → top. RISK: the ten per-tag LAYOUT theorems (index bookkeeping);
 `axm`(ii)'s `bv`/`fvarVec` V-lemmas (Foundation status unverified). Note: `Occ.lean`'s `fvOcc`
 rows are not needed by this design (shifted members are re-walked with exact lengths).
+
+**§9 status — `Describe` (the walk) IN PROGRESS, wip Parts 0–3 (df3ffe3, 127e2ab, de01930,
+e171333; 2620 lines):** Part 0 vector/shift laws (`appendV`, `shiftsV`, `shiftIterV`, `ctxVec` append
+laws, `ListOK`, `NoDrop` transport); Part 1 the walk's row table (40 rows, `rIdx` constants,
+`exists_walkTable`, `walkPieces`, `mkStep`); Part 2 the TERM walk as a `TermRec` construction
+(`vRef`, `ltSteps`, node emitters, `descVecAux`, `descT`/`describeT`/`descCountT` + equations);
+Part 3 step applicability (`stepOK_useHorn/introFact`, 21 per-row `ok_<row>` lemmas, the `z < n`
+chain, leaf/nil node lemmas). Rate-limit kills on 2026-09-13 at 15:10 (Zurich); both agents
+resumed at 16:00. IN FLIGHT: the formula-walk fixpoint (D2–D5), `Chain` Part C (tags 6/7).
