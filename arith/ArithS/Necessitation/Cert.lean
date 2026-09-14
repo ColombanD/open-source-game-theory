@@ -8601,6 +8601,40 @@ a sibling fixpoint, the image offset increment `descCountT (termSubst wv t)` per
 `substsSubsts1` + `freeCert` on top of `certSubst` at `qVec (fvar 0)` (`DESIGN_fragments` §4.5 item 2).
 -/
 
+/-! ### 4.9 Status of `certSubst` / `certFree` (2026-09-15, after Part 6 — BOTH LANDED, see §6.0–6.6)
+
+**`certSubst` LANDED** (Part 6): the `nth` chain `NthC` (`nthChainL W m w s j d off`, §6.0), the two-mode
+term/vector pass `SubT` (`subT`/`subV`, §6.1; mode 0 = substitution by the walked vector `w` — the bvar leaf
+reads `w.[z]` through the chain (row 168 `termSubstBvarCert`), re-walks it in mode 1 against the image and
+identifies by the new row `congTSubstL` (cIdx 186, `e' = e → tsG e w t → tsG e' w t`); mode 1 = the bound
+shift), shift-free and Horn-only, `len + 4 ≤ 12|t|(S + 1)`, applicable at cap 9 (`subTGraph_ok`/`subVGraph_ok`,
+§6.2); the formula pass `SubF` (§6.3, `certSubst W Wd n m w iw r i j`, `Wd` the walk pieces as a SECOND
+parameter): NOT shift-free — at every quantifier the `qVec w` vector is WALKED (`qWalkP`, `π₁` eigenvariables,
+`≤ 2·listSum (termLenVec (n+1) (qVec w))`) and the vector pass re-runs in mode 1 for `qVecCert` (176); so
+`shiftsV ≤ 2Q·|r|` for `Q` a bound on the sums of the iterated `qVecIterV w e`, `e ≤ |r|`, and
+`len ≤ sfK L Q · |r|` for `L` a bound on those walks' lengths (`len_subFGraph_le`; existence along `qVecIterV`
+by the budget maximum `exists_qBound`). `subFGraph_ok` (§6.5: cap 9, `NoDrop`, Horn-only, the root fact
+`substFact &(j+σ) ⟨w⟩(iw+σ) &(i+σ)` at the moved offsets, `σ = shiftsV`), `certSubst_ok` (the Part-5 shape),
+`costSum_certSubst_le` (Frag1's `costSum_le_of_sizeOK 9` at `Q = D = 0` — Horn-only lists are trivially
+size-disciplined, `sizeOK_of_hornOnly`).
+
+**`certFree` LANDED** (§6.6): `certFree W Wd p ip isp ifp` = the walk of the singleton vector `fvec = ⟨&0⟩`
+(`freeWalk`, `freeCw = π₁` eigenvariables, `≤ 2`) ++ `certSubst` of `shift p` by `fvec` (shifts `freeS`) ++ the
+shift-free `certShift W 1 p` ++ rows 166 (`substsSubsts1`) and 165 (`freeCert`); `certFree_ok` reads
+`freeFact &(ifp + σ) &(ip + σ)`, `σ = freeCw Wd + freeS … ≤ 2 + 2Q·|shift p|`, `len ≤ 14 + sfK L Q·|shift p| +
+12|p| + 2`; `costSum_certFree_le`. Its caps are stated through `SubFPre E Q 1 0 fvec (shift p) (isp+2) (ifp+2) 0 Γ`
+(with `|subst fvec (shift p)| = |free p|` DEFINITIONALLY — `free = substs1 &0 ∘ shift`, `substs1 t = subst ?[t]`)
+plus the shift pass's caps after the moves.
+
+**Traps recorded.** (1) `definability` cannot compose 9-ary functions: `certSubst_definable` is usable only
+through `certSubstDef`; `freeS`/`certFree` have NO `DefinableFunction` instance (∃-wrap `SubFGraph` in a
+blueprint instead). (2) A Π₁ motive with SIX hypotheses + `SubFPost` (5 conjuncts) hits an aesop internal error
+("goal … was not normalised") — package the hypotheses (`SubFHyp`) to keep the goal count down. (3) The mode-1
+vector pass runs on a vector that is NOT `IsSemitermVec n m w` (it is `IsSemitermVec n (m+1)`), so every
+`SubT` lemma's vector hypothesis is `μ = 0 → IsSemitermVec LAct n m w`. (4) `formulaLen (shift p) = |p| + fvOccF p`
+(`formulaLen_shift_eq`), not `|p|` — `certFree`'s bounds are stated in `|shift p|` and `|p|` separately.
+-/
+
 /-! ## Part 6 — `certSubst`: the certified substitution (§3.6 "substs")
 
 ### 6.0 The `nth` chain: `nthFact &e ⟨v⟩ (cT d)` for the entry `d` of a walked (sub-)vector

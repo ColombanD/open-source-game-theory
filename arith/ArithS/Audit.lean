@@ -825,6 +825,40 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms sizeOK_lenSteps
 #print axioms costSum_lenSteps_le
 
+-- U10 (2026-09-15, Cert Part 6): `certSubst` / `certFree` (§3.6 "substitution" and "free instance"). The
+-- `nth` chain `NthC` (`nthChainL`, Horn-only, shift-free), the two-mode term/vector pass `SubT` (`subT`/`subV`:
+-- mode 0 substitution by the walked vector `w` — the bvar leaf reads `w.[z]` through the chain, re-walks it
+-- in mode 1 against the image and identifies by the new row `congTSubstL` (186) — mode 1 the bound shift;
+-- both shift-free, `len + 4 ≤ 12|t|(S + 1)`), and the formula pass `SubF` (`certSubst W Wd n m w iw r i j`,
+-- W-parametric Σ₁): NOT shift-free — every quantifier WALKS `qVec w` (`qWalkP`, one `qVec` vector of sum ≤ Q,
+-- hence `shiftsV ≤ 2Q·|r|`) and re-runs the vector pass in mode 1 for `qVecCert` (176). `subFGraph_ok`
+-- (cap 9, `NoDrop`, Horn-only, `substFact &(j+σ) ⟨w⟩(iw+σ) &(i+σ)` at the moved offsets), `certSubst_ok`
+-- (Part-5 shape: `ListOK … 9`, `NoDrop'`, `shiftsV ≤ 2Q|r|`, `len ≤ sfK L Q · |r|`, the fact),
+-- `costSum_certSubst_le` (Frag1's size discipline at `Q = D = 0`, Horn-only). `certFree W Wd p ip isp ifp`
+-- = the walk of `⟨&0⟩` + `certSubst` of `shift p` by `⟨&0⟩` + `certShift` + rows 166/165 → `freeFact`;
+-- `certFree_ok`, `costSum_certFree_le`. Nothing below is an axiom.
+#print axioms lib_congTSubstL
+#print axioms cok_congTSubstL
+#print axioms nthChainL_defined
+#print axioms nthCGraph_struct
+#print axioms nthCGraph_ok
+#print axioms subT_defined
+#print axioms subV_defined
+#print axioms subTGraph_noDrop_shifts
+#print axioms subVGraph_noDrop_shifts
+#print axioms len_subTGraph_le
+#print axioms subTGraph_ok
+#print axioms subVGraph_ok
+#print axioms certSubst_defined
+#print axioms certSubst_graph
+#print axioms subFGraph_exists
+#print axioms len_subFGraph_le
+#print axioms subFGraph_ok
+#print axioms certSubst_ok
+#print axioms costSum_certSubst_le
+#print axioms certFree_ok
+#print axioms costSum_certFree_le
+
 -- U10 (Necessitation/Top, 2026-09-14): THE TOP against an explicit kit. The target's code shape
 -- `instB ⌜Box_g χ⌝ k = boxFact (numeral ⌜χ⌝) (bnum k)` for a VARIABLE χ, the three closing rows
 -- (gIntroNum/lenDerIntro/boxIntro) and the top table, the root steps (walk + chain → RootLayout),
