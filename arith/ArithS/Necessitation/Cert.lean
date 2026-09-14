@@ -13100,4 +13100,233 @@ theorem costSum_certSubst_le {tbl N B Wd W n m w iw r i j E Γ Q L : V} (htbl : 
 
 end subFOK
 
+
+/-! ## Part 6.6 — `certFree`: the free instance `free p = substs1 &0 (shift p)` as `certSubst` at `⟨&0⟩`
+
+`certFree W Wd p ip isp ifp` (`p` with one bound variable at `&ip`, `shift p` at `&isp`, `free p` at `&ifp`):
+the walk of the singleton vector `fvec = ⟨&0⟩` (two eigenvariables: the term `&0` at `&1`, the vector at `&0`),
+then `certSubst` of `shift p` by `fvec` (shifts `s`), then the shift-free `certShift` of `p`, then the rows
+`substsSubsts1 [sp, t, w, fp]` (`adjFact w t 𝟎 → substFact fp w sp → substs1Fact fp t sp`) and
+`freeCert [p, t, sp, fp]` (`fvarFact t 𝟎 → shiftFact sp p → substs1Fact fp t sp → freeFact fp p`). -/
+
+section certFree
+
+/-- The singleton substitution vector `⟨&0⟩`. -/
+noncomputable def fvec : V := ?[^&0]
+
+lemma isSemitermVec_fvec : IsSemitermVec LAct 1 0 (fvec : V) := by
+  unfold fvec
+  have := IsSemitermVec.adjoin (L := LAct) (IsSemitermVec.nil (L := LAct) (V := V) 0) (t := ^&0) (by simp)
+  rwa [zero_add] at this
+
+lemma listSum_termLenVec_fvec : listSum (termLenVec LAct 1 (fvec : V)) = 1 := by
+  unfold fvec
+  have := termLenVec_cons (L := LAct) (k := (0 : V)) (t := ^&0) (ts := 0) (by simp) (by simp)
+  rw [zero_add] at this
+  rw [this, listSum_adjoin, termLen_fvar, termLenVec_nil, listSum_nil]; simp
+
+/-- The walk of `fvec` at arity `0`. -/
+noncomputable def freeWalk (Wd : V) : V := descVecAux Wd 0 (descTVec Wd 0 1 fvec) 1
+/-- Its eigenvariable count (`= 2`). -/
+noncomputable def freeCw (Wd : V) : V := π₁ (freeWalk Wd)
+/-- The shift count of the substitution pass. -/
+noncomputable def freeS (W Wd p isp ifp : V) : V :=
+  shiftsV (certSubst W Wd 1 0 fvec 0 (shift LAct p) (isp + freeCw Wd) (ifp + freeCw Wd))
+
+noncomputable def certFree (W Wd p ip isp ifp : V) : V :=
+  appendV (π₂ (freeWalk Wd))
+    (appendV (certSubst W Wd 1 0 fvec 0 (shift LAct p) (isp + freeCw Wd) (ifp + freeCw Wd))
+      (appendV (certShift W 1 p (ip + freeCw Wd + freeS W Wd p isp ifp) (isp + freeCw Wd + freeS W Wd p isp ifp))
+        ?[mkStep W 166 ?[^&(isp + freeCw Wd + freeS W Wd p isp ifp), ^&(freeS W Wd p isp ifp + 1),
+            ^&(freeS W Wd p isp ifp), ^&(ifp + freeCw Wd + freeS W Wd p isp ifp)],
+          mkStep W 165 ?[^&(ip + freeCw Wd + freeS W Wd p isp ifp), ^&(freeS W Wd p isp ifp + 1),
+            ^&(isp + freeCw Wd + freeS W Wd p isp ifp), ^&(ifp + freeCw Wd + freeS W Wd p isp ifp)]]))
+
+instance freeWalk_definable : 𝚺₁.DefinableFunction (fun v : Fin 1 → V ↦ freeWalk (v 0)) := by
+  unfold freeWalk; definability
+instance freeCw_definable : 𝚺₁.DefinableFunction (fun v : Fin 1 → V ↦ freeCw (v 0)) := by
+  unfold freeCw; definability
+/- NOTE: no `DefinableFunction` instance for `freeS`/`certFree` — `certSubst` is 9-ary and the `definability`
+composition rules stop below that arity (the 6-ary-wrapper trap); a consumer that needs `certFree` inside a
+blueprint ∃-wraps `SubFGraph` (as `certSubstDef` does) instead of composing the function. -/
+
+lemma noDrop_of_hornOnly {S : V} (h : HornOnly S) : NoDrop S := fun i hi ↦ by
+  rcases h i hi with h | h | h
+  · exact Or.inl h
+  · exact Or.inr (Or.inl h)
+  · exact Or.inr (Or.inr (Or.inl h))
+
+set_option maxHeartbeats 4000000 in
+/-- **`certFree` is applicable and certifies `freeFact &fp' &p'`** at the moved offsets (`shiftsV = freeCw + freeS
+≤ 2 + 2Q·|shift p|`): cap `9`, Horn-only, `len ≤ 14 + sfK L Q·|shift p| + 12|p| + 2`. The caps are those of
+`certSubst` on `shift p` by `fvec` at the offsets `isp + 2`, `ifp + 2` (`SubFPre`, with `|subst fvec (shift p)| =
+|free p|` by definition), the walks' bound `L`, and the shift pass's caps after the moves. -/
+theorem certFree_ok {tbl N Wd W p ip isp ifp E Γ Q L : V} (htbl : TableOK tbl N) (hC : CertTable tbl)
+    (hWd : Wd = walkPieces) (hWp : W = certPieces) (hp : IsSemiformula LAct 1 p)
+    (hP : SubFPre E Q 1 0 fvec (shift LAct p) (isp + 2) (ifp + 2) 0 Γ)
+    (hL : ∀ e ≤ formulaLen LAct (shift LAct p), len (π₂ (qWalkP Wd (0 + e) (1 + e) (qVecIterV LAct fvec e))) ≤ L)
+    (hEp : 2 * 1 + 2 * formulaLen LAct p + 8 ≤ E)
+    (hEip : ip + 2 + 2 * Q * formulaLen LAct (shift LAct p) + 2 * formulaLen LAct p + 1 ≤ E)
+    (hEisp : isp + 2 + 2 * Q * formulaLen LAct (shift LAct p) + 2 * formulaLen LAct p + 1 ≤ E)
+    (hDp : DossF Wd Γ 1 p ip) (hDsp : DossF Wd Γ 1 (shift LAct p) isp) (hDfp : DossF Wd Γ 0 (free LAct p) ifp) :
+    ListOK tbl E ((9 : ℕ) : V) Γ (certFree W Wd p ip isp ifp) ∧ NoDrop' (certFree W Wd p ip isp ifp) ∧
+    HornOnly (certFree W Wd p ip isp ifp) ∧
+    shiftsV (certFree W Wd p ip isp ifp) = freeCw Wd + freeS W Wd p isp ifp ∧
+    freeCw Wd + freeS W Wd p isp ifp ≤ 2 + 2 * Q * formulaLen LAct (shift LAct p) ∧
+    len (certFree W Wd p ip isp ifp) ≤ 14 + sfK L Q * formulaLen LAct (shift LAct p) + 12 * formulaLen LAct p + 2 ∧
+    neg LAct (freeFact (^&(ifp + shiftsV (certFree W Wd p ip isp ifp))) (^&(ip + shiftsV (certFree W Wd p ip isp ifp)))) ∈
+      finalCtx Γ (certFree W Wd p ip isp ifp) := by
+  have hW : WalkTable tbl := hC.walkTable
+  have hΓ : IsFormulaSet LAct Γ := hP.2.2.2.2.2.2
+  have hw : IsSemitermVec LAct 1 0 (fvec : V) := isSemitermVec_fvec
+  have hsp : IsSemiformula LAct 1 (shift LAct p) := hp.shift
+  have hS1 : listSum (termLenVec LAct 1 (fvec : V)) = 1 := listSum_termLenVec_fvec
+  have htl : takeLast (fvec : V) 1 = fvec := by have := takeLast_len_self (fvec : V); rwa [hw.lh] at this
+  -- the walk of `fvec`
+  have hEw : 2 * 0 + 2 * 1 + 2 * listSum (termLenVec LAct 1 (fvec : V)) + 8 ≤ E :=
+    le_trans (add_le_add (le_refl _) (by norm_num : (8 : V) ≤ 9)) hP.hE0
+  obtain ⟨_, hcu, hVF⟩ := descVecAux_ok' htbl hW hWd hw hEw 1 le_rfl
+  rw [htl, hS1] at hcu
+  obtain ⟨okU, ndU, shU, _⟩ := hVF Γ hΓ
+  have hDu : DossV Wd (finalCtx Γ (π₂ (freeWalk Wd))) 0 1 fvec 1 0 := dossV_of_walk ndU
+  have hoU : HornOnly (π₂ (freeWalk Wd)) :=
+    hornOnly_descVecAux hWd hw (fun i hi ↦ by have := hornOnly_describeT hWd 0 _ (hw.nth hi); rwa [describeT] at this) 1 le_rfl
+  obtain ⟨_, hlU⟩ := len_descVecAux_le hw (fun i hi ↦ len_describeT_le Wd 0 _ (hw.nth hi)) 1 le_rfl
+  rw [htl, hS1] at hlU
+  set cw := freeCw Wd with hcw_def
+  set Lu := π₂ (freeWalk Wd) with hLu_def
+  have hcu' : cw ≤ 2 := by rw [hcw_def, freeCw]; exact le_trans hcu (le_of_eq (mul_one 2))
+  have okU' : ListOK tbl E ((8 : ℕ) : V) Γ Lu := okU
+  have ndU' : NoDrop Lu := ndU
+  have hshU : shiftsV Lu = cw := shU
+  have hlU' : len Lu ≤ 14 := by
+    have : len Lu + 2 ≤ 14 + 2 := le_trans hlU (le_of_eq (by norm_num))
+    exact le_of_add_le_add_right this
+  have hΓ₁ : IsFormulaSet LAct (finalCtx Γ Lu) := finalCtx_isFormulaSet 8 htbl hΓ okU'
+  have hDp₁ : DossF Wd (finalCtx Γ Lu) 1 p (ip + cw) := by have := dossF_transport ndU' hDp; rwa [hshU] at this
+  have hDsp₁ : DossF Wd (finalCtx Γ Lu) 1 (shift LAct p) (isp + cw) := by
+    have := dossF_transport ndU' hDsp; rwa [hshU] at this
+  have hDfp₁ : DossF Wd (finalCtx Γ Lu) 0 (subst LAct fvec (shift LAct p)) (ifp + cw) := by
+    have := dossF_transport ndU' hDfp; rw [hshU] at this; exact this
+  -- the substitution pass of `shift p` by `fvec`
+  have hP₁ : SubFPre E Q 1 0 fvec (shift LAct p) (isp + cw) (ifp + cw) 0 (finalCtx Γ Lu) :=
+    ⟨hP.1, hP.2.1, hP.2.2.1,
+      le_trans (add_le_add (add_le_add (add_le_add (le_refl isp) hcu') (le_refl _)) (le_refl 1)) hP.2.2.2.1,
+      le_trans (add_le_add (add_le_add (add_le_add (add_le_add (le_refl ifp) hcu') (le_refl _)) (le_refl _)) (le_refl 1)) hP.2.2.2.2.1,
+      hP.2.2.2.2.2.1, hΓ₁⟩
+  obtain ⟨okS, _, hoS, hshS, hlenS, hfS⟩ := certSubst_ok htbl hC hWd hWp hw hsp hP₁ hL hDsp₁ hDfp₁ hDu
+  set Ls := certSubst W Wd 1 0 fvec 0 (shift LAct p) (isp + cw) (ifp + cw) with hLs_def
+  set s := freeS W Wd p isp ifp with hs_def
+  have hs : shiftsV Ls = s := by rw [hs_def, freeS]
+  rw [hs] at hshS hfS
+  have ndS : NoDrop Ls := noDrop_of_hornOnly hoS
+  have hΓ₂ : IsFormulaSet LAct (finalCtx (finalCtx Γ Lu) Ls) := finalCtx_isFormulaSet 9 htbl hΓ₁ okS
+  have hDp₂ : DossF Wd (finalCtx (finalCtx Γ Lu) Ls) 1 p (ip + cw + s) := by
+    have := dossF_transport ndS hDp₁; rwa [hs] at this
+  have hDsp₂ : DossF Wd (finalCtx (finalCtx Γ Lu) Ls) 1 (shift LAct p) (isp + cw + s) := by
+    have := dossF_transport ndS hDsp₁; rwa [hs] at this
+  have hDu₂ : DossV Wd (finalCtx (finalCtx Γ Lu) Ls) 0 1 fvec (0 + 1) s := by
+    have := dossV_transport ndS hDu; rw [hs, zero_add] at this; rw [zero_add]; exact this
+  -- the shift pass of `p`
+  have hEi : ip + cw + s + 2 * formulaLen LAct p + 1 ≤ E :=
+    le_trans (add_le_add (add_le_add (add_le_add (add_le_add (le_refl ip) hcu') hshS) (le_refl _)) (le_refl 1)) hEip
+  have hEj : isp + cw + s + 2 * formulaLen LAct p + 1 ≤ E :=
+    le_trans (add_le_add (add_le_add (add_le_add (add_le_add (le_refl isp) hcu') hshS) (le_refl _)) (le_refl 1)) hEisp
+  obtain ⟨okSh, ndSh, hoSh, shSh, hfSh⟩ := certShift_ok htbl hC hWd hWp hp hEp hEi hEj hΓ₂ hDp₂ hDsp₂
+  set Lsh := certShift W 1 p (ip + cw + s) (isp + cw + s) with hLsh_def
+  have hsub₃ : finalCtx (finalCtx Γ Lu) Ls ⊆ finalCtx (finalCtx (finalCtx Γ Lu) Ls) Lsh :=
+    subset_finalCtx_of_shiftsV_zero ndSh shSh
+  have hΓ₃ : IsFormulaSet LAct (finalCtx (finalCtx (finalCtx Γ Lu) Ls) Lsh) := finalCtx_isFormulaSet 8 htbl hΓ₂ okSh
+  have hlSh : len Lsh ≤ 12 * formulaLen LAct p := le_trans le_self_add (len_certShift_le hp)
+  -- the facts the two rows read
+  have hsubF : neg LAct (substFact (^&(ifp + cw + s)) (^&s) (^&(isp + cw + s))) ∈
+      finalCtx (finalCtx (finalCtx Γ Lu) Ls) Lsh := by
+    have := hfS; rw [zero_add, vRef_of_ne _root_.one_ne_zero] at this; exact hsub₃ this
+  obtain ⟨hadj, _, hDz, _⟩ := dossV_succ htbl hW hWd hw (j := 0) (by rw [zero_add]) hDu₂
+  have h0 : (fvec : V).[1 - (0 + 1)] = ^&0 := by rw [zero_add, tsub_self, fvec]; simp
+  rw [vRef_zero] at hadj
+  rw [h0] at hDz
+  obtain ⟨hfz, _⟩ := dossT_fvar htbl hW hWd hDz
+  rw [cTV_zero] at hfz
+  -- the witness caps
+  have hEs1 : s + 1 + 1 ≤ E :=
+    calc s + 1 + 1 ≤ 2 * Q * formulaLen LAct (shift LAct p) + 1 + 1 := add_le_add (add_le_add hshS (le_refl 1)) (le_refl 1)
+      _ ≤ 2 * Q * formulaLen LAct (shift LAct p) + 1 + 1 + 2 * Q := le_self_add
+      _ = 0 + 2 * Q * (formulaLen LAct (shift LAct p) + 1) + 2 := by ring
+      _ ≤ E := hP.2.2.2.2.2.1
+  have hEs : s + 1 ≤ E := le_trans le_self_add hEs1
+  have hEfp : ifp + cw + s + 1 ≤ E :=
+    calc ifp + cw + s + 1 ≤ ifp + 2 + 2 * Q * formulaLen LAct (shift LAct p) + 1 :=
+          add_le_add (add_le_add (add_le_add (le_refl ifp) hcu') hshS) (le_refl 1)
+      _ ≤ ifp + 2 + 2 * Q * formulaLen LAct (shift LAct p) + 1 + 2 * formulaLen LAct (subst LAct fvec (shift LAct p)) := le_self_add
+      _ = ifp + 2 + 2 * formulaLen LAct (subst LAct fvec (shift LAct p)) + 2 * Q * formulaLen LAct (shift LAct p) + 1 := by ring
+      _ ≤ E := hP.2.2.2.2.1
+  have hEsp' : isp + cw + s + 1 ≤ E := le_trans (add_le_add (le_self_add) (le_refl 1)) hEj
+  have hEp' : ip + cw + s + 1 ≤ E := le_trans (add_le_add (le_self_add) (le_refl 1)) hEi
+  -- row 166
+  obtain ⟨ok166, tag166, ctx166⟩ := cok_substsSubsts1 htbl hC hWp hΓ₃ (by simp) (termLen_fvar_le hEsp')
+    (by simp) (termLen_fvar_le hEs1) (by simp) (termLen_fvar_le hEs) (by simp) (termLen_fvar_le hEfp)
+    (hsub₃ hadj) hsubF
+  have hΓ₄ := isFormulaSet_ctxAfter 8 htbl ok166
+  -- row 165
+  obtain ⟨ok165, tag165, ctx165⟩ := cok_freeCert htbl hC hWp hΓ₄ (by simp) (termLen_fvar_le hEp')
+    (by simp) (termLen_fvar_le hEs1) (by simp) (termLen_fvar_le hEsp') (by simp) (termLen_fvar_le hEfp)
+    (by rw [ctx166]; exact mem_insert_of_mem' (hsub₃ hfz))
+    (by rw [ctx166]; exact mem_insert_of_mem' hfSh)
+    (by rw [ctx166]; exact mem_insert_self')
+  -- assembly
+  have hcf : certFree W Wd p ip isp ifp = appendV Lu (appendV Ls (appendV Lsh
+      ?[mkStep W 166 ?[^&(isp + cw + s), ^&(s + 1), ^&s, ^&(ifp + cw + s)],
+        mkStep W 165 ?[^&(ip + cw + s), ^&(s + 1), ^&(isp + cw + s), ^&(ifp + cw + s)]])) := by
+    rw [certFree]
+  have hsh : shiftsV (certFree W Wd p ip isp ifp) = cw + s := by
+    rw [hcf, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, hshU, hs, shSh, shiftsV_cons_tag0 tag166,
+      shiftsV_single_tag0 tag165]
+    ring
+  have hcs : cw + s ≤ 2 + 2 * Q * formulaLen LAct (shift LAct p) := add_le_add hcu' hshS
+  refine ⟨?_, ?_, ?_, hsh, hcs, ?_, ?_⟩
+  · rw [hcf]
+    exact listOK_appendV (okU'.mono h89) (listOK_appendV okS (listOK_appendV (okSh.mono h89)
+      (listOK_cons (ok166.mono h89) (listOK_single (ok165.mono h89)))))
+  · rw [hcf]
+    exact (noDrop_appendV ndU' (noDrop_appendV ndS (noDrop_appendV ndSh
+      (noDrop_cons (Or.inl tag166) (noDrop_single (Or.inl tag165)))))).noDrop'
+  · rw [hcf]
+    exact hornOnly_appendV hoU (hornOnly_appendV hoS (hornOnly_appendV hoSh
+      (hornOnly_cons (Or.inl tag166) (hornOnly_single (Or.inl tag165)))))
+  · rw [hcf, len_appendV, len_appendV, len_appendV]
+    have h2 : len (?[mkStep W 166 ?[^&(isp + cw + s), ^&(s + 1), ^&s, ^&(ifp + cw + s)],
+        mkStep W 165 ?[^&(ip + cw + s), ^&(s + 1), ^&(isp + cw + s), ^&(ifp + cw + s)]] : V) = 2 := by
+      simp; norm_num
+    rw [h2]
+    exact le_trans (add_le_add hlU' (add_le_add hlenS (add_le_add hlSh (le_refl 2)))) (le_of_eq (by ring))
+  · rw [hsh, hcf, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_cons, finalCtx_single, ctx165,
+      ← add_assoc, ← add_assoc]
+    exact mem_insert_self'
+
+/-- **The cost of `certFree`**: `14 + sfK L Q·|shift p| + 12|p| + 2` Horn-only steps at cap `9`
+(`Frag1`'s `costSum_le_of_sizeOK` at `Q = D = 0`). -/
+theorem costSum_certFree_le {tbl N B Wd W p ip isp ifp E Γ Q L : V} (htbl : TableOK tbl N) (hC : CertTable tbl)
+    (hWd : Wd = walkPieces) (hWp : W = certPieces) (hBt : ∀ a < len tbl, formulaLen LAct (rowB tbl.[a]) ≤ B)
+    (hp : IsSemiformula LAct 1 p)
+    (hP : SubFPre E Q 1 0 fvec (shift LAct p) (isp + 2) (ifp + 2) 0 Γ)
+    (hL : ∀ e ≤ formulaLen LAct (shift LAct p), len (π₂ (qWalkP Wd (0 + e) (1 + e) (qVecIterV LAct fvec e))) ≤ L)
+    (hEp : 2 * 1 + 2 * formulaLen LAct p + 8 ≤ E)
+    (hEip : ip + 2 + 2 * Q * formulaLen LAct (shift LAct p) + 2 * formulaLen LAct p + 1 ≤ E)
+    (hEisp : isp + 2 + 2 * Q * formulaLen LAct (shift LAct p) + 2 * formulaLen LAct p + 1 ≤ E)
+    (hDp : DossF Wd Γ 1 p ip) (hDsp : DossF Wd Γ 1 (shift LAct p) isp) (hDfp : DossF Wd Γ 0 (free LAct p) ifp) :
+    costSum N E Γ (certFree W Wd p ip isp ifp) ≤
+      (14 + sfK L Q * formulaLen LAct (shift LAct p) + 12 * formulaLen LAct p + 2) * (costK N E B 9 0 0 +
+        (3 * ((9 : ℕ) : V) + 11) *
+          (ctxBoundG (growK B E 0) Γ (14 + sfK L Q * formulaLen LAct (shift LAct p) + 12 * formulaLen LAct p + 2) +
+            (fvOccS LAct Γ + (14 + sfK L Q * formulaLen LAct (shift LAct p) + 12 * formulaLen LAct p + 2) * growK B E 0))) := by
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) hP.h8
+  obtain ⟨hok, _, hho, _, _, hl, _⟩ := certFree_ok htbl hC hWd hWp hp hP hL hEp hEip hEisp hDp hDsp hDfp
+  refine le_trans (costSum_le_of_sizeOK 9 hE1 htbl hBt hok (sizeOK_of_hornOnly (Q := 0) (D := 0) hho)) ?_
+  refine mul_le_mul hl ?_ zero_le zero_le
+  refine add_le_add (le_refl _) (mul_le_mul_of_nonneg_left (add_le_add (ctxBoundG_mono_len hl)
+    (add_le_add (le_refl _) (mul_le_mul_of_nonneg_right hl zero_le))) zero_le)
+
+end certFree
+
 end ArithS
