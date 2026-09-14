@@ -9132,4 +9132,1061 @@ lemma nthCGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd W
 
 end nthChainOK
 
+
+/-! ### 6.1 The term/vector pass `SubT` (`μ = 0`: `termSubst w`, the vector `w` walked at `&iw`; `μ = 1`: `termBShift`)
+
+A sibling of `PassT` (§1) with the substitution data as blueprint PARAMETERS `![W, w, iw, m]` (`w` the vector
+code, `&iw` its walked dossier, `m` the arity of its entries — the term level never changes the vector; only
+the formula level does, under a quantifier). SHIFT-FREE in both modes. The image's offsets do NOT run in
+lock-step with the source's: a leaf `#z` becomes `w.[z]` walked afresh, so the image tail of a vector node
+sits at `j + 1 + subImgCount` (the image entry's own count) — the analogue of `outCount`. The bound-variable
+leaf in mode `0`: the `nth` chain (§6.0) to the ORIGINAL entry `w.[z]` at `&e`, `termSubstBvarCert` there
+(`tsFact &e ⟨w⟩ &i`), the identification pass of §4.3 between the image leaf `&j` and `&e` (both are `w.[z]`
+walked: `eqFactB &j &e`), and `congTSubstL` (cIdx 186) moving the fact onto the image. -/
+
+section subTermBuilders
+
+/-- The image of a term: `termSubst w t` (`μ = 0`) or `termBShift t`. -/
+noncomputable def subImg (w μ t : V) : V := if μ = 0 then termSubst LAct w t else termBShift LAct t
+/-- The image's arity: `m` (`μ = 0`) or `n + 1`. -/
+noncomputable def subAr (m μ n : V) : V := if μ = 0 then m else n + 1
+/-- The image of a vector: `termSubstVec k w v` (`μ = 0`) or `termBShiftVec k v`. -/
+noncomputable def subImgVec (w μ k v : V) : V := if μ = 0 then termSubstVec LAct k w v else termBShiftVec LAct k v
+/-- The walk count of a term's image (the image tail's offset increment). -/
+noncomputable def subImgCount (W w m μ n t : V) : V := descCountT W (subAr m μ n) (subImg w μ t)
+
+noncomputable def subImgDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y w μ t. (μ = 0 → !(termSubstGraph LAct) y w t) ∧ (μ ≠ 0 → !(termBShiftGraph LAct) y t)”
+instance subImg_defined : 𝚺₁-Function₃ (subImg : V → V → V → V) via subImgDef := .mk fun v ↦ by
+  simp [subImgDef, subImg, termSubst.defined.iff, termBShift.defined.iff]
+  by_cases hμ : v 2 = 0 <;> simp [hμ]
+instance subImg_definable : 𝚺₁-Function₃ (subImg : V → V → V → V) := subImg_defined.to_definable
+
+def subArDef : 𝚺₀.Semisentence 4 := .mkSigma “y m μ n. (μ = 0 → y = m) ∧ (μ ≠ 0 → y = n + 1)”
+instance subAr_defined : 𝚺₀-Function₃ (subAr : V → V → V → V) via subArDef := .mk fun v ↦ by
+  simp [subArDef, subAr]
+  by_cases hμ : v 2 = 0 <;> simp [hμ]
+instance subAr_definable : 𝚺₀-Function₃ (subAr : V → V → V → V) := subAr_defined.to_definable
+
+noncomputable def subImgVecDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y w μ k v. (μ = 0 → !(termSubstVecGraph LAct) y k w v) ∧ (μ ≠ 0 → !(termBShiftVecGraph LAct) y k v)”
+instance subImgVec_defined : 𝚺₁-Function₄ (subImgVec : V → V → V → V → V) via subImgVecDef := .mk fun v ↦ by
+  simp [subImgVecDef, subImgVec, termSubstVec.defined.iff, termBShiftVec.defined.iff]
+  by_cases hμ : v 2 = 0 <;> simp [hμ]
+instance subImgVec_definable : 𝚺₁-Function₄ (subImgVec : V → V → V → V → V) := subImgVec_defined.to_definable
+
+noncomputable def subImgCountDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W w m μ n t. ∃ a, !subArDef a m μ n ∧ ∃ e, !subImgDef e w μ t ∧ !descCountTDef y W a e”
+instance subImgCount_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ subImgCount (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) subImgCountDef := .mk
+  fun v ↦ by simp [subImgCountDef, subImgCount, subAr_defined.iff, subImg_defined.iff, descCountT_defined.iff]
+instance subImgCount_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ subImgCount (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
+  subImgCount_defined.to_definable
+
+@[simp] lemma subImg_zero (w t : V) : subImg w 0 t = termSubst LAct w t := by simp [subImg]
+lemma subImg_one (w t : V) : subImg w 1 t = termBShift LAct t := by simp [subImg]
+@[simp] lemma subAr_zero (m n : V) : subAr m 0 n = m := by simp [subAr]
+lemma subAr_one (m n : V) : subAr m 1 n = n + 1 := by simp [subAr]
+@[simp] lemma subImgVec_zero (w k v : V) : subImgVec w 0 k v = termSubstVec LAct k w v := by simp [subImgVec]
+lemma subImgVec_one (w k v : V) : subImgVec w 1 k v = termBShiftVec LAct k v := by simp [subImgVec]
+
+lemma isSemitermVec_subImgVec {n m k v : V} (hw : IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) (μ : V) :
+    IsSemitermVec LAct k (subAr m μ n) (subImgVec w μ k v) := by
+  unfold subAr subImgVec
+  by_cases hμ : μ = 0
+  · simp only [hμ, if_true]; exact hw.termSubstVec hv
+  · simp only [hμ, if_false]; exact hv.termBShiftVec
+
+lemma isSemiterm_subImg {n m t : V} (hw : IsSemitermVec LAct n m w) (ht : IsSemiterm LAct n t) (μ : V) :
+    IsSemiterm LAct (subAr m μ n) (subImg w μ t) := by
+  unfold subAr subImg
+  by_cases hμ : μ = 0
+  · simp only [hμ, if_true]; exact hw.termSubst ht
+  · simp only [hμ, if_false]; exact ht.termBShift
+
+lemma nth_subImgVec {n m k v i : V} (hw : IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) (μ : V) (hi : i < k) :
+    (subImgVec w μ k v).[i] = subImg w μ v.[i] := by
+  unfold subImgVec subImg
+  by_cases hμ : μ = 0
+  · simp only [hμ, if_true]; exact nth_termSubstVec hv.isUTerm hi
+  · simp only [hμ, if_false]; exact nth_termBShiftVec hv.isUTerm hi
+
+/-- The bound-variable leaf. Mode `0`: the chain to the original entry, `termSubstBvarCert [&i, cT z, &iw, &e]`,
+the identification pass `passT 1 m w.[z] j e` (`eqFactB &j &e`), `congTSubstL [&e, &j, &iw, &i]`.
+Mode `1`: `termBShiftBvarCert [cT z, &i, &j]`. -/
+noncomputable def sBvarSteps (W w iw m μ n z i j : V) : V :=
+  if μ = 0 then
+    appendV (nthChainL W m w 0 n z iw)
+      (appendV ?[mkStep W 168 ?[^&i, cTV z, ^&iw, ^&(nthChainE W m w 0 n z iw)]]
+        (appendV (passT W 1 m w.[z] j (nthChainE W m w 0 n z iw))
+          ?[mkStep W 186 ?[^&(nthChainE W m w 0 n z iw), ^&j, ^&iw, ^&i]]))
+  else ?[mkStep W 173 ?[cTV z, ^&i, ^&j]]
+
+noncomputable def sBvarStepsDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y W w iw m μ n z i j. ∃ cz, !cTVGraph cz z ∧ ∃ fi, !qqFvarDef fi i ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ fw, !qqFvarDef fw iw ∧
+    ∃ L, !nthChainLDef L W m w 0 n z iw ∧ ∃ e, !nthChainEDef e W m w 0 n z iw ∧ ∃ fe, !qqFvarDef fe e ∧
+    ∃ a₀, !mkVec₂Def a₀ fw fe ∧ ∃ a₁, !adjoinDef a₁ cz a₀ ∧ ∃ a, !adjoinDef a fi a₁ ∧ ∃ sa, !mkStepDef sa W 168 a ∧
+    ∃ la, !mkVec₁Def la sa ∧
+    ∃ t, !nthDef t w z ∧ ∃ P, !passTDef P W 1 m t j e ∧
+    ∃ b₀, !mkVec₂Def b₀ fw fi ∧ ∃ b₁, !adjoinDef b₁ fj b₀ ∧ ∃ b, !adjoinDef b fe b₁ ∧ ∃ sb, !mkStepDef sb W 186 b ∧
+    ∃ lb, !mkVec₁Def lb sb ∧
+    ∃ S₃, !appendVDef S₃ P lb ∧ ∃ S₂, !appendVDef S₂ la S₃ ∧ ∃ A, !appendVDef A L S₂ ∧
+    ∃ c₀, !mkVec₂Def c₀ fi fj ∧ ∃ c, !adjoinDef c cz c₀ ∧ ∃ sc, !mkStepDef sc W 173 c ∧ ∃ B, !mkVec₁Def B sc ∧
+    ((μ = 0 → y = A) ∧ (μ ≠ 0 → y = B))”
+
+instance sBvarSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ sBvarSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) sBvarStepsDef := .mk
+  fun v ↦ by
+    simp [sBvarStepsDef, sBvarSteps, numeral_eq_natCast, cTV.defined.iff, nthChainL_defined.iff, nthChainE_defined.iff,
+      nth_defined.iff, passT_defined.iff, mkStep_defined.iff, appendV_defined.iff]
+    by_cases hμ : v 5 = 0 <;> simp [hμ]
+instance sBvarSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ sBvarSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
+  sBvarSteps_defined.to_definable
+
+/-- The free-variable leaf: `termSubstFvarCert [&i, cT x, ⟨w⟩, &j]` / `termBShiftFvarCert [cT x, &i, &j]`. -/
+noncomputable def sFvarSteps (W iw μ n x i j : V) : V :=
+  if μ = 0 then ?[mkStep W 169 ?[^&i, cTV x, vRef iw n, ^&j]] else ?[mkStep W 174 ?[cTV x, ^&i, ^&j]]
+
+noncomputable def sFvarStepsDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W iw μ n x i j. ∃ cx, !cTVGraph cx x ∧ ∃ fi, !qqFvarDef fi i ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ r, !vRefDef r iw n ∧
+    ∃ a₀, !mkVec₂Def a₀ r fj ∧ ∃ a₁, !adjoinDef a₁ cx a₀ ∧ ∃ a, !adjoinDef a fi a₁ ∧ ∃ sa, !mkStepDef sa W 169 a ∧ ∃ A, !mkVec₁Def A sa ∧
+    ∃ b₀, !mkVec₂Def b₀ fi fj ∧ ∃ b, !adjoinDef b cx b₀ ∧ ∃ sb, !mkStepDef sb W 174 b ∧ ∃ B, !mkVec₁Def B sb ∧
+    ((μ = 0 → y = A) ∧ (μ ≠ 0 → y = B))”
+
+instance sFvarSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ sFvarSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) sFvarStepsDef := .mk
+  fun v ↦ by
+    simp [sFvarStepsDef, sFvarSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff]
+    by_cases hμ : v 3 = 0 <;> simp [hμ]
+instance sFvarSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ sFvarSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  sFvarSteps_defined.to_definable
+
+/-- The function node after the vector pass `yv`: the closed symbol row, then
+`termSubstFuncCert [⟨w⟩, &i, cT k, cT f, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]` / `termBShiftFuncCert [&i, cT k, cT f, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. -/
+noncomputable def sFuncRow (μ : V) : V := if μ = 0 then 170 else 175
+def sFuncRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y μ. (μ = 0 → y = 170) ∧ (μ ≠ 0 → y = 175)”
+instance sFuncRow_defined : 𝚺₀-Function₁ (sFuncRow : V → V) via sFuncRowDef := .mk fun v ↦ by
+  simp [sFuncRowDef, sFuncRow, numeral_eq_natCast]
+  by_cases hμ : v 1 = 0 <;> simp [hμ]
+instance sFuncRow_definable : 𝚺₀-Function₁ (sFuncRow : V → V) := sFuncRow_defined.to_definable
+
+noncomputable def sFuncWits (iw μ n k f i j : V) : V :=
+  if μ = 0 then ?[vRef iw n, ^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]
+  else ?[^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]
+
+noncomputable def sFuncWitsDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y iw μ n k f i j. ∃ r, !vRefDef r iw n ∧ ∃ fi, !qqFvarDef fi i ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ ck, !cTVGraph ck k ∧ ∃ cf, !cTVGraph cf f ∧
+    ∃ ri, !vRefDef ri (i + 1) k ∧ ∃ rj, !vRefDef rj (j + 1) k ∧
+    ∃ e₀, !mkVec₂Def e₀ rj fj ∧ ∃ e₁, !adjoinDef e₁ ri e₀ ∧ ∃ e₂, !adjoinDef e₂ cf e₁ ∧ ∃ e₃, !adjoinDef e₃ ck e₂ ∧
+    ∃ B, !adjoinDef B fi e₃ ∧ ∃ A, !adjoinDef A r B ∧ ((μ = 0 → y = A) ∧ (μ ≠ 0 → y = B))”
+
+instance sFuncWits_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ sFuncWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) sFuncWitsDef := .mk
+  fun v ↦ by
+    simp [sFuncWitsDef, sFuncWits, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff]
+    by_cases hμ : v 2 = 0 <;> simp [hμ]
+instance sFuncWits_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ sFuncWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  sFuncWits_defined.to_definable
+
+noncomputable def sFuncSteps (W iw μ n k f i j yv : V) : V :=
+  appendV yv ?[mkStep W (funcRow k f) 0, mkStep W (sFuncRow μ) (sFuncWits iw μ n k f i j)]
+
+noncomputable def sFuncStepsDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y W iw μ n k f i j yv. ∃ ρ₁, !funcRowDef ρ₁ k f ∧ ∃ s₁, !mkStepDef s₁ W ρ₁ 0 ∧ ∃ ρ₂, !sFuncRowDef ρ₂ μ ∧
+    ∃ e, !sFuncWitsDef e iw μ n k f i j ∧ ∃ s₂, !mkStepDef s₂ W ρ₂ e ∧ ∃ l, !mkVec₂Def l s₁ s₂ ∧ !appendVDef y yv l”
+
+instance sFuncSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ sFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) sFuncStepsDef := .mk
+  fun v ↦ by
+    simp [sFuncStepsDef, sFuncSteps, numeral_eq_natCast, funcRow_defined.iff, sFuncRow_defined.iff, sFuncWits_defined.iff,
+      mkStep_defined.iff, appendV_defined.iff]
+instance sFuncSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ sFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
+  sFuncSteps_defined.to_definable
+
+/-- The empty vector: `tsvNilCert [⟨w⟩]` / `tbshvNilCert [cT 0]`. -/
+noncomputable def sNilSteps (W iw μ n : V) : V :=
+  if μ = 0 then ?[mkStep W 167 ?[vRef iw n]] else ?[mkStep W 171 ?[cTV 0]]
+
+noncomputable def sNilStepsDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W iw μ n. ∃ r, !vRefDef r iw n ∧ ∃ ea, !mkVec₁Def ea r ∧ ∃ sa, !mkStepDef sa W 167 ea ∧ ∃ A, !mkVec₁Def A sa ∧
+    ∃ c0, !cTVGraph c0 0 ∧ ∃ eb, !mkVec₁Def eb c0 ∧ ∃ sb, !mkStepDef sb W 171 eb ∧ ∃ B, !mkVec₁Def B sb ∧
+    ((μ = 0 → y = A) ∧ (μ ≠ 0 → y = B))”
+
+instance sNilSteps_defined : 𝚺₁-Function₄ (sNilSteps : V → V → V → V → V) via sNilStepsDef := .mk
+  fun v ↦ by
+    simp [sNilStepsDef, sNilSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff]
+    by_cases hμ : v 3 = 0 <;> simp [hμ]
+instance sNilSteps_definable : 𝚺₁-Function₄ (sNilSteps : V → V → V → V → V) := sNilSteps_defined.to_definable
+
+/-- The adjoin certificate's witnesses at a vector node with `m'` tail entries, source entry count `ct`, image
+entry count `ct'`: `tsvAdjCert [cT n, cT m', ⟨w⟩, ⟨tail⟩ᵢ, &i, &(i+1), &(j+1), ⟨tail⟩ⱼ, &j]` /
+`tbshvAdjCert [cT n, cT m', ⟨tail⟩ᵢ, &i, &(i+1), &(j+1), ⟨tail⟩ⱼ, &j]`, `⟨tail⟩ᵢ = vRef (i + 1 + ct) m'`,
+`⟨tail⟩ⱼ = vRef (j + 1 + ct') m'`. -/
+noncomputable def sAdjWits (iw μ n m' ct ct' i j : V) : V :=
+  if μ = 0 then ?[cTV n, cTV m', vRef iw n, vRef (i + 1 + ct) m', ^&i, ^&(i + 1), ^&(j + 1), vRef (j + 1 + ct') m', ^&j]
+  else ?[cTV n, cTV m', vRef (i + 1 + ct) m', ^&i, ^&(i + 1), ^&(j + 1), vRef (j + 1 + ct') m', ^&j]
+
+noncomputable def sAdjWitsDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y iw μ n m' ct ct' i j. ∃ cn, !cTVGraph cn n ∧ ∃ cm, !cTVGraph cm m' ∧ ∃ r, !vRefDef r iw n ∧
+    ∃ ri, !vRefDef ri (i + 1 + ct) m' ∧ ∃ rj, !vRefDef rj (j + 1 + ct') m' ∧
+    ∃ fi, !qqFvarDef fi i ∧ ∃ fi', !qqFvarDef fi' (i + 1) ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ fj', !qqFvarDef fj' (j + 1) ∧
+    ∃ e₀, !mkVec₂Def e₀ rj fj ∧ ∃ e₁, !adjoinDef e₁ fj' e₀ ∧ ∃ e₂, !adjoinDef e₂ fi' e₁ ∧ ∃ e₃, !adjoinDef e₃ fi e₂ ∧
+    ∃ e₄, !adjoinDef e₄ ri e₃ ∧ ∃ a₅, !adjoinDef a₅ r e₄ ∧ ∃ a₆, !adjoinDef a₆ cm a₅ ∧ ∃ A, !adjoinDef A cn a₆ ∧
+    ∃ b₅, !adjoinDef b₅ cm e₄ ∧ ∃ B, !adjoinDef B cn b₅ ∧ ((μ = 0 → y = A) ∧ (μ ≠ 0 → y = B))”
+
+instance sAdjWits_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ sAdjWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) sAdjWitsDef := .mk
+  fun v ↦ by
+    simp [sAdjWitsDef, sAdjWits, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff]
+    by_cases hμ : v 2 = 0 <;> simp [hμ]
+instance sAdjWits_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ sAdjWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
+  sAdjWits_defined.to_definable
+
+noncomputable def sAdjRow (μ : V) : V := if μ = 0 then 181 else 172
+def sAdjRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y μ. (μ = 0 → y = 181) ∧ (μ ≠ 0 → y = 172)”
+instance sAdjRow_defined : 𝚺₀-Function₁ (sAdjRow : V → V) via sAdjRowDef := .mk fun v ↦ by
+  simp [sAdjRowDef, sAdjRow, numeral_eq_natCast]
+  by_cases hμ : v 1 = 0 <;> simp [hμ]
+instance sAdjRow_definable : 𝚺₀-Function₁ (sAdjRow : V → V) := sAdjRow_defined.to_definable
+
+/-- The vector node's certificate: the entry's pass `yt`, the tail's pass `yv`, the tail's `utvPi` bridge
+(rows 38/39 on the source tail), then the adjoin certificate. -/
+noncomputable def sAdjSteps (W iw μ n m' ct ct' i j yt yv : V) : V :=
+  appendV yt (appendV yv
+    ?[mkStep W 38 ?[cTV m', cTV n, vRef (i + 1 + ct) m'], mkStep W 39 ?[cTV m', vRef (i + 1 + ct) m'],
+      mkStep W (sAdjRow μ) (sAdjWits iw μ n m' ct ct' i j)])
+
+noncomputable def sAdjStepsDef : 𝚺₁.Semisentence 12 := .mkSigma
+  “y W iw μ n m' ct ct' i j yt yv. ∃ cn, !cTVGraph cn n ∧ ∃ cm, !cTVGraph cm m' ∧ ∃ ri, !vRefDef ri (i + 1 + ct) m' ∧
+    ∃ e₁₀, !mkVec₂Def e₁₀ cn ri ∧ ∃ e₁, !adjoinDef e₁ cm e₁₀ ∧ ∃ s₁, !mkStepDef s₁ W 38 e₁ ∧
+    ∃ e₂, !mkVec₂Def e₂ cm ri ∧ ∃ s₂, !mkStepDef s₂ W 39 e₂ ∧
+    ∃ ρ, !sAdjRowDef ρ μ ∧ ∃ e₃, !sAdjWitsDef e₃ iw μ n m' ct ct' i j ∧ ∃ s₃, !mkStepDef s₃ W ρ e₃ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l, !adjoinDef l s₁ l₂ ∧
+    ∃ S, !appendVDef S yv l ∧ !appendVDef y yt S”
+
+instance sAdjSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 11 → V ↦ sAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) sAdjStepsDef := .mk
+  fun v ↦ by
+    simp [sAdjStepsDef, sAdjSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff,
+      sAdjRow_defined.iff, sAdjWits_defined.iff, appendV_defined.iff]
+instance sAdjSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ sAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) :=
+  sAdjSteps_defined.to_definable
+
+end subTermBuilders
+
+/-! #### The fixpoint on `⟪tg, μ, n, x, i, j, y⟫` (`tg = 0`: term `x`; `tg = 1`: `x = ⟪k, v, m'⟫`), parameters `![W, w, iw, m]` -/
+
+namespace SubT
+
+def Cases (W w iw m : V) (C : Set V) (tg μ n x i j y : V) : Prop :=
+  (tg = 0 ∧ ∃ z < x, x = ^#z ∧ y = sBvarSteps W w iw m μ n z i j) ∨
+  (tg = 0 ∧ ∃ a < x, x = ^&a ∧ y = sFvarSteps W iw μ n a i j) ∨
+  (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ v < x, x = ^func k f v ∧ ∃ yv ≤ y,
+    ⟪1, μ, n, ⟪k, v, k⟫, i + 1, j + 1, yv⟫ ∈ C ∧ y = sFuncSteps W iw μ n k f i j yv) ∨
+  (tg = 1 ∧ ∃ k ≤ x, ∃ q ≤ x, x = ⟪k, q⟫ ∧ ∃ v ≤ q, ∃ m' ≤ q, q = ⟪v, m'⟫ ∧ m' = 0 ∧ y = sNilSteps W iw μ n) ∨
+  (tg = 1 ∧ ∃ k ≤ x, ∃ q ≤ x, x = ⟪k, q⟫ ∧ ∃ v ≤ q, ∃ m' ≤ q, q = ⟪v, m'⟫ ∧ ∃ m'' < m', m' = m'' + 1 ∧
+    ∃ yt ≤ y, ∃ yv ≤ y, ⟪0, μ, n, nthFromEnd v m'', i + 1, j + 1, yt⟫ ∈ C ∧
+    ⟪1, μ, n, ⟪k, v, m''⟫, i + 1 + descCountT W n (nthFromEnd v m''), j + 1 + subImgCount W w m μ n (nthFromEnd v m''), yv⟫ ∈ C ∧
+    y = sAdjSteps W iw μ n m'' (descCountT W n (nthFromEnd v m'')) (subImgCount W w m μ n (nthFromEnd v m'')) i j yt yv)
+
+def Phi (W w iw m : V) (C : Set V) (pr : V) : Prop :=
+  ∃ tg ≤ pr, ∃ q₁ ≤ pr, pr = ⟪tg, q₁⟫ ∧ ∃ μ ≤ q₁, ∃ q₂ ≤ q₁, q₁ = ⟪μ, q₂⟫ ∧ ∃ n ≤ q₂, ∃ q₃ ≤ q₂, q₂ = ⟪n, q₃⟫ ∧
+  ∃ x ≤ q₃, ∃ q₄ ≤ q₃, q₃ = ⟪x, q₄⟫ ∧ ∃ i ≤ q₄, ∃ q₅ ≤ q₄, q₄ = ⟪i, q₅⟫ ∧ ∃ j ≤ q₅, ∃ y ≤ q₅, q₅ = ⟪j, y⟫ ∧
+  Cases W w iw m C tg μ n x i j y
+
+lemma phi_unpack (W w iw m : V) (C : Set V) (pr : V) :
+    Phi W w iw m C pr ↔ ∃ tg μ n x i j y, pr = ⟪tg, μ, n, x, i, j, y⟫ ∧ Cases W w iw m C tg μ n x i j y := by
+  constructor
+  · rintro ⟨tg, _, q₁, _, rfl, μ, _, q₂, _, rfl, n, _, q₃, _, rfl, x, _, q₄, _, rfl, i, _, q₅, _, rfl, j, _, y, _, rfl, h⟩
+    exact ⟨tg, μ, n, x, i, j, y, rfl, h⟩
+  · rintro ⟨tg, μ, n, x, i, j, y, rfl, h⟩
+    exact ⟨tg, le_pair_left _ _, _, le_pair_right _ _, rfl, μ, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      n, le_pair_left _ _, _, le_pair_right _ _, rfl, x, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      i, le_pair_left _ _, _, le_pair_right _ _, rfl, j, le_pair_left _ _, y, le_pair_right _ _, rfl, h⟩
+
+lemma phi_of_cases {W w iw m : V} {C : Set V} {tg μ n x i j y : V} (h : Cases W w iw m C tg μ n x i j y) :
+    Phi W w iw m C ⟪tg, μ, n, x, i, j, y⟫ := (phi_unpack W w iw m C _).mpr ⟨tg, μ, n, x, i, j, y, rfl, h⟩
+
+lemma cases_of_phi {W w iw m : V} {C : Set V} {tg μ n x i j y : V} (h : Phi W w iw m C ⟪tg, μ, n, x, i, j, y⟫) :
+    Cases W w iw m C tg μ n x i j y := by
+  obtain ⟨tg', μ', n', x', i', j', y', e, h⟩ := (phi_unpack W w iw m C _).mp h
+  rw [pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff] at e
+  obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ := e
+  exact h
+
+noncomputable def blueprint : Fixpoint.Blueprint 4 := ⟨.mkDelta
+  (.mkSigma “pr C W w iw m.
+    ∃ tg <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr tg q₁ ∧ ∃ μ <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ μ q₂ ∧ ∃ n <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ n q₃ ∧
+    ∃ x <⁺ q₃, ∃ q₄ <⁺ q₃, !pairDef q₃ x q₄ ∧ ∃ i <⁺ q₄, ∃ q₅ <⁺ q₄, !pairDef q₄ i q₅ ∧ ∃ j <⁺ q₅, ∃ y <⁺ q₅, !pairDef q₅ j y ∧
+    ( (tg = 0 ∧ ∃ z < x, !qqBvarDef x z ∧ ∃ s, !sBvarStepsDef s W w iw m μ n z i j ∧ y = s) ∨
+      (tg = 0 ∧ ∃ a < x, !qqFvarDef x a ∧ ∃ s, !sFvarStepsDef s W iw μ n a i j ∧ y = s) ∨
+      (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ v < x, !qqFuncDef x k f v ∧ ∃ yv <⁺ y, ∃ x₁, !pairDef x₁ v k ∧ ∃ x₂, !pairDef x₂ k x₁ ∧
+        ∃ r₅, !pairDef r₅ (j + 1) yv ∧ ∃ r₄, !pairDef r₄ (i + 1) r₅ ∧ ∃ r₃, !pairDef r₃ x₂ r₄ ∧ ∃ r₂, !pairDef r₂ n r₃ ∧
+        :⟪1, μ, r₂⟫:∈ C ∧ ∃ s, !sFuncStepsDef s W iw μ n k f i j yv ∧ y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m' <⁺ q, !pairDef q v m' ∧ m' = 0 ∧ ∃ s, !sNilStepsDef s W iw μ n ∧ y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m' <⁺ q, !pairDef q v m' ∧ ∃ m'' < m', m' = m'' + 1 ∧
+        ∃ yt <⁺ y, ∃ yv <⁺ y, ∃ t, !nthFromEndDef t v m'' ∧ ∃ ct, !descCountTDef ct W n t ∧ ∃ ct', !subImgCountDef ct' W w m μ n t ∧
+        ∃ p₅, !pairDef p₅ (j + 1) yt ∧ ∃ p₄, !pairDef p₄ (i + 1) p₅ ∧ ∃ p₃, !pairDef p₃ t p₄ ∧ ∃ p₂, !pairDef p₂ n p₃ ∧
+        :⟪0, μ, p₂⟫:∈ C ∧ ∃ x₁, !pairDef x₁ v m'' ∧ ∃ x₂, !pairDef x₂ k x₁ ∧
+        ∃ r₅, !pairDef r₅ (j + 1 + ct') yv ∧ ∃ r₄, !pairDef r₄ (i + 1 + ct) r₅ ∧ ∃ r₃, !pairDef r₃ x₂ r₄ ∧ ∃ r₂, !pairDef r₂ n r₃ ∧
+        :⟪1, μ, r₂⟫:∈ C ∧ ∃ s, !sAdjStepsDef s W iw μ n m'' ct ct' i j yt yv ∧ y = s) )”)
+  (.mkPi “pr C W w iw m.
+    ∃ tg <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr tg q₁ ∧ ∃ μ <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ μ q₂ ∧ ∃ n <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ n q₃ ∧
+    ∃ x <⁺ q₃, ∃ q₄ <⁺ q₃, !pairDef q₃ x q₄ ∧ ∃ i <⁺ q₄, ∃ q₅ <⁺ q₄, !pairDef q₄ i q₅ ∧ ∃ j <⁺ q₅, ∃ y <⁺ q₅, !pairDef q₅ j y ∧
+    ( (tg = 0 ∧ ∃ z < x, !qqBvarDef x z ∧ ∀ s, !sBvarStepsDef s W w iw m μ n z i j → y = s) ∨
+      (tg = 0 ∧ ∃ a < x, !qqFvarDef x a ∧ ∀ s, !sFvarStepsDef s W iw μ n a i j → y = s) ∨
+      (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ v < x, !qqFuncDef x k f v ∧ ∃ yv <⁺ y, ∀ x₁, !pairDef x₁ v k → ∀ x₂, !pairDef x₂ k x₁ →
+        ∀ r₅, !pairDef r₅ (j + 1) yv → ∀ r₄, !pairDef r₄ (i + 1) r₅ → ∀ r₃, !pairDef r₃ x₂ r₄ → ∀ r₂, !pairDef r₂ n r₃ →
+        :⟪1, μ, r₂⟫:∈ C ∧ ∀ s, !sFuncStepsDef s W iw μ n k f i j yv → y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m' <⁺ q, !pairDef q v m' ∧ m' = 0 ∧ ∀ s, !sNilStepsDef s W iw μ n → y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m' <⁺ q, !pairDef q v m' ∧ ∃ m'' < m', m' = m'' + 1 ∧
+        ∃ yt <⁺ y, ∃ yv <⁺ y, ∀ t, !nthFromEndDef t v m'' → ∀ ct, !descCountTDef ct W n t → ∀ ct', !subImgCountDef ct' W w m μ n t →
+        ∀ p₅, !pairDef p₅ (j + 1) yt → ∀ p₄, !pairDef p₄ (i + 1) p₅ → ∀ p₃, !pairDef p₃ t p₄ → ∀ p₂, !pairDef p₂ n p₃ →
+        :⟪0, μ, p₂⟫:∈ C ∧ ∀ x₁, !pairDef x₁ v m'' → ∀ x₂, !pairDef x₂ k x₁ →
+        ∀ r₅, !pairDef r₅ (j + 1 + ct') yv → ∀ r₄, !pairDef r₄ (i + 1 + ct) r₅ → ∀ r₃, !pairDef r₃ x₂ r₄ → ∀ r₂, !pairDef r₂ n r₃ →
+        :⟪1, μ, r₂⟫:∈ C ∧ ∀ s, !sAdjStepsDef s W iw μ n m'' ct ct' i j yt yv → y = s) )”)⟩
+
+set_option maxHeartbeats 4000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0) (v 1) (v 2) (v 3)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, sBvarSteps_defined.iff, sFvarSteps_defined.iff, sFuncSteps_defined.iff, sNilSteps_defined.iff,
+        sAdjSteps_defined.iff, nthFromEnd_defined.iff, descCountT_defined.iff, subImgCount_defined.iff, numeral_eq_natCast]
+    · intro v
+      simp [blueprint, Phi, Cases, sBvarSteps_defined.iff, sFvarSteps_defined.iff, sFuncSteps_defined.iff, sNilSteps_defined.iff,
+        sAdjSteps_defined.iff, nthFromEnd_defined.iff, descCountT_defined.iff, subImgCount_defined.iff, numeral_eq_natCast]
+  monotone := by
+    intro C C' hC v pr h
+    change Phi (v 0) (v 1) (v 2) (v 3) C pr at h
+    change Phi (v 0) (v 1) (v 2) (v 3) C' pr
+    rw [phi_unpack] at h ⊢
+    obtain ⟨tg, μ, n, x, i, j, y, rfl, h⟩ := h
+    refine ⟨tg, μ, n, x, i, j, y, rfl, ?_⟩
+    rcases h with h | h | ⟨h0, k, hk, f, hf, v', hv, rfl, yv, hyv, h₁, rfl⟩ | h |
+      ⟨h1, k, hk, q, hq, rfl, v', hv, m', hm, rfl, m'', hm', rfl, yt, hyt, yv, hyv, h₁, h₂, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl ⟨h0, k, hk, f, hf, v', hv, rfl, yv, hyv, hC h₁, rfl⟩))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨h1, k, hk, _, hq, rfl, v', hv, _, hm, rfl, m'', hm', rfl, yt, hyt, yv, hyv,
+        hC h₁, hC h₂, rfl⟩)))
+
+instance : construction.Finite V where
+  finite := by
+    intro C v pr h
+    change Phi (v 0) (v 1) (v 2) (v 3) C pr at h
+    change ∃ m, Phi (v 0) (v 1) (v 2) (v 3) {y ∈ C | y < m} pr
+    rw [phi_unpack] at h
+    simp only [phi_unpack]
+    obtain ⟨tg, μ, n, x, i, j, y, rfl, h⟩ := h
+    rcases h with h | h | ⟨h0, k, hk, f, hf, v', hv, hx', yv, hyv, h₁, hy'⟩ | h |
+      ⟨h1, k, hk, q, hq, hx', v', hv, m', hm, hq', m'', hm', hmm, yt, hyt, yv, hyv, h₁, h₂, hy'⟩
+    · exact ⟨0, tg, μ, n, x, i, j, y, rfl, Or.inl h⟩
+    · exact ⟨0, tg, μ, n, x, i, j, y, rfl, Or.inr (Or.inl h)⟩
+    · exact ⟨⟪1, μ, n, ⟪k, v', k⟫, i + 1, j + 1, yv⟫ + 1, tg, μ, n, x, i, j, y, rfl,
+        Or.inr (Or.inr (Or.inl ⟨h0, k, hk, f, hf, v', hv, hx', yv, hyv, ⟨h₁, lt_add_one _⟩, hy'⟩))⟩
+    · exact ⟨0, tg, μ, n, x, i, j, y, rfl, Or.inr (Or.inr (Or.inr (Or.inl h)))⟩
+    · refine ⟨⟪0, μ, n, nthFromEnd v' m'', i + 1, j + 1, yt⟫ +
+          ⟪1, μ, n, ⟪k, v', m''⟫, i + 1 + descCountT (v 0) n (nthFromEnd v' m''),
+            j + 1 + subImgCount (v 0) (v 1) (v 3) μ n (nthFromEnd v' m''), yv⟫ + 1,
+        tg, μ, n, x, i, j, y, rfl, Or.inr (Or.inr (Or.inr (Or.inr ⟨h1, k, hk, q, hq, hx', v', hv, m', hm, hq', m'', hm', hmm, yt, hyt, yv, hyv,
+        ⟨h₁, ?_⟩, ⟨h₂, ?_⟩, hy'⟩)))⟩
+      · exact lt_of_le_of_lt le_self_add (lt_add_one _)
+      · exact lt_of_le_of_lt le_add_self (lt_add_one _)
+
+lemma phi_term_iff (W w iw m : V) (C : Set V) (μ n t i j y : V) :
+    Phi W w iw m C ⟪0, μ, n, t, i, j, y⟫ ↔
+    ( (∃ z, t = ^#z ∧ y = sBvarSteps W w iw m μ n z i j) ∨
+      (∃ a, t = ^&a ∧ y = sFvarSteps W iw μ n a i j) ∨
+      (∃ k f v yv, t = ^func k f v ∧ yv ≤ y ∧ ⟪1, μ, n, ⟪k, v, k⟫, i + 1, j + 1, yv⟫ ∈ C ∧ y = sFuncSteps W iw μ n k f i j yv) ) := by
+  constructor
+  · intro h
+    rcases cases_of_phi h with ⟨_, z, _, rfl, rfl⟩ | ⟨_, a, _, rfl, rfl⟩ | ⟨_, k, _, f, _, v, _, rfl, yv, hyv, hmem, rfl⟩ | ⟨h, _⟩ | ⟨h, _⟩
+    · exact Or.inl ⟨z, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨a, rfl, rfl⟩)
+    · exact Or.inr (Or.inr ⟨k, f, v, yv, rfl, hyv, hmem, rfl⟩)
+    · exact absurd h (by norm_num)
+    · exact absurd h (by norm_num)
+  · intro h
+    refine phi_of_cases ?_
+    rcases h with ⟨z, rfl, rfl⟩ | ⟨a, rfl, rfl⟩ | ⟨k, f, v, yv, rfl, hyv, hmem, rfl⟩
+    · exact Or.inl ⟨rfl, z, by simp, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨rfl, a, by simp, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl ⟨rfl, k, by simp, f, by simp, v, by simp, rfl, yv, hyv, hmem, rfl⟩))
+
+lemma phi_vec_iff (W w iw m : V) (C : Set V) (μ n k v m' i j y : V) :
+    Phi W w iw m C ⟪1, μ, n, ⟪k, v, m'⟫, i, j, y⟫ ↔
+    ( (m' = 0 ∧ y = sNilSteps W iw μ n) ∨
+      (∃ m'' yt yv, m' = m'' + 1 ∧ yt ≤ y ∧ yv ≤ y ∧ ⟪0, μ, n, nthFromEnd v m'', i + 1, j + 1, yt⟫ ∈ C ∧
+        ⟪1, μ, n, ⟪k, v, m''⟫, i + 1 + descCountT W n (nthFromEnd v m''), j + 1 + subImgCount W w m μ n (nthFromEnd v m''), yv⟫ ∈ C ∧
+        y = sAdjSteps W iw μ n m'' (descCountT W n (nthFromEnd v m'')) (subImgCount W w m μ n (nthFromEnd v m'')) i j yt yv) ) := by
+  constructor
+  · intro h
+    rcases cases_of_phi h with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨_, k', _, q, _, hx, v', _, m₁, _, hq, rfl, rfl⟩ |
+      ⟨_, k', _, q, _, hx, v', _, m₁, _, hq, m'', _, rfl, yt, hyt, yv, hyv, hmem₁, hmem₂, rfl⟩
+    · exact absurd h (by norm_num)
+    · exact absurd h (by norm_num)
+    · exact absurd h (by norm_num)
+    · obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hx
+      obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hq
+      exact Or.inl ⟨rfl, rfl⟩
+    · obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hx
+      obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hq
+      exact Or.inr ⟨m'', yt, yv, rfl, hyt, hyv, hmem₁, hmem₂, rfl⟩
+  · intro h
+    refine phi_of_cases ?_
+    rcases h with ⟨rfl, rfl⟩ | ⟨m'', yt, yv, rfl, hyt, hyv, hmem₁, hmem₂, rfl⟩
+    · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨rfl, k, le_pair_left _ _, _, le_pair_right _ _, rfl, v, le_pair_left _ _, 0, le_pair_right _ _, rfl, rfl, rfl⟩)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl, k, le_pair_left _ _, _, le_pair_right _ _, rfl, v, le_pair_left _ _, m'' + 1, le_pair_right _ _, rfl, m'',
+        lt_add_one _, rfl, yt, hyt, yv, hyv, hmem₁, hmem₂, rfl⟩)))
+
+end SubT
+
+/-- **The graph of the substitution/bshift term pass** on packed tuples. -/
+def SubPacked (W w iw m pr : V) : Prop := SubT.construction.Fixpoint ![W, w, iw, m] pr
+/-- `SubTGraph W w iw m μ n t i j y`: the pass of the term `t` (source at `&i`, image at `&j`) is the list `y`. -/
+def SubTGraph (W w iw m μ n t i j y : V) : Prop := SubPacked W w iw m ⟪0, μ, n, t, i, j, y⟫
+/-- `SubVGraph W w iw m μ n k v m' i j y`: the pass of the last `m'` entries of the vector `v` (of length `k`). -/
+def SubVGraph (W w iw m μ n k v m' i j y : V) : Prop := SubPacked W w iw m ⟪1, μ, n, ⟪k, v, m'⟫, i, j, y⟫
+
+noncomputable def subPackedDef : 𝚺₁.Semisentence 5 := .mkSigma “W w iw m pr. !SubT.blueprint.fixpointDef pr W w iw m”
+
+instance subPacked_defined : 𝚺₁.Defined (fun v : Fin 5 → V ↦ SubPacked (v 0) (v 1) (v 2) (v 3) (v 4)) subPackedDef := .mk
+  fun v ↦ by
+    simp only [subPackedDef, HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs,
+      Matrix.comp_vecCons', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons,
+      Matrix.constant_eq_singleton]
+    rw [SubT.construction.eval_fixpointDef]
+    rfl
+instance subPacked_definable : 𝚺₁.Definable (fun v : Fin 5 → V ↦ SubPacked (v 0) (v 1) (v 2) (v 3) (v 4)) := subPacked_defined.to_definable
+
+noncomputable def subTGraphDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “W w iw m μ n t i j y. ∃ q₅, !pairDef q₅ j y ∧ ∃ q₄, !pairDef q₄ i q₅ ∧ ∃ q₃, !pairDef q₃ t q₄ ∧ ∃ q₂, !pairDef q₂ n q₃ ∧
+    ∃ q₁, !pairDef q₁ μ q₂ ∧ ∃ pr, !pairDef pr 0 q₁ ∧ !subPackedDef W w iw m pr”
+noncomputable def subVGraphDef : 𝚺₁.Semisentence 12 := .mkSigma
+  “W w iw m μ n k v m' i j y. ∃ x₁, !pairDef x₁ v m' ∧ ∃ x, !pairDef x k x₁ ∧
+    ∃ q₅, !pairDef q₅ j y ∧ ∃ q₄, !pairDef q₄ i q₅ ∧ ∃ q₃, !pairDef q₃ x q₄ ∧ ∃ q₂, !pairDef q₂ n q₃ ∧
+    ∃ q₁, !pairDef q₁ μ q₂ ∧ ∃ pr, !pairDef pr 1 q₁ ∧ !subPackedDef W w iw m pr”
+
+instance subTGraph_defined :
+    𝚺₁.Defined (fun v : Fin 10 → V ↦ SubTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) subTGraphDef := .mk
+  fun v ↦ by simp [subTGraphDef, subPacked_defined.iff, SubTGraph, numeral_eq_natCast]
+instance subTGraph_definable :
+    𝚺₁.Definable (fun v : Fin 10 → V ↦ SubTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
+  subTGraph_defined.to_definable
+instance subVGraph_defined :
+    𝚺₁.Defined (fun v : Fin 12 → V ↦ SubVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) subVGraphDef := .mk
+  fun v ↦ by simp [subVGraphDef, subPacked_defined.iff, SubVGraph, numeral_eq_natCast]
+instance subVGraph_definable :
+    𝚺₁.Definable (fun v : Fin 12 → V ↦ SubVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
+  subVGraph_defined.to_definable
+
+lemma SubTGraph.case_iff {W w iw m μ n t i j y : V} :
+    SubTGraph W w iw m μ n t i j y ↔
+    ( (∃ z, t = ^#z ∧ y = sBvarSteps W w iw m μ n z i j) ∨
+      (∃ a, t = ^&a ∧ y = sFvarSteps W iw μ n a i j) ∨
+      (∃ k f v yv, t = ^func k f v ∧ yv ≤ y ∧ SubVGraph W w iw m μ n k v k (i + 1) (j + 1) yv ∧
+        y = sFuncSteps W iw μ n k f i j yv) ) := by
+  unfold SubTGraph SubPacked
+  rw [SubT.construction.case]
+  exact SubT.phi_term_iff W w iw m _ μ n t i j y
+
+lemma SubVGraph.case_iff {W w iw m μ n k v m' i j y : V} :
+    SubVGraph W w iw m μ n k v m' i j y ↔
+    ( (m' = 0 ∧ y = sNilSteps W iw μ n) ∨
+      (∃ m'' yt yv, m' = m'' + 1 ∧ yt ≤ y ∧ yv ≤ y ∧ SubTGraph W w iw m μ n (nthFromEnd v m'') (i + 1) (j + 1) yt ∧
+        SubVGraph W w iw m μ n k v m'' (i + 1 + descCountT W n (nthFromEnd v m'')) (j + 1 + subImgCount W w m μ n (nthFromEnd v m'')) yv ∧
+        y = sAdjSteps W iw μ n m'' (descCountT W n (nthFromEnd v m'')) (subImgCount W w m μ n (nthFromEnd v m'')) i j yt yv) ) := by
+  unfold SubVGraph SubTGraph SubPacked
+  rw [SubT.construction.case]
+  exact SubT.phi_vec_iff W w iw m _ μ n k v m' i j y
+
+section subInversion
+
+attribute [local simp] qqBvar qqFvar qqFunc
+
+lemma SubTGraph.bvar_iff {W w iw m μ n z i j y : V} : SubTGraph W w iw m μ n (^#z) i j y ↔ y = sBvarSteps W w iw m μ n z i j := by
+  rw [SubTGraph.case_iff]; simp
+lemma SubTGraph.fvar_iff {W w iw m μ n a i j y : V} : SubTGraph W w iw m μ n (^&a) i j y ↔ y = sFvarSteps W iw μ n a i j := by
+  rw [SubTGraph.case_iff]; simp
+lemma SubTGraph.func_iff {W w iw m μ n k f v i j y : V} :
+    SubTGraph W w iw m μ n (^func k f v) i j y ↔
+    ∃ yv, yv ≤ y ∧ SubVGraph W w iw m μ n k v k (i + 1) (j + 1) yv ∧ y = sFuncSteps W iw μ n k f i j yv := by
+  rw [SubTGraph.case_iff]; simp
+lemma SubVGraph.zero_iff {W w iw m μ n k v i j y : V} : SubVGraph W w iw m μ n k v 0 i j y ↔ y = sNilSteps W iw μ n := by
+  rw [SubVGraph.case_iff]
+  constructor
+  · rintro (⟨_, rfl⟩ | ⟨m', _, _, h, _⟩)
+    · rfl
+    · exact absurd h.symm (succ_ne_zero' m')
+  · intro h; exact Or.inl ⟨rfl, h⟩
+lemma SubVGraph.succ_iff {W w iw m μ n k v m' i j y : V} :
+    SubVGraph W w iw m μ n k v (m' + 1) i j y ↔
+    ∃ yt yv, yt ≤ y ∧ yv ≤ y ∧ SubTGraph W w iw m μ n (nthFromEnd v m') (i + 1) (j + 1) yt ∧
+      SubVGraph W w iw m μ n k v m' (i + 1 + descCountT W n (nthFromEnd v m')) (j + 1 + subImgCount W w m μ n (nthFromEnd v m')) yv ∧
+      y = sAdjSteps W iw μ n m' (descCountT W n (nthFromEnd v m')) (subImgCount W w m μ n (nthFromEnd v m')) i j yt yv := by
+  rw [SubVGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨m'', yt, yv, h, hyt, hyv, h₁, h₂, rfl⟩)
+    · exact absurd h (succ_ne_zero' m')
+    · obtain rfl : m' = m'' := add_right_cancel h
+      exact ⟨yt, yv, hyt, hyv, h₁, h₂, rfl⟩
+  · rintro ⟨yt, yv, hyt, hyv, h₁, h₂, rfl⟩
+    exact Or.inr ⟨m', yt, yv, rfl, hyt, hyv, h₁, h₂, rfl⟩
+
+end subInversion
+
+lemma le_sFuncSteps (W iw μ n k f i j yv : V) : yv ≤ sFuncSteps W iw μ n k f i j yv := le_appendV_left _ _
+lemma le_sAdjSteps_left (W iw μ n m' ct ct' i j yt yv : V) : yt ≤ sAdjSteps W iw μ n m' ct ct' i j yt yv := le_appendV_left _ _
+lemma le_sAdjSteps_right (W iw μ n m' ct ct' i j yt yv : V) : yv ≤ sAdjSteps W iw μ n m' ct ct' i j yt yv :=
+  le_trans (le_appendV_left _ _) (le_appendV_right _ _)
+
+lemma subImg_func {n m k f v : V} (hw : IsSemitermVec LAct n m w) (hkf : LAct.IsFunc k f) (hv : IsSemitermVec LAct k n v) (μ : V) :
+    subImg w μ (^func k f v) = ^func k f (subImgVec w μ k v) := by
+  unfold subImg subImgVec
+  by_cases hμ : μ = 0
+  · simp only [hμ, if_true]; exact termSubst_func hkf hv.isUTerm
+  · simp only [hμ, if_false]; exact termBShift_func hkf hv.isUTerm
+
+/-- The image count of a function node: the image vector's count plus one. -/
+lemma subImgCount_func {n m k f v : V} (hw : IsSemitermVec LAct n m w) (hkf : LAct.IsFunc k f) (hv : IsSemitermVec LAct k n v)
+    (W μ : V) : subImgCount W w m μ n (^func k f v) =
+      π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) k) + 1 := by
+  rw [subImgCount, subImg_func hw hkf hv, descCountT_func W _ hkf (isSemitermVec_subImgVec hw hv μ).isUTerm]
+
+/-- The image vector's count grows by the image entry's count plus one. -/
+lemma subImgVec_count_succ {n m k v : V} (hw : IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) (W μ : V)
+    {m' : V} (hm : m' + 1 ≤ k) :
+    π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) (m' + 1)) =
+      π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') +
+        subImgCount W w m μ n v.[k - (m' + 1)] + 1 := by
+  have hvs := isSemitermVec_subImgVec hw hv μ
+  have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+  have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+  have hnth : nthFromEnd (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m' =
+      descT W (subAr m μ n) (subImgVec w μ k v).[k - (m' + 1)] := by
+    rw [nthFromEnd_eq (a := k - (m' + 1)) (by rw [len_descTVec W _ hvs.isUTerm, tsub_add_cancel_of_le hm]),
+      nth_descTVec W _ hvs.isUTerm hlt]
+  rw [descVecAux_succ, hnth, adjNode, pi₁_pair, nth_subImgVec hw hv μ hlt, subImgCount]; rfl
+
+section subTermFun
+
+set_option maxHeartbeats 4000000 in
+/-- **Existence**, offsets bounded by `B` (Σ₁ motive): the source potential `i + descCountT t`, the image potential
+`j + subImgCount t`. -/
+lemma subTGraph_exists_bounded (W iw μ B : V) {n m w : V} (hw : IsSemitermVec LAct n m w) : ∀ t, IsSemiterm LAct n t →
+    ∀ i ≤ B, ∀ j ≤ B, i + descCountT W n t ≤ B → j + subImgCount W w m μ n t ≤ B → ∃ y, SubTGraph W w iw m μ n t i j y := by
+  refine IsSemiterm.induction 𝚺 ?_ ?_ ?_ ?_
+  · simp only [SubTGraph, SubVGraph, subImgCount]; definability
+  · intro z _ i _ j _ _ _; exact ⟨_, SubTGraph.bvar_iff.mpr rfl⟩
+  · intro a i _ j _ _ _; exact ⟨_, SubTGraph.fvar_iff.mpr rfl⟩
+  · intro k f v hkf hv ih i hi j hj hiB hjB
+    rw [descCountT_func W n hkf hv.isUTerm] at hiB
+    rw [subImgCount_func hw hkf hv] at hjB
+    have key : ∀ m' ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descVecAux W n (descTVec W n k v) m') ≤ B →
+        j + π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') ≤ B →
+        ∃ yv, SubVGraph W w iw m μ n k v m' i j yv := by
+      intro m'
+      induction m' using ISigma1.sigma1_succ_induction with
+      | hP => simp only [SubTGraph, SubVGraph]; definability
+      | zero => intro _ i _ j _ _ _; exact ⟨_, SubVGraph.zero_iff.mpr rfl⟩
+      | succ m' ihm =>
+        intro hm i hi j hj hiB hjB
+        have hvlen : len v = k := hv.lh
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have hnth : nthFromEnd (descTVec W n k v) m' = descT W n v.[k - (m' + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m' + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec W n hv.isUTerm hlt]
+        have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
+          nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        have hC : π₁ (descVecAux W n (descTVec W n k v) (m' + 1)) =
+            π₁ (descVecAux W n (descTVec W n k v) m') + descCountT W n v.[k - (m' + 1)] + 1 := by
+          rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+        rw [hC] at hiB
+        rw [subImgVec_count_succ hw hv W μ hm] at hjB
+        have hiB' : i + 1 + descCountT W n v.[k - (m' + 1)] ≤ B :=
+          le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1]))
+            (add_le_add (le_refl i) (add_le_add le_add_self (le_refl 1)))) hiB
+        have hjB' : j + 1 + subImgCount W w m μ n v.[k - (m' + 1)] ≤ B :=
+          le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1]))
+            (add_le_add (le_refl j) (add_le_add le_add_self (le_refl 1)))) hjB
+        obtain ⟨yt, hyt⟩ := ih _ hlt (i + 1) (le_trans le_self_add hiB') (j + 1) (le_trans le_self_add hjB') hiB' hjB'
+        obtain ⟨yv, hyv⟩ := ihm (le_trans le_self_add hm) (i + 1 + descCountT W n v.[k - (m' + 1)]) hiB'
+          (j + 1 + subImgCount W w m μ n v.[k - (m' + 1)]) hjB'
+          (le_trans (le_of_eq (by ring)) hiB) (le_trans (le_of_eq (by ring)) hjB)
+        refine ⟨_, SubVGraph.succ_iff.mpr ⟨yt, yv, le_sAdjSteps_left _ _ _ _ _ _ _ _ _ _ _, le_sAdjSteps_right _ _ _ _ _ _ _ _ _ _ _,
+          ?_, ?_, rfl⟩⟩
+        · rw [hnth']; exact hyt
+        · rw [hnth']; exact hyv
+    obtain ⟨yv, hyv⟩ := key k le_rfl (i + 1) (le_trans (add_le_add (le_refl i) le_add_self) hiB) (j + 1)
+      (le_trans (add_le_add (le_refl j) le_add_self) hjB)
+      (le_trans (le_of_eq (by rw [add_assoc, add_comm 1])) hiB)
+      (le_trans (le_of_eq (by rw [add_assoc, add_comm 1])) hjB)
+    exact ⟨_, SubTGraph.func_iff.mpr ⟨yv, le_sFuncSteps _ _ _ _ _ _ _ _ _, hyv, rfl⟩⟩
+
+lemma subTGraph_exists (W iw μ : V) {n m w : V} (hw : IsSemitermVec LAct n m w) {t : V} (ht : IsSemiterm LAct n t) (i j : V) :
+    ∃ y, SubTGraph W w iw m μ n t i j y :=
+  subTGraph_exists_bounded W iw μ (i + j + descCountT W n t + subImgCount W w m μ n t) hw t ht i
+    (le_trans (le_trans le_self_add le_self_add) le_self_add) j (le_trans (le_trans le_add_self le_self_add) le_self_add)
+    (le_trans (add_le_add le_self_add (le_refl _)) le_self_add)
+    (by rw [show i + j + descCountT W n t + subImgCount W w m μ n t = j + subImgCount W w m μ n t + (i + descCountT W n t) by ring]
+        exact le_self_add)
+
+set_option maxHeartbeats 1000000 in
+/-- **Uniqueness of the pass** (Π₁ motives, the vector level by an inner induction). -/
+lemma subTGraph_unique (W w iw m μ n : V) : ∀ t, IsSemiterm LAct n t →
+    ∀ i j y₁ y₂, SubTGraph W w iw m μ n t i j y₁ → SubTGraph W w iw m μ n t i j y₂ → y₁ = y₂ := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · simp only [SubTGraph, SubVGraph]; definability
+  · intro z _ i j y₁ y₂ h₁ h₂
+    rw [SubTGraph.bvar_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro a i j y₁ y₂ h₁ h₂
+    rw [SubTGraph.fvar_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro k f v hkf hv ih i j y₁ y₂ h₁ h₂
+    have hvlen : len v = k := hv.lh
+    have key : ∀ m' ≤ k, ∀ i j z₁ z₂, SubVGraph W w iw m μ n k v m' i j z₁ → SubVGraph W w iw m μ n k v m' i j z₂ → z₁ = z₂ := by
+      intro m'
+      induction m' using ISigma1.pi1_succ_induction with
+      | hP => simp only [SubTGraph, SubVGraph]; definability
+      | zero =>
+        intro _ i j z₁ z₂ hz₁ hz₂
+        rw [SubVGraph.zero_iff] at hz₁ hz₂; rw [hz₁, hz₂]
+      | succ m' ihm =>
+        intro hm i j z₁ z₂ hz₁ hz₂
+        obtain ⟨yt, yv, _, _, ht, hvv, rfl⟩ := SubVGraph.succ_iff.mp hz₁
+        obtain ⟨yt', yv', _, _, ht', hvv', rfl⟩ := SubVGraph.succ_iff.mp hz₂
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
+          nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        rw [hnth'] at ht ht' hvv hvv'
+        rw [ih _ hlt (i + 1) (j + 1) yt yt' ht ht', ihm (le_trans le_self_add hm) _ _ yv yv' hvv hvv']
+    obtain ⟨yv, _, hyv, rfl⟩ := SubTGraph.func_iff.mp h₁
+    obtain ⟨yv', _, hyv', rfl⟩ := SubTGraph.func_iff.mp h₂
+    rw [key k le_rfl (i + 1) (j + 1) yv yv' hyv hyv']
+
+set_option maxHeartbeats 1000000 in
+lemma subVGraph_unique {W w iw m μ n k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m' ≤ k, ∀ i j y₁ y₂, SubVGraph W w iw m μ n k v m' i j y₁ → SubVGraph W w iw m μ n k v m' i j y₂ → y₁ = y₂ := by
+  have hvlen : len v = k := hv.lh
+  intro m'
+  induction m' using ISigma1.pi1_succ_induction with
+  | hP => simp only [SubTGraph, SubVGraph]; definability
+  | zero =>
+    intro _ i j z₁ z₂ hz₁ hz₂
+    rw [SubVGraph.zero_iff] at hz₁ hz₂; rw [hz₁, hz₂]
+  | succ m' ihm =>
+    intro hm i j z₁ z₂ hz₁ hz₂
+    obtain ⟨yt, yv, _, _, ht, hvv, rfl⟩ := SubVGraph.succ_iff.mp hz₁
+    obtain ⟨yt', yv', _, _, ht', hvv', rfl⟩ := SubVGraph.succ_iff.mp hz₂
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
+      nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    rw [hnth'] at ht ht' hvv hvv'
+    rw [subTGraph_unique W w iw m μ n _ (hv.nth hlt) (i + 1) (j + 1) yt yt' ht ht',
+      ihm (le_trans le_self_add hm) _ _ yv yv' hvv hvv']
+
+set_option maxHeartbeats 4000000 in
+/-- **Existence at the vector level** (the source and image potentials). -/
+lemma subVGraph_exists_bounded (W iw μ B : V) {n m w : V} (hw : IsSemitermVec LAct n m w) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m' ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descVecAux W n (descTVec W n k v) m') ≤ B →
+      j + π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') ≤ B →
+      ∃ y, SubVGraph W w iw m μ n k v m' i j y := by
+  have hvlen : len v = k := hv.lh
+  intro m'
+  induction m' using ISigma1.sigma1_succ_induction with
+  | hP => simp only [SubTGraph, SubVGraph]; definability
+  | zero => intro _ i _ j _ _ _; exact ⟨_, SubVGraph.zero_iff.mpr rfl⟩
+  | succ m' ihm =>
+    intro hm i hi j hj hiB hjB
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth : nthFromEnd (descTVec W n k v) m' = descT W n v.[k - (m' + 1)] := by
+      rw [nthFromEnd_eq (a := k - (m' + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+        nth_descTVec W n hv.isUTerm hlt]
+    have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
+      nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    have hC : π₁ (descVecAux W n (descTVec W n k v) (m' + 1)) =
+        π₁ (descVecAux W n (descTVec W n k v) m') + descCountT W n v.[k - (m' + 1)] + 1 := by
+      rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+    rw [hC] at hiB
+    rw [subImgVec_count_succ hw hv W μ hm] at hjB
+    have hiB' : i + 1 + descCountT W n v.[k - (m' + 1)] ≤ B :=
+      le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1]))
+        (add_le_add (le_refl i) (add_le_add le_add_self (le_refl 1)))) hiB
+    have hjB' : j + 1 + subImgCount W w m μ n v.[k - (m' + 1)] ≤ B :=
+      le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1]))
+        (add_le_add (le_refl j) (add_le_add le_add_self (le_refl 1)))) hjB
+    obtain ⟨yt, hyt⟩ := subTGraph_exists_bounded W iw μ B hw _ (hv.nth hlt) (i + 1) (le_trans le_self_add hiB') (j + 1)
+      (le_trans le_self_add hjB') hiB' hjB'
+    obtain ⟨yv, hyv⟩ := ihm (le_trans le_self_add hm) (i + 1 + descCountT W n v.[k - (m' + 1)]) hiB'
+      (j + 1 + subImgCount W w m μ n v.[k - (m' + 1)]) hjB'
+      (le_trans (le_of_eq (by ring)) hiB) (le_trans (le_of_eq (by ring)) hjB)
+    refine ⟨_, SubVGraph.succ_iff.mpr ⟨yt, yv, le_sAdjSteps_left _ _ _ _ _ _ _ _ _ _ _, le_sAdjSteps_right _ _ _ _ _ _ _ _ _ _ _,
+      ?_, ?_, rfl⟩⟩
+    · rw [hnth']; exact hyt
+    · rw [hnth']; exact hyv
+
+lemma subVGraph_exists (W iw μ : V) {n m w : V} (hw : IsSemitermVec LAct n m w) {k v : V} (hv : IsSemitermVec LAct k n v)
+    {m' : V} (hm : m' ≤ k) (i j : V) : ∃ y, SubVGraph W w iw m μ n k v m' i j y :=
+  subVGraph_exists_bounded W iw μ
+    (i + j + π₁ (descVecAux W n (descTVec W n k v) m') + π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m'))
+    hw hv m' hm i (le_trans (le_trans le_self_add le_self_add) le_self_add) j (le_trans (le_trans le_add_self le_self_add) le_self_add)
+    (le_trans (add_le_add le_self_add (le_refl _)) le_self_add)
+    (by rw [show i + j + π₁ (descVecAux W n (descTVec W n k v) m') +
+          π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') =
+          j + π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') +
+          (i + π₁ (descVecAux W n (descTVec W n k v) m')) by ring]
+        exact le_self_add)
+
+lemma subVGraph_existsUnique_total (W w iw m μ n k v m' i j : V) :
+    ∃! y, ((IsSemitermVec LAct n m w ∧ IsSemitermVec LAct k n v ∧ m' ≤ k) → SubVGraph W w iw m μ n k v m' i j y) ∧
+      (¬(IsSemitermVec LAct n m w ∧ IsSemitermVec LAct k n v ∧ m' ≤ k) → y = 0) := by
+  by_cases h : IsSemitermVec LAct n m w ∧ IsSemitermVec LAct k n v ∧ m' ≤ k
+  · obtain ⟨y, hy⟩ := subVGraph_exists W iw μ h.1 h.2.1 h.2.2 i j
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ subVGraph_unique h.2.1 m' h.2.2 i j y' y hy' hy)
+  · simp [h]
+
+/-- The vector-level pass as a function (`0` off the domain). -/
+noncomputable def subV (W w iw m μ n k v m' i j : V) : V := Classical.choose! (subVGraph_existsUnique_total W w iw m μ n k v m' i j)
+
+theorem subV_graph {W w iw m μ n k v m' i j : V} (hw : IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) (hm : m' ≤ k) :
+    SubVGraph W w iw m μ n k v m' i j (subV W w iw m μ n k v m' i j) :=
+  (Classical.choose!_spec (subVGraph_existsUnique_total W w iw m μ n k v m' i j)).1 ⟨hw, hv, hm⟩
+lemma subV_eq_of_graph {W w iw m μ n k v m' i j y : V} (hw : IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) (hm : m' ≤ k)
+    (hy : SubVGraph W w iw m μ n k v m' i j y) : subV W w iw m μ n k v m' i j = y :=
+  subVGraph_unique hv m' hm i j _ _ (subV_graph hw hv hm) hy
+
+noncomputable def subVDef : 𝚺₁.Semisentence 12 := .mkSigma
+  “y W w iw m μ n k v m' i j.
+    ((!(isSemitermVec LAct).pi n m w ∧ !(isSemitermVec LAct).pi k n v ∧ m' ≤ k) → !subVGraphDef W w iw m μ n k v m' i j y) ∧
+    ((!(isSemitermVec LAct).sigma n m w → !(isSemitermVec LAct).sigma k n v → k < m') → y = 0)”
+
+instance subV_defined :
+    𝚺₁.DefinedFunction (fun x : Fin 11 → V ↦ subV (x 0) (x 1) (x 2) (x 3) (x 4) (x 5) (x 6) (x 7) (x 8) (x 9) (x 10)) subVDef := .mk
+  fun v ↦ by
+    simp [subVDef, HierarchySymbol.Semiformula.val_sigma, subVGraph_defined.iff,
+      (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df, subV,
+      Classical.choose!_eq_iff_right]
+instance subV_definable :
+    𝚺₁.DefinableFunction (fun x : Fin 11 → V ↦ subV (x 0) (x 1) (x 2) (x 3) (x 4) (x 5) (x 6) (x 7) (x 8) (x 9) (x 10)) :=
+  subV_defined.to_definable
+
+lemma subTGraph_existsUnique_total (W w iw m μ n t i j : V) :
+    ∃! y, ((IsSemitermVec LAct n m w ∧ IsSemiterm LAct n t) → SubTGraph W w iw m μ n t i j y) ∧
+      (¬(IsSemitermVec LAct n m w ∧ IsSemiterm LAct n t) → y = 0) := by
+  by_cases h : IsSemitermVec LAct n m w ∧ IsSemiterm LAct n t
+  · obtain ⟨y, hy⟩ := subTGraph_exists W iw μ h.1 h.2 i j
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ subTGraph_unique W w iw m μ n t h.2 i j y' y hy' hy)
+  · simp [h]
+
+/-- The term-level pass as a function (`0` off the domain). -/
+noncomputable def subT (W w iw m μ n t i j : V) : V := Classical.choose! (subTGraph_existsUnique_total W w iw m μ n t i j)
+
+theorem subT_graph {W w iw m μ n t i j : V} (hw : IsSemitermVec LAct n m w) (ht : IsSemiterm LAct n t) :
+    SubTGraph W w iw m μ n t i j (subT W w iw m μ n t i j) :=
+  (Classical.choose!_spec (subTGraph_existsUnique_total W w iw m μ n t i j)).1 ⟨hw, ht⟩
+lemma subT_eq_of_graph {W w iw m μ n t i j y : V} (hw : IsSemitermVec LAct n m w) (ht : IsSemiterm LAct n t)
+    (hy : SubTGraph W w iw m μ n t i j y) : subT W w iw m μ n t i j = y :=
+  subTGraph_unique W w iw m μ n t ht i j _ _ (subT_graph hw ht) hy
+
+noncomputable def subTDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y W w iw m μ n t i j.
+    ((!(isSemitermVec LAct).pi n m w ∧ !(isSemiterm LAct).pi n t) → !subTGraphDef W w iw m μ n t i j y) ∧
+    ((!(isSemitermVec LAct).sigma n m w → ¬!(isSemiterm LAct).sigma n t) → y = 0)”
+
+instance subT_defined :
+    𝚺₁.DefinedFunction (fun x : Fin 9 → V ↦ subT (x 0) (x 1) (x 2) (x 3) (x 4) (x 5) (x 6) (x 7) (x 8)) subTDef := .mk
+  fun v ↦ by
+    simp [subTDef, HierarchySymbol.Semiformula.val_sigma, subTGraph_defined.iff,
+      (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df,
+      (IsSemiterm.defined (L := LAct)).proper.iff', (IsSemiterm.defined (L := LAct)).df, subT,
+      Classical.choose!_eq_iff_right]
+instance subT_definable :
+    𝚺₁.DefinableFunction (fun x : Fin 9 → V ↦ subT (x 0) (x 1) (x 2) (x 3) (x 4) (x 5) (x 6) (x 7) (x 8)) :=
+  subT_defined.to_definable
+
+/-! #### The equations -/
+
+lemma subT_bvar {W w iw m μ n z i j : V} (hw : IsSemitermVec LAct n m w) (hz : z < n) :
+    subT W w iw m μ n (^#z) i j = sBvarSteps W w iw m μ n z i j :=
+  subT_eq_of_graph hw (by simp [hz]) (SubTGraph.bvar_iff.mpr rfl)
+lemma subT_fvar {W w iw m μ n a i j : V} (hw : IsSemitermVec LAct n m w) :
+    subT W w iw m μ n (^&a) i j = sFvarSteps W iw μ n a i j :=
+  subT_eq_of_graph hw (by simp) (SubTGraph.fvar_iff.mpr rfl)
+lemma subT_func {W w iw m μ n k f v i j : V} (hw : IsSemitermVec LAct n m w) (hkf : LAct.IsFunc k f)
+    (hv : IsSemitermVec LAct k n v) :
+    subT W w iw m μ n (^func k f v) i j = sFuncSteps W iw μ n k f i j (subV W w iw m μ n k v k (i + 1) (j + 1)) :=
+  subT_eq_of_graph hw (by simp [hkf, hv]) (SubTGraph.func_iff.mpr ⟨_, le_sFuncSteps _ _ _ _ _ _ _ _ _, subV_graph hw hv le_rfl, rfl⟩)
+lemma subV_zero {W w iw m μ n k v i j : V} (hw : IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) :
+    subV W w iw m μ n k v 0 i j = sNilSteps W iw μ n :=
+  subV_eq_of_graph hw hv zero_le (SubVGraph.zero_iff.mpr rfl)
+lemma subV_succ {W w iw m μ n k v m' i j : V} (hw : IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) (hm : m' + 1 ≤ k) :
+    subV W w iw m μ n k v (m' + 1) i j =
+      sAdjSteps W iw μ n m' (descCountT W n (nthFromEnd v m')) (subImgCount W w m μ n (nthFromEnd v m')) i j
+        (subT W w iw m μ n (nthFromEnd v m') (i + 1) (j + 1))
+        (subV W w iw m μ n k v m' (i + 1 + descCountT W n (nthFromEnd v m')) (j + 1 + subImgCount W w m μ n (nthFromEnd v m'))) := by
+  have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+  have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+  have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] := nthFromEnd_eq (a := k - (m' + 1)) (by rw [hv.lh, tsub_add_cancel_of_le hm])
+  refine subV_eq_of_graph hw hv hm (SubVGraph.succ_iff.mpr ⟨_, _, le_sAdjSteps_left _ _ _ _ _ _ _ _ _ _ _,
+    le_sAdjSteps_right _ _ _ _ _ _ _ _ _ _ _, subT_graph hw ?_, subV_graph hw hv (le_trans le_self_add hm), rfl⟩)
+  rw [hnth']; exact hv.nth hlt
+
+end subTermFun
+
+/-! #### The structure of the lists: tags, `NoDrop`, shift-freeness, lengths -/
+
+section subTStruct
+
+lemma ctag_sFuncRow {W : V} (hWp : W = certPieces) (μ ev : V) : sTag (mkStep W (sFuncRow μ) ev) = 0 := by
+  by_cases hμ : μ = 0
+  · rw [sFuncRow, if_pos hμ]; exact ctag_termSubstFuncCert hWp ev
+  · rw [sFuncRow, if_neg hμ]; exact ctag_termBShiftFuncCert hWp ev
+lemma ctag_sAdjRow {W : V} (hWp : W = certPieces) (μ ev : V) : sTag (mkStep W (sAdjRow μ) ev) = 0 := by
+  by_cases hμ : μ = 0
+  · rw [sAdjRow, if_pos hμ]; exact ctag_tsvAdjCert hWp ev
+  · rw [sAdjRow, if_neg hμ]; exact ctag_tbshvAdjCert hWp ev
+
+lemma sNilSteps_struct {W : V} (hWp : W = certPieces) (iw μ n : V) :
+    NoDrop (sNilSteps W iw μ n) ∧ shiftsV (sNilSteps W iw μ n) = 0 ∧ len (sNilSteps W iw μ n) = 1 := by
+  by_cases hμ : μ = 0
+  · rw [sNilSteps, if_pos hμ]
+    have ht := ctag_tsvNilCert hWp ?[vRef iw n]
+    exact ⟨noDrop_single (Or.inl ht), shiftsV_single_tag0 ht, by simp⟩
+  · rw [sNilSteps, if_neg hμ]
+    have ht := ctag_tbshvNilCert hWp ?[cTV 0]
+    exact ⟨noDrop_single (Or.inl ht), shiftsV_single_tag0 ht, by simp⟩
+
+lemma sFvarSteps_struct {W : V} (hWp : W = certPieces) (iw μ n x i j : V) :
+    NoDrop (sFvarSteps W iw μ n x i j) ∧ shiftsV (sFvarSteps W iw μ n x i j) = 0 ∧ len (sFvarSteps W iw μ n x i j) = 1 := by
+  by_cases hμ : μ = 0
+  · rw [sFvarSteps, if_pos hμ]
+    have ht := ctag_termSubstFvarCert hWp ?[^&i, cTV x, vRef iw n, ^&j]
+    exact ⟨noDrop_single (Or.inl ht), shiftsV_single_tag0 ht, by simp⟩
+  · rw [sFvarSteps, if_neg hμ]
+    have ht := ctag_termBShiftFvarCert hWp ?[cTV x, ^&i, ^&j]
+    exact ⟨noDrop_single (Or.inl ht), shiftsV_single_tag0 ht, by simp⟩
+
+lemma sFuncSteps_struct {W : V} (hWp : W = certPieces) (iw μ n k f i j yv : V) (hv : NoDrop yv) (hs : shiftsV yv = 0) :
+    NoDrop (sFuncSteps W iw μ n k f i j yv) ∧ shiftsV (sFuncSteps W iw μ n k f i j yv) = 0 ∧
+    len (sFuncSteps W iw μ n k f i j yv) = len yv + 2 := by
+  have h₁ := ctag_certFuncRow hWp k f (0 : V)
+  have h₂ := ctag_sFuncRow hWp μ (sFuncWits iw μ n k f i j)
+  refine ⟨noDrop_appendV hv (noDrop_cons (Or.inl h₁) (noDrop_single (Or.inl h₂))), ?_, ?_⟩
+  · rw [sFuncSteps, shiftsV_appendV, hs, shiftsV_cons_tag0 h₁, shiftsV_single_tag0 h₂, add_zero]
+  · rw [sFuncSteps, len_appendV, len_adjoin, len_adjoin, len_nil]; ring
+
+lemma sAdjSteps_struct {W : V} (hWp : W = certPieces) (iw μ n m' ct ct' i j yt yv : V)
+    (ht : NoDrop yt) (hst : shiftsV yt = 0) (hv : NoDrop yv) (hsv : shiftsV yv = 0) :
+    NoDrop (sAdjSteps W iw μ n m' ct ct' i j yt yv) ∧ shiftsV (sAdjSteps W iw μ n m' ct ct' i j yt yv) = 0 ∧
+    len (sAdjSteps W iw μ n m' ct ct' i j yt yv) = len yt + (len yv + 3) := by
+  have h₁ := ctag_cert38 hWp ?[cTV m', cTV n, vRef (i + 1 + ct) m']
+  have h₂ := ctag_cert39 hWp ?[cTV m', vRef (i + 1 + ct) m']
+  have h₃ := ctag_sAdjRow hWp μ (sAdjWits iw μ n m' ct ct' i j)
+  refine ⟨noDrop_appendV ht (noDrop_appendV hv (noDrop_cons (Or.inl h₁) (noDrop_cons (Or.inl h₂) (noDrop_single (Or.inl h₃))))), ?_, ?_⟩
+  · rw [sAdjSteps, shiftsV_appendV, shiftsV_appendV, hst, hsv, shiftsV_cons_tag0 h₁, shiftsV_cons_tag0 h₂, shiftsV_single_tag0 h₃]
+    ring
+  · rw [sAdjSteps, len_appendV, len_appendV, len_adjoin, len_adjoin, len_adjoin, len_nil]; ring
+
+/-- The bound-variable leaf: `NoDrop`, shift-free, and `len ≤ z + 12|w.[z]| + 3` in mode `0` (`= 1` otherwise). -/
+lemma sBvarSteps_struct {W : V} (hWp : W = certPieces) {n m w : V} (hw : IsSemitermVec LAct n m w) (iw μ : V) {z : V} (hz : z < n)
+    (i j : V) :
+    NoDrop (sBvarSteps W w iw m μ n z i j) ∧ shiftsV (sBvarSteps W w iw m μ n z i j) = 0 ∧
+    len (sBvarSteps W w iw m μ n z i j) + 4 ≤ 12 * termLen LAct w.[z] + (z + 3) + 4 := by
+  by_cases hμ : μ = 0
+  · rw [sBvarSteps, if_pos hμ]
+    have hchain := nthChain_graph (W := W) (s := 0) (j := n) (d := z) (off := iw) hw (by simp) hz
+    obtain ⟨hnd₁, hs₁, _, hl₁⟩ := nthCGraph_struct hWp m w z 0 n iw _ _ hchain
+    have hwz : IsSemiterm LAct m w.[z] := hw.nth hz
+    obtain ⟨hnd₃, hs₃⟩ := passTGraph_noDrop_shifts W 1 m hWp _ hwz j (nthChainE W m w 0 n z iw) _ (passT_graph hwz)
+    have hl₃ := len_passTGraph_le W 1 m _ hwz j (nthChainE W m w 0 n z iw) _ (passT_graph hwz)
+    have h₂ := ctag_termSubstBvarCert hWp ?[^&i, cTV z, ^&iw, ^&(nthChainE W m w 0 n z iw)]
+    have h₄ := ctag_congTSubstL hWp ?[^&(nthChainE W m w 0 n z iw), ^&j, ^&iw, ^&i]
+    refine ⟨noDrop_appendV hnd₁ (noDrop_appendV (noDrop_single (Or.inl h₂)) (noDrop_appendV hnd₃ (noDrop_single (Or.inl h₄)))), ?_, ?_⟩
+    · rw [shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, hs₁, shiftsV_single_tag0 h₂, hs₃, shiftsV_single_tag0 h₄]; simp
+    · rw [len_appendV, len_appendV, len_appendV, hl₁, len_adjoin, len_nil, len_adjoin, len_nil]
+      calc z + 1 + (0 + 1 + (len (passT W 1 m w.[z] j (nthChainE W m w 0 n z iw)) + (0 + 1))) + 4
+          = (len (passT W 1 m w.[z] j (nthChainE W m w 0 n z iw)) + 4) + (z + 3) := by ring
+        _ ≤ 12 * termLen LAct w.[z] + (z + 3) := add_le_add hl₃ (le_refl _)
+        _ ≤ 12 * termLen LAct w.[z] + (z + 3) + 4 := le_self_add
+  · rw [sBvarSteps, if_neg hμ]
+    have ht := ctag_termBShiftBvarCert hWp ?[cTV z, ^&i, ^&j]
+    refine ⟨noDrop_single (Or.inl ht), shiftsV_single_tag0 ht, ?_⟩
+    rw [len_adjoin, len_nil]
+    calc (0 : V) + 1 + 4 = 5 := by norm_num
+      _ ≤ 5 + (12 * termLen LAct w.[z] + (z + 2)) := le_self_add
+      _ = 12 * termLen LAct w.[z] + (z + 3) + 4 := by ring
+
+set_option maxHeartbeats 2000000 in
+set_option maxRecDepth 20000 in
+/-- **The pass drops nothing and introduces no eigenvariable** (Π₁ motive over the graph). -/
+lemma subTGraph_noDrop_shifts (W iw μ : V) (hWp : W = certPieces) {n m w : V} (hw : IsSemitermVec LAct n m w) :
+    ∀ t, IsSemiterm LAct n t → ∀ i j y : V, SubTGraph W w iw m μ n t i j y → NoDrop y ∧ shiftsV y = 0 := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · simp only [SubTGraph, SubVGraph]; definability
+  · intro z hz i j y hy
+    rw [SubTGraph.bvar_iff.mp hy]
+    exact ⟨(sBvarSteps_struct hWp hw iw μ hz i j).1, (sBvarSteps_struct hWp hw iw μ hz i j).2.1⟩
+  · intro a i j y hy
+    rw [SubTGraph.fvar_iff.mp hy]
+    exact ⟨(sFvarSteps_struct hWp iw μ n a i j).1, (sFvarSteps_struct hWp iw μ n a i j).2.1⟩
+  · intro k f v hkf hv ih i j y hy
+    have key : ∀ m' ≤ k, ∀ i j z : V, SubVGraph W w iw m μ n k v m' i j z → NoDrop z ∧ shiftsV z = 0 := by
+      intro m'
+      induction m' using ISigma1.pi1_succ_induction with
+      | hP => simp only [SubTGraph, SubVGraph]; definability
+      | zero =>
+        intro _ i j z hz
+        rw [SubVGraph.zero_iff.mp hz]
+        exact ⟨(sNilSteps_struct hWp iw μ n).1, (sNilSteps_struct hWp iw μ n).2.1⟩
+      | succ m' ihm =>
+        intro hm i j z hz
+        obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := SubVGraph.succ_iff.mp hz
+        have hvlen : len v = k := hv.lh
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
+          nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        rw [hnth'] at hyt
+        obtain ⟨ht, hst⟩ := ih _ hlt (i + 1) (j + 1) yt hyt
+        obtain ⟨hv', hsv⟩ := ihm (le_trans le_self_add hm) _ _ yv hyv
+        exact ⟨(sAdjSteps_struct hWp iw μ n m' _ _ i j yt yv ht hst hv' hsv).1,
+          (sAdjSteps_struct hWp iw μ n m' _ _ i j yt yv ht hst hv' hsv).2.1⟩
+    obtain ⟨yv, _, hyv, rfl⟩ := SubTGraph.func_iff.mp hy
+    obtain ⟨hv', hsv⟩ := key k le_rfl (i + 1) (j + 1) yv hyv
+    exact ⟨(sFuncSteps_struct hWp iw μ n k f i j yv hv' hsv).1, (sFuncSteps_struct hWp iw μ n k f i j yv hv' hsv).2.1⟩
+
+lemma subVGraph_noDrop_shifts {W iw μ : V} (hWp : W = certPieces) {n m w : V} (hw : IsSemitermVec LAct n m w)
+    {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m' ≤ k, ∀ i j z : V, SubVGraph W w iw m μ n k v m' i j z → NoDrop z ∧ shiftsV z = 0 := by
+  intro m'
+  induction m' using ISigma1.pi1_succ_induction with
+  | hP => simp only [SubTGraph, SubVGraph]; definability
+  | zero =>
+    intro _ i j z hz
+    rw [SubVGraph.zero_iff.mp hz]
+    exact ⟨(sNilSteps_struct hWp iw μ n).1, (sNilSteps_struct hWp iw μ n).2.1⟩
+  | succ m' ihm =>
+    intro hm i j z hz
+    obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := SubVGraph.succ_iff.mp hz
+    have hvlen : len v = k := hv.lh
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
+      nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    rw [hnth'] at hyt
+    obtain ⟨ht, hst⟩ := subTGraph_noDrop_shifts W iw μ hWp hw _ (hv.nth hlt) (i + 1) (j + 1) yt hyt
+    obtain ⟨hv', hsv⟩ := ihm (le_trans le_self_add hm) _ _ yv hyv
+    exact ⟨(sAdjSteps_struct hWp iw μ n m' _ _ i j yt yv ht hst hv' hsv).1,
+      (sAdjSteps_struct hWp iw μ n m' _ _ i j yt yv ht hst hv' hsv).2.1⟩
+
+/-- `|w.[z]| ≤ Σ|w|`. -/
+lemma termLen_nth_le_listSum {n m w z : V} (hw : IsSemitermVec LAct n m w) (hz : z < n) :
+    termLen LAct w.[z] ≤ listSum (termLenVec LAct n w) := by
+  rw [← nth_termLenVec hw.isUTerm hz]
+  exact nth_le_listSum _ _ (by rw [len_termLenVec hw.isUTerm]; exact hz)
+
+/-- `12 a ≤ 12 (z + 1) a` and `z + 7 ≤ 12 (z + 1)`: the leaf arithmetic. -/
+lemma twelve_mul_le_succ_mul (z a : V) : 12 * a ≤ 12 * (z + 1) * a := by
+  rw [show 12 * a = 12 * 1 * a by ring]
+  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left le_add_self zero_le) zero_le
+lemma five_le_twelve_mul (a b : V) : (5 : V) ≤ 12 * (a + 1) * (b + 1) := by
+  calc (5 : V) ≤ 12 := by norm_num
+    _ ≤ 12 * (a + 1) := le_mul_of_one_le_right zero_le le_add_self
+    _ ≤ 12 * (a + 1) * (b + 1) := le_mul_of_one_le_right zero_le le_add_self
+
+set_option maxHeartbeats 2000000 in
+/-- **The pass has `≤ 12|t|(Σ|w| + 1)` steps** (the bound-variable leaves carry a chain and an identification pass of
+the substituted entry; `Σ|w| = listSum (termLenVec n w)`). -/
+lemma len_subTGraph_le {W : V} (hWp : W = certPieces) (iw μ : V) {n m w : V} (hw : IsSemitermVec LAct n m w) :
+    ∀ t, IsSemiterm LAct n t →
+    ∀ i j y : V, SubTGraph W w iw m μ n t i j y → len y + 4 ≤ 12 * termLen LAct t * (listSum (termLenVec LAct n w) + 1) := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · simp only [SubTGraph, SubVGraph]; definability
+  · intro z hz i j y hy
+    rw [SubTGraph.bvar_iff.mp hy, termLen_bvar]
+    have hS := termLen_nth_le_listSum hw hz
+    calc len (sBvarSteps W w iw m μ n z i j) + 4 ≤ 12 * termLen LAct w.[z] + (z + 3) + 4 :=
+          (sBvarSteps_struct hWp hw iw μ hz i j).2.2
+      _ ≤ 12 * listSum (termLenVec LAct n w) + (z + 3) + 4 :=
+          add_le_add (add_le_add (mul_le_mul_of_nonneg_left hS zero_le) (le_refl _)) (le_refl 4)
+      _ = 12 * listSum (termLenVec LAct n w) + (z + 7) := by ring
+      _ ≤ 12 * (z + 1) * listSum (termLenVec LAct n w) + 12 * (z + 1) :=
+          add_le_add (twelve_mul_le_succ_mul z _)
+            (calc z + 7 ≤ z + 7 + (11 * z + 5) := le_self_add
+              _ = 12 * (z + 1) := by ring)
+      _ = 12 * (z + 1) * (listSum (termLenVec LAct n w) + 1) := by ring
+  · intro a i j y hy
+    rw [SubTGraph.fvar_iff.mp hy, (sFvarSteps_struct hWp iw μ n a i j).2.2, termLen_fvar]
+    exact le_trans (le_of_eq (by norm_num)) (five_le_twelve_mul a _)
+  · intro k f v hkf hv ih i j y hy
+    have key : ∀ m' ≤ k, ∀ i j z : V, SubVGraph W w iw m μ n k v m' i j z →
+        IsUTermVec LAct m' (takeLast v m') ∧
+        len z + 2 ≤ 12 * listSum (termLenVec LAct m' (takeLast v m')) * (listSum (termLenVec LAct n w) + 1) + 4 := by
+      intro m'
+      induction m' using ISigma1.pi1_succ_induction with
+      | hP => simp only [SubTGraph, SubVGraph]; definability
+      | zero =>
+        intro _ i j z hz
+        refine ⟨by simp, ?_⟩
+        rw [SubVGraph.zero_iff.mp hz, (sNilSteps_struct hWp iw μ n).2.2]
+        simp; norm_num
+      | succ m' ihm =>
+        intro hm i j z hz
+        obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := SubVGraph.succ_iff.mp hz
+        have hvlen : len v = k := hv.lh
+        have hjk : m' < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m') hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have ht : IsSemiterm LAct n v.[k - (m' + 1)] := hv.nth hlt
+        have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
+          nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        rw [hnth'] at hyt hyv ⊢
+        obtain ⟨hU, hl⟩ := ihm (le_trans le_self_add hm) _ _ yv hyv
+        have htake : takeLast v (m' + 1) = v.[k - (m' + 1)] ∷ takeLast v m' := by
+          rw [takeLast_succ_of_lt hjk, hvlen]
+        refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+        have h1 := ih _ hlt (i + 1) (j + 1) yt hyt
+        obtain ⟨hnt, hst⟩ := subTGraph_noDrop_shifts W iw μ hWp hw _ ht _ _ _ hyt
+        obtain ⟨hnv, hsv⟩ := subVGraph_noDrop_shifts hWp hw hv m' (le_trans le_self_add hm) _ _ _ hyv
+        rw [(sAdjSteps_struct hWp iw μ n m' (descCountT W n v.[k - (m' + 1)]) (subImgCount W w m μ n v.[k - (m' + 1)]) i j yt yv
+            hnt hst hnv hsv).2.2, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin]
+        calc len yt + (len yv + 3) + 2
+            ≤ (len yv + 2) + (len yt + 4) := by
+              rw [show (len yv + 2) + (len yt + 4) = len yt + (len yv + 3) + 2 + 1 by ring]
+              exact le_self_add
+          _ ≤ (12 * listSum (termLenVec LAct m' (takeLast v m')) * (listSum (termLenVec LAct n w) + 1) + 4) +
+                12 * termLen LAct v.[k - (m' + 1)] * (listSum (termLenVec LAct n w) + 1) := add_le_add hl h1
+          _ = 12 * (termLen LAct v.[k - (m' + 1)] + listSum (termLenVec LAct m' (takeLast v m'))) *
+                (listSum (termLenVec LAct n w) + 1) + 4 := by ring
+    obtain ⟨yv, _, hyv, rfl⟩ := SubTGraph.func_iff.mp hy
+    obtain ⟨hU, hl⟩ := key k le_rfl (i + 1) (j + 1) yv hyv
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    rw [htl] at hl
+    obtain ⟨hnv, hsv⟩ := subVGraph_noDrop_shifts hWp hw hv k le_rfl _ _ _ hyv
+    rw [(sFuncSteps_struct hWp iw μ n k f i j yv hnv hsv).2.2, termLen_func hkf hv.isUTerm]
+    calc len yv + 2 + 4 = (len yv + 2) + 4 := by ring
+      _ ≤ (12 * listSum (termLenVec LAct k v) * (listSum (termLenVec LAct n w) + 1) + 4) + 4 := add_le_add hl (le_refl 4)
+      _ ≤ 12 * listSum (termLenVec LAct k v) * (listSum (termLenVec LAct n w) + 1) + 12 * (listSum (termLenVec LAct n w) + 1) := by
+          rw [add_assoc]
+          refine add_le_add (le_refl _) ?_
+          calc (4 : V) + 4 = 8 := by norm_num
+            _ ≤ 12 := by norm_num
+            _ ≤ 12 * (listSum (termLenVec LAct n w) + 1) := le_mul_of_one_le_right zero_le le_add_self
+      _ = 12 * (listSum (termLenVec LAct k v) + 1) * (listSum (termLenVec LAct n w) + 1) := by ring
+
+end subTStruct
+
 end ArithS
