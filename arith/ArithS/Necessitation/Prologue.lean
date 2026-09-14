@@ -2897,4 +2897,240 @@ theorem identIns_ok {tbl N Wl W Wc T s p i₁ ip₁ σ D E Γ q : V} (htbl : Tab
 
 end identOK
 
+/-! ## 5. The `insert` child: `proIns` (before the child) and `postIns` (after it); the `and`/`or` readings -/
+
+section insertChild
+
+/-- The shifts of a child's layout. -/
+noncomputable def proSig (Ww Wl Wc W T c : V) : V := shiftsV (layoutSteps Ww Wl Wc W T c)
+
+/-- **The prologue of an `insert p s` child**: `cp := insertTotalC [P, S]`, the child's layout, the identification.
+`i` = the parent's chain offset, `ip` = the index of `p`'s walk dossier. -/
+noncomputable def proIns (Ww Wl Wc W T s p i ip : V) : V :=
+  appendV ?[mkStep W 76 ?[^&ip, ^&(i + (len (memberList s) + 1))]]
+    (appendV (layoutSteps Ww Wl Wc W T (insert p s))
+      (identIns (qPack Wl W (i + 1 + proSig Ww Wl Wc W T (insert p s)) (len (memberList s))
+        (offVec (memberList s) Ww Wc T) (memberList s) (ip + 1 + proSig Ww Wl Wc W T (insert p s))
+        (len (memberList (insert p s))) (offVec (memberList (insert p s)) Ww Wc T) (memberList (insert p s)) p
+        (proSig Ww Wl Wc W T (insert p s)))))
+
+noncomputable def proInsDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y Ww Wl Wc W T s p i ip. ∃ zip, !qqFvarDef zip ip ∧ ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧
+    ∃ is, is = i + (k + 1) ∧ ∃ zs, !qqFvarDef zs is ∧ ∃ e₁, !adjoinDef e₁ zs 0 ∧ ∃ e₂, !adjoinDef e₂ zip e₁ ∧
+    ∃ s₁, !mkStepDef s₁ W 76 e₂ ∧ ∃ l₁, !adjoinDef l₁ s₁ 0 ∧
+    ∃ c, !insertDef c p s ∧ ∃ L, !layoutStepsDef L Ww Wl Wc W T c ∧ ∃ σ, !shiftsVDef σ L ∧
+    ∃ os, !offVecDef os xs Ww Wc T ∧ ∃ ys, !memberListDef ys c ∧ ∃ kk, !lenDef kk ys ∧ ∃ oss, !offVecDef oss ys Ww Wc T ∧
+    ∃ i₁, i₁ = i + 1 + σ ∧ ∃ ip₁, ip₁ = ip + 1 + σ ∧
+    ∃ q₁₁, !pairDef q₁₁ p σ ∧ ∃ q₁₀, !pairDef q₁₀ ys q₁₁ ∧ ∃ q₉, !pairDef q₉ oss q₁₀ ∧ ∃ q₈, !pairDef q₈ kk q₉ ∧
+    ∃ q₇, !pairDef q₇ ip₁ q₈ ∧ ∃ q₆, !pairDef q₆ xs q₇ ∧ ∃ q₅, !pairDef q₅ os q₆ ∧ ∃ q₄, !pairDef q₄ k q₅ ∧
+    ∃ q₃, !pairDef q₃ i₁ q₄ ∧ ∃ q₂, !pairDef q₂ W q₃ ∧ ∃ q, !pairDef q Wl q₂ ∧
+    ∃ I, !identInsDef I q ∧ ∃ r, !appendVDef r L I ∧ !appendVDef y l₁ r”
+
+set_option maxHeartbeats 1000000 in
+instance proIns_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ proIns (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) proInsDef := .mk
+  fun v ↦ by
+    simp [proInsDef, proIns, proSig, qPack, memberList_defined.iff, layoutSteps_defined.iff, shiftsV_defined.iff,
+      offVec_defined.iff, identIns_defined.iff, mkStep_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+
+/-- The shifts of a layout are at most `6D + 1`. -/
+lemma proSig_le {tbl N Wl Wc W T c D : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWc : Wc = certPieces)
+    {N' B' E Γ : V} (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWp : W = proPieces)
+    (hc : IsFormulaSet LAct c) (hk1 : 1 ≤ len (memberList c)) (hcD : setLen LAct c ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
+    proSig walkPieces Wl Wc W T c ≤ 6 * D + 1 := by
+  obtain ⟨_, _, hsh, _, _⟩ := layoutSteps_ok htbl hP htblN hWl hWc hWp hc hk1 hcD hE hΓ
+  unfold proSig
+  rw [hsh]
+  have hkD : len (memberList c) ≤ D := le_trans (len_memberList_le_setLen hc) hcD
+  have ht : tailShift (memberList c) walkPieces Wc T ≤ 4 * D := by
+    refine le_trans (tailShift_le htbl hP.walkTable hWc T _ (fun j hj ↦ hc _ (nth_memberList_mem hj))) ?_
+    rw [← setLen_eq_listSum_memberList]; exact mul_le_mul_of_nonneg_left hcD zero_le
+  calc tailShift (memberList c) walkPieces Wc T + (len (memberList c) + 1) + len (memberList c)
+      ≤ 4 * D + (D + 1) + D := add_le_add (add_le_add ht (add_le_add hkD le_rfl)) hkD
+    _ = 6 * D + 1 := by ring
+
+set_option maxHeartbeats 4000000 in
+/-- **The `insert` child's prologue is applicable**: afterwards the child's layout is at `0`, the parent's at
+`i + 1 + σ`, `p`'s dossier at `ip + 1 + σ`, the row object `cp = &σ` with `insFact cp P S` and `eqFactB cp s''`
+(`σ = proSig … (insert p s)`, `s'' = &(k' + 1)` the child's chain top). -/
+theorem proIns_ok {tbl N N' B' Wl Wc W T s p i ip D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hk1 : 1 ≤ len (memberList s))
+    (hsD : setLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hipE : ip + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
+    (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (proIns walkPieces Wl Wc W T s p i ip) ∧ NoDrop' (proIns walkPieces Wl Wc W T s p i ip) ∧
+    shiftsV (proIns walkPieces Wl Wc W T s p i ip) = 1 + proSig walkPieces Wl Wc W T (insert p s) ∧
+    Layout walkPieces Wc T (finalCtx Γ (proIns walkPieces Wl Wc W T s p i ip)) (insert p s) 0 ∧
+    IdFrame walkPieces Wc T (finalCtx Γ (proIns walkPieces Wl Wc W T s p i ip)) s p
+      (i + 1 + proSig walkPieces Wl Wc W T (insert p s)) (ip + 1 + proSig walkPieces Wl Wc W T (insert p s))
+      (proSig walkPieces Wl Wc W T (insert p s)) ∧
+    neg LAct (eqFactB (^&(proSig walkPieces Wl Wc W T (insert p s))) (^&(0 + (len (memberList (insert p s)) + 1)))) ∈
+      finalCtx Γ (proIns walkPieces Wl Wc W T s p i ip) := by
+  have hL := hP.layoutTable
+  have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
+  have hsD' : setLen LAct s ≤ D := le_trans (setLen_le_insert p s) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD'
+  have hk1' : 1 ≤ len (memberList (insert p s)) := by
+    obtain ⟨hlt, _⟩ := idxOf_spec (show p ∈ insert p s by simp)
+    have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
+  have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
+  have e76 : ∀ ev : V, mkStep proPieces (76 : V) ev = mkStep layoutPieces (76 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 76 (by decide) ev; simpa using this
+  set σ := proSig walkPieces Wl Wc W T (insert p s) with hσ
+  have hσle : σ ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hcs hk1' hsD hE8 hΓ
+  have hipE1 : ip + 1 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) (le_trans (add_le_add le_self_add le_rfl) hipE)
+  have hSE : i + (len (memberList s) + 1) + 1 ≤ E := by
+    calc i + (len (memberList s) + 1) + 1 = i + (len (memberList s) + 2) := by ring
+      _ ≤ i + (14 * D + 5) := add_le_add le_rfl (add_le_add (le_trans hkD (le_mul_of_one_le_left zero_le (by norm_num))) (by norm_num))
+      _ = i + 14 * D + 5 := by ring
+      _ ≤ E := hiE
+  -- step 1: the insert object
+  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_insertTotalC htbl hL rfl hΓ (by simp) (termLen_fvar_le' hipE1) (by simp) (termLen_fvar_le' hSE)
+  rw [← e76, ← hWp] at ok₁ tg₁ cx₁
+  rw [Nat.cast_zero, termShift_fvar, termShift_fvar] at cx₁
+  have h1sh : shiftsV (?[mkStep W 76 ?[^&ip, ^&(i + (len (memberList s) + 1))]] : V) = 1 := shiftsV_single_tag2 tg₁
+  have h1nd : NoDrop' (?[mkStep W 76 ?[^&ip, ^&(i + (len (memberList s) + 1))]] : V) := noDrop'_single (Or.inr (Or.inr (Or.inl tg₁)))
+  set Γ₁ := finalCtx Γ ?[mkStep W 76 ?[^&ip, ^&(i + (len (memberList s) + 1))]] with hΓ₁
+  have hΓ₁e : Γ₁ = insert (neg LAct (insFact (^&0) (^&(ip + 1)) (^&(i + (len (memberList s) + 1) + 1)))) (setShift LAct Γ) := by
+    rw [hΓ₁, finalCtx_single, cx₁]
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := finalCtx_isFormulaSet 8 htbl hΓ (listOK_single ok₁)
+  have hLay₁ : Layout walkPieces Wc T Γ₁ s (i + 1) := by have := hLay.transport h1nd; rwa [h1sh] at this
+  have hDp₁ : DossF walkPieces Γ₁ 0 p (ip + 1) := by have := dossF_transport' h1nd hDp; rwa [h1sh] at this
+  have hcp₁ : neg LAct (insFact (^&0) (^&(ip + 1)) (^&(i + (len (memberList s) + 1) + 1))) ∈ Γ₁ := by
+    rw [hΓ₁e]; exact memInsSelf _ _
+  -- step 2: the child's layout
+  obtain ⟨lok, lnd, _, _, lLay⟩ := layoutSteps_ok htbl hP htblN hWl hWc hWp hcs hk1' hsD hE8 hΓ₁f
+  have lsh : shiftsV (layoutSteps walkPieces Wl Wc W T (insert p s)) = σ := by rw [hσ, proSig]
+  set Γ₂ := finalCtx Γ₁ (layoutSteps walkPieces Wl Wc W T (insert p s)) with hΓ₂
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 8 htbl hΓ₁f lok
+  have hLay₂ : Layout walkPieces Wc T Γ₂ s (i + 1 + σ) := by have := hLay₁.transport lnd; rwa [lsh] at this
+  have hDp₂ : DossF walkPieces Γ₂ 0 p (ip + 1 + σ) := by have := dossF_transport' lnd hDp₁; rwa [lsh] at this
+  have hcp₂ : neg LAct (insFact (^&σ) (^&(ip + 1 + σ)) (^&(i + 1 + σ + (len (memberList s) + 1)))) ∈ Γ₂ := by
+    have := mem_finalCtx_of_mem' lnd hcp₁
+    rw [lsh, shiftIterV_neg (isFormula_insFact (by simp) (by simp) (by simp)), shiftIterV_insFact (by simp) (by simp) (by simp),
+      termShiftIterV_fvar, termShiftIterV_fvar, termShiftIterV_fvar, zero_add] at this
+    have e : i + (len (memberList s) + 1) + 1 + σ = i + 1 + σ + (len (memberList s) + 1) := by ring
+    rwa [e] at this
+  have hF₂ : IdFrame walkPieces Wc T Γ₂ s p (i + 1 + σ) (ip + 1 + σ) σ := ⟨lLay, hLay₂, hDp₂, hcp₂⟩
+  -- step 3: the identification
+  have hcap : IdCap D E (i + 1 + σ) (ip + 1 + σ) σ := ⟨hE, by
+      calc i + 1 + σ + 8 * D + 3 ≤ i + 1 + (6 * D + 1) + 8 * D + 3 := add_le_add (add_le_add (add_le_add le_rfl hσle) le_rfl) le_rfl
+        _ = i + 14 * D + 5 := by ring
+        _ ≤ E := hiE, by
+      calc ip + 1 + σ + 2 * D + 2 ≤ ip + 1 + (6 * D + 1) + 2 * D + 2 := add_le_add (add_le_add (add_le_add le_rfl hσle) le_rfl) le_rfl
+        _ = ip + 8 * D + 4 := by ring
+        _ ≤ E := hipE, by
+      calc σ + 1 ≤ 6 * D + 1 + 1 := add_le_add hσle le_rfl
+        _ = 6 * D + 2 := by ring
+        _ ≤ 13 * D + 18 * ‖D‖ + 12 := six_le_cap (by norm_num)
+        _ ≤ E := hE⟩
+  obtain ⟨iok, ind, iho, ish, ifact⟩ := identIns_ok htbl hP hWl hWc hWp rfl hs hp hk1 hsD hcap hΓ₂f hF₂
+  -- assembly
+  have hlist : proIns walkPieces Wl Wc W T s p i ip = appendV ?[mkStep W 76 ?[^&ip, ^&(i + (len (memberList s) + 1))]]
+      (appendV (layoutSteps walkPieces Wl Wc W T (insert p s))
+        (identIns (qPack Wl W (i + 1 + σ) (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s)
+          (ip + 1 + σ) (len (memberList (insert p s))) (offVec (memberList (insert p s)) walkPieces Wc T)
+          (memberList (insert p s)) p σ))) := by
+    unfold proIns; rw [← hσ]
+  rw [hlist]
+  refine ⟨listOK_appendV (listOK_single ok₁) (by rw [← hΓ₁]; exact listOK_appendV lok (by rw [← hΓ₂]; exact iok)),
+    noDrop'_appendV h1nd (noDrop'_appendV lnd ind.noDrop'), ?_, ?_, ?_, ?_⟩
+  · rw [shiftsV_appendV, shiftsV_appendV, h1sh, lsh, ish, add_zero]
+  · rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂]
+    have := lLay.transport ind.noDrop'; rwa [ish, add_zero] at this
+  · rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂]
+    exact hF₂.zero_transport ind ish
+  · rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂]
+    exact ifact
+
+/-- **`postIns W s'' cp n`**: recover the child's goal (`goalElim`: `d = &1`, `n = &0`), then move
+`fstIdxFact s'' d` onto the row object `cp` by `congFstIdx` (the child's chain top and `cp` are at `s'' + 2`,
+`cp + 2` after the two eliminations). -/
+noncomputable def postIns (W s'' cp n : V) : V :=
+  appendV (goalElim (^&s'') (bnum n)) ?[mkStep W 122 ?[^&1, ^&(s'' + 2), ^&(cp + 2)]]
+
+noncomputable def postInsDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W s cp n. ∃ zs, !qqFvarDef zs s ∧ ∃ bn, !bnumGraph bn n ∧ ∃ G, !goalElimDef G zs bn ∧
+    ∃ z1, !qqFvarDef z1 1 ∧ ∃ s2, s2 = s + 2 ∧ ∃ zs2, !qqFvarDef zs2 s2 ∧ ∃ c2, c2 = cp + 2 ∧ ∃ zc2, !qqFvarDef zc2 c2 ∧
+    ∃ e₁, !adjoinDef e₁ zc2 0 ∧ ∃ e₂, !adjoinDef e₂ zs2 e₁ ∧ ∃ e₃, !adjoinDef e₃ z1 e₂ ∧ ∃ st, !mkStepDef st W 122 e₃ ∧
+    ∃ l, !adjoinDef l st 0 ∧ !appendVDef y G l”
+
+instance postIns_defined : 𝚺₁-Function₄ (postIns : V → V → V → V → V) via postInsDef := .mk fun v ↦ by
+  simp [postInsDef, postIns, bnum.defined.iff, goalElim_defined.iff, mkStep_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance postIns_definable : 𝚺₁-Function₄ (postIns : V → V → V → V → V) := postIns_defined.to_definable
+
+/-- **`postIns` is applicable** and leaves the child's four facts on the row object: `derFact &1`,
+`fstIdxFact &(cp + 2) &1`, `dlenFact &1 &0`, `leFact &0 (bnum n)`. -/
+theorem postIns_ok {tbl N W s'' cp n E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hsE : s'' + 3 ≤ E) (hcE : cp + 3 ≤ E)
+    (hg : neg LAct (goalFact (^&s'') (bnum n)) ∈ Γ) (heq : neg LAct (eqFactB (^&cp) (^&s'')) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (postIns W s'' cp n) ∧ NoDrop' (postIns W s'' cp n) ∧
+    shiftsV (postIns W s'' cp n) = 2 ∧ len (postIns W s'' cp n) = 6 ∧
+    neg LAct (derFact (^&1 : V)) ∈ finalCtx Γ (postIns W s'' cp n) ∧
+    neg LAct (fstIdxFact (^&(cp + 2)) (^&1)) ∈ finalCtx Γ (postIns W s'' cp n) ∧
+    neg LAct (dlenFact (^&1 : V) (^&0)) ∈ finalCtx Γ (postIns W s'' cp n) ∧
+    neg LAct (leFact (^&0) (bnum n)) ∈ finalCtx Γ (postIns W s'' cp n) := by
+  have hF1 := hP.frag1Table
+  have e122 : ∀ ev : V, mkStep proPieces (122 : V) ev = mkStep frag1Pieces (122 : V) ev := fun ev ↦ by
+    have := mkStep_pro_frag1 122 (by decide) ev; simpa using this
+  have hE2 : (2 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hsE)
+  obtain ⟨gok, gnd, gsh, _, gd, gf, gn, gl⟩ := goalElim_ok 8 htbl hΓ (by simp) (isSemiterm_bnum0 n) hg
+  rw [termShift_fvar, termShift_fvar, add_assoc, one_add_one_eq_two] at gf
+  rw [termShift_bnum, termShift_bnum] at gl
+  set Γg := finalCtx Γ (goalElim (^&s'') (bnum n)) with hΓg
+  have hΓgf : IsFormulaSet LAct Γg := finalCtx_isFormulaSet 8 htbl hΓ gok
+  have heq' : neg LAct (eqFactB (^&(cp + 2)) (^&(s'' + 2))) ∈ Γg := by
+    have hf : IsFormula LAct (eqFactB (^&cp) (^&s'')) := isFormula_eqFact (by simp) (by simp)
+    have := mem_finalCtx_of_mem' gnd heq
+    rw [gsh, shiftIterV_neg hf, shiftIterV_eqFactB (by simp) (by simp), termShiftIterV_fvar, termShiftIterV_fvar] at this
+    exact this
+  obtain ⟨ok₁, tg₁, cx₁⟩ := fok_congFstIdx htbl hF1 rfl hΓgf (by simp) (termLen_fvar_le' (le_trans (by norm_num) hE2))
+    (by simp) (termLen_fvar_le' (by rw [add_assoc, show (2 : V) + 1 = 3 by norm_num]; exact hsE))
+    (by simp) (termLen_fvar_le' (by rw [add_assoc, show (2 : V) + 1 = 3 by norm_num]; exact hcE)) heq' gf
+  rw [← e122, ← hWp] at ok₁ tg₁ cx₁
+  refine ⟨listOK_appendV gok (by rw [← hΓg]; exact listOK_single ok₁), noDrop'_appendV gnd (noDrop'_single (Or.inl tg₁)),
+    ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · unfold postIns; rw [shiftsV_appendV, gsh, shiftsV_single_tag0 tg₁, add_zero]
+  · unfold postIns; rw [len_appendV, len_goalElim, len_vec1]; norm_num
+  · unfold postIns; rw [finalCtx_appendV, ← hΓg, finalCtx_single, cx₁]; exact memIns gd
+  · unfold postIns; rw [finalCtx_appendV, ← hΓg, finalCtx_single, cx₁]; exact memInsSelf _ _
+  · unfold postIns; rw [finalCtx_appendV, ← hΓg, finalCtx_single, cx₁]; exact memIns gn
+  · unfold postIns; rw [finalCtx_appendV, ← hΓg, finalCtx_single, cx₁]; exact memIns gl
+
+/-! ### 5.1 The `and`/`or` readings: the principal member's shape and its sub-formulas' dossiers -/
+
+/-- With `r = p ⋏ q ∈ s`, the layout gives `andFact &ir &ip &iq`, the dossiers of `p`/`q` at `ip`/`iq` and
+`memFact &ir &is` — the `nodeAnd_ok` hypotheses `hand`/`hmr` and the two `proIns` inputs. -/
+theorem layout_and {tbl N Wc T s p q Γ i : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q) (hr : (p ^⋏ q) ∈ s)
+    (hLay : Layout walkPieces Wc T Γ s i) :
+    neg LAct (andFact (^&(memTop walkPieces Wc T s (p ^⋏ q) i))
+      (^&(memTop walkPieces Wc T s (p ^⋏ q) i + descCountF walkPieces 0 q + 1))
+      (^&(memTop walkPieces Wc T s (p ^⋏ q) i + 1))) ∈ Γ ∧
+    DossF walkPieces Γ 0 p (memTop walkPieces Wc T s (p ^⋏ q) i + descCountF walkPieces 0 q + 1) ∧
+    DossF walkPieces Γ 0 q (memTop walkPieces Wc T s (p ^⋏ q) i + 1) ∧
+    neg LAct (memFact (^&(memTop walkPieces Wc T s (p ^⋏ q) i)) (^&(i + (len (memberList s) + 1)))) ∈ Γ := by
+  obtain ⟨hD, _, _, hm⟩ := hLay.member hr
+  obtain ⟨h1, _, hq', hp'⟩ := dossF_and htbl hP.walkTable rfl hp hq hD
+  exact ⟨h1, hp', hq', hm⟩
+
+/-- With `r = p ⋎ q ∈ s`, likewise (`nodeOr_ok`'s `hor`/`hmr`). -/
+theorem layout_or {tbl N Wc T s p q Γ i : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q) (hr : (p ^⋎ q) ∈ s)
+    (hLay : Layout walkPieces Wc T Γ s i) :
+    neg LAct (orFact (^&(memTop walkPieces Wc T s (p ^⋎ q) i))
+      (^&(memTop walkPieces Wc T s (p ^⋎ q) i + descCountF walkPieces 0 q + 1))
+      (^&(memTop walkPieces Wc T s (p ^⋎ q) i + 1))) ∈ Γ ∧
+    DossF walkPieces Γ 0 p (memTop walkPieces Wc T s (p ^⋎ q) i + descCountF walkPieces 0 q + 1) ∧
+    DossF walkPieces Γ 0 q (memTop walkPieces Wc T s (p ^⋎ q) i + 1) ∧
+    neg LAct (memFact (^&(memTop walkPieces Wc T s (p ^⋎ q) i)) (^&(i + (len (memberList s) + 1)))) ∈ Γ := by
+  obtain ⟨hD, _, _, hm⟩ := hLay.member hr
+  obtain ⟨h1, _, hq', hp'⟩ := dossF_or htbl hP.walkTable rfl hp hq hD
+  exact ⟨h1, hp', hq', hm⟩
+
+end insertChild
+
 end ArithS
