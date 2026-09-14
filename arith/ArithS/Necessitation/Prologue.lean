@@ -1675,4 +1675,197 @@ theorem layoutSteps_ok {tbl N N' B' Wl Wc W T s D E Γ : V} (htbl : TableOK tbl 
 
 end layoutStepsOK
 
+/-! ## 3. The leaves: `axL` and `verumIntro` (`DESIGN_fragments.md` §4.1–§4.2)
+
+The member `p` and its negation `neg p` are both members of `s`, so both have WALK dossiers in the layout;
+`certNeg` between the two dossiers (re-indexed to the prologue table) derives `negFact X_np X_p` — no
+identification walk is needed. `verumIntro` needs no prologue at all: `verumFact X_⊤` is the top fact of
+the member's dossier. -/
+
+section leaves
+
+/-! ### 3.1 The index of a member -/
+
+namespace IdxAux
+
+noncomputable def blueprint : PR.Blueprint 2 where
+  zero := .mkSigma “y xs t. y = 0”
+  succ := .mkSigma “y ih m xs t. ∃ e, !nthDef e xs m ∧ (e = t → y = m) ∧ (e ≠ t → y = ih)”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v m ih ↦ if (v 0).[m] = v 1 then m else ih
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by
+    simp [blueprint]
+    by_cases h : (v 3).[v 2] = v 4
+    · simp [h]
+    · simp [h]
+
+end IdxAux
+
+/-- `idxAux xs t m` — the last index `< m` at which `xs` holds `t` (`0` if none). -/
+noncomputable def idxAux (xs t m : V) : V := IdxAux.construction.result ![xs, t] m
+/-- `idxOf xs t` — the index of `t` in `xs` (for a member of a duplicate-free list). -/
+noncomputable def idxOf (xs t : V) : V := idxAux xs t (len xs)
+
+@[simp] lemma idxAux_zero (xs t : V) : idxAux xs t 0 = 0 := by simp [idxAux, IdxAux.construction]
+lemma idxAux_succ (xs t m : V) : idxAux xs t (m + 1) = if xs.[m] = t then m else idxAux xs t m := by
+  simp [idxAux, IdxAux.construction]
+
+noncomputable def idxAuxDef : 𝚺₁.Semisentence 4 := IdxAux.blueprint.resultDef |>.rew (Rew.subst ![#0, #3, #1, #2])
+
+instance idxAux_defined : 𝚺₁-Function₃ (idxAux : V → V → V → V) via idxAuxDef := .mk
+  fun v ↦ by simp [IdxAux.construction.result_defined_iff, idxAuxDef]; rfl
+instance idxAux_definable : 𝚺₁-Function₃ (idxAux : V → V → V → V) := idxAux_defined.to_definable
+
+noncomputable def idxOfDef : 𝚺₁.Semisentence 3 := .mkSigma “y xs t. ∃ n, !lenDef n xs ∧ !idxAuxDef y xs t n”
+
+instance idxOf_defined : 𝚺₁-Function₂ (idxOf : V → V → V) via idxOfDef := .mk fun v ↦ by
+  simp [idxOfDef, idxOf, idxAux_defined.iff]
+instance idxOf_definable : 𝚺₁-Function₂ (idxOf : V → V → V) := idxOf_defined.to_definable
+
+lemma idxAux_spec (xs t : V) : ∀ m, (∃ j < m, xs.[j] = t) → idxAux xs t m < m ∧ xs.[idxAux xs t m] = t := by
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => rintro ⟨j, hj, _⟩; exact absurd hj (by simp)
+  | succ m ih =>
+    rintro ⟨j, hj, hjt⟩
+    rw [idxAux_succ]
+    by_cases h : xs.[m] = t
+    · rw [if_pos h]; exact ⟨lt_add_one m, h⟩
+    · rw [if_neg h]
+      have hjm : j < m := lt_of_le_of_ne (lt_succ_iff_le.mp hj) (fun e ↦ h (e ▸ hjt))
+      obtain ⟨h1, h2⟩ := ih ⟨j, hjm, hjt⟩
+      exact ⟨lt_trans h1 (lt_add_one m), h2⟩
+
+/-- A member's index is in range and reads the member. -/
+lemma idxOf_spec {s y : V} (hy : y ∈ s) :
+    idxOf (memberList s) y < len (memberList s) ∧ (memberList s).[idxOf (memberList s) y] = y :=
+  idxAux_spec _ _ _ (mem_memberList_iff.mpr hy)
+
+/-! ### 3.2 `proAxL` -/
+
+/-- The index of the top of the member `y` of `s` in the layout at chain offset `i`. -/
+noncomputable def memTop (Ww Wc T s y i : V) : V :=
+  mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[idxOf (memberList s) y]
+
+/-- **The `axL` prologue**: `certNeg` from `p`'s dossier to `neg p`'s dossier, re-indexed. -/
+noncomputable def proAxL (Ww Wc T s p i : V) : V :=
+  reidxL (certNeg Wc 0 p (memTop Ww Wc T s p i) (memTop Ww Wc T s (neg LAct p) i))
+
+noncomputable def proAxLDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y Ww Wc T s p i. ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ os, !offVecDef os xs Ww Wc T ∧
+    ∃ a, !idxOfDef a xs p ∧ ∃ oa, !nthDef oa os a ∧ ∃ np, !(negGraph LAct) np p ∧ ∃ b, !idxOfDef b xs np ∧
+    ∃ ob, !nthDef ob os b ∧ ∃ ta, ta = i + (2 * k + 1 + oa) ∧ ∃ tb, tb = i + (2 * k + 1 + ob) ∧
+    ∃ c, !passFDef c Wc 1 0 p ta tb ∧ !reidxLDef y c”
+
+instance proAxL_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ proAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) proAxLDef := .mk
+  fun v ↦ by
+    simp [proAxLDef, proAxL, memTop, mTop, certNeg, memberList_defined.iff, offVec_defined.iff, idxOf_defined.iff,
+      neg.defined.iff, passF_defined.iff, reidxL_defined.iff, numeral_eq_natCast]
+
+/-- The member facts of the layout, read at a member `y ∈ s`. -/
+lemma Layout.member {Ww Wc T Γ s i y : V} (h : Layout Ww Wc T Γ s i) (hy : y ∈ s) :
+    DossF Ww Γ 0 y (memTop Ww Wc T s y i) ∧
+    neg LAct (piFact (𝟎 : V) (^&(memTop Ww Wc T s y i))) ∈ Γ ∧
+    neg LAct (lenFact (bnum (formulaLen LAct y)) (^&(memTop Ww Wc T s y i))) ∈ Γ ∧
+    neg LAct (memFact (^&(memTop Ww Wc T s y i)) (^&(i + (len (memberList s) + 1)))) ∈ Γ := by
+  obtain ⟨hlt, heq⟩ := idxOf_spec hy
+  obtain ⟨hD, hpi, hln, _, _, hm⟩ := h.1 _ hlt
+  rw [heq] at hD hln
+  exact ⟨hD, hpi, hln, hm⟩
+
+/-- The sequent's formula-set fact (prefix `0` of the chain). -/
+lemma Layout.fsetPi {Ww Wc T Γ s i : V} (h : Layout Ww Wc T Γ s i) (hk : 1 ≤ len (memberList s)) :
+    neg LAct (fsetPiFact (^&(i + (len (memberList s) + 1)))) ∈ Γ := by
+  have := (h.1 0 (lt_of_lt_of_le _root_.zero_lt_one hk)).2.2.2.2.1
+  rwa [add_zero] at this
+
+lemma memTop_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc : V} (hWc : Wc = certPieces) (T : V)
+    {s y i D : V} (hs : IsFormulaSet LAct s) (hy : y ∈ s) (hsD : setLen LAct s ≤ D) :
+    memTop walkPieces Wc T s y i ≤ i + 6 * D + 1 := by
+  obtain ⟨hlt, _⟩ := idxOf_spec hy
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have ho : (offVec (memberList s) walkPieces Wc T).[idxOf (memberList s) y] ≤ 4 * D := by
+    refine le_trans (nth_offVec_le _ _ _ _ _ hlt) ?_
+    refine le_trans (tailShift_le htbl hW hWc T _ (fun j hj ↦ hs _ (nth_memberList_mem hj))) ?_
+    rw [← setLen_eq_listSum_memberList]; exact mul_le_mul_of_nonneg_left hsD zero_le
+  unfold memTop mTop
+  calc i + (2 * len (memberList s) + 1 + (offVec (memberList s) walkPieces Wc T).[idxOf (memberList s) y])
+      ≤ i + (2 * D + 1 + 4 * D) := add_le_add le_rfl (add_le_add (add_le_add (mul_le_mul_of_nonneg_left hkD zero_le) le_rfl) ho)
+    _ = i + 6 * D + 1 := by ring
+
+set_option maxHeartbeats 1000000 in
+/-- **The `axL` prologue is applicable** and leaves `negFact X_np X_p`; together with the layout it discharges
+EVERY hypothesis of `fragAxL_ok` at `is = i + (k + 1)`, `il = i`, `ip = memTop s p i`, `inp = memTop s (neg p) i`,
+`L = setLen s` (the facts are listed in `fragAxL_ok`'s order). -/
+theorem proAxL_ok {tbl N N' B' Wc T s p D E Γ i : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces)
+    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hnp : neg LAct p ∈ s) (hsD : setLen LAct s ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hiE : i + 8 * D + 3 ≤ E) (hΓ : IsFormulaSet LAct Γ)
+    (hLay : Layout walkPieces Wc T Γ s i) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (proAxL walkPieces Wc T s p i) ∧ NoDrop (proAxL walkPieces Wc T s p i) ∧
+    HornOnly (proAxL walkPieces Wc T s p i) ∧ shiftsV (proAxL walkPieces Wc T s p i) = 0 ∧
+    len (proAxL walkPieces Wc T s p i) + 4 ≤ 12 * formulaLen LAct p ∧
+    (neg LAct (fsetPiFact (^&(i + (len (memberList s) + 1)))) ∈ finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
+     neg LAct (memFact (^&(memTop walkPieces Wc T s p i)) (^&(i + (len (memberList s) + 1)))) ∈
+       finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
+     neg LAct (negFact (^&(memTop walkPieces Wc T s (neg LAct p) i)) (^&(memTop walkPieces Wc T s p i))) ∈
+       finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
+     neg LAct (memFact (^&(memTop walkPieces Wc T s (neg LAct p) i)) (^&(i + (len (memberList s) + 1)))) ∈
+       finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
+     neg LAct (setLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
+     neg LAct (leFact (^&i) (bnum (setLen LAct s))) ∈ finalCtx Γ (proAxL walkPieces Wc T s p i)) := by
+  have hW := hP.walkTable
+  have hC := hP.certTable
+  have htblC := hP.tableOK_certView htbl
+  have hpf : IsSemiformula LAct 0 p := hs p hp
+  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_setLen_of_mem hp) hsD
+  have hk1 : 1 ≤ len (memberList s) := by
+    obtain ⟨hlt, _⟩ := idxOf_spec hp
+    have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
+  obtain ⟨hDp, _, _, hmp⟩ := hLay.member hp
+  obtain ⟨hDnp, _, _, hmnp⟩ := hLay.member hnp
+  have h2D : 2 * formulaLen LAct p ≤ 2 * D := mul_le_mul_of_nonneg_left hpD zero_le
+  have hE1 : 2 * (0 : V) + 2 * formulaLen LAct p + 8 ≤ E := by
+    rw [mul_zero, zero_add]
+    exact le_trans (add_le_add (le_trans h2D (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) le_rfl)
+      (le_trans (add_le_add le_self_add le_rfl) hE)
+  have htop : ∀ y ∈ s, memTop walkPieces Wc T s y i + 2 * formulaLen LAct p + 1 ≤ E := fun y hy ↦ by
+    calc memTop walkPieces Wc T s y i + 2 * formulaLen LAct p + 1 ≤ (i + 6 * D + 1) + 2 * D + 1 :=
+          add_le_add (add_le_add (memTop_le htbl hW hWc T hs hy hsD) h2D) le_rfl
+      _ = i + 8 * D + 2 := by ring
+      _ ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hiE
+  obtain ⟨cok, cnd, cho, csh, cfact⟩ :=
+    certNeg_ok htblC hC rfl hWc hpf hE1 (htop p hp) (htop _ hnp) hΓ hDp hDnp
+  have tr : ∀ x ∈ Γ, x ∈ finalCtx Γ (proAxL walkPieces Wc T s p i) := fun x hx ↦ by
+    unfold proAxL; rw [finalCtx_reidxL]
+    have := mem_finalCtx_of_mem cnd hx; rwa [csh, shiftIterV_zero] at this
+  refine ⟨listOK_reidxL hP cok, noDrop_reidxL cnd, hornOnly_reidxL cho, by unfold proAxL; rw [shiftsV_reidxL, csh],
+    by unfold proAxL; rw [len_reidxL]; exact len_certNeg_le hpf, tr _ (hLay.fsetPi hk1), tr _ hmp, ?_, tr _ hmnp,
+    tr _ hLay.2.1, tr _ hLay.2.2⟩
+  unfold proAxL; rw [finalCtx_reidxL]; exact cfact
+
+/-! ### 3.3 `verumIntro`: no steps — the layout already discharges every hypothesis of `fragVerum_ok` -/
+
+/-- With `⊤ ∈ s`, the layout at offset `i` discharges `fragVerum_ok`'s hypotheses at `is = i + (k + 1)`, `il = i`,
+`iv = memTop s ⊤ i`, `L = setLen s`. -/
+theorem layout_verum {tbl N Wc T s Γ i : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (hv : (^⊤ : V) ∈ s) (hLay : Layout walkPieces Wc T Γ s i) :
+    neg LAct (fsetPiFact (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
+    neg LAct (verumFact (^&(memTop walkPieces Wc T s ^⊤ i))) ∈ Γ ∧
+    neg LAct (memFact (^&(memTop walkPieces Wc T s ^⊤ i)) (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
+    neg LAct (setLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
+    neg LAct (leFact (^&i) (bnum (setLen LAct s))) ∈ Γ := by
+  have hk1 : 1 ≤ len (memberList s) := by
+    obtain ⟨hlt, _⟩ := idxOf_spec hv
+    have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
+  obtain ⟨hD, _, _, hm⟩ := hLay.member hv
+  exact ⟨hLay.fsetPi hk1, (dossF_verum htbl hP.walkTable rfl hD).1, hm, hLay.2.1, hLay.2.2⟩
+
+end leaves
+
 end ArithS
