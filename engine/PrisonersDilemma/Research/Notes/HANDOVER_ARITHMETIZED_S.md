@@ -145,46 +145,38 @@ node-code totalities, the axiom recognizer incl. induction instances), `Lib/Brid
 `WalkLemmas` (`lt` rows, closed symbol rows as chain numerals `cT`, `bvOcc`, `fvOccF_subst_le`,
 `instOuterAt_subst_bvList`, `freeIter_subst_listToVec`).
 
+**U10 progress as of 2026-09-14** (the detail is §8 and `BRIEF.md` §11): on top of the modules
+above, `RowInstB`, `Lib/Frag` (196 rows), `Lib/Occ`, `CertRows`, `NumSteps`, `Layout`
+(`copySteps`/`chainSteps`/`eqSteps`), `Frag1Rows`+`Frag1` and `Frag2Rows`+`Frag2` (**all ten
+per-tag fragments**), `Cert` (the term and formula certification passes with `certNeg`/`certShift`)
+and `Verify` (`VerifyGraph` with `StrongFinite`, the ten inversion lemmas, `verifyGraph_exists`).
+Build 3247 jobs, census 451 lines, all three standard axioms.
+
 **Infrastructure.** Engine on v4.33.1 (`Metatheory` target broken before, documented tau debt);
 one workspace; results record; roadmap status log; the M4 brief and two U10 design notes.
 
 ## 4. What is left (with estimates)
 
-**U10, in order (brief §9–§10; DESIGN_inner_necessitation §5; DESIGN_describe):**
-1. **`Necessitation/Chain.lean` — the step language and the PR chain builder** (§8 below for
-   its exact state): step codes `sIntroFact i j ē`, `sUseHorn`, `sUseHornAnd`, `sElimExs`,
-   `sSplit`, `sWkDrop`, `sAxLFact`; `applyStep`, `ctxAfter`, `ctxVec` (PR), `chainCode` (PR from
-   the end with fixed parameters), `StepOK` (Δ₁), `stepCost`; `chainCode_proof`,
-   `dlen_chainCode_le` by IΣ₁ induction on the index. ~1 week.
-2. **`RowInst.lean`** — for every row the walk uses: the row-shape lemma (`⌜lMap emb rowB⌝` read
-   off the DSL) and the instantiation lemma at witnesses (canonical fact codes
-   `subst (listToVec ws) ⌜lMap emb P⌝`), plus the context-fact definitions (`shapeF`, `piF`, …)
-   with `IsFormula`/length/`fvOcc` bounds. ~1 week (never started; an agent was killed at launch).
-3. **`describeSteps`** — the formula walk as a `Fixpoint` on `⟪n, r⟫` (DESIGN_describe §4–§7),
-   `descCount`, `StepsOK` by `IsSemiformula.pi1_structural_induction`, the final-context facts,
-   the cost. Then `negSteps/shiftSteps/substSteps/freeSteps` (§9). ~3 weeks.
-4. **The ten per-tag fragments** as step-list emitters (DESIGN_inner_necessitation §3.3) and the
-   `dlen` bookkeeping with binary numerals (§4.1–4.2; needs `formulaLenShift`+`fvOcc` rows for
-   shifted atoms — flagged). ~4–6 weeks.
-5. **`verifySteps ρ`** — a `DlenGraph`-style fixpoint on `⟪ρ, list⟫`, with `StepsOK` and the cost
-   sum by `Derivation.induction1`; **the top** (§4.3): closing the target sentence, `gBudget`,
-   the numeral `⌜χ⌝`; then `theorem boundedInnerNec_three : BoundedInnerNec 3` and the
-   UNCONDITIONAL `dupoc_self_coop`. ~3 weeks.
-6. Small: the `Steps.lean` `dlen_introFactCode_le_occ` swap (ShiftLen's report says how);
-   `Lib/Nodes` item (iii) is in `Bridge` (`axIsFormula`).
-   Total remaining: 2–3 months. Cheap independent improvement: charge variable indices in
-   BINARY in `Length.lean` (one factor of `a` off `E`; touches the M1 constants).
+**The ladder is §8's "REMAINING, in order"** — that list supersedes the 2026-09-13 plan that stood
+here (items 1–3 of it, `Chain`/`RowInst`/`describeSteps`, are DONE; item 4, the ten fragments, is
+DONE; item 5 is in progress). In brief: finish `Cert`'s `_ok` theorems and the remaining producers
+(deciding the `tvPiFact`/`utvPiFact` question first), apply `Verify` §3.6's clause edit and then
+uniqueness/`verifySteps`/`verifySteps_ok`/`dlen_verifySteps_le`, write the prologue producers that
+discharge the fragments' layout hypotheses, then the top and `boundedInnerNec_three`, which retires
+the hypothesis and makes `dupoc_self_coop` UNCONDITIONAL. Estimate from here: days to a couple of
+weeks of agent work, the prologue producers and the top being the bulk; the per-tag layout theorems
+(`DESIGN_fragments` §9 risk 1) remain the place where surprises would appear.
 
 **After U10:** the mutual-Löb cells (PrudentBot/JustBot vs Dupoc — same machinery on the
 conjunction), the tau constructors, LegibleBot/OptimBot (box guards: the node-data coding fix),
 the merge onto `Pf` (T2-NEG: cannot be budget-preserving), the paper (the results record's
-sentences), pushing `-u10`, syncing notes to `-s`, re-pinning LeanInteract.
+sentences), syncing notes to `-s`, re-pinning LeanInteract.
 
 ## 5. Conventions the user expects
 
 * Commit early and often, each commit green; message style `feat(arith): …`, `docs(arith): …`,
-  `wip(arith): …` (green partial), ending with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`
-  (adapt to the new assistant's attribution line). Never push without being asked; never
+  `wip(arith): …` (green partial), ending with the CURRENT assistant's attribution line (Fable 5.1 wrote M4 and started U10;
+  Opus 5 continued it on 2026-09-14 — adapt to whoever is working). Never push without being asked; never
   commit on `main`.
 * No `sorry`, no `axiom`, ever; if a statement resists, WEAKEN it and say so. Every threshold
   and constant EXISTENTIAL — never a numeric constant (Cantor coding makes them astronomical).
