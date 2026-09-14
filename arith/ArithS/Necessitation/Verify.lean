@@ -797,4 +797,67 @@ instance verifyGraph_definable : 𝚺₁-Relation₄ (VerifyGraph : V → V → 
   verifyGraph_defined.to_definable
 
 
+/-! ### 3.3 Case analysis and inversion (`DESIGN_fragments.md` §6.1) -/
+
+lemma VerifyGraph.case_iff {W tblN ρ L : V} :
+    VerifyGraph W tblN ρ L ↔
+    (∃ s < ρ, ∃ p < ρ, ρ = axL s p ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ip ≤ L, ∃ inp ≤ L, ∃ Lv ≤ L, ∃ n ≤ L,
+      fragAxL W tblN is il ip inp Lv n ≤ L ∧ L = appendV pro (fragAxL W tblN is il ip inp Lv n)) ∨
+    (∃ s < ρ, ρ = verumIntro s ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ iv ≤ L, ∃ Lv ≤ L, ∃ n ≤ L, fragVerum W tblN
+      is il iv Lv n ≤ L ∧ L = appendV pro (fragVerum W tblN is il iv Lv n)) ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ q < ρ, ∃ dp < ρ, ∃ dq < ρ, ρ = andIntro s p q dp dq ∧ ∃ L₁ ≤ L, VerifyGraph W tblN
+      dp L₁ ∧ ∃ L₂ ≤ L, VerifyGraph W tblN dq L₂ ∧ ∃ pro₁ ≤ L, ∃ pro₂ ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ir ≤ L,
+      ∃ ip ≤ L, ∃ iq ≤ L, ∃ idd₁ ≤ L, ∃ idd₂ ≤ L, ∃ icp ≤ L, ∃ icq ≤ L, ∃ in₁ ≤ L, ∃ in₂ ≤ L, ∃ Lv ≤ L,
+      ∃ m₁ ≤ L, ∃ m₂ ≤ L, ∃ n ≤ L, nodeAnd W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n ≤
+      L ∧ appendV L₂ (nodeAnd W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n) ≤ L ∧ appendV
+      pro₂ (appendV L₂ (nodeAnd W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n)) ≤ L ∧
+      appendV L₁ (appendV pro₂ (appendV L₂ (nodeAnd W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv
+      m₁ m₂ n))) ≤ L ∧ L = appendV pro₁ (appendV L₁ (appendV pro₂ (appendV L₂ (nodeAnd W tblN is il ir
+      ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n))))) ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ q < ρ, ∃ d' < ρ, ρ = orIntro s p q d' ∧ ∃ L' ≤ L, VerifyGraph W tblN d' L' ∧ ∃ pro ≤
+      L, ∃ is ≤ L, ∃ il ≤ L, ∃ ir ≤ L, ∃ ip ≤ L, ∃ iq ≤ L, ∃ idd ≤ L, ∃ icq ≤ L, ∃ ic ≤ L, ∃ in₁ ≤ L, ∃
+      Lv ≤ L, ∃ m₁ ≤ L, ∃ n ≤ L, nodeOr W tblN is il ir ip iq idd icq ic in₁ Lv m₁ n ≤ L ∧ appendV L'
+      (nodeOr W tblN is il ir ip iq idd icq ic in₁ Lv m₁ n) ≤ L ∧ L = appendV pro (appendV L' (nodeOr W
+      tblN is il ir ip iq idd icq ic in₁ Lv m₁ n))) ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ d' < ρ, ρ = allIntro s p d' ∧ ∃ L' ≤ L, VerifyGraph W tblN d' L' ∧ ∃ pro ≤ L, ∃ is ≤
+      L, ∃ il ≤ L, ∃ ir ≤ L, ∃ ip ≤ L, ∃ ifp ≤ L, ∃ iss ≤ L, ∃ ic ≤ L, ∃ idd ≤ L, ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃
+      m₁ ≤ L, ∃ n ≤ L, nodeAll W tblN is il ir ip ifp iss ic idd in₁ Lv m₁ n ≤ L ∧ appendV L' (nodeAll W
+      tblN is il ir ip ifp iss ic idd in₁ Lv m₁ n) ≤ L ∧ L = appendV pro (appendV L' (nodeAll W tblN is
+      il ir ip ifp iss ic idd in₁ Lv m₁ n))) ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ t < ρ, ∃ d' < ρ, ρ = exsIntro s p t d' ∧ ∃ L' ≤ L, VerifyGraph W tblN d' L' ∧ ∃ pro
+      ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ir ≤ L, ∃ ip ≤ L, ∃ it ≤ L, ∃ ipt ≤ L, ∃ ic ≤ L, ∃ idd ≤ L, ∃ ilt ≤ L,
+      ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃ Lt ≤ L, ∃ m₁ ≤ L, ∃ n ≤ L, nodeExs W tblN is il ir ip it ipt ic idd ilt in₁
+      Lv Lt m₁ n ≤ L ∧ appendV L' (nodeExs W tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n) ≤ L ∧ L
+      = appendV pro (appendV L' (nodeExs W tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n))) ∨
+    (∃ s < ρ, ∃ d' < ρ, ρ = wkRule s d' ∧ ∃ L' ≤ L, VerifyGraph W tblN d' L' ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L,
+      ∃ ic ≤ L, ∃ idd ≤ L, ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ n ≤ L, nodeWk W tblN is il ic idd in₁ Lv m₁
+      n ≤ L ∧ appendV L' (nodeWk W tblN is il ic idd in₁ Lv m₁ n) ≤ L ∧ L = appendV pro (appendV L'
+      (nodeWk W tblN is il ic idd in₁ Lv m₁ n))) ∨
+    (∃ s < ρ, ∃ d' < ρ, ρ = shiftRule s d' ∧ ∃ L' ≤ L, VerifyGraph W tblN d' L' ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤
+      L, ∃ ic ≤ L, ∃ idd ≤ L, ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ n ≤ L, nodeShift W tblN is il ic idd in₁
+      Lv m₁ n ≤ L ∧ appendV L' (nodeShift W tblN is il ic idd in₁ Lv m₁ n) ≤ L ∧ L = appendV pro
+      (appendV L' (nodeShift W tblN is il ic idd in₁ Lv m₁ n))) ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ d₁ < ρ, ∃ d₂ < ρ, ρ = cutRule s p d₁ d₂ ∧ ∃ L₁ ≤ L, VerifyGraph W tblN d₁ L₁ ∧ ∃ L₂
+      ≤ L, VerifyGraph W tblN d₂ L₂ ∧ ∃ pro₁ ≤ L, ∃ pro₂ ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ip ≤ L, ∃ inp ≤ L, ∃
+      idd₁ ≤ L, ∃ idd₂ ≤ L, ∃ ic₁ ≤ L, ∃ ic₂ ≤ L, ∃ in₁ ≤ L, ∃ in₂ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ m₂ ≤ L, ∃
+      n ≤ L, nodeCut W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n ≤ L ∧ appendV L₂ (nodeCut
+      W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n) ≤ L ∧ appendV pro₂ (appendV L₂ (nodeCut
+      W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n)) ≤ L ∧ appendV L₁ (appendV pro₂ (appendV
+      L₂ (nodeCut W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n))) ≤ L ∧ L = appendV pro₁
+      (appendV L₁ (appendV pro₂ (appendV L₂ (nodeCut W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁
+      m₂ n))))) ∨
+    (∃ s < ρ, ∃ p < ρ, ρ = axm s p ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ip ≤ L, ∃ Lv ≤ L, ∃ n ≤ L, nodeAxm W
+      tblN is il ip Lv n ≤ L ∧ L = appendV pro (nodeAxm W tblN is il ip Lv n)) := by
+  unfold VerifyGraph
+  rw [Verify.construction.case]
+  show Verify.Phi (![W, tblN] 0) (![W, tblN] 1) _ _ ↔ _
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Verify.Phi, VerifyGraph]
+  constructor
+  · rintro ⟨d, _, L', _, hpr, h⟩
+    obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hpr
+    exact h
+  · intro h
+    exact ⟨ρ, by simp, L, by simp, rfl, h⟩
+
+
 end ArithS
