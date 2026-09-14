@@ -615,45 +615,61 @@ blueprint's `core` must be `𝚫₁` (`HFS/Fixpoint.lean:25`). -/
 def Phi (W tblN : V) (C : Set V) (pr : V) : Prop :=
   ∃ d ≤ pr, ∃ L ≤ pr, pr = ⟪d, L⟫ ∧
   (
-  (∃ s p pro is il ip inp Lv n,
-    s < d ∧ p < d ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ip ≤ L ∧ inp ≤ L ∧ Lv ≤ L ∧ n ≤ L ∧
-    d = axL s p ∧ L = appendV pro (fragAxL W tblN is il ip inp Lv n)) ∨
-  (∃ s pro is il iv Lv n,
-    s < d ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ iv ≤ L ∧ Lv ≤ L ∧ n ≤ L ∧
-    d = verumIntro s ∧ L = appendV pro (fragVerum W tblN is il iv Lv n)) ∨
-  (∃ s p q dp dq L₁ L₂ pro₁ pro₂ is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n,
-    s < d ∧ p < d ∧ q < d ∧ dp < d ∧ dq < d ∧ L₁ ≤ L ∧ L₂ ≤ L ∧ pro₁ ≤ L ∧ pro₂ ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ir ≤ L ∧ ip ≤ L ∧ iq ≤ L ∧ idd₁ ≤ L ∧ idd₂ ≤ L ∧ icp ≤ L ∧ icq ≤ L ∧ in₁ ≤ L ∧ in₂ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ m₂ ≤ L ∧ n ≤ L ∧
-     ⟪dp, L₁⟫ ∈ C ∧ ⟪dq, L₂⟫ ∈ C ∧
-    d = andIntro s p q dp dq ∧ L = appendV pro₁ (appendV L₁ (appendV pro₂ (appendV L₂
-        (nodeAnd W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n))))) ∨
-  (∃ s p q d' L' pro is il ir ip iq idd icq ic in₁ Lv m₁ n,
-    s < d ∧ p < d ∧ q < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ir ≤ L ∧ ip ≤ L ∧ iq ≤ L ∧ idd ≤ L ∧ icq ≤ L ∧ ic ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
-     ⟪d', L'⟫ ∈ C ∧
-    d = orIntro s p q d' ∧ L = appendV pro (appendV L' (nodeOr W tblN is il ir ip iq idd icq ic in₁ Lv m₁ n))) ∨
-  (∃ s p d' L' pro is il ir ip ifp iss ic idd in₁ Lv m₁ n,
-    s < d ∧ p < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ir ≤ L ∧ ip ≤ L ∧ ifp ≤ L ∧ iss ≤ L ∧ ic ≤ L ∧ idd ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
-     ⟪d', L'⟫ ∈ C ∧
-    d = allIntro s p d' ∧ L = appendV pro (appendV L' (nodeAll W tblN is il ir ip ifp iss ic idd in₁ Lv m₁ n))) ∨
-  (∃ s p t d' L' pro is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n,
-    s < d ∧ p < d ∧ t < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ir ≤ L ∧ ip ≤ L ∧ it ≤ L ∧ ipt ≤ L ∧ ic ≤ L ∧ idd ≤ L ∧ ilt ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ Lt ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
-     ⟪d', L'⟫ ∈ C ∧
-    d = exsIntro s p t d' ∧ L = appendV pro (appendV L' (nodeExs W tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n))) ∨
-  (∃ s d' L' pro is il ic idd in₁ Lv m₁ n,
-    s < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ic ≤ L ∧ idd ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
-     ⟪d', L'⟫ ∈ C ∧
-    d = wkRule s d' ∧ L = appendV pro (appendV L' (nodeWk W tblN is il ic idd in₁ Lv m₁ n))) ∨
-  (∃ s d' L' pro is il ic idd in₁ Lv m₁ n,
-    s < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ic ≤ L ∧ idd ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
-     ⟪d', L'⟫ ∈ C ∧
-    d = shiftRule s d' ∧ L = appendV pro (appendV L' (nodeShift W tblN is il ic idd in₁ Lv m₁ n))) ∨
-  (∃ s p d₁ d₂ L₁ L₂ pro₁ pro₂ is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n,
-    s < d ∧ p < d ∧ d₁ < d ∧ d₂ < d ∧ L₁ ≤ L ∧ L₂ ≤ L ∧ pro₁ ≤ L ∧ pro₂ ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ip ≤ L ∧ inp ≤ L ∧ idd₁ ≤ L ∧ idd₂ ≤ L ∧ ic₁ ≤ L ∧ ic₂ ≤ L ∧ in₁ ≤ L ∧ in₂ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ m₂ ≤ L ∧ n ≤ L ∧
-     ⟪d₁, L₁⟫ ∈ C ∧ ⟪d₂, L₂⟫ ∈ C ∧
-    d = cutRule s p d₁ d₂ ∧ L = appendV pro₁ (appendV L₁ (appendV pro₂ (appendV L₂
-        (nodeCut W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n))))) ∨
-  (∃ s p pro is il ip Lv n,
-    s < d ∧ p < d ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ip ≤ L ∧ Lv ≤ L ∧ n ≤ L ∧
-    d = axm s p ∧ L = appendV pro (nodeAxm W tblN is il ip Lv n)) )
+  (
+    ∃ s < d, ∃ p < d, d = axL s p ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ip ≤ L, ∃ inp ≤ L, ∃ Lv ≤ L, ∃ n ≤ L,
+      fragAxL W tblN is il ip inp Lv n ≤ L ∧ L = appendV pro (fragAxL W tblN is il ip inp Lv n)) ∨
+  (
+    ∃ s < d, d = verumIntro s ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ iv ≤ L, ∃ Lv ≤ L, ∃ n ≤ L, fragVerum W tblN is
+      il iv Lv n ≤ L ∧ L = appendV pro (fragVerum W tblN is il iv Lv n)) ∨
+  (
+    ∃ s < d, ∃ p < d, ∃ q < d, ∃ dp < d, ∃ dq < d, d = andIntro s p q dp dq ∧ ∃ L₁ ≤ L, ⟪dp, L₁⟫ ∈ C ∧ ∃ L₂ ≤ L,
+      ⟪dq, L₂⟫ ∈ C ∧ ∃ pro₁ ≤ L, ∃ pro₂ ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ir ≤ L, ∃ ip ≤ L, ∃ iq ≤ L, ∃ idd₁ ≤ L, ∃
+      idd₂ ≤ L, ∃ icp ≤ L, ∃ icq ≤ L, ∃ in₁ ≤ L, ∃ in₂ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ m₂ ≤ L, ∃ n ≤ L, nodeAnd W
+      tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n ≤ L ∧ appendV L₂ (nodeAnd W tblN is il ir ip iq
+      idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n) ≤ L ∧ appendV pro₂ (appendV L₂ (nodeAnd W tblN is il ir ip iq idd₁
+      idd₂ icp icq in₁ in₂ Lv m₁ m₂ n)) ≤ L ∧ appendV L₁ (appendV pro₂ (appendV L₂ (nodeAnd W tblN is il ir ip
+      iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n))) ≤ L ∧ L = appendV pro₁ (appendV L₁ (appendV pro₂ (appendV L₂
+      (nodeAnd W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n))))) ∨
+  (
+    ∃ s < d, ∃ p < d, ∃ q < d, ∃ d' < d, d = orIntro s p q d' ∧ ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃
+      il ≤ L, ∃ ir ≤ L, ∃ ip ≤ L, ∃ iq ≤ L, ∃ idd ≤ L, ∃ icq ≤ L, ∃ ic ≤ L, ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ n ≤
+      L, nodeOr W tblN is il ir ip iq idd icq ic in₁ Lv m₁ n ≤ L ∧ appendV L' (nodeOr W tblN is il ir ip iq idd
+      icq ic in₁ Lv m₁ n) ≤ L ∧ L = appendV pro (appendV L' (nodeOr W tblN is il ir ip iq idd icq ic in₁ Lv m₁
+      n))) ∨
+  (
+    ∃ s < d, ∃ p < d, ∃ d' < d, d = allIntro s p d' ∧ ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃
+      ir ≤ L, ∃ ip ≤ L, ∃ ifp ≤ L, ∃ iss ≤ L, ∃ ic ≤ L, ∃ idd ≤ L, ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ n ≤ L,
+      nodeAll W tblN is il ir ip ifp iss ic idd in₁ Lv m₁ n ≤ L ∧ appendV L' (nodeAll W tblN is il ir ip ifp iss
+      ic idd in₁ Lv m₁ n) ≤ L ∧ L = appendV pro (appendV L' (nodeAll W tblN is il ir ip ifp iss ic idd in₁ Lv m₁
+      n))) ∨
+  (
+    ∃ s < d, ∃ p < d, ∃ t < d, ∃ d' < d, d = exsIntro s p t d' ∧ ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃
+      il ≤ L, ∃ ir ≤ L, ∃ ip ≤ L, ∃ it ≤ L, ∃ ipt ≤ L, ∃ ic ≤ L, ∃ idd ≤ L, ∃ ilt ≤ L, ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃ Lt
+      ≤ L, ∃ m₁ ≤ L, ∃ n ≤ L, nodeExs W tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n ≤ L ∧ appendV L'
+      (nodeExs W tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n) ≤ L ∧ L = appendV pro (appendV L' (nodeExs W
+      tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n))) ∨
+  (
+    ∃ s < d, ∃ d' < d, d = wkRule s d' ∧ ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ic ≤ L, ∃ idd
+      ≤ L, ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ n ≤ L, nodeWk W tblN is il ic idd in₁ Lv m₁ n ≤ L ∧ appendV L'
+      (nodeWk W tblN is il ic idd in₁ Lv m₁ n) ≤ L ∧ L = appendV pro (appendV L' (nodeWk W tblN is il ic idd in₁
+      Lv m₁ n))) ∨
+  (
+    ∃ s < d, ∃ d' < d, d = shiftRule s d' ∧ ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ic ≤ L, ∃
+      idd ≤ L, ∃ in₁ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ n ≤ L, nodeShift W tblN is il ic idd in₁ Lv m₁ n ≤ L ∧ appendV
+      L' (nodeShift W tblN is il ic idd in₁ Lv m₁ n) ≤ L ∧ L = appendV pro (appendV L' (nodeShift W tblN is il
+      ic idd in₁ Lv m₁ n))) ∨
+  (
+    ∃ s < d, ∃ p < d, ∃ d₁ < d, ∃ d₂ < d, d = cutRule s p d₁ d₂ ∧ ∃ L₁ ≤ L, ⟪d₁, L₁⟫ ∈ C ∧ ∃ L₂ ≤ L, ⟪d₂, L₂⟫ ∈
+      C ∧ ∃ pro₁ ≤ L, ∃ pro₂ ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ip ≤ L, ∃ inp ≤ L, ∃ idd₁ ≤ L, ∃ idd₂ ≤ L, ∃ ic₁ ≤ L, ∃
+      ic₂ ≤ L, ∃ in₁ ≤ L, ∃ in₂ ≤ L, ∃ Lv ≤ L, ∃ m₁ ≤ L, ∃ m₂ ≤ L, ∃ n ≤ L, nodeCut W tblN is il ip inp idd₁
+      idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n ≤ L ∧ appendV L₂ (nodeCut W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv
+      m₁ m₂ n) ≤ L ∧ appendV pro₂ (appendV L₂ (nodeCut W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂
+      n)) ≤ L ∧ appendV L₁ (appendV pro₂ (appendV L₂ (nodeCut W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv
+      m₁ m₂ n))) ≤ L ∧ L = appendV pro₁ (appendV L₁ (appendV pro₂ (appendV L₂ (nodeCut W tblN is il ip inp idd₁
+      idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n))))) ∨
+  (
+    ∃ s < d, ∃ p < d, d = axm s p ∧ ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ip ≤ L, ∃ Lv ≤ L, ∃ n ≤ L, nodeAxm W tblN
+      is il ip Lv n ≤ L ∧ L = appendV pro (nodeAxm W tblN is il ip Lv n)) )
 
 noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
   (.mkSigma “pr C W tblN.
@@ -672,16 +688,53 @@ noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
   (.mkPi “pr C W tblN.
     ∃ d <⁺ pr, ∃ L <⁺ pr, !pairDef pr d L ∧
     (
-      (∃ s < d, ∃ p < d, !axLGraph d s p ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ip <⁺ L, ∃ inp <⁺ L, ∃ Lv <⁺ L, ∃ n <⁺ L, ∀ F, !fragAxLDef F W tblN is il ip inp Lv n → ∀ yy, !appendVDef yy pro F → L = yy) ∨
-      (∃ s < d, !verumIntroGraph d s ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ iv <⁺ L, ∃ Lv <⁺ L, ∃ n <⁺ L, ∀ F, !fragVerumDef F W tblN is il iv Lv n → ∀ yy, !appendVDef yy pro F → L = yy) ∨
-      (∃ s < d, ∃ p < d, ∃ q < d, ∃ dp < d, ∃ dq < d, !andIntroGraph d s p q dp dq ∧ ∃ L₁ <⁺ L, :⟪dp, L₁⟫:∈ C ∧ ∃ L₂ <⁺ L, :⟪dq, L₂⟫:∈ C ∧ ∃ pro₁ <⁺ L, ∃ pro₂ <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ir <⁺ L, ∃ ip <⁺ L, ∃ iq <⁺ L, ∃ idd₁ <⁺ L, ∃ idd₂ <⁺ L, ∃ icp <⁺ L, ∃ icq <⁺ L, ∃ in₁ <⁺ L, ∃ in₂ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ m₂ <⁺ L, ∃ n <⁺ L, ∀ F, !nodeAndDef F W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n → ∀ a₁, !appendVDef a₁ L₂ F → ∀ a₂, !appendVDef a₂ pro₂ a₁ → ∀ a₃, !appendVDef a₃ L₁ a₂ → ∀ yy, !appendVDef yy pro₁ a₃ → L = yy) ∨
-      (∃ s < d, ∃ p < d, ∃ q < d, ∃ d' < d, !orIntroGraph d s p q d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ir <⁺ L, ∃ ip <⁺ L, ∃ iq <⁺ L, ∃ idd <⁺ L, ∃ icq <⁺ L, ∃ ic <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∀ F, !nodeOrDef F W tblN is il ir ip iq idd icq ic in₁ Lv m₁ n → ∀ a₁, !appendVDef a₁ L' F → ∀ yy, !appendVDef yy pro a₁ → L = yy) ∨
-      (∃ s < d, ∃ p < d, ∃ d' < d, !allIntroGraph d s p d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ir <⁺ L, ∃ ip <⁺ L, ∃ ifp <⁺ L, ∃ iss <⁺ L, ∃ ic <⁺ L, ∃ idd <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∀ F, !nodeAllDef F W tblN is il ir ip ifp iss ic idd in₁ Lv m₁ n → ∀ a₁, !appendVDef a₁ L' F → ∀ yy, !appendVDef yy pro a₁ → L = yy) ∨
-      (∃ s < d, ∃ p < d, ∃ t < d, ∃ d' < d, !exsIntroGraph d s p t d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ir <⁺ L, ∃ ip <⁺ L, ∃ it <⁺ L, ∃ ipt <⁺ L, ∃ ic <⁺ L, ∃ idd <⁺ L, ∃ ilt <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ Lt <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∀ F, !nodeExsDef F W tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n → ∀ a₁, !appendVDef a₁ L' F → ∀ yy, !appendVDef yy pro a₁ → L = yy) ∨
-      (∃ s < d, ∃ d' < d, !wkRuleGraph d s d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ic <⁺ L, ∃ idd <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∀ F, !nodeWkDef F W tblN is il ic idd in₁ Lv m₁ n → ∀ a₁, !appendVDef a₁ L' F → ∀ yy, !appendVDef yy pro a₁ → L = yy) ∨
-      (∃ s < d, ∃ d' < d, !shiftRuleGraph d s d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ic <⁺ L, ∃ idd <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∀ F, !nodeShiftDef F W tblN is il ic idd in₁ Lv m₁ n → ∀ a₁, !appendVDef a₁ L' F → ∀ yy, !appendVDef yy pro a₁ → L = yy) ∨
-      (∃ s < d, ∃ p < d, ∃ d₁ < d, ∃ d₂ < d, !cutRuleGraph d s p d₁ d₂ ∧ ∃ L₁ <⁺ L, :⟪d₁, L₁⟫:∈ C ∧ ∃ L₂ <⁺ L, :⟪d₂, L₂⟫:∈ C ∧ ∃ pro₁ <⁺ L, ∃ pro₂ <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ip <⁺ L, ∃ inp <⁺ L, ∃ idd₁ <⁺ L, ∃ idd₂ <⁺ L, ∃ ic₁ <⁺ L, ∃ ic₂ <⁺ L, ∃ in₁ <⁺ L, ∃ in₂ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ m₂ <⁺ L, ∃ n <⁺ L, ∀ F, !nodeCutDef F W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n → ∀ a₁, !appendVDef a₁ L₂ F → ∀ a₂, !appendVDef a₂ pro₂ a₁ → ∀ a₃, !appendVDef a₃ L₁ a₂ → ∀ yy, !appendVDef yy pro₁ a₃ → L = yy) ∨
-      (∃ s < d, ∃ p < d, !axmGraph d s p ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ip <⁺ L, ∃ Lv <⁺ L, ∃ n <⁺ L, ∀ F, !nodeAxmDef F W tblN is il ip Lv n → ∀ yy, !appendVDef yy pro F → L = yy) )”)⟩
+      (∃ s < d, ∃ p < d, !axLGraph d s p ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ip <⁺ L, ∃ inp <⁺ L, ∃ Lv <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !fragAxLDef zF W tblN is il ip inp Lv n → F = zF) ∧ ∀ zL, !appendVDef zL pro F → L = zL) ∨
+      (∃ s < d, !verumIntroGraph d s ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ iv <⁺ L, ∃ Lv <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !fragVerumDef zF W tblN is il iv Lv n → F = zF) ∧ ∀ zL, !appendVDef zL pro F → L = zL) ∨
+      (∃ s < d, ∃ p < d, ∃ q < d, ∃ dp < d, ∃ dq < d, !andIntroGraph d s p q dp dq ∧ ∃ L₁ <⁺ L, :⟪dp, L₁⟫:∈ C ∧ ∃ L₂ <⁺ L, :⟪dq, L₂⟫:∈ C ∧ ∃ pro₁ <⁺ L, ∃ pro₂ <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ir <⁺ L, ∃ ip <⁺ L, ∃ iq <⁺ L, ∃ idd₁ <⁺ L, ∃ idd₂ <⁺ L, ∃ icp <⁺ L, ∃ icq <⁺ L, ∃ in₁ <⁺ L, ∃ in₂ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ m₂ <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !nodeAndDef zF W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n → F = zF) ∧ ∃ a₁ <⁺ L, (∀ za1, !appendVDef za1 L₂ F → a₁ = za1) ∧ ∃ a₂ <⁺ L, (∀ za2, !appendVDef za2 pro₂ a₁ → a₂ = za2) ∧ ∃ a₃ <⁺ L, (∀ za3, !appendVDef za3 L₁ a₂ → a₃ = za3) ∧ ∀ zL, !appendVDef zL pro₁ a₃ → L = zL) ∨
+      (∃ s < d, ∃ p < d, ∃ q < d, ∃ d' < d, !orIntroGraph d s p q d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ir <⁺ L, ∃ ip <⁺ L, ∃ iq <⁺ L, ∃ idd <⁺ L, ∃ icq <⁺ L, ∃ ic <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !nodeOrDef zF W tblN is il ir ip iq idd icq ic in₁ Lv m₁ n → F = zF) ∧ ∃ a₁ <⁺ L, (∀ za1, !appendVDef za1 L' F → a₁ = za1) ∧ ∀ zL, !appendVDef zL pro a₁ → L = zL) ∨
+      (∃ s < d, ∃ p < d, ∃ d' < d, !allIntroGraph d s p d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ir <⁺ L, ∃ ip <⁺ L, ∃ ifp <⁺ L, ∃ iss <⁺ L, ∃ ic <⁺ L, ∃ idd <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !nodeAllDef zF W tblN is il ir ip ifp iss ic idd in₁ Lv m₁ n → F = zF) ∧ ∃ a₁ <⁺ L, (∀ za1, !appendVDef za1 L' F → a₁ = za1) ∧ ∀ zL, !appendVDef zL pro a₁ → L = zL) ∨
+      (∃ s < d, ∃ p < d, ∃ t < d, ∃ d' < d, !exsIntroGraph d s p t d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ir <⁺ L, ∃ ip <⁺ L, ∃ it <⁺ L, ∃ ipt <⁺ L, ∃ ic <⁺ L, ∃ idd <⁺ L, ∃ ilt <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ Lt <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !nodeExsDef zF W tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n → F = zF) ∧ ∃ a₁ <⁺ L, (∀ za1, !appendVDef za1 L' F → a₁ = za1) ∧ ∀ zL, !appendVDef zL pro a₁ → L = zL) ∨
+      (∃ s < d, ∃ d' < d, !wkRuleGraph d s d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ic <⁺ L, ∃ idd <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !nodeWkDef zF W tblN is il ic idd in₁ Lv m₁ n → F = zF) ∧ ∃ a₁ <⁺ L, (∀ za1, !appendVDef za1 L' F → a₁ = za1) ∧ ∀ zL, !appendVDef zL pro a₁ → L = zL) ∨
+      (∃ s < d, ∃ d' < d, !shiftRuleGraph d s d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ic <⁺ L, ∃ idd <⁺ L, ∃ in₁ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !nodeShiftDef zF W tblN is il ic idd in₁ Lv m₁ n → F = zF) ∧ ∃ a₁ <⁺ L, (∀ za1, !appendVDef za1 L' F → a₁ = za1) ∧ ∀ zL, !appendVDef zL pro a₁ → L = zL) ∨
+      (∃ s < d, ∃ p < d, ∃ d₁ < d, ∃ d₂ < d, !cutRuleGraph d s p d₁ d₂ ∧ ∃ L₁ <⁺ L, :⟪d₁, L₁⟫:∈ C ∧ ∃ L₂ <⁺ L, :⟪d₂, L₂⟫:∈ C ∧ ∃ pro₁ <⁺ L, ∃ pro₂ <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ip <⁺ L, ∃ inp <⁺ L, ∃ idd₁ <⁺ L, ∃ idd₂ <⁺ L, ∃ ic₁ <⁺ L, ∃ ic₂ <⁺ L, ∃ in₁ <⁺ L, ∃ in₂ <⁺ L, ∃ Lv <⁺ L, ∃ m₁ <⁺ L, ∃ m₂ <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !nodeCutDef zF W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n → F = zF) ∧ ∃ a₁ <⁺ L, (∀ za1, !appendVDef za1 L₂ F → a₁ = za1) ∧ ∃ a₂ <⁺ L, (∀ za2, !appendVDef za2 pro₂ a₁ → a₂ = za2) ∧ ∃ a₃ <⁺ L, (∀ za3, !appendVDef za3 L₁ a₂ → a₃ = za3) ∧ ∀ zL, !appendVDef zL pro₁ a₃ → L = zL) ∨
+      (∃ s < d, ∃ p < d, !axmGraph d s p ∧ ∃ pro <⁺ L, ∃ is <⁺ L, ∃ il <⁺ L, ∃ ip <⁺ L, ∃ Lv <⁺ L, ∃ n <⁺ L, ∃ F <⁺ L, (∀ zF, !nodeAxmDef zF W tblN is il ip Lv n → F = zF) ∧ ∀ zL, !appendVDef zL pro F → L = zL) )”)⟩
+
+set_option maxHeartbeats 4000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0) (v 1)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, fragAxL_defined.iff, fragVerum_defined.iff, nodeAnd_defined.iff, nodeOr_defined.iff,
+        nodeAll_defined.iff, nodeExs_defined.iff, nodeWk_defined.iff, nodeShift_defined.iff,
+        nodeCut_defined.iff, nodeAxm_defined.iff, appendV_defined.iff]
+    · intro v
+      simp [blueprint, Phi, fragAxL_defined.iff, fragVerum_defined.iff, nodeAnd_defined.iff, nodeOr_defined.iff,
+        nodeAll_defined.iff, nodeExs_defined.iff, nodeWk_defined.iff, nodeShift_defined.iff,
+        nodeCut_defined.iff, nodeAxm_defined.iff, appendV_defined.iff]
+  monotone := by
+    rintro C C' hC v pr ⟨d, hd, L, hL, rfl, h⟩
+    refine ⟨d, hd, L, hL, rfl, ?_⟩
+    rcases h with ⟨s, h_s, p, h_p, he, pro, h_pro, is, h_is, il, h_il, ip, h_ip, inp, h_inp, Lv, h_Lv, n, h_n, hb0, hf⟩ |
+      ⟨s, h_s, he, pro, h_pro, is, h_is, il, h_il, iv, h_iv, Lv, h_Lv, n, h_n, hb0, hf⟩ |
+      ⟨s, h_s, p, h_p, q, h_q, dp, h_dp, dq, h_dq, he, L₁, h_L₁, hm_L₁, L₂, h_L₂, hm_L₂, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ir, h_ir, ip, h_ip, iq, h_iq, idd₁, h_idd₁, idd₂, h_idd₂, icp, h_icp, icq, h_icq, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩ |
+      ⟨s, h_s, p, h_p, q, h_q, d', h_d', he, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, iq, h_iq, idd, h_idd, icq, h_icq, ic, h_ic, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, p, h_p, d', h_d', he, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, ifp, h_ifp, iss, h_iss, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, p, h_p, t, h_t, d', h_d', he, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, it, h_it, ipt, h_ipt, ic, h_ic, idd, h_idd, ilt, h_ilt, in₁, h_in₁, Lv, h_Lv, Lt, h_Lt, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, d', h_d', he, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, d', h_d', he, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, p, h_p, d₁, h_d₁, d₂, h_d₂, he, L₁, h_L₁, hm_L₁, L₂, h_L₂, hm_L₂, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ip, h_ip, inp, h_inp, idd₁, h_idd₁, idd₂, h_idd₂, ic₁, h_ic₁, ic₂, h_ic₂, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩ |
+      ⟨s, h_s, p, h_p, he, pro, h_pro, is, h_is, il, h_il, ip, h_ip, Lv, h_Lv, n, h_n, hb0, hf⟩
+    · exact Or.inl ⟨s, h_s, p, h_p, he, pro, h_pro, is, h_is, il, h_il, ip, h_ip, inp, h_inp, Lv, h_Lv, n, h_n, hb0, hf⟩
+    · exact Or.inr (Or.inl ⟨s, h_s, he, pro, h_pro, is, h_is, il, h_il, iv, h_iv, Lv, h_Lv, n, h_n, hb0, hf⟩)
+    · exact Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, q, h_q, dp, h_dp, dq, h_dq, he, L₁, h_L₁, hC hm_L₁, L₂, h_L₂, hC hm_L₂, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ir, h_ir, ip, h_ip, iq, h_iq, idd₁, h_idd₁, idd₂, h_idd₂, icp, h_icp, icq, h_icq, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, q, h_q, d', h_d', he, L', h_L', hC hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, iq, h_iq, idd, h_idd, icq, h_icq, ic, h_ic, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, d', h_d', he, L', h_L', hC hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, ifp, h_ifp, iss, h_iss, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, t, h_t, d', h_d', he, L', h_L', hC hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, it, h_it, ipt, h_ipt, ic, h_ic, idd, h_idd, ilt, h_ilt, in₁, h_in₁, Lv, h_Lv, Lt, h_Lt, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, d', h_d', he, L', h_L', hC hm_L', pro, h_pro, is, h_is, il, h_il, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, d', h_d', he, L', h_L', hC hm_L', pro, h_pro, is, h_is, il, h_il, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩)))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, d₁, h_d₁, d₂, h_d₂, he, L₁, h_L₁, hC hm_L₁, L₂, h_L₂, hC hm_L₂, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ip, h_ip, inp, h_inp, idd₁, h_idd₁, idd₂, h_idd₂, ic₁, h_ic₁, ic₂, h_ic₂, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (⟨s, h_s, p, h_p, he, pro, h_pro, is, h_is, il, h_il, ip, h_ip, Lv, h_Lv, n, h_n, hb0, hf⟩)))))))))
 
 end Verify
 
