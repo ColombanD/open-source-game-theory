@@ -37,6 +37,7 @@ import ArithS.Necessitation.Layout
 import ArithS.Necessitation.Members
 import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.Cert
+import ArithS.Necessitation.Dossier
 import ArithS.Necessitation.Frag1
 import ArithS.Necessitation.Frag2
 import ArithS.Necessitation.Verify
@@ -735,5 +736,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dossierAt_rel
 #print axioms dossierAtV_succ
 #print axioms dossierAtT_func
+
+-- U10 (Necessitation/Dossier, 2026-09-14): THE DOSSIER BRIDGE — `Cert`'s walk-context dossier
+-- (`DossF/DossT/DossV`, over `walkPieces`) IS `Layout`'s relocated-template dossier (`DossierAt`,
+-- `DossierAtT/V` at `factPreds`), by one structural induction per syntactic class matching the two
+-- decompositions node by node under the count bridges; hence the walk's final context holds
+-- `dossFacts factPreds 0 r` (`Layout.lean:53`'s open sentence), transported to `shiftsV S` by any
+-- further non-dropping list.
+#print axioms dossierAtT_of_dossT
+#print axioms dossierAtV_of_dossV
+#print axioms dossierAt_of_dossF
+#print axioms dossierAt_of_walk
+#print axioms dossierAt_of_walk_transport
+#print axioms dossierAt_of_dossF_transport
+#print axioms dossierAtT_of_walk
 
 end ArithS
