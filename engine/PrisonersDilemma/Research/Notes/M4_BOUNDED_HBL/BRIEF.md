@@ -656,3 +656,26 @@ IN FLIGHT: `Cert` (producers), `Frag1` (the six fragments needing no re-descript
 **§11 status — 2026-09-14 10:40, PAUSED (agents stopped for an account/model switch):** `Cert` and
 `Frag1` in-progress edits + `Frag1Rows` (generated) committed UNVERIFIED as wip; see HANDOVER §8
 for the resume procedure and the remaining ladder.
+
+**§11 status — 2026-09-14 (Opus 5 takeover): the three unverified files triaged.** Baseline
+re-verified: `lake build ArithS` green, 3240 jobs, census 417 lines (one pre-existing subset line
+`substs_leF_imp`); none of `Cert`/`Frag1`/`Frag1Rows` was imported, so the baseline never depended
+on them. Results: `Frag1Rows.lean` (2944 generated lines) GREEN as committed, 21 s.
+`Frag1.lean` had exactly 2 errors, both the residual goal `2 ≤ 3·M + 11` left by
+`mul_le_mul (by norm_num) …` in the tag-4 and tag-6 cost cases — `norm_num` cannot do
+`V`-arithmetic with a CAST NATURAL; fixed by `le_trans (by norm_num) le_add_self` (i.e. `2 ≤ 11 ≤
+3M + 11`); GREEN in 18 s (`ecd5559`). `Cert.lean` STALLED (exit 124 at 30 min, nothing flushed);
+bisection by truncation (prefixes 1350/1500/1570/1597/1620/1670/1682, each ≤ 12 min) pinned it to
+lines 1671–1682: **`passGraph_defined`'s blanket `simp [passGraphDef, eval_fixpointDef, PassGraph]`
+over the FIVE-disjunct `PassT` blueprint** (the same one-liner is fine for `Describe`'s smaller
+`DescF` at `Describe.lean:3309` — the trap is the blueprint's size, not the pattern). FIX
+(`a140a68`): push the substitution through with a targeted
+`simp only [passGraphDef, val_mkSigma, Semiformula.eval_substs, Matrix.comp_vecCons',
+cons_val_zero, cons_val_one, head_cons, constant_eq_singleton]` and then `rw
+[PassT.construction.eval_fixpointDef]; rfl` — the whole file now elaborates in 44 s. Remaining:
+10 ordinary errors in lines 1809–1827 (`passTGraph_exists_bounded`'s `≤ B` associativity
+bookkeeping: `rw [add_assoc]` against goals already right-nested, one stuck numeral) — agent on it.
+GENERAL LESSON for every future `Fixpoint`: never let `simp` unfold a large blueprint in a
+definability instance; rewrite with `eval_fixpointDef` explicitly after normalizing the
+substitution. PROCESS: a truncation prefix that ends mid-declaration reports `unexpected end of
+input` — that is an artifact, not a failure; only exit 124 with an empty log is a stall.
