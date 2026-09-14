@@ -604,3 +604,39 @@ the empty context shifted to an offset, `finalCtx` monotonicity, transport throu
 `scripts/gen_cert.py`: the ten `Lib/Lengths` rows re-issued with `quote_row_/inst_` lemmas, the
 certification table `certRows = walkRows ++ pad ++ 81 rows at 100+k`, `CertTable` (implies
 `WalkTable`), `exists_certTable`, `certPieces` extending `walkPieces`); the producers pending.
+
+**§11 status — `Layout` DONE (2026-09-13; Parts 1–4):** the three producers of §3.3–3.5 against the
+step language. Part 1: `layoutRows := walkRows ++ 47 rows` (copy-in, identification, `subsetAntisymm`,
+the new Frag group K `*C` — the `Sets`/`Lengths` rows re-issued WITH `inst_` lemmas, `IsFormulaSet 0`
+reached as `0 ⊆ 0 → s ⊆ 0 → IsFormulaSet s`, never a closed `0` inside `isFormulaSet`), `LayoutTable`
+(⇒ `WalkTable`), `layoutPieces` extending `walkPieces` entrywise (`mkStep_layoutPieces_lt`, so the
+walk's `ok_` lemmas transfer), per row `lok_<row>` (generated). Part 2 `copySteps W i T`: FACT TAGS
+`⟪kind, args⟫` (19 kinds: pi/and/or/all/exs/rel/nrel/verum/falsum/len/mem for formulas, tpi/func/bvar/
+fvar/tlen for terms, adj/tvpi/utvpi for vectors) name one dossier fact and its other witnesses in the
+PRE-copy frame; `eqTotal [^&i]` then per tag the congruence step (+ the walk's `.sigma→.pi` bridge for
+the four formation kinds); `copySteps_ok`: `TagOK` for every tag ⇒ Horn-only, ONE shift, `≤ 2|T|+1`
+steps, `eqFactB &0 &(i+1)` and every `tagFact` in the final context. Part 3 `chainSteps W xs`:
+members inserted INNERMOST FIRST so `s_i = insert x_i s_{i+1}` ends at `&(i+1)` with NO index
+arithmetic in the membership phase (only `k − (c+1)` in the intro loop, via `nthFromEnd`); the
+formula-set facts interleaved into the intro loop; membership by `subsetRefl` + per member
+`subsetInsert/subsetTrans/memInsertSelf/subsetMem` (`O(k)`); `setLenTotal` last. Final layout
+(`k+1` shifts): `l_s = &0`, `s = &1`, `s_i = &(i+1)`, `insFact/fsetPiFact/memFact` per member,
+`setLenFact &0 &1` (`chainSteps_ok`, `≤ 7k+6` steps). NOTE: this deviates from §3.2's `s = &k` (which
+assumed a length object per prefix; the exact-length `sLemma` route is `NumSteps`'). Part 4
+`eqSteps W i j r`: the walk's recursion shape replayed ONCE per code as a TEMPLATE `⟪count, facts,
+steps⟫` with witnesses `tL/tR/tA` (left offset, right offset, closed term) — `TermRec` for terms, a
+fold from the end for vectors, `UformulaRec1` (parameter unused) for formulas — then RELOCATED
+(`relocS`/`relocD`, `VecRec` maps); `dossFacts P i r` = the relocated facts (`P := factPreds`, the
+table of the twelve predicate codes, a PARAMETER), `DossierAt P Γ i r`; `eqSteps_ok` by the template
+invariant `TOK` (top `vRef · k`, so the empty vector's `eqRefl [𝟎]` and the objects share one
+statement), structural induction on terms/vectors/formulas. Costs: all three lists are Horn-only, so
+`costSum_le_of_hornOnly` gives `len · (stepK + 36·ctxBound)`. DEBT: the bridge "the walk's final
+context ⊇ `dossFacts factPreds 0 r`" and `eqCount r = descCountF W n r` are NOT proved here (the
+`Cert` module's `DossF/DossT/DossV` dossiers are the natural home). TRAPS: `definability` on a
+19-branch `ite` or on a bounded `∀ e < c + 1` (compound bound) times out / trips aesop — explicit
+blueprints, a variable bound; `definability` unfolding a fact code whose predicate is an OPERATOR
+sentence (`Pmem`) hangs — give every fact code a `_definable` instance (named `_definable'` here,
+`Cert.lean` owns the plain names); `add_lt_add_left/right` are swapped like the `le` versions; a
+`by_cases` branch must carry ALL previous case hypotheses into `simp`; `Function₅` exists only in the
+`via` form; `ArithS.eqF` was taken (`TheoryAct`) — the formula template is `eqFT`; a `shiftTW` that
+shifts every non-absolute tag made `relocV_shiftTV` FALSE for malformed tags (shift tags 0/1 only).
