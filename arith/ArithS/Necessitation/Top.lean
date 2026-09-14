@@ -1451,4 +1451,140 @@ theorem top_main (χ : Semisentence LAct 1) {tbl N B W tblN N' B' tblL N₂ B₂
 
 end assembly
 
+/-! ## 7. The polynomial bound: `topBound ≤ C · (gBudget k + 1)^3`
+
+`G := gBudget k + 1` and `u := ‖k‖ + 1` with `u³ ≤ 8G` (`gBudget k = ‖k‖³`). Quantities are bounded in
+the GRADED form `q ≤ c · G^e · u^f` (`PB`), so that the walk-sized quantities (`|instB ⌜χ⌝ k| ~ ‖k‖`,
+the numeral lemmas' bit-length polynomials) keep their `u`-degree until it is converted by
+`u³ ≤ 8G` — bounding them by `G` outright would push the root and pin blocks and `topD` past
+degree 3. The one logarithmic fact needed is `‖gBudget k + 1‖ ≤ 3‖‖k‖‖ + 2` (`Exp.exp`), for the
+second product lemma's `‖s‖` with `s ~ 3·gBudget k`. -/
+
+section poly
+
+/-- `q ≤ c · G^e · u^f`. -/
+def PB (G u : V) (c : ℕ) (q : V) (e f : ℕ) : Prop := q ≤ (c : V) * G ^ e * u ^ f
+
+/-- The two scales: `1 ≤ u ≤ G` and `u³ ≤ 8G`. -/
+structure PBCtx (G u : V) : Prop where
+  hG : 1 ≤ G
+  hu : 1 ≤ u
+  huG : u ≤ G
+  hu3 : u ^ 3 ≤ 8 * G
+
+namespace PB
+
+variable {G u : V}
+
+lemma of_le {c e f : ℕ} {q q' : V} (h : q ≤ q') (h' : PB G u c q' e f) : PB G u c q e f := le_trans h h'
+
+lemma const (n : ℕ) : PB G u n (n : V) 0 0 := by simp [PB]
+
+lemma natCast {q : V} (n : ℕ) (h : q ≤ (n : V)) : PB G u n q 0 0 := of_le h (const n)
+
+lemma G_ (hc : PBCtx G u) : PB G u 1 G 1 0 := by simp [PB]
+
+lemma u_ (hc : PBCtx G u) : PB G u 1 u 0 1 := by simp [PB]
+
+lemma mono (hc : PBCtx G u) {c e e' f f' : ℕ} {q : V} (he : e ≤ e') (hf : f ≤ f') (h : PB G u c q e f) :
+    PB G u c q e' f' :=
+  le_trans h (mul_le_mul' (mul_le_mul' le_rfl (pow_le_pow_right₀ hc.hG he)) (pow_le_pow_right₀ hc.hu hf))
+
+lemma add {c₁ c₂ e f : ℕ} {q₁ q₂ : V} (h₁ : PB G u c₁ q₁ e f) (h₂ : PB G u c₂ q₂ e f) :
+    PB G u (c₁ + c₂) (q₁ + q₂) e f := by
+  unfold PB at *
+  push_cast
+  rw [add_mul, add_mul]
+  exact add_le_add h₁ h₂
+
+lemma mul {c₁ c₂ e₁ e₂ f₁ f₂ : ℕ} {q₁ q₂ : V} (h₁ : PB G u c₁ q₁ e₁ f₁) (h₂ : PB G u c₂ q₂ e₂ f₂) :
+    PB G u (c₁ * c₂) (q₁ * q₂) (e₁ + e₂) (f₁ + f₂) := by
+  unfold PB at *
+  push_cast
+  rw [pow_add, pow_add]
+  calc q₁ * q₂ ≤ ((c₁ : V) * G ^ e₁ * u ^ f₁) * ((c₂ : V) * G ^ e₂ * u ^ f₂) := mul_le_mul' h₁ h₂
+    _ = (c₁ : V) * c₂ * (G ^ e₁ * G ^ e₂) * (u ^ f₁ * u ^ f₂) := by ring
+
+lemma smul {c e f : ℕ} {q : V} (n : ℕ) (h : PB G u c q e f) : PB G u (n * c) ((n : V) * q) e f := by
+  have := (const (G := G) (u := u) n).mul h
+  simpa using this
+
+/-- `u³ ≤ 8G`: three `u`-degrees for one `G`-degree. -/
+lemma reduce (hc : PBCtx G u) {c e f : ℕ} {q : V} (h : PB G u c q e (f + 3)) : PB G u (8 * c) q (e + 1) f := by
+  unfold PB at *
+  push_cast
+  calc q ≤ (c : V) * G ^ e * u ^ (f + 3) := h
+    _ = (c : V) * G ^ e * u ^ f * u ^ 3 := by ring
+    _ ≤ (c : V) * G ^ e * u ^ f * (8 * G) := mul_le_mul' le_rfl hc.hu3
+    _ = 8 * (c : V) * G ^ (e + 1) * u ^ f := by ring
+
+/-- `u ≤ G`: one `u`-degree for one `G`-degree. -/
+lemma uG (hc : PBCtx G u) {c e f : ℕ} {q : V} (h : PB G u c q e (f + 1)) : PB G u c q (e + 1) f := by
+  unfold PB at *
+  calc q ≤ (c : V) * G ^ e * u ^ (f + 1) := h
+    _ = (c : V) * G ^ e * u ^ f * u := by ring
+    _ ≤ (c : V) * G ^ e * u ^ f * G := mul_le_mul' le_rfl hc.huG
+    _ = (c : V) * G ^ (e + 1) * u ^ f := by ring
+
+lemma final (hc : PBCtx G u) {c e : ℕ} {q : V} (h : PB G u c q e 0) (he : e ≤ 3) : q ≤ (c : V) * G ^ 3 := by
+  unfold PB at h
+  rw [pow_zero, mul_one] at h
+  exact le_trans h (mul_le_mul' le_rfl (pow_le_pow_right₀ hc.hG he))
+
+end PB
+
+/-! ### The two scales for `G = gBudget k + 1`, `u = ‖k‖ + 1` -/
+
+lemma le_cube (a : V) : a ≤ a * a * a := by
+  rcases Arithmetic.zero_le a with rfl | pos
+  · simp
+  · have h1 : (1 : V) ≤ a := pos_iff_one_le.mp pos
+    calc a ≤ a * a := le_mul_of_one_le_right zero_le h1
+      _ ≤ a * a * a := le_mul_of_one_le_right zero_le h1
+
+lemma sq_le_cube (a : V) : a * a ≤ a * a * a := by
+  rcases Arithmetic.zero_le a with rfl | pos
+  · simp
+  · exact le_mul_of_one_le_right zero_le (pos_iff_one_le.mp pos)
+
+lemma succ_cube_le (a : V) : (a + 1) ^ 3 ≤ 8 * (a * a * a + 1) := by
+  have h2 := sq_le_cube a
+  have h3 := le_cube a
+  calc (a + 1) ^ 3 = a * a * a + 3 * (a * a) + 3 * a + 1 := by ring
+    _ ≤ a * a * a + 3 * (a * a * a) + 3 * (a * a * a) + 1 :=
+        add_le_add (add_le_add (add_le_add le_rfl (mul_le_mul' le_rfl h2)) (mul_le_mul' le_rfl h3)) le_rfl
+    _ ≤ 8 * (a * a * a + 1) := le_iff_exists_add.mpr ⟨a * a * a + 7, by ring⟩
+
+lemma pbCtx_gBudget (k : V) : PBCtx (gBudget k + 1) (‖k‖ + 1) where
+  hG := le_add_self
+  hu := le_add_self
+  huG := add_le_add (le_cube ‖k‖) le_rfl
+  hu3 := succ_cube_le ‖k‖
+
+/-- **The logarithmic fact**: `‖gBudget k + 1‖ ≤ 3‖‖k‖‖ + 2` (through `Exp.exp`: `‖k‖ < exp ‖‖k‖‖`, so
+`‖k‖³ + 1 ≤ exp (3‖‖k‖‖) < exp (3‖‖k‖‖ + 1)`… one more step for the `+ 1`). -/
+lemma length_gBudget_succ_le (k : V) : ‖gBudget k + 1‖ ≤ 3 * ‖‖k‖‖ + 2 := by
+  set a := ‖k‖ with ha
+  set w := ‖a‖ with hw
+  have h1 : a < Exp.exp w := lt_exponential_length (exponential_exp w)
+  have h1' : a ≤ Exp.exp w := le_of_lt h1
+  have hcube : a * a * a ≤ Exp.exp w * Exp.exp w * Exp.exp w := mul_le_mul' (mul_le_mul' h1' h1') h1'
+  have hexp : Exp.exp w * Exp.exp w * Exp.exp w = Exp.exp (w + w + w) := by rw [exp_add, exp_add]
+  have h2 : gBudget k + 1 < Exp.exp (w + w + w + 1 + 1) := by
+    have hlt : Exp.exp (w + w + w) < Exp.exp (w + w + w + 1) := exp_monotone.mpr (lt_add_one _)
+    have hlt2 : Exp.exp (w + w + w + 1) < Exp.exp (w + w + w + 1 + 1) := exp_monotone.mpr (lt_add_one _)
+    have hg : gBudget k < Exp.exp (w + w + w + 1) := lt_of_le_of_lt (by unfold gBudget; rw [← hexp]; exact hcube) hlt
+    have : gBudget k + 1 ≤ Exp.exp (w + w + w + 1) := lt_iff_succ_le.mp hg
+    exact lt_of_le_of_lt this hlt2
+  have h3 := (Exponential.lt_iff_len_le (exponential_exp (w + w + w + 1 + 1))).mp h2
+  calc ‖gBudget k + 1‖ ≤ w + w + w + 1 + 1 := h3
+    _ = 3 * w + 2 := by ring
+
+lemma length_four_mul (G : V) (hG : 0 < G) : ‖4 * G‖ = ‖G‖ + 2 := by
+  have : (4 : V) * G = 2 * (2 * G) := by ring
+  rw [this, length_two_mul_of_pos (by positivity), length_two_mul_of_pos hG]
+  ring
+
+end poly
+
 end ArithS
