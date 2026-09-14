@@ -1833,4 +1833,109 @@ lemma passTGraph_exists (W ν n : V) {t : V} (ht : IsSemiterm LAct n t) (i j : V
     (le_trans le_add_self le_self_add) (add_le_add le_self_add (le_refl (descCountT W n t)))
     (add_le_add le_add_self (le_refl (descCountT W n t)))
 
+set_option maxHeartbeats 1000000 in
+/-- **Uniqueness of the pass.** The two levels are proved together: the term level by
+`IsSemiterm.induction 𝚷` (the motive quantifies over both offsets and both outputs, so it is Π₁),
+the vector level by an inner `pi1_succ_induction` on the number of entries still to walk. -/
+lemma passTGraph_unique (W ν n : V) : ∀ t, IsSemiterm LAct n t →
+    ∀ i j y₁ y₂, PassTGraph W ν n t i j y₁ → PassTGraph W ν n t i j y₂ → y₁ = y₂ := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · definability
+  · intro z _ i j y₁ y₂ h₁ h₂
+    rw [PassTGraph.bvar_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro a i j y₁ y₂ h₁ h₂
+    rw [PassTGraph.fvar_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro k f v hkf hv ih i j y₁ y₂ h₁ h₂
+    have hvlen : len v = k := hv.lh
+    have key : ∀ m ≤ k, ∀ i j z₁ z₂, PassVGraph W ν n k v m i j z₁ → PassVGraph W ν n k v m i j z₂ → z₁ = z₂ := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero =>
+        intro _ i j z₁ z₂ hz₁ hz₂
+        rw [PassVGraph.zero_iff] at hz₁ hz₂; rw [hz₁, hz₂]
+      | succ m ihm =>
+        intro hm i j z₁ z₂ hz₁ hz₂
+        obtain ⟨yt, yv, _, _, ht, hvv, rfl⟩ := PassVGraph.succ_iff.mp hz₁
+        obtain ⟨yt', yv', _, _, ht', hvv', rfl⟩ := PassVGraph.succ_iff.mp hz₂
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        rw [hnth'] at ht ht' hvv hvv'
+        rw [ih _ hlt (i + 1) (j + 1) yt yt' ht ht',
+          ihm (le_trans le_self_add hm) _ _ yv yv' hvv hvv']
+    obtain ⟨yv, _, hyv, rfl⟩ := PassTGraph.func_iff.mp h₁
+    obtain ⟨yv', _, hyv', rfl⟩ := PassTGraph.func_iff.mp h₂
+    rw [key k le_rfl (i + 1) (j + 1) yv yv' hyv hyv']
+
+set_option maxHeartbeats 1000000 in
+/-- **Uniqueness at the vector level** (the shape the fragments use directly). -/
+lemma passVGraph_unique {W ν n k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, ∀ i j y₁ y₂, PassVGraph W ν n k v m i j y₁ → PassVGraph W ν n k v m i j y₂ → y₁ = y₂ := by
+  have hvlen : len v = k := hv.lh
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _ i j z₁ z₂ hz₁ hz₂
+    rw [PassVGraph.zero_iff] at hz₁ hz₂; rw [hz₁, hz₂]
+  | succ m ihm =>
+    intro hm i j z₁ z₂ hz₁ hz₂
+    obtain ⟨yt, yv, _, _, ht, hvv, rfl⟩ := PassVGraph.succ_iff.mp hz₁
+    obtain ⟨yt', yv', _, _, ht', hvv', rfl⟩ := PassVGraph.succ_iff.mp hz₂
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    rw [hnth'] at ht ht' hvv hvv'
+    rw [passTGraph_unique W ν n _ (hv.nth hlt) (i + 1) (j + 1) yt yt' ht ht',
+      ihm (le_trans le_self_add hm) _ _ yv yv' hvv hvv']
+
+lemma passTGraph_existsUnique_total (W ν n t i j : V) :
+    ∃! y, (IsSemiterm LAct n t → PassTGraph W ν n t i j y) ∧ (¬IsSemiterm LAct n t → y = 0) := by
+  by_cases h : IsSemiterm LAct n t
+  · obtain ⟨y, hy⟩ := passTGraph_exists W ν n h i j
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ passTGraph_unique W ν n t h i j y' y hy' hy)
+  · simp [h]
+
+/-- **The term-level certification pass as a function**: `passT W ν n t i j` is the step list the
+pass `ν` (`0` = identification, `2` = shift) emits for the term `t` whose dossier sits at offset
+`i` (and the output's at `j`); `0` off semiterms. -/
+noncomputable def passT (W ν n t i j : V) : V := Classical.choose! (passTGraph_existsUnique_total W ν n t i j)
+
+theorem passT_graph {W ν n t i j : V} (h : IsSemiterm LAct n t) : PassTGraph W ν n t i j (passT W ν n t i j) :=
+  (Classical.choose!_spec (passTGraph_existsUnique_total W ν n t i j)).1 h
+
+theorem passT_of_not {W ν n t i j : V} (h : ¬IsSemiterm LAct n t) : passT W ν n t i j = 0 :=
+  (Classical.choose!_spec (passTGraph_existsUnique_total W ν n t i j)).2 h
+
+lemma passT_eq_of_graph {W ν n t i j y : V} (h : IsSemiterm LAct n t) (hy : PassTGraph W ν n t i j y) :
+    passT W ν n t i j = y :=
+  passTGraph_unique W ν n t h i j _ _ (passT_graph h) hy
+
+noncomputable def passTDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W ν n t i j. (!(isSemiterm LAct).pi n t → !passTGraphDef W ν n t i j y) ∧
+    (¬!(isSemiterm LAct).sigma n t → y = 0)”
+
+instance passT_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ passT (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) passTDef := .mk
+  fun v ↦ by
+    simp [passTDef, HierarchySymbol.Semiformula.val_sigma, passTGraph_defined.iff,
+      (IsSemiterm.defined (L := LAct)).proper.iff', (IsSemiterm.defined (L := LAct)).df, passT,
+      Classical.choose!_eq_iff_right]
+
+instance passT_definable :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ passT (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) passTDef :=
+  passT_defined
+
+/-! #### The equations of `passT` -/
+
+lemma passT_bvar (W ν n z i j : V) (hz : IsSemiterm LAct n (^#z)) :
+    passT W ν n (^#z) i j = tLeafSteps W ν 0 z i j :=
+  passT_eq_of_graph hz (PassTGraph.bvar_iff.mpr rfl)
+
+lemma passT_fvar (W ν n a i j : V) : passT W ν n (^&a) i j = tLeafSteps W ν 1 a i j :=
+  passT_eq_of_graph (by simp) (PassTGraph.fvar_iff.mpr rfl)
+
 end ArithS
