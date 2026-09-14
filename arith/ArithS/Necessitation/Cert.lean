@@ -2584,4 +2584,122 @@ lemma passFGraph_exists (W : V) {ν : V} (hν : ν = 1 ∨ ν = 2) {n r : V} (hr
   passFGraph_exists_bounded W (i + descCountF W n r + (j + outCount W ν n r)) hν hr
     i (le_trans le_self_add le_self_add) j (le_trans le_self_add le_add_self) le_self_add le_add_self
 
+set_option maxHeartbeats 1000000 in
+/-- **Uniqueness** of the formula pass (the motive is Π₁: `PassFGraph` is Σ₁ and appears only
+in antecedents). -/
+lemma passFGraph_unique (W ν : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    ∀ i j y₁ y₂, PassFGraph W ν n r i j y₁ → PassFGraph W ν n r i j y₂ → y₁ = y₂ := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ ∀ i j y₁ y₂, PassFGraph W ν n r i j y₁ → PassFGraph W ν n r i j y₂ → y₁ = y₂)
+  · definability
+  · intro n k R v _ _ i j y₁ y₂ h₁ h₂; rw [PassFGraph.rel_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n k R v _ _ i j y₁ y₂ h₁ h₂; rw [PassFGraph.nrel_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n i j y₁ y₂ h₁ h₂; rw [PassFGraph.verum_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n i j y₁ y₂ h₁ h₂; rw [PassFGraph.falsum_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n p q _ _ ihp ihq i j y₁ y₂ h₁ h₂
+    obtain ⟨yp, yq, _, _, hp₁, hq₁, rfl⟩ := PassFGraph.and_iff.mp h₁
+    obtain ⟨yp', yq', _, _, hp₂, hq₂, rfl⟩ := PassFGraph.and_iff.mp h₂
+    rw [ihp _ _ yp yp' hp₁ hp₂, ihq _ _ yq yq' hq₁ hq₂]
+  · intro n p q _ _ ihp ihq i j y₁ y₂ h₁ h₂
+    obtain ⟨yp, yq, _, _, hp₁, hq₁, rfl⟩ := PassFGraph.or_iff.mp h₁
+    obtain ⟨yp', yq', _, _, hp₂, hq₂, rfl⟩ := PassFGraph.or_iff.mp h₂
+    rw [ihp _ _ yp yp' hp₁ hp₂, ihq _ _ yq yq' hq₁ hq₂]
+  · intro n p _ ih i j y₁ y₂ h₁ h₂
+    obtain ⟨yb, _, hb₁, rfl⟩ := PassFGraph.all_iff.mp h₁
+    obtain ⟨yb', _, hb₂, rfl⟩ := PassFGraph.all_iff.mp h₂
+    rw [ih _ _ yb yb' hb₁ hb₂]
+  · intro n p _ ih i j y₁ y₂ h₁ h₂
+    obtain ⟨yb, _, hb₁, rfl⟩ := PassFGraph.exs_iff.mp h₁
+    obtain ⟨yb', _, hb₂, rfl⟩ := PassFGraph.exs_iff.mp h₂
+    rw [ih _ _ yb yb' hb₁ hb₂]
+
+lemma passFGraph_existsUnique_total (W ν n r i j : V) :
+    ∃! y, ((IsSemiformula LAct n r ∧ (ν = 1 ∨ ν = 2)) → PassFGraph W ν n r i j y) ∧
+      (¬(IsSemiformula LAct n r ∧ (ν = 1 ∨ ν = 2)) → y = 0) := by
+  by_cases h : IsSemiformula LAct n r ∧ (ν = 1 ∨ ν = 2)
+  · obtain ⟨y, hy⟩ := passFGraph_exists W h.2 h.1 i j
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ passFGraph_unique W ν h.1 i j y' y hy' hy)
+  · simp [h]
+
+/-- **The formula-level certification pass as a function**: for `ν ∈ {1, 2}` (`neg`, `shift`),
+the step list certifying `imgF ν r` against `r` when `r`'s dossier is at offset `i` and
+`imgF ν r`'s at offset `j`; `0` off semiformulas and off the two families. -/
+noncomputable def passF (W ν n r i j : V) : V := Classical.choose! (passFGraph_existsUnique_total W ν n r i j)
+
+theorem passF_graph {W ν n r i j : V} (hν : ν = 1 ∨ ν = 2) (hr : IsSemiformula LAct n r) :
+    PassFGraph W ν n r i j (passF W ν n r i j) :=
+  (Classical.choose!_spec (passFGraph_existsUnique_total W ν n r i j)).1 ⟨hr, hν⟩
+
+theorem passF_of_not {W ν n r i j : V} (h : ¬(IsSemiformula LAct n r ∧ (ν = 1 ∨ ν = 2))) :
+    passF W ν n r i j = 0 :=
+  (Classical.choose!_spec (passFGraph_existsUnique_total W ν n r i j)).2 h
+
+lemma passF_eq_of_graph {W ν n r i j y : V} (hν : ν = 1 ∨ ν = 2) (hr : IsSemiformula LAct n r)
+    (hy : PassFGraph W ν n r i j y) : passF W ν n r i j = y :=
+  passFGraph_unique W ν hr i j _ _ (passF_graph hν hr) hy
+
+/-! ### 2.4 The equations of `passF` -/
+
+section passFeq
+
+variable {W ν n : V}
+
+lemma passF_rel (hν : ν = 1 ∨ ν = 2) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (i j : V) :
+    passF W ν n (^rel k R v) i j = fAtomSteps W ν 0 k R i j (passV W ν n k v k (i + 1) (j + 1)) :=
+  passF_eq_of_graph hν (by simp [hR, hv]) (PassFGraph.rel_iff.mpr rfl)
+
+lemma passF_nrel (hν : ν = 1 ∨ ν = 2) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (i j : V) :
+    passF W ν n (^nrel k R v) i j = fAtomSteps W ν 1 k R i j (passV W ν n k v k (i + 1) (j + 1)) :=
+  passF_eq_of_graph hν (by simp [hR, hv]) (PassFGraph.nrel_iff.mpr rfl)
+
+lemma passF_verum (hν : ν = 1 ∨ ν = 2) (i j : V) : passF W ν n ^⊤ i j = fConstSteps W ν 2 i j :=
+  passF_eq_of_graph hν (by simp) (PassFGraph.verum_iff.mpr rfl)
+
+lemma passF_falsum (hν : ν = 1 ∨ ν = 2) (i j : V) : passF W ν n ^⊥ i j = fConstSteps W ν 3 i j :=
+  passF_eq_of_graph hν (by simp) (PassFGraph.falsum_iff.mpr rfl)
+
+lemma passF_and (hν : ν = 1 ∨ ν = 2) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (i j : V) :
+    passF W ν n (p ^⋏ q) i j = fBinSteps W ν 4 n (descCountF W n q) (outCount W ν n q) i j
+      (passF W ν n p (i + descCountF W n q + 1) (j + outCount W ν n q + 1)) (passF W ν n q (i + 1) (j + 1)) :=
+  passF_eq_of_graph hν (by simp [hp, hq]) (PassFGraph.and_iff.mpr
+    ⟨_, _, le_fBinSteps_left _ _ _ _ _ _ _ _ _ _, le_fBinSteps_right _ _ _ _ _ _ _ _ _ _,
+      passF_graph hν hp, passF_graph hν hq, rfl⟩)
+
+lemma passF_or (hν : ν = 1 ∨ ν = 2) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (i j : V) :
+    passF W ν n (p ^⋎ q) i j = fBinSteps W ν 5 n (descCountF W n q) (outCount W ν n q) i j
+      (passF W ν n p (i + descCountF W n q + 1) (j + outCount W ν n q + 1)) (passF W ν n q (i + 1) (j + 1)) :=
+  passF_eq_of_graph hν (by simp [hp, hq]) (PassFGraph.or_iff.mpr
+    ⟨_, _, le_fBinSteps_left _ _ _ _ _ _ _ _ _ _, le_fBinSteps_right _ _ _ _ _ _ _ _ _ _,
+      passF_graph hν hp, passF_graph hν hq, rfl⟩)
+
+lemma passF_all (hν : ν = 1 ∨ ν = 2) {p : V} (hp : IsSemiformula LAct (n + 1) p) (i j : V) :
+    passF W ν n (^∀ p) i j = fQuantSteps W ν 6 n i j (passF W ν (n + 1) p (i + 1) (j + 1)) :=
+  passF_eq_of_graph hν (by simp [hp]) (PassFGraph.all_iff.mpr ⟨_, le_fQuantSteps _ _ _ _ _ _ _, passF_graph hν hp, rfl⟩)
+
+lemma passF_exs (hν : ν = 1 ∨ ν = 2) {p : V} (hp : IsSemiformula LAct (n + 1) p) (i j : V) :
+    passF W ν n (^∃ p) i j = fQuantSteps W ν 7 n i j (passF W ν (n + 1) p (i + 1) (j + 1)) :=
+  passF_eq_of_graph hν (by simp [hp]) (PassFGraph.exs_iff.mpr ⟨_, le_fQuantSteps _ _ _ _ _ _ _, passF_graph hν hp, rfl⟩)
+
+end passFeq
+
+/-! ### 2.5 The two named producers: `certNeg` and `certShift` (§3.6) -/
+
+/-- **`certNeg W n r i j`** — the certification pass of `neg r` (§3.6): with `r`'s walk dossier at
+offset `i` and `neg r`'s at offset `j`, the step list whose final context holds `negFact &j &i`. -/
+noncomputable def certNeg (W n r i j : V) : V := passF W 1 n r i j
+
+/-- **`certShift W n r i j`** — the certification pass of `shift r` (§3.6): with `r`'s walk dossier
+at offset `i` and `shift r`'s at offset `j`, the step list whose final context holds
+`shiftFact &j &i`. -/
+noncomputable def certShift (W n r i j : V) : V := passF W 2 n r i j
+
+@[simp] lemma certNeg_eq (W n r i j : V) : certNeg W n r i j = passF W 1 n r i j := rfl
+@[simp] lemma certShift_eq (W n r i j : V) : certShift W n r i j = passF W 2 n r i j := rfl
+
+lemma certNeg_graph {W n r i j : V} (hr : IsSemiformula LAct n r) :
+    PassFGraph W 1 n r i j (certNeg W n r i j) := passF_graph (Or.inl rfl) hr
+lemma certShift_graph {W n r i j : V} (hr : IsSemiformula LAct n r) :
+    PassFGraph W 2 n r i j (certShift W n r i j) := passF_graph (Or.inr rfl) hr
+
 end ArithS
