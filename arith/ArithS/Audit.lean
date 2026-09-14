@@ -44,6 +44,7 @@ import ArithS.Necessitation.Frag1
 import ArithS.Necessitation.Frag2
 import ArithS.Necessitation.Verify
 import ArithS.Necessitation.Top
+import ArithS.Necessitation.Prologue
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -843,5 +844,33 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms topD_pb
 #print axioms topBound_pb
 #print axioms boundedInnerNec_three_of_kit
+
+-- U10 (Necessitation/PrologueRows + Prologue, 2026-09-15): THE PROLOGUE PRODUCERS. The prologue table
+-- `proRows := topRows ++ proExtraRows ++ certTailRows` (the row-index collision between the certification
+-- rows at `100 + k` and the fragment rows resolved by RE-INDEXING certification lists, `reidxL`), the
+-- canonical `Layout` of a sequent (member walk dossiers + lengths, chain, fresh length object + numeric
+-- bound) with its transport, the builder `layoutSteps` (member blocks, chain, the `setLen` fold with the new
+-- row `setLenSingLe`), the leaves (`proAxL` = re-indexed `certNeg`; `layout_verum`), the identification of an
+-- `insert` object with the child's chain (`subChain`, `loopA`/`loopB`/`blockP`, `identIns`), the `insert`
+-- child's prologue `proIns` and recovery `postIns`, and the `and`/`or` readings. Nothing below is an axiom.
+#print axioms exists_proTable
+#print axioms listOK_reidxL
+#print axioms costSum_reidxL
+#print axioms pok_setLenSingLe
+#print axioms Layout.transport
+#print axioms memberBlocks_ok
+#print axioms foldBlockS_ok
+#print axioms lenFoldAux_ok
+#print axioms layoutSteps_ok
+#print axioms proAxL_ok
+#print axioms layout_verum
+#print axioms subChain_ok
+#print axioms loopA_ok
+#print axioms loopB_ok
+#print axioms identIns_ok
+#print axioms proIns_ok
+#print axioms postIns_ok
+#print axioms layout_and
+#print axioms layout_or
 
 end ArithS

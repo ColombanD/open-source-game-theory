@@ -66,6 +66,8 @@ import ArithS.Necessitation.Frag1
 import ArithS.Necessitation.Frag2
 import ArithS.Necessitation.Verify
 import ArithS.Necessitation.Top
+import ArithS.Necessitation.PrologueRows
+import ArithS.Necessitation.Prologue
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse
