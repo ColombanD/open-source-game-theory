@@ -42,8 +42,9 @@ is to be pushed for, on its own branch.**
 (create a new branch off it if you prefer). The OneDrive folder exists so the app/IDE keep
 working on the old engine toolchain; Lean builds inside OneDrive stall on I/O (see
 `CLAUDE_MEMORY/project_onedrive_lake_replay_timeout.md`). `-m3` and `-s` are pushed to `origin`
-(GitHub `ColombanD/open-source-game-theory`); **`-u10` has NEVER been pushed** — push it first
-thing on the new account if the machine changes (`git push -u origin colomban-arith-u10`).
+(GitHub `ColombanD/open-source-game-theory`); **`-u10` IS pushed and in sync** (verified
+2026-09-14: `origin/colomban-arith-u10` at the same commit, 0 ahead / 0 behind) — keep pushing it
+after each session (`git push`), it is the only off-machine copy of the U10 work.
 To collapse to one folder later: merge into `main`, `git checkout main` in OneDrive,
 `cd engine && lake exe cache get && lake build`, `git worktree remove ~/wt/osgt-arith-m3`.
 
