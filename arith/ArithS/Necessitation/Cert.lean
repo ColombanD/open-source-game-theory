@@ -1892,6 +1892,89 @@ lemma passVGraph_unique {W ν n k v : V} (hv : IsSemitermVec LAct k n v) :
     rw [passTGraph_unique W ν n _ (hv.nth hlt) (i + 1) (j + 1) yt yt' ht ht',
       ihm (le_trans le_self_add hm) _ _ yv yv' hvv hvv']
 
+/-- **Existence at the vector level**, from the term level. The motive must be Σ₁, so the
+offsets are bounded quantifiers; as at the term level (`passTGraph_exists_bounded`) the bound `B`
+must dominate the offsets the descent reaches, i.e. `i + cv ≤ B` and `j + cv ≤ B` for
+`cv = π₁ (descVecAux …)` the vector's own eigenvariable count. -/
+lemma passVGraph_exists_bounded (W ν n B : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descVecAux W n (descTVec W n k v) m) ≤ B →
+      j + π₁ (descVecAux W n (descTVec W n k v) m) ≤ B → ∃ y, PassVGraph W ν n k v m i j y := by
+  have hvlen : len v = k := hv.lh
+  intro m
+  induction m using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => intro _ i _ j _ _ _; exact ⟨_, PassVGraph.zero_iff.mpr rfl⟩
+  | succ m ihm =>
+    intro hm i hi j hj hiB hjB
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
+      rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+        nth_descTVec W n hv.isUTerm hlt]
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    have hC : π₁ (descVecAux W n (descTVec W n k v) (m + 1)) =
+        π₁ (descVecAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
+      rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+    rw [hC] at hiB hjB
+    set ct := descCountT W n v.[k - (m + 1)] with hct
+    set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+    have hiB' : i + 1 + ct ≤ B :=
+      le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1 ct]))
+        (add_le_add (le_refl i) (add_le_add le_add_self (le_refl 1)))) hiB
+    have hjB' : j + 1 + ct ≤ B :=
+      le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1 ct]))
+        (add_le_add (le_refl j) (add_le_add le_add_self (le_refl 1)))) hjB
+    obtain ⟨yt, hyt⟩ := passTGraph_exists W ν n (hv.nth hlt) (i + 1) (j + 1)
+    obtain ⟨yv, hyv⟩ := ihm (le_trans le_self_add hm) (i + 1 + ct) hiB' (j + 1 + ct) hjB'
+      (le_trans (le_of_eq (by rw [add_assoc, add_assoc, add_comm ct cv, add_comm 1 (cv + ct), ← add_assoc])) hiB)
+      (le_trans (le_of_eq (by rw [add_assoc, add_assoc, add_comm ct cv, add_comm 1 (cv + ct), ← add_assoc])) hjB)
+    refine ⟨_, PassVGraph.succ_iff.mpr ⟨yt, yv, le_vAdjSteps_left _ _ _ _ _ _ _ _ _,
+      le_vAdjSteps_right _ _ _ _ _ _ _ _ _, ?_, ?_, rfl⟩⟩
+    · rw [hnth']; exact hyt
+    · rw [hnth']; exact hyv
+
+lemma passVGraph_exists (W ν n : V) {k v : V} (hv : IsSemitermVec LAct k n v)
+    {m : V} (hm : m ≤ k) (i j : V) : ∃ y, PassVGraph W ν n k v m i j y := by
+  set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+  exact passVGraph_exists_bounded W ν n (i + j + cv) hv m hm i (le_trans le_self_add le_self_add) j
+    (le_trans le_add_self le_self_add) (add_le_add le_self_add (le_refl cv)) (add_le_add le_add_self (le_refl cv))
+
+lemma passVGraph_existsUnique_total (W ν n k v m i j : V) :
+    ∃! y, ((IsSemitermVec LAct k n v ∧ m ≤ k) → PassVGraph W ν n k v m i j y) ∧
+      (¬(IsSemitermVec LAct k n v ∧ m ≤ k) → y = 0) := by
+  by_cases h : IsSemitermVec LAct k n v ∧ m ≤ k
+  · obtain ⟨y, hy⟩ := passVGraph_exists W ν n h.1 h.2 i j
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ passVGraph_unique h.1 m h.2 i j y' y hy' hy)
+  · simp [h]
+
+/-- **The vector-level certification pass as a function** (`0` off semiterm vectors / oversized `m`). -/
+noncomputable def passV (W ν n k v m i j : V) : V :=
+  Classical.choose! (passVGraph_existsUnique_total W ν n k v m i j)
+
+theorem passV_graph {W ν n k v m i j : V} (hv : IsSemitermVec LAct k n v) (hm : m ≤ k) :
+    PassVGraph W ν n k v m i j (passV W ν n k v m i j) :=
+  (Classical.choose!_spec (passVGraph_existsUnique_total W ν n k v m i j)).1 ⟨hv, hm⟩
+
+lemma passV_eq_of_graph {W ν n k v m i j y : V} (hv : IsSemitermVec LAct k n v) (hm : m ≤ k)
+    (hy : PassVGraph W ν n k v m i j y) : passV W ν n k v m i j = y :=
+  passVGraph_unique hv m hm i j _ _ (passV_graph hv hm) hy
+
+noncomputable def passVDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y W ν n k v m i j. ((!(isSemitermVec LAct).pi k n v ∧ m ≤ k) → !passVGraphDef W ν n k v m i j y) ∧
+    ((!(isSemitermVec LAct).sigma k n v → k < m) → y = 0)”
+
+instance passV_defined :
+    𝚺₁.DefinedFunction (fun w : Fin 8 → V ↦ passV (w 0) (w 1) (w 2) (w 3) (w 4) (w 5) (w 6) (w 7)) passVDef := .mk
+  fun w ↦ by
+    simp [passVDef, HierarchySymbol.Semiformula.val_sigma, passVGraph_defined.iff,
+      (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df, passV,
+      Classical.choose!_eq_iff_right]
+
+instance passV_definable :
+    𝚺₁.DefinedFunction (fun w : Fin 8 → V ↦ passV (w 0) (w 1) (w 2) (w 3) (w 4) (w 5) (w 6) (w 7)) passVDef :=
+  passV_defined
+
 lemma passTGraph_existsUnique_total (W ν n t i j : V) :
     ∃! y, (IsSemiterm LAct n t → PassTGraph W ν n t i j y) ∧ (¬IsSemiterm LAct n t → y = 0) := by
   by_cases h : IsSemiterm LAct n t
@@ -2050,5 +2133,77 @@ instance fAtomSteps_definable :
   fAtomSteps_defined.to_definable
 
 end formulaPass
+
+/-- The image of a formula code under the pass's family: `neg` at `ν = 1`, `shift` otherwise. -/
+noncomputable def imgF (ν r : V) : V := if ν = 1 then neg LAct r else shift LAct r
+
+noncomputable def imgFDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y ν r. ∃ a, !(negGraph LAct) a r ∧ ∃ b, !(shiftGraph LAct) b r ∧ ((ν = 1 → y = a) ∧ (ν ≠ 1 → y = b))”
+
+instance imgF_defined : 𝚺₁-Function₂ (imgF : V → V → V) via imgFDef := .mk fun v ↦ by
+  simp [imgFDef, imgF, numeral_eq_natCast, neg.defined.iff, shift.defined.iff]
+  by_cases hν : v 1 = 1 <;> simp [hν]
+instance imgF_definable : 𝚺₁-Function₂ (imgF : V → V → V) := imgF_defined.to_definable
+
+@[simp] lemma imgF_one (r : V) : imgF 1 r = neg LAct r := by simp [imgF]
+lemma imgF_of_ne {ν : V} (h : ν ≠ 1) (r : V) : imgF ν r = shift LAct r := by simp [imgF, h]
+
+/-- The OUTPUT-side count at a node: `descCountF W n (imgF ν r)`. -/
+noncomputable def outCount (W ν n r : V) : V := descCountF W n (imgF ν r)
+
+noncomputable def outCountDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W ν n r. ∃ z, !imgFDef z ν r ∧ !descCountFDef y W n z”
+
+instance outCount_defined : 𝚺₁-Function₄ (outCount : V → V → V → V → V) via outCountDef := .mk fun v ↦ by
+  simp [outCountDef, outCount, imgF_defined.iff, descCountF_defined.iff]
+instance outCount_definable : 𝚺₁-Function₄ (outCount : V → V → V → V → V) := outCount_defined.to_definable
+
+/-! ### 2.1 The fixpoint on `⟪ν, n, r, i, j, y⟫` -/
+
+namespace PassF
+
+/-- The cases of the formula pass operator (the constructor codes are those of `fRow`). -/
+def Cases (W : V) (C : Set V) (ν n r i j y : V) : Prop :=
+  (∃ k < r, ∃ R < r, ∃ v < r, r = ^rel k R v ∧ ∃ yv ≤ y,
+    PassVGraph W ν n k v k (i + 1) (j + 1) yv ∧ y = fAtomSteps W ν 0 k R i j yv) ∨
+  (∃ k < r, ∃ R < r, ∃ v < r, r = ^nrel k R v ∧ ∃ yv ≤ y,
+    PassVGraph W ν n k v k (i + 1) (j + 1) yv ∧ y = fAtomSteps W ν 1 k R i j yv) ∨
+  (r = ^⊤ ∧ y = fConstSteps W ν 2 i j) ∨
+  (r = ^⊥ ∧ y = fConstSteps W ν 3 i j) ∨
+  (∃ p < r, ∃ q < r, r = p ^⋏ q ∧ ∃ yp ≤ y, ∃ yq ≤ y,
+    ⟪ν, n, p, i + descCountF W n q + 1, j + outCount W ν n q + 1, yp⟫ ∈ C ∧ ⟪ν, n, q, i + 1, j + 1, yq⟫ ∈ C ∧
+    y = fBinSteps W ν 4 n (descCountF W n q) (outCount W ν n q) i j yp yq) ∨
+  (∃ p < r, ∃ q < r, r = p ^⋎ q ∧ ∃ yp ≤ y, ∃ yq ≤ y,
+    ⟪ν, n, p, i + descCountF W n q + 1, j + outCount W ν n q + 1, yp⟫ ∈ C ∧ ⟪ν, n, q, i + 1, j + 1, yq⟫ ∈ C ∧
+    y = fBinSteps W ν 5 n (descCountF W n q) (outCount W ν n q) i j yp yq) ∨
+  (∃ p < r, r = ^∀ p ∧ ∃ yb ≤ y, ⟪ν, n + 1, p, i + 1, j + 1, yb⟫ ∈ C ∧ y = fQuantSteps W ν 6 n i j yb) ∨
+  (∃ p < r, r = ^∃ p ∧ ∃ yb ≤ y, ⟪ν, n + 1, p, i + 1, j + 1, yb⟫ ∈ C ∧ y = fQuantSteps W ν 7 n i j yb)
+
+/-- The pass operator on the packed tuples. -/
+def Phi (W : V) (C : Set V) (pr : V) : Prop :=
+  ∃ ν ≤ pr, ∃ q₁ ≤ pr, pr = ⟪ν, q₁⟫ ∧ ∃ n ≤ q₁, ∃ q₂ ≤ q₁, q₁ = ⟪n, q₂⟫ ∧ ∃ r ≤ q₂, ∃ q₃ ≤ q₂, q₂ = ⟪r, q₃⟫ ∧
+  ∃ i ≤ q₃, ∃ q₄ ≤ q₃, q₃ = ⟪i, q₄⟫ ∧ ∃ j ≤ q₄, ∃ y ≤ q₄, q₄ = ⟪j, y⟫ ∧ Cases W C ν n r i j y
+
+lemma phi_unpack (W : V) (C : Set V) (pr : V) :
+    Phi W C pr ↔ ∃ ν n r i j y, pr = ⟪ν, n, r, i, j, y⟫ ∧ Cases W C ν n r i j y := by
+  constructor
+  · rintro ⟨ν, _, q₁, _, rfl, n, _, q₂, _, rfl, r, _, q₃, _, rfl, i, _, q₄, _, rfl, j, _, y, _, rfl, h⟩
+    exact ⟨ν, n, r, i, j, y, rfl, h⟩
+  · rintro ⟨ν, n, r, i, j, y, rfl, h⟩
+    exact ⟨ν, le_pair_left _ _, _, le_pair_right _ _, rfl, n, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      r, le_pair_left _ _, _, le_pair_right _ _, rfl, i, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      j, le_pair_left _ _, y, le_pair_right _ _, rfl, h⟩
+
+lemma phi_of_cases {W : V} {C : Set V} {ν n r i j y : V} (h : Cases W C ν n r i j y) :
+    Phi W C ⟪ν, n, r, i, j, y⟫ := (phi_unpack W C _).mpr ⟨ν, n, r, i, j, y, rfl, h⟩
+
+lemma cases_of_phi {W : V} {C : Set V} {ν n r i j y : V} (h : Phi W C ⟪ν, n, r, i, j, y⟫) :
+    Cases W C ν n r i j y := by
+  obtain ⟨ν', n', r', i', j', y', e, h⟩ := (phi_unpack W C _).mp h
+  rw [pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff] at e
+  obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ := e
+  exact h
+
+end PassF
 
 end ArithS
