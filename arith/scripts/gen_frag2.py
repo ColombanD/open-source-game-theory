@@ -19,6 +19,11 @@ G.__file__ = os.path.join(HERE, 'gen_frag.py')
 exec(compile(_src, G.__file__, 'exec'), G.__dict__)
 A, EX, S, P, C = G.A, G.EX, G.S, G.P, G.C
 
+# ---- the Δ₁ch predicate (nothing exists for it: the generator produces P/isSem/Fdef/isFormula too)
+G.PREDS['axch'] = G.graph('(↑(Theory.Δ₁ch TAct).sigma : ArithmeticSemisentence 1)', 1, 'Paxch', 'axchFact', ['p'],
+                          '(Theory.Δ₁ch TAct).sigma', lambda a: f'{a[0]} ∈ TAct.Δ₁Class')
+
+
 # ---- the rows re-issued with quote_row_/inst_ lemmas (same names, same DSL as the originals)
 NEW_ROWS = [
  # Nodes: totalities of the four remaining tags
@@ -48,12 +53,13 @@ NEW_ROWS = [
   [A('shiftRule', 'e', 's', 'd'), A('dlen', 'd', 'n'), A('setLen', 'l', 's')], A('dlen', 'e', S(P('l', 'n')))),
  ('dlenAxm', ['l', 'p', 's', 'e'], [A('axm', 'e', 's', 'p'), A('setLen', 'l', 's')], A('dlen', 'e', S('l'))),
  # Sets / prologue plumbing
+ ('introAxm', ['e', 'p', 's'],
+  [A('fsetPi', 's'), A('mem', 'p', 's'), A('axch', 'p'), A('axm', 'e', 's', 'p')], A('deriv', 'e')),
  ('setShiftTotal', ['s'], [], EX(['t'], [A('setShiftG', 't', 's')])),
  ('shiftMemSetShift', ['y', 't', 'x', 's'],
   [A('mem', 'x', 's'), A('setShiftG', 't', 's'), A('shiftG', 'y', 'x')], A('mem', 'y', 't')),
 ]
-# `introAxmB` is declared at arity 3; the Δ₁ch antecedent has no generator predicate, so the axm
-# intro/fstIdx rows are taken from `Frag.lean`/`RowInstB.lean` where they already exist.
+# `introAxmB` is at arity 3; its `Δ₁ch` antecedent gets its own predicate (registered above).
 
 G.out = []
 for (name, binders, ants, conc) in NEW_ROWS:
@@ -347,9 +353,10 @@ head = '''import ArithS.Necessitation.Frag1Rows
    row `frag2Table_<row>`, `gmk_<row>`, `gtag_<row>`, `gok_<row>`, plus `gfok_<row>`/`glok_<row>`:
    the Frag1 and layout rows Frag2 uses, read from `frag2Pieces`.
 
-NOTE: `introAxm`'s `(Theory.Δ₁ch TAct).sigma p` antecedent has no generator predicate, so the `axm`
-intro row is NOT in this table; `nodeAxm` (Frag2.lean) takes the recognizer facts as layout
-hypotheses — see the file's docstring.
+NOTE: `introAxm`'s `(Theory.Δ₁ch TAct).sigma p` antecedent gets the NEW predicate code `Paxch` /
+fact code `axchFact` here (nothing in `RowInstB` had it); `nodeAxm` (Frag2.lean) therefore takes
+`axchFact p` in the context as a LAYOUT HYPOTHESIS — the recognizer chain that produces it (`axiomRec σ`
+for the finitely many standard axioms, `indRec` for the induction schema) is NOT in this table.
 -/
 
 namespace ArithS
@@ -364,6 +371,34 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 set_option linter.unusedSimpArgs false
 set_option linter.unusedTactic false
 set_option maxRecDepth 20000
+
+/-! ## 0. The `Δ₁ch` predicate code (nothing in `RowInstB.lean` had it) -/
+
+section axch
+
+/-- The code of `(Theory.Δ₁ch TAct).sigma`, the `axm` premise `p ∈ TAct.Δ₁Class`. -/
+noncomputable def Paxch : V := ⌜Semiformula.lMap emb (↑(Theory.Δ₁ch TAct).sigma : ArithmeticSemisentence 1)⌝
+lemma isSemiformula_Paxch : IsSemiformula LAct ((1 : ℕ) : V) Paxch := Sentence.quote_isSemiformula _
+lemma shift_Paxch : shift LAct (Paxch : V) = Paxch := shift_quote_sentence _
+lemma fvOccF_Paxch : fvOccF LAct (Paxch : V) = 0 := fvOccF_quote_sentence _
+
+/-- `p ∈ TAct.Δ₁Class` at the witness `p`. -/
+noncomputable def axchFact (p : V) : V := subst LAct (listToVec [p]) Paxch
+lemma isFormula_axchFact {p : V} (hp : IsSemiterm LAct 0 p) : IsFormula LAct (axchFact p) :=
+  isFormula_fact isSemiformula_Paxch _ rfl (List.forall_mem_cons.mpr ⟨hp, List.forall_mem_nil _⟩)
+lemma shift_axchFact {p : V} (hp : IsSemiterm LAct 0 p) :
+    shift LAct (axchFact p) = axchFact (termShift LAct p) := by
+  unfold axchFact
+  rw [shift_subst_listToVec [p] isSemiformula_Paxch shift_Paxch (n := 0) (List.forall_mem_cons.mpr ⟨hp, List.forall_mem_nil _⟩)]
+  rfl
+lemma formulaLen_axchFact_le {B : V} (hB : 1 ≤ B) {p : V} (hp : IsSemiterm LAct 0 p) (hlp : termLen LAct p ≤ B) :
+    formulaLen LAct (axchFact p) ≤ formulaLen LAct (Paxch : V) * B :=
+  formulaLen_fact_le hB isSemiformula_Paxch _ rfl (List.forall_mem_cons.mpr ⟨⟨hp, hlp⟩, List.forall_mem_nil _⟩)
+lemma fvOccF_axchFact_le {M : V} {p : V} (hp : IsSemiterm LAct 0 p) (hop : fvOcc LAct p ≤ M) :
+    fvOccF LAct (axchFact p) ≤ bvOccF LAct (Paxch : V) * M :=
+  fvOccF_fact_le isSemiformula_Paxch fvOccF_Paxch _ rfl (List.forall_mem_cons.mpr ⟨⟨hp, hop⟩, List.forall_mem_nil _⟩)
+
+end axch
 
 /-! ## 1. The rows, re-issued -/
 
