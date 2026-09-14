@@ -8601,4 +8601,535 @@ a sibling fixpoint, the image offset increment `descCountT (termSubst wv t)` per
 `substsSubsts1` + `freeCert` on top of `certSubst` at `qVec (fvar 0)` (`DESIGN_fragments` §4.5 item 2).
 -/
 
+/-! ## Part 6 — `certSubst`: the certified substitution (§3.6 "substs")
+
+### 6.0 The `nth` chain: `nthFact &e ⟨v⟩ (cT d)` for the entry `d` of a walked (sub-)vector
+
+The walk leaves adjoin facts only (`adjF &off &(off+1) ⟨tail⟩`, `dossV_succ`); the substitution rows
+need `nthFact e w z` (`termSubstBvarCert`). The chain descends `d` adjoins from the sub-vector at
+`&off` (the last `j` entries of `w`, its head `w.[s]`) to the entry, reads `nthAdjoinZero` there and
+climbs back with `nthAdjoinSucc`, deriving `nthFact &e &off (cT d)` for `e` the walk offset of the
+entry `w.[s + d]`. A fixpoint on `⟪s, j, d, off, e, y⟫` (parameters `W`, the entries' arity `m`, the
+vector `w`): the sub-call is the DEEPER level `(s + 1, j − 1, d − 1, off + 1 + descCountT w.[s])`,
+the offsets computed by addition only (no subtraction anywhere in the blueprint). -/
+
+section nthChainBuilders
+
+/-- The zero step at the sub-vector `&off` with tail `⟨tail⟩ = vRef (off + 1 + c) j'`:
+`nthAdjoinZero [⟨tail⟩, &(off+1), &off]` → `nthFact &(off+1) &off 𝟎`. -/
+noncomputable def ncZeroSteps (W c off j' : V) : V :=
+  ?[mkStep W 179 ?[vRef (off + 1 + c) j', ^&(off + 1), ^&off]]
+
+noncomputable def ncZeroStepsDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W c off j'. ∃ r, !vRefDef r (off + 1 + c) j' ∧ ∃ f₁, !qqFvarDef f₁ (off + 1) ∧ ∃ f₀, !qqFvarDef f₀ off ∧
+    ∃ e₀, !mkVec₂Def e₀ f₁ f₀ ∧ ∃ e, !adjoinDef e r e₀ ∧ ∃ s, !mkStepDef s W 179 e ∧ !mkVec₁Def y s”
+
+instance ncZeroSteps_defined : 𝚺₁-Function₄ (ncZeroSteps : V → V → V → V → V) via ncZeroStepsDef := .mk
+  fun v ↦ by simp [ncZeroStepsDef, ncZeroSteps, numeral_eq_natCast, vRef_defined.iff, mkStep_defined.iff]
+instance ncZeroSteps_definable : 𝚺₁-Function₄ (ncZeroSteps : V → V → V → V → V) := ncZeroSteps_defined.to_definable
+
+/-- The climbing step at the sub-vector `&off` after the deeper chain `y'`:
+`nthAdjoinSucc [cT d', ⟨tail⟩, &(off+1), &off, &e]` → `nthFact &e &off (cT d' + 1)`. -/
+noncomputable def ncSuccSteps (W c off j' d' e y' : V) : V :=
+  appendV y' ?[mkStep W 180 ?[cTV d', vRef (off + 1 + c) j', ^&(off + 1), ^&off, ^&e]]
+
+noncomputable def ncSuccStepsDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W c off j' d' e y'. ∃ cd, !cTVGraph cd d' ∧ ∃ r, !vRefDef r (off + 1 + c) j' ∧ ∃ f₁, !qqFvarDef f₁ (off + 1) ∧
+    ∃ f₀, !qqFvarDef f₀ off ∧ ∃ fe, !qqFvarDef fe e ∧
+    ∃ e₀, !mkVec₂Def e₀ f₀ fe ∧ ∃ e₁, !adjoinDef e₁ f₁ e₀ ∧ ∃ e₂, !adjoinDef e₂ r e₁ ∧ ∃ ev, !adjoinDef ev cd e₂ ∧
+    ∃ s, !mkStepDef s W 180 ev ∧ ∃ l, !mkVec₁Def l s ∧ !appendVDef y y' l”
+
+instance ncSuccSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ ncSuccSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) ncSuccStepsDef := .mk
+  fun v ↦ by
+    simp [ncSuccStepsDef, ncSuccSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff,
+      appendV_defined.iff]
+instance ncSuccSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ ncSuccSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  ncSuccSteps_defined.to_definable
+
+lemma len_ncZeroSteps (W c off j' : V) : len (ncZeroSteps W c off j') = 1 := by simp [ncZeroSteps]
+lemma len_ncSuccSteps (W c off j' d' e y' : V) : len (ncSuccSteps W c off j' d' e y') = len y' + 1 := by
+  rw [ncSuccSteps, len_appendV, len_adjoin, len_nil, zero_add]
+
+end nthChainBuilders
+
+namespace NthC
+
+/-- The cases on the unpacked tuple. -/
+def Cases (W m w : V) (C : Set V) (s j d off e y : V) : Prop :=
+  (d = 0 ∧ ∃ j' < j, j = j' + 1 ∧ e = off + 1 ∧ y = ncZeroSteps W (descCountT W m w.[s]) off j') ∨
+  (∃ d' < d, d = d' + 1 ∧ ∃ j' < j, j = j' + 1 ∧ ∃ y' ≤ y,
+    ⟪s + 1, j', d', off + 1 + descCountT W m w.[s], e, y'⟫ ∈ C ∧
+    y = ncSuccSteps W (descCountT W m w.[s]) off j' d' e y')
+
+def Phi (W m w : V) (C : Set V) (pr : V) : Prop :=
+  ∃ s ≤ pr, ∃ q₁ ≤ pr, pr = ⟪s, q₁⟫ ∧ ∃ j ≤ q₁, ∃ q₂ ≤ q₁, q₁ = ⟪j, q₂⟫ ∧ ∃ d ≤ q₂, ∃ q₃ ≤ q₂, q₂ = ⟪d, q₃⟫ ∧
+  ∃ off ≤ q₃, ∃ q₄ ≤ q₃, q₃ = ⟪off, q₄⟫ ∧ ∃ e ≤ q₄, ∃ y ≤ q₄, q₄ = ⟪e, y⟫ ∧ Cases W m w C s j d off e y
+
+lemma phi_unpack (W m w : V) (C : Set V) (pr : V) :
+    Phi W m w C pr ↔ ∃ s j d off e y, pr = ⟪s, j, d, off, e, y⟫ ∧ Cases W m w C s j d off e y := by
+  constructor
+  · rintro ⟨s, _, q₁, _, rfl, j, _, q₂, _, rfl, d, _, q₃, _, rfl, off, _, q₄, _, rfl, e, _, y, _, rfl, h⟩
+    exact ⟨s, j, d, off, e, y, rfl, h⟩
+  · rintro ⟨s, j, d, off, e, y, rfl, h⟩
+    exact ⟨s, le_pair_left _ _, _, le_pair_right _ _, rfl, j, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      d, le_pair_left _ _, _, le_pair_right _ _, rfl, off, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      e, le_pair_left _ _, y, le_pair_right _ _, rfl, h⟩
+
+lemma phi_of_cases {W m w : V} {C : Set V} {s j d off e y : V} (h : Cases W m w C s j d off e y) :
+    Phi W m w C ⟪s, j, d, off, e, y⟫ := (phi_unpack W m w C _).mpr ⟨s, j, d, off, e, y, rfl, h⟩
+
+lemma cases_of_phi {W m w : V} {C : Set V} {s j d off e y : V} (h : Phi W m w C ⟪s, j, d, off, e, y⟫) :
+    Cases W m w C s j d off e y := by
+  obtain ⟨s', j', d', off', e', y', h₁, h⟩ := (phi_unpack W m w C _).mp h
+  rw [pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff] at h₁
+  obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ := h₁
+  exact h
+
+noncomputable def blueprint : Fixpoint.Blueprint 3 := ⟨.mkDelta
+  (.mkSigma “pr C W m w.
+    ∃ s <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr s q₁ ∧ ∃ j <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ j q₂ ∧ ∃ d <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ d q₃ ∧
+    ∃ off <⁺ q₃, ∃ q₄ <⁺ q₃, !pairDef q₃ off q₄ ∧ ∃ e <⁺ q₄, ∃ y <⁺ q₄, !pairDef q₄ e y ∧
+    ∃ t, !nthDef t w s ∧ ∃ c, !descCountTDef c W m t ∧
+    ( (d = 0 ∧ ∃ j' < j, j = j' + 1 ∧ e = off + 1 ∧ ∃ z, !ncZeroStepsDef z W c off j' ∧ y = z) ∨
+      (∃ d' < d, d = d' + 1 ∧ ∃ j' < j, j = j' + 1 ∧ ∃ y' <⁺ y,
+        ∃ p₄, !pairDef p₄ e y' ∧ ∃ p₃, !pairDef p₃ (off + 1 + c) p₄ ∧ ∃ p₂, !pairDef p₂ d' p₃ ∧ ∃ p₁, !pairDef p₁ j' p₂ ∧
+        :⟪s + 1, p₁⟫:∈ C ∧ ∃ z, !ncSuccStepsDef z W c off j' d' e y' ∧ y = z) )”)
+  (.mkPi “pr C W m w.
+    ∃ s <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr s q₁ ∧ ∃ j <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ j q₂ ∧ ∃ d <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ d q₃ ∧
+    ∃ off <⁺ q₃, ∃ q₄ <⁺ q₃, !pairDef q₃ off q₄ ∧ ∃ e <⁺ q₄, ∃ y <⁺ q₄, !pairDef q₄ e y ∧
+    ∀ t, !nthDef t w s → ∀ c, !descCountTDef c W m t →
+    ( (d = 0 ∧ ∃ j' < j, j = j' + 1 ∧ e = off + 1 ∧ ∀ z, !ncZeroStepsDef z W c off j' → y = z) ∨
+      (∃ d' < d, d = d' + 1 ∧ ∃ j' < j, j = j' + 1 ∧ ∃ y' <⁺ y,
+        ∀ p₄, !pairDef p₄ e y' → ∀ p₃, !pairDef p₃ (off + 1 + c) p₄ → ∀ p₂, !pairDef p₂ d' p₃ → ∀ p₁, !pairDef p₁ j' p₂ →
+        :⟪s + 1, p₁⟫:∈ C ∧ ∀ z, !ncSuccStepsDef z W c off j' d' e y' → y = z) )”)⟩
+
+set_option maxHeartbeats 4000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0) (v 1) (v 2)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, nth_defined.iff, descCountT_defined.iff, ncZeroSteps_defined.iff, ncSuccSteps_defined.iff,
+        numeral_eq_natCast]
+    · intro v
+      simp [blueprint, Phi, Cases, nth_defined.iff, descCountT_defined.iff, ncZeroSteps_defined.iff,
+        ncSuccSteps_defined.iff, numeral_eq_natCast]
+  monotone := by
+    intro C C' hC v pr h
+    change Phi (v 0) (v 1) (v 2) C pr at h
+    change Phi (v 0) (v 1) (v 2) C' pr
+    rw [phi_unpack] at h ⊢
+    obtain ⟨s, j, d, off, e, y, rfl, h⟩ := h
+    refine ⟨s, j, d, off, e, y, rfl, ?_⟩
+    rcases h with h | ⟨d', hd', rfl, j', hj', rfl, y', hy', h₁, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr ⟨d', hd', rfl, j', hj', rfl, y', hy', hC h₁, rfl⟩
+
+instance : construction.Finite V where
+  finite := by
+    intro C v pr h
+    change Phi (v 0) (v 1) (v 2) C pr at h
+    change ∃ m, Phi (v 0) (v 1) (v 2) {y ∈ C | y < m} pr
+    rw [phi_unpack] at h
+    simp only [phi_unpack]
+    obtain ⟨s, j, d, off, e, y, rfl, h⟩ := h
+    rcases h with h | ⟨d', hd', hd, j', hj', hj, y', hy', h₁, hy⟩
+    · exact ⟨0, s, j, d, off, e, y, rfl, Or.inl h⟩
+    · exact ⟨⟪s + 1, j', d', off + 1 + descCountT (v 0) (v 1) (v 2).[s], e, y'⟫ + 1, s, j, d, off, e, y, rfl,
+        Or.inr ⟨d', hd', hd, j', hj', hj, y', hy', ⟨h₁, lt_add_one _⟩, hy⟩⟩
+
+lemma phi_iff (W m w : V) (C : Set V) (s j d off e y : V) :
+    Phi W m w C ⟪s, j, d, off, e, y⟫ ↔
+    ( (d = 0 ∧ ∃ j', j = j' + 1 ∧ e = off + 1 ∧ y = ncZeroSteps W (descCountT W m w.[s]) off j') ∨
+      (∃ d' j' y', d = d' + 1 ∧ j = j' + 1 ∧ y' ≤ y ∧
+        ⟪s + 1, j', d', off + 1 + descCountT W m w.[s], e, y'⟫ ∈ C ∧
+        y = ncSuccSteps W (descCountT W m w.[s]) off j' d' e y') ) := by
+  rw [show Phi W m w C ⟪s, j, d, off, e, y⟫ ↔ Cases W m w C s j d off e y from ⟨cases_of_phi, phi_of_cases⟩]
+  unfold Cases
+  constructor
+  · rintro (⟨rfl, j', _, rfl, rfl, rfl⟩ | ⟨d', _, rfl, j', _, rfl, y', hy', h₁, rfl⟩)
+    · exact Or.inl ⟨rfl, j', rfl, rfl, rfl⟩
+    · exact Or.inr ⟨d', j', y', rfl, rfl, hy', h₁, rfl⟩
+  · rintro (⟨rfl, j', rfl, rfl, rfl⟩ | ⟨d', j', y', rfl, rfl, hy', h₁, rfl⟩)
+    · exact Or.inl ⟨rfl, j', lt_add_one _, rfl, rfl, rfl⟩
+    · exact Or.inr ⟨d', lt_add_one _, rfl, j', lt_add_one _, rfl, y', hy', h₁, rfl⟩
+
+end NthC
+
+def NthCPacked (W m w pr : V) : Prop := NthC.construction.Fixpoint ![W, m, w] pr
+/-- `NthCGraph W m w s j d off e y`: from the sub-vector at `&off` (the last `j` entries of `w`, head `w.[s]`),
+the chain `y` derives `nthFact &e &off (cT d)`, `e` the walk offset of the entry `w.[s + d]`. -/
+def NthCGraph (W m w s j d off e y : V) : Prop := NthCPacked W m w ⟪s, j, d, off, e, y⟫
+
+noncomputable def nthCPackedDef : 𝚺₁.Semisentence 4 := .mkSigma “W m w pr. !NthC.blueprint.fixpointDef pr W m w”
+
+instance nthCPacked_defined : 𝚺₁-Relation₄ (NthCPacked : V → V → V → V → Prop) via nthCPackedDef := .mk
+  fun v ↦ by
+    simp only [nthCPackedDef, HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs,
+      Matrix.comp_vecCons', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons,
+      Matrix.constant_eq_singleton]
+    rw [NthC.construction.eval_fixpointDef]
+    rfl
+instance nthCPacked_definable : 𝚺₁-Relation₄ (NthCPacked : V → V → V → V → Prop) := nthCPacked_defined.to_definable
+
+noncomputable def nthCGraphDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “W m w s j d off e y. ∃ q₄, !pairDef q₄ e y ∧ ∃ q₃, !pairDef q₃ off q₄ ∧ ∃ q₂, !pairDef q₂ d q₃ ∧
+    ∃ q₁, !pairDef q₁ j q₂ ∧ ∃ pr, !pairDef pr s q₁ ∧ !nthCPackedDef W m w pr”
+instance nthCGraph_defined :
+    𝚺₁.Defined (fun v : Fin 9 → V ↦ NthCGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) nthCGraphDef := .mk
+  fun v ↦ by simp [nthCGraphDef, nthCPacked_defined.iff, NthCGraph]
+instance nthCGraph_definable :
+    𝚺₁.Definable (fun v : Fin 9 → V ↦ NthCGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
+  nthCGraph_defined.to_definable
+
+lemma NthCGraph.case_iff {W m w s j d off e y : V} :
+    NthCGraph W m w s j d off e y ↔
+    ( (d = 0 ∧ ∃ j', j = j' + 1 ∧ e = off + 1 ∧ y = ncZeroSteps W (descCountT W m w.[s]) off j') ∨
+      (∃ d' j' y', d = d' + 1 ∧ j = j' + 1 ∧ y' ≤ y ∧
+        NthCGraph W m w (s + 1) j' d' (off + 1 + descCountT W m w.[s]) e y' ∧
+        y = ncSuccSteps W (descCountT W m w.[s]) off j' d' e y') ) := by
+  unfold NthCGraph NthCPacked
+  rw [NthC.construction.case]
+  exact NthC.phi_iff W m w _ s j d off e y
+
+lemma NthCGraph.zero_iff {W m w s j off e y : V} :
+    NthCGraph W m w s j 0 off e y ↔ ∃ j', j = j' + 1 ∧ e = off + 1 ∧ y = ncZeroSteps W (descCountT W m w.[s]) off j' := by
+  rw [NthCGraph.case_iff]
+  constructor
+  · rintro (⟨_, h⟩ | ⟨d', _, _, h, _⟩)
+    · exact h
+    · exact absurd h (by simp)
+  · intro h; exact Or.inl ⟨rfl, h⟩
+
+lemma NthCGraph.succ_iff {W m w s j d' off e y : V} :
+    NthCGraph W m w s j (d' + 1) off e y ↔ ∃ j' y', j = j' + 1 ∧ y' ≤ y ∧
+      NthCGraph W m w (s + 1) j' d' (off + 1 + descCountT W m w.[s]) e y' ∧
+      y = ncSuccSteps W (descCountT W m w.[s]) off j' d' e y' := by
+  rw [NthCGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨d'', j', y', hd, rfl, hy', h₁, rfl⟩)
+    · exact absurd h (by simp)
+    · obtain rfl : d' = d'' := by simpa using hd
+      exact ⟨j', y', rfl, hy', h₁, rfl⟩
+  · rintro ⟨j', y', rfl, hy', h₁, rfl⟩
+    exact Or.inr ⟨d', j', y', rfl, rfl, hy', h₁, rfl⟩
+
+/-- `IsUTermVec j (takeLast v j)` for every `j ≤ k` of a semiterm vector. -/
+lemma isUTermVec_takeLast {k n v : V} (hv : IsSemitermVec LAct k n v) : ∀ j ≤ k, IsUTermVec LAct j (takeLast v j) := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => intro _; simp
+  | succ j ih =>
+    intro hj
+    have hjk : j < len v := by rw [hv.lh]; exact lt_of_lt_of_le (lt_add_one j) hj
+    rw [takeLast_succ_of_lt hjk, hv.lh]
+    exact (ih (le_trans le_self_add hj)).adjoin (hv.nth (tsub_lt_self
+      (lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj)
+      (lt_of_lt_of_le _root_.zero_lt_one le_add_self))).isUTerm
+
+section nthChainFun
+
+/-- **Existence** (Σ₁ motive, offsets bounded by `B`; the potential `off + π₁ (descVecAux … j)` is CONSTANT along
+the descent — the offset of the deeper sub-vector plus its count is the offset of this one plus this count). -/
+lemma nthCGraph_exists_bounded (W m : V) {n w : V} (hv : IsSemitermVec LAct n m w) {B : V} (hn : n ≤ B) :
+    ∀ d, ∀ s ≤ B, ∀ j ≤ B, ∀ off ≤ B, s + j = n → d < j →
+      off + π₁ (descVecAux W m (descTVec W m n w) j) ≤ B → ∃ e y, NthCGraph W m w s j d off e y := by
+  intro d
+  induction d using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro s _ j _ off _ _ hd _
+    rcases zero_or_succ j with rfl | ⟨j', rfl⟩
+    · exact absurd hd (by simp)
+    exact ⟨off + 1, _, NthCGraph.zero_iff.mpr ⟨j', rfl, rfl, rfl⟩⟩
+  | succ d ih =>
+    intro s hs j hj off hoff hsj hd hpot
+    rcases zero_or_succ j with rfl | ⟨j', rfl⟩
+    · exact absurd hd (by simp)
+    have hjk : j' < len w := by rw [hv.lh, ← hsj]; exact lt_of_lt_of_le (lt_add_one j') le_add_self
+    have hlt : n - (j' + 1) < n := tsub_lt_self (lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) (hsj ▸ le_add_self))
+      (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth : nthFromEnd (descTVec W m n w) j' = descT W m w.[n - (j' + 1)] := by
+      rw [nthFromEnd_eq (a := n - (j' + 1)) (by rw [len_descTVec W m hv.isUTerm, tsub_add_cancel_of_le (hsj ▸ le_add_self)]),
+        nth_descTVec W m hv.isUTerm hlt]
+    have hs' : n - (j' + 1) = s := by rw [← hsj, add_tsub_cancel_right]
+    have hpot' : off + 1 + descCountT W m w.[s] + π₁ (descVecAux W m (descTVec W m n w) j') ≤ B := by
+      have : π₁ (descVecAux W m (descTVec W m n w) (j' + 1)) =
+          π₁ (descVecAux W m (descTVec W m n w) j') + descCountT W m w.[s] + 1 := by
+        rw [descVecAux_succ, hnth, adjNode, pi₁_pair, hs']; rfl
+      rw [this] at hpot
+      calc off + 1 + descCountT W m w.[s] + π₁ (descVecAux W m (descTVec W m n w) j')
+          = off + (π₁ (descVecAux W m (descTVec W m n w) j') + descCountT W m w.[s] + 1) := by ring
+        _ ≤ B := hpot
+    obtain ⟨e, y', hy'⟩ := ih (s + 1) (le_trans (by rw [← hsj]; exact add_le_add (le_refl s) (by simp)) hn)
+      j' (le_trans le_self_add hj) (off + 1 + descCountT W m w.[s]) (le_trans le_self_add hpot')
+      (by rw [← hsj]; ring) (by simpa using hd) hpot'
+    exact ⟨e, _, NthCGraph.succ_iff.mpr ⟨j', y', rfl, le_appendV_left _ _, hy', rfl⟩⟩
+
+lemma nthCGraph_exists (W m : V) {n w : V} (hv : IsSemitermVec LAct n m w) {s j d off : V} (hsj : s + j = n) (hd : d < j) :
+    ∃ e y, NthCGraph W m w s j d off e y :=
+  nthCGraph_exists_bounded W m hv (B := s + j + off + π₁ (descVecAux W m (descTVec W m n w) j))
+    (by rw [← hsj]; exact le_trans le_self_add le_self_add) d s
+    (le_trans (le_trans le_self_add le_self_add) le_self_add) j (le_trans (le_trans le_add_self le_self_add) le_self_add)
+    off (le_trans le_add_self le_self_add) hsj hd (by rw [add_assoc (s + j)]; exact le_add_self)
+
+/-- **Uniqueness** (Π₁ motive). -/
+lemma nthCGraph_unique (W m w : V) : ∀ d, ∀ s j off e₁ y₁ e₂ y₂,
+    NthCGraph W m w s j d off e₁ y₁ → NthCGraph W m w s j d off e₂ y₂ → e₁ = e₂ ∧ y₁ = y₂ := by
+  intro d
+  induction d using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro s j off e₁ y₁ e₂ y₂ h₁ h₂
+    obtain ⟨j₁, rfl, rfl, rfl⟩ := NthCGraph.zero_iff.mp h₁
+    obtain ⟨j₂, hj, rfl, rfl⟩ := NthCGraph.zero_iff.mp h₂
+    obtain rfl : j₁ = j₂ := by simpa using hj
+    exact ⟨rfl, rfl⟩
+  | succ d ih =>
+    intro s j off e₁ y₁ e₂ y₂ h₁ h₂
+    obtain ⟨j₁, y₁', rfl, _, hg₁, rfl⟩ := NthCGraph.succ_iff.mp h₁
+    obtain ⟨j₂, y₂', hj, _, hg₂, rfl⟩ := NthCGraph.succ_iff.mp h₂
+    obtain rfl : j₁ = j₂ := by simpa using hj
+    obtain ⟨rfl, rfl⟩ := ih _ _ _ _ _ _ _ hg₁ hg₂
+    exact ⟨rfl, rfl⟩
+
+lemma nthCGraph_existsUnique_total (W m w s j d off : V) :
+    ∃! p, ((IsSemitermVec LAct (len w) m w ∧ s + j = len w ∧ d < j) → NthCGraph W m w s j d off (π₁ p) (π₂ p)) ∧
+      (¬(IsSemitermVec LAct (len w) m w ∧ s + j = len w ∧ d < j) → p = 0) := by
+  by_cases h : IsSemitermVec LAct (len w) m w ∧ s + j = len w ∧ d < j
+  · obtain ⟨e, y, hy⟩ := nthCGraph_exists W m h.1 h.2.1 h.2.2 (off := off)
+    refine ExistsUnique.intro ⟪e, y⟫ (by simpa [h] using hy) ?_
+    intro p hp
+    simp only [h, and_self, true_implies, not_true_eq_false, false_implies, and_true] at hp
+    obtain ⟨rfl, rfl⟩ := nthCGraph_unique W m w d s j off _ _ _ _ hp hy
+    exact (pair_unpair p).symm
+  · simp [h]
+
+/-- **The `nth` chain**: `nthChainP W m w s j d off = ⟪e, y⟫` — the entry offset `e` of `w.[s + d]` and the step list
+`y` deriving `nthFact &e &off (cT d)` from the sub-vector at `&off` (the last `j` entries, head `w.[s]`);
+`0` off the domain (`s + j = len w`, `d < j`, `w` a semiterm vector of arity `m`). -/
+noncomputable def nthChainP (W m w s j d off : V) : V := Classical.choose! (nthCGraph_existsUnique_total W m w s j d off)
+/-- The entry offset (`π₁`) and the chain (`π₂`). -/
+noncomputable def nthChainE (W m w s j d off : V) : V := π₁ (nthChainP W m w s j d off)
+noncomputable def nthChainL (W m w s j d off : V) : V := π₂ (nthChainP W m w s j d off)
+
+theorem nthChain_graph {W m n w s j d off : V} (hv : IsSemitermVec LAct n m w) (hsj : s + j = n) (hd : d < j) :
+    NthCGraph W m w s j d off (nthChainE W m w s j d off) (nthChainL W m w s j d off) := by
+  have hlen : len w = n := hv.lh
+  subst hlen
+  exact (Classical.choose!_spec (nthCGraph_existsUnique_total W m w s j d off)).1 ⟨hv, hsj, hd⟩
+lemma nthChain_eq_of_graph {W m n w s j d off e y : V} (hv : IsSemitermVec LAct n m w) (hsj : s + j = n) (hd : d < j)
+    (hy : NthCGraph W m w s j d off e y) : nthChainE W m w s j d off = e ∧ nthChainL W m w s j d off = y :=
+  nthCGraph_unique W m w d s j off _ _ _ _ (nthChain_graph hv hsj hd) hy
+
+noncomputable def nthChainPDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “p W m w s j d off. ∃ k, !lenDef k w ∧
+    ((!(isSemitermVec LAct).pi k m w ∧ s + j = k ∧ d < j) → ∃ e, !pi₁Def e p ∧ ∃ y, !pi₂Def y p ∧ !nthCGraphDef W m w s j d off e y) ∧
+    ((!(isSemitermVec LAct).sigma k m w → s + j = k → j ≤ d) → p = 0)”
+
+instance nthChainP_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ nthChainP (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) nthChainPDef := .mk
+  fun v ↦ by
+    simp [nthChainPDef, HierarchySymbol.Semiformula.val_sigma, nthCGraph_defined.iff,
+      (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df, nthChainP,
+      Classical.choose!_eq_iff_right]
+instance nthChainP_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ nthChainP (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  nthChainP_defined.to_definable
+
+noncomputable def nthChainEDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “e W m w s j d off. ∃ p, !nthChainPDef p W m w s j d off ∧ !pi₁Def e p”
+noncomputable def nthChainLDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W m w s j d off. ∃ p, !nthChainPDef p W m w s j d off ∧ !pi₂Def y p”
+instance nthChainE_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ nthChainE (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) nthChainEDef := .mk
+  fun v ↦ by simp [nthChainEDef, nthChainP_defined.iff, nthChainE]
+instance nthChainE_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ nthChainE (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  nthChainE_defined.to_definable
+instance nthChainL_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ nthChainL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) nthChainLDef := .mk
+  fun v ↦ by simp [nthChainLDef, nthChainP_defined.iff, nthChainL]
+instance nthChainL_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ nthChainL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  nthChainL_defined.to_definable
+
+end nthChainFun
+
+/-! #### The equations, the structure and the applicability of the chain -/
+
+section nthChainOK
+
+lemma nthChain_zero {W m n w s j' off : V} (hv : IsSemitermVec LAct n m w) (hsj : s + (j' + 1) = n) :
+    nthChainE W m w s (j' + 1) 0 off = off + 1 ∧
+    nthChainL W m w s (j' + 1) 0 off = ncZeroSteps W (descCountT W m w.[s]) off j' :=
+  nthChain_eq_of_graph hv hsj (by simp) (NthCGraph.zero_iff.mpr ⟨j', rfl, rfl, rfl⟩)
+
+lemma nthChain_succ {W m n w s j' d' off : V} (hv : IsSemitermVec LAct n m w) (hsj : s + (j' + 1) = n) (hd : d' < j') :
+    nthChainE W m w s (j' + 1) (d' + 1) off = nthChainE W m w (s + 1) j' d' (off + 1 + descCountT W m w.[s]) ∧
+    nthChainL W m w s (j' + 1) (d' + 1) off =
+      ncSuccSteps W (descCountT W m w.[s]) off j' d' (nthChainE W m w (s + 1) j' d' (off + 1 + descCountT W m w.[s]))
+        (nthChainL W m w (s + 1) j' d' (off + 1 + descCountT W m w.[s])) :=
+  nthChain_eq_of_graph hv hsj (by simpa using hd) (NthCGraph.succ_iff.mpr ⟨j', _, rfl, le_appendV_left _ _,
+    nthChain_graph hv (by rw [← hsj]; ring) hd, rfl⟩)
+
+/-- The chain is Horn-only, shift-free, and has `d + 1` steps. -/
+lemma nthCGraph_struct {W : V} (hWp : W = certPieces) (m w : V) : ∀ d, ∀ s j off e y : V,
+    NthCGraph W m w s j d off e y → NoDrop y ∧ shiftsV y = 0 ∧ HornOnly y ∧ len y = d + 1 := by
+  intro d
+  induction d using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro s j off e y hy
+    obtain ⟨j', rfl, rfl, rfl⟩ := NthCGraph.zero_iff.mp hy
+    have ht : sTag (mkStep W (179 : V) ?[vRef (off + 1 + descCountT W m w.[s]) j', ^&(off + 1), ^&off]) = 0 :=
+      ctag_nthAdjoinZero hWp _
+    exact ⟨noDrop_single (Or.inl ht), shiftsV_single_tag0 ht, hornOnly_single (Or.inl ht), by rw [len_ncZeroSteps, zero_add]⟩
+  | succ d ih =>
+    intro s j off e y hy
+    obtain ⟨j', y', rfl, _, hy', rfl⟩ := NthCGraph.succ_iff.mp hy
+    obtain ⟨hnd, hsh, hh, hl⟩ := ih _ _ _ _ _ hy'
+    have ht : sTag (mkStep W (180 : V) ?[cTV d, vRef (off + 1 + descCountT W m w.[s]) j', ^&(off + 1), ^&off, ^&e]) = 0 :=
+      ctag_nthAdjoinSucc hWp _
+    refine ⟨noDrop_appendV hnd (noDrop_single (Or.inl ht)), ?_, hornOnly_appendV hh (hornOnly_single (Or.inl ht)), ?_⟩
+    · rw [ncSuccSteps, shiftsV_appendV, hsh, shiftsV_single_tag0 ht, add_zero]
+    · rw [len_ncSuccSteps, hl]
+
+/-- The result of a chain at `(s, j, d, off)`: the fact `nthFact &e &off (cT d)`, the dossier of the entry
+`w.[s + d]` at `e`, and the bound `e + 2|w.[s + d]| + 1 ≤ off + 2Σ|entries| + 2` (so every later witness at
+`e` fits the same cap). -/
+def NCRes (tbl Wd E Γ m w j s d off e y : V) : Prop :=
+  PassPost tbl E Γ y (nthFact (^&e) (^&off) (cTV d)) ∧ DossT Wd Γ m w.[s + d] e ∧
+  e + 2 * termLen LAct w.[s + d] + 1 ≤ off + 2 * listSum (termLenVec LAct j (takeLast w j)) + 2
+instance ncRes_definable :
+    𝚫₁.Definable (fun v : Fin 12 → V ↦ NCRes (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) := by
+  unfold NCRes; definability
+
+/-- **The chain is applicable** and leaves `nthFact &e ⟨sub-vector⟩ (cT d)` (Π₁ motive on `d`). -/
+lemma nthCGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd W : V} (hWd : Wd = walkPieces)
+    (hWp : W = certPieces) {m n w : V} (hv : IsSemitermVec LAct n m w) :
+    ∀ d, ∀ s j off e y E Γ : V, NthCGraph W m w s j d off e y → s + j = n → d < j →
+      2 * m + 2 * n + 8 ≤ E → off + 2 * listSum (termLenVec LAct j (takeLast w j)) + 2 ≤ E → IsFormulaSet LAct Γ →
+      DossV Wd Γ m n w j off → NCRes tbl Wd E Γ m w j s d off e y := by
+  have hW : WalkTable tbl := hC.walkTable
+  intro d
+  induction d using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro s j off e y E Γ hy hsj hd hE hEo hΓ hD
+    obtain ⟨j', rfl, rfl, rfl⟩ := NthCGraph.zero_iff.mp hy
+    have hs_lt : s < n := by rw [← hsj]; exact lt_of_lt_of_le (lt_add_one s) (add_le_add (le_refl s) le_add_self)
+    have hjn : j' + 1 ≤ n := by rw [← hsj]; exact le_add_self
+    have hjk : j' < len w := by rw [hv.lh]; exact lt_of_lt_of_le (lt_add_one j') hjn
+    have hs' : n - (j' + 1) = s := by rw [← hsj, add_tsub_cancel_right]
+    obtain ⟨hadj, _, hDt, _⟩ := dossV_succ htbl hW hWd hv hjn hD
+    rw [hs'] at hadj hDt
+    have hc : descCountT W m w.[s] = descCountT Wd m w.[s] := by
+      rw [hWp, hWd]; exact descCountT_certPieces m _ (hv.nth hs_lt)
+    have hct : descCountT Wd m w.[s] + 1 ≤ 2 * termLen LAct w.[s] := descCountT_walk_le htbl hW hWd (hv.nth hs_lt)
+    have hSum : listSum (termLenVec LAct (j' + 1) (takeLast w (j' + 1))) =
+        termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j')) := by
+      rw [takeLast_succ_of_lt hjk, hv.lh, hs', termLenVec_cons (hv.nth hs_lt).isUTerm (isUTermVec_takeLast hv j' (le_trans le_self_add hjn)),
+        listSum_adjoin]
+    unfold NCRes
+    rw [hSum] at hEo ⊢
+    rw [hc]
+    have hE1 : off + 2 * termLen LAct w.[s] + 1 ≤ E :=
+      calc off + 2 * termLen LAct w.[s] + 1 ≤ off + 2 * termLen LAct w.[s] + 1 + (2 * listSum (termLenVec LAct j' (takeLast w j')) + 1) :=
+            le_self_add
+        _ = off + 2 * (termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j'))) + 2 := by ring
+        _ ≤ E := hEo
+    have hEoff1 : off + 1 + 1 ≤ E :=
+      calc off + 1 + 1 = off + 0 + 2 := by ring
+        _ ≤ off + 2 * (termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j'))) + 2 :=
+            add_le_add (add_le_add (le_refl off) zero_le) (le_refl 2)
+        _ ≤ E := hEo
+    have hEoff : off + 1 ≤ E := le_trans le_self_add hEoff1
+    obtain ⟨ok₀, tag₀, ctx₀⟩ := cok_nthAdjoinZero htbl hC hWp hΓ (isSemiterm_vRef _ _) (E_vRef_ct hct hE1)
+      (by simp) (termLen_fvar_le hEoff1) (by simp) (termLen_fvar_le hEoff) hadj
+    refine ⟨⟨listOK_single ok₀, hornOnly_single (Or.inl tag₀), ?_⟩, by rw [add_zero]; exact hDt, ?_⟩
+    · rw [ncZeroSteps, finalCtx_single, ctx₀, cTV_zero]; exact mem_insert_self'
+    · rw [add_zero]
+      calc off + 1 + 2 * termLen LAct w.[s] + 1 = off + 2 * termLen LAct w.[s] + 0 + 2 := by ring
+        _ ≤ off + 2 * termLen LAct w.[s] + 2 * listSum (termLenVec LAct j' (takeLast w j')) + 2 :=
+            add_le_add (add_le_add (le_refl _) zero_le) (le_refl 2)
+        _ = off + 2 * (termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j'))) + 2 := by ring
+  | succ d ih =>
+    intro s j off e y E Γ hy hsj hd hE hEo hΓ hD
+    obtain ⟨j', y', rfl, _, hy', rfl⟩ := NthCGraph.succ_iff.mp hy
+    have hs_lt : s < n := by rw [← hsj]; exact lt_of_lt_of_le (lt_add_one s) (add_le_add (le_refl s) le_add_self)
+    have hjn : j' + 1 ≤ n := by rw [← hsj]; exact le_add_self
+    have hjk : j' < len w := by rw [hv.lh]; exact lt_of_lt_of_le (lt_add_one j') hjn
+    have hs' : n - (j' + 1) = s := by rw [← hsj, add_tsub_cancel_right]
+    have hdj : d < j' := by simpa using hd
+    have hj0 : j' ≠ 0 := ne_of_gt (lt_of_le_of_lt zero_le hdj)
+    obtain ⟨hadj, _, _, hDv⟩ := dossV_succ htbl hW hWd hv hjn hD
+    rw [hs'] at hadj hDv
+    have hc : descCountT W m w.[s] = descCountT Wd m w.[s] := by
+      rw [hWp, hWd]; exact descCountT_certPieces m _ (hv.nth hs_lt)
+    have hct : descCountT Wd m w.[s] + 1 ≤ 2 * termLen LAct w.[s] := descCountT_walk_le htbl hW hWd (hv.nth hs_lt)
+    have hSum : listSum (termLenVec LAct (j' + 1) (takeLast w (j' + 1))) =
+        termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j')) := by
+      rw [takeLast_succ_of_lt hjk, hv.lh, hs', termLenVec_cons (hv.nth hs_lt).isUTerm (isUTermVec_takeLast hv j' (le_trans le_self_add hjn)),
+        listSum_adjoin]
+    unfold NCRes
+    rw [hSum] at hEo ⊢
+    rw [hc] at hy' ⊢
+    -- the deeper chain
+    have hEo' : off + 1 + descCountT Wd m w.[s] + 2 * listSum (termLenVec LAct j' (takeLast w j')) + 2 ≤ E :=
+      calc off + 1 + descCountT Wd m w.[s] + 2 * listSum (termLenVec LAct j' (takeLast w j')) + 2
+          = off + (descCountT Wd m w.[s] + 1) + 2 * listSum (termLenVec LAct j' (takeLast w j')) + 2 := by ring
+        _ ≤ off + 2 * termLen LAct w.[s] + 2 * listSum (termLenVec LAct j' (takeLast w j')) + 2 :=
+            add_le_add (add_le_add (add_le_add (le_refl off) hct) (le_refl _)) (le_refl 2)
+        _ = off + 2 * (termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j'))) + 2 := by ring
+        _ ≤ E := hEo
+    obtain ⟨⟨hokY, hhY, hfY⟩, hDe, hbe⟩ :=
+      ih (s + 1) j' (off + 1 + descCountT Wd m w.[s]) e y' E Γ hy' (by rw [← hsj]; ring) hdj hE hEo' hΓ hDv
+    obtain ⟨hndY, hsY, _, _⟩ := nthCGraph_struct hWp m w d (s + 1) j' (off + 1 + descCountT Wd m w.[s]) e y' hy'
+    have hsub : Γ ⊆ finalCtx Γ y' := subset_finalCtx_of_shiftsV_zero hndY hsY
+    have hΓ₁ : IsFormulaSet LAct (finalCtx Γ y') := finalCtx_isFormulaSet 8 htbl hΓ hokY
+    -- the witness bounds
+    have hE1 : off + 2 * termLen LAct w.[s] + 1 ≤ E :=
+      calc off + 2 * termLen LAct w.[s] + 1 ≤ off + 2 * termLen LAct w.[s] + 1 + (2 * listSum (termLenVec LAct j' (takeLast w j')) + 1) :=
+            le_self_add
+        _ = off + 2 * (termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j'))) + 2 := by ring
+        _ ≤ E := hEo
+    have hEoff1 : off + 1 + 1 ≤ E :=
+      calc off + 1 + 1 = off + 0 + 2 := by ring
+        _ ≤ off + 2 * (termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j'))) + 2 :=
+            add_le_add (add_le_add (le_refl off) zero_le) (le_refl 2)
+        _ ≤ E := hEo
+    have hEoff : off + 1 ≤ E := le_trans le_self_add hEoff1
+    have hEe : e + 1 ≤ E :=
+      calc e + 1 ≤ e + 1 + 2 * termLen LAct w.[s + 1 + d] := le_self_add
+        _ = e + 2 * termLen LAct w.[s + 1 + d] + 1 := by ring
+        _ ≤ E := le_trans hbe hEo'
+    have hEd : 2 * d + 1 ≤ E :=
+      calc 2 * d + 1 ≤ 2 * d + 2 := add_le_add (le_refl _) (by norm_num)
+        _ = 2 * (d + 1) := by ring
+        _ ≤ 2 * n := mul_le_mul_of_nonneg_left (le_trans (add_le_add (le_of_lt hdj) (le_refl 1)) hjn) zero_le
+        _ ≤ 2 * m + 2 * n + 8 := le_trans le_add_self le_self_add
+        _ ≤ E := hE
+    -- the climbing step
+    have hnth' : neg LAct (nthFact (^&e) (vRef (off + 1 + descCountT Wd m w.[s]) j') (cTV d)) ∈ finalCtx Γ y' := by
+      rw [vRef_of_ne hj0]; exact hfY
+    obtain ⟨ok₁, tag₁, ctx₁⟩ := cok_nthAdjoinSucc htbl hC hWp hΓ₁ (cTV_semiterm_LAct 0 _) (termLen_cTV_le hEd)
+      (isSemiterm_vRef _ _) (E_vRef_ct hct hE1) (by simp) (termLen_fvar_le hEoff1) (by simp) (termLen_fvar_le hEoff)
+      (by simp) (termLen_fvar_le hEe) (hsub hadj) hnth'
+    refine ⟨⟨listOK_appendV hokY (listOK_single ok₁), hornOnly_appendV hhY (hornOnly_single (Or.inl tag₁)), ?_⟩,
+      by rw [show s + (d + 1) = s + 1 + d by ring]; exact hDe, ?_⟩
+    · rw [ncSuccSteps, finalCtx_appendV, finalCtx_single, ctx₁, cTV_succ]; exact mem_insert_self'
+    · rw [show s + (d + 1) = s + 1 + d by ring]
+      calc e + 2 * termLen LAct w.[s + 1 + d] + 1
+          ≤ off + 1 + descCountT Wd m w.[s] + 2 * listSum (termLenVec LAct j' (takeLast w j')) + 2 := hbe
+        _ = off + (descCountT Wd m w.[s] + 1) + 2 * listSum (termLenVec LAct j' (takeLast w j')) + 2 := by ring
+        _ ≤ off + 2 * termLen LAct w.[s] + 2 * listSum (termLenVec LAct j' (takeLast w j')) + 2 :=
+            add_le_add (add_le_add (add_le_add (le_refl off) hct) (le_refl _)) (le_refl 2)
+        _ = off + 2 * (termLen LAct w.[s] + listSum (termLenVec LAct j' (takeLast w j'))) + 2 := by ring
+
+end nthChainOK
+
 end ArithS
