@@ -640,3 +640,15 @@ sentence (`Pmem`) hangs — give every fact code a `_definable` instance (named 
 `by_cases` branch must carry ALL previous case hypotheses into `simp`; `Function₅` exists only in the
 `via` form; `ArithS.eqF` was taken (`TheoryAct`) — the formula template is `eqFT`; a `shiftTW` that
 shifts every non-absolute tag made `relocV_shiftTV` FALSE for malformed tags (shift tags 0/1 only).
+
+**§11 status — `Layout` DONE (0a076a4; 5299 lines; census standard):** `layoutRows` (47 = walk + copy-in
++ identification + `subsetAntisymm` + the Frag group K re-issues of Sets/Lengths rows WITH `inst_`),
+`copySteps W i T` (19 fact kinds; index rule: one shift, source `&i ↦ &(i+1)`, copy `= &0`),
+`chainSteps W xs` (innermost-first insert chain; LAYOUT `l_s = &0`, `s = &1`, `s_i = &(i+1)` —
+deviates from §3.2's `s = &k`), `eqSteps W i j r` (the walk's recursion replayed once as a
+template `⟪count, facts, steps⟫` and RELOCATED; `DossierAt P Γ i r`; `eqCount`), each with `_ok`
+(`ListOK ∧ NoDrop ∧ HornOnly ∧ shiftsV = … ∧ len ≤ … ∧ facts ∈ finalCtx`) and `costSum_…_le`.
+REMAINING bridges (stated, not proved): "the walk's final context holds `dossFacts factPreds 0 r`"
+and `eqCount r = descCountF W n r` — the Cert agent's `DossF/DossT/DossV` are the natural home.
+Name note: Layout's fact-code `_definable'` instances (Cert declares the plain names).
+IN FLIGHT: `Cert` (producers), `Frag1` (the six fragments needing no re-description).
