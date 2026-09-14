@@ -1170,4 +1170,780 @@ theorem fragVerum_ok {tbl N E Γ W tblN N' B' is il iv L n : V} (htbl : TableOK 
 
 end leaves
 
+/-! ## 4. The node fragments `nodeAnd`, `nodeOr`, `nodeWk`, `nodeCut` (DESIGN_fragments §4.3, §4.4, §4.7, §4.9)
+
+Each is the `node(ν)` list of §4.0 for a node whose children have been recovered (`goalElim`): the totality
+step, `fstIdx_tag`, `Intro_tag`, `Dlen_tag` (four steps, one shift), then the `dlen` tail and `sGoal`.
+LAYOUT ASSUMED at `Γ` (indices of the objects, as `^&i`): the sequent `s` at `is` (with `fsetPiFact` for `wk`),
+its length object at `il` (`setLenFact &il &is`, `leFact &il (bnum L)`), the principal member `r` at `ir` with
+its shape fact and `memFact &ir &is`, its immediate sub-formulas at `ip`, `iq`; for every child `i`: its
+derivation object at `idᵢ` with `derFact`, its length object at `inᵢ` with `dlenFact &idᵢ &inᵢ` and the numeral
+bound `leFact &inᵢ (bnum mᵢ)` (what `goalElim` leaves), and the row's sequent object `cᵢ` at `icᵢ` with its
+`insFact` (the `insertTotal` object) and `fstIdxFact &icᵢ &idᵢ` — the child's goal fact MOVED onto `cᵢ` by
+`congFstIdx`; the identification of the child's chain top with `cᵢ` (§3.4) is NOT produced here. For `wk` the
+child's sequent object `c` at `ic` carries `subsetFact &ic &is` instead, and for `cut` the cut formula `p` at
+`ip` and its negation at `inp` carry `negFact &inp &ip`. `L`, `mᵢ`, `n` are the values `setLen s`, `dlen dᵢ`,
+`dlen ν`; the closed `sLemma` needs the recurrence `L + Σ mᵢ + 1 ≤ n` (true by `DlenGraph.<tag>_iff`). -/
+
+section nodes
+
+/-! ### 4.1 `andIntro` -/
+
+noncomputable def nodeAndHead (W is il ir ip iq id₁ id₂ icp icq in₁ in₂ : V) : V :=
+  mkStep W 89 ?[^&is, ^&ip, ^&iq, ^&id₁, ^&id₂] ∷
+  mkStep W 118 ?[^&(is + 1), ^&(ip + 1), ^&(iq + 1), ^&(id₁ + 1), ^&(id₂ + 1), ^&0] ∷
+  mkStep W 95 ?[^&(is + 1), ^&(ip + 1), ^&(iq + 1), ^&(id₁ + 1), ^&(id₂ + 1), ^&(ir + 1), ^&(icp + 1), ^&(icq + 1), ^&0] ∷
+  mkStep W 101 ?[^&0, ^&(is + 1), ^&(ip + 1), ^&(iq + 1), ^&(id₁ + 1), ^&(id₂ + 1), ^&(in₁ + 1), ^&(in₂ + 1), ^&(il + 1)] ∷
+  (0 : V)
+
+/-- **The `andIntro` node fragment**. -/
+noncomputable def nodeAnd (W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n : V) : V :=
+  appendV (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂)
+    (goalTailBinary W tblN (il + 1) (in₁ + 1) (in₂ + 1) L m₁ m₂ n (is + 1))
+
+noncomputable def nodeAndHeadCtx (Γ is il ip iq id₁ id₂ in₁ in₂ : V) : V :=
+  insert (neg LAct (dlenFact (^&0 : V) (binaryT (il + 1) (in₁ + 1) (in₂ + 1))))
+    (insert (neg LAct (derFact (^&0 : V)))
+      (insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0)))
+        (insert (neg LAct (andIntroFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)) (^&(iq + 1)) (^&(id₁ + 1)) (^&(id₂ + 1))))
+          (setShift LAct Γ))))
+
+theorem nodeAndHead_ok {tbl N E Γ W is il ir ip iq id₁ id₂ icp icq in₁ in₂ : V} (htbl : TableOK tbl N)
+    (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hil : il + 2 ≤ E) (hir : ir + 2 ≤ E) (hip : ip + 2 ≤ E) (hiq : iq + 2 ≤ E)
+    (hid₁ : id₁ + 2 ≤ E) (hid₂ : id₂ + 2 ≤ E) (hicp : icp + 2 ≤ E) (hicq : icq + 2 ≤ E)
+    (hin₁ : in₁ + 2 ≤ E) (hin₂ : in₂ + 2 ≤ E)
+    (hand : neg LAct (andFact (^&ir) (^&ip) (^&iq)) ∈ Γ) (hmr : neg LAct (memFact (^&ir) (^&is)) ∈ Γ)
+    (hf₁ : neg LAct (fstIdxFact (^&icp) (^&id₁)) ∈ Γ) (hi₁ : neg LAct (insFact (^&icp) (^&ip) (^&is)) ∈ Γ)
+    (hd₁ : neg LAct (derFact (^&id₁ : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id₁ : V) (^&in₁)) ∈ Γ)
+    (hf₂ : neg LAct (fstIdxFact (^&icq) (^&id₂)) ∈ Γ) (hi₂ : neg LAct (insFact (^&icq) (^&iq) (^&is)) ∈ Γ)
+    (hd₂ : neg LAct (derFact (^&id₂ : V)) ∈ Γ) (hn₂ : neg LAct (dlenFact (^&id₂ : V) (^&in₂)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) :
+    ListOK tbl E ((9 : ℕ) : V) Γ (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) ∧
+    NoDrop' (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) ∧
+    shiftsV (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) = 1 ∧
+    len (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) = 4 ∧
+    finalCtx Γ (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) = nodeAndHeadCtx Γ is il ip iq id₁ id₂ in₁ in₂ := by
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
+  have his0 : IsSemiterm LAct 0 (^&is : V) := by simp
+  have hisE : termLen LAct (^&is : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) his)
+  have his1 : IsSemiterm LAct 0 (^&(is + 1) : V) := by simp
+  have his1E : termLen LAct (^&(is + 1) : V) ≤ E := termLen_fvar_succ_le his
+  have hil0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hilE : termLen LAct (^&il : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hil)
+  have hil1 : IsSemiterm LAct 0 (^&(il + 1) : V) := by simp
+  have hil1E : termLen LAct (^&(il + 1) : V) ≤ E := termLen_fvar_succ_le hil
+  have hir0 : IsSemiterm LAct 0 (^&ir : V) := by simp
+  have hirE : termLen LAct (^&ir : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hir)
+  have hir1 : IsSemiterm LAct 0 (^&(ir + 1) : V) := by simp
+  have hir1E : termLen LAct (^&(ir + 1) : V) ≤ E := termLen_fvar_succ_le hir
+  have hip0 : IsSemiterm LAct 0 (^&ip : V) := by simp
+  have hipE : termLen LAct (^&ip : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hip)
+  have hip1 : IsSemiterm LAct 0 (^&(ip + 1) : V) := by simp
+  have hip1E : termLen LAct (^&(ip + 1) : V) ≤ E := termLen_fvar_succ_le hip
+  have hiq0 : IsSemiterm LAct 0 (^&iq : V) := by simp
+  have hiqE : termLen LAct (^&iq : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hiq)
+  have hiq1 : IsSemiterm LAct 0 (^&(iq + 1) : V) := by simp
+  have hiq1E : termLen LAct (^&(iq + 1) : V) ≤ E := termLen_fvar_succ_le hiq
+  have hid₁0 : IsSemiterm LAct 0 (^&id₁ : V) := by simp
+  have hid₁E : termLen LAct (^&id₁ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hid₁)
+  have hid₁1 : IsSemiterm LAct 0 (^&(id₁ + 1) : V) := by simp
+  have hid₁1E : termLen LAct (^&(id₁ + 1) : V) ≤ E := termLen_fvar_succ_le hid₁
+  have hid₂0 : IsSemiterm LAct 0 (^&id₂ : V) := by simp
+  have hid₂E : termLen LAct (^&id₂ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hid₂)
+  have hid₂1 : IsSemiterm LAct 0 (^&(id₂ + 1) : V) := by simp
+  have hid₂1E : termLen LAct (^&(id₂ + 1) : V) ≤ E := termLen_fvar_succ_le hid₂
+  have hicp0 : IsSemiterm LAct 0 (^&icp : V) := by simp
+  have hicpE : termLen LAct (^&icp : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hicp)
+  have hicp1 : IsSemiterm LAct 0 (^&(icp + 1) : V) := by simp
+  have hicp1E : termLen LAct (^&(icp + 1) : V) ≤ E := termLen_fvar_succ_le hicp
+  have hicq0 : IsSemiterm LAct 0 (^&icq : V) := by simp
+  have hicqE : termLen LAct (^&icq : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hicq)
+  have hicq1 : IsSemiterm LAct 0 (^&(icq + 1) : V) := by simp
+  have hicq1E : termLen LAct (^&(icq + 1) : V) ≤ E := termLen_fvar_succ_le hicq
+  have hin₁0 : IsSemiterm LAct 0 (^&in₁ : V) := by simp
+  have hin₁E : termLen LAct (^&in₁ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hin₁)
+  have hin₁1 : IsSemiterm LAct 0 (^&(in₁ + 1) : V) := by simp
+  have hin₁1E : termLen LAct (^&(in₁ + 1) : V) ≤ E := termLen_fvar_succ_le hin₁
+  have hin₂0 : IsSemiterm LAct 0 (^&in₂ : V) := by simp
+  have hin₂E : termLen LAct (^&in₂ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hin₂)
+  have hin₂1 : IsSemiterm LAct 0 (^&(in₂ + 1) : V) := by simp
+  have hin₂1E : termLen LAct (^&(in₂ + 1) : V) ≤ E := termLen_fvar_succ_le hin₂
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E :=
+    termLen_fvar_le (by rw [zero_add]; exact le_trans (by norm_num) (le_trans le_add_self his))
+  -- step 1: tot_andIntro
+  obtain ⟨ok₁, tg₁, cx₁⟩ := fok_totAndIntro htbl hF hWp hΓ his0 hisE hip0 hipE hiq0 hiqE hid₁0 hid₁E hid₂0 hid₂E
+  rw [termShift_fvar, termShift_fvar, termShift_fvar, termShift_fvar, termShift_fvar, Nat.cast_zero] at cx₁
+  set F := neg LAct (andIntroFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)) (^&(iq + 1)) (^&(id₁ + 1)) (^&(id₂ + 1))) with hFdef
+  set Γ₁ := insert F (setShift LAct Γ) with hΓ₁def
+  have hΓ₁ : IsFormulaSet LAct Γ₁ := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
+  have tand : neg LAct (andFact (^&(ir + 1)) (^&(ip + 1)) (^&(iq + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hand
+    rwa [shift_neg (isFormula_andFact hir0 hip0 hiq0), shift_andFact hir0 hip0 hiq0, termShift_fvar, termShift_fvar, termShift_fvar] at this
+  have tmr : neg LAct (memFact (^&(ir + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hmr
+    rwa [shift_neg (isFormula_memFact hir0 his0), shift_memFact hir0 his0, termShift_fvar, termShift_fvar] at this
+  have tf₁ : neg LAct (fstIdxFact (^&(icp + 1)) (^&(id₁ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hf₁
+    rwa [shift_neg (isFormula_fstIdxFact hicp0 hid₁0), shift_fstIdxFact hicp0 hid₁0, termShift_fvar, termShift_fvar] at this
+  have ti₁ : neg LAct (insFact (^&(icp + 1)) (^&(ip + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hi₁
+    rwa [shift_neg (isFormula_insFact hicp0 hip0 his0), shift_insFact hicp0 hip0 his0, termShift_fvar, termShift_fvar, termShift_fvar] at this
+  have td₁ : neg LAct (derFact (^&(id₁ + 1) : V)) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hd₁
+    rwa [shift_neg (isFormula_derFact hid₁0), shift_derFact hid₁0, termShift_fvar] at this
+  have tn₁ : neg LAct (dlenFact (^&(id₁ + 1) : V) (^&(in₁ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hn₁
+    rwa [shift_neg (isFormula_dlenFact hid₁0 hin₁0), shift_dlenFact hid₁0 hin₁0, termShift_fvar, termShift_fvar] at this
+  have tf₂ : neg LAct (fstIdxFact (^&(icq + 1)) (^&(id₂ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hf₂
+    rwa [shift_neg (isFormula_fstIdxFact hicq0 hid₂0), shift_fstIdxFact hicq0 hid₂0, termShift_fvar, termShift_fvar] at this
+  have ti₂ : neg LAct (insFact (^&(icq + 1)) (^&(iq + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hi₂
+    rwa [shift_neg (isFormula_insFact hicq0 hiq0 his0), shift_insFact hicq0 hiq0 his0, termShift_fvar, termShift_fvar, termShift_fvar] at this
+  have td₂ : neg LAct (derFact (^&(id₂ + 1) : V)) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hd₂
+    rwa [shift_neg (isFormula_derFact hid₂0), shift_derFact hid₂0, termShift_fvar] at this
+  have tn₂ : neg LAct (dlenFact (^&(id₂ + 1) : V) (^&(in₂ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hn₂
+    rwa [shift_neg (isFormula_dlenFact hid₂0 hin₂0), shift_dlenFact hid₂0 hin₂0, termShift_fvar, termShift_fvar] at this
+  have tsl : neg LAct (setLenFact (^&(il + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hsl
+    rwa [shift_neg (isFormula_setLenFact hil0 his0), shift_setLenFact hil0 his0, termShift_fvar, termShift_fvar] at this
+  -- step 2: fstIdx_and
+  obtain ⟨ok₂, tg₂, cx₂⟩ := fok_fstIdxAnd htbl hF hWp hΓ₁ his1 his1E hip1 hip1E hiq1 hiq1E hid₁1 hid₁1E hid₂1 hid₂1E hf0 hf0E
+    (by rw [hΓ₁def, hFdef]; simp)
+  set Γ₂ := insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0))) Γ₁ with hΓ₂def
+  have hΓ₂ : IsFormulaSet LAct Γ₂ := cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
+  -- step 3: Intro_and
+  obtain ⟨ok₃, tg₃, cx₃⟩ := fok_introAnd htbl hF hWp hΓ₂ his1 his1E hip1 hip1E hiq1 hiq1E hid₁1 hid₁1E hid₂1 hid₂1E
+    hir1 hir1E hicp1 hicp1E hicq1 hicq1E hf0 hf0E
+    (by rw [hΓ₂def, hΓ₁def, hFdef]; simp) (by rw [hΓ₂def]; simp [tand]) (by rw [hΓ₂def]; simp [tmr])
+    (by rw [hΓ₂def]; simp [tf₁]) (by rw [hΓ₂def]; simp [ti₁]) (by rw [hΓ₂def]; simp [td₁])
+    (by rw [hΓ₂def]; simp [tf₂]) (by rw [hΓ₂def]; simp [ti₂]) (by rw [hΓ₂def]; simp [td₂])
+  set Γ₃ := insert (neg LAct (derFact (^&0 : V))) Γ₂ with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := cx₃ ▸ isFormulaSet_ctxAfter 9 htbl ok₃
+  -- step 4: Dlen_and
+  obtain ⟨ok₄, tg₄, cx₄⟩ := fok_dlenAnd htbl hF hWp hΓ₃ hf0 hf0E his1 his1E hip1 hip1E hiq1 hiq1E hid₁1 hid₁1E
+    hid₂1 hid₂1E hin₁1 hin₁1E hin₂1 hin₂1E hil1 hil1E
+    (by rw [hΓ₃def, hΓ₂def, hΓ₁def, hFdef]; simp) (by rw [hΓ₃def, hΓ₂def]; simp [tn₁])
+    (by rw [hΓ₃def, hΓ₂def]; simp [tn₂]) (by rw [hΓ₃def, hΓ₂def]; simp [tsl])
+  have hfin : finalCtx Γ (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) =
+      nodeAndHeadCtx Γ is il ip iq id₁ id₂ in₁ in₂ := by
+    unfold nodeAndHead
+    rw [finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_single, cx₄]
+    rfl
+  refine ⟨?_, ?_, ?_, ?_, hfin⟩
+  · unfold nodeAndHead
+    refine listOK_cons (ok₁.mono h89) ?_
+    rw [cx₁]
+    refine listOK_cons (ok₂.mono h89) ?_
+    rw [cx₂]
+    refine listOK_cons ok₃ ?_
+    rw [cx₃]
+    exact listOK_single ok₄
+  · unfold nodeAndHead
+    exact noDrop'_cons (by rw [tg₁]; simp) (noDrop'_cons (by rw [tg₂]; simp)
+      (noDrop'_cons (by rw [tg₃]; simp) (noDrop'_single (by rw [tg₄]; simp))))
+  · unfold nodeAndHead
+    rw [shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄]
+    simp
+  · unfold nodeAndHead; simp [len_adjoin]; norm_num
+
+/-- **`nodeAnd` is applicable** (cap `M = 9`: `Intro_and` and `Dlen_and` have nine witnesses). -/
+theorem nodeAnd_ok {tbl N E Γ W tblN N' B' is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n : V}
+    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
+    (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hir : ir + 2 ≤ E) (hip : ip + 2 ≤ E) (hiq : iq + 2 ≤ E)
+    (hid₁ : id₁ + 2 ≤ E) (hid₂ : id₂ + 2 ≤ E) (hicp : icp + 2 ≤ E) (hicq : icq + 2 ≤ E)
+    (hT : il + in₁ + in₂ + 10 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + m₂ + 1 ≤ n)
+    (hand : neg LAct (andFact (^&ir) (^&ip) (^&iq)) ∈ Γ) (hmr : neg LAct (memFact (^&ir) (^&is)) ∈ Γ)
+    (hf₁ : neg LAct (fstIdxFact (^&icp) (^&id₁)) ∈ Γ) (hi₁ : neg LAct (insFact (^&icp) (^&ip) (^&is)) ∈ Γ)
+    (hd₁ : neg LAct (derFact (^&id₁ : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id₁ : V) (^&in₁)) ∈ Γ)
+    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
+    (hf₂ : neg LAct (fstIdxFact (^&icq) (^&id₂)) ∈ Γ) (hi₂ : neg LAct (insFact (^&icq) (^&iq) (^&is)) ∈ Γ)
+    (hd₂ : neg LAct (derFact (^&id₂ : V)) ∈ Γ) (hn₂ : neg LAct (dlenFact (^&id₂ : V) (^&in₂)) ∈ Γ)
+    (hle₂ : neg LAct (leFact (^&in₂) (bnum m₂)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    ListOK tbl E ((9 : ℕ) : V) Γ (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) ∧
+    NoDrop' (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) ∧
+    shiftsV (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) = 1 ∧
+    len (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) = 9 ∧
+    neg LAct (goalFact (^&(is + 1)) (bnum n)) ∈
+      finalCtx Γ (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) := by
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
+  have hil : il + 2 ≤ E := le_trans (add_le_add (le_trans le_self_add le_self_add) (by norm_num)) hT
+  have hin₁ : in₁ + 2 ≤ E := le_trans (add_le_add (le_trans le_add_self le_self_add) (by norm_num)) hT
+  have hin₂ : in₂ + 2 ≤ E := le_trans (add_le_add le_add_self (by norm_num)) hT
+  obtain ⟨hok, hnd, hsv, hlen, hfin⟩ := nodeAndHead_ok htbl hF hWp hΓ his hil hir hip hiq hid₁ hid₂ hicp hicq hin₁ hin₂
+    hand hmr hf₁ hi₁ hd₁ hn₁ hf₂ hi₂ hd₂ hn₂ hsl
+  have hΓ' : IsFormulaSet LAct (finalCtx Γ (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂)) :=
+    finalCtx_isFormulaSet 9 htbl hΓ hok
+  have hl0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hn10 : IsSemiterm LAct 0 (^&in₁ : V) := by simp
+  have hn20 : IsSemiterm LAct 0 (^&in₂ : V) := by simp
+  have hbL : IsSemiterm LAct 0 (bnum L) := isSemiterm_bnum_LAct 0 L
+  have hbm₁ : IsSemiterm LAct 0 (bnum m₁) := isSemiterm_bnum_LAct 0 m₁
+  have hbm₂ : IsSemiterm LAct 0 (bnum m₂) := isSemiterm_bnum_LAct 0 m₂
+  have tr : ∀ x ∈ Γ, shift LAct x ∈ finalCtx Γ (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) := by
+    intro x hx; rw [hfin]; unfold nodeAndHeadCtx; exact shift_mem_head3 hx
+  have hle' : neg LAct (leFact (^&(il + 1)) (bnum L)) ∈ finalCtx Γ (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) := by
+    have := tr _ hle
+    rwa [shift_neg (isFormula_leFact hl0 hbL), shift_leFact hl0 hbL, termShift_fvar, termShift_bnum] at this
+  have hle₁' : neg LAct (leFact (^&(in₁ + 1)) (bnum m₁)) ∈ finalCtx Γ (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) := by
+    have := tr _ hle₁
+    rwa [shift_neg (isFormula_leFact hn10 hbm₁), shift_leFact hn10 hbm₁, termShift_fvar, termShift_bnum] at this
+  have hle₂' : neg LAct (leFact (^&(in₂ + 1)) (bnum m₂)) ∈ finalCtx Γ (nodeAndHead W is il ir ip iq id₁ id₂ icp icq in₁ in₂) := by
+    have := tr _ hle₂
+    rwa [shift_neg (isFormula_leFact hn20 hbm₂), shift_leFact hn20 hbm₂, termShift_fvar, termShift_bnum] at this
+  obtain ⟨tok, tnd, tsv, tlen, tfin, tmem⟩ := goalTailBinary_ok htbl hF hWp htblN hΓ'
+    (by rw [show il + 1 + (in₁ + 1) + (in₂ + 1) + 7 = il + in₁ + in₂ + 10 by ring]; exact hT)
+    (by rw [add_assoc, one_add_one_eq_two]; exact his) hn hLn hle' hle₁' hle₂'
+    (by rw [hfin]; unfold nodeAndHeadCtx; simp) (by rw [hfin]; unfold nodeAndHeadCtx; simp)
+    (by rw [hfin]; unfold nodeAndHeadCtx; simp)
+  refine ⟨listOK_appendV hok (tok.mono h89), noDrop'_appendV hnd tnd, ?_, ?_, ?_⟩
+  · unfold nodeAnd; rw [shiftsV_appendV, hsv, tsv, add_zero]
+  · unfold nodeAnd; rw [len_appendV, hlen, tlen]; norm_num
+  · unfold nodeAnd; rw [finalCtx_appendV]; exact tmem
+
+/-! ### 4.2 `orIntro` (`c' = insert q s` at `icq`, `c = insert p c'` at `ic`) -/
+
+noncomputable def nodeOrHead (W is il ir ip iq id icq ic in₁ : V) : V :=
+  mkStep W 90 ?[^&is, ^&ip, ^&iq, ^&id] ∷
+  mkStep W 119 ?[^&(is + 1), ^&(ip + 1), ^&(iq + 1), ^&(id + 1), ^&0] ∷
+  mkStep W 96 ?[^&(is + 1), ^&(ip + 1), ^&(iq + 1), ^&(id + 1), ^&(ir + 1), ^&(icq + 1), ^&(ic + 1), ^&0] ∷
+  mkStep W 102 ?[^&0, ^&(is + 1), ^&(ip + 1), ^&(iq + 1), ^&(id + 1), ^&(in₁ + 1), ^&(il + 1)] ∷ (0 : V)
+
+/-- **The `orIntro` node fragment**. -/
+noncomputable def nodeOr (W tblN is il ir ip iq id icq ic in₁ L m₁ n : V) : V :=
+  appendV (nodeOrHead W is il ir ip iq id icq ic in₁) (goalTailUnary W tblN (il + 1) (in₁ + 1) L m₁ n (is + 1))
+
+noncomputable def nodeOrHeadCtx (Γ is il ip iq id in₁ : V) : V :=
+  insert (neg LAct (dlenFact (^&0 : V) (unaryT (il + 1) (in₁ + 1))))
+    (insert (neg LAct (derFact (^&0 : V)))
+      (insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0)))
+        (insert (neg LAct (orIntroFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)) (^&(iq + 1)) (^&(id + 1))))
+          (setShift LAct Γ))))
+
+theorem nodeOrHead_ok {tbl N E Γ W is il ir ip iq id icq ic in₁ : V} (htbl : TableOK tbl N)
+    (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hil : il + 2 ≤ E) (hir : ir + 2 ≤ E) (hip : ip + 2 ≤ E) (hiq : iq + 2 ≤ E)
+    (hid : id + 2 ≤ E) (hicq : icq + 2 ≤ E) (hic : ic + 2 ≤ E) (hin₁ : in₁ + 2 ≤ E)
+    (hor : neg LAct (orFact (^&ir) (^&ip) (^&iq)) ∈ Γ) (hmr : neg LAct (memFact (^&ir) (^&is)) ∈ Γ)
+    (hf : neg LAct (fstIdxFact (^&ic) (^&id)) ∈ Γ) (hiq' : neg LAct (insFact (^&icq) (^&iq) (^&is)) ∈ Γ)
+    (hip' : neg LAct (insFact (^&ic) (^&ip) (^&icq)) ∈ Γ)
+    (hd : neg LAct (derFact (^&id : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id : V) (^&in₁)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (nodeOrHead W is il ir ip iq id icq ic in₁) ∧
+    NoDrop' (nodeOrHead W is il ir ip iq id icq ic in₁) ∧
+    shiftsV (nodeOrHead W is il ir ip iq id icq ic in₁) = 1 ∧ len (nodeOrHead W is il ir ip iq id icq ic in₁) = 4 ∧
+    finalCtx Γ (nodeOrHead W is il ir ip iq id icq ic in₁) = nodeOrHeadCtx Γ is il ip iq id in₁ := by
+  have his0 : IsSemiterm LAct 0 (^&is : V) := by simp
+  have hisE : termLen LAct (^&is : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) his)
+  have his1 : IsSemiterm LAct 0 (^&(is + 1) : V) := by simp
+  have his1E : termLen LAct (^&(is + 1) : V) ≤ E := termLen_fvar_succ_le his
+  have hil0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hilE : termLen LAct (^&il : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hil)
+  have hil1 : IsSemiterm LAct 0 (^&(il + 1) : V) := by simp
+  have hil1E : termLen LAct (^&(il + 1) : V) ≤ E := termLen_fvar_succ_le hil
+  have hir0 : IsSemiterm LAct 0 (^&ir : V) := by simp
+  have hirE : termLen LAct (^&ir : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hir)
+  have hir1 : IsSemiterm LAct 0 (^&(ir + 1) : V) := by simp
+  have hir1E : termLen LAct (^&(ir + 1) : V) ≤ E := termLen_fvar_succ_le hir
+  have hip0 : IsSemiterm LAct 0 (^&ip : V) := by simp
+  have hipE : termLen LAct (^&ip : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hip)
+  have hip1 : IsSemiterm LAct 0 (^&(ip + 1) : V) := by simp
+  have hip1E : termLen LAct (^&(ip + 1) : V) ≤ E := termLen_fvar_succ_le hip
+  have hiq0 : IsSemiterm LAct 0 (^&iq : V) := by simp
+  have hiqE : termLen LAct (^&iq : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hiq)
+  have hiq1 : IsSemiterm LAct 0 (^&(iq + 1) : V) := by simp
+  have hiq1E : termLen LAct (^&(iq + 1) : V) ≤ E := termLen_fvar_succ_le hiq
+  have hid0 : IsSemiterm LAct 0 (^&id : V) := by simp
+  have hidE : termLen LAct (^&id : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hid)
+  have hid1 : IsSemiterm LAct 0 (^&(id + 1) : V) := by simp
+  have hid1E : termLen LAct (^&(id + 1) : V) ≤ E := termLen_fvar_succ_le hid
+  have hicq0 : IsSemiterm LAct 0 (^&icq : V) := by simp
+  have hicqE : termLen LAct (^&icq : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hicq)
+  have hicq1 : IsSemiterm LAct 0 (^&(icq + 1) : V) := by simp
+  have hicq1E : termLen LAct (^&(icq + 1) : V) ≤ E := termLen_fvar_succ_le hicq
+  have hic0 : IsSemiterm LAct 0 (^&ic : V) := by simp
+  have hicE : termLen LAct (^&ic : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hic)
+  have hic1 : IsSemiterm LAct 0 (^&(ic + 1) : V) := by simp
+  have hic1E : termLen LAct (^&(ic + 1) : V) ≤ E := termLen_fvar_succ_le hic
+  have hin₁0 : IsSemiterm LAct 0 (^&in₁ : V) := by simp
+  have hin₁E : termLen LAct (^&in₁ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hin₁)
+  have hin₁1 : IsSemiterm LAct 0 (^&(in₁ + 1) : V) := by simp
+  have hin₁1E : termLen LAct (^&(in₁ + 1) : V) ≤ E := termLen_fvar_succ_le hin₁
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E :=
+    termLen_fvar_le (by rw [zero_add]; exact le_trans (by norm_num) (le_trans le_add_self his))
+  obtain ⟨ok₁, tg₁, cx₁⟩ := fok_totOrIntro htbl hF hWp hΓ his0 hisE hip0 hipE hiq0 hiqE hid0 hidE
+  rw [termShift_fvar, termShift_fvar, termShift_fvar, termShift_fvar, Nat.cast_zero] at cx₁
+  set F := neg LAct (orIntroFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)) (^&(iq + 1)) (^&(id + 1))) with hFdef
+  set Γ₁ := insert F (setShift LAct Γ) with hΓ₁def
+  have hΓ₁ : IsFormulaSet LAct Γ₁ := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
+  have tor : neg LAct (orFact (^&(ir + 1)) (^&(ip + 1)) (^&(iq + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hor
+    rwa [shift_neg (isFormula_orFact hir0 hip0 hiq0), shift_orFact hir0 hip0 hiq0, termShift_fvar, termShift_fvar, termShift_fvar] at this
+  have tmr : neg LAct (memFact (^&(ir + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hmr
+    rwa [shift_neg (isFormula_memFact hir0 his0), shift_memFact hir0 his0, termShift_fvar, termShift_fvar] at this
+  have tf : neg LAct (fstIdxFact (^&(ic + 1)) (^&(id + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hf
+    rwa [shift_neg (isFormula_fstIdxFact hic0 hid0), shift_fstIdxFact hic0 hid0, termShift_fvar, termShift_fvar] at this
+  have tiq : neg LAct (insFact (^&(icq + 1)) (^&(iq + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hiq'
+    rwa [shift_neg (isFormula_insFact hicq0 hiq0 his0), shift_insFact hicq0 hiq0 his0, termShift_fvar, termShift_fvar, termShift_fvar] at this
+  have tip : neg LAct (insFact (^&(ic + 1)) (^&(ip + 1)) (^&(icq + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hip'
+    rwa [shift_neg (isFormula_insFact hic0 hip0 hicq0), shift_insFact hic0 hip0 hicq0, termShift_fvar, termShift_fvar, termShift_fvar] at this
+  have td : neg LAct (derFact (^&(id + 1) : V)) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hd
+    rwa [shift_neg (isFormula_derFact hid0), shift_derFact hid0, termShift_fvar] at this
+  have tn₁ : neg LAct (dlenFact (^&(id + 1) : V) (^&(in₁ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hn₁
+    rwa [shift_neg (isFormula_dlenFact hid0 hin₁0), shift_dlenFact hid0 hin₁0, termShift_fvar, termShift_fvar] at this
+  have tsl : neg LAct (setLenFact (^&(il + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hsl
+    rwa [shift_neg (isFormula_setLenFact hil0 his0), shift_setLenFact hil0 his0, termShift_fvar, termShift_fvar] at this
+  obtain ⟨ok₂, tg₂, cx₂⟩ := fok_fstIdxOr htbl hF hWp hΓ₁ his1 his1E hip1 hip1E hiq1 hiq1E hid1 hid1E hf0 hf0E
+    (by rw [hΓ₁def, hFdef]; simp)
+  set Γ₂ := insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0))) Γ₁ with hΓ₂def
+  have hΓ₂ : IsFormulaSet LAct Γ₂ := cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
+  obtain ⟨ok₃, tg₃, cx₃⟩ := fok_introOr htbl hF hWp hΓ₂ his1 his1E hip1 hip1E hiq1 hiq1E hid1 hid1E hir1 hir1E
+    hicq1 hicq1E hic1 hic1E hf0 hf0E
+    (by rw [hΓ₂def, hΓ₁def, hFdef]; simp) (by rw [hΓ₂def]; simp [tor]) (by rw [hΓ₂def]; simp [tmr])
+    (by rw [hΓ₂def]; simp [tf]) (by rw [hΓ₂def]; simp [tiq]) (by rw [hΓ₂def]; simp [tip]) (by rw [hΓ₂def]; simp [td])
+  set Γ₃ := insert (neg LAct (derFact (^&0 : V))) Γ₂ with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := cx₃ ▸ isFormulaSet_ctxAfter 8 htbl ok₃
+  obtain ⟨ok₄, tg₄, cx₄⟩ := fok_dlenOr htbl hF hWp hΓ₃ hf0 hf0E his1 his1E hip1 hip1E hiq1 hiq1E hid1 hid1E
+    hin₁1 hin₁1E hil1 hil1E
+    (by rw [hΓ₃def, hΓ₂def, hΓ₁def, hFdef]; simp) (by rw [hΓ₃def, hΓ₂def]; simp [tn₁])
+    (by rw [hΓ₃def, hΓ₂def]; simp [tsl])
+  have hfin : finalCtx Γ (nodeOrHead W is il ir ip iq id icq ic in₁) = nodeOrHeadCtx Γ is il ip iq id in₁ := by
+    unfold nodeOrHead
+    rw [finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_single, cx₄]
+    rfl
+  refine ⟨?_, ?_, ?_, ?_, hfin⟩
+  · unfold nodeOrHead
+    refine listOK_cons ok₁ ?_
+    rw [cx₁]
+    refine listOK_cons ok₂ ?_
+    rw [cx₂]
+    refine listOK_cons ok₃ ?_
+    rw [cx₃]
+    exact listOK_single ok₄
+  · unfold nodeOrHead
+    exact noDrop'_cons (by rw [tg₁]; simp) (noDrop'_cons (by rw [tg₂]; simp)
+      (noDrop'_cons (by rw [tg₃]; simp) (noDrop'_single (by rw [tg₄]; simp))))
+  · unfold nodeOrHead
+    rw [shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄]
+    simp
+  · unfold nodeOrHead; simp [len_adjoin]; norm_num
+
+/-- **`nodeOr` is applicable**. -/
+theorem nodeOr_ok {tbl N E Γ W tblN N' B' is il ir ip iq id icq ic in₁ L m₁ n : V}
+    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
+    (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hir : ir + 2 ≤ E) (hip : ip + 2 ≤ E) (hiq : iq + 2 ≤ E)
+    (hid : id + 2 ≤ E) (hicq : icq + 2 ≤ E) (hic : ic + 2 ≤ E)
+    (hT : il + in₁ + 7 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + 1 ≤ n)
+    (hor : neg LAct (orFact (^&ir) (^&ip) (^&iq)) ∈ Γ) (hmr : neg LAct (memFact (^&ir) (^&is)) ∈ Γ)
+    (hf : neg LAct (fstIdxFact (^&ic) (^&id)) ∈ Γ) (hiq' : neg LAct (insFact (^&icq) (^&iq) (^&is)) ∈ Γ)
+    (hip' : neg LAct (insFact (^&ic) (^&ip) (^&icq)) ∈ Γ)
+    (hd : neg LAct (derFact (^&id : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id : V) (^&in₁)) ∈ Γ)
+    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) ∧
+    NoDrop' (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) ∧
+    shiftsV (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) = 1 ∧
+    len (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) = 9 ∧
+    neg LAct (goalFact (^&(is + 1)) (bnum n)) ∈ finalCtx Γ (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) := by
+  have hil : il + 2 ≤ E := le_trans (add_le_add le_self_add (by norm_num)) hT
+  have hin₁ : in₁ + 2 ≤ E := le_trans (add_le_add le_add_self (by norm_num)) hT
+  obtain ⟨hok, hnd, hsv, hlen, hfin⟩ := nodeOrHead_ok htbl hF hWp hΓ his hil hir hip hiq hid hicq hic hin₁
+    hor hmr hf hiq' hip' hd hn₁ hsl
+  have hΓ' : IsFormulaSet LAct (finalCtx Γ (nodeOrHead W is il ir ip iq id icq ic in₁)) :=
+    finalCtx_isFormulaSet 8 htbl hΓ hok
+  have hl0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hn10 : IsSemiterm LAct 0 (^&in₁ : V) := by simp
+  have hbL : IsSemiterm LAct 0 (bnum L) := isSemiterm_bnum_LAct 0 L
+  have hbm₁ : IsSemiterm LAct 0 (bnum m₁) := isSemiterm_bnum_LAct 0 m₁
+  have tr : ∀ x ∈ Γ, shift LAct x ∈ finalCtx Γ (nodeOrHead W is il ir ip iq id icq ic in₁) := by
+    intro x hx; rw [hfin]; unfold nodeOrHeadCtx; exact shift_mem_head3 hx
+  have hle' : neg LAct (leFact (^&(il + 1)) (bnum L)) ∈ finalCtx Γ (nodeOrHead W is il ir ip iq id icq ic in₁) := by
+    have := tr _ hle
+    rwa [shift_neg (isFormula_leFact hl0 hbL), shift_leFact hl0 hbL, termShift_fvar, termShift_bnum] at this
+  have hle₁' : neg LAct (leFact (^&(in₁ + 1)) (bnum m₁)) ∈ finalCtx Γ (nodeOrHead W is il ir ip iq id icq ic in₁) := by
+    have := tr _ hle₁
+    rwa [shift_neg (isFormula_leFact hn10 hbm₁), shift_leFact hn10 hbm₁, termShift_fvar, termShift_bnum] at this
+  obtain ⟨tok, tnd, tsv, tlen, tfin, tmem⟩ := goalTailUnary_ok htbl hF hWp htblN hΓ'
+    (by rw [show il + 1 + (in₁ + 1) + 5 = il + in₁ + 7 by ring]; exact hT)
+    (by rw [add_assoc, one_add_one_eq_two]; exact his) hn hLn hle' hle₁'
+    (by rw [hfin]; unfold nodeOrHeadCtx; simp) (by rw [hfin]; unfold nodeOrHeadCtx; simp)
+    (by rw [hfin]; unfold nodeOrHeadCtx; simp)
+  refine ⟨listOK_appendV hok tok, noDrop'_appendV hnd tnd, ?_, ?_, ?_⟩
+  · unfold nodeOr; rw [shiftsV_appendV, hsv, tsv, add_zero]
+  · unfold nodeOr; rw [len_appendV, hlen, tlen]; norm_num
+  · unfold nodeOr; rw [finalCtx_appendV]; exact tmem
+
+/-! ### 4.3 `wkRule` (the child's sequent object `c` at `ic`, `c ⊆ s`) -/
+
+noncomputable def nodeWkHead (W is il ic id in₁ : V) : V :=
+  mkStep W 91 ?[^&is, ^&id] ∷ mkStep W 120 ?[^&(is + 1), ^&(id + 1), ^&0] ∷
+  mkStep W 97 ?[^&(is + 1), ^&(id + 1), ^&(ic + 1), ^&0] ∷
+  mkStep W 103 ?[^&0, ^&(is + 1), ^&(id + 1), ^&(in₁ + 1), ^&(il + 1)] ∷ (0 : V)
+
+/-- **The `wkRule` node fragment**. -/
+noncomputable def nodeWk (W tblN is il ic id in₁ L m₁ n : V) : V :=
+  appendV (nodeWkHead W is il ic id in₁) (goalTailUnary W tblN (il + 1) (in₁ + 1) L m₁ n (is + 1))
+
+noncomputable def nodeWkHeadCtx (Γ is il id in₁ : V) : V :=
+  insert (neg LAct (dlenFact (^&0 : V) (unaryT (il + 1) (in₁ + 1))))
+    (insert (neg LAct (derFact (^&0 : V)))
+      (insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0)))
+        (insert (neg LAct (wkRuleFact (^&0 : V) (^&(is + 1)) (^&(id + 1)))) (setShift LAct Γ))))
+
+theorem nodeWkHead_ok {tbl N E Γ W is il ic id in₁ : V} (htbl : TableOK tbl N)
+    (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hil : il + 2 ≤ E) (hic : ic + 2 ≤ E) (hid : id + 2 ≤ E) (hin₁ : in₁ + 2 ≤ E)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hf : neg LAct (fstIdxFact (^&ic) (^&id)) ∈ Γ)
+    (hsub : neg LAct (subsetFact (^&ic) (^&is)) ∈ Γ)
+    (hd : neg LAct (derFact (^&id : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id : V) (^&in₁)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (nodeWkHead W is il ic id in₁) ∧ NoDrop' (nodeWkHead W is il ic id in₁) ∧
+    shiftsV (nodeWkHead W is il ic id in₁) = 1 ∧ len (nodeWkHead W is il ic id in₁) = 4 ∧
+    finalCtx Γ (nodeWkHead W is il ic id in₁) = nodeWkHeadCtx Γ is il id in₁ := by
+  have his0 : IsSemiterm LAct 0 (^&is : V) := by simp
+  have hisE : termLen LAct (^&is : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) his)
+  have his1 : IsSemiterm LAct 0 (^&(is + 1) : V) := by simp
+  have his1E : termLen LAct (^&(is + 1) : V) ≤ E := termLen_fvar_succ_le his
+  have hil0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hilE : termLen LAct (^&il : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hil)
+  have hil1 : IsSemiterm LAct 0 (^&(il + 1) : V) := by simp
+  have hil1E : termLen LAct (^&(il + 1) : V) ≤ E := termLen_fvar_succ_le hil
+  have hic0 : IsSemiterm LAct 0 (^&ic : V) := by simp
+  have hicE : termLen LAct (^&ic : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hic)
+  have hic1 : IsSemiterm LAct 0 (^&(ic + 1) : V) := by simp
+  have hic1E : termLen LAct (^&(ic + 1) : V) ≤ E := termLen_fvar_succ_le hic
+  have hid0 : IsSemiterm LAct 0 (^&id : V) := by simp
+  have hidE : termLen LAct (^&id : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hid)
+  have hid1 : IsSemiterm LAct 0 (^&(id + 1) : V) := by simp
+  have hid1E : termLen LAct (^&(id + 1) : V) ≤ E := termLen_fvar_succ_le hid
+  have hin₁0 : IsSemiterm LAct 0 (^&in₁ : V) := by simp
+  have hin₁E : termLen LAct (^&in₁ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hin₁)
+  have hin₁1 : IsSemiterm LAct 0 (^&(in₁ + 1) : V) := by simp
+  have hin₁1E : termLen LAct (^&(in₁ + 1) : V) ≤ E := termLen_fvar_succ_le hin₁
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E :=
+    termLen_fvar_le (by rw [zero_add]; exact le_trans (by norm_num) (le_trans le_add_self his))
+  obtain ⟨ok₁, tg₁, cx₁⟩ := fok_totWkRule htbl hF hWp hΓ his0 hisE hid0 hidE
+  rw [termShift_fvar, termShift_fvar, Nat.cast_zero] at cx₁
+  set F := neg LAct (wkRuleFact (^&0 : V) (^&(is + 1)) (^&(id + 1))) with hFdef
+  set Γ₁ := insert F (setShift LAct Γ) with hΓ₁def
+  have hΓ₁ : IsFormulaSet LAct Γ₁ := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
+  have tfs : neg LAct (fsetPiFact (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hfs
+    rwa [shift_neg (isFormula_fsetPiFact his0), shift_fsetPiFact his0, termShift_fvar] at this
+  have tf : neg LAct (fstIdxFact (^&(ic + 1)) (^&(id + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hf
+    rwa [shift_neg (isFormula_fstIdxFact hic0 hid0), shift_fstIdxFact hic0 hid0, termShift_fvar, termShift_fvar] at this
+  have tsub : neg LAct (subsetFact (^&(ic + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hsub
+    rwa [shift_neg (isFormula_subsetFact hic0 his0), shift_subsetFact hic0 his0, termShift_fvar, termShift_fvar] at this
+  have td : neg LAct (derFact (^&(id + 1) : V)) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hd
+    rwa [shift_neg (isFormula_derFact hid0), shift_derFact hid0, termShift_fvar] at this
+  have tn₁ : neg LAct (dlenFact (^&(id + 1) : V) (^&(in₁ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hn₁
+    rwa [shift_neg (isFormula_dlenFact hid0 hin₁0), shift_dlenFact hid0 hin₁0, termShift_fvar, termShift_fvar] at this
+  have tsl : neg LAct (setLenFact (^&(il + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hsl
+    rwa [shift_neg (isFormula_setLenFact hil0 his0), shift_setLenFact hil0 his0, termShift_fvar, termShift_fvar] at this
+  obtain ⟨ok₂, tg₂, cx₂⟩ := fok_fstIdxWk htbl hF hWp hΓ₁ his1 his1E hid1 hid1E hf0 hf0E (by rw [hΓ₁def, hFdef]; simp)
+  set Γ₂ := insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0))) Γ₁ with hΓ₂def
+  have hΓ₂ : IsFormulaSet LAct Γ₂ := cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
+  obtain ⟨ok₃, tg₃, cx₃⟩ := fok_introWk htbl hF hWp hΓ₂ his1 his1E hid1 hid1E hic1 hic1E hf0 hf0E
+    (by rw [hΓ₂def]; simp [tfs]) (by rw [hΓ₂def]; simp [tf]) (by rw [hΓ₂def]; simp [tsub])
+    (by rw [hΓ₂def]; simp [td]) (by rw [hΓ₂def, hΓ₁def, hFdef]; simp)
+  set Γ₃ := insert (neg LAct (derFact (^&0 : V))) Γ₂ with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := cx₃ ▸ isFormulaSet_ctxAfter 8 htbl ok₃
+  obtain ⟨ok₄, tg₄, cx₄⟩ := fok_dlenWk htbl hF hWp hΓ₃ hf0 hf0E his1 his1E hid1 hid1E hin₁1 hin₁1E hil1 hil1E
+    (by rw [hΓ₃def, hΓ₂def, hΓ₁def, hFdef]; simp) (by rw [hΓ₃def, hΓ₂def]; simp [tn₁])
+    (by rw [hΓ₃def, hΓ₂def]; simp [tsl])
+  have hfin : finalCtx Γ (nodeWkHead W is il ic id in₁) = nodeWkHeadCtx Γ is il id in₁ := by
+    unfold nodeWkHead
+    rw [finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_single, cx₄]
+    rfl
+  refine ⟨?_, ?_, ?_, ?_, hfin⟩
+  · unfold nodeWkHead
+    refine listOK_cons ok₁ ?_
+    rw [cx₁]
+    refine listOK_cons ok₂ ?_
+    rw [cx₂]
+    refine listOK_cons ok₃ ?_
+    rw [cx₃]
+    exact listOK_single ok₄
+  · unfold nodeWkHead
+    exact noDrop'_cons (by rw [tg₁]; simp) (noDrop'_cons (by rw [tg₂]; simp)
+      (noDrop'_cons (by rw [tg₃]; simp) (noDrop'_single (by rw [tg₄]; simp))))
+  · unfold nodeWkHead
+    rw [shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄]
+    simp
+  · unfold nodeWkHead; simp [len_adjoin]; norm_num
+
+/-- **`nodeWk` is applicable**. -/
+theorem nodeWk_ok {tbl N E Γ W tblN N' B' is il ic id in₁ L m₁ n : V}
+    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
+    (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hic : ic + 2 ≤ E) (hid : id + 2 ≤ E)
+    (hT : il + in₁ + 7 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + 1 ≤ n)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hf : neg LAct (fstIdxFact (^&ic) (^&id)) ∈ Γ)
+    (hsub : neg LAct (subsetFact (^&ic) (^&is)) ∈ Γ)
+    (hd : neg LAct (derFact (^&id : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id : V) (^&in₁)) ∈ Γ)
+    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (nodeWk W tblN is il ic id in₁ L m₁ n) ∧ NoDrop' (nodeWk W tblN is il ic id in₁ L m₁ n) ∧
+    shiftsV (nodeWk W tblN is il ic id in₁ L m₁ n) = 1 ∧ len (nodeWk W tblN is il ic id in₁ L m₁ n) = 9 ∧
+    neg LAct (goalFact (^&(is + 1)) (bnum n)) ∈ finalCtx Γ (nodeWk W tblN is il ic id in₁ L m₁ n) := by
+  have hil : il + 2 ≤ E := le_trans (add_le_add le_self_add (by norm_num)) hT
+  have hin₁ : in₁ + 2 ≤ E := le_trans (add_le_add le_add_self (by norm_num)) hT
+  obtain ⟨hok, hnd, hsv, hlen, hfin⟩ := nodeWkHead_ok htbl hF hWp hΓ his hil hic hid hin₁ hfs hf hsub hd hn₁ hsl
+  have hΓ' : IsFormulaSet LAct (finalCtx Γ (nodeWkHead W is il ic id in₁)) := finalCtx_isFormulaSet 8 htbl hΓ hok
+  have hl0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hn10 : IsSemiterm LAct 0 (^&in₁ : V) := by simp
+  have hbL : IsSemiterm LAct 0 (bnum L) := isSemiterm_bnum_LAct 0 L
+  have hbm₁ : IsSemiterm LAct 0 (bnum m₁) := isSemiterm_bnum_LAct 0 m₁
+  have tr : ∀ x ∈ Γ, shift LAct x ∈ finalCtx Γ (nodeWkHead W is il ic id in₁) := by
+    intro x hx; rw [hfin]; unfold nodeWkHeadCtx; exact shift_mem_head3 hx
+  have hle' : neg LAct (leFact (^&(il + 1)) (bnum L)) ∈ finalCtx Γ (nodeWkHead W is il ic id in₁) := by
+    have := tr _ hle
+    rwa [shift_neg (isFormula_leFact hl0 hbL), shift_leFact hl0 hbL, termShift_fvar, termShift_bnum] at this
+  have hle₁' : neg LAct (leFact (^&(in₁ + 1)) (bnum m₁)) ∈ finalCtx Γ (nodeWkHead W is il ic id in₁) := by
+    have := tr _ hle₁
+    rwa [shift_neg (isFormula_leFact hn10 hbm₁), shift_leFact hn10 hbm₁, termShift_fvar, termShift_bnum] at this
+  obtain ⟨tok, tnd, tsv, tlen, tfin, tmem⟩ := goalTailUnary_ok htbl hF hWp htblN hΓ'
+    (by rw [show il + 1 + (in₁ + 1) + 5 = il + in₁ + 7 by ring]; exact hT)
+    (by rw [add_assoc, one_add_one_eq_two]; exact his) hn hLn hle' hle₁'
+    (by rw [hfin]; unfold nodeWkHeadCtx; simp) (by rw [hfin]; unfold nodeWkHeadCtx; simp)
+    (by rw [hfin]; unfold nodeWkHeadCtx; simp)
+  refine ⟨listOK_appendV hok tok, noDrop'_appendV hnd tnd, ?_, ?_, ?_⟩
+  · unfold nodeWk; rw [shiftsV_appendV, hsv, tsv, add_zero]
+  · unfold nodeWk; rw [len_appendV, hlen, tlen]; norm_num
+  · unfold nodeWk; rw [finalCtx_appendV]; exact tmem
+
+/-! ### 4.4 `cutRule` (the cut formula `p` at `ip`, `neg p` at `inp`; `c₁ = insert p s` at `ic₁`, `c₂ = insert (neg p) s` at `ic₂`) -/
+
+noncomputable def nodeCutHead (W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ : V) : V :=
+  mkStep W 92 ?[^&is, ^&ip, ^&id₁, ^&id₂] ∷
+  mkStep W 121 ?[^&(is + 1), ^&(ip + 1), ^&(id₁ + 1), ^&(id₂ + 1), ^&0] ∷
+  mkStep W 98 ?[(𝟎 : V), ^&(is + 1), ^&(ip + 1), ^&(id₁ + 1), ^&(id₂ + 1), ^&(ic₁ + 1), ^&(inp + 1), ^&(ic₂ + 1), ^&0] ∷
+  mkStep W 104 ?[^&0, ^&(is + 1), ^&(ip + 1), ^&(id₁ + 1), ^&(id₂ + 1), ^&(in₁ + 1), ^&(in₂ + 1), ^&(il + 1)] ∷ (0 : V)
+
+/-- **The `cutRule` node fragment**. -/
+noncomputable def nodeCut (W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n : V) : V :=
+  appendV (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂)
+    (goalTailBinary W tblN (il + 1) (in₁ + 1) (in₂ + 1) L m₁ m₂ n (is + 1))
+
+noncomputable def nodeCutHeadCtx (Γ is il ip id₁ id₂ in₁ in₂ : V) : V :=
+  insert (neg LAct (dlenFact (^&0 : V) (binaryT (il + 1) (in₁ + 1) (in₂ + 1))))
+    (insert (neg LAct (derFact (^&0 : V)))
+      (insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0)))
+        (insert (neg LAct (cutRuleFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)) (^&(id₁ + 1)) (^&(id₂ + 1))))
+          (setShift LAct Γ))))
+
+theorem nodeCutHead_ok {tbl N E Γ W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ : V} (htbl : TableOK tbl N)
+    (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hil : il + 2 ≤ E) (hip : ip + 2 ≤ E) (hinp : inp + 2 ≤ E)
+    (hid₁ : id₁ + 2 ≤ E) (hid₂ : id₂ + 2 ≤ E) (hic₁ : ic₁ + 2 ≤ E) (hic₂ : ic₂ + 2 ≤ E)
+    (hin₁ : in₁ + 2 ≤ E) (hin₂ : in₂ + 2 ≤ E)
+    (hf₁ : neg LAct (fstIdxFact (^&ic₁) (^&id₁)) ∈ Γ) (hi₁ : neg LAct (insFact (^&ic₁) (^&ip) (^&is)) ∈ Γ)
+    (hd₁ : neg LAct (derFact (^&id₁ : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id₁ : V) (^&in₁)) ∈ Γ)
+    (hf₂ : neg LAct (fstIdxFact (^&ic₂) (^&id₂)) ∈ Γ) (hneg : neg LAct (negFact (^&inp) (^&ip)) ∈ Γ)
+    (hi₂ : neg LAct (insFact (^&ic₂) (^&inp) (^&is)) ∈ Γ)
+    (hd₂ : neg LAct (derFact (^&id₂ : V)) ∈ Γ) (hn₂ : neg LAct (dlenFact (^&id₂ : V) (^&in₂)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) :
+    ListOK tbl E ((9 : ℕ) : V) Γ (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) ∧
+    NoDrop' (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) ∧
+    shiftsV (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) = 1 ∧
+    len (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) = 4 ∧
+    finalCtx Γ (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) = nodeCutHeadCtx Γ is il ip id₁ id₂ in₁ in₂ := by
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
+  have his0 : IsSemiterm LAct 0 (^&is : V) := by simp
+  have hisE : termLen LAct (^&is : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) his)
+  have his1 : IsSemiterm LAct 0 (^&(is + 1) : V) := by simp
+  have his1E : termLen LAct (^&(is + 1) : V) ≤ E := termLen_fvar_succ_le his
+  have hil0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hilE : termLen LAct (^&il : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hil)
+  have hil1 : IsSemiterm LAct 0 (^&(il + 1) : V) := by simp
+  have hil1E : termLen LAct (^&(il + 1) : V) ≤ E := termLen_fvar_succ_le hil
+  have hip0 : IsSemiterm LAct 0 (^&ip : V) := by simp
+  have hipE : termLen LAct (^&ip : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hip)
+  have hip1 : IsSemiterm LAct 0 (^&(ip + 1) : V) := by simp
+  have hip1E : termLen LAct (^&(ip + 1) : V) ≤ E := termLen_fvar_succ_le hip
+  have hinp0 : IsSemiterm LAct 0 (^&inp : V) := by simp
+  have hinpE : termLen LAct (^&inp : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hinp)
+  have hinp1 : IsSemiterm LAct 0 (^&(inp + 1) : V) := by simp
+  have hinp1E : termLen LAct (^&(inp + 1) : V) ≤ E := termLen_fvar_succ_le hinp
+  have hid₁0 : IsSemiterm LAct 0 (^&id₁ : V) := by simp
+  have hid₁E : termLen LAct (^&id₁ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hid₁)
+  have hid₁1 : IsSemiterm LAct 0 (^&(id₁ + 1) : V) := by simp
+  have hid₁1E : termLen LAct (^&(id₁ + 1) : V) ≤ E := termLen_fvar_succ_le hid₁
+  have hid₂0 : IsSemiterm LAct 0 (^&id₂ : V) := by simp
+  have hid₂E : termLen LAct (^&id₂ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hid₂)
+  have hid₂1 : IsSemiterm LAct 0 (^&(id₂ + 1) : V) := by simp
+  have hid₂1E : termLen LAct (^&(id₂ + 1) : V) ≤ E := termLen_fvar_succ_le hid₂
+  have hic₁0 : IsSemiterm LAct 0 (^&ic₁ : V) := by simp
+  have hic₁E : termLen LAct (^&ic₁ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hic₁)
+  have hic₁1 : IsSemiterm LAct 0 (^&(ic₁ + 1) : V) := by simp
+  have hic₁1E : termLen LAct (^&(ic₁ + 1) : V) ≤ E := termLen_fvar_succ_le hic₁
+  have hic₂0 : IsSemiterm LAct 0 (^&ic₂ : V) := by simp
+  have hic₂E : termLen LAct (^&ic₂ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hic₂)
+  have hic₂1 : IsSemiterm LAct 0 (^&(ic₂ + 1) : V) := by simp
+  have hic₂1E : termLen LAct (^&(ic₂ + 1) : V) ≤ E := termLen_fvar_succ_le hic₂
+  have hin₁0 : IsSemiterm LAct 0 (^&in₁ : V) := by simp
+  have hin₁E : termLen LAct (^&in₁ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hin₁)
+  have hin₁1 : IsSemiterm LAct 0 (^&(in₁ + 1) : V) := by simp
+  have hin₁1E : termLen LAct (^&(in₁ + 1) : V) ≤ E := termLen_fvar_succ_le hin₁
+  have hin₂0 : IsSemiterm LAct 0 (^&in₂ : V) := by simp
+  have hin₂E : termLen LAct (^&in₂ : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hin₂)
+  have hin₂1 : IsSemiterm LAct 0 (^&(in₂ + 1) : V) := by simp
+  have hin₂1E : termLen LAct (^&(in₂ + 1) : V) ≤ E := termLen_fvar_succ_le hin₂
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E :=
+    termLen_fvar_le (by rw [zero_add]; exact le_trans (by norm_num) (le_trans le_add_self his))
+  have hx0 : IsSemiterm LAct 0 (𝟎 : V) := isSemiterm_qqZero_LAct 0
+  have hxE : termLen LAct (𝟎 : V) ≤ E := by
+    rw [termLen_qqZero isFunc_LAct_zeroIndex]; exact le_trans (by norm_num) (le_trans le_add_self his)
+  obtain ⟨ok₁, tg₁, cx₁⟩ := fok_totCutRule htbl hF hWp hΓ his0 hisE hip0 hipE hid₁0 hid₁E hid₂0 hid₂E
+  rw [termShift_fvar, termShift_fvar, termShift_fvar, termShift_fvar, Nat.cast_zero] at cx₁
+  set F := neg LAct (cutRuleFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)) (^&(id₁ + 1)) (^&(id₂ + 1))) with hFdef
+  set Γ₁ := insert F (setShift LAct Γ) with hΓ₁def
+  have hΓ₁ : IsFormulaSet LAct Γ₁ := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
+  have tf₁ : neg LAct (fstIdxFact (^&(ic₁ + 1)) (^&(id₁ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hf₁
+    rwa [shift_neg (isFormula_fstIdxFact hic₁0 hid₁0), shift_fstIdxFact hic₁0 hid₁0, termShift_fvar, termShift_fvar] at this
+  have ti₁ : neg LAct (insFact (^&(ic₁ + 1)) (^&(ip + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hi₁
+    rwa [shift_neg (isFormula_insFact hic₁0 hip0 his0), shift_insFact hic₁0 hip0 his0, termShift_fvar, termShift_fvar, termShift_fvar] at this
+  have td₁ : neg LAct (derFact (^&(id₁ + 1) : V)) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hd₁
+    rwa [shift_neg (isFormula_derFact hid₁0), shift_derFact hid₁0, termShift_fvar] at this
+  have tn₁ : neg LAct (dlenFact (^&(id₁ + 1) : V) (^&(in₁ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hn₁
+    rwa [shift_neg (isFormula_dlenFact hid₁0 hin₁0), shift_dlenFact hid₁0 hin₁0, termShift_fvar, termShift_fvar] at this
+  have tf₂ : neg LAct (fstIdxFact (^&(ic₂ + 1)) (^&(id₂ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hf₂
+    rwa [shift_neg (isFormula_fstIdxFact hic₂0 hid₂0), shift_fstIdxFact hic₂0 hid₂0, termShift_fvar, termShift_fvar] at this
+  have tneg : neg LAct (negFact (^&(inp + 1)) (^&(ip + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hneg
+    rwa [shift_neg (isFormula_negFact hinp0 hip0), shift_negFact hinp0 hip0, termShift_fvar, termShift_fvar] at this
+  have ti₂ : neg LAct (insFact (^&(ic₂ + 1)) (^&(inp + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hi₂
+    rwa [shift_neg (isFormula_insFact hic₂0 hinp0 his0), shift_insFact hic₂0 hinp0 his0, termShift_fvar, termShift_fvar, termShift_fvar] at this
+  have td₂ : neg LAct (derFact (^&(id₂ + 1) : V)) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hd₂
+    rwa [shift_neg (isFormula_derFact hid₂0), shift_derFact hid₂0, termShift_fvar] at this
+  have tn₂ : neg LAct (dlenFact (^&(id₂ + 1) : V) (^&(in₂ + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hn₂
+    rwa [shift_neg (isFormula_dlenFact hid₂0 hin₂0), shift_dlenFact hid₂0 hin₂0, termShift_fvar, termShift_fvar] at this
+  have tsl : neg LAct (setLenFact (^&(il + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := F) hsl
+    rwa [shift_neg (isFormula_setLenFact hil0 his0), shift_setLenFact hil0 his0, termShift_fvar, termShift_fvar] at this
+  obtain ⟨ok₂, tg₂, cx₂⟩ := fok_fstIdxCut htbl hF hWp hΓ₁ his1 his1E hip1 hip1E hid₁1 hid₁1E hid₂1 hid₂1E hf0 hf0E
+    (by rw [hΓ₁def, hFdef]; simp)
+  set Γ₂ := insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0))) Γ₁ with hΓ₂def
+  have hΓ₂ : IsFormulaSet LAct Γ₂ := cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
+  obtain ⟨ok₃, tg₃, cx₃⟩ := fok_introCut htbl hF hWp hΓ₂ hx0 hxE his1 his1E hip1 hip1E hid₁1 hid₁1E hid₂1 hid₂1E
+    hic₁1 hic₁1E hinp1 hinp1E hic₂1 hic₂1E hf0 hf0E
+    (by rw [hΓ₂def, hΓ₁def, hFdef]; simp) (by rw [hΓ₂def]; simp [tf₁]) (by rw [hΓ₂def]; simp [ti₁])
+    (by rw [hΓ₂def]; simp [td₁]) (by rw [hΓ₂def]; simp [tf₂]) (by rw [hΓ₂def]; simp [tneg])
+    (by rw [hΓ₂def]; simp [ti₂]) (by rw [hΓ₂def]; simp [td₂])
+  set Γ₃ := insert (neg LAct (derFact (^&0 : V))) Γ₂ with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := cx₃ ▸ isFormulaSet_ctxAfter 9 htbl ok₃
+  obtain ⟨ok₄, tg₄, cx₄⟩ := fok_dlenCut htbl hF hWp hΓ₃ hf0 hf0E his1 his1E hip1 hip1E hid₁1 hid₁1E hid₂1 hid₂1E
+    hin₁1 hin₁1E hin₂1 hin₂1E hil1 hil1E
+    (by rw [hΓ₃def, hΓ₂def, hΓ₁def, hFdef]; simp) (by rw [hΓ₃def, hΓ₂def]; simp [tn₁])
+    (by rw [hΓ₃def, hΓ₂def]; simp [tn₂]) (by rw [hΓ₃def, hΓ₂def]; simp [tsl])
+  have hfin : finalCtx Γ (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) =
+      nodeCutHeadCtx Γ is il ip id₁ id₂ in₁ in₂ := by
+    unfold nodeCutHead
+    rw [finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_single, cx₄]
+    rfl
+  refine ⟨?_, ?_, ?_, ?_, hfin⟩
+  · unfold nodeCutHead
+    refine listOK_cons (ok₁.mono h89) ?_
+    rw [cx₁]
+    refine listOK_cons (ok₂.mono h89) ?_
+    rw [cx₂]
+    refine listOK_cons ok₃ ?_
+    rw [cx₃]
+    exact listOK_single (ok₄.mono h89)
+  · unfold nodeCutHead
+    exact noDrop'_cons (by rw [tg₁]; simp) (noDrop'_cons (by rw [tg₂]; simp)
+      (noDrop'_cons (by rw [tg₃]; simp) (noDrop'_single (by rw [tg₄]; simp))))
+  · unfold nodeCutHead
+    rw [shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄]
+    simp
+  · unfold nodeCutHead; simp [len_adjoin]; norm_num
+
+/-- **`nodeCut` is applicable** (cap `M = 9`: `Intro_cut` is a nine-variable row with a dummy witness `𝟎`). -/
+theorem nodeCut_ok {tbl N E Γ W tblN N' B' is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n : V}
+    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
+    (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hip : ip + 2 ≤ E) (hinp : inp + 2 ≤ E)
+    (hid₁ : id₁ + 2 ≤ E) (hid₂ : id₂ + 2 ≤ E) (hic₁ : ic₁ + 2 ≤ E) (hic₂ : ic₂ + 2 ≤ E)
+    (hT : il + in₁ + in₂ + 10 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + m₂ + 1 ≤ n)
+    (hf₁ : neg LAct (fstIdxFact (^&ic₁) (^&id₁)) ∈ Γ) (hi₁ : neg LAct (insFact (^&ic₁) (^&ip) (^&is)) ∈ Γ)
+    (hd₁ : neg LAct (derFact (^&id₁ : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id₁ : V) (^&in₁)) ∈ Γ)
+    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
+    (hf₂ : neg LAct (fstIdxFact (^&ic₂) (^&id₂)) ∈ Γ) (hneg : neg LAct (negFact (^&inp) (^&ip)) ∈ Γ)
+    (hi₂ : neg LAct (insFact (^&ic₂) (^&inp) (^&is)) ∈ Γ)
+    (hd₂ : neg LAct (derFact (^&id₂ : V)) ∈ Γ) (hn₂ : neg LAct (dlenFact (^&id₂ : V) (^&in₂)) ∈ Γ)
+    (hle₂ : neg LAct (leFact (^&in₂) (bnum m₂)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    ListOK tbl E ((9 : ℕ) : V) Γ (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) ∧
+    NoDrop' (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) ∧
+    shiftsV (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) = 1 ∧
+    len (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) = 9 ∧
+    neg LAct (goalFact (^&(is + 1)) (bnum n)) ∈
+      finalCtx Γ (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) := by
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
+  have hil : il + 2 ≤ E := le_trans (add_le_add (le_trans le_self_add le_self_add) (by norm_num)) hT
+  have hin₁ : in₁ + 2 ≤ E := le_trans (add_le_add (le_trans le_add_self le_self_add) (by norm_num)) hT
+  have hin₂ : in₂ + 2 ≤ E := le_trans (add_le_add le_add_self (by norm_num)) hT
+  obtain ⟨hok, hnd, hsv, hlen, hfin⟩ := nodeCutHead_ok htbl hF hWp hΓ his hil hip hinp hid₁ hid₂ hic₁ hic₂ hin₁ hin₂
+    hf₁ hi₁ hd₁ hn₁ hf₂ hneg hi₂ hd₂ hn₂ hsl
+  have hΓ' : IsFormulaSet LAct (finalCtx Γ (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂)) :=
+    finalCtx_isFormulaSet 9 htbl hΓ hok
+  have hl0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hn10 : IsSemiterm LAct 0 (^&in₁ : V) := by simp
+  have hn20 : IsSemiterm LAct 0 (^&in₂ : V) := by simp
+  have hbL : IsSemiterm LAct 0 (bnum L) := isSemiterm_bnum_LAct 0 L
+  have hbm₁ : IsSemiterm LAct 0 (bnum m₁) := isSemiterm_bnum_LAct 0 m₁
+  have hbm₂ : IsSemiterm LAct 0 (bnum m₂) := isSemiterm_bnum_LAct 0 m₂
+  have tr : ∀ x ∈ Γ, shift LAct x ∈ finalCtx Γ (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) := by
+    intro x hx; rw [hfin]; unfold nodeCutHeadCtx; exact shift_mem_head3 hx
+  have hle' : neg LAct (leFact (^&(il + 1)) (bnum L)) ∈ finalCtx Γ (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) := by
+    have := tr _ hle
+    rwa [shift_neg (isFormula_leFact hl0 hbL), shift_leFact hl0 hbL, termShift_fvar, termShift_bnum] at this
+  have hle₁' : neg LAct (leFact (^&(in₁ + 1)) (bnum m₁)) ∈ finalCtx Γ (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) := by
+    have := tr _ hle₁
+    rwa [shift_neg (isFormula_leFact hn10 hbm₁), shift_leFact hn10 hbm₁, termShift_fvar, termShift_bnum] at this
+  have hle₂' : neg LAct (leFact (^&(in₂ + 1)) (bnum m₂)) ∈ finalCtx Γ (nodeCutHead W is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂) := by
+    have := tr _ hle₂
+    rwa [shift_neg (isFormula_leFact hn20 hbm₂), shift_leFact hn20 hbm₂, termShift_fvar, termShift_bnum] at this
+  obtain ⟨tok, tnd, tsv, tlen, tfin, tmem⟩ := goalTailBinary_ok htbl hF hWp htblN hΓ'
+    (by rw [show il + 1 + (in₁ + 1) + (in₂ + 1) + 7 = il + in₁ + in₂ + 10 by ring]; exact hT)
+    (by rw [add_assoc, one_add_one_eq_two]; exact his) hn hLn hle' hle₁' hle₂'
+    (by rw [hfin]; unfold nodeCutHeadCtx; simp) (by rw [hfin]; unfold nodeCutHeadCtx; simp)
+    (by rw [hfin]; unfold nodeCutHeadCtx; simp)
+  refine ⟨listOK_appendV hok (tok.mono h89), noDrop'_appendV hnd tnd, ?_, ?_, ?_⟩
+  · unfold nodeCut; rw [shiftsV_appendV, hsv, tsv, add_zero]
+  · unfold nodeCut; rw [len_appendV, hlen, tlen]; norm_num
+  · unfold nodeCut; rw [finalCtx_appendV]; exact tmem
+
+end nodes
+
 end ArithS
