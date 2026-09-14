@@ -3858,4 +3858,272 @@ lemma isSemiterm_zero_LAct : IsSemiterm LAct 0 (𝟎 : V) := by
 
 end eBounds
 
+
+/-! ### 4.2 The term-level SHIFT pass is applicable and certifies `tshFact &j &i`
+
+The invariant is stated over the GRAPH and quantifies the offsets, the cap `E` and the context.
+`PassPre D n i j E Γ` packages the side conditions: `E` bounds the arity part (`2n + D + 8`, the
+walk's own shape) and the two offset parts (`i + D + 1`, `j + D + 1`) — with `D = 2|t|` for a term
+and `D = 2Σ|entries| + 1` for a vector, the deepest eigenvariable a pass names sits
+`descCount < 2|·|` above the root. `PassPost tbl E Γ y F` is the conclusion: the list is applicable
+at cap `8`, Horn-only, and leaves `neg F` in its final context. (The two packages exist because
+`definability` on the inlined 8-conjunct motive times out at `whnf` — the `GoalOK` lesson.)
+The dossiers live at `Wd = walkPieces`, the pass at `W = certPieces`.
+-/
+
+section termShiftOK
+
+/-- The side conditions of a pass: the cap `E` bounds the arity part and both offset parts. -/
+def PassPre (D n i j E Γ : V) : Prop :=
+  2 * n + D + 8 ≤ E ∧ i + D + 1 ≤ E ∧ j + D + 1 ≤ E ∧ IsFormulaSet LAct Γ
+instance passPre_definable : 𝚫₁.Definable (fun v : Fin 6 → V ↦ PassPre (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
+  unfold PassPre; definability
+
+/-- The conclusion of a pass: applicable at cap `8`, Horn-only, `neg F` in the final context. -/
+def PassPost (tbl E Γ y F : V) : Prop := ListOK tbl E ((8 : ℕ) : V) Γ y ∧ HornOnly y ∧ neg LAct F ∈ finalCtx Γ y
+instance passPost_definable : 𝚫₁-Relation₅ (PassPost : V → V → V → V → V → Prop) := by
+  unfold PassPost; definability
+
+/-- The term-level invariant of the shift pass (the Π₁ motive of the structural induction). -/
+def TShiftOK (tbl Wd W n t : V) : Prop :=
+  ∀ i j y E Γ : V, PassTGraph W 2 n t i j y → PassPre (2 * termLen LAct t) n i j E Γ →
+    DossT Wd Γ n t i → DossT Wd Γ n (termShift LAct t) j → PassPost tbl E Γ y (tshFact (^&j) (^&i))
+instance tShiftOK_definable : 𝚷₁-Relation₅ (TShiftOK : V → V → V → V → V → Prop) := by
+  unfold TShiftOK; definability
+
+set_option maxHeartbeats 4000000 in
+/-- **The vector-level shift pass is applicable**, tail first (the entries' invariant as a hypothesis,
+the `descVecAux_ok` pattern): it certifies `tshvFact ⟨v⟩ⱼ (cT m) ⟨v⟩ᵢ` for the last `m` entries. -/
+lemma passVGraph_shift_ok_aux {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd W : V}
+    (hWd : Wd = walkPieces) (hWp : W = certPieces) (n : V) {k v : V} (hk : k ≤ 2)
+    (hv : IsSemitermVec LAct k n v) (ih : ∀ a < k, TShiftOK tbl Wd W n v.[a]) :
+    ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i j z E Γ : V, PassVGraph W 2 n k v m i j z →
+      PassPre (2 * listSum (termLenVec LAct m (takeLast v m)) + 1) n i j E Γ →
+      DossV Wd Γ n k v m i → DossV Wd Γ n k (termShiftVec LAct k v) m j →
+      PassPost tbl E Γ z (tshvFact (vRef j m) (cTV m) (vRef i m)) := by
+  have hW : WalkTable tbl := hC.walkTable
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _
+    refine ⟨by simp, ?_⟩
+    intro i j z E Γ hz hP hDi hDj
+    obtain ⟨hE, hEi, hEj, hΓ⟩ := hP
+    -- TRAP: never hand `𝟎` to a `cok_` witness — `isDefEq` on the closed constant times out; name it `cTV 0`
+    rw [PassVGraph.zero_iff.mp hz, vNilSteps, vNilRow, if_pos rfl, ← cTV_zero]
+    have h8 : (8 : V) ≤ E := E_eight hE
+    obtain ⟨hok, htag, hctx⟩ := cok_tshvNilCert htbl hC hWp hΓ (wx := cTV 0) (cTV_semiterm_LAct 0 0)
+      (E_cT_le_two (by norm_num) h8)
+    refine ⟨listOK_single hok, hornOnly_single (Or.inl htag), ?_⟩
+    rw [finalCtx_single, hctx, vRef_zero, vRef_zero, cTV_zero]
+    exact mem_insert_self'
+  | succ m ihm =>
+    intro hm
+    have hvlen : len v = k := hv.lh
+    have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+    obtain ⟨hU, hrest⟩ := ihm (le_trans le_self_add hm)
+    have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+      rw [takeLast_succ_of_lt hjk, hvlen]
+    refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+    intro i j z E Γ hz hP hDi hDj
+    obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := PassVGraph.succ_iff.mp hz
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    have hct : descCountT W n (nthFromEnd v m) = descCountT Wd n v.[k - (m + 1)] := by
+      rw [hnth', hWp, hWd]; exact descCountT_certPieces n _ ht
+    rw [hnth'] at hyt
+    rw [hct] at hyv ⊢
+    rw [htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin] at hP
+    obtain ⟨hE, hEi, hEj, hΓ⟩ := hP
+    have hct_le : descCountT Wd n v.[k - (m + 1)] + 1 ≤ 2 * termLen LAct v.[k - (m + 1)] :=
+      descCountT_walk_le htbl hW hWd ht
+    have h8 : (8 : V) ≤ E := E_eight hE
+    have hmk : m ≤ k := le_trans le_self_add hm
+    -- the dossiers' node facts (source and image)
+    obtain ⟨hadjI, htvI, hDt, hDv⟩ := dossV_succ htbl hW hWd hv hm hDi
+    have hvs : IsSemitermVec LAct k n (termShiftVec LAct k v) := hv.termShiftVec
+    obtain ⟨hadjJ, htvJ, hDt', hDv'⟩ := dossV_succ htbl hW hWd hvs hm hDj
+    rw [nth_termShiftVec hv.isUTerm hlt] at hadjJ hDt' hDv'
+    rw [descCountT_termShift Wd n _ ht] at hadjJ hDv'
+    -- the arithmetic of the bounds
+    have h2t : 2 * termLen LAct v.[k - (m + 1)] ≤
+        2 * (termLen LAct v.[k - (m + 1)] + listSum (termLenVec LAct m (takeLast v m))) :=
+      mul_le_mul_of_nonneg_left le_self_add zero_le
+    have hD1 : (1 : V) ≤ 2 * (termLen LAct v.[k - (m + 1)] + listSum (termLenVec LAct m (takeLast v m))) + 1 := le_add_self
+    have hctD : descCountT Wd n v.[k - (m + 1)] + 1 ≤
+        2 * (termLen LAct v.[k - (m + 1)] + listSum (termLenVec LAct m (takeLast v m))) + 1 :=
+      le_trans hct_le (le_trans h2t le_self_add)
+    -- the entry's pass
+    obtain ⟨hokT, hhT, hfT⟩ := ih _ hlt (i + 1) (j + 1) yt E Γ hyt
+      ⟨le_trans (add_le_add (add_le_add (le_refl (2 * n)) (le_trans h2t le_self_add)) (le_refl (8 : V))) hE,
+       le_trans (le_of_eq (show i + 1 + 2 * termLen LAct v.[k - (m + 1)] + 1 = i + (2 * termLen LAct v.[k - (m + 1)] + 1) + 1 by ring))
+        (le_trans (add_le_add (add_le_add (le_refl i) (add_le_add h2t (le_refl (1 : V)))) (le_refl (1 : V))) hEi),
+       le_trans (le_of_eq (show j + 1 + 2 * termLen LAct v.[k - (m + 1)] + 1 = j + (2 * termLen LAct v.[k - (m + 1)] + 1) + 1 by ring))
+        (le_trans (add_le_add (add_le_add (le_refl j) (add_le_add h2t (le_refl (1 : V)))) (le_refl (1 : V))) hEj),
+       hΓ⟩ hDt hDt'
+    obtain ⟨hndT, hsT⟩ := passTGraph_noDrop_shifts W 2 n hWp _ ht (i + 1) (j + 1) yt hyt
+    have hsub₁ : Γ ⊆ finalCtx Γ yt := subset_finalCtx_of_shiftsV_zero hndT hsT
+    have hΓ₁ : IsFormulaSet LAct (finalCtx Γ yt) := finalCtx_isFormulaSet 8 htbl hΓ hokT
+    -- the tail's pass
+    have hSig : 2 * listSum (termLenVec LAct m (takeLast v m)) + 1 ≤
+        2 * (termLen LAct v.[k - (m + 1)] + listSum (termLenVec LAct m (takeLast v m))) + 1 :=
+      add_le_add (mul_le_mul_of_nonneg_left le_add_self zero_le) (le_refl (1 : V))
+    obtain ⟨hokV, hhV, hfV⟩ := hrest (i + 1 + descCountT Wd n v.[k - (m + 1)]) (j + 1 + descCountT Wd n v.[k - (m + 1)])
+      yv E (finalCtx Γ yt) hyv
+      ⟨le_trans (add_le_add (add_le_add (le_refl (2 * n)) hSig) (le_refl (8 : V))) hE,
+       le_trans (le_of_eq (show i + 1 + descCountT Wd n v.[k - (m + 1)] + (2 * listSum (termLenVec LAct m (takeLast v m)) + 1) + 1 =
+          i + (descCountT Wd n v.[k - (m + 1)] + 1 + 2 * listSum (termLenVec LAct m (takeLast v m)) + 1) + 1 by ring))
+        (le_trans (add_le_add (add_le_add (le_refl i)
+            (add_le_add (add_le_add hct_le (le_refl (2 * listSum (termLenVec LAct m (takeLast v m))))) (le_refl (1 : V))))
+          (le_refl (1 : V)))
+          (le_trans (le_of_eq (show i + (2 * termLen LAct v.[k - (m + 1)] + 2 * listSum (termLenVec LAct m (takeLast v m)) + 1) + 1 =
+            i + (2 * (termLen LAct v.[k - (m + 1)] + listSum (termLenVec LAct m (takeLast v m))) + 1) + 1 by ring)) hEi)),
+       le_trans (le_of_eq (show j + 1 + descCountT Wd n v.[k - (m + 1)] + (2 * listSum (termLenVec LAct m (takeLast v m)) + 1) + 1 =
+          j + (descCountT Wd n v.[k - (m + 1)] + 1 + 2 * listSum (termLenVec LAct m (takeLast v m)) + 1) + 1 by ring))
+        (le_trans (add_le_add (add_le_add (le_refl j)
+            (add_le_add (add_le_add hct_le (le_refl (2 * listSum (termLenVec LAct m (takeLast v m))))) (le_refl (1 : V))))
+          (le_refl (1 : V)))
+          (le_trans (le_of_eq (show j + (2 * termLen LAct v.[k - (m + 1)] + 2 * listSum (termLenVec LAct m (takeLast v m)) + 1) + 1 =
+            j + (2 * (termLen LAct v.[k - (m + 1)] + listSum (termLenVec LAct m (takeLast v m))) + 1) + 1 by ring)) hEj)),
+       hΓ₁⟩ (hDv.mono hsub₁) (hDv'.mono hsub₁)
+    obtain ⟨hndV, hsV⟩ := passVGraph_noDrop_shifts hWp hv m hmk _ _ yv hyv
+    have hsub₂ : finalCtx Γ yt ⊆ finalCtx (finalCtx Γ yt) yv := subset_finalCtx_of_shiftsV_zero hndV hsV
+    have hΓ₂ : IsFormulaSet LAct (finalCtx (finalCtx Γ yt) yv) := finalCtx_isFormulaSet 8 htbl hΓ₁ hokV
+    -- the witness lengths
+    have hcTm : termLen LAct (cTV m) ≤ E := E_cT_le_two (le_trans hmk hk) h8
+    have hcTn : termLen LAct (cTV n) ≤ E := E_cT_n hE
+    have hrI : termLen LAct (vRef (i + 1 + descCountT Wd n v.[k - (m + 1)]) m) ≤ E := E_vRef_ct hctD hEi
+    have hrJ : termLen LAct (vRef (j + 1 + descCountT Wd n v.[k - (m + 1)]) m) ≤ E := E_vRef_ct hctD hEj
+    -- row 38 then row 39 on the source tail: `utvPiFact (cT m) ⟨tail⟩ᵢ`
+    have e38 : mkStep W 38 ?[cTV m, cTV n, vRef (i + 1 + descCountT Wd n v.[k - (m + 1)]) m] =
+        mkStep walkPieces 38 ?[cTV m, cTV n, vRef (i + 1 + descCountT Wd n v.[k - (m + 1)]) m] := by
+      rw [hWp, mkStep_certPieces_38]
+    have htv : neg LAct (tvPiFact (cTV m) (cTV n) (vRef (i + 1 + descCountT Wd n v.[k - (m + 1)]) m)) ∈
+        finalCtx (finalCtx Γ yt) yv :=
+      hsub₂ (hsub₁ (dossV_tvPi htbl hW hWd hv hmk hDv))
+    obtain ⟨ok38, tag38, ctx38⟩ := ok_isUTermVecOfSemitermVecLAct htbl hW rfl hΓ₂ (cTV_semiterm_LAct 0 _) hcTm
+      (cTV_semiterm_LAct 0 _) hcTn (isSemiterm_vRef _ _) hrI htv
+    rw [← e38] at ok38 tag38 ctx38
+    have hΓ₃ := isFormulaSet_ctxAfter 8 htbl ok38
+    have e39 : mkStep W 39 ?[cTV m, vRef (i + 1 + descCountT Wd n v.[k - (m + 1)]) m] =
+        mkStep walkPieces 39 ?[cTV m, vRef (i + 1 + descCountT Wd n v.[k - (m + 1)]) m] := by
+      rw [hWp, mkStep_certPieces_39]
+    obtain ⟨ok39, tag39, ctx39⟩ := ok_isUTermVecSigmaPiLAct htbl hW rfl hΓ₃ (cTV_semiterm_LAct 0 _) hcTm
+      (isSemiterm_vRef _ _) hrI (by rw [ctx38]; exact mem_insert_self')
+    rw [← e39] at ok39 tag39 ctx39
+    have hΓ₄ := isFormulaSet_ctxAfter 8 htbl ok39
+    have hlift : ∀ x, x ∈ finalCtx (finalCtx Γ yt) yv →
+        x ∈ ctxAfter (ctxAfter (finalCtx (finalCtx Γ yt) yv)
+          (mkStep W 38 ?[cTV m, cTV n, vRef (i + 1 + descCountT Wd n v.[k - (m + 1)]) m]))
+          (mkStep W 39 ?[cTV m, vRef (i + 1 + descCountT Wd n v.[k - (m + 1)]) m]) := by
+      intro x hx; rw [ctx39, ctx38]; exact mem_insert_of_mem' (mem_insert_of_mem' hx)
+    -- the adjoin certificate
+    obtain ⟨okA, tagA, ctxA⟩ := cok_tshvAdjCert htbl hC hWp hΓ₄
+      (cTV_semiterm_LAct 0 _) hcTn (cTV_semiterm_LAct 0 _) hcTm (isSemiterm_vRef _ _) hrI
+      (by simp) (E_fvar hEi) (by simp) (E_fvar_succ hD1 hEi) (by simp) (E_fvar_succ hD1 hEj)
+      (isSemiterm_vRef _ _) hrJ (by simp) (E_fvar hEj)
+      (hlift _ (hsub₂ (hsub₁ (dossT_tPi htbl hW hWd ht hDt))))
+      (by rw [ctx39]; exact mem_insert_self')
+      (hlift _ (hsub₂ hfT))
+      (hlift _ hfV)
+      (hlift _ (hsub₂ (hsub₁ hadjI)))
+      (hlift _ (hsub₂ (hsub₁ hadjJ)))
+    rw [vAdjSteps, vAdjRow, if_pos rfl, vAdjWits, if_pos rfl]
+    refine ⟨listOK_appendV hokT (listOK_appendV hokV (listOK_cons ok38 (listOK_cons ok39 (listOK_single okA)))),
+      hornOnly_appendV hhT (hornOnly_appendV hhV (hornOnly_cons (Or.inl tag38)
+        (hornOnly_cons (Or.inl tag39) (hornOnly_single (Or.inl tagA))))), ?_⟩
+    rw [finalCtx_appendV, finalCtx_three, ctxA,
+      vRef_of_ne (ne_of_gt (lt_of_lt_of_le _root_.zero_lt_one le_add_self)),
+      vRef_of_ne (ne_of_gt (lt_of_lt_of_le _root_.zero_lt_one le_add_self)), cTV_succ]
+    exact mem_insert_self'
+
+set_option maxHeartbeats 4000000 in
+/-- **The term-level shift pass is applicable and certifies `tshFact &j &i`.** -/
+theorem passTGraph_shift_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd W : V}
+    (hWd : Wd = walkPieces) (hWp : W = certPieces) (n : V) :
+    ∀ t, IsSemiterm LAct n t → TShiftOK tbl Wd W n t := by
+  have hW : WalkTable tbl := hC.walkTable
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · definability
+  · intro z _ i j y E Γ hy hP hDi hDj
+    rw [termLen_bvar] at hP
+    obtain ⟨hE, hEi, hEj, hΓ⟩ := hP
+    rw [PassTGraph.bvar_iff.mp hy, tLeafSteps, tLeafRow, if_pos rfl, if_pos rfl]
+    rw [termShift_bvar] at hDj
+    obtain ⟨hbI, _⟩ := dossT_bvar htbl hW hWd hDi
+    obtain ⟨hbJ, _⟩ := dossT_bvar htbl hW hWd hDj
+    obtain ⟨hok, htag, hctx⟩ := cok_termShiftBvarCert htbl hC hWp hΓ (cTV_semiterm_LAct 0 _) (E_cT_leaf hE)
+      (by simp) (E_fvar hEi) (by simp) (E_fvar hEj) hbI hbJ
+    refine ⟨listOK_single hok, hornOnly_single (Or.inl htag), ?_⟩
+    rw [finalCtx_single, hctx]; exact mem_insert_self'
+  · intro a i j y E Γ hy hP hDi hDj
+    rw [termLen_fvar] at hP
+    obtain ⟨hE, hEi, hEj, hΓ⟩ := hP
+    rw [PassTGraph.fvar_iff.mp hy, tLeafSteps, tLeafRow, if_pos rfl, if_neg (by simp)]
+    rw [termShift_fvar] at hDj
+    obtain ⟨hfI, _⟩ := dossT_fvar htbl hW hWd hDi
+    obtain ⟨hfJ, _⟩ := dossT_fvar htbl hW hWd hDj
+    rw [cTV_succ] at hfJ
+    obtain ⟨hok, htag, hctx⟩ := cok_termShiftFvarCert htbl hC hWp hΓ (cTV_semiterm_LAct 0 _) (E_cT_leaf hE)
+      (by simp) (E_fvar hEi) (by simp) (E_fvar hEj) hfI hfJ
+    refine ⟨listOK_single hok, hornOnly_single (Or.inl htag), ?_⟩
+    rw [finalCtx_single, hctx]; exact mem_insert_self'
+  · intro k f v hkf hv ih i j y E Γ hy hP hDi hDj
+    rw [termLen_func hkf hv.isUTerm] at hP
+    obtain ⟨hE, hEi, hEj, hΓ⟩ := hP
+    obtain ⟨yv, _, hyv, rfl⟩ := PassTGraph.func_iff.mp hy
+    rw [tFuncSteps_eq, tFuncRow, if_pos rfl]
+    have h8 : (8 : V) ≤ E := E_eight hE
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    obtain ⟨hfI, _, huI, hDvI⟩ := dossT_func htbl hW hWd hkf hv hDi
+    rw [termShift_func hkf hv.isUTerm] at hDj
+    obtain ⟨hfJ, _, _, hDvJ⟩ := dossT_func htbl hW hWd hkf hv.termShiftVec hDj
+    obtain ⟨_, hrest⟩ := passVGraph_shift_ok_aux htbl hC hWd hWp n (arity_le_two hkf) hv ih k le_rfl
+    rw [htl] at hrest
+    have hSig : 2 * listSum (termLenVec LAct k v) + 1 ≤ 2 * (listSum (termLenVec LAct k v) + 1) := by
+      rw [mul_add, mul_one]; exact add_le_add (le_refl _) (by norm_num)
+    obtain ⟨hokV, hhV, hfV⟩ := hrest (i + 1) (j + 1) yv E Γ hyv
+      ⟨le_trans (add_le_add (add_le_add (le_refl (2 * n)) hSig) (le_refl (8 : V))) hE,
+       le_trans (le_of_eq (show i + 1 + (2 * listSum (termLenVec LAct k v) + 1) + 1 = i + 2 * (listSum (termLenVec LAct k v) + 1) + 1 by ring)) hEi,
+       le_trans (le_of_eq (show j + 1 + (2 * listSum (termLenVec LAct k v) + 1) + 1 = j + 2 * (listSum (termLenVec LAct k v) + 1) + 1 by ring)) hEj,
+       hΓ⟩ hDvI hDvJ
+    obtain ⟨hndV, hsV⟩ := passVGraph_noDrop_shifts hWp hv k le_rfl _ _ yv hyv
+    have hsub₁ : Γ ⊆ finalCtx Γ yv := subset_finalCtx_of_shiftsV_zero hndV hsV
+    have hΓ₁ : IsFormulaSet LAct (finalCtx Γ yv) := finalCtx_isFormulaSet 8 htbl hΓ hokV
+    have ef : mkStep W (funcRow k f) 0 = mkStep walkPieces (funcRow k f) 0 := by rw [hWp, mkStep_certPieces_funcRow]
+    obtain ⟨okF, tagF, ctxF, hEk, hEf⟩ := funcConst_ok htbl hW rfl hkf h8 hΓ₁
+    rw [← ef] at okF tagF ctxF
+    have hΓ₂ := isFormulaSet_ctxAfter 8 htbl okF
+    have hD1 : (1 : V) ≤ 2 * (listSum (termLenVec LAct k v) + 1) :=
+      le_trans (by norm_num : (1 : V) ≤ 2 * 1) (mul_le_mul_of_nonneg_left le_add_self zero_le)
+    obtain ⟨okS, tagS, ctxS⟩ := cok_termShiftFuncCert htbl hC hWp hΓ₂ (by simp) (E_fvar hEi) (cTV_semiterm_LAct 0 _) hEk
+      (cTV_semiterm_LAct 0 _) hEf (isSemiterm_vRef _ _) (E_vRef_succ hD1 hEi) (isSemiterm_vRef _ _) (E_vRef_succ hD1 hEj)
+      (by simp) (E_fvar hEj)
+      (by rw [ctxF]; exact mem_insert_self')
+      (by rw [ctxF]; exact mem_insert_of_mem' (hsub₁ huI))
+      (by rw [ctxF]; exact mem_insert_of_mem' (hsub₁ hfI))
+      (by rw [ctxF]; exact mem_insert_of_mem' hfV)
+      (by rw [ctxF]; exact mem_insert_of_mem' (hsub₁ hfJ))
+    refine ⟨listOK_appendV hokV (listOK_cons okF (listOK_single okS)),
+      hornOnly_appendV hhV (hornOnly_cons (Or.inl tagF) (hornOnly_single (Or.inl tagS))), ?_⟩
+    rw [finalCtx_appendV, finalCtx_cons, finalCtx_single, ctxS]
+    exact mem_insert_self'
+
+/-- The vector-level shift pass, standalone. -/
+theorem passVGraph_shift_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd W : V}
+    (hWd : Wd = walkPieces) (hWp : W = certPieces) (n : V) {k v : V} (hk : k ≤ 2)
+    (hv : IsSemitermVec LAct k n v) {m : V} (hm : m ≤ k) :
+    ∀ i j z E Γ : V, PassVGraph W 2 n k v m i j z →
+      PassPre (2 * listSum (termLenVec LAct m (takeLast v m)) + 1) n i j E Γ →
+      DossV Wd Γ n k v m i → DossV Wd Γ n k (termShiftVec LAct k v) m j →
+      PassPost tbl E Γ z (tshvFact (vRef j m) (cTV m) (vRef i m)) :=
+  (passVGraph_shift_ok_aux htbl hC hWd hWp n hk hv
+    (fun a ha ↦ passTGraph_shift_ok htbl hC hWd hWp n _ (hv.nth ha)) m hm).2
+
+end termShiftOK
+
 end ArithS
