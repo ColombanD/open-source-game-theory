@@ -1385,28 +1385,31 @@ theorem dossF_nrel {Γ n k R v i : V} (hkR : LAct.IsRel k R) (hv : IsSemitermVec
 
 end decompose
 
-/-! ## Part 1 — the term-level certification pass (identification `ν = 0` / shift `ν = 2`)
+/-! ## Part 1 — the term-level certification pass (shift `ν = 2` / identification otherwise)
 
 A pass is SHIFT-FREE: a list of Horn steps (tags `0`) over two dossiers in context — the source
 object's (top `&i`) and the derived object's (top `&j`), both in walk layout — certifying at each node
-that the derived node is the image of the source node (`eqFactB &i &j` for `ν = 0`, `tshFact &j &i`
-for `ν = 2`; `tshvFact` at the vector level). The indices of the two trees run in parallel: the
+that the derived node is the image of the source node (`tshFact &j &i` for `ν = 2`, `eqFactB &i &j`
+for every other `ν` — the IDENTIFICATION pass, used at `ν = 0` and, by the formula pass's `neg`
+family, at `ν = 1`: `neg` changes no term, but the image's atoms were walked afresh, so their
+vectors must be identified with the source's; `tshvFact`/`eqFactB` at the vector level). The indices of the two trees run in parallel: the
 child at walk offset `o` of the source sits at `&(i + o)`, the corresponding child of the derived
 object at `&(j + o)` (the images of `neg`/`shift`/identity have the walk's shape, `descCountT_termShift`).
 -/
 
 section termPass
 
-/-- The row of a leaf certificate: `eqOfBvar/eqOfFvar` (`ν = 0`), `termShiftBvarCert/termShiftFvarCert` (else). -/
+/-- The row of a leaf certificate: `termShiftBvarCert/termShiftFvarCert` (`ν = 2`), `eqOfBvar/eqOfFvar` (else:
+the identification pass, `ν = 0` or `ν = 1`). -/
 noncomputable def tLeafRow (ν kind : V) : V :=
-  if ν = 0 then (if kind = 0 then 124 else 125) else (if kind = 0 then 118 else 119)
+  if ν = 2 then (if kind = 0 then 118 else 119) else (if kind = 0 then 124 else 125)
 
 def tLeafRowDef : 𝚺₀.Semisentence 3 := .mkSigma
-  “y ν kind. (ν = 0 → ((kind = 0 → y = 124) ∧ (kind ≠ 0 → y = 125))) ∧ (ν ≠ 0 → ((kind = 0 → y = 118) ∧ (kind ≠ 0 → y = 119)))”
+  “y ν kind. (ν = 2 → ((kind = 0 → y = 118) ∧ (kind ≠ 0 → y = 119))) ∧ (ν ≠ 2 → ((kind = 0 → y = 124) ∧ (kind ≠ 0 → y = 125)))”
 
 instance tLeafRow_defined : 𝚺₀-Function₂ (tLeafRow : V → V → V) via tLeafRowDef := .mk fun v ↦ by
   simp [tLeafRowDef, tLeafRow, numeral_eq_natCast]
-  by_cases hν : v 1 = 0 <;> by_cases hk : v 2 = 0 <;> simp [hν, hk]
+  by_cases hν : v 1 = 2 <;> by_cases hk : v 2 = 0 <;> simp [hν, hk]
 instance tLeafRow_definable : 𝚺₀-Function₂ (tLeafRow : V → V → V) := tLeafRow_defined.to_definable
 
 /-- The leaf certificate `[row [cT z, &i, &j]]`. -/
@@ -1427,13 +1430,13 @@ instance tLeafSteps_definable :
 `eqOfFunc`/`termShiftFuncCert [&i, cT k, cT f, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. -/
 noncomputable def tFuncSteps (W ν k f i j yv : V) : V :=
   appendV yv ?[mkStep W (funcRow k f) 0,
-    mkStep W (if ν = 0 then 126 else 120) ?[^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]]
+    mkStep W (if ν = 2 then 120 else 126) ?[^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]]
 
-noncomputable def tFuncRow (ν : V) : V := if ν = 0 then 126 else 120
-def tFuncRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 0 → y = 126) ∧ (ν ≠ 0 → y = 120)”
+noncomputable def tFuncRow (ν : V) : V := if ν = 2 then 120 else 126
+def tFuncRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 2 → y = 120) ∧ (ν ≠ 2 → y = 126)”
 instance tFuncRow_defined : 𝚺₀-Function₁ (tFuncRow : V → V) via tFuncRowDef := .mk fun v ↦ by
   simp [tFuncRowDef, tFuncRow, numeral_eq_natCast]
-  by_cases hν : v 1 = 0 <;> simp [hν]
+  by_cases hν : v 1 = 2 <;> simp [hν]
 instance tFuncRow_definable : 𝚺₀-Function₁ (tFuncRow : V → V) := tFuncRow_defined.to_definable
 
 lemma tFuncSteps_eq (W ν k f i j yv : V) : tFuncSteps W ν k f i j yv =
@@ -1456,11 +1459,11 @@ instance tFuncSteps_definable :
   tFuncSteps_defined.to_definable
 
 /-- The empty vector's certificate: `eqRefl [𝟎]` / `tshvNilCert [𝟎]`. -/
-noncomputable def vNilRow (ν : V) : V := if ν = 0 then 121 else 116
-def vNilRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 0 → y = 121) ∧ (ν ≠ 0 → y = 116)”
+noncomputable def vNilRow (ν : V) : V := if ν = 2 then 116 else 121
+def vNilRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 2 → y = 116) ∧ (ν ≠ 2 → y = 121)”
 instance vNilRow_defined : 𝚺₀-Function₁ (vNilRow : V → V) via vNilRowDef := .mk fun v ↦ by
   simp [vNilRowDef, vNilRow, numeral_eq_natCast]
-  by_cases hν : v 1 = 0 <;> simp [hν]
+  by_cases hν : v 1 = 2 <;> simp [hν]
 instance vNilRow_definable : 𝚺₀-Function₁ (vNilRow : V → V) := vNilRow_defined.to_definable
 
 noncomputable def vNilSteps (W ν : V) : V := ?[mkStep W (vNilRow ν) ?[(𝟎 : V)]]
@@ -1471,11 +1474,11 @@ instance vNilSteps_defined : 𝚺₁-Function₂ (vNilSteps : V → V → V) via
 instance vNilSteps_definable : 𝚺₁-Function₂ (vNilSteps : V → V → V) := vNilSteps_defined.to_definable
 
 /-- The witnesses of the adjoin certificate at a vector node with `m` tail entries and the entry's count `ct`:
-`eqOfAdj [&(i+1), ⟨tail⟩ᵢ, &i, &(j+1), ⟨tail⟩ⱼ, &j]` (`ν = 0`), else
-`tshvAdjCert [cT n, cT m, ⟨tail⟩ᵢ, &i, &(i+1), &(j+1), ⟨tail⟩ⱼ, &j]`, with `⟨tail⟩ᵢ = vRef (i + 1 + ct) m`. -/
+`tshvAdjCert [cT n, cT m, ⟨tail⟩ᵢ, &i, &(i+1), &(j+1), ⟨tail⟩ⱼ, &j]` (`ν = 2`), else
+`eqOfAdj [&(i+1), ⟨tail⟩ᵢ, &i, &(j+1), ⟨tail⟩ⱼ, &j]`, with `⟨tail⟩ᵢ = vRef (i + 1 + ct) m`. -/
 noncomputable def vAdjWits (ν n m ct i j : V) : V :=
-  if ν = 0 then ?[^&(i + 1), vRef (i + 1 + ct) m, ^&i, ^&(j + 1), vRef (j + 1 + ct) m, ^&j]
-  else ?[cTV n, cTV m, vRef (i + 1 + ct) m, ^&i, ^&(i + 1), ^&(j + 1), vRef (j + 1 + ct) m, ^&j]
+  if ν = 2 then ?[cTV n, cTV m, vRef (i + 1 + ct) m, ^&i, ^&(i + 1), ^&(j + 1), vRef (j + 1 + ct) m, ^&j]
+  else ?[^&(i + 1), vRef (i + 1 + ct) m, ^&i, ^&(j + 1), vRef (j + 1 + ct) m, ^&j]
 
 noncomputable def vAdjWitsDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y ν n m ct i j. ∃ fi, !qqFvarDef fi i ∧ ∃ fi', !qqFvarDef fi' (i + 1) ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ fj', !qqFvarDef fj' (j + 1) ∧
@@ -1483,22 +1486,22 @@ noncomputable def vAdjWitsDef : 𝚺₁.Semisentence 7 := .mkSigma
     ∃ a₀, !mkVec₂Def a₀ rj fj ∧ ∃ a₁, !adjoinDef a₁ fj' a₀ ∧ ∃ a₂, !adjoinDef a₂ fi a₁ ∧ ∃ a₃, !adjoinDef a₃ ri a₂ ∧ ∃ a, !adjoinDef a fi' a₃ ∧
     ∃ b₀, !mkVec₂Def b₀ rj fj ∧ ∃ b₁, !adjoinDef b₁ fj' b₀ ∧ ∃ b₂, !adjoinDef b₂ fi' b₁ ∧ ∃ b₃, !adjoinDef b₃ fi b₂ ∧
     ∃ b₄, !adjoinDef b₄ ri b₃ ∧ ∃ b₅, !adjoinDef b₅ cm b₄ ∧ ∃ b, !adjoinDef b cn b₅ ∧
-    ((ν = 0 → y = a) ∧ (ν ≠ 0 → y = b))”
+    ((ν = 2 → y = b) ∧ (ν ≠ 2 → y = a))”
 
 instance vAdjWits_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ vAdjWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) vAdjWitsDef := .mk
   fun v ↦ by
     simp [vAdjWitsDef, vAdjWits, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff]
-    by_cases hν : v 1 = 0 <;> simp [hν]
+    by_cases hν : v 1 = 2 <;> simp [hν]
 instance vAdjWits_definable :
     𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ vAdjWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
   vAdjWits_defined.to_definable
 
-noncomputable def vAdjRow (ν : V) : V := if ν = 0 then 127 else 117
-def vAdjRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 0 → y = 127) ∧ (ν ≠ 0 → y = 117)”
+noncomputable def vAdjRow (ν : V) : V := if ν = 2 then 117 else 127
+def vAdjRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 2 → y = 117) ∧ (ν ≠ 2 → y = 127)”
 instance vAdjRow_defined : 𝚺₀-Function₁ (vAdjRow : V → V) via vAdjRowDef := .mk fun v ↦ by
   simp [vAdjRowDef, vAdjRow, numeral_eq_natCast]
-  by_cases hν : v 1 = 0 <;> simp [hν]
+  by_cases hν : v 1 = 2 <;> simp [hν]
 instance vAdjRow_definable : 𝚺₀-Function₁ (vAdjRow : V → V) := vAdjRow_defined.to_definable
 
 /-- The vector node's certificate: the entry's pass `yt`, the tail's pass `yv`, the tail's `utvPi` bridge
@@ -2142,28 +2145,53 @@ instance fQuantSteps_definable :
     𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ fQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
   fQuantSteps_defined.to_definable
 
-/-- The certificate of an ATOM (`rel`/`nrel`). `ν = 1` (`neg`) changes no term: the row
-`negRelCert [&i, cT k, cT R, ⟨v⟩ᵢ, &j]` takes the SOURCE vector on both sides and no term pass
-runs. `ν = 2` (`shift`) first runs the term-level vector pass at `(i+1, j+1)` and then
-`shiftRelCert [&i, cT k, cT R, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. -/
+/-- The row of the congruence step at a `neg` atom: `congNRel` (137) at a `rel` source (its image is
+an `nrel`), `congRel` (136) at an `nrel` source. -/
+noncomputable def congRow (c : V) : V := if c = 0 then 137 else 136
+def congRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y c. (c = 0 → y = 137) ∧ (c ≠ 0 → y = 136)”
+instance congRow_defined : 𝚺₀-Function₁ (congRow : V → V) via congRowDef := .mk fun v ↦ by
+  simp [congRowDef, congRow, numeral_eq_natCast]
+  by_cases hc : v 1 = 0 <;> simp [hc]
+instance congRow_definable : 𝚺₀-Function₁ (congRow : V → V) := congRow_defined.to_definable
+
+/-- The certificate of an ATOM (`rel`/`nrel`), after the term-level vector pass `yv` at `(i+1, j+1)`:
+the closed relation-symbol row (`relRow R`, delivering `isRelFact`), then the family's row.
+`ν = 2` (`shift`): `yv` is the SHIFT pass (`tshvFact ⟨v⟩ⱼ (cT k) ⟨v⟩ᵢ`) and the row is
+`shiftRelCert [&i, cT k, cT R, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. `ν = 1` (`neg`): `neg` changes no term, but the
+image's dossier was walked AFRESH, so its atom fact names the image's OWN vector `⟨v⟩ⱼ`; `yv` is
+therefore the IDENTIFICATION pass (`eqFactB ⟨v⟩ᵢ ⟨v⟩ⱼ`), followed by `eqRefl [&j]` and
+`congNRel/congRel [&j, cT k, cT R, ⟨v⟩ⱼ, &j, ⟨v⟩ᵢ]` (moving the image's fact onto the source's
+vector), and only then `negRelCert [&i, cT k, cT R, ⟨v⟩ᵢ, &j]`. (Until 2026-09-14 the `ν = 1`
+branch was the single `negRelCert` step over the source vector, whose `nrelFact &j … ⟨v⟩ᵢ`
+antecedent is NOT in the image's dossier — `certNeg_ok` was unprovable as designed.) -/
 noncomputable def fAtomSteps (W ν c k R i j yv : V) : V :=
-  if ν = 1 then ?[mkStep W (fRow ν c) ?[^&i, cTV k, cTV R, vRef (i + 1) k, ^&j]]
-  else appendV yv ?[mkStep W (fRow ν c) ?[^&i, cTV k, cTV R, vRef (i + 1) k, vRef (j + 1) k, ^&j]]
+  if ν = 1 then
+    appendV yv ?[mkStep W (relRow R) 0, mkStep W 121 ?[^&j],
+      mkStep W (congRow c) ?[^&j, cTV k, cTV R, vRef (j + 1) k, ^&j, vRef (i + 1) k],
+      mkStep W (fRow ν c) ?[^&i, cTV k, cTV R, vRef (i + 1) k, ^&j]]
+  else appendV yv ?[mkStep W (relRow R) 0, mkStep W (fRow ν c) ?[^&i, cTV k, cTV R, vRef (i + 1) k, vRef (j + 1) k, ^&j]]
 
 noncomputable def fAtomStepsDef : 𝚺₁.Semisentence 9 := .mkSigma
-  “y W ν c k R i j yv. ∃ ρ, !fRowDef ρ ν c ∧ ∃ ck, !cTVGraph ck k ∧ ∃ cR, !cTVGraph cR R ∧
+  “y W ν c k R i j yv. ∃ ρ, !fRowDef ρ ν c ∧ ∃ ρr, !relRowDef ρr R ∧ ∃ sr, !mkStepDef sr W ρr 0 ∧ ∃ ρc, !congRowDef ρc c ∧
+    ∃ ck, !cTVGraph ck k ∧ ∃ cR, !cTVGraph cR R ∧
     ∃ fi, !qqFvarDef fi i ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ ri, !vRefDef ri (i + 1) k ∧ ∃ rj, !vRefDef rj (j + 1) k ∧
     ∃ a₀, !mkVec₂Def a₀ ri fj ∧ ∃ a₁, !adjoinDef a₁ cR a₀ ∧ ∃ a₂, !adjoinDef a₂ ck a₁ ∧ ∃ a, !adjoinDef a fi a₂ ∧
-    ∃ sa, !mkStepDef sa W ρ a ∧ ∃ la, !mkVec₁Def la sa ∧
+    ∃ sa, !mkStepDef sa W ρ a ∧
+    ∃ e₀, !mkVec₁Def e₀ fj ∧ ∃ se, !mkStepDef se W 121 e₀ ∧
+    ∃ g₀, !mkVec₂Def g₀ fj ri ∧ ∃ g₁, !adjoinDef g₁ rj g₀ ∧ ∃ g₂, !adjoinDef g₂ cR g₁ ∧ ∃ g₃, !adjoinDef g₃ ck g₂ ∧
+    ∃ g, !adjoinDef g fj g₃ ∧ ∃ sg, !mkStepDef sg W ρc g ∧
+    ∃ la₃, !mkVec₁Def la₃ sa ∧ ∃ la₂, !adjoinDef la₂ sg la₃ ∧ ∃ la₁, !adjoinDef la₁ se la₂ ∧ ∃ la, !adjoinDef la sr la₁ ∧
+    ∃ A, !appendVDef A yv la ∧
     ∃ b₀, !mkVec₂Def b₀ rj fj ∧ ∃ b₁, !adjoinDef b₁ ri b₀ ∧ ∃ b₂, !adjoinDef b₂ cR b₁ ∧ ∃ b₃, !adjoinDef b₃ ck b₂ ∧
-    ∃ b, !adjoinDef b fi b₃ ∧ ∃ sb, !mkStepDef sb W ρ b ∧ ∃ lb, !mkVec₁Def lb sb ∧ ∃ B, !appendVDef B yv lb ∧
-    ((ν = 1 → y = la) ∧ (ν ≠ 1 → y = B))”
+    ∃ b, !adjoinDef b fi b₃ ∧ ∃ sb, !mkStepDef sb W ρ b ∧ ∃ lb₁, !mkVec₁Def lb₁ sb ∧ ∃ lb, !adjoinDef lb sr lb₁ ∧
+    ∃ B, !appendVDef B yv lb ∧
+    ((ν = 1 → y = A) ∧ (ν ≠ 1 → y = B))”
 
 instance fAtomSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ fAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) fAtomStepsDef := .mk
   fun v ↦ by
-    simp [fAtomStepsDef, fAtomSteps, numeral_eq_natCast, fRow_defined.iff, cTV.defined.iff,
-      vRef_defined.iff, mkStep_defined.iff, appendV_defined.iff]
+    simp [fAtomStepsDef, fAtomSteps, numeral_eq_natCast, fRow_defined.iff, relRow_defined.iff, congRow_defined.iff,
+      cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff, appendV_defined.iff]
     by_cases hν : v 2 = 1 <;> simp [hν]
 instance fAtomSteps_definable :
     𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ fAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
@@ -2792,16 +2820,15 @@ lemma ctag_fRow {W : V} (hWp : W = certPieces) {ν c : V} (hν : ν = 1 ∨ ν =
 lemma ctag_vNilRow {W : V} (hWp : W = certPieces) {ν : V} (hν : ν = 1 ∨ ν = 2) (ev : V) :
     sTag (mkStep W (vNilRow ν) ev) = 0 := by
   rcases hν with rfl | rfl
-  · rw [show vNilRow (1 : V) = 116 by simp [vNilRow]]; exact ctag_tshvNilCert hWp ev
-  · rw [show vNilRow (2 : V) = 116 by simp [vNilRow]]; exact ctag_tshvNilCert hWp ev
+  · rw [show vNilRow (1 : V) = 121 by norm_num [vNilRow]]; exact ctag_eqRefl hWp ev
+  · rw [show vNilRow (2 : V) = 116 by norm_num [vNilRow]]; exact ctag_tshvNilCert hWp ev
 
-/-- The rows of the TERM-level pass are Horn rows too (`ν = 1` uses the shift rows as well: at a
-`neg` the term level never runs, but the definition still names them). -/
+/-- The rows of the TERM-level pass are Horn rows too (whatever `ν`). -/
 lemma ctag_tLeafRow {W : V} (hWp : W = certPieces) (ν kind ev : V) :
     sTag (mkStep W (tLeafRow ν kind) ev) = 0 := by
   have hf : tLeafRow ν kind = 124 ∨ tLeafRow ν kind = 125 ∨ tLeafRow ν kind = 118 ∨ tLeafRow ν kind = 119 := by
     unfold tLeafRow
-    by_cases hν : ν = 0 <;> by_cases hk : kind = 0 <;> simp [hν, hk]
+    by_cases hν : ν = 2 <;> by_cases hk : kind = 0 <;> simp [hν, hk]
   rcases hf with h | h | h | h <;> rw [h]
   · exact ctag_eqOfBvar hWp ev
   · exact ctag_eqOfFvar hWp ev
@@ -2810,21 +2837,21 @@ lemma ctag_tLeafRow {W : V} (hWp : W = certPieces) (ν kind ev : V) :
 
 lemma ctag_tFuncRow {W : V} (hWp : W = certPieces) (ν ev : V) : sTag (mkStep W (tFuncRow ν) ev) = 0 := by
   have hf : tFuncRow ν = 126 ∨ tFuncRow ν = 120 := by
-    unfold tFuncRow; by_cases hν : ν = 0 <;> simp [hν]
+    unfold tFuncRow; by_cases hν : ν = 2 <;> simp [hν]
   rcases hf with h | h <;> rw [h]
   · exact ctag_eqOfFunc hWp ev
   · exact ctag_termShiftFuncCert hWp ev
 
 lemma ctag_vNilRow' {W : V} (hWp : W = certPieces) (ν ev : V) : sTag (mkStep W (vNilRow ν) ev) = 0 := by
   have hf : vNilRow ν = 121 ∨ vNilRow ν = 116 := by
-    unfold vNilRow; by_cases hν : ν = 0 <;> simp [hν]
+    unfold vNilRow; by_cases hν : ν = 2 <;> simp [hν]
   rcases hf with h | h <;> rw [h]
   · exact ctag_eqRefl hWp ev
   · exact ctag_tshvNilCert hWp ev
 
 lemma ctag_vAdjRow {W : V} (hWp : W = certPieces) (ν ev : V) : sTag (mkStep W (vAdjRow ν) ev) = 0 := by
   have hf : vAdjRow ν = 127 ∨ vAdjRow ν = 117 := by
-    unfold vAdjRow; by_cases hν : ν = 0 <;> simp [hν]
+    unfold vAdjRow; by_cases hν : ν = 2 <;> simp [hν]
   rcases hf with h | h <;> rw [h]
   · exact ctag_eqOfAdj hWp ev
   · exact ctag_tshvAdjCert hWp ev
@@ -2856,6 +2883,17 @@ lemma ctag_certFuncRow {W : V} (hWp : W = certPieces) (k f ev : V) : sTag (mkSte
   obtain ⟨m, hm, hfm⟩ := hf
   rw [hfm, mkStep_certPieces_lt m hm, ← hfm]
   exact tag_funcRow rfl k f ev
+lemma ctag_certRelRow {W : V} (hWp : W = certPieces) (R ev : V) : sTag (mkStep W (relRow R) ev) = 0 := by
+  subst hWp
+  by_cases hR : R = 0
+  · rw [relRow, if_pos hR, show (36 : V) = ((36 : ℕ) : V) by simp, mkStep_certPieces_lt 36 (by decide)]
+    exact tag_isRelConst_eq rfl ev
+  · rw [relRow, if_neg hR, show (37 : V) = ((37 : ℕ) : V) by simp, mkStep_certPieces_lt 37 (by decide)]
+    exact tag_isRelConst_lt rfl ev
+lemma ctag_congRow {W : V} (hWp : W = certPieces) (c ev : V) : sTag (mkStep W (congRow c) ev) = 0 := by
+  by_cases hc : c = 0
+  · rw [congRow, if_pos hc]; exact ctag_congNRel hWp ev
+  · rw [congRow, if_neg hc]; exact ctag_congRel hWp ev
 
 set_option maxHeartbeats 2000000 in
 set_option maxRecDepth 20000 in
@@ -2964,11 +3002,17 @@ lemma passFGraph_noDrop_shifts (W : V) {ν : V} (hν : ν = 1 ∨ ν = 2) (hWp :
     unfold fAtomSteps
     by_cases hν1 : ν = 1
     · rw [if_pos hν1]
-      exact ⟨noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inl rfl) _)),
-        by rw [shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inl rfl)]; simp)]⟩
+      refine ⟨noDrop_appendV hnv (noDrop_cons (Or.inl (ctag_certRelRow hWp _ _)) (noDrop_cons (Or.inl (ctag_eqRefl hWp _))
+        (noDrop_cons (Or.inl (ctag_congRow hWp _ _)) (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inl rfl) _)))))), ?_⟩
+      rw [shiftsV_appendV, hsv, shiftsV_cons, if_neg (by rw [ctag_certRelRow hWp]; simp), shiftsV_cons,
+        if_neg (by rw [ctag_eqRefl hWp]; simp), shiftsV_cons, if_neg (by rw [ctag_congRow hWp]; simp),
+        shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inl rfl)]; simp)]
+      simp
     · rw [if_neg hν1]
-      refine ⟨noDrop_appendV hnv (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inl rfl) _))), ?_⟩
-      rw [shiftsV_appendV, hsv, shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inl rfl)]; simp)]
+      refine ⟨noDrop_appendV hnv (noDrop_cons (Or.inl (ctag_certRelRow hWp _ _))
+        (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inl rfl) _)))), ?_⟩
+      rw [shiftsV_appendV, hsv, shiftsV_cons, if_neg (by rw [ctag_certRelRow hWp]; simp), shiftsV_single,
+        if_neg (by rw [ctag_fRow hWp hν (Or.inl rfl)]; simp)]
       simp
   · intro n k R v hR hv i j y hy
     rw [PassFGraph.nrel_iff.mp hy]
@@ -2976,11 +3020,17 @@ lemma passFGraph_noDrop_shifts (W : V) {ν : V} (hν : ν = 1 ∨ ν = 2) (hWp :
     unfold fAtomSteps
     by_cases hν1 : ν = 1
     · rw [if_pos hν1]
-      exact ⟨noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inl rfl)) _)),
-        by rw [shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inl rfl))]; simp)]⟩
+      refine ⟨noDrop_appendV hnv (noDrop_cons (Or.inl (ctag_certRelRow hWp _ _)) (noDrop_cons (Or.inl (ctag_eqRefl hWp _))
+        (noDrop_cons (Or.inl (ctag_congRow hWp _ _)) (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inl rfl)) _)))))), ?_⟩
+      rw [shiftsV_appendV, hsv, shiftsV_cons, if_neg (by rw [ctag_certRelRow hWp]; simp), shiftsV_cons,
+        if_neg (by rw [ctag_eqRefl hWp]; simp), shiftsV_cons, if_neg (by rw [ctag_congRow hWp]; simp),
+        shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inl rfl))]; simp)]
+      simp
     · rw [if_neg hν1]
-      refine ⟨noDrop_appendV hnv (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inl rfl)) _))), ?_⟩
-      rw [shiftsV_appendV, hsv, shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inl rfl))]; simp)]
+      refine ⟨noDrop_appendV hnv (noDrop_cons (Or.inl (ctag_certRelRow hWp _ _))
+        (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inl rfl)) _)))), ?_⟩
+      rw [shiftsV_appendV, hsv, shiftsV_cons, if_neg (by rw [ctag_certRelRow hWp]; simp), shiftsV_single,
+        if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inl rfl))]; simp)]
       simp
   · intro n i j y hy
     rw [PassFGraph.verum_iff.mp hy, fConstSteps]
@@ -3064,11 +3114,11 @@ lemma len_fBinSteps (W ν c n cq dq i j yp yq : V) :
 lemma len_fQuantSteps (W ν c n i j yb : V) : len (fQuantSteps W ν c n i j yb) = len yb + 1 := by
   rw [fQuantSteps, len_appendV]; simp
 lemma len_fAtomSteps_of_ne {ν : V} (h : ν ≠ 1) (W c k R i j yv : V) :
-    len (fAtomSteps W ν c k R i j yv) = len yv + 1 := by
-  rw [fAtomSteps, if_neg h, len_appendV]; simp
+    len (fAtomSteps W ν c k R i j yv) = len yv + 2 := by
+  rw [fAtomSteps, if_neg h, len_appendV]; simp; norm_num
 lemma len_fAtomSteps_one {ν : V} (h : ν = 1) (W c k R i j yv : V) :
-    len (fAtomSteps W ν c k R i j yv) = 1 := by
-  rw [fAtomSteps, if_pos h]; simp
+    len (fAtomSteps W ν c k R i j yv) = len yv + 4 := by
+  rw [fAtomSteps, if_pos h, len_appendV]; simp; norm_num
 
 set_option maxHeartbeats 1000000 in
 /-- **The term pass has `≤ 12|t|` steps** (the same shape as the walk). -/
@@ -3197,15 +3247,17 @@ lemma len_passFGraph_le (W : V) {ν : V} (hν : ν = 1 ∨ ν = 2) :
     rw [htl] at hb
     by_cases hν1 : ν = 1
     · rw [len_fAtomSteps_one hν1]
-      calc (1 : V) + 4 = 5 := by norm_num
-        _ ≤ 12 := by norm_num
-        _ ≤ 12 * listSum (termLenVec LAct k v) + 12 := le_add_self
+      calc len (passV W ν n k v k (i + 1) (j + 1)) + 4 + 4
+          = (len (passV W ν n k v k (i + 1) (j + 1)) + 2) + 6 := by ring
+        _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 6 := add_le_add hb le_rfl
+        _ = 12 * listSum (termLenVec LAct k v) + 10 := by ring
+        _ ≤ 12 * listSum (termLenVec LAct k v) + 12 := add_le_add le_rfl (by norm_num)
         _ = 12 * (listSum (termLenVec LAct k v) + 1) := by ring
     · rw [len_fAtomSteps_of_ne hν1]
-      calc len (passV W ν n k v k (i + 1) (j + 1)) + 1 + 4
-          = (len (passV W ν n k v k (i + 1) (j + 1)) + 2) + 3 := by ring
-        _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 3 := add_le_add hb le_rfl
-        _ = 12 * listSum (termLenVec LAct k v) + 7 := by ring
+      calc len (passV W ν n k v k (i + 1) (j + 1)) + 2 + 4
+          = (len (passV W ν n k v k (i + 1) (j + 1)) + 2) + 4 := by ring
+        _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 4 := add_le_add hb le_rfl
+        _ = 12 * listSum (termLenVec LAct k v) + 8 := by ring
         _ ≤ 12 * listSum (termLenVec LAct k v) + 12 := add_le_add le_rfl (by norm_num)
         _ = 12 * (listSum (termLenVec LAct k v) + 1) := by ring
   · intro n k R v hkR hv i j y hy
@@ -3215,15 +3267,17 @@ lemma len_passFGraph_le (W : V) {ν : V} (hν : ν = 1 ∨ ν = 2) :
     rw [htl] at hb
     by_cases hν1 : ν = 1
     · rw [len_fAtomSteps_one hν1]
-      calc (1 : V) + 4 = 5 := by norm_num
-        _ ≤ 12 := by norm_num
-        _ ≤ 12 * listSum (termLenVec LAct k v) + 12 := le_add_self
+      calc len (passV W ν n k v k (i + 1) (j + 1)) + 4 + 4
+          = (len (passV W ν n k v k (i + 1) (j + 1)) + 2) + 6 := by ring
+        _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 6 := add_le_add hb le_rfl
+        _ = 12 * listSum (termLenVec LAct k v) + 10 := by ring
+        _ ≤ 12 * listSum (termLenVec LAct k v) + 12 := add_le_add le_rfl (by norm_num)
         _ = 12 * (listSum (termLenVec LAct k v) + 1) := by ring
     · rw [len_fAtomSteps_of_ne hν1]
-      calc len (passV W ν n k v k (i + 1) (j + 1)) + 1 + 4
-          = (len (passV W ν n k v k (i + 1) (j + 1)) + 2) + 3 := by ring
-        _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 3 := add_le_add hb le_rfl
-        _ = 12 * listSum (termLenVec LAct k v) + 7 := by ring
+      calc len (passV W ν n k v k (i + 1) (j + 1)) + 2 + 4
+          = (len (passV W ν n k v k (i + 1) (j + 1)) + 2) + 4 := by ring
+        _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 4 := add_le_add hb le_rfl
+        _ = 12 * listSum (termLenVec LAct k v) + 8 := by ring
         _ ≤ 12 * listSum (termLenVec LAct k v) + 12 := add_le_add le_rfl (by norm_num)
         _ = 12 * (listSum (termLenVec LAct k v) + 1) := by ring
   · intro n i j y hy
