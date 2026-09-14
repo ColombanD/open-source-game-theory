@@ -2164,10 +2164,8 @@ namespace PassF
 
 /-- The cases of the formula pass operator (the constructor codes are those of `fRow`). -/
 def Cases (W : V) (C : Set V) (ν n r i j y : V) : Prop :=
-  (∃ k < r, ∃ R < r, ∃ v < r, r = ^rel k R v ∧ ∃ yv ≤ y,
-    PassVGraph W ν n k v k (i + 1) (j + 1) yv ∧ y = fAtomSteps W ν 0 k R i j yv) ∨
-  (∃ k < r, ∃ R < r, ∃ v < r, r = ^nrel k R v ∧ ∃ yv ≤ y,
-    PassVGraph W ν n k v k (i + 1) (j + 1) yv ∧ y = fAtomSteps W ν 1 k R i j yv) ∨
+  (∃ k < r, ∃ R < r, ∃ v < r, r = ^rel k R v ∧ y = fAtomSteps W ν 0 k R i j (passV W ν n k v k (i + 1) (j + 1))) ∨
+  (∃ k < r, ∃ R < r, ∃ v < r, r = ^nrel k R v ∧ y = fAtomSteps W ν 1 k R i j (passV W ν n k v k (i + 1) (j + 1))) ∨
   (r = ^⊤ ∧ y = fConstSteps W ν 2 i j) ∨
   (r = ^⊥ ∧ y = fConstSteps W ν 3 i j) ∨
   (∃ p < r, ∃ q < r, r = p ^⋏ q ∧ ∃ yp ≤ y, ∃ yq ≤ y,
@@ -2204,6 +2202,234 @@ lemma cases_of_phi {W : V} {C : Set V} {ν n r i j y : V} (h : Phi W C ⟪ν, n,
   obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ := e
   exact h
 
+noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
+  (.mkSigma “pr C W.
+    ∃ ν <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr ν q₁ ∧ ∃ n <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ n q₂ ∧ ∃ r <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ r q₃ ∧
+    ∃ i <⁺ q₃, ∃ q₄ <⁺ q₃, !pairDef q₃ i q₄ ∧ ∃ j <⁺ q₄, ∃ y <⁺ q₄, !pairDef q₄ j y ∧
+    ( (∃ k < r, ∃ R < r, ∃ v < r, !qqRelDef r k R v ∧ ∃ yv, !passVDef yv W ν n k v k (i + 1) (j + 1) ∧
+        ∃ s, !fAtomStepsDef s W ν 0 k R i j yv ∧ y = s) ∨
+      (∃ k < r, ∃ R < r, ∃ v < r, !qqNRelDef r k R v ∧ ∃ yv, !passVDef yv W ν n k v k (i + 1) (j + 1) ∧
+        ∃ s, !fAtomStepsDef s W ν 1 k R i j yv ∧ y = s) ∨
+      (!qqVerumDef r ∧ ∃ s, !fConstStepsDef s W ν 2 i j ∧ y = s) ∨
+      (!qqFalsumDef r ∧ ∃ s, !fConstStepsDef s W ν 3 i j ∧ y = s) ∨
+      (∃ p < r, ∃ q < r, !qqAndDef r p q ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, ∃ cq, !descCountFDef cq W n q ∧ ∃ dq, !outCountDef dq W ν n q ∧
+        ∃ a₄, !pairDef a₄ (j + dq + 1) yp ∧ ∃ a₃, !pairDef a₃ (i + cq + 1) a₄ ∧ ∃ a₂, !pairDef a₂ p a₃ ∧ ∃ a₁, !pairDef a₁ n a₂ ∧
+        :⟪ν, a₁⟫:∈ C ∧ ∃ b₄, !pairDef b₄ (j + 1) yq ∧ ∃ b₃, !pairDef b₃ (i + 1) b₄ ∧ ∃ b₂, !pairDef b₂ q b₃ ∧ ∃ b₁, !pairDef b₁ n b₂ ∧
+        :⟪ν, b₁⟫:∈ C ∧ ∃ s, !fBinStepsDef s W ν 4 n cq dq i j yp yq ∧ y = s) ∨
+      (∃ p < r, ∃ q < r, !qqOrDef r p q ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, ∃ cq, !descCountFDef cq W n q ∧ ∃ dq, !outCountDef dq W ν n q ∧
+        ∃ a₄, !pairDef a₄ (j + dq + 1) yp ∧ ∃ a₃, !pairDef a₃ (i + cq + 1) a₄ ∧ ∃ a₂, !pairDef a₂ p a₃ ∧ ∃ a₁, !pairDef a₁ n a₂ ∧
+        :⟪ν, a₁⟫:∈ C ∧ ∃ b₄, !pairDef b₄ (j + 1) yq ∧ ∃ b₃, !pairDef b₃ (i + 1) b₄ ∧ ∃ b₂, !pairDef b₂ q b₃ ∧ ∃ b₁, !pairDef b₁ n b₂ ∧
+        :⟪ν, b₁⟫:∈ C ∧ ∃ s, !fBinStepsDef s W ν 5 n cq dq i j yp yq ∧ y = s) ∨
+      (∃ p < r, !qqAllDef r p ∧ ∃ yb <⁺ y, ∃ a₄, !pairDef a₄ (j + 1) yb ∧ ∃ a₃, !pairDef a₃ (i + 1) a₄ ∧
+        ∃ a₂, !pairDef a₂ p a₃ ∧ ∃ a₁, !pairDef a₁ (n + 1) a₂ ∧ :⟪ν, a₁⟫:∈ C ∧
+        ∃ s, !fQuantStepsDef s W ν 6 n i j yb ∧ y = s) ∨
+      (∃ p < r, !qqExsDef r p ∧ ∃ yb <⁺ y, ∃ a₄, !pairDef a₄ (j + 1) yb ∧ ∃ a₃, !pairDef a₃ (i + 1) a₄ ∧
+        ∃ a₂, !pairDef a₂ p a₃ ∧ ∃ a₁, !pairDef a₁ (n + 1) a₂ ∧ :⟪ν, a₁⟫:∈ C ∧
+        ∃ s, !fQuantStepsDef s W ν 7 n i j yb ∧ y = s) )”)
+  (.mkPi “pr C W.
+    ∃ ν <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr ν q₁ ∧ ∃ n <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ n q₂ ∧ ∃ r <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ r q₃ ∧
+    ∃ i <⁺ q₃, ∃ q₄ <⁺ q₃, !pairDef q₃ i q₄ ∧ ∃ j <⁺ q₄, ∃ y <⁺ q₄, !pairDef q₄ j y ∧
+    ( (∃ k < r, ∃ R < r, ∃ v < r, !qqRelDef r k R v ∧ ∀ yv, !passVDef yv W ν n k v k (i + 1) (j + 1) →
+        ∀ s, !fAtomStepsDef s W ν 0 k R i j yv → y = s) ∨
+      (∃ k < r, ∃ R < r, ∃ v < r, !qqNRelDef r k R v ∧ ∀ yv, !passVDef yv W ν n k v k (i + 1) (j + 1) →
+        ∀ s, !fAtomStepsDef s W ν 1 k R i j yv → y = s) ∨
+      (!qqVerumDef r ∧ ∀ s, !fConstStepsDef s W ν 2 i j → y = s) ∨
+      (!qqFalsumDef r ∧ ∀ s, !fConstStepsDef s W ν 3 i j → y = s) ∨
+      (∃ p < r, ∃ q < r, !qqAndDef r p q ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, ∀ cq, !descCountFDef cq W n q → ∀ dq, !outCountDef dq W ν n q →
+        ∀ a₄, !pairDef a₄ (j + dq + 1) yp → ∀ a₃, !pairDef a₃ (i + cq + 1) a₄ → ∀ a₂, !pairDef a₂ p a₃ → ∀ a₁, !pairDef a₁ n a₂ →
+        :⟪ν, a₁⟫:∈ C ∧ ∀ b₄, !pairDef b₄ (j + 1) yq → ∀ b₃, !pairDef b₃ (i + 1) b₄ → ∀ b₂, !pairDef b₂ q b₃ → ∀ b₁, !pairDef b₁ n b₂ →
+        :⟪ν, b₁⟫:∈ C ∧ ∀ s, !fBinStepsDef s W ν 4 n cq dq i j yp yq → y = s) ∨
+      (∃ p < r, ∃ q < r, !qqOrDef r p q ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, ∀ cq, !descCountFDef cq W n q → ∀ dq, !outCountDef dq W ν n q →
+        ∀ a₄, !pairDef a₄ (j + dq + 1) yp → ∀ a₃, !pairDef a₃ (i + cq + 1) a₄ → ∀ a₂, !pairDef a₂ p a₃ → ∀ a₁, !pairDef a₁ n a₂ →
+        :⟪ν, a₁⟫:∈ C ∧ ∀ b₄, !pairDef b₄ (j + 1) yq → ∀ b₃, !pairDef b₃ (i + 1) b₄ → ∀ b₂, !pairDef b₂ q b₃ → ∀ b₁, !pairDef b₁ n b₂ →
+        :⟪ν, b₁⟫:∈ C ∧ ∀ s, !fBinStepsDef s W ν 5 n cq dq i j yp yq → y = s) ∨
+      (∃ p < r, !qqAllDef r p ∧ ∃ yb <⁺ y, ∀ a₄, !pairDef a₄ (j + 1) yb → ∀ a₃, !pairDef a₃ (i + 1) a₄ →
+        ∀ a₂, !pairDef a₂ p a₃ → ∀ a₁, !pairDef a₁ (n + 1) a₂ → :⟪ν, a₁⟫:∈ C ∧
+        ∀ s, !fQuantStepsDef s W ν 6 n i j yb → y = s) ∨
+      (∃ p < r, !qqExsDef r p ∧ ∃ yb <⁺ y, ∀ a₄, !pairDef a₄ (j + 1) yb → ∀ a₃, !pairDef a₃ (i + 1) a₄ →
+        ∀ a₂, !pairDef a₂ p a₃ → ∀ a₁, !pairDef a₁ (n + 1) a₂ → :⟪ν, a₁⟫:∈ C ∧
+        ∀ s, !fQuantStepsDef s W ν 7 n i j yb → y = s) )”)⟩
+
+set_option maxHeartbeats 4000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, passV_defined.iff, fAtomSteps_defined.iff, fConstSteps_defined.iff,
+        fBinSteps_defined.iff, fQuantSteps_defined.iff, descCountF_defined.iff, outCount_defined.iff,
+        numeral_eq_natCast]
+    · intro v
+      simp [blueprint, Phi, Cases, passV_defined.iff, fAtomSteps_defined.iff, fConstSteps_defined.iff,
+        fBinSteps_defined.iff, fQuantSteps_defined.iff, descCountF_defined.iff, outCount_defined.iff,
+        numeral_eq_natCast]
+  monotone := by
+    intro C C' hC w pr h
+    change Phi (w 0) C pr at h
+    rw [phi_unpack] at h ⊢
+    obtain ⟨ν, n, r, i, j, y, rfl, h⟩ := h
+    refine ⟨ν, n, r, i, j, y, rfl, ?_⟩
+    rcases h with h | h | h | h |
+      ⟨p, hp, q, hq, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩ | ⟨p, hp, q, hq, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩ |
+      ⟨p, hp, rfl, yb, hyb, h₁, rfl⟩ | ⟨p, hp, rfl, yb, hyb, h₁, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, q, hq, rfl, yp, hyp, yq, hyq, hC h₁, hC h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, q, hq, rfl, yp, hyp, yq, hyq, hC h₁, hC h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, rfl, yb, hyb, hC h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, hp, rfl, yb, hyb, hC h₁, rfl⟩))))))
+
+instance : construction.Finite V where
+  finite := by
+    intro C w pr h
+    change Phi (w 0) C pr at h
+    change ∃ m, Phi (w 0) {y ∈ C | y < m} pr
+    rw [phi_unpack] at h
+    simp only [phi_unpack]
+    obtain ⟨ν, n, r, i, j, y, rfl, h⟩ := h
+    rcases h with h | h | h | h |
+      ⟨p, hp, q, hq, hr, yp, hyp, yq, hyq, h₁, h₂, hy⟩ | ⟨p, hp, q, hq, hr, yp, hyp, yq, hyq, h₁, h₂, hy⟩ |
+      ⟨p, hp, hr, yb, hyb, h₁, hy⟩ | ⟨p, hp, hr, yb, hyb, h₁, hy⟩
+    · exact ⟨0, ν, n, r, i, j, y, rfl, Or.inl h⟩
+    · exact ⟨0, ν, n, r, i, j, y, rfl, Or.inr (Or.inl h)⟩
+    · exact ⟨0, ν, n, r, i, j, y, rfl, Or.inr (Or.inr (Or.inl h))⟩
+    · exact ⟨0, ν, n, r, i, j, y, rfl, Or.inr (Or.inr (Or.inr (Or.inl h)))⟩
+    · refine ⟨⟪ν, n, p, i + descCountF (w 0) n q + 1, j + outCount (w 0) ν n q + 1, yp⟫ +
+          ⟪ν, n, q, i + 1, j + 1, yq⟫ + 1, ν, n, r, i, j, y, rfl,
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, q, hq, hr, yp, hyp, yq, hyq,
+          ⟨h₁, lt_of_le_of_lt le_self_add (lt_add_one _)⟩, ⟨h₂, lt_of_le_of_lt le_add_self (lt_add_one _)⟩, hy⟩))))⟩
+    · refine ⟨⟪ν, n, p, i + descCountF (w 0) n q + 1, j + outCount (w 0) ν n q + 1, yp⟫ +
+          ⟪ν, n, q, i + 1, j + 1, yq⟫ + 1, ν, n, r, i, j, y, rfl,
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, q, hq, hr, yp, hyp, yq, hyq,
+          ⟨h₁, lt_of_le_of_lt le_self_add (lt_add_one _)⟩, ⟨h₂, lt_of_le_of_lt le_add_self (lt_add_one _)⟩, hy⟩)))))⟩
+    · exact ⟨⟪ν, n + 1, p, i + 1, j + 1, yb⟫ + 1, ν, n, r, i, j, y, rfl,
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+          ⟨p, hp, hr, yb, hyb, ⟨h₁, lt_add_one _⟩, hy⟩))))))⟩
+    · exact ⟨⟪ν, n + 1, p, i + 1, j + 1, yb⟫ + 1, ν, n, r, i, j, y, rfl,
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+          ⟨p, hp, hr, yb, hyb, ⟨h₁, lt_add_one _⟩, hy⟩))))))⟩
+
+/-- `Phi` at a tuple, the bounds discharged. -/
+lemma phi_iff (W : V) (C : Set V) (ν n r i j y : V) :
+    Phi W C ⟪ν, n, r, i, j, y⟫ ↔
+    ( (∃ k R v, r = ^rel k R v ∧ y = fAtomSteps W ν 0 k R i j (passV W ν n k v k (i + 1) (j + 1))) ∨
+      (∃ k R v, r = ^nrel k R v ∧ y = fAtomSteps W ν 1 k R i j (passV W ν n k v k (i + 1) (j + 1))) ∨
+      (r = ^⊤ ∧ y = fConstSteps W ν 2 i j) ∨
+      (r = ^⊥ ∧ y = fConstSteps W ν 3 i j) ∨
+      (∃ p q yp yq, r = p ^⋏ q ∧ yp ≤ y ∧ yq ≤ y ∧
+        ⟪ν, n, p, i + descCountF W n q + 1, j + outCount W ν n q + 1, yp⟫ ∈ C ∧ ⟪ν, n, q, i + 1, j + 1, yq⟫ ∈ C ∧
+        y = fBinSteps W ν 4 n (descCountF W n q) (outCount W ν n q) i j yp yq) ∨
+      (∃ p q yp yq, r = p ^⋎ q ∧ yp ≤ y ∧ yq ≤ y ∧
+        ⟪ν, n, p, i + descCountF W n q + 1, j + outCount W ν n q + 1, yp⟫ ∈ C ∧ ⟪ν, n, q, i + 1, j + 1, yq⟫ ∈ C ∧
+        y = fBinSteps W ν 5 n (descCountF W n q) (outCount W ν n q) i j yp yq) ∨
+      (∃ p yb, r = ^∀ p ∧ yb ≤ y ∧ ⟪ν, n + 1, p, i + 1, j + 1, yb⟫ ∈ C ∧ y = fQuantSteps W ν 6 n i j yb) ∨
+      (∃ p yb, r = ^∃ p ∧ yb ≤ y ∧ ⟪ν, n + 1, p, i + 1, j + 1, yb⟫ ∈ C ∧ y = fQuantSteps W ν 7 n i j yb) ) := by
+  rw [show Phi W C ⟪ν, n, r, i, j, y⟫ ↔ Cases W C ν n r i j y from
+    ⟨cases_of_phi, phi_of_cases⟩]
+  unfold Cases
+  constructor
+  · rintro (⟨k, _, R, _, v, _, rfl, rfl⟩ | ⟨k, _, R, _, v, _, rfl, rfl⟩ | h | h |
+      ⟨p, _, q, _, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩ | ⟨p, _, q, _, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩ |
+      ⟨p, _, rfl, yb, hyb, h₁, rfl⟩ | ⟨p, _, rfl, yb, hyb, h₁, rfl⟩)
+    · exact Or.inl ⟨k, R, v, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨k, R, v, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, q, yp, yq, rfl, hyp, hyq, h₁, h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, q, yp, yq, rfl, hyp, hyq, h₁, h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, yb, rfl, hyb, h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, yb, rfl, hyb, h₁, rfl⟩))))))
+  · rintro (⟨k, R, v, rfl, rfl⟩ | ⟨k, R, v, rfl, rfl⟩ | h | h |
+      ⟨p, q, yp, yq, rfl, hyp, hyq, h₁, h₂, rfl⟩ | ⟨p, q, yp, yq, rfl, hyp, hyq, h₁, h₂, rfl⟩ |
+      ⟨p, yb, rfl, hyb, h₁, rfl⟩ | ⟨p, yb, rfl, hyb, h₁, rfl⟩)
+    · exact Or.inl ⟨k, by simp, R, by simp, v, by simp, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨k, by simp, R, by simp, v, by simp, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, q, by simp, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, q, by simp, rfl, yp, hyp, yq, hyq, h₁, h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, rfl, yb, hyb, h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, by simp, rfl, yb, hyb, h₁, rfl⟩))))))
+
 end PassF
+
+/-- **The graph of the formula-level certification pass**. -/
+def PassFGraph (W ν n r i j y : V) : Prop := PassF.construction.Fixpoint ![W] ⟪ν, n, r, i, j, y⟫
+
+noncomputable def passFGraphDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “W ν n r i j y. ∃ q₄, !pairDef q₄ j y ∧ ∃ q₃, !pairDef q₃ i q₄ ∧ ∃ q₂, !pairDef q₂ r q₃ ∧
+    ∃ q₁, !pairDef q₁ n q₂ ∧ ∃ pr, !pairDef pr ν q₁ ∧ !PassF.blueprint.fixpointDef pr W”
+
+instance passFGraph_defined :
+    𝚺₁.Defined (fun v : Fin 7 → V ↦ PassFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) passFGraphDef := .mk
+  fun v ↦ by simp [passFGraphDef, PassF.construction.eval_fixpointDef, PassFGraph]; rfl
+instance passFGraph_definable :
+    𝚺₁.Defined (fun v : Fin 7 → V ↦ PassFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) passFGraphDef :=
+  passFGraph_defined
+
+/-! ### 2.2 Case analysis and inversion -/
+
+lemma PassFGraph.case_iff {W ν n r i j y : V} :
+    PassFGraph W ν n r i j y ↔
+    ( (∃ k R v, r = ^rel k R v ∧ y = fAtomSteps W ν 0 k R i j (passV W ν n k v k (i + 1) (j + 1))) ∨
+      (∃ k R v, r = ^nrel k R v ∧ y = fAtomSteps W ν 1 k R i j (passV W ν n k v k (i + 1) (j + 1))) ∨
+      (r = ^⊤ ∧ y = fConstSteps W ν 2 i j) ∨
+      (r = ^⊥ ∧ y = fConstSteps W ν 3 i j) ∨
+      (∃ p q yp yq, r = p ^⋏ q ∧ yp ≤ y ∧ yq ≤ y ∧
+        PassFGraph W ν n p (i + descCountF W n q + 1) (j + outCount W ν n q + 1) yp ∧
+        PassFGraph W ν n q (i + 1) (j + 1) yq ∧
+        y = fBinSteps W ν 4 n (descCountF W n q) (outCount W ν n q) i j yp yq) ∨
+      (∃ p q yp yq, r = p ^⋎ q ∧ yp ≤ y ∧ yq ≤ y ∧
+        PassFGraph W ν n p (i + descCountF W n q + 1) (j + outCount W ν n q + 1) yp ∧
+        PassFGraph W ν n q (i + 1) (j + 1) yq ∧
+        y = fBinSteps W ν 5 n (descCountF W n q) (outCount W ν n q) i j yp yq) ∨
+      (∃ p yb, r = ^∀ p ∧ yb ≤ y ∧ PassFGraph W ν (n + 1) p (i + 1) (j + 1) yb ∧ y = fQuantSteps W ν 6 n i j yb) ∨
+      (∃ p yb, r = ^∃ p ∧ yb ≤ y ∧ PassFGraph W ν (n + 1) p (i + 1) (j + 1) yb ∧ y = fQuantSteps W ν 7 n i j yb) ) := by
+  unfold PassFGraph
+  rw [PassF.construction.case]
+  exact PassF.phi_iff W _ ν n r i j y
+
+section finversion
+
+attribute [local simp] qqRel qqNRel qqVerum qqFalsum qqAnd qqOr qqAll qqExs
+
+lemma PassFGraph.rel_iff {W ν n k R v i j y : V} :
+    PassFGraph W ν n (^rel k R v) i j y ↔ y = fAtomSteps W ν 0 k R i j (passV W ν n k v k (i + 1) (j + 1)) := by
+  rw [PassFGraph.case_iff]; simp
+lemma PassFGraph.nrel_iff {W ν n k R v i j y : V} :
+    PassFGraph W ν n (^nrel k R v) i j y ↔ y = fAtomSteps W ν 1 k R i j (passV W ν n k v k (i + 1) (j + 1)) := by
+  rw [PassFGraph.case_iff]; simp
+lemma PassFGraph.verum_iff {W ν n i j y : V} :
+    PassFGraph W ν n ^⊤ i j y ↔ y = fConstSteps W ν 2 i j := by
+  rw [PassFGraph.case_iff]; simp
+lemma PassFGraph.falsum_iff {W ν n i j y : V} :
+    PassFGraph W ν n ^⊥ i j y ↔ y = fConstSteps W ν 3 i j := by
+  rw [PassFGraph.case_iff]; simp
+lemma PassFGraph.and_iff {W ν n p q i j y : V} :
+    PassFGraph W ν n (p ^⋏ q) i j y ↔
+    ∃ yp yq, yp ≤ y ∧ yq ≤ y ∧
+      PassFGraph W ν n p (i + descCountF W n q + 1) (j + outCount W ν n q + 1) yp ∧
+      PassFGraph W ν n q (i + 1) (j + 1) yq ∧
+      y = fBinSteps W ν 4 n (descCountF W n q) (outCount W ν n q) i j yp yq := by
+  rw [PassFGraph.case_iff]; simp
+lemma PassFGraph.or_iff {W ν n p q i j y : V} :
+    PassFGraph W ν n (p ^⋎ q) i j y ↔
+    ∃ yp yq, yp ≤ y ∧ yq ≤ y ∧
+      PassFGraph W ν n p (i + descCountF W n q + 1) (j + outCount W ν n q + 1) yp ∧
+      PassFGraph W ν n q (i + 1) (j + 1) yq ∧
+      y = fBinSteps W ν 5 n (descCountF W n q) (outCount W ν n q) i j yp yq := by
+  rw [PassFGraph.case_iff]; simp
+lemma PassFGraph.all_iff {W ν n p i j y : V} :
+    PassFGraph W ν n (^∀ p) i j y ↔
+    ∃ yb, yb ≤ y ∧ PassFGraph W ν (n + 1) p (i + 1) (j + 1) yb ∧ y = fQuantSteps W ν 6 n i j yb := by
+  rw [PassFGraph.case_iff]; simp
+lemma PassFGraph.exs_iff {W ν n p i j y : V} :
+    PassFGraph W ν n (^∃ p) i j y ↔
+    ∃ yb, yb ≤ y ∧ PassFGraph W ν (n + 1) p (i + 1) (j + 1) yb ∧ y = fQuantSteps W ν 7 n i j yb := by
+  rw [PassFGraph.case_iff]; simp
+
+end finversion
 
 end ArithS
