@@ -35,6 +35,8 @@ import ArithS.Necessitation.ChainOcc
 import ArithS.Necessitation.Describe
 import ArithS.Necessitation.Layout
 import ArithS.Necessitation.NumSteps
+import ArithS.Necessitation.Cert
+import ArithS.Necessitation.Frag1
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -660,5 +662,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms costSum_chainSteps_le
 #print axioms eqSteps_ok
 #print axioms costSum_eqSteps_le
+
+-- U10 (2026-09-14): the term-level certification pass (`Cert`, the `PassT` fixpoint: every term of
+-- a dossier is re-described and certified as the image of its source) and the first six per-tag
+-- FRAGMENTS (`Frag1`: the leaves `axL`/`verumIntro` and the nodes `and`/`or`/`wk`/`cut`, each a
+-- step list ending with the node's goal fact, with its `ListOK`/`NoDrop`/cost theorems).
+#print axioms passTGraph_exists
+#print axioms goalElim_ok
+#print axioms fragAxL_ok
+#print axioms fragVerum_ok
+#print axioms nodeAnd_ok
+#print axioms nodeOr_ok
+#print axioms nodeWk_ok
+#print axioms nodeCut_ok
+#print axioms costSum_fragAxL_le
+#print axioms costSum_nodeAnd_le
+#print axioms costSum_nodeCut_le
 
 end ArithS
