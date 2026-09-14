@@ -34,6 +34,7 @@ import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
 import ArithS.Necessitation.Describe
 import ArithS.Necessitation.Layout
+import ArithS.Necessitation.Members
 import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.Cert
 import ArithS.Necessitation.Frag1
@@ -715,5 +716,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms len_certShift_le
 #print axioms len_certNeg_le
 #print axioms eqCount_eq_descCountF
+
+-- U10 (Necessitation/Members + Layout §4.8, 2026-09-14): `memberList` — the ascending member list of
+-- a bit-set (a `PR` on the indices), membership both ways, strict ascent, the length bounds and the
+-- DISTINCTNESS lemma the chain's exact length rests on (`setLen s = Σ formulaLen (memberList s)`);
+-- and the per-node dossier equations of `Layout` (`dossFacts_*`, `dossierAt_*` at `factPreds` in the
+-- order `Cert`'s `dossF_*` deliver) that the dossier bridge `DossF → DossierAt` matches against.
+#print axioms mem_memberList_iff
+#print axioms memberList_sorted
+#print axioms memberList_nodup
+#print axioms len_memberList_le_length
+#print axioms len_memberList_le_setLen
+#print axioms setLen_eq_listSum_memberList
+#print axioms dossFacts_and
+#print axioms dossFacts_rel
+#print axioms dossFactsV_succ
+#print axioms dossierAt_and
+#print axioms dossierAt_rel
+#print axioms dossierAtV_succ
+#print axioms dossierAtT_func
 
 end ArithS

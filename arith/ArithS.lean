@@ -56,6 +56,7 @@ import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
 import ArithS.Necessitation.Describe
 import ArithS.Necessitation.Layout
+import ArithS.Necessitation.Members
 import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.Cert
 import ArithS.Necessitation.Frag1
