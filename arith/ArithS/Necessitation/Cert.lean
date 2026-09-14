@@ -2369,6 +2369,56 @@ instance passFGraph_definable :
     𝚺₁.Defined (fun v : Fin 7 → V ↦ PassFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) passFGraphDef :=
   passFGraph_defined
 
+/-! ### 2.1b The missing `descCountF` equations and the OUTPUT-side counts -/
+
+lemma descCountF_or (W n : V) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) :
+    descCountF W n (p ^⋎ q) = descCountF W n p + descCountF W n q + 1 := by
+  rw [descCountF, descFw_or W n hp hq, binNode, pi₁_pair]; rfl
+lemma descCountF_exs (W n : V) {p : V} (hp : IsSemiformula LAct (n + 1) p) :
+    descCountF W n (^∃ p) = descCountF W (n + 1) p + 1 := by
+  rw [descCountF, descFw_exs W n hp, quantNode, pi₁_pair]; rfl
+lemma descCountF_falsum (W n : V) : descCountF W n ^⊥ = 1 := by
+  rw [descCountF, descFw_falsum, constNode, pi₁_pair]
+lemma descCountF_rel (W n : V) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) :
+    descCountF W n (^rel k R v) = π₁ (descVecAux W n (descTVec W n k v) k) + 1 := by
+  rw [descCountF, descFw_rel W n hR hv, atomNode, pi₁_pair]
+lemma descCountF_nrel (W n : V) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) :
+    descCountF W n (^nrel k R v) = π₁ (descVecAux W n (descTVec W n k v) k) + 1 := by
+  rw [descCountF, descFw_nrel W n hR hv, atomNode, pi₁_pair]
+
+/-- The image of an `and` under the pass's family is a binary node with the corresponding children. -/
+lemma outCount_and {W ν n p q : V} (hν : ν = 1 ∨ ν = 2) (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) :
+    outCount W ν n (p ^⋏ q) = outCount W ν n p + outCount W ν n q + 1 := by
+  rcases hν with rfl | rfl
+  · simp only [outCount, imgF_one, neg_and hp.isUFormula hq.isUFormula]
+    exact descCountF_or W n hp.neg hq.neg
+  · simp only [outCount, imgF_of_ne (V := V) (ν := 2) (by simp), shift_and hp.isUFormula hq.isUFormula]
+    exact descCountF_and W n hp.shift hq.shift
+
+lemma outCount_or {W ν n p q : V} (hν : ν = 1 ∨ ν = 2) (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) :
+    outCount W ν n (p ^⋎ q) = outCount W ν n p + outCount W ν n q + 1 := by
+  rcases hν with rfl | rfl
+  · simp only [outCount, imgF_one, neg_or hp.isUFormula hq.isUFormula]
+    exact descCountF_and W n hp.neg hq.neg
+  · simp only [outCount, imgF_of_ne (V := V) (ν := 2) (by simp), shift_or hp.isUFormula hq.isUFormula]
+    exact descCountF_or W n hp.shift hq.shift
+
+lemma outCount_all {W ν n p : V} (hν : ν = 1 ∨ ν = 2) (hp : IsSemiformula LAct (n + 1) p) :
+    outCount W ν n (^∀ p) = outCount W ν (n + 1) p + 1 := by
+  rcases hν with rfl | rfl
+  · simp only [outCount, imgF_one, neg_all hp.isUFormula]
+    exact descCountF_exs W n hp.neg
+  · simp only [outCount, imgF_of_ne (V := V) (ν := 2) (by simp), shift_all hp.isUFormula]
+    exact descCountF_all W n hp.shift
+
+lemma outCount_exs {W ν n p : V} (hν : ν = 1 ∨ ν = 2) (hp : IsSemiformula LAct (n + 1) p) :
+    outCount W ν n (^∃ p) = outCount W ν (n + 1) p + 1 := by
+  rcases hν with rfl | rfl
+  · simp only [outCount, imgF_one, neg_ex hp.isUFormula]
+    exact descCountF_all W n hp.neg
+  · simp only [outCount, imgF_of_ne (V := V) (ν := 2) (by simp), shift_exs hp.isUFormula]
+    exact descCountF_exs W n hp.shift
+
 /-! ### 2.2 Case analysis and inversion -/
 
 lemma PassFGraph.case_iff {W ν n r i j y : V} :
