@@ -2306,7 +2306,7 @@ theorem step_grow_cost (M : ℕ) {tbl N E B Q D Γ s : V} (hE : 1 ≤ E) (htbl :
                     rw [show stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42
                       = (7 * Q + 42) + (stepKM N E B M + 27 * (Q * E) + 2 * E + D) by ring]
                     exact le_self_add
-            · exact mul_le_mul (by norm_num) le_self_add zero_le zero_le
+            · exact mul_le_mul (le_trans (by norm_num) le_add_self) le_self_add zero_le zero_le
   · -- tag 6
     obtain ⟨hs, hu⟩ := stepOK_tag6_data hok h6
     have hF : IsFormula LAct (goalFact (sGoalS s) (sGoalU s)) := isFormula_goalFact hs hu
@@ -2359,7 +2359,7 @@ theorem step_grow_cost (M : ℕ) {tbl N E B Q D Γ s : V} (hE : 1 ≤ E) (htbl :
                     rw [show stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42
                       = (D + 7 * Q + 42) + (stepKM N E B M + 27 * (Q * E) + 2 * E) by ring]
                     exact le_self_add
-            · exact mul_le_mul (by norm_num) le_self_add zero_le zero_le
+            · exact mul_le_mul (le_trans (by norm_num) le_add_self) le_self_add zero_le zero_le
 
 /-! ### 5.4 The list: additive context growth and the cost sum -/
 
