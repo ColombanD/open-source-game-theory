@@ -150,3 +150,24 @@ list-valued Σ₁ functions (`describeSteps`, fragments, `verifySteps`). Chain a
 Primitives, Lib A (145 rows), Lib/Nodes, Lib/Bridge, Steps, ShiftLen, Lib/Walk+WalkLemmas (census 292);
 Chain.lean = partial vector twins (wip), RowInst/describeSteps/fragments/verifySteps/top NOT started.
 Handover doc rewritten (HANDOVER_ARITHMETIZED_S.md), CLAUDE_MEMORY/ refreshed from this memory dir.
+**2026-09-13 takeover (new account, same machine/worktree):** build green 3231 jobs, census 292.
+Chain.lean's 30-min stall = BLUEPRINT TRAP (direct `!(qVecGraph L) y ih` / `!(impGraph L) y x ih`
+clauses; ∃-wrapped → 9 s), then 25 real errors (guessed `VecRec.Construction.result_defined_iff`,
+A.5 rewrites) — Part A never end-to-end checked. Committed 3e5813e. Agents: Chain repair + Part B;
+RowInst. Not pushed (user did not ask).
+**Chain.lean DONE 9bf20ba (census 301): chainCode_proof/dlen_chainCode_le; VecRec definability lemma is `eval_resultDef` (PR: `result_defined_iff`). In flight: RowInst, Steps _occ swap. Next: describeSteps.**
+**RowInst DONE a40e816 (87 rows, 28 fact codes, census 334); Steps _occ c2cfd17; Describe (the walk) agent launched; Lib/Occ in flight. Flag: isSemiformulaSubsts1B/isFormulaFreeB write arity 1 as numeral 1, not cT 1.**
+**Lib/Occ DONE 18b6a91 (census 347; DSL numeral 1 ≠ oneO by rfl — bridge row dslSuccEqSuccO). In flight: Describe (walk), DESIGN_fragments.md (read-only), cT-arity variants of two rows.**
+**DESIGN_fragments.md 2026-09-13 (brief §11):** no sub-chain step (circular PR) → flat tags `sGoal` (6) and
+`sLemma` (7); canonical LAYOUT instead of an environment; ū = bnum(dlen) numerals with one `dlenBinaryLe`
++ one `sLemma` per node; derived formulas RE-DESCRIBED + certified (Occ rows unneeded); `VerifyGraph`
+fixpoint on ⟪ρ, L⟫; cost cubic = BoundedInnerNec 3; M = 9; ~150 rows + ~6–7k lines of producers.
+ORDER: tags 6/7 (agent launched) → numSteps → copy/chain/eq walks → certX/lenSteps → frag<Tag> +
+VerifyGraph → verifySteps_ok → top. Walk (Describe) in progress (wip df3ffe3, 127e2ab).
+**Chain Part C (sGoal/sLemma) DONE 6d4ebab; Describe wip through term-walk D3 (86cb745, a6aff62 wired); numSteps agent launched. Agents on this account stall on background waits — resume by SendMessage with explicit polling; check git status first (their work is usually committed).**
+**Describe (the walk) DONE 1ccea31 (5616 lines; D1–D5 terms+formulas; corrected bounds descCount+1 ≤ 2|r|, len ≤ 12|r|; cost cubic). In flight: NumSteps, Lib/Frag+RowInstB (§8.1 rows). Next: copySteps/chainSteps/eqSteps → certX/lenSteps → frag<Tag>+VerifyGraph → top.**
+**Lib/Frag+RowInstB DONE 3a3cad2 (196 rows, census 396; generator scripts/gen_frag.py). In flight: NumSteps (resumed), Layout (copySteps/chainSteps/eqSteps). TRAP: self-matching watcher shells loop forever — poll with pgrep -f 'bin/lake build ArithS'.**
+**NumSteps DONE ded402f (addCode/leCode/bin3Fact/cTEq as sLemma steps, cubic). In flight: Layout (copy/chain/eq), Cert (certNeg/Shift/Subst/Free + lenSteps). Then: frag<Tag> + VerifyGraph + verifySteps_ok → top → BoundedInnerNec 3.**
+**2026-09-14: Layout wip Parts 2–3 (copySteps, chainSteps; eqSteps pending), Cert wip Part 0 + CertRows (producers pending); both resumed 09:01 after the 02:10 kill. Rate-limit resets so far: 04:10, 16:20, 15:10, 20:50, 02:10.**
+**Layout DONE 0a076a4 (copySteps/chainSteps/eqSteps; layout l_s=&0,s=&1,s_i=&(i+1); bridges dossFacts↔walk and eqCount=descCountF still to prove). In flight: Cert (producers), Frag1 (axL/verum/and/or/wk/cut). Then Frag2 (all/exs/shift/axm) → VerifyGraph → top.**
+**PAUSED 2026-09-14 10:40 (user switching to Opus / low Fable credits): agents stopped; Cert/Frag1/Frag1Rows committed UNVERIFIED wip; HANDOVER §8 rewritten with the resume procedure and remaining ladder; branch -u10 never pushed.**

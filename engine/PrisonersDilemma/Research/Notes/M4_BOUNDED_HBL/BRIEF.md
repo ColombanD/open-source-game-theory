@@ -652,3 +652,7 @@ REMAINING bridges (stated, not proved): "the walk's final context holds `dossFac
 and `eqCount r = descCountF W n r` — the Cert agent's `DossF/DossT/DossV` are the natural home.
 Name note: Layout's fact-code `_definable'` instances (Cert declares the plain names).
 IN FLIGHT: `Cert` (producers), `Frag1` (the six fragments needing no re-description).
+
+**§11 status — 2026-09-14 10:40, PAUSED (agents stopped for an account/model switch):** `Cert` and
+`Frag1` in-progress edits + `Frag1Rows` (generated) committed UNVERIFIED as wip; see HANDOVER §8
+for the resume procedure and the remaining ladder.
