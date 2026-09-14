@@ -920,4 +920,192 @@ theorem rootSteps_ok {tbl N x E Γ : V} (htbl : TableOK tbl N) (hT : TopTable tb
 
 end rootSteps
 
+/-! ## 5. The closing steps (§7.1 steps 6–9, folded): recover the root goal, the four numeral lemmas,
+the five rows to the target fact -/
+
+section closeSteps
+
+/-- `closeSteps χ k ρ js tblN tblL tblM`: with the root goal fact `goalFact (^&js) (bnum (dlen ρ))`, the chain
+fact `insFact &js &(js+1) 𝟎` and the pinned `instBFact &(js+1) (qNum χ) (bnum k)` in context —
+`goalElim` (2 shifts: `d = &1`, `n = &0`, the sequent at `&(js+2)`, the member at `&(js+3)`), then
+`sLemma` N5 (`‖k‖`), N4 twice (`‖k‖·‖k‖`, `‖k‖²·‖k‖ = gBudget k`), N2 (`dlen ρ ≤ gBudget k`), then
+`dlenDefIntro [&1, &0]`, `proofIntro [&(js+2), &(js+3), &1]`, `leTrans [bnum g, bnum (dlen ρ), &0]`,
+`lenDerIntro [&1, &0, &(js+3), bnum g]`, `gIntroNum [bnum k, bnum ‖k‖, bnum ‖k‖², bnum g]`,
+`boxIntro [bnum g, &(js+3), bnum k, qNum χ]` — whose conclusion is the target `boxFact (qNum χ) (bnum k)`. -/
+noncomputable def closeSteps (χ : Semisentence LAct 1) (k ρ js tblN tblL tblM : V) : V :=
+  appendV (goalElim (^&js) (bnum (dlen TAct ρ)))
+    (sLemma (lengthEqFact k) (lengthEqCode tblL tblN k) ∷
+     sLemma (mulFact ‖k‖ ‖k‖) (mulEqCode tblM tblN ‖k‖ ‖k‖) ∷
+     sLemma (mulFact (‖k‖ * ‖k‖) ‖k‖) (mulEqCode tblM tblN (‖k‖ * ‖k‖) ‖k‖) ∷
+     sLemma (leFact (bnum (dlen TAct ρ)) (bnum (gBudget k))) (leCode tblN (dlen TAct ρ) (gBudget k)) ∷
+     mkStep topPieces 150 ?[^&1, ^&0] ∷
+     mkStep topPieces 151 ?[^&(js + 2), ^&(js + 3), ^&1] ∷
+     mkStep topPieces 110 ?[bnum (gBudget k), bnum (dlen TAct ρ), ^&0] ∷
+     mkStep topPieces 153 ?[^&1, ^&0, ^&(js + 3), bnum (gBudget k)] ∷
+     mkStep topPieces 152 ?[bnum k, bnum ‖k‖, bnum (‖k‖ * ‖k‖), bnum (gBudget k)] ∷
+     mkStep topPieces 154 ?[bnum (gBudget k), ^&(js + 3), bnum k, qNum χ] ∷ (0 : V))
+
+lemma mem_ins {x a Γ : V} (h : x ∈ Γ) : x ∈ insert a Γ := by simp [h]
+
+lemma eqFact_eq_eqFactB (a b : V) : eqFact a b = eqFactB a b := rfl
+
+/-- **The closing steps are applicable** and end with the target fact: cap `8`, cut-admitting, `2` shifts,
+`15` steps. Hypotheses: the three tables, `dlen ρ ≤ gBudget k` (the N2 lemma is TRUE), the witness caps,
+and the three facts. -/
+theorem closeSteps_ok (χ : Semisentence LAct 1) {tbl N E Γ tblN N' B' tblL N₂ B₂ tblM N₃ B₃ k ρ js : V}
+    (htbl : TableOK tbl N) (hT : TopTable tbl) (htblN : NumTableOK tblN N' B') (htblL : LenTableOK tblL N₂ B₂)
+    (htblM : MulTableOK tblM N₃ B₃) (hΓ : IsFormulaSet LAct Γ) (hρ : dlen TAct ρ ≤ gBudget k)
+    (hE1 : js + 4 ≤ E) (hEq : termLen LAct (qNum χ : V) ≤ E) (hEk : termLen LAct (bnum k) ≤ E)
+    (hEl : termLen LAct (bnum ‖k‖) ≤ E) (hEb : termLen LAct (bnum (‖k‖ * ‖k‖)) ≤ E)
+    (hEg : termLen LAct (bnum (gBudget k)) ≤ E) (hEd : termLen LAct (bnum (dlen TAct ρ)) ≤ E)
+    (hgoal : neg LAct (goalFact (^&js) (bnum (dlen TAct ρ))) ∈ Γ)
+    (hins : neg LAct (insFact (^&js) (^&(js + 1)) (𝟎 : V)) ∈ Γ)
+    (hinst : neg LAct (instBFact (^&(js + 1)) (qNum χ) (bnum k)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (closeSteps χ k ρ js tblN tblL tblM) ∧
+    NoDrop' (closeSteps χ k ρ js tblN tblL tblM) ∧ shiftsV (closeSteps χ k ρ js tblN tblL tblM) = 2 ∧
+    len (closeSteps χ k ρ js tblN tblL tblM) = 15 ∧
+    neg LAct (boxFact (qNum χ) (bnum k)) ∈ finalCtx Γ (closeSteps χ k ρ js tblN tblL tblM) := by
+  -- the witnesses
+  have h0 : IsSemiterm LAct (0 : V) (𝟎 : V) := isSemiterm_qqZero_LAct 0
+  have hq : IsSemiterm LAct (0 : V) (qNum χ) := isSemiterm_qNum χ
+  have hbk : IsSemiterm LAct (0 : V) (bnum k) := isSemiterm_bnum_LAct 0 k
+  have hbl : IsSemiterm LAct (0 : V) (bnum ‖k‖) := isSemiterm_bnum_LAct 0 _
+  have hbb : IsSemiterm LAct (0 : V) (bnum (‖k‖ * ‖k‖)) := isSemiterm_bnum_LAct 0 _
+  have hbg : IsSemiterm LAct (0 : V) (bnum (gBudget k)) := isSemiterm_bnum_LAct 0 _
+  have hbd : IsSemiterm LAct (0 : V) (bnum (dlen TAct ρ)) := isSemiterm_bnum_LAct 0 _
+  have hE4 : (4 : V) ≤ E := le_trans le_add_self hE1
+  have hf0 : termLen LAct (^&0 : V) ≤ E := termLen_fvar_le (le_trans (by norm_num) hE4)
+  have hf1 : termLen LAct (^&1 : V) ≤ E := termLen_fvar_le (le_trans (by norm_num) hE4)
+  have hf2 : termLen LAct (^&(js + 2) : V) ≤ E := termLen_fvar_le (by
+    calc js + 2 + 1 = js + 3 := by ring
+      _ ≤ js + 4 := add_le_add le_rfl (by norm_num)
+      _ ≤ E := hE1)
+  have hf3 : termLen LAct (^&(js + 3) : V) ≤ E := termLen_fvar_le (by
+    calc js + 3 + 1 = js + 4 := by ring
+      _ ≤ E := hE1)
+  have e2 : (js : V) + 1 + 1 = js + 2 := by rw [add_assoc, one_add_one_eq_two]
+  have e3 : (js : V) + 1 + 2 = js + 3 := by rw [add_assoc]; norm_num
+  -- the recovery of the goal
+  obtain ⟨gok, gnd, gsh, _, gder, gfst, gdlen, gle⟩ := goalElim_ok 8 htbl hΓ (by simp) hbd hgoal
+  rw [termShift_fvar, termShift_fvar, e2] at gfst
+  rw [termShift_bnum, termShift_bnum] at gle
+  have hΓ₀ : IsFormulaSet LAct (finalCtx Γ (goalElim (^&js) (bnum (dlen TAct ρ)))) :=
+    finalCtx_isFormulaSet 8 htbl hΓ gok
+  have hins₀ := mem_finalCtx_of_mem' gnd hins
+  rw [gsh, shiftIterV_neg (isFormula_insFact (by simp) (by simp) h0), shiftIterV_insFact (by simp) (by simp) h0,
+    termShiftIterV_fvar, termShiftIterV_fvar, termShiftIterV_qqZero, e3] at hins₀
+  have hinst₀ := mem_finalCtx_of_mem' gnd hinst
+  rw [gsh, shiftIterV_neg (isFormula_instBFact (by simp) hq hbk), shiftIterV_instBFact (by simp) hq hbk,
+    termShiftIterV_fvar, termShiftIterV_qNum, termShiftIterV_bnumTop, e3] at hinst₀
+  set Γ₀ := finalCtx Γ (goalElim (^&js) (bnum (dlen TAct ρ))) with hΓ₀def
+  -- the four numeral lemmas
+  have ok₁ : StepOK tbl E ((8 : ℕ) : V) Γ₀ (sLemma (lengthEqFact k) (lengthEqCode tblL tblN k)) :=
+    stepOK_sLemma hΓ₀ (lemmaOK_lengthEq htblN htblL k)
+  have cx₁ := ctxAfter_sLemma Γ₀ (lengthEqFact k) (lengthEqCode tblL tblN k)
+  have hΓ₁ : IsFormulaSet LAct (insert (neg LAct (lengthEqFact k)) Γ₀) := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
+  have ok₂ : StepOK tbl E ((8 : ℕ) : V) (insert (neg LAct (lengthEqFact k)) Γ₀)
+      (sLemma (mulFact ‖k‖ ‖k‖) (mulEqCode tblM tblN ‖k‖ ‖k‖)) :=
+    stepOK_sLemma hΓ₁ (lemmaOK_mulEq htblN htblM _ _)
+  have cx₂ := ctxAfter_sLemma (insert (neg LAct (lengthEqFact k)) Γ₀) (mulFact ‖k‖ ‖k‖) (mulEqCode tblM tblN ‖k‖ ‖k‖)
+  have hΓ₂ : IsFormulaSet LAct (insert (neg LAct (mulFact ‖k‖ ‖k‖)) (insert (neg LAct (lengthEqFact k)) Γ₀)) :=
+    cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
+  have ok₃ : StepOK tbl E ((8 : ℕ) : V) (insert (neg LAct (mulFact ‖k‖ ‖k‖)) (insert (neg LAct (lengthEqFact k)) Γ₀))
+      (sLemma (mulFact (‖k‖ * ‖k‖) ‖k‖) (mulEqCode tblM tblN (‖k‖ * ‖k‖) ‖k‖)) :=
+    stepOK_sLemma hΓ₂ (lemmaOK_mulEq htblN htblM _ _)
+  have cx₃ := ctxAfter_sLemma (insert (neg LAct (mulFact ‖k‖ ‖k‖)) (insert (neg LAct (lengthEqFact k)) Γ₀))
+    (mulFact (‖k‖ * ‖k‖) ‖k‖) (mulEqCode tblM tblN (‖k‖ * ‖k‖) ‖k‖)
+  set Γ₃ := insert (neg LAct (mulFact (‖k‖ * ‖k‖) ‖k‖))
+    (insert (neg LAct (mulFact ‖k‖ ‖k‖)) (insert (neg LAct (lengthEqFact k)) Γ₀)) with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := cx₃ ▸ isFormulaSet_ctxAfter 8 htbl ok₃
+  have ok₄ : StepOK tbl E ((8 : ℕ) : V) Γ₃
+      (sLemma (leFact (bnum (dlen TAct ρ)) (bnum (gBudget k))) (leCode tblN (dlen TAct ρ) (gBudget k))) :=
+    stepOK_sLemma hΓ₃ (lemmaOK_of (isFormula_leFact_bnum _ _) (leCode_proof htblN hρ))
+  have cx₄ := ctxAfter_sLemma Γ₃ (leFact (bnum (dlen TAct ρ)) (bnum (gBudget k))) (leCode tblN (dlen TAct ρ) (gBudget k))
+  set Γ₄ := insert (neg LAct (leFact (bnum (dlen TAct ρ)) (bnum (gBudget k)))) Γ₃ with hΓ₄def
+  have hΓ₄ : IsFormulaSet LAct Γ₄ := cx₄ ▸ isFormulaSet_ctxAfter 8 htbl ok₄
+  -- the facts so far, in `Γ₄`
+  have m_der : neg LAct (derFact (^&1 : V)) ∈ Γ₄ := mem_ins (mem_ins (mem_ins (mem_ins gder)))
+  have m_fst : neg LAct (fstIdxFact (^&(js + 2)) (^&1)) ∈ Γ₄ := mem_ins (mem_ins (mem_ins (mem_ins gfst)))
+  have m_dlen : neg LAct (dlenFact (^&1 : V) (^&0)) ∈ Γ₄ := mem_ins (mem_ins (mem_ins (mem_ins gdlen)))
+  have m_le : neg LAct (leFact (^&0) (bnum (dlen TAct ρ))) ∈ Γ₄ := mem_ins (mem_ins (mem_ins (mem_ins gle)))
+  have m_ins : neg LAct (insFact (^&(js + 2)) (^&(js + 3)) (𝟎 : V)) ∈ Γ₄ := mem_ins (mem_ins (mem_ins (mem_ins hins₀)))
+  have m_inst : neg LAct (instBFact (^&(js + 3)) (qNum χ) (bnum k)) ∈ Γ₄ := mem_ins (mem_ins (mem_ins (mem_ins hinst₀)))
+  have m_len : neg LAct (lengthFact (bnum ‖k‖) (bnum k)) ∈ Γ₄ := by
+    have : neg LAct (lengthEqFact k) ∈ Γ₄ := mem_ins (by rw [hΓ₃def]; simp)
+    exact this
+  have m_mul1 : neg LAct (eqFactB (bnum ‖k‖ ^* bnum ‖k‖) (bnum (‖k‖ * ‖k‖))) ∈ Γ₄ := by
+    have : neg LAct (mulFact ‖k‖ ‖k‖) ∈ Γ₄ := mem_ins (by rw [hΓ₃def]; simp)
+    exact this
+  have m_mul2 : neg LAct (eqFactB (bnum (‖k‖ * ‖k‖) ^* bnum ‖k‖) (bnum (gBudget k))) ∈ Γ₄ := by
+    have : neg LAct (mulFact (‖k‖ * ‖k‖) ‖k‖) ∈ Γ₄ := mem_ins (by rw [hΓ₃def]; simp)
+    exact this
+  have m_leg : neg LAct (leFact (bnum (dlen TAct ρ)) (bnum (gBudget k))) ∈ Γ₄ := by rw [hΓ₄def]; simp
+  -- step 5: dlenDefIntro
+  obtain ⟨ok₅, tg₅, cx₅⟩ := tok_dlenDefIntro (wd := ^&1) (wn := ^&0) htbl hT rfl hΓ₄ (by simp) hf1 (by simp) hf0 m_der m_dlen
+  set Γ₅ := insert (neg LAct (dlenDefFact (^&0) (^&1))) Γ₄ with hΓ₅def
+  have hΓ₅ : IsFormulaSet LAct Γ₅ := cx₅ ▸ isFormulaSet_ctxAfter 8 htbl ok₅
+  -- step 6: proofIntro
+  obtain ⟨ok₆, tg₆, cx₆⟩ := tok_proofIntro (ws := ^&(js + 2)) (wg := ^&(js + 3)) (wd := ^&1) htbl hT rfl hΓ₅
+    (by simp) hf2 (by simp) hf3 (by simp) hf1 (mem_ins m_ins) (mem_ins m_fst) (mem_ins m_der)
+  set Γ₆ := insert (neg LAct (proofFact (^&1) (^&(js + 3)))) Γ₅ with hΓ₆def
+  have hΓ₆ : IsFormulaSet LAct Γ₆ := cx₆ ▸ isFormulaSet_ctxAfter 8 htbl ok₆
+  -- step 7: leTrans
+  obtain ⟨ok₇, tg₇, cx₇⟩ := tfok_leTrans (wz := bnum (gBudget k)) (wy := bnum (dlen TAct ρ)) (wx := ^&0) htbl hT rfl hΓ₆
+    hbg hEg hbd hEd (by simp) hf0 (mem_ins (mem_ins m_le)) (mem_ins (mem_ins m_leg))
+  set Γ₇ := insert (neg LAct (leFact (^&0) (bnum (gBudget k)))) Γ₆ with hΓ₇def
+  have hΓ₇ : IsFormulaSet LAct Γ₇ := cx₇ ▸ isFormulaSet_ctxAfter 8 htbl ok₇
+  -- step 8: lenDerIntro
+  obtain ⟨ok₈, tg₈, cx₈⟩ := tok_lenDerIntro (wd := ^&1) (wn := ^&0) (wg := ^&(js + 3)) (wa := bnum (gBudget k)) htbl hT rfl hΓ₇
+    (by simp) hf1 (by simp) hf0 (by simp) hf3 hbg hEg (mem_ins (by rw [hΓ₆def]; simp))
+    (mem_ins (mem_ins (by rw [hΓ₅def]; simp))) (by rw [hΓ₇def]; simp)
+  set Γ₈ := insert (neg LAct (lenDerFact (bnum (gBudget k)) (^&(js + 3)))) Γ₇ with hΓ₈def
+  have hΓ₈ : IsFormulaSet LAct Γ₈ := cx₈ ▸ isFormulaSet_ctxAfter 8 htbl ok₈
+  -- step 9: gIntroNum
+  obtain ⟨ok₉, tg₉, cx₉⟩ := tok_gIntroNum (wk := bnum k) (wl := bnum ‖k‖) (wb := bnum (‖k‖ * ‖k‖)) (wa := bnum (gBudget k))
+    htbl hT rfl hΓ₈ hbk hEk hbl hEl hbb hEb hbg hEg
+    (mem_ins (mem_ins (mem_ins (mem_ins m_len)))) (mem_ins (mem_ins (mem_ins (mem_ins m_mul1))))
+    (mem_ins (mem_ins (mem_ins (mem_ins m_mul2))))
+  set Γ₉ := insert (neg LAct (gFact (bnum (gBudget k)) (bnum k))) Γ₈ with hΓ₉def
+  have hΓ₉ : IsFormulaSet LAct Γ₉ := cx₉ ▸ isFormulaSet_ctxAfter 8 htbl ok₉
+  -- step 10: boxIntro
+  obtain ⟨ok₁₀, tg₁₀, cx₁₀⟩ := tok_boxIntro (wa := bnum (gBudget k)) (wg := ^&(js + 3)) (wk := bnum k) (wn := qNum χ)
+    htbl hT rfl hΓ₉ hbg hEg (by simp) hf3 hbk hEk hq hEq (by rw [hΓ₉def]; simp)
+    (mem_ins (mem_ins (mem_ins (mem_ins (mem_ins m_inst))))) (mem_ins (by rw [hΓ₈def]; simp))
+  -- assembly
+  have hfin : finalCtx Γ (closeSteps χ k ρ js tblN tblL tblM) =
+      insert (neg LAct (boxFact (qNum χ) (bnum k))) Γ₉ := by
+    unfold closeSteps
+    rw [finalCtx_appendV, ← hΓ₀def, finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃,
+      finalCtx_cons, cx₄, finalCtx_cons, cx₅, finalCtx_cons, cx₆,
+      finalCtx_cons, cx₇, finalCtx_cons, cx₈, finalCtx_cons, cx₉,
+      finalCtx_single, cx₁₀]
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · unfold closeSteps
+    refine listOK_appendV gok ?_
+    rw [← hΓ₀def]
+    refine listOK_cons ok₁ ?_; rw [cx₁]
+    refine listOK_cons ok₂ ?_; rw [cx₂]
+    refine listOK_cons ok₃ ?_; rw [cx₃]
+    refine listOK_cons ok₄ ?_; rw [cx₄]
+    refine listOK_cons ok₅ ?_; rw [cx₅]
+    refine listOK_cons ok₆ ?_; rw [cx₆]
+    refine listOK_cons ok₇ ?_; rw [cx₇]
+    refine listOK_cons ok₈ ?_; rw [cx₈]
+    refine listOK_cons ok₉ ?_; rw [cx₉]
+    exact listOK_single ok₁₀
+  · unfold closeSteps
+    refine noDrop'_appendV gnd ?_
+    exact noDrop'_cons (by simp) (noDrop'_cons (by simp) (noDrop'_cons (by simp) (noDrop'_cons (by simp)
+      (noDrop'_cons (by rw [tg₅]; simp) (noDrop'_cons (by rw [tg₆]; simp) (noDrop'_cons (by rw [tg₇]; simp)
+      (noDrop'_cons (by rw [tg₈]; simp) (noDrop'_cons (by rw [tg₉]; simp) (noDrop'_single (by rw [tg₁₀]; simp))))))))))
+  · unfold closeSteps
+    rw [shiftsV_appendV, gsh, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_cons,
+      shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₅, tg₆, tg₇, tg₈, tg₉, tg₁₀]
+    simp
+  · unfold closeSteps
+    rw [len_appendV, len_goalElim]; simp [len_adjoin]; norm_num
+  · rw [hfin]; simp
+
+end closeSteps
+
 end ArithS
