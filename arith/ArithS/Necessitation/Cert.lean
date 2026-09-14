@@ -2507,4 +2507,81 @@ lemma le_fQuantSteps (W ν c n i j yb : V) : yb ≤ fQuantSteps W ν c n i j yb 
 
 /-! ### 2.3 Existence, uniqueness, and the function `passF` -/
 
+set_option maxHeartbeats 1000000 in
+/-- **Existence**, with the offsets bounded by a parameter `B` (the motive must be Σ₁). -/
+lemma passFGraph_exists_bounded (W B : V) {ν : V} (hν : ν = 1 ∨ ν = 2) :
+    ∀ {n r : V}, IsSemiformula LAct n r →
+    ∀ i ≤ B, ∀ j ≤ B, i + descCountF W n r ≤ B → j + outCount W ν n r ≤ B →
+      ∃ y, PassFGraph W ν n r i j y := by
+  intro n r
+  apply IsSemiformula.sigma1_structural_induction
+    (P := fun n r ↦ ∀ i ≤ B, ∀ j ≤ B, i + descCountF W n r ≤ B → j + outCount W ν n r ≤ B →
+      ∃ y, PassFGraph W ν n r i j y)
+  · definability
+  · intro n k R v _ _ i _ j _ _ _; exact ⟨_, PassFGraph.rel_iff.mpr rfl⟩
+  · intro n k R v _ _ i _ j _ _ _; exact ⟨_, PassFGraph.nrel_iff.mpr rfl⟩
+  · intro n i _ j _ _ _; exact ⟨_, PassFGraph.verum_iff.mpr rfl⟩
+  · intro n i _ j _ _ _; exact ⟨_, PassFGraph.falsum_iff.mpr rfl⟩
+  · intro n p q hp hq ihp ihq i hi j hj hiB hjB
+    rw [descCountF_and W n hp hq] at hiB
+    rw [outCount_and hν hp hq] at hjB
+    set cp := descCountF W n p with hcp
+    set cq := descCountF W n q with hcq
+    set dp := outCount W ν n p with hdp
+    set dq := outCount W ν n q with hdq
+    have hcq1 : cq + 1 ≤ cp + cq + 1 := add_le_add le_add_self (le_refl 1)
+    have hdq1 : dq + 1 ≤ dp + dq + 1 := add_le_add le_add_self (le_refl 1)
+    have hiq : i + 1 + cq ≤ B := le_trans (le_trans (le_of_eq (show i + 1 + cq = i + (cq + 1) by ring))
+      (add_le_add (le_refl i) hcq1)) hiB
+    have hjq : j + 1 + dq ≤ B := le_trans (le_trans (le_of_eq (show j + 1 + dq = j + (dq + 1) by ring))
+      (add_le_add (le_refl j) hdq1)) hjB
+    have hip : i + cq + 1 + cp ≤ B := le_trans (le_of_eq (show i + cq + 1 + cp = i + (cp + cq + 1) by ring)) hiB
+    have hjp : j + dq + 1 + dp ≤ B := le_trans (le_of_eq (show j + dq + 1 + dp = j + (dp + dq + 1) by ring)) hjB
+    obtain ⟨yq, hyq⟩ := ihq (i + 1) (le_trans le_self_add hiq) (j + 1) (le_trans le_self_add hjq) hiq hjq
+    obtain ⟨yp, hyp⟩ := ihp (i + cq + 1) (le_trans le_self_add hip) (j + dq + 1) (le_trans le_self_add hjp) hip hjp
+    exact ⟨_, PassFGraph.and_iff.mpr ⟨yp, yq, le_fBinSteps_left _ _ _ _ _ _ _ _ _ _,
+      le_fBinSteps_right _ _ _ _ _ _ _ _ _ _, hyp, hyq, rfl⟩⟩
+  · intro n p q hp hq ihp ihq i hi j hj hiB hjB
+    rw [descCountF_or W n hp hq] at hiB
+    rw [outCount_or hν hp hq] at hjB
+    set cp := descCountF W n p with hcp
+    set cq := descCountF W n q with hcq
+    set dp := outCount W ν n p with hdp
+    set dq := outCount W ν n q with hdq
+    have hcq1 : cq + 1 ≤ cp + cq + 1 := add_le_add le_add_self (le_refl 1)
+    have hdq1 : dq + 1 ≤ dp + dq + 1 := add_le_add le_add_self (le_refl 1)
+    have hiq : i + 1 + cq ≤ B := le_trans (le_trans (le_of_eq (show i + 1 + cq = i + (cq + 1) by ring))
+      (add_le_add (le_refl i) hcq1)) hiB
+    have hjq : j + 1 + dq ≤ B := le_trans (le_trans (le_of_eq (show j + 1 + dq = j + (dq + 1) by ring))
+      (add_le_add (le_refl j) hdq1)) hjB
+    have hip : i + cq + 1 + cp ≤ B := le_trans (le_of_eq (show i + cq + 1 + cp = i + (cp + cq + 1) by ring)) hiB
+    have hjp : j + dq + 1 + dp ≤ B := le_trans (le_of_eq (show j + dq + 1 + dp = j + (dp + dq + 1) by ring)) hjB
+    obtain ⟨yq, hyq⟩ := ihq (i + 1) (le_trans le_self_add hiq) (j + 1) (le_trans le_self_add hjq) hiq hjq
+    obtain ⟨yp, hyp⟩ := ihp (i + cq + 1) (le_trans le_self_add hip) (j + dq + 1) (le_trans le_self_add hjp) hip hjp
+    exact ⟨_, PassFGraph.or_iff.mpr ⟨yp, yq, le_fBinSteps_left _ _ _ _ _ _ _ _ _ _,
+      le_fBinSteps_right _ _ _ _ _ _ _ _ _ _, hyp, hyq, rfl⟩⟩
+  · intro n p hp ih i hi j hj hiB hjB
+    rw [descCountF_all W n hp] at hiB
+    rw [outCount_all hν hp] at hjB
+    have hiB' : i + 1 + descCountF W (n + 1) p ≤ B :=
+      le_trans (le_of_eq (show i + 1 + descCountF W (n + 1) p = i + (descCountF W (n + 1) p + 1) by ring)) hiB
+    have hjB' : j + 1 + outCount W ν (n + 1) p ≤ B :=
+      le_trans (le_of_eq (show j + 1 + outCount W ν (n + 1) p = j + (outCount W ν (n + 1) p + 1) by ring)) hjB
+    obtain ⟨yb, hyb⟩ := ih (i + 1) (le_trans le_self_add hiB') (j + 1) (le_trans le_self_add hjB') hiB' hjB'
+    exact ⟨_, PassFGraph.all_iff.mpr ⟨yb, le_fQuantSteps _ _ _ _ _ _ _, hyb, rfl⟩⟩
+  · intro n p hp ih i hi j hj hiB hjB
+    rw [descCountF_exs W n hp] at hiB
+    rw [outCount_exs hν hp] at hjB
+    have hiB' : i + 1 + descCountF W (n + 1) p ≤ B :=
+      le_trans (le_of_eq (show i + 1 + descCountF W (n + 1) p = i + (descCountF W (n + 1) p + 1) by ring)) hiB
+    have hjB' : j + 1 + outCount W ν (n + 1) p ≤ B :=
+      le_trans (le_of_eq (show j + 1 + outCount W ν (n + 1) p = j + (outCount W ν (n + 1) p + 1) by ring)) hjB
+    obtain ⟨yb, hyb⟩ := ih (i + 1) (le_trans le_self_add hiB') (j + 1) (le_trans le_self_add hjB') hiB' hjB'
+    exact ⟨_, PassFGraph.exs_iff.mpr ⟨yb, le_fQuantSteps _ _ _ _ _ _ _, hyb, rfl⟩⟩
+
+lemma passFGraph_exists (W : V) {ν : V} (hν : ν = 1 ∨ ν = 2) {n r : V} (hr : IsSemiformula LAct n r)
+    (i j : V) : ∃ y, PassFGraph W ν n r i j y :=
+  passFGraph_exists_bounded W (i + descCountF W n r + (j + outCount W ν n r)) hν hr
+    i (le_trans le_self_add le_self_add) j (le_trans le_self_add le_add_self) le_self_add le_add_self
+
 end ArithS
