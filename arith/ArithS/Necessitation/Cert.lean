@@ -5065,4 +5065,45 @@ theorem costSum_certNeg_le {tbl N E B Wd W n r i j Γ : V} (htbl : TableOK tbl N
 
 end certMain
 
+
+/-! ### 4.7 Status of the remaining §3.6 producers (2026-09-14, recorded here so the next session starts from facts)
+
+**`certSubst w` / `certFree` — NOT started; three obstacles, in order of size.**
+1. The `PassT`/`PassF` template has no slot for the substitution vector, and the image's offsets do
+   NOT advance in lock-step with the source's: the image of a leaf `#z` is `w.[z]` walked afresh
+   (count `descCountT (w.[z])`, not `1`), so the third family cannot be a `ν` value of the existing
+   fixpoints — it is a sibling fixpoint with parameters `(W, wv, wt)` (the vector CODE and the TERM
+   naming it), whose image offset increments by `descCountT (termSubst wv t)` per node (the analogue
+   of `outCount`). Everything from `blueprint` to the `_ok` proofs (~1500 lines) is new.
+2. The bvar leaf: `termSubstBvarCert “e w z t. qqBvarDef t z → nthDef e w z → termSubstGraph e w t”`
+   needs `nthFact e &w (cT z)` for the IMAGE's node `e`, but the image walks `w.[z]` afresh at some
+   `&j'`, while `nthAdjoinZero/Succ` deliver `nthFact` only for the ORIGINAL entries of `w`
+   (`&it` with `adjFact &w &it 𝟎`). No `congNth` row exists. The way out without a new row: apply
+   `termSubstBvarCert` at `e := &it` (the original entry), identify `&it` with `&j'` by the
+   identification pass (§4.3), and repair the parent vector's `adjFact &u' &j' &u` into
+   `adjFact &u' &it &u` with `congAdj` (`Lib/Frag.lean:290`, a LAYOUT row — it is not in
+   `certRows`; append it, and `eqSymm`, to `gen_cert.py`'s `TABLE`, index-stable) — every term
+   occurs inside a vector, so the parent is always an adjoin.
+3. Under a quantifier the vector becomes `qVec w = #0 ∷ termBShiftVec w`, which the rows need as an
+   OBJECT (`qVecCert “u sw z w k. utvPi k w → termBShiftVecGraph sw k w → qqBvarDef z 0 →
+   adjoinDef u z sw → qVecGraph u w”`): the pass must CONSTRUCT `sw`, `z`, `u` by totality steps
+   (`adjoinTotal`, `qqBvarTotal`, `qqFuncTotal` for the shifted entries) — tag-2 steps, so the
+   substitution pass is NOT shift-free and its offsets move with `shiftsV` (the `dossF_transport`
+   discipline, not the fixed layout of §4.2–4.5). `exsIntro`'s `substs1 t p` needs this whenever `p`
+   has inner quantifiers.
+
+**`lenSteps` — NOT started; one missing row.** The bottom-up plan (§3.6 "lengths") is sound:
+`formulaLenTotal [&i]` (`cok_formulaLenTotal`, tag 2 — one eigenvariable per node, offsets move),
+the `formulaLen*` rows at NUMERAL child witnesses (`lenFact (bnum|p|) &p` from the children) giving
+`eqFactB &0 (bnum|p| ^+ bnum|q| ^+ 𝟏)`, then the closed numeral fact, `eqTrans`, `congLenNum`.
+The closed fact `bnum|p| ^+ bnum|q| ^+ 𝟏 = bnum (|p| + |q| + 1)` is NOT among `NumSteps`' lemma
+facts (`addFact`, `succFact` are, `bin2Fact` is the `≤` version) and cannot be assembled from them
+in context: the successor congruence `“y x. x = y → x + 1 = y + 1”` exists NOWHERE in the row
+library (checked `Lib/*.lean`, `NumSteps`). Either add that row (`Lib/Frag` + `RowInstB`, then
+`gen_cert.py`'s `TABLE`) or add an `addSuccFact a b : eqFact (bnum a ^+ bnum b ^+ 𝟏) (bnum (a + b + 1))`
+lemma code to `NumSteps` (a cut of `addFact` and `succFact` through that same congruence — so the
+row is needed either way). With the `≤` facts only, `leOfEqLe` yields `&0 ≤ bnum|r|`, an inexact
+length no consumer row reads (`congLenNum` needs `=`). State `lenSteps_ok` with `NoDrop'`.
+-/
+
 end ArithS

@@ -780,4 +780,23 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lemmaOK_mulEq
 #print axioms stepCost_lemma_mulEq
 
+-- U10 (2026-09-14, Cert Part 4): the certification passes are APPLICABLE. `certShift_ok`/`certNeg_ok`:
+-- with the source's walk dossier at `i` and the freshly walked image's at `j`, the pass is `ListOK` at
+-- cap 8, `NoDrop`, Horn-only, shift-free, and leaves `shiftFact &j &i` / `negFact &j &i` in its final
+-- context; the term level (`passTGraph_shift_ok`, `passTGraph_eq_ok`) and the costs (the walk's
+-- polynomial at `12|r|` steps). The `neg` atom needed the identification pass + `congRel/congNRel`
+-- (the image's atom vector is fresh) — the former single-step `ν = 1` branch was unprovable.
+#print axioms passTGraph_shift_ok
+#print axioms passVGraph_shift_ok
+#print axioms passTGraph_eq_ok
+#print axioms passVGraph_eq_ok
+#print axioms passFGraph_shift_ok
+#print axioms passFGraph_neg_ok
+#print axioms certShift_ok
+#print axioms certNeg_ok
+#print axioms costSum_certShift_le
+#print axioms costSum_certNeg_le
+#print axioms descCountF_certPieces
+#print axioms descCountF_neg
+
 end ArithS
