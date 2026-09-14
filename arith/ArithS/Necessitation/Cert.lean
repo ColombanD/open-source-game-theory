@@ -1806,24 +1806,31 @@ lemma passTGraph_exists_bounded (W ν n B : V) : ∀ t, IsSemiterm LAct n t →
         rw [hC] at hiB hjB
         set ct := descCountT W n v.[k - (m + 1)] with hct
         set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
-        have hiB' : i + 1 + ct ≤ B := le_trans (by rw [add_assoc, add_comm 1 ct, ← add_assoc]; exact le_self_add) (by rw [add_assoc, add_assoc, add_comm cv]; simpa [add_assoc] using hiB)
-        have hjB' : j + 1 + ct ≤ B := le_trans (by rw [add_assoc, add_comm 1 ct, ← add_assoc]; exact le_self_add) (by rw [add_assoc, add_assoc, add_comm cv]; simpa [add_assoc] using hjB)
+        have hiB' : i + 1 + ct ≤ B :=
+          le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1 ct]))
+            (add_le_add (le_refl i) (add_le_add le_add_self (le_refl 1)))) hiB
+        have hjB' : j + 1 + ct ≤ B :=
+          le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1 ct]))
+            (add_le_add (le_refl j) (add_le_add le_add_self (le_refl 1)))) hjB
         obtain ⟨yt, hyt⟩ := ih _ hlt (i + 1) (le_trans le_self_add hiB') (j + 1) (le_trans le_self_add hjB') hiB' hjB'
         obtain ⟨yv, hyv⟩ := ihm (le_trans le_self_add hm) (i + 1 + ct) hiB' (j + 1 + ct) hjB'
-          (by rw [add_assoc, add_assoc, add_comm cv] at hiB; simpa [add_assoc] using hiB)
-          (by rw [add_assoc, add_assoc, add_comm cv] at hjB; simpa [add_assoc] using hjB)
+          (le_trans (le_of_eq (by
+            rw [add_assoc, add_assoc, add_comm ct cv, add_comm 1 (cv + ct), ← add_assoc])) hiB)
+          (le_trans (le_of_eq (by
+            rw [add_assoc, add_assoc, add_comm ct cv, add_comm 1 (cv + ct), ← add_assoc])) hjB)
         refine ⟨_, PassVGraph.succ_iff.mpr ⟨yt, yv, le_vAdjSteps_left _ _ _ _ _ _ _ _ _, le_vAdjSteps_right _ _ _ _ _ _ _ _ _,
           ?_, ?_, rfl⟩⟩
         · rw [hnth']; exact hyt
         · rw [hnth']; exact hyv
-    obtain ⟨yv, hyv⟩ := key k le_rfl (i + 1) (le_trans (by rw [add_assoc]; exact le_self_add) hiB) (j + 1)
-      (le_trans (by rw [add_assoc]; exact le_self_add) hjB)
-      (by rw [add_assoc, add_comm 1]; exact hiB) (by rw [add_assoc, add_comm 1]; exact hjB)
+    obtain ⟨yv, hyv⟩ := key k le_rfl (i + 1) (le_trans (add_le_add (le_refl i) le_add_self) hiB) (j + 1)
+      (le_trans (add_le_add (le_refl j) le_add_self) hjB)
+      (le_trans (le_of_eq (by rw [add_assoc, add_comm 1])) hiB)
+      (le_trans (le_of_eq (by rw [add_assoc, add_comm 1])) hjB)
     exact ⟨_, PassTGraph.func_iff.mpr ⟨yv, le_tFuncSteps _ _ _ _ _ _ _, hyv, rfl⟩⟩
 
 lemma passTGraph_exists (W ν n : V) {t : V} (ht : IsSemiterm LAct n t) (i j : V) : ∃ y, PassTGraph W ν n t i j y :=
   passTGraph_exists_bounded W ν n (i + j + descCountT W n t) t ht i (le_trans le_self_add le_self_add) j
-    (le_trans le_add_self le_self_add) (by rw [add_assoc, add_comm j]; exact le_rfl)
-    (by rw [add_assoc, add_comm i, ← add_assoc]; exact le_self_add)
+    (le_trans le_add_self le_self_add) (add_le_add le_self_add (le_refl (descCountT W n t)))
+    (add_le_add le_add_self (le_refl (descCountT W n t)))
 
 end ArithS
