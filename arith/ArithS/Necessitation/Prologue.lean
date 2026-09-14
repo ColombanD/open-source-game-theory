@@ -2110,6 +2110,207 @@ theorem subChain_ok {tbl N W i' k' os A E Γ : V} (htbl : TableOK tbl N) (hP : P
     exact add_right_cancel (by rw [this, zero_add] : jOf k' (k' - 1) + k' = 0 + k')
   rwa [hj, add_zero] at h
 
+/-! ### 4.4 The packed parameters of an identification -/
+
+/-- `qPack Wl W i₁ k os xs ip₁ k' os' ys p σ` — the frame of an identification: layout pieces `Wl`, prologue
+pieces `W`, the PARENT layout at chain offset `i₁` (`k` members, offsets `os`, member list `xs`), the object of
+`p` at `ip₁`, the CHILD layout at offset `0` (`k'` members, offsets `os'`, member list `ys`), the formula `p`,
+and the `insertTotalC` object `cp` at `&σ`. -/
+noncomputable def qPack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : V :=
+  ⟪Wl, W, i₁, k, os, xs, ip₁, k', os', ys, p, σ⟫
+
+noncomputable def qWl (q : V) : V := π₁ q
+noncomputable def qW (q : V) : V := π₁ (π₂ q)
+noncomputable def qI (q : V) : V := π₁ (π₂ (π₂ q))
+noncomputable def qK (q : V) : V := π₁ (π₂ (π₂ (π₂ q)))
+noncomputable def qOs (q : V) : V := π₁ (π₂ (π₂ (π₂ (π₂ q))))
+noncomputable def qXs (q : V) : V := π₁ (π₂ (π₂ (π₂ (π₂ (π₂ q)))))
+noncomputable def qIp (q : V) : V := π₁ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ q))))))
+noncomputable def qK' (q : V) : V := π₁ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ q)))))))
+noncomputable def qOs' (q : V) : V := π₁ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ q))))))))
+noncomputable def qYs (q : V) : V := π₁ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ q)))))))))
+noncomputable def qP (q : V) : V := π₁ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ q))))))))))
+noncomputable def qSig (q : V) : V := π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ q))))))))))
+
+@[simp] lemma qWl_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qWl (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = Wl := by simp [qWl, qPack]
+@[simp] lemma qW_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qW (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = W := by simp [qW, qPack]
+@[simp] lemma qI_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qI (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = i₁ := by simp [qI, qPack]
+@[simp] lemma qK_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qK (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = k := by simp [qK, qPack]
+@[simp] lemma qOs_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qOs (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = os := by simp [qOs, qPack]
+@[simp] lemma qXs_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qXs (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = xs := by simp [qXs, qPack]
+@[simp] lemma qIp_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qIp (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = ip₁ := by simp [qIp, qPack]
+@[simp] lemma qK'_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qK' (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = k' := by simp [qK', qPack]
+@[simp] lemma qOs'_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qOs' (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = os' := by simp [qOs', qPack]
+@[simp] lemma qYs_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qYs (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = ys := by simp [qYs, qPack]
+@[simp] lemma qP_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qP (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = p := by simp [qP, qPack]
+@[simp] lemma qSig_pack (Wl W i₁ k os xs ip₁ k' os' ys p σ : V) : qSig (qPack Wl W i₁ k os xs ip₁ k' os' ys p σ) = σ := by simp [qSig, qPack]
+
+/-- `eqSteps` as an explicit Σ₁ graph (`Layout` only provides `_definable`). -/
+noncomputable def eqStepsDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W i j r. ∃ t, !eqFPDef t 0 r ∧ ∃ t₂, !pi₂Def t₂ t ∧ ∃ t₃, !pi₂Def t₃ t₂ ∧ !relocSDef y t₃ W i j”
+
+instance eqSteps_defined' : 𝚺₁-Function₄ (eqSteps : V → V → V → V → V) via eqStepsDef := .mk fun v ↦ by
+  simp [eqStepsDef, eqSteps, eqFT, eqFP_defined.iff, relocS_defined.iff, numeral_eq_natCast]
+
+/-! ### 4.5 The three member blocks and the two loops -/
+
+/-- Loop A, member `j` of the CHILD: `memFact Y_j cp`. If `y_j = p`: `eqSteps Y_j P`, `memInsertSelfC`,
+`congMem`; else (`y_j ∈ s`): `eqSteps Y_j X_{j'}`, `memInsertOfMem`, `congMem`. -/
+noncomputable def blockA (q j : V) : V :=
+  if (qYs q).[j] = qP q then
+    appendV (eqSteps (qWl q) (mTop 0 (qK' q) (qOs' q).[j]) (qIp q) (qP q))
+      ?[mkStep (qW q) 77 ?[^&(qIp q), ^&(qI q + (qK q + 1)), ^&(qSig q)],
+        mkStep (qW q) 62 ?[^&(qIp q), ^&(mTop 0 (qK' q) (qOs' q).[j]), ^&(qSig q)]]
+  else
+    appendV (eqSteps (qWl q) (mTop 0 (qK' q) (qOs' q).[j]) (mTop (qI q) (qK q) (qOs q).[idxOf (qXs q) (qYs q).[j]]) (qYs q).[j])
+      ?[mkStep (qW q) 113 ?[^&(mTop (qI q) (qK q) (qOs q).[idxOf (qXs q) (qYs q).[j]]), ^&(qI q + (qK q + 1)), ^&(qIp q), ^&(qSig q)],
+        mkStep (qW q) 62 ?[^&(mTop (qI q) (qK q) (qOs q).[idxOf (qXs q) (qYs q).[j]]), ^&(mTop 0 (qK' q) (qOs' q).[j]), ^&(qSig q)]]
+
+noncomputable def blockADef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y q j. ∃ Wl, !pi₁Def Wl q ∧ ∃ r1, !pi₂Def r1 q ∧ ∃ W, !pi₁Def W r1 ∧ ∃ r2, !pi₂Def r2 r1 ∧ ∃ i, !pi₁Def i r2 ∧ ∃ r3, !pi₂Def r3 r2 ∧ ∃ k, !pi₁Def k r3 ∧ ∃ r4, !pi₂Def r4 r3 ∧ ∃ os, !pi₁Def os r4 ∧ ∃ r5, !pi₂Def r5 r4 ∧ ∃ xs, !pi₁Def xs r5 ∧ ∃ r6, !pi₂Def r6 r5 ∧ ∃ ip, !pi₁Def ip r6 ∧ ∃ r7, !pi₂Def r7 r6 ∧ ∃ kk, !pi₁Def kk r7 ∧ ∃ r8, !pi₂Def r8 r7 ∧ ∃ oss, !pi₁Def oss r8 ∧ ∃ r9, !pi₂Def r9 r8 ∧ ∃ ys, !pi₁Def ys r9 ∧ ∃ r10, !pi₂Def r10 r9 ∧ ∃ p, !pi₁Def p r10 ∧ ∃ sg, !pi₂Def sg r10 ∧
+    ∃ yj, !nthDef yj ys j ∧ ∃ oj, !nthDef oj oss j ∧ ∃ tj, tj = 0 + (2 * kk + 1 + oj) ∧ ∃ zj, !qqFvarDef zj tj ∧
+    ∃ zip, !qqFvarDef zip ip ∧ ∃ is, is = i + (k + 1) ∧ ∃ zs, !qqFvarDef zs is ∧ ∃ zc, !qqFvarDef zc sg ∧
+    (yj = p → ∃ e, !eqStepsDef e Wl tj ip p ∧
+      ∃ a₁, !adjoinDef a₁ zc 0 ∧ ∃ a₂, !adjoinDef a₂ zs a₁ ∧ ∃ a₃, !adjoinDef a₃ zip a₂ ∧ ∃ s₁, !mkStepDef s₁ W 77 a₃ ∧
+      ∃ b₁, !adjoinDef b₁ zc 0 ∧ ∃ b₂, !adjoinDef b₂ zj b₁ ∧ ∃ b₃, !adjoinDef b₃ zip b₂ ∧ ∃ s₂, !mkStepDef s₂ W 62 b₃ ∧
+      ∃ l₂, !adjoinDef l₂ s₂ 0 ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !appendVDef y e l₁) ∧
+    (yj ≠ p → ∃ jp, !idxOfDef jp xs yj ∧ ∃ oo, !nthDef oo os jp ∧ ∃ tx, tx = i + (2 * k + 1 + oo) ∧ ∃ zx, !qqFvarDef zx tx ∧
+      ∃ e, !eqStepsDef e Wl tj tx yj ∧
+      ∃ a₁, !adjoinDef a₁ zc 0 ∧ ∃ a₂, !adjoinDef a₂ zip a₁ ∧ ∃ a₃, !adjoinDef a₃ zs a₂ ∧ ∃ a₄, !adjoinDef a₄ zx a₃ ∧
+      ∃ s₁, !mkStepDef s₁ W 113 a₄ ∧
+      ∃ b₁, !adjoinDef b₁ zc 0 ∧ ∃ b₂, !adjoinDef b₂ zj b₁ ∧ ∃ b₃, !adjoinDef b₃ zx b₂ ∧ ∃ s₂, !mkStepDef s₂ W 62 b₃ ∧
+      ∃ l₂, !adjoinDef l₂ s₂ 0 ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !appendVDef y e l₁)”
+
+set_option maxHeartbeats 1000000 in
+instance blockA_defined : 𝚺₁-Function₂ (blockA : V → V → V) via blockADef := .mk fun v ↦ by
+  simp [blockADef, blockA, qWl, qW, qI, qK, qOs, qXs, qIp, qK', qOs', qYs, qP, qSig, mTop, eqSteps_defined'.iff,
+    idxOf_defined.iff, mkStep_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+  by_cases h : (π₁ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (v 1))))))))))).[v 2] =
+      π₁ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (v 1)))))))))))
+  · simp [h]
+  · simp [h]
+instance blockA_definable : 𝚺₁-Function₂ (blockA : V → V → V) := blockA_defined.to_definable
+
+/-- Loop B, member `j` of the PARENT: `memFact X_j s''` by `eqSteps Y_{j''} X_j`, `eqSymm`, `congMem`. -/
+noncomputable def blockB (q j : V) : V :=
+  appendV (eqSteps (qWl q) (mTop 0 (qK' q) (qOs' q).[idxOf (qYs q) (qXs q).[j]]) (mTop (qI q) (qK q) (qOs q).[j]) (qXs q).[j])
+    ?[mkStep (qW q) 42 ?[^&(mTop 0 (qK' q) (qOs' q).[idxOf (qYs q) (qXs q).[j]]), ^&(mTop (qI q) (qK q) (qOs q).[j])],
+      mkStep (qW q) 62 ?[^&(mTop 0 (qK' q) (qOs' q).[idxOf (qYs q) (qXs q).[j]]), ^&(mTop (qI q) (qK q) (qOs q).[j]),
+        ^&(0 + (qK' q + 1))]]
+
+noncomputable def blockBDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y q j. ∃ Wl, !pi₁Def Wl q ∧ ∃ r1, !pi₂Def r1 q ∧ ∃ W, !pi₁Def W r1 ∧ ∃ r2, !pi₂Def r2 r1 ∧ ∃ i, !pi₁Def i r2 ∧ ∃ r3, !pi₂Def r3 r2 ∧ ∃ k, !pi₁Def k r3 ∧ ∃ r4, !pi₂Def r4 r3 ∧ ∃ os, !pi₁Def os r4 ∧ ∃ r5, !pi₂Def r5 r4 ∧ ∃ xs, !pi₁Def xs r5 ∧ ∃ r6, !pi₂Def r6 r5 ∧ ∃ ip, !pi₁Def ip r6 ∧ ∃ r7, !pi₂Def r7 r6 ∧ ∃ kk, !pi₁Def kk r7 ∧ ∃ r8, !pi₂Def r8 r7 ∧ ∃ oss, !pi₁Def oss r8 ∧ ∃ r9, !pi₂Def r9 r8 ∧ ∃ ys, !pi₁Def ys r9 ∧ ∃ r10, !pi₂Def r10 r9 ∧ ∃ p, !pi₁Def p r10 ∧ ∃ sg, !pi₂Def sg r10 ∧
+    ∃ xj, !nthDef xj xs j ∧ ∃ jy, !idxOfDef jy ys xj ∧ ∃ oy, !nthDef oy oss jy ∧ ∃ ty, ty = 0 + (2 * kk + 1 + oy) ∧
+    ∃ zy, !qqFvarDef zy ty ∧ ∃ oj, !nthDef oj os j ∧ ∃ tx, tx = i + (2 * k + 1 + oj) ∧ ∃ zx, !qqFvarDef zx tx ∧
+    ∃ is, is = 0 + (kk + 1) ∧ ∃ zs, !qqFvarDef zs is ∧
+    ∃ e, !eqStepsDef e Wl ty tx xj ∧
+    ∃ a₁, !adjoinDef a₁ zx 0 ∧ ∃ a₂, !adjoinDef a₂ zy a₁ ∧ ∃ s₁, !mkStepDef s₁ W 42 a₂ ∧
+    ∃ b₁, !adjoinDef b₁ zs 0 ∧ ∃ b₂, !adjoinDef b₂ zx b₁ ∧ ∃ b₃, !adjoinDef b₃ zy b₂ ∧ ∃ s₂, !mkStepDef s₂ W 62 b₃ ∧
+    ∃ l₂, !adjoinDef l₂ s₂ 0 ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !appendVDef y e l₁”
+
+set_option maxHeartbeats 1000000 in
+instance blockB_defined : 𝚺₁-Function₂ (blockB : V → V → V) via blockBDef := .mk fun v ↦ by
+  simp [blockBDef, blockB, qWl, qW, qI, qK, qOs, qXs, qIp, qK', qOs', qYs, qP, qSig, mTop, eqSteps_defined'.iff,
+    idxOf_defined.iff, mkStep_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance blockB_definable : 𝚺₁-Function₂ (blockB : V → V → V) := blockB_defined.to_definable
+
+/-- The `p` block: `memFact P s''` by `eqSteps Y_{jp} P`, `eqSymm`, `congMem`. -/
+noncomputable def blockP (q : V) : V :=
+  appendV (eqSteps (qWl q) (mTop 0 (qK' q) (qOs' q).[idxOf (qYs q) (qP q)]) (qIp q) (qP q))
+    ?[mkStep (qW q) 42 ?[^&(mTop 0 (qK' q) (qOs' q).[idxOf (qYs q) (qP q)]), ^&(qIp q)],
+      mkStep (qW q) 62 ?[^&(mTop 0 (qK' q) (qOs' q).[idxOf (qYs q) (qP q)]), ^&(qIp q), ^&(0 + (qK' q + 1))]]
+
+noncomputable def blockPDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y q. ∃ Wl, !pi₁Def Wl q ∧ ∃ r1, !pi₂Def r1 q ∧ ∃ W, !pi₁Def W r1 ∧ ∃ r2, !pi₂Def r2 r1 ∧ ∃ i, !pi₁Def i r2 ∧ ∃ r3, !pi₂Def r3 r2 ∧ ∃ k, !pi₁Def k r3 ∧ ∃ r4, !pi₂Def r4 r3 ∧ ∃ os, !pi₁Def os r4 ∧ ∃ r5, !pi₂Def r5 r4 ∧ ∃ xs, !pi₁Def xs r5 ∧ ∃ r6, !pi₂Def r6 r5 ∧ ∃ ip, !pi₁Def ip r6 ∧ ∃ r7, !pi₂Def r7 r6 ∧ ∃ kk, !pi₁Def kk r7 ∧ ∃ r8, !pi₂Def r8 r7 ∧ ∃ oss, !pi₁Def oss r8 ∧ ∃ r9, !pi₂Def r9 r8 ∧ ∃ ys, !pi₁Def ys r9 ∧ ∃ r10, !pi₂Def r10 r9 ∧ ∃ p, !pi₁Def p r10 ∧ ∃ sg, !pi₂Def sg r10 ∧
+    ∃ jy, !idxOfDef jy ys p ∧ ∃ oy, !nthDef oy oss jy ∧ ∃ ty, ty = 0 + (2 * kk + 1 + oy) ∧ ∃ zy, !qqFvarDef zy ty ∧
+    ∃ zip, !qqFvarDef zip ip ∧ ∃ is, is = 0 + (kk + 1) ∧ ∃ zs, !qqFvarDef zs is ∧
+    ∃ e, !eqStepsDef e Wl ty ip p ∧
+    ∃ a₁, !adjoinDef a₁ zip 0 ∧ ∃ a₂, !adjoinDef a₂ zy a₁ ∧ ∃ s₁, !mkStepDef s₁ W 42 a₂ ∧
+    ∃ b₁, !adjoinDef b₁ zs 0 ∧ ∃ b₂, !adjoinDef b₂ zip b₁ ∧ ∃ b₃, !adjoinDef b₃ zy b₂ ∧ ∃ s₂, !mkStepDef s₂ W 62 b₃ ∧
+    ∃ l₂, !adjoinDef l₂ s₂ 0 ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !appendVDef y e l₁”
+
+set_option maxHeartbeats 1000000 in
+instance blockP_defined : 𝚺₁-Function₁ (blockP : V → V) via blockPDef := .mk fun v ↦ by
+  simp [blockPDef, blockP, qWl, qW, qI, qK, qOs, qXs, qIp, qK', qOs', qYs, qP, qSig, mTop, eqSteps_defined'.iff,
+    idxOf_defined.iff, mkStep_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance blockP_definable : 𝚺₁-Function₁ (blockP : V → V) := blockP_defined.to_definable
+
+namespace LoopA
+
+noncomputable def blueprint : PR.Blueprint 1 where
+  zero := .mkSigma “y q. y = 0”
+  succ := .mkSigma “y ih j q. ∃ b, !blockADef b q j ∧ !appendVDef y ih b”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v j ih ↦ appendV ih (blockA (v 0) j)
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, blockA_defined.iff, appendV_defined.iff]
+
+end LoopA
+
+namespace LoopB
+
+noncomputable def blueprint : PR.Blueprint 1 where
+  zero := .mkSigma “y q. y = 0”
+  succ := .mkSigma “y ih j q. ∃ b, !blockBDef b q j ∧ !appendVDef y ih b”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v j ih ↦ appendV ih (blockB (v 0) j)
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, blockB_defined.iff, appendV_defined.iff]
+
+end LoopB
+
+/-- Loop A over the first `m` child members. -/
+noncomputable def loopA (q m : V) : V := LoopA.construction.result ![q] m
+/-- Loop B over the first `m` parent members. -/
+noncomputable def loopB (q m : V) : V := LoopB.construction.result ![q] m
+
+@[simp] lemma loopA_zero (q : V) : loopA q 0 = 0 := by simp [loopA, LoopA.construction]
+lemma loopA_succ (q m : V) : loopA q (m + 1) = appendV (loopA q m) (blockA q m) := by simp [loopA, LoopA.construction]
+@[simp] lemma loopB_zero (q : V) : loopB q 0 = 0 := by simp [loopB, LoopB.construction]
+lemma loopB_succ (q m : V) : loopB q (m + 1) = appendV (loopB q m) (blockB q m) := by simp [loopB, LoopB.construction]
+
+noncomputable def loopADef : 𝚺₁.Semisentence 3 := LoopA.blueprint.resultDef |>.rew (Rew.subst ![#0, #2, #1])
+noncomputable def loopBDef : 𝚺₁.Semisentence 3 := LoopB.blueprint.resultDef |>.rew (Rew.subst ![#0, #2, #1])
+
+instance loopA_defined : 𝚺₁-Function₂ (loopA : V → V → V) via loopADef := .mk
+  fun v ↦ by simp [LoopA.construction.result_defined_iff, loopADef]; rfl
+instance loopA_definable : 𝚺₁-Function₂ (loopA : V → V → V) := loopA_defined.to_definable
+instance loopB_defined : 𝚺₁-Function₂ (loopB : V → V → V) via loopBDef := .mk
+  fun v ↦ by simp [LoopB.construction.result_defined_iff, loopBDef]; rfl
+instance loopB_definable : 𝚺₁-Function₂ (loopB : V → V → V) := loopB_defined.to_definable
+
+/-- **`identIns q`**: Loop A, `s'' ⊆ cp`, Loop B, the `p` block, `S ⊆ s''`, `cp ⊆ s''` (`insertSubset`),
+`subsetAntisymm` → `eqFactB cp s''`. -/
+noncomputable def identIns (q : V) : V :=
+  appendV (loopA q (qK' q)) (appendV (subChain (qW q) 0 (qK' q) (qOs' q) (^&(qSig q)))
+    (appendV (loopB q (qK q)) (appendV (blockP q)
+      (appendV (subChain (qW q) (qI q) (qK q) (qOs q) (^&(0 + (qK' q + 1))))
+        ?[mkStep (qW q) 112 ?[^&(qI q + (qK q + 1)), ^&(0 + (qK' q + 1)), ^&(qIp q), ^&(qSig q)],
+          mkStep (qW q) 75 ?[^&(qSig q), ^&(0 + (qK' q + 1))]]))))
+
+noncomputable def identInsDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y q. ∃ Wl, !pi₁Def Wl q ∧ ∃ r1, !pi₂Def r1 q ∧ ∃ W, !pi₁Def W r1 ∧ ∃ r2, !pi₂Def r2 r1 ∧ ∃ i, !pi₁Def i r2 ∧ ∃ r3, !pi₂Def r3 r2 ∧ ∃ k, !pi₁Def k r3 ∧ ∃ r4, !pi₂Def r4 r3 ∧ ∃ os, !pi₁Def os r4 ∧ ∃ r5, !pi₂Def r5 r4 ∧ ∃ xs, !pi₁Def xs r5 ∧ ∃ r6, !pi₂Def r6 r5 ∧ ∃ ip, !pi₁Def ip r6 ∧ ∃ r7, !pi₂Def r7 r6 ∧ ∃ kk, !pi₁Def kk r7 ∧ ∃ r8, !pi₂Def r8 r7 ∧ ∃ oss, !pi₁Def oss r8 ∧ ∃ r9, !pi₂Def r9 r8 ∧ ∃ ys, !pi₁Def ys r9 ∧ ∃ r10, !pi₂Def r10 r9 ∧ ∃ p, !pi₁Def p r10 ∧ ∃ sg, !pi₂Def sg r10 ∧
+    ∃ A, !loopADef A q kk ∧ ∃ zc, !qqFvarDef zc sg ∧ ∃ C₁, !subChainDef C₁ W 0 kk oss zc ∧
+    ∃ B, !loopBDef B q k ∧ ∃ P, !blockPDef P q ∧ ∃ is, is = 0 + (kk + 1) ∧ ∃ zs, !qqFvarDef zs is ∧
+    ∃ C₂, !subChainDef C₂ W i k os zs ∧ ∃ iS, iS = i + (k + 1) ∧ ∃ zS, !qqFvarDef zS iS ∧ ∃ zip, !qqFvarDef zip ip ∧
+    ∃ a₁, !adjoinDef a₁ zc 0 ∧ ∃ a₂, !adjoinDef a₂ zip a₁ ∧ ∃ a₃, !adjoinDef a₃ zs a₂ ∧ ∃ a₄, !adjoinDef a₄ zS a₃ ∧
+    ∃ s₁, !mkStepDef s₁ W 112 a₄ ∧
+    ∃ b₁, !adjoinDef b₁ zs 0 ∧ ∃ b₂, !adjoinDef b₂ zc b₁ ∧ ∃ s₂, !mkStepDef s₂ W 75 b₂ ∧
+    ∃ l₂, !adjoinDef l₂ s₂ 0 ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧
+    ∃ r₅, !appendVDef r₅ C₂ l₁ ∧ ∃ r₄, !appendVDef r₄ P r₅ ∧ ∃ r₃, !appendVDef r₃ B r₄ ∧ ∃ r₂, !appendVDef r₂ C₁ r₃ ∧
+    !appendVDef y A r₂”
+
+set_option maxHeartbeats 1000000 in
+instance identIns_defined : 𝚺₁-Function₁ (identIns : V → V) via identInsDef := .mk fun v ↦ by
+  simp [identInsDef, identIns, qWl, qW, qI, qK, qOs, qXs, qIp, qK', qOs', qYs, qP, qSig, loopA_defined.iff,
+    loopB_defined.iff, blockP_defined.iff, subChain_defined.iff, mkStep_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance identIns_definable : 𝚺₁-Function₁ (identIns : V → V) := identIns_defined.to_definable
+
 end identify
 
 end ArithS
