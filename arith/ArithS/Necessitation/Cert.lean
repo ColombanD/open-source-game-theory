@@ -1938,4 +1938,117 @@ lemma passT_bvar (W ν n z i j : V) (hz : IsSemiterm LAct n (^#z)) :
 lemma passT_fvar (W ν n a i j : V) : passT W ν n (^&a) i j = tLeafSteps W ν 1 a i j :=
   passT_eq_of_graph (by simp) (PassTGraph.fvar_iff.mpr rfl)
 
+/-! ## Part 2 — the formula-level certification pass (`ν = 1`: `neg`; `ν = 2`: `shift`)
+
+The two families have the SAME shape: at every node ONE Horn step whose antecedents are the
+source dossier's shape facts (top at `&i`), the output dossier's shape facts (top at `&j`) and
+the children's already-certified `negFact`/`shiftFact` pairs; at an atom the vector level is
+supplied by the TERM pass of Part 1 (`ν = 2` emits `passT … 2`; `ν = 1` changes no term, so the
+atom row takes the source vector on both sides and no term pass runs). The rows are the generated
+`cIdx_neg*Cert` (100–107) and `cIdx_shift*Cert` (108–115) of `CertRows.lean`.
+-/
+
+section formulaPass
+
+/-- The row of a `verum`/`falsum`/`and`/`or`/`all`/`exs`/`rel`/`nrel` node, per family
+(`ν = 1` → `neg*Cert` at `100 + c`; else `shift*Cert` at `108 + c`), where `c` is the
+constructor code `0 = rel, 1 = nrel, 2 = verum, 3 = falsum, 4 = and, 5 = or, 6 = all, 7 = exs`. -/
+noncomputable def fRow (ν c : V) : V := if ν = 1 then 100 + c else 108 + c
+
+def fRowDef : 𝚺₀.Semisentence 3 := .mkSigma
+  “y ν c. (ν = 1 → y = 100 + c) ∧ (ν ≠ 1 → y = 108 + c)”
+
+instance fRow_defined : 𝚺₀-Function₂ (fRow : V → V → V) via fRowDef := .mk fun v ↦ by
+  simp [fRowDef, fRow, numeral_eq_natCast]
+  by_cases hν : v 1 = 1 <;> simp [hν]
+instance fRow_definable : 𝚺₀-Function₂ (fRow : V → V → V) := fRow_defined.to_definable
+
+/-- The certificate of a `verum` node: `[fRow ν 2 [&i, &j]]` (`negVerumCert`/`shiftVerumCert`). -/
+noncomputable def fConstSteps (W ν c i j : V) : V := ?[mkStep W (fRow ν c) ?[^&i, ^&j]]
+
+noncomputable def fConstStepsDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W ν c i j. ∃ ρ, !fRowDef ρ ν c ∧ ∃ fi, !qqFvarDef fi i ∧ ∃ fj, !qqFvarDef fj j ∧
+    ∃ e, !mkVec₂Def e fi fj ∧ ∃ s, !mkStepDef s W ρ e ∧ !mkVec₁Def y s”
+
+instance fConstSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ fConstSteps (v 0) (v 1) (v 2) (v 3) (v 4)) fConstStepsDef := .mk
+  fun v ↦ by simp [fConstStepsDef, fConstSteps, numeral_eq_natCast, fRow_defined.iff, mkStep_defined.iff]
+instance fConstSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ fConstSteps (v 0) (v 1) (v 2) (v 3) (v 4)) :=
+  fConstSteps_defined.to_definable
+
+/-- The certificate of a binary node after the two children's passes `yp` (LEFT) and `yq` (RIGHT):
+`[fRow ν c [cT n, &(i+cq+1), &(i+1), &i, &(j+dq+1), &(j+1), &j]]` — the walk puts the RIGHT child
+first (offset `+1`) and the LEFT child above it, so the source's left top is `&(i+cq+1)` for
+`cq = descCountF n q`, and likewise `dq` on the output side. -/
+noncomputable def fBinSteps (W ν c n cq dq i j yp yq : V) : V :=
+  appendV yp (appendV yq
+    ?[mkStep W (fRow ν c) ?[cTV n, ^&(i + cq + 1), ^&(i + 1), ^&i, ^&(j + dq + 1), ^&(j + 1), ^&j]])
+
+noncomputable def fBinStepsDef : 𝚺₁.Semisentence 11 := .mkSigma
+  “y W ν c n cq dq i j yp yq. ∃ ρ, !fRowDef ρ ν c ∧ ∃ cn, !cTVGraph cn n ∧
+    ∃ a₁, !qqFvarDef a₁ (i + cq + 1) ∧ ∃ a₂, !qqFvarDef a₂ (i + 1) ∧ ∃ a₃, !qqFvarDef a₃ i ∧
+    ∃ b₁, !qqFvarDef b₁ (j + dq + 1) ∧ ∃ b₂, !qqFvarDef b₂ (j + 1) ∧ ∃ b₃, !qqFvarDef b₃ j ∧
+    ∃ e₀, !mkVec₂Def e₀ b₂ b₃ ∧ ∃ e₁, !adjoinDef e₁ b₁ e₀ ∧ ∃ e₂, !adjoinDef e₂ a₃ e₁ ∧
+    ∃ e₃, !adjoinDef e₃ a₂ e₂ ∧ ∃ e₄, !adjoinDef e₄ a₁ e₃ ∧ ∃ e, !adjoinDef e cn e₄ ∧
+    ∃ s, !mkStepDef s W ρ e ∧ ∃ l, !mkVec₁Def l s ∧ ∃ S, !appendVDef S yq l ∧ !appendVDef y yp S”
+
+instance fBinSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ fBinSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) fBinStepsDef := .mk
+  fun v ↦ by
+    simp [fBinStepsDef, fBinSteps, numeral_eq_natCast, fRow_defined.iff, cTV.defined.iff,
+      mkStep_defined.iff, appendV_defined.iff]
+instance fBinSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ fBinSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
+  fBinSteps_defined.to_definable
+
+/-- The certificate of a quantifier node after the body's pass `yb`:
+`[fRow ν c [cT n, &(i+1), &i, &(j+1), &j]]` (`negAllCert`/`shiftAllCert` shape). -/
+noncomputable def fQuantSteps (W ν c n i j yb : V) : V :=
+  appendV yb ?[mkStep W (fRow ν c) ?[cTV n, ^&(i + 1), ^&i, ^&(j + 1), ^&j]]
+
+noncomputable def fQuantStepsDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W ν c n i j yb. ∃ ρ, !fRowDef ρ ν c ∧ ∃ cn, !cTVGraph cn n ∧
+    ∃ a₁, !qqFvarDef a₁ (i + 1) ∧ ∃ a₂, !qqFvarDef a₂ i ∧ ∃ b₁, !qqFvarDef b₁ (j + 1) ∧ ∃ b₂, !qqFvarDef b₂ j ∧
+    ∃ e₀, !mkVec₂Def e₀ b₁ b₂ ∧ ∃ e₁, !adjoinDef e₁ a₂ e₀ ∧ ∃ e₂, !adjoinDef e₂ a₁ e₁ ∧ ∃ e, !adjoinDef e cn e₂ ∧
+    ∃ s, !mkStepDef s W ρ e ∧ ∃ l, !mkVec₁Def l s ∧ !appendVDef y yb l”
+
+instance fQuantSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ fQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) fQuantStepsDef := .mk
+  fun v ↦ by
+    simp [fQuantStepsDef, fQuantSteps, numeral_eq_natCast, fRow_defined.iff, cTV.defined.iff,
+      mkStep_defined.iff, appendV_defined.iff]
+instance fQuantSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ fQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  fQuantSteps_defined.to_definable
+
+/-- The certificate of an ATOM (`rel`/`nrel`). `ν = 1` (`neg`) changes no term: the row
+`negRelCert [&i, cT k, cT R, ⟨v⟩ᵢ, &j]` takes the SOURCE vector on both sides and no term pass
+runs. `ν = 2` (`shift`) first runs the term-level vector pass at `(i+1, j+1)` and then
+`shiftRelCert [&i, cT k, cT R, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. -/
+noncomputable def fAtomSteps (W ν c k R i j yv : V) : V :=
+  if ν = 1 then ?[mkStep W (fRow ν c) ?[^&i, cTV k, cTV R, vRef (i + 1) k, ^&j]]
+  else appendV yv ?[mkStep W (fRow ν c) ?[^&i, cTV k, cTV R, vRef (i + 1) k, vRef (j + 1) k, ^&j]]
+
+noncomputable def fAtomStepsDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y W ν c k R i j yv. ∃ ρ, !fRowDef ρ ν c ∧ ∃ ck, !cTVGraph ck k ∧ ∃ cR, !cTVGraph cR R ∧
+    ∃ fi, !qqFvarDef fi i ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ ri, !vRefDef ri (i + 1) k ∧ ∃ rj, !vRefDef rj (j + 1) k ∧
+    ∃ a₀, !mkVec₂Def a₀ ri fj ∧ ∃ a₁, !adjoinDef a₁ cR a₀ ∧ ∃ a₂, !adjoinDef a₂ ck a₁ ∧ ∃ a, !adjoinDef a fi a₂ ∧
+    ∃ sa, !mkStepDef sa W ρ a ∧ ∃ la, !mkVec₁Def la sa ∧
+    ∃ b₀, !mkVec₂Def b₀ rj fj ∧ ∃ b₁, !adjoinDef b₁ ri b₀ ∧ ∃ b₂, !adjoinDef b₂ cR b₁ ∧ ∃ b₃, !adjoinDef b₃ ck b₂ ∧
+    ∃ b, !adjoinDef b fi b₃ ∧ ∃ sb, !mkStepDef sb W ρ b ∧ ∃ lb, !mkVec₁Def lb sb ∧ ∃ B, !appendVDef B yv lb ∧
+    ((ν = 1 → y = la) ∧ (ν ≠ 1 → y = B))”
+
+instance fAtomSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ fAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) fAtomStepsDef := .mk
+  fun v ↦ by
+    simp [fAtomStepsDef, fAtomSteps, numeral_eq_natCast, fRow_defined.iff, cTV.defined.iff,
+      vRef_defined.iff, mkStep_defined.iff, appendV_defined.iff]
+    by_cases hν : v 2 = 1 <;> simp [hν]
+instance fAtomSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ fAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
+  fAtomSteps_defined.to_definable
+
+end formulaPass
+
 end ArithS
