@@ -8304,4 +8304,301 @@ theorem lenSteps_ok {tbl N N' B' Wd W T n r i E Γ : V} (htbl : TableOK tbl N) (
 
 end lenFOK
 
+/-! ### 5.9 The size discipline and the cost of `lenSteps` -/
+
+section lenCost
+
+/-- `SizeOK` is Δ₁ (needed as a Π₁ induction motive below). -/
+instance stepSizeOK_definable : 𝚫₁-Relation₃ (StepSizeOK : V → V → V → Prop) := by
+  unfold StepSizeOK sGoalS sGoalU sLemA sLemD sTag; definability
+instance sizeOK_definable : 𝚫₁-Relation₃ (SizeOK : V → V → V → Prop) := by
+  unfold SizeOK; definability
+
+/-- The uniform size bounds of the closed `sLemma` facts at arguments `≤ L`: `Q = B'·cTE L` on the
+formulas, `D = (L + 1)(‖L‖ + 2)·nodeCost N' B' (cTE L)` on the derivations. -/
+noncomputable def lenQ (B' L : V) : V := B' * cTE L
+noncomputable def lenD (N' B' L : V) : V := (L + 1) * (‖L‖ + 2) * nodeCost N' B' (cTE L)
+
+lemma NumTableOK.peq {tbl N B : V} (h : NumTableOK tbl N B) : formulaLen LAct (Peq : V) ≤ B := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hPeq, -, -, -⟩ := h
+  exact hPeq
+
+lemma succ_fits {T N' B' L z : V} (htblN : NumTableOK T N' B') (hz : z ≤ L) :
+    formulaLen LAct (succFact z) ≤ lenQ B' L ∧ dlen TAct (succCode T z) ≤ lenD N' B' L := by
+  have hz1 : ‖z + 1‖ ≤ ‖L + 1‖ := length_monotone (add_le_add hz (le_refl (1 : V)))
+  have hE : 6 * ‖z + 1‖ + 3 ≤ cTE L := by
+    unfold cTE
+    calc 6 * ‖z + 1‖ + 3 ≤ 12 * ‖L + 1‖ + 5 :=
+          add_le_add (le_trans (mul_le_mul_of_nonneg_left hz1 zero_le) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ 2 * L + 12 * ‖L + 1‖ + 5 := by rw [add_assoc]; exact le_add_self
+  refine ⟨formulaLen_succFact_le htblN.peq hE, ?_⟩
+  refine le_trans (dlen_succCode_le htblN z) ?_
+  unfold lenD
+  calc (‖z‖ + 1) * nodeCost N' B' (6 * ‖z + 1‖ + 3)
+      ≤ (L + 1) * nodeCost N' B' (cTE L) :=
+        mul_le_mul (add_le_add (le_trans (length_le z) hz) (le_refl 1)) (nodeCost_mono hE) zero_le zero_le
+    _ = (L + 1) * 1 * nodeCost N' B' (cTE L) := by ring
+    _ ≤ (L + 1) * (‖L‖ + 2) * nodeCost N' B' (cTE L) :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (le_trans (by norm_num) le_add_self) zero_le) zero_le
+
+lemma add_fits {T N' B' L a b : V} (htblN : NumTableOK T N' B') (hab : a + b ≤ L) :
+    formulaLen LAct (addFact a b) ≤ lenQ B' L ∧ dlen TAct (addCode T a b) ≤ lenD N' B' L := by
+  have hab' : ‖a + b‖ ≤ ‖L‖ := length_monotone hab
+  have hE : 12 * ‖a + b‖ + 3 ≤ cTE L := by
+    unfold cTE
+    calc 12 * ‖a + b‖ + 3 ≤ 12 * ‖L + 1‖ + 5 :=
+          add_le_add (mul_le_mul_of_nonneg_left (le_trans hab' (length_monotone le_self_add)) zero_le) (by norm_num)
+      _ ≤ 2 * L + 12 * ‖L + 1‖ + 5 := by rw [add_assoc]; exact le_add_self
+  refine ⟨formulaLen_addFact_le htblN.peq hE, ?_⟩
+  refine le_trans (dlen_addCode_le htblN a b) ?_
+  unfold lenD
+  exact mul_le_mul (mul_le_mul (add_le_add (le_trans (length_le a) (le_trans le_self_add hab)) (le_refl 1))
+    (add_le_add hab' (le_refl 2)) zero_le zero_le) (nodeCost_mono hE) zero_le zero_le
+
+lemma cTEq_fits {T N' B' L z : V} (htblN : NumTableOK T N' B') (hz : z ≤ L) :
+    formulaLen LAct (cTEqFact z) ≤ lenQ B' L ∧ dlen TAct (cTEqCode T z) ≤ lenD N' B' L := by
+  refine ⟨le_trans (formulaLen_cTEqFact_le htblN.peq) (mul_le_mul_of_nonneg_left (cTE_mono hz) zero_le), ?_⟩
+  refine le_trans (dlen_cTEqCode_le htblN z) ?_
+  unfold lenD
+  exact mul_le_mul (mul_le_mul (add_le_add hz (le_refl 1)) (add_le_add (length_monotone hz) (le_refl 2)) zero_le zero_le)
+    (nodeCost_mono (cTE_mono hz)) zero_le zero_le
+
+/-! The lists are size-disciplined at `(lenQ B' L, lenD N' B' L)` whenever their numeral arguments are `≤ L`. -/
+
+lemma sizeOK_lnLeafSteps {W T N' B' L c z i : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B') (hc : c = 153 ∨ c = 154)
+    (hz : z + 1 ≤ L) : SizeOK (lenQ B' L) (lenD N' B' L) (lnLeafSteps W T c z i) := by
+  obtain ⟨hA, hd⟩ := cTEq_fits (B' := B') htblN hz
+  exact sizeOK_cons (stepSizeOK_horn2 (ctag_termLenTotal hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ctag_lnLeafRow hWp hc _))
+    (sizeOK_cons (stepSizeOK_sLemma hA hd) (sizeOK_cons (stepSizeOK_horn0 (ctag_eqTrans hWp _))
+    (sizeOK_single (stepSizeOK_horn0 (ctag_congTLenNum hWp _))))))
+lemma sizeOK_lnNilSteps {W N' B' L : V} (hWp : W = certPieces) : SizeOK (lenQ B' L) (lenD N' B' L) (lnNilSteps W) :=
+  sizeOK_cons (stepSizeOK_horn0 (ctag_termLenVecNil hWp _)) (sizeOK_single (stepSizeOK_horn0 (ctag_listSumNil hWp _)))
+lemma sizeOK_lnAdjTail {W T N' B' L n m ct lt σ' i st sv : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B')
+    (hs : lt + σ' ≤ L) : SizeOK (lenQ B' L) (lenD N' B' L) (lnAdjTail W T n m ct lt σ' i st sv) := by
+  obtain ⟨hA, hd⟩ := add_fits (B' := B') htblN hs
+  exact sizeOK_cons (stepSizeOK_horn2 (ctag_cert17 hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ctag_cert38 hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ctag_cert39 hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ctag_termLenVecAdj hWp _))
+    (sizeOK_cons (stepSizeOK_sLemma hA hd) (sizeOK_single (stepSizeOK_horn0 (ctag_listSumAdjI hWp _)))))))
+lemma sizeOK_lnFuncTail {W T N' B' L k f σ i sv : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B') (hσ : σ ≤ L) :
+    SizeOK (lenQ B' L) (lenD N' B' L) (lnFuncTail W T k f σ i sv) := by
+  obtain ⟨hA, hd⟩ := succ_fits (B' := B') htblN hσ
+  exact sizeOK_cons (stepSizeOK_horn0 (ctag_certFuncRow hWp _ _ _)) (sizeOK_cons (stepSizeOK_horn2 (ctag_termLenTotal hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ctag_termLenFuncCert hWp _)) (sizeOK_cons (stepSizeOK_sLemma hA hd)
+    (sizeOK_cons (stepSizeOK_horn0 (ctag_eqTrans hWp _)) (sizeOK_single (stepSizeOK_horn0 (ctag_congTLenNum hWp _)))))))
+lemma sizeOK_lnConstSteps {W N' B' L c i : V} (hWp : W = certPieces) (hc : c = 147 ∨ c = 148) :
+    SizeOK (lenQ B' L) (lenD N' B' L) (lnConstSteps W c i) :=
+  sizeOK_cons (stepSizeOK_horn2 (ctag_formulaLenTotal hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ctag_lnConstRow hWp hc _))
+    (sizeOK_single (stepSizeOK_horn0 (ctag_congLenNum hWp _))))
+lemma sizeOK_lnQuantTail {W T N' B' L c n lp i sb : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B') (hc : c = 151 ∨ c = 152)
+    (hlp : lp ≤ L) : SizeOK (lenQ B' L) (lenD N' B' L) (lnQuantTail W T c n lp i sb) := by
+  obtain ⟨hA, hd⟩ := succ_fits (B' := B') htblN hlp
+  exact sizeOK_cons (stepSizeOK_horn2 (ctag_formulaLenTotal hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ctag_lnQuantRow hWp hc _))
+    (sizeOK_cons (stepSizeOK_sLemma hA hd) (sizeOK_cons (stepSizeOK_horn0 (ctag_eqTrans hWp _))
+    (sizeOK_single (stepSizeOK_horn0 (ctag_congLenNum hWp _))))))
+lemma sizeOK_lnBinTail {W T N' B' L c n cq lp lq i sq sp : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B')
+    (hc : c = 149 ∨ c = 150) (hs : lp + lq ≤ L) : SizeOK (lenQ B' L) (lenD N' B' L) (lnBinTail W T c n cq lp lq i sq sp) := by
+  obtain ⟨hA₁, hd₁⟩ := add_fits (B' := B') htblN hs
+  obtain ⟨hA₂, hd₂⟩ := succ_fits (B' := B') htblN hs
+  exact sizeOK_cons (stepSizeOK_horn2 (ctag_formulaLenTotal hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ctag_lnBinRow hWp hc _))
+    (sizeOK_cons (stepSizeOK_sLemma hA₁ hd₁) (sizeOK_cons (stepSizeOK_horn0 (ctag_congSucc hWp _))
+    (sizeOK_cons (stepSizeOK_sLemma hA₂ hd₂) (sizeOK_cons (stepSizeOK_horn0 (ctag_eqTrans hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ctag_eqTrans hWp _)) (sizeOK_single (stepSizeOK_horn0 (ctag_congLenNum hWp _)))))))))
+lemma sizeOK_lnAtomTail {W T N' B' L c k R σ i sv : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B') (hc : c = 142 ∨ c = 143)
+    (hσ : σ ≤ L) : SizeOK (lenQ B' L) (lenD N' B' L) (lnAtomTail W T c k R σ i sv) := by
+  obtain ⟨hA, hd⟩ := succ_fits (B' := B') htblN hσ
+  exact sizeOK_cons (stepSizeOK_horn0 (ctag_certRelRow hWp _ _)) (sizeOK_cons (stepSizeOK_horn2 (ctag_formulaLenTotal hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ctag_lnAtomRow hWp hc _)) (sizeOK_cons (stepSizeOK_sLemma hA hd)
+    (sizeOK_cons (stepSizeOK_horn0 (ctag_eqTrans hWp _)) (sizeOK_single (stepSizeOK_horn0 (ctag_congLenNum hWp _)))))))
+
+set_option maxHeartbeats 2000000 in
+/-- The term/vector lists are size-disciplined at any `L ≥ |t|` (`≥ Σ` at the vector level). -/
+lemma lenTGraph_sizeOK {W T N' B' : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B') (n L : V) :
+    ∀ t, IsSemiterm LAct n t → termLen LAct t ≤ L → ∀ i y : V, LenTGraph W T n t i y → SizeOK (lenQ B' L) (lenD N' B' L) y := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · simp only [LenTGraph]; definability
+  · intro z _ hL i y hy
+    rw [LenTGraph.bvar_iff.mp hy]; rw [termLen_bvar] at hL
+    exact sizeOK_lnLeafSteps hWp htblN (Or.inl rfl) hL
+  · intro a hL i y hy
+    rw [LenTGraph.fvar_iff.mp hy]; rw [termLen_fvar] at hL
+    exact sizeOK_lnLeafSteps hWp htblN (Or.inr rfl) hL
+  · intro k f v hkf hv ih hL i y hy
+    have hvlen : len v = k := hv.lh
+    have key : ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ (listSum (termLenVec LAct m (takeLast v m)) ≤ L →
+        ∀ i z : V, LenVGraph W T n k v m i z → SizeOK (lenQ B' L) (lenD N' B' L) z) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => simp only [LenVGraph]; definability
+      | zero =>
+        intro _
+        refine ⟨by simp, ?_⟩
+        intro _ i z hz
+        rw [LenVGraph.zero_iff.mp hz]
+        exact sizeOK_lnNilSteps hWp
+      | succ m ihm =>
+        intro hm
+        have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+        obtain ⟨hU, hrest⟩ := ihm (le_trans le_self_add hm)
+        have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+          rw [takeLast_succ_of_lt hjk, hvlen]
+        refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+        intro hL i z hz
+        rw [htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin] at hL
+        obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := LenVGraph.succ_iff.mp hz
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        rw [hnth'] at hyt hyv ⊢
+        rw [lnAdjSteps_eq]
+        exact sizeOK_appendV (ih _ hlt (le_trans le_self_add hL) (i + 1) yt hyt)
+          (sizeOK_appendV (hrest (le_trans le_add_self hL) _ yv hyv) (sizeOK_lnAdjTail hWp htblN hL))
+    obtain ⟨yv, _, hyv, rfl⟩ := LenTGraph.func_iff.mp hy
+    have htl : takeLast v k = v := by rw [← hvlen]; exact takeLast_len_self v
+    obtain ⟨_, hrest⟩ := key k le_rfl
+    rw [htl] at hrest
+    rw [termLen_func hkf hv.isUTerm] at hL
+    rw [lnFuncSteps_eq]
+    exact sizeOK_appendV (hrest (le_trans le_self_add hL) (i + 1) yv hyv) (sizeOK_lnFuncTail hWp htblN (le_trans le_self_add hL))
+
+lemma lenVGraph_sizeOK {W T N' B' : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B') (n L : V) {k v : V}
+    (hv : IsSemitermVec LAct k n v) : ∀ m ≤ k, listSum (termLenVec LAct m (takeLast v m)) ≤ L →
+      ∀ i z : V, LenVGraph W T n k v m i z → SizeOK (lenQ B' L) (lenD N' B' L) z := by
+  have hvlen : len v = k := hv.lh
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => simp only [LenVGraph]; definability
+  | zero =>
+    intro _ _ i z hz
+    rw [LenVGraph.zero_iff.mp hz]
+    exact sizeOK_lnNilSteps hWp
+  | succ m ihm =>
+    intro hm hL i z hz
+    have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+    have hU : IsUTermVec LAct m (takeLast v m) := (lenVGraph_len W T n hv m (le_trans le_self_add hm)).1
+    have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+      rw [takeLast_succ_of_lt hjk, hvlen]
+    rw [htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin] at hL
+    obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := LenVGraph.succ_iff.mp hz
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    rw [hnth'] at hyt hyv ⊢
+    rw [lnAdjSteps_eq]
+    exact sizeOK_appendV (lenTGraph_sizeOK hWp htblN n L _ ht (le_trans le_self_add hL) (i + 1) yt hyt)
+      (sizeOK_appendV (ihm (le_trans le_self_add hm) (le_trans le_add_self hL) _ yv hyv) (sizeOK_lnAdjTail hWp htblN hL))
+
+set_option maxHeartbeats 2000000 in
+/-- The formula lists are size-disciplined at any `L ≥ |r|`. -/
+lemma lenFGraph_sizeOK {W T N' B' : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B') (L : V) :
+    ∀ {n r : V}, IsSemiformula LAct n r → formulaLen LAct r ≤ L →
+      ∀ i y : V, LenFGraph W T n r i y → SizeOK (lenQ B' L) (lenD N' B' L) y := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ formulaLen LAct r ≤ L → ∀ i y : V, LenFGraph W T n r i y → SizeOK (lenQ B' L) (lenD N' B' L) y)
+  · simp only [LenFGraph]; definability
+  · intro n k R v hkR hv hL i y hy
+    rw [LenFGraph.rel_iff.mp hy, lnAtomSteps_eq]
+    rw [formulaLen_rel hkR hv.isUTerm] at hL
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    have hV := lenVGraph_sizeOK hWp htblN n L hv k le_rfl
+    rw [htl] at hV
+    exact sizeOK_appendV (hV (le_trans le_self_add hL) (i + 1) _ (lenV_graph hv le_rfl))
+      (sizeOK_lnAtomTail hWp htblN (Or.inl rfl) (le_trans le_self_add hL))
+  · intro n k R v hkR hv hL i y hy
+    rw [LenFGraph.nrel_iff.mp hy, lnAtomSteps_eq]
+    rw [formulaLen_nrel hkR hv.isUTerm] at hL
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    have hV := lenVGraph_sizeOK hWp htblN n L hv k le_rfl
+    rw [htl] at hV
+    exact sizeOK_appendV (hV (le_trans le_self_add hL) (i + 1) _ (lenV_graph hv le_rfl))
+      (sizeOK_lnAtomTail hWp htblN (Or.inr rfl) (le_trans le_self_add hL))
+  · intro n _ i y hy
+    rw [LenFGraph.verum_iff.mp hy]; exact sizeOK_lnConstSteps hWp (Or.inl rfl)
+  · intro n _ i y hy
+    rw [LenFGraph.falsum_iff.mp hy]; exact sizeOK_lnConstSteps hWp (Or.inr rfl)
+  · intro n p q hp hq ihp ihq hL i y hy
+    obtain ⟨yq, yp, _, _, hyq, hyp, rfl⟩ := LenFGraph.and_iff.mp hy
+    rw [formulaLen_and hp.isUFormula hq.isUFormula] at hL
+    rw [lnBinSteps_eq]
+    exact sizeOK_appendV (ihq (le_trans (le_trans le_add_self le_self_add) hL) _ _ hyq)
+      (sizeOK_appendV (ihp (le_trans (le_trans le_self_add le_self_add) hL) _ _ hyp)
+        (sizeOK_lnBinTail hWp htblN (Or.inl rfl) (le_trans le_self_add hL)))
+  · intro n p q hp hq ihp ihq hL i y hy
+    obtain ⟨yq, yp, _, _, hyq, hyp, rfl⟩ := LenFGraph.or_iff.mp hy
+    rw [formulaLen_or hp.isUFormula hq.isUFormula] at hL
+    rw [lnBinSteps_eq]
+    exact sizeOK_appendV (ihq (le_trans (le_trans le_add_self le_self_add) hL) _ _ hyq)
+      (sizeOK_appendV (ihp (le_trans (le_trans le_self_add le_self_add) hL) _ _ hyp)
+        (sizeOK_lnBinTail hWp htblN (Or.inr rfl) (le_trans le_self_add hL)))
+  · intro n p hp ih hL i y hy
+    obtain ⟨yb, _, hyb, rfl⟩ := LenFGraph.all_iff.mp hy
+    rw [formulaLen_all hp.isUFormula] at hL
+    rw [lnQuantSteps_eq]
+    exact sizeOK_appendV (ih (le_trans le_self_add hL) _ _ hyb) (sizeOK_lnQuantTail hWp htblN (Or.inl rfl) (le_trans le_self_add hL))
+  · intro n p hp ih hL i y hy
+    obtain ⟨yb, _, hyb, rfl⟩ := LenFGraph.exs_iff.mp hy
+    rw [formulaLen_exs hp.isUFormula] at hL
+    rw [lnQuantSteps_eq]
+    exact sizeOK_appendV (ih (le_trans le_self_add hL) _ _ hyb) (sizeOK_lnQuantTail hWp htblN (Or.inr rfl) (le_trans le_self_add hL))
+
+theorem sizeOK_lenSteps {W T N' B' n r i : V} (hWp : W = certPieces) (htblN : NumTableOK T N' B') (hr : IsSemiformula LAct n r) :
+    SizeOK (lenQ B' (formulaLen LAct r)) (lenD N' B' (formulaLen LAct r)) (lenSteps W T n r i) :=
+  lenFGraph_sizeOK hWp htblN _ hr le_rfl i _ (lenSteps_graph hr)
+
+lemma ctxBoundG_mono_len {G Γ L L' : V} (h : L ≤ L') : ctxBoundG G Γ L ≤ ctxBoundG G Γ L' := by
+  unfold ctxBoundG
+  exact add_le_add (add_le_add (le_refl _) (mul_le_mul_of_nonneg_right h zero_le))
+    (mul_le_mul_of_nonneg_right (add_le_add (mul_le_mul h h zero_le zero_le) h) zero_le)
+
+/-- **The cost of `lenSteps`**: `14|r|` size-disciplined steps at cap 8 — `Frag1`'s `costSum_le_of_sizeOK` at
+`L = 14|r|`, `Q = B'·cTE |r|` (the closed numeral facts), `D = (|r| + 1)(‖|r|‖ + 2)·nodeCost N' B' (cTE |r|)`
+(their derivations, cubic in `‖|r|‖` per `NumSteps`). -/
+theorem costSum_lenSteps_le {tbl N N' B' B Wd W T n r i E Γ : V} (htbl : TableOK tbl N) (hC : CertTable tbl)
+    (htblN : NumTableOK T N' B') (hWd : Wd = walkPieces) (hWp : W = certPieces)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hr : IsSemiformula LAct n r)
+    (hE : 2 * n + 13 * formulaLen LAct r + 8 ≤ E) (hEi : i + 5 * formulaLen LAct r + 2 ≤ E) (hΓ : IsFormulaSet LAct Γ)
+    (hD : DossF Wd Γ n r i) :
+    costSum N E Γ (lenSteps W T n r i) ≤
+      14 * formulaLen LAct r * (costK N E B 8 (lenQ B' (formulaLen LAct r)) (lenD N' B' (formulaLen LAct r)) +
+        (3 * ((8 : ℕ) : V) + 11) * (ctxBoundG (growK B E (lenQ B' (formulaLen LAct r))) Γ (14 * formulaLen LAct r) +
+          (fvOccS LAct Γ + 14 * formulaLen LAct r * growK B E (lenQ B' (formulaLen LAct r))))) := by
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
+  obtain ⟨hok, _, _, hl, _⟩ := lenSteps_ok htbl hC htblN hWd hWp hr hE hEi hΓ hD
+  have hsz := sizeOK_lenSteps (B' := B') hWp htblN hr (i := i)
+  refine le_trans (costSum_le_of_sizeOK 8 hE1 htbl hBt hok hsz) ?_
+  refine mul_le_mul hl ?_ zero_le zero_le
+  refine add_le_add (le_refl _) (mul_le_mul_of_nonneg_left (add_le_add (ctxBoundG_mono_len hl)
+    (add_le_add (le_refl _) (mul_le_mul_of_nonneg_right hl zero_le))) zero_le)
+
+end lenCost
+
+/-! ### 4.8 Status of `certSubst` / `certFree` (2026-09-14, after Part 5 — `lenSteps` DONE, see §5.0–5.9)
+
+**`lenSteps` LANDED** (Part 5): the term/vector fixpoint `LenT` (`lenT`/`lenV`) and the formula fixpoint
+`LenF` (`lenSteps W T n r i`, `T` the `NumSteps` table), NOT shift-free — one `formulaLenTotal`/`termLenTotal`
+eigenvariable per node and one `adjoinTotal` per vector entry, `shiftsV + 1 ≤ 2|r|`, `len ≤ 14|r|` — with
+`lenSteps_ok` (`ListOK` at cap 8, `NoDrop'`, `lenFact (bnum |r|) &(i + shiftsV (lenSteps …))` in the final
+context; the numeral in the GRAPH position, which `setLenInsertLe`/`dlenExs` consume; the offsets move, so
+the consumer reads the root at `&(i + shiftsV …)`) and `costSum_lenSteps_le` (`Frag1`'s size discipline at
+`Q = B'·cTE |r|`, `D = (|r| + 1)(‖|r|‖ + 2)·nodeCost N' B' (cTE |r|)`, `14|r|` steps — cubic in `‖|r|‖`).
+The rows §4.7 asked for were APPENDED (index-stable): `congAdd` (cIdx 183, `x = x' → y = y' → x + y = x' + y'`),
+`congSucc` (184, the one the binary node uses — `congAdd` at the closed `𝟏` would need the closed-constant
+witness), and `listSumAdjI` (185, `listSumDef s M → adjoinDef M' l M → l + s = s' → listSumDef s' M'`: the
+table's `listSumAdj` has all three `listSumDef` facts as ANTECEDENTS, so no `listSumDef s' M'` was derivable
+for a non-empty `M'` — the atom case needed the intro form, at NUMERAL sums via `addFact`).
+
+**`certSubst w` / `certFree` — NOT started (budget).** §4.7's three obstacles stand; what Part 5 now
+provides towards them: (1) the template for a NON-shift-free pass whose offsets move with `shiftsV`
+(`LenT`/`LenF`: sub-call offsets `i + … + shiftsV yq` in the blueprint, existence through `shiftsV_le_len`
++ the `W`-free length bounds, the `_ok` by `dossF_transport'` over `NoDrop'` lists and the per-fact
+`*_transport` lemmas of §5.7) — exactly the discipline `certSubst`'s `qVec` totality steps need; (2) the
+`congAdj` row (182) for the bvar leaf's parent-vector repair. Still to design: the `w`/`wt` parameter slot in
+a sibling fixpoint, the image offset increment `descCountT (termSubst wv t)` per node, and `certFree` as
+`substsSubsts1` + `freeCert` on top of `certSubst` at `qVec (fvar 0)` (`DESIGN_fragments` §4.5 item 2).
+-/
+
 end ArithS
