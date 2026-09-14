@@ -3650,4 +3650,212 @@ lemma h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide 
 
 end certOK
 
+/-! ### 4.1 Helpers: constructor-independent dossier facts, the count bridges, the E-bounds
+
+The applicability proofs read three kinds of facts off the dossiers: the per-constructor shape
+facts (`dossT_*`/`dossF_*`/`dossV_succ`), the constructor-INDEPENDENT `tPiFact`/`piFact` of every
+node (`dossT_tPi`/`dossF_pi`, from the walk's own root fact) and the vector-level `tvPiFact`
+(`dossV_tvPi`, uniform over the empty and the non-empty vector: `vRef i 0 = 𝟎 = cT 0`). The pass's
+own offsets are computed over `certPieces` while the dossiers count over `walkPieces`
+(`descCountF_certPieces` completes `descCountT_certPieces`), and the `neg` family's output side
+counts like its input (`descCountF_neg`).
+-/
+
+section certHelpers
+
+variable {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wd : V} (hWd : Wd = walkPieces)
+include htbl hW hWd
+
+/-- Every term dossier holds `tPiF (cT n) &i` (the walk's root fact, transported). -/
+lemma dossT_tPi {Γ n t i : V} (ht : IsSemiterm LAct n t) (h : DossT Wd Γ n t i) :
+    neg LAct (tPiFact (cTV n) (^&i)) ∈ Γ := by
+  obtain ⟨_, _, _, _, hmem⟩ := describeT_ok htbl hW ht (E := 2 * n + 2 * termLen LAct t + 8) le_rfl (Γ := 0) IsFormulaSet.empty
+  rw [← hWd] at hmem
+  have := h _ hmem
+  rwa [shiftIterV_neg (isFormula_tPiFact (cTV_semiterm_LAct 0 _) (by simp)), shiftIterV_tPiFact (cTV_semiterm_LAct 0 _) (by simp),
+    termShiftIterV_fvar, termShiftIterV_cTV, zero_add] at this
+
+/-- Every formula dossier holds `piF (cT n) &i`. -/
+lemma dossF_pi {Γ n r i : V} (hr : IsSemiformula LAct n r) (h : DossF Wd Γ n r i) :
+    neg LAct (piFact (cTV n) (^&i)) ∈ Γ := by
+  obtain ⟨_, _, _, _, hmem⟩ := describeF_ok htbl hW hr (E := 2 * n + 2 * formulaLen LAct r + 8) le_rfl (Γ := 0) IsFormulaSet.empty
+  rw [← hWd] at hmem
+  have := h _ hmem
+  rwa [shiftIterV_neg (isFormula_piFact (cTV_semiterm_LAct 0 _) (by simp)), shiftIterV_piFact (cTV_semiterm_LAct 0 _) (by simp),
+    termShiftIterV_fvar, termShiftIterV_cTV, zero_add] at this
+
+/-- The walk's eigenvariable counts are bounded by the lengths (read off `describeT_ok`/`describeF_ok`). -/
+lemma descCountT_walk_le {n t : V} (ht : IsSemiterm LAct n t) : descCountT Wd n t + 1 ≤ 2 * termLen LAct t := by
+  have := (describeT_ok htbl hW ht (E := 2 * n + 2 * termLen LAct t + 8) le_rfl (Γ := 0) IsFormulaSet.empty).2.2.2.1
+  rwa [← hWd] at this
+lemma descCountF_walk_le {n r : V} (hr : IsSemiformula LAct n r) : descCountF Wd n r + 1 ≤ 2 * formulaLen LAct r := by
+  have := (describeF_ok htbl hW hr (E := 2 * n + 2 * formulaLen LAct r + 8) le_rfl (Γ := 0) IsFormulaSet.empty).2.2.2.1
+  rwa [← hWd] at this
+
+/-- The empty vector's dossier: `tvPiF (cT 0) (cT n) (cT 0)` (the `nilNode`'s bridge row). -/
+lemma dossV_zero {Γ n k v i : V} (h : DossV Wd Γ n k v 0 i) :
+    neg LAct (tvPiFact (cTV 0) (cTV n) (cTV 0)) ∈ Γ := by
+  have h2 : neg LAct (tvPiFact (cTV 0) (cTV n) (cTV 0)) ∈ finalCtx 0 (π₂ (descVecAux Wd n (descTVec Wd n k v) 0)) := by
+    rw [descVecAux_zero, nilNode, pi₂_pair, finalCtx_cons, finalCtx_single,
+      ctx_isSemitermVecSigmaPiLAct hWd (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)]
+    exact mem_insert_self'
+  have := h _ h2
+  rwa [shiftIterV_neg (isFormula_tvPiFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)),
+    shiftIterV_tvPiFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _),
+    termShiftIterV_cTV, termShiftIterV_cTV] at this
+
+/-- The vector-level `tvPiF (cT m) (cT n) ⟨v⟩` of a vector dossier, uniformly in `m`. -/
+lemma dossV_tvPi {Γ n k v m i : V} (hv : IsSemitermVec LAct k n v) (hm : m ≤ k) (h : DossV Wd Γ n k v m i) :
+    neg LAct (tvPiFact (cTV m) (cTV n) (vRef i m)) ∈ Γ := by
+  rcases zero_or_succ m with rfl | ⟨m, rfl⟩
+  · rw [vRef_zero, ← cTV_zero]; exact dossV_zero htbl hW hWd h
+  · rw [vRef_of_ne (ne_of_gt (lt_of_lt_of_le _root_.zero_lt_one le_add_self))]
+    exact (dossV_succ htbl hW hWd hv hm h).2.1
+
+end certHelpers
+
+section countBridges
+
+/-- The vector walk's count is the same over the two piece tables. -/
+theorem descVecAux_count_certPieces (n : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, π₁ (descVecAux (certPieces : V) n (descTVec (certPieces : V) n k v) m) =
+      π₁ (descVecAux (walkPieces : V) n (descTVec (walkPieces : V) n k v) m) := by
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _
+    rw [descVecAux_zero, descVecAux_zero, nilNode, nilNode, pi₁_pair, pi₁_pair]
+  | succ m ihm =>
+    intro hm
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have h1 : ∀ Wx : V, nthFromEnd (descTVec Wx n k v) m = descT Wx n v.[k - (m + 1)] := fun Wx ↦ by
+      rw [nthFromEnd_eq (a := k - (m + 1))
+        (by rw [len_descTVec Wx n hv.isUTerm, tsub_add_cancel_of_le hm]),
+        nth_descTVec Wx n hv.isUTerm hlt]
+    rw [descVecAux_succ, h1, adjNode, pi₁_pair, descVecAux_succ, h1, adjNode, pi₁_pair,
+      ihm (le_trans le_self_add hm)]
+    have := descCountT_certPieces n _ (hv.nth hlt)
+    rw [descCountT, descCountT] at this
+    rw [this]
+
+/-- The formula walk's count is the same over the two piece tables. -/
+theorem descCountF_certPieces : ∀ {n r : V}, IsSemiformula LAct n r →
+    descCountF (certPieces : V) n r = descCountF (walkPieces : V) n r := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ descCountF (certPieces : V) n r = descCountF (walkPieces : V) n r)
+  · definability
+  · intro n k R v hkR hv
+    rw [descCountF_rel _ n hkR hv, descCountF_rel _ n hkR hv, descVecAux_count_certPieces n hv k le_rfl]
+  · intro n k R v hkR hv
+    rw [descCountF_nrel _ n hkR hv, descCountF_nrel _ n hkR hv, descVecAux_count_certPieces n hv k le_rfl]
+  · intro n; rw [descCountF_verum, descCountF_verum]
+  · intro n; rw [descCountF_falsum, descCountF_falsum]
+  · intro n p q hp hq ihp ihq
+    rw [descCountF_and _ n hp hq, descCountF_and _ n hp hq, ihp, ihq]
+  · intro n p q hp hq ihp ihq
+    rw [descCountF_or _ n hp hq, descCountF_or _ n hp hq, ihp, ihq]
+  · intro n p hp ih
+    rw [descCountF_all _ n hp, descCountF_all _ n hp, ih]
+  · intro n p hp ih
+    rw [descCountF_exs _ n hp, descCountF_exs _ n hp, ih]
+
+/-- **The walk of `neg r` has the same eigenvariable count as the walk of `r`** (`neg` swaps
+constructors pairwise and leaves the atoms' vectors alone). -/
+theorem descCountF_neg (Wd : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    descCountF Wd n (neg LAct r) = descCountF Wd n r := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ descCountF Wd n (neg LAct r) = descCountF Wd n r)
+  · definability
+  · intro n k R v hkR hv
+    rw [neg_rel hkR hv.isUTerm, descCountF_nrel Wd n hkR hv, descCountF_rel Wd n hkR hv]
+  · intro n k R v hkR hv
+    rw [neg_nrel hkR hv.isUTerm, descCountF_rel Wd n hkR hv, descCountF_nrel Wd n hkR hv]
+  · intro n; rw [neg_verum, descCountF_falsum, descCountF_verum]
+  · intro n; rw [neg_falsum, descCountF_verum, descCountF_falsum]
+  · intro n p q hp hq ihp ihq
+    rw [neg_and hp.isUFormula hq.isUFormula, descCountF_or Wd n hp.neg hq.neg, descCountF_and Wd n hp hq, ihp, ihq]
+  · intro n p q hp hq ihp ihq
+    rw [neg_or hp.isUFormula hq.isUFormula, descCountF_and Wd n hp.neg hq.neg, descCountF_or Wd n hp hq, ihp, ihq]
+  · intro n p hp ih
+    rw [neg_all hp.isUFormula, descCountF_exs Wd n hp.neg, descCountF_all Wd n hp, ih]
+  · intro n p hp ih
+    rw [neg_ex hp.isUFormula, descCountF_all Wd n hp.neg, descCountF_exs Wd n hp, ih]
+
+/-- The neg pass's offsets advance in lock-step too: `outCount Wd 1 n r = descCountF Wd n r`. -/
+theorem outCount_neg {Wd n r : V} (hr : IsSemiformula LAct n r) :
+    outCount Wd 1 n r = descCountF Wd n r := by
+  rw [outCount, imgF_one, descCountF_neg Wd hr]
+
+/-- A shift-free non-dropping list only grows its context. -/
+lemma subset_finalCtx_of_shiftsV_zero {Γ S : V} (hS : NoDrop S) (h0 : shiftsV S = 0) : Γ ⊆ finalCtx Γ S := by
+  intro x hx
+  have := mem_finalCtx_of_mem hS hx
+  rwa [h0, shiftIterV_zero] at this
+
+/-- The walk's closed-symbol and bridge rows, read from `certPieces`, are the walk's own steps. -/
+lemma mkStep_certPieces_funcRow (k f ev : V) :
+    mkStep (certPieces : V) (funcRow k f) ev = mkStep walkPieces (funcRow k f) ev := by
+  have hf : ∃ m : ℕ, m < walkRowCount ∧ funcRow k f = (m : V) := by
+    unfold funcRow
+    by_cases h1 : k = 0
+    · by_cases h2 : f = 0
+      · exact ⟨9, by decide, by simp [h1, h2]⟩
+      by_cases h3 : f = 1
+      · exact ⟨10, by decide, by simp [h1, h2, h3]⟩
+      by_cases h4 : f = 2
+      · exact ⟨13, by decide, by simp [h1, h2, h3, h4]⟩
+      · exact ⟨14, by decide, by simp [h1, h2, h3, h4]⟩
+    · by_cases h2 : f = 0
+      · exact ⟨11, by decide, by simp [h1, h2]⟩
+      · exact ⟨12, by decide, by simp [h1, h2]⟩
+  obtain ⟨m, hm, hfm⟩ := hf
+  rw [hfm, mkStep_certPieces_lt m hm]
+lemma mkStep_certPieces_relRow (R ev : V) :
+    mkStep (certPieces : V) (relRow R) ev = mkStep walkPieces (relRow R) ev := by
+  by_cases hR : R = 0
+  · rw [relRow, if_pos hR, show (36 : V) = ((36 : ℕ) : V) by simp, mkStep_certPieces_lt 36 (by decide)]
+  · rw [relRow, if_neg hR, show (37 : V) = ((37 : ℕ) : V) by simp, mkStep_certPieces_lt 37 (by decide)]
+lemma mkStep_certPieces_38 (ev : V) : mkStep (certPieces : V) 38 ev = mkStep walkPieces 38 ev := by
+  rw [show (38 : V) = ((38 : ℕ) : V) by simp, mkStep_certPieces_lt 38 (by decide)]
+lemma mkStep_certPieces_39 (ev : V) : mkStep (certPieces : V) 39 ev = mkStep walkPieces 39 ev := by
+  rw [show (39 : V) = ((39 : ℕ) : V) by simp, mkStep_certPieces_lt 39 (by decide)]
+
+end countBridges
+
+section eBounds
+
+/-! The witness-length side conditions of the `cok_` lemmas, from the two offset bounds
+`i + D + 1 ≤ E` (source) / `j + D + 1 ≤ E` (image) and the arity bound `2n + D + 8 ≤ E`. -/
+
+lemma E_eight {n D E : V} (h : 2 * n + D + 8 ≤ E) : (8 : V) ≤ E := le_trans le_add_self h
+lemma E_cT_n {n D E : V} (h : 2 * n + D + 8 ≤ E) : termLen LAct (cTV n) ≤ E :=
+  termLen_cTV_le (le_trans (add_le_add (le_self_add : 2 * n ≤ 2 * n + D) (by norm_num : (1 : V) ≤ 8)) h)
+lemma E_cT_le_two {m E : V} (hm : m ≤ 2) (h8 : (8 : V) ≤ E) : termLen LAct (cTV m) ≤ E :=
+  termLen_cTV_le (le_trans (add_le_add (mul_le_mul_of_nonneg_left hm zero_le) (le_refl (1 : V)))
+    (le_trans (by norm_num) h8))
+lemma E_cT_leaf {x n E : V} (h : 2 * n + 2 * (x + 1) + 8 ≤ E) : termLen LAct (cTV x) ≤ E :=
+  termLen_cTV_le (le_trans (show 2 * x + 1 ≤ 2 * (x + 1) by
+      rw [mul_add, mul_one]; exact add_le_add (le_refl (2 * x)) (by norm_num))
+    (le_trans le_add_self (le_trans le_self_add h)))
+lemma E_fvar {i D E : V} (h : i + D + 1 ≤ E) : termLen LAct (^&i : V) ≤ E :=
+  termLen_fvar_le (le_trans (add_le_add (le_self_add : i ≤ i + D) (le_refl (1 : V))) h)
+lemma E_fvar_succ {i D E : V} (hD : 1 ≤ D) (h : i + D + 1 ≤ E) : termLen LAct (^&(i + 1) : V) ≤ E :=
+  termLen_fvar_le (le_trans (add_le_add (add_le_add (le_refl i) hD) (le_refl (1 : V))) h)
+lemma E_vRef_succ {i D E m : V} (hD : 1 ≤ D) (h : i + D + 1 ≤ E) : termLen LAct (vRef (i + 1) m) ≤ E :=
+  termLen_vRef_le (le_trans (add_le_add (add_le_add (le_refl i) hD) (le_refl (1 : V))) h)
+lemma E_vRef_ct {i ct D E m : V} (hct : ct + 1 ≤ D) (h : i + D + 1 ≤ E) :
+    termLen LAct (vRef (i + 1 + ct) m) ≤ E :=
+  termLen_vRef_le (le_trans (le_of_eq (show i + 1 + ct + 1 = i + (ct + 1) + 1 by ring))
+    (le_trans (add_le_add (add_le_add (le_refl i) hct) (le_refl (1 : V))) h))
+lemma E_zero_term {E : V} (h8 : (8 : V) ≤ E) : termLen LAct (𝟎 : V) ≤ E := by
+  rw [← cTV_zero]; exact E_cT_le_two (by norm_num) h8
+lemma isSemiterm_zero_LAct : IsSemiterm LAct 0 (𝟎 : V) := by
+  rw [← cTV_zero]; exact cTV_semiterm_LAct 0 0
+
+end eBounds
+
 end ArithS
