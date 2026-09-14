@@ -691,3 +691,35 @@ goal itself, leaving a following `exact le_self_add` with "No goals") — use ex
 `add_le_add h₁ h₂`; `le_rfl` after a rewrite produces a stuck `Preorder ?m` instance — use
 `le_refl <explicit term>`. NOTE: `passTGraph_unique` does NOT exist yet (only `_exists`);
 uniqueness is part of the remaining `Cert` work.
+
+**§11 status — `Frag2` DONE (b0c0fe8): ALL TEN per-tag fragments now exist.** Build 3246 jobs,
+census 437, all standard. `gen_frag2.py` + `Frag2Rows.lean` (24 new rows at `gIdx = 126+k`,
+`frag2RowCount = 150`, `Frag2Table`/`frag2Pieces` extending `frag1Pieces` entrywise) and
+`Frag2.lean` (1075 lines): `nodeShift`, `nodeAll`, `nodeExs` (cap `M = 9`, BINARY tail — the
+witness term's length is charged), `nodeAxm` (leaf tail), each `node<Tag>Head` (4 steps, 1 shift:
+totality → `fstIdx<Tag>` → `Intro<Tag>` → `Dlen<Tag>`) + a Frag1 tail, with `Head_ok`, `_ok`
+(`len = 9`, `shiftsV = 1`, concluding `neg (goalFact (^&(is+1)) (bnum n)) ∈ finalCtx`), `sizeOK_`
+and `costSum_…_le`. NEW predicate `Paxch`/`axchFact` (the `Δ₁ch TAct` recognizer had no code in
+`RowInstB`). THE LAYOUT HYPOTHESES `Cert` MUST DISCHARGE (all stated as `neg … ∈ Γ`, the Frag1
+discipline): `nodeShift` — `setShiftFact (^&is) (^&ic)` (pure producer work, every row needed is
+already in the table) + `fstIdxFact`; `nodeAll` — `freeFact` (← `certFree`), `setShiftFact`,
+`insFact`, `allFact`/`memFact`, `fstIdxFact`; `nodeExs` — `tPiFact`/`tlenFact` (← `describeT` +
+term `lenSteps`), `leFact`, `substs1Fact` (← `certSubst` + `substsSubsts1`), `insFact`,
+`exsFact`/`memFact`, `fstIdxFact`; **`nodeAxm` — the ONE deliberate weakening, flagged in the file
+docstring and the census comment**: the whole recognizer chain of DESIGN §4.10 (case (i)
+`pinSteps σ` + `axiomRec σ`, case (ii) `qqAlls`/`bv`/`fvarVec` + `indRec` + the `Lib/Bridge`
+ℒₒᵣ↔LAct chain) is replaced by the single hypothesis `neg (axchFact (^&ip)) ∈ Γ`; when the
+recognizer producer lands it discharges exactly that and nothing else changes (`axiomRec σ` is
+PARAMETRIC in σ, so it needs one row per standard axiom). The fragments' PROLOGUES (§4.5(1)–(5),
+§4.6(1)–(3), §4.8(1)–(3), §4.10) are not emitted here — `Frag1`/`Frag2` are the `node(ν)` part only.
+TRAPS: (1) `Frag2.lean` must import `Frag1` as well as `Frag2Rows` (the symptom of the missing
+import is "Function expected at …" from autobound implicits, NOT "unknown identifier");
+(2) a generated row needs its predicate's `P…`/`…Fact` codes to exist already — registering a
+`PREDS` entry is not enough, the code block must be hand-written (§0 of `Frag2Rows`);
+(3) piece-table extension is FREE for the tails: every tail step reads an index `< frag1RowCount`,
+so `goalTail*` at `frag2Pieces` is definitionally the Frag1 one after three
+`mkStep_frag2Pieces_lt` rewrites (the same trick will serve any `Frag3`);
+(4) `dlenExs` yields `binaryT` only if the term-length object is an EIGENVARIABLE `^&ilt` — the
+numeral `bnum Lt` enters only through `leFact (^&ilt) (bnum Lt)` in the tail;
+(5) `introExs`'s dummy ninth witness is the literal `𝟎`, forcing cap `M = 9` and `ok.mono h89` on
+the `M = 8` siblings.
