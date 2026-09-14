@@ -149,6 +149,82 @@ instance dlenUnarySteps_definable :
     𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ dlenUnarySteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
   dlenUnarySteps_defined.to_definable
 
+noncomputable def dlenBinaryStepsDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y W tblN l n₁ n₂ L m₁ m₂ n. ∃ T, !binaryTDef T l n₁ n₂ ∧ ∃ e₁, !adjoinDef e₁ T 0 ∧
+    ∃ s₁, !mkStepDef s₁ W 41 e₁ ∧
+    ∃ zl, !qqFvarDef zl l ∧ ∃ za, !qqFvarDef za n₁ ∧ ∃ zb, !qqFvarDef zb n₂ ∧
+    ∃ bL, !bnumGraph bL L ∧ ∃ ba, !bnumGraph ba m₁ ∧ ∃ bb, !bnumGraph bb m₂ ∧
+    ∃ v₁, !adjoinDef v₁ bb 0 ∧ ∃ v₂, !adjoinDef v₂ ba v₁ ∧ ∃ v₃, !adjoinDef v₃ bL v₂ ∧
+    ∃ v₄, !adjoinDef v₄ zb v₃ ∧ ∃ v₅, !adjoinDef v₅ za v₄ ∧ ∃ v₆, !adjoinDef v₆ zl v₅ ∧
+    ∃ e₂, !adjoinDef e₂ T v₆ ∧ ∃ s₂, !mkStepDef s₂ W 107 e₂ ∧
+    ∃ A, !bin3FactDef A L m₁ m₂ n ∧ ∃ dA, !bin3CodeDef dA tblN L m₁ m₂ n ∧ ∃ q, !pairDef q A dA ∧
+    ∃ s₃, !pairDef s₃ 7 q ∧
+    ∃ bn, !bnumGraph bn n ∧ ∃ p₁, !qqAddGraph p₁ bL ba ∧ ∃ p₂, !qqAddGraph p₂ p₁ bb ∧
+    ∃ p₃, !qqAddGraph p₃ p₂ ↑(𝟏 : ℕ) ∧
+    ∃ w₁, !adjoinDef w₁ T 0 ∧ ∃ w₂, !adjoinDef w₂ p₃ w₁ ∧ ∃ e₄, !adjoinDef e₄ bn w₂ ∧
+    ∃ s₄, !mkStepDef s₄ W 110 e₄ ∧
+    ∃ r₄, !adjoinDef r₄ s₄ 0 ∧ ∃ r₃, !adjoinDef r₃ s₃ r₄ ∧ ∃ r₂, !adjoinDef r₂ s₂ r₃ ∧ !adjoinDef y s₁ r₂”
+
+instance dlenBinarySteps_defined :
+    𝚺₁.DefinedFunction
+      (fun v : Fin 9 → V ↦ dlenBinarySteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8))
+      dlenBinaryStepsDef := .mk fun v ↦ by
+  simp [dlenBinaryStepsDef, dlenBinarySteps, binaryT_defined.iff, bin3Fact_defined.iff, bin3Code_defined.iff,
+    bnum.defined.iff, mkStep_defined.iff, sLemma, numeral_eq_natCast]
+instance dlenBinarySteps_definable :
+    𝚺₁.DefinableFunction
+      (fun v : Fin 9 → V ↦ dlenBinarySteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
+  dlenBinarySteps_defined.to_definable
+
+noncomputable def goalTailLeafDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W tblN l L n s. ∃ D, !dlenLeafStepsDef D W tblN l L n ∧ ∃ z, !qqFvarDef z 0 ∧ ∃ T, !leafTDef T l ∧
+    ∃ zs, !qqFvarDef zs s ∧ ∃ bn, !bnumGraph bn n ∧ ∃ q₁, !pairDef q₁ zs bn ∧ ∃ q₂, !pairDef q₂ T q₁ ∧
+    ∃ q₃, !pairDef q₃ z q₂ ∧ ∃ g, !pairDef g 6 q₃ ∧ ∃ e, !adjoinDef e g 0 ∧ !appendVDef y D e”
+
+instance goalTailLeaf_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ goalTailLeaf (v 0) (v 1) (v 2) (v 3) (v 4) (v 5))
+      goalTailLeafDef := .mk fun v ↦ by
+  simp [goalTailLeafDef, goalTailLeaf, dlenLeafSteps_defined.iff, leafT_defined.iff, bnum.defined.iff,
+    appendV_defined.iff, sGoal, numeral_eq_natCast]
+instance goalTailLeaf_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ goalTailLeaf (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
+  goalTailLeaf_defined.to_definable
+
+noncomputable def goalTailUnaryDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y W tblN l n₁ L m₁ n s. ∃ D, !dlenUnaryStepsDef D W tblN l n₁ L m₁ n ∧ ∃ z, !qqFvarDef z 0 ∧
+    ∃ T, !unaryTDef T l n₁ ∧ ∃ zs, !qqFvarDef zs s ∧ ∃ bn, !bnumGraph bn n ∧ ∃ q₁, !pairDef q₁ zs bn ∧
+    ∃ q₂, !pairDef q₂ T q₁ ∧ ∃ q₃, !pairDef q₃ z q₂ ∧ ∃ g, !pairDef g 6 q₃ ∧ ∃ e, !adjoinDef e g 0 ∧
+    !appendVDef y D e”
+
+instance goalTailUnary_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ goalTailUnary (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7))
+      goalTailUnaryDef := .mk fun v ↦ by
+  simp [goalTailUnaryDef, goalTailUnary, dlenUnarySteps_defined.iff, unaryT_defined.iff, bnum.defined.iff,
+    appendV_defined.iff, sGoal, numeral_eq_natCast]
+instance goalTailUnary_definable :
+    𝚺₁.DefinableFunction
+      (fun v : Fin 8 → V ↦ goalTailUnary (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
+  goalTailUnary_defined.to_definable
+
+noncomputable def goalTailBinaryDef : 𝚺₁.Semisentence 11 := .mkSigma
+  “y W tblN l n₁ n₂ L m₁ m₂ n s. ∃ D, !dlenBinaryStepsDef D W tblN l n₁ n₂ L m₁ m₂ n ∧ ∃ z, !qqFvarDef z 0 ∧
+    ∃ T, !binaryTDef T l n₁ n₂ ∧ ∃ zs, !qqFvarDef zs s ∧ ∃ bn, !bnumGraph bn n ∧ ∃ q₁, !pairDef q₁ zs bn ∧
+    ∃ q₂, !pairDef q₂ T q₁ ∧ ∃ q₃, !pairDef q₃ z q₂ ∧ ∃ g, !pairDef g 6 q₃ ∧ ∃ e, !adjoinDef e g 0 ∧
+    !appendVDef y D e”
+
+instance goalTailBinary_defined :
+    𝚺₁.DefinedFunction
+      (fun v : Fin 10 → V ↦
+        goalTailBinary (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9))
+      goalTailBinaryDef := .mk fun v ↦ by
+  simp [goalTailBinaryDef, goalTailBinary, dlenBinarySteps_defined.iff, binaryT_defined.iff, bnum.defined.iff,
+    appendV_defined.iff, sGoal, numeral_eq_natCast]
+instance goalTailBinary_definable :
+    𝚺₁.DefinableFunction
+      (fun v : Fin 10 → V ↦
+        goalTailBinary (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
+  goalTailBinary_defined.to_definable
+
 end definability
 
 end ArithS
