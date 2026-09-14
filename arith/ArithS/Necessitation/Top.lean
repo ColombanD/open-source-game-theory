@@ -1717,4 +1717,98 @@ theorem topD_pb (N' B' N₂ B₂ N₃ B₃ : ℕ) (k d : V) (hd : d ≤ gBudget 
     (hMul₂.mono hc (e' := 3) (f' := 0) (by norm_num) le_rfl)).add
     (hLe.mono hc (e' := 3) (f' := 0) (by norm_num) le_rfl)
 
+/-! ### The step-cost constants are linear (`stepK`, `stepKM`, `costK`) -/
+
+section costLin
+
+lemma hornCost_le (N E B : V) : hornCost N E 0 8 8 B ≤ 684 * (N + B * E + B + E + 1) := by
+  unfold hornCost
+  exact le_iff_exists_add.mpr ⟨683 * N + 450 * (B * E) + 683 * B + 676 * E, by ring⟩
+
+lemma introCost_le (N E B : V) : introCost N E 0 8 8 B ≤ 693 * (N + B * E + B + E + 1) := by
+  unfold introCost
+  exact le_iff_exists_add.mpr ⟨692 * N + 423 * (B * E) + 692 * B + 685 * E, by ring⟩
+
+lemma stepK_le (N E B : V) : stepK N E B ≤ 1387 * (N + B * E + B + E + 1) := by
+  unfold stepK
+  have h1 := hornCost_le N E B
+  have h2 := introCost_le N E B
+  have h3 : 6 * (B * E) + 4 ≤ 10 * (N + B * E + B + E + 1) :=
+    le_iff_exists_add.mpr ⟨10 * N + 4 * (B * E) + 10 * B + 10 * E + 6, by ring⟩
+  calc hornCost N E 0 8 8 B + (6 * (B * E) + 4) + introCost N E 0 8 8 B
+      ≤ 684 * (N + B * E + B + E + 1) + 10 * (N + B * E + B + E + 1) + 693 * (N + B * E + B + E + 1) :=
+        add_le_add (add_le_add h1 h3) h2
+    _ = 1387 * (N + B * E + B + E + 1) := by ring
+
+lemma stepKM_le (N E B : V) : stepKM N E B ((8 : ℕ) : V) ≤ 1387 * (N + B * E + B + E + 1) := by
+  have : stepKM N E B ((8 : ℕ) : V) = stepK N E B := by
+    unfold stepKM stepK; simp only [Nat.cast_ofNat]
+  rw [this]; exact stepK_le N E B
+
+lemma costK_le (N E B Q D : V) :
+    costK N E B ((8 : ℕ) : V) Q D ≤ 1387 * (N + B * E + B + E + 1) + 27 * (Q * E) + 2 * E + 7 * Q + D + 42 := by
+  unfold costK
+  exact add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (stepKM_le N E B) le_rfl) le_rfl) le_rfl) le_rfl) le_rfl
+
+end costLin
+
+/-! ### The bound is cubic -/
+
+section topBoundPb
+
+variable {G u : V} (hc : PBCtx G u)
+include hc
+
+/-- The constant of `topBound_pb` (read off the graded derivation; see `topDc`). -/
+def topBc (cN cB cE ck cχ cS cF cL cD : ℕ) : ℕ :=
+  (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * (cE * 1)) + ck * (cE * 1) + 15 * (cF + cL * (4 * (cB * cE)) + cχ * 1 + ck * 1) + 240 * (4 * (cB * cE) + 2 * (4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * (cE * 1)) + ck * (cE * 1)) + cB * cE)) + 1 + 8 * (cL * (1387 * (cN + cB * cE + cB + cE + 1) + 36 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE))))) + 8 * (cχ * 1 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cN + cE + 1 * 1)) + ck * 1 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * (cE * 1)) + cN + cE + 1 * 1) + 15 * (1387 * (cN + cB * cE + cB + cE + 1) + 27 * ((4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * (cE * 1)) + ck * (cE * 1)) + cB * cE) * cE) + 2 * cE + 7 * (4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * (cE * 1)) + ck * (cE * 1)) + cB * cE) + cD + 42 + 35 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * (cE * 1)) + ck * (cE * 1) + 15 * (cF + cL * (4 * (cB * cE)) + cχ * 1 + ck * 1) + 240 * (4 * (cB * cE) + 2 * (4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * (cE * 1)) + ck * (cE * 1)) + cB * cE)) + (cF + cL * (4 * (cB * cE)) + cχ * 1 + ck * 1 + 15 * (4 * (cB * cE) + 2 * (4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * (cE * 1)) + ck * (cE * 1)) + cB * cE))))))
+
+/-- **`topBound` is cubic** in `G` given the graded bounds on its inputs: `N, B, Ck, Cχ` standard,
+`E, S₀, F₀, d + 1 ≤ c·G`, `Lr, lk + 1 ≤ c·u`, `D ≤ cD·G³`. -/
+theorem topBound_pb {cN cB cE ck cχ cS cF cL cD : ℕ} {N B E Ck Cχ lk d S₀ F₀ Lr D : V}
+    (hN : PB G u cN N 0 0) (hB : PB G u cB B 0 0) (hE : PB G u cE E 1 0) (hCk : PB G u ck Ck 0 0)
+    (hCχ : PB G u cχ Cχ 0 0) (hu1 : PB G u 1 (lk + 1) 0 1) (hd1 : PB G u 1 (d + 1) 1 0)
+    (hS : PB G u cS S₀ 1 0) (hF : PB G u cF F₀ 1 0) (hL : PB G u cL Lr 0 1) (hD : PB G u cD D 3 0) :
+    PB G u (topBc cN cB cE ck cχ cS cF cL cD) (topBound N B E Ck Cχ lk d S₀ F₀ Lr D) 3 0 := by
+  unfold topBc
+  have h1 : PB G u 1 (1 : V) 0 0 := PB.one'
+  have h2 : PB G u 2 (2 : V) 0 0 := PB.two
+  have h4 : PB G u 4 (4 : V) 0 0 := PB.natCast 4 (by norm_num)
+  have h7 : PB G u 7 (7 : V) 0 0 := PB.seven
+  have h15 : PB G u 15 (15 : V) 0 0 := PB.natCast 15 (by norm_num)
+  have h27 : PB G u 27 (27 : V) 0 0 := PB.natCast 27 (by norm_num)
+  have h36 : PB G u 36 (36 : V) 0 0 := PB.natCast 36 (by norm_num)
+  have h42 : PB G u 42 (42 : V) 0 0 := PB.natCast 42 (by norm_num)
+  have h240 : PB G u 240 (15 * 15 + 15 : V) 0 0 := PB.natCast 240 (by norm_num)
+  have h35 : PB G u 35 (3 * ((8 : ℕ) : V) + 11) 0 0 := PB.natCast 35 (by norm_num)
+  have h1387 : PB G u 1387 (1387 : V) 0 0 := PB.natCast 1387 (by norm_num)
+  have hBE := (hB.mul hE).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)
+  have h4BE := (h4.mul hBE).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)
+  have hLin := ((((((hN).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)).add hBE).add ((hB).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))).add hE).add ((h1).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)
+  have hStepK := PB.of_le (stepK_le N E B) ((h1387.mul hLin).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))
+  have hLF := (hL.mul hF).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num)
+  have hLL := ((hL.mul hL).add ((hL).mono hc (e' := 0) (f' := 2) (by norm_num) (by norm_num))).mono hc (e' := 0) (f' := 2) (by norm_num) (by norm_num)
+  have hS1 := ((((hS).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num)).add ((hLF).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).add ((hLL.mul h4BE).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num)
+  have hF1 := (((hF).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num)).add ((hL.mul h4BE).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num)
+  have hS2 := (hS1.add ((hCχ.mul (hE.mul hu1)).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num)
+  have hF2 := (hF1.add ((hCχ.mul hu1).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num)
+  have hS2r := PB.reduce hc ((hS2).mono hc (e' := 1) (f' := 3) (by norm_num) (by norm_num))
+  have hS3 := (hS2r.add ((hCk.mul (hE.mul hd1)).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)
+  have hF3 := ((PB.uG hc hF2).add ((hCk.mul hd1).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)
+  have hQ := ((h4.mul hS3).add ((hBE).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)
+  have hGr := (((h4BE).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)).add (h2.mul hQ)).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)
+  have hLeaf := ((((hS3.add (h15.mul hF3)).add (h240.mul hGr)).add ((h1).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)
+  have hRoot := (PB.reduce hc ((hL.mul (((hStepK).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num)).add (h36.mul hS1))).mono hc (e' := 1) (f' := 3) (by norm_num) (by norm_num))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)
+  have hu2 : PB G u (1 * 1) ((lk + 1) ^ 2) 0 2 := PB.of_le (le_of_eq (pow_two _)) (hu1.mul hu1)
+  have hd2 : PB G u (1 * 1) ((d + 1) ^ 2) 2 0 := PB.of_le (le_of_eq (pow_two _)) (hd1.mul hd1)
+  have hPin := (PB.reduce hc (((hCχ.mul hu1).mul ((((hS1.add ((hN).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).add ((hE).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).add ((hu2).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))))).mono hc (e' := 1) (f' := 3) (by norm_num) (by norm_num))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)
+  have hVer := ((hCk.mul hd1).mul ((((hS2r.add ((hN).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).add ((hE).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).add hd2))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)
+  have hCostK := PB.of_le (costK_le N E B (4 * (S₀ + Lr * F₀ + (Lr * Lr + Lr) * (4 * (B * E)) + Cχ * (E * (lk + 1)) + Ck * (E * (d + 1))) + B * E) D) (((((((((h1387.mul hLin).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)).add ((h27.mul (hQ.mul hE)).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).add ((h2.mul hE).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).add ((h7.mul hQ).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).add hD).add ((h42).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))
+  have hInner := (((hS3.add (h15.mul hF3)).add (h240.mul hGr)).add (hF3.add (h15.mul hGr))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)
+  have hClose := (h15.mul (hCostK.add ((h35.mul hInner).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)
+  unfold topBound topQ topS3 topF3 topS2 topF2 topS1 topF1 growK
+  exact (((hLeaf.add hRoot).add hPin).add hVer).add hClose
+
+end topBoundPb
+
 end ArithS
