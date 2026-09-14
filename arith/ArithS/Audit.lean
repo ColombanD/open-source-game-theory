@@ -852,7 +852,9 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- bound) with its transport, the builder `layoutSteps` (member blocks, chain, the `setLen` fold with the new
 -- row `setLenSingLe`), the leaves (`proAxL` = re-indexed `certNeg`; `layout_verum`), the identification of an
 -- `insert` object with the child's chain (`subChain`, `loopA`/`loopB`/`blockP`, `identIns`), the `insert`
--- child's prologue `proIns` and recovery `postIns`, and the `and`/`or` readings. Nothing below is an axiom.
+-- child's prologue `proIns` and recovery `postIns`, the `and`/`or` readings, the `cut` prefix `proCutPre`
+-- (walk + lengths of `p` and `neg p`, `certNeg`) and the `wk` prologue `proWk` (Loop W + the subset fold).
+-- Nothing below is an axiom.
 #print axioms exists_proTable
 #print axioms listOK_reidxL
 #print axioms costSum_reidxL
@@ -872,5 +874,8 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms postIns_ok
 #print axioms layout_and
 #print axioms layout_or
+#print axioms proCutPre_ok
+#print axioms loopW_ok
+#print axioms proWk_ok
 
 end ArithS
