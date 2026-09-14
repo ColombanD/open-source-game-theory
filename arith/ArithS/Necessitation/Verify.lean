@@ -104,6 +104,51 @@ instance bin3Fact_defined : 𝚺₁-Function₄ (bin3Fact : V → V → V → V 
   simp [bin3FactDef, bin3Fact, bnum.defined.iff, leFact_defined.iff, numeral_eq_natCast]
 instance bin3Fact_definable : 𝚺₁-Function₄ (bin3Fact : V → V → V → V → V) := bin3Fact_defined.to_definable
 
+/-! ### 2.2 The three `dlen` tails and the three goal tails
+
+`dlenLeafSteps W tblN l L n = mkStep W 41 ?[leafT l] ∷ mkStep W 105 ?[leafT l, ^&l, bnum L] ∷
+sLemma (leafFact L n) (leafCode tblN L n) ∷ mkStep W 110 ?[bnum n, bnum L ^+ 𝟏, leafT l] ∷ 0`
+(`Frag1.lean:537-552`), and the unary/binary tails in the same shape; `goalTail<K>` appends one
+`sGoal` step. `sLemma A dA = ⟪7, A, dA⟫`, `sGoal e n s u = ⟪6, e, n, s, u⟫` (`Chain.lean:1395`)
+are pair codes, so they enter the blueprints through `pairDef`. -/
+
+noncomputable def dlenLeafStepsDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W tblN l L n. ∃ T, !leafTDef T l ∧ ∃ e₁, !adjoinDef e₁ T 0 ∧ ∃ s₁, !mkStepDef s₁ W 41 e₁ ∧
+    ∃ z, !qqFvarDef z l ∧ ∃ bL, !bnumGraph bL L ∧ ∃ v₁, !adjoinDef v₁ bL 0 ∧ ∃ v₂, !adjoinDef v₂ z v₁ ∧
+    ∃ e₂, !adjoinDef e₂ T v₂ ∧ ∃ s₂, !mkStepDef s₂ W 105 e₂ ∧
+    ∃ A, !leafFactDef A L n ∧ ∃ dA, !leafCodeDef dA tblN L n ∧ ∃ q, !pairDef q A dA ∧ ∃ s₃, !pairDef s₃ 7 q ∧
+    ∃ bn, !bnumGraph bn n ∧ ∃ bL1, !qqAddGraph bL1 bL ↑(𝟏 : ℕ) ∧ ∃ w₁, !adjoinDef w₁ T 0 ∧
+    ∃ w₂, !adjoinDef w₂ bL1 w₁ ∧ ∃ e₄, !adjoinDef e₄ bn w₂ ∧ ∃ s₄, !mkStepDef s₄ W 110 e₄ ∧
+    ∃ r₄, !adjoinDef r₄ s₄ 0 ∧ ∃ r₃, !adjoinDef r₃ s₃ r₄ ∧ ∃ r₂, !adjoinDef r₂ s₂ r₃ ∧ !adjoinDef y s₁ r₂”
+
+instance dlenLeafSteps_defined :
+    𝚺₁-Function₅ (dlenLeafSteps : V → V → V → V → V → V) via dlenLeafStepsDef := .mk fun v ↦ by
+  simp [dlenLeafStepsDef, dlenLeafSteps, leafT_defined.iff, leafFact_defined.iff, leafCode_defined.iff,
+    bnum.defined.iff, mkStep_defined.iff, sLemma, numeral_eq_natCast]
+instance dlenLeafSteps_definable :
+    𝚺₁.DefinableFunction₅ (dlenLeafSteps : V → V → V → V → V → V) := dlenLeafSteps_defined.to_definable
+
+noncomputable def dlenUnaryStepsDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W tblN l n₁ L m₁ n. ∃ T, !unaryTDef T l n₁ ∧ ∃ e₁, !adjoinDef e₁ T 0 ∧ ∃ s₁, !mkStepDef s₁ W 41 e₁ ∧
+    ∃ zl, !qqFvarDef zl l ∧ ∃ zn, !qqFvarDef zn n₁ ∧ ∃ bL, !bnumGraph bL L ∧ ∃ bm, !bnumGraph bm m₁ ∧
+    ∃ v₁, !adjoinDef v₁ bm 0 ∧ ∃ v₂, !adjoinDef v₂ bL v₁ ∧ ∃ v₃, !adjoinDef v₃ zn v₂ ∧
+    ∃ v₄, !adjoinDef v₄ zl v₃ ∧ ∃ e₂, !adjoinDef e₂ T v₄ ∧ ∃ s₂, !mkStepDef s₂ W 106 e₂ ∧
+    ∃ A, !bin2FactDef A L m₁ n ∧ ∃ dA, !bin2CodeDef dA tblN L m₁ n ∧ ∃ q, !pairDef q A dA ∧
+    ∃ s₃, !pairDef s₃ 7 q ∧
+    ∃ bn, !bnumGraph bn n ∧ ∃ sm, !qqAddGraph sm bL bm ∧ ∃ sm1, !qqAddGraph sm1 sm ↑(𝟏 : ℕ) ∧
+    ∃ w₁, !adjoinDef w₁ T 0 ∧ ∃ w₂, !adjoinDef w₂ sm1 w₁ ∧ ∃ e₄, !adjoinDef e₄ bn w₂ ∧
+    ∃ s₄, !mkStepDef s₄ W 110 e₄ ∧
+    ∃ r₄, !adjoinDef r₄ s₄ 0 ∧ ∃ r₃, !adjoinDef r₃ s₃ r₄ ∧ ∃ r₂, !adjoinDef r₂ s₂ r₃ ∧ !adjoinDef y s₁ r₂”
+
+instance dlenUnarySteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ dlenUnarySteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6))
+      dlenUnaryStepsDef := .mk fun v ↦ by
+  simp [dlenUnaryStepsDef, dlenUnarySteps, unaryT_defined.iff, bin2Fact_defined.iff, bin2Code_defined.iff,
+    bnum.defined.iff, mkStep_defined.iff, sLemma, numeral_eq_natCast]
+instance dlenUnarySteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ dlenUnarySteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  dlenUnarySteps_defined.to_definable
+
 end definability
 
 end ArithS
