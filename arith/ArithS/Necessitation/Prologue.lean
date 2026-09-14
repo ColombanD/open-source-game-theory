@@ -1868,4 +1868,248 @@ theorem layout_verum {tbl N Wc T s Γ i : V} (htbl : TableOK tbl N) (hP : ProTab
 
 end leaves
 
+/-! ## 4. Identification of an `insert` object with a chain (`DESIGN_fragments.md` §3.4)
+
+The child's sequent object the `Intro` rows need is a fresh `insertTotalC` object `cp = insert p s`; the child's
+own layout is the CHAIN `s''` over the sorted members of `insert p s`. `eqFactB cp s''` is derived by
+`subsetAntisymm` from `s'' ⊆ cp` (every member of the chain is in `cp`, folded by `insertSubset` along the
+child's chain) and `cp ⊆ s''` (the parent's chain folded the same way, then one more `insertSubset` for `p`);
+the per-member facts come from `eqSteps` between the two walk dossiers of the same code. -/
+
+section identify
+
+/-! ### 4.1 Counting a chain down without subtraction in a blueprint -/
+
+/-- `jOf k c = k − (c + 1)` when `c + 1 ≤ k` (else `0`): the member index of the `c`-th link from the inside. -/
+noncomputable def jOf (k c : V) : V := if c + 1 ≤ k then k - (c + 1) else 0
+
+noncomputable def jOfDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y k c. (c + 1 ≤ k → y + (c + 1) = k) ∧ (¬ c + 1 ≤ k → y = 0)”
+
+instance jOf_defined : 𝚺₁-Function₂ (jOf : V → V → V) via jOfDef := .mk fun v ↦ by
+  simp [jOfDef, jOf]
+  by_cases h : v 2 + 1 ≤ v 1
+  · have h' : ¬ v 1 < v 2 + 1 := not_lt.mpr h
+    simp [h, h']
+    constructor
+    · intro e; exact eq_tsub_of_add_eq e
+    · intro e; rw [e]; exact tsub_add_cancel_of_le h
+  · have h' : v 1 < v 2 + 1 := not_le.mp h
+    simp [h, h']
+instance jOf_definable : 𝚺₁-Function₂ (jOf : V → V → V) := jOf_defined.to_definable
+
+lemma jOf_of_le {k c : V} (h : c + 1 ≤ k) : jOf k c = k - (c + 1) := by unfold jOf; rw [if_pos h]
+
+lemma jOf_add {k c : V} (h : c + 1 ≤ k) : jOf k c + (c + 1) = k := by
+  rw [jOf_of_le h]; exact tsub_add_cancel_of_le h
+
+/-! ### 4.2 The links and the fold -/
+
+/-- Link `c` (member `j = jOf k' c`): `insertSubset [s_{j+1}, X_j, A, s_j]` in the layout frame at chain offset
+`i'` with `k'` members and offsets `os`. -/
+noncomputable def subLink (W i' k' os A c : V) : V :=
+  mkStep W 112 ?[prevI i' k' (jOf k' c), A, ^&(mTop i' k' (nthFromEnd os c)), ^&(i' + (k' + 1 + jOf k' c))]
+
+noncomputable def subLinkDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W i k os A c. ∃ j, !jOfDef j k c ∧ ∃ a, a = i + (2 * k + 1) ∧ ∃ b, b = i + (k + 1 + j) ∧ ∃ pv, !prevAtDef pv a b ∧
+    ∃ o, !nthFromEndDef o os c ∧ ∃ t, t = i + (2 * k + 1 + o) ∧ ∃ zt, !qqFvarDef zt t ∧ ∃ zs, !qqFvarDef zs b ∧
+    ∃ e₁, !adjoinDef e₁ zs 0 ∧ ∃ e₂, !adjoinDef e₂ zt e₁ ∧ ∃ e₃, !adjoinDef e₃ A e₂ ∧ ∃ e₄, !adjoinDef e₄ pv e₃ ∧
+    !mkStepDef y W 112 e₄”
+
+instance subLink_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ subLink (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) subLinkDef := .mk
+  fun v ↦ by
+    simp [subLinkDef, subLink, prevI, mTop, jOf_defined.iff, prevAt_defined.iff, nthFromEnd_defined.iff,
+      mkStep_defined.iff, numeral_eq_natCast]
+
+namespace SubChain
+
+/-- Packed parameters `p = ⟪W, i', k', os, A⟫`. -/
+noncomputable def blueprint : PR.Blueprint 1 where
+  zero := .mkSigma “y p. ∃ W, !pi₁Def W p ∧ ∃ q₁, !pi₂Def q₁ p ∧ ∃ q₂, !pi₂Def q₂ q₁ ∧ ∃ q₃, !pi₂Def q₃ q₂ ∧
+    ∃ A, !pi₂Def A q₃ ∧ ∃ e, !adjoinDef e A 0 ∧ ∃ s, !mkStepDef s W 81 e ∧ !adjoinDef y s 0”
+  succ := .mkSigma “y ih c p. ∃ W, !pi₁Def W p ∧ ∃ q₁, !pi₂Def q₁ p ∧ ∃ i, !pi₁Def i q₁ ∧ ∃ q₂, !pi₂Def q₂ q₁ ∧
+    ∃ k, !pi₁Def k q₂ ∧ ∃ q₃, !pi₂Def q₃ q₂ ∧ ∃ os, !pi₁Def os q₃ ∧ ∃ A, !pi₂Def A q₃ ∧
+    ∃ l, !subLinkDef l W i k os A c ∧ ∃ e, !adjoinDef e l 0 ∧ !appendVDef y ih e”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun v ↦ ?[mkStep (π₁ (v 0)) 81 ?[π₂ (π₂ (π₂ (π₂ (v 0))))]]
+  succ := fun v c ih ↦ appendV ih ?[subLink (π₁ (v 0)) (π₁ (π₂ (v 0))) (π₁ (π₂ (π₂ (v 0))))
+    (π₁ (π₂ (π₂ (π₂ (v 0))))) (π₂ (π₂ (π₂ (π₂ (v 0))))) c]
+  zero_defined := .mk fun v ↦ by simp [blueprint, mkStep_defined.iff, numeral_eq_natCast]
+  succ_defined := .mk fun v ↦ by simp [blueprint, subLink_defined.iff, appendV_defined.iff]
+
+end SubChain
+
+noncomputable def subChainAux (p c : V) : V := SubChain.construction.result ![p] c
+
+noncomputable def subChainAuxDef : 𝚺₁.Semisentence 3 :=
+  SubChain.blueprint.resultDef |>.rew (Rew.subst ![#0, #2, #1])
+
+instance subChainAux_defined : 𝚺₁-Function₂ (subChainAux : V → V → V) via subChainAuxDef := .mk
+  fun v ↦ by simp [SubChain.construction.result_defined_iff, subChainAuxDef]; rfl
+instance subChainAux_definable : 𝚺₁-Function₂ (subChainAux : V → V → V) := subChainAux_defined.to_definable
+
+lemma subChainAux_zero (W i' k' os A : V) : subChainAux ⟪W, i', k', os, A⟫ 0 = ?[mkStep W 81 ?[A]] := by
+  simp [subChainAux, SubChain.construction]
+lemma subChainAux_succ (W i' k' os A c : V) :
+    subChainAux ⟪W, i', k', os, A⟫ (c + 1) = appendV (subChainAux ⟪W, i', k', os, A⟫ c) ?[subLink W i' k' os A c] := by
+  simp [subChainAux, SubChain.construction]
+
+/-- **`subChain W i' k' os A`** — `subsetFact s A` for the chain `s` laid out at offset `i'` (`k'` members, offsets
+`os`), from `memFact X_j A` for every member. -/
+noncomputable def subChain (W i' k' os A : V) : V := subChainAux ⟪W, i', k', os, A⟫ k'
+
+noncomputable def subChainDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W i k os A. ∃ q₃, !pairDef q₃ os A ∧ ∃ q₂, !pairDef q₂ k q₃ ∧ ∃ q₁, !pairDef q₁ i q₂ ∧ ∃ p, !pairDef p W q₁ ∧
+    !subChainAuxDef y p k”
+
+instance subChain_defined : 𝚺₁-Function₅ (subChain : V → V → V → V → V → V) via subChainDef := .mk
+  fun v ↦ by simp [subChainDef, subChain, subChainAux_defined.iff]
+
+/-! ### 4.3 The fold is applicable -/
+
+/-- The fold's invariant after `c` links: the derived subset fact is about `𝟎` (`c = 0`) or `s_{jOf k' (c−1)}`. -/
+def SOut (tbl E p Γ c : V) : Prop :=
+  ListOK tbl E ((8 : ℕ) : V) Γ (subChainAux p c) ∧ NoDrop (subChainAux p c) ∧ HornOnly (subChainAux p c) ∧
+  shiftsV (subChainAux p c) = 0 ∧ len (subChainAux p c) = c + 1 ∧
+  (c = 0 → neg LAct (subsetFact (𝟎 : V) (π₂ (π₂ (π₂ (π₂ p))))) ∈ finalCtx Γ (subChainAux p c)) ∧
+  (1 ≤ c → neg LAct (subsetFact (^&(π₁ (π₂ p) + (π₁ (π₂ (π₂ p)) + 1 + jOf (π₁ (π₂ (π₂ p))) (c - 1))))
+    (π₂ (π₂ (π₂ (π₂ p))))) ∈ finalCtx Γ (subChainAux p c))
+
+set_option maxHeartbeats 1000000 in
+instance sOut_definable : 𝚫₁-Relation₅ (SOut : V → V → V → V → V → Prop) := by
+  unfold SOut; definability
+
+lemma sOut_iff (tbl E W i' k' os A Γ c : V) : SOut tbl E ⟪W, i', k', os, A⟫ Γ c ↔
+    (ListOK tbl E ((8 : ℕ) : V) Γ (subChainAux ⟪W, i', k', os, A⟫ c) ∧ NoDrop (subChainAux ⟪W, i', k', os, A⟫ c) ∧
+    HornOnly (subChainAux ⟪W, i', k', os, A⟫ c) ∧ shiftsV (subChainAux ⟪W, i', k', os, A⟫ c) = 0 ∧
+    len (subChainAux ⟪W, i', k', os, A⟫ c) = c + 1 ∧
+    (c = 0 → neg LAct (subsetFact (𝟎 : V) A) ∈ finalCtx Γ (subChainAux ⟪W, i', k', os, A⟫ c)) ∧
+    (1 ≤ c → neg LAct (subsetFact (^&(i' + (k' + 1 + jOf k' (c - 1)))) A) ∈ finalCtx Γ (subChainAux ⟪W, i', k', os, A⟫ c))) := by
+  simp only [SOut, pi₁_pair, pi₂_pair]
+
+/-- The chain facts a `subChain` reads: the insert facts of the layout frame and the member facts against `A`. -/
+def SubIn (Γ i' k' os A : V) : Prop :=
+  ∀ j < k', neg LAct (insFact (^&(i' + (k' + 1 + j))) (^&(mTop i' k' os.[j])) (prevI i' k' j)) ∈ Γ ∧
+    neg LAct (memFact (^&(mTop i' k' os.[j])) A) ∈ Γ
+
+lemma prevI_of_last {i' k' j : V} (h : j + 1 = k') : prevI i' k' j = (𝟎 : V) := by
+  unfold prevI prevAt; rw [if_pos (by rw [← h]; ring)]
+
+lemma prevI_of_lt {i' k' j : V} (h : j + 1 < k') : prevI i' k' j = ^&(i' + (k' + 1 + j) + 1) := by
+  unfold prevI
+  apply prevAt_of_lt
+  calc i' + (k' + 1 + j) + 1 = i' + (k' + 1) + (j + 1) := by ring
+    _ < i' + (k' + 1) + k' := (add_lt_add_iff_left _).mpr h
+    _ = i' + (2 * k' + 1) := by ring
+
+set_option maxHeartbeats 2000000 in
+/-- **The subset fold is applicable**, link by link. -/
+theorem subChainAux_ok {tbl N W i' k' os A E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hA : IsSemiterm LAct 0 A) (hAE : termLen LAct A ≤ E)
+    (hkE : i' + (2 * k' + 2) ≤ E) (hosE : ∀ j < k', mTop i' k' os.[j] + 1 ≤ E) (hos : len os = k')
+    (hin : SubIn Γ i' k' os A) :
+    ∀ c ≤ k', SOut tbl E ⟪W, i', k', os, A⟫ Γ c := by
+  have hL := hP.layoutTable
+  have hF := hP.frag1Table
+  have e81 : ∀ ev : V, mkStep proPieces (81 : V) ev = mkStep layoutPieces (81 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 81 (by decide) ev; simpa using this
+  have e112 : ∀ ev : V, mkStep proPieces (112 : V) ev = mkStep frag1Pieces (112 : V) ev := fun ev ↦ by
+    have := mkStep_pro_frag1 112 (by decide) ev; simpa using this
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num : (1 : V) ≤ 2) (le_trans le_add_self (le_trans le_add_self hkE))
+  intro c
+  induction c using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _
+    rw [sOut_iff, subChainAux_zero]
+    obtain ⟨ok₀, tg₀, cx₀⟩ := lok_emptySubsetC htbl hL rfl hΓ hA hAE
+    rw [← e81, ← hWp] at ok₀ tg₀ cx₀
+    refine ⟨listOK_single ok₀, noDrop_single (Or.inl tg₀), hornOnly_single (Or.inl tg₀),
+      shiftsV_single_tag0 tg₀, by rw [len_vec1, zero_add], fun _ ↦ ?_, fun h ↦ absurd h (not_le.mpr _root_.zero_lt_one)⟩
+    rw [finalCtx_single, cx₀]; exact memInsSelf _ _
+  | succ c ih =>
+    intro hc
+    rw [sOut_iff] at ih ⊢
+    obtain ⟨sok, snd, sho, ssh, slen, s0, s1⟩ := ih (le_trans le_self_add hc)
+    rw [subChainAux_succ]
+    set L := subChainAux ⟪W, i', k', os, A⟫ c with hL'
+    set Γc := finalCtx Γ L with hΓc
+    have hΓcf : IsFormulaSet LAct Γc := finalCtx_isFormulaSet 8 htbl hΓ sok
+    have tr : ∀ x ∈ Γ, x ∈ Γc := fun x hx ↦ by
+      have := mem_finalCtx_of_mem snd hx; rwa [ssh, shiftIterV_zero] at this
+    have hck : c < k' := lt_of_lt_of_le (lt_add_one c) hc
+    set j := jOf k' c with hj
+    have hjc : j + (c + 1) = k' := jOf_add hc
+    have hjk : j < k' := by rw [← hjc]; exact lt_add_of_pos_right _ (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hoj : nthFromEnd os c = os.[j] := nthFromEnd_eq (by rw [hos, ← hjc])
+    obtain ⟨hins, hmem⟩ := hin j hjk
+    -- the subset fact of the set below
+    have hbelow : neg LAct (subsetFact (prevI i' k' j) A) ∈ Γc := by
+      by_cases hc0 : c = 0
+      · rw [prevI_of_last (by rw [← hjc, hc0, zero_add])]; exact s0 hc0
+      · have hc1 : 1 ≤ c := by
+          have : (0 : V) < c := pos_iff_ne_zero.mpr hc0
+          rw [lt_iff_succ_le, zero_add] at this; exact this
+        have hlt : j + 1 < k' := by
+          rw [← hjc]; exact (add_lt_add_iff_left j).mpr (lt_add_of_pos_left 1 (pos_iff_ne_zero.mpr hc0))
+        rw [prevI_of_lt hlt]
+        have e : i' + (k' + 1 + j) + 1 = i' + (k' + 1 + jOf k' (c - 1)) := by
+          have h1 : c - 1 + 1 = c := tsub_add_cancel_of_le hc1
+          have h2 : jOf k' (c - 1) = j + 1 := by
+            have := jOf_add (k := k') (c := c - 1) (by rw [h1]; exact le_of_lt hck)
+            rw [h1] at this
+            have h3 : jOf k' (c - 1) + c = (j + 1) + c := by rw [this, ← hjc]; ring
+            exact add_right_cancel h3
+          rw [h2]; ring
+        rw [e]; exact s1 hc1
+    have hjE2 : i' + (k' + 1 + j) + 2 ≤ E := by
+      have h1 : j + 1 ≤ k' := lt_iff_succ_le.mp hjk
+      calc i' + (k' + 1 + j) + 2 = i' + (k' + 1) + (j + 1) + 1 := by ring
+        _ ≤ i' + (k' + 1) + k' + 1 := add_le_add (add_le_add le_rfl h1) le_rfl
+        _ = i' + (2 * k' + 2) := by ring
+        _ ≤ E := hkE
+    have hjE : i' + (k' + 1 + j) + 1 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hjE2
+    have hprevI : IsSemiterm LAct 0 (prevI i' k' j) := by unfold prevI; exact isSemiterm_prevAt _ _
+    have hprevE : termLen LAct (prevI i' k' j) ≤ E := by
+      unfold prevI; exact termLen_prevAt_le hjE2
+    obtain ⟨ok₁, tg₁, cx₁⟩ := fok_insertSubset htbl hF rfl hΓcf hprevI hprevE hA hAE
+      (by simp) (termLen_fvar_le' (hosE j hjk)) (by simp) (termLen_fvar_le' hjE)
+      hbelow (tr _ hmem) (tr _ hins)
+    rw [← e112, ← hWp] at ok₁ tg₁ cx₁
+    rw [← hoj] at ok₁ tg₁ cx₁
+    refine ⟨listOK_appendV sok (listOK_single (by unfold subLink; rw [← hj]; exact ok₁)),
+      noDrop_appendV snd (noDrop_single (Or.inl (by unfold subLink; rw [← hj]; exact tg₁))),
+      hornOnly_appendV sho (hornOnly_single (Or.inl (by unfold subLink; rw [← hj]; exact tg₁))),
+      by rw [shiftsV_appendV, ssh, shiftsV_single_tag0 (by unfold subLink; rw [← hj]; exact tg₁), add_zero],
+      by rw [len_appendV, slen, len_vec1],
+      fun h ↦ absurd h (ne_of_gt (lt_of_lt_of_le _root_.zero_lt_one le_add_self)),
+      fun _ ↦ ?_⟩
+    rw [finalCtx_appendV, ← hΓc, finalCtx_single]
+    unfold subLink
+    rw [← hj, cx₁, add_tsub_cancel_right, ← hj]
+    exact memInsSelf _ _
+
+/-- **`subChain` is applicable** and leaves `subsetFact s A` (`s` the chain top, at `&(i' + (k' + 1))`). -/
+theorem subChain_ok {tbl N W i' k' os A E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hA : IsSemiterm LAct 0 A) (hAE : termLen LAct A ≤ E) (hk1 : 1 ≤ k')
+    (hkE : i' + (2 * k' + 2) ≤ E) (hosE : ∀ j < k', mTop i' k' os.[j] + 1 ≤ E) (hos : len os = k')
+    (hin : SubIn Γ i' k' os A) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (subChain W i' k' os A) ∧ NoDrop (subChain W i' k' os A) ∧
+    HornOnly (subChain W i' k' os A) ∧ shiftsV (subChain W i' k' os A) = 0 ∧ len (subChain W i' k' os A) = k' + 1 ∧
+    neg LAct (subsetFact (^&(i' + (k' + 1))) A) ∈ finalCtx Γ (subChain W i' k' os A) := by
+  obtain ⟨sok, snd, sho, ssh, slen, _, s1⟩ :=
+    (sOut_iff _ _ _ _ _ _ _ _ _).mp (subChainAux_ok htbl hP hWp hΓ hA hAE hkE hosE hos hin k' le_rfl)
+  refine ⟨sok, snd, sho, ssh, slen, ?_⟩
+  have h := s1 hk1
+  have hj : jOf k' (k' - 1) = 0 := by
+    have h1 : k' - 1 + 1 = k' := tsub_add_cancel_of_le hk1
+    have := jOf_add (k := k') (c := k' - 1) (by rw [h1])
+    rw [h1] at this
+    exact add_right_cancel (by rw [this, zero_add] : jOf k' (k' - 1) + k' = 0 + k')
+  rwa [hj, add_zero] at h
+
+end identify
+
 end ArithS
