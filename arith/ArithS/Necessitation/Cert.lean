@@ -3004,4 +3004,99 @@ theorem certNeg_noDrop_shifts {W n r i j : V} (hWp : W = certPieces) (hr : IsSem
 
 end passStruct
 
+/-! ### 2.7 Length bounds (the cost prerequisite)
+
+A pass emits ONE Horn step per formula node, plus at an atom the term pass (one step per term
+node, three per vector entry). The `len_describe*_le` bounds of `Describe.lean` are the template.
+-/
+
+section passLen
+
+lemma len_tLeafSteps (W ν kind z i j : V) : len (tLeafSteps W ν kind z i j) = 1 := by
+  simp [tLeafSteps]
+lemma len_vNilSteps (W ν : V) : len (vNilSteps W ν) = 1 := by simp [vNilSteps]
+lemma len_tFuncSteps (W ν k f i j yv : V) : len (tFuncSteps W ν k f i j yv) = len yv + 2 := by
+  rw [tFuncSteps_eq, len_appendV]; simp; norm_num
+lemma len_vAdjSteps (W ν n m ct i j yt yv : V) :
+    len (vAdjSteps W ν n m ct i j yt yv) = len yt + (len yv + 3) := by
+  rw [vAdjSteps, len_appendV, len_appendV]; simp; norm_num
+lemma len_fConstSteps (W ν c i j : V) : len (fConstSteps W ν c i j) = 1 := by simp [fConstSteps]
+lemma len_fBinSteps (W ν c n cq dq i j yp yq : V) :
+    len (fBinSteps W ν c n cq dq i j yp yq) = len yp + (len yq + 1) := by
+  rw [fBinSteps, len_appendV, len_appendV]; simp
+lemma len_fQuantSteps (W ν c n i j yb : V) : len (fQuantSteps W ν c n i j yb) = len yb + 1 := by
+  rw [fQuantSteps, len_appendV]; simp
+lemma len_fAtomSteps_of_ne {ν : V} (h : ν ≠ 1) (W c k R i j yv : V) :
+    len (fAtomSteps W ν c k R i j yv) = len yv + 1 := by
+  rw [fAtomSteps, if_neg h, len_appendV]; simp
+lemma len_fAtomSteps_one (W c k R i j yv : V) : len (fAtomSteps W 1 c k R i j yv) = 1 := by
+  rw [fAtomSteps, if_pos rfl]; simp
+
+set_option maxHeartbeats 1000000 in
+/-- **The term pass has `≤ 12|t|` steps** (the same shape as the walk). -/
+lemma len_passTGraph_le (W ν n : V) : ∀ t, IsSemiterm LAct n t →
+    ∀ i j y : V, PassTGraph W ν n t i j y → len y + 4 ≤ 12 * termLen LAct t := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · definability
+  · intro z hz i j y hy
+    rw [PassTGraph.bvar_iff.mp hy, len_tLeafSteps, termLen_bvar]
+    calc (1 : V) + 4 = 5 := by norm_num
+      _ ≤ 12 := by norm_num
+      _ ≤ 12 * z + 12 := le_add_self
+      _ = 12 * (z + 1) := by ring
+  · intro a i j y hy
+    rw [PassTGraph.fvar_iff.mp hy, len_tLeafSteps, termLen_fvar]
+    calc (1 : V) + 4 = 5 := by norm_num
+      _ ≤ 12 := by norm_num
+      _ ≤ 12 * a + 12 := le_add_self
+      _ = 12 * (a + 1) := by ring
+  · intro k f v hkf hv ih i j y hy
+    have key : ∀ m ≤ k, ∀ i j z : V, PassVGraph W ν n k v m i j z →
+        IsUTermVec LAct m (takeLast v m) ∧
+        len z + 2 ≤ 12 * listSum (termLenVec LAct m (takeLast v m)) + 4 := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero =>
+        intro _ i j z hz
+        refine ⟨by simp, ?_⟩
+        rw [PassVGraph.zero_iff.mp hz, len_vNilSteps]
+        simp; norm_num
+      | succ m ihm =>
+        intro hm i j z hz
+        obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := PassVGraph.succ_iff.mp hz
+        have hvlen : len v = k := hv.lh
+        have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        rw [hnth'] at hyt
+        obtain ⟨hU, hl⟩ := ihm (le_trans le_self_add hm) _ _ yv hyv
+        have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+          rw [takeLast_succ_of_lt hjk, hvlen]
+        refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+        have h1 := ih _ hlt (i + 1) (j + 1) yt hyt
+        rw [len_vAdjSteps, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+        calc len yt + (len yv + 3) + 2
+            ≤ (len yv + 2) + (len yt + 4) := by
+              rw [show (len yv + 2) + (len yt + 4) = len yt + (len yv + 3) + 2 + 1 by ring]
+              exact le_self_add
+          _ ≤ (12 * listSum (termLenVec LAct m (takeLast v m)) + 4) + 12 * termLen LAct v.[k - (m + 1)] :=
+            add_le_add hl h1
+          _ = 12 * termLen LAct v.[k - (m + 1)] + 12 * listSum (termLenVec LAct m (takeLast v m)) + 4 := by ring
+    obtain ⟨yv, _, hyv, rfl⟩ := PassTGraph.func_iff.mp hy
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    obtain ⟨_, h⟩ := key k le_rfl (i + 1) (j + 1) yv hyv
+    rw [htl] at h
+    rw [len_tFuncSteps, termLen_func hkf hv.isUTerm]
+    calc len yv + 2 + 4 = (len yv + 2) + 4 := by ring
+      _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 4 := add_le_add h le_rfl
+      _ = 12 * listSum (termLenVec LAct k v) + 8 := by ring
+      _ ≤ 12 * listSum (termLenVec LAct k v) + 12 := add_le_add le_rfl (by norm_num)
+      _ = 12 * (listSum (termLenVec LAct k v) + 1) := by ring
+
+end passLen
+
 end ArithS
