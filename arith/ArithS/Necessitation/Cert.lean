@@ -5683,4 +5683,578 @@ lemma le_lnAdjSteps_left (W T n m ct lt σ' i st sv yt yv : V) : yt ≤ lnAdjSte
 lemma le_lnAdjSteps_right (W T n m ct lt σ' i st sv yt yv : V) : yv ≤ lnAdjSteps W T n m ct lt σ' i st sv yt yv :=
   le_trans (le_appendV_left _ _) (le_appendV_right _ _)
 
+/-! ### 5.3 Structure of the term/vector lists: tags, `NoDrop'`, shifts, lengths -/
+
+section lenTStruct
+
+lemma noDrop'_tag0 {s : V} (h : sTag s = 0) :
+    sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2 ∨ sTag s = 3 ∨ sTag s = 4 ∨ sTag s = 6 ∨ sTag s = 7 := Or.inl h
+lemma noDrop'_tag2 {s : V} (h : sTag s = 2) :
+    sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2 ∨ sTag s = 3 ∨ sTag s = 4 ∨ sTag s = 6 ∨ sTag s = 7 := Or.inr (Or.inr (Or.inl h))
+lemma noDrop'_tag7 {s : V} (h : sTag s = 7) :
+    sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2 ∨ sTag s = 3 ∨ sTag s = 4 ∨ sTag s = 6 ∨ sTag s = 7 :=
+  Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h)))))
+
+lemma shiftsV_cons_tag0 {s : V} (h : sTag s = 0) (S : V) : shiftsV (s ∷ S) = shiftsV S := by
+  rw [shiftsV_cons, if_neg (by rw [h]; simp), zero_add]
+lemma shiftsV_cons_tag2 {s : V} (h : sTag s = 2) (S : V) : shiftsV (s ∷ S) = 1 + shiftsV S := by
+  rw [shiftsV_cons, if_pos (Or.inl h)]
+lemma shiftsV_cons_sLemma (A d S : V) : shiftsV (sLemma A d ∷ S) = shiftsV S := by
+  rw [shiftsV_cons, if_neg (by rw [sTag_sLemma]; norm_num), zero_add]
+lemma shiftsV_single_tag0 {s : V} (h : sTag s = 0) : shiftsV (?[s] : V) = 0 := by
+  rw [shiftsV_single, if_neg (by rw [h]; simp)]
+
+/-- Every step shifts at most once. -/
+lemma shiftsAux_le (S : V) : ∀ j, shiftsAux S j ≤ j := by
+  intro j
+  induction j using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ j ih =>
+    rw [shiftsAux_succ]
+    split_ifs
+    · exact add_le_add ih (le_refl (1 : V))
+    · exact le_trans ih le_self_add
+lemma shiftsV_le_len (S : V) : shiftsV S ≤ len S := shiftsAux_le S (len S)
+
+/-- The walk's `adjoinTotal` (row 17) read from the certification pieces: an intro step. -/
+lemma ctag_cert17 {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (17 : V) ev) = 2 := by
+  subst hWp
+  rw [show (17 : V) = ((17 : ℕ) : V) by simp, mkStep_certPieces_lt 17 (by decide)]
+  exact tag_adjoinTotal rfl ev
+lemma ctag_lnLeafRow {W : V} (hWp : W = certPieces) {c : V} (hc : c = 153 ∨ c = 154) (ev : V) :
+    sTag (mkStep W c ev) = 0 := by
+  rcases hc with rfl | rfl
+  · exact ctag_termLenBvar hWp ev
+  · exact ctag_termLenFvar hWp ev
+
+lemma lnLeafSteps_struct {W : V} (hWp : W = certPieces) {c : V} (hc : c = 153 ∨ c = 154) (T z i : V) :
+    NoDrop' (lnLeafSteps W T c z i) ∧ shiftsV (lnLeafSteps W T c z i) = 1 := by
+  refine ⟨?_, ?_⟩
+  · exact noDrop'_cons (noDrop'_tag2 (ctag_termLenTotal hWp _)) (noDrop'_cons (noDrop'_tag0 (ctag_lnLeafRow hWp hc _))
+      (noDrop'_cons (noDrop'_tag7 (sTag_sLemma _ _)) (noDrop'_cons (noDrop'_tag0 (ctag_eqTrans hWp _))
+      (noDrop'_single (noDrop'_tag0 (ctag_congTLenNum hWp _))))))
+  · rw [lnLeafSteps, shiftsV_cons_tag2 (ctag_termLenTotal hWp _), shiftsV_cons_tag0 (ctag_lnLeafRow hWp hc _),
+      shiftsV_cons_sLemma, shiftsV_cons_tag0 (ctag_eqTrans hWp _), shiftsV_single_tag0 (ctag_congTLenNum hWp _), add_zero]
+lemma len_lnLeafSteps (W T c z i : V) : len (lnLeafSteps W T c z i) = 5 := by
+  rw [lnLeafSteps, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_nil]; norm_num
+
+lemma lnFuncSteps_struct {W : V} (hWp : W = certPieces) (T k f σ i sv yv : V) (hv : NoDrop' yv) :
+    NoDrop' (lnFuncSteps W T k f σ i sv yv) ∧ shiftsV (lnFuncSteps W T k f σ i sv yv) = shiftsV yv + 1 := by
+  refine ⟨?_, ?_⟩
+  · exact noDrop'_appendV hv (noDrop'_cons (noDrop'_tag0 (ctag_certFuncRow hWp _ _ _))
+      (noDrop'_cons (noDrop'_tag2 (ctag_termLenTotal hWp _)) (noDrop'_cons (noDrop'_tag0 (ctag_termLenFuncCert hWp _))
+      (noDrop'_cons (noDrop'_tag7 (sTag_sLemma _ _)) (noDrop'_cons (noDrop'_tag0 (ctag_eqTrans hWp _))
+      (noDrop'_single (noDrop'_tag0 (ctag_congTLenNum hWp _))))))))
+  · rw [lnFuncSteps, shiftsV_appendV, shiftsV_cons_tag0 (ctag_certFuncRow hWp _ _ _), shiftsV_cons_tag2 (ctag_termLenTotal hWp _),
+      shiftsV_cons_tag0 (ctag_termLenFuncCert hWp _), shiftsV_cons_sLemma, shiftsV_cons_tag0 (ctag_eqTrans hWp _),
+      shiftsV_single_tag0 (ctag_congTLenNum hWp _), add_zero]
+lemma len_lnFuncSteps (W T k f σ i sv yv : V) : len (lnFuncSteps W T k f σ i sv yv) = len yv + 6 := by
+  rw [lnFuncSteps, len_appendV, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_nil]; ring
+
+lemma lnNilSteps_struct {W : V} (hWp : W = certPieces) : NoDrop' (lnNilSteps W) ∧ shiftsV (lnNilSteps W) = 0 := by
+  refine ⟨noDrop'_cons (noDrop'_tag0 (ctag_termLenVecNil hWp _)) (noDrop'_single (noDrop'_tag0 (ctag_listSumNil hWp _))), ?_⟩
+  rw [lnNilSteps, shiftsV_cons_tag0 (ctag_termLenVecNil hWp _), shiftsV_single_tag0 (ctag_listSumNil hWp _)]
+lemma len_lnNilSteps (W : V) : len (lnNilSteps W) = 2 := by
+  rw [lnNilSteps, len_adjoin, len_adjoin, len_nil]; norm_num
+
+lemma lnAdjSteps_struct {W : V} (hWp : W = certPieces) (T n m ct lt σ' i st sv yt yv : V) (ht : NoDrop' yt) (hv : NoDrop' yv) :
+    NoDrop' (lnAdjSteps W T n m ct lt σ' i st sv yt yv) ∧
+    shiftsV (lnAdjSteps W T n m ct lt σ' i st sv yt yv) = shiftsV yt + (shiftsV yv + 1) := by
+  refine ⟨?_, ?_⟩
+  · exact noDrop'_appendV ht (noDrop'_appendV hv (noDrop'_cons (noDrop'_tag2 (ctag_cert17 hWp _))
+      (noDrop'_cons (noDrop'_tag0 (ctag_cert38 hWp _)) (noDrop'_cons (noDrop'_tag0 (ctag_cert39 hWp _))
+      (noDrop'_cons (noDrop'_tag0 (ctag_termLenVecAdj hWp _)) (noDrop'_cons (noDrop'_tag7 (sTag_sLemma _ _))
+      (noDrop'_single (noDrop'_tag0 (ctag_listSumAdjI hWp _)))))))))
+  · rw [lnAdjSteps, shiftsV_appendV, shiftsV_appendV, shiftsV_cons_tag2 (ctag_cert17 hWp _), shiftsV_cons_tag0 (ctag_cert38 hWp _),
+      shiftsV_cons_tag0 (ctag_cert39 hWp _), shiftsV_cons_tag0 (ctag_termLenVecAdj hWp _), shiftsV_cons_sLemma,
+      shiftsV_single_tag0 (ctag_listSumAdjI hWp _), add_zero]
+lemma len_lnAdjSteps (W T n m ct lt σ' i st sv yt yv : V) :
+    len (lnAdjSteps W T n m ct lt σ' i st sv yt yv) = len yt + (len yv + 6) := by
+  rw [lnAdjSteps, len_appendV, len_appendV, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_nil]; ring
+
+set_option maxHeartbeats 2000000 in
+/-- **Length bound, `W`-free** (the existence proof needs it for every `W`): `len y + 6 ≤ 14|t|`; at the vector
+level `len z ≤ 14·Σ + 2` over the last `m` entries. -/
+lemma lenTGraph_len (W T n : V) : ∀ t, IsSemiterm LAct n t →
+    ∀ i y : V, LenTGraph W T n t i y → len y + 6 ≤ 14 * termLen LAct t := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · simp only [LenTGraph, LenVGraph]; definability
+  · intro z _ i y hy
+    rw [LenTGraph.bvar_iff.mp hy, len_lnLeafSteps, termLen_bvar]
+    calc (5 : V) + 6 = 11 := by norm_num
+      _ ≤ 14 * 1 := by norm_num
+      _ ≤ 14 * (z + 1) := mul_le_mul_of_nonneg_left le_add_self zero_le
+  · intro a i y hy
+    rw [LenTGraph.fvar_iff.mp hy, len_lnLeafSteps, termLen_fvar]
+    calc (5 : V) + 6 = 11 := by norm_num
+      _ ≤ 14 * 1 := by norm_num
+      _ ≤ 14 * (a + 1) := mul_le_mul_of_nonneg_left le_add_self zero_le
+  · intro k f v hkf hv ih i y hy
+    have key : ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i z : V, LenVGraph W T n k v m i z →
+        len z ≤ 14 * listSum (termLenVec LAct m (takeLast v m)) + 2 := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => simp only [LenTGraph, LenVGraph]; definability
+      | zero =>
+        intro _
+        refine ⟨by simp, ?_⟩
+        intro i z hz
+        rw [LenVGraph.zero_iff.mp hz, len_lnNilSteps]
+        exact le_add_self
+      | succ m ihm =>
+        intro hm
+        have hvlen : len v = k := hv.lh
+        have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+        obtain ⟨hU, hrest⟩ := ihm (le_trans le_self_add hm)
+        have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+          rw [takeLast_succ_of_lt hjk, hvlen]
+        refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+        intro i z hz
+        obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := LenVGraph.succ_iff.mp hz
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        rw [hnth'] at hyt
+        have hlT := ih _ hlt (i + 1) yt hyt
+        have hlV := hrest _ yv hyv
+        rw [len_lnAdjSteps, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+        calc len yt + (len yv + 6) = (len yt + 6) + len yv := by ring
+          _ ≤ 14 * termLen LAct v.[k - (m + 1)] + (14 * listSum (termLenVec LAct m (takeLast v m)) + 2) := add_le_add hlT hlV
+          _ = 14 * termLen LAct v.[k - (m + 1)] + 14 * listSum (termLenVec LAct m (takeLast v m)) + 2 := by ring
+    obtain ⟨yv, _, hyv, rfl⟩ := LenTGraph.func_iff.mp hy
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    have hlV := (key k le_rfl).2 (i + 1) yv hyv
+    rw [htl] at hlV
+    rw [len_lnFuncSteps, termLen_func hkf hv.isUTerm]
+    calc len yv + 6 + 6 = len yv + 12 := by ring
+      _ ≤ (14 * listSum (termLenVec LAct k v) + 2) + 12 := add_le_add hlV (le_refl (12 : V))
+      _ = 14 * (listSum (termLenVec LAct k v) + 1) := by ring
+
+set_option maxHeartbeats 2000000 in
+lemma lenVGraph_len (W T n : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i z : V, LenVGraph W T n k v m i z →
+      len z ≤ 14 * listSum (termLenVec LAct m (takeLast v m)) + 2 := by
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => simp only [LenTGraph, LenVGraph]; definability
+  | zero =>
+    intro _
+    refine ⟨by simp, ?_⟩
+    intro i z hz
+    rw [LenVGraph.zero_iff.mp hz, len_lnNilSteps]
+    exact le_add_self
+  | succ m ihm =>
+    intro hm
+    have hvlen : len v = k := hv.lh
+    have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+    obtain ⟨hU, hrest⟩ := ihm (le_trans le_self_add hm)
+    have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+      rw [takeLast_succ_of_lt hjk, hvlen]
+    refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+    intro i z hz
+    obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := LenVGraph.succ_iff.mp hz
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    rw [hnth'] at hyt
+    have hlT := lenTGraph_len W T n _ ht (i + 1) yt hyt
+    have hlV := hrest _ yv hyv
+    rw [len_lnAdjSteps, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+    calc len yt + (len yv + 6) = (len yt + 6) + len yv := by ring
+      _ ≤ 14 * termLen LAct v.[k - (m + 1)] + (14 * listSum (termLenVec LAct m (takeLast v m)) + 2) := add_le_add hlT hlV
+      _ = 14 * termLen LAct v.[k - (m + 1)] + 14 * listSum (termLenVec LAct m (takeLast v m)) + 2 := by ring
+
+set_option maxHeartbeats 2000000 in
+/-- **`NoDrop'` and the shift count** (over the certification pieces): `shiftsV y + 1 ≤ 2|t|`; at the vector
+level `shiftsV z ≤ 2·Σ`. -/
+lemma lenTGraph_noDrop_shifts {W : V} (hWp : W = certPieces) (T n : V) : ∀ t, IsSemiterm LAct n t →
+    ∀ i y : V, LenTGraph W T n t i y → NoDrop' y ∧ shiftsV y + 1 ≤ 2 * termLen LAct t := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · simp only [LenTGraph, LenVGraph]; definability
+  · intro z _ i y hy
+    rw [LenTGraph.bvar_iff.mp hy, termLen_bvar]
+    obtain ⟨h1, h2⟩ := lnLeafSteps_struct hWp (Or.inl rfl) T z i
+    refine ⟨h1, ?_⟩
+    rw [h2]
+    calc (1 : V) + 1 = 2 * 1 := by norm_num
+      _ ≤ 2 * (z + 1) := mul_le_mul_of_nonneg_left le_add_self zero_le
+  · intro a i y hy
+    rw [LenTGraph.fvar_iff.mp hy, termLen_fvar]
+    obtain ⟨h1, h2⟩ := lnLeafSteps_struct hWp (Or.inr rfl) T a i
+    refine ⟨h1, ?_⟩
+    rw [h2]
+    calc (1 : V) + 1 = 2 * 1 := by norm_num
+      _ ≤ 2 * (a + 1) := mul_le_mul_of_nonneg_left le_add_self zero_le
+  · intro k f v hkf hv ih i y hy
+    have key : ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i z : V, LenVGraph W T n k v m i z →
+        NoDrop' z ∧ shiftsV z ≤ 2 * listSum (termLenVec LAct m (takeLast v m)) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => simp only [LenTGraph, LenVGraph]; definability
+      | zero =>
+        intro _
+        refine ⟨by simp, ?_⟩
+        intro i z hz
+        rw [LenVGraph.zero_iff.mp hz]
+        obtain ⟨h1, h2⟩ := lnNilSteps_struct hWp
+        exact ⟨h1, by rw [h2]; exact zero_le⟩
+      | succ m ihm =>
+        intro hm
+        have hvlen : len v = k := hv.lh
+        have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+        obtain ⟨hU, hrest⟩ := ihm (le_trans le_self_add hm)
+        have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+          rw [takeLast_succ_of_lt hjk, hvlen]
+        refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+        intro i z hz
+        obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := LenVGraph.succ_iff.mp hz
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        rw [hnth'] at hyt
+        obtain ⟨hnT, hsT⟩ := ih _ hlt (i + 1) yt hyt
+        obtain ⟨hnV, hsV⟩ := hrest _ yv hyv
+        obtain ⟨h1, h2⟩ := lnAdjSteps_struct hWp T n m _ _ _ i _ _ yt yv hnT hnV
+        refine ⟨h1, ?_⟩
+        rw [h2, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+        calc shiftsV yt + (shiftsV yv + 1) = (shiftsV yt + 1) + shiftsV yv := by ring
+          _ ≤ 2 * termLen LAct v.[k - (m + 1)] + 2 * listSum (termLenVec LAct m (takeLast v m)) := add_le_add hsT hsV
+    obtain ⟨yv, _, hyv, rfl⟩ := LenTGraph.func_iff.mp hy
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    obtain ⟨hnV, hsV⟩ := (key k le_rfl).2 (i + 1) yv hyv
+    rw [htl] at hsV
+    obtain ⟨h1, h2⟩ := lnFuncSteps_struct hWp T k f _ i _ yv hnV
+    refine ⟨h1, ?_⟩
+    rw [h2, termLen_func hkf hv.isUTerm]
+    calc shiftsV yv + 1 + 1 = shiftsV yv + 2 := by ring
+      _ ≤ 2 * listSum (termLenVec LAct k v) + 2 := add_le_add hsV (le_refl (2 : V))
+      _ = 2 * (listSum (termLenVec LAct k v) + 1) := by ring
+
+set_option maxHeartbeats 2000000 in
+lemma lenVGraph_noDrop_shifts {W : V} (hWp : W = certPieces) (T n : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, ∀ i z : V, LenVGraph W T n k v m i z →
+      NoDrop' z ∧ shiftsV z ≤ 2 * listSum (termLenVec LAct m (takeLast v m)) := by
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => simp only [LenTGraph, LenVGraph]; definability
+  | zero =>
+    intro _ i z hz
+    rw [LenVGraph.zero_iff.mp hz]
+    obtain ⟨h1, h2⟩ := lnNilSteps_struct hWp
+    exact ⟨h1, by rw [h2]; exact zero_le⟩
+  | succ m ihm =>
+    intro hm i z hz
+    have hvlen : len v = k := hv.lh
+    have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+    have hU : IsUTermVec LAct m (takeLast v m) := (lenVGraph_len W T n hv m (le_trans le_self_add hm)).1
+    have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+      rw [takeLast_succ_of_lt hjk, hvlen]
+    obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := LenVGraph.succ_iff.mp hz
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    rw [hnth'] at hyt
+    obtain ⟨hnT, hsT⟩ := lenTGraph_noDrop_shifts hWp T n _ ht (i + 1) yt hyt
+    obtain ⟨hnV, hsV⟩ := ihm (le_trans le_self_add hm) _ yv hyv
+    obtain ⟨h1, h2⟩ := lnAdjSteps_struct hWp T n m _ _ _ i _ _ yt yv hnT hnV
+    refine ⟨h1, ?_⟩
+    rw [h2, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+    calc shiftsV yt + (shiftsV yv + 1) = (shiftsV yt + 1) + shiftsV yv := by ring
+      _ ≤ 2 * termLen LAct v.[k - (m + 1)] + 2 * listSum (termLenVec LAct m (takeLast v m)) := add_le_add hsT hsV
+
+end lenTStruct
+
+/-! ### 5.4 Existence, uniqueness, and the functions `lenT`/`lenV` -/
+
+section lenTFun
+
+set_option maxHeartbeats 1000000 in
+/-- **Existence**, offsets bounded by `B` (the motive must be Σ₁); `W`-free — the sub-call offsets involve
+`shiftsV`, bounded through `shiftsV_le_len` and `lenTGraph_len`. -/
+lemma lenTGraph_exists_bounded (W T n B : V) : ∀ t, IsSemiterm LAct n t →
+    ∀ i ≤ B, i + descCountT W n t + 16 * termLen LAct t ≤ B → ∃ y, LenTGraph W T n t i y := by
+  refine IsSemiterm.induction 𝚺 ?_ ?_ ?_ ?_
+  · simp only [LenTGraph, LenVGraph]; definability
+  · intro z _ i _ _; exact ⟨_, LenTGraph.bvar_iff.mpr rfl⟩
+  · intro a i _ _; exact ⟨_, LenTGraph.fvar_iff.mpr rfl⟩
+  · intro k f v hkf hv ih i hi hiB
+    rw [descCountT_func W n hkf hv.isUTerm, termLen_func hkf hv.isUTerm] at hiB
+    have key : ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i ≤ B,
+        i + π₁ (descVecAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1 ≤ B →
+        ∃ yv, LenVGraph W T n k v m i yv := by
+      intro m
+      induction m using ISigma1.sigma1_succ_induction with
+      | hP => simp only [LenTGraph, LenVGraph]; definability
+      | zero => intro _; exact ⟨by simp, fun i _ _ ↦ ⟨_, LenVGraph.zero_iff.mpr rfl⟩⟩
+      | succ m ihm =>
+        intro hm
+        have hvlen : len v = k := hv.lh
+        have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+        obtain ⟨hU, ihm'⟩ := ihm (le_trans le_self_add hm)
+        have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+          rw [takeLast_succ_of_lt hjk, hvlen]
+        refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+        intro i hi hiB
+        have hnth : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec W n hv.isUTerm hlt]
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        have hC : π₁ (descVecAux W n (descTVec W n k v) (m + 1)) =
+            π₁ (descVecAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
+          rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+        rw [hC, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin] at hiB
+        set ct := descCountT W n v.[k - (m + 1)] with hct
+        set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+        set lt := termLen LAct v.[k - (m + 1)] with hlt'
+        set σ' := listSum (termLenVec LAct m (takeLast v m)) with hσ'
+        -- hiB : i + (cv + ct + 1) + 16 * (lt + σ') + 1 ≤ B
+        have hiT : i + 1 + ct + 16 * lt ≤ B :=
+          le_trans (le_of_eq (show i + 1 + ct + 16 * lt = i + (0 + ct + 1) + 16 * (lt + 0) + 0 by ring))
+            (le_trans (add_le_add (add_le_add (add_le_add (le_refl i) (add_le_add (add_le_add zero_le (le_refl ct)) (le_refl 1)))
+              (mul_le_mul_of_nonneg_left (add_le_add (le_refl lt) zero_le) zero_le)) zero_le) hiB)
+        obtain ⟨yt, hyt⟩ := ih _ hlt (i + 1) (le_trans (le_trans le_self_add le_self_add) hiT) hiT
+        have hst : shiftsV yt ≤ 14 * lt := by
+          have h1 := shiftsV_le_len yt
+          have h2 := lenTGraph_len W T n _ ht (i + 1) yt hyt
+          exact le_trans h1 (le_trans le_self_add h2)
+        have hiV : i + 1 + ct + shiftsV yt + cv + 16 * σ' + 1 ≤ B := by
+          calc i + 1 + ct + shiftsV yt + cv + 16 * σ' + 1 ≤ i + 1 + ct + 14 * lt + cv + 16 * σ' + 1 := by
+                gcongr
+            _ ≤ i + 1 + ct + 16 * lt + cv + 16 * σ' + 1 := by gcongr; norm_num
+            _ = i + (cv + ct + 1) + 16 * (lt + σ') + 1 := by ring
+            _ ≤ B := hiB
+        obtain ⟨yv, hyv⟩ := ihm' (i + 1 + ct + shiftsV yt) (le_trans (le_trans le_self_add le_self_add) (le_trans le_self_add hiV)) hiV
+        refine ⟨_, LenVGraph.succ_iff.mpr ⟨yt, yv, le_lnAdjSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
+          le_lnAdjSteps_right _ _ _ _ _ _ _ _ _ _ _ _, ?_, ?_, rfl⟩⟩
+        · rw [hnth']; exact hyt
+        · rw [hnth']; exact hyv
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    have hiV : i + 1 + π₁ (descVecAux W n (descTVec W n k v) k) + 16 * listSum (termLenVec LAct k (takeLast v k)) + 1 ≤ B := by
+      rw [htl]
+      calc i + 1 + π₁ (descVecAux W n (descTVec W n k v) k) + 16 * listSum (termLenVec LAct k v) + 1
+          = i + (π₁ (descVecAux W n (descTVec W n k v) k) + 1) + 16 * listSum (termLenVec LAct k v) + 1 := by ring
+        _ ≤ i + (π₁ (descVecAux W n (descTVec W n k v) k) + 1) + 16 * listSum (termLenVec LAct k v) + 16 := by gcongr; norm_num
+        _ = i + (π₁ (descVecAux W n (descTVec W n k v) k) + 1) + 16 * (listSum (termLenVec LAct k v) + 1) := by ring
+        _ ≤ B := hiB
+    obtain ⟨yv, hyv⟩ := (key k le_rfl).2 (i + 1) (le_trans (le_trans le_self_add le_self_add) (le_trans le_self_add hiV)) hiV
+    exact ⟨_, LenTGraph.func_iff.mpr ⟨yv, le_lnFuncSteps _ _ _ _ _ _ _ _, hyv, rfl⟩⟩
+
+lemma lenTGraph_exists (W T n : V) {t : V} (ht : IsSemiterm LAct n t) (i : V) : ∃ y, LenTGraph W T n t i y :=
+  lenTGraph_exists_bounded W T n (i + descCountT W n t + 16 * termLen LAct t) t ht i
+    (le_trans le_self_add le_self_add) le_rfl
+
+set_option maxHeartbeats 2000000 in
+lemma lenVGraph_exists_bounded (W T n B : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i ≤ B,
+      i + π₁ (descVecAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1 ≤ B →
+      ∃ y, LenVGraph W T n k v m i y := by
+  have hvlen : len v = k := hv.lh
+  intro m
+  induction m using ISigma1.sigma1_succ_induction with
+  | hP => simp only [LenTGraph, LenVGraph]; definability
+  | zero => intro _; exact ⟨by simp, fun i _ _ ↦ ⟨_, LenVGraph.zero_iff.mpr rfl⟩⟩
+  | succ m ihm =>
+    intro hm
+    have hjk : m < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m) hm
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+    obtain ⟨hU, ihm'⟩ := ihm (le_trans le_self_add hm)
+    have htake : takeLast v (m + 1) = v.[k - (m + 1)] ∷ takeLast v m := by
+      rw [takeLast_succ_of_lt hjk, hvlen]
+    refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
+    intro i hi hiB
+    have hnth : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
+      rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+        nth_descTVec W n hv.isUTerm hlt]
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    have hC : π₁ (descVecAux W n (descTVec W n k v) (m + 1)) =
+        π₁ (descVecAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
+      rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+    rw [hC, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin] at hiB
+    set ct := descCountT W n v.[k - (m + 1)] with hct
+    set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+    set lt := termLen LAct v.[k - (m + 1)] with hlt'
+    set σ' := listSum (termLenVec LAct m (takeLast v m)) with hσ'
+    obtain ⟨yt, hyt⟩ := lenTGraph_exists W T n ht (i + 1)
+    have hst : shiftsV yt ≤ 14 * lt := by
+      have h1 := shiftsV_le_len yt
+      have h2 := lenTGraph_len W T n _ ht (i + 1) yt hyt
+      exact le_trans h1 (le_trans le_self_add h2)
+    have hiV : i + 1 + ct + shiftsV yt + cv + 16 * σ' + 1 ≤ B := by
+      calc i + 1 + ct + shiftsV yt + cv + 16 * σ' + 1 ≤ i + 1 + ct + 14 * lt + cv + 16 * σ' + 1 := by
+            gcongr
+        _ ≤ i + 1 + ct + 16 * lt + cv + 16 * σ' + 1 := by gcongr; norm_num
+        _ = i + (cv + ct + 1) + 16 * (lt + σ') + 1 := by ring
+        _ ≤ B := hiB
+    obtain ⟨yv, hyv⟩ := ihm' (i + 1 + ct + shiftsV yt) (le_trans (le_trans le_self_add le_self_add) (le_trans le_self_add hiV)) hiV
+    refine ⟨_, LenVGraph.succ_iff.mpr ⟨yt, yv, le_lnAdjSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
+      le_lnAdjSteps_right _ _ _ _ _ _ _ _ _ _ _ _, ?_, ?_, rfl⟩⟩
+    · rw [hnth']; exact hyt
+    · rw [hnth']; exact hyv
+
+lemma lenVGraph_exists (W T n : V) {k v : V} (hv : IsSemitermVec LAct k n v) {m : V} (hm : m ≤ k) (i : V) :
+    ∃ y, LenVGraph W T n k v m i y :=
+  (lenVGraph_exists_bounded W T n
+    (i + π₁ (descVecAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1) hv m hm).2 i
+    (le_trans (le_trans le_self_add le_self_add) le_self_add) le_rfl
+
+set_option maxHeartbeats 2000000 in
+/-- **Uniqueness** (Π₁ motive). -/
+lemma lenTGraph_unique (W T n : V) : ∀ t, IsSemiterm LAct n t →
+    ∀ i y₁ y₂, LenTGraph W T n t i y₁ → LenTGraph W T n t i y₂ → y₁ = y₂ := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · simp only [LenTGraph, LenVGraph]; definability
+  · intro z _ i y₁ y₂ h₁ h₂; rw [LenTGraph.bvar_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro a i y₁ y₂ h₁ h₂; rw [LenTGraph.fvar_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro k f v hkf hv ih i y₁ y₂ h₁ h₂
+    have hvlen : len v = k := hv.lh
+    have key : ∀ m ≤ k, ∀ i z₁ z₂, LenVGraph W T n k v m i z₁ → LenVGraph W T n k v m i z₂ → z₁ = z₂ := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => simp only [LenTGraph, LenVGraph]; definability
+      | zero => intro _ i z₁ z₂ h₁ h₂; rw [LenVGraph.zero_iff] at h₁ h₂; rw [h₁, h₂]
+      | succ m ihm =>
+        intro hm i z₁ z₂ h₁ h₂
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := LenVGraph.succ_iff.mp h₁
+        obtain ⟨yt', yv', _, _, hyt', hyv', rfl⟩ := LenVGraph.succ_iff.mp h₂
+        rw [hnth'] at hyt hyt'
+        obtain rfl := ih _ hlt (i + 1) yt yt' hyt hyt'
+        obtain rfl := ihm (le_trans le_self_add hm) _ yv yv' hyv hyv'
+        rfl
+    obtain ⟨yv, _, hyv, rfl⟩ := LenTGraph.func_iff.mp h₁
+    obtain ⟨yv', _, hyv', rfl⟩ := LenTGraph.func_iff.mp h₂
+    rw [key k le_rfl (i + 1) yv yv' hyv hyv']
+
+set_option maxHeartbeats 2000000 in
+lemma lenVGraph_unique (W T n : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, ∀ i z₁ z₂, LenVGraph W T n k v m i z₁ → LenVGraph W T n k v m i z₂ → z₁ = z₂ := by
+  have hvlen : len v = k := hv.lh
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => simp only [LenTGraph, LenVGraph]; definability
+  | zero => intro _ i z₁ z₂ h₁ h₂; rw [LenVGraph.zero_iff] at h₁ h₂; rw [h₁, h₂]
+  | succ m ihm =>
+    intro hm i z₁ z₂ h₁ h₂
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have ht : IsSemiterm LAct n v.[k - (m + 1)] := hv.nth hlt
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+    obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := LenVGraph.succ_iff.mp h₁
+    obtain ⟨yt', yv', _, _, hyt', hyv', rfl⟩ := LenVGraph.succ_iff.mp h₂
+    rw [hnth'] at hyt hyt'
+    obtain rfl := lenTGraph_unique W T n _ ht (i + 1) yt yt' hyt hyt'
+    obtain rfl := ihm (le_trans le_self_add hm) _ yv yv' hyv hyv'
+    rfl
+
+lemma lenTGraph_existsUnique_total (W T n t i : V) :
+    ∃! y, (IsSemiterm LAct n t → LenTGraph W T n t i y) ∧ (¬IsSemiterm LAct n t → y = 0) := by
+  by_cases h : IsSemiterm LAct n t
+  · obtain ⟨y, hy⟩ := lenTGraph_exists W T n h i
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ lenTGraph_unique W T n t h i y' y hy' hy)
+  · simp [h]
+
+/-- **The term-level length producer as a function** (`0` off semiterms). -/
+noncomputable def lenT (W T n t i : V) : V := Classical.choose! (lenTGraph_existsUnique_total W T n t i)
+
+theorem lenT_graph {W T n t i : V} (h : IsSemiterm LAct n t) : LenTGraph W T n t i (lenT W T n t i) :=
+  (Classical.choose!_spec (lenTGraph_existsUnique_total W T n t i)).1 h
+theorem lenT_of_not {W T n t i : V} (h : ¬IsSemiterm LAct n t) : lenT W T n t i = 0 :=
+  (Classical.choose!_spec (lenTGraph_existsUnique_total W T n t i)).2 h
+lemma lenT_eq_of_graph {W T n t i y : V} (h : IsSemiterm LAct n t) (hy : LenTGraph W T n t i y) : lenT W T n t i = y :=
+  lenTGraph_unique W T n t h i _ _ (lenT_graph h) hy
+
+noncomputable def lenTDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W T n t i. (!(isSemiterm LAct).pi n t → !lenTGraphDef W T n t i y) ∧ (¬!(isSemiterm LAct).sigma n t → y = 0)”
+
+instance lenT_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ lenT (v 0) (v 1) (v 2) (v 3) (v 4)) lenTDef := .mk
+  fun v ↦ by
+    simp [lenTDef, HierarchySymbol.Semiformula.val_sigma, lenTGraph_defined.iff,
+      (IsSemiterm.defined (L := LAct)).proper.iff', (IsSemiterm.defined (L := LAct)).df, lenT,
+      Classical.choose!_eq_iff_right]
+instance lenT_definable :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ lenT (v 0) (v 1) (v 2) (v 3) (v 4)) lenTDef := lenT_defined
+
+lemma lenVGraph_existsUnique_total (W T n k v m i : V) :
+    ∃! y, ((IsSemitermVec LAct k n v ∧ m ≤ k) → LenVGraph W T n k v m i y) ∧
+      (¬(IsSemitermVec LAct k n v ∧ m ≤ k) → y = 0) := by
+  by_cases h : IsSemitermVec LAct k n v ∧ m ≤ k
+  · obtain ⟨y, hy⟩ := lenVGraph_exists W T n h.1 h.2 i
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ lenVGraph_unique W T n h.1 m h.2 i y' y hy' hy)
+  · simp [h]
+
+/-- **The vector-level length producer as a function** (`0` off semiterm vectors / oversized `m`). -/
+noncomputable def lenV (W T n k v m i : V) : V := Classical.choose! (lenVGraph_existsUnique_total W T n k v m i)
+
+theorem lenV_graph {W T n k v m i : V} (hv : IsSemitermVec LAct k n v) (hm : m ≤ k) :
+    LenVGraph W T n k v m i (lenV W T n k v m i) :=
+  (Classical.choose!_spec (lenVGraph_existsUnique_total W T n k v m i)).1 ⟨hv, hm⟩
+lemma lenV_eq_of_graph {W T n k v m i y : V} (hv : IsSemitermVec LAct k n v) (hm : m ≤ k)
+    (hy : LenVGraph W T n k v m i y) : lenV W T n k v m i = y :=
+  lenVGraph_unique W T n hv m hm i _ _ (lenV_graph hv hm) hy
+
+noncomputable def lenVDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W T n k v m i. ((!(isSemitermVec LAct).pi k n v ∧ m ≤ k) → !lenVGraphDef W T n k v m i y) ∧
+    ((!(isSemitermVec LAct).sigma k n v → k < m) → y = 0)”
+
+instance lenV_defined :
+    𝚺₁.DefinedFunction (fun w : Fin 7 → V ↦ lenV (w 0) (w 1) (w 2) (w 3) (w 4) (w 5) (w 6)) lenVDef := .mk
+  fun w ↦ by
+    simp [lenVDef, HierarchySymbol.Semiformula.val_sigma, lenVGraph_defined.iff,
+      (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df, lenV,
+      Classical.choose!_eq_iff_right]
+instance lenV_definable :
+    𝚺₁.DefinedFunction (fun w : Fin 7 → V ↦ lenV (w 0) (w 1) (w 2) (w 3) (w 4) (w 5) (w 6)) lenVDef := lenV_defined
+
+/-! #### The equations -/
+
+lemma lenT_bvar (W T n z i : V) (hz : IsSemiterm LAct n (^#z)) : lenT W T n (^#z) i = lnLeafSteps W T 153 z i :=
+  lenT_eq_of_graph hz (LenTGraph.bvar_iff.mpr rfl)
+lemma lenT_fvar (W T n a i : V) : lenT W T n (^&a) i = lnLeafSteps W T 154 a i :=
+  lenT_eq_of_graph (by simp) (LenTGraph.fvar_iff.mpr rfl)
+lemma lenT_func (W T n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsSemitermVec LAct k n v) (i : V) :
+    lenT W T n (^func k f v) i =
+      lnFuncSteps W T k f (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1)) :=
+  lenT_eq_of_graph (by simp [hkf, hv]) (LenTGraph.func_iff.mpr ⟨_, le_lnFuncSteps _ _ _ _ _ _ _ _, lenV_graph hv le_rfl, rfl⟩)
+lemma lenV_zero (W T n k v i : V) (hv : IsSemitermVec LAct k n v) : lenV W T n k v 0 i = lnNilSteps W :=
+  lenV_eq_of_graph hv zero_le (LenVGraph.zero_iff.mpr rfl)
+lemma lenV_succ (W T n : V) {k v m : V} (hv : IsSemitermVec LAct k n v) (hm : m + 1 ≤ k) (i : V) :
+    lenV W T n k v (m + 1) i =
+      lnAdjSteps W T n m (descCountT W n (nthFromEnd v m)) (termLen LAct (nthFromEnd v m))
+        (listSum (termLenVec LAct m (takeLast v m))) i
+        (shiftsV (lenT W T n (nthFromEnd v m) (i + 1)))
+        (shiftsV (lenV W T n k v m (i + 1 + descCountT W n (nthFromEnd v m) + shiftsV (lenT W T n (nthFromEnd v m) (i + 1)))))
+        (lenT W T n (nthFromEnd v m) (i + 1))
+        (lenV W T n k v m (i + 1 + descCountT W n (nthFromEnd v m) + shiftsV (lenT W T n (nthFromEnd v m) (i + 1)))) := by
+  have hvlen : len v = k := hv.lh
+  have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+  have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+  have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+    nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+  have ht : IsSemiterm LAct n (nthFromEnd v m) := by rw [hnth']; exact hv.nth hlt
+  exact lenV_eq_of_graph hv hm (LenVGraph.succ_iff.mpr ⟨_, _, le_lnAdjSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
+    le_lnAdjSteps_right _ _ _ _ _ _ _ _ _ _ _ _, lenT_graph ht, lenV_graph hv (le_trans le_self_add hm), rfl⟩)
+
+end lenTFun
+
 end ArithS
