@@ -3133,4 +3133,94 @@ theorem layout_or {tbl N Wc T s p q Γ i : V} (htbl : TableOK tbl N) (hP : ProTa
 
 end insertChild
 
+/-! ## 6. The `cut` prefix: the cut formula and its negation, walked and certified (`DESIGN_fragments.md` §4.9) -/
+
+section cutPrefix
+
+/-- **`proCutPre p`**: the member block of `p`, the member block of `neg p`, then `certNeg` (re-indexed). Afterwards
+`p`'s dossier is at `mLen p + mShift (neg p)`, `neg p`'s at `mLen (neg p)`, and `negFact X_np X_p` holds. -/
+noncomputable def proCutPre (Ww Wc T p : V) : V :=
+  appendV (memberBlock Ww Wc T p) (appendV (memberBlock Ww Wc T (neg LAct p))
+    (reidxL (certNeg Wc 0 p (mLen Wc T p + mShift Ww Wc T (neg LAct p)) (mLen Wc T (neg LAct p)))))
+
+noncomputable def proCutPreDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y Ww Wc T p. ∃ b₁, !memberBlockDef b₁ Ww Wc T p ∧ ∃ np, !(negGraph LAct) np p ∧ ∃ b₂, !memberBlockDef b₂ Ww Wc T np ∧
+    ∃ lp, !mLenDef lp Wc T p ∧ ∃ mn, !mShiftDef mn Ww Wc T np ∧ ∃ ip, ip = lp + mn ∧ ∃ inp, !mLenDef inp Wc T np ∧
+    ∃ c, !passFDef c Wc 1 0 p ip inp ∧ ∃ r, !reidxLDef r c ∧ ∃ a, !appendVDef a b₂ r ∧ !appendVDef y b₁ a”
+
+instance proCutPre_defined : 𝚺₁-Function₄ (proCutPre : V → V → V → V → V) via proCutPreDef := .mk fun v ↦ by
+  simp [proCutPreDef, proCutPre, certNeg, memberBlock_defined.iff, neg.defined.iff, mLen_defined.iff, mShift_defined.iff,
+    passF_defined.iff, reidxL_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance proCutPre_definable : 𝚺₁-Function₄ (proCutPre : V → V → V → V → V) := proCutPre_defined.to_definable
+
+set_option maxHeartbeats 2000000 in
+/-- **The `cut` prefix is applicable**: it leaves the two dossiers, their `piFact`/`lenFact`, and `negFact X_np X_p`. -/
+theorem proCutPre_ok {tbl N N' B' Wc T p D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces)
+    (hp : IsSemiformula LAct 0 p) (hpD : formulaLen LAct p ≤ D) (hnpD : formulaLen LAct (neg LAct p) ≤ D)
+    (hE : 13 * D + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (proCutPre walkPieces Wc T p) ∧ NoDrop' (proCutPre walkPieces Wc T p) ∧
+    shiftsV (proCutPre walkPieces Wc T p) = mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) ∧
+    DossF walkPieces (finalCtx Γ (proCutPre walkPieces Wc T p)) 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)) ∧
+    neg LAct (lenFact (bnum (formulaLen LAct p)) (^&(mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))) ∈
+      finalCtx Γ (proCutPre walkPieces Wc T p) ∧
+    DossF walkPieces (finalCtx Γ (proCutPre walkPieces Wc T p)) 0 (neg LAct p) (mLen Wc T (neg LAct p)) ∧
+    neg LAct (lenFact (bnum (formulaLen LAct (neg LAct p))) (^&(mLen Wc T (neg LAct p)))) ∈
+      finalCtx Γ (proCutPre walkPieces Wc T p) ∧
+    neg LAct (negFact (^&(mLen Wc T (neg LAct p))) (^&(mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))) ∈
+      finalCtx Γ (proCutPre walkPieces Wc T p) := by
+  have hW := hP.walkTable
+  have hC := hP.certTable
+  have htblC := hP.tableOK_certView htbl
+  have hnp : IsSemiformula LAct 0 (neg LAct p) := hp.neg
+  -- block of `p`
+  obtain ⟨b1ok, b1nd, b1sh, _, b1D, _, b1ln⟩ := memberBlock_ok htbl hP htblN hWc hp hpD hE hΓ
+  set Γ₁ := finalCtx Γ (memberBlock walkPieces Wc T p) with hΓ₁
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := finalCtx_isFormulaSet 8 htbl hΓ b1ok
+  -- block of `neg p`
+  obtain ⟨b2ok, b2nd, b2sh, _, b2D, _, b2ln⟩ := memberBlock_ok htbl hP htblN hWc hnp hnpD hE hΓ₁f
+  set Γ₂ := finalCtx Γ₁ (memberBlock walkPieces Wc T (neg LAct p)) with hΓ₂
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 8 htbl hΓ₁f b2ok
+  have hD₁ : DossF walkPieces Γ₂ 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)) := by
+    have := dossF_transport' b2nd b1D; rwa [b2sh] at this
+  have hln₁ : neg LAct (lenFact (bnum (formulaLen LAct p)) (^&(mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))) ∈ Γ₂ := by
+    have := mem_finalCtx_of_mem' b2nd b1ln
+    rwa [b2sh, shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
+      shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar] at this
+  -- the certification
+  have hml : mLen Wc T p ≤ 2 * D := le_trans le_self_add (le_trans (mLen_succ_le hWc T hp) (mul_le_mul_of_nonneg_left hpD zero_le))
+  have hmn : mLen Wc T (neg LAct p) ≤ 2 * D :=
+    le_trans le_self_add (le_trans (mLen_succ_le hWc T hnp) (mul_le_mul_of_nonneg_left hnpD zero_le))
+  have hms : mShift walkPieces Wc T (neg LAct p) ≤ 4 * D := le_trans (mShift_le htbl hW hWc T hnp) (mul_le_mul_of_nonneg_left hnpD zero_le)
+  have h2p : 2 * formulaLen LAct p ≤ 2 * D := mul_le_mul_of_nonneg_left hpD zero_le
+  have hE1 : 2 * (0 : V) + 2 * formulaLen LAct p + 8 ≤ E := by
+    rw [mul_zero, zero_add]
+    exact le_trans (add_le_add (le_trans h2p (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) le_rfl) hE
+  have hEi : mLen Wc T p + mShift walkPieces Wc T (neg LAct p) + 2 * formulaLen LAct p + 1 ≤ E := by
+    calc mLen Wc T p + mShift walkPieces Wc T (neg LAct p) + 2 * formulaLen LAct p + 1 ≤ 2 * D + 4 * D + 2 * D + 1 :=
+          add_le_add (add_le_add (add_le_add hml hms) h2p) le_rfl
+      _ = 8 * D + 1 := by ring
+      _ ≤ 13 * D + 8 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
+      _ ≤ E := hE
+  have hEj : mLen Wc T (neg LAct p) + 2 * formulaLen LAct p + 1 ≤ E := by
+    calc mLen Wc T (neg LAct p) + 2 * formulaLen LAct p + 1 ≤ 2 * D + 2 * D + 1 := add_le_add (add_le_add hmn h2p) le_rfl
+      _ = 4 * D + 1 := by ring
+      _ ≤ 13 * D + 8 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
+      _ ≤ E := hE
+  obtain ⟨cok, cnd, cho, csh, cfact⟩ := certNeg_ok htblC hC rfl hWc hp hE1 hEi hEj hΓ₂f hD₁ b2D
+  have tr : ∀ x ∈ Γ₂, x ∈ finalCtx Γ₂ (reidxL (certNeg Wc 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)) (mLen Wc T (neg LAct p)))) :=
+    fun x hx ↦ by rw [finalCtx_reidxL]; exact tr_of_zero cnd csh hx
+  refine ⟨listOK_appendV b1ok (by rw [← hΓ₁]; exact listOK_appendV b2ok (by rw [← hΓ₂]; exact listOK_reidxL hP cok)),
+    noDrop'_appendV b1nd (noDrop'_appendV b2nd (noDrop'_reidxL cnd.noDrop')), ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · unfold proCutPre; rw [shiftsV_appendV, shiftsV_appendV, b1sh, b2sh, shiftsV_reidxL, csh, add_zero]
+  · unfold proCutPre; rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, finalCtx_reidxL]
+    have := dossF_transport cnd hD₁; rwa [csh, add_zero] at this
+  · unfold proCutPre; rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂]; exact tr _ hln₁
+  · unfold proCutPre; rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, finalCtx_reidxL]
+    have := dossF_transport cnd b2D; rwa [csh, add_zero] at this
+  · unfold proCutPre; rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂]; exact tr _ b2ln
+  · unfold proCutPre; rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, finalCtx_reidxL]; exact cfact
+
+end cutPrefix
+
 end ArithS
