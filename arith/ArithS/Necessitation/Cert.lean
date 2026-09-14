@@ -945,7 +945,6 @@ theorem dossT_func_isFunc {Γ n k f v i : V} (hkf : LAct.IsFunc k f) (hv : IsSem
     rw [hS, finalCtx_six]
   have hr0 : IsSemiterm LAct 0 (vRef 0 k) := isSemiterm_vRef _ _
   have hr1 : IsSemiterm LAct 0 (vRef 1 k) := isSemiterm_vRef _ _
-  have hΓSv : IsFormulaSet LAct (finalCtx 0 Sv) := hSvSet
   have h1 : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ finalCtx 0 (describeT W n (^func k f v)) := by
     rw [hctx]
     refine mem_ctxAfter_of_noShift (Or.inl (tag_isUTermVecSigmaPiLAct hWp _))
@@ -954,8 +953,7 @@ theorem dossT_func_isFunc {Γ n k f v i : V} (hkf : LAct.IsFunc k f) (hv : IsSem
       (mem_ctxAfter_of_noShift (Or.inl (tag_isSemitermFunc hWp _)) ?_)))
     have hbase : neg LAct (isFuncFact (cTV k) (cTV f)) ∈
         ctxAfter (finalCtx 0 Sv) (mkStep W (funcRow k f) 0) := by
-      rw [(funcConst_ok (Γ := finalCtx 0 Sv) htbl hW hWp hkf (E := (8 : V)) le_rfl
-        (by intro x hx; exact (hΓSv x hx))).2.2.1]
+      rw [(funcConst_ok (Γ := finalCtx 0 Sv) htbl hW hWp hkf (E := (8 : V)) le_rfl hSvSet).2.2.1]
       exact mem_insert_self'
     have hsh := mem_ctxAfter_of_shift (s := mkStep W 7 ?[cTV k, cTV f, vRef 0 k])
       (Or.inl (tag_qqFuncTotal hWp _)) hbase
@@ -3410,6 +3408,49 @@ them. Every step is then applicable and the final context holds `tshFact &j &i`.
 **`M = 9`.** `CertRows.lean`'s convention: `cok_tsvAdjCert` is stated at `M = 9`, every other
 `cok_` at `M = 8`; the siblings are lifted with `StepOK.mono`/`ListOK.mono` through `h89`.
 -/
+
+/-! ### 4.-1 The walk is the same over `certPieces` as over `walkPieces`
+
+The walk only ever names rows `< walkRowCount`, and `certPieces` extends `walkPieces` entrywise
+(`mkStep_certPieces_lt`), so every walk object — `descT`, `descTVec`, `descVecAux`, `descFw` and
+hence `describeT`/`describeF`/`descCountT`/`descCountF` — is UNCHANGED. The pass may therefore run
+over ONE piece table, `certPieces`, with the dossiers stated at `walkPieces` and transported here.
+-/
+
+section pieceInvariance
+
+/-- The walk's counts are the same over the two piece tables. -/
+theorem descCountT_certPieces (n : V) : ∀ t, IsSemiterm LAct n t →
+    descCountT (certPieces : V) n t = descCountT (walkPieces : V) n t := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · definability
+  · intro z _; rw [descCountT_bvar, descCountT_bvar]
+  · intro a; rw [descCountT_fvar, descCountT_fvar]
+  · intro k f v hkf hv ih
+    have key : ∀ m ≤ k, π₁ (descVecAux (certPieces : V) n (descTVec (certPieces : V) n k v) m) =
+        π₁ (descVecAux (walkPieces : V) n (descTVec (walkPieces : V) n k v) m) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero =>
+        intro _
+        rw [descVecAux_zero, descVecAux_zero, nilNode, nilNode, pi₁_pair, pi₁_pair]
+      | succ m ihm =>
+        intro hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have h1 : ∀ Wx : V, nthFromEnd (descTVec Wx n k v) m = descT Wx n v.[k - (m + 1)] := fun Wx ↦ by
+          rw [nthFromEnd_eq (a := k - (m + 1))
+            (by rw [len_descTVec Wx n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec Wx n hv.isUTerm hlt]
+        rw [descVecAux_succ, h1, adjNode, pi₁_pair, descVecAux_succ, h1, adjNode, pi₁_pair,
+          ihm (le_trans le_self_add hm)]
+        have := ih _ hlt
+        rw [descCountT, descCountT] at this
+        rw [this]
+    rw [descCountT_func _ n hkf hv.isUTerm, descCountT_func _ n hkf hv.isUTerm, key k le_rfl]
+
+end pieceInvariance
 
 /-! ### 4.0 Count preservation under `termShift`
 

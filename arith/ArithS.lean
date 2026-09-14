@@ -60,6 +60,7 @@ import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.Cert
 import ArithS.Necessitation.Frag1
 import ArithS.Necessitation.Frag2
+import ArithS.Necessitation.Verify
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse
