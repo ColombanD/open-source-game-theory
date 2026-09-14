@@ -43,6 +43,7 @@ import ArithS.Necessitation.Dossier
 import ArithS.Necessitation.Frag1
 import ArithS.Necessitation.Frag2
 import ArithS.Necessitation.Verify
+import ArithS.Necessitation.Top
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -822,5 +823,25 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lenSteps_ok
 #print axioms sizeOK_lenSteps
 #print axioms costSum_lenSteps_le
+
+-- U10 (Necessitation/Top, 2026-09-14): THE TOP against an explicit kit. The target's code shape
+-- `instB ⌜Box_g χ⌝ k = boxFact (numeral ⌜χ⌝) (bnum k)` for a VARIABLE χ, the three closing rows
+-- (gIntroNum/lenDerIntro/boxIntro) and the top table, the root steps (walk + chain → RootLayout),
+-- the closing steps (goalElim + N5/N4/N4/N2 sLemmas + five rows → the target fact), the assembly
+-- `top_main` (a proof code of the box instance of length ≤ topBound), the cubic bound
+-- (`topD_pb`, `topBound_pb`, through the graded `PB` calculus with u³ ≤ 8G), and
+-- `boundedInnerNec_three_of_kit : KitPackage … → BoundedInnerNec 3`. The two kits (`VerifyKit` =
+-- §6.3/§6.4/§5 for the relation `VerifyGraph`; `PinKit χ` = §7.1 steps 1–4/§7.2) are the remaining
+-- `Verify`/`Cert` obligations; nothing below is an axiom.
+#print axioms target_eq_boxFact
+#print axioms termLen_qNum_le
+#print axioms exists_topTable
+#print axioms tok_boxIntro
+#print axioms rootSteps_ok
+#print axioms closeSteps_ok
+#print axioms top_main
+#print axioms topD_pb
+#print axioms topBound_pb
+#print axioms boundedInnerNec_three_of_kit
 
 end ArithS
