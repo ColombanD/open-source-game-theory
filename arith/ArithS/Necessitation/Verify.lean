@@ -859,5 +859,26 @@ lemma VerifyGraph.case_iff {W tblN ρ L : V} :
   · intro h
     exact ⟨ρ, by simp, L, by simp, rfl, h⟩
 
+/-! ### 3.4 The ten inversion lemmas -/
+
+section inversion
+
+attribute [local simp] axL verumIntro andIntro orIntro allIntro exsIntro wkRule shiftRule cutRule axm
+
+lemma VerifyGraph.axL_iff {W tblN s p L : V} :
+    VerifyGraph W tblN (axL s p) L ↔
+    ∃ pro ≤ L, ∃ is ≤ L, ∃ il ≤ L, ∃ ip ≤ L, ∃ inp ≤ L, ∃ Lv ≤ L, ∃ n ≤ L, fragAxL W tblN is il ip inp
+      Lv n ≤ L ∧ L = appendV pro (fragAxL W tblN is il ip inp Lv n) := by
+  rw [VerifyGraph.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, h⟩
+    exact h
+  · intro h
+    exact ⟨lt_succ_iff_le.mpr (le_pair_left _ _),
+      lt_succ_iff_le.mpr (le_trans (le_pair_right _ _) (le_pair_right _ _)), h⟩
+
+end inversion
+
 
 end ArithS
