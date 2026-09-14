@@ -930,4 +930,162 @@ instance layoutSteps_defined :
 
 end layoutBuild
 
+/-! ### 2.5 The member blocks are applicable -/
+
+section memberBlocksOK
+
+/-- The walk's count bound, standalone. -/
+lemma descCountF_succ_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {r : V} (hr : IsSemiformula LAct 0 r) :
+    descCountF walkPieces 0 r + 1 ≤ 2 * formulaLen LAct r :=
+  (describeF_ok htbl hW hr (E := 2 * 0 + 2 * formulaLen LAct r + 8) le_rfl (Γ := 0) IsFormulaSet.empty).2.2.2.1
+
+lemma mLen_succ_le {Wc : V} (hWc : Wc = certPieces) (T : V) {x : V} (hx : IsSemiformula LAct 0 x) :
+    mLen Wc T x + 1 ≤ 2 * formulaLen LAct x := (lenSteps_struct hWc T hx 0).2.1
+
+lemma mShift_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc : V} (hWc : Wc = certPieces) (T : V)
+    {x : V} (hx : IsSemiformula LAct 0 x) : mShift walkPieces Wc T x ≤ 4 * formulaLen LAct x := by
+  have h1 := descCountF_succ_le htbl hW hx
+  have h2 := mLen_succ_le hWc T hx
+  unfold mShift
+  calc descCountF walkPieces 0 x + mLen Wc T x ≤ 2 * formulaLen LAct x + 2 * formulaLen LAct x :=
+        add_le_add (le_trans le_self_add h1) (le_trans le_self_add h2)
+    _ = 4 * formulaLen LAct x := by ring
+
+lemma tailShift_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc : V} (hWc : Wc = certPieces) (T : V) :
+    ∀ v : V, (∀ j < len v, IsSemiformula LAct 0 v.[j]) → tailShift v walkPieces Wc T ≤ 4 * listSum (flenVec v) := by
+  intro v
+  induction v using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil => intro _; simp
+  | adjoin x v ih =>
+    intro hv
+    have hx : IsSemiformula LAct 0 x := by have := hv 0 (by simp); rwa [nth_adjoin_zero] at this
+    have hv' : ∀ j < len v, IsSemiformula LAct 0 v.[j] := fun j hj ↦ by
+      have := hv (j + 1) (by rw [len_adjoin]; exact (add_lt_add_iff_right 1).mpr hj)
+      rwa [nth_adjoin_succ] at this
+    rw [tailShift_adjoin, flenVec_adjoin, listSum_adjoin]
+    calc mShift walkPieces Wc T x + tailShift v walkPieces Wc T
+        ≤ 4 * formulaLen LAct x + 4 * listSum (flenVec v) := add_le_add (mShift_le htbl hW hWc T hx) (ih hv')
+      _ = 4 * (formulaLen LAct x + listSum (flenVec v)) := by ring
+
+lemma nth_offVec_le (Ww Wc T : V) : ∀ v : V, ∀ j < len v, (offVec v Ww Wc T).[j] ≤ tailShift v Ww Wc T := by
+  intro v
+  induction v using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil => intro j hj; simp at hj
+  | adjoin x v ih =>
+    intro j hj
+    rw [offVec_adjoin, tailShift_adjoin]
+    rcases zero_or_succ j with rfl | ⟨j, rfl⟩
+    · rw [nth_adjoin_zero]
+      exact add_le_add (le_add_self) le_rfl
+    · rw [nth_adjoin_succ]
+      exact le_trans (ih j (by rw [len_adjoin] at hj; exact lt_of_add_lt_add_right hj)) le_add_self
+
+/-- **One member block is applicable**: it walks `x` and derives its numeric length; afterwards the walk dossier,
+`piFact 𝟎` and `lenFact (bnum |x|)` of `x` sit at `&(mLen x)`. -/
+theorem memberBlock_ok {tbl N N' B' Wc T x D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces)
+    (hx : IsSemiformula LAct 0 x) (hxD : formulaLen LAct x ≤ D) (hE : 13 * D + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (memberBlock walkPieces Wc T x) ∧ NoDrop' (memberBlock walkPieces Wc T x) ∧
+    shiftsV (memberBlock walkPieces Wc T x) = mShift walkPieces Wc T x ∧
+    len (memberBlock walkPieces Wc T x) ≤ 26 * formulaLen LAct x ∧
+    DossF walkPieces (finalCtx Γ (memberBlock walkPieces Wc T x)) 0 x (mLen Wc T x) ∧
+    neg LAct (piFact (𝟎 : V) (^&(mLen Wc T x))) ∈ finalCtx Γ (memberBlock walkPieces Wc T x) ∧
+    neg LAct (lenFact (bnum (formulaLen LAct x)) (^&(mLen Wc T x))) ∈ finalCtx Γ (memberBlock walkPieces Wc T x) := by
+  have hW := hP.walkTable
+  have hC := hP.certTable
+  have htblC := hP.tableOK_certView htbl
+  have h2D : 2 * formulaLen LAct x ≤ 13 * D :=
+    le_trans (mul_le_mul_of_nonneg_left hxD zero_le) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
+  have h5D : 5 * formulaLen LAct x ≤ 13 * D :=
+    le_trans (mul_le_mul_of_nonneg_left hxD zero_le) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
+  have hE1 : 2 * (0 : V) + 2 * formulaLen LAct x + 8 ≤ E := by
+    rw [mul_zero, zero_add]; exact le_trans (add_le_add h2D le_rfl) hE
+  obtain ⟨wok, wnd, wsh, _, wpi⟩ := describeF_ok htbl hW hx hE1 hΓ
+  set Γ₁ := finalCtx Γ (describeF walkPieces 0 x) with hΓ₁
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := finalCtx_isFormulaSet 8 htbl hΓ wok
+  have hD₀ : DossF walkPieces Γ₁ 0 x 0 := dossF_of_walk wnd
+  have hE2 : 2 * (0 : V) + 13 * formulaLen LAct x + 8 ≤ E := by
+    rw [mul_zero, zero_add]; exact le_trans (add_le_add (mul_le_mul_of_nonneg_left hxD zero_le) le_rfl) hE
+  have hE3 : (0 : V) + 5 * formulaLen LAct x + 2 ≤ E := by
+    rw [zero_add]; exact le_trans (add_le_add h5D (by norm_num)) hE
+  obtain ⟨lok, lnd, lsh, llen, lfact⟩ := lenSteps_ok htblC hC htblN rfl hWc hx hE2 hE3 hΓ₁f hD₀
+  rw [zero_add] at lfact
+  have lok' := listOK_reidxL hP lok
+  have hlw := len_describeF_le walkPieces hx
+  have hpi : neg LAct (piFact (𝟎 : V) (^&0)) ∈ Γ₁ := by rwa [cTV_zero] at wpi
+  refine ⟨listOK_appendV wok (by rw [← hΓ₁]; exact lok'), noDrop'_appendV wnd.noDrop' (noDrop'_reidxL lnd), ?_, ?_, ?_, ?_, ?_⟩
+  · unfold memberBlock; rw [shiftsV_appendV, shiftsV_reidxL, wsh]; rfl
+  · unfold memberBlock; rw [len_appendV, len_reidxL]
+    calc len (describeF walkPieces 0 x) + len (lenSteps Wc T 0 x 0)
+        ≤ 12 * formulaLen LAct x + 14 * formulaLen LAct x := add_le_add (le_trans le_self_add hlw) llen
+      _ = 26 * formulaLen LAct x := by ring
+  · unfold memberBlock; rw [finalCtx_appendV, finalCtx_reidxL, ← hΓ₁]
+    have := dossF_transport' lnd hD₀; rwa [zero_add] at this
+  · unfold memberBlock; rw [finalCtx_appendV, finalCtx_reidxL, ← hΓ₁]
+    have := mem_finalCtx_of_mem' lnd hpi
+    rwa [shiftIterV_neg (isFormula_piFact (isSemiterm_qqZero_LAct 0) (by simp)),
+      shiftIterV_piFact (isSemiterm_qqZero_LAct 0) (by simp), termShiftIterV_zeroV, termShiftIterV_fvar, zero_add] at this
+  · unfold memberBlock; rw [finalCtx_appendV, finalCtx_reidxL, ← hΓ₁]; exact lfact
+
+/-- The invariant of the member blocks (packaged for `definability`). -/
+def MBOut (tbl E Ww Wc T v Γ : V) : Prop :=
+  ListOK tbl E ((8 : ℕ) : V) Γ (memberBlocks v Ww Wc T) ∧ NoDrop' (memberBlocks v Ww Wc T) ∧
+  shiftsV (memberBlocks v Ww Wc T) = tailShift v Ww Wc T ∧ len (memberBlocks v Ww Wc T) ≤ 26 * listSum (flenVec v) ∧
+  ∀ j < len v, DossF Ww (finalCtx Γ (memberBlocks v Ww Wc T)) 0 v.[j] (offVec v Ww Wc T).[j] ∧
+    neg LAct (piFact (𝟎 : V) (^&((offVec v Ww Wc T).[j]))) ∈ finalCtx Γ (memberBlocks v Ww Wc T) ∧
+    neg LAct (lenFact (bnum (formulaLen LAct v.[j])) (^&((offVec v Ww Wc T).[j]))) ∈ finalCtx Γ (memberBlocks v Ww Wc T)
+
+set_option maxHeartbeats 1000000 in
+instance mbOut_definable : 𝚫₁.Definable (fun v : Fin 7 → V ↦ MBOut (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := by
+  unfold MBOut; definability
+
+/-- **The member blocks are applicable, member by member.** -/
+theorem memberBlocks_ok {tbl N N' B' Wc T D E : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces) (hE : 13 * D + 8 ≤ E) :
+    ∀ v : V, (∀ j < len v, IsSemiformula LAct 0 v.[j] ∧ formulaLen LAct v.[j] ≤ D) →
+      ∀ Γ, IsFormulaSet LAct Γ → MBOut tbl E walkPieces Wc T v Γ := by
+  intro v
+  induction v using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil =>
+    intro _ Γ hΓ
+    refine ⟨by rw [memberBlocks_nil]; exact listOK_nil _ _ _ _, by rw [memberBlocks_nil]; exact noDrop'_nil,
+      by rw [memberBlocks_nil, shiftsV_nil, tailShift_nil], by rw [memberBlocks_nil]; simp, fun j hj ↦ by simp at hj⟩
+  | adjoin x v ih =>
+    intro hv Γ hΓ
+    have hx := hv 0 (by simp)
+    rw [nth_adjoin_zero] at hx
+    have hv' : ∀ j < len v, IsSemiformula LAct 0 v.[j] ∧ formulaLen LAct v.[j] ≤ D := fun j hj ↦ by
+      have := hv (j + 1) (by rw [len_adjoin]; exact (add_lt_add_iff_right 1).mpr hj)
+      rwa [nth_adjoin_succ] at this
+    obtain ⟨bok, bnd, bsh, blen, bD, bpi, bln⟩ := memberBlock_ok htbl hP htblN hWc hx.1 hx.2 hE hΓ
+    set Γ₁ := finalCtx Γ (memberBlock walkPieces Wc T x) with hΓ₁
+    have hΓ₁f : IsFormulaSet LAct Γ₁ := finalCtx_isFormulaSet 8 htbl hΓ bok
+    obtain ⟨vok, vnd, vsh, vlen, vfacts⟩ := ih hv' Γ₁ hΓ₁f
+    rw [MBOut, memberBlocks_adjoin]
+    refine ⟨listOK_appendV bok vok, noDrop'_appendV bnd vnd, ?_, ?_, ?_⟩
+    · rw [shiftsV_appendV, bsh, vsh, tailShift_adjoin]
+    · rw [len_appendV, flenVec_adjoin, listSum_adjoin]
+      calc len (memberBlock walkPieces Wc T x) + len (memberBlocks v walkPieces Wc T)
+          ≤ 26 * formulaLen LAct x + 26 * listSum (flenVec v) := add_le_add blen vlen
+        _ = 26 * (formulaLen LAct x + listSum (flenVec v)) := by ring
+    · intro j hj
+      rw [finalCtx_appendV, ← hΓ₁]
+      rcases zero_or_succ j with rfl | ⟨j, rfl⟩
+      · rw [nth_adjoin_zero, offVec_adjoin, nth_adjoin_zero]
+        refine ⟨?_, ?_, ?_⟩
+        · have := dossF_transport' vnd bD; rwa [vsh] at this
+        · have := mem_finalCtx_of_mem' vnd bpi
+          rwa [shiftIterV_neg (isFormula_piFact (isSemiterm_qqZero_LAct 0) (by simp)),
+            shiftIterV_piFact (isSemiterm_qqZero_LAct 0) (by simp), termShiftIterV_zeroV, termShiftIterV_fvar, vsh] at this
+        · have := mem_finalCtx_of_mem' vnd bln
+          rwa [shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
+            shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar, vsh] at this
+      · rw [nth_adjoin_succ, offVec_adjoin, nth_adjoin_succ]
+        exact vfacts j (by rw [len_adjoin] at hj; exact lt_of_add_lt_add_right hj)
+
+end memberBlocksOK
+
 end ArithS
