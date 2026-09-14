@@ -43,6 +43,7 @@ TABLE = [
  'freeCert','substsSubsts1','tsvNilCert','termSubstBvarCert','termSubstFvarCert','termSubstFuncCert',
  'tbshvNilCert','tbshvAdjCert','termBShiftBvarCert','termBShiftFvarCert','termBShiftFuncCert',
  'qVecCert','qVecNth0','qVecNthSucc','nthAdjoinZero','nthAdjoinSucc',
+ 'tsvAdjCert',
 ]
 BASE = 100
 rowinstb = open('ArithS/Necessitation/RowInstB.lean').read()
@@ -231,6 +232,7 @@ for name in TABLE:
         mem_term = f'List.forall_mem_cons.mpr ⟨hmem{i}, {mem_term}⟩'
     inst_args = ' '.join(f'h{w}' for w in ws)
     tag = 2 if d['tag2'] else 0
+    RM = 9 if name == 'tsvAdjCert' else 8
     if d['tag2']:
         after = f'insert (neg LAct (free LAct ({conc}))) (setShift LAct Γ)' if False else None
         # ctxAfter of an intro step: insert (neg (CONC)) (setShift Γ) where CONC = freeIter 1 (...) form
@@ -240,7 +242,7 @@ for name in TABLE:
     E(f'/-- Row `{name}` as a step. -/')
     E(f'lemma cok_{name} {{tbl N E Γ W : V}} {binders}(htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)')
     E(f'    (hΓ : IsFormulaSet LAct Γ) {hyps} {mems} :')
-    E(f'    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W {idx} {vec}) ∧ sTag (mkStep W {idx} {vec}) = {tag} ∧')
+    E(f'    StepOK tbl E (({RM} : ℕ) : V) Γ (mkStep W {idx} {vec}) ∧ sTag (mkStep W {idx} {vec}) = {tag} ∧')
     E(f'    ctxAfter Γ (mkStep W {idx} {vec}) = {after} := by')
     E(f'  subst hWp')
     E(f'  have hk : ((cIdx_{name} : ℕ) : V) = ({idx} : V) := by simp [cIdx_{name}]')
@@ -252,14 +254,14 @@ for name in TABLE:
     E(f'  have hinst := inst_{name} {inst_args}')
     E(f'  rw [hstep, show ({vec} : V) = vecOf {lst} from rfl]')
     if d['tag2']:
-        E(f'  refine ⟨stepOK_introFact htbl {lst} row_{name}_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : {len(ws)} ≤ 8))')
-        E(f'    (by rw [show row_{name}_as.length = {len(facts)} from rfl]; exact_mod_cast (by decide : {len(facts)} ≤ 8)) hes ?_, by simp, ?_⟩')
+        E(f'  refine ⟨stepOK_introFact htbl {lst} row_{name}_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : {len(ws)} ≤ {RM}))')
+        E(f'    (by rw [show row_{name}_as.length = {len(facts)} from rfl]; exact_mod_cast (by decide : {len(facts)} ≤ {RM})) hes ?_, by simp, ?_⟩')
         E(f'  · exact neg_mem_of_map hinst.1 ({mem_term})')
         E(f'  · rw [ctxAfter_introFact {lst} row_{name}_as (by rw [← Nat.cast_succ]; exact isSemiformula_{name}_R) (fun e he ↦ (hes e he).1),')
         E(f'      show row_{name}_R = row_{name}_body from rfl, ← freeIter_one, hinst.2]')
     else:
-        E(f'  refine ⟨stepOK_useHorn htbl {lst} row_{name}_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : {len(ws)} ≤ 8))')
-        E(f'    (by rw [show row_{name}_as.length = {len(facts)} from rfl]; exact_mod_cast (by decide : {len(facts)} ≤ 8)) hes ?_, by simp, ?_⟩')
+        E(f'  refine ⟨stepOK_useHorn htbl {lst} row_{name}_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : {len(ws)} ≤ {RM}))')
+        E(f'    (by rw [show row_{name}_as.length = {len(facts)} from rfl]; exact_mod_cast (by decide : {len(facts)} ≤ {RM})) hes ?_, by simp, ?_⟩')
         E(f'  · exact neg_mem_of_map hinst.1 ({mem_term})')
         E(f'  · rw [ctxAfter_useHorn {lst} row_{name}_as isSemiformula_{name}_c (fun e he ↦ (hes e he).1), hinst.2]')
     E('')
@@ -281,8 +283,21 @@ import ArithS.Necessitation.RowInstB
    the identification rows `eqOf*`/`eqRefl/eqSymm/eqTrans`, `congRel/congNRel`, the length rows). `CertTable tbl`
    (implies `WalkTable tbl`), `exists_certTable`, the piece table `certPieces` extending `walkPieces` entrywise
    (`mkStep_certPieces_lt`), and per row `certTable_<row>`, `cmk_<row>`, `ctag_<row>`, `cok_<row>` (the step is
-   applicable at `M = 8` and its `ctxAfter` inserts the canonical fact). `tsvAdjCert` (9 witnesses) is NOT in
-   the table (the `M = 8` cap of the walk's cost machinery).
+   applicable at its own `M` and its `ctxAfter` inserts the canonical fact).
+
+**The `M` convention.** Every `cok_<row>` is stated at the row's OWN minimal cost cap: `M = 8` for all rows
+but one, and `M = 9` for `cIdx_tsvAdjCert` (the term-substitution vector-adjoin step, 9 witnesses — it is IN
+the table since 2026-09-14, at the last index; the earlier note that the `M = 8` cap excluded it was wrong,
+the cap is per-consumer, not per-table). A consumer that mixes `tsvAdjCert` with `M = 8` siblings runs the
+whole pass at `M = 9` and lifts the siblings with `Frag1.lean`'s `StepOK.mono`/`ListOK.mono`
+(`h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V)`) — exactly the idiom `Frag2.lean`'s `nodeExs` already uses for the
+arity-9 `introExs` row. Stating the `M = 8` rows at 9 directly was rejected: it would weaken every existing
+consumer that is happy at 8, and `.mono` is a one-line lift at the single mixing site.
+
+A second blocker reported against `Cert.lean` — that `lenSteps` is blocked because `Describe.lean`'s `NoDrop`
+excludes tags 6/7 — is a NON-ISSUE: `Frag1.lean:21` already defines `NoDrop'` (tags 0–4, 6, 7) with
+`noDrop'_appendV`, `noDrop'_cons`, `mem_ctxVec_of_mem'`, `mem_finalCtx_of_mem'` and the coercion
+`NoDrop.noDrop'`.
 -/
 
 namespace ArithS
