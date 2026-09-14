@@ -1026,5 +1026,112 @@ lemma VerifyGraph.axm_iff {W tblN s p L : V} :
 
 end inversion
 
+/-! ### 3.5 Existence (`DESIGN_fragments.md` §6.2)
+
+Every internal derivation of `T` has a verification list. By `Derivation.induction1 𝚺` on the Σ₁
+predicate `P ρ := ∃ L, VerifyGraph W tblN ρ L`; each case closes its clause of `case_iff` by
+taking the children's lists and splicing them into the node's fragment with EMPTY prologues
+(`pro := 0`), the index arguments arbitrary (`0`). The bounds the clause carries are then
+`le_refl` for the fragment itself, `le_appendV_prefix`/`le_appendV_self` for the intermediate
+concatenations, and `le_appendV_mid` (§1) for the children's lists. (`le_refl` needs its argument
+SPELLED OUT — `le_refl _` leaves a stuck `Preorder ?m`, HANDOVER §6.) -/
+
+section existence
+
+variable {T : Theory LAct} [T.Δ₁]
+
+lemma verifyGraph_exists (W tblN : V) {ρ : V} (hd : Derivation T ρ) :
+    ∃ L, VerifyGraph W tblN ρ L := by
+  apply Derivation.induction1 𝚺 (T := T) (P := fun ρ ↦ ∃ L, VerifyGraph W tblN ρ L)
+    (by definability) hd
+  · intro s _ p _ _
+    exact ⟨fragAxL W tblN 0 0 0 0 0 0, VerifyGraph.axL_iff.mpr
+      ⟨0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, le_refl (fragAxL W tblN 0 0 0 0 0 0), (appendV_nil (fragAxL W tblN 0 0 0 0 0 0)).symm⟩⟩
+  · intro s _ _
+    exact ⟨fragVerum W tblN 0 0 0 0 0, VerifyGraph.verumIntro_iff.mpr
+      ⟨0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, le_refl (fragVerum W tblN 0 0 0 0 0), (appendV_nil (fragVerum W tblN 0 0 0 0 0)).symm⟩⟩
+  · rintro s _ p q dp dq _ _ _ ⟨L₁, h₁⟩ ⟨L₂, h₂⟩
+    refine ⟨appendV 0 (appendV L₁ (appendV 0 (appendV L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))),
+      VerifyGraph.andIntro_iff.mpr
+      ⟨L₁, ?_, h₁, L₂, ?_, h₂, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, ?_, ?_, ?_, ?_, rfl⟩⟩
+    · simp only [appendV_nil]
+      exact le_appendV_prefix L₁ (appendV L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+    · simp only [appendV_nil]
+      exact le_trans (le_appendV_prefix L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)) (le_appendV_self L₁ (appendV L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))
+    · simp only [appendV_nil]
+      exact le_trans (le_appendV_self L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)) (le_appendV_self L₁ (appendV L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))
+    · simp only [appendV_nil]
+      exact le_appendV_self L₁ (appendV L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+    · simp only [appendV_nil]
+      exact le_appendV_self L₁ (appendV L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+    · simp only [appendV_nil]
+      exact le_refl (appendV L₁ (appendV L₂ (nodeAnd W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))
+  · rintro s _ p q d' _ _ ⟨L', h'⟩
+    refine ⟨appendV 0 (appendV L' (nodeOr W tblN 0 0 0 0 0 0 0 0 0 0 0 0)),
+      VerifyGraph.orIntro_iff.mpr ⟨L', ?_, h', 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, ?_, ?_, rfl⟩⟩
+    · simp only [appendV_nil]
+      exact le_appendV_prefix L' (nodeOr W tblN 0 0 0 0 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_appendV_self L' (nodeOr W tblN 0 0 0 0 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_refl (appendV L' (nodeOr W tblN 0 0 0 0 0 0 0 0 0 0 0 0))
+  · rintro s _ p d' _ _ ⟨L', h'⟩
+    refine ⟨appendV 0 (appendV L' (nodeAll W tblN 0 0 0 0 0 0 0 0 0 0 0 0)),
+      VerifyGraph.allIntro_iff.mpr ⟨L', ?_, h', 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, ?_, ?_, rfl⟩⟩
+    · simp only [appendV_nil]
+      exact le_appendV_prefix L' (nodeAll W tblN 0 0 0 0 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_appendV_self L' (nodeAll W tblN 0 0 0 0 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_refl (appendV L' (nodeAll W tblN 0 0 0 0 0 0 0 0 0 0 0 0))
+  · rintro s _ p t d' _ _ _ ⟨L', h'⟩
+    refine ⟨appendV 0 (appendV L' (nodeExs W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)),
+      VerifyGraph.exsIntro_iff.mpr ⟨L', ?_, h', 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, ?_, ?_, rfl⟩⟩
+    · simp only [appendV_nil]
+      exact le_appendV_prefix L' (nodeExs W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_appendV_self L' (nodeExs W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_refl (appendV L' (nodeExs W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+  · rintro s _ d' _ _ ⟨L', h'⟩
+    refine ⟨appendV 0 (appendV L' (nodeWk W tblN 0 0 0 0 0 0 0 0)),
+      VerifyGraph.wkRule_iff.mpr ⟨L', ?_, h', 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, ?_, ?_, rfl⟩⟩
+    · simp only [appendV_nil]
+      exact le_appendV_prefix L' (nodeWk W tblN 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_appendV_self L' (nodeWk W tblN 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_refl (appendV L' (nodeWk W tblN 0 0 0 0 0 0 0 0))
+  · rintro s _ d' _ _ ⟨L', h'⟩
+    refine ⟨appendV 0 (appendV L' (nodeShift W tblN 0 0 0 0 0 0 0 0)),
+      VerifyGraph.shiftRule_iff.mpr ⟨L', ?_, h', 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, ?_, ?_, rfl⟩⟩
+    · simp only [appendV_nil]
+      exact le_appendV_prefix L' (nodeShift W tblN 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_appendV_self L' (nodeShift W tblN 0 0 0 0 0 0 0 0)
+    · simp only [appendV_nil]
+      exact le_refl (appendV L' (nodeShift W tblN 0 0 0 0 0 0 0 0))
+  · rintro s _ p d₁ d₂ _ _ ⟨L₁, h₁⟩ ⟨L₂, h₂⟩
+    refine ⟨appendV 0 (appendV L₁ (appendV 0 (appendV L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))),
+      VerifyGraph.cutRule_iff.mpr
+      ⟨L₁, ?_, h₁, L₂, ?_, h₂, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, ?_, ?_, ?_, ?_, rfl⟩⟩
+    · simp only [appendV_nil]
+      exact le_appendV_prefix L₁ (appendV L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+    · simp only [appendV_nil]
+      exact le_trans (le_appendV_prefix L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)) (le_appendV_self L₁ (appendV L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))
+    · simp only [appendV_nil]
+      exact le_trans (le_appendV_self L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)) (le_appendV_self L₁ (appendV L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))
+    · simp only [appendV_nil]
+      exact le_appendV_self L₁ (appendV L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+    · simp only [appendV_nil]
+      exact le_appendV_self L₁ (appendV L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+    · simp only [appendV_nil]
+      exact le_refl (appendV L₁ (appendV L₂ (nodeCut W tblN 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))
+  · intro s _ p _ _
+    exact ⟨nodeAxm W tblN 0 0 0 0 0, VerifyGraph.axm_iff.mpr
+      ⟨0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, 0, by simp, le_refl (nodeAxm W tblN 0 0 0 0 0), (appendV_nil (nodeAxm W tblN 0 0 0 0 0)).symm⟩⟩
+
+end existence
+
 
 end ArithS
