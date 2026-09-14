@@ -27,6 +27,8 @@ open LAct
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
+set_option linter.unusedSimpArgs false
+set_option linter.unusedTactic false
 set_option maxRecDepth 8000
 
 /-! ## 1. The sub-vector bound (`DESIGN_fragments.md` §8.4) -/
@@ -448,6 +450,128 @@ instance nodeAxmHead_defined :
   simp [nodeAxmHeadDef, nodeAxmHead, mkStep_defined.iff, numeral_eq_natCast]
 instance nodeAxmHead_definable :
     𝚺₁.DefinableFunction (fun v : Fin 4 → V ↦ nodeAxmHead (v 0) (v 1) (v 2) (v 3)) := nodeAxmHead_defined.to_definable
+
+/-! ### 2.4 The ten fragments -/
+
+noncomputable def fragAxLDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y W tblN is il ip inp L n.
+    ∃ H, !fragAxLHeadDef H W is il ip inp ∧ ∃ T, !goalTailLeafDef T W tblN (il + 1) L n (is + 1) ∧
+    !appendVDef y H T”
+
+instance fragAxL_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ fragAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) fragAxLDef := .mk fun v ↦ by
+  simp [fragAxLDef, fragAxL, fragAxLHead_defined.iff, goalTailLeaf_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance fragAxL_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ fragAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) := fragAxL_defined.to_definable
+
+noncomputable def fragVerumDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W tblN is il iv L n.
+    ∃ H, !fragVerumHeadDef H W is il iv ∧ ∃ T, !goalTailLeafDef T W tblN (il + 1) L n (is + 1) ∧
+    !appendVDef y H T”
+
+instance fragVerum_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ fragVerum (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) fragVerumDef := .mk fun v ↦ by
+  simp [fragVerumDef, fragVerum, fragVerumHead_defined.iff, goalTailLeaf_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance fragVerum_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ fragVerum (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := fragVerum_defined.to_definable
+
+noncomputable def nodeAndDef : 𝚺₁.Semisentence 18 := .mkSigma
+  “y W tblN is il ir ip iq id1 id2 icp icq in1 in2 L m1 m2 n.
+    ∃ H, !nodeAndHeadDef H W is il ir ip iq id1 id2 icp icq in1 in2 ∧ ∃ T, !goalTailBinaryDef T W tblN
+    (il + 1) (in1 + 1) (in2 + 1) L m1 m2 n (is + 1) ∧ !appendVDef y H T”
+
+instance nodeAnd_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 17 → V ↦ nodeAnd (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15) (v 16)) nodeAndDef := .mk fun v ↦ by
+  simp [nodeAndDef, nodeAnd, nodeAndHead_defined.iff, goalTailBinary_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance nodeAnd_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 17 → V ↦ nodeAnd (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15) (v 16)) := nodeAnd_defined.to_definable
+
+noncomputable def nodeOrDef : 𝚺₁.Semisentence 15 := .mkSigma
+  “y W tblN is il ir ip iq id icq ic in1 L m1 n.
+    ∃ H, !nodeOrHeadDef H W is il ir ip iq id icq ic in1 ∧ ∃ T, !goalTailUnaryDef T W tblN (il + 1) (in1
+    + 1) L m1 n (is + 1) ∧ !appendVDef y H T”
+
+instance nodeOr_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 14 → V ↦ nodeOr (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13)) nodeOrDef := .mk fun v ↦ by
+  simp [nodeOrDef, nodeOr, nodeOrHead_defined.iff, goalTailUnary_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance nodeOr_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 14 → V ↦ nodeOr (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13)) := nodeOr_defined.to_definable
+
+noncomputable def nodeWkDef : 𝚺₁.Semisentence 11 := .mkSigma
+  “y W tblN is il ic id in1 L m1 n.
+    ∃ H, !nodeWkHeadDef H W is il ic id in1 ∧ ∃ T, !goalTailUnaryDef T W tblN (il + 1) (in1 + 1) L m1 n
+    (is + 1) ∧ !appendVDef y H T”
+
+instance nodeWk_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ nodeWk (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) nodeWkDef := .mk fun v ↦ by
+  simp [nodeWkDef, nodeWk, nodeWkHead_defined.iff, goalTailUnary_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance nodeWk_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ nodeWk (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := nodeWk_defined.to_definable
+
+noncomputable def nodeCutDef : 𝚺₁.Semisentence 17 := .mkSigma
+  “y W tblN is il ip inp id1 id2 ic1 ic2 in1 in2 L m1 m2 n.
+    ∃ H, !nodeCutHeadDef H W is il ip inp id1 id2 ic1 ic2 in1 in2 ∧ ∃ T, !goalTailBinaryDef T W tblN (il
+    + 1) (in1 + 1) (in2 + 1) L m1 m2 n (is + 1) ∧ !appendVDef y H T”
+
+instance nodeCut_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 16 → V ↦ nodeCut (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15)) nodeCutDef := .mk fun v ↦ by
+  simp [nodeCutDef, nodeCut, nodeCutHead_defined.iff, goalTailBinary_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance nodeCut_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 16 → V ↦ nodeCut (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15)) := nodeCut_defined.to_definable
+
+noncomputable def nodeShiftDef : 𝚺₁.Semisentence 11 := .mkSigma
+  “y W tblN is il ic id in1 L m1 n.
+    ∃ H, !nodeShiftHeadDef H W is il ic id in1 ∧ ∃ T, !goalTailUnaryDef T W tblN (il + 1) (in1 + 1) L m1
+    n (is + 1) ∧ !appendVDef y H T”
+
+instance nodeShift_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ nodeShift (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) nodeShiftDef := .mk fun v ↦ by
+  simp [nodeShiftDef, nodeShift, nodeShiftHead_defined.iff, goalTailUnary_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance nodeShift_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ nodeShift (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := nodeShift_defined.to_definable
+
+noncomputable def nodeAllDef : 𝚺₁.Semisentence 15 := .mkSigma
+  “y W tblN is il ir ip ifp iss ic id in1 L m1 n.
+    ∃ H, !nodeAllHeadDef H W is il ir ip ifp iss ic id in1 ∧ ∃ T, !goalTailUnaryDef T W tblN (il + 1)
+    (in1 + 1) L m1 n (is + 1) ∧ !appendVDef y H T”
+
+instance nodeAll_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 14 → V ↦ nodeAll (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13)) nodeAllDef := .mk fun v ↦ by
+  simp [nodeAllDef, nodeAll, nodeAllHead_defined.iff, goalTailUnary_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance nodeAll_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 14 → V ↦ nodeAll (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13)) := nodeAll_defined.to_definable
+
+noncomputable def nodeExsDef : 𝚺₁.Semisentence 17 := .mkSigma
+  “y W tblN is il ir ip it ipt ic id ilt in1 L Lt m1 n.
+    ∃ H, !nodeExsHeadDef H W is il ir ip it ipt ic id ilt in1 ∧ ∃ T, !goalTailBinaryDef T W tblN (il + 1)
+    (ilt + 1) (in1 + 1) L Lt m1 n (is + 1) ∧ !appendVDef y H T”
+
+instance nodeExs_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 16 → V ↦ nodeExs (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15)) nodeExsDef := .mk fun v ↦ by
+  simp [nodeExsDef, nodeExs, nodeExsHead_defined.iff, goalTailBinary_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance nodeExs_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 16 → V ↦ nodeExs (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15)) := nodeExs_defined.to_definable
+
+noncomputable def nodeAxmDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W tblN is il ip L n.
+    ∃ H, !nodeAxmHeadDef H W is il ip ∧ ∃ T, !goalTailLeafDef T W tblN (il + 1) L n (is + 1) ∧
+    !appendVDef y H T”
+
+instance nodeAxm_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ nodeAxm (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) nodeAxmDef := .mk fun v ↦ by
+  simp [nodeAxmDef, nodeAxm, nodeAxmHead_defined.iff, goalTailLeaf_defined.iff, appendV_defined.iff,
+    numeral_eq_natCast]
+instance nodeAxm_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ nodeAxm (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := nodeAxm_defined.to_definable
 
 end definability
 
