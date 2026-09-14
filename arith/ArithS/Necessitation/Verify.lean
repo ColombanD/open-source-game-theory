@@ -736,6 +736,33 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, d₁, h_d₁, d₂, h_d₂, he, L₁, h_L₁, hC hm_L₁, L₂, h_L₂, hC hm_L₂, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ip, h_ip, inp, h_inp, idd₁, h_idd₁, idd₂, h_idd₂, ic₁, h_ic₁, ic₂, h_ic₂, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩))))))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (⟨s, h_s, p, h_p, he, pro, h_pro, is, h_is, il, h_il, ip, h_ip, Lv, h_Lv, n, h_n, hb0, hf⟩)))))))))
 
+/-- Every referenced child pair `⟪d', L'⟫` is below `⟪d, L⟫`: `d' < d` (the Foundation
+`*_lt_*` lemmas) and `L' ≤ L` (`le_appendV_mid`, §1 — `L'` is spliced into `L`). -/
+instance : construction.StrongFinite V where
+  strong_finite := by
+    rintro C v pr ⟨d, hd, L, hL, rfl, h⟩
+    refine ⟨d, hd, L, hL, rfl, ?_⟩
+    rcases h with ⟨s, h_s, p, h_p, rfl, pro, h_pro, is, h_is, il, h_il, ip, h_ip, inp, h_inp, Lv, h_Lv, n, h_n, hb0, hf⟩ |
+      ⟨s, h_s, rfl, pro, h_pro, is, h_is, il, h_il, iv, h_iv, Lv, h_Lv, n, h_n, hb0, hf⟩ |
+      ⟨s, h_s, p, h_p, q, h_q, dp, h_dp, dq, h_dq, rfl, L₁, h_L₁, hm_L₁, L₂, h_L₂, hm_L₂, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ir, h_ir, ip, h_ip, iq, h_iq, idd₁, h_idd₁, idd₂, h_idd₂, icp, h_icp, icq, h_icq, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩ |
+      ⟨s, h_s, p, h_p, q, h_q, d', h_d', rfl, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, iq, h_iq, idd, h_idd, icq, h_icq, ic, h_ic, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, p, h_p, d', h_d', rfl, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, ifp, h_ifp, iss, h_iss, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, p, h_p, t, h_t, d', h_d', rfl, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, it, h_it, ipt, h_ipt, ic, h_ic, idd, h_idd, ilt, h_ilt, in₁, h_in₁, Lv, h_Lv, Lt, h_Lt, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, d', h_d', rfl, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, d', h_d', rfl, L', h_L', hm_L', pro, h_pro, is, h_is, il, h_il, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩ |
+      ⟨s, h_s, p, h_p, d₁, h_d₁, d₂, h_d₂, rfl, L₁, h_L₁, hm_L₁, L₂, h_L₂, hm_L₂, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ip, h_ip, inp, h_inp, idd₁, h_idd₁, idd₂, h_idd₂, ic₁, h_ic₁, ic₂, h_ic₂, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩ |
+      ⟨s, h_s, p, h_p, rfl, pro, h_pro, is, h_is, il, h_il, ip, h_ip, Lv, h_Lv, n, h_n, hb0, hf⟩
+    · exact Or.inl ⟨s, h_s, p, h_p, rfl, pro, h_pro, is, h_is, il, h_il, ip, h_ip, inp, h_inp, Lv, h_Lv, n, h_n, hb0, hf⟩
+    · exact Or.inr (Or.inl ⟨s, h_s, rfl, pro, h_pro, is, h_is, il, h_il, iv, h_iv, Lv, h_Lv, n, h_n, hb0, hf⟩)
+    · exact Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, q, h_q, dp, h_dp, dq, h_dq, rfl, L₁, h_L₁, ⟨hm_L₁, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L₁)⟩, L₂, h_L₂, ⟨hm_L₂, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L₂)⟩, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ir, h_ir, ip, h_ip, iq, h_iq, idd₁, h_idd₁, idd₂, h_idd₂, icp, h_icp, icq, h_icq, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, q, h_q, d', h_d', rfl, L', h_L', ⟨hm_L', lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L')⟩, pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, iq, h_iq, idd, h_idd, icq, h_icq, ic, h_ic, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, d', h_d', rfl, L', h_L', ⟨hm_L', lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L')⟩, pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, ifp, h_ifp, iss, h_iss, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, t, h_t, d', h_d', rfl, L', h_L', ⟨hm_L', lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L')⟩, pro, h_pro, is, h_is, il, h_il, ir, h_ir, ip, h_ip, it, h_it, ipt, h_ipt, ic, h_ic, idd, h_idd, ilt, h_ilt, in₁, h_in₁, Lv, h_Lv, Lt, h_Lt, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, d', h_d', rfl, L', h_L', ⟨hm_L', lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L')⟩, pro, h_pro, is, h_is, il, h_il, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, d', h_d', rfl, L', h_L', ⟨hm_L', lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L')⟩, pro, h_pro, is, h_is, il, h_il, ic, h_ic, idd, h_idd, in₁, h_in₁, Lv, h_Lv, m₁, h_m₁, n, h_n, hb0, hb1, hf⟩)))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, h_s, p, h_p, d₁, h_d₁, d₂, h_d₂, rfl, L₁, h_L₁, ⟨hm_L₁, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L₁)⟩, L₂, h_L₂, ⟨hm_L₂, lt_of_lt_of_le (pair_lt_pair_left (by simp) _) (pair_le_pair_right _ h_L₂)⟩, pro₁, h_pro₁, pro₂, h_pro₂, is, h_is, il, h_il, ip, h_ip, inp, h_inp, idd₁, h_idd₁, idd₂, h_idd₂, ic₁, h_ic₁, ic₂, h_ic₂, in₁, h_in₁, in₂, h_in₂, Lv, h_Lv, m₁, h_m₁, m₂, h_m₂, n, h_n, hb0, hb1, hb2, hb3, hf⟩))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (⟨s, h_s, p, h_p, rfl, pro, h_pro, is, h_is, il, h_il, ip, h_ip, Lv, h_Lv, n, h_n, hb0, hf⟩)))))))))
+
 end Verify
 
 end ArithS
