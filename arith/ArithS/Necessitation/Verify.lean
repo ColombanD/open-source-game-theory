@@ -225,6 +225,230 @@ instance goalTailBinary_definable :
         goalTailBinary (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
   goalTailBinary_defined.to_definable
 
+/-! ### 2.3 The ten `node<Tag>Head` lists -/
+
+noncomputable def fragAxLHeadDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W is il ip inp.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 ip ∧ ∃ t2, !qqFvarDef t2 (is + 1) ∧ ∃ t3, !qqFvarDef t3
+    (ip + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t5, !qqFvarDef t5 (inp + 1) ∧ ∃ t6, !qqFvarDef t6 (il + 1) ∧ ∃
+    e0_0, !adjoinDef e0_0 t1 0 ∧ ∃ e0_1, !adjoinDef e0_1 t0 e0_0 ∧ ∃ s0, !mkStepDef s0 W 87 e0_1 ∧ ∃
+    e1_0, !adjoinDef e1_0 z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t3 e1_0 ∧ ∃ e1_2, !adjoinDef e1_2 t2 e1_1 ∧ ∃
+    s1, !mkStepDef s1 W 116 e1_2 ∧ ∃ e2_0, !adjoinDef e2_0 z0 0 ∧ ∃ e2_1, !adjoinDef e2_1 t5 e2_0 ∧ ∃
+    e2_2, !adjoinDef e2_2 t3 e2_1 ∧ ∃ e2_3, !adjoinDef e2_3 t2 e2_2 ∧ ∃ s2, !mkStepDef s2 W 93 e2_3 ∧ ∃
+    e3_0, !adjoinDef e3_0 t6 0 ∧ ∃ e3_1, !adjoinDef e3_1 t3 e3_0 ∧ ∃ e3_2, !adjoinDef e3_2 t2 e3_1 ∧ ∃
+    e3_3, !adjoinDef e3_3 z0 e3_2 ∧ ∃ s3, !mkStepDef s3 W 99 e3_3 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧ ∃ r2,
+    !adjoinDef r2 s2 r3 ∧ ∃ r1, !adjoinDef r1 s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance fragAxLHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ fragAxLHead (v 0) (v 1) (v 2) (v 3) (v 4)) fragAxLHeadDef := .mk fun v ↦ by
+  simp [fragAxLHeadDef, fragAxLHead, mkStep_defined.iff, numeral_eq_natCast]
+instance fragAxLHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ fragAxLHead (v 0) (v 1) (v 2) (v 3) (v 4)) := fragAxLHead_defined.to_definable
+
+
+noncomputable def fragVerumHeadDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W is il iv.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 (is + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t3, !qqFvarDef t3
+    (iv + 1) ∧ ∃ t4, !qqFvarDef t4 (il + 1) ∧ ∃ e0_0, !adjoinDef e0_0 t0 0 ∧ ∃ s0, !mkStepDef s0 W 88
+    e0_0 ∧ ∃ e1_0, !adjoinDef e1_0 z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t1 e1_0 ∧ ∃ s1, !mkStepDef s1 W 117
+    e1_1 ∧ ∃ e2_0, !adjoinDef e2_0 z0 0 ∧ ∃ e2_1, !adjoinDef e2_1 t3 e2_0 ∧ ∃ e2_2, !adjoinDef e2_2 t1
+    e2_1 ∧ ∃ s2, !mkStepDef s2 W 94 e2_2 ∧ ∃ e3_0, !adjoinDef e3_0 t4 0 ∧ ∃ e3_1, !adjoinDef e3_1 t1 e3_0
+    ∧ ∃ e3_2, !adjoinDef e3_2 z0 e3_1 ∧ ∃ s3, !mkStepDef s3 W 100 e3_2 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧ ∃ r2,
+    !adjoinDef r2 s2 r3 ∧ ∃ r1, !adjoinDef r1 s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance fragVerumHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 4 → V ↦ fragVerumHead (v 0) (v 1) (v 2) (v 3)) fragVerumHeadDef := .mk fun v ↦ by
+  simp [fragVerumHeadDef, fragVerumHead, mkStep_defined.iff, numeral_eq_natCast]
+instance fragVerumHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 4 → V ↦ fragVerumHead (v 0) (v 1) (v 2) (v 3)) := fragVerumHead_defined.to_definable
+
+
+noncomputable def nodeAndHeadDef : 𝚺₁.Semisentence 13 := .mkSigma
+  “y W is il ir ip iq id1 id2 icp icq in1 in2.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 ip ∧ ∃ t2, !qqFvarDef t2 iq ∧ ∃ t3, !qqFvarDef t3 id1 ∧
+    ∃ t4, !qqFvarDef t4 id2 ∧ ∃ t5, !qqFvarDef t5 (is + 1) ∧ ∃ t6, !qqFvarDef t6 (ip + 1) ∧ ∃ t7,
+    !qqFvarDef t7 (iq + 1) ∧ ∃ t8, !qqFvarDef t8 (id1 + 1) ∧ ∃ t9, !qqFvarDef t9 (id2 + 1) ∧ ∃ z0,
+    !qqFvarDef z0 0 ∧ ∃ t11, !qqFvarDef t11 (ir + 1) ∧ ∃ t12, !qqFvarDef t12 (icp + 1) ∧ ∃ t13,
+    !qqFvarDef t13 (icq + 1) ∧ ∃ t14, !qqFvarDef t14 (in1 + 1) ∧ ∃ t15, !qqFvarDef t15 (in2 + 1) ∧ ∃ t16,
+    !qqFvarDef t16 (il + 1) ∧ ∃ e0_0, !adjoinDef e0_0 t4 0 ∧ ∃ e0_1, !adjoinDef e0_1 t3 e0_0 ∧ ∃ e0_2,
+    !adjoinDef e0_2 t2 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 t1 e0_2 ∧ ∃ e0_4, !adjoinDef e0_4 t0 e0_3 ∧ ∃ s0,
+    !mkStepDef s0 W 89 e0_4 ∧ ∃ e1_0, !adjoinDef e1_0 z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t9 e1_0 ∧ ∃ e1_2,
+    !adjoinDef e1_2 t8 e1_1 ∧ ∃ e1_3, !adjoinDef e1_3 t7 e1_2 ∧ ∃ e1_4, !adjoinDef e1_4 t6 e1_3 ∧ ∃ e1_5,
+    !adjoinDef e1_5 t5 e1_4 ∧ ∃ s1, !mkStepDef s1 W 118 e1_5 ∧ ∃ e2_0, !adjoinDef e2_0 z0 0 ∧ ∃ e2_1,
+    !adjoinDef e2_1 t13 e2_0 ∧ ∃ e2_2, !adjoinDef e2_2 t12 e2_1 ∧ ∃ e2_3, !adjoinDef e2_3 t11 e2_2 ∧ ∃
+    e2_4, !adjoinDef e2_4 t9 e2_3 ∧ ∃ e2_5, !adjoinDef e2_5 t8 e2_4 ∧ ∃ e2_6, !adjoinDef e2_6 t7 e2_5 ∧ ∃
+    e2_7, !adjoinDef e2_7 t6 e2_6 ∧ ∃ e2_8, !adjoinDef e2_8 t5 e2_7 ∧ ∃ s2, !mkStepDef s2 W 95 e2_8 ∧ ∃
+    e3_0, !adjoinDef e3_0 t16 0 ∧ ∃ e3_1, !adjoinDef e3_1 t15 e3_0 ∧ ∃ e3_2, !adjoinDef e3_2 t14 e3_1 ∧ ∃
+    e3_3, !adjoinDef e3_3 t9 e3_2 ∧ ∃ e3_4, !adjoinDef e3_4 t8 e3_3 ∧ ∃ e3_5, !adjoinDef e3_5 t7 e3_4 ∧ ∃
+    e3_6, !adjoinDef e3_6 t6 e3_5 ∧ ∃ e3_7, !adjoinDef e3_7 t5 e3_6 ∧ ∃ e3_8, !adjoinDef e3_8 z0 e3_7 ∧ ∃
+    s3, !mkStepDef s3 W 101 e3_8 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧ ∃ r2, !adjoinDef r2 s2 r3 ∧ ∃ r1,
+    !adjoinDef r1 s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance nodeAndHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 12 → V ↦ nodeAndHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) nodeAndHeadDef := .mk fun v ↦ by
+  simp [nodeAndHeadDef, nodeAndHead, mkStep_defined.iff, numeral_eq_natCast]
+instance nodeAndHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ nodeAndHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) := nodeAndHead_defined.to_definable
+
+
+noncomputable def nodeOrHeadDef : 𝚺₁.Semisentence 11 := .mkSigma
+  “y W is il ir ip iq id icq ic in1.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 ip ∧ ∃ t2, !qqFvarDef t2 iq ∧ ∃ t3, !qqFvarDef t3 id ∧ ∃
+    t4, !qqFvarDef t4 (is + 1) ∧ ∃ t5, !qqFvarDef t5 (ip + 1) ∧ ∃ t6, !qqFvarDef t6 (iq + 1) ∧ ∃ t7,
+    !qqFvarDef t7 (id + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t9, !qqFvarDef t9 (ir + 1) ∧ ∃ t10, !qqFvarDef t10
+    (icq + 1) ∧ ∃ t11, !qqFvarDef t11 (ic + 1) ∧ ∃ t12, !qqFvarDef t12 (in1 + 1) ∧ ∃ t13, !qqFvarDef t13
+    (il + 1) ∧ ∃ e0_0, !adjoinDef e0_0 t3 0 ∧ ∃ e0_1, !adjoinDef e0_1 t2 e0_0 ∧ ∃ e0_2, !adjoinDef e0_2
+    t1 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 t0 e0_2 ∧ ∃ s0, !mkStepDef s0 W 90 e0_3 ∧ ∃ e1_0, !adjoinDef e1_0
+    z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t7 e1_0 ∧ ∃ e1_2, !adjoinDef e1_2 t6 e1_1 ∧ ∃ e1_3, !adjoinDef e1_3 t5
+    e1_2 ∧ ∃ e1_4, !adjoinDef e1_4 t4 e1_3 ∧ ∃ s1, !mkStepDef s1 W 119 e1_4 ∧ ∃ e2_0, !adjoinDef e2_0 z0
+    0 ∧ ∃ e2_1, !adjoinDef e2_1 t11 e2_0 ∧ ∃ e2_2, !adjoinDef e2_2 t10 e2_1 ∧ ∃ e2_3, !adjoinDef e2_3 t9
+    e2_2 ∧ ∃ e2_4, !adjoinDef e2_4 t7 e2_3 ∧ ∃ e2_5, !adjoinDef e2_5 t6 e2_4 ∧ ∃ e2_6, !adjoinDef e2_6 t5
+    e2_5 ∧ ∃ e2_7, !adjoinDef e2_7 t4 e2_6 ∧ ∃ s2, !mkStepDef s2 W 96 e2_7 ∧ ∃ e3_0, !adjoinDef e3_0 t13
+    0 ∧ ∃ e3_1, !adjoinDef e3_1 t12 e3_0 ∧ ∃ e3_2, !adjoinDef e3_2 t7 e3_1 ∧ ∃ e3_3, !adjoinDef e3_3 t6
+    e3_2 ∧ ∃ e3_4, !adjoinDef e3_4 t5 e3_3 ∧ ∃ e3_5, !adjoinDef e3_5 t4 e3_4 ∧ ∃ e3_6, !adjoinDef e3_6 z0
+    e3_5 ∧ ∃ s3, !mkStepDef s3 W 102 e3_6 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧ ∃ r2, !adjoinDef r2 s2 r3 ∧ ∃ r1,
+    !adjoinDef r1 s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance nodeOrHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ nodeOrHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) nodeOrHeadDef := .mk fun v ↦ by
+  simp [nodeOrHeadDef, nodeOrHead, mkStep_defined.iff, numeral_eq_natCast]
+instance nodeOrHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ nodeOrHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := nodeOrHead_defined.to_definable
+
+
+noncomputable def nodeWkHeadDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W is il ic id in1.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 id ∧ ∃ t2, !qqFvarDef t2 (is + 1) ∧ ∃ t3, !qqFvarDef t3
+    (id + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t5, !qqFvarDef t5 (ic + 1) ∧ ∃ t6, !qqFvarDef t6 (in1 + 1) ∧ ∃
+    t7, !qqFvarDef t7 (il + 1) ∧ ∃ e0_0, !adjoinDef e0_0 t1 0 ∧ ∃ e0_1, !adjoinDef e0_1 t0 e0_0 ∧ ∃ s0,
+    !mkStepDef s0 W 91 e0_1 ∧ ∃ e1_0, !adjoinDef e1_0 z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t3 e1_0 ∧ ∃ e1_2,
+    !adjoinDef e1_2 t2 e1_1 ∧ ∃ s1, !mkStepDef s1 W 120 e1_2 ∧ ∃ e2_0, !adjoinDef e2_0 z0 0 ∧ ∃ e2_1,
+    !adjoinDef e2_1 t5 e2_0 ∧ ∃ e2_2, !adjoinDef e2_2 t3 e2_1 ∧ ∃ e2_3, !adjoinDef e2_3 t2 e2_2 ∧ ∃ s2,
+    !mkStepDef s2 W 97 e2_3 ∧ ∃ e3_0, !adjoinDef e3_0 t7 0 ∧ ∃ e3_1, !adjoinDef e3_1 t6 e3_0 ∧ ∃ e3_2,
+    !adjoinDef e3_2 t3 e3_1 ∧ ∃ e3_3, !adjoinDef e3_3 t2 e3_2 ∧ ∃ e3_4, !adjoinDef e3_4 z0 e3_3 ∧ ∃ s3,
+    !mkStepDef s3 W 103 e3_4 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧ ∃ r2, !adjoinDef r2 s2 r3 ∧ ∃ r1, !adjoinDef r1
+    s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance nodeWkHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ nodeWkHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) nodeWkHeadDef := .mk fun v ↦ by
+  simp [nodeWkHeadDef, nodeWkHead, mkStep_defined.iff, numeral_eq_natCast]
+instance nodeWkHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ nodeWkHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := nodeWkHead_defined.to_definable
+
+
+noncomputable def nodeCutHeadDef : 𝚺₁.Semisentence 12 := .mkSigma
+  “y W is il ip inp id1 id2 ic1 ic2 in1 in2.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 ip ∧ ∃ t2, !qqFvarDef t2 id1 ∧ ∃ t3, !qqFvarDef t3 id2 ∧
+    ∃ t4, !qqFvarDef t4 (is + 1) ∧ ∃ t5, !qqFvarDef t5 (ip + 1) ∧ ∃ t6, !qqFvarDef t6 (id1 + 1) ∧ ∃ t7,
+    !qqFvarDef t7 (id2 + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t9, !qqFvarDef t9 (ic1 + 1) ∧ ∃ t10, !qqFvarDef
+    t10 (inp + 1) ∧ ∃ t11, !qqFvarDef t11 (ic2 + 1) ∧ ∃ t12, !qqFvarDef t12 (in1 + 1) ∧ ∃ t13, !qqFvarDef
+    t13 (in2 + 1) ∧ ∃ t14, !qqFvarDef t14 (il + 1) ∧ ∃ e0_0, !adjoinDef e0_0 t3 0 ∧ ∃ e0_1, !adjoinDef
+    e0_1 t2 e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 t1 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 t0 e0_2 ∧ ∃ s0, !mkStepDef
+    s0 W 92 e0_3 ∧ ∃ e1_0, !adjoinDef e1_0 z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t7 e1_0 ∧ ∃ e1_2, !adjoinDef
+    e1_2 t6 e1_1 ∧ ∃ e1_3, !adjoinDef e1_3 t5 e1_2 ∧ ∃ e1_4, !adjoinDef e1_4 t4 e1_3 ∧ ∃ s1, !mkStepDef
+    s1 W 121 e1_4 ∧ ∃ e2_0, !adjoinDef e2_0 z0 0 ∧ ∃ e2_1, !adjoinDef e2_1 t11 e2_0 ∧ ∃ e2_2, !adjoinDef
+    e2_2 t10 e2_1 ∧ ∃ e2_3, !adjoinDef e2_3 t9 e2_2 ∧ ∃ e2_4, !adjoinDef e2_4 t7 e2_3 ∧ ∃ e2_5,
+    !adjoinDef e2_5 t6 e2_4 ∧ ∃ e2_6, !adjoinDef e2_6 t5 e2_5 ∧ ∃ e2_7, !adjoinDef e2_7 t4 e2_6 ∧ ∃ e2_8,
+    !adjoinDef e2_8 ↑Arithmetic.zero e2_7 ∧ ∃ s2, !mkStepDef s2 W 98 e2_8 ∧ ∃ e3_0, !adjoinDef e3_0 t14 0
+    ∧ ∃ e3_1, !adjoinDef e3_1 t13 e3_0 ∧ ∃ e3_2, !adjoinDef e3_2 t12 e3_1 ∧ ∃ e3_3, !adjoinDef e3_3 t7
+    e3_2 ∧ ∃ e3_4, !adjoinDef e3_4 t6 e3_3 ∧ ∃ e3_5, !adjoinDef e3_5 t5 e3_4 ∧ ∃ e3_6, !adjoinDef e3_6 t4
+    e3_5 ∧ ∃ e3_7, !adjoinDef e3_7 z0 e3_6 ∧ ∃ s3, !mkStepDef s3 W 104 e3_7 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧
+    ∃ r2, !adjoinDef r2 s2 r3 ∧ ∃ r1, !adjoinDef r1 s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance nodeCutHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 11 → V ↦ nodeCutHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) nodeCutHeadDef := .mk fun v ↦ by
+  simp [nodeCutHeadDef, nodeCutHead, mkStep_defined.iff, numeral_eq_natCast]
+instance nodeCutHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ nodeCutHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) := nodeCutHead_defined.to_definable
+
+
+noncomputable def nodeShiftHeadDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W is il ic id in1.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 id ∧ ∃ t2, !qqFvarDef t2 (is + 1) ∧ ∃ t3, !qqFvarDef t3
+    (id + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t5, !qqFvarDef t5 (ic + 1) ∧ ∃ t6, !qqFvarDef t6 (in1 + 1) ∧ ∃
+    t7, !qqFvarDef t7 (il + 1) ∧ ∃ e0_0, !adjoinDef e0_0 t1 0 ∧ ∃ e0_1, !adjoinDef e0_1 t0 e0_0 ∧ ∃ s0,
+    !mkStepDef s0 W 128 e0_1 ∧ ∃ e1_0, !adjoinDef e1_0 z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t3 e1_0 ∧ ∃ e1_2,
+    !adjoinDef e1_2 t2 e1_1 ∧ ∃ s1, !mkStepDef s1 W 142 e1_2 ∧ ∃ e2_0, !adjoinDef e2_0 z0 0 ∧ ∃ e2_1,
+    !adjoinDef e2_1 t2 e2_0 ∧ ∃ e2_2, !adjoinDef e2_2 t5 e2_1 ∧ ∃ e2_3, !adjoinDef e2_3 t3 e2_2 ∧ ∃ s2,
+    !mkStepDef s2 W 132 e2_3 ∧ ∃ e3_0, !adjoinDef e3_0 t7 0 ∧ ∃ e3_1, !adjoinDef e3_1 t6 e3_0 ∧ ∃ e3_2,
+    !adjoinDef e3_2 t3 e3_1 ∧ ∃ e3_3, !adjoinDef e3_3 t2 e3_2 ∧ ∃ e3_4, !adjoinDef e3_4 z0 e3_3 ∧ ∃ s3,
+    !mkStepDef s3 W 135 e3_4 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧ ∃ r2, !adjoinDef r2 s2 r3 ∧ ∃ r1, !adjoinDef r1
+    s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance nodeShiftHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ nodeShiftHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) nodeShiftHeadDef := .mk fun v ↦ by
+  simp [nodeShiftHeadDef, nodeShiftHead, mkStep_defined.iff, numeral_eq_natCast]
+instance nodeShiftHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ nodeShiftHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := nodeShiftHead_defined.to_definable
+
+
+noncomputable def nodeAllHeadDef : 𝚺₁.Semisentence 11 := .mkSigma
+  “y W is il ir ip ifp iss ic id in1.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 ip ∧ ∃ t2, !qqFvarDef t2 id ∧ ∃ t3, !qqFvarDef t3 (is +
+    1) ∧ ∃ t4, !qqFvarDef t4 (ip + 1) ∧ ∃ t5, !qqFvarDef t5 (id + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t7,
+    !qqFvarDef t7 (ir + 1) ∧ ∃ t8, !qqFvarDef t8 (ifp + 1) ∧ ∃ t9, !qqFvarDef t9 (iss + 1) ∧ ∃ t10,
+    !qqFvarDef t10 (ic + 1) ∧ ∃ t11, !qqFvarDef t11 (in1 + 1) ∧ ∃ t12, !qqFvarDef t12 (il + 1) ∧ ∃ e0_0,
+    !adjoinDef e0_0 t2 0 ∧ ∃ e0_1, !adjoinDef e0_1 t1 e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 t0 e0_1 ∧ ∃ s0,
+    !mkStepDef s0 W 126 e0_2 ∧ ∃ e1_0, !adjoinDef e1_0 z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t5 e1_0 ∧ ∃ e1_2,
+    !adjoinDef e1_2 t4 e1_1 ∧ ∃ e1_3, !adjoinDef e1_3 t3 e1_2 ∧ ∃ s1, !mkStepDef s1 W 140 e1_3 ∧ ∃ e2_0,
+    !adjoinDef e2_0 z0 0 ∧ ∃ e2_1, !adjoinDef e2_1 t10 e2_0 ∧ ∃ e2_2, !adjoinDef e2_2 t9 e2_1 ∧ ∃ e2_3,
+    !adjoinDef e2_3 t8 e2_2 ∧ ∃ e2_4, !adjoinDef e2_4 t7 e2_3 ∧ ∃ e2_5, !adjoinDef e2_5 t5 e2_4 ∧ ∃ e2_6,
+    !adjoinDef e2_6 t4 e2_5 ∧ ∃ e2_7, !adjoinDef e2_7 t3 e2_6 ∧ ∃ s2, !mkStepDef s2 W 130 e2_7 ∧ ∃ e3_0,
+    !adjoinDef e3_0 t12 0 ∧ ∃ e3_1, !adjoinDef e3_1 t11 e3_0 ∧ ∃ e3_2, !adjoinDef e3_2 t5 e3_1 ∧ ∃ e3_3,
+    !adjoinDef e3_3 t4 e3_2 ∧ ∃ e3_4, !adjoinDef e3_4 t3 e3_3 ∧ ∃ e3_5, !adjoinDef e3_5 z0 e3_4 ∧ ∃ s3,
+    !mkStepDef s3 W 133 e3_5 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧ ∃ r2, !adjoinDef r2 s2 r3 ∧ ∃ r1, !adjoinDef r1
+    s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance nodeAllHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ nodeAllHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) nodeAllHeadDef := .mk fun v ↦ by
+  simp [nodeAllHeadDef, nodeAllHead, mkStep_defined.iff, numeral_eq_natCast]
+instance nodeAllHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ nodeAllHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := nodeAllHead_defined.to_definable
+
+
+noncomputable def nodeExsHeadDef : 𝚺₁.Semisentence 12 := .mkSigma
+  “y W is il ir ip it ipt ic id ilt in1.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 ip ∧ ∃ t2, !qqFvarDef t2 it ∧ ∃ t3, !qqFvarDef t3 id ∧ ∃
+    t4, !qqFvarDef t4 (is + 1) ∧ ∃ t5, !qqFvarDef t5 (ip + 1) ∧ ∃ t6, !qqFvarDef t6 (it + 1) ∧ ∃ t7,
+    !qqFvarDef t7 (id + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t9, !qqFvarDef t9 (ir + 1) ∧ ∃ t10, !qqFvarDef t10
+    (ipt + 1) ∧ ∃ t11, !qqFvarDef t11 (ic + 1) ∧ ∃ t12, !qqFvarDef t12 (in1 + 1) ∧ ∃ t13, !qqFvarDef t13
+    (il + 1) ∧ ∃ t14, !qqFvarDef t14 (ilt + 1) ∧ ∃ e0_0, !adjoinDef e0_0 t3 0 ∧ ∃ e0_1, !adjoinDef e0_1
+    t2 e0_0 ∧ ∃ e0_2, !adjoinDef e0_2 t1 e0_1 ∧ ∃ e0_3, !adjoinDef e0_3 t0 e0_2 ∧ ∃ s0, !mkStepDef s0 W
+    127 e0_3 ∧ ∃ e1_0, !adjoinDef e1_0 z0 0 ∧ ∃ e1_1, !adjoinDef e1_1 t7 e1_0 ∧ ∃ e1_2, !adjoinDef e1_2
+    t6 e1_1 ∧ ∃ e1_3, !adjoinDef e1_3 t5 e1_2 ∧ ∃ e1_4, !adjoinDef e1_4 t4 e1_3 ∧ ∃ s1, !mkStepDef s1 W
+    141 e1_4 ∧ ∃ e2_0, !adjoinDef e2_0 z0 0 ∧ ∃ e2_1, !adjoinDef e2_1 t11 e2_0 ∧ ∃ e2_2, !adjoinDef e2_2
+    t10 e2_1 ∧ ∃ e2_3, !adjoinDef e2_3 t9 e2_2 ∧ ∃ e2_4, !adjoinDef e2_4 t7 e2_3 ∧ ∃ e2_5, !adjoinDef
+    e2_5 t6 e2_4 ∧ ∃ e2_6, !adjoinDef e2_6 t5 e2_5 ∧ ∃ e2_7, !adjoinDef e2_7 t4 e2_6 ∧ ∃ e2_8, !adjoinDef
+    e2_8 ↑Arithmetic.zero e2_7 ∧ ∃ s2, !mkStepDef s2 W 131 e2_8 ∧ ∃ e3_0, !adjoinDef e3_0 t14 0 ∧ ∃ e3_1,
+    !adjoinDef e3_1 t13 e3_0 ∧ ∃ e3_2, !adjoinDef e3_2 t12 e3_1 ∧ ∃ e3_3, !adjoinDef e3_3 t7 e3_2 ∧ ∃
+    e3_4, !adjoinDef e3_4 t6 e3_3 ∧ ∃ e3_5, !adjoinDef e3_5 t5 e3_4 ∧ ∃ e3_6, !adjoinDef e3_6 t4 e3_5 ∧ ∃
+    e3_7, !adjoinDef e3_7 z0 e3_6 ∧ ∃ s3, !mkStepDef s3 W 134 e3_7 ∧ ∃ r3, !adjoinDef r3 s3 0 ∧ ∃ r2,
+    !adjoinDef r2 s2 r3 ∧ ∃ r1, !adjoinDef r1 s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance nodeExsHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 11 → V ↦ nodeExsHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) nodeExsHeadDef := .mk fun v ↦ by
+  simp [nodeExsHeadDef, nodeExsHead, mkStep_defined.iff, numeral_eq_natCast]
+instance nodeExsHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ nodeExsHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) := nodeExsHead_defined.to_definable
+
+
+noncomputable def nodeAxmHeadDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W is il ip.
+    ∃ t0, !qqFvarDef t0 is ∧ ∃ t1, !qqFvarDef t1 ip ∧ ∃ t2, !qqFvarDef t2 (is + 1) ∧ ∃ t3, !qqFvarDef t3
+    (ip + 1) ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ t5, !qqFvarDef t5 (il + 1) ∧ ∃ e0_0, !adjoinDef e0_0 t1 0 ∧ ∃
+    e0_1, !adjoinDef e0_1 t0 e0_0 ∧ ∃ s0, !mkStepDef s0 W 129 e0_1 ∧ ∃ e1_0, !adjoinDef e1_0 z0 0 ∧ ∃
+    e1_1, !adjoinDef e1_1 t3 e1_0 ∧ ∃ e1_2, !adjoinDef e1_2 t2 e1_1 ∧ ∃ s1, !mkStepDef s1 W 143 e1_2 ∧ ∃
+    e2_0, !adjoinDef e2_0 z0 0 ∧ ∃ e2_1, !adjoinDef e2_1 t3 e2_0 ∧ ∃ e2_2, !adjoinDef e2_2 t2 e2_1 ∧ ∃
+    s2, !mkStepDef s2 W 137 e2_2 ∧ ∃ e3_0, !adjoinDef e3_0 t5 0 ∧ ∃ e3_1, !adjoinDef e3_1 t3 e3_0 ∧ ∃
+    e3_2, !adjoinDef e3_2 t2 e3_1 ∧ ∃ e3_3, !adjoinDef e3_3 z0 e3_2 ∧ ∃ s3, !mkStepDef s3 W 136 e3_3 ∧ ∃
+    r3, !adjoinDef r3 s3 0 ∧ ∃ r2, !adjoinDef r2 s2 r3 ∧ ∃ r1, !adjoinDef r1 s1 r2 ∧ !adjoinDef y s0 r1”
+
+instance nodeAxmHead_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 4 → V ↦ nodeAxmHead (v 0) (v 1) (v 2) (v 3)) nodeAxmHeadDef := .mk fun v ↦ by
+  simp [nodeAxmHeadDef, nodeAxmHead, mkStep_defined.iff, numeral_eq_natCast]
+instance nodeAxmHead_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 4 → V ↦ nodeAxmHead (v 0) (v 1) (v 2) (v 3)) := nodeAxmHead_defined.to_definable
+
 end definability
 
 end ArithS
