@@ -779,3 +779,31 @@ discipline whenever "green" arrives suspiciously quickly. LESSON ON BLOCKERS: bo
 reported against `Cert` dissolved on inspection (one was already solved by `NoDrop'`, one needed a
 one-line cap lift with a worked precedent in the repository) — verify a reported blocker against
 the tree before treating it as one.
+
+**§11 status — `Layout` §4.8 + `Members` DONE (df045c4, 57bf1c4, 77bb65e; build 3248, census 464,
+all standard; every check sentinel-tested).** `Layout.lean` §4.8 (5299 → 5483, additions only):
+`dossFactsT/V`, `eqCountT/V`, `DossierAtT/V` (+ definability), the count equations
+(`eqCountT_func = eqCountV k v k + 1`, `eqCountV_succ`, `eqCount_and = eqCount p + eqCount q + 1`,
+…), the fact-list equations `dossFactsT_bvar/fvar/func`, `dossFactsV_zero/succ`,
+`dossFacts_verum/falsum/and/or/all/exs/rel/nrel`, and the `DossierAt` DECOMPOSITIONS at
+`factPreds` in Cert's fact order and offset spelling (`dossierAt_and : DossierAt factPreds Γ i
+(p ^⋏ q) ↔ neg (andFact (^&i) (^&(i + eqCount q + 1)) (^&(i+1))) ∈ Γ ∧ DossierAt … (i+1) q ∧
+DossierAt … (i + eqCount q + 1) p`, `dossierAtV_succ`, …). NOTE for the bridge: Layout's dossier
+carries NO `piFact/tPiFact/tvPiFact/utvPiFact` (only the 12 shape kinds) — Cert's extra conjuncts
+are dropped; hypotheses are `IsUFormula`/`IsUTermVec`. `Members.lean` (NEW, 338): `flenVec`
+(VecRec map of `formulaLen`), `listSum_appendV`, `memberList` (PR on the set code: ascending,
+`mem_memberList_iff`, `memberList_sorted/nodup`, `len_memberList_le_length : ≤ ‖s‖`),
+**`setLen_eq_listSum_memberList : setLen LAct s = listSum (flenVec (memberList s))`** (THE
+distinctness lemma, DESIGN §0 item 5) and `listSum_flenVec_memberList_le` (the `sLemma`'s true
+closed sentence). §8.4 V-lemmas: nothing to write — `setShift_insert` (`Lib/Frag.lean:73`) and
+`termLen_bnum_le` (`NumSteps.lean:1465`) exist. NOT started: N4 `mulEq`/N5 `lengthEq` — not a
+small addition (`NumTableOK` has only the 19 `n*B` rows; each needs new rows + a bit-recursion
+fixpoint on the `addCode` precedent, ~1000 lines); DESIGN NOTE: the FACT-level rows
+`row_lengthZero/One/TwoMul/TwoMulOne` already exist in `RowInstB` (Frag table), so N5 can be a STEP
+LIST over the Frag table instead of a `DerivationOf` sLemma. TRAPS: `add_lt_add_right hm 1` gives
+`1 + m < 1 + len L` (the swap applies to `lt` too); `if … then` in a `PR.Construction` needs
+`open Classical`; `lt_irrefl` is ambiguous — `_root_.lt_irrefl`; `one_le_formulaLen_V` needs
+`(L := LAct) (n := 0)`; no `𝚺₁-Function₅` — state a 5-ary function as `𝚺₁.Definable (fun v :
+Fin 6 → V ↦ f … = v 0)`; after appending to `Layout.lean`, `lake build
+ArithS.Necessitation.Layout` (~70 s) before importers see the names.
+IN FLIGHT: `Cert` (ok theorems, bridge row, certSubst/certFree, lenSteps); `Dossier` (the bridge) + N5.
