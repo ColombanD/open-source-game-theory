@@ -930,3 +930,41 @@ does not see through the let); `rw … at h₁ h₂` fails if a pattern is absen
 identifier character (`hΣ` → `hSum`); dot-lemmas named `LenPre.bnum`/`.vRef` shadow the globals inside
 later `LenPre.*` statements — never name an accessor after a global; `cok_` witness-name is the ROW's
 binder (`wp` for `formulaLenTotal`), not the consumer's.
+
+**§11 status — `Top` DONE against an explicit KIT (b1fc02c … 37ddaac; 2060 lines; build 3245,
+census 508, all standard).** **`theorem boundedInnerNec_three_of_kit (hpkg : KitPackage N B N' B'
+N₂ B₂ N₃ B₃ Ck Cχ) : BoundedInnerNec 3`.** `KitPackage` = per model: the top table (`TopTable`,
+rows 150–154 `gIntroNum/lenDerIntro/boxIntro` + …), the NumSteps/Len/Mul tables, and TWO kits:
+`VerifyKit tbl N W tblN Ck` — `ok : Proof TAct ρ x → RootLayout Γ x i → IsFormulaSet Γ →
+Ck·(dlen ρ + i + 1) ≤ E → VerifyGraph W tblN ρ L → ListOK tbl E 9 Γ L ∧ NoDrop' L ∧ shiftsV L ≤
+Ck·(dlen ρ + 1) ∧ neg (goalFact (^&(i + 1 + shiftsV L)) (bnum (dlen ρ))) ∈ finalCtx Γ L` and
+`cost : … → costSum N E Γ L ≤ Ck·(dlen ρ + 1)·(setLen Γ + N + E + (dlen ρ + 1)²) ∧ setLen
+(finalCtx Γ L) ≤ setLen Γ + Ck·E·(dlen ρ + 1) ∧ fvOccS (finalCtx Γ L) ≤ fvOccS Γ + Ck·(dlen ρ + 1)`
+(= §6.3/§6.4/§5 for the RELATION `VerifyGraph` at the root — NO function, NO uniqueness needed);
+`PinKit χ tbl N Cχ` — `pin : ∀ k, RootLayout Γ (instB ⌜χ⌝ k) i → … → ∃ P, ListOK … ∧ NoDrop' ∧
+shiftsV P ≤ Cχ·(‖k‖+1) ∧ neg (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P ∧
+costs` (= §7.1 steps 1–4 / §7.2: bnum certification, adjoin, the per-χ closed shape rows,
+`certSubst`, `instBIntro` — per-χ constants are ALLOWED by `BoundedInnerNec`'s `∃ C` per χ, so the
+pin may cost anything constant in `k`). `RootLayout Γ x i := DossF walkPieces Γ 0 x (i+2) ∧ piFact
+𝟎 &(i+2) ∧ insFact &(i+1) &(i+2) 𝟎 ∧ fsetPiFact &(i+1) ∧ memFact &(i+2) &(i+1) ∧ setLenFact &i
+&(i+1)`. DISCHARGED in `Top`: the target's code shape with NO closed quote unfolded
+(**`target_eq_boxFact χ k : instB ⌜Box_g χ⌝ k = boxFact (qNum χ) (bnum k)`**, `qNum χ := numeral
+⌜χ⌝`, `Pbox` via the Σ₁ symbol `boxCoreS`), the closing rows, `rootSteps = describeF ++ chainSteps`
+(`rootSteps_ok`), `closeSteps` (15 steps: `goalElim` + the four numeral `sLemma`s N5/N4/N4/N2 +
+`dlenDefIntro/proofIntro/leTrans/lenDerIntro/gIntroNum/boxIntro`; the leaf is `axL` — no
+`targetLeafCode`, one Horn row `boxIntro` concludes the target), `top_main`, and the CUBIC bound
+with explicit standard constants (`PB` graded-bound toolkit, `topBound_pb`, `‖gBudget k + 1‖ ≤
+3‖‖k‖‖ + 2`). **THE REMAINING OBLIGATION IS EXACTLY THE KIT:** (i) `VerifyKit.ok/.cost` = the
+prologue producers per tag + `Verify`'s clause edit (constrain `pro` to the COMPUTED prologue —
+still required: with `pro` existential the relation admits garbage lists and `ok` is false) +
+the per-tag layout theorems (`DESIGN_fragments` §9 risk 1); (ii) `PinKit` per χ = `certSubst` +
+a `numeral`-identification producer (`eqFact &x (numeral c)` from a dossier of a VARIABLE code
+`c`, by PR over the structure using closed pair/`qq*` identities at numerals via
+`mulEqCode/addCode` + congruences) + `instBIntro`. TRAPS: `IsSemiterm LAct 0 (qNum χ)` under
+`variable {V : Type}` elaborates at `V := ℕ` (the `0` defaults first) — ascribe `V` in every
+statement; `InstV`/`Uniform` are at `Type` — `Top` is `V : Type` throughout; a `_` in a `have` TYPE
+cannot be filled by a `by` block; the final constant must be a natural `_` inside ONE `exact
+⟨_, fun … ↦ by …⟩` (a `refine` goal is synthetic-opaque); `le_self_add` chains with sum summands
+backtrack into `whnf` — name the summands; written-out constants must be `irreducible`; the
+concurrent `Cert` rebuild removes `Cert.olean` for minutes — poll the olean before checking.
+IN FLIGHT: `Cert` (certSubst/certFree); `Prologue` (the seven certSubst-free tags).
