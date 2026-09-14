@@ -1811,4 +1811,143 @@ theorem topBound_pb {cN cB cE ck cχ cS cF cL cD : ℕ} {N B E Ck Cχ lk d S₀ 
 
 end topBoundPb
 
+-- the two written-out constants are never unfolded again: `whnf` on them is what stalls the final unification
+attribute [irreducible] topBc topDc
+
+/-! ## 8. `BoundedInnerNec 3` from the kits -/
+
+section final
+
+lemma setLen_empty' : setLen LAct (∅ : V) = 0 := by
+  unfold setLen; rw [emptyset_def]; exact setLenAux_zero _
+
+/-- The bound at the exponent the hypothesis wants: `q ≤ (8c) · (g^3 + 1)` from `q ≤ c · (g + 1)^3`. -/
+lemma PB.final_cube {g u : V} (hc : PBCtx (g + 1) u) {c : ℕ} {q : V} (h : PB (g + 1) u c q 3 0) :
+    q ≤ ((8 * c : ℕ) : V) * (g ^ 3 + 1) := by
+  have h1 := PB.final hc h le_rfl
+  have hcube : (g + 1) ^ 3 ≤ 8 * (g ^ 3 + 1) := by
+    have := succ_cube_le g
+    rwa [show g * g * g = g ^ 3 by ring] at this
+  calc q ≤ (c : V) * (g + 1) ^ 3 := h1
+    _ ≤ (c : V) * (8 * (g ^ 3 + 1)) := mul_le_mul' le_rfl hcube
+    _ = ((8 * c : ℕ) : V) * (g ^ 3 + 1) := by push_cast; ring
+
+/-- **The kit package** — everything the top needs from `Verify`/`Cert`, with STANDARD constants
+(`ℕ`, chosen before the model): in every model of `𝗜𝚺₁` a step table `tbl` (sound at `N`, containing the
+top rows, its row bodies of length `≤ B` together with the three predicate codes the closing block's
+size accounting cites), the three numeral tables, a `VerifyKit` for `tbl` with the constant `Ck`, and for
+every `χ` a `PinKit` for the same `tbl` with the constant `Cχ χ`. The table parts are available now
+(`exists_topTable`, `exists_numTable`, `exists_lenTable`, `exists_mulTable`, and `TopTable` is "at least
+these rows", so the kits' extra rows can be appended); the two kits are the remaining `Verify`/`Cert`
+work. -/
+def KitPackage (N B N' B' N₂ B₂ N₃ B₃ Ck : ℕ) (Cχ : Semisentence LAct 1 → ℕ) : Prop :=
+  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
+    ∃ tbl W tblN tblL tblM : V, TableOK tbl N ∧ TopTable tbl ∧
+      (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) ∧
+      formulaLen LAct (Plength : V) ≤ B ∧ formulaLen LAct (Peq : V) ≤ B ∧ formulaLen LAct (Ple : V) ≤ B ∧
+      NumTableOK tblN N' B' ∧ LenTableOK tblL N₂ B₂ ∧ MulTableOK tblM N₃ B₃ ∧
+      VerifyKit tbl N W tblN Ck ∧ ∀ χ, PinKit χ tbl N (Cχ χ)
+
+/-- **`BoundedInnerNec 3`, given the kits** (`DESIGN_fragments.md` §7.3): for every `χ` the constant is
+`8 · topBc (…)` with the graded inputs `E ~ G`, `S₀, F₀ ~ |Pbox|·(2⌜χ⌝ + 6‖k‖ + 9)`, `Lr ~ 84·|χ|·u + 9`,
+`D ~ topDc`, then `(g + 1)^3 ≤ 8 (g^3 + 1)`. -/
+theorem boundedInnerNec_three_of_kit {N B N' B' N₂ B₂ N₃ B₃ Ck : ℕ} {Cχ : Semisentence LAct 1 → ℕ}
+    (hpkg : KitPackage N B N' B' N₂ B₂ N₃ B₃ Ck Cχ) : BoundedInnerNec 3 where
+  nec χ := by
+    -- the constant is a NATURAL metavariable (`_`): the final `exact` assigns it by unification (a `?_` goal is
+    -- synthetic-opaque and would not be)
+    exact ⟨_, fun V _ _ k hk ↦ by
+      obtain ⟨tbl, W, tblN, tblL, tblM, htbl, hT, hB, hPl, hPeq, hPle, htblN, htblL, htblM, hkit, hpin⟩ := hpkg V
+      obtain ⟨ρ, hρ, hlen⟩ := hk
+      obtain ⟨L, hL⟩ := verifyGraph_exists W tblN hρ.2
+      obtain ⟨e, Lr, he, hLr, hbound⟩ := top_main χ htbl hT hB hPl hPeq hPle htblN htblL htblM hkit (hpin χ) hρ hlen hL
+        (le_refl (Etop χ k (dlen TAct ρ) Ck (Cχ χ)))
+      refine ⟨e, ?_, he⟩
+      -- the graded inputs (`G = gBudget k + 1`, `u = ‖k‖ + 1`)
+      have hc := pbCtx_gBudget k
+      have hlk : PB (gBudget k + 1) (‖k‖ + 1) 1 ‖k‖ 0 1 := (PB.u_ hc).of_le le_self_add
+      have hone : PB (gBudget k + 1) (‖k‖ + 1) 1 (1 : V) 0 1 := PB.one'.mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)
+      have h1u : PB (gBudget k + 1) (‖k‖ + 1) 1 (1 : V) 1 0 := PB.one'.mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl
+      have h3u : PB (gBudget k + 1) (‖k‖ + 1) 3 (3 : V) 0 1 := PB.three.mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)
+      have hbk : PB (gBudget k + 1) (‖k‖ + 1) 7 (termLen LAct (bnum k)) 0 1 := by
+        refine PB.of_le (termLen_bnum_le_V k) ?_
+        have := (hlk.smul 6).add hone
+        simpa using this
+      have hg1 : PB (gBudget k + 1) (‖k‖ + 1) 1 (gBudget k) 1 0 := (PB.G_ hc).of_le le_self_add
+      have hd1 : PB (gBudget k + 1) (‖k‖ + 1) 1 (dlen TAct ρ + 1) 1 0 := (PB.G_ hc).of_le (add_le_add hlen le_rfl)
+      have hd0 : PB (gBudget k + 1) (‖k‖ + 1) 1 (dlen TAct ρ) 1 0 := hg1.of_le hlen
+      have hCk : PB (gBudget k + 1) (‖k‖ + 1) Ck (Ck : V) 0 0 := PB.const Ck
+      have hCχ : PB (gBudget k + 1) (‖k‖ + 1) (Cχ χ) (Cχ χ : V) 0 0 := PB.const _
+      have hqN : PB (gBudget k + 1) (‖k‖ + 1) (2 * (⌜χ⌝ : ℕ) + 1) (termLen LAct (qNum χ : V)) 0 0 :=
+        PB.natCast _ (termLen_qNum_le χ)
+      -- `|x| ≤ |χ|·|bnum k|`
+      have hx : PB (gBudget k + 1) (‖k‖ + 1) (flen (Rewriting.emb χ : Semiproposition LAct 1) * 7)
+          (formulaLen LAct (instB (⌜χ⌝ : V) k)) 0 1 :=
+        PB.of_le (by
+          have := formulaLen_instB_le (Sentence.quote_isSemiformul₁ χ) k
+          rwa [formulaLen_quote_semisentence_V'] at this) ((PB.const _).mul hbk)
+      -- `E = Etop`: each summand is `≲ G`
+      have e1 := PB.uG hc (((PB.two.mul hx).add ((PB.natCast (q := (8 : V)) 8 (by norm_num)).mono hc (e' := 0) (f' := 1)
+        le_rfl (by norm_num))).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num))
+      have e2 := PB.uG hc (((hCχ.mul (hlk.add (PB.one'.mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)))).of_le
+        (le_of_eq (by ring : (Cχ χ : V) * (‖k‖ + 0 + 1) = (Cχ χ : V) * (‖k‖ + 1)))).mono hc (e' := 0) (f' := 1)
+        le_rfl (by norm_num))
+      have hin := PB.uG hc (((hCχ.mul (PB.u_ hc)).of_le (le_of_eq (zero_add ((Cχ χ : V) * (‖k‖ + 1))))).mono hc
+        (e' := 0) (f' := 1) le_rfl (by norm_num))
+      have e3 := (hCk.mul ((hd0.add hin).add h1u)).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl
+      have e4 := ((((PB.uG hc ((hCχ.mul (PB.u_ hc)).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num))).add h1u).add
+        ((hCk.mul hd1).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl)).add
+        ((PB.natCast (q := (4 : V)) 4 (by norm_num)).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl))
+      have e5 := hqN.mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl
+      have e6 := PB.uG hc hbk
+      have e7 := PB.uG hc (PB.of_le (termLen_bnum_le_V ‖k‖) (((hlk.of_le (length_le _)).smul 6).add hone))
+      have e8 := PB.reduce hc (PB.of_le (termLen_bnum_le_V (‖k‖ * ‖k‖))
+        (((((hlk.mul hlk).of_le (length_le _)).smul 6).add (hone.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num))).mono hc
+          (e' := 0) (f' := 3) le_rfl (by norm_num)))
+      have e9 := PB.of_le (termLen_bnum_le_V (gBudget k)) (((hg1.of_le (length_le _)).smul 6).add h1u)
+      have e10 := PB.of_le (termLen_bnum_le_V (dlen TAct ρ)) (((hd0.of_le (length_le _)).smul 6).add h1u)
+      have e11 := PB.uG hc ((hlk.smul 12).add h3u)
+      have hs1 := PB.of_le (length_le (‖k‖ * ‖k‖ + ‖k‖ + ‖k‖))
+        (((hlk.mul hlk).add (hlk.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num))).add
+          (hlk.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num)))
+      have e12 := PB.reduce hc (((hs1.smul 12).add (PB.three.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num))).mono hc
+        (e' := 0) (f' := 3) le_rfl (by norm_num))
+      have hle2 : ‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ + ‖k‖ ≤ gBudget k + gBudget k + gBudget k := by
+        unfold gBudget; exact add_le_add (add_le_add le_rfl (sq_le_cube _)) (le_cube _)
+      have hs2 := PB.of_le (length_le (‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ + ‖k‖)) (PB.of_le hle2 ((hg1.add hg1).add hg1))
+      have e13 := (hs2.smul 12).add (PB.three.mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl)
+      have hE₀ := ((((((((((((e1.add e2).add e3).add e4).add e5).add e6).add e7).add e8).add e9).add e10).add e11).add e12).add e13)
+      have hE := PB.of_le (q := Etop χ k (dlen TAct ρ) Ck (Cχ χ)) (le_of_eq (by
+        unfold Etop eWalk ePin eVer eJs eQ eK eL eB eG eD eN5 eN4a eN4b; push_cast; ring)) hE₀
+      -- `S₀, F₀ ≤ |Pbox| · (2⌜χ⌝ + 6‖k‖ + 9)`
+      have hq : IsSemiterm LAct (0 : V) (qNum χ) := isSemiterm_qNum χ
+      have hbk' : IsSemiterm LAct (0 : V) (bnum k) := isSemiterm_bnum_LAct 0 k
+      have hTf : IsFormula LAct (boxFact (qNum χ) (bnum k)) := isFormula_boxFact hq hbk'
+      have hB' : formulaLen LAct (boxFact (qNum χ) (bnum k)) ≤
+          formulaLen LAct (Pbox : V) * (((2 * (⌜χ⌝ : ℕ) + 1 : ℕ) : V) + (6 * ‖k‖ + 1)) :=
+        formulaLen_boxFact_le (le_trans (by norm_num) le_add_self) hq hbk' (le_trans (termLen_qNum_le χ) le_self_add)
+          (le_trans (termLen_bnum_le_V k) le_add_self)
+      have hBp := PB.uG hc (((PB.const (2 * (⌜χ⌝ : ℕ) + 1)).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)).add
+        ((hlk.smul 6).add hone))
+      have hPb := PB.natCast (G := gBudget k + 1) (u := ‖k‖ + 1)
+        (flen (Rewriting.emb (Semiformula.lMap emb (↑boxCoreS : ArithmeticSemisentence 2)) : Semiproposition LAct 2))
+        (le_of_eq (formulaLen_quote_semisentence_V' _))
+      have hTlen := PB.of_le hB' ((hPb.mul hBp).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl)
+      have hS := PB.of_le (le_trans (setLen_insert_le (L := LAct) (boxFact (qNum χ) (bnum k)) (∅ : V))
+        (by rw [setLen_empty', zero_add])) hTlen
+      have hF := PB.of_le (le_trans (fvOccS_insert_le (L := LAct) (boxFact (qNum χ) (bnum k)) (∅ : V))
+        (by rw [fvOccS_empty, zero_add]; exact fvOccF_le_formulaLen hTf.isUFormula)) hTlen
+      -- `Lr ≤ 12|x| + 9`
+      have h1 : Lr ≤ 12 * formulaLen LAct (instB (⌜χ⌝ : V) k) + 9 := by
+        have : Lr + 4 ≤ 12 * formulaLen LAct (instB (⌜χ⌝ : V) k) + 9 + 4 := by
+          refine le_trans hLr (le_of_eq ?_); ring
+        exact le_of_add_le_add_right this
+      have hL := PB.of_le h1 (((PB.natCast (q := (12 : V)) 12 (by norm_num)).mul hx).add
+        ((PB.natCast (q := (9 : V)) 9 (by norm_num)).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)))
+      have hD := topD_pb N' B' N₂ B₂ N₃ B₃ k (dlen TAct ρ) hlen
+      have hmain := topBound_pb hc (PB.const N) (PB.const B) hE hCk hCχ (PB.u_ hc) hd1 hS hF hL hD
+      exact le_trans hbound (PB.final_cube hc hmain)⟩
+
+end final
+
 end ArithS
