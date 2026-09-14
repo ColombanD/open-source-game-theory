@@ -807,3 +807,32 @@ LIST over the Frag table instead of a `DerivationOf` sLemma. TRAPS: `add_lt_add_
 Fin 6 → V ↦ f … = v 0)`; after appending to `Layout.lean`, `lake build
 ArithS.Necessitation.Layout` (~70 s) before importers see the names.
 IN FLIGHT: `Cert` (ok theorems, bridge row, certSubst/certFree, lenSteps); `Dossier` (the bridge) + N5.
+
+**§11 status — `Dossier` (the bridge), `NumLength` (N5), `NumMul` (N4) DONE (1bbde1f, 124634c,
+f1c2979; module builds green, census standard per scratch; full-build confirmation pending lake).**
+`Dossier.lean` (imports `Cert`, `Members`; `DossF` is over `walkPieces`):
+`dossierAtT_of_dossT`, `dossierAtV_of_dossV`, **`dossierAt_of_dossF : IsSemiformula LAct n r →
+DossF W Γ n r i → DossierAt factPreds Γ i r`**, `dossierAt_of_walk : DossierAt factPreds
+(finalCtx Γ (describeF W n r)) 0 r` (closes `Layout.lean:53`), the transported forms
+`dossierAt_of_walk_transport`/`dossierAt_of_dossF_transport` (offset `i + shiftsV S` after a
+`NoDrop` list), `dossierAtT_of_walk`; `eqCountT_eq_descCountT`. Cert's `piFact/…` conjuncts are
+dropped. `NumLength.lean` (leaf, imports `NumSteps`, `RowInstB`): N5 by the `sLemma`/`DerivationOf`
+ROUTE (not the step list — the Frag row `lengthTwoMul` concludes at `bnum ‖m‖ ^+ 𝟏` while the fact
+needs `bnum (‖m‖+1)`, so two COMBINED rows `lenTwoMulSB “l' l x. !lengthDef l x → 0 < x → l + 1 = l'
+→ !lengthDef l' (2*x)”`, `lenTwoMulOneSB` in their own 4-row `LenTableOK` table with
+`exists_lenTable`): `lengthEqFact k := lengthFact (bnum ‖k‖) (bnum k)`, `LenGraph` fixpoint,
+`lengthEqCode` (+ definability), `lengthEqCode_proof : DerivationOf TAct (lengthEqCode tblL tbl k)
+(sing (lengthEqFact k))`, `dlen_lengthEqCode_le ≤ lengthEqBound N B N' B' k = (‖k‖+1)·nodeCap`,
+`lemmaOK_lengthEq`, `stepCost_lemma_lengthEq`. `NumMul.lean` (leaf): `mulFact a b := eqFact (bnum a
+^* bnum b) (bnum (a*b))`, `MulTableOK` (5 rows incl. `zeroMul` — `bnum (2·0) = 𝟎`, not `𝟐 ^* 𝟎`),
+`MulGraph` on the bits of `b`, `mulEqCode`, `mulEqCode_proof`, `dlen_mulEqCode_le ≤ mulEqBound`,
+`lemmaOK_mulEq`, `stepCost_lemma_mulEq`. Neither file touches `NumTableOK` (index-stable, no olean
+invalidation under the concurrent `Cert` agent). FOR THE TOP: two extra tables in hand
+(`exists_lenTable`, `exists_mulTable`), `mulEqCode` twice for `‖k‖³` plus `leCode`.
+TRAPS: pass `factPreds` as a parameter `P` with `hP : P = factPreds` and `subst` per case, never
+inside a `definability` goal; `dossF_of_walk` needs `(Γ := Γ)` in transported forms; no
+`𝚺₁-Relation₅ … via` — 5-ary graphs are `𝚺₁.Defined (fun v : Fin 5 → V ↦ …)`; after `rcases … with
+rfl | rfl | h` the name `a` is gone in the `rfl` branches — `by_cases ha0 : a = 0` instead; a
+SENTINEL that replaces `_` by what it unifies to is a no-op — break a real argument;
+`eqFactB = eqFact` is `rfl` (RowInstB's `PeqB` = NumSteps' `Peq`).
+IN FLIGHT: `Cert` (ok theorems, bridge row, certSubst/certFree, lenSteps); `Top` (against a kit).
