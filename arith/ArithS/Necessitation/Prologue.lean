@@ -1,4 +1,4 @@
-import ArithS.Necessitation.Top
+import ArithS.Necessitation.PrologueRows
 
 /-!
 # ArithS.Necessitation.Prologue — the PROLOGUE producers (`DESIGN_fragments.md` §3–§4)
@@ -12,8 +12,9 @@ composes into the verification list of `Verify.lean`.
 
 Two row lineages collided: the certification table `certRows` keeps its rows at `100 + k`, and the
 fragment tables `frag1Rows`/`frag2Rows`/`topRows` keep theirs at `87 … 154`. One step list runs at ONE
-table, so the prologue table `proRows := topRows ++ certTailRows` carries the certification tail at
-`i + certShiftN` (`certShiftN = topRowCount − walkRowCount`), and every certification list
+table, so the prologue table `proRows := topRows ++ proExtraRows ++ certTailRows` (the prologue's own
+rows of `PrologueRows.lean` at `155 + k`, then the certification tail) carries the certification tail at
+`i + certShiftN` (`certShiftN = topRowCount + proExtraRowCount − walkRowCount`), and every certification list
 (`certNeg`, `certShift`, `lenSteps`, all stated at a `CertTable`) is RE-INDEXED by `reidxL`
 (`sRow ↦ cshiftV sRow` on the three Horn tags, everything else untouched). The re-indexing changes
 nothing but the row index: `ctxAfter`, `stepCost`, `shiftsV`, `finalCtx`, `NoDrop'`, `HornOnly`,
@@ -52,18 +53,19 @@ set_option maxRecDepth 20000
 
 section proTable
 
-/-- The prologue rows: the top rows at their indices, then the certification tail (`certRows` without
-its 40 walk rows) at `topRowCount + k`. -/
-noncomputable def proRows : List WRow := topRows ++ certTailRows
+/-- The prologue rows: the top rows at their indices, the prologue's own rows at `topRowCount + k`, then
+the certification tail (`certRows` without its 40 walk rows) at `topRowCount + proExtraRowCount + k`. -/
+noncomputable def proRows : List WRow := topRows ++ proExtraRows ++ certTailRows
+
+/-- Where the certification tail starts. -/
+def proBase : ℕ := topRowCount + proExtraRowCount
 
 /-- How far a certification row (index `≥ walkRowCount` in `certRows`) moves. -/
-def certShiftN : ℕ := topRowCount - walkRowCount
+def certShiftN : ℕ := proBase - walkRowCount
 
-def proRowCount : ℕ := topRowCount + (certRowCount - walkRowCount)
+def proRowCount : ℕ := proBase + (certRowCount - walkRowCount)
 
 lemma proRows_length : proRows.length = proRowCount := rfl
-
-lemma certShiftN_eq : certShiftN = 115 := rfl
 
 /-- The prologue table: `proRowCount` rows at least, the `i`-th with the arity and matrix of `proRows[i]`. -/
 def ProTable (tbl : V) : Prop :=
@@ -72,12 +74,43 @@ def ProTable (tbl : V) : Prop :=
     rowM tbl.[(i : V)] = ((proRows[i]).m : V) ∧ rowB tbl.[(i : V)] = ⌜Semiformula.lMap emb (proRows[i]).B⌝
 
 lemma ProTable.topTable {tbl : V} (h : ProTable tbl) : TopTable tbl := by
-  refine ⟨le_trans (by exact_mod_cast (Nat.le_add_right _ _ : topRowCount ≤ proRowCount)) h.1, ?_⟩
+  refine ⟨le_trans (by exact_mod_cast (show topRowCount ≤ proRowCount by simp only [proRowCount, proBase]; omega)) h.1, ?_⟩
   intro i hi
   have hi' : i < proRows.length := by
-    rw [proRows_length]; exact lt_of_lt_of_le (topRows_length ▸ hi) (Nat.le_add_right _ _)
+    rw [proRows_length]; rw [topRows_length] at hi; simp only [proRowCount, proBase]; omega
   have := h.2 i hi'
-  rwa [show proRows[i] = topRows[i] from List.getElem_append_left hi] at this
+  have hi'' : i < (topRows ++ proExtraRows).length := by
+    rw [List.length_append]; exact lt_of_lt_of_le hi (Nat.le_add_right _ _)
+  rwa [show proRows[i] = topRows[i] from
+    (List.getElem_append_left hi'').trans (List.getElem_append_left hi)] at this
+
+lemma ProTable.frag2Table {tbl : V} (h : ProTable tbl) : Frag2Table tbl := h.topTable.frag2Table
+lemma ProTable.frag1Table {tbl : V} (h : ProTable tbl) : Frag1Table tbl := h.topTable.frag1Table
+lemma ProTable.layoutTable {tbl : V} (h : ProTable tbl) : LayoutTable tbl := h.topTable.layoutTable
+lemma ProTable.walkTable {tbl : V} (h : ProTable tbl) : WalkTable tbl := h.topTable.walkTable
+
+/-- The reading of the prologue's own row `setLenSingLe` (what `pok_setLenSingLe` takes). -/
+lemma ProTable.setLenSingLe {tbl : V} (h : ProTable tbl) :
+    ((pIdx_setLenSingLe : ℕ) : V) < len tbl ∧
+    rowM tbl.[((pIdx_setLenSingLe : ℕ) : V)] = ((4 : ℕ) : V) ∧
+    rowB tbl.[((pIdx_setLenSingLe : ℕ) : V)] = impChainV LAct (vecOf row_setLenSingLe_as) row_setLenSingLe_c := by
+  have hlt : pIdx_setLenSingLe < proRows.length := by
+    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_setLenSingLe, topRowCount, proExtraRowCount]; omega
+  have hr := h.2 pIdx_setLenSingLe hlt
+  have e' : proRows[pIdx_setLenSingLe]? = proExtraRows[0]? := by
+    have h1 : pIdx_setLenSingLe < (topRows ++ proExtraRows).length := by
+      rw [List.length_append]; simp only [pIdx_setLenSingLe, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
+    have h2 : topRows.length ≤ pIdx_setLenSingLe := by rw [topRows_length]; simp only [pIdx_setLenSingLe, topRowCount]; omega
+    unfold proRows
+    rw [List.getElem?_append_left h1, List.getElem?_append_right h2]
+    rfl
+  have e : proRows[pIdx_setLenSingLe] = proExtraRows[0] := by
+    rw [List.getElem?_eq_getElem hlt, List.getElem?_eq_getElem (by decide : 0 < proExtraRows.length)] at e'
+    exact Option.some.inj e'
+  rw [e] at hr
+  refine ⟨lt_of_lt_of_le (by exact_mod_cast hlt) (proRows_length ▸ h.1), hr.1, ?_⟩
+  rw [impChainV_vecOf, hr.2]
+  exact quote_row_setLenSingLe
 
 theorem exists_proTable : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
     ∃ tbl : V, TableOK tbl (N : V) ∧ ProTable tbl := by
@@ -107,9 +140,9 @@ lemma cshiftV_natCast (i : ℕ) : cshiftV (i : V) = (cshiftN i : V) := by
 lemma cshiftN_lt {i : ℕ} (hi : i < certRowCount) : cshiftN i < proRowCount := by
   unfold cshiftN
   split_ifs with h
-  · simp only [proRowCount, certShiftN, certRowCount, topRowCount, walkRowCount] at hi h ⊢
+  · simp only [proRowCount, certShiftN, proBase, certRowCount, topRowCount, proExtraRowCount, walkRowCount] at hi h ⊢
     omega
-  · simp only [proRowCount, certShiftN, certRowCount, topRowCount, walkRowCount] at hi h ⊢
+  · simp only [proRowCount, certShiftN, proBase, certRowCount, topRowCount, proExtraRowCount, walkRowCount] at hi h ⊢
     omega
 
 /-- `proRows` at the moved index is the certification row (the proof-free `getElem?` form). -/
@@ -125,8 +158,10 @@ lemma proRows_cshiftN' (i : ℕ) (hi : i < certRowCount) : proRows[cshiftN i]? =
       rw [frag2Rows_length]; exact lt_of_lt_of_le hw (by decide)
     have h5 : i < topRows.length := by
       rw [topRows_length]; exact lt_of_lt_of_le hw (by decide)
+    have h6 : i < (topRows ++ proExtraRows).length := by
+      rw [List.length_append]; exact lt_of_lt_of_le h5 (Nat.le_add_right _ _)
     unfold proRows certRows
-    rw [List.getElem?_append_left h5, List.getElem?_append_left h1]
+    rw [List.getElem?_append_left h6, List.getElem?_append_left h5, List.getElem?_append_left h1]
     unfold topRows
     rw [List.getElem?_append_left h4]
     unfold frag2Rows
@@ -136,8 +171,9 @@ lemma proRows_cshiftN' (i : ℕ) (hi : i < certRowCount) : proRows[cshiftN i]? =
     unfold layoutRows
     rw [List.getElem?_append_left h1]
   · have hw' : walkRowCount ≤ i := not_lt.mp hw
-    have h1 : topRows.length ≤ i + certShiftN := by
-      rw [topRows_length]; simp only [certShiftN, topRowCount, walkRowCount] at hw' ⊢; omega
+    have h1 : (topRows ++ proExtraRows).length ≤ i + certShiftN := by
+      rw [List.length_append, topRows_length, proExtraRows_length]
+      simp only [certShiftN, proBase, topRowCount, proExtraRowCount, walkRowCount] at hw' ⊢; omega
     have h2 : walkRows.length ≤ i := by rw [walkRows_length]; exact hw'
     unfold proRows certRows
     rw [List.getElem?_append_right h1, List.getElem?_append_right h2]
