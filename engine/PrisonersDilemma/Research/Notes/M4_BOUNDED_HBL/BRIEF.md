@@ -723,3 +723,41 @@ so `goalTail*` at `frag2Pieces` is definitionally the Frag1 one after three
 numeral `bnum Lt` enters only through `leFact (^&ilt) (bnum Lt)` in the tail;
 (5) `introExs`'s dummy ninth witness is the literal `𝟎`, forcing cap `M = 9` and `ok.mono h89` on
 the `M = 8` siblings.
+
+**§11 status — `Cert` Part 1–3 (23bf760, 1322ec8; 1836 → 3361 lines, census +14, all standard).**
+DELIVERED: uniqueness of the term pass (`passTGraph_unique`, `passVGraph_unique`) and the functions
+`passT`/`passV` with their definability and equations; the FORMULA pass as ONE parametric fixpoint
+`PassF` on `⟪ν, n, r, i, j, y⟫` (`ν = 1` neg, `ν = 2` shift) with `passFGraph_exists`/`_unique`,
+the function `passF` and its eight per-constructor equations, hence
+`certNeg W n r i j := passF W 1 n r i j` and `certShift := passF W 2 …`; two of the four `_ok`
+conjuncts (`certShift_noDrop_shifts`, `certNeg_noDrop_shifts`, `len_certShift_le`/`len_certNeg_le`:
+`len + 4 ≤ 12|r|`); and the COUNT BRIDGE `Layout.lean:53` left open —
+**`eqCount_eq_descCountF : eqCount r = descCountF W n r`** (`Cert` now imports `Layout`, no cycle).
+NOT REACHED: the `ListOK` conjunct and the root-pair fact of `certShift_ok`/`certNeg_ok` (the
+dossier-consumption argument reading the `dossF_*` decomposition lemmas), and
+`costSum_certShift_le` (needs `ListOK` first); the DOSSIER bridge `DossF … → DossierAt …` (needs
+`Layout`'s per-node `dossFacts_*` equations written first).
+**TWO REPORTED BLOCKERS, BOTH SMALLER THAN REPORTED (checked 2026-09-14):**
+(a) `lenSteps` was said to be blocked because `Describe.lean:432`'s `NoDrop` excludes tags 6/7 —
+NOT A BLOCKER: `Frag1.lean:21` already defines **`NoDrop'`** (tags 0–4, 6, 7) with
+`noDrop'_appendV`/`noDrop'_cons`/`mem_ctxVec_of_mem'`/`mem_finalCtx_of_mem'` and the coercion
+`NoDrop.noDrop'`; `lenSteps_ok` simply states `NoDrop'`, as every `Frag1`/`Frag2` `_ok` already does.
+(b) `certSubst`/`certFree` blocked because `tsvAdjCert` (9 witnesses) is absent from the
+certification table under an `M = 8` cap — the ROW EXISTS and is proved (`Lib/Frag.lean:1604-1611`,
+`lib_tsvAdjCert`); the cap is liftable exactly as `Frag2`'s `nodeExs` does it for the arity-9
+`introExs`, via `Frag1.lean:101,114` `StepOK.mono`/`ListOK.mono`. Agent on it.
+TRAPS (from the `Cert` agent, all worth keeping): (1) the fixpoint-`simp` hang RECURS at every new
+fixpoint — and the targeted-`simp only` fix is NOT sufficient by itself: the fixpoint must ALSO be
+wrapped in a separate `def <X>Packed (W pr : V) : Prop := construction.Fixpoint ![W] pr` before the
+arity-`n` graph, or instance search unfolds through it and `definability` diverges (symptom: a goal
+mentioning `construction.limSeq` with an aesop depth error); `PassGraph`/`PassTGraph` had this shape
+by accident, `DescFGraph` gets away without it only because `DescF`'s blueprint is smaller.
+(2) `definability` on a Π₁ motive must quantify over the GRAPH, never the `choose!` function
+(`∀ i j y, PassTGraph … y → P y` works; `∀ i j, P (passT …)` gives "goal 9 was not normalised").
+(3) `set_option … in` goes BEFORE the docstring. (4) Σ₁ motives forbid unbounded `∀`: every
+`_exists` needs the `B`-parameter shape plus an unbounded corollary. (5) `le_of_eq (by ring)` fails
+silently on inequalities — use `le_trans (le_of_eq (show _ = _ by ring)) h`. (6) `shiftsV_cons`
+rewrites outermost-first: interleave each `if_neg` after its own `shiftsV_cons`. (7)
+`IsUTermVec LAct m (takeLast v m)` has no standalone lemma — carry it in the induction's conjunction.
+(8) `DefinedFunction` arity counts arguments, not the output. (9) a `¬(A ∧ B)` guard in a `choose!`
+definability sentence must be written interpreted (`(!P → k < m) → y = 0`).
