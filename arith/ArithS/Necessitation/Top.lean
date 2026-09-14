@@ -654,4 +654,270 @@ lemma termLen_qNum_le (χ : Semisentence LAct 1) :
 
 end targetShape
 
+/-! ## 3. The root layout and the two kits -/
+
+section rootLayout
+
+/-! ### 3.1 Iterated shifts of the facts the top transports (`termShiftIterV`/`shiftIterV`, by
+`sigma1_succ_induction` on the count — the `termShiftIterV_fvar` pattern) -/
+
+lemma termShiftIterV_bnumTop (k : V) : ∀ c : V, termShiftIterV (bnum k) c = bnum k := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih => rw [termShiftIterV_succ, ih, termShift_bnum]
+
+lemma termShiftIterV_qNum (χ : Semisentence LAct 1) : ∀ c : V, termShiftIterV (qNum χ : V) c = qNum χ := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih => rw [termShiftIterV_succ, ih, termShift_qNum]
+
+lemma termShiftIterV_qqZero : ∀ c : V, termShiftIterV (𝟎 : V) c = 𝟎 := by
+  intro c
+  rw [← cTV_zero]
+  exact termShiftIterV_cTV 0 c
+
+instance boxFact_defined : 𝚺₁-Function₂ (boxFact : V → V → V) via
+    fact2Def (Semiformula.lMap emb (↑boxCoreS : ArithmeticSemisentence 2)) := fact2_defined _
+instance boxFact_definable : 𝚺₁-Function₂ (boxFact : V → V → V) := boxFact_defined.to_definable
+instance instBFact_defined' : 𝚺₁-Function₃ (instBFact : V → V → V → V) via
+    fact3Def (Semiformula.lMap emb (↑instBGraph : ArithmeticSemisentence 3)) := fact3_defined _
+instance instBFact_definable' : 𝚺₁-Function₃ (instBFact : V → V → V → V) := instBFact_defined'.to_definable
+
+lemma shiftIterV_memFact {x s : V} (hx : IsSemiterm LAct 0 x) (hs : IsSemiterm LAct 0 s) :
+    ∀ c : V, shiftIterV (memFact x s) c = memFact (termShiftIterV x c) (termShiftIterV s c) := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih =>
+    rw [shiftIterV_succ, ih, shift_memFact (isSemiterm_termShiftIterV hx c) (isSemiterm_termShiftIterV hs c),
+      termShiftIterV_succ, termShiftIterV_succ]
+
+lemma shiftIterV_setLenFact {l s : V} (hl : IsSemiterm LAct 0 l) (hs : IsSemiterm LAct 0 s) :
+    ∀ c : V, shiftIterV (setLenFact l s) c = setLenFact (termShiftIterV l c) (termShiftIterV s c) := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih =>
+    rw [shiftIterV_succ, ih, shift_setLenFact (isSemiterm_termShiftIterV hl c) (isSemiterm_termShiftIterV hs c),
+      termShiftIterV_succ, termShiftIterV_succ]
+
+lemma shiftIterV_insFact {t x s : V} (ht : IsSemiterm LAct 0 t) (hx : IsSemiterm LAct 0 x) (hs : IsSemiterm LAct 0 s) :
+    ∀ c : V, shiftIterV (insFact t x s) c = insFact (termShiftIterV t c) (termShiftIterV x c) (termShiftIterV s c) := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih =>
+    rw [shiftIterV_succ, ih, shift_insFact (isSemiterm_termShiftIterV ht c) (isSemiterm_termShiftIterV hx c)
+      (isSemiterm_termShiftIterV hs c), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
+
+lemma shiftIterV_instBFact {g n k : V} (hg : IsSemiterm LAct 0 g) (hn : IsSemiterm LAct 0 n) (hk : IsSemiterm LAct 0 k) :
+    ∀ c : V, shiftIterV (instBFact g n k) c = instBFact (termShiftIterV g c) (termShiftIterV n c) (termShiftIterV k c) := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih =>
+    rw [shiftIterV_succ, ih, shift_instBFact (isSemiterm_termShiftIterV hg c) (isSemiterm_termShiftIterV hn c)
+      (isSemiterm_termShiftIterV hk c), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
+
+lemma shiftIterV_boxFact {n k : V} (hn : IsSemiterm LAct 0 n) (hk : IsSemiterm LAct 0 k) :
+    ∀ c : V, shiftIterV (boxFact n k) c = boxFact (termShiftIterV n c) (termShiftIterV k c) := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih =>
+    rw [shiftIterV_succ, ih, shift_boxFact (isSemiterm_termShiftIterV hn c) (isSemiterm_termShiftIterV hk c),
+      termShiftIterV_succ, termShiftIterV_succ]
+
+/-- The target is shift-invariant (a sentence code). -/
+lemma shiftIterV_target (χ : Semisentence LAct 1) (k : V) (c : V) :
+    shiftIterV (boxFact (qNum χ) (bnum k)) c = boxFact (qNum χ) (bnum k) := by
+  rw [shiftIterV_boxFact (isSemiterm_qNum χ) (bnum_term_LAct k), termShiftIterV_qNum, termShiftIterV_bnumTop]
+
+/-- A walk dossier survives a cut-admitting (`NoDrop'`) list, at the moved offset (the `NoDrop'` twin of
+`Cert.dossF_transport`). -/
+lemma dossF_transport' {W Γ n r i S : V} (hS : NoDrop' S) (h : DossF W Γ n r i) :
+    DossF W (finalCtx Γ S) n r (i + shiftsV S) := by
+  intro f hf
+  rw [shiftIterV_add]
+  exact mem_finalCtx_of_mem' hS (h f hf)
+
+/-! ### 3.2 The root layout -/
+
+/-- **The root layout at offset `i`** — exactly what the walk of the root member `x` and the singleton
+chain `{x}` deliver (`rootSteps_ok`, §4): the walk dossier of `x` at `&(i + 2)` (`Cert.DossF` over
+`walkPieces`; the kit's discharger converts it to `Layout`'s `DossierAt` with `dossierAt_of_dossF`),
+`IsSemiformula 0 &(i + 2)`, the chain `&(i + 1) = insert &(i + 2) 𝟎` with `IsFormulaSet &(i + 1)`,
+`&(i + 2) ∈ &(i + 1)`, and the length OBJECT `&i = setLen &(i + 1)`. NOT included (an honest gap):
+the NUMERIC length `leFact &i (bnum |x|)`, which `lenSteps` (in flight in `Cert`) derives from the
+dossier — the kit's discharger produces it inside the root node's prologue. -/
+def RootLayout (Γ x i : V) : Prop :=
+  DossF walkPieces Γ 0 x (i + 2) ∧
+  neg LAct (piFact (𝟎 : V) (^&(i + 2))) ∈ Γ ∧
+  neg LAct (insFact (^&(i + 1)) (^&(i + 2)) (𝟎 : V)) ∈ Γ ∧
+  neg LAct (fsetPiFact (^&(i + 1))) ∈ Γ ∧
+  neg LAct (memFact (^&(i + 2)) (^&(i + 1))) ∈ Γ ∧
+  neg LAct (setLenFact (^&i) (^&(i + 1))) ∈ Γ
+
+/-- The root layout survives any further cut-admitting list, at the moved offset. -/
+lemma RootLayout.transport {Γ x i S : V} (hS : NoDrop' S) (h : RootLayout Γ x i) :
+    RootLayout (finalCtx Γ S) x (i + shiftsV S) := by
+  obtain ⟨hD, hpi, hins, hfs, hmem, hsl⟩ := h
+  have h0 : IsSemiterm LAct (0 : V) (𝟎 : V) := isSemiterm_qqZero_LAct 0
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · have := dossF_transport' hS hD
+    rwa [add_right_comm] at this
+  · have := mem_finalCtx_of_mem' hS hpi
+    rwa [shiftIterV_neg (isFormula_piFact h0 (by simp)), shiftIterV_piFact h0 (by simp), termShiftIterV_qqZero,
+      termShiftIterV_fvar, add_right_comm] at this
+  · have := mem_finalCtx_of_mem' hS hins
+    rwa [shiftIterV_neg (isFormula_insFact (by simp) (by simp) h0), shiftIterV_insFact (by simp) (by simp) h0,
+      termShiftIterV_qqZero, termShiftIterV_fvar, termShiftIterV_fvar, add_right_comm i 1, add_right_comm i 2] at this
+  · have := mem_finalCtx_of_mem' hS hfs
+    rwa [shiftIterV_neg (isFormula_fsetPiFact (by simp)), shiftIterV_fsetPiFact (by simp), termShiftIterV_fvar,
+      add_right_comm] at this
+  · have := mem_finalCtx_of_mem' hS hmem
+    rwa [shiftIterV_neg (isFormula_memFact (by simp) (by simp)), shiftIterV_memFact (by simp) (by simp),
+      termShiftIterV_fvar, termShiftIterV_fvar, add_right_comm i 2, add_right_comm i 1] at this
+  · have := mem_finalCtx_of_mem' hS hsl
+    rwa [shiftIterV_neg (isFormula_setLenFact (by simp) (by simp)), shiftIterV_setLenFact (by simp) (by simp),
+      termShiftIterV_fvar, termShiftIterV_fvar, add_right_comm i 1] at this
+
+/-! ### 3.3 The kits
+
+`VerifyKit` states, for the RELATION `VerifyGraph W tblN ρ L` (`Verify.lean` §3 — the function
+`verifySteps` does not exist yet, §3.6 there), exactly what `DESIGN_fragments.md` §6.3 (`ok`), §6.4 and
+§5 (`cost`) promise, specialised to the ROOT (the only node the top calls it at):
+
+* `ok` = §6.3 `verifySteps_ok` at the root: from `Proof TAct ρ x` (the root sequent is `{x}`), the root
+  layout at offset `i`, and a witness cap `E ≥ Ck·(dlen ρ + i + 1)` (§5's `E ≤ C₁ g`, plus the root's
+  index depth), every verification list is applicable at cap `9`, cut-admitting, has at most
+  `Ck·(dlen ρ + 1)` eigenvariables (§5's `shiftsV ≤ C₀ g`), and leaves the root's goal fact
+  `goalFact (^&(i + 1 + σ)) (bnum (dlen ρ))` (the sequent `&(i + 1)` shifted `σ` times, `ū = bnum (dlen ρ)`).
+  §6.3's remaining conjuncts (`Layout' (finalCtx Γ L) ρ σ`, the parent's objects) are what the ROOT
+  layout transports by `RootLayout.transport` — not part of the kit.
+* `cost` = §6.4 without `dlen_chainCode_le` (which the top applies itself): the cost sum of `L` is
+  §5's cubic `Ck·(g + 1)·(setLen Γ + N + E + (g + 1)²)`, together with §5's context bounds at the
+  END of `L` (`setLen ≤ setLen Γ + Ck·E·(g + 1)`: at most `len L ≤ Ck·(g + 1)` facts of length `≤ B·E`;
+  `fvOccS ≤ fvOccS Γ + Ck·(g + 1)`: at most nine `^&` witnesses per fact), which the top needs to
+  bound its own closing block.
+
+Discharging it: prove §6.3/§6.4 for `VerifyGraph` once the prologue producers land (the §3.6 clause
+edit in `Verify.lean`, then `Derivation.induction1 𝚷`), derive the root's numeric length inside the
+root prologue from the dossier (`lenSteps`), and read the constant `Ck` off the per-tag bounds. -/
+structure VerifyKit (tbl N W tblN : V) (Ck : ℕ) : Prop where
+  ok : ∀ {ρ x Γ i E L : V}, Proof TAct ρ x → RootLayout Γ x i → IsFormulaSet LAct Γ →
+    (Ck : V) * (dlen TAct ρ + i + 1) ≤ E → VerifyGraph W tblN ρ L →
+    ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ (Ck : V) * (dlen TAct ρ + 1) ∧
+    neg LAct (goalFact (^&(i + 1 + shiftsV L)) (bnum (dlen TAct ρ))) ∈ finalCtx Γ L
+  cost : ∀ {ρ x Γ i E L : V}, Proof TAct ρ x → RootLayout Γ x i → IsFormulaSet LAct Γ →
+    (Ck : V) * (dlen TAct ρ + i + 1) ≤ E → VerifyGraph W tblN ρ L →
+    costSum N E Γ L ≤ (Ck : V) * (dlen TAct ρ + 1) * (setLen LAct Γ + N + E + (dlen TAct ρ + 1) ^ 2) ∧
+    setLen LAct (finalCtx Γ L) ≤ setLen LAct Γ + (Ck : V) * (E * (dlen TAct ρ + 1)) ∧
+    fvOccS LAct (finalCtx Γ L) ≤ fvOccS LAct Γ + (Ck : V) * (dlen TAct ρ + 1)
+
+/-- **The pinning kit** (`DESIGN_fragments.md` §7.1 steps 1–4 and §7.2, per `χ`) — the ONE place the
+closed code `⌜χ⌝` enters the object proof. From a context holding the root layout of the member
+`x = instB ⌜χ⌝ k` at offset `i` (its walk dossier at `&(i + 2)`), a list `P` that certifies
+`&(i + 2) = subst (bnum k ∷ 0) ⌜χ⌝`, i.e. leaves `instBFact (^&(i + 2 + π)) (qNum χ) (bnum k)` in its
+final context, `π = shiftsV P`. Inside it: `describeT`/`bnumZero/One/Even/OddCert` certifying
+`bnumGraph t̂ (bnum k)` along the bits of `k` (`O(‖k‖)`), `adjoinTotal`, the per-`χ` closed shape rows
+of the numeral `⌜χ⌝` (`O(|χ|)` `sLemma` steps with STANDARD derivations — the constant `Cχ`), the
+certified substitution `certSubst` (in flight in `Cert`), and `instBIntro`. Sizes: `≤ Cχ·(‖k‖ + 1)`
+steps and shifts (`|instB ⌜χ⌝ k| ≤ |χ|·|bnum k|`), the cost polynomial of §5 in `‖k‖`, and the
+context bounds at the end, all with the `χ`-dependent constant `Cχ` — this is why `BoundedInnerNec`
+has its `∃ C` AFTER `∀ χ`. The cap requirement `Cχ·(‖k‖ + i + 1) ≤ E` covers the witnesses
+`bnum k` (`≤ 6‖k‖ + 1`), `qNum χ` (`≤ 2⌜χ⌝ + 1`, inside `Cχ`) and the indices. -/
+structure PinKit (χ : Semisentence LAct 1) (tbl N : V) (Cχ : ℕ) : Prop where
+  pin : ∀ (k : V) {Γ i E : V}, RootLayout Γ (instB (⌜χ⌝ : V) k) i → IsFormulaSet LAct Γ →
+    (Cχ : V) * (‖k‖ + i + 1) ≤ E →
+    ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P ≤ (Cχ : V) * (‖k‖ + 1) ∧
+      neg LAct (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P ∧
+      costSum N E Γ P ≤ (Cχ : V) * (‖k‖ + 1) * (setLen LAct Γ + N + E + (‖k‖ + 1) ^ 2) ∧
+      setLen LAct (finalCtx Γ P) ≤ setLen LAct Γ + (Cχ : V) * (E * (‖k‖ + 1)) ∧
+      fvOccS LAct (finalCtx Γ P) ≤ fvOccS LAct Γ + (Cχ : V) * (‖k‖ + 1)
+
+end rootLayout
+
+/-! ## 4. The root steps: the walk of the member and the singleton chain (§7.1 steps 3 and 5) -/
+
+section rootSteps
+
+/-- `rootSteps x := describeF walkPieces 0 x ++ chainSteps layoutPieces ?[^&0]`: walk the root member,
+then chain it into the root sequent. -/
+noncomputable def rootSteps (x : V) : V :=
+  appendV (describeF walkPieces 0 x) (chainSteps layoutPieces ?[^&0])
+
+/-- **The root steps are applicable and produce the root layout at offset `0`**: Horn-only,
+`descCountF + 2` eigenvariables, at most `12|x| + 13` steps. -/
+theorem rootSteps_ok {tbl N x E Γ : V} (htbl : TableOK tbl N) (hT : TopTable tbl) (hx : IsSemiformula LAct 0 x)
+    (hΓ : IsFormulaSet LAct Γ) (hE : 2 * formulaLen LAct x + 8 ≤ E) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (rootSteps x) ∧ NoDrop (rootSteps x) ∧ HornOnly (rootSteps x) ∧
+    shiftsV (rootSteps x) = descCountF walkPieces 0 x + 2 ∧
+    len (rootSteps x) + 4 ≤ 12 * formulaLen LAct x + 13 ∧
+    RootLayout (finalCtx Γ (rootSteps x)) x 0 := by
+  have hE' : 2 * (0 : V) + 2 * formulaLen LAct x + 8 ≤ E := by rwa [mul_zero, zero_add]
+  obtain ⟨wok, wnd, wsh, _, wpi⟩ := describeF_ok htbl hT.walkTable hx hE' hΓ
+  have who : HornOnly (describeF walkPieces 0 x) := hornOnly_describeF rfl hx
+  have wlen := len_describeF_le walkPieces hx
+  set Γ₁ := finalCtx Γ (describeF walkPieces 0 x) with hΓ₁
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := finalCtx_isFormulaSet 8 htbl hΓ wok
+  have hpi₁ : neg LAct (piFact (𝟎 : V) (^&0)) ∈ Γ₁ := by rwa [cTV_zero] at wpi
+  have hlen1 : len (?[^&0] : V) = 1 := by simp
+  have h8 : (8 : V) ≤ E := le_trans le_add_self hE
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) h8
+  have hEc : len (?[^&0] : V) + 2 ≤ E := by rw [hlen1]; exact le_trans (by norm_num) h8
+  have hxs : ∀ i < len (?[^&0] : V), IsSemiterm LAct 0 (?[^&0] : V).[i] ∧
+      termLen LAct (termShiftIterV (?[^&0] : V).[i] (len (?[^&0] : V) + 1)) ≤ E ∧
+      neg LAct (piFact (𝟎 : V) (?[^&0] : V).[i]) ∈ Γ₁ := by
+    intro i hi
+    rw [hlen1] at hi
+    have hi0 : i = 0 := by
+      rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+      · rfl
+      · exact absurd hi (not_lt.mpr le_add_self)
+    subst hi0
+    rw [nth_adjoin_zero, hlen1, termShiftIterV_fvar, termLen_fvar]
+    refine ⟨by simp, ?_, hpi₁⟩
+    calc (0 : V) + (1 + 1) + 1 = 3 := by norm_num
+      _ ≤ 8 := by norm_num
+      _ ≤ E := h8
+  obtain ⟨cok, cnd, cho, csh, clen, cfacts, csl⟩ :=
+    chainSteps_ok htbl hT.layoutTable rfl hΓ₁f (by rw [hlen1]) hEc hxs
+  rw [hlen1] at csh clen cfacts
+  have c2 : (1 : V) + 1 = 2 := one_add_one_eq_two
+  rw [c2] at csh cfacts
+  obtain ⟨cins, cfs, cmem⟩ := cfacts 0 (by simp)
+  simp only [nth_adjoin_zero, termShiftIterV_fvar, zero_add] at cins cmem cfs
+  have hprev : prevAt (2 : V) 1 = (𝟎 : V) := by
+    unfold prevAt; rw [if_pos c2]
+  rw [hprev] at cins
+  refine ⟨listOK_appendV wok cok, noDrop_appendV wnd cnd, hornOnly_appendV who cho, ?_, ?_, ?_⟩
+  · rw [rootSteps, shiftsV_appendV, wsh, csh]
+  · rw [rootSteps, len_appendV]
+    calc len (describeF walkPieces 0 x) + len (chainSteps layoutPieces ?[^&0]) + 4
+        = (len (describeF walkPieces 0 x) + 4) + len (chainSteps layoutPieces ?[^&0]) := by ring
+      _ ≤ 12 * formulaLen LAct x + (7 * 1 + 6) := add_le_add wlen clen
+      _ = 12 * formulaLen LAct x + 13 := by norm_num
+  · rw [rootSteps, finalCtx_appendV, ← hΓ₁]
+    have hD : DossF walkPieces Γ₁ 0 x 0 := dossF_of_walk (describeF_noDrop_shifts htbl hT.walkTable rfl hx).1
+    have hD' := dossF_transport cnd hD
+    rw [csh, zero_add] at hD'
+    have hpi₂ := mem_finalCtx_of_mem cnd hpi₁
+    rw [csh, shiftIterV_neg (isFormula_piFact (isSemiterm_qqZero_LAct 0) (by simp)),
+      shiftIterV_piFact (isSemiterm_qqZero_LAct 0) (by simp), termShiftIterV_qqZero, termShiftIterV_fvar,
+      zero_add] at hpi₂
+    exact ⟨by simpa using hD', by simpa using hpi₂, by simpa using cins, by simpa using cfs,
+      by simpa using cmem, by simpa using csl⟩
+
+end rootSteps
+
 end ArithS
