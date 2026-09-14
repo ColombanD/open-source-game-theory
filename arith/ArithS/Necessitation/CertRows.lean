@@ -44,7 +44,52 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedTactic false
 set_option maxRecDepth 20000
 
-/-! ## 1. The length rows, re-issued -/
+/-! ## 0. Three rows APPENDED 2026-09-14 for `lenSteps` (hand-written sentences and `lib_` proofs; their
+`quote_row_`/`inst_` blocks are generated below like the length rows): the addition congruence `congAdd`
+(`x = x' → y = y' → x + y = x' + y'`), the successor congruence `congSucc` (`x = x' → x + 1 = x' + 1` — the
+one `lenSteps` uses: the closed `bnum|p| + bnum|q| + 1 = bnum(|p| + |q| + 1)` is `addFact` + `congSucc` +
+`succFact` + `eqTrans`; `congAdd` at `𝟏` would need the closed-constant witness), and the INTRO form of the
+list-sum adjoin `listSumAdjI` (`listSumDef s M → adjoinDef M' l M → l + s = s' → listSumDef s' M'` — the table's
+`listSumAdj` has all three `listSumDef` facts as antecedents, so no `listSumDef s' M'` was derivable for a
+non-empty `M'`; the intro form takes the sum as a NUMERAL via `addFact`, no `listSumTotal` eigenvariable). -/
+
+section newRows
+
+/-- `x = x' → y = y' → x + y = x' + y'`. -/
+noncomputable def congAddB : ArithmeticSemisentence 4 :=
+  “y' y x' x. x = x' → y = y' → (x + y) = (x' + y')”
+noncomputable def congAdd : ArithmeticSentence := ∀¹* congAddB
+lemma models_congAdd : V↓[ℒₒᵣ] ⊧ congAdd ↔ ∀ y' y x' x : V, x = x' → y = y' → x + y = x' + y' := by
+  simp [congAdd, congAddB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_congAdd : 𝗣𝗔 ⊢ congAdd :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_congAdd.mpr fun _ _ _ _ h₁ h₂ ↦ by subst h₁; subst h₂; rfl
+theorem lib_congAdd : Lib congAdd := Lib.of_pa pa_proves_congAdd
+
+/-- `x = x' → x + 1 = x' + 1`. -/
+noncomputable def congSuccB : ArithmeticSemisentence 2 :=
+  “x' x. x = x' → (x + 1) = (x' + 1)”
+noncomputable def congSucc : ArithmeticSentence := ∀¹* congSuccB
+lemma models_congSucc : V↓[ℒₒᵣ] ⊧ congSucc ↔ ∀ x' x : V, x = x' → x + 1 = x' + 1 := by
+  simp [congSucc, congSuccB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_congSucc : 𝗣𝗔 ⊢ congSucc :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_congSucc.mpr fun _ _ h ↦ by subst h; rfl
+theorem lib_congSucc : Lib congSucc := Lib.of_pa pa_proves_congSucc
+
+/-- `listSum M = s → M' = l ∷ M → l + s = s' → listSum M' = s'` (the intro form of `listSumAdj`). -/
+noncomputable def listSumAdjIB : ArithmeticSemisentence 5 :=
+  “s' s l M M'. !listSumDef s M → !adjoinDef M' l M → (l + s) = s' → !listSumDef s' M'”
+noncomputable def listSumAdjI : ArithmeticSentence := ∀¹* listSumAdjIB
+lemma models_listSumAdjI : V↓[ℒₒᵣ] ⊧ listSumAdjI ↔
+    ∀ s' s l M M' : V, s = listSum M → M' = l ∷ M → l + s = s' → s' = listSum M' := by
+  simp [listSumAdjI, listSumAdjIB, models_iff, Matrix.vecForall_iff, listSum_defined.iff]
+theorem pa_proves_listSumAdjI : 𝗣𝗔 ⊢ listSumAdjI :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_listSumAdjI.mpr fun _ _ _ _ _ h₁ h₂ h₃ ↦ by
+    subst h₁; subst h₂; subst h₃; simp
+theorem lib_listSumAdjI : Lib listSumAdjI := Lib.of_pa pa_proves_listSumAdjI
+
+end newRows
+
+/-! ## 1. The length rows, re-issued (+ the three new rows' generated blocks) -/
 
 section lengthRows
 
@@ -344,6 +389,87 @@ lemma inst_termLenTotal {wt : V} (hwt : IsSemiterm LAct 0 wt) :
     rw [freeIterT_bv0 1 0 (by norm_num), freeIterT_closed 0 hwt 1]
     try rfl
 
+/-! ### `congAdd` — `“y' y x' x. …”`, `m = 4` -/
+
+noncomputable def row_congAdd_as : List V := [subst LAct (listToVec [bv 3, bv 2]) PeqB, subst LAct (listToVec [bv 1, bv 0]) PeqB]
+noncomputable def row_congAdd_c : V := subst LAct (listToVec [(bv 3 ^+ bv 1), (bv 2 ^+ bv 0)]) PeqB
+
+theorem quote_row_congAdd : (⌜Semiformula.lMap emb congAddB⌝ : V) = impChain LAct row_congAdd_as row_congAdd_c := by
+  unfold congAddB row_congAdd_as row_congAdd_c PeqB
+  all_goals row_shapeB
+
+lemma isSemiformula_congAdd_as : ∀ A ∈ row_congAdd_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
+  unfold row_congAdd_as
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
+lemma isSemiformula_congAdd_c : IsSemiformula LAct ((4 : ℕ) : V) row_congAdd_c := by
+  unfold row_congAdd_c
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
+
+/-- `congAdd` at the witnesses `[wx, wxp, wy, wyp]` (the DSL variables right-to-left). -/
+lemma inst_congAdd {wx wxp wy wyp : V} (hwx : IsSemiterm LAct 0 wx) (hwxp : IsSemiterm LAct 0 wxp) (hwy : IsSemiterm LAct 0 wy) (hwyp : IsSemiterm LAct 0 wyp) :
+    row_congAdd_as.map (instOuter LAct [wx, wxp, wy, wyp]) = [eqFactB wx wxp, eqFactB wy wyp] ∧
+    instOuter LAct [wx, wxp, wy, wyp] row_congAdd_c = eqFactB (wx ^+ wy) (wxp ^+ wyp) := by
+  have hes : ∀ e ∈ ([wx, wxp, wy, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwxp, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
+  unfold row_congAdd_as row_congAdd_c
+  simp only [List.map_cons, List.map_nil]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
+  all_goals try row_entries_simpB
+  row_finish
+
+/-! ### `congSucc` — `“x' x. …”`, `m = 2` -/
+
+noncomputable def row_congSucc_as : List V := [subst LAct (listToVec [bv 1, bv 0]) PeqB]
+noncomputable def row_congSucc_c : V := subst LAct (listToVec [(bv 1 ^+ (𝟏 : V)), (bv 0 ^+ (𝟏 : V))]) PeqB
+
+theorem quote_row_congSucc : (⌜Semiformula.lMap emb congSuccB⌝ : V) = impChain LAct row_congSucc_as row_congSucc_c := by
+  unfold congSuccB row_congSucc_as row_congSucc_c PeqB
+  all_goals row_shapeB
+
+lemma isSemiformula_congSucc_as : ∀ A ∈ row_congSucc_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
+  unfold row_congSucc_as
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
+lemma isSemiformula_congSucc_c : IsSemiformula LAct ((2 : ℕ) : V) row_congSucc_c := by
+  unfold row_congSucc_c
+  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
+
+/-- `congSucc` at the witnesses `[wx, wxp]` (the DSL variables right-to-left). -/
+lemma inst_congSucc {wx wxp : V} (hwx : IsSemiterm LAct 0 wx) (hwxp : IsSemiterm LAct 0 wxp) :
+    row_congSucc_as.map (instOuter LAct [wx, wxp]) = [eqFactB wx wxp] ∧
+    instOuter LAct [wx, wxp] row_congSucc_c = eqFactB (wx ^+ (𝟏 : V)) (wxp ^+ (𝟏 : V)) := by
+  have hes : ∀ e ∈ ([wx, wxp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwxp, List.forall_mem_nil _⟩⟩)
+  unfold row_congSucc_as row_congSucc_c
+  simp only [List.map_cons, List.map_nil]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
+  all_goals try row_entries_simpB
+  row_finish
+
+/-! ### `listSumAdjI` — `“s' s l M M'. …”`, `m = 5` -/
+
+noncomputable def row_listSumAdjI_as : List V := [subst LAct (listToVec [bv 1, bv 3]) PlistSum, subst LAct (listToVec [bv 4, bv 2, bv 3]) Padjoin, subst LAct (listToVec [(bv 2 ^+ bv 1), bv 0]) PeqB]
+noncomputable def row_listSumAdjI_c : V := subst LAct (listToVec [bv 0, bv 4]) PlistSum
+
+theorem quote_row_listSumAdjI : (⌜Semiformula.lMap emb listSumAdjIB⌝ : V) = impChain LAct row_listSumAdjI_as row_listSumAdjI_c := by
+  unfold listSumAdjIB row_listSumAdjI_as row_listSumAdjI_c Padjoin PeqB PlistSum
+  all_goals row_shapeB
+
+lemma isSemiformula_listSumAdjI_as : ∀ A ∈ row_listSumAdjI_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
+  unfold row_listSumAdjI_as
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
+lemma isSemiformula_listSumAdjI_c : IsSemiformula LAct ((5 : ℕ) : V) row_listSumAdjI_c := by
+  unfold row_listSumAdjI_c
+  exact isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB)
+
+/-- `listSumAdjI` at the witnesses `[wMp, wM, wl, ws, wsp]` (the DSL variables right-to-left). -/
+lemma inst_listSumAdjI {wMp wM wl ws wsp : V} (hwMp : IsSemiterm LAct 0 wMp) (hwM : IsSemiterm LAct 0 wM) (hwl : IsSemiterm LAct 0 wl) (hws : IsSemiterm LAct 0 ws) (hwsp : IsSemiterm LAct 0 wsp) :
+    row_listSumAdjI_as.map (instOuter LAct [wMp, wM, wl, ws, wsp]) = [listSumFact ws wM, adjFact wMp wl wM, eqFactB (wl ^+ ws) wsp] ∧
+    instOuter LAct [wMp, wM, wl, ws, wsp] row_listSumAdjI_c = listSumFact wsp wMp := by
+  have hes : ∀ e ∈ ([wMp, wM, wl, ws, wsp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwMp, List.forall_mem_cons.mpr ⟨hwM, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwsp, List.forall_mem_nil _⟩⟩⟩⟩⟩)
+  unfold row_listSumAdjI_as row_listSumAdjI_c
+  simp only [List.map_cons, List.map_nil]
+  rw [instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PlistSum (by rfl) _ hes (by row_entriesB)]
+  all_goals try row_entries_simpB
+  row_finish
+
 end lengthRows
 
 /-! ## 2. The certification table: the walk rows, a pad, then the cert/identification/length rows at `100 + k` -/
@@ -433,7 +559,10 @@ def cIdx_nthAdjoinZero : ℕ := 179
 def cIdx_nthAdjoinSucc : ℕ := 180
 def cIdx_tsvAdjCert : ℕ := 181
 def cIdx_congAdj : ℕ := 182
-def certRowCount : ℕ := 183
+def cIdx_congAdd : ℕ := 183
+def cIdx_congSucc : ℕ := 184
+def cIdx_listSumAdjI : ℕ := 185
+def certRowCount : ℕ := 186
 
 /-- The rows at `100 + k`, in index order. -/
 noncomputable def certExtraRows : List WRow := [
@@ -519,7 +648,10 @@ noncomputable def certExtraRows : List WRow := [
   ⟨3, nthAdjoinZeroB, lib_nthAdjoinZero⟩,
   ⟨5, nthAdjoinSuccB, lib_nthAdjoinSucc⟩,
   ⟨9, tsvAdjCertB, lib_tsvAdjCert⟩,
-  ⟨6, congAdjB, lib_congAdj⟩
+  ⟨6, congAdjB, lib_congAdj⟩,
+  ⟨4, congAddB, lib_congAdd⟩,
+  ⟨2, congSuccB, lib_congSucc⟩,
+  ⟨5, listSumAdjIB, lib_listSumAdjI⟩
 ]
 
 /-- Sixty copies of the walk's first row fill indices `40 … 99` (room for the layout rows). -/
@@ -1315,6 +1447,33 @@ lemma certTable_congAdj {tbl : V} (h : CertTable tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_congAdj]
 
+lemma certTable_congAdd {tbl : V} (h : CertTable tbl) :
+    rowM tbl.[((cIdx_congAdd : ℕ) : V)] = ((4 : ℕ) : V) ∧
+    rowB tbl.[((cIdx_congAdd : ℕ) : V)] = impChainV LAct (vecOf row_congAdd_as) row_congAdd_c := by
+  have this : rowM tbl.[((cIdx_congAdd : ℕ) : V)] = ((4 : ℕ) : V) ∧
+      rowB tbl.[((cIdx_congAdd : ℕ) : V)] = ⌜Semiformula.lMap emb congAddB⌝ :=
+    h.2 cIdx_congAdd (Nat.lt_of_sub_eq_succ rfl)
+  refine ⟨this.1, ?_⟩
+  rw [impChainV_vecOf, this.2, quote_row_congAdd]
+
+lemma certTable_congSucc {tbl : V} (h : CertTable tbl) :
+    rowM tbl.[((cIdx_congSucc : ℕ) : V)] = ((2 : ℕ) : V) ∧
+    rowB tbl.[((cIdx_congSucc : ℕ) : V)] = impChainV LAct (vecOf row_congSucc_as) row_congSucc_c := by
+  have this : rowM tbl.[((cIdx_congSucc : ℕ) : V)] = ((2 : ℕ) : V) ∧
+      rowB tbl.[((cIdx_congSucc : ℕ) : V)] = ⌜Semiformula.lMap emb congSuccB⌝ :=
+    h.2 cIdx_congSucc (Nat.lt_of_sub_eq_succ rfl)
+  refine ⟨this.1, ?_⟩
+  rw [impChainV_vecOf, this.2, quote_row_congSucc]
+
+lemma certTable_listSumAdjI {tbl : V} (h : CertTable tbl) :
+    rowM tbl.[((cIdx_listSumAdjI : ℕ) : V)] = ((5 : ℕ) : V) ∧
+    rowB tbl.[((cIdx_listSumAdjI : ℕ) : V)] = impChainV LAct (vecOf row_listSumAdjI_as) row_listSumAdjI_c := by
+  have this : rowM tbl.[((cIdx_listSumAdjI : ℕ) : V)] = ((5 : ℕ) : V) ∧
+      rowB tbl.[((cIdx_listSumAdjI : ℕ) : V)] = ⌜Semiformula.lMap emb listSumAdjIB⌝ :=
+    h.2 cIdx_listSumAdjI (Nat.lt_of_sub_eq_succ rfl)
+  refine ⟨this.1, ?_⟩
+  rw [impChainV_vecOf, this.2, quote_row_listSumAdjI]
+
 /-! ### The piece table -/
 
 noncomputable def cpiece_negRelCert : V := ⟪(0 : V), vecOf row_negRelCert_as, row_negRelCert_c⟫
@@ -1400,6 +1559,9 @@ noncomputable def cpiece_nthAdjoinZero : V := ⟪(0 : V), vecOf row_nthAdjoinZer
 noncomputable def cpiece_nthAdjoinSucc : V := ⟪(0 : V), vecOf row_nthAdjoinSucc_as, row_nthAdjoinSucc_c⟫
 noncomputable def cpiece_tsvAdjCert : V := ⟪(0 : V), vecOf row_tsvAdjCert_as, row_tsvAdjCert_c⟫
 noncomputable def cpiece_congAdj : V := ⟪(0 : V), vecOf row_congAdj_as, row_congAdj_c⟫
+noncomputable def cpiece_congAdd : V := ⟪(0 : V), vecOf row_congAdd_as, row_congAdd_c⟫
+noncomputable def cpiece_congSucc : V := ⟪(0 : V), vecOf row_congSucc_as, row_congSucc_c⟫
+noncomputable def cpiece_listSumAdjI : V := ⟪(0 : V), vecOf row_listSumAdjI_as, row_listSumAdjI_c⟫
 
 noncomputable def certExtraPieceList : List V := [
   cpiece_negRelCert,
@@ -1484,7 +1646,10 @@ noncomputable def certExtraPieceList : List V := [
   cpiece_nthAdjoinZero,
   cpiece_nthAdjoinSucc,
   cpiece_tsvAdjCert,
-  cpiece_congAdj
+  cpiece_congAdj,
+  cpiece_congAdd,
+  cpiece_congSucc,
+  cpiece_listSumAdjI
 ]
 noncomputable def padPieceList : List V := List.replicate 60 piece_zeroLtSucc
 
@@ -2751,6 +2916,51 @@ lemma ctag_congAdj {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (182
   subst hWp
   have hk : ((cIdx_congAdj : ℕ) : V) = (182 : V) := by simp [cIdx_congAdj]
   rw [← hk, cmk_congAdj]; simp
+
+lemma certPieces_congAdd : (certPieces : V).[((cIdx_congAdd : ℕ) : V)] = cpiece_congAdd := by
+  unfold certPieces
+  rw [nth_vecOf _ cIdx_congAdd (Nat.lt_of_sub_eq_succ rfl)]
+  rfl
+
+lemma cmk_congAdd (ev : V) :
+    mkStep certPieces ((cIdx_congAdd : ℕ) : V) ev = sUseHorn ((cIdx_congAdd : ℕ) : V) ev (vecOf row_congAdd_as) row_congAdd_c := by
+  rw [mkStep, certPieces_congAdd]
+  simp [cpiece_congAdd, sUseHorn]
+
+lemma ctag_congAdd {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (183 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((cIdx_congAdd : ℕ) : V) = (183 : V) := by simp [cIdx_congAdd]
+  rw [← hk, cmk_congAdd]; simp
+
+lemma certPieces_congSucc : (certPieces : V).[((cIdx_congSucc : ℕ) : V)] = cpiece_congSucc := by
+  unfold certPieces
+  rw [nth_vecOf _ cIdx_congSucc (Nat.lt_of_sub_eq_succ rfl)]
+  rfl
+
+lemma cmk_congSucc (ev : V) :
+    mkStep certPieces ((cIdx_congSucc : ℕ) : V) ev = sUseHorn ((cIdx_congSucc : ℕ) : V) ev (vecOf row_congSucc_as) row_congSucc_c := by
+  rw [mkStep, certPieces_congSucc]
+  simp [cpiece_congSucc, sUseHorn]
+
+lemma ctag_congSucc {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (184 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((cIdx_congSucc : ℕ) : V) = (184 : V) := by simp [cIdx_congSucc]
+  rw [← hk, cmk_congSucc]; simp
+
+lemma certPieces_listSumAdjI : (certPieces : V).[((cIdx_listSumAdjI : ℕ) : V)] = cpiece_listSumAdjI := by
+  unfold certPieces
+  rw [nth_vecOf _ cIdx_listSumAdjI (Nat.lt_of_sub_eq_succ rfl)]
+  rfl
+
+lemma cmk_listSumAdjI (ev : V) :
+    mkStep certPieces ((cIdx_listSumAdjI : ℕ) : V) ev = sUseHorn ((cIdx_listSumAdjI : ℕ) : V) ev (vecOf row_listSumAdjI_as) row_listSumAdjI_c := by
+  rw [mkStep, certPieces_listSumAdjI]
+  simp [cpiece_listSumAdjI, sUseHorn]
+
+lemma ctag_listSumAdjI {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (185 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((cIdx_listSumAdjI : ℕ) : V) = (185 : V) := by simp [cIdx_listSumAdjI]
+  rw [← hk, cmk_listSumAdjI]; simp
 
 /-! ### The per-row applicability lemmas `cok_<row>` -/
 
@@ -4333,6 +4543,63 @@ lemma cok_congAdj {tbl N E Γ W : V} {wt wv ww wtp wvp wwp : V} (htbl : TableOK 
     (by rw [show row_congAdj_as.length = 4 from rfl]; exact_mod_cast (by decide : 4 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
   · rw [ctxAfter_useHorn [wt, wv, ww, wtp, wvp, wwp] row_congAdj_as isSemiformula_congAdj_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `congAdd` as a step. -/
+lemma cok_congAdd {tbl N E Γ W : V} {wx wxp wy wyp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwxp : IsSemiterm LAct 0 wxp) (hEwxp : termLen LAct wxp ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hwyp : IsSemiterm LAct 0 wyp) (hEwyp : termLen LAct wyp ≤ E) (hmem0 : neg LAct (eqFactB wx wxp) ∈ Γ) (hmem1 : neg LAct (eqFactB wy wyp) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 183 ?[wx, wxp, wy, wyp]) ∧ sTag (mkStep W 183 ?[wx, wxp, wy, wyp]) = 0 ∧
+    ctxAfter Γ (mkStep W 183 ?[wx, wxp, wy, wyp]) = insert (neg LAct (eqFactB (wx ^+ wy) (wxp ^+ wyp))) Γ := by
+  subst hWp
+  have hk : ((cIdx_congAdd : ℕ) : V) = (183 : V) := by simp [cIdx_congAdd]
+  have hstep := cmk_congAdd (V := V) ?[wx, wxp, wy, wyp]
+  have hlen := certTable_len hC cIdx_congAdd (by decide)
+  have hrow := certTable_congAdd hC
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wx, wxp, wy, wyp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwxp, hEwxp⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_cons.mpr ⟨⟨hwyp, hEwyp⟩, List.forall_mem_nil _⟩⟩⟩⟩
+  have hinst := inst_congAdd hwx hwxp hwy hwyp
+  rw [hstep, show (?[wx, wxp, wy, wyp] : V) = vecOf [wx, wxp, wy, wyp] from rfl]
+  refine ⟨stepOK_useHorn htbl [wx, wxp, wy, wyp] row_congAdd_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 4 ≤ 8))
+    (by rw [show row_congAdd_as.length = 2 from rfl]; exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
+  · rw [ctxAfter_useHorn [wx, wxp, wy, wyp] row_congAdd_as isSemiformula_congAdd_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `congSucc` as a step. -/
+lemma cok_congSucc {tbl N E Γ W : V} {wx wxp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwxp : IsSemiterm LAct 0 wxp) (hEwxp : termLen LAct wxp ≤ E) (hmem0 : neg LAct (eqFactB wx wxp) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 184 ?[wx, wxp]) ∧ sTag (mkStep W 184 ?[wx, wxp]) = 0 ∧
+    ctxAfter Γ (mkStep W 184 ?[wx, wxp]) = insert (neg LAct (eqFactB (wx ^+ (𝟏 : V)) (wxp ^+ (𝟏 : V)))) Γ := by
+  subst hWp
+  have hk : ((cIdx_congSucc : ℕ) : V) = (184 : V) := by simp [cIdx_congSucc]
+  have hstep := cmk_congSucc (V := V) ?[wx, wxp]
+  have hlen := certTable_len hC cIdx_congSucc (by decide)
+  have hrow := certTable_congSucc hC
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wx, wxp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwxp, hEwxp⟩, List.forall_mem_nil _⟩⟩
+  have hinst := inst_congSucc hwx hwxp
+  rw [hstep, show (?[wx, wxp] : V) = vecOf [wx, wxp] from rfl]
+  refine ⟨stepOK_useHorn htbl [wx, wxp] row_congSucc_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
+    (by rw [show row_congSucc_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [wx, wxp] row_congSucc_as isSemiformula_congSucc_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `listSumAdjI` as a step. -/
+lemma cok_listSumAdjI {tbl N E Γ W : V} {wMp wM wl ws wsp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwMp : IsSemiterm LAct 0 wMp) (hEwMp : termLen LAct wMp ≤ E) (hwM : IsSemiterm LAct 0 wM) (hEwM : termLen LAct wM ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwsp : IsSemiterm LAct 0 wsp) (hEwsp : termLen LAct wsp ≤ E) (hmem0 : neg LAct (listSumFact ws wM) ∈ Γ) (hmem1 : neg LAct (adjFact wMp wl wM) ∈ Γ) (hmem2 : neg LAct (eqFactB (wl ^+ ws) wsp) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 185 ?[wMp, wM, wl, ws, wsp]) ∧ sTag (mkStep W 185 ?[wMp, wM, wl, ws, wsp]) = 0 ∧
+    ctxAfter Γ (mkStep W 185 ?[wMp, wM, wl, ws, wsp]) = insert (neg LAct (listSumFact wsp wMp)) Γ := by
+  subst hWp
+  have hk : ((cIdx_listSumAdjI : ℕ) : V) = (185 : V) := by simp [cIdx_listSumAdjI]
+  have hstep := cmk_listSumAdjI (V := V) ?[wMp, wM, wl, ws, wsp]
+  have hlen := certTable_len hC cIdx_listSumAdjI (by decide)
+  have hrow := certTable_listSumAdjI hC
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wMp, wM, wl, ws, wsp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwMp, hEwMp⟩, List.forall_mem_cons.mpr ⟨⟨hwM, hEwM⟩, List.forall_mem_cons.mpr ⟨⟨hwl, hEwl⟩, List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwsp, hEwsp⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩
+  have hinst := inst_listSumAdjI hwMp hwM hwl hws hwsp
+  rw [hstep, show (?[wMp, wM, wl, ws, wsp] : V) = vecOf [wMp, wM, wl, ws, wsp] from rfl]
+  refine ⟨stepOK_useHorn htbl [wMp, wM, wl, ws, wsp] row_listSumAdjI_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 5 ≤ 8))
+    (by rw [show row_listSumAdjI_as.length = 3 from rfl]; exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
+  · rw [ctxAfter_useHorn [wMp, wM, wl, ws, wsp] row_listSumAdjI_as isSemiformula_listSumAdjI_c (fun e he ↦ (hes e he).1), hinst.2]
 
 end certTable
 

@@ -24,6 +24,10 @@ LEN_ROWS = [
  ('termLenFvar', ['l','t','x'], [A('qqFvar','t','x'), A('tlenG','l','t')], A('eq','l',S('x'))),
  ('formulaLenTotal', ['p'], [], EX(['l'], [A('flenG','l','p')])),
  ('termLenTotal', ['t'], [], EX(['l'], [A('tlenG','l','t')])),
+ # ---- the three rows APPENDED 2026-09-14 for `lenSteps` (sentences + `lib_` proofs hand-written in `head` §0):
+ ('congAdd', ["y'", 'y', "x'", 'x'], [A('eq','x',"x'"), A('eq','y',"y'")], A('eq', P('x','y'), P("x'","y'"))),
+ ('congSucc', ["x'", 'x'], [A('eq','x',"x'")], A('eq', S('x'), S("x'"))),
+ ('listSumAdjI', ["s'", 's', 'l', 'M', "M'"], [A('listSum','s','M'), A('adjoin',"M'",'l','M'), A('eq', P('l','s'), "s'")], A('listSum', "s'", "M'")),
 ]
 G.out = []
 for (name, binders, ants, conc) in LEN_ROWS:
@@ -45,6 +49,7 @@ TABLE = [
  'qVecCert','qVecNth0','qVecNthSucc','nthAdjoinZero','nthAdjoinSucc',
  'tsvAdjCert',
  'congAdj',
+ 'congAdd', 'congSucc', 'listSumAdjI',
 ]
 BASE = 100
 rowinstb = open('ArithS/Necessitation/RowInstB.lean').read()
@@ -314,7 +319,52 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedTactic false
 set_option maxRecDepth 20000
 
-/-! ## 1. The length rows, re-issued -/
+/-! ## 0. Three rows APPENDED 2026-09-14 for `lenSteps` (hand-written sentences and `lib_` proofs; their
+`quote_row_`/`inst_` blocks are generated below like the length rows): the addition congruence `congAdd`
+(`x = x' → y = y' → x + y = x' + y'`), the successor congruence `congSucc` (`x = x' → x + 1 = x' + 1` — the
+one `lenSteps` uses: the closed `bnum|p| + bnum|q| + 1 = bnum(|p| + |q| + 1)` is `addFact` + `congSucc` +
+`succFact` + `eqTrans`; `congAdd` at `𝟏` would need the closed-constant witness), and the INTRO form of the
+list-sum adjoin `listSumAdjI` (`listSumDef s M → adjoinDef M' l M → l + s = s' → listSumDef s' M'` — the table's
+`listSumAdj` has all three `listSumDef` facts as antecedents, so no `listSumDef s' M'` was derivable for a
+non-empty `M'`; the intro form takes the sum as a NUMERAL via `addFact`, no `listSumTotal` eigenvariable). -/
+
+section newRows
+
+/-- `x = x' → y = y' → x + y = x' + y'`. -/
+noncomputable def congAddB : ArithmeticSemisentence 4 :=
+  “y' y x' x. x = x' → y = y' → (x + y) = (x' + y')”
+noncomputable def congAdd : ArithmeticSentence := ∀¹* congAddB
+lemma models_congAdd : V↓[ℒₒᵣ] ⊧ congAdd ↔ ∀ y' y x' x : V, x = x' → y = y' → x + y = x' + y' := by
+  simp [congAdd, congAddB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_congAdd : 𝗣𝗔 ⊢ congAdd :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_congAdd.mpr fun _ _ _ _ h₁ h₂ ↦ by subst h₁; subst h₂; rfl
+theorem lib_congAdd : Lib congAdd := Lib.of_pa pa_proves_congAdd
+
+/-- `x = x' → x + 1 = x' + 1`. -/
+noncomputable def congSuccB : ArithmeticSemisentence 2 :=
+  “x' x. x = x' → (x + 1) = (x' + 1)”
+noncomputable def congSucc : ArithmeticSentence := ∀¹* congSuccB
+lemma models_congSucc : V↓[ℒₒᵣ] ⊧ congSucc ↔ ∀ x' x : V, x = x' → x + 1 = x' + 1 := by
+  simp [congSucc, congSuccB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_congSucc : 𝗣𝗔 ⊢ congSucc :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_congSucc.mpr fun _ _ h ↦ by subst h; rfl
+theorem lib_congSucc : Lib congSucc := Lib.of_pa pa_proves_congSucc
+
+/-- `listSum M = s → M' = l ∷ M → l + s = s' → listSum M' = s'` (the intro form of `listSumAdj`). -/
+noncomputable def listSumAdjIB : ArithmeticSemisentence 5 :=
+  “s' s l M M'. !listSumDef s M → !adjoinDef M' l M → (l + s) = s' → !listSumDef s' M'”
+noncomputable def listSumAdjI : ArithmeticSentence := ∀¹* listSumAdjIB
+lemma models_listSumAdjI : V↓[ℒₒᵣ] ⊧ listSumAdjI ↔
+    ∀ s' s l M M' : V, s = listSum M → M' = l ∷ M → l + s = s' → s' = listSum M' := by
+  simp [listSumAdjI, listSumAdjIB, models_iff, Matrix.vecForall_iff, listSum_defined.iff]
+theorem pa_proves_listSumAdjI : 𝗣𝗔 ⊢ listSumAdjI :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_listSumAdjI.mpr fun _ _ _ _ _ h₁ h₂ h₃ ↦ by
+    subst h₁; subst h₂; subst h₃; simp
+theorem lib_listSumAdjI : Lib listSumAdjI := Lib.of_pa pa_proves_listSumAdjI
+
+end newRows
+
+/-! ## 1. The length rows, re-issued (+ the three new rows' generated blocks) -/
 
 section lengthRows
 
