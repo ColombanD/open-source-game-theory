@@ -605,4 +605,55 @@ uniqueness provable. The index arguments `is il ir …` are likewise left as exi
 are what the prologue determines (`DESIGN_fragments.md` §4.11's "three static quantities").
 -/
 
+namespace Verify
+
+/-- The verification operator on pairs `⟪ρ, L⟫`. `W`/`tblN` are the piece table and the numeral
+table; each clause splices the children's lists into the node's fragment (§6.1). Every auxiliary
+existential is bounded — by `d` for the node data (the Foundation `*_lt_*` lemmas), by `L` for
+the sub-lists, the prologues, the indices and the numeral values — because the `Fixpoint`
+blueprint's `core` must be `𝚫₁` (`HFS/Fixpoint.lean:25`). -/
+def Phi (W tblN : V) (C : Set V) (pr : V) : Prop :=
+  ∃ d ≤ pr, ∃ L ≤ pr, pr = ⟪d, L⟫ ∧
+  (
+  (∃ s p pro is il ip inp Lv n,
+    s < d ∧ p < d ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ip ≤ L ∧ inp ≤ L ∧ Lv ≤ L ∧ n ≤ L ∧
+    d = axL s p ∧ L = appendV pro (fragAxL W tblN is il ip inp Lv n)) ∨
+  (∃ s pro is il iv Lv n,
+    s < d ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ iv ≤ L ∧ Lv ≤ L ∧ n ≤ L ∧
+    d = verumIntro s ∧ L = appendV pro (fragVerum W tblN is il iv Lv n)) ∨
+  (∃ s p q dp dq L₁ L₂ pro₁ pro₂ is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n,
+    s < d ∧ p < d ∧ q < d ∧ dp < d ∧ dq < d ∧ L₁ ≤ L ∧ L₂ ≤ L ∧ pro₁ ≤ L ∧ pro₂ ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ir ≤ L ∧ ip ≤ L ∧ iq ≤ L ∧ idd₁ ≤ L ∧ idd₂ ≤ L ∧ icp ≤ L ∧ icq ≤ L ∧ in₁ ≤ L ∧ in₂ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ m₂ ≤ L ∧ n ≤ L ∧
+     ⟪dp, L₁⟫ ∈ C ∧ ⟪dq, L₂⟫ ∈ C ∧
+    d = andIntro s p q dp dq ∧ L = appendV pro₁ (appendV L₁ (appendV pro₂ (appendV L₂
+        (nodeAnd W tblN is il ir ip iq idd₁ idd₂ icp icq in₁ in₂ Lv m₁ m₂ n))))) ∨
+  (∃ s p q d' L' pro is il ir ip iq idd icq ic in₁ Lv m₁ n,
+    s < d ∧ p < d ∧ q < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ir ≤ L ∧ ip ≤ L ∧ iq ≤ L ∧ idd ≤ L ∧ icq ≤ L ∧ ic ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
+     ⟪d', L'⟫ ∈ C ∧
+    d = orIntro s p q d' ∧ L = appendV pro (appendV L' (nodeOr W tblN is il ir ip iq idd icq ic in₁ Lv m₁ n))) ∨
+  (∃ s p d' L' pro is il ir ip ifp iss ic idd in₁ Lv m₁ n,
+    s < d ∧ p < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ir ≤ L ∧ ip ≤ L ∧ ifp ≤ L ∧ iss ≤ L ∧ ic ≤ L ∧ idd ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
+     ⟪d', L'⟫ ∈ C ∧
+    d = allIntro s p d' ∧ L = appendV pro (appendV L' (nodeAll W tblN is il ir ip ifp iss ic idd in₁ Lv m₁ n))) ∨
+  (∃ s p t d' L' pro is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n,
+    s < d ∧ p < d ∧ t < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ir ≤ L ∧ ip ≤ L ∧ it ≤ L ∧ ipt ≤ L ∧ ic ≤ L ∧ idd ≤ L ∧ ilt ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ Lt ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
+     ⟪d', L'⟫ ∈ C ∧
+    d = exsIntro s p t d' ∧ L = appendV pro (appendV L' (nodeExs W tblN is il ir ip it ipt ic idd ilt in₁ Lv Lt m₁ n))) ∨
+  (∃ s d' L' pro is il ic idd in₁ Lv m₁ n,
+    s < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ic ≤ L ∧ idd ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
+     ⟪d', L'⟫ ∈ C ∧
+    d = wkRule s d' ∧ L = appendV pro (appendV L' (nodeWk W tblN is il ic idd in₁ Lv m₁ n))) ∨
+  (∃ s d' L' pro is il ic idd in₁ Lv m₁ n,
+    s < d ∧ d' < d ∧ L' ≤ L ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ic ≤ L ∧ idd ≤ L ∧ in₁ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ n ≤ L ∧
+     ⟪d', L'⟫ ∈ C ∧
+    d = shiftRule s d' ∧ L = appendV pro (appendV L' (nodeShift W tblN is il ic idd in₁ Lv m₁ n))) ∨
+  (∃ s p d₁ d₂ L₁ L₂ pro₁ pro₂ is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n,
+    s < d ∧ p < d ∧ d₁ < d ∧ d₂ < d ∧ L₁ ≤ L ∧ L₂ ≤ L ∧ pro₁ ≤ L ∧ pro₂ ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ip ≤ L ∧ inp ≤ L ∧ idd₁ ≤ L ∧ idd₂ ≤ L ∧ ic₁ ≤ L ∧ ic₂ ≤ L ∧ in₁ ≤ L ∧ in₂ ≤ L ∧ Lv ≤ L ∧ m₁ ≤ L ∧ m₂ ≤ L ∧ n ≤ L ∧
+     ⟪d₁, L₁⟫ ∈ C ∧ ⟪d₂, L₂⟫ ∈ C ∧
+    d = cutRule s p d₁ d₂ ∧ L = appendV pro₁ (appendV L₁ (appendV pro₂ (appendV L₂
+        (nodeCut W tblN is il ip inp idd₁ idd₂ ic₁ ic₂ in₁ in₂ Lv m₁ m₂ n))))) ∨
+  (∃ s p pro is il ip Lv n,
+    s < d ∧ p < d ∧ pro ≤ L ∧ is ≤ L ∧ il ≤ L ∧ ip ≤ L ∧ Lv ≤ L ∧ n ≤ L ∧
+    d = axm s p ∧ L = appendV pro (nodeAxm W tblN is il ip Lv n)) )
+end Verify
+
 end ArithS
