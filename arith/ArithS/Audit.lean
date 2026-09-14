@@ -37,6 +37,7 @@ import ArithS.Necessitation.Layout
 import ArithS.Necessitation.Members
 import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.NumLength
+import ArithS.Necessitation.NumMul
 import ArithS.Necessitation.Cert
 import ArithS.Necessitation.Dossier
 import ArithS.Necessitation.Frag1
@@ -765,5 +766,18 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dlen_lengthEqCode_le
 #print axioms lemmaOK_lengthEq
 #print axioms stepCost_lemma_lengthEq
+
+-- U10 (Necessitation/NumMul, 2026-09-14): N4 — the closed product fact `bnum a · bnum b = bnum (a · b)`
+-- (`mulFact a b`) as a DERIVATION CODE: a `Fixpoint` on `⟪a, b, d⟫` recursing on the bits of `b` over
+-- its own five-row table (`MulTableOK`: `zeroMul`/`mulZero`/`mulOne` and the two COMBINED bit rows
+-- `x·y = z → x·(2y) = 2z`, `x·y = z → 2z + x = w → x·(2y + 1) = w`, the odd bit cutting in `addCode`);
+-- `dlen ≤ (‖b‖ + 1) · mulNodeCap`, cubic in the bit length; `sLemma` packaging. A leaf file.
+#print axioms exists_mulTable
+#print axioms mulGraph_exists
+#print axioms mulGraph_unique
+#print axioms mulEqCode_proof
+#print axioms dlen_mulEqCode_le
+#print axioms lemmaOK_mulEq
+#print axioms stepCost_lemma_mulEq
 
 end ArithS
