@@ -3,6 +3,8 @@ import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.RowInstB
 import ArithS.Necessitation.CertRows
 import ArithS.Necessitation.Layout
+import ArithS.Necessitation.Frag1
+import ArithS.Necessitation.Frag1
 
 /-!
 # ArithS.Necessitation.Cert — certified re-description (`neg`/`shift`/`eq`) and length steps
@@ -928,6 +930,42 @@ theorem dossT_func {Γ n k f v i : V} (hkf : LAct.IsFunc k f) (hv : IsSemitermVe
   intro g hg
   have := dossT_mem h (h4 g hg)
   rwa [shiftIterV_shift] at this
+
+/-- The closed-symbol fact the walk emits at a `func` node, read off the dossier
+(`dossT_func`'s missing fourth conjunct — the `isFuncFact` the certification rows need). -/
+theorem dossT_func_isFunc {Γ n k f v i : V} (hkf : LAct.IsFunc k f) (hv : IsSemitermVec LAct k n v)
+    (hSvSet : IsFormulaSet LAct (finalCtx 0 (π₂ (descVecAux W n (descTVec W n k v) k))))
+    (h : DossT W Γ n (^func k f v) i) : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ Γ := by
+  have hS := describeT_func W n hkf hv.isUTerm
+  set Sv := π₂ (descVecAux W n (descTVec W n k v) k) with hSv
+  have hctx : finalCtx 0 (describeT W n (^func k f v)) =
+      ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter (finalCtx 0 Sv) (mkStep W (funcRow k f) 0))
+        (mkStep W 7 ?[cTV k, cTV f, vRef 0 k])) (mkStep W 8 ?[cTV n, cTV k, cTV f, vRef 1 k, ^&0]))
+        (mkStep W 4 ?[cTV n, ^&0])) (mkStep W 38 ?[cTV k, cTV n, vRef 1 k])) (mkStep W 39 ?[cTV k, vRef 1 k]) := by
+    rw [hS, finalCtx_six]
+  have hr0 : IsSemiterm LAct 0 (vRef 0 k) := isSemiterm_vRef _ _
+  have hr1 : IsSemiterm LAct 0 (vRef 1 k) := isSemiterm_vRef _ _
+  have hΓSv : IsFormulaSet LAct (finalCtx 0 Sv) := hSvSet
+  have h1 : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ finalCtx 0 (describeT W n (^func k f v)) := by
+    rw [hctx]
+    refine mem_ctxAfter_of_noShift (Or.inl (tag_isUTermVecSigmaPiLAct hWp _))
+      (mem_ctxAfter_of_noShift (Or.inl (tag_isUTermVecOfSemitermVecLAct hWp _))
+      (mem_ctxAfter_of_noShift (Or.inl (tag_isSemitermSigmaPiLAct hWp _))
+      (mem_ctxAfter_of_noShift (Or.inl (tag_isSemitermFunc hWp _)) ?_)))
+    have hbase : neg LAct (isFuncFact (cTV k) (cTV f)) ∈
+        ctxAfter (finalCtx 0 Sv) (mkStep W (funcRow k f) 0) := by
+      rw [(funcConst_ok (Γ := finalCtx 0 Sv) htbl hW hWp hkf (E := (8 : V)) le_rfl
+        (by intro x hx; exact (hΓSv x hx))).2.2.1]
+      exact mem_insert_self'
+    have hsh := mem_ctxAfter_of_shift (s := mkStep W 7 ?[cTV k, cTV f, vRef 0 k])
+      (Or.inl (tag_qqFuncTotal hWp _)) hbase
+    rwa [shift_neg (isFormula_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)),
+      shift_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _),
+      termShift_cTV, termShift_cTV] at hsh
+  have e1 := dossT_mem h h1
+  rwa [shiftIterV_neg (isFormula_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)),
+    shiftIterV_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _),
+    termShiftIterV_cTV, termShiftIterV_cTV] at e1
 
 /-- The vector walk of `j + 1` entries at offset `i`: the entry `t := v.[k − (j+1)]` at `i + 1` (with
 `ct := descCountT t` eigenvariables), the tail vector at `i + 1 + ct`, and the node's facts
@@ -3357,5 +3395,164 @@ theorem eqCount_eq_descCountF (W : V) : ∀ {n r : V}, IsSemiformula LAct n r �
     rw [ih]
 
 end countBridge
+
+/-! ## Part 4 — applicability: the pass runs and leaves the root fact
+
+The remaining two conjuncts of `certShift_ok`. The pass runs in a context holding BOTH dossiers —
+the source `t` at offset `i` and the image `termShift t` at offset `j` — and every emitted row's
+antecedents are exactly the shape facts the `dossT_*`/`dossV_*` decomposition lemmas read off
+them. Every step is then applicable and the final context holds `tshFact &j &i`.
+
+**Two piece tables.** The dossiers are the WALK's output, so they are stated at `Wd = walkPieces`
+(`dossT_*` demand it); the pass's own steps are read from `W = certPieces`. The offsets and the
+`describeT` counts belong to `Wd`.
+
+**`M = 9`.** `CertRows.lean`'s convention: `cok_tsvAdjCert` is stated at `M = 9`, every other
+`cok_` at `M = 8`; the siblings are lifted with `StepOK.mono`/`ListOK.mono` through `h89`.
+-/
+
+/-! ### 4.0 Count preservation under `termShift`
+
+The source and the image are walked in PARALLEL, so the two dossiers' offsets must advance in
+lock-step: the walk of `termShift t` introduces exactly as many eigenvariables as the walk of `t`
+(`termShift` is structure-preserving; only the `fvar` leaves change, and a leaf costs `1` either
+way).
+-/
+
+section shiftCount
+
+set_option maxHeartbeats 1000000 in
+/-- **The walk of `termShift t` has the same eigenvariable count as the walk of `t`.** -/
+theorem descCountT_termShift (Wd n : V) : ∀ t, IsSemiterm LAct n t →
+    descCountT Wd n (termShift LAct t) = descCountT Wd n t := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · definability
+  · intro z hz; rw [termShift_bvar]
+  · intro a; rw [termShift_fvar, descCountT_fvar, descCountT_fvar]
+  · intro k f v hkf hv ih
+    have hvs : IsSemitermVec LAct k n (termShiftVec LAct k v) := hv.termShiftVec
+    have key : ∀ m ≤ k, π₁ (descVecAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
+        π₁ (descVecAux Wd n (descTVec Wd n k v) m) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero => intro _; rw [descVecAux_zero, descVecAux_zero, nilNode, pi₁_pair]
+      | succ m ihm =>
+        intro hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have h1 : nthFromEnd (descTVec Wd n k (termShiftVec LAct k v)) m =
+            descT Wd n (termShiftVec LAct k v).[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1))
+            (by rw [len_descTVec Wd n hvs.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec Wd n hvs.isUTerm hlt]
+        have h2 : nthFromEnd (descTVec Wd n k v) m = descT Wd n v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1))
+            (by rw [len_descTVec Wd n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec Wd n hv.isUTerm hlt]
+        have h3 : (termShiftVec LAct k v).[k - (m + 1)] = termShift LAct v.[k - (m + 1)] :=
+          nth_termShiftVec hv.isUTerm hlt
+        rw [descVecAux_succ, h1, h3, adjNode, pi₁_pair, descVecAux_succ, h2, adjNode, pi₁_pair,
+          ihm (le_trans le_self_add hm)]
+        have := ih _ hlt
+        rw [descCountT, descCountT] at this
+        rw [this]
+    rw [termShift_func hkf hv.isUTerm, descCountT_func Wd n hkf hvs.isUTerm,
+      descCountT_func Wd n hkf hv.isUTerm, key k le_rfl]
+
+set_option maxHeartbeats 1000000 in
+/-- **The walk of `shift r` has the same eigenvariable count as the walk of `r`** — the formula-level
+twin, i.e. `outCount Wd 2 n r = descCountF Wd n r`, so the shift pass's two offsets advance in
+lock-step. -/
+theorem descCountF_shift (Wd : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    descCountF Wd n (shift LAct r) = descCountF Wd n r := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ descCountF Wd n (shift LAct r) = descCountF Wd n r)
+  · definability
+  · intro n k R v hkR hv
+    have hvs : IsSemitermVec LAct k n (termShiftVec LAct k v) := hv.termShiftVec
+    have key : ∀ m ≤ k, π₁ (descVecAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
+        π₁ (descVecAux Wd n (descTVec Wd n k v) m) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero => intro _; rw [descVecAux_zero, descVecAux_zero, nilNode, pi₁_pair]
+      | succ m ihm =>
+        intro hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have h1 : nthFromEnd (descTVec Wd n k (termShiftVec LAct k v)) m =
+            descT Wd n (termShiftVec LAct k v).[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1))
+            (by rw [len_descTVec Wd n hvs.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec Wd n hvs.isUTerm hlt]
+        have h2 : nthFromEnd (descTVec Wd n k v) m = descT Wd n v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1))
+            (by rw [len_descTVec Wd n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec Wd n hv.isUTerm hlt]
+        have h3 : (termShiftVec LAct k v).[k - (m + 1)] = termShift LAct v.[k - (m + 1)] :=
+          nth_termShiftVec hv.isUTerm hlt
+        rw [descVecAux_succ, h1, h3, adjNode, pi₁_pair, descVecAux_succ, h2, adjNode, pi₁_pair,
+          ihm (le_trans le_self_add hm)]
+        have := descCountT_termShift Wd n _ (hv.nth hlt)
+        rw [descCountT, descCountT] at this
+        rw [this]
+    rw [shift_rel hkR hv.isUTerm, descCountF_rel Wd n hkR hvs, descCountF_rel Wd n hkR hv, key k le_rfl]
+  · intro n k R v hkR hv
+    have hvs : IsSemitermVec LAct k n (termShiftVec LAct k v) := hv.termShiftVec
+    have key : ∀ m ≤ k, π₁ (descVecAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
+        π₁ (descVecAux Wd n (descTVec Wd n k v) m) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero => intro _; rw [descVecAux_zero, descVecAux_zero, nilNode, pi₁_pair]
+      | succ m ihm =>
+        intro hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have h1 : nthFromEnd (descTVec Wd n k (termShiftVec LAct k v)) m =
+            descT Wd n (termShiftVec LAct k v).[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1))
+            (by rw [len_descTVec Wd n hvs.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec Wd n hvs.isUTerm hlt]
+        have h2 : nthFromEnd (descTVec Wd n k v) m = descT Wd n v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1))
+            (by rw [len_descTVec Wd n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec Wd n hv.isUTerm hlt]
+        have h3 : (termShiftVec LAct k v).[k - (m + 1)] = termShift LAct v.[k - (m + 1)] :=
+          nth_termShiftVec hv.isUTerm hlt
+        rw [descVecAux_succ, h1, h3, adjNode, pi₁_pair, descVecAux_succ, h2, adjNode, pi₁_pair,
+          ihm (le_trans le_self_add hm)]
+        have := descCountT_termShift Wd n _ (hv.nth hlt)
+        rw [descCountT, descCountT] at this
+        rw [this]
+    rw [shift_nrel hkR hv.isUTerm, descCountF_nrel Wd n hkR hvs, descCountF_nrel Wd n hkR hv, key k le_rfl]
+  · intro n; rw [shift_verum]
+  · intro n; rw [shift_falsum]
+  · intro n p q hp hq ihp ihq
+    rw [shift_and hp.isUFormula hq.isUFormula, descCountF_and Wd n hp.shift hq.shift,
+      descCountF_and Wd n hp hq, ihp, ihq]
+  · intro n p q hp hq ihp ihq
+    rw [shift_or hp.isUFormula hq.isUFormula, descCountF_or Wd n hp.shift hq.shift,
+      descCountF_or Wd n hp hq, ihp, ihq]
+  · intro n p hp ih
+    rw [shift_all hp.isUFormula, descCountF_all Wd n hp.shift, descCountF_all Wd n hp, ih]
+  · intro n p hp ih
+    rw [shift_exs hp.isUFormula, descCountF_exs Wd n hp.shift, descCountF_exs Wd n hp, ih]
+
+/-- The shift pass's offsets advance in lock-step: `outCount Wd 2 n r = descCountF Wd n r`. -/
+theorem outCount_shift {Wd n r : V} (hr : IsSemiformula LAct n r) :
+    outCount Wd 2 n r = descCountF Wd n r := by
+  rw [outCount, imgF_of_ne (V := V) (ν := 2) (by simp), descCountF_shift Wd hr]
+
+end shiftCount
+
+section certOK
+
+/-- The `M = 8 ≤ 9` coercion the mixed-arity certification table needs. -/
+lemma h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
+
+end certOK
 
 end ArithS
