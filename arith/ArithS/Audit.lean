@@ -37,6 +37,7 @@ import ArithS.Necessitation.Layout
 import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.Cert
 import ArithS.Necessitation.Frag1
+import ArithS.Necessitation.Frag2
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -678,5 +679,20 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms costSum_fragAxL_le
 #print axioms costSum_nodeAnd_le
 #print axioms costSum_nodeCut_le
+
+-- U10 (2026-09-14): the four REMAINING per-tag fragments (`Frag2`: `allIntro`, `exsIntro`,
+-- `shiftRule`, `axm`), on the extended table `frag2Rows = frag1Rows ++ 24 rows` (`Frag2Table`,
+-- `frag2Pieces`). Each is the same four-step head plus a `Frag1` dlen tail; the prologue facts the
+-- `Cert`/`Layout` producers will supply (the free/substituted instance, the setShift identification,
+-- the `Δ₁ch` recognizer) are LAYOUT HYPOTHESES — see the file docstring.
+#print axioms exists_frag2Table
+#print axioms nodeShift_ok
+#print axioms nodeAll_ok
+#print axioms nodeExs_ok
+#print axioms nodeAxm_ok
+#print axioms costSum_nodeShift_le
+#print axioms costSum_nodeAll_le
+#print axioms costSum_nodeExs_le
+#print axioms costSum_nodeAxm_le
 
 end ArithS
