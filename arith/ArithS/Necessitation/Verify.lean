@@ -1133,5 +1133,34 @@ lemma verifyGraph_exists (W tblN : V) {ρ : V} (hd : Derivation T ρ) :
 
 end existence
 
+/-! ### 3.6 Uniqueness and `verifySteps` — NOT AVAILABLE at this stage (an honest WEAKENING)
+
+`DESIGN_fragments.md` §6.2 asks for `verifyGraph_unique` and then `verifySteps W tblN ρ` as the
+`Classical.choose!` function with its ten equations (the `descFw` pattern,
+`Describe.lean:3432-3466`). **Neither is provable for `VerifyGraph` as this file defines it, and
+the reason is exactly the weakening declared in §3's docstring** — it is not a proof gap that
+better tactics would close:
+
+* the clause leaves the prologue `pro` and every index argument `is il ir …` EXISTENTIALLY free,
+  because the prologue producers of `DESIGN_fragments.md` §3.3–§3.6 (`certNeg`/`certShift`/
+  `certSubst`/`certFree`, `lenSteps`, `memberList`) have not landed (`Cert.lean`, in flight);
+* so for a single `ρ` there are MANY lists `L` with `VerifyGraph W tblN ρ L` — one per choice of
+  `pro` (e.g. `appendV 0 F` and `appendV ?[x] F` both qualify) — and `∃! L` is FALSE, not merely
+  unproved. Writing `Classical.choose!` against it would be writing down a function that does not
+  exist.
+
+What restores both, with no change to anything above: replace each clause's `∃ pro ≤ L, …` and
+`∃ is ≤ L, …` by the Σ₁ calls that COMPUTE them (`∃ pro, !proDef pro … ∧ …`), exactly as
+`DESIGN_fragments.md` §6.1's last paragraph describes. The blueprint, the construction,
+`StrongFinite`, `case_iff`, the ten inversion lemmas and `verifyGraph_exists` are all stated
+against the clause SHAPE and survive that edit unchanged; `verifyGraph_unique` then goes through
+by `Fixpoint.induction` on the key and `verifySteps` by `Classical.choose!`, both on the
+`descFw`/`dlenGraph` template.
+
+Consequently §6.3's `verifySteps_ok` and §6.4's `dlen_verifySteps_le` are also not stated here:
+they quantify over the function. Their statements can be phrased for an arbitrary `L` with
+`VerifyGraph W tblN ρ L` (as §6.1 itself suggests: "or — simpler for the theorems — never define
+the function"), but their PROOFS need the prologue's layout theorem, which is the `Cert` work. -/
+
 
 end ArithS
