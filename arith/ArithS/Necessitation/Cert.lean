@@ -2639,6 +2639,21 @@ lemma passF_eq_of_graph {W ν n r i j y : V} (hν : ν = 1 ∨ ν = 2) (hr : IsS
     (hy : PassFGraph W ν n r i j y) : passF W ν n r i j = y :=
   passFGraph_unique W ν hr i j _ _ (passF_graph hν hr) hy
 
+noncomputable def passFDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W ν n r i j. ((!(isSemiformula LAct).pi n r ∧ (ν = 1 ∨ ν = 2)) → !passFGraphDef W ν n r i j y) ∧
+    ((!(isSemiformula LAct).sigma n r → (ν ≠ 1 ∧ ν ≠ 2)) → y = 0)”
+
+instance passF_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ passF (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) passFDef := .mk
+  fun v ↦ by
+    simp [passFDef, HierarchySymbol.Semiformula.val_sigma, passFGraph_defined.iff,
+      (IsSemiformula.defined (L := LAct)).proper.iff', (IsSemiformula.defined (L := LAct)).df, passF,
+      Classical.choose!_eq_iff_right]
+
+instance passF_definable :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ passF (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) passFDef :=
+  passF_defined
+
 /-! ### 2.4 The equations of `passF` -/
 
 section passFeq
