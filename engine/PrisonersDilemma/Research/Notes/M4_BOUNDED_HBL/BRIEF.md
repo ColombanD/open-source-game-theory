@@ -679,3 +679,15 @@ GENERAL LESSON for every future `Fixpoint`: never let `simp` unfold a large blue
 definability instance; rewrite with `eval_fixpointDef` explicitly after normalizing the
 substitution. PROCESS: a truncation prefix that ends mid-declaration reports `unexpected end of
 input` — that is an artifact, not a failure; only exit 124 with an empty log is a stall.
+
+**§11 status — 2026-09-14 (Opus): `Cert` and `Frag1` GREEN AND WIRED (`ea5ce7e`, `d1bfb96`,
+`8a5e5b1`).** `Cert.lean` 39.6 s (the 10 tail errors were one family: after `rw [hC] at hiB hjB`
+and two `set`s the `≤ B` hypotheses are RIGHT-nested (`i + (cv + ct + 1) ≤ B`), so every
+`rw [add_assoc …]` chain missed; replaced by explicit `le_trans`/`le_of_eq`/`add_le_add` terms —
+statements byte-identical). `Frag1.lean` 18 s. Both wired into `ArithS.lean` and `Audit.lean`:
+**build 3244 jobs green, census 428 lines**, one pre-existing subset line. TOOLCHAIN NOTES from the
+tail fix: `gcongr` is NON-DETERMINISTIC here (on `i + c ≤ i + j + c` it sometimes closes the side
+goal itself, leaving a following `exact le_self_add` with "No goals") — use explicit
+`add_le_add h₁ h₂`; `le_rfl` after a rewrite produces a stuck `Preorder ?m` instance — use
+`le_refl <explicit term>`. NOTE: `passTGraph_unique` does NOT exist yet (only `_exists`);
+uniqueness is part of the remaining `Cert` work.
