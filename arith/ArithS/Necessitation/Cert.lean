@@ -6257,4 +6257,290 @@ lemma lenV_succ (W T n : V) {k v m : V} (hv : IsSemitermVec LAct k n v) (hm : m 
 
 end lenTFun
 
+/-! ### 5.5 The formula fixpoint `LenF` on `⟪n, r, i, y⟫` (parameters `W`, `T`; atoms call `lenV`) -/
+
+namespace LenF
+
+def Cases (W T : V) (C : Set V) (n r i y : V) : Prop :=
+  (∃ k < r, ∃ R < r, ∃ v < r, r = ^rel k R v ∧
+    y = lnAtomSteps W T 142 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1))) ∨
+  (∃ k < r, ∃ R < r, ∃ v < r, r = ^nrel k R v ∧
+    y = lnAtomSteps W T 143 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1))) ∨
+  (r = ^⊤ ∧ y = lnConstSteps W 147 i) ∨
+  (r = ^⊥ ∧ y = lnConstSteps W 148 i) ∨
+  (∃ p < r, ∃ q < r, r = p ^⋏ q ∧ ∃ yq ≤ y, ∃ yp ≤ y,
+    ⟪n, q, i + 1, yq⟫ ∈ C ∧ ⟪n, p, i + descCountF W n q + 1 + shiftsV yq, yp⟫ ∈ C ∧
+    y = lnBinSteps W T 149 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i (shiftsV yq) (shiftsV yp) yq yp) ∨
+  (∃ p < r, ∃ q < r, r = p ^⋎ q ∧ ∃ yq ≤ y, ∃ yp ≤ y,
+    ⟪n, q, i + 1, yq⟫ ∈ C ∧ ⟪n, p, i + descCountF W n q + 1 + shiftsV yq, yp⟫ ∈ C ∧
+    y = lnBinSteps W T 150 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i (shiftsV yq) (shiftsV yp) yq yp) ∨
+  (∃ p < r, r = ^∀ p ∧ ∃ yb ≤ y, ⟪n + 1, p, i + 1, yb⟫ ∈ C ∧ y = lnQuantSteps W T 151 n (formulaLen LAct p) i (shiftsV yb) yb) ∨
+  (∃ p < r, r = ^∃ p ∧ ∃ yb ≤ y, ⟪n + 1, p, i + 1, yb⟫ ∈ C ∧ y = lnQuantSteps W T 152 n (formulaLen LAct p) i (shiftsV yb) yb)
+
+def Phi (W T : V) (C : Set V) (pr : V) : Prop :=
+  ∃ n ≤ pr, ∃ q₁ ≤ pr, pr = ⟪n, q₁⟫ ∧ ∃ r ≤ q₁, ∃ q₂ ≤ q₁, q₁ = ⟪r, q₂⟫ ∧
+  ∃ i ≤ q₂, ∃ y ≤ q₂, q₂ = ⟪i, y⟫ ∧ Cases W T C n r i y
+
+lemma phi_unpack (W T : V) (C : Set V) (pr : V) :
+    Phi W T C pr ↔ ∃ n r i y, pr = ⟪n, r, i, y⟫ ∧ Cases W T C n r i y := by
+  constructor
+  · rintro ⟨n, _, q₁, _, rfl, r, _, q₂, _, rfl, i, _, y, _, rfl, h⟩
+    exact ⟨n, r, i, y, rfl, h⟩
+  · rintro ⟨n, r, i, y, rfl, h⟩
+    exact ⟨n, le_pair_left _ _, _, le_pair_right _ _, rfl, r, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      i, le_pair_left _ _, y, le_pair_right _ _, rfl, h⟩
+
+lemma phi_of_cases {W T : V} {C : Set V} {n r i y : V} (h : Cases W T C n r i y) :
+    Phi W T C ⟪n, r, i, y⟫ := (phi_unpack W T C _).mpr ⟨n, r, i, y, rfl, h⟩
+
+lemma cases_of_phi {W T : V} {C : Set V} {n r i y : V} (h : Phi W T C ⟪n, r, i, y⟫) :
+    Cases W T C n r i y := by
+  obtain ⟨n', r', i', y', e, h⟩ := (phi_unpack W T C _).mp h
+  rw [pair_ext_iff, pair_ext_iff, pair_ext_iff] at e
+  obtain ⟨rfl, rfl, rfl, rfl⟩ := e
+  exact h
+
+noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
+  (.mkSigma “pr C W T.
+    ∃ n <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr n q₁ ∧ ∃ r <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ r q₂ ∧
+    ∃ i <⁺ q₂, ∃ y <⁺ q₂, !pairDef q₂ i y ∧
+    ( (∃ k < r, ∃ R < r, ∃ v < r, !qqRelDef r k R v ∧ ∃ yv, !lenVDef yv W T n k v k (i + 1) ∧
+        ∃ M, !(termLenVecGraph LAct) M k v ∧ ∃ σ, !listSumDef σ M ∧ ∃ sv, !shiftsVDef sv yv ∧
+        ∃ s, !lnAtomStepsDef s W T 142 k R σ i sv yv ∧ y = s) ∨
+      (∃ k < r, ∃ R < r, ∃ v < r, !qqNRelDef r k R v ∧ ∃ yv, !lenVDef yv W T n k v k (i + 1) ∧
+        ∃ M, !(termLenVecGraph LAct) M k v ∧ ∃ σ, !listSumDef σ M ∧ ∃ sv, !shiftsVDef sv yv ∧
+        ∃ s, !lnAtomStepsDef s W T 143 k R σ i sv yv ∧ y = s) ∨
+      (!qqVerumDef r ∧ ∃ s, !lnConstStepsDef s W 147 i ∧ y = s) ∨
+      (!qqFalsumDef r ∧ ∃ s, !lnConstStepsDef s W 148 i ∧ y = s) ∨
+      (∃ p < r, ∃ q < r, !qqAndDef r p q ∧ ∃ yq <⁺ y, ∃ yp <⁺ y, ∃ cq, !descCountFDef cq W n q ∧
+        ∃ sq, !shiftsVDef sq yq ∧ ∃ sp, !shiftsVDef sp yp ∧ ∃ lp, !(formulaLenGraph LAct) lp p ∧ ∃ lq, !(formulaLenGraph LAct) lq q ∧
+        ∃ b₃, !pairDef b₃ (i + 1) yq ∧ ∃ b₂, !pairDef b₂ q b₃ ∧ :⟪n, b₂⟫:∈ C ∧
+        ∃ a₃, !pairDef a₃ (i + cq + 1 + sq) yp ∧ ∃ a₂, !pairDef a₂ p a₃ ∧ :⟪n, a₂⟫:∈ C ∧
+        ∃ s, !lnBinStepsDef s W T 149 n cq lp lq i sq sp yq yp ∧ y = s) ∨
+      (∃ p < r, ∃ q < r, !qqOrDef r p q ∧ ∃ yq <⁺ y, ∃ yp <⁺ y, ∃ cq, !descCountFDef cq W n q ∧
+        ∃ sq, !shiftsVDef sq yq ∧ ∃ sp, !shiftsVDef sp yp ∧ ∃ lp, !(formulaLenGraph LAct) lp p ∧ ∃ lq, !(formulaLenGraph LAct) lq q ∧
+        ∃ b₃, !pairDef b₃ (i + 1) yq ∧ ∃ b₂, !pairDef b₂ q b₃ ∧ :⟪n, b₂⟫:∈ C ∧
+        ∃ a₃, !pairDef a₃ (i + cq + 1 + sq) yp ∧ ∃ a₂, !pairDef a₂ p a₃ ∧ :⟪n, a₂⟫:∈ C ∧
+        ∃ s, !lnBinStepsDef s W T 150 n cq lp lq i sq sp yq yp ∧ y = s) ∨
+      (∃ p < r, !qqAllDef r p ∧ ∃ yb <⁺ y, ∃ sb, !shiftsVDef sb yb ∧ ∃ lp, !(formulaLenGraph LAct) lp p ∧
+        ∃ a₃, !pairDef a₃ (i + 1) yb ∧ ∃ a₂, !pairDef a₂ p a₃ ∧ :⟪n + 1, a₂⟫:∈ C ∧
+        ∃ s, !lnQuantStepsDef s W T 151 n lp i sb yb ∧ y = s) ∨
+      (∃ p < r, !qqExsDef r p ∧ ∃ yb <⁺ y, ∃ sb, !shiftsVDef sb yb ∧ ∃ lp, !(formulaLenGraph LAct) lp p ∧
+        ∃ a₃, !pairDef a₃ (i + 1) yb ∧ ∃ a₂, !pairDef a₂ p a₃ ∧ :⟪n + 1, a₂⟫:∈ C ∧
+        ∃ s, !lnQuantStepsDef s W T 152 n lp i sb yb ∧ y = s) )”)
+  (.mkPi “pr C W T.
+    ∃ n <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr n q₁ ∧ ∃ r <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ r q₂ ∧
+    ∃ i <⁺ q₂, ∃ y <⁺ q₂, !pairDef q₂ i y ∧
+    ( (∃ k < r, ∃ R < r, ∃ v < r, !qqRelDef r k R v ∧ ∀ yv, !lenVDef yv W T n k v k (i + 1) →
+        ∀ M, !(termLenVecGraph LAct) M k v → ∀ σ, !listSumDef σ M → ∀ sv, !shiftsVDef sv yv →
+        ∀ s, !lnAtomStepsDef s W T 142 k R σ i sv yv → y = s) ∨
+      (∃ k < r, ∃ R < r, ∃ v < r, !qqNRelDef r k R v ∧ ∀ yv, !lenVDef yv W T n k v k (i + 1) →
+        ∀ M, !(termLenVecGraph LAct) M k v → ∀ σ, !listSumDef σ M → ∀ sv, !shiftsVDef sv yv →
+        ∀ s, !lnAtomStepsDef s W T 143 k R σ i sv yv → y = s) ∨
+      (!qqVerumDef r ∧ ∀ s, !lnConstStepsDef s W 147 i → y = s) ∨
+      (!qqFalsumDef r ∧ ∀ s, !lnConstStepsDef s W 148 i → y = s) ∨
+      (∃ p < r, ∃ q < r, !qqAndDef r p q ∧ ∃ yq <⁺ y, ∃ yp <⁺ y, ∀ cq, !descCountFDef cq W n q →
+        ∀ sq, !shiftsVDef sq yq → ∀ sp, !shiftsVDef sp yp → ∀ lp, !(formulaLenGraph LAct) lp p → ∀ lq, !(formulaLenGraph LAct) lq q →
+        ∀ b₃, !pairDef b₃ (i + 1) yq → ∀ b₂, !pairDef b₂ q b₃ → :⟪n, b₂⟫:∈ C ∧
+        ∀ a₃, !pairDef a₃ (i + cq + 1 + sq) yp → ∀ a₂, !pairDef a₂ p a₃ → :⟪n, a₂⟫:∈ C ∧
+        ∀ s, !lnBinStepsDef s W T 149 n cq lp lq i sq sp yq yp → y = s) ∨
+      (∃ p < r, ∃ q < r, !qqOrDef r p q ∧ ∃ yq <⁺ y, ∃ yp <⁺ y, ∀ cq, !descCountFDef cq W n q →
+        ∀ sq, !shiftsVDef sq yq → ∀ sp, !shiftsVDef sp yp → ∀ lp, !(formulaLenGraph LAct) lp p → ∀ lq, !(formulaLenGraph LAct) lq q →
+        ∀ b₃, !pairDef b₃ (i + 1) yq → ∀ b₂, !pairDef b₂ q b₃ → :⟪n, b₂⟫:∈ C ∧
+        ∀ a₃, !pairDef a₃ (i + cq + 1 + sq) yp → ∀ a₂, !pairDef a₂ p a₃ → :⟪n, a₂⟫:∈ C ∧
+        ∀ s, !lnBinStepsDef s W T 150 n cq lp lq i sq sp yq yp → y = s) ∨
+      (∃ p < r, !qqAllDef r p ∧ ∃ yb <⁺ y, ∀ sb, !shiftsVDef sb yb → ∀ lp, !(formulaLenGraph LAct) lp p →
+        ∀ a₃, !pairDef a₃ (i + 1) yb → ∀ a₂, !pairDef a₂ p a₃ → :⟪n + 1, a₂⟫:∈ C ∧
+        ∀ s, !lnQuantStepsDef s W T 151 n lp i sb yb → y = s) ∨
+      (∃ p < r, !qqExsDef r p ∧ ∃ yb <⁺ y, ∀ sb, !shiftsVDef sb yb → ∀ lp, !(formulaLenGraph LAct) lp p →
+        ∀ a₃, !pairDef a₃ (i + 1) yb → ∀ a₂, !pairDef a₂ p a₃ → :⟪n + 1, a₂⟫:∈ C ∧
+        ∀ s, !lnQuantStepsDef s W T 152 n lp i sb yb → y = s) )”)⟩
+
+set_option maxHeartbeats 4000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0) (v 1)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, lenV_defined.iff, lnAtomSteps_defined.iff, lnConstSteps_defined.iff, lnBinSteps_defined.iff,
+        lnQuantSteps_defined.iff, descCountF_defined.iff, shiftsV_defined.iff, listSum_defined.iff,
+        (termLenVec.defined (L := LAct)).iff, (formulaLen.defined (L := LAct)).iff, numeral_eq_natCast]
+    · intro v
+      simp [blueprint, Phi, Cases, lenV_defined.iff, lnAtomSteps_defined.iff, lnConstSteps_defined.iff, lnBinSteps_defined.iff,
+        lnQuantSteps_defined.iff, descCountF_defined.iff, shiftsV_defined.iff, listSum_defined.iff,
+        (termLenVec.defined (L := LAct)).iff, (formulaLen.defined (L := LAct)).iff, numeral_eq_natCast]
+  monotone := by
+    intro C C' hC w pr h
+    change Phi (w 0) (w 1) C pr at h
+    rw [phi_unpack] at h ⊢
+    obtain ⟨n, r, i, y, rfl, h⟩ := h
+    refine ⟨n, r, i, y, rfl, ?_⟩
+    rcases h with h | h | h | h |
+      ⟨p, hp, q, hq, rfl, yq, hyq, yp, hyp, h₁, h₂, rfl⟩ | ⟨p, hp, q, hq, rfl, yq, hyq, yp, hyp, h₁, h₂, rfl⟩ |
+      ⟨p, hp, rfl, yb, hyb, h₁, rfl⟩ | ⟨p, hp, rfl, yb, hyb, h₁, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, q, hq, rfl, yq, hyq, yp, hyp, hC h₁, hC h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, q, hq, rfl, yq, hyq, yp, hyp, hC h₁, hC h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, rfl, yb, hyb, hC h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, hp, rfl, yb, hyb, hC h₁, rfl⟩))))))
+
+instance : construction.Finite V where
+  finite := by
+    intro C w pr h
+    change Phi (w 0) (w 1) C pr at h
+    change ∃ m, Phi (w 0) (w 1) {y ∈ C | y < m} pr
+    rw [phi_unpack] at h
+    simp only [phi_unpack]
+    obtain ⟨n, r, i, y, rfl, h⟩ := h
+    rcases h with h | h | h | h |
+      ⟨p, hp, q, hq, hr, yq, hyq, yp, hyp, h₁, h₂, hy⟩ | ⟨p, hp, q, hq, hr, yq, hyq, yp, hyp, h₁, h₂, hy⟩ |
+      ⟨p, hp, hr, yb, hyb, h₁, hy⟩ | ⟨p, hp, hr, yb, hyb, h₁, hy⟩
+    · exact ⟨0, n, r, i, y, rfl, Or.inl h⟩
+    · exact ⟨0, n, r, i, y, rfl, Or.inr (Or.inl h)⟩
+    · exact ⟨0, n, r, i, y, rfl, Or.inr (Or.inr (Or.inl h))⟩
+    · exact ⟨0, n, r, i, y, rfl, Or.inr (Or.inr (Or.inr (Or.inl h)))⟩
+    · refine ⟨⟪n, q, i + 1, yq⟫ + ⟪n, p, i + descCountF (w 0) n q + 1 + shiftsV yq, yp⟫ + 1, n, r, i, y, rfl,
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, q, hq, hr, yq, hyq, yp, hyp,
+          ⟨h₁, lt_of_le_of_lt le_self_add (lt_add_one _)⟩, ⟨h₂, lt_of_le_of_lt le_add_self (lt_add_one _)⟩, hy⟩))))⟩
+    · refine ⟨⟪n, q, i + 1, yq⟫ + ⟪n, p, i + descCountF (w 0) n q + 1 + shiftsV yq, yp⟫ + 1, n, r, i, y, rfl,
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, q, hq, hr, yq, hyq, yp, hyp,
+          ⟨h₁, lt_of_le_of_lt le_self_add (lt_add_one _)⟩, ⟨h₂, lt_of_le_of_lt le_add_self (lt_add_one _)⟩, hy⟩)))))⟩
+    · exact ⟨⟪n + 1, p, i + 1, yb⟫ + 1, n, r, i, y, rfl,
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, hp, hr, yb, hyb, ⟨h₁, lt_add_one _⟩, hy⟩))))))⟩
+    · exact ⟨⟪n + 1, p, i + 1, yb⟫ + 1, n, r, i, y, rfl,
+        Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, hp, hr, yb, hyb, ⟨h₁, lt_add_one _⟩, hy⟩))))))⟩
+
+lemma phi_iff (W T : V) (C : Set V) (n r i y : V) :
+    Phi W T C ⟪n, r, i, y⟫ ↔
+    ( (∃ k R v, r = ^rel k R v ∧
+        y = lnAtomSteps W T 142 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1))) ∨
+      (∃ k R v, r = ^nrel k R v ∧
+        y = lnAtomSteps W T 143 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1))) ∨
+      (r = ^⊤ ∧ y = lnConstSteps W 147 i) ∨
+      (r = ^⊥ ∧ y = lnConstSteps W 148 i) ∨
+      (∃ p q yq yp, r = p ^⋏ q ∧ yq ≤ y ∧ yp ≤ y ∧
+        ⟪n, q, i + 1, yq⟫ ∈ C ∧ ⟪n, p, i + descCountF W n q + 1 + shiftsV yq, yp⟫ ∈ C ∧
+        y = lnBinSteps W T 149 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i (shiftsV yq) (shiftsV yp) yq yp) ∨
+      (∃ p q yq yp, r = p ^⋎ q ∧ yq ≤ y ∧ yp ≤ y ∧
+        ⟪n, q, i + 1, yq⟫ ∈ C ∧ ⟪n, p, i + descCountF W n q + 1 + shiftsV yq, yp⟫ ∈ C ∧
+        y = lnBinSteps W T 150 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i (shiftsV yq) (shiftsV yp) yq yp) ∨
+      (∃ p yb, r = ^∀ p ∧ yb ≤ y ∧ ⟪n + 1, p, i + 1, yb⟫ ∈ C ∧ y = lnQuantSteps W T 151 n (formulaLen LAct p) i (shiftsV yb) yb) ∨
+      (∃ p yb, r = ^∃ p ∧ yb ≤ y ∧ ⟪n + 1, p, i + 1, yb⟫ ∈ C ∧ y = lnQuantSteps W T 152 n (formulaLen LAct p) i (shiftsV yb) yb) ) := by
+  rw [show Phi W T C ⟪n, r, i, y⟫ ↔ Cases W T C n r i y from ⟨cases_of_phi, phi_of_cases⟩]
+  unfold Cases
+  constructor
+  · rintro (⟨k, _, R, _, v, _, rfl, rfl⟩ | ⟨k, _, R, _, v, _, rfl, rfl⟩ | h | h |
+      ⟨p, _, q, _, rfl, yq, hyq, yp, hyp, h₁, h₂, rfl⟩ | ⟨p, _, q, _, rfl, yq, hyq, yp, hyp, h₁, h₂, rfl⟩ |
+      ⟨p, _, rfl, yb, hyb, h₁, rfl⟩ | ⟨p, _, rfl, yb, hyb, h₁, rfl⟩)
+    · exact Or.inl ⟨k, R, v, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨k, R, v, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, q, yq, yp, rfl, hyq, hyp, h₁, h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, q, yq, yp, rfl, hyq, hyp, h₁, h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, yb, rfl, hyb, h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, yb, rfl, hyb, h₁, rfl⟩))))))
+  · rintro (⟨k, R, v, rfl, rfl⟩ | ⟨k, R, v, rfl, rfl⟩ | h | h |
+      ⟨p, q, yq, yp, rfl, hyq, hyp, h₁, h₂, rfl⟩ | ⟨p, q, yq, yp, rfl, hyq, hyp, h₁, h₂, rfl⟩ |
+      ⟨p, yb, rfl, hyb, h₁, rfl⟩ | ⟨p, yb, rfl, hyb, h₁, rfl⟩)
+    · exact Or.inl ⟨k, by simp, R, by simp, v, by simp, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨k, by simp, R, by simp, v, by simp, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl h))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, q, by simp, rfl, yq, hyq, yp, hyp, h₁, h₂, rfl⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, q, by simp, rfl, yq, hyq, yp, hyp, h₁, h₂, rfl⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, by simp, rfl, yb, hyb, h₁, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨p, by simp, rfl, yb, hyb, h₁, rfl⟩))))))
+
+end LenF
+
+def LenFPacked (W T pr : V) : Prop := LenF.construction.Fixpoint ![W, T] pr
+/-- `LenFGraph W T n r i y`: the length steps of the formula `r` (dossier at `&i`) are the list `y`. -/
+def LenFGraph (W T n r i y : V) : Prop := LenFPacked W T ⟪n, r, i, y⟫
+
+noncomputable def lenFPackedDef : 𝚺₁.Semisentence 3 := .mkSigma “W T pr. !LenF.blueprint.fixpointDef pr W T”
+
+instance lenFPacked_defined : 𝚺₁-Relation₃ (LenFPacked : V → V → V → Prop) via lenFPackedDef := .mk
+  fun v ↦ by
+    simp only [lenFPackedDef, HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs,
+      Matrix.comp_vecCons', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons,
+      Matrix.constant_eq_singleton]
+    rw [LenF.construction.eval_fixpointDef]
+    rfl
+instance lenFPacked_definable : 𝚺₁-Relation₃ (LenFPacked : V → V → V → Prop) := lenFPacked_defined.to_definable
+
+noncomputable def lenFGraphDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “W T n r i y. ∃ q₂, !pairDef q₂ i y ∧ ∃ q₁, !pairDef q₁ r q₂ ∧ ∃ pr, !pairDef pr n q₁ ∧ !lenFPackedDef W T pr”
+instance lenFGraph_defined :
+    𝚺₁.Defined (fun v : Fin 6 → V ↦ LenFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) lenFGraphDef := .mk
+  fun v ↦ by simp [lenFGraphDef, lenFPacked_defined.iff, LenFGraph]
+instance lenFGraph_definable :
+    𝚺₁.Definable (fun v : Fin 6 → V ↦ LenFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := lenFGraph_defined.to_definable
+
+lemma LenFGraph.case_iff {W T n r i y : V} :
+    LenFGraph W T n r i y ↔
+    ( (∃ k R v, r = ^rel k R v ∧
+        y = lnAtomSteps W T 142 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1))) ∨
+      (∃ k R v, r = ^nrel k R v ∧
+        y = lnAtomSteps W T 143 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1))) ∨
+      (r = ^⊤ ∧ y = lnConstSteps W 147 i) ∨
+      (r = ^⊥ ∧ y = lnConstSteps W 148 i) ∨
+      (∃ p q yq yp, r = p ^⋏ q ∧ yq ≤ y ∧ yp ≤ y ∧
+        LenFGraph W T n q (i + 1) yq ∧ LenFGraph W T n p (i + descCountF W n q + 1 + shiftsV yq) yp ∧
+        y = lnBinSteps W T 149 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i (shiftsV yq) (shiftsV yp) yq yp) ∨
+      (∃ p q yq yp, r = p ^⋎ q ∧ yq ≤ y ∧ yp ≤ y ∧
+        LenFGraph W T n q (i + 1) yq ∧ LenFGraph W T n p (i + descCountF W n q + 1 + shiftsV yq) yp ∧
+        y = lnBinSteps W T 150 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i (shiftsV yq) (shiftsV yp) yq yp) ∨
+      (∃ p yb, r = ^∀ p ∧ yb ≤ y ∧ LenFGraph W T (n + 1) p (i + 1) yb ∧ y = lnQuantSteps W T 151 n (formulaLen LAct p) i (shiftsV yb) yb) ∨
+      (∃ p yb, r = ^∃ p ∧ yb ≤ y ∧ LenFGraph W T (n + 1) p (i + 1) yb ∧ y = lnQuantSteps W T 152 n (formulaLen LAct p) i (shiftsV yb) yb) ) := by
+  unfold LenFGraph LenFPacked
+  rw [LenF.construction.case]
+  exact LenF.phi_iff W T _ n r i y
+
+section lenFInversion
+
+attribute [local simp] qqRel qqNRel qqVerum qqFalsum qqAnd qqOr qqAll qqExs
+
+lemma LenFGraph.rel_iff {W T n k R v i y : V} :
+    LenFGraph W T n (^rel k R v) i y ↔
+    y = lnAtomSteps W T 142 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1)) := by
+  rw [LenFGraph.case_iff]; simp
+lemma LenFGraph.nrel_iff {W T n k R v i y : V} :
+    LenFGraph W T n (^nrel k R v) i y ↔
+    y = lnAtomSteps W T 143 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1)) := by
+  rw [LenFGraph.case_iff]; simp
+lemma LenFGraph.verum_iff {W T n i y : V} : LenFGraph W T n ^⊤ i y ↔ y = lnConstSteps W 147 i := by
+  rw [LenFGraph.case_iff]; simp
+lemma LenFGraph.falsum_iff {W T n i y : V} : LenFGraph W T n ^⊥ i y ↔ y = lnConstSteps W 148 i := by
+  rw [LenFGraph.case_iff]; simp
+lemma LenFGraph.and_iff {W T n p q i y : V} :
+    LenFGraph W T n (p ^⋏ q) i y ↔
+    ∃ yq yp, yq ≤ y ∧ yp ≤ y ∧ LenFGraph W T n q (i + 1) yq ∧ LenFGraph W T n p (i + descCountF W n q + 1 + shiftsV yq) yp ∧
+      y = lnBinSteps W T 149 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i (shiftsV yq) (shiftsV yp) yq yp := by
+  rw [LenFGraph.case_iff]; simp
+lemma LenFGraph.or_iff {W T n p q i y : V} :
+    LenFGraph W T n (p ^⋎ q) i y ↔
+    ∃ yq yp, yq ≤ y ∧ yp ≤ y ∧ LenFGraph W T n q (i + 1) yq ∧ LenFGraph W T n p (i + descCountF W n q + 1 + shiftsV yq) yp ∧
+      y = lnBinSteps W T 150 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i (shiftsV yq) (shiftsV yp) yq yp := by
+  rw [LenFGraph.case_iff]; simp
+lemma LenFGraph.all_iff {W T n p i y : V} :
+    LenFGraph W T n (^∀ p) i y ↔
+    ∃ yb, yb ≤ y ∧ LenFGraph W T (n + 1) p (i + 1) yb ∧ y = lnQuantSteps W T 151 n (formulaLen LAct p) i (shiftsV yb) yb := by
+  rw [LenFGraph.case_iff]; simp
+lemma LenFGraph.exs_iff {W T n p i y : V} :
+    LenFGraph W T n (^∃ p) i y ↔
+    ∃ yb, yb ≤ y ∧ LenFGraph W T (n + 1) p (i + 1) yb ∧ y = lnQuantSteps W T 152 n (formulaLen LAct p) i (shiftsV yb) yb := by
+  rw [LenFGraph.case_iff]; simp
+
+end lenFInversion
+
+lemma le_lnBinSteps_left (W T c n cq lp lq i sq sp yq yp : V) : yq ≤ lnBinSteps W T c n cq lp lq i sq sp yq yp :=
+  le_appendV_left _ _
+lemma le_lnBinSteps_right (W T c n cq lp lq i sq sp yq yp : V) : yp ≤ lnBinSteps W T c n cq lp lq i sq sp yq yp :=
+  le_trans (le_appendV_left _ _) (le_appendV_right _ _)
+lemma le_lnQuantSteps (W T c n lp i sb yb : V) : yb ≤ lnQuantSteps W T c n lp i sb yb := le_appendV_left _ _
+
 end ArithS
