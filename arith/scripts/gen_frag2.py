@@ -68,7 +68,7 @@ new_blocks = '\n'.join(G.out)
 
 # ---- the table rows: the new rows, then the RowInstB rows Frag2 needs
 TABLE = [n for (n, *_r) in NEW_ROWS] + [
- 'fstIdxAll', 'fstIdxExs', 'fstIdxShift',
+ 'fstIdxAll', 'fstIdxExs', 'fstIdxShift', 'fstIdxAxm',
  'setShiftInsert', 'setShiftEmpty', 'setShiftFun', 'congShiftL', 'congSetShiftL', 'substsSubsts1',
 ]
 BASE = 126

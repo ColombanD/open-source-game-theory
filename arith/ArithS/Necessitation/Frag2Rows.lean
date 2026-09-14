@@ -533,13 +533,14 @@ def gIdx_shiftMemSetShift : ℕ := 139
 def gIdx_fstIdxAll : ℕ := 140
 def gIdx_fstIdxExs : ℕ := 141
 def gIdx_fstIdxShift : ℕ := 142
-def gIdx_setShiftInsert : ℕ := 143
-def gIdx_setShiftEmpty : ℕ := 144
-def gIdx_setShiftFun : ℕ := 145
-def gIdx_congShiftL : ℕ := 146
-def gIdx_congSetShiftL : ℕ := 147
-def gIdx_substsSubsts1 : ℕ := 148
-def frag2RowCount : ℕ := 149
+def gIdx_fstIdxAxm : ℕ := 143
+def gIdx_setShiftInsert : ℕ := 144
+def gIdx_setShiftEmpty : ℕ := 145
+def gIdx_setShiftFun : ℕ := 146
+def gIdx_congShiftL : ℕ := 147
+def gIdx_congSetShiftL : ℕ := 148
+def gIdx_substsSubsts1 : ℕ := 149
+def frag2RowCount : ℕ := 150
 
 /-- The rows at `126 + k`, in index order. -/
 noncomputable def frag2ExtraRows : List WRow := [
@@ -560,6 +561,7 @@ noncomputable def frag2ExtraRows : List WRow := [
   ⟨4, fstIdxAllB, lib_fstIdxAll⟩,
   ⟨5, fstIdxExsB, lib_fstIdxExs⟩,
   ⟨3, fstIdxShiftB, lib_fstIdxShift⟩,
+  ⟨3, fstIdxAxmB, lib_fstIdxAxm⟩,
   ⟨6, setShiftInsertB, lib_setShiftInsert⟩,
   ⟨1, setShiftEmptyB, lib_setShiftEmpty⟩,
   ⟨3, setShiftFunB, lib_setShiftFun⟩,
@@ -768,6 +770,15 @@ lemma frag2Table_fstIdxShift {tbl : V} (h : Frag2Table tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_fstIdxShift]
 
+lemma frag2Table_fstIdxAxm {tbl : V} (h : Frag2Table tbl) :
+    rowM tbl.[((gIdx_fstIdxAxm : ℕ) : V)] = ((3 : ℕ) : V) ∧
+    rowB tbl.[((gIdx_fstIdxAxm : ℕ) : V)] = impChainV LAct (vecOf row_fstIdxAxm_as) row_fstIdxAxm_c := by
+  have this : rowM tbl.[((gIdx_fstIdxAxm : ℕ) : V)] = ((3 : ℕ) : V) ∧
+      rowB tbl.[((gIdx_fstIdxAxm : ℕ) : V)] = ⌜Semiformula.lMap emb fstIdxAxmB⌝ :=
+    h.2 gIdx_fstIdxAxm (Nat.lt_of_sub_eq_succ rfl)
+  refine ⟨this.1, ?_⟩
+  rw [impChainV_vecOf, this.2, quote_row_fstIdxAxm]
+
 lemma frag2Table_setShiftInsert {tbl : V} (h : Frag2Table tbl) :
     rowM tbl.[((gIdx_setShiftInsert : ℕ) : V)] = ((6 : ℕ) : V) ∧
     rowB tbl.[((gIdx_setShiftInsert : ℕ) : V)] = impChainV LAct (vecOf row_setShiftInsert_as) row_setShiftInsert_c := by
@@ -841,6 +852,7 @@ noncomputable def gpiece_shiftMemSetShift : V := ⟪(0 : V), vecOf row_shiftMemS
 noncomputable def gpiece_fstIdxAll : V := ⟪(0 : V), vecOf row_fstIdxAll_as, row_fstIdxAll_c⟫
 noncomputable def gpiece_fstIdxExs : V := ⟪(0 : V), vecOf row_fstIdxExs_as, row_fstIdxExs_c⟫
 noncomputable def gpiece_fstIdxShift : V := ⟪(0 : V), vecOf row_fstIdxShift_as, row_fstIdxShift_c⟫
+noncomputable def gpiece_fstIdxAxm : V := ⟪(0 : V), vecOf row_fstIdxAxm_as, row_fstIdxAxm_c⟫
 noncomputable def gpiece_setShiftInsert : V := ⟪(0 : V), vecOf row_setShiftInsert_as, row_setShiftInsert_c⟫
 noncomputable def gpiece_setShiftEmpty : V := ⟪(0 : V), vecOf row_setShiftEmpty_as, row_setShiftEmpty_c⟫
 noncomputable def gpiece_setShiftFun : V := ⟪(0 : V), vecOf row_setShiftFun_as, row_setShiftFun_c⟫
@@ -866,6 +878,7 @@ noncomputable def frag2ExtraPieceList : List V := [
   gpiece_fstIdxAll,
   gpiece_fstIdxExs,
   gpiece_fstIdxShift,
+  gpiece_fstIdxAxm,
   gpiece_setShiftInsert,
   gpiece_setShiftEmpty,
   gpiece_setShiftFun,
@@ -1147,6 +1160,21 @@ lemma gtag_fstIdxShift {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W
   have hk : ((gIdx_fstIdxShift : ℕ) : V) = (142 : V) := by simp [gIdx_fstIdxShift]
   rw [← hk, gmk_fstIdxShift]; simp
 
+lemma frag2Pieces_fstIdxAxm : (frag2Pieces : V).[((gIdx_fstIdxAxm : ℕ) : V)] = gpiece_fstIdxAxm := by
+  unfold frag2Pieces
+  rw [nth_vecOf _ gIdx_fstIdxAxm (Nat.lt_of_sub_eq_succ rfl)]
+  rfl
+
+lemma gmk_fstIdxAxm (ev : V) :
+    mkStep frag2Pieces ((gIdx_fstIdxAxm : ℕ) : V) ev = sUseHorn ((gIdx_fstIdxAxm : ℕ) : V) ev (vecOf row_fstIdxAxm_as) row_fstIdxAxm_c := by
+  rw [mkStep, frag2Pieces_fstIdxAxm]
+  simp [gpiece_fstIdxAxm, sUseHorn]
+
+lemma gtag_fstIdxAxm {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (143 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((gIdx_fstIdxAxm : ℕ) : V) = (143 : V) := by simp [gIdx_fstIdxAxm]
+  rw [← hk, gmk_fstIdxAxm]; simp
+
 lemma frag2Pieces_setShiftInsert : (frag2Pieces : V).[((gIdx_setShiftInsert : ℕ) : V)] = gpiece_setShiftInsert := by
   unfold frag2Pieces
   rw [nth_vecOf _ gIdx_setShiftInsert (Nat.lt_of_sub_eq_succ rfl)]
@@ -1157,9 +1185,9 @@ lemma gmk_setShiftInsert (ev : V) :
   rw [mkStep, frag2Pieces_setShiftInsert]
   simp [gpiece_setShiftInsert, sUseHorn]
 
-lemma gtag_setShiftInsert {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (143 : V) ev) = 0 := by
+lemma gtag_setShiftInsert {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (144 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_setShiftInsert : ℕ) : V) = (143 : V) := by simp [gIdx_setShiftInsert]
+  have hk : ((gIdx_setShiftInsert : ℕ) : V) = (144 : V) := by simp [gIdx_setShiftInsert]
   rw [← hk, gmk_setShiftInsert]; simp
 
 lemma frag2Pieces_setShiftEmpty : (frag2Pieces : V).[((gIdx_setShiftEmpty : ℕ) : V)] = gpiece_setShiftEmpty := by
@@ -1172,9 +1200,9 @@ lemma gmk_setShiftEmpty (ev : V) :
   rw [mkStep, frag2Pieces_setShiftEmpty]
   simp [gpiece_setShiftEmpty, sUseHorn]
 
-lemma gtag_setShiftEmpty {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (144 : V) ev) = 0 := by
+lemma gtag_setShiftEmpty {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (145 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_setShiftEmpty : ℕ) : V) = (144 : V) := by simp [gIdx_setShiftEmpty]
+  have hk : ((gIdx_setShiftEmpty : ℕ) : V) = (145 : V) := by simp [gIdx_setShiftEmpty]
   rw [← hk, gmk_setShiftEmpty]; simp
 
 lemma frag2Pieces_setShiftFun : (frag2Pieces : V).[((gIdx_setShiftFun : ℕ) : V)] = gpiece_setShiftFun := by
@@ -1187,9 +1215,9 @@ lemma gmk_setShiftFun (ev : V) :
   rw [mkStep, frag2Pieces_setShiftFun]
   simp [gpiece_setShiftFun, sUseHorn]
 
-lemma gtag_setShiftFun {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (145 : V) ev) = 0 := by
+lemma gtag_setShiftFun {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (146 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_setShiftFun : ℕ) : V) = (145 : V) := by simp [gIdx_setShiftFun]
+  have hk : ((gIdx_setShiftFun : ℕ) : V) = (146 : V) := by simp [gIdx_setShiftFun]
   rw [← hk, gmk_setShiftFun]; simp
 
 lemma frag2Pieces_congShiftL : (frag2Pieces : V).[((gIdx_congShiftL : ℕ) : V)] = gpiece_congShiftL := by
@@ -1202,9 +1230,9 @@ lemma gmk_congShiftL (ev : V) :
   rw [mkStep, frag2Pieces_congShiftL]
   simp [gpiece_congShiftL, sUseHorn]
 
-lemma gtag_congShiftL {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (146 : V) ev) = 0 := by
+lemma gtag_congShiftL {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (147 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_congShiftL : ℕ) : V) = (146 : V) := by simp [gIdx_congShiftL]
+  have hk : ((gIdx_congShiftL : ℕ) : V) = (147 : V) := by simp [gIdx_congShiftL]
   rw [← hk, gmk_congShiftL]; simp
 
 lemma frag2Pieces_congSetShiftL : (frag2Pieces : V).[((gIdx_congSetShiftL : ℕ) : V)] = gpiece_congSetShiftL := by
@@ -1217,9 +1245,9 @@ lemma gmk_congSetShiftL (ev : V) :
   rw [mkStep, frag2Pieces_congSetShiftL]
   simp [gpiece_congSetShiftL, sUseHorn]
 
-lemma gtag_congSetShiftL {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (147 : V) ev) = 0 := by
+lemma gtag_congSetShiftL {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (148 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_congSetShiftL : ℕ) : V) = (147 : V) := by simp [gIdx_congSetShiftL]
+  have hk : ((gIdx_congSetShiftL : ℕ) : V) = (148 : V) := by simp [gIdx_congSetShiftL]
   rw [← hk, gmk_congSetShiftL]; simp
 
 lemma frag2Pieces_substsSubsts1 : (frag2Pieces : V).[((gIdx_substsSubsts1 : ℕ) : V)] = gpiece_substsSubsts1 := by
@@ -1232,9 +1260,9 @@ lemma gmk_substsSubsts1 (ev : V) :
   rw [mkStep, frag2Pieces_substsSubsts1]
   simp [gpiece_substsSubsts1, sUseHorn]
 
-lemma gtag_substsSubsts1 {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (148 : V) ev) = 0 := by
+lemma gtag_substsSubsts1 {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (149 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_substsSubsts1 : ℕ) : V) = (148 : V) := by simp [gIdx_substsSubsts1]
+  have hk : ((gIdx_substsSubsts1 : ℕ) : V) = (149 : V) := by simp [gIdx_substsSubsts1]
   rw [← hk, gmk_substsSubsts1]; simp
 
 /-! ### The per-row applicability lemmas `gok_<row>` -/
@@ -1567,13 +1595,32 @@ lemma gok_fstIdxShift {tbl N E Γ W : V} {ws wd we : V} (htbl : TableOK tbl N) (
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
   · rw [ctxAfter_useHorn [ws, wd, we] row_fstIdxShift_as isSemiformula_fstIdxShift_c (fun e he ↦ (hes e he).1), hinst.2]
 
+/-- Row `fstIdxAxm` as a step. -/
+lemma gok_fstIdxAxm {tbl N E Γ W : V} {ws wp we : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
+    (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hmem0 : neg LAct (axmFact we ws wp) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 143 ?[ws, wp, we]) ∧ sTag (mkStep W 143 ?[ws, wp, we]) = 0 ∧
+    ctxAfter Γ (mkStep W 143 ?[ws, wp, we]) = insert (neg LAct (fstIdxFact ws we)) Γ := by
+  subst hWp
+  have hk : ((gIdx_fstIdxAxm : ℕ) : V) = (143 : V) := by simp [gIdx_fstIdxAxm]
+  have hstep := gmk_fstIdxAxm (V := V) ?[ws, wp, we]
+  have hlen := frag2Table_len hF gIdx_fstIdxAxm (by decide)
+  have hrow := frag2Table_fstIdxAxm hF
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [ws, wp, we], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_cons.mpr ⟨⟨hwe, hEwe⟩, List.forall_mem_nil _⟩⟩⟩
+  have hinst := inst_fstIdxAxm hws hwp hwe
+  rw [hstep, show (?[ws, wp, we] : V) = vecOf [ws, wp, we] from rfl]
+  refine ⟨stepOK_useHorn htbl [ws, wp, we] row_fstIdxAxm_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 3 ≤ 8))
+    (by rw [show row_fstIdxAxm_as.length = 1 from rfl] <;> exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [ws, wp, we] row_fstIdxAxm_as isSemiformula_fstIdxAxm_c (fun e he ↦ (hes e he).1), hinst.2]
+
 /-- Row `setShiftInsert` as a step. -/
 lemma gok_setShiftInsert {tbl N E Γ W : V} {ws wsp wx wy wu wup : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwsp : IsSemiterm LAct 0 wsp) (hEwsp : termLen LAct wsp ≤ E) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hwu : IsSemiterm LAct 0 wu) (hEwu : termLen LAct wu ≤ E) (hwup : IsSemiterm LAct 0 wup) (hEwup : termLen LAct wup ≤ E) (hmem0 : neg LAct (insFact wsp wx ws) ∈ Γ) (hmem1 : neg LAct (setShiftFact wu ws) ∈ Γ) (hmem2 : neg LAct (shiftFact wy wx) ∈ Γ) (hmem3 : neg LAct (insFact wup wy wu) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 143 ?[ws, wsp, wx, wy, wu, wup]) ∧ sTag (mkStep W 143 ?[ws, wsp, wx, wy, wu, wup]) = 0 ∧
-    ctxAfter Γ (mkStep W 143 ?[ws, wsp, wx, wy, wu, wup]) = insert (neg LAct (setShiftFact wup wsp)) Γ := by
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 144 ?[ws, wsp, wx, wy, wu, wup]) ∧ sTag (mkStep W 144 ?[ws, wsp, wx, wy, wu, wup]) = 0 ∧
+    ctxAfter Γ (mkStep W 144 ?[ws, wsp, wx, wy, wu, wup]) = insert (neg LAct (setShiftFact wup wsp)) Γ := by
   subst hWp
-  have hk : ((gIdx_setShiftInsert : ℕ) : V) = (143 : V) := by simp [gIdx_setShiftInsert]
+  have hk : ((gIdx_setShiftInsert : ℕ) : V) = (144 : V) := by simp [gIdx_setShiftInsert]
   have hstep := gmk_setShiftInsert (V := V) ?[ws, wsp, wx, wy, wu, wup]
   have hlen := frag2Table_len hF gIdx_setShiftInsert (by decide)
   have hrow := frag2Table_setShiftInsert hF
@@ -1589,10 +1636,10 @@ lemma gok_setShiftInsert {tbl N E Γ W : V} {ws wsp wx wy wu wup : V} (htbl : Ta
 /-- Row `setShiftEmpty` as a step. -/
 lemma gok_setShiftEmpty {tbl N E Γ W : V} {wu : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hwu : IsSemiterm LAct 0 wu) (hEwu : termLen LAct wu ≤ E) (hmem0 : neg LAct (setShiftFact wu (𝟎 : V)) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 144 ?[wu]) ∧ sTag (mkStep W 144 ?[wu]) = 0 ∧
-    ctxAfter Γ (mkStep W 144 ?[wu]) = insert (neg LAct (eqFactB wu (𝟎 : V))) Γ := by
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 145 ?[wu]) ∧ sTag (mkStep W 145 ?[wu]) = 0 ∧
+    ctxAfter Γ (mkStep W 145 ?[wu]) = insert (neg LAct (eqFactB wu (𝟎 : V))) Γ := by
   subst hWp
-  have hk : ((gIdx_setShiftEmpty : ℕ) : V) = (144 : V) := by simp [gIdx_setShiftEmpty]
+  have hk : ((gIdx_setShiftEmpty : ℕ) : V) = (145 : V) := by simp [gIdx_setShiftEmpty]
   have hstep := gmk_setShiftEmpty (V := V) ?[wu]
   have hlen := frag2Table_len hF gIdx_setShiftEmpty (by decide)
   have hrow := frag2Table_setShiftEmpty hF
@@ -1608,10 +1655,10 @@ lemma gok_setShiftEmpty {tbl N E Γ W : V} {wu : V} (htbl : TableOK tbl N) (hF :
 /-- Row `setShiftFun` as a step. -/
 lemma gok_setShiftFun {tbl N E Γ W : V} {wy ws wyp : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwyp : IsSemiterm LAct 0 wyp) (hEwyp : termLen LAct wyp ≤ E) (hmem0 : neg LAct (setShiftFact wy ws) ∈ Γ) (hmem1 : neg LAct (setShiftFact wyp ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 145 ?[wy, ws, wyp]) ∧ sTag (mkStep W 145 ?[wy, ws, wyp]) = 0 ∧
-    ctxAfter Γ (mkStep W 145 ?[wy, ws, wyp]) = insert (neg LAct (eqFactB wy wyp)) Γ := by
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 146 ?[wy, ws, wyp]) ∧ sTag (mkStep W 146 ?[wy, ws, wyp]) = 0 ∧
+    ctxAfter Γ (mkStep W 146 ?[wy, ws, wyp]) = insert (neg LAct (eqFactB wy wyp)) Γ := by
   subst hWp
-  have hk : ((gIdx_setShiftFun : ℕ) : V) = (145 : V) := by simp [gIdx_setShiftFun]
+  have hk : ((gIdx_setShiftFun : ℕ) : V) = (146 : V) := by simp [gIdx_setShiftFun]
   have hstep := gmk_setShiftFun (V := V) ?[wy, ws, wyp]
   have hlen := frag2Table_len hF gIdx_setShiftFun (by decide)
   have hrow := frag2Table_setShiftFun hF
@@ -1627,10 +1674,10 @@ lemma gok_setShiftFun {tbl N E Γ W : V} {wy ws wyp : V} (htbl : TableOK tbl N) 
 /-- Row `congShiftL` as a step. -/
 lemma gok_congShiftL {tbl N E Γ W : V} {wy wyp wx : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hwyp : IsSemiterm LAct 0 wyp) (hEwyp : termLen LAct wyp ≤ E) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hmem0 : neg LAct (eqFactB wyp wy) ∈ Γ) (hmem1 : neg LAct (shiftFact wy wx) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 146 ?[wy, wyp, wx]) ∧ sTag (mkStep W 146 ?[wy, wyp, wx]) = 0 ∧
-    ctxAfter Γ (mkStep W 146 ?[wy, wyp, wx]) = insert (neg LAct (shiftFact wyp wx)) Γ := by
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 147 ?[wy, wyp, wx]) ∧ sTag (mkStep W 147 ?[wy, wyp, wx]) = 0 ∧
+    ctxAfter Γ (mkStep W 147 ?[wy, wyp, wx]) = insert (neg LAct (shiftFact wyp wx)) Γ := by
   subst hWp
-  have hk : ((gIdx_congShiftL : ℕ) : V) = (146 : V) := by simp [gIdx_congShiftL]
+  have hk : ((gIdx_congShiftL : ℕ) : V) = (147 : V) := by simp [gIdx_congShiftL]
   have hstep := gmk_congShiftL (V := V) ?[wy, wyp, wx]
   have hlen := frag2Table_len hF gIdx_congShiftL (by decide)
   have hrow := frag2Table_congShiftL hF
@@ -1646,10 +1693,10 @@ lemma gok_congShiftL {tbl N E Γ W : V} {wy wyp wx : V} (htbl : TableOK tbl N) (
 /-- Row `congSetShiftL` as a step. -/
 lemma gok_congSetShiftL {tbl N E Γ W : V} {wt wtp ws : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwtp : IsSemiterm LAct 0 wtp) (hEwtp : termLen LAct wtp ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hmem0 : neg LAct (eqFactB wtp wt) ∈ Γ) (hmem1 : neg LAct (setShiftFact wt ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 147 ?[wt, wtp, ws]) ∧ sTag (mkStep W 147 ?[wt, wtp, ws]) = 0 ∧
-    ctxAfter Γ (mkStep W 147 ?[wt, wtp, ws]) = insert (neg LAct (setShiftFact wtp ws)) Γ := by
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 148 ?[wt, wtp, ws]) ∧ sTag (mkStep W 148 ?[wt, wtp, ws]) = 0 ∧
+    ctxAfter Γ (mkStep W 148 ?[wt, wtp, ws]) = insert (neg LAct (setShiftFact wtp ws)) Γ := by
   subst hWp
-  have hk : ((gIdx_congSetShiftL : ℕ) : V) = (147 : V) := by simp [gIdx_congSetShiftL]
+  have hk : ((gIdx_congSetShiftL : ℕ) : V) = (148 : V) := by simp [gIdx_congSetShiftL]
   have hstep := gmk_congSetShiftL (V := V) ?[wt, wtp, ws]
   have hlen := frag2Table_len hF gIdx_congSetShiftL (by decide)
   have hrow := frag2Table_congSetShiftL hF
@@ -1665,10 +1712,10 @@ lemma gok_congSetShiftL {tbl N E Γ W : V} {wt wtp ws : V} (htbl : TableOK tbl N
 /-- Row `substsSubsts1` as a step. -/
 lemma gok_substsSubsts1 {tbl N E Γ W : V} {wp wt ww wy : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hww : IsSemiterm LAct 0 ww) (hEww : termLen LAct ww ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (adjFact ww wt (𝟎 : V)) ∈ Γ) (hmem1 : neg LAct (substFact wy ww wp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 148 ?[wp, wt, ww, wy]) ∧ sTag (mkStep W 148 ?[wp, wt, ww, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 148 ?[wp, wt, ww, wy]) = insert (neg LAct (substs1Fact wy wt wp)) Γ := by
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 149 ?[wp, wt, ww, wy]) ∧ sTag (mkStep W 149 ?[wp, wt, ww, wy]) = 0 ∧
+    ctxAfter Γ (mkStep W 149 ?[wp, wt, ww, wy]) = insert (neg LAct (substs1Fact wy wt wp)) Γ := by
   subst hWp
-  have hk : ((gIdx_substsSubsts1 : ℕ) : V) = (148 : V) := by simp [gIdx_substsSubsts1]
+  have hk : ((gIdx_substsSubsts1 : ℕ) : V) = (149 : V) := by simp [gIdx_substsSubsts1]
   have hstep := gmk_substsSubsts1 (V := V) ?[wp, wt, ww, wy]
   have hlen := frag2Table_len hF gIdx_substsSubsts1 (by decide)
   have hrow := frag2Table_substsSubsts1 hF
