@@ -28,6 +28,8 @@ LEN_ROWS = [
  ('congAdd', ["y'", 'y', "x'", 'x'], [A('eq','x',"x'"), A('eq','y',"y'")], A('eq', P('x','y'), P("x'","y'"))),
  ('congSucc', ["x'", 'x'], [A('eq','x',"x'")], A('eq', S('x'), S("x'"))),
  ('listSumAdjI', ["s'", 's', 'l', 'M', "M'"], [A('listSum','s','M'), A('adjoin',"M'",'l','M'), A('eq', P('l','s'), "s'")], A('listSum', "s'", "M'")),
+ # ---- APPENDED 2026-09-14 (later) for `certSubst`: the term-substitution left congruence (sentence + `lib_` in `head` §0):
+ ('congTSubstL', ['t', 'w', "e'", 'e'], [A('eq', "e'", 'e'), A('tsG', 'e', 'w', 't')], A('tsG', "e'", 'w', 't')),
 ]
 G.out = []
 for (name, binders, ants, conc) in LEN_ROWS:
@@ -50,6 +52,7 @@ TABLE = [
  'tsvAdjCert',
  'congAdj',
  'congAdd', 'congSucc', 'listSumAdjI',
+ 'congTSubstL',
 ]
 BASE = 100
 rowinstb = open('ArithS/Necessitation/RowInstB.lean').read()
@@ -361,6 +364,19 @@ theorem pa_proves_listSumAdjI : 𝗣𝗔 ⊢ listSumAdjI :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_listSumAdjI.mpr fun _ _ _ _ _ h₁ h₂ h₃ ↦ by
     subst h₁; subst h₂; subst h₃; simp
 theorem lib_listSumAdjI : Lib listSumAdjI := Lib.of_pa pa_proves_listSumAdjI
+
+/-- `e' = e → e = termSubst w t → e' = termSubst w t` (the term-level twin of `congSubstL`; APPENDED
+2026-09-14 for `certSubst`'s bound-variable leaf: `termSubstBvarCert` is applied at the ORIGINAL entry of
+the substitution vector, the image leaf is identified with it, and this row moves the fact onto the image). -/
+noncomputable def congTSubstLB : ArithmeticSemisentence 4 :=
+  “t w e' e. e' = e → !(termSubstGraph LAct) e w t → !(termSubstGraph LAct) e' w t”
+noncomputable def congTSubstL : ArithmeticSentence := ∀¹* congTSubstLB
+lemma models_congTSubstL : V↓[ℒₒᵣ] ⊧ congTSubstL ↔
+    ∀ t w e' e : V, e' = e → e = termSubst LAct w t → e' = termSubst LAct w t := by
+  simp [congTSubstL, congTSubstLB, models_iff, Matrix.vecForall_iff, termSubst.defined.iff]
+theorem pa_proves_congTSubstL : 𝗣𝗔 ⊢ congTSubstL :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_congTSubstL.mpr fun _ _ _ _ h₁ h₂ ↦ by subst h₁; exact h₂
+theorem lib_congTSubstL : Lib congTSubstL := Lib.of_pa pa_proves_congTSubstL
 
 end newRows
 
