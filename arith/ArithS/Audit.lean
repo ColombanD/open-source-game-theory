@@ -695,4 +695,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms costSum_nodeExs_le
 #print axioms costSum_nodeAxm_le
 
+-- U10 (2026-09-14): the FORMULA-level certification pass (`Cert` Part 2, the `PassF` fixpoint at
+-- `ν = 1` = `neg`, `ν = 2` = `shift`): the pass exists and is unique for every semiformula at every
+-- pair of offsets, so `passF` is a Σ₁ FUNCTION with per-constructor equations; the named producers
+-- are `certNeg`/`certShift`. Both are shift-free (`NoDrop`, `shiftsV = 0`) and have `≤ 12|r|` steps.
+-- Plus Part 3, the count half of the bridge `Layout.lean:53` left open.
+#print axioms passTGraph_unique
+#print axioms passVGraph_unique
+#print axioms passT_graph
+#print axioms passV_graph
+#print axioms passFGraph_exists
+#print axioms passFGraph_unique
+#print axioms passF_graph
+#print axioms passF_and
+#print axioms passF_rel
+#print axioms certShift_noDrop_shifts
+#print axioms certNeg_noDrop_shifts
+#print axioms len_certShift_le
+#print axioms len_certNeg_le
+#print axioms eqCount_eq_descCountF
+
 end ArithS
