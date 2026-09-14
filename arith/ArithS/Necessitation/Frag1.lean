@@ -1946,4 +1946,848 @@ theorem nodeCut_ok {tbl N E Γ W tblN N' B' is il ip inp id₁ id₂ ic₁ ic₂
 
 end nodes
 
+/-! ## 5. Cost (DESIGN_fragments §5)
+
+The fragments mix Horn steps (tags 0/1/2, costed by `stepCost_le_of_stepOK`) with the eliminations and
+splits of `goalElim` (tags 3/4), the goal cut (tag 6) and the closed lemma cut (tag 7). A SIZE DISCIPLINE
+`SizeOK Q D S` records, per non-Horn step, the size of the formula it handles (`≤ Q`) and the length of a
+lemma's derivation (`≤ D`); with `ListOK` at cap `M` and a table bound `B` on the row bodies, every step grows
+the context ADDITIVELY by `growK B E Q = 4BE + 2Q` and costs at most `costK + (3M + 11)·(|Γ| + fvOccS Γ)`,
+whence `costSum ≤ len S · (costK + (3M+11)·ctxBound)` — the shape §5 sums. The goal-fact size `|goalFact s ū|`
+is kept SYMBOLIC (as §5's `|G_code|`): `goalElim` is bounded by `4·|goalFact|` through its two `free`
+equations, and a fragment's `Q` must dominate its own goal fact and its closed lemma fact. -/
+
+section cost
+
+/-! ### 5.1 The Horn bounds at an arbitrary cap `M` -/
+
+theorem ctxAfter_len_le_M (M : ℕ) {tbl N E B Γ s : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hok : StepOK tbl E (M : V) Γ s) (ht : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2)
+    (hB : formulaLen LAct (rowB tbl.[sRow s]) ≤ B) :
+    setLen LAct (ctxAfter Γ s) ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) ∧
+    fvOccS LAct (ctxAfter Γ s) ≤ fvOccS LAct Γ + 4 * (B * E) := by
+  obtain ⟨hΓ, h⟩ := hok
+  rcases h with ⟨ht0, hh, hrow⟩ | ⟨ht1, hh, hrow⟩ | ⟨ht2, hh, hrow⟩ | ⟨ht3, _⟩ | ⟨ht4, _⟩ | ⟨ht5, _⟩ | ⟨ht6, _⟩ | ⟨ht7, _⟩
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrowF := (htbl _ hh.1).1
+    rw [hm, hrow, hl_eq, impChainV_vecOf] at hrowF
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrowF
+    rw [hrow, hl_eq, impChainV_vecOf] at hB
+    have hcB : formulaLen LAct (sC s) ≤ B := le_trans (formulaLen_le_impChain has hc) hB
+    have hlen : formulaLen LAct (instOuter LAct es (sC s)) ≤ B * E :=
+      le_trans (formulaLen_instOuter_le hE es hc hes') (mul_le_mul_of_nonneg_right hcB zero_le)
+    have hF : IsFormula LAct (instOuter LAct es (sC s)) := isFormula_instOuter es hc hes
+    rw [ctxAfter_tag0 ht0, hes_eq, subst_revV_vecOf es hc hes]
+    constructor
+    · calc setLen LAct (insert (neg LAct (instOuter LAct es (sC s))) Γ)
+          ≤ setLen LAct Γ + formulaLen LAct (neg LAct (instOuter LAct es (sC s))) := setLen_insert_le _ _
+        _ = setLen LAct Γ + formulaLen LAct (instOuter LAct es (sC s)) := by rw [formulaLen_neg hF.isUFormula]
+        _ ≤ setLen LAct Γ + B * E := add_le_add le_rfl hlen
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := by
+            rw [add_assoc]; exact add_le_add le_rfl (le_trans (le_trans (le_of_eq (one_mul _).symm)
+              (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) le_add_self)
+    · calc fvOccS LAct (insert (neg LAct (instOuter LAct es (sC s))) Γ)
+          ≤ fvOccS LAct Γ + fvOccF LAct (neg LAct (instOuter LAct es (sC s))) := fvOccS_insert_le _ _
+        _ = fvOccS LAct Γ + fvOccF LAct (instOuter LAct es (sC s)) := by rw [fvOccF_neg hF.isUFormula]
+        _ ≤ fvOccS LAct Γ + B * E := add_le_add le_rfl (le_trans (fvOccF_le_formulaLen hF.isUFormula) hlen)
+        _ ≤ fvOccS LAct Γ + 4 * (B * E) := add_le_add le_rfl
+            (le_trans (le_of_eq (one_mul _).symm) (mul_le_mul_of_nonneg_right (by norm_num) zero_le))
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrowF := (htbl _ hh.1).1
+    rw [hm, hrow, hl_eq, impChainV_vecOf] at hrowF
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrowF
+    obtain ⟨hc₁, hc₂⟩ := IsSemiformula.and.mp hc
+    rw [hrow, hl_eq, impChainV_vecOf] at hB
+    have hcB : formulaLen LAct ((π₁ (sC s)) ^⋏ (π₂ (sC s))) ≤ B := le_trans (formulaLen_le_impChain has hc) hB
+    rw [formulaLen_and hc₁.isUFormula hc₂.isUFormula] at hcB
+    have hc₁B : formulaLen LAct (π₁ (sC s)) ≤ B := le_trans (le_trans le_self_add le_self_add) hcB
+    have hc₂B : formulaLen LAct (π₂ (sC s)) ≤ B := le_trans (le_trans le_add_self le_self_add) hcB
+    have hlen₁ : formulaLen LAct (instOuter LAct es (π₁ (sC s))) ≤ B * E :=
+      le_trans (formulaLen_instOuter_le hE es hc₁ hes') (mul_le_mul_of_nonneg_right hc₁B zero_le)
+    have hlen₂ : formulaLen LAct (instOuter LAct es (π₂ (sC s))) ≤ B * E :=
+      le_trans (formulaLen_instOuter_le hE es hc₂ hes') (mul_le_mul_of_nonneg_right hc₂B zero_le)
+    have hF₁ : IsFormula LAct (instOuter LAct es (π₁ (sC s))) := isFormula_instOuter es hc₁ hes
+    have hF₂ : IsFormula LAct (instOuter LAct es (π₂ (sC s))) := isFormula_instOuter es hc₂ hes
+    rw [ctxAfter_tag1 ht1, hes_eq, subst_revV_vecOf es hc₁ hes, subst_revV_vecOf es hc₂ hes]
+    have h4 : B * E + B * E ≤ 4 * (B * E) := by
+      rw [show B * E + B * E = 2 * (B * E) by ring]; exact mul_le_mul_of_nonneg_right (by norm_num) zero_le
+    constructor
+    · calc setLen LAct (insert (neg LAct (instOuter LAct es (π₁ (sC s))))
+              (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ))
+          ≤ setLen LAct (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ)
+              + formulaLen LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := setLen_insert_le _ _
+        _ ≤ (setLen LAct Γ + formulaLen LAct (neg LAct (instOuter LAct es (π₂ (sC s)))))
+              + formulaLen LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := add_le_add (setLen_insert_le _ _) le_rfl
+        _ ≤ (setLen LAct Γ + B * E) + B * E := by
+            rw [formulaLen_neg hF₁.isUFormula, formulaLen_neg hF₂.isUFormula]
+            exact add_le_add (add_le_add le_rfl hlen₂) hlen₁
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := by
+            rw [add_assoc, add_assoc]; exact add_le_add le_rfl (le_trans h4 le_add_self)
+    · calc fvOccS LAct (insert (neg LAct (instOuter LAct es (π₁ (sC s))))
+              (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ))
+          ≤ fvOccS LAct (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ)
+              + fvOccF LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := fvOccS_insert_le _ _
+        _ ≤ (fvOccS LAct Γ + fvOccF LAct (neg LAct (instOuter LAct es (π₂ (sC s)))))
+              + fvOccF LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := add_le_add (fvOccS_insert_le _ _) le_rfl
+        _ ≤ (fvOccS LAct Γ + B * E) + B * E := by
+            rw [fvOccF_neg hF₁.isUFormula, fvOccF_neg hF₂.isUFormula]
+            exact add_le_add (add_le_add le_rfl (le_trans (fvOccF_le_formulaLen hF₂.isUFormula) hlen₂))
+              (le_trans (fvOccF_le_formulaLen hF₁.isUFormula) hlen₁)
+        _ ≤ fvOccS LAct Γ + 4 * (B * E) := by rw [add_assoc]; exact add_le_add le_rfl h4
+  · obtain ⟨es, l, hes_eq, hl_eq, hm, hes', hneg'⟩ := hh.lists M
+    have hes : ∀ e ∈ es, IsTerm LAct e := fun e he ↦ (hes' e he).1
+    have hrowF := (htbl _ hh.1).1
+    rw [hm, hrow, hl_eq, impChainV_vecOf] at hrowF
+    obtain ⟨has, hc⟩ := isSemiformula_of_impChain hrowF
+    have hR : IsSemiformula LAct ((es.length : V) + 1) (sC s) := IsSemiformula.exs.mp hc
+    rw [hrow, hl_eq, impChainV_vecOf] at hB
+    have hR' : IsSemiformula LAct 1 (instOuterAt LAct 1 es (sC s)) := isSemiformula_one_instOuterAt es hR hes
+    have hlen : formulaLen LAct (instOuterAt LAct 1 es (sC s)) ≤ B * E := by
+      have h := formulaLen_exs_instOuterAt_le hE has hR hes' (F := B * E)
+        (mul_le_mul_of_nonneg_right hB zero_le)
+      rw [formulaLen_exs hR'.isUFormula] at h
+      exact le_trans le_self_add h
+    have hfree : formulaLen LAct (free LAct (instOuterAt LAct 1 es (sC s))) ≤ 2 * (B * E) :=
+      le_trans (formulaLen_free_le hR') (mul_le_mul_of_nonneg_left hlen zero_le)
+    have hF : IsFormula LAct (free LAct (instOuterAt LAct 1 es (sC s))) := hR'.free
+    have hocc : fvOccF LAct (free LAct (instOuterAt LAct 1 es (sC s))) ≤ 2 * (B * E) := by
+      calc fvOccF LAct (free LAct (instOuterAt LAct 1 es (sC s)))
+          ≤ fvOccF LAct (instOuterAt LAct 1 es (sC s)) + bvOccF LAct (instOuterAt LAct 1 es (sC s)) := fvOccF_free_le' hR'
+        _ ≤ formulaLen LAct (instOuterAt LAct 1 es (sC s)) + formulaLen LAct (instOuterAt LAct 1 es (sC s)) :=
+            add_le_add (fvOccF_le_formulaLen hR'.isUFormula) (bvOccF_le_formulaLen hR'.isUFormula)
+        _ ≤ B * E + B * E := add_le_add hlen hlen
+        _ = 2 * (B * E) := by ring
+    rw [ctxAfter_tag2 ht2, hes_eq, subst_qVec_revV_vecOf es hR hes]
+    have h2 : 2 * (B * E) ≤ 4 * (B * E) := mul_le_mul_of_nonneg_right (by norm_num) zero_le
+    constructor
+    · calc setLen LAct (insert (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) (setShift LAct Γ))
+          ≤ setLen LAct (setShift LAct Γ) + formulaLen LAct (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) :=
+            setLen_insert_le _ _
+        _ ≤ (setLen LAct Γ + fvOccS LAct Γ) + 2 * (B * E) := by
+            rw [formulaLen_neg hF.isUFormula]; exact add_le_add (setLen_setShift_le_occ hΓ) hfree
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := add_le_add le_rfl h2
+    · calc fvOccS LAct (insert (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) (setShift LAct Γ))
+          ≤ fvOccS LAct (setShift LAct Γ) + fvOccF LAct (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) :=
+            fvOccS_insert_le _ _
+        _ ≤ fvOccS LAct Γ + 2 * (B * E) := by
+            rw [fvOccF_neg hF.isUFormula]; exact add_le_add (fvOccS_setShift_le hΓ) hocc
+        _ ≤ fvOccS LAct Γ + 4 * (B * E) := add_le_add le_rfl h2
+  · exfalso; rw [ht3] at ht; norm_num at ht
+  · exfalso; rw [ht4] at ht; norm_num at ht
+  · exfalso; rw [ht5] at ht; norm_num at ht
+  · exfalso; rw [ht6] at ht; norm_num at ht
+  · exfalso; rw [ht7] at ht; norm_num at ht
+
+
+noncomputable def stepKM (N E B M : V) : V :=
+  hornCost N E 0 M M B + (6 * (B * E) + 4) + introCost N E 0 M M B
+
+lemma hornCost_GM (N E G M B : V) : hornCost N E G M M B = hornCost N E 0 M M B + (3 * M + 4) * G := by
+  unfold hornCost; ring
+lemma introCost_GM (N E G M B : V) : introCost N E G M M B = introCost N E 0 M M B + (3 * M + 10) * G := by
+  unfold introCost; ring
+
+/-- `stepCost_le_of_stepOK` at an arbitrary cap. -/
+theorem stepCost_le_of_stepOK_M (M : ℕ) {tbl N E B Γ s : V} (hok : StepOK tbl E (M : V) Γ s)
+    (ht : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) (hB : formulaLen LAct (rowB tbl.[sRow s]) ≤ B) :
+    stepCost N E Γ s ≤ stepKM N E B M + (3 * (M : V) + 10) * setLen LAct Γ := by
+  obtain ⟨_, h⟩ := hok
+  have hle : (3 * (M : V) + 4) * setLen LAct Γ ≤ (3 * (M : V) + 10) * setLen LAct Γ :=
+    mul_le_mul_of_nonneg_right (by gcongr; norm_num) zero_le
+  rcases h with ⟨ht0, hh, hrow⟩ | ⟨ht1, hh, hrow⟩ | ⟨ht2, hh, hrow⟩ | ⟨ht3, _⟩ | ⟨ht4, _⟩ | ⟨ht5, _⟩ | ⟨ht6, _⟩ | ⟨ht7, _⟩
+  · rw [stepCost_tag0 ht0]
+    rw [hrow] at hB
+    have hm : len (sEv s) ≤ (M : V) := hh.2.2.1
+    have hj : len (sAs s) ≤ (M : V) := hh.2.2.2.1
+    calc hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (sC s)))
+        ≤ hornCost N E (setLen LAct Γ) (M : V) (M : V) B := by unfold hornCost; gcongr
+      _ = hornCost N E 0 (M : V) (M : V) B + (3 * (M : V) + 4) * setLen LAct Γ := hornCost_GM _ _ _ _ _
+      _ ≤ stepKM N E B M + (3 * (M : V) + 10) * setLen LAct Γ := by
+          unfold stepKM; exact add_le_add (le_trans le_self_add le_self_add) hle
+  · rw [stepCost_tag1 ht1]
+    rw [hrow] at hB
+    have hm : len (sEv s) ≤ (M : V) := hh.2.2.1
+    have hj : len (sAs s) ≤ (M : V) := hh.2.2.2.1
+    calc hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s))
+            (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))))
+          + 2 * setLen LAct Γ + 6 * (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))) * E) + 4
+        ≤ hornCost N E (setLen LAct Γ) (M : V) (M : V) B + 2 * setLen LAct Γ + 6 * (B * E) + 4 := by
+          gcongr <;> (unfold hornCost; gcongr)
+      _ = (hornCost N E 0 (M : V) (M : V) B + (6 * (B * E) + 4)) + (3 * (M : V) + 6) * setLen LAct Γ := by
+          rw [hornCost_GM]; ring
+      _ ≤ stepKM N E B M + (3 * (M : V) + 10) * setLen LAct Γ := by
+          unfold stepKM
+          exact add_le_add le_self_add (mul_le_mul_of_nonneg_right (by gcongr; norm_num) zero_le)
+  · rw [stepCost_tag2 ht2]
+    rw [hrow] at hB
+    have hm : len (sEv s) ≤ (M : V) := hh.2.2.1
+    have hj : len (sAs s) ≤ (M : V) := hh.2.2.2.1
+    calc introCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (^∃ (sC s))))
+        ≤ introCost N E (setLen LAct Γ) (M : V) (M : V) B := by unfold introCost; gcongr
+      _ = introCost N E 0 (M : V) (M : V) B + (3 * (M : V) + 10) * setLen LAct Γ := introCost_GM _ _ _ _ _
+      _ ≤ stepKM N E B M + (3 * (M : V) + 10) * setLen LAct Γ := by
+          unfold stepKM; exact add_le_add le_add_self le_rfl
+  · exfalso; rw [ht3] at ht; norm_num at ht
+  · exfalso; rw [ht4] at ht; norm_num at ht
+  · exfalso; rw [ht5] at ht; norm_num at ht
+  · exfalso; rw [ht6] at ht; norm_num at ht
+  · exfalso; rw [ht7] at ht; norm_num at ht
+
+/-! ### 5.2 The size discipline -/
+
+/-- The size data of a step (context-free): Horn steps carry none (the table bound `B` covers them); an
+elimination carries `|P|`, a split `|p| + |q|`, a goal cut `|goalFact s ū|`, a lemma cut `|A|` and `dlen dA`. -/
+def StepSizeOK (Q D s : V) : Prop :=
+  sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2 ∨
+  (sTag s = 3 ∧ formulaLen LAct (π₂ s) ≤ Q) ∨
+  (sTag s = 4 ∧ formulaLen LAct (π₁ (π₂ s)) + formulaLen LAct (π₂ (π₂ s)) ≤ Q) ∨
+  (sTag s = 6 ∧ formulaLen LAct (goalFact (sGoalS s) (sGoalU s)) ≤ Q) ∨
+  (sTag s = 7 ∧ formulaLen LAct (sLemA s) ≤ Q ∧ dlen TAct (sLemD s) ≤ D)
+
+def SizeOK (Q D S : V) : Prop := ∀ i < len S, StepSizeOK Q D S.[i]
+
+lemma sizeOK_nil (Q D : V) : SizeOK Q D (0 : V) := fun i hi ↦ by simp at hi
+
+lemma sizeOK_appendV {Q D S₁ S₂ : V} (h₁ : SizeOK Q D S₁) (h₂ : SizeOK Q D S₂) : SizeOK Q D (appendV S₁ S₂) := by
+  intro i hi
+  rw [len_appendV] at hi
+  rcases lt_or_ge i (len S₁) with h | h
+  · rw [nth_appendV_lt S₁ S₂ i h]; exact h₁ i h
+  · obtain ⟨j, rfl⟩ : ∃ j, i = len S₁ + j := ⟨i - len S₁, (add_tsub_cancel_of_le h).symm⟩
+    rw [nth_appendV_add]; exact h₂ j (lt_of_add_lt_add_left hi)
+
+lemma sizeOK_single {Q D s : V} (h : StepSizeOK Q D s) : SizeOK Q D (?[s] : V) := by
+  intro i hi
+  rw [len_adjoin, len_nil, zero_add] at hi
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simpa using h
+  · exact absurd hi (not_lt.mpr le_add_self)
+
+lemma sizeOK_cons {Q D s S : V} (h : StepSizeOK Q D s) (hS : SizeOK Q D S) : SizeOK Q D (s ∷ S) := by
+  rw [cons_eq_appendV_single]; exact sizeOK_appendV (sizeOK_single h) hS
+
+lemma StepSizeOK.mono {Q Q' D D' s : V} (hQ : Q ≤ Q') (hD : D ≤ D') (h : StepSizeOK Q D s) : StepSizeOK Q' D' s := by
+  rcases h with h | h | h | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h', h''⟩
+  · exact Or.inl h
+  · exact Or.inr (Or.inl h)
+  · exact Or.inr (Or.inr (Or.inl h))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨h, le_trans h' hQ⟩)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨h, le_trans h' hQ⟩))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨h, le_trans h' hQ⟩)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨h, le_trans h' hQ, le_trans h'' hD⟩)))))
+
+lemma SizeOK.mono {Q Q' D D' S : V} (hQ : Q ≤ Q') (hD : D ≤ D') (h : SizeOK Q D S) : SizeOK Q' D' S :=
+  fun i hi ↦ (h i hi).mono hQ hD
+
+/-- The per-tag data of an applicable non-Horn step. -/
+lemma stepOK_tag3_data {tbl E M Γ s : V} (hok : StepOK tbl E M Γ s) (h3 : sTag s = 3) :
+    IsSemiformula LAct 1 (π₂ s) := by
+  obtain ⟨_, h⟩ := hok
+  rcases h with ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨_, hP, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩
+  all_goals first | exact hP | (exfalso; rw [h0] at h3; norm_num at h3)
+lemma stepOK_tag4_data {tbl E M Γ s : V} (hok : StepOK tbl E M Γ s) (h4 : sTag s = 4) :
+    IsFormula LAct (π₁ (π₂ s)) ∧ IsFormula LAct (π₂ (π₂ s)) := by
+  obtain ⟨_, h⟩ := hok
+  rcases h with ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨_, hp, hq, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩
+  all_goals first | exact ⟨hp, hq⟩ | (exfalso; rw [h0] at h4; norm_num at h4)
+lemma stepOK_tag6_data {tbl E M Γ s : V} (hok : StepOK tbl E M Γ s) (h6 : sTag s = 6) :
+    IsSemiterm LAct 0 (sGoalS s) ∧ IsSemiterm LAct 0 (sGoalU s) := by
+  obtain ⟨_, h⟩ := hok
+  rcases h with ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨_, hG⟩ | ⟨h0, _⟩
+  all_goals first | exact ⟨hG.2.2.2.2.1, hG.2.2.2.2.2.2.1⟩ | (exfalso; rw [h0] at h6; norm_num at h6)
+lemma stepOK_tag7_data {tbl E M Γ s : V} (hok : StepOK tbl E M Γ s) (h7 : sTag s = 7) :
+    IsFormula LAct (sLemA s) := by
+  obtain ⟨_, h⟩ := hok
+  rcases h with ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨_, hL⟩
+  all_goals first | exact hL.1 | (exfalso; rw [h0] at h7; norm_num at h7)
+lemma stepOK_horn_row_lt {tbl E M Γ s : V} (hok : StepOK tbl E M Γ s)
+    (ht : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) : sRow s < len tbl := by
+  obtain ⟨_, h⟩ := hok
+  rcases h with ⟨_, hh, _⟩ | ⟨_, hh, _⟩ | ⟨_, hh, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩ | ⟨h0, _⟩
+  all_goals first | exact hh.1 | (exfalso; rcases ht with ht | ht | ht <;> (rw [h0] at ht; norm_num at ht))
+
+/-! ### 5.3 One disciplined step: additive growth, affine cost -/
+
+noncomputable def growK (B E Q : V) : V := 4 * (B * E) + 2 * Q
+noncomputable def costK (N E B M Q D : V) : V := stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42
+
+theorem step_grow_cost (M : ℕ) {tbl N E B Q D Γ s : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B)
+    (hok : StepOK tbl E (M : V) Γ s) (hsz : StepSizeOK Q D s) :
+    (setLen LAct (ctxAfter Γ s) ≤ setLen LAct Γ + fvOccS LAct Γ + growK B E Q ∧
+     fvOccS LAct (ctxAfter Γ s) ≤ fvOccS LAct Γ + growK B E Q) ∧
+    stepCost N E Γ s ≤ costK N E B M Q D + (3 * (M : V) + 11) * (setLen LAct Γ + fvOccS LAct Γ) := by
+  have hΓ : IsFormulaSet LAct Γ := hok.1
+  have hG4 : 4 * (B * E) ≤ growK B E Q := le_self_add
+  have hQ2 : 2 * Q ≤ growK B E Q := le_add_self
+  have hQ1 : Q ≤ growK B E Q := le_trans (le_trans (le_of_eq (one_mul Q).symm) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) hQ2
+  have hcoef : (3 * (M : V) + 10) * setLen LAct Γ ≤ (3 * (M : V) + 11) * (setLen LAct Γ + fvOccS LAct Γ) :=
+    mul_le_mul (by gcongr; norm_num) le_self_add zero_le zero_le
+  have hK0 : stepKM N E B M ≤ costK N E B M Q D := by unfold costK; exact le_trans le_self_add (le_trans le_self_add (le_trans le_self_add (le_trans le_self_add le_self_add)))
+  -- the Horn cases
+  have horn : (sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) →
+      (setLen LAct (ctxAfter Γ s) ≤ setLen LAct Γ + fvOccS LAct Γ + growK B E Q ∧
+       fvOccS LAct (ctxAfter Γ s) ≤ fvOccS LAct Γ + growK B E Q) ∧
+      stepCost N E Γ s ≤ costK N E B M Q D + (3 * (M : V) + 11) * (setLen LAct Γ + fvOccS LAct Γ) := by
+    intro ht
+    have hB := hBt _ (stepOK_horn_row_lt hok ht)
+    obtain ⟨g1, g2⟩ := ctxAfter_len_le_M M hE htbl hok ht hB
+    refine ⟨⟨le_trans g1 (add_le_add le_rfl hG4), le_trans g2 (add_le_add le_rfl hG4)⟩, ?_⟩
+    exact le_trans (stepCost_le_of_stepOK_M M hok ht hB) (add_le_add hK0 hcoef)
+  rcases hsz with h | h | h | ⟨h3, hP⟩ | ⟨h4, hpq⟩ | ⟨h6, hg⟩ | ⟨h7, hA, hD⟩
+  · exact horn (Or.inl h)
+  · exact horn (Or.inr (Or.inl h))
+  · exact horn (Or.inr (Or.inr h))
+  · -- tag 3
+    have hP1 := stepOK_tag3_data hok h3
+    have hF : IsFormula LAct (free LAct (π₂ s)) := hP1.free
+    have hfl : formulaLen LAct (free LAct (π₂ s)) ≤ 2 * Q :=
+      le_trans (formulaLen_free_le hP1) (mul_le_mul_of_nonneg_left hP zero_le)
+    rw [ctxAfter_tag3 h3, stepCost_tag3 h3]
+    refine ⟨⟨?_, ?_⟩, ?_⟩
+    · calc setLen LAct (insert (neg LAct (free LAct (π₂ s))) (setShift LAct Γ))
+          ≤ setLen LAct (setShift LAct Γ) + formulaLen LAct (neg LAct (free LAct (π₂ s))) := setLen_insert_le _ _
+        _ ≤ (setLen LAct Γ + fvOccS LAct Γ) + 2 * Q := by
+            rw [formulaLen_neg hF.isUFormula]; exact add_le_add (setLen_setShift_le_occ hΓ) hfl
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + growK B E Q := add_le_add le_rfl hQ2
+    · calc fvOccS LAct (insert (neg LAct (free LAct (π₂ s))) (setShift LAct Γ))
+          ≤ fvOccS LAct (setShift LAct Γ) + fvOccF LAct (neg LAct (free LAct (π₂ s))) := fvOccS_insert_le _ _
+        _ ≤ fvOccS LAct Γ + 2 * Q := by
+            rw [fvOccF_neg hF.isUFormula]
+            exact add_le_add (fvOccS_setShift_le hΓ) (le_trans (fvOccF_le_formulaLen hF.isUFormula) hfl)
+        _ ≤ fvOccS LAct Γ + growK B E Q := add_le_add le_rfl hQ2
+    · calc 4 * setLen LAct Γ + setLen LAct (setShift LAct Γ) + 7 * formulaLen LAct (π₂ s) + 10
+          ≤ 4 * setLen LAct Γ + (setLen LAct Γ + fvOccS LAct Γ) + 7 * Q + 10 := by
+            gcongr; exact setLen_setShift_le_occ hΓ
+        _ = (7 * Q + 10) + (5 * setLen LAct Γ + fvOccS LAct Γ) := by ring
+        _ ≤ costK N E B M Q D + (3 * (M : V) + 11) * (setLen LAct Γ + fvOccS LAct Γ) := by
+            refine add_le_add ?_ ?_
+            · unfold costK
+              calc 7 * Q + 10 ≤ 7 * Q + 42 := by gcongr; norm_num
+                _ ≤ stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42 := by
+                    rw [show stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42
+                      = (7 * Q + 42) + (stepKM N E B M + 27 * (Q * E) + 2 * E + D) by ring]
+                    exact le_self_add
+            · calc 5 * setLen LAct Γ + fvOccS LAct Γ ≤ 11 * (setLen LAct Γ + fvOccS LAct Γ) := by
+                    rw [mul_add]; exact add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
+                      (le_trans (le_of_eq (one_mul _).symm) (mul_le_mul_of_nonneg_right (by norm_num) zero_le))
+                _ ≤ (3 * (M : V) + 11) * (setLen LAct Γ + fvOccS LAct Γ) :=
+                    mul_le_mul_of_nonneg_right le_add_self zero_le
+  · -- tag 4
+    obtain ⟨hp, hq⟩ := stepOK_tag4_data hok h4
+    rw [ctxAfter_tag4 h4, stepCost_tag4 h4]
+    refine ⟨⟨?_, ?_⟩, ?_⟩
+    · calc setLen LAct (insert (neg LAct (π₁ (π₂ s))) (insert (neg LAct (π₂ (π₂ s))) Γ))
+          ≤ setLen LAct (insert (neg LAct (π₂ (π₂ s))) Γ) + formulaLen LAct (neg LAct (π₁ (π₂ s))) := setLen_insert_le _ _
+        _ ≤ (setLen LAct Γ + formulaLen LAct (neg LAct (π₂ (π₂ s)))) + formulaLen LAct (neg LAct (π₁ (π₂ s))) :=
+            add_le_add (setLen_insert_le _ _) le_rfl
+        _ = setLen LAct Γ + (formulaLen LAct (π₁ (π₂ s)) + formulaLen LAct (π₂ (π₂ s))) := by
+            rw [formulaLen_neg hp.isUFormula, formulaLen_neg hq.isUFormula]; ring
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + growK B E Q := by
+            rw [add_assoc]; exact add_le_add le_rfl (le_trans (le_trans hpq hQ1) le_add_self)
+    · calc fvOccS LAct (insert (neg LAct (π₁ (π₂ s))) (insert (neg LAct (π₂ (π₂ s))) Γ))
+          ≤ fvOccS LAct (insert (neg LAct (π₂ (π₂ s))) Γ) + fvOccF LAct (neg LAct (π₁ (π₂ s))) := fvOccS_insert_le _ _
+        _ ≤ (fvOccS LAct Γ + fvOccF LAct (neg LAct (π₂ (π₂ s)))) + fvOccF LAct (neg LAct (π₁ (π₂ s))) :=
+            add_le_add (fvOccS_insert_le _ _) le_rfl
+        _ ≤ fvOccS LAct Γ + (formulaLen LAct (π₁ (π₂ s)) + formulaLen LAct (π₂ (π₂ s))) := by
+            rw [fvOccF_neg hp.isUFormula, fvOccF_neg hq.isUFormula, add_assoc, add_comm (formulaLen LAct (π₁ (π₂ s)))]
+            exact add_le_add le_rfl (add_le_add (fvOccF_le_formulaLen hq.isUFormula) (fvOccF_le_formulaLen hp.isUFormula))
+        _ ≤ fvOccS LAct Γ + growK B E Q := add_le_add le_rfl (le_trans hpq hQ1)
+    · calc 2 * setLen LAct Γ + 3 * formulaLen LAct (π₁ (π₂ s)) + 3 * formulaLen LAct (π₂ (π₂ s)) + 4
+          = (3 * (formulaLen LAct (π₁ (π₂ s)) + formulaLen LAct (π₂ (π₂ s))) + 4) + 2 * setLen LAct Γ := by ring
+        _ ≤ (3 * Q + 4) + 2 * setLen LAct Γ := by gcongr
+        _ ≤ costK N E B M Q D + (3 * (M : V) + 11) * (setLen LAct Γ + fvOccS LAct Γ) := by
+            refine add_le_add ?_ ?_
+            · unfold costK
+              calc 3 * Q + 4 ≤ 7 * Q + 42 := by gcongr <;> norm_num
+                _ ≤ stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42 := by
+                    rw [show stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42
+                      = (7 * Q + 42) + (stepKM N E B M + 27 * (Q * E) + 2 * E + D) by ring]
+                    exact le_self_add
+            · exact mul_le_mul (by norm_num) le_self_add zero_le zero_le
+  · -- tag 6
+    obtain ⟨hs, hu⟩ := stepOK_tag6_data hok h6
+    have hF : IsFormula LAct (goalFact (sGoalS s) (sGoalU s)) := isFormula_goalFact hs hu
+    rw [ctxAfter_tag6 h6, stepCost_tag6 h6]
+    refine ⟨⟨?_, ?_⟩, ?_⟩
+    · calc setLen LAct (insert (neg LAct (goalFact (sGoalS s) (sGoalU s))) Γ)
+          ≤ setLen LAct Γ + formulaLen LAct (neg LAct (goalFact (sGoalS s) (sGoalU s))) := setLen_insert_le _ _
+        _ ≤ setLen LAct Γ + Q := by rw [formulaLen_neg hF.isUFormula]; exact add_le_add le_rfl hg
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + growK B E Q := by
+            rw [add_assoc]; exact add_le_add le_rfl (le_trans hQ1 le_add_self)
+    · calc fvOccS LAct (insert (neg LAct (goalFact (sGoalS s) (sGoalU s))) Γ)
+          ≤ fvOccS LAct Γ + fvOccF LAct (neg LAct (goalFact (sGoalS s) (sGoalU s))) := fvOccS_insert_le _ _
+        _ ≤ fvOccS LAct Γ + Q := by
+            rw [fvOccF_neg hF.isUFormula]
+            exact add_le_add le_rfl (le_trans (fvOccF_le_formulaLen hF.isUFormula) hg)
+        _ ≤ fvOccS LAct Γ + growK B E Q := add_le_add le_rfl hQ1
+    · unfold goalCost
+      calc 11 * setLen LAct Γ + 27 * (formulaLen LAct (goalFact (sGoalS s) (sGoalU s)) * E) + 2 * E + 42
+          ≤ 11 * setLen LAct Γ + 27 * (Q * E) + 2 * E + 42 := by gcongr
+        _ = (27 * (Q * E) + 2 * E + 42) + 11 * setLen LAct Γ := by ring
+        _ ≤ costK N E B M Q D + (3 * (M : V) + 11) * (setLen LAct Γ + fvOccS LAct Γ) := by
+            refine add_le_add ?_ ?_
+            · unfold costK
+              rw [show stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42
+                = (27 * (Q * E) + 2 * E + 42) + (stepKM N E B M + 7 * Q + D) by ring]
+              exact le_self_add
+            · exact mul_le_mul le_add_self le_self_add zero_le zero_le
+  · -- tag 7
+    have hAF := stepOK_tag7_data hok h7
+    rw [ctxAfter_tag7 h7, stepCost_tag7 h7]
+    refine ⟨⟨?_, ?_⟩, ?_⟩
+    · calc setLen LAct (insert (neg LAct (sLemA s)) Γ)
+          ≤ setLen LAct Γ + formulaLen LAct (neg LAct (sLemA s)) := setLen_insert_le _ _
+        _ ≤ setLen LAct Γ + Q := by rw [formulaLen_neg hAF.isUFormula]; exact add_le_add le_rfl hA
+        _ ≤ setLen LAct Γ + fvOccS LAct Γ + growK B E Q := by
+            rw [add_assoc]; exact add_le_add le_rfl (le_trans hQ1 le_add_self)
+    · calc fvOccS LAct (insert (neg LAct (sLemA s)) Γ)
+          ≤ fvOccS LAct Γ + fvOccF LAct (neg LAct (sLemA s)) := fvOccS_insert_le _ _
+        _ ≤ fvOccS LAct Γ + Q := by
+            rw [fvOccF_neg hAF.isUFormula]; exact add_le_add le_rfl (le_trans (fvOccF_le_formulaLen hAF.isUFormula) hA)
+        _ ≤ fvOccS LAct Γ + growK B E Q := add_le_add le_rfl hQ1
+    · calc dlen TAct (sLemD s) + 2 * setLen LAct Γ + 2 * formulaLen LAct (sLemA s) + 2
+          ≤ D + 2 * setLen LAct Γ + 2 * Q + 2 := by gcongr
+        _ = (D + 2 * Q + 2) + 2 * setLen LAct Γ := by ring
+        _ ≤ costK N E B M Q D + (3 * (M : V) + 11) * (setLen LAct Γ + fvOccS LAct Γ) := by
+            refine add_le_add ?_ ?_
+            · unfold costK
+              calc D + 2 * Q + 2 ≤ D + 7 * Q + 42 := by gcongr <;> norm_num
+                _ ≤ stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42 := by
+                    rw [show stepKM N E B M + 27 * (Q * E) + 2 * E + 7 * Q + D + 42
+                      = (D + 7 * Q + 42) + (stepKM N E B M + 27 * (Q * E) + 2 * E) by ring]
+                    exact le_self_add
+            · exact mul_le_mul (by norm_num) le_self_add zero_le zero_le
+
+/-! ### 5.4 The list: additive context growth and the cost sum -/
+
+/-- The uniform context bound of a disciplined list of `L` steps (growth constant `G`). -/
+noncomputable def ctxBoundG (G Γ L : V) : V := setLen LAct Γ + L * fvOccS LAct Γ + (L * L + L) * G
+
+theorem ctxVec_len_le_sizeOK (M : ℕ) {tbl N E B Q D Γ S : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B)
+    (hok : ListOK tbl E (M : V) Γ S) (hsz : SizeOK Q D S) :
+    ∀ i ≤ len S, fvOccS LAct (ctxVec Γ S).[i] ≤ fvOccS LAct Γ + i * growK B E Q ∧
+      setLen LAct (ctxVec Γ S).[i] ≤ setLen LAct Γ + i * fvOccS LAct Γ + (i * i + i) * growK B E Q := by
+  intro i
+  induction i using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => intro _; simp
+  | succ i ih =>
+    intro hi
+    have hi' : i < len S := lt_of_lt_of_le (lt_add_one i) hi
+    obtain ⟨hO, hG⟩ := ih (le_of_lt hi')
+    obtain ⟨⟨hG', hO'⟩, _⟩ := step_grow_cost M hE htbl hBt (hok i hi') (hsz i hi')
+    rw [nth_ctxVec_succ Γ S hi']
+    constructor
+    · calc fvOccS LAct (ctxAfter (ctxVec Γ S).[i] S.[i])
+          ≤ fvOccS LAct (ctxVec Γ S).[i] + growK B E Q := hO'
+        _ ≤ (fvOccS LAct Γ + i * growK B E Q) + growK B E Q := add_le_add hO le_rfl
+        _ = fvOccS LAct Γ + (i + 1) * growK B E Q := by ring
+    · calc setLen LAct (ctxAfter (ctxVec Γ S).[i] S.[i])
+          ≤ setLen LAct (ctxVec Γ S).[i] + fvOccS LAct (ctxVec Γ S).[i] + growK B E Q := hG'
+        _ ≤ (setLen LAct Γ + i * fvOccS LAct Γ + (i * i + i) * growK B E Q)
+              + (fvOccS LAct Γ + i * growK B E Q) + growK B E Q := add_le_add (add_le_add hG hO) le_rfl
+        _ = setLen LAct Γ + (i + 1) * fvOccS LAct Γ + ((i + 1) * (i + 1)) * growK B E Q := by ring
+        _ ≤ setLen LAct Γ + (i + 1) * fvOccS LAct Γ + ((i + 1) * (i + 1) + (i + 1)) * growK B E Q := by
+            rw [add_mul ((i + 1) * (i + 1))]; exact add_le_add le_rfl le_self_add
+
+/-- **The cost of a disciplined list**: `len S` times the affine per-step bound at the uniform context bound. -/
+theorem costSum_le_of_sizeOK (M : ℕ) {tbl N E B Q D Γ S : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B)
+    (hok : ListOK tbl E (M : V) Γ S) (hsz : SizeOK Q D S) :
+    costSum N E Γ S ≤ len S * (costK N E B M Q D +
+      (3 * (M : V) + 11) * (ctxBoundG (growK B E Q) Γ (len S) + (fvOccS LAct Γ + len S * growK B E Q))) := by
+  have hbound := ctxVec_len_le_sizeOK M hE htbl hBt hok hsz
+  set K := costK N E B M Q D +
+    (3 * (M : V) + 11) * (ctxBoundG (growK B E Q) Γ (len S) + (fvOccS LAct Γ + len S * growK B E Q)) with hK
+  have hctx : ∀ i ≤ len S, setLen LAct (ctxVec Γ S).[i] + fvOccS LAct (ctxVec Γ S).[i] ≤
+      ctxBoundG (growK B E Q) Γ (len S) + (fvOccS LAct Γ + len S * growK B E Q) := by
+    intro i hi
+    obtain ⟨hO, hG⟩ := hbound i hi
+    refine add_le_add (le_trans hG ?_) (le_trans hO ?_)
+    · unfold ctxBoundG; gcongr
+    · gcongr
+  have key : ∀ j ≤ len S, costAux N E (ctxVec Γ S) S j ≤ j * K := by
+    intro j
+    induction j using ISigma1.pi1_succ_induction with
+    | hP => definability
+    | zero => intro _; simp
+    | succ j ihj =>
+      intro hj
+      have hj' : j ≤ len S := le_trans le_self_add hj
+      obtain ⟨i, hi⟩ : ∃ i, len S = i + (j + 1) := ⟨len S - (j + 1), (tsub_add_cancel_of_le hj).symm⟩
+      have hi' : i < len S := by rw [hi]; exact lt_add_of_pos_right _ (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+      have hC : nthFromEnd (ctxVec Γ S) (j + 1) = (ctxVec Γ S).[i] :=
+        nthFromEnd_eq (a := i) (by rw [len_ctxVec, hi, add_assoc])
+      have hS : nthFromEnd S j = S.[i] := nthFromEnd_eq (a := i) hi
+      rw [costAux_succ, hC, hS]
+      obtain ⟨_, hc⟩ := step_grow_cost M hE htbl hBt (hok i hi') (hsz i hi')
+      calc costAux N E (ctxVec Γ S) S j + stepCost N E (ctxVec Γ S).[i] S.[i]
+          ≤ j * K + (costK N E B M Q D + (3 * (M : V) + 11) * (setLen LAct (ctxVec Γ S).[i] + fvOccS LAct (ctxVec Γ S).[i])) :=
+            add_le_add (ihj hj') hc
+        _ ≤ j * K + K := by
+            rw [hK]; exact add_le_add le_rfl (add_le_add le_rfl (mul_le_mul_of_nonneg_left (hctx i (le_of_lt hi')) zero_le))
+        _ = (j + 1) * K := by ring
+  exact key (len S) le_rfl
+
+/-! ### 5.5 The size discipline of each producer -/
+
+lemma ftag_eqRefl {W : V} (hWp : W = frag1Pieces) (ev : V) : sTag (mkStep W (41 : V) ev) = 0 := by
+  subst hWp
+  have e : mkStep frag1Pieces (41 : V) ev = mkStep layoutPieces (41 : V) ev := by
+    have := mkStep_frag1Pieces_lt 41 (by decide) ev; simpa using this
+  rw [e]; exact ltag_eqRefl rfl ev
+
+lemma stepSizeOK_horn0 {Q D W i ev : V} (h : sTag (mkStep W i ev) = 0) : StepSizeOK Q D (mkStep W i ev) := Or.inl h
+lemma stepSizeOK_horn2 {Q D W i ev : V} (h : sTag (mkStep W i ev) = 2) : StepSizeOK Q D (mkStep W i ev) :=
+  Or.inr (Or.inr (Or.inl h))
+lemma stepSizeOK_sLemma {Q D A dA : V} (hA : formulaLen LAct A ≤ Q) (hd : dlen TAct dA ≤ D) :
+    StepSizeOK Q D (sLemma A dA) :=
+  Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨by simp, by simpa using hA, by simpa using hd⟩)))))
+lemma stepSizeOK_sGoal {Q D e n s u : V} (h : formulaLen LAct (goalFact s u) ≤ Q) : StepSizeOK Q D (sGoal e n s u) :=
+  Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨by simp, by simpa using h⟩)))))
+lemma stepSizeOK_sElimExs {Q D P : V} (h : formulaLen LAct P ≤ Q) : StepSizeOK Q D (sElimExs P) :=
+  Or.inr (Or.inr (Or.inr (Or.inl ⟨by simp, by simpa [sElimExs] using h⟩)))
+lemma stepSizeOK_sSplit {Q D p q : V} (h : formulaLen LAct p + formulaLen LAct q ≤ Q) : StepSizeOK Q D (sSplit p q) :=
+  Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨by simp, by simpa [sSplit] using h⟩))))
+
+/-- **`goalElim` is disciplined at `Q = 4·|goalFact s u|`** (through its two `free` equations). -/
+theorem sizeOK_goalElim {D s u : V} (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) :
+    SizeOK (4 * formulaLen LAct (goalFact s u)) D (goalElim s u) := by
+  set G := formulaLen LAct (goalFact s u) with hGdef
+  have hs'0 : IsSemiterm LAct 0 (termShift LAct s) := hs.termShift
+  have hu'0 : IsSemiterm LAct 0 (termShift LAct u) := hu.termShift
+  have hs''0 : IsSemiterm LAct 0 (termShift LAct (termShift LAct s)) := hs'0.termShift
+  have hu''0 : IsSemiterm LAct 0 (termShift LAct (termShift LAct u)) := hu'0.termShift
+  have hf1 : IsSemiterm LAct 0 (^&1 : V) := by simp
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hB2 : IsSemiformula LAct ((2 : ℕ) : V) (goalBody s u) := isSemiformula_goalBody hs hu
+  have hP1 : IsSemiformula LAct 1 (^∃ goalBody s u) := by
+    have := isSemiformula_exs_cast (m := 1) (p := goalBody s u) hB2
+    simpa using this
+  have hP2 : IsSemiformula LAct 1 (goalBody1 (termShift LAct s) (termShift LAct u)) := by
+    simpa using isSemiformula_goalBody1 hs'0 hu'0
+  -- |∃ goalBody| + 1 = |goalFact|
+  have e1 : formulaLen LAct (^∃ goalBody s u) + 1 = G := by
+    rw [hGdef, show goalFact s u = ^∃ (^∃ goalBody s u) from rfl, formulaLen_exs hP1.isUFormula]
+  have h1 : formulaLen LAct (^∃ goalBody s u) ≤ G := by rw [← e1]; exact le_self_add
+  -- |goalBody1| + 1 = |free (∃ goalBody)| ≤ 2|∃ goalBody|
+  have e2 : formulaLen LAct (goalBody1 (termShift LAct s) (termShift LAct u)) + 1 =
+      formulaLen LAct (free LAct (^∃ goalBody s u)) := by
+    rw [free_exs_goalBody hs hu, formulaLen_exs hP2.isUFormula]
+  have h2 : formulaLen LAct (goalBody1 (termShift LAct s) (termShift LAct u)) ≤ 2 * G := by
+    have := formulaLen_free_le hP1
+    rw [← e2] at this
+    exact le_trans le_self_add (le_trans this (mul_le_mul_of_nonneg_left h1 zero_le))
+  -- |goalInst| = |free goalBody1| ≤ 2|goalBody1|
+  have hA₁ : IsFormula LAct (derFact (^&1 : V)) := isFormula_derFact hf1
+  have hA₂ : IsFormula LAct (fstIdxFact (termShift LAct (termShift LAct s)) (^&1)) := isFormula_fstIdxFact hs''0 hf1
+  have hA₃ : IsFormula LAct (dlenFact (^&1 : V) (^&0)) := isFormula_dlenFact hf1 hf0
+  have hA₄ : IsFormula LAct (leFact (^&0) (termShift LAct (termShift LAct u))) := isFormula_leFact hf0 hu''0
+  have hR₂ : IsFormula LAct (dlenFact (^&1 : V) (^&0) ^⋏ leFact (^&0) (termShift LAct (termShift LAct u))) := by simp [hA₃, hA₄]
+  have hR₁ : IsFormula LAct (fstIdxFact (termShift LAct (termShift LAct s)) (^&1) ^⋏
+      (dlenFact (^&1 : V) (^&0) ^⋏ leFact (^&0) (termShift LAct (termShift LAct u)))) := by simp [hA₂, hR₂]
+  have e3 : formulaLen LAct (goalInst (^&1) (^&0) (termShift LAct (termShift LAct s)) (termShift LAct (termShift LAct u))) =
+      formulaLen LAct (free LAct (goalBody1 (termShift LAct s) (termShift LAct u))) := by
+    rw [free_goalBody1 hs'0 hu'0]
+  have h3 : formulaLen LAct (goalInst (^&1) (^&0) (termShift LAct (termShift LAct s)) (termShift LAct (termShift LAct u))) ≤ 4 * G := by
+    rw [e3]
+    exact le_trans (formulaLen_free_le hP2) (le_trans (mul_le_mul_of_nonneg_left h2 zero_le) (le_of_eq (by ring)))
+  have hInst : goalInst (^&1) (^&0) (termShift LAct (termShift LAct s)) (termShift LAct (termShift LAct u)) =
+      derFact (^&1) ^⋏ (fstIdxFact (termShift LAct (termShift LAct s)) (^&1) ^⋏
+        (dlenFact (^&1) (^&0) ^⋏ leFact (^&0) (termShift LAct (termShift LAct u)))) := rfl
+  rw [hInst, formulaLen_and hA₁.isUFormula hR₁.isUFormula] at h3
+  have h4 : formulaLen LAct (derFact (^&1 : V)) + formulaLen LAct (fstIdxFact (termShift LAct (termShift LAct s)) (^&1) ^⋏
+      (dlenFact (^&1 : V) (^&0) ^⋏ leFact (^&0) (termShift LAct (termShift LAct u)))) ≤ 4 * G := le_trans le_self_add h3
+  have h5 : formulaLen LAct (fstIdxFact (termShift LAct (termShift LAct s)) (^&1)) +
+      formulaLen LAct (dlenFact (^&1 : V) (^&0) ^⋏ leFact (^&0) (termShift LAct (termShift LAct u))) ≤ 4 * G := by
+    have := le_trans le_add_self h4
+    rw [formulaLen_and hA₂.isUFormula hR₂.isUFormula] at this
+    exact le_trans le_self_add this
+  have h6 : formulaLen LAct (dlenFact (^&1 : V) (^&0)) + formulaLen LAct (leFact (^&0) (termShift LAct (termShift LAct u))) ≤ 4 * G := by
+    have := le_trans le_add_self h5
+    rw [formulaLen_and hA₃.isUFormula hA₄.isUFormula] at this
+    exact le_trans le_self_add this
+  unfold goalElim
+  refine sizeOK_cons (stepSizeOK_sElimExs (le_trans h1 (by rw [show 4 * G = G + 3 * G by ring]; exact le_self_add)))
+    (sizeOK_cons (stepSizeOK_sElimExs (le_trans h2 (by rw [show 4 * G = 2 * G + 2 * G by ring]; exact le_self_add)))
+    (sizeOK_cons (stepSizeOK_sSplit h4) (sizeOK_cons (stepSizeOK_sSplit h5) (sizeOK_single (stepSizeOK_sSplit h6)))))
+
+theorem costSum_goalElim_le (M : ℕ) {tbl N E B Γ s u : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hΓ : IsFormulaSet LAct Γ)
+    (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) (hg : neg LAct (goalFact s u) ∈ Γ) :
+    costSum N E Γ (goalElim s u) ≤ 5 * (costK N E B M (4 * formulaLen LAct (goalFact s u)) 0 +
+      (3 * (M : V) + 11) * (ctxBoundG (growK B E (4 * formulaLen LAct (goalFact s u))) Γ 5 +
+        (fvOccS LAct Γ + 5 * growK B E (4 * formulaLen LAct (goalFact s u))))) := by
+  have := costSum_le_of_sizeOK M hE htbl hBt (goalElim_ok M htbl hΓ hs hu hg).1 (sizeOK_goalElim (D := 0) hs hu)
+  rwa [len_goalElim] at this
+
+/-- The size discipline of the tails: `Q` dominates the closed lemma fact, `D` its derivation. -/
+theorem sizeOK_dlenLeafSteps {Q D W tblN l L n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (leafFact L n) ≤ Q) (hD : dlen TAct (leafCode tblN L n) ≤ D) :
+    SizeOK Q D (dlenLeafSteps W tblN l L n) := by
+  unfold dlenLeafSteps
+  exact sizeOK_cons (stepSizeOK_horn0 (ftag_eqRefl hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_dlenLeafLe hWp _))
+    (sizeOK_cons (stepSizeOK_sLemma hA hD) (sizeOK_single (stepSizeOK_horn0 (ftag_leTrans hWp _)))))
+theorem sizeOK_dlenUnarySteps {Q D W tblN l n₁ L m₁ n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (bin2Fact L m₁ n) ≤ Q) (hD : dlen TAct (bin2Code tblN L m₁ n) ≤ D) :
+    SizeOK Q D (dlenUnarySteps W tblN l n₁ L m₁ n) := by
+  unfold dlenUnarySteps
+  exact sizeOK_cons (stepSizeOK_horn0 (ftag_eqRefl hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_dlenUnaryLe hWp _))
+    (sizeOK_cons (stepSizeOK_sLemma hA hD) (sizeOK_single (stepSizeOK_horn0 (ftag_leTrans hWp _)))))
+theorem sizeOK_dlenBinarySteps {Q D W tblN l n₁ n₂ L m₁ m₂ n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (bin3Fact L m₁ m₂ n) ≤ Q) (hD : dlen TAct (bin3Code tblN L m₁ m₂ n) ≤ D) :
+    SizeOK Q D (dlenBinarySteps W tblN l n₁ n₂ L m₁ m₂ n) := by
+  unfold dlenBinarySteps
+  exact sizeOK_cons (stepSizeOK_horn0 (ftag_eqRefl hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_dlenBinaryLe hWp _))
+    (sizeOK_cons (stepSizeOK_sLemma hA hD) (sizeOK_single (stepSizeOK_horn0 (ftag_leTrans hWp _)))))
+
+theorem sizeOK_goalTailLeaf {Q D W tblN l L n s : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (leafFact L n) ≤ Q) (hD : dlen TAct (leafCode tblN L n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&s) (bnum n)) ≤ Q) : SizeOK Q D (goalTailLeaf W tblN l L n s) :=
+  sizeOK_appendV (sizeOK_dlenLeafSteps hWp hA hD) (sizeOK_single (stepSizeOK_sGoal hg))
+theorem sizeOK_goalTailUnary {Q D W tblN l n₁ L m₁ n s : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (bin2Fact L m₁ n) ≤ Q) (hD : dlen TAct (bin2Code tblN L m₁ n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&s) (bnum n)) ≤ Q) : SizeOK Q D (goalTailUnary W tblN l n₁ L m₁ n s) :=
+  sizeOK_appendV (sizeOK_dlenUnarySteps hWp hA hD) (sizeOK_single (stepSizeOK_sGoal hg))
+theorem sizeOK_goalTailBinary {Q D W tblN l n₁ n₂ L m₁ m₂ n s : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (bin3Fact L m₁ m₂ n) ≤ Q) (hD : dlen TAct (bin3Code tblN L m₁ m₂ n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&s) (bnum n)) ≤ Q) : SizeOK Q D (goalTailBinary W tblN l n₁ n₂ L m₁ m₂ n s) :=
+  sizeOK_appendV (sizeOK_dlenBinarySteps hWp hA hD) (sizeOK_single (stepSizeOK_sGoal hg))
+
+/-- The closed lemma facts are `|Ple|·E`-small once `E` bounds the numeral terms. -/
+lemma formulaLen_leafFact_le {B E L n : V} (hE : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L ≤ n) : formulaLen LAct (leafFact L n) ≤ B * E :=
+  le_trans (formulaLen_leFact_le hE (isSemiterm_qqAdd_LAct (isSemiterm_bnum_LAct 0 L) (isSemiterm_qqOne_LAct 0))
+    (isSemiterm_bnum_LAct 0 n) (le_trans (termLen_leafT_le hLn) hn) (termLen_bnum_le_bkE le_rfl hn))
+    (mul_le_mul_of_nonneg_right hPle zero_le)
+lemma formulaLen_bin2Fact_le {B E L m n : V} (hE : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hn : 18 * ‖n‖ + 7 ≤ E) (hL : L ≤ n) (hm : m ≤ n) : formulaLen LAct (bin2Fact L m n) ≤ B * E :=
+  le_trans (formulaLen_leFact_le hE
+    (isSemiterm_qqAdd_LAct (isSemiterm_qqAdd_LAct (isSemiterm_bnum_LAct 0 L) (isSemiterm_bnum_LAct 0 m)) (isSemiterm_qqOne_LAct 0))
+    (isSemiterm_bnum_LAct 0 n) (le_trans (termLen_bin2T_le hL hm) hn) (termLen_bnum_le_bkE le_rfl hn))
+    (mul_le_mul_of_nonneg_right hPle zero_le)
+lemma formulaLen_bin3Fact_le {B E L m₁ m₂ n : V} (hE : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hn : 18 * ‖n‖ + 7 ≤ E) (hL : L ≤ n) (hm₁ : m₁ ≤ n) (hm₂ : m₂ ≤ n) : formulaLen LAct (bin3Fact L m₁ m₂ n) ≤ B * E :=
+  le_trans (formulaLen_leFact_le hE
+    (isSemiterm_qqAdd_LAct (isSemiterm_qqAdd_LAct (isSemiterm_qqAdd_LAct (isSemiterm_bnum_LAct 0 L) (isSemiterm_bnum_LAct 0 m₁))
+      (isSemiterm_bnum_LAct 0 m₂)) (isSemiterm_qqOne_LAct 0))
+    (isSemiterm_bnum_LAct 0 n) (le_trans (termLen_bin3T_le hL hm₁ hm₂) hn) (termLen_bnum_le_bkE le_rfl hn))
+    (mul_le_mul_of_nonneg_right hPle zero_le)
+
+/-! ### 5.6 The fragments' costs -/
+
+/-- The size discipline of `fragAxL`: `Q` dominates `B·E` (the closed leaf fact) and the node's goal fact. -/
+theorem sizeOK_fragAxL {Q D W tblN is il ip inp L n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (leafFact L n) ≤ Q) (hD : dlen TAct (leafCode tblN L n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&(is + 1)) (bnum n)) ≤ Q) : SizeOK Q D (fragAxL W tblN is il ip inp L n) := by
+  unfold fragAxL fragAxLHead
+  exact sizeOK_appendV (sizeOK_cons (stepSizeOK_horn2 (ftag_totAxL hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_fstIdxAxL hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ftag_introAxL hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenAxL hWp _))))))
+    (sizeOK_goalTailLeaf hWp hA hD hg)
+
+/-- **The cost of `fragAxL`** (§5's shape): nine steps, each `≤ costK + (3·8+11)·ctxBound`, with `Q :=
+B·E + |goalFact &(is+1) (bnum n)|` (the closed leaf fact and the goal fact) and `D := dlen (leafCode tblN L n)`. -/
+theorem costSum_fragAxL_le {tbl N E B Γ W tblN N' B' is il ip inp L n : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
+    (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B') (hΓ : IsFormulaSet LAct Γ)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (his : is + 2 ≤ E) (hil : il + 4 ≤ E) (hip : ip + 2 ≤ E) (hinp : inp + 2 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E)
+    (hLn : L + 1 ≤ n)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hmp : neg LAct (memFact (^&ip) (^&is)) ∈ Γ)
+    (hneg : neg LAct (negFact (^&inp) (^&ip)) ∈ Γ) (hmnp : neg LAct (memFact (^&inp) (^&is)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    costSum N E Γ (fragAxL W tblN is il ip inp L n) ≤
+      9 * (costK N E B 8 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (leafCode tblN L n)) +
+        (3 * ((8 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
+          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
+  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
+  obtain ⟨hok, _, _, hlen, _⟩ := fragAxL_ok htbl hF hWp htblN hΓ his hil hip hinp hn hLn hfs hmp hneg hmnp hsl hle
+  have hsz := sizeOK_fragAxL (W := W) (tblN := tblN) (is := is) (il := il) (ip := ip) (inp := inp) hWp
+    (le_trans (formulaLen_leafFact_le hE hPle hn (le_trans le_self_add hLn)) le_self_add)
+    (le_refl (dlen TAct (leafCode tblN L n))) le_add_self
+  have := costSum_le_of_sizeOK 8 hE htbl hBt hok hsz
+  rwa [hlen] at this
+
+theorem sizeOK_fragVerum {Q D W tblN is il iv L n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (leafFact L n) ≤ Q) (hD : dlen TAct (leafCode tblN L n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&(is + 1)) (bnum n)) ≤ Q) : SizeOK Q D (fragVerum W tblN is il iv L n) := by
+  unfold fragVerum fragVerumHead
+  exact sizeOK_appendV (sizeOK_cons (stepSizeOK_horn2 (ftag_totVerumIntro hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_fstIdxVerum hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ftag_introVerum hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenVerum hWp _))))))
+    (sizeOK_goalTailLeaf hWp hA hD hg)
+
+theorem costSum_fragVerum_le {tbl N E B Γ W tblN N' B' is il iv L n : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
+    (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B') (hΓ : IsFormulaSet LAct Γ)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (his : is + 2 ≤ E) (hil : il + 4 ≤ E) (hiv : iv + 2 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + 1 ≤ n)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hv : neg LAct (verumFact (^&iv)) ∈ Γ)
+    (hmv : neg LAct (memFact (^&iv) (^&is)) ∈ Γ) (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ)
+    (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    costSum N E Γ (fragVerum W tblN is il iv L n) ≤
+      9 * (costK N E B 8 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (leafCode tblN L n)) +
+        (3 * ((8 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
+          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
+  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
+  obtain ⟨hok, _, _, hlen, _⟩ := fragVerum_ok htbl hF hWp htblN hΓ his hil hiv hn hLn hfs hv hmv hsl hle
+  have hsz := sizeOK_fragVerum (W := W) (tblN := tblN) (is := is) (il := il) (iv := iv) hWp
+    (le_trans (formulaLen_leafFact_le hE hPle hn (le_trans le_self_add hLn)) le_self_add)
+    (le_refl (dlen TAct (leafCode tblN L n))) le_add_self
+  have := costSum_le_of_sizeOK 8 hE htbl hBt hok hsz
+  rwa [hlen] at this
+
+theorem sizeOK_nodeAnd {Q D W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (bin3Fact L m₁ m₂ n) ≤ Q) (hD : dlen TAct (bin3Code tblN L m₁ m₂ n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&(is + 1)) (bnum n)) ≤ Q) :
+    SizeOK Q D (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) := by
+  unfold nodeAnd nodeAndHead
+  exact sizeOK_appendV (sizeOK_cons (stepSizeOK_horn2 (ftag_totAndIntro hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_fstIdxAnd hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ftag_introAnd hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenAnd hWp _))))))
+    (sizeOK_goalTailBinary hWp hA hD hg)
+
+theorem costSum_nodeAnd_le {tbl N E B Γ W tblN N' B' is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n : V}
+    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
+    (hΓ : IsFormulaSet LAct Γ)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (his : is + 2 ≤ E) (hir : ir + 2 ≤ E) (hip : ip + 2 ≤ E) (hiq : iq + 2 ≤ E)
+    (hid₁ : id₁ + 2 ≤ E) (hid₂ : id₂ + 2 ≤ E) (hicp : icp + 2 ≤ E) (hicq : icq + 2 ≤ E)
+    (hT : il + in₁ + in₂ + 10 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + m₂ + 1 ≤ n)
+    (hand : neg LAct (andFact (^&ir) (^&ip) (^&iq)) ∈ Γ) (hmr : neg LAct (memFact (^&ir) (^&is)) ∈ Γ)
+    (hf₁ : neg LAct (fstIdxFact (^&icp) (^&id₁)) ∈ Γ) (hi₁ : neg LAct (insFact (^&icp) (^&ip) (^&is)) ∈ Γ)
+    (hd₁ : neg LAct (derFact (^&id₁ : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id₁ : V) (^&in₁)) ∈ Γ)
+    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
+    (hf₂ : neg LAct (fstIdxFact (^&icq) (^&id₂)) ∈ Γ) (hi₂ : neg LAct (insFact (^&icq) (^&iq) (^&is)) ∈ Γ)
+    (hd₂ : neg LAct (derFact (^&id₂ : V)) ∈ Γ) (hn₂ : neg LAct (dlenFact (^&id₂ : V) (^&in₂)) ∈ Γ)
+    (hle₂ : neg LAct (leFact (^&in₂) (bnum m₂)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    costSum N E Γ (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) ≤
+      9 * (costK N E B 9 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (bin3Code tblN L m₁ m₂ n)) +
+        (3 * ((9 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
+          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
+  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
+  have hLn' : L + m₁ + m₂ ≤ n := le_trans le_self_add hLn
+  obtain ⟨hok, _, _, hlen, _⟩ := nodeAnd_ok htbl hF hWp htblN hΓ his hir hip hiq hid₁ hid₂ hicp hicq hT hn hLn
+    hand hmr hf₁ hi₁ hd₁ hn₁ hle₁ hf₂ hi₂ hd₂ hn₂ hle₂ hsl hle
+  have hsz := sizeOK_nodeAnd (W := W) (tblN := tblN) (is := is) (il := il) (ir := ir) (ip := ip) (iq := iq)
+    (id₁ := id₁) (id₂ := id₂) (icp := icp) (icq := icq) (in₁ := in₁) (in₂ := in₂) hWp
+    (le_trans (formulaLen_bin3Fact_le hE hPle hn (le_trans (le_trans le_self_add le_self_add) hLn')
+      (le_trans (le_trans le_add_self le_self_add) hLn') (le_trans le_add_self hLn')) le_self_add)
+    (le_refl (dlen TAct (bin3Code tblN L m₁ m₂ n))) le_add_self
+  have := costSum_le_of_sizeOK 9 hE htbl hBt hok hsz
+  rwa [hlen] at this
+
+theorem sizeOK_nodeOr {Q D W tblN is il ir ip iq id icq ic in₁ L m₁ n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (bin2Fact L m₁ n) ≤ Q) (hD : dlen TAct (bin2Code tblN L m₁ n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&(is + 1)) (bnum n)) ≤ Q) :
+    SizeOK Q D (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) := by
+  unfold nodeOr nodeOrHead
+  exact sizeOK_appendV (sizeOK_cons (stepSizeOK_horn2 (ftag_totOrIntro hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_fstIdxOr hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ftag_introOr hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenOr hWp _))))))
+    (sizeOK_goalTailUnary hWp hA hD hg)
+
+theorem costSum_nodeOr_le {tbl N E B Γ W tblN N' B' is il ir ip iq id icq ic in₁ L m₁ n : V}
+    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
+    (hΓ : IsFormulaSet LAct Γ)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (his : is + 2 ≤ E) (hir : ir + 2 ≤ E) (hip : ip + 2 ≤ E) (hiq : iq + 2 ≤ E)
+    (hid : id + 2 ≤ E) (hicq : icq + 2 ≤ E) (hic : ic + 2 ≤ E)
+    (hT : il + in₁ + 7 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + 1 ≤ n)
+    (hor : neg LAct (orFact (^&ir) (^&ip) (^&iq)) ∈ Γ) (hmr : neg LAct (memFact (^&ir) (^&is)) ∈ Γ)
+    (hf : neg LAct (fstIdxFact (^&ic) (^&id)) ∈ Γ) (hiq' : neg LAct (insFact (^&icq) (^&iq) (^&is)) ∈ Γ)
+    (hip' : neg LAct (insFact (^&ic) (^&ip) (^&icq)) ∈ Γ)
+    (hd : neg LAct (derFact (^&id : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id : V) (^&in₁)) ∈ Γ)
+    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    costSum N E Γ (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) ≤
+      9 * (costK N E B 8 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (bin2Code tblN L m₁ n)) +
+        (3 * ((8 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
+          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
+  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
+  have hLn' : L + m₁ ≤ n := le_trans le_self_add hLn
+  obtain ⟨hok, _, _, hlen, _⟩ := nodeOr_ok htbl hF hWp htblN hΓ his hir hip hiq hid hicq hic hT hn hLn
+    hor hmr hf hiq' hip' hd hn₁ hle₁ hsl hle
+  have hsz := sizeOK_nodeOr (W := W) (tblN := tblN) (is := is) (il := il) (ir := ir) (ip := ip) (iq := iq)
+    (id := id) (icq := icq) (ic := ic) (in₁ := in₁) hWp
+    (le_trans (formulaLen_bin2Fact_le hE hPle hn (le_trans le_self_add hLn') (le_trans le_add_self hLn')) le_self_add)
+    (le_refl (dlen TAct (bin2Code tblN L m₁ n))) le_add_self
+  have := costSum_le_of_sizeOK 8 hE htbl hBt hok hsz
+  rwa [hlen] at this
+
+theorem sizeOK_nodeWk {Q D W tblN is il ic id in₁ L m₁ n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (bin2Fact L m₁ n) ≤ Q) (hD : dlen TAct (bin2Code tblN L m₁ n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&(is + 1)) (bnum n)) ≤ Q) :
+    SizeOK Q D (nodeWk W tblN is il ic id in₁ L m₁ n) := by
+  unfold nodeWk nodeWkHead
+  exact sizeOK_appendV (sizeOK_cons (stepSizeOK_horn2 (ftag_totWkRule hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_fstIdxWk hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ftag_introWk hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenWk hWp _))))))
+    (sizeOK_goalTailUnary hWp hA hD hg)
+
+theorem costSum_nodeWk_le {tbl N E B Γ W tblN N' B' is il ic id in₁ L m₁ n : V}
+    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
+    (hΓ : IsFormulaSet LAct Γ)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (his : is + 2 ≤ E) (hic : ic + 2 ≤ E) (hid : id + 2 ≤ E)
+    (hT : il + in₁ + 7 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + 1 ≤ n)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hf : neg LAct (fstIdxFact (^&ic) (^&id)) ∈ Γ)
+    (hsub : neg LAct (subsetFact (^&ic) (^&is)) ∈ Γ)
+    (hd : neg LAct (derFact (^&id : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id : V) (^&in₁)) ∈ Γ)
+    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    costSum N E Γ (nodeWk W tblN is il ic id in₁ L m₁ n) ≤
+      9 * (costK N E B 8 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (bin2Code tblN L m₁ n)) +
+        (3 * ((8 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
+          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
+  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
+  have hLn' : L + m₁ ≤ n := le_trans le_self_add hLn
+  obtain ⟨hok, _, _, hlen, _⟩ := nodeWk_ok htbl hF hWp htblN hΓ his hic hid hT hn hLn hfs hf hsub hd hn₁ hle₁ hsl hle
+  have hsz := sizeOK_nodeWk (W := W) (tblN := tblN) (is := is) (il := il) (ic := ic) (id := id) (in₁ := in₁) hWp
+    (le_trans (formulaLen_bin2Fact_le hE hPle hn (le_trans le_self_add hLn') (le_trans le_add_self hLn')) le_self_add)
+    (le_refl (dlen TAct (bin2Code tblN L m₁ n))) le_add_self
+  have := costSum_le_of_sizeOK 8 hE htbl hBt hok hsz
+  rwa [hlen] at this
+
+theorem sizeOK_nodeCut {Q D W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n : V} (hWp : W = frag1Pieces)
+    (hA : formulaLen LAct (bin3Fact L m₁ m₂ n) ≤ Q) (hD : dlen TAct (bin3Code tblN L m₁ m₂ n) ≤ D)
+    (hg : formulaLen LAct (goalFact (^&(is + 1)) (bnum n)) ≤ Q) :
+    SizeOK Q D (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) := by
+  unfold nodeCut nodeCutHead
+  exact sizeOK_appendV (sizeOK_cons (stepSizeOK_horn2 (ftag_totCutRule hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_fstIdxCut hWp _))
+    (sizeOK_cons (stepSizeOK_horn0 (ftag_introCut hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenCut hWp _))))))
+    (sizeOK_goalTailBinary hWp hA hD hg)
+
+theorem costSum_nodeCut_le {tbl N E B Γ W tblN N' B' is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n : V}
+    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
+    (hΓ : IsFormulaSet LAct Γ)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (his : is + 2 ≤ E) (hip : ip + 2 ≤ E) (hinp : inp + 2 ≤ E)
+    (hid₁ : id₁ + 2 ≤ E) (hid₂ : id₂ + 2 ≤ E) (hic₁ : ic₁ + 2 ≤ E) (hic₂ : ic₂ + 2 ≤ E)
+    (hT : il + in₁ + in₂ + 10 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + m₂ + 1 ≤ n)
+    (hf₁ : neg LAct (fstIdxFact (^&ic₁) (^&id₁)) ∈ Γ) (hi₁ : neg LAct (insFact (^&ic₁) (^&ip) (^&is)) ∈ Γ)
+    (hd₁ : neg LAct (derFact (^&id₁ : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id₁ : V) (^&in₁)) ∈ Γ)
+    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
+    (hf₂ : neg LAct (fstIdxFact (^&ic₂) (^&id₂)) ∈ Γ) (hneg : neg LAct (negFact (^&inp) (^&ip)) ∈ Γ)
+    (hi₂ : neg LAct (insFact (^&ic₂) (^&inp) (^&is)) ∈ Γ)
+    (hd₂ : neg LAct (derFact (^&id₂ : V)) ∈ Γ) (hn₂ : neg LAct (dlenFact (^&id₂ : V) (^&in₂)) ∈ Γ)
+    (hle₂ : neg LAct (leFact (^&in₂) (bnum m₂)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    costSum N E Γ (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) ≤
+      9 * (costK N E B 9 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (bin3Code tblN L m₁ m₂ n)) +
+        (3 * ((9 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
+          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
+  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
+  have hLn' : L + m₁ + m₂ ≤ n := le_trans le_self_add hLn
+  obtain ⟨hok, _, _, hlen, _⟩ := nodeCut_ok htbl hF hWp htblN hΓ his hip hinp hid₁ hid₂ hic₁ hic₂ hT hn hLn
+    hf₁ hi₁ hd₁ hn₁ hle₁ hf₂ hneg hi₂ hd₂ hn₂ hle₂ hsl hle
+  have hsz := sizeOK_nodeCut (W := W) (tblN := tblN) (is := is) (il := il) (ip := ip) (inp := inp)
+    (id₁ := id₁) (id₂ := id₂) (ic₁ := ic₁) (ic₂ := ic₂) (in₁ := in₁) (in₂ := in₂) hWp
+    (le_trans (formulaLen_bin3Fact_le hE hPle hn (le_trans (le_trans le_self_add le_self_add) hLn')
+      (le_trans (le_trans le_add_self le_self_add) hLn') (le_trans le_add_self hLn')) le_self_add)
+    (le_refl (dlen TAct (bin3Code tblN L m₁ m₂ n))) le_add_self
+  have := costSum_le_of_sizeOK 9 hE htbl hBt hok hsz
+  rwa [hlen] at this
+
+end cost
+
 end ArithS

@@ -1,6 +1,7 @@
 import ArithS.Necessitation.Describe
 import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.RowInstB
+import ArithS.Necessitation.CertRows
 
 /-!
 # ArithS.Necessitation.Cert — certified re-description (`neg`/`shift`/`eq`) and length steps
@@ -1346,5 +1347,474 @@ theorem dossF_nrel {Γ n k R v i : V} (hkR : LAct.IsRel k R) (hv : IsSemitermVec
   rwa [shiftIterV_shift] at this
 
 end decompose
+
+/-! ## Part 1 — the term-level certification pass (identification `ν = 0` / shift `ν = 2`)
+
+A pass is SHIFT-FREE: a list of Horn steps (tags `0`) over two dossiers in context — the source
+object's (top `&i`) and the derived object's (top `&j`), both in walk layout — certifying at each node
+that the derived node is the image of the source node (`eqFactB &i &j` for `ν = 0`, `tshFact &j &i`
+for `ν = 2`; `tshvFact` at the vector level). The indices of the two trees run in parallel: the
+child at walk offset `o` of the source sits at `&(i + o)`, the corresponding child of the derived
+object at `&(j + o)` (the images of `neg`/`shift`/identity have the walk's shape, `descCountT_termShift`).
+-/
+
+section termPass
+
+/-- The row of a leaf certificate: `eqOfBvar/eqOfFvar` (`ν = 0`), `termShiftBvarCert/termShiftFvarCert` (else). -/
+noncomputable def tLeafRow (ν kind : V) : V :=
+  if ν = 0 then (if kind = 0 then 124 else 125) else (if kind = 0 then 118 else 119)
+
+def tLeafRowDef : 𝚺₀.Semisentence 3 := .mkSigma
+  “y ν kind. (ν = 0 → ((kind = 0 → y = 124) ∧ (kind ≠ 0 → y = 125))) ∧ (ν ≠ 0 → ((kind = 0 → y = 118) ∧ (kind ≠ 0 → y = 119)))”
+
+instance tLeafRow_defined : 𝚺₀-Function₂ (tLeafRow : V → V → V) via tLeafRowDef := .mk fun v ↦ by
+  simp [tLeafRowDef, tLeafRow, numeral_eq_natCast]
+  by_cases hν : v 1 = 0 <;> by_cases hk : v 2 = 0 <;> simp [hν, hk]
+instance tLeafRow_definable : 𝚺₀-Function₂ (tLeafRow : V → V → V) := tLeafRow_defined.to_definable
+
+/-- The leaf certificate `[row [cT z, &i, &j]]`. -/
+noncomputable def tLeafSteps (W ν kind z i j : V) : V := ?[mkStep W (tLeafRow ν kind) ?[cTV z, ^&i, ^&j]]
+
+noncomputable def tLeafStepsDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W ν kind z i j. ∃ ρ, !tLeafRowDef ρ ν kind ∧ ∃ cz, !cTVGraph cz z ∧ ∃ fi, !qqFvarDef fi i ∧ ∃ fj, !qqFvarDef fj j ∧
+    ∃ e₀, !mkVec₂Def e₀ fi fj ∧ ∃ e, !adjoinDef e cz e₀ ∧ ∃ s, !mkStepDef s W ρ e ∧ !mkVec₁Def y s”
+
+instance tLeafSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ tLeafSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) tLeafStepsDef := .mk
+  fun v ↦ by simp [tLeafStepsDef, tLeafSteps, numeral_eq_natCast, tLeafRow_defined.iff, cTV.defined.iff, mkStep_defined.iff]
+instance tLeafSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ tLeafSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
+  tLeafSteps_defined.to_definable
+
+/-- The function-node certificate after the vector pass `yv`: the closed symbol row, then
+`eqOfFunc`/`termShiftFuncCert [&i, cT k, cT f, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. -/
+noncomputable def tFuncSteps (W ν k f i j yv : V) : V :=
+  appendV yv ?[mkStep W (funcRow k f) 0,
+    mkStep W (if ν = 0 then 126 else 120) ?[^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]]
+
+noncomputable def tFuncRow (ν : V) : V := if ν = 0 then 126 else 120
+def tFuncRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 0 → y = 126) ∧ (ν ≠ 0 → y = 120)”
+instance tFuncRow_defined : 𝚺₀-Function₁ (tFuncRow : V → V) via tFuncRowDef := .mk fun v ↦ by
+  simp [tFuncRowDef, tFuncRow, numeral_eq_natCast]
+  by_cases hν : v 1 = 0 <;> simp [hν]
+instance tFuncRow_definable : 𝚺₀-Function₁ (tFuncRow : V → V) := tFuncRow_defined.to_definable
+
+lemma tFuncSteps_eq (W ν k f i j yv : V) : tFuncSteps W ν k f i j yv =
+    appendV yv ?[mkStep W (funcRow k f) 0, mkStep W (tFuncRow ν) ?[^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]] := rfl
+
+noncomputable def tFuncStepsDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y W ν k f i j yv. ∃ ρ₁, !funcRowDef ρ₁ k f ∧ ∃ s₁, !mkStepDef s₁ W ρ₁ 0 ∧ ∃ ρ₂, !tFuncRowDef ρ₂ ν ∧
+    ∃ fi, !qqFvarDef fi i ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ ck, !cTVGraph ck k ∧ ∃ cf, !cTVGraph cf f ∧
+    ∃ ri, !vRefDef ri (i + 1) k ∧ ∃ rj, !vRefDef rj (j + 1) k ∧
+    ∃ e₀, !mkVec₂Def e₀ rj fj ∧ ∃ e₁, !adjoinDef e₁ ri e₀ ∧ ∃ e₂, !adjoinDef e₂ cf e₁ ∧ ∃ e₃, !adjoinDef e₃ ck e₂ ∧
+    ∃ e, !adjoinDef e fi e₃ ∧ ∃ s₂, !mkStepDef s₂ W ρ₂ e ∧ ∃ l, !mkVec₂Def l s₁ s₂ ∧ !appendVDef y yv l”
+
+instance tFuncSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ tFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) tFuncStepsDef := .mk
+  fun v ↦ by
+    simp [tFuncStepsDef, tFuncSteps_eq, numeral_eq_natCast, funcRow_defined.iff, tFuncRow_defined.iff, cTV.defined.iff,
+      mkStep_defined.iff, vRef_defined.iff, appendV_defined.iff]
+instance tFuncSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ tFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  tFuncSteps_defined.to_definable
+
+/-- The empty vector's certificate: `eqRefl [𝟎]` / `tshvNilCert [𝟎]`. -/
+noncomputable def vNilRow (ν : V) : V := if ν = 0 then 121 else 116
+def vNilRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 0 → y = 121) ∧ (ν ≠ 0 → y = 116)”
+instance vNilRow_defined : 𝚺₀-Function₁ (vNilRow : V → V) via vNilRowDef := .mk fun v ↦ by
+  simp [vNilRowDef, vNilRow, numeral_eq_natCast]
+  by_cases hν : v 1 = 0 <;> simp [hν]
+instance vNilRow_definable : 𝚺₀-Function₁ (vNilRow : V → V) := vNilRow_defined.to_definable
+
+noncomputable def vNilSteps (W ν : V) : V := ?[mkStep W (vNilRow ν) ?[(𝟎 : V)]]
+noncomputable def vNilStepsDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y W ν. ∃ ρ, !vNilRowDef ρ ν ∧ ∃ e, !mkVec₁Def e ↑Arithmetic.zero ∧ ∃ s, !mkStepDef s W ρ e ∧ !mkVec₁Def y s”
+instance vNilSteps_defined : 𝚺₁-Function₂ (vNilSteps : V → V → V) via vNilStepsDef := .mk
+  fun v ↦ by simp [vNilStepsDef, vNilSteps, numeral_eq_natCast, vNilRow_defined.iff, mkStep_defined.iff]
+instance vNilSteps_definable : 𝚺₁-Function₂ (vNilSteps : V → V → V) := vNilSteps_defined.to_definable
+
+/-- The witnesses of the adjoin certificate at a vector node with `m` tail entries and the entry's count `ct`:
+`eqOfAdj [&(i+1), ⟨tail⟩ᵢ, &i, &(j+1), ⟨tail⟩ⱼ, &j]` (`ν = 0`), else
+`tshvAdjCert [cT n, cT m, ⟨tail⟩ᵢ, &i, &(i+1), &(j+1), ⟨tail⟩ⱼ, &j]`, with `⟨tail⟩ᵢ = vRef (i + 1 + ct) m`. -/
+noncomputable def vAdjWits (ν n m ct i j : V) : V :=
+  if ν = 0 then ?[^&(i + 1), vRef (i + 1 + ct) m, ^&i, ^&(j + 1), vRef (j + 1 + ct) m, ^&j]
+  else ?[cTV n, cTV m, vRef (i + 1 + ct) m, ^&i, ^&(i + 1), ^&(j + 1), vRef (j + 1 + ct) m, ^&j]
+
+noncomputable def vAdjWitsDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y ν n m ct i j. ∃ fi, !qqFvarDef fi i ∧ ∃ fi', !qqFvarDef fi' (i + 1) ∧ ∃ fj, !qqFvarDef fj j ∧ ∃ fj', !qqFvarDef fj' (j + 1) ∧
+    ∃ ri, !vRefDef ri (i + 1 + ct) m ∧ ∃ rj, !vRefDef rj (j + 1 + ct) m ∧ ∃ cn, !cTVGraph cn n ∧ ∃ cm, !cTVGraph cm m ∧
+    ∃ a₀, !mkVec₂Def a₀ rj fj ∧ ∃ a₁, !adjoinDef a₁ fj' a₀ ∧ ∃ a₂, !adjoinDef a₂ fi a₁ ∧ ∃ a₃, !adjoinDef a₃ ri a₂ ∧ ∃ a, !adjoinDef a fi' a₃ ∧
+    ∃ b₀, !mkVec₂Def b₀ rj fj ∧ ∃ b₁, !adjoinDef b₁ fj' b₀ ∧ ∃ b₂, !adjoinDef b₂ fi' b₁ ∧ ∃ b₃, !adjoinDef b₃ fi b₂ ∧
+    ∃ b₄, !adjoinDef b₄ ri b₃ ∧ ∃ b₅, !adjoinDef b₅ cm b₄ ∧ ∃ b, !adjoinDef b cn b₅ ∧
+    ((ν = 0 → y = a) ∧ (ν ≠ 0 → y = b))”
+
+instance vAdjWits_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ vAdjWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) vAdjWitsDef := .mk
+  fun v ↦ by
+    simp [vAdjWitsDef, vAdjWits, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff]
+    by_cases hν : v 1 = 0 <;> simp [hν]
+instance vAdjWits_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ vAdjWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
+  vAdjWits_defined.to_definable
+
+noncomputable def vAdjRow (ν : V) : V := if ν = 0 then 127 else 117
+def vAdjRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 0 → y = 127) ∧ (ν ≠ 0 → y = 117)”
+instance vAdjRow_defined : 𝚺₀-Function₁ (vAdjRow : V → V) via vAdjRowDef := .mk fun v ↦ by
+  simp [vAdjRowDef, vAdjRow, numeral_eq_natCast]
+  by_cases hν : v 1 = 0 <;> simp [hν]
+instance vAdjRow_definable : 𝚺₀-Function₁ (vAdjRow : V → V) := vAdjRow_defined.to_definable
+
+/-- The vector node's certificate: the entry's pass `yt`, the tail's pass `yv`, the tail's `utvPi` bridge
+(rows 38/39 on the source tail), then the adjoin certificate. -/
+noncomputable def vAdjSteps (W ν n m ct i j yt yv : V) : V :=
+  appendV yt (appendV yv
+    ?[mkStep W 38 ?[cTV m, cTV n, vRef (i + 1 + ct) m], mkStep W 39 ?[cTV m, vRef (i + 1 + ct) m],
+      mkStep W (vAdjRow ν) (vAdjWits ν n m ct i j)])
+
+noncomputable def vAdjStepsDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y W ν n m ct i j yt yv. ∃ cn, !cTVGraph cn n ∧ ∃ cm, !cTVGraph cm m ∧ ∃ ri, !vRefDef ri (i + 1 + ct) m ∧
+    ∃ e₁₀, !mkVec₂Def e₁₀ cn ri ∧ ∃ e₁, !adjoinDef e₁ cm e₁₀ ∧ ∃ s₁, !mkStepDef s₁ W 38 e₁ ∧
+    ∃ e₂, !mkVec₂Def e₂ cm ri ∧ ∃ s₂, !mkStepDef s₂ W 39 e₂ ∧
+    ∃ ρ, !vAdjRowDef ρ ν ∧ ∃ e₃, !vAdjWitsDef e₃ ν n m ct i j ∧ ∃ s₃, !mkStepDef s₃ W ρ e₃ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l, !adjoinDef l s₁ l₂ ∧
+    ∃ S, !appendVDef S yv l ∧ !appendVDef y yt S”
+
+instance vAdjSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ vAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) vAdjStepsDef := .mk
+  fun v ↦ by
+    simp [vAdjStepsDef, vAdjSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff,
+      vAdjRow_defined.iff, vAdjWits_defined.iff, appendV_defined.iff]
+instance vAdjSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ vAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
+  vAdjSteps_defined.to_definable
+
+end termPass
+
+/-! ### 1.1 The fixpoint on `⟪tag, ν, n, x, i, j, y⟫` (`tag = 0`: term `x`; `tag = 1`: `x = ⟪k, v, m⟫`, the
+last `m` entries of the vector `v` of length `k`) -/
+
+namespace PassT
+
+/-- The cases of the pass operator on the unpacked tuple (`tg = 0`: term `x`; `tg = 1`: `x = ⟪k, v, m⟫`),
+with the bounds the blueprint carries. -/
+def Cases (W : V) (C : Set V) (tg ν n x i j y : V) : Prop :=
+  (tg = 0 ∧ ∃ z < x, x = ^#z ∧ y = tLeafSteps W ν 0 z i j) ∨
+  (tg = 0 ∧ ∃ a < x, x = ^&a ∧ y = tLeafSteps W ν 1 a i j) ∨
+  (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ w < x, x = ^func k f w ∧ ∃ yv ≤ y,
+    ⟪1, ν, n, ⟪k, w, k⟫, i + 1, j + 1, yv⟫ ∈ C ∧ y = tFuncSteps W ν k f i j yv) ∨
+  (tg = 1 ∧ ∃ k ≤ x, ∃ q ≤ x, x = ⟪k, q⟫ ∧ ∃ v ≤ q, ∃ m ≤ q, q = ⟪v, m⟫ ∧ m = 0 ∧ y = vNilSteps W ν) ∨
+  (tg = 1 ∧ ∃ k ≤ x, ∃ q ≤ x, x = ⟪k, q⟫ ∧ ∃ v ≤ q, ∃ m ≤ q, q = ⟪v, m⟫ ∧ ∃ m' < m, m = m' + 1 ∧
+    ∃ yt ≤ y, ∃ yv ≤ y, ⟪0, ν, n, nthFromEnd v m', i + 1, j + 1, yt⟫ ∈ C ∧
+    ⟪1, ν, n, ⟪k, v, m'⟫, i + 1 + descCountT W n (nthFromEnd v m'), j + 1 + descCountT W n (nthFromEnd v m'), yv⟫ ∈ C ∧
+    y = vAdjSteps W ν n m' (descCountT W n (nthFromEnd v m')) i j yt yv)
+
+/-- The pass operator on the packed tuples. -/
+def Phi (W : V) (C : Set V) (pr : V) : Prop :=
+  ∃ tg ≤ pr, ∃ q₁ ≤ pr, pr = ⟪tg, q₁⟫ ∧ ∃ ν ≤ q₁, ∃ q₂ ≤ q₁, q₁ = ⟪ν, q₂⟫ ∧ ∃ n ≤ q₂, ∃ q₃ ≤ q₂, q₂ = ⟪n, q₃⟫ ∧
+  ∃ x ≤ q₃, ∃ q₄ ≤ q₃, q₃ = ⟪x, q₄⟫ ∧ ∃ i ≤ q₄, ∃ q₅ ≤ q₄, q₄ = ⟪i, q₅⟫ ∧ ∃ j ≤ q₅, ∃ y ≤ q₅, q₅ = ⟪j, y⟫ ∧
+  Cases W C tg ν n x i j y
+
+/-- `Phi` unpacked: the tuple's components and the cases. -/
+lemma phi_unpack (W : V) (C : Set V) (pr : V) :
+    Phi W C pr ↔ ∃ tg ν n x i j y, pr = ⟪tg, ν, n, x, i, j, y⟫ ∧ Cases W C tg ν n x i j y := by
+  constructor
+  · rintro ⟨tg, _, q₁, _, rfl, ν, _, q₂, _, rfl, n, _, q₃, _, rfl, x, _, q₄, _, rfl, i, _, q₅, _, rfl, j, _, y, _, rfl, h⟩
+    exact ⟨tg, ν, n, x, i, j, y, rfl, h⟩
+  · rintro ⟨tg, ν, n, x, i, j, y, rfl, h⟩
+    exact ⟨tg, le_pair_left _ _, _, le_pair_right _ _, rfl, ν, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      n, le_pair_left _ _, _, le_pair_right _ _, rfl, x, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      i, le_pair_left _ _, _, le_pair_right _ _, rfl, j, le_pair_left _ _, y, le_pair_right _ _, rfl, h⟩
+
+lemma phi_of_cases {W : V} {C : Set V} {tg ν n x i j y : V} (h : Cases W C tg ν n x i j y) :
+    Phi W C ⟪tg, ν, n, x, i, j, y⟫ := (phi_unpack W C _).mpr ⟨tg, ν, n, x, i, j, y, rfl, h⟩
+
+lemma cases_of_phi {W : V} {C : Set V} {tg ν n x i j y : V} (h : Phi W C ⟪tg, ν, n, x, i, j, y⟫) :
+    Cases W C tg ν n x i j y := by
+  obtain ⟨tg', ν', n', x', i', j', y', e, h⟩ := (phi_unpack W C _).mp h
+  rw [pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff] at e
+  obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ := e
+  exact h
+
+noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
+  (.mkSigma “pr C W.
+    ∃ tg <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr tg q₁ ∧ ∃ ν <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ ν q₂ ∧ ∃ n <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ n q₃ ∧
+    ∃ x <⁺ q₃, ∃ q₄ <⁺ q₃, !pairDef q₃ x q₄ ∧ ∃ i <⁺ q₄, ∃ q₅ <⁺ q₄, !pairDef q₄ i q₅ ∧ ∃ j <⁺ q₅, ∃ y <⁺ q₅, !pairDef q₅ j y ∧
+    ( (tg = 0 ∧ ∃ z < x, !qqBvarDef x z ∧ ∃ s, !tLeafStepsDef s W ν 0 z i j ∧ y = s) ∨
+      (tg = 0 ∧ ∃ a < x, !qqFvarDef x a ∧ ∃ s, !tLeafStepsDef s W ν 1 a i j ∧ y = s) ∨
+      (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ w < x, !qqFuncDef x k f w ∧ ∃ yv <⁺ y, ∃ x₁, !pairDef x₁ w k ∧ ∃ x₂, !pairDef x₂ k x₁ ∧
+        ∃ r₅, !pairDef r₅ (j + 1) yv ∧ ∃ r₄, !pairDef r₄ (i + 1) r₅ ∧ ∃ r₃, !pairDef r₃ x₂ r₄ ∧ ∃ r₂, !pairDef r₂ n r₃ ∧
+        :⟪1, ν, r₂⟫:∈ C ∧ ∃ s, !tFuncStepsDef s W ν k f i j yv ∧ y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m <⁺ q, !pairDef q v m ∧ m = 0 ∧ ∃ s, !vNilStepsDef s W ν ∧ y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m <⁺ q, !pairDef q v m ∧ ∃ m' < m, m = m' + 1 ∧
+        ∃ yt <⁺ y, ∃ yv <⁺ y, ∃ t, !nthFromEndDef t v m' ∧ ∃ ct, !descCountTDef ct W n t ∧
+        ∃ p₅, !pairDef p₅ (j + 1) yt ∧ ∃ p₄, !pairDef p₄ (i + 1) p₅ ∧ ∃ p₃, !pairDef p₃ t p₄ ∧ ∃ p₂, !pairDef p₂ n p₃ ∧
+        :⟪0, ν, p₂⟫:∈ C ∧ ∃ x₁, !pairDef x₁ v m' ∧ ∃ x₂, !pairDef x₂ k x₁ ∧
+        ∃ r₅, !pairDef r₅ (j + 1 + ct) yv ∧ ∃ r₄, !pairDef r₄ (i + 1 + ct) r₅ ∧ ∃ r₃, !pairDef r₃ x₂ r₄ ∧ ∃ r₂, !pairDef r₂ n r₃ ∧
+        :⟪1, ν, r₂⟫:∈ C ∧ ∃ s, !vAdjStepsDef s W ν n m' ct i j yt yv ∧ y = s) )”)
+  (.mkPi “pr C W.
+    ∃ tg <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr tg q₁ ∧ ∃ ν <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ ν q₂ ∧ ∃ n <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ n q₃ ∧
+    ∃ x <⁺ q₃, ∃ q₄ <⁺ q₃, !pairDef q₃ x q₄ ∧ ∃ i <⁺ q₄, ∃ q₅ <⁺ q₄, !pairDef q₄ i q₅ ∧ ∃ j <⁺ q₅, ∃ y <⁺ q₅, !pairDef q₅ j y ∧
+    ( (tg = 0 ∧ ∃ z < x, !qqBvarDef x z ∧ ∀ s, !tLeafStepsDef s W ν 0 z i j → y = s) ∨
+      (tg = 0 ∧ ∃ a < x, !qqFvarDef x a ∧ ∀ s, !tLeafStepsDef s W ν 1 a i j → y = s) ∨
+      (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ w < x, !qqFuncDef x k f w ∧ ∃ yv <⁺ y, ∀ x₁, !pairDef x₁ w k → ∀ x₂, !pairDef x₂ k x₁ →
+        ∀ r₅, !pairDef r₅ (j + 1) yv → ∀ r₄, !pairDef r₄ (i + 1) r₅ → ∀ r₃, !pairDef r₃ x₂ r₄ → ∀ r₂, !pairDef r₂ n r₃ →
+        :⟪1, ν, r₂⟫:∈ C ∧ ∀ s, !tFuncStepsDef s W ν k f i j yv → y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m <⁺ q, !pairDef q v m ∧ m = 0 ∧ ∀ s, !vNilStepsDef s W ν → y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m <⁺ q, !pairDef q v m ∧ ∃ m' < m, m = m' + 1 ∧
+        ∃ yt <⁺ y, ∃ yv <⁺ y, ∀ t, !nthFromEndDef t v m' → ∀ ct, !descCountTDef ct W n t →
+        ∀ p₅, !pairDef p₅ (j + 1) yt → ∀ p₄, !pairDef p₄ (i + 1) p₅ → ∀ p₃, !pairDef p₃ t p₄ → ∀ p₂, !pairDef p₂ n p₃ →
+        :⟪0, ν, p₂⟫:∈ C ∧ ∀ x₁, !pairDef x₁ v m' → ∀ x₂, !pairDef x₂ k x₁ →
+        ∀ r₅, !pairDef r₅ (j + 1 + ct) yv → ∀ r₄, !pairDef r₄ (i + 1 + ct) r₅ → ∀ r₃, !pairDef r₃ x₂ r₄ → ∀ r₂, !pairDef r₂ n r₃ →
+        :⟪1, ν, r₂⟫:∈ C ∧ ∀ s, !vAdjStepsDef s W ν n m' ct i j yt yv → y = s) )”)⟩
+
+set_option maxHeartbeats 4000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, tLeafSteps_defined.iff, tFuncSteps_defined.iff, vNilSteps_defined.iff, vAdjSteps_defined.iff,
+        nthFromEnd_defined.iff, descCountT_defined.iff, numeral_eq_natCast]
+    · intro v
+      simp [blueprint, Phi, Cases, tLeafSteps_defined.iff, tFuncSteps_defined.iff, vNilSteps_defined.iff, vAdjSteps_defined.iff,
+        nthFromEnd_defined.iff, descCountT_defined.iff, numeral_eq_natCast]
+  monotone := by
+    intro C C' hC w pr h
+    change Phi (w 0) C pr at h
+    change Phi (w 0) C' pr
+    rw [phi_unpack] at h ⊢
+    obtain ⟨tg, ν, n, x, i, j, y, rfl, h⟩ := h
+    refine ⟨tg, ν, n, x, i, j, y, rfl, ?_⟩
+    rcases h with h | h | ⟨h0, k, hk, f, hf, w', hw, rfl, yv, hyv, h₁, rfl⟩ | h |
+      ⟨h1, k, hk, q, hq, rfl, v, hv, m, hm, rfl, m', hm', rfl, yt, hyt, yv, hyv, h₁, h₂, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl ⟨h0, k, hk, f, hf, w', hw, rfl, yv, hyv, hC h₁, rfl⟩))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨h1, k, hk, _, hq, rfl, v, hv, _, hm, rfl, m', hm', rfl, yt, hyt, yv, hyv,
+        hC h₁, hC h₂, rfl⟩)))
+
+/-- Every referenced tuple is below the sum of the referenced tuples plus one. -/
+instance : construction.Finite V where
+  finite := by
+    intro C w pr h
+    change Phi (w 0) C pr at h
+    change ∃ m, Phi (w 0) {y ∈ C | y < m} pr
+    rw [phi_unpack] at h
+    simp only [phi_unpack]
+    obtain ⟨tg, ν, n, x, i, j, y, rfl, h⟩ := h
+    rcases h with h | h | ⟨h0, k, hk, f, hf, w', hw, hx', yv, hyv, h₁, hy'⟩ | h |
+      ⟨h1, k, hk, q, hq, hx', v, hv, m, hm, hq', m', hm', hmm, yt, hyt, yv, hyv, h₁, h₂, hy'⟩
+    · exact ⟨0, tg, ν, n, x, i, j, y, rfl, Or.inl h⟩
+    · exact ⟨0, tg, ν, n, x, i, j, y, rfl, Or.inr (Or.inl h)⟩
+    · exact ⟨⟪1, ν, n, ⟪k, w', k⟫, i + 1, j + 1, yv⟫ + 1, tg, ν, n, x, i, j, y, rfl,
+        Or.inr (Or.inr (Or.inl ⟨h0, k, hk, f, hf, w', hw, hx', yv, hyv, ⟨h₁, lt_add_one _⟩, hy'⟩))⟩
+    · exact ⟨0, tg, ν, n, x, i, j, y, rfl, Or.inr (Or.inr (Or.inr (Or.inl h)))⟩
+    · refine ⟨⟪0, ν, n, nthFromEnd v m', i + 1, j + 1, yt⟫ +
+          ⟪1, ν, n, ⟪k, v, m'⟫, i + 1 + descCountT (w 0) n (nthFromEnd v m'), j + 1 + descCountT (w 0) n (nthFromEnd v m'), yv⟫ + 1,
+        tg, ν, n, x, i, j, y, rfl, Or.inr (Or.inr (Or.inr (Or.inr ⟨h1, k, hk, q, hq, hx', v, hv, m, hm, hq', m', hm', hmm, yt, hyt, yv, hyv,
+        ⟨h₁, ?_⟩, ⟨h₂, ?_⟩, hy'⟩)))⟩
+      · exact lt_of_le_of_lt le_self_add (lt_add_one _)
+      · exact lt_of_le_of_lt le_add_self (lt_add_one _)
+
+/-- `Phi` at a term tuple, the bounds discharged. -/
+lemma phi_term_iff (W : V) (C : Set V) (ν n t i j y : V) :
+    Phi W C ⟪0, ν, n, t, i, j, y⟫ ↔
+    ( (∃ z, t = ^#z ∧ y = tLeafSteps W ν 0 z i j) ∨
+      (∃ a, t = ^&a ∧ y = tLeafSteps W ν 1 a i j) ∨
+      (∃ k f w yv, t = ^func k f w ∧ yv ≤ y ∧ ⟪1, ν, n, ⟪k, w, k⟫, i + 1, j + 1, yv⟫ ∈ C ∧ y = tFuncSteps W ν k f i j yv) ) := by
+  constructor
+  · intro h
+    rcases cases_of_phi h with ⟨_, z, _, rfl, rfl⟩ | ⟨_, a, _, rfl, rfl⟩ | ⟨_, k, _, f, _, w, _, rfl, yv, hyv, hmem, rfl⟩ | ⟨h, _⟩ | ⟨h, _⟩
+    · exact Or.inl ⟨z, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨a, rfl, rfl⟩)
+    · exact Or.inr (Or.inr ⟨k, f, w, yv, rfl, hyv, hmem, rfl⟩)
+    · exact absurd h (by norm_num)
+    · exact absurd h (by norm_num)
+  · intro h
+    refine phi_of_cases ?_
+    rcases h with ⟨z, rfl, rfl⟩ | ⟨a, rfl, rfl⟩ | ⟨k, f, w, yv, rfl, hyv, hmem, rfl⟩
+    · exact Or.inl ⟨rfl, z, by simp, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨rfl, a, by simp, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl ⟨rfl, k, by simp, f, by simp, w, by simp, rfl, yv, hyv, hmem, rfl⟩))
+
+/-- `Phi` at a vector tuple, the bounds discharged. -/
+lemma phi_vec_iff (W : V) (C : Set V) (ν n k v m i j y : V) :
+    Phi W C ⟪1, ν, n, ⟪k, v, m⟫, i, j, y⟫ ↔
+    ( (m = 0 ∧ y = vNilSteps W ν) ∨
+      (∃ m' yt yv, m = m' + 1 ∧ yt ≤ y ∧ yv ≤ y ∧ ⟪0, ν, n, nthFromEnd v m', i + 1, j + 1, yt⟫ ∈ C ∧
+        ⟪1, ν, n, ⟪k, v, m'⟫, i + 1 + descCountT W n (nthFromEnd v m'), j + 1 + descCountT W n (nthFromEnd v m'), yv⟫ ∈ C ∧
+        y = vAdjSteps W ν n m' (descCountT W n (nthFromEnd v m')) i j yt yv) ) := by
+  constructor
+  · intro h
+    rcases cases_of_phi h with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨_, k', _, q, _, hx, v', _, m'', _, hq, rfl, rfl⟩ |
+      ⟨_, k', _, q, _, hx, v', _, m'', _, hq, m', _, rfl, yt, hyt, yv, hyv, hmem₁, hmem₂, rfl⟩
+    · exact absurd h (by norm_num)
+    · exact absurd h (by norm_num)
+    · exact absurd h (by norm_num)
+    · obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hx
+      obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hq
+      exact Or.inl ⟨rfl, rfl⟩
+    · obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hx
+      obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hq
+      exact Or.inr ⟨m', yt, yv, rfl, hyt, hyv, hmem₁, hmem₂, rfl⟩
+  · intro h
+    refine phi_of_cases ?_
+    rcases h with ⟨rfl, rfl⟩ | ⟨m', yt, yv, rfl, hyt, hyv, hmem₁, hmem₂, rfl⟩
+    · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨rfl, k, le_pair_left _ _, _, le_pair_right _ _, rfl, v, le_pair_left _ _, 0, le_pair_right _ _, rfl, rfl, rfl⟩)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl, k, le_pair_left _ _, _, le_pair_right _ _, rfl, v, le_pair_left _ _, m' + 1, le_pair_right _ _, rfl, m',
+        lt_add_one _, rfl, yt, hyt, yv, hyv, hmem₁, hmem₂, rfl⟩)))
+
+end PassT
+
+/-- **The graph of the term-level pass** on packed tuples. -/
+def PassGraph (W pr : V) : Prop := PassT.construction.Fixpoint ![W] pr
+/-- `PassTGraph W ν n t i j y`: the pass of the term `t` (source at `&i`, image at `&j`) is the step list `y`. -/
+def PassTGraph (W ν n t i j y : V) : Prop := PassGraph W ⟪0, ν, n, t, i, j, y⟫
+/-- `PassVGraph W ν n k v m i j y`: the pass of the last `m` entries of the vector `v` (of length `k`). -/
+def PassVGraph (W ν n k v m i j y : V) : Prop := PassGraph W ⟪1, ν, n, ⟪k, v, m⟫, i, j, y⟫
+
+noncomputable def passGraphDef : 𝚺₁.Semisentence 2 := .mkSigma “W pr. !PassT.blueprint.fixpointDef pr W”
+
+instance passGraph_defined : 𝚺₁-Relation (PassGraph : V → V → Prop) via passGraphDef := .mk
+  fun v ↦ by simp [passGraphDef, PassT.construction.eval_fixpointDef, PassGraph]; rfl
+instance passGraph_definable : 𝚺₁-Relation (PassGraph : V → V → Prop) := passGraph_defined.to_definable
+
+noncomputable def passTGraphDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “W ν n t i j y. ∃ q₅, !pairDef q₅ j y ∧ ∃ q₄, !pairDef q₄ i q₅ ∧ ∃ q₃, !pairDef q₃ t q₄ ∧ ∃ q₂, !pairDef q₂ n q₃ ∧
+    ∃ q₁, !pairDef q₁ ν q₂ ∧ ∃ pr, !pairDef pr 0 q₁ ∧ !passGraphDef W pr”
+noncomputable def passVGraphDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “W ν n k v m i j y. ∃ x₁, !pairDef x₁ v m ∧ ∃ x, !pairDef x k x₁ ∧
+    ∃ q₅, !pairDef q₅ j y ∧ ∃ q₄, !pairDef q₄ i q₅ ∧ ∃ q₃, !pairDef q₃ x q₄ ∧ ∃ q₂, !pairDef q₂ n q₃ ∧
+    ∃ q₁, !pairDef q₁ ν q₂ ∧ ∃ pr, !pairDef pr 1 q₁ ∧ !passGraphDef W pr”
+
+instance passTGraph_defined :
+    𝚺₁.Defined (fun v : Fin 7 → V ↦ PassTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) passTGraphDef := .mk
+  fun v ↦ by simp [passTGraphDef, passGraph_defined.iff, PassTGraph, numeral_eq_natCast]
+instance passTGraph_definable :
+    𝚺₁.Definable (fun v : Fin 7 → V ↦ PassTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  passTGraph_defined.to_definable
+instance passVGraph_defined :
+    𝚺₁.Defined (fun v : Fin 9 → V ↦ PassVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) passVGraphDef := .mk
+  fun v ↦ by simp [passVGraphDef, passGraph_defined.iff, PassVGraph, numeral_eq_natCast]
+instance passVGraph_definable :
+    𝚺₁.Definable (fun v : Fin 9 → V ↦ PassVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
+  passVGraph_defined.to_definable
+
+/-! ### 1.2 Case analysis, inversion, existence and uniqueness -/
+
+lemma PassTGraph.case_iff {W ν n t i j y : V} :
+    PassTGraph W ν n t i j y ↔
+    ( (∃ z, t = ^#z ∧ y = tLeafSteps W ν 0 z i j) ∨
+      (∃ a, t = ^&a ∧ y = tLeafSteps W ν 1 a i j) ∨
+      (∃ k f w yv, t = ^func k f w ∧ yv ≤ y ∧ PassVGraph W ν n k w k (i + 1) (j + 1) yv ∧
+        y = tFuncSteps W ν k f i j yv) ) := by
+  unfold PassTGraph PassVGraph PassGraph
+  rw [PassT.construction.case]
+  exact PassT.phi_term_iff W _ ν n t i j y
+
+lemma PassVGraph.case_iff {W ν n k v m i j y : V} :
+    PassVGraph W ν n k v m i j y ↔
+    ( (m = 0 ∧ y = vNilSteps W ν) ∨
+      (∃ m' yt yv, m = m' + 1 ∧ yt ≤ y ∧ yv ≤ y ∧ PassTGraph W ν n (nthFromEnd v m') (i + 1) (j + 1) yt ∧
+        PassVGraph W ν n k v m' (i + 1 + descCountT W n (nthFromEnd v m')) (j + 1 + descCountT W n (nthFromEnd v m')) yv ∧
+        y = vAdjSteps W ν n m' (descCountT W n (nthFromEnd v m')) i j yt yv) ) := by
+  unfold PassTGraph PassVGraph PassGraph
+  rw [PassT.construction.case]
+  exact PassT.phi_vec_iff W _ ν n k v m i j y
+
+section inversion
+
+attribute [local simp] qqBvar qqFvar qqFunc
+
+lemma PassTGraph.bvar_iff {W ν n z i j y : V} : PassTGraph W ν n (^#z) i j y ↔ y = tLeafSteps W ν 0 z i j := by
+  rw [PassTGraph.case_iff]; simp
+lemma PassTGraph.fvar_iff {W ν n a i j y : V} : PassTGraph W ν n (^&a) i j y ↔ y = tLeafSteps W ν 1 a i j := by
+  rw [PassTGraph.case_iff]; simp
+lemma PassTGraph.func_iff {W ν n k f w i j y : V} :
+    PassTGraph W ν n (^func k f w) i j y ↔
+    ∃ yv, yv ≤ y ∧ PassVGraph W ν n k w k (i + 1) (j + 1) yv ∧ y = tFuncSteps W ν k f i j yv := by
+  rw [PassTGraph.case_iff]; simp
+lemma PassVGraph.zero_iff {W ν n k v i j y : V} : PassVGraph W ν n k v 0 i j y ↔ y = vNilSteps W ν := by
+  rw [PassVGraph.case_iff]
+  constructor
+  · rintro (⟨_, rfl⟩ | ⟨m', _, _, h, _⟩)
+    · rfl
+    · exact absurd h.symm (succ_ne_zero' m')
+  · intro h; exact Or.inl ⟨rfl, h⟩
+lemma PassVGraph.succ_iff {W ν n k v m i j y : V} :
+    PassVGraph W ν n k v (m + 1) i j y ↔
+    ∃ yt yv, yt ≤ y ∧ yv ≤ y ∧ PassTGraph W ν n (nthFromEnd v m) (i + 1) (j + 1) yt ∧
+      PassVGraph W ν n k v m (i + 1 + descCountT W n (nthFromEnd v m)) (j + 1 + descCountT W n (nthFromEnd v m)) yv ∧
+      y = vAdjSteps W ν n m (descCountT W n (nthFromEnd v m)) i j yt yv := by
+  rw [PassVGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨m', yt, yv, h, hyt, hyv, h₁, h₂, rfl⟩)
+    · exact absurd h (succ_ne_zero' m)
+    · obtain rfl : m = m' := add_right_cancel h
+      exact ⟨yt, yv, hyt, hyv, h₁, h₂, rfl⟩
+  · rintro ⟨yt, yv, hyt, hyv, h₁, h₂, rfl⟩
+    exact Or.inr ⟨m, yt, yv, rfl, hyt, hyv, h₁, h₂, rfl⟩
+
+end inversion
+
+lemma le_tFuncSteps (W ν k f i j yv : V) : yv ≤ tFuncSteps W ν k f i j yv := le_appendV_left _ _
+lemma le_vAdjSteps_left (W ν n m ct i j yt yv : V) : yt ≤ vAdjSteps W ν n m ct i j yt yv := le_appendV_left _ _
+lemma le_vAdjSteps_right (W ν n m ct i j yt yv : V) : yv ≤ vAdjSteps W ν n m ct i j yt yv :=
+  le_trans (le_appendV_left _ _) (le_appendV_right _ _)
+
+/-- **Existence**, with the offsets bounded by a parameter `B` (the motive must be Σ₁): the pass of `t` at
+`(i, j)` exists whenever `i + descCountT t ≤ B` and `j + descCountT t ≤ B`. -/
+lemma passTGraph_exists_bounded (W ν n B : V) : ∀ t, IsSemiterm LAct n t →
+    ∀ i ≤ B, ∀ j ≤ B, i + descCountT W n t ≤ B → j + descCountT W n t ≤ B → ∃ y, PassTGraph W ν n t i j y := by
+  refine IsSemiterm.induction 𝚺 ?_ ?_ ?_ ?_
+  · definability
+  · intro z _ i _ j _ _ _; exact ⟨_, PassTGraph.bvar_iff.mpr rfl⟩
+  · intro a i _ j _ _ _; exact ⟨_, PassTGraph.fvar_iff.mpr rfl⟩
+  · intro k f v hkf hv ih i hi j hj hiB hjB
+    have hk := arity_le_two hkf
+    rw [descCountT_func W n hkf hv.isUTerm] at hiB hjB
+    -- the vector level, by induction on the number of entries from the end
+    have key : ∀ m ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descVecAux W n (descTVec W n k v) m) ≤ B →
+        j + π₁ (descVecAux W n (descTVec W n k v) m) ≤ B → ∃ yv, PassVGraph W ν n k v m i j yv := by
+      intro m
+      induction m using ISigma1.sigma1_succ_induction with
+      | hP => definability
+      | zero => intro _ i _ j _ _ _; exact ⟨_, PassVGraph.zero_iff.mpr rfl⟩
+      | succ m ihm =>
+        intro hm i hi j hj hiB hjB
+        have hvlen : len v = k := hv.lh
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have hnth : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec W n hv.isUTerm hlt]
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
+        have hC : π₁ (descVecAux W n (descTVec W n k v) (m + 1)) =
+            π₁ (descVecAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
+          rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+        rw [hC] at hiB hjB
+        set ct := descCountT W n v.[k - (m + 1)] with hct
+        set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+        have hiB' : i + 1 + ct ≤ B := le_trans (by rw [add_assoc, add_comm 1 ct, ← add_assoc]; exact le_self_add) (by rw [add_assoc, add_assoc, add_comm cv]; simpa [add_assoc] using hiB)
+        have hjB' : j + 1 + ct ≤ B := le_trans (by rw [add_assoc, add_comm 1 ct, ← add_assoc]; exact le_self_add) (by rw [add_assoc, add_assoc, add_comm cv]; simpa [add_assoc] using hjB)
+        obtain ⟨yt, hyt⟩ := ih _ hlt (i + 1) (le_trans le_self_add hiB') (j + 1) (le_trans le_self_add hjB') hiB' hjB'
+        obtain ⟨yv, hyv⟩ := ihm (le_trans le_self_add hm) (i + 1 + ct) hiB' (j + 1 + ct) hjB'
+          (by rw [add_assoc, add_assoc, add_comm cv] at hiB; simpa [add_assoc] using hiB)
+          (by rw [add_assoc, add_assoc, add_comm cv] at hjB; simpa [add_assoc] using hjB)
+        refine ⟨_, PassVGraph.succ_iff.mpr ⟨yt, yv, le_vAdjSteps_left _ _ _ _ _ _ _ _ _, le_vAdjSteps_right _ _ _ _ _ _ _ _ _,
+          ?_, ?_, rfl⟩⟩
+        · rw [hnth']; exact hyt
+        · rw [hnth']; exact hyv
+    obtain ⟨yv, hyv⟩ := key k le_rfl (i + 1) (le_trans (by rw [add_assoc]; exact le_self_add) hiB) (j + 1)
+      (le_trans (by rw [add_assoc]; exact le_self_add) hjB)
+      (by rw [add_assoc, add_comm 1]; exact hiB) (by rw [add_assoc, add_comm 1]; exact hjB)
+    exact ⟨_, PassTGraph.func_iff.mpr ⟨yv, le_tFuncSteps _ _ _ _ _ _ _, hyv, rfl⟩⟩
+
+lemma passTGraph_exists (W ν n : V) {t : V} (ht : IsSemiterm LAct n t) (i j : V) : ∃ y, PassTGraph W ν n t i j y :=
+  passTGraph_exists_bounded W ν n (i + j + descCountT W n t) t ht i (le_trans le_self_add le_self_add) j
+    (le_trans le_add_self le_self_add) (by rw [add_assoc, add_comm j]; exact le_rfl)
+    (by rw [add_assoc, add_comm i, ← add_assoc]; exact le_self_add)
 
 end ArithS
