@@ -5296,4 +5296,188 @@ theorem costSum_eqSteps_le {tbl N E B : V} (htbl : TableOK tbl N) (hL : LayoutTa
 end identOK
 
 end ident
+
+/-! ### 4.8 The per-node dossier equations (what the `Cert` dossier bridge matches against)
+
+`dossFactsT`/`dossFactsV` (the term and vector dossiers, the same relocation of the term/vector
+templates), the counts `eqCountT`/`eqCountV`, and per constructor: the count, the fact LIST
+(children's dossiers at their walk offsets, then the node's own fact) and — at `P = factPreds` —
+the `DossierAt` decomposition as an `↔`, facts in the ORDER `Cert`'s `dossF_*`/`dossT_*`/`dossV_succ`
+deliver them (node fact, then the children: `q` at `i + 1`, `p` at `i + eqCount q + 1`; `t` at
+`i + 1`, the tail at `i + 1 + eqCountT t`). -/
+
+section dossEqs
+
+/-- The dossier facts of a TERM at offset `i` (its template, relocated). -/
+noncomputable def dossFactsT (P i t : V) : V := relocD (π₁ (π₂ (eqT t))) P i
+/-- The dossier facts of the last `j` entries of the vector `v` (of length `k`) at offset `i`. -/
+noncomputable def dossFactsV (P i k v j : V) : V := relocD (π₁ (π₂ (eqVecAux (eqTVec k v) j))) P i
+/-- The eigenvariable count of a term's template. -/
+noncomputable def eqCountT (t : V) : V := π₁ (eqT t)
+/-- The eigenvariable count of the template of the last `j` entries of `v`. -/
+noncomputable def eqCountV (k v j : V) : V := π₁ (eqVecAux (eqTVec k v) j)
+/-- A term dossier is present. -/
+def DossierAtT (P Γ i t : V) : Prop := AllNeg Γ (dossFactsT P i t)
+/-- A vector dossier (the last `j` entries) is present. -/
+def DossierAtV (P Γ i k v j : V) : Prop := AllNeg Γ (dossFactsV P i k v j)
+
+instance dossFactsT_definable : 𝚺₁-Function₃ (dossFactsT : V → V → V → V) := by
+  unfold dossFactsT; definability
+instance dossFactsV_definable : 𝚺₁.Definable (fun v : Fin 6 → V ↦ dossFactsV (v 1) (v 2) (v 3) (v 4) (v 5) = v 0) := by
+  unfold dossFactsV; definability
+instance eqCountT_definable : 𝚺₁-Function₁ (eqCountT : V → V) := by
+  unfold eqCountT; definability
+instance eqCountV_definable : 𝚺₁-Function₃ (eqCountV : V → V → V → V) := by
+  unfold eqCountV; definability
+instance dossierAtT_definable : 𝚫₁-Relation₄ (DossierAtT : V → V → V → V → Prop) := by
+  unfold DossierAtT; definability
+instance dossierAtV_definable : 𝚫₁.Definable (fun v : Fin 6 → V ↦ DossierAtV (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
+  unfold DossierAtV dossFactsV; definability
+
+lemma dossierAtT_iff (P Γ i t : V) : DossierAtT P Γ i t ↔ AllNeg Γ (dossFactsT P i t) := Iff.rfl
+lemma dossierAtV_iff (P Γ i k v j : V) : DossierAtV P Γ i k v j ↔ AllNeg Γ (dossFactsV P i k v j) := Iff.rfl
+
+/-! The counts at each node. -/
+lemma eqCountT_bvar (z : V) : eqCountT (^#z) = 1 := by rw [eqCountT, eqT_bvar, bvarT_count]
+lemma eqCountT_fvar (x : V) : eqCountT (^&x) = 1 := by rw [eqCountT, eqT_fvar, fvarT_count]
+lemma eqCountT_func {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
+    eqCountT (^func k f v) = eqCountV k v k + 1 := by rw [eqCountT, eqT_func hkf hv, funcT_count]; rfl
+lemma eqCountV_zero (k v : V) : eqCountV k v 0 = 0 := by rw [eqCountV, eqVecAux_zero, nilT_count]
+lemma nthFromEnd_eqTVec {k v j : V} (hv : IsUTermVec LAct k v) (hj : j + 1 ≤ k) :
+    nthFromEnd (eqTVec k v) j = eqT v.[k - (j + 1)] := by
+  have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj
+  have hi : k - (j + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+  rw [nthFromEnd_eq (a := k - (j + 1)) (by rw [len_eqTVec hv, tsub_add_cancel_of_le hj]), nth_eqTVec hv hi]
+lemma eqCountV_succ {k v j : V} (hv : IsUTermVec LAct k v) (hj : j + 1 ≤ k) :
+    eqCountV k v (j + 1) = eqCountV k v j + eqCountT v.[k - (j + 1)] + 1 := by
+  rw [eqCountV, eqVecAux_succ, nthFromEnd_eqTVec hv hj, adjT_count]; rfl
+lemma eqCount_verum : eqCount (^⊤ : V) = 1 := by rw [eqCount, eqFT_verum, constT_count]
+lemma eqCount_falsum : eqCount (^⊥ : V) = 1 := by rw [eqCount, eqFT_falsum, constT_count]
+lemma eqCount_and {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) :
+    eqCount (p ^⋏ q) = eqCount p + eqCount q + 1 := by rw [eqCount, eqFT_and hp hq, binT_count]; rfl
+lemma eqCount_or {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) :
+    eqCount (p ^⋎ q) = eqCount p + eqCount q + 1 := by rw [eqCount, eqFT_or hp hq, binT_count]; rfl
+lemma eqCount_all {p : V} (hp : IsUFormula LAct p) : eqCount (^∀ p) = eqCount p + 1 := by
+  rw [eqCount, eqFT_all hp, quantT_count]; rfl
+lemma eqCount_exs {p : V} (hp : IsUFormula LAct p) : eqCount (^∃ p) = eqCount p + 1 := by
+  rw [eqCount, eqFT_exs hp, quantT_count]; rfl
+lemma eqCount_rel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) :
+    eqCount (^rel k R v) = eqCountV k v k + 1 := by rw [eqCount, eqFT_rel hR hv, atomT_count]; rfl
+lemma eqCount_nrel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) :
+    eqCount (^nrel k R v) = eqCountV k v k + 1 := by rw [eqCount, eqFT_nrel hR hv, atomT_count]; rfl
+
+/-! The fact lists at each node: the children's dossiers at their walk offsets (`q` at `1`, `p` at
+`count q + 1`; a quantifier body at `1`; an atom's vector at `1`; `t ∷ v` with `t` at `1` and `v` at
+`count t + 1`) followed by the node's own fact. -/
+lemma dossFactsT_bvar (P i z : V) : dossFactsT P i (^#z) = ?[subst LAct ?[^&i, cTV z] P.[9]] := by
+  rw [dossFactsT, eqT_bvar, bvarT_D]
+lemma dossFactsT_fvar (P i x : V) : dossFactsT P i (^&x) = ?[subst LAct ?[^&i, cTV x] P.[10]] := by
+  rw [dossFactsT, eqT_fvar, fvarT_D]
+lemma dossFactsT_func {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) (P i : V) :
+    dossFactsT P i (^func k f v) =
+      appendV (dossFactsV P (i + 1) k v k) ?[subst LAct ?[^&i, cTV k, cTV f, vRef (i + 1) k] P.[8]] := by
+  rw [dossFactsT, eqT_func hkf hv, funcT_D]; rfl
+lemma dossFactsV_zero (P i k v : V) : dossFactsV P i k v 0 = 0 := by
+  rw [dossFactsV, eqVecAux_zero, nilT_D]
+lemma dossFactsV_succ {k v j : V} (hv : IsUTermVec LAct k v) (hj : j + 1 ≤ k) (P i : V) :
+    dossFactsV P i k v (j + 1) =
+      appendV (dossFactsV P (i + (eqCountT v.[k - (j + 1)] + 1)) k v j)
+        (appendV (dossFactsT P (i + 1) v.[k - (j + 1)])
+          ?[subst LAct ?[^&i, ^&(i + 1), vRef (i + (eqCountT v.[k - (j + 1)] + 1)) j] P.[11]]) := by
+  rw [dossFactsV, eqVecAux_succ, nthFromEnd_eqTVec hv hj, adjT_D]; rfl
+lemma dossFacts_verum (P i : V) : dossFacts P i (^⊤ : V) = ?[subst LAct ?[^&i] P.[6]] := by
+  rw [dossFacts, eqFT_verum, constT_D]
+lemma dossFacts_falsum (P i : V) : dossFacts P i (^⊥ : V) = ?[subst LAct ?[^&i] P.[7]] := by
+  rw [dossFacts, eqFT_falsum, constT_D]
+lemma dossFacts_and {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) (P i : V) :
+    dossFacts P i (p ^⋏ q) =
+      appendV (dossFacts P (i + (eqCount q + 1)) p)
+        (appendV (dossFacts P (i + 1) q) ?[subst LAct ?[^&i, ^&(i + (eqCount q + 1)), ^&(i + 1)] P.[0]]) := by
+  rw [dossFacts, eqFT_and hp hq, binT_D]; rfl
+lemma dossFacts_or {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) (P i : V) :
+    dossFacts P i (p ^⋎ q) =
+      appendV (dossFacts P (i + (eqCount q + 1)) p)
+        (appendV (dossFacts P (i + 1) q) ?[subst LAct ?[^&i, ^&(i + (eqCount q + 1)), ^&(i + 1)] P.[1]]) := by
+  rw [dossFacts, eqFT_or hp hq, binT_D]; rfl
+lemma dossFacts_all {p : V} (hp : IsUFormula LAct p) (P i : V) :
+    dossFacts P i (^∀ p) = appendV (dossFacts P (i + 1) p) ?[subst LAct ?[^&i, ^&(i + 1)] P.[2]] := by
+  rw [dossFacts, eqFT_all hp, quantT_D]; rfl
+lemma dossFacts_exs {p : V} (hp : IsUFormula LAct p) (P i : V) :
+    dossFacts P i (^∃ p) = appendV (dossFacts P (i + 1) p) ?[subst LAct ?[^&i, ^&(i + 1)] P.[3]] := by
+  rw [dossFacts, eqFT_exs hp, quantT_D]; rfl
+lemma dossFacts_rel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) (P i : V) :
+    dossFacts P i (^rel k R v) =
+      appendV (dossFactsV P (i + 1) k v k) ?[subst LAct ?[^&i, cTV k, cTV R, vRef (i + 1) k] P.[4]] := by
+  rw [dossFacts, eqFT_rel hR hv, atomT_D]; rfl
+lemma dossFacts_nrel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) (P i : V) :
+    dossFacts P i (^nrel k R v) =
+      appendV (dossFactsV P (i + 1) k v k) ?[subst LAct ?[^&i, cTV k, cTV R, vRef (i + 1) k] P.[5]] := by
+  rw [dossFacts, eqFT_nrel hR hv, atomT_D]; rfl
+
+/-! **The dossier at `factPreds`, decomposed in the walk's order** (the node's own fact, then the
+children's dossiers in the order `Cert`'s `dossF_*`/`dossT_*`/`dossV_succ` deliver them, at the
+offsets written the way those lemmas write them: `i + eqCount q + 1`, `i + 1 + eqCountT t`). -/
+lemma dossierAtT_bvar (Γ i z : V) : DossierAtT factPreds Γ i (^#z) ↔ neg LAct (bvarFact (^&i) (cTV z)) ∈ Γ := by
+  rw [dossierAtT_iff, dossFactsT_bvar, factPreds_bvar, subst_Pbvar, allNeg_single]
+lemma dossierAtT_fvar (Γ i x : V) : DossierAtT factPreds Γ i (^&x) ↔ neg LAct (fvarFact (^&i) (cTV x)) ∈ Γ := by
+  rw [dossierAtT_iff, dossFactsT_fvar, factPreds_fvar, subst_Pfvar, allNeg_single]
+lemma dossierAtT_func {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) (Γ i : V) :
+    DossierAtT factPreds Γ i (^func k f v) ↔
+      neg LAct (funcFact (^&i) (cTV k) (cTV f) (vRef (i + 1) k)) ∈ Γ ∧ DossierAtV factPreds Γ (i + 1) k v k := by
+  rw [dossierAtT_iff, dossFactsT_func hkf hv, factPreds_func, subst_Pfunc, allNeg_appendV, allNeg_single,
+    dossierAtV_iff, and_comm]
+lemma dossierAtV_zero (P Γ i k v : V) : DossierAtV P Γ i k v 0 := by
+  rw [dossierAtV_iff, dossFactsV_zero]; exact allNeg_nil Γ
+lemma dossierAtV_succ {k v j : V} (hv : IsUTermVec LAct k v) (hj : j + 1 ≤ k) (Γ i : V) :
+    DossierAtV factPreds Γ i k v (j + 1) ↔
+      neg LAct (adjFact (^&i) (^&(i + 1)) (vRef (i + 1 + eqCountT v.[k - (j + 1)]) j)) ∈ Γ ∧
+      DossierAtT factPreds Γ (i + 1) v.[k - (j + 1)] ∧
+      DossierAtV factPreds Γ (i + 1 + eqCountT v.[k - (j + 1)]) k v j := by
+  have e : i + (eqCountT v.[k - (j + 1)] + 1) = i + 1 + eqCountT v.[k - (j + 1)] := by ring
+  rw [dossierAtV_iff, dossFactsV_succ hv hj, factPreds_adjoin, subst_Padjoin, allNeg_appendV, allNeg_appendV,
+    allNeg_single, e, dossierAtT_iff, dossierAtV_iff]
+  exact ⟨fun ⟨a, b, c⟩ ↦ ⟨c, b, a⟩, fun ⟨c, b, a⟩ ↦ ⟨a, b, c⟩⟩
+lemma dossierAt_verum (Γ i : V) : DossierAt factPreds Γ i (^⊤ : V) ↔ neg LAct (verumFact (^&i)) ∈ Γ := by
+  rw [dossierAt_iff, dossFacts_verum, factPreds_verum, subst_Pverum, allNeg_single]
+lemma dossierAt_falsum (Γ i : V) : DossierAt factPreds Γ i (^⊥ : V) ↔ neg LAct (falsumFact (^&i)) ∈ Γ := by
+  rw [dossierAt_iff, dossFacts_falsum, factPreds_falsum, subst_Pfalsum, allNeg_single]
+lemma dossierAt_and {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) (Γ i : V) :
+    DossierAt factPreds Γ i (p ^⋏ q) ↔
+      neg LAct (andFact (^&i) (^&(i + eqCount q + 1)) (^&(i + 1))) ∈ Γ ∧
+      DossierAt factPreds Γ (i + 1) q ∧ DossierAt factPreds Γ (i + eqCount q + 1) p := by
+  have e : i + (eqCount q + 1) = i + eqCount q + 1 := (add_assoc _ _ _).symm
+  simp only [dossierAt_iff]
+  rw [dossFacts_and hp hq, factPreds_and, subst_Pand, allNeg_appendV, allNeg_appendV, allNeg_single, e]
+  exact ⟨fun ⟨a, b, c⟩ ↦ ⟨c, b, a⟩, fun ⟨c, b, a⟩ ↦ ⟨a, b, c⟩⟩
+lemma dossierAt_or {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) (Γ i : V) :
+    DossierAt factPreds Γ i (p ^⋎ q) ↔
+      neg LAct (orFact (^&i) (^&(i + eqCount q + 1)) (^&(i + 1))) ∈ Γ ∧
+      DossierAt factPreds Γ (i + 1) q ∧ DossierAt factPreds Γ (i + eqCount q + 1) p := by
+  have e : i + (eqCount q + 1) = i + eqCount q + 1 := (add_assoc _ _ _).symm
+  simp only [dossierAt_iff]
+  rw [dossFacts_or hp hq, factPreds_or, subst_Por, allNeg_appendV, allNeg_appendV, allNeg_single, e]
+  exact ⟨fun ⟨a, b, c⟩ ↦ ⟨c, b, a⟩, fun ⟨c, b, a⟩ ↦ ⟨a, b, c⟩⟩
+lemma dossierAt_all {p : V} (hp : IsUFormula LAct p) (Γ i : V) :
+    DossierAt factPreds Γ i (^∀ p) ↔
+      neg LAct (allFact (^&i) (^&(i + 1))) ∈ Γ ∧ DossierAt factPreds Γ (i + 1) p := by
+  simp only [dossierAt_iff]
+  rw [dossFacts_all hp, factPreds_all, subst_Pall, allNeg_appendV, allNeg_single, and_comm]
+lemma dossierAt_exs {p : V} (hp : IsUFormula LAct p) (Γ i : V) :
+    DossierAt factPreds Γ i (^∃ p) ↔
+      neg LAct (exsFact (^&i) (^&(i + 1))) ∈ Γ ∧ DossierAt factPreds Γ (i + 1) p := by
+  simp only [dossierAt_iff]
+  rw [dossFacts_exs hp, factPreds_exs, subst_Pexs, allNeg_appendV, allNeg_single, and_comm]
+lemma dossierAt_rel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) (Γ i : V) :
+    DossierAt factPreds Γ i (^rel k R v) ↔
+      neg LAct (relFact (^&i) (cTV k) (cTV R) (vRef (i + 1) k)) ∈ Γ ∧ DossierAtV factPreds Γ (i + 1) k v k := by
+  rw [dossierAt_iff, dossFacts_rel hR hv, factPreds_rel, subst_Prel, allNeg_appendV, allNeg_single,
+    dossierAtV_iff, and_comm]
+lemma dossierAt_nrel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) (Γ i : V) :
+    DossierAt factPreds Γ i (^nrel k R v) ↔
+      neg LAct (nrelFact (^&i) (cTV k) (cTV R) (vRef (i + 1) k)) ∈ Γ ∧ DossierAtV factPreds Γ (i + 1) k v k := by
+  rw [dossierAt_iff, dossFacts_nrel hR hv, factPreds_nrel, subst_Pnrel, allNeg_appendV, allNeg_single,
+    dossierAtV_iff, and_comm]
+
+end dossEqs
+
 end ArithS
