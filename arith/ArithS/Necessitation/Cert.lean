@@ -5106,4 +5106,303 @@ row is needed either way). With the `≤` facts only, `leOfEqLe` yields `&0 ≤ 
 length no consumer row reads (`congLenNum` needs `=`). State `lenSteps_ok` with `NoDrop'`.
 -/
 
+/-! ## Part 5 — `lenSteps`: the exact-length producer (§3.6 "lengths")
+
+Bottom-up over a dossier. The walk leaves NO length fact, so every node first INTRODUCES its length
+object (`formulaLenTotal`/`termLenTotal`, tag 2 — one eigenvariable per node, the offsets move with
+`shiftsV`), reads the exact equation off the table's `formulaLen*`/`termLen*` row at the children's
+NUMERAL lengths, closes the arithmetic by `NumSteps`' `sLemma` facts (`addFact`, `succFact`, `cTEqFact`)
+with the new `congSucc` row (cIdx 184) and `eqTrans`, and moves the numeral into the graph position
+by `congLenNum`/`congTLenNum`. Atoms go through the vector: the length VECTOR is built by
+`adjoinTotal` (walk row 17) + `termLenVecAdj`, the sum by the new intro row `listSumAdjI` (cIdx 185)
+at numeral sums, then `formulaLenRelCert`/`termLenFuncCert`. NOT shift-free: `shiftsV + 1 ≤ 2|r|`.
+-/
+
+/-! ### 5.0 Preliminaries: numerals are shift-invariant; `NoDrop'` transport of dossiers -/
+
+section lenPrelim
+
+lemma termShiftIterV_bnum (z : V) : ∀ k : V, termShiftIterV (bnum z) k = bnum z := by
+  intro k
+  induction k using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp [termShiftIterV_zero]
+  | succ k ih => rw [termShiftIterV_succ, ih, termShift_bnum]
+
+/-- A dossier survives a cut-admitting list too, moved up by its eigenvariable count. -/
+lemma dossF_transport' {W Γ n r i S : V} (hS : NoDrop' S) (h : DossF W Γ n r i) :
+    DossF W (finalCtx Γ S) n r (i + shiftsV S) := by
+  intro f hf
+  rw [shiftIterV_add]
+  exact mem_finalCtx_of_mem' hS (h f hf)
+lemma dossT_transport' {W Γ n t i S : V} (hS : NoDrop' S) (h : DossT W Γ n t i) :
+    DossT W (finalCtx Γ S) n t (i + shiftsV S) := by
+  intro f hf
+  rw [shiftIterV_add]
+  exact mem_finalCtx_of_mem' hS (h f hf)
+lemma dossV_transport' {W Γ n k v j i S : V} (hS : NoDrop' S) (h : DossV W Γ n k v j i) :
+    DossV W (finalCtx Γ S) n k v j (i + shiftsV S) := by
+  intro f hf
+  rw [shiftIterV_add]
+  exact mem_finalCtx_of_mem' hS (h f hf)
+
+end lenPrelim
+
+/-! ### 5.1 The step-list builders (one per node shape), each a Σ₁ function -/
+
+section lenBuilders
+
+/-- A constant node (`verum` at row `147`, `falsum` at `148`): introduce the length, read `l = 1`, move the
+numeral `bnum 1` onto the node. -/
+noncomputable def lnConstSteps (W c i : V) : V :=
+  ?[mkStep W 155 ?[^&i], mkStep W c ?[^&(i + 1), ^&0], mkStep W 145 ?[^&(i + 1), ^&0, bnum 1]]
+
+noncomputable def lnConstStepsDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W c i. ∃ fi, !qqFvarDef fi i ∧ ∃ fi', !qqFvarDef fi' (i + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ b1, !bnumGraph b1 1 ∧
+    ∃ e₁, !mkVec₁Def e₁ fi ∧ ∃ s₁, !mkStepDef s₁ W 155 e₁ ∧
+    ∃ e₂, !mkVec₂Def e₂ fi' f0 ∧ ∃ s₂, !mkStepDef s₂ W c e₂ ∧
+    ∃ e₃₀, !mkVec₂Def e₃₀ f0 b1 ∧ ∃ e₃, !adjoinDef e₃ fi' e₃₀ ∧ ∃ s₃, !mkStepDef s₃ W 145 e₃ ∧
+    ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ !adjoinDef y s₁ l₂”
+
+instance lnConstSteps_defined : 𝚺₁-Function₃ (lnConstSteps : V → V → V → V) via lnConstStepsDef := .mk
+  fun v ↦ by simp [lnConstStepsDef, lnConstSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff]
+instance lnConstSteps_definable : 𝚺₁-Function₃ (lnConstSteps : V → V → V → V) := lnConstSteps_defined.to_definable
+
+/-- A binary node (`and` at row `149`, `or` at `150`) after the RIGHT child's list `yq` (offset `i + 1`,
+shifts `sq`) and the LEFT child's `yp` (offset `i + cq + 1 + sq`, shifts `sp`), `S = sq + sp`: introduce the
+length at `&(i + S)`, read `l = bnum lp + bnum lq + 1`, close by `addFact lp lq`, `congSucc`,
+`succFact (lp + lq)` and two `eqTrans`, then `congLenNum`. -/
+noncomputable def lnBinSteps (W T c n cq lp lq i sq sp yq yp : V) : V :=
+  appendV yq (appendV yp
+    ?[mkStep W 155 ?[^&(i + (sq + sp))],
+      mkStep W c ?[cTV n, ^&(i + cq + 1 + (sq + sp) + 1), ^&(i + 1 + (sq + sp) + 1), ^&(i + (sq + sp) + 1), bnum lp, bnum lq, ^&0],
+      sLemma (addFact lp lq) (addCode T lp lq),
+      mkStep W 184 ?[bnum lp ^+ bnum lq, bnum (lp + lq)],
+      sLemma (succFact (lp + lq)) (succCode T (lp + lq)),
+      mkStep W 123 ?[^&0, bnum lp ^+ bnum lq ^+ (𝟏 : V), bnum (lp + lq) ^+ (𝟏 : V)],
+      mkStep W 123 ?[^&0, bnum (lp + lq) ^+ (𝟏 : V), bnum (lp + lq + 1)],
+      mkStep W 145 ?[^&(i + (sq + sp) + 1), ^&0, bnum (lp + lq + 1)]])
+
+noncomputable def lnBinStepsDef : 𝚺₁.Semisentence 13 := .mkSigma
+  “y W T c n cq lp lq i sq sp yq yp. ∃ S, S = sq + sp ∧
+    ∃ fS, !qqFvarDef fS (i + S) ∧ ∃ fp, !qqFvarDef fp (i + cq + 1 + S + 1) ∧ ∃ fq, !qqFvarDef fq (i + 1 + S + 1) ∧
+    ∃ fr, !qqFvarDef fr (i + S + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ cn, !cTVGraph cn n ∧
+    ∃ bp, !bnumGraph bp lp ∧ ∃ bq, !bnumGraph bq lq ∧ ∃ bs, !bnumGraph bs (lp + lq) ∧ ∃ bs1, !bnumGraph bs1 (lp + lq + 1) ∧
+    ∃ pq, !qqAddGraph pq bp bq ∧ ∃ pq1, !qqAddGraph pq1 pq ↑Arithmetic.one ∧ ∃ bs1', !qqAddGraph bs1' bs ↑Arithmetic.one ∧
+    ∃ e₁, !mkVec₁Def e₁ fS ∧ ∃ s₁, !mkStepDef s₁ W 155 e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ bq f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ bp e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ fr e₂₁ ∧ ∃ e₂₃, !adjoinDef e₂₃ fq e₂₂ ∧
+    ∃ e₂₄, !adjoinDef e₂₄ fp e₂₃ ∧ ∃ e₂, !adjoinDef e₂ cn e₂₄ ∧ ∃ s₂, !mkStepDef s₂ W c e₂ ∧
+    ∃ A₃, !addFactDef A₃ lp lq ∧ ∃ d₃, !addCodeDef d₃ T lp lq ∧ ∃ q₃, !pairDef q₃ A₃ d₃ ∧ ∃ s₃, !pairDef s₃ 7 q₃ ∧
+    ∃ e₄, !mkVec₂Def e₄ pq bs ∧ ∃ s₄, !mkStepDef s₄ W 184 e₄ ∧
+    ∃ A₅, !succFactDef A₅ (lp + lq) ∧ ∃ d₅, !succCodeDef d₅ T (lp + lq) ∧ ∃ q₅, !pairDef q₅ A₅ d₅ ∧ ∃ s₅, !pairDef s₅ 7 q₅ ∧
+    ∃ e₆₀, !mkVec₂Def e₆₀ pq1 bs1' ∧ ∃ e₆, !adjoinDef e₆ f0 e₆₀ ∧ ∃ s₆, !mkStepDef s₆ W 123 e₆ ∧
+    ∃ e₇₀, !mkVec₂Def e₇₀ bs1' bs1 ∧ ∃ e₇, !adjoinDef e₇ f0 e₇₀ ∧ ∃ s₇, !mkStepDef s₇ W 123 e₇ ∧
+    ∃ e₈₀, !mkVec₂Def e₈₀ f0 bs1 ∧ ∃ e₈, !adjoinDef e₈ fr e₈₀ ∧ ∃ s₈, !mkStepDef s₈ W 145 e₈ ∧
+    ∃ l₈, !mkVec₁Def l₈ s₈ ∧ ∃ l₇, !adjoinDef l₇ s₇ l₈ ∧ ∃ l₆, !adjoinDef l₆ s₆ l₇ ∧ ∃ l₅, !adjoinDef l₅ s₅ l₆ ∧
+    ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l, !adjoinDef l s₁ l₂ ∧
+    ∃ A, !appendVDef A yp l ∧ !appendVDef y yq A”
+
+instance lnBinSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 12 → V ↦ lnBinSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11))
+      lnBinStepsDef := .mk
+  fun v ↦ by
+    simp [lnBinStepsDef, lnBinSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+      qqAdd_defined.iff, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff,
+      appendV_defined.iff, sLemma]
+instance lnBinSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ lnBinSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
+  lnBinSteps_defined.to_definable
+
+/-- A quantifier node (`all` at row `151`, `exs` at `152`) after the body's list `yb` (offset `i + 1`, level
+`n + 1`, shifts `sb`): introduce the length at `&(i + sb)`, read `l = bnum lp + 1`, close by
+`succFact lp` and `eqTrans`, then `congLenNum`. -/
+noncomputable def lnQuantSteps (W T c n lp i sb yb : V) : V :=
+  appendV yb
+    ?[mkStep W 155 ?[^&(i + sb)],
+      mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), bnum lp, ^&0],
+      sLemma (succFact lp) (succCode T lp),
+      mkStep W 123 ?[^&0, bnum lp ^+ (𝟏 : V), bnum (lp + 1)],
+      mkStep W 145 ?[^&(i + sb + 1), ^&0, bnum (lp + 1)]]
+
+noncomputable def lnQuantStepsDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y W T c n lp i sb yb.
+    ∃ fS, !qqFvarDef fS (i + sb) ∧ ∃ fp, !qqFvarDef fp (i + 1 + sb + 1) ∧ ∃ fr, !qqFvarDef fr (i + sb + 1) ∧
+    ∃ f0, !qqFvarDef f0 0 ∧ ∃ cn, !cTVGraph cn n ∧ ∃ bp, !bnumGraph bp lp ∧ ∃ bp1, !bnumGraph bp1 (lp + 1) ∧
+    ∃ bp1', !qqAddGraph bp1' bp ↑Arithmetic.one ∧
+    ∃ e₁, !mkVec₁Def e₁ fS ∧ ∃ s₁, !mkStepDef s₁ W 155 e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ bp f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ fr e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ fp e₂₁ ∧ ∃ e₂, !adjoinDef e₂ cn e₂₂ ∧
+    ∃ s₂, !mkStepDef s₂ W c e₂ ∧
+    ∃ A₃, !succFactDef A₃ lp ∧ ∃ d₃, !succCodeDef d₃ T lp ∧ ∃ q₃, !pairDef q₃ A₃ d₃ ∧ ∃ s₃, !pairDef s₃ 7 q₃ ∧
+    ∃ e₄₀, !mkVec₂Def e₄₀ bp1' bp1 ∧ ∃ e₄, !adjoinDef e₄ f0 e₄₀ ∧ ∃ s₄, !mkStepDef s₄ W 123 e₄ ∧
+    ∃ e₅₀, !mkVec₂Def e₅₀ f0 bp1 ∧ ∃ e₅, !adjoinDef e₅ fr e₅₀ ∧ ∃ s₅, !mkStepDef s₅ W 145 e₅ ∧
+    ∃ l₅, !mkVec₁Def l₅ s₅ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧
+    ∃ l, !adjoinDef l s₁ l₂ ∧ !appendVDef y yb l”
+
+instance lnQuantSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ lnQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) lnQuantStepsDef := .mk
+  fun v ↦ by
+    simp [lnQuantStepsDef, lnQuantSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+      qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff, appendV_defined.iff, sLemma]
+instance lnQuantSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ lnQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
+  lnQuantSteps_defined.to_definable
+
+/-- An atom (`rel` at row `142`, `nrel` at `143`) after the vector's list `yv` (offset `i + 1`, shifts `sv`,
+leaving the length vector at `&0` (`vRef 0 k`) and `listSumFact (bnum σ) ⟨M⟩`): the closed symbol row, the
+length at `&(i + sv)`, `formulaLenRelCert` at `[cT k, cT R, ⟨v⟩, &p, ⟨M⟩, bnum σ, &0]` reading
+`l = bnum σ + 1`, `succFact σ`, `eqTrans`, `congLenNum`. -/
+noncomputable def lnAtomSteps (W T c k R σ i sv yv : V) : V :=
+  appendV yv
+    ?[mkStep W (relRow R) 0,
+      mkStep W 155 ?[^&(i + sv)],
+      mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, bnum σ, ^&0],
+      sLemma (succFact σ) (succCode T σ),
+      mkStep W 123 ?[^&0, bnum σ ^+ (𝟏 : V), bnum (σ + 1)],
+      mkStep W 145 ?[^&(i + sv + 1), ^&0, bnum (σ + 1)]]
+
+noncomputable def lnAtomStepsDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y W T c k R σ i sv yv. ∃ ρ, !relRowDef ρ R ∧ ∃ s₀, !mkStepDef s₀ W ρ 0 ∧
+    ∃ fS, !qqFvarDef fS (i + sv) ∧ ∃ fr, !qqFvarDef fr (i + sv + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧
+    ∃ ck, !cTVGraph ck k ∧ ∃ cR, !cTVGraph cR R ∧ ∃ rv, !vRefDef rv (i + 1 + sv + 1) k ∧ ∃ rM, !vRefDef rM 1 k ∧
+    ∃ bσ, !bnumGraph bσ σ ∧ ∃ bσ1, !bnumGraph bσ1 (σ + 1) ∧ ∃ bσ1', !qqAddGraph bσ1' bσ ↑Arithmetic.one ∧
+    ∃ e₁, !mkVec₁Def e₁ fS ∧ ∃ s₁, !mkStepDef s₁ W 155 e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ bσ f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ rM e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ fr e₂₁ ∧ ∃ e₂₃, !adjoinDef e₂₃ rv e₂₂ ∧
+    ∃ e₂₄, !adjoinDef e₂₄ cR e₂₃ ∧ ∃ e₂, !adjoinDef e₂ ck e₂₄ ∧ ∃ s₂, !mkStepDef s₂ W c e₂ ∧
+    ∃ A₃, !succFactDef A₃ σ ∧ ∃ d₃, !succCodeDef d₃ T σ ∧ ∃ q₃, !pairDef q₃ A₃ d₃ ∧ ∃ s₃, !pairDef s₃ 7 q₃ ∧
+    ∃ e₄₀, !mkVec₂Def e₄₀ bσ1' bσ1 ∧ ∃ e₄, !adjoinDef e₄ f0 e₄₀ ∧ ∃ s₄, !mkStepDef s₄ W 123 e₄ ∧
+    ∃ e₅₀, !mkVec₂Def e₅₀ f0 bσ1 ∧ ∃ e₅, !adjoinDef e₅ fr e₅₀ ∧ ∃ s₅, !mkStepDef s₅ W 145 e₅ ∧
+    ∃ l₅, !mkVec₁Def l₅ s₅ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧
+    ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ ∃ l, !adjoinDef l s₀ l₁ ∧ !appendVDef y yv l”
+
+instance lnAtomSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ lnAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) lnAtomStepsDef := .mk
+  fun v ↦ by
+    simp [lnAtomStepsDef, lnAtomSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+      vRef_defined.iff, relRow_defined.iff, qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff,
+      appendV_defined.iff, sLemma]
+instance lnAtomSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ lnAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
+  lnAtomSteps_defined.to_definable
+
+/-- A term leaf (`bvar` at row `153`, `fvar` at `154`, index `z`): `termLenTotal`, the row reading
+`l = cT z + 1`, the closed `cTEqFact (z + 1)` (`cT (z + 1) = bnum (z + 1)`, and `cT (z + 1) = cT z + 1`
+syntactically), `eqTrans`, `congTLenNum`. -/
+noncomputable def lnLeafSteps (W T c z i : V) : V :=
+  ?[mkStep W 156 ?[^&i],
+    mkStep W c ?[cTV z, ^&(i + 1), ^&0],
+    sLemma (cTEqFact (z + 1)) (cTEqCode T (z + 1)),
+    mkStep W 123 ?[^&0, cTV (z + 1), bnum (z + 1)],
+    mkStep W 146 ?[^&(i + 1), ^&0, bnum (z + 1)]]
+
+noncomputable def lnLeafStepsDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W T c z i. ∃ fi, !qqFvarDef fi i ∧ ∃ fi', !qqFvarDef fi' (i + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧
+    ∃ cz, !cTVGraph cz z ∧ ∃ cz1, !cTVGraph cz1 (z + 1) ∧ ∃ bz1, !bnumGraph bz1 (z + 1) ∧
+    ∃ e₁, !mkVec₁Def e₁ fi ∧ ∃ s₁, !mkStepDef s₁ W 156 e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ fi' f0 ∧ ∃ e₂, !adjoinDef e₂ cz e₂₀ ∧ ∃ s₂, !mkStepDef s₂ W c e₂ ∧
+    ∃ A₃, !cTEqFactDef A₃ (z + 1) ∧ ∃ d₃, !cTEqCodeDef d₃ T (z + 1) ∧ ∃ q₃, !pairDef q₃ A₃ d₃ ∧ ∃ s₃, !pairDef s₃ 7 q₃ ∧
+    ∃ e₄₀, !mkVec₂Def e₄₀ cz1 bz1 ∧ ∃ e₄, !adjoinDef e₄ f0 e₄₀ ∧ ∃ s₄, !mkStepDef s₄ W 123 e₄ ∧
+    ∃ e₅₀, !mkVec₂Def e₅₀ f0 bz1 ∧ ∃ e₅, !adjoinDef e₅ fi' e₅₀ ∧ ∃ s₅, !mkStepDef s₅ W 146 e₅ ∧
+    ∃ l₅, !mkVec₁Def l₅ s₅ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧
+    !adjoinDef y s₁ l₂”
+
+instance lnLeafSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ lnLeafSteps (v 0) (v 1) (v 2) (v 3) (v 4)) lnLeafStepsDef := .mk
+  fun v ↦ by
+    simp [lnLeafStepsDef, lnLeafSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+      cTEqFact_defined.iff, cTEqCode_defined.iff, sLemma]
+instance lnLeafSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ lnLeafSteps (v 0) (v 1) (v 2) (v 3) (v 4)) :=
+  lnLeafSteps_defined.to_definable
+
+/-- A function node after the vector's list `yv` (as `lnAtomSteps`, with `termLenFuncCert` (row `144`) and
+`congTLenNum` (`146`)). -/
+noncomputable def lnFuncSteps (W T k f σ i sv yv : V) : V :=
+  appendV yv
+    ?[mkStep W (funcRow k f) 0,
+      mkStep W 156 ?[^&(i + sv)],
+      mkStep W 144 ?[cTV k, cTV f, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, bnum σ, ^&0],
+      sLemma (succFact σ) (succCode T σ),
+      mkStep W 123 ?[^&0, bnum σ ^+ (𝟏 : V), bnum (σ + 1)],
+      mkStep W 146 ?[^&(i + sv + 1), ^&0, bnum (σ + 1)]]
+
+noncomputable def lnFuncStepsDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y W T k f σ i sv yv. ∃ ρ, !funcRowDef ρ k f ∧ ∃ s₀, !mkStepDef s₀ W ρ 0 ∧
+    ∃ fS, !qqFvarDef fS (i + sv) ∧ ∃ fr, !qqFvarDef fr (i + sv + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧
+    ∃ ck, !cTVGraph ck k ∧ ∃ cf, !cTVGraph cf f ∧ ∃ rv, !vRefDef rv (i + 1 + sv + 1) k ∧ ∃ rM, !vRefDef rM 1 k ∧
+    ∃ bσ, !bnumGraph bσ σ ∧ ∃ bσ1, !bnumGraph bσ1 (σ + 1) ∧ ∃ bσ1', !qqAddGraph bσ1' bσ ↑Arithmetic.one ∧
+    ∃ e₁, !mkVec₁Def e₁ fS ∧ ∃ s₁, !mkStepDef s₁ W 156 e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ bσ f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ rM e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ fr e₂₁ ∧ ∃ e₂₃, !adjoinDef e₂₃ rv e₂₂ ∧
+    ∃ e₂₄, !adjoinDef e₂₄ cf e₂₃ ∧ ∃ e₂, !adjoinDef e₂ ck e₂₄ ∧ ∃ s₂, !mkStepDef s₂ W 144 e₂ ∧
+    ∃ A₃, !succFactDef A₃ σ ∧ ∃ d₃, !succCodeDef d₃ T σ ∧ ∃ q₃, !pairDef q₃ A₃ d₃ ∧ ∃ s₃, !pairDef s₃ 7 q₃ ∧
+    ∃ e₄₀, !mkVec₂Def e₄₀ bσ1' bσ1 ∧ ∃ e₄, !adjoinDef e₄ f0 e₄₀ ∧ ∃ s₄, !mkStepDef s₄ W 123 e₄ ∧
+    ∃ e₅₀, !mkVec₂Def e₅₀ f0 bσ1 ∧ ∃ e₅, !adjoinDef e₅ fr e₅₀ ∧ ∃ s₅, !mkStepDef s₅ W 146 e₅ ∧
+    ∃ l₅, !mkVec₁Def l₅ s₅ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧
+    ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ ∃ l, !adjoinDef l s₀ l₁ ∧ !appendVDef y yv l”
+
+instance lnFuncSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ lnFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) lnFuncStepsDef := .mk
+  fun v ↦ by
+    simp [lnFuncStepsDef, lnFuncSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+      vRef_defined.iff, funcRow_defined.iff, qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff,
+      appendV_defined.iff, sLemma]
+instance lnFuncSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ lnFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
+  lnFuncSteps_defined.to_definable
+
+/-- The empty vector: `termLenVecNil` (row `138`) and `listSumNil` (`140`), their dummy witness `cT 0`. -/
+noncomputable def lnNilSteps (W : V) : V := ?[mkStep W 138 ?[cTV 0], mkStep W 140 ?[cTV 0]]
+
+noncomputable def lnNilStepsDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y W. ∃ c0, !cTVGraph c0 0 ∧ ∃ e, !mkVec₁Def e c0 ∧ ∃ s₁, !mkStepDef s₁ W 138 e ∧ ∃ s₂, !mkStepDef s₂ W 140 e ∧
+    ∃ l₂, !mkVec₁Def l₂ s₂ ∧ !adjoinDef y s₁ l₂”
+
+instance lnNilSteps_defined : 𝚺₁-Function₁ (lnNilSteps : V → V) via lnNilStepsDef := .mk
+  fun v ↦ by simp [lnNilStepsDef, lnNilSteps, numeral_eq_natCast, mkStep_defined.iff, cTV.defined.iff]
+instance lnNilSteps_definable : 𝚺₁-Function₁ (lnNilSteps : V → V) := lnNilSteps_defined.to_definable
+
+/-- A vector node with `m` tail entries: the entry's list `yt` (offset `i + 1`, shifts `st`), the tail's `yv`
+(offset `i + 1 + ct + st`, shifts `sv`; its length vector at `&0` = `vRef 0 m`, sum `bnum σ'`), `S = st + sv + 1`:
+`adjoinTotal [bnum lt, ⟨M⟩]` (the new length vector `&0`), the tail's `utvPi` bridge (rows 38/39),
+`termLenVecAdj [cT n, cT m, ⟨tail⟩, &v', &t, bnum lt, ⟨M⟩, &0]`, `addFact lt σ'`, and
+`listSumAdjI [&0, ⟨M⟩, bnum lt, bnum σ', bnum (lt + σ')]`. -/
+noncomputable def lnAdjSteps (W T n m ct lt σ' i st sv yt yv : V) : V :=
+  appendV yt (appendV yv
+    ?[mkStep W 17 ?[bnum lt, vRef 0 m],
+      mkStep W 38 ?[cTV m, cTV n, vRef (i + 1 + ct + (st + sv + 1)) m],
+      mkStep W 39 ?[cTV m, vRef (i + 1 + ct + (st + sv + 1)) m],
+      mkStep W 139 ?[cTV n, cTV m, vRef (i + 1 + ct + (st + sv + 1)) m, ^&(i + (st + sv + 1)), ^&(i + 1 + (st + sv + 1)),
+        bnum lt, vRef 1 m, ^&0],
+      sLemma (addFact lt σ') (addCode T lt σ'),
+      mkStep W 185 ?[^&0, vRef 1 m, bnum lt, bnum σ', bnum (lt + σ')]])
+
+noncomputable def lnAdjStepsDef : 𝚺₁.Semisentence 13 := .mkSigma
+  “y W T n m ct lt σ' i st sv yt yv. ∃ S, S = st + sv + 1 ∧
+    ∃ bt, !bnumGraph bt lt ∧ ∃ bσ, !bnumGraph bσ σ' ∧ ∃ bs, !bnumGraph bs (lt + σ') ∧
+    ∃ r0, !vRefDef r0 0 m ∧ ∃ r1, !vRefDef r1 1 m ∧ ∃ rt, !vRefDef rt (i + 1 + ct + S) m ∧
+    ∃ cn, !cTVGraph cn n ∧ ∃ cm, !cTVGraph cm m ∧ ∃ fv, !qqFvarDef fv (i + S) ∧ ∃ ft, !qqFvarDef ft (i + 1 + S) ∧
+    ∃ f0, !qqFvarDef f0 0 ∧
+    ∃ e₁, !mkVec₂Def e₁ bt r0 ∧ ∃ s₁, !mkStepDef s₁ W 17 e₁ ∧
+    ∃ e₂₀, !mkVec₂Def e₂₀ cn rt ∧ ∃ e₂, !adjoinDef e₂ cm e₂₀ ∧ ∃ s₂, !mkStepDef s₂ W 38 e₂ ∧
+    ∃ e₃, !mkVec₂Def e₃ cm rt ∧ ∃ s₃, !mkStepDef s₃ W 39 e₃ ∧
+    ∃ e₄₀, !mkVec₂Def e₄₀ r1 f0 ∧ ∃ e₄₁, !adjoinDef e₄₁ bt e₄₀ ∧ ∃ e₄₂, !adjoinDef e₄₂ ft e₄₁ ∧ ∃ e₄₃, !adjoinDef e₄₃ fv e₄₂ ∧
+    ∃ e₄₄, !adjoinDef e₄₄ rt e₄₃ ∧ ∃ e₄₅, !adjoinDef e₄₅ cm e₄₄ ∧ ∃ e₄, !adjoinDef e₄ cn e₄₅ ∧ ∃ s₄, !mkStepDef s₄ W 139 e₄ ∧
+    ∃ A₅, !addFactDef A₅ lt σ' ∧ ∃ d₅, !addCodeDef d₅ T lt σ' ∧ ∃ q₅, !pairDef q₅ A₅ d₅ ∧ ∃ s₅, !pairDef s₅ 7 q₅ ∧
+    ∃ e₆₀, !mkVec₂Def e₆₀ bσ bs ∧ ∃ e₆₁, !adjoinDef e₆₁ bt e₆₀ ∧ ∃ e₆₂, !adjoinDef e₆₂ r1 e₆₁ ∧ ∃ e₆, !adjoinDef e₆ f0 e₆₂ ∧
+    ∃ s₆, !mkStepDef s₆ W 185 e₆ ∧
+    ∃ l₆, !mkVec₁Def l₆ s₆ ∧ ∃ l₅, !adjoinDef l₅ s₅ l₆ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧
+    ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l, !adjoinDef l s₁ l₂ ∧ ∃ A, !appendVDef A yv l ∧ !appendVDef y yt A”
+
+instance lnAdjSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 12 → V ↦ lnAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11))
+      lnAdjStepsDef := .mk
+  fun v ↦ by
+    simp [lnAdjStepsDef, lnAdjSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+      vRef_defined.iff, addFact_defined.iff, addCode_defined.iff, appendV_defined.iff, sLemma]
+instance lnAdjSteps_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ lnAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
+  lnAdjSteps_defined.to_definable
+
+end lenBuilders
+
+
 end ArithS
