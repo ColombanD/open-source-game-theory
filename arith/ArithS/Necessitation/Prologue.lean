@@ -3492,4 +3492,42 @@ theorem proWk_ok {tbl N N' B' Wl Wc W T s c i D E Γ : V} (htbl : TableOK tbl N)
 
 end wkChild
 
+/-! ## 8. What remains (2026-09-15) — recorded precisely
+
+* **`shift` (§4.8)**: NOT started. Plan, on this file's producers: for each member `x_j` of the (shifted) sequent
+  `s = setShift c`, the unshift `x'_j` is a known code; emit `memberBlock x'_j` (its dossier + length) and
+  `reidxL (certShift Wc 0 x'_j (its top) (memTop s x_j i))` → `shiftFact X_j X'_j`; lay out `c` by `layoutSteps c`
+  (members `x'_j`); `gok_setShiftTotal [s'']` → `ss`; identify `ss = S`: (a) `ss ⊆ S` by the `setShiftInsert` chain
+  along `c`'s layout chain (rows `gIdx 144/145`, needs each `shiftFact` and `memFact X_j S`) + `insertSubset`
+  folds; (b) `S ⊆ ss` by `gok_shiftMemSetShift [x'_j, ss, s'', x_j]` per member + `subChain` along `s`'s chain;
+  `lok_subsetAntisymm` → `eqFactB ss S`; `gok_congSetShiftL [S, ss, s'']` → `setShiftFact S s''` — the
+  `nodeShift_ok` hypothesis `hss`; `hf` is the child's own goal (no `congFstIdx`). The `_ok` needs `setShift_insert`
+  (`Lib/Frag.lean:73`) and `mem_setShift_iff` at the V level, and a per-member loop like `loopW` over the
+  certification calls (re-indexed, `certShift_ok` at `certView tbl`).
+* **`or` (§4.4)**: `layout_or` gives the shape/dossiers; the child sequent is `insert p (insert q s)` — a TWO-level
+  insert. `proIns` handles ONE level; the two-level identification needs Loop A with a third case (`y_j = q` →
+  `memInsertSelfC [Q, S, cp']` + `memInsertOfMem [Q, cp', P, cp]`), the else-case through both objects, and in
+  direction (ii) two `insertSubset`s (`S ⊆ s''` → `cp' ⊆ s''` → `cp ⊆ s''`). Everything else (`postIns`,
+  `nodeOr_ok`'s `hiq'`/`hip'`) is in place.
+* **`all`/`exs`/`axm`**: not this file's (they need `certSubst`/`certFree`, in flight in `Cert`). Their remaining needs
+  beyond `Prologue`: `all` — `freeFact fp p` (`certFree`) and the `setShift` identification of `shift`;
+  `exs` — `describeT t` + term `lenSteps` (`tPiFact`/`tlenFact`), `substs1Fact` (`certSubst` + `substsSubsts1`),
+  then `proIns` for `insert (substs1 t p) s`; `axm` — the recognizer `axchFact` (`axiomRec σ`/`indRec`).
+* **`or`'s and the leaves' `nodeAxL`-side fragment at `W = frag2Pieces`**: `fragAxL_ok` is stated at `W = frag1Pieces`
+  and my facts are stated at the PROLOGUE pieces `proPieces` (`mkStep_pro_frag1/frag2/layout` bridge literal indices);
+  the composed verify list must read the fragment steps through `mkStep_frag2Pieces_lt` (as `Frag2` does) — a
+  bookkeeping step for `Verify`, not a mathematical gap.
+* **Costs (`costSum_pro<Tag>_le`)**: NOT stated. Every piece has its bound (`costSum_certNeg_le`,
+  `costSum_lenSteps_le`, `costSum_chainSteps_le`, `costSum_eqSteps_le`, `costSum_le_of_hornOnly` for the Horn-only
+  loops/folds, `costSum_le_of_sizeOK` for the `sLemma`-bearing `lenFold`, `costSum_reidxL` for re-indexed lists,
+  `costSum_appendV`); the assembly is additive with the context bounds of `Frag1` §5 (`ctxVec_len_le_sizeOK`).
+  `SizeOK` of the `lenFold` blocks: `foldBlockS` carries one `sLemma (sum2Fact L' |x| L)` — `Q ≥ |sum2Fact|`,
+  `D ≥ dlen (sum2Code …)` (`dlen_sum2Code_le`).
+* **The empty child sequent** (`wk`/`cut` from a derivation of `∅` in a nonstandard model): `chainSteps_ok` needs
+  `1 ≤ k`; every `_ok` here assumes `1 ≤ len (memberList …)`. The empty case needs an "empty sequent object"
+  (`eqTotal [𝟎]` + `fsetOfSubsetZeroC` + a length object) — a handful of rows, not attempted.
+* **Tables**: the prologue table `ProTable` = `TopTable` + the certification tail (re-indexed by `+ certShiftN`)
+  + `proExtraRows` (`setLenSingLe` at 155). `exists_proTable` builds it. `certRowCount` may still grow (the `Cert`
+  agent appends): everything here is symbolic in it (`proRowCount`, `cshiftN_lt`, `proRows_cshiftN'`). -/
+
 end ArithS
