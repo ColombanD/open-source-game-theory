@@ -1676,8 +1676,17 @@ def PassVGraph (W ν n k v m i j y : V) : Prop := PassGraph W ⟪1, ν, n, ⟪k,
 
 noncomputable def passGraphDef : 𝚺₁.Semisentence 2 := .mkSigma “W pr. !PassT.blueprint.fixpointDef pr W”
 
+-- TRAP (2026-09-14): a full `simp [passGraphDef, eval_fixpointDef, PassGraph]` HANGS here (the
+-- blueprint has five disjuncts with long `pairDef` chains, and `simp` unfolds all of them; the
+-- same one-liner is fine for `Describe`'s smaller `DescF`). Push the substitution through with a
+-- targeted `simp only`, then rewrite with `eval_fixpointDef` — 40 s.
 instance passGraph_defined : 𝚺₁-Relation (PassGraph : V → V → Prop) via passGraphDef := .mk
-  fun v ↦ by simp [passGraphDef, PassT.construction.eval_fixpointDef, PassGraph]; rfl
+  fun v ↦ by
+    simp only [passGraphDef, HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs,
+      Matrix.comp_vecCons', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons,
+      Matrix.constant_eq_singleton]
+    rw [PassT.construction.eval_fixpointDef]
+    rfl
 instance passGraph_definable : 𝚺₁-Relation (PassGraph : V → V → Prop) := passGraph_defined.to_definable
 
 noncomputable def passTGraphDef : 𝚺₁.Semisentence 7 := .mkSigma
