@@ -2717,4 +2717,291 @@ lemma certNeg_graph {W n r i j : V} (hr : IsSemiformula LAct n r) :
 lemma certShift_graph {W n r i j : V} (hr : IsSemiformula LAct n r) :
     PassFGraph W 2 n r i j (certShift W n r i j) := passF_graph (Or.inr rfl) hr
 
+/-! ### 2.6 The structural invariant: the pass is SHIFT-FREE (`NoDrop`, `shiftsV = 0`)
+
+Every step of a pass is a Horn step (tag `0`), so contexts only grow and the offsets never move.
+-/
+
+section passStruct
+
+/-- Every row the formula pass emits is a Horn row (tag `0`). -/
+lemma ctag_fRow {W : V} (hWp : W = certPieces) {ν c : V} (hν : ν = 1 ∨ ν = 2)
+    (hc : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 ∨ c = 5 ∨ c = 6 ∨ c = 7) (ev : V) :
+    sTag (mkStep W (fRow ν c) ev) = 0 := by
+  have hf : fRow ν c = 100 ∨ fRow ν c = 101 ∨ fRow ν c = 102 ∨ fRow ν c = 103 ∨ fRow ν c = 104 ∨
+      fRow ν c = 105 ∨ fRow ν c = 106 ∨ fRow ν c = 107 ∨ fRow ν c = 108 ∨ fRow ν c = 109 ∨
+      fRow ν c = 110 ∨ fRow ν c = 111 ∨ fRow ν c = 112 ∨ fRow ν c = 113 ∨ fRow ν c = 114 ∨ fRow ν c = 115 := by
+    rcases hν with rfl | rfl <;> rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp [fRow] <;> norm_num
+  rcases hf with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h]
+  · exact ctag_negRelCert hWp ev
+  · exact ctag_negNRelCert hWp ev
+  · exact ctag_negVerumCert hWp ev
+  · exact ctag_negFalsumCert hWp ev
+  · exact ctag_negAndCert hWp ev
+  · exact ctag_negOrCert hWp ev
+  · exact ctag_negAllCert hWp ev
+  · exact ctag_negExsCert hWp ev
+  · exact ctag_shiftRelCert hWp ev
+  · exact ctag_shiftNRelCert hWp ev
+  · exact ctag_shiftVerumCert hWp ev
+  · exact ctag_shiftFalsumCert hWp ev
+  · exact ctag_shiftAndCert hWp ev
+  · exact ctag_shiftOrCert hWp ev
+  · exact ctag_shiftAllCert hWp ev
+  · exact ctag_shiftExsCert hWp ev
+
+/-- The two term-level closed-symbol / vector rows the ATOM case appends are Horn rows too. -/
+lemma ctag_vNilRow {W : V} (hWp : W = certPieces) {ν : V} (hν : ν = 1 ∨ ν = 2) (ev : V) :
+    sTag (mkStep W (vNilRow ν) ev) = 0 := by
+  rcases hν with rfl | rfl
+  · rw [show vNilRow (1 : V) = 116 by simp [vNilRow]]; exact ctag_tshvNilCert hWp ev
+  · rw [show vNilRow (2 : V) = 116 by simp [vNilRow]]; exact ctag_tshvNilCert hWp ev
+
+/-- The rows of the TERM-level pass are Horn rows too (`ν = 1` uses the shift rows as well: at a
+`neg` the term level never runs, but the definition still names them). -/
+lemma ctag_tLeafRow {W : V} (hWp : W = certPieces) (ν kind ev : V) :
+    sTag (mkStep W (tLeafRow ν kind) ev) = 0 := by
+  have hf : tLeafRow ν kind = 124 ∨ tLeafRow ν kind = 125 ∨ tLeafRow ν kind = 118 ∨ tLeafRow ν kind = 119 := by
+    unfold tLeafRow
+    by_cases hν : ν = 0 <;> by_cases hk : kind = 0 <;> simp [hν, hk]
+  rcases hf with h | h | h | h <;> rw [h]
+  · exact ctag_eqOfBvar hWp ev
+  · exact ctag_eqOfFvar hWp ev
+  · exact ctag_termShiftBvarCert hWp ev
+  · exact ctag_termShiftFvarCert hWp ev
+
+lemma ctag_tFuncRow {W : V} (hWp : W = certPieces) (ν ev : V) : sTag (mkStep W (tFuncRow ν) ev) = 0 := by
+  have hf : tFuncRow ν = 126 ∨ tFuncRow ν = 120 := by
+    unfold tFuncRow; by_cases hν : ν = 0 <;> simp [hν]
+  rcases hf with h | h <;> rw [h]
+  · exact ctag_eqOfFunc hWp ev
+  · exact ctag_termShiftFuncCert hWp ev
+
+lemma ctag_vNilRow' {W : V} (hWp : W = certPieces) (ν ev : V) : sTag (mkStep W (vNilRow ν) ev) = 0 := by
+  have hf : vNilRow ν = 121 ∨ vNilRow ν = 116 := by
+    unfold vNilRow; by_cases hν : ν = 0 <;> simp [hν]
+  rcases hf with h | h <;> rw [h]
+  · exact ctag_eqRefl hWp ev
+  · exact ctag_tshvNilCert hWp ev
+
+lemma ctag_vAdjRow {W : V} (hWp : W = certPieces) (ν ev : V) : sTag (mkStep W (vAdjRow ν) ev) = 0 := by
+  have hf : vAdjRow ν = 127 ∨ vAdjRow ν = 117 := by
+    unfold vAdjRow; by_cases hν : ν = 0 <;> simp [hν]
+  rcases hf with h | h <;> rw [h]
+  · exact ctag_eqOfAdj hWp ev
+  · exact ctag_tshvAdjCert hWp ev
+
+/-- The walk's two `utvPi` bridge rows and the closed-symbol rows, read from `certPieces`. -/
+lemma ctag_cert38 {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (38 : V) ev) = 0 := by
+  subst hWp
+  rw [show (38 : V) = ((38 : ℕ) : V) by simp, mkStep_certPieces_lt 38 (by decide)]
+  exact tag_isUTermVecOfSemitermVecLAct rfl ev
+lemma ctag_cert39 {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (39 : V) ev) = 0 := by
+  subst hWp
+  rw [show (39 : V) = ((39 : ℕ) : V) by simp, mkStep_certPieces_lt 39 (by decide)]
+  exact tag_isUTermVecSigmaPiLAct rfl ev
+lemma ctag_certFuncRow {W : V} (hWp : W = certPieces) (k f ev : V) : sTag (mkStep W (funcRow k f) ev) = 0 := by
+  subst hWp
+  have hf : ∃ m : ℕ, m < walkRowCount ∧ funcRow k f = (m : V) := by
+    unfold funcRow
+    by_cases h1 : k = 0
+    · by_cases h2 : f = 0
+      · exact ⟨9, by decide, by simp [h1, h2]⟩
+      by_cases h3 : f = 1
+      · exact ⟨10, by decide, by simp [h1, h2, h3]⟩
+      by_cases h4 : f = 2
+      · exact ⟨13, by decide, by simp [h1, h2, h3, h4]⟩
+      · exact ⟨14, by decide, by simp [h1, h2, h3, h4]⟩
+    · by_cases h2 : f = 0
+      · exact ⟨11, by decide, by simp [h1, h2]⟩
+      · exact ⟨12, by decide, by simp [h1, h2]⟩
+  obtain ⟨m, hm, hfm⟩ := hf
+  rw [hfm, mkStep_certPieces_lt m hm, ← hfm]
+  exact tag_funcRow rfl k f ev
+
+set_option maxHeartbeats 2000000 in
+set_option maxRecDepth 20000 in
+/-- **The term pass drops nothing and introduces no eigenvariable.** Stated over the GRAPH (the
+function `passT` inside a Π₁ motive makes `definability` diverge — TRAP). -/
+lemma passTGraph_noDrop_shifts (W ν n : V) (hWp : W = certPieces) : ∀ t, IsSemiterm LAct n t →
+    ∀ i j y : V, PassTGraph W ν n t i j y → NoDrop y ∧ shiftsV y = 0 := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · definability
+  · intro z hz i j y hy
+    rw [PassTGraph.bvar_iff.mp hy, tLeafSteps]
+    exact ⟨noDrop_single (Or.inl (ctag_tLeafRow hWp _ _ _)),
+      by rw [shiftsV_single, if_neg (by rw [ctag_tLeafRow hWp]; simp)]⟩
+  · intro a i j y hy
+    rw [PassTGraph.fvar_iff.mp hy, tLeafSteps]
+    exact ⟨noDrop_single (Or.inl (ctag_tLeafRow hWp _ _ _)),
+      by rw [shiftsV_single, if_neg (by rw [ctag_tLeafRow hWp]; simp)]⟩
+  · intro k f v hkf hv ih i j y hy
+    have key : ∀ m ≤ k, ∀ i j z : V, PassVGraph W ν n k v m i j z → NoDrop z ∧ shiftsV z = 0 := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero =>
+        intro _ i j z hz
+        rw [PassVGraph.zero_iff.mp hz, vNilSteps]
+        exact ⟨noDrop_single (Or.inl (ctag_vNilRow' hWp _ _)),
+          by rw [shiftsV_single, if_neg (by rw [ctag_vNilRow' hWp]; simp)]⟩
+      | succ m ihm =>
+        intro hm i j z hz
+        obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := PassVGraph.succ_iff.mp hz
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+          nthFromEnd_eq (a := k - (m + 1)) (by rw [hv.lh, tsub_add_cancel_of_le hm])
+        set ct := descCountT W n (nthFromEnd v m) with hct
+        rw [hnth'] at hyt
+        obtain ⟨hnt, hst⟩ := ih _ hlt (i + 1) (j + 1) yt hyt
+        obtain ⟨hnv, hsv⟩ := ihm (le_trans le_self_add hm) (i + 1 + ct) (j + 1 + ct) yv hyv
+        rw [vAdjSteps]
+        refine ⟨noDrop_appendV hnt (noDrop_appendV hnv (noDrop_cons (Or.inl (ctag_cert38 hWp _))
+          (noDrop_cons (Or.inl (ctag_cert39 hWp _)) (noDrop_single (Or.inl (ctag_vAdjRow hWp _ _)))))), ?_⟩
+        rw [shiftsV_appendV, shiftsV_appendV, hst, hsv]
+        have h3 : shiftsV (?[mkStep W 38 ?[cTV m, cTV n, vRef (i + 1 + ct) m], mkStep W 39 ?[cTV m, vRef (i + 1 + ct) m],
+            mkStep W (vAdjRow ν) (vAdjWits ν n m ct i j)] : V) = 0 := by
+          rw [shiftsV_cons, if_neg (by rw [ctag_cert38 hWp]; simp), shiftsV_cons,
+            if_neg (by rw [ctag_cert39 hWp]; simp), shiftsV_single,
+            if_neg (by rw [ctag_vAdjRow hWp]; simp)]
+          simp
+        rw [h3]
+        simp
+    obtain ⟨yv, _, hyv, rfl⟩ := PassTGraph.func_iff.mp hy
+    obtain ⟨hnv, hsv⟩ := key k le_rfl (i + 1) (j + 1) yv hyv
+    rw [tFuncSteps_eq]
+    refine ⟨noDrop_appendV hnv (noDrop_cons (Or.inl (ctag_certFuncRow hWp _ _ _))
+      (noDrop_single (Or.inl (ctag_tFuncRow hWp _ _)))), ?_⟩
+    rw [shiftsV_appendV, hsv, shiftsV_cons, if_neg (by rw [ctag_certFuncRow hWp]; simp),
+      shiftsV_single, if_neg (by rw [ctag_tFuncRow hWp]; simp)]
+    simp
+
+/-- The same at the vector level. -/
+lemma passVGraph_noDrop_shifts {W ν n : V} (hWp : W = certPieces) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, ∀ i j z : V, PassVGraph W ν n k v m i j z → NoDrop z ∧ shiftsV z = 0 := by
+  intro m
+  induction m using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _ i j z hz
+    rw [PassVGraph.zero_iff.mp hz, vNilSteps]
+    exact ⟨noDrop_single (Or.inl (ctag_vNilRow' hWp _ _)),
+      by rw [shiftsV_single, if_neg (by rw [ctag_vNilRow' hWp]; simp)]⟩
+  | succ m ihm =>
+    intro hm i j z hz
+    obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := PassVGraph.succ_iff.mp hz
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+    have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
+      nthFromEnd_eq (a := k - (m + 1)) (by rw [hv.lh, tsub_add_cancel_of_le hm])
+    set ct := descCountT W n (nthFromEnd v m) with hct
+    have hyt' : PassTGraph W ν n v.[k - (m + 1)] (i + 1) (j + 1) yt := hnth' ▸ hyt
+    obtain ⟨hnt, hst⟩ := passTGraph_noDrop_shifts W ν n hWp _ (hv.nth hlt) (i + 1) (j + 1) yt hyt'
+    obtain ⟨hnv, hsv⟩ := ihm (le_trans le_self_add hm) (i + 1 + ct) (j + 1 + ct) yv hyv
+    rw [vAdjSteps]
+    refine ⟨noDrop_appendV hnt (noDrop_appendV hnv (noDrop_cons (Or.inl (ctag_cert38 hWp _))
+      (noDrop_cons (Or.inl (ctag_cert39 hWp _)) (noDrop_single (Or.inl (ctag_vAdjRow hWp _ _)))))), ?_⟩
+    rw [shiftsV_appendV, shiftsV_appendV, hst, hsv]
+    have h3 : shiftsV (?[mkStep W 38 ?[cTV m, cTV n, vRef (i + 1 + ct) m], mkStep W 39 ?[cTV m, vRef (i + 1 + ct) m],
+        mkStep W (vAdjRow ν) (vAdjWits ν n m ct i j)] : V) = 0 := by
+      rw [shiftsV_cons, if_neg (by rw [ctag_cert38 hWp]; simp), shiftsV_cons,
+        if_neg (by rw [ctag_cert39 hWp]; simp), shiftsV_single,
+        if_neg (by rw [ctag_vAdjRow hWp]; simp)]
+      simp
+    rw [h3]
+    simp
+
+set_option maxHeartbeats 2000000 in
+/-- **The formula pass drops nothing and introduces no eigenvariable.** -/
+lemma passFGraph_noDrop_shifts (W : V) {ν : V} (hν : ν = 1 ∨ ν = 2) (hWp : W = certPieces) :
+    ∀ {n r : V}, IsSemiformula LAct n r → ∀ i j y : V, PassFGraph W ν n r i j y → NoDrop y ∧ shiftsV y = 0 := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ ∀ i j y : V, PassFGraph W ν n r i j y → NoDrop y ∧ shiftsV y = 0)
+  · definability
+  · intro n k R v hR hv i j y hy
+    rw [PassFGraph.rel_iff.mp hy]
+    obtain ⟨hnv, hsv⟩ := passVGraph_noDrop_shifts hWp hv k le_rfl (i + 1) (j + 1) _ (passV_graph hv le_rfl)
+    unfold fAtomSteps
+    by_cases hν1 : ν = 1
+    · rw [if_pos hν1]
+      exact ⟨noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inl rfl) _)),
+        by rw [shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inl rfl)]; simp)]⟩
+    · rw [if_neg hν1]
+      refine ⟨noDrop_appendV hnv (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inl rfl) _))), ?_⟩
+      rw [shiftsV_appendV, hsv, shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inl rfl)]; simp)]
+      simp
+  · intro n k R v hR hv i j y hy
+    rw [PassFGraph.nrel_iff.mp hy]
+    obtain ⟨hnv, hsv⟩ := passVGraph_noDrop_shifts hWp hv k le_rfl (i + 1) (j + 1) _ (passV_graph hv le_rfl)
+    unfold fAtomSteps
+    by_cases hν1 : ν = 1
+    · rw [if_pos hν1]
+      exact ⟨noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inl rfl)) _)),
+        by rw [shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inl rfl))]; simp)]⟩
+    · rw [if_neg hν1]
+      refine ⟨noDrop_appendV hnv (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inl rfl)) _))), ?_⟩
+      rw [shiftsV_appendV, hsv, shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inl rfl))]; simp)]
+      simp
+  · intro n i j y hy
+    rw [PassFGraph.verum_iff.mp hy, fConstSteps]
+    exact ⟨noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inr (Or.inl rfl))) _)),
+      by rw [shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inr (Or.inl rfl)))]; simp)]⟩
+  · intro n i j y hy
+    rw [PassFGraph.falsum_iff.mp hy, fConstSteps]
+    exact ⟨noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inl rfl)))) _)),
+      by rw [shiftsV_single, if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inl rfl))))]; simp)]⟩
+  · intro n p q _ _ ihp ihq i j y hy
+    obtain ⟨yp, yq, _, _, hp, hq, rfl⟩ := PassFGraph.and_iff.mp hy
+    obtain ⟨hnp, hsp⟩ := ihp _ _ yp hp
+    obtain ⟨hnq, hsq⟩ := ihq _ _ yq hq
+    rw [fBinSteps]
+    refine ⟨noDrop_appendV hnp (noDrop_appendV hnq
+      (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))) _)))), ?_⟩
+    rw [shiftsV_appendV, shiftsV_appendV, hsp, hsq, shiftsV_single,
+      if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))]; simp)]
+    simp
+  · intro n p q _ _ ihp ihq i j y hy
+    obtain ⟨yp, yq, _, _, hp, hq, rfl⟩ := PassFGraph.or_iff.mp hy
+    obtain ⟨hnp, hsp⟩ := ihp _ _ yp hp
+    obtain ⟨hnq, hsq⟩ := ihq _ _ yq hq
+    rw [fBinSteps]
+    refine ⟨noDrop_appendV hnp (noDrop_appendV hnq
+      (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))) _)))), ?_⟩
+    rw [shiftsV_appendV, shiftsV_appendV, hsp, hsq, shiftsV_single,
+      if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))]; simp)]
+    simp
+  · intro n p _ ih i j y hy
+    obtain ⟨yb, _, hb, rfl⟩ := PassFGraph.all_iff.mp hy
+    obtain ⟨hnb, hsb⟩ := ih _ _ yb hb
+    rw [fQuantSteps]
+    refine ⟨noDrop_appendV hnb
+      (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))) _))), ?_⟩
+    rw [shiftsV_appendV, hsb, shiftsV_single,
+      if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))]; simp)]
+    simp
+  · intro n p _ ih i j y hy
+    obtain ⟨yb, _, hb, rfl⟩ := PassFGraph.exs_iff.mp hy
+    obtain ⟨hnb, hsb⟩ := ih _ _ yb hb
+    rw [fQuantSteps]
+    refine ⟨noDrop_appendV hnb
+      (noDrop_single (Or.inl (ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))))) _))), ?_⟩
+    rw [shiftsV_appendV, hsb, shiftsV_single,
+      if_neg (by rw [ctag_fRow hWp hν (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))))]; simp)]
+    simp
+
+/-- **`certShift` and `certNeg` drop nothing and introduce no eigenvariable** — so a pass runs in a
+FIXED context layout: the offsets `i` and `j` never move. -/
+theorem certShift_noDrop_shifts {W n r i j : V} (hWp : W = certPieces) (hr : IsSemiformula LAct n r) :
+    NoDrop (certShift W n r i j) ∧ shiftsV (certShift W n r i j) = 0 :=
+  passFGraph_noDrop_shifts W (Or.inr rfl) hWp hr i j _ (certShift_graph hr)
+
+theorem certNeg_noDrop_shifts {W n r i j : V} (hWp : W = certPieces) (hr : IsSemiformula LAct n r) :
+    NoDrop (certNeg W n r i j) ∧ shiftsV (certNeg W n r i j) = 0 :=
+  passFGraph_noDrop_shifts W (Or.inl rfl) hWp hr i j _ (certNeg_graph hr)
+
+end passStruct
+
 end ArithS
