@@ -44,6 +44,7 @@ TABLE = [
  'tbshvNilCert','tbshvAdjCert','termBShiftBvarCert','termBShiftFvarCert','termBShiftFuncCert',
  'qVecCert','qVecNth0','qVecNthSucc','nthAdjoinZero','nthAdjoinSucc',
  'tsvAdjCert',
+ 'congAdj',
 ]
 BASE = 100
 rowinstb = open('ArithS/Necessitation/RowInstB.lean').read()

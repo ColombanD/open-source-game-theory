@@ -432,7 +432,8 @@ def cIdx_qVecNthSucc : ℕ := 178
 def cIdx_nthAdjoinZero : ℕ := 179
 def cIdx_nthAdjoinSucc : ℕ := 180
 def cIdx_tsvAdjCert : ℕ := 181
-def certRowCount : ℕ := 182
+def cIdx_congAdj : ℕ := 182
+def certRowCount : ℕ := 183
 
 /-- The rows at `100 + k`, in index order. -/
 noncomputable def certExtraRows : List WRow := [
@@ -517,7 +518,8 @@ noncomputable def certExtraRows : List WRow := [
   ⟨6, qVecNthSuccB, lib_qVecNthSucc⟩,
   ⟨3, nthAdjoinZeroB, lib_nthAdjoinZero⟩,
   ⟨5, nthAdjoinSuccB, lib_nthAdjoinSucc⟩,
-  ⟨9, tsvAdjCertB, lib_tsvAdjCert⟩
+  ⟨9, tsvAdjCertB, lib_tsvAdjCert⟩,
+  ⟨6, congAdjB, lib_congAdj⟩
 ]
 
 /-- Sixty copies of the walk's first row fill indices `40 … 99` (room for the layout rows). -/
@@ -1304,6 +1306,15 @@ lemma certTable_tsvAdjCert {tbl : V} (h : CertTable tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_tsvAdjCert]
 
+lemma certTable_congAdj {tbl : V} (h : CertTable tbl) :
+    rowM tbl.[((cIdx_congAdj : ℕ) : V)] = ((6 : ℕ) : V) ∧
+    rowB tbl.[((cIdx_congAdj : ℕ) : V)] = impChainV LAct (vecOf row_congAdj_as) row_congAdj_c := by
+  have this : rowM tbl.[((cIdx_congAdj : ℕ) : V)] = ((6 : ℕ) : V) ∧
+      rowB tbl.[((cIdx_congAdj : ℕ) : V)] = ⌜Semiformula.lMap emb congAdjB⌝ :=
+    h.2 cIdx_congAdj (Nat.lt_of_sub_eq_succ rfl)
+  refine ⟨this.1, ?_⟩
+  rw [impChainV_vecOf, this.2, quote_row_congAdj]
+
 /-! ### The piece table -/
 
 noncomputable def cpiece_negRelCert : V := ⟪(0 : V), vecOf row_negRelCert_as, row_negRelCert_c⟫
@@ -1388,6 +1399,7 @@ noncomputable def cpiece_qVecNthSucc : V := ⟪(0 : V), vecOf row_qVecNthSucc_as
 noncomputable def cpiece_nthAdjoinZero : V := ⟪(0 : V), vecOf row_nthAdjoinZero_as, row_nthAdjoinZero_c⟫
 noncomputable def cpiece_nthAdjoinSucc : V := ⟪(0 : V), vecOf row_nthAdjoinSucc_as, row_nthAdjoinSucc_c⟫
 noncomputable def cpiece_tsvAdjCert : V := ⟪(0 : V), vecOf row_tsvAdjCert_as, row_tsvAdjCert_c⟫
+noncomputable def cpiece_congAdj : V := ⟪(0 : V), vecOf row_congAdj_as, row_congAdj_c⟫
 
 noncomputable def certExtraPieceList : List V := [
   cpiece_negRelCert,
@@ -1471,7 +1483,8 @@ noncomputable def certExtraPieceList : List V := [
   cpiece_qVecNthSucc,
   cpiece_nthAdjoinZero,
   cpiece_nthAdjoinSucc,
-  cpiece_tsvAdjCert
+  cpiece_tsvAdjCert,
+  cpiece_congAdj
 ]
 noncomputable def padPieceList : List V := List.replicate 60 piece_zeroLtSucc
 
@@ -2723,6 +2736,21 @@ lemma ctag_tsvAdjCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (
   subst hWp
   have hk : ((cIdx_tsvAdjCert : ℕ) : V) = (181 : V) := by simp [cIdx_tsvAdjCert]
   rw [← hk, cmk_tsvAdjCert]; simp
+
+lemma certPieces_congAdj : (certPieces : V).[((cIdx_congAdj : ℕ) : V)] = cpiece_congAdj := by
+  unfold certPieces
+  rw [nth_vecOf _ cIdx_congAdj (Nat.lt_of_sub_eq_succ rfl)]
+  rfl
+
+lemma cmk_congAdj (ev : V) :
+    mkStep certPieces ((cIdx_congAdj : ℕ) : V) ev = sUseHorn ((cIdx_congAdj : ℕ) : V) ev (vecOf row_congAdj_as) row_congAdj_c := by
+  rw [mkStep, certPieces_congAdj]
+  simp [cpiece_congAdj, sUseHorn]
+
+lemma ctag_congAdj {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (182 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((cIdx_congAdj : ℕ) : V) = (182 : V) := by simp [cIdx_congAdj]
+  rw [← hk, cmk_congAdj]; simp
 
 /-! ### The per-row applicability lemmas `cok_<row>` -/
 
@@ -4286,6 +4314,25 @@ lemma cok_tsvAdjCert {tbl N E Γ W : V} {wn wk ww wv wvp wt we wu wup : V} (htbl
     (by rw [show row_tsvAdjCert_as.length = 6 from rfl]; exact_mod_cast (by decide : 6 ≤ 9)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_cons.mpr ⟨hmem4, List.forall_mem_cons.mpr ⟨hmem5, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   · rw [ctxAfter_useHorn [wn, wk, ww, wv, wvp, wt, we, wu, wup] row_tsvAdjCert_as isSemiformula_tsvAdjCert_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `congAdj` as a step. -/
+lemma cok_congAdj {tbl N E Γ W : V} {wt wv ww wtp wvp wwp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hww : IsSemiterm LAct 0 ww) (hEww : termLen LAct ww ≤ E) (hwtp : IsSemiterm LAct 0 wtp) (hEwtp : termLen LAct wtp ≤ E) (hwvp : IsSemiterm LAct 0 wvp) (hEwvp : termLen LAct wvp ≤ E) (hwwp : IsSemiterm LAct 0 wwp) (hEwwp : termLen LAct wwp ≤ E) (hmem0 : neg LAct (eqFactB wwp ww) ∈ Γ) (hmem1 : neg LAct (eqFactB wtp wt) ∈ Γ) (hmem2 : neg LAct (eqFactB wvp wv) ∈ Γ) (hmem3 : neg LAct (adjFact ww wt wv) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 182 ?[wt, wv, ww, wtp, wvp, wwp]) ∧ sTag (mkStep W 182 ?[wt, wv, ww, wtp, wvp, wwp]) = 0 ∧
+    ctxAfter Γ (mkStep W 182 ?[wt, wv, ww, wtp, wvp, wwp]) = insert (neg LAct (adjFact wwp wtp wvp)) Γ := by
+  subst hWp
+  have hk : ((cIdx_congAdj : ℕ) : V) = (182 : V) := by simp [cIdx_congAdj]
+  have hstep := cmk_congAdj (V := V) ?[wt, wv, ww, wtp, wvp, wwp]
+  have hlen := certTable_len hC cIdx_congAdj (by decide)
+  have hrow := certTable_congAdj hC
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wt, wv, ww, wtp, wvp, wwp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_cons.mpr ⟨⟨hww, hEww⟩, List.forall_mem_cons.mpr ⟨⟨hwtp, hEwtp⟩, List.forall_mem_cons.mpr ⟨⟨hwvp, hEwvp⟩, List.forall_mem_cons.mpr ⟨⟨hwwp, hEwwp⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩
+  have hinst := inst_congAdj hwt hwv hww hwtp hwvp hwwp
+  rw [hstep, show (?[wt, wv, ww, wtp, wvp, wwp] : V) = vecOf [wt, wv, ww, wtp, wvp, wwp] from rfl]
+  refine ⟨stepOK_useHorn htbl [wt, wv, ww, wtp, wvp, wwp] row_congAdj_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
+    (by rw [show row_congAdj_as.length = 4 from rfl]; exact_mod_cast (by decide : 4 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
+  · rw [ctxAfter_useHorn [wt, wv, ww, wtp, wvp, wwp] row_congAdj_as isSemiformula_congAdj_c (fun e he ↦ (hes e he).1), hinst.2]
 
 end certTable
 
