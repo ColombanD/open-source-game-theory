@@ -33,6 +33,7 @@ import ArithS.Necessitation.RowInstB
 import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
 import ArithS.Necessitation.Describe
+import ArithS.Necessitation.Layout
 import ArithS.Necessitation.NumSteps
 
 /-!
@@ -646,5 +647,18 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms lemmaOK_add
 #print axioms lemmaOK_bin3
 #print axioms stepCost_lemma_bin3
+
+-- U10 (Necessitation/Layout, 2026-09-13): the three layout producers of DESIGN_fragments §3.3–3.5 as
+-- Σ₁ step-list functions with Π₁ applicability theorems — `copySteps` (a fresh eigenvariable equal to a
+-- known object plus one congruence step per fact tag), `chainSteps` (the insert-chain of a sequent with
+-- its membership/formula-set facts and its length object), `eqSteps` (the identification walk by the
+-- injectivity rows, computed as a relocatable template), each Horn-only with its cost bound.
+#print axioms exists_layoutTable
+#print axioms copySteps_ok
+#print axioms costSum_copySteps_le
+#print axioms chainSteps_ok
+#print axioms costSum_chainSteps_le
+#print axioms eqSteps_ok
+#print axioms costSum_eqSteps_le
 
 end ArithS

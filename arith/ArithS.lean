@@ -55,6 +55,7 @@ import ArithS.Necessitation.RowInstB
 import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
 import ArithS.Necessitation.Describe
+import ArithS.Necessitation.Layout
 import ArithS.Necessitation.NumSteps
 import ArithS.Neg
 import ArithS.Agent

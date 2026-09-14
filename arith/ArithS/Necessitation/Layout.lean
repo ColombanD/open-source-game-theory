@@ -46,9 +46,11 @@ and finally `setLenTotalC` for the length object `l_s = &0` (every chain object 
 
 Two walk-style dossiers of the SAME code `r` at offsets `i` and `j` (the layout convention: the top
 at the offset, the descendants at the walk's relative offsets) yield `eqFactB &i &j` bottom-up by
-the injectivity rows `eqOf*` (`eqRefl` on the literal `𝟎` for empty vectors). A `Fixpoint` on
-`⟪r, i, j⟫` over the formula/vector/term kinds is the design's walk order; this file delivers the
-producer relative to an explicit dossier predicate (see the Part 4 docstring for what is assumed).
+the injectivity rows `eqOf*` (`eqRefl` on the literal `𝟎` for empty vectors). The producer is a
+TEMPLATE computed once per code by the walk's own recursion shape (`TermRec`, a fold from the end,
+`UformulaRec1`) and RELOCATED to the two offsets; the dossier is the relocated fact list
+(`dossFacts`/`DossierAt`), and `eqSteps_ok` is proved by one template invariant (`TOK`) over terms,
+vectors and formulas. The bridge from the walk's final context to `DossierAt` is NOT in this file.
 -/
 
 namespace ArithS
@@ -2385,39 +2387,39 @@ instance piFact_defined : 𝚺₁-Function₂ (piFact : V → V → V) via piFac
 
 noncomputable def andFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑qqAndDef : ArithmeticSemisentence 3))
 instance andFact_defined : 𝚺₁-Function₃ (andFact : V → V → V → V) via andFactDef := fact3_defined _
-instance andFact_definable : 𝚺₁-Function₃ (andFact : V → V → V → V) := andFact_defined.to_definable
+instance andFact_definable' : 𝚺₁-Function₃ (andFact : V → V → V → V) := andFact_defined.to_definable
 
 noncomputable def orFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑qqOrDef : ArithmeticSemisentence 3))
 instance orFact_defined : 𝚺₁-Function₃ (orFact : V → V → V → V) via orFactDef := fact3_defined _
-instance orFact_definable : 𝚺₁-Function₃ (orFact : V → V → V → V) := orFact_defined.to_definable
+instance orFact_definable' : 𝚺₁-Function₃ (orFact : V → V → V → V) := orFact_defined.to_definable
 
 noncomputable def allFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqAllDef : ArithmeticSemisentence 2))
 instance allFact_defined : 𝚺₁-Function₂ (allFact : V → V → V) via allFactDef := fact2_defined _
-instance allFact_definable : 𝚺₁-Function₂ (allFact : V → V → V) := allFact_defined.to_definable
+instance allFact_definable' : 𝚺₁-Function₂ (allFact : V → V → V) := allFact_defined.to_definable
 
 noncomputable def exsFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqExsDef : ArithmeticSemisentence 2))
 instance exsFact_defined : 𝚺₁-Function₂ (exsFact : V → V → V) via exsFactDef := fact2_defined _
-instance exsFact_definable : 𝚺₁-Function₂ (exsFact : V → V → V) := exsFact_defined.to_definable
+instance exsFact_definable' : 𝚺₁-Function₂ (exsFact : V → V → V) := exsFact_defined.to_definable
 
 noncomputable def relFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqRelDef : ArithmeticSemisentence 4))
 instance relFact_defined : 𝚺₁-Function₄ (relFact : V → V → V → V → V) via relFactDef := fact4_defined _
-instance relFact_definable : 𝚺₁-Function₄ (relFact : V → V → V → V → V) := relFact_defined.to_definable
+instance relFact_definable' : 𝚺₁-Function₄ (relFact : V → V → V → V → V) := relFact_defined.to_definable
 
 noncomputable def nrelFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqNRelDef : ArithmeticSemisentence 4))
 instance nrelFact_defined : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) via nrelFactDef := fact4_defined _
-instance nrelFact_definable : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) := nrelFact_defined.to_definable
+instance nrelFact_definable' : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) := nrelFact_defined.to_definable
 
 noncomputable def verumFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑qqVerumDef : ArithmeticSemisentence 1))
 instance verumFact_defined : 𝚺₁-Function₁ (verumFact : V → V) via verumFactDef := fact1_defined _
-instance verumFact_definable : 𝚺₁-Function₁ (verumFact : V → V) := verumFact_defined.to_definable
+instance verumFact_definable' : 𝚺₁-Function₁ (verumFact : V → V) := verumFact_defined.to_definable
 
 noncomputable def falsumFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑qqFalsumDef : ArithmeticSemisentence 1))
 instance falsumFact_defined : 𝚺₁-Function₁ (falsumFact : V → V) via falsumFactDef := fact1_defined _
-instance falsumFact_definable : 𝚺₁-Function₁ (falsumFact : V → V) := falsumFact_defined.to_definable
+instance falsumFact_definable' : 𝚺₁-Function₁ (falsumFact : V → V) := falsumFact_defined.to_definable
 
 noncomputable def funcFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqFuncDef : ArithmeticSemisentence 4))
 instance funcFact_defined : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) via funcFactDef := fact4_defined _
-instance funcFact_definable : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) := funcFact_defined.to_definable
+instance funcFact_definable' : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) := funcFact_defined.to_definable
 
 noncomputable def bvarFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqBvarDef : ArithmeticSemisentence 2))
 instance bvarFact_defined : 𝚺₁-Function₂ (bvarFact : V → V → V) via bvarFactDef := fact2_defined _
@@ -2427,7 +2429,7 @@ instance fvarFact_defined : 𝚺₁-Function₂ (fvarFact : V → V → V) via f
 
 noncomputable def adjFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑adjoinDef : ArithmeticSemisentence 3))
 instance adjFact_defined : 𝚺₁-Function₃ (adjFact : V → V → V → V) via adjFactDef := fact3_defined _
-instance adjFact_definable : 𝚺₁-Function₃ (adjFact : V → V → V → V) := adjFact_defined.to_definable
+instance adjFact_definable' : 𝚺₁-Function₃ (adjFact : V → V → V → V) := adjFact_defined.to_definable
 
 noncomputable def tPiFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isSemiterm LAct).pi : ArithmeticSemisentence 2))
 instance tPiFact_defined : 𝚺₁-Function₂ (tPiFact : V → V → V) via tPiFactDef := fact2_defined _
@@ -2437,43 +2439,43 @@ instance tvPiFact_defined : 𝚺₁-Function₃ (tvPiFact : V → V → V → V)
 
 noncomputable def utvPiFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isUTermVec LAct).pi : ArithmeticSemisentence 2))
 instance utvPiFact_defined : 𝚺₁-Function₂ (utvPiFact : V → V → V) via utvPiFactDef := fact2_defined _
-instance utvPiFact_definable : 𝚺₁-Function₂ (utvPiFact : V → V → V) := utvPiFact_defined.to_definable
+instance utvPiFact_definable' : 𝚺₁-Function₂ (utvPiFact : V → V → V) := utvPiFact_defined.to_definable
 
 noncomputable def eqFactBDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Eq.eq : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
 instance eqFactB_defined : 𝚺₁-Function₂ (eqFactB : V → V → V) via eqFactBDef := fact2_defined _
-instance eqFactB_definable : 𝚺₁-Function₂ (eqFactB : V → V → V) := eqFactB_defined.to_definable
+instance eqFactB_definable' : 𝚺₁-Function₂ (eqFactB : V → V → V) := eqFactB_defined.to_definable
 
 noncomputable def lenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(formulaLenGraph LAct) : ArithmeticSemisentence 2))
 instance lenFact_defined : 𝚺₁-Function₂ (lenFact : V → V → V) via lenFactDef := fact2_defined _
-instance lenFact_definable : 𝚺₁-Function₂ (lenFact : V → V → V) := lenFact_defined.to_definable
+instance lenFact_definable' : 𝚺₁-Function₂ (lenFact : V → V → V) := lenFact_defined.to_definable
 
 noncomputable def tlenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(termLenGraph LAct) : ArithmeticSemisentence 2))
 instance tlenFact_defined : 𝚺₁-Function₂ (tlenFact : V → V → V) via tlenFactDef := fact2_defined _
-instance tlenFact_definable : 𝚺₁-Function₂ (tlenFact : V → V → V) := tlenFact_defined.to_definable
+instance tlenFact_definable' : 𝚺₁-Function₂ (tlenFact : V → V → V) := tlenFact_defined.to_definable
 
 noncomputable def memFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Mem.mem : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
 instance memFact_defined : 𝚺₁-Function₂ (memFact : V → V → V) via memFactDef := fact2_defined _
-instance memFact_definable : 𝚺₁-Function₂ (memFact : V → V → V) := memFact_defined.to_definable
+instance memFact_definable' : 𝚺₁-Function₂ (memFact : V → V → V) := memFact_defined.to_definable
 
 noncomputable def insFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑insertDef : ArithmeticSemisentence 3))
 instance insFact_defined : 𝚺₁-Function₃ (insFact : V → V → V → V) via insFactDef := fact3_defined _
-instance insFact_definable : 𝚺₁-Function₃ (insFact : V → V → V → V) := insFact_defined.to_definable
+instance insFact_definable' : 𝚺₁-Function₃ (insFact : V → V → V → V) := insFact_defined.to_definable
 
 noncomputable def subsetFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑bitSubsetDef : ArithmeticSemisentence 2))
 instance subsetFact_defined : 𝚺₁-Function₂ (subsetFact : V → V → V) via subsetFactDef := fact2_defined _
-instance subsetFact_definable : 𝚺₁-Function₂ (subsetFact : V → V → V) := subsetFact_defined.to_definable
+instance subsetFact_definable' : 𝚺₁-Function₂ (subsetFact : V → V → V) := subsetFact_defined.to_definable
 
 noncomputable def fsetPiFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑(isFormulaSet LAct).pi : ArithmeticSemisentence 1))
 instance fsetPiFact_defined : 𝚺₁-Function₁ (fsetPiFact : V → V) via fsetPiFactDef := fact1_defined _
-instance fsetPiFact_definable : 𝚺₁-Function₁ (fsetPiFact : V → V) := fsetPiFact_defined.to_definable
+instance fsetPiFact_definable' : 𝚺₁-Function₁ (fsetPiFact : V → V) := fsetPiFact_defined.to_definable
 
 noncomputable def fsetSigmaFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑(isFormulaSet LAct).sigma : ArithmeticSemisentence 1))
 instance fsetSigmaFact_defined : 𝚺₁-Function₁ (fsetSigmaFact : V → V) via fsetSigmaFactDef := fact1_defined _
-instance fsetSigmaFact_definable : 𝚺₁-Function₁ (fsetSigmaFact : V → V) := fsetSigmaFact_defined.to_definable
+instance fsetSigmaFact_definable' : 𝚺₁-Function₁ (fsetSigmaFact : V → V) := fsetSigmaFact_defined.to_definable
 
 noncomputable def setLenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(setLenDef LAct) : ArithmeticSemisentence 2))
 instance setLenFact_defined : 𝚺₁-Function₂ (setLenFact : V → V → V) via setLenFactDef := fact2_defined _
-instance setLenFact_definable : 𝚺₁-Function₂ (setLenFact : V → V → V) := setLenFact_defined.to_definable
+instance setLenFact_definable' : 𝚺₁-Function₂ (setLenFact : V → V → V) := setLenFact_defined.to_definable
 
 /-! ### 2.2 Fact tags, their arity, steps, antecedents and conclusion (if-chains on the kind, with
 explicit blueprints — `definability` does not go through an `ite`) -/
@@ -4077,4 +4079,1221 @@ theorem costSum_chainSteps_le {tbl N E B : V} (htbl : TableOK tbl N) (hL : Layou
   gcongr
 
 end chainsOK
+
+/-! ## Part 4 — identification (`eqSteps`, §3.5)
+
+Two walk-style dossiers of the same code `r` at offsets `i` and `j` yield `eqFactB &i &j` bottom-up
+by the injectivity rows. The producer is computed ONCE per code as a TEMPLATE — a triple
+`⟪count, facts, steps⟫` where witnesses are `tL o = ⟪0, o⟫` (left dossier, offset `o` from its top),
+`tR o = ⟪1, o⟫` (right), `tA t = ⟪2, t⟫` (a closed term) — by the walk's own recursion shape
+(`TermRec` for terms, a fold from the end for vectors, `UformulaRec1` for formulas, all with the
+walk's relative offsets: for `p ⋏ q`, `q` at `1`, `p` at `count q + 1`; for `∀p`, `p` at `1`; for an
+atom, its vector at `1` (the empty vector is the literal `𝟎`); for `t ∷ v`, `t` at `1`, `v` at
+`count t + 1`). `relocV ws i j` turns a template witness vector into closed terms, `eqSteps W i j r`
+= the relocated steps, `dossFacts P i r` = the relocated facts (`P` the table of the eight/twelve
+predicate codes — passed as a parameter, never inside a blueprint), `DossierAt P Γ i r` = all of
+them negated in `Γ`. -/
+
+section ident
+
+/-! ### 4.1 Template witnesses and their relocation -/
+
+noncomputable def tL (o : V) : V := ⟪0, o⟫
+noncomputable def tR (o : V) : V := ⟪1, o⟫
+noncomputable def tA (t : V) : V := ⟪2, t⟫
+
+/-- Shift the offsets of a template witness by `δ` (absolute witnesses untouched). -/
+noncomputable def shiftTW (w δ : V) : V := if π₁ w = 0 ∨ π₁ w = 1 then ⟪π₁ w, π₂ w + δ⟫ else w
+
+noncomputable def shiftTWDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y w δ. ∃ s, !pi₁Def s w ∧ ∃ o, !pi₂Def o w ∧ ((s = 0 ∨ s = 1) → ∃ o', o' = o + δ ∧ !pairDef y s o') ∧
+    (s ≠ 0 → s ≠ 1 → y = w)”
+
+instance shiftTW_defined : 𝚺₁-Function₂ (shiftTW : V → V → V) via shiftTWDef := .mk fun v ↦ by
+  simp [shiftTWDef, numeral_eq_natCast]
+  unfold shiftTW
+  by_cases h0 : π₁ (v 1) = 0
+  · simp [h0]
+  by_cases h1 : π₁ (v 1) = 1
+  · simp [h1]
+  · simp [h0, h1]
+instance shiftTW_definable : 𝚺₁-Function₂ (shiftTW : V → V → V) := shiftTW_defined.to_definable
+
+/-- Relocate a template witness: left offsets from `i`, right offsets from `j`. -/
+noncomputable def relocW (w i j : V) : V :=
+  if π₁ w = 0 then ^&(i + π₂ w) else if π₁ w = 1 then ^&(j + π₂ w) else π₂ w
+
+noncomputable def relocWDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y w i j. ∃ s, !pi₁Def s w ∧ ∃ o, !pi₂Def o w ∧ (s = 0 → ∃ a, a = i + o ∧ !qqFvarDef y a) ∧
+    (s = 1 → ∃ a, a = j + o ∧ !qqFvarDef y a) ∧ (s ≠ 0 → s ≠ 1 → y = o)”
+
+instance relocW_defined : 𝚺₁-Function₃ (relocW : V → V → V → V) via relocWDef := .mk fun v ↦ by
+  simp [relocWDef, numeral_eq_natCast]
+  unfold relocW
+  by_cases h0 : π₁ (v 1) = 0
+  · simp [h0]
+  by_cases h1 : π₁ (v 1) = 1
+  · simp [h1]
+  · simp [h0, h1]
+instance relocW_definable : 𝚺₁-Function₃ (relocW : V → V → V → V) := relocW_defined.to_definable
+
+@[simp] lemma shiftTW_tL (o δ : V) : shiftTW (tL o) δ = tL (o + δ) := by simp [shiftTW, tL]
+@[simp] lemma shiftTW_tR (o δ : V) : shiftTW (tR o) δ = tR (o + δ) := by simp [shiftTW, tR]
+@[simp] lemma shiftTW_tA (t δ : V) : shiftTW (tA t) δ = tA t := by simp [shiftTW, tA]
+@[simp] lemma relocW_tL (o i j : V) : relocW (tL o) i j = ^&(i + o) := by simp [relocW, tL]
+@[simp] lemma relocW_tR (o i j : V) : relocW (tR o) i j = ^&(j + o) := by simp [relocW, tR]
+@[simp] lemma relocW_tA (t i j : V) : relocW (tA t) i j = t := by simp [relocW, tA]
+
+namespace ShiftTV
+
+noncomputable def blueprint : VecRec.Blueprint 1 where
+  nil := .mkSigma “y δ. y = 0”
+  adjoin := .mkSigma “y x xs ih δ. ∃ x', !shiftTWDef x' x δ ∧ !adjoinDef y x' ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin v x _ ih := shiftTW x (v 0) ∷ ih
+  nil_defined := .mk fun v ↦ by simp [blueprint]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint, shiftTW_defined.iff]
+
+end ShiftTV
+
+/-- Shift every witness of a template vector. -/
+noncomputable def shiftTV (ws δ : V) : V := ShiftTV.construction.result ![δ] ws
+
+@[simp] lemma shiftTV_nil (δ : V) : shiftTV 0 δ = 0 := by simp [shiftTV, ShiftTV.construction]
+@[simp] lemma shiftTV_adjoin (x ws δ : V) : shiftTV (x ∷ ws) δ = shiftTW x δ ∷ shiftTV ws δ := by
+  simp [shiftTV, ShiftTV.construction]
+
+noncomputable def shiftTVDef : 𝚺₁.Semisentence 3 := ShiftTV.blueprint.resultDef
+
+instance shiftTV_defined : 𝚺₁-Function₂ (shiftTV : V → V → V) via shiftTVDef := .mk
+  fun v ↦ by simp [ShiftTV.construction.eval_resultDef, shiftTVDef]; rfl
+instance shiftTV_definable : 𝚺₁-Function₂ (shiftTV : V → V → V) := shiftTV_defined.to_definable
+
+namespace RelocV
+
+noncomputable def blueprint : VecRec.Blueprint 2 where
+  nil := .mkSigma “y i j. y = 0”
+  adjoin := .mkSigma “y x xs ih i j. ∃ x', !relocWDef x' x i j ∧ !adjoinDef y x' ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin v x _ ih := relocW x (v 0) (v 1) ∷ ih
+  nil_defined := .mk fun v ↦ by simp [blueprint]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint, relocW_defined.iff]
+
+end RelocV
+
+/-- Relocate every witness of a template vector. -/
+noncomputable def relocV (ws i j : V) : V := RelocV.construction.result ![i, j] ws
+
+@[simp] lemma relocV_nil (i j : V) : relocV 0 i j = 0 := by simp [relocV, RelocV.construction]
+@[simp] lemma relocV_adjoin (x ws i j : V) : relocV (x ∷ ws) i j = relocW x i j ∷ relocV ws i j := by
+  simp [relocV, RelocV.construction]
+
+noncomputable def relocVDef : 𝚺₁.Semisentence 4 := RelocV.blueprint.resultDef
+
+instance relocV_defined : 𝚺₁-Function₃ (relocV : V → V → V → V) via relocVDef := .mk
+  fun v ↦ by simp [RelocV.construction.eval_resultDef, relocVDef]; rfl
+instance relocV_definable : 𝚺₁-Function₃ (relocV : V → V → V → V) := relocV_defined.to_definable
+
+/-- Shifting then relocating is relocating from shifted offsets. -/
+lemma relocV_shiftTV (δ i j : V) : ∀ ws : V, relocV (shiftTV ws δ) i j = relocV ws (i + δ) (j + δ) := by
+  intro ws
+  induction ws using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x ws ih =>
+    rw [shiftTV_adjoin, relocV_adjoin, relocV_adjoin, ih]
+    congr 1
+    unfold shiftTW relocW
+    by_cases h0 : π₁ x = 0
+    · simp [h0]; ring
+    by_cases h1 : π₁ x = 1
+    · simp [h0, h1]; ring
+    · simp [h0, h1]
+
+/-! ### 4.2 The template lists: `⟪tag, ws⟫` entries, shifted or relocated entrywise -/
+
+namespace ShiftTL
+
+noncomputable def blueprint : VecRec.Blueprint 1 where
+  nil := .mkSigma “y δ. y = 0”
+  adjoin := .mkSigma “y x xs ih δ. ∃ t, !pi₁Def t x ∧ ∃ ws, !pi₂Def ws x ∧ ∃ ws', !shiftTVDef ws' ws δ ∧
+    ∃ x', !pairDef x' t ws' ∧ !adjoinDef y x' ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin v x _ ih := ⟪π₁ x, shiftTV (π₂ x) (v 0)⟫ ∷ ih
+  nil_defined := .mk fun v ↦ by simp [blueprint]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint, shiftTV_defined.iff]
+
+end ShiftTL
+
+/-- Shift the witnesses of every entry `⟪tag, ws⟫` of a template list. -/
+noncomputable def shiftTL (L δ : V) : V := ShiftTL.construction.result ![δ] L
+
+@[simp] lemma shiftTL_nil (δ : V) : shiftTL 0 δ = 0 := by simp [shiftTL, ShiftTL.construction]
+@[simp] lemma shiftTL_adjoin (x L δ : V) : shiftTL (x ∷ L) δ = ⟪π₁ x, shiftTV (π₂ x) δ⟫ ∷ shiftTL L δ := by
+  simp [shiftTL, ShiftTL.construction]
+
+noncomputable def shiftTLDef : 𝚺₁.Semisentence 3 := ShiftTL.blueprint.resultDef
+
+instance shiftTL_defined : 𝚺₁-Function₂ (shiftTL : V → V → V) via shiftTLDef := .mk
+  fun v ↦ by simp [ShiftTL.construction.eval_resultDef, shiftTLDef]; rfl
+instance shiftTL_definable : 𝚺₁-Function₂ (shiftTL : V → V → V) := shiftTL_defined.to_definable
+
+lemma shiftTL_appendV (δ : V) : ∀ A B : V, shiftTL (appendV A B) δ = appendV (shiftTL A δ) (shiftTL B δ) := by
+  intro A B
+  induction A using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x A ih => rw [appendV_adjoin, shiftTL_adjoin, shiftTL_adjoin, ih, appendV_adjoin]
+
+namespace RelocS
+
+noncomputable def blueprint : VecRec.Blueprint 3 where
+  nil := .mkSigma “y W i j. y = 0”
+  adjoin := .mkSigma “y x xs ih W i j. ∃ r, !pi₁Def r x ∧ ∃ ws, !pi₂Def ws x ∧ ∃ ws', !relocVDef ws' ws i j ∧
+    ∃ s, !mkStepDef s W r ws' ∧ !adjoinDef y s ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin v x _ ih := mkStep (v 0) (π₁ x) (relocV (π₂ x) (v 1) (v 2)) ∷ ih
+  nil_defined := .mk fun v ↦ by simp [blueprint]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint, relocV_defined.iff, mkStep_defined.iff]
+
+end RelocS
+
+/-- The steps of a template list, relocated: `⟪row, ws⟫ ↦ mkStep W row (relocV ws i j)`. -/
+noncomputable def relocS (L W i j : V) : V := RelocS.construction.result ![W, i, j] L
+
+@[simp] lemma relocS_nil (W i j : V) : relocS 0 W i j = 0 := by simp [relocS, RelocS.construction]
+@[simp] lemma relocS_adjoin (x L W i j : V) :
+    relocS (x ∷ L) W i j = mkStep W (π₁ x) (relocV (π₂ x) i j) ∷ relocS L W i j := by
+  simp [relocS, RelocS.construction]
+
+noncomputable def relocSDef : 𝚺₁.Semisentence 5 := RelocS.blueprint.resultDef
+
+instance relocS_defined : 𝚺₁-Function₄ (relocS : V → V → V → V → V) via relocSDef := .mk
+  fun v ↦ by simp [RelocS.construction.eval_resultDef, relocSDef]; rfl
+instance relocS_definable : 𝚺₁-Function₄ (relocS : V → V → V → V → V) := relocS_defined.to_definable
+
+lemma relocS_appendV (W i j : V) : ∀ A B : V, relocS (appendV A B) W i j = appendV (relocS A W i j) (relocS B W i j) := by
+  intro A B
+  induction A using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x A ih => rw [appendV_adjoin, relocS_adjoin, relocS_adjoin, ih, appendV_adjoin]
+
+lemma relocS_shiftTL (W i j δ : V) : ∀ L : V, relocS (shiftTL L δ) W i j = relocS L W (i + δ) (j + δ) := by
+  intro L
+  induction L using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x L ih => rw [shiftTL_adjoin, relocS_adjoin, relocS_adjoin, ih]; simp [relocV_shiftTV]
+
+namespace RelocD
+
+noncomputable def blueprint : VecRec.Blueprint 2 where
+  nil := .mkSigma “y P i. y = 0”
+  adjoin := .mkSigma “y x xs ih P i. ∃ k, !pi₁Def k x ∧ ∃ ws, !pi₂Def ws x ∧ ∃ ws', !relocVDef ws' ws i i ∧
+    ∃ Q, !nthDef Q P k ∧ ∃ f, !(substsGraph LAct) f ws' Q ∧ !adjoinDef y f ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin v x _ ih := subst LAct (relocV (π₂ x) (v 1) (v 1)) (v 0).[π₁ x] ∷ ih
+  nil_defined := .mk fun v ↦ by simp [blueprint, relocV_defined.iff, subst.defined.iff]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint, relocV_defined.iff, subst.defined.iff]
+
+end RelocD
+
+/-- The facts of a template list, relocated at `i` on both sides: `⟪kind, ws⟫ ↦ subst (relocV ws i i) P.[kind]`. -/
+noncomputable def relocD (L P i : V) : V := RelocD.construction.result ![P, i] L
+
+@[simp] lemma relocD_nil (P i : V) : relocD 0 P i = 0 := by simp [relocD, RelocD.construction]
+@[simp] lemma relocD_adjoin (x L P i : V) :
+    relocD (x ∷ L) P i = subst LAct (relocV (π₂ x) i i) P.[π₁ x] ∷ relocD L P i := by
+  simp [relocD, RelocD.construction]
+
+noncomputable def relocDDef : 𝚺₁.Semisentence 4 := RelocD.blueprint.resultDef
+
+instance relocD_defined : 𝚺₁-Function₃ (relocD : V → V → V → V) via relocDDef := .mk
+  fun v ↦ by simp [RelocD.construction.eval_resultDef, relocDDef]; rfl
+instance relocD_definable : 𝚺₁-Function₃ (relocD : V → V → V → V) := relocD_defined.to_definable
+
+lemma relocD_appendV (P i : V) : ∀ A B : V, relocD (appendV A B) P i = appendV (relocD A P i) (relocD B P i) := by
+  intro A B
+  induction A using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x A ih => rw [appendV_adjoin, relocD_adjoin, relocD_adjoin, ih, appendV_adjoin]
+
+lemma relocD_shiftTL (P i δ : V) : ∀ L : V, relocD (shiftTL L δ) P i = relocD L P (i + δ) := by
+  intro L
+  induction L using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x L ih => rw [shiftTL_adjoin, relocD_adjoin, relocD_adjoin, ih]; simp [relocV_shiftTV]
+
+/-- The table of the fact predicates, by kind: `0` and, `1` or, `2` all, `3` exs, `4` rel, `5` nrel,
+`6` verum, `7` falsum, `8` func, `9` bvar, `10` fvar, `11` adjoin. A closed V-generic term, always a
+PARAMETER of the theorems. -/
+noncomputable def factPreds : V :=
+  ?[Pand, Por, Pall, Pexs, Prel, Pnrel, Pverum, Pfalsum, Pfunc, Pbvar, Pfvar, Padjoin]
+
+
+section identNodes
+
+/-- The vector reference of a template: the literal `𝟎` for the empty vector, else the left offset `c`. -/
+noncomputable def vRefT (c j : V) : V := if j = 0 then tA (𝟎 : V) else tL c
+/-- The same on the right side. -/
+noncomputable def vRefT' (c j : V) : V := if j = 0 then tA (𝟎 : V) else tR c
+
+noncomputable def vRefTDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y c j. (j = 0 → ∃ z, !cTVGraph z 0 ∧ !pairDef y 2 z) ∧ (j ≠ 0 → !pairDef y 0 c)”
+noncomputable def vRefTpDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y c j. (j = 0 → ∃ z, !cTVGraph z 0 ∧ !pairDef y 2 z) ∧ (j ≠ 0 → !pairDef y 1 c)”
+
+instance vRefT_defined : 𝚺₁-Function₂ (vRefT : V → V → V) via vRefTDef := .mk fun v ↦ by
+  simp [vRefTDef, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
+  unfold vRefT tA tL
+  by_cases h : v 2 = 0
+  · simp [h]
+  · simp [h]
+instance vRefT_definable : 𝚺₁-Function₂ (vRefT : V → V → V) := vRefT_defined.to_definable
+instance vRefTp_defined : 𝚺₁-Function₂ (vRefT' : V → V → V) via vRefTpDef := .mk fun v ↦ by
+  simp [vRefTpDef, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
+  unfold vRefT' tA tR
+  by_cases h : v 2 = 0
+  · simp [h]
+  · simp [h]
+instance vRefTp_definable : 𝚺₁-Function₂ (vRefT' : V → V → V) := vRefTp_defined.to_definable
+
+/-! ### 4.3 The node templates (GENERATED by the session script `gen_layout4.py`) -/
+
+/-- A bound variable `#z`: fact `bvarFact &0 (cT z)`, step `eqOfBvar [cT z, L0, R0]`. -/
+noncomputable def bvarT (z : V) : V :=
+  ⟪1, ⟪?[⟪9, ?[(tL 0), (tA (cTV z))]⟫], ?[⟪72, ?[(tA (cTV z)), (tL 0), (tR 0)]⟫]⟫⟫
+
+noncomputable def bvarTDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y z. ∃ t1, !cTVGraph t1 z ∧ ∃ t2, !pairDef t2 2 t1 ∧ ∃ t3, !adjoinDef t3 t2 0 ∧ ∃ t4, !pairDef t4 0 0 ∧ ∃ t5, !adjoinDef t5 t4 t3 ∧ ∃ t6, !pairDef t6 9 t5 ∧ ∃ t7, !adjoinDef t7 t6 0 ∧ ∃ t8, !pairDef t8 1 0 ∧ ∃ t9, !adjoinDef t9 t8 0 ∧ ∃ t10, !pairDef t10 0 0 ∧ ∃ t11, !adjoinDef t11 t10 t9 ∧ ∃ t12, !cTVGraph t12 z ∧ ∃ t13, !pairDef t13 2 t12 ∧ ∃ t14, !adjoinDef t14 t13 t11 ∧ ∃ t15, !pairDef t15 72 t14 ∧ ∃ t16, !adjoinDef t16 t15 0 ∧ ∃ t17, !pairDef t17 t7 t16 ∧ ∃ t18, !pairDef t18 1 t17 ∧ y = t18”
+
+instance bvarT_defined : 𝚺₁-Function₁ (bvarT : V → V) via bvarTDef := .mk
+  fun v ↦ by simp [bvarTDef, bvarT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
+instance bvarT_definable : 𝚺₁-Function₁ (bvarT : V → V) := bvarT_defined.to_definable
+
+/-- A free variable `&x`: fact `fvarFact &0 (cT x)`, step `eqOfFvar [cT x, L0, R0]`. -/
+noncomputable def fvarT (x : V) : V :=
+  ⟪1, ⟪?[⟪10, ?[(tL 0), (tA (cTV x))]⟫], ?[⟪73, ?[(tA (cTV x)), (tL 0), (tR 0)]⟫]⟫⟫
+
+noncomputable def fvarTDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y x. ∃ t1, !cTVGraph t1 x ∧ ∃ t2, !pairDef t2 2 t1 ∧ ∃ t3, !adjoinDef t3 t2 0 ∧ ∃ t4, !pairDef t4 0 0 ∧ ∃ t5, !adjoinDef t5 t4 t3 ∧ ∃ t6, !pairDef t6 10 t5 ∧ ∃ t7, !adjoinDef t7 t6 0 ∧ ∃ t8, !pairDef t8 1 0 ∧ ∃ t9, !adjoinDef t9 t8 0 ∧ ∃ t10, !pairDef t10 0 0 ∧ ∃ t11, !adjoinDef t11 t10 t9 ∧ ∃ t12, !cTVGraph t12 x ∧ ∃ t13, !pairDef t13 2 t12 ∧ ∃ t14, !adjoinDef t14 t13 t11 ∧ ∃ t15, !pairDef t15 73 t14 ∧ ∃ t16, !adjoinDef t16 t15 0 ∧ ∃ t17, !pairDef t17 t7 t16 ∧ ∃ t18, !pairDef t18 1 t17 ∧ y = t18”
+
+instance fvarT_defined : 𝚺₁-Function₁ (fvarT : V → V) via fvarTDef := .mk
+  fun v ↦ by simp [fvarTDef, fvarT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
+instance fvarT_definable : 𝚺₁-Function₁ (fvarT : V → V) := fvarT_defined.to_definable
+
+/-- A function node over the vector template `d`: the vector at `1`, fact `funcFact`, step `eqOfFunc`. -/
+noncomputable def funcT (k f d : V) : V :=
+  ⟪((π₁ d) + 1), ⟪(appendV (shiftTL (π₁ (π₂ d)) 1) ?[⟪8, ?[(tL 0), (tA (cTV k)), (tA (cTV f)), (vRefT 1 k)]⟫]), (appendV (shiftTL (π₂ (π₂ d)) 1) ?[⟪71, ?[(tL 0), (tA (cTV k)), (tA (cTV f)), (vRefT 1 k), (vRefT' 1 k), (tR 0)]⟫])⟫⟫
+
+noncomputable def funcTDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y k f d. ∃ t1, !pi₁Def t1 d ∧ ∃ t2, t2 = t1 + 1 ∧ ∃ t3, !pi₂Def t3 d ∧ ∃ t4, !pi₁Def t4 t3 ∧ ∃ t5, !shiftTLDef t5 t4 1 ∧ ∃ t6, !vRefTDef t6 1 k ∧ ∃ t7, !adjoinDef t7 t6 0 ∧ ∃ t8, !cTVGraph t8 f ∧ ∃ t9, !pairDef t9 2 t8 ∧ ∃ t10, !adjoinDef t10 t9 t7 ∧ ∃ t11, !cTVGraph t11 k ∧ ∃ t12, !pairDef t12 2 t11 ∧ ∃ t13, !adjoinDef t13 t12 t10 ∧ ∃ t14, !pairDef t14 0 0 ∧ ∃ t15, !adjoinDef t15 t14 t13 ∧ ∃ t16, !pairDef t16 8 t15 ∧ ∃ t17, !adjoinDef t17 t16 0 ∧ ∃ t18, !appendVDef t18 t5 t17 ∧ ∃ t19, !pi₂Def t19 d ∧ ∃ t20, !pi₂Def t20 t19 ∧ ∃ t21, !shiftTLDef t21 t20 1 ∧ ∃ t22, !pairDef t22 1 0 ∧ ∃ t23, !adjoinDef t23 t22 0 ∧ ∃ t24, !vRefTpDef t24 1 k ∧ ∃ t25, !adjoinDef t25 t24 t23 ∧ ∃ t26, !vRefTDef t26 1 k ∧ ∃ t27, !adjoinDef t27 t26 t25 ∧ ∃ t28, !cTVGraph t28 f ∧ ∃ t29, !pairDef t29 2 t28 ∧ ∃ t30, !adjoinDef t30 t29 t27 ∧ ∃ t31, !cTVGraph t31 k ∧ ∃ t32, !pairDef t32 2 t31 ∧ ∃ t33, !adjoinDef t33 t32 t30 ∧ ∃ t34, !pairDef t34 0 0 ∧ ∃ t35, !adjoinDef t35 t34 t33 ∧ ∃ t36, !pairDef t36 71 t35 ∧ ∃ t37, !adjoinDef t37 t36 0 ∧ ∃ t38, !appendVDef t38 t21 t37 ∧ ∃ t39, !pairDef t39 t18 t38 ∧ ∃ t40, !pairDef t40 t2 t39 ∧ y = t40”
+
+instance funcT_defined : 𝚺₁-Function₃ (funcT : V → V → V → V) via funcTDef := .mk
+  fun v ↦ by simp [funcTDef, funcT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff, vRefT_defined.iff, vRefTp_defined.iff]
+instance funcT_definable : 𝚺₁-Function₃ (funcT : V → V → V → V) := funcT_defined.to_definable
+
+/-- The empty vector: the literal `𝟎`, no fact, the step `eqRefl [𝟎]` (the dummy argument keeps it a function). -/
+noncomputable def nilT (w : V) : V :=
+  ⟪0, ⟪?[], ?[⟪41, ?[(tA (𝟎 : V))]⟫]⟫⟫
+
+noncomputable def nilTDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “y w. ∃ t1, !cTVGraph t1 0 ∧ ∃ t2, !pairDef t2 2 t1 ∧ ∃ t3, !adjoinDef t3 t2 0 ∧ ∃ t4, !pairDef t4 41 t3 ∧ ∃ t5, !adjoinDef t5 t4 0 ∧ ∃ t6, !pairDef t6 0 t5 ∧ ∃ t7, !pairDef t7 0 t6 ∧ y = t7”
+
+instance nilT_defined : 𝚺₁-Function₁ (nilT : V → V) via nilTDef := .mk
+  fun v ↦ by simp [nilTDef, nilT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
+instance nilT_definable : 𝚺₁-Function₁ (nilT : V → V) := nilT_defined.to_definable
+
+/-- A vector node `t ∷ v` (`p` the entry template, `ih` the tail template of `j` entries): `t` at `1`, `v` at `count t + 1`; fact `adjFact`, step `eqOfAdj`. -/
+noncomputable def adjT (j p ih : V) : V :=
+  ⟪(((π₁ ih) + (π₁ p)) + 1), ⟪(appendV (shiftTL (π₁ (π₂ ih)) ((π₁ p) + 1)) (appendV (shiftTL (π₁ (π₂ p)) 1) ?[⟪11, ?[(tL 0), (tL 1), (vRefT ((π₁ p) + 1) j)]⟫])), (appendV (shiftTL (π₂ (π₂ ih)) ((π₁ p) + 1)) (appendV (shiftTL (π₂ (π₂ p)) 1) ?[⟪74, ?[(tL 1), (vRefT ((π₁ p) + 1) j), (tL 0), (tR 1), (vRefT' ((π₁ p) + 1) j), (tR 0)]⟫]))⟫⟫
+
+noncomputable def adjTDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y j p ih. ∃ t1, !pi₁Def t1 ih ∧ ∃ t2, !pi₁Def t2 p ∧ ∃ t3, t3 = t1 + t2 ∧ ∃ t4, t4 = t3 + 1 ∧ ∃ t5, !pi₂Def t5 ih ∧ ∃ t6, !pi₁Def t6 t5 ∧ ∃ t7, !pi₁Def t7 p ∧ ∃ t8, t8 = t7 + 1 ∧ ∃ t9, !shiftTLDef t9 t6 t8 ∧ ∃ t10, !pi₂Def t10 p ∧ ∃ t11, !pi₁Def t11 t10 ∧ ∃ t12, !shiftTLDef t12 t11 1 ∧ ∃ t13, !pi₁Def t13 p ∧ ∃ t14, t14 = t13 + 1 ∧ ∃ t15, !vRefTDef t15 t14 j ∧ ∃ t16, !adjoinDef t16 t15 0 ∧ ∃ t17, !pairDef t17 0 1 ∧ ∃ t18, !adjoinDef t18 t17 t16 ∧ ∃ t19, !pairDef t19 0 0 ∧ ∃ t20, !adjoinDef t20 t19 t18 ∧ ∃ t21, !pairDef t21 11 t20 ∧ ∃ t22, !adjoinDef t22 t21 0 ∧ ∃ t23, !appendVDef t23 t12 t22 ∧ ∃ t24, !appendVDef t24 t9 t23 ∧ ∃ t25, !pi₂Def t25 ih ∧ ∃ t26, !pi₂Def t26 t25 ∧ ∃ t27, !pi₁Def t27 p ∧ ∃ t28, t28 = t27 + 1 ∧ ∃ t29, !shiftTLDef t29 t26 t28 ∧ ∃ t30, !pi₂Def t30 p ∧ ∃ t31, !pi₂Def t31 t30 ∧ ∃ t32, !shiftTLDef t32 t31 1 ∧ ∃ t33, !pairDef t33 1 0 ∧ ∃ t34, !adjoinDef t34 t33 0 ∧ ∃ t35, !pi₁Def t35 p ∧ ∃ t36, t36 = t35 + 1 ∧ ∃ t37, !vRefTpDef t37 t36 j ∧ ∃ t38, !adjoinDef t38 t37 t34 ∧ ∃ t39, !pairDef t39 1 1 ∧ ∃ t40, !adjoinDef t40 t39 t38 ∧ ∃ t41, !pairDef t41 0 0 ∧ ∃ t42, !adjoinDef t42 t41 t40 ∧ ∃ t43, !pi₁Def t43 p ∧ ∃ t44, t44 = t43 + 1 ∧ ∃ t45, !vRefTDef t45 t44 j ∧ ∃ t46, !adjoinDef t46 t45 t42 ∧ ∃ t47, !pairDef t47 0 1 ∧ ∃ t48, !adjoinDef t48 t47 t46 ∧ ∃ t49, !pairDef t49 74 t48 ∧ ∃ t50, !adjoinDef t50 t49 0 ∧ ∃ t51, !appendVDef t51 t32 t50 ∧ ∃ t52, !appendVDef t52 t29 t51 ∧ ∃ t53, !pairDef t53 t24 t52 ∧ ∃ t54, !pairDef t54 t4 t53 ∧ y = t54”
+
+instance adjT_defined : 𝚺₁-Function₃ (adjT : V → V → V → V) via adjTDef := .mk
+  fun v ↦ by simp [adjTDef, adjT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff, vRefT_defined.iff, vRefTp_defined.iff]
+instance adjT_definable : 𝚺₁-Function₃ (adjT : V → V → V → V) := adjT_defined.to_definable
+
+/-- A constant formula (`⊤`/`⊥`): its shape fact, the step `eqOfVerum`/`eqOfFalsum [L0, R0]`. -/
+noncomputable def constT (kind row : V) : V :=
+  ⟪1, ⟪?[⟪kind, ?[(tL 0)]⟫], ?[⟪row, ?[(tL 0), (tR 0)]⟫]⟫⟫
+
+noncomputable def constTDef : 𝚺₁.Semisentence 3 := .mkSigma
+  “y kind row. ∃ t1, !pairDef t1 0 0 ∧ ∃ t2, !adjoinDef t2 t1 0 ∧ ∃ t3, !pairDef t3 kind t2 ∧ ∃ t4, !adjoinDef t4 t3 0 ∧ ∃ t5, !pairDef t5 1 0 ∧ ∃ t6, !adjoinDef t6 t5 0 ∧ ∃ t7, !pairDef t7 0 0 ∧ ∃ t8, !adjoinDef t8 t7 t6 ∧ ∃ t9, !pairDef t9 row t8 ∧ ∃ t10, !adjoinDef t10 t9 0 ∧ ∃ t11, !pairDef t11 t4 t10 ∧ ∃ t12, !pairDef t12 1 t11 ∧ y = t12”
+
+instance constT_defined : 𝚺₁-Function₂ (constT : V → V → V) via constTDef := .mk
+  fun v ↦ by simp [constTDef, constT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
+instance constT_definable : 𝚺₁-Function₂ (constT : V → V → V) := constT_defined.to_definable
+
+/-- A binary node `p ⋏ q`/`p ⋎ q`: `q` at `1`, `p` at `count q + 1`; the shape fact, the step `eqOfAnd`/`eqOfOr`. -/
+noncomputable def binT (kind row yp yq : V) : V :=
+  ⟪(((π₁ yp) + (π₁ yq)) + 1), ⟪(appendV (shiftTL (π₁ (π₂ yp)) ((π₁ yq) + 1)) (appendV (shiftTL (π₁ (π₂ yq)) 1) ?[⟪kind, ?[(tL 0), (tL ((π₁ yq) + 1)), (tL 1)]⟫])), (appendV (shiftTL (π₂ (π₂ yp)) ((π₁ yq) + 1)) (appendV (shiftTL (π₂ (π₂ yq)) 1) ?[⟪row, ?[(tL 0), (tL ((π₁ yq) + 1)), (tL 1), (tR ((π₁ yq) + 1)), (tR 1), (tR 0)]⟫]))⟫⟫
+
+noncomputable def binTDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y kind row yp yq. ∃ t1, !pi₁Def t1 yp ∧ ∃ t2, !pi₁Def t2 yq ∧ ∃ t3, t3 = t1 + t2 ∧ ∃ t4, t4 = t3 + 1 ∧ ∃ t5, !pi₂Def t5 yp ∧ ∃ t6, !pi₁Def t6 t5 ∧ ∃ t7, !pi₁Def t7 yq ∧ ∃ t8, t8 = t7 + 1 ∧ ∃ t9, !shiftTLDef t9 t6 t8 ∧ ∃ t10, !pi₂Def t10 yq ∧ ∃ t11, !pi₁Def t11 t10 ∧ ∃ t12, !shiftTLDef t12 t11 1 ∧ ∃ t13, !pairDef t13 0 1 ∧ ∃ t14, !adjoinDef t14 t13 0 ∧ ∃ t15, !pi₁Def t15 yq ∧ ∃ t16, t16 = t15 + 1 ∧ ∃ t17, !pairDef t17 0 t16 ∧ ∃ t18, !adjoinDef t18 t17 t14 ∧ ∃ t19, !pairDef t19 0 0 ∧ ∃ t20, !adjoinDef t20 t19 t18 ∧ ∃ t21, !pairDef t21 kind t20 ∧ ∃ t22, !adjoinDef t22 t21 0 ∧ ∃ t23, !appendVDef t23 t12 t22 ∧ ∃ t24, !appendVDef t24 t9 t23 ∧ ∃ t25, !pi₂Def t25 yp ∧ ∃ t26, !pi₂Def t26 t25 ∧ ∃ t27, !pi₁Def t27 yq ∧ ∃ t28, t28 = t27 + 1 ∧ ∃ t29, !shiftTLDef t29 t26 t28 ∧ ∃ t30, !pi₂Def t30 yq ∧ ∃ t31, !pi₂Def t31 t30 ∧ ∃ t32, !shiftTLDef t32 t31 1 ∧ ∃ t33, !pairDef t33 1 0 ∧ ∃ t34, !adjoinDef t34 t33 0 ∧ ∃ t35, !pairDef t35 1 1 ∧ ∃ t36, !adjoinDef t36 t35 t34 ∧ ∃ t37, !pi₁Def t37 yq ∧ ∃ t38, t38 = t37 + 1 ∧ ∃ t39, !pairDef t39 1 t38 ∧ ∃ t40, !adjoinDef t40 t39 t36 ∧ ∃ t41, !pairDef t41 0 1 ∧ ∃ t42, !adjoinDef t42 t41 t40 ∧ ∃ t43, !pi₁Def t43 yq ∧ ∃ t44, t44 = t43 + 1 ∧ ∃ t45, !pairDef t45 0 t44 ∧ ∃ t46, !adjoinDef t46 t45 t42 ∧ ∃ t47, !pairDef t47 0 0 ∧ ∃ t48, !adjoinDef t48 t47 t46 ∧ ∃ t49, !pairDef t49 row t48 ∧ ∃ t50, !adjoinDef t50 t49 0 ∧ ∃ t51, !appendVDef t51 t32 t50 ∧ ∃ t52, !appendVDef t52 t29 t51 ∧ ∃ t53, !pairDef t53 t24 t52 ∧ ∃ t54, !pairDef t54 t4 t53 ∧ y = t54”
+
+instance binT_defined : 𝚺₁-Function₄ (binT : V → V → V → V → V) via binTDef := .mk
+  fun v ↦ by simp [binTDef, binT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff]
+instance binT_definable : 𝚺₁-Function₄ (binT : V → V → V → V → V) := binT_defined.to_definable
+
+/-- A quantifier node `∀p`/`∃p`: `p` at `1`; the shape fact, the step `eqOfAll`/`eqOfExs`. -/
+noncomputable def quantT (kind row yp : V) : V :=
+  ⟪((π₁ yp) + 1), ⟪(appendV (shiftTL (π₁ (π₂ yp)) 1) ?[⟪kind, ?[(tL 0), (tL 1)]⟫]), (appendV (shiftTL (π₂ (π₂ yp)) 1) ?[⟪row, ?[(tL 0), (tL 1), (tR 1), (tR 0)]⟫])⟫⟫
+
+noncomputable def quantTDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y kind row yp. ∃ t1, !pi₁Def t1 yp ∧ ∃ t2, t2 = t1 + 1 ∧ ∃ t3, !pi₂Def t3 yp ∧ ∃ t4, !pi₁Def t4 t3 ∧ ∃ t5, !shiftTLDef t5 t4 1 ∧ ∃ t6, !pairDef t6 0 1 ∧ ∃ t7, !adjoinDef t7 t6 0 ∧ ∃ t8, !pairDef t8 0 0 ∧ ∃ t9, !adjoinDef t9 t8 t7 ∧ ∃ t10, !pairDef t10 kind t9 ∧ ∃ t11, !adjoinDef t11 t10 0 ∧ ∃ t12, !appendVDef t12 t5 t11 ∧ ∃ t13, !pi₂Def t13 yp ∧ ∃ t14, !pi₂Def t14 t13 ∧ ∃ t15, !shiftTLDef t15 t14 1 ∧ ∃ t16, !pairDef t16 1 0 ∧ ∃ t17, !adjoinDef t17 t16 0 ∧ ∃ t18, !pairDef t18 1 1 ∧ ∃ t19, !adjoinDef t19 t18 t17 ∧ ∃ t20, !pairDef t20 0 1 ∧ ∃ t21, !adjoinDef t21 t20 t19 ∧ ∃ t22, !pairDef t22 0 0 ∧ ∃ t23, !adjoinDef t23 t22 t21 ∧ ∃ t24, !pairDef t24 row t23 ∧ ∃ t25, !adjoinDef t25 t24 0 ∧ ∃ t26, !appendVDef t26 t15 t25 ∧ ∃ t27, !pairDef t27 t12 t26 ∧ ∃ t28, !pairDef t28 t2 t27 ∧ y = t28”
+
+instance quantT_defined : 𝚺₁-Function₃ (quantT : V → V → V → V) via quantTDef := .mk
+  fun v ↦ by simp [quantTDef, quantT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff]
+instance quantT_definable : 𝚺₁-Function₃ (quantT : V → V → V → V) := quantT_defined.to_definable
+
+/-- An atom `rel k R v`/`nrel k R v` over the vector template `d`: the vector at `1`; the shape fact, the step `eqOfRel`/`eqOfNRel`. -/
+noncomputable def atomT (kind row k R d : V) : V :=
+  ⟪((π₁ d) + 1), ⟪(appendV (shiftTL (π₁ (π₂ d)) 1) ?[⟪kind, ?[(tL 0), (tA (cTV k)), (tA (cTV R)), (vRefT 1 k)]⟫]), (appendV (shiftTL (π₂ (π₂ d)) 1) ?[⟪row, ?[(tL 0), (tA (cTV k)), (tA (cTV R)), (vRefT 1 k), (vRefT' 1 k), (tR 0)]⟫])⟫⟫
+
+noncomputable def atomTDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y kind row k R d. ∃ t1, !pi₁Def t1 d ∧ ∃ t2, t2 = t1 + 1 ∧ ∃ t3, !pi₂Def t3 d ∧ ∃ t4, !pi₁Def t4 t3 ∧ ∃ t5, !shiftTLDef t5 t4 1 ∧ ∃ t6, !vRefTDef t6 1 k ∧ ∃ t7, !adjoinDef t7 t6 0 ∧ ∃ t8, !cTVGraph t8 R ∧ ∃ t9, !pairDef t9 2 t8 ∧ ∃ t10, !adjoinDef t10 t9 t7 ∧ ∃ t11, !cTVGraph t11 k ∧ ∃ t12, !pairDef t12 2 t11 ∧ ∃ t13, !adjoinDef t13 t12 t10 ∧ ∃ t14, !pairDef t14 0 0 ∧ ∃ t15, !adjoinDef t15 t14 t13 ∧ ∃ t16, !pairDef t16 kind t15 ∧ ∃ t17, !adjoinDef t17 t16 0 ∧ ∃ t18, !appendVDef t18 t5 t17 ∧ ∃ t19, !pi₂Def t19 d ∧ ∃ t20, !pi₂Def t20 t19 ∧ ∃ t21, !shiftTLDef t21 t20 1 ∧ ∃ t22, !pairDef t22 1 0 ∧ ∃ t23, !adjoinDef t23 t22 0 ∧ ∃ t24, !vRefTpDef t24 1 k ∧ ∃ t25, !adjoinDef t25 t24 t23 ∧ ∃ t26, !vRefTDef t26 1 k ∧ ∃ t27, !adjoinDef t27 t26 t25 ∧ ∃ t28, !cTVGraph t28 R ∧ ∃ t29, !pairDef t29 2 t28 ∧ ∃ t30, !adjoinDef t30 t29 t27 ∧ ∃ t31, !cTVGraph t31 k ∧ ∃ t32, !pairDef t32 2 t31 ∧ ∃ t33, !adjoinDef t33 t32 t30 ∧ ∃ t34, !pairDef t34 0 0 ∧ ∃ t35, !adjoinDef t35 t34 t33 ∧ ∃ t36, !pairDef t36 row t35 ∧ ∃ t37, !adjoinDef t37 t36 0 ∧ ∃ t38, !appendVDef t38 t21 t37 ∧ ∃ t39, !pairDef t39 t18 t38 ∧ ∃ t40, !pairDef t40 t2 t39 ∧ y = t40”
+
+instance atomT_defined : 𝚺₁-Function₅ (atomT : V → V → V → V → V → V) via atomTDef := .mk
+  fun v ↦ by simp [atomTDef, atomT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff, vRefT_defined.iff, vRefTp_defined.iff]
+
+
+/-! ### 4.4 The recursions: vectors (fold from the end), terms (`TermRec`), formulas (`UformulaRec1`) -/
+
+namespace EqVecAux
+
+noncomputable def blueprint : PR.Blueprint 1 where
+  zero := .mkSigma “y w. ∃ s, !nilTDef s w ∧ y = s”
+  succ := .mkSigma “y ih j w. ∃ p, !nthFromEndDef p w j ∧ ∃ s, !adjTDef s j p ih ∧ y = s”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun v ↦ nilT (v 0)
+  succ := fun v j ih ↦ adjT j (nthFromEnd (v 0) j) ih
+  zero_defined := .mk fun v ↦ by simp [blueprint, nilT_defined.iff]
+  succ_defined := .mk fun v ↦ by simp [blueprint, nthFromEnd_defined.iff, adjT_defined.iff]
+
+end EqVecAux
+
+/-- The template of the last `j` entries of a vector of term templates (tail first, as the walk). -/
+noncomputable def eqVecAux (w j : V) : V := EqVecAux.construction.result ![w] j
+
+@[simp] lemma eqVecAux_zero (w : V) : eqVecAux w 0 = nilT w := by simp [eqVecAux, EqVecAux.construction]
+@[simp] lemma eqVecAux_succ (w j : V) : eqVecAux w (j + 1) = adjT j (nthFromEnd w j) (eqVecAux w j) := by
+  simp [eqVecAux, EqVecAux.construction]
+
+noncomputable def eqVecAuxDef : 𝚺₁.Semisentence 3 := EqVecAux.blueprint.resultDef |>.rew (Rew.subst ![#0, #2, #1])
+
+instance eqVecAux_defined : 𝚺₁-Function₂ (eqVecAux : V → V → V) via eqVecAuxDef := .mk
+  fun v ↦ by simp [EqVecAux.construction.result_defined_iff, eqVecAuxDef]; rfl
+instance eqVecAux_definable : 𝚺₁-Function₂ (eqVecAux : V → V → V) := eqVecAux_defined.to_definable
+
+namespace EqT
+
+noncomputable def blueprint : Language.TermRec.Blueprint 0 where
+  bvar := .mkSigma “y z. ∃ s, !bvarTDef s z ∧ y = s”
+  fvar := .mkSigma “y x. ∃ s, !fvarTDef s x ∧ y = s”
+  func := .mkSigma “y k f v w. ∃ d, !eqVecAuxDef d w k ∧ ∃ s, !funcTDef s k f d ∧ y = s”
+
+noncomputable def construction : Language.TermRec.Construction V blueprint where
+  bvar := fun _ z ↦ bvarT z
+  fvar := fun _ x ↦ fvarT x
+  func := fun _ k f _ w ↦ funcT k f (eqVecAux w k)
+  bvar_defined := .mk fun v ↦ by simp [blueprint, bvarT_defined.iff]
+  fvar_defined := .mk fun v ↦ by simp [blueprint, fvarT_defined.iff]
+  func_defined := .mk fun v ↦ by simp [blueprint, eqVecAux_defined.iff, funcT_defined.iff]
+
+end EqT
+
+/-- The template of a term. -/
+noncomputable def eqT (t : V) : V := EqT.construction.result LAct ![] t
+/-- The templates of the entries of a vector. -/
+noncomputable def eqTVec (k v : V) : V := EqT.construction.resultVec LAct ![] k v
+
+@[simp] lemma eqT_bvar (z : V) : eqT (^#z) = bvarT z := by simp [eqT, EqT.construction]
+@[simp] lemma eqT_fvar (x : V) : eqT (^&x) = fvarT x := by simp [eqT, EqT.construction]
+lemma eqT_func {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
+    eqT (^func k f v) = funcT k f (eqVecAux (eqTVec k v) k) := by
+  simp [eqT, eqTVec, EqT.construction, hkf, hv]
+lemma len_eqTVec {k v : V} (hv : IsUTermVec LAct k v) : len (eqTVec k v) = k :=
+  EqT.construction.resultVec_lh LAct _ hv
+lemma nth_eqTVec {k v i : V} (hv : IsUTermVec LAct k v) (hi : i < k) : (eqTVec k v).[i] = eqT v.[i] :=
+  EqT.construction.nth_resultVec LAct _ hv hi
+
+noncomputable def eqTDef : 𝚺₁.Semisentence 2 := EqT.blueprint.result LAct
+noncomputable def eqTVecDef : 𝚺₁.Semisentence 3 := EqT.blueprint.resultVec LAct
+
+instance eqT_defined : 𝚺₁-Function₁ (eqT : V → V) via eqTDef := .mk
+  fun v ↦ by simp [eqTDef, EqT.construction.result_graphDef]; rfl
+instance eqT_definable : 𝚺₁-Function₁ (eqT : V → V) := eqT_defined.to_definable
+instance eqTVec_defined : 𝚺₁-Function₂ (eqTVec : V → V → V) via eqTVecDef := .mk
+  fun v ↦ by simp [eqTVecDef, EqT.construction.resultVec_defined.iff]; rfl
+instance eqTVec_definable : 𝚺₁-Function₂ (eqTVec : V → V → V) := eqTVec_defined.to_definable
+
+namespace EqF
+
+noncomputable def blueprint : UformulaRec1.Blueprint where
+  rel := .mkSigma “y param k R v. ∃ w, !eqTVecDef w k v ∧ ∃ d, !eqVecAuxDef d w k ∧ ∃ s, !atomTDef s 4 67 k R d ∧ y = s”
+  nrel := .mkSigma “y param k R v. ∃ w, !eqTVecDef w k v ∧ ∃ d, !eqVecAuxDef d w k ∧ ∃ s, !atomTDef s 5 68 k R d ∧ y = s”
+  verum := .mkSigma “y param. ∃ s, !constTDef s 6 69 ∧ y = s”
+  falsum := .mkSigma “y param. ∃ s, !constTDef s 7 70 ∧ y = s”
+  and := .mkSigma “y param p₁ p₂ y₁ y₂. ∃ s, !binTDef s 0 63 y₁ y₂ ∧ y = s”
+  or := .mkSigma “y param p₁ p₂ y₁ y₂. ∃ s, !binTDef s 1 64 y₁ y₂ ∧ y = s”
+  all := .mkSigma “y param p₁ y₁. ∃ s, !quantTDef s 2 65 y₁ ∧ y = s”
+  exs := .mkSigma “y param p₁ y₁. ∃ s, !quantTDef s 3 66 y₁ ∧ y = s”
+  allChanges := .mkSigma “y param. y = param”
+  exsChanges := .mkSigma “y param. y = param”
+
+noncomputable def construction : UformulaRec1.Construction V blueprint where
+  rel := fun _ k R v ↦ atomT 4 67 k R (eqVecAux (eqTVec k v) k)
+  nrel := fun _ k R v ↦ atomT 5 68 k R (eqVecAux (eqTVec k v) k)
+  verum := fun _ ↦ constT 6 69
+  falsum := fun _ ↦ constT 7 70
+  and := fun _ _ _ y₁ y₂ ↦ binT 0 63 y₁ y₂
+  or := fun _ _ _ y₁ y₂ ↦ binT 1 64 y₁ y₂
+  all := fun _ _ y₁ ↦ quantT 2 65 y₁
+  exs := fun _ _ y₁ ↦ quantT 3 66 y₁
+  allChanges := fun param ↦ param
+  exsChanges := fun param ↦ param
+  rel_defined := .mk fun v ↦ by simp [blueprint, numeral_eq_natCast, eqTVec_defined.iff, eqVecAux_defined.iff, atomT_defined.iff]
+  nrel_defined := .mk fun v ↦ by simp [blueprint, numeral_eq_natCast, eqTVec_defined.iff, eqVecAux_defined.iff, atomT_defined.iff]
+  verum_defined := .mk fun v ↦ by simp [blueprint, numeral_eq_natCast, constT_defined.iff]
+  falsum_defined := .mk fun v ↦ by simp [blueprint, numeral_eq_natCast, constT_defined.iff]
+  and_defined := .mk fun v ↦ by simp [blueprint, numeral_eq_natCast, binT_defined.iff]
+  or_defined := .mk fun v ↦ by simp [blueprint, numeral_eq_natCast, binT_defined.iff]
+  all_defined := .mk fun v ↦ by simp [blueprint, numeral_eq_natCast, quantT_defined.iff]
+  exs_defined := .mk fun v ↦ by simp [blueprint, numeral_eq_natCast, quantT_defined.iff]
+  allChanges_defined := .mk fun v ↦ by simp [blueprint]
+  exChanges_defined := .mk fun v ↦ by simp [blueprint]
+
+end EqF
+
+/-- **The template of a formula**: `⟪count, facts, steps⟫` (the parameter is unused). -/
+noncomputable def eqFP (param r : V) : V := EqF.construction.result LAct param r
+
+noncomputable def eqFPDef : 𝚺₁.Semisentence 3 := EqF.blueprint.result LAct
+
+instance eqFP_defined : 𝚺₁-Function₂ (eqFP : V → V → V) via eqFPDef := EqF.construction.result_defined (L := LAct)
+instance eqFP_definable : 𝚺₁-Function₂ (eqFP : V → V → V) := eqFP_defined.to_definable
+
+/-- **The template of a formula**: `⟪count, facts, steps⟫` (the recursion's parameter is unused; its Σ₁
+graph is Foundation's `result` verbatim — never spliced into a DSL: substituting even a numeral into
+the fixpoint formula explodes). -/
+noncomputable def eqFT (r : V) : V := eqFP 0 r
+
+lemma eqFT_rel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) :
+    eqFT (^rel k R v) = atomT 4 67 k R (eqVecAux (eqTVec k v) k) := by
+  simp [eqFT, eqFP, EqF.construction, hR, hv]
+lemma eqFT_nrel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) :
+    eqFT (^nrel k R v) = atomT 5 68 k R (eqVecAux (eqTVec k v) k) := by
+  simp [eqFT, eqFP, EqF.construction, hR, hv]
+@[simp] lemma eqFT_verum : eqFT (^⊤ : V) = constT 6 69 := by simp [eqFT, eqFP, EqF.construction]
+@[simp] lemma eqFT_falsum : eqFT (^⊥ : V) = constT 7 70 := by simp [eqFT, eqFP, EqF.construction]
+lemma eqFT_and {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) : eqFT (p ^⋏ q) = binT 0 63 (eqFT p) (eqFT q) := by
+  simp [eqFT, eqFP, EqF.construction, hp, hq]
+lemma eqFT_or {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) : eqFT (p ^⋎ q) = binT 1 64 (eqFT p) (eqFT q) := by
+  simp [eqFT, eqFP, EqF.construction, hp, hq]
+lemma eqFT_all {p : V} (hp : IsUFormula LAct p) : eqFT (^∀ p) = quantT 2 65 (eqFT p) := by
+  simp [eqFT, eqFP, EqF.construction, hp]
+lemma eqFT_exs {p : V} (hp : IsUFormula LAct p) : eqFT (^∃ p) = quantT 3 66 (eqFT p) := by
+  simp [eqFT, eqFP, EqF.construction, hp]
+
+instance eqFT_definable : 𝚺₁-Function₁ (eqFT : V → V) := by
+  unfold eqFT; definability
+
+/-! ### 4.5 `eqSteps`, the dossier, `eqCount` -/
+
+/-- The number of eigenvariables the walk of `r` introduces (the template's count). -/
+noncomputable def eqCount (r : V) : V := π₁ (eqFT r)
+/-- **The identification walk**: the relocated steps for the dossiers of `r` at `i` (left) and `j` (right). -/
+noncomputable def eqSteps (W i j r : V) : V := relocS (π₂ (π₂ (eqFT r))) W i j
+/-- The dossier facts of `r` at offset `i` (predicate table `P`, always `factPreds`). -/
+noncomputable def dossFacts (P i r : V) : V := relocD (π₁ (π₂ (eqFT r))) P i
+/-- **A dossier is present**: every dossier fact of `r` at `i`, negated, is in `Γ`. -/
+def DossierAt (P Γ i r : V) : Prop := ∀ m < len (dossFacts P i r), neg LAct (dossFacts P i r).[m] ∈ Γ
+
+instance eqCount_definable : 𝚺₁-Function₁ (eqCount : V → V) := by
+  unfold eqCount; definability
+instance eqSteps_definable : 𝚺₁-Function₄ (eqSteps : V → V → V → V → V) := by
+  unfold eqSteps; definability
+instance dossFacts_definable : 𝚺₁-Function₃ (dossFacts : V → V → V → V) := by
+  unfold dossFacts; definability
+instance dossierAt_definable : 𝚫₁-Relation₄ (DossierAt : V → V → V → V → Prop) := by
+  unfold DossierAt; definability
+
+end identNodes
+
+/-! ### 4.6 Reading the templates: the relocated steps and facts of each node -/
+
+section identCompute
+
+lemma relocW_vRefT (c k i j : V) : relocW (vRefT c k) i j = vRef (i + c) k := by
+  unfold vRefT vRef; split_ifs <;> simp
+lemma relocW_vRefTp (c k i j : V) : relocW (vRefT' c k) i j = vRef (j + c) k := by
+  unfold vRefT' vRef; split_ifs <;> simp
+
+/-- Every fact of a list, negated, is in `Γ`. -/
+def AllNeg (Γ L : V) : Prop := ∀ m < len L, neg LAct L.[m] ∈ Γ
+
+instance allNeg_definable : 𝚫₁-Relation (AllNeg : V → V → Prop) := by
+  unfold AllNeg; definability
+
+lemma allNeg_nil (Γ : V) : AllNeg Γ 0 := fun m hm ↦ by simp at hm
+lemma allNeg_single {Γ f : V} : AllNeg Γ ?[f] ↔ neg LAct f ∈ Γ := by
+  constructor
+  · intro h; have := h 0 (by rw [len_vec1]; exact _root_.zero_lt_one); simpa using this
+  · intro h m hm
+    rw [len_vec1] at hm
+    have : m = 0 := le_antisymm (lt_succ_iff_le.mp (by simpa using hm)) zero_le
+    subst this; simpa using h
+lemma allNeg_appendV {Γ A B : V} : AllNeg Γ (appendV A B) ↔ AllNeg Γ A ∧ AllNeg Γ B := by
+  constructor
+  · intro h
+    refine ⟨fun m hm ↦ ?_, fun m hm ↦ ?_⟩
+    · have := h m (by rw [len_appendV]; exact lt_of_lt_of_le hm le_self_add)
+      rwa [nth_appendV_lt A B m hm] at this
+    · have := h (len A + m) (by rw [len_appendV]; exact add_lt_add_right hm _)
+      rwa [nth_appendV_add] at this
+  · rintro ⟨hA, hB⟩ m hm
+    rw [len_appendV] at hm
+    by_cases hmA : m < len A
+    · rw [nth_appendV_lt A B m hmA]; exact hA m hmA
+    · obtain ⟨d, rfl⟩ := exists_add_of_le (not_lt.mp hmA)
+      rw [nth_appendV_add]
+      exact hB d (lt_of_add_lt_add_left hm)
+lemma allNeg_mono {Γ Γ' L : V} (h : ∀ x ∈ Γ, x ∈ Γ') (hL : AllNeg Γ L) : AllNeg Γ' L :=
+  fun m hm ↦ h _ (hL m hm)
+
+lemma dossierAt_iff (P Γ i r : V) : DossierAt P Γ i r ↔ AllNeg Γ (dossFacts P i r) := Iff.rfl
+
+/-- The predicate table, entrywise. -/
+lemma factPreds_and : (factPreds : V).[0] = Pand := by simp [factPreds]
+lemma factPreds_or : (factPreds : V).[1] = Por := by simp [factPreds, nth_vec_one]
+lemma factPreds_all : (factPreds : V).[2] = Pall := by simp [factPreds, nth_vec_two]
+lemma factPreds_exs : (factPreds : V).[3] = Pexs := by
+  simp only [factPreds]
+  rw [show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+lemma factPreds_rel : (factPreds : V).[4] = Prel := by
+  simp only [factPreds]
+  rw [show (4 : V) = 3 + 1 from by norm_num, nth_adjoin_succ, show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+lemma factPreds_nrel : (factPreds : V).[5] = Pnrel := by
+  simp only [factPreds]
+  rw [show (5 : V) = 4 + 1 from by norm_num, nth_adjoin_succ, show (4 : V) = 3 + 1 from by norm_num, nth_adjoin_succ,
+    show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+lemma factPreds_verum : (factPreds : V).[6] = Pverum := by
+  simp only [factPreds]
+  rw [show (6 : V) = 5 + 1 from by norm_num, nth_adjoin_succ, show (5 : V) = 4 + 1 from by norm_num, nth_adjoin_succ,
+    show (4 : V) = 3 + 1 from by norm_num, nth_adjoin_succ, show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+lemma factPreds_falsum : (factPreds : V).[7] = Pfalsum := by
+  simp only [factPreds]
+  rw [show (7 : V) = 6 + 1 from by norm_num, nth_adjoin_succ, show (6 : V) = 5 + 1 from by norm_num, nth_adjoin_succ,
+    show (5 : V) = 4 + 1 from by norm_num, nth_adjoin_succ, show (4 : V) = 3 + 1 from by norm_num, nth_adjoin_succ,
+    show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+lemma factPreds_func : (factPreds : V).[8] = Pfunc := by
+  simp only [factPreds]
+  rw [show (8 : V) = 7 + 1 from by norm_num, nth_adjoin_succ, show (7 : V) = 6 + 1 from by norm_num, nth_adjoin_succ,
+    show (6 : V) = 5 + 1 from by norm_num, nth_adjoin_succ, show (5 : V) = 4 + 1 from by norm_num, nth_adjoin_succ,
+    show (4 : V) = 3 + 1 from by norm_num, nth_adjoin_succ, show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+lemma factPreds_bvar : (factPreds : V).[9] = Pbvar := by
+  simp only [factPreds]
+  rw [show (9 : V) = 8 + 1 from by norm_num, nth_adjoin_succ, show (8 : V) = 7 + 1 from by norm_num, nth_adjoin_succ,
+    show (7 : V) = 6 + 1 from by norm_num, nth_adjoin_succ, show (6 : V) = 5 + 1 from by norm_num, nth_adjoin_succ,
+    show (5 : V) = 4 + 1 from by norm_num, nth_adjoin_succ, show (4 : V) = 3 + 1 from by norm_num, nth_adjoin_succ,
+    show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+lemma factPreds_fvar : (factPreds : V).[10] = Pfvar := by
+  simp only [factPreds]
+  rw [show (10 : V) = 9 + 1 from by norm_num, nth_adjoin_succ, show (9 : V) = 8 + 1 from by norm_num, nth_adjoin_succ,
+    show (8 : V) = 7 + 1 from by norm_num, nth_adjoin_succ, show (7 : V) = 6 + 1 from by norm_num, nth_adjoin_succ,
+    show (6 : V) = 5 + 1 from by norm_num, nth_adjoin_succ, show (5 : V) = 4 + 1 from by norm_num, nth_adjoin_succ,
+    show (4 : V) = 3 + 1 from by norm_num, nth_adjoin_succ, show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+lemma factPreds_adjoin : (factPreds : V).[11] = Padjoin := by
+  simp only [factPreds]
+  rw [show (11 : V) = 10 + 1 from by norm_num, nth_adjoin_succ, show (10 : V) = 9 + 1 from by norm_num, nth_adjoin_succ,
+    show (9 : V) = 8 + 1 from by norm_num, nth_adjoin_succ, show (8 : V) = 7 + 1 from by norm_num, nth_adjoin_succ,
+    show (7 : V) = 6 + 1 from by norm_num, nth_adjoin_succ, show (6 : V) = 5 + 1 from by norm_num, nth_adjoin_succ,
+    show (5 : V) = 4 + 1 from by norm_num, nth_adjoin_succ, show (4 : V) = 3 + 1 from by norm_num, nth_adjoin_succ,
+    show (3 : V) = 2 + 1 from by norm_num, nth_adjoin_succ, nth_vec_two]
+
+/-- The relocated pieces of the node templates (`S x := π₂ (π₂ x)`, `D x := π₁ (π₂ x)`). -/
+lemma constT_count (kind row : V) : π₁ (constT kind row) = 1 := by simp [constT]
+lemma constT_S (kind row W i j : V) :
+    relocS (π₂ (π₂ (constT kind row))) W i j = ?[mkStep W row ?[^&i, ^&j]] := by
+  simp [constT]
+lemma constT_D (kind row P i : V) :
+    relocD (π₁ (π₂ (constT kind row))) P i = ?[subst LAct ?[^&i] P.[kind]] := by
+  simp [constT]
+
+lemma binT_count (kind row yp yq : V) : π₁ (binT kind row yp yq) = π₁ yp + π₁ yq + 1 := by simp [binT]
+lemma binT_S (kind row yp yq W i j : V) :
+    relocS (π₂ (π₂ (binT kind row yp yq))) W i j =
+      appendV (relocS (π₂ (π₂ yp)) W (i + (π₁ yq + 1)) (j + (π₁ yq + 1)))
+        (appendV (relocS (π₂ (π₂ yq)) W (i + 1) (j + 1))
+          ?[mkStep W row ?[^&i, ^&(i + (π₁ yq + 1)), ^&(i + 1), ^&(j + (π₁ yq + 1)), ^&(j + 1), ^&j]]) := by
+  simp [binT, relocS_appendV, relocS_shiftTL]
+lemma binT_D (kind row yp yq P i : V) :
+    relocD (π₁ (π₂ (binT kind row yp yq))) P i =
+      appendV (relocD (π₁ (π₂ yp)) P (i + (π₁ yq + 1)))
+        (appendV (relocD (π₁ (π₂ yq)) P (i + 1)) ?[subst LAct ?[^&i, ^&(i + (π₁ yq + 1)), ^&(i + 1)] P.[kind]]) := by
+  simp [binT, relocD_appendV, relocD_shiftTL]
+
+lemma quantT_count (kind row yp : V) : π₁ (quantT kind row yp) = π₁ yp + 1 := by simp [quantT]
+lemma quantT_S (kind row yp W i j : V) :
+    relocS (π₂ (π₂ (quantT kind row yp))) W i j =
+      appendV (relocS (π₂ (π₂ yp)) W (i + 1) (j + 1)) ?[mkStep W row ?[^&i, ^&(i + 1), ^&(j + 1), ^&j]] := by
+  simp [quantT, relocS_appendV, relocS_shiftTL]
+lemma quantT_D (kind row yp P i : V) :
+    relocD (π₁ (π₂ (quantT kind row yp))) P i =
+      appendV (relocD (π₁ (π₂ yp)) P (i + 1)) ?[subst LAct ?[^&i, ^&(i + 1)] P.[kind]] := by
+  simp [quantT, relocD_appendV, relocD_shiftTL]
+
+lemma atomT_count (kind row k R d : V) : π₁ (atomT kind row k R d) = π₁ d + 1 := by simp [atomT]
+lemma atomT_S (kind row k R d W i j : V) :
+    relocS (π₂ (π₂ (atomT kind row k R d))) W i j =
+      appendV (relocS (π₂ (π₂ d)) W (i + 1) (j + 1))
+        ?[mkStep W row ?[^&i, cTV k, cTV R, vRef (i + 1) k, vRef (j + 1) k, ^&j]] := by
+  simp [atomT, relocS_appendV, relocS_shiftTL, relocW_vRefT, relocW_vRefTp]
+lemma atomT_D (kind row k R d P i : V) :
+    relocD (π₁ (π₂ (atomT kind row k R d))) P i =
+      appendV (relocD (π₁ (π₂ d)) P (i + 1)) ?[subst LAct ?[^&i, cTV k, cTV R, vRef (i + 1) k] P.[kind]] := by
+  simp [atomT, relocD_appendV, relocD_shiftTL, relocW_vRefT]
+
+lemma funcT_count (k f d : V) : π₁ (funcT k f d) = π₁ d + 1 := by simp [funcT]
+lemma funcT_S (k f d W i j : V) :
+    relocS (π₂ (π₂ (funcT k f d))) W i j =
+      appendV (relocS (π₂ (π₂ d)) W (i + 1) (j + 1))
+        ?[mkStep W 71 ?[^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]] := by
+  simp [funcT, relocS_appendV, relocS_shiftTL, relocW_vRefT, relocW_vRefTp]
+lemma funcT_D (k f d P i : V) :
+    relocD (π₁ (π₂ (funcT k f d))) P i =
+      appendV (relocD (π₁ (π₂ d)) P (i + 1)) ?[subst LAct ?[^&i, cTV k, cTV f, vRef (i + 1) k] P.[8]] := by
+  simp [funcT, relocD_appendV, relocD_shiftTL, relocW_vRefT]
+
+lemma bvarT_count (z : V) : π₁ (bvarT z) = 1 := by simp [bvarT]
+lemma bvarT_S (z W i j : V) : relocS (π₂ (π₂ (bvarT z))) W i j = ?[mkStep W 72 ?[cTV z, ^&i, ^&j]] := by simp [bvarT]
+lemma bvarT_D (z P i : V) : relocD (π₁ (π₂ (bvarT z))) P i = ?[subst LAct ?[^&i, cTV z] P.[9]] := by simp [bvarT]
+lemma fvarT_count (x : V) : π₁ (fvarT x) = 1 := by simp [fvarT]
+lemma fvarT_S (x W i j : V) : relocS (π₂ (π₂ (fvarT x))) W i j = ?[mkStep W 73 ?[cTV x, ^&i, ^&j]] := by simp [fvarT]
+lemma fvarT_D (x P i : V) : relocD (π₁ (π₂ (fvarT x))) P i = ?[subst LAct ?[^&i, cTV x] P.[10]] := by simp [fvarT]
+
+lemma nilT_count (w : V) : π₁ (nilT w) = 0 := by simp [nilT]
+lemma nilT_S (w W i j : V) : relocS (π₂ (π₂ (nilT w))) W i j = ?[mkStep W 41 ?[(𝟎 : V)]] := by simp [nilT]
+lemma nilT_D (w P i : V) : relocD (π₁ (π₂ (nilT w))) P i = 0 := by simp [nilT]
+
+lemma adjT_count (j p ih : V) : π₁ (adjT j p ih) = π₁ ih + π₁ p + 1 := by simp [adjT]
+lemma adjT_S (j p ih W i i' : V) :
+    relocS (π₂ (π₂ (adjT j p ih))) W i i' =
+      appendV (relocS (π₂ (π₂ ih)) W (i + (π₁ p + 1)) (i' + (π₁ p + 1)))
+        (appendV (relocS (π₂ (π₂ p)) W (i + 1) (i' + 1))
+          ?[mkStep W 74 ?[^&(i + 1), vRef (i + (π₁ p + 1)) j, ^&i, ^&(i' + 1), vRef (i' + (π₁ p + 1)) j, ^&i']]) := by
+  simp [adjT, relocS_appendV, relocS_shiftTL, relocW_vRefT, relocW_vRefTp]
+lemma adjT_D (j p ih P i : V) :
+    relocD (π₁ (π₂ (adjT j p ih))) P i =
+      appendV (relocD (π₁ (π₂ ih)) P (i + (π₁ p + 1)))
+        (appendV (relocD (π₁ (π₂ p)) P (i + 1)) ?[subst LAct ?[^&i, ^&(i + 1), vRef (i + (π₁ p + 1)) j] P.[11]]) := by
+  simp [adjT, relocD_appendV, relocD_shiftTL, relocW_vRefT]
+
+end identCompute
+
+/-! ### 4.7 The identification walk is applicable -/
+
+section identOK
+
+/-- A shift-free applicable segment. -/
+def Seg (tbl E Γ S : V) : Prop := ListOK tbl E ((8 : ℕ) : V) Γ S ∧ NoDrop S ∧ HornOnly S ∧ shiftsV S = 0
+
+instance seg_definable : 𝚫₁-Relation₄ (Seg : V → V → V → V → Prop) := by
+  unfold Seg; definability
+
+lemma seg_appendV {tbl E Γ S₁ S₂ : V} (h₁ : Seg tbl E Γ S₁) (h₂ : Seg tbl E (finalCtx Γ S₁) S₂) :
+    Seg tbl E Γ (appendV S₁ S₂) :=
+  ⟨listOK_appendV h₁.1 h₂.1, noDrop_appendV h₁.2.1 h₂.2.1, hornOnly_appendV h₁.2.2.1 h₂.2.2.1,
+    by rw [shiftsV_appendV, h₁.2.2.2, h₂.2.2.2, add_zero]⟩
+
+lemma seg_single {tbl E Γ s : V} (hok : StepOK tbl E ((8 : ℕ) : V) Γ s) (ht : sTag s = 0) : Seg tbl E Γ ?[s] :=
+  ⟨listOK_single hok, noDrop_single (Or.inl ht), hornOnly_single (Or.inl ht), by rw [shiftsV_single]; simp [ht]⟩
+
+lemma Seg.mem {tbl E Γ S x : V} (h : Seg tbl E Γ S) (hx : x ∈ Γ) : x ∈ finalCtx Γ S := by
+  have := mem_finalCtx_of_mem h.2.1 hx
+  rwa [h.2.2.2, shiftIterV_zero] at this
+
+lemma Seg.isFormulaSet {tbl N E Γ S : V} (htbl : TableOK tbl N) (hΓ : IsFormulaSet LAct Γ) (h : Seg tbl E Γ S) :
+    IsFormulaSet LAct (finalCtx Γ S) :=
+  finalCtx_isFormulaSet 8 htbl hΓ h.1
+
+lemma Seg.allNeg {tbl E Γ S L : V} (h : Seg tbl E Γ S) (hL : AllNeg Γ L) : AllNeg (finalCtx Γ S) L :=
+  allNeg_mono (fun _ hx ↦ h.mem hx) hL
+
+/-- The canonical facts as substitutions into the predicate table. -/
+lemma subst_Pand (z a b : V) : subst LAct ?[z, a, b] Pand = andFact z a b := rfl
+lemma subst_Por (z a b : V) : subst LAct ?[z, a, b] Por = orFact z a b := rfl
+lemma subst_Pall (q p : V) : subst LAct ?[q, p] Pall = allFact q p := rfl
+lemma subst_Pexs (q p : V) : subst LAct ?[q, p] Pexs = exsFact q p := rfl
+lemma subst_Prel (p k R v : V) : subst LAct ?[p, k, R, v] Prel = relFact p k R v := rfl
+lemma subst_Pnrel (p k R v : V) : subst LAct ?[p, k, R, v] Pnrel = nrelFact p k R v := rfl
+lemma subst_Pverum (p : V) : subst LAct ?[p] Pverum = verumFact p := rfl
+lemma subst_Pfalsum (p : V) : subst LAct ?[p] Pfalsum = falsumFact p := rfl
+lemma subst_Pfunc (t k f v : V) : subst LAct ?[t, k, f, v] Pfunc = funcFact t k f v := rfl
+lemma subst_Pbvar (t z : V) : subst LAct ?[t, z] Pbvar = bvarFact t z := rfl
+lemma subst_Pfvar (t x : V) : subst LAct ?[t, x] Pfvar = fvarFact t x := rfl
+lemma subst_Padjoin (w t v : V) : subst LAct ?[w, t, v] Padjoin = adjFact w t v := rfl
+
+lemma func_index_le_three {k f : V} (hkf : LAct.IsFunc k f) : f ≤ 3 := by
+  rcases isFunc_LAct_iff_V.mp hkf with ⟨_, rfl⟩ | ⟨_, rfl⟩ | ⟨_, rfl⟩ | ⟨_, rfl⟩ | ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> norm_num
+lemma rel_index_le_one {k R : V} (hkR : LAct.IsRel k R) : R ≤ 1 := by
+  rcases isRel_LAct_iff_V.mp hkR with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> norm_num
+
+/-- **The template invariant**: a template `y = ⟪count, D, S⟫` whose top is `vRef · k` (`k = 0`: the
+literal `𝟎`; else the offset itself), for an object all of whose subobjects, together with the arity,
+are bounded by `B` (`n + size ≤ B`) — at any offsets `i`, `j` and any context holding both relocated
+dossiers, the relocated steps are a Horn-only segment of at most `2·count + 1` steps leaving
+`eqFactB (vRef i k) (vRef j k)`. The bound `B` is SHARED by a node and its children (every subobject
+of a subobject is a subobject; under a quantifier the arity grows by the one symbol the size loses). -/
+def TOK (tbl W P y B k : V) : Prop :=
+  ∀ i j E Γ, 2 * B + 12 ≤ E → i + π₁ y + 1 ≤ E → j + π₁ y + 1 ≤ E → IsFormulaSet LAct Γ →
+    AllNeg Γ (relocD (π₁ (π₂ y)) P i) → AllNeg Γ (relocD (π₁ (π₂ y)) P j) →
+    Seg tbl E Γ (relocS (π₂ (π₂ y)) W i j) ∧ len (relocS (π₂ (π₂ y)) W i j) ≤ 2 * π₁ y + 1 ∧
+    neg LAct (eqFactB (vRef i k) (vRef j k)) ∈ finalCtx Γ (relocS (π₂ (π₂ y)) W i j)
+
+lemma two_mul_le_of_le {a b : V} (h : a ≤ b) : 2 * a ≤ 2 * b := mul_le_mul_of_nonneg_left h zero_le
+
+lemma E_of_sym {E m : V} (hm : m ≤ 5) (hE : 12 ≤ E) : termLen LAct (cTV m) ≤ E := by
+  rw [termLen_cTV]
+  calc 2 * m + 1 ≤ 2 * 5 + 1 := add_le_add (two_mul_le_of_le hm) le_rfl
+    _ ≤ 12 := by norm_num
+    _ ≤ E := hE
+
+lemma E12 {B E : V} (hE : 2 * B + 12 ≤ E) : 12 ≤ E := le_trans le_add_self hE
+
+/-- `len ≤ 2c + 1` pushed through one more step and one more object. -/
+lemma len_bound_succ {a c : V} (h : a ≤ 2 * c + 1) : a + 1 ≤ 2 * (c + 1) + 1 := by
+  calc a + 1 ≤ 2 * c + 1 + 1 := add_le_add h le_rfl
+    _ ≤ 2 * (c + 1) + 1 := by
+      rw [mul_add, mul_one]
+      exact add_le_add (add_le_add le_rfl (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2))) le_rfl
+
+/-! #### The leaves -/
+
+lemma nilT_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces)
+    (w B : V) : TOK tbl W P (nilT w) B 0 := by
+  intro i j E Γ hE _ _ hΓ _ _
+  rw [nilT_S, nilT_count]
+  obtain ⟨ok, tg, cx⟩ := lok_eqRefl htbl hL hWp hΓ isSemiterm_zeroV (termLen_zeroV_le (le_trans (by norm_num) (E12 hE)))
+  refine ⟨seg_single ok tg, by rw [len_vec1]; norm_num, ?_⟩
+  rw [finalCtx_single, cx, vRef_zero]; simp
+
+lemma bvarT_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {z B : V} (hz : z + 1 ≤ B) : TOK tbl W P (bvarT z) B 1 := by
+  intro i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [bvarT_S]
+  rw [bvarT_D, hP, factPreds_bvar, subst_Pbvar, allNeg_single] at hDi hDj
+  rw [bvarT_count] at hEi hEj
+  have hz' : termLen LAct (cTV z) ≤ E := by
+    rw [termLen_cTV]
+    calc 2 * z + 1 ≤ 2 * (z + 1) := by rw [mul_add, mul_one]; exact add_le_add le_rfl (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2))
+      _ ≤ 2 * B := two_mul_le_of_le hz
+      _ ≤ E := le_trans le_self_add hE
+  obtain ⟨ok, tg, cx⟩ := lok_eqOfBvar htbl hL hWp hΓ (cTV_semiterm_LAct 0 z) hz' (by simp) (termLen_fvar_le (le_trans le_self_add hEi))
+    (by simp) (termLen_fvar_le (le_trans le_self_add hEj)) hDi hDj
+  refine ⟨seg_single ok tg, by rw [len_vec1]; norm_num, ?_⟩
+  rw [finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+
+lemma fvarT_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {x B : V} (hx : x + 1 ≤ B) : TOK tbl W P (fvarT x) B 1 := by
+  intro i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [fvarT_S]
+  rw [fvarT_D, hP, factPreds_fvar, subst_Pfvar, allNeg_single] at hDi hDj
+  rw [fvarT_count] at hEi hEj
+  have hx' : termLen LAct (cTV x) ≤ E := by
+    rw [termLen_cTV]
+    calc 2 * x + 1 ≤ 2 * (x + 1) := by rw [mul_add, mul_one]; exact add_le_add le_rfl (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2))
+      _ ≤ 2 * B := two_mul_le_of_le hx
+      _ ≤ E := le_trans le_self_add hE
+  obtain ⟨ok, tg, cx⟩ := lok_eqOfFvar htbl hL hWp hΓ (cTV_semiterm_LAct 0 x) hx' (by simp) (termLen_fvar_le (le_trans le_self_add hEi))
+    (by simp) (termLen_fvar_le (le_trans le_self_add hEj)) hDi hDj
+  refine ⟨seg_single ok tg, by rw [len_vec1]; norm_num, ?_⟩
+  rw [finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+
+lemma constT_ok_verum {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    (B : V) : TOK tbl W P (constT 6 69) B 1 := by
+  intro i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [constT_S]
+  rw [constT_D, hP, factPreds_verum, subst_Pverum, allNeg_single] at hDi hDj
+  rw [constT_count] at hEi hEj
+  obtain ⟨ok, tg, cx⟩ := lok_eqOfVerum htbl hL hWp hΓ (by simp) (termLen_fvar_le (le_trans le_self_add hEi))
+    (by simp) (termLen_fvar_le (le_trans le_self_add hEj)) hDi hDj
+  refine ⟨seg_single ok tg, by rw [len_vec1]; norm_num, ?_⟩
+  rw [finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+
+lemma constT_ok_falsum {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    (B : V) : TOK tbl W P (constT 7 70) B 1 := by
+  intro i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [constT_S]
+  rw [constT_D, hP, factPreds_falsum, subst_Pfalsum, allNeg_single] at hDi hDj
+  rw [constT_count] at hEi hEj
+  obtain ⟨ok, tg, cx⟩ := lok_eqOfFalsum htbl hL hWp hΓ (by simp) (termLen_fvar_le (le_trans le_self_add hEi))
+    (by simp) (termLen_fvar_le (le_trans le_self_add hEj)) hDi hDj
+  refine ⟨seg_single ok tg, by rw [len_vec1]; norm_num, ?_⟩
+  rw [finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+
+/-! #### The inner nodes: one child (`quantT`, `atomT`, `funcT`) and two children (`binT`, `adjT`) -/
+
+/-- Arithmetic of the offsets, isolated. -/
+lemma off_le_of_count {i c d E : V} (h : i + (c + d + 1) + 1 ≤ E) : i + (d + 1) + c + 1 ≤ E := by
+  refine le_trans (le_of_eq ?_) h; ring
+lemma off_le_of_count' {i c d E : V} (h : i + (c + d + 1) + 1 ≤ E) : i + 1 + d + 1 ≤ E := by
+  refine le_trans ?_ h
+  calc i + 1 + d + 1 = i + (0 + d + 1) + 1 := by ring
+    _ ≤ i + (c + d + 1) + 1 := add_le_add (add_le_add le_rfl (add_le_add (add_le_add zero_le le_rfl) le_rfl)) le_rfl
+lemma off_le_one {i c E : V} (h : i + (c + 1) + 1 ≤ E) : i + 1 + c + 1 ≤ E := by
+  refine le_trans (le_of_eq ?_) h; ring
+lemma fvar_le_of_count {i c E : V} (h : i + (c + 1) + 1 ≤ E) : i + 1 ≤ E :=
+  le_trans (add_le_add le_rfl (le_trans (by norm_num) le_self_add : 1 ≤ c + 1 + 1)) (by rw [← add_assoc]; exact h)
+lemma fvar_succ_le_of_count {i c E : V} (h : i + (c + 1) + 1 ≤ E) : i + 1 + 1 ≤ E :=
+  le_trans (add_le_add (add_le_add le_rfl (le_add_self : 1 ≤ c + 1)) le_rfl) h
+lemma fvar_off_le_of_count {i c d E : V} (h : i + (c + d + 1) + 1 ≤ E) : i + (d + 1) + 1 ≤ E :=
+  le_trans (add_le_add (add_le_add le_rfl (add_le_add le_add_self le_rfl)) le_rfl) h
+
+lemma quantT_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {kind row yp B : V} (hkr : (kind = 2 ∧ row = 65) ∨ (kind = 3 ∧ row = 66))
+    (hp : TOK tbl W P yp B 1) : TOK tbl W P (quantT kind row yp) B 1 := by
+  intro i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [quantT_S]
+  rw [quantT_D, allNeg_appendV, allNeg_single] at hDi hDj
+  rw [quantT_count] at hEi hEj ⊢
+  obtain ⟨hDpi, hOi⟩ := hDi
+  obtain ⟨hDpj, hOj⟩ := hDj
+  obtain ⟨sp, lenp, eqp⟩ := hp (i + 1) (j + 1) E Γ hE (off_le_one hEi) (off_le_one hEj) hΓ hDpi hDpj
+  rw [vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero] at eqp
+  have hΓ₁ := sp.isFormulaSet htbl hΓ
+  have hx : IsSemiterm LAct 0 (^&i : V) := by simp
+  have hx1 : IsSemiterm LAct 0 (^&(i + 1) : V) := by simp
+  have hy : IsSemiterm LAct 0 (^&j : V) := by simp
+  have hy1 : IsSemiterm LAct 0 (^&(j + 1) : V) := by simp
+  have hEx := termLen_fvar_le (fvar_le_of_count hEi)
+  have hEx1 := termLen_fvar_le (fvar_succ_le_of_count hEi)
+  have hEy := termLen_fvar_le (fvar_le_of_count hEj)
+  have hEy1 := termLen_fvar_le (fvar_succ_le_of_count hEj)
+  rcases hkr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · rw [hP, factPreds_all, subst_Pall] at hOi hOj
+    obtain ⟨ok, tg, cx⟩ := lok_eqOfAll htbl hL hWp hΓ₁ hx hEx hx1 hEx1 hy1 hEy1 hy hEy (sp.mem hOi) (sp.mem hOj) eqp
+    refine ⟨seg_appendV sp (seg_single ok tg), ?_, ?_⟩
+    · rw [len_appendV, len_vec1]
+      exact len_bound_succ lenp
+    · rw [finalCtx_appendV, finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+  · rw [hP, factPreds_exs, subst_Pexs] at hOi hOj
+    obtain ⟨ok, tg, cx⟩ := lok_eqOfExs htbl hL hWp hΓ₁ hx hEx hx1 hEx1 hy1 hEy1 hy hEy (sp.mem hOi) (sp.mem hOj) eqp
+    refine ⟨seg_appendV sp (seg_single ok tg), ?_, ?_⟩
+    · rw [len_appendV, len_vec1]
+      exact len_bound_succ lenp
+    · rw [finalCtx_appendV, finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+
+lemma atomT_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {kind row k R d B : V} (hkr : (kind = 4 ∧ row = 67) ∨ (kind = 5 ∧ row = 68)) (hkR : LAct.IsRel k R)
+    (hd : TOK tbl W P d B k) : TOK tbl W P (atomT kind row k R d) B 1 := by
+  intro i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [atomT_S]
+  rw [atomT_D, allNeg_appendV, allNeg_single] at hDi hDj
+  rw [atomT_count] at hEi hEj ⊢
+  obtain ⟨hDdi, hOi⟩ := hDi
+  obtain ⟨hDdj, hOj⟩ := hDj
+  obtain ⟨sd, lend, eqd⟩ := hd (i + 1) (j + 1) E Γ hE (off_le_one hEi) (off_le_one hEj) hΓ hDdi hDdj
+  have hΓ₁ := sd.isFormulaSet htbl hΓ
+  have hx : IsSemiterm LAct 0 (^&i : V) := by simp
+  have hy : IsSemiterm LAct 0 (^&j : V) := by simp
+  have hEx := termLen_fvar_le (fvar_le_of_count hEi)
+  have hEy := termLen_fvar_le (fvar_le_of_count hEj)
+  have hk := cTV_semiterm_LAct 0 k
+  have hR := cTV_semiterm_LAct 0 R
+  have hEk := E_of_sym (le_trans (rel_arity_le_two hkR) (by norm_num)) (E12 hE)
+  have hER := E_of_sym (le_trans (rel_index_le_one hkR) (by norm_num)) (E12 hE)
+  have hv := isSemiterm_vRef (i + 1) k
+  have hv' := isSemiterm_vRef (j + 1) k
+  have hEv := termLen_vRef_le (j := k) (fvar_succ_le_of_count hEi)
+  have hEv' := termLen_vRef_le (j := k) (fvar_succ_le_of_count hEj)
+  rcases hkr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · rw [hP, factPreds_rel, subst_Prel] at hOi hOj
+    obtain ⟨ok, tg, cx⟩ := lok_eqOfRel htbl hL hWp hΓ₁ hx hEx hk hEk hR hER hv hEv hv' hEv' hy hEy (sd.mem hOi) (sd.mem hOj) eqd
+    refine ⟨seg_appendV sd (seg_single ok tg), ?_, ?_⟩
+    · rw [len_appendV, len_vec1]
+      exact len_bound_succ lend
+    · rw [finalCtx_appendV, finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+  · rw [hP, factPreds_nrel, subst_Pnrel] at hOi hOj
+    obtain ⟨ok, tg, cx⟩ := lok_eqOfNRel htbl hL hWp hΓ₁ hx hEx hk hEk hR hER hv hEv hv' hEv' hy hEy (sd.mem hOi) (sd.mem hOj) eqd
+    refine ⟨seg_appendV sd (seg_single ok tg), ?_, ?_⟩
+    · rw [len_appendV, len_vec1]
+      exact len_bound_succ lend
+    · rw [finalCtx_appendV, finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+
+lemma funcT_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {k f d B : V} (hkf : LAct.IsFunc k f) (hd : TOK tbl W P d B k) : TOK tbl W P (funcT k f d) B 1 := by
+  intro i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [funcT_S]
+  rw [funcT_D, allNeg_appendV, allNeg_single] at hDi hDj
+  rw [funcT_count] at hEi hEj ⊢
+  obtain ⟨hDdi, hOi⟩ := hDi
+  obtain ⟨hDdj, hOj⟩ := hDj
+  rw [hP, factPreds_func, subst_Pfunc] at hOi hOj
+  obtain ⟨sd, lend, eqd⟩ := hd (i + 1) (j + 1) E Γ hE (off_le_one hEi) (off_le_one hEj) hΓ hDdi hDdj
+  have hΓ₁ := sd.isFormulaSet htbl hΓ
+  have hx : IsSemiterm LAct 0 (^&i : V) := by simp
+  have hy : IsSemiterm LAct 0 (^&j : V) := by simp
+  have hEx := termLen_fvar_le (fvar_le_of_count hEi)
+  have hEy := termLen_fvar_le (fvar_le_of_count hEj)
+  have hk := cTV_semiterm_LAct 0 k
+  have hf := cTV_semiterm_LAct 0 f
+  have hEk := E_of_sym (le_trans (arity_le_two hkf) (by norm_num)) (E12 hE)
+  have hEf := E_of_sym (le_trans (func_index_le_three hkf) (by norm_num)) (E12 hE)
+  have hv := isSemiterm_vRef (i + 1) k
+  have hv' := isSemiterm_vRef (j + 1) k
+  have hEv := termLen_vRef_le (j := k) (fvar_succ_le_of_count hEi)
+  have hEv' := termLen_vRef_le (j := k) (fvar_succ_le_of_count hEj)
+  obtain ⟨ok, tg, cx⟩ := lok_eqOfFunc htbl hL hWp hΓ₁ hx hEx hk hEk hf hEf hv hEv hv' hEv' hy hEy (sd.mem hOi) (sd.mem hOj) eqd
+  refine ⟨seg_appendV sd (seg_single ok tg), ?_, ?_⟩
+  · rw [len_appendV, len_vec1]
+    exact len_bound_succ lend
+  · rw [finalCtx_appendV, finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+
+lemma binT_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {kind row yp yq B : V} (hkr : (kind = 0 ∧ row = 63) ∨ (kind = 1 ∧ row = 64))
+    (hp : TOK tbl W P yp B 1) (hq : TOK tbl W P yq B 1) : TOK tbl W P (binT kind row yp yq) B 1 := by
+  intro i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [binT_S]
+  rw [binT_D, allNeg_appendV, allNeg_appendV, allNeg_single] at hDi hDj
+  rw [binT_count] at hEi hEj ⊢
+  obtain ⟨hDpi, hDqi, hOi⟩ := hDi
+  obtain ⟨hDpj, hDqj, hOj⟩ := hDj
+  obtain ⟨sp, lenp, eqp⟩ := hp (i + (π₁ yq + 1)) (j + (π₁ yq + 1)) E Γ hE (off_le_of_count hEi) (off_le_of_count hEj) hΓ hDpi hDpj
+  rw [vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero] at eqp
+  have hΓ₁ := sp.isFormulaSet htbl hΓ
+  obtain ⟨sq, lenq, eqq⟩ := hq (i + 1) (j + 1) E _ hE (off_le_of_count' hEi) (off_le_of_count' hEj) hΓ₁ (sp.allNeg hDqi) (sp.allNeg hDqj)
+  rw [vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero] at eqq
+  have hΓ₂ := sq.isFormulaSet htbl hΓ₁
+  have hx : IsSemiterm LAct 0 (^&i : V) := by simp
+  have hxp : IsSemiterm LAct 0 (^&(i + (π₁ yq + 1)) : V) := by simp
+  have hxq : IsSemiterm LAct 0 (^&(i + 1) : V) := by simp
+  have hy : IsSemiterm LAct 0 (^&j : V) := by simp
+  have hyp : IsSemiterm LAct 0 (^&(j + (π₁ yq + 1)) : V) := by simp
+  have hyq : IsSemiterm LAct 0 (^&(j + 1) : V) := by simp
+  have hEx := termLen_fvar_le (fvar_le_of_count hEi)
+  have hExp := termLen_fvar_le (fvar_off_le_of_count hEi)
+  have hExq := termLen_fvar_le (fvar_succ_le_of_count hEi)
+  have hEy := termLen_fvar_le (fvar_le_of_count hEj)
+  have hEyp := termLen_fvar_le (fvar_off_le_of_count hEj)
+  have hEyq := termLen_fvar_le (fvar_succ_le_of_count hEj)
+  have hlen : len (appendV (relocS (π₂ (π₂ yp)) W (i + (π₁ yq + 1)) (j + (π₁ yq + 1)))
+      (appendV (relocS (π₂ (π₂ yq)) W (i + 1) (j + 1)) ?[mkStep W row ?[^&i, ^&(i + (π₁ yq + 1)), ^&(i + 1), ^&(j + (π₁ yq + 1)), ^&(j + 1), ^&j]])) ≤
+      2 * (π₁ yp + π₁ yq + 1) + 1 := by
+    rw [len_appendV, len_appendV, len_vec1]
+    calc _ ≤ 2 * π₁ yp + 1 + (2 * π₁ yq + 1 + 1) := add_le_add lenp (add_le_add lenq le_rfl)
+      _ = 2 * (π₁ yp + π₁ yq + 1) + 1 := by ring
+  rcases hkr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · rw [hP, factPreds_and, subst_Pand] at hOi hOj
+    obtain ⟨ok, tg, cx⟩ := lok_eqOfAnd htbl hL hWp hΓ₂ hx hEx hxp hExp hxq hExq hyp hEyp hyq hEyq hy hEy
+      (sq.mem (sp.mem hOi)) (sq.mem (sp.mem hOj)) (sq.mem eqp) eqq
+    refine ⟨seg_appendV sp (seg_appendV sq (seg_single ok tg)), hlen, ?_⟩
+    rw [finalCtx_appendV, finalCtx_appendV, finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+  · rw [hP, factPreds_or, subst_Por] at hOi hOj
+    obtain ⟨ok, tg, cx⟩ := lok_eqOfOr htbl hL hWp hΓ₂ hx hEx hxp hExp hxq hExq hyp hEyp hyq hEyq hy hEy
+      (sq.mem (sp.mem hOi)) (sq.mem (sp.mem hOj)) (sq.mem eqp) eqq
+    refine ⟨seg_appendV sp (seg_appendV sq (seg_single ok tg)), hlen, ?_⟩
+    rw [finalCtx_appendV, finalCtx_appendV, finalCtx_single, cx, vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero]; simp
+
+lemma adjT_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {j p ih B : V} (hp : TOK tbl W P p B 1) (hih : TOK tbl W P ih B j) :
+    TOK tbl W P (adjT j p ih) B (j + 1) := by
+  intro i i' E Γ hE hEi hEj hΓ hDi hDj
+  rw [adjT_S]
+  rw [adjT_D, allNeg_appendV, allNeg_appendV, allNeg_single] at hDi hDj
+  rw [adjT_count] at hEi hEj ⊢
+  obtain ⟨hDii, hDpi, hOi⟩ := hDi
+  obtain ⟨hDij, hDpj, hOj⟩ := hDj
+  rw [hP, factPreds_adjoin, subst_Padjoin] at hOi hOj
+  have hEi1 : i + (π₁ p + 1) + π₁ ih + 1 ≤ E := by
+    refine le_trans (le_of_eq ?_) hEi; ring
+  have hEj1 : i' + (π₁ p + 1) + π₁ ih + 1 ≤ E := by
+    refine le_trans (le_of_eq ?_) hEj; ring
+  obtain ⟨si, leni, eqi⟩ := hih (i + (π₁ p + 1)) (i' + (π₁ p + 1)) E Γ hE hEi1 hEj1 hΓ hDii hDij
+  have hΓ₁ := si.isFormulaSet htbl hΓ
+  have hEi2 : i + 1 + π₁ p + 1 ≤ E := by
+    refine le_trans ?_ hEi
+    calc i + 1 + π₁ p + 1 = i + (0 + π₁ p + 1) + 1 := by ring
+      _ ≤ i + (π₁ ih + π₁ p + 1) + 1 := add_le_add (add_le_add le_rfl (add_le_add (add_le_add zero_le le_rfl) le_rfl)) le_rfl
+  have hEj2 : i' + 1 + π₁ p + 1 ≤ E := by
+    refine le_trans ?_ hEj
+    calc i' + 1 + π₁ p + 1 = i' + (0 + π₁ p + 1) + 1 := by ring
+      _ ≤ i' + (π₁ ih + π₁ p + 1) + 1 := add_le_add (add_le_add le_rfl (add_le_add (add_le_add zero_le le_rfl) le_rfl)) le_rfl
+  obtain ⟨sp, lenp, eqp⟩ := hp (i + 1) (i' + 1) E _ hE hEi2 hEj2 hΓ₁ (si.allNeg hDpi) (si.allNeg hDpj)
+  rw [vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero] at eqp
+  have hΓ₂ := sp.isFormulaSet htbl hΓ₁
+  have hx : IsSemiterm LAct 0 (^&i : V) := by simp
+  have hx1 : IsSemiterm LAct 0 (^&(i + 1) : V) := by simp
+  have hy : IsSemiterm LAct 0 (^&i' : V) := by simp
+  have hy1 : IsSemiterm LAct 0 (^&(i' + 1) : V) := by simp
+  have hEx := termLen_fvar_le (fvar_le_of_count hEi)
+  have hEx1 := termLen_fvar_le (fvar_succ_le_of_count hEi)
+  have hEy := termLen_fvar_le (fvar_le_of_count hEj)
+  have hEy1 := termLen_fvar_le (fvar_succ_le_of_count hEj)
+  have hv := isSemiterm_vRef (i + (π₁ p + 1)) j
+  have hv' := isSemiterm_vRef (i' + (π₁ p + 1)) j
+  have hEv : termLen LAct (vRef (i + (π₁ p + 1)) j) ≤ E := termLen_vRef_le (by
+    refine le_trans ?_ hEi
+    calc i + (π₁ p + 1) + 1 = i + (0 + π₁ p + 1) + 1 := by ring
+      _ ≤ i + (π₁ ih + π₁ p + 1) + 1 := add_le_add (add_le_add le_rfl (add_le_add (add_le_add zero_le le_rfl) le_rfl)) le_rfl)
+  have hEv' : termLen LAct (vRef (i' + (π₁ p + 1)) j) ≤ E := termLen_vRef_le (by
+    refine le_trans ?_ hEj
+    calc i' + (π₁ p + 1) + 1 = i' + (0 + π₁ p + 1) + 1 := by ring
+      _ ≤ i' + (π₁ ih + π₁ p + 1) + 1 := add_le_add (add_le_add le_rfl (add_le_add (add_le_add zero_le le_rfl) le_rfl)) le_rfl)
+  obtain ⟨ok, tg, cx⟩ := lok_eqOfAdj htbl hL hWp hΓ₂ hx1 hEx1 hv hEv hx hEx hy1 hEy1 hv' hEv' hy hEy
+    (sp.mem (si.mem hOi)) (sp.mem (si.mem hOj)) eqp (sp.mem eqi)
+  refine ⟨seg_appendV si (seg_appendV sp (seg_single ok tg)), ?_, ?_⟩
+  · rw [len_appendV, len_appendV, len_vec1]
+    calc _ ≤ 2 * π₁ ih + 1 + (2 * π₁ p + 1 + 1) := add_le_add leni (add_le_add lenp le_rfl)
+      _ = 2 * (π₁ ih + π₁ p + 1) + 1 := by ring
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_single, cx, vRef_of_ne (by simp : j + 1 ≠ 0), vRef_of_ne (by simp : j + 1 ≠ 0)]; simp
+
+/-! #### The inductions -/
+
+/-- The vector fold: the last `j` entries. -/
+theorem eqVecAux_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {k v B : V} (hv : IsUTermVec LAct k v) (ih : ∀ i < k, TOK tbl W P (eqT v.[i]) B 1) :
+    ∀ j ≤ k, TOK tbl W P (eqVecAux (eqTVec k v) j) B j := by
+  intro j
+  induction j using ISigma1.pi1_succ_induction with
+  | hP => unfold TOK; definability
+  | zero =>
+    intro _
+    rw [eqVecAux_zero]
+    exact nilT_ok htbl hL hWp _ B
+  | succ j ihj =>
+    intro hj
+    have hT := ihj (le_trans le_self_add hj)
+    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj
+    have hi : k - (j + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hnth : nthFromEnd (eqTVec k v) j = eqT v.[k - (j + 1)] := by
+      rw [nthFromEnd_eq (a := k - (j + 1)) (by rw [len_eqTVec hv, tsub_add_cancel_of_le hj]), nth_eqTVec hv hi]
+    rw [eqVecAux_succ, hnth]
+    exact adjT_ok htbl hL hWp hP (ih _ hi) hT
+
+/-- **Every semiterm's template is applicable** (bound `B ≥ n + |t|`). -/
+theorem termTOK_of_isSemiterm {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    (n : V) : ∀ t, IsSemiterm LAct n t → ∀ B, n + termLen LAct t ≤ B → TOK tbl W P (eqT t) B 1 := by
+  intro t ht
+  refine IsSemiterm.induction 𝚷 (P := fun t ↦ ∀ B, n + termLen LAct t ≤ B → TOK tbl W P (eqT t) B 1) ?_ ?_ ?_ ?_ t ht
+  · unfold TOK; definability
+  · intro z hz B hB
+    rw [eqT_bvar]
+    refine bvarT_ok htbl hL hWp hP (le_trans (lt_iff_succ_le.mp hz) (le_trans le_self_add hB))
+  · intro x B hB
+    rw [eqT_fvar]
+    refine fvarT_ok htbl hL hWp hP ?_
+    rw [termLen_fvar] at hB
+    exact le_trans le_add_self hB
+  · intro k f v hkf hv ih B hB
+    rw [eqT_func hkf hv.isUTerm]
+    rw [termLen_func hkf hv.isUTerm] at hB
+    have hvec := eqVecAux_ok htbl hL hWp hP hv.isUTerm (B := B) (fun i hi ↦ ih i hi B (by
+      refine le_trans (add_le_add le_rfl ?_) hB
+      refine le_trans ?_ le_self_add
+      rw [← nth_termLenVec hv.isUTerm hi]
+      exact nth_le_listSum _ _ (by rw [len_termLenVec hv.isUTerm]; exact hi))) k le_rfl
+    exact funcT_ok htbl hL hWp hP hkf hvec
+
+/-- **Every semiformula's template is applicable** (bound `B ≥ n + |r|`). -/
+theorem formTOK_of_isSemiformula {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds) :
+    ∀ {n r : V}, IsSemiformula LAct n r → ∀ B, n + formulaLen LAct r ≤ B → TOK tbl W P (eqFT r) B 1 := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction (P := fun n r ↦ ∀ B, n + formulaLen LAct r ≤ B → TOK tbl W P (eqFT r) B 1)
+  · unfold TOK; definability
+  · intro n k R v hkR hv B hB
+    rw [eqFT_rel hkR hv.isUTerm]
+    rw [formulaLen_rel hkR hv.isUTerm] at hB
+    have hvec := eqVecAux_ok htbl hL hWp hP hv.isUTerm (B := B) (fun i hi ↦
+      termTOK_of_isSemiterm htbl hL hWp hP n _ (hv.nth hi) B (by
+        refine le_trans (add_le_add le_rfl ?_) hB
+        refine le_trans ?_ le_self_add
+        rw [← nth_termLenVec hv.isUTerm hi]
+        exact nth_le_listSum _ _ (by rw [len_termLenVec hv.isUTerm]; exact hi))) k le_rfl
+    exact atomT_ok htbl hL hWp hP (Or.inl ⟨rfl, rfl⟩) hkR hvec
+  · intro n k R v hkR hv B hB
+    rw [eqFT_nrel hkR hv.isUTerm]
+    rw [formulaLen_nrel hkR hv.isUTerm] at hB
+    have hvec := eqVecAux_ok htbl hL hWp hP hv.isUTerm (B := B) (fun i hi ↦
+      termTOK_of_isSemiterm htbl hL hWp hP n _ (hv.nth hi) B (by
+        refine le_trans (add_le_add le_rfl ?_) hB
+        refine le_trans ?_ le_self_add
+        rw [← nth_termLenVec hv.isUTerm hi]
+        exact nth_le_listSum _ _ (by rw [len_termLenVec hv.isUTerm]; exact hi))) k le_rfl
+    exact atomT_ok htbl hL hWp hP (Or.inr ⟨rfl, rfl⟩) hkR hvec
+  · intro n B _
+    rw [eqFT_verum]
+    exact constT_ok_verum htbl hL hWp hP B
+  · intro n B _
+    rw [eqFT_falsum]
+    exact constT_ok_falsum htbl hL hWp hP B
+  · intro n p q hp hq ihp ihq B hB
+    rw [eqFT_and hp.isUFormula hq.isUFormula]
+    rw [formulaLen_and hp.isUFormula hq.isUFormula] at hB
+    exact binT_ok htbl hL hWp hP (Or.inl ⟨rfl, rfl⟩)
+      (ihp B (le_trans (add_le_add le_rfl (le_trans le_self_add le_self_add)) hB))
+      (ihq B (le_trans (add_le_add le_rfl (le_trans le_add_self le_self_add)) hB))
+  · intro n p q hp hq ihp ihq B hB
+    rw [eqFT_or hp.isUFormula hq.isUFormula]
+    rw [formulaLen_or hp.isUFormula hq.isUFormula] at hB
+    exact binT_ok htbl hL hWp hP (Or.inr ⟨rfl, rfl⟩)
+      (ihp B (le_trans (add_le_add le_rfl (le_trans le_self_add le_self_add)) hB))
+      (ihq B (le_trans (add_le_add le_rfl (le_trans le_add_self le_self_add)) hB))
+  · intro n p hp ihp B hB
+    rw [eqFT_all hp.isUFormula]
+    rw [formulaLen_all hp.isUFormula] at hB
+    exact quantT_ok htbl hL hWp hP (Or.inl ⟨rfl, rfl⟩) (ihp B (le_trans (le_of_eq (by ring)) hB))
+  · intro n p hp ihp B hB
+    rw [eqFT_exs hp.isUFormula]
+    rw [formulaLen_exs hp.isUFormula] at hB
+    exact quantT_ok htbl hL hWp hP (Or.inr ⟨rfl, rfl⟩) (ihp B (le_trans (le_of_eq (by ring)) hB))
+
+/-- **`eqSteps` is applicable**: with the dossiers of `r` at `i` and `j` in `Γ`, the identification walk is a
+Horn-only, shift-free list of at most `2·eqCount r + 1` steps leaving `eqFactB &i &j`. -/
+theorem eqSteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    {n r : V} (hr : IsSemiformula LAct n r) {i j E Γ : V}
+    (hE : 2 * (n + formulaLen LAct r) + 12 ≤ E) (hEi : i + eqCount r + 1 ≤ E) (hEj : j + eqCount r + 1 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hDi : DossierAt P Γ i r) (hDj : DossierAt P Γ j r) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (eqSteps W i j r) ∧ NoDrop (eqSteps W i j r) ∧ HornOnly (eqSteps W i j r) ∧
+    shiftsV (eqSteps W i j r) = 0 ∧ len (eqSteps W i j r) ≤ 2 * eqCount r + 1 ∧
+    neg LAct (eqFactB (^&i) (^&j)) ∈ finalCtx Γ (eqSteps W i j r) := by
+  obtain ⟨⟨a, b, c, d⟩, hlen, hfact⟩ :=
+    formTOK_of_isSemiformula htbl hL hWp hP hr _ le_rfl i j E Γ hE hEi hEj hΓ hDi hDj
+  rw [vRef_of_ne _root_.one_ne_zero, vRef_of_ne _root_.one_ne_zero] at hfact
+  exact ⟨a, b, c, d, hlen, hfact⟩
+
+/-- The cost of an identification walk (`costSum_le_of_hornOnly`). -/
+theorem costSum_eqSteps_le {tbl N E B : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W P : V} (hWp : W = layoutPieces) (hP : P = factPreds)
+    (hB : ∀ i < len tbl, formulaLen LAct (rowB tbl.[i]) ≤ B)
+    {n r : V} (hr : IsSemiformula LAct n r) {i j Γ : V}
+    (hE : 2 * (n + formulaLen LAct r) + 12 ≤ E) (hEi : i + eqCount r + 1 ≤ E) (hEj : j + eqCount r + 1 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hDi : DossierAt P Γ i r) (hDj : DossierAt P Γ j r) :
+    costSum N E Γ (eqSteps W i j r) ≤ (2 * eqCount r + 1) * (stepK N E B + 36 * ctxBound E B Γ (2 * eqCount r + 1)) := by
+  have hE1 : 1 ≤ E := le_trans (by norm_num) (E12 hE)
+  obtain ⟨hok, _, ht, _, hlen, _⟩ := eqSteps_ok htbl hL hWp hP hr hE hEi hEj hΓ hDi hDj
+  have hB' : ∀ m < len (eqSteps W i j r), formulaLen LAct (rowB tbl.[sRow (eqSteps W i j r).[m]]) ≤ B :=
+    fun m hm ↦ hB _ (sRow_lt_of_stepOK (hok m hm) (ht m hm))
+  refine le_trans (costSum_le_of_hornOnly hE1 htbl hok ht hB') ?_
+  unfold ctxBound
+  gcongr
+
+end identOK
+
+end ident
 end ArithS
