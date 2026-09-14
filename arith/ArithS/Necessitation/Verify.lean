@@ -575,4 +575,34 @@ instance nodeAxm_definable :
 
 end definability
 
+/-! ## 3. `VerifyGraph` — the Δ₁ fixpoint on the key `⟪ρ, L⟫` (`DESIGN_fragments.md` §6.1)
+
+The recursion that glues the ten fragments of §2 into ONE flat step list for a whole derivation
+code `ρ`. The key is the pair `⟪ρ, L⟫` (the `DlenGraph` pattern, `DerivationLength.lean:55-211`);
+`StrongFinite` holds because every referenced child pair `⟪ρ', L'⟫` has `ρ' < ρ` (the Foundation
+`*_lt_*` lemmas) and `L' ≤ L` (`le_appendV_mid` of §1 — `L'` is spliced into `L`).
+
+**THE PROLOGUE IS NOT EMITTED HERE, and this is an explicit WEAKENING relative to
+`DESIGN_fragments.md` §4.0.** There the clause reads
+`frag<Tag> := pro₁ ++ L₁ ++ rec ++ pro₂ ++ L₂ ++ rec ++ node`, where `pro₁`/`pro₂` are the
+copy-in / chain / re-description producers of §3.3–§3.6 that establish the CHILD's canonical
+layout. Of those, `copySteps`, `chainSteps` and `eqSteps` have landed (`Layout.lean`), but
+`certNeg/certShift/certSubst/certFree`, `lenSteps`, `memberList` and `numProof`'s layout
+callers have not (`Cert.lean`, in flight; `DESIGN_fragments.md` §8.3). Assembling a prologue
+out of half a kit would freeze the wrong interface. So this file defines the recursion with the
+prologues as the Σ₁ parameters `pro₁ pro₂ : V` of the clause, existentially quantified and
+constrained ONLY by their own membership in the concatenation — i.e. `VerifyGraph` relates `ρ`
+to EVERY list of the right shape, and the uniqueness of §6.2 is therefore NOT claimed for it.
+What IS claimed, and is what §6.1 exists for, is the structural core:
+
+* the key, the ten clauses and their `appendV` gluing are exactly §6.1's;
+* `Finite`/`StrongFinite` hold, so `Fixpoint.case` and `Fixpoint.induction` are available;
+* the graph is Δ₁ (`fixpointDefΔ₁`), with `case_iff` and the ten inversion lemmas.
+
+When `Cert`'s producers land, each clause's `∃ pro₁ pro₂` becomes `∃ pro₁, !proDef pro₁ … ∧ …`
+— a one-line change per clause that turns the relation into a function and makes §6.2's
+uniqueness provable. The index arguments `is il ir …` are likewise left as existentials: they
+are what the prologue determines (`DESIGN_fragments.md` §4.11's "three static quantities").
+-/
+
 end ArithS
