@@ -909,4 +909,265 @@ theorem goalTailBinary_ok {tbl N E Γ W tblN N' B' l n₁ n₂ L m₁ m₂ n s :
 
 end tails
 
+/-! ## 3. The leaf fragments `fragAxL`, `fragVerum` (DESIGN_fragments §4.1–4.2)
+
+Layout assumed (indices of the objects in `Γ`, all as `^&i`): the sequent `s` at `is`, its length object at
+`il` with `setLenFact &il &is` and the numeral bound `leFact &il (bnum L)`, `fsetPiFact &is`, and the members
+with their membership facts — for `axL` the member `p` at `ip`, `neg p` at `inp`, `negFact &inp &ip` (the
+identification of the two members as negations of each other is ASSUMED: it comes from `eqSteps` on the walk
+dossiers when the members were described separately), for `verumIntro` the member `⊤` at `iv` with
+`verumFact &iv`. `L` and `n` are the values `setLen s` and `dlen ν` (the closed `sLemma` needs `L + 1 ≤ n`). -/
+
+section leaves
+
+/-- A layout fact of `Γ` reappears in the head's context (the one shift, then inserts). -/
+lemma shift_mem_head3 {Γ x a b c f : V} (hx : x ∈ Γ) :
+    shift LAct x ∈ insert a (insert b (insert c (insert f (setShift LAct Γ)))) := by
+  have := mem_shift_insert (f := f) hx
+  simp [this]
+
+/-- The four node steps of `axL`: `tot_axL`, `fstIdx_axL`, `Intro_axL`, `Dlen_axL`. -/
+noncomputable def fragAxLHead (W is il ip inp : V) : V :=
+  mkStep W 87 ?[^&is, ^&ip] ∷ mkStep W 116 ?[^&(is + 1), ^&(ip + 1), ^&0] ∷
+  mkStep W 93 ?[^&(is + 1), ^&(ip + 1), ^&(inp + 1), ^&0] ∷
+  mkStep W 99 ?[^&0, ^&(is + 1), ^&(ip + 1), ^&(il + 1)] ∷ (0 : V)
+
+/-- **The `axL` fragment**: the head, then the leaf tail closing `goalFact &(is+1) (bnum n)`. -/
+noncomputable def fragAxL (W tblN is il ip inp L n : V) : V :=
+  appendV (fragAxLHead W is il ip inp) (goalTailLeaf W tblN (il + 1) L n (is + 1))
+
+noncomputable def fragAxLHeadCtx (Γ is il ip : V) : V :=
+  insert (neg LAct (dlenFact (^&0 : V) (leafT (il + 1))))
+    (insert (neg LAct (derFact (^&0 : V)))
+      (insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0)))
+        (insert (neg LAct (axLFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)))) (setShift LAct Γ))))
+
+theorem fragAxLHead_ok {tbl N E Γ W is il ip inp : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
+    (hWp : W = frag1Pieces) (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hil : il + 2 ≤ E) (hip : ip + 2 ≤ E) (hinp : inp + 2 ≤ E)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hmp : neg LAct (memFact (^&ip) (^&is)) ∈ Γ)
+    (hneg : neg LAct (negFact (^&inp) (^&ip)) ∈ Γ) (hmnp : neg LAct (memFact (^&inp) (^&is)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (fragAxLHead W is il ip inp) ∧ NoDrop' (fragAxLHead W is il ip inp) ∧
+    shiftsV (fragAxLHead W is il ip inp) = 1 ∧ len (fragAxLHead W is il ip inp) = 4 ∧
+    finalCtx Γ (fragAxLHead W is il ip inp) = fragAxLHeadCtx Γ is il ip := by
+  have hi0 : IsSemiterm LAct 0 (^&is : V) := by simp
+  have hiE : termLen LAct (^&is : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) his)
+  have hp0 : IsSemiterm LAct 0 (^&ip : V) := by simp
+  have hpE : termLen LAct (^&ip : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) hip)
+  have hnp0 : IsSemiterm LAct 0 (^&inp : V) := by simp
+  have hl0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hi1 : IsSemiterm LAct 0 (^&(is + 1) : V) := by simp
+  have hi1E : termLen LAct (^&(is + 1) : V) ≤ E := termLen_fvar_succ_le his
+  have hp1 : IsSemiterm LAct 0 (^&(ip + 1) : V) := by simp
+  have hp1E : termLen LAct (^&(ip + 1) : V) ≤ E := termLen_fvar_succ_le hip
+  have hnp1 : IsSemiterm LAct 0 (^&(inp + 1) : V) := by simp
+  have hnp1E : termLen LAct (^&(inp + 1) : V) ≤ E := termLen_fvar_succ_le hinp
+  have hl1 : IsSemiterm LAct 0 (^&(il + 1) : V) := by simp
+  have hl1E : termLen LAct (^&(il + 1) : V) ≤ E := termLen_fvar_succ_le hil
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E :=
+    termLen_fvar_le (by rw [zero_add]; exact le_trans (by norm_num) (le_trans le_add_self his))
+  -- step 1: tot_axL
+  obtain ⟨ok₁, tg₁, cx₁⟩ := fok_totAxL htbl hF hWp hΓ hi0 hiE hp0 hpE
+  rw [termShift_fvar, termShift_fvar, Nat.cast_zero] at cx₁
+  set Γ₁ := insert (neg LAct (axLFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)))) (setShift LAct Γ) with hΓ₁def
+  have hΓ₁ : IsFormulaSet LAct Γ₁ := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
+  -- the shifted layout facts
+  have tfs : neg LAct (fsetPiFact (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (axLFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)))) hfs
+    rwa [shift_neg (isFormula_fsetPiFact hi0), shift_fsetPiFact hi0, termShift_fvar] at this
+  have tmp : neg LAct (memFact (^&(ip + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (axLFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)))) hmp
+    rwa [shift_neg (isFormula_memFact hp0 hi0), shift_memFact hp0 hi0, termShift_fvar, termShift_fvar] at this
+  have tneg : neg LAct (negFact (^&(inp + 1)) (^&(ip + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (axLFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)))) hneg
+    rwa [shift_neg (isFormula_negFact hnp0 hp0), shift_negFact hnp0 hp0, termShift_fvar, termShift_fvar] at this
+  have tmnp : neg LAct (memFact (^&(inp + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (axLFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)))) hmnp
+    rwa [shift_neg (isFormula_memFact hnp0 hi0), shift_memFact hnp0 hi0, termShift_fvar, termShift_fvar] at this
+  have tsl : neg LAct (setLenFact (^&(il + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (axLFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)))) hsl
+    rwa [shift_neg (isFormula_setLenFact hl0 hi0), shift_setLenFact hl0 hi0, termShift_fvar, termShift_fvar] at this
+  -- step 2: fstIdx_axL
+  obtain ⟨ok₂, tg₂, cx₂⟩ := fok_fstIdxAxL htbl hF hWp hΓ₁ hi1 hi1E hp1 hp1E hf0 hf0E (by rw [hΓ₁def]; simp)
+  set Γ₂ := insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0))) Γ₁ with hΓ₂def
+  have hΓ₂ : IsFormulaSet LAct Γ₂ := cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
+  -- step 3: Intro_axL
+  obtain ⟨ok₃, tg₃, cx₃⟩ := fok_introAxL htbl hF hWp hΓ₂ hi1 hi1E hp1 hp1E hnp1 hnp1E hf0 hf0E
+    (by rw [hΓ₂def]; simp [tfs]) (by rw [hΓ₂def]; simp [tmp]) (by rw [hΓ₂def]; simp [tneg])
+    (by rw [hΓ₂def]; simp [tmnp]) (by rw [hΓ₂def, hΓ₁def]; simp)
+  set Γ₃ := insert (neg LAct (derFact (^&0 : V))) Γ₂ with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := cx₃ ▸ isFormulaSet_ctxAfter 8 htbl ok₃
+  -- step 4: Dlen_axL
+  obtain ⟨ok₄, tg₄, cx₄⟩ := fok_dlenAxL htbl hF hWp hΓ₃ hf0 hf0E hi1 hi1E hp1 hp1E hl1 hl1E
+    (by rw [hΓ₃def, hΓ₂def, hΓ₁def]; simp) (by rw [hΓ₃def, hΓ₂def]; simp [tsl])
+  have hfin : finalCtx Γ (fragAxLHead W is il ip inp) = fragAxLHeadCtx Γ is il ip := by
+    unfold fragAxLHead
+    rw [finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_single, cx₄]
+    rfl
+  refine ⟨?_, ?_, ?_, ?_, hfin⟩
+  · unfold fragAxLHead
+    refine listOK_cons ok₁ ?_
+    rw [cx₁]
+    refine listOK_cons ok₂ ?_
+    rw [cx₂]
+    refine listOK_cons ok₃ ?_
+    rw [cx₃]
+    exact listOK_single ok₄
+  · unfold fragAxLHead
+    exact noDrop'_cons (by rw [tg₁]; simp) (noDrop'_cons (by rw [tg₂]; simp)
+      (noDrop'_cons (by rw [tg₃]; simp) (noDrop'_single (by rw [tg₄]; simp))))
+  · unfold fragAxLHead
+    rw [shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄]
+    simp
+  · unfold fragAxLHead; simp [len_adjoin]; norm_num
+
+/-- **`fragAxL` is applicable**: from the leaf's layout, nine steps and one shift, ending with the node's goal
+fact `goalFact &(is+1) (bnum n)` — the sequent object now at `&(is+1)`. -/
+theorem fragAxL_ok {tbl N E Γ W tblN N' B' is il ip inp L n : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
+    (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B') (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hil : il + 4 ≤ E) (hip : ip + 2 ≤ E) (hinp : inp + 2 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E)
+    (hLn : L + 1 ≤ n)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hmp : neg LAct (memFact (^&ip) (^&is)) ∈ Γ)
+    (hneg : neg LAct (negFact (^&inp) (^&ip)) ∈ Γ) (hmnp : neg LAct (memFact (^&inp) (^&is)) ∈ Γ)
+    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (fragAxL W tblN is il ip inp L n) ∧ NoDrop' (fragAxL W tblN is il ip inp L n) ∧
+    shiftsV (fragAxL W tblN is il ip inp L n) = 1 ∧ len (fragAxL W tblN is il ip inp L n) = 9 ∧
+    neg LAct (goalFact (^&(is + 1)) (bnum n)) ∈ finalCtx Γ (fragAxL W tblN is il ip inp L n) := by
+  have hil2 : il + 2 ≤ E := le_trans (by gcongr; norm_num) hil
+  obtain ⟨hok, hnd, hsv, hlen, hfin⟩ := fragAxLHead_ok htbl hF hWp hΓ his hil2 hip hinp hfs hmp hneg hmnp hsl
+  have hΓ' : IsFormulaSet LAct (finalCtx Γ (fragAxLHead W is il ip inp)) := finalCtx_isFormulaSet 8 htbl hΓ hok
+  have hl0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hbL : IsSemiterm LAct 0 (bnum L) := isSemiterm_bnum_LAct 0 L
+  have hle' : neg LAct (leFact (^&(il + 1)) (bnum L)) ∈ finalCtx Γ (fragAxLHead W is il ip inp) := by
+    rw [hfin]; unfold fragAxLHeadCtx
+    have := shift_mem_head3 (a := neg LAct (dlenFact (^&0 : V) (leafT (il + 1)))) (b := neg LAct (derFact (^&0 : V)))
+      (c := neg LAct (fstIdxFact (^&(is + 1)) (^&0)))
+      (f := neg LAct (axLFact (^&0 : V) (^&(is + 1)) (^&(ip + 1)))) hle
+    rwa [shift_neg (isFormula_leFact hl0 hbL), shift_leFact hl0 hbL, termShift_fvar, termShift_bnum] at this
+  obtain ⟨tok, tnd, tsv, tlen, tfin, tmem⟩ := goalTailLeaf_ok htbl hF hWp htblN hΓ'
+    (by rw [show il + 1 + 3 = il + 4 by ring]; exact hil) (by rw [add_assoc, one_add_one_eq_two]; exact his) hn hLn hle'
+    (by rw [hfin]; unfold fragAxLHeadCtx; simp) (by rw [hfin]; unfold fragAxLHeadCtx; simp)
+    (by rw [hfin]; unfold fragAxLHeadCtx; simp)
+  refine ⟨listOK_appendV hok tok, noDrop'_appendV hnd tnd, ?_, ?_, ?_⟩
+  · unfold fragAxL; rw [shiftsV_appendV, hsv, tsv, add_zero]
+  · unfold fragAxL; rw [len_appendV, hlen, tlen]; norm_num
+  · unfold fragAxL; rw [finalCtx_appendV]; exact tmem
+
+/-- The four node steps of `verumIntro`: `tot_verumIntro`, `fstIdx_verum`, `Intro_verum`, `Dlen_verum`. -/
+noncomputable def fragVerumHead (W is il iv : V) : V :=
+  mkStep W 88 ?[^&is] ∷ mkStep W 117 ?[^&(is + 1), ^&0] ∷
+  mkStep W 94 ?[^&(is + 1), ^&(iv + 1), ^&0] ∷ mkStep W 100 ?[^&0, ^&(is + 1), ^&(il + 1)] ∷ (0 : V)
+
+/-- **The `verumIntro` fragment**. -/
+noncomputable def fragVerum (W tblN is il iv L n : V) : V :=
+  appendV (fragVerumHead W is il iv) (goalTailLeaf W tblN (il + 1) L n (is + 1))
+
+noncomputable def fragVerumHeadCtx (Γ is il : V) : V :=
+  insert (neg LAct (dlenFact (^&0 : V) (leafT (il + 1))))
+    (insert (neg LAct (derFact (^&0 : V)))
+      (insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0)))
+        (insert (neg LAct (verumIntroFact (^&0 : V) (^&(is + 1)))) (setShift LAct Γ))))
+
+theorem fragVerumHead_ok {tbl N E Γ W is il iv : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
+    (hWp : W = frag1Pieces) (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hil : il + 2 ≤ E) (hiv : iv + 2 ≤ E)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hv : neg LAct (verumFact (^&iv)) ∈ Γ)
+    (hmv : neg LAct (memFact (^&iv) (^&is)) ∈ Γ) (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (fragVerumHead W is il iv) ∧ NoDrop' (fragVerumHead W is il iv) ∧
+    shiftsV (fragVerumHead W is il iv) = 1 ∧ len (fragVerumHead W is il iv) = 4 ∧
+    finalCtx Γ (fragVerumHead W is il iv) = fragVerumHeadCtx Γ is il := by
+  have hi0 : IsSemiterm LAct 0 (^&is : V) := by simp
+  have hiE : termLen LAct (^&is : V) ≤ E := termLen_fvar_le (le_trans (by gcongr; norm_num) his)
+  have hv0 : IsSemiterm LAct 0 (^&iv : V) := by simp
+  have hl0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hi1 : IsSemiterm LAct 0 (^&(is + 1) : V) := by simp
+  have hi1E : termLen LAct (^&(is + 1) : V) ≤ E := termLen_fvar_succ_le his
+  have hv1 : IsSemiterm LAct 0 (^&(iv + 1) : V) := by simp
+  have hv1E : termLen LAct (^&(iv + 1) : V) ≤ E := termLen_fvar_succ_le hiv
+  have hl1 : IsSemiterm LAct 0 (^&(il + 1) : V) := by simp
+  have hl1E : termLen LAct (^&(il + 1) : V) ≤ E := termLen_fvar_succ_le hil
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E :=
+    termLen_fvar_le (by rw [zero_add]; exact le_trans (by norm_num) (le_trans le_add_self his))
+  obtain ⟨ok₁, tg₁, cx₁⟩ := fok_totVerumIntro htbl hF hWp hΓ hi0 hiE
+  rw [termShift_fvar, Nat.cast_zero] at cx₁
+  set Γ₁ := insert (neg LAct (verumIntroFact (^&0 : V) (^&(is + 1)))) (setShift LAct Γ) with hΓ₁def
+  have hΓ₁ : IsFormulaSet LAct Γ₁ := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
+  have tfs : neg LAct (fsetPiFact (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (verumIntroFact (^&0 : V) (^&(is + 1)))) hfs
+    rwa [shift_neg (isFormula_fsetPiFact hi0), shift_fsetPiFact hi0, termShift_fvar] at this
+  have tv : neg LAct (verumFact (^&(iv + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (verumIntroFact (^&0 : V) (^&(is + 1)))) hv
+    rwa [shift_neg (isFormula_verumFact hv0), shift_verumFact hv0, termShift_fvar] at this
+  have tmv : neg LAct (memFact (^&(iv + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (verumIntroFact (^&0 : V) (^&(is + 1)))) hmv
+    rwa [shift_neg (isFormula_memFact hv0 hi0), shift_memFact hv0 hi0, termShift_fvar, termShift_fvar] at this
+  have tsl : neg LAct (setLenFact (^&(il + 1)) (^&(is + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (verumIntroFact (^&0 : V) (^&(is + 1)))) hsl
+    rwa [shift_neg (isFormula_setLenFact hl0 hi0), shift_setLenFact hl0 hi0, termShift_fvar, termShift_fvar] at this
+  obtain ⟨ok₂, tg₂, cx₂⟩ := fok_fstIdxVerum htbl hF hWp hΓ₁ hi1 hi1E hf0 hf0E (by rw [hΓ₁def]; simp)
+  set Γ₂ := insert (neg LAct (fstIdxFact (^&(is + 1)) (^&0))) Γ₁ with hΓ₂def
+  have hΓ₂ : IsFormulaSet LAct Γ₂ := cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
+  obtain ⟨ok₃, tg₃, cx₃⟩ := fok_introVerum htbl hF hWp hΓ₂ hi1 hi1E hv1 hv1E hf0 hf0E
+    (by rw [hΓ₂def]; simp [tfs]) (by rw [hΓ₂def]; simp [tv]) (by rw [hΓ₂def]; simp [tmv])
+    (by rw [hΓ₂def, hΓ₁def]; simp)
+  set Γ₃ := insert (neg LAct (derFact (^&0 : V))) Γ₂ with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := cx₃ ▸ isFormulaSet_ctxAfter 8 htbl ok₃
+  obtain ⟨ok₄, tg₄, cx₄⟩ := fok_dlenVerum htbl hF hWp hΓ₃ hf0 hf0E hi1 hi1E hl1 hl1E
+    (by rw [hΓ₃def, hΓ₂def, hΓ₁def]; simp) (by rw [hΓ₃def, hΓ₂def]; simp [tsl])
+  have hfin : finalCtx Γ (fragVerumHead W is il iv) = fragVerumHeadCtx Γ is il := by
+    unfold fragVerumHead
+    rw [finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_single, cx₄]
+    rfl
+  refine ⟨?_, ?_, ?_, ?_, hfin⟩
+  · unfold fragVerumHead
+    refine listOK_cons ok₁ ?_
+    rw [cx₁]
+    refine listOK_cons ok₂ ?_
+    rw [cx₂]
+    refine listOK_cons ok₃ ?_
+    rw [cx₃]
+    exact listOK_single ok₄
+  · unfold fragVerumHead
+    exact noDrop'_cons (by rw [tg₁]; simp) (noDrop'_cons (by rw [tg₂]; simp)
+      (noDrop'_cons (by rw [tg₃]; simp) (noDrop'_single (by rw [tg₄]; simp))))
+  · unfold fragVerumHead
+    rw [shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄]
+    simp
+  · unfold fragVerumHead; simp [len_adjoin]; norm_num
+
+/-- **`fragVerum` is applicable**. -/
+theorem fragVerum_ok {tbl N E Γ W tblN N' B' is il iv L n : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
+    (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B') (hΓ : IsFormulaSet LAct Γ)
+    (his : is + 2 ≤ E) (hil : il + 4 ≤ E) (hiv : iv + 2 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + 1 ≤ n)
+    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hv : neg LAct (verumFact (^&iv)) ∈ Γ)
+    (hmv : neg LAct (memFact (^&iv) (^&is)) ∈ Γ) (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ)
+    (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (fragVerum W tblN is il iv L n) ∧ NoDrop' (fragVerum W tblN is il iv L n) ∧
+    shiftsV (fragVerum W tblN is il iv L n) = 1 ∧ len (fragVerum W tblN is il iv L n) = 9 ∧
+    neg LAct (goalFact (^&(is + 1)) (bnum n)) ∈ finalCtx Γ (fragVerum W tblN is il iv L n) := by
+  have hil2 : il + 2 ≤ E := le_trans (by gcongr; norm_num) hil
+  obtain ⟨hok, hnd, hsv, hlen, hfin⟩ := fragVerumHead_ok htbl hF hWp hΓ his hil2 hiv hfs hv hmv hsl
+  have hΓ' : IsFormulaSet LAct (finalCtx Γ (fragVerumHead W is il iv)) := finalCtx_isFormulaSet 8 htbl hΓ hok
+  have hl0 : IsSemiterm LAct 0 (^&il : V) := by simp
+  have hbL : IsSemiterm LAct 0 (bnum L) := isSemiterm_bnum_LAct 0 L
+  have hle' : neg LAct (leFact (^&(il + 1)) (bnum L)) ∈ finalCtx Γ (fragVerumHead W is il iv) := by
+    rw [hfin]; unfold fragVerumHeadCtx
+    have := shift_mem_head3 (a := neg LAct (dlenFact (^&0 : V) (leafT (il + 1)))) (b := neg LAct (derFact (^&0 : V)))
+      (c := neg LAct (fstIdxFact (^&(is + 1)) (^&0)))
+      (f := neg LAct (verumIntroFact (^&0 : V) (^&(is + 1)))) hle
+    rwa [shift_neg (isFormula_leFact hl0 hbL), shift_leFact hl0 hbL, termShift_fvar, termShift_bnum] at this
+  obtain ⟨tok, tnd, tsv, tlen, tfin, tmem⟩ := goalTailLeaf_ok htbl hF hWp htblN hΓ'
+    (by rw [show il + 1 + 3 = il + 4 by ring]; exact hil) (by rw [add_assoc, one_add_one_eq_two]; exact his) hn hLn hle'
+    (by rw [hfin]; unfold fragVerumHeadCtx; simp) (by rw [hfin]; unfold fragVerumHeadCtx; simp)
+    (by rw [hfin]; unfold fragVerumHeadCtx; simp)
+  refine ⟨listOK_appendV hok tok, noDrop'_appendV hnd tnd, ?_, ?_, ?_⟩
+  · unfold fragVerum; rw [shiftsV_appendV, hsv, tsv, add_zero]
+  · unfold fragVerum; rw [len_appendV, hlen, tlen]; norm_num
+  · unfold fragVerum; rw [finalCtx_appendV]; exact tmem
+
+end leaves
+
 end ArithS
