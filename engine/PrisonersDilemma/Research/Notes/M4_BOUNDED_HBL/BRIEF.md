@@ -836,3 +836,38 @@ rfl | rfl | h` the name `a` is gone in the `rfl` branches — `by_cases ha0 : a 
 SENTINEL that replaces `_` by what it unifies to is a no-op — break a real argument;
 `eqFactB = eqFact` is `rfl` (RowInstB's `PeqB` = NumSteps' `Peq`).
 IN FLIGHT: `Cert` (ok theorems, bridge row, certSubst/certFree, lenSteps); `Top` (against a kit).
+
+**§11 status — `Cert` Part 4 DONE: `certShift_ok`, `certNeg_ok`, costs (fdd6427 … 6c459d8; 3599 →
+~5200 lines; build 3251 jobs, census 497, all standard).**
+`certShift_ok {tbl N Wd W n r i j E Γ} (htbl) (hC : CertTable tbl) (hWd : Wd = walkPieces)
+(hWp : W = certPieces) (hr : IsSemiformula LAct n r) (hE : 2n + 2|r| + 8 ≤ E) (hEi : i + 2|r| + 1
+≤ E) (hEj) (hΓ) (hDi : DossF Wd Γ n r i) (hDj : DossF Wd Γ n (shift r) j) : ListOK tbl E 8 Γ
+(certShift W n r i j) ∧ NoDrop ∧ HornOnly ∧ shiftsV = 0 ∧ neg (shiftFact (^&j) (^&i)) ∈ finalCtx`;
+`certNeg_ok` identical with `neg`/`negFact`; `costSum_certShift_le/certNeg_le ≤ 12|r|·(stepK N E B
++ 36·ctxBound E B Γ (12|r|))` — the walk's polynomial. Structure §4.1–4.6 (`PassPre`/`PassPost`
+packages, `TShiftOK`/`TEqOK`, `passTGraph_shift_ok`, `passTGraph_eq_ok` for any `ν ≠ 2`,
+`passFGraph_shift_ok`, `passFGraph_neg_ok`). **A DESIGN BUG FOUND AND FIXED (fdd6427):** the old
+`ν = 1` atom branch emitted `negRelCert` over the SOURCE vector, whose antecedent names `⟨v⟩ᵢ`, but
+the image is walked afresh and its atom fact names `⟨v⟩ⱼ` — `certNeg_ok` was unprovable as
+designed. Fix: the term pass's convention is now "`ν = 2` = shift, every other `ν` =
+IDENTIFICATION", and `fAtomSteps` at `ν = 1` emits the identification pass + `eqRefl [&j]` +
+`congRel/congNRel` before `negRelCert`; both branches also emit the closed `relRow R` step
+(`isRelFact`); length bounds still fit `12|r|`. **THE `tvPiFact`/`utvPiFact` DESIGN FINDING
+DISSOLVED:** the bridge already exists as WALK rows 38 (`isUTermVecOfSemitermVecLAct`) and 39, and
+`vAdjSteps` already emits them on the source tail at every vector node — nothing added (the ℒₒᵣ
+row `isUTermVecOfSemitermVecORB` is the wrong language). Third reported blocker dissolved on
+inspection. NOT started, obstacles recorded in `Cert.lean` §4.7: `certSubst` — no `w` slot and
+image offsets not in lock-step (`#z ↦ w.[z]` walked afresh) ⇒ a SIBLING fixpoint with parameters
+`(W, wv, wt)`; the bvar leaf needs `termSubstBvarCert` at the original entry + identification +
+`congAdj` (APPENDED to the certification table, `cIdx_congAdj = 182`, `M = 8`, sentinel-tested);
+under quantifiers `qVec w` must be CONSTRUCTED by totality steps, so that pass is not shift-free.
+`lenSteps` — the closed fact `bnum|p| ^+ bnum|q| ^+ 𝟏 = bnum(|p|+|q|+1)` needs an ADDITION
+CONGRUENCE row (`x = x' → y = y' → x + y = x' + y'`; VERIFIED absent 2026-09-14 — no `congAdd`/
+successor-congruence row anywhere) combined with `addFact`/`succFact` and `eqTrans`.
+TRAPS: `definability` on an 8-conjunct inlined Π₁ motive times out at `whnf` though each conjunct
+passes alone — package as defs with instances (the `GoalOK` lesson again); never hand `𝟎` to a
+`cok_` witness (`isDefEq` on the closed constant times out) — name it `cTV 0` and `rw [← cTV_zero]`
+first; `rw [a, b] at h₁ h₂` fails if `b` has no occurrence in one of them; `Σ` is not an identifier
+character; `rw [termShiftIterV_cTV]` rewrites every instance of the first match; quantifier-child
+offset bounds are `≤`, not `=`.
+IN FLIGHT: `Cert` continuation (lenSteps with the congAdd row, then certSubst/certFree); `Top`.
