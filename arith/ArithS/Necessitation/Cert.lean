@@ -6543,4 +6543,413 @@ lemma le_lnBinSteps_right (W T c n cq lp lq i sq sp yq yp : V) : yp ≤ lnBinSte
   le_trans (le_appendV_left _ _) (le_appendV_right _ _)
 lemma le_lnQuantSteps (W T c n lp i sb yb : V) : yb ≤ lnQuantSteps W T c n lp i sb yb := le_appendV_left _ _
 
+/-! ### 5.6 Structure of the formula lists; existence, uniqueness, and the producer `lenSteps` -/
+
+section lenFStruct
+
+lemma ctag_lnConstRow {W : V} (hWp : W = certPieces) {c : V} (hc : c = 147 ∨ c = 148) (ev : V) : sTag (mkStep W c ev) = 0 := by
+  rcases hc with rfl | rfl
+  · exact ctag_formulaLenVerum hWp ev
+  · exact ctag_formulaLenFalsum hWp ev
+lemma ctag_lnBinRow {W : V} (hWp : W = certPieces) {c : V} (hc : c = 149 ∨ c = 150) (ev : V) : sTag (mkStep W c ev) = 0 := by
+  rcases hc with rfl | rfl
+  · exact ctag_formulaLenAnd hWp ev
+  · exact ctag_formulaLenOr hWp ev
+lemma ctag_lnQuantRow {W : V} (hWp : W = certPieces) {c : V} (hc : c = 151 ∨ c = 152) (ev : V) : sTag (mkStep W c ev) = 0 := by
+  rcases hc with rfl | rfl
+  · exact ctag_formulaLenAll hWp ev
+  · exact ctag_formulaLenExs hWp ev
+lemma ctag_lnAtomRow {W : V} (hWp : W = certPieces) {c : V} (hc : c = 142 ∨ c = 143) (ev : V) : sTag (mkStep W c ev) = 0 := by
+  rcases hc with rfl | rfl
+  · exact ctag_formulaLenRelCert hWp ev
+  · exact ctag_formulaLenNRelCert hWp ev
+
+lemma lnConstSteps_struct {W : V} (hWp : W = certPieces) {c : V} (hc : c = 147 ∨ c = 148) (i : V) :
+    NoDrop' (lnConstSteps W c i) ∧ shiftsV (lnConstSteps W c i) = 1 := by
+  refine ⟨?_, ?_⟩
+  · exact noDrop'_cons (noDrop'_tag2 (ctag_formulaLenTotal hWp _)) (noDrop'_cons (noDrop'_tag0 (ctag_lnConstRow hWp hc _))
+      (noDrop'_single (noDrop'_tag0 (ctag_congLenNum hWp _))))
+  · rw [lnConstSteps, shiftsV_cons_tag2 (ctag_formulaLenTotal hWp _), shiftsV_cons_tag0 (ctag_lnConstRow hWp hc _),
+      shiftsV_single_tag0 (ctag_congLenNum hWp _), add_zero]
+lemma len_lnConstSteps (W c i : V) : len (lnConstSteps W c i) = 3 := by
+  rw [lnConstSteps, len_adjoin, len_adjoin, len_adjoin, len_nil]; norm_num
+
+lemma lnBinSteps_struct {W : V} (hWp : W = certPieces) {c : V} (hc : c = 149 ∨ c = 150) (T n cq lp lq i sq sp yq yp : V)
+    (hq : NoDrop' yq) (hp : NoDrop' yp) :
+    NoDrop' (lnBinSteps W T c n cq lp lq i sq sp yq yp) ∧
+    shiftsV (lnBinSteps W T c n cq lp lq i sq sp yq yp) = shiftsV yq + (shiftsV yp + 1) := by
+  refine ⟨?_, ?_⟩
+  · exact noDrop'_appendV hq (noDrop'_appendV hp (noDrop'_cons (noDrop'_tag2 (ctag_formulaLenTotal hWp _))
+      (noDrop'_cons (noDrop'_tag0 (ctag_lnBinRow hWp hc _)) (noDrop'_cons (noDrop'_tag7 (sTag_sLemma _ _))
+      (noDrop'_cons (noDrop'_tag0 (ctag_congSucc hWp _)) (noDrop'_cons (noDrop'_tag7 (sTag_sLemma _ _))
+      (noDrop'_cons (noDrop'_tag0 (ctag_eqTrans hWp _)) (noDrop'_cons (noDrop'_tag0 (ctag_eqTrans hWp _))
+      (noDrop'_single (noDrop'_tag0 (ctag_congLenNum hWp _)))))))))))
+  · rw [lnBinSteps, shiftsV_appendV, shiftsV_appendV, shiftsV_cons_tag2 (ctag_formulaLenTotal hWp _),
+      shiftsV_cons_tag0 (ctag_lnBinRow hWp hc _), shiftsV_cons_sLemma, shiftsV_cons_tag0 (ctag_congSucc hWp _),
+      shiftsV_cons_sLemma, shiftsV_cons_tag0 (ctag_eqTrans hWp _), shiftsV_cons_tag0 (ctag_eqTrans hWp _),
+      shiftsV_single_tag0 (ctag_congLenNum hWp _), add_zero]
+lemma len_lnBinSteps (W T c n cq lp lq i sq sp yq yp : V) :
+    len (lnBinSteps W T c n cq lp lq i sq sp yq yp) = len yq + (len yp + 8) := by
+  rw [lnBinSteps, len_appendV, len_appendV, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin,
+    len_adjoin, len_nil]; ring
+
+lemma lnQuantSteps_struct {W : V} (hWp : W = certPieces) {c : V} (hc : c = 151 ∨ c = 152) (T n lp i sb yb : V)
+    (hb : NoDrop' yb) :
+    NoDrop' (lnQuantSteps W T c n lp i sb yb) ∧ shiftsV (lnQuantSteps W T c n lp i sb yb) = shiftsV yb + 1 := by
+  refine ⟨?_, ?_⟩
+  · exact noDrop'_appendV hb (noDrop'_cons (noDrop'_tag2 (ctag_formulaLenTotal hWp _))
+      (noDrop'_cons (noDrop'_tag0 (ctag_lnQuantRow hWp hc _)) (noDrop'_cons (noDrop'_tag7 (sTag_sLemma _ _))
+      (noDrop'_cons (noDrop'_tag0 (ctag_eqTrans hWp _)) (noDrop'_single (noDrop'_tag0 (ctag_congLenNum hWp _)))))))
+  · rw [lnQuantSteps, shiftsV_appendV, shiftsV_cons_tag2 (ctag_formulaLenTotal hWp _), shiftsV_cons_tag0 (ctag_lnQuantRow hWp hc _),
+      shiftsV_cons_sLemma, shiftsV_cons_tag0 (ctag_eqTrans hWp _), shiftsV_single_tag0 (ctag_congLenNum hWp _), add_zero]
+lemma len_lnQuantSteps (W T c n lp i sb yb : V) : len (lnQuantSteps W T c n lp i sb yb) = len yb + 5 := by
+  rw [lnQuantSteps, len_appendV, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_nil]; ring
+
+lemma lnAtomSteps_struct {W : V} (hWp : W = certPieces) {c : V} (hc : c = 142 ∨ c = 143) (T k R σ i sv yv : V)
+    (hv : NoDrop' yv) :
+    NoDrop' (lnAtomSteps W T c k R σ i sv yv) ∧ shiftsV (lnAtomSteps W T c k R σ i sv yv) = shiftsV yv + 1 := by
+  refine ⟨?_, ?_⟩
+  · exact noDrop'_appendV hv (noDrop'_cons (noDrop'_tag0 (ctag_certRelRow hWp _ _))
+      (noDrop'_cons (noDrop'_tag2 (ctag_formulaLenTotal hWp _)) (noDrop'_cons (noDrop'_tag0 (ctag_lnAtomRow hWp hc _))
+      (noDrop'_cons (noDrop'_tag7 (sTag_sLemma _ _)) (noDrop'_cons (noDrop'_tag0 (ctag_eqTrans hWp _))
+      (noDrop'_single (noDrop'_tag0 (ctag_congLenNum hWp _))))))))
+  · rw [lnAtomSteps, shiftsV_appendV, shiftsV_cons_tag0 (ctag_certRelRow hWp _ _), shiftsV_cons_tag2 (ctag_formulaLenTotal hWp _),
+      shiftsV_cons_tag0 (ctag_lnAtomRow hWp hc _), shiftsV_cons_sLemma, shiftsV_cons_tag0 (ctag_eqTrans hWp _),
+      shiftsV_single_tag0 (ctag_congLenNum hWp _), add_zero]
+lemma len_lnAtomSteps (W T c k R σ i sv yv : V) : len (lnAtomSteps W T c k R σ i sv yv) = len yv + 6 := by
+  rw [lnAtomSteps, len_appendV, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_nil]; ring
+
+set_option maxHeartbeats 2000000 in
+/-- **Length bound, `W`-free**: `len y ≤ 14|r|`. -/
+lemma lenFGraph_len (W T : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    ∀ i y : V, LenFGraph W T n r i y → len y ≤ 14 * formulaLen LAct r := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ ∀ i y : V, LenFGraph W T n r i y → len y ≤ 14 * formulaLen LAct r)
+  · simp only [LenFGraph]; definability
+  · intro n k R v hkR hv i y hy
+    rw [LenFGraph.rel_iff.mp hy, len_lnAtomSteps, formulaLen_rel hkR hv.isUTerm]
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    have hl := (lenVGraph_len W T n hv k le_rfl).2 (i + 1) _ (lenV_graph hv le_rfl)
+    rw [htl] at hl
+    calc len (lenV W T n k v k (i + 1)) + 6 ≤ (14 * listSum (termLenVec LAct k v) + 2) + 6 := add_le_add hl (le_refl (6 : V))
+      _ = 14 * listSum (termLenVec LAct k v) + 8 := by ring
+      _ ≤ 14 * listSum (termLenVec LAct k v) + 14 := add_le_add (le_refl _) (by norm_num)
+      _ = 14 * (listSum (termLenVec LAct k v) + 1) := by ring
+  · intro n k R v hkR hv i y hy
+    rw [LenFGraph.nrel_iff.mp hy, len_lnAtomSteps, formulaLen_nrel hkR hv.isUTerm]
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    have hl := (lenVGraph_len W T n hv k le_rfl).2 (i + 1) _ (lenV_graph hv le_rfl)
+    rw [htl] at hl
+    calc len (lenV W T n k v k (i + 1)) + 6 ≤ (14 * listSum (termLenVec LAct k v) + 2) + 6 := add_le_add hl (le_refl (6 : V))
+      _ = 14 * listSum (termLenVec LAct k v) + 8 := by ring
+      _ ≤ 14 * listSum (termLenVec LAct k v) + 14 := add_le_add (le_refl _) (by norm_num)
+      _ = 14 * (listSum (termLenVec LAct k v) + 1) := by ring
+  · intro n i y hy
+    rw [LenFGraph.verum_iff.mp hy, len_lnConstSteps, formulaLen_verum]; norm_num
+  · intro n i y hy
+    rw [LenFGraph.falsum_iff.mp hy, len_lnConstSteps, formulaLen_falsum]; norm_num
+  · intro n p q hp hq ihp ihq i y hy
+    obtain ⟨yq, yp, _, _, hyq, hyp, rfl⟩ := LenFGraph.and_iff.mp hy
+    rw [len_lnBinSteps, formulaLen_and hp.isUFormula hq.isUFormula]
+    calc len yq + (len yp + 8) ≤ 14 * formulaLen LAct q + (14 * formulaLen LAct p + 8) :=
+          add_le_add (ihq _ _ hyq) (add_le_add (ihp _ _ hyp) (le_refl (8 : V)))
+      _ ≤ 14 * formulaLen LAct q + (14 * formulaLen LAct p + 14) := by gcongr; norm_num
+      _ = 14 * (formulaLen LAct p + formulaLen LAct q + 1) := by ring
+  · intro n p q hp hq ihp ihq i y hy
+    obtain ⟨yq, yp, _, _, hyq, hyp, rfl⟩ := LenFGraph.or_iff.mp hy
+    rw [len_lnBinSteps, formulaLen_or hp.isUFormula hq.isUFormula]
+    calc len yq + (len yp + 8) ≤ 14 * formulaLen LAct q + (14 * formulaLen LAct p + 8) :=
+          add_le_add (ihq _ _ hyq) (add_le_add (ihp _ _ hyp) (le_refl (8 : V)))
+      _ ≤ 14 * formulaLen LAct q + (14 * formulaLen LAct p + 14) := by gcongr; norm_num
+      _ = 14 * (formulaLen LAct p + formulaLen LAct q + 1) := by ring
+  · intro n p hp ih i y hy
+    obtain ⟨yb, _, hyb, rfl⟩ := LenFGraph.all_iff.mp hy
+    rw [len_lnQuantSteps, formulaLen_all hp.isUFormula]
+    calc len yb + 5 ≤ 14 * formulaLen LAct p + 5 := add_le_add (ih _ _ hyb) (le_refl (5 : V))
+      _ ≤ 14 * formulaLen LAct p + 14 := by gcongr; norm_num
+      _ = 14 * (formulaLen LAct p + 1) := by ring
+  · intro n p hp ih i y hy
+    obtain ⟨yb, _, hyb, rfl⟩ := LenFGraph.exs_iff.mp hy
+    rw [len_lnQuantSteps, formulaLen_exs hp.isUFormula]
+    calc len yb + 5 ≤ 14 * formulaLen LAct p + 5 := add_le_add (ih _ _ hyb) (le_refl (5 : V))
+      _ ≤ 14 * formulaLen LAct p + 14 := by gcongr; norm_num
+      _ = 14 * (formulaLen LAct p + 1) := by ring
+
+set_option maxHeartbeats 2000000 in
+/-- **`NoDrop'` and the shift count**: `shiftsV y + 1 ≤ 2|r|`. -/
+lemma lenFGraph_noDrop_shifts {W : V} (hWp : W = certPieces) (T : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    ∀ i y : V, LenFGraph W T n r i y → NoDrop' y ∧ shiftsV y + 1 ≤ 2 * formulaLen LAct r := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ ∀ i y : V, LenFGraph W T n r i y → NoDrop' y ∧ shiftsV y + 1 ≤ 2 * formulaLen LAct r)
+  · simp only [LenFGraph]; definability
+  · intro n k R v hkR hv i y hy
+    rw [LenFGraph.rel_iff.mp hy, formulaLen_rel hkR hv.isUTerm]
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    obtain ⟨hnV, hsV⟩ := lenVGraph_noDrop_shifts hWp T n hv k le_rfl (i + 1) _ (lenV_graph hv le_rfl)
+    rw [htl] at hsV
+    obtain ⟨h1, h2⟩ := lnAtomSteps_struct hWp (Or.inl rfl) T k R _ i _ _ hnV
+    refine ⟨h1, ?_⟩
+    rw [h2]
+    calc shiftsV (lenV W T n k v k (i + 1)) + 1 + 1 = shiftsV (lenV W T n k v k (i + 1)) + 2 := by ring
+      _ ≤ 2 * listSum (termLenVec LAct k v) + 2 := add_le_add hsV (le_refl (2 : V))
+      _ = 2 * (listSum (termLenVec LAct k v) + 1) := by ring
+  · intro n k R v hkR hv i y hy
+    rw [LenFGraph.nrel_iff.mp hy, formulaLen_nrel hkR hv.isUTerm]
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    obtain ⟨hnV, hsV⟩ := lenVGraph_noDrop_shifts hWp T n hv k le_rfl (i + 1) _ (lenV_graph hv le_rfl)
+    rw [htl] at hsV
+    obtain ⟨h1, h2⟩ := lnAtomSteps_struct hWp (Or.inr rfl) T k R _ i _ _ hnV
+    refine ⟨h1, ?_⟩
+    rw [h2]
+    calc shiftsV (lenV W T n k v k (i + 1)) + 1 + 1 = shiftsV (lenV W T n k v k (i + 1)) + 2 := by ring
+      _ ≤ 2 * listSum (termLenVec LAct k v) + 2 := add_le_add hsV (le_refl (2 : V))
+      _ = 2 * (listSum (termLenVec LAct k v) + 1) := by ring
+  · intro n i y hy
+    rw [LenFGraph.verum_iff.mp hy, formulaLen_verum]
+    obtain ⟨h1, h2⟩ := lnConstSteps_struct hWp (Or.inl rfl) i
+    exact ⟨h1, by rw [h2]; norm_num⟩
+  · intro n i y hy
+    rw [LenFGraph.falsum_iff.mp hy, formulaLen_falsum]
+    obtain ⟨h1, h2⟩ := lnConstSteps_struct hWp (Or.inr rfl) i
+    exact ⟨h1, by rw [h2]; norm_num⟩
+  · intro n p q hp hq ihp ihq i y hy
+    obtain ⟨yq, yp, _, _, hyq, hyp, rfl⟩ := LenFGraph.and_iff.mp hy
+    obtain ⟨hnq, hsq⟩ := ihq _ _ hyq
+    obtain ⟨hnp, hsp⟩ := ihp _ _ hyp
+    obtain ⟨h1, h2⟩ := lnBinSteps_struct hWp (Or.inl rfl) T n _ _ _ i _ _ yq yp hnq hnp
+    refine ⟨h1, ?_⟩
+    rw [h2, formulaLen_and hp.isUFormula hq.isUFormula]
+    calc shiftsV yq + (shiftsV yp + 1) + 1 = (shiftsV yq + 1) + (shiftsV yp + 1) := by ring
+      _ ≤ 2 * formulaLen LAct q + 2 * formulaLen LAct p := add_le_add hsq hsp
+      _ ≤ 2 * formulaLen LAct q + 2 * formulaLen LAct p + 2 := le_self_add
+      _ = 2 * (formulaLen LAct p + formulaLen LAct q + 1) := by ring
+  · intro n p q hp hq ihp ihq i y hy
+    obtain ⟨yq, yp, _, _, hyq, hyp, rfl⟩ := LenFGraph.or_iff.mp hy
+    obtain ⟨hnq, hsq⟩ := ihq _ _ hyq
+    obtain ⟨hnp, hsp⟩ := ihp _ _ hyp
+    obtain ⟨h1, h2⟩ := lnBinSteps_struct hWp (Or.inr rfl) T n _ _ _ i _ _ yq yp hnq hnp
+    refine ⟨h1, ?_⟩
+    rw [h2, formulaLen_or hp.isUFormula hq.isUFormula]
+    calc shiftsV yq + (shiftsV yp + 1) + 1 = (shiftsV yq + 1) + (shiftsV yp + 1) := by ring
+      _ ≤ 2 * formulaLen LAct q + 2 * formulaLen LAct p := add_le_add hsq hsp
+      _ ≤ 2 * formulaLen LAct q + 2 * formulaLen LAct p + 2 := le_self_add
+      _ = 2 * (formulaLen LAct p + formulaLen LAct q + 1) := by ring
+  · intro n p hp ih i y hy
+    obtain ⟨yb, _, hyb, rfl⟩ := LenFGraph.all_iff.mp hy
+    obtain ⟨hnb, hsb⟩ := ih _ _ hyb
+    obtain ⟨h1, h2⟩ := lnQuantSteps_struct hWp (Or.inl rfl) T n _ i _ yb hnb
+    refine ⟨h1, ?_⟩
+    rw [h2, formulaLen_all hp.isUFormula]
+    calc shiftsV yb + 1 + 1 ≤ 2 * formulaLen LAct p + 1 := add_le_add hsb (le_refl (1 : V))
+      _ ≤ 2 * formulaLen LAct p + 2 := by gcongr; norm_num
+      _ = 2 * (formulaLen LAct p + 1) := by ring
+  · intro n p hp ih i y hy
+    obtain ⟨yb, _, hyb, rfl⟩ := LenFGraph.exs_iff.mp hy
+    obtain ⟨hnb, hsb⟩ := ih _ _ hyb
+    obtain ⟨h1, h2⟩ := lnQuantSteps_struct hWp (Or.inr rfl) T n _ i _ yb hnb
+    refine ⟨h1, ?_⟩
+    rw [h2, formulaLen_exs hp.isUFormula]
+    calc shiftsV yb + 1 + 1 ≤ 2 * formulaLen LAct p + 1 := add_le_add hsb (le_refl (1 : V))
+      _ ≤ 2 * formulaLen LAct p + 2 := by gcongr; norm_num
+      _ = 2 * (formulaLen LAct p + 1) := by ring
+
+end lenFStruct
+
+section lenFFun
+
+set_option maxHeartbeats 2000000 in
+/-- **Existence**, offsets bounded by `B` (Σ₁ motive; `W`-free through `shiftsV_le_len` + `lenFGraph_len`). -/
+lemma lenFGraph_exists_bounded (W T B : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    ∀ i ≤ B, i + descCountF W n r + 16 * formulaLen LAct r ≤ B → ∃ y, LenFGraph W T n r i y := by
+  intro n r
+  apply IsSemiformula.sigma1_structural_induction
+    (P := fun n r ↦ ∀ i ≤ B, i + descCountF W n r + 16 * formulaLen LAct r ≤ B → ∃ y, LenFGraph W T n r i y)
+  · simp only [LenFGraph]; definability
+  · intro n k R v _ _ i _ _; exact ⟨_, LenFGraph.rel_iff.mpr rfl⟩
+  · intro n k R v _ _ i _ _; exact ⟨_, LenFGraph.nrel_iff.mpr rfl⟩
+  · intro n i _ _; exact ⟨_, LenFGraph.verum_iff.mpr rfl⟩
+  · intro n i _ _; exact ⟨_, LenFGraph.falsum_iff.mpr rfl⟩
+  · intro n p q hp hq ihp ihq i hi hiB
+    rw [descCountF_and W n hp hq, formulaLen_and hp.isUFormula hq.isUFormula] at hiB
+    set cp := descCountF W n p with hcp
+    set cq := descCountF W n q with hcq
+    set lp := formulaLen LAct p with hlp
+    set lq := formulaLen LAct q with hlq
+    have hiq : i + 1 + cq + 16 * lq ≤ B := by
+      calc i + 1 + cq + 16 * lq ≤ i + (cp + cq + 1) + 16 * (lp + lq + 1) := by
+            rw [show i + (cp + cq + 1) + 16 * (lp + lq + 1) = (i + 1 + cq + 16 * lq) + (cp + 16 * lp + 16) by ring]
+            exact le_self_add
+        _ ≤ B := hiB
+    obtain ⟨yq, hyq⟩ := ihq (i + 1) (le_trans (le_trans le_self_add le_self_add) hiq) hiq
+    have hsq : shiftsV yq ≤ 14 * lq := le_trans (shiftsV_le_len yq) (lenFGraph_len W T hq (i + 1) yq hyq)
+    have hip : i + cq + 1 + shiftsV yq + cp + 16 * lp ≤ B := by
+      calc i + cq + 1 + shiftsV yq + cp + 16 * lp ≤ i + cq + 1 + 14 * lq + cp + 16 * lp := by gcongr
+        _ ≤ i + (cp + cq + 1) + 16 * (lp + lq + 1) := by
+            rw [show i + (cp + cq + 1) + 16 * (lp + lq + 1) = (i + cq + 1 + 14 * lq + cp + 16 * lp) + (2 * lq + 16) by ring]
+            exact le_self_add
+        _ ≤ B := hiB
+    obtain ⟨yp, hyp⟩ := ihp (i + cq + 1 + shiftsV yq) (le_trans (le_trans le_self_add le_self_add) hip) hip
+    exact ⟨_, LenFGraph.and_iff.mpr ⟨yq, yp, le_lnBinSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
+      le_lnBinSteps_right _ _ _ _ _ _ _ _ _ _ _ _, hyq, hyp, rfl⟩⟩
+  · intro n p q hp hq ihp ihq i hi hiB
+    rw [descCountF_or W n hp hq, formulaLen_or hp.isUFormula hq.isUFormula] at hiB
+    set cp := descCountF W n p with hcp
+    set cq := descCountF W n q with hcq
+    set lp := formulaLen LAct p with hlp
+    set lq := formulaLen LAct q with hlq
+    have hiq : i + 1 + cq + 16 * lq ≤ B := by
+      calc i + 1 + cq + 16 * lq ≤ i + (cp + cq + 1) + 16 * (lp + lq + 1) := by
+            rw [show i + (cp + cq + 1) + 16 * (lp + lq + 1) = (i + 1 + cq + 16 * lq) + (cp + 16 * lp + 16) by ring]
+            exact le_self_add
+        _ ≤ B := hiB
+    obtain ⟨yq, hyq⟩ := ihq (i + 1) (le_trans (le_trans le_self_add le_self_add) hiq) hiq
+    have hsq : shiftsV yq ≤ 14 * lq := le_trans (shiftsV_le_len yq) (lenFGraph_len W T hq (i + 1) yq hyq)
+    have hip : i + cq + 1 + shiftsV yq + cp + 16 * lp ≤ B := by
+      calc i + cq + 1 + shiftsV yq + cp + 16 * lp ≤ i + cq + 1 + 14 * lq + cp + 16 * lp := by gcongr
+        _ ≤ i + (cp + cq + 1) + 16 * (lp + lq + 1) := by
+            rw [show i + (cp + cq + 1) + 16 * (lp + lq + 1) = (i + cq + 1 + 14 * lq + cp + 16 * lp) + (2 * lq + 16) by ring]
+            exact le_self_add
+        _ ≤ B := hiB
+    obtain ⟨yp, hyp⟩ := ihp (i + cq + 1 + shiftsV yq) (le_trans (le_trans le_self_add le_self_add) hip) hip
+    exact ⟨_, LenFGraph.or_iff.mpr ⟨yq, yp, le_lnBinSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
+      le_lnBinSteps_right _ _ _ _ _ _ _ _ _ _ _ _, hyq, hyp, rfl⟩⟩
+  · intro n p hp ih i hi hiB
+    rw [descCountF_all W n hp, formulaLen_all hp.isUFormula] at hiB
+    have hib : i + 1 + descCountF W (n + 1) p + 16 * formulaLen LAct p ≤ B := by
+      calc i + 1 + descCountF W (n + 1) p + 16 * formulaLen LAct p ≤ i + (descCountF W (n + 1) p + 1) + 16 * (formulaLen LAct p + 1) := by
+            rw [show i + (descCountF W (n + 1) p + 1) + 16 * (formulaLen LAct p + 1) =
+              (i + 1 + descCountF W (n + 1) p + 16 * formulaLen LAct p) + 16 by ring]
+            exact le_self_add
+        _ ≤ B := hiB
+    obtain ⟨yb, hyb⟩ := ih (i + 1) (le_trans (le_trans le_self_add le_self_add) hib) hib
+    exact ⟨_, LenFGraph.all_iff.mpr ⟨yb, le_lnQuantSteps _ _ _ _ _ _ _ _, hyb, rfl⟩⟩
+  · intro n p hp ih i hi hiB
+    rw [descCountF_exs W n hp, formulaLen_exs hp.isUFormula] at hiB
+    have hib : i + 1 + descCountF W (n + 1) p + 16 * formulaLen LAct p ≤ B := by
+      calc i + 1 + descCountF W (n + 1) p + 16 * formulaLen LAct p ≤ i + (descCountF W (n + 1) p + 1) + 16 * (formulaLen LAct p + 1) := by
+            rw [show i + (descCountF W (n + 1) p + 1) + 16 * (formulaLen LAct p + 1) =
+              (i + 1 + descCountF W (n + 1) p + 16 * formulaLen LAct p) + 16 by ring]
+            exact le_self_add
+        _ ≤ B := hiB
+    obtain ⟨yb, hyb⟩ := ih (i + 1) (le_trans (le_trans le_self_add le_self_add) hib) hib
+    exact ⟨_, LenFGraph.exs_iff.mpr ⟨yb, le_lnQuantSteps _ _ _ _ _ _ _ _, hyb, rfl⟩⟩
+
+lemma lenFGraph_exists (W T : V) {n r : V} (hr : IsSemiformula LAct n r) (i : V) : ∃ y, LenFGraph W T n r i y :=
+  lenFGraph_exists_bounded W T (i + descCountF W n r + 16 * formulaLen LAct r) hr i (le_trans le_self_add le_self_add) le_rfl
+
+set_option maxHeartbeats 2000000 in
+/-- **Uniqueness** (Π₁ motive). -/
+lemma lenFGraph_unique (W T : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    ∀ i y₁ y₂, LenFGraph W T n r i y₁ → LenFGraph W T n r i y₂ → y₁ = y₂ := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ ∀ i y₁ y₂, LenFGraph W T n r i y₁ → LenFGraph W T n r i y₂ → y₁ = y₂)
+  · simp only [LenFGraph]; definability
+  · intro n k R v _ _ i y₁ y₂ h₁ h₂; rw [LenFGraph.rel_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n k R v _ _ i y₁ y₂ h₁ h₂; rw [LenFGraph.nrel_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n i y₁ y₂ h₁ h₂; rw [LenFGraph.verum_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n i y₁ y₂ h₁ h₂; rw [LenFGraph.falsum_iff] at h₁ h₂; rw [h₁, h₂]
+  · intro n p q _ _ ihp ihq i y₁ y₂ h₁ h₂
+    obtain ⟨yq, yp, _, _, hq₁, hp₁, rfl⟩ := LenFGraph.and_iff.mp h₁
+    obtain ⟨yq', yp', _, _, hq₂, hp₂, rfl⟩ := LenFGraph.and_iff.mp h₂
+    obtain rfl := ihq _ yq yq' hq₁ hq₂
+    obtain rfl := ihp _ yp yp' hp₁ hp₂
+    rfl
+  · intro n p q _ _ ihp ihq i y₁ y₂ h₁ h₂
+    obtain ⟨yq, yp, _, _, hq₁, hp₁, rfl⟩ := LenFGraph.or_iff.mp h₁
+    obtain ⟨yq', yp', _, _, hq₂, hp₂, rfl⟩ := LenFGraph.or_iff.mp h₂
+    obtain rfl := ihq _ yq yq' hq₁ hq₂
+    obtain rfl := ihp _ yp yp' hp₁ hp₂
+    rfl
+  · intro n p _ ih i y₁ y₂ h₁ h₂
+    obtain ⟨yb, _, hb₁, rfl⟩ := LenFGraph.all_iff.mp h₁
+    obtain ⟨yb', _, hb₂, rfl⟩ := LenFGraph.all_iff.mp h₂
+    rw [ih _ yb yb' hb₁ hb₂]
+  · intro n p _ ih i y₁ y₂ h₁ h₂
+    obtain ⟨yb, _, hb₁, rfl⟩ := LenFGraph.exs_iff.mp h₁
+    obtain ⟨yb', _, hb₂, rfl⟩ := LenFGraph.exs_iff.mp h₂
+    rw [ih _ yb yb' hb₁ hb₂]
+
+lemma lenFGraph_existsUnique_total (W T n r i : V) :
+    ∃! y, (IsSemiformula LAct n r → LenFGraph W T n r i y) ∧ (¬IsSemiformula LAct n r → y = 0) := by
+  by_cases h : IsSemiformula LAct n r
+  · obtain ⟨y, hy⟩ := lenFGraph_exists W T h i
+    simpa [h] using ExistsUnique.intro y hy (fun y' hy' ↦ lenFGraph_unique W T h i y' y hy' hy)
+  · simp [h]
+
+/-- **The exact-length producer `lenSteps W T n r i`** (§3.6 "lengths"): the step list which, from the walk
+dossier of `r` at offset `i`, derives `lenFact (bnum |r|) (^&(i + shiftsV (lenSteps …)))` — the numeral length
+in the graph position; `W` the certification pieces, `T` the `NumSteps` table; `0` off semiformulas. -/
+noncomputable def lenSteps (W T n r i : V) : V := Classical.choose! (lenFGraph_existsUnique_total W T n r i)
+
+theorem lenSteps_graph {W T n r i : V} (hr : IsSemiformula LAct n r) : LenFGraph W T n r i (lenSteps W T n r i) :=
+  (Classical.choose!_spec (lenFGraph_existsUnique_total W T n r i)).1 hr
+theorem lenSteps_of_not {W T n r i : V} (h : ¬IsSemiformula LAct n r) : lenSteps W T n r i = 0 :=
+  (Classical.choose!_spec (lenFGraph_existsUnique_total W T n r i)).2 h
+lemma lenSteps_eq_of_graph {W T n r i y : V} (hr : IsSemiformula LAct n r) (hy : LenFGraph W T n r i y) :
+    lenSteps W T n r i = y :=
+  lenFGraph_unique W T hr i _ _ (lenSteps_graph hr) hy
+
+noncomputable def lenStepsDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W T n r i. (!(isSemiformula LAct).pi n r → !lenFGraphDef W T n r i y) ∧ (¬!(isSemiformula LAct).sigma n r → y = 0)”
+
+instance lenSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ lenSteps (v 0) (v 1) (v 2) (v 3) (v 4)) lenStepsDef := .mk
+  fun v ↦ by
+    simp [lenStepsDef, HierarchySymbol.Semiformula.val_sigma, lenFGraph_defined.iff,
+      (IsSemiformula.defined (L := LAct)).proper.iff', (IsSemiformula.defined (L := LAct)).df, lenSteps,
+      Classical.choose!_eq_iff_right]
+instance lenSteps_definable :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ lenSteps (v 0) (v 1) (v 2) (v 3) (v 4)) lenStepsDef := lenSteps_defined
+
+/-! #### The equations of `lenSteps` -/
+
+variable {W T n : V}
+
+lemma lenSteps_rel {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (i : V) :
+    lenSteps W T n (^rel k R v) i =
+      lnAtomSteps W T 142 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1)) :=
+  lenSteps_eq_of_graph (by simp [hR, hv]) (LenFGraph.rel_iff.mpr rfl)
+lemma lenSteps_nrel {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (i : V) :
+    lenSteps W T n (^nrel k R v) i =
+      lnAtomSteps W T 143 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1)) :=
+  lenSteps_eq_of_graph (by simp [hR, hv]) (LenFGraph.nrel_iff.mpr rfl)
+lemma lenSteps_verum (i : V) : lenSteps W T n ^⊤ i = lnConstSteps W 147 i :=
+  lenSteps_eq_of_graph (by simp) (LenFGraph.verum_iff.mpr rfl)
+lemma lenSteps_falsum (i : V) : lenSteps W T n ^⊥ i = lnConstSteps W 148 i :=
+  lenSteps_eq_of_graph (by simp) (LenFGraph.falsum_iff.mpr rfl)
+lemma lenSteps_and {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (i : V) :
+    lenSteps W T n (p ^⋏ q) i =
+      lnBinSteps W T 149 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i
+        (shiftsV (lenSteps W T n q (i + 1))) (shiftsV (lenSteps W T n p (i + descCountF W n q + 1 + shiftsV (lenSteps W T n q (i + 1)))))
+        (lenSteps W T n q (i + 1)) (lenSteps W T n p (i + descCountF W n q + 1 + shiftsV (lenSteps W T n q (i + 1)))) :=
+  lenSteps_eq_of_graph (by simp [hp, hq]) (LenFGraph.and_iff.mpr ⟨_, _, le_lnBinSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
+    le_lnBinSteps_right _ _ _ _ _ _ _ _ _ _ _ _, lenSteps_graph hq, lenSteps_graph hp, rfl⟩)
+lemma lenSteps_or {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (i : V) :
+    lenSteps W T n (p ^⋎ q) i =
+      lnBinSteps W T 150 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i
+        (shiftsV (lenSteps W T n q (i + 1))) (shiftsV (lenSteps W T n p (i + descCountF W n q + 1 + shiftsV (lenSteps W T n q (i + 1)))))
+        (lenSteps W T n q (i + 1)) (lenSteps W T n p (i + descCountF W n q + 1 + shiftsV (lenSteps W T n q (i + 1)))) :=
+  lenSteps_eq_of_graph (by simp [hp, hq]) (LenFGraph.or_iff.mpr ⟨_, _, le_lnBinSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
+    le_lnBinSteps_right _ _ _ _ _ _ _ _ _ _ _ _, lenSteps_graph hq, lenSteps_graph hp, rfl⟩)
+lemma lenSteps_all {p : V} (hp : IsSemiformula LAct (n + 1) p) (i : V) :
+    lenSteps W T n (^∀ p) i =
+      lnQuantSteps W T 151 n (formulaLen LAct p) i (shiftsV (lenSteps W T (n + 1) p (i + 1))) (lenSteps W T (n + 1) p (i + 1)) :=
+  lenSteps_eq_of_graph (by simp [hp]) (LenFGraph.all_iff.mpr ⟨_, le_lnQuantSteps _ _ _ _ _ _ _ _, lenSteps_graph hp, rfl⟩)
+lemma lenSteps_exs {p : V} (hp : IsSemiformula LAct (n + 1) p) (i : V) :
+    lenSteps W T n (^∃ p) i =
+      lnQuantSteps W T 152 n (formulaLen LAct p) i (shiftsV (lenSteps W T (n + 1) p (i + 1))) (lenSteps W T (n + 1) p (i + 1)) :=
+  lenSteps_eq_of_graph (by simp [hp]) (LenFGraph.exs_iff.mpr ⟨_, le_lnQuantSteps _ _ _ _ _ _ _ _, lenSteps_graph hp, rfl⟩)
+
+/-- The structural facts of the producer, packaged: `NoDrop'`, `shiftsV + 1 ≤ 2|r|`, `len ≤ 14|r|`. -/
+theorem lenSteps_struct {W : V} (hWp : W = certPieces) (T : V) {n r : V} (hr : IsSemiformula LAct n r) (i : V) :
+    NoDrop' (lenSteps W T n r i) ∧ shiftsV (lenSteps W T n r i) + 1 ≤ 2 * formulaLen LAct r ∧
+    len (lenSteps W T n r i) ≤ 14 * formulaLen LAct r :=
+  ⟨(lenFGraph_noDrop_shifts hWp T hr i _ (lenSteps_graph hr)).1, (lenFGraph_noDrop_shifts hWp T hr i _ (lenSteps_graph hr)).2,
+    lenFGraph_len W T hr i _ (lenSteps_graph hr)⟩
+
+end lenFFun
+
 end ArithS
