@@ -761,3 +761,21 @@ rewrites outermost-first: interleave each `if_neg` after its own `shiftsV_cons`.
 `IsUTermVec LAct m (takeLast v m)` has no standalone lemma — carry it in the induction's conjunction.
 (8) `DefinedFunction` arity counts arguments, not the output. (9) a `¬(A ∧ B)` guard in a `choose!`
 definability sentence must be written interpreted (`(!P → k < m) → y = 0`).
+
+**§11 status — the `tsvAdjCert` blocker CLEARED (704fd2d; census 451, all standard).**
+`cIdx_tsvAdjCert = 181`, APPENDED at the end of the table so every pre-existing `cIdx_` is
+byte-stable (`certRowCount` 181 → 182 — the concurrent agents are writing consumers, so index
+stability was the deciding consideration); full kit `certTable_/cpiece_/certPieces_/cmk_/ctag_`
+(tag 0, `sUseHorn`) and `cok_tsvAdjCert` at **`M = 9`**. THE `M` CONVENTION (now documented in
+`CertRows.lean`'s header, replacing the stale "not in the table" note): each `cok_` is stated at
+its OWN minimal cap — 8 for the 81 older rows, 9 for `tsvAdjCert` — and a consumer that mixes them
+runs at `M = 9` and lifts the siblings with `StepOK.mono`/`ListOK.mono` (`Frag1.lean:101,114`),
+the idiom `Frag2`'s `nodeExs` already uses for the arity-9 `introExs`. `stepOK_useHorn` is
+`M`-parametric, so no lemma anywhere had to change; in `gen_cert.py` the whole lift is one line
+(`RM = 9 if name == 'tsvAdjCert' else 8`). METHOD NOTE worth keeping: the agent SENTINEL-TESTED its
+own green result (deliberately breaking the new `cok_`'s `M` to 7 and confirming Lean fails at the
+expected lines) before believing a fast `EXIT 0` on a 4000-line generated file — the right
+discipline whenever "green" arrives suspiciously quickly. LESSON ON BLOCKERS: both blockers
+reported against `Cert` dissolved on inspection (one was already solved by `NoDrop'`, one needed a
+one-line cap lift with a worked precedent in the repository) — verify a reported blocker against
+the tree before treating it as one.
