@@ -2355,19 +2355,36 @@ lemma phi_iff (W : V) (C : Set V) (ν n r i j y : V) :
 
 end PassF
 
+/-- The fixpoint on the PACKED tuples (kept separate so that instance search never unfolds it —
+the `PassGraph` pattern of Part 1). -/
+def PassFPacked (W pr : V) : Prop := PassF.construction.Fixpoint ![W] pr
+
 /-- **The graph of the formula-level certification pass**. -/
-def PassFGraph (W ν n r i j y : V) : Prop := PassF.construction.Fixpoint ![W] ⟪ν, n, r, i, j, y⟫
+def PassFGraph (W ν n r i j y : V) : Prop := PassFPacked W ⟪ν, n, r, i, j, y⟫
+
+noncomputable def passFPackedDef : 𝚺₁.Semisentence 2 := .mkSigma “W pr. !PassF.blueprint.fixpointDef pr W”
+
+-- TRAP (2026-09-14): the full `simp [passFPackedDef, eval_fixpointDef, PassFPacked]` HANGS (the
+-- eight-disjunct blueprint); the fixed pattern is the one at `passGraph_defined` above.
+instance passFPacked_defined : 𝚺₁-Relation (PassFPacked : V → V → Prop) via passFPackedDef := .mk
+  fun v ↦ by
+    simp only [passFPackedDef, HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs,
+      Matrix.comp_vecCons', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons,
+      Matrix.constant_eq_singleton]
+    rw [PassF.construction.eval_fixpointDef]
+    rfl
+instance passFPacked_definable : 𝚺₁-Relation (PassFPacked : V → V → Prop) := passFPacked_defined.to_definable
 
 noncomputable def passFGraphDef : 𝚺₁.Semisentence 7 := .mkSigma
   “W ν n r i j y. ∃ q₄, !pairDef q₄ j y ∧ ∃ q₃, !pairDef q₃ i q₄ ∧ ∃ q₂, !pairDef q₂ r q₃ ∧
-    ∃ q₁, !pairDef q₁ n q₂ ∧ ∃ pr, !pairDef pr ν q₁ ∧ !PassF.blueprint.fixpointDef pr W”
+    ∃ q₁, !pairDef q₁ n q₂ ∧ ∃ pr, !pairDef pr ν q₁ ∧ !passFPackedDef W pr”
 
 instance passFGraph_defined :
     𝚺₁.Defined (fun v : Fin 7 → V ↦ PassFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) passFGraphDef := .mk
-  fun v ↦ by simp [passFGraphDef, PassF.construction.eval_fixpointDef, PassFGraph]; rfl
+  fun v ↦ by simp [passFGraphDef, passFPacked_defined.iff, PassFGraph]
 instance passFGraph_definable :
-    𝚺₁.Defined (fun v : Fin 7 → V ↦ PassFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) passFGraphDef :=
-  passFGraph_defined
+    𝚺₁.Definable (fun v : Fin 7 → V ↦ PassFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
+  passFGraph_defined.to_definable
 
 /-! ### 2.1b The missing `descCountF` equations and the OUTPUT-side counts -/
 
@@ -2437,7 +2454,7 @@ lemma PassFGraph.case_iff {W ν n r i j y : V} :
         y = fBinSteps W ν 5 n (descCountF W n q) (outCount W ν n q) i j yp yq) ∨
       (∃ p yb, r = ^∀ p ∧ yb ≤ y ∧ PassFGraph W ν (n + 1) p (i + 1) (j + 1) yb ∧ y = fQuantSteps W ν 6 n i j yb) ∨
       (∃ p yb, r = ^∃ p ∧ yb ≤ y ∧ PassFGraph W ν (n + 1) p (i + 1) (j + 1) yb ∧ y = fQuantSteps W ν 7 n i j yb) ) := by
-  unfold PassFGraph
+  unfold PassFGraph PassFPacked
   rw [PassF.construction.case]
   exact PassF.phi_iff W _ ν n r i j y
 
@@ -2481,5 +2498,13 @@ lemma PassFGraph.exs_iff {W ν n p i j y : V} :
   rw [PassFGraph.case_iff]; simp
 
 end finversion
+
+lemma le_fBinSteps_left (W ν c n cq dq i j yp yq : V) : yp ≤ fBinSteps W ν c n cq dq i j yp yq :=
+  le_appendV_left _ _
+lemma le_fBinSteps_right (W ν c n cq dq i j yp yq : V) : yq ≤ fBinSteps W ν c n cq dq i j yp yq :=
+  le_trans (le_appendV_left _ _) (le_appendV_right _ _)
+lemma le_fQuantSteps (W ν c n i j yb : V) : yb ≤ fQuantSteps W ν c n i j yb := le_appendV_left _ _
+
+/-! ### 2.3 Existence, uniqueness, and the function `passF` -/
 
 end ArithS
