@@ -476,4 +476,458 @@ theorem listOK_reidxL {tbl E M Γ L : V} (hP : ProTable tbl) (hok : ListOK (cert
 
 end proTable
 
+/-! ## 1. The canonical layout of a sequent (`DESIGN_fragments.md` §3.2, in this file's frame)
+
+Members `xs = memberList s` (ascending, `k = len xs`). The layout at CHAIN OFFSET `i`:
+
+* the fresh length object `l_s = &i` with `setLenFact &i &(i + k + 1)` and the NUMERIC bound
+  `leFact &i (bnum (setLen s))`;
+* the chain `s_j = &(i + k + 1 + j)` (`s = s_0`), with `insFact &(i+k+1+j) X_j (prev)` (`prev` = `s_{j+1}`,
+  or the literal `𝟎` for the innermost member), `fsetPiFact &(i+k+1+j)` and `memFact X_j &(i+k+1)`;
+* the member objects `X_j = &(mTop i k o_j)` with `o_j = (offVec xs).[j]` (the offsets left by the member
+  blocks: `o_j = mLen x_j + Σ_{j' > j} mShift x_{j'}`), each with its WALK dossier (`DossF`),
+  `piFact 𝟎 X_j` and its numeric length `lenFact (bnum |x_j|) X_j`.
+
+The offsets are Σ₁ functions of `s` and the piece tables alone, so a child fragment recomputes them. -/
+
+section layoutDef
+
+/-- The shifts of the length pass of a member (`lenSteps` at offset `0`). -/
+noncomputable def mLen (Wc T x : V) : V := shiftsV (lenSteps Wc T 0 x 0)
+
+noncomputable def mLenDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y Wc T x. ∃ l, !lenStepsDef l Wc T 0 x 0 ∧ !shiftsVDef y l”
+
+instance mLen_defined : 𝚺₁-Function₃ (mLen : V → V → V → V) via mLenDef := .mk fun v ↦ by
+  simp [mLenDef, mLen, lenSteps_defined.iff, shiftsV_defined.iff, numeral_eq_natCast]
+instance mLen_definable : 𝚺₁-Function₃ (mLen : V → V → V → V) := mLen_defined.to_definable
+
+/-- The shifts of a member's block: its walk and its length pass. -/
+noncomputable def mShift (Ww Wc T x : V) : V := descCountF Ww 0 x + mLen Wc T x
+
+noncomputable def mShiftDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y Ww Wc T x. ∃ c, !descCountFDef c Ww 0 x ∧ ∃ l, !mLenDef l Wc T x ∧ y = c + l”
+
+instance mShift_defined : 𝚺₁-Function₄ (mShift : V → V → V → V → V) via mShiftDef := .mk fun v ↦ by
+  simp [mShiftDef, mShift, descCountF_defined.iff, mLen_defined.iff, numeral_eq_natCast]
+instance mShift_definable : 𝚺₁-Function₄ (mShift : V → V → V → V → V) := mShift_defined.to_definable
+
+namespace TailShift
+
+noncomputable def blueprint : VecRec.Blueprint 3 where
+  nil := .mkSigma “y Ww Wc T. y = 0”
+  adjoin := .mkSigma “y x xs ih Ww Wc T. ∃ m, !mShiftDef m Ww Wc T x ∧ y = m + ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin v x _ ih := mShift (v 0) (v 1) (v 2) x + ih
+  nil_defined := .mk fun v ↦ by simp [blueprint]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint, mShift_defined.iff]
+
+end TailShift
+
+/-- `tailShift v Ww Wc T` — the total block shift of the members in `v` (vector first: the `VecRec` order). -/
+noncomputable def tailShift (v Ww Wc T : V) : V := TailShift.construction.result ![Ww, Wc, T] v
+
+@[simp] lemma tailShift_nil (Ww Wc T : V) : tailShift 0 Ww Wc T = 0 := by simp [tailShift, TailShift.construction]
+@[simp] lemma tailShift_adjoin (x v Ww Wc T : V) :
+    tailShift (x ∷ v) Ww Wc T = mShift Ww Wc T x + tailShift v Ww Wc T := by
+  simp [tailShift, TailShift.construction]
+
+noncomputable def tailShiftDef : 𝚺₁.Semisentence 5 := TailShift.blueprint.resultDef
+
+instance tailShift_defined : 𝚺₁-Function₄ (tailShift : V → V → V → V → V) via tailShiftDef := .mk
+  fun v ↦ by simp [TailShift.construction.eval_resultDef, tailShiftDef]; rfl
+instance tailShift_definable : 𝚺₁-Function₄ (tailShift : V → V → V → V → V) := tailShift_defined.to_definable
+
+namespace OffVec
+
+noncomputable def blueprint : VecRec.Blueprint 3 where
+  nil := .mkSigma “y Ww Wc T. y = 0”
+  adjoin := .mkSigma “y x xs ih Ww Wc T. ∃ l, !mLenDef l Wc T x ∧ ∃ t, !tailShiftDef t xs Ww Wc T ∧
+    ∃ o, o = l + t ∧ !adjoinDef y o ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin v x xs ih := (mLen (v 1) (v 2) x + tailShift xs (v 0) (v 1) (v 2)) ∷ ih
+  nil_defined := .mk fun v ↦ by simp [blueprint]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint, mLen_defined.iff, tailShift_defined.iff]
+
+end OffVec
+
+/-- `offVec v Ww Wc T` — the offset of each member's top after all member blocks
+(`o_j = mLen x_j + tailShift (tail)`; vector first). -/
+noncomputable def offVec (v Ww Wc T : V) : V := OffVec.construction.result ![Ww, Wc, T] v
+
+@[simp] lemma offVec_nil (Ww Wc T : V) : offVec 0 Ww Wc T = 0 := by simp [offVec, OffVec.construction]
+@[simp] lemma offVec_adjoin (x v Ww Wc T : V) :
+    offVec (x ∷ v) Ww Wc T = (mLen Wc T x + tailShift v Ww Wc T) ∷ offVec v Ww Wc T := by
+  simp [offVec, OffVec.construction]
+
+noncomputable def offVecDef : 𝚺₁.Semisentence 5 := OffVec.blueprint.resultDef
+
+instance offVec_defined : 𝚺₁-Function₄ (offVec : V → V → V → V → V) via offVecDef := .mk
+  fun v ↦ by simp [OffVec.construction.eval_resultDef, offVecDef]; rfl
+instance offVec_definable : 𝚺₁-Function₄ (offVec : V → V → V → V → V) := offVec_defined.to_definable
+
+lemma len_offVec (Ww Wc T : V) : ∀ v : V, len (offVec v Ww Wc T) = len v := by
+  intro v
+  induction v using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x v ih => rw [offVec_adjoin, len_adjoin, len_adjoin, ih]
+
+namespace FvarVec
+
+noncomputable def blueprint : VecRec.Blueprint 0 where
+  nil := .mkSigma “y. y = 0”
+  adjoin := .mkSigma “y x xs ih. ∃ z, !qqFvarDef z x ∧ !adjoinDef y z ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin _ x _ ih := (^&x : V) ∷ ih
+  nil_defined := .mk fun v ↦ by simp [blueprint]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint]
+
+end FvarVec
+
+/-- `fvarVec o` — the eigenvariables `^&o_j` of a vector of indices. -/
+noncomputable def fvarVec (o : V) : V := FvarVec.construction.result ![] o
+
+@[simp] lemma fvarVec_nil : fvarVec (0 : V) = 0 := by simp [fvarVec, FvarVec.construction]
+@[simp] lemma fvarVec_adjoin (x o : V) : fvarVec (x ∷ o) = (^&x : V) ∷ fvarVec o := by
+  simp [fvarVec, FvarVec.construction]
+
+noncomputable def fvarVecDef : 𝚺₁.Semisentence 2 := FvarVec.blueprint.resultDef
+
+instance fvarVec_defined : 𝚺₁-Function₁ (fvarVec : V → V) via fvarVecDef := .mk
+  fun v ↦ by simp [FvarVec.construction.eval_resultDef, fvarVecDef]; rfl
+instance fvarVec_definable : 𝚺₁-Function₁ (fvarVec : V → V) := fvarVec_defined.to_definable
+
+lemma len_fvarVec : ∀ o : V, len (fvarVec o) = len o := by
+  intro o
+  induction o using adjoin_ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | nil => simp
+  | adjoin x o ih => rw [fvarVec_adjoin, len_adjoin, len_adjoin, ih]
+
+lemma nth_fvarVec : ∀ o : V, ∀ m < len o, (fvarVec o).[m] = ^&(o.[m]) := by
+  intro o
+  induction o using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil => intro m hm; simp at hm
+  | adjoin x o ih =>
+    intro m hm
+    rw [fvarVec_adjoin]
+    rcases zero_or_succ m with rfl | ⟨m, rfl⟩
+    · simp
+    · rw [nth_adjoin_succ, nth_adjoin_succ]
+      exact ih m (by rw [len_adjoin] at hm; exact lt_of_add_lt_add_right hm)
+
+/-- The index of the top of a member with offset `o` in a layout at chain offset `i` with `k` members. -/
+noncomputable def mTop (i k o : V) : V := i + (2 * k + 1 + o)
+
+/-- The set below prefix `j` of the chain: `s_{j+1}` at `&(i + k + 2 + j)`, or `𝟎` for the innermost member. -/
+noncomputable def prevI (i k j : V) : V := prevAt (i + (2 * k + 1)) (i + (k + 1 + j))
+
+/-- **The canonical layout of the sequent `s` at chain offset `i`.** -/
+def Layout (Ww Wc T Γ s i : V) : Prop :=
+  (∀ j < len (memberList s),
+    DossF Ww Γ 0 (memberList s).[j] (mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j]) ∧
+    neg LAct (piFact (𝟎 : V) (^&(mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j]))) ∈ Γ ∧
+    neg LAct (lenFact (bnum (formulaLen LAct (memberList s).[j]))
+      (^&(mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j]))) ∈ Γ ∧
+    neg LAct (insFact (^&(i + (len (memberList s) + 1 + j)))
+      (^&(mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j])) (prevI i (len (memberList s)) j)) ∈ Γ ∧
+    neg LAct (fsetPiFact (^&(i + (len (memberList s) + 1 + j)))) ∈ Γ ∧
+    neg LAct (memFact (^&(mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j]))
+      (^&(i + (len (memberList s) + 1)))) ∈ Γ) ∧
+  neg LAct (setLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
+  neg LAct (leFact (^&i) (bnum (setLen LAct s))) ∈ Γ
+
+/-! ### 1.1 The one transport lemma -/
+
+lemma termShiftIterV_prevAt (k i : V) : ∀ c : V, termShiftIterV (prevAt k i) c = prevAt (k + c) (i + c) := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih => rw [termShiftIterV_succ, ih, termShift_prevAt, add_assoc, add_assoc]
+
+lemma shiftIterV_leFact {n u : V} (hn : IsSemiterm LAct 0 n) (hu : IsSemiterm LAct 0 u) :
+    ∀ c : V, shiftIterV (leFact n u) c = leFact (termShiftIterV n c) (termShiftIterV u c) := by
+  intro c
+  induction c using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ c ih =>
+    rw [shiftIterV_succ, ih, shift_leFact (isSemiterm_termShiftIterV hn c) (isSemiterm_termShiftIterV hu c),
+      termShiftIterV_succ, termShiftIterV_succ]
+
+lemma termShiftIterV_bnum' (k : V) : ∀ c : V, termShiftIterV (bnum k) c = bnum k := termShiftIterV_bnumTop k
+
+lemma isSemiterm_bnum0 (a : V) : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 a
+
+/-- **The layout survives any cut-admitting list, at the moved offset.** -/
+theorem Layout.transport {Ww Wc T Γ s i S : V} (hS : NoDrop' S) (h : Layout Ww Wc T Γ s i) :
+    Layout Ww Wc T (finalCtx Γ S) s (i + shiftsV S) := by
+  obtain ⟨hmem, hsl, hle⟩ := h
+  set c := shiftsV S with hc
+  set k := len (memberList s) with hk
+  have h0 : IsSemiterm LAct (0 : V) (𝟎 : V) := isSemiterm_qqZero_LAct 0
+  refine ⟨?_, ?_, ?_⟩
+  · intro j hj
+    obtain ⟨hD, hpi, hln, hins, hfs, hm⟩ := hmem j hj
+    have e1 : mTop i k (offVec (memberList s) Ww Wc T).[j] + c = mTop (i + c) k (offVec (memberList s) Ww Wc T).[j] := by
+      unfold mTop; ring
+    have e2 : i + (k + 1 + j) + c = i + c + (k + 1 + j) := by ring
+    have e3 : i + (k + 1) + c = i + c + (k + 1) := by ring
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+    · have := dossF_transport' hS hD; rwa [← hc, e1] at this
+    · have := mem_finalCtx_of_mem' hS hpi
+      rwa [shiftIterV_neg (isFormula_piFact h0 (by simp)), shiftIterV_piFact h0 (by simp), termShiftIterV_zeroV,
+        termShiftIterV_fvar, ← hc, e1] at this
+    · have := mem_finalCtx_of_mem' hS hln
+      rwa [shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
+        shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar, ← hc, e1] at this
+    · have := mem_finalCtx_of_mem' hS hins
+      unfold prevI at this ⊢
+      rw [shiftIterV_neg (isFormula_insFact (by simp) (by simp) (isSemiterm_prevAt _ _)),
+        shiftIterV_insFact (by simp) (by simp) (isSemiterm_prevAt _ _), termShiftIterV_fvar, termShiftIterV_fvar,
+        termShiftIterV_prevAt, ← hc, e1, e2] at this
+      have e4 : i + (2 * k + 1) + c = i + c + (2 * k + 1) := by ring
+      rwa [e4] at this
+    · have := mem_finalCtx_of_mem' hS hfs
+      rwa [shiftIterV_neg (isFormula_fsetPiFact (by simp)), shiftIterV_fsetPiFact (by simp), termShiftIterV_fvar,
+        ← hc, e2] at this
+    · have := mem_finalCtx_of_mem' hS hm
+      rwa [shiftIterV_neg (isFormula_memFact (by simp) (by simp)), shiftIterV_memFact (by simp) (by simp),
+        termShiftIterV_fvar, termShiftIterV_fvar, ← hc, e1, e3] at this
+  · have := mem_finalCtx_of_mem' hS hsl
+    have e3 : i + (k + 1) + c = i + c + (k + 1) := by ring
+    rwa [shiftIterV_neg (isFormula_setLenFact (by simp) (by simp)), shiftIterV_setLenFact (by simp) (by simp),
+      termShiftIterV_fvar, termShiftIterV_fvar, ← hc, e3] at this
+  · have := mem_finalCtx_of_mem' hS hle
+    rwa [shiftIterV_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shiftIterV_leFact (by simp) (isSemiterm_bnum0 _),
+      termShiftIterV_fvar, termShiftIterV_bnum', ← hc] at this
+
+end layoutDef
+
+/-! ## 2. The layout builder `layoutSteps` (member blocks, the chain, the `setLen` fold) -/
+
+section layoutBuild
+
+/-! ### 2.1 Member blocks: the walk of a member, then its (re-indexed) length pass -/
+
+/-- `memberBlock x := describeF Ww 0 x ++ reidxL (lenSteps Wc T 0 x 0)`. -/
+noncomputable def memberBlock (Ww Wc T x : V) : V :=
+  appendV (describeF Ww 0 x) (reidxL (lenSteps Wc T 0 x 0))
+
+noncomputable def memberBlockDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y Ww Wc T x. ∃ d, !describeFDef d Ww 0 x ∧ ∃ l, !lenStepsDef l Wc T 0 x 0 ∧ ∃ r, !reidxLDef r l ∧ !appendVDef y d r”
+
+instance memberBlock_defined : 𝚺₁-Function₄ (memberBlock : V → V → V → V → V) via memberBlockDef := .mk fun v ↦ by
+  simp [memberBlockDef, memberBlock, describeF_defined.iff, lenSteps_defined.iff, reidxL_defined.iff,
+    appendV_defined.iff, numeral_eq_natCast]
+instance memberBlock_definable : 𝚺₁-Function₄ (memberBlock : V → V → V → V → V) := memberBlock_defined.to_definable
+
+namespace MemberBlocks
+
+noncomputable def blueprint : VecRec.Blueprint 3 where
+  nil := .mkSigma “y Ww Wc T. y = 0”
+  adjoin := .mkSigma “y x xs ih Ww Wc T. ∃ b, !memberBlockDef b Ww Wc T x ∧ !appendVDef y b ih”
+
+noncomputable def construction : VecRec.Construction V blueprint where
+  nil _ := 0
+  adjoin v x _ ih := appendV (memberBlock (v 0) (v 1) (v 2) x) ih
+  nil_defined := .mk fun v ↦ by simp [blueprint]
+  adjoin_defined := .mk fun v ↦ by simp [blueprint, memberBlock_defined.iff, appendV_defined.iff]
+
+end MemberBlocks
+
+/-- `memberBlocks v Ww Wc T` — the member blocks of `v`, first member first (vector first). -/
+noncomputable def memberBlocks (v Ww Wc T : V) : V := MemberBlocks.construction.result ![Ww, Wc, T] v
+
+@[simp] lemma memberBlocks_nil (Ww Wc T : V) : memberBlocks 0 Ww Wc T = 0 := by
+  simp [memberBlocks, MemberBlocks.construction]
+@[simp] lemma memberBlocks_adjoin (x v Ww Wc T : V) :
+    memberBlocks (x ∷ v) Ww Wc T = appendV (memberBlock Ww Wc T x) (memberBlocks v Ww Wc T) := by
+  simp [memberBlocks, MemberBlocks.construction]
+
+noncomputable def memberBlocksDef : 𝚺₁.Semisentence 5 := MemberBlocks.blueprint.resultDef
+
+instance memberBlocks_defined : 𝚺₁-Function₄ (memberBlocks : V → V → V → V → V) via memberBlocksDef := .mk
+  fun v ↦ by simp [MemberBlocks.construction.eval_resultDef, memberBlocksDef]; rfl
+instance memberBlocks_definable : 𝚺₁-Function₄ (memberBlocks : V → V → V → V → V) := memberBlocks_defined.to_definable
+
+/-! ### 2.2 The prefix sets of the chain (from the end) -/
+
+namespace PsetAux
+
+noncomputable def blueprint : PR.Blueprint 1 where
+  zero := .mkSigma “y xs. y = 0”
+  succ := .mkSigma “y ih c xs. ∃ t, !nthFromEndDef t xs c ∧ !insertDef y t ih”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v c ih ↦ insert (nthFromEnd (v 0) c) ih
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, nthFromEnd_defined.iff]
+
+end PsetAux
+
+/-- `psetAux xs c` — the set of the last `c` members (`s_{k−c}` of the chain). -/
+noncomputable def psetAux (xs c : V) : V := PsetAux.construction.result ![xs] c
+
+@[simp] lemma psetAux_zero (xs : V) : psetAux xs 0 = 0 := by simp [psetAux, PsetAux.construction]
+lemma psetAux_succ (xs c : V) : psetAux xs (c + 1) = insert (nthFromEnd xs c) (psetAux xs c) := by
+  simp [psetAux, PsetAux.construction]
+
+noncomputable def psetAuxDef : 𝚺₁.Semisentence 3 := PsetAux.blueprint.resultDef |>.rew (Rew.subst ![#0, #2, #1])
+
+instance psetAux_defined : 𝚺₁-Function₂ (psetAux : V → V → V) via psetAuxDef := .mk
+  fun v ↦ by simp [PsetAux.construction.result_defined_iff, psetAuxDef]; rfl
+instance psetAux_definable : 𝚺₁-Function₂ (psetAux : V → V → V) := psetAux_defined.to_definable
+
+/-! ### 2.3 The `setLen` fold: one block per member, innermost first -/
+
+/-- `sum2Fact a b n = leFact (bnum a ^+ bnum b) (bnum n)` as a Σ₁ graph. -/
+noncomputable def sum2FactDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “y a b n. ∃ x, !bnumGraph x a ∧ ∃ u, !bnumGraph u b ∧ ∃ p, !qqAddGraph p x u ∧ ∃ w, !bnumGraph w n ∧ !leFactDef y p w”
+
+instance sum2Fact_defined : 𝚺₁-Function₃ (sum2Fact : V → V → V → V) via sum2FactDef := .mk fun v ↦ by
+  simp [sum2FactDef, sum2Fact, bnum.defined.iff, leFact_defined.iff, numeral_eq_natCast]
+instance sum2Fact_definable : 𝚺₁-Function₃ (sum2Fact : V → V → V → V) := sum2Fact_defined.to_definable
+
+/-- The innermost block (`c = 0`): a length object for `s_{k−1}` (at `&k`), then `setLenSingLe`. The member's
+object is at `&(o + (k + 1) + c + 1)` after the shift. -/
+noncomputable def foldBlock0 (W k c o x : V) : V :=
+  ?[mkStep W 85 ?[^&k], mkStep W 155 ?[^&(o + (k + 1) + c + 1), ^&(k + 1), ^&0, bnum (formulaLen LAct x)]]
+
+/-- A general block (`c ≥ 1`): the length object, `setLenInsertLe`, `leRefl`, `leAddLeAdd`, the closed
+`sum2Fact L' |x| L` (`L' = setLen s_{j+1}`, `L = setLen s_j`), `leTrans`. -/
+noncomputable def foldBlockS (W T k c o x L' L : V) : V :=
+  ?[mkStep W 85 ?[^&k],
+    mkStep W 111 ?[^&(o + (k + 1) + c + 1), ^&(k + 2), ^&(k + 1), ^&0, ^&1, bnum (formulaLen LAct x)],
+    mkStep W 109 ?[bnum (formulaLen LAct x)],
+    mkStep W 108 ?[^&0, ^&1, bnum (formulaLen LAct x), bnum L', bnum (formulaLen LAct x)],
+    sLemma (sum2Fact L' (formulaLen LAct x) L) (sum2Code T L' (formulaLen LAct x) L),
+    mkStep W 110 ?[bnum L, bnum L' ^+ bnum (formulaLen LAct x), ^&0]]
+
+noncomputable def foldBlock0Def : 𝚺₁.Semisentence 6 := .mkSigma
+  “y W k c o x. ∃ zk, !qqFvarDef zk k ∧ ∃ e₁, !adjoinDef e₁ zk 0 ∧ ∃ s₁, !mkStepDef s₁ W 85 e₁ ∧
+    ∃ i₁, i₁ = o + (k + 1) + c + 1 ∧ ∃ zx, !qqFvarDef zx i₁ ∧ ∃ i₂, i₂ = k + 1 ∧ ∃ zs, !qqFvarDef zs i₂ ∧
+    ∃ z0, !qqFvarDef z0 0 ∧ ∃ fl, !(formulaLenGraph LAct) fl x ∧ ∃ bl, !bnumGraph bl fl ∧
+    ∃ v₁, !adjoinDef v₁ bl 0 ∧ ∃ v₂, !adjoinDef v₂ z0 v₁ ∧ ∃ v₃, !adjoinDef v₃ zs v₂ ∧ ∃ e₂, !adjoinDef e₂ zx v₃ ∧
+    ∃ s₂, !mkStepDef s₂ W 155 e₂ ∧ ∃ r₂, !adjoinDef r₂ s₂ 0 ∧ !adjoinDef y s₁ r₂”
+
+instance foldBlock0_defined : 𝚺₁-Function₅ (foldBlock0 : V → V → V → V → V → V) via foldBlock0Def := .mk fun v ↦ by
+  simp [foldBlock0Def, foldBlock0, mkStep_defined.iff, formulaLen.defined.iff, bnum.defined.iff, numeral_eq_natCast]
+instance foldBlock0_definable : 𝚺₁.DefinableFunction₅ (foldBlock0 : V → V → V → V → V → V) := foldBlock0_defined.to_definable
+
+noncomputable def foldBlockSDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y W T k c o x L' L. ∃ zk, !qqFvarDef zk k ∧ ∃ e₁, !adjoinDef e₁ zk 0 ∧ ∃ s₁, !mkStepDef s₁ W 85 e₁ ∧
+    ∃ i₁, i₁ = o + (k + 1) + c + 1 ∧ ∃ zx, !qqFvarDef zx i₁ ∧ ∃ i₂, i₂ = k + 2 ∧ ∃ zs₂, !qqFvarDef zs₂ i₂ ∧
+    ∃ i₃, i₃ = k + 1 ∧ ∃ zs₁, !qqFvarDef zs₁ i₃ ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ z1, !qqFvarDef z1 1 ∧
+    ∃ fl, !(formulaLenGraph LAct) fl x ∧ ∃ bl, !bnumGraph bl fl ∧ ∃ bL', !bnumGraph bL' L' ∧ ∃ bL, !bnumGraph bL L ∧
+    ∃ u₁, !adjoinDef u₁ bl 0 ∧ ∃ u₂, !adjoinDef u₂ z1 u₁ ∧ ∃ u₃, !adjoinDef u₃ z0 u₂ ∧ ∃ u₄, !adjoinDef u₄ zs₁ u₃ ∧
+    ∃ u₅, !adjoinDef u₅ zs₂ u₄ ∧ ∃ e₂, !adjoinDef e₂ zx u₅ ∧ ∃ s₂, !mkStepDef s₂ W 111 e₂ ∧
+    ∃ e₃, !adjoinDef e₃ bl 0 ∧ ∃ s₃, !mkStepDef s₃ W 109 e₃ ∧
+    ∃ w₁, !adjoinDef w₁ bl 0 ∧ ∃ w₂, !adjoinDef w₂ bL' w₁ ∧ ∃ w₃, !adjoinDef w₃ bl w₂ ∧ ∃ w₄, !adjoinDef w₄ z1 w₃ ∧
+    ∃ e₄, !adjoinDef e₄ z0 w₄ ∧ ∃ s₄, !mkStepDef s₄ W 108 e₄ ∧
+    ∃ A, !sum2FactDef A L' fl L ∧ ∃ dA, !sum2CodeDef dA T L' fl L ∧ ∃ q, !pairDef q A dA ∧ ∃ s₅, !pairDef s₅ 7 q ∧
+    ∃ p, !qqAddGraph p bL' bl ∧ ∃ t₁, !adjoinDef t₁ z0 0 ∧ ∃ t₂, !adjoinDef t₂ p t₁ ∧ ∃ e₆, !adjoinDef e₆ bL t₂ ∧
+    ∃ s₆, !mkStepDef s₆ W 110 e₆ ∧
+    ∃ r₆, !adjoinDef r₆ s₆ 0 ∧ ∃ r₅, !adjoinDef r₅ s₅ r₆ ∧ ∃ r₄, !adjoinDef r₄ s₄ r₅ ∧ ∃ r₃, !adjoinDef r₃ s₃ r₄ ∧
+    ∃ r₂, !adjoinDef r₂ s₂ r₃ ∧ !adjoinDef y s₁ r₂”
+
+instance foldBlockS_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ foldBlockS (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) foldBlockSDef := .mk
+  fun v ↦ by
+    simp [foldBlockSDef, foldBlockS, mkStep_defined.iff, formulaLen.defined.iff, bnum.defined.iff,
+      sum2Fact_defined.iff, sum2Code_defined.iff, sLemma, numeral_eq_natCast]
+
+/-- Block `c` of the fold: `x = nthFromEnd xs c` (the member), `o = nthFromEnd os c` (its offset). -/
+noncomputable def foldBlock (W T xs os k c : V) : V :=
+  if c = 0 then foldBlock0 W k c (nthFromEnd os c) (nthFromEnd xs c)
+  else foldBlockS W T k c (nthFromEnd os c) (nthFromEnd xs c) (setLen LAct (psetAux xs c)) (setLen LAct (psetAux xs (c + 1)))
+
+noncomputable def foldBlockDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y W T xs os k c. ∃ o, !nthFromEndDef o os c ∧ ∃ x, !nthFromEndDef x xs c ∧
+    (c = 0 → !foldBlock0Def y W k c o x) ∧
+    (c ≠ 0 → ∃ p', !psetAuxDef p' xs c ∧ ∃ L', !(setLenDef LAct) L' p' ∧ ∃ c1, c1 = c + 1 ∧
+      ∃ p, !psetAuxDef p xs c1 ∧ ∃ L, !(setLenDef LAct) L p ∧ !foldBlockSDef y W T k c o x L' L)”
+
+instance foldBlock_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ foldBlock (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) foldBlockDef := .mk
+  fun v ↦ by
+    simp [foldBlockDef, nthFromEnd_defined.iff, foldBlock0_defined.iff, psetAux_defined.iff, setLen_defined.iff,
+      foldBlockS_defined.iff, numeral_eq_natCast]
+    unfold foldBlock
+    by_cases h : v 6 = 0
+    · simp [h]
+    · simp [h]
+
+namespace LenFoldAux
+
+noncomputable def blueprint : PR.Blueprint 5 where
+  zero := .mkSigma “y W T xs os k. y = 0”
+  succ := .mkSigma “y ih c W T xs os k. ∃ b, !foldBlockDef b W T xs os k c ∧ !appendVDef y ih b”
+
+noncomputable def construction : PR.Construction V blueprint where
+  zero := fun _ ↦ 0
+  succ := fun v c ih ↦ appendV ih (foldBlock (v 0) (v 1) (v 2) (v 3) (v 4) c)
+  zero_defined := .mk fun v ↦ by simp [blueprint]
+  succ_defined := .mk fun v ↦ by simp [blueprint, foldBlock_defined.iff, appendV_defined.iff]
+
+end LenFoldAux
+
+/-- The first `c` blocks of the fold. -/
+noncomputable def lenFoldAux (W T xs os k c : V) : V := LenFoldAux.construction.result ![W, T, xs, os, k] c
+
+@[simp] lemma lenFoldAux_zero (W T xs os k : V) : lenFoldAux W T xs os k 0 = 0 := by
+  simp [lenFoldAux, LenFoldAux.construction]
+lemma lenFoldAux_succ (W T xs os k c : V) :
+    lenFoldAux W T xs os k (c + 1) = appendV (lenFoldAux W T xs os k c) (foldBlock W T xs os k c) := by
+  simp [lenFoldAux, LenFoldAux.construction]
+
+noncomputable def lenFoldAuxDef : 𝚺₁.Semisentence 7 :=
+  LenFoldAux.blueprint.resultDef |>.rew (Rew.subst ![#0, #6, #1, #2, #3, #4, #5])
+
+instance lenFoldAux_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ lenFoldAux (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) lenFoldAuxDef := .mk
+  fun v ↦ by simp [LenFoldAux.construction.result_defined_iff, lenFoldAuxDef]; rfl
+
+/-- **The `setLen` fold** of the whole chain: `k` blocks, innermost first. -/
+noncomputable def lenFold (W T xs os : V) : V := lenFoldAux W T xs os (len xs) (len xs)
+
+noncomputable def lenFoldDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y W T xs os. ∃ k, !lenDef k xs ∧ !lenFoldAuxDef y W T xs os k k”
+
+instance lenFold_defined : 𝚺₁-Function₄ (lenFold : V → V → V → V → V) via lenFoldDef := .mk fun v ↦ by
+  simp [lenFoldDef, lenFold, lenFoldAux_defined.iff]
+instance lenFold_definable : 𝚺₁-Function₄ (lenFold : V → V → V → V → V) := lenFold_defined.to_definable
+
+/-! ### 2.4 The whole builder -/
+
+/-- **`layoutSteps s`**: the member blocks (ascending), the chain over the member objects, the `setLen` fold.
+Pieces: `Ww` (walk), `Wl` (layout), `Wc` (certification), `W` (prologue); `T` the `NumSteps` table. -/
+noncomputable def layoutSteps (Ww Wl Wc W T s : V) : V :=
+  appendV (memberBlocks (memberList s) Ww Wc T)
+    (appendV (chainSteps Wl (fvarVec (offVec (memberList s) Ww Wc T)))
+      (lenFold W T (memberList s) (offVec (memberList s) Ww Wc T)))
+
+noncomputable def layoutStepsDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y Ww Wl Wc W T s. ∃ xs, !memberListDef xs s ∧ ∃ M, !memberBlocksDef M xs Ww Wc T ∧
+    ∃ os, !offVecDef os xs Ww Wc T ∧ ∃ ov, !fvarVecDef ov os ∧ ∃ C, !chainStepsDef C Wl ov ∧
+    ∃ F, !lenFoldDef F W T xs os ∧ ∃ r, !appendVDef r C F ∧ !appendVDef y M r”
+
+instance layoutSteps_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ layoutSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) layoutStepsDef := .mk
+  fun v ↦ by
+    simp [layoutStepsDef, layoutSteps, memberList_defined.iff, memberBlocks_defined.iff, offVec_defined.iff,
+      fvarVec_defined.iff, chainSteps_defined.iff, lenFold_defined.iff, appendV_defined.iff]
+
+end layoutBuild
+
 end ArithS
