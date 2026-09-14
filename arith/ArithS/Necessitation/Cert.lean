@@ -2,6 +2,7 @@ import ArithS.Necessitation.Describe
 import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.RowInstB
 import ArithS.Necessitation.CertRows
+import ArithS.Necessitation.Layout
 
 /-!
 # ArithS.Necessitation.Cert — certified re-description (`neg`/`shift`/`eq`) and length steps
@@ -3238,5 +3239,123 @@ theorem len_certNeg_le {W n r i j : V} (hr : IsSemiformula LAct n r) :
   len_passFGraph_le W (Or.inl rfl) hr i j _ (certNeg_graph hr)
 
 end passLen
+
+/-! ## Part 3 — the bridge to `Layout.lean`'s identification template
+
+`Layout.lean` (`:53`) records the bridge from the walk's final context to `DossierAt` as NOT in
+that file. Its first half — that the two recursions count the SAME number of eigenvariables,
+`eqCount r = descCountF W n r` — is proved here: the identification template `eqFT`
+(`Layout.lean:4560ff`) and the walk `descFw` (`Describe.lean:3439ff`) have the same node arities
+(`bvarT/fvarT/constT` emit `1`, `binT` `π₁ yp + π₁ yq + 1`, `quantT`/`atomT`/`funcT` `π₁ + 1`,
+`nilT` `0`, `adjT` `π₁ ih + π₁ p + 1` — exactly `descCountT`/`descCountF`'s arities).
+-/
+
+section countBridge
+
+lemma pi1_bvarT (z : V) : π₁ (bvarT z) = 1 := by rw [bvarT, pi₁_pair]
+lemma pi1_fvarT (x : V) : π₁ (fvarT x) = 1 := by rw [fvarT, pi₁_pair]
+lemma pi1_funcT (k f d : V) : π₁ (funcT k f d) = π₁ d + 1 := by rw [funcT, pi₁_pair]
+lemma pi1_nilT (w : V) : π₁ (nilT w) = 0 := by rw [nilT, pi₁_pair]
+lemma pi1_adjT (j p ih : V) : π₁ (adjT j p ih) = π₁ ih + π₁ p + 1 := by rw [adjT, pi₁_pair]
+lemma pi1_constT (kind row : V) : π₁ (constT kind row) = 1 := by rw [constT, pi₁_pair]
+lemma pi1_binT (kind row yp yq : V) : π₁ (binT kind row yp yq) = π₁ yp + π₁ yq + 1 := by
+  rw [binT, pi₁_pair]
+lemma pi1_quantT (kind row yp : V) : π₁ (quantT kind row yp) = π₁ yp + 1 := by rw [quantT, pi₁_pair]
+lemma pi1_atomT (kind row k R d : V) : π₁ (atomT kind row k R d) = π₁ d + 1 := by rw [atomT, pi₁_pair]
+
+/-- **The two term recursions have the same count.** -/
+lemma pi1_eqT_eq_descCountT (W n : V) : ∀ t, IsSemiterm LAct n t → π₁ (eqT t) = descCountT W n t := by
+  refine IsSemiterm.induction 𝚷 ?_ ?_ ?_ ?_
+  · definability
+  · intro z _; rw [eqT_bvar, pi1_bvarT, descCountT_bvar]
+  · intro a; rw [eqT_fvar, pi1_fvarT, descCountT_fvar]
+  · intro k f v hkf hv ih
+    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descVecAux W n (descTVec W n k v) m) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descVecAux_zero, nilNode, pi₁_pair]
+      | succ m ihm =>
+        intro hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have h1 : nthFromEnd (eqTVec k v) m = eqT v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_eqTVec hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_eqTVec hv.isUTerm hlt]
+        have h2 : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec W n hv.isUTerm hlt]
+        rw [eqVecAux_succ, h1, pi1_adjT, descVecAux_succ, h2, adjNode, pi₁_pair,
+          ihm (le_trans le_self_add hm), ih _ hlt]
+        rfl
+    rw [eqT_func hkf hv.isUTerm, pi1_funcT, descCountT_func W n hkf hv.isUTerm, key k le_rfl]
+
+/-- **The bridge: the identification template and the walk introduce the same number of
+eigenvariables** (`Layout.lean:53`'s missing half). -/
+theorem eqCount_eq_descCountF (W : V) : ∀ {n r : V}, IsSemiformula LAct n r →
+    eqCount r = descCountF W n r := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction (P := fun n r ↦ eqCount r = descCountF W n r)
+  · definability
+  · intro n k R v hkR hv
+    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descVecAux W n (descTVec W n k v) m) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descVecAux_zero, nilNode, pi₁_pair]
+      | succ m ihm =>
+        intro hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have h1 : nthFromEnd (eqTVec k v) m = eqT v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_eqTVec hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_eqTVec hv.isUTerm hlt]
+        have h2 : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec W n hv.isUTerm hlt]
+        rw [eqVecAux_succ, h1, pi1_adjT, descVecAux_succ, h2, adjNode, pi₁_pair,
+          ihm (le_trans le_self_add hm), pi1_eqT_eq_descCountT W n _ (hv.nth hlt)]
+        rfl
+    rw [eqCount, eqFT_rel hkR hv.isUTerm, pi1_atomT, descCountF_rel W n hkR hv, key k le_rfl]
+  · intro n k R v hkR hv
+    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descVecAux W n (descTVec W n k v) m) := by
+      intro m
+      induction m using ISigma1.pi1_succ_induction with
+      | hP => definability
+      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descVecAux_zero, nilNode, pi₁_pair]
+      | succ m ihm =>
+        intro hm
+        have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
+        have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+        have h1 : nthFromEnd (eqTVec k v) m = eqT v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_eqTVec hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_eqTVec hv.isUTerm hlt]
+        have h2 : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
+          rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
+            nth_descTVec W n hv.isUTerm hlt]
+        rw [eqVecAux_succ, h1, pi1_adjT, descVecAux_succ, h2, adjNode, pi₁_pair,
+          ihm (le_trans le_self_add hm), pi1_eqT_eq_descCountT W n _ (hv.nth hlt)]
+        rfl
+    rw [eqCount, eqFT_nrel hkR hv.isUTerm, pi1_atomT, descCountF_nrel W n hkR hv, key k le_rfl]
+  · intro n; rw [eqCount, eqFT_verum, pi1_constT, descCountF_verum]
+  · intro n; rw [eqCount, eqFT_falsum, pi1_constT, descCountF_falsum]
+  · intro n p q hp hq ihp ihq
+    rw [eqCount, eqFT_and hp.isUFormula hq.isUFormula, pi1_binT, descCountF_and W n hp hq]
+    rw [eqCount] at ihp ihq
+    rw [ihp, ihq]
+  · intro n p q hp hq ihp ihq
+    rw [eqCount, eqFT_or hp.isUFormula hq.isUFormula, pi1_binT, descCountF_or W n hp hq]
+    rw [eqCount] at ihp ihq
+    rw [ihp, ihq]
+  · intro n p hp ih
+    rw [eqCount, eqFT_all hp.isUFormula, pi1_quantT, descCountF_all W n hp]
+    rw [eqCount] at ih
+    rw [ih]
+  · intro n p hp ih
+    rw [eqCount, eqFT_exs hp.isUFormula, pi1_quantT, descCountF_exs W n hp]
+    rw [eqCount] at ih
+    rw [ih]
+
+end countBridge
 
 end ArithS
