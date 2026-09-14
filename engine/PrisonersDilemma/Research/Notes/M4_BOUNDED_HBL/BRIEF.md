@@ -898,3 +898,35 @@ final context); §6 the assembly `top_main` (from `Proof ρ (instB ⌜χ⌝ k)`,
 `≤ topBound`); §7 the graded polynomial-bound toolkit `PB/PBCtx` and `topD_pb` (the closing block's
 four `sLemma` derivations are CUBIC in `gBudget k + 1`, using `‖gBudget k + 1‖ ≤ 3‖‖k‖‖ + 2` via
 `Exp.exp`). PENDING: the final `boundedInnerNec_three_of_kit`, wiring, census.
+
+**§11 status — `Cert` Part 5 DONE: `lenSteps` (447ed64 … the Part-5.9 commit; `Cert.lean` ~7300 lines,
+`CertRows` 4606, census +16, all standard).** The exact-length producer of §3.6 "lengths": the term/vector
+fixpoint `LenT` on `⟪tg, n, x, i, y⟫` (`Blueprint 2`: the pieces `W` and the `NumSteps` table `T`) with
+`lenT`/`lenV`, and the formula fixpoint `LenF` on `⟪n, r, i, y⟫` with **`lenSteps W T n r i`** (Σ₁-definable,
+eight equations). NOT shift-free — the walk leaves NO length fact, so every node first INTRODUCES its length
+object (`formulaLenTotal`/`termLenTotal`, tag 2) and every vector entry its `adjoinTotal`; the offsets move
+(`shiftsV + 1 ≤ 2|r|`, sub-call offsets `i + … + shiftsV yq` INSIDE the blueprint; existence `W`-free through
+`shiftsV_le_len` + the `W`-free length bounds `len ≤ 14|r|`). Per node: the row at the children's NUMERAL
+lengths, then the closed arithmetic by `sLemma`s (`addFact`, `succFact`, `cTEqFact (z+1)` for leaves —
+`cTV (z+1) = cTV z + 1` syntactically) with the NEW rows **`congSucc` (cIdx 184)** and `eqTrans`, then
+`congLenNum`/`congTLenNum` moves the numeral into the graph position; atoms build the length VECTOR by
+`adjoinTotal` + `termLenVecAdj` and the sum by the NEW intro row **`listSumAdjI` (185)** at numeral sums —
+the table's `listSumAdj` has all three `listSumDef` facts as ANTECEDENTS, so no sum fact was derivable for a
+non-empty vector (a real gap in the row library, found by the design); **`congAdd` (183)** appended as
+requested (unused by `lenSteps`: at the closed `𝟏` it would need the closed-constant witness).
+**`lenSteps_ok`**: `ListOK tbl E 8 Γ ∧ NoDrop' ∧ shiftsV + 1 ≤ 2|r| ∧ len ≤ 14|r| ∧ neg (lenFact (bnum |r|)
+(^&(i + shiftsV (lenSteps …)))) ∈ finalCtx` under `2n + 13|r| + 8 ≤ E`, `i + 5|r| + 2 ≤ E` (the numeral
+sums `bnum a + bnum b + 1` cost `12a + 5` in term length). **`costSum_lenSteps_le`**: `Frag1`'s
+`costSum_le_of_sizeOK` at `14|r|` steps, `Q = B'·cTE |r|`, `D = (|r|+1)(‖|r|‖+2)·nodeCost N' B' (cTE |r|)`
+— `O(|r|·‖|r|‖³)` per §0 item 2. NOTE for consumers: the root fact sits at `&(i + shiftsV …)`, not `&i`.
+`certSubst`/`certFree`: NOT started (budget); §4.8 of `Cert.lean` records what Part 5 provides towards them.
+TRAPS (new): a 6-ary graph wrapper (`LenTGraph W T n t i y`) defeats `definability` — aesop's `comp` rules
+stop at arity 5, so it unfolds the wrapper INTO the fixpoint (`limSeq`, whnf timeout) instead of using the
+instance; `simp only [LenTGraph, LenVGraph]` (to the 3-ary packed form) before `definability` fixes every
+motive — `PassTGraph` (7-ary) only worked because its packed form is 2-ary and delta-unifies; heartbeats are
+per DECLARATION — a lemma with four `definability` calls needs `set_option maxHeartbeats` even when each
+call passes alone; `set … with h` contexts: discharge memberships by `rw [h]; exact mem_insert_self'` (`exact`
+does not see through the let); `rw … at h₁ h₂` fails if a pattern is absent in one — split; `Σ` is not an
+identifier character (`hΣ` → `hSum`); dot-lemmas named `LenPre.bnum`/`.vRef` shadow the globals inside
+later `LenPre.*` statements — never name an accessor after a global; `cok_` witness-name is the ROW's
+binder (`wp` for `formulaLenTotal`), not the consumer's.

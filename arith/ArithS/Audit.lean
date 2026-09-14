@@ -799,4 +799,28 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms descCountF_certPieces
 #print axioms descCountF_neg
 
+-- U10 (2026-09-14, Cert Part 5): the exact-length producer `lenSteps` (§3.6 "lengths"). The term/vector
+-- fixpoint `LenT` (`lenT`/`lenV`) and the formula fixpoint `LenF` (`lenSteps W T n r i`, `T` the NumSteps
+-- table for the closed `succFact/addFact/cTEqFact` cuts), NOT shift-free (one `formulaLenTotal`/
+-- `termLenTotal` per node, one `adjoinTotal` per vector entry; `shiftsV + 1 ≤ 2|r|`, `len ≤ 14|r|`),
+-- `lenSteps_ok` (`ListOK` at cap 8, `NoDrop'`, `lenFact (bnum |r|) &(i + shifts)` in the final context)
+-- and `costSum_lenSteps_le` (Frag1's size discipline at `14|r|` steps). Three rows APPENDED to the
+-- certification table: `congAdd` (183), `congSucc` (184), `listSumAdjI` (185).
+#print axioms lib_congAdd
+#print axioms lib_congSucc
+#print axioms lib_listSumAdjI
+#print axioms cok_congSucc
+#print axioms cok_listSumAdjI
+#print axioms lenT_defined
+#print axioms lenV_defined
+#print axioms lenSteps_defined
+#print axioms lenSteps_and
+#print axioms lenSteps_struct
+#print axioms lenTGraph_ok
+#print axioms lenVGraph_ok_aux
+#print axioms lenFGraph_ok
+#print axioms lenSteps_ok
+#print axioms sizeOK_lenSteps
+#print axioms costSum_lenSteps_le
+
 end ArithS
