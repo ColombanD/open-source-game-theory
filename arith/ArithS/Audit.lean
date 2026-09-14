@@ -36,6 +36,7 @@ import ArithS.Necessitation.Describe
 import ArithS.Necessitation.Layout
 import ArithS.Necessitation.Members
 import ArithS.Necessitation.NumSteps
+import ArithS.Necessitation.NumLength
 import ArithS.Necessitation.Cert
 import ArithS.Necessitation.Dossier
 import ArithS.Necessitation.Frag1
@@ -750,5 +751,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dossierAt_of_walk_transport
 #print axioms dossierAt_of_dossF_transport
 #print axioms dossierAtT_of_walk
+
+-- U10 (Necessitation/NumLength, 2026-09-14): N5 — the closed length fact `bnum ‖k‖ = ‖bnum k‖`
+-- (`lengthEqFact k := lengthFact (bnum ‖k‖) (bnum k)`) as a DERIVATION CODE: a `Fixpoint` bit
+-- recursion over its own four-row table (`LenTableOK`: the Frag rows `lengthZero`/`lengthOne` and the
+-- two COMBINED bit rows carrying the successor of the length numeral, cut in from `succCode`) plus the
+-- numeral table (`ltCode` for `0 < x`); `dlen ≤ (‖k‖ + 1) · nodeCap`, quadratic in `‖k‖`; `sLemma`
+-- packaging. A leaf file — `NumTableOK` and every existing row index are byte-stable.
+#print axioms exists_lenTable
+#print axioms lenGraph_exists
+#print axioms lenGraph_unique
+#print axioms lengthEqCode_proof
+#print axioms dlen_lengthEqCode_le
+#print axioms lemmaOK_lengthEq
+#print axioms stepCost_lemma_lengthEq
 
 end ArithS

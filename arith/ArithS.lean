@@ -58,6 +58,7 @@ import ArithS.Necessitation.Describe
 import ArithS.Necessitation.Layout
 import ArithS.Necessitation.Members
 import ArithS.Necessitation.NumSteps
+import ArithS.Necessitation.NumLength
 import ArithS.Necessitation.Cert
 import ArithS.Necessitation.Dossier
 import ArithS.Necessitation.Frag1
