@@ -1587,4 +1587,134 @@ lemma length_four_mul (G : V) (hG : 0 < G) : ‖4 * G‖ = ‖G‖ + 2 := by
 
 end poly
 
+/-! ### The `sLemma` derivations of the closing block are cubic (`topD`) -/
+
+lemma PB.one' {G u : V} : PB G u 1 (1 : V) 0 0 := by simp [PB]
+
+/-- Numeral literals at degree `(0, 0)`. -/
+lemma PB.two {G u : V} : PB G u 2 (2 : V) 0 0 := by simp [PB]
+lemma PB.three {G u : V} : PB G u 3 (3 : V) 0 0 := by simp [PB]
+lemma PB.seven {G u : V} : PB G u 7 (7 : V) 0 0 := by simp [PB]
+
+section topDpb
+
+variable {G u : V} (hc : PBCtx G u)
+include hc
+
+lemma PB.two_le_u : PB G u 2 (2 : V) 0 1 := by
+  refine PB.of_le ?_ (PB.two.mul (PB.u_ hc))
+  simp [hc.hu]
+
+/-- `nodeCost N B E' = N + 800·B·E'`. -/
+lemma nodeCost_pb {cN cB cE e f : ℕ} {N B E' : V} (hN : PB G u cN N 0 0) (hB : PB G u cB B 0 0) (hE : PB G u cE E' e f) :
+    PB G u (cN + 800 * (cB * cE)) (nodeCost N B E') e f := by
+  unfold nodeCost
+  refine (hN.mono hc (Nat.zero_le _) (Nat.zero_le _)).add ?_
+  have := (hB.mul hE).smul 800
+  simpa using this
+
+/-- `12‖z‖ + 3` from a bound on `‖z‖`. -/
+lemma twelveLen_pb {cz e f : ℕ} {z : V} (hz : PB G u cz ‖z‖ e f) : PB G u (12 * cz + 3) (12 * ‖z‖ + 3) e f :=
+  (hz.smul 12).add (PB.three.mono hc (Nat.zero_le _) (Nat.zero_le _))
+
+/-- `nodeCap N B N' B' z` is quadratic in `‖z‖`. -/
+lemma nodeCap_pb {cN cB cN' cB' cz : ℕ} {N B N' B' z : V} (hN : PB G u cN N 0 0) (hB : PB G u cB B 0 0)
+    (hN' : PB G u cN' N' 0 0) (hB' : PB G u cB' B' 0 0) (hz : PB G u cz ‖z‖ 0 1) :
+    PB G u ((cN' + 800 * (cB' * (12 * cz + 3)) + (2 * cz + 7) * (cN + 800 * (cB * (12 * cz + 3)))) +
+      (cz + 1) * (cN + 800 * (cB * (12 * cz + 3)))) (nodeCap N B N' B' z) 0 2 := by
+  unfold nodeCap ltCap
+  have h12 := twelveLen_pb hc hz
+  have hnc := nodeCost_pb hc hN hB h12
+  have hnc' := nodeCost_pb hc hN' hB' h12
+  have hz1 : PB G u (cz + 1) (‖z‖ + 1) 0 1 := hz.add (PB.one'.mono hc (Nat.zero_le _) (Nat.zero_le _))
+  have h27 : PB G u (2 * cz + 7) (2 * ‖z‖ + 7) 0 1 := (hz.smul 2).add (PB.seven.mono hc (Nat.zero_le _) (Nat.zero_le _))
+  exact ((hnc'.mono hc (Nat.zero_le _) (by norm_num)).add (h27.mul hnc)).add (hz1.mul hnc)
+
+/-- `mulNodeCap N B N' B' s` is cubic in `‖s‖`. -/
+lemma mulNodeCap_pb {cN cB cN' cB' cs e f : ℕ} {N B N' B' s : V} (hN : PB G u cN N 0 0) (hB : PB G u cB B 0 0)
+    (hN' : PB G u cN' N' 0 0) (hB' : PB G u cB' B' 0 0) (hs : PB G u cs ‖s‖ e f) :
+    PB G u ((cN' + 800 * (cB' * (12 * cs + 3))) + (cs + 1) * (cs + 2) * (cN + 800 * (cB * (12 * cs + 3))))
+      (mulNodeCap N B N' B' s) (e + e + e) (f + f + f) := by
+  unfold mulNodeCap
+  have h12 := twelveLen_pb hc hs
+  have hnc := nodeCost_pb hc hN hB h12
+  have hnc' := nodeCost_pb hc hN' hB' h12
+  have hs1 : PB G u (cs + 1) (‖s‖ + 1) e f := hs.add (PB.one'.mono hc (Nat.zero_le _) (Nat.zero_le _))
+  have hs2 : PB G u (cs + 2) (‖s‖ + 2) e f := hs.add (PB.two.mono hc (Nat.zero_le _) (Nat.zero_le _))
+  exact (hnc'.mono hc (by omega) (by omega)).add ((hs1.mul hs2).mul hnc)
+
+end topDpb
+
+/-- The constant of `topD_pb`, read off the graded derivation (the `PB` combinators compute it; a
+metavariable cannot be assigned through the `∃ cD` lambda, so it is written out). -/
+def topDc (N' B' N₂ B₂ N₃ B₃ : ℕ) : ℕ :=
+  8 * (1 * (N₂ + 800 * (B₂ * (12 * 1 + 3)) + (2 * 1 + 7) * (N' + 800 * (B' * (12 * 1 + 3))) +
+      (1 + 1) * (N' + 800 * (B' * (12 * 1 + 3))))) +
+    8 * (8 * ((1 + 1) * (N₃ + 800 * (B₃ * (12 * 3 + 3)) + (3 + 1) * (3 + 2) * (N' + 800 * (B' * (12 * 3 + 3)))))) +
+    8 * ((1 + 1) * (N₃ + 800 * (B₃ * (12 * 7 + 3)) + (7 + 1) * (7 + 2) * (N' + 800 * (B' * (12 * 7 + 3))))) +
+    8 * (6 * 7 * (N' + 800 * (B' * (12 * 5 + 3))) + (N' + 800 * (B' * (12 * 5 + 3))))
+
+/-- **`topD` is cubic**: `topD ≤ topDc · (gBudget k + 1)^3`, the constant a function of the six table
+constants only. -/
+theorem topD_pb (N' B' N₂ B₂ N₃ B₃ : ℕ) (k d : V) (hd : d ≤ gBudget k) :
+    PB (gBudget k + 1) (‖k‖ + 1) (topDc N' B' N₂ B₂ N₃ B₃) (topD (N' : V) B' N₂ B₂ N₃ B₃ k d) 3 0 := by
+  unfold topDc
+  have hc := pbCtx_gBudget k
+  set G := gBudget k + 1 with hG
+  set u := ‖k‖ + 1 with hu
+  have hN' : PB G u N' (N' : V) 0 0 := PB.const _
+  have hB' : PB G u B' (B' : V) 0 0 := PB.const _
+  have hN₂ : PB G u N₂ (N₂ : V) 0 0 := PB.const _
+  have hB₂ : PB G u B₂ (B₂ : V) 0 0 := PB.const _
+  have hN₃ : PB G u N₃ (N₃ : V) 0 0 := PB.const _
+  have hB₃ : PB G u B₃ (B₃ : V) 0 0 := PB.const _
+  -- the atoms
+  have hlk : PB G u 1 ‖k‖ 0 1 := (PB.u_ hc).of_le le_self_add
+  have hllk : PB G u 1 ‖‖k‖‖ 0 1 := hlk.of_le (length_le _)
+  have hu1 : PB G u 1 (‖k‖ + 1) 0 1 := PB.u_ hc
+  have hlg : PB G u 5 ‖gBudget k‖ 0 1 := by
+    refine PB.of_le (le_trans (length_monotone le_self_add) (length_gBudget_succ_le k)) ?_
+    have := (hllk.smul 3).add (PB.two_le_u hc)
+    simpa using this
+  have hld : PB G u 5 ‖d‖ 0 1 := hlg.of_le (length_monotone hd)
+  -- `s₁ = ‖k‖·‖k‖ + ‖k‖ + ‖k‖`
+  have hs₁ : PB G u 3 ‖‖k‖ * ‖k‖ + ‖k‖ + ‖k‖‖ 0 2 := by
+    refine PB.of_le (length_le _) ?_
+    have := ((hlk.mul hlk).add (hlk.mono hc le_rfl (by norm_num))).add (hlk.mono hc le_rfl (by norm_num))
+    simpa using this
+  -- `s₂ = ‖k‖³ + ‖k‖² + ‖k‖ ≤ 4G`, so `‖s₂‖ ≤ ‖G‖ + 2 ≤ 3‖‖k‖‖ + 4`
+  have hs₂ : PB G u 7 ‖‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ + ‖k‖‖ 0 1 := by
+    have hle : ‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ + ‖k‖ ≤ 4 * G := by
+      calc ‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ + ‖k‖ ≤ ‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ * ‖k‖ :=
+            add_le_add (add_le_add le_rfl (sq_le_cube _)) (le_cube _)
+        _ ≤ 4 * G := by rw [hG]; unfold gBudget; exact le_iff_exists_add.mpr ⟨‖k‖ * ‖k‖ * ‖k‖ + 4, by ring⟩
+    have hG0 : 0 < G := lt_of_lt_of_le _root_.zero_lt_one hc.hG
+    have h1 : ‖‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ + ‖k‖‖ ≤ 3 * ‖‖k‖‖ + 2 + 2 := by
+      refine le_trans (length_monotone hle) ?_
+      rw [length_four_mul G hG0, hG]
+      exact add_le_add (length_gBudget_succ_le k) le_rfl
+    refine PB.of_le h1 ?_
+    have := ((hllk.smul 3).add (PB.two_le_u hc)).add (PB.two_le_u hc)
+    simpa using this
+  -- the four bounds
+  have hLen := PB.reduce hc ((hu1.mul (nodeCap_pb hc hN' hB' hN₂ hB₂ hlk)).mono hc (e' := 0) (f' := 3) le_rfl (by norm_num))
+  have hMul₁ :=
+    PB.uG hc ((PB.reduce hc (PB.reduce hc (((hllk.add (PB.one'.mono hc le_rfl (by norm_num))).mul
+      (mulNodeCap_pb hc hN' hB' hN₃ hB₃ hs₁)).mono hc (e' := 0) (f' := 7) le_rfl (by norm_num)))).mono hc
+      (e' := 2) (f' := 1) le_rfl (by norm_num))
+  have hMul₂ :=
+    PB.uG hc ((PB.reduce hc (((hllk.add (PB.one'.mono hc le_rfl (by norm_num))).mul
+      (mulNodeCap_pb hc hN' hB' hN₃ hB₃ hs₂)).mono hc (e' := 0) (f' := 4) le_rfl (by norm_num))).mono hc
+      (e' := 1) (f' := 1) le_rfl (by norm_num))
+  have hnc := nodeCost_pb hc hN' hB' (twelveLen_pb hc hlg)
+  have hd1 : PB G u 6 (‖d‖ + 1) 0 1 := hld.add (PB.one'.mono hc le_rfl (by norm_num))
+  have hg2 : PB G u 7 (‖gBudget k‖ + 2) 0 1 := hlg.add (PB.two.mono hc le_rfl (by norm_num))
+  have hLe := PB.reduce hc ((((hd1.mul hg2).mul hnc).add (hnc.mono hc (e' := 0) (f' := 3) le_rfl (by norm_num))).mono hc
+    (e' := 0) (f' := 3) le_rfl (by norm_num))
+  unfold topD lengthEqBound mulEqBound
+  exact (((hLen.mono hc (e' := 3) (f' := 0) (by norm_num) le_rfl).add
+    (hMul₁.mono hc (e' := 3) (f' := 0) (by norm_num) le_rfl)).add
+    (hMul₂.mono hc (e' := 3) (f' := 0) (by norm_num) le_rfl)).add
+    (hLe.mono hc (e' := 3) (f' := 0) (by norm_num) le_rfl)
+
 end ArithS
