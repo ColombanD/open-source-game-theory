@@ -171,3 +171,16 @@ VerifyGraph → verifySteps_ok → top. Walk (Describe) in progress (wip df3ffe3
 **2026-09-14: Layout wip Parts 2–3 (copySteps, chainSteps; eqSteps pending), Cert wip Part 0 + CertRows (producers pending); both resumed 09:01 after the 02:10 kill. Rate-limit resets so far: 04:10, 16:20, 15:10, 20:50, 02:10.**
 **Layout DONE 0a076a4 (copySteps/chainSteps/eqSteps; layout l_s=&0,s=&1,s_i=&(i+1); bridges dossFacts↔walk and eqCount=descCountF still to prove). In flight: Cert (producers), Frag1 (axL/verum/and/or/wk/cut). Then Frag2 (all/exs/shift/axm) → VerifyGraph → top.**
 **PAUSED 2026-09-14 10:40 (user switching to Opus / low Fable credits): agents stopped; Cert/Frag1/Frag1Rows committed UNVERIFIED wip; HANDOVER §8 rewritten with the resume procedure and remaining ladder; branch -u10 never pushed.**
+**2026-09-14 (Opus 5 session, stopped cleanly):** takeover triage recovered all three unverified
+files (Frag1Rows green; Frag1's 2 errors = `norm_num` cannot do V-arithmetic with a cast natural;
+Cert's 30-min HANG = blanket `simp` over a five-disjunct Fixpoint blueprint in `passGraph_defined`,
+fixed by targeted `simp only` + `rw [eval_fixpointDef]`, 44 s — THE HOUSE PATTERN for every
+fixpoint). LANDED: Frag2 (ALL TEN per-tag fragments now exist), Cert's term+formula certification
+passes (passT/passV/passF, certNeg/certShift, eqCount bridge), tsvAdjCert into the table at M=9,
+Verify (VerifyGraph + StrongFinite + ten inversion lemmas + verifyGraph_exists). Build 3247 jobs,
+census 451, all standard. HONEST WEAKENING (Verify §3.6): verifyGraph_unique is FALSE as the clause
+is written (prologue left existential) — the fix is to replace `∃ pro ≤ L` by the Σ₁ calls that
+compute it; everything above survives. DESIGN FINDING: the vector walk emits `tvPiFact`, not
+`utvPiFact` — a bridge row is needed before certSubst. LESSONS: verify a reported blocker against
+the tree (2 of 2 dissolved); sentinel-test a suspiciously fast green on generated files; only
+exit 124 + empty log is a stall; never end an agent turn while its own check runs.
