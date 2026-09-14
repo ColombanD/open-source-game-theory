@@ -765,4 +765,36 @@ instance : construction.StrongFinite V where
 
 end Verify
 
+/-! ### 3.2 `VerifyGraph` and its definability -/
+
+/-- **The verification graph**: `VerifyGraph W tblN ρ L` — the derivation code `ρ` is verified by
+the step list `L` (`DESIGN_fragments.md` §6.1). -/
+def VerifyGraph (W tblN ρ L : V) : Prop := Verify.construction.Fixpoint ![W, tblN] ⟪ρ, L⟫
+
+noncomputable def verifyGraphDef : 𝚺₁.Semisentence 4 := .mkSigma
+  “W tblN ρ L. ∃ pr, !pairDef pr ρ L ∧ !Verify.blueprint.fixpointDef pr W tblN”
+
+-- TRAP (the `Cert.lean:1679` lesson, applied): a blanket `simp [verifyGraphDef, eval_fixpointDef]`
+-- over the TEN-disjunct blueprint would unfold every clause. Normalize the substitution first,
+-- then rewrite with `eval_fixpointDef`.
+instance verifyGraph_defined : 𝚺₁-Relation₄ (VerifyGraph : V → V → V → V → Prop) via verifyGraphDef := .mk
+  fun v ↦ by
+    simp only [verifyGraphDef, HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_ex,
+      LogicalConnective.HomClass.map_and, Semiformula.eval_substs, Matrix.comp_vecCons',
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
+      Matrix.tail_cons, Matrix.cons_val_three, Matrix.constant_eq_singleton,
+      Verify.construction.eval_fixpointDef, pair_defined.iff, VerifyGraph,
+      Function.comp_apply, Matrix.cons_val_succ, Matrix.cons_val_fin_one, Semiterm.val_bvar]
+    simp only [Matrix.vecHead, Matrix.vecTail, Function.comp_apply, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.head_cons, Fin.succ_zero_eq_one, Matrix.cons_val_succ]
+    constructor
+    · rintro ⟨pr, hpr, h⟩
+      have : pr = ⟪v 2, v 3⟫ := by simpa using hpr
+      rw [this] at h; exact h
+    · intro h; exact ⟨⟪v 2, v 3⟫, by simp, h⟩
+
+instance verifyGraph_definable : 𝚺₁-Relation₄ (VerifyGraph : V → V → V → V → Prop) :=
+  verifyGraph_defined.to_definable
+
+
 end ArithS
