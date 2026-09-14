@@ -871,3 +871,30 @@ first; `rw [a, b] at h₁ h₂` fails if `b` has no occurrence in one of them; `
 character; `rw [termShiftIterV_cTV]` rewrites every instance of the first match; quantifier-child
 offset bounds are `≤`, not `=`.
 IN FLIGHT: `Cert` continuation (lenSteps with the congAdd row, then certSubst/certFree); `Top`.
+
+**§11 status — 2026-09-14 late evening (Fable): `lenSteps` and the `Top` under way, both killed once
+by the rate limit and resumed from on-disk state.** `Cert` Parts 5.0–5.7 (c6722dd … ebe4018, wip):
+`congAdd` (cIdx 183), `congSucc` (184), `listSumAdjI` (185) APPENDED to the certification table
+(447ed64; sentences + `lib_` proofs hand-written in `gen_cert.py`'s head §0); the eight length
+builders `lnConst/Bin/Quant/Atom/Leaf/Func/Nil/AdjSteps`; the term/vector length fixpoint `LenT` on
+`⟪tg, n, x, i, y⟫` (Blueprint 2: pieces `W` + the NumSteps table `T`) and the formula one `LenF` on
+`⟪n, r, i, y⟫` (offsets move with `shiftsV` — the length lists are NOT shift-free: `shiftsV + 1 ≤
+2|r|`, `len ≤ 14|r|`); the functions `lenT/lenV/lenSteps W T n r i` (Σ₁, equations,
+`lenSteps_struct`); `lenTGraph_ok` (`tlenFact (bnum |t|) &(i + shifts)` in the final context, via
+`LenPre/LenPreV/LenPost(V)` packages and fact transport through `NoDrop'` lists). PENDING:
+`lenSteps_ok` at the formula level, `costSum_lenSteps_le`, then `certSubst`/`certFree`.
+`Top.lean` (NEW, b1fc02c … 7376039, wip, ~1780 lines): the two new predicate codes
+(`lenDerivableDef TAct`, `boxCore` via the Σ₁ symbol `boxCoreS`), the three closing rows
+`gIntroNum/lenDerIntro/boxIntro` (Lib + pieces + `inst_`), the top table `topRows = frag2Rows ++ 5
+rows at 150+k` (`TopTable`, `exists_topTable`, `topPieces`), the target's code shape for a VARIABLE
+χ (`instB ⌜Box_g χ⌝ k = boxFact (numeral ⌜χ⌝) (bnum k)`, closedness/shift/length of the numeral);
+§3 `RootLayout` (walk dossier + singleton chain) and the two KITS — `VerifyKit` (§6.3/§6.4/§5 for
+the RELATION `VerifyGraph` at the root) and `PinKit χ` (§7.1 steps 1–4 / §7.2 pinning); §4
+`rootSteps = describeF ++ chainSteps` with `rootSteps_ok`; §5 `closeSteps` (`goalElim` + the four
+numeral `sLemma`s N5/N4/N4/N2 + `dlenDefIntro/proofIntro/leTrans/lenDerIntro/gIntroNum/boxIntro`)
+with `closeSteps_ok` (cap 8, `NoDrop'`, 2 shifts, 15 steps, `boxFact (qNum χ) (bnum k)` in the
+final context); §6 the assembly `top_main` (from `Proof ρ (instB ⌜χ⌝ k)`, `dlen ρ ≤ gBudget k`,
+`VerifyGraph ρ L`, the two kits and the tables: a proof code of `instB ⌜Box_g χ⌝ k` of length
+`≤ topBound`); §7 the graded polynomial-bound toolkit `PB/PBCtx` and `topD_pb` (the closing block's
+four `sLemma` derivations are CUBIC in `gBudget k + 1`, using `‖gBudget k + 1‖ ≤ 3‖‖k‖‖ + 2` via
+`Exp.exp`). PENDING: the final `boundedInnerNec_three_of_kit`, wiring, census.
