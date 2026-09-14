@@ -5404,5 +5404,283 @@ instance lnAdjSteps_definable :
 
 end lenBuilders
 
+/-! ### 5.2 The term/vector fixpoint `LenT` on `⟪tg, n, x, i, y⟫` (`tg = 0`: term `x`; `tg = 1`: `x = ⟪k, v, m⟫`),
+parameters `W` (the pieces) and `T` (the `NumSteps` table of the `sLemma` codes) -/
+
+namespace LenT
+
+/-- The cases of the length operator on the unpacked tuple. -/
+def Cases (W T : V) (C : Set V) (tg n x i y : V) : Prop :=
+  (tg = 0 ∧ ∃ z < x, x = ^#z ∧ y = lnLeafSteps W T 153 z i) ∨
+  (tg = 0 ∧ ∃ a < x, x = ^&a ∧ y = lnLeafSteps W T 154 a i) ∨
+  (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ w < x, x = ^func k f w ∧ ∃ yv ≤ y,
+    ⟪1, n, ⟪k, w, k⟫, i + 1, yv⟫ ∈ C ∧ y = lnFuncSteps W T k f (listSum (termLenVec LAct k w)) i (shiftsV yv) yv) ∨
+  (tg = 1 ∧ ∃ k ≤ x, ∃ q ≤ x, x = ⟪k, q⟫ ∧ ∃ v ≤ q, ∃ m ≤ q, q = ⟪v, m⟫ ∧ m = 0 ∧ y = lnNilSteps W) ∨
+  (tg = 1 ∧ ∃ k ≤ x, ∃ q ≤ x, x = ⟪k, q⟫ ∧ ∃ v ≤ q, ∃ m ≤ q, q = ⟪v, m⟫ ∧ ∃ m' < m, m = m' + 1 ∧
+    ∃ yt ≤ y, ∃ yv ≤ y, ⟪0, n, nthFromEnd v m', i + 1, yt⟫ ∈ C ∧
+    ⟪1, n, ⟪k, v, m'⟫, i + 1 + descCountT W n (nthFromEnd v m') + shiftsV yt, yv⟫ ∈ C ∧
+    y = lnAdjSteps W T n m' (descCountT W n (nthFromEnd v m')) (termLen LAct (nthFromEnd v m'))
+      (listSum (termLenVec LAct m' (takeLast v m'))) i (shiftsV yt) (shiftsV yv) yt yv)
+
+/-- The operator on the packed tuples. -/
+def Phi (W T : V) (C : Set V) (pr : V) : Prop :=
+  ∃ tg ≤ pr, ∃ q₁ ≤ pr, pr = ⟪tg, q₁⟫ ∧ ∃ n ≤ q₁, ∃ q₂ ≤ q₁, q₁ = ⟪n, q₂⟫ ∧
+  ∃ x ≤ q₂, ∃ q₃ ≤ q₂, q₂ = ⟪x, q₃⟫ ∧ ∃ i ≤ q₃, ∃ y ≤ q₃, q₃ = ⟪i, y⟫ ∧ Cases W T C tg n x i y
+
+lemma phi_unpack (W T : V) (C : Set V) (pr : V) :
+    Phi W T C pr ↔ ∃ tg n x i y, pr = ⟪tg, n, x, i, y⟫ ∧ Cases W T C tg n x i y := by
+  constructor
+  · rintro ⟨tg, _, q₁, _, rfl, n, _, q₂, _, rfl, x, _, q₃, _, rfl, i, _, y, _, rfl, h⟩
+    exact ⟨tg, n, x, i, y, rfl, h⟩
+  · rintro ⟨tg, n, x, i, y, rfl, h⟩
+    exact ⟨tg, le_pair_left _ _, _, le_pair_right _ _, rfl, n, le_pair_left _ _, _, le_pair_right _ _, rfl,
+      x, le_pair_left _ _, _, le_pair_right _ _, rfl, i, le_pair_left _ _, y, le_pair_right _ _, rfl, h⟩
+
+lemma phi_of_cases {W T : V} {C : Set V} {tg n x i y : V} (h : Cases W T C tg n x i y) :
+    Phi W T C ⟪tg, n, x, i, y⟫ := (phi_unpack W T C _).mpr ⟨tg, n, x, i, y, rfl, h⟩
+
+lemma cases_of_phi {W T : V} {C : Set V} {tg n x i y : V} (h : Phi W T C ⟪tg, n, x, i, y⟫) :
+    Cases W T C tg n x i y := by
+  obtain ⟨tg', n', x', i', y', e, h⟩ := (phi_unpack W T C _).mp h
+  rw [pair_ext_iff, pair_ext_iff, pair_ext_iff, pair_ext_iff] at e
+  obtain ⟨rfl, rfl, rfl, rfl, rfl⟩ := e
+  exact h
+
+noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
+  (.mkSigma “pr C W T.
+    ∃ tg <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr tg q₁ ∧ ∃ n <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ n q₂ ∧
+    ∃ x <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ x q₃ ∧ ∃ i <⁺ q₃, ∃ y <⁺ q₃, !pairDef q₃ i y ∧
+    ( (tg = 0 ∧ ∃ z < x, !qqBvarDef x z ∧ ∃ s, !lnLeafStepsDef s W T 153 z i ∧ y = s) ∨
+      (tg = 0 ∧ ∃ a < x, !qqFvarDef x a ∧ ∃ s, !lnLeafStepsDef s W T 154 a i ∧ y = s) ∨
+      (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ w < x, !qqFuncDef x k f w ∧ ∃ yv <⁺ y, ∃ x₁, !pairDef x₁ w k ∧ ∃ x₂, !pairDef x₂ k x₁ ∧
+        ∃ r₄, !pairDef r₄ (i + 1) yv ∧ ∃ r₃, !pairDef r₃ x₂ r₄ ∧ ∃ r₂, !pairDef r₂ n r₃ ∧ :⟪1, r₂⟫:∈ C ∧
+        ∃ M, !(termLenVecGraph LAct) M k w ∧ ∃ σ, !listSumDef σ M ∧ ∃ sv, !shiftsVDef sv yv ∧
+        ∃ s, !lnFuncStepsDef s W T k f σ i sv yv ∧ y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m <⁺ q, !pairDef q v m ∧ m = 0 ∧ ∃ s, !lnNilStepsDef s W ∧ y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m <⁺ q, !pairDef q v m ∧ ∃ m' < m, m = m' + 1 ∧
+        ∃ yt <⁺ y, ∃ yv <⁺ y, ∃ t, !nthFromEndDef t v m' ∧ ∃ ct, !descCountTDef ct W n t ∧ ∃ st, !shiftsVDef st yt ∧
+        ∃ p₄, !pairDef p₄ (i + 1) yt ∧ ∃ p₃, !pairDef p₃ t p₄ ∧ ∃ p₂, !pairDef p₂ n p₃ ∧ :⟪0, p₂⟫:∈ C ∧
+        ∃ x₁, !pairDef x₁ v m' ∧ ∃ x₂, !pairDef x₂ k x₁ ∧
+        ∃ r₄, !pairDef r₄ (i + 1 + ct + st) yv ∧ ∃ r₃, !pairDef r₃ x₂ r₄ ∧ ∃ r₂, !pairDef r₂ n r₃ ∧ :⟪1, r₂⟫:∈ C ∧
+        ∃ lt, !(termLenGraph LAct) lt t ∧ ∃ u, !takeLastDef u v m' ∧ ∃ M, !(termLenVecGraph LAct) M m' u ∧
+        ∃ σ, !listSumDef σ M ∧ ∃ sv, !shiftsVDef sv yv ∧
+        ∃ s, !lnAdjStepsDef s W T n m' ct lt σ i st sv yt yv ∧ y = s) )”)
+  (.mkPi “pr C W T.
+    ∃ tg <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr tg q₁ ∧ ∃ n <⁺ q₁, ∃ q₂ <⁺ q₁, !pairDef q₁ n q₂ ∧
+    ∃ x <⁺ q₂, ∃ q₃ <⁺ q₂, !pairDef q₂ x q₃ ∧ ∃ i <⁺ q₃, ∃ y <⁺ q₃, !pairDef q₃ i y ∧
+    ( (tg = 0 ∧ ∃ z < x, !qqBvarDef x z ∧ ∀ s, !lnLeafStepsDef s W T 153 z i → y = s) ∨
+      (tg = 0 ∧ ∃ a < x, !qqFvarDef x a ∧ ∀ s, !lnLeafStepsDef s W T 154 a i → y = s) ∨
+      (tg = 0 ∧ ∃ k < x, ∃ f < x, ∃ w < x, !qqFuncDef x k f w ∧ ∃ yv <⁺ y, ∀ x₁, !pairDef x₁ w k → ∀ x₂, !pairDef x₂ k x₁ →
+        ∀ r₄, !pairDef r₄ (i + 1) yv → ∀ r₃, !pairDef r₃ x₂ r₄ → ∀ r₂, !pairDef r₂ n r₃ → :⟪1, r₂⟫:∈ C ∧
+        ∀ M, !(termLenVecGraph LAct) M k w → ∀ σ, !listSumDef σ M → ∀ sv, !shiftsVDef sv yv →
+        ∀ s, !lnFuncStepsDef s W T k f σ i sv yv → y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m <⁺ q, !pairDef q v m ∧ m = 0 ∧ ∀ s, !lnNilStepsDef s W → y = s) ∨
+      (tg = 1 ∧ ∃ k <⁺ x, ∃ q <⁺ x, !pairDef x k q ∧ ∃ v <⁺ q, ∃ m <⁺ q, !pairDef q v m ∧ ∃ m' < m, m = m' + 1 ∧
+        ∃ yt <⁺ y, ∃ yv <⁺ y, ∀ t, !nthFromEndDef t v m' → ∀ ct, !descCountTDef ct W n t → ∀ st, !shiftsVDef st yt →
+        ∀ p₄, !pairDef p₄ (i + 1) yt → ∀ p₃, !pairDef p₃ t p₄ → ∀ p₂, !pairDef p₂ n p₃ → :⟪0, p₂⟫:∈ C ∧
+        ∀ x₁, !pairDef x₁ v m' → ∀ x₂, !pairDef x₂ k x₁ →
+        ∀ r₄, !pairDef r₄ (i + 1 + ct + st) yv → ∀ r₃, !pairDef r₃ x₂ r₄ → ∀ r₂, !pairDef r₂ n r₃ → :⟪1, r₂⟫:∈ C ∧
+        ∀ lt, !(termLenGraph LAct) lt t → ∀ u, !takeLastDef u v m' → ∀ M, !(termLenVecGraph LAct) M m' u →
+        ∀ σ, !listSumDef σ M → ∀ sv, !shiftsVDef sv yv →
+        ∀ s, !lnAdjStepsDef s W T n m' ct lt σ i st sv yt yv → y = s) )”)⟩
+
+set_option maxHeartbeats 4000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0) (v 1)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, lnLeafSteps_defined.iff, lnFuncSteps_defined.iff, lnNilSteps_defined.iff, lnAdjSteps_defined.iff,
+        nthFromEnd_defined.iff, descCountT_defined.iff, shiftsV_defined.iff, listSum_defined.iff, takeLast_defined.iff,
+        (termLenVec.defined (L := LAct)).iff, (termLen.defined (L := LAct)).iff, numeral_eq_natCast]
+    · intro v
+      simp [blueprint, Phi, Cases, lnLeafSteps_defined.iff, lnFuncSteps_defined.iff, lnNilSteps_defined.iff, lnAdjSteps_defined.iff,
+        nthFromEnd_defined.iff, descCountT_defined.iff, shiftsV_defined.iff, listSum_defined.iff, takeLast_defined.iff,
+        (termLenVec.defined (L := LAct)).iff, (termLen.defined (L := LAct)).iff, numeral_eq_natCast]
+  monotone := by
+    intro C C' hC w pr h
+    change Phi (w 0) (w 1) C pr at h
+    rw [phi_unpack] at h ⊢
+    obtain ⟨tg, n, x, i, y, rfl, h⟩ := h
+    refine ⟨tg, n, x, i, y, rfl, ?_⟩
+    rcases h with h | h | ⟨htg, k, hk, f, hf, w', hw, rfl, yv, hyv, h₁, rfl⟩ | h |
+      ⟨htg, k, hk, q, hq, rfl, v, hv, m, hm, rfl, m', hm', rfl, yt, hyt, yv, hyv, h₁, h₂, rfl⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl ⟨htg, k, hk, f, hf, w', hw, rfl, yv, hyv, hC h₁, rfl⟩))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨htg, k, hk, _, hq, rfl, v, hv, _, hm, rfl, m', hm', rfl, yt, hyt, yv, hyv, hC h₁, hC h₂, rfl⟩)))
+
+instance : construction.Finite V where
+  finite := by
+    intro C w pr h
+    change Phi (w 0) (w 1) C pr at h
+    change ∃ m, Phi (w 0) (w 1) {y ∈ C | y < m} pr
+    rw [phi_unpack] at h
+    simp only [phi_unpack]
+    obtain ⟨tg, n, x, i, y, rfl, h⟩ := h
+    rcases h with h | h | ⟨htg, k, hk, f, hf, w', hw, hx, yv, hyv, h₁, hy⟩ | h |
+      ⟨htg, k, hk, q, hq, hx, v, hv, m, hm, hq', m', hm', hmm, yt, hyt, yv, hyv, h₁, h₂, hy⟩
+    · exact ⟨0, tg, n, x, i, y, rfl, Or.inl h⟩
+    · exact ⟨0, tg, n, x, i, y, rfl, Or.inr (Or.inl h)⟩
+    · exact ⟨⟪1, n, ⟪k, w', k⟫, i + 1, yv⟫ + 1, tg, n, x, i, y, rfl,
+        Or.inr (Or.inr (Or.inl ⟨htg, k, hk, f, hf, w', hw, hx, yv, hyv, ⟨h₁, lt_add_one _⟩, hy⟩))⟩
+    · exact ⟨0, tg, n, x, i, y, rfl, Or.inr (Or.inr (Or.inr (Or.inl h)))⟩
+    · refine ⟨⟪0, n, nthFromEnd v m', i + 1, yt⟫ + ⟪1, n, ⟪k, v, m'⟫, i + 1 + descCountT (w 0) n (nthFromEnd v m') + shiftsV yt, yv⟫ + 1,
+        tg, n, x, i, y, rfl, Or.inr (Or.inr (Or.inr (Or.inr ⟨htg, k, hk, q, hq, hx, v, hv, m, hm, hq', m', hm', hmm, yt, hyt, yv, hyv,
+          ⟨h₁, lt_of_le_of_lt le_self_add (lt_add_one _)⟩, ⟨h₂, lt_of_le_of_lt le_add_self (lt_add_one _)⟩, hy⟩)))⟩
+
+/-- `Phi` at a term tuple. -/
+lemma phi_term_iff (W T : V) (C : Set V) (n t i y : V) :
+    Phi W T C ⟪0, n, t, i, y⟫ ↔
+    ( (∃ z, t = ^#z ∧ y = lnLeafSteps W T 153 z i) ∨
+      (∃ a, t = ^&a ∧ y = lnLeafSteps W T 154 a i) ∨
+      (∃ k f w yv, t = ^func k f w ∧ yv ≤ y ∧ ⟪1, n, ⟪k, w, k⟫, i + 1, yv⟫ ∈ C ∧
+        y = lnFuncSteps W T k f (listSum (termLenVec LAct k w)) i (shiftsV yv) yv) ) := by
+  rw [show Phi W T C ⟪0, n, t, i, y⟫ ↔ Cases W T C 0 n t i y from ⟨cases_of_phi, phi_of_cases⟩]
+  unfold Cases
+  constructor
+  · rintro (⟨_, z, _, rfl, rfl⟩ | ⟨_, a, _, rfl, rfl⟩ | ⟨_, k, _, f, _, w, _, rfl, yv, hyv, h₁, rfl⟩ | ⟨h, _⟩ | ⟨h, _⟩)
+    · exact Or.inl ⟨z, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨a, rfl, rfl⟩)
+    · exact Or.inr (Or.inr ⟨k, f, w, yv, rfl, hyv, h₁, rfl⟩)
+    · exact absurd h zero_ne_one
+    · exact absurd h zero_ne_one
+  · rintro (⟨z, rfl, rfl⟩ | ⟨a, rfl, rfl⟩ | ⟨k, f, w, yv, rfl, hyv, h₁, rfl⟩)
+    · exact Or.inl ⟨rfl, z, by simp, rfl, rfl⟩
+    · exact Or.inr (Or.inl ⟨rfl, a, by simp, rfl, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inl ⟨rfl, k, by simp, f, by simp, w, by simp, rfl, yv, hyv, h₁, rfl⟩))
+
+/-- `Phi` at a vector tuple. -/
+lemma phi_vec_iff (W T : V) (C : Set V) (n k v m i y : V) :
+    Phi W T C ⟪1, n, ⟪k, v, m⟫, i, y⟫ ↔
+    ( (m = 0 ∧ y = lnNilSteps W) ∨
+      (∃ m' yt yv, m = m' + 1 ∧ yt ≤ y ∧ yv ≤ y ∧ ⟪0, n, nthFromEnd v m', i + 1, yt⟫ ∈ C ∧
+        ⟪1, n, ⟪k, v, m'⟫, i + 1 + descCountT W n (nthFromEnd v m') + shiftsV yt, yv⟫ ∈ C ∧
+        y = lnAdjSteps W T n m' (descCountT W n (nthFromEnd v m')) (termLen LAct (nthFromEnd v m'))
+          (listSum (termLenVec LAct m' (takeLast v m'))) i (shiftsV yt) (shiftsV yv) yt yv) ) := by
+  rw [show Phi W T C ⟪1, n, ⟪k, v, m⟫, i, y⟫ ↔ Cases W T C 1 n ⟪k, v, m⟫ i y from ⟨cases_of_phi, phi_of_cases⟩]
+  unfold Cases
+  constructor
+  · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨_, k', _, q, _, e, v', _, m'', _, e', hm, rfl⟩ |
+      ⟨_, k', _, q, _, e, v', _, m'', _, e', m', hm', hmm, yt, hyt, yv, hyv, h₁, h₂, rfl⟩)
+    · exact absurd h _root_.one_ne_zero
+    · exact absurd h _root_.one_ne_zero
+    · exact absurd h _root_.one_ne_zero
+    · rw [pair_ext_iff] at e; obtain ⟨rfl, rfl⟩ := e
+      rw [pair_ext_iff] at e'; obtain ⟨rfl, rfl⟩ := e'
+      exact Or.inl ⟨hm, rfl⟩
+    · rw [pair_ext_iff] at e; obtain ⟨rfl, rfl⟩ := e
+      rw [pair_ext_iff] at e'; obtain ⟨rfl, rfl⟩ := e'
+      exact Or.inr ⟨m', yt, yv, hmm, hyt, hyv, h₁, h₂, rfl⟩
+  · rintro (⟨rfl, rfl⟩ | ⟨m', yt, yv, rfl, hyt, hyv, h₁, h₂, rfl⟩)
+    · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨rfl, k, le_pair_left _ _, _, le_pair_right _ _, rfl, v, le_pair_left _ _, 0,
+        le_pair_right _ _, rfl, rfl, rfl⟩)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl, k, le_pair_left _ _, _, le_pair_right _ _, rfl, v, le_pair_left _ _, m' + 1,
+        le_pair_right _ _, rfl, m', lt_add_one _, rfl, yt, hyt, yv, hyv, h₁, h₂, rfl⟩)))
+
+end LenT
+
+/-- The fixpoint on the PACKED tuples (kept separate so that instance search never unfolds it). -/
+def LenTPacked (W T pr : V) : Prop := LenT.construction.Fixpoint ![W, T] pr
+/-- `LenTGraph W T n t i y`: the length steps of the term `t` (at `&i`) are the list `y`. -/
+def LenTGraph (W T n t i y : V) : Prop := LenTPacked W T ⟪0, n, t, i, y⟫
+/-- `LenVGraph W T n k v m i y`: the length steps of the last `m` entries of the vector `v` (of length `k`, at `&i`). -/
+def LenVGraph (W T n k v m i y : V) : Prop := LenTPacked W T ⟪1, n, ⟪k, v, m⟫, i, y⟫
+
+noncomputable def lenTPackedDef : 𝚺₁.Semisentence 3 := .mkSigma “W T pr. !LenT.blueprint.fixpointDef pr W T”
+
+-- The house pattern (`Cert.lean:1679`): never let `simp` unfold the blueprint here.
+instance lenTPacked_defined : 𝚺₁-Relation₃ (LenTPacked : V → V → V → Prop) via lenTPackedDef := .mk
+  fun v ↦ by
+    simp only [lenTPackedDef, HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs,
+      Matrix.comp_vecCons', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons,
+      Matrix.constant_eq_singleton]
+    rw [LenT.construction.eval_fixpointDef]
+    rfl
+instance lenTPacked_definable : 𝚺₁-Relation₃ (LenTPacked : V → V → V → Prop) := lenTPacked_defined.to_definable
+
+noncomputable def lenTGraphDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “W T n t i y. ∃ q₃, !pairDef q₃ i y ∧ ∃ q₂, !pairDef q₂ t q₃ ∧ ∃ q₁, !pairDef q₁ n q₂ ∧ ∃ pr, !pairDef pr 0 q₁ ∧
+    !lenTPackedDef W T pr”
+instance lenTGraph_defined :
+    𝚺₁.Defined (fun v : Fin 6 → V ↦ LenTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) lenTGraphDef := .mk
+  fun v ↦ by simp [lenTGraphDef, lenTPacked_defined.iff, LenTGraph]
+instance lenTGraph_definable :
+    𝚺₁.Definable (fun v : Fin 6 → V ↦ LenTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := lenTGraph_defined.to_definable
+
+noncomputable def lenVGraphDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “W T n k v m i y. ∃ q₃, !pairDef q₃ i y ∧ ∃ x₁, !pairDef x₁ v m ∧ ∃ x, !pairDef x k x₁ ∧ ∃ q₂, !pairDef q₂ x q₃ ∧
+    ∃ q₁, !pairDef q₁ n q₂ ∧ ∃ pr, !pairDef pr 1 q₁ ∧ !lenTPackedDef W T pr”
+instance lenVGraph_defined :
+    𝚺₁.Defined (fun v : Fin 8 → V ↦ LenVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) lenVGraphDef := .mk
+  fun v ↦ by simp [lenVGraphDef, lenTPacked_defined.iff, LenVGraph]
+instance lenVGraph_definable :
+    𝚺₁.Definable (fun v : Fin 8 → V ↦ LenVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) := lenVGraph_defined.to_definable
+
+/-! #### Case analysis and inversion -/
+
+lemma LenTGraph.case_iff {W T n t i y : V} :
+    LenTGraph W T n t i y ↔
+    ( (∃ z, t = ^#z ∧ y = lnLeafSteps W T 153 z i) ∨
+      (∃ a, t = ^&a ∧ y = lnLeafSteps W T 154 a i) ∨
+      (∃ k f w yv, t = ^func k f w ∧ yv ≤ y ∧ LenVGraph W T n k w k (i + 1) yv ∧
+        y = lnFuncSteps W T k f (listSum (termLenVec LAct k w)) i (shiftsV yv) yv) ) := by
+  unfold LenTGraph LenVGraph LenTPacked
+  rw [LenT.construction.case]
+  exact LenT.phi_term_iff W T _ n t i y
+
+lemma LenVGraph.case_iff {W T n k v m i y : V} :
+    LenVGraph W T n k v m i y ↔
+    ( (m = 0 ∧ y = lnNilSteps W) ∨
+      (∃ m' yt yv, m = m' + 1 ∧ yt ≤ y ∧ yv ≤ y ∧ LenTGraph W T n (nthFromEnd v m') (i + 1) yt ∧
+        LenVGraph W T n k v m' (i + 1 + descCountT W n (nthFromEnd v m') + shiftsV yt) yv ∧
+        y = lnAdjSteps W T n m' (descCountT W n (nthFromEnd v m')) (termLen LAct (nthFromEnd v m'))
+          (listSum (termLenVec LAct m' (takeLast v m'))) i (shiftsV yt) (shiftsV yv) yt yv) ) := by
+  unfold LenTGraph LenVGraph LenTPacked
+  rw [LenT.construction.case]
+  exact LenT.phi_vec_iff W T _ n k v m i y
+
+section lenInversion
+
+attribute [local simp] qqBvar qqFvar qqFunc
+
+lemma LenTGraph.bvar_iff {W T n z i y : V} : LenTGraph W T n (^#z) i y ↔ y = lnLeafSteps W T 153 z i := by
+  rw [LenTGraph.case_iff]; simp
+lemma LenTGraph.fvar_iff {W T n a i y : V} : LenTGraph W T n (^&a) i y ↔ y = lnLeafSteps W T 154 a i := by
+  rw [LenTGraph.case_iff]; simp
+lemma LenTGraph.func_iff {W T n k f w i y : V} :
+    LenTGraph W T n (^func k f w) i y ↔
+    ∃ yv, yv ≤ y ∧ LenVGraph W T n k w k (i + 1) yv ∧ y = lnFuncSteps W T k f (listSum (termLenVec LAct k w)) i (shiftsV yv) yv := by
+  rw [LenTGraph.case_iff]; simp
+lemma LenVGraph.zero_iff {W T n k v i y : V} : LenVGraph W T n k v 0 i y ↔ y = lnNilSteps W := by
+  rw [LenVGraph.case_iff]
+  constructor
+  · rintro (⟨_, rfl⟩ | ⟨m', _, _, h, _⟩)
+    · rfl
+    · exact absurd h.symm (succ_ne_zero' m')
+  · intro h; exact Or.inl ⟨rfl, h⟩
+lemma LenVGraph.succ_iff {W T n k v m i y : V} :
+    LenVGraph W T n k v (m + 1) i y ↔
+    ∃ yt yv, yt ≤ y ∧ yv ≤ y ∧ LenTGraph W T n (nthFromEnd v m) (i + 1) yt ∧
+      LenVGraph W T n k v m (i + 1 + descCountT W n (nthFromEnd v m) + shiftsV yt) yv ∧
+      y = lnAdjSteps W T n m (descCountT W n (nthFromEnd v m)) (termLen LAct (nthFromEnd v m))
+        (listSum (termLenVec LAct m (takeLast v m))) i (shiftsV yt) (shiftsV yv) yt yv := by
+  rw [LenVGraph.case_iff]
+  constructor
+  · rintro (⟨h, _⟩ | ⟨m', yt, yv, h, hyt, hyv, h₁, h₂, rfl⟩)
+    · exact absurd h (succ_ne_zero' m)
+    · obtain rfl : m = m' := add_right_cancel h
+      exact ⟨yt, yv, hyt, hyv, h₁, h₂, rfl⟩
+  · rintro ⟨yt, yv, hyt, hyv, h₁, h₂, rfl⟩
+    exact Or.inr ⟨m, yt, yv, rfl, hyt, hyv, h₁, h₂, rfl⟩
+
+end lenInversion
+
+lemma le_lnFuncSteps (W T k f σ i sv yv : V) : yv ≤ lnFuncSteps W T k f σ i sv yv := le_appendV_left _ _
+lemma le_lnAdjSteps_left (W T n m ct lt σ' i st sv yt yv : V) : yt ≤ lnAdjSteps W T n m ct lt σ' i st sv yt yv :=
+  le_appendV_left _ _
+lemma le_lnAdjSteps_right (W T n m ct lt σ' i st sv yt yv : V) : yv ≤ lnAdjSteps W T n m ct lt σ' i st sv yt yv :=
+  le_trans (le_appendV_left _ _) (le_appendV_right _ _)
 
 end ArithS
