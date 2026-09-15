@@ -1431,3 +1431,33 @@ attempted). TRAPS: an EMPTY log with `EXIT 0` is the normal green here (linters 
 with a deliberate error + `#print axioms`; `entryB` must be unfolded before `axmLeaf_p4`; the
 mechanical `p6 → p4` rename must rename the LEMMA names first, then the bare tokens.
 IN FLIGHT: `Assemble` (switched to `m = 4`: `boundedInnerNec_sixteen`, `dupoc_self_coop_unconditional`).
+
+**§11 status — `Assemble` DONE: `BoundedInnerNec 16` and `dupoc_self_coop` modulo ONE hypothesis,
+`SizeOracle` (7454672 … 7ae6122; `Assemble.lean` 1367 lines; build 3268, census 794, all standard).**
+§1 `memberList_single`, `layout_single`; §2 `identRoot` (the root's two copies identified:
+`eqSteps`, `congMem`×2, `emptySubsetC`×2, `insertSubset`×2, `subsetAntisymm`; Horn-only, shift-free,
+`≤ 2·eqCount x + 9`); §3 `retargetRoot` (`goalElim`, `congFstIdx`, `sGoal`; 2 shifts, 7 steps) — THE
+INDEX RECONCILIATION: the goal is RETARGETED onto the root sequent (no `RootLayout`↔`Layout` index
+identity exists — the fold base `&1` sits between the length and the chain — so a fresh layout +
+identification was necessary), and the kit's `ok` ends with EXACTLY `VerifyKit''`'s index
+`&(i + 1 + shiftsV vList)`; §4 `vList = layoutSteps {x} ++ identRoot ++ L ++ retargetRoot`; §5 the
+codes of the goal's predicates as OPAQUE constants (`cDer cDlen cFst : ℕ`, `formulaLen_goalFact_le`);
+§6 `VerifySizeOracle` (`len L ≤ Cz·(dlen ρ+1)^4 ∧ SizeOK (kitQ Cz B E) (kitD Cz (dlen ρ)) L` for every
+graph list), the size-class dominations `layQ_le`, `layD_le`, `goalFact4_le_kitQ`, **`vList_full`**
+(the `ok` conjuncts + `len`/`SizeOK` of `vList`, `Ck = (asmCk Ck₄ Cz N' B' + cG)·(Cv+1)`); §7
+`VerifyKit''' … Cv Ck m` (in `Assemble`, not `Top`: `Verify2` imports `Top`), `KitPackage'''`,
+`top_main'''`, `boundedInnerNec_of_kit''' (m) (3 ≤ m)`; §8 `SizeOracle Cz`, `exists_indRecTableB`,
+`kitPackage'''_of_size` (existence from `verifyGraph''_exists_unconditional` — the `axm` case
+UNCONDITIONAL), `deg_four : deg 4 = 16`, **`boundedInnerNec_sixteen_of_size (Cz) (hsz : SizeOracle
+Cz) : BoundedInnerNec 16`**, **`dupoc_self_coop_of_size … : ∃ k₀, ∀ k > k₀, EvalGraph 2 (Dupoc k)
+(Dupoc k) (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1`**. THE ONE HYPOTHESIS:
+`SizeOracle` = the `len`/`SizeOK` tracking of the graph's list — `verifyGraph''_ok4` tracks neither,
+so it is a second `Derivation.induction1 𝚷` glue mirroring `Verify4` with two more conjuncts (the
+`axm` entries' `len`/`SizeOK` are already in `AxmEntryOK'`). Morally true, being machine-checked
+(`Verify5`, in flight). THE STALL (2905 s, empty log): `def cGoal : ℕ := 4·(cDer + …)` with `cDer =
+flen ⌜derivation …⌝` — ANY `Nat`-level arithmetic on it makes the KERNEL evaluate the giant closed
+constant, and `irreducible` does not help; fix: package it existentially (`exists_cGoal`) and add
+it as an opaque summand. TRAPS: `'''` in Python strings; a regex rename hits named arguments;
+`(1 : V)` vs `((1:ℕ):V)` in cast lemmas.
+IN FLIGHT: `Verify5` (the size oracle discharged → `boundedInnerNec_sixteen`,
+`dupoc_self_coop_unconditional`).
