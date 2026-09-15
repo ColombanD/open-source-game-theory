@@ -1061,3 +1061,49 @@ finalCtx … := ⟨_, rfl⟩` and `rw [hΓ']`; never `set k := len (memberList s
 lemmas stated with it; a loop's frame equation must take σ as a VARIABLE; `hornOnly_single`'s goal
 already has `?[s]` unfolded; `norm_num` cannot do `6D+1+1 ≤ 6D+2` on `V` — `calc` with `ring`.
 IN FLIGHT: `NumId`/`Pin`; `Prologue` Part 3 (all/exs, with the two `qVecIterV` bounds in Cert).
+
+**§11 status — `NumId` DONE, `Pin` kernel + assembly modulo two oracles (ca9dfe5 … f9c9ac8; build
+3257, census 599 standard). AND A COST-ACCOUNTING FINDING THAT SETS THE DEGREE.**
+`NumId.lean` (1331): numeral identification for a STANDARD code — `numId_term/formula/sentence :
+∃ C, ∀ V …, DossF walkPieces Γ n ⌜χ⌝ i → C + i ≤ E → ∃ P, NumInv tbl E Γ C P (eqFact (^&i)
+(numeral ⌜χ⌝))` (`NumInv` = `ListOK 9 ∧ NoDrop' ∧ shiftsV = 0 ∧ len ≤ C ∧ SizeOK C C ∧ fact ∈
+finalCtx`); ROUTE: per node ONE closed shape fact (`cfact P ts`, a 𝚺₀ meta sentence TRUE in ℕ by the
+`rfl` quote equations, absolute by `shigmaZero_absolute`, hence `Lib` — a STANDARD-length `TAct`
+derivation in every model, `closedDer_of_lib`) + ONE `eqOf<Kind>` identification row; shift-free;
+constants per formula via the 𝚺₁-absoluteness of `formulaLen/termLen/takeLast`. NOT taken: a Σ₁
+producer over a VARIABLE code (would need unary-numeral provers for the quadratic pairing, or an
+internal Σ₁-completeness bridge) — neither consumer needs it (`PinKit` is per χ, `axm`(i) per
+standard σ). `NumIdRows.lean` (generated, `gen_numid.py`): six rows APPENDED at `proRowCount + k`
+(symbolic base): `instBIntro`, `congSubstArg`, `bnumZero/One/EvenCert`, NEW **`bnumOddOfEven`**
+(the library's `bnumOddCert` has 12 witnesses, above cap 9). `Pin.lean` (585): `NumIdTable`,
+`pinKernel_ok` (`congSubstArg ∷ instBIntro` → `instBFact &x (numeral c) (bnum k)`), and
+**`pin_assembly χ Cb Cs : ∃ Cχ, … RootLayout Γ (instB ⌜χ⌝ k) i → BnumOracle tbl E k Cb →
+SubstOracle tbl E χ k Cs → … → ∃ P, ListOK 9 ∧ NoDrop' ∧ shiftsV P ≤ Cχ·(‖k‖+1) ∧ neg (instBFact
+(^&(i+2+shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P`** — every pin conjunct except the COST, the
+χ-walk and the vector walk real, only the two oracles hypotheses: `BnumOracle` (a `bnumSteps k j`
+producer over the bits of `k` on `bnum k`'s dossier, per bit an `sLemma` `𝟏 ≤ bnum m` + one Horn
+`bnumEvenCert`/`bnumOddOfEven`; TRAP: the two `𝟏`s in `𝟐 = 𝟏 ^+ 𝟏` are DIFFERENT eigenvariables —
+identify by `eqOfFunc` at `𝟎` then `congAdj`; ~600–800 lines on the Part-5 template) and
+`SubstOracle` (`certSubst_ok` re-indexed at `w = bnum k ∷ 0`, `r = ⌜χ⌝` — discharge `SubFPre`'s
+`Q ≥ 3e + |bnum k|` and the `qWalkP` length bound; elementary, unwritten).
+**THE FINDING (decides the degree):** `PinKit.cost` — and likewise `VerifyKit.cost` — as `Top`
+states them (`C·(size)·(setLen Γ + N + E + size²)`, the design's FINE shape) are NOT reachable
+from the generic cost lemmas (`costSum_le_of_sizeOK`, `ctxBoundG G Γ L = |Γ| + L·fvOccS Γ +
+(L²+L)·G`, `G ≥ 4·B·E`): they charge context growth `4·B·E` per step (a new fact's full LENGTH),
+so `L` steps cost `≳ L²·B·E`; with `L ~ g` and `E ~ g` (eigenvariable indices in unary) the total
+is `~ g⁴`, ONE factor of `g` above the design's `g³`. The design's cubic count assumes the finer
+fact that each new fact has `O(B)` variable OCCURRENCES (`ShiftLen`'s `fvOccF`, `ChainOcc`'s
+`stepCostOcc` — the "secondary risk" of §11's original entry), so `fvOccS` grows by a constant per
+step and contexts stay `O(g²)`. DECISION (2026-09-15): the M4 results are PARAMETRIC in the degree
+(`pblt_uniform {d}`, `dupoc_self_coop {d}`), so **target `BoundedInnerNec 4` FIRST from the bounds
+already proved** (a `Top`-only change: the kits restated in the COARSE shape `C·size·(|Γ| +
+size·fvOccS Γ + size²·(N + E + 1)·(‖size‖+1)^c)`, a degree-4 assembly `boundedInnerNec_four_of_kit`
+using `‖g‖³ ≤ 8g` universally; keep `_three_of_kit`), and record the fine occurrence accounting
+(`OccOK` per step, a `costSum_le_of_sizeOK_occ` variant, `occOK_*` per producer) as the
+REFINEMENT to degree 3. Honesty over reach: the headline constant is 4 until the refinement lands.
+TRAPS (NumId/Pin): `simp`/`push_cast` rewrite `((⌜φ⌝ : ℕ) : V)` to `⌜φ⌝` — keep standard values
+OPAQUE (`obtain ⟨x, hx⟩ : ∃ x : ℕ, x = ⌜φ⌝`); unifying `k - (j+1)` whnf's `Nat.sub` (timeout) —
+carry an opaque `a` with `a + (j+1) = k`; at `V := ℕ` Foundation's `Sub ℕ` is NOT `Nat.sub`;
+`((1:ℕ):V)` vs `(1:V)` not defeq; `definability`/`simp` on a motive containing the quote `Pbnum`
+times out — state transports for a VARIABLE predicate code; `(⌜f⌝ : ℕ) = encode f` is not `rfl`.
+IN FLIGHT: `Prologue` Part 3 (all/exs); `Top` (degree-4 kits + assembly).
