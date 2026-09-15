@@ -113,4 +113,141 @@ lemma layout_single {Ww Wc T Γ x i : V} (h : Layout Ww Wc T Γ (insert x (0 : V
 
 end singleton
 
+/-! ## 2. The identification of the two copies of the root: `x₀ = x'` (the walk `eqSteps`), then `s₀ = s'`
+(`congMem` ×2, `emptySubsetC` ×2, `insertSubset` ×2, `subsetAntisymm`) — a Horn-only, shift-free block -/
+
+section identRoot
+
+/-- **The identification block.** `x₀ = &jx₀`, `s₀ = &js₀` (the root copy, `insFact &js₀ &jx₀ 𝟎`,
+`memFact &jx₀ &js₀`); `x' = &jx'`, `s' = &js'` (the fresh layout copy, `insFact &js' &jx' 𝟎`, `memFact &jx' &js'`).
+Leaves `eqFactB &js₀ &js'`. All steps are `frag1Pieces` Horn rows (42 `eqSymm`, 62 `congMem`, 81 `emptySubsetC`,
+112 `insertSubset`, 75 `subsetAntisymm`). -/
+noncomputable def identRoot (Wl x jx₀ jx' js₀ js' : V) : V :=
+  appendV (eqSteps Wl jx₀ jx' x)
+    (mkStep frag1Pieces 42 ?[^&jx₀, ^&jx'] ∷
+     mkStep frag1Pieces 62 ?[^&jx', ^&jx₀, ^&js'] ∷
+     mkStep frag1Pieces 62 ?[^&jx₀, ^&jx', ^&js₀] ∷
+     mkStep frag1Pieces 81 ?[^&js'] ∷
+     mkStep frag1Pieces 81 ?[^&js₀] ∷
+     mkStep frag1Pieces 112 ?[(𝟎 : V), ^&js', ^&jx₀, ^&js₀] ∷
+     mkStep frag1Pieces 112 ?[(𝟎 : V), ^&js₀, ^&jx', ^&js'] ∷
+     mkStep frag1Pieces 75 ?[^&js₀, ^&js'] ∷ (0 : V))
+
+set_option maxHeartbeats 1000000 in
+/-- **The identification block is applicable** (cap `8`, Horn-only, shift-free, `≤ 2·eqCount x + 9` steps) and
+leaves `eqFactB &js₀ &js'`. -/
+theorem identRoot_ok {tbl N Wl x jx₀ jx' js₀ js' E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (hWl : Wl = layoutPieces) (hx : IsSemiformula LAct 0 x) (hΓ : IsFormulaSet LAct Γ)
+    (hE : 2 * (0 + formulaLen LAct x) + 12 ≤ E) (hE₀ : jx₀ + eqCount x + 1 ≤ E) (hE' : jx' + eqCount x + 1 ≤ E)
+    (hEs₀ : js₀ + 1 ≤ E) (hEs' : js' + 1 ≤ E)
+    (hD₀ : DossF walkPieces Γ 0 x jx₀) (hD' : DossF walkPieces Γ 0 x jx')
+    (hm₀ : neg LAct (memFact (^&jx₀) (^&js₀)) ∈ Γ) (hm' : neg LAct (memFact (^&jx') (^&js')) ∈ Γ)
+    (hi₀ : neg LAct (insFact (^&js₀) (^&jx₀) (𝟎 : V)) ∈ Γ) (hi' : neg LAct (insFact (^&js') (^&jx') (𝟎 : V)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (identRoot Wl x jx₀ jx' js₀ js') ∧ NoDrop (identRoot Wl x jx₀ jx' js₀ js') ∧
+    HornOnly (identRoot Wl x jx₀ jx' js₀ js') ∧ shiftsV (identRoot Wl x jx₀ jx' js₀ js') = 0 ∧
+    len (identRoot Wl x jx₀ jx' js₀ js') ≤ 2 * eqCount x + 9 ∧
+    neg LAct (eqFactB (^&js₀) (^&js')) ∈ finalCtx Γ (identRoot Wl x jx₀ jx' js₀ js') := by
+  have hW := hP.walkTable
+  have hL := hP.layoutTable
+  have hF := hP.frag1Table
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
+  have hx₀E : jx₀ + 1 ≤ E := le_trans (add_le_add le_self_add le_rfl) hE₀
+  have hx'E : jx' + 1 ≤ E := le_trans (add_le_add le_self_add le_rfl) hE'
+  have h0l : termLen LAct (𝟎 : V) ≤ E := termLen_zeroV_le hE1
+  -- the walk
+  have hDA₀ := dossierAt_of_dossF htbl hW rfl hx hD₀
+  have hDA' := dossierAt_of_dossF htbl hW rfl hx hD'
+  obtain ⟨eok, end_, eho, esh, elen, efact⟩ := eqSteps_ok htbl hL hWl rfl hx hE hE₀ hE' hΓ hDA₀ hDA'
+  obtain ⟨Γe, hΓe⟩ : ∃ Γ', Γ' = finalCtx Γ (eqSteps Wl jx₀ jx' x) := ⟨_, rfl⟩
+  rw [← hΓe] at efact
+  have hΓef : IsFormulaSet LAct Γe := by rw [hΓe]; exact finalCtx_isFormulaSet 8 htbl hΓ eok
+  have tre : ∀ y ∈ Γ, y ∈ Γe := fun y hy ↦ by rw [hΓe]; exact tr_of_zero end_ esh hy
+  -- the eight Horn steps
+  obtain ⟨ok₁, tg₁, cx₁⟩ := flok_eqSymm htbl hF rfl hΓef (hf_ jx₀) (termLen_fvar_le' hx₀E) (hf_ jx') (termLen_fvar_le' hx'E) efact
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = insert (neg LAct (eqFactB (^&jx') (^&jx₀))) Γe := ⟨_, rfl⟩
+  rw [← hΓ₁] at cx₁
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
+  have tr₁ : ∀ y ∈ Γe, y ∈ Γ₁ := fun y hy ↦ by rw [hΓ₁]; exact memIns hy
+  have f₁ : neg LAct (eqFactB (^&jx') (^&jx₀)) ∈ Γ₁ := by rw [hΓ₁]; exact memInsSelf _ _
+  obtain ⟨ok₂, tg₂, cx₂⟩ := flok_congMem htbl hF rfl hΓ₁f (hf_ jx') (termLen_fvar_le' hx'E) (hf_ jx₀) (termLen_fvar_le' hx₀E)
+    (hf_ js') (termLen_fvar_le' hEs') (tr₁ _ efact) (tr₁ _ (tre _ hm'))
+  obtain ⟨Γ₂, hΓ₂⟩ : ∃ Γ', Γ' = insert (neg LAct (memFact (^&jx₀) (^&js'))) Γ₁ := ⟨_, rfl⟩
+  rw [← hΓ₂] at cx₂
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
+  have tr₂ : ∀ y ∈ Γ₁, y ∈ Γ₂ := fun y hy ↦ by rw [hΓ₂]; exact memIns hy
+  have f₂ : neg LAct (memFact (^&jx₀) (^&js')) ∈ Γ₂ := by rw [hΓ₂]; exact memInsSelf _ _
+  obtain ⟨ok₃, tg₃, cx₃⟩ := flok_congMem htbl hF rfl hΓ₂f (hf_ jx₀) (termLen_fvar_le' hx₀E) (hf_ jx') (termLen_fvar_le' hx'E)
+    (hf_ js₀) (termLen_fvar_le' hEs₀) (tr₂ _ f₁) (tr₂ _ (tr₁ _ (tre _ hm₀)))
+  obtain ⟨Γ₃, hΓ₃⟩ : ∃ Γ', Γ' = insert (neg LAct (memFact (^&jx') (^&js₀))) Γ₂ := ⟨_, rfl⟩
+  rw [← hΓ₃] at cx₃
+  have hΓ₃f : IsFormulaSet LAct Γ₃ := by rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
+  have tr₃ : ∀ y ∈ Γ₂, y ∈ Γ₃ := fun y hy ↦ by rw [hΓ₃]; exact memIns hy
+  have f₃ : neg LAct (memFact (^&jx') (^&js₀)) ∈ Γ₃ := by rw [hΓ₃]; exact memInsSelf _ _
+  obtain ⟨ok₄, tg₄, cx₄⟩ := flok_emptySubsetC htbl hF rfl hΓ₃f (hf_ js') (termLen_fvar_le' hEs')
+  obtain ⟨Γ₄, hΓ₄⟩ : ∃ Γ', Γ' = insert (neg LAct (subsetFact (𝟎 : V) (^&js'))) Γ₃ := ⟨_, rfl⟩
+  rw [← hΓ₄] at cx₄
+  have hΓ₄f : IsFormulaSet LAct Γ₄ := by rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
+  have tr₄ : ∀ y ∈ Γ₃, y ∈ Γ₄ := fun y hy ↦ by rw [hΓ₄]; exact memIns hy
+  have f₄ : neg LAct (subsetFact (𝟎 : V) (^&js')) ∈ Γ₄ := by rw [hΓ₄]; exact memInsSelf _ _
+  obtain ⟨ok₅, tg₅, cx₅⟩ := flok_emptySubsetC htbl hF rfl hΓ₄f (hf_ js₀) (termLen_fvar_le' hEs₀)
+  obtain ⟨Γ₅, hΓ₅⟩ : ∃ Γ', Γ' = insert (neg LAct (subsetFact (𝟎 : V) (^&js₀))) Γ₄ := ⟨_, rfl⟩
+  rw [← hΓ₅] at cx₅
+  have hΓ₅f : IsFormulaSet LAct Γ₅ := by rw [← cx₅]; exact isFormulaSet_ctxAfter 8 htbl ok₅
+  have tr₅ : ∀ y ∈ Γ₄, y ∈ Γ₅ := fun y hy ↦ by rw [hΓ₅]; exact memIns hy
+  have f₅ : neg LAct (subsetFact (𝟎 : V) (^&js₀)) ∈ Γ₅ := by rw [hΓ₅]; exact memInsSelf _ _
+  obtain ⟨ok₆, tg₆, cx₆⟩ := fok_insertSubset htbl hF rfl hΓ₅f h0_ h0l (hf_ js') (termLen_fvar_le' hEs') (hf_ jx₀)
+    (termLen_fvar_le' hx₀E) (hf_ js₀) (termLen_fvar_le' hEs₀) (tr₅ _ f₄) (tr₅ _ (tr₄ _ (tr₃ _ f₂)))
+    (tr₅ _ (tr₄ _ (tr₃ _ (tr₂ _ (tr₁ _ (tre _ hi₀))))))
+  obtain ⟨Γ₆, hΓ₆⟩ : ∃ Γ', Γ' = insert (neg LAct (subsetFact (^&js₀) (^&js'))) Γ₅ := ⟨_, rfl⟩
+  rw [← hΓ₆] at cx₆
+  have hΓ₆f : IsFormulaSet LAct Γ₆ := by rw [← cx₆]; exact isFormulaSet_ctxAfter 8 htbl ok₆
+  have tr₆ : ∀ y ∈ Γ₅, y ∈ Γ₆ := fun y hy ↦ by rw [hΓ₆]; exact memIns hy
+  have f₆ : neg LAct (subsetFact (^&js₀) (^&js')) ∈ Γ₆ := by rw [hΓ₆]; exact memInsSelf _ _
+  obtain ⟨ok₇, tg₇, cx₇⟩ := fok_insertSubset htbl hF rfl hΓ₆f h0_ h0l (hf_ js₀) (termLen_fvar_le' hEs₀) (hf_ jx')
+    (termLen_fvar_le' hx'E) (hf_ js') (termLen_fvar_le' hEs') (tr₆ _ f₅) (tr₆ _ (tr₅ _ (tr₄ _ f₃)))
+    (tr₆ _ (tr₅ _ (tr₄ _ (tr₃ _ (tr₂ _ (tr₁ _ (tre _ hi')))))))
+  obtain ⟨Γ₇, hΓ₇⟩ : ∃ Γ', Γ' = insert (neg LAct (subsetFact (^&js') (^&js₀))) Γ₆ := ⟨_, rfl⟩
+  rw [← hΓ₇] at cx₇
+  have hΓ₇f : IsFormulaSet LAct Γ₇ := by rw [← cx₇]; exact isFormulaSet_ctxAfter 8 htbl ok₇
+  have tr₇ : ∀ y ∈ Γ₆, y ∈ Γ₇ := fun y hy ↦ by rw [hΓ₇]; exact memIns hy
+  have f₇ : neg LAct (subsetFact (^&js') (^&js₀)) ∈ Γ₇ := by rw [hΓ₇]; exact memInsSelf _ _
+  obtain ⟨ok₈, tg₈, cx₈⟩ := flok_subsetAntisymm htbl hF rfl hΓ₇f (hf_ js₀) (termLen_fvar_le' hEs₀) (hf_ js') (termLen_fvar_le' hEs')
+    (tr₇ _ f₆) f₇
+  -- the assembly
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · unfold identRoot
+    refine listOK_appendV eok ?_
+    rw [← hΓe]
+    refine listOK_cons ok₁ ?_; rw [cx₁]
+    refine listOK_cons ok₂ ?_; rw [cx₂]
+    refine listOK_cons ok₃ ?_; rw [cx₃]
+    refine listOK_cons ok₄ ?_; rw [cx₄]
+    refine listOK_cons ok₅ ?_; rw [cx₅]
+    refine listOK_cons ok₆ ?_; rw [cx₆]
+    refine listOK_cons ok₇ ?_; rw [cx₇]
+    exact listOK_single ok₈
+  · unfold identRoot
+    exact noDrop_appendV end_ (noDrop_cons (Or.inl tg₁) (noDrop_cons (Or.inl tg₂) (noDrop_cons (Or.inl tg₃)
+      (noDrop_cons (Or.inl tg₄) (noDrop_cons (Or.inl tg₅) (noDrop_cons (Or.inl tg₆) (noDrop_cons (Or.inl tg₇)
+      (noDrop_single (Or.inl tg₈)))))))))
+  · unfold identRoot
+    exact hornOnly_appendV eho (hornOnly_cons (Or.inl tg₁) (hornOnly_cons (Or.inl tg₂) (hornOnly_cons (Or.inl tg₃)
+      (hornOnly_cons (Or.inl tg₄) (hornOnly_cons (Or.inl tg₅) (hornOnly_cons (Or.inl tg₆) (hornOnly_cons (Or.inl tg₇)
+      (hornOnly_single (Or.inl tg₈)))))))))
+  · unfold identRoot
+    rw [shiftsV_appendV, esh, shiftsV_cons_tag0 tg₁, shiftsV_cons_tag0 tg₂, shiftsV_cons_tag0 tg₃, shiftsV_cons_tag0 tg₄,
+      shiftsV_cons_tag0 tg₅, shiftsV_cons_tag0 tg₆, shiftsV_cons_tag0 tg₇, shiftsV_single_tag0 tg₈, add_zero]
+  · unfold identRoot
+    rw [len_appendV]
+    simp only [len_adjoin, len_nil]
+    calc len (eqSteps Wl jx₀ jx' x) + (0 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1) = len (eqSteps Wl jx₀ jx' x) + 8 := by ring
+      _ ≤ 2 * eqCount x + 1 + 8 := add_le_add elen le_rfl
+      _ = 2 * eqCount x + 9 := by ring
+  · unfold identRoot
+    rw [finalCtx_appendV, ← hΓe, finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_cons, cx₄,
+      finalCtx_cons, cx₅, finalCtx_cons, cx₆, finalCtx_cons, cx₇, finalCtx_single, cx₈]
+    exact memInsSelf _ _
+
+end identRoot
+
 end ArithS
