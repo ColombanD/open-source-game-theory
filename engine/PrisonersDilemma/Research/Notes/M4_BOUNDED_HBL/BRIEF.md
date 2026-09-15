@@ -1350,3 +1350,18 @@ norm_num)` for `c ≤ c'` against a metavariable coefficient silently leaves `?c
 `termLen (#0 + 1) = 3`; chained `sleep` is blocked — poll with `until grep -q … ; do sleep 10; done`.
 IN FLIGHT: `Assemble` (kit over VerifyGraph', root bridge, cost, the theorem conditional on the
 oracle); `Seam` (the two seam fixes → the recognizer plugged into the recursion).
+
+**§11 status — 2026-09-15 evening: the seam, Part 1 (6b8aa28, 8819b6e; both agents dropped once by
+a network error and resumed).** `IndRec` §7: **offset-independent CUBIC recognizer bounds** —
+`axmInd_ok' : |p| ≤ D → ip + 200(D+1)³ ≤ E → … → shiftsV P ≤ 100(D+1)³ ∧ len P ≤ 1400(D+1)³`,
+`axmIndOracle_of'` with `C = 1400(D+1)³` (via `formulaLen_subst_fvarVec_le : |subst (fvarVec m) b|
+≤ |b|` — `VarInv` preserved by `qVec` — and `Pin`'s linear `sfL` bound: `certSubst_winv'`,
+`substInst_*'`, `stageA'`, `stageB'`). So the quintic-with-offset bound was, as suspected, an
+artifact of the superseded `certSubst` bound: the recognizer is CUBIC in `|p|` alone. `Verify3.lean`
+(NEW) §1–§3: shifted certificate entries `AxmEntryOK'`/`AxmTableOK'` (`entryB Cv p = Cv·(|p|+1)³`),
+the shifted assembler `vAxm'` (node at `is = k+1+σ`, `il = σ`, `ip = memTop s p σ`), **`VerifyGraph''`**
+(= `Verify2`'s fixpoint with the `axm` clause on `vAxm'`), definability, `case_iff`, ten inversions,
+`mono_A`. PENDING: `vAxm'_ok`, `verifyGraph''_ok` re-glued, `verifyGraph''_exists_unconditional`.
+`Assemble.lean` (in flight): §1–§4 committed (`identRoot`, `retargetRoot`, `vList`/`vList_ok` — the
+`ok` half of the kit from the ROOT layout, `Ck = Ck' + 50`); the cost half, the kit instance and
+the conditional theorem pending.
