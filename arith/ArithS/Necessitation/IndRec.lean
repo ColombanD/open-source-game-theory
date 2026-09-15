@@ -1720,4 +1720,127 @@ theorem stageWalks {tbl N E Γ p ip s nk m : V} (htbl : TableOK tbl N) (hT : Ind
 
 end walks
 
+/-! ### 5.3 The body's dossier and the size-bound helpers -/
+
+section bodyDoss
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-- The pieces of the body `indBodyVal K` in the `LAct` vocabulary. -/
+noncomputable def xK (K : V) : V := subst LAct c0v (neg LAct K)
+noncomputable def nsK (K : V) : V := subst LAct c1v (neg LAct K)
+noncomputable def n1K (K : V) : V := K ^⋏ nsK K
+noncomputable def zK (K : V) : V := ^∀ K
+noncomputable def yK (K : V) : V := (^∃ n1K K) ^⋎ zK K
+
+lemma indBodyVal_eq_yK {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) : indBodyVal K = xK K ^⋎ yK K := by
+  rw [indBodyVal_shape hK]; rfl
+
+lemma nkL_of {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) : IsSemiformula LAct 1 (neg LAct K) := by
+  rw [neg_LAct_eq hK.isUFormula]; exact IsSemiformula.LAct_of_LOR hK.neg
+lemma xK_isSemiformula {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) : IsSemiformula LAct 0 (xK K) :=
+  IsSemiformula.subst (nkL_of hK) isSemitermVec_c0v
+lemma nsK_isSemiformula {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) : IsSemiformula LAct 1 (nsK K) :=
+  IsSemiformula.subst (nkL_of hK) isSemitermVec_c1v
+lemma n1K_isSemiformula {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) : IsSemiformula LAct 1 (n1K K) :=
+  IsSemiformula.and.mpr ⟨IsSemiformula.LAct_of_LOR hK, nsK_isSemiformula hK⟩
+lemma zK_isSemiformula {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) : IsSemiformula LAct 0 (zK K) :=
+  IsSemiformula.all.mpr (by rw [zero_add]; exact IsSemiformula.LAct_of_LOR hK)
+lemma yK_isSemiformula {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) : IsSemiformula LAct 0 (yK K) :=
+  IsSemiformula.or.mpr ⟨IsSemiformula.exs.mpr (by rw [zero_add]; exact n1K_isSemiformula hK), zK_isSemiformula hK⟩
+lemma indBodyVal_isSemiformula {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) : IsSemiformula LAct 0 (indBodyVal K) := by
+  rw [indBodyVal_eq_yK hK]; exact IsSemiformula.or.mpr ⟨xK_isSemiformula hK, yK_isSemiformula hK⟩
+
+/-- The lengths of the pieces are bounded by the body's. -/
+lemma formulaLen_pieces_le {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) :
+    formulaLen LAct (xK K) ≤ formulaLen LAct (indBodyVal K) ∧ formulaLen LAct (yK K) ≤ formulaLen LAct (indBodyVal K) ∧
+    formulaLen LAct (zK K) ≤ formulaLen LAct (indBodyVal K) ∧ formulaLen LAct (nsK K) ≤ formulaLen LAct (indBodyVal K) ∧
+    formulaLen LAct K ≤ formulaLen LAct (indBodyVal K) := by
+  have hx := xK_isSemiformula hK
+  have hy := yK_isSemiformula hK
+  have hz := zK_isSemiformula hK
+  have hn1 := n1K_isSemiformula hK
+  have hns := nsK_isSemiformula hK
+  have hKL := IsSemiformula.LAct_of_LOR hK
+  have e1 : formulaLen LAct (indBodyVal K) = formulaLen LAct (xK K) + formulaLen LAct (yK K) + 1 := by
+    rw [indBodyVal_eq_yK hK]; exact formulaLen_or hx.isUFormula hy.isUFormula
+  have e2 : formulaLen LAct (yK K) = formulaLen LAct (^∃ n1K K) + formulaLen LAct (zK K) + 1 :=
+    formulaLen_or (IsSemiformula.exs.mpr (by rw [zero_add]; exact hn1)).isUFormula hz.isUFormula
+  have e3 : formulaLen LAct (^∃ n1K K) = formulaLen LAct (n1K K) + 1 := formulaLen_exs hn1.isUFormula
+  have e4 : formulaLen LAct (n1K K) = formulaLen LAct K + formulaLen LAct (nsK K) + 1 := formulaLen_and hKL.isUFormula hns.isUFormula
+  have e5 : formulaLen LAct (zK K) = formulaLen LAct K + 1 := formulaLen_all hKL.isUFormula
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [e1]; exact le_trans le_self_add le_self_add
+  · rw [e1]; exact le_trans le_add_self le_self_add
+  · rw [e1, e2]; exact le_trans le_add_self (le_trans le_self_add (le_trans le_add_self le_self_add))
+  · rw [e1, e2, e3, e4]
+    have h : formulaLen LAct (nsK K) ≤ formulaLen LAct K + formulaLen LAct (nsK K) + 1 + 1 + formulaLen LAct (zK K) + 1 :=
+      le_trans le_add_self (le_trans le_self_add (le_trans le_self_add (le_trans le_self_add le_self_add)))
+    exact le_trans h (le_trans le_add_self le_self_add)
+  · rw [e1, e2, e3, e4]
+    have h : formulaLen LAct K ≤ formulaLen LAct K + formulaLen LAct (nsK K) + 1 + 1 + formulaLen LAct (zK K) + 1 :=
+      le_trans le_self_add (le_trans le_self_add (le_trans le_self_add (le_trans le_self_add le_self_add)))
+    exact le_trans h (le_trans le_add_self le_self_add)
+
+/-- **The body's dossier, decomposed**: from the dossier of `indBodyVal K` at `&js` (bound `0`), the five shape facts and
+the sub-dossiers of `x`, `ns`, and the two copies of `K` at their walk offsets. -/
+theorem bodyDoss {tbl N Γ K js : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hK : IsSemiformula ℒₒᵣ 1 K)
+    (hD : DossF walkPieces Γ 0 (indBodyVal K) js) :
+    neg LAct (orFact (^&js) (^&(js + descCountF walkPieces 0 (yK K) + 1)) (^&(js + 1))) ∈ Γ ∧
+    neg LAct (orFact (^&(js + 1)) (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1)) (^&(js + 1 + 1))) ∈ Γ ∧
+    neg LAct (exsFact (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1)) (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1))) ∈ Γ ∧
+    neg LAct (andFact (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1))
+      (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1))
+      (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + 1))) ∈ Γ ∧
+    neg LAct (allFact (^&(js + 1 + 1)) (^&(js + 1 + 1 + 1))) ∈ Γ ∧
+    DossF walkPieces Γ 0 (xK K) (js + descCountF walkPieces 0 (yK K) + 1) ∧
+    DossF walkPieces Γ 1 (nsK K) (js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + 1) ∧
+    DossF walkPieces Γ 1 K (js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1) ∧
+    DossF walkPieces Γ 1 K (js + 1 + 1 + 1) := by
+  have hx := xK_isSemiformula hK
+  have hy := yK_isSemiformula hK
+  have hz := zK_isSemiformula hK
+  have hn1 := n1K_isSemiformula hK
+  have hns := nsK_isSemiformula hK
+  have hKL := IsSemiformula.LAct_of_LOR hK
+  have hu : IsSemiformula LAct 0 (^∃ n1K K) := IsSemiformula.exs.mpr (by rw [zero_add]; exact hn1)
+  rw [indBodyVal_eq_yK hK] at hD
+  obtain ⟨h1, _, hDy, hDx⟩ := dossF_or htbl hW rfl hx hy hD
+  have hDy' : DossF walkPieces Γ 0 ((^∃ n1K K) ^⋎ zK K) (js + 1) := hDy
+  obtain ⟨h2, _, hDz, hDu⟩ := dossF_or htbl hW rfl hu hz hDy'
+  obtain ⟨h3, _, hDn1⟩ := dossF_exs htbl hW rfl (by rw [zero_add]; exact hn1) hDu
+  rw [zero_add] at hDn1
+  have hDn1' : DossF walkPieces Γ 1 (K ^⋏ nsK K) (js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1) := hDn1
+  obtain ⟨h4, _, hDns, hDK1⟩ := dossF_and htbl hW rfl hKL hns hDn1'
+  have hDz' : DossF walkPieces Γ 0 (^∀ K) (js + 1 + 1) := hDz
+  obtain ⟨h5, _, hDK2⟩ := dossF_all htbl hW rfl (by rw [zero_add]; exact hKL) hDz'
+  rw [zero_add] at hDK2
+  exact ⟨h1, h2, h3, h4, h5, hDx, hDns, hDK1, hDK2⟩
+
+/-! ### The size-bound helpers (`gp Z k`) -/
+
+lemma le_gp_of_le {Z a : V} {c : V} {k : ℕ} (hZ : 1 ≤ Z) (ha : a ≤ c * gp Z k) {k' : ℕ} (hk : k ≤ k') : a ≤ c * gp Z k' :=
+  le_trans ha (mul_le_mul_of_nonneg_left (gp_mono hZ hk) zero_le)
+
+lemma add_gp_le {Z a b c₁ c₂ : V} {i j k : ℕ} (hZ : 1 ≤ Z) (ha : a ≤ c₁ * gp Z i) (hb : b ≤ c₂ * gp Z j) (hi : i ≤ k) (hj : j ≤ k) :
+    a + b ≤ (c₁ + c₂) * gp Z k := by
+  calc a + b ≤ c₁ * gp Z k + c₂ * gp Z k := add_le_add (le_gp_of_le hZ ha hi) (le_gp_of_le hZ hb hj)
+    _ = (c₁ + c₂) * gp Z k := by ring
+
+lemma mul_gp_le {Z a b c₁ c₂ : V} {i j : ℕ} (ha : a ≤ c₁ * gp Z i) (hb : b ≤ c₂ * gp Z j) :
+    a * b ≤ (c₁ * c₂) * gp Z (i + j) := by
+  calc a * b ≤ (c₁ * gp Z i) * (c₂ * gp Z j) := mul_le_mul ha hb zero_le zero_le
+    _ = (c₁ * c₂) * gp Z (i + j) := by rw [gp_add]; ring
+
+lemma const_gp_le {Z : V} (c : V) (hZ : 1 ≤ Z) (k : ℕ) : c ≤ c * gp Z k := by
+  calc c = c * 1 := by ring
+    _ ≤ c * gp Z k := mul_le_mul_of_nonneg_left (one_le_gp hZ k) zero_le
+
+lemma atom_gp_le {Z a : V} (ha : a ≤ Z) : a ≤ 1 * gp Z 1 := by rw [one_mul]; simpa using ha
+
+lemma coef_gp_le {Z a c c' : V} {k : ℕ} (ha : a ≤ c * gp Z k) (hc : c ≤ c') : a ≤ c' * gp Z k :=
+  le_trans ha (mul_le_mul_of_nonneg_right hc zero_le)
+
+end bodyDoss
+
 end ArithS
