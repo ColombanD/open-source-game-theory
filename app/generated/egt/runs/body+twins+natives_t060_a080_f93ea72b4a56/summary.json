@@ -1,0 +1,103 @@
+{
+  "run": "body+twins+natives_t060_a080_f93ea72b4a56",
+  "zoo": "body+twins+natives",
+  "family": "behavioral",
+  "t": 0.6,
+  "alpha": 0.8,
+  "fingerprint": "f93ea72b4a56",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.6,
+      0.8
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.635,
+      "error": null,
+      "edges_strict": 59,
+      "edges_weak": 124,
+      "n_sccs": 8,
+      "n_cycles": 65,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 1.185,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 12705,
+        "non_interior": 3650,
+        "asymp_stable_invadable": 11,
+        "saddle": 3
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 1143.483,
+      "error": null,
+      "run_dir": "runs/20260901T135425Z_c4e71c6d6502",
+      "n_extreme_NE": 33,
+      "n_components": 2,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 89.774,
+      "error": null,
+      "n_attractors": 14,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 1.0,
+      "dominant_support": [
+        "TitForTatBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.059,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "TitForTatBot"
+        ]
+      }
+    }
+  }
+}

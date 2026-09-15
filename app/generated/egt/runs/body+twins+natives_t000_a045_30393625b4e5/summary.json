@@ -1,0 +1,114 @@
+{
+  "run": "body+twins+natives_t000_a045_30393625b4e5",
+  "zoo": "body+twins+natives",
+  "family": "behavioral",
+  "t": 0.0,
+  "alpha": 0.45,
+  "fingerprint": "30393625b4e5",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.0,
+      0.45
+    ],
+    [
+      0.0,
+      0.62
+    ]
+  ],
+  "n_grid_points": 2,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.003,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.926,
+      "error": null,
+      "edges_strict": 48,
+      "edges_weak": 134,
+      "n_sccs": 14,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 1.372,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 16369
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 0.495,
+      "error": null,
+      "run_dir": "runs/20260901T145950Z_326f1a366e38",
+      "n_extreme_NE": 36,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 1.064,
+      "error": null,
+      "n_attractors": 19,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.975124,
+      "dominant_support": [
+        "DefectBot",
+        "CIMCIC",
+        "OBot",
+        "DupocBot",
+        "MaxConfidenceBot",
+        "PrudentBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.096,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DefectBot",
+          "DupocBot",
+          "MaxConfidenceBot",
+          "OBot",
+          "PrudentBot",
+          "CIMCIC"
+        ]
+      }
+    }
+  }
+}

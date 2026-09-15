@@ -1,0 +1,104 @@
+{
+  "run": "body_syntactic_t060_a030_6834f939325e",
+  "zoo": "body",
+  "family": "syntactic",
+  "t": 0.6,
+  "alpha": 0.3,
+  "fingerprint": "6834f939325e",
+  "n_types": 10,
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.6,
+      0.3
+    ],
+    [
+      0.4,
+      0.45
+    ]
+  ],
+  "n_grid_points": 2,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.001,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 10
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.37,
+      "error": null,
+      "edges_strict": 34,
+      "edges_weak": 65,
+      "n_sccs": 3,
+      "n_cycles": 69,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.054,
+      "error": null,
+      "n_supports": 1013,
+      "by_class": {
+        "non_interior": 642,
+        "singular": 363,
+        "asymp_stable_invadable": 8
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 11.667,
+      "error": null,
+      "run_dir": "runs/20260901T122658Z_5c1e03b1f42b",
+      "n_extreme_NE": 21,
+      "n_components": 3,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 1.406,
+      "error": null,
+      "n_attractors": 13,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.945274,
+      "dominant_support": [
+        "DupocBot",
+        "CooperateBot",
+        "TitForTatBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.031,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DupocBot"
+        ]
+      }
+    }
+  }
+}

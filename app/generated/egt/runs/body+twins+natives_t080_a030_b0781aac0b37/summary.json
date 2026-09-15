@@ -1,0 +1,116 @@
+{
+  "run": "body+twins+natives_t080_a030_b0781aac0b37",
+  "zoo": "body+twins+natives",
+  "family": "behavioral",
+  "t": 0.8,
+  "alpha": 0.3,
+  "fingerprint": "b0781aac0b37",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.8,
+      0.3
+    ],
+    [
+      0.8,
+      0.45
+    ],
+    [
+      0.6,
+      0.45
+    ]
+  ],
+  "n_grid_points": 3,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.449,
+      "error": null,
+      "edges_strict": 64,
+      "edges_weak": 123,
+      "n_sccs": 3,
+      "n_cycles": 255,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.836,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 11441,
+        "non_interior": 4917,
+        "asymp_stable_invadable": 8,
+        "non_hyperbolic": 3
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 257.046,
+      "error": null,
+      "run_dir": "runs/20260901T131346Z_c0f199a2582c",
+      "n_extreme_NE": 36,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 28.224,
+      "error": null,
+      "n_attractors": 17,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.955224,
+      "dominant_support": [
+        "DefectBot",
+        "PrudentBot",
+        "OBot",
+        "MaxConfidenceBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.08,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "PrudentBot",
+          "DefectBot",
+          "TitForTatBot"
+        ]
+      }
+    }
+  }
+}

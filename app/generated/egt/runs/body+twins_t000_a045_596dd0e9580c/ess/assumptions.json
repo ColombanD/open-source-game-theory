@@ -1,0 +1,59 @@
+{
+  "ess_definition": {
+    "form": "Maynard Smith two-condition (pure-strategy, single-population, possibly asymmetric A)",
+    "reference": "Sandholm 2010 Ch. 8; Weibull 1995 Def. 2.1",
+    "clause_a": "A[i,i] > A[j,i]",
+    "clause_b": "A[i,i] == A[j,i] AND A[i,j] > A[j,j]"
+  },
+  "source": "tau_tournament[behavioral]",
+  "zoo": "body+twins",
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "n_types": 12,
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c"
+  },
+  "tau": {
+    "t": 0.0,
+    "alpha": 0.45
+  },
+  "non_termination": {
+    "policy": "exclude",
+    "payoff": null,
+    "excluded_bots": []
+  },
+  "stipulated_cells": [],
+  "is_fully_proven": true,
+  "suspect_cells": [],
+  "diagonal_undefined_policy": {
+    "rule": "If A[i,i] is non-finite, enumerate_pure_ess raises ValueError. The ingest layer raises earlier; this is defence in depth.",
+    "currently_triggered": false,
+    "reason_currently_inactive": "non-terminating cells are resolved by NonTerminationPolicy before A is built, so no diagonal sentinel survives ingest."
+  },
+  "tolerance": {
+    "atol": 1e-12,
+    "rationale": "payoffs are exact combinations of {b, -c, b-c, 0}; tolerance guards against float-arithmetic noise only"
+  },
+  "ess_pipeline_version": "0.2.0"
+}

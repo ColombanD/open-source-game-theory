@@ -1,0 +1,104 @@
+{
+  "run": "body+twins_syntactic_t040_a062_1771e29237cf",
+  "zoo": "body+twins",
+  "family": "syntactic",
+  "t": 0.4,
+  "alpha": 0.62,
+  "fingerprint": "1771e29237cf",
+  "n_types": 12,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.4,
+      0.62
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 12
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.381,
+      "error": null,
+      "edges_strict": 44,
+      "edges_weak": 90,
+      "n_sccs": 5,
+      "n_cycles": 22,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.217,
+      "error": null,
+      "n_supports": 4083,
+      "by_class": {
+        "singular": 2305,
+        "non_interior": 1774,
+        "asymp_stable_invadable": 4
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 88.646,
+      "error": null,
+      "run_dir": "runs/20260901T125548Z_4ed6a7fe633e",
+      "n_extreme_NE": 80,
+      "n_components": 2,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.886,
+      "error": null,
+      "n_attractors": 17,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.945274,
+      "dominant_support": [
+        "CIMCIC",
+        "DupocBot",
+        "CooperateBot",
+        "TitForTatBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.044,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "CIMCIC",
+          "DupocBot"
+        ]
+      }
+    }
+  }
+}

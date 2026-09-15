@@ -1,0 +1,98 @@
+{
+  "run": "body_syntactic_t000_a030_a8e58c0078c8",
+  "zoo": "body",
+  "family": "syntactic",
+  "t": 0.0,
+  "alpha": 0.3,
+  "fingerprint": "a8e58c0078c8",
+  "n_types": 10,
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.0,
+      0.3
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.001,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 10
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.404,
+      "error": null,
+      "edges_strict": 20,
+      "edges_weak": 69,
+      "n_sccs": 10,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.059,
+      "error": null,
+      "n_supports": 1013,
+      "by_class": {
+        "singular": 989,
+        "non_interior": 24
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 0.168,
+      "error": null,
+      "run_dir": "runs/20260901T122833Z_cb2757381323",
+      "n_extreme_NE": 4,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.977,
+      "error": null,
+      "n_attractors": 11,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.995025,
+      "dominant_support": [
+        "DefectBot",
+        "OBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.031,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DefectBot"
+        ]
+      }
+    }
+  }
+}

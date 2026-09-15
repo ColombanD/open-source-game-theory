@@ -1,0 +1,113 @@
+{
+  "run": "body+twins+natives_t080_a100_01e563a4396d",
+  "zoo": "body+twins+natives",
+  "family": "behavioral",
+  "t": 0.8,
+  "alpha": 1.0,
+  "fingerprint": "01e563a4396d",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.8,
+      1.0
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.719,
+      "error": null,
+      "edges_strict": 23,
+      "edges_weak": 159,
+      "n_sccs": 14,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 1.152,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 16221,
+        "non_interior": 148
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 53.997,
+      "error": null,
+      "run_dir": "runs/20260901T133202Z_f4f96fe401e6",
+      "n_extreme_NE": 121,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 1.866,
+      "error": null,
+      "n_attractors": 25,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.865672,
+      "dominant_support": [
+        "DefectBot",
+        "PrudentBot",
+        "OBot",
+        "CIMCIC",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "DupocBot",
+        "EBot",
+        "DIMCID",
+        "CupodBot",
+        "TitForTatBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.076,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DefectBot",
+          "OBot",
+          "PrudentBot"
+        ]
+      }
+    }
+  }
+}

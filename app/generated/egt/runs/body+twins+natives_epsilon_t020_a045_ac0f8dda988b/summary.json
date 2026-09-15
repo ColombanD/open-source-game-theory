@@ -1,0 +1,105 @@
+{
+  "run": "body+twins+natives_epsilon_t020_a045_ac0f8dda988b",
+  "zoo": "body+twins+natives",
+  "family": "epsilon",
+  "t": 0.2,
+  "alpha": 0.45,
+  "fingerprint": "ac0f8dda988b",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.2,
+      0.45
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.711,
+      "error": null,
+      "edges_strict": 52,
+      "edges_weak": 128,
+      "n_sccs": 7,
+      "n_cycles": 15,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 1.246,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 13609,
+        "non_interior": 2757,
+        "asymp_stable_invadable": 3
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 397.383,
+      "error": null,
+      "run_dir": "runs/20260901T154823Z_a420d20307ae",
+      "n_extreme_NE": 36,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.996,
+      "error": null,
+      "n_attractors": 20,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.80597,
+      "dominant_support": [
+        "MaxConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "DefectBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.074,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "MaxConfidenceBot"
+        ]
+      }
+    }
+  }
+}

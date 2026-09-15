@@ -1,0 +1,100 @@
+{
+  "run": "body_t000_a045_0589b43d45a5",
+  "zoo": "body",
+  "family": "behavioral",
+  "t": 0.0,
+  "alpha": 0.45,
+  "fingerprint": "0589b43d45a5",
+  "n_types": 10,
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.0,
+      0.45
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.001,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 10
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.33,
+      "error": null,
+      "edges_strict": 21,
+      "edges_weak": 69,
+      "n_sccs": 10,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.057,
+      "error": null,
+      "n_supports": 1013,
+      "by_class": {
+        "singular": 1013
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 0.057,
+      "error": null,
+      "run_dir": "runs/20260901T122213Z_49022a155129",
+      "n_extreme_NE": 9,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.693,
+      "error": null,
+      "n_attractors": 11,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 1.0,
+      "dominant_support": [
+        "OBot",
+        "DupocBot",
+        "DefectBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.032,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DefectBot",
+          "DupocBot",
+          "OBot"
+        ]
+      }
+    }
+  }
+}

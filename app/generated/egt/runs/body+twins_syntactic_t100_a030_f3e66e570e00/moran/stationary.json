@@ -1,0 +1,555 @@
+{
+  "names": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "points": [
+    {
+      "population": 10,
+      "beta": 0.01,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CIMCIC",
+          0.09388
+        ],
+        [
+          "DupocBot",
+          0.09388
+        ],
+        [
+          "PrudentBot",
+          0.088133
+        ],
+        [
+          "TitForTatBot",
+          0.087962
+        ],
+        [
+          "OBot",
+          0.086737
+        ],
+        [
+          "DefectBot",
+          0.083972
+        ],
+        [
+          "EBot",
+          0.083388
+        ],
+        [
+          "CooperateBot",
+          0.081146
+        ],
+        [
+          "CupodTrollBot",
+          0.078328
+        ],
+        [
+          "CupodBot",
+          0.074635
+        ],
+        [
+          "DIMCID",
+          0.07463
+        ],
+        [
+          "DBot",
+          0.073309
+        ]
+      ]
+    },
+    {
+      "population": 10,
+      "beta": 0.1,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [
+        "CIMCIC",
+        "DupocBot"
+      ],
+      "stationary": [
+        [
+          "CIMCIC",
+          0.190156
+        ],
+        [
+          "DupocBot",
+          0.190156
+        ],
+        [
+          "TitForTatBot",
+          0.114922
+        ],
+        [
+          "PrudentBot",
+          0.10672
+        ],
+        [
+          "OBot",
+          0.094304
+        ],
+        [
+          "DefectBot",
+          0.075855
+        ],
+        [
+          "CooperateBot",
+          0.066553
+        ],
+        [
+          "EBot",
+          0.055681
+        ],
+        [
+          "CupodTrollBot",
+          0.041281
+        ],
+        [
+          "CupodBot",
+          0.022618
+        ],
+        [
+          "DIMCID",
+          0.022546
+        ],
+        [
+          "DBot",
+          0.019208
+        ]
+      ]
+    },
+    {
+      "population": 10,
+      "beta": 1.0,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [
+        "CIMCIC",
+        "DupocBot"
+      ],
+      "stationary": [
+        [
+          "CIMCIC",
+          0.353885
+        ],
+        [
+          "DupocBot",
+          0.353885
+        ],
+        [
+          "TitForTatBot",
+          0.100046
+        ],
+        [
+          "PrudentBot",
+          0.055349
+        ],
+        [
+          "OBot",
+          0.041078
+        ],
+        [
+          "CooperateBot",
+          0.034685
+        ],
+        [
+          "DefectBot",
+          0.032109
+        ],
+        [
+          "EBot",
+          0.012824
+        ],
+        [
+          "CupodTrollBot",
+          0.010262
+        ],
+        [
+          "DBot",
+          0.004493
+        ],
+        [
+          "CupodBot",
+          0.000717
+        ],
+        [
+          "DIMCID",
+          0.000666
+        ]
+      ]
+    },
+    {
+      "population": 50,
+      "beta": 0.01,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [
+        "DupocBot",
+        "CIMCIC"
+      ],
+      "stationary": [
+        [
+          "DupocBot",
+          0.143026
+        ],
+        [
+          "CIMCIC",
+          0.143026
+        ],
+        [
+          "TitForTatBot",
+          0.106886
+        ],
+        [
+          "PrudentBot",
+          0.097462
+        ],
+        [
+          "OBot",
+          0.090638
+        ],
+        [
+          "DefectBot",
+          0.079173
+        ],
+        [
+          "EBot",
+          0.077257
+        ],
+        [
+          "CooperateBot",
+          0.076121
+        ],
+        [
+          "CupodTrollBot",
+          0.061328
+        ],
+        [
+          "CupodBot",
+          0.043049
+        ],
+        [
+          "DIMCID",
+          0.042988
+        ],
+        [
+          "DBot",
+          0.039047
+        ]
+      ]
+    },
+    {
+      "population": 50,
+      "beta": 0.1,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [
+        "CIMCIC",
+        "DupocBot"
+      ],
+      "stationary": [
+        [
+          "CIMCIC",
+          0.339925
+        ],
+        [
+          "DupocBot",
+          0.339925
+        ],
+        [
+          "TitForTatBot",
+          0.118973
+        ],
+        [
+          "PrudentBot",
+          0.054463
+        ],
+        [
+          "CooperateBot",
+          0.043772
+        ],
+        [
+          "OBot",
+          0.037468
+        ],
+        [
+          "DefectBot",
+          0.031552
+        ],
+        [
+          "EBot",
+          0.016633
+        ],
+        [
+          "CupodTrollBot",
+          0.012986
+        ],
+        [
+          "DBot",
+          0.003008
+        ],
+        [
+          "CupodBot",
+          0.000664
+        ],
+        [
+          "DIMCID",
+          0.000631
+        ]
+      ]
+    },
+    {
+      "population": 50,
+      "beta": 1.0,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [
+        "DupocBot",
+        "CIMCIC"
+      ],
+      "stationary": [
+        [
+          "DupocBot",
+          0.434853
+        ],
+        [
+          "CIMCIC",
+          0.434853
+        ],
+        [
+          "TitForTatBot",
+          0.04014
+        ],
+        [
+          "PrudentBot",
+          0.033497
+        ],
+        [
+          "DefectBot",
+          0.019576
+        ],
+        [
+          "OBot",
+          0.015611
+        ],
+        [
+          "CooperateBot",
+          0.011801
+        ],
+        [
+          "EBot",
+          0.004389
+        ],
+        [
+          "CupodTrollBot",
+          0.003655
+        ],
+        [
+          "DBot",
+          0.00136
+        ],
+        [
+          "CupodBot",
+          0.00014
+        ],
+        [
+          "DIMCID",
+          0.000127
+        ]
+      ]
+    },
+    {
+      "population": 100,
+      "beta": 0.01,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [
+        "DupocBot",
+        "CIMCIC"
+      ],
+      "stationary": [
+        [
+          "DupocBot",
+          0.200112
+        ],
+        [
+          "CIMCIC",
+          0.200112
+        ],
+        [
+          "TitForTatBot",
+          0.121915
+        ],
+        [
+          "PrudentBot",
+          0.095611
+        ],
+        [
+          "OBot",
+          0.083581
+        ],
+        [
+          "CooperateBot",
+          0.07113
+        ],
+        [
+          "DefectBot",
+          0.068119
+        ],
+        [
+          "EBot",
+          0.058769
+        ],
+        [
+          "CupodTrollBot",
+          0.043631
+        ],
+        [
+          "CupodBot",
+          0.019959
+        ],
+        [
+          "DIMCID",
+          0.019881
+        ],
+        [
+          "DBot",
+          0.017179
+        ]
+      ]
+    },
+    {
+      "population": 100,
+      "beta": 0.1,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [
+        "CIMCIC",
+        "DupocBot"
+      ],
+      "stationary": [
+        [
+          "CIMCIC",
+          0.378055
+        ],
+        [
+          "DupocBot",
+          0.378055
+        ],
+        [
+          "TitForTatBot",
+          0.089812
+        ],
+        [
+          "PrudentBot",
+          0.048319
+        ],
+        [
+          "CooperateBot",
+          0.02945
+        ],
+        [
+          "DefectBot",
+          0.027965
+        ],
+        [
+          "OBot",
+          0.026119
+        ],
+        [
+          "EBot",
+          0.010973
+        ],
+        [
+          "CupodTrollBot",
+          0.008824
+        ],
+        [
+          "DBot",
+          0.001928
+        ],
+        [
+          "CupodBot",
+          0.00026
+        ],
+        [
+          "DIMCID",
+          0.000241
+        ]
+      ]
+    },
+    {
+      "population": 100,
+      "beta": 1.0,
+      "converged": true,
+      "neutral_share": 0.083333,
+      "stochastically_stable": [
+        "CIMCIC",
+        "DupocBot"
+      ],
+      "stationary": [
+        [
+          "CIMCIC",
+          0.457572
+        ],
+        [
+          "DupocBot",
+          0.457572
+        ],
+        [
+          "PrudentBot",
+          0.025549
+        ],
+        [
+          "TitForTatBot",
+          0.02312
+        ],
+        [
+          "DefectBot",
+          0.014978
+        ],
+        [
+          "OBot",
+          0.009101
+        ],
+        [
+          "CooperateBot",
+          0.006634
+        ],
+        [
+          "EBot",
+          0.002481
+        ],
+        [
+          "CupodTrollBot",
+          0.002107
+        ],
+        [
+          "DBot",
+          0.000755
+        ],
+        [
+          "CupodBot",
+          6.9e-05
+        ],
+        [
+          "DIMCID",
+          6.2e-05
+        ]
+      ]
+    }
+  ]
+}

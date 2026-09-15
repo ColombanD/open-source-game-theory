@@ -1,0 +1,127 @@
+{
+  "run": "body+twins_syntactic_t100_a000_f7df4db66078",
+  "zoo": "body+twins",
+  "family": "syntactic",
+  "t": 1.0,
+  "alpha": 0.0,
+  "fingerprint": "f7df4db66078",
+  "n_types": 12,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      1.0,
+      0.0
+    ],
+    [
+      0.8,
+      0.0
+    ],
+    [
+      0.6,
+      0.0
+    ],
+    [
+      0.4,
+      0.0
+    ],
+    [
+      0.2,
+      0.0
+    ],
+    [
+      0.0,
+      0.0
+    ]
+  ],
+  "n_grid_points": 6,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.003,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 12
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.441,
+      "error": null,
+      "edges_strict": 0,
+      "edges_weak": 132,
+      "n_sccs": 12,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.21,
+      "error": null,
+      "n_supports": 4083,
+      "by_class": {
+        "singular": 4083
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 0.349,
+      "error": null,
+      "run_dir": "runs/20260901T124812Z_12be35e459e9",
+      "n_extreme_NE": 144,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.006,
+      "error": null,
+      "n_attractors": 26,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.870647,
+      "dominant_support": [
+        "DefectBot",
+        "CIMCIC",
+        "EBot",
+        "OBot",
+        "CupodBot",
+        "DIMCID",
+        "PrudentBot",
+        "DBot",
+        "DupocBot",
+        "TitForTatBot",
+        "CooperateBot",
+        "CupodTrollBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.046,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": []
+      }
+    }
+  }
+}

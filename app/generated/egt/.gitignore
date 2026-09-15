@@ -1,19 +1,59 @@
-# EGT sweep artefacts are reproducible outputs, not records: one `(t, α)`
-# sweep writes hundreds of files (per-run ess/invasion/faces/nash directories,
-# figures, parquet), and re-running the same sweep regenerates them exactly —
-# the run directory name embeds a hash of the cells it analysed.
+# EGT sweep artefacts: the BULK is reproducible output, but a thin slice is
+# tracked on purpose so a collaborator can re-cut the analysis without a ~3h
+# regeneration (and without a working Lean build).
 #
-# This is deliberately narrower than ignoring `app/generated/`, which tracks
-# constructor proposals and outcome transcripts on purpose (longitudinal
-# thesis data that cannot be regenerated).
+# One `(t, α)` sweep writes hundreds of files per run — parquet face tables,
+# GEXF/PNG/SVG invasion graphs, replicator basins, per-stage reports. Those
+# regenerate exactly (the run directory name embeds a hash of the cells
+# analysed), so they stay out.
 #
-# Keep a result set by copying it out, or point `--out-root` elsewhere.
-runs/
-sweep_summary*.json
+# What IS tracked, and why (these are exactly the inputs the four analysis
+# modules in `pd_runner.egt` read — see the module docstrings):
+#   runs/*/summary.json                     `integrity` + `analysis` (tidy.csv,
+#                                           phase_maps, family_diffs) read ONLY
+#                                           this; it is complete and
+#                                           self-describing
+#   runs/*/*/assumptions.json               `integrity.scan_assumptions` globs
+#                                           one level (`*/assumptions.json`) for
+#                                           truncation + cross-check markers
+#   runs/*/moran/stationary.json            `findings` drills into this for the
+#                                           full (M, β) table
+#   runs/*/ess/payoff_matrix_numeric.csv    `nash_structure` (diagonal > 0 ⇔
+#                                           self-play (C,C))
+#   runs/*/nash/**/equilibria.jsonl         `nash_structure` classifies NE
+#                                           components by cooperation_rate_float
+#   runs/*/nash/latest                      symlink into nash/runs/<ts>/; the
+#                                           `_latest_nash` fast path (it falls
+#                                           back to globbing nash/runs/* anyway)
+#   analysis/                               the derived artefacts + figures — the
+#                                           first thing a reader opens
+#   sweep_summary*.json                     grid → matrix dedup record
+#
+# Deliberately NOT tracked though it looks similar: `replicator/basins.json`
+# (~920K) — no module in the analysis layer reads it; basin numbers reach the
+# analysis via `summary.json`'s `stages.replicator`.
+#
+# `runs/**` (not `runs/`) is load-bearing: a directory-level exclude stops git
+# descending, and every `!` negation below it would silently do nothing. The
+# `!runs/*/` + `!runs/*/*/` directory re-includes are what let the leaf
+# negations match at all.
+#
+# Keep a fuller result set by copying it out, or point `--out-root` elsewhere.
+runs/**
+!runs/*/
+!runs/*/summary.json
+!runs/*/*/
+!runs/*/*/assumptions.json
+!runs/*/moran/stationary.json
+!runs/*/ess/payoff_matrix_numeric.csv
+!runs/*/nash/latest
+!runs/*/nash/runs/
+!runs/*/nash/runs/*/
+!runs/*/nash/runs/*/equilibria.jsonl
+
 report.html
 
 # Frozen pre-paper artefact archives (2026-09-01): kept out of git, backed by
 # OneDrive. The tarball is the machine-readable record behind TAUBOTS.md §4's
 # pre-freeze EGT observations (retired zoos, pre-rename bot names).
 archive/
-analysis/

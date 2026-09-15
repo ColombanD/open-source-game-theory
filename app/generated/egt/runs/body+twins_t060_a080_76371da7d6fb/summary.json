@@ -1,0 +1,105 @@
+{
+  "run": "body+twins_t060_a080_76371da7d6fb",
+  "zoo": "body+twins",
+  "family": "behavioral",
+  "t": 0.6,
+  "alpha": 0.8,
+  "fingerprint": "76371da7d6fb",
+  "n_types": 12,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.6,
+      0.8
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.001,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 12
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.418,
+      "error": null,
+      "edges_strict": 43,
+      "edges_weak": 92,
+      "n_sccs": 6,
+      "n_cycles": 65,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.219,
+      "error": null,
+      "n_supports": 4083,
+      "by_class": {
+        "singular": 2725,
+        "non_interior": 1344,
+        "asymp_stable_invadable": 11,
+        "saddle": 3
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 118.405,
+      "error": null,
+      "run_dir": "runs/20260901T123818Z_7446421d9528",
+      "n_extreme_NE": 25,
+      "n_components": 2,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.431,
+      "error": null,
+      "n_attractors": 15,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.99005,
+      "dominant_support": [
+        "CIMCIC",
+        "DupocBot",
+        "TitForTatBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.045,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DupocBot",
+          "CIMCIC",
+          "TitForTatBot"
+        ]
+      }
+    }
+  }
+}

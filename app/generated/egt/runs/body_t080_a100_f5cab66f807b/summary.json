@@ -1,0 +1,118 @@
+{
+  "run": "body_t080_a100_f5cab66f807b",
+  "zoo": "body",
+  "family": "behavioral",
+  "t": 0.8,
+  "alpha": 1.0,
+  "fingerprint": "f5cab66f807b",
+  "n_types": 10,
+  "bots": [
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.8,
+      1.0
+    ],
+    [
+      0.6,
+      1.0
+    ],
+    [
+      0.4,
+      1.0
+    ],
+    [
+      0.2,
+      1.0
+    ],
+    [
+      0.0,
+      1.0
+    ]
+  ],
+  "n_grid_points": 5,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.001,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 10
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.345,
+      "error": null,
+      "edges_strict": 9,
+      "edges_weak": 81,
+      "n_sccs": 10,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.056,
+      "error": null,
+      "n_supports": 1013,
+      "by_class": {
+        "singular": 1013
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 0.165,
+      "error": null,
+      "run_dir": "runs/20260901T122046Z_48f2b767d8e5",
+      "n_extreme_NE": 81,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.529,
+      "error": null,
+      "n_attractors": 17,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.965174,
+      "dominant_support": [
+        "DupocBot",
+        "OBot",
+        "TitForTatBot",
+        "DIMCID",
+        "CupodTrollBot",
+        "DefectBot",
+        "CupodBot",
+        "EBot",
+        "DBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.031,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": []
+      }
+    }
+  }
+}

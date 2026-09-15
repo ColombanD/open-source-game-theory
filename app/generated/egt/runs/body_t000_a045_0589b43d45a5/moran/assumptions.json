@@ -1,0 +1,49 @@
+{
+  "stage": "moran_process",
+  "moran_pipeline_version": "0.1.0",
+  "numeric_matrix_source": "/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/app/generated/egt/runs/body_t000_a045_0589b43d45a5/ess/payoff_matrix_numeric.csv",
+  "process": {
+    "form": "frequency-dependent Moran, birth-death, one replacement per step",
+    "fitness": "exponential, f = exp(beta * payoff) \u2014 positive for any payoff, so the matrix needs no shift",
+    "self_interaction": "excluded; payoffs use the M-1 denominator"
+  },
+  "fixation": {
+    "method": "closed form for the 1-D birth-death chain",
+    "numerics": "accumulated in LOG space \u2014 the gamma products underflow to zero for moderate beta*M, which would report a rare fixation as impossible"
+  },
+  "stationary": {
+    "limit": "small-mutation limit: each mutation fixates or dies before the next arrives, so the population is a monoculture almost always",
+    "chain": "P[j->i] = rho(i->j)/(N-1) for i != j",
+    "method": "left eigenvector for eigenvalue 1",
+    "stable_threshold": "mass >= 1.5 / N (the raw distribution is reported too, so another cut can be applied)"
+  },
+  "sweep": {
+    "populations": [
+      10,
+      50,
+      100
+    ],
+    "betas": [
+      0.01,
+      0.1,
+      1.0
+    ]
+  },
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c"
+  },
+  "tau": {
+    "t": 0.0,
+    "alpha": 0.45
+  },
+  "zoo": "body"
+}

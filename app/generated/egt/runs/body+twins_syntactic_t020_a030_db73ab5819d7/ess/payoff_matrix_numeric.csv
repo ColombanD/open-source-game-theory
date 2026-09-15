@@ -1,0 +1,13 @@
+,CIMCIC,CooperateBot,CupodBot,CupodTrollBot,DBot,DIMCID,DefectBot,DupocBot,EBot,OBot,PrudentBot,TitForTatBot
+CIMCIC,2,2,3,3,3,3,0,2,3,0,0,2
+CooperateBot,2,2,2,2,2,2,-1,2,-1,2,-1,2
+CupodBot,-1,2,2,2,2,2,-1,-1,2,-1,-1,2
+CupodTrollBot,-1,2,2,2,2,2,-1,-1,2,2,-1,2
+DBot,-1,2,2,2,2,2,-1,-1,2,-1,-1,2
+DIMCID,-1,2,2,2,2,2,-1,-1,2,-1,-1,2
+DefectBot,0,3,3,3,3,3,0,0,0,0,0,3
+DupocBot,2,2,3,3,3,3,0,2,3,0,0,2
+EBot,-1,3,2,2,2,2,0,-1,2,-1,-1,2
+OBot,0,2,3,2,3,3,0,0,3,0,0,3
+PrudentBot,0,3,3,3,3,3,0,0,3,0,0,3
+TitForTatBot,2,2,2,2,2,2,-1,2,2,-1,-1,2
