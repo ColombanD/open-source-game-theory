@@ -793,4 +793,90 @@ theorem shift_arm_size {Wl Wc W₂ W T s d' L' B E Cz N' B' D d Γ : V}
 
 end wkShiftArms
 
+
+/-! ## 11. The `or` arm, and the binary nodes' lengths
+
+`vOr = proOr ++ (L' ++ (postIns ++ nodeOr))` — the four-block shape of §10 with `Prologue.postIns` (six steps) as the
+recovery block in place of `goalElim` (five), so the tail contributes `6 + 9`. The size halves differ from `wk`/`shift`
+only in the prologue (`Prologue.sizeOK_proOr`, which additionally wants the two dossier hypotheses `DossF … p`/`… q`
+that `Prologue.layout_or` supplies at the glue level) and in the recovery block (§6's `sizeOK_postIns_kit`).
+
+The three NON-LEAF node lengths are proved here together: `nodeOr` sits on the UNARY tail (`goalTailUnary`), `nodeAnd`
+and `nodeCut` on the BINARY one (`goalTailBinary`), and all three are `head (four steps) ++ tail (five steps) = 9`,
+the same structural computation as `len_nodeAxm`. `len_nodeAnd`/`len_nodeCut` are advance work for §12.
+-/
+
+section orArm
+
+lemma len_nodeOr (W tblN is il ir ip iq id icq ic in₁ L m₁ n : V) :
+    len (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) = 9 := by
+  unfold nodeOr nodeOrHead goalTailUnary dlenUnarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_nodeAnd (W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n : V) :
+    len (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) = 9 := by
+  unfold nodeAnd nodeAndHead goalTailBinary dlenBinarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_nodeCut (W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n : V) :
+    len (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) = 9 := by
+  unfold nodeCut nodeCutHead goalTailBinary dlenBinarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+/-- **The `or` arm, length half** (`postIns` is six steps, so the tail is `6 + 9`). -/
+theorem len_vOr_eq (Ww Wl Wc W₁ W T s p q d' L' : V) :
+    len (vOr Ww Wl Wc W₁ W T s p q d' L') =
+      len (proOr Ww Wl Wc W T s p q 0 (memTop Ww Wc T s (p ^⋎ q) 0 + descCountF Ww 0 q + 1)
+        (memTop Ww Wc T s (p ^⋎ q) 0 + 1)) + (len L' + (6 + 9)) := by
+  unfold vOr
+  rw [len_appendV, len_appendV, len_appendV, len_postIns, len_nodeOr]
+
+/-- **The `or` arm, size half.** -/
+theorem or_arm_size {Wl Wc W₁ W T s p q d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hk1 : 1 ≤ len (memberList s)) (hsD : setLen LAct (insert p (insert q s)) ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiEpro : 0 + 14 * D + 5 ≤ E)
+    (hipE : memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1 + 14 * D + 6 ≤ E)
+    (hiqE : memTop walkPieces Wc T s (p ^⋎ q) 0 + 1 + 8 * D + 4 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDp : DossF walkPieces Γ 0 p (memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1))
+    (hDq : DossF walkPieces Γ 0 q (memTop walkPieces Wc T s (p ^⋎ q) 0 + 1))
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (insert p (insert q s))) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (bnum (dlen TAct d')) ≤ E)
+    (hbn' : termLen LAct (bnum (dlen TAct (orIntro s p q d'))) ≤ E)
+    (hnE : 18 * ‖dlen TAct (orIntro s p q d')‖ + 7 ≤ E)
+    (hLn : setLen LAct s + dlen TAct d' + 1 ≤ dlen TAct (orIntro s p q d'))
+    (hnd : dlen TAct (orIntro s p q d') ≤ 2 * d)
+    (hgE2 : 1 + proSig walkPieces Wl Wc W T (insert q s) +
+      (1 + proSig walkPieces Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vOr walkPieces Wl Wc W₁ W T s p q d' L') := by
+  unfold vOr
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_proOr htbl hP htblN hWl hWc hWp hPle hs hp hq hk1 hsD hEpro hiEpro hipE hiqE hΓ hLay hDp hDq).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE hbn hcG
+  · refine sizeOK_nodeOr hW₁ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin2Fact_le hE1 hPle hnE
+        (le_trans (le_trans le_self_add le_self_add) hLn) (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact dlen_bin2Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_bnum_LAct 0 _) hbn' hcG
+
+end orArm
+
 end ArithS

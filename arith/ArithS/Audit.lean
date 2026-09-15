@@ -1432,6 +1432,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms wk_arm_size
 #print axioms shift_arm_size
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 8 — the `or` ARM and the binary nodes' lengths
+-- (6 of 10 arms done). `vOr = proOr ++ (L' ++ (postIns ++ nodeOr))` — the four-block shape of §10 with
+-- `Prologue.postIns` (SIX steps) as the recovery block in place of `goalElim` (five), so the tail contributes
+-- `6 + 9`. The size halves differ from `wk`/`shift` only in the prologue (`Prologue.sizeOK_proOr`, which
+-- additionally wants the two dossier hypotheses `DossF … p`/`… q` that `Prologue.layout_or` supplies at the glue
+-- level) and in the recovery block (§6's `sizeOK_postIns_kit`). The three NON-LEAF node lengths are proved here
+-- together: `nodeOr` sits on the UNARY tail (`goalTailUnary`), `nodeAnd` and `nodeCut` on the BINARY one
+-- (`goalTailBinary`), and all three are `head (four) ++ tail (five) = 9`, the same structural computation as
+-- `len_nodeAxm`; `len_nodeAnd`/`len_nodeCut` are advance work for the `and`/`cut` arms.
+#print axioms len_nodeOr
+#print axioms len_nodeAnd
+#print axioms len_nodeCut
+#print axioms len_vOr_eq
+#print axioms or_arm_size
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
