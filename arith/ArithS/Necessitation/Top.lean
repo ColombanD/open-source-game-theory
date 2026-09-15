@@ -1950,4 +1950,67 @@ theorem boundedInnerNec_three_of_kit {N B N' B' N₂ B₂ N₃ B₃ Ck : ℕ} {C
 
 end final
 
+/-! ## 9. The kits in the COARSE cost shape (`BRIEF.md` §11, THE FINDING, 2026-09-15)
+
+Every producer's cost lemma in the repository is proved through `costSum_le_of_sizeOK`, i.e. in the shape
+`costSum N E Γ L ≤ len · (costK N E B M Q D + (3M + 11) · (ctxBoundG (growK B E Q) Γ len + (fvOccS Γ + len · growK B E Q)))`
+with end-context bounds `setLen (finalCtx Γ L) ≤ ctxBoundG …`, `fvOccS (finalCtx Γ L) ≤ fvOccS Γ + len · growK …`
+(`Frag1.lean`: `costK`, `ctxBoundG`, `growK`; `Cert.lean`: `costSum_lenSteps_le` with `lenQ B' L = B'·cTE L`,
+`lenD N' B' L = (L+1)(‖L‖+2)·nodeCost N' B' (cTE L)`; `Prologue.lean` §11: `costSum_pro*_le` with
+`layQ = lenQ + sum2Q`, `sum2Q B Dz = B(18‖Dz‖+7)`, `layD = lenD + sum2D`; `NumId.lean`: `numInv_cost` with
+`Q = D = C`). The fine shape of §3.3 (`C·size·(setLen Γ + N + E + size²)`) needs the occurrence
+accounting (`fvOccF` growth `O(B)` per step) that is not proved. So the kits are restated here with the
+COARSE cost conjuncts, at the cap `M = 9` and with `Q`, `D` dominating every producer's:
+`kitQ C B E = C·(B + 1)(E + 1)` (all producers' `Q` are `≤ B'·(a size ≤ E)` or `B·E`) and
+`kitD C z = C·(z + 1)³` (`lenD` is cubic in the LENGTH, `cTE` being unary). With `len ~ dlen ρ ~ E ~ g`
+this is degree 4 (`boundedInnerNec_four_of_kit`, §11); the `ok` fields are byte-identical to §3.3's. -/
+
+section kitsCoarse
+
+/-- The dominating fact-size parameter of the kits: `C · (B + 1) · (E + 1)`. -/
+noncomputable def kitQ (C B E : V) : V := C * ((B + 1) * (E + 1))
+/-- The dominating `sLemma`-derivation parameter of the kits: `C · (z + 1)³`. -/
+noncomputable def kitD (C z : V) : V := C * (z + 1) ^ 3
+
+/-- **`VerifyKit'`** — `VerifyKit` with the cost conjuncts in the coarse shape (`len ≤ Ck·(dlen ρ + 1)`,
+`Q = kitQ Ck B E`, `D = kitD Ck (dlen ρ)`, cap `9`). -/
+structure VerifyKit' (tbl N B W tblN : V) (Ck : ℕ) : Prop where
+  ok : ∀ {ρ x Γ i E L : V}, Proof TAct ρ x → RootLayout Γ x i → IsFormulaSet LAct Γ →
+    (Ck : V) * (dlen TAct ρ + i + 1) ≤ E → VerifyGraph W tblN ρ L →
+    ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ (Ck : V) * (dlen TAct ρ + 1) ∧
+    neg LAct (goalFact (^&(i + 1 + shiftsV L)) (bnum (dlen TAct ρ))) ∈ finalCtx Γ L
+  cost : ∀ {ρ x Γ i E L : V}, Proof TAct ρ x → RootLayout Γ x i → IsFormulaSet LAct Γ →
+    (Ck : V) * (dlen TAct ρ + i + 1) ≤ E → VerifyGraph W tblN ρ L →
+    costSum N E Γ L ≤ (Ck : V) * (dlen TAct ρ + 1) *
+      (costK N E B ((9 : ℕ) : V) (kitQ (Ck : V) B E) (kitD (Ck : V) (dlen TAct ρ)) +
+        38 * (ctxBoundG (growK B E (kitQ (Ck : V) B E)) Γ ((Ck : V) * (dlen TAct ρ + 1)) +
+          (fvOccS LAct Γ + (Ck : V) * (dlen TAct ρ + 1) * growK B E (kitQ (Ck : V) B E)))) ∧
+    setLen LAct (finalCtx Γ L) ≤ ctxBoundG (growK B E (kitQ (Ck : V) B E)) Γ ((Ck : V) * (dlen TAct ρ + 1)) ∧
+    fvOccS LAct (finalCtx Γ L) ≤ fvOccS LAct Γ + (Ck : V) * (dlen TAct ρ + 1) * growK B E (kitQ (Ck : V) B E)
+
+/-- **`PinKit'`** — `PinKit` with the cost conjuncts in the coarse shape (`len ≤ Cχ·(‖k‖ + 1)`,
+`Q = kitQ Cχ B E`, `D = kitD Cχ ‖k‖`); the four fact conjuncts are exactly `Pin.pin_assembly`'s. -/
+structure PinKit' (χ : Semisentence LAct 1) (tbl N B : V) (Cχ : ℕ) : Prop where
+  pin : ∀ (k : V) {Γ i E : V}, RootLayout Γ (instB (⌜χ⌝ : V) k) i → IsFormulaSet LAct Γ →
+    (Cχ : V) * (‖k‖ + i + 1) ≤ E →
+    ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P ≤ (Cχ : V) * (‖k‖ + 1) ∧
+      neg LAct (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P ∧
+      costSum N E Γ P ≤ (Cχ : V) * (‖k‖ + 1) *
+        (costK N E B ((9 : ℕ) : V) (kitQ (Cχ : V) B E) (kitD (Cχ : V) ‖k‖) +
+          38 * (ctxBoundG (growK B E (kitQ (Cχ : V) B E)) Γ ((Cχ : V) * (‖k‖ + 1)) +
+            (fvOccS LAct Γ + (Cχ : V) * (‖k‖ + 1) * growK B E (kitQ (Cχ : V) B E)))) ∧
+      setLen LAct (finalCtx Γ P) ≤ ctxBoundG (growK B E (kitQ (Cχ : V) B E)) Γ ((Cχ : V) * (‖k‖ + 1)) ∧
+      fvOccS LAct (finalCtx Γ P) ≤ fvOccS LAct Γ + (Cχ : V) * (‖k‖ + 1) * growK B E (kitQ (Cχ : V) B E)
+
+/-- **The kit package, coarse shape** (`KitPackage` with the primed kits; `B` now also feeds the kits). -/
+def KitPackage' (N B N' B' N₂ B₂ N₃ B₃ Ck : ℕ) (Cχ : Semisentence LAct 1 → ℕ) : Prop :=
+  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
+    ∃ tbl W tblN tblL tblM : V, TableOK tbl N ∧ TopTable tbl ∧
+      (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) ∧
+      formulaLen LAct (Plength : V) ≤ B ∧ formulaLen LAct (Peq : V) ≤ B ∧ formulaLen LAct (Ple : V) ≤ B ∧
+      NumTableOK tblN N' B' ∧ LenTableOK tblL N₂ B₂ ∧ MulTableOK tblM N₃ B₃ ∧
+      VerifyKit' tbl N B W tblN Ck ∧ ∀ χ, PinKit' χ tbl N B (Cχ χ)
+
+end kitsCoarse
+
 end ArithS
