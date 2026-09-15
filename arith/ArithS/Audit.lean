@@ -57,6 +57,7 @@ import ArithS.Necessitation.Verify2
 import ArithS.Necessitation.Verify3
 import ArithS.Necessitation.Bounds
 import ArithS.Necessitation.Verify4
+import ArithS.Necessitation.Assemble
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1265,5 +1266,36 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- (`Ck·(Cv+1)·(dlen ρ+1)^4`), so `deg 4 = 16`. Every arm closes at m = 4; m = 3 needs per-node accounting (not done).
 #print axioms verifyGraph''_ok4
 #print axioms verifyGraph''_ok_pow4
+
+-- U10 (Necessitation/Assemble, 2026-09-15): THE KIT OVER `VerifyGraph''` AND THE ASSEMBLY. The root bridge (the top's
+-- `RootLayout` re-laid canonically by `layoutSteps {x}`, the two copies identified by `identRoot` — `eqSteps` + set rows —
+-- and the goal RETARGETED onto the root sequent by `retargetRoot` = `goalElim`/`congFstIdx`/`sGoal`), the bridged list
+-- `vList = layoutSteps {x} ++ identRoot ++ L ++ retargetRoot` with `vList_full` (ok + len + SizeOK, `Ck = (asmCk … + cG)·(Cv+1)`
+-- over `Verify4.verifyGraph''_ok_pow4` at exponent 4), `VerifyKit'''` (Top's `VerifyKit''` over `VerifyGraph''`/`AxmTableOK'`
+-- with the bridge folded in), `verifyKit'''_of`, `KitPackage'''`, `top_main'''`/`boundedInnerNec_of_kit''' (m ≥ 3)`,
+-- `exists_indRecTableB`, `kitPackage'''_of_size` (the `axm` case UNCONDITIONAL via `verifyGraph''_exists_unconditional`),
+-- **`boundedInnerNec_sixteen_of_size : SizeOracle Cz → BoundedInnerNec 16`** and **`dupoc_self_coop_of_size`** — conditional
+-- on ONE named hypothesis, `SizeOracle` (`len L ≤ Cz·(dlen ρ+1)^4 ∧ SizeOK (kitQ …) (kitD …) L` for the graph's lists; the
+-- glue `verifyGraph''_ok4` does not track `len`/`SizeOK`). TRAP: `exists_cGoal` — a `def` of `4·(cDer + …)` (`flen`s of the
+-- giant `derivation` sentence) stalls every `push_cast`/`omega` that touches it; packaged existentially, cast identity by `rw`.
+#print axioms len_memberList_single
+#print axioms layout_single
+#print axioms identRoot_ok
+#print axioms retargetRoot_ok
+#print axioms sizeOK_retargetRoot
+#print axioms formulaLen_goalFact_le
+#print axioms exists_cGoal
+#print axioms layQ_le
+#print axioms layD_le
+#print axioms goalFact4_le_kitQ
+#print axioms vList_full
+#print axioms verifyKit'''_of
+#print axioms top_main'''
+#print axioms boundedInnerNec_of_kit'''
+#print axioms exists_indRecTableB
+#print axioms kitPackage'''_of_size
+#print axioms deg_four
+#print axioms boundedInnerNec_sixteen_of_size
+#print axioms dupoc_self_coop_of_size
 
 end ArithS
