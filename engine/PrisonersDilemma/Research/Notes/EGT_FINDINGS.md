@@ -90,8 +90,15 @@ stationary shares + SS sets), `nash/latest/equilibria.jsonl`
 components, 6 stable faces / 1013 supports, invasion SCCs 3; replicator
 dominant support {Coop, Dup, TFT} with a 95% basin; DupocBot's stationary
 share rises 11% → 89% with selection (the (M, β) table in `findings.md` §1).
-No pure ESS on any zoo/family/point — statics can't select, which is the
-argument for the dynamic stages (→ the "two analyses" design of §5.1.3).
+No pure ESS on **93 of the 94** matrices — statics can't select, which is the
+argument for the dynamic stages (→ the "two analyses" design of §5.1.3). The
+sole exception (corrected 2026-09-15; this line previously read "on any
+zoo/family/point") is `body`/syntactic at t=0.2, α=0.8, where EBot is a pure
+ESS with 0 invaders — run `body_syntactic_t020_a080_0792726f07bc`,
+`ess/ess_summary.csv`. It does not weaken the argument: one ESS at one
+off-anchor grid point in one family still leaves statics silent everywhere
+the headline is stated, but the claim must be quoted as 93/94, never as
+"none".
 
 **F2 — Critical transparency (→ §5.2, the headline figure).** Body/behavioral:
 Dup uniquely stochastically stable on all of t ∈ [0.4, 1.0] × α ∈ [0.3, 0.8];
@@ -152,8 +159,8 @@ precisely because it is DefectBot's behavioral twin. (`findings.md` §6.)
 ## 5. Why Moran carries the headline (the ladder — for the §5 narrative)
 
 Nash: cooperation is one of 21 equilibria — selection problem, unanswered.
-ESS: the classic static selector returns nothing (0 pure ESS) — statics
-genuinely cannot decide. Replicator: 95% of starts reach the cooperative
+ESS: the classic static selector returns nothing at the anchor (0 pure ESS
+there; 93/94 matrices sweep-wide — see F1) — statics genuinely cannot decide. Replicator: 95% of starts reach the cooperative
 cluster — strong but conditional on starts, infinite population, no noise,
 and neutral continua (twins) leave "which point" open. Moran: finite
 population + mutation + a selection dial; the stationary distribution is

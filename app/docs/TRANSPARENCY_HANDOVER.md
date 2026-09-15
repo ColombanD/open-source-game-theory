@@ -48,25 +48,20 @@ Expect `VERDICT: CLEAN`, 0 hard failures, 1 soft finding (the `lrsnash` note).
 
 Everything lives under `app/generated/egt/`.
 
-**Start here — derived artefacts, already built:**
+**The data is `runs/<zoo>_<family>_t<NNN>_a<NNN>_<hash>/` — 94 run directories,**
+one per distinct analysed matrix. Each holds the output of the six analysis
+stages: `summary.json` (headline metrics for every stage), `ess/`, `invasion/`,
+`faces/`, `nash/`, `replicator/`, `moran/`.
 
-| file | what it is |
-|---|---|
-| `analysis/tidy.csv` | **the main table.** One row per (zoo, family, t, α), 216 rows, headline metrics flattened |
-| `analysis/findings.md` | claim-driven drill-down: baseline, critical transparency, per-(M,β) Moran tables |
-| `analysis/phase_maps.md` | the (t, α) phase maps |
-| `analysis/nash_structure.csv` / `.md` | Nash components classified by cooperation rate |
-| `analysis/family_diffs.md` | behavioral vs syntactic vs epsilon comparisons |
-| `analysis/fig_collapse_*.png` | 6 figures, the collapse story per zoo/family |
+A curated slice of each run is committed — the summaries, payoff matrices, Moran
+stationary distributions, Nash equilibria and per-stage assumptions. The bulk
+output (parquet face tables, invasion graph renders, replicator basins) is not in
+git: it is reproducible, and a full regeneration of the sweeps is ~3 h.
 
-**Underneath:** `runs/<zoo>_<family>_t<NNN>_a<NNN>_<hash>/` — 94 run directories.
-A curated slice is committed (summaries, payoff matrices, Moran stationary
-distributions, Nash equilibria, per-stage assumptions). The bulk output — parquet
-face tables, invasion graph renders, replicator basins — is **not** in git; it is
-reproducible, and full regeneration is ~3 h.
-
-The slice is sufficient: all six text artefacts in `analysis/` regenerate
-**byte-identical** from committed data alone. To rebuild them:
+**There is deliberately no derived analysis layer in the repo.** No tidy table,
+no figures, no findings document. The tracked slice is exactly the input the
+analysis modules consume, and they build that layer in seconds — so the first
+cut should be yours, not a copy of ours. Build it whenever you want it:
 
 ```bash
 cd app
@@ -75,7 +70,16 @@ uv run python -m pd_runner.egt.findings        ../app/generated/egt
 uv run python -m pd_runner.egt.nash_structure  ../app/generated/egt
 ```
 
-Each takes an optional output-root argument and defaults to the repo's own tree.
+That writes `analysis/` (gitignored): `tidy.csv` — one row per (zoo, family, t,
+α), 216 rows — plus phase maps, family diffs, a Moran drill-down, a Nash
+component table and six figures.
+
+**Treat those modules as a starting point, not the API.** They encode the
+questions we happened to ask. `tidy.csv` flattens `summary.json` and drops a
+lot; the run directories hold more than it exposes. Reading
+`pd_runner/egt/analysis.py` (~140 lines) shows what is being thrown away, and
+writing your own loader over `runs/*/summary.json` is entirely reasonable — that
+is where a different question gets asked.
 
 ---
 
@@ -120,7 +124,10 @@ fixation (where a population actually *goes*).
 
 ## 4. Your first pass
 
-Dig in and form your own view. Some honest entry points:
+Build your own view of the data before reading ours. Concretely: run the three
+commands in §2 (or write your own loader), get a table you trust, and look.
+
+Some honest entry points — none of them is the "intended" answer:
 
 - **Where does cooperation die?** Walk `t` downward at fixed `α` and find where
   the cooperative outcome stops being selected. Is the boundary sharp or gradual?
@@ -164,12 +171,14 @@ an attractor.
 ## 5. Second step — only after your own pass
 
 Once you have formed a view, these say what we already think, and what we think
-is shaky:
+is shaky. Reading them first would cost the main thing you are here for: an
+independent read.
 
 - `engine/PrisonersDilemma/Research/Notes/EGT_FINDINGS.md` — the results-section
   record: findings F1–F7, each with an evidence pointer, plus conventions and
-  open questions. **Corrected 2026-09-15:** F1 previously claimed no pure ESS
-  anywhere; the true count is 93 of 94 matrices (the exception is EBot at
+  open questions. Its pointers name files under `analysis/` — the same ones your
+  §2 rebuild produces. **Corrected 2026-09-15:** F1 previously claimed no pure
+  ESS anywhere; the true count is 93 of 94 matrices (the exception is EBot at
   `body`/syntactic, t=0.2, α=0.8). If you find other overstated claims, that is
   a useful result in itself.
 - `engine/PrisonersDilemma/Research/Notes/TAUBOTS.md` — the transparency layer's

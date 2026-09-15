@@ -689,7 +689,12 @@ the `tau.matrix` `ZOOS` registry, so a new zoo appears everywhere at once.
 **Ported-in fixes:** pygambit ≥16.7 indexes `game.players` by label (an int subscript
 raises); `test_faces_hawk_dove` asserted exact float equality on a linear-solve result.
 
-**Status:** the analysis is genuinely `(t, α)`-sensitive — at `t=0.5`, raising α from
-0.3 to 0.8 takes extreme NE 43→25, stable faces 4→2, and SCCs 5→7. No pure ESS exists
-on any zoo tried so far, reproducing the standalone repo's qualitative finding on
-different (certified) data.
+**Status:** the analysis is genuinely `(t, α)`-sensitive — on the frozen `body`
+behavioral sweep at `t=0.4`, raising α from 0.3 to 0.8 takes extreme NE 13→121,
+stable faces 4→4, and SCCs 5→5 (the old figures here, "at `t=0.5`, 43→25, 4→2,
+5→7", came from a pre-freeze sweep on a different grid — the frozen grid has
+t ∈ {0, 0.2, 0.4, 0.6, 0.8, 1.0} and no t=0.5, so they cannot be reproduced).
+A pure ESS exists at exactly ONE of the 94 frozen matrices (EBot, `body`/syntactic,
+t=0.2, α=0.8); everywhere else there is none, which is the qualitative finding the
+standalone repo reports, on different (certified) data. Never quote this as "no pure
+ESS on any zoo" — and note `critch8` was never swept, so it is outside this count.

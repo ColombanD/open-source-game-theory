@@ -53,6 +53,19 @@ runs/**
 
 report.html
 
+# The DERIVED analysis layer (tidy.csv, findings.md, phase_maps.md,
+# family_diffs.md, nash_structure.{csv,md}, fig_collapse_*.png) is deliberately
+# NOT tracked, even though the run slice above is.
+#
+# It was briefly committed (3ffb98e) and removed again on purpose: the tracked
+# slice is exactly the input those four `pd_runner.egt` modules consume, they
+# rebuild the whole directory byte-identical in seconds, and a collaborator
+# doing a first pass should derive their own cut rather than open ours. Shipping
+# both the inputs and our answers next to them makes the answers the default.
+#
+# Rebuild with: uv run python -m pd_runner.egt.{analysis,findings,nash_structure}
+analysis/
+
 # Frozen pre-paper artefact archives (2026-09-01): kept out of git, backed by
 # OneDrive. The tarball is the machine-readable record behind TAUBOTS.md §4's
 # pre-freeze EGT observations (retired zoos, pre-rename bot names).
