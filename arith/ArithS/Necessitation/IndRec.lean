@@ -1313,4 +1313,137 @@ theorem shiftSelf_ok {tbl N E Γ q b ib : V} (htbl : TableOK tbl N) (hT : IndRec
 
 end instances
 
+/-! ## 5. The assembly -/
+
+section assembly
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-! ### 5.0 Powers of the size bound, the shifted-list invariant, the semantic shape of the body -/
+
+/-- `gp G n = G^n` (repeated multiplication, `ℕ`-indexed). -/
+noncomputable def gp (G : V) : ℕ → V
+  | 0 => 1
+  | n + 1 => gp G n * G
+
+@[simp] lemma gp_zero (G : V) : gp G 0 = 1 := rfl
+@[simp] lemma gp_succ (G : V) (n : ℕ) : gp G (n + 1) = gp G n * G := rfl
+
+lemma one_le_gp {G : V} (hG : 1 ≤ G) : ∀ n : ℕ, 1 ≤ gp G n
+  | 0 => le_rfl
+  | n + 1 => by
+    rw [gp_succ]
+    calc (1 : V) = 1 * 1 := by ring
+      _ ≤ gp G n * G := mul_le_mul (one_le_gp hG n) hG zero_le zero_le
+
+lemma gp_le_gp_succ {G : V} (hG : 1 ≤ G) (n : ℕ) : gp G n ≤ gp G (n + 1) := by
+  rw [gp_succ]
+  calc gp G n = gp G n * 1 := by ring
+    _ ≤ gp G n * G := mul_le_mul_of_nonneg_left hG zero_le
+
+lemma gp_mono {G : V} (hG : 1 ≤ G) {a b : ℕ} (h : a ≤ b) : gp G a ≤ gp G b := by
+  induction b with
+  | zero => rw [Nat.le_zero.mp h]
+  | succ b ih =>
+    rcases Nat.lt_or_ge a (b + 1) with hlt | hge
+    · exact le_trans (ih (Nat.lt_succ_iff.mp hlt)) (gp_le_gp_succ hG b)
+    · rw [Nat.le_antisymm h hge]
+
+lemma gp_add (G : V) (a : ℕ) : ∀ b : ℕ, gp G (a + b) = gp G a * gp G b
+  | 0 => by simp
+  | b + 1 => by rw [← Nat.add_assoc, gp_succ, gp_add G a b, gp_succ]; ring
+
+lemma le_gp_one (G : V) : G = gp G 1 := by simp
+
+/-- A list with eigenvariables: applicable at cap `9`, cut-admitting, Horn-only, with `σ` shifts. -/
+def WInv (tbl E Γ P σ : V) : Prop :=
+  ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ HornOnly P ∧ shiftsV P = σ
+
+lemma WInv.append {tbl E Γ P₁ P₂ σ₁ σ₂ : V} (h₁ : WInv tbl E Γ P₁ σ₁) (h₂ : WInv tbl E (finalCtx Γ P₁) P₂ σ₂) :
+    WInv tbl E Γ (appendV P₁ P₂) (σ₁ + σ₂) :=
+  ⟨listOK_appendV h₁.1 h₂.1, noDrop'_appendV h₁.2.1 h₂.2.1, hornOnly_appendV h₁.2.2.1 h₂.2.2.1,
+    by rw [shiftsV_appendV, h₁.2.2.2, h₂.2.2.2]⟩
+
+lemma WInv.isFormulaSet {tbl N E Γ P σ : V} (htbl : TableOK tbl N) (hΓ : IsFormulaSet LAct Γ) (h : WInv tbl E Γ P σ) :
+    IsFormulaSet LAct (finalCtx Γ P) :=
+  finalCtx_isFormulaSet 9 htbl hΓ h.1
+
+lemma WInv.dossF {tbl E Γ P σ W n r i : V} (h : WInv tbl E Γ P σ) (hD : DossF W Γ n r i) :
+    DossF W (finalCtx Γ P) n r (i + σ) := by
+  have := dossF_transport' h.2.1 hD; rwa [h.2.2.2] at this
+lemma WInv.dossV {tbl E Γ P σ W n k v j i : V} (h : WInv tbl E Γ P σ) (hD : DossV W Γ n k v j i) :
+    DossV W (finalCtx Γ P) n k v j (i + σ) := by
+  have := dossV_transport' h.2.1 hD; rwa [h.2.2.2] at this
+lemma WInv.substFact {tbl E Γ P σ y w p : V} (h : WInv tbl E Γ P σ) (hy : IsSemiterm LAct 0 y) (hw : IsSemiterm LAct 0 w)
+    (hp : IsSemiterm LAct 0 p) (hx : neg LAct (substFact y w p) ∈ Γ) :
+    neg LAct (substFact (termShiftIterV y σ) (termShiftIterV w σ) (termShiftIterV p σ)) ∈ finalCtx Γ P := by
+  have := mem_finalCtx_of_mem' h.2.1 hx
+  rwa [h.2.2.2, shiftIterV_neg (isFormula_substFact hy hw hp), shiftIterV_substFact hy hw hp] at this
+lemma HInv.winv {tbl E Γ P : V} (h : HInv tbl E Γ P) : WInv tbl E Γ P 0 := h
+
+/-- The walk of a formula as a `WInv` list. -/
+lemma walkF_winv {tbl N E Γ n r : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hr : IsSemiformula LAct n r)
+    (hE : 2 * n + 2 * formulaLen LAct r + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
+    WInv tbl E Γ (describeF walkPieces n r) (descCountF walkPieces n r) ∧
+    descCountF walkPieces n r + 1 ≤ 2 * formulaLen LAct r ∧ len (describeF walkPieces n r) ≤ 12 * formulaLen LAct r ∧
+    DossF walkPieces (finalCtx Γ (describeF walkPieces n r)) n r 0 := by
+  obtain ⟨hok, hnd, hsh, hc, _⟩ := describeF_ok htbl hW hr hE hΓ
+  exact ⟨⟨hok.mono (by exact_mod_cast (by decide : 8 ≤ 9)), hnd.noDrop', hornOnly_describeF rfl hr, hsh⟩, hc,
+    le_trans le_self_add (len_describeF_le walkPieces hr), dossF_of_walk hnd⟩
+
+/-- The walk of a vector as a `WInv` list. -/
+lemma walkV_winv {tbl N E Γ n k v : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hv : IsSemitermVec LAct k n v)
+    (hE : 2 * n + 2 * k + 2 * listSum (termLenVec LAct k v) + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
+    WInv tbl E Γ (vecWalkN walkPieces n k v) (vecCwN walkPieces n k v) ∧
+    vecCwN walkPieces n k v ≤ 2 * listSum (termLenVec LAct k v) ∧
+    len (vecWalkN walkPieces n k v) ≤ 12 * listSum (termLenVec LAct k v) + 4 ∧
+    DossV walkPieces (finalCtx Γ (vecWalkN walkPieces n k v)) n k v k 0 := by
+  obtain ⟨hok, hnd, hho, hsh, hc, hl, hD⟩ := vecWalkN_ok htbl hW hv hE hΓ
+  exact ⟨⟨hok.mono (by exact_mod_cast (by decide : 8 ≤ 9)), hnd.noDrop', hho, hsh⟩, hc, le_trans le_self_add hl, hD⟩
+
+/-- The base-case vector `⟨⌜0⌝⟩` as a `V`-code. -/
+noncomputable def c0v : V := (^func 0 0 0 : V) ∷ 0
+
+lemma isC0_c0v : IsC0 (c0v : V) := ⟨_, rfl, rfl⟩
+lemma c0t_eq : (^func 0 0 0 : V) = 𝟎 := coe_zero_eq.symm
+lemma isSemiterm_c0t : IsSemiterm LAct 0 (^func 0 0 0 : V) := by rw [c0t_eq]; exact isSemiterm_qqZero_LAct 0
+lemma termLen_c0t : termLen LAct (^func 0 0 0 : V) = 1 := by rw [c0t_eq]; exact termLen_qqZero isFunc_LAct_zeroIndex
+lemma isSemitermVec_c0v : IsSemitermVec LAct 1 0 (c0v : V) := by
+  unfold c0v; rw [show (1 : V) = 0 + 1 by simp, IsSemitermVec.cons_iff]
+  exact ⟨isSemiterm_c0t, IsSemitermVec.nil _⟩
+lemma termLen_c1t : termLen LAct (^#(0 : V) ^+ (𝟏 : V)) = 3 := by
+  rw [termLen_qqAdd isFunc_LAct_addIndex (by simp) qqOne_uterm_LAct, termLen_bvar, termLen_qqOne isFunc_LAct_oneIndex]
+  ring
+
+/-- **The shape of the induction body in the `LAct` vocabulary**: for an `ℒₒᵣ`-1-formula `K`,
+`indBodyVal K = x ⋎ ((∃ (K ⋏ ns)) ⋎ (∀ K))` with `x = subst c0v (neg K)`, `ns = subst c1v (neg K)`. -/
+theorem indBodyVal_shape {K : V} (hK : IsSemiformula ℒₒᵣ 1 K) :
+    indBodyVal K = subst LAct c0v (neg LAct K) ^⋎ ((^∃ (K ^⋏ subst LAct c1v (neg LAct K))) ^⋎ ^∀ K) := by
+  have hc0O := isC0_isSemitermVec (isC0_c0v (V := V))
+  have hc1O := isC1_isSemitermVec (isC1_c1v (V := V))
+  have hx : subst LAct c0v (neg LAct K) = neg ℒₒᵣ (subst ℒₒᵣ c0v K) := by
+    rw [substs_neg (IsSemiformula.LAct_of_LOR hK) (IsSemitermVec.LAct_of_LOR hc0O), subst_LAct_eq hK.isUFormula hc0O.isUTermVec,
+      neg_LAct_eq (IsSemiformula.subst hK hc0O).isUFormula]
+  have hns : subst LAct c1v (neg LAct K) = neg ℒₒᵣ (subst ℒₒᵣ c1v K) := by
+    rw [substs_neg (IsSemiformula.LAct_of_LOR hK) (IsSemitermVec.LAct_of_LOR hc1O), subst_LAct_eq hK.isUFormula hc1O.isUTermVec,
+      neg_LAct_eq (IsSemiformula.subst hK hc1O).isUFormula]
+  rw [hx, hns]
+  unfold indBodyVal
+  rw [← isC0_val (isC0_c0v (V := V)), ← isC1_val (isC1_c1v (V := V))]
+  simp only [Bootstrapping.imp]
+  have hs1K : IsUFormula ℒₒᵣ (subst ℒₒᵣ c1v K) := (IsSemiformula.subst hK hc1O).isUFormula
+  have hor : IsUFormula ℒₒᵣ (neg ℒₒᵣ K ^⋎ subst ℒₒᵣ c1v K) := by simp [hK.isUFormula.neg, hs1K]
+  rw [neg_all hor, neg_or hK.isUFormula.neg hs1K, IsUFormula.neg_neg hK.isUFormula]
+
+/-- `formulaLen (qqAlls b m) = formulaLen b + m`. -/
+lemma formulaLen_qqAlls {b : V} (hb : IsUFormula LAct b) : ∀ m : V, formulaLen LAct (qqAlls b m) = formulaLen LAct b + m := by
+  intro m
+  induction m using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero => simp
+  | succ m ih =>
+    rw [qqAlls_succ, formulaLen_all (isUFormula_qqAlls.mpr hb), ih, add_assoc]
+
+end assembly
+
 end ArithS
