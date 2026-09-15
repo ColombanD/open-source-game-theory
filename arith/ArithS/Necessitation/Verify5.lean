@@ -1324,4 +1324,95 @@ lemma dlen_leafCode_le_kitD {T N' B' Cz a n d : V} (htblN : NumTableOK T N' B')
 
 end recursionPrep
 
+
+/-! ## 16. The per-arm MOTIVE WRAPPERS — `axL`
+
+TRAP 15 (Part 3) measured that filling one arm INSIDE the ten-arm `Derivation.induction1` body does not converge
+(>40 min on the cheapest arm, against ~10 s standalone). The restructuring is one TOP-LEVEL theorem per arm, taking
+the induction's binders and the cap as explicit hypotheses and concluding the MOTIVE at that node; the recursion
+body then becomes ten one-line applications.
+
+**TRAP 16 — the actual cost centre, and the fix.** The blowup is NOT the induction context: it is `isDefEq`
+searching for the arm lemma's IMPLICIT arguments (`is`, `il`, `ip`, `inp`, `L`, `n`, …) against the large unfolded
+list term. Pinning them by name turns that search into a check. Measured on this wrapper: unpinned, `isDefEq`
+timeout at 2 000 000 heartbeats after 73 s; **pinned, green in 5 s** — the same content, a >480× collapse against
+the in-body figure. Every remaining wrapper must pin its arm lemma's implicits the same way.
+
+The wrapper also needs `set_option maxHeartbeats 2000000` (the default 200 000 is not enough even pinned) and its
+constant hypotheses in the SHAPE the arithmetic lemmas expect — `lin_le_p3` wants `(12 : V) + 9 ≤ Czv`, not
+`((21 : ℕ) : V) ≤ Czv`; a cast mismatch there reads as an application type error, not as a numeric one.
+-/
+
+section motiveWrappers
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `axL` MOTIVE WRAPPER** — top-level, taking the induction's binders and the cap explicitly,
+concluding the motive at an `axL` node. The E-room constructions live HERE, not in the recursion body. -/
+theorem axL_wrapper {tbl N N' B' Wc W₁ T B E Czv Γ s p : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWc : Wc = certPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ a : ℕ, a ≤ 1000000 → ((a : ℕ) : V) ≤ Czv)
+    (hC21 : (12 : V) + 9 ≤ Czv)
+    (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hnp : neg LAct p ∈ s)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hE : Czv * p4 (dlen TAct (axL s p) + 1) ≤ E) :
+    len (vAxL walkPieces Wc W₁ T s p) ≤ Czv * p4 (dlen TAct (axL s p)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (axL s p))) (vAxL walkPieces Wc W₁ T s p) := by
+  have hD : Derivation TAct (axL s p) := Derivation.axL hs hp hnp
+  have hd1 : 1 ≤ dlen TAct (axL s p) := one_le_dlen hD
+  have hsD : setLen LAct s ≤ dlen TAct (axL s p) := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_axL] at this
+  have hkD : len (memberList s) ≤ dlen TAct (axL s p) := le_trans (len_memberList_le_setLen hs) hsD
+  have hpD : formulaLen LAct p ≤ dlen TAct (axL s p) :=
+    formulaLen_le_dlen_of_mem hD (by rw [fstIdx_axL]; exact hp)
+  have hdl : dlen TAct (axL s p) = setLen LAct s + 1 := dlen_axL hD
+  obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (axL s p) := ⟨_, rfl⟩
+  rw [← hdd] at hE hd1 hsD hkD hpD hdl ⊢
+  have he1 : (1 : V) ≤ d + 1 := le_add_self
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEax : 13 * d + 18 * ‖d‖ + 8 ≤ E := capE4' hE he1 (hCk 39 (by norm_num)) (by
+    calc 13 * d + 18 * ‖d‖ + 8 ≤ (13 + 18 + 8) * (d + 1) := lin_cap 13 18 8 d
+      _ = ((39 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  have hiEax : 0 + 8 * d + 3 ≤ E := capE4' hE he1 (hCk 11 (by norm_num)) (by
+    push_cast; exact le_of_add_eq' (c := 3 * d + 8) (by ring))
+  obtain ⟨-, -, hho, -, hlenp, -⟩ := proAxL_ok (D := d) htbl hP htblN hWc hs hp hnp hsD hEax hiEax hΓ hLay.layout
+  have hnE : 18 * ‖d‖ + 7 ≤ E := capE4' hE he1 (hCk 25 (by norm_num)) (by
+    calc 18 * ‖d‖ + 7 ≤ 0 * d + 18 * ‖d‖ + 7 := by rw [zero_mul, zero_add]
+      _ ≤ (0 + 18 + 7) * (d + 1) := lin_cap 0 18 7 d
+      _ = ((25 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  have hLn : setLen LAct s + 1 ≤ d := le_of_eq hdl.symm
+  have hgoalE : len (memberList s) + 1 + 1 + 1 ≤ E := capE4' hE he1 (hCk 4 (by norm_num)) (by
+    calc len (memberList s) + 1 + 1 + 1 ≤ d + 3 :=
+          (add_le_add (add_le_add (add_le_add hkD le_rfl) le_rfl) le_rfl).trans (le_of_eq (by ring))
+      _ ≤ ((4 : ℕ) : V) * (d + 1) := by push_cast; exact le_of_add_eq' (c := 3 * d + 1) (by ring))
+  have hbn : termLen LAct (bnum d) ≤ E := capE4' hE he1 (hCk 7 (by norm_num)) (by
+    refine le_trans (termLen_bnum_le_V d) ?_
+    calc 6 * ‖d‖ + 1 ≤ 6 * (d + 1) + 1 * (d + 1) :=
+          add_le_add (mul_le_mul_of_nonneg_left (le_trans (length_le d) le_self_add) zero_le)
+            (by rw [one_mul]; exact le_add_self)
+      _ = ((7 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  refine ⟨?_, ?_⟩
+  · rw [axL_arm_len]
+    refine le_trans (add_le_add (le_trans (le_trans le_self_add hlenp)
+      (mul_le_mul_of_nonneg_left hpD zero_le)) (le_refl (9 : V))) ?_
+    exact le_trans (lin_le_p3 hd1 hC21) (mul_le_mul_of_nonneg_left (p3_le_p4 hd1) zero_le)
+  · unfold vAxL
+    rw [← hdd]
+    exact (axL_arm_size (Ww := walkPieces) (Wc := Wc) (W₁ := W₁) (T := T) (s := s) (p := p)
+      (B := B) (E := E) (Cz := Czv)
+      (is := len (memberList s) + 1) (il := 0)
+      (ip := memTop walkPieces Wc T s p 0) (inp := memTop walkPieces Wc T s (neg LAct p) 0)
+      (L := setLen LAct s) (n := d)
+      hW₁ hho hCz1 hE1 hPle hnE hLn hgoalE hbn hcG
+      (le_trans (dlen_leafCode_le' htblN (le_of_eq hdl.symm) le_rfl)
+        (le_trans (sum2D_le_layD N' B' d) (layD_le_kitD le_rfl hCD)))).mono le_rfl
+      (kitD_mono (le_two_mul_self d))
+
+end motiveWrappers
+
 end ArithS

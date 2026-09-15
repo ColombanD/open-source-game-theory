@@ -1513,6 +1513,20 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms le_two_mul_self
 #print axioms dlen_leafCode_le_kitD
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 13 — the per-arm MOTIVE WRAPPERS begin (`axL`).
+-- TRAP 15 measured that filling one arm INSIDE the ten-arm `Derivation.induction1` body does not converge (>40 min
+-- on the cheapest arm, against ~10 s standalone). The restructuring is one TOP-LEVEL theorem per arm, taking the
+-- induction's binders and the cap as explicit hypotheses and concluding the MOTIVE at that node; the recursion body
+-- then becomes ten one-line applications. **TRAP 16 — the actual cost centre, and the fix.** The blowup is NOT the
+-- induction context: it is `isDefEq` searching for the arm lemma's IMPLICIT arguments (`is`, `il`, `ip`, `inp`,
+-- `L`, `n`, …) against the large unfolded list term. Pinning them by name turns that search into a check. Measured
+-- on `axL_wrapper`: unpinned, `isDefEq` timeout at 2 000 000 heartbeats after 73 s; PINNED, green in 5 s — the same
+-- content, a >480× collapse against the in-body figure. Every remaining wrapper must pin its arm lemma's implicits
+-- the same way. The wrapper also needs `maxHeartbeats 2000000` (the default 200 000 is not enough even pinned) and
+-- its constant hypotheses in the SHAPE the arithmetic lemmas expect — `lin_le_p3` wants `(12 : V) + 9 ≤ Czv`, not
+-- `((21 : ℕ) : V) ≤ Czv`; a cast mismatch there reads as an application type error, not as a numeric one.
+#print axioms axL_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
