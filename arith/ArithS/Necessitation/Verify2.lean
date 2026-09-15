@@ -926,4 +926,325 @@ instance vAxm_definable :
 
 end assemblers
 
+/-! ## 6. `VerifyGraph'` — the Δ₁ fixpoint on the key `⟪ρ, L⟫` with COMPUTED lists
+
+Parameters: the piece tables `Ww Wl Wc W₁ W₂ W` (walk, layout, cert, frag1, frag2, prologue), the numeral table
+`T`, and the `axm` certificate table `A` (§3). Ten clauses, one per node tag; every child pair `⟪d', L'⟫` is
+referenced through `C` with the bound `L' ≤ L` (`le_appendV_mid`: the child's list is spliced into the node's), so
+`StrongFinite` holds exactly as in `Verify.lean` §3. -/
+
+namespace Verify2
+
+def Phi (Ww Wl Wc W₁ W₂ W T A : V) (C : Set V) (pr : V) : Prop :=
+  ∃ d ≤ pr, ∃ L ≤ pr, pr = ⟪d, L⟫ ∧
+  (
+  (∃ s < d, ∃ p < d, d = axL s p ∧ L = vAxL Ww Wc W₁ T s p) ∨
+  (∃ s < d, d = verumIntro s ∧ L = vVerum Ww Wc W₁ T s) ∨
+  (∃ s < d, ∃ p < d, ∃ q < d, ∃ dp < d, ∃ dq < d, d = andIntro s p q dp dq ∧
+    ∃ L₁ ≤ L, ⟪dp, L₁⟫ ∈ C ∧ ∃ L₂ ≤ L, ⟪dq, L₂⟫ ∈ C ∧ L = vAnd Ww Wl Wc W₁ W T s p q dp dq L₁ L₂) ∨
+  (∃ s < d, ∃ p < d, ∃ q < d, ∃ d' < d, d = orIntro s p q d' ∧
+    ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ L = vOr Ww Wl Wc W₁ W T s p q d' L') ∨
+  (∃ s < d, ∃ p < d, ∃ d' < d, d = allIntro s p d' ∧
+    ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ L = vAll Ww Wl Wc W₂ W T s p d' L') ∨
+  (∃ s < d, ∃ p < d, ∃ t < d, ∃ d' < d, d = exsIntro s p t d' ∧
+    ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ L = vExs Ww Wl Wc W₂ W T s p t d' L') ∨
+  (∃ s < d, ∃ d' < d, d = wkRule s d' ∧ ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ L = vWk Ww Wl Wc W₁ W T s d' L') ∨
+  (∃ s < d, ∃ d' < d, d = shiftRule s d' ∧ ∃ L' ≤ L, ⟪d', L'⟫ ∈ C ∧ L = vShift Ww Wl Wc W₂ W T s d' L') ∨
+  (∃ s < d, ∃ p < d, ∃ d₁ < d, ∃ d₂ < d, d = cutRule s p d₁ d₂ ∧
+    ∃ L₁ ≤ L, ⟪d₁, L₁⟫ ∈ C ∧ ∃ L₂ ≤ L, ⟪d₂, L₂⟫ ∈ C ∧ L = vCut Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) ∨
+  (∃ s < d, ∃ p < d, d = axm s p ∧ ∃ pro ≤ L, ⟪p, memTop Ww Wc T s p 0, pro⟫ ∈ A ∧ L = vAxm Ww Wc W₂ T s p pro) )
+
+noncomputable def blueprint : Fixpoint.Blueprint 8 := ⟨.mkDelta
+  (.mkSigma “pr C Ww Wl Wc W₁ W₂ W T A.
+    ∃ d <⁺ pr, ∃ L <⁺ pr, !pairDef pr d L ∧
+    (
+      (∃ s < d, ∃ p < d, !axLGraph d s p ∧ ∃ F, !vAxLDef F Ww Wc W₁ T s p ∧ L = F) ∨
+      (∃ s < d, !verumIntroGraph d s ∧ ∃ F, !vVerumDef F Ww Wc W₁ T s ∧ L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ q < d, ∃ dp < d, ∃ dq < d, !andIntroGraph d s p q dp dq ∧
+        ∃ L₁ <⁺ L, :⟪dp, L₁⟫:∈ C ∧ ∃ L₂ <⁺ L, :⟪dq, L₂⟫:∈ C ∧ ∃ F, !vAndDef F Ww Wl Wc W₁ W T s p q dp dq L₁ L₂ ∧ L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ q < d, ∃ d' < d, !orIntroGraph d s p q d' ∧
+        ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ F, !vOrDef F Ww Wl Wc W₁ W T s p q d' L' ∧ L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ d' < d, !allIntroGraph d s p d' ∧
+        ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ F, !vAllDef F Ww Wl Wc W₂ W T s p d' L' ∧ L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ t < d, ∃ d' < d, !exsIntroGraph d s p t d' ∧
+        ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ F, !vExsDef F Ww Wl Wc W₂ W T s p t d' L' ∧ L = F) ∨
+      (∃ s < d, ∃ d' < d, !wkRuleGraph d s d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ F, !vWkDef F Ww Wl Wc W₁ W T s d' L' ∧ L = F) ∨
+      (∃ s < d, ∃ d' < d, !shiftRuleGraph d s d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∃ F, !vShiftDef F Ww Wl Wc W₂ W T s d' L' ∧ L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ d₁ < d, ∃ d₂ < d, !cutRuleGraph d s p d₁ d₂ ∧
+        ∃ L₁ <⁺ L, :⟪d₁, L₁⟫:∈ C ∧ ∃ L₂ <⁺ L, :⟪d₂, L₂⟫:∈ C ∧ ∃ F, !vCutDef F Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ ∧ L = F) ∨
+      (∃ s < d, ∃ p < d, !axmGraph d s p ∧ ∃ pro <⁺ L, ∃ ip, !memTopDef ip Ww Wc T s p 0 ∧ ∃ e₁, !pairDef e₁ ip pro ∧
+        ∃ e, !pairDef e p e₁ ∧ e ∈ A ∧ ∃ F, !vAxmDef F Ww Wc W₂ T s p pro ∧ L = F) )”)
+  (.mkPi “pr C Ww Wl Wc W₁ W₂ W T A.
+    ∃ d <⁺ pr, ∃ L <⁺ pr, !pairDef pr d L ∧
+    (
+      (∃ s < d, ∃ p < d, !axLGraph d s p ∧ ∀ F, !vAxLDef F Ww Wc W₁ T s p → L = F) ∨
+      (∃ s < d, !verumIntroGraph d s ∧ ∀ F, !vVerumDef F Ww Wc W₁ T s → L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ q < d, ∃ dp < d, ∃ dq < d, !andIntroGraph d s p q dp dq ∧
+        ∃ L₁ <⁺ L, :⟪dp, L₁⟫:∈ C ∧ ∃ L₂ <⁺ L, :⟪dq, L₂⟫:∈ C ∧ ∀ F, !vAndDef F Ww Wl Wc W₁ W T s p q dp dq L₁ L₂ → L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ q < d, ∃ d' < d, !orIntroGraph d s p q d' ∧
+        ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∀ F, !vOrDef F Ww Wl Wc W₁ W T s p q d' L' → L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ d' < d, !allIntroGraph d s p d' ∧
+        ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∀ F, !vAllDef F Ww Wl Wc W₂ W T s p d' L' → L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ t < d, ∃ d' < d, !exsIntroGraph d s p t d' ∧
+        ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∀ F, !vExsDef F Ww Wl Wc W₂ W T s p t d' L' → L = F) ∨
+      (∃ s < d, ∃ d' < d, !wkRuleGraph d s d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∀ F, !vWkDef F Ww Wl Wc W₁ W T s d' L' → L = F) ∨
+      (∃ s < d, ∃ d' < d, !shiftRuleGraph d s d' ∧ ∃ L' <⁺ L, :⟪d', L'⟫:∈ C ∧ ∀ F, !vShiftDef F Ww Wl Wc W₂ W T s d' L' → L = F) ∨
+      (∃ s < d, ∃ p < d, ∃ d₁ < d, ∃ d₂ < d, !cutRuleGraph d s p d₁ d₂ ∧
+        ∃ L₁ <⁺ L, :⟪d₁, L₁⟫:∈ C ∧ ∃ L₂ <⁺ L, :⟪d₂, L₂⟫:∈ C ∧ ∀ F, !vCutDef F Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ → L = F) ∨
+      (∃ s < d, ∃ p < d, !axmGraph d s p ∧ ∃ pro <⁺ L, ∀ ip, !memTopDef ip Ww Wc T s p 0 → ∀ e₁, !pairDef e₁ ip pro →
+        ∀ e, !pairDef e p e₁ → (e ∈ A ∧ ∀ F, !vAxmDef F Ww Wc W₂ T s p pro → L = F)) )”)⟩
+
+set_option maxHeartbeats 4000000 in
+noncomputable def construction : Fixpoint.Construction V blueprint where
+  Φ := fun v ↦ Phi (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)
+  defined := .mk <| by
+    constructor
+    · intro v
+      simp [blueprint, vAxL_defined.iff, vVerum_defined.iff, vAnd_defined.iff, vOr_defined.iff, vAll_defined.iff,
+        vExs_defined.iff, vWk_defined.iff, vShift_defined.iff, vCut_defined.iff, vAxm_defined.iff, memTop_defined.iff]
+    · intro v
+      simp [blueprint, Phi, vAxL_defined.iff, vVerum_defined.iff, vAnd_defined.iff, vOr_defined.iff, vAll_defined.iff,
+        vExs_defined.iff, vWk_defined.iff, vShift_defined.iff, vCut_defined.iff, vAxm_defined.iff, memTop_defined.iff]
+  monotone := by
+    rintro C C' hC v pr ⟨d, hd, L, hL, rfl, h⟩
+    refine ⟨d, hd, L, hL, rfl, ?_⟩
+    rcases h with h | h | ⟨s, hs, p, hp, q, hq, dp, hdp, dq, hdq, he, L₁, hL₁, hm₁, L₂, hL₂, hm₂, hf⟩ |
+      ⟨s, hs, p, hp, q, hq, d', hd', he, L', hL', hm, hf⟩ | ⟨s, hs, p, hp, d', hd', he, L', hL', hm, hf⟩ |
+      ⟨s, hs, p, hp, t, ht, d', hd', he, L', hL', hm, hf⟩ | ⟨s, hs, d', hd', he, L', hL', hm, hf⟩ |
+      ⟨s, hs, d', hd', he, L', hL', hm, hf⟩ | ⟨s, hs, p, hp, d₁, hd₁, d₂, hd₂, he, L₁, hL₁, hm₁, L₂, hL₂, hm₂, hf⟩ | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl ⟨s, hs, p, hp, q, hq, dp, hdp, dq, hdq, he, L₁, hL₁, hC hm₁, L₂, hL₂, hC hm₂, hf⟩))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, p, hp, q, hq, d', hd', he, L', hL', hC hm, hf⟩)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, p, hp, d', hd', he, L', hL', hC hm, hf⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, p, hp, t, ht, d', hd', he, L', hL', hC hm, hf⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, d', hd', he, L', hL', hC hm, hf⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, d', hd', he, L', hL', hC hm, hf⟩)))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨s, hs, p, hp, d₁, hd₁, d₂, hd₂, he, L₁, hL₁, hC hm₁, L₂, hL₂, hC hm₂, hf⟩))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h))))))))
+
+/-- Every referenced child pair `⟪d', L'⟫` is below `⟪d, L⟫`: `d' < d` and `L' ≤ L`. -/
+instance : construction.StrongFinite V where
+  strong_finite := by
+    rintro C v pr ⟨d, hd, L, hL, rfl, h⟩
+    refine ⟨d, hd, L, hL, rfl, ?_⟩
+    have key : ∀ {d' L' : V}, d' < d → L' ≤ L → ⟪d', L'⟫ < ⟪d, L⟫ := fun hd' hL' ↦
+      lt_of_lt_of_le (pair_lt_pair_left hd' _) (pair_le_pair_right _ hL')
+    rcases h with h | h | ⟨s, hs, p, hp, q, hq, dp, hdp, dq, hdq, he, L₁, hL₁, hm₁, L₂, hL₂, hm₂, hf⟩ |
+      ⟨s, hs, p, hp, q, hq, d', hd', he, L', hL', hm, hf⟩ | ⟨s, hs, p, hp, d', hd', he, L', hL', hm, hf⟩ |
+      ⟨s, hs, p, hp, t, ht, d', hd', he, L', hL', hm, hf⟩ | ⟨s, hs, d', hd', he, L', hL', hm, hf⟩ |
+      ⟨s, hs, d', hd', he, L', hL', hm, hf⟩ | ⟨s, hs, p, hp, d₁, hd₁, d₂, hd₂, he, L₁, hL₁, hm₁, L₂, hL₂, hm₂, hf⟩ | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr (Or.inl ⟨s, hs, p, hp, q, hq, dp, hdp, dq, hdq, he, L₁, hL₁, ⟨hm₁, key hdp hL₁⟩,
+        L₂, hL₂, ⟨hm₂, key hdq hL₂⟩, hf⟩))
+    · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, p, hp, q, hq, d', hd', he, L', hL', ⟨hm, key hd' hL'⟩, hf⟩)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, p, hp, d', hd', he, L', hL', ⟨hm, key hd' hL'⟩, hf⟩))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, p, hp, t, ht, d', hd', he, L', hL', ⟨hm, key hd' hL'⟩, hf⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, d', hd', he, L', hL', ⟨hm, key hd' hL'⟩, hf⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨s, hs, d', hd', he, L', hL', ⟨hm, key hd' hL'⟩, hf⟩)))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨s, hs, p, hp, d₁, hd₁, d₂, hd₂, he, L₁, hL₁, ⟨hm₁, key hd₁ hL₁⟩, L₂, hL₂, ⟨hm₂, key hd₂ hL₂⟩, hf⟩))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h))))))))
+
+end Verify2
+
+/-! ### 6.2 `VerifyGraph'` and its definability (the PACKED-parameter pattern of `BnumSteps.lean`) -/
+
+/-- The fixpoint at the packed parameter `P = ⟪Ww, Wl, Wc, W₁, W₂, W, T, A⟫`. -/
+def VPackedP (P pr : V) : Prop :=
+  Verify2.construction.Fixpoint
+    ![π₁ P, π₁ (π₂ P), π₁ (π₂ (π₂ P)), π₁ (π₂ (π₂ (π₂ P))), π₁ (π₂ (π₂ (π₂ (π₂ P)))),
+      π₁ (π₂ (π₂ (π₂ (π₂ (π₂ P))))), π₁ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ P)))))), π₂ (π₂ (π₂ (π₂ (π₂ (π₂ (π₂ P))))))] pr
+
+/-- **The verification graph with computed lists**: `VerifyGraph' Ww Wl Wc W₁ W₂ W T A ρ L` — the derivation code
+`ρ` (its sequent laid out at offset `0`) is verified by the list `L`, with the `axm` certificates taken from `A`. -/
+def VerifyGraph' (Ww Wl Wc W₁ W₂ W T A ρ L : V) : Prop := VPackedP ⟪Ww, Wl, Wc, W₁, W₂, W, T, A⟫ ⟪ρ, L⟫
+
+noncomputable def vPackedPDef : 𝚺₁.Semisentence 2 := .mkSigma
+  “P pr. ∃ a, !pi₁Def a P ∧ ∃ r₁, !pi₂Def r₁ P ∧ ∃ b, !pi₁Def b r₁ ∧ ∃ r₂, !pi₂Def r₂ r₁ ∧ ∃ c, !pi₁Def c r₂ ∧
+    ∃ r₃, !pi₂Def r₃ r₂ ∧ ∃ d, !pi₁Def d r₃ ∧ ∃ r₄, !pi₂Def r₄ r₃ ∧ ∃ e, !pi₁Def e r₄ ∧ ∃ r₅, !pi₂Def r₅ r₄ ∧
+    ∃ f, !pi₁Def f r₅ ∧ ∃ r₆, !pi₂Def r₆ r₅ ∧ ∃ g, !pi₁Def g r₆ ∧ ∃ h, !pi₂Def h r₆ ∧
+    !Verify2.blueprint.fixpointDef pr a b c d e f g h”
+
+instance vPackedP_defined : 𝚺₁-Relation (VPackedP : V → V → Prop) via vPackedPDef := .mk
+  fun v ↦ by
+    simp [vPackedPDef, VPackedP, Verify2.construction.eval_fixpointDef]
+    first
+    | exact Iff.rfl
+    | (constructor <;> intro h <;> convert h using 2 <;> funext i <;> fin_cases i <;> rfl)
+instance vPackedP_definable : 𝚺₁-Relation (VPackedP : V → V → Prop) := vPackedP_defined.to_definable
+
+noncomputable def verifyGraph'Def : 𝚺₁.Semisentence 10 := .mkSigma
+  “Ww Wl Wc W₁ W₂ W T A ρ L. ∃ pr, !pairDef pr ρ L ∧ ∃ p₇, !pairDef p₇ T A ∧ ∃ p₆, !pairDef p₆ W p₇ ∧
+    ∃ p₅, !pairDef p₅ W₂ p₆ ∧ ∃ p₄, !pairDef p₄ W₁ p₅ ∧ ∃ p₃, !pairDef p₃ Wc p₄ ∧ ∃ p₂, !pairDef p₂ Wl p₃ ∧
+    ∃ P, !pairDef P Ww p₂ ∧ !vPackedPDef P pr”
+
+instance verifyGraph'_defined :
+    𝚺₁.Defined (fun v : Fin 10 → V ↦ VerifyGraph' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9))
+      verifyGraph'Def := .mk
+  fun v ↦ by simp [verifyGraph'Def, vPackedP_defined.iff, VerifyGraph']
+instance verifyGraph'_definable :
+    𝚺₁.Definable (fun v : Fin 10 → V ↦ VerifyGraph' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
+  verifyGraph'_defined.to_definable
+
+/-! ### 6.3 Case analysis and the ten inversions -/
+
+lemma VerifyGraph'.case_iff {Ww Wl Wc W₁ W₂ W T A ρ L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A ρ L ↔
+    (
+    (∃ s < ρ, ∃ p < ρ, ρ = axL s p ∧ L = vAxL Ww Wc W₁ T s p) ∨
+    (∃ s < ρ, ρ = verumIntro s ∧ L = vVerum Ww Wc W₁ T s) ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ q < ρ, ∃ dp < ρ, ∃ dq < ρ, ρ = andIntro s p q dp dq ∧
+      ∃ L₁ ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A dp L₁ ∧ ∃ L₂ ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A dq L₂ ∧
+      L = vAnd Ww Wl Wc W₁ W T s p q dp dq L₁ L₂) ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ q < ρ, ∃ d' < ρ, ρ = orIntro s p q d' ∧
+      ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vOr Ww Wl Wc W₁ W T s p q d' L') ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ d' < ρ, ρ = allIntro s p d' ∧
+      ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vAll Ww Wl Wc W₂ W T s p d' L') ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ t < ρ, ∃ d' < ρ, ρ = exsIntro s p t d' ∧
+      ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vExs Ww Wl Wc W₂ W T s p t d' L') ∨
+    (∃ s < ρ, ∃ d' < ρ, ρ = wkRule s d' ∧
+      ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vWk Ww Wl Wc W₁ W T s d' L') ∨
+    (∃ s < ρ, ∃ d' < ρ, ρ = shiftRule s d' ∧
+      ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vShift Ww Wl Wc W₂ W T s d' L') ∨
+    (∃ s < ρ, ∃ p < ρ, ∃ d₁ < ρ, ∃ d₂ < ρ, ρ = cutRule s p d₁ d₂ ∧
+      ∃ L₁ ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d₁ L₁ ∧ ∃ L₂ ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d₂ L₂ ∧
+      L = vCut Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) ∨
+    (∃ s < ρ, ∃ p < ρ, ρ = axm s p ∧ ∃ pro ≤ L, ⟪p, memTop Ww Wc T s p 0, pro⟫ ∈ A ∧ L = vAxm Ww Wc W₂ T s p pro) ) := by
+  unfold VerifyGraph' VPackedP
+  simp only [pi₁_pair, pi₂_pair]
+  rw [Verify2.construction.case]
+  show Verify2.Phi _ _ _ _ _ _ _ _ _ _ ↔ _
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two, Matrix.tail_cons,
+    Matrix.cons_val_three, Matrix.cons_val_four, Matrix.cons_val_succ, Matrix.cons_val_fin_one, Verify2.Phi]
+  constructor
+  · rintro ⟨d, _, L', _, hpr, h⟩
+    obtain ⟨rfl, rfl⟩ := pair_ext_iff.mp hpr
+    exact h
+  · intro h
+    exact ⟨ρ, by simp, L, by simp, rfl, h⟩
+
+section inversion
+
+attribute [local simp] axL verumIntro andIntro orIntro allIntro exsIntro wkRule shiftRule cutRule axm
+
+variable {Ww Wl Wc W₁ W₂ W T A : V}
+
+lemma VerifyGraph'.axL_iff {s p L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (axL s p) L ↔ L = vAxL Ww Wc W₁ T s p := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [axL] using seq_lt_axL s p, by simpa [axL] using arity_lt_axL s p, h⟩
+
+lemma VerifyGraph'.verumIntro_iff {s L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (verumIntro s) L ↔ L = vVerum Ww Wc W₁ T s := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  intros
+  simpa [verumIntro] using seq_lt_verumIntro s
+
+lemma VerifyGraph'.andIntro_iff {s p q dp dq L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (andIntro s p q dp dq) L ↔
+    ∃ L₁ ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A dp L₁ ∧ ∃ L₂ ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A dq L₂ ∧
+      L = vAnd Ww Wl Wc W₁ W T s p q dp dq L₁ L₂ := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, -, -, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [andIntro] using seq_lt_andIntro s p q dp dq, by simpa [andIntro] using p_lt_andIntro s p q dp dq,
+      by simpa [andIntro] using q_lt_andIntro s p q dp dq, by simpa [andIntro] using dp_lt_andIntro s p q dp dq,
+      by simpa [andIntro] using dq_lt_andIntro s p q dp dq, h⟩
+
+lemma VerifyGraph'.orIntro_iff {s p q d' L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (orIntro s p q d') L ↔
+    ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vOr Ww Wl Wc W₁ W T s p q d' L' := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, -, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [orIntro] using seq_lt_orIntro s p q d', by simpa [orIntro] using p_lt_orIntro s p q d',
+      by simpa [orIntro] using q_lt_orIntro s p q d', by simpa [orIntro] using d_lt_orIntro s p q d', h⟩
+
+lemma VerifyGraph'.allIntro_iff {s p d' L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (allIntro s p d') L ↔
+    ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vAll Ww Wl Wc W₂ W T s p d' L' := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [allIntro] using seq_lt_allIntro s p d', by simpa [allIntro] using p_lt_allIntro s p d',
+      by simpa [allIntro] using s_lt_allIntro s p d', h⟩
+
+lemma VerifyGraph'.exsIntro_iff {s p t d' L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (exsIntro s p t d') L ↔
+    ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vExs Ww Wl Wc W₂ W T s p t d' L' := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, -, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [exsIntro] using seq_lt_exsIntro s p t d', by simpa [exsIntro] using p_lt_exsIntro s p t d',
+      by simpa [exsIntro] using t_lt_exsIntro s p t d', by simpa [exsIntro] using d_lt_exsIntro s p t d', h⟩
+
+lemma VerifyGraph'.wkRule_iff {s d' L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (wkRule s d') L ↔
+    ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vWk Ww Wl Wc W₁ W T s d' L' := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [wkRule] using seq_lt_wkRule s d', by simpa [wkRule] using d_lt_wkRule s d', h⟩
+
+lemma VerifyGraph'.shiftRule_iff {s d' L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (shiftRule s d') L ↔
+    ∃ L' ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d' L' ∧ L = vShift Ww Wl Wc W₂ W T s d' L' := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [shiftRule] using seq_lt_shiftRule s d', by simpa [shiftRule] using d_lt_shiftRule s d', h⟩
+
+lemma VerifyGraph'.cutRule_iff {s p d₁ d₂ L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (cutRule s p d₁ d₂) L ↔
+    ∃ L₁ ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d₁ L₁ ∧ ∃ L₂ ≤ L, VerifyGraph' Ww Wl Wc W₁ W₂ W T A d₂ L₂ ∧
+      L = vCut Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, -, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [cutRule] using seq_lt_cutRule s p d₁ d₂, by simpa [cutRule] using p_lt_cutRule s p d₁ d₂,
+      by simpa [cutRule] using d₁_lt_cutRule s p d₁ d₂, by simpa [cutRule] using d₂_lt_cutRule s p d₁ d₂, h⟩
+
+lemma VerifyGraph'.axm_iff {s p L : V} :
+    VerifyGraph' Ww Wl Wc W₁ W₂ W T A (axm s p) L ↔
+    ∃ pro ≤ L, ⟪p, memTop Ww Wc T s p 0, pro⟫ ∈ A ∧ L = vAxm Ww Wc W₂ T s p pro := by
+  rw [VerifyGraph'.case_iff]
+  simp
+  constructor
+  · rintro ⟨-, -, h⟩
+    exact h
+  · intro h
+    exact ⟨by simpa [axm] using seq_lt_axm s p, by simpa [axm] using p_lt_axm s p, h⟩
+
+end inversion
+
 end ArithS
