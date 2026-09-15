@@ -1188,3 +1188,41 @@ passing `rfl` yields a step at `certPieces` that no longer matches `mkStep Wc �
 with an unpinned RHS unifies wrongly — pin the type; rewriting `hq` in a Loop fact rewrites under
 `loopA` too — rewrite the projections.
 IN FLIGHT: `ProAxm` (axm); `Prologue` Part 4 (the `len` bounds + node-size lemmas).
+
+**§11 status — `ProAxm` (459af33, 358f2ba; build 3256, census 676, all standard): `axm` case (i)
+DONE per model; case (ii) = a NAMED ORACLE; and `proAxm` is NOT Σ₁ — a decision for `Verify`.**
+Case (i) (the finitely many standard axioms: `StdAxiom σ := σ = axAct ∨ axAct' ∨ axNe ∨ axNe' ∨ ∃
+σ₀ ∈ 𝗣𝗔⁻, lMap emb σ₀ = σ`, `stdAxiom_finite`; the V-level case split `mem_TAct_class_cases : p ∈
+TAct.Δ₁Class → (∃ σ, StdAxiom σ ∧ p = ⌜σ⌝) ∨ (IsSemiformula ℒₒᵣ 0 p ∧ InductionR … p)`): NumId's
+route + the closed fact `axchNum ⌜σ⌝` (`Lib` for every `σ ∈ TAct`) + ONE row **`congAxch`**
+(`“y x. Δ₁ch x → y = x → Δ₁ch y”`, `aIdx = numIdRowCount + 0`; `proAxmRows := numIdRows ++
+[congAxch]`, `ProAxmTable ⇒ NumIdTable ⇒ ProTable`) — NOT `Lib/Nodes.lean`'s `axiomRec σ`, which is
+parametric in σ and would need one table row per σ. `proAxm_std : ∃ C, ∀ σ, StdAxiom σ → … Layout
+… → ∃ P, NumInv tbl E Γ C P (axchFact (^&(memTop … s ⌜σ⌝ i)))` (shift-free — the fact is at the
+member's top itself), **`proAxm_ok`** (with `AxmIndOracle` for case (ii)), `costSum_proAxm_le`.
+**Case (ii) = `AxmIndOracle tbl E Wc T Γ s i C := ∀ p ∈ s, IsSemiformula ℒₒᵣ 0 p → InductionR … p →
+∃ P, NumInv … (axchFact …)`** — the induction-instance recognizer, NOT built: needs table rows for
+the §J `Lib` sentences (`qqAllsZero/Succ`, `bv*`, `termBV*`, `listMax*`, `fvarVecTotal/Nth`,
+`max`/`−` glue — none has an `inst_` block), a Σ₁ walk `p = qqAlls b m` → `b`, `describeF` +
+`certShift` + `eqSteps` for `shift b = b`, a bottom-up `bv` pass, `certSubst` for `subst (fvarVec
+m) b`, `totIndBody`, and THE WALL: `indRec` is stated over ℒₒᵣ-graphs while every walked fact is
+`LAct` — `Lib/Bridge` has restriction sentences for `isUFormula`/`shift`/`subst` but NOT `bv`, none
+as rows. Cert-scale. **`proAxm` is NOT Σ₁** (declared): NumId's lists carry `sLemma A dA` with
+PER-MODEL derivations (`Lib.code` is `∃ d` per model), so the `axm` clause of `VerifyGraph` cannot
+be `∃ pro, !proAxmDef pro …`. DECISION (2026-09-15): **option (B)** — since `VerifyKit'` is stated
+for the RELATION (no uniqueness needed), the `axm` clause quantifies `∃ pro ≤ L` with a Δ₁
+certificate `AxmPro tbl E W p ip pro` (`ListOK` at the CANONICAL dossier context `finalCtx 0
+(describeF …)` + the fact in its final context; `tbl E` become blueprint parameters) and a
+context-MONOTONICITY lemma for shift-free `NoDrop'` lists (`Cert` Part 0's `ctxAfter_mono`/
+`ctxVec_mono` are the ingredients) transfers `ListOK` to the actual `Γ`; existence from
+`proAxm_ok` per model. Option (A) (`pinSteps σ` as per-σ GENERATED rows, NumId redone over rows)
+is the Σ₁ route, multi-session, not taken. CONSEQUENCE: until case (ii) lands, the `VerifyKit'`
+instance carries `AxmIndOracle` as a HYPOTHESIS — an explicit, named weakening (nonstandard
+induction instances). TRAPS: a lemma stated over `ℒₒᵣ` made `rw` whnf the closed code `encode
+axNe'` (200k heartbeats + a whole-declaration timeout) — state over a VARIABLE language and never
+put `encode` in a statement; `simp` does not rewrite inside instance arguments (`change … .val`);
+`HierarchySymbol.Defined.iff` in a simp set silently turns `Evalb` hypotheses into `Δ₁Class`
+memberships; two `.length = count` `rfl`s on the 9-fold piece list exceed 200k heartbeats in ONE
+declaration; `dif_pos hmem` instead of `simp [Cf, hmem]`.
+IN FLIGHT: `Prologue` Part 4 (len/shiftsV bounds, NodeSize); `Verify` Part 2 (clause edit, option
+B for axm, `VerifyKit'.ok`).
