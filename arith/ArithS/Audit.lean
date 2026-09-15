@@ -55,6 +55,7 @@ import ArithS.Necessitation.IndRec
 import ArithS.Necessitation.NodeSize
 import ArithS.Necessitation.Verify2
 import ArithS.Necessitation.Verify3
+import ArithS.Necessitation.Bounds
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1224,5 +1225,34 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms vAxm_ok'
 #print axioms verifyGraph''_ok
 #print axioms verifyGraph''_ok_pow
+
+-- U10 (Necessitation/Bounds, 2026-09-15): CUBIC `all`/`exs` bounds — the verification list can run at m = 4. The
+-- substitution certificate through `Pin`'s LINEAR `sfL` at the `Cert` §6.7 caps: `len_certSubst_single_le_cubic ≤
+-- 144·p3 (D+1)`; `Prologue`'s parametric `_of` lemmas instantiated: `len_allCert_le_cubic ≤ 196·p3 (D+1)`,
+-- `len_proAll_le_cubic ≤ 402·p3 (D+1)`, `len_exsCert_le_cubic ≤ 189·p3 (D+1)`, `len_proExs_le_cubic ≤ 256·p3 (D+1)`
+-- (same hypotheses as the quintic `len_pro*_le`); shifts through `shiftsV ≤ len` (`shiftsV_pro*_le_cubic`) and SHARP
+-- from the `_ok`s (`shiftsV_proAll_le_sharp ≤ 2(1+D)(2+D)D + 23D + 8`, `shiftsV_proExs_le_sharp ≤ 2(1+D)(1+2D)D + 12D +
+-- 3` — cubic inherently: the `qVec` iterate's unary bvar lengths sum to `Σ_{i<e}(i+1)`); the recursion arithmetic at
+-- m = 4 (`p4`, `p4_split`, `rec1₄`/`rec2₄`, the node caps `allEQ_p3`/`alliE_p3`/`exsEQ_p3`/`exsiE_p3`/`allE_p4`/
+-- `exsE_p4`/`allNode_p4`/`axmLeaf_p4`) and the LOCAL step at m = 3 (`rec1_local`/`rec2_local`); the cost corollaries
+-- `costSum_pro{All,Exs}_le''`.
+#print axioms len_certSubst_single_le_cubic
+#print axioms len_allCert_le_cubic
+#print axioms len_proAll_le_cubic
+#print axioms len_exsCert_le_cubic
+#print axioms len_proExs_le_cubic
+#print axioms shiftsV_proAll_le_cubic
+#print axioms shiftsV_proExs_le_cubic
+#print axioms shiftsV_proAll_le_sharp
+#print axioms shiftsV_proExs_le_sharp
+#print axioms rec1₄
+#print axioms rec2₄
+#print axioms allNode_p4
+#print axioms axmLeaf_p4
+#print axioms allE_p4
+#print axioms exsE_p4
+#print axioms rec1_local
+#print axioms costSum_proAll_le''
+#print axioms costSum_proExs_le''
 
 end ArithS
