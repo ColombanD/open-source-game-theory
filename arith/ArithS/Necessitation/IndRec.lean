@@ -1446,4 +1446,116 @@ lemma formulaLen_qqAlls {b : V} (hb : IsUFormula LAct b) : ∀ m : V, formulaLen
 
 end assembly
 
+/-! ### 5.1 The three `certSubst` instances (re-indexed to the table) -/
+
+section substInst
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-- `certSubst` re-indexed to a `ProTable`, as a `WInv` list. -/
+lemma certSubst_winv {tbl N E Γ n m w iw r i j Q L : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (hw : IsSemitermVec LAct n m w) (hr : IsSemiformula LAct n r) (hPre : SubFPre E Q n m w r i j iw Γ)
+    (hL : ∀ e ≤ formulaLen LAct r, len (π₂ (qWalkP walkPieces (m + e) (n + e) (qVecIterV LAct w e))) ≤ L)
+    (hDi : DossF walkPieces Γ n r i) (hDj : DossF walkPieces Γ m (subst LAct w r) j) (hDw : DossV walkPieces Γ m n w n iw) :
+    ∃ S sh : V, WInv tbl E Γ S sh ∧ sh ≤ 2 * Q * formulaLen LAct r ∧ len S ≤ sfK L Q * formulaLen LAct r ∧
+      neg LAct (substFact (^&(j + sh)) (vRef (iw + sh) n) (^&(i + sh))) ∈ finalCtx Γ S := by
+  obtain ⟨hok, hnd, hho, hsh, hlen, hf⟩ := certSubst_ok (tbl := certView tbl) (N := N) (Wd := walkPieces) (W := certPieces)
+    (hP.tableOK_certView htbl) hP.certTable rfl rfl hw hr hPre hL hDi hDj hDw
+  refine ⟨reidxL (certSubst certPieces walkPieces n m w iw r i j), shiftsV (certSubst certPieces walkPieces n m w iw r i j),
+    ⟨listOK_reidxL hP hok, noDrop'_reidxL hnd, hornOnly_reidxL hho, shiftsV_reidxL _⟩, hsh, ?_, ?_⟩
+  · rw [len_reidxL]; exact hlen
+  · rw [finalCtx_reidxL]; exact hf
+
+/-- **The instance `s = subst (fvarVec m) b`** (`Q₆ = (m + |b|)(m + |b| + m + 1)`). -/
+theorem substInst_fv {tbl N E Γ m b i j iw : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hb : IsSemiformula LAct m b)
+    (hE1 : 2 * formulaLen LAct b + 2 * (m + formulaLen LAct b) + 2 * ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1))) + 9 ≤ E)
+    (hE3 : 2 * m + 2 * formulaLen LAct b + 8 ≤ E)
+    (hE4 : i + 2 * formulaLen LAct b * ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1)) + 1) + 1 ≤ E)
+    (hE5 : j + 2 * formulaLen LAct (subst LAct (Bootstrapping.fvarVec m) b) +
+      2 * ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1))) * formulaLen LAct b + 1 ≤ E)
+    (hE6 : iw + 2 * ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1))) * (formulaLen LAct b + 1) + 2 ≤ E)
+    (hDi : DossF walkPieces Γ m b i) (hDj : DossF walkPieces Γ 0 (subst LAct (Bootstrapping.fvarVec m) b) j)
+    (hDw : DossV walkPieces Γ 0 m (Bootstrapping.fvarVec m) m iw) :
+    ∃ S sh : V, WInv tbl E Γ S sh ∧ sh ≤ 2 * ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1))) * formulaLen LAct b ∧
+      len S ≤ sfK (12 * ((m + formulaLen LAct b + 1) * (m + formulaLen LAct b + 1 + (m + 1))) + 2)
+        ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1))) * formulaLen LAct b ∧
+      neg LAct (substFact (^&(j + sh)) (vRef (iw + sh) m) (^&(i + sh))) ∈ finalCtx Γ S := by
+  have hw : IsSemitermVec LAct m 0 (Bootstrapping.fvarVec m) := IsSemitermVec.LAct_of_LOR (fvarVec_isSemitermVec_LOR m)
+  have hinv := substInv_fvarVec (V := V) m
+  have hcap := listSum_termLenVec_qVecIterV_cap (D := formulaLen LAct b) hw hinv
+  have hPre : SubFPre E ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1))) m 0 (Bootstrapping.fvarVec m) b i j iw Γ := by
+    refine ⟨fun e he ↦ ?_, hcap, hE3, hE4, hE5, hE6, hΓ⟩
+    calc 2 * (0 + e) + 2 * (m + e) + 2 * listSum (termLenVec LAct (m + e) (qVecIterV LAct (Bootstrapping.fvarVec m) e)) + 9
+        ≤ 2 * (0 + formulaLen LAct b) + 2 * (m + formulaLen LAct b) +
+          2 * ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1))) + 9 :=
+          add_le_add (add_le_add (add_le_add (mul_le_mul_of_nonneg_left (add_le_add le_rfl he) zero_le)
+            (mul_le_mul_of_nonneg_left (add_le_add le_rfl he) zero_le)) (mul_le_mul_of_nonneg_left (hcap e he) zero_le)) le_rfl
+      _ = 2 * formulaLen LAct b + 2 * (m + formulaLen LAct b) + 2 * ((m + formulaLen LAct b) * (m + formulaLen LAct b + (m + 1))) + 9 := by ring
+      _ ≤ E := hE1
+  exact certSubst_winv htbl hT.proTable hw hb hPre (len_qWalkP_cap (Wd := walkPieces) hw hinv) hDi hDj hDw
+
+/-- **The instance `x = subst ⟨⌜0⌝⟩ (neg K)`** (`Q₇ = (1 + |nk|)(1 + |nk| + 1)`). -/
+theorem substInst_c0 {tbl N E Γ nk i j iw : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hnk : IsSemiformula LAct 1 nk)
+    (hE1 : 4 * formulaLen LAct nk + 2 * ((1 + formulaLen LAct nk) * (1 + formulaLen LAct nk + 1)) + 11 ≤ E)
+    (hE4 : i + 2 * formulaLen LAct nk * ((1 + formulaLen LAct nk) * (1 + formulaLen LAct nk + 1) + 1) + 1 ≤ E)
+    (hE5 : j + 2 * formulaLen LAct (subst LAct c0v nk) +
+      2 * ((1 + formulaLen LAct nk) * (1 + formulaLen LAct nk + 1)) * formulaLen LAct nk + 1 ≤ E)
+    (hE6 : iw + 2 * ((1 + formulaLen LAct nk) * (1 + formulaLen LAct nk + 1)) * (formulaLen LAct nk + 1) + 2 ≤ E)
+    (hDi : DossF walkPieces Γ 1 nk i) (hDj : DossF walkPieces Γ 0 (subst LAct c0v nk) j)
+    (hDw : DossV walkPieces Γ 0 1 c0v 1 iw) :
+    ∃ S sh : V, WInv tbl E Γ S sh ∧ sh ≤ 2 * ((1 + formulaLen LAct nk) * (1 + formulaLen LAct nk + 1)) * formulaLen LAct nk ∧
+      len S ≤ sfK (12 * ((1 + formulaLen LAct nk + 1) * (1 + formulaLen LAct nk + 1 + 1)) + 2)
+        ((1 + formulaLen LAct nk) * (1 + formulaLen LAct nk + 1)) * formulaLen LAct nk ∧
+      neg LAct (substFact (^&(j + sh)) (^&(iw + sh)) (^&(i + sh))) ∈ finalCtx Γ S := by
+  have ht : IsSemiterm LAct 0 (^func 0 0 0 : V) := isSemiterm_c0t
+  have hB : termLen LAct (^func 0 0 0 : V) ≤ 1 := le_of_eq termLen_c0t
+  have hPre : SubFPre E ((1 + formulaLen LAct nk) * (1 + formulaLen LAct nk + 1)) 1 0 ((^func 0 0 0 : V) ∷ 0) nk i j iw Γ :=
+    subFPre_single ht hB hE1 hE4 hE5 hE6 hΓ
+  have hL := qWalkP_single_cap (Wd := walkPieces) (t := (^func 0 0 0 : V)) (B := 1) (r := nk) ht hB
+  obtain ⟨S, sh, hS, hsh, hl, hf⟩ := certSubst_winv htbl hT.proTable isSemitermVec_c0v hnk hPre hL hDi hDj hDw
+  refine ⟨S, sh, hS, hsh, hl, ?_⟩
+  rwa [vRef_of_ne _root_.one_ne_zero] at hf
+
+/-- **The instance `ns = subst ⟨#0 + 1⟩ (neg K)`** (`Q₈ = (1 + |nk|)(|nk| + 3)`, the bespoke caps of §4.3). -/
+theorem substInst_c1 {tbl N E Γ nk i j iw : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hnk : IsSemiformula LAct 1 nk)
+    (hE1 : 4 * (1 + formulaLen LAct nk) + 2 * ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3)) + 9 ≤ E)
+    (hE3 : 2 * 1 + 2 * formulaLen LAct nk + 8 ≤ E)
+    (hE4 : i + 2 * formulaLen LAct nk * ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3) + 1) + 1 ≤ E)
+    (hE5 : j + 2 * formulaLen LAct (subst LAct c1v nk) +
+      2 * ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3)) * formulaLen LAct nk + 1 ≤ E)
+    (hE6 : iw + 2 * ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3)) * (formulaLen LAct nk + 1) + 2 ≤ E)
+    (hDi : DossF walkPieces Γ 1 nk i) (hDj : DossF walkPieces Γ 1 (subst LAct c1v nk) j)
+    (hDw : DossV walkPieces Γ 1 1 c1v 1 iw) :
+    ∃ S sh : V, WInv tbl E Γ S sh ∧ sh ≤ 2 * ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3)) * formulaLen LAct nk ∧
+      len S ≤ sfK (12 * ((1 + formulaLen LAct nk + 1) * (formulaLen LAct nk + 1 + 3)) + 4)
+        ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3)) * formulaLen LAct nk ∧
+      neg LAct (substFact (^&(j + sh)) (^&(iw + sh)) (^&(i + sh))) ∈ finalCtx Γ S := by
+  have hcap : ∀ e ≤ formulaLen LAct nk, listSum (termLenVec LAct (1 + e) (qVecIterV LAct c1v e)) ≤
+      (1 + formulaLen LAct nk) * (formulaLen LAct nk + 3) := fun e he ↦
+    le_trans (listSum_qVecIterV_c1v_le e) (mul_le_mul (add_le_add le_rfl he) (add_le_add he le_rfl) zero_le zero_le)
+  have hPre : SubFPre E ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3)) 1 1 c1v nk i j iw Γ := by
+    refine ⟨fun e he ↦ ?_, hcap, hE3, hE4, hE5, hE6, hΓ⟩
+    calc 2 * (1 + e) + 2 * (1 + e) + 2 * listSum (termLenVec LAct (1 + e) (qVecIterV LAct c1v e)) + 9
+        ≤ 2 * (1 + formulaLen LAct nk) + 2 * (1 + formulaLen LAct nk) +
+          2 * ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3)) + 9 :=
+          add_le_add (add_le_add (add_le_add (mul_le_mul_of_nonneg_left (add_le_add le_rfl he) zero_le)
+            (mul_le_mul_of_nonneg_left (add_le_add le_rfl he) zero_le)) (mul_le_mul_of_nonneg_left (hcap e he) zero_le)) le_rfl
+      _ = 4 * (1 + formulaLen LAct nk) + 2 * ((1 + formulaLen LAct nk) * (formulaLen LAct nk + 3)) + 9 := by ring
+      _ ≤ E := hE1
+  have hL : ∀ e ≤ formulaLen LAct nk, len (π₂ (qWalkP walkPieces (1 + e) (1 + e) (qVecIterV LAct c1v e))) ≤
+      12 * ((1 + formulaLen LAct nk + 1) * (formulaLen LAct nk + 1 + 3)) + 4 := fun e he ↦ by
+    have h1 := len_qWalkP_c1v_le walkPieces e
+    have h2 : 12 * ((1 + e + 1) * (e + 1 + 3)) + 4 ≤ 12 * ((1 + formulaLen LAct nk + 1) * (formulaLen LAct nk + 1 + 3)) + 4 :=
+      add_le_add (mul_le_mul_of_nonneg_left (mul_le_mul (add_le_add (add_le_add le_rfl he) le_rfl)
+        (add_le_add (add_le_add he le_rfl) le_rfl) zero_le zero_le) zero_le) le_rfl
+    exact le_trans le_self_add (le_trans h1 h2)
+  obtain ⟨S, sh, hS, hsh, hl, hf⟩ := certSubst_winv htbl hT.proTable isSemitermVec_c1v hnk hPre hL hDi hDj hDw
+  refine ⟨S, sh, hS, hsh, hl, ?_⟩
+  rwa [vRef_of_ne _root_.one_ne_zero] at hf
+
+end substInst
+
 end ArithS
