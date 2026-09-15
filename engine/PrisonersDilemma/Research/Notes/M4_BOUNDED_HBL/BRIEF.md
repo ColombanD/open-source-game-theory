@@ -1392,3 +1392,26 @@ Type)` theorem passes `1400` as `V` — `hC V 1400`; `Γ-[m+1]-Relation₁[V]` i
 `Layout.transport` returns `0 + shiftsV S`.
 IN FLIGHT: `Assemble` (switched to Verify3: the cost conjunct, `verifyKit'''_of` with no oracle,
 `KitPackage''' 6`, **`boundedInnerNec_twentyfour`**, **`dupoc_self_coop_unconditional`**).
+
+**§11 status — `Bounds` DONE: `all`/`exs` CUBIC, the recursion can run at `m = 4` (45d1f55, 7f0432e;
+`Bounds.lean` 596 lines, imports `Prologue`/`Pin`/`NodeSize`/`Verify3`; census 761, all standard).**
+`len_certSubst_single_le_cubic ≤ 144·p3(D+1)` (from `Pin.len_certSubst_le_lin` at the `Cert` §6.7
+caps — replaces `Prologue`'s `192·(D+1)⁵`); `len_allCert_le_cubic ≤ 196·p3(D+1)`,
+**`len_proAll_le_cubic ≤ 402·p3(D+1)`**, `len_exsCert_le_cubic ≤ 189·p3(D+1)`, **`len_proExs_le_cubic
+≤ 256·p3(D+1)`** — SAME hypotheses as the quintic lemmas (drop-in; for `exs`, `|substs1 t p| ≤ D` is
+what `NodeSize` supplies at the node, no `|p|·(|t|+1)` product); `shiftsV_proAll/proExs_le_cubic`
+(drop-ins for `Verify3`'s `hSA`) and the `_sharp` forms `2·((1+D)(2+D))·D + 23D + 8` /
+`2·((1+D)(1+2D))·D + 12D + 3`. **THE CUBIC SHIFTS ARE INHERENT**: `certSubst_ok`'s `2Q|r|` with `Q =
+(1+|r|)(1+|r|+B)` bounds the term-length sum of the `qVec` iterate at depth `e ≤ |r|`, whose entries
+`#0 … #(e−1)` have UNARY lengths (`Σ(i+1)`); every quantifier walks one such iterate — no lower
+without the certificate redesign or binary indices (`VarInv` bounds the substituted formula, not the
+iterate). §4 the recursion arithmetic at `m = 4`, name-for-name against `Verify3`'s `m = 6` glue
+(`p4`, `rec1₄`/`rec2₄`, `allNode_p4`, `axmLeaf_p4`, `allE_p4`/`exsE_p4`, `capE4`, `child_bound4`,
+`quad_cap3`, `proSA_add_le_p3` with `Csv ≥ 25731`, `Ckv ≥ 5·Csv`): **`m = 4` ⇒ `deg 4 = 16`**. Also
+the LOCAL step at `m = 3` (`rec1_local`/`rec2_local`): with PER-NODE accounting (`D` = the node's own
+`setLen s + 1`) the same cubic bounds would close at `m = 3` (`deg 12`) — but the `_ok`s take ONE `D`
+that also bounds the child sequent and `|substs1 t p|`, only globally bounded; that refactor is not
+done. `costSum_proAll/proExs_le''` at the cubic lengths. TRAP: `le_trans hrD le_self_add` with a free
+middle term — pin it.
+IN FLIGHT: `Assemble` (at `m = 6`: the unconditional `BoundedInnerNec 24`); `Verify4` (the re-glue at
+`m = 4`).
