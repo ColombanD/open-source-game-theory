@@ -1014,3 +1014,20 @@ c).mpr`, `lt_add_of_pos_left`; `linarith/nlinarith` fail on `V`; zsh: a word sta
 triggers `=cmd` expansion; concurrent `Cert` rebuilds removed `Cert.olean` four times (poll the
 olean before checking).
 IN FLIGHT: `Cert` (certSubst/certFree); `Prologue` Part 2 (or, shift, costs, empty sequent).
+
+**§11 status — `Cert` Part 6 DONE: `certSubst`/`certFree` (ecee5b3, ac63986, 93010f1; `Cert.lean`
+now 13366 lines; census +21, all standard) and `Prologue` `or` (ccffdfe).** `certSubst`: the `nth`
+chain, a TWO-MODE term/vector pass, the `qVec`-walking formula pass (under quantifiers `qVec w` is
+CONSTRUCTED — the pass is not shift-free: `shiftsV ≤ 2Q|r|`), `subFGraph_ok` (cap 9, `NoDrop`,
+Horn-only, `substFact` at the MOVED offsets), **`certSubst_ok`**, `costSum_certSubst_le`; NEW row
+`congTSubstL` (cIdx 186). `certFree` = walk of `⟨&0⟩` + `certSubst` of `shift p` + `certShift` +
+`substsSubsts1`/`freeCert`: **`certFree_ok`** (cap 9, Horn-only, `shiftsV = freeCw + freeS ≤ 2 +
+2Q|shift p|`, `freeFact` at the moved offsets), `costSum_certFree_le`; §4.9 status note. EVERY
+`Cert` PRODUCER OF §3.6 NOW EXISTS WITH ITS `_ok` AND COST (`certNeg`, `certShift`, `certSubst`,
+`certFree`, `lenSteps`). `Prologue` §9: `proOr = proIns s q ++ proIns (insert q s) p ++
+congInsertS`, `proOr_ok` (child layout at 0, parent transported, `insFact cq Q S` / `insFact cp' P
+cq` / `eqFactB cp' s''`). Both agents were killed by the 03:30 session limit after committing.
+REMAINING: `Prologue` — `shift`, the cost bounds, the empty child sequent, then `all`/`exs`
+(now unblocked) and `axm`; a NUMERAL-IDENTIFICATION producer (`eqFact &x (numeral c)` from a
+dossier of a VARIABLE code `c`) shared by `axm`(i) and `PinKit`; then `PinKit`; `Verify`'s
+clause edit; `VerifyKit`; `KitPackage`.
