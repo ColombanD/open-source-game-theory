@@ -13363,4 +13363,144 @@ theorem costSum_certFree_le {tbl N B Wd W p ip isp ifp E Γ Q L : V} (htbl : Tab
 
 end certFree
 
+/-! ## Part 6.7 — The `qVec` iterates of a singleton vector: the caps `certSubst_ok`/`certFree_ok` ask for
+
+`SubFPre` and `hL` bound, for every `e ≤ |r|`, the sum `listSum (termLenVec (n + e) (qVecIterV w e))` and the
+length of the walk `qWalkP` of the next iterate. For a vector whose entries are identity bound variables or
+CLOSED terms of length `≤ B` (`SubstInv B`, `InstV.lean`) — every singleton `t ∷ 0`, in particular `fvec` at
+`B = 1` — the invariant passes through every iterate (`substInv_qVecIterV`), so entry `i` of the iterate of
+length `k` has length `≤ k + B` (a bound variable `#i` counts `i + 1`: the sum is QUADRATIC in `e`, not linear —
+`Σ_{i<e} (i + 1)` — hence the caps `(n + e)(n + e + B)` and `12(n + e + 1)(n + e + 1 + B) + 2`). The packaged
+`subFPre_single`/`qWalkP_single_cap` discharge `certSubst_ok`'s `hP`/`hL` for a singleton vector from `|r|`,
+`B` and the offset caps alone. -/
+
+section qVecBounds
+
+/-- Entry-wise `a.[i] ≤ M` gives `Σ a ≤ len a · M`. -/
+lemma listSum_le_len_mul {M : V} : ∀ a : V, (∀ i < len a, a.[i] ≤ M) → listSum a ≤ len a * M := by
+  intro a
+  induction a using adjoin_ISigma1.pi1_succ_induction with
+  | hP => definability
+  | nil => intro _; simp
+  | adjoin x a ih =>
+    intro h
+    have h0 : x ≤ M := by simpa using h 0 (by simp)
+    have hrest : ∀ i < len a, a.[i] ≤ M := fun i hi ↦ by
+      simpa using h (i + 1) (by rw [len_adjoin]; simpa using hi)
+    rw [listSum_adjoin, len_adjoin, add_mul, one_mul, add_comm (len a * M) M]
+    exact add_le_add h0 (ih hrest)
+
+/-- The `SubstInv` invariant passes through every `qVec` iterate. -/
+lemma substInv_qVecIterV {B n m w : V} (hw : IsSemitermVec LAct n m w) (h : SubstInv LAct B w) :
+    ∀ e, SubstInv LAct B (qVecIterV LAct w e) := by
+  intro e
+  induction e using ISigma1.pi1_succ_induction with
+  | hP => definability
+  | zero => simpa using h
+  | succ e ih => rw [qVecIterV_succ]; exact substInv_qVec (isSemitermVec_qVecIterV hw e) ih
+
+/-- Under `SubstInv B`, every entry of a vector of length `k` has term length `≤ k + B`, so the sum is
+`≤ k · (k + B)`. -/
+lemma listSum_termLenVec_le_of_substInv {B k n v : V} (hv : IsSemitermVec LAct k n v) (h : SubstInv LAct B v) :
+    listSum (termLenVec LAct k v) ≤ k * (k + B) := by
+  have hl : len (termLenVec LAct k v) = k := len_termLenVec hv.isUTerm
+  have key : ∀ i < len (termLenVec LAct k v), (termLenVec LAct k v).[i] ≤ k + B := by
+    intro i hi
+    rw [hl] at hi
+    rw [nth_termLenVec hv.isUTerm hi]
+    rcases h i (by rw [hv.lh]; exact hi) with hb | ⟨_, hB⟩
+    · rw [hb, termLen_bvar]
+      exact le_trans (lt_iff_succ_le.mp hi) le_self_add
+    · exact le_trans hB le_add_self
+  have := listSum_le_len_mul (M := k + B) (termLenVec LAct k v) key
+  rwa [hl] at this
+
+/-- **Bound 1**: the sum of the term lengths of the `e`-th `qVec` iterate of a `SubstInv B` vector. -/
+lemma listSum_termLenVec_qVecIterV_le {B n m w : V} (hw : IsSemitermVec LAct n m w) (h : SubstInv LAct B w) (e : V) :
+    listSum (termLenVec LAct (n + e) (qVecIterV LAct w e)) ≤ (n + e) * (n + e + B) :=
+  listSum_termLenVec_le_of_substInv (isSemitermVec_qVecIterV hw e) (substInv_qVecIterV hw h e)
+
+/-- **Bound 2**: the length of the walk `qWalkP` of the `(e+1)`-st iterate (what `certSubst` walks under the
+`e`-th quantifier): `+ 2 ≤ 12 · (n + e + 1)(n + e + 1 + B) + 4`. -/
+lemma len_qWalkP_le {B n m w Wd : V} (hw : IsSemitermVec LAct n m w) (h : SubstInv LAct B w) (e : V) :
+    len (π₂ (qWalkP Wd (m + e) (n + e) (qVecIterV LAct w e))) + 2 ≤ 12 * ((n + e + 1) * (n + e + 1 + B)) + 4 := by
+  have hv : IsSemitermVec LAct (n + e + 1) (m + e + 1) (qVecIterV LAct w (e + 1)) := by
+    have := isSemitermVec_qVecIterV hw (e + 1); rwa [← add_assoc, ← add_assoc] at this
+  have hinv : SubstInv LAct B (qVecIterV LAct w (e + 1)) := substInv_qVecIterV hw h (e + 1)
+  have htl : takeLast (qVecIterV LAct w (e + 1)) (n + e + 1) = qVecIterV LAct w (e + 1) := by
+    rw [← hv.lh]; exact takeLast_len_self _
+  obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ len_describeT_le Wd _ _ (hv.nth hi)) (n + e + 1) le_rfl
+  rw [htl] at hl
+  unfold qWalkP
+  rw [← qVecIterV_succ]
+  refine le_trans hl ?_
+  exact add_le_add (mul_le_mul_of_nonneg_left (listSum_termLenVec_le_of_substInv hv hinv) zero_le) (le_refl _)
+
+/-- The caps for all `e ≤ D`, monotone in `e`: the sum bound. -/
+lemma listSum_termLenVec_qVecIterV_cap {B n m w D : V} (hw : IsSemitermVec LAct n m w) (h : SubstInv LAct B w) :
+    ∀ e ≤ D, listSum (termLenVec LAct (n + e) (qVecIterV LAct w e)) ≤ (n + D) * (n + D + B) := fun e he ↦
+  le_trans (listSum_termLenVec_qVecIterV_le hw h e)
+    (mul_le_mul (add_le_add (le_refl n) he) (add_le_add (add_le_add (le_refl n) he) (le_refl B)) zero_le zero_le)
+
+/-- The caps for all `e ≤ D`, monotone in `e`: the walk-length bound. -/
+lemma len_qWalkP_cap {B n m w D Wd : V} (hw : IsSemitermVec LAct n m w) (h : SubstInv LAct B w) :
+    ∀ e ≤ D, len (π₂ (qWalkP Wd (m + e) (n + e) (qVecIterV LAct w e))) ≤ 12 * ((n + D + 1) * (n + D + 1 + B)) + 2 := by
+  intro e he
+  have h1 := len_qWalkP_le (Wd := Wd) hw h e
+  have h2 : 12 * ((n + e + 1) * (n + e + 1 + B)) + 4 ≤ 12 * ((n + D + 1) * (n + D + 1 + B)) + 4 :=
+    add_le_add (mul_le_mul_of_nonneg_left (mul_le_mul (add_le_add (add_le_add (le_refl n) he) (le_refl 1))
+      (add_le_add (add_le_add (add_le_add (le_refl n) he) (le_refl 1)) (le_refl B)) zero_le zero_le) zero_le) (le_refl _)
+  have : len (π₂ (qWalkP Wd (m + e) (n + e) (qVecIterV LAct w e))) + 2 ≤ (12 * ((n + D + 1) * (n + D + 1 + B)) + 2) + 2 :=
+    le_trans h1 (le_trans h2 (le_of_eq (by ring)))
+  exact le_of_add_le_add_right this
+
+/-- The singleton vector of a closed term is `SubstInv` at its length. -/
+lemma substInv_single' {t : V} (ht : IsSemiterm LAct 0 t) : SubstInv LAct (termLen LAct t) (t ∷ 0) :=
+  substInv_single ht (le_refl _)
+
+lemma substInv_fvec : SubstInv LAct 1 (fvec : V) := by
+  unfold fvec
+  have := substInv_single' (V := V) (t := ^&0) (by simp)
+  rwa [termLen_fvar, zero_add] at this
+
+/-- **`SubFPre` for a singleton vector `t ∷ 0`** (closed `t` of length `≤ B`) at
+`Q := (1 + |r|) · (1 + |r| + B)`, from the four offset caps and `4|r| + 2Q + 11 ≤ E`. -/
+lemma subFPre_single {E B t r i j iw Γ : V} (ht : IsSemiterm LAct 0 t) (hB : termLen LAct t ≤ B)
+    (hE : 4 * formulaLen LAct r + 2 * ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B)) + 11 ≤ E)
+    (hi : i + 2 * formulaLen LAct r * ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B) + 1) + 1 ≤ E)
+    (hj : j + 2 * formulaLen LAct (subst LAct (t ∷ 0) r) +
+      2 * ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B)) * formulaLen LAct r + 1 ≤ E)
+    (hiw : iw + 2 * ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B)) * (formulaLen LAct r + 1) + 2 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) :
+    SubFPre E ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B)) 1 0 (t ∷ 0) r i j iw Γ := by
+  have hw : IsSemitermVec LAct 1 0 (t ∷ (0 : V)) := by simp [ht]
+  have hinv : SubstInv LAct B (t ∷ (0 : V)) := substInv_single ht hB
+  have hcap := listSum_termLenVec_qVecIterV_cap (D := formulaLen LAct r) hw hinv
+  refine ⟨fun e he ↦ ?_, hcap, ?_, hi, hj, hiw, hΓ⟩
+  · have h1 := hcap e he
+    calc 2 * (0 + e) + 2 * (1 + e) + 2 * listSum (termLenVec LAct (1 + e) (qVecIterV LAct (t ∷ 0) e)) + 9
+        ≤ 2 * (0 + formulaLen LAct r) + 2 * (1 + formulaLen LAct r) +
+            2 * ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B)) + 9 :=
+          add_le_add (add_le_add (add_le_add (mul_le_mul_of_nonneg_left (add_le_add (le_refl 0) he) zero_le)
+            (mul_le_mul_of_nonneg_left (add_le_add (le_refl 1) he) zero_le)) (mul_le_mul_of_nonneg_left h1 zero_le)) (le_refl 9)
+      _ = 4 * formulaLen LAct r + 2 * ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B)) + 11 := by ring
+      _ ≤ E := hE
+  · calc 2 * 1 + 2 * formulaLen LAct r + 8
+        ≤ 2 * 1 + 2 * formulaLen LAct r + 8 + (2 * formulaLen LAct r + 2 * ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B)) + 1) := le_self_add
+      _ = 4 * formulaLen LAct r + 2 * ((1 + formulaLen LAct r) * (1 + formulaLen LAct r + B)) + 11 := by ring
+      _ ≤ E := hE
+
+/-- The walk cap `hL` of `certSubst_ok`/`certFree_ok` for a singleton vector, at
+`L := 12 · (|r| + 2)(|r| + 2 + B) + 2`. -/
+lemma qWalkP_single_cap {B t r Wd : V} (ht : IsSemiterm LAct 0 t) (hB : termLen LAct t ≤ B) :
+    ∀ e ≤ formulaLen LAct r, len (π₂ (qWalkP Wd (0 + e) (1 + e) (qVecIterV LAct (t ∷ 0) e))) ≤
+      12 * ((1 + formulaLen LAct r + 1) * (1 + formulaLen LAct r + 1 + B)) + 2 := by
+  have hw : IsSemitermVec LAct 1 0 (t ∷ (0 : V)) := by simp [ht]
+  exact len_qWalkP_cap (Wd := Wd) hw (substInv_single ht hB)
+
+/-- `fvec = ^&0 ∷ 0`, as a rewrite. -/
+lemma fvec_eq : (fvec : V) = ^&0 ∷ 0 := rfl
+
+end qVecBounds
+
 end ArithS
