@@ -6,7 +6,14 @@ import ArithS.Assembly.Cell
 import ArithS.Assembly.Uniform
 
 /-!
-# ArithS.Necessitation.Package — the package and the headline theorems, with `SizeOracle` BYPASSED
+# ArithS.Necessitation.Package
+
+**Every theorem here is CONDITIONAL on `SizeThmAll`** (the length/size discipline of the
+verification list, `Verify5`'s ten-arm glue, in flight). The names carry `_of_sizeThm` for that
+reason: `SizeOracle` (`Assemble` §8) is UNPROVABLE as stated — it binds the numeral table with no
+`NumTableOK`, which every prologue size lemma needs and which is never a conclusion — so this file
+BYPASSES it. The quantifier order is the repair: `exists_numTable` fixes `N'`/`B'` FIRST, and only
+then is the size constant `Cz` chosen, which the layout class `(layQ B B' D, layD N' B' D)` requires. — the package and the headline theorems, with `SizeOracle` BYPASSED
 
 `Assemble.lean` §8 closes at `boundedInnerNec_sixteen_of_size (Cz) (hsz : SizeOracle Cz) : BoundedInnerNec 16`
 and `dupoc_self_coop_of_size`, conditional on ONE hypothesis, `Assemble.SizeOracle`.
@@ -132,22 +139,22 @@ section headline
 
 /-- **`BoundedInnerNec 16`** (`deg 4 = 16`) from the carrying size theorem — `Assemble`'s
 `boundedInnerNec_sixteen_of_size` with the unprovable `SizeOracle` replaced. -/
-theorem boundedInnerNec_sixteen (hsz : SizeThmAll) : BoundedInnerNec 16 := by
+theorem boundedInnerNec_sixteen_of_sizeThm (hsz : SizeThmAll) : BoundedInnerNec 16 := by
   obtain ⟨N, B, N', B', N₂, B₂, N₃, B₃, Ck, Cv, Cχ, hpkg⟩ := kitPackage'''_of_size' hsz
   exact boundedInnerNec_of_kit''' 4 (by norm_num) hpkg
 
 /-- **Critch's Theorem 3.7 in PA-`S`**: for all large `k`, `Dupoc k` cooperates with itself and `Cupod k` defects
 against itself (`Assembly/Cell.dupoc_self_coop` at `d = 16`). -/
-theorem dupoc_self_coop_unconditional (hsz : SizeThmAll) :
+theorem dupoc_self_coop_of_sizeThm (hsz : SizeThmAll) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1 :=
-  dupoc_self_coop (boundedInnerNec_sixteen hsz)
+  dupoc_self_coop (boundedInnerNec_sixteen_of_sizeThm hsz)
 
 /-- **The parametric bounded Löb theorem (PBLT) in PA-`S`**, uniform in the budget
 (`Assembly/Uniform.pblt_uniform` at `d = 16`). -/
-theorem pblt_unconditional (hsz : SizeThmAll) :
+theorem pblt_of_sizeThm (hsz : SizeThmAll) :
     ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psi) :=
-  pblt_uniform (boundedInnerNec_sixteen hsz)
+  pblt_uniform (boundedInnerNec_sixteen_of_sizeThm hsz)
 
 end headline
 

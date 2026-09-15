@@ -1461,3 +1461,46 @@ it as an opaque summand. TRAPS: `'''` in Python strings; a regex rename hits nam
 `(1 : V)` vs `((1:ℕ):V)` in cast lemmas.
 IN FLIGHT: `Verify5` (the size oracle discharged → `boundedInnerNec_sixteen`,
 `dupoc_self_coop_unconditional`).
+
+**§11 status — A DEFECT IN OUR OWN STATEMENT, and its repair (`Verify5` §1/§3: 4d57c5d … e54d638;
+`Package`: 342ab0a, 4322685; build 3270, census 819, all standard).**
+**THE DEFECT (machine-checked, not asserted):** `Assemble` §8's `SizeOracle Cz := ∀ V (tbl B T),
+IndRecTable tbl → (rows ≤ B) → VerifySizeOracle … T Cz` binds the numeral table `T` with NO
+`NumTableOK T N' B'` — but EVERY prologue size lemma (`sizeOK_layoutSteps`, `sizeOK_pro*`,
+`sizeOK_memberBlock(s)`, `sizeOK_lenFold`) requires one and concludes in the class `(layQ B B' D,
+layD N' B' D)`, whose only route to `(kitQ Cz B E, kitD Cz d)` is `layQ_le`/`layD_le`, which need
+`N'`, `B'` as NUMBERS; and `NumTableOK` is NEVER a conclusion anywhere in the tree (only ever a
+hypothesis). A probe confirms Lean cannot even elaborate `sizeOK_layoutSteps` with `T` free
+("don't know how to synthesize implicit argument `B'`"). So `SizeOracle` is UNPROVABLE AS STATED.
+`vList_full` escapes precisely because it CARRIES `htblN : NumTableOK T (N' : V) (B' : V)`.
+**THE REPAIR — bypass, don't prove:** `SizeOracle`'s only consumer, `kitPackage'''_of_size`,
+instantiates it at the CANONICAL numeral table (`exists_numTable`), where `N'`/`B'` are fixed
+naturals. `Package.lean` (NEW, 145 lines) replays that body with ONE REORDERING — `exists_numTable`
+FIRST (fixing `N'`/`B'`), the size constant `Cz` drawn only then from the hypothesis — hence the
+shape `SizeThmAll := ∀ N' B' : ℕ, ∃ Cz, SizeThm N' B' Cz` (**the quantifier order IS the repair**:
+`Cz` may depend on `N'`/`B'`, which the layout class requires; the broken statement had it the
+other way). `SizeThm N' B' Cz` concludes in `Assemble.VerifySizeOracle` — the shape
+`verifyKit'''_of` actually consumes, strictly weaker to assume than the announced
+`verifyGraph''_size4` and implied by it, so discharging will be a one-line adapter.
+DELIVERED, all CONDITIONAL on `SizeThmAll` and NAMED accordingly (`_of_sizeThm` — an
+`_unconditional` name on a hypothesis-carrying theorem is an overclaim; renamed by the
+coordinator): `verifySizeOracle_of_sizeThm`, `kitPackage'''_of_size'`,
+**`boundedInnerNec_sixteen_of_sizeThm : SizeThmAll → BoundedInnerNec 16`**,
+**`dupoc_self_coop_of_sizeThm`**, **`pblt_of_sizeThm`** (`pblt_uniform` needed only
+`BoundedInnerNec 16` — no extra work). `Verify5` §1 `layQ_mono`/`layD_mono` (the layout class is
+monotone in its size parameter — no such lemmas existed); §3 `dlen_leafCode_le'`/`dlen_bin2Code_le'`/
+`dlen_bin3Code_le'` via `codeK N' B' Dz` — **these discharge the `dlen TAct (leafCode tblN L n) ≤ D`
+side conditions of `Frag1`/`Frag2`'s `sizeOK_frag*`/`sizeOK_node*`, which NO caller in the tree had
+ever discharged** (`NumSteps` stops at the raw decompositions). §2's `ArmHyps`/
+`verifySizeOracle_of_arms` is an honest SCAFFOLD (assumes what it concludes); the ten-arm glue
+replacing it is in flight.
+TRAPS: **never `simp only [SizeOK, StepSizeOK]` in a definability goal** — it destroys
+`Cert.lean:8312/8314`'s registered instances ("aesop: goal 87 was not normalised"); the verified
+incantation is `simp only [VerifyGraph'']; definability` (+ `kitQ, kitD` for the kit-shaped motive)
+under 20 M heartbeats, and it is the UNFOLDING, not `definability`, that hits the `isDefEq` wall;
+a `lake env lean` type-check produces NO olean, so a probe importing your in-progress module fails
+with "object file does not exist" — import a built module and inline; `#print axioms` after
+`end ArithS` silently reports `Unknown constant` — qualify as `ArithS.foo`; `exists_numTable`
+PRODUCES `N'`/`B'`, it does not take them; `le_mul_of_one_le_right zero_le le_add_self` does not
+prove `1 ≤ ‖Dz‖ + 2`; `psi` is `ArithS.psi` (`Uniform.lean` uses `section`, not `namespace`).
+IN FLIGHT: `Verify5` (the ten-arm `len`/`SizeOK` glue → discharges `SizeThmAll`).
