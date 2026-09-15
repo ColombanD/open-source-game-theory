@@ -1083,4 +1083,234 @@ theorem bsF_ok {tbl N E Γ B Bi : V} (htbl : TableOK tbl N) (hT : IndRecTable tb
 
 end bsPass
 
+/-! ## 4. The substitution instances: the walks, `fvSeq`, the caps -/
+
+section instances
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-! ### 4.1 The walk of a `k`-entry vector at bound `n` (`Prologue.vecWalk_ok`, generalized) -/
+
+/-- The walk of the vector `v` (`k` entries at bound `n`): the vector object at `&0`. -/
+noncomputable def vecWalkN (Ww n k v : V) : V := π₂ (descVecAux Ww n (descTVec Ww n k v) k)
+noncomputable def vecCwN (Ww n k v : V) : V := π₁ (descVecAux Ww n (descTVec Ww n k v) k)
+
+theorem vecWalkN_ok {tbl N n k v E Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hv : IsSemitermVec LAct k n v)
+    (hE : 2 * n + 2 * k + 2 * listSum (termLenVec LAct k v) + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (vecWalkN walkPieces n k v) ∧ NoDrop (vecWalkN walkPieces n k v) ∧
+    HornOnly (vecWalkN walkPieces n k v) ∧ shiftsV (vecWalkN walkPieces n k v) = vecCwN walkPieces n k v ∧
+    vecCwN walkPieces n k v ≤ 2 * listSum (termLenVec LAct k v) ∧
+    len (vecWalkN walkPieces n k v) + 2 ≤ 12 * listSum (termLenVec LAct k v) + 4 ∧
+    DossV walkPieces (finalCtx Γ (vecWalkN walkPieces n k v)) n k v k 0 := by
+  have htl : takeLast v k = v := by have := takeLast_len_self v; rwa [hv.lh] at this
+  obtain ⟨_, hcu, hVF⟩ := descVecAux_ok' htbl hW rfl hv hE k le_rfl
+  rw [htl] at hcu
+  obtain ⟨okU, ndU, shU, _⟩ := hVF Γ hΓ
+  have hoU : HornOnly (vecWalkN walkPieces n k v) :=
+    hornOnly_descVecAux rfl hv (fun i hi ↦ by have := hornOnly_describeT rfl n _ (hv.nth hi); rwa [describeT] at this) k le_rfl
+  obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ len_describeT_le walkPieces n _ (hv.nth hi)) k le_rfl
+  rw [htl] at hl
+  exact ⟨okU, ndU, hoU, shU, hcu, hl, dossV_of_walk ndU⟩
+
+/-! ### 4.2 The `fvSeq` pass over the walked `fvarVec q` -/
+
+/-- **The `fvSeq` pass**: from the dossier of the last `j` entries of `fvarVec q` at `&i`, `fvSeqFact (vRef i j) (cTV a) (cTV q)`
+(`a + j = q`) in `j + 1` shift-free Horn steps. -/
+theorem fvSeq_ok {tbl N E Γ Bi q : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hE : 2 * q + 1 ≤ E) (hEi : Bi + 1 ≤ E) :
+    ∀ j ≤ q, ∀ a ≤ q, a + j = q → ∀ i ≤ Bi, i + 2 * listSum (termLenVec LAct j (takeLast (Bootstrapping.fvarVec q) j)) + 1 ≤ Bi →
+      DossV walkPieces Γ 0 q (Bootstrapping.fvarVec q) j i →
+      ∃ P : V, HInv tbl E Γ P ∧ len P ≤ j + 1 ∧
+        neg LAct (fvSeqFact (vRef i j) (cTV a) (cTV q)) ∈ finalCtx Γ P := by
+  have hW := hT.walkTable
+  have hvL : IsSemitermVec LAct q 0 (Bootstrapping.fvarVec q) := IsSemitermVec.LAct_of_LOR (fvarVec_isSemitermVec_LOR q)
+  have hlv : len (Bootstrapping.fvarVec q) = q := Bootstrapping.len_fvarVec q
+  have hEq : termLen LAct (cTV q) ≤ E := cTV_cap le_rfl hE
+  intro j
+  induction j using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero =>
+    intro _ a _ ha i _ _ _
+    rw [add_zero] at ha
+    subst ha
+    obtain ⟨hlen, hrow⟩ := hT.fvSeqNil
+    obtain ⟨hok, htag, hctx⟩ := iok_fvSeqNil htbl rfl hlen hrow hΓ (cTV_semiterm_LAct 0 a) hEq
+    refine ⟨_, HInv.single hok htag, by rw [len_single, zero_add], ?_⟩
+    rw [finalCtx_single, hctx, vRef_zero]
+    exact mem_insert_self'
+  | succ j ih =>
+    intro hj a ha hja i hi hib hDv
+    have hj' : j ≤ q := le_trans le_self_add hj
+    have ha1 : a + 1 ≤ q := by rw [← hja]; exact add_le_add le_rfl (le_add_self : 1 ≤ j + 1)
+    have hk0 : (0 : V) < q := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj
+    have hlt : q - (j + 1) < q := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
+    have hjl : j < len (Bootstrapping.fvarVec q) := by rw [hlv]; exact lt_of_lt_of_le (lt_add_one j) hj
+    have hqa : q - (j + 1) = a := by rw [← hja]; exact add_tsub_cancel_right a (j + 1)
+    have hent : (Bootstrapping.fvarVec q).[q - (j + 1)] = ^&a := by rw [Bootstrapping.nth_fvarVec q _ hlt, hqa]
+    obtain ⟨hadj, _, hDt, hDtail⟩ := dossV_succ htbl hW rfl hvL hj hDv
+    rw [hent] at hDt hadj hDtail
+    obtain ⟨hfv, _⟩ := dossT_fvar htbl hW rfl hDt
+    -- the offsets
+    have htake : takeLast (Bootstrapping.fvarVec q) (j + 1) = ^&a ∷ takeLast (Bootstrapping.fvarVec q) j := by
+      rw [takeLast_succ_of_lt hjl, hlv, hent]
+    have hwL : IsUTermVec LAct j (takeLast (Bootstrapping.fvarVec q) j) := isUTermVec_takeLast hvL j hj'
+    have hSsucc : listSum (termLenVec LAct (j + 1) (takeLast (Bootstrapping.fvarVec q) (j + 1))) =
+        (a + 1) + listSum (termLenVec LAct j (takeLast (Bootstrapping.fvarVec q) j)) := by
+      rw [htake, termLenVec_cons (by simp) hwL, listSum_adjoin, termLen_fvar]
+    rw [hSsucc] at hib
+    have hct := descCountT_succ_le htbl hW (t := (^&a : V)) (n := 0) (by simp)
+    rw [termLen_fvar] at hct
+    have hib_v : (i + 1 + descCountT walkPieces 0 (^&a)) + 2 * listSum (termLenVec LAct j (takeLast (Bootstrapping.fvarVec q) j)) + 1 ≤ Bi := by
+      calc (i + 1 + descCountT walkPieces 0 (^&a)) + 2 * listSum (termLenVec LAct j (takeLast (Bootstrapping.fvarVec q) j)) + 1
+          = i + (descCountT walkPieces 0 (^&a) + 1) + 2 * listSum (termLenVec LAct j (takeLast (Bootstrapping.fvarVec q) j)) + 1 := by ring
+        _ ≤ i + 2 * (a + 1) + 2 * listSum (termLenVec LAct j (takeLast (Bootstrapping.fvarVec q) j)) + 1 :=
+            add_le_add (add_le_add (add_le_add le_rfl hct) le_rfl) le_rfl
+        _ = i + 2 * ((a + 1) + listSum (termLenVec LAct j (takeLast (Bootstrapping.fvarVec q) j))) + 1 := by ring
+        _ ≤ Bi := hib
+    have hiv : i + 1 + descCountT walkPieces 0 (^&a) ≤ Bi := le_trans le_self_add (le_trans le_self_add hib_v)
+    have hi1 : i + 1 ≤ Bi := le_trans le_self_add hiv
+    obtain ⟨P₀, hP₀, hl₀, hf₀⟩ := ih hj' (a + 1) ha1 (by rw [← hja]; ring) _ hiv hib_v hDtail
+    have hΓ₁ := hP₀.isFormulaSet htbl hΓ
+    obtain ⟨hlen, hrow⟩ := hT.fvSeqCons
+    obtain ⟨hok, htag, hctx⟩ := iok_fvSeqCons htbl rfl hlen hrow hΓ₁ (cTV_semiterm_LAct 0 a) (cTV_cap (le_trans le_self_add ha1) hE)
+      (cTV_semiterm_LAct 0 q) hEq (isSemiterm_vRef _ _) (termLen_vRef_le (le_trans (add_le_add hiv le_rfl) hEi))
+      (by simp) (termLen_fvar_le (le_trans (add_le_add hi1 le_rfl) hEi)) (by simp) (termLen_fvar_le (le_trans (add_le_add hi le_rfl) hEi))
+      (by rw [cTV_succ] at hf₀; exact hf₀) (hP₀.mem hfv) (hP₀.mem hadj)
+    refine ⟨_, hP₀.snoc hok htag, ?_, ?_⟩
+    · rw [len_appendV, len_single]; exact add_le_add hl₀ le_rfl
+    · rw [finalCtx_appendV_single, hctx, vRef_of_ne (ne_of_gt (lt_of_lt_of_le _root_.zero_lt_one le_add_self))]
+      exact mem_insert_self'
+
+/-! ### 4.3 The caps of the three substitution vectors -/
+
+/-- `fvarVec q` is `SubstInv (q + 1)` (closed entries `&i`, `i + 1 ≤ q + 1`). -/
+lemma substInv_fvarVec (q : V) : SubstInv LAct (q + 1) (Bootstrapping.fvarVec q) := by
+  intro i hi
+  rw [Bootstrapping.len_fvarVec] at hi
+  rw [Bootstrapping.nth_fvarVec q i hi]
+  exact Or.inr ⟨by simp, by rw [termLen_fvar]; exact add_le_add (le_of_lt hi) le_rfl⟩
+
+/-- The sum of the entry lengths of `fvarVec q` is `≤ q * (q + 1)`. -/
+lemma listSum_termLenVec_fvarVec_le (q : V) :
+    listSum (termLenVec LAct q (Bootstrapping.fvarVec q)) ≤ q * (q + 1) := by
+  have hvL : IsSemitermVec LAct q 0 (Bootstrapping.fvarVec q) := IsSemitermVec.LAct_of_LOR (fvarVec_isSemitermVec_LOR q)
+  have hl : len (termLenVec LAct q (Bootstrapping.fvarVec q)) = q := len_termLenVec hvL.isUTermVec
+  have := listSum_le_len_mul (M := q + 1) (termLenVec LAct q (Bootstrapping.fvarVec q)) (fun i hi ↦ by
+    rw [hl] at hi
+    rw [nth_termLenVec hvL.isUTermVec hi, Bootstrapping.nth_fvarVec q i hi, termLen_fvar]
+    exact add_le_add (le_of_lt hi) le_rfl)
+  rwa [hl] at this
+
+/-- The step-case vector `⟨#0 + 1⟩` (bound `1`). -/
+noncomputable def c1v : V := (^#(0 : V) ^+ (𝟏 : V)) ∷ 0
+
+lemma isSemiterm_c1t : IsSemiterm LAct 1 (^#0 ^+ (𝟏 : V)) := by
+  rw [isSemiterm_qqAdd_LAct_iff]; simp
+
+lemma isSemitermVec_c1v : IsSemitermVec LAct 1 1 (c1v : V) := by
+  unfold c1v
+  rw [show (1 : V) = 0 + 1 by simp, IsSemitermVec.cons_iff]
+  exact ⟨by rw [zero_add]; exact isSemiterm_c1t, IsSemitermVec.nil _⟩
+
+lemma isC1_c1v : IsC1 (c1v : V) := by
+  refine ⟨_, _, _, _, _, rfl, rfl, rfl, rfl, rfl, ?_⟩
+  unfold c1v
+  rw [qqAdd_eq, coe_one_eq]
+
+/-- The `termBShift` of `#e + 1` is `#(e + 1) + 1`. -/
+lemma termBShift_c1t (e : V) : termBShift LAct (^#e ^+ (𝟏 : V)) = ^#(e + 1) ^+ 𝟏 := by
+  have h1 : IsUTermVec LAct 2 (?[^#e, (𝟏 : V)] : V) := by simp [qqOne_uterm_LAct]
+  unfold qqAdd
+  rw [termBShift_func (isFunc_LAct_addIndex) h1]
+  congr 1
+  refine nth_ext' 2 (len_termBShiftVec h1) (by rw [len_adjoin, len_adjoin, len_nil]; norm_num) fun i hi ↦ ?_
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · rw [nth_termBShiftVec h1 hi]; simp
+  · rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+    · rw [nth_termBShiftVec h1 hi]; simp
+      rw [qqOne_eq, termBShift_func isFunc_LAct_oneIndex (by simp), termBShiftVec_nil]
+    · exfalso
+      have : (2 : V) ≤ i + 1 + 1 := by
+        calc (2 : V) = 0 + 1 + 1 := by norm_num
+          _ ≤ i + 1 + 1 := add_le_add (add_le_add zero_le le_rfl) le_rfl
+      exact absurd hi (not_lt.mpr this)
+
+/-- The iterates of `⟨#0 + 1⟩`: `⟨#0, …, #(e-1), #e + 1⟩`. -/
+lemma qVecIterV_c1v : ∀ e : V,
+    (∀ i < e, (qVecIterV LAct c1v e).[i] = ^#i) ∧ (qVecIterV LAct c1v e).[e] = ^#e ^+ 𝟏 := by
+  intro e
+  induction e using ISigma1.sigma1_succ_induction with
+  | hP => definability
+  | zero =>
+    refine ⟨fun i hi ↦ absurd hi (not_lt.mpr zero_le), ?_⟩
+    rw [qVecIterV_zero]; simp [c1v]
+  | succ e ih =>
+    obtain ⟨ih₁, ih₂⟩ := ih
+    have hv : IsSemitermVec LAct (1 + e) (1 + e) (qVecIterV LAct c1v e) := isSemitermVec_qVecIterV isSemitermVec_c1v e
+    have hlen : len (qVecIterV LAct c1v e) = 1 + e := hv.lh
+    rw [qVecIterV_succ]
+    unfold qVec
+    rw [hlen]
+    refine ⟨fun i hi ↦ ?_, ?_⟩
+    · rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+      · simp
+      · rw [nth_adjoin_succ, nth_termBShiftVec hv.isUTermVec (by rw [add_comm]; exact lt_of_lt_of_le (lt_of_add_lt_add_right hi) le_self_add)]
+        rw [ih₁ i (lt_of_add_lt_add_right hi), termBShift_bvar]
+    · rw [nth_adjoin_succ, nth_termBShiftVec hv.isUTermVec (by rw [add_comm]; exact lt_add_one e), ih₂, termBShift_c1t]
+
+/-- Every entry of the `e`-th iterate of `⟨#0 + 1⟩` has length `≤ e + 3`. -/
+lemma termLen_qVecIterV_c1v_le (e : V) : ∀ i < 1 + e, termLen LAct (qVecIterV LAct c1v e).[i] ≤ e + 3 := by
+  intro i hi
+  obtain ⟨ih₁, ih₂⟩ := qVecIterV_c1v e
+  rcases lt_or_eq_of_le (lt_succ_iff_le.mp (by rw [add_comm] at hi; exact hi)) with hlt | rfl
+  · rw [ih₁ i hlt, termLen_bvar]
+    exact le_trans (add_le_add (le_of_lt hlt) le_rfl) (add_le_add le_rfl (by norm_num))
+  · rw [ih₂, termLen_qqAdd isFunc_LAct_addIndex (by simp) qqOne_uterm_LAct, termLen_bvar, termLen_qqOne isFunc_LAct_oneIndex]
+    exact le_of_eq (by ring)
+
+lemma listSum_qVecIterV_c1v_le (e : V) :
+    listSum (termLenVec LAct (1 + e) (qVecIterV LAct c1v e)) ≤ (1 + e) * (e + 3) := by
+  have hv : IsSemitermVec LAct (1 + e) (1 + e) (qVecIterV LAct c1v e) := isSemitermVec_qVecIterV isSemitermVec_c1v e
+  have hl : len (termLenVec LAct (1 + e) (qVecIterV LAct c1v e)) = 1 + e := len_termLenVec hv.isUTermVec
+  have := listSum_le_len_mul (M := e + 3) (termLenVec LAct (1 + e) (qVecIterV LAct c1v e)) (fun i hi ↦ by
+    rw [hl] at hi
+    rw [nth_termLenVec hv.isUTermVec hi]
+    exact termLen_qVecIterV_c1v_le e i hi)
+  rwa [hl] at this
+
+/-- The walk-length cap of `certSubst` at `⟨#0 + 1⟩` (`len_qWalkP_le`, with the bespoke sum bound). -/
+lemma len_qWalkP_c1v_le (Wd e : V) :
+    len (π₂ (qWalkP Wd (1 + e) (1 + e) (qVecIterV LAct c1v e))) + 2 ≤ 12 * ((1 + e + 1) * (e + 1 + 3)) + 4 := by
+  have hv : IsSemitermVec LAct (1 + e + 1) (1 + e + 1) (qVecIterV LAct c1v (e + 1)) := by
+    have := isSemitermVec_qVecIterV isSemitermVec_c1v (e + 1); rwa [← add_assoc] at this
+  have htl : takeLast (qVecIterV LAct c1v (e + 1)) (1 + e + 1) = qVecIterV LAct c1v (e + 1) := by
+    rw [← hv.lh]; exact takeLast_len_self _
+  obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ len_describeT_le Wd _ _ (hv.nth hi)) (1 + e + 1) le_rfl
+  rw [htl] at hl
+  unfold qWalkP
+  rw [← qVecIterV_succ]
+  refine le_trans hl ?_
+  have := listSum_qVecIterV_c1v_le (e + 1)
+  rw [← add_assoc] at this
+  exact add_le_add (mul_le_mul_of_nonneg_left this zero_le) (le_refl _)
+
+/-! ### 4.4 `certShift` on a shift-invariant formula (`shift b = b`) -/
+
+/-- `shiftFact &ib &ib` from the dossier of a shift-invariant `b` (bound `q`) at `&ib`: `certShift` re-indexed to the table. -/
+theorem shiftSelf_ok {tbl N E Γ q b ib : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hb : IsSemiformula LAct q b) (hsh : shift LAct b = b) (hD : DossF walkPieces Γ q b ib)
+    (hE : 2 * q + 2 * formulaLen LAct b + 8 ≤ E) (hEi : ib + 2 * formulaLen LAct b + 1 ≤ E) :
+    ∃ P : V, HInv tbl E Γ P ∧ len P ≤ 12 * formulaLen LAct b ∧ neg LAct (shiftFact (^&ib) (^&ib)) ∈ finalCtx Γ P := by
+  have hC := hT.proTable.certTable
+  have hDj : DossF walkPieces Γ q (shift LAct b) ib := by rw [hsh]; exact hD
+  obtain ⟨hok, hnd, hho, hs, hf⟩ := certShift_ok (tbl := certView tbl) (N := N) (Wd := walkPieces) (W := certPieces)
+    (hT.proTable.tableOK_certView htbl) hC rfl rfl hb hE hEi hEi hΓ hD hDj
+  refine ⟨reidxL (certShift certPieces q b ib ib),
+    ⟨(listOK_reidxL hT.proTable hok).mono (by exact_mod_cast (by decide : 8 ≤ 9)), noDrop'_reidxL hnd.noDrop',
+      hornOnly_reidxL hho, by rw [shiftsV_reidxL, hs]⟩, ?_, ?_⟩
+  · rw [len_reidxL]; exact le_trans le_self_add (len_certShift_le hb)
+  · rw [finalCtx_reidxL]; exact hf
+
+end instances
+
 end ArithS
