@@ -544,4 +544,103 @@ theorem vList_ok : ∃ Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒ�
 
 end vList
 
+/-! ## 5. The size half: the goal fact's length, the size oracle for the graph's list, the kit -/
+
+section goalLen
+
+/-- `derFact (bv 1)` and `dlenFact (bv 1) (bv 0)` are codes of STANDARD semisentences (the two `goalBody`
+conjuncts that mention only bound variables), so their lengths are standard constants. -/
+noncomputable def derB1 : ArithmeticSemisentence 2 :=
+  (↑(derivation TAct).sigma : ArithmeticSemisentence 1) ⇜ ![#1]
+noncomputable def dlenB10 : ArithmeticSemisentence 2 :=
+  (↑(dlenGraphDef LAct).sigma : ArithmeticSemisentence 2) ⇜ ![#1, #0]
+
+lemma derFact_bv1_eq : (derFact (bv 1) : V) = ⌜Semiformula.lMap emb derB1⌝ := by
+  unfold derFact Pderiv derivS derB1
+  symm; row_shapeB
+
+lemma dlenFact_bv10_eq : (dlenFact (bv 1) (bv 0) : V) = ⌜Semiformula.lMap emb dlenB10⌝ := by
+  unfold dlenFact Pdlen dlenS dlenB10
+  symm; row_shapeB
+
+/-- The three standard constants of the goal fact's length. -/
+noncomputable def cDer : ℕ := flen (Rewriting.emb (Semiformula.lMap emb derB1) : Semiproposition LAct 2)
+noncomputable def cDlen : ℕ := flen (Rewriting.emb (Semiformula.lMap emb dlenB10) : Semiproposition LAct 2)
+noncomputable def cFst : ℕ := flen (Rewriting.emb fstIdxS : Semiproposition LAct 2)
+
+lemma formulaLen_derFact_bv1 : formulaLen LAct (derFact (bv 1) : V) = (cDer : V) := by
+  rw [derFact_bv1_eq, formulaLen_quote_semisentence_V']; rfl
+lemma formulaLen_dlenFact_bv10 : formulaLen LAct (dlenFact (bv 1) (bv 0) : V) = (cDlen : V) := by
+  rw [dlenFact_bv10_eq, formulaLen_quote_semisentence_V']; rfl
+lemma formulaLen_PfstIdx : formulaLen LAct (PfstIdx : V) = (cFst : V) := by
+  unfold PfstIdx; rw [formulaLen_quote_semisentence_V']; rfl
+
+/-- A two-entry substitution vector `[s, #1]` (closed `s`, the identity at position `1`) is substitution-disciplined. -/
+lemma substInv_closed_bv1 {B s : V} (hs : IsSemiterm LAct 0 s) (hls : termLen LAct s ≤ B) :
+    SubstInv LAct B (listToVec [s, bv 1]) := by
+  intro i hi
+  rw [len_listToVec] at hi
+  obtain ⟨i, rfl⟩ := eq_nat_of_lt_nat hi
+  have hi' : i < 2 := by exact_mod_cast hi
+  rw [nth_listToVec]
+  rcases i with _ | _ | i
+  · exact Or.inr ⟨hs, hls⟩
+  · exact Or.inl rfl
+  · exfalso; omega
+
+/-- `[#0, u]` likewise. -/
+lemma substInv_bv0_closed {B u : V} (hu : IsSemiterm LAct 0 u) (hlu : termLen LAct u ≤ B) :
+    SubstInv LAct B (listToVec [bv 0, u]) := by
+  intro i hi
+  rw [len_listToVec] at hi
+  obtain ⟨i, rfl⟩ := eq_nat_of_lt_nat hi
+  have hi' : i < 2 := by exact_mod_cast hi
+  rw [nth_listToVec]
+  rcases i with _ | _ | i
+  · exact Or.inl rfl
+  · exact Or.inr ⟨hu, hlu⟩
+  · exfalso; omega
+
+/-- **The goal fact's length**: `|goalFact s u| ≤ cDer + cDlen + (cFst + |Ple|)·B + 5` for closed `s, u` of
+length `≤ B`. -/
+lemma formulaLen_goalFact_le {B : V} (hB : 1 ≤ B) {s u : V} (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u)
+    (hls : termLen LAct s ≤ B) (hlu : termLen LAct u ≤ B) :
+    formulaLen LAct (goalFact s u) ≤ (cDer : V) + (cDlen : V) + ((cFst : V) + formulaLen LAct (Ple : V)) * B + 5 := by
+  have hb := isSemiformula_goalBody hs hu
+  unfold goalBody at hb
+  simp only [IsSemiformula.and] at hb
+  obtain ⟨h1, h2, h3, h4⟩ := hb
+  rw [formulaLen_goalFact hs hu]
+  unfold goalBody
+  rw [formulaLen_and h1.isUFormula (by simp [h2.isUFormula, h3.isUFormula, h4.isUFormula]),
+    formulaLen_and h2.isUFormula (by simp [h3.isUFormula, h4.isUFormula]),
+    formulaLen_and h3.isUFormula h4.isUFormula, formulaLen_derFact_bv1, formulaLen_dlenFact_bv10]
+  have hs2 : IsSemiterm LAct (2 : V) s := isSemiterm_of_le hs zero_le
+  have hu2 : IsSemiterm LAct (2 : V) u := isSemiterm_of_le hu zero_le
+  have hF : formulaLen LAct (fstIdxFact s (bv 1)) ≤ (cFst : V) * B := by
+    rw [← formulaLen_PfstIdx]
+    exact formulaLen_subst_le hB isSemiformula_PfstIdx _ _
+      (isSemitermVec_listToVec [s, bv 1] (fun x hx ↦ by
+        rcases List.mem_cons.mp hx with rfl | hx
+        · exact hs2
+        · rcases List.mem_cons.mp hx with rfl | hx
+          · exact isSemiterm_bv_two 1 (by norm_num)
+          · simp at hx))
+      (substInv_closed_bv1 hs hls)
+  have hL : formulaLen LAct (leFact (bv 0) u) ≤ formulaLen LAct (Ple : V) * B :=
+    formulaLen_subst_le hB isSemiformula_Ple _ _
+      (isSemitermVec_listToVec [bv 0, u] (fun x hx ↦ by
+        rcases List.mem_cons.mp hx with rfl | hx
+        · exact isSemiterm_bv_two 0 (by norm_num)
+        · rcases List.mem_cons.mp hx with rfl | hx
+          · exact hu2
+          · simp at hx))
+      (substInv_bv0_closed hu hlu)
+  calc (cDer : V) + (formulaLen LAct (fstIdxFact s (bv 1)) + ((cDlen : V) + formulaLen LAct (leFact (bv 0) u) + 1) + 1) + 1 + 2
+      ≤ (cDer : V) + ((cFst : V) * B + ((cDlen : V) + formulaLen LAct (Ple : V) * B + 1) + 1) + 1 + 2 :=
+        add_le_add (add_le_add (add_le_add le_rfl (add_le_add (add_le_add hF (add_le_add (add_le_add le_rfl hL) le_rfl)) le_rfl)) le_rfl) le_rfl
+    _ = (cDer : V) + (cDlen : V) + ((cFst : V) + formulaLen LAct (Ple : V)) * B + 5 := by ring
+
+end goalLen
+
 end ArithS
