@@ -1483,4 +1483,60 @@ theorem verum_wrapper {tbl N N' B' Wc W₁ T B E Czv Γ s : V}
 
 end motiveWrappers
 
+
+/-! ## 17. The E-room helper family
+
+Part 5 spent its whole round on hand-built inequality chains: every wrapper's `hEpro`/`hiEpro`/`hnE`/`hbn` is the
+same `capE4'`+`lin_cap`+`hCk` composition at a different coefficient triple, and each hand-rolling went wrong in a
+different way (a leading `0 +` blocking `ring`, a mis-associated `le_of_add_eq'`, `44 + 25` written as `65`). This
+section factors the three shapes once.
+
+* `eroom_lin hE hCk a b c _ : (a : V)·D + (b : V)·‖D‖ + (c : V) ≤ E` — the general LINEAR room, subsuming the
+  prologue room `(13, 18, 12)`, the node room `(0, 18, 7)`, the insert room `(14, 0, 5)`, and every other
+  `lin_cap` chain in the wrappers;
+* `eroom_bnum hE hCk hn : termLen LAct (bnum n) ≤ E` for `n ≤ D` — covers the parent's and the child's `dlen`
+  alike (`termLen_bnum_le_V` at coefficient `7`);
+* `eroom_off hE hCk hx c _ : x + (c : V) ≤ E` for `x ≤ D` — the goal-fact offset shape.
+
+**Usage.** The helpers are stated with ℕ-casts on the coefficients so the constant side discharges by `norm_num`
+against `hCk`; a call site wanting the literal `V`-shape follows with `push_cast at this`, and for a triple with
+`a = 0` additionally `rw [zero_mul, zero_add] at this` — the leading zero is exactly what blocked `ring` when these
+were hand-rolled. Both idioms are exercised by the smoke tests this section was validated against.
+-/
+
+section eroom
+
+/-- **The general LINEAR E-room**: `a·D + b·‖D‖ + c ≤ E` under the cap, for `a + b + c ≤ 1000000`. -/
+lemma eroom_lin {D E Czv : V} (hE : Czv * p4 (D + 1) ≤ E) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (a b c : ℕ) (habc : a + b + c ≤ 1000000) :
+    ((a : ℕ) : V) * D + ((b : ℕ) : V) * ‖D‖ + ((c : ℕ) : V) ≤ E := by
+  refine capE4' hE le_add_self (hCk (a + b + c) habc) ?_
+  refine le_trans (lin_cap ((a : ℕ) : V) ((b : ℕ) : V) ((c : ℕ) : V) D) ?_
+  exact le_of_eq (by push_cast; ring)
+
+/-- **The `bnum` E-room**: `termLen (bnum n) ≤ E` for any `n ≤ D` (`termLen_bnum_le_V` at coefficient `7`). -/
+lemma eroom_bnum {D E Czv n : V} (hE : Czv * p4 (D + 1) ≤ E)
+    (hCk : ∀ m : ℕ, m ≤ 1000000 → ((m : ℕ) : V) ≤ Czv) (hn : n ≤ D) :
+    termLen LAct (bnum n) ≤ E := by
+  refine capE4' hE le_add_self (hCk 7 (by norm_num)) ?_
+  refine le_trans (termLen_bnum_le_V n) ?_
+  calc 6 * ‖n‖ + 1 ≤ 6 * (D + 1) + 1 * (D + 1) :=
+        add_le_add (mul_le_mul_of_nonneg_left
+          (le_trans (length_monotone hn) (le_trans (length_le D) le_self_add)) zero_le)
+          (by rw [one_mul]; exact le_add_self)
+    _ = ((7 : ℕ) : V) * (D + 1) := by push_cast; ring
+
+/-- **The OFFSET E-room**: `x + c ≤ E` for `x ≤ D` and a literal `c`. -/
+lemma eroom_off {D E Czv x : V} (hE : Czv * p4 (D + 1) ≤ E)
+    (hCk : ∀ m : ℕ, m ≤ 1000000 → ((m : ℕ) : V) ≤ Czv) (hx : x ≤ D)
+    (c : ℕ) (hc : 1 + c ≤ 1000000) :
+    x + ((c : ℕ) : V) ≤ E := by
+  refine capE4' hE le_add_self (hCk (1 + c) hc) ?_
+  calc x + ((c : ℕ) : V) ≤ D + ((c : ℕ) : V) := add_le_add hx le_rfl
+    _ ≤ ((1 + c : ℕ) : V) * (D + 1) := by
+        push_cast
+        exact le_of_add_eq' (c := (c : V) * D + 1) (by ring)
+
+end eroom
+
 end ArithS

@@ -1537,6 +1537,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- mismatch. Repeating the rewrite after the unfold fixes it.
 #print axioms verum_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §17 — the E-ROOM HELPER FAMILY. Part 5 spent its whole round on
+-- hand-built inequality chains: every wrapper's `hEpro`/`hiEpro`/`hnE`/`hbn` is the SAME `capE4'`+`lin_cap`+`hCk`
+-- composition at a different coefficient triple, and each hand-rolling went wrong differently (a leading `0 +`
+-- blocking `ring`, a mis-associated `le_of_add_eq'`, `44 + 25` written as `65`). The three shapes are factored
+-- once: `eroom_lin hE hCk a b c _ : (a:V)·D + (b:V)·‖D‖ + (c:V) ≤ E` — the general LINEAR room, subsuming the
+-- prologue room (13,18,12), the node room (0,18,7), the insert room (14,0,5) and every other `lin_cap` chain;
+-- `eroom_bnum hE hCk hn : termLen (bnum n) ≤ E` for `n ≤ D` — parent's and child's `dlen` alike; and
+-- `eroom_off hE hCk hx c _ : x + (c:V) ≤ E` for `x ≤ D` — the goal-fact offset shape. USAGE: the coefficients
+-- carry ℕ-casts so the constant side discharges by `norm_num` against `hCk`; a call site wanting the literal
+-- `V`-shape follows with `push_cast at this`, and for a triple with `a = 0` additionally
+-- `rw [zero_mul, zero_add] at this` — that leading zero is exactly what blocked `ring` when these were hand-rolled.
+#print axioms eroom_lin
+#print axioms eroom_bnum
+#print axioms eroom_off
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
