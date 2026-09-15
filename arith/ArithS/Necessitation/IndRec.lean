@@ -1558,4 +1558,166 @@ theorem substInst_c1 {tbl N E Γ nk i j iw : V} (htbl : TableOK tbl N) (hT : Ind
 
 end substInst
 
+/-! ### 5.2 The five walks: `s`, `neg K`, `fvarVec m`, `⟨⌜0⌝⟩`, `⟨#0 + 1⟩` -/
+
+section walks
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+lemma listSum_termLenVec_c0v : listSum (termLenVec LAct 1 (c0v : V)) = 1 := by
+  have := listSum_termLenVec_single (V := V) isSemiterm_c0t
+  rw [termLen_c0t] at this; exact this
+
+lemma listSum_termLenVec_c1v : listSum (termLenVec LAct 1 (c1v : V)) = 3 := by
+  have := termLenVec_cons (L := LAct) (k := (0 : V)) (t := (^#(0 : V) ^+ (𝟏 : V))) (ts := 0) isSemiterm_c1t.isUTerm (by simp)
+  rw [zero_add] at this
+  unfold c1v
+  rw [this, listSum_adjoin, termLenVec_nil, listSum_nil, termLen_c1t, add_zero]
+
+/-- **The five walks**, one `WInv` list: the dossiers of `s` (bound `0`), `neg K` (bound `1`), `fvarVec m`, `⟨⌜0⌝⟩` and
+`⟨#0 + 1⟩` (bound `1`) at the returned offsets, `p`'s dossier moved by the total `A` of the eigenvariable counts. -/
+theorem stageWalks {tbl N E Γ p ip s nk m : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hsL : IsSemiformula LAct 0 s) (hnkL : IsSemiformula LAct 1 nk)
+    (hE : 2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 20 ≤ E)
+    (hD : DossF walkPieces Γ 0 p ip) :
+    ∃ L A js ink iw iw0 : V, WInv tbl E Γ L A ∧
+      A ≤ 2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * (m * (m + 1)) + 8 ∧
+      len L ≤ 12 * formulaLen LAct s + 12 * formulaLen LAct nk + 12 * (m * (m + 1)) + 60 ∧
+      js ≤ A ∧ ink ≤ A ∧ iw ≤ A ∧ iw0 ≤ A ∧
+      DossF walkPieces (finalCtx Γ L) 0 p (ip + A) ∧ DossF walkPieces (finalCtx Γ L) 0 s js ∧
+      DossF walkPieces (finalCtx Γ L) 1 nk ink ∧ DossV walkPieces (finalCtx Γ L) 0 m (Bootstrapping.fvarVec m) m iw ∧
+      DossV walkPieces (finalCtx Γ L) 0 1 c0v 1 iw0 ∧ DossV walkPieces (finalCtx Γ L) 1 1 c1v 1 0 := by
+  have hW := hT.walkTable
+  have hfv : IsSemitermVec LAct m 0 (Bootstrapping.fvarVec m) := IsSemitermVec.LAct_of_LOR (fvarVec_isSemitermVec_LOR m)
+  have hSfv := listSum_termLenVec_fvarVec_le (V := V) m
+  -- 1. the walk of `s`
+  have hE1 : 2 * 0 + 2 * formulaLen LAct s + 8 ≤ E := by
+    calc 2 * 0 + 2 * formulaLen LAct s + 8 ≤ 2 * 0 + 2 * formulaLen LAct s + 8 + (2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 12) := le_self_add
+      _ = 2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 20 := by ring
+      _ ≤ E := hE
+  obtain ⟨h1, hc1, hl1, hD1s⟩ := walkF_winv htbl hW hsL hE1 hΓ
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (describeF walkPieces 0 s) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact h1.isFormulaSet htbl hΓ
+  have hD1p : DossF walkPieces Γ₁ 0 p (ip + descCountF walkPieces 0 s) := by rw [hΓ₁]; exact h1.dossF hD
+  rw [← hΓ₁] at hD1s
+  -- 2. the walk of `neg K`
+  have hE2 : 2 * 1 + 2 * formulaLen LAct nk + 8 ≤ E := by
+    calc 2 * 1 + 2 * formulaLen LAct nk + 8 ≤ 2 * 1 + 2 * formulaLen LAct nk + 8 + (2 * formulaLen LAct s + 2 * m + 2 * (m * (m + 1)) + 10) := le_self_add
+      _ = 2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 20 := by ring
+      _ ≤ E := hE
+  obtain ⟨h2, hc2, hl2, hD2k⟩ := walkF_winv htbl hW hnkL hE2 hΓ₁f
+  obtain ⟨Γ₂, hΓ₂⟩ : ∃ Γ', Γ' = finalCtx Γ₁ (describeF walkPieces 1 nk) := ⟨_, rfl⟩
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [hΓ₂]; exact h2.isFormulaSet htbl hΓ₁f
+  have hD2p := h2.dossF hD1p
+  have hD2s := h2.dossF hD1s
+  rw [← hΓ₂] at hD2p hD2s hD2k
+  -- 3. the walk of `fvarVec m`
+  have hE3 : 2 * 0 + 2 * m + 2 * listSum (termLenVec LAct m (Bootstrapping.fvarVec m)) + 8 ≤ E := by
+    calc 2 * 0 + 2 * m + 2 * listSum (termLenVec LAct m (Bootstrapping.fvarVec m)) + 8
+        ≤ 2 * 0 + 2 * m + 2 * (m * (m + 1)) + 8 := add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hSfv zero_le)) le_rfl
+      _ ≤ 2 * 0 + 2 * m + 2 * (m * (m + 1)) + 8 + (2 * formulaLen LAct s + 2 * formulaLen LAct nk + 12) := le_self_add
+      _ = 2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 20 := by ring
+      _ ≤ E := hE
+  obtain ⟨h3, hc3, hl3, hD3w⟩ := walkV_winv htbl hW hfv hE3 hΓ₂f
+  obtain ⟨Γ₃, hΓ₃⟩ : ∃ Γ', Γ' = finalCtx Γ₂ (vecWalkN walkPieces 0 m (Bootstrapping.fvarVec m)) := ⟨_, rfl⟩
+  have hΓ₃f : IsFormulaSet LAct Γ₃ := by rw [hΓ₃]; exact h3.isFormulaSet htbl hΓ₂f
+  have hD3p := h3.dossF hD2p
+  have hD3s := h3.dossF hD2s
+  have hD3k := h3.dossF hD2k
+  rw [← hΓ₃] at hD3p hD3s hD3k hD3w
+  -- 4. the walk of `⟨⌜0⌝⟩`
+  have hE4 : 2 * 0 + 2 * 1 + 2 * listSum (termLenVec LAct 1 (c0v : V)) + 8 ≤ E := by
+    rw [listSum_termLenVec_c0v]
+    calc (2 * 0 + 2 * 1 + 2 * 1 + 8 : V) = 12 := by norm_num
+      _ ≤ 12 + (2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 8) := le_self_add
+      _ = 2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 20 := by ring
+      _ ≤ E := hE
+  obtain ⟨h4, hc4, hl4, hD4w0⟩ := walkV_winv htbl hW isSemitermVec_c0v hE4 hΓ₃f
+  rw [listSum_termLenVec_c0v] at hc4 hl4
+  obtain ⟨Γ₄, hΓ₄⟩ : ∃ Γ', Γ' = finalCtx Γ₃ (vecWalkN walkPieces 0 1 c0v) := ⟨_, rfl⟩
+  have hΓ₄f : IsFormulaSet LAct Γ₄ := by rw [hΓ₄]; exact h4.isFormulaSet htbl hΓ₃f
+  have hD4p := h4.dossF hD3p
+  have hD4s := h4.dossF hD3s
+  have hD4k := h4.dossF hD3k
+  have hD4w := h4.dossV hD3w
+  rw [← hΓ₄] at hD4p hD4s hD4k hD4w hD4w0
+  -- 5. the walk of `⟨#0 + 1⟩`
+  have hE5 : 2 * 1 + 2 * 1 + 2 * listSum (termLenVec LAct 1 (c1v : V)) + 8 ≤ E := by
+    rw [listSum_termLenVec_c1v]
+    calc (2 * 1 + 2 * 1 + 2 * 3 + 8 : V) = 18 := by norm_num
+      _ ≤ 18 + (2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 2) := le_self_add
+      _ = 2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * m + 2 * (m * (m + 1)) + 20 := by ring
+      _ ≤ E := hE
+  obtain ⟨h5, hc5, hl5, hD5w1⟩ := walkV_winv htbl hW isSemitermVec_c1v hE5 hΓ₄f
+  rw [listSum_termLenVec_c1v] at hc5 hl5
+  obtain ⟨Γ₅, hΓ₅⟩ : ∃ Γ', Γ' = finalCtx Γ₄ (vecWalkN walkPieces 1 1 c1v) := ⟨_, rfl⟩
+  have hD5p := h5.dossF hD4p
+  have hD5s := h5.dossF hD4s
+  have hD5k := h5.dossF hD4k
+  have hD5w := h5.dossV hD4w
+  have hD5w0 := h5.dossV hD4w0
+  rw [← hΓ₅] at hD5p hD5s hD5k hD5w hD5w0 hD5w1
+  -- the composite
+  have hL : WInv tbl E Γ (appendV (describeF walkPieces 0 s) (appendV (describeF walkPieces 1 nk)
+      (appendV (vecWalkN walkPieces 0 m (Bootstrapping.fvarVec m)) (appendV (vecWalkN walkPieces 0 1 c0v) (vecWalkN walkPieces 1 1 c1v)))))
+      (descCountF walkPieces 0 s + (descCountF walkPieces 1 nk + (vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) +
+        (vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v)))) := by
+    refine h1.append ?_
+    rw [← hΓ₁]
+    refine h2.append ?_
+    rw [← hΓ₂]
+    refine h3.append ?_
+    rw [← hΓ₃]
+    refine h4.append ?_
+    rw [← hΓ₄]
+    exact h5
+  have hctx : finalCtx Γ (appendV (describeF walkPieces 0 s) (appendV (describeF walkPieces 1 nk)
+      (appendV (vecWalkN walkPieces 0 m (Bootstrapping.fvarVec m)) (appendV (vecWalkN walkPieces 0 1 c0v) (vecWalkN walkPieces 1 1 c1v))))) = Γ₅ := by
+    rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, ← hΓ₃, ← hΓ₄, ← hΓ₅]
+  have hc1' : descCountF walkPieces 0 s ≤ 2 * formulaLen LAct s := le_trans le_self_add hc1
+  have hc2' : descCountF walkPieces 1 nk ≤ 2 * formulaLen LAct nk := le_trans le_self_add hc2
+  have hc3' : vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) ≤ 2 * (m * (m + 1)) := le_trans hc3 (mul_le_mul_of_nonneg_left hSfv zero_le)
+  refine ⟨_, _, descCountF walkPieces 1 nk + (vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) + (vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v)),
+    vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) + (vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v),
+    vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v, vecCwN walkPieces 1 1 c1v, hL, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · calc descCountF walkPieces 0 s + (descCountF walkPieces 1 nk + (vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) +
+        (vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v)))
+        ≤ 2 * formulaLen LAct s + (2 * formulaLen LAct nk + (2 * (m * (m + 1)) + (2 * 1 + 2 * 3))) :=
+          add_le_add hc1' (add_le_add hc2' (add_le_add hc3' (add_le_add hc4 hc5)))
+      _ = 2 * formulaLen LAct s + 2 * formulaLen LAct nk + 2 * (m * (m + 1)) + 8 := by ring
+  · rw [len_appendV, len_appendV, len_appendV, len_appendV]
+    calc len (describeF walkPieces 0 s) + (len (describeF walkPieces 1 nk) + (len (vecWalkN walkPieces 0 m (Bootstrapping.fvarVec m)) +
+        (len (vecWalkN walkPieces 0 1 c0v) + len (vecWalkN walkPieces 1 1 c1v))))
+        ≤ 12 * formulaLen LAct s + (12 * formulaLen LAct nk + ((12 * (m * (m + 1)) + 4) + ((12 * 1 + 4) + (12 * 3 + 4)))) :=
+          add_le_add hl1 (add_le_add hl2 (add_le_add (le_trans hl3 (add_le_add (mul_le_mul_of_nonneg_left hSfv zero_le) le_rfl))
+            (add_le_add hl4 hl5)))
+      _ = 12 * formulaLen LAct s + 12 * formulaLen LAct nk + 12 * (m * (m + 1)) + 60 := by ring
+  · exact le_add_self
+  · exact le_trans le_add_self le_add_self
+  · exact le_trans le_add_self (le_trans le_add_self le_add_self)
+  · exact le_trans le_add_self (le_trans le_add_self (le_trans le_add_self le_add_self))
+  · rw [hctx]
+    have := hD5p
+    rwa [show ip + descCountF walkPieces 0 s + descCountF walkPieces 1 nk + vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) +
+      vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v = ip + (descCountF walkPieces 0 s + (descCountF walkPieces 1 nk +
+      (vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) + (vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v)))) by ring] at this
+  · rw [hctx]
+    have := hD5s
+    rwa [show 0 + descCountF walkPieces 1 nk + vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) + vecCwN walkPieces 0 1 c0v +
+      vecCwN walkPieces 1 1 c1v = descCountF walkPieces 1 nk + (vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) +
+      (vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v)) by ring] at this
+  · rw [hctx]
+    have := hD5k
+    rwa [show 0 + vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) + vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v =
+      vecCwN walkPieces 0 m (Bootstrapping.fvarVec m) + (vecCwN walkPieces 0 1 c0v + vecCwN walkPieces 1 1 c1v) by ring] at this
+  · rw [hctx]
+    have := hD5w
+    rwa [zero_add] at this
+  · rw [hctx]
+    have := hD5w0
+    rwa [zero_add] at this
+  · rw [hctx]; exact hD5w1
+
+end walks
+
 end ArithS
