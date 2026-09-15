@@ -334,4 +334,214 @@ lemma sizeOK_retargetRoot {Q D js' js₀ d : V} (hQ : 4 * formulaLen LAct (goalF
 
 end retargetRoot
 
+/-! ## 4. The bridged verify list `vList = layoutSteps {x} ++ identRoot ++ L ++ retargetRoot` and its `ok` -/
+
+section vList
+
+/-- **The bridged verify list** at root offset `i` (root member `x = &(i+2)`, root sequent `&(i+1)`): the fresh
+canonical layout of `{x}` (`β` shifts), the identification (`x₀ = &(i+β+2)` with `x' = &(sTop Wc T x 0)`,
+`s₀ = &(i+β+1)` with `s' = &2`), the verify list `L` of the graph, and the retarget of the goal onto `s₀`. -/
+noncomputable def vList (Wl Wc W T x i ρ L : V) : V :=
+  appendV (layoutSteps walkPieces Wl Wc W T (insert x 0))
+    (appendV (identRoot Wl x (i + shiftsV (layoutSteps walkPieces Wl Wc W T (insert x 0)) + 2) (sTop Wc T x 0)
+        (i + shiftsV (layoutSteps walkPieces Wl Wc W T (insert x 0)) + 1) (0 + 2))
+      (appendV L (retargetRoot (0 + 2 + shiftsV L)
+        (i + shiftsV (layoutSteps walkPieces Wl Wc W T (insert x 0)) + 1 + shiftsV L) (dlen TAct ρ))))
+
+lemma pow6_eq_p6 (x : V) : x ^ 6 = p6 x := by simp only [p6]; ring
+
+lemma succ_le_pow6 (d : V) : d + 1 ≤ (d + 1) ^ 6 := by
+  rw [pow6_eq_p6]; exact le_p6_self le_add_self
+
+/-- The cap discipline of the bridged list: a quantity `≤ c·(d+1)^6 + a·(d+1) + b·i` is below `E` once
+`Ckv·((d+1)^6 + i) ≤ E` with `c + a ≤ Ckv`, `b ≤ Ckv`. -/
+lemma cap_gen {Ckv E d i X c a b : V} (hE : Ckv * ((d + 1) ^ 6 + i) ≤ E) (hca : c + a ≤ Ckv) (hb : b ≤ Ckv)
+    (hX : X ≤ c * (d + 1) ^ 6 + a * (d + 1) + b * i) : X ≤ E := by
+  refine le_trans hX (le_trans ?_ hE)
+  calc c * (d + 1) ^ 6 + a * (d + 1) + b * i ≤ c * (d + 1) ^ 6 + a * (d + 1) ^ 6 + Ckv * i :=
+        add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left (succ_le_pow6 d) zero_le))
+          (mul_le_mul_of_nonneg_right hb zero_le)
+    _ = (c + a) * (d + 1) ^ 6 + Ckv * i := by ring
+    _ ≤ Ckv * (d + 1) ^ 6 + Ckv * i := add_le_add (mul_le_mul_of_nonneg_right hca zero_le) le_rfl
+    _ = Ckv * ((d + 1) ^ 6 + i) := by ring
+
+/-- `{x} = insert x 0` (the sequent of a `Proof`). -/
+lemma singleton_eq_insert_zero (x : V) : ({x} : V) = insert x (0 : V) := mem_ext fun _ ↦ by simp
+
+set_option maxHeartbeats 2000000 in
+/-- **The bridged verify list is applicable at the ROOT layout** (the `ok` half of the kit `VerifyKit3`): from
+`Proof TAct ρ x`, `RootLayout Γ x i` and the cap `Ck·((dlen ρ + 1)^6 + i) ≤ E`, every graph list `L` yields
+`vList` applicable at cap `9`, cut-admitting, with `shiftsV ≤ Ck·(dlen ρ + 1)^6`, leaving the goal fact on the
+ROOT sequent at `&(i + 1 + shiftsV vList)`. `Ck = Ck' + 50` with `Ck'` the constant of `verifyGraph'_ok_pow`. -/
+theorem vList_ok : ∃ Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' Wl Wc W₁ W₂ W T A Cv E ρ x Γ i L : V},
+    TableOK tbl N → ProTable tbl → NumTableOK T N' B' → Wl = layoutPieces → Wc = certPieces →
+    W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → AxmTableOK tbl E walkPieces A Cv →
+    Proof TAct ρ x → IsSemiformula LAct 0 x → RootLayout Γ x i → IsFormulaSet LAct Γ →
+    (Ck : V) * ((dlen TAct ρ + 1) ^ 6 + i) ≤ E → VerifyGraph' walkPieces Wl Wc W₁ W₂ W T A ρ L →
+    ListOK tbl E ((9 : ℕ) : V) Γ (vList Wl Wc W T x i ρ L) ∧ NoDrop' (vList Wl Wc W T x i ρ L) ∧
+    shiftsV (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (dlen TAct ρ + 1) ^ 6 ∧
+    neg LAct (goalFact (^&(i + 1 + shiftsV (vList Wl Wc W T x i ρ L))) (bnum (dlen TAct ρ))) ∈
+      finalCtx Γ (vList Wl Wc W T x i ρ L) := by
+  obtain ⟨Ck', hV⟩ := verifyGraph'_ok_pow
+  refine ⟨Ck' + 50, fun V _ _ tbl N N' B' Wl Wc W₁ W₂ W T A Cv E ρ x Γ i L htbl hP htblN hWl hWc hW₁ hW₂ hWp hA hρ hx hR hΓ hE hL ↦ ?_⟩
+  have hW := hP.walkTable
+  have hF := hP.frag1Table
+  have hd : Derivation TAct ρ := hρ.2
+  have hfst : fstIdx ρ = insert x 0 := by rw [hρ.1]; exact singleton_eq_insert_zero x
+  obtain ⟨d, hdd⟩ : ∃ d, d = dlen TAct ρ := ⟨_, rfl⟩
+  obtain ⟨Ckv, hCkv⟩ : ∃ c : V, c = ((Ck' + 50 : ℕ) : V) := ⟨_, rfl⟩
+  rw [← hCkv, ← hdd] at hE
+  have hCk' : (Ck' : V) ≤ Ckv := by rw [hCkv]; push_cast; exact le_self_add
+  have hC : ∀ a : ℕ, a ≤ 50 → ((a : ℕ) : V) ≤ Ckv := fun a ha ↦ by
+    rw [hCkv]; push_cast; exact le_trans (by exact_mod_cast ha) le_add_self
+  have hC1 : (1 : V) ≤ Ckv := by rw [hCkv]; push_cast; exact le_trans (by norm_num) le_add_self
+  have hd1 : (1 : V) ≤ d := hdd ▸ one_le_dlen hd
+  -- sizes of the root member
+  have hxs : IsFormulaSet LAct (insert x (0 : V)) := IsFormulaSet.insert_iff.mpr ⟨hx, IsFormulaSet.empty⟩
+  have hsD : setLen LAct (insert x (0 : V)) ≤ d := by rw [hdd, ← hfst]; exact setLen_fstIdx_le_dlen hd
+  have hxD : formulaLen LAct x ≤ d := le_trans (formulaLen_le_setLen_of_mem (L := LAct) (by simp)) hsD
+  have hxD1 : formulaLen LAct x ≤ d + 1 := le_trans hxD le_self_add
+  have hcnt : eqCount x + 1 ≤ 2 * (d + 1) := le_trans (eqCount_succ_le htbl hW hx) (mul_le_mul_of_nonneg_left hxD1 zero_le)
+  have hmL : mLen Wc T x + 1 ≤ 2 * (d + 1) := le_trans (mLen_succ_le hWc T hx) (mul_le_mul_of_nonneg_left hxD1 zero_le)
+  have hmS : mShift walkPieces Wc T x ≤ 4 * (d + 1) := le_trans (mShift_le htbl hW hWc T hx) (mul_le_mul_of_nonneg_left hxD1 zero_le)
+  have hE1 : (1 : V) ≤ E := cap_gen hE (c := 0) (a := 1) (b := 0) (by rw [zero_add]; exact hC1) zero_le
+    (by rw [zero_mul, zero_add, zero_mul, add_zero, one_mul]; exact le_add_self)
+  -- (1) the fresh layout of `{x}`
+  have hk1 : 1 ≤ len (memberList (insert x (0 : V))) := by rw [len_memberList_single]
+  have hE13 : 13 * d + 18 * ‖d‖ + 8 ≤ E := cap_gen hE (c := 0) (a := 39) (b := 0) (by rw [zero_add]; exact hC 39 (by norm_num)) zero_le (by
+    rw [zero_mul, zero_add, zero_mul, add_zero]
+    calc 13 * d + 18 * ‖d‖ + 8 ≤ (13 + 18 + 8) * (d + 1) := lin_cap 13 18 8 d
+      _ = 39 * (d + 1) := by ring)
+  obtain ⟨bok, bnd, bsh, blen, bLay⟩ := layoutSteps_ok htbl hP htblN hWl hWc hWp hxs hk1 hsD hE13 hΓ
+  obtain ⟨β, hβ⟩ : ∃ b, b = shiftsV (layoutSteps walkPieces Wl Wc W T (insert x 0)) := ⟨_, rfl⟩
+  have hβle : β ≤ 7 * (d + 1) := by
+    rw [hβ, bsh, memberList_single, tailShift_adjoin, tailShift_nil, len_adjoin, len_nil]
+    calc _ = mShift walkPieces Wc T x + 3 := by ring
+      _ ≤ 4 * (d + 1) + 3 := add_le_add hmS le_rfl
+      _ ≤ 4 * (d + 1) + 3 * (d + 1) := add_le_add le_rfl (le_mul_of_one_le_right zero_le le_add_self)
+      _ = 7 * (d + 1) := by ring
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (layoutSteps walkPieces Wl Wc W T (insert x 0)) := ⟨_, rfl⟩
+  rw [← hΓ₁] at bLay
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact finalCtx_isFormulaSet 8 htbl hΓ bok
+  have hR₁ : RootLayout Γ₁ x (i + β) := by rw [hΓ₁, hβ]; exact hR.transport bnd
+  obtain ⟨hD₀, _, hi₀, _, hm₀, _⟩ := hR₁
+  obtain ⟨hD', _, hi', hm'⟩ := layout_single bLay
+  -- (2) the identification
+  have hsT : sTop Wc T x 0 ≤ 3 * (d + 1) := by
+    rw [sTop_eq]
+    calc 0 + 3 + mLen Wc T x = mLen Wc T x + 1 + 2 := by ring
+      _ ≤ 2 * (d + 1) + 2 := add_le_add hmL le_rfl
+      _ ≤ 2 * (d + 1) + (d + 1) := add_le_add le_rfl (le_trans (by norm_num) (add_le_add hd1 le_rfl))
+      _ = 3 * (d + 1) := by ring
+  have hIE : 2 * (0 + formulaLen LAct x) + 12 ≤ E := cap_gen hE (c := 0) (a := 14) (b := 0)
+    (by rw [zero_add]; exact hC 14 (by norm_num)) zero_le (by
+      rw [zero_mul, zero_add, zero_mul, add_zero, zero_add]
+      calc 2 * formulaLen LAct x + 12 ≤ 2 * (d + 1) + 12 * (d + 1) :=
+            add_le_add (mul_le_mul_of_nonneg_left hxD1 zero_le) (le_mul_of_one_le_right zero_le le_add_self)
+        _ = 14 * (d + 1) := by ring)
+  have hIE₀ : i + β + 2 + eqCount x + 1 ≤ E := cap_gen hE (c := 0) (a := 11) (b := 1)
+    (by rw [zero_add]; exact hC 11 (by norm_num)) hC1 (by
+      rw [zero_mul, zero_add]
+      calc i + β + 2 + eqCount x + 1 = β + 2 + (eqCount x + 1) + i := by ring
+        _ ≤ 7 * (d + 1) + 2 * (d + 1) + 2 * (d + 1) + i :=
+            add_le_add (add_le_add (add_le_add hβle (le_mul_of_one_le_right zero_le le_add_self)) hcnt) le_rfl
+        _ = 11 * (d + 1) + 1 * i := by ring)
+  have hIE' : sTop Wc T x 0 + eqCount x + 1 ≤ E := cap_gen hE (c := 0) (a := 5) (b := 0)
+    (by rw [zero_add]; exact hC 5 (by norm_num)) zero_le (by
+      rw [zero_mul, zero_add, zero_mul, add_zero, add_assoc]
+      calc sTop Wc T x 0 + (eqCount x + 1) ≤ 3 * (d + 1) + 2 * (d + 1) := add_le_add hsT hcnt
+        _ = 5 * (d + 1) := by ring)
+  have hIs₀ : i + β + 1 + 1 ≤ E := cap_gen hE (c := 0) (a := 9) (b := 1)
+    (by rw [zero_add]; exact hC 9 (by norm_num)) hC1 (by
+      rw [zero_mul, zero_add]
+      calc i + β + 1 + 1 = β + 2 + i := by ring
+        _ ≤ 7 * (d + 1) + 2 * (d + 1) + i := add_le_add (add_le_add hβle (le_mul_of_one_le_right zero_le le_add_self)) le_rfl
+        _ = 9 * (d + 1) + 1 * i := by ring)
+  have hIs' : 0 + 2 + 1 ≤ E := cap_gen hE (c := 0) (a := 3) (b := 0) (by rw [zero_add]; exact hC 3 (by norm_num)) zero_le (by
+    rw [zero_mul, zero_add, zero_mul, add_zero, zero_add]
+    calc (2 : V) + 1 = 3 * 1 := by norm_num
+      _ ≤ 3 * (d + 1) := mul_le_mul_of_nonneg_left le_add_self zero_le)
+  obtain ⟨iok, ind, iho, ish, ilen, ieq⟩ := identRoot_ok htbl hP hWl hx hΓ₁f hIE hIE₀ hIE' hIs₀ hIs' hD₀ hD' hm₀ hm' hi₀ hi'
+  obtain ⟨Γ₂, hΓ₂⟩ : ∃ Γ', Γ' = finalCtx Γ₁ (identRoot Wl x (i + β + 2) (sTop Wc T x 0) (i + β + 1) (0 + 2)) := ⟨_, rfl⟩
+  rw [← hΓ₂] at ieq
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [hΓ₂]; exact finalCtx_isFormulaSet 8 htbl hΓ₁f iok
+  have tr₂ : ∀ y ∈ Γ₁, y ∈ Γ₂ := fun y hy ↦ by rw [hΓ₂]; exact tr_of_zero ind ish hy
+  have hLay₂ : NodeLay walkPieces Wc T Γ₂ (fstIdx ρ) := by
+    rw [hfst]; exact Or.inl ⟨hk1, bLay.mono tr₂⟩
+  -- (3) the verify list
+  have hEv : (Ck' : V) * (dlen TAct ρ + 1) ^ 6 ≤ E := by
+    rw [← hdd]
+    exact cap_gen hE (c := (Ck' : V)) (a := 0) (b := 0) (by rw [add_zero]; exact hCk') zero_le
+      (by rw [zero_mul, add_zero, zero_mul, add_zero])
+  obtain ⟨vok, vnd, vsh, vgoal⟩ := hV V htbl hP htblN rfl hWl hWc hW₁ hW₂ hWp hA hd hEv L Γ₂ hL hΓ₂f hLay₂
+  rw [← hdd] at vsh vgoal
+  obtain ⟨σ, hσ⟩ : ∃ s, s = shiftsV L := ⟨_, rfl⟩
+  rw [← hσ] at vsh vgoal
+  have hσle : σ ≤ (Ck' : V) * (d + 1) ^ 6 := vsh
+  rw [hfst, len_memberList_single] at vgoal
+  have e12 : (1 : V) + 1 + σ = 0 + 2 + σ := by ring
+  rw [e12] at vgoal
+  obtain ⟨Γ₃, hΓ₃⟩ : ∃ Γ', Γ' = finalCtx Γ₂ L := ⟨_, rfl⟩
+  rw [← hΓ₃] at vgoal
+  have hΓ₃f : IsFormulaSet LAct Γ₃ := by rw [hΓ₃]; exact finalCtx_isFormulaSet 9 htbl hΓ₂f vok
+  have ieq₃ : neg LAct (eqFactB (^&(i + β + 1 + σ)) (^&(0 + 2 + σ))) ∈ Γ₃ := by
+    have := tr_fact vnd (isFormula_eqFactB (hf_ _) (hf_ _)) ieq
+    rw [shiftIterV_eqFactB (hf_ _) (hf_ _), termShiftIterV_fvar, termShiftIterV_fvar, ← hσ, ← hΓ₃] at this
+    exact this
+  -- (4) the retarget
+  have hRE₀ : i + β + 1 + σ + 3 ≤ E := cap_gen hE (c := (Ck' : V)) (a := 11) (b := 1)
+    (by rw [hCkv]; push_cast; exact add_le_add le_rfl (by norm_num)) hC1 (by
+      calc i + β + 1 + σ + 3 = σ + (β + 4) + i := by ring
+        _ ≤ (Ck' : V) * (d + 1) ^ 6 + (7 * (d + 1) + 4 * (d + 1)) + i :=
+            add_le_add (add_le_add hσle (add_le_add hβle (le_mul_of_one_le_right zero_le le_add_self))) le_rfl
+        _ = (Ck' : V) * (d + 1) ^ 6 + 11 * (d + 1) + 1 * i := by ring)
+  have hRE' : 0 + 2 + σ + 3 ≤ E := cap_gen hE (c := (Ck' : V)) (a := 5) (b := 0)
+    (by rw [hCkv]; push_cast; exact add_le_add le_rfl (by norm_num)) zero_le (by
+      rw [zero_mul, add_zero]
+      calc 0 + 2 + σ + 3 = σ + 5 := by ring
+        _ ≤ (Ck' : V) * (d + 1) ^ 6 + 5 * (d + 1) := add_le_add hσle (le_mul_of_one_le_right zero_le le_add_self))
+  have hEd : termLen LAct (bnum d) ≤ E := cap_gen hE (c := 0) (a := 7) (b := 0)
+    (by rw [zero_add]; exact hC 7 (by norm_num)) zero_le (by
+      rw [zero_mul, zero_add, zero_mul, add_zero]
+      calc termLen LAct (bnum d) ≤ 6 * ‖d‖ + 1 := termLen_bnum_le_V d
+        _ ≤ 6 * (d + 1) + 1 * (d + 1) :=
+            add_le_add (mul_le_mul_of_nonneg_left (le_trans (length_le d) le_self_add) zero_le)
+              (by rw [one_mul]; exact le_add_self)
+        _ = 7 * (d + 1) := by ring)
+  obtain ⟨rok, rnd, rsh, rgoal⟩ := retargetRoot_ok htbl hF hΓ₃f hRE₀ hRE' hEd vgoal ieq₃
+  -- the assembly
+  have hsh : shiftsV (vList Wl Wc W T x i ρ L) = β + (0 + (σ + 2)) := by
+    unfold vList
+    rw [shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, ← hβ, ← hσ, ← hdd, ish, rsh]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · unfold vList
+    rw [← hβ, ← hdd, ← hσ]
+    refine listOK_appendV (bok.mono (by exact_mod_cast (by decide : (8 : ℕ) ≤ 9))) ?_
+    rw [← hΓ₁]
+    refine listOK_appendV (iok.mono (by exact_mod_cast (by decide : (8 : ℕ) ≤ 9))) ?_
+    rw [← hΓ₂]
+    refine listOK_appendV vok ?_
+    rw [← hΓ₃]
+    exact rok.mono (by exact_mod_cast (by decide : (8 : ℕ) ≤ 9))
+  · unfold vList
+    rw [← hβ, ← hdd, ← hσ]
+    exact noDrop'_appendV bnd (noDrop'_appendV ind.noDrop' (noDrop'_appendV vnd rnd))
+  · rw [hsh, ← hdd, ← hCkv]
+    calc β + (0 + (σ + 2)) = σ + (β + 2) := by ring
+      _ ≤ (Ck' : V) * (d + 1) ^ 6 + (7 * (d + 1) + 2 * (d + 1)) :=
+          add_le_add hσle (add_le_add hβle (le_mul_of_one_le_right zero_le le_add_self))
+      _ = (Ck' : V) * (d + 1) ^ 6 + 9 * (d + 1) := by ring
+      _ ≤ (Ck' : V) * (d + 1) ^ 6 + 9 * (d + 1) ^ 6 := add_le_add le_rfl (mul_le_mul_of_nonneg_left (succ_le_pow6 d) zero_le)
+      _ = ((Ck' : V) + 9) * (d + 1) ^ 6 := by ring
+      _ ≤ Ckv * (d + 1) ^ 6 := mul_le_mul_of_nonneg_right (by rw [hCkv]; push_cast; exact add_le_add le_rfl (by norm_num)) zero_le
+  · rw [hsh, ← hdd]
+    have e : i + 1 + (β + (0 + (σ + 2))) = i + β + 1 + σ + 2 := by ring
+    rw [e]
+    unfold vList
+    rw [← hβ, ← hdd, ← hσ, finalCtx_appendV, ← hΓ₁, finalCtx_appendV, ← hΓ₂, finalCtx_appendV, ← hΓ₃]
+    exact rgoal
+
+end vList
+
 end ArithS
