@@ -1261,3 +1261,26 @@ individually. NOTE: `len_eqSteps_le` needs `TableOK`/`ProTable` — a purely str
 `eqFT` template would be a `Layout` addition.
 IN FLIGHT: `Verify2` (VerifyGraph', option B, verifyKit'_ok at the cubic length); `Top` (the kit
 generalized to a `(dlen ρ+1)^m` multiplier and the resulting degree).
+
+**§11 status — `Top` §12–§14 DONE: the polynomial-length kits (12a7e6b, 1b79981, 9e30741; census
+696, all standard).** `VerifyKit'' tbl N B W tblN Ck m` = `VerifyKit'` with every list-length
+multiplier `Ck·(dlen ρ+1)` replaced by `Ck·(dlen ρ+1)^m` AND the cap `Ck·((dlen ρ+1)^m + i) ≤ E`
+(a deliberate deviation: a list whose eigenvariable indices reach `Ck·(dlen ρ+1)^m` is applicable
+only at a cap `E ≥` those indices — `HornOK` charges `termLen (^&j) = j + 1 ≤ E` — so the unchanged
+cap would be UNSATISFIABLE for `m ≥ 2`); `verifyKit''_one_iff : VerifyKit'' … 1 ↔ VerifyKit'`;
+`KitPackage'' … m`; `top_main''`; `succ_pow_le : (a+1)^n ≤ 2^n·(a^n+1)`, `PB.final_pow`,
+`topBound''_pb … (4·n)`; **`def deg (m : ℕ) : ℕ := 4 * max m 1`; `deg_one : deg 1 = 4 := rfl`;
+`deg_three : deg 3 = 12 := rfl`; `theorem boundedInnerNec_of_kit'' (m) (hpkg : KitPackage'' … m) :
+BoundedInnerNec (deg m)`.** THE DEGREE IS `4m` (so 12 at `m = 3`, not the ≈ 10 estimated): with
+`L ~ G^m` the cap forces `E ~ G^m`, hence `kitQ/growK ~ G^m`, `ctxBoundG ~ L²·growK ~ G^{3m}`, the
+verify block `~ L·ctxBoundG ~ G^{4m}`; the closing block's `27·Q·E` is the same order. EVERY
+degree loss traces to ONE root cause — variable indices charged in UNARY (the E cap, the `qVec`
+iterate, the context growth) — so the deep fix is binary index charging in the M1 length measure
+(`Length.lean`; touches the M1 constants and the census), with the `certSubst` redesign and the
+occurrence accounting as the cheaper partial fixes. TRAPS: with a symbolic degree `n`, `0 + n`,
+`n + n`, `n + 1` are not definitionally `n`/`2n`/… — `mono` every product to the target; a
+constant mentioning a proof-local cannot be assigned to an earlier metavariable — introduce it
+before the `exact ⟨_, …⟩`; bind implicits explicitly in an `iff` whose cap proof leaves `E` a
+metavariable.
+IN FLIGHT: `Verify2` (VerifyGraph', option B, verifyKit''_ok at m = 3); `IndRec` (case (ii), the
+induction-instance recognizer — the last named weakening).
