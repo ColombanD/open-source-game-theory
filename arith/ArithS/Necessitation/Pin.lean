@@ -960,4 +960,414 @@ theorem substOracle_of (χ : Semisentence LAct 1) :
 
 end substOracle
 
+/-! ## 6. The pin with its length and size discipline; the three cost conjuncts; `PinKit'`
+
+The cost is taken in ONE shot: `Frag1.costSum_le_of_sizeOK` over the whole assembled list (every block is
+`SizeOK` — the walks and `certSubst` are Horn-only, `NumId` is `SizeOK Cn Cn`, the kernel `SizeOK 0 0`, and
+`bnumSteps` is `SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖)`), at `Q := Cχ·(‖k‖ + 1) ≤ kitQ Cχ B E` and `D := Cχ·(‖k‖ + 1)³ =
+kitD Cχ ‖k‖`, with `len P ≤ Cχ·(‖k‖ + 1)`; the end-context bounds are `ctxVec_len_le_sizeOK` at `len P`. This
+is equivalent to (and shorter than) summing the per-block cost lemmas through `costSum_appendV`. -/
+
+section pinFull
+
+lemma costK_mono {N E B M Q Q' D D' : V} (hQ : Q ≤ Q') (hD : D ≤ D') : costK N E B M Q D ≤ costK N E B M Q' D' := by
+  unfold costK
+  exact add_le_add (add_le_add (add_le_add (add_le_add (add_le_add le_rfl
+    (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hQ zero_le) zero_le)) le_rfl)
+    (mul_le_mul_of_nonneg_left hQ zero_le)) hD) le_rfl
+
+lemma growK_mono {B E Q Q' : V} (hQ : Q ≤ Q') : growK B E Q ≤ growK B E Q' := by
+  unfold growK; exact add_le_add le_rfl (mul_le_mul_of_nonneg_left hQ zero_le)
+
+lemma ctxBoundG_mono2 {G G' Γ L L' : V} (hG : G ≤ G') (hL : L ≤ L') : ctxBoundG G Γ L ≤ ctxBoundG G' Γ L' := by
+  unfold ctxBoundG
+  exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right hL zero_le))
+    (mul_le_mul (add_le_add (mul_le_mul hL hL zero_le zero_le) hL) hG zero_le zero_le)
+
+set_option maxHeartbeats 4000000 in
+/-- **The pin, fully produced** (`pin_assembly` with the two oracles DISCHARGED — `bnumSteps` and the re-indexed
+`certSubst` — and the length and size discipline tracked): for an explicit standard `Cχ` (depending on `χ` and the
+`NumSteps` bounds `N' B'`), from the root layout of `instB ⌜χ⌝ k` at `&i`, a list `P` applicable at cap `9`,
+cut-admitting, `shiftsV P ≤ Cχ·(‖k‖+1)`, leaving `instBFact &(i + 2 + shiftsV P) (qNum χ) (bnum k)`, with
+`len P ≤ Cχ·(‖k‖+1)` and `SizeOK (Cχ·(‖k‖+1)) (Cχ·(‖k‖+1)³) P`. -/
+theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
+    ∃ Cχ : ℕ, 1 ≤ Cχ ∧ ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N tblN E Γ i k : V},
+      TableOK tbl N → NumIdTable tbl → NumTableOK tblN (N' : V) (B' : V) → IsFormulaSet LAct Γ →
+      RootLayout Γ (instB (⌜χ⌝ : V) k) i → (Cχ : V) * (‖k‖ + i + 1) ≤ E →
+      ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P ≤ (Cχ : V) * (‖k‖ + 1) ∧
+        neg LAct (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P ∧
+        len P ≤ (Cχ : V) * (‖k‖ + 1) ∧ SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) P := by
+  obtain ⟨Cn, hCn⟩ := numId_sentence χ
+  obtain ⟨Cs, hCs⟩ := substSteps_ok χ
+  obtain ⟨fχ, hfχ⟩ : ∃ f : ℕ, f = flN (⌜χ⌝ : ℕ) := ⟨_, rfl⟩
+  obtain ⟨qχ, hqχ⟩ : ∃ q : ℕ, q = (⌜χ⌝ : ℕ) := ⟨_, rfl⟩
+  obtain ⟨A, hA⟩ : ∃ A : ℕ, A = 40 * (fχ + Cn + 27 + qχ + 1) := ⟨_, rfl⟩
+  obtain ⟨C₀, hC₀⟩ : ∃ C : ℕ, C = A * (Cs + 1) := ⟨_, rfl⟩
+  obtain ⟨R, hR⟩ : ∃ R : ℕ, R = 12 * fχ + 100 + Cn + Cs + 6 * B' + 5 * (N' + 9600 * B') := ⟨_, rfl⟩
+  obtain ⟨Cχ, hCχ⟩ : ∃ C : ℕ, C = C₀ + R := ⟨_, rfl⟩
+  refine ⟨Cχ, by omega, ?_⟩
+  intro V _ _ tbl N tblN E Γ i k htbl hT htblN hΓ hR hE
+  have hW : WalkTable tbl := hT.walkTable
+  have hu1 : (1 : V) ≤ ‖k‖ + 1 := le_add_self
+  -- the standard quantities of χ in V
+  have hfV : formulaLen LAct (⌜χ⌝ : V) = (fχ : V) := by
+    rw [hfχ, ← Sentence.coe_quote_eq_quote (V := V) χ, flN_cast]
+  have hqV : ((qχ : ℕ) : V) = ⌜χ⌝ := by rw [hqχ]; exact Sentence.coe_quote_eq_quote χ
+  have hr : IsSemiformula LAct (1 : V) (⌜χ⌝ : V) := Sentence.quote_isSemiformul₁ χ
+  have hlenk : termLen LAct (bnum k) ≤ 6 * ‖k‖ + 1 := termLen_bnum_le_bk le_rfl
+  have hC₀C : C₀ ≤ Cχ := by rw [hCχ]; exact Nat.le_add_right _ _
+  have hRC : R ≤ Cχ := by rw [hCχ]; exact Nat.le_add_left _ _
+  have hAC₀ : A ≤ C₀ := by rw [hC₀]; exact Nat.le_mul_of_pos_right A (by omega)
+  have hAC : A ≤ Cχ := le_trans hAC₀ hC₀C
+  have hACs : A + Cs ≤ Cχ := by
+    refine le_trans ?_ hC₀C
+    rw [hC₀]
+    calc A + Cs ≤ A + A * Cs := add_le_add (le_refl _) (Nat.le_mul_of_pos_left Cs (by omega))
+      _ = A * (Cs + 1) := by ring
+  -- ===== block 1: the walk of χ
+  have cap1 : 2 * (1 : V) + 2 * formulaLen LAct (⌜χ⌝ : V) + 8 ≤ E := by
+    rw [hfV]
+    refine cap_master' (A := A) (by omega) hAC hE ?_
+    calc 2 * (1 : V) + 2 * (fχ : V) + 8 = ((2 * fχ + 10 : ℕ) : V) := by push_cast; ring
+      _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (lin_const hu1)
+      _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
+  obtain ⟨ok₁, nd₁, sh₁, cnt₁, _⟩ := describeF_ok htbl hW hr cap1 hΓ
+  have hl₁ := len_describeF_le walkPieces hr
+  set S₁ := describeF walkPieces 1 (⌜χ⌝ : V) with hS₁
+  set cχ := descCountF walkPieces 1 (⌜χ⌝ : V) with hcχ
+  set Γ₁ := finalCtx Γ S₁ with hΓ₁def
+  have hΓ₁ : IsFormulaSet LAct Γ₁ := finalCtx_isFormulaSet 8 htbl hΓ ok₁
+  have hcχle : cχ ≤ (2 * fχ : ℕ) * (‖k‖ + 1) := by
+    have : cχ + 1 ≤ 2 * (fχ : V) := by rw [← hfV]; exact cnt₁
+    push_cast
+    exact le_trans (le_trans le_self_add this) (le_mul_of_one_le_right (by simp) hu1)
+  have hlen₁ : len S₁ ≤ ((12 * fχ : ℕ) : V) * (‖k‖ + 1) := by
+    have : len S₁ ≤ 12 * (fχ : V) := by rw [← hfV]; exact le_trans le_self_add hl₁
+    push_cast
+    exact le_trans this (le_mul_of_one_le_right zero_le hu1)
+  have hsz₁ : SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) S₁ := sizeOK_of_hornOnly (hornOnly_describeF rfl hr)
+  have hDχ₁ : DossF walkPieces Γ₁ 1 (⌜χ⌝ : V) 0 := dossF_of_walk nd₁
+  have hR₁ : RootLayout Γ₁ (instB (⌜χ⌝ : V) k) (i + cχ) := by
+    have := hR.transport nd₁.noDrop'; rwa [sh₁] at this
+  -- ===== block 2: the vector walk of w = bnum k ∷ 0
+  set w : V := bnum k ∷ 0 with hwdef
+  have hw : IsSemitermVec LAct ((0 : V) + 1) (0 : V) w :=
+    IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) (0 : V)) (bnum_term_LAct k)
+  have hw' : IsSemitermVec LAct (1 : V) (0 : V) w := by rwa [zero_add] at hw
+  have hlenw : listSum (termLenVec LAct 1 w) = termLen LAct (bnum k) := by
+    rw [hwdef, show (1 : V) = 0 + 1 by rw [zero_add],
+      termLenVec_cons (bnum_term_LAct k).isUTerm (IsSemitermVec.nil (L := LAct) (0 : V)).isUTerm, termLenVec_nil,
+      listSum_adjoin, listSum_nil, add_zero]
+  have cap2 : 2 * (0 : V) + 2 * listSum (termLenVec LAct 1 w) + 8 ≤ E := by
+    rw [hlenw]
+    refine cap_master' (A := A) (by omega) hAC hE ?_
+    calc 2 * (0 : V) + 2 * termLen LAct (bnum k) + 8 ≤ 2 * 0 + 2 * (6 * ‖k‖ + 1) + 8 :=
+          add_le_add (add_le_add (le_refl _) (mul_le_mul_of_nonneg_left hlenk (by simp))) (le_refl _)
+      _ = 12 * ‖k‖ + 10 := by ring
+      _ ≤ 12 * ‖k‖ + 12 := add_le_add (le_refl _) (by norm_num)
+      _ = ((12 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
+      _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (le_refl _)
+      _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
+  have ih : ∀ m < (1 : V), TermOK tbl walkPieces 0 w.[m] := fun m hm ↦ termOK_of_isSemiterm htbl hW rfl 0 _ (hw'.nth hm)
+  obtain ⟨_, hcnt₂, hVF⟩ := descVecAux_ok htbl hW rfl (by norm_num : (1 : V) ≤ 2) hw' ih cap2 1 le_rfl
+  obtain ⟨ok₂, nd₂, sh₂, _⟩ := hVF Γ₁ hΓ₁
+  set S₂ := π₂ (descVecAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hS₂
+  set cw := π₁ (descVecAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hcw
+  set Γ₂ := finalCtx Γ₁ S₂ with hΓ₂def
+  have hΓ₂ : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 8 htbl hΓ₁ ok₂
+  have hlw : len w = 1 := by rw [hwdef, len_adjoin, len_nil, zero_add]
+  have htl : takeLast w 1 = w := by have := takeLast_len_self w; rwa [hlw] at this
+  have hcwle : cw ≤ ((14 : ℕ) : V) * (‖k‖ + 1) := by
+    have h2 := hcnt₂
+    rw [htl, hlenw] at h2
+    calc cw ≤ 2 * termLen LAct (bnum k) := h2
+      _ ≤ 2 * (6 * ‖k‖ + 1) := mul_le_mul_of_nonneg_left hlenk (by simp)
+      _ = 12 * ‖k‖ + 2 := by ring
+      _ ≤ 14 * ‖k‖ + 14 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) (by simp)) (by norm_num)
+      _ = ((14 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
+  have hlen₂ : len S₂ ≤ ((86 : ℕ) : V) * (‖k‖ + 1) := by
+    obtain ⟨_, hl⟩ := len_descVecAux_le hw' (fun i hi ↦ len_describeT_le walkPieces 0 _ (hw'.nth hi)) 1 le_rfl
+    rw [htl, hlenw] at hl
+    calc len S₂ ≤ 12 * termLen LAct (bnum k) + 4 := le_trans le_self_add (le_trans hl (le_of_eq (by ring)))
+      _ ≤ 12 * (6 * ‖k‖ + 1) + 4 := add_le_add (mul_le_mul_of_nonneg_left hlenk zero_le) le_rfl
+      _ = 72 * ‖k‖ + 16 := by ring
+      _ ≤ 86 * ‖k‖ + 86 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
+      _ = ((86 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
+  have hsz₂ : SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) S₂ :=
+    sizeOK_of_hornOnly (hornOnly_descVecAux rfl hw' (fun i hi ↦ hornOnly_describeT rfl 0 _ (hw'.nth hi)) 1 le_rfl)
+  have hDw₂ : DossV walkPieces Γ₂ 0 1 w 1 0 := dossV_of_walk nd₂
+  have hDχ₂ : DossF walkPieces Γ₂ 1 (⌜χ⌝ : V) cw := by
+    have := dossF_transport' nd₂.noDrop' hDχ₁; rwa [sh₂, zero_add] at this
+  have hR₂ : RootLayout Γ₂ (instB (⌜χ⌝ : V) k) (i + cχ + cw) := by
+    have := hR₁.transport nd₂.noDrop'; rwa [sh₂] at this
+  have hDw₂' : DossV walkPieces Γ₂ 0 1 w ((0 : V) + 1) 0 := by rw [zero_add]; exact hDw₂
+  obtain ⟨ha₂, _, hDt₂, _⟩ := dossV_succ htbl hW rfl hw' (by rw [zero_add]) hDw₂'
+  have e10 : (1 : V) - ((0 : V) + 1) = 0 := by rw [zero_add]; exact tsub_eq_zero_of_le (le_refl _)
+  rw [e10, hwdef, nth_adjoin_zero, zero_add] at hDt₂
+  rw [vRef_zero, zero_add] at ha₂
+  -- ===== block 3: the binary numeral certification (bnumSteps)
+  have cap3 : (1 : V) + 27 * (‖k‖ + 1) ≤ E := by
+    refine cap_master (A := 28) (by omega) hE ?_
+    calc (1 : V) + 27 * (‖k‖ + 1) ≤ 1 * (‖k‖ + 1) + 27 * (‖k‖ + 1) :=
+          add_le_add (le_mul_of_one_le_right zero_le hu1) le_rfl
+      _ = ((28 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
+      _ ≤ ((28 : ℕ) : V) * (‖k‖ + 1) + ((28 : ℕ) : V) * i := le_self_add
+  obtain ⟨okb, ndb, shb, hlenb, hszb, hbf⟩ := bnumSteps_ok htbl hT.layoutTable hT.bnRows htblN hΓ₂ hDt₂ cap3
+  set Pb := bnumSteps numIdPieces walkPieces tblN k 1 with hPbdef
+  set Γ₃ := finalCtx Γ₂ Pb with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := finalCtx_isFormulaSet 9 htbl hΓ₂ okb
+  have hbf₃ : neg LAct (bnumFact (^&1) (bnum k)) ∈ Γ₃ := hbf
+  have ha₃ : neg LAct (adjFact (^&0) (^&1) (𝟎 : V)) ∈ Γ₃ := by
+    have := transport_adj ndb ha₂; rwa [shb, add_zero, add_zero] at this
+  have hDχ₃ : DossF walkPieces Γ₃ 1 (⌜χ⌝ : V) cw := by
+    have := dossF_transport' ndb hDχ₂; rwa [shb, add_zero] at this
+  have hDw₃ : DossV walkPieces Γ₂ 0 1 w 1 0 → DossV walkPieces Γ₃ 0 1 w 1 0 := fun h ↦ by
+    have := dossV_transport' ndb h; rwa [shb, add_zero] at this
+  have hDw₃' := hDw₃ hDw₂
+  have hR₃ : RootLayout Γ₃ (instB (⌜χ⌝ : V) k) (i + cχ + cw) := by
+    have := hR₂.transport ndb; rwa [shb, add_zero] at this
+  have hlenb' : len Pb ≤ ((9 : ℕ) : V) * (‖k‖ + 1) := by
+    refine le_trans hlenb ?_
+    push_cast
+    calc 8 * ‖k‖ + 1 ≤ 9 * ‖k‖ + 9 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
+      _ = 9 * (‖k‖ + 1) := by ring
+  -- the size discipline of Pb at the kit's parameters
+  have hu3 : (‖k‖ + 1) ≤ (‖k‖ + 1) ^ 3 := by
+    rw [show (‖k‖ + 1) ^ 3 = (‖k‖ + 1) * ((‖k‖ + 1) * (‖k‖ + 1)) by ring]
+    exact le_mul_of_one_le_right zero_le (one_le_mul_of_one_le_of_one_le hu1 hu1)
+  have hu23 : (‖k‖ + 1) * (‖k‖ + 1) ≤ (‖k‖ + 1) ^ 3 := by
+    rw [show (‖k‖ + 1) ^ 3 = (‖k‖ + 1) * (‖k‖ + 1) * (‖k‖ + 1) by ring]
+    exact le_mul_of_one_le_right zero_le hu1
+  have hQb : bQ (B' : V) ‖k‖ ≤ (Cχ : V) * (‖k‖ + 1) := by
+    unfold bQ
+    calc (B' : V) * (6 * ‖k‖ + 1) ≤ (B' : V) * (6 * (‖k‖ + 1)) :=
+          mul_le_mul_of_nonneg_left (by rw [mul_add, mul_one]; exact add_le_add le_rfl (by norm_num)) zero_le
+      _ = ((6 * B' : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
+      _ ≤ (Cχ : V) * (‖k‖ + 1) := lin_mono (by omega) le_rfl
+  have hDb : bD (N' : V) (B' : V) ‖k‖ ≤ (Cχ : V) * (‖k‖ + 1) ^ 3 := by
+    unfold bD nodeCost
+    have hnc : (N' : V) + 800 * ((B' : V) * (12 * ‖k‖ + 3)) ≤ ((N' + 9600 * B' : ℕ) : V) * (‖k‖ + 1) := by
+      push_cast
+      calc (N' : V) + 800 * ((B' : V) * (12 * ‖k‖ + 3)) ≤ (N' : V) * (‖k‖ + 1) + 800 * ((B' : V) * (12 * (‖k‖ + 1))) :=
+            add_le_add (le_mul_of_one_le_right zero_le hu1) (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
+              (by rw [mul_add, mul_one]; exact add_le_add le_rfl (by norm_num)) zero_le) zero_le)
+        _ = ((N' : V) + 9600 * (B' : V)) * (‖k‖ + 1) := by ring
+    have hk2 : ‖k‖ + 2 ≤ 2 * (‖k‖ + 1) := by
+      rw [mul_add, mul_one]
+      calc ‖k‖ + 2 ≤ ‖k‖ + ‖k‖ + 2 := add_le_add le_self_add le_rfl
+        _ = 2 * ‖k‖ + 2 := by ring
+    calc (1 + 1) * (‖k‖ + 2) * ((N' : V) + 800 * ((B' : V) * (12 * ‖k‖ + 3))) + ((N' : V) + 800 * ((B' : V) * (12 * ‖k‖ + 3)))
+        ≤ (1 + 1) * (2 * (‖k‖ + 1)) * (((N' + 9600 * B' : ℕ) : V) * (‖k‖ + 1)) + ((N' + 9600 * B' : ℕ) : V) * (‖k‖ + 1) :=
+          add_le_add (mul_le_mul (mul_le_mul_of_nonneg_left hk2 zero_le) hnc zero_le zero_le) hnc
+      _ = ((N' + 9600 * B' : ℕ) : V) * (4 * ((‖k‖ + 1) * (‖k‖ + 1)) + (‖k‖ + 1)) := by ring
+      _ ≤ ((N' + 9600 * B' : ℕ) : V) * (4 * (‖k‖ + 1) ^ 3 + (‖k‖ + 1) ^ 3) :=
+          mul_le_mul_of_nonneg_left (add_le_add (mul_le_mul_of_nonneg_left hu23 zero_le) hu3) zero_le
+      _ = ((5 * (N' + 9600 * B') : ℕ) : V) * (‖k‖ + 1) ^ 3 := by push_cast; ring
+      _ ≤ (Cχ : V) * (‖k‖ + 1) ^ 3 := mul_le_mul_of_nonneg_right (by exact_mod_cast (by omega : 5 * (N' + 9600 * B') ≤ Cχ)) zero_le
+  have hszb' : SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) Pb := hszb.mono hQb hDb
+  -- ===== block 4: the numeral identification of χ (NumId)
+  have cap4 : (Cn : V) + cw ≤ E := by
+    refine cap_master' (A := A) (by omega) hAC hE ?_
+    calc (Cn : V) + cw ≤ (Cn : V) * (‖k‖ + 1) + ((14 : ℕ) : V) * (‖k‖ + 1) := add_le_add (lin_const hu1) hcwle
+      _ = ((Cn + 14 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
+      _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (le_refl _)
+      _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
+  obtain ⟨Pn, hPn⟩ := hCn V htbl hT.layoutTable hΓ₃ (by rw [Nat.cast_one]; exact hDχ₃) cap4
+  set Γ₄ := finalCtx Γ₃ Pn with hΓ₄def
+  have hΓ₄ : IsFormulaSet LAct Γ₄ := hPn.isFormulaSet htbl hΓ₃
+  have hy₄ : neg LAct (eqFact (^&cw) (numeral (⌜χ⌝ : V))) ∈ Γ₄ := hPn.2.2.2.2.2
+  have hbf₄ := hPn.mem hbf₃
+  have ha₄ := hPn.mem ha₃
+  have hDχ₄ : DossF walkPieces Γ₄ 1 (⌜χ⌝ : V) cw := hPn.dossF hDχ₃
+  have hDw₄ : DossV walkPieces Γ₄ 0 1 w 1 0 := hPn.dossV hDw₃'
+  have hR₄ : RootLayout Γ₄ (instB (⌜χ⌝ : V) k) (i + cχ + cw) := by
+    have := hR₃.transport hPn.2.1; rwa [hPn.2.2.1, add_zero] at this
+  have hDx₄ : DossF walkPieces Γ₄ 0 (instB (⌜χ⌝ : V) k) (i + cχ + cw + 2) := hR₄.1
+  have hlenn : len Pn ≤ (Cn : V) * (‖k‖ + 1) := le_trans hPn.2.2.2.1 (lin_const hu1)
+  have hszn : SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) Pn :=
+    hPn.2.2.2.2.1.mono (lin_mono (by omega) (lin_const hu1)) (le_trans (lin_mono (by omega) (lin_const hu1))
+      (mul_le_mul_of_nonneg_left hu3 zero_le))
+  -- ===== block 5: the certified substitution (substSteps)
+  have hin : ‖k‖ + (i + cχ + cw + 2) + cw + 0 + 1 ≤ ((2 * fχ + 32 : ℕ) : V) * (‖k‖ + 1) + i := by
+    have h1 : ‖k‖ ≤ ((1 : ℕ) : V) * (‖k‖ + 1) := by push_cast; rw [one_mul]; exact le_self_add
+    have hsum : ‖k‖ + cχ + cw + 2 + cw + 1 ≤ ((2 * fχ + 32 : ℕ) : V) * (‖k‖ + 1) :=
+      lin_mono (by omega) (lin_add (lin_add (lin_add (lin_add (lin_add h1 hcχle) hcwle) (lin_two hu1)) hcwle) (lin_one hu1))
+    calc ‖k‖ + (i + cχ + cw + 2) + cw + 0 + 1 = (‖k‖ + cχ + cw + 2 + cw + 1) + i := by ring
+      _ ≤ ((2 * fχ + 32 : ℕ) : V) * (‖k‖ + 1) + i := add_le_add hsum (le_refl i)
+  have cap5 : (Cs : V) * (‖k‖ + (i + cχ + cw + 2) + cw + 0 + 1) ≤ E := by
+    refine cap_master (A := Cs * (2 * fχ + 32)) ?_ hE ?_
+    · refine le_trans ?_ hC₀C
+      rw [hC₀, hA]
+      calc Cs * (2 * fχ + 32) ≤ (Cs + 1) * (40 * (fχ + Cn + 27 + qχ + 1)) := Nat.mul_le_mul (by omega) (by omega)
+        _ = 40 * (fχ + Cn + 27 + qχ + 1) * (Cs + 1) := Nat.mul_comm _ _
+    · calc (Cs : V) * (‖k‖ + (i + cχ + cw + 2) + cw + 0 + 1)
+          ≤ (Cs : V) * (((2 * fχ + 32 : ℕ) : V) * (‖k‖ + 1) + i) := mul_le_mul_of_nonneg_left hin (by simp)
+        _ = ((Cs * (2 * fχ + 32) : ℕ) : V) * (‖k‖ + 1) + (Cs : V) * i := by push_cast; ring
+        _ ≤ ((Cs * (2 * fχ + 32) : ℕ) : V) * (‖k‖ + 1) + ((Cs * (2 * fχ + 32) : ℕ) : V) * i :=
+          add_le_add (le_refl _) (mul_le_mul_of_nonneg_right (by exact_mod_cast Nat.le_mul_of_pos_right Cs (by omega)) (by simp))
+  obtain ⟨Ps, oks, nds, hhos, shs, hlens, hsub⟩ := hCs V htbl hT.proTable hΓ₄ hDχ₄ hDx₄ hDw₄ cap5
+  set σs := shiftsV Ps with hσs
+  set Γ₅ := finalCtx Γ₄ Ps with hΓ₅def
+  have hΓ₅ : IsFormulaSet LAct Γ₅ := finalCtx_isFormulaSet 9 htbl hΓ₄ oks
+  have hy₅ := transport_eq nds hy₄
+  have hb₅ := transport_bnum nds hbf₄
+  have ha₅ := transport_adj nds ha₄
+  have hszs : SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) Ps := sizeOK_of_hornOnly hhos
+  -- ===== block 6: the kernel
+  set x := i + cχ + cw + 2 + σs with hxdef
+  have hCχ1 : 1 ≤ Cχ := by omega
+  have hcapx : x + 1 ≤ E := by
+    refine cap_master' (A := Cχ) hCχ1 le_rfl hE ?_
+    have hsum : cχ + cw + 2 + σs + 1 ≤ ((2 * fχ + 14 + 2 + Cs + 1 : ℕ) : V) * (‖k‖ + 1) :=
+      lin_add (lin_add (lin_add (lin_add hcχle hcwle) (lin_two hu1)) shs) (lin_one hu1)
+    calc x + 1 = (cχ + cw + 2 + σs + 1) + i := by rw [hxdef]; ring
+      _ ≤ ((2 * fχ + 14 + 2 + Cs + 1 : ℕ) : V) * (‖k‖ + 1) + i := add_le_add hsum (le_refl i)
+      _ ≤ (Cχ : V) * (‖k‖ + 1) + i := add_le_add (lin_mono (by omega) (le_refl _)) (le_refl i)
+  have hcapy : cw + σs + 1 ≤ E := by
+    refine cap_master' (A := Cχ) hCχ1 le_rfl hE ?_
+    have hsum : cw + σs + 1 ≤ ((14 + Cs + 1 : ℕ) : V) * (‖k‖ + 1) := lin_add (lin_add hcwle shs) (lin_one hu1)
+    exact le_trans (lin_mono (by omega) hsum) le_self_add
+  have hcapv : 0 + σs + 1 ≤ E := by
+    refine cap_master' (A := Cχ) hCχ1 le_rfl hE ?_
+    have hsum : 0 + σs + 1 ≤ ((Cs + 1 : ℕ) : V) * (‖k‖ + 1) := by
+      rw [zero_add]; exact lin_add shs (lin_one hu1)
+    exact le_trans (lin_mono (by omega) hsum) le_self_add
+  have hcapt : 1 + σs + 1 ≤ E := by
+    refine cap_master' (A := Cχ) hCχ1 le_rfl hE ?_
+    have hsum : 1 + σs + 1 ≤ ((1 + Cs + 1 : ℕ) : V) * (‖k‖ + 1) := lin_add (lin_add (lin_one hu1) shs) (lin_one hu1)
+    exact le_trans (lin_mono (by omega) hsum) le_self_add
+  have hcapc : 2 * (⌜χ⌝ : V) + 1 ≤ E := by
+    rw [← hqV]
+    refine cap_master' (A := A) (by omega) hAC hE ?_
+    calc 2 * ((qχ : ℕ) : V) + 1 = ((2 * qχ + 1 : ℕ) : V) := by push_cast; ring
+      _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (lin_const hu1)
+      _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
+  have hcapk : termLen LAct (bnum k) ≤ E := by
+    refine cap_master' (A := A) (by omega) hAC hE ?_
+    calc termLen LAct (bnum k) ≤ 6 * ‖k‖ + 1 := hlenk
+      _ ≤ 6 * ‖k‖ + 6 := add_le_add (le_refl _) (by norm_num)
+      _ = ((6 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
+      _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (le_refl _)
+      _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
+  obtain ⟨kok, knd, ksh, klen, ksz, hK⟩ := pinKernel_ok (x := x) (y := cw + σs) (v := 0 + σs) (t := 1 + σs)
+    (c := (⌜χ⌝ : V)) (k := k) htbl hT rfl hΓ₅ hcapx hcapy hcapv hcapt hcapc hcapk hsub hy₅ hb₅ ha₅
+  set K := pinKernelSteps numIdPieces x (cw + σs) (0 + σs) (1 + σs) (⌜χ⌝ : V) k with hKdef
+  -- ===== the assembly
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : 8 ≤ 9)
+  refine ⟨appendV S₁ (appendV S₂ (appendV Pb (appendV Pn (appendV Ps K)))), ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact listOK_appendV (ok₁.mono h89) (listOK_appendV (ok₂.mono h89) (listOK_appendV okb
+      (listOK_appendV hPn.1 (listOK_appendV oks kok))))
+  · exact noDrop'_appendV nd₁.noDrop' (noDrop'_appendV nd₂.noDrop' (noDrop'_appendV ndb
+      (noDrop'_appendV hPn.2.1 (noDrop'_appendV nds knd))))
+  · rw [shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, sh₁, sh₂, shb, hPn.2.2.1, ksh]
+    have hsum : cχ + (cw + (0 + (0 + (σs + 0)))) ≤ ((2 * fχ + (14 + Cs) : ℕ) : V) * (‖k‖ + 1) := by
+      rw [zero_add, zero_add, add_zero]
+      exact lin_add hcχle (lin_add hcwle shs)
+    exact lin_mono (by omega) hsum
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV,
+      shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, sh₁, sh₂, shb, hPn.2.2.1, ksh]
+    have e : i + 2 + (cχ + (cw + (0 + (0 + (σs + 0))))) = x := by rw [hxdef]; ring
+    rw [e]
+    exact hK
+  · rw [len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, klen]
+    have hsum : len S₁ + (len S₂ + (len Pb + (len Pn + (len Ps + 2)))) ≤
+        ((12 * fχ + (86 + (9 + (Cn + (Cs + 2)))) : ℕ) : V) * (‖k‖ + 1) :=
+      lin_add hlen₁ (lin_add hlen₂ (lin_add hlenb' (lin_add hlenn (lin_add hlens (lin_two hu1)))))
+    exact lin_mono (by omega) hsum
+  · exact sizeOK_appendV hsz₁ (sizeOK_appendV hsz₂ (sizeOK_appendV hszb' (sizeOK_appendV hszn
+      (sizeOK_appendV hszs (ksz.mono zero_le zero_le)))))
+
+/-- **`PinKit'` holds**, for every `χ`, with the constant of `pin_full` (per `χ` and the `NumSteps` bounds), on
+any pin table with row-body bound `B`: the four fact conjuncts are `pin_full`'s, the three cost conjuncts are
+`Frag1.costSum_le_of_sizeOK`/`ctxVec_len_le_sizeOK` over the whole list at `Q = Cχ·(‖k‖+1) ≤ kitQ Cχ B E`,
+`D = kitD Cχ ‖k‖`, `len P ≤ Cχ·(‖k‖+1)`. -/
+theorem pinKit'_of (χ : Semisentence LAct 1) (N' B' : ℕ) :
+    ∃ Cχ : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N B tblN : V},
+      TableOK tbl N → NumIdTable tbl → (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
+      NumTableOK tblN (N' : V) (B' : V) → PinKit' χ tbl N B Cχ := by
+  obtain ⟨Cχ, hCχ1, h⟩ := pin_full χ N' B'
+  refine ⟨Cχ, fun V _ _ tbl N B tblN htbl hT hBt htblN ↦ ⟨fun k Γ i E hR hΓ hE ↦ ?_⟩⟩
+  obtain ⟨P, ok, nd, sh, hf, hlen, hsz⟩ := h V htbl hT htblN hΓ hR hE
+  have hu1 : (1 : V) ≤ ‖k‖ + 1 := le_add_self
+  have hkE : ‖k‖ + 1 ≤ E := by
+    refine le_trans ?_ hE
+    calc ‖k‖ + 1 ≤ ‖k‖ + i + 1 := add_le_add le_self_add le_rfl
+      _ ≤ (Cχ : V) * (‖k‖ + i + 1) := le_mul_of_one_le_left zero_le (by exact_mod_cast hCχ1)
+  have hE1 : (1 : V) ≤ E := le_trans hu1 hkE
+  have hQk : (Cχ : V) * (‖k‖ + 1) ≤ kitQ (Cχ : V) B E := by
+    unfold kitQ
+    refine mul_le_mul_of_nonneg_left (le_trans hkE ?_) zero_le
+    calc E ≤ E + 1 := le_self_add
+      _ ≤ (B + 1) * (E + 1) := le_mul_of_one_le_left zero_le le_add_self
+  have hDk : (Cχ : V) * (‖k‖ + 1) ^ 3 ≤ kitD (Cχ : V) ‖k‖ := le_of_eq rfl
+  have hG : growK B E ((Cχ : V) * (‖k‖ + 1)) ≤ growK B E (kitQ (Cχ : V) B E) := growK_mono hQk
+  have cost := costSum_le_of_sizeOK 9 hE1 htbl hBt ok hsz
+  obtain ⟨hF, hS⟩ := ctxVec_len_le_sizeOK 9 hE1 htbl hBt ok hsz (len P) le_rfl
+  have h38 : (3 * ((9 : ℕ) : V) + 11) = 38 := by push_cast; norm_num
+  refine ⟨P, ok, nd, sh, hf, ?_, ?_, ?_⟩
+  · refine le_trans cost ?_
+    rw [h38]
+    refine mul_le_mul hlen ?_ zero_le zero_le
+    refine add_le_add (costK_mono hQk hDk) (mul_le_mul_of_nonneg_left ?_ zero_le)
+    exact add_le_add (ctxBoundG_mono2 hG hlen) (add_le_add le_rfl (mul_le_mul hlen hG zero_le zero_le))
+  · show setLen LAct (ctxVec Γ P).[len P] ≤ _
+    exact le_trans hS (ctxBoundG_mono2 hG hlen)
+  · show fvOccS LAct (ctxVec Γ P).[len P] ≤ _
+    exact le_trans hF (add_le_add le_rfl (mul_le_mul hlen hG zero_le zero_le))
+
+end pinFull
+
+/-! ## 7. The package: one table per model, the row-body bound, `PinKit'` for every `χ` -/
+
+section package
+
+/-- The row-body bound of a `WRow` list: the sum of the standard lengths of its matrices. -/
+noncomputable def rowsB : List WRow → ℕ
+  | [] => 0
+  | r :: rs => flN (⌜Semiformula.lMap emb r.B⌝ : ℕ) + rowsB rs
+
+lemma flN_le_rowsB : ∀ (rs : List WRow) (i : ℕ) (h : i < rs.length),
+    flN (⌜Semiformula.lMap emb (rs[i]).B⌝ : ℕ) ≤ rowsB rs
+  | [], i, h => absurd h (Nat.not_lt_zero _)
+  | r :: rs, 0, _ => by simp only [List.getElem_cons_zero, rowsB]; exact Nat.le_add_right _ _
+  | r :: rs, i + 1, h => by
+    simp only [List.getElem_cons_succ, rowsB]
+    exact le_trans (flN_le_rowsB rs i (Nat.lt_of_succ_lt_succ h)) (Nat.le_add_left _ _)
+
+/-- **A pin table with its row-body bound exists in every model** (`exists_numIdTable` with `B := rowsB numIdRows`). -/
+theorem exists_numIdTableB : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
+    ∃ tbl : V, TableOK tbl (N : V) ∧ NumIdTable tbl ∧ ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ (B : V) := by
+  obtain ⟨N, hN⟩ := exists_rows numIdRows
+  refine ⟨N, rowsB numIdRows, fun V _ _ ↦ ?_⟩
+  obtain ⟨rows, hlen, hok, hidx⟩ := hN V
+  refine ⟨vecOf rows, tableOK_vecOf rows hok, ⟨?_, ?_⟩, ?_⟩
+  · rw [len_vecOf, hlen, numIdRows_length]
+  · intro i h
+    have h' : i < rows.length := by rw [hlen]; exact h
+    rw [nth_vecOf rows i h']
+    exact hidx i h h'
+  · intro j hj
+    rw [len_vecOf] at hj
+    obtain ⟨i, rfl⟩ := eq_nat_of_lt_nat hj
+    have h' : i < rows.length := by exact_mod_cast hj
+    have h : i < numIdRows.length := by rw [← hlen]; exact h'
+    rw [nth_vecOf rows i h', (hidx i h h').2, ← Sentence.coe_quote_eq_quote (V := V), flN_cast]
+    exact_mod_cast flN_le_rowsB numIdRows i h
+
+/-- **The pin half of `KitPackage'`**: standard `N B N' B'` and a per-`χ` constant `Cχ` such that every model has
+a pin table (`NumIdTable ⇒ ProTable ⇒ TopTable`) with row-body bound `B`, a `NumSteps` table, and `PinKit' χ tbl
+N B (Cχ χ)` for EVERY `χ`. -/
+theorem pinKit'_package : ∃ (N B N' B' : ℕ) (Cχ : Semisentence LAct 1 → ℕ),
+    ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁], ∃ tbl tblN : V,
+      TableOK tbl (N : V) ∧ NumIdTable tbl ∧ (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ (B : V)) ∧
+      NumTableOK tblN (N' : V) (B' : V) ∧ ∀ χ : Semisentence LAct 1, PinKit' χ tbl (N : V) (B : V) (Cχ χ) := by
+  obtain ⟨N', B', hNum⟩ := exists_numTable
+  obtain ⟨N, B, hTab⟩ := exists_numIdTableB
+  refine ⟨N, B, N', B', fun χ ↦ Classical.choose (pinKit'_of χ N' B'), fun V _ _ ↦ ?_⟩
+  obtain ⟨tbl, htbl, hT, hB⟩ := hTab V
+  obtain ⟨tblN, hN⟩ := hNum V
+  exact ⟨tbl, tblN, htbl, hT, hB, hN, fun χ ↦ Classical.choose_spec (pinKit'_of χ N' B') V htbl hT hB hN⟩
+
+end package
+
 end ArithS
