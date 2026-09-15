@@ -1284,3 +1284,36 @@ before the `exact ⟨_, …⟩`; bind implicits explicitly in an `iff` whose cap
 metavariable.
 IN FLIGHT: `Verify2` (VerifyGraph', option B, verifyKit''_ok at m = 3); `IndRec` (case (ii), the
 induction-instance recognizer — the last named weakening).
+
+**§11 status — `Verify2` DONE: `VerifyGraph'` and `verifyGraph'_ok`, ALL TEN TAGS GLUED (f36c6a1
+… df6284d; 3255 jobs; census 728, all standard).** §1 `setShiftIterV`/`dossCtx` (the canonical
+dossier context); §2 context monotonicity for cut-admitting lists — **`listOK_mono_subset : NoDrop'
+S → Γ ⊆ Γ' → ListOK tbl E M Γ S → ListOK tbl E M Γ' S`** (shift-freeness turned out unnecessary);
+§3 the `axm` certificate as a TABLE `A` (the 8th fixpoint parameter): `AxmEntryOK tbl E Ww Cv e :=
+∃ p ip pro ≤ e, e = ⟪p, ip, pro⟫ ∧ NumInvV tbl E (dossCtx Ww p ip) Cv pro (axchFact (^&ip))`,
+`AxmTableOK`, `VerifyGraph'.mono_A` (`ListOK` has no named `𝚫₁.Semisentence`, so the check cannot
+sit inside the blueprint — option B realised as a table); §4 Σ₁ graphs of the offset helpers; §5
+the ten assemblers `v<Tag>` (prologue ++ child ++ recovery ++ node at the DETERMINED offsets) with
+the empty-sequent selectors; §6 `VerifyGraph' Ww Wl Wc W₁ W₂ W T A ρ L` (fixpoint on `⟪ρ, L⟫`,
+`StrongFinite`, packed definability, `case_iff`, ten inversions; the `axm` clause: `∃ pro ≤ L,
+⟪p, memTop … s p 0, pro⟫ ∈ A ∧ L = vAxm … pro`); §7 `verifyGraph'_exists` (with `AxmIndOracleC tbl
+E Cind` explicit, uniting the children's tables by `mono_A`); §8 `v<Tag>_ok` for all ten and
+**`verifyGraph'_ok`** (`Derivation.induction1 𝚷`; `Cs = 500000`, `Ck = 2500000`): under
+`Ck·(dlen ρ+1)^6 ≤ E`, every `L` with `VerifyGraph' … ρ L` and `NodeLay` at the root satisfies
+`ListOK 9 ∧ NoDrop' ∧ shiftsV L ≤ Cs·(dlen ρ)^6 ∧ goalFact at &(k+1+shiftsV L) ∈ finalCtx`;
+`verifyGraph'_ok_pow` in the `VerifyKit''` shape at `m = 6`. **DEGREE 6 IN THE LIST, NOT 3**: the
+`all`/`exs` shift bounds are QUINTIC in a `D` bounded only globally by `dlen ρ`, and the recursion
+`X + Cs·y^6 ≤ Cs·(y+m)^6` needs `X ≤ Cs·d^5`; cubic prologue bounds (via `Pin`'s
+`len_certSubst_le_lin`) would give 4, per-node accounting 3. So the top's `deg 6 = 24` for now.
+REMAINING FOR THE KIT: (1) the ROOT BRIDGE — `VerifyKit''.ok` takes `RootLayout Γ x i` (dossier at
+`&(i+2)`, chain at `&(i+1)`, no fold base/`lenFact`/`leFact`), not a `Layout`: a re-layout list +
+a retarget of the goal index; (2) the kit quantifies over the OLD `VerifyGraph W tblN` — a
+`VerifyKit'''` over `VerifyGraph'` (+ `A`, `AxmTableOK`) is needed; (3) the `cost` conjunct (not
+started); (4) the quintic prologue caps are dischargeable only by a cap `≥ (dlen ρ+1)^6` — fine
+for `VerifyKit''`'s cap at `m = 6`. TRAPS: `rw [shiftsV_appendV]×3` splits the wrong `appendV` —
+interleave the block equations; never `rw [← hdd] at … ⊢` while a node lemma still mentions `dlen
+(tag …)`; child bounds on `dlen dp` with `y` only inside `Cs·p6 y`; `p5`/`p6` as explicit products
+keep the 𝚷 motive `definability`-friendly; injectivity of `⟪p, ip, pro⟫` via two `pair_ext_iff.mp`
+then `rw [← e₁, …] at hinv`; appending after `end ArithS` leaves the namespace.
+IN FLIGHT: `IndRec` (case (ii)); `Assemble` (VerifyKit''' over VerifyGraph', root bridge, cost,
+KitPackage''', BoundedInnerNec 24 conditional only on AxmIndOracleC).
