@@ -250,4 +250,88 @@ theorem identRoot_ok {tbl N Wl x jx₀ jx' js₀ js' E Γ : V} (htbl : TableOK t
 
 end identRoot
 
+/-! ## 3. The retarget block: the goal fact of the FRESH sequent `s'` moved onto the ROOT sequent `s₀`
+(`goalElim`, `congFstIdx`, `sGoal`) — two shifts, seven steps -/
+
+section retargetRoot
+
+/-- **The retarget block** at `s' = &js'`, `s₀ = &js₀` (with `eqFactB &js₀ &js'` in context): recover `d = &1`,
+`n = &0` and `fstIdxFact &(js'+2) &1` (`goalElim`, 2 shifts), `congFstIdx` to `fstIdxFact &(js₀+2) &1`, then
+`sGoal &1 &0 &(js₀+2) (bnum d)` re-closes `goalFact &(js₀+2) (bnum d)`. -/
+noncomputable def retargetRoot (js' js₀ d : V) : V :=
+  appendV (goalElim (^&js') (bnum d))
+    (mkStep frag1Pieces 122 ?[^&1, ^&(js' + 2), ^&(js₀ + 2)] ∷
+     sGoal (^&1) (^&0) (^&(js₀ + 2)) (bnum d) ∷ (0 : V))
+
+lemma len_retargetRoot (js' js₀ d : V) : len (retargetRoot js' js₀ d) = 7 := by
+  unfold retargetRoot; rw [len_appendV, len_goalElim]; simp [len_adjoin]; norm_num
+
+/-- **The retarget block is applicable** (cap `8`, cut-admitting, exactly two shifts) and leaves the goal fact on
+the root sequent, at `&(js₀ + 2)`. -/
+theorem retargetRoot_ok {tbl N js' js₀ d E Γ : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
+    (hΓ : IsFormulaSet LAct Γ) (hE₀ : js₀ + 3 ≤ E) (hE' : js' + 3 ≤ E) (hEd : termLen LAct (bnum d) ≤ E)
+    (hgoal : neg LAct (goalFact (^&js') (bnum d)) ∈ Γ) (heq : neg LAct (eqFactB (^&js₀) (^&js')) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (retargetRoot js' js₀ d) ∧ NoDrop' (retargetRoot js' js₀ d) ∧
+    shiftsV (retargetRoot js' js₀ d) = 2 ∧
+    neg LAct (goalFact (^&(js₀ + 2)) (bnum d)) ∈ finalCtx Γ (retargetRoot js' js₀ d) := by
+  have hbd : IsSemiterm LAct (0 : V) (bnum d) := isSemiterm_bnum_LAct 0 d
+  have hE3 : (3 : V) ≤ E := le_trans le_add_self hE₀
+  have hl0 : termLen LAct (^&0 : V) ≤ E := termLen_fvar_le' (le_trans (by norm_num) hE3)
+  have hl1 : termLen LAct (^&1 : V) ≤ E := termLen_fvar_le' (le_trans (by norm_num) hE3)
+  have hls' : termLen LAct (^&(js' + 2) : V) ≤ E := termLen_fvar_le' (by
+    calc js' + 2 + 1 = js' + 3 := by ring
+      _ ≤ E := hE')
+  have hls₀ : termLen LAct (^&(js₀ + 2) : V) ≤ E := termLen_fvar_le' (by
+    calc js₀ + 2 + 1 = js₀ + 3 := by ring
+      _ ≤ E := hE₀)
+  have e2' : (js' : V) + 1 + 1 = js' + 2 := by ring
+  -- the recovery
+  obtain ⟨gok, gnd, gsh, _, gder, gfst, gdlen, gle⟩ := goalElim_ok 8 htbl hΓ (hf_ js') hbd hgoal
+  rw [termShift_fvar, termShift_fvar, e2'] at gfst
+  rw [termShift_bnum, termShift_bnum] at gle
+  obtain ⟨Γ₀, hΓ₀⟩ : ∃ Γ', Γ' = finalCtx Γ (goalElim (^&js') (bnum d)) := ⟨_, rfl⟩
+  rw [← hΓ₀] at gder gfst gdlen gle
+  have hΓ₀f : IsFormulaSet LAct Γ₀ := by rw [hΓ₀]; exact finalCtx_isFormulaSet 8 htbl hΓ gok
+  have heq₀ : neg LAct (eqFactB (^&(js₀ + 2)) (^&(js' + 2))) ∈ Γ₀ := by
+    have := mem_finalCtx_of_mem' gnd heq
+    rw [gsh, shiftIterV_neg (isFormula_eqFactB (hf_ _) (hf_ _)), shiftIterV_eqFactB (hf_ _) (hf_ _),
+      termShiftIterV_fvar, termShiftIterV_fvar, ← hΓ₀] at this
+    exact this
+  -- `congFstIdx`
+  obtain ⟨ok₁, tg₁, cx₁⟩ := fok_congFstIdx htbl hF rfl hΓ₀f (hf_ 1) hl1 (hf_ (js' + 2)) hls' (hf_ (js₀ + 2)) hls₀ heq₀ gfst
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = insert (neg LAct (fstIdxFact (^&(js₀ + 2)) (^&1))) Γ₀ := ⟨_, rfl⟩
+  rw [← hΓ₁] at cx₁
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
+  have tr₁ : ∀ y ∈ Γ₀, y ∈ Γ₁ := fun y hy ↦ by rw [hΓ₁]; exact memIns hy
+  have f₁ : neg LAct (fstIdxFact (^&(js₀ + 2)) (^&1)) ∈ Γ₁ := by rw [hΓ₁]; exact memInsSelf _ _
+  -- `sGoal`
+  have ok₂ : StepOK tbl E ((8 : ℕ) : V) Γ₁ (sGoal (^&1) (^&0) (^&(js₀ + 2)) (bnum d)) :=
+    stepOK_sGoal hΓ₁f (hf_ 1) hl1 (hf_ 0) hl0 (hf_ (js₀ + 2)) hls₀ hbd hEd (tr₁ _ gder) f₁ (tr₁ _ gdlen) (tr₁ _ gle)
+  have cx₂ := ctxAfter_sGoal Γ₁ (^&1 : V) (^&0) (^&(js₀ + 2)) (bnum d)
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · unfold retargetRoot
+    refine listOK_appendV gok ?_
+    rw [← hΓ₀]
+    refine listOK_cons ok₁ ?_; rw [cx₁]
+    exact listOK_single ok₂
+  · unfold retargetRoot
+    exact noDrop'_appendV gnd (noDrop'_cons (Or.inl tg₁)
+      (noDrop'_single (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (by simp)))))))))
+  · unfold retargetRoot
+    rw [shiftsV_appendV, gsh, shiftsV_cons_tag0 tg₁, shiftsV_single]
+    simp
+  · unfold retargetRoot
+    rw [finalCtx_appendV, ← hΓ₀, finalCtx_cons, cx₁, finalCtx_single, cx₂]
+    exact memInsSelf _ _
+
+/-- The retarget block is size-disciplined once `Q` dominates `4·|goalFact &js' (bnum d)|` and
+`|goalFact &(js₀+2) (bnum d)|`. -/
+lemma sizeOK_retargetRoot {Q D js' js₀ d : V} (hQ : 4 * formulaLen LAct (goalFact (^&js') (bnum d)) ≤ Q)
+    (hQ' : formulaLen LAct (goalFact (^&(js₀ + 2)) (bnum d)) ≤ Q) : SizeOK Q D (retargetRoot js' js₀ d) := by
+  unfold retargetRoot
+  refine sizeOK_appendV ((sizeOK_goalElim (D := D) (hf_ js') (isSemiterm_bnum_LAct 0 d)).mono hQ le_rfl) ?_
+  exact sizeOK_cons (stepSizeOK_horn0 (ftag_congFstIdx rfl _)) (sizeOK_single (stepSizeOK_sGoal hQ'))
+
+end retargetRoot
+
 end ArithS
