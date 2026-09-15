@@ -1564,3 +1564,32 @@ on the empty CHILD, `cutPro` on the empty PARENT); the recovery block's goal fac
 CHILD's `dlen`, the node's at the PARENT's — two different term-length hypotheses; do not extract
 validated Lean text across files by script (backtick escaping) — write each section out literally.
 IN FLIGHT: `Verify5` Part 3 (`len_cutPro` + the wk/shift bound forms, then the ten-arm induction).
+
+**§11 status — `Verify5` glue, Part 3: the length gap CLOSED, and a MEASURED obstacle in the
+induction (bcaf996, b3e07a5; build 3270, census 867, all standard; Verify5 at 1327 lines, zero
+`sorry`).** §14 closes the gap Part 2 named: **`len_cutPro_le ≤ 55·D + 13`** (the lemma the tree
+never had — `cutPro` splits on the EMPTY PARENT, so its branches are `len_proIns0_le`'s
+`49·setLen (insert p 0) + 13` and `len_proIns_le`'s `55·setLen (insert p s) + 12`; the
+empty-parent branch needs its OWN size hypothesis, `insert p 0` is not `insert p s`),
+`len_wkPro_le ≤ 44·D + 11`, `len_shiftPro_le ≤ 62·D + 23` (bound forms replacing §7's branch
+equations; `shift` consumes BOTH size hypotheses). §15 the recursion prerequisites `kitD_mono`,
+`le_two_mul_self`, `dlen_leafCode_le_kitD` — needed because the arm lemmas conclude at `kitD Cz n`
+(the node's own `dlen`) while the motive carries `kitD Cz (2·dlen ρ)`.
+**TRAP 15, THE IMPORTANT ONE — the ten-arm induction body DOES NOT SCALE BY ACCRETION.** The `axL`
+recipe is proven complete: every ingredient (the four E-rooms via `capE4'`/`lin_cap`/`hCk`/
+`termLen_bnum_le_V`, the `proAxL_ok` destructuring, the length chain `axL_arm_len → len_proAxL_le →
+lin_le_p3 → p3_le_p4`, the size application widened by `.mono le_rfl (kitD_mono (le_two_mul_self
+d))`) compiles STANDALONE in ~10 s. Assembling that SAME arm INSIDE `Derivation.induction1 𝚷` does
+not converge: first run `EXIT 124` empty log at 570 s, rerun still elaborating at ~39 min — **more
+than 240×, for the CHEAPEST of the ten arms** — because the nine remaining `sorry` goals still
+carry the full motive context, and `maxHeartbeats 20000000` makes it GRIND rather than fail fast
+(so it reads as a hang, not an error). **THE RESTRUCTURING (follows directly from the measurement,
+untested):** extract each arm as its OWN TOP-LEVEL THEOREM taking the induction's binders and the
+cap as explicit hypotheses and concluding the motive at that node; the recursion body is then ten
+ONE-LINE applications and each arm elaborates in its own declaration at standalone cost. This is
+exactly how §§4–13's arm lemmas are already shaped; what is missing is the thin per-arm wrapper
+converting `(binders, cap) → motive`, which is where the E-room constructions belong.
+STATUS: all ten arms have proved size AND length lemmas (§§4–13), the length gap is closed (§14),
+the prerequisites are in place (§15); only the glue remains, now with a concrete strategy and a
+measured reason the direct approach fails.
+IN FLIGHT: `Verify5` Part 4 (the ten per-arm motive wrappers, then the one-line recursion).
