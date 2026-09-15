@@ -1092,4 +1092,137 @@ theorem cut_arm_size {Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ B E Cz N' B' D d Γ
 
 end andCutArms
 
+
+/-! ## 13. The `all` and `exs` arms — the last two, and all ten are now proved
+
+Both quantifier arms have the FOUR-block shape of `or` (`Verify2.lean` §5): `proAll ++ (L' ++ (postIns ++ nodeAll))`
+and `proExs ++ (L' ++ (postIns ++ nodeExs))`, so their lengths are `len pro + (len L' + (6 + 9))` exactly as
+`len_vOr_eq`, and the size halves are the prologue at the LAYOUT class (`Prologue.sizeOK_proAll`/`sizeOK_proExs`,
+whose extra `hEQ`/`hiE` hypotheses are the QUADRATIC E-rooms of the certification blocks) lifted by §6, the child
+from the induction hypothesis, §6's `sizeOK_postIns_kit`, and the node.
+
+The two nodes differ in their tail: `nodeAll` sits on the UNARY one (`bin2Fact`/`bin2Code`, the child's `dlen`
+alone), `nodeExs` on the BINARY one (`bin3Fact`/`bin3Code`, with `Lt = termLen t` as the second summand — the
+witness term's length enters the node's arithmetic).
+
+With these, ALL TEN arms have standalone size and length lemmas: `axm` (§4), `axL`/`verumIntro` (§5),
+`wk`/`shift` (§10), `or` (§11), `and`/`cut` (§12), `all`/`exs` (here).
+-/
+
+section allExsArms
+
+lemma len_nodeAll (W tblN is il ir ip ifp iss ic id in₁ L m₁ n : V) :
+    len (nodeAll W tblN is il ir ip ifp iss ic id in₁ L m₁ n) = 9 := by
+  unfold nodeAll nodeAllHead goalTailUnary dlenUnarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_nodeExs (W tblN is il ir ip it ipt ic id ilt in₁ L Lt m₁ n : V) :
+    len (nodeExs W tblN is il ir ip it ipt ic id ilt in₁ L Lt m₁ n) = 9 := by
+  unfold nodeExs nodeExsHead goalTailBinary dlenBinarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+/-- **The `all` arm, length half.** -/
+theorem len_vAll_eq (Ww Wl Wc W₂ W T s p d' L' : V) :
+    len (vAll Ww Wl Wc W₂ W T s p d' L') =
+      len (proAll Ww Wl Wc W T s p 0) + (len L' + (6 + 9)) := by
+  unfold vAll
+  rw [len_appendV, len_appendV, len_appendV, len_postIns, len_nodeAll]
+
+/-- **The `exs` arm, length half.** -/
+theorem len_vExs_eq (Ww Wl Wc W₂ W T s p t d' L' : V) :
+    len (vExs Ww Wl Wc W₂ W T s p t d' L') =
+      len (proExs Ww Wl Wc W T s p t 0) + (len L' + (6 + 9)) := by
+  unfold vExs
+  rw [len_appendV, len_appendV, len_appendV, len_postIns, len_nodeExs]
+
+/-- **The `all` arm, size half** (the node is on the UNARY tail: `bin2Fact`/`bin2Code`). -/
+theorem all_arm_size {Wl Wc W₂ W T s p d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hspD : formulaLen LAct (shift LAct p) ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : 0 + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (insert (free LAct p) (setShift LAct s))) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (bnum (dlen TAct d')) ≤ E)
+    (hbn' : termLen LAct (bnum (dlen TAct (allIntro s p d'))) ≤ E)
+    (hnE : 18 * ‖dlen TAct (allIntro s p d')‖ + 7 ≤ E)
+    (hLn : setLen LAct s + dlen TAct d' + 1 ≤ dlen TAct (allIntro s p d'))
+    (hnd : dlen TAct (allIntro s p d') ≤ 2 * d)
+    (hgE2 : allCertSig walkPieces Wc p +
+      (proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) +
+      (1 + proSig walkPieces Wl Wc W T (insert (free LAct p) (setShift LAct s))) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vAll walkPieces Wl Wc W₂ W T s p d' L') := by
+  unfold vAll
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_proAll htbl hP htblN hWl hWc hWp hPle hs hp hr hsD hcD hspD hEpro hEQ hiE hΓ hLay).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE hbn hcG
+  · refine sizeOK_nodeAll hW₂ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin2Fact_le hE1 hPle hnE
+        (le_trans (le_trans le_self_add le_self_add) hLn) (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact dlen_bin2Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_bnum_LAct 0 _) hbn' hcG
+
+/-- **The `exs` arm, size half** (the node is on the BINARY tail: `bin3Fact`/`bin3Code` with `Lt = termLen t`). -/
+theorem exs_arm_size {Wl Wc W₂ W T s p t d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s)
+    (ht : IsSemiterm LAct 0 t)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D)
+    (htD : termLen LAct t ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : 0 + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (insert (substs1 LAct t p) s)) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (bnum (dlen TAct d')) ≤ E)
+    (hbn' : termLen LAct (bnum (dlen TAct (exsIntro s p t d'))) ≤ E)
+    (hnE : 18 * ‖dlen TAct (exsIntro s p t d')‖ + 7 ≤ E)
+    (hLn : setLen LAct s + termLen LAct t + dlen TAct d' + 1 ≤ dlen TAct (exsIntro s p t d'))
+    (hnd : dlen TAct (exsIntro s p t d') ≤ 2 * d)
+    (hgE2 : exsSig walkPieces Wc T s p t 0 +
+      (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vExs walkPieces Wl Wc W₂ W T s p t d' L') := by
+  unfold vExs
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_proExs htbl hP htblN hWl hWc hWp hPle hs hp hr ht hsD hcD htD hEpro hEQ hiE hΓ hLay).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE hbn hcG
+  · refine sizeOK_nodeExs hW₂ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin3Fact_le hE1 hPle hnE
+        (le_trans (le_trans (le_trans le_self_add le_self_add) le_self_add) hLn)
+        (le_trans (le_trans (le_trans le_add_self le_self_add) le_self_add) hLn)
+        (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact dlen_bin3Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_bnum_LAct 0 _) hbn' hcG
+
+end allExsArms
+
 end ArithS

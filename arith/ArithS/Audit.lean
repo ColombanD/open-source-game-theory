@@ -1468,6 +1468,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms and_arm_size
 #print axioms cut_arm_size
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 10 — the `all` and `exs` ARMS; ALL TEN ARMS PROVED.
+-- Both quantifier arms have the FOUR-block shape of `or` (`Verify2.lean` §5): `proAll ++ (L' ++ (postIns ++ nodeAll))`
+-- and `proExs ++ (L' ++ (postIns ++ nodeExs))`, so their lengths are `len pro + (len L' + (6 + 9))` exactly as
+-- `len_vOr_eq`, and the size halves are the prologue at the LAYOUT class (`Prologue.sizeOK_proAll`/`sizeOK_proExs`,
+-- whose extra `hEQ`/`hiE` hypotheses are the QUADRATIC E-rooms of the certification blocks) lifted by §6, the child
+-- from the induction hypothesis, §6's `sizeOK_postIns_kit`, and the node. The two nodes differ in their tail:
+-- `nodeAll` sits on the UNARY one (`bin2Fact`/`bin2Code`, the child's `dlen` alone), `nodeExs` on the BINARY one
+-- (`bin3Fact`/`bin3Code`, with `Lt = termLen t` as the second summand — the witness term's length enters the node's
+-- arithmetic). With these, ALL TEN arms have standalone size and length lemmas: `axm` (§4), `axL`/`verumIntro` (§5),
+-- `wk`/`shift` (§10), `or` (§11), `and`/`cut` (§12), `all`/`exs` (§13). What remains is the `Derivation.induction1 𝚷`
+-- recursion threading them, which discharges `ArmHyps`/`ArmHypsAll`.
+#print axioms len_nodeAll
+#print axioms len_nodeExs
+#print axioms len_vAll_eq
+#print axioms len_vExs_eq
+#print axioms all_arm_size
+#print axioms exs_arm_size
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
