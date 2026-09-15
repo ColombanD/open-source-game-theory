@@ -1131,4 +1131,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms shiftsV_proIns_le'
 #print axioms shiftsV_proAll_le
 
+-- U10 (Necessitation/Top §12–§14, 2026-09-15): THE POLYNOMIAL-LENGTH KITS (BRIEF §11, THE SECOND ACCOUNTING
+-- FINDING). `VerifyKit'' … m` (list length `Ck·(dlen ρ+1)^m`, cap `Ck·((dlen ρ+1)^m + i) ≤ E`), its `m = 1`
+-- coincidence with `VerifyKit'`, `KitPackage''`, `top_main''`, the general-degree tools
+-- (`succ_pow_le`, `PB.final_pow`), `topBound''_pb` (degree 4n) and
+-- `boundedInnerNec_of_kit'' : KitPackage'' … m → BoundedInnerNec (deg m)`, `deg m = 4·max m 1`
+-- (`deg 1 = 4`, `deg 3 = 12`: the cap forces E ~ G^m, so cost ~ L·(L²·growK) ~ G^{4m}).
+#print axioms verifyKit''_one_iff
+#print axioms top_main''
+#print axioms succ_pow_le
+#print axioms PB.final_pow
+#print axioms topBound''_pb
+#print axioms deg_one
+#print axioms deg_three
+#print axioms boundedInnerNec_of_kit''
+
 end ArithS
