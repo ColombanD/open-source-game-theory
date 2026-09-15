@@ -184,3 +184,15 @@ compute it; everything above survives. DESIGN FINDING: the vector walk emits `tv
 `utvPiFact` — a bridge row is needed before certSubst. LESSONS: verify a reported blocker against
 the tree (2 of 2 dissolved); sentinel-test a suspiciously fast green on generated files; only
 exit 124 + empty log is a stall; never end an agent turn while its own check runs.
+**2026-09-15 (Fable session, stopped for a model switch):** TOP DONE — `boundedInnerNec_four_of_kit :
+KitPackage' → BoundedInnerNec 4` (and `_three_of_kit`); TARGET IS DEGREE 4 (user-confirmed; the
+generic cost lemmas charge 4·B·E per step → one factor of g over the design's cubic; 3 = optional
+occurrence-accounting refinement; linear impossible). Landed: certSubst/certFree/lenSteps (Cert
+Parts 5–6), Dossier bridge, NumLength/NumMul, Members, NumId (numeral identification for standard
+codes), Pin assembly modulo two oracles, Prologue for 7/10 tags + Layout/Layout0 + costs + the
+empty-sequent decision (∅ occurs; nonemptiness FALSE under ¬Con), Cert §6.7 qVec caps (quadratic).
+REMAINING = exactly `KitPackage'`: PinKit' (bnumSteps oracle, SubstOracle instance, coarse costs);
+VerifyKit' (all/exs/axm prologues, Verify's clause edit, the per-tag layout theorems glued by
+induction1 𝚷 at the root, costs). Census 606, build green, branch pushed 09-14 (push again).
+Design bugs caught this week: neg pass certified against the wrong vector; cert/frag row tables
+collided (re-indexing wrapper in Prologue §0). 4 of 5 reported blockers dissolved on inspection.

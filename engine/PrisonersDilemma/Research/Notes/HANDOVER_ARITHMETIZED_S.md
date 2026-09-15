@@ -145,7 +145,7 @@ node-code totalities, the axiom recognizer incl. induction instances), `Lib/Brid
 `WalkLemmas` (`lt` rows, closed symbol rows as chain numerals `cT`, `bvOcc`, `fvOccF_subst_le`,
 `instOuterAt_subst_bvList`, `freeIter_subst_listToVec`).
 
-**U10 progress as of 2026-09-14** (the detail is §8 and `BRIEF.md` §11): on top of the modules
+**U10 progress as of 2026-09-15** (see §8 — the top is done against a kit; degree 4 is the target) (the detail is §8 and `BRIEF.md` §11): on top of the modules
 above, `RowInstB`, `Lib/Frag` (196 rows), `Lib/Occ`, `CertRows`, `NumSteps`, `Layout`
 (`copySteps`/`chainSteps`/`eqSteps`), `Frag1Rows`+`Frag1` and `Frag2Rows`+`Frag2` (**all ten
 per-tag fragments**), `Cert` (the term and formula certification passes with `certNeg`/`certShift`)
@@ -225,73 +225,64 @@ Orchestration with background subagents (§5 agent operations); design decisions
 brief plus verbatim reader reports; a judge panel was tried once and not needed. Check
 `git status` in the worktree before assuming work was lost.
 
-## 8. Last session state (2026-09-14, ~18:30 — Opus 5 session, stopped cleanly by the user)
+## 8. Last session state (2026-09-15, 11:55 — Fable 5.1 session, stopped cleanly for a model switch)
 
-Branch `colomban-arith-u10`, **pushed and in sync** with `origin`. Tree CLEAN, build GREEN:
-**`lake build ArithS` 3247 jobs, census 451 lines, all `[propext, Classical.choice, Quot.sound]`**
-(the single `substs_leF_imp` line prints the SUBSET `[propext, Quot.sound]` — pre-existing, fine).
-55 commits this session. Full narrative in `M4_BOUNDED_HBL/BRIEF.md` §11 (read its status entries
-in order — they are the U10 log, newest last).
+Branch `colomban-arith-u10`, pushed and in sync as of 2026-09-14 (PUSH FIRST: `git push`). Tree
+CLEAN, build GREEN: last full build 3245–3257 jobs, **census 606 lines, all `[propext,
+Classical.choice, Quot.sound]`** (the single `substs_leF_imp` subset line is pre-existing). The
+full narrative is `M4_BOUNDED_HBL/BRIEF.md` §11 — read its status entries IN ORDER, newest last;
+they are the U10 log with every interface and every trap.
 
-**RECOVERED AT TAKEOVER** (the three files the previous session left unverified are all green now):
-`Frag1Rows.lean` was green as committed; `Frag1.lean` had 2 errors (the residual goal `2 ≤ 3·M + 11`
-— `norm_num` cannot do `V`-arithmetic with a CAST NATURAL; fixed by `le_trans (by norm_num)
-le_add_self`); `Cert.lean` HUNG (exit 124 at 30 min, empty log) — bisection by truncation pinned it
-to `passGraph_defined`'s blanket `simp` over the five-disjunct `PassT` blueprint; the fix
-(`Cert.lean:1679`, now the house pattern) is a targeted `simp only [<theDef>, val_mkSigma,
-Semiformula.eval_substs, Matrix.comp_vecCons', cons_val_zero, cons_val_one, head_cons,
-constant_eq_singleton]` then `rw [<Construction>.eval_fixpointDef]; rfl` — 30 min → 44 s.
+**THE HEADLINE.** `Necessitation/Top.lean` proves **`boundedInnerNec_four_of_kit : KitPackage' … →
+BoundedInnerNec 4`** (and `_three_of_kit` from the finer `KitPackage`). Since every M4 result is
+parametric in the degree (`pblt_uniform {d}`, `dupoc_self_coop {d}`), filling `KitPackage'` makes
+Dupoc's self-cooperation UNCONDITIONAL in PA-`S`. **The target is DEGREE 4** (decided with the user
+2026-09-15): the generic cost lemmas charge a new fact's full length `4·B·E` as context growth,
+which costs one factor of `g` over the design's cubic count; degree 3 is a later, optional
+refinement (occurrence accounting: an `OccOK` per step, a `costSum_le_of_sizeOK_occ` variant,
+`occOK_*` per producer). Linear is impossible in this measure and not claimed.
 
-**LANDED THIS SESSION (all green, all wired):** `Frag2.lean` + `Frag2Rows.lean` + `gen_frag2.py`
-— **all TEN per-tag fragments now exist** (`Frag1`: axL, verum, and, or, wk, cut; `Frag2`: shift,
-all, exs, axm), each `node<Tag>Head` (4 steps, 1 shift) + a shared tail, with `_ok` (`len = 9`,
-`shiftsV = 1`, concluding the node's goal fact in `finalCtx`), `sizeOK_` and `costSum_…_le`.
-`Cert.lean` (1836 → 3599): the term pass and the FORMULA pass as fixpoints with existence,
-uniqueness and functional forms (`passT`, `passV`, `passF`), hence the producers
-`certNeg`/`certShift` (one parametric pass, `ν = 1`/`ν = 2`), their shift-freeness and length
-bounds, count preservation under shift, and the count bridge `eqCount_eq_descCountF` that
-`Layout.lean:53` had left open. `CertRows.lean`: `tsvAdjCert` entered the table at `cIdx = 181`
-(APPENDED, so every older index is byte-stable), `cok_` at `M = 9`. `Verify.lean` (NEW, 1166):
-`le_appendV_mid`, the Σ₁ definability of the fragments' pieces, `VerifyGraph`'s blueprint +
-definability + `StrongFinite`, `case_iff`, the ten inversion lemmas, and **`verifyGraph_exists`
-(all ten cases by `Derivation.induction1 𝚺`)**.
+**WHAT `KitPackage'` NEEDS (the ENTIRE remaining obligation; `Top.lean` §9 verbatim):**
+(A) **`PinKit' χ tbl N B Cχ` for every χ.** `Pin.lean` has `pin_assembly` (every conjunct except the
+COST, from two ORACLES) and §3's exact plans. Remaining: (1) `BnumOracle` — a producer `bnumSteps
+k j` over the bits of `k` on the dossier of `bnum k` (per bit an `sLemma` `𝟏 ≤ bnum m` via
+`NumSteps.oneLe_proof` + one Horn step `bnumEvenCert`/`bnumOddOfEven` — rows in `NumIdRows`; TRAP:
+the two `𝟏`s in `𝟐 = 𝟏 ^+ 𝟏` are DIFFERENT eigenvariables, identify by `eqOfFunc` at `𝟎` then
+`congAdj`); (2) `SubstOracle` — `certSubst_ok` re-indexed (`Prologue` §0 `reidxL`/`certView`/
+`listOK_reidxL`) at `w = bnum k ∷ 0`, `r = ⌜χ⌝` as a VARIABLE `c`; `SubFPre` is now dischargeable:
+`Cert` §6.7 (8243772) has `subFPre_single`, `listSum_termLenVec_qVecIterV_le/_cap` (QUADRATIC:
+`Σ_{i<e}(i+1)`, not `e+1` — the earlier plan was wrong), `len_qWalkP_le/_cap`; (3) the three
+coarse cost conjuncts via `costSum_appendV` + each block's cost lemma (`numInv_cost`,
+`costSum_certSubst_le` + `costSum_reidxL`, the walk's cost, `pinKernel_ok`'s `SizeOK 0 0`) then
+`≤` the `kitQ`/`kitD` shape. The Pin agent was stopped BEFORE writing anything.
+(B) **`VerifyKit' tbl N B W tblN Ck`.** (1) The prologues: seven of ten DONE in `Prologue.lean`
+(`proAxL_ok`, `layout_verum`, `proIns_ok`/`postIns_ok` for and/or/cut, `proWk_ok`, `proOr_ok`,
+`proShift_ok`, the `Layout`/`Layout0` predicates with ONE transport lemma, the `costSum_pro*_le`
+bounds, the empty-sequent case — `∅` genuinely occurs, a nonemptiness invariant is FALSE under
+`¬Con`); `all`/`exs` NOT started (plans in `Prologue.lean` §8; the `Cert` §6.7 caps they need are
+in; the row `leOfEqP` for `exs` is in `PrologueRows` — the agent was stopped right after adding
+it); `axm` NOT started (`DESIGN_fragments` §4.10: case (i) the finitely many standard axioms via
+`NumId`'s `numId_sentence` + the `axiomRec σ` rows — one per σ; case (ii) induction instances via
+`qqAlls`/`bv`/`fvarVec` + `indRec` + `Lib/Bridge`'s ℒₒᵣ↔LAct chain — the longest single chain,
+`nodeAxm` currently takes `axchFact` as its layout hypothesis). (2) `Verify.lean` §3.6's clause
+edit: replace each clause's `∃ pro ≤ L, …` by the Σ₁ call computing the prologue (`∃ pro, !proDef
+pro … ∧ …`); blueprint/`StrongFinite`/`case_iff`/inversions/`verifyGraph_exists` survive; NOTE the
+verify list runs at the `proRows` table (`Prologue` §0) with fragment steps read through
+`mkStep_frag2Pieces_lt`/`mkStep_proPieces_lt`, certification steps re-indexed, and cap 9
+(`ListOK.mono h89`). (3) `VerifyKit'.ok/.cost`: by `Derivation.induction1 𝚷` on ρ with `Fixpoint.case`,
+each tag's case = its `pro<Tag>_ok` + the child's IH + `node<Tag>_ok` + the offset bookkeeping
+(`DESIGN_fragments` §9 risk 1 — the bulk, and the risk), carrying `1 ≤ k ∧ Layout ∨ k = 0 ∧
+Layout0`; the cost by the `costSum_appendV` chain in the coarse shape.
+(C) Then `KitPackage'` per model (one table: `NumIdTable ⇒ ProTable ⇒ TopTable …`, `exists_*`), the
+unconditional **`dupoc_self_coop`** (instantiate `Assembly/Cell.lean`'s `dupoc_self_coop` at
+`boundedInnerNec_four_of_kit …`), the results record and roadmap updated, the paper sentence.
 
-**THE ONE HONEST WEAKENING — read `Verify.lean` §3.6 before touching `Verify` or `Cert`.**
-`verifyGraph_unique`, the function `verifySteps`, `verifySteps_ok` and `dlen_verifySteps_le` are
-NOT stated, and uniqueness is **FALSE as the file currently defines `VerifyGraph`** — not merely
-unproved: each clause leaves the prologue `pro` and the index arguments EXISTENTIALLY free
-(`∃ pro ≤ L, …`) because the prologue producers do not exist yet, so many lists `L` satisfy
-`VerifyGraph W tblN ρ L`. THE FIX, which changes nothing above it: replace each clause's
-`∃ pro ≤ L, …`/`∃ is ≤ L, …` by the Σ₁ calls that COMPUTE them (`∃ pro, !proDef pro … ∧ …`), as
-`DESIGN_fragments.md` §6.1's last paragraph prescribes; the blueprint, construction,
-`StrongFinite`, `case_iff`, the ten inversion lemmas and `verifyGraph_exists` are all stated
-against the clause SHAPE and survive unchanged, after which uniqueness goes through by
-`Fixpoint.induction` and `verifySteps` by `Classical.choose!` (the `descFw` template).
-
-**REMAINING, in order.** (1) `Cert`: the `ListOK` conjunct and the root-pair fact of
-`certShift_ok`/`certNeg_ok` (the dossier-consumption argument reading the `dossF_*` decomposition
-lemmas), then `certSubst`/`certFree` (now unblocked — `tsvAdjCert` is in the table; mix caps with
-`StepOK.mono`/`ListOK.mono` at `M = 9`), `lenSteps` (state it with **`NoDrop'`**, `Frag1.lean:21`,
-which admits tags 6/7 — the "`NoDrop` blocks `lenSteps`" report was a false alarm), and the
-DOSSIER bridge `DossF … → DossierAt …` (needs `Layout`'s per-node `dossFacts_*` equations first).
-**A REAL DESIGN FINDING from the last agent, not yet acted on:** the vector walk (`descVecAux`)
-emits `tvPiFact` (row 16), NOT `utvPiFact` (row 39, which appears only at `func`/`rel`/`nrel`
-nodes), so the tail's `utvPiFact` is genuinely absent from a vector dossier — it must be derived
-from `tvPiFact` by a new bridge row, or the pass restructured to carry it. Decide this before
-finishing `certSubst`. (2) `Verify`: the §3.6 clause edit above, then uniqueness, `verifySteps`,
-`verifySteps_ok` (state `Layout` as list-membership of a Σ₁ `layoutFacts`, per `DESIGN_fragments`
-§9 risk 1), `dlen_verifySteps_le`. (3) The prologue producers (`memberList`, the per-tag prologues
-of §4.5/4.6/4.8/4.10) which discharge the fragments' layout hypotheses — including `nodeAxm`'s
-recognizer fact `axchFact`, the one deliberate weakening in `Frag2`. (4) The top (§7) and
-`theorem boundedInnerNec_three : BoundedInnerNec 3`; then the UNCONDITIONAL `dupoc_self_coop`.
-
-**PROCESS NOTES EARNED THIS SESSION.** Verify a reported blocker against the tree before believing
-it — both blockers reported this session dissolved on inspection (one was already solved by
-`NoDrop'`, one needed a one-line cap lift with a worked precedent). Sentinel-test a suspiciously
-fast `EXIT 0` on a large generated file (break a lemma deliberately, confirm Lean fails where
-expected). Only `exit 124` with an EMPTY log is a stall; a truncation prefix ending mid-declaration
-reports `unexpected end of input`, which is an artifact. Never end an agent turn while its own
-check is running (a network drop cost a turn that way; the work survived only by luck). Poll with a
-pattern that does NOT match the polling shell (`pgrep -f 'bin/lake build ArithS'`). Agents were
-killed twice by API/network errors and repeatedly by the session rate limit — every green section
-must be its own wip commit, and resume from `git status`.
+**PROCESS (binding, learned the hard way).** Verify a reported blocker against the tree before
+believing it (four of five dissolved this week). Sentinel-test a suspiciously fast green on a large
+or generated file. `exit 124` with an EMPTY log is a stall — bisect by truncation; a prefix ending
+mid-declaration reports `unexpected end of input` (artifact). Never end an agent turn while its own
+check runs; poll with a non-self-matching pattern; concurrent `Cert` rebuilds remove `Cert.olean`
+for minutes (poll the olean). Every green section is its own wip commit; resume from `git status`.
+Two concurrent Lean agents maximum; one file set each; commit by name only. The rate limit kills
+agents mid-task (resets seen at 03:30, 02:10, 20:50, 16:20, 15:10, 04:10); their commits and files
+survive.
