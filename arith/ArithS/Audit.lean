@@ -1052,4 +1052,18 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms exists_numIdTableB
 #print axioms pinKit'_package
 
+-- U10 (Necessitation/Prologue §16–§17, 2026-09-15): the `insert` child of the EMPTY parent (`proIns0_ok`: `cut` at `∅`,
+-- `identIns0` = Loop A + the child's subChain + emptySubsetC + congSubsetL + the p block + insertSubset +
+-- subsetAntisymm) and the `0`-producers' size discipline and costs. Nothing below is an axiom.
+#print axioms identIns0_ok
+#print axioms proIns0_ok
+#print axioms sizeOK_layoutSteps0
+#print axioms sizeOK_proWk0
+#print axioms sizeOK_proShift0
+#print axioms costSum_layoutSteps0_le
+#print axioms costSum_proWk0_le
+#print axioms costSum_proShift0_le
+#print axioms sizeOK_proIns0
+#print axioms costSum_proIns0_le
+
 end ArithS
