@@ -529,4 +529,120 @@ lemma len_shiftPro (Ww Wl Wc W T s c : V) :
 
 end wkShiftLengths
 
+
+/-! ## 8. The `wk`/`shift` selectors' sizes, and the node codes in the kit class
+
+The SELECTORS (`Verify2.wkPro`/`shiftPro`) split on the empty child, so their size discipline needs both branches:
+the empty one is closed Horn material (`Prologue.sizeOK_proWk0`/`sizeOK_proShift0` hold at EVERY class; the two
+pieces `emptyFsetPi` and `reset0` had no size lemma in the tree and get one here, by tag inspection — rows 81/157/82/84
+and `layoutSteps0` + 42/43/158, all tag `0`), and the nonempty one is the layout class of
+`Prologue.sizeOK_proWk`/`sizeOK_proShift`.
+
+The unary/binary NODE CODES land too: §3 bounds them by `2·sum2D N' B' Dz`, and `sum2D ≤ layD` absorbs one factor,
+so the doubling is absorbed into the kit constant (`2·(27N' + 525600B') ≤ Cz`). These are what `Frag1`/`Frag2`'s
+`sizeOK_node*` need for their `dlen (bin2Code …) ≤ D` side conditions at the non-leaf tags.
+-/
+
+section selectorSizes
+
+/-- `emptyFsetPi` is size-disciplined at every class (four Horn steps: rows 81, 157, 82, 84). -/
+lemma sizeOK_emptyFsetPi {W : V} (hWp : W = proPieces) (Q Dd : V) :
+    SizeOK Q Dd (emptyFsetPi W) := by
+  have e81 : ∀ ev : V, mkStep proPieces (81 : V) ev = mkStep layoutPieces (81 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 81 (by decide) ev; simpa using this
+  have e82 : ∀ ev : V, mkStep proPieces (82 : V) ev = mkStep layoutPieces (82 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 82 (by decide) ev; simpa using this
+  have e84 : ∀ ev : V, mkStep proPieces (84 : V) ev = mkStep layoutPieces (84 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 84 (by decide) ev; simpa using this
+  unfold emptyFsetPi
+  subst hWp
+  refine sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons (stepSizeOK_of_tag ?_)
+    (sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_single (stepSizeOK_of_tag ?_))))
+  · rw [e81, ltag_emptySubsetC rfl]; simp
+  · rw [ptag_congSubsetL rfl]; simp
+  · rw [e82, ltag_fsetOfSubsetZeroC rfl]; simp
+  · rw [e84, ltag_fsetSigmaPiC rfl]; simp
+
+/-- `reset0` is size-disciplined at every class (`layoutSteps0` + rows 42, 43, 158). -/
+lemma sizeOK_reset0 {W : V} (hWp : W = proPieces) (Q Dd : V) : SizeOK Q Dd (reset0 W) := by
+  have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 42 (by decide) ev; simpa using this
+  have e43 : ∀ ev : V, mkStep proPieces (43 : V) ev = mkStep layoutPieces (43 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 43 (by decide) ev; simpa using this
+  unfold reset0
+  subst hWp
+  refine sizeOK_appendV (sizeOK_layoutSteps0 rfl Q Dd)
+    (sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons (stepSizeOK_of_tag ?_)
+      (sizeOK_single (stepSizeOK_of_tag ?_))))
+  · rw [e42, ltag_eqSymm rfl]; simp
+  · rw [e43, ltag_eqTrans rfl]; simp
+  · rw [ptag_congSetShiftR rfl]; simp
+
+/-- **The `wk` selector is size-disciplined in BOTH branches**, at the layout class. -/
+lemma sizeOK_wkPro {Wl Wc W T s c : V} (hWp : W = proPieces)
+    {tbl N N' B' B D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hc : c ⊆ s) (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : 0 + 14 * D + 5 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0) :
+    SizeOK (layQ B B' D) (layD N' B' D) (wkPro walkPieces Wl Wc W T s c) := by
+  unfold wkPro
+  by_cases h : memberList c = 0
+  · rw [if_pos h]
+    exact sizeOK_appendV (sizeOK_proWk0 hWp s 0 _ _) (sizeOK_emptyFsetPi hWp _ _)
+  · rw [if_neg h]
+    exact sizeOK_proWk htbl hP htblN hWl hWc hWp hPle hs hc (one_le_len_memberList_of_ne h) hsD hcD hE hiE hΓ hLay
+
+/-- **The `shift` selector is size-disciplined in BOTH branches**, at the layout class. -/
+lemma sizeOK_shiftPro {Wl Wc W T s c : V} (hWp : W = proPieces)
+    {tbl N N' B' B D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : 0 + 16 * D + 8 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0) :
+    SizeOK (layQ B B' D) (layD N' B' D) (shiftPro walkPieces Wl Wc W T s c) := by
+  unfold shiftPro
+  by_cases h : memberList c = 0
+  · rw [if_pos h]
+    exact sizeOK_appendV (sizeOK_proShift0 hWp 0 _ _)
+      (sizeOK_appendV (sizeOK_reset0 hWp _ _) (sizeOK_emptyFsetPi hWp _ _))
+  · rw [if_neg h]
+    exact sizeOK_proShift htbl hP htblN hWl hWc hWp hPle hs hc hsc (one_le_len_memberList_of_ne h)
+      hsD hcD hE hiE hΓ hLay
+
+end selectorSizes
+
+section nodeCodeKit
+
+/-- **`bin2Code` lands in the kit class** (§3's `2·sum2D`, one factor absorbed by `sum2D ≤ layD`). -/
+lemma dlen_bin2Code_le_kitD {T N' B' Cz L m n d : V} (htblN : NumTableOK T N' B')
+    (h : L + m + 1 ≤ n) (hn : n ≤ 2 * d) (hC : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    dlen TAct (bin2Code T L m n) ≤ kitD Cz (2 * d) := by
+  refine le_trans (dlen_bin2Code_le' htblN h hn) ?_
+  refine le_trans (mul_le_mul_of_nonneg_left (sum2D_le_layD N' B' (2 * d)) zero_le) ?_
+  refine le_trans (mul_le_mul_of_nonneg_left
+    (layD_le_kitD (d := 2 * d) le_rfl (le_refl (27 * N' + 525600 * B'))) zero_le) ?_
+  unfold kitD
+  calc 2 * ((27 * N' + 525600 * B') * (2 * d + 1) ^ 3)
+      = (2 * (27 * N' + 525600 * B')) * (2 * d + 1) ^ 3 := by ring
+    _ ≤ Cz * (2 * d + 1) ^ 3 := mul_le_mul_of_nonneg_right hC zero_le
+
+/-- **`bin3Code` lands in the kit class**, likewise. -/
+lemma dlen_bin3Code_le_kitD {T N' B' Cz L m₁ m₂ n d : V} (htblN : NumTableOK T N' B')
+    (h : L + m₁ + m₂ + 1 ≤ n) (hn : n ≤ 2 * d) (hC : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    dlen TAct (bin3Code T L m₁ m₂ n) ≤ kitD Cz (2 * d) := by
+  refine le_trans (dlen_bin3Code_le' htblN h hn) ?_
+  refine le_trans (mul_le_mul_of_nonneg_left (sum2D_le_layD N' B' (2 * d)) zero_le) ?_
+  refine le_trans (mul_le_mul_of_nonneg_left
+    (layD_le_kitD (d := 2 * d) le_rfl (le_refl (27 * N' + 525600 * B'))) zero_le) ?_
+  unfold kitD
+  calc 2 * ((27 * N' + 525600 * B') * (2 * d + 1) ^ 3)
+      = (2 * (27 * N' + 525600 * B')) * (2 * d + 1) ^ 3 := by ring
+    _ ≤ Cz * (2 * d + 1) ^ 3 := mul_le_mul_of_nonneg_right hC zero_le
+
+end nodeCodeKit
+
 end ArithS

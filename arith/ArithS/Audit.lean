@@ -1387,6 +1387,22 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms len_wkPro
 #print axioms len_shiftPro
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 5 — the `wk`/`shift` SELECTORS' sizes and the node
+-- codes in the kit class. The selectors (`Verify2.wkPro`/`shiftPro`) split on the empty child, so their size
+-- discipline needs BOTH branches: the empty one is closed Horn material (`Prologue.sizeOK_proWk0`/`sizeOK_proShift0`
+-- hold at EVERY class; the two pieces `emptyFsetPi` and `reset0` had NO size lemma in the tree and get one here by
+-- tag inspection — rows 81/157/82/84, and `layoutSteps0` + 42/43/158, all tag `0`), and the nonempty one is the
+-- layout class of `Prologue.sizeOK_proWk`/`sizeOK_proShift`. The unary/binary NODE CODES land too: §3 bounds them by
+-- `2·sum2D N' B' Dz` and `sum2D ≤ layD` absorbs one factor, so the doubling goes into the kit constant
+-- (`2·(27N' + 525600B') ≤ Cz`) — `dlen_bin2Code_le_kitD`/`dlen_bin3Code_le_kitD` are what `Frag1`/`Frag2`'s
+-- `sizeOK_node*` need for their `dlen (bin2Code …) ≤ D` side conditions at the non-leaf tags.
+#print axioms sizeOK_emptyFsetPi
+#print axioms sizeOK_reset0
+#print axioms sizeOK_wkPro
+#print axioms sizeOK_shiftPro
+#print axioms dlen_bin2Code_le_kitD
+#print axioms dlen_bin3Code_le_kitD
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
