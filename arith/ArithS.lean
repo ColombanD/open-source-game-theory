@@ -77,6 +77,7 @@ import ArithS.Necessitation.ProAxm
 import ArithS.Necessitation.IndRecRows
 import ArithS.Necessitation.IndRec
 import ArithS.Necessitation.Verify2
+import ArithS.Necessitation.Verify3
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse

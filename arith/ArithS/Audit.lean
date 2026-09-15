@@ -54,6 +54,7 @@ import ArithS.Necessitation.IndRecRows
 import ArithS.Necessitation.IndRec
 import ArithS.Necessitation.NodeSize
 import ArithS.Necessitation.Verify2
+import ArithS.Necessitation.Verify3
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1198,5 +1199,30 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms stageB
 #print axioms axmInd_ok
 #print axioms axmIndOracle_of
+
+
+-- U10 (Necessitation/IndRec §7 + Verify3, 2026-09-15): THE SEAM — the recognizer plugged into the recursion.
+-- IndRec §7: `formulaLen_subst_fvarVec_le` (`|subst (fvarVec m) b| ≤ |b|`: substitution by an index-bounded variable
+-- vector never lengthens, `VarInv` preserved by `qVec`), `certSubst_winv'`/`substInst_*'` with `Pin`'s LINEAR `sfL`
+-- bound, `stageA'`/`stageB'` with the offset moved to the E-room, and `axmInd_ok' : |p| ≤ D → ip + 200(D+1)³ ≤ E →
+-- … shiftsV ≤ 100(D+1)³ ∧ len ≤ 1400(D+1)³` — DEGREE 3 in `D`, offset-independent; `axmIndOracle_of'` (C = 1400(D+1)³).
+-- Verify3: shifted certificate entries `AxmEntryOK'`/`AxmTableOK'` (bound `entryB Cv p = Cv·(|p|+1)³`), the shifted
+-- assembler `vAxm'`, `VerifyGraph''` (`VerifyGraph'` with the `axm` clause on `vAxm'`), the oracle `AxmIndOracleC'`
+-- DISCHARGED (`axmIndOracleC'_of_indRec`), `verifyGraph''_exists_unconditional` (NO oracle hypothesis),
+-- `vAxm_ok'`, `verifyGraph''_ok` (re-glued at m = 6; constants `Cs + Cv`, `Ck + 5·Cv`), `verifyGraph''_ok_pow`.
+#print axioms formulaLen_subst_fvarVec_le
+#print axioms stageA'
+#print axioms stageB'
+#print axioms axmInd_ok'
+#print axioms axmIndOracle_of'
+#print axioms VerifyGraph''.case_iff
+#print axioms VerifyGraph''.mono_A
+#print axioms axmIndOracleC'_of_indRec
+#print axioms axmEntry_exists'
+#print axioms verifyGraph''_exists'
+#print axioms verifyGraph''_exists_unconditional
+#print axioms vAxm_ok'
+#print axioms verifyGraph''_ok
+#print axioms verifyGraph''_ok_pow
 
 end ArithS
