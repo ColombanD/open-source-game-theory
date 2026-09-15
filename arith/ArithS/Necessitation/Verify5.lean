@@ -686,4 +686,111 @@ theorem verifyGraph''_size4_of_arms (N' B' : ℕ) {Cz : ℕ} (harms : ArmHypsAll
 
 end packageShape
 
+
+/-! ## 10. The `wk` and `shift` arms
+
+The first two NON-LEAF arms, and the template for the remaining five: each list is
+`selector ++ (child ++ (recovery ++ node))`, a right-nested `appendV` (`Verify2.lean` §5), so
+
+* the LENGTH is `len selector + (len L' + (5 + 9))` — `len_goalElim = 5` and §7's `len_nodeWk`/`len_nodeShift`;
+* the SIZES are `sizeOK_appendV` over the four blocks: the selector at the LAYOUT class (§8's
+  `sizeOK_wkPro`/`sizeOK_shiftPro`, covering BOTH branches of the empty-child split) lifted by §6's
+  `layQ_le_kitQ`/`layD_le_kitD`; the child from the induction hypothesis; the recovery by §6's
+  `sizeOK_goalElim_kit`; and the node by `Frag1.sizeOK_nodeWk`/`Frag2.sizeOK_nodeShift`, whose three side
+  conditions are `formulaLen_bin2Fact_le` + §4's `BE_le_kitQ`, §8's `dlen_bin2Code_le_kitD`, and §4's
+  `goalFact_le_kitQ`.
+
+The kit class is stated at `kitD Cz (2 * d)` throughout, matching `Verify4`'s `D = 2d` convention (`dlen_bin2Code_le_kitD`
+is stated there). TRAP: the recovery block's goal fact is at the CHILD's `dlen d'` while the node's is at the PARENT's
+`dlen (wkRule s d')`, so the two term-length hypotheses `hbn`/`hbn'` are genuinely different and both are needed.
+-/
+
+section wkShiftArms
+
+/-- **The `wk` arm, length half.** -/
+theorem len_vWk_eq (Ww Wl Wc W₁ W T s d' L' : V) :
+    len (vWk Ww Wl Wc W₁ W T s d' L') =
+      len (wkPro Ww Wl Wc W T s (fstIdx d')) + (len L' + (5 + 9)) := by
+  unfold vWk
+  rw [len_appendV, len_appendV, len_appendV, len_goalElim, len_nodeWk]
+
+/-- **The `shift` arm, length half.** -/
+theorem len_vShift_eq (Ww Wl Wc W₂ W T s d' L' : V) :
+    len (vShift Ww Wl Wc W₂ W T s d' L') =
+      len (shiftPro Ww Wl Wc W T s (fstIdx d')) + (len L' + (5 + 9)) := by
+  unfold vShift
+  rw [len_appendV, len_appendV, len_appendV, len_goalElim, len_nodeShift]
+
+/-- **The `wk` arm, size half.** -/
+theorem wk_arm_size {Wl Wc W₁ W T s d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hsub : fstIdx d' ⊆ s)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (fstIdx d') ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiEpro : 0 + 14 * D + 5 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (fstIdx d')) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (bnum (dlen TAct d')) ≤ E)
+    (hbn' : termLen LAct (bnum (dlen TAct (wkRule s d'))) ≤ E)
+    (hnE : 18 * ‖dlen TAct (wkRule s d')‖ + 7 ≤ E)
+    (hLn : setLen LAct s + dlen TAct d' + 1 ≤ dlen TAct (wkRule s d'))
+    (hnd : dlen TAct (wkRule s d') ≤ 2 * d)
+    (hgE2 : shiftsV (wkPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vWk walkPieces Wl Wc W₁ W T s d' L') := by
+  unfold vWk
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_wkPro hWp htbl hP htblN hWl hWc hPle hs hsub hsD hcD hEpro hiEpro hΓ hLay).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_goalElim_kit hE1 hPle hgE (isSemiterm_bnum_LAct 0 _) hbn hcG
+  · refine sizeOK_nodeWk hW₁ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin2Fact_le hE1 hPle hnE
+        (le_trans (le_trans le_self_add le_self_add) hLn) (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact dlen_bin2Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_bnum_LAct 0 _) hbn' hcG
+
+/-- **The `shift` arm, size half.** -/
+theorem shift_arm_size {Wl Wc W₂ W T s d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct (fstIdx d')) (hsc : s = setShift LAct (fstIdx d'))
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (fstIdx d') ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiEpro : 0 + 16 * D + 8 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (fstIdx d')) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (bnum (dlen TAct d')) ≤ E)
+    (hbn' : termLen LAct (bnum (dlen TAct (shiftRule s d'))) ≤ E)
+    (hnE : 18 * ‖dlen TAct (shiftRule s d')‖ + 7 ≤ E)
+    (hLn : setLen LAct s + dlen TAct d' + 1 ≤ dlen TAct (shiftRule s d'))
+    (hnd : dlen TAct (shiftRule s d') ≤ 2 * d)
+    (hgE2 : shiftsV (shiftPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vShift walkPieces Wl Wc W₂ W T s d' L') := by
+  unfold vShift
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_shiftPro hWp htbl hP htblN hWl hWc hPle hs hc hsc hsD hcD hEpro hiEpro hΓ hLay).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_goalElim_kit hE1 hPle hgE (isSemiterm_bnum_LAct 0 _) hbn hcG
+  · refine sizeOK_nodeShift hW₂ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin2Fact_le hE1 hPle hnE
+        (le_trans (le_trans le_self_add le_self_add) hLn) (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact dlen_bin2Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_bnum_LAct 0 _) hbn' hcG
+
+end wkShiftArms
+
 end ArithS

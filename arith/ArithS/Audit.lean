@@ -1416,6 +1416,22 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms ArmHypsAll
 #print axioms verifyGraph''_size4_of_arms
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 7 — the `wk` and `shift` ARMS (5 of 10 arms done).
+-- The first two NON-LEAF arms, and the template for the remaining five: each list is
+-- `selector ++ (child ++ (recovery ++ node))`, a right-nested `appendV` (`Verify2.lean` §5), so the LENGTH is
+-- `len selector + (len L' + (5 + 9))` (`len_goalElim = 5`, §7's `len_nodeWk`/`len_nodeShift`) and the SIZES are
+-- `sizeOK_appendV` over the four blocks: the selector at the LAYOUT class (§8's `sizeOK_wkPro`/`sizeOK_shiftPro`,
+-- covering BOTH branches of the empty-child split) lifted by §6's `layQ_le_kitQ`/`layD_le_kitD`; the child from the
+-- induction hypothesis; the recovery by §6's `sizeOK_goalElim_kit`; the node by `Frag1.sizeOK_nodeWk` /
+-- `Frag2.sizeOK_nodeShift`, whose three side conditions are `formulaLen_bin2Fact_le` + §4's `BE_le_kitQ`, §8's
+-- `dlen_bin2Code_le_kitD`, and §4's `goalFact_le_kitQ`. The kit class is stated at `kitD Cz (2 * d)` throughout,
+-- matching `Verify4`'s `D = 2d` convention. TRAP: the recovery block's goal fact is at the CHILD's `dlen d'` while
+-- the node's is at the PARENT's `dlen (wkRule s d')`, so the two term-length hypotheses are genuinely different.
+#print axioms len_vWk_eq
+#print axioms len_vShift_eq
+#print axioms wk_arm_size
+#print axioms shift_arm_size
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
