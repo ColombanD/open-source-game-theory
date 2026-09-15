@@ -1623,3 +1623,27 @@ into a 70 s timeout — an artifact of the edit, NOT evidence against the templa
 quarantined in the scratchpad as `Probe29.CORRUPTED-by-bulk-substitution.lean.bak` — REWRITE FRESH,
 do not repair. Mechanical text surgery on validated Lean is a false economy.
 IN FLIGHT: `Verify5` Part 5 (the eight remaining wrappers, then the one-line recursion).
+
+**§11 status — `Verify5` glue, Part 5: NO COMMITS (tree green and clean at 5b87af8); two findings
+that redirect the work.** Wrappers still 2 of 10 (`axL`, `verum`); `wk` scaffolded but not green.
+**FINDING 1 — TRAP 18 GENERALISES: hard-wired node lengths are the NORM, not the exception.**
+`wk_arm_size` states `hbn'`, `hnE`, `hLn`, `hnd` at `dlen TAct (wkRule s d')` and `hbn`, `hgE` at
+`dlen TAct d'`; `shift_arm_size` is the same, and by shape almost certainly `or`/`and`/`cut`/
+`all`/`exs` too. So MOST wrappers must be written UNABBREVIATED (no `d = dlen …` abbreviation);
+`axL`/`verum` are the outliers. CHECK EACH ARM LEMMA'S STATEMENT BEFORE DRAFTING ITS WRAPPER.
+**FINDING 2 — the structure is sound at `wk`'s complexity** (trap 16 continues to hold): the
+`rec1₄` recursion shape for the length half AND a **20-ARGUMENT PINNED `wk_arm_size` application**
+both elaborate at standalone cost; the `wk` scaffolding (all E-rooms `hEpro`/`hiEpro`/`hnE`/
+`hbnc`/`hbn'`, the `dlen_wkRule` facts `hLn`/`hyd`/`hnd`, both `shiftsV_le_len` bridges) is green
+in 4 s. What remained were two type mismatches at the goal-fact offsets — E-room cap plumbing, not
+structure. **EVERY failure this round was hand-built inequality arithmetic, each caught in 3–10 s**
+(a leading `0 +` blocking `ring`; a wrong `le_of_add_eq'` association; `44 + 25 ≤ 65` — it is 69).
+No wrapper resisted AFTER pinning; the template never failed.
+**THE REDIRECTION (the agent's own suggestion, adopted): build the E-room helper family FIRST.**
+The per-wrapper E-rooms are near-identical modulo constants — `hEpro`, `hiEpro`, `hnE`, `hbn`
+differ only in the coefficient fed to `capE4'`/`lin_cap`/`hCk`. A small family (`eroom_lin`,
+`eroom_len`, `eroom_bnum`) taking the coefficient and returning the capped bound removes the class
+of error that consumed this round and makes the remaining seven wrappers close to mechanical.
+Do that BEFORE drafting `shift`. (The `wk` probe stays in the scratchpad unlanded; the Part-4
+`axm` probe stays quarantined.)
+IN FLIGHT: `Verify5` Part 6 (the E-room helper family, then the eight wrappers, then the recursion).
