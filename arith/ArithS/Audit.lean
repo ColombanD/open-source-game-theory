@@ -1343,7 +1343,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms SizeThmAll
 #print axioms verifySizeOracle_of_sizeThm
 #print axioms kitPackage'''_of_size'
-#print axioms boundedInnerNec_sixteen
+#print axioms boundedInnerNec_sixteen_of_sizeThm
 #print axioms dupoc_self_coop_of_sizeThm
 #print axioms pblt_of_sizeThm
 
