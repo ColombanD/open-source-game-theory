@@ -1226,3 +1226,38 @@ memberships; two `.length = count` `rfl`s on the 9-fold piece list exceed 200k h
 declaration; `dif_pos hmem` instead of `simp [Cf, hmem]`.
 IN FLIGHT: `Prologue` Part 4 (len/shiftsV bounds, NodeSize); `Verify` Part 2 (clause edit, option
 B for axm, `VerifyKit'.ok`).
+
+**§11 status — `Prologue` Part 4 + `NodeSize` DONE (c23d3bd, 3dd5cf7, 0a3ff71; build 3261, census
+705, all standard). AND A SECOND ACCOUNTING FINDING: `all`/`exs` ARE NOT LINEAR.**
+`NodeSize.lean` (generic `L`, `T` `[T.Δ₁]`): the ten `Derivation.<tag>_inv`, the EXACT node laws
+(`dlen_andIntro : dlen (andIntro s p q dp dq) = setLen s + dlen dp + dlen dq + 1`, `dlen_exsIntro =
+setLen s + termLen t + dlen d + 1`, …), `one_le_dlen`, **`setLen_fstIdx_le_dlen`**,
+`formulaLen_le_dlen_of_mem`, the children `dlen_dp_succ_le_<tag>`, principal-formula and child-
+sequent bounds per tag. `Prologue` §18: structural `len_*` for every block/loop (`len_layoutSteps_le
+≤ 26·setLen s + 13k + 6`, `len_proAxL_le + 4 ≤ 12|p|`, `len_proCutPre_le ≤ 64|p|`, `len_proShift_le
+≤ 61·setLen c + setLen s + 20`, `len_eqSteps_le ≤ 2·eqCount r + 1` (needs the tables; extracted from
+`eqSteps_ok` by a double walk), `len_identIns_le ≤ 16·setLen (insert p s) + 5`, `len_proIns_le ≤
+55·setLen (insert p s) + 12`, `len_proOr_le ≤ 110·… + 25`, `len_proWk_le ≤ 44·setLen c + 7`,
+`len_proSS_le`, `len_proIns0_le ≤ 49·… + 13`), the cost corollaries `costSum_pro<Tag>_le'` with
+literal constants, the sharp `shiftsV_pro<Tag>_le'` (`proIns ≤ 6D+2`, `proOr ≤ 12D+4`, `proShift
+≤ 7D+3`, `proCutPre ≤ 8D`). BUT **`len_proAll_le ≤ 450·(D+1)^5`, `len_proExs_le ≤ 310·(D+1)^5`**
+(parametric `_of` forms `≤ 200D + 58 + Lc` with `Lc` = the `certFree`/`certSubst` length —
+CUBIC in `D` with `Pin`'s `len_certSubst_le_lin`, quintic without): `certSubst` walks the
+`qVecIterV` vectors at every quantifier depth, whose term-length sums are QUADRATIC in the depth
+(unary bvar codes: `Σ_{i<e}(i+1)`), so the substitution certificate is superlinear per node — the
+DESIGN's "steps `O(setLen s')`" for §4.5/§4.6 overlooked this (root cause: variable indices charged
+in UNARY, the same cause as the degree-4 loss). CONSEQUENCE: the verify list is `O(Σ_nodes (D+1)³)
+≤ O((dlen ρ + 1)³)` long, not `O(dlen ρ)`; `VerifyKit'.cost`'s multiplier must be `Ck·(dlen ρ+1)³`;
+the top's degree is then ≈ 10 under the coarse accounting (`L ~ G³`, `ctxBoundG ~ L²G ~ G⁷`, cost
+`~ L·G⁷`), ≈ 7 under fine occurrence accounting, and back toward 4–5 only with a REDESIGN of the
+substitution certificate (one `qVecCert` step per depth + lazy `qVecNth0/Succ` at bvar leaves,
+instead of re-walking the iterate). DECISION (2026-09-15): finish the UNCONDITIONAL theorem at the
+honest degree first (any fixed degree suffices for `dupoc_self_coop {d}`; the remaining work is the
+same), record the two improvements as follow-ups: (1) `certSubst` redesign, (2) occurrence
+accounting; (3) the deeper fix — binary variable-index charging in the M1 length measure. The user
+is informed. TRAPS: `formulaLen_le_setLen_of_mem` needs `(L := LAct)`; `norm_num` turned a true
+`12*1+4 = 14` into `False` inside a `calc` — `le_of_eq (by ring)`; `Audit.lean` imports modules
+individually. NOTE: `len_eqSteps_le` needs `TableOK`/`ProTable` — a purely structural bound of the
+`eqFT` template would be a `Layout` addition.
+IN FLIGHT: `Verify2` (VerifyGraph', option B, verifyKit'_ok at the cubic length); `Top` (the kit
+generalized to a `(dlen ρ+1)^m` multiplier and the resulting degree).
