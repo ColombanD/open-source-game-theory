@@ -73,5 +73,47 @@ lemma layD_mono (N' B' : V) {a b : V} (h : a ≤ b) : layD N' B' a ≤ layD N' B
   unfold layD; exact add_le_add (lenD_mono N' B' h) (sum2D_mono N' B' h)
 
 end layMono
+/-! ## 2. The size invariant of the verification list
+
+The `NumTableOK`-carrying variant of `Assemble.VerifySizeOracle`. The ten arms of the
+`Derivation.induction1` glue are, for now, one explicitly named hypothesis (`ArmHyps`);
+they are discharged in turn below, mirroring `Verify4.verifyGraph''_ok4` arm for arm with
+`len`/`SizeOK` in place of `shiftsV`.
+
+The size classes that occur, and how each lands in the kit class:
+
+* the LAYOUT class `(layQ B B' D, layD N' B' D)` of every prologue (`Prologue.sizeOK_pro*`),
+  lifted by `layQ_mono`/`layD_mono` of section 1 to `D = 2d` and then by `Assemble.layQ_le`/`layD_le`;
+* the GOAL-FACT class `4 * |goalFact &j u|` of `postIns`/`goalElim` and each node's goal step,
+  landed directly by `Assemble.goalFact4_le_kitQ`;
+* the `axm` ENTRY class `entryB Cv p`, already carried by `Verify3.AxmEntryOK'`.
+-/
+
+section sizeInvariant
+
+/-- The per-arm obligations of the size glue, as ONE named hypothesis (discharged arm by arm below).
+This is a scaffold: with it assumed, `verifySizeOracle_of` is immediate; the mathematics is in
+replacing it. -/
+def ArmHyps (tbl B Wl Wc W₁ W₂ W T : V) (Cz : ℕ) : Prop :=
+  ∀ {E A Cv ρ L : V}, AxmTableOK' tbl E walkPieces A Cv → Derivation TAct ρ →
+    VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
+    len L ≤ (Cz : V) * (dlen TAct ρ + 1) ^ 4 ∧
+      SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (dlen TAct ρ)) L
+
+/-- **The size oracle, with the numeral-table hypothesis its proof requires.**
+
+`Assemble.SizeOracle` binds the numeral table `T` with no `NumTableOK`, which makes it unprovable
+(see this file's header); this is the same statement with `NumTableOK T N' B'` restored, so `Cz`
+may depend on the fixed naturals `N'`, `B'`. Its only consumer, `Assemble.kitPackage'''_of_size`,
+applies the oracle at the canonical numeral table of `NumSteps.exists_numTable`, where `N'` and
+`B'` are fixed. -/
+theorem verifySizeOracle_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl B T : V} {Cz : ℕ}
+    (harms : ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz) :
+    VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz := by
+  intro E A Cv rho L hA hd hL
+  exact harms hA hd hL
+
+end sizeInvariant
 
 end ArithS
