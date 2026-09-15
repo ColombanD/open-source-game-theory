@@ -2013,4 +2013,293 @@ def KitPackage' (N B N' B' N₂ B₂ N₃ B₃ Ck : ℕ) (Cχ : Semisentence LAc
 
 end kitsCoarse
 
+/-! ## 10. The assembly with the coarse kits -/
+
+section assemblyCoarse
+
+lemma hornCost9_le (N E B : V) : hornCost N E 0 9 9 B ≤ 940 * (N + B * E + B + E + 1) := by
+  unfold hornCost
+  exact le_iff_exists_add.mpr ⟨939 * N + 650 * (B * E) + 939 * B + 931 * E, by ring⟩
+
+lemma introCost9_le (N E B : V) : introCost N E 0 9 9 B ≤ 949 * (N + B * E + B + E + 1) := by
+  unfold introCost
+  exact le_iff_exists_add.mpr ⟨948 * N + 620 * (B * E) + 948 * B + 940 * E, by ring⟩
+
+lemma stepKM9_le (N E B : V) : stepKM N E B ((9 : ℕ) : V) ≤ 1899 * (N + B * E + B + E + 1) := by
+  unfold stepKM
+  simp only [Nat.cast_ofNat]
+  have h1 := hornCost9_le N E B
+  have h2 := introCost9_le N E B
+  have h3 : 6 * (B * E) + 4 ≤ 10 * (N + B * E + B + E + 1) :=
+    le_iff_exists_add.mpr ⟨10 * N + 4 * (B * E) + 10 * B + 10 * E + 6, by ring⟩
+  calc hornCost N E 0 9 9 B + (6 * (B * E) + 4) + introCost N E 0 9 9 B
+      ≤ 940 * (N + B * E + B + E + 1) + 10 * (N + B * E + B + E + 1) + 949 * (N + B * E + B + E + 1) :=
+        add_le_add (add_le_add h1 h3) h2
+    _ = 1899 * (N + B * E + B + E + 1) := by ring
+
+lemma costK9_le (N E B Q D : V) :
+    costK N E B ((9 : ℕ) : V) Q D ≤ 1899 * (N + B * E + B + E + 1) + 27 * (Q * E) + 2 * E + 7 * Q + D + 42 := by
+  unfold costK
+  exact add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (stepKM9_le N E B) le_rfl) le_rfl) le_rfl) le_rfl) le_rfl
+
+/-- `ctxBoundG` with the context replaced by bounds on its `setLen`/`fvOccS`. -/
+noncomputable def ctxB (G S F L : V) : V := S + L * F + (L * L + L) * G
+
+lemma ctxBoundG_le_ctxB {G Γ L S F : V} (hS : setLen LAct Γ ≤ S) (hF : fvOccS LAct Γ ≤ F) :
+    ctxBoundG G Γ L ≤ ctxB G S F L := by
+  unfold ctxBoundG ctxB
+  exact add_le_add (add_le_add hS (mul_le_mul_of_nonneg_left hF zero_le)) le_rfl
+
+noncomputable def topS2' (B E Cχ lk S₀ F₀ Lr : V) : V :=
+  ctxB (growK B E (kitQ Cχ B E)) (topS1 B E S₀ F₀ Lr) (topF1 B E F₀ Lr) (Cχ * (lk + 1))
+noncomputable def topF2' (B E Cχ lk F₀ Lr : V) : V := topF1 B E F₀ Lr + Cχ * (lk + 1) * growK B E (kitQ Cχ B E)
+noncomputable def topS3' (B E Ck Cχ lk d S₀ F₀ Lr : V) : V :=
+  ctxB (growK B E (kitQ Ck B E)) (topS2' B E Cχ lk S₀ F₀ Lr) (topF2' B E Cχ lk F₀ Lr) (Ck * (d + 1))
+noncomputable def topF3' (B E Ck Cχ lk d F₀ Lr : V) : V :=
+  topF2' B E Cχ lk F₀ Lr + Ck * (d + 1) * growK B E (kitQ Ck B E)
+noncomputable def topQ' (B E Ck Cχ lk d S₀ F₀ Lr : V) : V := 4 * topS3' B E Ck Cχ lk d S₀ F₀ Lr + B * E
+
+/-- **The explicit bound, coarse shape**: leaf + root + pin kit + verify kit + closing block. -/
+noncomputable def topBound' (N B E Ck Cχ lk d S₀ F₀ Lr D : V) : V :=
+  (topS3' B E Ck Cχ lk d S₀ F₀ Lr + 15 * topF3' B E Ck Cχ lk d F₀ Lr +
+      (15 * 15 + 15) * growK B E (topQ' B E Ck Cχ lk d S₀ F₀ Lr) + 1) +
+  Lr * (stepK N E B + 36 * topS1 B E S₀ F₀ Lr) +
+  Cχ * (lk + 1) * (costK N E B ((9 : ℕ) : V) (kitQ Cχ B E) (kitD Cχ lk) +
+    38 * (ctxB (growK B E (kitQ Cχ B E)) (topS1 B E S₀ F₀ Lr) (topF1 B E F₀ Lr) (Cχ * (lk + 1)) +
+      (topF1 B E F₀ Lr + Cχ * (lk + 1) * growK B E (kitQ Cχ B E)))) +
+  Ck * (d + 1) * (costK N E B ((9 : ℕ) : V) (kitQ Ck B E) (kitD Ck d) +
+    38 * (ctxB (growK B E (kitQ Ck B E)) (topS2' B E Cχ lk S₀ F₀ Lr) (topF2' B E Cχ lk F₀ Lr) (Ck * (d + 1)) +
+      (topF2' B E Cχ lk F₀ Lr + Ck * (d + 1) * growK B E (kitQ Ck B E)))) +
+  15 * (costK N E B ((8 : ℕ) : V) (topQ' B E Ck Cχ lk d S₀ F₀ Lr) D +
+    (3 * ((8 : ℕ) : V) + 11) * ((topS3' B E Ck Cχ lk d S₀ F₀ Lr + 15 * topF3' B E Ck Cχ lk d F₀ Lr +
+      (15 * 15 + 15) * growK B E (topQ' B E Ck Cχ lk d S₀ F₀ Lr)) +
+      (topF3' B E Ck Cχ lk d F₀ Lr + 15 * growK B E (topQ' B E Ck Cχ lk d S₀ F₀ Lr))))
+
+theorem top_main' (χ : Semisentence LAct 1) {tbl N B W tblN N' B' tblL N₂ B₂ tblM N₃ B₃ : V} {Ck Cχ : ℕ}
+    (htbl : TableOK tbl N) (hT : TopTable tbl) (hB : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B)
+    (hPl : formulaLen LAct (Plength : V) ≤ B) (hPeq : formulaLen LAct (Peq : V) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (htblN : NumTableOK tblN N' B') (htblL : LenTableOK tblL N₂ B₂) (htblM : MulTableOK tblM N₃ B₃)
+    (hkit : VerifyKit' tbl N B W tblN Ck) (hpin : PinKit' χ tbl N B Cχ)
+    {k ρ : V} (hρ : Proof TAct ρ (instB (⌜χ⌝ : V) k)) (hlen : dlen TAct ρ ≤ gBudget k)
+    {L : V} (hL : VerifyGraph W tblN ρ L) {E : V} (hE : Etop χ k (dlen TAct ρ) Ck Cχ ≤ E) :
+    ∃ e Lr : V, LenDerivable TAct e (instB (⌜Box_g χ⌝ : V) k) ∧
+      Lr + 4 ≤ 12 * formulaLen LAct (instB (⌜χ⌝ : V) k) + 13 ∧
+      e ≤ topBound' N B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct (insert (boxFact (qNum χ) (bnum k)) (∅ : V)))
+        (fvOccS LAct (insert (boxFact (qNum χ) (bnum k)) (∅ : V))) Lr (topD N' B' N₂ B₂ N₃ B₃ k (dlen TAct ρ)) := by
+  obtain ⟨x, hxdef⟩ : ∃ x, x = instB (⌜χ⌝ : V) k := ⟨_, rfl⟩
+  obtain ⟨T, hTdef⟩ : ∃ T, T = boxFact (qNum χ) (bnum k) := ⟨_, rfl⟩
+  obtain ⟨Γ₀, hΓ₀def⟩ : ∃ Γ₀ : V, Γ₀ = insert T (∅ : V) := ⟨_, rfl⟩
+  rw [← hxdef] at hρ ⊢
+  rw [← hTdef, ← hΓ₀def]
+  have hx : IsSemiformula LAct 0 x := hxdef ▸ isFormula_instB_quote χ k
+  have hq : IsSemiterm LAct (0 : V) (qNum χ) := isSemiterm_qNum χ
+  have hbk : IsSemiterm LAct (0 : V) (bnum k) := isSemiterm_bnum_LAct 0 k
+  have hTf : IsFormula LAct T := hTdef ▸ isFormula_boxFact hq hbk
+  have hΓ₀ : IsFormulaSet LAct Γ₀ := hΓ₀def ▸ IsFormulaSet.insert_iff.mpr ⟨hTf, IsFormulaSet.empty⟩
+  have hTmem : T ∈ Γ₀ := by rw [hΓ₀def]; simp
+  -- the cap requirements, read off `Etop`
+  have hE0 : Etop χ k (dlen TAct ρ) Ck Cχ ≤ E := hE
+  have r_walk : eWalk χ k ≤ E := le_trans (le_Etop_walk χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_pin : ePin k Cχ ≤ E := le_trans (le_Etop_pin χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_ver : eVer k (dlen TAct ρ) Ck Cχ ≤ E := le_trans (le_Etop_ver χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_js : eJs k (dlen TAct ρ) Ck Cχ ≤ E := le_trans (le_Etop_js χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_q : eQ χ ≤ E := le_trans (le_Etop_q χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_k : eK k ≤ E := le_trans (le_Etop_k χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_l : eL k ≤ E := le_trans (le_Etop_l χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_b : eB k ≤ E := le_trans (le_Etop_b χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_g : eG k ≤ E := le_trans (le_Etop_g χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_d : eD (dlen TAct ρ) ≤ E := le_trans (le_Etop_d χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_n5 : eN5 k ≤ E := le_trans (le_Etop_n5 χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_n4a : eN4a k ≤ E := le_trans (le_Etop_n4a χ k (dlen TAct ρ) Ck Cχ) hE0
+  have r_n4b : eN4b k ≤ E := le_trans (le_Etop_n4b χ k (dlen TAct ρ) Ck Cχ) hE0
+  unfold eWalk at r_walk
+  rw [← hxdef] at r_walk
+  unfold ePin at r_pin
+  unfold eVer at r_ver
+  unfold eJs at r_js
+  unfold eQ at r_q
+  unfold eK at r_k
+  unfold eL at r_l
+  unfold eB at r_b
+  unfold eG at r_g
+  unfold eD at r_d
+  unfold eN5 at r_n5
+  unfold eN4a at r_n4a
+  unfold eN4b at r_n4b
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self r_walk)
+  -- (1) the root block
+  obtain ⟨rok, rnd, rho, rsh, rlen, rlay⟩ := rootSteps_ok htbl hT hx hΓ₀ r_walk
+  set Γ₁ := finalCtx Γ₀ (rootSteps x) with hΓ₁def
+  have hΓ₁ : IsFormulaSet LAct Γ₁ := finalCtx_isFormulaSet 8 htbl hΓ₀ rok
+  have rB : ∀ i < len (rootSteps x), formulaLen LAct (rowB tbl.[sRow (rootSteps x).[i]]) ≤ B :=
+    fun i hi ↦ hB _ (sRow_lt_of_stepOK (rok i hi) (rho i hi))
+  have rcost := costSum_le_of_hornOnly hE1 htbl rok rho rB
+  obtain ⟨rF, rS⟩ := ctxVec_len_le hE1 htbl rok rho rB (len (rootSteps x)) le_rfl
+  have rF' : fvOccS LAct Γ₁ ≤ topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x)) := rF
+  have rS' : setLen LAct Γ₁ ≤ topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) := rS
+  -- (2) the pin block
+  obtain ⟨P, pok, pnd, psh, pinst, pcost, pS, pF⟩ := hpin.pin k (hxdef ▸ rlay) hΓ₁ r_pin
+  set Γ₂ := finalCtx Γ₁ P with hΓ₂def
+  have hΓ₂ : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 9 htbl hΓ₁ pok
+  have lay₂ : RootLayout Γ₂ x (0 + shiftsV P) := rlay.transport pnd
+  -- (3) the verification block
+  have r_ver' : (Ck : V) * ((dlen TAct ρ) + (0 + shiftsV P) + 1) ≤ E :=
+    le_trans (mul_le_mul_of_nonneg_left (add_le_add (add_le_add le_rfl (add_le_add le_rfl psh)) le_rfl) zero_le) r_ver
+  obtain ⟨vok, vnd, vsh, vgoal⟩ := hkit.ok hρ lay₂ hΓ₂ r_ver' hL
+  obtain ⟨vcost, vS, vF⟩ := hkit.cost hρ lay₂ hΓ₂ r_ver' hL
+  set Γ₃ := finalCtx Γ₂ L with hΓ₃def
+  have hΓ₃ : IsFormulaSet LAct Γ₃ := finalCtx_isFormulaSet 9 htbl hΓ₂ vok
+  have lay₃ : RootLayout Γ₃ x (0 + shiftsV P + shiftsV L) := lay₂.transport vnd
+  set js := 0 + shiftsV P + 1 + shiftsV L with hjsdef
+  have hins₃ : neg LAct (insFact (^&js) (^&(js + 1)) (𝟎 : V)) ∈ Γ₃ := by
+    have := lay₃.2.2.1
+    have e1 : (0 : V) + shiftsV P + shiftsV L + 1 = js := by rw [hjsdef]; ring
+    have e2 : (0 : V) + shiftsV P + shiftsV L + 2 = js + 1 := by rw [hjsdef]; ring
+    rwa [e1, e2] at this
+  have hinst₃ : neg LAct (instBFact (^&(js + 1)) (qNum χ) (bnum k)) ∈ Γ₃ := by
+    have := mem_finalCtx_of_mem' vnd pinst
+    rw [shiftIterV_neg (isFormula_instBFact (by simp) hq hbk), shiftIterV_instBFact (by simp) hq hbk,
+      termShiftIterV_fvar, termShiftIterV_qNum, termShiftIterV_bnumTop] at this
+    have e : (0 : V) + 2 + shiftsV P + shiftsV L = js + 1 := by rw [hjsdef]; ring
+    rwa [e] at this
+  -- (4) the closing block
+  have r_js' : js + 4 ≤ E := by
+    refine le_trans ?_ r_js
+    rw [hjsdef]
+    calc (0 : V) + shiftsV P + 1 + shiftsV L + 4 ≤ 0 + (Cχ : V) * (‖k‖ + 1) + 1 + (Ck : V) * ((dlen TAct ρ) + 1) + 4 :=
+          add_le_add (add_le_add (add_le_add (add_le_add le_rfl psh) le_rfl) vsh) le_rfl
+      _ = (Cχ : V) * (‖k‖ + 1) + 1 + (Ck : V) * ((dlen TAct ρ) + 1) + 4 := by rw [zero_add]
+  obtain ⟨cok, cnd, csh, clen, cT⟩ := closeSteps_ok χ htbl hT htblN htblL htblM hΓ₃ hlen r_js' r_q r_k r_l r_b r_g r_d
+    vgoal hins₃ hinst₃
+  set Γ₄ := finalCtx Γ₃ (closeSteps χ k ρ js tblN tblL tblM) with hΓ₄def
+  have hΓ₄ : IsFormulaSet LAct Γ₄ := finalCtx_isFormulaSet 8 htbl hΓ₃ cok
+  -- the whole list
+  set S := topList χ k ρ P L tblN tblL tblM with hSdef
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
+  have hSfin : finalCtx Γ₀ S = Γ₄ := by
+    rw [hSdef, topList, ← hxdef, ← hjsdef, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁def,
+      ← hΓ₂def, ← hΓ₃def]
+  have hok : ListOK tbl E ((9 : ℕ) : V) Γ₀ S := by
+    rw [hSdef, topList, ← hxdef, ← hjsdef]
+    refine listOK_appendV (rok.mono h89) ?_
+    rw [← hΓ₁def]
+    refine listOK_appendV pok ?_
+    rw [← hΓ₂def]
+    refine listOK_appendV vok ?_
+    rw [← hΓ₃def]
+    exact cok.mono h89
+  have hnd : NoDrop' S := by
+    rw [hSdef, topList, ← hxdef, ← hjsdef]
+    exact noDrop'_appendV rnd.noDrop' (noDrop'_appendV pnd (noDrop'_appendV vnd cnd))
+  have hT₄ : T ∈ Γ₄ := by
+    have := mem_finalCtx_of_mem' hnd hTmem
+    rw [hSfin, hTdef, shiftIterV_target] at this
+    rw [hTdef]; exact this
+  have hnT₄ : neg LAct T ∈ Γ₄ := by rw [hTdef]; exact cT
+  -- the leaf and the derivation
+  have hleaf : DerivationOf TAct (axL Γ₄ T) Γ₄ := ⟨by simp, Derivation.axL hΓ₄ hT₄ hnT₄⟩
+  have hleaf' : DerivationOf TAct (axL Γ₄ T) (ctxVec Γ₀ S).[len S] := by
+    show DerivationOf TAct (axL Γ₄ T) (finalCtx Γ₀ S); rw [hSfin]; exact hleaf
+  have hdlen_leaf : dlen TAct (axL Γ₄ T) = setLen LAct Γ₄ + 1 :=
+    dlen_eq_of_graph hleaf.2 (DlenGraph.axL_iff.mpr rfl)
+  have hproof : DerivationOf TAct (chainCode tbl Γ₀ S (axL Γ₄ T)) Γ₀ := chainCode_proof 9 htbl hok hleaf'
+  have hcost := dlen_chainCode_le 9 hE1 htbl hok hleaf'
+  -- the closing block's cost
+  have hgoalLen : formulaLen LAct (goalFact (^&js) (bnum (dlen TAct ρ))) ≤ setLen LAct Γ₃ := by
+    have h := formulaLen_le_setLen_of_mem (L := LAct) vgoal
+    rwa [formulaLen_neg_eq (isFormula_goalFact (by simp) (isSemiterm_bnum_LAct 0 _))] at h
+  set Q := topQ' B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) with hQdef
+  set D := topD N' B' N₂ B₂ N₃ B₃ k (dlen TAct ρ) with hDdef
+  have hS2 : setLen LAct Γ₂ ≤ topS2' B E Cχ ‖k‖ (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) :=
+    le_trans pS (ctxBoundG_le_ctxB rS' rF')
+  have hF2 : fvOccS LAct Γ₂ ≤ topF2' B E Cχ ‖k‖ (fvOccS LAct Γ₀) (len (rootSteps x)) :=
+    le_trans pF (add_le_add rF' le_rfl)
+  have hS3 : setLen LAct Γ₃ ≤ topS3' B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) :=
+    le_trans vS (ctxBoundG_le_ctxB hS2 hF2)
+  have hF3 : fvOccS LAct Γ₃ ≤ topF3' B E Ck Cχ ‖k‖ (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) :=
+    le_trans vF (add_le_add hF2 le_rfl)
+  have hBE : B * E ≤ Q := by rw [hQdef, topQ']; exact le_add_self
+  have hQg : 4 * formulaLen LAct (goalFact (^&js) (bnum (dlen TAct ρ))) ≤ Q := by
+    rw [hQdef, topQ']
+    exact le_trans (mul_le_mul_of_nonneg_left (le_trans hgoalLen hS3) zero_le) le_self_add
+  have hsz : SizeOK Q D (closeSteps χ k ρ js tblN tblL tblM) := by
+    unfold closeSteps
+    refine sizeOK_appendV ((sizeOK_goalElim (D := D) (by simp) (isSemiterm_bnum_LAct 0 _)).mono hQg le_rfl) ?_
+    have hE1' : (1 : V) ≤ E := hE1
+    have hbd : IsSemiterm LAct (0 : V) (bnum (dlen TAct ρ)) := isSemiterm_bnum_LAct 0 _
+    have hbg : IsSemiterm LAct (0 : V) (bnum (gBudget k)) := isSemiterm_bnum_LAct 0 _
+    refine sizeOK_cons (stepSizeOK_sLemma (le_trans (formulaLen_lengthEqFact_le hPl r_n5) hBE)
+      (le_trans (dlen_lengthEqCode_le htblN htblL k) (by rw [hDdef, topD]; exact le_trans le_self_add (le_trans le_self_add le_self_add)))) ?_
+    refine sizeOK_cons (stepSizeOK_sLemma (le_trans (formulaLen_mulFact_le hPeq r_n4a) hBE)
+      (le_trans (dlen_mulEqCode_le htblN htblM _ _) (by rw [hDdef, topD]; exact le_trans le_add_self (le_trans le_self_add le_self_add)))) ?_
+    refine sizeOK_cons (stepSizeOK_sLemma (le_trans (formulaLen_mulFact_le hPeq r_n4b) hBE)
+      (le_trans (dlen_mulEqCode_le htblN htblM _ _) (by rw [hDdef, topD]; exact le_trans le_add_self le_self_add))) ?_
+    refine sizeOK_cons (stepSizeOK_sLemma
+      (le_trans (formulaLen_leFact_le hE1' hbd hbg r_d r_g) (le_trans (mul_le_mul_of_nonneg_right hPle zero_le) hBE))
+      (le_trans (dlen_leCode_le' htblN hlen) (by rw [hDdef, topD]; exact le_add_self))) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (ttag_dlenDefIntro rfl _)) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (ttag_proofIntro rfl _)) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (ttag_leTrans _)) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (ttag_lenDerIntro rfl _)) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (ttag_gIntroNum rfl _)) ?_
+    exact sizeOK_single (stepSizeOK_horn0 (ttag_boxIntro rfl _))
+  have ccost := costSum_le_of_sizeOK 8 hE1 htbl hB cok hsz
+  rw [clen] at ccost
+  obtain ⟨_, cS⟩ := ctxVec_len_le_sizeOK 8 hE1 htbl hB cok hsz (len (closeSteps χ k ρ js tblN tblL tblM)) le_rfl
+  have cS' : setLen LAct Γ₄ ≤ setLen LAct Γ₃ + len (closeSteps χ k ρ js tblN tblL tblM) * fvOccS LAct Γ₃ +
+      (len (closeSteps χ k ρ js tblN tblL tblM) * len (closeSteps χ k ρ js tblN tblL tblM) +
+        len (closeSteps χ k ρ js tblN tblL tblM)) * growK B E Q := cS
+  rw [clen] at cS'
+  -- the total
+  refine ⟨dlen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)), len (rootSteps x), ?_, rlen, ?_⟩
+  · refine ⟨chainCode tbl Γ₀ S (axL Γ₄ T), ?_, le_refl (dlen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)))⟩
+    rw [target_eq_boxFact, ← hTdef]
+    have e : insert T (∅ : V) = {T} := mem_ext fun _ ↦ by simp
+    show DerivationOf TAct _ {T}
+    rw [← e, ← hΓ₀def]; exact hproof
+  · have hsplit : costSum N E Γ₀ S = costSum N E Γ₀ (rootSteps x) +
+        (costSum N E Γ₁ P + (costSum N E Γ₂ L + costSum N E Γ₃ (closeSteps χ k ρ js tblN tblL tblM))) := by
+      rw [hSdef, topList, ← hxdef, ← hjsdef, costSum_appendV, costSum_appendV, costSum_appendV, ← hΓ₁def, ← hΓ₂def,
+        ← hΓ₃def]
+    have h_leaf : setLen LAct Γ₄ + 1 ≤ topS3' B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) +
+        15 * topF3' B E Ck Cχ ‖k‖ (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) + (15 * 15 + 15) * growK B E Q + 1 :=
+      add_le_add (le_trans cS' (add_le_add (add_le_add hS3 (mul_le_mul_of_nonneg_left hF3 zero_le)) le_rfl)) le_rfl
+    have h_root : costSum N E Γ₀ (rootSteps x) ≤
+        len (rootSteps x) * (stepK N E B + 36 * topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x))) := by
+      unfold topS1; unfold ctxBound at rcost; exact rcost
+    have h_pin : costSum N E Γ₁ P ≤ (Cχ : V) * (‖k‖ + 1) *
+        (costK N E B ((9 : ℕ) : V) (kitQ (Cχ : V) B E) (kitD (Cχ : V) ‖k‖) +
+          38 * (ctxB (growK B E (kitQ (Cχ : V) B E)) (topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
+            (topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x))) ((Cχ : V) * (‖k‖ + 1)) +
+            (topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x)) + (Cχ : V) * (‖k‖ + 1) * growK B E (kitQ (Cχ : V) B E)))) :=
+      le_trans pcost (mul_le_mul_of_nonneg_left (add_le_add le_rfl (mul_le_mul_of_nonneg_left
+        (add_le_add (ctxBoundG_le_ctxB rS' rF') (add_le_add rF' le_rfl)) zero_le)) zero_le)
+    have h_ver : costSum N E Γ₂ L ≤ (Ck : V) * (dlen TAct ρ + 1) *
+        (costK N E B ((9 : ℕ) : V) (kitQ (Ck : V) B E) (kitD (Ck : V) (dlen TAct ρ)) +
+          38 * (ctxB (growK B E (kitQ (Ck : V) B E)) (topS2' B E Cχ ‖k‖ (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
+            (topF2' B E Cχ ‖k‖ (fvOccS LAct Γ₀) (len (rootSteps x))) ((Ck : V) * (dlen TAct ρ + 1)) +
+            (topF2' B E Cχ ‖k‖ (fvOccS LAct Γ₀) (len (rootSteps x)) + (Ck : V) * (dlen TAct ρ + 1) * growK B E (kitQ (Ck : V) B E)))) :=
+      le_trans vcost (mul_le_mul_of_nonneg_left (add_le_add le_rfl (mul_le_mul_of_nonneg_left
+        (add_le_add (ctxBoundG_le_ctxB hS2 hF2) (add_le_add hF2 le_rfl)) zero_le)) zero_le)
+    have h_close : costSum N E Γ₃ (closeSteps χ k ρ js tblN tblL tblM) ≤
+        15 * (costK N E B ((8 : ℕ) : V) Q D + (3 * ((8 : ℕ) : V) + 11) *
+          ((topS3' B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) +
+            15 * topF3' B E Ck Cχ ‖k‖ (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) + (15 * 15 + 15) * growK B E Q) +
+           (topF3' B E Ck Cχ ‖k‖ (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) + 15 * growK B E Q))) := by
+      refine le_trans ccost (mul_le_mul_of_nonneg_left (add_le_add le_rfl (mul_le_mul_of_nonneg_left
+        (add_le_add ?_ (add_le_add hF3 le_rfl)) zero_le)) zero_le)
+      unfold ctxBoundG
+      exact add_le_add (add_le_add hS3 (mul_le_mul_of_nonneg_left hF3 zero_le)) le_rfl
+    refine le_trans hcost ?_
+    rw [hdlen_leaf, hsplit]
+    unfold topBound'
+    calc setLen LAct Γ₄ + 1 + (costSum N E Γ₀ (rootSteps x) + (costSum N E Γ₁ P +
+          (costSum N E Γ₂ L + costSum N E Γ₃ (closeSteps χ k ρ js tblN tblL tblM))))
+        = (setLen LAct Γ₄ + 1) + costSum N E Γ₀ (rootSteps x) + costSum N E Γ₁ P + costSum N E Γ₂ L +
+          costSum N E Γ₃ (closeSteps χ k ρ js tblN tblL tblM) := by ring
+      _ ≤ _ := add_le_add (add_le_add (add_le_add (add_le_add h_leaf h_root) h_pin) h_ver) h_close
+
+
+end assemblyCoarse
+
 end ArithS
