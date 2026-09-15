@@ -1647,3 +1647,29 @@ of error that consumed this round and makes the remaining seven wrappers close t
 Do that BEFORE drafting `shift`. (The `wk` probe stays in the scratchpad unlanded; the Part-4
 `axm` probe stays quarantined.)
 IN FLIGHT: `Verify5` Part 6 (the E-room helper family, then the eight wrappers, then the recursion).
+
+**§11 status — `Verify5` glue, Part 6: the E-ROOM HELPER FAMILY LANDED and it works (2e51439, §17;
+build 3270, census 872, all standard).** Three helpers, green in 4 s, validated at the exact shapes
+Part 5 hand-rolled and got wrong: **`eroom_lin hE hCk a b c _ : (a:V)·D + (b:V)·‖D‖ + (c:V) ≤ E`**
+(the general linear room — subsumes the prologue room `(13,18,12)`, the node room `(0,18,7)`, the
+insert room `(14,0,5)` and every other `lin_cap` chain), **`eroom_bnum hE hCk hn : termLen (bnum n)
+≤ E`** for `n ≤ D`, **`eroom_off hE hCk hx c _ : x + (c:V) ≤ E`** for `x ≤ D` (the goal-fact offset
+shape). USAGE IDIOM (in the section docstring and census): coefficients carry ℕ-casts so the
+constant side discharges by `norm_num` against `hCk`; call sites wanting the literal `V`-shape
+follow with `push_cast at this`, and for a triple with `a = 0` additionally `rw [zero_mul,
+zero_add] at this` — that leading zero is exactly what blocked `ring` when these were hand-rolled.
+**PROOF THAT THEY WORK: rebuilt on the helpers, the `wk` scaffolding goes green in 3 s**, each
+E-room a single call. Also: **the 20-argument pinned `wk_arm_size` application TYPE-CHECKS** (the
+last structural unknown for that arm — the blocker had been a wrong `le_rfl` in the `hsD` slot
+where `D := dlen TAct (wkRule s d')`; the witness is the scaffolding's own `hsD`), and the length
+half via `rec1₄` + `hdeq` from `dlen_wkRule` is structurally sound. RESIDUAL: `lin_le_p3` yields
+`1 * D + c`, not `D + c` — a `one_mul` rewrite is needed at those call sites.
+WRAPPERS: still 2 of 10 (`axL`, `verum`); `wk` is ONE CAREFUL LITERAL TRANSCRIPTION from landing
+(scaffolding, `hsD` fix, `rec1₄` length half and the pinned size call all individually verified).
+**PROCESS FAILURE, SECOND OCCURRENCE: the `wk` probe was destroyed by SCRIPTED SPLICES** (a `calc`
+fragment landed in the wrong block — "unexpected token '·'" — plus a mid-file helper name
+collision), exactly as the `axm` probe was in Part 4. Quarantined as
+`Probe32.CORRUPTED-by-scripted-splice.lean.bak`. **RULE, now absolute: NEVER edit validated Lean by
+script, heredoc splice, `sed`, or any bulk substitution — transcribe literally, one piece at a
+time, with the Edit tool.** Rewrite `wk` fresh; do not repair either quarantined probe.
+IN FLIGHT: `Verify5` Part 7 (`wk` transcribed literally, then the seven, then the recursion).
