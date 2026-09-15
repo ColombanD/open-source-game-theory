@@ -45,6 +45,7 @@ import ArithS.Necessitation.Frag2
 import ArithS.Necessitation.Verify
 import ArithS.Necessitation.Top
 import ArithS.Necessitation.Prologue
+import ArithS.Necessitation.NumId
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -911,5 +912,26 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms proCutPre_ok
 #print axioms loopW_ok
 #print axioms proWk_ok
+
+-- U10 (Necessitation/NumId, 2026-09-15): NUMERAL IDENTIFICATION — `eqFact &x (numeral ⌜φ⌝)` from the walk
+-- dossier of a STANDARD code (the quote of a Lean-level formula), the `pinSteps` of DESIGN §4.10(i)/§7.1
+-- step 3. Per node one closed shape fact at the numerals (a `Lib` sentence: true in `ℕ` by the quote
+-- equations, true everywhere by 𝚺₀-absoluteness, `Lib.of_models`; its code by `quote_lMap_emb_subst`)
+-- cut in as an `sLemma`, then one identification row `eqOf<Kind>` at closed witnesses — SHIFT-FREE lists,
+-- constants per formula (`Lib` lengths + the 𝚺₁-absolute `formulaLen`/`termLen`/`takeLast`). The meta
+-- induction over `SyntacticSemiterm`/`Semiproposition`, the sentence form `numId_sentence` and the cost
+-- (`Frag1.costSum_le_of_sizeOK`). Nothing below is an axiom.
+#print axioms lib_cfact_of_nat
+#print axioms closedDer_of_lib
+#print axioms flN_cast
+#print axioms lemmaThenHorn_ok
+#print axioms termId_bvar
+#print axioms vecId_succ
+#print axioms numId_term
+#print axioms formId_and
+#print axioms formId_rel
+#print axioms numId_formula
+#print axioms numId_sentence
+#print axioms numInv_cost
 
 end ArithS
