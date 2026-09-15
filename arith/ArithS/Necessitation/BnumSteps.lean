@@ -638,4 +638,321 @@ theorem bnOddTop_ok {E Γ m j ce : V} (hΓ : IsFormulaSet LAct Γ) (hm : 1 ≤ m
 
 end tailsOK
 
+/-! ## 3. The producer is applicable (Π₁ order induction on `k`) -/
+
+section okInduction
+
+/-- The conclusion of one certification list: applicable at cap `9`, cut-admitting, SHIFT-FREE, `neg F` in the
+final context. -/
+def BnPost (tbl E Γ y F : V) : Prop :=
+  ListOK tbl E ((9 : ℕ) : V) Γ y ∧ NoDrop' y ∧ shiftsV y = 0 ∧ neg LAct F ∈ finalCtx Γ y
+instance bnPost_definable : 𝚫₁-Relation₅ (BnPost : V → V → V → V → V → Prop) := by
+  unfold BnPost; definability
+
+/-- The size parameters of the `sLemma` steps (`𝟏 ≤ bnum m`, `m ≤ k`, `‖k‖ ≤ L`): the fact `≤ B'·(6L + 1)`, the
+derivation `≤ 2(L + 2)·nodeCost N' B' (12L + 3) + nodeCost N' B' (12L + 3)` (`NumSteps.dlen_leCode_le'`). -/
+noncomputable def bQ (B' L : V) : V := B' * (6 * L + 1)
+noncomputable def bD (N' B' L : V) : V := (1 + 1) * (L + 2) * nodeCost N' B' (12 * L + 3) + nodeCost N' B' (12 * L + 3)
+
+lemma mem_final0 {Γ S x : V} (hS : NoDrop' S) (h0 : shiftsV S = 0) (hx : x ∈ Γ) : x ∈ finalCtx Γ S := by
+  have := mem_finalCtx_of_mem' hS hx
+  rwa [h0, shiftIterV_zero] at this
+
+lemma bnumFact_eq_subst (t k : V) : bnumFact t k = subst LAct (t ∷ k ∷ 0) Pbnum := rfl
+
+variable {tbl N T N' B' : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hR : BnRows tbl) (htblN : NumTableOK T N' B')
+include htbl hL hR htblN
+
+set_option maxHeartbeats 4000000 in
+/-- **Applicability of every certification list** (over the graph; `Pb` an opaque copy of `Pbnum`, `Wn`/`Wd`/`c₁`/`c₂`
+opaque copies of the pieces and counts — the motive must not mention closed quotes): from the dossier of `bnum k`
+at `&j` under the cap `j + 27(‖k‖ + 1) ≤ E`, `BnPost` with the fact `bnumFact &j (bnum k)`. -/
+theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd = walkPieces)
+    (hc₁ : c₁ = descCountT walkPieces 0 (𝟏 : V)) (hc₂ : c₂ = descCountT walkPieces 0 (𝟐 : V)) (hPb : Pb = Pbnum) :
+    ∀ k : V, ∀ j y Γ : V, BnGraph Wn Wd T c₁ c₂ k j y → IsFormulaSet LAct Γ → DossT Wd Γ 0 (bnum k) j →
+      j + 27 * (‖k‖ + 1) ≤ E → BnPost tbl E Γ y (subst LAct (^&j ∷ bnum k ∷ 0) Pb) := by
+  have hW : WalkTable tbl := hL.walkTable
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : 8 ≤ 9)
+  have hc₁le : c₁ ≤ 1 := by rw [hc₁]; exact descCountT_one_le htbl hW
+  have hc₂le : c₂ ≤ 5 := by rw [hc₂]; exact descCountT_two_le htbl hW
+  intro k
+  induction k using ISigma1.pi1_order_induction with
+  | hP => simp only [BnGraph]; definability
+  | ind k ih =>
+    intro j y Γ hg hΓ hD hE
+    subst hWd
+    rcases zero_one_or_two_le k with rfl | rfl | h2
+    · -- k = 0
+      rw [BnGraph.zero_iff] at hg
+      subst hg
+      rw [bnum_zero, qqZero_eq] at hD
+      have f0 := dossT_const htbl hW isFunc_LAct_zeroIndex hD
+      rw [coe_zeroIndex_eq, cTV_zero] at f0
+      have hj : j + 1 ≤ E := le_trans (add_le_add le_rfl (by
+        calc (1 : V) ≤ 27 := by norm_num
+          _ ≤ 27 * (‖(0 : V)‖ + 1) := le_mul_of_one_le_right zero_le le_add_self)) hE
+      obtain ⟨ok₁, tg₁, cx₁⟩ := nok_bnumZeroCert htbl hWn hR.1.1 ⟨hR.1.2.1, hR.1.2.2⟩ hΓ (by simp) (termLen_fvar_le hj) f0
+      refine ⟨listOK_single (ok₁.mono h89), noDrop'_single (Or.inl tg₁), shiftsV_single_tag0 tg₁, ?_⟩
+      rw [finalCtx_single, cx₁, hPb, ← bnumFact_eq_subst, bnum_zero]
+      exact mem_insert_self'
+    · -- k = 1
+      rw [BnGraph.one_iff] at hg
+      subst hg
+      rw [bnum_one, qqOne_eq] at hD
+      have f0 := dossT_const htbl hW isFunc_LAct_oneIndex hD
+      rw [coe_oneIndex_eq, ← cT_one_eq] at f0
+      have hj : j + 1 ≤ E := le_trans (add_le_add le_rfl (by
+        calc (1 : V) ≤ 27 := by norm_num
+          _ ≤ 27 * (‖(1 : V)‖ + 1) := le_mul_of_one_le_right zero_le le_add_self)) hE
+      obtain ⟨ok₁, tg₁, cx₁⟩ := nok_bnumOneCert htbl hWn hR.2.1.1 ⟨hR.2.1.2.1, hR.2.1.2.2⟩ hΓ (by simp) (termLen_fvar_le hj) f0
+      refine ⟨listOK_single (ok₁.mono h89), noDrop'_single (Or.inl tg₁), shiftsV_single_tag0 tg₁, ?_⟩
+      rw [finalCtx_single, cx₁, hPb, ← bnumFact_eq_subst, bnum_one]
+      exact mem_insert_self'
+    obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
+    · -- k = 2 * m
+      obtain ⟨m, hmdef⟩ : ∃ m : V, m = k / 2 := ⟨_, rfl⟩
+      rw [← hmdef] at hm hlt he
+      subst he
+      have hlen : ‖2 * m‖ = ‖m‖ + 1 := length_two_mul_of_pos (lt_of_lt_of_le _root_.zero_lt_one hm)
+      rw [hlen] at hE
+      have hbm : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 m
+      have hEm : termLen LAct (bnum m) ≤ E := by
+        refine le_trans (termLen_bnum_le_bk (n := m) le_rfl) (le_trans ?_ (le_trans le_add_self hE))
+        calc 6 * ‖m‖ + 1 ≤ 27 * ‖m‖ + 54 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
+          _ = 27 * (‖m‖ + 1 + 1) := by ring
+      have hEj : j + 9 ≤ E := le_trans (add_le_add le_rfl (by
+        calc (9 : V) ≤ 27 * 2 := by norm_num
+          _ ≤ 27 * (‖m‖ + 1 + 1) := mul_le_mul_of_nonneg_left (by rw [add_assoc, one_add_one_eq_two]; exact le_add_self) zero_le)) hE
+      have hEsub : j + 3 + c₂ + 27 * (‖m‖ + 1) ≤ E := by
+        refine le_trans ?_ hE
+        calc j + 3 + c₂ + 27 * (‖m‖ + 1) ≤ j + 3 + 5 + 27 * (‖m‖ + 1) := add_le_add (add_le_add le_rfl hc₂le) le_rfl
+          _ = j + (27 * (‖m‖ + 1) + 8) := by ring
+          _ ≤ j + (27 * (‖m‖ + 1) + 27) := add_le_add le_rfl (add_le_add le_rfl (by norm_num))
+          _ = j + 27 * (‖m‖ + 1 + 1) := by ring
+      obtain ⟨y', _, hg', rfl⟩ := (BnGraph.even_iff hm).mp hg
+      -- the dossier facts
+      rw [bnum_two_mul hm] at hD
+      have hD' : DossT walkPieces Γ 0 (^func 2 (mulIndex : V) ?[(𝟐 : V), bnum m]) j := hD
+      obtain ⟨f1, f2, hD2, f8, hDm⟩ := dossT_pair htbl hW isFunc_LAct_mulIndex (isSemiterm_qqTwo_LAct 0) hbm hD'
+      rw [coe_mulIndex_eq, ← cT_one_eq] at f1
+      rw [← hc₂] at f2 f8 hDm
+      have hD2' : DossT walkPieces Γ 0 (^func 2 (addIndex : V) ?[(𝟏 : V), (𝟏 : V)]) (j + 2) := hD2
+      obtain ⟨f3, f4, hD1a, f6, hD1b⟩ := dossT_pair htbl hW isFunc_LAct_addIndex (isSemiterm_qqOne_LAct 0) (isSemiterm_qqOne_LAct 0) hD2'
+      rw [coe_addIndex_eq, cTV_zero, show j + 2 + 1 = j + 3 by ring] at f3
+      rw [← hc₁, show j + 2 + 2 = j + 4 by ring, show j + 2 + 1 = j + 3 by ring] at f4
+      rw [← hc₁, show j + 2 + 2 = j + 4 by ring, show j + 2 + 3 = j + 5 by ring] at f6
+      rw [show j + 2 + 2 = j + 4 by ring] at hD1a
+      rw [← hc₁, show j + 2 + 3 = j + 5 by ring] at hD1b
+      rw [qqOne_eq] at hD1a hD1b
+      have f5 := dossT_const htbl hW isFunc_LAct_oneIndex hD1a
+      have f7 := dossT_const htbl hW isFunc_LAct_oneIndex hD1b
+      rw [coe_oneIndex_eq, ← cT_one_eq] at f5 f7
+      -- the sub-list
+      obtain ⟨ok', nd', sh', hf'⟩ := ih m hlt (j + 3 + c₂) y' Γ hg' hΓ hDm hEsub
+      obtain ⟨Γ', hΓ'⟩ : ∃ Γ', Γ' = finalCtx Γ y' := ⟨_, rfl⟩
+      have hΓ's : IsFormulaSet LAct Γ' := by rw [hΓ']; exact finalCtx_isFormulaSet 9 htbl hΓ ok'
+      have up : ∀ {x : V}, x ∈ Γ → x ∈ Γ' := fun hx ↦ by rw [hΓ']; exact mem_final0 nd' sh' hx
+      have f9 : neg LAct (bnumFact (^&(j + 3 + c₂)) (bnum m)) ∈ Γ' := by
+        rw [hΓ', bnumFact_eq_subst, ← hPb]; exact hf'
+      obtain ⟨okT, ndT, shT, hfT⟩ := bnEvenTail_ok htbl hL hR htblN hΓ's hm hc₁le hc₂le hEj hEm
+        (up f1) (up f2) (up f3) (up f4) (up f5) (up f6) (up f7) (up f8) f9
+      rw [hWn]
+      refine ⟨?_, noDrop'_appendV nd' ndT, ?_, ?_⟩
+      · refine listOK_appendV ok' ?_; rw [← hΓ']; exact okT
+      · rw [shiftsV_appendV, sh', shT, add_zero]
+      · rw [finalCtx_appendV, ← hΓ', bnum_two_mul hm, hPb, ← bnumFact_eq_subst]
+        exact hfT
+    · -- k = 2 * m + 1
+      obtain ⟨m, hmdef⟩ : ∃ m : V, m = k / 2 := ⟨_, rfl⟩
+      rw [← hmdef] at hm hlt ho
+      subst ho
+      have hlen : ‖2 * m + 1‖ = ‖m‖ + 1 := length_two_mul_add_one m
+      rw [hlen] at hE
+      have hbm : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 m
+      have hEm : termLen LAct (bnum m) ≤ E := by
+        refine le_trans (termLen_bnum_le_bk (n := m) le_rfl) (le_trans ?_ (le_trans le_add_self hE))
+        calc 6 * ‖m‖ + 1 ≤ 27 * ‖m‖ + 54 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
+          _ = 27 * (‖m‖ + 1 + 1) := by ring
+      have hEj : j + 2 + 9 ≤ E := le_trans (by
+        calc j + 2 + 9 = j + 11 := by ring
+          _ ≤ j + 27 * 2 := add_le_add le_rfl (by norm_num)
+          _ ≤ j + 27 * (‖m‖ + 1 + 1) := add_le_add le_rfl (mul_le_mul_of_nonneg_left
+              (by rw [add_assoc, one_add_one_eq_two]; exact le_add_self) zero_le)) hE
+      have hEsub : j + 5 + c₂ + 27 * (‖m‖ + 1) ≤ E := by
+        refine le_trans ?_ hE
+        calc j + 5 + c₂ + 27 * (‖m‖ + 1) ≤ j + 5 + 5 + 27 * (‖m‖ + 1) := add_le_add (add_le_add le_rfl hc₂le) le_rfl
+          _ = j + (27 * (‖m‖ + 1) + 10) := by ring
+          _ ≤ j + (27 * (‖m‖ + 1) + 27) := add_le_add le_rfl (add_le_add le_rfl (by norm_num))
+          _ = j + 27 * (‖m‖ + 1 + 1) := by ring
+      obtain ⟨y', _, hg', rfl⟩ := (BnGraph.odd_iff hm).mp hg
+      -- the dossier facts of the odd numeral
+      rw [bnum_two_mul_add_one hm] at hD
+      have hD' : DossT walkPieces Γ 0 (^func 2 (addIndex : V) ?[(𝟐 ^* bnum m : V), (𝟏 : V)]) j := hD
+      have hev : IsSemiterm LAct 0 (𝟐 ^* bnum m : V) := by simp [hbm]
+      obtain ⟨g1, g2, hDe, g4, hD1⟩ := dossT_pair htbl hW isFunc_LAct_addIndex hev (isSemiterm_qqOne_LAct 0) hD'
+      rw [coe_addIndex_eq, cTV_zero] at g1
+      rw [qqOne_eq] at hD1
+      have g5 := dossT_const htbl hW isFunc_LAct_oneIndex hD1
+      rw [coe_oneIndex_eq, ← cT_one_eq] at g5
+      obtain ⟨ce, hce⟩ : ∃ ce : V, ce = descCountT walkPieces 0 (𝟐 ^* bnum m : V) := ⟨_, rfl⟩
+      rw [← hce] at g2 g4 g5
+      have hceE : j + 3 + ce + 1 ≤ E := by
+        have h1 := descCountT_walk_le htbl hW rfl hev
+        rw [← hce, ← bnum_two_mul hm] at h1
+        have h2 : termLen LAct (bnum (2 * m)) ≤ 6 * ‖2 * m‖ + 1 := termLen_bnum_le_bk le_rfl
+        rw [length_two_mul_of_pos (lt_of_lt_of_le _root_.zero_lt_one hm)] at h2
+        refine le_trans ?_ hE
+        calc j + 3 + ce + 1 = j + 3 + (ce + 1) := by ring
+          _ ≤ j + 3 + 2 * termLen LAct (bnum (2 * m)) := add_le_add le_rfl h1
+          _ ≤ j + 3 + 2 * (6 * (‖m‖ + 1) + 1) := add_le_add le_rfl (mul_le_mul_of_nonneg_left h2 zero_le)
+          _ = j + (12 * ‖m‖ + 17) := by ring
+          _ ≤ j + (27 * ‖m‖ + 54) := add_le_add le_rfl (add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num))
+          _ = j + 27 * (‖m‖ + 1 + 1) := by ring
+      -- the dossier facts of the even numeral at j + 2
+      have hDe' : DossT walkPieces Γ 0 (^func 2 (mulIndex : V) ?[(𝟐 : V), bnum m]) (j + 2) := hDe
+      obtain ⟨f1, f2, hD2, f8, hDm⟩ := dossT_pair htbl hW isFunc_LAct_mulIndex (isSemiterm_qqTwo_LAct 0) hbm hDe'
+      rw [coe_mulIndex_eq, ← cT_one_eq] at f1
+      rw [← hc₂] at f2 f8 hDm
+      rw [show j + 2 + 3 + c₂ = j + 5 + c₂ by ring] at hDm
+      have hD2' : DossT walkPieces Γ 0 (^func 2 (addIndex : V) ?[(𝟏 : V), (𝟏 : V)]) (j + 2 + 2) := hD2
+      obtain ⟨f3, f4, hD1a, f6, hD1b⟩ := dossT_pair htbl hW isFunc_LAct_addIndex (isSemiterm_qqOne_LAct 0) (isSemiterm_qqOne_LAct 0) hD2'
+      rw [coe_addIndex_eq, cTV_zero, show j + 2 + 2 + 1 = j + 2 + 3 by ring] at f3
+      rw [← hc₁, show j + 2 + 2 + 1 = j + 2 + 3 by ring, show j + 2 + 2 + 2 = j + 2 + 4 by ring] at f4
+      rw [← hc₁, show j + 2 + 2 + 2 = j + 2 + 4 by ring, show j + 2 + 2 + 3 = j + 2 + 5 by ring] at f6
+      rw [show j + 2 + 2 + 2 = j + 2 + 4 by ring] at hD1a
+      rw [← hc₁, show j + 2 + 2 + 3 = j + 2 + 5 by ring] at hD1b
+      rw [qqOne_eq] at hD1a hD1b
+      have f5 := dossT_const htbl hW isFunc_LAct_oneIndex hD1a
+      have f7 := dossT_const htbl hW isFunc_LAct_oneIndex hD1b
+      rw [coe_oneIndex_eq, ← cT_one_eq] at f5 f7
+      -- the sub-list
+      obtain ⟨ok', nd', sh', hf'⟩ := ih m hlt (j + 5 + c₂) y' Γ hg' hΓ hDm hEsub
+      obtain ⟨Γ', hΓ'⟩ : ∃ Γ', Γ' = finalCtx Γ y' := ⟨_, rfl⟩
+      have hΓ's : IsFormulaSet LAct Γ' := by rw [hΓ']; exact finalCtx_isFormulaSet 9 htbl hΓ ok'
+      have up : ∀ {x : V}, x ∈ Γ → x ∈ Γ' := fun hx ↦ by rw [hΓ']; exact mem_final0 nd' sh' hx
+      have f9 : neg LAct (bnumFact (^&(j + 2 + 3 + c₂)) (bnum m)) ∈ Γ' := by
+        rw [hΓ', bnumFact_eq_subst, ← hPb, show j + 2 + 3 + c₂ = j + 5 + c₂ by ring]; exact hf'
+      -- the even tail at j + 2
+      obtain ⟨okT, ndT, shT, hfT⟩ := bnEvenTail_ok htbl hL hR htblN hΓ's hm hc₁le hc₂le hEj hEm
+        (up f1) (up f2) (up f3) (up f4) (up f5) (up f6) (up f7) (up f8) f9
+      obtain ⟨Γ'', hΓ''⟩ : ∃ Γ'', Γ'' = finalCtx Γ' (bnEvenTail numIdPieces T c₁ c₂ m (j + 2)) := ⟨_, rfl⟩
+      have hΓ''s : IsFormulaSet LAct Γ'' := by rw [hΓ'']; exact finalCtx_isFormulaSet 9 htbl hΓ's okT
+      have up' : ∀ {x : V}, x ∈ Γ → x ∈ Γ'' := fun hx ↦ by rw [hΓ'']; exact mem_final0 ndT shT (up hx)
+      have g3 : neg LAct (bnumFact (^&(j + 2)) (𝟐 ^* bnum m)) ∈ Γ'' := by rw [hΓ'']; exact hfT
+      -- the odd top
+      obtain ⟨okO, ndO, shO, hfO⟩ := bnOddTop_ok htbl hL hR htblN hΓ''s hm hceE hEm (up' g1) (up' g2) g3 (up' g4) (up' g5)
+      rw [hWn, bnum_two_mul hm, ← hce]
+      refine ⟨?_, noDrop'_appendV nd' (noDrop'_appendV ndT ndO), ?_, ?_⟩
+      · refine listOK_appendV ok' ?_
+        rw [← hΓ']
+        refine listOK_appendV okT ?_
+        rw [← hΓ'']
+        exact okO
+      · rw [shiftsV_appendV, shiftsV_appendV, sh', shT, shO, add_zero, add_zero]
+      · rw [finalCtx_appendV, finalCtx_appendV, ← hΓ', ← hΓ'', bnum_two_mul_add_one hm, hPb, ← bnumFact_eq_subst]
+        exact hfO
+
+set_option maxHeartbeats 2000000 in
+/-- **Length and size discipline** of every certification list: `len ≤ 8‖k‖ + 1`, `SizeOK (bQ B' L) (bD N' B' L)`
+for `‖k‖ ≤ L`. -/
+theorem bnGraph_len_size {Wn Wd c₁ c₂ : V} (hWn : Wn = numIdPieces) :
+    ∀ k : V, ∀ L : V, ‖k‖ ≤ L → ∀ j y : V, BnGraph Wn Wd T c₁ c₂ k j y →
+      len y ≤ 8 * ‖k‖ + 1 ∧ SizeOK (bQ B' L) (bD N' B' L) y := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hPle, -, hB1⟩ := id htblN
+  -- the size data of the `sLemma` `𝟏 ≤ bnum m` for `‖m‖ ≤ L`
+  have hLem : ∀ {m L : V}, 1 ≤ m → ‖m‖ ≤ L →
+      StepSizeOK (bQ B' L) (bD N' B' L) (sLemma (leFact (𝟏 : V) (bnum m)) (leCode T 1 m)) := by
+    intro m L hm hmL
+    refine stepSizeOK_sLemma ?_ ?_
+    · have h6 : (1 : V) ≤ 6 * L + 1 := le_add_self
+      have hb : termLen LAct (bnum m) ≤ 6 * L + 1 :=
+        le_trans (termLen_bnum_le_bk (n := m) le_rfl) (add_le_add (mul_le_mul_of_nonneg_left hmL zero_le) le_rfl)
+      have h1 : termLen LAct (𝟏 : V) ≤ 6 * L + 1 := by rw [termLen_qqOne isFunc_LAct_oneIndex]; exact h6
+      refine le_trans (formulaLen_leFact_le h6 (isSemiterm_qqOne_LAct 0) (isSemiterm_bnum_LAct 0 m) h1 hb) ?_
+      unfold bQ
+      exact mul_le_mul_of_nonneg_right hPle zero_le
+    · refine le_trans (dlen_leCode_le' htblN hm) ?_
+      unfold bD
+      rw [length_one]
+      have hn : nodeCost N' B' (12 * ‖m‖ + 3) ≤ nodeCost N' B' (12 * L + 3) :=
+        nodeCost_mono (add_le_add (mul_le_mul_of_nonneg_left hmL zero_le) le_rfl)
+      exact add_le_add (mul_le_mul (mul_le_mul_of_nonneg_left (add_le_add hmL le_rfl) zero_le) hn zero_le zero_le) hn
+  have hTailE : ∀ {m L j : V}, 1 ≤ m → ‖m‖ ≤ L → SizeOK (bQ B' L) (bD N' B' L) (bnEvenTail Wn T c₁ c₂ m j) := by
+    intro m L j hm hmL
+    unfold bnEvenTail
+    refine sizeOK_cons (stepSizeOK_horn0 (by rw [hWn, mkStep_numId_41]; exact ltag_eqRefl rfl _)) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (by rw [hWn, mkStep_numId_71]; exact ltag_eqOfFunc rfl _)) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (by rw [hWn, mkStep_numId_41]; exact ltag_eqRefl rfl _)) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (by rw [hWn, mkStep_numId_59]; exact ltag_congAdj rfl _)) ?_
+    refine sizeOK_cons (hLem hm hmL) ?_
+    exact sizeOK_single (stepSizeOK_horn0 (ntag_bnumEvenCert hWn _))
+  have hTopO : ∀ {m L j ce : V}, 1 ≤ m → ‖m‖ ≤ L → SizeOK (bQ B' L) (bD N' B' L) (bnOddTop Wn T ce m j) := by
+    intro m L j ce hm hmL
+    unfold bnOddTop
+    refine sizeOK_cons (hLem hm hmL) ?_
+    exact sizeOK_single (stepSizeOK_horn0 (ntag_bnumOddOfEven hWn _))
+  intro k
+  induction k using ISigma1.pi1_order_induction with
+  | hP => simp only [BnGraph, bQ, bD]; definability
+  | ind k ih =>
+    intro L hkL j y hg
+    rcases zero_one_or_two_le k with rfl | rfl | h2
+    · rw [BnGraph.zero_iff] at hg
+      subst hg
+      refine ⟨?_, sizeOK_single (stepSizeOK_horn0 (ntag_bnumZeroCert hWn _))⟩
+      rw [len_adjoin, len_nil, zero_add]; exact le_add_self
+    · rw [BnGraph.one_iff] at hg
+      subst hg
+      refine ⟨?_, sizeOK_single (stepSizeOK_horn0 (ntag_bnumOneCert hWn _))⟩
+      rw [len_adjoin, len_nil, zero_add]; exact le_add_self
+    obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
+    · obtain ⟨m, hmdef⟩ : ∃ m : V, m = k / 2 := ⟨_, rfl⟩
+      rw [← hmdef] at hm hlt he
+      subst he
+      have hlen : ‖2 * m‖ = ‖m‖ + 1 := length_two_mul_of_pos (lt_of_lt_of_le _root_.zero_lt_one hm)
+      rw [hlen] at hkL ⊢
+      have hmL : ‖m‖ ≤ L := le_trans le_self_add hkL
+      obtain ⟨y', _, hg', rfl⟩ := (BnGraph.even_iff hm).mp hg
+      obtain ⟨hl, hs⟩ := ih m hlt L hmL _ _ hg'
+      refine ⟨?_, sizeOK_appendV hs (hTailE hm hmL)⟩
+      rw [len_appendV, len_bnEvenTail]
+      calc len y' + 6 ≤ 8 * ‖m‖ + 1 + 6 := add_le_add hl le_rfl
+        _ ≤ 8 * (‖m‖ + 1) + 1 := by
+          rw [show 8 * (‖m‖ + 1) + 1 = 8 * ‖m‖ + 1 + 8 by ring]
+          exact add_le_add le_rfl (by norm_num)
+    · obtain ⟨m, hmdef⟩ : ∃ m : V, m = k / 2 := ⟨_, rfl⟩
+      rw [← hmdef] at hm hlt ho
+      subst ho
+      have hlen : ‖2 * m + 1‖ = ‖m‖ + 1 := length_two_mul_add_one m
+      rw [hlen] at hkL ⊢
+      have hmL : ‖m‖ ≤ L := le_trans le_self_add hkL
+      obtain ⟨y', _, hg', rfl⟩ := (BnGraph.odd_iff hm).mp hg
+      obtain ⟨hl, hs⟩ := ih m hlt L hmL _ _ hg'
+      refine ⟨?_, sizeOK_appendV hs (sizeOK_appendV (hTailE hm hmL) (hTopO hm hmL))⟩
+      rw [len_appendV, len_appendV, len_bnEvenTail, len_bnOddTop]
+      calc len y' + (6 + 2) ≤ 8 * ‖m‖ + 1 + (6 + 2) := add_le_add hl le_rfl
+        _ = 8 * (‖m‖ + 1) + 1 := by ring
+
+/-- **The certification list of `bnum k` is applicable** (the exact shape `Pin.BnumOracle` needs, plus the length
+and size discipline): from the dossier of `bnum k` at `&j` under `j + 27(‖k‖ + 1) ≤ E`, the list
+`bnumSteps numIdPieces walkPieces T k j` is applicable at cap `9`, cut-admitting, shift-free, of length
+`≤ 8‖k‖ + 1`, `SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖)`, and leaves `bnumFact &j (bnum k)`. -/
+theorem bnumSteps_ok {E Γ k j : V} (hΓ : IsFormulaSet LAct Γ) (hD : DossT walkPieces Γ 0 (bnum k) j)
+    (hE : j + 27 * (‖k‖ + 1) ≤ E) :
+    ListOK tbl E ((9 : ℕ) : V) Γ (bnumSteps numIdPieces walkPieces T k j) ∧
+    NoDrop' (bnumSteps numIdPieces walkPieces T k j) ∧ shiftsV (bnumSteps numIdPieces walkPieces T k j) = 0 ∧
+    len (bnumSteps numIdPieces walkPieces T k j) ≤ 8 * ‖k‖ + 1 ∧
+    SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖) (bnumSteps numIdPieces walkPieces T k j) ∧
+    neg LAct (bnumFact (^&j) (bnum k)) ∈ finalCtx Γ (bnumSteps numIdPieces walkPieces T k j) := by
+  obtain ⟨Pb, hPb⟩ : ∃ P : V, P = Pbnum := ⟨_, rfl⟩
+  have hg := bnumSteps_graph numIdPieces walkPieces T k j
+  obtain ⟨ok, nd, sh, hf⟩ := bnGraph_ok htbl hL hR htblN rfl rfl rfl rfl hPb k j _ Γ hg hΓ hD hE
+  obtain ⟨hl, hs⟩ := bnGraph_len_size htbl hL hR htblN (Wd := walkPieces) (c₁ := descCountT walkPieces 0 (𝟏 : V))
+    (c₂ := descCountT walkPieces 0 (𝟐 : V)) rfl k ‖k‖ le_rfl j _ hg
+  refine ⟨ok, nd, sh, hl, hs, ?_⟩
+  rw [bnumFact_eq_subst, ← hPb]
+  exact hf
+
+end okInduction
+
 end ArithS
