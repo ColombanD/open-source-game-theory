@@ -32,16 +32,23 @@ NEW_ROWS = [
 # Rows whose `Lib` block AND `quote_row_`/`inst_` block already exist (`Lib/Frag.lean`, `RowInstB.lean`) but which sit
 # in no piece table: only their table entries are generated here (APPEND-ONLY).
 EXISTING_ROWS = ['congSubsetL', 'congSetShiftR']
+# Rows added AFTER the existing-row block (APPEND-ONLY: the table order is NEW_ROWS ++ EXISTING_ROWS ++ NEW_ROWS_2).
+NEW_ROWS_2 = [
+ ('leOfEqP', ['y', 'x'],
+  [A('eq', 'x', 'y')], A('le', 'x', 'y'),
+  by("subst_vars; exact le_refl _"),
+  '`x = y → x ≤ y` (the `exs` witness term: from `eqTotal`\'s eigenvariable `l = bnum |t|` to `leFact l (bnum |t|)`; the library\'s `leOfEq` has no `inst_` block).'),
+]
 
 G.frag = []
 G.out = []
-for (name, binders, ants, conc, proof, doc) in NEW_ROWS:
+for (name, binders, ants, conc, proof, doc) in NEW_ROWS + NEW_ROWS_2:
     G.gen_frag_row('pro', name, binders, ants, conc, proof, doc)
     G.gen_row(name, binders, ants, conc)
 lib_blocks = '\n'.join(G.frag)
 new_blocks = '\n'.join(G.out)
 
-TABLE = [n for (n, *_r) in NEW_ROWS] + EXISTING_ROWS
+TABLE = [n for (n, *_r) in NEW_ROWS] + EXISTING_ROWS + [n for (n, *_r) in NEW_ROWS_2]
 BASE = 155
 alltext = new_blocks + open(os.path.join(HERE, '..', 'ArithS', 'Necessitation', 'RowInstB.lean')).read()
 

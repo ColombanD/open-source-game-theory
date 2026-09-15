@@ -56,6 +56,16 @@ theorem pa_proves_setLenEmptyLe : 𝗣𝗔 ⊢ setLenEmptyLe :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenEmptyLe.mpr fun _ h₁ ↦ by subst_vars; rw [← emptyset_def, setLen_empty]; try exact le_refl _
 theorem lib_setLenEmptyLe : Lib setLenEmptyLe := Lib.of_pa pa_proves_setLenEmptyLe
 
+/-- `x = y → x ≤ y` (the `exs` witness term: from `eqTotal`'s eigenvariable `l = bnum |t|` to `leFact l (bnum |t|)`; the library's `leOfEq` has no `inst_` block). -/
+noncomputable def leOfEqPB : ArithmeticSemisentence 2 :=
+  “y x. x = y → x ≤ y”
+noncomputable def leOfEqP : ArithmeticSentence := ∀¹* leOfEqPB
+lemma models_leOfEqP : V↓[ℒₒᵣ] ⊧ leOfEqP ↔ ∀ y x : V, x = y → x ≤ y := by
+  simp [leOfEqP, leOfEqPB, models_iff, Matrix.vecForall_iff]
+theorem pa_proves_leOfEqP : 𝗣𝗔 ⊢ leOfEqP :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_leOfEqP.mpr fun _ _ h₁ ↦ by subst_vars; exact le_refl _
+theorem lib_leOfEqP : Lib leOfEqP := Lib.of_pa pa_proves_leOfEqP
+
 end proLib
 
 /-! ## 1. The rows as pieces: `row_<r>_as`/`_c`, `quote_row_<r>`, `inst_<r>` (the `RowInstB` template) -/
@@ -116,6 +126,33 @@ lemma inst_setLenEmptyLe {wl : V} (hwl : IsSemiterm LAct 0 wl) :
   all_goals try row_entries_simpB
   row_finish
 
+/-! ### `leOfEqP` — `“y x. …”`, `m = 2` -/
+
+noncomputable def row_leOfEqP_as : List V := [subst LAct (listToVec [bv 1, bv 0]) PeqB]
+noncomputable def row_leOfEqP_c : V := subst LAct (listToVec [bv 1, bv 0]) Ple
+
+theorem quote_row_leOfEqP : (⌜Semiformula.lMap emb leOfEqPB⌝ : V) = impChain LAct row_leOfEqP_as row_leOfEqP_c := by
+  unfold leOfEqPB row_leOfEqP_as row_leOfEqP_c PeqB Ple leS
+  all_goals row_shapeB
+
+lemma isSemiformula_leOfEqP_as : ∀ A ∈ row_leOfEqP_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
+  unfold row_leOfEqP_as
+  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
+lemma isSemiformula_leOfEqP_c : IsSemiformula LAct ((2 : ℕ) : V) row_leOfEqP_c := by
+  unfold row_leOfEqP_c
+  exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
+
+/-- `leOfEqP` at the witnesses `[wx, wy]` (the DSL variables right-to-left). -/
+lemma inst_leOfEqP {wx wy : V} (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
+    row_leOfEqP_as.map (instOuter LAct [wx, wy]) = [eqFactB wx wy] ∧
+    instOuter LAct [wx, wy] row_leOfEqP_c = leFact wx wy := by
+  have hes : ∀ e ∈ ([wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩)
+  unfold row_leOfEqP_as row_leOfEqP_c
+  simp only [List.map_cons, List.map_nil]
+  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB)]
+  all_goals try row_entries_simpB
+  row_finish
+
 end proRowInst
 
 /-! ## 2. The extra rows at `topRowCount + k`, the piece table, the applicability lemmas -/
@@ -126,14 +163,16 @@ def pIdx_setLenSingLe : ℕ := 155
 def pIdx_setLenEmptyLe : ℕ := 156
 def pIdx_congSubsetL : ℕ := 157
 def pIdx_congSetShiftR : ℕ := 158
-def proExtraRowCount : ℕ := 4
+def pIdx_leOfEqP : ℕ := 159
+def proExtraRowCount : ℕ := 5
 
 /-- The extra rows at `topRowCount + k`, in index order (append-only). -/
 noncomputable def proExtraRows : List WRow := [
   ⟨4, setLenSingLeB, lib_setLenSingLe⟩,
   ⟨1, setLenEmptyLeB, lib_setLenEmptyLe⟩,
   ⟨3, congSubsetLB, lib_congSubsetL⟩,
-  ⟨3, congSetShiftRB, lib_congSetShiftR⟩
+  ⟨3, congSetShiftRB, lib_congSetShiftR⟩,
+  ⟨2, leOfEqPB, lib_leOfEqP⟩
 ]
 
 lemma proExtraRows_length : proExtraRows.length = proExtraRowCount := rfl
@@ -144,12 +183,14 @@ noncomputable def ppiece_setLenSingLe : V := ⟪(0 : V), vecOf row_setLenSingLe_
 noncomputable def ppiece_setLenEmptyLe : V := ⟪(0 : V), vecOf row_setLenEmptyLe_as, row_setLenEmptyLe_c⟫
 noncomputable def ppiece_congSubsetL : V := ⟪(0 : V), vecOf row_congSubsetL_as, row_congSubsetL_c⟫
 noncomputable def ppiece_congSetShiftR : V := ⟪(0 : V), vecOf row_congSetShiftR_as, row_congSetShiftR_c⟫
+noncomputable def ppiece_leOfEqP : V := ⟪(0 : V), vecOf row_leOfEqP_as, row_leOfEqP_c⟫
 
 noncomputable def proExtraPieceList : List V := [
   ppiece_setLenSingLe,
   ppiece_setLenEmptyLe,
   ppiece_congSubsetL,
-  ppiece_congSetShiftR
+  ppiece_congSetShiftR,
+  ppiece_leOfEqP
 ]
 
 /-- **The piece table of the prologue producers**: the top's pieces, then the extra rows' pieces. -/
@@ -229,6 +270,21 @@ lemma ptag_congSetShiftR {W : V} (hWp : W = proPieces) (ev : V) : sTag (mkStep W
   subst hWp
   have hk : ((pIdx_congSetShiftR : ℕ) : V) = (158 : V) := by simp [pIdx_congSetShiftR]
   rw [← hk, pmk_congSetShiftR]; simp
+
+lemma proPieces_leOfEqP : (proPieces : V).[((pIdx_leOfEqP : ℕ) : V)] = ppiece_leOfEqP := by
+  unfold proPieces
+  rw [nth_vecOf _ pIdx_leOfEqP (Nat.lt_of_sub_eq_succ rfl)]
+  rfl
+
+lemma pmk_leOfEqP (ev : V) :
+    mkStep proPieces ((pIdx_leOfEqP : ℕ) : V) ev = sUseHorn ((pIdx_leOfEqP : ℕ) : V) ev (vecOf row_leOfEqP_as) row_leOfEqP_c := by
+  rw [mkStep, proPieces_leOfEqP]
+  simp [ppiece_leOfEqP, sUseHorn]
+
+lemma ptag_leOfEqP {W : V} (hWp : W = proPieces) (ev : V) : sTag (mkStep W (159 : V) ev) = 0 := by
+  subst hWp
+  have hk : ((pIdx_leOfEqP : ℕ) : V) = (159 : V) := by simp [pIdx_leOfEqP]
+  rw [← hk, pmk_leOfEqP]; simp
 
 /-! ### The per-row applicability lemmas `pok_<row>` (against explicit table readings) -/
 
@@ -311,6 +367,26 @@ lemma pok_congSetShiftR {tbl N E Γ W : V} {wt ws wsp : V} (htbl : TableOK tbl N
     (by rw [show row_congSetShiftR_as.length = 2 from rfl] <;> exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
   · rw [ctxAfter_useHorn [wt, ws, wsp] row_congSetShiftR_as isSemiformula_congSetShiftR_c (fun e he ↦ (hes e he).1), hinst.2]
+
+/-- Row `leOfEqP` as a step, against the table readings `hlen`/`hrow` at its index. -/
+lemma pok_leOfEqP {tbl N E Γ W : V} {wx wy : V} (htbl : TableOK tbl N) (hWp : W = proPieces)
+    (hlen : ((pIdx_leOfEqP : ℕ) : V) < len tbl)
+    (hrow : rowM tbl.[((pIdx_leOfEqP : ℕ) : V)] = ((2 : ℕ) : V) ∧
+      rowB tbl.[((pIdx_leOfEqP : ℕ) : V)] = impChainV LAct (vecOf row_leOfEqP_as) row_leOfEqP_c)
+    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (eqFactB wx wy) ∈ Γ) :
+    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 159 ?[wx, wy]) ∧ sTag (mkStep W 159 ?[wx, wy]) = 0 ∧
+    ctxAfter Γ (mkStep W 159 ?[wx, wy]) = insert (neg LAct (leFact wx wy)) Γ := by
+  subst hWp
+  have hk : ((pIdx_leOfEqP : ℕ) : V) = (159 : V) := by simp [pIdx_leOfEqP]
+  have hstep := pmk_leOfEqP (V := V) ?[wx, wy]
+  rw [hk] at hstep hlen hrow
+  have hes : ∀ e ∈ [wx, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩
+  have hinst := inst_leOfEqP hwx hwy
+  rw [hstep, show (?[wx, wy] : V) = vecOf [wx, wy] from rfl]
+  refine ⟨stepOK_useHorn htbl [wx, wy] row_leOfEqP_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
+    (by rw [show row_leOfEqP_as.length = 1 from rfl] <;> exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
+  · rw [ctxAfter_useHorn [wx, wy] row_leOfEqP_as isSemiformula_leOfEqP_c (fun e he ↦ (hes e he).1), hinst.2]
 
 end proRowsTable
 
