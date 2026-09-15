@@ -1317,3 +1317,36 @@ keep the 𝚷 motive `definability`-friendly; injectivity of `⟪p, ip, pro⟫` 
 then `rw [← e₁, …] at hinv`; appending after `end ArithS` leaves the namespace.
 IN FLIGHT: `IndRec` (case (ii)); `Assemble` (VerifyKit''' over VerifyGraph', root bridge, cost,
 KitPackage''', BoundedInnerNec 24 conditional only on AxmIndOracleC).
+
+**§11 status — `IndRec` DONE: the induction-instance recognizer, in an HONEST variant (5ea88e2 …
+8082e20; `IndRec.lean` ~2300 lines + `IndRecRows` 34 rows at `proAxmRowCount + k`; 3264 jobs, all
+standard).** DESIGN: the recognizer `indRecL` lives in the LAct vocabulary and the ℒₒᵣ/LAct wall is
+crossed SEMANTICALLY once — `inductionR_of_L : p = qqAlls b m → BsF m m b → b = shift b → FvSeq fv
+0 m → s = subst fv b → IndBodyL s K → p ∈ TAct.Δ₁Class` (the bridge lemmas `subst/neg/shift/bv_LAct_eq`,
+`fvarVec_isSemitermVec_LOR`, `IsSemiformula.LAct_of_LOR` ALREADY EXISTED — the "missing `bv` bridge"
+premise was stale; `Lib/Bridge.lean` untouched). Pieces: `qqAllsWalk_ok` (m+1 steps), the shift-free
+`bv` pass `bsT_ok/bsV_of_entries/bsF_ok` (ℒₒᵣ-formation AND exact `bv` in one bottom-up pass, `max`
+via `≤` rows, `−1` via `bsAllS/Z`), `fvSeq_ok`, `shiftSelf_ok` (`certShift` on a shift-invariant
+formula), three `certSubst` instances (the `⟨#0+1⟩` vector needed bespoke iterate bounds —
+`SubstInv` fails for it), `stageWalks`/`stageA` (everything composed, sizes by `gp Z k = Z^k`),
+`stageB` (`bodyIntro → indBodyIntroL → indRecL → axchFact`), **`axmInd_ok : … InductionR p → ip ≤
+Z → |p|(|p|+1) ≤ Z → 200·Z³ ≤ E → DossF … p ip → ∃ P, ListOK 9 ∧ NoDrop' ∧ HornOnly ∧ shiftsV P ≤
+100·Z³ ∧ len P ≤ 4100·Z⁵ ∧ neg (axchFact (^&(ip + shiftsV P))) ∈ finalCtx`**, and
+`axmIndOracle_of : Layout … s i → … → AxmIndOracle' tbl E Wc T Γ s i (4100·Z⁵)` with `Z = i + 6D +
+1 + D(D+1)`. THE SEAM: the produced list is NOT shift-free, so `ProAxm.AxmIndOracle` (`NumInv`,
+`shiftsV = 0`, standard `C`) and `Verify2.AxmIndOracleC` are UNSATISFIABLE for nonstandard `p` (the
+walks alone are `|p|` steps); the consumer must switch to `AxmIndOracle'` (`shiftsV ≤ C`, `len ≤ C`,
+`SizeOK C C`, fact at `&(memTop s p i + shiftsV P)`) — `vAxm_ok` then reads the fact at the moved
+offset exactly as `vAll_ok`/`vExs_ok` do. TWO THINGS TO FIX AT THE SEAM: (1) `Verify2`'s `AxmEntryOK`
+must admit shifted entries and `vAxm_ok`/`verifyGraph'_ok` re-glued; (2) `axmInd_ok`'s bounds must
+be restated INDEPENDENT of the offset `ip` (only the E-room may depend on it) and tightened with
+`Pin`'s `len_certSubst_le_lin` (the quintic comes from `certSubst`'s superseded quintic bound) — as
+stated, `Z ~ i + D²` makes `len ~ Z⁵` depend on the accumulated shifts, which the recursion's
+degree-6 budget cannot absorb. TRAPS: `fvarVec` resolves to `ArithS.fvarVec` (Prologue) — write
+`Bootstrapping.fvarVec`; `formulaLen_subst_le`'s vector index order (length first, term bound
+second); bridge lemmas are not dot-notation; `rw [hP₈, …]` in a goal breaks hypotheses still
+mentioning `P₇` — use equation-carrying lemmas; nine-witness rows need cap 9; a deferred `(by
+norm_num)` for `c ≤ c'` against a metavariable coefficient silently leaves `?c'` unassigned;
+`termLen (#0 + 1) = 3`; chained `sleep` is blocked — poll with `until grep -q … ; do sleep 10; done`.
+IN FLIGHT: `Assemble` (kit over VerifyGraph', root bridge, cost, the theorem conditional on the
+oracle); `Seam` (the two seam fixes → the recognizer plugged into the recursion).
