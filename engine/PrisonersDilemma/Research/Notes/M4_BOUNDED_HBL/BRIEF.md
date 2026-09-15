@@ -1504,3 +1504,34 @@ with "object file does not exist" — import a built module and inline; `#print 
 PRODUCES `N'`/`B'`, it does not take them; `le_mul_of_one_le_right zero_le le_add_self` does not
 prove `1 ≤ ‖Dz‖ + 2`; `psi` is `ArithS.psi` (`Uniform.lean` uses `section`, not `namespace`).
 IN FLIGHT: `Verify5` (the ten-arm `len`/`SizeOK` glue → discharges `SizeThmAll`).
+
+**§11 status — `Verify5` glue, Part 1: 3 of 10 arms + every reusable block (… ee898c1; build 3270,
+census 838, all standard; every green sentinel-tested).** THE TARGET SHAPE, matched to
+`Package.SizeThm` (no `Cz` product; the `Cv` dependence lives inside `ArmHyps`, where the `axm`
+entries' `entryB Cv p` is bounded via `entryB_le_kitQ`/`entryB_le_kitD`):
+`ArmHypsAll N' B' Cz := ∀ V (tbl B T), IndRecTable tbl → (rows ≤ B) → NumTableOK T N' B' → ArmHyps
+…` and **`verifyGraph''_size4_of_arms (N' B') {Cz} (harms : ArmHypsAll N' B' Cz) : ∀ V (tbl B T),
+… → VerifySizeOracle … Cz`** — with the arms discharged this IS `Package.SizeThm N' B' Cz`, and
+`SizeThmAll` follows by choosing `Cz` per `(N', B')`. `ArmHyps`/`verifySizeOracle_of_arms` kept
+BYTE-IDENTICAL (`Package.lean` depends on them). ARMS PROVED (3): `axm` (`axm_arm_len : len (vAxm'
+…) = len pro + 9`, `axm_arm_size`), `axL`, `verumIntro`. REMAINING (7): `wk`, `shift`, `and`, `or`,
+`cut`, `all`, `exs`, plus the `Derivation.induction1 𝚷` recursion threading all ten — NOT a wall,
+assembly volume: every reusable block is now proved and committed — the layout-class landing
+`layQ_le_kitQ`/`layD_le_kitD`; the recovery blocks `sizeOK_goalElim_kit`/`sizeOK_postIns_kit` (at
+ANY `D`, so they never touch the layout class); `len_nodeWk`, `len_nodeShift`, `len_wkPro`,
+`len_shiftPro`, `len_emptyFsetPi = 4`, `len_reset0 = 8`; the selector sizes in BOTH branches
+(`sizeOK_wkPro`, `sizeOK_shiftPro`); the node codes in the kit class (`dlen_bin2Code_le_kitD`,
+`dlen_bin3Code_le_kitD`). What remains per arm is `sizeOK_appendV` over four blocks, then the
+induction mirroring `verifyGraph''_ok4`'s 560 lines. TRAPS: `pow_le_pow_left` does not exist at
+this structure — `pow3_eq_p3` + `p3_mono`; **`lake env lean` writes NO olean**, so an `Audit`
+compile after a fresh file reports `unknownIdentifier` until `lake build
+ArithS.Necessitation.<File>` runs — every census append needs an olean rebuild BETWEEN the file
+compile and the Audit compile; `emptyFsetPi`/`reset0` had NO size lemma anywhere (proved by tag
+inspection: `ltag_emptySubsetC`, `ptag_congSubsetL`, `ltag_fsetOfSubsetZeroC`, `ltag_fsetSigmaPiC`,
+`ltag_eqSymm`, `ltag_eqTrans`, `ptag_congSetShiftR`); `2·sum2D` does NOT fit under `layD` (it
+absorbs only one factor) — route via `sum2D ≤ layD` and absorb the 2 into `Cz`; `len (node…) = 9`
+must be proved STRUCTURALLY (`unfold; rw [len_appendV, len_appendV]; simp [len_adjoin]; norm_num`),
+not from `node*_ok` (those bundle applicability hypotheses the size glue lacks); `le_of_eq (by
+ring)` after `add_le_add` leaves `ring` a metavariable; `pgrep -f 'bin/lake build'` can match the
+IDE's `lake serve` children — verify with `ps -p`; `goalFact4_le_kitQ` states the QUADRUPLE.
+IN FLIGHT: `Verify5` glue Part 2 (the seven remaining arms + the ten-arm induction).
