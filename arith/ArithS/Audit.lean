@@ -46,6 +46,8 @@ import ArithS.Necessitation.Verify
 import ArithS.Necessitation.Top
 import ArithS.Necessitation.Prologue
 import ArithS.Necessitation.NumId
+import ArithS.Necessitation.NumIdRows
+import ArithS.Necessitation.Pin
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -967,5 +969,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms costSum_proOr_le
 #print axioms sizeOK_proShift
 #print axioms costSum_proShift_le
+#print axioms layoutSteps0_ok
+#print axioms proWk0_ok
+#print axioms proShift0_ok
+
+-- U10 (Necessitation/NumIdRows + Pin, 2026-09-15): TOWARDS `PinKit χ`. The pin's six rows on the prologue
+-- table (`nIdx = proRowCount + k`; the NEW `bnumOddOfEven`, the odd bit-step through the even numeral — the
+-- library's `bnumOddCert` has 12 witnesses, above cap 9), `NumIdTable`, the kernel `pinKernel_ok`
+-- (`congSubstArg ∷ instBIntro`) and the assembly `pin_assembly`: every `pin` conjunct of `PinKit χ` except the
+-- cost, from two producer ORACLES (`BnumOracle` = the bit-wise `bnum k` certification, `SubstOracle` =
+-- `certSubst` re-indexed) — see `Pin.lean` §3 for what remains and why the cost conjunct as stated is out of
+-- reach of the generic cost lemmas. Nothing below is an axiom.
+#print axioms lib_bnumOddOfEven
+#print axioms nok_bnumEvenCert
+#print axioms nok_bnumOddOfEven
+#print axioms exists_numIdTable
+#print axioms NumIdTable.proTable
+#print axioms pinKernel_ok
+#print axioms transport_bnum
+#print axioms pin_assembly
 
 end ArithS
