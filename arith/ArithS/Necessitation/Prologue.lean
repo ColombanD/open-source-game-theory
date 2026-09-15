@@ -6904,6 +6904,897 @@ theorem proAll_ok {tbl N N' B' Wl Wc W T s p i D E Γ : V} (htbl : TableOK tbl N
 
 end allChild
 
+/-! ## 14. The `exs` child: `insert (substs1 t p) s` (`DESIGN_fragments.md` §4.6)
+
+Route (2026-09-15): (1) the walk of the singleton vector `⟨t⟩` (`descVecAux`: the vector object at `0`, `t`'s dossier
+at `1`, `adjFact w T̂ 𝟎`), the re-indexed term `lenT` (`tlenFact (bnum |t|) T̂`), then `lenObj`: `eqTotal [bnum |t|]`
+(the LENGTH OBJECT `l = &0` with `l = bnum |t|`), `eqSymm`, the re-indexed cert row `congTLenNum` (`tlenFact l T̂`) and
+the prologue row `leOfEqP` (159; `leFact l (bnum |t|)`) — `nodeExs_ok`'s `htl`/`hlet`; (2) a fresh walk of
+`substs1 t p` and the re-indexed `certSubst` at the singleton vector (`subFPre_single`) between the parent's dossier of
+`p` (the body of the member `∃p`) and the fresh one, then `substsSubsts1` (frag2 row 149): `substs1Fact PT T̂ P`;
+(3) `proIns_ok` REUSED on `(s, substs1 t p)`: the child at `0`, `insFact cp PT S`, `eqFactB cp s''`. -/
+
+section exsChild
+
+/-! ### 14.1 The reading of the prologue row `leOfEqP` (159) -/
+
+lemma ProTable.leOfEqP {tbl : V} (h : ProTable tbl) :
+    ((pIdx_leOfEqP : ℕ) : V) < len tbl ∧
+    rowM tbl.[((pIdx_leOfEqP : ℕ) : V)] = ((2 : ℕ) : V) ∧
+    rowB tbl.[((pIdx_leOfEqP : ℕ) : V)] = impChainV LAct (vecOf row_leOfEqP_as) row_leOfEqP_c := by
+  have hlt : pIdx_leOfEqP < proRows.length := by
+    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_leOfEqP, topRowCount, proExtraRowCount]; omega
+  have hr := h.2 pIdx_leOfEqP hlt
+  have e' : proRows[pIdx_leOfEqP]? = proExtraRows[4]? := by
+    have h1 : pIdx_leOfEqP < (topRows ++ proExtraRows).length := by
+      rw [List.length_append]; simp only [pIdx_leOfEqP, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
+    have h2 : topRows.length ≤ pIdx_leOfEqP := by rw [topRows_length]; simp only [pIdx_leOfEqP, topRowCount]; omega
+    unfold proRows
+    rw [List.getElem?_append_left h1, List.getElem?_append_right h2]
+    rfl
+  have e : proRows[pIdx_leOfEqP] = proExtraRows[4] := by
+    rw [List.getElem?_eq_getElem hlt, List.getElem?_eq_getElem (by decide : 4 < proExtraRows.length)] at e'
+    exact Option.some.inj e'
+  rw [e] at hr
+  refine ⟨lt_of_lt_of_le (by exact_mod_cast hlt) (proRows_length ▸ h.1), hr.1, ?_⟩
+  rw [impChainV_vecOf, hr.2]
+  exact quote_row_leOfEqP
+
+/-! ### 14.2 The walk of the singleton vector `⟨t⟩` -/
+
+/-- The walk of `t ∷ 0` at arity `0`: the vector object at `0`, `t`'s dossier at `1`. -/
+noncomputable def vecWalk (Ww t : V) : V := π₂ (descVecAux Ww 0 (descTVec Ww 0 1 (t ∷ 0)) 1)
+/-- Its eigenvariable count (`≤ 2|t|`). -/
+noncomputable def vecCw (Ww t : V) : V := π₁ (descVecAux Ww 0 (descTVec Ww 0 1 (t ∷ 0)) 1)
+
+lemma listSum_termLenVec_single {t : V} (ht : IsSemiterm LAct 0 t) :
+    listSum (termLenVec LAct 1 (t ∷ (0 : V))) = termLen LAct t := by
+  have := termLenVec_cons (L := LAct) (k := (0 : V)) (t := t) (ts := 0) ht.isUTerm (by simp)
+  rw [zero_add] at this
+  rw [this, listSum_adjoin, termLenVec_nil, listSum_nil]; simp
+
+/-- **The vector walk is applicable**: Horn-only, `vecCw ≤ 2|t|`, the vector's dossier at `0`. -/
+theorem vecWalk_ok {tbl N t E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (ht : IsSemiterm LAct 0 t)
+    (hE : 2 * termLen LAct t + 10 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (vecWalk walkPieces t) ∧ NoDrop (vecWalk walkPieces t) ∧ HornOnly (vecWalk walkPieces t) ∧
+    shiftsV (vecWalk walkPieces t) = vecCw walkPieces t ∧ vecCw walkPieces t ≤ 2 * termLen LAct t ∧
+    DossV walkPieces (finalCtx Γ (vecWalk walkPieces t)) 0 1 (t ∷ 0) 1 0 := by
+  have hW := hP.walkTable
+  have hw : IsSemitermVec LAct 1 0 (t ∷ (0 : V)) := by simp [ht]
+  have hS : listSum (termLenVec LAct 1 (t ∷ (0 : V))) = termLen LAct t := listSum_termLenVec_single ht
+  have htl : takeLast (t ∷ (0 : V)) 1 = t ∷ 0 := by have := takeLast_len_self (t ∷ (0 : V)); rwa [hw.lh] at this
+  have hEw : 2 * 0 + 2 * 1 + 2 * listSum (termLenVec LAct 1 (t ∷ (0 : V))) + 8 ≤ E := by
+    rw [hS]; exact le_trans (le_of_eq (by ring)) hE
+  obtain ⟨_, hcu, hVF⟩ := descVecAux_ok' htbl hW rfl hw hEw 1 le_rfl
+  rw [htl, hS] at hcu
+  obtain ⟨okU, ndU, shU, _⟩ := hVF Γ hΓ
+  have hoU : HornOnly (vecWalk walkPieces t) :=
+    hornOnly_descVecAux rfl hw (fun i hi ↦ by have := hornOnly_describeT rfl 0 _ (hw.nth hi); rwa [describeT] at this) 1 le_rfl
+  exact ⟨okU, ndU, hoU, shU, hcu, dossV_of_walk ndU⟩
+
+/-! ### 14.3 The length object `l = bnum |t|` -/
+
+/-- `eqTotal [bnum lt]` (`&0 = bnum lt`), `eqSymm [&0, bnum lt]`, the re-indexed cert row `congTLenNum [T̂, bnum lt, &0]`
+(`tlenFact &0 T̂`, `T̂ = &(it₀ + 1)` after the eigenvariable), `leOfEqP [&0, bnum lt]` (`leFact &0 (bnum lt)`). -/
+noncomputable def lenObj (Wc W lt it₀ : V) : V :=
+  appendV ?[mkStep W 40 ?[bnum lt]]
+    (appendV ?[mkStep W 42 ?[^&0, bnum lt]]
+      (appendV (reidxL ?[mkStep Wc 146 ?[^&(it₀ + 1), bnum lt, ^&0]])
+        ?[mkStep W 159 ?[^&0, bnum lt]]))
+
+noncomputable def lenObjDef : 𝚺₁.Semisentence 5 := .mkSigma
+  “y Wc W lt it. ∃ bn, !bnumGraph bn lt ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ it1, it1 = it + 1 ∧ ∃ zi, !qqFvarDef zi it1 ∧
+    ∃ e₁, !adjoinDef e₁ bn 0 ∧ ∃ s₁, !mkStepDef s₁ W 40 e₁ ∧ ∃ l₁, !adjoinDef l₁ s₁ 0 ∧
+    ∃ e₂, !adjoinDef e₂ z0 e₁ ∧ ∃ s₂, !mkStepDef s₂ W 42 e₂ ∧ ∃ l₂, !adjoinDef l₂ s₂ 0 ∧
+    ∃ e₃', !adjoinDef e₃' z0 0 ∧ ∃ e₃'', !adjoinDef e₃'' bn e₃' ∧ ∃ e₃, !adjoinDef e₃ zi e₃'' ∧ ∃ s₃, !mkStepDef s₃ Wc 146 e₃ ∧
+    ∃ l₃', !adjoinDef l₃' s₃ 0 ∧ ∃ l₃, !reidxLDef l₃ l₃' ∧
+    ∃ s₄, !mkStepDef s₄ W 159 e₂ ∧ ∃ l₄, !adjoinDef l₄ s₄ 0 ∧
+    ∃ r₃, !appendVDef r₃ l₃ l₄ ∧ ∃ r₂, !appendVDef r₂ l₂ r₃ ∧ !appendVDef y l₁ r₂”
+
+set_option maxHeartbeats 1000000 in
+instance lenObj_defined : 𝚺₁-Function₄ (lenObj : V → V → V → V → V) via lenObjDef := .mk fun v ↦ by
+  simp [lenObjDef, lenObj, bnum.defined.iff, mkStep_defined.iff, reidxL_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance lenObj_definable : 𝚺₁-Function₄ (lenObj : V → V → V → V → V) := lenObj_defined.to_definable
+
+set_option maxHeartbeats 2000000 in
+/-- **`lenObj` is applicable**: one eigenvariable (`l = &0`), four steps, `tlenFact l T̂` and `leFact l (bnum lt)`. -/
+theorem lenObj_ok {tbl N Wc W lt it₀ E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWc : Wc = certPieces)
+    (hWp : W = proPieces) (hΓ : IsFormulaSet LAct Γ) (hbE : termLen LAct (bnum lt) ≤ E) (hit : it₀ + 2 ≤ E)
+    (htl : neg LAct (tlenFact (bnum lt) (^&it₀)) ∈ Γ) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (lenObj Wc W lt it₀) ∧ NoDrop' (lenObj Wc W lt it₀) ∧
+    shiftsV (lenObj Wc W lt it₀) = 1 ∧ len (lenObj Wc W lt it₀) = 4 ∧
+    neg LAct (tlenFact (^&0) (^&(it₀ + 1))) ∈ finalCtx Γ (lenObj Wc W lt it₀) ∧
+    neg LAct (leFact (^&0) (bnum lt)) ∈ finalCtx Γ (lenObj Wc W lt it₀) ∧
+    ∀ Q Dd : V, SizeOK Q Dd (lenObj Wc W lt it₀) := by
+  have hL := hP.layoutTable
+  have hC := hP.certTable
+  have htblC := hP.tableOK_certView htbl
+  have e40 : ∀ ev : V, mkStep proPieces (40 : V) ev = mkStep layoutPieces (40 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 40 (by decide) ev; simpa using this
+  have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 42 (by decide) ev; simpa using this
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hit)
+  have hb : IsSemiterm LAct 0 (bnum lt) := isSemiterm_bnum0 lt
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
+  have hitE : it₀ + 1 + 1 ≤ E := by rw [add_assoc, one_add_one_eq_two]; exact hit
+  -- step 1: the length object
+  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_eqTotal htbl hL rfl hΓ hb hbE
+  rw [← e40, ← hWp] at ok₁ tg₁ cx₁
+  rw [Nat.cast_zero, termShift_bnum] at cx₁
+  have h1nd : NoDrop' (?[mkStep W 40 ?[bnum lt]] : V) := noDrop'_single (Or.inr (Or.inr (Or.inl tg₁)))
+  have h1sh : shiftsV (?[mkStep W 40 ?[bnum lt]] : V) = 1 := shiftsV_single_tag2 tg₁
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = insert (neg LAct (eqFactB (^&0) (bnum lt))) (setShift LAct Γ) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁, ← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
+  have htl₁ : neg LAct (tlenFact (bnum lt) (^&(it₀ + 1))) ∈ Γ₁ := by
+    have := tlenFact_transport h1nd htl
+    rw [h1sh, finalCtx_single, cx₁] at this
+    rw [hΓ₁]; exact this
+  have heq₁ : neg LAct (eqFactB (^&0) (bnum lt)) ∈ Γ₁ := by rw [hΓ₁]; exact memInsSelf _ _
+  -- step 2: `eqSymm`
+  obtain ⟨ok₂, tg₂, cx₂⟩ := lok_eqSymm htbl hL rfl hΓ₁f hf0 hf0E hb hbE heq₁
+  rw [← e42, ← hWp] at ok₂ tg₂ cx₂
+  have hΓ₂f : IsFormulaSet LAct (insert (neg LAct (eqFactB (bnum lt) (^&0))) Γ₁) := by
+    rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
+  -- step 3: `congTLenNum` (a cert row, re-indexed)
+  obtain ⟨ok₃, tg₃, cx₃⟩ := cok_congTLenNum htblC hC hWc hΓ₂f (by simp) (termLen_fvar_le' hitE) hb hbE hf0 hf0E
+    (memInsSelf _ _) (memIns htl₁)
+  have hΓ₃f : IsFormulaSet LAct (insert (neg LAct (tlenFact (^&0) (^&(it₀ + 1)))) (insert (neg LAct (eqFactB (bnum lt) (^&0))) Γ₁)) := by
+    rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htblC ok₃
+  -- step 4: `leOfEqP`
+  have hrow := hP.leOfEqP
+  obtain ⟨ok₄, tg₄, cx₄⟩ := pok_leOfEqP htbl hWp hrow.1 ⟨hrow.2.1, hrow.2.2⟩ hΓ₃f hf0 hf0E hb hbE (memIns (memIns heq₁))
+  -- assembly
+  unfold lenObj
+  refine ⟨?_, noDrop'_appendV h1nd (noDrop'_appendV (noDrop'_single (Or.inl tg₂))
+      (noDrop'_appendV (noDrop'_reidxL (noDrop'_single (Or.inl tg₃))) (noDrop'_single (Or.inl tg₄)))), ?_, ?_, ?_, ?_, ?_⟩
+  · refine listOK_appendV (listOK_single ok₁) ?_
+    rw [finalCtx_single, cx₁, ← hΓ₁]
+    refine listOK_appendV (listOK_single ok₂) ?_
+    rw [finalCtx_single, cx₂]
+    refine listOK_appendV (listOK_reidxL hP (listOK_single ok₃)) ?_
+    rw [finalCtx_reidxL, finalCtx_single, cx₃]
+    exact listOK_single ok₄
+  · rw [shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, h1sh, shiftsV_single_tag0 tg₂, shiftsV_reidxL,
+      shiftsV_single_tag0 tg₃, shiftsV_single_tag0 tg₄]
+    simp
+  · rw [len_appendV, len_appendV, len_appendV, len_reidxL, len_vec1, len_vec1, len_vec1, len_vec1]; norm_num
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_reidxL]
+    simp only [finalCtx_single]
+    rw [cx₁, ← hΓ₁, cx₂, cx₃, cx₄]
+    exact memIns (memInsSelf _ _)
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_reidxL]
+    simp only [finalCtx_single]
+    rw [cx₁, ← hΓ₁, cx₂, cx₃, cx₄]
+    exact memInsSelf _ _
+  · intro Q Dd
+    exact sizeOK_appendV (sizeOK_single (stepSizeOK_of_tag (Or.inr (Or.inr tg₁))))
+      (sizeOK_appendV (sizeOK_single (stepSizeOK_of_tag (Or.inl tg₂)))
+        (sizeOK_appendV (sizeOK_reidxL (sizeOK_single (stepSizeOK_of_tag (Or.inl tg₃))))
+          (sizeOK_single (stepSizeOK_of_tag (Or.inl tg₄)))))
+
+/-! ### 14.4 The certification prefix `exsCert` -/
+
+/-- The shifts of the term `lenT` (at offset `1`). -/
+noncomputable def exsSl (Wc T t : V) : V := shiftsV (lenT Wc T 0 t 1)
+/-- The shifts of the walk of `substs1 t p`. -/
+noncomputable def exsC3 (Ww t p : V) : V := descCountF Ww 0 (substs1 LAct t p)
+/-- The index of the vector object `⟨t⟩` when `certSubst` starts (`T̂` is at `exsIw + 1`). -/
+noncomputable def exsIw (Ww Wc T t p : V) : V := exsSl Wc T t + 1 + exsC3 Ww t p
+/-- The index of the parent's dossier of `p` (the body of the member `∃p`) when `certSubst` starts. -/
+noncomputable def exsIp (Ww Wc T s p t i : V) : V :=
+  memTop Ww Wc T s (^∃ p) (i + vecCw Ww t + exsSl Wc T t + 1 + exsC3 Ww t p) + 1
+/-- The shifts of the substitution pass. -/
+noncomputable def exsSc (Ww Wc T s p t i : V) : V :=
+  shiftsV (certSubst Wc Ww 1 0 (t ∷ 0) (exsIw Ww Wc T t p) p (exsIp Ww Wc T s p t i) 0)
+/-- The shifts of the whole certification prefix. -/
+noncomputable def exsSig (Ww Wc T s p t i : V) : V :=
+  vecCw Ww t + exsSl Wc T t + 1 + exsC3 Ww t p + exsSc Ww Wc T s p t i
+
+/-- **`exsCert`**: the vector walk of `⟨t⟩`, the re-indexed term `lenT`, `lenObj`, the walk of `substs1 t p`, the
+re-indexed `certSubst` (`substFact PT ⟨t⟩ P`), `substsSubsts1 [P, T̂, ⟨t⟩, PT]` (frag2 row 149). -/
+noncomputable def exsCert (Ww Wc W T s p t i : V) : V :=
+  appendV (vecWalk Ww t)
+    (appendV (reidxL (lenT Wc T 0 t 1))
+      (appendV (lenObj Wc W (termLen LAct t) (1 + exsSl Wc T t))
+        (appendV (describeF Ww 0 (substs1 LAct t p))
+          (appendV (reidxL (certSubst Wc Ww 1 0 (t ∷ 0) (exsIw Ww Wc T t p) p (exsIp Ww Wc T s p t i) 0))
+            ?[mkStep W 149 ?[^&(exsIp Ww Wc T s p t i + exsSc Ww Wc T s p t i), ^&(exsIw Ww Wc T t p + exsSc Ww Wc T s p t i + 1),
+                ^&(exsIw Ww Wc T t p + exsSc Ww Wc T s p t i), ^&(exsSc Ww Wc T s p t i)]]))))
+
+noncomputable def exsCertDef : 𝚺₁.Semisentence 9 := .mkSigma
+  “y Ww Wc W T s p t i. ∃ tv, !adjoinDef tv t 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 tv ∧ ∃ VW, !descVecAuxDef VW Ww 0 dv 1 ∧
+    ∃ cv, !pi₁Def cv VW ∧ ∃ Lv, !pi₂Def Lv VW ∧
+    ∃ Lt, !lenTDef Lt Wc T 0 t 1 ∧ ∃ Rt, !reidxLDef Rt Lt ∧ ∃ sl, !shiftsVDef sl Lt ∧
+    ∃ lt, !(termLenGraph LAct) lt t ∧ ∃ it₀, it₀ = 1 + sl ∧ ∃ Lo, !lenObjDef Lo Wc W lt it₀ ∧
+    ∃ pt, !(substs1Graph LAct) pt t p ∧ ∃ Lp, !describeFDef Lp Ww 0 pt ∧ ∃ c₃, !descCountFDef c₃ Ww 0 pt ∧
+    ∃ iw, iw = sl + 1 + c₃ ∧
+    ∃ r, !qqExsDef r p ∧ ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ os, !offVecDef os xs Ww Wc T ∧
+    ∃ a, !idxOfDef a xs r ∧ ∃ oa, !nthDef oa os a ∧ ∃ i', i' = i + cv + sl + 1 + c₃ ∧ ∃ ip, ip = i' + (2 * k + 1 + oa) + 1 ∧
+    ∃ Ls, !certSubstDef Ls Wc Ww 1 0 tv iw p ip 0 ∧ ∃ Rs, !reidxLDef Rs Ls ∧ ∃ sc, !shiftsVDef sc Ls ∧
+    ∃ a₁, a₁ = ip + sc ∧ ∃ z₁, !qqFvarDef z₁ a₁ ∧ ∃ a₂, a₂ = iw + sc + 1 ∧ ∃ z₂, !qqFvarDef z₂ a₂ ∧
+    ∃ a₃, a₃ = iw + sc ∧ ∃ z₃, !qqFvarDef z₃ a₃ ∧ ∃ z₄, !qqFvarDef z₄ sc ∧
+    ∃ e₁, !adjoinDef e₁ z₄ 0 ∧ ∃ e₂, !adjoinDef e₂ z₃ e₁ ∧ ∃ e₃, !adjoinDef e₃ z₂ e₂ ∧ ∃ e₄, !adjoinDef e₄ z₁ e₃ ∧
+    ∃ st, !mkStepDef st W 149 e₄ ∧ ∃ l, !adjoinDef l st 0 ∧
+    ∃ r₅, !appendVDef r₅ Rs l ∧ ∃ r₄, !appendVDef r₄ Lp r₅ ∧ ∃ r₃, !appendVDef r₃ Lo r₄ ∧ ∃ r₂, !appendVDef r₂ Rt r₃ ∧
+    !appendVDef y Lv r₂”
+
+set_option maxHeartbeats 2000000 in
+instance exsCert_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ exsCert (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) exsCertDef := .mk
+  fun v ↦ by
+    simp [exsCertDef, exsCert, vecWalk, vecCw, exsSl, exsC3, exsIw, exsIp, exsSc, memTop, mTop, descTVec_defined.iff,
+      descVecAux_defined.iff, lenT_defined.iff, reidxL_defined.iff, shiftsV_defined.iff, termLen.defined.iff,
+      lenObj_defined.iff, substs1.defined.iff, describeF_defined.iff, descCountF_defined.iff, memberList_defined.iff,
+      offVec_defined.iff, idxOf_defined.iff, certSubst_defined.iff, mkStep_defined.iff, appendV_defined.iff,
+      numeral_eq_natCast]
+
+/-- With `r = ∃p ∈ s`, the layout gives `exsFact &ir &(ir + 1)`, the dossier of `p` (arity 1) at `ir + 1` and
+`memFact &ir &is` — the `nodeExs_ok` hypotheses `hexs`/`hmr` and the `certSubst` input. -/
+theorem layout_exs {tbl N Wc T s p Γ i : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (hLay : Layout walkPieces Wc T Γ s i) :
+    neg LAct (exsFact (^&(memTop walkPieces Wc T s (^∃ p) i)) (^&(memTop walkPieces Wc T s (^∃ p) i + 1))) ∈ Γ ∧
+    DossF walkPieces Γ 1 p (memTop walkPieces Wc T s (^∃ p) i + 1) ∧
+    neg LAct (memFact (^&(memTop walkPieces Wc T s (^∃ p) i)) (^&(i + (len (memberList s) + 1)))) ∈ Γ := by
+  obtain ⟨hD, _, _, hm⟩ := hLay.member hr
+  obtain ⟨h1, _, hp'⟩ := dossF_exs htbl hP.walkTable rfl (n := 0) (by rw [zero_add]; exact hp) hD
+  rw [zero_add] at hp'
+  exact ⟨h1, hp', hm⟩
+
+set_option maxHeartbeats 4000000 in
+/-- **The certification prefix is applicable** (cap `9`): afterwards the parent is at `i + exsSig`, the fresh dossier
+of `PT = substs1 t p` is at `exsSc`, `T̂ = &(exsIw + exsSc + 1)` with `tPiFact 𝟎 T̂`, the length object
+`l = &(exsC3 + exsSc)` with `tlenFact l T̂` and `leFact l (bnum |t|)`, and `substs1Fact PT T̂ P`. -/
+theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces) (hWp : W = proPieces)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
+    (hsD : setLen LAct s ≤ D) (htD : termLen LAct t ≤ D) (hptD : formulaLen LAct (substs1 LAct t p) ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
+    ListOK tbl E ((9 : ℕ) : V) Γ (exsCert walkPieces Wc W T s p t i) ∧ NoDrop' (exsCert walkPieces Wc W T s p t i) ∧
+    shiftsV (exsCert walkPieces Wc W T s p t i) = exsSig walkPieces Wc T s p t i ∧
+    exsSc walkPieces Wc T s p t i ≤ 2 * ((1 + D) * (1 + D + D)) * D ∧
+    exsSig walkPieces Wc T s p t i ≤ 2 * ((1 + D) * (1 + D + D)) * D + 6 * D + 1 ∧
+    Layout walkPieces Wc T (finalCtx Γ (exsCert walkPieces Wc W T s p t i)) s (i + exsSig walkPieces Wc T s p t i) ∧
+    DossF walkPieces (finalCtx Γ (exsCert walkPieces Wc W T s p t i)) 0 (substs1 LAct t p) (exsSc walkPieces Wc T s p t i) ∧
+    neg LAct (tPiFact (𝟎 : V) (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1))) ∈
+      finalCtx Γ (exsCert walkPieces Wc W T s p t i) ∧
+    neg LAct (tlenFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i))
+      (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1))) ∈ finalCtx Γ (exsCert walkPieces Wc W T s p t i) ∧
+    neg LAct (leFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i)) (bnum (termLen LAct t))) ∈
+      finalCtx Γ (exsCert walkPieces Wc W T s p t i) ∧
+    neg LAct (substs1Fact (^&(exsSc walkPieces Wc T s p t i)) (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1))
+      (^&(memTop walkPieces Wc T s (^∃ p) (i + exsSig walkPieces Wc T s p t i) + 1))) ∈
+      finalCtx Γ (exsCert walkPieces Wc W T s p t i) ∧
+    ∀ B : V, SizeOK (layQ B B' D) (layD N' B' D) (exsCert walkPieces Wc W T s p t i) := by
+  have hW := hP.walkTable
+  have hC := hP.certTable
+  have htblC := hP.tableOK_certView htbl
+  have hF2 := hP.frag2Table
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
+  have e149 : ∀ ev : V, mkStep proPieces (149 : V) ev = mkStep frag2Pieces (149 : V) ev := fun ev ↦ by
+    have := mkStep_pro_frag2 149 (by decide) ev; simpa using this
+  have hw : IsSemitermVec LAct 1 0 (t ∷ (0 : V)) := by simp [ht]
+  have hpt : IsSemiformula LAct 0 (substs1 LAct t p) := hp.substs1 ht
+  have hpD : formulaLen LAct p ≤ D := by
+    have h1 := formulaLen_exs (L := LAct) hp.isUFormula
+    have h2 := formulaLen_le_setLen_of_mem (L := LAct) hr
+    rw [h1] at h2
+    exact le_trans le_self_add (le_trans h2 hsD)
+  have hQ : (1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t) ≤ (1 + D) * (1 + D + D) :=
+    mul_le_mul (add_le_add le_rfl hpD) (add_le_add (add_le_add le_rfl hpD) htD) zero_le zero_le
+  have hQD2 : 2 * ((1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t)) * formulaLen LAct p ≤
+      2 * ((1 + D) * (1 + D + D)) * D := mul_le_mul (mul_le_mul_of_nonneg_left hQ zero_le) hpD zero_le zero_le
+  have hD13 : 2 * D + 10 ≤ E :=
+    le_trans (add_le_add (le_trans (mul_le_mul_of_nonneg_right (by norm_num) zero_le) le_self_add) (by norm_num)) hE
+  have hE18 : 18 * ‖D‖ + 7 ≤ E :=
+    le_trans (add_le_add (le_add_self : 18 * ‖D‖ ≤ 13 * D + 18 * ‖D‖) (by norm_num : (7 : V) ≤ 12)) hE
+  have hbE : termLen LAct (bnum (termLen LAct t)) ≤ E := termLen_bnum_le_bkE htD hE18
+  have h0 : (t ∷ (0 : V)).[1 - (0 + 1)] = t := by rw [zero_add, tsub_self]; simp
+  -- (1) the vector walk
+  obtain ⟨vok, vnd, vho, vsh, hcv, vD⟩ := vecWalk_ok htbl hP ht
+    (by calc 2 * termLen LAct t + 10 ≤ 2 * D + 10 := add_le_add (mul_le_mul_of_nonneg_left htD zero_le) le_rfl
+        _ ≤ E := hD13) hΓ
+  have hcv' : vecCw walkPieces t ≤ 2 * D := le_trans hcv (mul_le_mul_of_nonneg_left htD zero_le)
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (vecWalk walkPieces t) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact finalCtx_isFormulaSet 8 htbl hΓ vok
+  have vD₁ : DossV walkPieces Γ₁ 0 1 (t ∷ 0) 1 0 := by rw [hΓ₁]; exact vD
+  have hLay₁ : Layout walkPieces Wc T Γ₁ s (i + vecCw walkPieces t) := by
+    rw [hΓ₁]; have := hLay.transport vnd.noDrop'; rwa [vsh] at this
+  have vD₁' : DossV walkPieces Γ₁ 0 1 (t ∷ 0) (0 + 1) 0 := by rw [zero_add]; exact vD₁
+  obtain ⟨_, _, hDt₁, _⟩ := dossV_succ htbl hW rfl hw (j := 0) (by rw [zero_add]) vD₁'
+  rw [h0, zero_add] at hDt₁
+  -- (2) the term lengths (a cert list, re-indexed)
+  have hTL := lenTGraph_ok htblC hC htblN rfl hWc 0 t ht
+  unfold TLenOK at hTL
+  obtain ⟨lok, lfact⟩ := hTL 1 _ E Γ₁ (lenT_graph ht)
+    ⟨by calc 2 * 0 + 13 * termLen LAct t + 8 ≤ 2 * 0 + 13 * D + 8 := add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left htD zero_le)) le_rfl
+        _ ≤ 13 * D + 18 * ‖D‖ + 12 := by rw [mul_zero, zero_add]; exact add_le_add le_self_add (by norm_num)
+        _ ≤ E := hE,
+      by calc 1 + 5 * termLen LAct t + 2 ≤ 1 + 5 * D + 2 := add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left htD zero_le)) le_rfl
+        _ ≤ 13 * D + 18 * ‖D‖ + 12 := by
+          calc 1 + 5 * D + 2 = 5 * D + 3 := by ring
+            _ ≤ 13 * D + 18 * ‖D‖ + 12 := add_le_add (le_trans (mul_le_mul_of_nonneg_right (by norm_num) zero_le) le_self_add) (by norm_num)
+        _ ≤ E := hE, hΓ₁f⟩ hDt₁
+  obtain ⟨lnd, lsh⟩ := lenTGraph_noDrop_shifts hWc T 0 t ht 1 _ (lenT_graph ht)
+  have hsl : shiftsV (lenT Wc T 0 t 1) = exsSl Wc T t := rfl
+  have hsl' : exsSl Wc T t ≤ 2 * D := by
+    rw [← hsl]; exact le_trans le_self_add (le_trans lsh (mul_le_mul_of_nonneg_left htD zero_le))
+  rw [hsl] at lfact
+  obtain ⟨Γ₂, hΓ₂⟩ : ∃ Γ', Γ' = finalCtx Γ₁ (reidxL (lenT Wc T 0 t 1)) := ⟨_, rfl⟩
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [hΓ₂]; exact finalCtx_isFormulaSet 8 htbl hΓ₁f (listOK_reidxL hP lok)
+  have htl₂ : neg LAct (tlenFact (bnum (termLen LAct t)) (^&(1 + exsSl Wc T t))) ∈ Γ₂ := by rw [hΓ₂, finalCtx_reidxL]; exact lfact
+  have vD₂ : DossV walkPieces Γ₂ 0 1 (t ∷ 0) 1 (0 + exsSl Wc T t) := by
+    rw [hΓ₂]; have := dossV_transport' (noDrop'_reidxL lnd) vD₁; rwa [shiftsV_reidxL, hsl] at this
+  have hLay₂ : Layout walkPieces Wc T Γ₂ s (i + vecCw walkPieces t + exsSl Wc T t) := by
+    rw [hΓ₂]; have := hLay₁.transport (noDrop'_reidxL lnd); rwa [shiftsV_reidxL, hsl] at this
+  -- (3) the length object
+  obtain ⟨ook, ond, osh, _, otl, ole, osz⟩ := lenObj_ok htbl hP hWc hWp hΓ₂f hbE
+    (by calc 1 + exsSl Wc T t + 2 ≤ 1 + 2 * D + 2 := add_le_add (add_le_add le_rfl hsl') le_rfl
+        _ ≤ 2 * D + 10 := by rw [add_comm 1 (2 * D), add_assoc]; exact add_le_add le_rfl (by norm_num)
+        _ ≤ E := hD13) htl₂
+  obtain ⟨Γ₃, hΓ₃⟩ : ∃ Γ', Γ' = finalCtx Γ₂ (lenObj Wc W (termLen LAct t) (1 + exsSl Wc T t)) := ⟨_, rfl⟩
+  have hΓ₃f : IsFormulaSet LAct Γ₃ := by rw [hΓ₃]; exact finalCtx_isFormulaSet 8 htbl hΓ₂f ook
+  have otl₃ : neg LAct (tlenFact (^&0) (^&(1 + exsSl Wc T t + 1))) ∈ Γ₃ := by rw [hΓ₃]; exact otl
+  have ole₃ : neg LAct (leFact (^&0) (bnum (termLen LAct t))) ∈ Γ₃ := by rw [hΓ₃]; exact ole
+  have vD₃ : DossV walkPieces Γ₃ 0 1 (t ∷ 0) 1 (0 + exsSl Wc T t + 1) := by
+    rw [hΓ₃]; have := dossV_transport' ond vD₂; rwa [osh] at this
+  have hLay₃ : Layout walkPieces Wc T Γ₃ s (i + vecCw walkPieces t + exsSl Wc T t + 1) := by
+    rw [hΓ₃]; have := hLay₂.transport ond; rwa [osh] at this
+  -- (4) the walk of `substs1 t p`
+  have hptD' : 2 * 0 + 2 * formulaLen LAct (substs1 LAct t p) + 8 ≤ E := by
+    calc 2 * 0 + 2 * formulaLen LAct (substs1 LAct t p) + 8 ≤ 2 * 0 + 2 * D + 8 := add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hptD zero_le)) le_rfl
+      _ ≤ 2 * D + 10 := by rw [mul_zero, zero_add]; exact add_le_add le_rfl (by norm_num)
+      _ ≤ E := hD13
+  obtain ⟨pok', pnd, psh, pcnt, _⟩ := describeF_ok htbl hW hpt hptD' hΓ₃f
+  have hc₃ : descCountF walkPieces 0 (substs1 LAct t p) = exsC3 walkPieces t p := rfl
+  have hc₃' : exsC3 walkPieces t p ≤ 2 * D := by
+    rw [← hc₃]; exact le_trans le_self_add (le_trans pcnt (mul_le_mul_of_nonneg_left hptD zero_le))
+  rw [hc₃] at psh
+  obtain ⟨Γ₄, hΓ₄⟩ : ∃ Γ', Γ' = finalCtx Γ₃ (describeF walkPieces 0 (substs1 LAct t p)) := ⟨_, rfl⟩
+  have hΓ₄f : IsFormulaSet LAct Γ₄ := by rw [hΓ₄]; exact finalCtx_isFormulaSet 8 htbl hΓ₃f pok'
+  have hDpt₄ : DossF walkPieces Γ₄ 0 (substs1 LAct t p) 0 := by rw [hΓ₄]; exact dossF_of_walk pnd
+  have vD₄ : DossV walkPieces Γ₄ 0 1 (t ∷ 0) 1 (exsIw walkPieces Wc T t p) := by
+    rw [hΓ₄]; have := dossV_transport pnd vD₃; rw [psh, zero_add] at this; exact this
+  have hLay₄ : Layout walkPieces Wc T Γ₄ s (i + vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p) := by
+    rw [hΓ₄]; have := hLay₃.transport pnd.noDrop'; rwa [psh] at this
+  have otl₄ : neg LAct (tlenFact (^&(0 + exsC3 walkPieces t p)) (^&(1 + exsSl Wc T t + 1 + exsC3 walkPieces t p))) ∈ Γ₄ := by
+    rw [hΓ₄]
+    have := mem_finalCtx_of_mem pnd otl₃
+    rwa [psh, shiftIterV_neg (isFormula_tlenFact (by simp) (by simp)), shiftIterV_tlenFact (by simp) (by simp),
+      termShiftIterV_fvar, termShiftIterV_fvar] at this
+  have ole₄ : neg LAct (leFact (^&(0 + exsC3 walkPieces t p)) (bnum (termLen LAct t))) ∈ Γ₄ := by
+    rw [hΓ₄]
+    have := mem_finalCtx_of_mem pnd ole₃
+    rwa [psh, shiftIterV_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shiftIterV_leFact (by simp) (isSemiterm_bnum0 _),
+      termShiftIterV_fvar, termShiftIterV_bnum'] at this
+  obtain ⟨_, hDp₄, _⟩ := layout_exs htbl hP hp hr hLay₄
+  have hip : memTop walkPieces Wc T s (^∃ p) (i + vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p) + 1 =
+      exsIp walkPieces Wc T s p t i := rfl
+  rw [hip] at hDp₄
+  -- (5) the substitution pass
+  have hmt : exsIp walkPieces Wc T s p t i ≤ i + 12 * D + 3 := by
+    unfold exsIp
+    refine le_trans (add_le_add (memTop_le htbl hW hWc T hs hr hsD) le_rfl) ?_
+    calc i + vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p + 6 * D + 1 + 1
+        ≤ i + 2 * D + 2 * D + 1 + 2 * D + 6 * D + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add le_rfl hcv') hsl') le_rfl) hc₃') le_rfl) le_rfl) le_rfl
+      _ = i + 12 * D + 3 := by ring
+  have hiw : exsIw walkPieces Wc T t p ≤ 4 * D + 1 := by
+    unfold exsIw
+    calc exsSl Wc T t + 1 + exsC3 walkPieces t p ≤ 2 * D + 1 + 2 * D := add_le_add (add_le_add hsl' le_rfl) hc₃'
+      _ = 4 * D + 1 := by ring
+  have hPre : SubFPre E ((1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t)) 1 0 (t ∷ 0) p
+      (exsIp walkPieces Wc T s p t i) 0 (exsIw walkPieces Wc T t p) Γ₄ := by
+    refine subFPre_single ht (le_refl _) ?_ ?_ ?_ ?_ hΓ₄f
+    · calc 4 * formulaLen LAct p + 2 * ((1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t)) + 11
+          ≤ 4 * D + 2 * ((1 + D) * (1 + D + D)) + 11 := add_le_add (add_le_add (mul_le_mul_of_nonneg_left hpD zero_le) (mul_le_mul_of_nonneg_left hQ zero_le)) le_rfl
+        _ ≤ 4 * D + 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 11 := add_le_add (add_le_add le_rfl (le_mul_of_one_le_right zero_le le_add_self)) le_rfl
+        _ = 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 := by ring
+        _ ≤ E := hEQ
+    · calc exsIp walkPieces Wc T s p t i + 2 * formulaLen LAct p * ((1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t) + 1) + 1
+          ≤ (i + 12 * D + 3) + 2 * D * ((1 + D) * (1 + D + D) + 1) + 1 :=
+            add_le_add (add_le_add hmt (mul_le_mul (mul_le_mul_of_nonneg_left hpD zero_le) (add_le_add hQ le_rfl) zero_le zero_le)) le_rfl
+        _ = i + 2 * ((1 + D) * (1 + D + D)) * D + 14 * D + 4 := by ring
+        _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+            add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+        _ ≤ E := hiE
+    · show 0 + 2 * formulaLen LAct (subst LAct (t ∷ 0) p) + 2 * ((1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t)) * formulaLen LAct p + 1 ≤ E
+      calc 0 + 2 * formulaLen LAct (subst LAct (t ∷ 0) p) + 2 * ((1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t)) * formulaLen LAct p + 1
+          ≤ 0 + 2 * D + 2 * ((1 + D) * (1 + D + D)) * D + 1 :=
+            add_le_add (add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hptD zero_le)) hQD2) le_rfl
+        _ = 0 + 2 * ((1 + D) * (1 + D + D)) * D + 2 * D + 1 := by ring
+        _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+            add_le_add (add_le_add (add_le_add zero_le le_rfl) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+        _ ≤ E := hiE
+    · calc exsIw walkPieces Wc T t p + 2 * ((1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t)) * (formulaLen LAct p + 1) + 2
+          ≤ (4 * D + 1) + 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 2 :=
+            add_le_add (add_le_add hiw (mul_le_mul (mul_le_mul_of_nonneg_left hQ zero_le) (add_le_add hpD le_rfl) zero_le zero_le)) le_rfl
+        _ = 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 3 := by ring
+        _ ≤ 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 := add_le_add le_rfl (by norm_num)
+        _ ≤ E := hEQ
+  have hLcap := qWalkP_single_cap (Wd := walkPieces) (t := t) (B := termLen LAct t) (r := p) ht (le_refl _)
+  obtain ⟨cok, cnd, cho, csh, _, cfact⟩ := certSubst_ok htblC hC rfl hWc hw hp hPre hLcap hDp₄ hDpt₄ vD₄
+  have hsc : shiftsV (certSubst Wc walkPieces 1 0 (t ∷ 0) (exsIw walkPieces Wc T t p) p (exsIp walkPieces Wc T s p t i) 0) =
+      exsSc walkPieces Wc T s p t i := rfl
+  rw [hsc] at csh cfact
+  have hsc' : exsSc walkPieces Wc T s p t i ≤ 2 * ((1 + D) * (1 + D + D)) * D := le_trans csh hQD2
+  obtain ⟨Γ₅, hΓ₅⟩ : ∃ Γ', Γ' = finalCtx Γ₄ (reidxL (certSubst Wc walkPieces 1 0 (t ∷ 0) (exsIw walkPieces Wc T t p) p (exsIp walkPieces Wc T s p t i) 0)) := ⟨_, rfl⟩
+  have hΓ₅f : IsFormulaSet LAct Γ₅ := by rw [hΓ₅]; exact finalCtx_isFormulaSet 9 htbl hΓ₄f (listOK_reidxL hP cok)
+  have cnd' : NoDrop' (reidxL (certSubst Wc walkPieces 1 0 (t ∷ 0) (exsIw walkPieces Wc T t p) p (exsIp walkPieces Wc T s p t i) 0)) :=
+    noDrop'_reidxL cnd
+  have csh' : shiftsV (reidxL (certSubst Wc walkPieces 1 0 (t ∷ 0) (exsIw walkPieces Wc T t p) p (exsIp walkPieces Wc T s p t i) 0)) =
+      exsSc walkPieces Wc T s p t i := by rw [shiftsV_reidxL, hsc]
+  have cfact₅ : neg LAct (substFact (^&(exsSc walkPieces Wc T s p t i)) (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i))
+      (^&(exsIp walkPieces Wc T s p t i + exsSc walkPieces Wc T s p t i))) ∈ Γ₅ := by
+    rw [hΓ₅, finalCtx_reidxL]
+    have := cfact; rw [zero_add, vRef_of_ne _root_.one_ne_zero] at this; exact this
+  have hLay₅ : Layout walkPieces Wc T Γ₅ s (i + vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i) := by
+    rw [hΓ₅]; have := hLay₄.transport cnd'; rwa [csh'] at this
+  have hDpt₅ : DossF walkPieces Γ₅ 0 (substs1 LAct t p) (exsSc walkPieces Wc T s p t i) := by
+    rw [hΓ₅]; have := dossF_transport' cnd' hDpt₄; rwa [csh', zero_add] at this
+  have vD₅ : DossV walkPieces Γ₅ 0 1 (t ∷ 0) 1 (exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i) := by
+    rw [hΓ₅]; have := dossV_transport (noDrop_reidxL (noDrop_of_hornOnly cho)) vD₄; rwa [csh'] at this
+  have otl₅ : neg LAct (tlenFact (^&(0 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i))
+      (^&(1 + exsSl Wc T t + 1 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i))) ∈ Γ₅ := by
+    rw [hΓ₅]
+    have := mem_finalCtx_of_mem' cnd' otl₄
+    rwa [csh', shiftIterV_neg (isFormula_tlenFact (by simp) (by simp)), shiftIterV_tlenFact (by simp) (by simp),
+      termShiftIterV_fvar, termShiftIterV_fvar] at this
+  have ole₅ : neg LAct (leFact (^&(0 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i)) (bnum (termLen LAct t))) ∈ Γ₅ := by
+    rw [hΓ₅]
+    have := mem_finalCtx_of_mem' cnd' ole₄
+    rwa [csh', shiftIterV_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shiftIterV_leFact (by simp) (isSemiterm_bnum0 _),
+      termShiftIterV_fvar, termShiftIterV_bnum'] at this
+  have vD₅' : DossV walkPieces Γ₅ 0 1 (t ∷ 0) (0 + 1) (exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i) := by
+    rw [zero_add]; exact vD₅
+  obtain ⟨hadj₅, _, hDt₅, _⟩ := dossV_succ htbl hW rfl hw (j := 0) (by rw [zero_add]) vD₅'
+  rw [h0] at hDt₅
+  rw [vRef_zero] at hadj₅
+  have htpi₅ := dossT_tPi htbl hW rfl ht hDt₅
+  rw [cTV_zero] at htpi₅
+  -- (6) `substsSubsts1`
+  have hsc1 : exsSc walkPieces Wc T s p t i + 1 ≤ E := by
+    calc exsSc walkPieces Wc T s p t i + 1 ≤ 2 * ((1 + D) * (1 + D + D)) * D + 1 := add_le_add hsc' le_rfl
+      _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 := by
+        calc 2 * ((1 + D) * (1 + D + D)) * D + 1 = 0 + 2 * ((1 + D) * (1 + D + D)) * D + 0 + 1 := by ring
+          _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+            add_le_add (add_le_add (add_le_add zero_le le_rfl) zero_le) (by norm_num)
+      _ ≤ E := hiE
+  have hiwsc : exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 ≤ E := by
+    calc exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 ≤ (4 * D + 1) + 2 * ((1 + D) * (1 + D + D)) * D + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add hiw hsc') le_rfl) le_rfl
+      _ = 0 + 2 * ((1 + D) * (1 + D + D)) * D + 4 * D + 3 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add (add_le_add zero_le le_rfl) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  have hiwsc' : exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 ≤ E := le_trans le_self_add hiwsc
+  have hipsc : exsIp walkPieces Wc T s p t i + exsSc walkPieces Wc T s p t i + 1 ≤ E := by
+    calc exsIp walkPieces Wc T s p t i + exsSc walkPieces Wc T s p t i + 1 ≤ (i + 12 * D + 3) + 2 * ((1 + D) * (1 + D + D)) * D + 1 :=
+          add_le_add (add_le_add hmt hsc') le_rfl
+      _ = i + 2 * ((1 + D) * (1 + D + D)) * D + 12 * D + 4 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  obtain ⟨ok₆, tg₆, cx₆⟩ := gok_substsSubsts1 htbl hF2 rfl hΓ₅f (by simp) (termLen_fvar_le' hipsc) (by simp) (termLen_fvar_le' hiwsc)
+    (by simp) (termLen_fvar_le' hiwsc') (by simp) (termLen_fvar_le' hsc1) hadj₅ cfact₅
+  rw [← e149, ← hWp] at ok₆ tg₆ cx₆
+  -- assembly
+  have hsig : exsSig walkPieces Wc T s p t i = vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i := rfl
+  have tr₆ : ∀ x ∈ Γ₅, x ∈ finalCtx Γ₅ (?[mkStep W 149 ?[^&(exsIp walkPieces Wc T s p t i + exsSc walkPieces Wc T s p t i),
+      ^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1), ^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i),
+      ^&(exsSc walkPieces Wc T s p t i)]] : V) := fun x hx ↦ by
+    rw [finalCtx_single, cx₆]; exact memIns hx
+  have e₁ : 0 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i = exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i := by ring
+  have e₂ : 1 + exsSl Wc T t + 1 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i =
+      exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 := by unfold exsIw; ring
+  have e₃ : exsIp walkPieces Wc T s p t i + exsSc walkPieces Wc T s p t i =
+      memTop walkPieces Wc T s (^∃ p) (i + exsSig walkPieces Wc T s p t i) + 1 := by
+    unfold exsIp; rw [hsig]; unfold memTop mTop; ring
+  rw [e₁, e₂] at otl₅
+  rw [e₁] at ole₅
+  unfold exsCert
+  refine ⟨?_, ?_, ?_, hsc', ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · refine listOK_appendV (vok.mono h89) ?_
+    rw [← hΓ₁]
+    refine listOK_appendV (listOK_reidxL hP lok |>.mono h89) ?_
+    rw [← hΓ₂]
+    refine listOK_appendV (ook.mono h89) ?_
+    rw [← hΓ₃]
+    refine listOK_appendV (pok'.mono h89) ?_
+    rw [← hΓ₄]
+    refine listOK_appendV (listOK_reidxL hP cok) ?_
+    rw [← hΓ₅]
+    exact listOK_single (ok₆.mono h89)
+  · exact noDrop'_appendV vnd.noDrop' (noDrop'_appendV (noDrop'_reidxL lnd) (noDrop'_appendV ond
+      (noDrop'_appendV pnd.noDrop' (noDrop'_appendV cnd' (noDrop'_single (Or.inl tg₆))))))
+  · rw [shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, shiftsV_appendV, vsh, shiftsV_reidxL, hsl, osh, psh,
+      csh', shiftsV_single_tag0 tg₆, hsig, add_zero]
+    ring
+  · rw [hsig]
+    calc vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i
+        ≤ 2 * D + 2 * D + 1 + 2 * D + 2 * ((1 + D) * (1 + D + D)) * D :=
+          add_le_add (add_le_add (add_le_add (add_le_add hcv' hsl') le_rfl) hc₃') hsc'
+      _ = 2 * ((1 + D) * (1 + D + D)) * D + 6 * D + 1 := by ring
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, ← hΓ₃, ← hΓ₄, ← hΓ₅,
+      finalCtx_single, cx₆, hsig]
+    have eL : i + (vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i) =
+        i + vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i := by ring
+    rw [eL]
+    exact hLay₅.mono (fun x hx ↦ memIns hx)
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, ← hΓ₃, ← hΓ₄, ← hΓ₅,
+      finalCtx_single, cx₆]
+    exact hDpt₅.mono (fun x hx ↦ memIns hx)
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, ← hΓ₃, ← hΓ₄, ← hΓ₅,
+      finalCtx_single, cx₆]
+    exact memIns htpi₅
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, ← hΓ₃, ← hΓ₄, ← hΓ₅,
+      finalCtx_single, cx₆]
+    exact memIns otl₅
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, ← hΓ₃, ← hΓ₄, ← hΓ₅,
+      finalCtx_single, cx₆]
+    exact memIns ole₅
+  · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, ← hΓ₃, ← hΓ₄, ← hΓ₅,
+      finalCtx_single, cx₆, ← e₃]
+    exact memInsSelf _ _
+  · intro B
+    exact sizeOK_appendV (sizeOK_of_hornOnly vho)
+      (sizeOK_appendV (sizeOK_reidxL ((lenTGraph_sizeOK hWc htblN 0 D t ht htD 1 _ (lenT_graph ht)).mono le_self_add le_self_add))
+        (sizeOK_appendV (osz _ _)
+          (sizeOK_appendV (sizeOK_of_hornOnly (hornOnly_describeF rfl hpt))
+            (sizeOK_appendV (sizeOK_reidxL (sizeOK_of_hornOnly cho)) (sizeOK_single (stepSizeOK_of_tag (Or.inl tg₆)))))))
+
+/-! ### 14.5 The whole `exs` prologue -/
+
+/-- **`proExs s p t i`**: `exsCert` (the witness term, its length object, `substs1Fact PT T̂ P`), then
+`proIns s (substs1 t p)` (the child `insert (substs1 t p) s` at `0`, `insFact cp PT S`, `eqFactB cp s''`). -/
+noncomputable def proExs (Ww Wl Wc W T s p t i : V) : V :=
+  appendV (exsCert Ww Wc W T s p t i)
+    (proIns Ww Wl Wc W T s (substs1 LAct t p) (i + exsSig Ww Wc T s p t i) (exsSc Ww Wc T s p t i))
+
+noncomputable def proExsDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y Ww Wl Wc W T s p t i. ∃ C, !exsCertDef C Ww Wc W T s p t i ∧
+    ∃ tv, !adjoinDef tv t 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 tv ∧ ∃ VW, !descVecAuxDef VW Ww 0 dv 1 ∧ ∃ cv, !pi₁Def cv VW ∧
+    ∃ Lt, !lenTDef Lt Wc T 0 t 1 ∧ ∃ sl, !shiftsVDef sl Lt ∧ ∃ pt, !(substs1Graph LAct) pt t p ∧ ∃ c₃, !descCountFDef c₃ Ww 0 pt ∧
+    ∃ iw, iw = sl + 1 + c₃ ∧
+    ∃ r, !qqExsDef r p ∧ ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ os, !offVecDef os xs Ww Wc T ∧
+    ∃ a, !idxOfDef a xs r ∧ ∃ oa, !nthDef oa os a ∧ ∃ i'', i'' = i + cv + sl + 1 + c₃ ∧ ∃ ip, ip = i'' + (2 * k + 1 + oa) + 1 ∧
+    ∃ Ls, !certSubstDef Ls Wc Ww 1 0 tv iw p ip 0 ∧ ∃ sc, !shiftsVDef sc Ls ∧
+    ∃ σ, σ = cv + sl + 1 + c₃ + sc ∧ ∃ i', i' = i + σ ∧
+    ∃ I, !proInsDef I Ww Wl Wc W T s pt i' sc ∧ !appendVDef y C I”
+
+set_option maxHeartbeats 2000000 in
+instance proExs_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ proExs (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) proExsDef := .mk
+  fun v ↦ by
+    simp [proExsDef, proExs, exsSig, exsSc, exsIw, exsIp, exsSl, exsC3, vecCw, memTop, mTop, exsCert_defined.iff,
+      lenT_defined.iff, shiftsV_defined.iff, substs1.defined.iff, descCountF_defined.iff, descTVec_defined.iff,
+      descVecAux_defined.iff, memberList_defined.iff, offVec_defined.iff, idxOf_defined.iff, certSubst_defined.iff,
+      proIns_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+
+set_option maxHeartbeats 4000000 in
+/-- **The `exs` child's prologue is applicable** (cap `9`): afterwards the child `insert (substs1 t p) s` is laid out
+at `0`, the parent at `iP = i + exsSig + 1 + σ₃` (`σ₃ = proSig` of the child), and — with `S = &(iP + (k + 1))`,
+`ir = memTop … (∃p) iP`, `P = &(ir + 1)`, `T̂ = &it`, `l = &ilt`, `PT = &ipt`, `cp = &σ₃`, `s'' = &(k_c + 1)` —
+`tPiFact 𝟎 T̂`, `tlenFact l T̂`, `leFact l (bnum |t|)`, `substs1Fact PT T̂ P`, `insFact cp PT S`, `eqFactB cp s''`:
+every `nodeExs_ok` hypothesis except the child's own goal (`postIns`) is a fact here or follows from the two layouts. -/
+theorem proExs_ok {tbl N N' B' Wl Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
+    ListOK tbl E ((9 : ℕ) : V) Γ (proExs walkPieces Wl Wc W T s p t i) ∧ NoDrop' (proExs walkPieces Wl Wc W T s p t i) ∧
+    shiftsV (proExs walkPieces Wl Wc W T s p t i) =
+      exsSig walkPieces Wc T s p t i + (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) ∧
+    Layout walkPieces Wc T (finalCtx Γ (proExs walkPieces Wl Wc W T s p t i)) (insert (substs1 LAct t p) s) 0 ∧
+    Layout walkPieces Wc T (finalCtx Γ (proExs walkPieces Wl Wc W T s p t i)) s
+      (i + exsSig walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) ∧
+    neg LAct (tPiFact (𝟎 : V) (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 +
+      proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))) ∈ finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
+    neg LAct (tlenFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
+      (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))) ∈
+      finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
+    neg LAct (leFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
+      (bnum (termLen LAct t))) ∈ finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
+    neg LAct (substs1Fact (^&(exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
+      (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
+      (^&(memTop walkPieces Wc T s (^∃ p) (i + exsSig walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + 1))) ∈
+      finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
+    neg LAct (insFact (^&(proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
+      (^&(exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
+      (^&(i + exsSig walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s) + (len (memberList s) + 1)))) ∈
+      finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
+    neg LAct (eqFactB (^&(proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
+      (^&(0 + (len (memberList (insert (substs1 LAct t p) s)) + 1)))) ∈ finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) := by
+  have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
+  have hpt : IsSemiformula LAct 0 (substs1 LAct t p) := hp.substs1 ht
+  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hcD
+  have hk1 : 1 ≤ len (memberList s) := by
+    obtain ⟨hlt, _⟩ := idxOf_spec hr
+    have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
+  -- (1) the certifications
+  obtain ⟨cok, cnd, csh, hsc', hsig', cLay, cDpt, ctpi, ctl, cle, csub, _⟩ :=
+    exsCert_ok htbl hP htblN hWc hWp hs hp hr ht hsD htD hptD hE hEQ hiE hΓ hLay
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (exsCert walkPieces Wc W T s p t i) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact finalCtx_isFormulaSet 9 htbl hΓ cok
+  have cLay₁ : Layout walkPieces Wc T Γ₁ s (i + exsSig walkPieces Wc T s p t i) := by rw [hΓ₁]; exact cLay
+  have cDpt₁ : DossF walkPieces Γ₁ 0 (substs1 LAct t p) (exsSc walkPieces Wc T s p t i) := by rw [hΓ₁]; exact cDpt
+  have ctpi₁ := ctpi; rw [← hΓ₁] at ctpi₁
+  have ctl₁ := ctl; rw [← hΓ₁] at ctl₁
+  have cle₁ := cle; rw [← hΓ₁] at cle₁
+  have csub₁ := csub; rw [← hΓ₁] at csub₁
+  -- (2) `proIns s (substs1 t p)`
+  have hiE'' : i + exsSig walkPieces Wc T s p t i + 14 * D + 5 ≤ E := by
+    calc i + exsSig walkPieces Wc T s p t i + 14 * D + 5 ≤ i + (2 * ((1 + D) * (1 + D + D)) * D + 6 * D + 1) + 14 * D + 5 :=
+          add_le_add (add_le_add (add_le_add le_rfl hsig') le_rfl) le_rfl
+      _ = i + 2 * ((1 + D) * (1 + D + D)) * D + 20 * D + 6 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  have hipE : exsSc walkPieces Wc T s p t i + 8 * D + 4 ≤ E := by
+    calc exsSc walkPieces Wc T s p t i + 8 * D + 4 ≤ 2 * ((1 + D) * (1 + D + D)) * D + 8 * D + 4 := add_le_add (add_le_add hsc' le_rfl) le_rfl
+      _ = 0 + 2 * ((1 + D) * (1 + D + D)) * D + 8 * D + 4 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add (add_le_add zero_le le_rfl) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  obtain ⟨iok, ind, ish, iLay, iF, ifact⟩ := proIns_ok htbl hP htblN hWl hWc hWp hs hpt hk1 hcD hE hiE'' hipE hΓ₁f cLay₁ cDpt₁
+  -- assembly
+  have e₁ : exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) =
+      exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s) := by ring
+  have e₂ : exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i + (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) =
+      exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s) := by ring
+  have e₃ : exsSc walkPieces Wc T s p t i + (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) =
+      exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s) := by ring
+  have e₄ : memTop walkPieces Wc T s (^∃ p) (i + exsSig walkPieces Wc T s p t i) + 1 + (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) =
+      memTop walkPieces Wc T s (^∃ p) (i + exsSig walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + 1 := by
+    unfold memTop mTop; ring
+  unfold proExs
+  refine ⟨listOK_appendV cok (by rw [← hΓ₁]; exact iok.mono h89), noDrop'_appendV cnd ind, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [shiftsV_appendV, csh, ish]
+  · rw [finalCtx_appendV, ← hΓ₁]; exact iLay
+  · rw [finalCtx_appendV, ← hΓ₁]; exact iF.parent
+  · rw [finalCtx_appendV, ← hΓ₁]
+    have := mem_finalCtx_of_mem' ind ctpi₁
+    rwa [ish, shiftIterV_neg (isFormula_tPiFact isSemiterm_zeroV (by simp)), shiftIterV_tPiFact isSemiterm_zeroV (by simp),
+      termShiftIterV_zeroV, termShiftIterV_fvar, e₁] at this
+  · rw [finalCtx_appendV, ← hΓ₁]
+    have := mem_finalCtx_of_mem' ind ctl₁
+    rwa [ish, shiftIterV_neg (isFormula_tlenFact (by simp) (by simp)), shiftIterV_tlenFact (by simp) (by simp),
+      termShiftIterV_fvar, termShiftIterV_fvar, e₁, e₂] at this
+  · rw [finalCtx_appendV, ← hΓ₁]
+    have := mem_finalCtx_of_mem' ind cle₁
+    rwa [ish, shiftIterV_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shiftIterV_leFact (by simp) (isSemiterm_bnum0 _),
+      termShiftIterV_fvar, termShiftIterV_bnum', e₂] at this
+  · rw [finalCtx_appendV, ← hΓ₁]
+    have := mem_finalCtx_of_mem' ind csub₁
+    rwa [ish, shiftIterV_neg (isFormula_substs1Fact (by simp) (by simp) (by simp)), shiftIterV_substs1Fact (by simp) (by simp) (by simp),
+      termShiftIterV_fvar, termShiftIterV_fvar, termShiftIterV_fvar, e₁, e₃, e₄] at this
+  · rw [finalCtx_appendV, ← hΓ₁]; exact iF.cp
+  · rw [finalCtx_appendV, ← hΓ₁]; exact ifact
+
+end exsChild
+
+/-! ## 15. Sizes and costs of the `all`/`exs` prologues (§11's shape at cap `9`)
+
+Both prologues are size-disciplined at the layout class `(layQ B B' D, layD N' B' D)`: the certification blocks are
+Horn-only (`allCert`) or Horn-only with one `eqTotal` and the term `lenT` at `(lenQ B' D, lenD N' B' D)` (`exsCert`), the
+layouts/`proShift`/`proIns` pieces are those of §11, and every loop is Horn-only. The cost bounds are
+`costSum_le_of_sizeOK 9` (the lists run at cap `9`). -/
+
+section proSizes2
+
+set_option maxHeartbeats 4000000 in
+/-- **`proSS` is size-disciplined** at the layout class (the hypotheses are those of `proSS_ok`). -/
+theorem sizeOK_proSS {tbl N N' B' B Wl Wc W T s i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : setLen LAct s ≤ D)
+    (hvD : setLen LAct (setShift LAct s) ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 22 * D + 8 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
+    SizeOK (layQ B B' D) (layD N' B' D) (proSS walkPieces Wl Wc W T s i) := by
+  have hV : IsFormulaSet LAct (setShift LAct s) := hs.setShift
+  have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hkVD : len (memberList (setShift LAct s)) ≤ D := le_trans (len_memberList_le_setLen hV) hvD
+  have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
+  have hσ₁ : proSig walkPieces Wl Wc W T (setShift LAct s) ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
+  have hσ₂ : proSig walkPieces Wl Wc W T s ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hs hk1 hsD hE8 hΓ
+  have h16 : 0 + 16 * D + 8 ≤ E := by
+    calc 0 + 16 * D + 8 ≤ i + 22 * D + 8 := by
+          rw [zero_add]; exact add_le_add (le_trans (mul_le_mul_of_nonneg_right (by norm_num) zero_le) le_add_self) le_rfl
+      _ ≤ E := hiE
+  -- the states (as in `proSS_ok`)
+  obtain ⟨lok, lnd, _, _, lLay⟩ := layoutSteps_ok htbl hP htblN hWl hWc hWp hV hkV1 hvD hE8 hΓ
+  have lsh : shiftsV (layoutSteps walkPieces Wl Wc W T (setShift LAct s)) = proSig walkPieces Wl Wc W T (setShift LAct s) := rfl
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (layoutSteps walkPieces Wl Wc W T (setShift LAct s)) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact finalCtx_isFormulaSet 8 htbl hΓ lok
+  have lLay₁ : Layout walkPieces Wc T Γ₁ (setShift LAct s) 0 := by rw [hΓ₁]; exact lLay
+  have hLay₁ : Layout walkPieces Wc T Γ₁ s (i + proSig walkPieces Wl Wc W T (setShift LAct s)) := by
+    rw [hΓ₁]; have := hLay.transport lnd; rwa [lsh] at this
+  obtain ⟨pok, pnd, psh, pLc, pLv, pfact⟩ := proShift_ok htbl hP htblN hWl hWc hWp hV hs rfl hk1 hvD hsD hE h16 hΓ₁f lLay₁
+  obtain ⟨Γ₂, hΓ₂⟩ : ∃ Γ', Γ' = finalCtx Γ₁ (proShift walkPieces Wl Wc W T (setShift LAct s) s 0) := ⟨_, rfl⟩
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [hΓ₂]; exact finalCtx_isFormulaSet 8 htbl hΓ₁f pok
+  have pLc₂ : Layout walkPieces Wc T Γ₂ s 0 := by rw [hΓ₂]; exact pLc
+  have hLay₂ : Layout walkPieces Wc T Γ₂ s
+      (i + proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) := by
+    rw [hΓ₂]; have := hLay₁.transport pnd; rwa [psh] at this
+  have pfact₂ : neg LAct (setShiftFact
+      (^&(0 + 1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s + (len (memberList (setShift LAct s)) + 1)))
+      (^&(0 + (len (memberList s) + 1)))) ∈ Γ₂ := by rw [hΓ₂]; exact pfact
+  have hi₁ : i + proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s) + 8 * D + 3 ≤ E := by
+    calc i + proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s) + 8 * D + 3
+        ≤ i + (6 * D + 1) + (1 + (D + 1) + (6 * D + 1)) + 8 * D + 3 :=
+          add_le_add (add_le_add (add_le_add (add_le_add le_rfl hσ₁) (add_le_add (add_le_add le_rfl (add_le_add hkD le_rfl)) hσ₂)) le_rfl) le_rfl
+      _ = i + 21 * D + 7 := by ring
+      _ ≤ i + 22 * D + 8 := add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  have hvt : 0 + 1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s + (len (memberList (setShift LAct s)) + 1) + 1 ≤ E := by
+    calc 0 + 1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s + (len (memberList (setShift LAct s)) + 1) + 1
+        ≤ 0 + 1 + (D + 1) + (6 * D + 1) + (D + 1) + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add le_rfl (add_le_add hkD le_rfl)) hσ₂) (add_le_add hkVD le_rfl)) le_rfl
+      _ = 8 * D + 5 := by ring
+      _ ≤ 13 * D + 18 * ‖D‖ + 12 := eight_le_cap (by norm_num)
+      _ ≤ E := hE
+  obtain ⟨_, _, sho, _, _⟩ := ssIdent_ok htbl hP hWl hWc hWp hs hk1 hsD hE hi₁ hvt hΓ₂f pLc₂ hLay₂ pfact₂
+  unfold proSS
+  exact sizeOK_appendV (sizeOK_layoutSteps hWl hWc hWp htblN hPle hV hvD)
+    (sizeOK_appendV (sizeOK_proShift htbl hP htblN hWl hWc hWp hPle hV hs rfl hk1 hvD hsD hE h16 hΓ₁f lLay₁)
+      (sizeOK_of_hornOnly sho))
+
+set_option maxHeartbeats 4000000 in
+/-- **`proAll` is size-disciplined** at the layout class (the hypotheses are those of `proAll_ok`). -/
+theorem sizeOK_proAll {tbl N N' B' B Wl Wc W T s p i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hspD : formulaLen LAct (shift LAct p) ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : i + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
+    SizeOK (layQ B B' D) (layD N' B' D) (proAll walkPieces Wl Wc W T s p i) := by
+  have hV : IsFormulaSet LAct (setShift LAct s) := hs.setShift
+  have hfp : IsSemiformula LAct 0 (free LAct p) := hp.free
+  have hk1 : 1 ≤ len (memberList s) := by
+    obtain ⟨hlt, _⟩ := idxOf_spec hr
+    have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
+  have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
+  have hvD : setLen LAct (setShift LAct s) ≤ D := le_trans (setLen_le_insert _ _) hcD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
+  have hσV : proSig walkPieces Wl Wc W T (setShift LAct s) ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
+  have hσS : proSig walkPieces Wl Wc W T s ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hs hk1 hsD hE8 hΓ
+  have hsSS : proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s) ≤ 13 * D + 4 := by
+    calc proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)
+        ≤ (6 * D + 1) + (1 + (D + 1) + (6 * D + 1)) := add_le_add hσV (add_le_add (add_le_add le_rfl (add_le_add hkD le_rfl)) hσS)
+      _ = 13 * D + 4 := by ring
+  -- the states (as in `proAll_ok`)
+  obtain ⟨aok, and_, aho, ash, hcf, hcA, aLay, aDfp, _⟩ := allCert_ok htbl hP hWc hs hp hr hsD hspD hE hEQ hiE hΓ hLay
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (allCert walkPieces Wc T s p i) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact finalCtx_isFormulaSet 9 htbl hΓ aok
+  have aLay₁ : Layout walkPieces Wc T Γ₁ s (i + allCertSig walkPieces Wc p) := by rw [hΓ₁]; exact aLay
+  have aDfp₁ : DossF walkPieces Γ₁ 0 (free LAct p) (allCf walkPieces Wc p) := by rw [hΓ₁]; exact aDfp
+  have hiE' : i + allCertSig walkPieces Wc p + 22 * D + 8 ≤ E := by
+    calc i + allCertSig walkPieces Wc p + 22 * D + 8 ≤ i + (4 * D + 2 + 2 * ((1 + D) * (1 + D + 1)) * D) + 22 * D + 8 :=
+          add_le_add (add_le_add (add_le_add le_rfl hcA) le_rfl) le_rfl
+      _ = i + 2 * ((1 + D) * (1 + D + 1)) * D + 26 * D + 10 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  obtain ⟨sok, snd, ssh, sLv, _, _⟩ := proSS_ok htbl hP htblN hWl hWc hWp hs hk1 hsD hvD hE hiE' hΓ₁f aLay₁
+  obtain ⟨Γ₂, hΓ₂⟩ : ∃ Γ', Γ' = finalCtx Γ₁ (proSS walkPieces Wl Wc W T s (i + allCertSig walkPieces Wc p)) := ⟨_, rfl⟩
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [hΓ₂]; exact finalCtx_isFormulaSet 8 htbl hΓ₁f sok
+  have sLv₂ : Layout walkPieces Wc T Γ₂ (setShift LAct s) (0 + 1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s) := by
+    rw [hΓ₂]; exact sLv
+  have aDfp₂ : DossF walkPieces Γ₂ 0 (free LAct p) (allCf walkPieces Wc p +
+      (proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s))) := by
+    rw [hΓ₂]; have := dossF_transport' snd aDfp₁; rwa [ssh] at this
+  have hiE'' : 0 + 1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s + 14 * D + 5 ≤ E := by
+    calc 0 + 1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s + 14 * D + 5
+        ≤ 0 + 1 + (D + 1) + (6 * D + 1) + 14 * D + 5 := add_le_add (add_le_add (add_le_add (add_le_add le_rfl (add_le_add hkD le_rfl)) hσS) le_rfl) le_rfl
+      _ = 0 + 0 + 21 * D + 8 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add (add_le_add zero_le zero_le) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  have hipE : allCf walkPieces Wc p + (proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) +
+      8 * D + 4 ≤ E := by
+    calc allCf walkPieces Wc p + (proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) + 8 * D + 4
+        ≤ (2 + 2 * ((1 + D) * (1 + D + 1)) * D) + (13 * D + 4) + 8 * D + 4 := add_le_add (add_le_add (add_le_add hcf hsSS) le_rfl) le_rfl
+      _ = 0 + 2 * ((1 + D) * (1 + D + 1)) * D + 21 * D + 10 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add (add_le_add zero_le le_rfl) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  unfold proAll
+  exact sizeOK_appendV (sizeOK_of_hornOnly aho)
+    (sizeOK_appendV (sizeOK_proSS htbl hP htblN hWl hWc hWp hPle hs hk1 hsD hvD hE hiE' hΓ₁f aLay₁)
+      (sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hV hfp hkV1 hcD hE hiE'' hipE hΓ₂f sLv₂ aDfp₂))
+
+/-- **The cost of `proAll`** in the `costSum_le_of_sizeOK 9` shape. -/
+theorem costSum_proAll_le {tbl N N' B' B Wl Wc W T s p i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hspD : formulaLen LAct (shift LAct p) ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : i + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
+    costSum N E Γ (proAll walkPieces Wl Wc W T s p i) ≤ len (proAll walkPieces Wl Wc W T s p i) *
+      (costK N E B 9 (layQ B B' D) (layD N' B' D) + (3 * ((9 : ℕ) : V) + 11) *
+        (ctxBoundG (growK B E (layQ B B' D)) Γ (len (proAll walkPieces Wl Wc W T s p i)) +
+          (fvOccS LAct Γ + len (proAll walkPieces Wl Wc W T s p i) * growK B E (layQ B B' D)))) := by
+  obtain ⟨ok, _⟩ := proAll_ok htbl hP htblN hWl hWc hWp hs hp hr hsD hcD hspD hE hEQ hiE hΓ hLay
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
+  exact costSum_le_of_sizeOK 9 hE1 htbl hBt ok (sizeOK_proAll htbl hP htblN hWl hWc hWp hPle hs hp hr hsD hcD hspD hE hEQ hiE hΓ hLay)
+
+set_option maxHeartbeats 4000000 in
+/-- **`proExs` is size-disciplined** at the layout class (the hypotheses are those of `proExs_ok`). -/
+theorem sizeOK_proExs {tbl N N' B' B Wl Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
+    SizeOK (layQ B B' D) (layD N' B' D) (proExs walkPieces Wl Wc W T s p t i) := by
+  have hpt : IsSemiformula LAct 0 (substs1 LAct t p) := hp.substs1 ht
+  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hcD
+  have hk1 : 1 ≤ len (memberList s) := by
+    obtain ⟨hlt, _⟩ := idxOf_spec hr
+    have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
+  obtain ⟨cok, _, _, hsc', hsig', cLay, cDpt, _, _, _, _, csz⟩ :=
+    exsCert_ok htbl hP htblN hWc hWp hs hp hr ht hsD htD hptD hE hEQ hiE hΓ hLay
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (exsCert walkPieces Wc W T s p t i) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact finalCtx_isFormulaSet 9 htbl hΓ cok
+  have cLay₁ : Layout walkPieces Wc T Γ₁ s (i + exsSig walkPieces Wc T s p t i) := by rw [hΓ₁]; exact cLay
+  have cDpt₁ : DossF walkPieces Γ₁ 0 (substs1 LAct t p) (exsSc walkPieces Wc T s p t i) := by rw [hΓ₁]; exact cDpt
+  have hiE'' : i + exsSig walkPieces Wc T s p t i + 14 * D + 5 ≤ E := by
+    calc i + exsSig walkPieces Wc T s p t i + 14 * D + 5 ≤ i + (2 * ((1 + D) * (1 + D + D)) * D + 6 * D + 1) + 14 * D + 5 :=
+          add_le_add (add_le_add (add_le_add le_rfl hsig') le_rfl) le_rfl
+      _ = i + 2 * ((1 + D) * (1 + D + D)) * D + 20 * D + 6 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  have hipE : exsSc walkPieces Wc T s p t i + 8 * D + 4 ≤ E := by
+    calc exsSc walkPieces Wc T s p t i + 8 * D + 4 ≤ 2 * ((1 + D) * (1 + D + D)) * D + 8 * D + 4 := add_le_add (add_le_add hsc' le_rfl) le_rfl
+      _ = 0 + 2 * ((1 + D) * (1 + D + D)) * D + 8 * D + 4 := by ring
+      _ ≤ i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 :=
+          add_le_add (add_le_add (add_le_add zero_le le_rfl) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
+      _ ≤ E := hiE
+  unfold proExs
+  exact sizeOK_appendV (csz B) (sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hpt hk1 hcD hE hiE'' hipE hΓ₁f cLay₁ cDpt₁)
+
+/-- **The cost of `proExs`** in the `costSum_le_of_sizeOK 9` shape. -/
+theorem costSum_proExs_le {tbl N N' B' B Wl Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
+    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
+    costSum N E Γ (proExs walkPieces Wl Wc W T s p t i) ≤ len (proExs walkPieces Wl Wc W T s p t i) *
+      (costK N E B 9 (layQ B B' D) (layD N' B' D) + (3 * ((9 : ℕ) : V) + 11) *
+        (ctxBoundG (growK B E (layQ B B' D)) Γ (len (proExs walkPieces Wl Wc W T s p t i)) +
+          (fvOccS LAct Γ + len (proExs walkPieces Wl Wc W T s p t i) * growK B E (layQ B B' D)))) := by
+  obtain ⟨ok, _⟩ := proExs_ok htbl hP htblN hWl hWc hWp hs hp hr ht hsD hcD htD hE hEQ hiE hΓ hLay
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
+  exact costSum_le_of_sizeOK 9 hE1 htbl hBt ok
+    (sizeOK_proExs htbl hP htblN hWl hWc hWp hPle hs hp hr ht hsD hcD htD hE hEQ hiE hΓ hLay)
+
+end proSizes2
+
 /-! ## 8. What remains (2026-09-15, evening) — recorded precisely
 
 DELIVERED since the morning entry: §9 `proOr`/`proOr_ok` (two `proIns` + `congInsertS`); §10 `proShift`/`proShift_ok`
@@ -6963,6 +7854,27 @@ VARIABLE (`loopS_ok`'s first version hard-coded `proSig walkPieces layoutPieces 
 `hWl : Wl = layoutPieces`). `hornOnly_single`'s goal already has the `?[s]` unfolded — no `unfold blockI` before the
 tag rewrite. `norm_num` cannot prove `6 * D + 1 + 1 ≤ 6 * D + 2` (V-arithmetic with a variable): `calc` with `ring`
 equalities. A row not in any piece table (`congSubsetL`, `congSetShiftR`) is added to `PrologueRows` by the generator's
-`EXISTING_ROWS` (table entries only; the `Lib`/`inst_` blocks stay in `Lib/Frag`/`RowInstB`). -/
+`EXISTING_ROWS` (table entries only; the `Lib`/`inst_` blocks stay in `Lib/Frag`/`RowInstB`).
+
+**2026-09-15, night — `all` and `exs` DELIVERED (§13–§15).** `proAll_ok` (§13.4) and `proExs_ok` (§14.5) discharge every
+`nodeAll_ok`/`nodeExs_ok` hypothesis except the child's own goal (`postIns`, as for `and`): the child at `0`, the parent
+transported, the certified facts at explicit indices (see the docstrings). DESIGN CHANGES against the plan above: (a) no
+"unshift index" — `proSS` (§13.2) lays out `setShift s` and REUSES `proShift_ok` with the roles `(setShift s, s, 0)` (a second
+layout of `s` at `0`), then identifies the fresh chain top with the parent's `S` by Loop E (`eqSteps` per member, both
+`congMem` directions) + two `subChain`s + `subsetAntisymm` + row 158 `congSetShiftR`; (b) `proIns_ok` is REUSED for the
+`insert` in both tags (`insert (free p) (setShift s)`, `insert (substs1 t p) s`) — the fresh dossiers of `free p` /
+`substs1 t p` are walked BEFORE the layouts, so `certFree`/`certSubst` run between fresh dossiers and the child stays at `0`;
+(c) `exs`'s length OBJECT: `eqTotal [bnum |t|]`, `eqSymm`, the re-indexed cert row `congTLenNum`, `leOfEqP` (159) —
+`nodeExs_ok`'s `&ilt` is a variable, not the numeral. CAPS: `D` bounds the parent, the child, `|shift p|` (all) / `|t|`
+(exs); besides `13D + 18‖D‖ + 12 ≤ E` the quadratic `2·QD·(D+1) + 4D + 11 ≤ E` and `i + 2·QD·D + 40D + 20 ≤ E` with
+`QD = (1+D)(2+D)` (all: `subFPre_single` at `fvec`, `B = 1`) or `(1+D)(1+2D)` (exs: `B = |t|`). `certFreeDef` (§13.3) is the
+Σ₁ graph `Cert` lacked. COSTS (§15): `sizeOK_proAll/proExs` at the layout class, `costSum_proAll/proExs_le` at cap `9`.
+TRAPS: `PrologueRows.olean` was STALE when this session started (`leOfEqP` committed without a rebuild; `proExtraRowCount = 4`
+in the olean — `#print proExtraRowCount` is the sentinel); `lake build` REMOVES `Prologue.olean` while it rebuilds (scratch
+checks must wait); `cok_*` lemmas take `hWc` — passing `rfl` produces a step at `certPieces` that no longer matches a `Wc`
+step; `dossV_succ (j := 0)` wants the vector's dossier stated with `0 + 1`; `proShift_ok`/`proSS_ok` return the parent
+offset LEFT-associated (`i + a + b + (…)`) — re-associate with a `ring` equation before `exact`; `rw [finalCtx_single]`
+picks the OUTERMOST list — `simp only [finalCtx_single]` then the `cx` rewrites. NOT DONE: `proIns0` (the empty parent of
+`cut`), the `0`-producers' costs, `axm`, the `Verify` clause edit. -/
 
 end ArithS

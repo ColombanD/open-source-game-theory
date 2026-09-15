@@ -1001,4 +1001,29 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms topBound'_pb
 #print axioms boundedInnerNec_four_of_kit
 
+-- U10 (Necessitation/Prologue §13–§15, 2026-09-15): the `all` and `exs` prologues. `proAll_ok` (the fresh walks of
+-- `shift p`/`free p` + the re-indexed `certFree`; `proSS` = the layout of `setShift s` + `proShift_ok` reused with the
+-- roles `(setShift s, s, 0)` + Loop E/two subChains/subsetAntisymm/congSetShiftR; `proIns_ok` reused) and `proExs_ok`
+-- (the vector walk of `⟨t⟩`, the term `lenT`, the length object `eqTotal/eqSymm/congTLenNum/leOfEqP`, the walk of
+-- `substs1 t p`, the re-indexed `certSubst` at the singleton vector, `substsSubsts1`; `proIns_ok` reused) discharge every
+-- `nodeAll_ok`/`nodeExs_ok` hypothesis except the child's own goal (`postIns`); costs in the `costSum_le_of_sizeOK 9`
+-- shape. Nothing below is an axiom.
+#print axioms loopE_ok
+#print axioms ssIdent_ok
+#print axioms proSS_ok
+#print axioms allCert_ok
+#print axioms layout_all
+#print axioms proAll_ok
+#print axioms ProTable.leOfEqP
+#print axioms vecWalk_ok
+#print axioms lenObj_ok
+#print axioms layout_exs
+#print axioms exsCert_ok
+#print axioms proExs_ok
+#print axioms sizeOK_proSS
+#print axioms sizeOK_proAll
+#print axioms costSum_proAll_le
+#print axioms sizeOK_proExs
+#print axioms costSum_proExs_le
+
 end ArithS
