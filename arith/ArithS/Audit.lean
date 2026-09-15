@@ -1364,6 +1364,29 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms axL_arm_size
 #print axioms verum_arm_size
 
+-- U10 (Necessitation/Verify5, 2026-09-15): THE SIZE HALF, PART 4 — the REUSABLE CORE and the `wk`/`shift` tier.
+-- Every remaining arm is `prologue ++ child ++ recovery ++ node`, and the prologue's size class is ALWAYS the
+-- layout class `(layQ B B' D, layD N' B' D)` of `Prologue.sizeOK_pro*`. `layQ_le_kitQ`/`layD_le_kitD` land that
+-- class in the kit class once and for all — which is exactly why the size oracle must CARRY `NumTableOK T N' B'`:
+-- `Assemble.layQ_le`/`layD_le` need `N'`, `B'` as NUMBERS (the defect this file works around). TRAP: the cube step
+-- of `layD_le_kitD` goes through `pow3_eq_p3` + `Verify3.p3_mono`; Mathlib's `pow_le_pow_left` does NOT exist at
+-- this structure (machine-checked). The RECOVERY blocks `Frag1.goalElim` (five steps) and `Prologue.postIns`
+-- (six steps) sit at the goal-fact class `4·|goalFact …|`, landed by `Assemble.goalFact4_le_kitQ` at ANY `D`, so
+-- they never touch the layout class (`sizeOK_goalElim_kit`, `sizeOK_postIns_kit`). Then the `wk`/`shift` tier's
+-- lengths: the nodes are nine steps structurally (`len_nodeWk`, `len_nodeShift`), and the SELECTORS split on the
+-- empty child — `proWk0 ++ emptyFsetPi` is `7 + 4 = 11`, `proShift0 ++ reset0 ++ emptyFsetPi` is `11 + 8 + 4 = 23`
+-- (`len_wkPro`, `len_shiftPro`, on `len_emptyFsetPi = 4` and `len_reset0 = 8`).
+#print axioms layQ_le_kitQ
+#print axioms layD_le_kitD
+#print axioms sizeOK_goalElim_kit
+#print axioms sizeOK_postIns_kit
+#print axioms len_nodeWk
+#print axioms len_nodeShift
+#print axioms len_emptyFsetPi
+#print axioms len_reset0
+#print axioms len_wkPro
+#print axioms len_shiftPro
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

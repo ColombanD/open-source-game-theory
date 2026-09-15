@@ -422,4 +422,111 @@ theorem verum_arm_size {W₁ T B E Cz L n is il iv : V} (hW₁ : W₁ = frag1Pie
 
 end leafArms
 
+
+/-! ## 6. The REUSABLE CORE: the layout class lands in the kit class; the recovery blocks
+
+Every remaining arm (`wk`, `shift`, `and`, `or`, `cut`, `all`, `exs`) is
+`prologue ++ child ++ recovery ++ node`, and the prologue's size class is ALWAYS the layout class
+`(layQ B B' D, layD N' B' D)` of `Prologue.sizeOK_pro*`. This section lands that class in the kit class once
+and for all — which is exactly why the size oracle must CARRY `NumTableOK T N' B'`: `Assemble.layQ_le`/`layD_le`
+need `N'` and `B'` as numbers (the defect this file works around, see the header).
+
+`layD_le_kitD`'s cube step goes through `pow3_eq_p3` + `Verify3.p3_mono`; Mathlib's `pow_le_pow_left` does not
+exist at this structure (machine-checked).
+
+The RECOVERY blocks are the other half: `Frag1.goalElim` (five steps, recovering a child's goal) and
+`Prologue.postIns` (six steps) both sit at the goal-fact class `4·|goalFact …|`, which `Assemble.goalFact4_le_kitQ`
+lands directly — at ANY `D`, so they never touch the layout class.
+-/
+
+section layoutLanding
+
+/-- **The layout `Q` lands**: `layQ B B' D ≤ kitQ Cz B E` for `D ≤ E` and `19B' + 25 ≤ Cz`. -/
+lemma layQ_le_kitQ {B B' D E Cz : V} (hDE : D ≤ E) (hC : 19 * B' + 25 ≤ Cz) :
+    layQ B B' D ≤ kitQ Cz B E := by
+  unfold kitQ
+  exact le_trans (layQ_le B B' D E hDE) (mul_le_mul_of_nonneg_right hC zero_le)
+
+/-- **The layout `D` lands**: `layD N' B' D ≤ kitD Cz d` for `D ≤ d` and `27N' + 525600B' ≤ Cz`. -/
+lemma layD_le_kitD {N' B' D d Cz : V} (hDd : D ≤ d) (hC : 27 * N' + 525600 * B' ≤ Cz) :
+    layD N' B' D ≤ kitD Cz d := by
+  unfold kitD
+  refine le_trans (layD_le N' B' D) (mul_le_mul hC ?_ zero_le zero_le)
+  rw [pow3_eq_p3, pow3_eq_p3]
+  exact p3_mono (add_le_add hDd le_rfl)
+
+/-- **The recovery block `goalElim` lands** (at any `D` — it carries no derivation). -/
+lemma sizeOK_goalElim_kit {Cz B E j u D : V} (hE1 : 1 ≤ E)
+    (hPle : formulaLen LAct (Ple : V) ≤ B) (hj : j + 1 ≤ E)
+    (hu : IsSemiterm LAct 0 u) (hlu : termLen LAct u ≤ E)
+    (hC : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz) :
+    SizeOK (kitQ Cz B E) D (goalElim (^&j) u) :=
+  (sizeOK_goalElim (hf_ j) hu).mono (goalFact4_le_kitQ hE1 hPle hj hu hlu hC) le_rfl
+
+/-- **The recovery block `postIns` lands** (likewise at any `D`). -/
+lemma sizeOK_postIns_kit {W Cz B E s'' cp n D : V} (hWp : W = proPieces) (hE1 : 1 ≤ E)
+    (hPle : formulaLen LAct (Ple : V) ≤ B) (hj : s'' + 1 ≤ E)
+    (hbn : termLen LAct (bnum n) ≤ E)
+    (hC : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz) :
+    SizeOK (kitQ Cz B E) D (postIns W s'' cp n) :=
+  (sizeOK_postIns hWp D).mono
+    (goalFact4_le_kitQ hE1 hPle hj (isSemiterm_bnum_LAct 0 n) hbn hC) le_rfl
+
+end layoutLanding
+
+/-! ## 7. The `wk` and `shift` tier: the node and selector lengths
+
+`vWk = wkPro ++ L' ++ goalElim ++ nodeWk` and `vShift = shiftPro ++ L' ++ goalElim ++ nodeShift`
+(`Verify2.lean` §5). The nodes are nine steps, structurally, exactly as `len_nodeAxm`; the SELECTORS split on
+the empty child (`Verify2.wkPro`/`shiftPro`), and in the empty branch the pieces are closed lists whose lengths
+are literals — `proWk0 ++ emptyFsetPi` is `7 + 4 = 11`, and `proShift0 ++ reset0 ++ emptyFsetPi` is
+`11 + 8 + 4 = 23`. In the nonempty branch the length is the prologue's own, bounded by `Prologue.len_proWk_le` /
+`len_proShift_le`.
+-/
+
+section wkShiftLengths
+
+lemma len_nodeWk (W tblN is il ic id in₁ L m₁ n : V) :
+    len (nodeWk W tblN is il ic id in₁ L m₁ n) = 9 := by
+  unfold nodeWk nodeWkHead goalTailUnary dlenUnarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_nodeShift (W tblN is il ic id in₁ L m₁ n : V) :
+    len (nodeShift W tblN is il ic id in₁ L m₁ n) = 9 := by
+  unfold nodeShift nodeShiftHead goalTailUnary dlenUnarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_emptyFsetPi (W : V) : len (emptyFsetPi W) = 4 := by
+  unfold emptyFsetPi; simp [len_adjoin]; norm_num
+
+lemma len_reset0 (W : V) : len (reset0 W) = 8 := by
+  unfold reset0
+  rw [len_appendV, len_layoutSteps0]
+  simp [len_adjoin]
+  norm_num
+
+/-- The `wk` selector's length, by branch. -/
+lemma len_wkPro (Ww Wl Wc W T s c : V) :
+    len (wkPro Ww Wl Wc W T s c) =
+      if memberList c = 0 then 11 else len (proWk Ww Wl Wc W T s c 0) := by
+  unfold wkPro
+  by_cases h : memberList c = 0
+  · rw [if_pos h, if_pos h, len_appendV, len_proWk0, len_emptyFsetPi]; norm_num
+  · rw [if_neg h, if_neg h]
+
+/-- The `shift` selector's length, by branch. -/
+lemma len_shiftPro (Ww Wl Wc W T s c : V) :
+    len (shiftPro Ww Wl Wc W T s c) =
+      if memberList c = 0 then 23 else len (proShift Ww Wl Wc W T s c 0) := by
+  unfold shiftPro
+  by_cases h : memberList c = 0
+  · rw [if_pos h, if_pos h, len_appendV, len_appendV, len_proShift0, len_reset0, len_emptyFsetPi]; norm_num
+  · rw [if_neg h, if_neg h]
+
+end wkShiftLengths
+
 end ArithS
