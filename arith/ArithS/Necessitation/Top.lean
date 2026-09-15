@@ -2302,4 +2302,231 @@ theorem top_main' (χ : Semisentence LAct 1) {tbl N B W tblN N' B' tblL N₂ B�
 
 end assemblyCoarse
 
+/-! ## 11. The degree-4 bound and `BoundedInnerNec 4` -/
+
+section quartic
+
+lemma le_pow4 (a : V) : a ≤ a ^ 4 := by
+  rcases Arithmetic.zero_le a with rfl | pos
+  · simp
+  · have := le_cube a
+    calc a ≤ a * a * a := this
+      _ ≤ a * a * a * a := le_mul_of_one_le_right zero_le (pos_iff_one_le.mp pos)
+      _ = a ^ 4 := by ring
+
+lemma sq_le_pow4 (a : V) : a * a ≤ a ^ 4 := by
+  rcases Arithmetic.zero_le a with rfl | pos
+  · simp
+  · have h1 : (1 : V) ≤ a := pos_iff_one_le.mp pos
+    calc a * a ≤ a * a * a := le_mul_of_one_le_right zero_le h1
+      _ ≤ a * a * a * a := le_mul_of_one_le_right zero_le h1
+      _ = a ^ 4 := by ring
+
+lemma cube_le_pow4 (a : V) : a * a * a ≤ a ^ 4 := by
+  rcases Arithmetic.zero_le a with rfl | pos
+  · simp
+  · calc a * a * a ≤ a * a * a * a := le_mul_of_one_le_right zero_le (pos_iff_one_le.mp pos)
+      _ = a ^ 4 := by ring
+
+lemma succ_quart_le (a : V) : (a + 1) ^ 4 ≤ 16 * (a ^ 4 + 1) := by
+  calc (a + 1) ^ 4 = a ^ 4 + 4 * (a * a * a) + 6 * (a * a) + 4 * a + 1 := by ring
+    _ ≤ a ^ 4 + 4 * a ^ 4 + 6 * a ^ 4 + 4 * a ^ 4 + 1 :=
+        add_le_add (add_le_add (add_le_add (add_le_add le_rfl (mul_le_mul' le_rfl (cube_le_pow4 a)))
+          (mul_le_mul' le_rfl (sq_le_pow4 a))) (mul_le_mul' le_rfl (le_pow4 a))) le_rfl
+    _ ≤ 16 * (a ^ 4 + 1) := le_iff_exists_add.mpr ⟨a ^ 4 + 15, by ring⟩
+
+/-- `q ≤ (16c) · (g⁴ + 1)` from a degree-4 graded bound. -/
+lemma PB.final_quart {g u : V} (hc : PBCtx (g + 1) u) {c : ℕ} {q : V} (h : PB (g + 1) u c q 4 0) :
+    q ≤ ((16 * c : ℕ) : V) * (g ^ 4 + 1) := by
+  unfold PB at h
+  rw [pow_zero, mul_one] at h
+  calc q ≤ (c : V) * (g + 1) ^ 4 := h
+    _ ≤ (c : V) * (16 * (g ^ 4 + 1)) := mul_le_mul' le_rfl (succ_quart_le g)
+    _ = ((16 * c : ℕ) : V) * (g ^ 4 + 1) := by push_cast; ring
+
+end quartic
+
+section topBoundPb'
+
+variable {G u : V} (hc : PBCtx G u)
+include hc
+
+/-- The constant of `topBound'_pb` (read off the graded derivation; see `topDc`). -/
+def topBc' (cN cB cE ck cχ cS cF cL cD : ℕ) : ℕ :=
+  (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + ck * 1 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + (ck * 1 * (ck * 1) + ck * 1) * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1)))) + 15 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1)))) + ck * 1 * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1))))) + 240 * (4 * (cB * cE) + 2 * (4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + ck * 1 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + (ck * 1 * (ck * 1) + ck * 1) * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1))))) + cB * cE)) + 1 + 8 * (cL * (1387 * (cN + cB * cE + cB + cE + 1) + 36 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE))))) + 8 * (cχ * 1 * (1899 * (cN + cB * cE + cB + cE + 1) + 27 * (cχ * ((cB + 1) * (cE + 1)) * cE) + 2 * cE + 7 * (cχ * ((cB + 1) * (cE + 1))) + 8 * (cχ * (1 * 1 * 1)) + 42 + 38 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1)))) + (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1)))))))) + ck * 1 * (1899 * (cN + cB * cE + cB + cE + 1) + 27 * (ck * ((cB + 1) * (cE + 1)) * cE) + 2 * cE + 7 * (ck * ((cB + 1) * (cE + 1))) + ck * (1 * 1 * 1) + 42 + 38 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + ck * 1 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + (ck * 1 * (ck * 1) + ck * 1) * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1)))) + (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1)))) + ck * 1 * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1))))))) + 15 * (1387 * (cN + cB * cE + cB + cE + 1) + 27 * ((4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + ck * 1 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + (ck * 1 * (ck * 1) + ck * 1) * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1))))) + cB * cE) * cE) + 2 * cE + 7 * (4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + ck * 1 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + (ck * 1 * (ck * 1) + ck * 1) * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1))))) + cB * cE) + cD + 42 + 35 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + ck * 1 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + (ck * 1 * (ck * 1) + ck * 1) * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1)))) + 15 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1)))) + ck * 1 * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1))))) + 240 * (4 * (cB * cE) + 2 * (4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + ck * 1 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + (ck * 1 * (ck * 1) + ck * 1) * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1))))) + cB * cE)) + (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1)))) + ck * 1 * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1)))) + 15 * (4 * (cB * cE) + 2 * (4 * (8 * (cS + cL * cF + (cL * cL + cL) * (4 * (cB * cE)) + cχ * 1 * (cF + cL * (4 * (cB * cE))) + (cχ * 1 * (cχ * 1) + cχ * 1) * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + ck * 1 * (cF + cL * (4 * (cB * cE)) + cχ * 1 * (4 * (cB * cE) + 2 * (cχ * ((cB + 1) * (cE + 1))))) + (ck * 1 * (ck * 1) + ck * 1) * (4 * (cB * cE) + 2 * (ck * ((cB + 1) * (cE + 1))))) + cB * cE))))))
+
+/-- **`topBound'` is quartic** in `G` given the same graded inputs as `topBound_pb`. -/
+theorem topBound'_pb {cN cB cE ck cχ cS cF cL cD : ℕ} {N B E Ck Cχ lk d S₀ F₀ Lr D : V}
+    (hN : PB G u cN N 0 0) (hB : PB G u cB B 0 0) (hE : PB G u cE E 1 0) (hCk : PB G u ck Ck 0 0)
+    (hCχ : PB G u cχ Cχ 0 0) (hu1 : PB G u 1 (lk + 1) 0 1) (hd1 : PB G u 1 (d + 1) 1 0)
+    (hS : PB G u cS S₀ 1 0) (hF : PB G u cF F₀ 1 0) (hL : PB G u cL Lr 0 1) (hD : PB G u cD D 3 0) :
+    PB G u (topBc' cN cB cE ck cχ cS cF cL cD) (topBound' N B E Ck Cχ lk d S₀ F₀ Lr D) 4 0 := by
+  unfold topBc'
+  have h1 : PB G u 1 (1 : V) 0 0 := PB.one'
+  have h2 : PB G u 2 (2 : V) 0 0 := PB.two
+  have h4 : PB G u 4 (4 : V) 0 0 := PB.natCast (q := (4 : V)) 4 (by norm_num)
+  have h7 : PB G u 7 (7 : V) 0 0 := PB.seven
+  have h15 : PB G u 15 (15 : V) 0 0 := PB.natCast (q := (15 : V)) 15 (by norm_num)
+  have h27 : PB G u 27 (27 : V) 0 0 := PB.natCast (q := (27 : V)) 27 (by norm_num)
+  have h36 : PB G u 36 (36 : V) 0 0 := PB.natCast (q := (36 : V)) 36 (by norm_num)
+  have h38 : PB G u 38 (38 : V) 0 0 := PB.natCast (q := (38 : V)) 38 (by norm_num)
+  have h42 : PB G u 42 (42 : V) 0 0 := PB.natCast (q := (42 : V)) 42 (by norm_num)
+  have h240 : PB G u 240 (15 * 15 + 15 : V) 0 0 := PB.natCast (q := (15 * 15 + 15 : V)) 240 (by norm_num)
+  have h35 : PB G u 35 (3 * ((8 : ℕ) : V) + 11) 0 0 := PB.natCast (q := (3 * ((8 : ℕ) : V) + 11)) 35 (by norm_num)
+  have h1387 : PB G u 1387 (1387 : V) 0 0 := PB.natCast (q := (1387 : V)) 1387 (by norm_num)
+  have h1899 : PB G u 1899 (1899 : V) 0 0 := PB.natCast (q := (1899 : V)) 1899 (by norm_num)
+  have h1u : PB G u 1 (1 : V) 1 0 := PB.one'.mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl
+  have hBE := (hB.mul hE).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)
+  have h4BE := (h4.mul hBE).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)
+  have hLin := ((((((hN).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)).add hBE).add ((hB).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))).add hE).add h1u).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)
+  have hStepK := PB.of_le (stepK_le N E B) ((h1387.mul hLin).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))
+  have hB1 := (hB.add h1).mono hc (e' := 0) (f' := 0) (by norm_num) (by norm_num)
+  have hE1' := (hE.add h1u).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)
+  have hQp := PB.of_le (q := kitQ (Cχ : V) B E) (le_of_eq rfl) ((hCχ.mul (hB1.mul hE1')).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))
+  have hQk := PB.of_le (q := kitQ (Ck : V) B E) (le_of_eq rfl) ((hCk.mul (hB1.mul hE1')).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))
+  have hGp := PB.of_le (q := growK B E (kitQ (Cχ : V) B E)) (le_of_eq rfl) ((h4BE.add (h2.mul hQp)).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))
+  have hGk := PB.of_le (q := growK B E (kitQ (Ck : V) B E)) (le_of_eq rfl) ((h4BE.add (h2.mul hQk)).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num))
+  have hLp := (hCχ.mul hu1).mono hc (e' := 0) (f' := 1) (by norm_num) (by norm_num)
+  have hLk := (hCk.mul hd1).mono hc (e' := 1) (f' := 0) (by norm_num) (by norm_num)
+  have hDp := PB.reduce hc (PB.of_le (q := kitD (Cχ : V) lk) (le_of_eq (by unfold kitD; ring)) ((hCχ.mul ((hu1.mul hu1).mul hu1)).mono hc (e' := 0) (f' := 3) (by norm_num) (by norm_num)))
+  have hDk := PB.of_le (q := kitD (Ck : V) d) (le_of_eq (by unfold kitD; ring)) ((hCk.mul ((hd1.mul hd1).mul hd1)).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))
+  have hLF := (hL.mul hF).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num)
+  have hLL := ((hL.mul hL).add ((hL).mono hc (e' := 0) (f' := 2) (by norm_num) (by norm_num))).mono hc (e' := 0) (f' := 2) (by norm_num) (by norm_num)
+  have hS1 := PB.of_le (q := topS1 B E S₀ F₀ Lr) (le_of_eq rfl) (((((hS).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num)).add ((hLF).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).add ((hLL.mul h4BE).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))
+  have hF1 := PB.of_le (q := topF1 B E F₀ Lr) (le_of_eq rfl) ((((hF).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num)).add ((hL.mul h4BE).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num))
+  have hLpLp := ((hLp.mul hLp).add ((hLp).mono hc (e' := 0) (f' := 2) (by norm_num) (by norm_num))).mono hc (e' := 0) (f' := 2) (by norm_num) (by norm_num)
+  have hS2 := PB.of_le (q := topS2' B E (Cχ : V) lk S₀ F₀ Lr) (le_of_eq rfl) (((hS1.add ((hLp.mul hF1).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).add ((hLpLp.mul hGp).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num))
+  have hF2 := PB.of_le (q := topF2' B E (Cχ : V) lk F₀ Lr) (le_of_eq rfl) ((hF1.add ((hLp.mul hGp).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num))).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num))
+  have hS2r := PB.reduce hc ((hS2).mono hc (e' := 1) (f' := 3) (by norm_num) (by norm_num))
+  have hLkLk := ((hLk.mul hLk).add ((hLk).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)
+  have hS3 := PB.of_le (q := topS3' B E (Ck : V) (Cχ : V) lk d S₀ F₀ Lr) (le_of_eq rfl) (((((hS2r).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)).add (PB.uG hc ((hLk.mul hF2).mono hc (e' := 2) (f' := 1) (by norm_num) (by norm_num)))).add ((hLkLk.mul hGk).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))
+  have hF3 := PB.of_le (q := topF3' B E (Ck : V) (Cχ : V) lk d F₀ Lr) (le_of_eq rfl) (((PB.uG hc hF2).add ((hLk.mul hGk).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))
+  have hQ := PB.of_le (q := topQ' B E (Ck : V) (Cχ : V) lk d S₀ F₀ Lr) (le_of_eq rfl) (((h4.mul hS3).add ((hBE).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))
+  have hGc := PB.of_le (q := growK B E (topQ' B E (Ck : V) (Cχ : V) lk d S₀ F₀ Lr)) (le_of_eq rfl) ((((h4BE).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)).add (h2.mul hQ)).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))
+  have hLeaf := ((((hS3.add ((h15.mul hF3).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).add (h240.mul hGc)).add ((h1).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)
+  have hRoot := (PB.reduce hc ((hL.mul (((hStepK).mono hc (e' := 1) (f' := 2) (by norm_num) (by norm_num)).add (h36.mul hS1))).mono hc (e' := 1) (f' := 3) (by norm_num) (by norm_num))).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)
+  have hCostP := PB.of_le (costK9_le N E B (kitQ (Cχ : V) B E) (kitD (Cχ : V) lk)) (((((((((h1899.mul hLin).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)).add ((h27.mul (hQp.mul hE)).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).add ((h2.mul hE).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).add ((h7.mul hQp).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).add ((hDp).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).add ((h42).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))
+  have hInP := (((PB.of_le (q := ctxB (growK B E (kitQ (Cχ : V) B E)) (topS1 B E S₀ F₀ Lr) (topF1 B E F₀ Lr) ((Cχ : V) * (lk + 1))) (le_of_eq rfl) hS2).mono hc (e' := 2) (f' := 2) (by norm_num) (by norm_num)).add ((hF1.add ((hLp.mul hGp).mono hc (e' := 1) (f' := 1) (by norm_num) (by norm_num))).mono hc (e' := 2) (f' := 2) (by norm_num) (by norm_num))).mono hc (e' := 2) (f' := 2) (by norm_num) (by norm_num)
+  have hPin := (PB.reduce hc ((hLp.mul (((hCostP).mono hc (e' := 2) (f' := 2) (by norm_num) (by norm_num)).add (h38.mul hInP))).mono hc (e' := 2) (f' := 3) (by norm_num) (by norm_num))).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)
+  have hCostK := PB.of_le (costK9_le N E B (kitQ (Ck : V) B E) (kitD (Ck : V) d)) (((((((((h1899.mul hLin).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)).add ((h27.mul (hQk.mul hE)).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).add ((h2.mul hE).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).add ((h7.mul hQk).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).add hDk).add ((h42).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))
+  have hInK := ((PB.of_le (q := ctxB (growK B E (kitQ (Ck : V) B E)) (topS2' B E (Cχ : V) lk S₀ F₀ Lr) (topF2' B E (Cχ : V) lk F₀ Lr) ((Ck : V) * (d + 1))) (le_of_eq rfl) hS3).add (((PB.uG hc hF2).add ((hLk.mul hGk).mono hc (e' := 2) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)
+  have hVer := (hLk.mul (hCostK.add (h38.mul hInK))).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)
+  have hCostC := PB.of_le (costK_le N E B (topQ' B E (Ck : V) (Cχ : V) lk d S₀ F₀ Lr) D) (((((((((h1387.mul hLin).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)).add ((h27.mul (hQ.mul hE)).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num))).add ((h2.mul hE).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num))).add ((h7.mul hQ).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num))).add ((hD).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num))).add ((h42).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num))
+  have hInner := (((hS3.add ((h15.mul hF3).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num))).add (h240.mul hGc)).add (((hF3).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)).add ((h15.mul hGc).mono hc (e' := 3) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)
+  have hClose := (h15.mul (hCostC.add ((h35.mul hInner).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)))).mono hc (e' := 4) (f' := 0) (by norm_num) (by norm_num)
+  unfold topBound'
+  exact (((hLeaf.add hRoot).add hPin).add hVer).add hClose
+
+end topBoundPb'
+
+section final4
+
+-- never unfolded again (see `topBc`)
+attribute [irreducible] topBc'
+
+/-- **`BoundedInnerNec 4`, given the COARSE kits** (`BRIEF.md` §11 THE FINDING): the degree is 4 because the
+generic cost accounting charges `4·B·E` of context growth per step (`growK`), so a block of `len ~ g` steps
+at cap `E ~ g` costs `len · ctxBoundG ~ g · g²·g = g⁴`; the finer occurrence accounting would give 3.
+For every `χ` the constant is `16 · topBc' (…)` with the graded inputs `E ~ G`, `S₀, F₀ ~ |Pbox|·(2⌜χ⌝ + 6‖k‖ + 9)`, `Lr ~ 84·|χ|·u + 9`,
+`D ~ topDc`, then `(g + 1)^3 ≤ 8 (g^3 + 1)`. -/
+theorem boundedInnerNec_four_of_kit {N B N' B' N₂ B₂ N₃ B₃ Ck : ℕ} {Cχ : Semisentence LAct 1 → ℕ}
+    (hpkg : KitPackage' N B N' B' N₂ B₂ N₃ B₃ Ck Cχ) : BoundedInnerNec 4 where
+  nec χ := by
+    -- the constant is a NATURAL metavariable (`_`): the final `exact` assigns it by unification (a `?_` goal is
+    -- synthetic-opaque and would not be)
+    exact ⟨_, fun V _ _ k hk ↦ by
+      obtain ⟨tbl, W, tblN, tblL, tblM, htbl, hT, hB, hPl, hPeq, hPle, htblN, htblL, htblM, hkit, hpin⟩ := hpkg V
+      obtain ⟨ρ, hρ, hlen⟩ := hk
+      obtain ⟨L, hL⟩ := verifyGraph_exists W tblN hρ.2
+      obtain ⟨e, Lr, he, hLr, hbound⟩ := top_main' χ htbl hT hB hPl hPeq hPle htblN htblL htblM hkit (hpin χ) hρ hlen hL
+        (le_refl (Etop χ k (dlen TAct ρ) Ck (Cχ χ)))
+      refine ⟨e, ?_, he⟩
+      -- the graded inputs (`G = gBudget k + 1`, `u = ‖k‖ + 1`)
+      have hc := pbCtx_gBudget k
+      have hlk : PB (gBudget k + 1) (‖k‖ + 1) 1 ‖k‖ 0 1 := (PB.u_ hc).of_le le_self_add
+      have hone : PB (gBudget k + 1) (‖k‖ + 1) 1 (1 : V) 0 1 := PB.one'.mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)
+      have h1u : PB (gBudget k + 1) (‖k‖ + 1) 1 (1 : V) 1 0 := PB.one'.mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl
+      have h3u : PB (gBudget k + 1) (‖k‖ + 1) 3 (3 : V) 0 1 := PB.three.mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)
+      have hbk : PB (gBudget k + 1) (‖k‖ + 1) 7 (termLen LAct (bnum k)) 0 1 := by
+        refine PB.of_le (termLen_bnum_le_V k) ?_
+        have := (hlk.smul 6).add hone
+        simpa using this
+      have hg1 : PB (gBudget k + 1) (‖k‖ + 1) 1 (gBudget k) 1 0 := (PB.G_ hc).of_le le_self_add
+      have hd1 : PB (gBudget k + 1) (‖k‖ + 1) 1 (dlen TAct ρ + 1) 1 0 := (PB.G_ hc).of_le (add_le_add hlen le_rfl)
+      have hd0 : PB (gBudget k + 1) (‖k‖ + 1) 1 (dlen TAct ρ) 1 0 := hg1.of_le hlen
+      have hCk : PB (gBudget k + 1) (‖k‖ + 1) Ck (Ck : V) 0 0 := PB.const Ck
+      have hCχ : PB (gBudget k + 1) (‖k‖ + 1) (Cχ χ) (Cχ χ : V) 0 0 := PB.const _
+      have hqN : PB (gBudget k + 1) (‖k‖ + 1) (2 * (⌜χ⌝ : ℕ) + 1) (termLen LAct (qNum χ : V)) 0 0 :=
+        PB.natCast _ (termLen_qNum_le χ)
+      -- `|x| ≤ |χ|·|bnum k|`
+      have hx : PB (gBudget k + 1) (‖k‖ + 1) (flen (Rewriting.emb χ : Semiproposition LAct 1) * 7)
+          (formulaLen LAct (instB (⌜χ⌝ : V) k)) 0 1 :=
+        PB.of_le (by
+          have := formulaLen_instB_le (Sentence.quote_isSemiformul₁ χ) k
+          rwa [formulaLen_quote_semisentence_V'] at this) ((PB.const _).mul hbk)
+      -- `E = Etop`: each summand is `≲ G`
+      have e1 := PB.uG hc (((PB.two.mul hx).add ((PB.natCast (q := (8 : V)) 8 (by norm_num)).mono hc (e' := 0) (f' := 1)
+        le_rfl (by norm_num))).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num))
+      have e2 := PB.uG hc (((hCχ.mul (hlk.add (PB.one'.mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)))).of_le
+        (le_of_eq (by ring : (Cχ χ : V) * (‖k‖ + 0 + 1) = (Cχ χ : V) * (‖k‖ + 1)))).mono hc (e' := 0) (f' := 1)
+        le_rfl (by norm_num))
+      have hin := PB.uG hc (((hCχ.mul (PB.u_ hc)).of_le (le_of_eq (zero_add ((Cχ χ : V) * (‖k‖ + 1))))).mono hc
+        (e' := 0) (f' := 1) le_rfl (by norm_num))
+      have e3 := (hCk.mul ((hd0.add hin).add h1u)).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl
+      have e4 := ((((PB.uG hc ((hCχ.mul (PB.u_ hc)).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num))).add h1u).add
+        ((hCk.mul hd1).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl)).add
+        ((PB.natCast (q := (4 : V)) 4 (by norm_num)).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl))
+      have e5 := hqN.mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl
+      have e6 := PB.uG hc hbk
+      have e7 := PB.uG hc (PB.of_le (termLen_bnum_le_V ‖k‖) (((hlk.of_le (length_le _)).smul 6).add hone))
+      have e8 := PB.reduce hc (PB.of_le (termLen_bnum_le_V (‖k‖ * ‖k‖))
+        (((((hlk.mul hlk).of_le (length_le _)).smul 6).add (hone.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num))).mono hc
+          (e' := 0) (f' := 3) le_rfl (by norm_num)))
+      have e9 := PB.of_le (termLen_bnum_le_V (gBudget k)) (((hg1.of_le (length_le _)).smul 6).add h1u)
+      have e10 := PB.of_le (termLen_bnum_le_V (dlen TAct ρ)) (((hd0.of_le (length_le _)).smul 6).add h1u)
+      have e11 := PB.uG hc ((hlk.smul 12).add h3u)
+      have hs1 := PB.of_le (length_le (‖k‖ * ‖k‖ + ‖k‖ + ‖k‖))
+        (((hlk.mul hlk).add (hlk.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num))).add
+          (hlk.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num)))
+      have e12 := PB.reduce hc (((hs1.smul 12).add (PB.three.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num))).mono hc
+        (e' := 0) (f' := 3) le_rfl (by norm_num))
+      have hle2 : ‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ + ‖k‖ ≤ gBudget k + gBudget k + gBudget k := by
+        unfold gBudget; exact add_le_add (add_le_add le_rfl (sq_le_cube _)) (le_cube _)
+      have hs2 := PB.of_le (length_le (‖k‖ * ‖k‖ * ‖k‖ + ‖k‖ * ‖k‖ + ‖k‖)) (PB.of_le hle2 ((hg1.add hg1).add hg1))
+      have e13 := (hs2.smul 12).add (PB.three.mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl)
+      have hE₀ := ((((((((((((e1.add e2).add e3).add e4).add e5).add e6).add e7).add e8).add e9).add e10).add e11).add e12).add e13)
+      have hE := PB.of_le (q := Etop χ k (dlen TAct ρ) Ck (Cχ χ)) (le_of_eq (by
+        unfold Etop eWalk ePin eVer eJs eQ eK eL eB eG eD eN5 eN4a eN4b; push_cast; ring)) hE₀
+      -- `S₀, F₀ ≤ |Pbox| · (2⌜χ⌝ + 6‖k‖ + 9)`
+      have hq : IsSemiterm LAct (0 : V) (qNum χ) := isSemiterm_qNum χ
+      have hbk' : IsSemiterm LAct (0 : V) (bnum k) := isSemiterm_bnum_LAct 0 k
+      have hTf : IsFormula LAct (boxFact (qNum χ) (bnum k)) := isFormula_boxFact hq hbk'
+      have hB' : formulaLen LAct (boxFact (qNum χ) (bnum k)) ≤
+          formulaLen LAct (Pbox : V) * (((2 * (⌜χ⌝ : ℕ) + 1 : ℕ) : V) + (6 * ‖k‖ + 1)) :=
+        formulaLen_boxFact_le (le_trans (by norm_num) le_add_self) hq hbk' (le_trans (termLen_qNum_le χ) le_self_add)
+          (le_trans (termLen_bnum_le_V k) le_add_self)
+      have hBp := PB.uG hc (((PB.const (2 * (⌜χ⌝ : ℕ) + 1)).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)).add
+        ((hlk.smul 6).add hone))
+      have hPb := PB.natCast (G := gBudget k + 1) (u := ‖k‖ + 1)
+        (flen (Rewriting.emb (Semiformula.lMap emb (↑boxCoreS : ArithmeticSemisentence 2)) : Semiproposition LAct 2))
+        (le_of_eq (formulaLen_quote_semisentence_V' _))
+      have hTlen := PB.of_le hB' ((hPb.mul hBp).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl)
+      have hS := PB.of_le (le_trans (setLen_insert_le (L := LAct) (boxFact (qNum χ) (bnum k)) (∅ : V))
+        (by rw [setLen_empty', zero_add])) hTlen
+      have hF := PB.of_le (le_trans (fvOccS_insert_le (L := LAct) (boxFact (qNum χ) (bnum k)) (∅ : V))
+        (by rw [fvOccS_empty, zero_add]; exact fvOccF_le_formulaLen hTf.isUFormula)) hTlen
+      -- `Lr ≤ 12|x| + 9`
+      have h1 : Lr ≤ 12 * formulaLen LAct (instB (⌜χ⌝ : V) k) + 9 := by
+        have : Lr + 4 ≤ 12 * formulaLen LAct (instB (⌜χ⌝ : V) k) + 9 + 4 := by
+          refine le_trans hLr (le_of_eq ?_); ring
+        exact le_of_add_le_add_right this
+      have hL := PB.of_le h1 (((PB.natCast (q := (12 : V)) 12 (by norm_num)).mul hx).add
+        ((PB.natCast (q := (9 : V)) 9 (by norm_num)).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)))
+      have hD := topD_pb N' B' N₂ B₂ N₃ B₃ k (dlen TAct ρ) hlen
+      have hmain := topBound'_pb hc (PB.const N) (PB.const B) hE hCk hCχ (PB.u_ hc) hd1 hS hF hL hD
+      exact le_trans hbound (PB.final_quart hc hmain)⟩
+
+
+end final4
+
 end ArithS
