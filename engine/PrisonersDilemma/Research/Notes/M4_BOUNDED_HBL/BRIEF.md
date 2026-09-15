@@ -1131,3 +1131,31 @@ done, `all`/`exs` in flight, `axm` pending — + `Verify`'s clause edit + the pe
 theorems glued by `Derivation.induction1 𝚷` at the root) and `PinKit'` (`pin_assembly` + the two
 oracles `BnumOracle`/`SubstOracle` + the coarse cost conjuncts).
 IN FLIGHT: `Prologue` Part 3 (all/exs); `Pin` Part 2 (the oracles + cost → a `PinKit'` instance).
+
+**§11 status — `PinKit'` DONE FOR EVERY χ (30c4162 … 21b3fb3; `BnumSteps.lean` NEW 958 lines,
+`Pin.lean` §4–§7; build 3254, census 651, all standard; no cost conjunct weakened).**
+`BnumSteps.lean`: `BnGraph` fixpoint on `⟪k, j, y⟫` over the bits of `k` (recursing on `m`, not
+`2m`, so `len ≤ 8‖k‖+1` closes), `bnEvenTail` (6 steps incl. the `eqRefl 𝟎`/`eqOfFunc`/`congAdj`
+identification of the two `𝟏` eigenvariables), `bnOddTop`, `bnumSteps_ok` (`ListOK 9 ∧ NoDrop' ∧
+shiftsV = 0 ∧ len ≤ 8‖k‖+1 ∧ SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖) ∧ bnumFact &j (bnum k)`); **`Cb =
+27`** (`bnumOracle_of`). `Pin` §5: `substSteps_ok`/`substOracle_of` with an explicit `Cs`
+polynomial in `f = flN ⌜χ⌝`. **A FINDING RESOLVED:** `Cert.sfK L Q = L + 12Q(Q+1) + …` (the
+quadratic length of `certSubst`) was an ARTIFACT — in the quantifier case the mode-1 vector pass's
+entry-length parameter `S` is vacuous and had been instantiated at `S := Q`; `len_subFGraph_le_lin`
+(same induction, `S := 0`) gives `sfL L Q = L + 24Q + 22`, LINEAR in `‖k‖`, and
+`len_certSubst_le_lin` applies it — without this the kit's cost shape was genuinely unreachable.
+`Pin` §6–§7: `pin_full` (`len P ≤ Cχ(‖k‖+1)`, `SizeOK (Cχ(‖k‖+1)) (Cχ(‖k‖+1)³) P`; `Cχ = A(Cs+1) +
+R`, `A = 40(f + Cn + 27 + ⌜χ⌝ + 1)`), **`pinKit'_of χ N' B' : ∃ Cχ, ∀ V … , TableOK tbl N →
+NumIdTable tbl → (rows ≤ B) → NumTableOK tblN N' B' → PinKit' χ tbl N B Cχ`** and
+**`pinKit'_package : ∃ N B N' B' Cχ, ∀ V, ∃ tbl tblN, TableOK ∧ NumIdTable ∧ rows ≤ B ∧ NumTableOK
+∧ ∀ χ, PinKit' χ tbl N B (Cχ χ)`**. The three cost conjuncts came from ONE `costSum_le_of_sizeOK 9`
+over the whole assembled list (every block is `SizeOK`) at `Q = Cχ(‖k‖+1) ≤ kitQ`, `D = kitD` by
+`rfl` — shorter than the per-block sum. TRAPS: the arity-5 limit hit the 6-ary `BnPacked` → pack
+the fixpoint parameters into one pair (`𝚺₁-Relation`, no subscript); motives must not contain
+closed quotes or CONSTANTS (`Pbnum`, `numIdPieces`, `walkPieces`, `𝟏`) — carry opaque variables
+with equations and `subst` inside the case; a `lin_add` summand for `+ 0` leaves an unassigned ℕ
+metavariable; `section exists` is a keyword clash; lemmas under `include htbl hW` silently take
+the table as arguments.
+**THE ENTIRE REMAINING OBLIGATION IS `VerifyKit'`** (+ the one-line `KitPackage'` assembly with a
+common `B`, then `dupoc_self_coop` at `boundedInnerNec_four_of_kit`).
+IN FLIGHT: `Prologue` Part 3 (all/exs); `Prologue` axm (a separate agent, `ProAxm.lean`).
