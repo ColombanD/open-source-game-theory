@@ -79,6 +79,7 @@ import ArithS.Necessitation.IndRec
 import ArithS.Necessitation.Verify2
 import ArithS.Necessitation.Verify3
 import ArithS.Necessitation.Bounds
+import ArithS.Necessitation.Verify4
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse

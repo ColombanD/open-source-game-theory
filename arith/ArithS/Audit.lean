@@ -56,6 +56,7 @@ import ArithS.Necessitation.NodeSize
 import ArithS.Necessitation.Verify2
 import ArithS.Necessitation.Verify3
 import ArithS.Necessitation.Bounds
+import ArithS.Necessitation.Verify4
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1254,5 +1255,15 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms rec1_local
 #print axioms costSum_proAll_le''
 #print axioms costSum_proExs_le''
+
+-- U10 (Necessitation/Verify4, 2026-09-15): THE RECURSION INVARIANT AT m = 4 — `Verify3.verifyGraph''_ok` re-glued with
+-- `p6 ↦ p4` throughout on `Bounds`' cubic `all`/`exs` shifts (`shiftsV_proAll/proExs_le_cubic` at `D = 2d`, landed in
+-- `402·p3 (2(d+1))`) and the `m = 4` arithmetic (`rec1₄`/`rec2₄`, `allNode_p4`, `axmLeaf_p4`, `allE_p4`/`exsE_p4`,
+-- `allEQ_p3`…`exsiE_p3` lifted by `p3_le_p4`, `capE4`/`capE4'`, `child_bound4`, `lin_le_p3`, `one_le_Cs_p4`):
+-- `verifyGraph''_ok4` — E-room `(Ck + 5·Cv)·p4 (dlen ρ + 1) ≤ E`, list `shiftsV L ≤ (Cs + Cv)·p4 (dlen ρ)`, constants
+-- `Cs = 25731`, `Ck = 128655 = 5·Cs`; `verifyGraph''_ok_pow4` — the `VerifyKit''` shape at exponent 4
+-- (`Ck·(Cv+1)·(dlen ρ+1)^4`), so `deg 4 = 16`. Every arm closes at m = 4; m = 3 needs per-node accounting (not done).
+#print axioms verifyGraph''_ok4
+#print axioms verifyGraph''_ok_pow4
 
 end ArithS
